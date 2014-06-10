@@ -144,8 +144,8 @@
 +		ar231x_board.radio = addr + 0x10000;
 +
 +	if (ar231x_board.radio) {
-+		/* broken board data detected, use radio data to find the offset,
-+		 * user will fix this */
++		/* broken board data detected, use radio data to find the
++		 * offset, user will fix this */
 +		return 1;
 +	}
 +	return 0;
@@ -561,7 +561,7 @@
 +#endif /* __ASM_MACH_ATHEROS_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,79 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -590,24 +590,27 @@
 +		return 0;
 +}
 +
-+static inline dma_addr_t plat_map_dma_mem(struct device *dev, void *addr, size_t size)
++static inline dma_addr_t
++plat_map_dma_mem(struct device *dev, void *addr, size_t size)
 +{
 +	return virt_to_phys(addr) + ar231x_dev_offset(dev);
 +}
 +
-+static inline dma_addr_t plat_map_dma_mem_page(struct device *dev, struct page *page)
++static inline dma_addr_t
++plat_map_dma_mem_page(struct device *dev, struct page *page)
 +{
 +	return page_to_phys(page) + ar231x_dev_offset(dev);
 +}
 +
-+static inline unsigned long plat_dma_addr_to_phys(struct device *dev,
-+	dma_addr_t dma_addr)
++static inline unsigned long
++plat_dma_addr_to_phys(struct device *dev, dma_addr_t dma_addr)
 +{
 +	return dma_addr - ar231x_dev_offset(dev);
 +}
 +
-+static inline void plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr,
-+	size_t size, enum dma_data_direction direction)
++static inline void
++plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr, size_t size,
++		   enum dma_data_direction direction)
 +{
 +}
 +
@@ -710,7 +713,7 @@
 +#endif /* __ASM_MIPS_MACH_ATHEROS_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,580 @@
+@@ -0,0 +1,615 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -759,56 +762,88 @@
 +#define AR2315_RESET_COLD_APB              0x00000002
 +#define AR2315_RESET_COLD_CPU              0x00000004
 +#define AR2315_RESET_COLD_CPUWARM          0x00000008
-+#define AR2315_RESET_SYSTEM                (RESET_COLD_CPU | RESET_COLD_APB | RESET_COLD_AHB)      /* full system */
++#define AR2315_RESET_SYSTEM	\
++	(RESET_COLD_CPU |\
++	 RESET_COLD_APB |\
++	 RESET_COLD_AHB)                                   /* full system */
 +#define AR2317_RESET_SYSTEM                0x00000010
 +
 +
 +#define AR2315_RESET            (AR2315_DSLBASE + 0x0004)
 +
-+#define AR2315_RESET_WARM_WLAN0_MAC        0x00000001      /* warm reset WLAN0 MAC */
-+#define AR2315_RESET_WARM_WLAN0_BB         0x00000002      /* warm reset WLAN0 BaseBand */
-+#define AR2315_RESET_MPEGTS_RSVD           0x00000004      /* warm reset MPEG-TS */
-+#define AR2315_RESET_PCIDMA                0x00000008      /* warm reset PCI ahb/dma */
-+#define AR2315_RESET_MEMCTL                0x00000010      /* warm reset memory controller */
-+#define AR2315_RESET_LOCAL                 0x00000020      /* warm reset local bus */
-+#define AR2315_RESET_I2C_RSVD              0x00000040      /* warm reset I2C bus */
-+#define AR2315_RESET_SPI                   0x00000080      /* warm reset SPI interface */
-+#define AR2315_RESET_UART0                 0x00000100      /* warm reset UART0 */
-+#define AR2315_RESET_IR_RSVD               0x00000200      /* warm reset IR interface */
-+#define AR2315_RESET_EPHY0                 0x00000400      /* cold reset ENET0 phy */
-+#define AR2315_RESET_ENET0                 0x00000800      /* cold reset ENET0 mac */
++/* warm reset WLAN0 MAC */
++#define AR2315_RESET_WARM_WLAN0_MAC        0x00000001
++/* warm reset WLAN0 BaseBand */
++#define AR2315_RESET_WARM_WLAN0_BB         0x00000002
++/* warm reset MPEG-TS */
++#define AR2315_RESET_MPEGTS_RSVD           0x00000004
++/* warm reset PCI ahb/dma */
++#define AR2315_RESET_PCIDMA                0x00000008
++/* warm reset memory controller */
++#define AR2315_RESET_MEMCTL                0x00000010
++/* warm reset local bus */
++#define AR2315_RESET_LOCAL                 0x00000020
++/* warm reset I2C bus */
++#define AR2315_RESET_I2C_RSVD              0x00000040
++/* warm reset SPI interface */
++#define AR2315_RESET_SPI                   0x00000080
++/* warm reset UART0 */
++#define AR2315_RESET_UART0                 0x00000100
++/* warm reset IR interface */
++#define AR2315_RESET_IR_RSVD               0x00000200
++/* cold reset ENET0 phy */
++#define AR2315_RESET_EPHY0                 0x00000400
++/* cold reset ENET0 mac */
++#define AR2315_RESET_ENET0                 0x00000800
 +
 +/*
 + * AHB master arbitration control
 + */
 +#define AR2315_AHB_ARB_CTL      (AR2315_DSLBASE + 0x0008)
 +
-+#define AR2315_ARB_CPU                     0x00000001      /* CPU, default */
-+#define AR2315_ARB_WLAN                    0x00000002      /* WLAN */
-+#define AR2315_ARB_MPEGTS_RSVD             0x00000004      /* MPEG-TS */
-+#define AR2315_ARB_LOCAL                   0x00000008      /* LOCAL */
-+#define AR2315_ARB_PCI                     0x00000010      /* PCI */
-+#define AR2315_ARB_ETHERNET                0x00000020      /* Ethernet */
-+#define AR2315_ARB_RETRY                   0x00000100      /* retry policy, debug only */
++/* CPU, default */
++#define AR2315_ARB_CPU                     0x00000001
++/* WLAN */
++#define AR2315_ARB_WLAN                    0x00000002
++/* MPEG-TS */
++#define AR2315_ARB_MPEGTS_RSVD             0x00000004
++/* LOCAL */
++#define AR2315_ARB_LOCAL                   0x00000008
++/* PCI */
++#define AR2315_ARB_PCI                     0x00000010
++/* Ethernet */
++#define AR2315_ARB_ETHERNET                0x00000020
++/* retry policy, debug only */
++#define AR2315_ARB_RETRY                   0x00000100
 +
 +/*
 + * Config Register
 + */
 +#define AR2315_ENDIAN_CTL       (AR2315_DSLBASE + 0x000c)
 +
-+#define AR2315_CONFIG_AHB                  0x00000001      /* EC - AHB bridge endianess */
-+#define AR2315_CONFIG_WLAN                 0x00000002      /* WLAN byteswap */
-+#define AR2315_CONFIG_MPEGTS_RSVD          0x00000004      /* MPEG-TS byteswap */
-+#define AR2315_CONFIG_PCI                  0x00000008      /* PCI byteswap */
-+#define AR2315_CONFIG_MEMCTL               0x00000010      /* Memory controller endianess */
-+#define AR2315_CONFIG_LOCAL                0x00000020      /* Local bus byteswap */
-+#define AR2315_CONFIG_ETHERNET             0x00000040      /* Ethernet byteswap */
++/* EC - AHB bridge endianess */
++#define AR2315_CONFIG_AHB                  0x00000001
++/* WLAN byteswap */
++#define AR2315_CONFIG_WLAN                 0x00000002
++/* MPEG-TS byteswap */
++#define AR2315_CONFIG_MPEGTS_RSVD          0x00000004
++/* PCI byteswap */
++#define AR2315_CONFIG_PCI                  0x00000008
++/* Memory controller endianess */
++#define AR2315_CONFIG_MEMCTL               0x00000010
++/* Local bus byteswap */
++#define AR2315_CONFIG_LOCAL                0x00000020
++/* Ethernet byteswap */
++#define AR2315_CONFIG_ETHERNET             0x00000040
 +
-+#define AR2315_CONFIG_MERGE                0x00000200      /* CPU write buffer merge */
-+#define AR2315_CONFIG_CPU                  0x00000400      /* CPU big endian */
++/* CPU write buffer merge */
++#define AR2315_CONFIG_MERGE                0x00000200
++/* CPU big endian */
++#define AR2315_CONFIG_CPU                  0x00000400
 +#define AR2315_CONFIG_PCIAHB               0x00000800
 +#define AR2315_CONFIG_PCIAHB_BRIDGE        0x00001000
-+#define AR2315_CONFIG_SPI                  0x00008000      /* SPI byteswap */
++/* SPI byteswap */
++#define AR2315_CONFIG_SPI                  0x00008000
 +#define AR2315_CONFIG_CPU_DRAM             0x00010000
 +#define AR2315_CONFIG_CPU_PCI              0x00020000
 +#define AR2315_CONFIG_CPU_MMR              0x00040000
@@ -842,7 +877,8 @@
 +#define AR2315_IF_DISABLED                 0
 +#define AR2315_IF_PCI                      1
 +#define AR2315_IF_TS_LOCAL                 2
-+#define AR2315_IF_ALL                      3   /* only for emulation with separate pins */
++/* only for emulation with separate pins */
++#define AR2315_IF_ALL                      3
 +#define AR2315_IF_LOCAL_HOST               0x00000008
 +#define AR2315_IF_PCI_HOST                 0x00000010
 +#define AR2315_IF_PCI_INTR                 0x00000020
@@ -861,23 +897,23 @@
 +#define AR2315_IMR              (AR2315_DSLBASE + 0x0024)
 +#define AR2315_GISR             (AR2315_DSLBASE + 0x0028)
 +
-+#define AR2315_ISR_UART0                   0x0001           /* high speed UART */
-+#define AR2315_ISR_I2C_RSVD                0x0002           /* I2C bus */
-+#define AR2315_ISR_SPI                     0x0004           /* SPI bus */
-+#define AR2315_ISR_AHB                     0x0008           /* AHB error */
-+#define AR2315_ISR_APB                     0x0010           /* APB error */
-+#define AR2315_ISR_TIMER                   0x0020           /* timer */
-+#define AR2315_ISR_GPIO                    0x0040           /* GPIO */
-+#define AR2315_ISR_WD                      0x0080           /* watchdog */
-+#define AR2315_ISR_IR_RSVD                 0x0100           /* IR */
++#define AR2315_ISR_UART0	0x0001           /* high speed UART */
++#define AR2315_ISR_I2C_RSVD	0x0002           /* I2C bus */
++#define AR2315_ISR_SPI		0x0004           /* SPI bus */
++#define AR2315_ISR_AHB		0x0008           /* AHB error */
++#define AR2315_ISR_APB		0x0010           /* APB error */
++#define AR2315_ISR_TIMER	0x0020           /* timer */
++#define AR2315_ISR_GPIO		0x0040           /* GPIO */
++#define AR2315_ISR_WD		0x0080           /* watchdog */
++#define AR2315_ISR_IR_RSVD	0x0100           /* IR */
 +
-+#define AR2315_GISR_MISC                   0x0001
-+#define AR2315_GISR_WLAN0                  0x0002
-+#define AR2315_GISR_MPEGTS_RSVD            0x0004
-+#define AR2315_GISR_LOCALPCI               0x0008
-+#define AR2315_GISR_WMACPOLL               0x0010
-+#define AR2315_GISR_TIMER                  0x0020
-+#define AR2315_GISR_ETHERNET               0x0040
++#define AR2315_GISR_MISC	0x0001
++#define AR2315_GISR_WLAN0	0x0002
++#define AR2315_GISR_MPEGTS_RSVD	0x0004
++#define AR2315_GISR_LOCALPCI	0x0008
++#define AR2315_GISR_WMACPOLL	0x0010
++#define AR2315_GISR_TIMER	0x0020
++#define AR2315_GISR_ETHERNET	0x0040
 +
 +/*
 + * Interrupt routing from IO to the processor IP bits
@@ -898,9 +934,9 @@
 +#define AR2315_WD               (AR2315_DSLBASE + 0x0038)
 +#define AR2315_WDC              (AR2315_DSLBASE + 0x003c)
 +
-+#define AR2315_WDC_IGNORE_EXPIRATION       0x00000000
-+#define AR2315_WDC_NMI                     0x00000001               /* NMI on watchdog */
-+#define AR2315_WDC_RESET                   0x00000002               /* reset on watchdog */
++#define AR2315_WDC_IGNORE_EXPIRATION	0x00000000
++#define AR2315_WDC_NMI			0x00000001	/* NMI on watchdog */
++#define AR2315_WDC_RESET		0x00000002	/* reset on watchdog */
 +
 +/*
 + * CPU Performance Counters
@@ -908,21 +944,21 @@
 +#define AR2315_PERFCNT0         (AR2315_DSLBASE + 0x0048)
 +#define AR2315_PERFCNT1         (AR2315_DSLBASE + 0x004c)
 +
-+#define AR2315_PERF0_DATAHIT                0x0001  /* Count Data Cache Hits */
-+#define AR2315_PERF0_DATAMISS               0x0002  /* Count Data Cache Misses */
-+#define AR2315_PERF0_INSTHIT                0x0004  /* Count Instruction Cache Hits */
-+#define AR2315_PERF0_INSTMISS               0x0008  /* Count Instruction Cache Misses */
-+#define AR2315_PERF0_ACTIVE                 0x0010  /* Count Active Processor Cycles */
-+#define AR2315_PERF0_WBHIT                  0x0020  /* Count CPU Write Buffer Hits */
-+#define AR2315_PERF0_WBMISS                 0x0040  /* Count CPU Write Buffer Misses */
++#define AR2315_PERF0_DATAHIT	0x0001  /* Count Data Cache Hits */
++#define AR2315_PERF0_DATAMISS	0x0002  /* Count Data Cache Misses */
++#define AR2315_PERF0_INSTHIT	0x0004  /* Count Instruction Cache Hits */
++#define AR2315_PERF0_INSTMISS	0x0008  /* Count Instruction Cache Misses */
++#define AR2315_PERF0_ACTIVE	0x0010  /* Count Active Processor Cycles */
++#define AR2315_PERF0_WBHIT	0x0020  /* Count CPU Write Buffer Hits */
++#define AR2315_PERF0_WBMISS	0x0040  /* Count CPU Write Buffer Misses */
 +
-+#define AR2315_PERF1_EB_ARDY                0x0001  /* Count EB_ARdy signal */
-+#define AR2315_PERF1_EB_AVALID              0x0002  /* Count EB_AValid signal */
-+#define AR2315_PERF1_EB_WDRDY               0x0004  /* Count EB_WDRdy signal */
-+#define AR2315_PERF1_EB_RDVAL               0x0008  /* Count EB_RdVal signal */
-+#define AR2315_PERF1_VRADDR                 0x0010  /* Count valid read address cycles */
-+#define AR2315_PERF1_VWADDR                 0x0020  /* Count valid write address cycles */
-+#define AR2315_PERF1_VWDATA                 0x0040  /* Count valid write data cycles */
++#define AR2315_PERF1_EB_ARDY	0x0001  /* Count EB_ARdy signal */
++#define AR2315_PERF1_EB_AVALID	0x0002  /* Count EB_AValid signal */
++#define AR2315_PERF1_EB_WDRDY	0x0004  /* Count EB_WDRdy signal */
++#define AR2315_PERF1_EB_RDVAL	0x0008  /* Count EB_RdVal signal */
++#define AR2315_PERF1_VRADDR	0x0010  /* Count valid read address cycles */
++#define AR2315_PERF1_VWADDR	0x0020  /* Count valid write address cycles */
++#define AR2315_PERF1_VWDATA	0x0040  /* Count valid write data cycles */
 +
 +/*
 + * AHB Error Reporting.
@@ -999,20 +1035,21 @@
 +#define AR2315_GPIO_CR          (AR2315_DSLBASE + 0x0098)
 +#define AR2315_GPIO_INT         (AR2315_DSLBASE + 0x00a0)
 +
-+#define AR2315_GPIO_CR_M(x)                (1 << (x))                  /* mask for i/o */
-+#define AR2315_GPIO_CR_O(x)                (1 << (x))                  /* output */
-+#define AR2315_GPIO_CR_I(x)                (0)                         /* input */
++#define AR2315_GPIO_CR_M(x)                (1 << (x))       /* mask for i/o */
++#define AR2315_GPIO_CR_O(x)                (1 << (x))       /* output */
++#define AR2315_GPIO_CR_I(x)                (0)              /* input */
 +
-+#define AR2315_GPIO_INT_S(x)               (x)                         /* interrupt enable */
-+#define AR2315_GPIO_INT_M                  (0x3F)                      /* mask for int */
-+#define AR2315_GPIO_INT_LVL(x)             ((x) << 6)                  /* interrupt level */
-+#define AR2315_GPIO_INT_LVL_M              ((0x3) << 6)                /* mask for int level */
++#define AR2315_GPIO_INT_S(x)	(x)             /* interrupt enable */
++#define AR2315_GPIO_INT_M	(0x3F)          /* mask for int */
++#define AR2315_GPIO_INT_LVL(x)	((x) << 6)      /* interrupt level */
++#define AR2315_GPIO_INT_LVL_M	((0x3) << 6)    /* mask for int level */
 +
-+#define AR2315_GPIO_INT_MAX_Y				1   /* Maximum value of Y for AR5313_GPIO_INT_* macros */
-+#define AR2315_GPIO_INT_LVL_OFF				0   /* Triggerring off */
-+#define AR2315_GPIO_INT_LVL_LOW				1   /* Low Level Triggered */
-+#define AR2315_GPIO_INT_LVL_HIGH			2   /* High Level Triggered */
-+#define AR2315_GPIO_INT_LVL_EDGE			3   /* Edge Triggered */
++#define AR2315_GPIO_INT_MAX_Y		1   /* Maximum value of Y for
++					     * AR5313_GPIO_INT_* macros */
++#define AR2315_GPIO_INT_LVL_OFF		0   /* Triggerring off */
++#define AR2315_GPIO_INT_LVL_LOW		1   /* Low Level Triggered */
++#define AR2315_GPIO_INT_LVL_HIGH	2   /* High Level Triggered */
++#define AR2315_GPIO_INT_LVL_EDGE	3   /* Edge Triggered */
 +
 +#define AR2315_RESET_GPIO       5
 +#define AR2315_NUM_GPIO         22
@@ -1096,7 +1133,7 @@
 + * PCI Bus Interface Registers
 + */
 +#define AR2315_PCI_1MS_REG      (AR2315_PCI + 0x0008)
-+#define AR2315_PCI_1MS_MASK     0x3FFFF         /* # of AHB clk cycles in 1ms */
++#define AR2315_PCI_1MS_MASK     0x3FFFF       /* # of AHB clk cycles in 1ms */
 +
 +#define AR2315_PCI_MISC_CONFIG  (AR2315_PCI + 0x000c)
 +#define AR2315_PCIMISC_TXD_EN   0x00000001      /* Enable TXD for fragments */
@@ -1110,7 +1147,8 @@
 +#define AR2315_PCIGRANT_FRAME   0x00000040      /* 6:7=1 grant waits 4 frame */
 +#define AR2315_PCIGRANT_IDLE    0x00000080      /* 6:7=2 grant waits 4 idle */
 +#define AR2315_PCIGRANT_GAP     0x00000000      /* 6:7=2 grant waits 4 idle */
-+#define AR2315_PCICACHE_DIS     0x00001000      /* PCI external access cache disable */
++#define AR2315_PCICACHE_DIS     0x00001000      /* PCI external access cache
++						 * disable */
 +
 +#define AR2315_PCI_OUT_TSTAMP   (AR2315_PCI + 0x0010)
 +
@@ -1152,7 +1190,7 @@
 +#define AR2315_PCI_EXT_INT      0x02000000
 +#define AR2315_PCI_ABORT_INT    0x04000000
 +
-+#define AR2315_PCI_INT_MASK     (AR2315_PCI + 0x0504)   /* same as INT_STATUS */
++#define AR2315_PCI_INT_MASK     (AR2315_PCI + 0x0504)  /* same as INT_STATUS */
 +
 +#define AR2315_PCI_INTEN_REG    (AR2315_PCI + 0x0508)
 +#define AR2315_PCI_INT_DISABLE  0x00            /* disable pci interrupts */
@@ -1170,44 +1208,44 @@
 + * Local Bus Interface Registers
 + */
 +#define AR2315_LB_CONFIG        (AR2315_LOCAL + 0x0000)
-+#define AR2315_LBCONF_OE        0x00000001      /* =1 OE is low-true */
-+#define AR2315_LBCONF_CS0       0x00000002      /* =1 first CS is low-true */
-+#define AR2315_LBCONF_CS1       0x00000004      /* =1 2nd CS is low-true */
-+#define AR2315_LBCONF_RDY       0x00000008      /* =1 RDY is low-true */
-+#define AR2315_LBCONF_WE        0x00000010      /* =1 Write En is low-true */
-+#define AR2315_LBCONF_WAIT      0x00000020      /* =1 WAIT is low-true */
-+#define AR2315_LBCONF_ADS       0x00000040      /* =1 Adr Strobe is low-true */
-+#define AR2315_LBCONF_MOT       0x00000080      /* =0 Intel, =1 Motorola */
-+#define AR2315_LBCONF_8CS       0x00000100      /* =1 8 bits CS, 0= 16bits */
-+#define AR2315_LBCONF_8DS       0x00000200      /* =1 8 bits Data S, 0=16bits */
-+#define AR2315_LBCONF_ADS_EN    0x00000400      /* =1 Enable ADS */
-+#define AR2315_LBCONF_ADR_OE    0x00000800      /* =1 Adr cap on OE, WE or DS */
-+#define AR2315_LBCONF_ADDT_MUX  0x00001000      /* =1 Adr and Data share bus */
-+#define AR2315_LBCONF_DATA_OE   0x00002000      /* =1 Data cap on OE, WE, DS */
-+#define AR2315_LBCONF_16DATA    0x00004000      /* =1 Data is 16 bits wide */
-+#define AR2315_LBCONF_SWAPDT    0x00008000      /* =1 Byte swap data */
-+#define AR2315_LBCONF_SYNC      0x00010000      /* =1 Bus synchronous to clk */
-+#define AR2315_LBCONF_INT       0x00020000      /* =1 Intr is low true */
-+#define AR2315_LBCONF_INT_CTR0  0x00000000      /* GND high-Z, Vdd is high-Z */
-+#define AR2315_LBCONF_INT_CTR1  0x00040000      /* GND drive, Vdd is high-Z */
-+#define AR2315_LBCONF_INT_CTR2  0x00080000      /* GND high-Z, Vdd drive */
-+#define AR2315_LBCONF_INT_CTR3  0x000C0000      /* GND drive, Vdd drive */
-+#define AR2315_LBCONF_RDY_WAIT  0x00100000      /* =1 RDY is negative of WAIT */
-+#define AR2315_LBCONF_INT_PULSE 0x00200000      /* =1 Interrupt is a pulse */
-+#define AR2315_LBCONF_ENABLE    0x00400000      /* =1 Falcon respond to LB */
++#define AR2315_LBCONF_OE        0x00000001    /* =1 OE is low-true */
++#define AR2315_LBCONF_CS0       0x00000002    /* =1 first CS is low-true */
++#define AR2315_LBCONF_CS1       0x00000004    /* =1 2nd CS is low-true */
++#define AR2315_LBCONF_RDY       0x00000008    /* =1 RDY is low-true */
++#define AR2315_LBCONF_WE        0x00000010    /* =1 Write En is low-true */
++#define AR2315_LBCONF_WAIT      0x00000020    /* =1 WAIT is low-true */
++#define AR2315_LBCONF_ADS       0x00000040    /* =1 Adr Strobe is low-true */
++#define AR2315_LBCONF_MOT       0x00000080    /* =0 Intel, =1 Motorola */
++#define AR2315_LBCONF_8CS       0x00000100    /* =1 8 bits CS, 0= 16bits */
++#define AR2315_LBCONF_8DS       0x00000200    /* =1 8 bits Data S, 0=16bits */
++#define AR2315_LBCONF_ADS_EN    0x00000400    /* =1 Enable ADS */
++#define AR2315_LBCONF_ADR_OE    0x00000800    /* =1 Adr cap on OE, WE or DS */
++#define AR2315_LBCONF_ADDT_MUX  0x00001000    /* =1 Adr and Data share bus */
++#define AR2315_LBCONF_DATA_OE   0x00002000    /* =1 Data cap on OE, WE, DS */
++#define AR2315_LBCONF_16DATA    0x00004000    /* =1 Data is 16 bits wide */
++#define AR2315_LBCONF_SWAPDT    0x00008000    /* =1 Byte swap data */
++#define AR2315_LBCONF_SYNC      0x00010000    /* =1 Bus synchronous to clk */
++#define AR2315_LBCONF_INT       0x00020000    /* =1 Intr is low true */
++#define AR2315_LBCONF_INT_CTR0  0x00000000    /* GND high-Z, Vdd is high-Z */
++#define AR2315_LBCONF_INT_CTR1  0x00040000    /* GND drive, Vdd is high-Z */
++#define AR2315_LBCONF_INT_CTR2  0x00080000    /* GND high-Z, Vdd drive */
++#define AR2315_LBCONF_INT_CTR3  0x000C0000    /* GND drive, Vdd drive */
++#define AR2315_LBCONF_RDY_WAIT  0x00100000    /* =1 RDY is negative of WAIT */
++#define AR2315_LBCONF_INT_PULSE 0x00200000    /* =1 Interrupt is a pulse */
++#define AR2315_LBCONF_ENABLE    0x00400000    /* =1 Falcon respond to LB */
 +
 +#define AR2315_LB_CLKSEL        (AR2315_LOCAL + 0x0004)
-+#define AR2315_LBCLK_EXT        0x0001          /* use external clk for lb */
++#define AR2315_LBCLK_EXT        0x0001        /* use external clk for lb */
 +
 +#define AR2315_LB_1MS           (AR2315_LOCAL + 0x0008)
-+#define AR2315_LB1MS_MASK       0x3FFFF         /* # of AHB clk cycles in 1ms */
++#define AR2315_LB1MS_MASK       0x3FFFF       /* # of AHB clk cycles in 1ms */
 +
 +#define AR2315_LB_MISCCFG       (AR2315_LOCAL + 0x000C)
-+#define AR2315_LBM_TXD_EN       0x00000001      /* Enable TXD for fragments */
-+#define AR2315_LBM_RX_INTEN     0x00000002      /* Enable LB ints on RX ready */
-+#define AR2315_LBM_MBOXWR_INTEN 0x00000004      /* Enable LB ints on mbox wr */
-+#define AR2315_LBM_MBOXRD_INTEN 0x00000008      /* Enable LB ints on mbox rd */
-+#define AR2315_LMB_DESCSWAP_EN  0x00000010      /* Byte swap desc enable */
++#define AR2315_LBM_TXD_EN       0x00000001    /* Enable TXD for fragments */
++#define AR2315_LBM_RX_INTEN     0x00000002    /* Enable LB ints on RX ready */
++#define AR2315_LBM_MBOXWR_INTEN 0x00000004    /* Enable LB ints on mbox wr */
++#define AR2315_LBM_MBOXRD_INTEN 0x00000008    /* Enable LB ints on mbox rd */
++#define AR2315_LMB_DESCSWAP_EN  0x00000010    /* Byte swap desc enable */
 +#define AR2315_LBM_TIMEOUT_MASK 0x00FFFF80
 +#define AR2315_LBM_TIMEOUT_SHFT 7
 +#define AR2315_LBM_PORTMUX      0x07000000
@@ -1255,32 +1293,32 @@
 +/*
 + * IR Interface Registers
 + */
-+#define AR2315_IR_PKTDATA                   (AR2315_IR + 0x0000)
++#define AR2315_IR_PKTDATA		(AR2315_IR + 0x0000)
 +
-+#define AR2315_IR_PKTLEN                    (AR2315_IR + 0x07fc) /* 0 - 63 */
++#define AR2315_IR_PKTLEN		(AR2315_IR + 0x07fc) /* 0 - 63 */
 +
-+#define AR2315_IR_CONTROL                   (AR2315_IR + 0x0800)
-+#define AR2315_IRCTL_TX                     0x00000000  /* use as tranmitter */
-+#define AR2315_IRCTL_RX                     0x00000001  /* use as receiver   */
-+#define AR2315_IRCTL_SAMPLECLK_MASK         0x00003ffe  /* Sample clk divisor mask */
-+#define AR2315_IRCTL_SAMPLECLK_SHFT                  1
-+#define AR2315_IRCTL_OUTPUTCLK_MASK         0x03ffc000  /* Output clk divisor mask */
-+#define AR2315_IRCTL_OUTPUTCLK_SHFT                 14
++#define AR2315_IR_CONTROL		(AR2315_IR + 0x0800)
++#define AR2315_IRCTL_TX			0x00000000  /* use as tranmitter */
++#define AR2315_IRCTL_RX			0x00000001  /* use as receiver   */
++#define AR2315_IRCTL_SAMPLECLK_MASK	0x00003ffe  /* Sample clk divisor */
++#define AR2315_IRCTL_SAMPLECLK_SHFT	1
++#define AR2315_IRCTL_OUTPUTCLK_MASK	0x03ffc000  /* Output clk div */
++#define AR2315_IRCTL_OUTPUTCLK_SHFT	14
 +
-+#define AR2315_IR_STATUS                    (AR2315_IR + 0x0804)
-+#define AR2315_IRSTS_RX                     0x00000001  /* receive in progress */
-+#define AR2315_IRSTS_TX                     0x00000002  /* transmit in progress */
++#define AR2315_IR_STATUS		(AR2315_IR + 0x0804)
++#define AR2315_IRSTS_RX			0x00000001  /* receive in progress */
++#define AR2315_IRSTS_TX			0x00000002  /* transmit in progress */
 +
-+#define AR2315_IR_CONFIG                    (AR2315_IR + 0x0808)
-+#define AR2315_IRCFG_INVIN                  0x00000001  /* invert input polarity */
-+#define AR2315_IRCFG_INVOUT                 0x00000002  /* invert output polarity */
-+#define AR2315_IRCFG_SEQ_START_WIN_SEL      0x00000004  /* 1 => 28, 0 => 7 */
-+#define AR2315_IRCFG_SEQ_START_THRESH       0x000000f0  /*  */
-+#define AR2315_IRCFG_SEQ_END_UNIT_SEL       0x00000100  /*  */
-+#define AR2315_IRCFG_SEQ_END_UNIT_THRESH    0x00007e00  /*  */
-+#define AR2315_IRCFG_SEQ_END_WIN_SEL        0x00008000  /*  */
-+#define AR2315_IRCFG_SEQ_END_WIN_THRESH     0x001f0000  /*  */
-+#define AR2315_IRCFG_NUM_BACKOFF_WORDS      0x01e00000  /*  */
++#define AR2315_IR_CONFIG		(AR2315_IR + 0x0808)
++#define AR2315_IRCFG_INVIN		0x00000001  /* invert in polarity */
++#define AR2315_IRCFG_INVOUT		0x00000002  /* invert out polarity */
++#define AR2315_IRCFG_SEQ_START_WIN_SEL	0x00000004  /* 1 => 28, 0 => 7 */
++#define AR2315_IRCFG_SEQ_START_THRESH	0x000000f0
++#define AR2315_IRCFG_SEQ_END_UNIT_SEL	0x00000100
++#define AR2315_IRCFG_SEQ_END_UNIT_THRESH 0x00007e00
++#define AR2315_IRCFG_SEQ_END_WIN_SEL	0x00008000
++#define AR2315_IRCFG_SEQ_END_WIN_THRESH	0x001f0000
++#define AR2315_IRCFG_NUM_BACKOFF_WORDS	0x01e00000
 +
 +#define HOST_PCI_DEV_ID         3
 +#define HOST_PCI_MBAR0          0x10000000
@@ -1517,11 +1555,11 @@
 +#define AR531X_GPIO_CR      (AR531X_GPIO + 0x08)        /* control register */
 +
 +/* GPIO Control Register bit field definitions */
-+#define AR531X_GPIO_CR_M(x)    (1 << (x))                      /* mask for i/o */
-+#define AR531X_GPIO_CR_O(x)    (0 << (x))                      /* mask for output */
-+#define AR531X_GPIO_CR_I(x)    (1 << (x))                      /* mask for input */
-+#define AR531X_GPIO_CR_INT(x)  (1 << ((x)+8))                  /* mask for interrupt */
-+#define AR531X_GPIO_CR_UART(x) (1 << ((x)+16))                 /* uart multiplex */
++#define AR531X_GPIO_CR_M(x)    (1 << (x))               /* mask for i/o */
++#define AR531X_GPIO_CR_O(x)    (0 << (x))               /* mask for output */
++#define AR531X_GPIO_CR_I(x)    (1 << (x))               /* mask for input */
++#define AR531X_GPIO_CR_INT(x)  (1 << ((x)+8))           /* mask for interrupt*/
++#define AR531X_GPIO_CR_UART(x) (1 << ((x)+16))          /* uart multiplex */
 +#define AR531X_NUM_GPIO		8
 +
 +
@@ -1529,7 +1567,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,579 @@
+@@ -0,0 +1,582 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1572,7 +1610,8 @@
 +static void
 +ar5312_misc_irq_dispatch(void)
 +{
-+	unsigned int ar231x_misc_intrs = ar231x_read_reg(AR531X_ISR) & ar231x_read_reg(AR531X_IMR);
++	unsigned int ar231x_misc_intrs = ar231x_read_reg(AR531X_ISR) &
++					 ar231x_read_reg(AR531X_IMR);
 +
 +	if (ar231x_misc_intrs & AR531X_ISR_TIMER) {
 +		do_IRQ(AR531X_MISC_IRQ_TIMER);
@@ -1853,10 +1892,12 @@
 +
 +	/* Disable other flash banks */
 +	ar231x_write_reg(AR531X_FLASHCTL1,
-+		ar231x_read_reg(AR531X_FLASHCTL1) & ~(FLASHCTL_E | FLASHCTL_AC));
++			 ar231x_read_reg(AR531X_FLASHCTL1) &
++			 ~(FLASHCTL_E | FLASHCTL_AC));
 +
 +	ar231x_write_reg(AR531X_FLASHCTL2,
-+		ar231x_read_reg(AR531X_FLASHCTL2) & ~(FLASHCTL_E | FLASHCTL_AC));
++			 ar231x_read_reg(AR531X_FLASHCTL2) &
++			 ~(FLASHCTL_E | FLASHCTL_AC));
 +
 +	return (char *)KSEG1ADDR(AR531X_FLASH + 0x800000);
 +}
@@ -2014,7 +2055,7 @@
 +	 *
 +	 *  cpu_freq = input_clock * MULT (where MULT is PLL multiplier)
 +	 *  sys_freq = cpu_freq / 4	  (used for APB clock, serial,
-+	 *							   flash, Timer, Watchdog Timer)
++	 *				   flash, Timer, Watchdog Timer)
 +	 *
 +	 *  cnt_freq = cpu_freq / 2	   (use for CPU count/compare)
 +	 *
@@ -2111,7 +2152,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,693 @@
+@@ -0,0 +1,696 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2171,7 +2212,8 @@
 +		ar231x_write_reg(AR2315_ISR, AR2315_ISR_GPIO);
 +
 +	/* Enable interrupt with edge detection */
-+	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(bit)) != AR2315_GPIO_CR_I(bit))
++	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(bit)) !=
++	    AR2315_GPIO_CR_I(bit))
 +		return;
 +
 +	if (bit >= 0)
@@ -2197,7 +2239,8 @@
 +	else if (pending & CAUSEF_IP4)
 +		do_IRQ(AR2315_IRQ_ENET0_INTRS);
 +	else if (pending & CAUSEF_IP2) {
-+		unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) & ar231x_read_reg(AR2315_IMR);
++		unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
++					 ar231x_read_reg(AR2315_IMR);
 +
 +		if (misc_intr & AR2315_ISR_SPI)
 +			do_IRQ(AR531X_MISC_IRQ_SPI);
@@ -2232,7 +2275,8 @@
 +	unsigned int gpio = d->irq - AR531X_GPIO_IRQ_BASE;
 +
 +	/* Enable interrupt with edge detection */
-+	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(gpio)) != AR2315_GPIO_CR_I(gpio))
++	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(gpio)) !=
++	    AR2315_GPIO_CR_I(gpio))
 +		return;
 +
 +	gpiointmask |= (1 << gpio);
@@ -2660,9 +2704,9 @@
 +	/* try reset the system via reset control */
 +	ar231x_write_reg(AR2315_COLD_RESET, AR2317_RESET_SYSTEM);
 +
-+	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits a workaround.
-+	 * give it some time to attempt a gpio based hardware reset
-+	 * (atheros reference design workaround) */
++	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits
++	 * a workaround. Give it some time to attempt a gpio based hardware
++	 * reset (atheros reference design workaround) */
 +	gpio_request_one(AR2315_RESET_GPIO, GPIOF_OUT_INIT_LOW, "Reset");
 +	mdelay(100);
 +

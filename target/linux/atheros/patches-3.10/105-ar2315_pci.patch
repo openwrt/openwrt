@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,236 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -102,7 +102,8 @@
 +	return config_access(devfn, where, size, value, 0);
 +}
 +
-+static int ar231x_pci_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 value)
++static int ar231x_pci_write(struct pci_bus *bus, unsigned int devfn, int where,
++			    int size, u32 value)
 +{
 +	return config_access(devfn, where, size, &value, 1);
 +}
@@ -115,7 +116,8 @@
 +static struct resource ar231x_mem_resource = {
 +	.name	= "AR531x PCI MEM",
 +	.start	= AR531X_MEM_BASE,
-+	.end	= AR531X_MEM_BASE + AR531X_MEM_SIZE - AR531X_IO_SIZE - 1 + 0x4000000,
++	.end	= AR531X_MEM_BASE + AR531X_MEM_SIZE - AR531X_IO_SIZE - 1 +
++		  0x4000000,
 +	.flags	= IORESOURCE_MEM,
 +};
 +
@@ -147,8 +149,10 @@
 +	/* Clear any pending Abort or external Interrupts
 +	 * and enable interrupt processing */
 +	ar231x_mask_reg(AR2315_PCI_INTEN_REG, AR2315_PCI_INT_ENABLE, 0);
-+	ar231x_write_reg(AR2315_PCI_INT_STATUS, (AR2315_PCI_ABORT_INT | AR2315_PCI_EXT_INT));
-+	ar231x_write_reg(AR2315_PCI_INT_MASK, (AR2315_PCI_ABORT_INT | AR2315_PCI_EXT_INT));
++	ar231x_write_reg(AR2315_PCI_INT_STATUS, (AR2315_PCI_ABORT_INT |
++			 AR2315_PCI_EXT_INT));
++	ar231x_write_reg(AR2315_PCI_INT_MASK, (AR2315_PCI_ABORT_INT |
++			 AR2315_PCI_EXT_INT));
 +	ar231x_mask_reg(AR2315_PCI_INTEN_REG, 0, AR2315_PCI_INT_ENABLE);
 +
 +	return 0;
@@ -170,10 +174,10 @@
 +	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, HOST_PCI_MBAR0);
 +	pci_write_config_dword(dev, PCI_BASE_ADDRESS_1, HOST_PCI_MBAR1);
 +	pci_write_config_dword(dev, PCI_BASE_ADDRESS_2, HOST_PCI_MBAR2);
-+	pci_write_config_dword(dev, PCI_COMMAND,
-+		PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
-+		PCI_COMMAND_INVALIDATE | PCI_COMMAND_PARITY | PCI_COMMAND_SERR |
-+		PCI_COMMAND_FAST_BACK);
++	pci_write_config_dword(dev, PCI_COMMAND, PCI_COMMAND_MEMORY |
++			       PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
++			       PCI_COMMAND_INVALIDATE | PCI_COMMAND_PARITY |
++			       PCI_COMMAND_SERR | PCI_COMMAND_FAST_BACK);
 +}
 +DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, ar2315_pci_fixup);
 +
@@ -185,10 +189,13 @@
 +	if (ar231x_devtype != DEV_TYPE_AR2315)
 +		return -ENODEV;
 +
-+	configspace = (unsigned long) ioremap_nocache(AR2315_PCIEXT, 1*1024*1024); /* Remap PCI config space */
++	/* Remap PCI config space */
++	configspace = (unsigned long) ioremap_nocache(AR2315_PCIEXT,
++						      1*1024*1024);
 +	ar231x_pci_controller.io_map_base =
-+		(unsigned long) ioremap_nocache(AR531X_MEM_BASE + AR531X_MEM_SIZE, AR531X_IO_SIZE);
-+	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space */
++			(unsigned long) ioremap_nocache(AR531X_MEM_BASE +
++			AR531X_MEM_SIZE, AR531X_IO_SIZE);
++	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space*/
 +
 +	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
 +	msleep(10);
@@ -252,7 +259,7 @@
 +	default y
 --- a/arch/mips/ar231x/ar2315.c
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -64,6 +64,27 @@ static inline void ar2315_gpio_irq(void)
+@@ -65,6 +65,27 @@ static inline void ar2315_gpio_irq(void)
  		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
  }
  
@@ -280,7 +287,7 @@
  
  /*
   * Called when an interrupt is received, this function
-@@ -82,6 +103,10 @@ ar2315_irq_dispatch(void)
+@@ -83,6 +104,10 @@ ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
@@ -289,5 +296,5 @@
 +		ar2315_pci_irq(AR2315_IRQ_LCBUS_PCI);
 +#endif
  	else if (pending & CAUSEF_IP2) {
- 		unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) & ar231x_read_reg(AR2315_IMR);
- 
+ 		unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
+ 					 ar231x_read_reg(AR2315_IMR);

@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,519 @@
+@@ -0,0 +1,525 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -91,11 +91,16 @@
 +
 +const struct flashconfig flashconfig_tbl[] = {
 +	[FLASH_NONE] = { 0, 0, 0},
-+	[FLASH_1MB]  = { STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT, STM_1MB_SECTOR_SIZE},
-+	[FLASH_2MB]  = { STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT, STM_2MB_SECTOR_SIZE},
-+	[FLASH_4MB]  = { STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT, STM_4MB_SECTOR_SIZE},
-+	[FLASH_8MB]  = { STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT, STM_8MB_SECTOR_SIZE},
-+	[FLASH_16MB] = { STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT, STM_16MB_SECTOR_SIZE}
++	[FLASH_1MB]  = { STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT,
++			 STM_1MB_SECTOR_SIZE},
++	[FLASH_2MB]  = { STM_2MB_BYTE_COUNT, STM_2MB_SECTOR_COUNT,
++			 STM_2MB_SECTOR_SIZE},
++	[FLASH_4MB]  = { STM_4MB_BYTE_COUNT, STM_4MB_SECTOR_COUNT,
++			 STM_4MB_SECTOR_SIZE},
++	[FLASH_8MB]  = { STM_8MB_BYTE_COUNT, STM_8MB_SECTOR_COUNT,
++			 STM_8MB_SECTOR_SIZE},
++	[FLASH_16MB] = { STM_16MB_BYTE_COUNT, STM_16MB_SECTOR_COUNT,
++			 STM_16MB_SECTOR_SIZE}
 +};
 +
 +/* Mapping of generic opcodes to STM serial flash opcodes */
@@ -152,7 +157,7 @@
 +	FL_WRITING
 +};
 +
-+/***************************************************************************************************/
++/*****************************************************************************/
 +
 +static u32
 +spiflash_read_reg(struct spiflash_priv *priv, int reg)
@@ -468,7 +473,8 @@
 +		goto error;
 +	}
 +
-+	priv->readaddr = ioremap_nocache(SPI_FLASH_READ, flashconfig_tbl[index].byte_cnt);
++	priv->readaddr = ioremap_nocache(SPI_FLASH_READ,
++					 flashconfig_tbl[index].byte_cnt);
 +	if (!priv->readaddr) {
 +		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
 +		goto error;
