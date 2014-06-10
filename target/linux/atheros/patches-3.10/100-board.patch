@@ -121,9 +121,9 @@
 +check_radio_magic(u8 *addr)
 +{
 +	addr += 0x7a; /* offset for flash magic */
-+	if ((addr[0] == 0x5a) && (addr[1] == 0xa5)) {
++	if ((addr[0] == 0x5a) && (addr[1] == 0xa5))
 +		return 1;
-+	}
++
 +	return 0;
 +}
 +
@@ -638,7 +638,7 @@
 +#endif /* __ASM_MACH_GENERIC_DMA_COHERENCE_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/gpio.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,30 @@
 +#ifndef _ATHEROS_GPIO_H_
 +#define _ATHEROS_GPIO_H_
 +
@@ -655,12 +655,14 @@
 +/* not sure if these are used? */
 +
 +/* Returns IRQ to attach for gpio.  Unchecked function */
-+static inline int gpio_to_irq(unsigned gpio) {
++static inline int gpio_to_irq(unsigned gpio)
++{
 +	return AR531X_GPIO_IRQ(gpio);
 +}
 +
 +/* Returns gpio for IRQ attached.  Unchecked function */
-+static inline int irq_to_gpio(unsigned irq) {
++static inline int irq_to_gpio(unsigned irq)
++{
 +	return irq - AR531X_GPIO_IRQ(0);
 +}
 +
@@ -1524,7 +1526,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,580 @@
+@@ -0,0 +1,579 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1959,9 +1961,8 @@
 +{
 +	/* reset the system */
 +	local_irq_disable();
-+	while(1) {
++	while (1)
 +		ar231x_write_reg(AR531X_RESET, AR531X_RESET_SYSTEM);
-+	}
 +}
 +
 +
@@ -2027,9 +2028,9 @@
 +	predivisor = clockctl1_predivide_table[predivide_select];
 +	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
 +
-+	if (clock_ctl1 & doubler_mask) {
++	if (clock_ctl1 & doubler_mask)
 +		multiplier = multiplier << 1;
-+	}
++
 +	return (40000000 / predivisor) * multiplier;
 +}
 +
@@ -2107,7 +2108,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,693 @@
+@@ -0,0 +1,692 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2602,8 +2603,7 @@
 +	int i, led = 0;
 +
 +	ar2315_led_data.num_leds = 0;
-+	for(i = 1; i < 8; i++)
-+	{
++	for (i = 1; i < 8; i++) {
 +		if((i == AR2315_RESET_GPIO) ||
 +		   (i == ar231x_board.config->reset_config_gpio))
 +			continue;

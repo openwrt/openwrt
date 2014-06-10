@@ -78,7 +78,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -1120,6 +1166,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1115,6 +1161,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  
@@ -86,5 +86,5 @@
 +		return -ENODEV;
 +
  	switch (cmd) {
- 
  	case SIOCETHTOOL:
+ 		spin_lock_irq(&sp->lock);

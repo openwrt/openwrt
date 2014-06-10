@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1266 @@
+@@ -0,0 +1,1260 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -535,7 +535,6 @@
 +
 +	add_timer(&sp->link_timer);
 +	return 0;
-+
 +}
 +
 +static void ar231x_link_timer_fn(unsigned long data)
@@ -554,11 +553,10 @@
 +	 * Loop faster when we don't have link.
 +	 * This was needed to speed up the AP bootstrap time.
 +	 */
-+	if (sp->link == 0) {
++	if (sp->link == 0)
 +		mod_timer(&sp->link_timer, jiffies + HZ / 2);
-+	} else {
++	else
 +		mod_timer(&sp->link_timer, jiffies + LINK_TIMER);
-+	}
 +}
 +
 +static void ar231x_check_link(struct net_device *dev)
@@ -764,7 +762,6 @@
 + */
 +static void ar231x_load_rx_ring(struct net_device *dev, int nr_bufs)
 +{
-+
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	short i, idx;
 +
@@ -824,9 +821,9 @@
 +
 +	/* process at most the entire ring and then wait for another int */
 +	while (1) {
-+
 +		rxdesc = &sp->rx_ring[idx];
 +		status = rxdesc->status;
++
 +		if (status & DMA_RX_OWN) {
 +			/* SiByte owns descriptor or descr not yet filled in */
 +			rval = 0;
@@ -858,7 +855,6 @@
 +			/* alloc new buffer. */
 +			skb_new = netdev_alloc_skb_ip_align(dev, AR2313_BUFSIZE);
 +			if (skb_new != NULL) {
-+
 +				skb = sp->rx_skb[idx];
 +				/* set skb */
 +				skb_put(skb,
@@ -953,9 +949,8 @@
 +	struct net_device *dev = (struct net_device *) data;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
-+	if (sp->unloading) {
++	if (sp->unloading)
 +		return;
-+	}
 +
 +	if (ar231x_rx_int(dev)) {
 +		tasklet_hi_schedule(&sp->rx_tasklet);
@@ -1005,9 +1000,9 @@
 +	}
 +
 +	/* abnormal status */
-+	if (status & (DMA_STATUS_FBE | DMA_STATUS_TPS)) {
++	if (status & (DMA_STATUS_FBE | DMA_STATUS_TPS))
 +		ar231x_restart(dev);
-+	}
++
 +	return IRQ_HANDLED;
 +}
 +
@@ -1156,7 +1151,6 @@
 +	int ret;
 +
 +	switch (cmd) {
-+
 +	case SIOCETHTOOL:
 +		spin_lock_irq(&sp->lock);
 +		ret = phy_ethtool_ioctl(sp->phy_dev, (void *) ifr->ifr_data);

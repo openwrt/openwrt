@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,197 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -82,8 +82,7 @@
 +static irqreturn_t
 +ar2315_wdt_interrupt(int irq, void *dev_id)
 +{
-+	if(started)
-+	{
++	if (started) {
 +		printk(KERN_CRIT "watchdog expired, rebooting system\n");
 +		emergency_restart();
 +	} else {
@@ -105,8 +104,7 @@
 +	int new_wdt_timeout;
 +	int ret = -ENOIOCTLCMD;
 +
-+	switch(cmd)
-+	{
++	switch (cmd) {
 +		case WDIOC_GETSUPPORT:
 +			ret = copy_to_user((struct watchdog_info __user *)arg, &ident, sizeof(ident)) ? -EFAULT : 0;
 +			break;
@@ -153,8 +151,7 @@
 +
 +	ar2315_wdt_enable();
 +	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt, IRQF_DISABLED, "ar2315_wdt", NULL);
-+	if(ret)
-+	{
++	if (ret) {
 +		printk(KERN_ERR "ar2315wdt: failed to register inetrrupt\n");
 +		goto out;
 +	}
