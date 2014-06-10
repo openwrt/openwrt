@@ -1766,11 +1766,11 @@
 +		.set                    = ar5312_gpio_set_value,
 +		.get                    = ar5312_gpio_get_value,
 +		.base                   = 0,
-+		.ngpio                  = AR531X_GPIO_IRQ_COUNT, // 22
++		.ngpio                  = AR531X_GPIO_IRQ_COUNT, /* 22 */
 +	}
 +};
 +
-+// end of gpiolib
++/* end of gpiolib */
 +
 +static struct physmap_flash_data ar5312_flash_data = {
 +	.width = 2,
@@ -2406,7 +2406,7 @@
 +	u32 rett;
 +	if (!(gpch->valid_mask & mask))
 +		return 0;
-+	rett = ar2315_gpio_get(gpch->valid_mask);  // legacy code
++	rett = ar2315_gpio_get(gpch->valid_mask);  /* legacy code */
 +	return !!(rett & mask);
 +}
 +
@@ -2418,7 +2418,7 @@
 +	u32 mask = 1 << gpio;
 +	if (!(gpch->valid_mask & mask))
 +		return;
-+	ar2315_gpio_set(mask, (!!value) * mask);  // legacy
++	ar2315_gpio_set(mask, (!!value) * mask);  /* legacy */
 +}
 +
 +static int
@@ -2429,7 +2429,7 @@
 +	u32 mask = 1 << gpio;
 +	if (!(gpch->valid_mask & mask))
 +		return -ENXIO;
-+	ar2315_gpio_set_output(mask, 0);  // legacy
++	ar2315_gpio_set_output(mask, 0);  /* legacy */
 +	return 0;
 +}
 +
@@ -2441,7 +2441,7 @@
 +	u32 mask = 1 << gpio;
 +	if (!(gpch->valid_mask & mask))
 +		return -ENXIO;
-+	ar2315_gpio_set_output(mask, mask);  // both legacy
++	ar2315_gpio_set_output(mask, mask);  /* both legacy */
 +	ar2315_gpio_set(mask, (!!value) * mask);
 +	return 0;
 +}
@@ -2455,11 +2455,11 @@
 +		.set                    = ar2315_gpio_set_value,
 +		.get                    = ar2315_gpio_get_value,
 +		.base                   = 0,
-+		.ngpio                  = AR531X_GPIO_IRQ_COUNT, // 22
++		.ngpio                  = AR531X_GPIO_IRQ_COUNT, /* 22 */
 +	}
 +};
 +
-+// end of gpiolib
++/* end of gpiolib */
 +
 +
 +static struct ar231x_eth ar2315_eth_data = {

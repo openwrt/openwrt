@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1278 @@
+@@ -0,0 +1,1265 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -103,7 +103,7 @@
 +
 +#include "ar231x.h"
 +
-+/*
++/**
 + * New interrupt handler strategy:
 + *
 + * An old interrupt handler worked using the traditional method of
@@ -142,7 +142,7 @@
 + * handler.
 + */
 +
-+/*
++/**
 + * Threshold values for RX buffer allocation - the low water marks for
 + * when to start refilling the rings are set to 75% of the ring
 + * sizes. It seems to make sense to refill the rings entirely from the
@@ -173,7 +173,7 @@
 +
 +#define virt_to_phys(x) ((u32)(x) & 0x1fffffff)
 +
-+// prototypes
++/* prototypes */
 +static void ar231x_halt(struct net_device *dev);
 +static void rx_tasklet_func(unsigned long data);
 +static void rx_tasklet_cleanup(struct net_device *dev);
@@ -265,7 +265,7 @@
 +		return (-ENXIO);
 +	}
 +
-+	/*
++	/**
 +	 * When there's only one MAC, PHY regs are typically on ENET0,
 +	 * even though the MAC might be on ENET1.
 +	 * Needto remap PHY regs separately in this case
@@ -302,9 +302,7 @@
 +	memcpy(dev->dev_addr, sp->cfg->macaddr, 6);
 +
 +	if (ar231x_init(dev)) {
-+		/*
-+		 * ar231x_init() calls ar231x_init_cleanup() on error.
-+		 */
++		/* ar231x_init() calls ar231x_init_cleanup() on error */
 +		kfree(dev);
 +		return -ENODEV;
 +	}
@@ -373,7 +371,7 @@
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
-+	/*
++	/**
 +	 * Tasklet may be scheduled. Need to get it removed from the list
 +	 * since we're about to free the struct.
 +	 */
@@ -397,7 +395,7 @@
 +}
 +
 +
-+/*
++/**
 + * Restart the AR2313 ethernet controller.
 + */
 +static int ar231x_restart(struct net_device *dev)
@@ -483,7 +481,7 @@
 +}
 +
 +
-+/*
++/**
 + * Generic cleanup handling data allocated during init. Used when the
 + * module is unloaded or if an error occurs during initialization
 + */
@@ -545,13 +543,17 @@
 +	struct net_device *dev = (struct net_device *) data;
 +	struct ar231x_private *sp = netdev_priv(dev);
 +
-+	// see if the link status changed
-+	// This was needed to make sure we set the PHY to the
-+	// autonegotiated value of half or full duplex.
++	/**
++	 * See if the link status changed.
++	 * This was needed to make sure we set the PHY to the
++	 * autonegotiated value of half or full duplex.
++	 */
 +	ar231x_check_link(dev);
 +
-+	// Loop faster when we don't have link.
-+	// This was needed to speed up the AP bootstrap time.
++	/**
++	 * Loop faster when we don't have link.
++	 * This was needed to speed up the AP bootstrap time.
++	 */
 +	if (sp->link == 0) {
 +		mod_timer(&sp->link_timer, jiffies + HZ / 2);
 +	} else {
@@ -567,8 +569,10 @@
 +	phy_data = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMSR);
 +	if (sp->phy_data != phy_data) {
 +		if (phy_data & BMSR_LSTATUS) {
-+			/* link is present, ready link partner ability to deterine
-+			   duplexity */
++			/**
++			 * Link is present, ready link partner ability to
++			 * deterine duplexity.
++			 */
 +			int duplex = 0;
 +			u16 reg;
 +
@@ -672,9 +676,7 @@
 +	struct ar231x_private *sp = netdev_priv(dev);
 +	int ecode = 0;
 +
-+	/*
-+	 * Allocate descriptors
-+	 */
++	/* Allocate descriptors */
 +	if (ar231x_allocate_descriptors(dev)) {
 +		printk("%s: %s: ar231x_allocate_descriptors failed\n",
 +			   dev->name, __FUNCTION__);
@@ -682,9 +684,7 @@
 +		goto init_error;
 +	}
 +
-+	/*
-+	 * Get the memory for the skb rings.
-+	 */
++	/* Get the memory for the skb rings */
 +	if (sp->rx_skb == NULL) {
 +		sp->rx_skb =
 +			kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES,
@@ -711,7 +711,7 @@
 +	}
 +	memset(sp->tx_skb, 0, sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES);
 +
-+	/*
++	/**
 +	 * Set tx_csm before we start receiving interrupts, otherwise
 +	 * the interrupt handler might think it is supposed to process
 +	 * tx ints before we are up and running, which may cause a null
@@ -722,25 +722,19 @@
 +	sp->tx_prd = 0;
 +	sp->tx_csm = 0;
 +
-+	/*
-+	 * Zero the stats before starting the interface
-+	 */
++	/* Zero the stats before starting the interface */
 +	memset(&dev->stats, 0, sizeof(dev->stats));
 +
-+	/*
++	/**
 +	 * We load the ring here as there seem to be no way to tell the
 +	 * firmware to wipe the ring without re-initializing it.
 +	 */
 +	ar231x_load_rx_ring(dev, RX_RING_SIZE);
 +
-+	/*
-+	 * Init hardware
-+	 */
++	/* Init hardware */
 +	ar231x_reset_reg(dev);
 +
-+	/*
-+	 * Get the IRQ
-+	 */
++	/* Get the IRQ */
 +	ecode =
 +		request_irq(dev->irq, &ar231x_interrupt,
 +					IRQF_DISABLED,
@@ -761,7 +755,7 @@
 +	return ecode;
 +}
 +
-+/*
++/**
 + * Load the rx ring.
 + *
 + * Loading rings is safe without holding the spin lock since this is
@@ -790,9 +784,7 @@
 +			break;
 +		}
 +
-+		/*
-+		 * Make sure IP header starts on a fresh cache line.
-+		 */
++		/* Make sure IP header starts on a fresh cache line */
 +		skb->dev = dev;
 +		sp->rx_skb[idx] = skb;
 +
@@ -830,8 +822,7 @@
 +
 +	idx = sp->cur_rx;
 +
-+	/* process at most the entire ring and then wait for another interrupt
-+	 */
++	/* process at most the entire ring and then wait for another int */
 +	while (1) {
 +
 +		rxdesc = &sp->rx_ring[idx];
@@ -991,16 +982,14 @@
 +	unsigned int status, enabled;
 +
 +	/* clear interrupt */
-+	/*
-+	 * Don't clear RI bit if currently disabled.
-+	 */
++	/* Don't clear RI bit if currently disabled */
 +	status = sp->dma_regs->status;
 +	enabled = sp->dma_regs->intr_ena;
 +	sp->dma_regs->status = status & enabled;
 +
 +	if (status & DMA_STATUS_NIS) {
 +		/* normal status */
-+		/*
++		/**
 +		 * Don't schedule rx processing if interrupt
 +		 * is already disabled.
 +		 */
@@ -1092,7 +1081,7 @@
 +	}
 +}
 +
-+/*
++/**
 + * close should do nothing. Here's why. It's called when
 + * 'ifconfig bond0 down' is run. If it calls free_irq then
 + * the irq is gone forever ! When bond0 is made 'up' again,
@@ -1105,12 +1094,10 @@
 +static int ar231x_close(struct net_device *dev)
 +{
 +#if 0
-+	/*
-+	 * Disable interrupts
-+	 */
++	/* Disable interrupts */
 +	disable_irq(dev->irq);
 +
-+	/*
++	/**
 +	 * Without (or before) releasing irq and stopping hardware, this
 +	 * is an absolute non-sense, by the way. It will be reset instantly
 +	 * by the first irq.
@@ -1313,7 +1300,7 @@
 +
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.h
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,289 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1339,9 +1326,7 @@
 +#include <asm/bootinfo.h>
 +#include <ar231x_platform.h>
 +
-+/*
-+ * probe link timer - 5 secs
-+ */
++/* probe link timer - 5 secs */
 +#define LINK_TIMER    (5*HZ)
 +
 +#define IS_DMA_TX_INT(X)   (((X) & (DMA_STATUS_TI)) != 0)
@@ -1350,9 +1335,7 @@
 +
 +#define AR2313_TX_TIMEOUT (HZ/4)
 +
-+/*
-+ * Rings
-+ */
++/* Rings */
 +#define DSC_RING_ENTRIES_SIZE	(AR2313_DESCR_ENTRIES * sizeof(struct desc))
 +#define DSC_NEXT(idx)	        ((idx + 1) & (AR2313_DESCR_ENTRIES - 1))
 +
@@ -1470,17 +1453,17 @@
 +
 +
 +typedef struct {
-+	volatile unsigned int status;	// OWN, Device control and status.
-+	volatile unsigned int devcs;	// pkt Control bits + Length
-+	volatile unsigned int addr;	// Current Address.
-+	volatile unsigned int descr;	// Next descriptor in chain.
++	volatile unsigned int status;	/* OWN, Device control and status. */
++	volatile unsigned int devcs;	/* pkt Control bits + Length */
++	volatile unsigned int addr;	/* Current Address. */
++	volatile unsigned int descr;	/* Next descriptor in chain. */
 +} ar231x_descr_t;
 +
 +
 +
-+//
-+// New Combo structure for Both Eth0 AND eth1
-+//
++/**
++ * New Combo structure for Both Eth0 AND eth1
++ */
 +typedef struct {
 +	volatile unsigned int mac_control;	/* 0x00 */
 +	volatile unsigned int mac_addr[2];	/* 0x04 - 0x08 */
@@ -1526,7 +1509,7 @@
 +	volatile unsigned int cur_rx_buf_addr;	/* 0x50 (CSR21) */
 +} DMA;
 +
-+/*
++/**
 + * Struct private for the Sibyte.
 + *
 + * Elements are grouped so variables used by the tx handling goes
@@ -1549,9 +1532,7 @@
 +
 +	spinlock_t lock;			/* Serialise access to device */
 +
-+	/*
-+	 * RX and TX descriptors, must be adjacent
-+	 */
++	/* RX and TX descriptors, must be adjacent */
 +	ar231x_descr_t *rx_ring;
 +	ar231x_descr_t *tx_ring;
 +
@@ -1559,21 +1540,15 @@
 +	struct sk_buff **rx_skb;
 +	struct sk_buff **tx_skb;
 +
-+	/*
-+	 * RX elements
-+	 */
++	/* RX elements */
 +	u32 rx_skbprd;
 +	u32 cur_rx;
 +
-+	/*
-+	 * TX elements
-+	 */
++	/* TX elements */
 +	u32 tx_prd;
 +	u32 tx_csm;
 +
-+	/*
-+	 * Misc elements
-+	 */
++	/* Misc elements */
 +	char name[48];
 +	struct {
 +		u32 address;
@@ -1597,9 +1572,7 @@
 +};
 +
 +
-+/*
-+ * Prototypes
-+ */
++/* Prototypes */
 +static int ar231x_init(struct net_device *dev);
 +#ifdef TX_TIMEOUT
 +static void ar231x_tx_timeout(struct net_device *dev);
