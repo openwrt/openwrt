@@ -562,11 +562,11 @@
 +static void ar231x_check_link(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
-+	u16 phyData;
++	u16 phy_data;
 +
-+	phyData = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMSR);
-+	if (sp->phyData != phyData) {
-+		if (phyData & BMSR_LSTATUS) {
++	phy_data = ar231x_mdiobus_read(sp->mii_bus, sp->phy, MII_BMSR);
++	if (sp->phy_data != phy_data) {
++		if (phy_data & BMSR_LSTATUS) {
 +			/* link is present, ready link partner ability to deterine
 +			   duplexity */
 +			int duplex = 0;
@@ -601,7 +601,7 @@
 +			/* no link */
 +			sp->link = 0;
 +		}
-+		sp->phyData = phyData;
++		sp->phy_data = phy_data;
 +	}
 +}
 +
@@ -1586,7 +1586,7 @@
 +	unsigned short phy;			/* merlot phy = 1, samsung phy = 0x1f */
 +	unsigned short mac;
 +	unsigned short link;		/* 0 - link down, 1 - link up */
-+	u16 phyData;
++	u16 phy_data;
 +
 +	struct tasklet_struct rx_tasklet;
 +	int unloading;
