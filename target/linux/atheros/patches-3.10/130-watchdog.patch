@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,200 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -80,10 +80,12 @@
 +}
 +
 +static irqreturn_t
-+ar2315_wdt_interrupt(int irq, void *dev_id)
++ar2315_wdt_interrupt(int irq, void *dev)
 +{
++	struct platform_device *pdev = (struct platform_device *)dev;
++
 +	if (started) {
-+		printk(KERN_CRIT "watchdog expired, rebooting system\n");
++		dev_crit(&pdev->dev, "watchdog expired, rebooting system\n");
 +		emergency_restart();
 +	} else {
 +		ar231x_write_reg(AR2315_WDC, 0);
@@ -150,15 +152,16 @@
 +	int ret = 0;
 +
 +	ar2315_wdt_enable();
-+	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt, IRQF_DISABLED, "ar2315_wdt", NULL);
++	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt,
++			  IRQF_DISABLED, "ar2315_wdt", dev);
 +	if (ret) {
-+		printk(KERN_ERR "ar2315wdt: failed to register inetrrupt\n");
++		dev_err(&dev->dev, "failed to register inetrrupt\n");
 +		goto out;
 +	}
 +
 +	ret = misc_register(&ar2315_wdt_miscdev);
 +	if(ret)
-+		printk(KERN_ERR "ar2315wdt: failed to register miscdev\n");
++		dev_err(&dev->dev, "failed to register miscdev\n");
 +
 +out:
 +	return ret;
@@ -186,7 +189,7 @@
 +{
 +	int ret = platform_driver_register(&ar2315_wdt_driver);
 +	if(ret)
-+		printk(KERN_INFO "ar2315_wdt: error registering platfom driver!");
++		pr_err("ar2315_wdt: error registering platfom driver!\n");
 +	return ret;
 +}
 +

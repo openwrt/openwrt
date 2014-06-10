@@ -251,7 +251,7 @@
 +		flash_size = FLASH_16MB;
 +		break;
 +	default:
-+		printk (KERN_WARNING SPIFLASH "Read of flash device signature failed!\n");
++		pr_warn(SPIFLASH "Read of flash device signature failed!\n");
 +		return 0;
 +	}
 +
@@ -454,19 +454,19 @@
 +
 +	priv->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
 +	if (!priv->mmraddr) {
-+		printk(KERN_WARNING SPIFLASH "Failed to map flash device\n");
++		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
 +		goto error;
 +	}
 +
 +	index = spiflash_probe_chip(priv);
 +	if (!index) {
-+		printk (KERN_WARNING SPIFLASH "Found no serial flash device\n");
++		dev_warn(&pdev->dev, SPIFLASH "Found no flash device\n");
 +		goto error;
 +	}
 +
 +	priv->readaddr = ioremap_nocache(SPI_FLASH_READ, flashconfig_tbl[index].byte_cnt);
 +	if (!priv->readaddr) {
-+		printk (KERN_WARNING SPIFLASH "Failed to map flash device\n");
++		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
 +		goto error;
 +	}
 +
