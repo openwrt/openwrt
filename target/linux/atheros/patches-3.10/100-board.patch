@@ -255,8 +255,8 @@
 +		config = ar231x_board.config;
 +		if (!memcmp(config->enet0_mac, "\x00\x00\x00\x00\x00\x00", 6)) {
 +			printk(KERN_INFO "Fixing up empty mac addresses\n");
-+			config->resetConfigGpio = 0xffff;
-+			config->sysLedGpio = 0xffff;
++			config->reset_config_gpio = 0xffff;
++			config->sys_led_gpio = 0xffff;
 +			random_ether_addr(config->wlan0_mac);
 +			config->wlan0_mac[0] &= ~0x06;
 +			random_ether_addr(config->enet0_mac);
@@ -402,7 +402,7 @@
 +    u16 cksum;                       /* checksum (starting with BD_REV 2) */
 +    u16 rev;                         /* revision of this struct */
 +#define BD_REV  4
-+    char boardName[64];            /* Name of board */
++    char board_name[64];             /* Name of board */
 +    u16 major;                       /* Board major number */
 +    u16 minor;                       /* Board minor number */
 +    u32 flags;                      /* Board configuration */
@@ -416,7 +416,7 @@
 +#define BD_CPUFREQ      0x00000080   /* cpu freq is valid in nvram */
 +#define BD_SYSFREQ      0x00000100   /* sys freq is set in nvram */
 +#define BD_WLAN0        0x00000200   /* Enable WLAN0 */
-+#define BD_MEMCAP       0x00000400   /* CAP SDRAM @ memCap for testing */
++#define BD_MEMCAP       0x00000400   /* CAP SDRAM @ mem_cap for testing */
 +#define BD_DISWATCHDOG  0x00000800   /* disable system watchdog */
 +#define BD_WLAN1        0x00001000   /* Enable WLAN1 (ar5212) */
 +#define BD_ISCASPER     0x00002000   /* FLAG for AR2312 */
@@ -424,19 +424,19 @@
 +#define BD_WLAN0_5G_EN  0x00008000   /* FLAG for radio0_2G */
 +#define BD_WLAN1_2G_EN  0x00020000   /* FLAG for radio0_2G */
 +#define BD_WLAN1_5G_EN  0x00040000   /* FLAG for radio0_2G */
-+    u16 resetConfigGpio;             /* Reset factory GPIO pin */
-+    u16 sysLedGpio;                  /* System LED GPIO pin */
++    u16 reset_config_gpio;           /* Reset factory GPIO pin */
++    u16 sys_led_gpio;                /* System LED GPIO pin */
 +
-+    u32 cpuFreq;                     /* CPU core frequency in Hz */
-+    u32 sysFreq;                     /* System frequency in Hz */
-+    u32 cntFreq;                     /* Calculated C0_COUNT frequency */
++    u32 cpu_freq;                    /* CPU core frequency in Hz */
++    u32 sys_freq;                    /* System frequency in Hz */
++    u32 cnt_freq;                    /* Calculated C0_COUNT frequency */
 +
 +    u8  wlan0_mac[6];
 +    u8  enet0_mac[6];
 +    u8  enet1_mac[6];
 +
-+    u16 pciId;                       /* Pseudo PCIID for common code */
-+    u16 memCap;                      /* cap bank1 in MB */
++    u16 pci_id;                      /* Pseudo PCIID for common code */
++    u16 mem_cap;                     /* cap bank1 in MB */
 +
 +    /* version 3 */
 +    u8  wlan1_mac[6];                 /* (ar5212) */
@@ -1634,12 +1634,12 @@
 +static irqreturn_t ar5312_ahb_proc_handler(int cpl, void *dev_id)
 +{
 +	u32 proc1 = ar231x_read_reg(AR531X_PROC1);
-+	u32 procAddr = ar231x_read_reg(AR531X_PROCADDR); /* clears error state */
++	u32 proc_addr = ar231x_read_reg(AR531X_PROCADDR); /* clears error */
 +	u32 dma1 = ar231x_read_reg(AR531X_DMA1);
-+	u32 dmaAddr = ar231x_read_reg(AR531X_DMAADDR);   /* clears error state */
++	u32 dma_addr = ar231x_read_reg(AR531X_DMAADDR);   /* clears error */
 +
 +	printk("AHB interrupt: PROCADDR=0x%8.8x  PROC1=0x%8.8x  DMAADDR=0x%8.8x  DMA1=0x%8.8x\n",
-+			procAddr, proc1, dmaAddr, dma1);
++	       proc_addr, proc1, dma_addr, dma1);
 +
 +	machine_restart("AHB error"); /* Catastrophic failure */
 +	return IRQ_HANDLED;
@@ -1895,7 +1895,7 @@
 +	platform_device_register(&ar5312_physmap_flash);
 +
 +#ifdef CONFIG_LEDS_GPIO
-+	ar5312_leds[0].gpio = config->sysLedGpio;
++	ar5312_leds[0].gpio = config->sys_led_gpio;
 +	platform_device_register(&ar5312_gpio_leds);
 +#endif
 +
@@ -1969,7 +1969,7 @@
 + * This table is indexed by bits 5..4 of the CLOCKCTL1 register
 + * to determine the predevisor value.
 + */
-+static int __initdata CLOCKCTL1_PREDIVIDE_TABLE[4] = { 1, 2, 4, 5 };
++static int clockctl1_predivide_table[4] __initdata = { 1, 2, 4, 5 };
 +
 +
 +static int __init
@@ -1978,7 +1978,7 @@
 +	unsigned int result;
 +	unsigned int predivide_mask, predivide_shift;
 +	unsigned int multiplier_mask, multiplier_shift;
-+	unsigned int clockCtl1, preDivideSelect, preDivisor, multiplier;
++	unsigned int clock_ctl1, predivide_select, predivisor, multiplier;
 +	unsigned int doubler_mask;
 +	u16 devid;
 +
@@ -2006,30 +2006,30 @@
 +	/*
 +	 * Clocking is derived from a fixed 40MHz input clock.
 +	 *
-+	 *  cpuFreq = InputClock * MULT (where MULT is PLL multiplier)
-+	 *  sysFreq = cpuFreq / 4	   (used for APB clock, serial,
++	 *  cpu_freq = input_clock * MULT (where MULT is PLL multiplier)
++	 *  sys_freq = cpu_freq / 4	  (used for APB clock, serial,
 +	 *							   flash, Timer, Watchdog Timer)
 +	 *
-+	 *  cntFreq = cpuFreq / 2	   (use for CPU count/compare)
++	 *  cnt_freq = cpu_freq / 2	   (use for CPU count/compare)
 +	 *
 +	 * So, for example, with a PLL multiplier of 5, we have
 +	 *
-+	 *  cpuFreq = 200MHz
-+	 *  sysFreq = 50MHz
-+	 *  cntFreq = 100MHz
++	 *  cpu_freq = 200MHz
++	 *  sys_freq = 50MHz
++	 *  cnt_freq = 100MHz
 +	 *
 +	 * We compute the CPU frequency, based on PLL settings.
 +	 */
 +
-+	clockCtl1 = ar231x_read_reg(AR5312_CLOCKCTL1);
-+	preDivideSelect = (clockCtl1 & predivide_mask) >> predivide_shift;
-+	preDivisor = CLOCKCTL1_PREDIVIDE_TABLE[preDivideSelect];
-+	multiplier = (clockCtl1 & multiplier_mask) >> multiplier_shift;
++	clock_ctl1 = ar231x_read_reg(AR5312_CLOCKCTL1);
++	predivide_select = (clock_ctl1 & predivide_mask) >> predivide_shift;
++	predivisor = clockctl1_predivide_table[predivide_select];
++	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
 +
-+	if (clockCtl1 & doubler_mask) {
++	if (clock_ctl1 & doubler_mask) {
 +		multiplier = multiplier << 1;
 +	}
-+	return (40000000 / preDivisor) * multiplier;
++	return (40000000 / predivisor) * multiplier;
 +}
 +
 +static inline int
@@ -2106,7 +2106,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,692 @@
+@@ -0,0 +1,693 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2604,10 +2604,10 @@
 +	for(i = 1; i < 8; i++)
 +	{
 +		if((i == AR2315_RESET_GPIO) ||
-+		   (i == ar231x_board.config->resetConfigGpio))
++		   (i == ar231x_board.config->reset_config_gpio))
 +			continue;
 +
-+		if(i == ar231x_board.config->sysLedGpio)
++		if (i == ar231x_board.config->sys_led_gpio)
 +			strcpy(led_names[led], "wlan");
 +		else
 +			sprintf(led_names[led], "gpio%d", i);
@@ -2673,42 +2673,43 @@
 + * This table is indexed by bits 5..4 of the CLOCKCTL1 register
 + * to determine the predevisor value.
 + */
-+static int __initdata CLOCKCTL1_PREDIVIDE_TABLE[4] = { 1, 2, 4, 5 };
-+static int __initdata PLLC_DIVIDE_TABLE[5] = { 2, 3, 4, 6, 3 };
++static int clockctl1_predivide_table[4] __initdata = { 1, 2, 4, 5 };
++static int pllc_divide_table[5] __initdata = { 2, 3, 4, 6, 3 };
 +
 +static unsigned int __init
-+ar2315_sys_clk(unsigned int clockCtl)
++ar2315_sys_clk(unsigned int clock_ctl)
 +{
-+    unsigned int pllcCtrl,cpuDiv;
-+    unsigned int pllcOut,refdiv,fdiv,divby2;
-+	unsigned int clkDiv;
++	unsigned int pllc_ctrl, cpu_div;
++	unsigned int pllc_out, refdiv, fdiv, divby2;
++	unsigned int clk_div;
 +
-+    pllcCtrl = ar231x_read_reg(AR2315_PLLC_CTL);
-+    refdiv = (pllcCtrl & PLLC_REF_DIV_M) >> PLLC_REF_DIV_S;
-+    refdiv = CLOCKCTL1_PREDIVIDE_TABLE[refdiv];
-+    fdiv = (pllcCtrl & PLLC_FDBACK_DIV_M) >> PLLC_FDBACK_DIV_S;
-+    divby2 = (pllcCtrl & PLLC_ADD_FDBACK_DIV_M) >> PLLC_ADD_FDBACK_DIV_S;
-+    divby2 += 1;
-+    pllcOut = (40000000/refdiv)*(2*divby2)*fdiv;
-+
++	pllc_ctrl = ar231x_read_reg(AR2315_PLLC_CTL);
++	refdiv = (pllc_ctrl & PLLC_REF_DIV_M) >> PLLC_REF_DIV_S;
++	refdiv = clockctl1_predivide_table[refdiv];
++	fdiv = (pllc_ctrl & PLLC_FDBACK_DIV_M) >> PLLC_FDBACK_DIV_S;
++	divby2 = (pllc_ctrl & PLLC_ADD_FDBACK_DIV_M) >> PLLC_ADD_FDBACK_DIV_S;
++	divby2 += 1;
++	pllc_out = (40000000/refdiv)*(2*divby2)*fdiv;
 +
 +    /* clkm input selected */
-+	switch(clockCtl & CPUCLK_CLK_SEL_M) {
++	switch (clock_ctl & CPUCLK_CLK_SEL_M) {
 +		case 0:
 +		case 1:
-+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
++			clk_div = pllc_divide_table[(pllc_ctrl & PLLC_CLKM_DIV_M) >> PLLC_CLKM_DIV_S];
 +			break;
 +		case 2:
-+			clkDiv = PLLC_DIVIDE_TABLE[(pllcCtrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
++			clk_div = pllc_divide_table[(pllc_ctrl & PLLC_CLKC_DIV_M) >> PLLC_CLKC_DIV_S];
 +			break;
 +		default:
-+			pllcOut = 40000000;
-+			clkDiv = 1;
++			pllc_out = 40000000;
++			clk_div = 1;
 +			break;
 +	}
-+	cpuDiv = (clockCtl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;
-+	cpuDiv = cpuDiv * 2 ?: 1;
-+	return (pllcOut/(clkDiv * cpuDiv));
++
++	cpu_div = (clock_ctl & CPUCLK_CLK_DIV_M) >> CPUCLK_CLK_DIV_S;
++	cpu_div = cpu_div * 2 ?: 1;
++
++	return pllc_out / (clk_div * cpu_div);
 +}
 +
 +static inline unsigned int
