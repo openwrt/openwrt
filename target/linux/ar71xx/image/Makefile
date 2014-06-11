@@ -877,6 +877,8 @@ define Image/Build/NetgearNAND
 		-B $(6) -v OpenWrt.$(REVISION) -r "$$$$r" $(8) \
 		-i $(imageraw) \
 		-o $(call imgname,ubi,$(2))-factory.img
+
+	$(call Image/Build/SysupgradeNAND,$(2),$(KDIR_TMP)/vmlinux-$(2).uImage,$(KDIR_TMP)/root.squashfs)
 endef
 
 
