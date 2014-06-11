@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=imx6
 BOARDNAME:=Freescale i.MX 6
-FEATURES:=audio display fpu gpio pcie rtc usb usbgadget squashfs targz ubifs
+FEATURES:=audio display fpu gpio pcie rtc usb usbgadget squashfs targz nand ubifs
 CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon
 MAINTAINER:=Luka Perkov <luka@openwrt.org>

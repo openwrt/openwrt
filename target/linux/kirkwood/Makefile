@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
-FEATURES:=targz usb jffs2_nand ubifs
+FEATURES:=targz usb jffs2_nand nand ubifs
 CPU_TYPE:=xscale
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
