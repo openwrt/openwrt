@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=mtd-utils
 PKG_REV:=7d2839b8dede3ae368780364b4a07473d2303219
 PKG_VERSION:=1.5.1
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
@@ -30,47 +30,17 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/ubi-utils/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 
-FILES:= \
-	ubiattach \
-	ubicrc32 \
-	ubiblock \
-	ubidetach \
-	ubiformat \
-	ubimkvol \
-	ubinfo \
-	ubinize \
-	ubirename \
-	ubirmvol \
-	ubirsvol \
-	ubiupdatevol
-
-define PartGen
-define Package/ubi-utils-$(subst _,-,$(firstword $(subst :, ,$(1))))
-  TITLE:=$(firstword $(subst :, ,$(1))) package from ubi-utils
-  URL:=http://www.linux-mtd.infradead.org/
-  SECTION:=utils
-  CATEGORY:=Utilities
-  DEPENDS:=ubi-utils $(wordlist 2,$(words $(subst :, ,$(1))),$(subst :, ,$(1)))
-endef
-endef
-
 define Package/ubi-utils
   TITLE:=Utilities for ubi info/debug
   SECTION:=utils
   CATEGORY:=Utilities
   URL:=http://www.linux-mtd.infradead.org/
-  MENU:=1
+  DEPENDS:=@NAND_SUPPORT
 endef
 
 define Package/ubi-utils/description
   Utilities for manipulating memory technology devices.
 endef
-
-define Package/ubi-utils/install
-	true
-endef
-
-$(foreach file,$(FILES),$(eval $(call PartGen,$(file))))
 
 MAKE_FLAGS += \
 	DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -79,16 +49,13 @@ MAKE_FLAGS += \
 	WITHOUT_XATTR=1 \
 	WITHOUT_LZO=1
 
-define PartInstall
-define Package/ubi-utils-$(subst _,-,$(firstword $(subst :, ,$(1))))/install
-	$(INSTALL_DIR) $$(1)/usr/sbin
+define Package/ubi-utils/install
+	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) \
-		$(PKG_INSTALL_DIR)/usr/sbin/$(firstword $(subst :, ,$(1))) \
-		$$(1)/usr/sbin/
-endef
+		$(PKG_INSTALL_DIR)/usr/sbin/{ubiattach,ubicrc32,ubiblock,ubidetach,ubiformat,ubimkvol} $(1)/usr/sbin/
+	$(INSTALL_BIN) \
+		$(PKG_INSTALL_DIR)/usr/sbin/{ubinfo,ubinize,ubirename,ubirmvol,ubirsvol,ubiupdatevol} $(1)/usr/sbin/
 endef
 
-$(foreach file,$(FILES),$(eval $(call PartInstall,$(file))))
 
 $(eval $(call BuildPackage,ubi-utils))
-$(foreach file,$(FILES),$(eval $(call BuildPackage,ubi-utils-$(subst _,-,$(firstword $(subst :, ,$(file)))))))
