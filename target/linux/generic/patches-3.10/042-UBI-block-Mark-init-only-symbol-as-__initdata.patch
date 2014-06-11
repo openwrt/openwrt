@@ -1,0 +1,42 @@
+From ca2b722d1ab5bc3ffc34b5995248968cd8a7cb6f Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 3 Mar 2014 13:42:38 -0300
+Subject: [PATCH] UBI: block: Mark init-only symbol as __initdata
+
+ubiblock_param_ops should be marked as __init as it's only used to set
+a driver parameter on insertion time. This commit fixes the following:
+
+  WARNING: drivers/mtd/built-in.o(.text+0x653ac): Section mismatch in
+  reference from the variable ubiblock_param_ops to the function
+  .init.text:ubiblock_set_param()
+
+  The function ubiblock_param_ops() references the function __init
+  ubiblock_set_param(). This is often because ubiblock_param_ops lacks a
+  __init annotation or the annotation of ubiblock_set_param is wrong.
+
+Given gcc errors if the struct is marked const __initdata, this commit
+drops the const mark from it.
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+---
+ drivers/mtd/ubi/block.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
+index 6402e41..cd6be98 100644
+--- a/drivers/mtd/ubi/block.c
++++ b/drivers/mtd/ubi/block.c
+@@ -156,7 +156,7 @@ static int __init ubiblock_set_param(const char *val,
+ 	return 0;
+ }
+ 
+-static const struct kernel_param_ops ubiblock_param_ops = {
++static struct kernel_param_ops ubiblock_param_ops __initdata = {
+ 	.set    = ubiblock_set_param,
+ };
+ module_param_cb(block, &ubiblock_param_ops, NULL, 0);
+-- 
+1.9.2
+
