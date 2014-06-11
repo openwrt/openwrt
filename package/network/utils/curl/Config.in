@@ -1,0 +1,112 @@
+menu "Configuration"
+	depends on PACKAGE_libcurl
+
+choice
+	prompt "SSL library"
+	default LIBCURL_POLARSSL
+
+config LIBCURL_POLARSSL
+	bool "PolarSSL"
+
+config LIBCURL_CYASSL
+	bool "CyaSSL"
+
+config LIBCURL_AXTLS
+	bool "axTLS"
+
+config LIBCURL_OPENSSL
+	bool "OpenSSL"
+
+config LIBCURL_GNUTLS
+	bool "GNUTLS"
+
+config LIBCURL_NOSSL
+	bool "No SSL support"
+
+endchoice
+
+config LIBCURL_COOKIES
+	bool "Enable cookies support"
+	default y
+
+config LIBCURL_CRYPTO_AUTH
+	bool "Enable cryptographic authentication"
+	default n
+
+config LIBCURL_DICT
+	bool "Enable DICT support"
+	default n
+
+config LIBCURL_FILE
+	bool "Enable FILE support"
+	default y
+
+config LIBCURL_FTP
+	bool "Enable FTP support"
+	default y
+
+config LIBCURL_GOPHER
+	bool "Enable Gopher support"
+	default n
+
+config LIBCURL_HTTP
+	bool "Enable HTTP support"
+	default y
+
+config LIBCURL_IMAP
+	bool "Enable IMAP support"
+	default n
+
+config LIBCURL_LDAP
+	bool "Enable LDAP support"
+	default n
+
+config LIBCURL_LDAPS
+	bool "Enable LDAPS support"
+	default n
+
+config LIBCURL_LIBCURL_OPTION
+	bool "Enable --libcurl C code generation support"
+	default n
+
+config LIBCURL_POP3
+	bool "Enable POP3 support"
+	default n
+
+config LIBCURL_PROXY
+	bool "Enable proxy support"
+	default n
+
+config LIBCURL_RTSP
+	bool "Enable RTSP support"
+	default n
+
+config LIBCURL_SMTP
+	bool "Enable SMTP support"
+	default n
+
+config LIBCURL_SSPI
+	bool "Enable SSPI"
+	default n
+
+config LIBCURL_TELNET
+	bool "Enable TELNET support"
+	default n
+
+config LIBCURL_TFTP
+	bool "Enable TFTP support"
+	default n
+
+config LIBCURL_THREADED_RESOLVER
+	bool "Enable threaded resolver"
+	default n
+
+config LIBCURL_TLS-SRP
+	bool "Enable TLS-SRP authentication"
+	default n
+
+config LIBCURL_ZLIB
+	bool "Use zlib"
+	default n
+
+endmenu
