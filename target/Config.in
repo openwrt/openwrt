@@ -65,6 +65,7 @@ config USES_CPIOGZ
 
 config USES_UBIFS
 	bool
+	select NAND_SUPPORT
 
 config PROFILE_KCONFIG
 	bool
@@ -80,6 +81,9 @@ config HAS_MIPS16
 	bool
 
 config RFKILL_SUPPORT
+	bool
+
+config NAND_SUPPORT
 	bool
 
 config ARCH_64BIT
