@@ -1,0 +1,33 @@
+From 9981e14ab2f7c6a4d2bb45e51a6371964919837d Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Mon, 3 Mar 2014 13:42:39 -0300
+Subject: [PATCH] UBI: block: Use 'u64' for the 64-bit dividend
+
+Fixes the following warning on ARCH=avr32:
+
+  drivers/mtd/ubi/block.c: In function 'ubiblock_read':
+  drivers/mtd/ubi/block.c:207: warning: comparison of distinct pointer types lacks a cast
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+---
+ drivers/mtd/ubi/block.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
+index cd6be98..16e6731 100644
+--- a/drivers/mtd/ubi/block.c
++++ b/drivers/mtd/ubi/block.c
+@@ -201,7 +201,7 @@ static int ubiblock_read(struct ubiblock *dev, char *buffer,
+ 	int ret, leb, offset;
+ 	int bytes_left = len;
+ 	int to_read = len;
+-	loff_t pos = sec << 9;
++	u64 pos = sec << 9;
+ 
+ 	/* Get LEB:offset address to read from */
+ 	offset = do_div(pos, dev->leb_size);
+-- 
+1.9.2
+
