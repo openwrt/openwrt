@@ -9,11 +9,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/mtd/ubi/build.c | 36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-diff --git a/drivers/mtd/ubi/build.c b/drivers/mtd/ubi/build.c
-index 6e30a3c..999a36b 100644
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
-@@ -1209,6 +1209,36 @@ static struct mtd_info * __init open_mtd_device(const char *mtd_dev)
+@@ -1209,6 +1209,36 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }
  
@@ -63,6 +61,3 @@ index 6e30a3c..999a36b 100644
  	err = ubiblock_init();
  	if (err) {
  		ubi_err("block: cannot initialize, error %d", err);
--- 
-1.9.2
-

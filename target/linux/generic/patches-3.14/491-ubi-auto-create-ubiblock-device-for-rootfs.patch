@@ -9,11 +9,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  drivers/mtd/ubi/block.c | 42 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 42 insertions(+)
 
-diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
-index 8d659e6..2dbe2f4 100644
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -593,6 +593,44 @@ static int __init ubiblock_create_from_param(void)
+@@ -593,6 +593,44 @@ static int __init ubiblock_create_from_p
  	return ret;
  }
  
@@ -69,6 +67,3 @@ index 8d659e6..2dbe2f4 100644
  	/*
  	 * Block devices are only created upon user requests, so we ignore
  	 * existing volumes.
--- 
-1.9.2
-

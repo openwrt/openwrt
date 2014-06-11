@@ -9,8 +9,6 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  init/do_mounts.c | 26 +++++++++++++++++++++++++-
  1 file changed, 25 insertions(+), 1 deletion(-)
 
-diff --git a/init/do_mounts.c b/init/do_mounts.c
-index 82f2288..faba9c6 100644
 --- a/init/do_mounts.c
 +++ b/init/do_mounts.c
 @@ -432,7 +432,27 @@ retry:
@@ -53,6 +51,3 @@ index 82f2288..faba9c6 100644
  #ifdef CONFIG_BLOCK
  	create_dev("/dev/root", ROOT_DEV);
  	mount_block_root("/dev/root", root_mountflags);
--- 
-1.9.2
-

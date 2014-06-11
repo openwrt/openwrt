@@ -15,11 +15,9 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
  drivers/mtd/ubi/block.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
-index cd6be98..16e6731 100644
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -201,7 +201,7 @@ static int ubiblock_read(struct ubiblock *dev, char *buffer,
+@@ -201,7 +201,7 @@ static int ubiblock_read(struct ubiblock
  	int ret, leb, offset;
  	int bytes_left = len;
  	int to_read = len;
@@ -28,6 +26,3 @@ index cd6be98..16e6731 100644
  
  	/* Get LEB:offset address to read from */
  	offset = do_div(pos, dev->leb_size);
--- 
-1.9.2
-

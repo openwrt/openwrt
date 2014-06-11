@@ -41,8 +41,6 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
  7 files changed, 718 insertions(+)
  create mode 100644 drivers/mtd/ubi/block.c
 
-diff --git a/drivers/mtd/ubi/Kconfig b/drivers/mtd/ubi/Kconfig
-index 36663af..783fb18 100644
 --- a/drivers/mtd/ubi/Kconfig
 +++ b/drivers/mtd/ubi/Kconfig
 @@ -87,4 +87,19 @@ config MTD_UBI_GLUEBI
@@ -65,8 +63,6 @@ index 36663af..783fb18 100644
 +	   If in doubt, say "N".
 +
  endif # MTD_UBI
-diff --git a/drivers/mtd/ubi/Makefile b/drivers/mtd/ubi/Makefile
-index b46b0c97..4e3c3d7 100644
 --- a/drivers/mtd/ubi/Makefile
 +++ b/drivers/mtd/ubi/Makefile
 @@ -3,5 +3,6 @@ obj-$(CONFIG_MTD_UBI) += ubi.o
@@ -76,9 +72,6 @@ index b46b0c97..4e3c3d7 100644
 +ubi-$(CONFIG_MTD_UBI_BLOCK) += block.o
  
  obj-$(CONFIG_MTD_UBI_GLUEBI) += gluebi.o
-diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
-new file mode 100644
-index 0000000..cea7d1c
 --- /dev/null
 +++ b/drivers/mtd/ubi/block.c
 @@ -0,0 +1,646 @@
@@ -728,8 +721,6 @@ index 0000000..cea7d1c
 +	ubiblock_detach_all();
 +	unregister_blkdev(ubiblock_major, "ubiblock");
 +}
-diff --git a/drivers/mtd/ubi/build.c b/drivers/mtd/ubi/build.c
-index 57deae9..6e30a3c 100644
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
 @@ -1298,6 +1298,15 @@ static int __init ubi_init(void)
@@ -757,11 +748,9 @@ index 57deae9..6e30a3c 100644
  	for (i = 0; i < UBI_MAX_DEVICES; i++)
  		if (ubi_devices[i]) {
  			mutex_lock(&ubi_devices_mutex);
-diff --git a/drivers/mtd/ubi/cdev.c b/drivers/mtd/ubi/cdev.c
-index 8ca49f2..39d3774 100644
 --- a/drivers/mtd/ubi/cdev.c
 +++ b/drivers/mtd/ubi/cdev.c
-@@ -561,6 +561,26 @@ static long vol_cdev_ioctl(struct file *file, unsigned int cmd,
+@@ -561,6 +561,26 @@ static long vol_cdev_ioctl(struct file *
  		break;
  	}
  
@@ -788,11 +777,9 @@ index 8ca49f2..39d3774 100644
  	default:
  		err = -ENOTTY;
  		break;
-diff --git a/drivers/mtd/ubi/ubi.h b/drivers/mtd/ubi/ubi.h
-index 8ea6297..e76ff98 100644
 --- a/drivers/mtd/ubi/ubi.h
 +++ b/drivers/mtd/ubi/ubi.h
-@@ -864,6 +864,20 @@ int ubi_update_fastmap(struct ubi_device *ubi);
+@@ -864,6 +864,20 @@ int ubi_update_fastmap(struct ubi_device
  int ubi_scan_fastmap(struct ubi_device *ubi, struct ubi_attach_info *ai,
  		     int fm_anchor);
  
@@ -813,8 +800,6 @@ index 8ea6297..e76ff98 100644
  /*
   * ubi_rb_for_each_entry - walk an RB-tree.
   * @rb: a pointer to type 'struct rb_node' to use as a loop counter
-diff --git a/include/uapi/mtd/ubi-user.h b/include/uapi/mtd/ubi-user.h
-index 723c324..b98585a 100644
 --- a/include/uapi/mtd/ubi-user.h
 +++ b/include/uapi/mtd/ubi-user.h
 @@ -134,6 +134,13 @@
@@ -842,6 +827,3 @@ index 723c324..b98585a 100644
  
  /* Maximum MTD device name length supported by UBI */
  #define MAX_UBI_MTD_NAME_LEN 127
--- 
-1.9.2
-
