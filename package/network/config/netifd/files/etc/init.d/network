@@ -138,10 +138,7 @@ validate_switch_vlan()
 
 service_triggers()
 {
-	procd_open_trigger
-	procd_add_config_trigger "config.change" "network" /etc/init.d/network reload
-	procd_add_config_trigger "config.change" "wireless" /etc/init.d/network reload
-	procd_close_trigger
+	procd_add_reload_trigger network wireless
 
 	procd_open_validate
 	validate_atm_bridge_section
