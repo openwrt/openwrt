@@ -32,14 +32,8 @@ TARGET_LDFLAGS += $(if $(CONFIG_USE_EGLIBC),-lrt)
 define Package/fstools
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubox +USE_EGLIBC:librt
+  DEPENDS:=+ubox +USE_EGLIBC:librt +NAND_SUPPORT:ubi-utils
   TITLE:=OpenWrt filesystem tools
-endef
-
-define Package/ubi-flash
-  SECTION:=base
-  CATEGORY:=Base system
-  TITLE:=OpenWrt ubi flashing tool
 endef
 
 define Package/block-mount
@@ -56,12 +50,6 @@ define Package/fstools/install
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools.so $(1)/lib/
 	$(INSTALL_BIN) ./files/snapshot $(1)/sbin/
 	ln -s /sbin/jffs2reset $(1)/sbin/jffs2mark
-endef
-
-define Package/ubi-flash/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/lib
-
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ubi $(1)/sbin/
 endef
 
 define Package/block-mount/install
@@ -86,5 +74,4 @@ define Build/InstallDev
 endef
 
 $(eval $(call BuildPackage,fstools))
-$(eval $(call BuildPackage,ubi-flash))
 $(eval $(call BuildPackage,block-mount))
