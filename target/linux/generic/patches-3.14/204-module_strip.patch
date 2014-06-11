@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  config INIT_ALL_POSSIBLE
 --- a/kernel/module.c
 +++ b/kernel/module.c
-@@ -2664,6 +2664,7 @@ static struct module *setup_load_info(st
+@@ -2661,6 +2661,7 @@ static struct module *setup_load_info(st
  
  static int check_modinfo(struct module *mod, struct load_info *info, int flags)
  {
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	const char *modmagic = get_modinfo(info, "vermagic");
  	int err;
  
-@@ -2689,6 +2690,7 @@ static int check_modinfo(struct module *
+@@ -2686,6 +2687,7 @@ static int check_modinfo(struct module *
  		pr_warn("%s: module is from the staging directory, the quality "
  			"is unknown, you have been warned.\n", mod->name);
  	}
