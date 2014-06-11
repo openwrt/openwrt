@@ -9,6 +9,8 @@ FEATURES+=usb
 CPU_TYPE:=24kec
 CPU_SUBTYPE:=dsp
 
+DEFAULT_PACKAGES += kmod-rt2800-pci
+
 define Target/Description
 	Build firmware images for Ralink MT7621 based boards.
 endef
