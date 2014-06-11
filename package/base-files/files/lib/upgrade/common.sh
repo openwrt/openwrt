@@ -55,7 +55,8 @@ run_ramfs() { # <command> [...]
 		/bin/grep /bin/cp /bin/mv /bin/tar /usr/bin/md5sum "/usr/bin/["	\
 		/bin/dd /bin/vi /bin/ls /bin/cat /usr/bin/awk /usr/bin/hexdump	\
 		/bin/sleep /bin/zcat /usr/bin/bzcat /usr/bin/printf /usr/bin/wc \
-		/bin/cut /usr/bin/printf /bin/sync
+		/bin/cut /usr/bin/printf /bin/sync /bin/mkdir /bin/rmdir	\
+		/bin/rm /usr/bin/basename /bin/kill /bin/chmod
 
 	install_bin /sbin/mtd
 	install_bin /sbin/ubi
@@ -64,6 +65,8 @@ run_ramfs() { # <command> [...]
 	install_bin /sbin/snapshot_tool
 	install_bin /usr/sbin/ubiupdatevol
 	install_bin /usr/sbin/ubiattach
+	install_bin /usr/sbin/ubiblock
+	install_bin /usr/sbin/ubiformat
 	install_bin /usr/sbin/ubidetach
 	install_bin /usr/sbin/ubirsvol
 	install_bin /usr/sbin/ubirmvol
