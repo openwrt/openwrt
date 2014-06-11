@@ -1,0 +1,30 @@
+From bebfef150e0b8fa68704cddacf05b8c26462d565 Mon Sep 17 00:00:00 2001
+From: Kees Cook <keescook@chromium.org>
+Date: Mon, 7 Apr 2014 21:44:07 -0700
+Subject: [PATCH] UBI: avoid workqueue format string leak
+
+When building the name for the workqueue thread, make sure a format
+string cannot leak in from the disk name.
+
+Signed-off-by: Kees Cook <keescook@chromium.org>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+---
+ drivers/mtd/ubi/block.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
+index 7ff473c..8d659e6 100644
+--- a/drivers/mtd/ubi/block.c
++++ b/drivers/mtd/ubi/block.c
+@@ -431,7 +431,7 @@ int ubiblock_create(struct ubi_volume_info *vi)
+ 	 * Create one workqueue per volume (per registered block device).
+ 	 * Rembember workqueues are cheap, they're not threads.
+ 	 */
+-	dev->wq = alloc_workqueue(gd->disk_name, 0, 0);
++	dev->wq = alloc_workqueue("%s", 0, 0, gd->disk_name);
+ 	if (!dev->wq)
+ 		goto out_free_queue;
+ 	INIT_WORK(&dev->work, ubiblock_do_work);
+-- 
+1.9.2
+
