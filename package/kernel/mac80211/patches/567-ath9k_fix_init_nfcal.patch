@@ -1,0 +1,25 @@
+--- a/drivers/net/wireless/ath/ath9k/ar9002_calib.c
++++ b/drivers/net/wireless/ath/ath9k/ar9002_calib.c
+@@ -854,6 +854,7 @@ static bool ar9002_hw_init_cal(struct at
+ 
+ 	/* Do PA Calibration */
+ 	ar9002_hw_pa_cal(ah, true);
++	ath9k_hw_start_nfcal(ah, true);
+ 
+ 	if (ah->caldata)
+ 		set_bit(NFCAL_PENDING, &ah->caldata->cal_flags);
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -1969,8 +1969,10 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+ 	if (ath9k_hw_mci_is_enabled(ah))
+ 		ar9003_mci_check_bt(ah);
+ 
+-	ath9k_hw_loadnf(ah, chan);
+-	ath9k_hw_start_nfcal(ah, true);
++	if (AR_SREV_9300_20_OR_LATER(ah)) {
++		ath9k_hw_loadnf(ah, chan);
++		ath9k_hw_start_nfcal(ah, true);
++	}
+ 
+ 	if (AR_SREV_9300_20_OR_LATER(ah))
+ 		ar9003_hw_bb_watchdog_config(ah);
