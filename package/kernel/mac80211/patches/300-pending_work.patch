@@ -1,3 +1,26 @@
+commit 6e7341074823d2a45b81f2742cbf75f1da790031
+Author: Rafał Miłecki <zajec5@gmail.com>
+Date:   Sat May 31 19:40:45 2014 +0200
+
+    b43: disable 5 GHz on G-PHY
+    
+    This fixes regression introduced by adding some G-PHY devices to the
+    list of dual band devices. There is simply no support for 5 GHz on
+    G-PHY devices in b43. It results in:
+    WARNING: CPU: 0 PID: 79 at drivers/net/wireless/b43/phy_g.c:75 b43_gphy_channel_switch+0x125/0x130 [b43]()
+    b43-phy1 ERROR: PHY init: Channel switch to default failed
+    
+    Regression was introduced by the following commit:
+    
+    commit 773cfc508f4d64c14547ff8751b5cbd473124364
+    Author: Rafał Miłecki <zajec5@gmail.com>
+    Date:   Mon May 19 23:18:55 2014 +0200
+    
+        b43: add more devices to the bands database
+    
+    Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
 commit 1186edbef91f15722e5bdf56326ce0abc2935ce7
 Author: Stanislaw Gruszka <sgruszka@redhat.com>
 Date:   Tue Jun 10 12:51:06 2014 +0200
@@ -2822,3 +2845,13 @@ Date:   Mon May 19 21:20:49 2014 +0200
  		break;
  	case B43_PHYTYPE_N:
  	case B43_PHYTYPE_LP:
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -5216,6 +5216,7 @@ static int b43_wireless_core_attach(stru
+ 	/* We don't support 5 GHz on some PHYs yet */
+ 	switch (dev->phy.type) {
+ 	case B43_PHYTYPE_A:
++	case B43_PHYTYPE_G:
+ 	case B43_PHYTYPE_N:
+ 	case B43_PHYTYPE_LP:
+ 	case B43_PHYTYPE_HT:

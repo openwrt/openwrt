@@ -99,7 +99,7 @@
  };
  
  /* Hard-reset the chip. Do not call this directly.
-@@ -5295,6 +5335,8 @@ static int b43_one_core_attach(struct b4
+@@ -5296,6 +5336,8 @@ static int b43_one_core_attach(struct b4
  	if (!wldev)
  		goto out;
  
@@ -108,7 +108,7 @@
  	wldev->use_pio = b43_modparam_pio;
  	wldev->dev = dev;
  	wldev->wl = wl;
-@@ -5385,6 +5427,9 @@ static struct b43_wl *b43_wireless_init(
+@@ -5386,6 +5428,9 @@ static struct b43_wl *b43_wireless_init(
  
  	hw->wiphy->flags |= WIPHY_FLAG_IBSS_RSN;
  
