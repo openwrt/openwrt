@@ -504,7 +504,7 @@ sub mconf_depends {
 					next if $depend eq $condition;
 					$depend = "$depend if $condition";
 				} else {
-					$depend = "!($condition) || $depend";
+					$depend = "!($condition) || $depend" unless $dep->{$condition} eq 'select';
 				}
 			}
 		}
