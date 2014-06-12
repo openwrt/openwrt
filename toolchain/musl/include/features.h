@@ -48,7 +48,7 @@
 #define __GNU_LIBRARY__ 6
 
 #define __GLIBC__ 2
-#define __GLIBC_MINOR__ 16
+#define __GLIBC_MINOR__ 2
 #endif
 
 #include <sys/glibc-types.h>

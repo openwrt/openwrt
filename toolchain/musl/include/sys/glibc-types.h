@@ -1,6 +1,8 @@
 #ifndef __MUSL_GLIBC_TYPES_H
 #define __MUSL_GLIBC_TYPES_H
 
+#include <sys/cdefs.h>
+
 /* Convenience types.  */
 typedef unsigned char __u_char;
 typedef unsigned short int __u_short;
@@ -25,5 +27,6 @@ __extension__ typedef unsigned long long int __uint64_t;
 #define __off64_t off_t
 #define __loff_t off_t
 typedef char *__caddr_t;
+#define __locale_t locale_t
 
 #endif
