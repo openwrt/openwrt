@@ -64,6 +64,13 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 
+	awapn2403)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 6t"
+		ucidef_add_switch_vlan "switch0" "2" "1 6t"
+		;;
+
 	br-6475nd)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"

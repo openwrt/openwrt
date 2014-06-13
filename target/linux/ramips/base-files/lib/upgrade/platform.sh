@@ -26,6 +26,7 @@ platform_check_image() {
 	ar725w | \
 	asl26555 | \
 	awm002-evb | \
+	awapn2403 | \
 	bc2 | \
 	broadway | \
 	carambola | \

@@ -15,6 +15,9 @@ get_status_led() {
 	ar725w)
 		status_led="ar725w:green:power"
 		;;
+	awapn2403)
+		status_led="asiarf:green:wps"
+		;;
 	argus-atp52b)
 		status_led="argus-atp52b:green:run"
 		;;
