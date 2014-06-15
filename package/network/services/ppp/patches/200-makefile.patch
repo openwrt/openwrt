@@ -16,22 +16,16 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  # Uncomment the next line to enable multilink PPP (enabled by default)
  # Linux distributions: Please leave multilink ENABLED in your builds
-@@ -58,11 +58,11 @@ HAVE_MULTILINK=y
+@@ -58,7 +58,7 @@ HAVE_MULTILINK=y
  # Uncomment the next line to enable the TDB database (enabled by default.)
  # If you enable multilink, then TDB is automatically enabled also.
  # Linux distributions: Please leave TDB ENABLED in your builds.
 -USE_TDB=y
 +#USE_TDB=y
  
--HAS_SHADOW=y
-+#HAS_SHADOW=y
+ HAS_SHADOW=y
  #USE_PAM=y
--#HAVE_INET6=y
-+HAVE_INET6=y
- 
- # Enable plugins
- PLUGIN=y
-@@ -77,7 +77,7 @@ MAXOCTETS=y
+@@ -80,7 +80,7 @@ MAXOCTETS=y
  
  INCLUDE_DIRS= -I../include
  
@@ -40,7 +34,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  CFLAGS= $(COPTS) $(COMPILE_FLAGS) $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
  
-@@ -117,10 +117,10 @@ CFLAGS   += -DHAS_SHADOW
+@@ -120,10 +120,10 @@ CFLAGS   += -DHAS_SHADOW
  #LIBS     += -lshadow $(LIBS)
  endif
  
@@ -51,5 +45,5 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
 -endif
 +#endif
  
- ifdef NEEDDES
- ifndef USE_CRYPT
+ ifdef USE_LIBUTIL
+ CFLAGS	+= -DHAVE_LOGWTMP=1

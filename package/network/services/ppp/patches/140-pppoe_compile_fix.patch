@@ -1,16 +1,17 @@
 --- a/pppd/plugins/rp-pppoe/plugin.c
 +++ b/pppd/plugins/rp-pppoe/plugin.c
-@@ -46,9 +46,9 @@ static char const RCSID[] =
+@@ -46,10 +46,10 @@ static char const RCSID[] =
  #include <unistd.h>
  #include <fcntl.h>
  #include <signal.h>
 -#include <net/ethernet.h>
  #include <net/if_arp.h>
  #include <linux/ppp_defs.h>
-+#include <linux/if_ether.h>
- #include <linux/if_ppp.h>
  #include <linux/if_pppox.h>
++#include <linux/if_ether.h>
  
+ #ifndef _ROOT_PATH
+ #define _ROOT_PATH ""
 --- a/pppd/plugins/rp-pppoe/pppoe.h
 +++ b/pppd/plugins/rp-pppoe/pppoe.h
 @@ -86,17 +86,6 @@ typedef unsigned long UINT32_t;

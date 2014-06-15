@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  clean:
 --- a/pppd/Makefile.linux
 +++ b/pppd/Makefile.linux
-@@ -99,7 +99,7 @@ ifdef USE_SRP
+@@ -102,7 +102,7 @@ ifdef USE_SRP
  CFLAGS	+= -DUSE_SRP -DOPENSSL -I/usr/local/ssl/include
  LIBS	+= -lsrp -L/usr/local/ssl/lib -lcrypto
  TARGETS	+= srp-entry
@@ -28,7 +28,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  MANPAGES += srp-entry.8
  EXTRACLEAN += srp-entry.o
  NEEDDES=y
-@@ -200,7 +200,7 @@ all: $(TARGETS)
+@@ -208,7 +208,7 @@ all: $(TARGETS)
  install: pppd
  	mkdir -p $(BINDIR) $(MANDIR)
  	$(EXTRAINSTALL)

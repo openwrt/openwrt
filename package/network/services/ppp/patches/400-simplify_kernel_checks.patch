@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  static char loop_name[20];
  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
-@@ -213,8 +213,8 @@ static int	looped;			/* 1 if using loop 
+@@ -213,8 +213,8 @@ static int	looped;			/* 1 if using loop
  static int	link_mtu;		/* mtu for the link (not bundle) */
  
  static struct utsname utsname;	/* for the kernel version */
@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2190,6 +2196,7 @@ int ppp_available(void)
+@@ -2189,6 +2195,7 @@ int ppp_available(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -2683,6 +2690,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2684,6 +2691,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -2701,6 +2709,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2702,6 +2710,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
  	    }
  	}
      }
@@ -98,7 +98,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  	return 0;
 --- a/pppd/plugins/pppoatm/pppoatm.c
 +++ b/pppd/plugins/pppoatm/pppoatm.c
-@@ -170,14 +170,6 @@ static void disconnect_pppoatm(void)
+@@ -168,14 +168,6 @@ static void disconnect_pppoatm(void)
  
  void plugin_init(void)
  {
@@ -115,7 +115,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  }
 --- a/pppd/plugins/rp-pppoe/plugin.c
 +++ b/pppd/plugins/rp-pppoe/plugin.c
-@@ -60,9 +60,6 @@ static char const RCSID[] =
+@@ -59,9 +59,6 @@ static char const RCSID[] =
  
  char pppd_version[] = VERSION;
  
@@ -125,7 +125,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  char *pppd_pppoe_service = NULL;
  static char *acName = NULL;
  static char *existingSession = NULL;
-@@ -340,10 +337,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
+@@ -371,10 +368,6 @@ PPPoEDevnameHook(char *cmd, char **argv,
  void
  plugin_init(void)
  {

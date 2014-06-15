@@ -36,7 +36,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  static void ipcp_script __P((char *, int));	/* Run an up/down script */
  static void ipcp_script_done __P((void *));
  
-@@ -1742,7 +1750,8 @@ ip_demand_conf(u)
+@@ -1761,7 +1769,8 @@ ip_demand_conf(u)
      if (!sifnpmode(u, PPP_IP, NPMODE_QUEUE))
  	return 0;
      if (wo->default_route)
@@ -46,7 +46,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  	    default_route_set[u] = 1;
      if (wo->proxy_arp)
  	if (sifproxyarp(u, wo->hisaddr))
-@@ -1830,7 +1839,8 @@ ipcp_up(f)
+@@ -1849,7 +1858,8 @@ ipcp_up(f)
       */
      if (demand) {
  	if (go->ouraddr != wo->ouraddr || ho->hisaddr != wo->hisaddr) {
@@ -56,7 +56,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  	    if (go->ouraddr != wo->ouraddr) {
  		warn("Local IP address changed to %I", go->ouraddr);
  		script_setenv("OLDIPLOCAL", ip_ntoa(wo->ouraddr), 0);
-@@ -1855,7 +1865,8 @@ ipcp_up(f)
+@@ -1874,7 +1884,8 @@ ipcp_up(f)
  
  	    /* assign a default route through the interface if required */
  	    if (ipcp_wantoptions[f->unit].default_route) 
@@ -66,7 +66,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  		    default_route_set[f->unit] = 1;
  
  	    /* Make a proxy ARP entry if requested. */
-@@ -1905,7 +1916,8 @@ ipcp_up(f)
+@@ -1924,7 +1935,8 @@ ipcp_up(f)
  
  	/* assign a default route through the interface if required */
  	if (ipcp_wantoptions[f->unit].default_route) 
@@ -76,7 +76,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  		default_route_set[f->unit] = 1;
  
  	/* Make a proxy ARP entry if requested. */
-@@ -1983,7 +1995,7 @@ ipcp_down(f)
+@@ -2002,7 +2014,7 @@ ipcp_down(f)
  	sifnpmode(f->unit, PPP_IP, NPMODE_DROP);
  	sifdown(f->unit);
  	ipcp_clear_addrs(f->unit, ipcp_gotoptions[f->unit].ouraddr,
@@ -85,7 +85,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      }
  
      /* Execute the ip-down script */
-@@ -1999,16 +2011,25 @@ ipcp_down(f)
+@@ -2018,16 +2030,25 @@ ipcp_down(f)
   * proxy arp entries, etc.
   */
  static void
@@ -137,7 +137,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  .B disconnect \fIscript
  Execute the command specified by \fIscript\fR, by passing it to a
  shell, after
-@@ -717,7 +722,12 @@ disable both forms of hardware flow cont
+@@ -734,7 +739,12 @@ disable both forms of hardware flow cont
  .TP
  .B nodefaultroute
  Disable the \fIdefaultroute\fR option.  The system administrator who
@@ -153,7 +153,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  .B nodeflate
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -645,7 +645,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
+@@ -664,7 +664,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
  int  cif6addr __P((int, eui64_t, eui64_t));
  				/* Remove an IPv6 address from i/f */
  #endif

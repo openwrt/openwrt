@@ -118,7 +118,7 @@ Signed-off-by: George Kashperko <george@znau.edu.ua>
  			&& memcmp(vd.dptr, key.dptr, vd.dsize) == 0;
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -693,6 +693,16 @@ void cfg_bundle(int mrru, int mtru, int 
+@@ -693,6 +693,16 @@ void cfg_bundle(int mrru, int mtru, int
  	add_fd(ppp_dev_fd);
  }
  
