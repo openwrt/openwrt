@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2013 OpenWrt.org
+# Copyright (C) 2009-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,7 +7,7 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=mtd-utils
+PKG_NAME:=ubi-utils
 PKG_REV:=7d2839b8dede3ae368780364b4a07473d2303219
 PKG_VERSION:=1.5.1
 PKG_RELEASE:=2
@@ -20,7 +20,7 @@ PKG_SOURCE_VERSION:=$(PKG_REV)
 
 PKG_INSTALL:=1
 
-PKG_BUILD_DEPENDS:=util-linux liblzo
+PKG_BUILD_DEPENDS:=util-linux liblzo zlib
 
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
