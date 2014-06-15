@@ -25,7 +25,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  	create_pidfile(getpid());	/* write pid to file */
 --- a/pppd/options.c
 +++ b/pppd/options.c
-@@ -111,6 +111,7 @@ int	log_to_fd = 1;		/* send log messages
+@@ -112,6 +112,7 @@ int	log_to_fd = 1;		/* send log messages
  bool	log_default = 1;	/* log_to_fd is default (stdout) */
  int	maxfail = 10;		/* max # of unsuccessful connection attempts */
  char	linkname[MAXPATHLEN];	/* logical name for link */
@@ -33,7 +33,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  bool	tune_kernel;		/* may alter kernel settings */
  int	connect_delay = 1000;	/* wait this many ms after connect script */
  int	req_unit = -1;		/* requested interface unit */
-@@ -266,6 +267,9 @@ option_t general_options[] = {
+@@ -277,6 +278,9 @@ option_t general_options[] = {
      { "linkname", o_string, linkname,
        "Set logical name for link",
        OPT_PRIO | OPT_PRIV | OPT_STATIC, NULL, MAXPATHLEN },
@@ -56,7 +56,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  /*
   * Limits.
   */
-@@ -312,6 +316,7 @@ extern char	*record_file;	/* File to rec
+@@ -316,6 +320,7 @@ extern char	*record_file;	/* File to rec
  extern bool	sync_serial;	/* Device is synchronous serial device */
  extern int	maxfail;	/* Max # of unsuccessful connection attempts */
  extern char	linkname[MAXPATHLEN]; /* logical name for link */

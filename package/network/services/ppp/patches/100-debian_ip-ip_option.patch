@@ -12,7 +12,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
 
 --- a/pppd/ipcp.c
 +++ b/pppd/ipcp.c
-@@ -1939,7 +1939,7 @@ ipcp_up(f)
+@@ -1958,7 +1958,7 @@ ipcp_up(f)
       */
      if (ipcp_script_state == s_down && ipcp_script_pid == 0) {
  	ipcp_script_state = s_up;
@@ -21,7 +21,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      }
  }
  
-@@ -1989,7 +1989,7 @@ ipcp_down(f)
+@@ -2008,7 +2008,7 @@ ipcp_down(f)
      /* Execute the ip-down script */
      if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
  	ipcp_script_state = s_down;
@@ -30,7 +30,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      }
  }
  
-@@ -2043,13 +2043,13 @@ ipcp_script_done(arg)
+@@ -2062,13 +2062,13 @@ ipcp_script_done(arg)
      case s_up:
  	if (ipcp_fsm[0].state != OPENED) {
  	    ipcp_script_state = s_down;
@@ -60,7 +60,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
 --- a/pppd/options.c
 +++ b/pppd/options.c
-@@ -113,6 +113,8 @@ char	linkname[MAXPATHLEN];	/* logical na
+@@ -114,6 +114,8 @@ char	linkname[MAXPATHLEN];	/* logical na
  bool	tune_kernel;		/* may alter kernel settings */
  int	connect_delay = 1000;	/* wait this many ms after connect script */
  int	req_unit = -1;		/* requested interface unit */
@@ -69,9 +69,9 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  bool	multilink = 0;		/* Enable multilink operation */
  char	*bundle_name = NULL;	/* bundle name for multilink */
  bool	dump_options;		/* print out option values */
-@@ -281,6 +283,13 @@ option_t general_options[] = {
-       "Number of seconds to wait for child processes at exit",
-       OPT_PRIO },
+@@ -299,6 +301,13 @@ option_t general_options[] = {
+       "Unset user environment variable",
+       OPT_A2PRINTER | OPT_NOPRINT, (void *)user_unsetprint },
  
 +    { "ip-up-script", o_string, path_ipup,
 +      "Set pathname of ip-up script",
@@ -85,7 +85,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
        "Enable multilink operation", OPT_PRIO | 1 },
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -313,6 +313,8 @@ extern bool	tune_kernel;	/* May alter ke
+@@ -317,6 +317,8 @@ extern bool	tune_kernel;	/* May alter ke
  extern int	connect_delay;	/* Time to delay after connect script */
  extern int	max_data_rate;	/* max bytes/sec through charshunt */
  extern int	req_unit;	/* interface unit number to use */

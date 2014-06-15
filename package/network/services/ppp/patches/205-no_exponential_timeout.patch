@@ -7,7 +7,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
 
 --- a/pppd/plugins/rp-pppoe/discovery.c
 +++ b/pppd/plugins/rp-pppoe/discovery.c
-@@ -548,7 +548,9 @@ discovery(PPPoEConnection *conn)
+@@ -644,7 +644,9 @@ discovery(PPPoEConnection *conn)
  	conn->discoveryState = STATE_SENT_PADI;
  	waitForPADO(conn, timeout);
  
@@ -17,7 +17,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      } while (conn->discoveryState == STATE_SENT_PADI);
  
      timeout = conn->discoveryTimeout;
-@@ -563,7 +565,9 @@ discovery(PPPoEConnection *conn)
+@@ -659,7 +661,9 @@ discovery(PPPoEConnection *conn)
  	sendPADR(conn);
  	conn->discoveryState = STATE_SENT_PADR;
  	waitForPADS(conn, timeout);
@@ -26,4 +26,4 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
 +#endif
      } while (conn->discoveryState == STATE_SENT_PADR);
  
-     /* We're done. */
+     if (!conn->seenMaxPayload) {
