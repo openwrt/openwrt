@@ -126,7 +126,7 @@ sysupgrade_image_check="platform_check_image"
 
 include /lib/upgrade
 
-[ "$1" = "nand" ] && nand_do_upgrade $@
+[ "$1" = "nand" ] && nand_upgrade_stage2 $@
 
 do_save_conffiles() {
 	local conf_tar="${1:-$CONF_TAR}"
