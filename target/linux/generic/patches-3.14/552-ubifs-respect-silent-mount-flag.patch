@@ -1,96 +1,53 @@
-From 248b89b95d27659c5360ef5b68cca21d096ee909 Mon Sep 17 00:00:00 2001
+From 90bea5a3f0bf680b87b90516f3c231997f4b8f3b Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
-Date: Sat, 17 May 2014 03:16:54 +0200
-Subject: [PATCH 3/5] ubifs: respect MS_SILENT mount flag
-To: dedekind1@gmail.com,
-    linux-mtd@lists.infradead.org
+Date: Mon, 2 Jun 2014 15:51:10 +0200
+X-Git-Url: http://git.infradead.org/linux-ubifs.git/commitdiff_plain/90bea5a3f0bf680b87b90516f3c231997f4b8f3b
+X-Git-Url: https://git.kernel.org/cgit/linux/kernel/git/next/linux-next.git/commit/?id=90bea5a3f0bf680b87b90516f3c231997f4b8f3b
+Subject: UBIFS: respect MS_SILENT mount flag
 
 When attempting to mount a non-ubifs formatted volume, lots of error
 messages (including a stack dump) are thrown to the kernel log even if
 the MS_SILENT mount flag is set.
-Fix this by checking the MS_SILENT flag in ubifs_read_sb_node and
-passing it down to ubifs_read_node, which now got an additional
-parameter for that purpose.
+Fix this by introducing adding an additional state-variable in
+struct ubifs_info and suppress error messages in ubifs_read_node if
+MS_SILENT is set.
 
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
 ---
- fs/ubifs/commit.c   |  4 ++--
- fs/ubifs/io.c       | 23 ++++++++++++++---------
- fs/ubifs/sb.c       |  5 +++--
- fs/ubifs/tnc_misc.c |  4 ++--
- fs/ubifs/ubifs.h    |  2 +-
- 5 files changed, 22 insertions(+), 16 deletions(-)
+ fs/ubifs/io.c    | 18 ++++++++++--------
+ fs/ubifs/super.c |  5 +++++
+ fs/ubifs/ubifs.h | 11 +++++++++++
+ 3 files changed, 26 insertions(+), 8 deletions(-)
 
---- a/fs/ubifs/commit.c
-+++ b/fs/ubifs/commit.c
-@@ -542,7 +542,7 @@ int dbg_old_index_check_init(struct ubif
- 	if (!idx)
- 		return -ENOMEM;
- 
--	err = ubifs_read_node(c, idx, UBIFS_IDX_NODE, len, lnum, offs);
-+	err = ubifs_read_node(c, idx, UBIFS_IDX_NODE, len, lnum, offs, 0);
- 	if (err)
- 		goto out;
- 
-@@ -610,7 +610,7 @@ int dbg_check_old_index(struct ubifs_inf
- 		list_add_tail(&i->list, &list);
- 		/* Read the index node */
- 		idx = &i->idx;
--		err = ubifs_read_node(c, idx, UBIFS_IDX_NODE, len, lnum, offs);
-+		err = ubifs_read_node(c, idx, UBIFS_IDX_NODE, len, lnum, offs, 0);
- 		if (err)
- 			goto out_free;
- 		/* Validate index node */
+---
+
+diff --git a/fs/ubifs/io.c b/fs/ubifs/io.c
+index e18b988..2290d58 100644
 --- a/fs/ubifs/io.c
 +++ b/fs/ubifs/io.c
-@@ -912,7 +912,7 @@ int ubifs_read_node_wbuf(struct ubifs_wb
- 	if (!overlap) {
- 		/* We may safely unlock the write-buffer and read the data */
- 		spin_unlock(&wbuf->lock);
--		return ubifs_read_node(c, buf, type, len, lnum, offs);
-+		return ubifs_read_node(c, buf, type, len, lnum, offs, 0);
- 	}
- 
- 	/* Don't read under wbuf */
-@@ -966,13 +966,14 @@ out:
-  * @len: node length (not aligned)
-  * @lnum: logical eraseblock number
-  * @offs: offset within the logical eraseblock
-+ * @silent: suppress error messages
-  *
-  * This function reads a node of known type and and length, checks it and
-  * stores in @buf. Returns zero in case of success, %-EUCLEAN if CRC mismatched
-  * and a negative error code in case of failure.
-  */
- int ubifs_read_node(const struct ubifs_info *c, void *buf, int type, int len,
--		    int lnum, int offs)
-+		    int lnum, int offs, int silent)
- {
- 	int err, l;
- 	struct ubifs_ch *ch = buf;
-@@ -988,30 +989,34 @@ int ubifs_read_node(const struct ubifs_i
+@@ -988,30 +988,32 @@ int ubifs_read_node(const struct ubifs_info *c, void *buf, int type, int len,
  		return err;
  
  	if (type != ch->node_type) {
 -		ubifs_err("bad node type (%d but expected %d)",
-+		if (!silent) ubifs_err("bad node type (%d but expected %d)",
- 			  ch->node_type, type);
+-			  ch->node_type, type);
++		ubifs_errc(c, "bad node type (%d but expected %d)",
++			   ch->node_type, type);
  		goto out;
  	}
  
  	err = ubifs_check_node(c, buf, lnum, offs, 0, 0);
  	if (err) {
 -		ubifs_err("expected node type %d", type);
-+		if (!silent)
-+			ubifs_err("expected node type %d", type);
++		ubifs_errc(c, "expected node type %d", type);
  		return err;
  	}
  
  	l = le32_to_cpu(ch->len);
  	if (l != len) {
 -		ubifs_err("bad node length %d, expected %d", l, len);
-+		if (!silent)
-+			ubifs_err("bad node length %d, expected %d", l, len);
++		ubifs_errc(c, "bad node length %d, expected %d", l, len);
  		goto out;
  	}
  
@@ -101,63 +58,71 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 -		  ubi_is_mapped(c->ubi, lnum));
 -	ubifs_dump_node(c, buf);
 -	dump_stack();
-+	if (!silent) {
-+		ubifs_err("bad node at LEB %d:%d, LEB mapping status %d", lnum,
-+			  offs, ubi_is_mapped(c->ubi, lnum));
++	ubifs_errc(c, "bad node at LEB %d:%d, LEB mapping status %d", lnum,
++		   offs, ubi_is_mapped(c->ubi, lnum));
++	if (!c->probing) {
 +		ubifs_dump_node(c, buf);
 +		dump_stack();
 +	}
  	return -EINVAL;
  }
  
---- a/fs/ubifs/sb.c
-+++ b/fs/ubifs/sb.c
-@@ -493,14 +493,15 @@ failed:
- struct ubifs_sb_node *ubifs_read_sb_node(struct ubifs_info *c)
- {
- 	struct ubifs_sb_node *sup;
--	int err;
-+	int silent, err;
+diff --git a/fs/ubifs/super.c b/fs/ubifs/super.c
+index a81c7b5..3904c85 100644
+--- a/fs/ubifs/super.c
++++ b/fs/ubifs/super.c
+@@ -1149,6 +1149,9 @@ static int mount_ubifs(struct ubifs_info *c)
+ 	size_t sz;
  
- 	sup = kmalloc(ALIGN(UBIFS_SB_NODE_SZ, c->min_io_size), GFP_NOFS);
- 	if (!sup)
- 		return ERR_PTR(-ENOMEM);
- 
-+	silent = !!(c->vfs_sb->s_flags & MS_SILENT);
- 	err = ubifs_read_node(c, sup, UBIFS_SB_NODE, UBIFS_SB_NODE_SZ,
--			      UBIFS_SB_LNUM, 0);
-+			      UBIFS_SB_LNUM, 0, silent);
- 	if (err) {
- 		kfree(sup);
- 		return ERR_PTR(err);
---- a/fs/ubifs/tnc_misc.c
-+++ b/fs/ubifs/tnc_misc.c
-@@ -280,7 +280,7 @@ static int read_znode(struct ubifs_info
- 	if (!idx)
- 		return -ENOMEM;
- 
--	err = ubifs_read_node(c, idx, UBIFS_IDX_NODE, len, lnum, offs);
-+	err = ubifs_read_node(c, idx, UBIFS_IDX_NODE, len, lnum, offs, 0);
- 	if (err < 0) {
- 		kfree(idx);
+ 	c->ro_mount = !!(c->vfs_sb->s_flags & MS_RDONLY);
++	/* Suppress error messages while probing if MS_SILENT is set */
++	c->probing = !!(c->vfs_sb->s_flags & MS_SILENT);
++
+ 	err = init_constants_early(c);
+ 	if (err)
  		return err;
-@@ -472,7 +472,7 @@ int ubifs_tnc_read_node(struct ubifs_inf
- 					   zbr->lnum, zbr->offs);
- 	else
- 		err = ubifs_read_node(c, node, type, zbr->len, zbr->lnum,
--				      zbr->offs);
-+				      zbr->offs, 0);
+@@ -1214,6 +1217,8 @@ static int mount_ubifs(struct ubifs_info *c)
+ 	if (err)
+ 		goto out_free;
  
- 	if (err) {
- 		dbg_tnck(key, "key ");
++	c->probing = 0;
++
+ 	/*
+ 	 * Make sure the compressor which is set as default in the superblock
+ 	 * or overridden by mount options is actually compiled in.
+diff --git a/fs/ubifs/ubifs.h b/fs/ubifs/ubifs.h
+index e8c8cfe..c1f71fe 100644
 --- a/fs/ubifs/ubifs.h
 +++ b/fs/ubifs/ubifs.h
-@@ -1481,7 +1481,7 @@ int ubifs_wbuf_write_nolock(struct ubifs
- int ubifs_wbuf_seek_nolock(struct ubifs_wbuf *wbuf, int lnum, int offs);
- int ubifs_wbuf_init(struct ubifs_info *c, struct ubifs_wbuf *wbuf);
- int ubifs_read_node(const struct ubifs_info *c, void *buf, int type, int len,
--		    int lnum, int offs);
-+		    int lnum, int offs, int silent);
- int ubifs_read_node_wbuf(struct ubifs_wbuf *wbuf, void *buf, int type, int len,
- 			 int lnum, int offs);
- int ubifs_write_node(struct ubifs_info *c, void *node, int len, int lnum,
+@@ -51,6 +51,15 @@
+ #define ubifs_warn(fmt, ...)                                        \
+ 	pr_warn("UBIFS warning (pid %d): %s: " fmt "\n",            \
+ 		current->pid, __func__, ##__VA_ARGS__)
++/*
++ * A variant of 'ubifs_err()' which takes the UBIFS file-sytem description
++ * object as an argument.
++ */
++#define ubifs_errc(c, fmt, ...)                                     \
++	do {                                                        \
++		if (!(c)->probing)                                  \
++			ubifs_err(fmt, ##__VA_ARGS__);              \
++	} while (0)
+ 
+ /* UBIFS file system VFS magic number */
+ #define UBIFS_SUPER_MAGIC 0x24051905
+@@ -1209,6 +1218,7 @@ struct ubifs_debug_info;
+  * @need_recovery: %1 if the file-system needs recovery
+  * @replaying: %1 during journal replay
+  * @mounting: %1 while mounting
++ * @probing: %1 while attempting to mount if MS_SILENT mount flag is set
+  * @remounting_rw: %1 while re-mounting from R/O mode to R/W mode
+  * @replay_list: temporary list used during journal replay
+  * @replay_buds: list of buds to replay
+@@ -1441,6 +1451,7 @@ struct ubifs_info {
+ 	unsigned int replaying:1;
+ 	unsigned int mounting:1;
+ 	unsigned int remounting_rw:1;
++	unsigned int probing:1;
+ 	struct list_head replay_list;
+ 	struct list_head replay_buds;
+ 	unsigned long long cs_sqnum;
