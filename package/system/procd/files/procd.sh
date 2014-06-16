@@ -164,7 +164,7 @@ _procd_add_interface_trigger() {
 	json_close_array
 }
 
-_procd_add_network_trigger() {
+_procd_add_reload_interface_trigger() {
 	local script=$(readlink "$initscript")
 	local name=$(basename ${script:-$initscript})
 
@@ -283,9 +283,10 @@ _procd_wrapper \
 	procd_close_service \
 	procd_add_instance \
 	procd_add_config_trigger \
-	procd_add_reload_trigger \
 	procd_add_interface_trigger \
-	procd_add_network_trigger \
+	procd_add_reload_trigger \
+	procd_add_reload_interface_trigger \
+	procd_add_interface_reload \
 	procd_open_trigger \
 	procd_close_trigger \
 	procd_open_instance \
