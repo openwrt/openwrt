@@ -1,0 +1,28 @@
+--- a/drivers/mtd/mtdpart.c	2014-04-27 10:09:21.566294160 +0300
++++ b/drivers/mtd/mtdpart.c	2014-06-09 11:27:48.952211672 +0300
+@@ -793,8 +793,11 @@
+ {
+ 	struct {
+ 		__be32 magic;
+-		__be32 pad[2];
++		__be32 pad0[2];
+ 		__be32 size;
++		__be32 pad1[4];
++		__be32 name[7];
++		__be32 kern_size;
+ 	} hdr;
+ 	size_t len;
+ 
+@@ -804,7 +807,11 @@
+ 	if (len != sizeof(hdr) || hdr.magic != cpu_to_be32(UBOOT_MAGIC))
+ 		return;
+ 
+-	len = be32_to_cpu(hdr.size) + 0x40;
++	if (hdr.kern_size != 0 && hdr.name[0] == 0)
++		len = be32_to_cpu(hdr.kern_size);
++	else
++		len = be32_to_cpu(hdr.size) + 0x40;
++
+ 	__mtd_add_partition(master, "rootfs", part->offset + len,
+ 			    part->mtd.size - len, false);
+ }

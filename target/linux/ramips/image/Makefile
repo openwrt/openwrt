@@ -665,7 +665,13 @@ Image/Build/Profile/DIR645=$(call BuildFirmware/Seama/$(1),$(1),dir-645,DIR-645,
 omniembhpm_mtd_size=16449536
 Image/Build/Profile/OMNIEMBHPM=$(call BuildFirmware/CustomFlash/$(1),$(1),omni-emb-hpm,OMNI-EMB-HPM,$(omniembhpm_mtd_size))
 
-Image/Build/Profile/RTN56U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n56u,RTN56U)
+define BuildFirmware/RTN56U/squashfs
+	$(call BuildFirmware/Default8M/$(1),$(1),rt-n56u,RTN56U)
+	-mkrtn56uimg -s $(call sysupname,$(1),rt-n56u)
+	-cp $(call sysupname,$(1),rt-n56u) $(call imgname,$(1),rt-n56u)-factory.bin
+	-mkrtn56uimg -f $(call imgname,$(1),rt-n56u)-factory.bin
+endef
+Image/Build/Profile/RTN56U=$(call BuildFirmware/RTN56U/$(1),$(1),rt-n56u,RTN56U)
 
 Image/Build/Profile/TEW691GR=$(call BuildFirmware/UMedia/$(1),$(1),tew-691gr,TEW-691GR,0x026910)
 
