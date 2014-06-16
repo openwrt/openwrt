@@ -306,12 +306,8 @@ platform_check_image() {
 		return 0
 		;;
 	wndr4300 )
-		nand_do_upgrade_stage1 $board $1
-		[ $? != 0 ] && {
-			echo "Invalid tar file."
-			return 1
-		}
-		return 0;
+		nand_do_platform_check $board $1
+		return $?;
 		;;
 	routerstation | \
 	routerstation-pro | \
