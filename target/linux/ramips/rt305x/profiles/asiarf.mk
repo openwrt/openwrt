@@ -5,12 +5,23 @@
 # See /LICENSE for more information.
 #
 
+define Profile/AWM002EVB
+	NAME:=AsiaRF AWM002-EVB
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+	kmod-i2c-core kmod-i2c-gpio
+endef
+
+define Profile/AWM002EVB/Description
+	Package set for AsiaRF AWM002 Evaluation Board
+endef
+
 define Profile/AWAPN2403
-	NAME:=AisaRF AWAPN2403
+	NAME:=AsiaRF AWAPN2403
 endef
 
 define Profile/AWAPN2403/Description
-	Package set for Allnet ALL0239-3G
+	Package set for AsiaRF AWAPN2403 Pocket Router
 endef
 
+$(eval $(call Profile,AWM002EVB))
 $(eval $(call Profile,AWAPN2403))
