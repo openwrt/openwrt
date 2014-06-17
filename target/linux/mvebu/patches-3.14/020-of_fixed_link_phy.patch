@@ -1,0 +1,170 @@
+From 3be2a49e5c08d268f8af0dd4fe89a24ea8cdc339 Mon Sep 17 00:00:00 2001
+From: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Date: Fri, 16 May 2014 16:14:05 +0200
+Subject: of: provide a binding for fixed link PHYs
+
+Some Ethernet MACs have a "fixed link", and are not connected to a
+normal MDIO-managed PHY device. For those situations, a Device Tree
+binding allows to describe a "fixed link" using a special PHY node.
+
+This patch adds:
+
+ * A documentation for the fixed PHY Device Tree binding.
+
+ * An of_phy_is_fixed_link() function that an Ethernet driver can call
+   on its PHY phandle to find out whether it's a fixed link PHY or
+   not. It should typically be used to know if
+   of_phy_register_fixed_link() should be called.
+
+ * An of_phy_register_fixed_link() function that instantiates the
+   fixed PHY into the PHY subsystem, so that when the driver calls
+   of_phy_connect(), the PHY device associated to the OF node will be
+   found.
+
+These two additional functions also support the old fixed-link Device
+Tree binding used on PowerPC platforms, so that ultimately, the
+network device drivers for those platforms could be converted to use
+of_phy_is_fixed_link() and of_phy_register_fixed_link() instead of
+of_phy_connect_fixed_link(), while keeping compatibility with their
+respective Device Tree bindings.
+
+Signed-off-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Tested-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+
+--- /dev/null
++++ b/Documentation/devicetree/bindings/net/fixed-link.txt
+@@ -0,0 +1,30 @@
++Fixed link Device Tree binding
++------------------------------
++
++Some Ethernet MACs have a "fixed link", and are not connected to a
++normal MDIO-managed PHY device. For those situations, a Device Tree
++binding allows to describe a "fixed link".
++
++Such a fixed link situation is described by creating a 'fixed-link'
++sub-node of the Ethernet MAC device node, with the following
++properties:
++
++* 'speed' (integer, mandatory), to indicate the link speed. Accepted
++  values are 10, 100 and 1000
++* 'full-duplex' (boolean, optional), to indicate that full duplex is
++  used. When absent, half duplex is assumed.
++* 'pause' (boolean, optional), to indicate that pause should be
++  enabled.
++* 'asym-pause' (boolean, optional), to indicate that asym_pause should
++  be enabled.
++
++Example:
++
++ethernet@0 {
++	...
++	fixed-link {
++	      speed = <1000>;
++	      full-duplex;
++	};
++	...
++};
+--- a/drivers/of/of_mdio.c
++++ b/drivers/of/of_mdio.c
+@@ -14,6 +14,7 @@
+ #include <linux/netdevice.h>
+ #include <linux/err.h>
+ #include <linux/phy.h>
++#include <linux/phy_fixed.h>
+ #include <linux/of.h>
+ #include <linux/of_irq.h>
+ #include <linux/of_mdio.h>
+@@ -280,3 +281,69 @@ struct phy_device *of_phy_attach(struct
+ 	return phy_attach_direct(dev, phy, flags, iface) ? NULL : phy;
+ }
+ EXPORT_SYMBOL(of_phy_attach);
++
++#if defined(CONFIG_FIXED_PHY)
++/*
++ * of_phy_is_fixed_link() and of_phy_register_fixed_link() must
++ * support two DT bindings:
++ * - the old DT binding, where 'fixed-link' was a property with 5
++ *   cells encoding various informations about the fixed PHY
++ * - the new DT binding, where 'fixed-link' is a sub-node of the
++ *   Ethernet device.
++ */
++bool of_phy_is_fixed_link(struct device_node *np)
++{
++	struct device_node *dn;
++	int len;
++
++	/* New binding */
++	dn = of_get_child_by_name(np, "fixed-link");
++	if (dn) {
++		of_node_put(dn);
++		return true;
++	}
++
++	/* Old binding */
++	if (of_get_property(np, "fixed-link", &len) &&
++	    len == (5 * sizeof(__be32)))
++		return true;
++
++	return false;
++}
++EXPORT_SYMBOL(of_phy_is_fixed_link);
++
++int of_phy_register_fixed_link(struct device_node *np)
++{
++	struct fixed_phy_status status = {};
++	struct device_node *fixed_link_node;
++	const __be32 *fixed_link_prop;
++	int len;
++
++	/* New binding */
++	fixed_link_node = of_get_child_by_name(np, "fixed-link");
++	if (fixed_link_node) {
++		status.link = 1;
++		status.duplex = of_property_read_bool(np, "full-duplex");
++		if (of_property_read_u32(fixed_link_node, "speed", &status.speed))
++			return -EINVAL;
++		status.pause = of_property_read_bool(np, "pause");
++		status.asym_pause = of_property_read_bool(np, "asym-pause");
++		of_node_put(fixed_link_node);
++		return fixed_phy_register(PHY_POLL, &status, np);
++	}
++
++	/* Old binding */
++	fixed_link_prop = of_get_property(np, "fixed-link", &len);
++	if (fixed_link_prop && len == (5 * sizeof(__be32))) {
++		status.link = 1;
++		status.duplex = be32_to_cpu(fixed_link_prop[1]);
++		status.speed = be32_to_cpu(fixed_link_prop[2]);
++		status.pause = be32_to_cpu(fixed_link_prop[3]);
++		status.asym_pause = be32_to_cpu(fixed_link_prop[4]);
++		return fixed_phy_register(PHY_POLL, &status, np);
++	}
++
++	return -ENODEV;
++}
++EXPORT_SYMBOL(of_phy_register_fixed_link);
++#endif
+--- a/include/linux/of_mdio.h
++++ b/include/linux/of_mdio.h
+@@ -67,4 +67,19 @@ static inline struct mii_bus *of_mdio_fi
+ }
+ #endif /* CONFIG_OF */
+ 
++#if defined(CONFIG_OF) && defined(CONFIG_FIXED_PHY)
++extern int of_phy_register_fixed_link(struct device_node *np);
++extern bool of_phy_is_fixed_link(struct device_node *np);
++#else
++static inline int of_phy_register_fixed_link(struct device_node *np)
++{
++	return -ENOSYS;
++}
++static inline bool of_phy_is_fixed_link(struct device_node *np)
++{
++	return false;
++}
++#endif
++
++
+ #endif /* __LINUX_OF_MDIO_H */
