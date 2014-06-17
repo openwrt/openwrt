@@ -7,13 +7,7 @@ set dhcp.odhcpd=odhcpd
 set dhcp.odhcpd.maindhcp=0
 set dhcp.odhcpd.leasefile=/tmp/hosts/odhcpd
 set dhcp.odhcpd.leasetrigger=/usr/sbin/odhcpd-update
-set dhcp.lan.dhcpv6=hybrid
-set dhcp.lan.ra=hybrid
-set dhcp.lan.ndp=hybrid
-set dhcp.wan6=dhcp
-set dhcp.wan6.dhcpv6=hybrid
-set dhcp.wan6.ra=hybrid
-set dhcp.wan6.ndp=hybrid
-set dhcp.wan6.master=1
+set dhcp.lan.dhcpv6=server
+set dhcp.lan.ra=server
 commit dhcp
 EOF
