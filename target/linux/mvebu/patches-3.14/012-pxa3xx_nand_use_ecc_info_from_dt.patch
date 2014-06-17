@@ -1,0 +1,57 @@
+From 5b3e507820c6e120bc2680c0d35f9d9d81fcb98d Mon Sep 17 00:00:00 2001
+From: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Date: Wed, 14 May 2014 14:58:08 -0300
+Subject: mtd: nand: pxa3xx: Use ECC strength and step size devicetree binding
+
+This commit adds support for the user to specify the ECC strength
+and step size through the devicetree. We keep the previous behavior,
+when there is no DT parameter provided.
+
+Signed-off-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
+Signed-off-by: Brian Norris <computersforpeace@gmail.com>
+
+--- a/drivers/mtd/nand/pxa3xx_nand.c
++++ b/drivers/mtd/nand/pxa3xx_nand.c
+@@ -1520,8 +1520,13 @@ KEEP_CONFIG:
+ 		}
+ 	}
+ 
+-	ecc_strength = chip->ecc_strength_ds;
+-	ecc_step = chip->ecc_step_ds;
++	if (pdata->ecc_strength && pdata->ecc_step_size) {
++		ecc_strength = pdata->ecc_strength;
++		ecc_step = pdata->ecc_step_size;
++	} else {
++		ecc_strength = chip->ecc_strength_ds;
++		ecc_step = chip->ecc_step_ds;
++	}
+ 
+ 	/* Set default ECC strength requirements on non-ONFI devices */
+ 	if (ecc_strength < 1 && ecc_step < 1) {
+@@ -1730,6 +1735,14 @@ static int pxa3xx_nand_probe_dt(struct p
+ 	of_property_read_u32(np, "num-cs", &pdata->num_cs);
+ 	pdata->flash_bbt = of_get_nand_on_flash_bbt(np);
+ 
++	pdata->ecc_strength = of_get_nand_ecc_strength(np);
++	if (pdata->ecc_strength < 0)
++		pdata->ecc_strength = 0;
++
++	pdata->ecc_step_size = of_get_nand_ecc_step_size(np);
++	if (pdata->ecc_step_size < 0)
++		pdata->ecc_step_size = 0;
++
+ 	pdev->dev.platform_data = pdata;
+ 
+ 	return 0;
+--- a/include/linux/platform_data/mtd-nand-pxa3xx.h
++++ b/include/linux/platform_data/mtd-nand-pxa3xx.h
+@@ -58,6 +58,9 @@ struct pxa3xx_nand_platform_data {
+ 	/* use an flash-based bad block table */
+ 	bool	flash_bbt;
+ 
++	/* requested ECC strength and ECC step size */
++	int ecc_strength, ecc_step_size;
++
+ 	const struct mtd_partition		*parts[NUM_CHIP_SELECT];
+ 	unsigned int				nr_parts[NUM_CHIP_SELECT];
+ 
