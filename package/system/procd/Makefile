@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2014-06-16
+PKG_VERSION:=2014-06-17
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
@@ -32,7 +32,7 @@ endef
 define Package/procd-nand
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@NAND_SUPPORT +ubi-utils
+  DEPENDS:=@NAND_SUPPORT @mips +ubi-utils
   TITLE:=OpenWrt system process manager
 endef
 
