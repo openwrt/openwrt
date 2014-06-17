@@ -4,8 +4,6 @@
 
 . /lib/functions.sh
 
-# combined-image uses 64k blocks
-CI_BLKSZ=65536
 # 'data' partition on NAND contains UBI
 CI_UBIPART="ubi"
 
@@ -192,7 +190,7 @@ nand_upgrade_ubinized() {
 
 	if [ ! "$mtdnum" ]; then
 		echo "cannot find mtd device $CI_UBIPART"
-		return 1;
+		reboot -f
 	fi
 
 	local mtddev="/dev/mtd${mtdnum}"
@@ -212,10 +210,9 @@ nand_do_upgrade_stage2() {
 
 	local kernel_length=`(tar xf $tar_file sysupgrade-$board_name/kernel -O | wc -c) 2> /dev/null`
 	local rootfs_length=`(tar xf $tar_file sysupgrade-$board_name/root -O | wc -c) 2> /dev/null`
-	local ubi_length=`(tar xf $tar_file sysupgrade-$board_name/ubi -O | wc -c) 2> /dev/null`
-	
+
 	local rootfs_type="$(identify_tar "$tar_file" root)"
-	
+
 	local has_kernel=1
 	local has_env=0
 
