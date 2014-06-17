@@ -9,7 +9,7 @@ define Profile/TLWDR4900
 	NAME:=TP-Link TL-WDR4900
 	PACKAGES:=\
 		kmod-usb-core kmod-usb2 kmod-usb2-fsl \
-		kmod-ath9k kmod-wpad
+		kmod-ath9k wpad
 endef
 
 define Profile/TLWDR4900/Description
