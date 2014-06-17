@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2013 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=3.11.0
+PKG_VERSION:=3.15.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
-PKG_MD5SUM:=d7ffb27bc9f0d80577b1f3fb9d1a7689
+PKG_MD5SUM:=5b1711c9d16071959052e369a2682d77
 PKG_BUILD_PARALLEL:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -24,8 +24,9 @@ define Package/iproute2/Default
   TITLE:=Routing control utility ($(2))
   SECTION:=net
   CATEGORY:=Network
-  URL:=http://linux-net.osdl.org/index.php/Iproute2
+  URL:=http://www.linuxfoundation.org/collaborate/workgroups/networking/iproute2
   SUBMENU:=Routing and Redirection
+  MAINTAINER:=Russell Senior <russell@personaltelco.net>
   DEPENDS:= +libnl-tiny
   VARIANT:=$(1)
 endef
