@@ -166,3 +166,19 @@ define KernelPackage/ledtrig-oneshot/description
 endef
 
 $(eval $(call KernelPackage,ledtrig-oneshot))
+
+
+define KernelPackage/leds-tlc59116
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=TLC59116 LED support
+  DEPENDS:=@TARGET_mvebu kmod-i2c-core
+  KCONFIG:=CONFIG_LEDS_TLC59116
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-tlc59116.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-tlc59116,1)
+endef
+
+define KernelPackage/leds-tlc59116/description
+ Kernel module for LEDs on TLC59116
+endef
+
+$(eval $(call KernelPackage,leds-tlc59116))
