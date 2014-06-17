@@ -1,13 +1,13 @@
 --- a/tc/Makefile
 +++ b/tc/Makefile
-@@ -38,6 +38,7 @@ TCMODULES += m_mirred.o
+@@ -39,6 +39,7 @@ TCMODULES += m_mirred.o
  TCMODULES += m_nat.o
  TCMODULES += m_pedit.o
  TCMODULES += m_skbedit.o
 +TCMODULES += m_connmark.o
  TCMODULES += m_csum.o
+ TCMODULES += m_simple.o
  TCMODULES += p_ip.o
- TCMODULES += p_icmp.o
 --- /dev/null
 +++ b/tc/m_connmark.c
 @@ -0,0 +1,74 @@
