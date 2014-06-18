@@ -13,10 +13,12 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
  7 files changed, 13 insertions(+), 2 deletions(-)
  create mode 100644 nettle-config.h.in
 
+diff --git a/Makefile.in b/Makefile.in
+index 42be3a9..280dd30 100644
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -178,7 +178,7 @@ HEADERS = aes.h arcfour.h arctwo.h asn1.
- 	  ecc-curve.h ecc.h ecdsa.h \
+@@ -151,7 +151,7 @@ HEADERS = aes.h arcfour.h arctwo.h asn1.h bignum.h blowfish.h \
+ 	  des.h des-compat.h dsa.h ecc-curve.h ecc.h ecdsa.h \
  	  gcm.h gosthash94.h hmac.h \
  	  knuth-lfib.h \
 -	  macros.h \
@@ -24,18 +26,20 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
  	  md2.h md4.h \
  	  md5.h md5-compat.h \
  	  memxor.h \
-@@ -203,7 +203,7 @@ DISTFILES = $(SOURCES) $(HEADERS) getopt
+@@ -174,7 +174,7 @@ DISTFILES = $(SOURCES) $(HEADERS) getopt.h .bootstrap run-tests \
+ 	config.guess config.sub install-sh texinfo.tex \
  	config.h.in config.m4.in config.make.in	Makefile.in \
- 	README AUTHORS COPYING.LESSERv3 COPYINGv2 COPYINGv3 \
- 	INSTALL NEWS TODO ChangeLog \
+ 	README AUTHORS COPYING.LIB INSTALL NEWS TODO ChangeLog \
 -	nettle.pc.in hogweed.pc.in \
 +	nettle.pc.in hogweed.pc.in nettle-config.h.in \
- 	$(des_headers) descore.README \
+ 	memxor.c $(des_headers) descore.README \
  	aes-internal.h camellia-internal.h serpent-internal.h \
  	cast128_sboxes.h desinfo.h desCode.h \
+diff --git a/bignum.h b/bignum.h
+index 1f2ff07..c31ccaa 100644
 --- a/bignum.h
 +++ b/bignum.h
-@@ -34,6 +34,7 @@
+@@ -26,6 +26,7 @@
  #ifndef NETTLE_BIGNUM_H_INCLUDED
  #define NETTLE_BIGNUM_H_INCLUDED
  
@@ -43,6 +47,8 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
  #include "nettle-meta.h"
  
  #ifdef USE_MINI_GMP
+diff --git a/configure.ac b/configure.ac
+index c24f954..cb65bcd 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -10,6 +10,7 @@ AC_CONFIG_AUX_DIR([.])
@@ -51,11 +57,13 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
  AC_CONFIG_HEADER([config.h])
 +AC_CONFIG_HEADER([nettle-config.h])
  
- LIBNETTLE_MAJOR=5
- LIBNETTLE_MINOR=0
+ LIBNETTLE_MAJOR=4
+ LIBNETTLE_MINOR=7
+diff --git a/examples/ecc-benchmark.c b/examples/ecc-benchmark.c
+index 16a1fd6..eaaf3a5 100644
 --- a/examples/ecc-benchmark.c
 +++ b/examples/ecc-benchmark.c
-@@ -47,6 +47,7 @@
+@@ -38,6 +38,7 @@
  #include "timing.h"
  
  #undef USE_MINI_GMP
@@ -63,6 +71,9 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
  #include <gmp.h>
  #include "../ecc.h"
  #include "../ecc-internal.h"
+diff --git a/nettle-config.h.in b/nettle-config.h.in
+new file mode 100644
+index 0000000..11330ff
 --- /dev/null
 +++ b/nettle-config.h.in
 @@ -0,0 +1,6 @@
@@ -72,6 +83,8 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
 +#undef USE_MINI_GMP
 +
 +#endif
+diff --git a/testsuite/testutils.h b/testsuite/testutils.h
+index a677a2a..6e9b30c 100644
 --- a/testsuite/testutils.h
 +++ b/testsuite/testutils.h
 @@ -15,6 +15,7 @@
@@ -81,4 +94,7 @@ Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
 +# define NETTLE_CONFIG_H_INCLUDED
  # undef USE_MINI_GMP
  # include "rsa.h"
- # include "dsa-compat.h"
+ # include "dsa.h"
+-- 
+1.9.2
+
