@@ -1,0 +1,403 @@
+From 8d5360e3e5eea3c9dbfd44f9b981f18a41605e45 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@gnutls.org>
+Date: Sun, 9 Mar 2014 11:30:25 +0100
+Subject: [PATCH 2/5] Added option to use mini-gmp in hogweed.
+
+---
+ Makefile.in              |  8 +++--
+ bignum.h                 |  6 +++-
+ configure.ac             | 76 +++++++++++++++++++++++++++++++++++-------------
+ dsa.h                    |  2 +-
+ ecc-internal.h           |  2 +-
+ ecc.h                    |  2 +-
+ eccdata.c                | 12 +++++++-
+ examples/Makefile.in     |  2 +-
+ examples/ecc-benchmark.c |  2 ++
+ gmp-glue.c               |  1 +
+ gmp-glue.h               |  2 +-
+ hogweed.pc.in            |  2 +-
+ mini-gmp.c               |  2 +-
+ mini-gmp.h               |  9 ++++++
+ pkcs1.h                  |  2 +-
+ rsa.h                    |  2 +-
+ testsuite/Makefile.in    |  4 +--
+ testsuite/testutils.h    |  5 ++--
+ 18 files changed, 102 insertions(+), 39 deletions(-)
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -15,6 +15,10 @@ MKDIR_P = @MKDIR_P@
+ OPT_ASM_NETTLE_SOURCES = @OPT_ASM_NETTLE_SOURCES@
+ OPT_ASM_HOGWEED_SOURCES = @OPT_ASM_HOGWEED_SOURCES@
+ 
++OPT_HOGWEED_SOURCES = @OPT_HOGWEED_SOURCES@
++
++OPT_HOGWEED_HEADERS = @OPT_HOGWEED_HEADERS@
++
+ SUBDIRS = tools testsuite examples
+ 
+ include config.make
+@@ -132,7 +136,7 @@ nettle_SOURCES = aes-decrypt-internal.c
+ 		 write-be32.c write-le32.c write-le64.c \
+ 		 yarrow256.c yarrow_key_event.c
+ 
+-hogweed_SOURCES = sexp.c sexp-format.c \
++hogweed_SOURCES = $(OPT_HOGWEED_SOURCES) sexp.c sexp-format.c \
+ 		  sexp-transport.c sexp-transport-format.c \
+ 		  bignum.c bignum-random.c bignum-random-prime.c \
+ 		  sexp2bignum.c \
+@@ -183,7 +187,7 @@ HEADERS = aes.h arcfour.h arctwo.h asn1.
+ 	  pgp.h pkcs1.h realloc.h ripemd160.h rsa.h \
+ 	  salsa20.h sexp.h \
+ 	  serpent.h sha.h sha1.h sha2.h sha3.h twofish.h \
+-	  umac.h yarrow.h poly1305.h
++	  umac.h yarrow.h poly1305.h $(OPT_HOGWEED_HEADERS)
+ 
+ INSTALL_HEADERS = $(HEADERS) nettle-stdint.h
+ 
+--- a/bignum.h
++++ b/bignum.h
+@@ -36,7 +36,11 @@
+ 
+ #include "nettle-meta.h"
+ 
+-#include <gmp.h>
++#ifdef USE_MINI_GMP
++# include "mini-gmp.h"
++#else
++# include <gmp.h>
++#endif
+ #include "nettle-types.h"
+ 
+ #ifdef __cplusplus
+--- a/configure.ac
++++ b/configure.ac
+@@ -72,6 +72,16 @@ AC_ARG_ENABLE(arm-neon,
+   AC_HELP_STRING([--enable-arm-neon], [Enable ARM Neon assembly. (default=auto)]),,
+   [enable_arm_neon=auto])
+ 
++AC_ARG_ENABLE(mini-gmp,
++  AC_HELP_STRING([--enable-mini-gmp], [Disable gmp support and enable mini-gmp. (default=disabled)]),,
++  [enable_mini_gmp=no])
++
++if test "x$enable_mini_gmp" = xyes ; then
++GMP_LIBS=""
++else
++GMP_LIBS="-lgmp"
++fi
++
+ LSH_RPATH_INIT([`echo $with_lib_path | sed 's/:/ /g'` \
+     `echo $exec_prefix | sed "s@^NONE@$prefix/lib@g" | sed "s@^NONE@$ac_default_prefix/lib@g"` \
+     /usr/local/lib /sw/local/lib /sw/lib \
+@@ -441,7 +451,7 @@ case "$host_os" in
+     LIBHOGWEED_SONAME='libhogweed.$(LIBHOGWEED_MAJOR).dylib'
+     LIBHOGWEED_FILE='libhogweed.$(LIBHOGWEED_MAJOR).$(LIBHOGWEED_MINOR).dylib'
+     LIBHOGWEED_LINK='$(CC) $(CFLAGS) -dynamiclib -L. $(LDFLAGS) -install_name ${libdir}/$(LIBHOGWEED_SONAME) -compatibility_version $(LIBHOGWEED_MAJOR) -current_version $(LIBHOGWEED_MAJOR).$(LIBHOGWEED_MINOR)'
+-    LIBHOGWEED_LIBS='-lnettle -lgmp'
++    LIBHOGWEED_LIBS='-lnettle $(GMP_LIBS)'
+     ;;
+   solaris*)
+     # Sun's ld uses -h to set the soname, and this option is passed
+@@ -457,7 +467,7 @@ case "$host_os" in
+     LIBHOGWEED_SONAME='$(LIBHOGWEED_FORLINK).$(LIBHOGWEED_MAJOR)'
+     LIBHOGWEED_FILE='$(LIBHOGWEED_SONAME).$(LIBHOGWEED_MINOR)'
+     LIBHOGWEED_LINK='$(CC) $(CFLAGS) $(LDFLAGS) -G -h $(LIBHOGWEED_SONAME)'
+-    LIBHOGWEED_LIBS='libnettle.so -lgmp'
++    LIBHOGWEED_LIBS='libnettle.so $(GMP_LIBS)'
+     ;;
+   *)
+     LIBNETTLE_FORLINK=libnettle.so
+@@ -474,7 +484,7 @@ case "$host_os" in
+     # (does not work in general, e.g., with static linking all of
+     # -lhogweed -lgmp -lnettle are still required). Also makes dlopen
+     # of libhogweed.so work, without having to use RTLD_GLOBAL.
+-    LIBHOGWEED_LIBS='libnettle.so -lgmp'
++    LIBHOGWEED_LIBS='libnettle.so $(GMP_LIBS)'
+     ;;
+ esac
+ 
+@@ -692,7 +702,18 @@ if test "x$nettle_cv_fcntl_locking" = "x
+ fi
+ 
+ # Checks for libraries
++TESTSUITE_LIBS=""
++
++OPT_HOGWEED_SOURCES=""
++OPT_HOGWEED_HEADERS=""
+ if test "x$enable_public_key" = "xyes" ; then
++if test "x$enable_mini_gmp" = xyes ; then
++  OPT_HOGWEED_SOURCES="$OPT_HOGWEED_SOURCES mini-gmp.c"
++  OPT_HOGWEED_HEADERS="$OPT_HOGWEED_HEADERS mini-gmp.h"
++  AC_DEFINE([USE_MINI_GMP], 1, [Use mini-gmp instead of gmp])
++  IF_NOT_MINI_GMP='#'
++  GMP_NUMB_BITS="0"  
++else
+   AC_CHECK_LIB(gmp, __gmpz_getlimbn,,
+       [AC_MSG_WARN(
+   [GNU MP not found, or not 3.1 or up, see http://gmplib.org/.
+@@ -701,9 +722,7 @@ if test "x$enable_public_key" = "xyes" ;
+ 
+   # Add -R flags needed to run programs linked with gmp
+   LSH_RPATH_FIX
+-fi
+ 
+-if test "x$enable_public_key" = "xyes" ; then
+   # Check for gmp limb size
+   nettle_cv_gmp_numb_bits=0
+   if test "$enable_public_key" = yes; then
+@@ -714,12 +733,23 @@ if test "x$enable_public_key" = "xyes" ;
+   
+     AC_MSG_RESULT([$nettle_cv_gmp_numb_bits bits])
+   fi
++
+   
+   GMP_NUMB_BITS="$nettle_cv_gmp_numb_bits"
+   AC_SUBST([GMP_NUMB_BITS])
+   
+   AH_TEMPLATE([HAVE_MPZ_POWM_SEC], [Define if mpz_powm_sec is available (appeared in GMP-5)])
+   AC_CHECK_FUNC(__gmpz_powm_sec, [AC_DEFINE(HAVE_MPZ_POWM_SEC)])
++  IF_NOT_MINI_GMP=''
++  TESTSUITE_LIBS="-lgmp"
++fi
++  AC_SUBST([GMP_LIBS])
++dnl The testsuite requires gmp
++AC_SUBST([TESTSUITE_LIBS])
++AC_SUBST([GMP_NUMB_BITS])
++AC_SUBST([OPT_HOGWEED_SOURCES])
++AC_SUBST([OPT_HOGWEED_HEADERS])
++
+ fi
+ 
+ AH_TEMPLATE([WITH_HOGWEED], [Defined if public key features are enabled])
+@@ -765,6 +795,7 @@ else
+   IF_DOCUMENTATION='#'
+ fi
+ 
++AC_SUBST(IF_NOT_MINI_GMP)
+ AC_SUBST(IF_HOGWEED)
+ AC_SUBST(IF_STATIC)
+ AC_SUBST(IF_SHARED)
+--- a/dsa.h
++++ b/dsa.h
+@@ -34,7 +34,7 @@
+ #ifndef NETTLE_DSA_H_INCLUDED
+ #define NETTLE_DSA_H_INCLUDED
+ 
+-#include <gmp.h>
++#include "bignum.h"
+ 
+ #include "nettle-types.h"
+ 
+--- a/ecc-internal.h
++++ b/ecc-internal.h
+@@ -34,7 +34,7 @@
+ #ifndef NETTLE_ECC_INTERNAL_H_INCLUDED
+ #define NETTLE_ECC_INTERNAL_H_INCLUDED
+ 
+-#include <gmp.h>
++#include "bignum.h"
+ 
+ #include "nettle-types.h"
+ #include "ecc-curve.h"
+--- a/ecc.h
++++ b/ecc.h
+@@ -34,7 +34,7 @@
+ #ifndef NETTLE_ECC_H_INCLUDED
+ #define NETTLE_ECC_H_INCLUDED
+ 
+-#include <gmp.h>
++#include "bignum.h"
+ 
+ #include "nettle-types.h"
+ 
+--- a/eccdata.c
++++ b/eccdata.c
+@@ -33,11 +33,14 @@
+ 
+ /* Development of Nettle's ECC support was funded by the .SE Internet Fund. */
+ 
++#include "config.h"
++
+ #include <assert.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#include "mini-gmp.h"
+ #include "mini-gmp.c"
+ 
+ /* Affine coordinates, for simplicity. Infinity point represented as x
+@@ -904,6 +907,7 @@ int
+ main (int argc, char **argv)
+ {
+   struct ecc_curve ecc;
++  unsigned bits;
+ 
+   if (argc < 4)
+     {
+@@ -911,6 +915,7 @@ main (int argc, char **argv)
+       return EXIT_FAILURE;
+     }
+ 
++  bits = atoi(argv[4]);
+   ecc_curve_init (&ecc, atoi(argv[1]));
+ 
+   ecc_pippenger_precompute (&ecc, atoi(argv[2]), atoi(argv[3]));
+@@ -921,7 +926,12 @@ main (int argc, char **argv)
+   ecc_curve_check (&ecc);
+ 
+   if (argc > 4)
+-    output_curve (&ecc, atoi(argv[4]));
++    {
++      /* when using mini-gmp we cannot estimate it on configure */
++      if (bits == 0)
++        bits = GMP_NUMB_BITS;
++      output_curve (&ecc, bits);
++    }
+ 
+   return EXIT_SUCCESS;
+ }
+--- a/examples/Makefile.in
++++ b/examples/Makefile.in
+@@ -11,7 +11,7 @@ PRE_CPPFLAGS = -I.. -I$(top_srcdir)
+ PRE_LDFLAGS = -L..
+ 
+ OPENSSL_LIBFLAGS = @OPENSSL_LIBFLAGS@
+-BENCH_LIBS = @BENCH_LIBS@ -lm
++BENCH_LIBS = @BENCH_LIBS@ $(TESTSUITE_LIBS) -lm
+ 
+ HOGWEED_TARGETS = rsa-keygen$(EXEEXT) rsa-sign$(EXEEXT) \
+ 	      rsa-verify$(EXEEXT) rsa-encrypt$(EXEEXT) rsa-decrypt$(EXEEXT) \
+--- a/examples/ecc-benchmark.c
++++ b/examples/ecc-benchmark.c
+@@ -46,6 +46,8 @@
+ 
+ #include "timing.h"
+ 
++#undef USE_MINI_GMP
++#include <gmp.h>
+ #include "../ecc.h"
+ #include "../ecc-internal.h"
+ #include "../gmp-glue.h"
+--- a/gmp-glue.c
++++ b/gmp-glue.c
+@@ -271,3 +271,4 @@ gmp_free(void *p, size_t n)
+ 
+   free_func (p, (size_t) n);
+ }
++
+--- a/gmp-glue.h
++++ b/gmp-glue.h
+@@ -33,7 +33,7 @@
+ #ifndef NETTLE_GMP_GLUE_H_INCLUDED
+ #define NETTLE_GMP_GLUE_H_INCLUDED
+ 
+-#include <gmp.h>
++#include "bignum.h"
+ 
+ #include "nettle-stdint.h"
+ 
+--- a/hogweed.pc.in
++++ b/hogweed.pc.in
+@@ -13,6 +13,6 @@ URL: http://www.lysator.liu.se/~nisse/ne
+ Version: @PACKAGE_VERSION@
+ Requires.private: nettle
+ Libs: -L${libdir} -lhogweed
+-Libs.private: -lgmp
++Libs.private: @GMP_LIBS@
+ Cflags: -I${includedir}
+ 
+--- a/mini-gmp.c
++++ b/mini-gmp.c
+@@ -1388,7 +1388,7 @@ mpz_clear (mpz_t r)
+   gmp_free (r->_mp_d);
+ }
+ 
+-static void *
++void *
+ mpz_realloc (mpz_t r, mp_size_t size)
+ {
+   size = GMP_MAX (size, 1);
+--- a/mini-gmp.h
++++ b/mini-gmp.h
+@@ -70,6 +70,11 @@ typedef struct
+   mp_limb_t *_mp_d;		/* Pointer to the limbs.  */
+ } __mpz_struct;
+ 
++typedef __mpz_struct MP_INT;
++
++#define GMP_NUMB_BITS (SIZEOF_LONG*8)
++#define GMP_NUMB_MASK (~0)
++
+ typedef __mpz_struct mpz_t[1];
+ 
+ typedef __mpz_struct *mpz_ptr;
+@@ -119,6 +124,10 @@ void mpz_init (mpz_t);
+ void mpz_init2 (mpz_t, mp_bitcnt_t);
+ void mpz_clear (mpz_t);
+ 
++void *
++mpz_realloc (mpz_t r, mp_size_t size);
++#define _mpz_realloc mpz_realloc
++
+ #define mpz_odd_p(z)   (((z)->_mp_size != 0) & (int) (z)->_mp_d[0])
+ #define mpz_even_p(z)  (! mpz_odd_p (z))
+ 
+--- a/pkcs1.h
++++ b/pkcs1.h
+@@ -34,7 +34,7 @@
+ #ifndef NETTLE_PKCS1_H_INCLUDED
+ #define NETTLE_PKCS1_H_INCLUDED
+ 
+-#include <gmp.h>
++#include "bignum.h"
+ #include "nettle-types.h"
+ 
+ #ifdef __cplusplus
+--- a/rsa.h
++++ b/rsa.h
+@@ -34,7 +34,7 @@
+ #ifndef NETTLE_RSA_H_INCLUDED
+ #define NETTLE_RSA_H_INCLUDED
+ 
+-#include <gmp.h>
++#include "bignum.h"
+ #include "nettle-types.h"
+ 
+ #include "md5.h"
+--- a/testsuite/Makefile.in
++++ b/testsuite/Makefile.in
+@@ -50,7 +50,7 @@ TS_HOGWEED = $(TS_HOGWEED_SOURCES:.c=$(E
+ TS_C = $(TS_NETTLE) @IF_HOGWEED@ $(TS_HOGWEED)
+ TS_CXX = @IF_CXX@ $(CXX_SOURCES:.cxx=$(EXEEXT))
+ TARGETS = $(TS_C) $(TS_CXX)
+-TS_SH = sexp-conv-test pkcs1-conv-test nettle-pbkdf2-test symbols-test
++TS_SH = sexp-conv-test pkcs1-conv-test nettle-pbkdf2-test symbols-test @IF_NOT_MINI_GMP@
+ TS_ALL = $(TARGETS) $(TS_SH)
+ EXTRA_SOURCES = sha1-huge-test.c
+ EXTRA_TARGETS = $(EXTRA_SOURCES:.c=$(EXEEXT))
+@@ -78,7 +78,7 @@ all: $(EXTRA_TARGETS)
+ 
+ LIB_HOGWEED = @IF_HOGWEED@ -lhogweed
+ TEST_OBJS = testutils.$(OBJEXT) ../nettle-internal.$(OBJEXT) \
+-	    $(LIB_HOGWEED) -lnettle $(LIBS)
++	    $(LIB_HOGWEED) -lnettle $(LIBS) $(TESTSUITE_LIBS)
+ 
+ ../nettle-internal.$(OBJEXT):
+ 	( cd .. && $(MAKE) nettle-internal.$(OBJEXT) )
+--- a/testsuite/testutils.h
++++ b/testsuite/testutils.h
+@@ -12,11 +12,10 @@
+ #include <stdio.h>
+ #include <string.h>
+ 
+-#if HAVE_LIBGMP
+-# include "bignum.h"
+-#endif
+ 
+ #if WITH_HOGWEED
++# include <gmp.h>
++# undef USE_MINI_GMP
+ # include "rsa.h"
+ # include "dsa-compat.h"
+ # include "ecc-curve.h"
