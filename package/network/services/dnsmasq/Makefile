@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
 PKG_VERSION:=2.71
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/dnsmasq/Default
   SECTION:=net
   CATEGORY:=Base system
-  TITLE:=A lightweight DNS and DHCP server
+  TITLE:=DNS and DHCP server
   URL:=http://www.thekelleys.org.uk/dnsmasq/
 endef
 
@@ -46,7 +46,7 @@ endef
 
 define Package/dnsmasq-full
 $(call Package/dnsmasq/Default)
-  TITLE += (with DHCPv6 and DNSSEC)
+  TITLE += (with DNSSEC, DHCPv6, Auth DNS, IPSET)
   DEPENDS:=@IPV6 +kmod-ipv6 +libnettle
   VARIANT:=full
 endef
@@ -64,7 +64,7 @@ endef
 define Package/dnsmasq-full/description
 $(call Package/dnsmasq/description)
 
-This is a variant with DHCPv6 and DNSSEC support
+This is a variant with DHCPv6, DNSSEC, Authroitative DNS and IPSET support
 endef
 
 define Package/dnsmasq/conffiles
@@ -78,7 +78,7 @@ Package/dnsmasq-full/conffiles = $(Package/dnsmasq/conffiles)
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 
-COPTS = $(if $(CONFIG_IPV6),,-DNO_IPV6) -DNO_IPSET -DNO_AUTH
+COPTS = $(if $(CONFIG_IPV6),,-DNO_IPV6)
 
 ifeq ($(BUILD_VARIANT),nodhcpv6)
 	COPTS += -DNO_DHCP6
@@ -87,6 +87,8 @@ endif
 ifeq ($(BUILD_VARIANT),full)
 	COPTS += -DHAVE_DNSSEC
 	COPTS += $(if $(CONFIG_LIBNETTLE_MINI),-DNO_GMP,)
+else
+	COPTS += -DNO_AUTH -DNO_IPSET
 endif
 
 MAKE_FLAGS := \

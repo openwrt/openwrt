@@ -10,11 +10,9 @@ Subject: [PATCH] Build config: add -DNO_GMP for use with nettle/mini-gmp
  src/dnssec.c    | 3 ++-
  4 files changed, 17 insertions(+), 4 deletions(-)
 
-diff --git a/Makefile b/Makefile
-index c58b50b..17eeb27 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -61,7 +61,7 @@ lua_cflags =    `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LUASCRIPT $(PKG_CON
+@@ -61,7 +61,7 @@ lua_cflags =    `echo $(COPTS) | $(top)/
  lua_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LUASCRIPT $(PKG_CONFIG) --libs lua5.1` 
  nettle_cflags = `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --cflags nettle hogweed`
  nettle_libs =   `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --libs nettle hogweed`
@@ -23,8 +21,6 @@ index c58b50b..17eeb27 100644
  sunos_libs =    `if uname | grep SunOS >/dev/null 2>&1; then echo -lsocket -lnsl -lposix4; fi`
  version =     -DVERSION='\"`$(top)/bld/get-version $(top)`\"'
  
-diff --git a/bld/pkg-wrapper b/bld/pkg-wrapper
-index 9f9332d..0ddb678 100755
 --- a/bld/pkg-wrapper
 +++ b/bld/pkg-wrapper
 @@ -11,9 +11,14 @@ in=`cat`
@@ -44,8 +40,6 @@ index 9f9332d..0ddb678 100755
      elif grep "^\#[[:space:]]*define[[:space:]]*${search}_STATIC" config.h >/dev/null 2>&1 || \
  	      echo $in | grep ${search}_STATIC >/dev/null 2>&1; then
  	pkg=`$pkg  --static $op $*`
-diff --git a/src/config.h b/src/config.h
-index 2155544..ee6d218 100644
 --- a/src/config.h
 +++ b/src/config.h
 @@ -105,6 +105,8 @@ HAVE_AUTH
@@ -69,8 +63,6 @@ index 2155544..ee6d218 100644
  LEASEFILE
  CONFFILE
  RESOLVFILE
-diff --git a/src/dnssec.c b/src/dnssec.c
-index 44d626b..2ffb75d 100644
 --- a/src/dnssec.c
 +++ b/src/dnssec.c
 @@ -26,7 +26,8 @@
@@ -83,6 +75,3 @@ index 44d626b..2ffb75d 100644
  
  #define SERIAL_UNDEF  -100
  #define SERIAL_EQ        0
--- 
-2.0.0
-
