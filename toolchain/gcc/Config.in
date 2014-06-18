@@ -3,6 +3,7 @@
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
 	default GCC_USE_VERSION_4_4_7 if avr32
+	default GCC_USE_VERSION_4_6_LINARO if mips64
 	default GCC_USE_VERSION_4_8_LINARO
 	help
 	  Select the version of gcc you wish to use.
