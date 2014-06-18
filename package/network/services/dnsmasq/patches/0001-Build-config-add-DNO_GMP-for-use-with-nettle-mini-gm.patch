@@ -1,0 +1,88 @@
+From 063efb330a3f341c2548e2cf1f67f83e49cd6395 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Tue, 17 Jun 2014 19:49:31 +0100
+Subject: [PATCH] Build config: add -DNO_GMP for use with nettle/mini-gmp
+
+---
+ Makefile        | 2 +-
+ bld/pkg-wrapper | 9 +++++++--
+ src/config.h    | 7 +++++++
+ src/dnssec.c    | 3 ++-
+ 4 files changed, 17 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index c58b50b..17eeb27 100644
+--- a/Makefile
++++ b/Makefile
+@@ -61,7 +61,7 @@ lua_cflags =    `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LUASCRIPT $(PKG_CON
+ lua_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_LUASCRIPT $(PKG_CONFIG) --libs lua5.1` 
+ nettle_cflags = `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --cflags nettle hogweed`
+ nettle_libs =   `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --libs nettle hogweed`
+-gmp_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC $(PKG_CONFIG) --copy -lgmp`
++gmp_libs =      `echo $(COPTS) | $(top)/bld/pkg-wrapper HAVE_DNSSEC NO_GMP --copy -lgmp`
+ sunos_libs =    `if uname | grep SunOS >/dev/null 2>&1; then echo -lsocket -lnsl -lposix4; fi`
+ version =     -DVERSION='\"`$(top)/bld/get-version $(top)`\"'
+ 
+diff --git a/bld/pkg-wrapper b/bld/pkg-wrapper
+index 9f9332d..0ddb678 100755
+--- a/bld/pkg-wrapper
++++ b/bld/pkg-wrapper
+@@ -11,9 +11,14 @@ in=`cat`
+ 
+ if grep "^\#[[:space:]]*define[[:space:]]*$search" config.h >/dev/null 2>&1 || \
+     echo $in | grep $search >/dev/null 2>&1; then
+-
++# Nasty, nasty, in --copy, arg 2 is another config to search for, use with NO_GMP
+     if [ $op = "--copy" ]; then
+-	pkg="$*"
++	if grep "^\#[[:space:]]*define[[:space:]]*$pkg" config.h >/dev/null 2>&1 || \
++            echo $in | grep $pkg >/dev/null 2>&1; then
++	    pkg=""
++	else 
++	    pkg="$*"
++	fi
+     elif grep "^\#[[:space:]]*define[[:space:]]*${search}_STATIC" config.h >/dev/null 2>&1 || \
+ 	      echo $in | grep ${search}_STATIC >/dev/null 2>&1; then
+ 	pkg=`$pkg  --static $op $*`
+diff --git a/src/config.h b/src/config.h
+index 2155544..ee6d218 100644
+--- a/src/config.h
++++ b/src/config.h
+@@ -105,6 +105,8 @@ HAVE_AUTH
+    define this to include the facility to act as an authoritative DNS
+    server for one or more zones.
+ 
++HAVE_DNSSEC
++   include DNSSEC validator.
+ 
+ NO_IPV6
+ NO_TFTP
+@@ -118,6 +120,11 @@ NO_AUTH
+    which are enabled  by default in the distributed source tree. Building dnsmasq
+    with something like "make COPTS=-DNO_SCRIPT" will do the trick.
+ 
++NO_NETTLE_ECC
++   Don't include the ECDSA cypher in DNSSEC validation. Needed for older Nettle versions.
++NO_GMP
++   Don't use and link against libgmp, Useful if nettle is built with --enable-mini-gmp.
++
+ LEASEFILE
+ CONFFILE
+ RESOLVFILE
+diff --git a/src/dnssec.c b/src/dnssec.c
+index 44d626b..2ffb75d 100644
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -26,7 +26,8 @@
+ #  include <nettle/ecc-curve.h>
+ #endif
+ #include <nettle/nettle-meta.h>
+-#include <gmp.h>
++#include <nettle/bignum.h>
++
+ 
+ #define SERIAL_UNDEF  -100
+ #define SERIAL_EQ        0
+-- 
+2.0.0
+
