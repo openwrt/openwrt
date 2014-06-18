@@ -44,6 +44,13 @@ $(call Package/dnsmasq/Default)
   VARIANT:=dhcpv6
 endef
 
+define Package/dnsmasq-full
+$(call Package/dnsmasq/Default)
+  TITLE += (with DHCPv6 and DNSSEC)
+  DEPENDS:=@IPV6 +kmod-ipv6 +libnettle
+  VARIANT:=full
+endef
+
 define Package/dnsmasq/description
   It is intended to provide coupled DNS and DHCP service to a LAN.
 endef
@@ -54,12 +61,19 @@ $(call Package/dnsmasq/description)
 This is a variant with DHCPv6 support
 endef
 
+define Package/dnsmasq-full/description
+$(call Package/dnsmasq/description)
+
+This is a variant with DHCPv6 and DNSSEC support
+endef
+
 define Package/dnsmasq/conffiles
 /etc/config/dhcp
 /etc/dnsmasq.conf
 endef
 
 Package/dnsmasq-dhcpv6/conffiles = $(Package/dnsmasq/conffiles)
+Package/dnsmasq-full/conffiles = $(Package/dnsmasq/conffiles)
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
@@ -68,6 +82,11 @@ COPTS = $(if $(CONFIG_IPV6),,-DNO_IPV6) -DNO_IPSET -DNO_AUTH
 
 ifeq ($(BUILD_VARIANT),nodhcpv6)
 	COPTS += -DNO_DHCP6
+endif
+
+ifeq ($(BUILD_VARIANT),full)
+	COPTS += -DHAVE_DNSSEC
+	COPTS += $(if $(CONFIG_LIBNETTLE_MINI),-DNO_GMP,)
 endif
 
 MAKE_FLAGS := \
@@ -91,5 +110,12 @@ endef
 
 Package/dnsmasq-dhcpv6/install = $(Package/dnsmasq/install)
 
+define Package/dnsmasq-full/install
+$(call Package/dnsmasq/install,$(1))
+	$(INSTALL_DIR) $(1)/usr/share/dnsmasq
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/trust-anchors.conf $(1)/usr/share/dnsmasq
+endef
+
 $(eval $(call BuildPackage,dnsmasq))
 $(eval $(call BuildPackage,dnsmasq-dhcpv6))
+$(eval $(call BuildPackage,dnsmasq-full))
