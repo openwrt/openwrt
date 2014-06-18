@@ -62,6 +62,7 @@ endef
 Package/dnsmasq-dhcpv6/conffiles = $(Package/dnsmasq/conffiles)
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
+TARGET_LDFLAGS += -Wl,--gc-sections
 
 COPTS = $(if $(CONFIG_IPV6),,-DNO_IPV6) -DNO_IPSET -DNO_AUTH
 
@@ -72,7 +73,7 @@ endif
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
 	CFLAGS="$(TARGET_CFLAGS)" \
-	LDFLAGS="-Wl,--gc-sections" \
+	LDFLAGS="$(TARGET_LDFLAGS)" \
 	COPTS="$(COPTS)" \
 	PREFIX="/usr"
 
