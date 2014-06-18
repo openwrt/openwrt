@@ -130,6 +130,10 @@ wzr-hp-g450h)
 	ucidef_add_switch_vlan "switch0" "2" "0t 1"
 	;;
 
+rb-951ui-2hnd)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	;;
+
 rb-493g)
 	ucidef_set_interfaces_lan_wan "eth0 eth1.1" "eth1.2"
 	ucidef_add_switch "switch0" "1" "1"
