@@ -1,0 +1,84 @@
+From 7508bb15de94b38402152757f75ff3e2094fdd86 Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@gnutls.org>
+Date: Sun, 9 Mar 2014 13:27:03 +0100
+Subject: [PATCH 4/5] Added-auto-generated-nettle-config.h
+
+---
+ Makefile.in              | 4 ++--
+ bignum.h                 | 1 +
+ configure.ac             | 1 +
+ examples/ecc-benchmark.c | 1 +
+ nettle-config.h.in       | 6 ++++++
+ testsuite/testutils.h    | 1 +
+ 7 files changed, 13 insertions(+), 2 deletions(-)
+ create mode 100644 nettle-config.h.in
+
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -178,7 +178,7 @@ HEADERS = aes.h arcfour.h arctwo.h asn1.
+ 	  ecc-curve.h ecc.h ecdsa.h \
+ 	  gcm.h gosthash94.h hmac.h \
+ 	  knuth-lfib.h \
+-	  macros.h \
++	  macros.h nettle-config.h \
+ 	  md2.h md4.h \
+ 	  md5.h md5-compat.h \
+ 	  memxor.h \
+@@ -203,7 +203,7 @@ DISTFILES = $(SOURCES) $(HEADERS) getopt
+ 	config.h.in config.m4.in config.make.in	Makefile.in \
+ 	README AUTHORS COPYING.LESSERv3 COPYINGv2 COPYINGv3 \
+ 	INSTALL NEWS TODO ChangeLog \
+-	nettle.pc.in hogweed.pc.in \
++	nettle.pc.in hogweed.pc.in nettle-config.h.in \
+ 	$(des_headers) descore.README \
+ 	aes-internal.h camellia-internal.h serpent-internal.h \
+ 	cast128_sboxes.h desinfo.h desCode.h \
+--- a/bignum.h
++++ b/bignum.h
+@@ -34,6 +34,7 @@
+ #ifndef NETTLE_BIGNUM_H_INCLUDED
+ #define NETTLE_BIGNUM_H_INCLUDED
+ 
++#include "nettle-config.h"
+ #include "nettle-meta.h"
+ 
+ #ifdef USE_MINI_GMP
+--- a/configure.ac
++++ b/configure.ac
+@@ -10,6 +10,7 @@ AC_CONFIG_AUX_DIR([.])
+ AC_CONFIG_MACRO_DIR([.])
+ 
+ AC_CONFIG_HEADER([config.h])
++AC_CONFIG_HEADER([nettle-config.h])
+ 
+ LIBNETTLE_MAJOR=5
+ LIBNETTLE_MINOR=0
+--- a/examples/ecc-benchmark.c
++++ b/examples/ecc-benchmark.c
+@@ -47,6 +47,7 @@
+ #include "timing.h"
+ 
+ #undef USE_MINI_GMP
++#define NETTLE_CONFIG_H_INCLUDED
+ #include <gmp.h>
+ #include "../ecc.h"
+ #include "../ecc-internal.h"
+--- /dev/null
++++ b/nettle-config.h.in
+@@ -0,0 +1,6 @@
++#ifndef NETTLE_CONFIG_H_INCLUDED
++#define NETTLE_CONFIG_H_INCLUDED
++
++#undef USE_MINI_GMP
++
++#endif
+--- a/testsuite/testutils.h
++++ b/testsuite/testutils.h
+@@ -15,6 +15,7 @@
+ 
+ #if WITH_HOGWEED
+ # include <gmp.h>
++# define NETTLE_CONFIG_H_INCLUDED
+ # undef USE_MINI_GMP
+ # include "rsa.h"
+ # include "dsa-compat.h"

@@ -1,0 +1,29 @@
+From d71b3138cbdc3852c96a2639995f2d7f44b1c76c Mon Sep 17 00:00:00 2001
+From: Nikos Mavrogiannopoulos <nmav@gnutls.org>
+Date: Sat, 29 Mar 2014 09:12:41 +0100
+Subject: [PATCH 5/5] allow der-iterator to be used with mini-gmp
+
+---
+ der-iterator.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/der-iterator.c
++++ b/der-iterator.c
+@@ -38,7 +38,7 @@
+ #include <assert.h>
+ #include <stdlib.h>
+ 
+-#if HAVE_LIBGMP
++#if defined(HAVE_LIBGMP) || defined(USE_MINI_GMP)
+ #include "bignum.h"
+ #endif
+ 
+@@ -254,7 +254,7 @@ asn1_der_get_uint32(struct asn1_der_iter
+   return 1;
+ }
+ 
+-#if HAVE_LIBGMP
++#if defined(HAVE_LIBGMP) || defined(USE_MINI_GMP)
+ int
+ asn1_der_get_bignum(struct asn1_der_iterator *i,
+ 		    mpz_t x, unsigned max_bits)
