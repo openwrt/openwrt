@@ -8,24 +8,22 @@
 touch /etc/config/network
 
 . /lib/functions/uci-defaults.sh
+. /lib/imx6.sh
+
+board=$(imx6_board_name)
 
 ucidef_set_interface_loopback
 
-case "`cat /proc/device-tree/model`" in
-"Gateworks Ventana i.MX6 DualLite/Solo GW51XX" |\
-"Gateworks Ventana i.MX6 DualLite/Solo GW52XX" |\
-"Gateworks Ventana i.MX6 Dual/Quad GW51XX" |\
-"Gateworks Ventana i.MX6 Dual/Quad GW52XX")
+case "$board" in
+"gw51xx" |\
+"gw52xx")
 	ucidef_set_interface_lan 'eth0'
 	;;
-"Gateworks Ventana i.MX6 DualLite/Solo GW53XX" |\
-"Gateworks Ventana i.MX6 DualLite/Solo GW54XX" |\
-"Gateworks Ventana i.MX6 Dual/Quad GW53XX" |\
-"Gateworks Ventana i.MX6 Dual/Quad GW54XX" |\
-"Gateworks Ventana GW5400-A")
+"gw53xx" |\
+"gw54xx")
 	ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
 	;;
-"Wandboard i.MX6 Dual Lite Board")
+"wandboard")
 	ucidef_set_interface_wan 'eth0'
 	;;
 esac
