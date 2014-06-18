@@ -35,7 +35,7 @@ imx6_board_detect() {
 		;;
 
 	"Wandboard i.MX6 Dual Lite Board")
-		name="wandaboard"
+		name="wandboard"
 		;;
 
 	*)
