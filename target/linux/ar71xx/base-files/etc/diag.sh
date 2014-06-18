@@ -128,6 +128,9 @@ get_status_led() {
 	rb-912uag-5hpnd)
 		status_led="rb:green:user"
 		;;
+	rb-951ui-2hnd)
+		status_led="rb:green:act"
+		;;
 	routerstation | routerstation-pro)
 		status_led="ubnt:green:rf"
 		;;
