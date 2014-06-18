@@ -9,6 +9,8 @@ Subject: [PATCH 3/5] Include local macros in nettle.m4 to allow regeneration.
  2 files changed, 1210 insertions(+)
  create mode 100644 nettle.m4
 
+diff --git a/configure.ac b/configure.ac
+index 93eb09a..c24f954 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -7,6 +7,7 @@ AC_PREREQ(2.61)
@@ -19,6 +21,9 @@ Subject: [PATCH 3/5] Include local macros in nettle.m4 to allow regeneration.
  
  AC_CONFIG_HEADER([config.h])
  
+diff --git a/nettle.m4 b/nettle.m4
+new file mode 100644
+index 0000000..98b399b
 --- /dev/null
 +++ b/nettle.m4
 @@ -0,0 +1,1209 @@
@@ -1231,3 +1236,6 @@ Subject: [PATCH 3/5] Include local macros in nettle.m4 to allow regeneration.
 +ac_cv_type_intmax_t="$ac_cv_type_intmax_t"
 +])
 +])
+-- 
+1.9.2
+

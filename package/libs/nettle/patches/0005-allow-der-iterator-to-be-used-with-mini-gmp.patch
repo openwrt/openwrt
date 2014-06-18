@@ -7,9 +7,11 @@ Subject: [PATCH 5/5] allow der-iterator to be used with mini-gmp
  der-iterator.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/der-iterator.c b/der-iterator.c
+index 2e6efd5..5ab15b9 100644
 --- a/der-iterator.c
 +++ b/der-iterator.c
-@@ -38,7 +38,7 @@
+@@ -30,7 +30,7 @@
  #include <assert.h>
  #include <stdlib.h>
  
@@ -18,7 +20,7 @@ Subject: [PATCH 5/5] allow der-iterator to be used with mini-gmp
  #include "bignum.h"
  #endif
  
-@@ -254,7 +254,7 @@ asn1_der_get_uint32(struct asn1_der_iter
+@@ -246,7 +246,7 @@ asn1_der_get_uint32(struct asn1_der_iterator *i,
    return 1;
  }
  
@@ -27,3 +29,6 @@ Subject: [PATCH 5/5] allow der-iterator to be used with mini-gmp
  int
  asn1_der_get_bignum(struct asn1_der_iterator *i,
  		    mpz_t x, unsigned max_bits)
+-- 
+1.9.2
+
