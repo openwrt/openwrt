@@ -1,0 +1,45 @@
+From patchwork Thu Sep  5 18:43:59 2013
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: [1/3] staging: octeon-ethernet: make dropped packets to consume NAPI
+ budget
+From: Aaro Koskinen <aaro.koskinen@iki.fi>
+X-Patchwork-Id: 5809
+Message-Id: <1378406641-16530-2-git-send-email-aaro.koskinen@iki.fi>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
+ devel@driverdev.osuosl.org, linux-mips@linux-mips.org
+Cc: David Daney <david.daney@cavium.com>,
+ "Jason A. Donenfeld" <Jason@zx2c4.com>, richard@nod.at,
+ Aaro Koskinen <aaro.koskinen@iki.fi>
+Date: Thu,  5 Sep 2013 21:43:59 +0300
+
+We should count also dropped packets, otherwise the NAPI handler may
+end up running too long.
+
+Signed-off-by: Aaro Koskinen <aaro.koskinen@iki.fi>
+
+---
+drivers/staging/octeon/ethernet-rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/staging/octeon/ethernet-rx.c b/drivers/staging/octeon/ethernet-rx.c
+index 34afc16..10e5416 100644
+--- a/drivers/staging/octeon/ethernet-rx.c
++++ b/drivers/staging/octeon/ethernet-rx.c
+@@ -303,6 +303,7 @@ static int cvm_oct_napi_poll(struct napi_struct *napi, int budget)
+ 			if (backlog > budget * cores_in_use && napi != NULL)
+ 				cvm_oct_enable_one_cpu();
+ 		}
++		rx_count++;
+ 
+ 		skb_in_hw = USE_SKBUFFS_IN_HW && work->word2.s.bufs == 1;
+ 		if (likely(skb_in_hw)) {
+@@ -429,7 +430,6 @@ static int cvm_oct_napi_poll(struct napi_struct *napi, int budget)
+ #endif
+ 				}
+ 				netif_receive_skb(skb);
+-				rx_count++;
+ 			} else {
+ 				/* Drop any packet received for a device that isn't up */
+ 				/*
