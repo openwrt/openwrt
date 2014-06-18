@@ -14,6 +14,7 @@ ADD_LOCAL_HOSTNAME=1
 
 CONFIGFILE="/var/etc/dnsmasq.conf"
 HOSTFILE="/tmp/hosts/dhcp"
+TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
 
 xappend() {
 	local value="$1"
@@ -184,6 +185,13 @@ dnsmasq() {
 		}
 
 		config_list_foreach "$cfg" rebind_domain append_rebind_domain
+	}
+
+	config_get dnssec "$cfg" dnssec
+	[ "$dnssec" -gt 0 ] && {
+		xappend "--conf-file=$TRUSTANCHORSFILE"
+		xappend "--dnssec"
+		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
 	}
 
 	dhcp_option_add "$cfg" "" 0
