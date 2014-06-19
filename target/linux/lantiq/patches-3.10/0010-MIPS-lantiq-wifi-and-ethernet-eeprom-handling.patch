@@ -41,8 +41,9 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
  #endif /* _LTQ_XWAY_H__ */
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -1,3 +1,6 @@
- obj-y := prom.o sysctrl.o clk.o reset.o dma.o gptu.o dcdc.o
+@@ -2,4 +2,7 @@ obj-y := prom.o sysctrl.o clk.o reset.o
+ 
+ obj-y += vmmc.o
  
 +obj-y += eth_mac.o
 +obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
@@ -50,7 +51,7 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,250 @@
+@@ -0,0 +1,271 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -88,6 +89,7 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +	return 0;
 +}
 +
++static int ath9k_eep_load;
 +int __init of_ath9k_eeprom_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node, *mtd_np;
@@ -170,6 +172,13 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +		ltq_pci_ath_fixup(pci_slot, ath9k_pdata.eeprom_data);
 +
 +		dev_info(&pdev->dev, "pci slot: %u\n", pci_slot);
++                if (ath9k_eep_load) {
++                        struct pci_dev *d = NULL;
++                        while ((d = pci_get_device(PCI_VENDOR_ID_ATHEROS,
++                                        PCI_ANY_ID, d)) != NULL)
++                                pci_fixup_device(pci_fixup_early, d);
++                }
++
 +	}
 +
 +	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
@@ -192,9 +201,22 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +
 +static int __init of_ath9k_eeprom_init(void)
 +{
-+	return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
++        int ret = platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
++
++        if (ret)
++                ath9k_eep_load = 1;
++
++        return ret;
 +}
-+arch_initcall(of_ath9k_eeprom_init);
++
++static int __init of_ath9k_eeprom_init_late(void)
++{
++        if (!ath9k_eep_load)
++                return 0;
++        return platform_driver_probe(&ath9k_eeprom_driver, of_ath9k_eeprom_probe);
++}
++late_initcall(of_ath9k_eeprom_init_late);
++subsys_initcall(of_ath9k_eeprom_init);
 +
 +
 +static int ath5k_pci_plat_dev_init(struct pci_dev *dev)
