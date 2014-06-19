@@ -12,4 +12,15 @@ config EGLIBC_VERSION_2_19
 	default y if !TOOLCHAINOPTS
 	bool
 
+config EGLIBC_REVISION
+	string
+	default "18909" if EGLIBC_VERSION_2_15
+	default "25243" if EGLIBC_VERSION_2_19
+	default ""
+
 endif
+
+menu "eglibc configuration"
+	depends on !TOOLCHAINOPTS && USE_EGLIBC
+	source toolchain/eglibc/config/Config.in
+endmenu
