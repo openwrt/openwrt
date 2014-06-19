@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Copyright (C) 2014 OpenWrt.org
+#
+
+[ -e /etc/config/network ] && exit 0
+
+. /lib/functions/uci-defaults.sh
+. /lib/functions/octeon.sh
+
+touch /etc/config/network
+
+board=$(octeon_board_name)
+
+case "$board" in
+erlite)
+	ucidef_set_interface_loopback
+	ucidef_set_interface_lan 'eth0'
+	ucidef_set_interface_wan 'eth1'
+	;;
+
+*)
+	ucidef_set_interface_loopback
+	ucidef_set_interface_wan 'eth1'
+	ucidef_set_interface_lan 'eth0'
+	;;
+esac
+
+uci commit network
+
+exit 0
