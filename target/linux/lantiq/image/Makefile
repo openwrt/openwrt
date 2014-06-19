@@ -189,6 +189,7 @@ define Image/Build/ubi
 
 ifneq ($($(PROFILE)_UBI_OPTS),)
 	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs.ubi
+	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
 endif
 endef
 
