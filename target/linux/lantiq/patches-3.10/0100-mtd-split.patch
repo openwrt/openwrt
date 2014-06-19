@@ -6,8 +6,8 @@
 -obj-y += vmmc.o
 +obj-y += vmmc.o mtd_split.o
  
+ obj-y += eth_mac.o
  obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
- 
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/mtd_split.c
 @@ -0,0 +1,129 @@
