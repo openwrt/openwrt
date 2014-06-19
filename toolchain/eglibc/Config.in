@@ -15,13 +15,6 @@ choice
 
 endchoice
 
-config EGLIBC_REVISION
-	string
-	depends on TOOLCHAINOPTS && USE_EGLIBC
-	default "18909" if EGLIBC_VERSION_2_15
-	default "25243" if EGLIBC_VERSION_2_19
-	default ""
-
 menu "eglibc configuration"
 	depends on TOOLCHAINOPTS && USE_EGLIBC
 	source toolchain/eglibc/config/Config.in
