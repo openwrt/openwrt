@@ -259,6 +259,7 @@ endef
 
 $(eval $(call KernelPackage,hwmon-gsc))
 
+
 define KernelPackage/hwmon-tmp421
   TITLE:=TI TMP421 and compatible monitoring support
   KCONFIG:=CONFIG_SENSORS_TMP421
@@ -272,3 +273,18 @@ define KernelPacakge/hwmon-tmp421/description
 endef
 
 $(eval $(call KernelPackage,hwmon-tmp421))
+
+
+define KernelPackage/hwmon-gpiofan
+  TITLE:=Generic GPIO FAN support
+  KCONFIG:=CONFIG_SENSORS_GPIO_FAN
+  FILES:=$(LINUX_DIR)/drivers/hwmon/gpio-fan.ko
+  AUTOLOAD:=$(call AutoLoad,60,gpio-fan)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPacakge/hwmon-gpiofan/description
+  Kernel module for GPIO controlled FANs
+endef
+
+$(eval $(call KernelPackage,hwmon-gpiofan))
