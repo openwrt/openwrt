@@ -6,9 +6,13 @@
  * is used, the CONFIG_DEBUG_MVEBU_UART_ALTERNATE option should be
  * used.
  *
- * Copyright (C) 2013 Marvell
+ * Copyright (C) 2014 Imre Kaloz <kaloz@openwrt.org>
  *
- * Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+ * Based on armada-xp-axpwifiap.dts:
+ *
+ *       Copyright (C) 2013 Marvell
+ *
+ *       Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  *
  * This file is licensed under the terms of the GNU General Public
  * License version 2.  This program is licensed "as is" without any
@@ -16,6 +20,8 @@
  */
 
 /dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include "armada-xp-mv78230.dtsi"
 
 / {
@@ -59,9 +65,6 @@
 
 		internal-regs {
 			pinctrl {
-				pinctrl-0 = <&pmx_phy_int>;
-				pinctrl-names = "default";
-
 				pmx_ge0: pmx-ge0 {
 					marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
 						       "mpp4", "mpp5", "mpp6", "mpp7",
@@ -77,7 +80,7 @@
 				};
 
 				pmx_keys: pmx-keys {
-					marvell,pins = "mpp33";
+					marvell,pins = "mpp32", "mpp33";
 					marvell,function = "gpio";
 				};
 
@@ -86,13 +89,13 @@
 					marvell,function = "spi";
 				};
 
-				pmx_phy_int: pmx-phy-int {
-					marvell,pins = "mpp32";
+				power_led_pin: power-led-pin {
+					marvell,pins = "mpp40";
 					marvell,function = "gpio";
 				};
 
-				power_led_pin: power-led-pin {
-					marvell,pins = "mpp40";
+				gpio_fan_pin: gpio-fan-pin {
+					marvell,pins = "mpp24";
 					marvell,function = "gpio";
 				};
 
@@ -114,7 +117,7 @@
 			};
 
 			mdio {
-				disabled;
+				status = "disabled";
 			};
 
 			ethernet@70000 {
@@ -187,6 +190,7 @@
 				partition@900000 {
 					label = "devinfo";
 					reg = <0x900000 0x100000>;    /* 1MB */
+					read-only;
 				};
 
 				partition@a00000 {
@@ -240,9 +244,15 @@
 		pinctrl-names = "default";
 
 		button@1 {
+			label = "WPS";
+			linux,code = <KEY_WPS_BUTTON>;
+			gpios = <&gpio0 32 GPIO_ACTIVE_HIGH>;
+		};
+
+		button@2 {
 			label = "Factory Reset Button";
-			linux,code = <141>; /* KEY_SETUP */
-			gpios = <&gpio1 1 1>;
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -253,8 +263,17 @@
 
 		power {
 			label = "mamba:white:power";
-			gpios = <&gpio1 8 0>;
+			gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
 		};
+	};
+
+	gpio_fan {
+		/* SUNON HA4010V4-0000-C99 */
+		compatible = "gpio-fan";
+		gpios = <&gpio0 24 0>;
+
+		gpio-fan,speed-map = <0    0
+				      4500 1>;
 	};
 };
