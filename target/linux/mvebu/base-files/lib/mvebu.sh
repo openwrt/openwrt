@@ -31,6 +31,9 @@ mvebu_board_detect() {
 	*"Marvell Armada XP GP Board")
 		name="armada-xp-gp"
 		;;
+	*"Linksys WRT1900AC (Mamba)")
+		name="armada-xp-mamba"
+		;;
 	esac
 
 	[ -z "$name" ] && name="unknown"
