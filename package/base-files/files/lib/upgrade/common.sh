@@ -76,6 +76,8 @@ run_ramfs() { # <command> [...]
 	done
 	install_file /etc/resolv.conf /lib/functions.sh /lib/functions/*.sh /lib/upgrade/*.sh $RAMFS_COPY_DATA
 
+	[ -L "/lib64" ] && ln -s /lib $RAM_ROOT/lib64
+
 	supivot $RAM_ROOT /mnt || {
 		echo "Failed to switch over to ramfs. Please reboot."
 		exit 1
