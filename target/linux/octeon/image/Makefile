@@ -18,6 +18,19 @@ define Image/Build/squashfs
     $(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
+define Image/Build/ext4/erlite
+	mkdir -p $(KDIR)/sysupgrade-erlite/
+	echo "BOARD=erlite" > $(KDIR)/sysupgrade-erlite/CONTROL
+	$(CP) $(KDIR)/vmlinux.elf $(KDIR)/sysupgrade-erlite/kernel
+	$(CP) $(KDIR)/root.ext4 $(KDIR)/sysupgrade-erlite/root
+	(cd $(KDIR); $(TAR) cvf \
+		$(BIN_DIR)/$(IMG_PREFIX)-erlite-sysupgrade.tar sysupgrade-erlite)
+endef
+
+define Image/Build/ext4
+    $(call Image/Build/ext4/erlite)
+endef
+
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
