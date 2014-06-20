@@ -855,6 +855,7 @@ define KernelPackage/thermal
 	CONFIG_THERMAL_GOV_FAIR_SHARE=n \
 	CONFIG_THERMAL_GOV_STEP_WISE=y \
 	CONFIG_THERMAL_GOV_USER_SPACE=n \
+	CONFIG_THERMAL_HWMON=y \
 	CONFIG_THERMAL_EMULATION=n
   FILES:=$(LINUX_DIR)/drivers/thermal/thermal_sys.ko
   AUTOLOAD:=$(call AutoProbe,thermal_sys)
