@@ -90,6 +90,12 @@
 					marvell,pins = "mpp32";
 					marvell,function = "gpio";
 				};
+
+				power_led_pin: power-led-pin {
+					marvell,pins = "mpp40";
+					marvell,function = "gpio";
+				};
+
 			};
 
 			serial@12000 {
@@ -237,6 +243,18 @@
 			label = "Factory Reset Button";
 			linux,code = <141>; /* KEY_SETUP */
 			gpios = <&gpio1 1 1>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		pinctrl-0 = <&power_led_pin>;
+		pinctrl-names = "default";
+
+		power {
+			label = "mamba:white:power";
+			gpios = <&gpio1 8 0>;
+			default-state = "on";
 		};
 	};
 };
