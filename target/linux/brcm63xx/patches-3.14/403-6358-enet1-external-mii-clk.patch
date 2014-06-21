@@ -1,6 +1,6 @@
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -912,6 +912,8 @@ void __init board_prom_init(void)
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
+@@ -139,6 +139,8 @@ void __init board_early_setup(const stru
  		if (BCMCPU_IS_6348())
  			val |= GPIO_MODE_6348_G3_EXT_MII |
  				GPIO_MODE_6348_G0_EXT_MII;
