@@ -10,7 +10,7 @@ Subject: [PATCH 64/79] MTD: m25p80: allow passing pp_data
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -1149,6 +1149,9 @@ static int m25p_probe(struct spi_device
+@@ -1150,6 +1150,9 @@ static int m25p_probe(struct spi_device
  			dev_warn(&spi->dev, "unrecognized id %s\n", data->type);
  	}
  

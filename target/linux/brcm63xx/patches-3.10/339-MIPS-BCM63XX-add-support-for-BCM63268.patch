@@ -572,7 +572,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #define REV_CHIPID_MASK			(0xffff << REV_CHIPID_SHIFT)
 +#define REV_LONG_CHIPID_SHIFT		12
 +#define REV_LONG_CHIPID_MASK		(0xfffff << REV_LONG_CHIPID_SHIFT)
- #define REV_VARID_SHIFT			8
+ #define REV_VARID_SHIFT			12
  #define REV_VARID_MASK			(0xf << REV_VARID_SHIFT)
  #define REV_REVID_SHIFT			0
 @@ -211,6 +213,52 @@
