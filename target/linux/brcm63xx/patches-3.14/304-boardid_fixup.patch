@@ -1,26 +1,26 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -35,6 +35,7 @@
- #include <board_bcm963xx.h>
+@@ -23,6 +23,7 @@
+ #include "board_common.h"
  
  #include <uapi/linux/bcm933xx_hcs.h>
 +#include <uapi/linux/bcm963xx_tag.h>
  
  #define PFX	"board_bcm963xx: "
  
-@@ -43,6 +44,9 @@
- #define BCM963XX_KEYS_POLL_INTERVAL	20
- #define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
+@@ -339,6 +340,9 @@ static struct board_info __initdata boar
+ 		.force_duplex_full	= 1,
+ 	},
  
 +#define CFE_OFFSET_64K			0x10000
 +#define CFE_OFFSET_128K			0x20000
 +
- static struct board_info board;
  
- /*
-@@ -782,6 +786,30 @@ const char *board_get_name(void)
- 	return board.name;
- }
+ 	.has_ohci0 = 1,
+ 	.has_pccard = 1,
+@@ -722,6 +726,30 @@ static const struct board_info __initcon
+ #endif
+ };
  
 +static void __init boardid_fixup(u8 *boot_addr)
 +{
@@ -49,7 +49,7 @@
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -820,6 +848,10 @@ void __init board_prom_init(void)
+@@ -760,6 +788,10 @@ void __init board_prom_init(void)
  		hcs = (struct bcm_hcs *)boot_addr;
  		board_name = hcs->filename;
  	} else {

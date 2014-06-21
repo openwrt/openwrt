@@ -26,17 +26,17 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
  obj-y		+= boards/
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
 @@ -34,6 +34,7 @@
  #include <bcm63xx_dev_usb_usbd.h>
  #include <board_bcm963xx.h>
  #include <pci_ath9k_fixup.h>
 +#include <pci_rt2x00_fixup.h>
  
- #include <uapi/linux/bcm933xx_hcs.h>
- #include <uapi/linux/bcm963xx_tag.h>
-@@ -1065,9 +1066,19 @@ int __init board_register_devices(void)
+ #include "board_common.h"
+ 
+@@ -293,9 +294,19 @@ int __init board_register_devices(void)
  	}
  
  	/* register any fixups */
@@ -61,7 +61,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  }
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -193,7 +193,7 @@ void __init bcm63xx_flash_detect(void)
+@@ -199,7 +199,7 @@ void __init bcm63xx_flash_detect(void)
  	}
  }
  
@@ -147,9 +147,9 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
 +
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
-@@ -11,7 +11,7 @@ enum {
+@@ -13,7 +13,7 @@ void bcm63xx_flash_detect(void);
  
- void bcm63xx_flash_detect(void);
+ void bcm63xx_flash_force_phys_base_address(u32 start, u32 end);
  
 -int __init bcm63xx_flash_register(int num_caldata, struct ath9k_caldata *caldata);
 +int __init bcm63xx_flash_register(int num_caldata, struct bcm63xx_caldata *caldata);

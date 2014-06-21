@@ -11,7 +11,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -222,3 +222,8 @@ int __init bcm63xx_flash_register(void)
+@@ -231,3 +231,8 @@ int __init bcm63xx_flash_register(void)
  		return -ENODEV;
  	}
  }
@@ -22,7 +22,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +}
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h
-@@ -11,4 +11,6 @@ void bcm63xx_flash_detect(void);
+@@ -13,4 +13,6 @@ void bcm63xx_flash_force_phys_base_addre
  
  int __init bcm63xx_flash_register(void);
  
