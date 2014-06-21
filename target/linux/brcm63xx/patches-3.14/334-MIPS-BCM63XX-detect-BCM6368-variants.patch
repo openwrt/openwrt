@@ -1,8 +1,12 @@
-From 311b0246d51e09d13464e76abb0e231c855dd333 Mon Sep 17 00:00:00 2001
+From 825cc67e56b5e624a05f6850a86d91508b786848 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sat, 7 Dec 2013 14:36:56 +0100
-Subject: [PATCH 44/53] MIPS: BCM63XX: add support for BCM6368 variants
+Subject: [PATCH 24/44] MIPS: BCM63XX: detect BCM6368 variants
 
+The DSL-less BCM6368 variant BCM6367 uses a different chip id. Apart
+from missing DSL, there is no difference to BCM6368, so treat it such.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/cpu.c                          | 4 ++++
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_cpu.h | 3 +++

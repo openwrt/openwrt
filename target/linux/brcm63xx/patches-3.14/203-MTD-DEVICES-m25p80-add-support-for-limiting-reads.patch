@@ -60,7 +60,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  /*
   * Write an address range to the flash chip.  Data must be written in
   * FLASH_PAGESIZE chunks.  The address range may be any size provided
-@@ -1158,6 +1180,9 @@ static int m25p_probe(struct spi_device
+@@ -1159,6 +1181,9 @@ static int m25p_probe(struct spi_device
  	if (!flash->command)
  		return -ENOMEM;
  
