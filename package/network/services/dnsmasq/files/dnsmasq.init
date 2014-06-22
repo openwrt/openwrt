@@ -536,6 +536,7 @@ start_service() {
 	procd_open_instance
 	procd_set_param command $PROG -C $CONFIGFILE -k
 	procd_set_param file $CONFIGFILE
+	procd_set_param respawn
 	procd_close_instance
 
 	# before we can call xappend
