@@ -187,7 +187,7 @@ dnsmasq() {
 		config_list_foreach "$cfg" rebind_domain append_rebind_domain
 	}
 
-	config_get dnssec "$cfg" dnssec
+	config_get_bool dnssec "$cfg" dnssec 0
 	[ "$dnssec" -gt 0 ] && {
 		xappend "--conf-file=$TRUSTANCHORSFILE"
 		xappend "--dnssec"
