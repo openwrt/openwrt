@@ -878,7 +878,7 @@ define Image/Build/NetgearNAND
 		-i $(imageraw) \
 		-o $(call imgname,ubi,$(2))-factory.img
 
-	$(call Image/Build/SysupgradeNAND,$(2),$(KDIR_TMP)/vmlinux-$(2).uImage,$(KDIR_TMP)/root.squashfs)
+	$(call Image/Build/SysupgradeNAND,$(2),squashfs,$(KDIR_TMP)/vmlinux-$(2).uImage)
 endef
 
 
