@@ -21,23 +21,26 @@ EOF
 }
 
 . /lib/functions/uci-defaults.sh
+. /lib/functions/kirkwood.sh
+
+board=$(kirkwood_board_name)
 
 ucidef_set_interface_loopback
 
-case "`cat /proc/device-tree/model`" in
-"Seagate FreeAgent Dockstar")
+case "$board" in
+"dockstar")
 	set_lan_dhcp "eth0"
 	;;
-"Iomega Iconnect")
+"iconnect")
 	set_lan_dhcp "eth0"
 	;;
-"RaidSonic ICY BOX IB-NAS62x0 (Rev B)")
+"ib62x0")
 	set_lan_dhcp "eth0"
 	;;
-"Cloud Engines Pogoplug E02")
+"pogo_e02")
 	set_lan_dhcp "eth0"
 	;;
-"Linksys EA4500")
+"ea4500")
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
 *)
