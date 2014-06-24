@@ -2152,7 +2152,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,696 @@
+@@ -0,0 +1,623 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2546,86 +2546,13 @@
 +	.name = "ar2315_wdt",
 +};
 +
-+#define SPI_FLASH_CTL      0x00
-+#define SPI_FLASH_OPCODE   0x04
-+#define SPI_FLASH_DATA     0x08
-+
-+static inline u32
-+spiflash_read_reg(int reg)
++/*
++ * NB: We use mapping size that is larger than the actual flash size,
++ * but this shouldn't be a problem here, because the flash will simply
++ * be mapped multiple times.
++ */
++static u8 __init *ar2315_flash_limit(void)
 +{
-+	return ar231x_read_reg(AR2315_SPI + reg);
-+}
-+
-+static inline void
-+spiflash_write_reg(int reg, u32 data)
-+{
-+	ar231x_write_reg(AR2315_SPI + reg, data);
-+}
-+
-+static u32
-+spiflash_wait_status(void)
-+{
-+	u32 reg;
-+
-+	do {
-+		reg = spiflash_read_reg(SPI_FLASH_CTL);
-+	} while (reg & SPI_CTL_BUSY);
-+
-+	return reg;
-+}
-+
-+static u8
-+spiflash_probe(void)
-+{
-+	u32 reg;
-+
-+	reg = spiflash_wait_status();
-+	reg &= ~SPI_CTL_TX_RX_CNT_MASK;
-+	reg |= (1 << 4) | 4 | SPI_CTL_START;
-+
-+	spiflash_write_reg(SPI_FLASH_OPCODE, 0xab);
-+	spiflash_write_reg(SPI_FLASH_CTL, reg);
-+
-+	reg = spiflash_wait_status();
-+	reg = spiflash_read_reg(SPI_FLASH_DATA);
-+	reg &= 0xff;
-+
-+	return (u8) reg;
-+}
-+
-+
-+#define STM_8MBIT_SIGNATURE     0x13
-+#define STM_16MBIT_SIGNATURE    0x14
-+#define STM_32MBIT_SIGNATURE    0x15
-+#define STM_64MBIT_SIGNATURE    0x16
-+#define STM_128MBIT_SIGNATURE   0x17
-+
-+static u8 __init *
-+ar2315_flash_limit(void)
-+{
-+	u32 flash_size = 0;
-+
-+	/* probe the flash chip size */
-+	switch (spiflash_probe()) {
-+	case STM_8MBIT_SIGNATURE:
-+		flash_size = 0x00100000;
-+		break;
-+	case STM_16MBIT_SIGNATURE:
-+		flash_size = 0x00200000;
-+		break;
-+	case STM_32MBIT_SIGNATURE:
-+		flash_size = 0x00400000;
-+		break;
-+	case STM_64MBIT_SIGNATURE:
-+		flash_size = 0x00800000;
-+		break;
-+	case STM_128MBIT_SIGNATURE:
-+		flash_size = 0x01000000;
-+		break;
-+	}
-+
-+	ar2315_spiflash_res[0].end = ar2315_spiflash_res[0].start +
-+		flash_size - 1;
 +	return (u8 *)ar2315_spiflash_res[0].end + 1;
 +}
 +
