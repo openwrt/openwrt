@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,539 @@
+@@ -0,0 +1,536 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -54,7 +54,6 @@
 +#include <linux/delay.h>
 +#include <linux/io.h>
 +
-+#include <ar231x.h>
 +#include "ar2315_spiflash.h"
 +
 +
@@ -140,8 +139,8 @@
 +/* Driver private data structure */
 +struct spiflash_priv {
 +	struct mtd_info mtd;
-+	void *readaddr; /* memory mapped data for read  */
-+	void *mmraddr;  /* memory mapped register space */
++	void __iomem *readaddr; /* memory mapped data for read  */
++	void __iomem *mmraddr;  /* memory mapped register space */
 +	wait_queue_head_t wq;
 +	spinlock_t lock;
 +	int state;
@@ -161,13 +160,13 @@
 +static u32
 +spiflash_read_reg(struct spiflash_priv *priv, int reg)
 +{
-+	return ar231x_read_reg((u32) priv->mmraddr + reg);
++	return ioread32(priv->mmraddr + reg);
 +}
 +
 +static void
 +spiflash_write_reg(struct spiflash_priv *priv, int reg, u32 data)
 +{
-+	ar231x_write_reg((u32) priv->mmraddr + reg, data);
++	iowrite32(data, priv->mmraddr + reg);
 +}
 +
 +static u32
@@ -341,7 +340,6 @@
 +	      u_char *buf)
 +{
 +	struct spiflash_priv *priv = to_spiflash(mtd);
-+	u8 *read_addr;
 +
 +	if (!len)
 +		return 0;
@@ -354,8 +352,7 @@
 +	if (!spiflash_wait_ready(priv, FL_READING))
 +		return -EINTR;
 +
-+	read_addr = (u8 *)(priv->readaddr + from);
-+	memcpy_fromio(buf, read_addr, len);
++	memcpy_fromio(buf, priv->readaddr + from, len);
 +	spiflash_done(priv);
 +
 +	return 0;
