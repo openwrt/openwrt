@@ -1,4 +1,4 @@
-From ee2c9e3aef32c05b1d7891858baff19bffed1652 Mon Sep 17 00:00:00 2001
+From 6e2630a0fc872d0db34157972f6dc3941f6d66dd Mon Sep 17 00:00:00 2001
 From: Daniel Golle <daniel@makrotopia.org>
 Date: Mon, 19 May 2014 21:38:01 +0200
 Subject: [PATCH] tools/env: add support for env in ubi volume chardev
@@ -6,11 +6,11 @@ Subject: [PATCH] tools/env: add support for env in ubi volume chardev
 Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 ---
  tools/env/Makefile |  5 ++++
- tools/env/fw_env.c | 74 ++++++++++++++++++++++++++++++++++++++++++++++--------
- 2 files changed, 69 insertions(+), 10 deletions(-)
+ tools/env/fw_env.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++-------
+ 2 files changed, 71 insertions(+), 10 deletions(-)
 
 diff --git a/tools/env/Makefile b/tools/env/Makefile
-index f5368bc..d006a93 100644
+index f5368bc..526d44d 100644
 --- a/tools/env/Makefile
 +++ b/tools/env/Makefile
 @@ -20,6 +20,11 @@ ifeq ($(MTD_VERSION),old)
@@ -26,7 +26,7 @@ index f5368bc..d006a93 100644
  hostprogs-y := fw_printenv_unstripped
  
 diff --git a/tools/env/fw_env.c b/tools/env/fw_env.c
-index 30d5b03..5c0acd5 100644
+index 30d5b03..2217a25 100644
 --- a/tools/env/fw_env.c
 +++ b/tools/env/fw_env.c
 @@ -29,6 +29,9 @@
@@ -107,17 +107,19 @@ index 30d5b03..5c0acd5 100644
  			ioctl(fd, MEMLOCK, &erase);
  
  		processed  += erasesize;
-@@ -955,6 +988,9 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
+@@ -955,6 +988,11 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
  	if (write_total > count)
  		free (data);
  
 +out:
++#ifdef UBI
 +	if (libubi)
 +		libubi_close(libubi);
++#endif
  	return processed;
  }
  
-@@ -1066,12 +1102,8 @@ static int flash_read (int fd)
+@@ -1066,12 +1104,8 @@ static int flash_read (int fd)
  
  	if (S_ISCHR(st.st_mode)) {
  		rc = ioctl(fd, MEMGETINFO, &mtdinfo);
@@ -132,7 +134,7 @@ index 30d5b03..5c0acd5 100644
  		    mtdinfo.type != MTD_NANDFLASH &&
  		    mtdinfo.type != MTD_DATAFLASH &&
  		    mtdinfo.type != MTD_UBIVOLUME) {
-@@ -1079,6 +1111,28 @@ static int flash_read (int fd)
+@@ -1079,6 +1113,28 @@ static int flash_read (int fd)
  				 mtdinfo.type, DEVNAME(dev_current));
  			return -1;
  		}
@@ -162,5 +164,5 @@ index 30d5b03..5c0acd5 100644
  		memset(&mtdinfo, 0, sizeof(mtdinfo));
  		mtdinfo.type = MTD_ABSENT;
 -- 
-1.9.2
+2.0.0
 
