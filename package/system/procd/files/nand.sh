@@ -4,7 +4,7 @@
 
 . /lib/functions.sh
 
-# 'data' partition on NAND contains UBI
+# 'ubi' partition on NAND contains UBI
 CI_UBIPART="ubi"
 
 nand_find_volume() {
@@ -242,7 +242,7 @@ nand_upgrade_tar() {
 	[ "$has_kernel" = "1" ] && {
 		local kern_ubivol="$(nand_find_volume $ubidev kernel)"
 	 	tar xf $tar_file sysupgrade-$board_name/kernel -O | \
-			ubiupdatevol /dev/$kern_ubivol -s $kern_length -
+			ubiupdatevol /dev/$kern_ubivol -s $kernel_length -
 	}
 
 	local root_ubivol="$(nand_find_volume $ubidev rootfs)"
