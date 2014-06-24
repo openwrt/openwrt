@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,527 @@
+@@ -0,0 +1,540 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -452,6 +452,7 @@
 +{
 +	struct spiflash_priv *priv;
 +	struct mtd_info *mtd;
++	struct resource *res;
 +	int index;
 +	int result = 0;
 +
@@ -461,7 +462,13 @@
 +	priv->state = FL_READY;
 +	mtd = &priv->mtd;
 +
-+	priv->mmraddr = ioremap_nocache(SPI_FLASH_MMR, SPI_FLASH_MMR_SIZE);
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	if (!res) {
++		dev_err(&pdev->dev, "No MMR resource found\n");
++		goto error;
++	}
++
++	priv->mmraddr = ioremap_nocache(res->start, resource_size(res));
 +	if (!priv->mmraddr) {
 +		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
 +		goto error;
@@ -473,7 +480,13 @@
 +		goto error;
 +	}
 +
-+	priv->readaddr = ioremap_nocache(SPI_FLASH_READ,
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "No flash readmem resource found\n");
++		goto error;
++	}
++
++	priv->readaddr = ioremap_nocache(res->start,
 +					 flashconfig_tbl[index].byte_cnt);
 +	if (!priv->readaddr) {
 +		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");

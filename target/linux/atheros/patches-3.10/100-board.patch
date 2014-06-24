@@ -750,7 +750,7 @@
 +#define AR2315_ENET0            0x10500000      /* ETHERNET MMR */
 +#define AR2315_DSLBASE          0x11000000      /* RESET CONTROL MMR */
 +#define AR2315_UART0            0x11100003      /* UART MMR */
-+#define AR2315_SPI              0x11300000      /* SPI FLASH MMR */
++#define AR2315_SPI_MMR          0x11300000      /* SPI FLASH MMR */
 +#define AR2315_PCIEXT           0x80000000      /* pci external */
 +
 +/*
@@ -2521,16 +2521,16 @@
 +
 +static struct resource ar2315_spiflash_res[] = {
 +	{
-+		.name = "flash_base",
++		.name = "spiflash_read",
 +		.flags = IORESOURCE_MEM,
-+		.start = KSEG1ADDR(AR2315_SPI_READ),
-+		.end = KSEG1ADDR(AR2315_SPI_READ) + 0x1000000 - 1,
++		.start = AR2315_SPI_READ,
++		.end = AR2315_SPI_READ + 0x1000000 - 1,
 +	},
 +	{
-+		.name = "flash_regs",
++		.name = "spiflash_mmr",
 +		.flags = IORESOURCE_MEM,
-+		.start = 0x11300000,
-+		.end = 0x11300012,
++		.start = AR2315_SPI_MMR,
++		.end = AR2315_SPI_MMR + 12 - 1,
 +	},
 +};
 +
@@ -2553,7 +2553,7 @@
 + */
 +static u8 __init *ar2315_flash_limit(void)
 +{
-+	return (u8 *)ar2315_spiflash_res[0].end + 1;
++	return (u8 *)KSEG1ADDR(ar2315_spiflash_res[0].end + 1);
 +}
 +
 +#ifdef CONFIG_LEDS_GPIO
