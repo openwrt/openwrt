@@ -199,7 +199,7 @@ static int encode_image(const char *input_file_name,
 		}
 
 		for (i = 0; i < bytes_read; i++)
-			buf[i] ^= magic >> ((((i >> 60) + i) & 7) - (i >> 60));
+			buf[i] ^= magic >> (i % 8) & 0xff;
 		fwrite(&buf, bytes_read, 1, fp_output);
 	}
 
@@ -254,7 +254,7 @@ int decode_image(const char *input_file_name, const char *output_file_name)
 
 		bytes_read = fread(&buf, 1, BUF_SIZE, fp_input);
 		for (i = 0; i < bytes_read; i++)
-			buf[i] ^= header.magic >> ((((i >> 60) + i) & 7) - (i >> 60));
+			buf[i] ^= header.magic >> (i % 8) & 0xff;
 
 		/*
 		 * Handle padded source file
