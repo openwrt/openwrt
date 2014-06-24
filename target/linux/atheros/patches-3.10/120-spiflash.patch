@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,525 @@
+@@ -0,0 +1,527 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -493,6 +493,8 @@
 +	mtd->_read = spiflash_read;
 +	mtd->_write = spiflash_write;
 +	mtd->owner = THIS_MODULE;
++
++	dev_info(&pdev->dev, "%lld Kbytes flash detected\n", mtd->size >> 10);
 +
 +#if defined CONFIG_MTD_REDBOOT_PARTS || CONFIG_MTD_MYLOADER_PARTS
 +	/* parse redboot partitions */
