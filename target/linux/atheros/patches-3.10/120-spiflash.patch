@@ -87,7 +87,7 @@
 +	u32 sector_size;
 +};
 +
-+const struct flashconfig flashconfig_tbl[] = {
++static const struct flashconfig flashconfig_tbl[] = {
 +	[FLASH_NONE] = { 0, 0, 0},
 +	[FLASH_1MB]  = { STM_1MB_BYTE_COUNT, STM_1MB_SECTOR_COUNT,
 +			 STM_1MB_SECTOR_SIZE},
@@ -122,7 +122,7 @@
 +	__s8 rx_cnt;
 +};
 +
-+const struct opcodes stm_opcodes[] = {
++static const struct opcodes stm_opcodes[] = {
 +	[SPI_WRITE_ENABLE] = {STM_OP_WR_ENABLE, 1, 0},
 +	[SPI_WRITE_DISABLE] = {STM_OP_WR_DISABLE, 1, 0},
 +	[SPI_RD_STATUS] = {STM_OP_RD_STATUS, 1, 1},
@@ -535,19 +535,19 @@
 +	return 0;
 +}
 +
-+struct platform_driver spiflash_driver = {
++static struct platform_driver spiflash_driver = {
 +	.driver.name = "spiflash",
 +	.probe = spiflash_probe,
 +	.remove = spiflash_remove,
 +};
 +
-+int __init
++static int __init
 +spiflash_init(void)
 +{
 +	return platform_driver_register(&spiflash_driver);
 +}
 +
-+void __exit
++static void __exit
 +spiflash_exit(void)
 +{
 +	return platform_driver_unregister(&spiflash_driver);
