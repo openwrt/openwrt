@@ -158,7 +158,7 @@ menu "Target Images"
 
 		choice
 			prompt "compression"
-			default TARGET_UBIFS_COMPRESSION_NONE
+			default TARGET_UBIFS_COMPRESSION_ZLIB
 			depends on TARGET_ROOTFS_UBIFS
 			help
 			  Select compression type
