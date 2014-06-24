@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,540 @@
+@@ -0,0 +1,539 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -54,9 +54,8 @@
 +#include <linux/delay.h>
 +#include <linux/io.h>
 +
-+#include <ar2315_spiflash.h>
-+#include <ar231x_platform.h>
 +#include <ar231x.h>
++#include "ar2315_spiflash.h"
 +
 +
 +#define SPIFLASH "spiflash: "
@@ -565,10 +564,10 @@
 +MODULE_DESCRIPTION("MTD driver for SPI Flash on Atheros SOC");
 +
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/ar2315_spiflash.h
++++ b/drivers/mtd/devices/ar2315_spiflash.h
 @@ -0,0 +1,116 @@
 +/*
-+ * SPI Flash Memory support header file.
++ * Atheros AR2315 SPI Flash Memory support header file.
 + *
 + * Copyright (c) 2005, Atheros Communications Inc.
 + * Copyright (C) 2006 FON Technology, SL.
