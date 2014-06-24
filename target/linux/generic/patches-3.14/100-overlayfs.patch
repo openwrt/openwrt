@@ -318,7 +318,7 @@
  extern const struct file_operations pipefifo_fops;
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -413,6 +413,7 @@ int __inode_permission(struct inode *ino
+@@ -414,6 +414,7 @@ int __inode_permission(struct inode *ino
  
  	return security_inode_permission(inode, mask);
  }
@@ -326,7 +326,7 @@
  
  /**
   * sb_permission - Check superblock-level permissions
-@@ -3035,9 +3036,12 @@ finish_open_created:
+@@ -3036,9 +3037,12 @@ finish_open_created:
  	error = may_open(&nd->path, acc_mode, open_flag);
  	if (error)
  		goto out;
