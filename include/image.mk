@@ -141,6 +141,13 @@ ifneq ($(CONFIG_NAND_SUPPORT),)
 	(cd $(KDIR_TMP); $(TAR) cvf \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-ubi-sysupgrade.tar sysupgrade-$(1))
    endef
+   define Image/Build/UbinizeImage
+	sh $(TOPDIR)/scripts/ubinize-image.sh $(2) \
+		"$(KDIR)/root.$(3)" "$(4)" \
+		"$(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(3)-ubinized.bin" \
+		$(5)
+   endef
+
 endif
 
 ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
