@@ -562,7 +562,7 @@
 +
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315_spiflash.h
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,106 @@
 +/*
 + * Atheros AR2315 SPI Flash Memory support header file.
 + *
@@ -651,20 +651,10 @@
 +/*
 + * SPI Flash Interface Registers
 + */
-+#define AR531XPLUS_SPI_READ     0x08000000
-+#define AR531XPLUS_SPI_MMR      0x11300000
-+#define AR531XPLUS_SPI_MMR_SIZE 12
 +
-+#define AR531XPLUS_SPI_CTL      0x00
-+#define AR531XPLUS_SPI_OPCODE   0x04
-+#define AR531XPLUS_SPI_DATA     0x08
-+
-+#define SPI_FLASH_READ          AR531XPLUS_SPI_READ
-+#define SPI_FLASH_MMR           AR531XPLUS_SPI_MMR
-+#define SPI_FLASH_MMR_SIZE      AR531XPLUS_SPI_MMR_SIZE
-+#define SPI_FLASH_CTL           AR531XPLUS_SPI_CTL
-+#define SPI_FLASH_OPCODE        AR531XPLUS_SPI_OPCODE
-+#define SPI_FLASH_DATA          AR531XPLUS_SPI_DATA
++#define SPI_FLASH_CTL           0x00
++#define SPI_FLASH_OPCODE        0x04
++#define SPI_FLASH_DATA          0x08
 +
 +#define SPI_CTL_START           0x00000100
 +#define SPI_CTL_BUSY            0x00010000

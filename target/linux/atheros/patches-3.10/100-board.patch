@@ -713,7 +713,7 @@
 +#endif /* __ASM_MIPS_MACH_ATHEROS_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,615 @@
+@@ -0,0 +1,597 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -1110,24 +1110,6 @@
 +
 +#define SDRAM_BANKADDR_BITS_M       0x00000018
 +#define SDRAM_BANKADDR_BITS_S       3
-+
-+/*
-+ * SPI Flash Interface Registers
-+ */
-+
-+#define AR2315_SPI_CTL      (AR2315_SPI + 0x00)
-+#define AR2315_SPI_OPCODE   (AR2315_SPI + 0x04)
-+#define AR2315_SPI_DATA     (AR2315_SPI + 0x08)
-+
-+#define SPI_CTL_START           0x00000100
-+#define SPI_CTL_BUSY            0x00010000
-+#define SPI_CTL_TXCNT_MASK      0x0000000f
-+#define SPI_CTL_RXCNT_MASK      0x000000f0
-+#define SPI_CTL_TX_RX_CNT_MASK  0x000000ff
-+#define SPI_CTL_SIZE_MASK       0x00060000
-+
-+#define SPI_CTL_CLK_SEL_MASK    0x03000000
-+#define SPI_OPCODE_MASK         0x000000ff
 +
 +/*
 + * PCI Bus Interface Registers
