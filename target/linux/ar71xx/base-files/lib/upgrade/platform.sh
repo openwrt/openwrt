@@ -305,6 +305,7 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	nbg6716 | \
 	wndr4300 )
 		nand_do_platform_check $board $1
 		return $?;
