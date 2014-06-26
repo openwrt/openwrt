@@ -1,19 +1,20 @@
 #!/bin/sh
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2013-2014 OpenWrt.org
 #
 
 [ -e /etc/config/ubootenv ] && exit 0
 
 touch /etc/config/ubootenv
 
+. /lib/imx6.sh
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
-board=$(cat /proc/device-tree/model)
+board=$(imx6_board_name)
 
 case "$board" in
-"Wandboard i.MX6 Dual Lite Board")
+"wandboard")
 	ubootenv_add_uci_config "/dev/mmcblk0" "0x60000" "0x2000" "0x2000"
 	;;
 esac
