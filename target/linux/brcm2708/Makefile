@@ -15,7 +15,7 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 CPU_TYPE:=arm1176jzf-s
 CPU_SUBTYPE:=vfp
 
-LINUX_VERSION:=3.10.36
+LINUX_VERSION:=3.10.44
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += brcm2708-gpu-fw kmod-usb-hid kmod-sound-core kmod-sound-arm-bcm2835
