@@ -7,13 +7,16 @@
 
 touch /etc/config/ubootenv
 
+. /lib/kirkwood.sh
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
-case "`cat /proc/device-tree/model`" in
-"Cloud Engines Pogoplug E02" | \
-"Linksys EA4500" | \
-"RaidSonic ICY BOX IB-NAS62x0 (Rev B)")
+board=$(kirkwood_board_name)
+
+case "$board" in
+"ea4500" | \
+"ib62x0" | \
+"pogo_e02")
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 esac
