@@ -67,7 +67,7 @@ endef
 define Package/iputils-ping6
 $(call Package/iputils/Default)
   TITLE:=iputils - ping6
-  DEPENDS+= @IPV6
+  DEPENDS+= @IPV6 +USE_EGLIBC:libopenssl
 endef
 
 define Package/iputils-ping6/description
