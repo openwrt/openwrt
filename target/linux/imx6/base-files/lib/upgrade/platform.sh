@@ -2,7 +2,7 @@
 # Copyright (C) 2010 OpenWrt.org
 #
 
-. /lib/functions/imx6.sh
+. /lib/imx6.sh
 
 platform_check_image() {
 	local board=$(imx6_board_name)
