@@ -14,8 +14,6 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
  drivers/mtd/ubi/ubi.h   | 14 ++++++++++----
  3 files changed, 32 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
-index cea7d1c..6402e41 100644
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
 @@ -29,10 +29,10 @@
@@ -33,7 +31,7 @@ index cea7d1c..6402e41 100644
   */
  
  #include <linux/module.h>
-@@ -374,7 +374,7 @@ static const struct block_device_operations ubiblock_ops = {
+@@ -374,7 +374,7 @@ static const struct block_device_operati
  	.getgeo	= ubiblock_getgeo,
  };
  
@@ -42,7 +40,7 @@ index cea7d1c..6402e41 100644
  {
  	struct ubiblock *dev;
  	struct gendisk *gd;
-@@ -464,7 +464,7 @@ static void ubiblock_cleanup(struct ubiblock *dev)
+@@ -464,7 +464,7 @@ static void ubiblock_cleanup(struct ubib
  	put_disk(dev->gd);
  }
  
@@ -51,7 +49,7 @@ index cea7d1c..6402e41 100644
  {
  	struct ubiblock *dev;
  
-@@ -503,7 +503,8 @@ static void ubiblock_resize(struct ubi_volume_info *vi)
+@@ -503,7 +503,8 @@ static void ubiblock_resize(struct ubi_v
  
  	/*
  	 * Need to lock the device list until we stop using the device,
@@ -61,7 +59,7 @@ index cea7d1c..6402e41 100644
  	 */
  	mutex_lock(&devices_mutex);
  	dev = find_dev_nolock(vi->ubi_num, vi->vol_id);
-@@ -528,12 +529,12 @@ static int ubiblock_notify(struct notifier_block *nb,
+@@ -528,12 +529,12 @@ static int ubiblock_notify(struct notifi
  	switch (notification_type) {
  	case UBI_VOLUME_ADDED:
  		/*
@@ -76,7 +74,7 @@ index cea7d1c..6402e41 100644
  		break;
  	case UBI_VOLUME_RESIZED:
  		ubiblock_resize(&nt->vi);
-@@ -561,7 +562,7 @@ open_volume_desc(const char *name, int ubi_num, int vol_id)
+@@ -561,7 +562,7 @@ open_volume_desc(const char *name, int u
  		return ubi_open_volume(ubi_num, vol_id, UBI_READONLY);
  }
  
@@ -85,7 +83,7 @@ index cea7d1c..6402e41 100644
  {
  	int i, ret;
  	struct ubiblock_param *p;
-@@ -582,7 +583,7 @@ static int __init ubiblock_attach_from_param(void)
+@@ -582,7 +583,7 @@ static int __init ubiblock_attach_from_p
  		ubi_get_volume_info(desc, &vi);
  		ubi_close_volume(desc);
  
@@ -94,7 +92,7 @@ index cea7d1c..6402e41 100644
  		if (ret) {
  			ubi_err("block: can't add '%s' volume, err=%d\n",
  				vi.name, ret);
-@@ -592,7 +593,7 @@ static int __init ubiblock_attach_from_param(void)
+@@ -592,7 +593,7 @@ static int __init ubiblock_attach_from_p
  	return ret;
  }
  
@@ -139,11 +137,9 @@ index cea7d1c..6402e41 100644
 +	ubiblock_remove_all();
  	unregister_blkdev(ubiblock_major, "ubiblock");
  }
-diff --git a/drivers/mtd/ubi/cdev.c b/drivers/mtd/ubi/cdev.c
-index 39d3774..11c8473 100644
 --- a/drivers/mtd/ubi/cdev.c
 +++ b/drivers/mtd/ubi/cdev.c
-@@ -567,7 +567,7 @@ static long vol_cdev_ioctl(struct file *file, unsigned int cmd,
+@@ -591,7 +591,7 @@ static long vol_cdev_ioctl(struct file *
  		struct ubi_volume_info vi;
  
  		ubi_get_volume_info(desc, &vi);
@@ -152,7 +148,7 @@ index 39d3774..11c8473 100644
  		break;
  	}
  
-@@ -577,7 +577,7 @@ static long vol_cdev_ioctl(struct file *file, unsigned int cmd,
+@@ -601,7 +601,7 @@ static long vol_cdev_ioctl(struct file *
  		struct ubi_volume_info vi;
  
  		ubi_get_volume_info(desc, &vi);
@@ -161,11 +157,9 @@ index 39d3774..11c8473 100644
  		break;
  	}
  
-diff --git a/drivers/mtd/ubi/ubi.h b/drivers/mtd/ubi/ubi.h
-index e76ff98..2e588a9 100644
 --- a/drivers/mtd/ubi/ubi.h
 +++ b/drivers/mtd/ubi/ubi.h
-@@ -868,13 +868,19 @@ int ubi_scan_fastmap(struct ubi_device *ubi, struct ubi_attach_info *ai,
+@@ -868,13 +868,19 @@ int ubi_scan_fastmap(struct ubi_device *
  #ifdef CONFIG_MTD_UBI_BLOCK
  int ubiblock_init(void);
  void ubiblock_exit(void);
@@ -189,6 +183,3 @@ index e76ff98..2e588a9 100644
  #endif
  
  
--- 
-1.9.2
-

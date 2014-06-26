@@ -22,11 +22,9 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
 
 ---
 
-diff --git a/fs/ubifs/io.c b/fs/ubifs/io.c
-index e18b988..2290d58 100644
 --- a/fs/ubifs/io.c
 +++ b/fs/ubifs/io.c
-@@ -988,30 +988,32 @@ int ubifs_read_node(const struct ubifs_info *c, void *buf, int type, int len,
+@@ -988,30 +988,32 @@ int ubifs_read_node(const struct ubifs_i
  		return err;
  
  	if (type != ch->node_type) {
@@ -67,11 +65,9 @@ index e18b988..2290d58 100644
  	return -EINVAL;
  }
  
-diff --git a/fs/ubifs/super.c b/fs/ubifs/super.c
-index a81c7b5..3904c85 100644
 --- a/fs/ubifs/super.c
 +++ b/fs/ubifs/super.c
-@@ -1149,6 +1149,9 @@ static int mount_ubifs(struct ubifs_info *c)
+@@ -1164,6 +1164,9 @@ static int mount_ubifs(struct ubifs_info
  	size_t sz;
  
  	c->ro_mount = !!(c->vfs_sb->s_flags & MS_RDONLY);
@@ -81,7 +77,7 @@ index a81c7b5..3904c85 100644
  	err = init_constants_early(c);
  	if (err)
  		return err;
-@@ -1214,6 +1217,8 @@ static int mount_ubifs(struct ubifs_info *c)
+@@ -1229,6 +1232,8 @@ static int mount_ubifs(struct ubifs_info
  	if (err)
  		goto out_free;
  
@@ -90,8 +86,6 @@ index a81c7b5..3904c85 100644
  	/*
  	 * Make sure the compressor which is set as default in the superblock
  	 * or overridden by mount options is actually compiled in.
-diff --git a/fs/ubifs/ubifs.h b/fs/ubifs/ubifs.h
-index e8c8cfe..c1f71fe 100644
 --- a/fs/ubifs/ubifs.h
 +++ b/fs/ubifs/ubifs.h
 @@ -51,6 +51,15 @@

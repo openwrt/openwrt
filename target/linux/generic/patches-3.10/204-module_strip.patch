@@ -99,7 +99,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1776,6 +1776,13 @@ config MODULE_SIG_HASH
+@@ -1783,6 +1783,13 @@ config MODULE_SIG_HASH
  	default "sha384" if MODULE_SIG_SHA384
  	default "sha512" if MODULE_SIG_SHA512
  
@@ -133,7 +133,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	set_license(mod, get_modinfo(info, "license"));
 --- a/scripts/mod/modpost.c
 +++ b/scripts/mod/modpost.c
-@@ -1740,7 +1740,9 @@ static void read_symbols(char *modname)
+@@ -1744,7 +1744,9 @@ static void read_symbols(char *modname)
  		symname = info.strtab + sym->st_name;
  
  		handle_modversions(mod, &info, sym, symname);
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	}
  	if (!is_vmlinux(modname) ||
  	     (is_vmlinux(modname) && vmlinux_section_warnings))
-@@ -1884,7 +1886,9 @@ static void add_header(struct buffer *b,
+@@ -1888,7 +1890,9 @@ static void add_header(struct buffer *b,
  	buf_printf(b, "#include <linux/vermagic.h>\n");
  	buf_printf(b, "#include <linux/compiler.h>\n");
  	buf_printf(b, "\n");
@@ -153,7 +153,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	buf_printf(b, "\n");
  	buf_printf(b, "struct module __this_module\n");
  	buf_printf(b, "__attribute__((section(\".gnu.linkonce.this_module\"))) = {\n");
-@@ -1901,16 +1905,20 @@ static void add_header(struct buffer *b,
+@@ -1905,16 +1909,20 @@ static void add_header(struct buffer *b,
  
  static void add_intree_flag(struct buffer *b, int is_intree)
  {
@@ -174,7 +174,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  /**
-@@ -2003,11 +2011,13 @@ static void add_depends(struct buffer *b
+@@ -2007,11 +2015,13 @@ static void add_depends(struct buffer *b
  
  static void add_srcversion(struct buffer *b, struct module *mod)
  {
@@ -188,7 +188,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static void write_if_changed(struct buffer *b, const char *fname)
-@@ -2233,7 +2243,9 @@ int main(int argc, char **argv)
+@@ -2237,7 +2247,9 @@ int main(int argc, char **argv)
  		add_staging_flag(&buf, mod->name);
  		err |= add_versions(&buf, mod);
  		add_depends(&buf, mod, modules);

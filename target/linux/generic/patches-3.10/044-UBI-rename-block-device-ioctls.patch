@@ -16,8 +16,6 @@ Acked-by: Ezequiel Garcia <ezequiel.garcia@free-electrons.com>
  include/uapi/mtd/ubi-user.h | 14 +++++++-------
  3 files changed, 12 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
-index 16e6731..69a74fd 100644
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
 @@ -32,7 +32,7 @@
@@ -29,11 +27,9 @@ index 16e6731..69a74fd 100644
   */
  
  #include <linux/module.h>
-diff --git a/drivers/mtd/ubi/cdev.c b/drivers/mtd/ubi/cdev.c
-index 11c8473..f54562a 100644
 --- a/drivers/mtd/ubi/cdev.c
 +++ b/drivers/mtd/ubi/cdev.c
-@@ -561,8 +561,8 @@ static long vol_cdev_ioctl(struct file *file, unsigned int cmd,
+@@ -585,8 +585,8 @@ static long vol_cdev_ioctl(struct file *
  		break;
  	}
  
@@ -44,7 +40,7 @@ index 11c8473..f54562a 100644
  	{
  		struct ubi_volume_info vi;
  
-@@ -571,8 +571,8 @@ static long vol_cdev_ioctl(struct file *file, unsigned int cmd,
+@@ -595,8 +595,8 @@ static long vol_cdev_ioctl(struct file *
  		break;
  	}
  
@@ -55,8 +51,6 @@ index 11c8473..f54562a 100644
  	{
  		struct ubi_volume_info vi;
  
-diff --git a/include/uapi/mtd/ubi-user.h b/include/uapi/mtd/ubi-user.h
-index b98585a..9c885e2 100644
 --- a/include/uapi/mtd/ubi-user.h
 +++ b/include/uapi/mtd/ubi-user.h
 @@ -138,9 +138,9 @@
@@ -72,7 +66,7 @@ index b98585a..9c885e2 100644
   */
  
  /*
-@@ -198,10 +198,10 @@
+@@ -195,10 +195,10 @@
  /* Set an UBI volume property */
  #define UBI_IOCSETVOLPROP _IOW(UBI_VOL_IOC_MAGIC, 6, \
  			       struct ubi_set_vol_prop_req)
@@ -87,6 +81,3 @@ index b98585a..9c885e2 100644
  
  /* Maximum MTD device name length supported by UBI */
  #define MAX_UBI_MTD_NAME_LEN 127
--- 
-1.9.2
-
