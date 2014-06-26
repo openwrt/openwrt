@@ -57,36 +57,39 @@ ubilayout() {
 }
 
 while [ "$1" ]; do
-	if [ "$1" = "--uboot-env" ]; then
+	case "$1" in
+	"--uboot-env")
 		ubootenv="ubootenv"
 		shift
 		continue
-	fi
-	if [ "$1" = "--no-kernel" ]; then
+		;;
+	"--no-kernel")
 		nokernel="nokernel"
 		shift
 		continue
-	fi
-	if [ ! "$kernel" -a ! "$nokernel" ]; then
-		[ "${1:0:1}" = "-" ] && break
-		kernel=$1
-		shift
-		continue
-	fi
-	if [ ! "$rootfs" ]; then
-		[ "${1:0:1}" = "-" ] && break
-		rootfs=$1
-		shift
-		continue
-	fi
-	if [ ! "$outfile" ]; then
-		[ "${1:0:1}" = "-" ] && break
-		outfile=$1
-		shift
-		continue
-	fi
-	ubinize_param="$@"
-	break
+		;;
+	"-"*)
+		ubinize_param="$@"
+		break
+		;;
+	*)
+		if [ ! "$kernel" -a ! "$nokernel" ]; then
+			kernel=$1
+			shift
+			continue
+		fi
+		if [ ! "$rootfs" ]; then
+			rootfs=$1
+			shift
+			continue
+		fi
+		if [ ! "$outfile" ]; then
+			outfile=$1
+			shift
+			continue
+		fi
+		;;
+	esac
 done
 
 if [ ! -r "$rootfs" -o ! -r "$kernel" -a ! "$nokernel" -o ! "$outfile" ]; then
