@@ -91,6 +91,12 @@ tplink_board_detect() {
 	hwver="v${hwver#0}"
 
 	case "$hwid" in
+	"015000"*)
+		model="EasyLink EL-M150"
+		;;
+	"015300"*)
+		model="EasyLink EL-MINI"
+		;;
 	"3C0001"*)
 		model="OOLITE"
 		;;
@@ -306,6 +312,12 @@ ar71xx_board_detect() {
 		;;
 	*EAP7660D)
 		name="eap7660d"
+		;;
+	*EL-M150)
+		name="el-m150"
+		;;
+	*EL-MINI)
+		name="el-mini"
 		;;
 	*JA76PF)
 		name="ja76pf"

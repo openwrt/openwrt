@@ -65,6 +65,10 @@ get_status_led() {
 	eap7660d)
 		status_led="eap7660d:green:ds4"
 		;;
+	el-mini | \
+	el-m150)
+		status_led="EasyLink:green:system"
+		;;
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;
