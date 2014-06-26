@@ -146,7 +146,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
  		size_t *retlen, const u_char *buf)
  {
-@@ -1058,6 +1180,12 @@ static int m25p_probe(struct spi_device
+@@ -1059,6 +1181,12 @@ static int m25p_probe(struct spi_device
  		flash->fast_read = true;
  #endif
  
