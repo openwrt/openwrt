@@ -224,6 +224,8 @@ platform_check_image() {
 		;;
 
 	archer-c7 | \
+	el-m150 | \
+	el-mini | \
 	oolite | \
 	tl-mr10u | \
 	tl-mr11u | \
