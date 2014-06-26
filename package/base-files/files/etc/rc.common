@@ -109,6 +109,9 @@ ${INIT_TRACE:+set -x}
 
 	start() {
 		rc_procd start_service "$@"
+		if eval "type service_started" 2>/dev/null >/dev/null; then
+			service_started
+		fi
 	}
 
 	stop() {
