@@ -12,11 +12,9 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
  drivers/mtd/ubi/block.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/ubi/block.c b/drivers/mtd/ubi/block.c
-index 7ff473c..8d659e6 100644
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -431,7 +431,7 @@ int ubiblock_create(struct ubi_volume_info *vi)
+@@ -431,7 +431,7 @@ int ubiblock_create(struct ubi_volume_in
  	 * Create one workqueue per volume (per registered block device).
  	 * Rembember workqueues are cheap, they're not threads.
  	 */
@@ -25,6 +23,3 @@ index 7ff473c..8d659e6 100644
  	if (!dev->wq)
  		goto out_free_queue;
  	INIT_WORK(&dev->work, ubiblock_do_work);
--- 
-1.9.2
-

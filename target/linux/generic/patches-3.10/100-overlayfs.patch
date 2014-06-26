@@ -322,7 +322,7 @@
  extern const struct file_operations pipefifo_fops;
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -402,6 +402,7 @@ int __inode_permission(struct inode *ino
+@@ -403,6 +403,7 @@ int __inode_permission(struct inode *ino
  
  	return security_inode_permission(inode, mask);
  }
@@ -330,7 +330,7 @@
  
  /**
   * sb_permission - Check superblock-level permissions
-@@ -2868,9 +2869,12 @@ finish_open_created:
+@@ -2869,9 +2870,12 @@ finish_open_created:
  	error = may_open(&nd->path, acc_mode, open_flag);
  	if (error)
  		goto out;
@@ -384,7 +384,7 @@
  {
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -800,8 +800,7 @@ struct file *dentry_open(const struct pa
+@@ -788,8 +788,7 @@ struct file *dentry_open(const struct pa
  	f = get_empty_filp();
  	if (!IS_ERR(f)) {
  		f->f_flags = flags;
@@ -394,7 +394,7 @@
  		if (!error) {
  			/* from now on we need fput() to dispose of f */
  			error = open_check_o_direct(f);
-@@ -818,6 +817,26 @@ struct file *dentry_open(const struct pa
+@@ -806,6 +805,26 @@ struct file *dentry_open(const struct pa
  }
  EXPORT_SYMBOL(dentry_open);
  
