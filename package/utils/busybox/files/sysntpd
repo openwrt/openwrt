@@ -8,16 +8,18 @@ PROG=/usr/sbin/ntpd
 
 validate_ntp_section() {
 	uci_validate_section system timeserver "${1}" \
-		'server:list(host)' 'enable_server:bool:0'
+		'server:list(host)' 'enabled:bool:1' 'enable_server:bool:0'
 }
 
 start_service() {
-	local server enable_server peer
+	local server enabled enable_server peer
 
 	validate_ntp_section ntp || {
 		echo "validation failed"
 		return 1
 	}
+
+	[ $enabled = 0 ] && return
 
 	[ -z "$server" ] && return
 
