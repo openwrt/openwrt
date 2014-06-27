@@ -14,6 +14,12 @@ LOADADDR:=0x00008000
 
 JFFS2_BLOCKSIZE = 128k
 
+UBIFS_OPTS = -F -m 2048 -e 124KiB -c 4096 -U
+UBI_OPTS = -m 2048 -p 128KiB -s 512 -O 2048
+
+KDIR_TMP:=$(KDIR)/tmp
+
+
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 
 define Image/Build/MkuImage
@@ -37,15 +43,21 @@ endef
 
 define Image/Build/squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs 128
+	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/UbinizeImage,$(dtb),,squashfs,$(UBI_OPTS));)
 endef
 
 define Image/Build/Initramfs
 	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/DTB,$(dtb),-initramfs))
 endef
 
+define BuildSysupgrade
+	$(call Image/Build/SysupgradeNAND,$(2),$(1),$(KDIR)/uImage-$(2))
+endef
+
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
+	$(foreach dtb,$(TARGET_DTBS),$(call BuildSysupgrade,$(1),$(dtb));)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/Build/Initramfs)
 endif
