@@ -1,6 +1,6 @@
 #!/bin/sh
 # 6in4.sh - IPv6-in-IPv4 tunnel backend
-# Copyright (c) 2010-2012 OpenWrt.org
+# Copyright (c) 2010-2014 OpenWrt.org
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
@@ -63,10 +63,6 @@ proto_6in4_setup() {
 	proto_send_update "$cfg"
 
 	[ -n "$tunnelid" -a -n "$username" -a \( -n "$password" -o -n "$updatekey" \) ] && {
-		[ "${#password}" == 32 -a -z "${password//[a-fA-F0-9]/}" ] || {
-			password="$(echo -n "$password" | md5sum)"; password="${password%% *}"
-		}
-
 		[ -n "$updatekey" ] && password="$updatekey"
 
 		local url="http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
