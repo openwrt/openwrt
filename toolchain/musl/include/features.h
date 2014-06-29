@@ -43,14 +43,6 @@
 # define __GNUC_PREREQ(maj, min) 0
 #endif
 
-#if !defined __FORCE_NOGLIBC && (!defined _LIBC || defined __FORCE_GLIBC)
-#undef __GNU_LIBRARY__
-#define __GNU_LIBRARY__ 6
-
-#define __GLIBC__ 2
-#define __GLIBC_MINOR__ 2
-#endif
-
 #include <sys/glibc-types.h>
 
 #endif
