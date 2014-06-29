@@ -57,8 +57,8 @@
 
 /*
  * Uncomment if the compiler supports long long.
- */
 #define POLARSSL_HAVE_LONGLONG
+ */
 
 
 /*
