@@ -1,0 +1,157 @@
+--- a/net.c
++++ b/net.c
+@@ -50,11 +50,7 @@
+ #include <arpa/inet.h>
+ #include <net/if.h>
+ #include <asm/types.h>
+-#if defined(__GLIBC__)
+-# include <netipx/ipx.h>
+-#else
+-# include <linux/ipx.h>
+-#endif
++#include <linux/ipx.h>
+ 
+ #if defined(__GLIBC__) && defined(HAVE_SIN6_SCOPE_ID_LINUX)
+ # if defined(HAVE_LINUX_IN6_H)
+@@ -94,14 +90,6 @@
+ # define PF_UNSPEC AF_UNSPEC
+ #endif
+ 
+-/* Under Linux these are enums so we can't test for them with ifdef. */
+-#define IPPROTO_EGP IPPROTO_EGP
+-#define IPPROTO_PUP IPPROTO_PUP
+-#define IPPROTO_IDP IPPROTO_IDP
+-#define IPPROTO_IGMP IPPROTO_IGMP
+-#define IPPROTO_RAW IPPROTO_RAW
+-#define IPPROTO_MAX IPPROTO_MAX
+-
+ static const struct xlat domains[] = {
+ #ifdef PF_UNSPEC
+ 	{ PF_UNSPEC,	"PF_UNSPEC"	},
+@@ -493,24 +481,16 @@ static const struct xlat protocols[] = {
+ 	{ IPPROTO_ICMP,	"IPPROTO_ICMP"	},
+ 	{ IPPROTO_TCP,	"IPPROTO_TCP"	},
+ 	{ IPPROTO_UDP,	"IPPROTO_UDP"	},
+-#ifdef IPPROTO_IGMP
+ 	{ IPPROTO_IGMP,	"IPPROTO_IGMP"	},
+-#endif
+ #ifdef IPPROTO_GGP
+ 	{ IPPROTO_GGP,	"IPPROTO_GGP"	},
+ #endif
+ #ifdef IPPROTO_IPIP
+ 	{ IPPROTO_IPIP,	"IPPROTO_IPIP"	},
+ #endif
+-#ifdef IPPROTO_EGP
+ 	{ IPPROTO_EGP,	"IPPROTO_EGP"	},
+-#endif
+-#ifdef IPPROTO_PUP
+ 	{ IPPROTO_PUP,	"IPPROTO_PUP"	},
+-#endif
+-#ifdef IPPROTO_IDP
+ 	{ IPPROTO_IDP,	"IPPROTO_IDP"	},
+-#endif
+ #ifdef IPPROTO_TP
+ 	{ IPPROTO_TP,	"IPPROTO_TP"	},
+ #endif
+@@ -571,12 +551,8 @@ static const struct xlat protocols[] = {
+ #ifdef IPPROTO_UDPLITE
+ 	{ IPPROTO_UDPLITE, "IPPROTO_UDPLITE" },
+ #endif
+-#ifdef IPPROTO_RAW
+ 	{ IPPROTO_RAW,	"IPPROTO_RAW"	},
+-#endif
+-#ifdef IPPROTO_MAX
+ 	{ IPPROTO_MAX,	"IPPROTO_MAX"	},
+-#endif
+ 	{ 0,		NULL		},
+ };
+ static const struct xlat msg_flags[] = {
+--- a/process.c
++++ b/process.c
+@@ -55,19 +55,6 @@
+ # endif
+ #endif
+ 
+-#ifdef HAVE_LINUX_PTRACE_H
+-# undef PTRACE_SYSCALL
+-# ifdef HAVE_STRUCT_IA64_FPREG
+-#  define ia64_fpreg XXX_ia64_fpreg
+-# endif
+-# ifdef HAVE_STRUCT_PT_ALL_USER_REGS
+-#  define pt_all_user_regs XXX_pt_all_user_regs
+-# endif
+-# include <linux/ptrace.h>
+-# undef ia64_fpreg
+-# undef pt_all_user_regs
+-#endif
+-
+ #if defined(SPARC64)
+ # define r_pc r_tpc
+ # undef PTRACE_GETREGS
+@@ -2857,7 +2844,7 @@ sys_sched_setscheduler(struct tcb *tcp)
+ 		if (umove(tcp, tcp->u_arg[2], &p) < 0)
+ 			tprintf(", %#lx", tcp->u_arg[2]);
+ 		else
+-			tprintf(", { %d }", p.__sched_priority);
++			tprintf(", { %d }", p.sched_priority);
+ 	}
+ 	return 0;
+ }
+@@ -2872,7 +2859,7 @@ sys_sched_getparam(struct tcb *tcp)
+ 		if (umove(tcp, tcp->u_arg[1], &p) < 0)
+ 			tprintf("%#lx", tcp->u_arg[1]);
+ 		else
+-			tprintf("{ %d }", p.__sched_priority);
++			tprintf("{ %d }", p.sched_priority);
+ 	}
+ 	return 0;
+ }
+@@ -2885,7 +2872,7 @@ sys_sched_setparam(struct tcb *tcp)
+ 		if (umove(tcp, tcp->u_arg[1], &p) < 0)
+ 			tprintf("%d, %#lx", (int) tcp->u_arg[0], tcp->u_arg[1]);
+ 		else
+-			tprintf("%d, { %d }", (int) tcp->u_arg[0], p.__sched_priority);
++			tprintf("%d, { %d }", (int) tcp->u_arg[0], p.sched_priority);
+ 	}
+ 	return 0;
+ }
+--- a/signal.c
++++ b/signal.c
+@@ -35,6 +35,7 @@
+ #include <sys/user.h>
+ #include <fcntl.h>
+ 
++#include <asm/ptrace.h>
+ #ifdef HAVE_SYS_REG_H
+ # include <sys/reg.h>
+ # ifndef PTRACE_PEEKUSR
+--- a/time.c
++++ b/time.c
+@@ -774,7 +774,7 @@ printsigevent(struct tcb *tcp, long arg)
+ 			/* _pad[0] is the _tid field which might not be
+ 			   present in the userlevel definition of the
+ 			   struct.  */
+-			tprintf("{%d}", sev._sigev_un._pad[0]);
++			tprintf("{%d}", *(int *) &sev.sigev_notify_function);
+ 		else if (sev.sigev_notify == SIGEV_THREAD)
+ 			tprintf("{%p, %p}", sev.sigev_notify_function,
+ 				sev.sigev_notify_attributes);
+--- a/defs.h
++++ b/defs.h
+@@ -27,6 +27,7 @@
+  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#define _LARGEFILE64_SOURCE 1
+ #ifdef HAVE_CONFIG_H
+ # include "config.h"
+ #endif
+@@ -222,7 +223,7 @@ extern long ptrace(int, int, char *, lon
+ # define PTRACE_EVENT_EXIT	6
+ #endif
+ 
+-#if !defined(__GLIBC__)
++#if !defined(__GLIBC__) && !defined(PTRACE_PEEKUSER)
+ # define PTRACE_PEEKUSER PTRACE_PEEKUSR
+ # define PTRACE_POKEUSER PTRACE_POKEUSR
+ #endif
