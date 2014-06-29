@@ -24,7 +24,7 @@ TARGET_LDFLAGS += $(if $(CONFIG_USE_EGLIBC),-lrt)
 define Package/ubox
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libubox +ubusd +ubus +libuci +USE_EGLIBC:librt
+  DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_EGLIBC:librt
   TITLE:=OpenWrt system helper toolbox
 endef
 
