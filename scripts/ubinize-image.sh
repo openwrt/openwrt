@@ -65,6 +65,7 @@ while [ "$1" ]; do
 	"--kernel")
 		kernel="$2"
 		shift
+		shift
 		continue
 		;;
 	"-"*)
