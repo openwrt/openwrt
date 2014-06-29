@@ -29,4 +29,7 @@ __extension__ typedef unsigned long long int __uint64_t;
 typedef char *__caddr_t;
 #define __locale_t locale_t
 
+#define __gid_t gid_t
+#define __uid_t uid_t
+
 #endif
