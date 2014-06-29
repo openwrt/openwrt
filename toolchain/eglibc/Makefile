@@ -1,6 +1,6 @@
 PATH_PREFIX := .
 VARIANT:=final
-HOST_BUILD_PARALLEL:=1
+HOST_BUILD_PARALLEL:=0
 
 include ./common.mk
 
