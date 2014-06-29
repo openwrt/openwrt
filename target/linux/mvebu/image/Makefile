@@ -44,6 +44,11 @@ endef
 define Image/Build/squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs 128
 	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/UbinizeImage,$(dtb),,squashfs,$(UBI_OPTS));)
+	( \
+		dd if=$(KDIR)/uImage-armada-xp-mamba bs=3072k conv=sync; \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-armada-xp-mamba-squashfs-ubinized.bin \
+		bs=2048 conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-mamba-squashfs.img
 endef
 
 define Image/Build/Initramfs
