@@ -171,6 +171,9 @@ else
   MAKE_FLAGS += HAVE_MULTILINK=
 endif
 
+ifdef CONFIG_USE_MUSL
+  MAKE_FLAGS += USE_LIBUTIL=
+endif
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
