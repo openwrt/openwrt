@@ -1,6 +1,6 @@
 --- a/source3/Makefile.in
 +++ b/source3/Makefile.in
-@@ -1019,7 +1019,7 @@ TEST_LP_LOAD_OBJ = param/test_lp_load.o
+@@ -1019,7 +1019,7 @@ TEST_LP_LOAD_OBJ = param/test_lp_load.o 
  
  PASSWD_UTIL_OBJ = utils/passwd_util.o
  
@@ -29,7 +29,7 @@
  MULTICALL_O = $(sort $(SMBD_MULTI_O) $(NMBD_MULTI_O) $(SMBPASSWD_MULTI_O) $(MULTI_O))
 --- /dev/null
 +++ b/source3/utils/owrt_smbpasswd.c
-@@ -0,0 +1,245 @@
+@@ -0,0 +1,249 @@
 +/*
 + * Copyright (C) 2012 Felix Fietkau <nbd@openwrt.org>
 + * Copyright (C) 2008 John Crispin <blogic@openwrt.org>
@@ -157,20 +157,24 @@
 +	int len = strlen(buf);
 +
 +	fgetpos(fp, &r_pos);
-+	w_pos = r_pos;
-+	w_pos.__pos -= len;
++	fseek(fp, -len, SEEK_CUR);
++	fgetpos(fp, &w_pos);
++	fsetpos(fp, &r_pos);
 +
 +	while (fgets(buf, sizeof(buf) - 1, fp)) {
 +		int cur_len = strlen(buf);
 +
 +		fsetpos(fp, &w_pos);
 +		fputs(buf, fp);
-+		r_pos.__pos += cur_len;
-+		w_pos.__pos += cur_len;
++		fgetpos(fp, &w_pos);
++
 +		fsetpos(fp, &r_pos);
++		fseek(fp, cur_len, SEEK_CUR);
++		fgetpos(fp, &r_pos);
 +	}
 +
-+	ftruncate(fileno(fp), w_pos.__pos);
++	fsetpos(fp, &w_pos);
++	ftruncate(fileno(fp), ftello(fp));
 +}
 +
 +static int usage(const char *progname)
