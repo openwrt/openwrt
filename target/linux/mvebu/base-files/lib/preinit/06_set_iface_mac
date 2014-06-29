@@ -1,0 +1,20 @@
+#
+# Copyright (C) 2014 OpenWrt.org
+#
+
+preinit_set_mac_address() {
+	local mac
+
+	. /lib/functions.sh
+	. /lib/mvebu.sh
+
+	case $(mvebu_board_name) in
+	armada-xp-mamba)
+		mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		ifconfig eth0 hw ether $mac 2>/dev/null
+		ifconfig eth1 hw ether $mac 2>/dev/null
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_set_mac_address
