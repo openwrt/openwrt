@@ -23,6 +23,8 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
+TAR_OPTIONS += --exclude='*.rej'
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/conntrack-tools
