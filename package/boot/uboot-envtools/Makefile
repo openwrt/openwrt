@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
 PKG_VERSION:=2014.04
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -85,6 +85,10 @@ endif
 ifneq ($(CONFIG_TARGET_lantiq),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/lantiq $(1)/etc/uci-defaults/30_uboot-envtools
+endif
+ifneq ($(CONFIG_TARGET_mvebu),)
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/mvebu $(1)/etc/uci-defaults/30_uboot-envtools
 endif
 ifneq ($(CONFIG_TARGET_mxs),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
