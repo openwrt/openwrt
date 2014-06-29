@@ -38,6 +38,9 @@ TARGET_CFLAGS += $(FPIC)
 ifneq ($(HOST_OS),Linux)
   TARGET_CFLAGS += -I$(STAGING_DIR_HOST)/include
 endif
+ifdef CONFIG_USE_MUSL
+  TARGET_CFLAGS += -D__UCLIBC__
+endif
 
 CONFIGURE_ARGS += \
 	--enable-shared \
