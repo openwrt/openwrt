@@ -11,6 +11,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_MD5SUM:=b77253ee4321d24d200fffc4f7ca3d15
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_CHECK_FORMAT_SECURITY:=0
 
 include $(INCLUDE_DIR)/package.mk
 
