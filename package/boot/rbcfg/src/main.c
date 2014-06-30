@@ -724,7 +724,7 @@ usage(void)
 		const struct rbcfg_command *cmd;
 		cmd = &rbcfg_commands[i];
 
-		len = snprintf(buf, sizeof(buf), cmd->usage);
+		len = snprintf(buf, sizeof(buf), "%s", cmd->usage);
 		buf[len] = '\0';
 		fprintf(stderr, "%s\n", buf);
 	}
