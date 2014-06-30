@@ -95,6 +95,13 @@ DVG3810BN)
 	ucidef_add_switch_vlan "eth0" "1" "1 2 4 5 8t"
 	;;
 
+96369R-1231N)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 5t"
+	ucidef_add_switch_vlan "eth0" "2" "4 5t"
+	;;
+
 NB6)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" "1" "1"
