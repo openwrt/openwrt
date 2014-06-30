@@ -93,9 +93,9 @@
  
  /*************************************************************************
   * _REG relative to RSET_USBD
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -914,6 +914,15 @@ void __init board_prom_init(void)
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
+@@ -129,6 +129,15 @@ void __init board_early_setup(const stru
  	}
  
  	bcm_gpio_writel(val, GPIO_MODE_REG);
@@ -110,7 +110,7 @@
 +#endif
  }
  
- /*
+ 
 --- a/arch/mips/bcm63xx/Kconfig
 +++ b/arch/mips/bcm63xx/Kconfig
 @@ -22,6 +22,8 @@ config BCM63XX_CPU_6318

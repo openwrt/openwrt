@@ -1,6 +1,14 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2897,6 +2897,492 @@ static struct board_info __initdata boar
+@@ -12,6 +12,7 @@
+ #include <linux/string.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
++#include <linux/pci_ids.h>
+ #include <linux/platform_device.h>
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi_gpio.h>
+@@ -2893,6 +2894,492 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -493,7 +501,7 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3336,6 +3822,10 @@ static const struct board_info __initcon
+@@ -3332,6 +3819,10 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r2,
  	&board_ct6373_1,
  	&board_HW553,
@@ -504,7 +512,7 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
-@@ -3401,13 +3891,37 @@ static void __init boardid_fixup(u8 *boo
+@@ -3351,13 +3842,37 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  

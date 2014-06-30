@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -925,6 +925,65 @@ static struct board_info __initdata boar
+@@ -913,6 +913,65 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -66,7 +66,7 @@
  #endif
  
  /*
-@@ -1995,6 +2054,7 @@ static const struct board_info __initcon
+@@ -1987,6 +2046,7 @@ static const struct board_info __initcon
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -74,7 +74,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -2116,6 +2176,22 @@ void __init board_prom_init(void)
+@@ -2062,6 +2122,22 @@ void __init board_bcm963xx_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
@@ -107,17 +107,17 @@
  #include <bcm63xx_cpu.h>
  #include <bcm63xx_dev_flash.h>
  #include <bcm63xx_dev_hsspi.h>
-@@ -207,6 +208,13 @@ int __init bcm63xx_flash_register(int nu
- 		val = bcm_mpi_readl(MPI_CSBASE_REG(0));
- 		val &= MPI_CSBASE_BASE_MASK;
+@@ -215,6 +216,13 @@ int __init bcm63xx_flash_register(int nu
+ 			val = bcm_mpi_readl(MPI_CSBASE_REG(0));
+ 			val &= MPI_CSBASE_BASE_MASK;
  
-+		/* BT Voyager 2500V has 8 Meg flash in two 4 Meg banks */
-+		/* Loading from CFE always uses Bank 0 */
-+		if (!strcmp(board_get_name(), "V2500V_BB")) {
-+			pr_info("V2500V: Start in Bank 0\n");
-+			val = val + 0x400000; // Select Bank 0 start address
-+		}
++			/* BT Voyager 2500V has 8 Meg flash in two 4 Meg banks */
++			/* Loading from CFE always uses Bank 0 */
++			if (!strcmp(board_get_name(), "V2500V_BB")) {
++				pr_info("V2500V: Start in Bank 0\n");
++				val = val + 0x400000; // Select Bank 0 start address
++			}
 +
- 		mtd_resources[0].start = val;
- 		mtd_resources[0].end = 0x1FFFFFFF;
- 
+ 			mtd_resources[0].start = val;
+ 			mtd_resources[0].end = 0x1FFFFFFF;
+ 		}

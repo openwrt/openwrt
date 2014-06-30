@@ -9,7 +9,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -169,6 +169,76 @@ static struct board_info __initdata boar
+@@ -148,6 +148,76 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -86,7 +86,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif
  
  /*
-@@ -2413,6 +2483,7 @@ static const struct board_info __initcon
+@@ -2405,6 +2475,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,

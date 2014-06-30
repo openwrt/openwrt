@@ -4,14 +4,14 @@ Date: Thu, 3 May 2012 14:55:26 +0200
 Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
 
 ---
- arch/mips/bcm63xx/boards/board_bcm963xx.c              |    2 +-
+ arch/mips/bcm63xx/boards/board_common.c              |    2 +-
  arch/mips/bcm63xx/dev-flash.c                          |    9 ++++++++-
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_dev_flash.h |    4 +++-
  3 files changed, 12 insertions(+), 3 deletions(-)
 
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1036,7 +1036,7 @@ int __init board_register_devices(void)
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
+@@ -264,7 +264,7 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  
@@ -38,7 +38,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  };
  
  static struct resource mtd_resources[] = {
-@@ -62,6 +65,7 @@ static struct platform_device mtd_dev =
+@@ -68,6 +71,7 @@ void __init bcm63xx_flash_force_phys_bas
  
  static struct flash_platform_data bcm63xx_flash_data = {
  	.part_probe_types	= bcm63xx_part_types,
@@ -46,7 +46,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  };
  
  static struct spi_board_info bcm63xx_spi_flash_info[] = {
-@@ -189,9 +193,13 @@ void __init bcm63xx_flash_detect(void)
+@@ -195,9 +199,13 @@ void __init bcm63xx_flash_detect(void)
  	}
  }
  
@@ -72,9 +72,9 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  enum {
  	BCM63XX_FLASH_TYPE_PARALLEL,
  	BCM63XX_FLASH_TYPE_SERIAL,
-@@ -9,7 +11,7 @@ enum {
+@@ -11,7 +13,7 @@ void bcm63xx_flash_detect(void);
  
- void bcm63xx_flash_detect(void);
+ void bcm63xx_flash_force_phys_base_address(u32 start, u32 end);
  
 -int __init bcm63xx_flash_register(void);
 +int __init bcm63xx_flash_register(int num_caldata, struct ath9k_caldata *caldata);

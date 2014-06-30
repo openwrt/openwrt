@@ -28,9 +28,9 @@
 +int bcm63xx_ohci_register(unsigned int num_ports);
  
  #endif /* BCM63XX_DEV_USB_OHCI_H_ */
---- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
-+++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -965,6 +965,7 @@ int __init board_register_devices(void)
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
+@@ -181,6 +181,7 @@ int __init board_register_devices(void)
  {
  	int button_count = 0;
  	int led_count = 0;
@@ -38,8 +38,8 @@
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -987,14 +988,21 @@ int __init board_register_devices(void)
- 	    !bcm63xx_nvram_get_mac_address(board.enetsw.mac_addr))
+@@ -203,14 +204,21 @@ int __init board_register_devices(void)
+ 	    !board_get_mac_address(board.enetsw.mac_addr))
  		bcm63xx_enetsw_register(&board.enetsw);
  
 +	if ((board.has_ohci0 || board.has_ehci0)) {
