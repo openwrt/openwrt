@@ -9,6 +9,7 @@ PROG=/usr/sbin/ntpd
 validate_ntp_section() {
 	uci_validate_section system timeserver "${1}" \
 		'server:list(host)' 'enabled:bool:1' 'enable_server:bool:0'
+	return $?
 }
 
 start_service() {
