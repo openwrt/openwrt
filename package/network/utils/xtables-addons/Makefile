@@ -25,6 +25,7 @@ PKG_SOURCE_URL:=@SF/xtables-addons
 PKG_BUILD_DEPENDS:=iptables
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
+PKG_CHECK_FORMAT_SECURITY:=0
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
