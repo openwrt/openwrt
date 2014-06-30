@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -57,6 +57,13 @@
+@@ -635,6 +635,13 @@ static struct board_info __initdata boar
  #define NB4_SPI_GPIO_CLK	6
  #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
  
@@ -11,10 +11,10 @@
 +#define CT6373_74HC64_GPIO(X)	(CT6373_74X164_GPIO_BASE + (X))
 +
 +
- static struct board_info board;
  
- /*
-@@ -2343,6 +2350,113 @@ static struct board_info __initdata boar
+ 	.has_ohci0 = 1,
+ 	.has_pccard = 1,
+@@ -2335,6 +2342,117 @@ static struct board_info __initdata boar
  	.num_spis = ARRAY_SIZE(nb4_spi_devices),
  };
  
@@ -38,11 +38,14 @@
 +	&ct6373_spi_gpio,
 +};
 +
++#if 0 /* FIXME: 3.14 dropped non-DT support */
 +const struct gen_74x164_chip_platform_data ct6373_74x164_platform_data = {
 +	.base = CT6373_74X164_GPIO_BASE
 +};
++#endif
 +
 +static struct spi_board_info ct6373_spi_devices[] = {
++#if 0 /* FIXME: 3.14 dropped non-DT support */
 +	{
 +		.modalias = "74x164",
 +		.max_speed_hz = 781000,
@@ -51,6 +54,7 @@
 +		.mode = SPI_MODE_0,
 +		.platform_data = &ct6373_74x164_platform_data
 +	}
++#endif
 +};
 +
 +static struct board_info __initdata board_ct6373_1 = {
@@ -128,7 +132,7 @@
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -2687,6 +2801,7 @@ static const struct board_info __initcon
+@@ -2679,6 +2797,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r2,
  	&board_nb4_fxc_r1,
  	&board_nb4_fxc_r2,

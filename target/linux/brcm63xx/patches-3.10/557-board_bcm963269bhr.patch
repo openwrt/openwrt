@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4427,6 +4427,75 @@ static struct board_info __initdata boar
+@@ -4424,6 +4424,75 @@ static struct board_info __initdata boar
  #endif
  
  /*
@@ -76,7 +76,7 @@
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -4511,6 +4580,9 @@ static const struct board_info __initcon
+@@ -4508,6 +4577,9 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
  #endif
@@ -85,4 +85,4 @@
 +#endif
  };
  
- /*
+ static void __init boardid_fixup(u8 *boot_addr)
