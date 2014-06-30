@@ -5,10 +5,10 @@
  #include <linux/gpio_keys.h>
  #include <linux/input.h>
 +#include <linux/export.h>
+ #include <linux/platform_data/b53.h>
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
- #include <linux/spi/74x164.h>
-@@ -4865,7 +4866,7 @@ static const struct board_info __initcon
+@@ -4960,7 +4961,7 @@ static const struct board_info __initcon
   * bcm4318 WLAN work
   */
  #ifdef CONFIG_SSB_PCIHOST
@@ -17,7 +17,7 @@
  	.revision		= 0x02,
  	.board_rev		= 0x17,
  	.country_code		= 0x0,
-@@ -4885,6 +4886,7 @@ static struct ssb_sprom bcm63xx_sprom =
+@@ -4980,6 +4981,7 @@ static struct ssb_sprom bcm63xx_sprom =
  	.boardflags_lo		= 0x2848,
  	.boardflags_hi		= 0x0000,
  };

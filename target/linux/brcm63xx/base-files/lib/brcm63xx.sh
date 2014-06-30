@@ -28,6 +28,11 @@ brcm63xx_detect() {
 		status_led="96328A-1241N:green:power"
 		ifname=eth0
 		;;
+	96369R-1231N)
+		brcm63xx_has_reset_button="true"
+		status_led="WAP-5813n:green:power"
+		ifname="eth0"
+		;;
 	RTA770BW)
 		brcm63xx_has_reset_button="true"
 		status_led="RTA770BW:green:diag"

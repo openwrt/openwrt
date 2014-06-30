@@ -227,6 +227,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),CT6373-1,6358,CT6373)
 	# Comtrend 536, 5621
 	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,CT536_CT5621,6348,CT536_CT5621)
+	# Comtrend WAP-5813n
+	$(call Image/Build/CFE,$(1),96369R-1231N,6368,WAP-5813n,,--pad 4)
 	# Davolink DV201AMR
 	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# USR 9108
