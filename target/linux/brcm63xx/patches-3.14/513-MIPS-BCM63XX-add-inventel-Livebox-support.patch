@@ -57,7 +57,7 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
  #endif /* __BOARD_COMMON_H */
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,200 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -118,7 +118,7 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 +
 +	.has_dsp			= 0, /*TODO some Liveboxes have dsp*/
 +	.dsp = {
-+		.gpio_rst		= 6, /*FIXME eth1 shares gpio6 with dsp?*/
++		.gpio_rst		= 6,
 +		.gpio_int		= 35,
 +		.cs			= 2,
 +		.ext_irq		= 2,
@@ -126,25 +126,25 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 +
 +	.leds = {
 +		{
-+			.name		= "Livebox-blue-5g::adsl-fail",
++			.name		= "Livebox-blue-5g:red:adsl-fail",
 +			.gpio		= 0,
 +			.active_low	= 0,
 +			.default_trigger = "default-on",
 +		},
 +		{
-+			.name		= "Livebox-blue-5g::adsl",
++			.name		= "Livebox-blue-5g:red:adsl",
 +			.gpio		= 1,
 +		},
 +		{
-+			.name		= "Livebox-blue-5g::traffic",
++			.name		= "Livebox-blue-5g:red:traffic",
 +			.gpio		= 2,
 +		},
 +		{
-+			.name		= "Livebox-blue-5g::phone",
++			.name		= "Livebox-blue-5g:red:phone",
 +			.gpio		= 3,
 +		},
 +		{
-+			.name		= "Livebox-blue-5g::wifi",
++			.name		= "Livebox-blue-5g:red:wifi",
 +			.gpio		= 4,
 +		},
 +	},
@@ -168,6 +168,9 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 +		},
 +
 +	},
++
++	.ephy_reset_gpio		= 6,
++	.ephy_reset_gpio_flags		= GPIOF_INIT_HIGH,
 +};
 +#endif
 +
