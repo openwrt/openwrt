@@ -1,6 +1,6 @@
 --- a/src/openvpn/ssl_polarssl.h
 +++ b/src/openvpn/ssl_polarssl.h
-@@ -36,6 +36,8 @@
+@@ -38,6 +38,8 @@
  #include <polarssl/pkcs11.h>
  #endif
  
@@ -11,7 +11,7 @@
  struct _buffer_entry {
 --- a/src/openvpn/ssl_polarssl.c
 +++ b/src/openvpn/ssl_polarssl.c
-@@ -44,7 +44,7 @@
+@@ -45,7 +45,7 @@
  #include "manage.h"
  #include "ssl_common.h"
  
@@ -20,7 +20,7 @@
  #include <polarssl/havege.h>
  
  #include "ssl_verify_polarssl.h"
-@@ -204,12 +204,12 @@ tls_ctx_load_dh_params (struct tls_root_
+@@ -209,12 +209,12 @@ tls_ctx_load_dh_params (struct tls_root_
  {
    if (!strcmp (dh_file, INLINE_FILE_TAG) && dh_file_inline)
      {
@@ -35,16 +35,64 @@
        msg (M_FATAL, "Cannot read DH parameters from file %s", dh_file);
    }
  
-@@ -530,7 +530,7 @@ void key_state_ssl_init(struct key_state
- 	    ssl_pkcs11_key_len );
+@@ -249,13 +249,13 @@ tls_ctx_load_cert_file (struct tls_root_
+ 
+   if (!strcmp (cert_file, INLINE_FILE_TAG) && cert_file_inline)
+     {
+-      if (0 != x509parse_crt(ctx->crt_chain, cert_file_inline,
++      if (0 != x509_crt_parse(ctx->crt_chain, cert_file_inline,
+ 	  strlen(cert_file_inline)))
+         msg (M_FATAL, "Cannot load inline certificate file");
+     }
+   else
+     {
+-      if (0 != x509parse_crtfile(ctx->crt_chain, cert_file))
++      if (0 != x509_crt_parse_file(ctx->crt_chain, cert_file))
+ 	msg (M_FATAL, "Cannot load certificate file %s", cert_file);
+     }
+ }
+@@ -476,13 +476,13 @@ void tls_ctx_load_ca (struct tls_root_ct
+ 
+   if (ca_file && !strcmp (ca_file, INLINE_FILE_TAG) && ca_file_inline)
+     {
+-      if (0 != x509parse_crt(ctx->ca_chain, ca_file_inline, strlen(ca_file_inline)))
++      if (0 != x509_crt_parse(ctx->ca_chain, ca_file_inline, strlen(ca_file_inline)))
+ 	msg (M_FATAL, "Cannot load inline CA certificates");
+     }
+   else
+     {
+       /* Load CA file for verifying peer supplied certificate */
+-      if (0 != x509parse_crtfile(ctx->ca_chain, ca_file))
++      if (0 != x509_crt_parse_file(ctx->ca_chain, ca_file))
+ 	msg (M_FATAL, "Cannot load CA certificate file %s", ca_file);
+     }
+ }
+@@ -496,13 +496,13 @@ tls_ctx_load_extra_certs (struct tls_roo
+ 
+   if (!strcmp (extra_certs_file, INLINE_FILE_TAG) && extra_certs_file_inline)
+     {
+-      if (0 != x509parse_crt(ctx->crt_chain, extra_certs_file_inline,
++      if (0 != x509_crt_parse(ctx->crt_chain, extra_certs_file_inline,
+ 	  strlen(extra_certs_file_inline)))
+         msg (M_FATAL, "Cannot load inline extra-certs file");
+     }
+   else
+     {
+-      if (0 != x509parse_crtfile(ctx->crt_chain, extra_certs_file))
++      if (0 != x509_crt_parse_file(ctx->crt_chain, extra_certs_file))
+ 	msg (M_FATAL, "Cannot load extra-certs file: %s", extra_certs_file);
+     }
+ }
+@@ -684,7 +684,7 @@ void key_state_ssl_init(struct key_state
+ 	   external_key_len );
        else
  #endif
 -	ssl_set_own_cert( ks_ssl->ctx, ssl_ctx->crt_chain, ssl_ctx->priv_key );
 +	ssl_set_own_cert_rsa( ks_ssl->ctx, ssl_ctx->crt_chain, ssl_ctx->priv_key );
  
        /* Initialise SSL verification */
-       ssl_set_authmode (ks_ssl->ctx, SSL_VERIFY_REQUIRED);
-@@ -832,7 +832,7 @@ print_details (struct key_state_ssl * ks
+ #if P2MP_SERVER
+@@ -1026,7 +1026,7 @@ print_details (struct key_state_ssl * ks
    cert = ssl_get_peer_cert(ks_ssl->ctx);
    if (cert != NULL)
      {
@@ -79,59 +127,17 @@
  
  #ifndef __OPENVPN_X509_CERT_T_DECLARED
  #define __OPENVPN_X509_CERT_T_DECLARED
---- a/src/openvpn/ssl_verify.c
-+++ b/src/openvpn/ssl_verify.c
-@@ -437,7 +437,7 @@ verify_cert_set_env(struct env_set *es, 
- #endif
- 
-   /* export serial number as environmental variable */
--  serial = x509_get_serial(peer_cert, &gc);
-+  serial = backend_x509_get_serial(peer_cert, &gc);
-   openvpn_snprintf (envname, sizeof(envname), "tls_serial_%d", cert_depth);
-   setenv_str (es, envname, serial);
- 
-@@ -564,7 +564,7 @@ verify_check_crl_dir(const char *crl_dir
-   int fd = -1;
-   struct gc_arena gc = gc_new();
- 
--  char *serial = x509_get_serial(cert, &gc);
-+  char *serial = backend_x509_get_serial(cert, &gc);
- 
-   if (!openvpn_snprintf(fn, sizeof(fn), "%s%c%s", crl_dir, OS_SPECIFIC_DIRSEP, serial))
-     {
---- a/src/openvpn/ssl_verify_backend.h
-+++ b/src/openvpn/ssl_verify_backend.h
-@@ -122,7 +122,7 @@ result_t x509_get_username (char *common
-  *
-  * @return 		The certificate's serial number.
-  */
--char *x509_get_serial (openvpn_x509_cert_t *cert, struct gc_arena *gc);
-+char *backend_x509_get_serial (openvpn_x509_cert_t *cert, struct gc_arena *gc);
- 
- /*
-  * Save X509 fields to environment, using the naming convention:
---- a/src/openvpn/ssl_verify_openssl.c
-+++ b/src/openvpn/ssl_verify_openssl.c
-@@ -220,7 +220,7 @@ x509_get_username (char *common_name, in
- }
- 
- char *
--x509_get_serial (openvpn_x509_cert_t *cert, struct gc_arena *gc)
-+backend_x509_get_serial (openvpn_x509_cert_t *cert, struct gc_arena *gc)
- {
-   ASN1_INTEGER *asn1_i;
-   BIGNUM *bignum;
 --- a/src/openvpn/ssl_verify_polarssl.c
 +++ b/src/openvpn/ssl_verify_polarssl.c
-@@ -38,6 +38,7 @@
- #if defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_POLARSSL)
- 
+@@ -40,6 +40,7 @@
  #include "ssl_verify.h"
+ #include <polarssl/error.h>
+ #include <polarssl/bignum.h>
 +#include <polarssl/oid.h>
  #include <polarssl/sha1.h>
  
  #define MAX_SUBJECT_LENGTH 256
-@@ -100,7 +101,7 @@ x509_get_username (char *cn, int cn_len,
+@@ -102,7 +103,7 @@ x509_get_username (char *cn, int cn_len,
    /* Find common name */
    while( name != NULL )
    {
@@ -140,16 +146,7 @@
  	break;
  
        name = name->next;
-@@ -123,7 +124,7 @@ x509_get_username (char *cn, int cn_len,
- }
- 
- char *
--x509_get_serial (x509_cert *cert, struct gc_arena *gc)
-+backend_x509_get_serial (x509_cert *cert, struct gc_arena *gc)
- {
-   int ret = 0;
-   int i = 0;
-@@ -184,60 +185,18 @@ x509_setenv (struct env_set *es, int cer
+@@ -224,60 +225,18 @@ x509_setenv (struct env_set *es, int cer
    while( name != NULL )
      {
        char name_expand[64+8];
@@ -219,3 +216,21 @@
  
  	for( i = 0; i < name->val.len; i++ )
  	{
+--- a/configure.ac
++++ b/configure.ac
+@@ -809,13 +809,13 @@ if test "${with_crypto_library}" = "pola
+ #include <polarssl/version.h>
+ 			]],
+ 			[[
+-#if POLARSSL_VERSION_NUMBER < 0x01020A00 || POLARSSL_VERSION_NUMBER >= 0x01030000
++#if POLARSSL_VERSION_NUMBER < 0x01030000
+ #error invalid version
+ #endif
+ 			]]
+ 		)],
+ 		[AC_MSG_RESULT([ok])],
+-		[AC_MSG_ERROR([PolarSSL 1.2.x required and must be 1.2.10 or later])]
++		[AC_MSG_ERROR([PolarSSL 1.3.x required])]
+ 	)
+ 
+ 	polarssl_with_pkcs11="no"
