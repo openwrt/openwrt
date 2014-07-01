@@ -131,6 +131,22 @@ endef
 $(eval $(call KernelPackage,nls-cp866))
 
 
+define KernelPackage/nls-cp932
+  SUBMENU:=Native Language Support
+  TITLE:=Codepage 932 (Japanese)
+  KCONFIG:=CONFIG_NLS_CODEPAGE_932
+  FILES:=$(LINUX_DIR)/fs/nls/nls_cp932.ko
+  AUTOLOAD:=$(call AutoLoad,25,nls_cp932)
+  $(call AddDepends/nls)
+endef
+
+define KernelPackage/nls-cp932/description
+  Kernel module for NLS Codepage 932 (Japanese)
+endef
+
+$(eval $(call KernelPackage,nls-cp932))
+
+
 define KernelPackage/nls-cp1250
   SUBMENU:=Native Language Support
   TITLE:=Codepage 1250 (Eastern Europe)
