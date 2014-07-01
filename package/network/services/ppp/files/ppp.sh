@@ -32,7 +32,7 @@ ppp_generic_setup() {
 	else
 		demand="persist"
 	fi
-
+	[ "${keepalive:-0}" -lt 1 ] && keepalive=""
 	[ -n "$mtu" ] || json_get_var mtu mtu
 	[ -n "$pppname" ] || pppname="${proto:-ppp}-$config"
 
