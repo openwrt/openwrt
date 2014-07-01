@@ -15,6 +15,7 @@ validate_log_section()
 		'log_file:string' \
 		'log_size:uinteger' \
 		'log_ip:ipaddr' \
+		'log_remote:bool:1' \
 		'log_port:port:514' \
 		'log_proto:or("tcp", "udp"):udp' \
 		'log_prefix:string'
@@ -64,12 +65,13 @@ start_service_remote()
 {
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
-	local log_ip log_port log_proto log_prefix
+	local log_ip log_port log_proto log_prefix log_remote
 
 	validate_log_section "${1}" || {
 		echo "validation failed"
 		return 1
 	}
+	[ "${log_enable}" -ne 0 ] || return
 	[ -z "${log_ip}" ] && return
 
 	procd_open_instance
