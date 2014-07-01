@@ -241,6 +241,9 @@ ramips_board_detect() {
 	*"WHR-600D")
 		name="whr-600d"
 		;;
+	*"WHR-1166D")
+		name="whr-1166d"
+		;;
 	*"WHR-G300N")
 		name="whr-g300n"
 		;;

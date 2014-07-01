@@ -110,6 +110,7 @@ case "$FIRMWARE" in
 	whr-g300n | \
 	whr-300hp2 | \
 	whr-600d | \
+	whr-1166d | \
 	wl-330n | \
 	wl-330n3g | \
 	wl-351 | \
@@ -141,7 +142,7 @@ case "$FIRMWARE" in
 	cy-swr1100)
 		rt2x00_eeprom_extract "factory" 8192 512
 		;;
-	rt-n56u | whr-600d)
+	rt-n56u | whr-600d | whr-1166d)
 		rt2x00_eeprom_extract "factory" 32768 512
 		;;
 	esac
