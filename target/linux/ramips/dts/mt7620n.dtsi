@@ -279,4 +279,14 @@
 
 		status = "disabled";
 	};
+
+	wmac@10180000 {
+		compatible = "ralink,rt7620-wmac", "ralink,rt2880-wmac";
+		reg = <0x10180000 40000>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <6>;
+
+		ralink,eeprom = "soc_wmac.eeprom";
+	};
 };
