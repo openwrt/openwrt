@@ -397,7 +397,7 @@ ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.8.0)),1)
   ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/host/ehci-orion.ko),)
     FILES+=$(LINUX_DIR)/drivers/usb/host/ehci-orion.ko
   endif
-  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform,1)
+  AUTOLOAD:=$(call AutoLoad,40,ehci-hcd ehci-platform ehci-orion,1)
 else
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-hcd.ko
   AUTOLOAD:=$(call AutoLoad,40,ehci-hcd,1)
