@@ -88,7 +88,15 @@
  #if defined(SPARC64)
  # define r_pc r_tpc
  # undef PTRACE_GETREGS
-@@ -2857,7 +2844,7 @@ sys_sched_setscheduler(struct tcb *tcp)
+@@ -94,6 +81,7 @@
+ 
+ #include <sched.h>
+ #include <asm/posix_types.h>
++#include <asm/ptrace.h>
+ #undef GETGROUPS_T
+ #define GETGROUPS_T __kernel_gid_t
+ #undef GETGROUPS32_T
+@@ -2857,7 +2845,7 @@ sys_sched_setscheduler(struct tcb *tcp)
  		if (umove(tcp, tcp->u_arg[2], &p) < 0)
  			tprintf(", %#lx", tcp->u_arg[2]);
  		else
@@ -97,7 +105,7 @@
  	}
  	return 0;
  }
-@@ -2872,7 +2859,7 @@ sys_sched_getparam(struct tcb *tcp)
+@@ -2872,7 +2860,7 @@ sys_sched_getparam(struct tcb *tcp)
  		if (umove(tcp, tcp->u_arg[1], &p) < 0)
  			tprintf("%#lx", tcp->u_arg[1]);
  		else
@@ -106,7 +114,7 @@
  	}
  	return 0;
  }
-@@ -2885,7 +2872,7 @@ sys_sched_setparam(struct tcb *tcp)
+@@ -2885,7 +2873,7 @@ sys_sched_setparam(struct tcb *tcp)
  		if (umove(tcp, tcp->u_arg[1], &p) < 0)
  			tprintf("%d, %#lx", (int) tcp->u_arg[0], tcp->u_arg[1]);
  		else
