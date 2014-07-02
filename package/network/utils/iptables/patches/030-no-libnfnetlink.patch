@@ -1,10 +1,8 @@
-Index: iptables-1.4.19.1/configure
-===================================================================
---- iptables-1.4.19.1.orig/configure	2013-05-29 16:37:33.176674855 +0200
-+++ iptables-1.4.19.1/configure	2013-05-29 16:37:33.168674855 +0200
-@@ -12198,77 +12198,7 @@
- 	fi
+--- a/configure
++++ b/configure
+@@ -12367,77 +12367,7 @@ fi
  fi
+ 
  
 -pkg_failed=no
 -{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libnfnetlink" >&5
@@ -81,13 +79,11 @@ Index: iptables-1.4.19.1/configure
    HAVE_LIBNFNETLINK_TRUE=
    HAVE_LIBNFNETLINK_FALSE='#'
  else
-Index: iptables-1.4.19.1/configure.ac
-===================================================================
---- iptables-1.4.19.1.orig/configure.ac	2013-05-29 16:37:33.176674855 +0200
-+++ iptables-1.4.19.1/configure.ac	2013-05-29 16:37:33.168674855 +0200
-@@ -93,9 +93,7 @@
- AM_CONDITIONAL([ENABLE_LIBIPQ], [test "$enable_libipq" = "yes"])
- AM_CONDITIONAL([ENABLE_BPFC], [test "$enable_bpfc" = "yes"])
+--- a/configure.ac
++++ b/configure.ac
+@@ -111,9 +111,7 @@ if test "x$enable_bpfc" = "xyes" || test
+ 	AC_CHECK_LIB(pcap, pcap_compile,, AC_MSG_ERROR(missing libpcap library required by bpf compiler or nfsynproxy tool))
+ fi
  
 -PKG_CHECK_MODULES([libnfnetlink], [libnfnetlink >= 1.0],
 -	[nfnetlink=1], [nfnetlink=0])
