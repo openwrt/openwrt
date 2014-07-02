@@ -369,7 +369,8 @@ CONFIGURE_ARGS += \
 	--enable-devel \
 	--with-kernel="$(LINUX_DIR)/user_headers" \
 	--with-xtlibdir=/usr/lib/iptables \
-	--enable-static
+	--enable-static \
+	$(if $(CONFIG_IPV6),,--disable-ipv6)
 
 MAKE_FLAGS := \
 	$(TARGET_CONFIGURE_OPTS) \
