@@ -109,32 +109,13 @@
 			#gpio-cells = <2>;
 
 			ralink,gpio-base = <0>;
-			ralink,num-gpios = <24>;
+			ralink,num-gpios = <22>;
 			ralink,register-map = [ 00 04 08 0c
 						20 24 28 2c
 						30 34 ];
 		};
 
-		gpio1: gpio@638 {
-			compatible = "ralink,rt5350-gpio", "ralink,rt2880-gpio";
-			reg = <0x638 0x24>;
-
-			interrupt-parent = <&intc>;
-			interrupts = <6>;
-
-			gpio-controller;
-			#gpio-cells = <2>;
-
-			ralink,gpio-base = <24>;
-			ralink,num-gpios = <16>;
-			ralink,register-map = [ 00 04 08 0c
-						10 14 18 1c
-						20 24 ];
-
-			status = "disabled";
-		};
-
-		gpio2: gpio@660 {
+		gpio1: gpio@660 {
 			compatible = "ralink,rt5350-gpio", "ralink,rt2880-gpio";
 			reg = <0x660 0x24>;
 
@@ -144,8 +125,8 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 
-			ralink,gpio-base = <40>;
-			ralink,num-gpios = <12>;
+			ralink,gpio-base = <22>;
+			ralink,num-gpios = <6>;
 			ralink,register-map = [ 00 04 08 0c
 						10 14 18 1c
 						20 24 ];
