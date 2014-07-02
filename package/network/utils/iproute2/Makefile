@@ -86,7 +86,7 @@ MAKE_FLAGS += \
 	SHARED_LIBS="" \
 	LDFLAGS="-Wl,--gc-sections" \
 	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
-	FPIC=""
+	FPIC="$(FPIC)"
 
 define Build/Compile
 	+$(MAKE_VARS) $(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) $(MAKE_FLAGS)
