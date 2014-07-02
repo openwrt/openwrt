@@ -3,10 +3,10 @@
 
 set_wps() {
 	uci set wireless.$1.wps_pushbutton=0
-	uci set wireless.$1.wps_device_name="OpenWrt - $(lantiq_board_name)"
+	uci set wireless.$1.wps_device_name="OpenWrt - $(lantiq_board_model)"
 }
 
-board=$(lantiq_board_id)
+board=$(lantiq_board_name)
 case $board in
 WBMR)
 	config_load wireless
