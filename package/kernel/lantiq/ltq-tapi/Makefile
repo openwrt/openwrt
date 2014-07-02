@@ -18,6 +18,7 @@ PKG_MD5SUM:=edb43b494832c540cc035493d18db58f
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_USE_MIPS16:=0
+PKG_CHECK_FORMAT_SECURITY:=0
 
 include $(INCLUDE_DIR)/ltqtapi.mk
 include $(INCLUDE_DIR)/package.mk
