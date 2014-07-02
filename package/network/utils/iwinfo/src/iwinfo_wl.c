@@ -565,7 +565,7 @@ static int wl_get_countrylist(const char *ifname, char *buf, int *len)
 	{
 		for (i = 0, count = 0; i < cl->count; i++, c++)
 		{
-			sprintf(c->ccode, &cl->country_abbrev[i * WLC_CNTRY_BUF_SZ]);
+			snprintf(c->ccode, sizeof(c->ccode), "%s", &cl->country_abbrev[i * WLC_CNTRY_BUF_SZ]);
 			c->iso3166 = c->ccode[0] * 256 + c->ccode[1];
 
 			/* IL0 -> World */
