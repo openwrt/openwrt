@@ -301,6 +301,9 @@ ramips_board_detect() {
 	*"WRTNODE")
 		name="wrtnode"
 		;;
+	*"Wansview NCS601W")
+		name="ncs601w"
+		;;
 	*"Sercomm NA930")
 		name="na930"
 		;;
