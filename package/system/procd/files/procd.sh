@@ -275,6 +275,18 @@ procd_close_data() {
 	json_set_namespace $__procd_old_cb
 }
 
+_procd_set_config_changed() {
+	local package="$1"
+
+	json_init
+	json_add_string type config.change
+	json_add_object data
+	json_add_string package "$package"
+	json_close_object
+
+	ubus call service event "$(json_dump)"
+}
+
 uci_validate_section()
 {
 	local _package="$1"
@@ -308,4 +320,5 @@ _procd_wrapper \
 	procd_set_param \
 	procd_append_param \
 	procd_add_validation \
+	procd_set_config_changed \
 	procd_kill
