@@ -12,6 +12,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
+KDIR_TMP:=$(KDIR)/tmp
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
@@ -80,6 +81,15 @@ define Image/Build/squashfs
 	cat $(KDIR)/uImage-$(2) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
 	$(if $(3),$(call MkBrnImage,$(3),$(4),$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-brnImage,$(2),$(1),$(5)))
+endef
+
+define Image/BuildNAND/squashfs
+
+ifneq ($($(PROFILE)_UBI_OPTS),)
+	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
+	$(call Image/Build/UbinizeImage,$(PROFILE),,squashfs,$($(PROFILE)_UBI_OPTS))
+	$(call Image/Build/SysupgradeNAND,$(PROFILE),$(1),$(KDIR)/uImage-$(PROFILE))
+endif
 endef
 
 DGN3500_SKERNEL=0x50000
@@ -184,6 +194,18 @@ ifneq ($($(PROFILE)_UBI_OPTS),)
 	$(CP) $(KDIR)/root-overlay.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-rootfs-overlay.ubi
 endif
 endef
+
+
+define Image/BuildNAND/ubifs
+
+ifneq ($($(PROFILE)_UBIFS_OPTS),)
+ifneq ($($(PROFILE)_UBI_OPTS),)
+	$(call Image/Build/UbinizeImage,$(PROFILE),,ubifs,$($(PROFILE)_UBI_OPTS))
+	$(call Image/Build/SysupgradeNAND,$(PROFILE),$(1),$(KDIR)/uImage-$(PROFILE))
+endif
+endif
+endef
+
 
 define Image/InstallKernel/Template
 
@@ -293,7 +315,7 @@ ifeq ($(CONFIG_TARGET_lantiq_xway),y)
 
 # Danube
 Image/BuildKernel/Profile/BTHOMEHUBV2B=$(call Image/BuildKernel/Template,BTHOMEHUBV2B)
-Image/Build/Profile/BTHOMEHUBV2B=$(call Image/Build/$(1),$(1),BTHOMEHUBV2B)
+Image/Build/Profile/BTHOMEHUBV2B=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV2B)
 
 Image/BuildKernel/Profile/EASY50712=$(call Image/BuildKernel/Template,EASY50712)
 Image/Build/Profile/EASY50712=$(call Image/Build/$(1),$(1),EASY50712)
