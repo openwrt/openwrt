@@ -65,6 +65,40 @@ igmp_add_network() {
 	procd_add_interface_trigger "interface.*" $network /etc/init.d/igmpproxy restart
 }
 
+igmp_add_firewall_routing() {
+	config_get network $1 network
+	config_get direction $1 direction
+
+	[[ "$direction" = "downstream" ]] || return 0
+
+	json_add_object ""
+	json_add_string type rule
+	json_add_string src "$upstream"
+	json_add_string dest "$network"
+	json_add_string family ipv4
+	json_add_string proto udp
+	json_add_string dest_ip "224.0.0.0/4"
+	json_add_string target ACCEPT
+	json_close_object
+}
+
+igmp_add_firewall_network() {
+	config_get network $1 network
+	config_get direction $1 direction
+
+	json_add_object ""
+	json_add_string type rule
+	json_add_string src "$network"
+	json_add_string proto igmp
+	json_add_string target ACCEPT
+	json_close_object
+
+	[[ "$direction" = "upstream" ]] && {
+		upstream="$network"
+		config_foreach igmp_add_firewall_routing phyint
+	}
+}
+
 service_triggers() {
 	procd_add_reload_trigger "igmpproxy"
 }
@@ -83,5 +117,18 @@ start_service() {
 	procd_open_trigger
 	config_foreach igmp_add_network phyint
 	procd_close_trigger
+
+	procd_open_data
+
+	json_add_array firewall
+	config_foreach igmp_add_firewall_network phyint
+	json_close_array
+
+	procd_close_data
+
 	procd_close_instance
+}
+
+service_started() {
+	procd_set_config_changed firewall
 }
