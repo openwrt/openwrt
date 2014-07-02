@@ -264,6 +264,17 @@ _procd_kill() {
 	_procd_ubus_call delete
 }
 
+procd_open_data() {
+	local name="$1"
+	json_set_namespace procd __procd_old_cb
+	json_add_object data
+}
+
+procd_close_data() {
+	json_close_object
+	json_set_namespace $__procd_old_cb
+}
+
 uci_validate_section()
 {
 	local _package="$1"
