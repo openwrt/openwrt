@@ -71,7 +71,7 @@ start_service_remote()
 		echo "validation failed"
 		return 1
 	}
-	[ "${log_enable}" -ne 0 ] || return
+	[ "${log_remote}" -ne 0 ] || return
 	[ -z "${log_ip}" ] && return
 
 	procd_open_instance
