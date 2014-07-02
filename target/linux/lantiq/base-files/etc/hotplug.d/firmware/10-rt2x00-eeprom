@@ -33,7 +33,7 @@ rt2x00_eeprom_extract() {
 
 case "$FIRMWARE" in
 "RT2860.eeprom" )
-	local board=$(lantiq_board_id)
+	local board=$(lantiq_board_name)
 	case $board in
 	ARV7510PW22|ARV7519PW|ARV752DPW|ARV752DPW22)
 		rt2x00_eeprom_extract "board_config" 520 256 1

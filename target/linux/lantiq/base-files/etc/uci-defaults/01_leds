@@ -17,7 +17,7 @@ for a in `ls /sys/class/leds/`; do
 	[ $? -eq 0 ] && ucidef_set_led_default $a $a $a `cat /sys/class/leds/$a/brightness`
 done
 
-board=$(lantiq_board_id)
+board=$(lantiq_board_name)
 
 case "$board" in
 VG3503J)
