@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ ifeq ($(DUMP),)
   define BuildTarget/bin
     ifeq ($(if $(VARIANT),$(BUILD_VARIANT)),$(VARIANT))
     ifdef Package/$(1)/install
-      ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
+      ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         compile: install-bin-$(1)
       else
         compile: $(1)-disabled

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006,2007 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -80,7 +80,7 @@ ifeq ($(DUMP),)
 
     ifeq ($(BUILD_VARIANT),$$(if $$(VARIANT),$$(VARIANT),$(BUILD_VARIANT)))
     ifdef Package/$(1)/install
-      ifneq ($(CONFIG_PACKAGE_$(1))$(SDK)$(DEVELOPER),)
+      ifneq ($(CONFIG_PACKAGE_$(1))$(DEVELOPER),)
         IPKGS += $(1)
         compile: $$(IPKG_$(1)) $(PKG_INFO_DIR)/$(1).provides $(STAGING_DIR_ROOT)/stamp/.$(1)_installed
         ifneq ($(ABI_VERSION),)
