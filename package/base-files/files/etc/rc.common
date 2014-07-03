@@ -123,7 +123,7 @@ ${INIT_TRACE:+set -x}
 		if eval "type reload_service" 2>/dev/null >/dev/null; then
 			reload_service "$@"
 		else
-			restart
+			start
 		fi
 	}
 
