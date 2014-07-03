@@ -1,6 +1,33 @@
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -216,8 +216,8 @@ bcm47xx_leds_linksys_e1000v1[] __initcon
+@@ -35,6 +35,15 @@ bcm47xx_leds_asus_rtn12[] __initconst =
+ };
+ 
+ static const struct gpio_led
++bcm47xx_leds_asus_rtn15u[] __initconst = {
++	/* TODO: Add "wlan" LED */
++	BCM47XX_GPIO_LED(3, "blue", "wan", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(4, "blue", "lan", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(6, "blue", "power", 1, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(9, "blue", "usb", 0, LEDS_GPIO_DEFSTATE_OFF),
++};
++
++static const struct gpio_led
+ bcm47xx_leds_asus_rtn16[] __initconst = {
+ 	BCM47XX_GPIO_LED(1, "blue", "power", 1, LEDS_GPIO_DEFSTATE_ON),
+ 	BCM47XX_GPIO_LED(7, "blue", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
+@@ -42,8 +51,8 @@ bcm47xx_leds_asus_rtn16[] __initconst =
+ 
+ static const struct gpio_led
+ bcm47xx_leds_asus_rtn66u[] __initconst = {
+-	BCM47XX_GPIO_LED(12, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
+-	BCM47XX_GPIO_LED(15, "unk", "usb", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(12, "blue", "power", 1, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(15, "blue", "usb", 1, LEDS_GPIO_DEFSTATE_OFF),
+ };
+ 
+ static const struct gpio_led
+@@ -216,8 +225,8 @@ bcm47xx_leds_linksys_e1000v1[] __initcon
  
  static const struct gpio_led
  bcm47xx_leds_linksys_e1000v21[] __initconst = {
@@ -11,3 +38,13 @@
  	BCM47XX_GPIO_LED(7, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(8, "blue", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  };
+@@ -425,6 +434,9 @@ void __init bcm47xx_leds_register(void)
+ 	case BCM47XX_BOARD_ASUS_RTN12:
+ 		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
+ 		break;
++	case BCM47XX_BOARD_ASUS_RTN15U:
++		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn15u);
++		break;
+ 	case BCM47XX_BOARD_ASUS_RTN16:
+ 		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn16);
+ 		break;
