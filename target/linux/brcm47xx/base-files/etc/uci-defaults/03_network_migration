@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Copyright (C) 2014 OpenWrt.org
+#
+
+uci show network | grep "\.vlan=0"
+[ $? -ne 0 ] && exit 0
+
+logger -t network "network config is invalid, creating new one"
+
+local lan_proto="$(uci -q get network.lan.proto)"
+local lan_ipaddr="$(uci -q get network.lan.ipaddr)"
+local lan_netmask="$(uci -q get network.lan.netmask)"
+local wan_proto="$(uci -q get network.wan.proto)"
+local wan_ipaddr="$(uci -q get network.wan.ipaddr)"
+local wan_netmask="$(uci -q get network.wan.netmask)"
+
+rm /etc/config/network
+/etc/init.d/netconfig start
+
+uci set network.lan.proto=$lan_proto
+uci set network.lan.ipaddr=$lan_ipaddr
+uci set network.lan.netmask=$lan_netmask
+uci set network.wan.proto=$wan_proto
+uci set network.wan.ipaddr=$wan_ipaddr
+uci set network.wan.netmask=$wan_netmask
+uci commit network
+
+exit 0
