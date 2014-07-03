@@ -1,1 +1,1 @@
-obj-${CONFIG_WRT55AGV2_SPIDEVS}	+= wrt55agv2_spidevs.o
+obj-m += wrt55agv2_spidevs.o
