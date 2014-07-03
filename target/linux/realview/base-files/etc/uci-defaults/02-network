@@ -1,0 +1,10 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults.sh
+
+ucidef_set_interface_loopback
+ucidef_set_interface_raw "lan" "eth0"
+
+uci batch <<EOF
+set network.lan.proto='dhcp'
+EOF
