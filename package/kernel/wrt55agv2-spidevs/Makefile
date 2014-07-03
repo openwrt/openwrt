@@ -24,20 +24,10 @@ define KernelPackage/wrt55agv2-spidevs/description
   Kernel module for the SPI devices on the WRT55AG v2 board.
 endef
 
-EXTRA_KCONFIG:= \
-	CONFIG_WRT55AGV2_SPIDEVS=m
-
-EXTRA_CFLAGS:= \
-	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=m,%,$(filter %=m,$(EXTRA_KCONFIG)))) \
-	$(patsubst CONFIG_%, -DCONFIG_%=1, $(patsubst %=y,%,$(filter %=y,$(EXTRA_KCONFIG)))) \
-
 MAKE_OPTS:= \
 	ARCH="$(LINUX_KARCH)" \
 	CROSS_COMPILE="$(TARGET_CROSS)" \
-	SUBDIRS="$(PKG_BUILD_DIR)" \
-	EXTRA_CFLAGS="$(EXTRA_CFLAGS)" \
-	LINUXINCLUDE="-I$(LINUX_DIR)/include -I$(LINUX_DIR)/arch/mips/include -include generated/autoconf.h" \
-	$(EXTRA_KCONFIG)
+	SUBDIRS="$(PKG_BUILD_DIR)"
 
 define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
