@@ -65,6 +65,8 @@ TARGET_CFLAGS += -DMAX_DEBUG_LEVEL=$(CONFIG_PACKAGE_SAMBA_MAX_DEBUG_LEVEL) -D__l
 TARGET_LDFLAGS += -Wl,--gc-sections
 
 CONFIGURE_VARS += \
+	ac_cv_lib_attr_getxattr=no \
+	ac_cv_search_getxattr=no \
 	ac_cv_file__proc_sys_kernel_core_pattern=yes \
 	libreplace_cv_HAVE_C99_VSNPRINTF=yes \
 	libreplace_cv_HAVE_GETADDRINFO=yes \
