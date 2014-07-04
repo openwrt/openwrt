@@ -105,6 +105,7 @@ CONFIGURE_ARGS += \
 	--with-piddir=/var/run \
 	--with-privatedir=/etc/samba \
 	--with-sendfile-support \
+	--without-acl-support \
 	--without-cluster-support \
 	--without-ads \
 	--without-krb5 \
