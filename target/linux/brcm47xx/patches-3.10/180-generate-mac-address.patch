@@ -14,7 +14,7 @@
  
 +static bool bcm47xx_is_valid_mac(u8 *mac)
 +{
-+	return !(mac[0] == 0x00 && mac[1] == 0x90 && mac[2] == 0x4c);
++	return mac && !(mac[0] == 0x00 && mac[1] == 0x90 && mac[2] == 0x4c);
 +}
 +
 +static int bcm47xx_increase_mac_addr(u8 *mac, u8 num)
@@ -37,7 +37,7 @@
 +	return 0;
 +}
 +
-+static int mac_addr_used = 1;
++static int mac_addr_used = 2;
 +
  static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
  					const char *prefix, bool fallback)
