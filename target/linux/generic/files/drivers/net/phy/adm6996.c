@@ -804,7 +804,6 @@ adm6996_get_port_link(struct switch_dev *dev, int port,
 	struct adm6996_priv *priv = to_adm(dev);
 	
 	u16 reg = 0;
-	u32 speed;
 	
 	if (port >= ADM_NUM_PORTS)
 		return -EINVAL;
@@ -938,7 +937,7 @@ static struct switch_attr adm6996_vlan[] = {
 	 },
 };
 
-static const struct switch_dev_ops adm6996_ops = {
+static struct switch_dev_ops adm6996_ops = {
 	.attr_global = {
 			.attr = adm6996_globals,
 			.n_attr = ARRAY_SIZE(adm6996_globals),
@@ -991,6 +990,13 @@ static int adm6996_switch_init(struct adm6996_priv *priv, const char *alias, str
 	swdev->vlans = ADM_NUM_VLANS;
 	swdev->ops = &adm6996_ops;
 	swdev->alias = alias;
+
+	/* The ADM6996L connected through GPIOs does not support any switch
+	   status calls */
+	if (priv->model == ADM6996L) {
+		adm6996_ops.attr_port.n_attr = 0;
+		adm6996_ops.get_port_link = NULL;
+	}
 
 	pr_info ("%s: %s model PHY found.\n", alias, swdev->name);
 
@@ -1121,6 +1127,7 @@ static int adm6996_gpio_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	mutex_init(&priv->reg_mutex);
+	mutex_init(&priv->mib_lock);
 
 	priv->eecs = pdata->eecs;
 	priv->eedi = pdata->eedi;
