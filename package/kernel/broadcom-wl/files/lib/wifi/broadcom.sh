@@ -120,6 +120,7 @@ disable_broadcom() {
 
 		wlc ifname "$device" stdin <<EOF
 $ifdown
+leddc 0xffff
 EOF
 	)
 	true
@@ -206,6 +207,11 @@ enable_broadcom() {
 			*) ;;
 		esac
 	}
+
+	local leddc = $(wlc ifname "$device" leddc)
+	if [ "$leddc" -eq 0xffff ]; then
+		leddc = 0x0;
+	fi
 
 	local _c=0
 	local nas="$(which nas)"
@@ -384,6 +390,7 @@ band ${band:-0}
 ${nmode:+nmode $nmode}
 ${nmode:+${nreqd:+nreqd $nreqd}}
 ${gmode:+gmode $gmode}
+leddc $leddc
 apsta $apsta
 ap $ap
 ${mssid:+mssid $mssid}
