@@ -54,7 +54,23 @@
  };
  
  /* Motorola */
-@@ -425,6 +433,9 @@ void __init bcm47xx_leds_register(void)
+@@ -385,6 +393,15 @@ bcm47xx_leds_netgear_wndr4500v1[] __init
+ };
+ 
+ static const struct gpio_led
++bcm47xx_leds_netgear_wnr3500lv1[] __initconst = {
++	BCM47XX_GPIO_LED(0, "blue", "wlan", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(1, "green", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(2, "green", "wan", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(3, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(7, "amber", "power", 0, LEDS_GPIO_DEFSTATE_OFF),
++};
++
++static const struct gpio_led
+ bcm47xx_leds_netgear_wnr834bv2[] __initconst = {
+ 	BCM47XX_GPIO_LED(2, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
+ 	BCM47XX_GPIO_LED(3, "amber", "power", 0, LEDS_GPIO_DEFSTATE_OFF),
+@@ -425,6 +442,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_ASUS_RTN12:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
  		break;
@@ -63,4 +79,14 @@
 +		break;
  	case BCM47XX_BOARD_ASUS_RTN16:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn16);
+ 		break;
+@@ -582,6 +602,9 @@ void __init bcm47xx_leds_register(void)
+ 	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
+ 		bcm47xx_set_pdata(bcm47xx_leds_netgear_wndr4500v1);
+ 		break;
++	case BCM47XX_BOARD_NETGEAR_WNR3500L:
++		bcm47xx_set_pdata(bcm47xx_leds_netgear_wnr3500lv1);
++		break;
+ 	case BCM47XX_BOARD_NETGEAR_WNR834BV2:
+ 		bcm47xx_set_pdata(bcm47xx_leds_netgear_wnr834bv2);
  		break;
