@@ -208,10 +208,10 @@ enable_broadcom() {
 		esac
 	}
 
-	local leddc = $(wlc ifname "$device" leddc)
-	if [ "$leddc" -eq 0xffff ]; then
-		leddc = 0x0;
-	fi
+	local leddc=$(wlc ifname "$device" leddc)
+	[ "$leddc" -eq 0xffff ] || {
+		leddc=0x005a000a;
+	}
 
 	local _c=0
 	local nas="$(which nas)"
