@@ -38,7 +38,23 @@
  	BCM47XX_GPIO_LED(7, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(8, "blue", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  };
-@@ -425,6 +434,9 @@ void __init bcm47xx_leds_register(void)
+@@ -333,11 +342,10 @@ bcm47xx_leds_linksys_wrt610nv2[] __initc
+ 
+ static const struct gpio_led
+ bcm47xx_leds_linksys_wrtsl54gs[] __initconst = {
+-	BCM47XX_GPIO_LED(0, "unk", "wlan", 1, LEDS_GPIO_DEFSTATE_OFF),
+-	BCM47XX_GPIO_LED(1, "unk", "power", 0, LEDS_GPIO_DEFSTATE_ON),
+-	BCM47XX_GPIO_LED(2, "white", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
+-	BCM47XX_GPIO_LED(3, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
+-	BCM47XX_GPIO_LED(7, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(0, "green", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(1, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(5, "white", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(7, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
+ };
+ 
+ /* Motorola */
+@@ -425,6 +433,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_ASUS_RTN12:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
  		break;
