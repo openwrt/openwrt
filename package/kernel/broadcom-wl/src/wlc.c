@@ -999,6 +999,14 @@ static const struct wlc_call wlc_calls[] = {
 		.data.str = "cap",
 		.desc = "Number of VIF's supported"
 	},
+	{
+		.name = "leddc",
+		.param = INT,
+		.handler = wlc_iovar,
+		.data.str = "leddc",
+		.desc = "LED Duty Cycle"
+	},
+	
 };
 #define wlc_calls_size (sizeof(wlc_calls) / sizeof(struct wlc_call))
 
