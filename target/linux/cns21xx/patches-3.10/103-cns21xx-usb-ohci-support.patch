@@ -245,14 +245,14 @@
 +MODULE_ALIAS("platform:" DRIVER_NAME);
 --- a/drivers/usb/host/ohci.h
 +++ b/drivers/usb/host/ohci.h
-@@ -405,6 +405,7 @@ struct ohci_hcd {
- #define	OHCI_QUIRK_HUB_POWER	0x100			/* distrust firmware power/oc setup */
+@@ -406,6 +406,7 @@ struct ohci_hcd {
  #define	OHCI_QUIRK_AMD_PLL	0x200			/* AMD PLL quirk*/
  #define	OHCI_QUIRK_AMD_PREFETCH	0x400			/* pre-fetch for ISO transfer */
+ #define	OHCI_QUIRK_GLOBAL_SUSPEND	0x800		/* must suspend ports */
 +#define	OHCI_QUIRK_INIT_FMINTERVAL 0x1000		/* fminterval must be initialized */
+ 
  	// there are also chip quirks/bugs in init logic
  
- 	struct work_struct	nec_work;	/* Worker for NEC quirk */
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -374,6 +374,7 @@ config ARCH_CNS21XX
