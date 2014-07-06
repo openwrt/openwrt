@@ -1018,6 +1018,14 @@ endef
 
 
 #Broadcom firmware
+ifneq ($(CONFIG_B43_FW_6_30),)
+  PKG_B43_FWV4_NAME:=broadcom-wl
+  PKG_B43_FWV4_VERSION:=6.30.163.46
+  PKG_B43_FWV4_OBJECT:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).wl_apsta.o
+  PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
+  PKG_B43_FWV4_SOURCE_URL:=http://www.lwfinger.com/b43-firmware/
+  PKG_B43_FWV4_MD5SUM:=6fe97e9368d25342a1ab943d3cf3496d
+else
 ifneq ($(CONFIG_B43_FW_5_10),)
   PKG_B43_FWV4_NAME:=broadcom-wl
   PKG_B43_FWV4_VERSION:=5.10.56.27.3
@@ -1048,6 +1056,7 @@ else
   PKG_B43_FWV4_SOURCE:=$(PKG_B43_FWV4_NAME)-$(PKG_B43_FWV4_VERSION).tar.bz2
   PKG_B43_FWV4_SOURCE_URL:=http://mirror2.openwrt.org/sources/
   PKG_B43_FWV4_MD5SUM:=0c6ba9687114c6b598e8019e262d9a60
+endif
 endif
 endif
 endif
@@ -1125,34 +1134,39 @@ config PACKAGE_B43_USE_BCMA
 	config B43_FW_4_150
 		bool "Firmware 410.2160 from driver 4.150.10.5 (old stable)"
 		help
-		  Stable firmware for BCM43xx devices.
+		  Old stable firmware for BCM43xx devices.
 
 		  If unsure, select this.
 
 	config B43_FW_4_178
 		bool "Firmware 478.104 from driver 4.178.10.4"
 		help
-		  Experimental firmware for BCM43xx devices.
-
-		  This firmware is not tested as much as the "stable" firmware.
+		  Older firmware for BCM43xx devices.
 
 		  If unsure, select the "stable" firmware.
 
 	config B43_FW_5_10
 		bool "Firmware 508.1084 from driver 5.10.56.27"
 		help
-		  Newer experimental firmware for BCM43xx devices.
-
-		  This firmware is mostly untested. It is needed for some N-PHY devices.
+		  Older firmware for BCM43xx devices.
 
 		  If unsure, select the "stable" firmware.
 
 	config B43_FW_5_100_138
 		bool "Firmware 666.2 from driver 5.100.138 (stable)"
 		help
+		  The currently default firmware for BCM43xx devices.
+
+		  This firmware currently gets most of the testing and is needed for some N-PHY devices.
+
+		  If unsure, select the this firmware.
+
+	config B43_FW_6_30
+		bool "Firmware 784.2 from driver 6.30.163.46 (experimental)"
+		help
 		  Newer experimental firmware for BCM43xx devices.
 
-		  This firmware is mostly untested. It is needed for some N-PHY devices.
+		  This firmware is mostly untested.
 
 		  If unsure, select the "stable" firmware.
 
