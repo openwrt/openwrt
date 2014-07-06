@@ -1,0 +1,23 @@
+--- a/arch/powerpc/boot/dts/mpc8377_wlan.dts
++++ b/arch/powerpc/boot/dts/mpc8377_wlan.dts
+@@ -81,6 +81,11 @@
+ 				reg = <0x3a0000 0x3c60000>;
+ 				label = "rootfs";
+ 			};
++
++			partition1@a0000 {
++				reg = <0xa0000 0x3f60000>;
++				label = "firmware";
++			};
+ 		};
+ 	};
+ 
+@@ -476,4 +481,8 @@
+ 			default-state = "off";
+ 		};
+ 	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 rootfstype=squashfs noinitrd";
++	};
+ };

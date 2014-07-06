@@ -1,0 +1,1318 @@
+--- a/arch/powerpc/boot/Makefile
++++ b/arch/powerpc/boot/Makefile
+@@ -89,7 +89,8 @@ src-plat-$(CONFIG_44x) += treeboot-ebony
+ src-plat-$(CONFIG_8xx) += cuboot-8xx.c fixed-head.S ep88xc.c redboot-8xx.c
+ src-plat-$(CONFIG_PPC_MPC52xx) += cuboot-52xx.c
+ src-plat-$(CONFIG_PPC_82xx) += cuboot-pq2.c fixed-head.S ep8248e.c cuboot-824x.c
+-src-plat-$(CONFIG_PPC_83xx) += cuboot-83xx.c fixed-head.S redboot-83xx.c
++src-plat-$(CONFIG_PPC_83xx) += cuboot-83xx.c fixed-head.S redboot-83xx.c \
++				rb600.c rb333.c
+ src-plat-$(CONFIG_FSL_SOC_BOOKE) += cuboot-85xx.c cuboot-85xx-cpm2.c
+ src-plat-$(CONFIG_EMBEDDED6xx) += cuboot-pq2.c cuboot-mpc7448hpc2.c \
+ 					cuboot-c2k.c gamecube-head.S \
+@@ -261,6 +262,8 @@ image-$(CONFIG_MPC834x_ITX)		+= cuImage.
+ image-$(CONFIG_MPC834x_MDS)		+= cuImage.mpc834x_mds
+ image-$(CONFIG_MPC836x_MDS)		+= cuImage.mpc836x_mds
+ image-$(CONFIG_ASP834x)			+= dtbImage.asp834x-redboot
++image-$(CONFIG_RB_PPC)			+= dtbImage.rb600 \
++					   dtbImage.rb333
+ 
+ # Board ports in arch/powerpc/platform/85xx/Kconfig
+ image-$(CONFIG_MPC8540_ADS)		+= cuImage.mpc8540ads
+--- /dev/null
++++ b/arch/powerpc/boot/dts/rb600.dts
+@@ -0,0 +1,283 @@
++/*
++ * RouterBOARD 600 series Device Tree Source
++ *
++ * Copyright 2009 Michael Guntsche <mike@it-loops.com>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ */
++
++/dts-v1/;
++
++/ {
++	model = "RB600";
++	compatible = "MPC83xx";
++	#address-cells = <1>;
++	#size-cells = <1>;
++
++	aliases {
++		ethernet0 = &enet0;
++		ethernet1 = &enet1;
++		pci0 = &pci0;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 board=mpc8323 rootfstype=squashfs,yaffs2,jffs2 root=/dev/mtdblock1 boot=1";
++		linux,stdout-path = "/soc8343@e0000000/serial@4500";
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		PowerPC,8343E@0 {
++			device_type = "cpu";
++			reg = <0x0>;
++			d-cache-line-size = <0x20>;
++			i-cache-line-size = <0x20>;
++			d-cache-size = <0x8000>;
++			i-cache-size = <0x8000>;
++			timebase-frequency = <0x0000000>; // filled by the bootwrapper from the firmware blob
++			clock-frequency = <0x00000000>; // filled by the bootwrapper from the firmware blob
++		};
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x0 0x0000000>; // filled by the bootwrapper from the firmware blob
++	};
++
++	cf@f9200000 {
++		lb-timings = <0x5dc 0x3e8 0x1194 0x5dc 0x2af8>;
++		interrupt-at-level = <0x0>;
++		interrupt-parent = <&ipic>;
++		interrupts = <0x16 0x8>;
++		lbc_extra_divider = <0x1>;
++		reg = <0xf9200000 0x200000>;
++		device_type = "rb,cf";
++	};
++
++	cf@f9000000 {
++		lb-timings = <0x5dc 0x3e8 0x1194 0x5dc 0x2af8>;
++		interrupt-at-level = <0x0>;
++		interrupt-parent = <&ipic>;
++		interrupts = <0x14 0x8>;
++		lbc_extra_divider = <0x1>;
++		reg = <0xf9000000 0x200000>;
++		device_type = "rb,cf";
++	};
++
++	flash {
++		reg = <0xff800000 0x20000>;
++	};
++
++	nnand {
++		reg = <0xf0000000 0x1000>;
++	};
++
++	nand {
++		ale = <&gpio 0x6>;
++		cle = <&gpio 0x5>;
++		nce = <&gpio 0x4>;
++		rdy = <&gpio 0x3>;
++		reg = <0xf8000000 0x1000>;
++		device_type = "rb,nand";
++	};
++
++	fancon {
++		interrupt-parent = <&ipic>;
++		interrupts = <0x17 0x8>;
++		sense = <&gpio 0x7>;
++		fan_on = <&gpio 0x9>;
++	};
++
++	pci0: pci@e0008500 {
++		device_type = "pci";
++		compatible = "fsl,mpc8349-pci";
++		reg = <0xe0008500 0x100 0xe0008300 0x8>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		ranges = <0x2000000 0x0 0x80000000 0x80000000 0x0 0x20000000 0x1000000 0x0 0x0 0xd0000000 0x0 0x4000000>;
++		bus-range = <0x0 0x0>;
++		interrupt-map = <
++			0x5800 0x0 0x0 0x1 &ipic 0x15 0x8
++			0x6000 0x0 0x0 0x1 &ipic 0x30 0x8
++			0x6000 0x0 0x0 0x2 &ipic 0x11 0x8
++			0x6800 0x0 0x0 0x1 &ipic 0x11 0x8
++			0x6800 0x0 0x0 0x2 &ipic 0x12 0x8
++			0x7000 0x0 0x0 0x1 &ipic 0x12 0x8
++			0x7000 0x0 0x0 0x2 &ipic 0x13 0x8
++			0x7800 0x0 0x0 0x1 &ipic 0x13 0x8
++			0x7800 0x0 0x0 0x2 &ipic 0x30 0x8
++			0x8000 0x0 0x0 0x1 &ipic 0x30 0x8
++			0x8000 0x0 0x0 0x2 &ipic 0x12 0x8
++			0x8000 0x0 0x0 0x3 &ipic 0x11 0x8
++			0x8000 0x0 0x0 0x4 &ipic 0x13 0x8
++			0xa000 0x0 0x0 0x1 &ipic 0x30 0x8
++			0xa000 0x0 0x0 0x2 &ipic 0x11 0x8
++			0xa000 0x0 0x0 0x3 &ipic 0x12 0x8
++			0xa000 0x0 0x0 0x4 &ipic 0x13 0x8
++			0xa800 0x0 0x0 0x1 &ipic 0x11 0x8
++			0xa800 0x0 0x0 0x2 &ipic 0x12 0x8
++			0xa800 0x0 0x0 0x3 &ipic 0x13 0x8
++			0xa800 0x0 0x0 0x4 &ipic 0x30 0x8>;
++		interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
++		interrupt-parent = <&ipic>;
++	};
++
++	soc8343@e0000000 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		device_type = "soc";
++		compatible = "simple-bus";
++		ranges = <0x0 0xe0000000 0x100000>;
++		reg = <0xe0000000 0x200>;
++		bus-frequency = <0x1>;
++
++		led {
++			user_led = <0x400 0x8>;
++		};
++
++		beeper {
++			reg = <0x500 0x100>;
++		};
++
++		gpio: gpio@0 {
++			reg = <0xc08 0x4>;
++			device-id = <0x0>;
++			compatible = "gpio";
++			device_type = "gpio";
++		};
++
++		dma@82a8 {
++                        #address-cells = <1>;
++                        #size-cells = <1>;
++                        compatible = "fsl,mpc8349-dma", "fsl,elo-dma";
++                        reg = <0x82a8 4>;
++                        ranges = <0 0x8100 0x1a8>;
++                        interrupt-parent = <&ipic>;
++                        interrupts = <71 8>;
++                        cell-index = <0>;
++                        dma-channel@0 {
++                                compatible = "fsl,mpc8349-dma-channel", "fsl,elo-dma-channel";
++                                reg = <0 0x80>;
++                                cell-index = <0>;
++                                interrupt-parent = <&ipic>;
++                                interrupts = <71 8>;
++                        };
++                        dma-channel@80 {
++                                compatible = "fsl,mpc8349-dma-channel", "fsl,elo-dma-channel";
++                                reg = <0x80 0x80>;
++                                cell-index = <1>;
++                                interrupt-parent = <&ipic>;
++                                interrupts = <71 8>;
++                        };
++                        dma-channel@100 {
++                                compatible = "fsl,mpc8349-dma-channel", "fsl,elo-dma-channel";
++                                reg = <0x100 0x80>;
++                                cell-index = <2>;
++                                interrupt-parent = <&ipic>;
++                                interrupts = <71 8>;
++                        };
++                        dma-channel@180 {
++                                compatible = "fsl,mpc8349-dma-channel", "fsl,elo-dma-channel";
++                                reg = <0x180 0x28>;
++                                cell-index = <3>;
++                                interrupt-parent = <&ipic>;
++                                interrupts = <71 8>;
++                        };
++                };
++
++		enet0: ethernet@25000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			cell-index = <0>;
++			phy-handle = <&phy0>;
++			tbi-handle = <&tbi0>;
++			interrupt-parent = <&ipic>;
++			interrupts = <0x23 0x8 0x24 0x8 0x25 0x8>;
++			local-mac-address = [00 00 00 00 00 00];
++			reg = <0x25000 0x1000>;
++			ranges = <0x0 0x25000 0x1000>;
++			compatible = "gianfar";
++			model = "TSEC";
++			device_type = "network";
++
++			mdio@520 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,gianfar-tbi";
++				reg = <0x520 0x20>;
++
++				tbi0: tbi-phy@11 {
++					reg = <0x11>;
++					device_type = "tbi-phy";
++				};
++			};
++		};
++
++		enet1: ethernet@24000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			cell-index = <1>;
++			phy-handle = <&phy1>;
++			tbi-handle = <&tbi1>;
++			interrupt-parent = <&ipic>;
++			interrupts = <0x20 0x8 0x21 0x8 0x22 0x8>;
++			local-mac-address = [00 00 00 00 00 00];
++			reg = <0x24000 0x1000>;
++			ranges = <0x0 0x24000 0x1000>;
++			compatible = "gianfar";
++			model = "TSEC";
++			device_type = "network";
++
++			mdio@520 {
++				#size-cells = <0x0>;
++				#address-cells = <0x1>;
++				reg = <0x520 0x20>;
++				compatible = "fsl,gianfar-mdio";
++
++				phy0: ethernet-phy@0 {
++					device_type = "ethernet-phy";
++					reg = <0x0>;
++				};
++
++				phy1: ethernet-phy@1 {
++					device_type = "ethernet-phy";
++					reg = <0x1>;
++				};
++
++				tbi1: tbi-phy@11 {
++					reg = <0x11>;
++					device_type = "tbi-phy";
++				};
++			};
++		};
++
++		ipic: pic@700 {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <2>;
++			reg = <0x700 0x100>;
++			device_type = "ipic";
++		};
++
++		serial@4500 {
++			interrupt-parent = <&ipic>;
++			interrupts = <0x9 0x8>;
++			clock-frequency = <0xfe4f840>;
++			reg = <0x4500 0x100>;
++			compatible = "ns16550";
++			device_type = "serial";
++		};
++
++		wdt@200 {
++			reg = <0x200 0x100>;
++			compatible = "mpc83xx_wdt";
++			device_type = "watchdog";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/powerpc/boot/rb600.c
+@@ -0,0 +1,70 @@
++/*
++ * The RouterBOARD platform -- for booting RB600(A) RouterBOARDs.
++ *
++ * Author: Michael Guntsche <mike@it-loops.com>
++ *
++ * Copyright (c) 2009 Michael Guntsche
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ */
++
++#include "ops.h"
++#include "types.h"
++#include "io.h"
++#include "stdio.h"
++#include <libfdt.h>
++
++BSS_STACK(4*1024);
++
++u64 memsize64;
++const void *fw_dtb;
++
++static void rb600_fixups(void)
++{
++	const u32 *reg, *timebase, *clock;
++	int node, size;
++
++	dt_fixup_memory(0, memsize64);
++
++	/* Set the MAC addresses. */
++	node = fdt_path_offset(fw_dtb, "/soc8343@e0000000/ethernet@24000");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet1", (const u8 *)reg);
++
++	node = fdt_path_offset(fw_dtb, "/soc8343@e0000000/ethernet@25000");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet0", (const u8 *)reg);
++
++	/* Find the CPU timebase and clock frequencies. */
++	node = fdt_node_offset_by_prop_value(fw_dtb, -1, "device_type", "cpu", sizeof("cpu"));
++	timebase = fdt_getprop(fw_dtb, node, "timebase-frequency", &size);
++	clock = fdt_getprop(fw_dtb, node, "clock-frequency", &size);
++	dt_fixup_cpu_clocks(*clock, *timebase, 0);
++
++}
++
++void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
++		   unsigned long r6, unsigned long r7)
++{
++	const u32 *reg;
++	int node, size;
++
++	fw_dtb = (const void *)r3;
++
++	/* Find the memory range. */
++	node = fdt_node_offset_by_prop_value(fw_dtb, -1, "device_type", "memory", sizeof("memory"));
++	reg = fdt_getprop(fw_dtb, node, "reg", &size);
++	memsize64 = reg[1];
++
++	/* Now we have the memory size; initialize the heap. */
++	simple_alloc_init(_end, memsize64 - (unsigned long)_end, 32, 64);
++
++	/* Prepare the device tree and find the console. */
++	fdt_init(_dtb_start);
++	serial_console_init();
++
++	/* Remaining fixups... */
++	platform_ops.fixups = rb600_fixups;
++}
+--- a/arch/powerpc/boot/wrapper
++++ b/arch/powerpc/boot/wrapper
+@@ -217,7 +217,7 @@ ps3)
+     make_space=n
+     pie=
+     ;;
+-ep88xc|ep405|ep8248e)
++ep88xc|ep405|ep8248e|rb600|rb333)
+     platformo="$object/fixed-head.o $object/$platform.o"
+     binary=y
+     ;;
+--- a/arch/powerpc/platforms/83xx/Kconfig
++++ b/arch/powerpc/platforms/83xx/Kconfig
+@@ -38,6 +38,15 @@ config MPC832x_RDB
+ 	help
+ 	  This option enables support for the MPC8323 RDB board.
+ 
++config RB_PPC
++	bool "MikroTik RouterBOARD 333/600 series"
++	select DEFAULT_UIMAGE
++	select QUICC_ENGINE
++	select PPC_MPC832x
++	select PPC_MPC834x
++	help
++	  This option enables support for MikroTik RouterBOARD 333/600 series boards.
++
+ config MPC834x_MDS
+ 	bool "Freescale MPC834x MDS"
+ 	select DEFAULT_UIMAGE
+--- /dev/null
++++ b/arch/powerpc/boot/dts/rb333.dts
+@@ -0,0 +1,426 @@
++
++/*
++ * RouterBOARD 333 series Device Tree Source
++ *
++ * Copyright 2010 Alexandros C. Couloumbis <alex@ozo.com>
++ * Copyright 2009 Michael Guntsche <mike@it-loops.com>
++ *
++ * This program is free software; you can redistribute  it and/or modify it
++ * under  the terms of  the GNU General  Public License as published by the
++ * Free Software Foundation;  either version 2 of the  License, or (at your
++ * option) any later version.
++ *
++ * Warning (reg_format): "reg" property in /qe@e0100000/muram@10000/data-only@0 has invalid length (8 bytes) (#address-cells == 2, #size-cells == 1)
++ * Warning (ranges_format): "ranges" property in /qe@e0100000/muram@10000 has invalid length (12 bytes) (parent #address-cells == 1, child #address-cells == 2, #size-cells == 1)
++ * Warning (avoid_default_addr_size): Relying on default #address-cells value for /qe@e0100000/muram@10000/data-only@0
++ * Warning (avoid_default_addr_size): Relying on default #size-cells value for /qe@e0100000/muram@10000/data-only@0
++ * Warning (obsolete_chosen_interrupt_controller): /chosen has obsolete "interrupt-controller" property
++ *
++ */
++
++
++/dts-v1/;
++
++/ {
++	model = "RB333";
++	compatible = "MPC83xx";
++	#size-cells = <1>;
++	#address-cells = <1>;
++
++	aliases {
++		ethernet0 = &enet0;
++		ethernet1 = &enet1;
++		ethernet2 = &enet2;
++		pci0 = &pci0;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200 board=mpc8323 rootfstype=squashfs,yaffs2,jffs2 root=/dev/mtdblock1 boot=1";
++		// linux,platform = <0x8062>;
++		// linux,initrd = <0x488000 0x0>;
++		linux,stdout-path = "/soc8323@e0000000/serial@4500";
++		// interrupt-controller = <&ipic>;
++	};
++
++	cpus {
++		#cpus = <1>;
++		#size-cells = <0>;
++		#address-cells = <1>;
++
++		PowerPC,8323E@0 {
++			device_type = "cpu";
++			reg = <0x0>;
++			i-cache-size = <0x4000>;
++			d-cache-size = <0x4000>;
++			i-cache-line-size = <0x20>;
++			d-cache-line-size = <0x20>;
++			// clock-frequency = <0x13de3650>;
++			// timebase-frequency = <0x1fc9f08>;
++			timebase-frequency = <0x0000000>; // filled by the bootwrapper from the firmware blob
++			clock-frequency = <0x00000000>; // filled by the bootwrapper from the firmware blob
++			32-bit;
++		};
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x0 0x4000000>;
++		// reg = <0x0 0x0000000>; // filled by the bootwrapper from the firmware blob
++	};
++
++	flash {
++		reg = <0xfe000000 0x20000>;
++	};
++
++	nand {
++		ale = <&gpio2 0x3>;
++		cle = <&gpio2 0x2>;
++		nce = <&gpio2 0x1>;
++		rdy = <&gpio2 0x0>;
++		reg = <0xf8000000 0x1000>;
++		device_type = "rb,nand";
++	};
++
++	nnand {
++		reg = <0xf0000000 0x1000>;
++	};
++
++	voltage {
++		voltage_gpio = <&gpio3 0x11>;
++	};
++
++	fancon {
++		interrupt-parent = <&ipic>;
++		interrupts = <0x14 0x8>;
++		fan_on = <&gpio0 0x10>;
++	};
++
++	soc8323@e0000000 {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		device_type = "soc";
++		compatible = "simple-bus";
++		ranges = <0x0 0xe0000000 0x00100000>;
++		reg = <0xe0000000 0x00000200>;
++		bus-frequency = <1>;
++
++		wdt@200 {
++			device_type = "watchdog";
++			compatible = "mpc83xx_wdt";
++			reg = <0x200 0x100>;
++		};
++
++		ipic:pic@700 {
++			interrupt-controller;
++			#address-cells = <0>;
++			#interrupt-cells = <2>;
++			reg = <0x700 0x100>;
++			device_type = "ipic";
++		};
++
++		par_io@1400 {
++			num-ports = <4>;
++			device_type = "par_io";
++			reg = <0x1400 0x100>;
++
++			ucc2pio: ucc_pin@02 {
++				pio-map = <
++			/* port  pin  dir  open_drain  assignment  has_irq */
++					3  4 3 0 2 0
++					3  5 1 0 2 0
++					0 18 1 0 1 0
++					0 19 1 0 1 0
++					0 20 1 0 1 0
++					0 21 1 0 1 0
++					0 30 1 0 1 0
++					3  6 2 0 1 0
++					0 29 2 0 1 0
++					0 31 2 0 1 0
++					0 22 2 0 1 0
++					0 23 2 0 1 0
++					0 24 2 0 1 0
++					0 25 2 0 1 0
++					0 28 2 0 1 0
++					0 26 2 0 1 0
++					3 31 2 0 1 0>;
++			};
++
++			ucc3pio: ucc_pin@03 {
++				pio-map = <
++			/* port  pin  dir  open_drain  assignment  has_irq */
++					1  0 1 0 1 0
++					1  1 1 0 1 0
++					1  2 1 0 1 0
++					1  3 1 0 1 0
++					1 12 1 0 1 0
++					3 24 2 0 1 0
++					1 11 2 0 1 0
++					1 13 2 0 1 0
++					1  4 2 0 1 0
++					1  5 2 0 1 0
++					1  6 2 0 1 0
++					1  7 2 0 1 0
++					1 10 2 0 1 0
++					1  8 2 0 1 0
++					3 29 2 0 1 0>;
++			};
++
++			ucc4pio: ucc_pin@04 {
++				pio-map = <
++			/* port  pin  dir  open_drain  assignment  has_irq */
++					1 18 1 0 1 0
++					1 19 1 0 1 0
++					1 20 1 0 1 0
++					1 21 1 0 1 0
++					1 30 1 0 1 0
++					3 20 2 0 1 0
++					1 30 2 0 1 0
++					1 31 2 0 1 0
++					1 22 2 0 1 0
++					1 23 2 0 1 0
++					1 24 2 0 1 0
++					1 25 2 0 1 0
++					1 28 2 0 1 0
++					1 26 2 0 1 0
++					3 21 2 0 1 0>;
++			};
++		};
++
++		serial0: serial@4500 {
++			cell-index = <0>;
++			device_type = "serial";
++			compatible = "fsl,ns16550", "ns16550";
++			reg = <0x4500 0x100>;
++			clock-frequency = <0x7f27c20>;
++			interrupts = <9 0x8>;
++			interrupt-parent = <&ipic>;
++		};
++
++		dma@82a8 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			compatible = "fsl,mpc8323-dma", "fsl,elo-dma";
++			reg = <0x82a8 4>;
++			ranges = <0 0x8100 0x1a8>;
++			interrupt-parent = <&ipic>;
++			interrupts = <71 8>;
++			cell-index = <0>;
++			dma-channel@0 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0 0x80>;
++				cell-index = <0>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++			dma-channel@80 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0x80 0x80>;
++				cell-index = <1>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++			dma-channel@100 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0x100 0x80>;
++				cell-index = <2>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++			dma-channel@180 {
++				compatible = "fsl,mpc8323-dma-channel", "fsl,elo-dma-channel";
++				reg = <0x180 0x28>;
++				cell-index = <3>;
++				interrupt-parent = <&ipic>;
++				interrupts = <71 8>;
++			};
++		};
++
++		beeper {
++			gpio = <&gpio3 0x12>;
++			reg = <0x500 0x100>;
++			interrupt-parent = <&ipic>;
++			interrupts = <0x48 0x8>;
++		};
++
++		gpio3: gpio@3 {
++			reg = <0x144c 0x4>;
++			device-id = <0x3>;
++			compatible = "qe_gpio";
++			device_type = "gpio";
++		};
++
++		gpio2: gpio@2 {
++			reg = <0x1434 0x4>;
++			device-id = <0x2>;
++			compatible = "qe_gpio";
++			device_type = "gpio";
++		};
++
++		gpio0: gpio@0 {
++			reg = <0x1404 0x4>;
++			device-id = <0x0>;
++			compatible = "qe_gpio";
++			device_type = "gpio";
++		};
++	};
++
++	pci0: pci@e0008500 {
++		device_type = "pci";
++		// compatible = "83xx";
++		compatible = "fsl,mpc8349-pci";
++		reg = <0xe0008500 0x100 0xe0008300 0x8>;
++		#address-cells = <3>;
++		#size-cells = <2>;
++		#interrupt-cells = <1>;
++		// clock-frequency = <0>;
++		ranges = <0x2000000 0x0 0x80000000 0x80000000 0x0 0x20000000 0x1000000 0x0 0x0 0xd0000000 0x0 0x4000000>;
++		bus-range = <0x0 0x0>;
++		interrupt-map = <
++			/* IDSEL 0x10 AD16 miniPCI slot 0 */
++			0x8000 0x0 0x0 0x1 &ipic 0x11 0x8
++			0x8000 0x0 0x0 0x2 &ipic 0x12 0x8
++
++			/* IDSEL 0x11 AD17 miniPCI slot 1 */
++			0x8800 0x0 0x0 0x1 &ipic 0x12 0x8
++			0x8800 0x0 0x0 0x2 &ipic 0x13 0x8
++
++			/* IDSEL 0x12 AD18  miniPCI slot 2 */
++			0x9000 0x0 0x0 0x1 &ipic 0x13 0x8
++			0x9000 0x0 0x0 0x2 &ipic 0x11 0x8>;
++
++		interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
++		interrupt-parent = <&ipic>;
++		// interrupts = <66 0x8>;
++	};
++
++	qe@e0100000 {
++		reg = <0xe0100000 0x480>;
++		ranges = <0x0 0xe0100000 0x100000>;
++		model = "QE";
++		device_type = "qe";
++		compatible = "fsl,qe";
++		#size-cells = <1>;
++		#address-cells = <1>;
++		brg-frequency = <0>;
++                bus-frequency = <0>;
++                // bus-frequency = <198000000>;
++                fsl,qe-num-riscs = <1>;
++                fsl,qe-num-snums = <28>;
++
++		qeic: qeic@80 {
++			interrupt-controller;
++			compatible = "fsl,qe-ic";
++			big-endian;
++			built-in;
++			reg = <0x80 0x80>;
++			#interrupt-cells = <1>;
++			#address-cells = <0>;
++			device_type = "qeic";
++			interrupts = <0x20 0x8 0x21 0x8>;
++			interrupt-parent = <&ipic>;
++		};
++
++		mdio@2120 {
++			compatible = "ucc_geth_phy";
++			device_type = "mdio";
++			reg = <0x3120 0x18>;
++			#size-cells = <0>;
++			#address-cells = <1>;
++
++			phy3: ethernet-phy@03 {
++				// interface = <0x3>;
++				device_type = "ethernet-phy";
++				reg = <0x3>;
++			};
++
++			phy2: ethernet-phy@02 {
++				// interface = <0x3>;
++				device_type = "ethernet-phy";
++				reg = <0x2>;
++			};
++
++			phy1: ethernet-phy@01 {
++				// interface = <0x3>;
++				device_type = "ethernet-phy";
++				reg = <0x1>;
++			};
++		};
++
++		enet0: ucc@2200 {
++			tx-clock = <0x1a>;
++			rx-clock = <0x1f>;
++			local-mac-address = [00 00 00 00 00 00];
++			interrupt-parent = <&qeic>;
++			interrupts = <0x22>;
++			reg = <0x2200 0x200>;
++			device-id = <0x3>;
++			model = "UCC";
++			compatible = "ucc_geth";
++			device_type = "network";
++			phy-handle = <&phy2>;
++			pio-handle = <&ucc3pio>;
++		};
++
++		enet1: ucc@3200 {
++			tx-clock = <0x22>;
++			rx-clock = <0x20>;
++			local-mac-address = [00 00 00 00 00 00];
++			interrupt-parent = <&qeic>;
++			interrupts = <0x23>;
++			reg = <0x3200 0x200>;
++			device-id = <0x4>;
++			model = "UCC";
++			compatible = "ucc_geth";
++			device_type = "network";
++			phy-handle = <&phy3>;
++			pio-handle = <&ucc4pio>;
++		};
++
++		enet2: ucc@3000 {
++			tx-clock = <0x18>;
++			rx-clock = <0x17>;
++			local-mac-address = [00 00 00 00 00 00];
++			interrupt-parent = <&qeic>;
++			interrupts = <0x21>;
++			reg = <0x3000 0x200>;
++			device-id = <0x2>;
++			model = "UCC";
++			compatible = "ucc_geth";
++			device_type = "network";
++			phy-handle = <&phy1>;
++			pio-handle = <&ucc2pio>;
++		};
++
++		spi@500 {
++			mode = "cpu";
++			interrupt-parent = <&qeic>;
++			interrupts = <0x1>;
++			reg = <0x500 0x40>;
++			compatible = "fsl,spi";
++			device_type = "spi";
++		};
++
++		spi@4c0 {
++			mode = "cpu";
++			interrupt-parent = <&qeic>;
++			interrupts = <0x2>;
++			reg = <0x4c0 0x40>;
++			compatible = "fsl,spi";
++			device_type = "spi";
++		};
++
++		muram@10000 {
++			#address-cells = <1>;
++			#size-cells = <1>;
++			compatible = "fsl,qe-muram", "fsl,cpm-muram";
++			ranges = <0x0 0x10000 0x4000>;
++			device_type = "muram";
++
++			data-only@0 {
++				compatible = "fsl,qe-muram-data",
++					"fsl,cpm-muram-data";
++				reg = <0x0 0x4000>;
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/powerpc/boot/rb333.c
+@@ -0,0 +1,86 @@
++/*
++ * The RouterBOARD platform -- for booting RB333 RouterBOARDs.
++ *
++ * Author: Alexandros C. Couloumbis  <alex@ozo.com>
++ * Author: Michael Guntsche <mike@it-loops.com>
++ *
++ * Copyright (c) 2010 Alexandros C. Couloumbis
++ * Copyright (c) 2009 Michael Guntsche
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 2 as published
++ * by the Free Software Foundation.
++ */
++
++#include "ops.h"
++#include "types.h"
++#include "io.h"
++#include "stdio.h"
++#include <libfdt.h>
++
++BSS_STACK(4*1024);
++
++u64 memsize64;
++const void *fw_dtb;
++
++static void rb333_fixups(void)
++{
++	const u32 *reg, *timebase, *clock;
++	int node, size;
++	void *chosen;
++	const char* bootargs;
++
++	dt_fixup_memory(0, memsize64);
++
++	/* Find the CPU timebase and clock frequencies. */
++	node = fdt_node_offset_by_prop_value(fw_dtb, -1, "device_type", "cpu", sizeof("cpu"));
++	timebase = fdt_getprop(fw_dtb, node, "timebase-frequency", &size);
++	clock = fdt_getprop(fw_dtb, node, "clock-frequency", &size);
++	dt_fixup_cpu_clocks(*clock, *timebase, 0);
++
++	/* Set the MAC addresses. */
++	node = fdt_path_offset(fw_dtb, "/qe@e0100000/ucc@2200");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet0", (const u8 *)reg);
++
++	node = fdt_path_offset(fw_dtb, "/qe@e0100000/ucc@3200");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet1", (const u8 *)reg);
++
++	node = fdt_path_offset(fw_dtb, "/qe@e0100000/ucc@3000");
++	reg = fdt_getprop(fw_dtb, node, "mac-address", &size);
++	dt_fixup_mac_address_by_alias("ethernet2", (const u8 *)reg);
++
++	/* Fixup chosen
++	 * The bootloader reads the kernelparm segment and adds the content to
++	 * bootargs. This is needed to specify root and other boot flags.
++	 */
++	chosen = finddevice("/chosen");
++	node = fdt_path_offset(fw_dtb, "/chosen");
++	bootargs = fdt_getprop(fw_dtb, node, "bootargs", &size);
++	setprop_str(chosen, "bootargs", bootargs);
++}
++
++void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
++		   unsigned long r6, unsigned long r7)
++{
++	const u32 *reg;
++	int node, size;
++
++	fw_dtb = (const void *)r3;
++
++	/* Find the memory range. */
++	node = fdt_node_offset_by_prop_value(fw_dtb, -1, "device_type", "memory", sizeof("memory"));
++	reg = fdt_getprop(fw_dtb, node, "reg", &size);
++	memsize64 = reg[1];
++
++	/* Now we have the memory size; initialize the heap. */
++	simple_alloc_init(_end, memsize64 - (unsigned long)_end, 32, 64);
++
++	/* Prepare the device tree and find the console. */
++	fdt_init(_dtb_start);
++	serial_console_init();
++
++	/* Remaining fixups... */
++	platform_ops.fixups = rb333_fixups;
++}
+--- /dev/null
++++ b/arch/powerpc/platforms/83xx/rbppc.c
+@@ -0,0 +1,388 @@
++/*
++ * Copyright (C) 2010 Alexandros C. Couloumbis <alex@ozo.com>
++ * Copyright (C) 2008-2009 Noah Fontes <nfontes@transtruct.org>
++ * Copyright (C) 2009 Michael Guntsche <mike@it-loops.com>
++ * Copyright (C) Mikrotik 2007
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License as published by the
++ * Free Software Foundation; either version 2 of the License, or (at your
++ * option) any later version.
++ */
++
++#include <linux/delay.h>
++#include <linux/root_dev.h>
++#include <linux/initrd.h>
++#include <linux/interrupt.h>
++#include <linux/of_platform.h>
++#include <linux/of_device.h>
++#include <linux/of_platform.h>
++#include <linux/pci.h>
++#include <asm/time.h>
++#include <asm/ipic.h>
++#include <asm/udbg.h>
++#include <asm/qe.h>
++#include <asm/qe_ic.h>
++#include <sysdev/fsl_soc.h>
++#include <sysdev/fsl_pci.h>
++#include "mpc83xx.h"
++
++#define SYSCTL		0x100
++#define SICRL		0x014
++
++#define GTCFR2		0x04
++#define GTMDR4		0x22
++#define GTRFR4		0x26
++#define GTCNR4		0x2e
++#define GTVER4		0x36
++#define GTPSR4		0x3e
++
++#define GTCFR_BCM	0x40
++#define GTCFR_STP4	0x20
++#define GTCFR_RST4	0x10
++#define GTCFR_STP3	0x02
++#define GTCFR_RST3	0x01
++
++#define GTMDR_ORI	0x10
++#define GTMDR_FRR	0x08
++#define GTMDR_ICLK16	0x04
++
++extern int par_io_data_set(u8 port, u8 pin, u8 val);
++extern int par_io_config_pin(u8 port, u8 pin, int dir, int open_drain,
++			     int assignment, int has_irq);
++
++static unsigned timer_freq;
++static void *gtm;
++
++static int beeper_irq;
++static unsigned beeper_gpio_pin[2];
++
++int rb333model = 0;
++
++irqreturn_t rbppc_timer_irq(int irq, void *ptr)
++{
++	static int toggle = 0;
++
++	par_io_data_set(beeper_gpio_pin[0], beeper_gpio_pin[1], toggle);
++	toggle = !toggle;
++
++	/* ack interrupt */
++	out_be16(gtm + GTVER4, 3);
++
++	return IRQ_HANDLED;
++}
++
++void rbppc_beep(unsigned freq)
++{
++	unsigned gtmdr;
++
++	if (freq > 5000) freq = 5000;
++
++	if (!gtm)
++		return;
++	if (!freq) {
++		out_8(gtm + GTCFR2, GTCFR_STP4 | GTCFR_STP3);
++		return;
++	}
++
++	out_8(gtm + GTCFR2, GTCFR_RST4 | GTCFR_STP3);
++	out_be16(gtm + GTPSR4, 255);
++	gtmdr = GTMDR_FRR | GTMDR_ICLK16;
++	if (beeper_irq != NO_IRQ) gtmdr |= GTMDR_ORI;
++	out_be16(gtm + GTMDR4, gtmdr);
++	out_be16(gtm + GTVER4, 3);
++
++	out_be16(gtm + GTRFR4, timer_freq / 16 / 256 / freq / 2);
++	out_be16(gtm + GTCNR4, 0);
++}
++EXPORT_SYMBOL(rbppc_beep);
++
++static void __init rbppc_setup_arch(void)
++{
++	struct device_node *np;
++
++	np = of_find_node_by_type(NULL, "cpu");
++	if (np) {
++		const unsigned *fp = of_get_property(np, "clock-frequency", NULL);
++		loops_per_jiffy = fp ? *fp / HZ : 0;
++
++		of_node_put(np);
++	}
++
++	np = of_find_node_by_name(NULL, "serial");
++	if (np) {
++		timer_freq =
++		    *(unsigned *) of_get_property(np, "clock-frequency", NULL);
++		of_node_put(np);
++	}
++
++#ifdef CONFIG_PCI
++	np = of_find_node_by_type(NULL, "pci");
++	if (np) {
++		mpc83xx_add_bridge(np);
++	}
++#endif
++
++if (rb333model) {
++
++#ifdef CONFIG_QUICC_ENGINE
++        qe_reset();
++
++        if ((np = of_find_node_by_name(NULL, "par_io")) != NULL) {
++                par_io_init(np);
++                of_node_put(np);
++
++                for (np = NULL; (np = of_find_node_by_name(np, "ucc")) != NULL;)
++                        par_io_of_config(np);
++        }
++#endif
++
++}  /* RB333 */
++
++}
++
++void __init rbppc_init_IRQ(void)
++{
++	struct device_node *np;
++
++	np = of_find_node_by_type(NULL, "ipic");
++	if (np) {
++		ipic_init(np, 0);
++		ipic_set_default_priority();
++		of_node_put(np);
++	}
++
++if (rb333model) {
++
++#ifdef CONFIG_QUICC_ENGINE
++        np = of_find_compatible_node(NULL, NULL, "fsl,qe-ic");
++        if (!np) {
++                np = of_find_node_by_type(NULL, "qeic");
++                if (!np)
++                        return;
++        }
++        qe_ic_init(np, 0, qe_ic_cascade_low_ipic, qe_ic_cascade_high_ipic);
++        of_node_put(np);
++#endif                          /* CONFIG_QUICC_ENGINE */
++
++}  /* RB333 */
++
++}
++
++static int __init rbppc_probe(void)
++{
++	char *model;
++
++	model = of_get_flat_dt_prop(of_get_flat_dt_root(), "model", NULL);
++
++	if (!model)
++		return 0;
++
++	if (strcmp(model, "RB333") == 0) {
++		rb333model = 1;
++		return 1;
++	}
++
++	if (strcmp(model, "RB600") == 0)
++		return 1;
++
++	return 0;
++}
++
++static void __init rbppc_beeper_init(struct device_node *beeper)
++{
++	struct resource res;
++	struct device_node *gpio;
++	const unsigned *pin;
++	const unsigned *gpio_id;
++
++	if (of_address_to_resource(beeper, 0, &res)) {
++		printk(KERN_ERR "rbppc_beeper_init(%s): Beeper error: No region specified\n", beeper->full_name);
++		return;
++	}
++
++	pin = of_get_property(beeper, "gpio", NULL);
++	if (pin) {
++		gpio = of_find_node_by_phandle(pin[0]);
++
++		if (!gpio) {
++			printk(KERN_ERR "rbppc_beeper_init(%s): Beeper error: GPIO handle %x not found\n", beeper->full_name, pin[0]);
++			return;
++		}
++
++		gpio_id = of_get_property(gpio, "device-id", NULL);
++		if (!gpio_id) {
++			printk(KERN_ERR "rbppc_beeper_init(%s): Beeper error: No device-id specified in GPIO\n", beeper->full_name);
++			return;
++		}
++
++		beeper_gpio_pin[0] = *gpio_id;
++		beeper_gpio_pin[1] = pin[1];
++
++		par_io_config_pin(*gpio_id, pin[1], 1, 0, 0, 0);
++	} else {
++		void *sysctl;
++
++		sysctl = ioremap_nocache(get_immrbase() + SYSCTL, 0x100);
++		out_be32(sysctl + SICRL,
++			 in_be32(sysctl + SICRL) | (1 << (31 - 19)));
++		iounmap(sysctl);
++	}
++
++	gtm = ioremap_nocache(res.start, res.end - res.start + 1);
++
++	beeper_irq = irq_of_parse_and_map(beeper, 0);
++	if (beeper_irq != NO_IRQ) {
++		int e = request_irq(beeper_irq, rbppc_timer_irq, 0, "beeper", NULL);
++		if (e) {
++			printk(KERN_ERR "rbppc_beeper_init(%s): Request of beeper irq failed!\n", beeper->full_name);
++		}
++	}
++}
++
++#define SBIT(x) (0x80000000 >> (x))
++#define DBIT(x, y) ((y) << (32 - (((x % 16) + 1) * 2)))
++
++#define GPIO_DIR_RB333(x) ((x) + (0x1408 >> 2))
++#define GPIO_DATA_RB333(x) ((x) + (0x1404 >> 2))
++
++#define SICRL_RB600(x) ((x) + (0x114 >> 2))
++#define GPIO_DIR_RB600(x) ((x) + (0xc00 >> 2))
++#define GPIO_DATA_RB600(x) ((x) + (0xc08 >> 2))
++
++static void rbppc_restart(char *cmd)
++{
++	__be32 __iomem *reg;
++	unsigned rb_model;
++	struct device_node *root;
++	unsigned int size;
++
++	root = of_find_node_by_path("/");
++	if (root) {
++		const char *prop = (char *) of_get_property(root, "model", &size);
++		rb_model = prop[sizeof("RB") - 1] - '0';
++		of_node_put(root);
++		switch (rb_model) {
++		case 3:
++			reg = ioremap(get_immrbase(), 0x2000);
++			local_irq_disable();
++			out_be32(GPIO_DIR_RB333(reg),
++			(in_be32(GPIO_DIR_RB333(reg)) & ~DBIT(4, 3)) | DBIT(4, 1));
++			out_be32(GPIO_DATA_RB333(reg), in_be32(GPIO_DATA_RB333(reg)) & ~SBIT(4));
++			break;
++		case 6:
++			reg = ioremap(get_immrbase(), 0x1000);
++			local_irq_disable();
++			out_be32(SICRL_RB600(reg), in_be32(SICRL_RB600(reg)) & ~0x00800000);
++			out_be32(GPIO_DIR_RB600(reg), in_be32(GPIO_DIR_RB600(reg)) | SBIT(2));
++			out_be32(GPIO_DATA_RB600(reg), in_be32(GPIO_DATA_RB600(reg)) & ~SBIT(2));
++			break;
++		default:
++			mpc83xx_restart(cmd);
++			break;
++		}
++	}
++	else mpc83xx_restart(cmd);
++
++	for (;;) ;
++}
++
++static void rbppc_halt(void)
++{
++	while (1);
++}
++
++static struct of_device_id rbppc_ids[] = {
++	{ .type = "soc", },
++	{ .compatible = "soc", },
++	{ .compatible = "simple-bus", },
++	{ .type = "qe", },
++	{ .compatible = "fsl,qe", },
++	{ .compatible = "gianfar", },
++	{ },
++};
++
++static int __init rbppc_declare_of_platform_devices(void)
++{
++	struct device_node *np;
++	unsigned idx;
++
++	of_platform_bus_probe(NULL, rbppc_ids, NULL);
++
++	np = of_find_node_by_type(NULL, "mdio");
++	if (np) {
++		unsigned len;
++		unsigned *res;
++		const unsigned *eres;
++		struct device_node *ep;
++
++		ep = of_find_compatible_node(NULL, "network", "ucc_geth");
++		if (ep) {
++			eres = of_get_property(ep, "reg", &len);
++			res = (unsigned *) of_get_property(np, "reg", &len);
++			if (res && eres) {
++				res[0] = eres[0] + 0x120;
++			}
++		}
++	}
++
++	np = of_find_node_by_name(NULL, "nand");
++	if (np) {
++		of_platform_device_create(np, "nand", NULL);
++	}
++
++	idx = 0;
++	for_each_node_by_type(np, "rb,cf") {
++		char dev_name[12];
++		snprintf(dev_name, sizeof(dev_name), "cf.%u", idx);
++		of_platform_device_create(np, dev_name, NULL);
++		++idx;
++	}
++
++	np = of_find_node_by_name(NULL, "beeper");
++	if (np) {
++		rbppc_beeper_init(np);
++	}
++
++	return 0;
++}
++machine_device_initcall(rb600, rbppc_declare_of_platform_devices);
++
++define_machine(rb600) {
++	.name 				= "MikroTik RouterBOARD 333/600 series",
++	.probe 				= rbppc_probe,
++	.setup_arch 			= rbppc_setup_arch,
++	.init_IRQ 			= rbppc_init_IRQ,
++	.get_irq 			= ipic_get_irq,
++	.restart 			= rbppc_restart,
++	.halt				= rbppc_halt,
++	.time_init 			= mpc83xx_time_init,
++	.calibrate_decr			= generic_calibrate_decr,
++};
++
++static void fixup_pcibridge(struct pci_dev *dev)
++{
++	if ((dev->class >> 8) == PCI_CLASS_BRIDGE_PCI) {
++		/* let the kernel itself set right memory windows */
++		pci_write_config_word(dev, PCI_MEMORY_BASE, 0);
++		pci_write_config_word(dev, PCI_MEMORY_LIMIT, 0);
++		pci_write_config_word(dev, PCI_PREF_MEMORY_BASE, 0);
++		pci_write_config_word(dev, PCI_PREF_MEMORY_LIMIT, 0);
++		pci_write_config_byte(dev, PCI_IO_BASE, 0);
++		pci_write_config_byte(dev, PCI_IO_LIMIT, 4 << 4);
++
++		pci_write_config_byte(
++			dev, PCI_COMMAND,
++			PCI_COMMAND_MASTER | PCI_COMMAND_MEMORY | PCI_COMMAND_IO);
++		pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 8);
++	}
++}
++
++
++static void fixup_rb604(struct pci_dev *dev)
++{
++	pci_write_config_byte(dev, 0xC0, 0x01);
++}
++
++DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, fixup_pcibridge)
++DECLARE_PCI_FIXUP_HEADER(0x3388, 0x0021, fixup_rb604)
