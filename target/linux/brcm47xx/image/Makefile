@@ -164,6 +164,26 @@ define Image/Build/generic/squashfs
 endef
 
 #################################################
+# Subtarget mips74k
+#################################################
+
+# $(1): filesystem type.
+define Image/Build/mips74k/jffs2-64k
+	$(call Image/Build/mips74k/devices-with-64k-blocks,$(1))
+endef
+
+# $(1): filesystem type.
+define Image/Build/mips74k/jffs2-128k
+	$(call Image/Build/mips74k/devices-with-128k-blocks,$(1))
+endef
+
+# $(1): filesystem type.
+define Image/Build/mips74k/squashfs
+	$(call Image/Build/mips74k/devices-with-64k-blocks,$(1))
+	$(call Image/Build/mips74k/devices-with-128k-blocks,$(1))
+endef
+
+#################################################
 # Shared BuildImage defines
 #################################################
 
