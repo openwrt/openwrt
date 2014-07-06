@@ -1,0 +1,82 @@
+--- a/arch/arm/mach-gemini/common.h
++++ b/arch/arm/mach-gemini/common.h
+@@ -13,6 +13,7 @@
+ #define __GEMINI_COMMON_H__
+ 
+ struct mtd_partition;
++struct gemini_gmac_platform_data;
+ 
+ extern void gemini_map_io(void);
+ extern void gemini_init_irq(void);
+@@ -26,6 +27,7 @@ extern int platform_register_pflash(unsi
+ 				    struct mtd_partition *parts,
+ 				    unsigned int nr_parts);
+ extern int platform_register_watchdog(void);
++extern int platform_register_ethernet(struct gemini_gmac_platform_data *pdata);
+ 
+ extern void gemini_restart(char mode, const char *cmd);
+ 
+--- a/arch/arm/mach-gemini/devices.c
++++ b/arch/arm/mach-gemini/devices.c
+@@ -17,6 +17,7 @@
+ #include <mach/irqs.h>
+ #include <mach/hardware.h>
+ #include <mach/global_reg.h>
++#include <mach/gmac.h>
+ #include "common.h"
+ 
+ static struct plat_serial8250_port serial_platform_data[] = {
+@@ -134,3 +135,53 @@ int __init platform_register_watchdog(vo
+ {
+ 	return platform_device_register(&wdt_device);
+ }
++
++static struct resource gmac_resources[] = {
++	{
++		.start	= 0x60000000,
++		.end	= 0x6000ffff,
++		.flags	= IORESOURCE_MEM,
++	},
++	{
++		.start	= IRQ_GMAC0,
++		.end	= IRQ_GMAC0,
++		.flags	= IORESOURCE_IRQ,
++	},
++	{
++		.start	= IRQ_GMAC1,
++		.end	= IRQ_GMAC1,
++		.flags	= IORESOURCE_IRQ,
++	},
++};
++
++static u64 gmac_dmamask = 0xffffffffUL;
++
++static struct platform_device ethernet_device = {
++	.name	= "gemini-gmac",
++	.id	= 0,
++	.dev	= {
++		.dma_mask = &gmac_dmamask,
++		.coherent_dma_mask = DMA_BIT_MASK(32),
++	},
++	.num_resources	= ARRAY_SIZE(gmac_resources),
++	.resource	= gmac_resources,
++};
++
++int __init platform_register_ethernet(struct gemini_gmac_platform_data *pdata)
++{
++	unsigned int reg;
++
++	reg = __raw_readl(IO_ADDRESS(GEMINI_GLOBAL_BASE) + GLOBAL_MISC_CTRL);
++	reg &= ~(GMAC_GMII | GMAC_1_ENABLE);
++
++	if (pdata->bus_id[1])
++		reg |= GMAC_1_ENABLE;
++	else if (pdata->interface[0] == PHY_INTERFACE_MODE_GMII)
++		reg |= GMAC_GMII;
++
++	__raw_writel(reg, IO_ADDRESS(GEMINI_GLOBAL_BASE) + GLOBAL_MISC_CTRL);
++
++	ethernet_device.dev.platform_data = pdata;
++
++	return platform_device_register(&ethernet_device);
++}

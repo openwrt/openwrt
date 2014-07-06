@@ -1,0 +1,2910 @@
+--- /dev/null
++++ b/arch/arm/mach-gemini/include/mach/gmac.h
+@@ -0,0 +1,21 @@
++/*
++ * Gemini GMAC specific defines
++ *
++ * Copyright (C) 2008, Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef __MACH_GMAC_H__
++#define __MACH_GMAC_H__
++
++#include <linux/phy.h>
++
++struct gemini_gmac_platform_data {
++	char *bus_id[2]; /* NULL means that this port is not used */
++	phy_interface_t interface[2];
++};
++
++#endif /* __MACH_GMAC_H__ */
+--- /dev/null
++++ b/drivers/net/gemini_negmac/gm_gmac.c
+@@ -0,0 +1,1359 @@
++/*
++ *  Ethernet device driver for Gemini SoC.
++ *
++ *  Copyright (C) 2006, Storlink, Corp.
++ *  Copyright (C) 2008-2009, Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/mm.h>
++#include <linux/compiler.h>
++#include <linux/dma-mapping.h>
++#include <linux/init.h>
++#include <linux/ioport.h>
++#include <linux/netdevice.h>
++#include <linux/etherdevice.h>
++#include <linux/rtnetlink.h>
++#include <linux/delay.h>
++#include <linux/ethtool.h>
++#include <linux/mii.h>
++#include <linux/phy.h>
++#include <linux/irq.h>
++#include <linux/interrupt.h>
++#include <linux/completion.h>
++#include <linux/kthread.h>
++#include <linux/io.h>
++#include <mach/hardware.h>
++#include <linux/semaphore.h>
++#include <mach/irqs.h>
++#include <linux/skbuff.h>
++#include <linux/in.h>
++#include <linux/ip.h>
++#include <linux/tcp.h>
++#include <linux/udp.h>
++#include <mach/gmac.h>
++
++#include "gm_gmac.h"
++
++/* #define GMAX_TX_INTR_DISABLED */
++/* #define DO_HW_CHKSUM */
++/* #define ENABLE_TSO */
++#define GMAC_USE_TXQ0
++/* #define GMAC_LEN_1_2_ISSUE */
++
++#define DEFAULT_RXQ_MAX_CNT			256
++
++/* define chip information */
++#define DRV_VERSION			"0.2"
++#define SL351x_DRIVER_NAME		"Gemini Ethernet driver " DRV_VERSION
++
++#ifdef GMAC_LEN_1_2_ISSUE
++	#define _DEBUG_PREFETCH_NUM	256
++static	int	_debug_prefetch_cnt;
++static	char _debug_prefetch_buf[_DEBUG_PREFETCH_NUM][4] __attribute__((aligned(4)));
++#endif
++
++static inline void gmac_write_reg(void __iomem *base, unsigned int offset,
++				  unsigned int data, unsigned int bit_mask)
++{
++	unsigned int reg_val;
++
++	reg_val = (__raw_readl(base + offset) & (~bit_mask)) | (data & bit_mask);
++	__raw_writel(reg_val, base + offset);
++}
++
++/*----------------------------------------------------------------------
++*	toe_init_free_queue
++*	(1) Initialize the Free Queue Descriptor Base Address & size
++*		Register: TOE_GLOBAL_BASE + 0x0004
++*	(2) Initialize DMA Read/Write pointer for
++*		SW Free Queue and HW Free Queue
++*	(3)	Initialize DMA Descriptors for
++*		SW Free Queue and HW Free Queue,
++*----------------------------------------------------------------------*/
++static void toe_init_free_queue(struct toe_private *toe)
++{
++	int			i;
++	DMA_RWPTR_T		rwptr_reg;
++	void			*desc_buf;
++	GMAC_RXDESC_T		*sw_desc_ptr;
++	struct sk_buff		*skb;
++
++	desc_buf = dma_alloc_coherent(toe->dev, TOE_SW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T),
++				      &toe->sw_freeq_desc_base_dma, GFP_KERNEL);
++	sw_desc_ptr = (GMAC_RXDESC_T *)desc_buf;
++	if (!desc_buf) {
++		dev_err(toe->dev, "%s::DMA ALLOC fail\n", __func__);
++		return;
++	}
++	memset(desc_buf, 0, TOE_SW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T));
++
++	/* DMA Queue Base & Size */
++	__raw_writel((toe->sw_freeq_desc_base_dma & DMA_Q_BASE_MASK) | TOE_SW_FREEQ_DESC_POWER,
++			toe->global_base + GLOBAL_SW_FREEQ_BASE_SIZE_REG);
++
++	/* init descriptor base */
++	toe->swfq_desc_base = (unsigned int)desc_buf;
++
++	/* SW Free Queue Descriptors */
++	for (i = 0; i < TOE_SW_FREEQ_DESC_NUM; i++) {
++		sw_desc_ptr->word0.bits.buffer_size = SW_RX_BUF_SIZE;
++		skb = dev_alloc_skb(SW_RX_BUF_SIZE);	/* allocate socket buffer */
++		if (!skb) {
++			dev_err(toe->dev, "%s::skb buffer allocation fail\n", __func__);
++			return;
++		}
++		REG32(skb->data) = (unsigned int)skb;
++		skb_reserve(skb, SKB_RESERVE_BYTES);
++		sw_desc_ptr->word2.buf_adr = dma_map_single(toe->dev, skb->data,
++					SW_RX_BUF_SIZE - SKB_RESERVE_BYTES,
++					DMA_FROM_DEVICE);
++		sw_desc_ptr++;
++	}
++
++	dma_sync_single_for_device(toe->dev, toe->sw_freeq_desc_base_dma,
++				TOE_SW_FREEQ_DESC_NUM * sizeof(GMAC_RXDESC_T),
++				DMA_TO_DEVICE);
++
++	/* SW Free Queue Read/Write Pointer */
++	rwptr_reg.bits.wptr = TOE_SW_FREEQ_DESC_NUM - 1;
++	rwptr_reg.bits.rptr = 0;
++	__raw_writel(rwptr_reg.bits32, toe->global_base + GLOBAL_SWFQ_RWPTR_REG);
++
++	/* DMA Queue Base & Size */
++	__raw_writel(TOE_HW_FREEQ_DESC_POWER,
++		toe->global_base + GLOBAL_HW_FREEQ_BASE_SIZE_REG);
++	rwptr_reg.bits.wptr = TOE_HW_FREEQ_DESC_NUM - 1;
++	rwptr_reg.bits.rptr = 0;
++	__raw_writel(rwptr_reg.bits32, toe->global_base + GLOBAL_HWFQ_RWPTR_REG);
++}
++
++/*----------------------------------------------------------------------
++*	toe_init_swtx_queue
++*	(2) Initialize the GMAC 0/1 SW TXQ Queue Descriptor Base Address & sizeup
++*		GMAC_SW_TX_QUEUE_BASE_REG(0x0050)
++*	(2) Initialize DMA Read/Write pointer for
++*		GMAC 0/1 SW TX Q0-5
++*----------------------------------------------------------------------*/
++static void toe_init_swtx_queue(struct net_device *dev)
++{
++	int			i;
++	struct gmac_private	*gmac = netdev_priv(dev);
++	struct toe_private	*toe = dev->ml_priv;
++	DMA_RWPTR_T		rwptr_reg;
++	void __iomem		*rwptr_addr;
++	void			*desc_buf;
++	unsigned int		offset;
++
++	desc_buf = dma_alloc_coherent(toe->dev, TOE_GMAC_SWTXQ_DESC_NUM * TOE_SW_TXQ_NUM * sizeof(GMAC_TXDESC_T),
++				      &gmac->swtxq_desc_base_dma, GFP_KERNEL);
++	gmac->swtxq_desc_base = (unsigned int)desc_buf;
++	if (!desc_buf) {
++		dev_err(toe->dev, "%s::DMA ALLOC fail\n", __func__);
++		return;
++	}
++	memset(desc_buf, 0, TOE_GMAC_SWTXQ_DESC_NUM * TOE_SW_TXQ_NUM * sizeof(GMAC_TXDESC_T));
++	dma_sync_single_for_device(toe->dev, gmac->swtxq_desc_base_dma,
++				TOE_GMAC_SWTXQ_DESC_NUM * TOE_SW_TXQ_NUM * sizeof(GMAC_TXDESC_T),
++				DMA_TO_DEVICE);
++	__raw_writel((gmac->swtxq_desc_base_dma & DMA_Q_BASE_MASK) | TOE_GMAC_SWTXQ_DESC_POWER,
++			gmac->dma_base_addr + GMAC_SW_TX_QUEUE_BASE_REG);
++
++	/* GMAC0 SW TX Q0-Q5 */
++	offset = 0;
++	rwptr_reg.bits.wptr = 0;
++	rwptr_reg.bits.rptr = 0;
++	rwptr_addr = gmac->dma_base_addr + GMAC_SW_TX_QUEUE0_PTR_REG;
++	for (i = 0; i < TOE_SW_TXQ_NUM; i++) {
++		gmac->swtxq[i].rwptr_reg = rwptr_addr;
++		gmac->swtxq[i].desc_base_dma = (unsigned int)gmac->swtxq_desc_base_dma + offset;
++		gmac->swtxq[i].desc_base = (unsigned int)desc_buf + offset;
++		offset += TOE_GMAC_SWTXQ_DESC_NUM * sizeof(GMAC_TXDESC_T);
++		__raw_writel(rwptr_reg.bits32, rwptr_addr);
++		rwptr_addr += 4;
++	}
++}
++
++/*----------------------------------------------------------------------
++*	toe_init_default_queue
++*	(1) Initialize the default 0/1 Queue Header
++*		Register: TOE_DEFAULT_Q0_HDR_BASE (0x60002000)
++*			  TOE_DEFAULT_Q1_HDR_BASE (0x60002008)
++*	(2)	Initialize Descriptors of Default Queue 0/1
++*----------------------------------------------------------------------*/
++static void toe_init_default_queue(struct net_device *dev)
++{
++	struct gmac_private	*gmac = netdev_priv(dev);
++	struct toe_private	*toe = dev->ml_priv;
++	volatile NONTOE_QHDR_T	*qhdr;
++	GMAC_RXDESC_T		*desc_ptr;
++
++	desc_ptr = dma_alloc_coherent(toe->dev, TOE_DEFAULT_Q_DESC_NUM * sizeof(GMAC_RXDESC_T),
++				      &gmac->default_desc_base_dma, GFP_KERNEL);
++	if (!desc_ptr) {
++		dev_err(toe->dev, "%s::DMA ALLOC fail\n", __func__);
++		return;
++	}
++	memset(desc_ptr, 0, TOE_DEFAULT_Q_DESC_NUM * sizeof(GMAC_RXDESC_T));
++	dma_sync_single_for_device(toe->dev, gmac->default_desc_base_dma,
++			TOE_DEFAULT_Q_DESC_NUM * sizeof(GMAC_RXDESC_T),
++			DMA_TO_DEVICE);
++	gmac->default_desc_base = (unsigned int)desc_ptr;
++	qhdr = (volatile NONTOE_QHDR_T *)(toe->global_base + TOE_DEFAULT_Q_HDR_BASE(gmac->port_id));
++	qhdr->word0.base_size = ((unsigned int)gmac->default_desc_base_dma & NONTOE_QHDR0_BASE_MASK) | TOE_DEFAULT_Q_DESC_POWER;
++	qhdr->word1.bits32 = 0;
++	gmac->default_qhdr = (NONTOE_QHDR_T *)qhdr;
++}
++
++/*----------------------------------------------------------------------
++*	toe_init_interrupt_config
++*	Interrupt Select Registers are used to map interrupt to int0 or int1
++*	Int0 and int1 are wired to CPU 0/1 GMAC 0/1
++*	Interrupt Device Inteface data are used to pass device info to
++*		upper device driver or store status/statistics
++*	ISR handler
++*		(1) If status bit ON but masked, the prinf error message (bug issue)
++*		(2) If select bits are for me, handle it, else skip to let
++*			the other ISR handles it.
++*  Notes:
++*		GMACx init routine (for eCOS) or open routine (for Linux)
++*		enable the interrupt bits only which are selected for it.
++*
++*	Default Setting:
++*		GMAC0 intr bits ------>	int0 ----> eth0
++*		GMAC1 intr bits ------> int1 ----> eth1
++*		TOE intr -------------> int0 ----> eth0
++*		Classification Intr --> int0 ----> eth0
++*		Default Q0 -----------> int0 ----> eth0
++*		Default Q1 -----------> int1 ----> eth1
++*----------------------------------------------------------------------*/
++static void toe_init_interrupt_config(struct toe_private *toe)
++{
++	/* clear all status bits */
++	__raw_writel(0xffffffff, toe->global_base + GLOBAL_INTERRUPT_STATUS_0_REG);
++	__raw_writel(0xffffffff, toe->global_base + GLOBAL_INTERRUPT_STATUS_1_REG);
++	__raw_writel(0xffffffff, toe->global_base + GLOBAL_INTERRUPT_STATUS_2_REG);
++	__raw_writel(0xffffffff, toe->global_base + GLOBAL_INTERRUPT_STATUS_3_REG);
++	__raw_writel(0xffffffff, toe->global_base + GLOBAL_INTERRUPT_STATUS_4_REG);
++
++	/* Init select registers */
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_SELECT_0_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_SELECT_1_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_SELECT_2_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_SELECT_3_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_SELECT_4_REG);
++
++	/* disable all interrupt */
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_ENABLE_0_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_ENABLE_1_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_ENABLE_2_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_ENABLE_3_REG);
++	__raw_writel(0, toe->global_base + GLOBAL_INTERRUPT_ENABLE_4_REG);
++}
++
++static void toe_gmac_hw_start(struct gmac_private *gmac)
++{
++	GMAC_DMA_CTRL_T	dma_ctrl;
++
++	/* program dma control register */
++	dma_ctrl.bits32 = __raw_readl(gmac->dma_base_addr + GMAC_DMA_CTRL_REG);
++	dma_ctrl.bits.rd_enable = 1;
++	dma_ctrl.bits.td_enable = 1;
++	dma_ctrl.bits.loopback = 0;
++	dma_ctrl.bits.drop_small_ack = 0;
++	dma_ctrl.bits.rd_prot = 0;
++	dma_ctrl.bits.rd_burst_size = 3;
++	dma_ctrl.bits.rd_insert_bytes = RX_INSERT_BYTES;
++	dma_ctrl.bits.rd_bus = 3;
++	dma_ctrl.bits.td_prot = 0;
++	dma_ctrl.bits.td_burst_size = 3;
++	dma_ctrl.bits.td_bus = 3;
++
++	__raw_writel(dma_ctrl.bits32, gmac->dma_base_addr + GMAC_DMA_CTRL_REG);
++}
++
++static void toe_gmac_hw_stop(struct gmac_private *gmac)
++{
++	GMAC_DMA_CTRL_T	dma_ctrl;
++
++	/* program dma control register */
++	dma_ctrl.bits32 = __raw_readl(gmac->dma_base_addr + GMAC_DMA_CTRL_REG);
++	dma_ctrl.bits.rd_enable = 0;
++	dma_ctrl.bits.td_enable = 0;
++	__raw_writel(dma_ctrl.bits32, gmac->dma_base_addr + GMAC_DMA_CTRL_REG);
++}
++
++static void toe_gmac_init_chip(struct net_device *dev)
++{
++	struct gmac_private	*gmac = netdev_priv(dev);
++	GMAC_CONFIG2_T	config2_val;
++	GMAC_CONFIG0_T	config0;
++	GMAC_CONFIG1_T	config1;
++	GMAC_STATUS_T	status;
++	GMAC_TX_WCR0_T	hw_weigh;
++	GMAC_TX_WCR1_T	sw_weigh;
++	GMAC_RX_FLTR_T	rx_filter;
++
++	/* set RX_FLTR register to receive all multicast packet */
++	rx_filter.bits32 = __raw_readl(gmac->base_addr + GMAC_RX_FLTR);
++	rx_filter.bits.unicast = 1;
++	rx_filter.bits.multicast = 1;
++	rx_filter.bits.broadcast = 1;
++	__raw_writel(rx_filter.bits32, gmac->base_addr + GMAC_RX_FLTR);
++
++	/* set flow control threshold */
++	config1.bits32 = 0;
++	config1.bits.set_threshold = 32 / 2;
++	config1.bits.rel_threshold = 32 / 4 * 3;
++	__raw_writel(config1.bits32, gmac->base_addr + GMAC_CONFIG1);
++
++	/* set flow control threshold */
++	config2_val.bits32 = 0;
++	config2_val.bits.set_threshold = TOE_SW_FREEQ_DESC_NUM / 4;
++	config2_val.bits.rel_threshold = TOE_SW_FREEQ_DESC_NUM / 2;
++	__raw_writel(config2_val.bits32, gmac->base_addr + GMAC_CONFIG2);
++
++	/* disable TX/RX and disable internal loop back */
++	config0.bits32 = __raw_readl(gmac->base_addr + GMAC_CONFIG0);
++
++	config0.bits.max_len = 2;
++
++	gmac->flow_control_enable = 0;
++
++	config0.bits.tx_fc_en = 0;	/* disable tx flow control */
++	config0.bits.rx_fc_en = 0;	/* disable rx flow control */
++	config0.bits.dis_rx = 1;	/* disable rx */
++	config0.bits.dis_tx = 1;	/* disable tx */
++	config0.bits.loop_back = 0;	/* enable/disable GMAC loopback */
++	config0.bits.rx_err_detect = 1;
++	config0.bits.rgmii_en = 0;
++	config0.bits.rgmm_edge = 1;
++	config0.bits.rxc_inv = 0;
++	config0.bits.ipv4_rx_chksum = 1;	/* enable H/W to check ip checksum */
++	config0.bits.ipv6_rx_chksum = 1;	/* enable H/W to check ip checksum */
++	config0.bits.port0_chk_hwq = 1;
++	config0.bits.port1_chk_hwq = 1;
++	config0.bits.port0_chk_toeq = 1;
++	config0.bits.port1_chk_toeq = 1;
++	config0.bits.port0_chk_classq = 1;
++	config0.bits.port1_chk_classq = 1;
++
++	__raw_writel(config0.bits32, gmac->base_addr + GMAC_CONFIG0);
++
++	hw_weigh.bits32 = 0;
++	hw_weigh.bits.hw_tq3 = 1;
++	hw_weigh.bits.hw_tq2 = 1;
++	hw_weigh.bits.hw_tq1 = 1;
++	hw_weigh.bits.hw_tq0 = 1;
++	__raw_writel(hw_weigh.bits32, gmac->dma_base_addr + GMAC_TX_WEIGHTING_CTRL_0_REG);
++
++	sw_weigh.bits32 = 0;
++	sw_weigh.bits.sw_tq5 = 1;
++	sw_weigh.bits.sw_tq4 = 1;
++	sw_weigh.bits.sw_tq3 = 1;
++	sw_weigh.bits.sw_tq2 = 1;
++	sw_weigh.bits.sw_tq1 = 1;
++	sw_weigh.bits.sw_tq0 = 1;
++	__raw_writel(sw_weigh.bits32, gmac->dma_base_addr + GMAC_TX_WEIGHTING_CTRL_1_REG);
++
++	/* set interface type */
++	status.bits32 = __raw_readl(gmac->base_addr + GMAC_STATUS);
++
++	switch (gmac->phydev->interface) {
++	case PHY_INTERFACE_MODE_MII:
++		status.bits.mii_rmii = GMAC_PHY_MII;
++		break;
++	case PHY_INTERFACE_MODE_GMII:
++		status.bits.mii_rmii = GMAC_PHY_GMII;
++		break;
++	case PHY_INTERFACE_MODE_RGMII:
++		status.bits.mii_rmii = GMAC_PHY_RGMII_100_10;
++		break;
++	default:
++		dev_err(&dev->dev, "Unsupported MII interface\n");
++		return;
++	}
++
++	__raw_writel(status.bits32, gmac->base_addr + GMAC_STATUS);
++}
++
++static void toe_init_gmac(struct net_device *dev)
++{
++	struct gmac_private	*gmac = netdev_priv(dev);
++	struct toe_private	*toe = dev->ml_priv;
++	u32			data;
++
++	/* GMAC initialization */
++	toe_gmac_init_chip(dev);
++
++	/* -----------------------------------------------------------
++	Enable GMAC interrupt & disable loopback
++	Notes:
++		GMACx init routine (for eCOS) or open routine (for Linux)
++		enable the interrupt bits only which are selected for him.
++	--------------------------------------------------------------*/
++
++	/* Enable Interrupt Bits */
++	if (gmac->port_id == 0) {
++		gmac->intr0_selected =	GMAC0_TXDERR_INT_BIT | GMAC0_TXPERR_INT_BIT	|
++					GMAC0_RXDERR_INT_BIT | GMAC0_RXPERR_INT_BIT	|
++					GMAC0_SWTQ05_FIN_INT_BIT | GMAC0_SWTQ05_EOF_INT_BIT |
++					GMAC0_SWTQ04_FIN_INT_BIT | GMAC0_SWTQ04_EOF_INT_BIT |
++					GMAC0_SWTQ03_FIN_INT_BIT | GMAC0_SWTQ03_EOF_INT_BIT |
++					GMAC0_SWTQ02_FIN_INT_BIT | GMAC0_SWTQ02_EOF_INT_BIT |
++					GMAC0_SWTQ01_FIN_INT_BIT | GMAC0_SWTQ01_EOF_INT_BIT |
++					GMAC0_SWTQ00_FIN_INT_BIT | GMAC0_SWTQ00_EOF_INT_BIT;
++
++#ifdef GMAX_TX_INTR_DISABLED
++		gmac->intr0_enabled = 0;
++#else
++		gmac->intr0_enabled = GMAC0_SWTQ00_FIN_INT_BIT | GMAC0_SWTQ00_EOF_INT_BIT;
++#endif
++
++		gmac->intr1_selected = TOE_IQ_ALL_BITS | TOE_CLASS_RX_INT_BITS |
++					GMAC0_HWTQ03_EOF_INT_BIT | GMAC0_HWTQ02_EOF_INT_BIT |
++					GMAC0_HWTQ01_EOF_INT_BIT | GMAC0_HWTQ00_EOF_INT_BIT |
++					DEFAULT_Q0_INT_BIT;
++		gmac->intr1_enabled =	DEFAULT_Q0_INT_BIT | TOE_IQ_ALL_BITS;
++		gmac->intr2_selected =	0xffffffff;	 /* TOE Queue 32-63 FUUL Intr */
++		gmac->intr2_enabled =	0xffffffff;
++		gmac->intr3_selected =	0xffffffff;	 /* TOE Queue 0-31 FUUL Intr */
++		gmac->intr3_enabled =	0xffffffff;
++		gmac->intr4_selected =	GMAC0_INT_BITS | CLASS_RX_FULL_INT_BITS |
++							HWFQ_EMPTY_INT_BIT | SWFQ_EMPTY_INT_BIT;
++		gmac->intr4_enabled =	GMAC0_INT_BITS | SWFQ_EMPTY_INT_BIT;
++
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_0_REG) & ~gmac->intr0_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_0_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_1_REG) & ~gmac->intr1_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_1_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_2_REG) & ~gmac->intr2_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_2_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_3_REG) & ~gmac->intr3_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_3_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_4_REG) & ~gmac->intr4_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_4_REG);
++	} else {
++		gmac->intr0_selected =	GMAC1_TXDERR_INT_BIT | GMAC1_TXPERR_INT_BIT	|
++					GMAC1_RXDERR_INT_BIT | GMAC1_RXPERR_INT_BIT	|
++					GMAC1_SWTQ15_FIN_INT_BIT | GMAC1_SWTQ15_EOF_INT_BIT |
++					GMAC1_SWTQ14_FIN_INT_BIT | GMAC1_SWTQ14_EOF_INT_BIT |
++					GMAC1_SWTQ13_FIN_INT_BIT | GMAC1_SWTQ13_EOF_INT_BIT |
++					GMAC1_SWTQ12_FIN_INT_BIT | GMAC1_SWTQ12_EOF_INT_BIT |
++					GMAC1_SWTQ11_FIN_INT_BIT | GMAC1_SWTQ11_EOF_INT_BIT |
++					GMAC1_SWTQ10_FIN_INT_BIT | GMAC1_SWTQ10_EOF_INT_BIT;
++#ifdef GMAX_TX_INTR_DISABLED
++		gmac->intr0_enabled =		0;
++#else
++		gmac->intr0_enabled =		GMAC1_SWTQ10_FIN_INT_BIT | GMAC1_SWTQ10_EOF_INT_BIT;
++#endif
++
++		gmac->intr1_selected =	DEFAULT_Q1_INT_BIT;
++		gmac->intr1_enabled =	DEFAULT_Q1_INT_BIT | TOE_IQ_ALL_BITS;
++		gmac->intr2_selected =	0;	 /* TOE Queue 32-63 FUUL Intr */
++		gmac->intr2_enabled =	0;
++		gmac->intr3_selected =	0;	 /* TOE Queue 0-31 FUUL Intr */
++		gmac->intr3_enabled =	0;
++		gmac->intr4_selected =	GMAC1_INT_BITS;
++		gmac->intr4_enabled =	GMAC1_INT_BITS;
++
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_0_REG) | gmac->intr0_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_0_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_1_REG) | gmac->intr1_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_1_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_2_REG) | gmac->intr2_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_2_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_3_REG) | gmac->intr3_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_3_REG);
++		data = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_SELECT_4_REG) | gmac->intr4_selected;
++		__raw_writel(data, toe->global_base + GLOBAL_INTERRUPT_SELECT_4_REG);
++	}
++
++	/* enable only selected bits */
++	gmac_write_reg(toe->global_base, GLOBAL_INTERRUPT_ENABLE_0_REG,
++					gmac->intr0_enabled, gmac->intr0_selected);
++	gmac_write_reg(toe->global_base, GLOBAL_INTERRUPT_ENABLE_1_REG,
++					gmac->intr1_enabled, gmac->intr1_selected);
++	gmac_write_reg(toe->global_base, GLOBAL_INTERRUPT_ENABLE_2_REG,
++					gmac->intr2_enabled, gmac->intr2_selected);
++	gmac_write_reg(toe->global_base, GLOBAL_INTERRUPT_ENABLE_3_REG,
++					gmac->intr3_enabled, gmac->intr3_selected);
++	gmac_write_reg(toe->global_base, GLOBAL_INTERRUPT_ENABLE_4_REG,
++					gmac->intr4_enabled, gmac->intr4_selected);
++
++	/* start DMA process */
++	toe_gmac_hw_start(gmac);
++}
++
++static void toe_gmac_enable_tx_rx(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	GMAC_CONFIG0_T	config0;
++
++	/* enable TX/RX */
++	config0.bits32 = __raw_readl(gmac->base_addr + GMAC_CONFIG0);
++	config0.bits.dis_rx = 0;	/* enable rx */
++	config0.bits.dis_tx = 0;	/* enable tx */
++	__raw_writel(config0.bits32, gmac->base_addr + GMAC_CONFIG0);
++}
++
++static void toe_gmac_disable_tx_rx(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	GMAC_CONFIG0_T	config0;
++
++	/* enable TX/RX */
++	config0.bits32 = __raw_readl(gmac->base_addr + GMAC_CONFIG0);
++	config0.bits.dis_rx = 1;	/* disable rx */
++	config0.bits.dis_tx = 1;	/* disable tx */
++	__raw_writel(config0.bits32, gmac->base_addr + GMAC_CONFIG0);
++}
++
++static void toe_gmac_tx_complete(struct net_device *dev, unsigned int tx_qid)
++{
++	struct gmac_private		*gmac = netdev_priv(dev);
++	struct toe_private		*toe = dev->ml_priv;
++	GMAC_TXDESC_T			*curr_desc;
++	GMAC_TXDESC_0_T			word0;
++	GMAC_TXDESC_1_T			word1;
++	unsigned int			desc_count;
++	GMAC_SWTXQ_T			*swtxq;
++	DMA_RWPTR_T			rwptr;
++
++	/* get tx H/W completed descriptor virtual address */
++	/* check tx status and accumulate tx statistics */
++	swtxq = &gmac->swtxq[tx_qid];
++	for (;;) {
++		rwptr.bits32 = __raw_readl(swtxq->rwptr_reg);
++		if (rwptr.bits.rptr == swtxq->finished_idx)
++			break;
++		curr_desc = (GMAC_TXDESC_T *)swtxq->desc_base + swtxq->finished_idx;
++		dma_sync_single_range_for_device(toe->dev, swtxq->desc_base_dma,
++						swtxq->finished_idx * sizeof(GMAC_TXDESC_T),
++						sizeof(GMAC_TXDESC_T),
++						DMA_FROM_DEVICE);
++		word0.bits32 = curr_desc->word0.bits32;
++		word1.bits32 = curr_desc->word1.bits32;
++
++		if (word0.bits.status_tx_ok) {
++			dev->stats.tx_bytes += word1.bits.byte_count;
++			desc_count = word0.bits.desc_count;
++			if (desc_count == 0) {
++				dev_err(&dev->dev, "%s::Desc 0x%x = 0x%x, desc_count=%d\n", __func__, (u32)curr_desc, word0.bits32, desc_count);
++				BUG();
++			}
++			while (--desc_count) {
++				word0.bits.status_tx_ok = 0;
++				curr_desc->word0.bits32 = word0.bits32;
++				dma_sync_single_range_for_device(toe->dev, swtxq->desc_base_dma,
++								swtxq->finished_idx * sizeof(GMAC_TXDESC_T),
++								sizeof(GMAC_TXDESC_T),
++								DMA_TO_DEVICE);
++				swtxq->finished_idx = RWPTR_ADVANCE_ONE(swtxq->finished_idx, TOE_GMAC_SWTXQ_DESC_NUM);
++				curr_desc = (GMAC_TXDESC_T *)swtxq->desc_base + swtxq->finished_idx;
++				dma_sync_single_range_for_device(toe->dev, swtxq->desc_base_dma,
++								swtxq->finished_idx * sizeof(GMAC_TXDESC_T),
++								sizeof(GMAC_TXDESC_T),
++								DMA_FROM_DEVICE);
++				word0.bits32 = curr_desc->word0.bits32;
++			}
++
++			word0.bits.status_tx_ok = 0;
++			dev_kfree_skb_any(swtxq->tx_skb[swtxq->finished_idx]);
++			swtxq->tx_skb[swtxq->finished_idx] = NULL;
++
++			curr_desc->word0.bits32 = word0.bits32;
++			dma_sync_single_range_for_device(toe->dev, swtxq->desc_base_dma,
++							swtxq->finished_idx * sizeof(GMAC_TXDESC_T),
++							sizeof(GMAC_TXDESC_T),
++							DMA_TO_DEVICE);
++			dev->stats.tx_packets++;
++			swtxq->finished_idx = RWPTR_ADVANCE_ONE(swtxq->finished_idx, TOE_GMAC_SWTXQ_DESC_NUM);
++		} else {
++			break;
++		}
++	}
++
++	if (netif_queue_stopped(dev))
++		netif_wake_queue(dev);
++}
++
++static int gmac_start_xmit(struct sk_buff *skb, struct net_device *dev)
++{
++	struct gmac_private	*gmac = netdev_priv(dev);
++	struct toe_private	*toe = dev->ml_priv;
++	DMA_RWPTR_T		rwptr;
++	GMAC_TXDESC_T		*curr_desc;
++	int			snd_pages = skb_shinfo(skb)->nr_frags + 1;	/* get number of descriptor */
++	int			frag_id = 0;
++	int			len, total_len = skb->len;
++	struct net_device_stats	*isPtr = &dev->stats;
++	unsigned int		free_desc;
++	GMAC_SWTXQ_T		*swtxq;
++	register unsigned long	word0, word1, word2, word3;
++	unsigned short		wptr, rptr;
++
++#ifdef GMAC_LEN_1_2_ISSUE
++	int			total_pages;
++	total_pages = snd_pages;
++#endif
++
++	if (skb->len >= 0x10000) {
++		isPtr->tx_dropped++;
++		dev_err(&dev->dev, "%s::skb->len %d >= 64K\n", __func__, skb->len);
++		netif_stop_queue(dev);
++		return 1;
++	}
++
++#ifdef GMAC_USE_TXQ0
++	#define tx_qid	0
++#endif
++
++	swtxq = &gmac->swtxq[tx_qid];
++
++	rwptr.bits32 = __raw_readl(swtxq->rwptr_reg);
++	wptr = rwptr.bits.wptr;
++	rptr = rwptr.bits.rptr;
++
++	/*
++	 * check finished desc or empty BD
++	 * cannot check by read ptr of RW PTR register,
++	 * because the HW complete to send but the SW may NOT handle it
++	 */
++#ifdef	GMAX_TX_INTR_DISABLED
++	toe_gmac_tx_complete(dev, tx_qid);
++#endif
++	if (wptr >= swtxq->finished_idx)
++		free_desc = TOE_GMAC_SWTXQ_DESC_NUM - wptr + swtxq->finished_idx;
++	else
++		free_desc = swtxq->finished_idx - wptr;
++
++	if (free_desc < snd_pages) {
++		isPtr->tx_dropped++;
++		netif_stop_queue(dev);
++		return 1;
++	}
++
++	while (snd_pages) {
++		dma_addr_t pkt_datap;
++
++		curr_desc = (GMAC_TXDESC_T *)swtxq->desc_base + wptr;
++		if (frag_id == 0) {
++			len = skb_headlen(skb);
++			pkt_datap = dma_map_single(toe->dev, skb->data, len, DMA_TO_DEVICE);
++		} else {
++			skb_frag_t *frag = &skb_shinfo(skb)->frags[frag_id - 1];
++			len = frag->size;
++			pkt_datap = dma_map_page(toe->dev, frag->page.p, frag->page_offset, len, DMA_TO_DEVICE);
++		}
++
++		/* set TX descriptor */
++		word0 = len;
++		word3 = (dev->mtu + 14) | EOFIE_BIT;
++
++#ifdef DO_HW_CHKSUM
++		if (total_len <= 1514 && ip_hdr(skb) && (ip_hdr(skb)->frag_off & __constant_htons(0x3fff)))
++			word1  = total_len |
++					TSS_IP_CHKSUM_BIT  |
++					TSS_IPV6_ENABLE_BIT |
++					TSS_MTU_ENABLE_BIT;
++		else
++			word1 = total_len |
++					TSS_UDP_CHKSUM_BIT |
++					TSS_TCP_CHKSUM_BIT |
++					TSS_IP_CHKSUM_BIT  |
++					TSS_IPV6_ENABLE_BIT |
++					TSS_MTU_ENABLE_BIT;
++#else
++		word1 = total_len | TSS_MTU_ENABLE_BIT;
++#endif
++		word2 = (unsigned long)pkt_datap;
++
++		if (frag_id == 0)
++			word3 |= SOF_BIT;
++
++		if (snd_pages == 1) {
++			word3 |= EOF_BIT;
++			swtxq->tx_skb[wptr] = skb;
++		} else
++			swtxq->tx_skb[wptr] = NULL;
++
++#ifdef GMAC_LEN_1_2_ISSUE
++		if ((total_pages != snd_pages) && (len == 1 || len == 2) && ((u32)pkt_datap & 0x03)) {
++			memcpy((void *)&_debug_prefetch_buf[_debug_prefetch_cnt][0], pkt_datap, len);
++			pkt_datap = (char *)&_debug_prefetch_buf[_debug_prefetch_cnt][0];
++			word2 = (unsigned long)__pa(pkt_datap);
++			_debug_prefetch_cnt++;
++			if (_debug_prefetch_cnt >= _DEBUG_PREFETCH_NUM)
++				_debug_prefetch_cnt = 0;
++		}
++#endif
++		curr_desc->word0.bits32 = word0;
++		curr_desc->word1.bits32 = word1;
++		curr_desc->word2.bits32 = word2;
++		curr_desc->word3.bits32 = word3;
++		free_desc--;
++		dma_sync_single_range_for_device(toe->dev, swtxq->desc_base_dma,
++						wptr * sizeof(GMAC_TXDESC_T),
++						sizeof(GMAC_TXDESC_T),
++						DMA_TO_DEVICE);
++		wptr = RWPTR_ADVANCE_ONE(wptr, TOE_GMAC_SWTXQ_DESC_NUM);
++		frag_id++;
++		snd_pages--;
++	}
++
++	SET_WPTR(swtxq->rwptr_reg, wptr);
++	dev->trans_start = jiffies;
++
++	return 0;
++}
++
++static void __gmac_set_mac_address(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	unsigned int    reg_val;
++
++	reg_val = dev->dev_addr[0] + (dev->dev_addr[1] << 8) +
++		  (dev->dev_addr[2] << 16) + (dev->dev_addr[3] << 24);
++	__raw_writel(reg_val, gmac->base_addr + GMAC_STA_ADD0);
++	reg_val = (__raw_readl(gmac->base_addr + GMAC_STA_ADD1) & 0xFFFF0000) +
++		  dev->dev_addr[4] + (dev->dev_addr[5] << 8);
++	__raw_writel(reg_val, gmac->base_addr + GMAC_STA_ADD1);
++}
++
++static int gmac_set_mac_address(struct net_device *dev, void *addr)
++{
++	struct sockaddr *sa = addr;
++
++	memcpy(dev->dev_addr, sa->sa_data, dev->addr_len);
++
++	__gmac_set_mac_address(dev);
++
++	return 0;
++}
++
++static void gmac_get_mac_address(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	unsigned int reg_val;
++
++	reg_val = __raw_readl(gmac->base_addr + GMAC_STA_ADD0);
++	dev->dev_addr[0] = reg_val & 0xFF;
++	dev->dev_addr[1] = (reg_val >> 8) & 0xFF;
++	dev->dev_addr[2] = (reg_val >> 16) & 0xFF;
++	dev->dev_addr[3] = (reg_val >> 24) & 0xFF;
++	reg_val = __raw_readl(gmac->base_addr + GMAC_STA_ADD1);
++	dev->dev_addr[4] = reg_val & 0xFF;
++	dev->dev_addr[5] = (reg_val >> 8) & 0xFF;
++
++	if (!is_valid_ether_addr(dev->dev_addr)) {
++		random_ether_addr(dev->dev_addr);
++		__gmac_set_mac_address(dev);
++	}
++}
++
++struct net_device_stats *gmac_get_stats(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++
++	if (netif_running(dev)) {
++		unsigned short multicast;
++
++		multicast = __raw_readw(gmac->base_addr + GMAC_IN_MCAST) +
++				__raw_readw(gmac->base_addr + GMAC_IN_BCAST);
++
++		dev->stats.rx_dropped += __raw_readw(gmac->base_addr + GMAC_IN_DISCARDS);
++		dev->stats.rx_errors += __raw_readw(gmac->base_addr + GMAC_IN_ERRORS);
++		dev->stats.rx_packets += __raw_readl(gmac->base_addr + GMAC_IN_MAC1) + multicast;
++		dev->stats.multicast += multicast;
++	}
++
++	return &dev->stats;
++}
++
++/* TODO: If possible use crc32 from kernel lib */
++static unsigned const ethernet_polynomial = 0x04c11db7U;
++static unsigned int ether_crc(int length, unsigned char *data)
++{
++	int crc = -1;
++	unsigned int i;
++	unsigned int crc_val = 0;
++
++	while (--length >= 0) {
++		unsigned char current_octet = *data++;
++		int bit;
++		for (bit = 0; bit < 8; bit++, current_octet >>= 1)
++			crc = (crc << 1) ^ ((crc < 0) ^ (current_octet & 1) ?
++				ethernet_polynomial : 0);
++	}
++	crc = ~crc;
++	for (i = 0; i < 32; i++)
++		crc_val = crc_val + (((crc << i) & 0x80000000) >> (31 - i));
++
++	return crc_val;
++}
++
++/*----------------------------------------------------------------------
++* toe_gmac_fill_free_q
++* allocate buffers for free queue.
++*----------------------------------------------------------------------*/
++static void toe_gmac_fill_free_q(struct toe_private *toe)
++{
++	struct sk_buff	*skb;
++	DMA_RWPTR_T	fq_rwptr;
++	GMAC_RXDESC_T	*fq_desc;
++	unsigned long	flags;
++
++	spin_lock_irqsave(&toe->freeq_lock, flags);
++	fq_rwptr.bits32 = __raw_readl(toe->global_base + GLOBAL_SWFQ_RWPTR_REG);
++	while ((unsigned short)RWPTR_ADVANCE_ONE(fq_rwptr.bits.wptr,
++		TOE_SW_FREEQ_DESC_NUM) != fq_rwptr.bits.rptr) {
++		skb = dev_alloc_skb(SW_RX_BUF_SIZE);
++		if (skb == NULL) {
++			dev_err(toe->dev, "%s::skb allocation fail\n", __func__);
++			break;
++		}
++		REG32(skb->data) = (unsigned int)skb;
++		skb_reserve(skb, SKB_RESERVE_BYTES);
++		fq_rwptr.bits.wptr = RWPTR_ADVANCE_ONE(fq_rwptr.bits.wptr,
++			TOE_SW_FREEQ_DESC_NUM);
++		fq_desc = (GMAC_RXDESC_T *)toe->swfq_desc_base + fq_rwptr.bits.wptr;
++		fq_desc->word2.buf_adr = dma_map_single(toe->dev, skb->data,
++					SW_RX_BUF_SIZE - SKB_RESERVE_BYTES,
++					DMA_FROM_DEVICE);
++		dma_sync_single_range_for_device(toe->dev,
++				toe->sw_freeq_desc_base_dma,
++				fq_rwptr.bits.wptr * sizeof(GMAC_RXDESC_T),
++				sizeof(GMAC_RXDESC_T),
++				DMA_TO_DEVICE);
++		SET_WPTR(toe->global_base + GLOBAL_SWFQ_RWPTR_REG, fq_rwptr.bits.wptr);
++	}
++	spin_unlock_irqrestore(&toe->freeq_lock, flags);
++}
++
++static void fill_free_q_worker(struct work_struct *work)
++{
++	struct toe_private *toe = container_of(work, struct toe_private, freq_work);
++
++	toe_gmac_fill_free_q(toe);
++}
++
++/*----------------------------------------------------------------------
++*	toe_gmac_handle_default_rxq
++*	(1) Get rx Buffer for default Rx queue
++*	(2) notify or call upper-routine to handle it
++*	(3) get a new buffer and insert it into SW free queue
++*	(4) Note: The SW free queue Read-Write Pointer should be locked when accessing
++*----------------------------------------------------------------------*/
++static void toe_gmac_handle_default_rxq(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	struct toe_private *toe = dev->ml_priv;
++	GMAC_RXDESC_T	*curr_desc;
++	struct sk_buff	*skb;
++	DMA_RWPTR_T	rwptr;
++	unsigned int	pkt_size;
++	int		max_cnt;
++	unsigned int	desc_count;
++	unsigned int	chksum_status, rx_status;
++	struct net_device_stats *isPtr = &dev->stats;
++
++	rwptr.bits32 = __raw_readl(&gmac->default_qhdr->word1);
++	max_cnt = DEFAULT_RXQ_MAX_CNT;
++	while ((--max_cnt) && rwptr.bits.rptr != rwptr.bits.wptr) {
++		curr_desc = (GMAC_RXDESC_T *)gmac->default_desc_base + rwptr.bits.rptr;
++		dma_sync_single_range_for_device(toe->dev,
++				gmac->default_desc_base_dma,
++				rwptr.bits.rptr * sizeof(GMAC_RXDESC_T),
++				sizeof(GMAC_RXDESC_T),
++				DMA_FROM_DEVICE);
++		rx_status = curr_desc->word0.bits.status;
++		chksum_status = curr_desc->word0.bits.chksum_status;
++		pkt_size = curr_desc->word1.bits.byte_count;	/* total byte count in a frame */
++		desc_count = curr_desc->word0.bits.desc_count;	/* get descriptor count per frame */
++		skb = (struct sk_buff *)(REG32(__va(curr_desc->word2.buf_adr) - SKB_RESERVE_BYTES));
++
++		if ((curr_desc->word0.bits32 & (GMAC_RXDESC_0_T_derr | GMAC_RXDESC_0_T_perr))
++			|| (pkt_size < 60) || (chksum_status & 0x4) || rx_status) {
++			if (curr_desc->word0.bits32 & GMAC_RXDESC_0_T_derr)
++				dev_err(&dev->dev, "%s::derr\n", __func__);
++			if (curr_desc->word0.bits32 & GMAC_RXDESC_0_T_perr)
++				dev_err(&dev->dev, "%s::perr\n", __func__);
++			if (rx_status && (rx_status == 4 || rx_status == 7))
++				isPtr->rx_crc_errors++;
++
++			dev_kfree_skb_irq(skb);
++			goto bad_frame;
++		}
++
++		if (curr_desc->word0.bits.drop)
++			dev_warn(&dev->dev, "%s::Drop\n", __func__);
++
++		/* get frame information from the first descriptor of the frame */
++		skb_reserve(skb, RX_INSERT_BYTES);	/* 16 byte align the IP fields. */
++		skb_put(skb, pkt_size);
++		skb->dev = dev;
++		skb->protocol = eth_type_trans(skb, dev);
++		if (chksum_status == RX_CHKSUM_IP_UDP_TCP_OK || chksum_status == RX_CHKSUM_IP_OK_ONLY)
++			skb->ip_summed = CHECKSUM_UNNECESSARY;
++
++		netif_rx(skb);	/* socket rx */
++		dev->last_rx = jiffies;
++
++		isPtr->rx_bytes += pkt_size;
++
++bad_frame:
++		/* advance one for Rx default Q 0/1 */
++		rwptr.bits.rptr = RWPTR_ADVANCE_ONE(rwptr.bits.rptr, TOE_DEFAULT_Q_DESC_NUM);
++		SET_RPTR(&gmac->default_qhdr->word1, rwptr.bits.rptr);
++	}
++
++	schedule_work(&toe->freq_work);
++}
++
++static irqreturn_t toe_gmac_interrupt(int irq, void *dev_instance)
++{
++	struct net_device	*dev = dev_instance;
++	struct gmac_private	*gmac = netdev_priv(dev);
++	struct toe_private	*toe = dev->ml_priv;
++	unsigned int		status0;
++	unsigned int		status1;
++	unsigned int		status2;
++	unsigned int		status3;
++	unsigned int		status4;
++	int			handled = 0;
++
++	/* read Interrupt status */
++	status0 = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_STATUS_0_REG);
++	status1 = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_STATUS_1_REG);
++	status2 = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_STATUS_2_REG);
++	status3 = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_STATUS_3_REG);
++	status4 = __raw_readl(toe->global_base + GLOBAL_INTERRUPT_STATUS_4_REG);
++
++	/* clear interrupts */
++	if (status0)
++		__raw_writel(status0, toe->global_base + GLOBAL_INTERRUPT_STATUS_0_REG);
++	if (status1)
++		__raw_writel(status1, toe->global_base + GLOBAL_INTERRUPT_STATUS_1_REG);
++	if (status2)
++		__raw_writel(status2, toe->global_base + GLOBAL_INTERRUPT_STATUS_2_REG);
++	if (status3)
++		__raw_writel(status3, toe->global_base + GLOBAL_INTERRUPT_STATUS_3_REG);
++	if (status4)
++		__raw_writel(status4, toe->global_base + GLOBAL_INTERRUPT_STATUS_4_REG);
++
++	/* handle freeq interrupt first */
++	if (status4 & gmac->intr4_enabled) {
++		if ((status4 & SWFQ_EMPTY_INT_BIT) && (gmac->intr4_enabled & SWFQ_EMPTY_INT_BIT)) {
++			toe_gmac_fill_free_q(toe);
++			handled = 1;
++		}
++	}
++
++	/* Interrupt Status 1 */
++	if (status1 & gmac->intr1_enabled) {
++		/*
++		 * Handle GMAC 0/1 HW Tx queue 0-3 EOF events
++		 * Only count
++		 * TOE, Classification, and default queues interrupts are handled by ISR
++		 * because they should pass packets to upper layer
++		 */
++		if (gmac->port_id == 0) {
++			if (netif_running(dev) && (status1 & DEFAULT_Q0_INT_BIT) && (gmac->intr1_enabled & DEFAULT_Q0_INT_BIT)) {
++				toe_gmac_handle_default_rxq(dev);
++				handled = 1;
++			}
++		} else if (gmac->port_id == 1) {
++			if (netif_running(dev) && (status1 & DEFAULT_Q1_INT_BIT) && (gmac->intr1_enabled & DEFAULT_Q1_INT_BIT)) {
++				toe_gmac_handle_default_rxq(dev);
++				handled = 1;
++			}
++		}
++	}
++
++	/* Interrupt Status 0 */
++	if (status0 & gmac->intr0_enabled) {
++#ifndef	GMAX_TX_INTR_DISABLED
++		if (gmac->port_id == 1 && netif_running(dev) &&
++			(((status0 & GMAC1_SWTQ10_FIN_INT_BIT) && (gmac->intr0_enabled & GMAC1_SWTQ10_FIN_INT_BIT))
++			||
++			((status0 & GMAC1_SWTQ10_EOF_INT_BIT) && (gmac->intr0_enabled & GMAC1_SWTQ10_EOF_INT_BIT)))) {
++			toe_gmac_tx_complete(dev, 0);
++			handled = 1;
++		}
++
++		if (gmac->port_id == 0 && netif_running(dev) &&
++			(((status0 & GMAC0_SWTQ00_FIN_INT_BIT) && (gmac->intr0_enabled & GMAC0_SWTQ00_FIN_INT_BIT))
++			||
++			((status0 & GMAC0_SWTQ00_EOF_INT_BIT) && (gmac->intr0_enabled & GMAC0_SWTQ00_EOF_INT_BIT)))) {
++			toe_gmac_tx_complete(dev, 0);
++			handled = 1;
++		}
++#endif
++	}
++
++	return IRQ_RETVAL(handled);
++}
++
++static int gmac_open(struct net_device *dev)
++{
++	struct gmac_private	*gmac = netdev_priv(dev);
++	int			retval;
++
++	/* hook ISR */
++	retval = request_irq(dev->irq, toe_gmac_interrupt, 0, dev->name, dev);
++	if (retval)
++		return retval;
++
++	toe_init_gmac(dev);
++
++	netif_carrier_off(dev);
++	phy_start(gmac->phydev);
++
++	netif_start_queue(dev);
++
++	return 0;
++}
++
++static int gmac_close(struct net_device *dev)
++{
++	struct gmac_private	*gmac = netdev_priv(dev);
++
++	netif_stop_queue(dev);
++	mdelay(20);
++
++	if (gmac->phydev)
++		phy_stop(gmac->phydev);
++
++	/* stop tx/rx packet */
++	toe_gmac_disable_tx_rx(dev);
++	mdelay(20);
++
++	/* stop the chip's Tx and Rx DMA processes */
++	toe_gmac_hw_stop(gmac);
++
++	disable_irq(dev->irq);
++	free_irq(dev->irq, dev);
++
++	return 0;
++}
++
++static void gmac_get_phy_status(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	GMAC_CONFIG0_T	config0;
++	GMAC_STATUS_T	status, old_status;
++	struct phy_device *phydev = gmac->phydev;
++
++	old_status.bits32 = status.bits32 = __raw_readl(gmac->base_addr + GMAC_STATUS);
++
++	status.bits.link = phydev->link;
++	status.bits.duplex = phydev->duplex;
++
++	switch (phydev->speed) {
++	case 1000:
++		status.bits.speed = GMAC_SPEED_1000;
++		if (phydev->interface == PHY_INTERFACE_MODE_RGMII)
++			status.bits.mii_rmii = GMAC_PHY_RGMII_1000;
++		break;
++	case 100:
++		status.bits.speed = GMAC_SPEED_100;
++		if (phydev->interface == PHY_INTERFACE_MODE_RGMII)
++			status.bits.mii_rmii = GMAC_PHY_RGMII_100_10;
++		break;
++	case 10:
++		status.bits.speed = GMAC_SPEED_10;
++		if (phydev->interface == PHY_INTERFACE_MODE_RGMII)
++			status.bits.mii_rmii = GMAC_PHY_RGMII_100_10;
++		break;
++	default:
++		dev_warn(&dev->dev, "Not supported PHY speed (%d)\n", phydev->speed);
++	}
++
++	if (phydev->pause) {
++		if (gmac->flow_control_enable == 0) {
++			config0.bits32 = __raw_readl(gmac->base_addr + GMAC_CONFIG0);
++			config0.bits.tx_fc_en = 1;	/* enable tx flow control */
++			config0.bits.rx_fc_en = 1;	/* enable rx flow control */
++			__raw_writel(config0.bits32, gmac->base_addr + GMAC_CONFIG0);
++			dev_info(&dev->dev, "MII flow control enabled\n");
++		}
++		gmac->flow_control_enable = 1;
++	} else {
++		if (gmac->flow_control_enable == 1) {
++			config0.bits32 = __raw_readl(gmac->base_addr + GMAC_CONFIG0);
++			config0.bits.tx_fc_en = 0;	/* disable tx flow control */
++			config0.bits.rx_fc_en = 0;	/* disable rx flow control */
++			__raw_writel(config0.bits32, gmac->base_addr + GMAC_CONFIG0);
++			dev_info(&dev->dev, "MII flow control disabled\n");
++		}
++		gmac->flow_control_enable = 0;
++	}
++
++	if (old_status.bits32 != status.bits32) {
++		toe_gmac_disable_tx_rx(dev);
++		phy_print_status(phydev);
++		mdelay(10);	/* let GMAC consume packet */
++		__raw_writel(status.bits32, gmac->base_addr + GMAC_STATUS);
++		if (status.bits.link)
++			toe_gmac_enable_tx_rx(dev);
++	}
++}
++
++static void gmac_set_rx_mode(struct net_device *dev)
++{
++	struct gmac_private *gmac = netdev_priv(dev);
++	GMAC_RX_FLTR_T	filter;
++	unsigned int	mc_filter[2];	/* Multicast hash filter */
++	int		bit_nr;
++
++	filter.bits32 = 0;
++	filter.bits.error = 0;
++	if (dev->flags & IFF_PROMISC) {
++		filter.bits.error = 1;
++		filter.bits.promiscuous = 1;
++		filter.bits.broadcast = 1;
++		filter.bits.multicast = 1;
++		filter.bits.unicast = 1;
++		mc_filter[1] = mc_filter[0] = 0xffffffff;
++	} else if (dev->flags & IFF_ALLMULTI) {
++		filter.bits.broadcast = 1;
++		filter.bits.multicast = 1;
++		filter.bits.unicast = 1;
++		mc_filter[1] = mc_filter[0] = 0xffffffff;
++	} else {
++		struct netdev_hw_addr *ha;
++
++		filter.bits.broadcast = 1;
++		filter.bits.multicast = 1;
++		filter.bits.unicast = 1;
++		mc_filter[1] = mc_filter[0] = 0;
++		netdev_for_each_mc_addr(ha, dev) {
++			bit_nr = ether_crc(ETH_ALEN, ha->addr) & 0x3f;
++			if (bit_nr <= 32)
++				mc_filter[0] = mc_filter[0] | (1 << bit_nr);
++			else
++				mc_filter[1] = mc_filter[1] | (1 << (bit_nr - 32));
++		}
++	}
++	__raw_writel(filter.bits32, gmac->base_addr + GMAC_RX_FLTR);
++	__raw_writel(mc_filter[0], gmac->base_addr + GMAC_MCAST_FIL0);
++	__raw_writel(mc_filter[1], gmac->base_addr + GMAC_MCAST_FIL1);
++}
++
++static void gmac_tx_timeout(struct net_device *dev)
++{
++	if (!netif_queue_stopped(dev))
++		netif_wake_queue(dev);
++
++	dev_warn(&dev->dev, "TX timeout\n");
++}
++
++const static struct net_device_ops gemini_gmac_ops = {
++	.ndo_open		= gmac_open,
++	.ndo_stop		= gmac_close,
++	.ndo_start_xmit		= gmac_start_xmit,
++	.ndo_get_stats		= gmac_get_stats,
++	.ndo_set_rx_mode	= gmac_set_rx_mode,
++	.ndo_set_mac_address	= gmac_set_mac_address,
++	.ndo_tx_timeout		= gmac_tx_timeout,
++};
++
++static void mac_init_drv(struct toe_private *toe)
++{
++	QUEUE_THRESHOLD_T	threshold;
++	DMA_SKB_SIZE_T		skb_size;
++
++	/* clear non TOE Queue Header Area */
++	memset(toe->global_base + TOE_NONTOE_QUE_HDR_BASE, 0,
++		NONTOE_Q_HDR_AREA_END - TOE_NONTOE_QUE_HDR_BASE);
++
++	/* clear TOE Queue Header Area */
++	memset(toe->global_base + TOE_TOE_QUE_HDR_BASE, 0,
++		TOE_Q_HDR_AREA_END - TOE_TOE_QUE_HDR_BASE);
++
++	/* Write GLOBAL_QUEUE_THRESHOLD_REG */
++	threshold.bits32 = 0;
++	threshold.bits.swfq_empty = (TOE_SW_FREEQ_DESC_NUM > 256) ? 255 :
++					TOE_SW_FREEQ_DESC_NUM / 2;
++	threshold.bits.hwfq_empty = (TOE_HW_FREEQ_DESC_NUM > 256) ? 256 / 4 :
++					TOE_HW_FREEQ_DESC_NUM / 4;
++	threshold.bits.toe_class = (TOE_TOE_DESC_NUM > 256) ? 256 / 4 :
++					TOE_TOE_DESC_NUM / 4;
++	threshold.bits.intrq = (TOE_INTR_DESC_NUM > 256) ? 256 / 4 :
++					TOE_INTR_DESC_NUM / 4;
++	__raw_writel(threshold.bits32, toe->global_base + GLOBAL_QUEUE_THRESHOLD_REG);
++
++	/* Init skb size */
++	skb_size.bits.hw_skb_size = HW_RX_BUF_SIZE;
++	skb_size.bits.sw_skb_size = SW_RX_BUF_SIZE;
++	__raw_writel(skb_size.bits32, toe->global_base + GLOBAL_DMA_SKB_SIZE_REG);
++
++	toe_init_free_queue(toe);
++	toe_init_interrupt_config(toe);
++}
++
++static int gmac_init_eth(struct platform_device *pdev,
++				   unsigned int num)
++{
++	struct gmac_private	*gmac;
++	struct net_device	*dev;
++	struct toe_private	*toe = platform_get_drvdata(pdev);
++	struct gemini_gmac_platform_data *pdata = pdev->dev.platform_data;
++
++	if (!pdata->bus_id[num])
++		return 0;
++
++	dev = alloc_etherdev(sizeof(*gmac));
++	if (dev == NULL) {
++		dev_err(&pdev->dev, "Can't allocate ethernet device #%d\n", num);
++		return -ENOMEM;
++	}
++
++	gmac = netdev_priv(dev);
++	dev->ml_priv = toe;
++	toe->net_dev[num] = dev;
++
++	gmac->base_addr = toe->global_base + TOE_GMAC_BASE(num);
++	gmac->dma_base_addr = toe->global_base + TOE_GMAC_DMA_BASE(num);
++	gmac->port_id = num;
++
++	dev->base_addr = (unsigned int) gmac->base_addr;
++	dev->irq = platform_get_irq(pdev, num);
++	dev->netdev_ops = &gemini_gmac_ops;
++	dev->watchdog_timeo = GMAC_DEV_TX_TIMEOUT;
++	dev->tx_queue_len = TOE_GMAC_SWTXQ_DESC_NUM;
++
++#ifdef DO_HW_CHKSUM
++	dev->features = NETIF_F_SG | NETIF_F_HW_CSUM;
++#ifdef ENABLE_TSO
++	dev->features |= NETIF_F_TSO;
++#endif
++#endif
++
++	toe_init_swtx_queue(dev);
++	toe_init_default_queue(dev);
++
++	gmac_get_mac_address(dev);
++
++	/* TODO: Do we need this? */
++	__raw_writel(0x55aa55aa, gmac->base_addr + GMAC_STA_ADD2);
++
++	if (register_netdev(dev))
++		return -1;
++
++	gmac->phydev = phy_connect(dev, pdata->bus_id[num], &gmac_get_phy_status,
++				 pdata->interface[num]);
++	if (IS_ERR(gmac->phydev))
++		return PTR_ERR(gmac->phydev);
++
++	gmac->phydev->supported &= PHY_GBIT_FEATURES | SUPPORTED_Pause;
++	gmac->phydev->advertising = gmac->phydev->supported;
++
++	return 0;
++}
++
++static int gmac_probe(struct platform_device *pdev)
++{
++	struct resource				*res;
++	struct toe_private			*toe;
++	int					retval;
++
++	if (!pdev->dev.platform_data)
++		return -EINVAL;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res) {
++		dev_err(&pdev->dev, "can't get device resources\n");
++		return -ENODEV;
++	}
++
++	toe = kzalloc(sizeof(struct toe_private), GFP_KERNEL);
++	if (!toe)
++		return -ENOMEM;
++
++	toe->dev = &pdev->dev;
++
++	toe->global_base = ioremap(res->start, resource_size(res));
++	if (!toe->global_base) {
++		dev_err(toe->dev, "ioremap failed\n");
++		retval = -EIO;
++		goto err_data;
++	}
++
++	platform_set_drvdata(pdev, toe);
++
++	mac_init_drv(toe);
++
++	INIT_WORK(&toe->freq_work, fill_free_q_worker);
++	spin_lock_init(&toe->freeq_lock);
++
++	retval = gmac_init_eth(pdev, GMAC_PORT0);
++	if (retval)
++		goto err_unmap;
++	retval = gmac_init_eth(pdev, GMAC_PORT1);
++	if (retval)
++		goto err_unmap;
++
++	dev_info(&pdev->dev, SL351x_DRIVER_NAME "\n");
++
++	return 0;
++
++err_unmap:
++	iounmap(toe->global_base);
++err_data:
++	kfree(toe);
++	return retval;
++}
++
++static int gmac_remove(struct platform_device *pdev)
++{
++	struct toe_private *toe = platform_get_drvdata(pdev);
++	int i;
++
++	for (i = 0; i < 2; i++)
++		if (toe->net_dev[i]) {
++			unregister_netdev(toe->net_dev[i]);
++			kfree(toe->net_dev[i]);
++		}
++
++	iounmap(toe->global_base);
++
++	kfree(toe);
++
++	return 0;
++}
++
++static struct platform_driver gemini_gmac_driver = {
++	.probe		= gmac_probe,
++	.remove		= gmac_remove,
++	.driver		= {
++		.name	= "gemini-gmac",
++		.owner	= THIS_MODULE,
++	},
++};
++
++static int __init gemini_gmac_init(void)
++{
++	return platform_driver_register(&gemini_gmac_driver);
++}
++
++static void __exit gemini_gmac_exit(void)
++{
++	platform_driver_unregister(&gemini_gmac_driver);
++}
++
++module_init(gemini_gmac_init);
++module_exit(gemini_gmac_exit);
++
++MODULE_AUTHOR("Paulius Zaleckas");
++MODULE_DESCRIPTION("Ethernet device driver for Gemini SoC");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:gemini-gmac");
+--- /dev/null
++++ b/drivers/net/gemini_negmac/gm_gmac.h
+@@ -0,0 +1,1489 @@
++/*
++ *  Register definitions for Gemini Ethernet device driver.
++ *
++ *  Copyright (C) 2006, Storlink, Corp.
++ *  Copyright (C) 2008-2009, Paulius Zaleckas <paulius.zaleckas@teltonika.lt>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#ifndef _GMAC_SL351x_H
++#define _GMAC_SL351x_H
++#include <linux/skbuff.h>
++
++#define _PACKED_			__attribute__ ((aligned(1), packed))
++
++#ifndef BIT
++#define BIT(x)				(1 << (x))
++#endif
++
++#define REG32(addr)     		(*(volatile unsigned long  * const)(addr))
++
++/* Define frame size */
++#define GMAC_MAX_ETH_FRAME_SIZE		1514
++#define GMAC_TX_BUF_SIZE		((GMAC_MAX_ETH_FRAME_SIZE + 31) & (~31))
++
++#define SW_RX_BUF_SIZE			1536
++#define HW_RX_BUF_SIZE			1536
++
++#define GMAC_DEV_TX_TIMEOUT  		(10*HZ)
++#define	SKB_RESERVE_BYTES		16
++
++/*
++ * Base Registers
++ */
++#define TOE_NONTOE_QUE_HDR_BASE		0x2000
++#define TOE_TOE_QUE_HDR_BASE		0x3000
++#define TOE_V_BIT_BASE			0x4000
++#define TOE_A_BIT_BASE			0x6000
++#define TOE_GMAC_DMA_BASE(x)		(0x8000 + 0x4000 * (x))
++#define TOE_GMAC_BASE(x)		(0xA000 + 0x4000 * (x))
++
++/*
++ * Queue ID
++ */
++#define TOE_SW_FREE_QID			0x00
++#define TOE_HW_FREE_QID			0x01
++#define TOE_GMAC0_SW_TXQ0_QID		0x02
++#define TOE_GMAC0_SW_TXQ1_QID		0x03
++#define TOE_GMAC0_SW_TXQ2_QID		0x04
++#define TOE_GMAC0_SW_TXQ3_QID		0x05
++#define TOE_GMAC0_SW_TXQ4_QID		0x06
++#define TOE_GMAC0_SW_TXQ5_QID		0x07
++#define TOE_GMAC0_HW_TXQ0_QID		0x08
++#define TOE_GMAC0_HW_TXQ1_QID		0x09
++#define TOE_GMAC0_HW_TXQ2_QID		0x0A
++#define TOE_GMAC0_HW_TXQ3_QID		0x0B
++#define TOE_GMAC1_SW_TXQ0_QID		0x12
++#define TOE_GMAC1_SW_TXQ1_QID		0x13
++#define TOE_GMAC1_SW_TXQ2_QID		0x14
++#define TOE_GMAC1_SW_TXQ3_QID		0x15
++#define TOE_GMAC1_SW_TXQ4_QID		0x16
++#define TOE_GMAC1_SW_TXQ5_QID		0x17
++#define TOE_GMAC1_HW_TXQ0_QID		0x18
++#define TOE_GMAC1_HW_TXQ1_QID		0x19
++#define TOE_GMAC1_HW_TXQ2_QID		0x1A
++#define TOE_GMAC1_HW_TXQ3_QID		0x1B
++#define TOE_GMAC0_DEFAULT_QID		0x20
++#define TOE_GMAC1_DEFAULT_QID		0x21
++#define TOE_CLASSIFICATION_QID(x)	(0x22 + x)	// 0x22 ~ 0x2F
++#define TOE_TOE_QID(x)			(0x40 + x)	// 0x40 ~ 0x7F
++
++/*
++ * TOE DMA Queue Number should be 2^n, n = 6...12
++ * TOE DMA Queues are the following queue types:
++ *		SW Free Queue, HW Free Queue,
++ *		GMAC 0/1 SW TX Q0-5, and GMAC 0/1 HW TX Q0-5
++ * They have same descriptor numbers.
++ * The base address and descriptor number are configured at
++ * DMA Queues Descriptor Ring Base Address/Size Register (offset 0x0004)
++ */
++#define TOE_SW_FREEQ_DESC_POWER		8
++#define TOE_SW_FREEQ_DESC_NUM		(1<<TOE_SW_FREEQ_DESC_POWER)
++#define TOE_HW_FREEQ_DESC_POWER		8
++#define TOE_HW_FREEQ_DESC_NUM		(1<<TOE_HW_FREEQ_DESC_POWER)
++#define TOE_GMAC_SWTXQ_DESC_POWER	8
++#define TOE_GMAC_SWTXQ_DESC_NUM		(1<<TOE_GMAC_SWTXQ_DESC_POWER)
++#define TOE_GMAC_HWTXQ_DESC_POWER	8
++#define TOE_GMAC_HWTXQ_DESC_NUM		(1<<TOE_GMAC_HWTXQ_DESC_POWER)
++#define TOE_DEFAULT_Q_DESC_POWER	8
++#define TOE_DEFAULT_Q_DESC_NUM		(1<<TOE_DEFAULT_Q_DESC_POWER)
++#define TOE_TOE_DESC_POWER		8
++#define TOE_TOE_DESC_NUM		(1<<TOE_TOE_DESC_POWER)
++#define TOE_CLASS_DESC_POWER		8
++#define TOE_CLASS_DESC_NUM		(1<<TOE_CLASS_DESC_POWER)
++#define TOE_INTR_DESC_POWER		8
++#define TOE_INTR_DESC_NUM		(1<<TOE_INTR_DESC_POWER)
++
++#define TOE_TOE_QUEUE_MAX	64
++#define TOE_TOE_QUEUE_NUM	64
++#define TOE_CLASS_QUEUE_MAX	14
++#define TOE_CLASS_QUEUE_NUM	14
++#define TOE_INTR_QUEUE_MAX	4
++#define TOE_INTR_QUEUE_NUM	4
++#define TOE_SW_TXQ_MAX		6
++#define TOE_SW_TXQ_NUM		1
++#define TOE_HW_TXQ_MAX		4
++#define TOE_HW_TXQ_NUM		4
++
++#define RWPTR_ADVANCE_ONE(x, max)	((x == (max -1)) ? 0 : x+1)
++#define RWPTR_RECEDE_ONE(x, max)	((x == 0) ? (max -1) : x-1)
++#define SET_WPTR(addr, data)		(*(volatile u16 * const)((u32)(addr) + 2) = (u16)data)
++#define SET_RPTR(addr, data)		(*(volatile u16 * const)((u32)(addr)) = (u16)data)
++
++/*
++ * Global registers
++ * #define TOE_GLOBAL_BASE			(TOE_BASE + 0x0000)
++ * Base 0x60000000
++ */
++#define GLOBAL_TOE_VERSION_REG		0x0000
++#define GLOBAL_SW_FREEQ_BASE_SIZE_REG	0x0004
++#define GLOBAL_HW_FREEQ_BASE_SIZE_REG	0x0008
++#define GLOBAL_DMA_SKB_SIZE_REG		0x0010
++#define GLOBAL_SWFQ_RWPTR_REG		0x0014
++#define GLOBAL_HWFQ_RWPTR_REG		0x0018
++#define GLOBAL_INTERRUPT_STATUS_0_REG	0x0020
++#define GLOBAL_INTERRUPT_ENABLE_0_REG	0x0024
++#define GLOBAL_INTERRUPT_SELECT_0_REG	0x0028
++#define GLOBAL_INTERRUPT_STATUS_1_REG	0x0030
++#define GLOBAL_INTERRUPT_ENABLE_1_REG	0x0034
++#define GLOBAL_INTERRUPT_SELECT_1_REG	0x0038
++#define GLOBAL_INTERRUPT_STATUS_2_REG	0x0040
++#define GLOBAL_INTERRUPT_ENABLE_2_REG	0x0044
++#define GLOBAL_INTERRUPT_SELECT_2_REG	0x0048
++#define GLOBAL_INTERRUPT_STATUS_3_REG	0x0050
++#define GLOBAL_INTERRUPT_ENABLE_3_REG	0x0054
++#define GLOBAL_INTERRUPT_SELECT_3_REG	0x0058
++#define GLOBAL_INTERRUPT_STATUS_4_REG	0x0060
++#define GLOBAL_INTERRUPT_ENABLE_4_REG	0x0064
++#define GLOBAL_INTERRUPT_SELECT_4_REG	0x0068
++#define GLOBAL_HASH_TABLE_BASE_REG	0x006C
++#define GLOBAL_QUEUE_THRESHOLD_REG	0x0070
++
++/*
++ * GMAC 0/1 DMA/TOE register
++ * #define TOE_GMAC0_DMA_BASE		(TOE_BASE + 0x8000)
++ * #define TOE_GMAC1_DMA_BASE		(TOE_BASE + 0xC000)
++ * Base 0x60008000 or 0x6000C000
++ */
++#define GMAC_DMA_CTRL_REG		0x0000
++#define GMAC_TX_WEIGHTING_CTRL_0_REG	0x0004
++#define GMAC_TX_WEIGHTING_CTRL_1_REG	0x0008
++#define GMAC_SW_TX_QUEUE0_PTR_REG	0x000C
++#define GMAC_SW_TX_QUEUE1_PTR_REG	0x0010
++#define GMAC_SW_TX_QUEUE2_PTR_REG	0x0014
++#define GMAC_SW_TX_QUEUE3_PTR_REG	0x0018
++#define GMAC_SW_TX_QUEUE4_PTR_REG	0x001C
++#define GMAC_SW_TX_QUEUE5_PTR_REG	0x0020
++#define GMAC_HW_TX_QUEUE0_PTR_REG	0x0024
++#define GMAC_HW_TX_QUEUE1_PTR_REG	0x0028
++#define GMAC_HW_TX_QUEUE2_PTR_REG	0x002C
++#define GMAC_HW_TX_QUEUE3_PTR_REG	0x0030
++#define GMAC_DMA_TX_FIRST_DESC_REG	0x0038
++#define GMAC_DMA_TX_CURR_DESC_REG	0x003C
++#define GMAC_DMA_TX_DESC_WORD0_REG	0x0040
++#define GMAC_DMA_TX_DESC_WORD1_REG	0x0044
++#define GMAC_DMA_TX_DESC_WORD2_REG	0x0048
++#define GMAC_DMA_TX_DESC_WORD3_REG	0x004C
++#define GMAC_SW_TX_QUEUE_BASE_REG	0x0050
++#define GMAC_HW_TX_QUEUE_BASE_REG	0x0054
++#define GMAC_DMA_RX_FIRST_DESC_REG	0x0058
++#define GMAC_DMA_RX_CURR_DESC_REG	0x005C
++#define GMAC_DMA_RX_DESC_WORD0_REG	0x0060
++#define GMAC_DMA_RX_DESC_WORD1_REG	0x0064
++#define GMAC_DMA_RX_DESC_WORD2_REG	0x0068
++#define GMAC_DMA_RX_DESC_WORD3_REG	0x006C
++#define GMAC_HASH_ENGINE_REG0		0x0070
++#define GMAC_HASH_ENGINE_REG1		0x0074
++/* matching rule 0 Control register 0 */
++#define GMAC_MR0CR0			0x0078
++#define GMAC_MR0CR1			0x007C
++#define GMAC_MR0CR2			0x0080
++#define GMAC_MR1CR0			0x0084
++#define GMAC_MR1CR1			0x0088
++#define GMAC_MR1CR2			0x008C
++#define GMAC_MR2CR0			0x0090
++#define GMAC_MR2CR1			0x0094
++#define GMAC_MR2CR2			0x0098
++#define GMAC_MR3CR0			0x009C
++#define GMAC_MR3CR1			0x00A0
++#define GMAC_MR3CR2			0x00A4
++/* Support Protocol Regsister 0 */
++#define GMAC_SPR0			0x00A8
++#define GMAC_SPR1			0x00AC
++#define GMAC_SPR2			0x00B0
++#define GMAC_SPR3			0x00B4
++#define GMAC_SPR4			0x00B8
++#define GMAC_SPR5			0x00BC
++#define GMAC_SPR6			0x00C0
++#define GMAC_SPR7			0x00C4
++/* GMAC Hash/Rx/Tx AHB Weighting register */
++#define GMAC_AHB_WEIGHT_REG		0x00C8
++
++/*
++ * TOE GMAC 0/1 register
++ * #define TOE_GMAC0_BASE				(TOE_BASE + 0xA000)
++ * #define TOE_GMAC1_BASE				(TOE_BASE + 0xE000)
++ * Base 0x6000A000 or 0x6000E000
++ */
++enum GMAC_REGISTER {
++	GMAC_STA_ADD0 	= 0x0000,
++	GMAC_STA_ADD1	= 0x0004,
++	GMAC_STA_ADD2	= 0x0008,
++	GMAC_RX_FLTR	= 0x000c,
++	GMAC_MCAST_FIL0 = 0x0010,
++	GMAC_MCAST_FIL1 = 0x0014,
++	GMAC_CONFIG0	= 0x0018,
++	GMAC_CONFIG1	= 0x001c,
++	GMAC_CONFIG2	= 0x0020,
++	GMAC_CONFIG3	= 0x0024,
++	GMAC_RESERVED	= 0x0028,
++	GMAC_STATUS	= 0x002c,
++	GMAC_IN_DISCARDS= 0x0030,
++	GMAC_IN_ERRORS  = 0x0034,
++	GMAC_IN_MCAST   = 0x0038,
++	GMAC_IN_BCAST   = 0x003c,
++	GMAC_IN_MAC1    = 0x0040,	/* for STA 1 MAC Address */
++	GMAC_IN_MAC2    = 0x0044	/* for STA 2 MAC Address */
++};
++
++/*
++ * DMA Queues description Ring Base Address/Size Register (offset 0x0004)
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int base_size;
++} DMA_Q_BASE_SIZE_T;
++#define DMA_Q_BASE_MASK 	(~0x0f)
++
++/*
++ * DMA SKB Buffer register (offset 0x0008)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_0008 {
++		unsigned int sw_skb_size : 16;	/* SW Free poll SKB Size */
++		unsigned int hw_skb_size : 16;	/* HW Free poll SKB Size */
++	} bits;
++} DMA_SKB_SIZE_T;
++
++/*
++ * DMA SW Free Queue Read/Write Pointer Register (offset 0x000C)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_000c {
++		unsigned int rptr	: 16;	/* Read Ptr, RO */
++		unsigned int wptr	: 16;	/* Write Ptr, RW */
++	} bits;
++} DMA_RWPTR_T;
++
++/*
++ * DMA HW Free Queue Read/Write Pointer Register (offset 0x0010)
++ * see DMA_RWPTR_T structure
++ */
++
++/*
++ * Interrupt Status Register 0 	(offset 0x0020)
++ * Interrupt Mask Register 0 	(offset 0x0024)
++ * Interrupt Select Register 0 	(offset 0x0028)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_0020 {
++		/* GMAC0 SW Tx Queue 0 EOF Interrupt */
++		unsigned int swtq00_eof	: 1;
++		unsigned int swtq01_eof	: 1;
++		unsigned int swtq02_eof	: 1;
++		unsigned int swtq03_eof	: 1;
++		unsigned int swtq04_eof	: 1;
++		unsigned int swtq05_eof	: 1;
++		/* GMAC1 SW Tx Queue 0 EOF Interrupt */
++		unsigned int swtq10_eof	: 1;
++		unsigned int swtq11_eof	: 1;
++		unsigned int swtq12_eof	: 1;
++		unsigned int swtq13_eof	: 1;
++		unsigned int swtq14_eof	: 1;
++		unsigned int swtq15_eof	: 1;
++		/* GMAC0 SW Tx Queue 0 Finish Interrupt */
++		unsigned int swtq00_fin	: 1;
++		unsigned int swtq01_fin	: 1;
++		unsigned int swtq02_fin	: 1;
++		unsigned int swtq03_fin	: 1;
++		unsigned int swtq04_fin	: 1;
++		unsigned int swtq05_fin	: 1;
++		/* GMAC1 SW Tx Queue 0 Finish Interrupt */
++		unsigned int swtq10_fin	: 1;
++		unsigned int swtq11_fin	: 1;
++		unsigned int swtq12_fin	: 1;
++		unsigned int swtq13_fin	: 1;
++		unsigned int swtq14_fin	: 1;
++		unsigned int swtq15_fin	: 1;
++		/* GMAC0 Rx Descriptor Protocol Error */
++		unsigned int rxPerr0	: 1;
++		/* GMAC0 AHB Bus Error while Rx */
++		unsigned int rxDerr0	: 1;
++		/* GMAC1 Rx Descriptor Protocol Error */
++		unsigned int rxPerr1	: 1;
++		/* GMAC1 AHB Bus Error while Rx */
++		unsigned int rxDerr1	: 1;
++		/* GMAC0 Tx Descriptor Protocol Error */
++		unsigned int txPerr0	: 1;
++		/* GMAC0 AHB Bus Error while Tx */
++		unsigned int txDerr0	: 1;
++		/* GMAC1 Tx Descriptor Protocol Error */
++		unsigned int txPerr1	: 1;
++		/* GMAC1 AHB Bus Error while Tx */
++		unsigned int txDerr1	: 1;
++	} bits;
++} INTR_REG0_T;
++
++#define GMAC1_TXDERR_INT_BIT		BIT(31)
++#define GMAC1_TXPERR_INT_BIT		BIT(30)
++#define GMAC0_TXDERR_INT_BIT		BIT(29)
++#define GMAC0_TXPERR_INT_BIT		BIT(28)
++#define GMAC1_RXDERR_INT_BIT		BIT(27)
++#define GMAC1_RXPERR_INT_BIT		BIT(26)
++#define GMAC0_RXDERR_INT_BIT		BIT(25)
++#define GMAC0_RXPERR_INT_BIT		BIT(24)
++#define GMAC1_SWTQ15_FIN_INT_BIT	BIT(23)
++#define GMAC1_SWTQ14_FIN_INT_BIT	BIT(22)
++#define GMAC1_SWTQ13_FIN_INT_BIT	BIT(21)
++#define GMAC1_SWTQ12_FIN_INT_BIT	BIT(20)
++#define GMAC1_SWTQ11_FIN_INT_BIT	BIT(19)
++#define GMAC1_SWTQ10_FIN_INT_BIT	BIT(18)
++#define GMAC0_SWTQ05_FIN_INT_BIT	BIT(17)
++#define GMAC0_SWTQ04_FIN_INT_BIT	BIT(16)
++#define GMAC0_SWTQ03_FIN_INT_BIT	BIT(15)
++#define GMAC0_SWTQ02_FIN_INT_BIT	BIT(14)
++#define GMAC0_SWTQ01_FIN_INT_BIT	BIT(13)
++#define GMAC0_SWTQ00_FIN_INT_BIT	BIT(12)
++#define GMAC1_SWTQ15_EOF_INT_BIT	BIT(11)
++#define GMAC1_SWTQ14_EOF_INT_BIT	BIT(10)
++#define GMAC1_SWTQ13_EOF_INT_BIT	BIT(9)
++#define GMAC1_SWTQ12_EOF_INT_BIT	BIT(8)
++#define GMAC1_SWTQ11_EOF_INT_BIT	BIT(7)
++#define GMAC1_SWTQ10_EOF_INT_BIT	BIT(6)
++#define GMAC0_SWTQ05_EOF_INT_BIT	BIT(5)
++#define GMAC0_SWTQ04_EOF_INT_BIT	BIT(4)
++#define GMAC0_SWTQ03_EOF_INT_BIT	BIT(3)
++#define GMAC0_SWTQ02_EOF_INT_BIT	BIT(2)
++#define GMAC0_SWTQ01_EOF_INT_BIT	BIT(1)
++#define GMAC0_SWTQ00_EOF_INT_BIT	BIT(0)
++
++/*
++ * Interrupt Status Register 1 	(offset 0x0030)
++ * Interrupt Mask Register 1 	(offset 0x0034)
++ * Interrupt Select Register 1 	(offset 0x0038)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_0030 {
++		unsigned int default_q0_eof	: 1;	/* Default Queue 0 EOF Interrupt */
++		unsigned int default_q1_eof	: 1;	/* Default Queue 1 EOF Interrupt */
++		unsigned int class_rx		: 14;	/* Classification Queue Rx Interrupt */
++		unsigned int hwtq00_eof		: 1;	/* GMAC0 HW Tx Queue0 EOF Interrupt */
++		unsigned int hwtq01_eof		: 1;	/* GMAC0 HW Tx Queue1 EOF Interrupt */
++		unsigned int hwtq02_eof		: 1;	/* GMAC0 HW Tx Queue2 EOF Interrupt */
++		unsigned int hwtq03_eof		: 1;	/* GMAC0 HW Tx Queue3 EOF Interrupt */
++		unsigned int hwtq10_eof		: 1;	/* GMAC1 HW Tx Queue0 EOF Interrupt */
++		unsigned int hwtq11_eof		: 1;	/* GMAC1 HW Tx Queue1 EOF Interrupt */
++		unsigned int hwtq12_eof		: 1;	/* GMAC1 HW Tx Queue2 EOF Interrupt */
++		unsigned int hwtq13_eof		: 1;	/* GMAC1 HW Tx Queue3 EOF Interrupt */
++		unsigned int toe_iq0_intr	: 1;	/* TOE Interrupt Queue 0 with Interrupts */
++		unsigned int toe_iq1_intr	: 1;	/* TOE Interrupt Queue 1 with Interrupts */
++		unsigned int toe_iq2_intr	: 1;	/* TOE Interrupt Queue 2 with Interrupts */
++		unsigned int toe_iq3_intr	: 1;	/* TOE Interrupt Queue 3 with Interrupts */
++		unsigned int toe_iq0_full	: 1;	/* TOE Interrupt Queue 0 Full Interrupt */
++		unsigned int toe_iq1_full	: 1;	/* TOE Interrupt Queue 1 Full Interrupt */
++		unsigned int toe_iq2_full	: 1;	/* TOE Interrupt Queue 2 Full Interrupt */
++		unsigned int toe_iq3_full	: 1;	/* TOE Interrupt Queue 3 Full Interrupt */
++	} bits;
++} INTR_REG1_T;
++
++#define TOE_IQ3_FULL_INT_BIT		BIT(31)
++#define TOE_IQ2_FULL_INT_BIT		BIT(30)
++#define TOE_IQ1_FULL_INT_BIT		BIT(29)
++#define TOE_IQ0_FULL_INT_BIT		BIT(28)
++#define TOE_IQ3_INT_BIT			BIT(27)
++#define TOE_IQ2_INT_BIT			BIT(26)
++#define TOE_IQ1_INT_BIT			BIT(25)
++#define TOE_IQ0_INT_BIT			BIT(24)
++#define GMAC1_HWTQ13_EOF_INT_BIT	BIT(23)
++#define GMAC1_HWTQ12_EOF_INT_BIT	BIT(22)
++#define GMAC1_HWTQ11_EOF_INT_BIT	BIT(21)
++#define GMAC1_HWTQ10_EOF_INT_BIT	BIT(20)
++#define GMAC0_HWTQ03_EOF_INT_BIT	BIT(19)
++#define GMAC0_HWTQ02_EOF_INT_BIT	BIT(18)
++#define GMAC0_HWTQ01_EOF_INT_BIT	BIT(17)
++#define GMAC0_HWTQ00_EOF_INT_BIT	BIT(16)
++#define CLASS_RX_INT_BIT(x)		BIT((x + 2))
++#define DEFAULT_Q1_INT_BIT		BIT(1)
++#define DEFAULT_Q0_INT_BIT		BIT(0)
++
++#define TOE_IQ_INT_BITS		(TOE_IQ0_INT_BIT | TOE_IQ1_INT_BIT | \
++		               	 TOE_IQ2_INT_BIT | TOE_IQ3_INT_BIT)
++#define	TOE_IQ_FULL_BITS	(TOE_IQ0_FULL_INT_BIT | TOE_IQ1_FULL_INT_BIT | \
++		                 TOE_IQ2_FULL_INT_BIT | TOE_IQ3_FULL_INT_BIT)
++#define	TOE_IQ_ALL_BITS		(TOE_IQ_INT_BITS | TOE_IQ_FULL_BITS)
++#define TOE_CLASS_RX_INT_BITS	0xfffc
++
++/*
++ * Interrupt Status Register 2 	(offset 0x0040)
++ * Interrupt Mask Register 2 	(offset 0x0044)
++ * Interrupt Select Register 2 	(offset 0x0048)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_0040 {
++		unsigned int toe_q0_full	: 1;	// bit 0	TOE Queue 0 Full Interrupt
++		unsigned int toe_q1_full	: 1;	// bit 1	TOE Queue 1 Full Interrupt
++		unsigned int toe_q2_full	: 1;	// bit 2	TOE Queue 2 Full Interrupt
++		unsigned int toe_q3_full	: 1;	// bit 3	TOE Queue 3 Full Interrupt
++		unsigned int toe_q4_full	: 1;	// bit 4	TOE Queue 4 Full Interrupt
++		unsigned int toe_q5_full	: 1;	// bit 5	TOE Queue 5 Full Interrupt
++		unsigned int toe_q6_full	: 1;	// bit 6	TOE Queue 6 Full Interrupt
++		unsigned int toe_q7_full	: 1;	// bit 7	TOE Queue 7 Full Interrupt
++		unsigned int toe_q8_full	: 1;	// bit 8	TOE Queue 8 Full Interrupt
++		unsigned int toe_q9_full	: 1;	// bit 9	TOE Queue 9 Full Interrupt
++		unsigned int toe_q10_full	: 1;	// bit 10	TOE Queue 10 Full Interrupt
++		unsigned int toe_q11_full	: 1;	// bit 11	TOE Queue 11 Full Interrupt
++		unsigned int toe_q12_full	: 1;	// bit 12	TOE Queue 12 Full Interrupt
++		unsigned int toe_q13_full	: 1;	// bit 13	TOE Queue 13 Full Interrupt
++		unsigned int toe_q14_full	: 1;	// bit 14	TOE Queue 14 Full Interrupt
++		unsigned int toe_q15_full	: 1;	// bit 15	TOE Queue 15 Full Interrupt
++		unsigned int toe_q16_full	: 1;	// bit 16	TOE Queue 16 Full Interrupt
++		unsigned int toe_q17_full	: 1;	// bit 17	TOE Queue 17 Full Interrupt
++		unsigned int toe_q18_full	: 1;	// bit 18	TOE Queue 18 Full Interrupt
++		unsigned int toe_q19_full	: 1;	// bit 19	TOE Queue 19 Full Interrupt
++		unsigned int toe_q20_full	: 1;	// bit 20	TOE Queue 20 Full Interrupt
++		unsigned int toe_q21_full	: 1;	// bit 21	TOE Queue 21 Full Interrupt
++		unsigned int toe_q22_full	: 1;	// bit 22	TOE Queue 22 Full Interrupt
++		unsigned int toe_q23_full	: 1;	// bit 23	TOE Queue 23 Full Interrupt
++		unsigned int toe_q24_full	: 1;	// bit 24	TOE Queue 24 Full Interrupt
++		unsigned int toe_q25_full	: 1;	// bit 25	TOE Queue 25 Full Interrupt
++		unsigned int toe_q26_full	: 1;	// bit 26	TOE Queue 26 Full Interrupt
++		unsigned int toe_q27_full	: 1;	// bit 27	TOE Queue 27 Full Interrupt
++		unsigned int toe_q28_full	: 1;	// bit 28	TOE Queue 28 Full Interrupt
++		unsigned int toe_q29_full	: 1;	// bit 29	TOE Queue 29 Full Interrupt
++		unsigned int toe_q30_full	: 1;	// bit 30	TOE Queue 30 Full Interrupt
++		unsigned int toe_q31_full	: 1;	// bit 31	TOE Queue 31 Full Interrupt
++	} bits;
++} INTR_REG2_T;
++
++#define TOE_QL_FULL_INT_BIT(x)		BIT(x)
++
++/*
++ * Interrupt Status Register 3 	(offset 0x0050)
++ * Interrupt Mask Register 3 	(offset 0x0054)
++ * Interrupt Select Register 3 	(offset 0x0058)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_0050 {
++		unsigned int toe_q32_full	: 1;	// bit 32	TOE Queue 32 Full Interrupt
++		unsigned int toe_q33_full	: 1;	// bit 33	TOE Queue 33 Full Interrupt
++		unsigned int toe_q34_full	: 1;	// bit 34	TOE Queue 34 Full Interrupt
++		unsigned int toe_q35_full	: 1;	// bit 35	TOE Queue 35 Full Interrupt
++		unsigned int toe_q36_full	: 1;	// bit 36	TOE Queue 36 Full Interrupt
++		unsigned int toe_q37_full	: 1;	// bit 37	TOE Queue 37 Full Interrupt
++		unsigned int toe_q38_full	: 1;	// bit 38	TOE Queue 38 Full Interrupt
++		unsigned int toe_q39_full	: 1;	// bit 39	TOE Queue 39 Full Interrupt
++		unsigned int toe_q40_full	: 1;	// bit 40	TOE Queue 40 Full Interrupt
++		unsigned int toe_q41_full	: 1;	// bit 41	TOE Queue 41 Full Interrupt
++		unsigned int toe_q42_full	: 1;	// bit 42	TOE Queue 42 Full Interrupt
++		unsigned int toe_q43_full	: 1;	// bit 43	TOE Queue 43 Full Interrupt
++		unsigned int toe_q44_full	: 1;	// bit 44	TOE Queue 44 Full Interrupt
++		unsigned int toe_q45_full	: 1;	// bit 45	TOE Queue 45 Full Interrupt
++		unsigned int toe_q46_full	: 1;	// bit 46	TOE Queue 46 Full Interrupt
++		unsigned int toe_q47_full	: 1;	// bit 47	TOE Queue 47 Full Interrupt
++		unsigned int toe_q48_full	: 1;	// bit 48	TOE Queue 48 Full Interrupt
++		unsigned int toe_q49_full	: 1;	// bit 49	TOE Queue 49 Full Interrupt
++		unsigned int toe_q50_full	: 1;	// bit 50	TOE Queue 50 Full Interrupt
++		unsigned int toe_q51_full	: 1;	// bit 51	TOE Queue 51 Full Interrupt
++		unsigned int toe_q52_full	: 1;	// bit 52	TOE Queue 52 Full Interrupt
++		unsigned int toe_q53_full	: 1;	// bit 53	TOE Queue 53 Full Interrupt
++		unsigned int toe_q54_full	: 1;	// bit 54	TOE Queue 54 Full Interrupt
++		unsigned int toe_q55_full	: 1;	// bit 55	TOE Queue 55 Full Interrupt
++		unsigned int toe_q56_full	: 1;	// bit 56	TOE Queue 56 Full Interrupt
++		unsigned int toe_q57_full	: 1;	// bit 57	TOE Queue 57 Full Interrupt
++		unsigned int toe_q58_full	: 1;	// bit 58	TOE Queue 58 Full Interrupt
++		unsigned int toe_q59_full	: 1;	// bit 59	TOE Queue 59 Full Interrupt
++		unsigned int toe_q60_full	: 1;	// bit 60	TOE Queue 60 Full Interrupt
++		unsigned int toe_q61_full	: 1;	// bit 61	TOE Queue 61 Full Interrupt
++		unsigned int toe_q62_full	: 1;	// bit 62	TOE Queue 62 Full Interrupt
++		unsigned int toe_q63_full	: 1;	// bit 63	TOE Queue 63 Full Interrupt
++	} bits;
++} INTR_REG3_T;
++
++#define TOE_QH_FULL_INT_BIT(x)		BIT(x-32)
++
++/*
++ * Interrupt Status Register 4 	(offset 0x0060)
++ * Interrupt Mask Register 4 	(offset 0x0064)
++ * Interrupt Select Register 4 	(offset 0x0068)
++ */
++typedef union {
++	unsigned char byte;
++	struct bit_0060 {
++		unsigned char status_changed	: 1;	// Status Changed Intr for RGMII Mode
++		unsigned char rx_overrun	: 1;   // GMAC Rx FIFO overrun interrupt
++		unsigned char tx_pause_off	: 1;	// received pause off frame interrupt
++		unsigned char rx_pause_off	: 1;	// received pause off frame interrupt
++		unsigned char tx_pause_on	: 1;	// transmit pause on frame interrupt
++		unsigned char rx_pause_on	: 1;	// received pause on frame interrupt
++		unsigned char cnt_full 		: 1;	// MIB counters half full interrupt
++		unsigned char reserved		: 1;	//
++	} _PACKED_ bits;
++} _PACKED_ GMAC_INTR_T;
++
++typedef union {
++	unsigned int bits32;
++	struct bit_0060_2 {
++		unsigned int    swfq_empty	: 1;	// bit 0	Software Free Queue Empty Intr.
++		unsigned int    hwfq_empty	: 1;	// bit 1	Hardware Free Queue Empty Intr.
++		unsigned int	class_qf_int	: 14;	// bit 15:2 Classification Rx Queue13-0 Full Intr.
++		GMAC_INTR_T	gmac0;
++		GMAC_INTR_T	gmac1;
++	} bits;
++} INTR_REG4_T;
++
++#define GMAC1_RESERVED_INT_BIT		BIT(31)
++#define GMAC1_MIB_INT_BIT		BIT(30)
++#define GMAC1_RX_PAUSE_ON_INT_BIT	BIT(29)
++#define GMAC1_TX_PAUSE_ON_INT_BIT	BIT(28)
++#define GMAC1_RX_PAUSE_OFF_INT_BIT	BIT(27)
++#define GMAC1_TX_PAUSE_OFF_INT_BIT	BIT(26)
++#define GMAC1_RX_OVERRUN_INT_BIT	BIT(25)
++#define GMAC1_STATUS_CHANGE_INT_BIT	BIT(24)
++#define GMAC0_RESERVED_INT_BIT		BIT(23)
++#define GMAC0_MIB_INT_BIT		BIT(22)
++#define GMAC0_RX_PAUSE_ON_INT_BIT	BIT(21)
++#define GMAC0_TX_PAUSE_ON_INT_BIT	BIT(20)
++#define GMAC0_RX_PAUSE_OFF_INT_BIT	BIT(19)
++#define GMAC0_TX_PAUSE_OFF_INT_BIT	BIT(18)
++#define GMAC0_RX_OVERRUN_INT_BIT	BIT(17)
++#define GMAC0_STATUS_CHANGE_INT_BIT	BIT(16)
++#define CLASS_RX_FULL_INT_BIT(x)	BIT((x+2))
++#define HWFQ_EMPTY_INT_BIT		BIT(1)
++#define SWFQ_EMPTY_INT_BIT		BIT(0)
++
++#if 1
++#define GMAC0_INT_BITS		(GMAC0_MIB_INT_BIT)
++#define GMAC1_INT_BITS		(GMAC1_MIB_INT_BIT)
++#else
++#define GMAC0_INT_BITS		(GMAC0_RESERVED_INT_BIT | GMAC0_MIB_INT_BIT | \
++				 GMAC0_RX_PAUSE_ON_INT_BIT | GMAC0_TX_PAUSE_ON_INT_BIT |	\
++				 GMAC0_RX_PAUSE_OFF_INT_BIT | GMAC0_TX_PAUSE_OFF_INT_BIT | 	\
++				 GMAC0_RX_OVERRUN_INT_BIT | GMAC0_STATUS_CHANGE_INT_BIT)
++#define GMAC1_INT_BITS		(GMAC1_RESERVED_INT_BIT | GMAC1_MIB_INT_BIT | \
++				 GMAC1_RX_PAUSE_ON_INT_BIT | GMAC1_TX_PAUSE_ON_INT_BIT |	\
++				 GMAC1_RX_PAUSE_OFF_INT_BIT | GMAC1_TX_PAUSE_OFF_INT_BIT | 	\
++				 GMAC1_RX_OVERRUN_INT_BIT | GMAC1_STATUS_CHANGE_INT_BIT)
++#endif
++
++#define CLASS_RX_FULL_INT_BITS		0xfffc
++
++/*
++ * GLOBAL_QUEUE_THRESHOLD_REG 	(offset 0x0070)
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_0070_2 {
++		unsigned int    swfq_empty	: 8;	//  7:0  	Software Free Queue Empty Threshold
++		unsigned int    hwfq_empty	: 8;	// 15:8		Hardware Free Queue Empty Threshold
++		unsigned int	intrq		: 8;	// 23:16
++		unsigned int	toe_class	: 8;	// 31:24
++	} bits;
++} QUEUE_THRESHOLD_T;
++
++
++/*
++ * GMAC DMA Control Register
++ * GMAC0 offset 0x8000
++ * GMAC1 offset 0xC000
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8000 {
++		unsigned int	td_bus		: 2;	// bit 1:0	Peripheral Bus Width
++		unsigned int	td_burst_size	: 2;	// bit 3:2	TxDMA max burst size for every AHB request
++		unsigned int	td_prot		: 4;	// bit 7:4	TxDMA protection control
++		unsigned int	rd_bus		: 2;	// bit 9:8 	Peripheral Bus Width
++		unsigned int	rd_burst_size	: 2;	// bit 11:10	DMA max burst size for every AHB request
++		unsigned int	rd_prot		: 4;	// bit 15:12	DMA Protection Control
++		unsigned int	rd_insert_bytes	: 2;	// bit 17:16
++		unsigned int	reserved	: 10;	// bit 27:18
++		unsigned int    drop_small_ack	: 1;	// bit 28	1: Drop, 0: Accept
++		unsigned int    loopback	: 1;	// bit 29	Loopback TxDMA to RxDMA
++		unsigned int    td_enable	: 1;	// bit 30	Tx DMA Enable
++		unsigned int    rd_enable	: 1;	// bit 31	Rx DMA Enable
++	} bits;
++} GMAC_DMA_CTRL_T;
++
++/*
++ * GMAC Tx Weighting Control Register 0
++ * GMAC0 offset 0x8004
++ * GMAC1 offset 0xC004
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8004 {
++		unsigned int    hw_tq0		: 6;	// bit 5:0	HW TX Queue 3
++		unsigned int    hw_tq1		: 6;	// bit 11:6	HW TX Queue 2
++		unsigned int    hw_tq2		: 6;	// bit 17:12	HW TX Queue 1
++		unsigned int    hw_tq3		: 6;	// bit 23:18	HW TX Queue 0
++		unsigned int    reserved	: 8;	// bit 31:24
++	} bits;
++} GMAC_TX_WCR0_T;	/* Weighting Control Register 0 */
++
++/*
++ * GMAC Tx Weighting Control Register 1
++ * GMAC0 offset 0x8008
++ * GMAC1 offset 0xC008
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8008 {
++		unsigned int    sw_tq0		: 5;	// bit 4:0	SW TX Queue 0
++		unsigned int    sw_tq1		: 5;	// bit 9:5	SW TX Queue 1
++		unsigned int    sw_tq2		: 5;	// bit 14:10	SW TX Queue 2
++		unsigned int    sw_tq3		: 5;	// bit 19:15	SW TX Queue 3
++		unsigned int    sw_tq4		: 5;	// bit 24:20	SW TX Queue 4
++		unsigned int    sw_tq5		: 5;	// bit 29:25	SW TX Queue 5
++		unsigned int    reserved	: 2;	// bit 31:30
++	} bits;
++} GMAC_TX_WCR1_T;	/* Weighting Control Register 1 */
++
++/*
++ * Queue Read/Write Pointer
++ * GMAC SW TX Queue 0~5 Read/Write Pointer register
++ * GMAC0 offset 0x800C ~ 0x8020
++ * GMAC1 offset 0xC00C ~ 0xC020
++ * GMAC HW TX Queue 0~3 Read/Write Pointer register
++ * GMAC0 offset 0x8024 ~ 0x8030
++ * GMAC1 offset 0xC024 ~ 0xC030
++ *
++ * see DMA_RWPTR_T structure
++ */
++
++/*
++ * GMAC DMA Tx First Description Address Register
++ * GMAC0 offset 0x8038
++ * GMAC1 offset 0xC038
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8038 {
++		unsigned int reserved		:  3;
++		unsigned int td_busy		:  1;	// bit 3	1: TxDMA busy; 0: TxDMA idle
++		unsigned int td_first_des_ptr	: 28;	// bit 31:4	first descriptor address
++	} bits;
++} GMAC_TXDMA_FIRST_DESC_T;
++
++/*
++ * GMAC DMA Tx Current Description Address Register
++ * GMAC0 offset 0x803C
++ * GMAC1 offset 0xC03C
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_803C {
++		unsigned int reserved		:  4;
++		unsigned int td_curr_desc_ptr	: 28;	// bit 31:4	current descriptor address
++	} bits;
++} GMAC_TXDMA_CURR_DESC_T;
++
++/*
++ * GMAC DMA Tx Description Word 0 Register
++ * GMAC0 offset 0x8040
++ * GMAC1 offset 0xC040
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8040 {
++		unsigned int buffer_size 	: 16;	// bit 15:0	Transfer size
++		unsigned int desc_count 	: 6;	// bit 21:16	number of descriptors used for the current frame
++		unsigned int status_tx_ok	: 1;	// bit 22	Tx Status, 1: Successful 0: Failed
++		unsigned int status_rvd		: 6;	// bit 28:23	Tx Status, Reserved bits
++		unsigned int perr		: 1;	// bit 29	protocol error during processing this descriptor
++		unsigned int derr		: 1;	// bit 30	data error during processing this descriptor
++		unsigned int reserved		: 1;	// bit 31
++	} bits;
++} GMAC_TXDESC_0_T;
++
++/*
++ * GMAC DMA Tx Description Word 1 Register
++ * GMAC0 offset 0x8044
++ * GMAC1 offset 0xC044
++ */
++typedef union {
++	unsigned int bits32;
++	struct txdesc_word1 {
++		unsigned int	byte_count	: 16;	// bit 15: 0	Tx Frame Byte Count
++		unsigned int	mtu_enable	: 1;	// bit 16	TSS segmentation use MTU setting
++		unsigned int	ip_chksum	: 1;	// bit 17	IPV4 Header Checksum Enable
++		unsigned int	ipv6_enable	: 1;	// bit 18	IPV6 Tx Enable
++		unsigned int	tcp_chksum	: 1;	// bit 19	TCP Checksum Enable
++		unsigned int	udp_chksum	: 1;	// bit 20	UDP Checksum Enable
++		unsigned int	bypass_tss	: 1;	// bit 21
++		unsigned int	ip_fixed_len	: 1;	// bit 22
++		unsigned int	reserved	: 9;	// bit 31:23 	Tx Flag, Reserved
++	} bits;
++} GMAC_TXDESC_1_T;
++
++#define TSS_IP_FIXED_LEN_BIT	BIT(22)
++#define TSS_UDP_CHKSUM_BIT	BIT(20)
++#define TSS_TCP_CHKSUM_BIT	BIT(19)
++#define TSS_IPV6_ENABLE_BIT	BIT(18)
++#define TSS_IP_CHKSUM_BIT	BIT(17)
++#define TSS_MTU_ENABLE_BIT	BIT(16)
++
++/*
++ * GMAC DMA Tx Description Word 2 Register
++ * GMAC0 offset 0x8048
++ * GMAC1 offset 0xC048
++ */
++typedef union {
++	unsigned int	bits32;
++	unsigned int 	buf_adr;
++} GMAC_TXDESC_2_T;
++
++/*
++ * GMAC DMA Tx Description Word 3 Register
++ * GMAC0 offset 0x804C
++ * GMAC1 offset 0xC04C
++ */
++typedef union {
++	unsigned int bits32;
++	struct txdesc_word3 {
++		unsigned int	mtu_size	: 11;	// bit 10: 0	Tx Frame Byte Count
++		unsigned int	reserved	: 18;	// bit 28:11
++		unsigned int	eofie		: 1;	// bit 29	End of frame interrupt enable
++		unsigned int	sof_eof		: 2;	// bit 31:30 	11: only one, 10: first, 01: last, 00: linking
++	} bits;
++} GMAC_TXDESC_3_T;
++#define SOF_EOF_BIT_MASK	0x3fffffff
++#define SOF_BIT			0x80000000
++#define EOF_BIT			0x40000000
++#define EOFIE_BIT		BIT(29)
++#define MTU_SIZE_BIT_MASK	0x7ff
++
++/*
++ * GMAC Tx Descriptor
++ */
++typedef struct {
++	GMAC_TXDESC_0_T	word0;
++	GMAC_TXDESC_1_T	word1;
++	GMAC_TXDESC_2_T	word2;
++	GMAC_TXDESC_3_T	word3;
++} GMAC_TXDESC_T;
++
++/*
++ * GMAC DMA Rx First Description Address Register
++ * GMAC0 offset 0x8058
++ * GMAC1 offset 0xC058
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8058 {
++		unsigned int reserved		:  3;	// bit 2:0
++		unsigned int rd_busy		:  1;	// bit 3	1-RxDMA busy; 0-RxDMA idle
++		unsigned int rd_first_des_ptr	: 28;	// bit 31:4 first descriptor address
++	} bits;
++} GMAC_RXDMA_FIRST_DESC_T;
++
++/*
++ * GMAC DMA Rx Current Description Address Register
++ * GMAC0 offset 0x805C
++ * GMAC1 offset 0xC05C
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_805C {
++		unsigned int reserved		:  4;	// bit 3:0
++		unsigned int rd_curr_des_ptr	: 28;	// bit 31:4 current descriptor address
++	} bits;
++} GMAC_RXDMA_CURR_DESC_T;
++
++/*
++ * GMAC DMA Rx Description Word 0 Register
++ * GMAC0 offset 0x8060
++ * GMAC1 offset 0xC060
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8060 {
++		unsigned int buffer_size 	: 16;	// bit 15:0  number of descriptors used for the current frame
++		unsigned int desc_count 	: 6;	// bit 21:16 number of descriptors used for the current frame
++		unsigned int status		: 4;	// bit 24:22 Status of rx frame
++		unsigned int chksum_status	: 3;	// bit 28:26 Check Sum Status
++		unsigned int perr		: 1;	// bit 29	 protocol error during processing this descriptor
++		unsigned int derr		: 1;	// bit 30	 data error during processing this descriptor
++		unsigned int drop		: 1;	// bit 31	 TOE/CIS Queue Full dropped packet to default queue
++	} bits;
++} GMAC_RXDESC_0_T;
++
++#define		GMAC_RXDESC_0_T_derr			BIT(30)
++#define		GMAC_RXDESC_0_T_perr			BIT(29)
++#define		GMAC_RXDESC_0_T_chksum_status(x)	BIT((x+26))
++#define		GMAC_RXDESC_0_T_status(x)		BIT((x+22))
++#define		GMAC_RXDESC_0_T_desc_count(x)		BIT((x+16))
++
++#define	RX_CHKSUM_IP_UDP_TCP_OK			0
++#define	RX_CHKSUM_IP_OK_ONLY			1
++#define	RX_CHKSUM_NONE				2
++#define	RX_CHKSUM_IP_ERR_UNKNOWN		4
++#define	RX_CHKSUM_IP_ERR			5
++#define	RX_CHKSUM_TCP_UDP_ERR			6
++#define RX_CHKSUM_NUM				8
++
++#define RX_STATUS_GOOD_FRAME			0
++#define RX_STATUS_TOO_LONG_GOOD_CRC		1
++#define RX_STATUS_RUNT_FRAME			2
++#define RX_STATUS_SFD_NOT_FOUND			3
++#define RX_STATUS_CRC_ERROR			4
++#define RX_STATUS_TOO_LONG_BAD_CRC		5
++#define RX_STATUS_ALIGNMENT_ERROR		6
++#define RX_STATUS_TOO_LONG_BAD_ALIGN		7
++#define RX_STATUS_RX_ERR			8
++#define RX_STATUS_DA_FILTERED			9
++#define RX_STATUS_BUFFER_FULL			10
++#define RX_STATUS_NUM				16
++
++
++/*
++ * GMAC DMA Rx Description Word 1 Register
++ * GMAC0 offset 0x8064
++ * GMAC1 offset 0xC064
++ */
++typedef union {
++	unsigned int bits32;
++	struct rxdesc_word1 {
++		unsigned int	byte_count	: 16;	// bit 15: 0	Rx Frame Byte Count
++		unsigned int	sw_id		: 16;	// bit 31:16	Software ID
++	} bits;
++} GMAC_RXDESC_1_T;
++
++/*
++ * GMAC DMA Rx Description Word 2 Register
++ * GMAC0 offset 0x8068
++ * GMAC1 offset 0xC068
++ */
++typedef union {
++	unsigned int	bits32;
++	unsigned int	buf_adr;
++} GMAC_RXDESC_2_T;
++
++#define RX_INSERT_NONE		0
++#define RX_INSERT_1_BYTE	1
++#define RX_INSERT_2_BYTE	2
++#define RX_INSERT_3_BYTE	3
++
++#define RX_INSERT_BYTES		RX_INSERT_2_BYTE
++/*
++ * GMAC DMA Rx Description Word 3 Register
++ * GMAC0 offset 0x806C
++ * GMAC1 offset 0xC06C
++ */
++typedef union {
++	unsigned int bits32;
++	struct rxdesc_word3 {
++		unsigned int	l3_offset	: 8;	// bit 7: 0	L3 data offset
++		unsigned int	l4_offset	: 8;	// bit 15: 8	L4 data offset
++		unsigned int	l7_offset	: 8;	// bit 23: 16	L7 data offset
++		unsigned int	dup_ack		: 1;	// bit 24	Duplicated ACK detected
++		unsigned int	abnormal	: 1;	// bit 25	abnormal case found
++		unsigned int	option		: 1;	// bit 26	IPV4 option or IPV6 extension header
++		unsigned int	out_of_seq	: 1;	// bit 27	Out of Sequence packet
++		unsigned int	ctrl_flag	: 1;	// bit 28 	Control Flag is present
++		unsigned int	eofie		: 1;	// bit 29	End of frame interrupt enable
++		unsigned int	sof_eof		: 2;	// bit 31:30 	11: only one, 10: first, 01: last, 00: linking
++	} bits;
++} GMAC_RXDESC_3_T;
++
++/*
++ * GMAC Rx Descriptor
++ */
++typedef struct {
++	GMAC_RXDESC_0_T	word0;
++	GMAC_RXDESC_1_T	word1;
++	GMAC_RXDESC_2_T	word2;
++	GMAC_RXDESC_3_T	word3;
++} GMAC_RXDESC_T;
++
++/*
++ * GMAC Hash Engine Enable/Action Register 0 Offset Register
++ * GMAC0 offset 0x8070
++ * GMAC1 offset 0xC070
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8070 {
++		unsigned int	mr0hel		: 6;	// bit 5:0	match rule 0 hash entry size
++		unsigned int	mr0_action	: 5;	// bit 10:6	Matching Rule 0 action offset
++		unsigned int	reserved0	: 4;	// bit 14:11
++		unsigned int	mr0en		: 1;	// bit 15	Enable Matching Rule 0
++		unsigned int	mr1hel		: 6;	// bit 21:16	match rule 1 hash entry size
++		unsigned int	mr1_action	: 5;	// bit 26:22	Matching Rule 1 action offset
++		unsigned int	timing		: 3;	// bit 29:27
++		unsigned int	reserved1	: 1;	// bit 30
++		unsigned int	mr1en		: 1;	// bit 31	Enable Matching Rule 1
++	} bits;
++} GMAC_HASH_ENABLE_REG0_T;
++
++/*
++ * GMAC Hash Engine Enable/Action Register 1 Offset Register
++ * GMAC0 offset 0x8074
++ * GMAC1 offset 0xC074
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8074 {
++		unsigned int	mr2hel		: 6;	// bit 5:0	match rule 2 hash entry size
++		unsigned int	mr2_action	: 5;	// bit 10:6	Matching Rule 2 action offset
++		unsigned int	reserved2	: 4;	// bit 14:11
++		unsigned int	mr2en		: 1;	// bit 15	Enable Matching Rule 2
++		unsigned int	mr3hel		: 6;	// bit 21:16	match rule 3 hash entry size
++		unsigned int	mr3_action	: 5;	// bit 26:22	Matching Rule 3 action offset
++		unsigned int	reserved1	: 4;	// bit 30:27
++		unsigned int	mr3en		: 1;	// bit 31	Enable Matching Rule 3
++	} bits;
++} GMAC_HASH_ENABLE_REG1_T;
++
++/*
++ * GMAC Matching Rule Control Register 0
++ * GMAC0 offset 0x8078
++ * GMAC1 offset 0xC078
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8078 {
++		unsigned int	sprx		: 8;	// bit 7:0	Support Protocol Register 7:0
++		unsigned int	reserved2	: 4;	// bit 11:8
++		unsigned int	tos_traffic	: 1;	// bit 12	IPV4 TOS or IPV6 Traffice Class
++		unsigned int	flow_lable	: 1;	// bit 13	IPV6 Flow label
++		unsigned int	ip_hdr_len	: 1;	// bit 14	IPV4 Header length
++		unsigned int	ip_version	: 1;	// bit 15	0: IPV4, 1: IPV6
++		unsigned int	reserved1	: 3;	// bit 18:16
++		unsigned int	pppoe		: 1;	// bit 19	PPPoE Session ID enable
++		unsigned int	vlan		: 1;	// bit 20	VLAN ID enable
++		unsigned int	ether_type	: 1;	// bit 21	Ethernet type enable
++		unsigned int	sa		: 1;	// bit 22	MAC SA enable
++		unsigned int	da		: 1;	// bit 23	MAC DA enable
++		unsigned int	priority	: 3;	// bit 26:24	priority if multi-rules matched
++		unsigned int	port		: 1;	// bit 27	PORT ID matching enable
++		unsigned int	l7		: 1;	// bit 28	L7 matching enable
++		unsigned int	l4		: 1;	// bit 29	L4 matching enable
++		unsigned int	l3		: 1;	// bit 30	L3 matching enable
++		unsigned int	l2		: 1;	// bit 31	L2 matching enable
++	} bits;
++} GMAC_MRxCR0_T;
++
++#define MR_L2_BIT		BIT(31)
++#define MR_L3_BIT		BIT(30)
++#define MR_L4_BIT		BIT(29)
++#define MR_L7_BIT		BIT(28)
++#define MR_PORT_BIT		BIT(27)
++#define MR_PRIORITY_BIT		BIT(26)
++#define MR_DA_BIT		BIT(23)
++#define MR_SA_BIT		BIT(22)
++#define MR_ETHER_TYPE_BIT	BIT(21)
++#define MR_VLAN_BIT		BIT(20)
++#define MR_PPPOE_BIT		BIT(19)
++#define MR_IP_VER_BIT		BIT(15)
++#define MR_IP_HDR_LEN_BIT	BIT(14)
++#define MR_FLOW_LABLE_BIT	BIT(13)
++#define MR_TOS_TRAFFIC_BIT	BIT(12)
++#define MR_SPR_BIT(x)		BIT(x)
++#define MR_SPR_BITS		0xff
++
++/*
++ * GMAC Matching Rule Control Register 1
++ * GMAC0 offset 0x807C
++ * GMAC1 offset 0xC07C
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_807C {
++		unsigned int    l4_byte0_15	: 16;	// bit 15: 0
++		unsigned int	dip_netmask	: 7;	// bit 22:16	Dest IP net mask, number of mask bits
++		unsigned int	dip		: 1;	// bit 23		Dest IP
++		unsigned int	sip_netmask	: 7;	// bit 30:24	Srce IP net mask, number of mask bits
++		unsigned int	sip		: 1;	// bit 31		Srce IP
++	} bits;
++} GMAC_MRxCR1_T;
++
++/*
++ * GMAC Matching Rule Control Register 2
++ * GMAC0 offset 0x8080
++ * GMAC1 offset 0xC080
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_8080 {
++		unsigned int    l7_byte0_23	: 24;	// bit 23:0
++		unsigned int    l4_byte16_24	: 8;	// bit 31: 24
++	} bits;
++} GMAC_MRxCR2_T;
++
++/*
++ * GMAC Support registers
++ * GMAC0 offset 0x80A8
++ * GMAC1 offset 0xC0A8
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_80A8 {
++		unsigned int    protocol	: 8;	// bit 7:0		Supported protocol
++		unsigned int    swap		: 3;	// bit 10:8		Swap
++		unsigned int    reserved	: 21;	// bit 31:11
++	} bits;
++} GMAC_SPR_T;
++
++/*
++ * GMAC_AHB_WEIGHT registers
++ * GMAC0 offset 0x80C8
++ * GMAC1 offset 0xC0C8
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_80C8 {
++		unsigned int    hash_weight	: 5;	// 4:0
++		unsigned int    rx_weight	: 5;	// 9:5
++		unsigned int    tx_weight	: 5;	// 14:10
++		unsigned int    pre_req		: 5;	// 19:15 Rx Data Pre Request FIFO Threshold
++		unsigned int    tqDV_threshold	: 5;	// 24:20 DMA TqCtrl to Start tqDV FIFO Threshold
++		unsigned int    reserved	: 7;	// 31:25
++	} bits;
++} GMAC_AHB_WEIGHT_T;
++
++/*
++ * the register structure of GMAC
++ */
++
++/*
++ * GMAC RX FLTR
++ * GMAC0 Offset 0xA00C
++ * GMAC1 Offset 0xE00C
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit1_000c {
++		unsigned int unicast		:  1;	/* enable receive of unicast frames that are sent to STA address */
++		unsigned int multicast		:  1;	/* enable receive of multicast frames that pass multicast filter */
++		unsigned int broadcast		:  1;	/* enable receive of broadcast frames */
++		unsigned int promiscuous	:  1;   /* enable receive of all frames */
++		unsigned int error		:  1;	/* enable receive of all error frames */
++		unsigned int 			: 27;
++	} bits;
++} GMAC_RX_FLTR_T;
++
++/*
++ * GMAC Configuration 0
++ * GMAC0 Offset 0xA018
++ * GMAC1 Offset 0xE018
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit1_0018 {
++		unsigned int dis_tx		:  1;	/* 0: disable transmit */
++		unsigned int dis_rx		:  1;	/* 1: disable receive */
++		unsigned int loop_back		:  1;	/* 2: transmit data loopback enable */
++		unsigned int flow_ctrl		:  1;   /* 3: flow control also trigged by Rx queues */
++		unsigned int adj_ifg		:  4;	/* 4-7: adjust IFG from 96+/-56 */
++		unsigned int max_len		:  3;	/* 8-10 maximum receive frame length allowed */
++		unsigned int dis_bkoff		:  1;	/* 11: disable back-off function */
++		unsigned int dis_col		:  1;	/* 12: disable 16 collisions abort function */
++		unsigned int sim_test		:  1;	/* 13: speed up timers in simulation */
++		unsigned int rx_fc_en		:  1;	/* 14: RX flow control enable */
++		unsigned int tx_fc_en		:  1;	/* 15: TX flow control enable */
++		unsigned int rgmii_en		:  1;   /* 16: RGMII in-band status enable */
++		unsigned int ipv4_rx_chksum	:  1;   /* 17: IPv4 RX Checksum enable */
++		unsigned int ipv6_rx_chksum	:  1;   /* 18: IPv6 RX Checksum enable */
++		unsigned int rx_tag_remove	:  1;   /* 19: Remove Rx VLAN tag */
++		unsigned int rgmm_edge		:  1;	// 20
++		unsigned int rxc_inv		:  1;	// 21
++		unsigned int ipv6_exthdr_order	:  1;	// 22
++		unsigned int rx_err_detect	:  1;	// 23
++		unsigned int port0_chk_hwq	:  1;	// 24
++		unsigned int port1_chk_hwq	:  1;	// 25
++		unsigned int port0_chk_toeq	:  1;	// 26
++		unsigned int port1_chk_toeq	:  1;	// 27
++		unsigned int port0_chk_classq	:  1;	// 28
++		unsigned int port1_chk_classq	:  1;	// 29
++		unsigned int reserved		:  2;	// 31
++	} bits;
++} GMAC_CONFIG0_T;
++
++/*
++ * GMAC Configuration 1
++ * GMAC0 Offset 0xA01C
++ * GMAC1 Offset 0xE01C
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit1_001c {
++		unsigned int set_threshold	: 8; 	/* flow control set threshold */
++		unsigned int rel_threshold	: 8;	/* flow control release threshold */
++		unsigned int reserved		: 16;
++	} bits;
++} GMAC_CONFIG1_T;
++
++#define GMAC_FLOWCTRL_SET_MAX		32
++#define GMAC_FLOWCTRL_SET_MIN		0
++#define GMAC_FLOWCTRL_RELEASE_MAX	32
++#define GMAC_FLOWCTRL_RELEASE_MIN	0
++
++/*
++ * GMAC Configuration 2
++ * GMAC0 Offset 0xA020
++ * GMAC1 Offset 0xE020
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit1_0020 {
++		unsigned int set_threshold	: 16; 	/* flow control set threshold */
++		unsigned int rel_threshold	: 16;	/* flow control release threshold */
++	} bits;
++} GMAC_CONFIG2_T;
++
++/*
++ * GMAC Configuration 3
++ * GMAC0 Offset 0xA024
++ * GMAC1 Offset 0xE024
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit1_0024 {
++		unsigned int set_threshold	: 16; 	/* flow control set threshold */
++		unsigned int rel_threshold	: 16;	/* flow control release threshold */
++	} bits;
++} GMAC_CONFIG3_T;
++
++
++/*
++ * GMAC STATUS
++ * GMAC0 Offset 0xA02C
++ * GMAC1 Offset 0xE02C
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit1_002c {
++		unsigned int link		:  1;	/* link status */
++		unsigned int speed		:  2;	/* link speed(00->2.5M 01->25M 10->125M) */
++		unsigned int duplex		:  1;	/* duplex mode */
++		unsigned int reserved		:  1;
++		unsigned int mii_rmii		:  2;   /* PHY interface type */
++		unsigned int 			: 25;
++	} bits;
++} GMAC_STATUS_T;
++
++#define GMAC_SPEED_10			0
++#define GMAC_SPEED_100			1
++#define GMAC_SPEED_1000			2
++
++#define GMAC_PHY_MII			0
++#define GMAC_PHY_GMII			1
++#define GMAC_PHY_RGMII_100_10		2
++#define GMAC_PHY_RGMII_1000		3
++
++/*
++ * Queue Header
++ *	(1) TOE Queue Header
++ *	(2) Non-TOE Queue Header
++ *	(3) Interrupt Queue Header
++ *
++ * memory Layout
++ *	TOE Queue Header
++ *	 0x60003000 +---------------------------+ 0x0000
++ *				|     TOE Queue 0 Header	|
++ *				|         8 * 4 Bytes	    |
++ *				+---------------------------+ 0x0020
++ *				|     TOE Queue 1 Header  	|
++ *				|         8 * 4 Bytes		|
++ *				+---------------------------+ 0x0040
++ *				|   	......  			|
++ *				|      						|
++ *				+---------------------------+
++ *
++ *	Non TOE Queue Header
++ *	 0x60002000 +---------------------------+ 0x0000
++ *				|   Default Queue 0 Header  |
++ *				|         2 * 4 Bytes		|
++ *				+---------------------------+ 0x0008
++ *				|   Default Queue 1 Header	|
++ *				|         2 * 4 Bytes		|
++ *				+---------------------------+ 0x0010
++ *				|   Classification Queue 0	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+
++ *				|   Classification Queue 1	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+ (n * 8 + 0x10)
++ *				|   		...				|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+ (13 * 8 + 0x10)
++ *				|   Classification Queue 13	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+ 0x80
++ * 				|      Interrupt Queue 0	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+
++ * 				|      Interrupt Queue 1	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+
++ * 				|      Interrupt Queue 2	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+
++ * 				|      Interrupt Queue 3	|
++ *				|      	  2 * 4 Bytes		|
++ *				+---------------------------+
++ *
++ */
++#define TOE_QUEUE_HDR_ADDR(n)		(TOE_TOE_QUE_HDR_BASE + n * 32)
++#define TOE_Q_HDR_AREA_END		(TOE_QUEUE_HDR_ADDR(TOE_TOE_QUEUE_MAX + 1))
++#define TOE_DEFAULT_Q_HDR_BASE(x)	(TOE_NONTOE_QUE_HDR_BASE + 0x08 * (x))
++#define TOE_CLASS_Q_HDR_BASE		(TOE_NONTOE_QUE_HDR_BASE + 0x10)
++#define TOE_INTR_Q_HDR_BASE		(TOE_NONTOE_QUE_HDR_BASE + 0x80)
++#define INTERRUPT_QUEUE_HDR_ADDR(n)	(TOE_INTR_Q_HDR_BASE + n * 8)
++#define NONTOE_Q_HDR_AREA_END		(INTERRUPT_QUEUE_HDR_ADDR(TOE_INTR_QUEUE_MAX + 1))
++/*
++ * TOE Queue Header Word 0
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int base_size;
++} TOE_QHDR0_T;
++
++#define TOE_QHDR0_BASE_MASK 	(~0x0f)
++
++/*
++ * TOE Queue Header Word 1
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_qhdr1 {
++		unsigned int rptr	: 16;	// bit 15:0
++		unsigned int wptr	: 16;	// bit 31:16
++	} bits;
++} TOE_QHDR1_T;
++
++/*
++ * TOE Queue Header Word 2
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_qhdr2 {
++		unsigned int TotalPktSize	: 17;	// bit 16: 0	Total packet size
++		unsigned int reserved		: 7;	// bit 23:17
++		unsigned int dack		: 1;	// bit 24	1: Duplicated ACK
++		unsigned int abn		: 1;	// bit 25	1: Abnormal case Found
++		unsigned int tcp_opt		: 1;	// bit 26	1: Have TCP option
++		unsigned int ip_opt		: 1;	// bit 27	1: have IPV4 option or IPV6 Extension header
++		unsigned int sat		: 1;	// bit 28	1: SeqCnt > SeqThreshold, or AckCnt > AckThreshold
++		unsigned int osq		: 1;	// bit 29	1: out of sequence
++		unsigned int ctl		: 1;	// bit 30	1: have control flag bits (except ack)
++		unsigned int usd		: 1;	// bit 31	0: if no data assembled yet
++	} bits;
++} TOE_QHDR2_T;
++
++/*
++ * TOE Queue Header Word 3
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int seq_num;
++} TOE_QHDR3_T;
++
++/*
++ * TOE Queue Header Word 4
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int ack_num;
++} TOE_QHDR4_T;
++
++/*
++ * TOE Queue Header Word 5
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_qhdr5 {
++		unsigned int AckCnt	: 16;	// bit 15:0
++		unsigned int SeqCnt	: 16;	// bit 31:16
++	} bits;
++} TOE_QHDR5_T;
++
++/*
++ * TOE Queue Header Word 6
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_qhdr6 {
++		unsigned int WinSize	: 16;	// bit 15:0
++		unsigned int iq_num	: 2;	// bit 17:16
++		unsigned int MaxPktSize	: 14;	// bit 31:18
++	} bits;
++} TOE_QHDR6_T;
++
++/*
++ * TOE Queue Header Word 7
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_qhdr7 {
++		unsigned int AckThreshold	: 16;	// bit 15:0
++		unsigned int SeqThreshold	: 16;	// bit 31:16
++	} bits;
++} TOE_QHDR7_T;
++
++/*
++ * TOE Queue Header
++ */
++typedef struct {
++	TOE_QHDR0_T		word0;
++	TOE_QHDR1_T		word1;
++	TOE_QHDR2_T		word2;
++	TOE_QHDR3_T		word3;
++	TOE_QHDR4_T		word4;
++	TOE_QHDR5_T		word5;
++	TOE_QHDR6_T		word6;
++	TOE_QHDR7_T		word7;
++} TOE_QHDR_T;
++
++/*
++ * NONTOE Queue Header Word 0
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int base_size;
++} NONTOE_QHDR0_T;
++
++#define NONTOE_QHDR0_BASE_MASK 	(~0x0f)
++
++/*
++ * NONTOE Queue Header Word 1
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_nonqhdr1 {
++		unsigned int rptr	: 16;	// bit 15:0
++		unsigned int wptr	: 16;	// bit 31:16
++	} bits;
++} NONTOE_QHDR1_T;
++
++/*
++ * Non-TOE Queue Header
++ */
++typedef struct {
++	NONTOE_QHDR0_T		word0;
++	NONTOE_QHDR1_T		word1;
++} NONTOE_QHDR_T;
++
++/*
++ * Interrupt Queue Header Word 0
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_intrqhdr0 {
++		unsigned int win_size	: 16;	// bit 15:0 	Descriptor Ring Size
++		unsigned int wptr	: 16;	// bit 31:16	Write Pointer where hw stopped
++	} bits;
++} INTR_QHDR0_T;
++
++/*
++ * Interrupt Queue Header Word 1
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_intrqhdr1 {
++		unsigned int TotalPktSize	: 17;	// bit 16: 0	Total packet size
++		unsigned int tcp_qid		: 8;	// bit 24:17	TCP Queue ID
++		unsigned int dack		: 1;	// bit 25	1: Duplicated ACK
++		unsigned int abn		: 1;	// bit 26	1: Abnormal case Found
++		unsigned int tcp_opt		: 1;	// bit 27	1: Have TCP option
++		unsigned int ip_opt		: 1;	// bit 28	1: have IPV4 option or IPV6 Extension header
++		unsigned int sat		: 1;	// bit 29	1: SeqCnt > SeqThreshold, or AckCnt > AckThreshold
++		unsigned int osq		: 1;	// bit 30	1: out of sequence
++		unsigned int ctl		: 1;	// bit 31	1: have control flag bits (except ack)
++	} bits;
++} INTR_QHDR1_T;
++
++/*
++ * Interrupt Queue Header Word 2
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int seq_num;
++} INTR_QHDR2_T;
++
++/*
++ * Interrupt Queue Header Word 3
++ */
++typedef union {
++	unsigned int bits32;
++	unsigned int ack_num;
++} INTR_QHDR3_T;
++
++/*
++ * Interrupt Queue Header Word 4
++ */
++typedef union {
++	unsigned int bits32;
++	struct bit_intrqhdr4 {
++		unsigned int AckCnt		: 16;	// bit 15:0	Ack# change since last ack# intr.
++		unsigned int SeqCnt		: 16;	// bit 31:16	Seq# change since last seq# intr.
++	} bits;
++} INTR_QHDR4_T;
++
++/*
++ * Interrupt Queue Header
++ */
++typedef struct {
++	INTR_QHDR0_T		word0;
++	INTR_QHDR1_T		word1;
++	INTR_QHDR2_T		word2;
++	INTR_QHDR3_T		word3;
++	INTR_QHDR4_T		word4;
++	unsigned int		word5;
++	unsigned int		word6;
++	unsigned int		word7;
++} INTR_QHDR_T;
++
++/*
++ * GMAC private data
++ */
++typedef struct {
++	void __iomem		*rwptr_reg;
++	unsigned int		desc_base;
++	unsigned int		desc_base_dma;
++	unsigned short		finished_idx;
++	struct sk_buff		*tx_skb[TOE_GMAC_SWTXQ_DESC_NUM];
++} GMAC_SWTXQ_T;
++
++struct gmac_private {
++	struct phy_device	*phydev;
++	unsigned int		port_id;
++	void __iomem		*base_addr;
++	void __iomem		*dma_base_addr;
++	unsigned int		swtxq_desc_base;
++	GMAC_SWTXQ_T		swtxq[TOE_SW_TXQ_NUM];
++	NONTOE_QHDR_T		*default_qhdr;
++	unsigned int		default_desc_base;
++	dma_addr_t		default_desc_base_dma;
++	dma_addr_t		swtxq_desc_base_dma;
++	unsigned int		flow_control_enable;
++	unsigned int		intr0_enabled;
++	unsigned int		intr1_enabled;
++	unsigned int		intr2_enabled;
++	unsigned int		intr3_enabled;
++	unsigned int		intr4_enabled;
++	unsigned int		intr0_selected;
++	unsigned int		intr1_selected;
++	unsigned int		intr2_selected;
++	unsigned int		intr3_selected;
++	unsigned int		intr4_selected;
++};
++
++struct toe_private {
++	void __iomem 		*global_base;
++	struct net_device	*net_dev[2];
++	struct device		*dev;
++	struct work_struct	freq_work;
++	spinlock_t		freeq_lock;
++	unsigned int		swfq_desc_base;
++	unsigned int		hwfq_desc_base;
++	unsigned int		hwfq_buf_base;
++	dma_addr_t		sw_freeq_desc_base_dma;
++	dma_addr_t		hw_freeq_desc_base_dma;
++	dma_addr_t		hwfq_buf_base_dma;
++	dma_addr_t		hwfq_buf_end_dma;
++};
++
++#define GMAC_PORT0	0
++#define GMAC_PORT1	1
++
++#endif /* _GMAC_SL351x_H */
+--- /dev/null
++++ b/drivers/net/gemini_negmac/Makefile
+@@ -0,0 +1,3 @@
++obj-$(CONFIG_GEMINI_NET_ENGINE_GMAC)+= gemini_negmac.o
++
++gemini_negmac-objs := gm_gmac.o
+--- a/drivers/net/Kconfig
++++ b/drivers/net/Kconfig
+@@ -100,6 +100,13 @@ config NET_FC
+ 	  adaptor below. You also should have said Y to "SCSI support" and
+ 	  "SCSI generic support".
+ 
++config GEMINI_NET_ENGINE_GMAC
++	tristate "Gemini Gigabit Ethernet support"
++	depends on ARCH_GEMINI
++	select PHYLIB
++	help
++	  This driver supports Gemini TOE and NAT dual Gigabit Ethernet.
++
+ config MII
+ 	tristate "Generic Media Independent Interface device support"
+ 	help
+--- a/drivers/net/Makefile
++++ b/drivers/net/Makefile
+@@ -34,6 +34,7 @@ obj-$(CONFIG_ETRAX_ETHERNET) += cris/
+ obj-$(CONFIG_NET_DSA) += dsa/
+ obj-$(CONFIG_ETHERNET) += ethernet/
+ obj-$(CONFIG_FDDI) += fddi/
++obj-$(CONFIG_GEMINI_NET_ENGINE_GMAC) += gemini_negmac/
+ obj-$(CONFIG_HIPPI) += hippi/
+ obj-$(CONFIG_HAMRADIO) += hamradio/
+ obj-$(CONFIG_IRDA) += irda/
