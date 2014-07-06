@@ -1,0 +1,43 @@
+--- a/arch/arm/mach-gemini/board-wbd222.c
++++ b/arch/arm/mach-gemini/board-wbd222.c
+@@ -22,9 +22,31 @@
+ #include <asm/mach/arch.h>
+ #include <asm/mach/time.h>
+ 
++#include <mach/gmac.h>
+ 
+ #include "common.h"
+ 
++static struct mdio_gpio_platform_data wbd222_mdio = {
++	.mdc		= 22,
++	.mdio		= 21,
++	.phy_mask	= ~((1 << 1) | (1 << 3)),
++};
++
++static struct platform_device wbd222_phy_device = {
++	.name	= "mdio-gpio",
++	.id	= 0,
++	.dev	= {
++		.platform_data = &wbd222_mdio,
++	},
++};
++
++static struct gemini_gmac_platform_data gmac_data = {
++	.bus_id[0] = "gpio-0:01",
++	.interface[0] = PHY_INTERFACE_MODE_MII,
++	.bus_id[1] = "gpio-0:03",
++        .interface[1] = PHY_INTERFACE_MODE_MII,
++};
++
+ static struct gpio_keys_button wbd222_keys[] = {
+ 	{
+ 		.code		= KEY_SETUP,
+@@ -123,6 +145,8 @@ static void __init wbd222_init(void)
+ 	platform_device_register(&wbd222_keys_device);
+ 	platform_register_rtc();
+ 	platform_register_watchdog();
++	platform_device_register(&wbd222_phy_device);
++	platform_register_ethernet(&gmac_data);
+ }
+ 
+ MACHINE_START(WBD222, "Wiliboard WBD-222")
