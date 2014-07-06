@@ -114,40 +114,20 @@ endef
 define Image/Build/generic/jffs2-64k
 	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3300_v1,U12H093T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wnr834b_v2,U12H081T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500L,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g3g-em,W3GN,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.71.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt54gs_v4,W54s,1.09.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt150n,N150,1.51.3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt160n_v1,N150,1.50.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt160n_v3,N150,3.0.3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt300n_v1,EWCB,1.03.6,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt300n_v11,EWC2,1.51.2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt310n_v1,310N,1.0.10,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt310n_v2,310N,2.0.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt320n_v1,320N,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt350n_v1,EWCG,1.04.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt610n_v1,610N,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),wrt610n_v2,610N,2.0.0,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e900_v1,E900,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1000_v1_v2,E100,1.1.2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1200_v1,E120,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1200_v2,E122,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1500_v1,E150,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1550_v1,1550,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2000_v1,32XN,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2500_v1_v2,E25X,1.0.7,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e3000_v1,61XN,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e3200_v1,3200,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e4200_v1,4200,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Huawei,$(1),e970,$(1))
 	$(call Image/Build/Motorola,$(1),wa840g,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Motorola,$(1),we800g,3,$(patsubst jffs2-%,jffs2,$(1)))
@@ -155,6 +135,21 @@ define Image/Build/generic/jffs2-64k
 	$(call Image/Build/USR,$(1),usr5461,$(1))
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/dwl3150,$(1),$(patsubst jffs2-%,jffs2,$(1)))
+
+	# Devices with mips74k CPU supported by broadcom-wl. They should be
+	# in mips74k subtarget only, but broadcom-wl is not compatible with it.
+	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr3500L,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr3500v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt160n_v3,N150,3.0.3,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt310n_v2,310N,2.0.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt320n_v1,320N,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e1000_v1_v2,E100,1.1.2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e2000_v1,32XN,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e4200_v1,4200,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 # $(1): filesystem type.
@@ -166,6 +161,29 @@ endef
 #################################################
 # Subtarget mips74k
 #################################################
+
+define Image/Build/mips74k/devices-with-64k-blocks
+	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr3500L,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/Chk,$(1),wnr3500v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt160n_v3,N150,3.0.3,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt310n_v2,310N,2.0.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),wrt320n_v1,320N,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e900_v1,E900,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e1000_v1_v2,E100,1.1.2,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e1200_v1,E120,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e1200_v2,E122,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e1500_v1,E150,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e1550_v1,1550,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e2000_v1,32XN,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e2500_v1_v2,E25X,1.0.7,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e3200_v1,3200,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
+	$(call Image/Build/CyberTAN,$(1),e4200_v1,4200,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
+endef
 
 # $(1): filesystem type.
 define Image/Build/mips74k/jffs2-64k
