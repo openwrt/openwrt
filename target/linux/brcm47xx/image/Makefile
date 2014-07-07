@@ -113,21 +113,6 @@ define Image/Build/generic/jffs2-64k
 	# BCMA SoC with SSB WiFi
 	$(call Image/Build/CyberTAN,$(1),wrt610n_v2,610N,2.0.0,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e3000_v1,61XN,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-
-	# Devices with mips74k CPU supported by broadcom-wl. They should be
-	# in mips74k subtarget only, but broadcom-wl is not compatible with it.
-	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500L,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt160n_v3,N150,3.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt310n_v2,310N,2.0.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt320n_v1,320N,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1000_v1_v2,E100,1.1.2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2000_v1,32XN,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e4200_v1,4200,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 # $(1): filesystem type.
