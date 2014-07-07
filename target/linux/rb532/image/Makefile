@@ -56,7 +56,7 @@ root=/dev/sda2 rootfstype=ext4
 endef
 
 define Image/cmdline/squashfs
-root=/dev/sda2 rootfstype=squashfs
+block2mtd.block2mtd=/dev/sda2,65536,rootfs root=/dev/mtdblock2 rootfstype=squashfs
 endef
 
 define Image/cmdline/yaffs2
