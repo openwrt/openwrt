@@ -6,6 +6,10 @@ config interface loopback
 	option ipaddr	127.0.0.1
 	option netmask	255.0.0.0
 
+config interface wan
+	option ifname	eth0
+	option proto	dhcp
+
 config interface lan
 	option ifname	eth2
 	option proto	static
