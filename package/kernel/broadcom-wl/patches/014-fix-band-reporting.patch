@@ -1,6 +1,6 @@
 --- a/driver/wl_iw.c
 +++ b/driver/wl_iw.c
-@@ -314,7 +314,7 @@
+@@ -314,7 +314,7 @@ wl_iw_get_name(
  )
  {
  	int phytype, err;
@@ -9,7 +9,7 @@
  	char cap[5];
  
  	WL_TRACE(("%s: SIOCGIWNAME\n", dev->name));
-@@ -335,16 +335,20 @@
+@@ -335,16 +335,20 @@ wl_iw_get_name(
  			break;
  		case WLC_PHY_TYPE_LP:
  		case WLC_PHY_TYPE_G:

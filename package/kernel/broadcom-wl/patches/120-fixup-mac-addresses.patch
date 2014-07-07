@@ -85,8 +85,8 @@
 +
 +	/* jump over the first free address so it can be used for wan */
 +	nvram_increase_mac_addr(&macaddr_base, 1);
++	nvram_change_mac_addr(new, &macaddr_base, "sb/1/macaddr");
 +	nvram_change_mac_addr(new, &macaddr_base, "pci/1/1/macaddr");
 +	nvram_change_mac_addr(new, &macaddr_base, "pci/1/2/macaddr");
 +	nvram_change_mac_addr(new, &macaddr_base, "pci/2/1/macaddr");
-+	nvram_change_mac_addr(new, &macaddr_base, "sb/1/macaddr");
 +}
