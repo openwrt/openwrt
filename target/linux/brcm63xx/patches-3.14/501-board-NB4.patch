@@ -13,7 +13,7 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -343,6 +349,12 @@ static struct board_info __initdata boar
+@@ -35,6 +41,12 @@
  #define CFE_OFFSET_64K			0x10000
  #define CFE_OFFSET_128K			0x20000
  
@@ -23,9 +23,9 @@
 +#define NB4_SPI_GPIO_CLK	6
 +#define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
 +
- 
- 	.has_ohci0 = 1,
- 	.has_pccard = 1,
+ /*
+  * known 3368 boards
+  */
 @@ -739,6 +751,605 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,

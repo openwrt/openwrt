@@ -1,19 +1,17 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -12,6 +12,12 @@
+@@ -12,6 +12,10 @@
  #include <linux/string.h>
  #include <linux/gpio_keys.h>
  #include <linux/input.h>
 +#include <linux/platform_device.h>
 +#include <linux/spi/spi.h>
 +#include <linux/spi/spi_gpio.h>
-+#if 0 /* FIXME: 3.14 removed non-DT support */
 +#include <linux/spi/74x164.h>
-+#endif
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -343,6 +349,12 @@ static struct board_info __initdata boar
+@@ -35,6 +39,12 @@
  #define CFE_OFFSET_64K			0x10000
  #define CFE_OFFSET_128K			0x20000
  
@@ -23,10 +21,10 @@
 +#define NB4_SPI_GPIO_CLK	6
 +#define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
 +
- 
- 	.has_ohci0 = 1,
- 	.has_pccard = 1,
-@@ -739,6 +751,605 @@ static struct board_info __initdata boar
+ /*
+  * known 3368 boards
+  */
+@@ -739,6 +749,601 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -51,14 +49,11 @@
 +	&nb4_spi_gpio,
 +};
 +
-+#if 0 /* FIXME: 3.14 removed non-DT support */
 +const struct gen_74x164_chip_platform_data nb4_74x164_platform_data = {
 +	.base = NB4_74X164_GPIO_BASE
 +};
-+#endif
 +
 +static struct spi_board_info nb4_spi_devices[] = {
-+#if 0 /* FIXME: 3.14 removed non-DT support */
 +	{
 +		.modalias = "74x164",
 +		.max_speed_hz = 781000,
@@ -67,7 +62,6 @@
 +		.mode = SPI_MODE_0,
 +		.platform_data = &nb4_74x164_platform_data
 +	}
-+#endif
 +};
 +
 +static struct board_info __initdata board_nb4_ser_r0 = {
@@ -632,7 +626,7 @@
  #endif
  
  /*
-@@ -775,6 +1386,11 @@ static const struct board_info __initcon
+@@ -775,6 +1380,11 @@ static const struct board_info __initcon
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -644,7 +638,7 @@
  #endif
  };
  
-@@ -783,6 +1399,16 @@ static void __init boardid_fixup(u8 *boo
+@@ -783,6 +1393,16 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  

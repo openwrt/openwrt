@@ -8,16 +8,16 @@
  
  #define PFX	"board_bcm963xx: "
  
-@@ -339,6 +340,9 @@ static struct board_info __initdata boar
- 		.force_duplex_full	= 1,
- 	},
+@@ -31,6 +32,9 @@
+ #define BCM963XX_KEYS_POLL_INTERVAL	20
+ #define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
  
 +#define CFE_OFFSET_64K			0x10000
 +#define CFE_OFFSET_128K			0x20000
 +
- 
- 	.has_ohci0 = 1,
- 	.has_pccard = 1,
+ /*
+  * known 3368 boards
+  */
 @@ -722,6 +726,30 @@ static const struct board_info __initcon
  #endif
  };

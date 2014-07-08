@@ -1,14 +1,14 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -18,6 +18,7 @@
- #if 0 /* FIXME: 3.14 removed non-DT support */
+@@ -16,6 +16,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/spi/spi_gpio.h>
  #include <linux/spi/74x164.h>
- #endif
 +#include <linux/rtl8367.h>
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -634,6 +635,8 @@ static struct board_info __initdata boar
+@@ -44,6 +45,8 @@
  #define NB4_SPI_GPIO_MOSI	7
  #define NB4_SPI_GPIO_CLK	6
  #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
@@ -17,7 +17,7 @@
  
  #define CT6373_PID_OFFSET		0xff80
  #define CT6373_74X164_GPIO_BASE	64
-@@ -2664,6 +2667,104 @@ static struct board_info __initdata boar
+@@ -2653,6 +2656,104 @@ static struct board_info __initdata boar
  };
  #endif
  
@@ -122,7 +122,7 @@
  /*
   * known 6368 boards
   */
-@@ -2870,6 +2971,10 @@ static const struct board_info __initcon
+@@ -2859,6 +2960,10 @@ static const struct board_info __initcon
  	&board_DVAG3810BN,
  #endif
  
@@ -133,7 +133,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -2891,6 +2996,11 @@ static void __init boardid_fixup(u8 *boo
+@@ -2880,6 +2985,11 @@ static void __init boardid_fixup(u8 *boo
  		}
  	}
  

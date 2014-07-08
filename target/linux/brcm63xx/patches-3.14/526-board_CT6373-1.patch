@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -635,6 +635,13 @@ static struct board_info __initdata boar
+@@ -47,6 +47,12 @@
  #define NB4_SPI_GPIO_CLK	6
  #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
  
@@ -10,11 +10,10 @@
 +#define CT6373_SPI_GPIO_CLK		6
 +#define CT6373_74HC64_GPIO(X)	(CT6373_74X164_GPIO_BASE + (X))
 +
-+
- 
- 	.has_ohci0 = 1,
- 	.has_pccard = 1,
-@@ -2335,6 +2342,117 @@ static struct board_info __initdata boar
+ /*
+  * known 3368 boards
+  */
+@@ -2335,6 +2341,117 @@ static struct board_info __initdata boar
  	.num_spis = ARRAY_SIZE(nb4_spi_devices),
  };
  
@@ -132,7 +131,7 @@
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -2679,6 +2797,7 @@ static const struct board_info __initcon
+@@ -2679,6 +2796,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r2,
  	&board_nb4_fxc_r1,
  	&board_nb4_fxc_r2,
