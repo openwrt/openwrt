@@ -31,18 +31,6 @@ config reclassify
 config default
 	option target       "Bulk"
 	option portrange    "1024-65535"
-config reclassify
-	option target       "Priority"
-	option proto        "tcp"
-	option pktsize      "-128"
-	option mark         "!Bulk"
-	option tcpflags     "SYN"
-config reclassify
-	option target       "Priority"
-	option proto        "tcp"
-	option pktsize      "-128"
-	option mark	        "!Bulk"
-	option tcpflags     "ACK"
 
 
 # Don't change the stuff below unless you
@@ -55,7 +43,6 @@ config classgroup "Default"
 
 config class "Priority"
 	option packetsize  400
-	option maxsize     400
 	option avgrate     10
 	option priority    20
 config class "Priority_down"
@@ -65,7 +52,6 @@ config class "Priority_down"
 
 config class "Express"
 	option packetsize  1000
-	option maxsize     800
 	option avgrate     50
 	option priority    10
 
