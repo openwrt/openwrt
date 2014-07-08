@@ -14,7 +14,7 @@ CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=vfpv3
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-LINUX_VERSION:=3.14.10
+LINUX_VERSION:=3.14.11
 
 include $(INCLUDE_DIR)/target.mk
 
