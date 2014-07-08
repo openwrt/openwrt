@@ -40,9 +40,9 @@
  /*
   * Some BIOS implementations leave the Intel GPU interrupts enabled,
   * even though no one is handling them (f.e. i915 driver is never loaded).
-@@ -2950,6 +2954,8 @@ static void disable_igfx_irq(struct pci_
- DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x0102, disable_igfx_irq);
+@@ -2951,6 +2955,8 @@ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_IN
  DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x010a, disable_igfx_irq);
+ DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_INTEL, 0x0152, disable_igfx_irq);
  
 +#endif /* !CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 +
