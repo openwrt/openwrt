@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -220,6 +220,126 @@ static struct board_info __initdata boar
+@@ -237,6 +237,126 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -127,7 +127,7 @@
  static struct board_info __initdata board_dsl_274xb_f1 = {
  	.name				= "AW4339U",
  	.expected_cpu_id		= 0x6328,
-@@ -2971,6 +3091,7 @@ static const struct board_info __initcon
+@@ -2970,6 +3090,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
