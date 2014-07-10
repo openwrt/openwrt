@@ -1626,6 +1626,15 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Enable MIB counters */
 	ar8xxx_reg_set(priv, AR8327_REG_MODULE_EN,
 		       AR8327_MODULE_EN_MIB);
+
+	/* Disable EEE on all ports due to stability issues */
+	t = priv->read(priv, AR8327_REG_EEE_CTRL);
+	t |= AR8327_EEE_CTRL_DISABLE_PHY(0) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(1) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(2) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(3) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(4);
+	priv->write(priv, AR8327_REG_EEE_CTRL, t);
 }
 
 static void
