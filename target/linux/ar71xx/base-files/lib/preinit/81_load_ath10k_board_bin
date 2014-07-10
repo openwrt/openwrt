@@ -1,0 +1,23 @@
+#!/bin/sh
+
+. /lib/ar71xx.sh
+
+do_load_ath10k_board_bin() {
+	# load board.bin
+	case $(ar71xx_board_name) in
+		nbg6716)
+			dd if=/dev/mtdblock2 \
+				bs=1 skip=20480 count=2116 \
+				of=/tmp/ath10k-board.bin
+		;;
+	esac
+	[ -f /tmp/ath10k-board.bin ] || {
+		return
+	}
+	cmp -s /tmp/ath10k-board.bin /lib/firmware/ath10k/QCA988X/hw2.0/board.bin || {
+		cp /tmp/ath10k-board.bin /lib/firmware/ath10k/QCA988X/hw2.0/board.bin
+		rm /tmp/ath10k-board.bin
+	}
+}
+
+boot_hook_add preinit_main do_load_ath10k_board_bin
