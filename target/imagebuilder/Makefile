@@ -24,7 +24,7 @@ all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	rm -rf $(PKG_BUILD_DIR)
-	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host \
+	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/{host,lib} \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
 	$(CP) \
@@ -38,6 +38,9 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	$(VERSION_SED) $(PKG_BUILD_DIR)/repositories.conf
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
+	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
+		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/lib; \
+	fi
 	rm -rf \
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
 		$(PKG_BUILD_DIR)/target/linux/*/patches{,-*}
