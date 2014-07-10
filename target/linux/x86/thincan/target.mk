@@ -14,8 +14,6 @@ DEFAULT_PACKAGES:=\
 	udevtrigger \
 	kmod-fs-msdos \
 	kmod-fs-vfat \
-	kmod-fs-ext2 \
-	kmod-fs-ext3 \
 	kmod-fs-ext4 \
 	kmod-usb-core \
 	kmod-usb-ohci \

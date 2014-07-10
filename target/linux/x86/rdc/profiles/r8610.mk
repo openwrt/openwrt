@@ -9,7 +9,6 @@ define Profile/r8610
 	NAME:=RDC R8610 Evaluation Board
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 \
 			kmod-hwmon-core kmod-hwmon-w83627hf kmod-ide-core kmod-ide-it821x \
-			kmod-rtc-core kmod-rtc-m48t86 \
-			kmod-fs-ext2 kmod-fs-ext3
+			kmod-rtc-core kmod-rtc-m48t86 kmod-fs-ext4
 endef
 $(eval $(call Profile,r8610))

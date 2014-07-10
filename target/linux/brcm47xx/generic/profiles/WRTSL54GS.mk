@@ -7,7 +7,7 @@
 
 define Profile/WRTSL54GS
   NAME:=Linksys WRTSL54GS
-  PACKAGES:=kmod-b44 kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage kmod-scsi-core kmod-fs-ext3 e2fsprogs kmod-b43
+  PACKAGES:=kmod-b44 kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-storage kmod-scsi-core kmod-fs-ext4 e2fsprogs kmod-b43
 endef
 
 define Profile/WRTSL54GS/Description
