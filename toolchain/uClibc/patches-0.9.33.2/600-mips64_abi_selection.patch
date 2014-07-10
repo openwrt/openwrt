@@ -21,11 +21,9 @@ Cc: Anthony G. Basile <blueness@gentoo.org>
 Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
 ---
 
-diff --git a/Rules.mak b/Rules.mak
-index 792b794..889108e 100644
 --- a/Rules.mak
 +++ b/Rules.mak
-@@ -138,13 +138,19 @@ export MAJOR_VERSION MINOR_VERSION SUBLEVEL VERSION ABI_VERSION LC_ALL
+@@ -118,13 +118,19 @@ export MAJOR_VERSION MINOR_VERSION SUBLE
  LIBC := libc
  SHARED_LIBNAME := $(LIBC).so.$(ABI_VERSION)
  UBACKTRACE_DSO := libubacktrace.so.$(ABI_VERSION)
@@ -48,5 +46,3 @@ index 792b794..889108e 100644
  UCLIBC_LDSO := $(UCLIBC_LDSO_NAME).so.$(ABI_VERSION)
  NONSHARED_LIBNAME := uclibc_nonshared.a
  libc := $(top_builddir)lib/$(SHARED_LIBNAME)
---
-cgit v0.9.1

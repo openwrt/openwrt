@@ -1,0 +1,36 @@
+--- a/libc/sysdeps/linux/mips/sysdep.h
++++ b/libc/sysdeps/linux/mips/sysdep.h
+@@ -96,7 +96,8 @@
+    backwards into the previous fn.  */
+ 
+ #ifdef __PIC__
+-#define PSEUDO(name, syscall_name, args) 		\
++# if _MIPS_SIM == _ABIO32
++#  define PSEUDO(name, syscall_name, args) 		\
+   .align 2;						\
+   99: move a0, v0;					\
+   la t9,__syscall_error;				\
+@@ -109,6 +110,23 @@
+   .set reorder;						\
+   bne a3, zero, 99b;					\
+ L(syse1):
++# else
++#  define PSEUDO(name, syscall_name, args) 		\
++  .align 2;						\
++  99:							\
++  .set noat;						\
++  .cpsetup t9, $1, name;				\
++  .set at;						\
++  move a0, v0;						\
++  dla t9,__syscall_error;				\
++  .cpreturn;						\
++  jr t9;						\
++  ENTRY(name)						\
++  li v0, SYS_ify(syscall_name);				\
++  syscall;						\
++  bne a3, zero, 99b;					\
++L(syse1):
++# endif
+ #else
+ #define PSEUDO(name, syscall_name, args) 		\
+   .set noreorder;					\

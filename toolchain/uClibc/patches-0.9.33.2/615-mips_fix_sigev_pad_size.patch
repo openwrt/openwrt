@@ -1,0 +1,58 @@
+commit b97b4b698b023f75b54f987859c856ab4861ea00
+Author: Vicente Olivert Riera <Vincent.Riera@imgtec.com>
+Date:   Thu Jan 2 15:02:12 2014 +0000
+
+    siginfo.h: __SIGEV_PAD_SIZE takes __WORDSIZE into account
+    
+    Make __SIGEV_PAD_SIZE to take __WORDSIZE into account for alpha, mips
+    and ia64 arches.
+    
+    Signed-off-by: Vicente Olivert Riera <Vincent.Riera@imgtec.com>
+    Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+
+--- a/libc/sysdeps/linux/alpha/bits/siginfo.h
++++ b/libc/sysdeps/linux/alpha/bits/siginfo.h
+@@ -258,7 +258,11 @@ enum
+ 
+ /* Structure to transport application-defined values with signals.  */
+ # define __SIGEV_MAX_SIZE	64
+-# define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 4)
++# if __WORDSIZE == 64
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 4)
++# else
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 3)
++# endif
+ 
+ typedef struct sigevent
+   {
+--- a/libc/sysdeps/linux/ia64/bits/siginfo.h
++++ b/libc/sysdeps/linux/ia64/bits/siginfo.h
+@@ -298,7 +298,11 @@ enum
+ 
+ /* Structure to transport application-defined values with signals.  */
+ # define __SIGEV_MAX_SIZE	64
+-# define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 4)
++# if __WORDSIZE == 64
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 4)
++# else
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 3)
++# endif
+ 
+ typedef struct sigevent
+   {
+--- a/libc/sysdeps/linux/mips/bits/siginfo.h
++++ b/libc/sysdeps/linux/mips/bits/siginfo.h
+@@ -265,8 +265,11 @@ enum
+ 
+ /* Structure to transport application-defined values with signals.  */
+ # define __SIGEV_MAX_SIZE	64
+-# define __SIGEV_HEAD_SIZE	(sizeof(long) + 2*sizeof(int))
+-# define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE - __SIGEV_HEAD_SIZE) / sizeof (int))
++# if __WORDSIZE == 64
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 4)
++# else
++#  define __SIGEV_PAD_SIZE	((__SIGEV_MAX_SIZE / sizeof (int)) - 3)
++# endif
+ 
+ /* Forward declaration of the `pthread_attr_t' type.  */
+ struct __pthread_attr_s;
