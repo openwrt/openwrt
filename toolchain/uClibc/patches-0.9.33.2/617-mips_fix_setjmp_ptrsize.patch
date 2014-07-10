@@ -1,0 +1,58 @@
+--- a/libc/sysdeps/linux/mips/bits/setjmp.h
++++ b/libc/sysdeps/linux/mips/bits/setjmp.h
+@@ -27,18 +27,18 @@
+ #include <sgidefs.h>
+ 
+ #if _MIPS_SIM == _MIPS_SIM_ABI32
+-#define ptrsize void *
++#define __setjmp_ptr void *
+ #else
+-#define ptrsize long long
++#define __setjmp_ptr long long
+ #endif
+ 
+ typedef struct
+   {
+     /* Program counter.  */
+-    ptrsize __pc;
++    __setjmp_ptr __pc;
+ 
+     /* Stack pointer.  */
+-    ptrsize __sp;
++    __setjmp_ptr __sp;
+ 
+     /* Callee-saved registers s0 through s7.  */
+ #if _MIPS_SIM == _MIPS_SIM_ABI32
+@@ -48,10 +48,10 @@ typedef struct
+ #endif
+ 
+     /* The frame pointer.  */
+-    ptrsize __fp;
++    __setjmp_ptr __fp;
+ 
+     /* The global pointer.  */
+-    ptrsize __gp;
++    __setjmp_ptr __gp;
+ 
+     /* Floating point status register.  */
+     int __fpc_csr;
+--- a/libc/sysdeps/linux/mips/setjmp_aux.c
++++ b/libc/sysdeps/linux/mips/setjmp_aux.c
+@@ -65,14 +65,14 @@ __sigsetjmp_aux (jmp_buf env, int savema
+ #endif
+ 
+   /* .. and the stack pointer;  */
+-  env[0].__jmpbuf[0].__sp = (ptrsize) sp;
++  env[0].__jmpbuf[0].__sp = (__setjmp_ptr) sp;
+ 
+   /* .. and the FP; it'll be in s8. */
+-  env[0].__jmpbuf[0].__fp = (ptrsize) fp;
++  env[0].__jmpbuf[0].__fp = (__setjmp_ptr) fp;
+ 
+   /* .. and the GP; */
+ #if _MIPS_SIM == _MIPS_SIM_ABI64
+-  env[0].__jmpbuf[0].__gp = (ptrsize) gp;
++  env[0].__jmpbuf[0].__gp = (__setjmp_ptr) gp;
+ #else
+   __asm__ __volatile__ ("sw $gp, %0" : : "m" (env[0].__jmpbuf[0].__gp));
+ #endif

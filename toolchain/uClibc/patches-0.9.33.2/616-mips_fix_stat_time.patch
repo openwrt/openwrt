@@ -1,0 +1,123 @@
+--- a/libc/sysdeps/linux/common/xstatconv.c
++++ b/libc/sysdeps/linux/common/xstatconv.c
+@@ -39,9 +39,12 @@ void __xstat_conv(struct kernel_stat *kb
+ 	buf->st_size = kbuf->st_size;
+ 	buf->st_blksize = kbuf->st_blksize;
+ 	buf->st_blocks = kbuf->st_blocks;
+-	buf->st_atim = kbuf->st_atim;
+-	buf->st_mtim = kbuf->st_mtim;
+-	buf->st_ctim = kbuf->st_ctim;
++	buf->st_atim.tv_sec = kbuf->st_atim.tv_sec;
++	buf->st_atim.tv_nsec = kbuf->st_atim.tv_sec;
++	buf->st_mtim.tv_sec = kbuf->st_mtim.tv_sec;
++	buf->st_mtim.tv_nsec = kbuf->st_mtim.tv_sec;
++	buf->st_ctim.tv_sec = kbuf->st_ctim.tv_sec;
++	buf->st_ctim.tv_nsec = kbuf->st_ctim.tv_sec;
+ }
+ 
+ void __xstat32_conv(struct kernel_stat64 *kbuf, struct stat *buf)
+@@ -58,9 +61,12 @@ void __xstat32_conv(struct kernel_stat64
+ 	buf->st_size = kbuf->st_size;
+ 	buf->st_blksize = kbuf->st_blksize;
+ 	buf->st_blocks = kbuf->st_blocks;
+-	buf->st_atim = kbuf->st_atim;
+-	buf->st_mtim = kbuf->st_mtim;
+-	buf->st_ctim = kbuf->st_ctim;
++	buf->st_atim.tv_sec = kbuf->st_atim.tv_sec;
++	buf->st_atim.tv_nsec = kbuf->st_atim.tv_sec;
++	buf->st_mtim.tv_sec = kbuf->st_mtim.tv_sec;
++	buf->st_mtim.tv_nsec = kbuf->st_mtim.tv_sec;
++	buf->st_ctim.tv_sec = kbuf->st_ctim.tv_sec;
++	buf->st_ctim.tv_nsec = kbuf->st_ctim.tv_sec;
+ }
+ 
+ #ifdef __UCLIBC_HAS_LFS__
+@@ -82,9 +88,12 @@ void __xstat64_conv(struct kernel_stat64
+ 	buf->st_size = kbuf->st_size;
+ 	buf->st_blksize = kbuf->st_blksize;
+ 	buf->st_blocks = kbuf->st_blocks;
+-	buf->st_atim = kbuf->st_atim;
+-	buf->st_mtim = kbuf->st_mtim;
+-	buf->st_ctim = kbuf->st_ctim;
++	buf->st_atim.tv_sec = kbuf->st_atim.tv_sec;
++	buf->st_atim.tv_nsec = kbuf->st_atim.tv_sec;
++	buf->st_mtim.tv_sec = kbuf->st_mtim.tv_sec;
++	buf->st_mtim.tv_nsec = kbuf->st_mtim.tv_sec;
++	buf->st_ctim.tv_sec = kbuf->st_ctim.tv_sec;
++	buf->st_ctim.tv_nsec = kbuf->st_ctim.tv_sec;
+ }
+ 
+ #endif /* __UCLIBC_HAS_LFS__ */
+--- a/libc/sysdeps/linux/mips/bits/kernel_stat.h
++++ b/libc/sysdeps/linux/mips/bits/kernel_stat.h
+@@ -8,6 +8,18 @@
+ #include <sgidefs.h>
+ 
+ #if _MIPS_SIM == _MIPS_SIM_ABI64
++typedef struct {
++	unsigned int tv_sec;
++	unsigned int tv_nsec;
++} __ktimespec_t;
++#else
++typedef struct {
++	time_t tv_sec;
++	unsigned long tv_nsec;
++} __ktimespec_t;
++#endif
++
++#if _MIPS_SIM == _MIPS_SIM_ABI64
+ /* The memory layout is the same as of struct stat64 of the 32-bit kernel.  */
+ struct kernel_stat {
+ 	__kernel_dev_t	st_dev;
+@@ -20,9 +32,9 @@ struct kernel_stat {
+ 	__kernel_dev_t	st_rdev;
+ 	unsigned int	st_pad2[3];
+ 	__kernel_off_t	st_size;
+-	struct timespec	st_atim;
+-	struct timespec	st_mtim;
+-	struct timespec	st_ctim;
++	__ktimespec_t	st_atim;
++	__ktimespec_t	st_mtim;
++	__ktimespec_t	st_ctim;
+ 	unsigned int	st_blksize;
+ 	unsigned int	reserved3;
+ 	unsigned long	st_blocks;
+@@ -41,9 +53,9 @@ struct kernel_stat {
+ 	unsigned int	st_rdev;
+ 	unsigned int	st_pad2[3];
+ 	unsigned long long	st_size;
+-	struct timespec	st_atim;
+-	struct timespec	st_mtim;
+-	struct timespec	st_ctim;
++	__ktimespec_t	st_atim;
++	__ktimespec_t	st_mtim;
++	__ktimespec_t	st_ctim;
+ 	unsigned int	st_blksize;
+ 	unsigned int	reserved3;
+ 	unsigned long long	st_blocks;
+@@ -62,9 +74,9 @@ struct kernel_stat {
+ 	long		st_pad2[2];
+ 	__kernel_off_t	st_size;
+ 	long		st_pad3;
+-	struct timespec	st_atim;
+-	struct timespec	st_mtim;
+-	struct timespec	st_ctim;
++	__ktimespec_t	st_atim;
++	__ktimespec_t	st_mtim;
++	__ktimespec_t	st_ctim;
+ 	long		st_blksize;
+ 	long		st_blocks;
+ 	long		st_pad4[14];
+@@ -81,9 +93,9 @@ struct kernel_stat64 {
+ 	unsigned long	st_rdev;
+ 	unsigned long	st_pad1[3];	/* Reserved for st_rdev expansion  */
+ 	long long	st_size;
+-	struct timespec	st_atim;
+-	struct timespec	st_mtim;
+-	struct timespec	st_ctim;
++	__ktimespec_t	st_atim;
++	__ktimespec_t	st_mtim;
++	__ktimespec_t	st_ctim;
+ 	unsigned long	st_blksize;
+ 	unsigned long	st_pad2;
+ 	long long	st_blocks;

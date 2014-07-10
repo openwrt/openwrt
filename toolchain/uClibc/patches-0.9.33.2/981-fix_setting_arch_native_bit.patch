@@ -15,11 +15,9 @@ Reviewed-by: Markos Chandras <markos.chandras@imgtec.com>
 Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
 ---
 
-diff --git a/Rules.mak b/Rules.mak
-index 889108e..be53d81 100644
 --- a/Rules.mak
 +++ b/Rules.mak
-@@ -141,7 +141,7 @@ UBACKTRACE_DSO := libubacktrace.so.$(ABI_VERSION)
+@@ -121,7 +121,7 @@ UBACKTRACE_DSO := libubacktrace.so.$(ABI
  
  UCLIBC_LDSO_NAME := ld-uClibc
  ARCH_NATIVE_BIT := 32
@@ -28,5 +26,3 @@ index 889108e..be53d81 100644
  UCLIBC_LDSO_NAME := ld64-uClibc
  ARCH_NATIVE_BIT := 64
  else
---
-cgit v0.9.1

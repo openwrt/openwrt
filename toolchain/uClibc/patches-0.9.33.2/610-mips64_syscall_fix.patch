@@ -1,0 +1,285 @@
+commit e5cde2eb0ed7df9416fdd6070af07c8448c72a30
+Author: Steve Ellcey <sellcey@mips.com>
+Date:   Wed Feb 12 11:01:35 2014 -0800
+
+    mips: Remove duplicate macro definitions
+    
+    The INLINE_SYSCALL, INTERNAL_SYSCALL*, and internal_syscall* macros
+    are defined for MIPS in both libc/sysdeps/linux/mips/sysdep.h and
+    libc/sysdeps/linux/mips/bits/syscalls.h.  The macros are the same
+    in both cases except that syscalls.h defines internal_syscalls[567]
+    the same for N32 and N64 ABIs and has a different definition for O32.
+    I believe that is correct.  The sysdep.h header uses the O32 versions
+    for N32 and has different definitions for N64.  I think that is wrong
+    and that N32 and N64 should share the same definition (modulo the
+    type 'long' vs. 'long long' for the arguments.  This setup (from
+    sysdep.h) now agrees with what glibc has.
+    
+    I am not positive about which header (sysdep.h vs syscalls.h) is
+    really the right one to have these definitions in but using sysdep.h
+    seems to work for all my builds.
+    
+    Signed-off-by: Steve Ellcey <sellcey@mips.com>
+    Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+
+--- a/libc/sysdeps/linux/mips/sysdep.h
++++ b/libc/sysdeps/linux/mips/sysdep.h
+@@ -133,258 +133,6 @@ L(syse1):
+ 
+ #else   /* ! __ASSEMBLER__ */
+ 
+-/* Define a macro which expands into the inline wrapper code for a system
+-   call.  */
+-#undef INLINE_SYSCALL
+-#define INLINE_SYSCALL(name, nr, args...)				\
+-  ({ INTERNAL_SYSCALL_DECL(err);					\
+-     long result_var = INTERNAL_SYSCALL (name, err, nr, args);		\
+-     if ( INTERNAL_SYSCALL_ERROR_P (result_var, err) )			\
+-       {								\
+-	 __set_errno (INTERNAL_SYSCALL_ERRNO (result_var, err));	\
+-	 result_var = -1L;						\
+-       }								\
+-     result_var; })
+-
+-#undef INTERNAL_SYSCALL_DECL
+-#define INTERNAL_SYSCALL_DECL(err) long err
+-
+-#undef INTERNAL_SYSCALL_ERROR_P
+-#define INTERNAL_SYSCALL_ERROR_P(val, err)   ((long) (err))
+-
+-#undef INTERNAL_SYSCALL_ERRNO
+-#define INTERNAL_SYSCALL_ERRNO(val, err)     (val)
+-
+-#undef INTERNAL_SYSCALL
+-#define INTERNAL_SYSCALL(name, err, nr, args...) \
+-	internal_syscall##nr (, "li\t$2, %2\t\t\t# " #name "\n\t",	\
+-			      "i" (SYS_ify (name)), err, args)
+-
+-#undef INTERNAL_SYSCALL_NCS
+-#define INTERNAL_SYSCALL_NCS(number, err, nr, args...) \
+-	internal_syscall##nr (= number, , "r" (__v0), err, args)
+-#undef internal_syscall0
+-#define internal_syscall0(ncs_init, cs_init, input, err, dummy...)	\
+-({									\
+-	long _sys_result;						\
+-									\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a3 __asm__("$7");				\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	".set reorder"							\
+-	: "=r" (__v0), "=r" (__a3)					\
+-	: input								\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef internal_syscall1
+-#define internal_syscall1(ncs_init, cs_init, input, err, arg1)		\
+-({									\
+-	long _sys_result;						\
+-									\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a3 __asm__("$7");				\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	".set reorder"							\
+-	: "=r" (__v0), "=r" (__a3)					\
+-	: input, "r" (__a0)						\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef internal_syscall2
+-#define internal_syscall2(ncs_init, cs_init, input, err, arg1, arg2)	\
+-({									\
+-	long _sys_result;						\
+-									\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a1 __asm__("$5") = (long) arg2;			\
+-	register long __a3 __asm__("$7");				\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	".set\treorder"							\
+-	: "=r" (__v0), "=r" (__a3)					\
+-	: input, "r" (__a0), "r" (__a1)					\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef internal_syscall3
+-#define internal_syscall3(ncs_init, cs_init, input, err, arg1, arg2, arg3)\
+-({									\
+-	long _sys_result;						\
+-									\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a1 __asm__("$5") = (long) arg2;			\
+-	register long __a2 __asm__("$6") = (long) arg3;			\
+-	register long __a3 __asm__("$7");				\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	".set\treorder"							\
+-	: "=r" (__v0), "=r" (__a3)					\
+-	: input, "r" (__a0), "r" (__a1), "r" (__a2)			\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef internal_syscall4
+-#define internal_syscall4(ncs_init, cs_init, input, err, arg1, arg2, arg3, arg4)\
+-({									\
+-	long _sys_result;						\
+-									\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a1 __asm__("$5") = (long) arg2;			\
+-	register long __a2 __asm__("$6") = (long) arg3;			\
+-	register long __a3 __asm__("$7") = (long) arg4;			\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	".set\treorder"							\
+-	: "=r" (__v0), "+r" (__a3)					\
+-	: input, "r" (__a0), "r" (__a1), "r" (__a2)			\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-/* We need to use a frame pointer for the functions in which we
+-   adjust $sp around the syscall, or debug information and unwind
+-   information will be $sp relative and thus wrong during the syscall.  As
+-   of GCC 3.4.3, this is sufficient.  */
+-#define FORCE_FRAME_POINTER alloca (4)
+-
+-#undef internal_syscall5
+-#define internal_syscall5(ncs_init, cs_init, input, err, arg1, arg2, arg3, arg4, arg5)\
+-({									\
+-	long _sys_result;						\
+-									\
+-	FORCE_FRAME_POINTER;						\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a1 __asm__("$5") = (long) arg2;			\
+-	register long __a2 __asm__("$6") = (long) arg3;			\
+-	register long __a3 __asm__("$7") = (long) arg4;			\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	"subu\t$29, 32\n\t"						\
+-	"sw\t%6, 16($29)\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	"addiu\t$29, 32\n\t"						\
+-	".set\treorder"							\
+-	: "=r" (__v0), "+r" (__a3)					\
+-	: input, "r" (__a0), "r" (__a1), "r" (__a2),			\
+-	  "r" ((long)arg5)						\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef internal_syscall6
+-#define internal_syscall6(ncs_init, cs_init, input, err, arg1, arg2, arg3, arg4, arg5, arg6)\
+-({									\
+-	long _sys_result;						\
+-									\
+-	FORCE_FRAME_POINTER;						\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a1 __asm__("$5") = (long) arg2;			\
+-	register long __a2 __asm__("$6") = (long) arg3;			\
+-	register long __a3 __asm__("$7") = (long) arg4;			\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	"subu\t$29, 32\n\t"						\
+-	"sw\t%6, 16($29)\n\t"						\
+-	"sw\t%7, 20($29)\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	"addiu\t$29, 32\n\t"						\
+-	".set\treorder"							\
+-	: "=r" (__v0), "+r" (__a3)					\
+-	: input, "r" (__a0), "r" (__a1), "r" (__a2),			\
+-	  "r" ((long)arg5), "r" ((long)arg6)				\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef internal_syscall7
+-#define internal_syscall7(ncs_init, cs_init, input, err, arg1, arg2, arg3, arg4, arg5, arg6, arg7)\
+-({									\
+-	long _sys_result;						\
+-									\
+-	FORCE_FRAME_POINTER;						\
+-	{								\
+-	register long __v0 __asm__("$2") ncs_init;			\
+-	register long __a0 __asm__("$4") = (long) arg1;			\
+-	register long __a1 __asm__("$5") = (long) arg2;			\
+-	register long __a2 __asm__("$6") = (long) arg3;			\
+-	register long __a3 __asm__("$7") = (long) arg4;			\
+-	__asm__ __volatile__ (						\
+-	".set\tnoreorder\n\t"						\
+-	"subu\t$29, 32\n\t"						\
+-	"sw\t%6, 16($29)\n\t"						\
+-	"sw\t%7, 20($29)\n\t"						\
+-	"sw\t%8, 24($29)\n\t"						\
+-	cs_init								\
+-	"syscall\n\t"							\
+-	"addiu\t$29, 32\n\t"						\
+-	".set\treorder"							\
+-	: "=r" (__v0), "+r" (__a3)					\
+-	: input, "r" (__a0), "r" (__a1), "r" (__a2),			\
+-	  "r" ((long)arg5), "r" ((long)arg6), "r" ((long)arg7)		\
+-	: __SYSCALL_CLOBBERS);						\
+-	err = __a3;							\
+-	_sys_result = __v0;						\
+-	}								\
+-	_sys_result;							\
+-})
+-
+-#undef __SYSCALL_CLOBBERS
+-#define __SYSCALL_CLOBBERS "$1", "$3", "$8", "$9", "$10", "$11", "$12", "$13", \
+-	"$14", "$15", "$24", "$25", "memory"
+-
+ /* Pointer mangling is not yet supported for MIPS.  */
+ #define PTR_MANGLE(var) (void) (var)
+ #define PTR_DEMANGLE(var) (void) (var)
