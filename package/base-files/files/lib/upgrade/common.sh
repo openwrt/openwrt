@@ -99,6 +99,13 @@ kill_remaining() { # [ <signal> ]
 	local sig="${1:-TERM}"
 	echo -n "Sending $sig to remaining processes ... "
 
+	local my_pid=$$
+	local my_ppid=$(cut -d' ' -f4  /proc/$my_pid/stat)
+	local my_ppisupgraded=
+	grep -q upgraded /proc/$my_ppid/cmdline >/dev/null && {
+		local my_ppisupgraded=1
+	}
+	
 	local stat
 	for stat in /proc/[0-9]*/stat; do
 		[ -f "$stat" ] || continue
@@ -113,18 +120,26 @@ kill_remaining() { # [ <signal> ]
 		# Skip kernel threads
 		[ -n "$cmdline" ] || continue
 
-		case "$name" in
-			# Skip essential services
-			*procd*|*upgraded*|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*hostapd*|*wpa_supplicant*|*nas*) : ;;
+		if [ $$ -eq 1 ] || [ $my_ppid -eq 1 ] && [ -n "$my_ppisupgraded" ]; then
+			# Running as init process, kill everything except me
+			if [ $pid -ne $$ ] && [ $pid -ne $my_ppid ]; then
+				echo -n "$name "
+				kill -$sig $pid 2>/dev/null
+			fi
+		else 
+			case "$name" in
+				# Skip essential services
+				*procd*|*ash*|*init*|*watchdog*|*ssh*|*dropbear*|*telnet*|*login*|*hostapd*|*wpa_supplicant*|*nas*) : ;;
 
-			# Killable process
-			*)
-				if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
-					echo -n "$name "
-					kill -$sig $pid 2>/dev/null
-				fi
-			;;
-		esac
+				# Killable process
+				*)
+					if [ $pid -ne $$ ] && [ $ppid -ne $$ ]; then
+						echo -n "$name "
+						kill -$sig $pid 2>/dev/null
+					fi
+				;;
+			esac
+		fi
 	done
 	echo ""
 }
