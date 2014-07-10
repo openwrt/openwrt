@@ -8,7 +8,7 @@
 define Profile/IP2202
 	NAME:=Poray IP2202
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-rt305x-dwc_otg \
-	kmod-ledtrig-netdev kmod-ledtrig-timer restorefactory
+	kmod-ledtrig-netdev kmod-ledtrig-timer
 endef
 
 define Profile/IP2202/Description

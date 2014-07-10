@@ -74,7 +74,7 @@ define Profile/ARV7510PW22
 	ltq-adsl-app ppp-mod-pppoa \
 	kmod-ltq-tapi kmod-ltq-vmmc \
 	kmod-rt2800-pci wpad-mini \
-	kmod-uhci kmod-usb2 kmod-usb2-pci \
+	kmod-usb-uhci kmod-usb2 kmod-usb2-pci \
 	swconfig
 endef
 
