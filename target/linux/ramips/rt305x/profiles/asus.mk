@@ -7,7 +7,7 @@
 
 define Profile/RT-N10-PLUS
 	NAME:=Asus RT-N10+
-	PACKAGES:=kmod-leds-gpio wpa
+	PACKAGES:=kmod-leds-gpio wpad-mini
 endef
 
 define Profile/RT-N10-PLUS/Description
