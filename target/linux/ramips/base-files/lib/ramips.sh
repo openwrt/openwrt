@@ -307,6 +307,9 @@ ramips_board_detect() {
 	*"Sercomm NA930")
 		name="na930"
 		;;
+	*"Zbtlink ZBT-WA05")
+		name="zbt-wa05"
+		;;
 	*)
 		name="generic"
 		;;

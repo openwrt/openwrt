@@ -91,7 +91,8 @@ platform_check_image() {
 	wmr300 |\
 	wrtnode |\
 	x5 |\
-	x8)
+	x8 |\
+	zbt-wa05)
 		[ "$magic" != "27051956" ] && {
 			echo "Invalid image type."
 			return 1
