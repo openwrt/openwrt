@@ -53,7 +53,7 @@ drv_mac80211_init_iface_config() {
 	config_add_boolean wds powersave
 	config_add_int maxassoc
 	config_add_int max_listen_int
-	config_add_int dtim_interval
+	config_add_int dtim_period
 
 	# mesh
 	config_add_string mesh_id
