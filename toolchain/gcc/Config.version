@@ -3,11 +3,11 @@ config GCC_VERSION_4_4_7
 	bool
 
 config GCC_VERSION_4_6_LINARO
-	default y if (!TOOLCHAINOPTS && mips64)
+	default y if (!TOOLCHAINOPTS && octeon)
 	bool
 
 config GCC_VERSION_4_8_LINARO
-	default y if (!TOOLCHAINOPTS && !avr32 && !mips64)
+	default y if (!TOOLCHAINOPTS && !avr32 && !octeon)
 	bool
 
 config GCC_VERSION_4_8_0
