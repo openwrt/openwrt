@@ -1,0 +1,42 @@
+From b2e4f1560f7388f8157dd2c828211abbfad0e806 Mon Sep 17 00:00:00 2001
+From: Aaro Koskinen <aaro.koskinen@nsn.com>
+Date: Fri, 1 Nov 2013 17:06:04 +0200
+Subject: [PATCH] MIPS: cavium-octeon: fix early boot hang on EBH5600 board
+
+The boot hangs early on EBH5600 board when octeon_fdt_pip_iface() is
+trying enumerate a non-existant interface. The actual hang happens in
+cvmx_helper_interface_get_mode():
+
+	mode.u64 = cvmx_read_csr(CVMX_GMXX_INF_MODE(interface));
+
+when interface == 4. We can avoid this situation by first checking that
+the interface exists in the DTB.
+
+Signed-off-by: Aaro Koskinen <aaro.koskinen@nsn.com>
+Acked-by: David Daney <david.daney@cavium.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Patchwork: http://patchwork.linux-mips.org/patch/6101/
+---
+ arch/mips/cavium-octeon/octeon-platform.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/mips/cavium-octeon/octeon-platform.c
++++ b/arch/mips/cavium-octeon/octeon-platform.c
+@@ -336,14 +336,14 @@ static void __init octeon_fdt_pip_iface(
+ 	int p;
+ 	int count = 0;
+ 
+-	if (cvmx_helper_interface_enumerate(idx) == 0)
+-		count = cvmx_helper_ports_on_interface(idx);
+-
+ 	snprintf(name_buffer, sizeof(name_buffer), "interface@%d", idx);
+ 	iface = fdt_subnode_offset(initial_boot_params, pip, name_buffer);
+ 	if (iface < 0)
+ 		return;
+ 
++	if (cvmx_helper_interface_enumerate(idx) == 0)
++		count = cvmx_helper_ports_on_interface(idx);
++
+ 	for (p = 0; p < 16; p++)
+ 		octeon_fdt_pip_port(iface, idx, p, count - 1, pmac);
+ }
