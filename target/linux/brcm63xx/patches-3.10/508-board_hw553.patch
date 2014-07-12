@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1764,6 +1764,83 @@ static struct board_info __initdata boar
+@@ -1764,6 +1764,76 @@ static struct board_info __initdata boar
  	.spis = nb4_spi_devices,
  	.num_spis = ARRAY_SIZE(nb4_spi_devices),
  };
@@ -11,14 +11,8 @@
 +
 +	.has_uart0			= 1,
 +
-+	.has_enet0                      = 1,
 +	.has_enet1                      = 1,
 +	.has_pci                        = 1,
-+
-+	.enet0 = {
-+		.has_phy                = 1,
-+		.use_internal_phy       = 1,
-+	},
 +
 +	.enet1 = {
 +		.has_phy		= 1,
@@ -33,22 +27,22 @@
 +
 +	.leds = {
 +		{
-+			.name		= "HW553:red:lan",
++			.name		= "HW553:red:adsl",
 +			.gpio		= 34,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "HW553:blue:lan",
++			.name		= "HW553:blue:adsl",
 +			.gpio		= 35,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "HW553:red:adsl",
++			.name		= "HW553:red:lan",
 +			.gpio		= 22,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "HW553:blue:adsl",
++			.name		= "HW553:blue:lan",
 +			.gpio		= 23,
 +			.active_low	= 1,
 +		},
@@ -56,13 +50,12 @@
 +			.name		= "HW553:red:power",
 +			.gpio		= 5,
 +			.active_low	= 1,
-+			.default_trigger = "default-on",
 +		},
-+
 +		{
 +			.name		= "HW553:blue:power",
 +			.gpio		= 4,
 +			.active_low	= 1,
++			.default_trigger = "default-on",
 +		},
 +		{
 +			.name		= "HW553:red:wifi",
@@ -70,12 +63,12 @@
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "HW553:red:internetkey",
++			.name		= "HW553:red:hspa",
 +			.gpio		= 12,
 +			.active_low	= 1,
 +		},
 +		{
-+			.name		= "HW553:blue:internetkey",
++			.name		= "HW553:blue:hspa",
 +			.gpio		= 13,
 +			.active_low	= 1,
 +		},
@@ -84,7 +77,7 @@
  #endif
  
  /*
-@@ -1812,6 +1889,7 @@ static const struct board_info __initcon
+@@ -1812,6 +1882,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r2,
  	&board_nb4_fxc_r1,
  	&board_nb4_fxc_r2,
