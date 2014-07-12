@@ -4,7 +4,7 @@
  	},
  };
  
-+static struct board_info __initdata board_96328A_1441N1 = {
++static struct board_info __initdata board_AR5387un = {
 +	.name					= "96328A-1441N1",
 +	.expected_cpu_id			= 0x6328,
 +
@@ -42,24 +42,24 @@
 +
 +	.leds = {
 +		{
-+			.name			= "96328A-1441N1:green:power",
++			.name			= "AR-5387un:green:power",
 +			.gpio			= 8,
 +			.default_trigger	= "default-on",
 +		},
 +		{
-+			.name			= "96328A-1441N1:red:power",
++			.name			= "AR-5387un:red:power",
 +			.gpio			= 4,
 +		},
 +		{
-+			.name			= "96328A-1441N1:green:inet",
++			.name			= "AR-5387un:green:inet",
 +			.gpio			= 7,
 +		},
 +		{
-+			.name			= "96328A-1441N1:red:inet",
++			.name			= "AR-5387un:red:inet",
 +			.gpio			= 1,
 +		},
 +		{
-+			.name			= "96328A-1441N1:green:dsl",
++			.name			= "AR-5387un:green:dsl",
 +			.gpio			= 11,
 +			.active_low		= 1,
 +		},
@@ -84,7 +84,7 @@
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
-+	&board_96328A_1441N1,
++	&board_AR5387un,
  	&board_963281TAN,
  	&board_A4001N1,
  	&board_dsl_274xb_f1,

@@ -71,7 +71,7 @@
 +	},
 +};
 +
- static struct board_info __initdata board_96328A_1441N1 = {
+ static struct board_info __initdata board_AR5387un = {
  	.name					= "96328A-1441N1",
  	.expected_cpu_id			= 0x6328,
 @@ -3152,6 +3219,7 @@ static const struct board_info __initcon
@@ -79,6 +79,6 @@
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
 +	&board_96328A_1241N,
- 	&board_96328A_1441N1,
+ 	&board_AR5387un,
  	&board_963281TAN,
  	&board_A4001N1,

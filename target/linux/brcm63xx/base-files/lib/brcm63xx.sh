@@ -45,7 +45,7 @@ brcm63xx_detect() {
 		;;
 	96328A-1441N1)
 		brcm63xx_has_reset_button="true"
-		status_led="96328A-1441N1:green:power"
+		status_led="AR-5387un:green:power"
 		ifname=eth0
 		;;
 	963281TAN)
