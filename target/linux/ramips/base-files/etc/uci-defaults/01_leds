@@ -186,6 +186,11 @@ case $board in
 		set_wifi_led "zbtlink:blue:air"
 		set_usb_led "zbtlink:blue:usb"
 		;;
+	wr8305rt)
+		ucidef_set_led_default "power" "power" "wr8305rt:sys" "1"
+		set_usb_led "wr8305rt:usb"
+		set_wifi_led "wr8305rt:wifi"
+		;;
 esac
 
 ucidef_commit_leds

@@ -89,6 +89,7 @@ platform_check_image() {
 	ur-336un |\
 	wr512-3gn |\
 	wmr300 |\
+	wr8305rt |\
 	wrtnode |\
 	x5 |\
 	x8 |\
