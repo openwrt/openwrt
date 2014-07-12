@@ -19,6 +19,10 @@ HW553)
 	ucidef_set_led_usbdev "usb1" "USB1" "HW553:red:hspa" "1-1"
 	ucidef_set_led_usbdev "usb2" "USB2" "HW553:blue:hspa" "1-2"
 	;;
+HW556*)
+	ucidef_set_led_netdev "lan" "LAN" "HW556:red:dsl" "eth0"
+	ucidef_set_led_usbdev "usb" "USB" "HW556:red:hspa" "1-2"
+	;;
 esac
 
 ucidef_commit_leds
