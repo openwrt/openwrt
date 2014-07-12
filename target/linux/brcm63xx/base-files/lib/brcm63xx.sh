@@ -54,7 +54,7 @@ brcm63xx_detect() {
 		;;
 	963281T_TEF)
 		brcm63xx_has_reset_button="true"
-		status_led="963281T_TEF:green:power"
+		status_led="A4001N1:green:power"
 		ifname=eth0
 		;;
 	96348GW)
