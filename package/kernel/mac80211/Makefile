@@ -1200,7 +1200,8 @@ config PACKAGE_B43_USE_BCMA
 		string "Core revisions to include"
 		depends on B43_FW_SQUASH
 		default "5,6,7,8,9,10,11,13,15" if TARGET_brcm47xx_legacy
-		default "5,6,7,8,9,10,11,13,15,16,29"
+		default "16,28,29" if TARGET_brcm47xx_mips74k
+		default "5,6,7,8,9,10,11,13,15,16,28,29"
 		help
 		  This is a comma seperated list of core revision numbers.
 
@@ -1214,6 +1215,7 @@ config PACKAGE_B43_USE_BCMA
 		string "PHY types to include"
 		depends on B43_FW_SQUASH
 		default "G,LP" if TARGET_brcm47xx_legacy
+		default "N,HT" if TARGET_brcm47xx_mips74k
 		default "G,LP,N,HT"
 		help
 		  This is a comma seperated list of PHY types:
@@ -1224,6 +1226,8 @@ config PACKAGE_B43_USE_BCMA
 		    N  => N-PHY
 		    HT  => HT-PHY
 		    LCN  => LCN-PHY
+		    LCN40  => LCN40-PHY
+		    AC  => AC-PHY
 
 		  Example (keep files for G-PHY only):
 		    G
@@ -1238,7 +1242,7 @@ config PACKAGE_B43_USE_BCMA
 		  This allows choosing buses that b43 should support.
 
 	config PACKAGE_B43_BUSES_BCMA_AND_SSB
-		depends on !TARGET_brcm47xx_legacy
+		depends on !TARGET_brcm47xx_legacy && !TARGET_brcm47xx_mips74k
 		bool "BCMA and SSB"
 
 	config PACKAGE_B43_BUSES_BCMA
@@ -1246,6 +1250,7 @@ config PACKAGE_B43_USE_BCMA
 		bool "BCMA only"
 
 	config PACKAGE_B43_BUSES_SSB
+		depends on !TARGET_brcm47xx_mips74k
 		bool "SSB only"
 
 	endchoice
@@ -1268,6 +1273,17 @@ config PACKAGE_B43_USE_BCMA
 
 		  If unsure, say N.
 
+	config PACKAGE_B43_PHY_G
+		bool "Enable support for G-PHYs"
+		default n if TARGET_brcm47xx_mips74k
+		default y
+		help
+		  Enable support for G-PHY. This includes support for the following devices:
+		  PCI: BCM4306, BCM4311, BCM4318
+		  SoC: BCM5352E, BCM4712
+
+		  If unsure, say Y.
+
 	config PACKAGE_B43_PHY_N
 		bool "Enable support for N-PHYs"
 		default n if TARGET_brcm47xx_legacy
@@ -1283,6 +1299,7 @@ config PACKAGE_B43_USE_BCMA
 
 	config PACKAGE_B43_PHY_LP
 		bool "Enable support for LP-PHYs"
+		default n if TARGET_brcm47xx_mips74k
 		default y
 		help
 		  Enable support for LP-PHY. This includes support for the following devices:
@@ -1505,6 +1522,7 @@ config-$(call config_package,b43) += B43
 config-$(CONFIG_PACKAGE_B43_BUSES_BCMA_AND_SSB) += B43_BUSES_BCMA_AND_SSB
 config-$(CONFIG_PACKAGE_B43_BUSES_BCMA) += B43_BUSES_BCMA
 config-$(CONFIG_PACKAGE_B43_BUSES_SSB) += B43_BUSES_SSB
+config-$(CONFIG_PACKAGE_B43_PHY_G) += B43_PHY_G
 config-$(CONFIG_PACKAGE_B43_PHY_N) += B43_PHY_N
 config-$(CONFIG_PACKAGE_B43_PHY_LP) += B43_PHY_LP
 config-$(CONFIG_PACKAGE_B43_PHY_HT) += B43_PHY_HT
