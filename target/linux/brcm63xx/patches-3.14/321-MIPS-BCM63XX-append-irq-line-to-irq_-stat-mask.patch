@@ -1,10 +1,9 @@
-From 1003fb4a5ee9fcff518f20eefdee1a9bf500af7e Mon Sep 17 00:00:00 2001
+From 96ce0a9d195b2781d6f8d919dea8056b1c409703 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 25 Apr 2013 00:24:06 +0200
-Subject: [PATCH 32/53] MIPS: BCM63XX: append irq line number to
- irq_{stat,mask}*
+Subject: [PATCH 04/10] MIPS: BCM63XX: append irq line to irq_{stat,mask}*
 
-The SMP capable irq controllers have two interupt output pins which are
+The SMP capable irq controllers have two interrupt output pins which are
 controlled through separate registers, so make the variables arrays.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
@@ -50,11 +49,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static void __internal_irq_unmask_##width(unsigned int irq)		\
 @@ -103,9 +104,9 @@ static void __internal_irq_unmask_##widt
  	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
- 	unsigned bit = irq & 0x1f; 					\
+ 	unsigned bit = irq & 0x1f;					\
  									\
 -	val = bcm_readl(irq_mask_addr + reg * sizeof(u32));		\
 +	val = bcm_readl(irq_mask_addr[0] + reg * sizeof(u32));		\
- 	val |= (1 << bit); 						\
+ 	val |= (1 << bit);						\
 -	bcm_writel(val, irq_mask_addr + reg * sizeof(u32));		\
 +	bcm_writel(val, irq_mask_addr[0] + reg * sizeof(u32));		\
  }
