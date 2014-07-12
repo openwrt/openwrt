@@ -14,6 +14,11 @@ case "$board_name" in
 'F@ST2704V2')
 	ucidef_set_led_usbdev "usb" "USB" "F@ST2704V2:green:usb" "1-1"
 	;;
+HW553)
+	ucidef_set_led_netdev "lan" "LAN" "HW553:blue:lan" "eth0"
+	ucidef_set_led_usbdev "usb1" "USB1" "HW553:red:hspa" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "HW553:blue:hspa" "1-2"
+	;;
 esac
 
 ucidef_commit_leds
