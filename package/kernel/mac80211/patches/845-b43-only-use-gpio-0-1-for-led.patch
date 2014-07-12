@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -2766,6 +2766,14 @@ static int b43_gpio_init(struct b43_wlde
+@@ -2804,6 +2804,14 @@ static int b43_gpio_init(struct b43_wlde
  	} else if (dev->dev->chip_id == 0x5354) {
  		/* Don't allow overtaking buttons GPIOs */
  		set &= 0x2; /* 0x2 is LED GPIO on BCM5354 */
