@@ -1,10 +1,10 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -237,6 +237,126 @@ static struct board_info __initdata boar
+@@ -235,6 +235,126 @@ static struct board_info __initdata boar
  	},
  };
  
-+static struct board_info __initdata board_963281T_TEF = {
++static struct board_info __initdata board_A4001N1 = {
 +	.name					= "963281T_TEF",
 +	.expected_cpu_id			= 0x6328,
 +
@@ -42,63 +42,63 @@
 +
 +	.leds = {
 +		{
-+			.name			= "963281T_TEF:green:power",
++			.name			= "A4001N1:green:power",
 +			.gpio			= 4,
 +			.active_low		= 1,
 +			.default_trigger	= "default-on",
 +		},
 +		{
-+			.name			= "963281T_TEF:red:power",
++			.name			= "A4001N1:red:power",
 +			.gpio			= 8,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:green:inet",
++			.name			= "A4001N1:green:inet",
 +			.gpio			= 11,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:red:inet",
++			.name			= "A4001N1:red:inet",
 +			.gpio			= 2,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:green:ppp",
++			.name			= "A4001N1:green:ppp",
 +			.gpio			= 3,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:red:ppp",
++			.name			= "A4001N1:red:ppp",
 +			.gpio			= 5,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:green:3g",
++			.name			= "A4001N1:green:3g",
 +			.gpio			= 6,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:red:3g",
++			.name			= "A4001N1:red:3g",
 +			.gpio			= 7,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:green:wlan",
++			.name			= "A4001N1:green:wlan",
 +			.gpio			= 9,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:red:wlan",
++			.name			= "A4001N1:red:wlan",
 +			.gpio			= 10,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:green:eth",
++			.name			= "A4001N1:green:eth",
 +			.gpio			= 31,
 +			.active_low		= 1,
 +		},
 +		{
-+			.name			= "963281T_TEF:red:eth",
++			.name			= "A4001N1:red:eth",
 +			.gpio			= 20,
 +			.active_low		= 1,
 +		},
@@ -127,11 +127,11 @@
  static struct board_info __initdata board_dsl_274xb_f1 = {
  	.name				= "AW4339U",
  	.expected_cpu_id		= 0x6328,
-@@ -2970,6 +3090,7 @@ static const struct board_info __initcon
+@@ -2960,6 +3080,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
-+	&board_963281T_TEF,
++	&board_A4001N1,
  	&board_dsl_274xb_f1,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
