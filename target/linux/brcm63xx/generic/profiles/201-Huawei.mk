@@ -16,11 +16,11 @@ endef
 $(eval $(call Profile,HW553))
 
 define Profile/HW556
-  NAME:=HW556 WiFi
-  PACKAGES:=kmod-rt2800-pci kmod-ath9k wpad-mini
+  NAME:=Huawei HG556a
+  PACKAGES:=kmod-rt2800-pci kmod-ath9k wpad-mini \
+	kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
 endef
-
 define Profile/HW556/Description
-	Package set compatible with hardware using Atheros or Ralink WiFi cards (Huawei HG556a)
+	Package set optimized for Huawei HG556a using open-source atheros or ralink WiFi driver
 endef
 $(eval $(call Profile,HW556))
