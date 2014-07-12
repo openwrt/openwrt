@@ -168,7 +168,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-4M-flash-generic,,--pad 2)
 	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-8M-flash-generic,,--pad 4)
 	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-16M-flash-generic,,--pad 8)
-	$(call Image/Build/CFE,$(1),96328A-1241N,6328,96328A-1241N-generic,,--pad 8)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-4M-flash-generic,,--pad 2)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-8M-flash-generic,,--pad 4)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-16M-flash-generic,,--pad 8)
@@ -227,6 +226,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),CT6373-1,6358,CT6373)
 	# Comtrend 536, 5621
 	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,CT536_CT5621,6348,CT536_CT5621)
+	# Comtrend AR-5381u
+	$(call Image/Build/CFE,$(1),96328A-1241N,6328,AR-5381u,,--pad 8)
 	# Comtrend AR-5387un
 	$(call Image/Build/CFE,$(1),96328A-1441N1,6328,AR-5387un,,--pad 8)
 	# Comtrend WAP-5813n
