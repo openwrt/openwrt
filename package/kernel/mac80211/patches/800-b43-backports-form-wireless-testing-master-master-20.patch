@@ -1,0 +1,2518 @@
+backport b43 patches from wireless testing
+
+This brings b43 up to wireless-testing/master master-2014-07-10
+
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -122,7 +122,11 @@ static const struct bcma_device_id b43_b
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x11, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x17, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x18, BCMA_ANY_CLASS),
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x1C, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x1D, BCMA_ANY_CLASS),
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x1E, BCMA_ANY_CLASS),
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x28, BCMA_ANY_CLASS),
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, 0x2A, BCMA_ANY_CLASS),
+ 	BCMA_CORETABLE_END
+ };
+ MODULE_DEVICE_TABLE(bcma, b43_bcma_tbl);
+@@ -2201,52 +2205,82 @@ err_format:
+ 	return -EPROTO;
+ }
+ 
++/* http://bcm-v4.sipsolutions.net/802.11/Init/Firmware */
+ static int b43_try_request_fw(struct b43_request_fw_context *ctx)
+ {
+ 	struct b43_wldev *dev = ctx->dev;
+ 	struct b43_firmware *fw = &ctx->dev->fw;
++	struct b43_phy *phy = &dev->phy;
+ 	const u8 rev = ctx->dev->dev->core_rev;
+ 	const char *filename;
+-	u32 tmshigh;
+ 	int err;
+ 
+-	/* Files for HT and LCN were found by trying one by one */
+-
+ 	/* Get microcode */
+-	if ((rev >= 5) && (rev <= 10)) {
+-		filename = "ucode5";
+-	} else if ((rev >= 11) && (rev <= 12)) {
+-		filename = "ucode11";
+-	} else if (rev == 13) {
+-		filename = "ucode13";
+-	} else if (rev == 14) {
+-		filename = "ucode14";
+-	} else if (rev == 15) {
++	filename = NULL;
++	switch (rev) {
++	case 42:
++		if (phy->type == B43_PHYTYPE_AC)
++			filename = "ucode42";
++		break;
++	case 40:
++		if (phy->type == B43_PHYTYPE_AC)
++			filename = "ucode40";
++		break;
++	case 33:
++		if (phy->type == B43_PHYTYPE_LCN40)
++			filename = "ucode33_lcn40";
++		break;
++	case 30:
++		if (phy->type == B43_PHYTYPE_N)
++			filename = "ucode30_mimo";
++		break;
++	case 29:
++		if (phy->type == B43_PHYTYPE_HT)
++			filename = "ucode29_mimo";
++		break;
++	case 26:
++		if (phy->type == B43_PHYTYPE_HT)
++			filename = "ucode26_mimo";
++		break;
++	case 28:
++	case 25:
++		if (phy->type == B43_PHYTYPE_N)
++			filename = "ucode25_mimo";
++		else if (phy->type == B43_PHYTYPE_LCN)
++			filename = "ucode25_lcn";
++		break;
++	case 24:
++		if (phy->type == B43_PHYTYPE_LCN)
++			filename = "ucode24_lcn";
++		break;
++	case 23:
++		if (phy->type == B43_PHYTYPE_N)
++			filename = "ucode16_mimo";
++		break;
++	case 16 ... 19:
++		if (phy->type == B43_PHYTYPE_N)
++			filename = "ucode16_mimo";
++		else if (phy->type == B43_PHYTYPE_LP)
++			filename = "ucode16_lp";
++		break;
++	case 15:
+ 		filename = "ucode15";
+-	} else {
+-		switch (dev->phy.type) {
+-		case B43_PHYTYPE_N:
+-			if (rev >= 16)
+-				filename = "ucode16_mimo";
+-			else
+-				goto err_no_ucode;
+-			break;
+-		case B43_PHYTYPE_HT:
+-			if (rev == 29)
+-				filename = "ucode29_mimo";
+-			else
+-				goto err_no_ucode;
+-			break;
+-		case B43_PHYTYPE_LCN:
+-			if (rev == 24)
+-				filename = "ucode24_mimo";
+-			else
+-				goto err_no_ucode;
+-			break;
+-		default:
+-			goto err_no_ucode;
+-		}
++		break;
++	case 14:
++		filename = "ucode14";
++		break;
++	case 13:
++		filename = "ucode13";
++		break;
++	case 11 ... 12:
++		filename = "ucode11";
++		break;
++	case 5 ... 10:
++		filename = "ucode5";
++		break;
+ 	}
++	if (!filename)
++		goto err_no_ucode;
+ 	err = b43_do_request_fw(ctx, filename, &fw->ucode, true);
+ 	if (err)
+ 		goto err_load;
+@@ -2268,117 +2302,121 @@ static int b43_try_request_fw(struct b43
+ 		goto err_load;
+ 
+ 	/* Get initvals */
++	filename = NULL;
+ 	switch (dev->phy.type) {
+-	case B43_PHYTYPE_A:
+-		if ((rev >= 5) && (rev <= 10)) {
+-			tmshigh = ssb_read32(dev->dev->sdev, SSB_TMSHIGH);
+-			if (tmshigh & B43_TMSHIGH_HAVE_2GHZ_PHY)
+-				filename = "a0g1initvals5";
+-			else
+-				filename = "a0g0initvals5";
+-		} else
+-			goto err_no_initvals;
+-		break;
+ 	case B43_PHYTYPE_G:
+-		if ((rev >= 5) && (rev <= 10))
+-			filename = "b0g0initvals5";
+-		else if (rev >= 13)
++		if (rev == 13)
+ 			filename = "b0g0initvals13";
+-		else
+-			goto err_no_initvals;
++		else if (rev >= 5 && rev <= 10)
++			filename = "b0g0initvals5";
+ 		break;
+ 	case B43_PHYTYPE_N:
+-		if (rev >= 16)
++		if (rev == 30)
++			filename = "n16initvals30";
++		else if (rev == 28 || rev == 25)
++			filename = "n0initvals25";
++		else if (rev == 24)
++			filename = "n0initvals24";
++		else if (rev == 23)
++			filename = "n0initvals16"; /* What about n0initvals22? */
++		else if (rev >= 16 && rev <= 18)
+ 			filename = "n0initvals16";
+-		else if ((rev >= 11) && (rev <= 12))
++		else if (rev >= 11 && rev <= 12)
+ 			filename = "n0initvals11";
+-		else
+-			goto err_no_initvals;
+ 		break;
+ 	case B43_PHYTYPE_LP:
+-		if (rev == 13)
+-			filename = "lp0initvals13";
++		if (rev >= 16 && rev <= 18)
++			filename = "lp0initvals16";
++		else if (rev == 15)
++			filename = "lp0initvals15";
+ 		else if (rev == 14)
+ 			filename = "lp0initvals14";
+-		else if (rev >= 15)
+-			filename = "lp0initvals15";
+-		else
+-			goto err_no_initvals;
++		else if (rev == 13)
++			filename = "lp0initvals13";
+ 		break;
+ 	case B43_PHYTYPE_HT:
+ 		if (rev == 29)
+ 			filename = "ht0initvals29";
+-		else
+-			goto err_no_initvals;
++		else if (rev == 26)
++			filename = "ht0initvals26";
+ 		break;
+ 	case B43_PHYTYPE_LCN:
+ 		if (rev == 24)
+ 			filename = "lcn0initvals24";
+-		else
+-			goto err_no_initvals;
+ 		break;
+-	default:
+-		goto err_no_initvals;
++	case B43_PHYTYPE_LCN40:
++		if (rev == 33)
++			filename = "lcn400initvals33";
++		break;
++	case B43_PHYTYPE_AC:
++		if (rev == 42)
++			filename = "ac1initvals42";
++		else if (rev == 40)
++			filename = "ac0initvals40";
++		break;
+ 	}
++	if (!filename)
++		goto err_no_initvals;
+ 	err = b43_do_request_fw(ctx, filename, &fw->initvals, false);
+ 	if (err)
+ 		goto err_load;
+ 
+ 	/* Get bandswitch initvals */
++	filename = NULL;
+ 	switch (dev->phy.type) {
+-	case B43_PHYTYPE_A:
+-		if ((rev >= 5) && (rev <= 10)) {
+-			tmshigh = ssb_read32(dev->dev->sdev, SSB_TMSHIGH);
+-			if (tmshigh & B43_TMSHIGH_HAVE_2GHZ_PHY)
+-				filename = "a0g1bsinitvals5";
+-			else
+-				filename = "a0g0bsinitvals5";
+-		} else if (rev >= 11)
+-			filename = NULL;
+-		else
+-			goto err_no_initvals;
+-		break;
+ 	case B43_PHYTYPE_G:
+-		if ((rev >= 5) && (rev <= 10))
++		if (rev == 13)
++			filename = "b0g0bsinitvals13";
++		else if (rev >= 5 && rev <= 10)
+ 			filename = "b0g0bsinitvals5";
+-		else if (rev >= 11)
+-			filename = NULL;
+-		else
+-			goto err_no_initvals;
+ 		break;
+ 	case B43_PHYTYPE_N:
+-		if (rev >= 16)
++		if (rev == 30)
++			filename = "n16bsinitvals30";
++		else if (rev == 28 || rev == 25)
++			filename = "n0bsinitvals25";
++		else if (rev == 24)
++			filename = "n0bsinitvals24";
++		else if (rev == 23)
++			filename = "n0bsinitvals16"; /* What about n0bsinitvals22? */
++		else if (rev >= 16 && rev <= 18)
+ 			filename = "n0bsinitvals16";
+-		else if ((rev >= 11) && (rev <= 12))
++		else if (rev >= 11 && rev <= 12)
+ 			filename = "n0bsinitvals11";
+-		else
+-			goto err_no_initvals;
+ 		break;
+ 	case B43_PHYTYPE_LP:
+-		if (rev == 13)
+-			filename = "lp0bsinitvals13";
++		if (rev >= 16 && rev <= 18)
++			filename = "lp0bsinitvals16";
++		else if (rev == 15)
++			filename = "lp0bsinitvals15";
+ 		else if (rev == 14)
+ 			filename = "lp0bsinitvals14";
+-		else if (rev >= 15)
+-			filename = "lp0bsinitvals15";
+-		else
+-			goto err_no_initvals;
++		else if (rev == 13)
++			filename = "lp0bsinitvals13";
+ 		break;
+ 	case B43_PHYTYPE_HT:
+ 		if (rev == 29)
+ 			filename = "ht0bsinitvals29";
+-		else
+-			goto err_no_initvals;
++		else if (rev == 26)
++			filename = "ht0bsinitvals26";
+ 		break;
+ 	case B43_PHYTYPE_LCN:
+ 		if (rev == 24)
+ 			filename = "lcn0bsinitvals24";
+-		else
+-			goto err_no_initvals;
+ 		break;
+-	default:
+-		goto err_no_initvals;
++	case B43_PHYTYPE_LCN40:
++		if (rev == 33)
++			filename = "lcn400bsinitvals33";
++		break;
++	case B43_PHYTYPE_AC:
++		if (rev == 42)
++			filename = "ac1bsinitvals42";
++		else if (rev == 40)
++			filename = "ac0bsinitvals40";
++		break;
+ 	}
++	if (!filename)
++		goto err_no_initvals;
+ 	err = b43_do_request_fw(ctx, filename, &fw->initvals_band, false);
+ 	if (err)
+ 		goto err_load;
+@@ -3742,7 +3780,9 @@ static int b43_switch_band(struct b43_wl
+ 	b43dbg(dev->wl, "Switching to %s GHz band\n",
+ 	       band_to_string(chan->band));
+ 
+-	b43_software_rfkill(dev, true);
++	/* Some new devices don't need disabling radio for band switching */
++	if (!(phy->type == B43_PHYTYPE_N && phy->rev >= 3))
++		b43_software_rfkill(dev, true);
+ 
+ 	phy->gmode = gmode;
+ 	b43_phy_put_into_reset(dev);
+@@ -3796,38 +3836,29 @@ static void b43_set_retry_limits(struct
+ static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
+ {
+ 	struct b43_wl *wl = hw_to_b43_wl(hw);
+-	struct b43_wldev *dev;
+-	struct b43_phy *phy;
++	struct b43_wldev *dev = wl->current_dev;
++	struct b43_phy *phy = &dev->phy;
+ 	struct ieee80211_conf *conf = &hw->conf;
+ 	int antenna;
+ 	int err = 0;
+-	bool reload_bss = false;
+ 
+ 	mutex_lock(&wl->mutex);
+-
+-	dev = wl->current_dev;
+-
+ 	b43_mac_suspend(dev);
+ 
+-	/* Switch the band (if necessary). This might change the active core. */
+-	err = b43_switch_band(dev, conf->chandef.chan);
+-	if (err)
+-		goto out_unlock_mutex;
++	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
++		phy->chandef = &conf->chandef;
++		phy->channel = conf->chandef.chan->hw_value;
+ 
+-	/* Need to reload all settings if the core changed */
+-	if (dev != wl->current_dev) {
+-		dev = wl->current_dev;
+-		changed = ~0;
+-		reload_bss = true;
+-	}
++		/* Switch the band (if necessary). */
++		err = b43_switch_band(dev, conf->chandef.chan);
++		if (err)
++			goto out_mac_enable;
+ 
+-	phy = &dev->phy;
+-
+-	if (conf_is_ht(conf))
+-		phy->is_40mhz =
+-			(conf_is_ht40_minus(conf) || conf_is_ht40_plus(conf));
+-	else
+-		phy->is_40mhz = false;
++		/* Switch to the requested channel.
++		 * The firmware takes care of races with the TX handler.
++		 */
++		b43_switch_channel(dev, phy->channel);
++	}
+ 
+ 	if (changed & IEEE80211_CONF_CHANGE_RETRY_LIMITS)
+ 		b43_set_retry_limits(dev, conf->short_frame_max_tx_count,
+@@ -3836,11 +3867,6 @@ static int b43_op_config(struct ieee8021
+ 	if (!changed)
+ 		goto out_mac_enable;
+ 
+-	/* Switch to the requested channel.
+-	 * The firmware takes care of races with the TX handler. */
+-	if (conf->chandef.chan->hw_value != phy->channel)
+-		b43_switch_channel(dev, conf->chandef.chan->hw_value);
+-
+ 	dev->wl->radiotap_enabled = !!(conf->flags & IEEE80211_CONF_MONITOR);
+ 
+ 	/* Adjust the desired TX power level. */
+@@ -3876,12 +3902,8 @@ static int b43_op_config(struct ieee8021
+ 
+ out_mac_enable:
+ 	b43_mac_enable(dev);
+-out_unlock_mutex:
+ 	mutex_unlock(&wl->mutex);
+ 
+-	if (wl->vif && reload_bss)
+-		b43_op_bss_info_changed(hw, wl->vif, &wl->vif->bss_conf, ~0);
+-
+ 	return err;
+ }
+ 
+@@ -4307,6 +4329,7 @@ static char *b43_phy_name(struct b43_wld
+ static int b43_phy_versioning(struct b43_wldev *dev)
+ {
+ 	struct b43_phy *phy = &dev->phy;
++	const u8 core_rev = dev->dev->core_rev;
+ 	u32 tmp;
+ 	u8 analog_type;
+ 	u8 phy_type;
+@@ -4321,20 +4344,20 @@ static int b43_phy_versioning(struct b43
+ 	analog_type = (tmp & B43_PHYVER_ANALOG) >> B43_PHYVER_ANALOG_SHIFT;
+ 	phy_type = (tmp & B43_PHYVER_TYPE) >> B43_PHYVER_TYPE_SHIFT;
+ 	phy_rev = (tmp & B43_PHYVER_VERSION);
++
++	/* LCNXN is continuation of N which run out of revisions */
++	if (phy_type == B43_PHYTYPE_LCNXN) {
++		phy_type = B43_PHYTYPE_N;
++		phy_rev += 16;
++	}
++
+ 	switch (phy_type) {
+-	case B43_PHYTYPE_A:
+-		if (phy_rev >= 4)
+-			unsupported = 1;
+-		break;
+-	case B43_PHYTYPE_B:
+-		if (phy_rev != 2 && phy_rev != 4 && phy_rev != 6
+-		    && phy_rev != 7)
+-			unsupported = 1;
+-		break;
++#ifdef CPTCFG_B43_PHY_G
+ 	case B43_PHYTYPE_G:
+ 		if (phy_rev > 9)
+ 			unsupported = 1;
+ 		break;
++#endif
+ #ifdef CPTCFG_B43_PHY_N
+ 	case B43_PHYTYPE_N:
+ 		if (phy_rev > 9)
+@@ -4372,7 +4395,15 @@ static int b43_phy_versioning(struct b43
+ 		analog_type, phy_type, b43_phy_name(dev, phy_type), phy_rev);
+ 
+ 	/* Get RADIO versioning */
+-	if (dev->dev->core_rev >= 24) {
++	if (core_rev == 40 || core_rev == 42) {
++		radio_manuf = 0x17F;
++
++		b43_write16(dev, B43_MMIO_RADIO24_CONTROL, 0);
++		radio_rev = b43_read16(dev, B43_MMIO_RADIO24_DATA);
++
++		b43_write16(dev, B43_MMIO_RADIO24_CONTROL, 1);
++		radio_ver = b43_read16(dev, B43_MMIO_RADIO24_DATA);
++	} else if (core_rev >= 24) {
+ 		u16 radio24[3];
+ 
+ 		for (tmp = 0; tmp < 3; tmp++) {
+@@ -5164,6 +5195,7 @@ static void b43_supported_bands(struct b
+ static int b43_wireless_core_attach(struct b43_wldev *dev)
+ {
+ 	struct b43_wl *wl = dev->wl;
++	struct b43_phy *phy = &dev->phy;
+ 	int err;
+ 	u32 tmp;
+ 	bool have_2ghz_phy = false, have_5ghz_phy = false;
+@@ -5181,6 +5213,8 @@ static int b43_wireless_core_attach(stru
+ 		goto out;
+ 	}
+ 
++	phy->do_full_init = true;
++
+ 	/* Try to guess supported bands for the first init needs */
+ 	switch (dev->dev->bus_type) {
+ #ifdef CPTCFG_B43_BCMA
+--- a/drivers/net/wireless/b43/phy_common.c
++++ b/drivers/net/wireless/b43/phy_common.c
+@@ -45,11 +45,10 @@ int b43_phy_allocate(struct b43_wldev *d
+ 	phy->ops = NULL;
+ 
+ 	switch (phy->type) {
+-	case B43_PHYTYPE_A:
+-		phy->ops = &b43_phyops_a;
+-		break;
+ 	case B43_PHYTYPE_G:
++#ifdef CPTCFG_B43_PHY_G
+ 		phy->ops = &b43_phyops_g;
++#endif
+ 		break;
+ 	case B43_PHYTYPE_N:
+ #ifdef CPTCFG_B43_PHY_N
+@@ -94,18 +93,25 @@ int b43_phy_init(struct b43_wldev *dev)
+ 	const struct b43_phy_operations *ops = phy->ops;
+ 	int err;
+ 
+-	phy->channel = ops->get_default_chan(dev);
++	/* During PHY init we need to use some channel. On the first init this
++	 * function is called *before* b43_op_config, so our pointer is NULL.
++	 */
++	if (!phy->chandef) {
++		phy->chandef = &dev->wl->hw->conf.chandef;
++		phy->channel = phy->chandef->chan->hw_value;
++	}
+ 
+ 	phy->ops->switch_analog(dev, true);
+ 	b43_software_rfkill(dev, false);
++
+ 	err = ops->init(dev);
+ 	if (err) {
+ 		b43err(dev->wl, "PHY init failed\n");
+ 		goto err_block_rf;
+ 	}
+-	/* Make sure to switch hardware and firmware (SHM) to
+-	 * the default channel. */
+-	err = b43_switch_channel(dev, ops->get_default_chan(dev));
++	phy->do_full_init = false;
++
++	err = b43_switch_channel(dev, phy->channel);
+ 	if (err) {
+ 		b43err(dev->wl, "PHY init: Channel switch to default failed\n");
+ 		goto err_phy_exit;
+@@ -114,6 +120,7 @@ int b43_phy_init(struct b43_wldev *dev)
+ 	return 0;
+ 
+ err_phy_exit:
++	phy->do_full_init = true;
+ 	if (ops->exit)
+ 		ops->exit(dev);
+ err_block_rf:
+@@ -127,6 +134,7 @@ void b43_phy_exit(struct b43_wldev *dev)
+ 	const struct b43_phy_operations *ops = dev->phy.ops;
+ 
+ 	b43_software_rfkill(dev, true);
++	dev->phy.do_full_init = true;
+ 	if (ops->exit)
+ 		ops->exit(dev);
+ }
+@@ -403,9 +411,6 @@ int b43_switch_channel(struct b43_wldev
+ 	u16 channelcookie, savedcookie;
+ 	int err;
+ 
+-	if (new_channel == B43_DEFAULT_CHANNEL)
+-		new_channel = phy->ops->get_default_chan(dev);
+-
+ 	/* First we set the channel radio code to prevent the
+ 	 * firmware from sending ghost packets.
+ 	 */
+@@ -423,7 +428,6 @@ int b43_switch_channel(struct b43_wldev
+ 	if (err)
+ 		goto err_restore_cookie;
+ 
+-	dev->phy.channel = new_channel;
+ 	/* Wait for the radio to tune to the channel and stabilize. */
+ 	msleep(8);
+ 
+@@ -542,10 +546,9 @@ void b43_phyop_switch_analog_generic(str
+ }
+ 
+ 
+-bool b43_channel_type_is_40mhz(enum nl80211_channel_type channel_type)
++bool b43_is_40mhz(struct b43_wldev *dev)
+ {
+-	return (channel_type == NL80211_CHAN_HT40MINUS ||
+-		channel_type == NL80211_CHAN_HT40PLUS);
++	return dev->phy.chandef->width == NL80211_CHAN_WIDTH_40;
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/BmacPhyClkFgc */
+--- a/drivers/net/wireless/b43/phy_common.h
++++ b/drivers/net/wireless/b43/phy_common.h
+@@ -228,12 +228,12 @@ struct b43_phy {
+ 	bool supports_2ghz;
+ 	bool supports_5ghz;
+ 
+-	/* HT info */
+-	bool is_40mhz;
+-
+ 	/* Is GMODE (2 GHz mode) bit enabled? */
+ 	bool gmode;
+ 
++	/* After power reset full init has to be performed */
++	bool do_full_init;
++
+ 	/* Analog Type */
+ 	u8 analog;
+ 	/* B43_PHYTYPE_ */
+@@ -264,9 +264,8 @@ struct b43_phy {
+ 	unsigned long next_txpwr_check_time;
+ 
+ 	/* Current channel */
++	struct cfg80211_chan_def *chandef;
+ 	unsigned int channel;
+-	u16 channel_freq;
+-	enum nl80211_channel_type channel_type;
+ 
+ 	/* PHY TX errors counter. */
+ 	atomic_t txerr_cnt;
+@@ -397,10 +396,6 @@ void b43_phy_take_out_of_reset(struct b4
+  * b43_switch_channel - Switch to another channel
+  */
+ int b43_switch_channel(struct b43_wldev *dev, unsigned int new_channel);
+-/**
+- * B43_DEFAULT_CHANNEL - Switch to the default channel.
+- */
+-#define B43_DEFAULT_CHANNEL	UINT_MAX
+ 
+ /**
+  * b43_software_rfkill - Turn the radio ON or OFF in software.
+@@ -451,7 +446,7 @@ int b43_phy_shm_tssi_read(struct b43_wld
+  */
+ void b43_phyop_switch_analog_generic(struct b43_wldev *dev, bool on);
+ 
+-bool b43_channel_type_is_40mhz(enum nl80211_channel_type channel_type);
++bool b43_is_40mhz(struct b43_wldev *dev);
+ 
+ void b43_phy_force_clock(struct b43_wldev *dev, bool force);
+ 
+--- a/drivers/net/wireless/b43/phy_n.c
++++ b/drivers/net/wireless/b43/phy_n.c
+@@ -590,7 +590,103 @@ static void b43_nphy_set_rf_sequence(str
+  * Radio 0x2057
+  **************************************************/
+ 
+-/* http://bcm-v4.sipsolutions.net/PHY/radio2057_rcal */
++static void b43_radio_2057_chantab_upload(struct b43_wldev *dev,
++					  const struct b43_nphy_chantabent_rev7 *e_r7,
++					  const struct b43_nphy_chantabent_rev7_2g *e_r7_2g)
++{
++	if (e_r7_2g) {
++		b43_radio_write(dev, R2057_VCOCAL_COUNTVAL0, e_r7_2g->radio_vcocal_countval0);
++		b43_radio_write(dev, R2057_VCOCAL_COUNTVAL1, e_r7_2g->radio_vcocal_countval1);
++		b43_radio_write(dev, R2057_RFPLL_REFMASTER_SPAREXTALSIZE, e_r7_2g->radio_rfpll_refmaster_sparextalsize);
++		b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_R1, e_r7_2g->radio_rfpll_loopfilter_r1);
++		b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C2, e_r7_2g->radio_rfpll_loopfilter_c2);
++		b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C1, e_r7_2g->radio_rfpll_loopfilter_c1);
++		b43_radio_write(dev, R2057_CP_KPD_IDAC, e_r7_2g->radio_cp_kpd_idac);
++		b43_radio_write(dev, R2057_RFPLL_MMD0, e_r7_2g->radio_rfpll_mmd0);
++		b43_radio_write(dev, R2057_RFPLL_MMD1, e_r7_2g->radio_rfpll_mmd1);
++		b43_radio_write(dev, R2057_VCOBUF_TUNE, e_r7_2g->radio_vcobuf_tune);
++		b43_radio_write(dev, R2057_LOGEN_MX2G_TUNE, e_r7_2g->radio_logen_mx2g_tune);
++		b43_radio_write(dev, R2057_LOGEN_INDBUF2G_TUNE, e_r7_2g->radio_logen_indbuf2g_tune);
++		b43_radio_write(dev, R2057_TXMIX2G_TUNE_BOOST_PU_CORE0, e_r7_2g->radio_txmix2g_tune_boost_pu_core0);
++		b43_radio_write(dev, R2057_PAD2G_TUNE_PUS_CORE0, e_r7_2g->radio_pad2g_tune_pus_core0);
++		b43_radio_write(dev, R2057_LNA2G_TUNE_CORE0, e_r7_2g->radio_lna2g_tune_core0);
++		b43_radio_write(dev, R2057_TXMIX2G_TUNE_BOOST_PU_CORE1, e_r7_2g->radio_txmix2g_tune_boost_pu_core1);
++		b43_radio_write(dev, R2057_PAD2G_TUNE_PUS_CORE1, e_r7_2g->radio_pad2g_tune_pus_core1);
++		b43_radio_write(dev, R2057_LNA2G_TUNE_CORE1, e_r7_2g->radio_lna2g_tune_core1);
++
++	} else {
++		b43_radio_write(dev, R2057_VCOCAL_COUNTVAL0, e_r7->radio_vcocal_countval0);
++		b43_radio_write(dev, R2057_VCOCAL_COUNTVAL1, e_r7->radio_vcocal_countval1);
++		b43_radio_write(dev, R2057_RFPLL_REFMASTER_SPAREXTALSIZE, e_r7->radio_rfpll_refmaster_sparextalsize);
++		b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_R1, e_r7->radio_rfpll_loopfilter_r1);
++		b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C2, e_r7->radio_rfpll_loopfilter_c2);
++		b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C1, e_r7->radio_rfpll_loopfilter_c1);
++		b43_radio_write(dev, R2057_CP_KPD_IDAC, e_r7->radio_cp_kpd_idac);
++		b43_radio_write(dev, R2057_RFPLL_MMD0, e_r7->radio_rfpll_mmd0);
++		b43_radio_write(dev, R2057_RFPLL_MMD1, e_r7->radio_rfpll_mmd1);
++		b43_radio_write(dev, R2057_VCOBUF_TUNE, e_r7->radio_vcobuf_tune);
++		b43_radio_write(dev, R2057_LOGEN_MX2G_TUNE, e_r7->radio_logen_mx2g_tune);
++		b43_radio_write(dev, R2057_LOGEN_MX5G_TUNE, e_r7->radio_logen_mx5g_tune);
++		b43_radio_write(dev, R2057_LOGEN_INDBUF2G_TUNE, e_r7->radio_logen_indbuf2g_tune);
++		b43_radio_write(dev, R2057_LOGEN_INDBUF5G_TUNE, e_r7->radio_logen_indbuf5g_tune);
++		b43_radio_write(dev, R2057_TXMIX2G_TUNE_BOOST_PU_CORE0, e_r7->radio_txmix2g_tune_boost_pu_core0);
++		b43_radio_write(dev, R2057_PAD2G_TUNE_PUS_CORE0, e_r7->radio_pad2g_tune_pus_core0);
++		b43_radio_write(dev, R2057_PGA_BOOST_TUNE_CORE0, e_r7->radio_pga_boost_tune_core0);
++		b43_radio_write(dev, R2057_TXMIX5G_BOOST_TUNE_CORE0, e_r7->radio_txmix5g_boost_tune_core0);
++		b43_radio_write(dev, R2057_PAD5G_TUNE_MISC_PUS_CORE0, e_r7->radio_pad5g_tune_misc_pus_core0);
++		b43_radio_write(dev, R2057_LNA2G_TUNE_CORE0, e_r7->radio_lna2g_tune_core0);
++		b43_radio_write(dev, R2057_LNA5G_TUNE_CORE0, e_r7->radio_lna5g_tune_core0);
++		b43_radio_write(dev, R2057_TXMIX2G_TUNE_BOOST_PU_CORE1, e_r7->radio_txmix2g_tune_boost_pu_core1);
++		b43_radio_write(dev, R2057_PAD2G_TUNE_PUS_CORE1, e_r7->radio_pad2g_tune_pus_core1);
++		b43_radio_write(dev, R2057_PGA_BOOST_TUNE_CORE1, e_r7->radio_pga_boost_tune_core1);
++		b43_radio_write(dev, R2057_TXMIX5G_BOOST_TUNE_CORE1, e_r7->radio_txmix5g_boost_tune_core1);
++		b43_radio_write(dev, R2057_PAD5G_TUNE_MISC_PUS_CORE1, e_r7->radio_pad5g_tune_misc_pus_core1);
++		b43_radio_write(dev, R2057_LNA2G_TUNE_CORE1, e_r7->radio_lna2g_tune_core1);
++		b43_radio_write(dev, R2057_LNA5G_TUNE_CORE1, e_r7->radio_lna5g_tune_core1);
++	}
++}
++
++static void b43_radio_2057_setup(struct b43_wldev *dev,
++				 const struct b43_nphy_chantabent_rev7 *tabent_r7,
++				 const struct b43_nphy_chantabent_rev7_2g *tabent_r7_2g)
++{
++	struct b43_phy *phy = &dev->phy;
++
++	b43_radio_2057_chantab_upload(dev, tabent_r7, tabent_r7_2g);
++
++	switch (phy->radio_rev) {
++	case 0 ... 4:
++	case 6:
++		if (b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ) {
++			b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_R1, 0x3f);
++			b43_radio_write(dev, R2057_CP_KPD_IDAC, 0x3f);
++			b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C1, 0x8);
++			b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C2, 0x8);
++		} else {
++			b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_R1, 0x1f);
++			b43_radio_write(dev, R2057_CP_KPD_IDAC, 0x3f);
++			b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C1, 0x8);
++			b43_radio_write(dev, R2057_RFPLL_LOOPFILTER_C2, 0x8);
++		}
++		break;
++	/* TODO */
++	}
++
++	/* TODO */
++
++	usleep_range(50, 100);
++
++	/* VCO calibration */
++	b43_radio_mask(dev, R2057_RFPLL_MISC_EN, ~0x01);
++	b43_radio_mask(dev, R2057_RFPLL_MISC_CAL_RESETN, ~0x04);
++	b43_radio_set(dev, R2057_RFPLL_MISC_CAL_RESETN, 0x4);
++	b43_radio_set(dev, R2057_RFPLL_MISC_EN, 0x01);
++	usleep_range(300, 600);
++}
++
++/* Calibrate resistors in LPF of PLL?
++ * http://bcm-v4.sipsolutions.net/PHY/radio205x_rcal
++ */
+ static u8 b43_radio_2057_rcal(struct b43_wldev *dev)
+ {
+ 	struct b43_phy *phy = &dev->phy;
+@@ -603,15 +699,25 @@ static u8 b43_radio_2057_rcal(struct b43
+ 		b43_radio_maskset(dev, 0x1ca, ~0x2, 0x1);
+ 	}
+ 
++	/* Enable */
+ 	b43_radio_set(dev, R2057_RCAL_CONFIG, 0x1);
+ 	udelay(10);
+-	b43_radio_set(dev, R2057_RCAL_CONFIG, 0x3);
+-	if (!b43_radio_wait_value(dev, R2057_RCCAL_N1_1, 1, 1, 100, 1000000)) {
++
++	/* Start */
++	b43_radio_set(dev, R2057_RCAL_CONFIG, 0x2);
++	usleep_range(100, 200);
++
++	/* Stop */
++	b43_radio_mask(dev, R2057_RCAL_CONFIG, ~0x2);
++
++	/* Wait and check for result */
++	if (!b43_radio_wait_value(dev, R2057_RCAL_STATUS, 1, 1, 100, 1000000)) {
+ 		b43err(dev->wl, "Radio 0x2057 rcal timeout\n");
+ 		return 0;
+ 	}
+-	b43_radio_mask(dev, R2057_RCAL_CONFIG, ~0x2);
+ 	tmp = b43_radio_read(dev, R2057_RCAL_STATUS) & 0x3E;
++
++	/* Disable */
+ 	b43_radio_mask(dev, R2057_RCAL_CONFIG, ~0x1);
+ 
+ 	if (phy->radio_rev == 5) {
+@@ -627,7 +733,9 @@ static u8 b43_radio_2057_rcal(struct b43
+ 	return tmp & 0x3e;
+ }
+ 
+-/* http://bcm-v4.sipsolutions.net/PHY/radio2057_rccal */
++/* Calibrate the internal RC oscillator?
++ * http://bcm-v4.sipsolutions.net/PHY/radio2057_rccal
++ */
+ static u16 b43_radio_2057_rccal(struct b43_wldev *dev)
+ {
+ 	struct b43_phy *phy = &dev->phy;
+@@ -635,49 +743,76 @@ static u16 b43_radio_2057_rccal(struct b
+ 			phy->radio_rev == 6);
+ 	u16 tmp;
+ 
++	/* Setup cal */
+ 	if (special) {
+ 		b43_radio_write(dev, R2057_RCCAL_MASTER, 0x61);
+ 		b43_radio_write(dev, R2057_RCCAL_TRC0, 0xC0);
+ 	} else {
+-		b43_radio_write(dev, 0x1AE, 0x61);
++		b43_radio_write(dev, R2057v7_RCCAL_MASTER, 0x61);
+ 		b43_radio_write(dev, R2057_RCCAL_TRC0, 0xE1);
+ 	}
+ 	b43_radio_write(dev, R2057_RCCAL_X1, 0x6E);
++
++	/* Start, wait, stop */
+ 	b43_radio_write(dev, R2057_RCCAL_START_R1_Q1_P1, 0x55);
+-	if (!b43_radio_wait_value(dev, R2057_RCCAL_DONE_OSCCAP, 1, 1, 500,
++	if (!b43_radio_wait_value(dev, R2057_RCCAL_DONE_OSCCAP, 2, 2, 500,
+ 				  5000000))
+ 		b43dbg(dev->wl, "Radio 0x2057 rccal timeout\n");
++	usleep_range(35, 70);
+ 	b43_radio_write(dev, R2057_RCCAL_START_R1_Q1_P1, 0x15);
++	usleep_range(70, 140);
++
++	/* Setup cal */
+ 	if (special) {
+ 		b43_radio_write(dev, R2057_RCCAL_MASTER, 0x69);
+ 		b43_radio_write(dev, R2057_RCCAL_TRC0, 0xB0);
+ 	} else {
+-		b43_radio_write(dev, 0x1AE, 0x69);
++		b43_radio_write(dev, R2057v7_RCCAL_MASTER, 0x69);
+ 		b43_radio_write(dev, R2057_RCCAL_TRC0, 0xD5);
+ 	}
+ 	b43_radio_write(dev, R2057_RCCAL_X1, 0x6E);
++
++	/* Start, wait, stop */
++	usleep_range(35, 70);
+ 	b43_radio_write(dev, R2057_RCCAL_START_R1_Q1_P1, 0x55);
+-	if (!b43_radio_wait_value(dev, R2057_RCCAL_DONE_OSCCAP, 1, 1, 500,
++	usleep_range(70, 140);
++	if (!b43_radio_wait_value(dev, R2057_RCCAL_DONE_OSCCAP, 2, 2, 500,
+ 				  5000000))
+ 		b43dbg(dev->wl, "Radio 0x2057 rccal timeout\n");
++	usleep_range(35, 70);
+ 	b43_radio_write(dev, R2057_RCCAL_START_R1_Q1_P1, 0x15);
++	usleep_range(70, 140);
++
++	/* Setup cal */
+ 	if (special) {
+ 		b43_radio_write(dev, R2057_RCCAL_MASTER, 0x73);
+ 		b43_radio_write(dev, R2057_RCCAL_X1, 0x28);
+ 		b43_radio_write(dev, R2057_RCCAL_TRC0, 0xB0);
+ 	} else {
+-		b43_radio_write(dev, 0x1AE, 0x73);
++		b43_radio_write(dev, R2057v7_RCCAL_MASTER, 0x73);
+ 		b43_radio_write(dev, R2057_RCCAL_X1, 0x6E);
+ 		b43_radio_write(dev, R2057_RCCAL_TRC0, 0x99);
+ 	}
++
++	/* Start, wait, stop */
++	usleep_range(35, 70);
+ 	b43_radio_write(dev, R2057_RCCAL_START_R1_Q1_P1, 0x55);
+-	if (!b43_radio_wait_value(dev, R2057_RCCAL_DONE_OSCCAP, 1, 1, 500,
++	usleep_range(70, 140);
++	if (!b43_radio_wait_value(dev, R2057_RCCAL_DONE_OSCCAP, 2, 2, 500,
+ 				  5000000)) {
+ 		b43err(dev->wl, "Radio 0x2057 rcal timeout\n");
+ 		return 0;
+ 	}
+ 	tmp = b43_radio_read(dev, R2057_RCCAL_DONE_OSCCAP);
++	usleep_range(35, 70);
+ 	b43_radio_write(dev, R2057_RCCAL_START_R1_Q1_P1, 0x15);
++	usleep_range(70, 140);
++
++	if (special)
++		b43_radio_mask(dev, R2057_RCCAL_MASTER, ~0x1);
++	else
++		b43_radio_mask(dev, R2057v7_RCCAL_MASTER, ~0x1);
++
+ 	return tmp;
+ }
+ 
+@@ -700,13 +835,11 @@ static void b43_radio_2057_init_post(str
+ 	b43_radio_mask(dev, R2057_RFPLL_MISC_CAL_RESETN, ~0x78);
+ 	b43_radio_mask(dev, R2057_XTAL_CONFIG2, ~0x80);
+ 
+-	if (dev->phy.n->init_por) {
++	if (dev->phy.do_full_init) {
+ 		b43_radio_2057_rcal(dev);
+ 		b43_radio_2057_rccal(dev);
+ 	}
+ 	b43_radio_mask(dev, R2057_RFPLL_MASTER, ~0x8);
+-
+-	dev->phy.n->init_por = false;
+ }
+ 
+ /* http://bcm-v4.sipsolutions.net/802.11/Radio/2057/Init */
+@@ -800,6 +933,7 @@ static void b43_chantab_radio_2056_uploa
+ static void b43_radio_2056_setup(struct b43_wldev *dev,
+ 				const struct b43_nphy_channeltab_entry_rev3 *e)
+ {
++	struct b43_phy *phy = &dev->phy;
+ 	struct ssb_sprom *sprom = dev->dev->bus_sprom;
+ 	enum ieee80211_band band = b43_current_band(dev->wl);
+ 	u16 offset;
+@@ -897,7 +1031,7 @@ static void b43_radio_2056_setup(struct
+ 					offset | B2056_TX_MIXG_BOOST_TUNE,
+ 					mixg_boost);
+ 			} else {
+-				bias = dev->phy.is_40mhz ? 0x40 : 0x20;
++				bias = b43_is_40mhz(dev) ? 0x40 : 0x20;
+ 				b43_radio_write(dev,
+ 					offset | B2056_TX_INTPAG_IMAIN_STAT,
+ 					bias);
+@@ -911,7 +1045,7 @@ static void b43_radio_2056_setup(struct
+ 			b43_radio_write(dev, offset | B2056_TX_PA_SPARE1, 0xee);
+ 		}
+ 	} else if (dev->phy.n->ipa5g_on && band == IEEE80211_BAND_5GHZ) {
+-		u16 freq = dev->phy.channel_freq;
++		u16 freq = phy->chandef->chan->center_freq;
+ 		if (freq < 5100) {
+ 			paa_boost = 0xA;
+ 			pada_boost = 0x77;
+@@ -1028,7 +1162,7 @@ static void b43_radio_init2056_post(stru
+ 	b43_radio_mask(dev, B2056_SYN_COM_RESET, ~0x2);
+ 	b43_radio_mask(dev, B2056_SYN_PLL_MAST2, ~0xFC);
+ 	b43_radio_mask(dev, B2056_SYN_RCCAL_CTRL0, ~0x1);
+-	if (dev->phy.n->init_por)
++	if (dev->phy.do_full_init)
+ 		b43_radio_2056_rcal(dev);
+ }
+ 
+@@ -1041,8 +1175,6 @@ static void b43_radio_init2056(struct b4
+ 	b43_radio_init2056_pre(dev);
+ 	b2056_upload_inittabs(dev, 0, 0);
+ 	b43_radio_init2056_post(dev);
+-
+-	dev->phy.n->init_por = false;
+ }
+ 
+ /**************************************************
+@@ -1214,8 +1346,7 @@ static u16 b43_nphy_gen_load_samples(str
+ 	u16 bw, len, rot, angle;
+ 	struct b43_c32 *samples;
+ 
+-
+-	bw = (dev->phy.is_40mhz) ? 40 : 20;
++	bw = b43_is_40mhz(dev) ? 40 : 20;
+ 	len = bw << 3;
+ 
+ 	if (test) {
+@@ -1224,7 +1355,7 @@ static u16 b43_nphy_gen_load_samples(str
+ 		else
+ 			bw = 80;
+ 
+-		if (dev->phy.is_40mhz)
++		if (b43_is_40mhz(dev))
+ 			bw <<= 1;
+ 
+ 		len = bw << 1;
+@@ -1252,7 +1383,8 @@ static u16 b43_nphy_gen_load_samples(str
+ 
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/RunSamples */
+ static void b43_nphy_run_samples(struct b43_wldev *dev, u16 samps, u16 loops,
+-					u16 wait, bool iqmode, bool dac_test)
++				 u16 wait, bool iqmode, bool dac_test,
++				 bool modify_bbmult)
+ {
+ 	struct b43_phy_n *nphy = dev->phy.n;
+ 	int i;
+@@ -1266,12 +1398,10 @@ static void b43_nphy_run_samples(struct
+ 		nphy->bb_mult_save = (tmp & 0xFFFF) | 0x80000000;
+ 	}
+ 
+-	/* TODO: add modify_bbmult argument */
+-	if (!dev->phy.is_40mhz)
+-		tmp = 0x6464;
+-	else
+-		tmp = 0x4747;
+-	b43_ntab_write(dev, B43_NTAB16(15, 87), tmp);
++	if (modify_bbmult) {
++		tmp = !b43_is_40mhz(dev) ? 0x6464 : 0x4747;
++		b43_ntab_write(dev, B43_NTAB16(15, 87), tmp);
++	}
+ 
+ 	b43_phy_write(dev, B43_NPHY_SAMP_DEPCNT, (samps - 1));
+ 
+@@ -1289,10 +1419,8 @@ static void b43_nphy_run_samples(struct
+ 		b43_phy_mask(dev, B43_NPHY_IQLOCAL_CMDGCTL, 0x7FFF);
+ 		b43_phy_set(dev, B43_NPHY_IQLOCAL_CMDGCTL, 0x8000);
+ 	} else {
+-		if (dac_test)
+-			b43_phy_write(dev, B43_NPHY_SAMP_CMD, 5);
+-		else
+-			b43_phy_write(dev, B43_NPHY_SAMP_CMD, 1);
++		tmp = dac_test ? 5 : 1;
++		b43_phy_write(dev, B43_NPHY_SAMP_CMD, tmp);
+ 	}
+ 	for (i = 0; i < 100; i++) {
+ 		if (!(b43_phy_read(dev, B43_NPHY_RFSEQST) & 1)) {
+@@ -1679,6 +1807,7 @@ static int b43_nphy_poll_rssi(struct b43
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/RSSICalRev3 */
+ static void b43_nphy_rev3_rssi_cal(struct b43_wldev *dev)
+ {
++	struct b43_phy *phy = &dev->phy;
+ 	struct b43_phy_n *nphy = dev->phy.n;
+ 
+ 	u16 saved_regs_phy_rfctl[2];
+@@ -1901,9 +2030,9 @@ static void b43_nphy_rev3_rssi_cal(struc
+ 
+ 	/* Remember for which channel we store configuration */
+ 	if (b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ)
+-		nphy->rssical_chanspec_2G.center_freq = dev->phy.channel_freq;
++		nphy->rssical_chanspec_2G.center_freq = phy->chandef->chan->center_freq;
+ 	else
+-		nphy->rssical_chanspec_5G.center_freq = dev->phy.channel_freq;
++		nphy->rssical_chanspec_5G.center_freq = phy->chandef->chan->center_freq;
+ 
+ 	/* End of calibration, restore configuration */
+ 	b43_nphy_classifier(dev, 7, class);
+@@ -2196,7 +2325,7 @@ static void b43_nphy_gain_ctl_workaround
+ 	b43_phy_write(dev, B43_NPHY_C1_NBCLIPTHRES, 0x84);
+ 	b43_phy_write(dev, B43_NPHY_C2_NBCLIPTHRES, 0x84);
+ 
+-	if (!dev->phy.is_40mhz) {
++	if (!b43_is_40mhz(dev)) {
+ 		/* Set dwell lengths */
+ 		b43_phy_write(dev, B43_NPHY_CLIP1_NBDWELL_LEN, 0x002B);
+ 		b43_phy_write(dev, B43_NPHY_CLIP2_NBDWELL_LEN, 0x002B);
+@@ -2210,7 +2339,7 @@ static void b43_nphy_gain_ctl_workaround
+ 	b43_phy_maskset(dev, B43_NPHY_C2_CLIPWBTHRES,
+ 			~B43_NPHY_C2_CLIPWBTHRES_CLIP2, 21);
+ 
+-	if (!dev->phy.is_40mhz) {
++	if (!b43_is_40mhz(dev)) {
+ 		b43_phy_maskset(dev, B43_NPHY_C1_CGAINI,
+ 			~B43_NPHY_C1_CGAINI_GAINBKOFF, 0x1);
+ 		b43_phy_maskset(dev, B43_NPHY_C2_CGAINI,
+@@ -2225,12 +2354,12 @@ static void b43_nphy_gain_ctl_workaround
+ 
+ 	if (nphy->gain_boost) {
+ 		if (b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ &&
+-			dev->phy.is_40mhz)
++		    b43_is_40mhz(dev))
+ 			code = 4;
+ 		else
+ 			code = 5;
+ 	} else {
+-		code = dev->phy.is_40mhz ? 6 : 7;
++		code = b43_is_40mhz(dev) ? 6 : 7;
+ 	}
+ 
+ 	/* Set HPVGA2 index */
+@@ -2302,7 +2431,7 @@ static void b43_nphy_gain_ctl_workaround
+ static u16 b43_nphy_read_lpf_ctl(struct b43_wldev *dev, u16 offset)
+ {
+ 	if (!offset)
+-		offset = (dev->phy.is_40mhz) ? 0x159 : 0x154;
++		offset = b43_is_40mhz(dev) ? 0x159 : 0x154;
+ 	return b43_ntab_read(dev, B43_NTAB16(7, offset)) & 0x7;
+ }
+ 
+@@ -2375,13 +2504,13 @@ static void b43_nphy_workarounds_rev7plu
+ 	lpf_40 = b43_nphy_read_lpf_ctl(dev, 0x159);
+ 	lpf_11b = b43_nphy_read_lpf_ctl(dev, 0x152);
+ 	if (b43_nphy_ipa(dev)) {
+-		if ((phy->radio_rev == 5 && phy->is_40mhz) ||
++		if ((phy->radio_rev == 5 && b43_is_40mhz(dev)) ||
+ 		    phy->radio_rev == 7 || phy->radio_rev == 8) {
+ 			bcap_val = b43_radio_read(dev, 0x16b);
+ 			scap_val = b43_radio_read(dev, 0x16a);
+ 			scap_val_11b = scap_val;
+ 			bcap_val_11b = bcap_val;
+-			if (phy->radio_rev == 5 && phy->is_40mhz) {
++			if (phy->radio_rev == 5 && b43_is_40mhz(dev)) {
+ 				scap_val_11n_20 = scap_val;
+ 				bcap_val_11n_20 = bcap_val;
+ 				scap_val_11n_40 = bcap_val_11n_40 = 0xc;
+@@ -2523,7 +2652,7 @@ static void b43_nphy_workarounds_rev7plu
+ 					}
+ 				}
+ 			} else if (phy->radio_rev == 7 || phy->radio_rev == 8) {
+-				if (!phy->is_40mhz) {
++				if (!b43_is_40mhz(dev)) {
+ 					b43_radio_write(dev, 0x5F, 0x14);
+ 					b43_radio_write(dev, 0xE8, 0x12);
+ 				} else {
+@@ -2532,7 +2661,7 @@ static void b43_nphy_workarounds_rev7plu
+ 				}
+ 			}
+ 		} else {
+-			u16 freq = phy->channel_freq;
++			u16 freq = phy->chandef->chan->center_freq;
+ 			if ((freq >= 5180 && freq <= 5230) ||
+ 			    (freq >= 5745 && freq <= 5805)) {
+ 				b43_radio_write(dev, 0x7D, 0xFF);
+@@ -2596,7 +2725,7 @@ static void b43_nphy_workarounds_rev7plu
+ 	b43_ntab_write(dev, B43_NTAB16(7, 0x123), 0x77);
+ 	b43_ntab_write(dev, B43_NTAB16(7, 0x12A), 0x77);
+ 
+-	if (!phy->is_40mhz) {
++	if (!b43_is_40mhz(dev)) {
+ 		b43_ntab_write(dev, B43_NTAB32(16, 0x03), 0x18D);
+ 		b43_ntab_write(dev, B43_NTAB32(16, 0x7F), 0x18D);
+ 	} else {
+@@ -2695,7 +2824,7 @@ static void b43_nphy_workarounds_rev3plu
+ 
+ 	b43_phy_maskset(dev, B43_NPHY_SGILTRNOFFSET, 0xF0FF, 0x0700);
+ 
+-	if (!dev->phy.is_40mhz) {
++	if (!b43_is_40mhz(dev)) {
+ 		b43_ntab_write(dev, B43_NTAB32(16, 3), 0x18D);
+ 		b43_ntab_write(dev, B43_NTAB32(16, 127), 0x18D);
+ 	} else {
+@@ -2950,12 +3079,13 @@ static void b43_nphy_workarounds(struct
+  * http://bcm-v4.sipsolutions.net/802.11/PHY/N/TXTone
+  */
+ static int b43_nphy_tx_tone(struct b43_wldev *dev, u32 freq, u16 max_val,
+-				bool iqmode, bool dac_test)
++			    bool iqmode, bool dac_test, bool modify_bbmult)
+ {
+ 	u16 samp = b43_nphy_gen_load_samples(dev, freq, max_val, dac_test);
+ 	if (samp == 0)
+ 		return -1;
+-	b43_nphy_run_samples(dev, samp, 0xFFFF, 0, iqmode, dac_test);
++	b43_nphy_run_samples(dev, samp, 0xFFFF, 0, iqmode, dac_test,
++			     modify_bbmult);
+ 	return 0;
+ }
+ 
+@@ -3118,7 +3248,7 @@ static void b43_nphy_tx_power_ctrl(struc
+ 			b43_phy_maskset(dev, B43_NPHY_BPHY_CTL3,
+ 				~B43_NPHY_BPHY_CTL3_SCALE, 0x5A);
+ 
+-		if (dev->phy.rev < 2 && dev->phy.is_40mhz)
++		if (dev->phy.rev < 2 && b43_is_40mhz(dev))
+ 			b43_hf_write(dev, b43_hf_read(dev) | B43_HF_TSSIRPSMW);
+ 	} else {
+ 		b43_ntab_write_bulk(dev, B43_NTAB16(26, 64), 84,
+@@ -3172,7 +3302,7 @@ static void b43_nphy_tx_power_ctrl(struc
+ 		else if (dev->phy.rev < 2)
+ 			b43_phy_maskset(dev, B43_NPHY_BPHY_CTL3, ~0xFF, 0x40);
+ 
+-		if (dev->phy.rev < 2 && dev->phy.is_40mhz)
++		if (dev->phy.rev < 2 && b43_is_40mhz(dev))
+ 			b43_hf_write(dev, b43_hf_read(dev) & ~B43_HF_TSSIRPSMW);
+ 
+ 		if (b43_nphy_ipa(dev)) {
+@@ -3188,12 +3318,13 @@ static void b43_nphy_tx_power_ctrl(struc
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/TxPwrFix */
+ static void b43_nphy_tx_power_fix(struct b43_wldev *dev)
+ {
++	struct b43_phy *phy = &dev->phy;
+ 	struct b43_phy_n *nphy = dev->phy.n;
+ 	struct ssb_sprom *sprom = dev->dev->bus_sprom;
+ 
+ 	u8 txpi[2], bbmult, i;
+ 	u16 tmp, radio_gain, dac_gain;
+-	u16 freq = dev->phy.channel_freq;
++	u16 freq = phy->chandef->chan->center_freq;
+ 	u32 txgain;
+ 	/* u32 gaintbl; rev3+ */
+ 
+@@ -3238,7 +3369,11 @@ static void b43_nphy_tx_power_fix(struct
+ 	*/
+ 
+ 	for (i = 0; i < 2; i++) {
+-		txgain = *(b43_nphy_get_tx_gain_table(dev) + txpi[i]);
++		const u32 *table = b43_nphy_get_tx_gain_table(dev);
++
++		if (!table)
++			break;
++		txgain = *(table + txpi[i]);
+ 
+ 		if (dev->phy.rev >= 3)
+ 			radio_gain = (txgain >> 16) & 0x1FFFF;
+@@ -3392,7 +3527,7 @@ static void b43_nphy_tx_power_ctl_idle_t
+ 		b43_nphy_rf_ctl_override(dev, 0x2000, 0, 3, false);
+ 
+ 	b43_nphy_stop_playback(dev);
+-	b43_nphy_tx_tone(dev, 0xFA0, 0, false, false);
++	b43_nphy_tx_tone(dev, 4000, 0, false, false, false);
+ 	udelay(20);
+ 	tmp = b43_nphy_poll_rssi(dev, N_RSSI_TSSI_2G, rssi, 1);
+ 	b43_nphy_stop_playback(dev);
+@@ -3443,21 +3578,21 @@ static void b43_nphy_tx_prepare_adjusted
+ 		delta = 0;
+ 		switch (stf_mode) {
+ 		case 0:
+-			if (dev->phy.is_40mhz && dev->phy.rev >= 5) {
++			if (b43_is_40mhz(dev) && dev->phy.rev >= 5) {
+ 				idx = 68;
+ 			} else {
+ 				delta = 1;
+-				idx = dev->phy.is_40mhz ? 52 : 4;
++				idx = b43_is_40mhz(dev) ? 52 : 4;
+ 			}
+ 			break;
+ 		case 1:
+-			idx = dev->phy.is_40mhz ? 76 : 28;
++			idx = b43_is_40mhz(dev) ? 76 : 28;
+ 			break;
+ 		case 2:
+-			idx = dev->phy.is_40mhz ? 84 : 36;
++			idx = b43_is_40mhz(dev) ? 84 : 36;
+ 			break;
+ 		case 3:
+-			idx = dev->phy.is_40mhz ? 92 : 44;
++			idx = b43_is_40mhz(dev) ? 92 : 44;
+ 			break;
+ 		}
+ 
+@@ -3478,6 +3613,7 @@ static void b43_nphy_tx_prepare_adjusted
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/TxPwrCtrlSetup */
+ static void b43_nphy_tx_power_ctl_setup(struct b43_wldev *dev)
+ {
++	struct b43_phy *phy = &dev->phy;
+ 	struct b43_phy_n *nphy = dev->phy.n;
+ 	struct ssb_sprom *sprom = dev->dev->bus_sprom;
+ 
+@@ -3487,7 +3623,7 @@ static void b43_nphy_tx_power_ctl_setup(
+ 	s32 num, den, pwr;
+ 	u32 regval[64];
+ 
+-	u16 freq = dev->phy.channel_freq;
++	u16 freq = phy->chandef->chan->center_freq;
+ 	u16 tmp;
+ 	u16 r; /* routing */
+ 	u8 i, c;
+@@ -3651,6 +3787,9 @@ static void b43_nphy_tx_gain_table_uploa
+ 	int i;
+ 
+ 	table = b43_nphy_get_tx_gain_table(dev);
++	if (!table)
++		return;
++
+ 	b43_ntab_write_bulk(dev, B43_NTAB32(26, 192), 128, table);
+ 	b43_ntab_write_bulk(dev, B43_NTAB32(27, 192), 128, table);
+ 
+@@ -3709,21 +3848,28 @@ static void b43_nphy_pa_override(struct
+ 	}
+ }
+ 
+-/* http://bcm-v4.sipsolutions.net/802.11/PHY/N/TxLpFbw */
+-static void b43_nphy_tx_lp_fbw(struct b43_wldev *dev)
++/*
++ * TX low-pass filter bandwidth setup
++ * http://bcm-v4.sipsolutions.net/802.11/PHY/N/TxLpFbw
++ */
++static void b43_nphy_tx_lpf_bw(struct b43_wldev *dev)
+ {
+ 	u16 tmp;
+ 
+-	if (dev->phy.rev >= 3) {
+-		if (b43_nphy_ipa(dev)) {
+-			tmp = 4;
+-			b43_phy_write(dev, B43_NPHY_TXF_40CO_B32S2,
+-			      (((((tmp << 3) | tmp) << 3) | tmp) << 3) | tmp);
+-		}
++	if (dev->phy.rev < 3 || dev->phy.rev >= 7)
++		return;
+ 
+-		tmp = 1;
++	if (b43_nphy_ipa(dev))
++		tmp = b43_is_40mhz(dev) ? 5 : 4;
++	else
++		tmp = b43_is_40mhz(dev) ? 3 : 1;
++	b43_phy_write(dev, B43_NPHY_TXF_40CO_B32S2,
++		      (tmp << 9) | (tmp << 6) | (tmp << 3) | tmp);
++
++	if (b43_nphy_ipa(dev)) {
++		tmp = b43_is_40mhz(dev) ? 4 : 1;
+ 		b43_phy_write(dev, B43_NPHY_TXF_40CO_B1S2,
+-			      (((((tmp << 3) | tmp) << 3) | tmp) << 3) | tmp);
++			      (tmp << 9) | (tmp << 6) | (tmp << 3) | tmp);
+ 	}
+ }
+ 
+@@ -3996,7 +4142,7 @@ static void b43_nphy_spur_workaround(str
+ 
+ 	if (nphy->gband_spurwar_en) {
+ 		/* TODO: N PHY Adjust Analog Pfbw (7) */
+-		if (channel == 11 && dev->phy.is_40mhz)
++		if (channel == 11 && b43_is_40mhz(dev))
+ 			; /* TODO: N PHY Adjust Min Noise Var(2, tone, noise)*/
+ 		else
+ 			; /* TODO: N PHY Adjust Min Noise Var(0, NULL, NULL)*/
+@@ -4290,7 +4436,7 @@ static void b43_nphy_int_pa_set_tx_dig_f
+ 			b43_phy_write(dev, B43_PHY_N(offset[i] + j),
+ 					tbl_tx_filter_coef_rev4[i][j]);
+ 
+-	if (dev->phy.is_40mhz) {
++	if (b43_is_40mhz(dev)) {
+ 		for (j = 0; j < 15; j++)
+ 			b43_phy_write(dev, B43_PHY_N(offset[0] + j),
+ 					tbl_tx_filter_coef_rev4[3][j]);
+@@ -4349,6 +4495,9 @@ static struct nphy_txgains b43_nphy_get_
+ 
+ 		for (i = 0; i < 2; ++i) {
+ 			table = b43_nphy_get_tx_gain_table(dev);
++			if (!table)
++				break;
++
+ 			if (dev->phy.rev >= 3) {
+ 				target.ipa[i] = (table[index[i]] >> 16) & 0xF;
+ 				target.pad[i] = (table[index[i]] >> 20) & 0xF;
+@@ -4504,8 +4653,9 @@ static void b43_nphy_save_cal(struct b43
+ 		txcal_radio_regs[2] = b43_radio_read(dev, 0x8D);
+ 		txcal_radio_regs[3] = b43_radio_read(dev, 0xBC);
+ 	}
+-	iqcal_chanspec->center_freq = dev->phy.channel_freq;
+-	iqcal_chanspec->channel_type = dev->phy.channel_type;
++	iqcal_chanspec->center_freq = dev->phy.chandef->chan->center_freq;
++	iqcal_chanspec->channel_type =
++				cfg80211_get_chandef_type(dev->phy.chandef);
+ 	b43_ntab_read_bulk(dev, B43_NTAB16(15, 80), 8, table);
+ 
+ 	if (nphy->hang_avoid)
+@@ -4585,6 +4735,7 @@ static int b43_nphy_cal_tx_iq_lo(struct
+ 				struct nphy_txgains target,
+ 				bool full, bool mphase)
+ {
++	struct b43_phy *phy = &dev->phy;
+ 	struct b43_phy_n *nphy = dev->phy.n;
+ 	int i;
+ 	int error = 0;
+@@ -4625,7 +4776,7 @@ static int b43_nphy_cal_tx_iq_lo(struct
+ 		(dev->phy.rev == 5 && nphy->ipa2g_on &&
+ 		b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ);
+ 	if (phy6or5x) {
+-		if (dev->phy.is_40mhz) {
++		if (b43_is_40mhz(dev)) {
+ 			b43_ntab_write_bulk(dev, B43_NTAB16(15, 0), 18,
+ 					tbl_tx_iqlo_cal_loft_ladder_40);
+ 			b43_ntab_write_bulk(dev, B43_NTAB16(15, 32), 18,
+@@ -4640,16 +4791,16 @@ static int b43_nphy_cal_tx_iq_lo(struct
+ 
+ 	b43_phy_write(dev, B43_NPHY_IQLOCAL_CMDGCTL, 0x8AA9);
+ 
+-	if (!dev->phy.is_40mhz)
++	if (!b43_is_40mhz(dev))
+ 		freq = 2500;
+ 	else
+ 		freq = 5000;
+ 
+ 	if (nphy->mphase_cal_phase_id > 2)
+-		b43_nphy_run_samples(dev, (dev->phy.is_40mhz ? 40 : 20) * 8,
+-					0xFFFF, 0, true, false);
++		b43_nphy_run_samples(dev, (b43_is_40mhz(dev) ? 40 : 20) * 8,
++				     0xFFFF, 0, true, false, false);
+ 	else
+-		error = b43_nphy_tx_tone(dev, freq, 250, true, false);
++		error = b43_nphy_tx_tone(dev, freq, 250, true, false, false);
+ 
+ 	if (error == 0) {
+ 		if (nphy->mphase_cal_phase_id > 2) {
+@@ -4777,9 +4928,9 @@ static int b43_nphy_cal_tx_iq_lo(struct
+ 						nphy->txiqlocal_bestc);
+ 			nphy->txiqlocal_coeffsvalid = true;
+ 			nphy->txiqlocal_chanspec.center_freq =
+-							dev->phy.channel_freq;
++						phy->chandef->chan->center_freq;
+ 			nphy->txiqlocal_chanspec.channel_type =
+-							dev->phy.channel_type;
++					cfg80211_get_chandef_type(phy->chandef);
+ 		} else {
+ 			length = 11;
+ 			if (dev->phy.rev < 3)
+@@ -4815,8 +4966,8 @@ static void b43_nphy_reapply_tx_cal_coef
+ 	bool equal = true;
+ 
+ 	if (!nphy->txiqlocal_coeffsvalid ||
+-	    nphy->txiqlocal_chanspec.center_freq != dev->phy.channel_freq ||
+-	    nphy->txiqlocal_chanspec.channel_type != dev->phy.channel_type)
++	    nphy->txiqlocal_chanspec.center_freq != dev->phy.chandef->chan->center_freq ||
++	    nphy->txiqlocal_chanspec.channel_type != cfg80211_get_chandef_type(dev->phy.chandef))
+ 		return;
+ 
+ 	b43_ntab_read_bulk(dev, B43_NTAB16(15, 80), 7, buffer);
+@@ -4972,11 +5123,11 @@ static int b43_nphy_rev2_cal_rx_iq(struc
+ 			if (playtone) {
+ 				ret = b43_nphy_tx_tone(dev, 4000,
+ 						(nphy->rxcalparams & 0xFFFF),
+-						false, false);
++						false, false, true);
+ 				playtone = false;
+ 			} else {
+-				b43_nphy_run_samples(dev, 160, 0xFFFF, 0,
+-							false, false);
++				b43_nphy_run_samples(dev, 160, 0xFFFF, 0, false,
++						     false, true);
+ 			}
+ 
+ 			if (ret == 0) {
+@@ -5348,7 +5499,7 @@ static int b43_phy_initn(struct b43_wlde
+ 	b43_phy_write(dev, B43_NPHY_TXMACDELAY, 0x0320);
+ 	if (phy->rev >= 3 && phy->rev <= 6)
+ 		b43_phy_write(dev, B43_NPHY_PLOAD_CSENSE_EXTLEN, 0x0032);
+-	b43_nphy_tx_lp_fbw(dev);
++	b43_nphy_tx_lpf_bw(dev);
+ 	if (phy->rev >= 3)
+ 		b43_nphy_spur_workaround(dev);
+ 
+@@ -5434,14 +5585,14 @@ static void b43_nphy_channel_setup(struc
+ 	if (dev->phy.rev < 3)
+ 		b43_nphy_adjust_lna_gain_table(dev);
+ 
+-	b43_nphy_tx_lp_fbw(dev);
++	b43_nphy_tx_lpf_bw(dev);
+ 
+ 	if (dev->phy.rev >= 3 &&
+ 	    dev->phy.n->spur_avoid != B43_SPUR_AVOID_DISABLE) {
+ 		bool avoid = false;
+ 		if (dev->phy.n->spur_avoid == B43_SPUR_AVOID_FORCE) {
+ 			avoid = true;
+-		} else if (!b43_channel_type_is_40mhz(phy->channel_type)) {
++		} else if (!b43_is_40mhz(dev)) {
+ 			if ((ch >= 5 && ch <= 8) || ch == 13 || ch == 14)
+ 				avoid = true;
+ 		} else { /* 40MHz */
+@@ -5488,10 +5639,17 @@ static int b43_nphy_set_channel(struct b
+ 
+ 	const struct b43_nphy_channeltab_entry_rev2 *tabent_r2 = NULL;
+ 	const struct b43_nphy_channeltab_entry_rev3 *tabent_r3 = NULL;
++	const struct b43_nphy_chantabent_rev7 *tabent_r7 = NULL;
++	const struct b43_nphy_chantabent_rev7_2g *tabent_r7_2g = NULL;
+ 
+ 	u8 tmp;
+ 
+-	if (dev->phy.rev >= 3) {
++	if (phy->rev >= 7) {
++		r2057_get_chantabent_rev7(dev, channel->center_freq,
++					  &tabent_r7, &tabent_r7_2g);
++		if (!tabent_r7 && !tabent_r7_2g)
++			return -ESRCH;
++	} else if (phy->rev >= 3) {
+ 		tabent_r3 = b43_nphy_get_chantabent_rev3(dev,
+ 							channel->center_freq);
+ 		if (!tabent_r3)
+@@ -5506,20 +5664,36 @@ static int b43_nphy_set_channel(struct b
+ 	/* Channel is set later in common code, but we need to set it on our
+ 	   own to let this function's subcalls work properly. */
+ 	phy->channel = channel->hw_value;
+-	phy->channel_freq = channel->center_freq;
+ 
++#if 0
+ 	if (b43_channel_type_is_40mhz(phy->channel_type) !=
+ 		b43_channel_type_is_40mhz(channel_type))
+ 		; /* TODO: BMAC BW Set (channel_type) */
++#endif
+ 
+-	if (channel_type == NL80211_CHAN_HT40PLUS)
+-		b43_phy_set(dev, B43_NPHY_RXCTL,
+-				B43_NPHY_RXCTL_BSELU20);
+-	else if (channel_type == NL80211_CHAN_HT40MINUS)
+-		b43_phy_mask(dev, B43_NPHY_RXCTL,
+-				~B43_NPHY_RXCTL_BSELU20);
++	if (channel_type == NL80211_CHAN_HT40PLUS) {
++		b43_phy_set(dev, B43_NPHY_RXCTL, B43_NPHY_RXCTL_BSELU20);
++		if (phy->rev >= 7)
++			b43_phy_set(dev, 0x310, 0x8000);
++	} else if (channel_type == NL80211_CHAN_HT40MINUS) {
++		b43_phy_mask(dev, B43_NPHY_RXCTL, ~B43_NPHY_RXCTL_BSELU20);
++		if (phy->rev >= 7)
++			b43_phy_mask(dev, 0x310, (u16)~0x8000);
++	}
+ 
+-	if (dev->phy.rev >= 3) {
++	if (phy->rev >= 7) {
++		const struct b43_phy_n_sfo_cfg *phy_regs = tabent_r7 ?
++			&(tabent_r7->phy_regs) : &(tabent_r7_2g->phy_regs);
++
++		if (phy->radio_rev <= 4 || phy->radio_rev == 6) {
++			tmp = (channel->band == IEEE80211_BAND_5GHZ) ? 2 : 0;
++			b43_radio_maskset(dev, R2057_TIA_CONFIG_CORE0, ~2, tmp);
++			b43_radio_maskset(dev, R2057_TIA_CONFIG_CORE1, ~2, tmp);
++		}
++
++		b43_radio_2057_setup(dev, tabent_r7, tabent_r7_2g);
++		b43_nphy_channel_setup(dev, phy_regs, channel);
++	} else if (phy->rev >= 3) {
+ 		tmp = (channel->band == IEEE80211_BAND_5GHZ) ? 4 : 0;
+ 		b43_radio_maskset(dev, 0x08, 0xFFFB, tmp);
+ 		b43_radio_2056_setup(dev, tabent_r3);
+@@ -5561,7 +5735,6 @@ static void b43_nphy_op_prepare_structs(
+ 	nphy->hang_avoid = (phy->rev == 3 || phy->rev == 4);
+ 	nphy->spur_avoid = (phy->rev >= 3) ?
+ 				B43_SPUR_AVOID_AUTO : B43_SPUR_AVOID_DISABLE;
+-	nphy->init_por = true;
+ 	nphy->gain_boost = true; /* this way we follow wl, assume it is true */
+ 	nphy->txrx_chain = 2; /* sth different than 0 and 1 for now */
+ 	nphy->phyrxchain = 3; /* to avoid b43_nphy_set_rx_core_state like wl */
+@@ -5602,8 +5775,6 @@ static void b43_nphy_op_prepare_structs(
+ 		nphy->ipa2g_on = sprom->fem.ghz2.extpa_gain == 2;
+ 		nphy->ipa5g_on = sprom->fem.ghz5.extpa_gain == 2;
+ 	}
+-
+-	nphy->init_por = true;
+ }
+ 
+ static void b43_nphy_op_free(struct b43_wldev *dev)
+@@ -5714,10 +5885,12 @@ static void b43_nphy_op_software_rfkill(
+ 		}
+ 	} else {
+ 		if (dev->phy.rev >= 7) {
+-			b43_radio_2057_init(dev);
++			if (!dev->phy.radio_on)
++				b43_radio_2057_init(dev);
+ 			b43_switch_channel(dev, dev->phy.channel);
+ 		} else if (dev->phy.rev >= 3) {
+-			b43_radio_init2056(dev);
++			if (!dev->phy.radio_on)
++				b43_radio_init2056(dev);
+ 			b43_switch_channel(dev, dev->phy.channel);
+ 		} else {
+ 			b43_radio_init2055(dev);
+--- a/drivers/net/wireless/b43/phy_n.h
++++ b/drivers/net/wireless/b43/phy_n.h
+@@ -931,7 +931,6 @@ struct b43_phy_n {
+ 	u16 papd_epsilon_offset[2];
+ 	s32 preamble_override;
+ 	u32 bb_mult_save;
+-	bool init_por;
+ 
+ 	bool gain_boost;
+ 	bool elna_gain_config;
+--- a/drivers/net/wireless/b43/tables_nphy.c
++++ b/drivers/net/wireless/b43/tables_nphy.c
+@@ -2146,7 +2146,196 @@ static const u16 b43_ntab_antswctl_r3[4]
+ 	}
+ };
+ 
+-/* TX gain tables */
++/* static tables, PHY revision >= 7 */
++
++/* Copied from brcmsmac (5.75.11) */
++static const u32 b43_ntab_tmap_r7[] = {
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00000888,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0xf1111110, 0x11111111, 0x11f11111, 0x00000111,
++	0x11000000, 0x1111f111, 0x11111111, 0x111111f1,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x000aa888,
++	0x88880000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0xa1111110, 0x11111111, 0x11c11111, 0x00000111,
++	0x11000000, 0x1111a111, 0x11111111, 0x111111a1,
++	0xa2222220, 0x22222222, 0x22c22222, 0x00000222,
++	0x22000000, 0x2222a222, 0x22222222, 0x222222a2,
++	0xf1111110, 0x11111111, 0x11f11111, 0x00011111,
++	0x11110000, 0x1111f111, 0x11111111, 0x111111f1,
++	0xa8aa88a0, 0xa88888a8, 0xa8a8a88a, 0x00088aaa,
++	0xaaaa0000, 0xa8a8aa88, 0xa88aaaaa, 0xaaaa8a8a,
++	0xaaa8aaa0, 0x8aaa8aaa, 0xaa8a8a8a, 0x000aaa88,
++	0x8aaa0000, 0xaaa8a888, 0x8aa88a8a, 0x8a88a888,
++	0x08080a00, 0x0a08080a, 0x080a0a08, 0x00080808,
++	0x080a0000, 0x080a0808, 0x080a0808, 0x0a0a0a08,
++	0xa0a0a0a0, 0x80a0a080, 0x8080a0a0, 0x00008080,
++	0x80a00000, 0x80a080a0, 0xa080a0a0, 0x8080a0a0,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x99999000, 0x9b9b99bb, 0x9bb99999, 0x9999b9b9,
++	0x9b99bb90, 0x9bbbbb9b, 0x9b9b9bb9, 0x00000999,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00aaa888,
++	0x22000000, 0x2222b222, 0x22222222, 0x222222b2,
++	0xb2222220, 0x22222222, 0x22d22222, 0x00000222,
++	0x11000000, 0x1111a111, 0x11111111, 0x111111a1,
++	0xa1111110, 0x11111111, 0x11c11111, 0x00000111,
++	0x33000000, 0x3333b333, 0x33333333, 0x333333b3,
++	0xb3333330, 0x33333333, 0x33d33333, 0x00000333,
++	0x22000000, 0x2222a222, 0x22222222, 0x222222a2,
++	0xa2222220, 0x22222222, 0x22c22222, 0x00000222,
++	0x99b99b00, 0x9b9b99bb, 0x9bb99999, 0x9999b9b9,
++	0x9b99bb99, 0x9bbbbb9b, 0x9b9b9bb9, 0x00000999,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa88, 0x8aaaaa8a, 0x8a8a8aa8, 0x08aaa888,
++	0x22222200, 0x2222f222, 0x22222222, 0x222222f2,
++	0x22222222, 0x22222222, 0x22f22222, 0x00000222,
++	0x11000000, 0x1111f111, 0x11111111, 0x11111111,
++	0xf1111111, 0x11111111, 0x11f11111, 0x01111111,
++	0xbb9bb900, 0xb9b9bb99, 0xb99bbbbb, 0xbbbb9b9b,
++	0xb9bb99bb, 0xb99999b9, 0xb9b9b99b, 0x00000bbb,
++	0xaa000000, 0xa8a8aa88, 0xa88aaaaa, 0xaaaa8a8a,
++	0xa8aa88aa, 0xa88888a8, 0xa8a8a88a, 0x0a888aaa,
++	0xaa000000, 0xa8a8aa88, 0xa88aaaaa, 0xaaaa8a8a,
++	0xa8aa88a0, 0xa88888a8, 0xa8a8a88a, 0x00000aaa,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00000888,
++	0xbbbbbb00, 0x999bbbbb, 0x9bb99b9b, 0xb9b9b9bb,
++	0xb9b99bbb, 0xb9b9b9bb, 0xb9bb9b99, 0x00000999,
++	0x8a000000, 0xaa88a888, 0xa88888aa, 0xa88a8a88,
++	0xa88aa88a, 0x88a8aaaa, 0xa8aa8aaa, 0x0888a88a,
++	0x0b0b0b00, 0x090b0b0b, 0x0b090b0b, 0x0909090b,
++	0x09090b0b, 0x09090b0b, 0x09090b09, 0x00000909,
++	0x0a000000, 0x0a080808, 0x080a080a, 0x080a0a08,
++	0x080a080a, 0x0808080a, 0x0a0a0a08, 0x0808080a,
++	0xb0b0b000, 0x9090b0b0, 0x90b09090, 0xb0b0b090,
++	0xb0b090b0, 0x90b0b0b0, 0xb0b09090, 0x00000090,
++	0x80000000, 0xa080a080, 0xa08080a0, 0xa0808080,
++	0xa080a080, 0x80a0a0a0, 0xa0a080a0, 0x00a0a0a0,
++	0x22000000, 0x2222f222, 0x22222222, 0x222222f2,
++	0xf2222220, 0x22222222, 0x22f22222, 0x00000222,
++	0x11000000, 0x1111f111, 0x11111111, 0x111111f1,
++	0xf1111110, 0x11111111, 0x11f11111, 0x00000111,
++	0x33000000, 0x3333f333, 0x33333333, 0x333333f3,
++	0xf3333330, 0x33333333, 0x33f33333, 0x00000333,
++	0x22000000, 0x2222f222, 0x22222222, 0x222222f2,
++	0xf2222220, 0x22222222, 0x22f22222, 0x00000222,
++	0x99000000, 0x9b9b99bb, 0x9bb99999, 0x9999b9b9,
++	0x9b99bb90, 0x9bbbbb9b, 0x9b9b9bb9, 0x00000999,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00000888,
++	0x88888000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00000888,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00aaa888,
++	0x88a88a00, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa88, 0x8aaaaa8a, 0x8a8a8aa8, 0x000aa888,
++	0x88880000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa88, 0x8aaaaa8a, 0x8a8a8aa8, 0x08aaa888,
++	0x11000000, 0x1111a111, 0x11111111, 0x111111a1,
++	0xa1111110, 0x11111111, 0x11c11111, 0x00000111,
++	0x11000000, 0x1111a111, 0x11111111, 0x111111a1,
++	0xa1111110, 0x11111111, 0x11c11111, 0x00000111,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00000888,
++	0x88000000, 0x8a8a88aa, 0x8aa88888, 0x8888a8a8,
++	0x8a88aa80, 0x8aaaaa8a, 0x8a8a8aa8, 0x00000888,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++	0x00000000, 0x00000000, 0x00000000, 0x00000000,
++};
++
++/* Extracted from MMIO dump of 6.30.223.141 */
++static const u32 b43_ntab_noisevar_r7[] = {
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++	0x020c020c, 0x0000014d, 0x020c020c, 0x0000014d,
++};
++
++/**************************************************
++ * TX gain tables
++ **************************************************/
++
+ static const u32 b43_ntab_tx_gain_rev0_1_2[] = {
+ 	0x03cc2b44, 0x03cc2b42, 0x03cc2a44, 0x03cc2a42,
+ 	0x03cc2944, 0x03c82b44, 0x03c82b42, 0x03c82a44,
+@@ -2182,7 +2371,9 @@ static const u32 b43_ntab_tx_gain_rev0_1
+ 	0x03801442, 0x03801344, 0x03801342, 0x00002b00,
+ };
+ 
+-static const u32 b43_ntab_tx_gain_rev3plus_2ghz[] = {
++/* EPA 2 GHz */
++
++static const u32 b43_ntab_tx_gain_epa_rev3_2g[] = {
+ 	0x1f410044, 0x1f410042, 0x1f410040, 0x1f41003e,
+ 	0x1f41003c, 0x1f41003b, 0x1f410039, 0x1f410037,
+ 	0x1e410044, 0x1e410042, 0x1e410040, 0x1e41003e,
+@@ -2217,7 +2408,9 @@ static const u32 b43_ntab_tx_gain_rev3pl
+ 	0x1041003c, 0x1041003b, 0x10410039, 0x10410037,
+ };
+ 
+-static const u32 b43_ntab_tx_gain_rev3_5ghz[] = {
++/* EPA 5 GHz */
++
++static const u32 b43_ntab_tx_gain_epa_rev3_5g[] = {
+ 	0xcff70044, 0xcff70042, 0xcff70040, 0xcff7003e,
+ 	0xcff7003c, 0xcff7003b, 0xcff70039, 0xcff70037,
+ 	0xcef70044, 0xcef70042, 0xcef70040, 0xcef7003e,
+@@ -2252,7 +2445,7 @@ static const u32 b43_ntab_tx_gain_rev3_5
+ 	0xc0f7003c, 0xc0f7003b, 0xc0f70039, 0xc0f70037,
+ };
+ 
+-static const u32 b43_ntab_tx_gain_rev4_5ghz[] = {
++static const u32 b43_ntab_tx_gain_epa_rev4_5g[] = {
+ 	0x2ff20044, 0x2ff20042, 0x2ff20040, 0x2ff2003e,
+ 	0x2ff2003c, 0x2ff2003b, 0x2ff20039, 0x2ff20037,
+ 	0x2ef20044, 0x2ef20042, 0x2ef20040, 0x2ef2003e,
+@@ -2287,7 +2480,7 @@ static const u32 b43_ntab_tx_gain_rev4_5
+ 	0x20d2003a, 0x20d20038, 0x20d20036, 0x20d20034,
+ };
+ 
+-static const u32 b43_ntab_tx_gain_rev5plus_5ghz[] = {
++static const u32 b43_ntab_tx_gain_epa_rev5_5g[] = {
+ 	0x0f62004a, 0x0f620048, 0x0f620046, 0x0f620044,
+ 	0x0f620042, 0x0f620040, 0x0f62003e, 0x0f62003c,
+ 	0x0e620044, 0x0e620042, 0x0e620040, 0x0e62003e,
+@@ -2322,7 +2515,9 @@ static const u32 b43_ntab_tx_gain_rev5pl
+ 	0x0062003b, 0x00620039, 0x00620037, 0x00620035,
+ };
+ 
+-static const u32 txpwrctrl_tx_gain_ipa[] = {
++/* IPA 2 GHz */
++
++static const u32 b43_ntab_tx_gain_ipa_rev3_2g[] = {
+ 	0x5ff7002d, 0x5ff7002b, 0x5ff7002a, 0x5ff70029,
+ 	0x5ff70028, 0x5ff70027, 0x5ff70026, 0x5ff70025,
+ 	0x5ef7002d, 0x5ef7002b, 0x5ef7002a, 0x5ef70029,
+@@ -2357,7 +2552,7 @@ static const u32 txpwrctrl_tx_gain_ipa[]
+ 	0x50f70028, 0x50f70027, 0x50f70026, 0x50f70025,
+ };
+ 
+-static const u32 txpwrctrl_tx_gain_ipa_rev5[] = {
++static const u32 b43_ntab_tx_gain_ipa_rev5_2g[] = {
+ 	0x1ff7002d, 0x1ff7002b, 0x1ff7002a, 0x1ff70029,
+ 	0x1ff70028, 0x1ff70027, 0x1ff70026, 0x1ff70025,
+ 	0x1ef7002d, 0x1ef7002b, 0x1ef7002a, 0x1ef70029,
+@@ -2392,7 +2587,7 @@ static const u32 txpwrctrl_tx_gain_ipa_r
+ 	0x10f70028, 0x10f70027, 0x10f70026, 0x10f70025,
+ };
+ 
+-static const u32 txpwrctrl_tx_gain_ipa_rev6[] = {
++static const u32 b43_ntab_tx_gain_ipa_rev6_2g[] = {
+ 	0x0ff7002d, 0x0ff7002b, 0x0ff7002a, 0x0ff70029,
+ 	0x0ff70028, 0x0ff70027, 0x0ff70026, 0x0ff70025,
+ 	0x0ef7002d, 0x0ef7002b, 0x0ef7002a, 0x0ef70029,
+@@ -2427,7 +2622,45 @@ static const u32 txpwrctrl_tx_gain_ipa_r
+ 	0x00f70028, 0x00f70027, 0x00f70026, 0x00f70025,
+ };
+ 
+-static const u32 txpwrctrl_tx_gain_ipa_5g[] = {
++/* Extracted from MMIO dump of 6.30.223.141 */
++static const u32 b43_ntab_tx_gain_ipa_2057_rev9_2g[] = {
++	0x60ff0031, 0x60e7002c, 0x60cf002a, 0x60c70029,
++	0x60b70029, 0x60a70029, 0x609f002a, 0x6097002b,
++	0x6087002e, 0x60770031, 0x606f0032, 0x60670034,
++	0x60670031, 0x605f0033, 0x605f0031, 0x60570033,
++	0x60570030, 0x6057002d, 0x6057002b, 0x604f002d,
++	0x604f002b, 0x604f0029, 0x604f0026, 0x60470029,
++	0x60470027, 0x603f0029, 0x603f0027, 0x603f0025,
++	0x60370029, 0x60370027, 0x60370024, 0x602f002a,
++	0x602f0028, 0x602f0026, 0x602f0024, 0x6027002a,
++	0x60270028, 0x60270026, 0x60270024, 0x60270022,
++	0x601f002b, 0x601f0029, 0x601f0027, 0x601f0024,
++	0x601f0022, 0x601f0020, 0x601f001f, 0x601f001d,
++	0x60170029, 0x60170027, 0x60170025, 0x60170023,
++	0x60170021, 0x6017001f, 0x6017001d, 0x6017001c,
++	0x6017001a, 0x60170018, 0x60170018, 0x60170016,
++	0x60170015, 0x600f0029, 0x600f0027, 0x600f0025,
++	0x600f0023, 0x600f0021, 0x600f001f, 0x600f001d,
++	0x600f001c, 0x600f001a, 0x600f0019, 0x600f0018,
++	0x600f0016, 0x600f0015, 0x600f0115, 0x600f0215,
++	0x600f0315, 0x600f0415, 0x600f0515, 0x600f0615,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++	0x600f0715, 0x600f0715, 0x600f0715, 0x600f0715,
++};
++
++/* IPA 2 5Hz */
++
++static const u32 b43_ntab_tx_gain_ipa_rev3_5g[] = {
+ 	0x7ff70035, 0x7ff70033, 0x7ff70032, 0x7ff70031,
+ 	0x7ff7002f, 0x7ff7002e, 0x7ff7002d, 0x7ff7002b,
+ 	0x7ff7002a, 0x7ff70029, 0x7ff70028, 0x7ff70027,
+@@ -2462,6 +2695,42 @@ static const u32 txpwrctrl_tx_gain_ipa_5
+ 	0x70f70021, 0x70f70020, 0x70f70020, 0x70f7001f,
+ };
+ 
++/* Extracted from MMIO dump of 6.30.223.141 */
++static const u32 b43_ntab_tx_gain_ipa_2057_rev9_5g[] = {
++	0x7f7f0053, 0x7f7f004b, 0x7f7f0044, 0x7f7f003f,
++	0x7f7f0039, 0x7f7f0035, 0x7f7f0032, 0x7f7f0030,
++	0x7f7f002d, 0x7e7f0030, 0x7e7f002d, 0x7d7f0032,
++	0x7d7f002f, 0x7d7f002c, 0x7c7f0032, 0x7c7f0030,
++	0x7c7f002d, 0x7b7f0030, 0x7b7f002e, 0x7b7f002b,
++	0x7a7f0032, 0x7a7f0030, 0x7a7f002d, 0x7a7f002b,
++	0x797f0030, 0x797f002e, 0x797f002b, 0x797f0029,
++	0x787f0030, 0x787f002d, 0x787f002b, 0x777f0032,
++	0x777f0030, 0x777f002d, 0x777f002b, 0x767f0031,
++	0x767f002f, 0x767f002c, 0x767f002a, 0x757f0031,
++	0x757f002f, 0x757f002c, 0x757f002a, 0x747f0030,
++	0x747f002d, 0x747f002b, 0x737f0032, 0x737f002f,
++	0x737f002c, 0x737f002a, 0x727f0030, 0x727f002d,
++	0x727f002b, 0x727f0029, 0x717f0030, 0x717f002d,
++	0x717f002b, 0x707f0031, 0x707f002f, 0x707f002c,
++	0x707f002a, 0x707f0027, 0x707f0025, 0x707f0023,
++	0x707f0021, 0x707f001f, 0x707f001d, 0x707f001c,
++	0x707f001a, 0x707f0019, 0x707f0017, 0x707f0016,
++	0x707f0015, 0x707f0014, 0x707f0012, 0x707f0012,
++	0x707f0011, 0x707f0010, 0x707f000f, 0x707f000e,
++	0x707f000d, 0x707f000d, 0x707f000c, 0x707f000b,
++	0x707f000a, 0x707f000a, 0x707f0009, 0x707f0008,
++	0x707f0008, 0x707f0008, 0x707f0008, 0x707f0007,
++	0x707f0007, 0x707f0006, 0x707f0006, 0x707f0006,
++	0x707f0005, 0x707f0005, 0x707f0005, 0x707f0004,
++	0x707f0004, 0x707f0004, 0x707f0003, 0x707f0003,
++	0x707f0003, 0x707f0003, 0x707f0003, 0x707f0003,
++	0x707f0003, 0x707f0003, 0x707f0003, 0x707f0003,
++	0x707f0002, 0x707f0002, 0x707f0002, 0x707f0002,
++	0x707f0002, 0x707f0002, 0x707f0002, 0x707f0002,
++	0x707f0002, 0x707f0001, 0x707f0001, 0x707f0001,
++	0x707f0001, 0x707f0001, 0x707f0001, 0x707f0001,
++};
++
+ const s8 b43_ntab_papd_pga_gain_delta_ipa_2g[] = {
+ 	-114, -108, -98, -91, -84, -78, -70, -62,
+ 	-54, -46, -39, -31, -23, -15, -8, 0
+@@ -3031,31 +3300,8 @@ void b43_ntab_write_bulk(struct b43_wlde
+ 		b43_ntab_write_bulk(dev, offset, ARRAY_SIZE(data), data); \
+ 	} while (0)
+ 
+-static void b43_nphy_tables_init_rev3(struct b43_wldev *dev)
++static void b43_nphy_tables_init_shared_lut(struct b43_wldev *dev)
+ {
+-	struct ssb_sprom *sprom = dev->dev->bus_sprom;
+-	u8 antswlut;
+-
+-	if (b43_current_band(dev->wl) == IEEE80211_BAND_5GHZ)
+-		antswlut = sprom->fem.ghz5.antswlut;
+-	else
+-		antswlut = sprom->fem.ghz2.antswlut;
+-
+-	/* Static tables */
+-	ntab_upload(dev, B43_NTAB_FRAMESTRUCT_R3, b43_ntab_framestruct_r3);
+-	ntab_upload(dev, B43_NTAB_PILOT_R3, b43_ntab_pilot_r3);
+-	ntab_upload(dev, B43_NTAB_TMAP_R3, b43_ntab_tmap_r3);
+-	ntab_upload(dev, B43_NTAB_INTLEVEL_R3, b43_ntab_intlevel_r3);
+-	ntab_upload(dev, B43_NTAB_TDTRN_R3, b43_ntab_tdtrn_r3);
+-	ntab_upload(dev, B43_NTAB_NOISEVAR_R3, b43_ntab_noisevar_r3);
+-	ntab_upload(dev, B43_NTAB_MCS_R3, b43_ntab_mcs_r3);
+-	ntab_upload(dev, B43_NTAB_TDI20A0_R3, b43_ntab_tdi20a0_r3);
+-	ntab_upload(dev, B43_NTAB_TDI20A1_R3, b43_ntab_tdi20a1_r3);
+-	ntab_upload(dev, B43_NTAB_TDI40A0_R3, b43_ntab_tdi40a0_r3);
+-	ntab_upload(dev, B43_NTAB_TDI40A1_R3, b43_ntab_tdi40a1_r3);
+-	ntab_upload(dev, B43_NTAB_PILOTLT_R3, b43_ntab_pilotlt_r3);
+-	ntab_upload(dev, B43_NTAB_CHANEST_R3, b43_ntab_channelest_r3);
+-	ntab_upload(dev, B43_NTAB_FRAMELT_R3, b43_ntab_framelookup_r3);
+ 	ntab_upload(dev, B43_NTAB_C0_ESTPLT_R3, b43_ntab_estimatepowerlt0_r3);
+ 	ntab_upload(dev, B43_NTAB_C1_ESTPLT_R3, b43_ntab_estimatepowerlt1_r3);
+ 	ntab_upload(dev, B43_NTAB_C0_ADJPLT_R3, b43_ntab_adjustpower0_r3);
+@@ -3066,6 +3312,107 @@ static void b43_nphy_tables_init_rev3(st
+ 	ntab_upload(dev, B43_NTAB_C1_IQLT_R3, b43_ntab_iqlt1_r3);
+ 	ntab_upload(dev, B43_NTAB_C0_LOFEEDTH_R3, b43_ntab_loftlt0_r3);
+ 	ntab_upload(dev, B43_NTAB_C1_LOFEEDTH_R3, b43_ntab_loftlt1_r3);
++}
++
++static void b43_nphy_tables_init_rev7_volatile(struct b43_wldev *dev)
++{
++	struct ssb_sprom *sprom = dev->dev->bus_sprom;
++	u8 antswlut;
++	int core, offset, i;
++
++	const int antswlut0_offsets[] = { 0, 4, 8, }; /* Offsets for values */
++	const u8 antswlut0_values[][3] = {
++		{ 0x2, 0x12, 0x8 }, /* Core 0 */
++		{ 0x2, 0x18, 0x2 }, /* Core 1 */
++	};
++
++	if (b43_current_band(dev->wl) == IEEE80211_BAND_5GHZ)
++		antswlut = sprom->fem.ghz5.antswlut;
++	else
++		antswlut = sprom->fem.ghz2.antswlut;
++
++	switch (antswlut) {
++	case 0:
++		for (core = 0; core < 2; core++) {
++			for (i = 0; i < ARRAY_SIZE(antswlut0_values[0]); i++) {
++				offset = core ? 0x20 : 0x00;
++				offset += antswlut0_offsets[i];
++				b43_ntab_write(dev, B43_NTAB8(9, offset),
++					       antswlut0_values[core][i]);
++			}
++		}
++		break;
++	default:
++		b43err(dev->wl, "Unsupported antswlut: %d\n", antswlut);
++		break;
++	}
++}
++
++static void b43_nphy_tables_init_rev16(struct b43_wldev *dev)
++{
++	/* Static tables */
++	if (dev->phy.do_full_init) {
++		ntab_upload(dev, B43_NTAB_NOISEVAR_R7, b43_ntab_noisevar_r7);
++		b43_nphy_tables_init_shared_lut(dev);
++	}
++
++	/* Volatile tables */
++	b43_nphy_tables_init_rev7_volatile(dev);
++}
++
++static void b43_nphy_tables_init_rev7(struct b43_wldev *dev)
++{
++	/* Static tables */
++	if (dev->phy.do_full_init) {
++		ntab_upload(dev, B43_NTAB_FRAMESTRUCT_R3, b43_ntab_framestruct_r3);
++		ntab_upload(dev, B43_NTAB_PILOT_R3, b43_ntab_pilot_r3);
++		ntab_upload(dev, B43_NTAB_TMAP_R7, b43_ntab_tmap_r7);
++		ntab_upload(dev, B43_NTAB_INTLEVEL_R3, b43_ntab_intlevel_r3);
++		ntab_upload(dev, B43_NTAB_TDTRN_R3, b43_ntab_tdtrn_r3);
++		ntab_upload(dev, B43_NTAB_NOISEVAR_R7, b43_ntab_noisevar_r7);
++		ntab_upload(dev, B43_NTAB_MCS_R3, b43_ntab_mcs_r3);
++		ntab_upload(dev, B43_NTAB_TDI20A0_R3, b43_ntab_tdi20a0_r3);
++		ntab_upload(dev, B43_NTAB_TDI20A1_R3, b43_ntab_tdi20a1_r3);
++		ntab_upload(dev, B43_NTAB_TDI40A0_R3, b43_ntab_tdi40a0_r3);
++		ntab_upload(dev, B43_NTAB_TDI40A1_R3, b43_ntab_tdi40a1_r3);
++		ntab_upload(dev, B43_NTAB_PILOTLT_R3, b43_ntab_pilotlt_r3);
++		ntab_upload(dev, B43_NTAB_CHANEST_R3, b43_ntab_channelest_r3);
++		ntab_upload(dev, B43_NTAB_FRAMELT_R3, b43_ntab_framelookup_r3);
++		b43_nphy_tables_init_shared_lut(dev);
++	}
++
++	/* Volatile tables */
++	b43_nphy_tables_init_rev7_volatile(dev);
++}
++
++static void b43_nphy_tables_init_rev3(struct b43_wldev *dev)
++{
++	struct ssb_sprom *sprom = dev->dev->bus_sprom;
++	u8 antswlut;
++
++	if (b43_current_band(dev->wl) == IEEE80211_BAND_5GHZ)
++		antswlut = sprom->fem.ghz5.antswlut;
++	else
++		antswlut = sprom->fem.ghz2.antswlut;
++
++	/* Static tables */
++	if (dev->phy.do_full_init) {
++		ntab_upload(dev, B43_NTAB_FRAMESTRUCT_R3, b43_ntab_framestruct_r3);
++		ntab_upload(dev, B43_NTAB_PILOT_R3, b43_ntab_pilot_r3);
++		ntab_upload(dev, B43_NTAB_TMAP_R3, b43_ntab_tmap_r3);
++		ntab_upload(dev, B43_NTAB_INTLEVEL_R3, b43_ntab_intlevel_r3);
++		ntab_upload(dev, B43_NTAB_TDTRN_R3, b43_ntab_tdtrn_r3);
++		ntab_upload(dev, B43_NTAB_NOISEVAR_R3, b43_ntab_noisevar_r3);
++		ntab_upload(dev, B43_NTAB_MCS_R3, b43_ntab_mcs_r3);
++		ntab_upload(dev, B43_NTAB_TDI20A0_R3, b43_ntab_tdi20a0_r3);
++		ntab_upload(dev, B43_NTAB_TDI20A1_R3, b43_ntab_tdi20a1_r3);
++		ntab_upload(dev, B43_NTAB_TDI40A0_R3, b43_ntab_tdi40a0_r3);
++		ntab_upload(dev, B43_NTAB_TDI40A1_R3, b43_ntab_tdi40a1_r3);
++		ntab_upload(dev, B43_NTAB_PILOTLT_R3, b43_ntab_pilotlt_r3);
++		ntab_upload(dev, B43_NTAB_CHANEST_R3, b43_ntab_channelest_r3);
++		ntab_upload(dev, B43_NTAB_FRAMELT_R3, b43_ntab_framelookup_r3);
++		b43_nphy_tables_init_shared_lut(dev);
++	}
+ 
+ 	/* Volatile tables */
+ 	if (antswlut < ARRAY_SIZE(b43_ntab_antswctl_r3))
+@@ -3078,20 +3425,22 @@ static void b43_nphy_tables_init_rev3(st
+ static void b43_nphy_tables_init_rev0(struct b43_wldev *dev)
+ {
+ 	/* Static tables */
+-	ntab_upload(dev, B43_NTAB_FRAMESTRUCT, b43_ntab_framestruct);
+-	ntab_upload(dev, B43_NTAB_FRAMELT, b43_ntab_framelookup);
+-	ntab_upload(dev, B43_NTAB_TMAP, b43_ntab_tmap);
+-	ntab_upload(dev, B43_NTAB_TDTRN, b43_ntab_tdtrn);
+-	ntab_upload(dev, B43_NTAB_INTLEVEL, b43_ntab_intlevel);
+-	ntab_upload(dev, B43_NTAB_PILOT, b43_ntab_pilot);
+-	ntab_upload(dev, B43_NTAB_TDI20A0, b43_ntab_tdi20a0);
+-	ntab_upload(dev, B43_NTAB_TDI20A1, b43_ntab_tdi20a1);
+-	ntab_upload(dev, B43_NTAB_TDI40A0, b43_ntab_tdi40a0);
+-	ntab_upload(dev, B43_NTAB_TDI40A1, b43_ntab_tdi40a1);
+-	ntab_upload(dev, B43_NTAB_CHANEST, b43_ntab_channelest);
+-	ntab_upload(dev, B43_NTAB_MCS, b43_ntab_mcs);
+-	ntab_upload(dev, B43_NTAB_NOISEVAR10, b43_ntab_noisevar10);
+-	ntab_upload(dev, B43_NTAB_NOISEVAR11, b43_ntab_noisevar11);
++	if (dev->phy.do_full_init) {
++		ntab_upload(dev, B43_NTAB_FRAMESTRUCT, b43_ntab_framestruct);
++		ntab_upload(dev, B43_NTAB_FRAMELT, b43_ntab_framelookup);
++		ntab_upload(dev, B43_NTAB_TMAP, b43_ntab_tmap);
++		ntab_upload(dev, B43_NTAB_TDTRN, b43_ntab_tdtrn);
++		ntab_upload(dev, B43_NTAB_INTLEVEL, b43_ntab_intlevel);
++		ntab_upload(dev, B43_NTAB_PILOT, b43_ntab_pilot);
++		ntab_upload(dev, B43_NTAB_TDI20A0, b43_ntab_tdi20a0);
++		ntab_upload(dev, B43_NTAB_TDI20A1, b43_ntab_tdi20a1);
++		ntab_upload(dev, B43_NTAB_TDI40A0, b43_ntab_tdi40a0);
++		ntab_upload(dev, B43_NTAB_TDI40A1, b43_ntab_tdi40a1);
++		ntab_upload(dev, B43_NTAB_CHANEST, b43_ntab_channelest);
++		ntab_upload(dev, B43_NTAB_MCS, b43_ntab_mcs);
++		ntab_upload(dev, B43_NTAB_NOISEVAR10, b43_ntab_noisevar10);
++		ntab_upload(dev, B43_NTAB_NOISEVAR11, b43_ntab_noisevar11);
++	}
+ 
+ 	/* Volatile tables */
+ 	ntab_upload(dev, B43_NTAB_BDI, b43_ntab_bdi);
+@@ -3111,7 +3460,11 @@ static void b43_nphy_tables_init_rev0(st
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/InitTables */
+ void b43_nphy_tables_init(struct b43_wldev *dev)
+ {
+-	if (dev->phy.rev >= 3)
++	if (dev->phy.rev >= 16)
++		b43_nphy_tables_init_rev16(dev);
++	else if (dev->phy.rev >= 7)
++		b43_nphy_tables_init_rev7(dev);
++	else if (dev->phy.rev >= 3)
+ 		b43_nphy_tables_init_rev3(dev);
+ 	else
+ 		b43_nphy_tables_init_rev0(dev);
+@@ -3120,23 +3473,45 @@ void b43_nphy_tables_init(struct b43_wld
+ /* http://bcm-v4.sipsolutions.net/802.11/PHY/N/GetIpaGainTbl */
+ static const u32 *b43_nphy_get_ipa_gain_table(struct b43_wldev *dev)
+ {
++	struct b43_phy *phy = &dev->phy;
++
+ 	if (b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ) {
+-		if (dev->phy.rev >= 6) {
+-			if (dev->dev->chip_id == 47162)
+-				return txpwrctrl_tx_gain_ipa_rev5;
+-			return txpwrctrl_tx_gain_ipa_rev6;
+-		} else if (dev->phy.rev >= 5) {
+-			return txpwrctrl_tx_gain_ipa_rev5;
+-		} else {
+-			return txpwrctrl_tx_gain_ipa;
++		switch (phy->rev) {
++		case 16:
++			if (phy->radio_rev == 9)
++				return b43_ntab_tx_gain_ipa_2057_rev9_2g;
++		case 6:
++			if (dev->dev->chip_id == BCMA_CHIP_ID_BCM47162)
++				return b43_ntab_tx_gain_ipa_rev5_2g;
++			return b43_ntab_tx_gain_ipa_rev6_2g;
++		case 5:
++			return b43_ntab_tx_gain_ipa_rev5_2g;
++		case 4:
++		case 3:
++			return b43_ntab_tx_gain_ipa_rev3_2g;
++		default:
++			b43err(dev->wl,
++			       "No 2GHz IPA gain table available for this device\n");
++			return NULL;
+ 		}
+ 	} else {
+-		return txpwrctrl_tx_gain_ipa_5g;
++		switch (phy->rev) {
++		case 16:
++			if (phy->radio_rev == 9)
++				return b43_ntab_tx_gain_ipa_2057_rev9_5g;
++		case 3 ... 6:
++			return b43_ntab_tx_gain_ipa_rev3_5g;
++		default:
++			b43err(dev->wl,
++			       "No 5GHz IPA gain table available for this device\n");
++			return NULL;
++		}
+ 	}
+ }
+ 
+ const u32 *b43_nphy_get_tx_gain_table(struct b43_wldev *dev)
+ {
++	struct b43_phy *phy = &dev->phy;
+ 	enum ieee80211_band band = b43_current_band(dev->wl);
+ 	struct ssb_sprom *sprom = dev->dev->bus_sprom;
+ 
+@@ -3148,19 +3523,36 @@ const u32 *b43_nphy_get_tx_gain_table(st
+ 	    (dev->phy.n->ipa5g_on && band == IEEE80211_BAND_5GHZ)) {
+ 		return b43_nphy_get_ipa_gain_table(dev);
+ 	} else if (b43_current_band(dev->wl) == IEEE80211_BAND_5GHZ) {
+-		if (dev->phy.rev == 3)
+-			return b43_ntab_tx_gain_rev3_5ghz;
+-		if (dev->phy.rev == 4)
++		switch (phy->rev) {
++		case 6:
++		case 5:
++			return b43_ntab_tx_gain_epa_rev5_5g;
++		case 4:
+ 			return sprom->fem.ghz5.extpa_gain == 3 ?
+-				b43_ntab_tx_gain_rev4_5ghz :
+-				b43_ntab_tx_gain_rev4_5ghz; /* FIXME */
+-		else
+-			return b43_ntab_tx_gain_rev5plus_5ghz;
++				b43_ntab_tx_gain_epa_rev4_5g :
++				b43_ntab_tx_gain_epa_rev4_5g; /* FIXME */
++		case 3:
++			return b43_ntab_tx_gain_epa_rev3_5g;
++		default:
++			b43err(dev->wl,
++			       "No 5GHz EPA gain table available for this device\n");
++			return NULL;
++		}
+ 	} else {
+-		if (dev->phy.rev >= 5 && sprom->fem.ghz5.extpa_gain == 3)
+-			return b43_ntab_tx_gain_rev3plus_2ghz; /* FIXME */
+-		else
+-			return b43_ntab_tx_gain_rev3plus_2ghz;
++		switch (phy->rev) {
++		case 6:
++		case 5:
++			if (sprom->fem.ghz5.extpa_gain == 3)
++				return b43_ntab_tx_gain_epa_rev3_2g; /* FIXME */
++			/* fall through */
++		case 4:
++		case 3:
++			return b43_ntab_tx_gain_epa_rev3_2g;
++		default:
++			b43err(dev->wl,
++			       "No 2GHz EPA gain table available for this device\n");
++			return NULL;
++		}
+ 	}
+ }
+ 
+@@ -3187,7 +3579,7 @@ struct nphy_gain_ctl_workaround_entry *b
+ 	/* Some workarounds to the workarounds... */
+ 	if (ghz5 && dev->phy.rev >= 6) {
+ 		if (dev->phy.radio_rev == 11 &&
+-		    !b43_channel_type_is_40mhz(dev->phy.channel_type))
++		    !b43_is_40mhz(dev))
+ 			e->cliplo_gain = 0x2d;
+ 	} else if (!ghz5 && dev->phy.rev >= 5) {
+ 		static const int gain_data[] = {0x0062, 0x0064, 0x006a, 0x106a,
+--- a/drivers/net/wireless/b43/Kconfig
++++ b/drivers/net/wireless/b43/Kconfig
+@@ -37,7 +37,7 @@ config B43_SSB
+ choice
+ 	prompt "Supported bus types"
+ 	depends on B43
+-	default B43_BCMA_AND_SSB
++	default B43_BUSES_BCMA_AND_SSB
+ 
+ config B43_BUSES_BCMA_AND_SSB
+ 	bool "BCMA and SSB"
+@@ -123,6 +123,15 @@ config B43_PIO
+ 	select SSB_BLOCKIO
+ 	default y
+ 
++config B43_PHY_G
++	bool "Support for G-PHY (802.11g) devices"
++	depends on B43 && B43_SSB
++	default y
++	---help---
++	  This PHY type can be found in the following chipsets:
++	  PCI: BCM4306, BCM4311, BCM4318
++	  SoC: BCM4712, BCM5352E
++
+ config B43_PHY_N
+ 	bool "Support for 802.11n (N-PHY) devices"
+ 	depends on B43
+--- a/drivers/net/wireless/b43/phy_ht.c
++++ b/drivers/net/wireless/b43/phy_ht.c
+@@ -596,7 +596,7 @@ static void b43_phy_ht_tx_power_ctl_setu
+ 	u8 target[3];
+ 	s16 a1[3], b0[3], b1[3];
+ 
+-	u16 freq = dev->phy.channel_freq;
++	u16 freq = dev->phy.chandef->chan->center_freq;
+ 	int i, c;
+ 
+ 	if (b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ) {
+--- a/drivers/net/wireless/b43/phy_a.h
++++ b/drivers/net/wireless/b43/phy_a.h
+@@ -123,8 +123,4 @@ struct b43_phy_a {
+  */
+ void b43_phy_inita(struct b43_wldev *dev);
+ 
+-
+-struct b43_phy_operations;
+-extern const struct b43_phy_operations b43_phyops_a;
+-
+ #endif /* LINUX_B43_PHY_A_H_ */
+--- a/drivers/net/wireless/b43/Makefile
++++ b/drivers/net/wireless/b43/Makefile
+@@ -1,13 +1,11 @@
+ b43-y				+= main.o
+ b43-y				+= bus.o
+-b43-y				+= tables.o
++b43-$(CPTCFG_B43_PHY_G)		+= phy_a.o phy_g.o tables.o lo.o wa.o
+ b43-$(CPTCFG_B43_PHY_N)		+= tables_nphy.o
+ b43-$(CPTCFG_B43_PHY_N)		+= radio_2055.o
+ b43-$(CPTCFG_B43_PHY_N)		+= radio_2056.o
+ b43-$(CPTCFG_B43_PHY_N)		+= radio_2057.o
+ b43-y				+= phy_common.o
+-b43-y				+= phy_g.o
+-b43-y				+= phy_a.o
+ b43-$(CPTCFG_B43_PHY_N)		+= phy_n.o
+ b43-$(CPTCFG_B43_PHY_LP)	+= phy_lp.o
+ b43-$(CPTCFG_B43_PHY_LP)	+= tables_lpphy.o
+@@ -17,8 +15,6 @@ b43-$(CPTCFG_B43_PHY_HT)	+= radio_2059.o
+ b43-$(CPTCFG_B43_PHY_LCN)	+= phy_lcn.o tables_phy_lcn.o
+ b43-y				+= sysfs.o
+ b43-y				+= xmit.o
+-b43-y				+= lo.o
+-b43-y				+= wa.o
+ b43-y				+= dma.o
+ b43-y				+= pio.o
+ b43-y				+= rfkill.o
+--- a/drivers/net/wireless/b43/phy_a.c
++++ b/drivers/net/wireless/b43/phy_a.c
+@@ -573,7 +573,7 @@ static void b43_aphy_op_pwork_60sec(stru
+ {//TODO
+ }
+ 
+-const struct b43_phy_operations b43_phyops_a = {
++static const struct b43_phy_operations b43_phyops_a = {
+ 	.allocate		= b43_aphy_op_allocate,
+ 	.free			= b43_aphy_op_free,
+ 	.prepare_structs	= b43_aphy_op_prepare_structs,
+--- a/drivers/net/wireless/b43/radio_2057.c
++++ b/drivers/net/wireless/b43/radio_2057.c
+@@ -26,7 +26,7 @@
+ #include "radio_2057.h"
+ #include "phy_common.h"
+ 
+-static u16 r2057_rev4_init[42][2] = {
++static u16 r2057_rev4_init[][2] = {
+ 	{ 0x0E, 0x20 }, { 0x31, 0x00 }, { 0x32, 0x00 }, { 0x33, 0x00 },
+ 	{ 0x35, 0x26 }, { 0x3C, 0xff }, { 0x3D, 0xff }, { 0x3E, 0xff },
+ 	{ 0x3F, 0xff }, { 0x62, 0x33 }, { 0x8A, 0xf0 }, { 0x8B, 0x10 },
+@@ -40,7 +40,7 @@ static u16 r2057_rev4_init[42][2] = {
+ 	{ 0x1AB, 0x00 }, { 0x1AC, 0x00 },
+ };
+ 
+-static u16 r2057_rev5_init[44][2] = {
++static u16 r2057_rev5_init[][2] = {
+ 	{ 0x00, 0x00 }, { 0x01, 0x57 }, { 0x02, 0x20 }, { 0x23, 0x6 },
+ 	{ 0x31, 0x00 }, { 0x32, 0x00 }, { 0x33, 0x00 }, { 0x51, 0x70 },
+ 	{ 0x59, 0x88 }, { 0x5C, 0x20 }, { 0x62, 0x33 }, { 0x63, 0x0f },
+@@ -54,7 +54,7 @@ static u16 r2057_rev5_init[44][2] = {
+ 	{ 0x1AC, 0x00 }, { 0x1B7, 0x0c }, { 0x1C1, 0x01 }, { 0x1C2, 0x80 },
+ };
+ 
+-static u16 r2057_rev5a_init[45][2] = {
++static u16 r2057_rev5a_init[][2] = {
+ 	{ 0x00, 0x15 }, { 0x01, 0x57 }, { 0x02, 0x20 }, { 0x23, 0x6 },
+ 	{ 0x31, 0x00 }, { 0x32, 0x00 }, { 0x33, 0x00 }, { 0x51, 0x70 },
+ 	{ 0x59, 0x88 }, { 0x5C, 0x20 }, { 0x62, 0x33 }, { 0x63, 0x0f },
+@@ -69,7 +69,7 @@ static u16 r2057_rev5a_init[45][2] = {
+ 	{ 0x1C2, 0x80 },
+ };
+ 
+-static u16 r2057_rev7_init[54][2] = {
++static u16 r2057_rev7_init[][2] = {
+ 	{ 0x00, 0x00 }, { 0x01, 0x57 }, { 0x02, 0x20 }, { 0x31, 0x00 },
+ 	{ 0x32, 0x00 }, { 0x33, 0x00 }, { 0x51, 0x70 }, { 0x59, 0x88 },
+ 	{ 0x5C, 0x20 }, { 0x62, 0x33 }, { 0x63, 0x0f }, { 0x64, 0x13 },
+@@ -86,7 +86,8 @@ static u16 r2057_rev7_init[54][2] = {
+ 	{ 0x1B7, 0x05 }, { 0x1C2, 0xa0 },
+ };
+ 
+-static u16 r2057_rev8_init[54][2] = {
++/* TODO: Which devices should use it?
++static u16 r2057_rev8_init[][2] = {
+ 	{ 0x00, 0x08 }, { 0x01, 0x57 }, { 0x02, 0x20 }, { 0x31, 0x00 },
+ 	{ 0x32, 0x00 }, { 0x33, 0x00 }, { 0x51, 0x70 }, { 0x59, 0x88 },
+ 	{ 0x5C, 0x20 }, { 0x62, 0x33 }, { 0x63, 0x0f }, { 0x64, 0x0f },
+@@ -102,6 +103,47 @@ static u16 r2057_rev8_init[54][2] = {
+ 	{ 0x1A6, 0x00 }, { 0x1AA, 0x00 }, { 0x1AB, 0x00 }, { 0x1AC, 0x00 },
+ 	{ 0x1B7, 0x05 }, { 0x1C2, 0xa0 },
+ };
++*/
++
++#define RADIOREGS7(r00, r01, r02, r03, r04, r05, r06, r07, r08, r09, \
++		   r10, r11, r12, r13, r14, r15, r16, r17, r18, r19, \
++		   r20, r21, r22, r23, r24, r25, r26, r27) \
++	.radio_vcocal_countval0			= r00,	\
++	.radio_vcocal_countval1			= r01,	\
++	.radio_rfpll_refmaster_sparextalsize	= r02,	\
++	.radio_rfpll_loopfilter_r1		= r03,	\
++	.radio_rfpll_loopfilter_c2		= r04,	\
++	.radio_rfpll_loopfilter_c1		= r05,	\
++	.radio_cp_kpd_idac			= r06,	\
++	.radio_rfpll_mmd0			= r07,	\
++	.radio_rfpll_mmd1			= r08,	\
++	.radio_vcobuf_tune			= r09,	\
++	.radio_logen_mx2g_tune			= r10,	\
++	.radio_logen_mx5g_tune			= r11,	\
++	.radio_logen_indbuf2g_tune		= r12,	\
++	.radio_logen_indbuf5g_tune		= r13,	\
++	.radio_txmix2g_tune_boost_pu_core0	= r14,	\
++	.radio_pad2g_tune_pus_core0		= r15,	\
++	.radio_pga_boost_tune_core0		= r16,	\
++	.radio_txmix5g_boost_tune_core0		= r17,	\
++	.radio_pad5g_tune_misc_pus_core0	= r18,	\
++	.radio_lna2g_tune_core0			= r19,	\
++	.radio_lna5g_tune_core0			= r20,	\
++	.radio_txmix2g_tune_boost_pu_core1	= r21,	\
++	.radio_pad2g_tune_pus_core1		= r22,	\
++	.radio_pga_boost_tune_core1		= r23,	\
++	.radio_txmix5g_boost_tune_core1		= r24,	\
++	.radio_pad5g_tune_misc_pus_core1	= r25,	\
++	.radio_lna2g_tune_core1			= r26,	\
++	.radio_lna5g_tune_core1			= r27
++
++#define PHYREGS(r0, r1, r2, r3, r4, r5)	\
++	.phy_regs.phy_bw1a	= r0,	\
++	.phy_regs.phy_bw2	= r1,	\
++	.phy_regs.phy_bw3	= r2,	\
++	.phy_regs.phy_bw4	= r3,	\
++	.phy_regs.phy_bw5	= r4,	\
++	.phy_regs.phy_bw6	= r5
+ 
+ void r2057_upload_inittabs(struct b43_wldev *dev)
+ {
+@@ -109,33 +151,69 @@ void r2057_upload_inittabs(struct b43_wl
+ 	u16 *table = NULL;
+ 	u16 size, i;
+ 
+-	if (phy->rev == 7) {
++	switch (phy->rev) {
++	case 7:
+ 		table = r2057_rev4_init[0];
+ 		size = ARRAY_SIZE(r2057_rev4_init);
+-	} else if (phy->rev == 8 || phy->rev == 9) {
++		break;
++	case 8:
+ 		if (phy->radio_rev == 5) {
+-			if (phy->radio_rev == 8) {
+-				table = r2057_rev5_init[0];
+-				size = ARRAY_SIZE(r2057_rev5_init);
+-			} else {
+-				table = r2057_rev5a_init[0];
+-				size = ARRAY_SIZE(r2057_rev5a_init);
+-			}
++			table = r2057_rev5_init[0];
++			size = ARRAY_SIZE(r2057_rev5_init);
+ 		} else if (phy->radio_rev == 7) {
+ 			table = r2057_rev7_init[0];
+ 			size = ARRAY_SIZE(r2057_rev7_init);
+-		} else if (phy->radio_rev == 9) {
+-			table = r2057_rev8_init[0];
+-			size = ARRAY_SIZE(r2057_rev8_init);
+ 		}
++		break;
++	case 9:
++		if (phy->radio_rev == 5) {
++			table = r2057_rev5a_init[0];
++			size = ARRAY_SIZE(r2057_rev5a_init);
++		}
++		break;
+ 	}
+ 
++	B43_WARN_ON(!table);
++
+ 	if (table) {
+-		for (i = 0; i < 10; i++) {
+-			pr_info("radio_write 0x%X ", *table);
+-			table++;
+-			pr_info("0x%X\n", *table);
+-			table++;
++		for (i = 0; i < size; i++, table += 2)
++			b43_radio_write(dev, table[0], table[1]);
++	}
++}
++
++void r2057_get_chantabent_rev7(struct b43_wldev *dev, u16 freq,
++			       const struct b43_nphy_chantabent_rev7 **tabent_r7,
++			       const struct b43_nphy_chantabent_rev7_2g **tabent_r7_2g)
++{
++	struct b43_phy *phy = &dev->phy;
++	const struct b43_nphy_chantabent_rev7 *e_r7 = NULL;
++	const struct b43_nphy_chantabent_rev7_2g *e_r7_2g = NULL;
++	unsigned int len, i;
++
++	*tabent_r7 = NULL;
++	*tabent_r7_2g = NULL;
++
++	/* TODO */
++	switch (phy->rev) {
++	default:
++		break;
++	}
++
++	if (e_r7) {
++		for (i = 0; i < len; i++, e_r7++) {
++			if (e_r7->freq == freq) {
++				*tabent_r7 = e_r7;
++				return;
++			}
++		}
++	} else if (e_r7_2g) {
++		for (i = 0; i < len; i++, e_r7_2g++) {
++			if (e_r7_2g->freq == freq) {
++				*tabent_r7_2g = e_r7_2g;
++				return;
++			}
+ 		}
++	} else {
++		B43_WARN_ON(1);
+ 	}
+ }
+--- a/drivers/net/wireless/b43/radio_2057.h
++++ b/drivers/net/wireless/b43/radio_2057.h
+@@ -425,6 +425,72 @@
+ 
+ #define R2057_VCM_MASK				0x7
+ 
++struct b43_nphy_chantabent_rev7 {
++	/* The channel frequency in MHz */
++	u16 freq;
++	/* Radio regs values on channelswitch */
++	u8 radio_vcocal_countval0;
++	u8 radio_vcocal_countval1;
++	u8 radio_rfpll_refmaster_sparextalsize;
++	u8 radio_rfpll_loopfilter_r1;
++	u8 radio_rfpll_loopfilter_c2;
++	u8 radio_rfpll_loopfilter_c1;
++	u8 radio_cp_kpd_idac;
++	u8 radio_rfpll_mmd0;
++	u8 radio_rfpll_mmd1;
++	u8 radio_vcobuf_tune;
++	u8 radio_logen_mx2g_tune;
++	u8 radio_logen_mx5g_tune;
++	u8 radio_logen_indbuf2g_tune;
++	u8 radio_logen_indbuf5g_tune;
++	u8 radio_txmix2g_tune_boost_pu_core0;
++	u8 radio_pad2g_tune_pus_core0;
++	u8 radio_pga_boost_tune_core0;
++	u8 radio_txmix5g_boost_tune_core0;
++	u8 radio_pad5g_tune_misc_pus_core0;
++	u8 radio_lna2g_tune_core0;
++	u8 radio_lna5g_tune_core0;
++	u8 radio_txmix2g_tune_boost_pu_core1;
++	u8 radio_pad2g_tune_pus_core1;
++	u8 radio_pga_boost_tune_core1;
++	u8 radio_txmix5g_boost_tune_core1;
++	u8 radio_pad5g_tune_misc_pus_core1;
++	u8 radio_lna2g_tune_core1;
++	u8 radio_lna5g_tune_core1;
++	/* PHY res values on channelswitch */
++	struct b43_phy_n_sfo_cfg phy_regs;
++};
++
++struct b43_nphy_chantabent_rev7_2g {
++	/* The channel frequency in MHz */
++	u16 freq;
++	/* Radio regs values on channelswitch */
++	u8 radio_vcocal_countval0;
++	u8 radio_vcocal_countval1;
++	u8 radio_rfpll_refmaster_sparextalsize;
++	u8 radio_rfpll_loopfilter_r1;
++	u8 radio_rfpll_loopfilter_c2;
++	u8 radio_rfpll_loopfilter_c1;
++	u8 radio_cp_kpd_idac;
++	u8 radio_rfpll_mmd0;
++	u8 radio_rfpll_mmd1;
++	u8 radio_vcobuf_tune;
++	u8 radio_logen_mx2g_tune;
++	u8 radio_logen_indbuf2g_tune;
++	u8 radio_txmix2g_tune_boost_pu_core0;
++	u8 radio_pad2g_tune_pus_core0;
++	u8 radio_lna2g_tune_core0;
++	u8 radio_txmix2g_tune_boost_pu_core1;
++	u8 radio_pad2g_tune_pus_core1;
++	u8 radio_lna2g_tune_core1;
++	/* PHY regs values on channelswitch */
++	struct b43_phy_n_sfo_cfg phy_regs;
++};
++
+ void r2057_upload_inittabs(struct b43_wldev *dev);
+ 
++void r2057_get_chantabent_rev7(struct b43_wldev *dev, u16 freq,
++			       const struct b43_nphy_chantabent_rev7 **tabent_r7,
++			       const struct b43_nphy_chantabent_rev7_2g **tabent_r7_2g);
++
+ #endif /* B43_RADIO_2057_H_ */
+--- a/drivers/net/wireless/b43/tables_nphy.h
++++ b/drivers/net/wireless/b43/tables_nphy.h
+@@ -165,6 +165,10 @@ struct nphy_gain_ctl_workaround_entry *b
+ #define B43_NTAB_C1_LOFEEDTH_R3		B43_NTAB16(27, 448) /* Local Oscillator Feed Through lookup 1 */
+ #define B43_NTAB_C1_PAPD_COMP_R3	B43_NTAB16(27, 576)
+ 
++/* Static N-PHY tables, PHY revision >= 7 */
++#define B43_NTAB_TMAP_R7		B43_NTAB32(12,   0) /* TM AP */
++#define B43_NTAB_NOISEVAR_R7		B43_NTAB32(16,   0) /* noise variance */
++
+ #define B43_NTAB_TX_IQLO_CAL_LOFT_LADDER_40_SIZE	18
+ #define B43_NTAB_TX_IQLO_CAL_LOFT_LADDER_20_SIZE	18
+ #define B43_NTAB_TX_IQLO_CAL_IQIMB_LADDER_40_SIZE	18

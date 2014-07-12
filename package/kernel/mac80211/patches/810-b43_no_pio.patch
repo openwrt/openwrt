@@ -1,8 +1,8 @@
 --- a/drivers/net/wireless/b43/Makefile
 +++ b/drivers/net/wireless/b43/Makefile
-@@ -20,7 +20,7 @@ b43-y				+= xmit.o
- b43-y				+= lo.o
- b43-y				+= wa.o
+@@ -16,7 +16,7 @@ b43-$(CPTCFG_B43_PHY_LCN)	+= phy_lcn.o t
+ b43-y				+= sysfs.o
+ b43-y				+= xmit.o
  b43-y				+= dma.o
 -b43-y				+= pio.o
 +b43-$(CPTCFG_B43_PIO)		+= pio.o
@@ -11,7 +11,7 @@
  b43-$(CPTCFG_B43_PCMCIA)	+= pcmcia.o
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -1909,10 +1909,12 @@ static void b43_do_interrupt_thread(stru
+@@ -1913,10 +1913,12 @@ static void b43_do_interrupt_thread(stru
  			dma_reason[0], dma_reason[1],
  			dma_reason[2], dma_reason[3],
  			dma_reason[4], dma_reason[5]);

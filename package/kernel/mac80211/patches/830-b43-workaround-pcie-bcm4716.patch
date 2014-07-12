@@ -74,7 +74,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct b43_bus_dev *b43_bus_dev_ssb_init(struct ssb_device *sdev);
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4380,7 +4380,7 @@ static int b43_phy_versioning(struct b43
+@@ -4411,7 +4411,7 @@ static int b43_phy_versioning(struct b43
  		u16 radio24[3];
  
  		for (tmp = 0; tmp < 3; tmp++) {
@@ -83,7 +83,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			radio24[tmp] = b43_read16(dev, B43_MMIO_RADIO24_DATA);
  		}
  
-@@ -4399,10 +4399,10 @@ static int b43_phy_versioning(struct b43
+@@ -4430,10 +4430,10 @@ static int b43_phy_versioning(struct b43
  			else
  				tmp = 0x5205017F;
  		} else {
@@ -98,7 +98,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  				<< 16;
 --- a/drivers/net/wireless/b43/phy_common.c
 +++ b/drivers/net/wireless/b43/phy_common.c
-@@ -267,6 +267,12 @@ void b43_phy_write(struct b43_wldev *dev
+@@ -275,6 +275,12 @@ void b43_phy_write(struct b43_wldev *dev
  {
  	assert_mac_suspended(dev);
  	dev->phy.ops->phy_write(dev, reg, value);
@@ -199,7 +199,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- a/drivers/net/wireless/b43/phy_n.c
 +++ b/drivers/net/wireless/b43/phy_n.c
-@@ -5641,14 +5641,14 @@ static inline void check_phyreg(struct b
+@@ -5812,14 +5812,14 @@ static inline void check_phyreg(struct b
  static u16 b43_nphy_op_read(struct b43_wldev *dev, u16 reg)
  {
  	check_phyreg(dev, reg);
@@ -216,7 +216,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_write16(dev, B43_MMIO_PHY_DATA, value);
  }
  
-@@ -5656,7 +5656,7 @@ static void b43_nphy_op_maskset(struct b
+@@ -5827,7 +5827,7 @@ static void b43_nphy_op_maskset(struct b
  				 u16 set)
  {
  	check_phyreg(dev, reg);
@@ -225,7 +225,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_maskset16(dev, B43_MMIO_PHY_DATA, mask, set);
  }
  
-@@ -5670,7 +5670,7 @@ static u16 b43_nphy_op_radio_read(struct
+@@ -5841,7 +5841,7 @@ static u16 b43_nphy_op_radio_read(struct
  	else
  		reg |= 0x100;
  
@@ -234,7 +234,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	return b43_read16(dev, B43_MMIO_RADIO_DATA_LOW);
  }
  
-@@ -5679,7 +5679,7 @@ static void b43_nphy_op_radio_write(stru
+@@ -5850,7 +5850,7 @@ static void b43_nphy_op_radio_write(stru
  	/* Register 1 is a 32-bit register. */
  	B43_WARN_ON(reg == 1);
  
