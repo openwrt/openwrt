@@ -310,6 +310,9 @@ ramips_board_detect() {
 	*"Zbtlink ZBT-WA05")
 		name="zbt-wa05"
 		;;
+	*"ZBT WR8305RT")
+		name="wr8305rt"
+		;;
 	*)
 		name="generic"
 		;;
