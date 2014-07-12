@@ -1,7 +1,7 @@
-From b665117faa0dfde70689502fc420d72bbf8e6bd4 Mon Sep 17 00:00:00 2001
+From e23dc903cd69d32d407ea1b7310bc9a71e00d359 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Tue, 30 Apr 2013 11:26:53 +0200
-Subject: [PATCH 37/53] MIPS: BCM63XX: use irq_desc as argument for (un)mask
+Subject: [PATCH 09/10] MIPS: BCM63XX: use irq_desc as argument for (un)mask
 
 In preparation for applying affinity, use the irq descriptor as the
 argument for (un)mask.
@@ -24,7 +24,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  
  static inline u32 get_ext_irq_perf_reg(int irq)
-@@ -96,9 +96,10 @@ void __dispatch_internal_##width(int pin
+@@ -96,9 +96,10 @@ void __dispatch_internal_##width(int cpu
  	}								\
  }									\
  									\
@@ -42,11 +42,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  									\
 -static void __internal_irq_unmask_##width(unsigned int irq)		\
 +static void __internal_irq_unmask_##width(struct irq_data *d)		\
- { 									\
+ {									\
  	u32 val;							\
 +	unsigned irq = d->irq - IRQ_INTERNAL_BASE;			\
  	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
- 	unsigned bit = irq & 0x1f; 					\
+ 	unsigned bit = irq & 0x1f;					\
  	unsigned long flags;						\
 @@ -182,12 +184,12 @@ asmlinkage void plat_irq_dispatch(void)
   */

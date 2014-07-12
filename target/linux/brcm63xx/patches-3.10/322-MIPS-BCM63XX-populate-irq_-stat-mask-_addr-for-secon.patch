@@ -1,8 +1,10 @@
-From 842f213228e6fc9fd6cca01ab5128623112aa7a9 Mon Sep 17 00:00:00 2001
+From ff61c72a7a260ab4c4abbddb72c3cd2aea5e0687 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Thu, 25 Apr 2013 00:31:29 +0200
-Subject: [PATCH 33/53] MIPS: BCM63XX: populate irq_{stat,mask}_addr for second
- pin
+Subject: [PATCH 05/10] MIPS: BCM63XX: populate irq_{stat,mask}_addr for second
+ cpu
+
+Set it to zero if there is no second set.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---

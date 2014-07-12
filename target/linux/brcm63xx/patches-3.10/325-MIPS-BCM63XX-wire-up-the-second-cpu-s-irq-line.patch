@@ -1,8 +1,9 @@
-From df6661d1b5c001eb91ce07f364fd5b6468fd6f99 Mon Sep 17 00:00:00 2001
+From 6e74b82aca08a5ecc4d2f0780254468659427e82 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Fri, 26 Apr 2013 12:03:15 +0200
-Subject: [PATCH 36/53] MIPS: BCM63XX: wire up the second cpu's irq line
+Subject: [PATCH 08/10] MIPS: BCM63XX: wire up the second cpu's irq line
 
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/irq.c | 44 +++++++++++++++++++++++++++++++++++++-------
  1 file changed, 37 insertions(+), 7 deletions(-)
@@ -32,13 +33,13 @@ Subject: [PATCH 36/53] MIPS: BCM63XX: wire up the second cpu's irq line
  									\
 @@ -116,11 +122,20 @@ static void __internal_irq_unmask_##widt
  	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
- 	unsigned bit = irq & 0x1f; 					\
+ 	unsigned bit = irq & 0x1f;					\
  	unsigned long flags;						\
 +	int cpu;							\
  									\
  	spin_lock_irqsave(&ipic_lock, flags);				\
 -	val = bcm_readl(irq_mask_addr[0] + reg * sizeof(u32));		\
--	val |= (1 << bit); 						\
+-	val |= (1 << bit);						\
 -	bcm_writel(val, irq_mask_addr[0] + reg * sizeof(u32));		\
 +	for_each_present_cpu(cpu) {					\
 +		if (!irq_mask_addr[cpu])				\
@@ -46,7 +47,7 @@ Subject: [PATCH 36/53] MIPS: BCM63XX: wire up the second cpu's irq line
 +									\
 +		val = bcm_readl(irq_mask_addr[cpu] + reg * sizeof(u32));\
 +		if (cpu_online(cpu))					\
-+			val |= (1 << bit); 				\
++			val |= (1 << bit);				\
 +		else							\
 +			val &= ~(1 << bit);				\
 +		bcm_writel(val, irq_mask_addr[cpu] + reg * sizeof(u32));\

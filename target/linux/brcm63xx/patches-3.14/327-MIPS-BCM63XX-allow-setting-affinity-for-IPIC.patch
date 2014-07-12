@@ -1,12 +1,16 @@
-From 9249f2f6a309e3f45c35d16decdcc5b2cadcadb8 Mon Sep 17 00:00:00 2001
+From 23493b47d8caaa59b18627a01bf443c3b50bb530 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Fri, 26 Apr 2013 12:06:03 +0200
-Subject: [PATCH 38/53] MIPS: BCM63XX: allow setting affinity for IPIC
+Subject: [PATCH 10/10] MIPS: BCM63XX: allow setting affinity for IPIC
+
+Wire up the set_affinity call for the internal PIC if booting on
+a cpu supporting it.
+Affinity is kept to boot cpu as default.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/bcm63xx/irq.c | 43 +++++++++++++++++++++++++++++++++++++------
- 1 file changed, 37 insertions(+), 6 deletions(-)
+ arch/mips/bcm63xx/irq.c | 46 ++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 40 insertions(+), 6 deletions(-)
 
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
@@ -27,8 +31,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +				     const struct cpumask *m)
 +{
 +	bool enable = cpu_online(cpu);
-+#ifdef CONFIG_SMP
 +
++#ifdef CONFIG_SMP
 +	if (m)
 +		enable &= cpu_isset(cpu, *m);
 +	else if (irqd_affinity_was_set(d))
@@ -47,7 +51,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -static void __internal_irq_unmask_##width(struct irq_data *d)		\
 +static void __internal_irq_unmask_##width(struct irq_data *d,		\
 +					  const struct cpumask *m)	\
- { 									\
+ {									\
  	u32 val;							\
  	unsigned irq = d->irq - IRQ_INTERNAL_BASE;			\
 @@ -132,7 +147,7 @@ static void __internal_irq_unmask_##widt
@@ -56,7 +60,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		val = bcm_readl(irq_mask_addr[cpu] + reg * sizeof(u32));\
 -		if (cpu_online(cpu))					\
 +		if (enable_irq_for_cpu(cpu, d, m))			\
- 			val |= (1 << bit); 				\
+ 			val |= (1 << bit);				\
  		else							\
  			val &= ~(1 << bit);				\
 @@ -189,7 +204,7 @@ static void bcm63xx_internal_irq_mask(st
@@ -97,7 +101,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static struct irq_chip bcm63xx_internal_irq_chip = {
  	.name		= "bcm63xx_ipic",
  	.irq_mask	= bcm63xx_internal_irq_mask,
-@@ -523,7 +551,10 @@ void __init arch_init_irq(void)
+@@ -523,7 +551,13 @@ void __init arch_init_irq(void)
  
  	setup_irq(MIPS_CPU_IRQ_BASE + 2, &cpu_ip2_cascade_action);
  #ifdef CONFIG_SMP
@@ -106,6 +110,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		setup_irq(MIPS_CPU_IRQ_BASE + 3, &cpu_ip3_cascade_action);
 +		bcm63xx_internal_irq_chip.irq_set_affinity =
 +			bcm63xx_internal_set_affinity;
++
++		cpumask_clear(irq_default_affinity);
++		cpumask_set_cpu(smp_processor_id(), irq_default_affinity);
 +	}
  #endif
  }

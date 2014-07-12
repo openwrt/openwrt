@@ -1,8 +1,12 @@
-From 85257b702e1d4c6dcc839c737833c42ca53bae93 Mon Sep 17 00:00:00 2001
+From 5e86f3988854c62c0788e4820caf722fec7c791b Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 21 Apr 2013 15:38:56 +0200
-Subject: [PATCH 35/53] MIPS: BCM63XX: protect irq register accesses
+Subject: [PATCH 07/10] MIPS: BCM63XX: protect irq register accesses
 
+Since we will have the chance of accessing the registers concurrently,
+protect any accesses through a spinlock.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/irq.c | 26 ++++++++++++++++++++++++++
  1 file changed, 26 insertions(+)
@@ -26,11 +30,11 @@ Subject: [PATCH 35/53] MIPS: BCM63XX: protect irq register accesses
 +
  static u32 irq_stat_addr[2];
  static u32 irq_mask_addr[2];
- static void (*dispatch_internal)(int pin);
-@@ -62,8 +66,10 @@ void __dispatch_internal_##width(int pin
+ static void (*dispatch_internal)(int cpu);
+@@ -62,8 +66,10 @@ void __dispatch_internal_##width(int cpu
  	bool irqs_pending = false;					\
- 	static int i[2];						\
- 	int *next = &i[pin];						\
+ 	static unsigned int i[2];					\
+ 	unsigned int *next = &i[cpu];					\
 +	unsigned long flags;						\
  									\
  	/* read registers in reverse order */				\
@@ -38,7 +42,7 @@ Subject: [PATCH 35/53] MIPS: BCM63XX: protect irq register accesses
  	for (src = 0, tgt = (width / 32); src < (width / 32); src++) {	\
  		u32 val;						\
  									\
-@@ -74,6 +80,7 @@ void __dispatch_internal_##width(int pin
+@@ -74,6 +80,7 @@ void __dispatch_internal_##width(int cpu
  		if (val)						\
  			irqs_pending = true;				\
  	}								\
@@ -63,12 +67,12 @@ Subject: [PATCH 35/53] MIPS: BCM63XX: protect irq register accesses
 @@ -105,10 +115,13 @@ static void __internal_irq_unmask_##widt
  	u32 val;							\
  	unsigned reg = (irq / 32) ^ (width/32 - 1);			\
- 	unsigned bit = irq & 0x1f; 					\
+ 	unsigned bit = irq & 0x1f;					\
 +	unsigned long flags;						\
  									\
 +	spin_lock_irqsave(&ipic_lock, flags);				\
  	val = bcm_readl(irq_mask_addr[0] + reg * sizeof(u32));		\
- 	val |= (1 << bit); 						\
+ 	val |= (1 << bit);						\
  	bcm_writel(val, irq_mask_addr[0] + reg * sizeof(u32));		\
 +	spin_unlock_irqrestore(&ipic_lock, flags);			\
  }

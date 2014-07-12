@@ -1,7 +1,7 @@
-From a33bb660c712447ba8b561109cda6734954a6efa Mon Sep 17 00:00:00 2001
+From 43ebef8162adfa7789cb915e60e46103965d7efd Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Fri, 26 Apr 2013 11:21:16 +0200
-Subject: [PATCH 34/53] MIPS: BCM63XX: add pin argument to dispatch internal
+Subject: [PATCH 06/10] MIPS: BCM63XX: add cpu argument to dispatch internal
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
@@ -18,7 +18,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static u32 irq_stat_addr[2];
  static u32 irq_mask_addr[2];
 -static void (*dispatch_internal)(void);
-+static void (*dispatch_internal)(int pin);
++static void (*dispatch_internal)(int cpu);
  static int is_ext_irq_cascaded;
  static unsigned int ext_irq_count;
  static unsigned int ext_irq_start, ext_irq_end;
@@ -27,14 +27,14 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  #define BUILD_IPIC_INTERNAL(width)					\
 -void __dispatch_internal_##width(void)					\
-+void __dispatch_internal_##width(int pin)				\
++void __dispatch_internal_##width(int cpu)				\
  {									\
  	u32 pending[width / 32];					\
  	unsigned int src, tgt;						\
  	bool irqs_pending = false;					\
--	static int i;							\
-+	static int i[2];						\
-+	int *next = &i[pin];						\
+-	static unsigned int i;						\
++	static unsigned int i[2];					\
++	unsigned int *next = &i[cpu];					\
  									\
  	/* read registers in reverse order */				\
  	for (src = 0, tgt = (width / 32); src < (width / 32); src++) {	\
@@ -42,8 +42,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  									\
 -		val = bcm_readl(irq_stat_addr[0] + src * sizeof(u32));	\
 -		val &= bcm_readl(irq_mask_addr[0] + src * sizeof(u32));	\
-+		val = bcm_readl(irq_stat_addr[pin] + src * sizeof(u32)); \
-+		val &= bcm_readl(irq_mask_addr[pin] + src * sizeof(u32)); \
++		val = bcm_readl(irq_stat_addr[cpu] + src * sizeof(u32)); \
++		val &= bcm_readl(irq_mask_addr[cpu] + src * sizeof(u32)); \
  		pending[--tgt] = val;					\
  									\
  		if (val)						\
@@ -51,8 +51,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		return;							\
  									\
  	while (1) {							\
--		int to_call = i;					\
-+		int to_call = *next;					\
+-		unsigned int to_call = i;				\
++		unsigned int to_call = *next;				\
  									\
 -		i = (i + 1) & (width - 1);				\
 +		*next = (*next + 1) & (width - 1);			\

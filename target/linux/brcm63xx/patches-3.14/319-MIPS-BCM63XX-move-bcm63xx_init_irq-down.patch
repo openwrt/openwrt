@@ -1,9 +1,11 @@
-From c28c639b031385ecf965eecf3bfb532e88044c89 Mon Sep 17 00:00:00 2001
+From 6e79c6dd02aa56e37eb071797f0eb5e3fb588cba Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 15 Dec 2013 20:52:53 +0100
-Subject: [PATCH 30/53] MIPS: BCM63XX: move bcm63xx_init_irq down
+Subject: [PATCH 02/10] MIPS: BCM63XX: move bcm63xx_init_irq down
 
 Allows up to drop the prototypes from the top.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/irq.c | 190 +++++++++++++++++++++++-------------------------
  1 file changed, 92 insertions(+), 98 deletions(-)
