@@ -322,6 +322,9 @@ ar71xx_board_detect() {
 	*EL-MINI)
 		name="el-mini"
 		;;
+	*"GL-CONNECT INET v1")
+		name="gl-inet"
+		;;
 	*JA76PF)
 		name="ja76pf"
 		;;

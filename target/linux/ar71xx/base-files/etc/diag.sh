@@ -69,6 +69,9 @@ get_status_led() {
 	el-m150)
 		status_led="EasyLink:green:system"
 		;;
+	gl-inet)
+		status_led="gl-connect:green:lan"
+		;;
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;
