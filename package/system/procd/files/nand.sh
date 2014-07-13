@@ -36,7 +36,7 @@ nand_find_ubi() {
 	done
 }
 
-get_magic_long() {
+nand_get_magic_long() {
 	dd if="$1" skip=$2 bs=4 count=1 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
@@ -70,7 +70,7 @@ identify_magic() {
 
 
 identify() {
-	identify_magic $(get_magic_long "$1" "${2:-0}")
+	identify_magic $(nand_get_magic_long "$1" "${2:-0}")
 }
 
 identify_tar() {
