@@ -59,6 +59,11 @@ int ath79_nvram_parse_mac_addr(const char *nvram, unsigned nvram_len,
 		goto free;
 	}
 
+	if (strlen(mac_str) == 19 && mac_str[0] == '"' && mac_str[18] == '"') {
+		mac_str[18] = 0;
+		mac_str++;
+	}
+
 	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
 		   &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
