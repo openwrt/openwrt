@@ -1,0 +1,27 @@
+#
+# Copyright (C) 2014 OpenWrt.org
+#
+
+preinit_mount_syscfg() {
+
+	. /lib/functions.sh
+	. /lib/mvebu.sh
+
+	case $(mvebu_board_name) in
+	armada-xp-mamba)
+		mkdir /tmp/syscfg
+		ubiattach -p /dev/mtd8
+		mount -t ubifs ubi1:syscfg /tmp/syscfg
+		[ -f /tmp/syscfg/sysupgrade.tgz ] && {
+		echo "- config restore -"
+		cd /
+		mv /tmp/syscfg/sysupgrade.tgz /tmp
+		tar xzf /tmp/sysupgrade.tgz
+		rm -f /tmp/sysupgrade.tgz
+		sync
+		}
+		;;
+	esac
+}
+
+boot_hook_add preinit_main preinit_mount_syscfg
