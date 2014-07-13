@@ -72,6 +72,9 @@ get_status_led() {
 	gl-inet)
 		status_led="gl-connect:green:lan"
 		;;
+	esr1750)
+		status_led="esr1750:amber:power"
+		;;
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;

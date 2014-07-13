@@ -30,6 +30,13 @@ wlr8100)
 	ucidef_add_switch_vlan "switch0" "2" "0t 1"
 	;;
 
+esr1750)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 1"
+	;;
+
 ap136-010)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" "1" "1"

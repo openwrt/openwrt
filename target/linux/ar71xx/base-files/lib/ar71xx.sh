@@ -325,6 +325,9 @@ ar71xx_board_detect() {
 	*"GL-CONNECT INET v1")
 		name="gl-inet"
 		;;
+	*"EnGenius ESR1750")
+		name="esr1750"
+		;;
 	*JA76PF)
 		name="ja76pf"
 		;;
