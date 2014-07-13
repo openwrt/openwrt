@@ -30,6 +30,7 @@
 #define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
 
 #define HEADER_VERSION_V1	0x01000000
+#define HWID_GL_INET_V1		0x08000001
 #define HWID_GS_OOLITE_V1	0x3C000101
 #define HWID_TL_MR10U_V1	0x00100101
 #define HWID_TL_MR13U_V1	0x00130101
@@ -387,6 +388,11 @@ static struct board_info boards[] = {
 		.hw_id		= HWID_TL_WR720N_V3,
 		.hw_rev		= 1,
 		.layout_id	= "4Mlzma",
+	}, {
+		.id		= "GL-INETv1",
+		.hw_id		= HWID_GL_INET_V1,
+		.hw_rev		= 1,
+		.layout_id	= "8Mlzma",
 	}, {
 		.id		= "GS-OOLITEv1",
 		.hw_id		= HWID_GS_OOLITE_V1,
