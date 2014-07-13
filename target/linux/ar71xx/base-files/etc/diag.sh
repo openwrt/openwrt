@@ -184,6 +184,7 @@ get_status_led() {
 	tl-wr841n-v1 | \
 	tl-wr841n-v7 | \
 	tl-wr841n-v8 | \
+	tl-wa830re-v2 | \
 	tl-wr842n-v2 | \
 	tl-wr941nd)
 		status_led="tp-link:green:system"
