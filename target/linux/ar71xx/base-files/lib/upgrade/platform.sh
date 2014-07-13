@@ -253,6 +253,7 @@ platform_check_image() {
 	tl-wr741nd | \
 	tl-wr741nd-v4 | \
 	tl-wr841n-v1 | \
+	tl-wa830re-v2 | \
 	tl-wr841n-v7 | \
 	tl-wr841n-v8 | \
 	tl-wr841n-v9 | \
