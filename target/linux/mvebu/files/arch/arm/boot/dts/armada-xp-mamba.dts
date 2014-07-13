@@ -178,7 +178,6 @@
 				partition@100000 {
 					label = "u_env";
 					reg = <0x100000 0x40000>;    /* 256KB */
-					read-only;
 				};
 
 				partition@140000 {
@@ -194,7 +193,7 @@
 
 				partition@a00000 {
 					label = "kernel1";
-					reg = <0xa00000 0x300000>;    /* 3MB */
+					reg = <0xa00000 0x2800000>;    /* 3MB */
 				};
 
 				partition@d00000 {
@@ -204,7 +203,7 @@
 
 				partition@3200000 {
 					label = "kernel2";
-					reg = <0x3200000 0x300000>;    /* 3MB */
+					reg = <0x3200000 0x2800000>;    /* 3MB */
 				};
 
 				partition@3500000 {
