@@ -7,7 +7,7 @@
 
 touch /etc/config/ubootenv
 
-. /lib/lantiq.sh
+. /lib/functions/lantiq.sh
 . /lib/uboot-envtools.sh
 . /lib/functions.sh
 
@@ -15,6 +15,9 @@ board=$(lantiq_board_name)
 
 case "$board" in
 GIGASX76X)
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
+	;;
+BTHOMEHUBV2B)
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x10000" "0x10000" "1"
 	;;
 esac
