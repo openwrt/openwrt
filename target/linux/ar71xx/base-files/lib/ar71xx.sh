@@ -625,6 +625,9 @@ ar71xx_board_detect() {
 	*"TL-MR13U")
 		name="tl-mr13u"
 		;;
+	*"Tube2H")
+		name="tube2h"
+		;;
 	*UniFi)
 		name="unifi"
 		;;
