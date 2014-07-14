@@ -4,6 +4,19 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+define Profile/ESR900
+	NAME:=EnGenius ESR900
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/ESR900/Description
+	Package set optimized for the EnGenius ESR900
+endef
+
+$(eval $(call Profile,ESR900))
+
+
 define Profile/ESR1750
         NAME:=EnGenius ESR1750
         PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k wpad-mini
