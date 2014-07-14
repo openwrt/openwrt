@@ -162,6 +162,13 @@ ifneq ($(GCC_ARCH),)
   GCC_CONFIGURE+= --with-arch=$(GCC_ARCH)
 endif
 
+ifneq ($(CONFIG_SOFT_FLOAT),y)
+  ifeq ($(CONFIG_arm),y)
+    GCC_CONFIGURE+= \
+		--with-float=hard
+  endif
+endif
+
 GCC_MAKE:= \
 	export SHELL="$(BASH)"; \
 	$(MAKE) \
