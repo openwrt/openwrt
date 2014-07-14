@@ -1,5 +1,5 @@
 /*
- *  ALFA NETWORKS Hornet-UB board support
+ *  ALFA NETWORK Hornet-UB board support
  *
  *  Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *
@@ -133,5 +133,5 @@ static void __init hornet_ub_setup(void)
 	ath79_register_usb();
 }
 
-MIPS_MACHINE(ATH79_MACH_HORNET_UB, "HORNET-UB", "ALFA NETWORKS Hornet-UB",
+MIPS_MACHINE(ATH79_MACH_HORNET_UB, "HORNET-UB", "ALFA NETWORK Hornet-UB",
 	     hornet_ub_setup);
