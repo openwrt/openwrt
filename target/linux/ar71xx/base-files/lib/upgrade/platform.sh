@@ -2,6 +2,7 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
+. /lib/functions/system.sh
 . /lib/ar71xx.sh
 
 PART_NAME=firmware
@@ -104,6 +105,29 @@ platform_do_upgrade_compex() {
 		dd if="$fw_file" bs=64k skip=1 count=$fw_blocks 2>/dev/null | \
 			mtd $append write - "$fw_part"
 	fi
+}
+
+alfa_check_image() {
+	local magic_long="$(get_magic_long "$1")"
+	local fw_part_size=$(mtd_get_part_size firmware)
+
+	case "$magic_long" in
+	"27051956")
+		[ "$fw_part_size" != "16318464" ] && {
+			echo "Invalid image magic \"$magic_long\" for $fw_part_size bytes"
+			return 1
+		}
+		;;
+
+	"68737173")
+		[ "$fw_part_size" != "7929856" ] && {
+			echo "Invalid image magic \"$magic_long\" for $fw_part_size bytes"
+			return 1
+		}
+		;;
+	esac
+
+	return 0
 }
 
 platform_check_image() {
@@ -293,6 +317,12 @@ platform_check_image() {
 
 		return 0
 		;;
+
+	tube2h)
+		alfa_check_image "$1" && return 0
+		return 1
+		;;
+
 	uap-pro)
 		[ "$magic_long" != "19852003" ] && {
 			echo "Invalid image type."

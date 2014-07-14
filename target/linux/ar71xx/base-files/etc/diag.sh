@@ -217,6 +217,9 @@ get_status_led() {
 	tl-wr2543n)
 		status_led="tp-link:green:wps"
 		;;
+	tube2h)
+		status_led="alfa:green:signal4"
+		;;
 	unifi)
 		status_led="ubnt:green:dome"
 		;;
