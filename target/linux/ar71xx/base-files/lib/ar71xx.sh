@@ -328,6 +328,9 @@ ar71xx_board_detect() {
 	*"EnGenius ESR1750")
 		name="esr1750"
 		;;
+	*"EnGenius ESR900")
+		name="esr900"
+		;;
 	*JA76PF)
 		name="ja76pf"
 		;;
