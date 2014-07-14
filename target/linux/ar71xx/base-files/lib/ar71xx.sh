@@ -340,6 +340,9 @@ ar71xx_board_detect() {
 	*"Nanostation M")
 		name="nanostation-m"
 		;;
+	*"Nanostation M XW")
+		name="nanostation-m-xw"
+		;;
 	*JWAP003)
 		name="jwap003"
 		;;
