@@ -5,6 +5,18 @@
 # See /LICENSE for more information.
 #
 
+define Profile/EAP300V2
+	NAME:=EnGenius EAP300V2
+	PACKAGES:=
+endef
+
+define Profile/EAP300V2/Description
+	Package set optimized for the EnGenius EAP300V2.
+endef
+
+$(eval $(call Profile,EAP300V2))
+
+
 define Profile/ESR900
 	NAME:=EnGenius ESR900
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev

@@ -261,6 +261,7 @@ cameo_ap121_mtdlayout_8M=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k
 cameo_db120_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,15936k(firmware),192k(lang)ro,64k(mac)ro,64k(art)ro
 cameo_db120_mtdlayout_8M=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,7872k(firmware),128k(lang)ro,64k(art)ro
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
+eap300v2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom),13632k(firmware),2048k(failsafe),64k(art)ro
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 cameo_ap94_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,1600k(unknown)ro,64k@0x7f0000(caldata_copy)
 cameo_ap94_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7808k(firmware),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
@@ -673,6 +674,27 @@ define Image/Build/Seama/initramfs
 	cat $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma.seama > $(call imgname,initramfs,$(2))-seama.bin
 endef
 
+Image/Build/Senao/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+Image/Build/Senao/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
+
+define Image/Build/Senao
+	mkdir -p $(KDIR_TMP)/$(2)/
+	touch $(KDIR_TMP)/$(2)/FWINFO-OpenWrt-$(REVISION)-$(2)
+	-$(CP) ./$(2)/* $(KDIR_TMP)/$(2)/
+	dd if=$(KDIR_TMP)/vmlinux-$(2).uImage \
+		of=$(KDIR_TMP)/$(2)/openwrt-senao-$(2)-uImage-lzma.bin bs=64k conv=sync
+	dd if=$(KDIR)/root.$(1) \
+		of=$(KDIR_TMP)/$(2)/openwrt-senao-$(2)-root.$(1) bs=64k conv=sync
+	( \
+		cd $(KDIR_TMP)/$(2)/;  \
+		$(TAR) -cz -f $(call factoryname,$(1),$(2)) * \
+	)
+	-rm -rf $(KDIR_TMP)/$(2)/
+	-sh $(TOPDIR)/scripts/combined-image.sh \
+		$(KDIR_TMP)/vmlinux-$(2).uImage \
+		$(KDIR)/root.$(1) \
+		$(call sysupname,$(1),$(2))
+endef
 
 Image/Build/TPLINKOLD/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
 
@@ -1108,6 +1130,8 @@ $(eval $(call SingleProfile,Planex,64kraw,MZKW300NH,mzk-w300nh,MZK-W300NH,ttyS0,
 
 $(eval $(call SingleProfile,Seama,64k,MYNETN600,mynet-n600,MYNET-N600,ttyS0,115200,$$(mynet_n600_mtdlayout),wrgnd16_wd_db600,1310720,16187392))
 $(eval $(call SingleProfile,Seama,64k,MYNETN750,mynet-n750,MYNET-N750,ttyS0,115200,$$(mynet_n600_mtdlayout),wrgnd13_wd_av,1310720,16187392))
+
+$(eval $(call SingleProfile,Senao,squashfs-only,EAP300V2,eap300v2,EAP300V2,ttyS0,115200,$$(eap300v2_mtdlayout)))
 
 $(eval $(call SingleProfile,TPLINKOLD,squashfs-only,TLWR841NV15,tl-wr841nd-v1.5,TL-WR841N-v1.5,ttyS0,115200,0x08410002,2,4M))
 
