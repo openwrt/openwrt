@@ -266,6 +266,16 @@ wndr4300)
 	[ -n "$mac_wan" ] && ucidef_set_interface_macaddr "wan" "$mac_wan"
 	;;
 
+esr900)
+	local mac
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 1 2 3 4"
+	ucidef_add_switch_vlan "switch0" "2" "0t 5"
+	mac=$(mtd_get_mac_ascii u-boot-env "wanaddr")
+	[ -n "$mac" ] && ucidef_set_interface_macaddr "wan" "$mac"
+	;;
+
 all0305 |\
 aw-nr580 |\
 bullet-m |\

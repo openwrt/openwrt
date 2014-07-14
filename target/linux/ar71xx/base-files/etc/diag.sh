@@ -75,6 +75,9 @@ get_status_led() {
 	esr1750)
 		status_led="esr1750:amber:power"
 		;;
+	esr900)
+		status_led="engenius:amber:power"
+		;;
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;
