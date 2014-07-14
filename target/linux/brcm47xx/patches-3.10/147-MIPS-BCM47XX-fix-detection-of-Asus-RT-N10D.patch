@@ -1,0 +1,22 @@
+From 3d0704e7d371ea3ea5c8fe5bd796f5f15d44da59 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 12 Jul 2014 18:01:32 +0200
+Subject: [PATCH 3/5] MIPS: BCM47XX: fix detection of Asus RT-N10D
+
+Sometimes we do not have a productid, but only a hardware_version.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/mips/bcm47xx/board.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/mips/bcm47xx/board.c
++++ b/arch/mips/bcm47xx/board.c
+@@ -57,6 +57,7 @@ struct bcm47xx_board_type_list1 bcm47xx_
+ static const
+ struct bcm47xx_board_type_list1 bcm47xx_board_list_hardware_version[] __initconst = {
+ 	{{BCM47XX_BOARD_ASUS_RTN10U, "Asus RT-N10U"}, "RTN10U"},
++	{{BCM47XX_BOARD_ASUS_RTN10D, "Asus RT-N10D"}, "RTN10D"},
+ 	{{BCM47XX_BOARD_ASUS_RTN12, "Asus RT-N12"}, "RT-N12"},
+ 	{{BCM47XX_BOARD_ASUS_RTN12B1, "Asus RT-N12B1"}, "RTN12B1"},
+ 	{{BCM47XX_BOARD_ASUS_RTN12C1, "Asus RT-N12C1"}, "RTN12C1"},
