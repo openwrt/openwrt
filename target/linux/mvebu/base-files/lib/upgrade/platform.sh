@@ -14,7 +14,7 @@ platform_check_image() {
 
 	case "$board" in
 	armada-xp-mamba )
-		[ "$magic_long" != "27051956" ] && {
+		[ "$magic_long" != "27051956" -a "$magic_long" != "73797375" ] && {
 			echo "Invalid image type."
 			return 1
 		}
