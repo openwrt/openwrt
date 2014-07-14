@@ -105,21 +105,21 @@ start() {
 			c["vlan1ports"] = "0 1 2 3 5t"
 			c["vlan2ports"] = "4 5t"
 		}
-		if ((model == "ASUS WL-HDD") || (model == "ASUS WL-300g") || (model == "Linksys WAP54G V1")) {
+		if ((model == "Asus WLHDD") || (model == "Asus WL300G")) {
 			c["wan_ifname"] = ""
 			c["lan_ifname"] = "eth1"
 		}
-		if (model == "ASUS WL-330gE") {
+		if (model == "Asus WL330GE") {
 			c["wan_ifname"] = ""
 			c["lan_ifname"] = "eth0.1"
 			c["vlan1ports"] = "4 5t"
 			c["vlan2ports"] = ""
 		}
-		if ((model == "ASUS WL-500g") || (model == "Microsoft MN-700")) {
+		if ((model == "Asus WL500G") || (model == "Microsoft MN-700")) {
 			c["wan_ifname"] = "eth1"
 			c["lan_ifname"] = "eth0"
 		}
-		if ((model == "ASUS WL-500g Premium V2") || (model == "Dell TrueMobile 2300 v2") || (model == "Buffalo WHR-G125")) {
+		if ((model == "Asus WL500GP V2") || (model == "Buffalo WHR-G125")) {
 			c["vlan1ports"] = "0 1 2 3 5t"
 			c["vlan2ports"] = "4 5t"
 		}
@@ -183,32 +183,20 @@ start() {
 		# These are actually same as defaults above. For some reason this script applies
 		# Generic BCM94704 settings instead so we revert to proper settings here.
 		# Hopefully someone will fix this properly soon.
-		if (model == "ASUS WL-700gE") {
+		if (model == "Asus WL700") {
 			c["lan_ifname"]="eth0.1"
 			c["wan_ifname"]="eth0.2"
 			c["vlan1ports"]="1 2 3 4 5t"
 			c["vlan2ports"]="0 5t"
 		}
-		if ((model == "Motorola WR850G V2/V3") || (model == "Siemens SE505 V2")) {
+		if ((model == "Motorola WR850G") || (model == "Siemens SE505 V2")) {
 			c["vlan1ports"]="0 1 2 3 5t"
 			c["vlan2ports"]="4 5t"
 		}
-		if (model == "ASUS WL-500W") {
+		if (model == "Asus WL500W") {
 			c["lan_ifname"] = "eth0"
 			c["wan_ifname"] = "eth1"
 			c["vlan1ports"] = "0 1 2 3 4 5"
-			c["vlan2ports"] = ""
-		}
-		if (model == "OvisLink WL-1600GL") {
-			c["lan_ifname"] = "eth0.1"
-			c["wan_ifname"] = "eth0.2"
-			c["vlan1ports"] = "0 1 2 3 5t"
-			c["vlan2ports"] = "4 5t"
-		}
-		if (model == "SimpleTech SimpleShare NAS") {
-			c["lan_ifname"] = "eth0"
-			c["wan_ifname"] = ""
-			c["vlan1ports"] = ""
 			c["vlan2ports"] = ""
 		}
 		print "local vlan1ports=\"" c["vlan1ports"] "\";"
