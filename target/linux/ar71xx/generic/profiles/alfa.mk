@@ -53,3 +53,14 @@ define Profile/ALFANX/Description
 endef
 
 $(eval $(call Profile,ALFANX))
+
+define Profile/TUBE2H
+	NAME:=ALFA Network Tube2H board
+	PACKAGES:=
+endef
+
+define Profile/TUBE2H/Description
+	Package set optimized for the ALFA Network Tube2H board.
+endef
+
+$(eval $(call Profile,TUBE2H))
