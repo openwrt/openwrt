@@ -258,6 +258,7 @@ ramips_setup_macs()
 		;;
 
 	*)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
