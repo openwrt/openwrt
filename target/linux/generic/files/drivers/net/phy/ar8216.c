@@ -2800,6 +2800,7 @@ static const u32 ar8xxx_phy_ids[] = {
 	0x004dd036, /* AR8337 */
 	0x004dd041,
 	0x004dd042,
+	0x004dd043, /* AR8236 */
 };
 
 static bool
