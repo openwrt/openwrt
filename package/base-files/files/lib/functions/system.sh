@@ -82,6 +82,7 @@ macaddr_canonicalize()
 	local mac="$1"
 	local canon=""
 
+	mac=$(echo -n $mac | tr -d \")
 	[ ${#mac} -gt 17 ] && return
 	[ -n "${mac//[a-fA-F0-9\.: -]/}" ] && return
 
