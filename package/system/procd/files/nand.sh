@@ -4,6 +4,9 @@
 
 . /lib/functions.sh
 
+# 'kernel' partition on NAND contains the kernel
+CI_KERNPART="kernel"
+
 # 'ubi' partition on NAND contains UBI
 CI_UBIPART="ubi"
 
@@ -221,7 +224,7 @@ nand_upgrade_ubifs() {
 nand_upgrade_tar() {
 	local tar_file="$1"
 	local board_name="$(cat /tmp/sysinfo/board_name)"
-	local kernel_mtd="$(find_mtd_index kernel)"
+	local kernel_mtd="$(find_mtd_index $CI_KERNPART)"
 
 	local kernel_length=`(tar xf $tar_file sysupgrade-$board_name/kernel -O | wc -c) 2> /dev/null`
 	local rootfs_length=`(tar xf $tar_file sysupgrade-$board_name/root -O | wc -c) 2> /dev/null`
@@ -232,7 +235,7 @@ nand_upgrade_tar() {
 	local has_env=0
 
 	[ "kernel_length" = 0 -o -z "$kernel_mtd" ] || {
-		tar xf $tar_file sysupgrade-$board_name/kernel -O | mtd write - kernel
+		tar xf $tar_file sysupgrade-$board_name/kernel -O | mtd write - $CI_KERNPART
 	}
 	[ "kernel_length" = 0 -o ! -z "$kernel_mtd" ] && has_kernel=0
 
