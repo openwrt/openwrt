@@ -22,6 +22,10 @@ linksys_get_target_firmware() {
 	echo "$target_firmware"
 }
 
+linksys_get_root_magic() {
+	(get_image "$@" | dd skip=786432 bs=4 count=1 | hexdump -v -n 4 -e '1/1 "%02x"') 2>/dev/null
+}
+
 platform_do_upgrade_linksys() {
 	local magic_long="$(get_magic_long "$1")"
 
@@ -35,10 +39,35 @@ platform_do_upgrade_linksys() {
 		exit 1
 	fi
 
-	# we don't know, what filesystem does the other partition use,
-	# nuke it tobe safe
-	mtd erase $part_label
-	get_image "$1" | mtd -n write - $part_label
+	local target_mtd=$(find_mtd_part $part_label)
+
+	[ "$magic_long" = "73797375" ] && {
+		CI_KERNPART="$part_label"
+		if [ "$part_label" = "kernel1" ]
+		then
+			CI_UBIPART="rootfs1"
+		else
+			CI_UBIPART="rootfs2"
+		fi
+
+		nand_upgrade_tar "$1"
+	}
+	[ "$magic_long" = "27051956" ] && {
+		# check firmwares' rootfs types
+		local target_mtd=$(find_mtd_part $part_label)
+		local oldroot="$(linksys_get_root_magic $target_mtd)"
+		local newroot="$(linksys_get_root_magic "$1")"
+
+		if [ "$newroot" = "55424923" -a "$oldroot" = "55424923" ]
+		# we're upgrading from a firmware with UBI to one with UBI
+		then
+			# erase everything to be safe
+			mtd erase $part_label
+			get_image "$1" | mtd -n write - $part_label
+		else
+			get_image "$1" | mtd write - $part_label
+		fi
+	}
 }
 
 linksys_preupgrade() {
