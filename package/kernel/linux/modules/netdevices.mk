@@ -443,6 +443,24 @@ endef
 $(eval $(call KernelPackage,e1000e))
 
 
+define KernelPackage/igb
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Intel(R) 82575/82576 PCI-Express Gigabit Ethernet support"
+  DEPENDS:=@PCI_SUPPORT +kmod-i2c-algo +kmod-i2c-algo-bit
+  KCONFIG:=CONFIG_IGB \
+    CONFIG_IGB_HWMON=n \
+    CONFIG_IGB_DCA=n
+  FILES:=$(LINUX_DIR)/drivers/net/ethernet/intel/igb/igb.ko
+  AUTOLOAD:=$(call AutoLoad,35,igb)
+endef
+
+define KernelPackage/igb/description
+ Kernel modules for Intel(R) 82575/82576 PCI-Express Gigabit Ethernet adapters.
+endef
+
+$(eval $(call KernelPackage,igb))
+
+
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44
