@@ -1,0 +1,22 @@
+Index: linux-3.10.34/drivers/net/ethernet/ralink/mdio_rt2880.c
+===================================================================
+--- linux-3.10.34.orig/drivers/net/ethernet/ralink/mdio_rt2880.c
++++ linux-3.10.34/drivers/net/ethernet/ralink/mdio_rt2880.c
+@@ -136,7 +136,7 @@ int rt2880_mdio_read(struct mii_bus *bus
+ 	if (err)
+ 		return 0xffff;
+ 
+-	pr_info("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
++	pr_debug("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
+ 		phy_addr, phy_reg, fe_r32(FE_MDIO_ACCESS) & 0xffff);
+ 
+ 	return fe_r32(FE_MDIO_ACCESS) & 0xffff;
+@@ -148,7 +148,7 @@ int rt2880_mdio_write(struct mii_bus *bu
+ 	int err;
+ 	u32 t;
+ 
+-	pr_info("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
++	pr_debug("%s: addr=%04x, reg=%04x, value=%04x\n", __func__,
+ 		phy_addr, phy_reg, fe_r32(FE_MDIO_ACCESS) & 0xffff);
+ 
+ 	err = rt2880_mdio_wait_ready(priv);
