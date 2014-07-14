@@ -166,6 +166,7 @@ platform_check_image() {
 	bullet-m | \
 	nanostation-m | \
 	rocket-m | \
+	nanostation-m-xw | \
 	rw2458n | \
 	wndap360 | \
 	wzr-hp-g300nh2 | \
