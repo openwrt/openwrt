@@ -313,6 +313,9 @@ ar71xx_board_detect() {
 	*"Dragino v2")
 		name="dragino2"
 		;;
+	*"EAP300 v2")
+		name="eap300v2"
+		;;
 	*EAP7660D)
 		name="eap7660d"
 		;;

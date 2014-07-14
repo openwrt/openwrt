@@ -62,6 +62,9 @@ get_status_led() {
 	dir-835-a1)
 		status_led="d-link:amber:power"
 		;;
+	eap300v2)
+		status_led="engenius:blue:power"
+		;;
 	eap7660d)
 		status_led="eap7660d:green:ds4"
 		;;

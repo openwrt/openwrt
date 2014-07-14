@@ -62,6 +62,11 @@ db120)
 	ucidef_set_led_usbdev "usb" "USB" "db120:green:usb" "1-1"
 	;;
 
+eap300v2)
+	ucidef_set_led_netdev "lan" "LAN" "engenius:blue:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "engenius:blue:wlan" "phy0tpt"
+	;;
+
 rb-750)
 	ucidef_set_led_default "act" "act" "rb750:green:act" "1"
 	ucidef_set_led_netdev "port1" "port1" "rb750:green:port1" "eth1"

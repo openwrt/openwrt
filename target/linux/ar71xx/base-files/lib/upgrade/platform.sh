@@ -353,6 +353,7 @@ platform_check_image() {
 	pb42 | \
 	pb44 | \
 	all0305 | \
+	eap300v2 | \
 	eap7660d | \
 	ja76pf | \
 	ja76pf2 | \
@@ -407,6 +408,7 @@ platform_do_upgrade() {
 	all0315n )
 		platform_do_upgrade_allnet "0x9f080000" "$ARGV"
 		;;
+	eap300v2 |\
 	cap4200ag)
 		platform_do_upgrade_allnet "0xbf0a0000" "$ARGV"
 		;;
