@@ -7,7 +7,7 @@
 
 define Profile/Broadcom-mips74k-b43
   NAME:=Broadcom SoC, BCM43xx WiFi (b43)
-  PACKAGES:=kmod-bgmac kmod-b43
+  PACKAGES:=kmod-b43
 endef
 
 define Profile/Broadcom-mips74k-b43/Description
