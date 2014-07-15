@@ -52,6 +52,7 @@ hostapd_common_add_device_config() {
 
 	config_add_string country
 	config_add_boolean country_ie doth
+	config_add_string require_mode
 
 	hostapd_add_log_config
 }
@@ -63,7 +64,7 @@ hostapd_prepare_device_config() {
 	local base="${config%%.conf}"
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int doth
+	json_get_vars country country_ie beacon_int doth require_mode
 
 	hostapd_set_log_options base_cfg
 
@@ -83,6 +84,11 @@ hostapd_prepare_device_config() {
 	for br in $basic_rate_list; do
 		hostapd_add_basic_rate brlist "$br"
 	done
+	case "$require_mode" in
+		g) brlist="60 120 240" ;;
+		n) append base_cfg "require_ht=1" "$N";;
+		ac) append base_cfg "require_vht=1" "$N";;
+	esac
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	[ -n "$beacon_int" ] && append base_cfg "beacon_int=$beacon_int" "$N"
 
