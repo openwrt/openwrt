@@ -109,7 +109,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  bcm47xx_leds_asus_wl500gd[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
  };
-@@ -348,6 +353,13 @@ bcm47xx_leds_linksys_wrtsl54gs[] __initc
+@@ -358,6 +363,13 @@ bcm47xx_leds_linksys_wrtsl54gs[] __initc
  	BCM47XX_GPIO_LED(7, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
  };
  
@@ -123,7 +123,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /* Motorola */
  
  static const struct gpio_led
-@@ -460,6 +472,9 @@ void __init bcm47xx_leds_register(void)
+@@ -470,6 +482,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_ASUS_WL330GE:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_wl330ge);
  		break;
@@ -133,7 +133,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	case BCM47XX_BOARD_ASUS_WL500GD:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_wl500gd);
  		break;
-@@ -586,6 +601,10 @@ void __init bcm47xx_leds_register(void)
+@@ -598,6 +613,10 @@ void __init bcm47xx_leds_register(void)
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrtsl54gs);
  		break;
  

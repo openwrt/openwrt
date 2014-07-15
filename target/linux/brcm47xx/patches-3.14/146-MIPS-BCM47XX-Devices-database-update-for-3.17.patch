@@ -38,7 +38,24 @@
  	BCM47XX_GPIO_LED(7, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(8, "blue", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  };
-@@ -333,11 +342,10 @@ bcm47xx_leds_linksys_wrt610nv2[] __initc
+@@ -314,6 +323,16 @@ bcm47xx_leds_linksys_wrt54g_type_0101[]
+ 	BCM47XX_GPIO_LED(7, "green", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
+ };
+ 
++/* Verified on: WRT54GL V1.1 */
++static const struct gpio_led
++bcm47xx_leds_linksys_wrt54g_type_0467[] __initconst = {
++	BCM47XX_GPIO_LED(0, "green", "wlan", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(1, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(2, "white", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(3, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(7, "green", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
++};
++
+ static const struct gpio_led
+ bcm47xx_leds_linksys_wrt610nv1[] __initconst = {
+ 	BCM47XX_GPIO_LED(0, "unk", "usb",  1, LEDS_GPIO_DEFSTATE_OFF),
+@@ -333,11 +352,10 @@ bcm47xx_leds_linksys_wrt610nv2[] __initc
  
  static const struct gpio_led
  bcm47xx_leds_linksys_wrtsl54gs[] __initconst = {
@@ -54,7 +71,7 @@
  };
  
  /* Motorola */
-@@ -385,6 +393,15 @@ bcm47xx_leds_netgear_wndr4500v1[] __init
+@@ -385,6 +403,15 @@ bcm47xx_leds_netgear_wndr4500v1[] __init
  };
  
  static const struct gpio_led
@@ -70,7 +87,7 @@
  bcm47xx_leds_netgear_wnr834bv2[] __initconst = {
  	BCM47XX_GPIO_LED(2, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
  	BCM47XX_GPIO_LED(3, "amber", "power", 0, LEDS_GPIO_DEFSTATE_OFF),
-@@ -425,6 +442,9 @@ void __init bcm47xx_leds_register(void)
+@@ -425,6 +452,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_ASUS_RTN12:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
  		break;
@@ -80,7 +97,16 @@
  	case BCM47XX_BOARD_ASUS_RTN16:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn16);
  		break;
-@@ -582,6 +602,9 @@ void __init bcm47xx_leds_register(void)
+@@ -553,6 +583,8 @@ void __init bcm47xx_leds_register(void)
+ 		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54g_type_0101);
+ 		break;
+ 	case BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0467:
++		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54g_type_0467);
++		break;
+ 	case BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0708:
+ 		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54g_generic);
+ 		break;
+@@ -582,6 +614,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
  		bcm47xx_set_pdata(bcm47xx_leds_netgear_wndr4500v1);
  		break;
