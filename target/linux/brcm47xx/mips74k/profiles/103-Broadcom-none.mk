@@ -7,7 +7,7 @@
 
 define Profile/Broadcom-mips74k-none
   NAME:=Broadcom SoC, No WiFi
-  PACKAGES:=kmod-bgmac -wpad-mini
+  PACKAGES:=-wpad-mini
 endef
 
 define Profile/Broadcom-mips74k-none/Description
