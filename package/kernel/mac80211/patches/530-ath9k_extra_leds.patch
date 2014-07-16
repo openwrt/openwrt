@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -564,6 +564,9 @@ static inline int ath9k_dump_btcoex(stru
+@@ -565,6 +565,9 @@ static inline int ath9k_dump_btcoex(stru
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -702,6 +705,13 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -703,6 +706,13 @@ void ath_ant_comb_scan(struct ath_softc 
  #define PS_BEACON_SYNC            BIT(4)
  #define PS_WAIT_FOR_ANI           BIT(5)
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -744,9 +754,8 @@ struct ath_softc {
+@@ -745,9 +755,8 @@ struct ath_softc {
  	struct ath_beacon beacon;
  
  #ifdef CPTCFG_MAC80211_LEDS
