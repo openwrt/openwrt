@@ -1805,7 +1805,7 @@
 +	.reset_clear = ar5312_device_reset_clear,
 +	.reset_mac = AR531X_RESET_ENET0,
 +	.reset_phy = AR531X_RESET_EPHY0,
-+	.phy_base = KSEG1ADDR(AR531X_ENET0),
++	.phy_base = AR531X_ENET0,
 +	.config = &ar231x_board,
 +};
 +
@@ -1814,7 +1814,7 @@
 +	.reset_clear = ar5312_device_reset_clear,
 +	.reset_mac = AR531X_RESET_ENET1,
 +	.reset_phy = AR531X_RESET_EPHY1,
-+	.phy_base = KSEG1ADDR(AR531X_ENET1),
++	.phy_base = AR531X_ENET1,
 +	.config = &ar231x_board,
 +};
 +
@@ -1936,12 +1936,12 @@
 +	switch (ar231x_devtype) {
 +	case DEV_TYPE_AR5312:
 +		ar5312_eth0_data.macaddr = config->enet0_mac;
-+		ar231x_add_ethernet(0, KSEG1ADDR(AR531X_ENET0),
-+			AR5312_IRQ_ENET0_INTRS, &ar5312_eth0_data);
++		ar231x_add_ethernet(0, AR531X_ENET0, AR5312_IRQ_ENET0_INTRS,
++				    &ar5312_eth0_data);
 +
 +		ar5312_eth1_data.macaddr = config->enet1_mac;
-+		ar231x_add_ethernet(1, KSEG1ADDR(AR531X_ENET1),
-+			AR5312_IRQ_ENET1_INTRS, &ar5312_eth1_data);
++		ar231x_add_ethernet(1, AR531X_ENET1, AR5312_IRQ_ENET1_INTRS,
++				    &ar5312_eth1_data);
 +
 +		if (!ar231x_board.radio)
 +			return 0;
@@ -1960,7 +1960,7 @@
 +		ar5312_eth1_data.phy_base = ar5312_eth0_data.phy_base;
 +		ar5312_eth1_data.reset_phy = ar5312_eth0_data.reset_phy;
 +		ar5312_eth1_data.macaddr = config->enet0_mac;
-+		ar231x_add_ethernet(0, KSEG1ADDR(AR531X_ENET1),
++		ar231x_add_ethernet(0, AR531X_ENET1,
 +			AR5312_IRQ_ENET1_INTRS, &ar5312_eth1_data);
 +
 +		if (!ar231x_board.radio)
@@ -2409,7 +2409,7 @@
 +	.reset_clear = ar2315_device_reset_clear,
 +	.reset_mac = AR2315_RESET_ENET0,
 +	.reset_phy = AR2315_RESET_EPHY0,
-+	.phy_base = KSEG1ADDR(AR2315_ENET0),
++	.phy_base = AR2315_ENET0,
 +	.config = &ar231x_board,
 +};
 +
@@ -2523,8 +2523,8 @@
 +	ar2315_init_gpio_leds();
 +	platform_device_register(&ar2315_wdt);
 +	platform_device_register(&ar2315_spiflash);
-+	ar231x_add_ethernet(0, KSEG1ADDR(AR2315_ENET0), AR2315_IRQ_ENET0_INTRS,
-+		&ar2315_eth_data);
++	ar231x_add_ethernet(0, AR2315_ENET0, AR2315_IRQ_ENET0_INTRS,
++			    &ar2315_eth_data);
 +	ar231x_add_wmac(0, AR2315_WLAN0, AR2315_IRQ_WLAN0_INTRS);
 +
 +	return 0;
