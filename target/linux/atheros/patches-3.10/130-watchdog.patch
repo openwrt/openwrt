@@ -192,15 +192,16 @@
 +MODULE_ALIAS("platform:" DRIVER_NAME);
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
-@@ -1113,6 +1113,12 @@ config LANTIQ_WDT
+@@ -1113,6 +1113,13 @@ config LANTIQ_WDT
  	help
  	  Hardware driver for the Lantiq SoC Watchdog Timer.
  
-+config ATHEROS_WDT
-+	tristate "Atheros wisoc Watchdog Timer"
++config AR2315_WDT
++	tristate "Atheros AR2315+ WiSoCs Watchdog Timer"
 +	depends on ATHEROS_AR231X
 +	help
-+	  Hardware driver for the Atheros wisoc Watchdog Timer.
++	  Hardware driver for the built-in watchdog timer on the Atheros
++	  AR2315/AR2316 WiSoCs.
 +
  # PARISC Architecture
  
@@ -211,7 +212,7 @@
  obj-$(CONFIG_PNX833X_WDT) += pnx833x_wdt.o
  obj-$(CONFIG_SIBYTE_WDOG) += sb_wdog.o
  obj-$(CONFIG_AR7_WDT) += ar7_wdt.o
-+obj-$(CONFIG_ATHEROS_WDT) += ar2315-wtd.o
++obj-$(CONFIG_AR2315_WDT) += ar2315-wtd.o
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
  obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
  octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o
