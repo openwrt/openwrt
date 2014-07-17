@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lzo
-PKG_VERSION:=2.06
+PKG_VERSION:=2.08
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
-PKG_MD5SUM:=95380bd4081f85ef08c5209f4107e9f8
+PKG_MD5SUM:=fcec64c26a0f4f4901468f360029678f
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
