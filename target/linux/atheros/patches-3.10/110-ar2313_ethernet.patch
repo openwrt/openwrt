@@ -32,7 +32,7 @@
 +obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.c
-@@ -0,0 +1,1254 @@
+@@ -0,0 +1,1249 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -286,12 +286,6 @@
 +	dev->base_addr = (unsigned int) sp->dma_regs;
 +	if (!sp->dma_regs) {
 +		printk("Can't remap DMA registers\n");
-+		return -ENXIO;
-+	}
-+
-+	sp->int_regs = ioremap_nocache(virt_to_phys(sp->cfg->reset_base), 4);
-+	if (!sp->int_regs) {
-+		printk("Can't remap INTERRUPT registers\n");
 +		return -ENXIO;
 +	}
 +
@@ -609,13 +603,13 @@
 +	unsigned int ethsal, ethsah;
 +	unsigned int flags;
 +
-+	*sp->int_regs |= sp->cfg->reset_mac;
++	sp->cfg->reset_set(sp->cfg->reset_mac);
 +	mdelay(10);
-+	*sp->int_regs &= ~sp->cfg->reset_mac;
++	sp->cfg->reset_clear(sp->cfg->reset_mac);
 +	mdelay(10);
-+	*sp->int_regs |= sp->cfg->reset_phy;
++	sp->cfg->reset_set(sp->cfg->reset_phy);
 +	mdelay(10);
-+	*sp->int_regs &= ~sp->cfg->reset_phy;
++	sp->cfg->reset_clear(sp->cfg->reset_phy);
 +	mdelay(10);
 +
 +	sp->dma_regs->bus_mode = (DMA_BUS_MODE_SWR);
@@ -1052,7 +1046,8 @@
 +	sp->dma_regs->bus_mode = DMA_BUS_MODE_SWR;
 +
 +	/* place phy and MAC in reset */
-+	*sp->int_regs |= (sp->cfg->reset_mac | sp->cfg->reset_phy);
++	sp->cfg->reset_set(sp->cfg->reset_mac);
++	sp->cfg->reset_set(sp->cfg->reset_phy);
 +
 +	/* free buffers on tx ring */
 +	for (j = 0; j < AR2313_DESCR_ENTRIES; j++) {
@@ -1076,7 +1071,7 @@
 + * the irq is gone forever ! When bond0 is made 'up' again,
 + * the ar231x_open () does not call request_irq (). Worse,
 + * the call to ar231x_halt() generates a WDOG reset due to
-+ * the write to 'sp->int_regs' and the box reboots.
++ * the write to reset register and the box reboots.
 + * Commenting this out is good since it allows the
 + * system to resume when bond0 is made up again.
 + */
@@ -1289,7 +1284,7 @@
 +
 --- /dev/null
 +++ b/drivers/net/ethernet/ar231x/ar231x.h
-@@ -0,0 +1,288 @@
+@@ -0,0 +1,287 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1515,7 +1510,6 @@
 +	volatile ETHERNET_STRUCT *phy_regs;
 +	volatile ETHERNET_STRUCT *eth_regs;
 +	volatile DMA *dma_regs;
-+	volatile u32 *int_regs;
 +	struct ar231x_eth *cfg;
 +
 +	spinlock_t lock;			/* Serialise access to device */
