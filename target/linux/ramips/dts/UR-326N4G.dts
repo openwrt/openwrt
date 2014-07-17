@@ -56,6 +56,10 @@
 		ralink,portmap = <0x2f>;
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		3g {

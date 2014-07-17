@@ -71,6 +71,11 @@
 		ralink,portmap = <0x1e>;
 	};
 
+	/* devdata partition seems to be missing */
+/*	wmac@10180000 {
+		ralink,mtd-eeprom = <&devdata 0x4000>;
+	};
+*/
 	otg@101c0000 {
 		status = "okay";
 	};

@@ -62,10 +62,12 @@
 		};
 	};
 
-	wmac@480000 {
+	/* FIXME: no u-boot partition and 0x40000@uboot is out of boundaries */
+/*	wmac@480000 {
 		status = "okay";
+		ralink,mtd-eeprom = <&u-boot 0x40000>;
 	};
-
+*/
 	rtl8367s {
 		compatible = "realtek,rtl8367s";
 		gpio-sda = <&gpio0 1 0>;

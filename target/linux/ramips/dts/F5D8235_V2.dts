@@ -25,7 +25,7 @@
 		#size-cells = <1>;
 
 		uboot: partition@0 {
-			label = "u-boot";
+			label = "uboot";
 			reg = <0x0 0x50000>;
 			read-only;
 		};
@@ -52,6 +52,10 @@
 
 	esw@10110000 {
 		ralink,portmap = <0x3f>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&uboot 0x40000>;
 	};
 
 	otg@101c0000 {

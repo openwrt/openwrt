@@ -77,6 +77,10 @@
 		ralink,port4 = "ephy";
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		power {

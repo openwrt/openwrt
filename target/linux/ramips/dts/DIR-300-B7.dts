@@ -92,9 +92,10 @@
                 };
         };
 
-        wmac@10180000 {
-                status = "okay";
+	wmac@10180000 {
+		status = "okay";
 		ralink,led-polarity = <1>;
-        };
+		ralink,mtd-eeprom = <&factory 0>;
+	};
 };
 

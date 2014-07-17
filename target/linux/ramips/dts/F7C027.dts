@@ -68,6 +68,10 @@
 		};
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {

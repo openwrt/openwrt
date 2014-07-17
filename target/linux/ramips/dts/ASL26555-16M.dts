@@ -50,7 +50,7 @@
 					reg = <0xfe0000 0x10000>;
 					read-only;
 				};
-				partition@ff0000 {
+				devdata: partition@ff0000 {
 					label = "devdata";
 					reg = <0xff0000 0x10000>;
 					read-only;
@@ -74,6 +74,10 @@
 
 	esw@10110000 {
 		ralink,portmap = <0x1e>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&devdata 0x4000>;
 	};
 
 	otg@101c0000 {

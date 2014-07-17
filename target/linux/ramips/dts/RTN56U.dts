@@ -56,7 +56,7 @@
 	wmac@10180000 {
 		status = "okay";
 		ralink,2ghz = <0>;
-		ralink,eeprom = "soc_wmac.eeprom";
+		ralink,mtd-eeprom = <&factory 0>;
 	};
 
 	ehci@101c0000 {

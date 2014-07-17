@@ -60,6 +60,10 @@
 		ralink,portmap = <0x3f>;
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	otg@101c0000 {
 		status = "okay";
 	};
