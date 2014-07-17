@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1249 @@
+@@ -0,0 +1,1246 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -257,8 +257,7 @@
 +	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
 +	tasklet_disable(&sp->rx_tasklet);
 +
-+	sp->eth_regs = ioremap_nocache(virt_to_phys(ar_eth_base),
-+				       sizeof(*sp->eth_regs));
++	sp->eth_regs = ioremap_nocache(ar_eth_base, sizeof(*sp->eth_regs));
 +	if (!sp->eth_regs) {
 +		printk("Can't remap eth registers\n");
 +		return -ENXIO;
@@ -269,26 +268,24 @@
 +	 * even though the MAC might be on ENET1.
 +	 * Needto remap PHY regs separately in this case
 +	 */
-+	if (virt_to_phys(ar_eth_base) == virt_to_phys(sp->phy_regs))
++	if (ar_eth_base == sp->cfg->phy_base)
 +		sp->phy_regs = sp->eth_regs;
 +	else {
-+		sp->phy_regs =
-+			ioremap_nocache(virt_to_phys(sp->cfg->phy_base),
-+							sizeof(*sp->phy_regs));
++		sp->phy_regs = ioremap_nocache(sp->cfg->phy_base,
++					       sizeof(*sp->phy_regs));
 +		if (!sp->phy_regs) {
 +			printk("Can't remap phy registers\n");
 +			return -ENXIO;
 +		}
 +	}
 +
-+	sp->dma_regs =
-+		ioremap_nocache(virt_to_phys(ar_eth_base + 0x1000),
-+						sizeof(*sp->dma_regs));
-+	dev->base_addr = (unsigned int) sp->dma_regs;
++	sp->dma_regs = ioremap_nocache(ar_eth_base + 0x1000,
++				       sizeof(*sp->dma_regs));
 +	if (!sp->dma_regs) {
 +		printk("Can't remap DMA registers\n");
 +		return -ENXIO;
 +	}
++	dev->base_addr = ar_eth_base + 0x1000;
 +
 +	strncpy(sp->name, "Atheros AR231x", sizeof(sp->name) - 1);
 +	sp->name[sizeof(sp->name) - 1] = '\0';
