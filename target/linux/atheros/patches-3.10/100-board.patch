@@ -2154,7 +2154,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,656 @@
+@@ -0,0 +1,661 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2222,6 +2222,28 @@
 +		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
 +}
 +
++static void
++ar2315_misc_irq_dispatch(void)
++{
++	unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
++				 ar231x_read_reg(AR2315_IMR);
++
++	if (misc_intr & AR2315_ISR_SPI)
++		do_IRQ(AR531X_MISC_IRQ_SPI);
++	else if (misc_intr & AR2315_ISR_TIMER)
++		do_IRQ(AR531X_MISC_IRQ_TIMER);
++	else if (misc_intr & AR2315_ISR_AHB)
++		do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
++	else if (misc_intr & AR2315_ISR_GPIO)
++		ar2315_gpio_irq();
++	else if (misc_intr & AR2315_ISR_UART0)
++		do_IRQ(AR531X_MISC_IRQ_UART0);
++	else if (misc_intr & AR2315_ISR_WD) {
++		ar231x_write_reg(AR2315_ISR, AR2315_ISR_WD);
++		do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
++	} else
++		do_IRQ(AR531X_MISC_IRQ_NONE);
++}
 +
 +/*
 + * Called when an interrupt is received, this function
@@ -2240,26 +2262,9 @@
 +		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
 +	else if (pending & CAUSEF_IP4)
 +		do_IRQ(AR2315_IRQ_ENET0_INTRS);
-+	else if (pending & CAUSEF_IP2) {
-+		unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
-+					 ar231x_read_reg(AR2315_IMR);
-+
-+		if (misc_intr & AR2315_ISR_SPI)
-+			do_IRQ(AR531X_MISC_IRQ_SPI);
-+		else if (misc_intr & AR2315_ISR_TIMER)
-+			do_IRQ(AR531X_MISC_IRQ_TIMER);
-+		else if (misc_intr & AR2315_ISR_AHB)
-+			do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
-+		else if (misc_intr & AR2315_ISR_GPIO)
-+			ar2315_gpio_irq();
-+		else if (misc_intr & AR2315_ISR_UART0)
-+			do_IRQ(AR531X_MISC_IRQ_UART0);
-+		else if (misc_intr & AR2315_ISR_WD) {
-+			ar231x_write_reg(AR2315_ISR, AR2315_ISR_WD);
-+			do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
-+		} else
-+			do_IRQ(AR531X_MISC_IRQ_NONE);
-+	} else if (pending & CAUSEF_IP7)
++	else if (pending & CAUSEF_IP2)
++		ar2315_misc_irq_dispatch();
++	else if (pending & CAUSEF_IP7)
 +		do_IRQ(AR531X_IRQ_CPU_CLOCK);
 +}
 +
