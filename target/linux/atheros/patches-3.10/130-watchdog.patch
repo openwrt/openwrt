@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,189 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@
 +#include <ar231x_platform.h>
 +#include <ar2315_regs.h>
 +#include <ar231x.h>
++
++#define DRIVER_NAME	"ar2315-wdt"
 +
 +#define CLOCK_RATE 40000000
 +#define HEARTBEAT(x) (x < 1 || x > 90 ? 20 : x)
@@ -151,7 +153,7 @@
 +
 +	ar2315_wdt_enable();
 +	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt,
-+			  IRQF_DISABLED, "ar2315_wdt", dev);
++			  IRQF_DISABLED, DRIVER_NAME, dev);
 +	if (ret) {
 +		dev_err(&dev->dev, "failed to register inetrrupt\n");
 +		goto out;
@@ -177,28 +179,17 @@
 +	.probe = ar2315_wdt_probe,
 +	.remove = ar2315_wdt_remove,
 +	.driver = {
-+		.name = "ar2315_wdt",
++		.name = DRIVER_NAME,
 +		.owner = THIS_MODULE,
 +	},
 +};
 +
-+static int __init
-+init_ar2315_wdt(void)
-+{
-+	int ret = platform_driver_register(&ar2315_wdt_driver);
-+	if (ret)
-+		pr_err("ar2315_wdt: error registering platfom driver!\n");
-+	return ret;
-+}
++module_platform_driver(ar2315_wdt_driver);
 +
-+static void __exit
-+exit_ar2315_wdt(void)
-+{
-+	platform_driver_unregister(&ar2315_wdt_driver);
-+}
-+
-+module_init(init_ar2315_wdt);
-+module_exit(exit_ar2315_wdt);
++MODULE_DESCRIPTION("Atheros AR2315 hardware watchdog driver");
++MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:" DRIVER_NAME);
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
 @@ -1113,6 +1113,12 @@ config LANTIQ_WDT
