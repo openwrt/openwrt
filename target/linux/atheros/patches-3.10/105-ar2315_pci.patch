@@ -258,7 +258,7 @@
 --- a/arch/mips/ar231x/ar2315.c
 +++ b/arch/mips/ar231x/ar2315.c
 @@ -88,6 +88,28 @@ ar2315_misc_irq_dispatch(void)
- 		do_IRQ(AR531X_MISC_IRQ_NONE);
+ 		do_IRQ(AR2315_MISC_IRQ_NONE);
  }
  
 +#ifdef CONFIG_ATHEROS_AR2315_PCI
