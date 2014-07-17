@@ -1,37 +1,38 @@
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -22,6 +22,7 @@ source "drivers/net/ethernet/adaptec/Kco
- source "drivers/net/ethernet/aeroflex/Kconfig"
- source "drivers/net/ethernet/alteon/Kconfig"
- source "drivers/net/ethernet/amd/Kconfig"
-+source "drivers/net/ethernet/ar231x/Kconfig"
- source "drivers/net/ethernet/apple/Kconfig"
- source "drivers/net/ethernet/atheros/Kconfig"
- source "drivers/net/ethernet/cadence/Kconfig"
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -9,6 +9,7 @@ obj-$(CONFIG_GRETH) += aeroflex/
- obj-$(CONFIG_NET_VENDOR_ALTEON) += alteon/
- obj-$(CONFIG_NET_VENDOR_AMD) += amd/
- obj-$(CONFIG_NET_VENDOR_APPLE) += apple/
-+obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x/
- obj-$(CONFIG_NET_VENDOR_ATHEROS) += atheros/
- obj-$(CONFIG_NET_CADENCE) += cadence/
- obj-$(CONFIG_NET_BFIN) += adi/
---- /dev/null
-+++ b/drivers/net/ethernet/ar231x/Kconfig
-@@ -0,0 +1,5 @@
-+config NET_VENDOR_AR231X
-+	tristate "AR231X Ethernet support"
+--- a/drivers/net/ethernet/atheros/Makefile
++++ b/drivers/net/ethernet/atheros/Makefile
+@@ -7,3 +7,4 @@ obj-$(CONFIG_ATL2) += atlx/
+ obj-$(CONFIG_ATL1E) += atl1e/
+ obj-$(CONFIG_ATL1C) += atl1c/
+ obj-$(CONFIG_ALX) += alx/
++obj-$(CONFIG_NET_AR231X) += ar231x/
+--- a/drivers/net/ethernet/atheros/Kconfig
++++ b/drivers/net/ethernet/atheros/Kconfig
+@@ -5,7 +5,7 @@
+ config NET_VENDOR_ATHEROS
+ 	bool "Atheros devices"
+ 	default y
+-	depends on PCI
++	depends on (PCI || ATHEROS_AR231X)
+ 	---help---
+ 	  If you have a network (Ethernet) card belonging to this class, say Y
+ 	  and read the Ethernet-HOWTO, available from
+@@ -85,4 +85,10 @@ config ALX
+ 	  To compile this driver as a module, choose M here.  The module
+ 	  will be called alx.
+ 
++config NET_AR231X
++	tristate "Atheros AR231X built-in Ethernet support"
 +	depends on ATHEROS_AR231X
 +	help
 +	  Support for the AR231x/531x ethernet controller
++
+ endif # NET_VENDOR_ATHEROS
 --- /dev/null
-+++ b/drivers/net/ethernet/ar231x/Makefile
++++ b/drivers/net/ethernet/atheros/ar231x/Makefile
 @@ -0,0 +1 @@
-+obj-$(CONFIG_NET_VENDOR_AR231X) += ar231x.o
++obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
-+++ b/drivers/net/ethernet/ar231x/ar231x.c
++++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
 @@ -0,0 +1,1249 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
@@ -1283,7 +1284,7 @@
 +}
 +
 --- /dev/null
-+++ b/drivers/net/ethernet/ar231x/ar231x.h
++++ b/drivers/net/ethernet/atheros/ar231x/ar231x.h
 @@ -0,0 +1,287 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
