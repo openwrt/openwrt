@@ -257,7 +257,7 @@
 +	default y
 --- a/arch/mips/ar231x/ar2315.c
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -88,6 +88,28 @@ ar2315_misc_irq_dispatch(void)
+@@ -87,6 +87,28 @@ static void ar2315_misc_irq_handler(unsi
  		do_IRQ(AR2315_MISC_IRQ_NONE);
  }
  
@@ -286,7 +286,7 @@
  /*
   * Called when an interrupt is received, this function
   * determines exactly which interrupt it was, and it
-@@ -105,6 +127,10 @@ ar2315_irq_dispatch(void)
+@@ -104,6 +126,10 @@ ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
@@ -295,5 +295,5 @@
 +		ar2315_pci_irq(AR2315_IRQ_LCBUS_PCI);
 +#endif
  	else if (pending & CAUSEF_IP2)
- 		ar2315_misc_irq_dispatch();
+ 		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)

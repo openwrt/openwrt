@@ -1583,7 +1583,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,602 @@
+@@ -0,0 +1,596 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1623,8 +1623,7 @@
 +#include "devices.h"
 +#include "ar5312.h"
 +
-+static void
-+ar5312_misc_irq_dispatch(void)
++static void ar5312_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
 +	unsigned int ar231x_misc_intrs = ar231x_read_reg(AR531X_ISR) &
 +					 ar231x_read_reg(AR531X_IMR);
@@ -1656,7 +1655,7 @@
 +	else if (pending & CAUSEF_IP5)
 +		do_IRQ(AR5312_IRQ_WLAN1_INTRS);
 +	else if (pending & CAUSEF_IP6)
-+		ar5312_misc_irq_dispatch();
++		do_IRQ(AR5312_IRQ_MISC_INTRS);
 +	else if (pending & CAUSEF_IP7)
 +		do_IRQ(AR531X_IRQ_CPU_CLOCK);
 +}
@@ -1714,11 +1713,6 @@
 +};
 +
 +
-+static struct irqaction cascade  = {
-+	.handler = no_action,
-+	.name    = "cascade",
-+};
-+
 +void __init ar5312_irq_init(void)
 +{
 +	int i;
@@ -1733,7 +1727,7 @@
 +					 handle_level_irq);
 +	}
 +	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5312_ahb_proc_interrupt);
-+	setup_irq(AR5312_IRQ_MISC_INTRS, &cascade);
++	irq_set_chained_handler(AR5312_IRQ_MISC_INTRS, ar5312_misc_irq_handler);
 +}
 +
 +static u32
@@ -2188,7 +2182,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,621 @@
+@@ -0,0 +1,615 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2230,7 +2224,7 @@
 +
 +static u32 gpiointmask, gpiointval;
 +
-+static inline void ar2315_gpio_irq(void)
++static void ar2315_gpio_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
 +	u32 pend;
 +	int bit = -1;
@@ -2256,8 +2250,7 @@
 +		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
 +}
 +
-+static void
-+ar2315_misc_irq_dispatch(void)
++static void ar2315_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
 +	unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
 +				 ar231x_read_reg(AR2315_IMR);
@@ -2269,7 +2262,7 @@
 +	else if (misc_intr & AR2315_ISR_AHB)
 +		do_IRQ(AR2315_MISC_IRQ_AHB);
 +	else if (misc_intr & AR2315_ISR_GPIO)
-+		ar2315_gpio_irq();
++		do_IRQ(AR2315_MISC_IRQ_GPIO);
 +	else if (misc_intr & AR2315_ISR_UART0)
 +		do_IRQ(AR2315_MISC_IRQ_UART0);
 +	else if (misc_intr & AR2315_ISR_WD) {
@@ -2297,7 +2290,7 @@
 +	else if (pending & CAUSEF_IP4)
 +		do_IRQ(AR2315_IRQ_ENET0_INTRS);
 +	else if (pending & CAUSEF_IP2)
-+		ar2315_misc_irq_dispatch();
++		do_IRQ(AR2315_IRQ_MISC_INTRS);
 +	else if (pending & CAUSEF_IP7)
 +		do_IRQ(AR531X_IRQ_CPU_CLOCK);
 +}
@@ -2382,11 +2375,6 @@
 +	.name		= "ar2315_ahb_proc_interrupt",
 +};
 +
-+static struct irqaction cascade  = {
-+	.handler	= no_action,
-+	.name		= "cascade",
-+};
-+
 +void
 +ar2315_irq_init(void)
 +{
@@ -2407,9 +2395,9 @@
 +		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
 +			handle_level_irq);
 +	}
-+	setup_irq(AR2315_MISC_IRQ_GPIO, &cascade);
++	irq_set_chained_handler(AR2315_MISC_IRQ_GPIO, ar2315_gpio_irq_handler);
 +	setup_irq(AR2315_MISC_IRQ_AHB, &ar2315_ahb_proc_interrupt);
-+	setup_irq(AR2315_IRQ_MISC_INTRS, &cascade);
++	irq_set_chained_handler(AR2315_IRQ_MISC_INTRS, ar2315_misc_irq_handler);
 +}
 +
 +static u32
