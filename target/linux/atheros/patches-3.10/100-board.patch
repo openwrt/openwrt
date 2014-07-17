@@ -714,7 +714,7 @@
 +#endif /* __ASM_MIPS_MACH_ATHEROS_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,597 @@
+@@ -0,0 +1,614 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -739,6 +739,23 @@
 +#define AR2315_IRQ_ENET0_INTRS  (MIPS_CPU_IRQ_BASE+4) /* C0_CAUSE: 0x1000 */
 +#define AR2315_IRQ_LCBUS_PCI    (MIPS_CPU_IRQ_BASE+5) /* C0_CAUSE: 0x2000 */
 +#define AR2315_IRQ_WLAN0_POLL   (MIPS_CPU_IRQ_BASE+6) /* C0_CAUSE: 0x4000 */
++
++
++/*
++ * Miscellaneous interrupts, which share IP2.
++ */
++#define AR2315_MISC_IRQ_NONE		(AR531X_MISC_IRQ_BASE+0)
++#define AR2315_MISC_IRQ_UART0		(AR531X_MISC_IRQ_BASE+1)
++#define AR2315_MISC_IRQ_I2C_RSVD	(AR531X_MISC_IRQ_BASE+2)
++#define AR2315_MISC_IRQ_SPI		(AR531X_MISC_IRQ_BASE+3)
++#define AR2315_MISC_IRQ_AHB		(AR531X_MISC_IRQ_BASE+4)
++#define AR2315_MISC_IRQ_APB		(AR531X_MISC_IRQ_BASE+5)
++#define AR2315_MISC_IRQ_TIMER		(AR531X_MISC_IRQ_BASE+6)
++#define AR2315_MISC_IRQ_GPIO		(AR531X_MISC_IRQ_BASE+7)
++#define AR2315_MISC_IRQ_WATCHDOG	(AR531X_MISC_IRQ_BASE+8)
++#define AR2315_MISC_IRQ_IR_RSVD		(AR531X_MISC_IRQ_BASE+9)
++#define AR2315_MISC_IRQ_COUNT		10
++
 +
 +/*
 + * Address map
@@ -1314,7 +1331,7 @@
 +#endif /* __AR2315_REG_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-@@ -0,0 +1,233 @@
+@@ -0,0 +1,249 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1339,6 +1356,22 @@
 +#define AR5312_IRQ_ENET1_INTRS  (MIPS_CPU_IRQ_BASE+4) /* C0_CAUSE: 0x1000 */
 +#define AR5312_IRQ_WLAN1_INTRS  (MIPS_CPU_IRQ_BASE+5) /* C0_CAUSE: 0x2000 */
 +#define AR5312_IRQ_MISC_INTRS   (MIPS_CPU_IRQ_BASE+6) /* C0_CAUSE: 0x4000 */
++
++
++/*
++ * Miscellaneous interrupts, which share IP6.
++ */
++#define AR531X_MISC_IRQ_NONE		(AR531X_MISC_IRQ_BASE+0)
++#define AR531X_MISC_IRQ_TIMER		(AR531X_MISC_IRQ_BASE+1)
++#define AR531X_MISC_IRQ_AHB_PROC	(AR531X_MISC_IRQ_BASE+2)
++#define AR531X_MISC_IRQ_AHB_DMA		(AR531X_MISC_IRQ_BASE+3)
++#define AR531X_MISC_IRQ_GPIO		(AR531X_MISC_IRQ_BASE+4)
++#define AR531X_MISC_IRQ_UART0		(AR531X_MISC_IRQ_BASE+5)
++#define AR531X_MISC_IRQ_UART0_DMA	(AR531X_MISC_IRQ_BASE+6)
++#define AR531X_MISC_IRQ_WATCHDOG	(AR531X_MISC_IRQ_BASE+7)
++#define AR531X_MISC_IRQ_LOCAL		(AR531X_MISC_IRQ_BASE+8)
++#define AR531X_MISC_IRQ_SPI		(AR531X_MISC_IRQ_BASE+9)
++#define AR531X_MISC_IRQ_COUNT		10
 +
 +
 +/* Address Map */
@@ -2155,7 +2188,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,663 @@
+@@ -0,0 +1,621 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2230,20 +2263,20 @@
 +				 ar231x_read_reg(AR2315_IMR);
 +
 +	if (misc_intr & AR2315_ISR_SPI)
-+		do_IRQ(AR531X_MISC_IRQ_SPI);
++		do_IRQ(AR2315_MISC_IRQ_SPI);
 +	else if (misc_intr & AR2315_ISR_TIMER)
-+		do_IRQ(AR531X_MISC_IRQ_TIMER);
++		do_IRQ(AR2315_MISC_IRQ_TIMER);
 +	else if (misc_intr & AR2315_ISR_AHB)
-+		do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
++		do_IRQ(AR2315_MISC_IRQ_AHB);
 +	else if (misc_intr & AR2315_ISR_GPIO)
 +		ar2315_gpio_irq();
 +	else if (misc_intr & AR2315_ISR_UART0)
-+		do_IRQ(AR531X_MISC_IRQ_UART0);
++		do_IRQ(AR2315_MISC_IRQ_UART0);
 +	else if (misc_intr & AR2315_ISR_WD) {
 +		ar231x_write_reg(AR2315_ISR, AR2315_ISR_WD);
-+		do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
++		do_IRQ(AR2315_MISC_IRQ_WATCHDOG);
 +	} else
-+		do_IRQ(AR531X_MISC_IRQ_NONE);
++		do_IRQ(AR2315_MISC_IRQ_NONE);
 +}
 +
 +/*
@@ -2313,28 +2346,7 @@
 +	unsigned int imr;
 +
 +	imr = ar231x_read_reg(AR2315_IMR);
-+	switch (d->irq) {
-+	case AR531X_MISC_IRQ_SPI:
-+		imr |= AR2315_ISR_SPI;
-+		break;
-+	case AR531X_MISC_IRQ_TIMER:
-+		imr |= AR2315_ISR_TIMER;
-+		break;
-+	case AR531X_MISC_IRQ_AHB_PROC:
-+		imr |= AR2315_ISR_AHB;
-+		break;
-+	case AR531X_MISC_IRQ_GPIO:
-+		imr |= AR2315_ISR_GPIO;
-+		break;
-+	case AR531X_MISC_IRQ_UART0:
-+		imr |= AR2315_ISR_UART0;
-+		break;
-+	case AR531X_MISC_IRQ_WATCHDOG:
-+		imr |= AR2315_ISR_WD;
-+		break;
-+	default:
-+		break;
-+	}
++	imr |= 1 << (d->irq - AR531X_MISC_IRQ_BASE - 1);
 +	ar231x_write_reg(AR2315_IMR, imr);
 +}
 +
@@ -2344,28 +2356,7 @@
 +	unsigned int imr;
 +
 +	imr = ar231x_read_reg(AR2315_IMR);
-+	switch (d->irq) {
-+	case AR531X_MISC_IRQ_SPI:
-+		imr &= ~AR2315_ISR_SPI;
-+		break;
-+	case AR531X_MISC_IRQ_TIMER:
-+		imr &= ~AR2315_ISR_TIMER;
-+		break;
-+	case AR531X_MISC_IRQ_AHB_PROC:
-+		imr &= ~AR2315_ISR_AHB;
-+		break;
-+	case AR531X_MISC_IRQ_GPIO:
-+		imr &= ~AR2315_ISR_GPIO;
-+		break;
-+	case AR531X_MISC_IRQ_UART0:
-+		imr &= ~AR2315_ISR_UART0;
-+		break;
-+	case AR531X_MISC_IRQ_WATCHDOG:
-+		imr &= ~AR2315_ISR_WD;
-+		break;
-+	default:
-+		break;
-+	}
++	imr &= ~(1 << (d->irq - AR531X_MISC_IRQ_BASE - 1));
 +	ar231x_write_reg(AR2315_IMR, imr);
 +}
 +
@@ -2406,7 +2397,7 @@
 +
 +	ar231x_irq_dispatch = ar2315_irq_dispatch;
 +	gpiointval = ar231x_read_reg(AR2315_GPIO_DI);
-+	for (i = 0; i < AR531X_MISC_IRQ_COUNT; i++) {
++	for (i = 0; i < AR2315_MISC_IRQ_COUNT; i++) {
 +		int irq = AR531X_MISC_IRQ_BASE + i;
 +		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
 +			handle_level_irq);
@@ -2416,8 +2407,8 @@
 +		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
 +			handle_level_irq);
 +	}
-+	setup_irq(AR531X_MISC_IRQ_GPIO, &cascade);
-+	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar2315_ahb_proc_interrupt);
++	setup_irq(AR2315_MISC_IRQ_GPIO, &cascade);
++	setup_irq(AR2315_MISC_IRQ_AHB, &ar2315_ahb_proc_interrupt);
 +	setup_irq(AR2315_IRQ_MISC_INTRS, &cascade);
 +}
 +
@@ -2576,8 +2567,8 @@
 +	},
 +	{
 +		.flags = IORESOURCE_IRQ,
-+		.start = AR531X_MISC_IRQ_WATCHDOG,
-+		.end = AR531X_MISC_IRQ_WATCHDOG,
++		.start = AR2315_MISC_IRQ_WATCHDOG,
++		.end = AR2315_MISC_IRQ_WATCHDOG,
 +	}
 +};
 +
@@ -2816,7 +2807,7 @@
 +	ar231x_write_reg(AR2315_WDC, AR2315_WDC_IGNORE_EXPIRATION);
 +
 +	_machine_restart = ar2315_restart;
-+	ar231x_serial_setup(KSEG1ADDR(AR2315_UART0), AR531X_MISC_IRQ_UART0,
++	ar231x_serial_setup(KSEG1ADDR(AR2315_UART0), AR2315_MISC_IRQ_UART0,
 +			    ar2315_apb_frequency());
 +}
 --- /dev/null
@@ -2902,7 +2893,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x.h
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,44 @@
 +#ifndef __AR531X_H
 +#define __AR531X_H
 +
@@ -2915,19 +2906,6 @@
 +/* Software's idea of interrupts handled by "CPU Interrupt Controller" */
 +#define AR531X_IRQ_NONE		(MIPS_CPU_IRQ_BASE+0)
 +#define AR531X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE+7) /* C0_CAUSE: 0x8000 */
-+
-+/* Miscellaneous interrupts, which share IP6 */
-+#define AR531X_MISC_IRQ_NONE		(AR531X_MISC_IRQ_BASE+0)
-+#define AR531X_MISC_IRQ_TIMER		(AR531X_MISC_IRQ_BASE+1)
-+#define AR531X_MISC_IRQ_AHB_PROC	(AR531X_MISC_IRQ_BASE+2)
-+#define AR531X_MISC_IRQ_AHB_DMA		(AR531X_MISC_IRQ_BASE+3)
-+#define AR531X_MISC_IRQ_GPIO		(AR531X_MISC_IRQ_BASE+4)
-+#define AR531X_MISC_IRQ_UART0		(AR531X_MISC_IRQ_BASE+5)
-+#define AR531X_MISC_IRQ_UART0_DMA	(AR531X_MISC_IRQ_BASE+6)
-+#define AR531X_MISC_IRQ_WATCHDOG	(AR531X_MISC_IRQ_BASE+7)
-+#define AR531X_MISC_IRQ_LOCAL		(AR531X_MISC_IRQ_BASE+8)
-+#define AR531X_MISC_IRQ_SPI		(AR531X_MISC_IRQ_BASE+9)
-+#define AR531X_MISC_IRQ_COUNT		10
 +
 +/* GPIO Interrupts [0..7], share AR531X_MISC_IRQ_GPIO */
 +#define AR531X_GPIO_IRQ_NONE            (AR531X_GPIO_IRQ_BASE+0)
