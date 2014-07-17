@@ -2134,7 +2134,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,623 @@
+@@ -0,0 +1,624 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2234,9 +2234,10 @@
 +			ar2315_gpio_irq();
 +		else if (misc_intr & AR2315_ISR_UART0)
 +			do_IRQ(AR531X_MISC_IRQ_UART0);
-+		else if (misc_intr & AR2315_ISR_WD)
++		else if (misc_intr & AR2315_ISR_WD) {
++			ar231x_write_reg(AR2315_ISR, AR2315_ISR_WD);
 +			do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
-+		else
++		} else
 +			do_IRQ(AR531X_MISC_IRQ_NONE);
 +	} else if (pending & CAUSEF_IP7)
 +		do_IRQ(AR531X_IRQ_CPU_CLOCK);
