@@ -1050,12 +1050,12 @@
 + */
 +#define AR2315_GPIO_DI          (AR2315_DSLBASE + 0x0088)
 +#define AR2315_GPIO_DO          (AR2315_DSLBASE + 0x0090)
-+#define AR2315_GPIO_CR          (AR2315_DSLBASE + 0x0098)
++#define AR2315_GPIO_DIR         (AR2315_DSLBASE + 0x0098)
 +#define AR2315_GPIO_INT         (AR2315_DSLBASE + 0x00a0)
 +
-+#define AR2315_GPIO_CR_M(x)                (1 << (x))       /* mask for i/o */
-+#define AR2315_GPIO_CR_O(x)                (1 << (x))       /* output */
-+#define AR2315_GPIO_CR_I(x)                (0)              /* input */
++#define AR2315_GPIO_DIR_M(x)               (1 << (x))       /* mask for i/o */
++#define AR2315_GPIO_DIR_O(x)               (1 << (x))       /* output */
++#define AR2315_GPIO_DIR_I(x)               (0)              /* input */
 +
 +#define AR2315_GPIO_INT_S(x)	(x)             /* interrupt enable */
 +#define AR2315_GPIO_INT_M	(0x3F)          /* mask for int */
@@ -1583,7 +1583,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,596 @@
+@@ -0,0 +1,540 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1730,100 +1730,46 @@
 +	irq_set_chained_handler(AR5312_IRQ_MISC_INTRS, ar5312_misc_irq_handler);
 +}
 +
-+static u32
-+ar5312_gpio_set_output(u32 mask, u32 val)
-+{
-+	u32 reg;
-+
-+	reg = ar231x_read_reg(AR531X_GPIO_CR);
-+	reg |= mask;
-+	reg &= ~val;
-+	ar231x_write_reg(AR531X_GPIO_CR, reg);
-+	return reg;
-+}
-+
-+static u32
-+ar5312_gpio_get(u32 valid_mask)
-+{
-+	u32 reg;
-+	reg = ar231x_read_reg(AR531X_GPIO_DI);
-+	reg &= valid_mask;
-+	return reg;
-+}
-+
-+static u32
-+ar5312_gpio_set(u32 mask, u32 value)
-+{
-+	u32 reg;
-+	reg = ar231x_read_reg(AR531X_GPIO_DO);
-+	reg &= ~mask;
-+	reg |= value;
-+	ar231x_write_reg(AR531X_GPIO_DO, reg);
-+	return reg;
-+}
-+
 +/*
-+ * gpiolib implementations. Original mask based methods preserved
++ * gpiolib implementations
 + */
 +static int
 +ar5312_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	u32 rett;
-+	if (!(gpch->valid_mask & mask))
-+		return 0;
-+	rett = ar5312_gpio_get(gpch->valid_mask);
-+	return !!(rett & mask);
++	return (ar231x_read_reg(AR531X_GPIO_DI) >> gpio) & 1;
 +}
 +
 +static void
 +ar5312_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	if (!(gpch->valid_mask & mask))
-+		return;
-+	ar5312_gpio_set(mask, (!!value) * mask);
++	u32 reg = ar231x_read_reg(AR531X_GPIO_DO);
++	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
++	ar231x_write_reg(AR531X_GPIO_DO, reg);
 +}
 +
 +static int
 +ar5312_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	if (!(gpch->valid_mask & mask))
-+		return -ENXIO;
-+	ar5312_gpio_set_output(mask, 0);
-+	return 0;
-+}
-+static int
-+ar5312_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
-+{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	if (!(gpch->valid_mask & mask))
-+		return -ENXIO;
-+	ar5312_gpio_set_output(mask, mask);
-+	ar5312_gpio_set(mask, (!!value) * mask);
++	ar231x_mask_reg(AR531X_GPIO_CR, 0, 1 << gpio);
 +	return 0;
 +}
 +
-+static struct ar231x_gpio_chip ar5312_gpio_chip = {
-+	.valid_mask = (1 << 22) - 1,
-+	.chip = {
-+		.label                  = "ar5312-gpio",
-+		.direction_input        = ar5312_gpio_direction_input,
-+		.direction_output       = ar5312_gpio_direction_output,
-+		.set                    = ar5312_gpio_set_value,
-+		.get                    = ar5312_gpio_get_value,
-+		.base                   = 0,
-+		.ngpio                  = AR531X_GPIO_IRQ_COUNT, /* 22 */
-+	}
++static int
++ar5312_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
++{
++	ar231x_mask_reg(AR531X_GPIO_CR, 1 << gpio, 0);
++	ar5312_gpio_set_value(chip, gpio, value);
++	return 0;
++}
++
++static struct gpio_chip ar5312_gpio_chip = {
++	.label                  = "ar5312-gpio",
++	.direction_input        = ar5312_gpio_direction_input,
++	.direction_output       = ar5312_gpio_direction_output,
++	.set                    = ar5312_gpio_set_value,
++	.get                    = ar5312_gpio_get_value,
++	.base                   = 0,
++	.ngpio                  = AR531X_NUM_GPIO, /* 8 */
 +};
 +
 +/* end of gpiolib */
@@ -2123,19 +2069,17 @@
 +	mips_hpt_frequency = ar5312_cpu_frequency() / 2;
 +}
 +
-+int __init
++static int __init
 +ar5312_gpio_init(void)
 +{
 +	int ret;
-+	struct ar231x_gpio_chip *gpch;
-+	gpch = &ar5312_gpio_chip;
-+	ret = gpiochip_add(&gpch->chip);
++	ret = gpiochip_add(&ar5312_gpio_chip);
 +	if (ret) {
-+		pr_err("%s: failed to add gpiochip\n", gpch->chip.label);
++		pr_err("%s: failed to add gpiochip\n", ar5312_gpio_chip.label);
 +		return ret;
 +	}
-+	pr_info("%s: registered %d GPIOs\n", gpch->chip.label,
-+		gpch->chip.ngpio);
++	pr_info("%s: registered %d GPIOs\n", ar5312_gpio_chip.label,
++		ar5312_gpio_chip.ngpio);
 +	return ret;
 +}
 +
@@ -2182,7 +2126,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,615 @@
+@@ -0,0 +1,557 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2242,8 +2186,8 @@
 +		ar231x_write_reg(AR2315_ISR, AR2315_ISR_GPIO);
 +
 +	/* Enable interrupt with edge detection */
-+	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(bit)) !=
-+	    AR2315_GPIO_CR_I(bit))
++	if ((ar231x_read_reg(AR2315_GPIO_DIR) & AR2315_GPIO_DIR_M(bit)) !=
++	    AR2315_GPIO_DIR_I(bit))
 +		return;
 +
 +	if (bit >= 0)
@@ -2310,8 +2254,8 @@
 +	unsigned int gpio = d->irq - AR531X_GPIO_IRQ_BASE;
 +
 +	/* Enable interrupt with edge detection */
-+	if ((ar231x_read_reg(AR2315_GPIO_CR) & AR2315_GPIO_CR_M(gpio)) !=
-+	    AR2315_GPIO_CR_I(gpio))
++	if ((ar231x_read_reg(AR2315_GPIO_DIR) & AR2315_GPIO_DIR_M(gpio)) !=
++	    AR2315_GPIO_DIR_I(gpio))
 +		return;
 +
 +	gpiointmask |= (1 << gpio);
@@ -2390,7 +2334,7 @@
 +		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
 +			handle_level_irq);
 +	}
-+	for (i = 0; i < AR531X_GPIO_IRQ_COUNT; i++) {
++	for (i = 0; i < AR2315_NUM_GPIO; i++) {
 +		int irq = AR531X_GPIO_IRQ_BASE + i;
 +		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
 +			handle_level_irq);
@@ -2400,102 +2344,46 @@
 +	irq_set_chained_handler(AR2315_IRQ_MISC_INTRS, ar2315_misc_irq_handler);
 +}
 +
-+static u32
-+ar2315_gpio_set_output(u32 mask, u32 val)
-+{
-+	u32 reg;
-+
-+	reg = ar231x_read_reg(AR2315_GPIO_CR);
-+	reg &= ~mask;
-+	reg |= val;
-+	ar231x_write_reg(AR2315_GPIO_CR, reg);
-+	return reg;
-+}
-+
-+static u32
-+ar2315_gpio_get(u32 valid_mask)
-+{
-+	u32 reg;
-+	reg = ar231x_read_reg(AR2315_GPIO_DI);
-+	reg &= valid_mask;
-+	return reg;
-+}
-+
-+static u32
-+ar2315_gpio_set(u32 mask, u32 value)
-+{
-+	u32 reg;
-+	reg = ar231x_read_reg(AR2315_GPIO_DO);
-+	reg &= ~mask;
-+	reg |= value;
-+	ar231x_write_reg(AR2315_GPIO_DO, reg);
-+	return reg;
-+}
-+
 +/*
-+ * gpiolib implementation.  Original legacy mask based methods
-+ * preserved for now.
++ * gpiolib implementation
 + */
 +static int
 +ar2315_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	u32 rett;
-+	if (!(gpch->valid_mask & mask))
-+		return 0;
-+	rett = ar2315_gpio_get(gpch->valid_mask);  /* legacy code */
-+	return !!(rett & mask);
++	return (ar231x_read_reg(AR2315_GPIO_DI) >> gpio) & 1;
 +}
 +
 +static void
 +ar2315_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	if (!(gpch->valid_mask & mask))
-+		return;
-+	ar2315_gpio_set(mask, (!!value) * mask);  /* legacy */
++	u32 reg = ar231x_read_reg(AR2315_GPIO_DO);
++	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
++	ar231x_write_reg(AR2315_GPIO_DO, reg);
 +}
 +
 +static int
 +ar2315_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	if (!(gpch->valid_mask & mask))
-+		return -ENXIO;
-+	ar2315_gpio_set_output(mask, 0);  /* legacy */
++	ar231x_mask_reg(AR2315_GPIO_DIR, 1 << gpio, 0);
 +	return 0;
 +}
 +
 +static int
 +ar2315_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
 +{
-+	struct ar231x_gpio_chip *gpch =
-+		container_of(chip, struct ar231x_gpio_chip, chip);
-+	u32 mask = 1 << gpio;
-+	if (!(gpch->valid_mask & mask))
-+		return -ENXIO;
-+	ar2315_gpio_set_output(mask, mask);  /* both legacy */
-+	ar2315_gpio_set(mask, (!!value) * mask);
++	ar231x_mask_reg(AR2315_GPIO_DIR, 0, 1 << gpio);
++	ar2315_gpio_set_value(chip, gpio, value);
 +	return 0;
 +}
 +
-+static struct ar231x_gpio_chip ar2315_gpio_chip = {
-+	.valid_mask = (1 << 22) - 1,
-+	.chip = {
-+		.label                  = "ar2315-gpio",
-+		.direction_input        = ar2315_gpio_direction_input,
-+		.direction_output       = ar2315_gpio_direction_output,
-+		.set                    = ar2315_gpio_set_value,
-+		.get                    = ar2315_gpio_get_value,
-+		.base                   = 0,
-+		.ngpio                  = AR531X_GPIO_IRQ_COUNT, /* 22 */
-+	}
++static struct gpio_chip ar2315_gpio_chip = {
++	.label                  = "ar2315-gpio",
++	.direction_input        = ar2315_gpio_direction_input,
++	.direction_output       = ar2315_gpio_direction_output,
++	.set                    = ar2315_gpio_set_value,
++	.get                    = ar2315_gpio_get_value,
++	.base                   = 0,
++	.ngpio                  = AR2315_NUM_GPIO, /* 22 */
 +};
 +
 +/* end of gpiolib */
@@ -2731,19 +2619,17 @@
 +	mips_hpt_frequency = ar2315_cpu_frequency() / 2;
 +}
 +
-+int __init
++static int __init
 +ar2315_gpio_init(void)
 +{
 +	int ret;
-+	struct ar231x_gpio_chip *gpch;
-+	gpch = &ar2315_gpio_chip;
-+	ret = gpiochip_add(&gpch->chip);
++	ret = gpiochip_add(&ar2315_gpio_chip);
 +	if (ret) {
-+		pr_err("%s: failed to add gpiochip\n", gpch->chip.label);
++		pr_err("%s: failed to add gpiochip\n", ar2315_gpio_chip.label);
 +		return ret;
 +	}
-+	pr_info("%s: registered %d GPIOs\n", gpch->chip.label,
-+		gpch->chip.ngpio);
++	pr_info("%s: registered %d GPIOs\n", ar2315_gpio_chip.label,
++		ar2315_gpio_chip.ngpio);
 +	return ret;
 +}
 +
@@ -2881,7 +2767,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x.h
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +#ifndef __AR531X_H
 +#define __AR531X_H
 +
@@ -2895,10 +2781,9 @@
 +#define AR531X_IRQ_NONE		(MIPS_CPU_IRQ_BASE+0)
 +#define AR531X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE+7) /* C0_CAUSE: 0x8000 */
 +
-+/* GPIO Interrupts [0..7], share AR531X_MISC_IRQ_GPIO */
++/* GPIO Interrupts, share ARXXXX_MISC_IRQ_GPIO */
 +#define AR531X_GPIO_IRQ_NONE            (AR531X_GPIO_IRQ_BASE+0)
 +#define AR531X_GPIO_IRQ(n)              (AR531X_GPIO_IRQ_BASE+n)
-+#define AR531X_GPIO_IRQ_COUNT           22
 +
 +static inline u32
 +ar231x_read_reg(u32 reg)
@@ -2928,10 +2813,9 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.h
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,37 @@
 +#ifndef __AR231X_DEVICES_H
 +#define __AR231X_DEVICES_H
-+#include <linux/gpio.h>
 +
 +enum {
 +	/* handled by ar5312.c */
@@ -2966,10 +2850,6 @@
 +	return !is_2315();
 +}
 +
-+struct ar231x_gpio_chip {
-+	u32 valid_mask;
-+	struct gpio_chip chip;
-+};
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.c
