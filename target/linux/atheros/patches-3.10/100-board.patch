@@ -2876,13 +2876,13 @@
 +static inline u32
 +ar231x_read_reg(u32 reg)
 +{
-+	return __raw_readl((u32 *)KSEG1ADDR(reg));
++	return __raw_readl((void __iomem *)KSEG1ADDR(reg));
 +}
 +
 +static inline void
 +ar231x_write_reg(u32 reg, u32 val)
 +{
-+	__raw_writel(val, (u32 *)KSEG1ADDR(reg));
++	__raw_writel(val, (void __iomem *)KSEG1ADDR(reg));
 +}
 +
 +static inline u32
