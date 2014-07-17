@@ -61,6 +61,10 @@
 		ralink,led_polarity = <0x17>;
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		status {

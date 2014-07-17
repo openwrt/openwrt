@@ -64,6 +64,10 @@
 		ralink,fpa2 = <0x1f003fff>;
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	otg@101c0000 {
 		status = "okay";
 	};

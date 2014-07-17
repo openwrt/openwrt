@@ -3,8 +3,8 @@
 /include/ "rt3050.dtsi"
 
 / {
-	compatible = "3G-6200N", "ralink,rt3050-soc";
-	model = "Edimax 3g-6200n";
+	compatible = "3G-6200NL", "ralink,rt3050-soc";
+	model = "Edimax 3g-6200nl";
 
 	pinctrl {
 		state_default: pinctrl0 {
@@ -56,6 +56,10 @@
 
 	esw@10110000 {
 		ralink,portmap = <0x2f>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
 	};
 
 	gpio-leds {

@@ -25,14 +25,20 @@
 		#size-cells = <1>;
 	};
 
-	ethernet@10100000 {
+	/* FIXME: no partitions defined */
+/*	ethernet@10100000 {
 		mtd-mac-address = <&factory 0x4004>;
 	};
-
+*/
 	esw@10110000 {
 		ralink,portmap = <0x2f>;
 	};
 
+	/* FIXME: no partitions defined */
+/*	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+*/
 	gpio-leds {
 		compatible = "gpio-leds";
 		3g {

@@ -77,6 +77,10 @@
 		mtd-mac-address = <&factory 0x28>;
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		power-green {
