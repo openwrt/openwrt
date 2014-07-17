@@ -53,8 +53,8 @@ parse_matching_rule() {
 	done
 	config_get type "$section" TYPE
 	case "$type" in
-		classify) unset pkt; append "$var" "-m mark --mark 0/0xff";;
-		default) pkt=1; append "$var" "-m mark --mark 0/0xff";;
+		classify) unset pkt; append "$var" "-m mark --mark 0/0x0f";;
+		default) pkt=1; append "$var" "-m mark --mark 0/0xf0";;
 		reclassify) pkt=1;;
 	esac
 	append "$var" "${proto:+-p $proto}"
@@ -165,8 +165,8 @@ parse_matching_rule() {
 				config_get class "${value##!}" classnr
 				[ -z "$class" ] && continue;
 				case "$value" in
-					!*) append "$var" "-m mark ! --mark $class/0xff";;
-					*) append "$var" "-m mark --mark $class/0xff";;
+					!*) append "$var" "-m mark ! --mark $class/0x0f";;
+					*) append "$var" "-m mark --mark $class/0x0f";;
 				esac
 			;;
 			1:TOS)
@@ -268,12 +268,13 @@ cls_var() {
 }
 
 tcrules() {
-	dir=/usr/lib/qos
-	[ -e $dir/tcrules.awk ] || dir=.
+	_dir=/usr/lib/qos
+	[ -e $_dir/tcrules.awk ] || _dir=.
 	echo "$cstr" | awk \
 		-v device="$dev" \
 		-v linespeed="$rate" \
-		-f $dir/tcrules.awk
+		-v direction="$dir" \
+		-f $_dir/tcrules.awk
 }
 
 start_interface() {
@@ -389,6 +390,7 @@ add_rules() {
 			unset iptrule
 		}
 
+		target=$(($target | ($target << 4)))
 		parse_matching_rule iptrule "$rule" "$options" "$prefix" "-j MARK --set-mark $target/0xff"
 		append "$var" "$iptrule" "$N"
 	done
@@ -407,7 +409,7 @@ start_cg() {
 		config_get maxsize "$class" maxsize
 		[ -z "$maxsize" -o -z "$mark" ] || {
 			add_insmod ipt_length
-			append pktrules "iptables -t mangle -A qos_${cg} -m mark --mark $mark/0xff -m length --length $maxsize: -j MARK --set-mark 0/0xff" "$N"
+			append pktrules "iptables -t mangle -A qos_${cg} -m mark --mark $mark/0x0f -m length --length $maxsize: -j MARK --set-mark 0/0xff" "$N"
 		}
 	done
 	add_rules pktrules "$rules" "iptables -t mangle -A qos_${cg}"
@@ -427,9 +429,10 @@ $INSMOD
 iptables -t mangle -N qos_${cg} >&- 2>&-
 iptables -t mangle -N qos_${cg}_ct >&- 2>&-
 ${iptrules:+${iptrules}${N}iptables -t mangle -A qos_${cg}_ct -j CONNMARK --save-mark --mask 0xff}
-iptables -t mangle -A qos_${cg} -j CONNMARK --restore-mark --mask 0xff
-iptables -t mangle -A qos_${cg} -m mark --mark 0/0xff -j qos_${cg}_ct
+iptables -t mangle -A qos_${cg} -j CONNMARK --restore-mark --mask 0x0f
+iptables -t mangle -A qos_${cg} -m mark --mark 0/0x0f -j qos_${cg}_ct
 $pktrules
+${iptrules:+${iptrules}${N}iptables -t mangle -A qos_${cg} -j CONNMARK --save-mark --mask 0xf0}
 $up$N${down:+${down}$N}
 EOF
 	unset INSMOD

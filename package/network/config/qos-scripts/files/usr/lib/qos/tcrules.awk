@@ -32,7 +32,7 @@ END {
 			sum_rtprio += prio[i]
 		}
 	}
-	
+
 	# allocation of m1 in rt classes:
 	# sum(d * m1) must not exceed dmax * (linespeed - allocated)
 	dmax = 0
@@ -46,7 +46,7 @@ END {
 				if (d[i] > dmax) dmax = d[i]
 			}
 		}
-	}	
+	}
 
 	ds_avail = dmax * (linespeed - allocated)
 	for (i = 1; i <= n; i++) {
@@ -84,7 +84,18 @@ END {
 
 	# filter rule
 	for (i = 1; i <= n; i++) {
-		print "tc filter add dev "device" parent 1: prio "class[i]" protocol ip handle "class[i]"/0xff fw flowid 1:"class[i] "0" 
+		filter_cmd = "tc filter add dev "device" parent 1: prio %d protocol ip handle %s fw flowid 1:%d0\n";
+		if (direction == "up") {
+			filter_1 = sprintf("0x%x0/0xf0", class[i])
+			filter_2 = sprintf("0x0%x/0x0f", class[i])
+		} else {
+			filter_1 = sprintf("0x0%x/0x0f", class[i])
+			filter_2 = sprintf("0x%x0/0xf0", class[i])
+		}
+
+		printf filter_cmd, class[i] * 2, filter_1, class[i]
+		printf filter_cmd, class[i] * 2 + 1, filter_2, class[i]
+
 		filterc=1
 		if (filter[i] != "") {
 			print " tc filter add dev "device" parent "class[i]"00: handle "filterc"0 "filter[i]
