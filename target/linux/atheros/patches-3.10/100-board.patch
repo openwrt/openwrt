@@ -1384,8 +1384,8 @@
 +#define AR531X_SDRAMCTL         0x18300000
 +#define AR531X_FLASHCTL         0x18400000
 +#define AR531X_APBBASE		0x1c000000
++#define AR531X_UART0            0x1c000000      /* UART MMR */
 +#define AR531X_FLASH            0x1e000000
-+#define AR531X_UART0            0xbc000000      /* UART MMR */
 +
 +/*
 + * AR531X_NUM_ENET_MAC defines the number of ethernet MACs that
@@ -2126,7 +2126,7 @@
 +	ar231x_write_reg(AR531X_WD_CTRL, AR531X_WD_CTRL_IGNORE_EXPIRATION);
 +
 +	_machine_restart = ar5312_restart;
-+	ar231x_serial_setup(KSEG1ADDR(AR531X_UART0), AR531X_MISC_IRQ_UART0,
++	ar231x_serial_setup(AR531X_UART0, AR531X_MISC_IRQ_UART0,
 +			    ar5312_sys_frequency());
 +}
 +
@@ -2686,7 +2686,7 @@
 +	ar231x_write_reg(AR2315_WDC, AR2315_WDC_IGNORE_EXPIRATION);
 +
 +	_machine_restart = ar2315_restart;
-+	ar231x_serial_setup(KSEG1ADDR(AR2315_UART0), AR2315_MISC_IRQ_UART0,
++	ar231x_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
 +			    ar2315_apb_frequency());
 +}
 --- /dev/null
@@ -2859,7 +2859,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.c
-@@ -0,0 +1,181 @@
+@@ -0,0 +1,180 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -3006,13 +3006,12 @@
 +
 +	memset(&s, 0, sizeof(s));
 +
-+	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
++	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST | UPF_IOREMAP;
 +	s.iotype = UPIO_MEM32;
 +	s.irq = irq;
 +	s.regshift = 2;
 +	s.mapbase = mapbase;
 +	s.uartclk = uartclk;
-+	s.membase = (void __iomem *)s.mapbase;
 +
 +	early_serial_setup(&s);
 +}
