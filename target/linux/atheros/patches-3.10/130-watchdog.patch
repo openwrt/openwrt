@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,189 @@
+@@ -0,0 +1,186 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,6 @@
 +ar2315_wdt_enable(void)
 +{
 +	ar231x_write_reg(AR2315_WD, wdt_timeout * CLOCK_RATE);
-+	ar231x_write_reg(AR2315_ISR, 0x80);
 +}
 +
 +static ssize_t
@@ -92,7 +91,6 @@
 +	} else {
 +		ar231x_write_reg(AR2315_WDC, 0);
 +		ar231x_write_reg(AR2315_WD, 0);
-+		ar231x_write_reg(AR2315_ISR, 0x80);
 +	}
 +	return IRQ_HANDLED;
 +}
@@ -151,7 +149,6 @@
 +{
 +	int ret = 0;
 +
-+	ar2315_wdt_enable();
 +	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt,
 +			  IRQF_DISABLED, DRIVER_NAME, dev);
 +	if (ret) {
