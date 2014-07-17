@@ -21,12 +21,12 @@
 +static inline void prom_uart_wr(void __iomem *base, unsigned reg,
 +				unsigned char ch)
 +{
-+	__raw_writeb(ch, base + 4 * reg);
++	__raw_writel(ch, base + 4 * reg);
 +}
 +
 +static inline unsigned char prom_uart_rr(void __iomem *base, unsigned reg)
 +{
-+	return __raw_readb(base + 4 * reg);
++	return __raw_readl(base + 4 * reg);
 +}
 +
 +void prom_putchar(unsigned char ch)
