@@ -1550,7 +1550,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,601 @@
+@@ -0,0 +1,602 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1631,7 +1631,7 @@
 +
 +/* Enable the specified AR531X_MISC_IRQ interrupt */
 +static void
-+ar5312_misc_intr_enable(struct irq_data *d)
++ar5312_misc_irq_unmask(struct irq_data *d)
 +{
 +	unsigned int imr;
 +
@@ -1642,7 +1642,7 @@
 +
 +/* Disable the specified AR531X_MISC_IRQ interrupt */
 +static void
-+ar5312_misc_intr_disable(struct irq_data *d)
++ar5312_misc_irq_mask(struct irq_data *d)
 +{
 +	unsigned int imr;
 +
@@ -1652,9 +1652,10 @@
 +	ar231x_read_reg(AR531X_IMR); /* flush write buffer */
 +}
 +
-+static struct irq_chip ar5312_misc_intr_controller = {
-+	.irq_mask     = ar5312_misc_intr_disable,
-+	.irq_unmask   = ar5312_misc_intr_enable,
++static struct irq_chip ar5312_misc_irq_chip = {
++	.name		= "AR5312-MISC",
++	.irq_unmask	= ar5312_misc_irq_unmask,
++	.irq_mask	= ar5312_misc_irq_mask,
 +};
 +
 +
@@ -1695,8 +1696,8 @@
 +	ar231x_irq_dispatch = ar5312_irq_dispatch;
 +	for (i = 0; i < AR531X_MISC_IRQ_COUNT; i++) {
 +		int irq = AR531X_MISC_IRQ_BASE + i;
-+		irq_set_chip_and_handler(irq, &ar5312_misc_intr_controller,
-+			handle_level_irq);
++		irq_set_chip_and_handler(irq, &ar5312_misc_irq_chip,
++					 handle_level_irq);
 +	}
 +	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5312_ahb_proc_interrupt);
 +	setup_irq(AR5312_IRQ_MISC_INTRS, &cascade);
@@ -2154,7 +2155,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,661 @@
+@@ -0,0 +1,663 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2278,7 +2279,7 @@
 +	ar231x_write_reg(AR2315_GPIO_INT, reg);
 +}
 +
-+static void ar2315_gpio_intr_enable(struct irq_data *d)
++static void ar2315_gpio_irq_unmask(struct irq_data *d)
 +{
 +	unsigned int gpio = d->irq - AR531X_GPIO_IRQ_BASE;
 +
@@ -2291,7 +2292,7 @@
 +	ar2315_set_gpiointmask(gpio, 3);
 +}
 +
-+static void ar2315_gpio_intr_disable(struct irq_data *d)
++static void ar2315_gpio_irq_mask(struct irq_data *d)
 +{
 +	unsigned int gpio = d->irq - AR531X_GPIO_IRQ_BASE;
 +
@@ -2300,13 +2301,14 @@
 +	ar2315_set_gpiointmask(gpio, 0);
 +}
 +
-+static struct irq_chip ar2315_gpio_intr_controller = {
-+	.irq_mask     = ar2315_gpio_intr_disable,
-+	.irq_unmask   = ar2315_gpio_intr_enable,
++static struct irq_chip ar2315_gpio_irq_chip = {
++	.name		= "AR2315-GPIO",
++	.irq_unmask	= ar2315_gpio_irq_unmask,
++	.irq_mask	= ar2315_gpio_irq_mask,
 +};
 +
 +static void
-+ar2315_misc_intr_enable(struct irq_data *d)
++ar2315_misc_irq_unmask(struct irq_data *d)
 +{
 +	unsigned int imr;
 +
@@ -2337,7 +2339,7 @@
 +}
 +
 +static void
-+ar2315_misc_intr_disable(struct irq_data *d)
++ar2315_misc_irq_mask(struct irq_data *d)
 +{
 +	unsigned int imr;
 +
@@ -2367,9 +2369,10 @@
 +	ar231x_write_reg(AR2315_IMR, imr);
 +}
 +
-+static struct irq_chip ar2315_misc_intr_controller = {
-+	.irq_mask     = ar2315_misc_intr_disable,
-+	.irq_unmask   = ar2315_misc_intr_enable,
++static struct irq_chip ar2315_misc_irq_chip = {
++	.name		= "AR2315-MISC",
++	.irq_unmask	= ar2315_misc_irq_unmask,
++	.irq_mask	= ar2315_misc_irq_mask,
 +};
 +
 +static irqreturn_t ar2315_ahb_proc_handler(int cpl, void *dev_id)
@@ -2405,12 +2408,12 @@
 +	gpiointval = ar231x_read_reg(AR2315_GPIO_DI);
 +	for (i = 0; i < AR531X_MISC_IRQ_COUNT; i++) {
 +		int irq = AR531X_MISC_IRQ_BASE + i;
-+		irq_set_chip_and_handler(irq, &ar2315_misc_intr_controller,
++		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
 +			handle_level_irq);
 +	}
 +	for (i = 0; i < AR531X_GPIO_IRQ_COUNT; i++) {
 +		int irq = AR531X_GPIO_IRQ_BASE + i;
-+		irq_set_chip_and_handler(irq, &ar2315_gpio_intr_controller,
++		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
 +			handle_level_irq);
 +	}
 +	setup_irq(AR531X_MISC_IRQ_GPIO, &cascade);
