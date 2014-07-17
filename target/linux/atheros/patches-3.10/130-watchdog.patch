@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/drivers/watchdog/ar2315-wtd.c
-@@ -0,0 +1,186 @@
+@@ -0,0 +1,209 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
 + * it under the terms of the GNU General Public License as published by
@@ -35,23 +35,32 @@
 +#include <linux/io.h>
 +#include <linux/uaccess.h>
 +
-+#include <ar231x_platform.h>
-+#include <ar2315_regs.h>
-+#include <ar231x.h>
-+
 +#define DRIVER_NAME	"ar2315-wdt"
 +
 +#define CLOCK_RATE 40000000
 +#define HEARTBEAT(x) (x < 1 || x > 90 ? 20 : x)
 +
++#define WDT_REG_TIMER		0x00
++#define WDT_REG_CTRL		0x04
++
++#define WDT_CTRL_ACT_NONE	0x00000000	/* No action */
++#define WDT_CTRL_ACT_NMI	0x00000001	/* NMI on watchdog */
++#define WDT_CTRL_ACT_RESET	0x00000002	/* reset on watchdog */
++
 +static int wdt_timeout = 20;
 +static int started;
 +static int in_use;
++static void __iomem *wdt_base;
++
++static inline void ar2315_wdt_wr(unsigned reg, u32 val)
++{
++	iowrite32(val, wdt_base + reg);
++}
 +
 +static void
 +ar2315_wdt_enable(void)
 +{
-+	ar231x_write_reg(AR2315_WD, wdt_timeout * CLOCK_RATE);
++	ar2315_wdt_wr(WDT_REG_TIMER, wdt_timeout * CLOCK_RATE);
 +}
 +
 +static ssize_t
@@ -89,8 +98,8 @@
 +		dev_crit(&pdev->dev, "watchdog expired, rebooting system\n");
 +		emergency_restart();
 +	} else {
-+		ar231x_write_reg(AR2315_WDC, 0);
-+		ar231x_write_reg(AR2315_WD, 0);
++		ar2315_wdt_wr(WDT_REG_CTRL, 0);
++		ar2315_wdt_wr(WDT_REG_TIMER, 0);
 +	}
 +	return IRQ_HANDLED;
 +}
@@ -147,10 +156,25 @@
 +static int
 +ar2315_wdt_probe(struct platform_device *dev)
 +{
++	struct resource *mem_res, *irq_res;
 +	int ret = 0;
 +
-+	ret = request_irq(AR531X_MISC_IRQ_WATCHDOG, ar2315_wdt_interrupt,
-+			  IRQF_DISABLED, DRIVER_NAME, dev);
++	if (wdt_base)
++		return -EBUSY;
++
++	irq_res = platform_get_resource(dev, IORESOURCE_IRQ, 0);
++	if (!irq_res) {
++		dev_err(&dev->dev, "no IRQ resource\n");
++		return -ENOENT;
++	}
++
++	mem_res = platform_get_resource(dev, IORESOURCE_MEM, 0);
++	wdt_base = devm_ioremap_resource(&dev->dev, mem_res);
++	if (IS_ERR(wdt_base))
++		return PTR_ERR(wdt_base);
++
++	ret = devm_request_irq(&dev->dev, irq_res->start, ar2315_wdt_interrupt,
++			       IRQF_DISABLED, DRIVER_NAME, dev);
 +	if (ret) {
 +		dev_err(&dev->dev, "failed to register inetrrupt\n");
 +		goto out;
@@ -168,7 +192,6 @@
 +ar2315_wdt_remove(struct platform_device *dev)
 +{
 +	misc_deregister(&ar2315_wdt_miscdev);
-+	free_irq(AR531X_MISC_IRQ_WATCHDOG, NULL);
 +	return 0;
 +}
 +
