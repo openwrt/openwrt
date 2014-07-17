@@ -42,7 +42,7 @@
 +++ b/arch/mips/ar231x/Platform
 @@ -0,0 +1,6 @@
 +#
-+# Atheros AR5312/AR2312 WiSoC
++# Atheros AR531X/AR231X WiSoC
 +#
 +platform-$(CONFIG_ATHEROS_AR231X)          += ar231x/
 +cflags-$(CONFIG_ATHEROS_AR231X)        += -I$(srctree)/arch/mips/include/asm/mach-ar231x
@@ -131,7 +131,7 @@
 +check_board_data(u8 *flash_limit, u8 *addr, bool broken)
 +{
 +	/* config magic found */
-+	if (*((u32 *)addr) == AR531X_BD_MAGIC)
++	if (*((u32 *)addr) == AR231X_BD_MAGIC)
 +		return 1;
 +
 +	if (!broken)
@@ -362,7 +362,7 @@
 + */
 +
 +/*
-+ * Prom setup file for ar531x
++ * Prom setup file for ar231x
 + */
 +
 +#include <linux/init.h>
@@ -389,8 +389,8 @@
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
 @@ -0,0 +1,83 @@
-+#ifndef __AR531X_PLATFORM_H
-+#define __AR531X_PLATFORM_H
++#ifndef __ASM_MACH_AR231X_PLATFORM_H
++#define __ASM_MACH_AR231X_PLATFORM_H
 +
 +/*
 + * This is board-specific data that is stored in a "fixed" location in flash.
@@ -400,7 +400,7 @@
 + */
 +struct ar231x_boarddata {
 +	u32 magic;                   /* board data is valid */
-+#define AR531X_BD_MAGIC 0x35333131   /* "5311", for all 531x platforms */
++#define AR231X_BD_MAGIC 0x35333131   /* "5311", for all 531x/231x platforms */
 +	u16 cksum;                   /* checksum (starting with BD_REV 2) */
 +	u16 rev;                     /* revision of this struct */
 +#define BD_REV 4
@@ -471,12 +471,12 @@
 +	char *macaddr;
 +};
 +
-+#endif /* __AR531X_PLATFORM_H */
++#endif /* __ASM_MACH_AR231X_PLATFORM_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/cpu-feature-overrides.h
 @@ -0,0 +1,84 @@
 +/*
-+ *  Atheros SoC specific CPU feature overrides
++ *  Atheros AR231x/AR531x SoC specific CPU feature overrides
 + *
 + *  Copyright (C) 2008 Gabor Juhos <juhosg@openwrt.org>
 + *
@@ -489,11 +489,11 @@
 + *  by the Free Software Foundation.
 + *
 + */
-+#ifndef __ASM_MACH_ATHEROS_CPU_FEATURE_OVERRIDES_H
-+#define __ASM_MACH_ATHEROS_CPU_FEATURE_OVERRIDES_H
++#ifndef __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H
++#define __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H
 +
 +/*
-+ * The ATHEROS SoCs have MIPS 4Kc/4KEc core.
++ * The Atheros AR531x/AR231x SoCs have MIPS 4Kc/4KEc core.
 + */
 +#define cpu_has_tlb			1
 +#define cpu_has_4kex			1
@@ -558,7 +558,7 @@
 +/* #define cpu_dcache_line_size()	? */
 +/* #define cpu_icache_line_size()	? */
 +
-+#endif /* __ASM_MACH_ATHEROS_CPU_FEATURE_OVERRIDES_H */
++#endif /* __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
 @@ -0,0 +1,79 @@
@@ -571,8 +571,8 @@
 + * Copyright (C) 2007  Felix Fietkau <nbd@openwrt.org>
 + *
 + */
-+#ifndef __ASM_MACH_GENERIC_DMA_COHERENCE_H
-+#define __ASM_MACH_GENERIC_DMA_COHERENCE_H
++#ifndef __ASM_MACH_AR231X_DMA_COHERENCE_H
++#define __ASM_MACH_AR231X_DMA_COHERENCE_H
 +
 +#define PCI_DMA_OFFSET	0x20000000
 +
@@ -640,12 +640,12 @@
 +#endif
 +}
 +
-+#endif /* __ASM_MACH_GENERIC_DMA_COHERENCE_H */
++#endif /* __ASM_MACH_AR231X_DMA_COHERENCE_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/gpio.h
 @@ -0,0 +1,30 @@
-+#ifndef _ATHEROS_GPIO_H_
-+#define _ATHEROS_GPIO_H_
++#ifndef __ASM_MACH_AR231X_GPIO_H
++#define __ASM_MACH_AR231X_GPIO_H
 +
 +#include <ar231x.h>
 +
@@ -662,27 +662,27 @@
 +/* Returns IRQ to attach for gpio.  Unchecked function */
 +static inline int gpio_to_irq(unsigned gpio)
 +{
-+	return AR531X_GPIO_IRQ(gpio);
++	return AR231X_GPIO_IRQ(gpio);
 +}
 +
 +/* Returns gpio for IRQ attached.  Unchecked function */
 +static inline int irq_to_gpio(unsigned irq)
 +{
-+	return irq - AR531X_GPIO_IRQ(0);
++	return irq - AR231X_GPIO_IRQ(0);
 +}
 +
 +#include <asm-generic/gpio.h> /* cansleep wrappers */
 +
-+#endif
++#endif	/* __ASM_MACH_AR231X_GPIO_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/reset.h
 @@ -0,0 +1,6 @@
-+#ifndef __AR531X_RESET_H
-+#define __AR531X_RESET_H
++#ifndef __ASM_MACH_AR231X_RESET_H
++#define __ASM_MACH_AR231X_RESET_H
 +
-+void ar531x_disable_reset_button(void);
++void ar231x_disable_reset_button(void);
 +
-+#endif /* __AR531X_RESET_H */
++#endif /* __ASM_MACH_AR231X_RESET_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/war.h
 @@ -0,0 +1,25 @@
@@ -693,8 +693,8 @@
 + *
 + * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
 + */
-+#ifndef __ASM_MIPS_MACH_ATHEROS_WAR_H
-+#define __ASM_MIPS_MACH_ATHEROS_WAR_H
++#ifndef __ASM_MACH_AR231X_WAR_H
++#define __ASM_MACH_AR231X_WAR_H
 +
 +#define R4600_V1_INDEX_ICACHEOP_WAR	0
 +#define R4600_V1_HIT_CACHEOP_WAR	0
@@ -710,7 +710,7 @@
 +#define R10000_LLSC_WAR			0
 +#define MIPS34K_MISSED_ITLB_WAR		0
 +
-+#endif /* __ASM_MIPS_MACH_ATHEROS_WAR_H */
++#endif /* __ASM_MACH_AR231X_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
 @@ -0,0 +1,617 @@
@@ -727,8 +727,8 @@
 + * Copyright (C) 2006-2008 Felix Fietkau <nbd@openwrt.org>
 + */
 +
-+#ifndef __AR2315_REG_H
-+#define __AR2315_REG_H
++#ifndef __ASM_MACH_AR231X_AR2315_REGS_H
++#define __ASM_MACH_AR231X_AR2315_REGS_H
 +
 +/*
 + * IRQs
@@ -743,16 +743,16 @@
 +/*
 + * Miscellaneous interrupts, which share IP2.
 + */
-+#define AR2315_MISC_IRQ_NONE		(AR531X_MISC_IRQ_BASE+0)
-+#define AR2315_MISC_IRQ_UART0		(AR531X_MISC_IRQ_BASE+1)
-+#define AR2315_MISC_IRQ_I2C_RSVD	(AR531X_MISC_IRQ_BASE+2)
-+#define AR2315_MISC_IRQ_SPI		(AR531X_MISC_IRQ_BASE+3)
-+#define AR2315_MISC_IRQ_AHB		(AR531X_MISC_IRQ_BASE+4)
-+#define AR2315_MISC_IRQ_APB		(AR531X_MISC_IRQ_BASE+5)
-+#define AR2315_MISC_IRQ_TIMER		(AR531X_MISC_IRQ_BASE+6)
-+#define AR2315_MISC_IRQ_GPIO		(AR531X_MISC_IRQ_BASE+7)
-+#define AR2315_MISC_IRQ_WATCHDOG	(AR531X_MISC_IRQ_BASE+8)
-+#define AR2315_MISC_IRQ_IR_RSVD		(AR531X_MISC_IRQ_BASE+9)
++#define AR2315_MISC_IRQ_NONE		(AR231X_MISC_IRQ_BASE+0)
++#define AR2315_MISC_IRQ_UART0		(AR231X_MISC_IRQ_BASE+1)
++#define AR2315_MISC_IRQ_I2C_RSVD	(AR231X_MISC_IRQ_BASE+2)
++#define AR2315_MISC_IRQ_SPI		(AR231X_MISC_IRQ_BASE+3)
++#define AR2315_MISC_IRQ_AHB		(AR231X_MISC_IRQ_BASE+4)
++#define AR2315_MISC_IRQ_APB		(AR231X_MISC_IRQ_BASE+5)
++#define AR2315_MISC_IRQ_TIMER		(AR231X_MISC_IRQ_BASE+6)
++#define AR2315_MISC_IRQ_GPIO		(AR231X_MISC_IRQ_BASE+7)
++#define AR2315_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+8)
++#define AR2315_MISC_IRQ_IR_RSVD		(AR231X_MISC_IRQ_BASE+9)
 +#define AR2315_MISC_IRQ_COUNT		10
 +
 +
@@ -878,7 +878,7 @@
 +#define AR2315_NMI_EN  1
 +
 +/*
-+ * Revision Register - Initial value is 0x3010 (WMAC 3.0, AR531X 1.0).
++ * Revision Register - Initial value is 0x3010 (WMAC 3.0, AR231X 1.0).
 + */
 +#define AR2315_SREV             (AR2315_DSLBASE + 0x0014)
 +
@@ -1065,7 +1065,7 @@
 +#define AR2315_GPIO_INT_LVL_M	((0x3) << 6)    /* mask for int level */
 +
 +#define AR2315_GPIO_INT_MAX_Y		1   /* Maximum value of Y for
-+					     * AR5313_GPIO_INT_* macros */
++					     * AR2315_GPIO_INT_* macros */
 +#define AR2315_GPIO_INT_LVL_OFF		0   /* Triggerring off */
 +#define AR2315_GPIO_INT_LVL_LOW		1   /* Low Level Triggered */
 +#define AR2315_GPIO_INT_LVL_HIGH	2   /* High Level Triggered */
@@ -1330,7 +1330,7 @@
 +#define HOST_PCI_SDRAM_BASEADDR HOST_PCI_MBAR1
 +#define PCI_DEVICE_MEM_SPACE    0x800000
 +
-+#endif /* __AR2315_REG_H */
++#endif /* __ASM_MACH_AR231X_AR2315_REGS_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
 @@ -0,0 +1,253 @@
@@ -1344,8 +1344,8 @@
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + */
 +
-+#ifndef AR5312_H
-+#define AR5312_H
++#ifndef __ASM_MACH_AR231X_AR5312_REGS_H
++#define __ASM_MACH_AR231X_AR5312_REGS_H
 +
 +#include <asm/addrspace.h>
 +
@@ -1363,118 +1363,118 @@
 +/*
 + * Miscellaneous interrupts, which share IP6.
 + */
-+#define AR531X_MISC_IRQ_NONE		(AR531X_MISC_IRQ_BASE+0)
-+#define AR531X_MISC_IRQ_TIMER		(AR531X_MISC_IRQ_BASE+1)
-+#define AR531X_MISC_IRQ_AHB_PROC	(AR531X_MISC_IRQ_BASE+2)
-+#define AR531X_MISC_IRQ_AHB_DMA		(AR531X_MISC_IRQ_BASE+3)
-+#define AR531X_MISC_IRQ_GPIO		(AR531X_MISC_IRQ_BASE+4)
-+#define AR531X_MISC_IRQ_UART0		(AR531X_MISC_IRQ_BASE+5)
-+#define AR531X_MISC_IRQ_UART0_DMA	(AR531X_MISC_IRQ_BASE+6)
-+#define AR531X_MISC_IRQ_WATCHDOG	(AR531X_MISC_IRQ_BASE+7)
-+#define AR531X_MISC_IRQ_LOCAL		(AR531X_MISC_IRQ_BASE+8)
-+#define AR531X_MISC_IRQ_SPI		(AR531X_MISC_IRQ_BASE+9)
-+#define AR531X_MISC_IRQ_COUNT		10
++#define AR5312_MISC_IRQ_NONE		(AR231X_MISC_IRQ_BASE+0)
++#define AR5312_MISC_IRQ_TIMER		(AR231X_MISC_IRQ_BASE+1)
++#define AR5312_MISC_IRQ_AHB_PROC	(AR231X_MISC_IRQ_BASE+2)
++#define AR5312_MISC_IRQ_AHB_DMA		(AR231X_MISC_IRQ_BASE+3)
++#define AR5312_MISC_IRQ_GPIO		(AR231X_MISC_IRQ_BASE+4)
++#define AR5312_MISC_IRQ_UART0		(AR231X_MISC_IRQ_BASE+5)
++#define AR5312_MISC_IRQ_UART0_DMA	(AR231X_MISC_IRQ_BASE+6)
++#define AR5312_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+7)
++#define AR5312_MISC_IRQ_LOCAL		(AR231X_MISC_IRQ_BASE+8)
++#define AR5312_MISC_IRQ_SPI		(AR231X_MISC_IRQ_BASE+9)
++#define AR5312_MISC_IRQ_COUNT		10
 +
 +
 +/* Address Map */
-+#define AR531X_WLAN0            0x18000000
-+#define AR531X_WLAN1            0x18500000
-+#define AR531X_ENET0            0x18100000
-+#define AR531X_ENET1            0x18200000
-+#define AR531X_SDRAMCTL         0x18300000
-+#define AR531X_FLASHCTL         0x18400000
-+#define AR531X_APBBASE		0x1c000000
-+#define AR531X_UART0            0x1c000000      /* UART MMR */
-+#define AR531X_FLASH            0x1e000000
++#define AR5312_WLAN0            0x18000000
++#define AR5312_WLAN1            0x18500000
++#define AR5312_ENET0            0x18100000
++#define AR5312_ENET1            0x18200000
++#define AR5312_SDRAMCTL         0x18300000
++#define AR5312_FLASHCTL         0x18400000
++#define AR5312_APBBASE          0x1c000000
++#define AR5312_UART0            0x1c000000      /* UART MMR */
++#define AR5312_FLASH            0x1e000000
 +
 +/*
-+ * AR531X_NUM_ENET_MAC defines the number of ethernet MACs that
++ * AR5312_NUM_ENET_MAC defines the number of ethernet MACs that
 + * should be considered available.  The AR5312 supports 2 enet MACS,
 + * even though many reference boards only actually use 1 of them
 + * (i.e. Only MAC 0 is actually connected to an enet PHY or PHY switch.
 + * The AR2312 supports 1 enet MAC.
 + */
-+#define AR531X_NUM_ENET_MAC             2
++#define AR5312_NUM_ENET_MAC             2
 +
 +/*
 + * Need these defines to determine true number of ethernet MACs
 + */
-+#define AR5212_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
-+#define AR5212_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
-+#define AR5212_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
++#define AR5312_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
++#define AR5312_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
++#define AR5312_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
 +
 +/* MII registers offset inside Ethernet MMR region */
-+#define AR531X_ENET0_MII	(AR531X_ENET0 + 0x14)
-+#define AR531X_ENET1_MII	(AR531X_ENET1 + 0x14)
++#define AR5312_ENET0_MII	(AR5312_ENET0 + 0x14)
++#define AR5312_ENET1_MII	(AR5312_ENET1 + 0x14)
 +
 +/*
-+ * AR531X_NUM_WMAC defines the number of Wireless MACs that\
++ * AR5312_NUM_WMAC defines the number of Wireless MACs that\
 + * should be considered available.
 + */
-+#define AR531X_NUM_WMAC                 2
++#define AR5312_NUM_WMAC                 2
 +
 +/* Reset/Timer Block Address Map */
-+#define AR531X_RESETTMR		(AR531X_APBBASE  + 0x3000)
-+#define AR531X_TIMER		(AR531X_RESETTMR + 0x0000) /* countdown timer */
-+#define AR531X_WD_CTRL		(AR531X_RESETTMR + 0x0008) /* watchdog cntrl */
-+#define AR531X_WD_TIMER		(AR531X_RESETTMR + 0x000c) /* watchdog timer */
-+#define AR531X_ISR		(AR531X_RESETTMR + 0x0010) /* Intr Status Reg */
-+#define AR531X_IMR		(AR531X_RESETTMR + 0x0014) /* Intr Mask Reg */
-+#define AR531X_RESET		(AR531X_RESETTMR + 0x0020)
-+#define AR5312_CLOCKCTL1	(AR531X_RESETTMR + 0x0064)
-+#define AR5312_SCRATCH		(AR531X_RESETTMR + 0x006c)
-+#define AR531X_PROCADDR		(AR531X_RESETTMR + 0x0070)
-+#define AR531X_PROC1		(AR531X_RESETTMR + 0x0074)
-+#define AR531X_DMAADDR		(AR531X_RESETTMR + 0x0078)
-+#define AR531X_DMA1		(AR531X_RESETTMR + 0x007c)
-+#define AR531X_ENABLE		(AR531X_RESETTMR + 0x0080) /* interface enb */
-+#define AR531X_REV		(AR531X_RESETTMR + 0x0090) /* revision */
++#define AR5312_RESETTMR		(AR5312_APBBASE  + 0x3000)
++#define AR5312_TIMER		(AR5312_RESETTMR + 0x0000) /* countdown timer */
++#define AR5312_WD_CTRL		(AR5312_RESETTMR + 0x0008) /* watchdog cntrl */
++#define AR5312_WD_TIMER		(AR5312_RESETTMR + 0x000c) /* watchdog timer */
++#define AR5312_ISR		(AR5312_RESETTMR + 0x0010) /* Intr Status Reg */
++#define AR5312_IMR		(AR5312_RESETTMR + 0x0014) /* Intr Mask Reg */
++#define AR5312_RESET		(AR5312_RESETTMR + 0x0020)
++#define AR5312_CLOCKCTL1	(AR5312_RESETTMR + 0x0064)
++#define AR5312_SCRATCH		(AR5312_RESETTMR + 0x006c)
++#define AR5312_PROCADDR		(AR5312_RESETTMR + 0x0070)
++#define AR5312_PROC1		(AR5312_RESETTMR + 0x0074)
++#define AR5312_DMAADDR		(AR5312_RESETTMR + 0x0078)
++#define AR5312_DMA1		(AR5312_RESETTMR + 0x007c)
++#define AR5312_ENABLE		(AR5312_RESETTMR + 0x0080) /* interface enb */
++#define AR5312_REV		(AR5312_RESETTMR + 0x0090) /* revision */
 +
-+/* AR531X_WD_CTRL register bit field definitions */
-+#define AR531X_WD_CTRL_IGNORE_EXPIRATION 0x0000
-+#define AR531X_WD_CTRL_NMI               0x0001
-+#define AR531X_WD_CTRL_RESET             0x0002
++/* AR5312_WD_CTRL register bit field definitions */
++#define AR5312_WD_CTRL_IGNORE_EXPIRATION 0x0000
++#define AR5312_WD_CTRL_NMI               0x0001
++#define AR5312_WD_CTRL_RESET             0x0002
 +
-+/* AR531X_ISR register bit field definitions */
-+#define AR531X_ISR_NONE		0x0000
-+#define AR531X_ISR_TIMER	0x0001
-+#define AR531X_ISR_AHBPROC	0x0002
-+#define AR531X_ISR_AHBDMA	0x0004
-+#define AR531X_ISR_GPIO		0x0008
-+#define AR531X_ISR_UART0	0x0010
-+#define AR531X_ISR_UART0DMA	0x0020
-+#define AR531X_ISR_WD		0x0040
-+#define AR531X_ISR_LOCAL	0x0080
++/* AR5312_ISR register bit field definitions */
++#define AR5312_ISR_NONE		0x0000
++#define AR5312_ISR_TIMER	0x0001
++#define AR5312_ISR_AHBPROC	0x0002
++#define AR5312_ISR_AHBDMA	0x0004
++#define AR5312_ISR_GPIO		0x0008
++#define AR5312_ISR_UART0	0x0010
++#define AR5312_ISR_UART0DMA	0x0020
++#define AR5312_ISR_WD		0x0040
++#define AR5312_ISR_LOCAL	0x0080
 +
-+/* AR531X_RESET register bit field definitions */
-+#define AR531X_RESET_SYSTEM     0x00000001  /* cold reset full system */
-+#define AR531X_RESET_PROC       0x00000002  /* cold reset MIPS core */
-+#define AR531X_RESET_WLAN0      0x00000004  /* cold reset WLAN MAC and BB */
-+#define AR531X_RESET_EPHY0      0x00000008  /* cold reset ENET0 phy */
-+#define AR531X_RESET_EPHY1      0x00000010  /* cold reset ENET1 phy */
-+#define AR531X_RESET_ENET0      0x00000020  /* cold reset ENET0 mac */
-+#define AR531X_RESET_ENET1      0x00000040  /* cold reset ENET1 mac */
-+#define AR531X_RESET_UART0      0x00000100  /* cold reset UART0 (high speed) */
-+#define AR531X_RESET_WLAN1      0x00000200  /* cold reset WLAN MAC/BB */
-+#define AR531X_RESET_APB        0x00000400  /* cold reset APB (ar5312) */
-+#define AR531X_RESET_WARM_PROC  0x00001000  /* warm reset MIPS core */
-+#define AR531X_RESET_WARM_WLAN0_MAC 0x00002000  /* warm reset WLAN0 MAC */
-+#define AR531X_RESET_WARM_WLAN0_BB  0x00004000  /* warm reset WLAN0 BaseBand */
-+#define AR531X_RESET_NMI        0x00010000  /* send an NMI to the processor */
-+#define AR531X_RESET_WARM_WLAN1_MAC 0x00020000  /* warm reset WLAN1 mac */
-+#define AR531X_RESET_WARM_WLAN1_BB  0x00040000  /* warm reset WLAN1 baseband */
-+#define AR531X_RESET_LOCAL_BUS  0x00080000  /* reset local bus */
-+#define AR531X_RESET_WDOG       0x00100000  /* last reset was a watchdog */
++/* AR5312_RESET register bit field definitions */
++#define AR5312_RESET_SYSTEM     0x00000001  /* cold reset full system */
++#define AR5312_RESET_PROC       0x00000002  /* cold reset MIPS core */
++#define AR5312_RESET_WLAN0      0x00000004  /* cold reset WLAN MAC and BB */
++#define AR5312_RESET_EPHY0      0x00000008  /* cold reset ENET0 phy */
++#define AR5312_RESET_EPHY1      0x00000010  /* cold reset ENET1 phy */
++#define AR5312_RESET_ENET0      0x00000020  /* cold reset ENET0 mac */
++#define AR5312_RESET_ENET1      0x00000040  /* cold reset ENET1 mac */
++#define AR5312_RESET_UART0      0x00000100  /* cold reset UART0 (high speed) */
++#define AR5312_RESET_WLAN1      0x00000200  /* cold reset WLAN MAC/BB */
++#define AR5312_RESET_APB        0x00000400  /* cold reset APB (ar5312) */
++#define AR5312_RESET_WARM_PROC  0x00001000  /* warm reset MIPS core */
++#define AR5312_RESET_WARM_WLAN0_MAC 0x00002000  /* warm reset WLAN0 MAC */
++#define AR5312_RESET_WARM_WLAN0_BB  0x00004000  /* warm reset WLAN0 BaseBand */
++#define AR5312_RESET_NMI        0x00010000  /* send an NMI to the processor */
++#define AR5312_RESET_WARM_WLAN1_MAC 0x00020000  /* warm reset WLAN1 mac */
++#define AR5312_RESET_WARM_WLAN1_BB  0x00040000  /* warm reset WLAN1 baseband */
++#define AR5312_RESET_LOCAL_BUS  0x00080000  /* reset local bus */
++#define AR5312_RESET_WDOG       0x00100000  /* last reset was a watchdog */
 +
-+#define AR531X_RESET_WMAC0_BITS \
-+	(AR531X_RESET_WLAN0 |\
-+	 AR531X_RESET_WARM_WLAN0_MAC |\
-+	 AR531X_RESET_WARM_WLAN0_BB)
++#define AR5312_RESET_WMAC0_BITS \
++	(AR5312_RESET_WLAN0 |\
++	 AR5312_RESET_WARM_WLAN0_MAC |\
++	 AR5312_RESET_WARM_WLAN0_BB)
 +
-+#define AR531X_RESERT_WMAC1_BITS \
-+	(AR531X_RESET_WLAN1 |\
-+	 AR531X_RESET_WARM_WLAN1_MAC |\
-+	 AR531X_RESET_WARM_WLAN1_BB)
++#define AR5312_RESET_WMAC1_BITS \
++	(AR5312_RESET_WLAN1 |\
++	 AR5312_RESET_WARM_WLAN1_MAC |\
++	 AR5312_RESET_WARM_WLAN1_BB)
 +
 +/* AR5312_CLOCKCTL1 register bit field definitions */
 +#define AR5312_CLOCKCTL1_PREDIVIDE_MASK    0x00000030
@@ -1498,36 +1498,36 @@
 +#define AR2313_CLOCKCTL1_DOUBLER_MASK      0x00000000
 +
 +
-+/* AR531X_ENABLE register bit field definitions */
-+#define AR531X_ENABLE_WLAN0              0x0001
-+#define AR531X_ENABLE_ENET0              0x0002
-+#define AR531X_ENABLE_ENET1              0x0004
-+#define AR531X_ENABLE_UART_AND_WLAN1_PIO 0x0008   /* UART, and WLAN1 PIOs */
-+#define AR531X_ENABLE_WLAN1_DMA          0x0010   /* WLAN1 DMAs */
-+#define AR531X_ENABLE_WLAN1 \
-+	(AR531X_ENABLE_UART_AND_WLAN1_PIO |\
-+	 AR531X_ENABLE_WLAN1_DMA)
++/* AR5312_ENABLE register bit field definitions */
++#define AR5312_ENABLE_WLAN0              0x0001
++#define AR5312_ENABLE_ENET0              0x0002
++#define AR5312_ENABLE_ENET1              0x0004
++#define AR5312_ENABLE_UART_AND_WLAN1_PIO 0x0008   /* UART, and WLAN1 PIOs */
++#define AR5312_ENABLE_WLAN1_DMA          0x0010   /* WLAN1 DMAs */
++#define AR5312_ENABLE_WLAN1 \
++	(AR5312_ENABLE_UART_AND_WLAN1_PIO |\
++	 AR5312_ENABLE_WLAN1_DMA)
 +
-+/* AR531X_REV register bit field definitions */
-+#define AR531X_REV_WMAC_MAJ    0xf000
-+#define AR531X_REV_WMAC_MAJ_S  12
-+#define AR531X_REV_WMAC_MIN    0x0f00
-+#define AR531X_REV_WMAC_MIN_S  8
-+#define AR531X_REV_MAJ         0x00f0
-+#define AR531X_REV_MAJ_S       4
-+#define AR531X_REV_MIN         0x000f
-+#define AR531X_REV_MIN_S       0
-+#define AR531X_REV_CHIP        (AR531X_REV_MAJ|AR531X_REV_MIN)
++/* AR5312_REV register bit field definitions */
++#define AR5312_REV_WMAC_MAJ    0xf000
++#define AR5312_REV_WMAC_MAJ_S  12
++#define AR5312_REV_WMAC_MIN    0x0f00
++#define AR5312_REV_WMAC_MIN_S  8
++#define AR5312_REV_MAJ         0x00f0
++#define AR5312_REV_MAJ_S       4
++#define AR5312_REV_MIN         0x000f
++#define AR5312_REV_MIN_S       0
++#define AR5312_REV_CHIP        (AR5312_REV_MAJ|AR5312_REV_MIN)
 +
 +/* Major revision numbers, bits 7..4 of Revision ID register */
-+#define AR531X_REV_MAJ_AR5312          0x4
-+#define AR531X_REV_MAJ_AR2313          0x5
++#define AR5312_REV_MAJ_AR5312          0x4
++#define AR5312_REV_MAJ_AR2313          0x5
 +
 +/* Minor revision numbers, bits 3..0 of Revision ID register */
 +#define AR5312_REV_MIN_DUAL     0x0     /* Dual WLAN version */
 +#define AR5312_REV_MIN_SINGLE   0x1     /* Single WLAN version */
 +
-+/* AR531X_FLASHCTL register bit field definitions */
++/* AR5312_FLASHCTL register bit field definitions */
 +#define FLASHCTL_IDCY   0x0000000f      /* Idle cycle turn around time */
 +#define FLASHCTL_IDCY_S 0
 +#define FLASHCTL_WST1   0x000003e0      /* Wait state 1 */
@@ -1559,33 +1559,33 @@
 +#define FLASHCTL_ATR4   0xc0000000      /* Access type == retry every 4 */
 +
 +/* ARM Flash Controller -- 3 flash banks with either x8 or x16 devices.  */
-+#define AR531X_FLASHCTL0        (AR531X_FLASHCTL + 0x00)
-+#define AR531X_FLASHCTL1        (AR531X_FLASHCTL + 0x04)
-+#define AR531X_FLASHCTL2        (AR531X_FLASHCTL + 0x08)
++#define AR5312_FLASHCTL0        (AR5312_FLASHCTL + 0x00)
++#define AR5312_FLASHCTL1        (AR5312_FLASHCTL + 0x04)
++#define AR5312_FLASHCTL2        (AR5312_FLASHCTL + 0x08)
 +
 +/* ARM SDRAM Controller -- just enough to determine memory size */
-+#define AR531X_MEM_CFG1 (AR531X_SDRAMCTL + 0x04)
++#define AR5312_MEM_CFG1 (AR5312_SDRAMCTL + 0x04)
 +#define MEM_CFG1_AC0    0x00000700      /* bank 0: SDRAM addr check (added) */
 +#define MEM_CFG1_AC0_S  8
 +#define MEM_CFG1_AC1    0x00007000      /* bank 1: SDRAM addr check (added) */
 +#define MEM_CFG1_AC1_S  12
 +
 +/* GPIO Address Map */
-+#define AR531X_GPIO         (AR531X_APBBASE  + 0x2000)
-+#define AR531X_GPIO_DO      (AR531X_GPIO + 0x00)        /* output register */
-+#define AR531X_GPIO_DI      (AR531X_GPIO + 0x04)        /* intput register */
-+#define AR531X_GPIO_CR      (AR531X_GPIO + 0x08)        /* control register */
++#define AR5312_GPIO         (AR5312_APBBASE  + 0x2000)
++#define AR5312_GPIO_DO      (AR5312_GPIO + 0x00)        /* output register */
++#define AR5312_GPIO_DI      (AR5312_GPIO + 0x04)        /* intput register */
++#define AR5312_GPIO_CR      (AR5312_GPIO + 0x08)        /* control register */
 +
 +/* GPIO Control Register bit field definitions */
-+#define AR531X_GPIO_CR_M(x)    (1 << (x))               /* mask for i/o */
-+#define AR531X_GPIO_CR_O(x)    (0 << (x))               /* mask for output */
-+#define AR531X_GPIO_CR_I(x)    (1 << (x))               /* mask for input */
-+#define AR531X_GPIO_CR_INT(x)  (1 << ((x)+8))           /* mask for interrupt*/
-+#define AR531X_GPIO_CR_UART(x) (1 << ((x)+16))          /* uart multiplex */
-+#define AR531X_NUM_GPIO		8
++#define AR5312_GPIO_CR_M(x)    (1 << (x))               /* mask for i/o */
++#define AR5312_GPIO_CR_O(x)    (0 << (x))               /* mask for output */
++#define AR5312_GPIO_CR_I(x)    (1 << (x))               /* mask for input */
++#define AR5312_GPIO_CR_INT(x)  (1 << ((x)+8))           /* mask for interrupt*/
++#define AR5312_GPIO_CR_UART(x) (1 << ((x)+16))          /* uart multiplex */
++#define AR5312_NUM_GPIO		8
 +
 +
-+#endif
++#endif	/* __ASM_MACH_AR231X_AR5312_REGS_H */
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
@@ -1631,20 +1631,20 @@
 +
 +static void ar5312_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
-+	unsigned int ar231x_misc_intrs = ar231x_read_reg(AR531X_ISR) &
-+					 ar231x_read_reg(AR531X_IMR);
++	unsigned int ar231x_misc_intrs = ar231x_read_reg(AR5312_ISR) &
++					 ar231x_read_reg(AR5312_IMR);
 +
-+	if (ar231x_misc_intrs & AR531X_ISR_TIMER) {
-+		do_IRQ(AR531X_MISC_IRQ_TIMER);
-+		(void)ar231x_read_reg(AR531X_TIMER);
-+	} else if (ar231x_misc_intrs & AR531X_ISR_AHBPROC)
-+		do_IRQ(AR531X_MISC_IRQ_AHB_PROC);
-+	else if ((ar231x_misc_intrs & AR531X_ISR_UART0))
-+		do_IRQ(AR531X_MISC_IRQ_UART0);
-+	else if (ar231x_misc_intrs & AR531X_ISR_WD)
-+		do_IRQ(AR531X_MISC_IRQ_WATCHDOG);
++	if (ar231x_misc_intrs & AR5312_ISR_TIMER) {
++		do_IRQ(AR5312_MISC_IRQ_TIMER);
++		(void)ar231x_read_reg(AR5312_TIMER);
++	} else if (ar231x_misc_intrs & AR5312_ISR_AHBPROC)
++		do_IRQ(AR5312_MISC_IRQ_AHB_PROC);
++	else if ((ar231x_misc_intrs & AR5312_ISR_UART0))
++		do_IRQ(AR5312_MISC_IRQ_UART0);
++	else if (ar231x_misc_intrs & AR5312_ISR_WD)
++		do_IRQ(AR5312_MISC_IRQ_WATCHDOG);
 +	else
-+		do_IRQ(AR531X_MISC_IRQ_NONE);
++		do_IRQ(AR5312_MISC_IRQ_NONE);
 +}
 +
 +static asmlinkage void
@@ -1663,31 +1663,31 @@
 +	else if (pending & CAUSEF_IP6)
 +		do_IRQ(AR5312_IRQ_MISC_INTRS);
 +	else if (pending & CAUSEF_IP7)
-+		do_IRQ(AR531X_IRQ_CPU_CLOCK);
++		do_IRQ(AR231X_IRQ_CPU_CLOCK);
 +}
 +
 +
-+/* Enable the specified AR531X_MISC_IRQ interrupt */
++/* Enable the specified AR5312_MISC_IRQ interrupt */
 +static void
 +ar5312_misc_irq_unmask(struct irq_data *d)
 +{
 +	unsigned int imr;
 +
-+	imr = ar231x_read_reg(AR531X_IMR);
-+	imr |= (1 << (d->irq - AR531X_MISC_IRQ_BASE - 1));
-+	ar231x_write_reg(AR531X_IMR, imr);
++	imr = ar231x_read_reg(AR5312_IMR);
++	imr |= (1 << (d->irq - AR231X_MISC_IRQ_BASE - 1));
++	ar231x_write_reg(AR5312_IMR, imr);
 +}
 +
-+/* Disable the specified AR531X_MISC_IRQ interrupt */
++/* Disable the specified AR5312_MISC_IRQ interrupt */
 +static void
 +ar5312_misc_irq_mask(struct irq_data *d)
 +{
 +	unsigned int imr;
 +
-+	imr = ar231x_read_reg(AR531X_IMR);
-+	imr &= ~(1 << (d->irq - AR531X_MISC_IRQ_BASE - 1));
-+	ar231x_write_reg(AR531X_IMR, imr);
-+	ar231x_read_reg(AR531X_IMR); /* flush write buffer */
++	imr = ar231x_read_reg(AR5312_IMR);
++	imr &= ~(1 << (d->irq - AR231X_MISC_IRQ_BASE - 1));
++	ar231x_write_reg(AR5312_IMR, imr);
++	ar231x_read_reg(AR5312_IMR); /* flush write buffer */
 +}
 +
 +static struct irq_chip ar5312_misc_irq_chip = {
@@ -1699,10 +1699,10 @@
 +
 +static irqreturn_t ar5312_ahb_proc_handler(int cpl, void *dev_id)
 +{
-+	u32 proc1 = ar231x_read_reg(AR531X_PROC1);
-+	u32 proc_addr = ar231x_read_reg(AR531X_PROCADDR); /* clears error */
-+	u32 dma1 = ar231x_read_reg(AR531X_DMA1);
-+	u32 dma_addr = ar231x_read_reg(AR531X_DMAADDR);   /* clears error */
++	u32 proc1 = ar231x_read_reg(AR5312_PROC1);
++	u32 proc_addr = ar231x_read_reg(AR5312_PROCADDR); /* clears error */
++	u32 dma1 = ar231x_read_reg(AR5312_DMA1);
++	u32 dma_addr = ar231x_read_reg(AR5312_DMAADDR);   /* clears error */
 +
 +	pr_emerg("AHB interrupt: PROCADDR=0x%8.8x  PROC1=0x%8.8x  "
 +		 "DMAADDR=0x%8.8x  DMA1=0x%8.8x\n", proc_addr, proc1, dma_addr,
@@ -1727,12 +1727,12 @@
 +		return;
 +
 +	ar231x_irq_dispatch = ar5312_irq_dispatch;
-+	for (i = 0; i < AR531X_MISC_IRQ_COUNT; i++) {
-+		int irq = AR531X_MISC_IRQ_BASE + i;
++	for (i = 0; i < AR5312_MISC_IRQ_COUNT; i++) {
++		int irq = AR231X_MISC_IRQ_BASE + i;
 +		irq_set_chip_and_handler(irq, &ar5312_misc_irq_chip,
 +					 handle_level_irq);
 +	}
-+	setup_irq(AR531X_MISC_IRQ_AHB_PROC, &ar5312_ahb_proc_interrupt);
++	setup_irq(AR5312_MISC_IRQ_AHB_PROC, &ar5312_ahb_proc_interrupt);
 +	irq_set_chained_handler(AR5312_IRQ_MISC_INTRS, ar5312_misc_irq_handler);
 +}
 +
@@ -1742,28 +1742,28 @@
 +static int
 +ar5312_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
 +{
-+	return (ar231x_read_reg(AR531X_GPIO_DI) >> gpio) & 1;
++	return (ar231x_read_reg(AR5312_GPIO_DI) >> gpio) & 1;
 +}
 +
 +static void
 +ar5312_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
 +{
-+	u32 reg = ar231x_read_reg(AR531X_GPIO_DO);
++	u32 reg = ar231x_read_reg(AR5312_GPIO_DO);
 +	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
-+	ar231x_write_reg(AR531X_GPIO_DO, reg);
++	ar231x_write_reg(AR5312_GPIO_DO, reg);
 +}
 +
 +static int
 +ar5312_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
 +{
-+	ar231x_mask_reg(AR531X_GPIO_CR, 0, 1 << gpio);
++	ar231x_mask_reg(AR5312_GPIO_CR, 0, 1 << gpio);
 +	return 0;
 +}
 +
 +static int
 +ar5312_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
 +{
-+	ar231x_mask_reg(AR531X_GPIO_CR, 1 << gpio, 0);
++	ar231x_mask_reg(AR5312_GPIO_CR, 1 << gpio, 0);
 +	ar5312_gpio_set_value(chip, gpio, value);
 +	return 0;
 +}
@@ -1775,7 +1775,7 @@
 +	.set                    = ar5312_gpio_set_value,
 +	.get                    = ar5312_gpio_get_value,
 +	.base                   = 0,
-+	.ngpio                  = AR531X_NUM_GPIO, /* 8 */
++	.ngpio                  = AR5312_NUM_GPIO, /* 8 */
 +};
 +
 +/* end of gpiolib */
@@ -1784,16 +1784,16 @@
 +{
 +	u32 val;
 +
-+	val = ar231x_read_reg(AR531X_RESET);
-+	ar231x_write_reg(AR531X_RESET, val | mask);
++	val = ar231x_read_reg(AR5312_RESET);
++	ar231x_write_reg(AR5312_RESET, val | mask);
 +}
 +
 +static void ar5312_device_reset_clear(u32 mask)
 +{
 +	u32 val;
 +
-+	val = ar231x_read_reg(AR531X_RESET);
-+	ar231x_write_reg(AR531X_RESET, val & ~mask);
++	val = ar231x_read_reg(AR5312_RESET);
++	ar231x_write_reg(AR5312_RESET, val & ~mask);
 +}
 +
 +static struct physmap_flash_data ar5312_flash_data = {
@@ -1801,24 +1801,24 @@
 +};
 +
 +static struct resource ar5312_flash_resource = {
-+	.start = AR531X_FLASH,
-+	.end = AR531X_FLASH + 0x800000 - 1,
++	.start = AR5312_FLASH,
++	.end = AR5312_FLASH + 0x800000 - 1,
 +	.flags = IORESOURCE_MEM,
 +};
 +
 +static struct ar231x_eth ar5312_eth0_data = {
 +	.reset_set = ar5312_device_reset_set,
 +	.reset_clear = ar5312_device_reset_clear,
-+	.reset_mac = AR531X_RESET_ENET0,
-+	.reset_phy = AR531X_RESET_EPHY0,
++	.reset_mac = AR5312_RESET_ENET0,
++	.reset_phy = AR5312_RESET_EPHY0,
 +	.config = &ar231x_board,
 +};
 +
 +static struct ar231x_eth ar5312_eth1_data = {
 +	.reset_set = ar5312_device_reset_set,
 +	.reset_clear = ar5312_device_reset_clear,
-+	.reset_mac = AR531X_RESET_ENET1,
-+	.reset_phy = AR531X_RESET_EPHY1,
++	.reset_mac = AR5312_RESET_ENET1,
++	.reset_phy = AR5312_RESET_EPHY1,
 +	.config = &ar231x_board,
 +};
 +
@@ -1865,20 +1865,20 @@
 +		(0x01 << FLASHCTL_IDCY_S) |
 +		(0x07 << FLASHCTL_WST1_S) |
 +		(0x07 << FLASHCTL_WST2_S) |
-+		(ar231x_read_reg(AR531X_FLASHCTL0) & FLASHCTL_MW);
++		(ar231x_read_reg(AR5312_FLASHCTL0) & FLASHCTL_MW);
 +
-+	ar231x_write_reg(AR531X_FLASHCTL0, ctl);
++	ar231x_write_reg(AR5312_FLASHCTL0, ctl);
 +
 +	/* Disable other flash banks */
-+	ar231x_write_reg(AR531X_FLASHCTL1,
-+			 ar231x_read_reg(AR531X_FLASHCTL1) &
++	ar231x_write_reg(AR5312_FLASHCTL1,
++			 ar231x_read_reg(AR5312_FLASHCTL1) &
 +			 ~(FLASHCTL_E | FLASHCTL_AC));
 +
-+	ar231x_write_reg(AR531X_FLASHCTL2,
-+			 ar231x_read_reg(AR531X_FLASHCTL2) &
++	ar231x_write_reg(AR5312_FLASHCTL2,
++			 ar231x_read_reg(AR5312_FLASHCTL2) &
 +			 ~(FLASHCTL_E | FLASHCTL_AC));
 +
-+	return (char *)KSEG1ADDR(AR531X_FLASH + 0x800000);
++	return (char *)KSEG1ADDR(AR5312_FLASH + 0x800000);
 +}
 +
 +int __init ar5312_init_devices(void)
@@ -1907,7 +1907,7 @@
 +		ar231x_devtype = DEV_TYPE_AR5312;
 +
 +	/* fixup flash width */
-+	fctl = ar231x_read_reg(AR531X_FLASHCTL) & FLASHCTL_MW;
++	fctl = ar231x_read_reg(AR5312_FLASHCTL) & FLASHCTL_MW;
 +	switch (fctl) {
 +	case FLASHCTL_MWx16:
 +		ar5312_flash_data.width = 2;
@@ -1940,13 +1940,13 @@
 +	switch (ar231x_devtype) {
 +	case DEV_TYPE_AR5312:
 +		ar5312_eth0_data.macaddr = config->enet0_mac;
-+		ar231x_add_ethernet(0, AR531X_ENET0, "eth0_mii",
-+				    AR531X_ENET0_MII, AR5312_IRQ_ENET0_INTRS,
++		ar231x_add_ethernet(0, AR5312_ENET0, "eth0_mii",
++				    AR5312_ENET0_MII, AR5312_IRQ_ENET0_INTRS,
 +				    &ar5312_eth0_data);
 +
 +		ar5312_eth1_data.macaddr = config->enet1_mac;
-+		ar231x_add_ethernet(1, AR531X_ENET1, "eth1_mii",
-+				    AR531X_ENET1_MII, AR5312_IRQ_ENET1_INTRS,
++		ar231x_add_ethernet(1, AR5312_ENET1, "eth1_mii",
++				    AR5312_ENET1_MII, AR5312_IRQ_ENET1_INTRS,
 +				    &ar5312_eth1_data);
 +
 +		if (!ar231x_board.radio)
@@ -1955,7 +1955,7 @@
 +		if (!(config->flags & BD_WLAN0))
 +			break;
 +
-+		ar231x_add_wmac(0, AR531X_WLAN0, AR5312_IRQ_WLAN0_INTRS);
++		ar231x_add_wmac(0, AR5312_WLAN0, AR5312_IRQ_WLAN0_INTRS);
 +		break;
 +	/*
 +	 * AR2312/3 ethernet uses the PHY of ENET0, but the MAC
@@ -1965,8 +1965,8 @@
 +	case DEV_TYPE_AR2313:
 +		ar5312_eth1_data.reset_phy = ar5312_eth0_data.reset_phy;
 +		ar5312_eth1_data.macaddr = config->enet0_mac;
-+		ar231x_add_ethernet(1, AR531X_ENET1, "eth0_mii",
-+				    AR531X_ENET0_MII, AR5312_IRQ_ENET1_INTRS,
++		ar231x_add_ethernet(1, AR5312_ENET1, "eth0_mii",
++				    AR5312_ENET0_MII, AR5312_IRQ_ENET1_INTRS,
 +				    &ar5312_eth1_data);
 +
 +		if (!ar231x_board.radio)
@@ -1977,7 +1977,7 @@
 +	}
 +
 +	if (config->flags & BD_WLAN1)
-+		ar231x_add_wmac(1, AR531X_WLAN1, AR5312_IRQ_WLAN1_INTRS);
++		ar231x_add_wmac(1, AR5312_WLAN1, AR5312_IRQ_WLAN1_INTRS);
 +
 +	return 0;
 +}
@@ -1988,7 +1988,7 @@
 +	/* reset the system */
 +	local_irq_disable();
 +	while (1)
-+		ar231x_write_reg(AR531X_RESET, AR531X_RESET_SYSTEM);
++		ar231x_write_reg(AR5312_RESET, AR5312_RESET_SYSTEM);
 +}
 +
 +
@@ -2014,10 +2014,10 @@
 +	if (scratch)
 +		return scratch;
 +
-+	devid = ar231x_read_reg(AR531X_REV);
-+	devid &= AR531X_REV_MAJ;
-+	devid >>= AR531X_REV_MAJ_S;
-+	if (devid == AR531X_REV_MAJ_AR2313) {
++	devid = ar231x_read_reg(AR5312_REV);
++	devid &= AR5312_REV_MAJ;
++	devid >>= AR5312_REV_MAJ_S;
++	if (devid == AR5312_REV_MAJ_AR2313) {
 +		predivide_mask = AR2313_CLOCKCTL1_PREDIVIDE_MASK;
 +		predivide_shift = AR2313_CLOCKCTL1_PREDIVIDE_SHIFT;
 +		multiplier_mask = AR2313_CLOCKCTL1_MULTIPLIER_MASK;
@@ -2099,7 +2099,7 @@
 +		return;
 +
 +	/* Detect memory size */
-+	memcfg = ar231x_read_reg(AR531X_MEM_CFG1);
++	memcfg = ar231x_read_reg(AR5312_MEM_CFG1);
 +	bank0AC = (memcfg & MEM_CFG1_AC0) >> MEM_CFG1_AC0_S;
 +	bank1AC = (memcfg & MEM_CFG1_AC1) >> MEM_CFG1_AC1_S;
 +	memsize = (bank0AC ? (1 << (bank0AC+1)) : 0) +
@@ -2107,9 +2107,9 @@
 +	memsize <<= 20;
 +	add_memory_region(0, memsize, BOOT_MEM_RAM);
 +
-+	devid = ar231x_read_reg(AR531X_REV);
-+	devid >>= AR531X_REV_WMAC_MIN_S;
-+	devid &= AR531X_REV_CHIP;
++	devid = ar231x_read_reg(AR5312_REV);
++	devid >>= AR5312_REV_WMAC_MIN_S;
++	devid &= AR5312_REV_CHIP;
 +	ar231x_board.devid = (u16) devid;
 +	ar5312_gpio_init();
 +}
@@ -2121,12 +2121,12 @@
 +		return;
 +
 +	/* Clear any lingering AHB errors */
-+	ar231x_read_reg(AR531X_PROCADDR);
-+	ar231x_read_reg(AR531X_DMAADDR);
-+	ar231x_write_reg(AR531X_WD_CTRL, AR531X_WD_CTRL_IGNORE_EXPIRATION);
++	ar231x_read_reg(AR5312_PROCADDR);
++	ar231x_read_reg(AR5312_DMAADDR);
++	ar231x_write_reg(AR5312_WD_CTRL, AR5312_WD_CTRL_IGNORE_EXPIRATION);
 +
 +	_machine_restart = ar5312_restart;
-+	ar231x_serial_setup(AR531X_UART0, AR531X_MISC_IRQ_UART0,
++	ar231x_serial_setup(AR5312_UART0, AR5312_MISC_IRQ_UART0,
 +			    ar5312_sys_frequency());
 +}
 +
@@ -2197,7 +2197,7 @@
 +		return;
 +
 +	if (bit >= 0)
-+		do_IRQ(AR531X_GPIO_IRQ_BASE + bit);
++		do_IRQ(AR231X_GPIO_IRQ_BASE + bit);
 +}
 +
 +static void ar2315_misc_irq_handler(unsigned irq, struct irq_desc *desc)
@@ -2242,7 +2242,7 @@
 +	else if (pending & CAUSEF_IP2)
 +		do_IRQ(AR2315_IRQ_MISC_INTRS);
 +	else if (pending & CAUSEF_IP7)
-+		do_IRQ(AR531X_IRQ_CPU_CLOCK);
++		do_IRQ(AR231X_IRQ_CPU_CLOCK);
 +}
 +
 +static void ar2315_set_gpiointmask(int gpio, int level)
@@ -2257,7 +2257,7 @@
 +
 +static void ar2315_gpio_irq_unmask(struct irq_data *d)
 +{
-+	unsigned int gpio = d->irq - AR531X_GPIO_IRQ_BASE;
++	unsigned int gpio = d->irq - AR231X_GPIO_IRQ_BASE;
 +
 +	/* Enable interrupt with edge detection */
 +	if ((ar231x_read_reg(AR2315_GPIO_DIR) & AR2315_GPIO_DIR_M(gpio)) !=
@@ -2270,7 +2270,7 @@
 +
 +static void ar2315_gpio_irq_mask(struct irq_data *d)
 +{
-+	unsigned int gpio = d->irq - AR531X_GPIO_IRQ_BASE;
++	unsigned int gpio = d->irq - AR231X_GPIO_IRQ_BASE;
 +
 +	/* Disable interrupt */
 +	gpiointmask &= ~(1 << gpio);
@@ -2289,7 +2289,7 @@
 +	unsigned int imr;
 +
 +	imr = ar231x_read_reg(AR2315_IMR);
-+	imr |= 1 << (d->irq - AR531X_MISC_IRQ_BASE - 1);
++	imr |= 1 << (d->irq - AR231X_MISC_IRQ_BASE - 1);
 +	ar231x_write_reg(AR2315_IMR, imr);
 +}
 +
@@ -2299,7 +2299,7 @@
 +	unsigned int imr;
 +
 +	imr = ar231x_read_reg(AR2315_IMR);
-+	imr &= ~(1 << (d->irq - AR531X_MISC_IRQ_BASE - 1));
++	imr &= ~(1 << (d->irq - AR231X_MISC_IRQ_BASE - 1));
 +	ar231x_write_reg(AR2315_IMR, imr);
 +}
 +
@@ -2336,12 +2336,12 @@
 +	ar231x_irq_dispatch = ar2315_irq_dispatch;
 +	gpiointval = ar231x_read_reg(AR2315_GPIO_DI);
 +	for (i = 0; i < AR2315_MISC_IRQ_COUNT; i++) {
-+		int irq = AR531X_MISC_IRQ_BASE + i;
++		int irq = AR231X_MISC_IRQ_BASE + i;
 +		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
 +			handle_level_irq);
 +	}
 +	for (i = 0; i < AR2315_NUM_GPIO; i++) {
-+		int irq = AR531X_GPIO_IRQ_BASE + i;
++		int irq = AR231X_GPIO_IRQ_BASE + i;
 +		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
 +			handle_level_irq);
 +	}
@@ -2773,22 +2773,22 @@
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x.h
 @@ -0,0 +1,43 @@
-+#ifndef __AR531X_H
-+#define __AR531X_H
++#ifndef __ASM_MACH_AR231X_H
++#define __ASM_MACH_AR231X_H
 +
 +#include <linux/types.h>
 +#include <linux/io.h>
 +
-+#define AR531X_MISC_IRQ_BASE		0x20
-+#define AR531X_GPIO_IRQ_BASE		0x30
++#define AR231X_MISC_IRQ_BASE		0x20
++#define AR231X_GPIO_IRQ_BASE		0x30
 +
 +/* Software's idea of interrupts handled by "CPU Interrupt Controller" */
-+#define AR531X_IRQ_NONE		(MIPS_CPU_IRQ_BASE+0)
-+#define AR531X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE+7) /* C0_CAUSE: 0x8000 */
++#define AR231X_IRQ_NONE		(MIPS_CPU_IRQ_BASE+0)
++#define AR231X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE+7) /* C0_CAUSE: 0x8000 */
 +
 +/* GPIO Interrupts, share ARXXXX_MISC_IRQ_GPIO */
-+#define AR531X_GPIO_IRQ_NONE            (AR531X_GPIO_IRQ_BASE+0)
-+#define AR531X_GPIO_IRQ(n)              (AR531X_GPIO_IRQ_BASE+n)
++#define AR231X_GPIO_IRQ_NONE            (AR231X_GPIO_IRQ_BASE+0)
++#define AR231X_GPIO_IRQ(n)              (AR231X_GPIO_IRQ_BASE+n)
 +
 +static inline u32
 +ar231x_read_reg(u32 reg)
@@ -2815,7 +2815,7 @@
 +	return ret;
 +}
 +
-+#endif
++#endif	/* __ASM_MACH_AR231X_H */
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.h
 @@ -0,0 +1,38 @@
