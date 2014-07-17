@@ -1550,7 +1550,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,600 @@
+@@ -0,0 +1,601 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2148,12 +2148,13 @@
 +	ar231x_write_reg(AR531X_WD_CTRL, AR531X_WD_CTRL_IGNORE_EXPIRATION);
 +
 +	_machine_restart = ar5312_restart;
-+	ar231x_serial_setup(KSEG1ADDR(AR531X_UART0), ar5312_sys_frequency());
++	ar231x_serial_setup(KSEG1ADDR(AR531X_UART0), AR531X_MISC_IRQ_UART0,
++			    ar5312_sys_frequency());
 +}
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,655 @@
+@@ -0,0 +1,656 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2807,7 +2808,8 @@
 +	ar231x_write_reg(AR2315_WDC, AR2315_WDC_IGNORE_EXPIRATION);
 +
 +	_machine_restart = ar2315_restart;
-+	ar231x_serial_setup(KSEG1ADDR(AR2315_UART0), ar2315_apb_frequency());
++	ar231x_serial_setup(KSEG1ADDR(AR2315_UART0), AR531X_MISC_IRQ_UART0,
++			    ar2315_apb_frequency());
 +}
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.h
@@ -2976,7 +2978,7 @@
 +extern asmlinkage void (*ar231x_irq_dispatch)(void);
 +
 +extern int ar231x_find_config(u8 *flash_limit);
-+extern void ar231x_serial_setup(u32 mapbase, unsigned int uartclk);
++extern void ar231x_serial_setup(u32 mapbase, int irq, unsigned int uartclk);
 +extern int ar231x_add_wmac(int nr, u32 base, int irq);
 +extern int ar231x_add_ethernet(int nr, u32 base, int irq, void *pdata);
 +
@@ -3125,7 +3127,7 @@
 +}
 +
 +void __init
-+ar231x_serial_setup(u32 mapbase, unsigned int uartclk)
++ar231x_serial_setup(u32 mapbase, int irq, unsigned int uartclk)
 +{
 +	struct uart_port s;
 +
@@ -3133,7 +3135,7 @@
 +
 +	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
 +	s.iotype = UPIO_MEM;
-+	s.irq = AR531X_MISC_IRQ_UART0;
++	s.irq = irq;
 +	s.regshift = 2;
 +	s.mapbase = mapbase;
 +	s.uartclk = uartclk;
