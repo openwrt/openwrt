@@ -766,7 +766,7 @@
 +#define AR2315_LOCAL            0x10400000      /* LOCAL BUS MMR */
 +#define AR2315_ENET0            0x10500000      /* ETHERNET MMR */
 +#define AR2315_DSLBASE          0x11000000      /* RESET CONTROL MMR */
-+#define AR2315_UART0            0x11100003      /* UART MMR */
++#define AR2315_UART0            0x11100000      /* UART MMR */
 +#define AR2315_SPI_MMR          0x11300000      /* SPI FLASH MMR */
 +#define AR2315_PCIEXT           0x80000000      /* pci external */
 +
@@ -1385,7 +1385,7 @@
 +#define AR531X_FLASHCTL         0x18400000
 +#define AR531X_APBBASE		0x1c000000
 +#define AR531X_FLASH            0x1e000000
-+#define AR531X_UART0            0xbc000003      /* UART MMR */
++#define AR531X_UART0            0xbc000000      /* UART MMR */
 +
 +/*
 + * AR531X_NUM_ENET_MAC defines the number of ethernet MACs that
@@ -3007,7 +3007,7 @@
 +	memset(&s, 0, sizeof(s));
 +
 +	s.flags = UPF_BOOT_AUTOCONF | UPF_SKIP_TEST;
-+	s.iotype = UPIO_MEM;
++	s.iotype = UPIO_MEM32;
 +	s.irq = irq;
 +	s.regshift = 2;
 +	s.mapbase = mapbase;
