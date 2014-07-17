@@ -388,7 +388,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,83 @@
 +#ifndef __AR531X_PLATFORM_H
 +#define __AR531X_PLATFORM_H
 +
@@ -467,7 +467,6 @@
 +	void (*reset_clear)(u32);
 +	u32 reset_mac;
 +	u32 reset_phy;
-+	u32 phy_base;
 +	struct ar231x_board_config *config;
 +	char *macaddr;
 +};
@@ -714,7 +713,7 @@
 +#endif /* __ASM_MIPS_MACH_ATHEROS_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,614 @@
+@@ -0,0 +1,617 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -770,6 +769,9 @@
 +#define AR2315_UART0            0x11100003      /* UART MMR */
 +#define AR2315_SPI_MMR          0x11300000      /* SPI FLASH MMR */
 +#define AR2315_PCIEXT           0x80000000      /* pci external */
++
++/* MII registers offset inside Ethernet MMR region */
++#define AR2315_ENET0_MII	(AR2315_ENET0 + 0x14)
 +
 +/*
 + * Reset Register
@@ -1331,7 +1333,7 @@
 +#endif /* __AR2315_REG_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-@@ -0,0 +1,249 @@
+@@ -0,0 +1,253 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1400,6 +1402,10 @@
 +#define AR5212_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
 +#define AR5212_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
 +#define AR5212_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
++
++/* MII registers offset inside Ethernet MMR region */
++#define AR531X_ENET0_MII	(AR531X_ENET0 + 0x14)
++#define AR531X_ENET1_MII	(AR531X_ENET1 + 0x14)
 +
 +/*
 + * AR531X_NUM_WMAC defines the number of Wireless MACs that\
@@ -1805,7 +1811,6 @@
 +	.reset_clear = ar5312_device_reset_clear,
 +	.reset_mac = AR531X_RESET_ENET0,
 +	.reset_phy = AR531X_RESET_EPHY0,
-+	.phy_base = AR531X_ENET0,
 +	.config = &ar231x_board,
 +};
 +
@@ -1814,7 +1819,6 @@
 +	.reset_clear = ar5312_device_reset_clear,
 +	.reset_mac = AR531X_RESET_ENET1,
 +	.reset_phy = AR531X_RESET_EPHY1,
-+	.phy_base = AR531X_ENET1,
 +	.config = &ar231x_board,
 +};
 +
@@ -1936,11 +1940,13 @@
 +	switch (ar231x_devtype) {
 +	case DEV_TYPE_AR5312:
 +		ar5312_eth0_data.macaddr = config->enet0_mac;
-+		ar231x_add_ethernet(0, AR531X_ENET0, AR5312_IRQ_ENET0_INTRS,
++		ar231x_add_ethernet(0, AR531X_ENET0, "eth0_mii",
++				    AR531X_ENET0_MII, AR5312_IRQ_ENET0_INTRS,
 +				    &ar5312_eth0_data);
 +
 +		ar5312_eth1_data.macaddr = config->enet1_mac;
-+		ar231x_add_ethernet(1, AR531X_ENET1, AR5312_IRQ_ENET1_INTRS,
++		ar231x_add_ethernet(1, AR531X_ENET1, "eth1_mii",
++				    AR531X_ENET1_MII, AR5312_IRQ_ENET1_INTRS,
 +				    &ar5312_eth1_data);
 +
 +		if (!ar231x_board.radio)
@@ -1957,11 +1963,11 @@
 +	 */
 +	case DEV_TYPE_AR2312:
 +	case DEV_TYPE_AR2313:
-+		ar5312_eth1_data.phy_base = ar5312_eth0_data.phy_base;
 +		ar5312_eth1_data.reset_phy = ar5312_eth0_data.reset_phy;
 +		ar5312_eth1_data.macaddr = config->enet0_mac;
-+		ar231x_add_ethernet(0, AR531X_ENET1,
-+			AR5312_IRQ_ENET1_INTRS, &ar5312_eth1_data);
++		ar231x_add_ethernet(1, AR531X_ENET1, "eth0_mii",
++				    AR531X_ENET0_MII, AR5312_IRQ_ENET1_INTRS,
++				    &ar5312_eth1_data);
 +
 +		if (!ar231x_board.radio)
 +			return 0;
@@ -2126,7 +2132,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,557 @@
+@@ -0,0 +1,556 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2409,7 +2415,6 @@
 +	.reset_clear = ar2315_device_reset_clear,
 +	.reset_mac = AR2315_RESET_ENET0,
 +	.reset_phy = AR2315_RESET_EPHY0,
-+	.phy_base = AR2315_ENET0,
 +	.config = &ar231x_board,
 +};
 +
@@ -2523,8 +2528,8 @@
 +	ar2315_init_gpio_leds();
 +	platform_device_register(&ar2315_wdt);
 +	platform_device_register(&ar2315_spiflash);
-+	ar231x_add_ethernet(0, AR2315_ENET0, AR2315_IRQ_ENET0_INTRS,
-+			    &ar2315_eth_data);
++	ar231x_add_ethernet(0, AR2315_ENET0, "eth0_mii", AR2315_ENET0_MII,
++			    AR2315_IRQ_ENET0_INTRS, &ar2315_eth_data);
 +	ar231x_add_wmac(0, AR2315_WLAN0, AR2315_IRQ_WLAN0_INTRS);
 +
 +	return 0;
@@ -2813,7 +2818,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,38 @@
 +#ifndef __AR231X_DEVICES_H
 +#define __AR231X_DEVICES_H
 +
@@ -2838,7 +2843,8 @@
 +extern int ar231x_find_config(u8 *flash_limit);
 +extern void ar231x_serial_setup(u32 mapbase, int irq, unsigned int uartclk);
 +extern int ar231x_add_wmac(int nr, u32 base, int irq);
-+extern int ar231x_add_ethernet(int nr, u32 base, int irq, void *pdata);
++extern int ar231x_add_ethernet(int nr, u32 base, const char *mii_name,
++			       u32 mii_base, int irq, void *pdata);
 +
 +static inline bool is_2315(void)
 +{
@@ -2853,7 +2859,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.c
-@@ -0,0 +1,168 @@
+@@ -0,0 +1,181 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -2875,6 +2881,10 @@
 +		.flags = IORESOURCE_MEM,
 +	},
 +	{
++		.name = "eth0_mii",
++		.flags = IORESOURCE_MEM,
++	},
++	{
 +		.name = "eth0_irq",
 +		.flags = IORESOURCE_IRQ,
 +	}
@@ -2883,6 +2893,10 @@
 +static struct resource ar231x_eth1_res[] = {
 +	{
 +		.name = "eth1_membase",
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.name = "eth1_mii",
 +		.flags = IORESOURCE_MEM,
 +	},
 +	{
@@ -2966,7 +2980,8 @@
 +
 +
 +int __init
-+ar231x_add_ethernet(int nr, u32 base, int irq, void *pdata)
++ar231x_add_ethernet(int nr, u32 base, const char *mii_name, u32 mii_base,
++		    int irq, void *pdata)
 +{
 +	struct resource *res;
 +
@@ -2974,6 +2989,10 @@
 +	res = &ar231x_eth[nr].resource[0];
 +	res->start = base;
 +	res->end = base + 0x2000 - 1;
++	res++;
++	res->name = mii_name;
++	res->start = mii_base;
++	res->end = mii_base + 8 - 1;
 +	res++;
 +	res->start = irq;
 +	res->end = irq;
