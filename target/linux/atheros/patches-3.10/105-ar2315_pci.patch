@@ -39,9 +39,9 @@
 +#include <ar2315_regs.h>
 +#include "devices.h"
 +
-+#define AR531X_MEM_BASE    0x80800000UL
-+#define AR531X_MEM_SIZE    0x00ffffffUL
-+#define AR531X_IO_SIZE     0x00007fffUL
++#define AR2315_MEM_BASE    0x80800000UL
++#define AR2315_MEM_SIZE    0x00ffffffUL
++#define AR2315_IO_SIZE     0x00007fffUL
 +
 +static unsigned long configspace;
 +
@@ -114,17 +114,17 @@
 +};
 +
 +static struct resource ar231x_mem_resource = {
-+	.name	= "AR531x PCI MEM",
-+	.start	= AR531X_MEM_BASE,
-+	.end	= AR531X_MEM_BASE + AR531X_MEM_SIZE - AR531X_IO_SIZE - 1 +
++	.name	= "AR2315 PCI MEM",
++	.start	= AR2315_MEM_BASE,
++	.end	= AR2315_MEM_BASE + AR2315_MEM_SIZE - AR2315_IO_SIZE - 1 +
 +		  0x4000000,
 +	.flags	= IORESOURCE_MEM,
 +};
 +
 +static struct resource ar231x_io_resource = {
-+	.name	= "AR531x PCI I/O",
-+	.start	= AR531X_MEM_BASE + AR531X_MEM_SIZE - AR531X_IO_SIZE,
-+	.end	= AR531X_MEM_BASE + AR531X_MEM_SIZE - 1,
++	.name	= "AR2315 PCI I/O",
++	.start	= AR2315_MEM_BASE + AR2315_MEM_SIZE - AR2315_IO_SIZE,
++	.end	= AR2315_MEM_BASE + AR2315_MEM_SIZE - 1,
 +	.flags	= IORESOURCE_IO,
 +};
 +
@@ -193,8 +193,8 @@
 +	configspace = (unsigned long) ioremap_nocache(AR2315_PCIEXT,
 +						      1*1024*1024);
 +	ar231x_pci_controller.io_map_base =
-+			(unsigned long) ioremap_nocache(AR531X_MEM_BASE +
-+			AR531X_MEM_SIZE, AR531X_IO_SIZE);
++			(unsigned long) ioremap_nocache(AR2315_MEM_BASE +
++			AR2315_MEM_SIZE, AR2315_IO_SIZE);
 +	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space*/
 +
 +	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
