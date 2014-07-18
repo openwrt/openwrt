@@ -18,6 +18,8 @@ PKG_MD5SUM:=fcec64c26a0f4f4901468f360029678f
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/liblzo
