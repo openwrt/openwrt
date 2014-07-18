@@ -1,0 +1,214 @@
+From adb6abbe4e3bc17c20cdc70e4a4357f1633d4970 Mon Sep 17 00:00:00 2001
+From: Joseph Kortje <jpktech@rogers.com>
+Date: Wed, 28 Oct 2009 21:49:11 -0400
+Subject: [PATCH] [ARM] gumstix.h: Verdex Pro support
+
+Added a bunch of ifdefs to support both original gumstix boards
+as well as the Verdex Pro in gumstix.h
+
+Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
+---
+ arch/arm/mach-pxa/include/mach/gumstix.h |  160 ++++++++++++++++++++++++------
+ 1 files changed, 130 insertions(+), 30 deletions(-)
+
+--- a/arch/arm/mach-pxa/include/mach/gumstix.h
++++ b/arch/arm/mach-pxa/include/mach/gumstix.h
+@@ -6,6 +6,9 @@
+  * published by the Free Software Foundation.
+  */
+ 
++#if !defined(__ASM_ARCH_MFP_PXA27X_H) && !defined(__ASM_ARCH_MFP_PXA25X_H)
++	#error You need to include either mfp-pxa27x.h or mfp-pxa25x.h
++#endif
+ 
+ /* BTRESET - Reset line to Bluetooth module, active low signal. */
+ #define GPIO_GUMSTIX_BTRESET          7
+@@ -20,9 +23,18 @@ this moves to GPIO17 and GPIO37. */
+ /* GPIOx - Connects to USB D+ and used as a pull-up after GPIOn
+ has detected a cable insertion; driven low otherwise. */
+ 
++#ifndef CONFIG_MACH_GUMSTIX_VERDEX
++
+ #define GPIO_GUMSTIX_USB_GPIOn		35
+ #define GPIO_GUMSTIX_USB_GPIOx		41
+ 
++#else
++
++#define GPIO_GUMSTIX_USB_GPIOn         100
++#define GPIO_GUMSTIX_USB_GPIOx         27
++
++#endif
++
+ /* usb state change */
+ #define GUMSTIX_USB_INTR_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_USB_GPIOn)
+ 
+@@ -42,48 +54,136 @@ has detected a cable insertion; driven l
+  * ETH_RST provides a hardware reset line to the ethernet chip
+  * ETH is the IRQ line in from the ethernet chip to the PXA
+  */
++#ifndef CONFIG_MACH_GUMSTIX_VERDEX
+ #define GPIO_GUMSTIX_ETH0_RST		80
+-#define GPIO_GUMSTIX_ETH0_RST_MD	(GPIO_GUMSTIX_ETH0_RST | GPIO_OUT)
++#define GPIO_GUMSTIX_ETH0		36
++#else
++#define GPIO_GUMSTIX_ETH0_RST		107
++#define GPIO_GUMSTIX_ETH0		99
++#endif
+ #define GPIO_GUMSTIX_ETH1_RST		52
+-#define GPIO_GUMSTIX_ETH1_RST_MD	(GPIO_GUMSTIX_ETH1_RST | GPIO_OUT)
++#define GPIO_GUMSTIX_ETH1		27
+ 
+-#define GPIO_GUMSTIX_ETH0		36
++#define GPIO_GUMSTIX_ETH0_RST_MD	(GPIO_GUMSTIX_ETH0_RST | GPIO_OUT)
++#define GPIO_GUMSTIX_ETH1_RST_MD	(GPIO_GUMSTIX_ETH1_RST | GPIO_OUT)
+ #define GPIO_GUMSTIX_ETH0_MD		(GPIO_GUMSTIX_ETH0 | GPIO_IN)
+-#define GUMSTIX_ETH0_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH0)
+-#define GPIO_GUMSTIX_ETH1		27
+ #define GPIO_GUMSTIX_ETH1_MD		(GPIO_GUMSTIX_ETH1 | GPIO_IN)
+-#define GUMSTIX_ETH1_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH1)
+-
+ 
+-/* CF reset line */
+-#define GPIO8_RESET			8
++#define GUMSTIX_ETH0_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH0)
++#define GUMSTIX_ETH1_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_ETH1)
+ 
+-/* CF slot 0 */
+-#define GPIO4_nBVD1			4
+-#define GPIO4_nSTSCHG			GPIO4_nBVD1
+-#define GPIO11_nCD			11
+-#define GPIO26_PRDY_nBSY		26
+-#define GUMSTIX_S0_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO4_nSTSCHG)
+-#define GUMSTIX_S0_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO11_nCD)
+-#define GUMSTIX_S0_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO26_PRDY_nBSY)
++ /* CF reset line */
++#define GPIO8_CF_RESET			8
++#define GPIO97_CF_RESET			97
++#define GPIO110_CF_RESET		110
++
++#ifndef CONFIG_MACH_GUMSTIX_VERDEX
++#define GPIO_GUMSTIX_CF_RESET		GPIO8_CF_RESET
++#else
++#define GPIO_GUMSTIX_CF_RESET		GPIO97_CF_RESET
++#endif
++
++#define GPIO_GUMSTIX_CF_OLD_RESET	GPIO110_CF_RESET
++
++/* CF signals shared by both sockets */
++#define GPIO_GUMSTIX_nPOE	48
++#define GPIO_GUMSTIX_nPWE	49
++#define GPIO_GUMSTIX_nPIOR	50
++#define GPIO_GUMSTIX_nPIOW	51
++
++#ifndef CONFIG_MACH_GUMSTIX_VERDEX
++#define GPIO_GUMSTIX_nPCE_1	52
++#define GPIO_GUMSTIX_nPCE_2	53
++#define GPIO_GUMSTIX_pSKTSEL	54
++#else
++#define GPIO_GUMSTIX_nPCE_1	102
++#define GPIO_GUMSTIX_nPCE_2	105
++#define GPIO_GUMSTIX_pSKTSEL	79
++#endif
++
++#define GPIO_GUMSTIX_nPREG	55
++#define GPIO_GUMSTIX_nPWAIT	56
++#define GPIO_GUMSTIX_nIOIS16	57
++
++/* Pin mode definitions correspond to mfp-pxa2[57]x.h */
++#define GPIO_GUMSTIX_nPOE_MD	GPIO48_nPOE
++#define GPIO_GUMSTIX_nPWE_MD	GPIO49_nPWE
++#define GPIO_GUMSTIX_nPIOR_MD	GPIO50_nPIOR
++#define GPIO_GUMSTIX_nPIOW_MD	GPIO51_nPIOW
++
++#ifndef CONFIG_MACH_GUMSTIX_VERDEX
++#define GPIO_GUMSTIX_nPCE_1_MD	GPIO52_nPCE_1
++#define GPIO_GUMSTIX_nPCE_2_MD	GPIO53_nPCE_2
++#define GPIO_GUMSTIX_pSKTSEL_MD	GPIO54_pSKTSEL
++#else
++#define GPIO_GUMSTIX_nPCE_1_MD	GPIO102_nPCE_1
++#define GPIO_GUMSTIX_nPCE_2_MD	GPIO105_nPCE_2
++#define GPIO_GUMSTIX_pSKTSEL_MD	GPIO79_pSKTSEL
++#endif
++
++#define GPIO_GUMSTIX_nPREG_MD	GPIO55_nPREG
++#define GPIO_GUMSTIX_nPWAIT_MD	GPIO56_nPWAIT
++#define GPIO_GUMSTIX_nIOIS16_MD	GPIO57_nIOIS16
++
++ /* CF slot 0 */
++#define GPIO4_nBVD1_0			4
++#define GPIO4_nSTSCHG_0			GPIO4_nBVD1_0
++#define GPIO11_nCD_0			11
++#define GPIO26_PRDY_nBSY_0		26
++
++#define GPIO111_nBVD1_0			111
++#define GPIO111_nSTSCHG_0		GPIO111_nBVD1_0
++#define GPIO104_nCD_0			104
++#define GPIO96_PRDY_nBSY_0		96
++#define GPIO109_PRDY_nBSY_0		109
++
++#ifndef CONFIG_MACH_GUMSTIX_VERDEX
++#define GPIO_GUMSTIX_nBVD1_0		GPIO4_nBVD1_0
++#define GPIO_GUMSTIX_nSTSCHG_0		GPIO4_nSTSCHG_0
++#define GPIO_GUMSTIX_nCD_0		GPIO11_nCD_0
++#define GPIO_GUMSTIX_PRDY_nBSY_0	GPIO26_PRDY_nBSY_0
++#else
++#define GPIO_GUMSTIX_nBVD1_0		GPIO111_nBVD1_0
++#define GPIO_GUMSTIX_nSTSCHG_0		GPIO111_nSTSCHG_0
++#define GPIO_GUMSTIX_nCD_0		GPIO104_nCD_0
++#define GPIO_GUMSTIX_PRDY_nBSY_0	GPIO96_PRDY_nBSY_0
++#endif
++
++#define GPIO_GUMSTIX_PRDY_nBSY_0_OLD	GPIO109_PRDY_nBSY_0
++#define GUMSTIX_S0_PRDY_nBSY_OLD_IRQ	PXA_GPIO_TO_IRQ(GPIO109_PRDY_nBSY_0)
++
++#define GUMSTIX_S0_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_nSTSCHG_0)
++#define GUMSTIX_S0_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_nCD_0)
++#define GUMSTIX_S0_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO_GUMSTIX_PRDY_nBSY_0)
+ 
+ /* CF slot 1 */
+-#define GPIO18_nBVD1			18
+-#define GPIO18_nSTSCHG			GPIO18_nBVD1
+-#define GPIO36_nCD			36
+-#define GPIO27_PRDY_nBSY		27
+-#define GUMSTIX_S1_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO18_nSTSCHG)
+-#define GUMSTIX_S1_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO36_nCD)
+-#define GUMSTIX_S1_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO27_PRDY_nBSY)
+-
+-/* CF GPIO line modes */
+-#define GPIO4_nSTSCHG_MD		(GPIO4_nSTSCHG | GPIO_IN)
+-#define GPIO8_RESET_MD			(GPIO8_RESET | GPIO_OUT)
+-#define GPIO11_nCD_MD			(GPIO11_nCD | GPIO_IN)
+-#define GPIO18_nSTSCHG_MD		(GPIO18_nSTSCHG | GPIO_IN)
+-#define GPIO26_PRDY_nBSY_MD		(GPIO26_PRDY_nBSY | GPIO_IN)
+-#define GPIO27_PRDY_nBSY_MD		(GPIO27_PRDY_nBSY | GPIO_IN)
+-#define GPIO36_nCD_MD			(GPIO36_nCD | GPIO_IN)
++#define GPIO18_nBVD1_1			18
++#define GPIO18_nSTSCHG_1		GPIO18_nBVD1_1
++#define GPIO36_nCD_1			36
++#define GPIO27_PRDY_nBSY_1		27
++
++#define GPIO_GUMSTIX_nBVD1_1		GPIO18_nBVD1_1
++#define GPIO_GUMSTIX_nSTSCHG_1		GPIO18_nSTSCHG_1
++#define GPIO_GUMSTIX_nCD_1		GPIO36_nCD_1
++#define GPIO_GUMSTIX_PRDY_nBSY_1	GPIO27_PRDY_nBSY_1
++
++#define GUMSTIX_S1_nSTSCHG_IRQ		PXA_GPIO_TO_IRQ(GPIO18_nSTSCHG_1)
++#define GUMSTIX_S1_nCD_IRQ		PXA_GPIO_TO_IRQ(GPIO36_nCD_1)
++#define GUMSTIX_S1_PRDY_nBSY_IRQ	PXA_GPIO_TO_IRQ(GPIO27_PRDY_nBSY_1)
++
++/* CF GPIO line modes - correspond to mfp-pxa2[57]x.h */
++#define GPIO_GUMSTIX_CF_RESET_MD	(GPIO_GUMSTIX_CF_RESET | GPIO_OUT)
++#define GPIO_GUMSTIX_CF_OLD_RESET_MD	(GPIO_GUMSTIX_CF_OLD_RESET | GPIO_OUT)
++
++#define GPIO_GUMSTIX_nSTSCHG_0_MD	GPIO111_GPIO
++#define GPIO_GUMSTIX_nCD_0_MD		GPIO104_GPIO
++
++#define GPIO_GUMSTIX_PRDY_nBSY_0_MD	GPIO96_GPIO
++#define GPIO_GUMSTIX_PRDY_nBSY_0_OLD_MD	GPIO109_GPIO
++
++#define GPIO_GUMSTIX_nSTSCHG_1_MD	GPIO18_GPIO
++#define GPIO_GUMSTIX_nCD_1_MD		GPIO36_GPIO
++#define GPIO_GUMSTIX_PRDY_nBSY_1_MD	GPIO27_GPIO
+ 
+ /* for expansion boards that can't be programatically detected */
+ extern int am200_init(void);
