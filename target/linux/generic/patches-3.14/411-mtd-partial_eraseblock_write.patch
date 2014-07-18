@@ -9,7 +9,7 @@
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  static DEFINE_MUTEX(mtd_partitions_mutex);
-@@ -231,13 +233,60 @@ static int part_erase(struct mtd_info *m
+@@ -231,13 +233,61 @@ static int part_erase(struct mtd_info *m
  	struct mtd_part *part = PART(mtd);
  	int ret;
  
@@ -33,6 +33,7 @@
 +				part->master->erasesize,
 +				&readlen, instr->erase_buf);
 +
++			instr->len += instr->erase_buf_ofs;
 +			instr->partial_start = true;
 +		} else {
 +			mtd_ofs = part->offset + part->mtd.size;
@@ -70,7 +71,7 @@
  	return ret;
  }
  
-@@ -245,7 +294,25 @@ void mtd_erase_callback(struct erase_inf
+@@ -245,7 +295,25 @@ void mtd_erase_callback(struct erase_inf
  {
  	if (instr->mtd->_erase == part_erase) {
  		struct mtd_part *part = PART(instr->mtd);
@@ -96,7 +97,7 @@
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
  		instr->addr -= part->offset;
-@@ -503,18 +570,24 @@ static struct mtd_part *allocate_partiti
+@@ -503,18 +571,24 @@ static struct mtd_part *allocate_partiti
  	if ((slave->mtd.flags & MTD_WRITEABLE) &&
  	    mtd_mod_by_eb(slave->offset, &slave->mtd)) {
  		/* Doesn't start on a boundary of major erase size */
