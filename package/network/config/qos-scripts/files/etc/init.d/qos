@@ -2,15 +2,27 @@
 # Copyright (C) 2006 OpenWrt.org
 
 START=50
+USE_PROCD=1
 
-boot() {
-	/usr/lib/qos/generate.sh firewall | sh
+validate_qos_section()
+{
+	uci_validate_section qos interface "${1}" \
+		'enabled:bool' \
+		'upload:uinteger' \
+		'download:uinteger'
 }
 
-start() {
+service_triggers()
+{
+	procd_add_reload_trigger "qos"
+	procd_add_validation validate_qos_section
 	qos-start
 }
 
-stop() {
-	qos-stop
+start_service() {
+	qos-start
+}
+
+reload_service() {
+	qos-start
 }
