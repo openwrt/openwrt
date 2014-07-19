@@ -5,7 +5,7 @@
  	ath10k_dbg(ATH10K_DBG_BOOT, "boot otp execute result %d\n", result);
  
 -	if (result != 0) {
-+	if (result = 2) {
++	if (result == 2) {
 +		ath10k_warn("otp stream is empty, using board.bin contents");
 +		return 0;
 +	} else if (result != 0) {
