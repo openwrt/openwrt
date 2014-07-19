@@ -1,0 +1,14 @@
+--- a/drivers/net/wireless/ath/ath10k/core.c
++++ b/drivers/net/wireless/ath/ath10k/core.c
+@@ -277,7 +277,10 @@ static int ath10k_download_and_run_otp(s
+ 
+ 	ath10k_dbg(ATH10K_DBG_BOOT, "boot otp execute result %d\n", result);
+ 
+-	if (result != 0) {
++	if (result = 2) {
++		ath10k_warn("otp stream is empty, using board.bin contents");
++		return 0;
++	} else if (result != 0) {
+ 		ath10k_err("otp calibration failed: %d", result);
+ 		return -EINVAL;
+ 	}
