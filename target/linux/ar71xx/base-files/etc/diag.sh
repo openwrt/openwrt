@@ -229,6 +229,9 @@ get_status_led() {
 	uap-pro)
 		status_led="ubnt:white:dome"
 		;;
+	airgateway)
+		status_led="ubnt:white:status"
+		;;
 	whr-g301n | \
 	whr-hp-g300n | \
 	whr-hp-gn | \
