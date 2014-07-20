@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-orion5x/Kconfig
 +++ b/arch/arm/mach-orion5x/Kconfig
-@@ -139,10 +139,13 @@ config MACH_MSS2
+@@ -146,10 +146,13 @@ config MACH_MSS2
  	  Maxtor Shared Storage II platform.
  
  config MACH_WNR854T
@@ -47,8 +47,8 @@
 +
  	orion5x_uart0_init();
  
- 	orion5x_setup_dev_boot_win(WNR854T_NOR_BOOT_BASE,
-@@ -167,7 +181,7 @@ static struct hw_pci wnr854t_pci __initd
+ 	mvebu_mbus_add_window("devbus-boot", WNR854T_NOR_BOOT_BASE,
+@@ -166,7 +180,7 @@ static struct hw_pci wnr854t_pci __initd
  
  static int __init wnr854t_pci_init(void)
  {
@@ -57,14 +57,14 @@
  		pci_common_init(&wnr854t_pci);
  
  	return 0;
-@@ -178,6 +192,18 @@ MACHINE_START(WNR854T, "Netgear WNR854T"
+@@ -177,6 +191,18 @@ MACHINE_START(WNR854T, "Netgear WNR854T"
  	/* Maintainer: Imre Kaloz <kaloz@openwrt.org> */
  	.atag_offset	= 0x100,
  	.init_machine	= wnr854t_init,
 +	.map_io		= orion5x_map_io,
 +	.init_early	= orion5x_init_early,
 +	.init_irq	= orion5x_init_irq,
-+	.timer		= &orion5x_timer,
++	.init_time	= orion5x_timer_init,
 +	.fixup		= tag_fixup_mem32,
 +	.restart	= orion5x_restart,
 +MACHINE_END

@@ -26,7 +26,6 @@
 #include <linux/interrupt.h>
 #include <asm/mach-types.h>
 #include <asm/gpio.h>
-#include <asm/leds.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/pci.h>
 #include <mach/orion5x.h>
@@ -146,7 +145,7 @@ void __init dt2_pci_preinit(void)
 	}
 }
 
-static int __init dt2_pci_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __init dt2_pci_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	int irq;
 
@@ -183,7 +182,6 @@ static int __init dt2_pci_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 static struct hw_pci dt2_pci __initdata = {
 	.nr_controllers	= 2,
 	.preinit	= dt2_pci_preinit,
-	.swizzle	= pci_std_swizzle,
 	.setup		= orion5x_pci_sys_setup,
 	.scan		= orion5x_pci_sys_scan_bus,
 	.map_irq	= dt2_pci_map_irq,
@@ -328,10 +326,12 @@ static void __init dt2_init(void)
 
 	i2c_register_board_info(0, &dt2_i2c_rtc, 1);
 
-	orion5x_setup_dev_boot_win(DT2_NOR_BOOT_BASE, DT2_NOR_BOOT_SIZE);
+	mvebu_mbus_add_window("devbus-boot", DT2_NOR_BOOT_BASE,
+			      DT2_NOR_BOOT_SIZE);
+
 	platform_device_register(&dt2_nor_flash);
 
-	orion5x_setup_dev0_win(DT2_LEDS_BASE, DT2_LEDS_SIZE);
+	mvebu_mbus_add_window("devbus-cs0", DT2_LEDS_BASE, DT2_LEDS_SIZE);
 	platform_device_register(&dt2_leds);
 
 	if (request_irq(gpio_to_irq(DT2_PIN_GPIO_RESET), &dt2_reset_handler,
@@ -383,8 +383,7 @@ __tagtable(ATAG_MV_UBOOT, parse_tag_dt2_uboot);
  *
  * Vanilla kernel should use "tag_fixup_mem32" function.
  */
-void __init openwrt_fixup(struct machine_desc *mdesc, struct tag *t,
-			    char **from, struct meminfo *meminfo)
+void __init openwrt_fixup(struct tag *t, char **from, struct meminfo *meminfo)
 {
 	char *p = NULL;
 	static char openwrt_init_tag[] __initdata = " init=/etc/preinit";
@@ -437,10 +436,10 @@ void __init openwrt_fixup(struct machine_desc *mdesc, struct tag *t,
 /* Warning: Freecom uses their own custom bootloader with mach-type (=1500) */
 MACHINE_START(DT2, "Freecom DataTank Gateway")
 	/* Maintainer: Zintis Petersons <Zintis.Petersons@abcsolutions.lv> */
-	.boot_params	= 0x00000100,
+	.atag_offset    = 0x100,
 	.init_machine	= dt2_init,
 	.map_io		= orion5x_map_io,
 	.init_irq	= orion5x_init_irq,
-	.timer		= &orion5x_timer,
+	.init_time	= orion5x_timer_init,
 	.fixup		= openwrt_fixup, //tag_fixup_mem32,
 MACHINE_END

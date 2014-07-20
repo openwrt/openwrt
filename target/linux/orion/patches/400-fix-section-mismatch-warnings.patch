@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-orion5x/common.c
 +++ b/arch/arm/mach-orion5x/common.c
-@@ -192,7 +192,7 @@ void __init orion5x_init_early(void)
+@@ -242,7 +242,7 @@ void orion5x_setup_wins(void)
  
  int orion5x_tclk;
  
@@ -9,23 +9,3 @@
  {
  	u32 dev, rev;
  
-@@ -204,7 +204,7 @@ int __init orion5x_find_tclk(void)
- 	return 166666667;
- }
- 
--static void orion5x_timer_init(void)
-+static __init void orion5x_timer_init(void)
- {
- 	orion5x_tclk = orion5x_find_tclk();
- 
---- a/arch/arm/mach-orion5x/addr-map.c
-+++ b/arch/arm/mach-orion5x/addr-map.c
-@@ -76,7 +76,7 @@ static int __init cpu_win_can_remap(cons
- /*
-  * Description of the windows needed by the platform code
-  */
--static struct __initdata orion_addr_map_cfg addr_map_cfg = {
-+static struct orion_addr_map_cfg addr_map_cfg __initdata = {
- 	.num_wins = 8,
- 	.cpu_win_can_remap = cpu_win_can_remap,
- 	.bridge_virt_base = ORION5X_BRIDGE_VIRT_BASE,
