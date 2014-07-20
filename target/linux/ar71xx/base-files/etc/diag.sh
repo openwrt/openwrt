@@ -124,6 +124,9 @@ get_status_led() {
 	om2p-lc)
 		status_led="om2p:blue:power"
 		;;
+	om5p)
+		status_led="om5p:blue:power"
+		;;
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;

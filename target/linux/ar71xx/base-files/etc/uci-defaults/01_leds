@@ -185,6 +185,11 @@ om2p-lc)
 	ucidef_set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
 	;;
 
+om5p)
+	ucidef_set_led_netdev "port1" "port1" "om5p:blue:wan" "eth0"
+	ucidef_set_led_netdev "port2" "port2" "om5p:blue:lan" "eth1"
+	;;
+
 tew-712br)
 	ucidef_set_led_netdev "wan" "WAN" "trendnet:green:wan" "eth1"
 	ucidef_set_led_switch "lan1" "LAN1" "trendnet:green:lan1" "switch0" "0x02"
