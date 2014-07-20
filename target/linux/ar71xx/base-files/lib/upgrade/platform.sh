@@ -245,7 +245,8 @@ platform_check_image() {
 	om2pv2 | \
 	om2p-hs | \
 	om2p-hsv2 | \
-	om2p-lc)
+	om2p-lc | \
+	om5p)
 		platform_check_image_openmesh "$magic_long" "$1" && return 0
 		return 1
 		;;
@@ -423,7 +424,8 @@ platform_do_upgrade() {
 	om2pv2 | \
 	om2p-hs | \
 	om2p-hsv2 | \
-	om2p-lc)
+	om2p-lc | \
+	om5p)
 		platform_do_upgrade_openmesh "$ARGV"
 		;;
 	uap-pro)
