@@ -31,7 +31,7 @@
 					reg = <0x30000 0x10000>;
 					read-only;
 				};
-				factory: partition@40000 {
+				partition@40000 {
 					label = "factory";
 					reg = <0x40000 0x10000>;
 					read-only;
@@ -69,7 +69,7 @@
 	};
 
 	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4004>;
+		mtd-mac-address = <&devdata 0x4004>;
 	};
 
 	esw@10110000 {
