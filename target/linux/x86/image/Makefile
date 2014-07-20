@@ -160,27 +160,21 @@ endef
 
 ifneq ($(CONFIG_VDI_IMAGES),)
   define Image/Build/vdi
-    # left here because the image builder doesnt need these
-    ifeq ($(1),ext4)
-		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
-		qemu-img convert -f raw -O vdi \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
-		# XXX: VBoxManage insists on setting perms to 0600
-		chmod 0644 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
-    endif
+	rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi || true
+	qemu-img convert -f raw -O vdi \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
+	# XXX: VBoxManage insists on setting perms to 0600
+	chmod 0644 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vdi
   endef
 endif
 
 ifneq ($(CONFIG_VMDK_IMAGES),)
   define Image/Build/vmdk
-    # left here because the image builder doesnt need these
-    ifeq ($(1),ext4)
-		rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
-		qemu-img convert -f raw -O vmdk \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
-			$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
-    endif
+	rm $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk || true
+	qemu-img convert -f raw -O vmdk \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img \
+		$(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).vmdk
   endef
 endif
 
