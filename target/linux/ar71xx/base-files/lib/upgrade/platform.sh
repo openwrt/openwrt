@@ -186,6 +186,7 @@ platform_check_image() {
 	tew-712br | \
 	tew-732br | \
 	wrt400n | \
+	airgateway | \
 	airrouter | \
 	bullet-m | \
 	nanostation-m | \

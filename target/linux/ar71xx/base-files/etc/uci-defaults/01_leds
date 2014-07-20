@@ -9,6 +9,9 @@
 board=$(ar71xx_board_name)
 
 case "$board" in
+airgateway)
+	ucidef_set_led_wlan "wlan" "WLAN" "ubnt:blue:wlan" "phy0tpt"
+	;;
 alfa-nx)
 	ucidef_set_led_netdev "wan" "WAN" "alfa:green:led_2" "eth0"
 	ucidef_set_led_netdev "lan" "LAN" "alfa:green:led_3" "eth1"
