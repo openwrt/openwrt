@@ -1,5 +1,5 @@
---- a/arch/mips/ath79/mach-ubnt-xm.c	2014-07-18 02:43:23.110693216 +0000
-+++ b/arch/mips/ath79/mach-ubnt-xm.c	2014-07-18 03:20:28.542701485 +0000
+--- a/arch/mips/ath79/mach-ubnt-xm.c
++++ b/arch/mips/ath79/mach-ubnt-xm.c
 @@ -17,9 +17,11 @@
  #include <linux/etherdevice.h>
  #include <linux/ar8216_platform.h>
@@ -63,8 +63,8 @@
 +MIPS_MACHINE(ATH79_MACH_UBNT_AIRGW, "UBNT-AGW", "Ubiquiti AirGateway",
 +	     ubnt_airgateway_setup);
 +
---- a/arch/mips/ath79/machtypes.h	2014-07-18 02:45:30.590693688 +0000
-+++ b/arch/mips/ath79/machtypes.h	2014-07-18 02:51:02.490694922 +0000
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
 @@ -143,6 +143,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
  	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */

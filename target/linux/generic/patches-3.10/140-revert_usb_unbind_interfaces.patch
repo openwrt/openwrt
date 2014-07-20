@@ -195,7 +195,7 @@ Date:   Wed Jul 9 12:08:23 2014 +0200
  	usb_autosuspend_device(udev);
 --- a/drivers/usb/core/usb.h
 +++ b/drivers/usb/core/usb.h
-@@ -55,7 +55,7 @@ extern int usb_match_one_id_intf(struct 
+@@ -55,7 +55,7 @@ extern int usb_match_one_id_intf(struct
  extern int usb_match_device(struct usb_device *dev,
  			    const struct usb_device_id *id);
  extern void usb_forced_unbind_intf(struct usb_interface *intf);

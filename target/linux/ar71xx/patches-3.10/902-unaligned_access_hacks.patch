@@ -328,7 +328,7 @@
  
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
-@@ -1272,9 +1272,9 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
+@@ -1273,9 +1273,9 @@ ip6ip6_tnl_xmit(struct sk_buff *skb, str
  
  	dsfield = ipv6_get_dsfield(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_TCLASS)
@@ -886,7 +886,7 @@
  		tpi->seq = 0;
 --- a/net/ipv4/tcp_input.c
 +++ b/net/ipv4/tcp_input.c
-@@ -3625,14 +3625,16 @@ static bool tcp_parse_aligned_timestamp(
+@@ -3624,14 +3624,16 @@ static bool tcp_parse_aligned_timestamp(
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
  
