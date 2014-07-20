@@ -26,8 +26,8 @@
 					reg = <0x0 0x30000>;
 					read-only;
 				};
-				factory: partition@30000 {
-					label = "factory";
+				ubootenv: partition@30000 {
+					label = "uboot-env";
 					reg = <0x30000 0x10000>;
 					read-only;
 				};
@@ -64,18 +64,17 @@
 	};
 
 	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4004>;
+		mtd-mac-address = <&ubootenv 0x4004>;
 	};
 
 	esw@10110000 {
 		ralink,portmap = <0x1e>;
 	};
 
-	/* devdata partition seems to be missing */
-/*	wmac@10180000 {
-		ralink,mtd-eeprom = <&devdata 0x4000>;
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&ubootenv 0x4000>;
 	};
-*/
+
 	otg@101c0000 {
 		status = "okay";
 	};
