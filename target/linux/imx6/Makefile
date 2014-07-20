@@ -14,7 +14,7 @@ CPU_TYPE:=cortex-a9
 CPU_SUBTYPE:=neon
 MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
-LINUX_VERSION:=3.10.44
+LINUX_VERSION:=3.10.49
 
 include $(INCLUDE_DIR)/target.mk
 
