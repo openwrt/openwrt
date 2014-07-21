@@ -36,7 +36,7 @@ define Image/BuildKernel
     endif
 
 	$(foreach board,$(BOARDS),
-		$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(BIN_DIR)/
+		$(CP) $(DTS_DIR)/$(board).dtb $(BIN_DIR)/
 	)
 endef
 
