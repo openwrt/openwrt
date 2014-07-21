@@ -13,7 +13,7 @@ BOARDS:= \
 	imx28-duckbill
 
 define Image/BuildKernel/olinuxino-bootlet
-	cat $(LINUX_DIR)/arch/arm/boot/zImage $(LINUX_DIR)/arch/arm/boot/dts/imx23-olinuxino.dtb > $(STAGING_DIR)/zImage_dtb
+	cat $(LINUX_DIR)/arch/arm/boot/zImage $(DTS_DIR)/imx23-olinuxino.dtb > $(STAGING_DIR)/zImage_dtb
 	(cd $(STAGING_DIR); \
 	$(STAGING_DIR)/../host/bin/elftosb -z -c ./linux_prebuilt.db -o linux.sb; \
 	dd if=/dev/zero of=sd_mmc_bootstream.raw bs=512 count=4; \
@@ -41,7 +41,7 @@ define Image/BuildKernel
   
 	$(CP) $(LINUX_DIR)/arch/arm/boot/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
 	$(foreach board,$(BOARDS),
-		$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(BIN_DIR)/
+		$(CP) $(DTS_DIR)/$(board).dtb $(BIN_DIR)/
 	)
 endef
 
@@ -55,7 +55,7 @@ define Image/InstallKernel
   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
 	mkdir -p $(TARGET_DIR)/boot
 	$(foreach board,$(BOARDS),
-		$(CP) $(LINUX_DIR)/arch/arm/boot/dts/$(board).dtb $(TARGET_DIR)/boot/
+		$(CP) $(DTS_DIR)/$(board).dtb $(TARGET_DIR)/boot/
 	)
   endif
 

@@ -22,14 +22,14 @@ define Image/BuildKernel
  endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
-	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(TARGET_DIR)/boot/
-	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(TARGET_DIR)/boot/
-	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(TARGET_DIR)/boot/
+	$(CP) $(DTS_DIR)/am335x*.dtb $(TARGET_DIR)/boot/
+	$(CP) $(DTS_DIR)/omap3*.dtb $(TARGET_DIR)/boot/
+	$(CP) $(DTS_DIR)/omap4*.dtb $(TARGET_DIR)/boot/
  endif
 	-mkdir $(BIN_DIR)/dtbs
-	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/am335x*.dtb $(BIN_DIR)/dtbs/
-	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap3*.dtb $(BIN_DIR)/dtbs/
-	-$(CP) $(LINUX_DIR)/arch/arm/boot/dts/omap4*.dtb $(BIN_DIR)/dtbs/
+	-$(CP) $(DTS_DIR)/am335x*.dtb $(BIN_DIR)/dtbs/
+	-$(CP) $(DTS_DIR)/omap3*.dtb $(BIN_DIR)/dtbs/
+	-$(CP) $(DTS_DIR)/omap4*.dtb $(BIN_DIR)/dtbs/
 endef
 
 define Image/Build

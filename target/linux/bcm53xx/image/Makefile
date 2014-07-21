@@ -43,7 +43,7 @@ endef
 define Image/Build/DTB
 	rm -f $(KDIR)/$(1)-$(2).lzma
 	rm -f $(KDIR)/$(1)-$(2).dts
-	cat $(KDIR)/$(1) $(LINUX_DIR)/arch/$(ARCH)/boot/dts/$(2).dtb > $(KDIR)/$(1)-$(2).dts;
+	cat $(KDIR)/$(1) $(DTS_DIR)/$(2).dtb > $(KDIR)/$(1)-$(2).dts;
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/$(1)-$(2).dts $(KDIR)/$(1)-$(2).lzma -d16
 endef
 

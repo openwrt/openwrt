@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/image.mk
 JFFS2_BLOCKSIZE=256k
 
 define Image/Prepare
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(LINUX_DIR)/arch/powerpc/boot/dts/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(DTS_DIR)/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
 endef
 
 define Image/BuildKernel

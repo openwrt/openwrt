@@ -25,7 +25,7 @@ define Image/Prepare
 endef
 
 define MkuImageDtb
-	cat $(KDIR)/zImage $(LINUX_DIR)/arch/arm/boot/dts/$(2).dtb > $(KDIR)/zImage-$(1)
+	cat $(KDIR)/zImage $(DTS_DIR)/$(2).dtb > $(KDIR)/zImage-$(1)
 	mkimage -A arm -T kernel -C none -a 0x20008000 -e 0x20008000 \
 		-n "OpenWrt ARM $(LINUX_VERSION)" \
 		-d $(KDIR)/zImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
@@ -33,7 +33,7 @@ endef
 
 define MkOftree
 	cp -u $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
-	cp $(LINUX_DIR)/arch/arm/boot/dts/$(2).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-oftree.dtb
+	cp $(DTS_DIR)/$(2).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-oftree.dtb
 endef
 
 # Atmel

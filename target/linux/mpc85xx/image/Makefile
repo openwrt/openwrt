@@ -33,7 +33,7 @@ endef
 define Image/BuildKernel
 	cp $(KDIR)/zImage $(zImage)
 	$(foreach dts,$(DTS_TARGETS),
-		$(LINUX_DIR)/scripts/dtc/dtc -I dts -O dtb $(LINUX_DIR)/arch/powerpc/boot/dts/$(dts).dts > $(BIN_DIR)/$(IMG_PREFIX)-$(dts).fdt
+		$(LINUX_DIR)/scripts/dtc/dtc -I dts -O dtb $(DTS_DIR)/$(dts).dts > $(BIN_DIR)/$(IMG_PREFIX)-$(dts).fdt
 	)
 endef
 
