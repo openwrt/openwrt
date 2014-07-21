@@ -11,7 +11,7 @@ EXTRA_HELP="	status  Get DSL status information
 SERVICE_DAEMONIZE=1
 SERVICE_WRITE_PID=1
 
-. /lib/functions/lantiq_dsl.sh
+[ -f /lib/functions/lantiq_dsl.sh ] && . /lib/functions/lantiq_dsl.sh
 XDSL_CTRL=vdsl_cpe_control
 
 # G.992.1 Annex A
