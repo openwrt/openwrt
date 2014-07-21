@@ -27,7 +27,7 @@ endef
 define MkImageGzip
 	gzip -9 -c $(1) > $(1).gz
 	mkimage -A mips -O linux -T kernel -a 0x80010000 -C gzip \
-		-e $(call kernel_entry,$(LINUX_DIR)/vmlinux) -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-e $(call kernel_entry,$(KDIR)/vmlinux.debug) -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
 		-d $(1).gz $(2)
 endef
 
