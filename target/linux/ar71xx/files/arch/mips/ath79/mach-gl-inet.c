@@ -41,7 +41,7 @@ static struct flash_platform_data gl_inet_flash_data = {
 
 static struct gpio_led gl_inet_leds_gpio[] __initdata = {
 	{
-		.name = "gl-connect:red:wireless",
+		.name = "gl-connect:red:wlan",
 		.gpio = GL_INET_GPIO_LED_WLAN,
 		.active_low = 0,
 	},
