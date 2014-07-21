@@ -250,6 +250,7 @@ get_status_led() {
 		;;
 	wndap360 | \
 	wndr3700 | \
+	wndr3700v4 | \
 	wndr4300 | \
 	wnr2000 | \
 	wnr2200 |\

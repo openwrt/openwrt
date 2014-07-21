@@ -1,6 +1,8 @@
---- a/arch/mips/ath79/machtypes.h
-+++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,143 @@
+Index: linux-3.10.49/arch/mips/ath79/machtypes.h
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ath79/machtypes.h	2014-07-18 18:32:42.703897643 +0100
++++ linux-3.10.49/arch/mips/ath79/machtypes.h	2014-07-18 18:36:07.635890025 +0100
+@@ -16,22 +16,144 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -126,7 +128,8 @@
 +	ATH79_MACH_WLR8100,		/* SITECOM WLR-8100 */
 +	ATH79_MACH_WNDAP360,		/* NETGEAR WNDAP360 */
 +	ATH79_MACH_WNDR3700,		/* NETGEAR WNDR3700/WNDR3800/WNDRMAC */
-+	ATH79_MACH_WNDR4300,		/* NETGEAR WNDR3700v4/WNDR4300 */
++	ATH79_MACH_WNDR3700_V4,		/* NETGEAR WNDR3700v4 */
++	ATH79_MACH_WNDR4300,		/* NETGEAR WNDR4300 */
 +	ATH79_MACH_WNR2000,		/* NETGEAR WNR2000 */
 +	ATH79_MACH_WNR2000_V3,		/* NETGEAR WNR2000 v3 */
 +	ATH79_MACH_WNR2200,		/* NETGEAR WNR2200 */
@@ -144,9 +147,11 @@
  };
  
  #endif /* _ATH79_MACHTYPE_H */
---- a/arch/mips/ath79/Kconfig
-+++ b/arch/mips/ath79/Kconfig
-@@ -2,6 +2,61 @@ if ATH79
+Index: linux-3.10.49/arch/mips/ath79/Kconfig
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ath79/Kconfig	2014-07-18 18:32:42.707897643 +0100
++++ linux-3.10.49/arch/mips/ath79/Kconfig	2014-07-18 18:34:56.795892658 +0100
+@@ -2,6 +2,61 @@
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
@@ -208,7 +213,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -9,64 +64,736 @@ config ATH79_MACH_AP121
+@@ -9,64 +64,736 @@
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
  	select ATH79_DEV_M25P80
@@ -971,7 +976,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +810,65 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +810,65 @@
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1037,7 +1042,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -132,7 +918,10 @@ config ATH79_DEV_DSA
+@@ -132,7 +918,10 @@
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1049,7 +1054,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,4 +953,7 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,4 +953,7 @@
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -1057,9 +1062,11 @@
 +	def_bool n
 +
  endif
---- a/arch/mips/ath79/Makefile
-+++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,90 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+Index: linux-3.10.49/arch/mips/ath79/Makefile
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ath79/Makefile	2014-07-18 18:32:42.567897648 +0100
++++ linux-3.10.49/arch/mips/ath79/Makefile	2014-07-18 18:34:56.795892658 +0100
+@@ -38,9 +38,90 @@
  #
  # Machines
  #
@@ -1150,9 +1157,11 @@
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 +obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
---- a/arch/mips/ath79/prom.c
-+++ b/arch/mips/ath79/prom.c
-@@ -180,6 +180,12 @@ void __init prom_init(void)
+Index: linux-3.10.49/arch/mips/ath79/prom.c
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ath79/prom.c	2014-07-18 18:32:42.351897656 +0100
++++ linux-3.10.49/arch/mips/ath79/prom.c	2014-07-18 18:32:42.723897642 +0100
+@@ -180,6 +180,12 @@
  			ath79_prom_append_cmdline("board", env);
  		}
  	}

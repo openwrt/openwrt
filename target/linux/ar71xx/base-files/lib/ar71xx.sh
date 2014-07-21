@@ -667,6 +667,9 @@ ar71xx_board_detect() {
 	*"WNDR3700/WNDR3800/WNDRMAC")
 		wndr3700_board_detect "$machine"
 		;;
+	*"WNDR3700v4")
+		name="wndr3700v4"
+		;;
 	*"WNDR4300")
 		name="wndr4300"
 		;;
