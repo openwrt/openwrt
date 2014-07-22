@@ -348,6 +348,7 @@ endef
 Image/Build/Profile/ASL26555=$(call BuildFirmware/ASL26555/$(1),$(1),asl26555,ASL26555)
 
 Image/Build/Profile/AWM002EVB=$(call BuildFirmware/DefaultDualSize/$(1),$(1),awm002-evb,AWM002-EVB)
+Image/Build/Profile/AWM003EVB=$(call BuildFirmware/Default8M/$(1),$(1),awm003-evb,AWM003-EVB)
 Image/Build/Profile/AWAPN2403=$(call BuildFirmware/Default4M/$(1),$(1),awmapn2403,AWAPN2403)
 
 Image/Build/Profile/BC2=$(call BuildFirmware/Default8M/$(1),$(1),bc2,BC2)

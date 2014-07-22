@@ -8,11 +8,21 @@
 define Profile/AWM002EVB
 	NAME:=AsiaRF AWM002-EVB
 	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
-	kmod-i2c-core kmod-i2c-gpio
+		kmod-i2c-core kmod-i2c-gpio
 endef
 
 define Profile/AWM002EVB/Description
 	Package set for AsiaRF AWM002 Evaluation Board
+endef
+
+define Profile/AWM003EVB
+	NAME:=AsiaRF AWM003-EVB
+	PACKAGES:=kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
+		kmod-i2c-core kmod-i2c-gpio
+endef
+
+define Profile/AWM003EVB/Description
+	Package set for AsiaRF AWM003 Evaluation Board
 endef
 
 define Profile/AWAPN2403
@@ -24,4 +34,5 @@ define Profile/AWAPN2403/Description
 endef
 
 $(eval $(call Profile,AWM002EVB))
+$(eval $(call Profile,AWM003EVB))
 $(eval $(call Profile,AWAPN2403))
