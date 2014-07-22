@@ -57,7 +57,7 @@ Subject: [PATCH 7/8] bcma: get irqs from dt
  static int bcma_register_cores(struct bcma_bus *bus)
  {
  	struct bcma_device *core;
-@@ -145,7 +179,13 @@ static int bcma_register_cores(struct bc
+@@ -146,7 +180,13 @@ static int bcma_register_cores(struct bc
  			break;
  		case BCMA_HOSTTYPE_SOC:
  			core->dev.dma_mask = &core->dev.coherent_dma_mask;

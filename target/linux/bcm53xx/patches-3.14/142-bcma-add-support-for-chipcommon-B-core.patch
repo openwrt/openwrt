@@ -112,8 +112,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		case BCMA_CORE_CHIPCOMMON_B:
  		case BCMA_CORE_PCI:
  		case BCMA_CORE_PCIE:
- 		case BCMA_CORE_MIPS_74K:
-@@ -300,6 +301,13 @@ int bcma_bus_register(struct bcma_bus *b
+ 		case BCMA_CORE_PCIE2:
+@@ -301,6 +302,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_init(&bus->drv_cc);
  	}
  
@@ -127,7 +127,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	/* Init MIPS core */
  	core = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
  	if (core) {
-@@ -347,6 +355,8 @@ void bcma_bus_unregister(struct bcma_bus
+@@ -355,6 +363,8 @@ void bcma_bus_unregister(struct bcma_bus
  	else if (err)
  		bcma_err(bus, "Can not unregister GPIO driver: %i\n", err);
  
@@ -148,14 +148,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		default:
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -334,6 +334,7 @@ struct bcma_bus {
+@@ -337,6 +337,7 @@ struct bcma_bus {
  	u8 num;
  
  	struct bcma_drv_cc drv_cc;
 +	struct bcma_drv_cc_b drv_cc_b;
  	struct bcma_drv_pci drv_pci[2];
+ 	struct bcma_drv_pcie2 drv_pcie2;
  	struct bcma_drv_mips drv_mips;
- 	struct bcma_drv_gmac_cmn drv_gmac_cmn;
 --- a/include/linux/bcma/bcma_driver_chipcommon.h
 +++ b/include/linux/bcma/bcma_driver_chipcommon.h
 @@ -644,6 +644,12 @@ struct bcma_drv_cc {
