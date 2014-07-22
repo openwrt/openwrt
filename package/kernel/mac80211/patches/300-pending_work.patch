@@ -1,3 +1,18 @@
+commit 38695a6e5a940e6a524523b88a33916b016fb2a1
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Fri Jul 11 12:06:18 2014 +0200
+
+    mac80211: fix crash on getting sta info with uninitialized rate control
+    
+    If the expected throughput is queried before rate control has been
+    initialized, the minstrel op for it will crash while trying to access
+    the rate table.
+    Check for WLAN_STA_RATE_CONTROL before attempting to use the rate
+    control op.
+    
+    Reported-by: Jean-Pierre Tosoni <jp.tosoni@acksys.fr>
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit c0ee7fa4c0da824ccccc172bf175fb1f86540921
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Wed Jul 16 18:00:31 2014 +0200
@@ -660,7 +675,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  }
  EXPORT_SYMBOL(ieee80211_sta_block_awake);
  
-@@ -1703,3 +1723,137 @@ u8 sta_info_tx_streams(struct sta_info *
+@@ -1703,3 +1723,140 @@ u8 sta_info_tx_streams(struct sta_info *
  	return ((ht_cap->mcs.tx_params & IEEE80211_HT_MCS_TX_MAX_STREAMS_MASK)
  			>> IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT) + 1;
  }
@@ -669,11 +684,14 @@ Date:   Mon May 19 21:20:49 2014 +0200
 +{
 +	struct ieee80211_sub_if_data *sdata = sta->sdata;
 +	struct ieee80211_local *local = sdata->local;
-+	struct rate_control_ref *ref = local->rate_ctrl;
++	struct rate_control_ref *ref = NULL;
 +	struct timespec uptime;
 +	u64 packets = 0;
 +	u32 thr = 0;
 +	int i, ac;
++
++	if (test_sta_flag(sta, WLAN_STA_RATE_CONTROL))
++		ref = local->rate_ctrl;
 +
 +	sinfo->generation = sdata->local->sta_generation;
 +
