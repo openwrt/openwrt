@@ -74,7 +74,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct b43_bus_dev *b43_bus_dev_ssb_init(struct ssb_device *sdev);
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4422,7 +4422,7 @@ static int b43_phy_versioning(struct b43
+@@ -4464,7 +4464,7 @@ static int b43_phy_versioning(struct b43
  		u16 radio24[3];
  
  		for (tmp = 0; tmp < 3; tmp++) {
@@ -83,7 +83,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			radio24[tmp] = b43_read16(dev, B43_MMIO_RADIO24_DATA);
  		}
  
-@@ -4441,10 +4441,10 @@ static int b43_phy_versioning(struct b43
+@@ -4481,10 +4481,10 @@ static int b43_phy_versioning(struct b43
  			else
  				tmp = 0x5205017F;
  		} else {
@@ -156,7 +156,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- a/drivers/net/wireless/b43/phy_lcn.c
 +++ b/drivers/net/wireless/b43/phy_lcn.c
-@@ -845,20 +845,20 @@ static void b43_phy_lcn_op_adjust_txpowe
+@@ -812,20 +812,20 @@ static void b43_phy_lcn_op_adjust_txpowe
  
  static u16 b43_phy_lcn_op_read(struct b43_wldev *dev, u16 reg)
  {
@@ -180,7 +180,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_write16(dev, B43_MMIO_PHY_DATA,
  		    (b43_read16(dev, B43_MMIO_PHY_DATA) & mask) | set);
  }
-@@ -868,14 +868,14 @@ static u16 b43_phy_lcn_op_radio_read(str
+@@ -835,14 +835,14 @@ static u16 b43_phy_lcn_op_radio_read(str
  	/* LCN-PHY needs 0x200 for read access */
  	reg |= 0x200;
  
@@ -199,7 +199,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- a/drivers/net/wireless/b43/phy_n.c
 +++ b/drivers/net/wireless/b43/phy_n.c
-@@ -6251,14 +6251,14 @@ static inline void check_phyreg(struct b
+@@ -6494,14 +6494,14 @@ static inline void check_phyreg(struct b
  static u16 b43_nphy_op_read(struct b43_wldev *dev, u16 reg)
  {
  	check_phyreg(dev, reg);
@@ -216,7 +216,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_write16(dev, B43_MMIO_PHY_DATA, value);
  }
  
-@@ -6266,7 +6266,7 @@ static void b43_nphy_op_maskset(struct b
+@@ -6509,7 +6509,7 @@ static void b43_nphy_op_maskset(struct b
  				 u16 set)
  {
  	check_phyreg(dev, reg);
@@ -225,7 +225,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_maskset16(dev, B43_MMIO_PHY_DATA, mask, set);
  }
  
-@@ -6280,7 +6280,7 @@ static u16 b43_nphy_op_radio_read(struct
+@@ -6523,7 +6523,7 @@ static u16 b43_nphy_op_radio_read(struct
  	else
  		reg |= 0x100;
  
@@ -234,7 +234,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	return b43_read16(dev, B43_MMIO_RADIO_DATA_LOW);
  }
  
-@@ -6289,7 +6289,7 @@ static void b43_nphy_op_radio_write(stru
+@@ -6532,7 +6532,7 @@ static void b43_nphy_op_radio_write(stru
  	/* Register 1 is a 32-bit register. */
  	B43_WARN_ON(dev->phy.rev < 7 && reg == 1);
  
