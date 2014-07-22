@@ -59,7 +59,7 @@ with the irq number and add it to the core configuration.
  static int bcma_register_cores(struct bcma_bus *bus)
  {
  	struct bcma_device *core;
-@@ -154,7 +188,13 @@ static int bcma_register_cores(struct bc
+@@ -155,7 +189,13 @@ static int bcma_register_cores(struct bc
  			break;
  		case BCMA_HOSTTYPE_SOC:
  			core->dev.dma_mask = &core->dev.coherent_dma_mask;
