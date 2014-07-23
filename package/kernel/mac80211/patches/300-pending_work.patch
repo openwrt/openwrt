@@ -1,3 +1,21 @@
+commit ff354dbdd743e5fe186df8cd17982db19f78231a
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Wed Jul 23 15:33:26 2014 +0200
+
+    ath9k: fix aggregation session lockup
+    
+    If an aggregation session fails, frames still end up in the driver queue
+    with IEEE80211_TX_CTL_AMPDU set.
+    This causes tx for the affected station/tid to stall, since
+    ath_tx_get_tid_subframe returning packets to send.
+    
+    Fix this by clearing IEEE80211_TX_CTL_AMPDU as long as no aggregation
+    session is running.
+    
+    Cc: stable@vger.kernel.org
+    Reported-by: Antonio Quartulli <antonio@open-mesh.com>
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 38695a6e5a940e6a524523b88a33916b016fb2a1
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Fri Jul 11 12:06:18 2014 +0200
@@ -2990,7 +3008,23 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	if (WARN_ON(--txq->pending_frames < 0))
  		txq->pending_frames = 0;
  
-@@ -1999,6 +1997,7 @@ static void setup_frame_info(struct ieee
+@@ -887,6 +885,15 @@ ath_tx_get_tid_subframe(struct ath_softc
+ 
+ 		tx_info = IEEE80211_SKB_CB(skb);
+ 		tx_info->flags &= ~IEEE80211_TX_CTL_CLEAR_PS_FILT;
++
++		/*
++		 * No aggregation session is running, but there may be frames
++		 * from a previous session or a failed attempt in the queue.
++		 * Send them out as normal data frames
++		 */
++		if (!tid->active)
++			tx_info->flags &= ~IEEE80211_TX_CTL_AMPDU;
++
+ 		if (!(tx_info->flags & IEEE80211_TX_CTL_AMPDU)) {
+ 			bf->bf_state.bf_type = 0;
+ 			return bf;
+@@ -1999,6 +2006,7 @@ static void setup_frame_info(struct ieee
  		an = (struct ath_node *) sta->drv_priv;
  
  	memset(fi, 0, sizeof(*fi));
@@ -2998,7 +3032,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	if (hw_key)
  		fi->keyix = hw_key->hw_key_idx;
  	else if (an && ieee80211_is_data(hdr->frame_control) && an->ps_key > 0)
-@@ -2150,6 +2149,7 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2150,6 +2158,7 @@ int ath_tx_start(struct ieee80211_hw *hw
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
  	struct ieee80211_sta *sta = txctl->sta;
  	struct ieee80211_vif *vif = info->control.vif;
@@ -3006,7 +3040,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	struct ath_softc *sc = hw->priv;
  	struct ath_txq *txq = txctl->txq;
  	struct ath_atx_tid *tid = NULL;
-@@ -2170,11 +2170,13 @@ int ath_tx_start(struct ieee80211_hw *hw
+@@ -2170,11 +2179,13 @@ int ath_tx_start(struct ieee80211_hw *hw
  	q = skb_get_queue_mapping(skb);
  
  	ath_txq_lock(sc, txq);
