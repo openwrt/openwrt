@@ -251,6 +251,7 @@ platform_check_image() {
 		return 1
 		;;
 
+	archer-c5 | \
 	archer-c7 | \
 	el-m150 | \
 	el-mini | \
