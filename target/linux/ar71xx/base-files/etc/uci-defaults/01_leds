@@ -124,7 +124,7 @@ esr900)
 	;;
 
 hiwifi-hc6361)
-	ucidef_set_led_default "inet" "INET" "hiwifi:blue:internet" "0"
+	ucidef_set_led_netdev "inet" "INET" "hiwifi:blue:internet" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "hiwifi:blue:wlan-2p4" "phy0tpt"
 	;;
 
