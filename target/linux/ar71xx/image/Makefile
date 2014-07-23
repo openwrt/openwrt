@@ -1160,6 +1160,7 @@ $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV3,tl-wr941nd-v3,TL-WR941ND,tt
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR1043V1,tl-wr1043nd-v1,TL-WR1043ND,ttyS0,115200,0x10430001,1,8M))
 
+$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ARCHERC5,archer-c5,ARCHER-C5,ttyS0,115200,0xc5000001,1,16Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ARCHERC7V1,archer-c7-v1,ARCHER-C7,ttyS0,115200,0x75000001,1,8Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ARCHERC7V2,archer-c7-v2,ARCHER-C7,ttyS0,115200,0xc7000002,1,16Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ELM150,el-m150,EL-M150,ttyATH0,115200,0x01500101,1,8Mlzma))
@@ -1241,7 +1242,7 @@ $(eval $(call SingleProfile,ZyXEL,64k,NBG_460N_550N_550NH,nbg460n_550n_550nh,NBG
 
 $(eval $(call MultiProfile,AP121,AP121_2M AP121_4M))
 $(eval $(call MultiProfile,AP136,AP136_010 AP136_020))
-$(eval $(call MultiProfile,ARCHERC7, ARCHERC7V1 ARCHERC7V2))
+$(eval $(call MultiProfile,ARCHERC7, ARCHERC5 ARCHERC7V1 ARCHERC7V2))
 $(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT EWDORIN16M))
 $(eval $(call MultiProfile,OPENMESH,OM2P OM5P MR600))
 $(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))

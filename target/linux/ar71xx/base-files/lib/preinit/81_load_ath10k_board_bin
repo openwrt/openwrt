@@ -11,6 +11,7 @@ do_load_ath10k_board_bin() {
 				bs=1 skip=20480 count=2116 \
 				of=/tmp/ath10k-board.bin
 		;;
+		archer-c5 | \
 		archer-c7)
 			local mac
 			mac=$(macaddr_add $(cat /sys/class/net/eth1/address) -2)

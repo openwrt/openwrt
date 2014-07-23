@@ -1,8 +1,9 @@
 /*
- * TP-LINK Archer C7/TL-WDR4900 v2 board support
+ * TP-LINK Archer C5/C7/TL-WDR4900 v2 board support
  *
  * Copyright (c) 2013 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (c) 2014 施康成 <tenninjas@tenninjas.ca>
+ * Copyright (c) 2014 Imre Kaloz <kaloz@openwrt.org>
  *
  * Based on the Qualcomm Atheros AP135/AP136 reference board support code
  *   Copyright (c) 2012 Qualcomm Atheros
@@ -238,6 +239,14 @@ static void __init common_setup(bool pcie_slot)
 			 "USB2 power");
 	ath79_register_usb();
 }
+
+static void __init archer_c5_setup(void)
+{
+	common_setup(true);
+}
+
+MIPS_MACHINE(ATH79_MACH_ARCHER_C5, "ARCHER-C5", "TP-LINK Archer C5",
+	     archer_c5_setup);
 
 static void __init archer_c7_setup(void)
 {

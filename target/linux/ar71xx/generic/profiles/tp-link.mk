@@ -6,12 +6,12 @@
 #
 
 define Profile/ARCHERC7
-	NAME:=TP-LINK Archer C7
+	NAME:=TP-LINK Archer C5/C7
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-ath10k
 endef
 
 define Profile/ARCHERC7/Description
-	Package set optimized for the TP-LINK Archer C7.
+	Package set optimized for the TP-LINK Archer C5/C7.
 endef
 $(eval $(call Profile,ARCHERC7))
 
