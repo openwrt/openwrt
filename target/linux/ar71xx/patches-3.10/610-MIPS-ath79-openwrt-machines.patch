@@ -1,7 +1,5 @@
-Index: linux-3.10.49/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/machtypes.h	2014-07-18 18:32:42.703897643 +0100
-+++ linux-3.10.49/arch/mips/ath79/machtypes.h	2014-07-18 18:36:07.635890025 +0100
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
 @@ -16,22 +16,144 @@
  
  enum ath79_mach_type {
@@ -147,11 +145,9 @@ Index: linux-3.10.49/arch/mips/ath79/machtypes.h
  };
  
  #endif /* _ATH79_MACHTYPE_H */
-Index: linux-3.10.49/arch/mips/ath79/Kconfig
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/Kconfig	2014-07-18 18:32:42.707897643 +0100
-+++ linux-3.10.49/arch/mips/ath79/Kconfig	2014-07-18 18:34:56.795892658 +0100
-@@ -2,6 +2,61 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -2,6 +2,61 @@ if ATH79
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
@@ -213,7 +209,7 @@ Index: linux-3.10.49/arch/mips/ath79/Kconfig
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -9,64 +64,736 @@
+@@ -9,64 +64,736 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
  	select ATH79_DEV_M25P80
@@ -976,7 +972,7 @@ Index: linux-3.10.49/arch/mips/ath79/Kconfig
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +810,65 @@
+@@ -83,6 +810,65 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1042,7 +1038,7 @@ Index: linux-3.10.49/arch/mips/ath79/Kconfig
  endmenu
  
  config SOC_AR71XX
-@@ -132,7 +918,10 @@
+@@ -132,7 +918,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1054,7 +1050,7 @@ Index: linux-3.10.49/arch/mips/ath79/Kconfig
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,4 +953,7 @@
+@@ -164,4 +953,7 @@ config ATH79_PCI_ATH9K_FIXUP
  config ATH79_ROUTERBOOT
  	def_bool n
  
@@ -1062,11 +1058,9 @@ Index: linux-3.10.49/arch/mips/ath79/Kconfig
 +	def_bool n
 +
  endif
-Index: linux-3.10.49/arch/mips/ath79/Makefile
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/Makefile	2014-07-18 18:32:42.567897648 +0100
-+++ linux-3.10.49/arch/mips/ath79/Makefile	2014-07-18 18:34:56.795892658 +0100
-@@ -38,9 +38,90 @@
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -38,9 +38,90 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1157,11 +1151,9 @@ Index: linux-3.10.49/arch/mips/ath79/Makefile
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 +obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
-Index: linux-3.10.49/arch/mips/ath79/prom.c
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/prom.c	2014-07-18 18:32:42.351897656 +0100
-+++ linux-3.10.49/arch/mips/ath79/prom.c	2014-07-18 18:32:42.723897642 +0100
-@@ -180,6 +180,12 @@
+--- a/arch/mips/ath79/prom.c
++++ b/arch/mips/ath79/prom.c
+@@ -180,6 +180,12 @@ void __init prom_init(void)
  			ath79_prom_append_cmdline("board", env);
  		}
  	}
