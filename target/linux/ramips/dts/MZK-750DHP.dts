@@ -51,7 +51,7 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "i2c", "uartf", "mdio", "wdt", "spi refclk", "pa", "rgmii1", "rgmii2", "wled", "nd_sd";
+				ralink,group = "i2c", "spi refclk", "rgmii1";
 				ralink,function = "gpio";
 			};
 		};
@@ -77,6 +77,18 @@
 		status = "okay";
 	};
 	
+	gpio-leds {
+		compatible = "gpio-leds";
+		wps {
+			label = "mzk750:green:wps";
+			gpios = <&gpio1 11 1>;
+		};
+		power {
+			label = "mzk750:green:power";
+			gpios = <&gpio1 15 1>;
+		};
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -86,6 +98,11 @@
 			label = "reset";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x100>;
+		};
+		s2 {
+			label = "wps";
+			gpios = <&gpio0 2 1>;
+			linux,code = <0x211>;
 		};
 	};
 };
