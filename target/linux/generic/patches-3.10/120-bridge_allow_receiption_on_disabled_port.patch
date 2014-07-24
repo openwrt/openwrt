@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -139,10 +139,14 @@ drop:
+@@ -140,10 +140,14 @@ drop:
  static int br_handle_local_finish(struct sk_buff *skb)
  {
  	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
@@ -33,7 +33,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return 0;	 /* process further */
  }
  
-@@ -212,6 +216,18 @@ rx_handler_result_t br_handle_frame(stru
+@@ -213,6 +217,18 @@ rx_handler_result_t br_handle_frame(stru
  
  forward:
  	switch (p->state) {

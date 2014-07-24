@@ -38,7 +38,7 @@
  		       netif_receive_skb);
  }
  
-@@ -209,7 +209,7 @@ rx_handler_result_t br_handle_frame(stru
+@@ -210,7 +210,7 @@ rx_handler_result_t br_handle_frame(stru
  		}
  
  		/* Deliver packet to local host only */
@@ -47,7 +47,7 @@
  			    NULL, br_handle_local_finish)) {
  			return RX_HANDLER_CONSUMED; /* consumed by filter */
  		} else {
-@@ -224,7 +224,7 @@ forward:
+@@ -225,7 +225,7 @@ forward:
  		if (ether_addr_equal(p->br->dev->dev_addr, dest))
  			skb->pkt_type = PACKET_HOST;
  
@@ -56,7 +56,7 @@
  			br_handle_local_finish))
  			break;
  
-@@ -246,7 +246,7 @@ forward:
+@@ -247,7 +247,7 @@ forward:
  		if (ether_addr_equal(p->br->dev->dev_addr, dest))
  			skb->pkt_type = PACKET_HOST;
  
@@ -67,7 +67,7 @@
  	default:
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -783,7 +783,7 @@ static void __br_multicast_send_query(st
+@@ -802,7 +802,7 @@ static void __br_multicast_send_query(st
  	if (port) {
  		__skb_push(skb, sizeof(struct ethhdr));
  		skb->dev = port->dev;
@@ -96,7 +96,7 @@
  	if (vlan_tx_tag_present(skb))
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -696,15 +696,29 @@ static inline u16 br_get_pvid(const stru
+@@ -734,15 +734,29 @@ static inline u16 br_get_pvid(const stru
  
  /* br_netfilter.c */
  #ifdef CONFIG_BRIDGE_NETFILTER
