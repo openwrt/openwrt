@@ -25,7 +25,7 @@ all: compile
 
 $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	rm -rf $(PKG_BUILD_DIR)
-	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/{host,lib} \
+	mkdir -p $(IB_KDIR) $(IB_LDIR) $(PKG_BUILD_DIR)/staging_dir/host/lib \
 		$(PKG_BUILD_DIR)/target $(PKG_BUILD_DIR)/scripts $(IB_DTSDIR)
 	-cp $(TOPDIR)/.config $(PKG_BUILD_DIR)/.config
 	$(CP) \
@@ -40,7 +40,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
-		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/lib; \
+		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
 	fi
 	rm -rf \
 		$(PKG_BUILD_DIR)/target/linux/*/files{,-*} \
