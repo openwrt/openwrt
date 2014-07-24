@@ -1,3 +1,128 @@
+commit 3c3769e63301fd92fcaf51870c371583dd0282ce
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Wed Sep 4 02:13:39 2013 +0200
+
+    bridge: apply multicast snooping to IPv6 link-local, too
+    
+    The multicast snooping code should have matured enough to be safely
+    applicable to IPv6 link-local multicast addresses (excluding the
+    link-local all nodes address, ff02::1), too.
+    
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 8fad9c39f31f9ed7bf3526c43a4537b2fcf1a5d5
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Wed Sep 4 02:13:38 2013 +0200
+
+    bridge: prevent flooding IPv6 packets that do not have a listener
+    
+    Currently if there is no listener for a certain group then IPv6 packets
+    for that group are flooded on all ports, even though there might be no
+    host and router interested in it on a port.
+    
+    With this commit they are only forwarded to ports with a multicast
+    router.
+    
+    Just like commit bd4265fe36 ("bridge: Only flood unregistered groups
+    to routers") did for IPv4, let's do the same for IPv6 with the same
+    reasoning.
+    
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit cc0fdd802859eaeb00e1c87dbb655594bed2844c
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Fri Aug 30 17:28:17 2013 +0200
+
+    bridge: separate querier and query timer into IGMP/IPv4 and MLD/IPv6 ones
+    
+    Currently we would still potentially suffer multicast packet loss if there
+    is just either an IGMP or an MLD querier: For the former case, we would
+    possibly drop IPv6 multicast packets, for the latter IPv4 ones. This is
+    because we are currently assuming that if either an IGMP or MLD querier
+    is present that the other one is present, too.
+    
+    This patch makes the behaviour and fix added in
+    "bridge: disable snooping if there is no querier" (b00589af3b04)
+    to also work if there is either just an IGMP or an MLD querier on the
+    link: It refines the deactivation of the snooping to be protocol
+    specific by using separate timers for the snooped IGMP and MLD queries
+    as well as separate timers for our internal IGMP and MLD queriers.
+    
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit b00589af3b04736376f24625ab0b394642e89e29
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Thu Aug 1 01:06:20 2013 +0200
+
+    bridge: disable snooping if there is no querier
+    
+    If there is no querier on a link then we won't get periodic reports and
+    therefore won't be able to learn about multicast listeners behind ports,
+    potentially leading to lost multicast packets, especially for multicast
+    listeners that joined before the creation of the bridge.
+    
+    These lost multicast packets can appear since c5c23260594
+    ("bridge: Add multicast_querier toggle and disable queries by default")
+    in particular.
+    
+    With this patch we are flooding multicast packets if our querier is
+    disabled and if we didn't detect any other querier.
+    
+    A grace period of the Maximum Response Delay of the querier is added to
+    give multicast responses enough time to arrive and to be learned from
+    before disabling the flooding behaviour again.
+    
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 6b7df111ece130fa979a0c4f58e53674c1e47d3e
+Author: Cong Wang <amwang@redhat.com>
+Date:   Tue May 21 21:52:56 2013 +0000
+
+    bridge: send query as soon as leave is received
+    
+    Continue sending queries when leave is received if the user marks
+    it as a querier.
+    
+    Cc: Herbert Xu <herbert@gondor.apana.org.au>
+    Cc: Stephen Hemminger <stephen@networkplumber.org>
+    Cc: "David S. Miller" <davem@davemloft.net>
+    Cc: Adam Baker <linux@baker-net.org.uk>
+    Signed-off-by: Cong Wang <amwang@redhat.com>
+    Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 1c8ad5bfa2be5025b0c81e3c2decd0574d453ab1
+Author: Cong Wang <amwang@redhat.com>
+Date:   Tue May 21 21:52:54 2013 +0000
+
+    bridge: use the bridge IP addr as source addr for querier
+    
+    Quote from Adam:
+    "If it is believed that the use of 0.0.0.0
+    as the IP address is what is causing strange behaviour on other devices
+    then is there a good reason that a bridge rather than a router shouldn't
+    be the active querier? If not then using the bridge IP address and
+    having the querier enabled by default may be a reasonable solution
+    (provided that our querier obeys the election rules and shuts up if it
+    sees a query from a lower IP address that isn't 0.0.0.0). Just because a
+    device is the elected querier for IGMP doesn't appear to mean it is
+    required to perform any other routing functions."
+    
+    And introduce a new troggle for it, as suggested by Herbert.
+    
+    Suggested-by: Adam Baker <linux@baker-net.org.uk>
+    Cc: Herbert Xu <herbert@gondor.apana.org.au>
+    Cc: Stephen Hemminger <stephen@networkplumber.org>
+    Cc: "David S. Miller" <davem@davemloft.net>
+    Cc: Adam Baker <linux@baker-net.org.uk>
+    Signed-off-by: Cong Wang <amwang@redhat.com>
+    Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
 --- a/net/bridge/br_device.c
 +++ b/net/bridge/br_device.c
 @@ -67,7 +67,8 @@ netdev_tx_t br_dev_xmit(struct sk_buff *
