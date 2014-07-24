@@ -78,38 +78,29 @@ setup_interface () {
 	proto_add_data
 	[ -n "$CER" ] && json_add_string cer "$CER"
 	[ -n "$PASSTHRU" ] && json_add_string passthru "$PASSTHRU"
+	[ -n "$ZONE" ] && json_add_string zone "$ZONE"
 	proto_close_data
 
 	proto_send_update "$INTERFACE"
 
-	if [ -n "$AFTR_IP " -a -n "$IFACE_DSLITE" ]; then
-		json_init
-		json_add_string name "$IFACE_DSLITE"
-		json_add_string ifname "@$INTERFACE"
-		json_add_string proto "dslite"
-		json_add_string peeraddr "$AFTR_IP"
-		json_add_string tunlink "$INTERFACE"
-		[ -n "$ZONE_DSLITE" ] && json_add_string zone "$ZONE_DSLITE"
-		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
-		json_close_object
-		ubus call network add_dynamic "$(json_dump)"
-	fi
-
 	MAPTYPE=""
 	MAPRULE=""
 
-	if [ -n "$MAPE" ]; then
+	if [ -n "$MAPE" -a -f /lib/netifd/proto/map.sh ]; then
 		MAPTYPE="map-e"
 		MAPRULE="$MAPE"
-	elif [ -n "$MAPT" ]; then
+	elif [ -n "$MAPT" -a -f /lib/netifd/proto/map.sh -a -f /proc/net/nat46/control ]; then
 		MAPTYPE="map-t"
 		MAPRULE="$MAPT"
-	elif [ -n "$LW4O6" ]; then
+	elif [ -n "$LW4O6" -a -f /lib/netifd/proto/map.sh ]; then
 		MAPTYPE="lw4o6"
 		MAPRULE="$LW4O6"
 	fi
 
-	if [ -n "$IFACE_MAP" -a -n "$MAPTYPE" -a -n "$MAPRULE" ]; then
+	[ -n "$ZONE" ] || ZONE=$(fw3 network $INTERFACE)
+
+	if [ "$IFACE_MAP" != 0 -a -n "$MAPTYPE" -a -n "$MAPRULE" ]; then
+		[ -z "$IFACE_MAP" -o "$IFACE_MAP" = 1 ] && IFACE_MAP=${INTERFACE}_map
 		json_init
 		json_add_string name "$IFACE_MAP"
 		json_add_string ifname "@$INTERFACE"
@@ -117,8 +108,22 @@ setup_interface () {
 		json_add_string type "$MAPTYPE"
 		json_add_string rule "$MAPRULE"
 		json_add_string tunlink "$INTERFACE"
+		[ -n "$ZONE_MAP" ] || ZONE_MAP=$ZONE
 		[ -n "$ZONE_MAP" ] && json_add_string zone "$ZONE_MAP"
 		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+	elif [ -n "$AFTR_IP " -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
+		[ -z "$IFACE_DSLITE" -o "$IFACE_DSLITE" = 1 ] && IFACE_DSLITE=${INTERFACE}_dslite
+		json_init
+		json_add_string name "$IFACE_DSLITE"
+		json_add_string ifname "@$INTERFACE"
+		json_add_string proto "dslite"
+		json_add_string peeraddr "$AFTR_IP"
+		json_add_string tunlink "$INTERFACE"
+		[ -n "$ZONE_DSLITE" ] || ZONE_DSLITE=$ZONE
+		[ -n "$ZONE_DSLITE" ] && json_add_string zone "$ZONE_DSLITE"
+		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	fi
