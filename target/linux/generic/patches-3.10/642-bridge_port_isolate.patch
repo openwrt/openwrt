@@ -1,13 +1,13 @@
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -157,6 +157,7 @@ struct net_bridge_port
+@@ -171,6 +171,7 @@ struct net_bridge_port
  #define BR_ROOT_BLOCK		0x00000004
  #define BR_MULTICAST_FAST_LEAVE	0x00000008
  #define BR_ADMIN_COST		0x00000010
 +#define BR_ISOLATE_MODE		0x00000020
  
  #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
- 	u32				multicast_startup_queries_sent;
+ 	struct bridge_mcast_query	ip4_query;
 --- a/net/bridge/br_sysfs_if.c
 +++ b/net/bridge/br_sysfs_if.c
 @@ -159,6 +159,22 @@ BRPORT_ATTR_FLAG(hairpin_mode, BR_HAIRPI
@@ -43,7 +43,7 @@
  
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
-@@ -114,8 +114,8 @@ int br_handle_frame_finish(struct sk_buf
+@@ -115,8 +115,8 @@ int br_handle_frame_finish(struct sk_buf
  			skb2 = skb;
  
  		br->dev->stats.multicast++;
