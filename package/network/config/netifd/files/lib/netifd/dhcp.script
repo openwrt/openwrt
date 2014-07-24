@@ -33,9 +33,15 @@ setup_interface () {
 	for domain in $domain; do
 		proto_add_dns_search "$domain"
 	done
+
+	proto_add_data
+	[ -n "$ZONE" ] && json_add_string zone "$ZONE"
+	proto_close_data
+
 	proto_send_update "$INTERFACE"
 
-	if [ -n "$IFACE6RD" -a -n "$ip6rd" ]; then
+
+	if [ "$IFACE6RD" != 0 -a -n "$ip6rd" ]; then
 		local v4mask="${ip6rd%% *}"
 		ip6rd="${ip6rd#* }"
 		local ip6rdprefixlen="${ip6rd%% *}"
@@ -43,6 +49,9 @@ setup_interface () {
 		local ip6rdprefix="${ip6rd%% *}"
 		ip6rd="${ip6rd#* }"
 		local ip6rdbr="${ip6rd%% *}"
+
+		[ -n "$ZONE" ] || ZONE=$(fw3 network $INTERFACE)
+		[ -z "$IFACE6RD" -o "$IFACE6RD" = 1 ] && IFACE6RD=${INTERFACE}_6rd
 
 		json_init
 		json_add_string name "$IFACE6RD"
@@ -54,6 +63,7 @@ setup_interface () {
 		json_add_int ip6prefixlen "$ip6rdprefixlen"
 		json_add_string tunlink "$INTERFACE"
 		[ -n "$IFACE6RD_DELEGATE" ] && json_add_boolean delegate "$IFACE6RD_DELEGATE"
+		[ -n "$ZONE6RD" ] || ZONE6RD=$ZONE
 		[ -n "$ZONE6RD" ] && json_add_string zone "$ZONE6RD"
 		json_close_object
 
