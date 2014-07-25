@@ -113,6 +113,7 @@ int iwinfo_ifmac(const char *ifname)
 	if (iwinfo_ioctl(SIOCGIFHWADDR, &ifr))
 		return 0;
 
+	ifr.ifr_hwaddr.sa_data[0] |= 0x02;
 	ifr.ifr_hwaddr.sa_data[1]++;
 	ifr.ifr_hwaddr.sa_data[2]++;
 
