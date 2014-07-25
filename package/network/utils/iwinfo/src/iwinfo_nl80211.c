@@ -2003,8 +2003,7 @@ static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 			if (!(res = nl80211_ifadd(ifname)))
 				goto out;
 
-			if (!iwinfo_ifmac(res))
-				goto out;
+			iwinfo_ifmac(res);
 
 			/* if we can take the new interface up, the driver supports an
 			 * additional interface and there's no need to tear down the ap */
