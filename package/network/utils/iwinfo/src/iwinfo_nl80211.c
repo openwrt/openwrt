@@ -720,9 +720,10 @@ out:
 static char * nl80211_ifadd(const char *ifname)
 {
 	int phyidx;
-	char *rv = NULL;
+	char *rv = NULL, path[PATH_MAX];
 	static char nif[IFNAMSIZ] = { 0 };
 	struct nl80211_msg_conveyor *req, *res;
+	FILE *sysfs;
 
 	req = nl80211_msg(ifname, NL80211_CMD_NEW_INTERFACE, 0);
 	if (req)
@@ -733,6 +734,15 @@ static char * nl80211_ifadd(const char *ifname)
 		NLA_PUT_U32(req->msg, NL80211_ATTR_IFTYPE, NL80211_IFTYPE_STATION);
 
 		nl80211_send(req, NULL, NULL);
+
+		snprintf(path, sizeof(path) - 1,
+		         "/proc/sys/net/ipv6/conf/%s/disable_ipv6", nif);
+
+		if ((sysfs = fopen(path, "w")) != NULL)
+		{
+			fwrite("0\n", 1, 2, sysfs);
+			fclose(sysfs);
+		}
 
 		rv = nif;
 
@@ -1865,7 +1875,7 @@ static int nl80211_get_scanlist_nl(const char *ifname, char *buf, int *len)
 
 static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 {
-	int freq, rssi, qmax, count;
+	int freq, rssi, qmax, count, mode;
 	char *res;
 	char ssid[128] = { 0 };
 	char bssid[18] = { 0 };
@@ -1981,6 +1991,16 @@ static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 			*len = count * sizeof(struct iwinfo_scanlist_entry);
 			return 0;
 		}
+	}
+
+	/* station / ad-hoc / monitor scan */
+	else if (!nl80211_get_mode(ifname, &mode) &&
+	         (mode == IWINFO_OPMODE_ADHOC ||
+	          mode == IWINFO_OPMODE_CLIENT ||
+	          mode == IWINFO_OPMODE_MONITOR) &&
+	         iwinfo_ifup(ifname))
+	{
+		return nl80211_get_scanlist_nl(ifname, buf, len);
 	}
 
 	/* AP scan */
