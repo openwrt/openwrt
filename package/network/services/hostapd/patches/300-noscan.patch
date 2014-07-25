@@ -30,3 +30,25 @@
  		return 0; /* HT40 not used */
  
  	hostapd_set_state(iface, HAPD_IFACE_HT_SCAN);
+--- a/src/ap/ieee802_11_ht.c
++++ b/src/ap/ieee802_11_ht.c
+@@ -221,6 +221,9 @@ void hostapd_2040_coex_action(struct hos
+ 	if (!(iface->conf->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET))
+ 		return;
+ 
++	if (iface->conf->noscan)
++		return;
++
+ 	hdr_len = data - (u8 *) mgmt;
+ 	if (hdr_len > len)
+ 		return;
+@@ -319,6 +322,9 @@ void ht40_intolerant_add(struct hostapd_
+ 	if (iface->current_mode->mode != HOSTAPD_MODE_IEEE80211G)
+ 		return;
+ 
++	if (iface->conf->noscan)
++		return;
++
+ 	wpa_printf(MSG_INFO, "HT: Forty MHz Intolerant is set by STA " MACSTR
+ 		   " in Association Request", MAC2STR(sta->addr));
+ 
