@@ -1,3 +1,28 @@
+commit 15ed54948f508ad1baad79c30050e2d29a21696d
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Fri Jul 25 16:18:03 2014 +0200
+
+    mac80211: fix smps mode check for AP_VLAN
+    
+    In ieee80211_sta_ps_deliver_wakeup, sdata->smps_mode is checked. This is
+    initialized only for the base AP interface, not the individual VLANs.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit bc74ad816bba291359ae46301173ea744bdda9d2
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Fri Jul 25 16:15:44 2014 +0200
+
+    mac80211: ignore AP_VLAN in ieee80211_recalc_chanctx_chantype
+    
+    When bringing down the AP, a WARN_ON is hit because the bss config chandef
+    is empty here.
+    Since AP_VLAN channel settings do not matter for anything chanctx related
+    (always inherits the settings from the AP interface), let's just ignore
+    it here.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit ff354dbdd743e5fe186df8cd17982db19f78231a
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Wed Jul 23 15:33:26 2014 +0200
@@ -645,7 +670,21 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	INIT_WORK(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
  	mutex_init(&sta->ampdu_mlme.mtx);
  #ifdef CPTCFG_MAC80211_MESH
-@@ -1140,8 +1137,15 @@ void ieee80211_sta_ps_deliver_wakeup(str
+@@ -1101,8 +1098,11 @@ void ieee80211_sta_ps_deliver_wakeup(str
+ 	unsigned long flags;
+ 	struct ps_data *ps;
+ 
+-	if (sdata->vif.type == NL80211_IFTYPE_AP ||
+-	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++		sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
++				     u.ap);
++
++	if (sdata->vif.type == NL80211_IFTYPE_AP)
+ 		ps = &sdata->bss->ps;
+ 	else if (ieee80211_vif_is_mesh(&sdata->vif))
+ 		ps = &sdata->u.mesh.ps;
+@@ -1140,8 +1140,15 @@ void ieee80211_sta_ps_deliver_wakeup(str
  	}
  
  	ieee80211_add_pending_skbs(local, &pending);
@@ -663,7 +702,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	spin_unlock(&sta->ps_lock);
  
  	atomic_dec(&ps->num_sta_ps);
-@@ -1542,10 +1546,26 @@ void ieee80211_sta_block_awake(struct ie
+@@ -1542,10 +1549,26 @@ void ieee80211_sta_block_awake(struct ie
  
  	trace_api_sta_block_awake(sta->local, pubsta, block);
  
@@ -693,7 +732,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  }
  EXPORT_SYMBOL(ieee80211_sta_block_awake);
  
-@@ -1703,3 +1723,140 @@ u8 sta_info_tx_streams(struct sta_info *
+@@ -1703,3 +1726,140 @@ u8 sta_info_tx_streams(struct sta_info *
  	return ((ht_cap->mcs.tx_params & IEEE80211_HT_MCS_TX_MAX_STREAMS_MASK)
  			>> IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT) + 1;
  }
@@ -3059,3 +3098,14 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	}
  
  	if (txctl->an && ieee80211_is_data_present(hdr->frame_control))
+--- a/net/mac80211/chan.c
++++ b/net/mac80211/chan.c
+@@ -521,6 +521,8 @@ static void ieee80211_recalc_chanctx_cha
+ 			continue;
+ 		if (rcu_access_pointer(sdata->vif.chanctx_conf) != conf)
+ 			continue;
++		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
++			continue;
+ 
+ 		if (!compat)
+ 			compat = &sdata->vif.bss_conf.chandef;
