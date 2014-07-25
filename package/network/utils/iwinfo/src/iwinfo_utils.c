@@ -132,7 +132,8 @@ struct iwinfo_hardware_entry * iwinfo_hardware(struct iwinfo_hardware_id *id)
 {
 	FILE *db;
 	char buf[256] = { 0 };
-	static struct iwinfo_hardware_entry e, *rv = NULL;
+	static struct iwinfo_hardware_entry e;
+	struct iwinfo_hardware_entry *rv = NULL;
 
 	if (!(db = fopen(IWINFO_HARDWARE_FILE, "r")))
 		return NULL;
