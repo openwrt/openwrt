@@ -218,11 +218,9 @@ start() {
 		[ -n "$cfg" ] && uci rename network.$cfg=eth0
 		[ -n "$vlan1ports" ] && {
 			cfg=`ucidef_add_switch_vlan "$switchname" 1 "$vlan1ports"`
-			[ -n "$cfg" ] && uci rename network.$cfg=eth0_1
 		}
 		[ -n "$vlan2ports" ] && {
 			cfg=`ucidef_add_switch_vlan "$switchname" 2 "$vlan2ports"`
-			[ -n "$cfg" ] && uci rename network.$cfg=eth0_2
 		}
 	}
 
