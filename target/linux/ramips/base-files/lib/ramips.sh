@@ -55,6 +55,9 @@ ramips_board_detect() {
 	*"AsiaRF AWM002 EVB")
 		name="awm002-evb"
 		;;
+	*"AsiaRF AWM003 EVB")
+		name="awm003-evb"
+		;;
 	*"AsiaRF AWAPN2403")
 		name="awapn2403"
 		;;
