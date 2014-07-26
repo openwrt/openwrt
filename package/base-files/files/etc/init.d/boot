@@ -51,8 +51,6 @@ boot() {
 	# temporary hack until configd exists
 	/sbin/reload_config
 
-	start
-
 	# create /dev/root if it doesn't exist
 	[ -e /dev/root -o -h /dev/root ] || {
 		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
