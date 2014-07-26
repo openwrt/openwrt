@@ -55,6 +55,7 @@ platform_check_image() {
 	ip2202 | \
 	m3 | \
 	m4 | \
+	mlw221 | \
 	mofi3500-3gn | \
 	mpr-a1 | \
 	mpr-a2 | \

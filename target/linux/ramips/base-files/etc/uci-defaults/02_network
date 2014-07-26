@@ -51,6 +51,10 @@ ramips_setup_interfaces()
 		;;
 
 	3g-6200nl | \
+	mlw221)
+                ucidef_set_interface_lan "eth0.2"
+                ;;
+
 	wl-330n | \
 	wmr300)
 		ucidef_set_interface_lan "eth0.1"
