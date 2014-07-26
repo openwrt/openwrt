@@ -199,19 +199,22 @@ ramips_setup_macs()
 
 	case $board in
 	br-6475nd)
-		lan_mac=$(mtd_get_mac_binary devdata 13)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(mtd_get_mac_binary devdata 7)
 		;;
 
 	w306r-v20)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 5)
 		;;
 
 	tew-691gr)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
 
 	tew-692gr)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 4)
 		;;
 
@@ -219,10 +222,24 @@ ramips_setup_macs()
 	m4 |\
 	x5 |\
 	x8)
-		lan_mac=$(macaddr_add "$lan_mac" -1)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		lan_mac=$(macaddr_add "$lan_mac" -2)
 		;;
 
-	dir-620-a1)
+	bc2 |\
+	broadway |\
+	d105 |\
+	dir-620-a1 |\
+	esr-9753 |\
+	freestation5 |\
+	hlk-rm04 | \
+	mpr-a1 | \
+	mpr-a2 | \
+	dir-300-b7 | \
+	dir-320-b1 | \
+	psr-680w |\
+	sl-r7205)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
@@ -233,12 +250,13 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
 
-	nbg-419n | \
 	wcr-150gn)
                 wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 
 	rt-n56u)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(mtd_get_mac_binary factory 32772)
 		;;
 
@@ -248,16 +266,6 @@ ramips_setup_macs()
 	w502u | \
 	wnce2001)
 		wan_mac=$(mtd_get_mac_binary factory 46)
-		;;
-
-	wl341v3)
-		lan_mac=$(mtd_get_mac_binary board-nvram 65440)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
-		;;
-
-	wr8305rt)
-		lan_mac=$(mtd_get_mac_binary factory 4)
-		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
 
 	*)

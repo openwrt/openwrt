@@ -58,6 +58,10 @@
 		};
 	};
 
+	ethernet@10100000 {
+		mtd-mac-address = <&devdata 0x2e>;
+	};
+
 	esw@10110000 {
 		ralink,portmap = <0x2f>;
 	};
