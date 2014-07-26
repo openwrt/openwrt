@@ -48,6 +48,10 @@
 		};
 	};
 
+	ethernet@10100000 {
+		mtd-mac-address = <&boardnvram 0xffa0>;
+	};
+
 	esw@10110000 {
 		ralink,portmap = <0x3e>;
 	};

@@ -31,6 +31,7 @@
 
 	ethernet@10100000 {
 		status = "okay";
+		mtd-mac-address = <&devdata 0x0d>;
 
 		port@0 {
 			ralink,fixed-link = <1000 1 1 1>;
@@ -99,7 +100,7 @@
 			read-only;
 		};
 
-		partition@50000 {
+		devdata: partition@50000 {
 			reg = <0x00050000 0x00020000>;
 			label = "devdata";
 			read-only;
