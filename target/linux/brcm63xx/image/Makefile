@@ -232,6 +232,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96328A-1441N1,6328,AR-5387un,,--pad 8)
 	# Comtrend VR-3025u
 	$(call Image/Build/CFE,$(1),96368M-1541N,6368,VR-3025u,,--pad 16)
+	# Comtrend VR-3025un
+	$(call Image/Build/CFE,$(1),96368M-1341N,6368,VR-3025un,,--pad 4)
 	# Comtrend WAP-5813n
 	$(call Image/Build/CFE,$(1),96369R-1231N,6368,WAP-5813n,,--pad 4)
 	# Davolink DV201AMR
