@@ -3,11 +3,11 @@ config GCC_VERSION_4_4_7
 	bool
 
 config GCC_VERSION_4_6_LINARO
-	default y if (!TOOLCHAINOPTS && octeon)
+	default y if (!TOOLCHAINOPTS && TARGET_octeon)
 	bool
 
 config GCC_VERSION_4_8_LINARO
-	default y if (!TOOLCHAINOPTS && !avr32 && !octeon)
+	default y if (!TOOLCHAINOPTS && !avr32 && !TARGET_octeon)
 	bool
 
 config GCC_VERSION_4_8_0
