@@ -135,6 +135,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	P870HW-51a_v2)
+		brcm63xx_has_reset_button="true"
+		status_led="P870HW-51a:green:power"
+		ifname="eth0"
+		;;
 	RTA770BW)
 		brcm63xx_has_reset_button="true"
 		status_led="RTA770BW:green:diag"
