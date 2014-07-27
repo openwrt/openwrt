@@ -1,0 +1,99 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -552,6 +552,88 @@ static struct board_info __initdata boar
+ 	},
+ };
+ 
++static struct board_info __initdata board_A4001N = {
++	.name				= "96328dg2x2",
++	.expected_cpu_id		= 0x6328,
++
++	.has_uart0			= 1,
++	.has_pci			= 1,
++	.has_ohci0			= 1,
++	.has_ehci0			= 1,
++	.num_usbh_ports			= 1,
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used	= 1,
++				.phy_id	= 1,
++				.name	= "Port 1",
++			},
++			[1] = {
++				.used	= 1,
++				.phy_id	= 2,
++				.name	= "Port 2",
++			},
++			[2] = {
++				.used	= 1,
++				.phy_id	= 3,
++				.name	= "Port 3",
++			},
++			[3] = {
++				.used	= 1,
++				.phy_id	= 4,
++				.name	= "Port 4",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name		= "A4001N:green:power",
++			.gpio		= 8,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "A4001N:red:power",
++			.gpio		= 4,
++		},
++		{
++			.name		= "A4001N:red:inet",
++			.gpio		= 1,
++		},
++		{
++			.name		= "A4001N:green:usb",
++			.gpio		= 10,
++			.active_low	= 1,
++		},
++		{
++			.name		= "A4001N:green:dsl",
++			.gpio		= 11,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 23,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 24,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++};
++
+ static struct board_info __initdata board_A4001N1 = {
+ 	.name					= "963281T_TEF",
+ 	.expected_cpu_id			= 0x6328,
+@@ -5166,6 +5248,7 @@ static const struct board_info __initcon
+ 	&board_AR5381u,
+ 	&board_AR5387un,
+ 	&board_963281TAN,
++	&board_A4001N,
+ 	&board_A4001N1,
+ 	&board_dsl_274xb_f1,
+ 	&board_FAST2704V2,

@@ -32,6 +32,11 @@ brcm63xx_detect() {
 		status_led="96328avng::power"
 		ifname=eth0
 		;;
+	96328dg2x2)
+		brcm63xx_has_reset_button="true"
+		status_led="A4001N:green:power"
+		ifname="eth0"
+		;;
 	96328A-1241N)
 		brcm63xx_has_reset_button="true"
 		status_led="AR-5381u:green:power"
