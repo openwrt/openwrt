@@ -49,6 +49,7 @@ define Host/Compile
 	$(call cc,mkchkimg)
 	$(call cc,mkzcfw cyg_crc32)
 	$(call cc,spw303v)
+	$(call cc,zyxbcm)
 	$(call cc,trx2edips)
 	$(call cc,xorimage)
 	$(call cc,buffalo-enc buffalo-lib, -Wall)
