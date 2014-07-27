@@ -111,6 +111,20 @@ define Image/Build/SPW303V
 	rm -f $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp
 endef
 
+define Image/Build/ZyXEL
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
+		--boardid $(2) --chipid $(4) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
+		--info1 "+$(call Image/LimitName16,$(3))" --info2 $(1) \
+		$(7) $(8) $(9) $(10)
+	# Fix up header
+	$(STAGING_DIR_HOST)/bin/zyxbcm -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
+		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin
+	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
+endef
+
 define Image/Build/CFEOLD
 	$(TOPDIR)/scripts/brcmImage.pl -t -p	\
 		-b $(2) -c $(3)			\
@@ -215,6 +229,8 @@ define Image/Build
 	$(call Image/Build/CFEFIXUP,$(1),96348GW,GW6200,6348,GW6200,$(shell printf '\x99'))
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
+	# Zyxel P870HW-51a v2
+	$(call Image/Build/ZyXEL,$(1),96368VVW,P870HW-51a_v2,6368,P870HW-51a_v2,ZyXEL,--signature "ZyXEL_0001")
 
 	# Neufbox6
 	$(call Image/Build/CFE,$(1),NB6-SER-r0,6362,NEUFBOX6,OpenWRT-$(REVISION))
