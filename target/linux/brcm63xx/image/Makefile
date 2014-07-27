@@ -201,6 +201,8 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
 	$(call Image/Build/CFE,$(1),96368MVWG,6368,96368MVWG-generic)
 
+	# ADB P.DG A4001N
+	$(call Image/Build/CFE,$(1),96328dg2x2,6328,A4001N,,--pad 4)
 	# ADB P.DG A4001N1
 	$(call Image/Build/CFE,$(1),963281T_TEF,6328,A4001N1,,--pad 8)
 	# Asmax AR 1004g

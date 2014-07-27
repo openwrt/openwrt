@@ -11,6 +11,9 @@ case "$board_name" in
 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"
 	;;
+96328dg2x2)
+	ucidef_set_led_usbdev "usb" "USB" "A4001N:green:usb" "1-1"
+	;;
 'F@ST2704V2')
 	ucidef_set_led_usbdev "usb" "USB" "F@ST2704V2:green:usb" "1-1"
 	;;
