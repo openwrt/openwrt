@@ -17,6 +17,14 @@ octeon_board_detect() {
 		name="erlite"
 		;;
 
+	"UBNT_E200"*)
+		name="er"
+		;;
+
+	"UBNT_E220"*)
+		name="erpro"
+		;;
+
 	*)
 		name="generic"
 		;;
