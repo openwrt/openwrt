@@ -310,6 +310,9 @@ define Image/Build
 	# T-Com Speedport W 500V
 	$(call Image/Build/CFEFIXUP,$(1),96348GW,SPW500V,6348,SPW500V)
 
+	# Huawei HW520
+	$(call Image/Build/CFE,$(1),HW6358GW_B,6358,HW520,EchoLife_HG520v)
+
 	#HW553
 	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
 

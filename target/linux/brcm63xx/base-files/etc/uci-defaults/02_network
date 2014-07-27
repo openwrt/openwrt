@@ -70,7 +70,8 @@ HW556*)
 	;;
 
 NB4-* |\
-DVG3810BN)
+DVG3810BN |\
+HW6358GW_B)
 	ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 	ucidef_add_switch "eth1" "1" "1"
 	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5t"
