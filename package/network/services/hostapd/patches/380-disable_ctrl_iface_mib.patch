@@ -153,3 +153,14 @@
  #endif /* CONFIG_CTRL_IFACE */
  
  
+--- a/wpa_supplicant/ap.c
++++ b/wpa_supplicant/ap.c
+@@ -984,7 +984,7 @@ int wpas_ap_wps_nfc_report_handover(stru
+ #endif /* CONFIG_WPS */
+ 
+ 
+-#ifdef CONFIG_CTRL_IFACE
++#if defined(CONFIG_CTRL_IFACE) && defined(CONFIG_CTRL_IFACE_MIB)
+ 
+ int ap_ctrl_iface_sta_first(struct wpa_supplicant *wpa_s,
+ 			    char *buf, size_t buflen)
