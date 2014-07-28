@@ -19,8 +19,10 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
  create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
  create mode 100644 arch/mips/lantiq/xway/rt_eep.c
 
---- /dev/null
-+++ b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+Index: linux-3.10.49/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h	2014-07-28 15:42:11.008968725 +0100
 @@ -0,0 +1,6 @@
 +#ifndef _PCI_ATH_FIXUP
 +#define _PCI_ATH_FIXUP
@@ -28,9 +30,11 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +void ltq_pci_ath_fixup(unsigned slot, u16 *cal_data) __init;
 +
 +#endif /* _PCI_ATH_FIXUP */
---- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-+++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev,
+Index: linux-3.10.49/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+===================================================================
+--- linux-3.10.49.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2014-07-17 23:58:15.000000000 +0100
++++ linux-3.10.49/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2014-07-28 15:42:11.008968725 +0100
+@@ -90,5 +90,8 @@
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  
@@ -39,9 +43,11 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +
  #endif /* CONFIG_SOC_TYPE_XWAY */
  #endif /* _LTQ_XWAY_H__ */
---- a/arch/mips/lantiq/xway/Makefile
-+++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,4 +2,7 @@ obj-y := prom.o sysctrl.o clk.o reset.o
+Index: linux-3.10.49/arch/mips/lantiq/xway/Makefile
+===================================================================
+--- linux-3.10.49.orig/arch/mips/lantiq/xway/Makefile	2014-07-28 15:42:10.976968725 +0100
++++ linux-3.10.49/arch/mips/lantiq/xway/Makefile	2014-07-28 15:49:51.008978396 +0100
+@@ -2,4 +2,7 @@
  
  obj-y += vmmc.o
  
@@ -49,9 +55,11 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
---- /dev/null
-+++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,271 @@
+Index: linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c	2014-07-28 15:46:33.032974234 +0100
+@@ -0,0 +1,277 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -113,6 +121,11 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +		i = mtd_read(the_mtd, be32_to_cpup(list),
 +				ATH9K_PLAT_EEP_MAX_WORDS << 1, &flash_readlen,
 +				(void *) ath9k_pdata.eeprom_data);
++		if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
++			size_t mac_readlen;
++			mtd_read(the_mtd, mac_offset, 6, &mac_readlen,
++				(void *) athxk_eeprom_mac);
++		}
 +		put_mtd_device(the_mtd);
 +		if ((sizeof(ath9k_pdata.eeprom_data) != flash_readlen) || i) {
 +			dev_err(&pdev->dev, "failed to load eeprom from mtd\n");
@@ -146,18 +159,19 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +		dev_info(&pdev->dev, "endian check enabled.\n");
 +	}
 +
-+	if (!of_property_read_u32(np, "ath,mac-offset", &mac_offset)) {
-+		memcpy_fromio(athxk_eeprom_mac, (void*) ath9k_pdata.eeprom_data + mac_offset, 6);
-+	} else if (mac_res) {
-+		if (resource_size(mac_res) != 6) {
-+			dev_err(&pdev->dev, "mac has an invalid size\n");
-+			return -EINVAL;
++	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
++		if (mac_res) {
++			if (resource_size(mac_res) != 6) {
++				dev_err(&pdev->dev, "mac has an invalid size\n");
++				return -EINVAL;
++			}
++			mac = ioremap(mac_res->start, resource_size(mac_res));
++			memcpy_fromio(athxk_eeprom_mac, mac, 6);
++		} else if (ltq_get_eth_mac()) {
++			memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
 +		}
-+		mac = ioremap(mac_res->start, resource_size(mac_res));
-+		memcpy_fromio(athxk_eeprom_mac, mac, 6);
-+	} else if (ltq_get_eth_mac())
-+		memcpy(athxk_eeprom_mac, ltq_get_eth_mac(), 6);
-+	else {
++	}
++	if (!is_valid_ether_addr(athxk_eeprom_mac)) {
 +		dev_warn(&pdev->dev, "using random mac\n");
 +		random_ether_addr(athxk_eeprom_mac);
 +	}
@@ -323,8 +337,10 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
 +device_initcall(of_ath5k_eeprom_init);
---- /dev/null
-+++ b/arch/mips/lantiq/xway/eth_mac.c
+Index: linux-3.10.49/arch/mips/lantiq/xway/eth_mac.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/arch/mips/lantiq/xway/eth_mac.c	2014-07-28 15:42:11.008968725 +0100
 @@ -0,0 +1,76 @@
 +/*
 + *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
@@ -402,8 +418,10 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +	return platform_driver_probe(&eth_mac_driver, of_eth_mac_probe);
 +}
 +device_initcall(of_eth_mac_init);
---- /dev/null
-+++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
+Index: linux-3.10.49/arch/mips/lantiq/xway/pci-ath-fixup.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/arch/mips/lantiq/xway/pci-ath-fixup.c	2014-07-28 15:42:11.008968725 +0100
 @@ -0,0 +1,109 @@
 +/*
 + *  Atheros AP94 reference board PCI initialization
@@ -514,8 +532,10 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 +	ath_fixups[ath_num_fixups].cal_data = cal_data;
 +	ath_num_fixups++;
 +}
---- /dev/null
-+++ b/arch/mips/lantiq/xway/rt_eep.c
+Index: linux-3.10.49/arch/mips/lantiq/xway/rt_eep.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/arch/mips/lantiq/xway/rt_eep.c	2014-07-28 15:42:11.008968725 +0100
 @@ -0,0 +1,60 @@
 +/*
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
