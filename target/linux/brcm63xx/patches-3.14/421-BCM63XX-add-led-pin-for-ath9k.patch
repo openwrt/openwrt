@@ -11,7 +11,7 @@
  }
 --- a/arch/mips/bcm63xx/pci-ath9k-fixup.c
 +++ b/arch/mips/bcm63xx/pci-ath9k-fixup.c
-@@ -175,13 +175,14 @@ static void ath9k_pci_fixup(struct pci_d
+@@ -182,13 +182,14 @@ static void ath9k_pci_fixup(struct pci_d
  DECLARE_PCI_FIXUP_FINAL(PCI_VENDOR_ID_ATHEROS, PCI_ANY_ID, ath9k_pci_fixup);
  
  void __init pci_enable_ath9k_fixup(unsigned slot, u32 offset,
