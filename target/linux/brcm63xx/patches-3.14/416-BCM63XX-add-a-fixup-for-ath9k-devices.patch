@@ -24,7 +24,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
  obj-y		+= boards/
 --- /dev/null
 +++ b/arch/mips/bcm63xx/pci-ath9k-fixup.c
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,199 @@
 +/*
 + *  Broadcom BCM63XX Ath9k EEPROM fixup helper.
 + *
@@ -117,6 +117,7 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 +{
 +	void __iomem *mem;
 +	struct ath9k_platform_data *pdata = NULL;
++	struct pci_dev *bridge = pci_upstream_bridge(dev);
 +	u16 *cal_data = NULL;
 +	u16 cmd;
 +	u32 bar0;
@@ -161,6 +162,9 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 +		return;
 +	}
 +
++	if (bridge)
++		pci_enable_device(bridge);
++
 +	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
 +	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
 +	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, val);
@@ -194,6 +198,9 @@ Subject: [PATCH 61/72] BCM63XX: add a fixup for ath9k devices
 +	pci_write_config_word(dev, PCI_COMMAND, cmd);
 +
 +	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
++
++	if (bridge)
++		pci_disable_device(bridge);
 +
 +	iounmap(mem);
 +
