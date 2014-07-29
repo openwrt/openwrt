@@ -10,8 +10,7 @@ ARCH:=i386
 BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs ext4 vdi vmdk pcmcia targz
-SUBTARGETS=generic olpc xen_domu net5501 kvm_guest geos alix2 thincan \
-	   rdc
+SUBTARGETS=generic olpc xen_domu net5501 kvm_guest alix2 thincan
 
 LINUX_VERSION:=3.10.49
 
