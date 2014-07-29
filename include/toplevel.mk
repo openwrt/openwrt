@@ -6,7 +6,7 @@
 # See /LICENSE for more information.
 #
 
-RELEASE:=Barrier Breaker
+RELEASE:=Chaos Calmer
 PREP_MK= OPENWRT_BUILD= QUIET=0
 
 export IS_TTY=$(shell tty -s && echo 1 || echo 0)
