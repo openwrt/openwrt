@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=hostapd
-PKG_VERSION:=2014-06-03
+PKG_VERSION:=2014-07-29
 PKG_RELEASE:=1
 PKG_REV:=84df167554569af8c87f0a8ac1fb508192417d8e
 
