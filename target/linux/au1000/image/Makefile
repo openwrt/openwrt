@@ -65,6 +65,10 @@ define Image/Build
 	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1).fs $(TMP_DIR)/$(IMG_PREFIX)-root.fs
 	tar -C $(BIN_DIR) -cvzf $(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.bin \
 		$(IMG_PREFIX)-vmlinux.bin -C $(TMP_DIR) $(IMG_PREFIX)-root.fs
+	# backwards compatible image for upgrade from Attitude Adjustment (12.09)
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(1).fs $(TMP_DIR)/$(IMG_PREFIX)-jffs2-128k.fs
+	tar -C $(BIN_DIR) -cvzf $(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade-from-12.09.bin \
+		$(IMG_PREFIX)-vmlinux.bin -C $(TMP_DIR)
 ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
 endif
