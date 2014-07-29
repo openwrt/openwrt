@@ -1,0 +1,13 @@
+Index: ppp-2.4.6/pppd/chap_ms.c
+===================================================================
+--- ppp-2.4.6.orig/pppd/chap_ms.c	2014-07-29 00:38:03.073968867 +0100
++++ ppp-2.4.6/pppd/chap_ms.c	2014-07-29 00:41:52.897964689 +0100
+@@ -382,7 +382,7 @@
+ 		      unsigned char *private)
+ {
+ 	const struct chapms2_response_cache_entry *cache_entry;
+-	unsigned char auth_response[MS_AUTH_RESPONSE_LENGTH];
++	unsigned char auth_response[MS_AUTH_RESPONSE_LENGTH+1];
+ 
+ 	challenge++;	/* skip length, should be 16 */
+ 	*response++ = MS_CHAP2_RESPONSE_LEN;
