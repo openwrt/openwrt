@@ -50,7 +50,7 @@ setup_interface () {
 		ip6rd="${ip6rd#* }"
 		local ip6rdbr="${ip6rd%% *}"
 
-		[ -n "$ZONE" ] || ZONE=$(fw3 network $INTERFACE)
+		[ -n "$ZONE" ] || ZONE=$(fw3 -q network $INTERFACE)
 		[ -z "$IFACE6RD" -o "$IFACE6RD" = 1 ] && IFACE6RD=${INTERFACE}_6rd
 
 		json_init
