@@ -11,7 +11,7 @@
  b43-$(CPTCFG_B43_PCMCIA)	+= pcmcia.o
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -1924,10 +1924,12 @@ static void b43_do_interrupt_thread(stru
+@@ -1940,10 +1940,12 @@ static void b43_do_interrupt_thread(stru
  			dma_reason[0], dma_reason[1],
  			dma_reason[2], dma_reason[3],
  			dma_reason[4], dma_reason[5]);
