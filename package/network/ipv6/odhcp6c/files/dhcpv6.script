@@ -113,7 +113,7 @@ setup_interface () {
 		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-	elif [ -n "$AFTR_IP " -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
+	elif [ -n "$AFTR_IP" -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
 		[ -z "$IFACE_DSLITE" -o "$IFACE_DSLITE" = 1 ] && IFACE_DSLITE=${INTERFACE}_dslite
 		json_init
 		json_add_string name "$IFACE_DSLITE"
