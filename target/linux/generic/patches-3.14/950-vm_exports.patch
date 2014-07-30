@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2963,6 +2963,15 @@ put_memory:
+@@ -3043,6 +3043,15 @@ put_memory:
  	return res;
  }
  
@@ -16,7 +16,7 @@
  /**
   * shmem_kernel_file_setup - get an unlinked file living in tmpfs which must be
   * 	kernel internal.  There will be NO LSM permission checks against the
-@@ -3002,11 +3011,8 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -3082,11 +3091,8 @@ int shmem_zero_setup(struct vm_area_stru
  	file = shmem_file_setup("dev/zero", size, vma->vm_flags);
  	if (IS_ERR(file))
  		return PTR_ERR(file);
