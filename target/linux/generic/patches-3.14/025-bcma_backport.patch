@@ -10,10 +10,11 @@
  bcma-$(CONFIG_BCMA_DRIVER_GMAC_CMN)	+= driver_gmac_cmn.o
 --- a/drivers/bcma/driver_chipcommon_pmu.c
 +++ b/drivers/bcma/driver_chipcommon_pmu.c
-@@ -603,6 +603,7 @@ void bcma_pmu_spuravoid_pllupdate(struct
+@@ -603,6 +603,8 @@ void bcma_pmu_spuravoid_pllupdate(struct
  		tmp = BCMA_CC_PMU_CTL_PLL_UPD | BCMA_CC_PMU_CTL_NOILPONW;
  		break;
  
++	case BCMA_CHIP_ID_BCM43131:
 +	case BCMA_CHIP_ID_BCM43217:
  	case BCMA_CHIP_ID_BCM43227:
  	case BCMA_CHIP_ID_BCM43228:
@@ -217,11 +218,12 @@
 +}
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
-@@ -279,6 +279,7 @@ static const struct pci_device_id bcma_p
+@@ -279,6 +279,8 @@ static const struct pci_device_id bcma_p
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4365) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
  	{ 0, },
  };
@@ -306,10 +308,11 @@
  
  	SPEX(leddc_on_time, SSB_SPROM8_LEDDC, SSB_SPROM8_LEDDC_ON,
  	     SSB_SPROM8_LEDDC_ON_SHIFT);
-@@ -509,6 +534,7 @@ static bool bcma_sprom_onchip_available(
+@@ -509,6 +534,8 @@ static bool bcma_sprom_onchip_available(
  		/* for these chips OTP is always available */
  		present = true;
  		break;
++	case BCMA_CHIP_ID_BCM43131:
 +	case BCMA_CHIP_ID_BCM43217:
  	case BCMA_CHIP_ID_BCM43227:
  	case BCMA_CHIP_ID_BCM43228:
@@ -324,16 +327,17 @@
  #include <linux/bcma/bcma_driver_mips.h>
  #include <linux/bcma/bcma_driver_gmac_cmn.h>
  #include <linux/ssb/ssb.h> /* SPROM sharing */
-@@ -157,6 +158,8 @@ struct bcma_host_ops {
+@@ -157,6 +158,9 @@ struct bcma_host_ops {
  /* Chip IDs of PCIe devices */
  #define BCMA_CHIP_ID_BCM4313	0x4313
  #define BCMA_CHIP_ID_BCM43142	43142
++#define BCMA_CHIP_ID_BCM43131	43131
 +#define BCMA_CHIP_ID_BCM43217	43217
 +#define BCMA_CHIP_ID_BCM43222	43222
  #define BCMA_CHIP_ID_BCM43224	43224
  #define  BCMA_PKG_ID_BCM43224_FAB_CSM	0x8
  #define  BCMA_PKG_ID_BCM43224_FAB_SMIC	0xa
-@@ -333,6 +336,7 @@ struct bcma_bus {
+@@ -333,6 +337,7 @@ struct bcma_bus {
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci[2];
