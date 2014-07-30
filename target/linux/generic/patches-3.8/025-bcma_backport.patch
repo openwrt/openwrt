@@ -1476,7 +1476,7 @@
  #define BCMA_CORE_4706_MAC_GBIT		0x52D
  #define BCMA_CORE_AMEMC			0x52E	/* DDR1/2 memory controller core */
  #define BCMA_CORE_ALTA			0x534	/* I2S core */
-@@ -134,12 +146,17 @@ struct bcma_host_ops {
+@@ -134,12 +146,20 @@ struct bcma_host_ops {
  #define BCMA_CORE_I2S			0x834
  #define BCMA_CORE_SDR_DDR1_MEM_CTL	0x835	/* SDR/DDR1 memory controller core */
  #define BCMA_CORE_SHIM			0x837	/* SHIM component in ubus/6362 */
@@ -1491,10 +1491,13 @@
  /* Chip IDs of PCIe devices */
  #define BCMA_CHIP_ID_BCM4313	0x4313
 +#define BCMA_CHIP_ID_BCM43142	43142
++#define BCMA_CHIP_ID_BCM43131  43131
++#define BCMA_CHIP_ID_BCM43217  43217
++#define BCMA_CHIP_ID_BCM43222  43222
  #define BCMA_CHIP_ID_BCM43224	43224
  #define  BCMA_PKG_ID_BCM43224_FAB_CSM	0x8
  #define  BCMA_PKG_ID_BCM43224_FAB_SMIC	0xa
-@@ -172,6 +189,65 @@ struct bcma_host_ops {
+@@ -172,6 +192,65 @@ struct bcma_host_ops {
  #define  BCMA_PKG_ID_BCM5357	11
  #define BCMA_CHIP_ID_BCM53572	53572
  #define  BCMA_PKG_ID_BCM47188	9
