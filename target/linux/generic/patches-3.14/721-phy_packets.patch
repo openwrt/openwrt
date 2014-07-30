@@ -79,7 +79,7 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2607,10 +2607,20 @@ int dev_hard_start_xmit(struct sk_buff *
+@@ -2614,10 +2614,20 @@ int dev_hard_start_xmit(struct sk_buff *
  		if (!list_empty(&ptype_all))
  			dev_queue_xmit_nit(skb, dev);
  
