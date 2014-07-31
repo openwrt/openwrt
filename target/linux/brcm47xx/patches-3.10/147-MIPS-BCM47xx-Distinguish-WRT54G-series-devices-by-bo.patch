@@ -1,8 +1,7 @@
-From 9fff5375229a4ba3a200747e079c46fa19b90797 Mon Sep 17 00:00:00 2001
+From 41a867cb07443c77c24747dcbad1a40002516469 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Fri, 20 Jun 2014 07:26:20 +0200
-Subject: [3.17][PATCH 1/2] MIPS: BCM47XX: Distinguish WRT54G series devices by
- boardtype
+Date: Fri, 20 Jun 2014 07:56:39 +0200
+Subject: [PATCH] MIPS: BCM47xx: Distinguish WRT54G series devices by boardtype
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -12,6 +11,10 @@ WRT54GS V1.0 board. It seems we need to distinguish these 54G* devices.
 
 Reported-by: Catalin Patulea <cat@vv.carleton.ca>
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Patchwork: https://patchwork.linux-mips.org/patch/7112/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  arch/mips/bcm47xx/board.c                          |  6 +++---
  arch/mips/bcm47xx/buttons.c                        | 10 ++++++----
@@ -21,7 +24,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
-@@ -179,9 +179,9 @@ struct bcm47xx_board_type_list3 bcm47xx_
+@@ -187,9 +187,9 @@ struct bcm47xx_board_type_list3 bcm47xx_
  	{{BCM47XX_BOARD_PHICOMM_M1, "Phicomm M1"}, "0x0590", "80", "0x1104"},
  	{{BCM47XX_BOARD_ZTE_H218N, "ZTE H218N"}, "0x053d", "1234", "0x1305"},
  	{{BCM47XX_BOARD_NETGEAR_WNR3500L, "Netgear WNR3500L"}, "0x04CF", "3500", "02"},
@@ -36,7 +39,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -265,7 +265,7 @@ bcm47xx_buttons_linksys_wrt54g3gv2[] __i
+@@ -270,7 +270,7 @@ bcm47xx_buttons_linksys_wrt54g3gv2[] __i
  };
  
  static const struct gpio_keys_button
@@ -45,7 +48,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	BCM47XX_GPIO_KEY(4, KEY_WPS_BUTTON),
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
  };
-@@ -501,12 +501,14 @@ int __init bcm47xx_buttons_register(void
+@@ -516,12 +516,14 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
@@ -65,7 +68,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		break;
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -292,7 +292,7 @@ bcm47xx_leds_linksys_wrt310nv1[] __initc
+@@ -297,7 +297,7 @@ bcm47xx_leds_linksys_wrt310nv1[] __initc
  };
  
  static const struct gpio_led
@@ -74,7 +77,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	BCM47XX_GPIO_LED(0, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(1, "unk", "power", 0, LEDS_GPIO_DEFSTATE_ON),
  	BCM47XX_GPIO_LED(5, "white", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
-@@ -538,12 +538,14 @@ void __init bcm47xx_leds_register(void)
+@@ -553,12 +553,14 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt310nv1);
  		break;
@@ -94,7 +97,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		break;
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -70,7 +70,9 @@ enum bcm47xx_board {
+@@ -71,7 +71,9 @@ enum bcm47xx_board {
  	BCM47XX_BOARD_LINKSYS_WRT310NV1,
  	BCM47XX_BOARD_LINKSYS_WRT310NV2,
  	BCM47XX_BOARD_LINKSYS_WRT54G3GV2,
