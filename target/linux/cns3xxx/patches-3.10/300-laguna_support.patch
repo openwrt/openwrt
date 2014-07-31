@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/Kconfig
 +++ b/arch/arm/mach-cns3xxx/Kconfig
-@@ -9,4 +9,12 @@ config MACH_CNS3420VB
+@@ -27,4 +27,12 @@ config MACH_CNS3420VB
  	  This is a platform with an on-board ARM11 MPCore and has support
  	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, etc.
  
@@ -15,24 +15,23 @@
  endmenu
 --- a/arch/arm/mach-cns3xxx/Makefile
 +++ b/arch/arm/mach-cns3xxx/Makefile
-@@ -1,5 +1,6 @@
- obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o gpio.o pm.o devices.o
- obj-$(CONFIG_PCI)			+= pcie.o
- obj-$(CONFIG_MACH_CNS3420VB)		+= cns3420vb.o
-+obj-$(CONFIG_MACH_GW2388)		+= laguna.o
- obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
- obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
+@@ -7,3 +7,5 @@ cns3xxx-$(CONFIG_PCI)			+= pcie.o
+ cns3xxx-$(CONFIG_MACH_CNS3420VB)	+= cns3420vb.o
+ cns3xxx-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
+ cns3xxx-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
++cns3xxx-$(CONFIG_MACH_GW2388)		+= laguna.o
++
 --- a/arch/arm/mach-cns3xxx/devices.c
 +++ b/arch/arm/mach-cns3xxx/devices.c
-@@ -19,6 +19,7 @@
- #include <mach/cns3xxx.h>
- #include <mach/irqs.h>
- #include <mach/pm.h>
+@@ -16,6 +16,7 @@
+ #include <linux/compiler.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_device.h>
 +#include <asm/mach-types.h>
+ #include "cns3xxx.h"
+ #include "pm.h"
  #include "core.h"
- #include "devices.h"
- 
-@@ -102,7 +103,11 @@ void __init cns3xxx_sdhci_init(void)
+@@ -101,7 +102,11 @@ void __init cns3xxx_sdhci_init(void)
  	u32 gpioa_pins = __raw_readl(gpioa);
  
  	/* MMC/SD pins share with GPIOA */

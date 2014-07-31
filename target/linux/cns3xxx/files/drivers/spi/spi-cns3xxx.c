@@ -45,30 +45,28 @@
 #include <asm/memory.h>
 #include <asm/dma.h>
 #include <asm/delay.h>
-#include <mach/cns3xxx.h>
 #include <linux/module.h>
-#include <mach/pm.h>
 
 /*
  * define access macros
  */
-#define SPI_MEM_MAP_VALUE(reg_offset)		(*((u32 volatile *)(CNS3XXX_SSP_BASE_VIRT + reg_offset)))
+#define SPI_MEM_MAP_VALUE(reg_offset)		(*((u32 volatile *)(hw->base + reg_offset)))
 
-#define SPI_CONFIGURATION_REG			SPI_MEM_MAP_VALUE(0x40)
-#define SPI_SERVICE_STATUS_REG			SPI_MEM_MAP_VALUE(0x44)
-#define SPI_BIT_RATE_CONTROL_REG		SPI_MEM_MAP_VALUE(0x48)
-#define SPI_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x4C)
-#define SPI_TRANSMIT_BUFFER_REG			SPI_MEM_MAP_VALUE(0x50)
-#define SPI_RECEIVE_CONTROL_REG			SPI_MEM_MAP_VALUE(0x54)
-#define SPI_RECEIVE_BUFFER_REG			SPI_MEM_MAP_VALUE(0x58)
-#define SPI_FIFO_TRANSMIT_CONFIG_REG		SPI_MEM_MAP_VALUE(0x5C)
-#define SPI_FIFO_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x60)
-#define SPI_FIFO_RECEIVE_CONFIG_REG		SPI_MEM_MAP_VALUE(0x64)
-#define SPI_INTERRUPT_STATUS_REG		SPI_MEM_MAP_VALUE(0x68)
-#define SPI_INTERRUPT_ENABLE_REG		SPI_MEM_MAP_VALUE(0x6C)
+#define SPI_CONFIGURATION_REG			SPI_MEM_MAP_VALUE(0x00)
+#define SPI_SERVICE_STATUS_REG			SPI_MEM_MAP_VALUE(0x04)
+#define SPI_BIT_RATE_CONTROL_REG		SPI_MEM_MAP_VALUE(0x08)
+#define SPI_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x0C)
+#define SPI_TRANSMIT_BUFFER_REG			SPI_MEM_MAP_VALUE(0x10)
+#define SPI_RECEIVE_CONTROL_REG			SPI_MEM_MAP_VALUE(0x14)
+#define SPI_RECEIVE_BUFFER_REG			SPI_MEM_MAP_VALUE(0x18)
+#define SPI_FIFO_TRANSMIT_CONFIG_REG		SPI_MEM_MAP_VALUE(0x1C)
+#define SPI_FIFO_TRANSMIT_CONTROL_REG		SPI_MEM_MAP_VALUE(0x20)
+#define SPI_FIFO_RECEIVE_CONFIG_REG		SPI_MEM_MAP_VALUE(0x24)
+#define SPI_INTERRUPT_STATUS_REG		SPI_MEM_MAP_VALUE(0x28)
+#define SPI_INTERRUPT_ENABLE_REG		SPI_MEM_MAP_VALUE(0x2C)
 
-#define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x50)
-#define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
+#define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x10)
+#define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x18)
 
 /* Structure for SPI controller of CNS3XXX SOCs */
 struct cns3xxx_spi {
@@ -85,42 +83,43 @@ struct cns3xxx_spi {
 	const unsigned char *tx;
 	unsigned char *rx;
 
+	void __iomem *base;
 	struct spi_master *master;
 	struct platform_device *pdev;
 	struct device *dev;
 };
 
-static inline u8 cns3xxx_spi_bus_idle(void)
+static inline u8 cns3xxx_spi_bus_idle(struct cns3xxx_spi *hw)
 {
 	return ((SPI_SERVICE_STATUS_REG & 0x1) ? 0 : 1);
 }
 
-static inline u8 cns3xxx_spi_tx_buffer_empty(void)
+static inline u8 cns3xxx_spi_tx_buffer_empty(struct cns3xxx_spi *hw)
 {
 	return ((SPI_INTERRUPT_STATUS_REG & (0x1 << 3)) ? 1 : 0);
 }
 
-static inline u8 cns3xxx_spi_rx_buffer_full(void)
+static inline u8 cns3xxx_spi_rx_buffer_full(struct cns3xxx_spi *hw)
 {
 	return ((SPI_INTERRUPT_STATUS_REG & (0x1 << 2)) ? 1 : 0);
 }
 
-u8 cns3xxx_spi_tx_rx(u8 tx_channel, u8 tx_eof, u32 tx_data,
-			    u32 * rx_data)
+u8 cns3xxx_spi_tx_rx(struct cns3xxx_spi *hw, u8 tx_channel, u8 tx_eof,
+		     u32 tx_data, u32 * rx_data)
 {
 	u8 rx_channel;
 	u8 rx_eof;
 
-	while (!cns3xxx_spi_bus_idle()) ;	// do nothing
+	while (!cns3xxx_spi_bus_idle(hw)) ;	// do nothing
 
-	while (!cns3xxx_spi_tx_buffer_empty()) ;	// do nothing
+	while (!cns3xxx_spi_tx_buffer_empty(hw)) ;	// do nothing
 
 	SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
 	SPI_TRANSMIT_CONTROL_REG |= (tx_channel & 0x3) | ((tx_eof & 0x1) << 2);
 
 	SPI_TRANSMIT_BUFFER_REG = tx_data;
 
-	while (!cns3xxx_spi_rx_buffer_full()) ;	// do nothing
+	while (!cns3xxx_spi_rx_buffer_full(hw)) ;	// do nothing
 
 	rx_channel = SPI_RECEIVE_CONTROL_REG & 0x3;
 	rx_eof = (SPI_RECEIVE_CONTROL_REG & (0x1 << 2)) ? 1 : 0;
@@ -134,12 +133,12 @@ u8 cns3xxx_spi_tx_rx(u8 tx_channel, u8 tx_eof, u32 tx_data,
 	}
 }
 
-u8 cns3xxx_spi_tx(u8 tx_channel, u8 tx_eof, u32 tx_data)
+u8 cns3xxx_spi_tx(struct cns3xxx_spi *hw, u8 tx_channel, u8 tx_eof, u32 tx_data)
 {
 
-        while (!cns3xxx_spi_bus_idle()) ;       // do nothing
+        while (!cns3xxx_spi_bus_idle(hw)) ;       // do nothing
 
-        while (!cns3xxx_spi_tx_buffer_empty()) ;        // do nothing
+        while (!cns3xxx_spi_tx_buffer_empty(hw)) ;        // do nothing
 
         SPI_TRANSMIT_CONTROL_REG &= ~(0x7);
         SPI_TRANSMIT_CONTROL_REG |= (tx_channel & 0x3) | ((tx_eof & 0x1) << 2);
@@ -162,6 +161,7 @@ static int cns3xxx_spi_setup_transfer(struct spi_device *spi,
 
 static void cns3xxx_spi_chipselect(struct spi_device *spi, int value)
 {
+	struct cns3xxx_spi *hw = to_hw(spi);
 	unsigned int spi_config;
 
 	switch (value) {
@@ -221,7 +221,7 @@ static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
 			dev_dbg(&spi->dev,
 				"[SPI_CNS3XXX_DEBUG] hw->tx[%02d]: 0x%02x\n", i,
 				hw->tx[i]);
-			cns3xxx_spi_tx_rx(spi->chip_select, 0, hw->tx[i],
+			cns3xxx_spi_tx_rx(hw, spi->chip_select, 0, hw->tx[i],
 					  &rx_data);
 			if (hw->rx) {
 				hw->rx[i] = rx_data;
@@ -232,7 +232,7 @@ static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
 		}
 
 		if (t->last_in_message_list) {
-			cns3xxx_spi_tx_rx(spi->chip_select, 1, hw->tx[i],
+			cns3xxx_spi_tx_rx(hw, spi->chip_select, 1, hw->tx[i],
 					  &rx_data);
 			if (hw->rx) {
 				hw->rx[i] = rx_data;
@@ -241,7 +241,7 @@ static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
 					i, hw->rx[i]);
 			}
 		} else {
-			cns3xxx_spi_tx_rx(spi->chip_select, 0, hw->tx[i],
+			cns3xxx_spi_tx_rx(hw, spi->chip_select, 0, hw->tx[i],
 					  &rx_data);
 		}
 		goto done;
@@ -251,7 +251,7 @@ static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
 		int i;
 		u32 rx_data;
 		for (i = 0; i < (hw->len - 1); i++) {
-			cns3xxx_spi_tx_rx(spi->chip_select, 0, 0xff, &rx_data);
+			cns3xxx_spi_tx_rx(hw, spi->chip_select, 0, 0xff, &rx_data);
 			hw->rx[i] = rx_data;
 			dev_dbg(&spi->dev,
 				"[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n", i,
@@ -259,9 +259,9 @@ static int cns3xxx_spi_txrx(struct spi_device *spi, struct spi_transfer *t)
 		}
 
 		if (t->last_in_message_list) {
-			cns3xxx_spi_tx_rx(spi->chip_select, 1, 0xff, &rx_data);
+			cns3xxx_spi_tx_rx(hw, spi->chip_select, 1, 0xff, &rx_data);
 		} else {
-			cns3xxx_spi_tx_rx(spi->chip_select, 0, 0xff, &rx_data);
+			cns3xxx_spi_tx_rx(hw, spi->chip_select, 0, 0xff, &rx_data);
 		}
 		hw->rx[i] = rx_data;
 		dev_dbg(&spi->dev, "[SPI_CNS3XXX_DEBUG] hw->rx[%02d]: 0x%02x\n",
@@ -271,21 +271,8 @@ done:
 	return hw->len;
 }
 
-static void __init cns3xxx_spi_initial(void)
+static void __init cns3xxx_spi_initial(struct cns3xxx_spi *hw)
 {
-	u32 __iomem *gpiob = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0018);
-	u32 gpiob_pins = __raw_readl(gpiob);
-
-	/* MMC/SD pins share with GPIOA */
-	gpiob_pins |= 0xf80;
-	__raw_writel(gpiob_pins, gpiob);
-
-	/* share pin config. */
-	//PM_PLL_HM_PD_CTRL_REG &= ~(0x1 << 5);
-	//HAL_MISC_ENABLE_SPI_PINS();
-	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
-	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SPI_PCM_I2C));
-
 	SPI_CONFIGURATION_REG = (((0x0 & 0x3) << 0) |	/* 8bits shift length */
 				 (0x0 << 9) |	/* SPI mode */
 				 (0x0 << 10) |	/* disable FIFO */
@@ -328,9 +315,14 @@ static int cns3xxx_spi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct cns3xxx_spi *hw;
+	struct resource *res;
 	int err = 0;
 
 	printk("%s: setup CNS3XXX SPI Controller\n", __FUNCTION__);
+
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res)
+		return -ENODEV;
 
 	/* Allocate master with space for cns3xxx_spi */
 	master = spi_alloc_master(&pdev->dev, sizeof(struct cns3xxx_spi));
@@ -345,6 +337,13 @@ static int cns3xxx_spi_probe(struct platform_device *pdev)
 
 	hw->master = spi_master_get(master);
 	hw->dev = &pdev->dev;
+
+	hw->base = devm_ioremap_resource(hw->dev, res);
+	if (IS_ERR(hw->base)) {
+		dev_err(hw->dev, "Unable to map registers\n");
+		err = PTR_ERR(hw->base);
+		goto err_register;
+	}
 
 	platform_set_drvdata(pdev, hw);
 	init_completion(&hw->done);
@@ -365,7 +364,7 @@ static int cns3xxx_spi_probe(struct platform_device *pdev)
 	dev_dbg(hw->dev, "bitbang at %p\n", &hw->bitbang);
 
 	/* SPI controller initializations */
-	cns3xxx_spi_initial();
+	cns3xxx_spi_initial(hw);
 
 	/* register SPI controller */
 

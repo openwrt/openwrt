@@ -1,6 +1,6 @@
 --- a/drivers/mmc/host/sdhci-cns3xxx.c
 +++ b/drivers/mmc/host/sdhci-cns3xxx.c
-@@ -89,10 +89,11 @@ static struct sdhci_pltfm_data sdhci_cns
+@@ -88,10 +88,11 @@ static const struct sdhci_pltfm_data sdh
  	.ops = &sdhci_cns3xxx_ops,
  	.quirks = SDHCI_QUIRK_BROKEN_DMA |
  		  SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK |

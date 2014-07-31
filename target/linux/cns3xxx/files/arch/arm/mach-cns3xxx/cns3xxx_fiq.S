@@ -20,77 +20,68 @@
  * R10 - DMA Direction
  * R11 - DMA type
  * R12 - fiq_buffer Address
- * R13 - DMA type Address
 */
 
 	.global	cns3xxx_fiq_end
 ENTRY(cns3xxx_fiq_start)
-	mov r8, #0
-	str r8, [r13]
+	str	r8, [r13]
 
-	ldr r9, [r12]
-	ldr r8, [r9]
-	add r8, r8, #1
-	str r8, [r9]
+	ldmia	r12, {r8, r9, r10}
+	and	r11, r10, #0x3000000
+	and	r10, r10, #0xff
 
-	ldmib r12, {r8, r9, r10}
-	and r11, r10, #0x3000000
-	and r10, r10, #0xff
-
-	teq r11, #0x1000000
-	beq cns3xxx_dma_map_area
-	teq r11, #0x2000000
-	beq cns3xxx_dma_unmap_area
-	b cns3xxx_dma_flush_range
-
+	teq	r11, #0x1000000
+	beq	cns3xxx_dma_map_area
+	teq	r11, #0x2000000
+	beq	cns3xxx_dma_unmap_area
+	/* fall through */
+cns3xxx_dma_flush_range:
+	bic	r8, r8, #D_CACHE_LINE_SIZE - 1
+1:
+	mcr	p15, 0, r8, c7, c14, 1		@ clean & invalidate D line
+	add	r8, r8, #D_CACHE_LINE_SIZE
+	cmp	r8, r9
+	blo	1b
+	/* fall through */
 cns3xxx_fiq_exit:
-	mov r8, #0
-	str r8, [r12, #12]
-	mcr p15, 0, r8, c7, c10, 4    @ drain write buffer
-	subs pc, lr, #4
+	mov	r8, #0
+	str	r8, [r12, #8]
+	mcr	p15, 0, r8, c7, c10, 4		@ drain write buffer
+	subs	pc, lr, #4
 
 cns3xxx_dma_map_area:
-	add r9, r9, r8
-	teq r10, #DMA_FROM_DEVICE
-	beq cns3xxx_dma_inv_range
-	b cns3xxx_dma_clean_range
+	add	r9, r9, r8
+	teq	r10, #DMA_FROM_DEVICE
+	beq	cns3xxx_dma_inv_range
+	teq	r10, #DMA_TO_DEVICE
+	bne	cns3xxx_dma_flush_range
+	/* fall through */
+cns3xxx_dma_clean_range:
+	bic	r8, r8, #D_CACHE_LINE_SIZE - 1
+1:
+	mcr	p15, 0, r8, c7, c10, 1		@ clean D line
+	add	r8, r8, #D_CACHE_LINE_SIZE
+	cmp	r8, r9
+	blo	1b
+	b	cns3xxx_fiq_exit
 
 cns3xxx_dma_unmap_area:
-	add r9, r9, r8
-	teq r10, #DMA_TO_DEVICE
-	bne cns3xxx_dma_inv_range
-	b cns3xxx_fiq_exit
-
-cns3xxx_dma_flush_range:
-	bic r8, r8, #D_CACHE_LINE_SIZE - 1
-1:
-	mcr p15, 0, r8, c7, c14, 1   @ clean & invalidate D line
-	add r8, r8, #D_CACHE_LINE_SIZE
-	cmp r8, r9
-	blo 1b
-	b cns3xxx_fiq_exit
-
-cns3xxx_dma_clean_range:
-	bic r8, r8, #D_CACHE_LINE_SIZE - 1
-1:
-	mcr p15, 0, r8, c7, c10, 1    @ clean D line
-	add r8, r8, #D_CACHE_LINE_SIZE
-	cmp r8, r9
-	blo 1b
-	b cns3xxx_fiq_exit
-
+	add	r9, r9, r8
+	teq	r10, #DMA_TO_DEVICE
+	beq	cns3xxx_fiq_exit
+	/* fall through */
 cns3xxx_dma_inv_range:
-	tst r8, #D_CACHE_LINE_SIZE - 1
-	bic r8, r8, #D_CACHE_LINE_SIZE - 1
-	mcrne p15, 0, r8, c7, c10, 1    @ clean D line
-	tst r9, #D_CACHE_LINE_SIZE - 1
-	bic r9, r9, #D_CACHE_LINE_SIZE - 1
-	mcrne p15, 0, r9, c7, c14, 1    @ clean & invalidate D line
+	tst	r8, #D_CACHE_LINE_SIZE - 1
+	bic	r8, r8, #D_CACHE_LINE_SIZE - 1
+	mcrne	p15, 0, r8, c7, c10, 1		@ clean D line
+	tst	r9, #D_CACHE_LINE_SIZE - 1
+	bic	r9, r9, #D_CACHE_LINE_SIZE - 1
+	mcrne	p15, 0, r9, c7, c14, 1		@ clean & invalidate D line
 1:
-	mcr p15, 0, r8, c7, c6, 1   @ invalidate D line
-	add r8, r8, #D_CACHE_LINE_SIZE
-	cmp r8, r9
-	blo 1b
-	b cns3xxx_fiq_exit
+	mcr	p15, 0, r8, c7, c6, 1		@ invalidate D line
+	add	r8, r8, #D_CACHE_LINE_SIZE
+	cmp	r8, r9
+	blo	1b
+	b	cns3xxx_fiq_exit
 
 cns3xxx_fiq_end:

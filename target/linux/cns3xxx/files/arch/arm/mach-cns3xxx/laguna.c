@@ -39,19 +39,19 @@
 #include <linux/pps-gpio.h>
 #include <linux/usb/ehci_pdriver.h>
 #include <linux/usb/ohci_pdriver.h>
+#include <linux/clk-provider.h>
+#include <linux/clkdev.h>
+#include <linux/platform_data/cns3xxx.h>
 #include <asm/setup.h>
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/mach/time.h>
-#include <mach/cns3xxx.h>
-#include <mach/irqs.h>
-#include <mach/platform.h>
-#include <mach/pm.h>
 #include <mach/gpio.h>
-#include <asm/hardware/gic.h>
 #include "core.h"
 #include "devices.h"
+#include "cns3xxx.h"
+#include "pm.h"
 
 #define ARRAY_AND_SIZE(x)       (x), ARRAY_SIZE(x)
 
@@ -192,8 +192,16 @@ static struct spi_board_info __initdata laguna_spi_devices[] = {
 	},
 };
 
+static struct resource laguna_spi_resource = {
+	.start    = CNS3XXX_SSP_BASE + 0x40,
+	.end      = CNS3XXX_SSP_BASE + 0x6f,
+	.flags    = IORESOURCE_MEM,
+};
+
 static struct platform_device laguna_spi_controller = {
 	.name = "cns3xxx_spi",
+	.resource = &laguna_spi_resource,
+	.num_resources = 1,
 };
 
 /*
@@ -314,9 +322,30 @@ static struct cns3xxx_plat_info laguna_net_data = {
 	},
 };
 
+static struct resource laguna_net_resource[] = {
+	{
+		.name = "eth0_mem",
+		.start = CNS3XXX_SWITCH_BASE,
+		.end = CNS3XXX_SWITCH_BASE + SZ_4K - 1,
+		.flags = IORESOURCE_MEM
+	}, {
+		.name = "eth_rx",
+		.start = IRQ_CNS3XXX_SW_R0RXC,
+		.end = IRQ_CNS3XXX_SW_R0RXC,
+		.flags = IORESOURCE_IRQ
+	}, {
+		.name = "eth_stat",
+		.start = IRQ_CNS3XXX_SW_STATUS,
+		.end = IRQ_CNS3XXX_SW_STATUS,
+		.flags = IORESOURCE_IRQ
+	}
+};
+
 static struct platform_device laguna_net_device = {
 	.name = "cns3xxx_eth",
 	.id = 0,
+	.resource = laguna_net_resource,
+	.num_resources = ARRAY_SIZE(laguna_net_resource),
 	.dev.platform_data = &laguna_net_data,
 };
 
@@ -361,29 +390,26 @@ static struct resource laguna_uart_resources[] = {
 
 static struct plat_serial8250_port laguna_uart_data[] = {
 	{
-		.membase        = (char*) (CNS3XXX_UART0_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART0_BASE),
 		.irq            = IRQ_CNS3XXX_UART0,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},{
-		.membase        = (char*) (CNS3XXX_UART1_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART1_BASE),
 		.irq            = IRQ_CNS3XXX_UART1,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},{
-		.membase        = (char*) (CNS3XXX_UART2_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART2_BASE),
 		.irq            = IRQ_CNS3XXX_UART2,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
@@ -526,7 +552,7 @@ static struct platform_device cns3xxx_usb_otg_device = {
 static struct resource laguna_i2c_resource[] = {
 	{
 		.start    = CNS3XXX_SSP_BASE + 0x20,
-		.end      = 0x7100003f,
+		.end      = CNS3XXX_SSP_BASE + 0x3f,
 		.flags    = IORESOURCE_MEM,
 	},{
 		.start    = IRQ_CNS3XXX_I2C,
@@ -771,9 +797,36 @@ static struct gpio laguna_gpio_gw2380[] = {
  */
 static void __init laguna_init(void)
 {
+	struct clk *clk;
+	u32 __iomem *reg;
+
+	clk = clk_register_fixed_rate(NULL, "cpu", NULL,
+				      CLK_IS_ROOT | CLK_IGNORE_UNUSED,
+				      cns3xxx_cpu_clock() * (1000000 / 8));
+	clk_register_clkdev(clk, "cpu", NULL);
+
 	platform_device_register(&laguna_watchdog);
 
 	platform_device_register(&laguna_i2c_controller);
+
+	/* Set ext_int 0-3 drive strength to 21 mA */
+	reg = MISC_IO_PAD_DRIVE_STRENGTH_CTRL_B;
+	*reg |= 0x300;
+
+	/* Enable SCL/SDA for I2C */
+	reg = MISC_GPIOB_PIN_ENABLE_REG;
+	*reg |= BIT(12) | BIT(13);
+
+	/* Enable MMC/SD pins */
+	reg = MISC_GPIOA_PIN_ENABLE_REG;
+	*reg |= 0xf80;
+
+	cns3xxx_pwr_clk_en(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+	cns3xxx_pwr_power_up(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+	cns3xxx_pwr_soft_rst(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+
+	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
+	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SPI_PCM_I2C));
 
 	i2c_register_board_info(0, ARRAY_AND_SIZE(laguna_i2c_devices));
 
@@ -786,22 +839,12 @@ static struct map_desc laguna_io_desc[] __initdata = {
 		.pfn		= __phys_to_pfn(CNS3XXX_UART0_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
-	},{
-		.virtual	= CNS3XXX_UART1_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_UART1_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	},{
-		.virtual	= CNS3XXX_UART2_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_UART2_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
 	},
 };
 
 static void __init laguna_map_io(void)
 {
-	cns3xxx_common_init();
+	cns3xxx_map_io();
 	cns3xxx_pcie_iotable_init();
 	iotable_init(ARRAY_AND_SIZE(laguna_io_desc));
 	laguna_early_serial_setup();
@@ -1022,11 +1065,11 @@ static int __init laguna_model_setup(void)
 late_initcall(laguna_model_setup);
 
 MACHINE_START(GW2388, "Gateworks Corporation Laguna Platform")
+	.smp		= smp_ops(cns3xxx_smp_ops),
 	.atag_offset	= 0x100,
 	.map_io		= laguna_map_io,
 	.init_irq	= cns3xxx_init_irq,
-	.timer		= &cns3xxx_timer,
-	.handle_irq	= gic_handle_irq,
+	.init_time	= cns3xxx_timer_init,
 	.init_machine	= laguna_init,
 	.restart	= cns3xxx_restart,
 MACHINE_END

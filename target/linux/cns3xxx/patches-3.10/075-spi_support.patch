@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -130,6 +130,13 @@ config SPI_CLPS711X
+@@ -142,6 +142,13 @@ config SPI_CLPS711X
  	  This enables dedicated general purpose SPI/Microwire1-compatible
  	  master mode interface (SSI1) for CLPS711X-based CPUs.
  
@@ -16,7 +16,7 @@
  	depends on (M520x || M523x || M5249 || M525x || M527x || M528x || M532x)
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5x
+@@ -20,6 +20,7 @@ obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5x
  obj-$(CONFIG_SPI_BFIN_SPORT)		+= spi-bfin-sport.o
  obj-$(CONFIG_SPI_BITBANG)		+= spi-bitbang.o
  obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
@@ -41,7 +41,7 @@
  			if (status > 0)
 --- a/include/linux/spi/spi.h
 +++ b/include/linux/spi/spi.h
-@@ -511,6 +511,13 @@ struct spi_transfer {
+@@ -524,6 +524,13 @@ struct spi_transfer {
  	u32		speed_hz;
  
  	struct list_head transfer_list;

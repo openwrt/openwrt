@@ -1,14 +1,23 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
-@@ -19,6 +19,7 @@
- #include <asm/mach/time.h>
- #include <asm/mach/irq.h>
- #include <asm/hardware/gic.h>
+@@ -17,6 +17,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
 +#include <asm/smp_twd.h>
- #include <asm/hardware/cache-l2x0.h>
- #include <mach/cns3xxx.h>
+ #include <asm/mach/arch.h>
+ #include <asm/mach/map.h>
+ #include <asm/mach/time.h>
+@@ -26,6 +27,8 @@
  #include "core.h"
-@@ -187,6 +188,17 @@ static struct irqaction cns3xxx_timer_ir
+ #include "pm.h"
+ 
++#define IRQ_LOCALTIMER 29
++
+ static struct map_desc cns3xxx_io_desc[] __initdata = {
+ 	{
+ 		.virtual	= CNS3XXX_TC11MP_SCU_BASE_VIRT,
+@@ -159,6 +162,17 @@ static struct irqaction cns3xxx_timer_ir
  	.handler	= cns3xxx_timer_interrupt,
  };
  
@@ -26,11 +35,11 @@
  /*
   * Set up the clock source and clock events devices
   */
-@@ -240,6 +252,7 @@ static void __init __cns3xxx_timer_init(
+@@ -212,6 +226,7 @@ static void __init __cns3xxx_timer_init(
  	setup_irq(timer_irq, &cns3xxx_timer_irq);
  
  	cns3xxx_clockevents_init(timer_irq);
 +	cns3xxx_init_twd();
  }
  
- static void __init cns3xxx_timer_init(void)
+ void __init cns3xxx_timer_init(void)
