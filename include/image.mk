@@ -77,15 +77,10 @@ define prepare_generic_squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(1) 4 8 16 64 128 256
 endef
 
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-  define Image/BuildKernel/Initramfs
+define Image/BuildKernel/Initramfs
 	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs.elf
 	$(call Image/Build/Initramfs)
-  endef
-else
-  define Image/BuildKernel/Initramfs
-  endef
-endif
+endef
 
 define Image/BuildKernel/MkuImage
 	mkimage -A $(ARCH) -O linux -T kernel -C $(1) -a $(2) -e $(3) \
@@ -269,7 +264,7 @@ define BuildImage
 		$(call Image/Prepare)
 		$(call Image/mkfs/prepare)
 		$(call Image/BuildKernel)
-		$(call Image/BuildKernel/Initramfs)
+		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
 		$(call Image/InstallKernel)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
@@ -283,7 +278,7 @@ define BuildImage
   else
     install: compile install-targets
 		$(call Image/BuildKernel)
-		$(call Image/BuildKernel/Initramfs)
+		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
 		$(call Image/InstallKernel)
 		$(call Image/mkfs/cpiogz)
 		$(call Image/mkfs/targz)
