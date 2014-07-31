@@ -25,6 +25,10 @@ define BuildFirmware/Generic
 		$(BIN_DIR)/$(IMG_PREFIX)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))-sysupgrade.bin
 endef
 
+define Image/BuildKernel/Initramfs
+	mkimage -A arm -O linux -T kernel -C none -a 0x20008000 -e 0x20008000 -n 'OpenWrt Linux-$(LINUX_VERSION)' -d $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-uImage
+endef
+
 define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call BuildFirmware/Generic,$(1))
