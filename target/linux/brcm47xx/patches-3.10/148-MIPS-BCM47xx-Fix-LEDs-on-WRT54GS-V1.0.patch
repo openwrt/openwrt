@@ -1,20 +1,25 @@
-From d12264ddf6c29ddab9889cd87a1e60d2209f9922 Mon Sep 17 00:00:00 2001
+From 7bb26b1691166d0d830c42c1a25caf82208bf90d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Fri, 20 Jun 2014 07:53:14 +0200
-Subject: [3.17][PATCH 2/2] MIPS: BCM47XX: Fix LEDs on WRT54GS V1.0
+Date: Fri, 20 Jun 2014 07:56:40 +0200
+Subject: [PATCH] MIPS: BCM47xx: Fix LEDs on WRT54GS V1.0
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 Reported-by: Catalin Patulea <cat@vv.carleton.ca>
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: linux-mips@linux-mips.org
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Patchwork: https://patchwork.linux-mips.org/patch/7113/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  arch/mips/bcm47xx/leds.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -306,6 +306,14 @@ bcm47xx_leds_linksys_wrt54g3gv2[] __init
+@@ -311,6 +311,14 @@ bcm47xx_leds_linksys_wrt54g3gv2[] __init
  	BCM47XX_GPIO_LED(3, "blue", "3g", 0, LEDS_GPIO_DEFSTATE_OFF),
  };
  
@@ -29,7 +34,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static const struct gpio_led
  bcm47xx_leds_linksys_wrt610nv1[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "usb",  1, LEDS_GPIO_DEFSTATE_OFF),
-@@ -542,6 +550,8 @@ void __init bcm47xx_leds_register(void)
+@@ -557,6 +565,8 @@ void __init bcm47xx_leds_register(void)
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54g3gv2);
  		break;
  	case BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0101:
