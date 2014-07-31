@@ -471,7 +471,7 @@
  	}
  
  	if (updown_tab) {
-@@ -516,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon 
+@@ -516,8 +524,8 @@ void ssb_pmu_init(struct ssb_chipcommon
  	pmucap = chipco_read32(cc, SSB_CHIPCO_PMU_CAP);
  	cc->pmu.rev = (pmucap & SSB_CHIPCO_PMU_CAP_REVISION);
  
@@ -1131,7 +1131,7 @@
  }
  
  static void dump_irq(struct ssb_bus *bus)
-@@ -178,9 +199,9 @@ static void ssb_mips_serial_init(struct 
+@@ -178,9 +199,9 @@ static void ssb_mips_serial_init(struct
  {
  	struct ssb_bus *bus = mcore->dev->bus;
  
@@ -1143,7 +1143,7 @@
  		mcore->nr_serial_ports = ssb_chipco_serial_init(&bus->chipco, mcore->serial_ports);
  	else
  		mcore->nr_serial_ports = 0;
-@@ -189,17 +210,42 @@ static void ssb_mips_serial_init(struct 
+@@ -189,17 +210,42 @@ static void ssb_mips_serial_init(struct
  static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
  {
  	struct ssb_bus *bus = mcore->dev->bus;
@@ -1980,7 +1980,7 @@
  	sprom_extract_r458(out, in);
  
  	/* TODO - get remaining rev 8 stuff needed */
-@@ -641,7 +753,7 @@ static int sprom_extract(struct ssb_bus 
+@@ -641,7 +753,7 @@ static int sprom_extract(struct ssb_bus
  	memset(out, 0, sizeof(*out));
  
  	out->revision = in[size - 1] & 0x00FF;
@@ -1989,7 +1989,7 @@
  	memset(out->et0mac, 0xFF, 6);		/* preset et0 and et1 mac */
  	memset(out->et1mac, 0xFF, 6);
  
-@@ -650,7 +762,7 @@ static int sprom_extract(struct ssb_bus 
+@@ -650,7 +762,7 @@ static int sprom_extract(struct ssb_bus
  		 * number stored in the SPROM.
  		 * Always extract r1. */
  		out->revision = 1;
@@ -1998,7 +1998,7 @@
  	}
  
  	switch (out->revision) {
-@@ -667,9 +779,8 @@ static int sprom_extract(struct ssb_bus 
+@@ -667,9 +779,8 @@ static int sprom_extract(struct ssb_bus
  		sprom_extract_r8(out, in);
  		break;
  	default:

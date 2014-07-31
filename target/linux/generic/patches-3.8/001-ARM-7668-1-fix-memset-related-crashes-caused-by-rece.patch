@@ -96,8 +96,6 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  arch/arm/lib/memset.S | 85 ++++++++++++++++++++++++++-------------------------
  1 file changed, 44 insertions(+), 41 deletions(-)
 
-diff --git a/arch/arm/lib/memset.S b/arch/arm/lib/memset.S
-index 650d5923ab83..d912e7397ecc 100644
 --- a/arch/arm/lib/memset.S
 +++ b/arch/arm/lib/memset.S
 @@ -19,9 +19,9 @@
@@ -250,6 +248,3 @@ index 650d5923ab83..d912e7397ecc 100644
 +	strneb	r1, [ip], #1
  	mov	pc, lr
  ENDPROC(memset)
--- 
-1.8.3.2
-
