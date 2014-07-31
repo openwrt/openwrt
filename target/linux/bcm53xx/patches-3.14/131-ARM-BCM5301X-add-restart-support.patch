@@ -11,8 +11,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  arch/arm/mach-bcm/bcm_5301x.c | 31 +++++++++++++++++++++++++++++++
  1 file changed, 31 insertions(+)
 
-diff --git a/arch/arm/mach-bcm/bcm_5301x.c b/arch/arm/mach-bcm/bcm_5301x.c
-index edff697..e349897 100644
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
 @@ -12,9 +12,26 @@
@@ -42,7 +40,7 @@ index edff697..e349897 100644
  static int bcm5301x_abort_handler(unsigned long addr, unsigned int fsr,
  				 struct pt_regs *regs)
  {
-@@ -49,6 +66,19 @@ static void __init bcm5301x_dt_init(void)
+@@ -49,6 +66,19 @@ static void __init bcm5301x_dt_init(void
  	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
  }
  
@@ -62,13 +60,10 @@ index edff697..e349897 100644
  static const char __initconst *bcm5301x_dt_compat[] = {
  	"brcm,bcm4708",
  	NULL,
-@@ -57,5 +87,6 @@ static const char __initconst *bcm5301x_dt_compat[] = {
+@@ -57,5 +87,6 @@ static const char __initconst *bcm5301x_
  DT_MACHINE_START(BCM5301X, "BCM5301X")
  	.init_early	= bcm5301x_init_early,
  	.init_machine	= bcm5301x_dt_init,
 +	.restart	= bcm5301x_restart,
  	.dt_compat	= bcm5301x_dt_compat,
  MACHINE_END
--- 
-1.8.4.5
-

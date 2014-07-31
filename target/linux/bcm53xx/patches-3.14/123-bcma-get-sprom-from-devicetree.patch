@@ -70,7 +70,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  static int bcma_fill_sprom_with_fallback(struct bcma_bus *bus,
  					 struct ssb_sprom *out)
  {
-@@ -579,7 +621,14 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -580,7 +622,14 @@ int bcma_sprom_get(struct bcma_bus *bus)
  	u16 *sprom;
  	size_t sprom_sizes[] = { SSB_SPROMSIZE_WORDS_R4,
  				 SSB_SPROMSIZE_WORDS_R10, };
