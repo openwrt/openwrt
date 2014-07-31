@@ -21,28 +21,23 @@
 #include <linux/delay.h>
 #include <linux/i2c.h>
 #include <linux/slab.h>
-#include <mach/pm.h>
-#include <mach/cns3xxx.h>
+#include <linux/clk.h>
 
 /*
  * We need the memory map
  */
 
-
-#define MISC_MEM_MAP_VALUE(reg_offset)	(*((uint32_t volatile *)(CNS3XXX_MISC_BASE_VIRT + reg_offset)))
-#define MISC_IOCDB_CTRL				MISC_MEM_MAP_VALUE(0x020)
-
-#define I2C_MEM_MAP_ADDR(x)         (CNS3XXX_SSP_BASE_VIRT + x)
+#define I2C_MEM_MAP_ADDR(x)         (i2c->base + x)
 #define I2C_MEM_MAP_VALUE(x)        (*((unsigned int volatile*)I2C_MEM_MAP_ADDR(x)))
 
-#define I2C_CONTROLLER_REG                    I2C_MEM_MAP_VALUE(0x20)
-#define I2C_TIME_OUT_REG                      I2C_MEM_MAP_VALUE(0x24)
-#define I2C_SLAVE_ADDRESS_REG                 I2C_MEM_MAP_VALUE(0x28)
-#define I2C_WRITE_DATA_REG                    I2C_MEM_MAP_VALUE(0x2C)
-#define I2C_READ_DATA_REG                     I2C_MEM_MAP_VALUE(0x30)
-#define I2C_INTERRUPT_STATUS_REG              I2C_MEM_MAP_VALUE(0x34)
-#define I2C_INTERRUPT_ENABLE_REG              I2C_MEM_MAP_VALUE(0x38)
-#define I2C_TWI_OUT_DLY_REG			         			I2C_MEM_MAP_VALUE(0x3C)
+#define I2C_CONTROLLER_REG                    I2C_MEM_MAP_VALUE(0x00)
+#define I2C_TIME_OUT_REG                      I2C_MEM_MAP_VALUE(0x04)
+#define I2C_SLAVE_ADDRESS_REG                 I2C_MEM_MAP_VALUE(0x08)
+#define I2C_WRITE_DATA_REG                    I2C_MEM_MAP_VALUE(0x0C)
+#define I2C_READ_DATA_REG                     I2C_MEM_MAP_VALUE(0x10)
+#define I2C_INTERRUPT_STATUS_REG              I2C_MEM_MAP_VALUE(0x14)
+#define I2C_INTERRUPT_ENABLE_REG              I2C_MEM_MAP_VALUE(0x18)
+#define I2C_TWI_OUT_DLY_REG			         			I2C_MEM_MAP_VALUE(0x1C)
 
 #define I2C_BUS_ERROR_FLAG     (0x1)
 #define I2C_ACTION_DONE_FLAG   (0x2)
@@ -203,24 +198,18 @@ static struct i2c_adapter cns3xxx_i2c_adapter = {
 
 static void cns3xxx_i2c_adapter_init(struct cns3xxx_i2c *i2c)
 {
-        cns3xxx_pwr_clk_en(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
-        cns3xxx_pwr_power_up(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
-        cns3xxx_pwr_soft_rst(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+	struct clk *clk;
+
+	clk = devm_clk_get(i2c->dev, "cpu");
+	if (WARN_ON(!clk))
+		return;
 
 	/* Disable the I2C */
 	I2C_CONTROLLER_REG = 0;	/* Disabled the I2C */
 
-	//enable SCL and SDA which share pin with GPIOB_PIN_EN(0x18)
-	//GPIOB[12]: SCL
-	//GPIOB[13]: SDA
-	(*(u32*)(CNS3XXX_MISC_BASE_VIRT+0x18)) |= ((1<<12)|(1<<13));
-
-	MISC_IOCDB_CTRL &= ~0x300;
-	MISC_IOCDB_CTRL |= 0x300; //21mA...
-
 	/* Check the Reg Dump when testing */
 	I2C_TIME_OUT_REG =
-	    ((((((cns3xxx_cpu_clock()*(1000000/8)) / (2 * CNS3xxx_I2C_CLK)) -
+	    (((((clk_get_rate(clk) / (2 * CNS3xxx_I2C_CLK)) -
 		1) & 0x3FF) << 8) | (1 << 7) | 0x7F);
 	I2C_TWI_OUT_DLY_REG |= 0x3;
 
@@ -358,20 +347,9 @@ static int cns3xxx_i2c_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#ifdef CONFIG_PM
-#warning "CONFIG_PM defined: suspend and resume not implemented"
-#define cns3xxx_i2c_suspend	NULL
-#define cns3xxx_i2c_resume	NULL
-#else
-#define cns3xxx_i2c_suspend	NULL
-#define cns3xxx_i2c_resume	NULL
-#endif
-
 static struct platform_driver cns3xxx_i2c_driver = {
 	.probe = cns3xxx_i2c_probe,
 	.remove = cns3xxx_i2c_remove,
-	.suspend = cns3xxx_i2c_suspend,
-	.resume = cns3xxx_i2c_resume,
 	.driver = {
 		.owner = THIS_MODULE,
 		.name = "cns3xxx-i2c",

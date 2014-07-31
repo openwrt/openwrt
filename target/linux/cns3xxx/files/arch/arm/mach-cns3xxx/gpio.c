@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
+#include <linux/irqchip/chained_irq.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
 #include <linux/irq.h>
@@ -141,8 +142,6 @@ static void cns3xxx_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
 {
 	struct cns3xxx_gpio_chip *cchip = irq_get_handler_data(irq);
 	struct irq_chip *chip = irq_get_chip(irq);
-	struct irq_chip_generic *gc = irq_desc_get_chip_data(desc);
-	struct irq_chip_type *ct = gc->chip_types;
 	u16 i;
 	u32 reg;
 

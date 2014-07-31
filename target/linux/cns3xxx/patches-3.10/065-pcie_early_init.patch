@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -263,11 +263,21 @@ static struct map_desc cns3420_io_desc[]
+@@ -261,11 +261,21 @@ static struct map_desc cns3420_io_desc[]
  static void __init cns3420_map_io(void)
  {
  	cns3xxx_map_io();
@@ -21,19 +21,18 @@
 +
  MACHINE_START(CNS3420VB, "Cavium Networks CNS3420 Validation Board")
  	.atag_offset	= 0x100,
- 	.map_io		= cns3420_map_io,
+ 	.nr_irqs	= NR_IRQS_CNS3XXX,
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -13,6 +13,8 @@
+@@ -13,6 +13,7 @@
  
  extern struct smp_operations cns3xxx_smp_ops;
- extern struct sys_timer cns3xxx_timer;
+ extern void cns3xxx_timer_init(void);
 +extern void cns3xxx_pcie_iotable_init(void);
-+
  
  #ifdef CONFIG_CACHE_L2X0
  void __init cns3xxx_l2x0_init(void);
-@@ -22,6 +24,7 @@ static inline void cns3xxx_l2x0_init(voi
+@@ -22,6 +23,7 @@ static inline void cns3xxx_l2x0_init(voi
  
  void __init cns3xxx_map_io(void);
  void __init cns3xxx_init_irq(void);
