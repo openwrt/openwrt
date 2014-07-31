@@ -75,7 +75,6 @@
 #include <linux/dma-mapping.h>
 #include <linux/version.h>
 
-#include <mach/irqs.h>
 #include <linux/usb/ch9.h>
 
 //#include <linux/usb_gadget.h>

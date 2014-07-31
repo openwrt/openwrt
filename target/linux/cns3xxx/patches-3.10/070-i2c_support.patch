@@ -1,6 +1,6 @@
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -347,6 +347,18 @@ config I2C_CBUS_GPIO
+@@ -375,6 +375,18 @@ config I2C_CBUS_GPIO
  	  This driver can also be built as a module.  If so, the module
  	  will be called i2c-cbus-gpio.
  
@@ -21,7 +21,7 @@
  	depends on (CPM1 || CPM2) && OF_I2C
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -87,6 +87,7 @@ obj-$(CONFIG_I2C_ACORN)		+= i2c-acorn.o
+@@ -89,6 +89,7 @@ obj-$(CONFIG_I2C_ACORN)		+= i2c-acorn.o
  obj-$(CONFIG_I2C_ELEKTOR)	+= i2c-elektor.o
  obj-$(CONFIG_I2C_PCA_ISA)	+= i2c-pca-isa.o
  obj-$(CONFIG_I2C_SIBYTE)	+= i2c-sibyte.o

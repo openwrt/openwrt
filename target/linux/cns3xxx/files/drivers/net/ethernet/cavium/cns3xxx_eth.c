@@ -20,9 +20,8 @@
 #include <linux/kernel.h>
 #include <linux/phy.h>
 #include <linux/platform_device.h>
+#include <linux/platform_data/cns3xxx.h>
 #include <linux/skbuff.h>
-#include <mach/irqs.h>
-#include <mach/platform.h>
 
 #define DRV_NAME "cns3xxx_eth"
 
@@ -282,7 +281,6 @@ struct _rx_ring {
 };
 
 struct sw {
-	struct resource *mem_res;
 	struct switch_regs __iomem *regs;
 	struct napi_struct napi;
 	struct cns3xxx_plat_info *plat;
@@ -290,6 +288,8 @@ struct sw {
 	struct _rx_ring rx_ring;
 	struct sk_buff *frag_first;
 	struct sk_buff *frag_last;
+	int rx_irq;
+	int stat_irq;
 };
 
 struct port {
@@ -377,14 +377,14 @@ static int cns3xxx_mdio_write(struct mii_bus *bus, int phy_id, int location,
 	return ret;
 }
 
-static int cns3xxx_mdio_register(void)
+static int cns3xxx_mdio_register(void __iomem *base)
 {
 	int err;
 
 	if (!(mdio_bus = mdiobus_alloc()))
 		return -ENOMEM;
 
-	mdio_regs = (struct switch_regs __iomem *)CNS3XXX_SWITCH_BASE_VIRT;
+	mdio_regs = base;
 
 	spin_lock_init(&mdio_lock);
 	mdio_bus->name = "CNS3xxx MII Bus";
@@ -441,7 +441,7 @@ static void eth_schedule_poll(struct sw *sw)
 	if (unlikely(!napi_schedule_prep(&sw->napi)))
 		return;
 
-	disable_irq_nosync(IRQ_CNS3XXX_SW_R0RXC);
+	disable_irq_nosync(sw->rx_irq);
 	__napi_schedule(&sw->napi);
 }
 
@@ -716,7 +716,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	rx_ring->cur_index = i;
 	if (!received) {
 		napi_complete(napi);
-		enable_irq(IRQ_CNS3XXX_SW_R0RXC);
+		enable_irq(sw->rx_irq);
 
 		/* if rx descriptors are full schedule another poll */
 		if (rx_ring->desc[(i-1) & (RX_DESCS-1)].cown)
@@ -1007,8 +1007,8 @@ static int eth_open(struct net_device *dev)
 	netif_start_queue(dev);
 
 	if (!ports_open) {
-		request_irq(IRQ_CNS3XXX_SW_R0RXC, eth_rx_irq, IRQF_SHARED, "gig_switch", napi_dev);
-		request_irq(IRQ_CNS3XXX_SW_STATUS, eth_stat_irq, IRQF_SHARED, "gig_stat", napi_dev);
+		request_irq(sw->rx_irq, eth_rx_irq, IRQF_SHARED, "gig_switch", napi_dev);
+		request_irq(sw->stat_irq, eth_stat_irq, IRQF_SHARED, "gig_stat", napi_dev);
 		napi_enable(&sw->napi);
 		netif_start_queue(napi_dev);
 
@@ -1052,10 +1052,10 @@ static int eth_close(struct net_device *dev)
 	phy_stop(port->phydev);
 
 	if (!ports_open) {
-		disable_irq(IRQ_CNS3XXX_SW_R0RXC);
-		free_irq(IRQ_CNS3XXX_SW_R0RXC, napi_dev);
-		disable_irq(IRQ_CNS3XXX_SW_STATUS);
-		free_irq(IRQ_CNS3XXX_SW_STATUS, napi_dev);
+		disable_irq(sw->rx_irq);
+		free_irq(sw->rx_irq, napi_dev);
+		disable_irq(sw->stat_irq);
+		free_irq(sw->stat_irq, napi_dev);
 		napi_disable(&sw->napi);
 		netif_stop_queue(napi_dev);
 		temp = __raw_readl(&sw->regs->mac_cfg[2]);
@@ -1172,26 +1172,36 @@ static int eth_init_one(struct platform_device *pdev)
 	struct sw *sw;
 	struct net_device *dev;
 	struct cns3xxx_plat_info *plat = pdev->dev.platform_data;
-	u32 regs_phys;
 	char phy_id[MII_BUS_ID_SIZE + 3];
 	int err;
 	u32 temp;
+	struct resource *res;
+	void __iomem *regs;
 
-	if (!(napi_dev = alloc_etherdev(sizeof(struct sw))))
-		return -ENOMEM;
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	regs = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(regs))
+		return PTR_ERR(regs);
+
+	err = cns3xxx_mdio_register(regs);
+	if (err)
+		return err;
+
+	if (!(napi_dev = alloc_etherdev(sizeof(struct sw)))) {
+		err = -ENOMEM;
+		goto err_remove_mdio;
+	}
+
 	strcpy(napi_dev->name, "switch%d");
 	napi_dev->features = NETIF_F_IP_CSUM | NETIF_F_SG | NETIF_F_FRAGLIST;
 
 	SET_NETDEV_DEV(napi_dev, &pdev->dev);
 	sw = netdev_priv(napi_dev);
 	memset(sw, 0, sizeof(struct sw));
-	sw->regs = (struct switch_regs __iomem *)CNS3XXX_SWITCH_BASE_VIRT;
-	regs_phys = CNS3XXX_SWITCH_BASE;
-	sw->mem_res = request_mem_region(regs_phys, REGS_SIZE, napi_dev->name);
-	if (!sw->mem_res) {
-		err = -EBUSY;
-		goto err_free;
-	}
+	sw->regs = regs;
+
+	sw->rx_irq = platform_get_irq_byname(pdev, "eth_rx");
+	sw->stat_irq = platform_get_irq_byname(pdev, "eth_stat");
 
 	temp = __raw_readl(&sw->regs->phy_auto_addr);
 	temp |= (3 << 30); /* maximum frame length: 9600 bytes */
@@ -1252,7 +1262,7 @@ static int eth_init_one(struct platform_device *pdev)
 		memcpy(dev->dev_addr, &plat->hwaddr[i], ETH_ALEN);
 
 		snprintf(phy_id, MII_BUS_ID_SIZE + 3, PHY_ID_FMT, "0", plat->phy[i]);
-		port->phydev = phy_connect(dev, phy_id, &cns3xxx_adjust_link, 0,
+		port->phydev = phy_connect(dev, phy_id, &cns3xxx_adjust_link,
 			PHY_INTERFACE_MODE_RGMII);
 		if ((err = IS_ERR(port->phydev))) {
 			switch_port_tab[port->id] = 0;
@@ -1290,6 +1300,8 @@ free_ports:
 	}
 err_free:
 	free_netdev(napi_dev);
+err_remove_mdio:
+	cns3xxx_mdio_remove();
 	return err;
 }
 
@@ -1311,8 +1323,9 @@ static int eth_remove_one(struct platform_device *pdev)
 		}
 	}
 
-	release_resource(sw->mem_res);
 	free_netdev(napi_dev);
+	cns3xxx_mdio_remove();
+
 	return 0;
 }
 
@@ -1324,16 +1337,12 @@ static struct platform_driver cns3xxx_eth_driver = {
 
 static int __init eth_init_module(void)
 {
-	int err;
-	if ((err = cns3xxx_mdio_register()))
-		return err;
 	return platform_driver_register(&cns3xxx_eth_driver);
 }
 
 static void __exit eth_cleanup_module(void)
 {
 	platform_driver_unregister(&cns3xxx_eth_driver);
-	cns3xxx_mdio_remove();
 }
 
 module_init(eth_init_module);

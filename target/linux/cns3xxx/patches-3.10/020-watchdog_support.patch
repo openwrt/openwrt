@@ -13,7 +13,7 @@ arch/arm/Kconfig                     |    1 +
 
 --- a/arch/arm/configs/cns3420vb_defconfig
 +++ b/arch/arm/configs/cns3420vb_defconfig
-@@ -53,6 +53,8 @@ CONFIG_LEGACY_PTY_COUNT=16
+@@ -56,6 +56,8 @@ CONFIG_LEGACY_PTY_COUNT=16
  # CONFIG_HW_RANDOM is not set
  # CONFIG_HWMON is not set
  # CONFIG_VGA_CONSOLE is not set
@@ -24,7 +24,7 @@ arch/arm/Kconfig                     |    1 +
  CONFIG_MMC=y
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -208,10 +208,32 @@ static struct platform_device cns3xxx_us
+@@ -206,10 +206,32 @@ static struct platform_device cns3xxx_us
  	},
  };
  

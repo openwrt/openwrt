@@ -1,6 +1,6 @@
 --- a/arch/arm/mach-cns3xxx/core.c
 +++ b/arch/arm/mach-cns3xxx/core.c
-@@ -293,13 +293,26 @@ struct sys_timer cns3xxx_timer = {
+@@ -273,13 +273,26 @@ void __init cns3xxx_timer_init(void)
  
  #ifdef CONFIG_CACHE_L2X0
  
@@ -30,7 +30,7 @@
  
  	/*
  	 * Tag RAM Control register
-@@ -329,7 +342,10 @@ void __init cns3xxx_l2x0_init(void)
+@@ -309,7 +322,10 @@ void __init cns3xxx_l2x0_init(void)
  
  	/* 32 KiB, 8-way, parity disable */
  	l2x0_init(base, 0x00540000, 0xfe000fff);
@@ -43,7 +43,7 @@
  
 --- a/arch/arm/mach-cns3xxx/cns3420vb.c
 +++ b/arch/arm/mach-cns3xxx/cns3420vb.c
-@@ -241,8 +241,6 @@ static struct platform_device *cns3420_p
+@@ -239,8 +239,6 @@ static struct platform_device *cns3420_p
  
  static void __init cns3420_init(void)
  {
@@ -52,19 +52,3 @@
  	platform_add_devices(cns3420_pdevs, ARRAY_SIZE(cns3420_pdevs));
  
  	cns3xxx_ahci_init();
---- a/arch/arm/mach-cns3xxx/core.h
-+++ b/arch/arm/mach-cns3xxx/core.h
-@@ -15,13 +15,6 @@ extern struct smp_operations cns3xxx_smp
- extern struct sys_timer cns3xxx_timer;
- extern void cns3xxx_pcie_iotable_init(void);
- 
--
--#ifdef CONFIG_CACHE_L2X0
--void __init cns3xxx_l2x0_init(void);
--#else
--static inline void cns3xxx_l2x0_init(void) {}
--#endif /* CONFIG_CACHE_L2X0 */
--
- void __init cns3xxx_common_init(void);
- void __init cns3xxx_init_irq(void);
- int  __init cns3xxx_pcie_init(void);
