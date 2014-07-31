@@ -1,3 +1,68 @@
+From 9194b3431616567ffbf69ef970506d695912be0b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 17 Jul 2014 23:24:30 +0200
+Subject: [PATCH] MIPS: BCM47XX: Devices database update for 3.17
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Detect more devices and register leds & buttons for them.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/7394/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/bcm47xx/board.c   |  3 ++-
+ arch/mips/bcm47xx/buttons.c |  9 ++++++++
+ arch/mips/bcm47xx/leds.c    | 53 +++++++++++++++++++++++++++++++++++++--------
+ 3 files changed, 55 insertions(+), 10 deletions(-)
+
+--- a/arch/mips/bcm47xx/board.c
++++ b/arch/mips/bcm47xx/board.c
+@@ -58,6 +58,7 @@ struct bcm47xx_board_type_list1 bcm47xx_
+ static const
+ struct bcm47xx_board_type_list1 bcm47xx_board_list_hardware_version[] __initconst = {
+ 	{{BCM47XX_BOARD_ASUS_RTN10U, "Asus RT-N10U"}, "RTN10U"},
++	{{BCM47XX_BOARD_ASUS_RTN10D, "Asus RT-N10D"}, "RTN10D"},
+ 	{{BCM47XX_BOARD_ASUS_RTN12, "Asus RT-N12"}, "RT-N12"},
+ 	{{BCM47XX_BOARD_ASUS_RTN12B1, "Asus RT-N12B1"}, "RTN12B1"},
+ 	{{BCM47XX_BOARD_ASUS_RTN12C1, "Asus RT-N12C1"}, "RTN12C1"},
+@@ -106,7 +107,7 @@ struct bcm47xx_board_type_list1 bcm47xx_
+ /* ModelId */
+ static const
+ struct bcm47xx_board_type_list1 bcm47xx_board_list_ModelId[] __initconst = {
+-	{{BCM47XX_BOARD_DELL_TM2300, "Dell WX-5565"}, "WX-5565"},
++	{{BCM47XX_BOARD_DELL_TM2300, "Dell TrueMobile 2300"}, "WX-5565"},
+ 	{{BCM47XX_BOARD_MOTOROLA_WE800G, "Motorola WE800G"}, "WE800G"},
+ 	{{BCM47XX_BOARD_MOTOROLA_WR850GP, "Motorola WR850GP"}, "WR850GP"},
+ 	{{BCM47XX_BOARD_MOTOROLA_WR850GV2V3, "Motorola WR850G"}, "WR850G"},
+--- a/arch/mips/bcm47xx/buttons.c
++++ b/arch/mips/bcm47xx/buttons.c
+@@ -341,6 +341,12 @@ bcm47xx_buttons_netgear_wndr4500v1[] __i
+ };
+ 
+ static const struct gpio_keys_button
++bcm47xx_buttons_netgear_wnr3500lv1[] __initconst = {
++	BCM47XX_GPIO_KEY(4, KEY_RESTART),
++	BCM47XX_GPIO_KEY(6, KEY_WPS_BUTTON),
++};
++
++static const struct gpio_keys_button
+ bcm47xx_buttons_netgear_wnr834bv2[] __initconst = {
+ 	BCM47XX_GPIO_KEY(6, KEY_RESTART),
+ };
+@@ -557,6 +563,9 @@ int __init bcm47xx_buttons_register(void
+ 	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr4500v1);
+ 		break;
++	case BCM47XX_BOARD_NETGEAR_WNR3500L:
++		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wnr3500lv1);
++		break;
+ 	case BCM47XX_BOARD_NETGEAR_WNR834BV2:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wnr834bv2);
+ 		break;
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
 @@ -35,6 +35,15 @@ bcm47xx_leds_asus_rtn12[] __initconst =
@@ -27,7 +92,7 @@
  };
  
  static const struct gpio_led
-@@ -216,8 +225,8 @@ bcm47xx_leds_linksys_e1000v1[] __initcon
+@@ -221,8 +230,8 @@ bcm47xx_leds_linksys_e1000v1[] __initcon
  
  static const struct gpio_led
  bcm47xx_leds_linksys_e1000v21[] __initconst = {
@@ -38,7 +103,7 @@
  	BCM47XX_GPIO_LED(7, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(8, "blue", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  };
-@@ -314,6 +323,16 @@ bcm47xx_leds_linksys_wrt54g_type_0101[]
+@@ -319,6 +328,16 @@ bcm47xx_leds_linksys_wrt54g_type_0101[]
  	BCM47XX_GPIO_LED(7, "green", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  };
  
@@ -55,7 +120,7 @@
  static const struct gpio_led
  bcm47xx_leds_linksys_wrt610nv1[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "usb",  1, LEDS_GPIO_DEFSTATE_OFF),
-@@ -333,11 +352,10 @@ bcm47xx_leds_linksys_wrt610nv2[] __initc
+@@ -338,11 +357,10 @@ bcm47xx_leds_linksys_wrt610nv2[] __initc
  
  static const struct gpio_led
  bcm47xx_leds_linksys_wrtsl54gs[] __initconst = {
@@ -70,8 +135,8 @@
 +	BCM47XX_GPIO_LED(7, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
  };
  
- /* Motorola */
-@@ -385,6 +403,15 @@ bcm47xx_leds_netgear_wndr4500v1[] __init
+ /* Microsoft */
+@@ -397,6 +415,15 @@ bcm47xx_leds_netgear_wndr4500v1[] __init
  };
  
  static const struct gpio_led
@@ -87,7 +152,7 @@
  bcm47xx_leds_netgear_wnr834bv2[] __initconst = {
  	BCM47XX_GPIO_LED(2, "green", "power", 0, LEDS_GPIO_DEFSTATE_ON),
  	BCM47XX_GPIO_LED(3, "amber", "power", 0, LEDS_GPIO_DEFSTATE_OFF),
-@@ -425,6 +452,9 @@ void __init bcm47xx_leds_register(void)
+@@ -437,6 +464,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_ASUS_RTN12:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
  		break;
@@ -97,7 +162,7 @@
  	case BCM47XX_BOARD_ASUS_RTN16:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn16);
  		break;
-@@ -553,6 +583,8 @@ void __init bcm47xx_leds_register(void)
+@@ -568,6 +598,8 @@ void __init bcm47xx_leds_register(void)
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54g_type_0101);
  		break;
  	case BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0467:
@@ -106,7 +171,7 @@
  	case BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0708:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt54g_generic);
  		break;
-@@ -582,6 +614,9 @@ void __init bcm47xx_leds_register(void)
+@@ -601,6 +633,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
  		bcm47xx_set_pdata(bcm47xx_leds_netgear_wndr4500v1);
  		break;
@@ -115,29 +180,4 @@
 +		break;
  	case BCM47XX_BOARD_NETGEAR_WNR834BV2:
  		bcm47xx_set_pdata(bcm47xx_leds_netgear_wnr834bv2);
- 		break;
---- a/arch/mips/bcm47xx/buttons.c
-+++ b/arch/mips/bcm47xx/buttons.c
-@@ -329,6 +329,12 @@ bcm47xx_buttons_netgear_wndr4500v1[] __i
- };
- 
- static const struct gpio_keys_button
-+bcm47xx_buttons_netgear_wnr3500lv1[] __initconst = {
-+	BCM47XX_GPIO_KEY(4, KEY_RESTART),
-+	BCM47XX_GPIO_KEY(6, KEY_WPS_BUTTON),
-+};
-+
-+static const struct gpio_keys_button
- bcm47xx_buttons_netgear_wnr834bv2[] __initconst = {
- 	BCM47XX_GPIO_KEY(6, KEY_RESTART),
- };
-@@ -538,6 +544,9 @@ int __init bcm47xx_buttons_register(void
- 	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
- 		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr4500v1);
- 		break;
-+	case BCM47XX_BOARD_NETGEAR_WNR3500L:
-+		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wnr3500lv1);
-+		break;
- 	case BCM47XX_BOARD_NETGEAR_WNR834BV2:
- 		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wnr834bv2);
  		break;

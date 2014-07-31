@@ -1,11 +1,16 @@
-From 35661c37bde151764e8526e77d4e02ca77e19160 Mon Sep 17 00:00:00 2001
+From 250dc03727b9cce91bd86091f05bf2443e2be9ec Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Mon, 14 Jul 2014 23:32:10 +0200
-Subject: [PATCH 5/5] MIPS: BCM47XX: add some more devices
+Date: Tue, 29 Jul 2014 00:12:09 +0200
+Subject: [PATCH] MIPS: BCM47XX: add Microsoft MN-700 and Asus WL500G
 
-This adds Microsoft MN-700 and Asus WL500G.
+This patch adds detection for the Microsoft MN-700 and the Asus WL500G
+router. This is based on some old code from OpenWrt.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: zajec5@gmail.com
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/7490/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 ---
  arch/mips/bcm47xx/board.c                          | 17 +++++++++++++++++
  arch/mips/bcm47xx/buttons.c                        | 19 +++++++++++++++++++
@@ -15,7 +20,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
-@@ -81,6 +81,14 @@ struct bcm47xx_board_type_list1 bcm47xx_
+@@ -80,6 +80,14 @@ struct bcm47xx_board_type_list1 bcm47xx_
  	{ {0}, NULL},
  };
  
@@ -30,7 +35,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /* productid */
  static const
  struct bcm47xx_board_type_list1 bcm47xx_board_list_productid[] __initconst = {
-@@ -238,6 +246,15 @@ static __init const struct bcm47xx_board
+@@ -237,6 +245,15 @@ static __init const struct bcm47xx_board
  		}
  	}
  
@@ -55,7 +60,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +bcm47xx_buttons_asus_wl500g[] __initconst = {
 +	BCM47XX_GPIO_KEY(6, KEY_RESTART),
 +};
-+			
++
 +static const struct gpio_keys_button
  bcm47xx_buttons_asus_wl500gd[] __initconst = {
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
@@ -74,7 +79,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /* Motorola */
  
  static const struct gpio_keys_button
-@@ -401,6 +413,9 @@ int __init bcm47xx_buttons_register(void
+@@ -395,6 +407,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_ASUS_WL330GE:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_wl330ge);
  		break;
@@ -84,7 +89,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	case BCM47XX_BOARD_ASUS_WL500GD:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_wl500gd);
  		break;
-@@ -525,6 +540,10 @@ int __init bcm47xx_buttons_register(void
+@@ -517,6 +532,10 @@ int __init bcm47xx_buttons_register(void
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrtsl54gs);
  		break;
  
@@ -97,7 +102,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  		break;
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -73,6 +73,11 @@ bcm47xx_leds_asus_wl330ge[] __initconst
+@@ -64,6 +64,11 @@ bcm47xx_leds_asus_wl330ge[] __initconst
  };
  
  static const struct gpio_led
@@ -109,8 +114,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  bcm47xx_leds_asus_wl500gd[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
  };
-@@ -358,6 +363,13 @@ bcm47xx_leds_linksys_wrtsl54gs[] __initc
- 	BCM47XX_GPIO_LED(7, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
+@@ -332,6 +337,13 @@ bcm47xx_leds_linksys_wrtsl54gs[] __initc
+ 	BCM47XX_GPIO_LED(7, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  };
  
 +/* Microsoft */
@@ -123,7 +128,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /* Motorola */
  
  static const struct gpio_led
-@@ -470,6 +482,9 @@ void __init bcm47xx_leds_register(void)
+@@ -432,6 +444,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_ASUS_WL330GE:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_wl330ge);
  		break;
@@ -133,7 +138,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	case BCM47XX_BOARD_ASUS_WL500GD:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_wl500gd);
  		break;
-@@ -598,6 +613,10 @@ void __init bcm47xx_leds_register(void)
+@@ -554,6 +569,10 @@ void __init bcm47xx_leds_register(void)
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrtsl54gs);
  		break;
  
@@ -154,7 +159,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	BCM47XX_BOARD_ASUS_WL500GD,
  	BCM47XX_BOARD_ASUS_WL500GPV1,
  	BCM47XX_BOARD_ASUS_WL500GPV2,
-@@ -77,6 +78,8 @@ enum bcm47xx_board {
+@@ -75,6 +76,8 @@ enum bcm47xx_board {
  	BCM47XX_BOARD_LINKSYS_WRT610NV2,
  	BCM47XX_BOARD_LINKSYS_WRTSL54GS,
  
