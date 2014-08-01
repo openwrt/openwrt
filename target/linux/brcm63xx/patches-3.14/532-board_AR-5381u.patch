@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -167,6 +167,73 @@ static struct board_info __initdata boar
+@@ -168,6 +168,73 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -74,7 +74,7 @@
  static struct board_info __initdata board_AR5387un = {
  	.name					= "96328A-1441N1",
  	.expected_cpu_id			= 0x6328,
-@@ -3155,6 +3222,7 @@ static const struct board_info __initcon
+@@ -3167,6 +3234,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,

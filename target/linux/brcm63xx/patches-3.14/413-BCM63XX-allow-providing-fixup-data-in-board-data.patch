@@ -18,7 +18,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  #include "board_common.h"
  
-@@ -197,6 +198,7 @@ int __init board_register_devices(void)
+@@ -159,6 +160,7 @@ int __init board_register_devices(void)
  	int button_count = 0;
  	int led_count = 0;
  	int usbh_ports = 0;
@@ -26,17 +26,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -242,7 +244,8 @@ int __init board_register_devices(void)
- 	 * do this after registering enet devices
- 	 */
- #ifdef CONFIG_SSB_PCIHOST
--	if (!board_get_mac_address(bcm63xx_sprom.il0mac)) {
-+	if (!board.has_caldata &&
-+	    !board_get_mac_address(bcm63xx_sprom.il0mac)) {
- 		memcpy(bcm63xx_sprom.et0mac, bcm63xx_sprom.il0mac, ETH_ALEN);
- 		memcpy(bcm63xx_sprom.et1mac, bcm63xx_sprom.il0mac, ETH_ALEN);
- 		if (ssb_arch_register_fallback_sprom(
-@@ -289,5 +292,9 @@ int __init board_register_devices(void)
+@@ -247,5 +249,9 @@ int __init board_register_devices(void)
  		platform_device_register(&bcm63xx_gpio_keys_device);
  	}
  
@@ -48,15 +38,15 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  }
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -8,6 +8,7 @@
- #include <bcm63xx_dev_enet.h>
+@@ -9,6 +9,7 @@
  #include <bcm63xx_dev_usb_usbd.h>
  #include <bcm63xx_dev_dsp.h>
+ #include <bcm63xx_fallback_sprom.h>
 +#include <pci_ath9k_fixup.h>
  
  /*
   * flash mapping
-@@ -15,6 +16,11 @@
+@@ -16,6 +17,11 @@
  #define BCM963XX_CFE_VERSION_OFFSET	0x570
  #define BCM963XX_NVRAM_OFFSET		0x580
  
@@ -68,10 +58,10 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  /*
   * board definition
   */
-@@ -34,6 +40,10 @@ struct board_info {
- 	unsigned int	has_dsp:1;
+@@ -36,6 +42,10 @@ struct board_info {
  	unsigned int	has_uart0:1;
  	unsigned int	has_uart1:1;
+ 	unsigned int	use_fallback_sprom:1;
 +	unsigned int	has_caldata:2;
 +
 +	/* wifi calibration data config */

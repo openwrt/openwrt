@@ -14,7 +14,7 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 
 --- a/arch/mips/bcm63xx/boards/Kconfig
 +++ b/arch/mips/bcm63xx/boards/Kconfig
-@@ -7,4 +7,10 @@ config BOARD_BCM963XX
+@@ -8,4 +8,10 @@ config BOARD_BCM963XX
  	default y
         help
  
@@ -33,7 +33,7 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 +obj-$(CONFIG_BOARD_LIVEBOX)		+= board_livebox.o
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -96,7 +96,7 @@ void __init board_prom_init(void)
+@@ -58,7 +58,7 @@ void __init board_prom_init(void)
  	if (fw_arg3 == CFE_EPTSEAL)
  		board_bcm963xx_init();
  	else
