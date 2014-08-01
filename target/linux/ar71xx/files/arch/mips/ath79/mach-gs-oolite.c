@@ -54,7 +54,7 @@ static struct gpio_keys_button gs_oolite_gpio_keys[] __initdata = {
 		.code		= KEY_RESTART,
 		.debounce_interval = GS_OOLITE_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= GS_OOLITE_GPIO_BTN_RESET,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 	{
 		.desc		= "BTN_6",
@@ -62,7 +62,7 @@ static struct gpio_keys_button gs_oolite_gpio_keys[] __initdata = {
 		.code		= BTN_6,
 		.debounce_interval = GS_OOLITE_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= GS_OOLITE_GPIO_BTN6,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 	{
 		.desc		= "BTN_7",
@@ -70,7 +70,7 @@ static struct gpio_keys_button gs_oolite_gpio_keys[] __initdata = {
 		.code		= BTN_7,
 		.debounce_interval = GS_OOLITE_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= GS_OOLITE_GPIO_BTN7,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 };
 
