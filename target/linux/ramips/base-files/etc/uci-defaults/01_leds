@@ -150,6 +150,10 @@ case $board in
 	v11st-fe)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	vocore)
+		ucidef_set_led_netdev "eth" "ETH" "vocore:orange:eth" "eth0"
+		set_wifi_led "vocore:green:status"
+		;;
 	w306r-v20)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
