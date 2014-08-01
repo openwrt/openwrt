@@ -80,6 +80,7 @@ platform_check_image() {
 	w502u |\
 	wr6202 |\
 	v22rw-2x2 | \
+	vocore | \
 	wl341v3 | \
 	wl-330n | \
 	wl-330n3g | \
