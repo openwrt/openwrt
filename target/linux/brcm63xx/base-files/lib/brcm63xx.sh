@@ -87,6 +87,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	AW5200B)
+		status_led="dsl-275xb:green:power"
+		brcm63xx_has_reset_button="true"
+		ifname=eth0
+		;;
 	CPVA642)
 		status_led="CPVA642:green:power:"
 		brcm63xx_has_reset_button="true"
