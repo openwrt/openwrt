@@ -74,7 +74,7 @@ get_status_led() {
 		status_led="m4:blue:status"
 		;;
 	mlw221)
-		status_led="kingston:green:status"
+		status_led="kingston:blue:status"
 		;;
 	mofi3500-3gn)
 		status_led="mofi3500-3gn:green:status"
