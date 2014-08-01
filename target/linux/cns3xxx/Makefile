@@ -12,7 +12,7 @@ BOARDNAME:=Cavium Networks Econa CNS3xxx
 FEATURES:=squashfs fpu gpio pcie usb usbgadget
 CPU_TYPE:=mpcore
 CPU_SUBTYPE:=vfp
-MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
+MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 LINUX_VERSION:=3.10.49
 
