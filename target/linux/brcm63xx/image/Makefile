@@ -143,9 +143,25 @@ define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
 
-define Image/Prepare
+define Image/PrepareLoader
 	# Standard LZMA kernel
-	cat $(KDIR)/vmlinux | $(STAGING_DIR_HOST)/bin/lzma e -si -so -eos -lc1 -lp2 -pb2 > $(KDIR)/vmlinux.lzma
+	$(STAGING_DIR_HOST)/bin/lzma e -d22 -fb64 -a1 $(KDIR)/vmlinux$(1) $(KDIR)/vmlinux$(1).lzma
+
+	# Build the LZMA loader
+	rm -rf $(KDIR)/lzma-loader
+	$(MAKE) -C lzma-loader \
+		$(LOADER_MAKEOPTS) \
+		BUILD_DIR="$(KDIR)" \
+		TARGET_DIR="$(BIN_DIR)" \
+		LOADER_DATA="$(KDIR)/vmlinux$(1).lzma" \
+		LOADER=$(IMG_PREFIX)-loader$(1).elf \
+		LZMA_TEXT_START=0x80a00000 \
+		compile loader.elf
+
+	rm -f $(KDIR)/vmlinux$(1).lzma
+endef
+
+define Image/Prepare
 
 	# CFE is a LZMA nazi! It took me hours to find out the parameters!
 	# Also I think lzma has a bug cause it generates different output depending on
@@ -158,14 +174,9 @@ define Image/Prepare
 	dd if=$(KDIR)/vmlinux.lzma.tmp of=$(KDIR)/vmlinux.lzma.cfe ibs=13 obs=5 skip=1 seek=1 conv=notrunc
 	rm -f $(KDIR)/vmlinux.lzma.tmp
 
-	# Build the LZMA loader
-	rm -f $(KDIR)/loader.gz
-	$(MAKE) -C lzma-loader \
-		BUILD_DIR="$(KDIR)" \
-		TARGET="$(KDIR)" \
-		clean install
-
-	echo -ne "\\x00" >> $(KDIR)/loader.gz
+ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
+	$(call Image/PrepareLoader,-initramfs)
+ endif
 	rm -f $(KDIR)/fs_mark
 	touch $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
