@@ -1,77 +1,86 @@
 #
-# Makefile for Broadcom BCM947XX boards
+# Makefile for the LZMA compressed kernel loader for
+# Atheros AR7XXX/AR9XXX based boards
 #
-# Copyright 2001-2003, Broadcom Corporation
-# All Rights Reserved.
-# 
-# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
-# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
-# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
-# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+# Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
 #
-# Copyright 2004  Manuel Novoa III <mjn3@codepoet.org>
-#   Modified to support bzip'd kernels.
-#   Of course, it would be better to integrate bunzip capability into CFE.
+# Some parts of this file was based on the OpenWrt specific lzma-loader
+# for the BCM47xx and ADM5120 based boards:
+#	Copyright (C) 2004 Manuel Novoa III (mjn3@codepoet.org)
+#	Copyright (C) 2005 Mineharu Takahara <mtakahar@yahoo.com>
+#	Copyright (C) 2005 by Oleg I. Vdovikin <oleg@cs.msu.su>
 #
-# Copyright 2005  Oleg I. Vdovikin <oleg@cs.msu.su>
-#   Cleaned up, modified for lzma support, removed from kernel
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 as published
+# by the Free Software Foundation.
 #
 
-TEXT_START	:= 0x80010000
-BZ_TEXT_START	:= 0x80300000
+LOADADDR	:=
+LZMA_TEXT_START	:= 0x80a00000
+LOADER_DATA	:=
 
-OBJCOPY		:= $(CROSS_COMPILE)objcopy -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
+CC		:= $(CROSS_COMPILE)gcc
+LD		:= $(CROSS_COMPILE)ld
+OBJCOPY		:= $(CROSS_COMPILE)objcopy
+OBJDUMP		:= $(CROSS_COMPILE)objdump
+
+BIN_FLAGS	:= -O binary -R .reginfo -R .note -R .comment -R .mdebug -S
 
 CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
-		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 -mno-abicalls -fno-pic \
-		  -ffunction-sections -pipe -mlong-calls -fno-common \
-		  -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
-CFLAGS		+= -DLOADADDR=$(TEXT_START) -D_LZMA_IN_CB
+		  -fno-strict-aliasing -fno-common -fomit-frame-pointer -G 0 \
+		  -mno-abicalls -fno-pic -ffunction-sections -pipe \
+		  -ffreestanding -fhonour-copts \
+		  -mabi=32 -march=mips32 \
+		  -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap
+CFLAGS		+= -D_LZMA_PROB32
 
-ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__ -DBZ_TEXT_START=$(BZ_TEXT_START)
+ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__
 
-SEDFLAGS	:= s/BZ_TEXT_START/$(BZ_TEXT_START)/;s/TEXT_START/$(TEXT_START)/
+LDFLAGS		= -static --gc-sections -no-warn-mismatch
+LDFLAGS		+= -e startup -T loader.lds -Ttext $(LZMA_TEXT_START)
 
-OBJECTS		:= head.o data.o
+O_FORMAT 	= $(shell $(OBJDUMP) -i | head -2 | grep elf32)
 
-all: loader.gz loader.elf
+OBJECTS		:= head.o loader.o cache.o board.o printf.o LzmaDecode.o
+
+ifneq ($(strip $(LOADER_DATA)),)
+OBJECTS		+= data.o
+CFLAGS		+= -DLZMA_WRAPPER=1 -DLOADADDR=$(LOADADDR)
+endif
+
+
+all: loader.elf
 
 # Don't build dependencies, this may die if $(CC) isn't gcc
 dep:
 
 install:
 
-loader.gz: loader
-	gzip -nc9 $< > $@
+%.o : %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-loader.elf: loader.o
-	cp $< $@
+%.o : %.S
+	$(CC) $(ASFLAGS) -c -o $@ $<
 
-loader: loader.o
-	$(OBJCOPY) $< $@
+data.o: $(LOADER_DATA)
+	$(LD) -r -b binary --oformat $(O_FORMAT) -T lzma-data.lds -o $@ $<
 
-loader.o: loader.lds $(OBJECTS)
-	$(LD) -static --gc-sections -no-warn-mismatch -T loader.lds -o $@ $(OBJECTS)
+loader: $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
 
-loader.lds: loader.lds.in Makefile
-	@sed "$(SEDFLAGS)" < $< > $@
+loader.bin: loader
+	$(OBJCOPY) $(BIN_FLAGS) $< $@
 
-data.o: data.lds decompress.image
-	$(LD) -no-warn-mismatch -T data.lds -r -o $@ -b binary decompress.image -b elf32-tradlittlemips
+loader2.o: loader.bin
+	$(LD) -r -b binary --oformat $(O_FORMAT) -o $@ $<
 
-data.lds:
-	@echo "SECTIONS { .data : { code_start = .; *(.data) code_stop = .; }}" > $@
-
-decompress.image: decompress
-	$(OBJCOPY) $< $@
-
-decompress: decompress.lds decompress.o LzmaDecode.o
-	$(LD) -static --gc-sections -no-warn-mismatch -T decompress.lds -o $@ decompress.o LzmaDecode.o
-
-decompress.lds: decompress.lds.in Makefile
-	@sed "$(SEDFLAGS)" < $< > $@
+loader.elf: loader2.o
+	$(LD) -e startup -T loader2.lds -Ttext $(LOADADDR) -o $@ $<
 
 mrproper: clean
 
 clean:
-	rm -f loader.gz loader decompress *.lds *.o *.image
+	rm -f loader *.elf *.bin *.o
+
+
+

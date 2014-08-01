@@ -1,155 +1,118 @@
-/* Copyright 2005 Oleg I. Vdovikin (oleg@cs.msu.su)	*/
-/* cache manipulation adapted from Broadcom code 	*/
-/* idea taken from original bunzip2 decompressor code	*/
-/* Copyright 2004 Manuel Novoa III (mjn3@codepoet.org)	*/
-/* Licensed under the linux kernel's version of the GPL.*/
+/*
+ * LZMA compressed kernel loader for Atheros AR7XXX/AR9XXX based boards
+ *
+ * Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
+ *
+ * Some parts of this code was based on the OpenWrt specific lzma-loader
+ * for the BCM47xx and ADM5120 based boards:
+ *	Copyright (C) 2004 Manuel Novoa III (mjn3@codepoet.org)
+ *	Copyright (C) 2005 by Oleg I. Vdovikin <oleg@cs.msu.su>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 as published
+ * by the Free Software Foundation.
+ */
 
 #include <asm/asm.h>
 #include <asm/regdef.h>
+#include "cp0regdef.h"
+#include "cacheops.h"
+#include "config.h"
 
 #define KSEG0		0x80000000
 
-#define C0_CONFIG	$16
-#define C0_TAGLO	$28
-#define C0_TAGHI	$29
-
-#define	CONF1_DA_SHIFT	7			/* D$ associativity */
-#define CONF1_DA_MASK	0x00000380
-#define CONF1_DA_BASE	1
-#define CONF1_DL_SHIFT	10			/* D$ line size */
-#define CONF1_DL_MASK	0x00001c00
-#define CONF1_DL_BASE	2
-#define CONF1_DS_SHIFT	13			/* D$ sets/way */
-#define CONF1_DS_MASK	0x0000e000
-#define CONF1_DS_BASE	64
-#define CONF1_IA_SHIFT	16			/* I$ associativity */
-#define CONF1_IA_MASK	0x00070000
-#define CONF1_IA_BASE	1
-#define CONF1_IL_SHIFT	19			/* I$ line size */
-#define CONF1_IL_MASK	0x00380000
-#define CONF1_IL_BASE	2
-#define CONF1_IS_SHIFT	22			/* Instruction cache sets/way */
-#define CONF1_IS_MASK	0x01c00000
-#define CONF1_IS_BASE	64
-
-#define Index_Invalidate_I	0x00
-#define Index_Writeback_Inv_D   0x01
+	.macro	ehb
+	sll     zero, 3
+	.endm
 
 	.text
-	LEAF(startup)
+
+LEAF(startup)
 	.set noreorder
-	
-	/* Copy decompressor code to the right place */
-	li	t2, BZ_TEXT_START
-	add	a0, t2, 0
-	la      a1, code_start
-	la	a2, code_stop
-$L1:
-	lw	t0, 0(a1)
-	sw	t0, 0(a0)
-	add	a1, 4
-	add	a0, 4
-	blt	a1, a2, $L1
-	nop
-	
-	/* At this point we need to invalidate dcache and */
-	/* icache before jumping to new code */
+	.set mips32
 
-1:	/* Get cache sizes */
-	.set	mips32
-	mfc0	s0,C0_CONFIG,1
-	.set	mips0
+	mtc0	zero, CP0_WATCHLO	# clear watch registers
+	mtc0	zero, CP0_WATCHHI
+	mtc0	zero, CP0_CAUSE		# clear before writing status register
 
-	li	s1,CONF1_DL_MASK
-	and	s1,s0
-	beq	s1,zero,nodc
-	nop
+	mfc0	t0, CP0_STATUS
+	li	t1, 0x1000001f
+	or	t0, t1
+	xori	t0, 0x1f
+	mtc0	t0, CP0_STATUS
+	ehb
 
-	srl	s1,CONF1_DL_SHIFT
-	li	t0,CONF1_DL_BASE
-	sll	s1,t0,s1		/* s1 has D$ cache line size */
+	mtc0	zero, CP0_COUNT
+	mtc0	zero, CP0_COMPARE
+	ehb
 
-	li	s2,CONF1_DA_MASK
-	and	s2,s0
-	srl	s2,CONF1_DA_SHIFT
-	addiu	s2,CONF1_DA_BASE	/* s2 now has D$ associativity */
+	la	t0, __reloc_label	# get linked address of label
+	bal	__reloc_label		# branch and link to label to
+	nop				# get actual address
+__reloc_label:
+	subu	t0, ra, t0		# get reloc_delta
 
-	li	t0,CONF1_DS_MASK
-	and	t0,s0
-	srl	t0,CONF1_DS_SHIFT
-	li	s3,CONF1_DS_BASE
-	sll	s3,s3,t0		/* s3 has D$ sets per way */
-
-	multu	s2,s3			/* sets/way * associativity */
-	mflo	t0			/* total cache lines */
-
-	multu	s1,t0			/* D$ linesize * lines */
-	mflo	s2			/* s2 is now D$ size in bytes */
-
-	/* Initilize the D$: */
-	mtc0	zero,C0_TAGLO
-	mtc0	zero,C0_TAGHI
-
-	li	t0,KSEG0		/* Just an address for the first $ line */
-	addu	t1,t0,s2		/*  + size of cache == end */
-
-	.set	mips3
-1:	cache	Index_Writeback_Inv_D,0(t0)
-	.set	mips0
-	bne	t0,t1,1b
-	addu	t0,s1
-	
-nodc:
-	/* Now we get to do it all again for the I$ */
-	
-	move	s3,zero			/* just in case there is no icache */
-	move	s4,zero
-
-	li	t0,CONF1_IL_MASK
-	and	t0,s0
-	beq	t0,zero,noic
+	beqz	t0, __reloc_done         # if delta is 0 we are in the right place
 	nop
 
-	srl	t0,CONF1_IL_SHIFT
-	li	s3,CONF1_IL_BASE
-	sll	s3,t0			/* s3 has I$ cache line size */
+	/* Copy our code to the right place */
+	la	t1, _code_start		# get linked address of _code_start
+	la	t2, _code_end		# get linked address of _code_end
+	addu	t0, t0, t1		# calculate actual address of _code_start
 
-	li	t0,CONF1_IA_MASK
-	and	t0,s0
-	srl	t0,CONF1_IA_SHIFT
-	addiu	s4,t0,CONF1_IA_BASE	/* s4 now has I$ associativity */
+__reloc_copy:
+	lw	t3, 0(t0)
+	sw	t3, 0(t1)
+	add	t1, 4
+	blt	t1, t2, __reloc_copy
+	add	t0, 4
 
-	li	t0,CONF1_IS_MASK
-	and	t0,s0
-	srl	t0,CONF1_IS_SHIFT
-	li	s5,CONF1_IS_BASE
-	sll	s5,t0			/* s5 has I$ sets per way */
+	/* flush cache */
+	la	t0, _code_start
+	la	t1, _code_end
 
-	multu	s4,s5			/* sets/way * associativity */
-	mflo	t0			/* s4 is now total cache lines */
+	li	t2, ~(CONFIG_CACHELINE_SIZE - 1)
+	and	t0, t2
+	and	t1, t2
+	li	t2, CONFIG_CACHELINE_SIZE
 
-	multu	s3,t0			/* I$ linesize * lines */
-	mflo	s4			/* s4 is cache size in bytes */
+	b	__flush_check
+	nop
 
-	/* Initilize the I$: */
-	mtc0	zero,C0_TAGLO
-	mtc0	zero,C0_TAGHI
+__flush_line:
+	cache	Hit_Writeback_Inv_D, 0(t0)
+	cache	Hit_Invalidate_I, 0(t0)
+	add	t0, t2
 
-	li	t0,KSEG0		/* Just an address for the first $ line */
-	addu	t1,t0,s4		/*  + size of cache == end */
+__flush_check:
+	bne	t0, t1, __flush_line
+	nop
 
-	.set	mips3
-1:	cache	Index_Invalidate_I,0(t0)
-	.set	mips0
-	bne	t0,t1,1b
-	addu	t0,s3
+	sync
 
-noic:
-	move	a0,s3			/* icache line size */
-	move	a1,s4			/* icache size */
-	move	a2,s1			/* dcache line size */
-	jal	t2
-	move	a3,s2			/* dcache size */
-	
+__reloc_done:
+
+	/* clear bss */
+	la	t0, _bss_start
+	la	t1, _bss_end
+	b	__bss_check
+	nop
+
+__bss_fill:
+	sw	zero, 0(t0)
+	addi	t0, 4
+
+__bss_check:
+	bne	t0, t1, __bss_fill
+	nop
+
+	/* Setup new "C" stack */
+	la	sp, _stack
+
+	/* jump to the decompressor routine */
+	la	t0, loader_main
+	jr	t0
+	nop
+
 	.set reorder
-	END(startup)
+END(startup)
