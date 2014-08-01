@@ -121,6 +121,9 @@ ramips_board_detect() {
 	*"ESR-9753")
 		name="esr-9753"
 		;;
+	*"EASYACC WI-STOR WIZARD 8800")
+		name="wizard8800"
+		;;
 	*"Edimax BR-6475nD")
 		name="br-6475nd"
 		;;
