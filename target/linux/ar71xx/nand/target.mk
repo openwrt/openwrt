@@ -1,5 +1,5 @@
 BOARDNAME := Generic devices with NAND flash
-FEATURES += squashfs nand
+FEATURES += squashfs nand rtc
 
 define Target/Description
 	Build firmware images for Atheros AR71xx/AR913x based boards with
