@@ -1222,8 +1222,8 @@ config PACKAGE_B43_USE_BCMA
 		string "Core revisions to include"
 		depends on B43_FW_SQUASH
 		default "5,6,7,8,9,10,11,13,15" if TARGET_brcm47xx_legacy
-		default "16,28,29" if TARGET_brcm47xx_mips74k
-		default "5,6,7,8,9,10,11,13,15,16,28,29"
+		default "16,28,29,30" if TARGET_brcm47xx_mips74k
+		default "5,6,7,8,9,10,11,13,15,16,28,29,30"
 		help
 		  This is a comma seperated list of core revision numbers.
 
