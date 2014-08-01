@@ -1,27 +1,20 @@
---- a/arch/mips/bcm63xx/boards/board_common.c
-+++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -13,6 +13,7 @@
- #include <linux/platform_device.h>
- #include <linux/ssb/ssb.h>
- #include <linux/gpio_keys.h>
-+#include <linux/export.h>
- #include <linux/spi/spi.h>
- #include <asm/addrspace.h>
- #include <asm/bootinfo.h>
-@@ -49,7 +50,7 @@ static struct board_info board;
-  * bcm4318 WLAN work
+--- a/arch/mips/bcm63xx/sprom.c
++++ b/arch/mips/bcm63xx/sprom.c
+@@ -8,6 +8,7 @@
   */
- #ifdef CONFIG_SSB_PCIHOST
--static struct ssb_sprom bcm63xx_sprom = {
-+struct ssb_sprom bcm63xx_sprom = {
- 	.revision		= 0x02,
- 	.board_rev		= 0x17,
- 	.country_code		= 0x0,
-@@ -69,6 +70,7 @@ static struct ssb_sprom bcm63xx_sprom =
- 	.boardflags_lo		= 0x2848,
- 	.boardflags_hi		= 0x0000,
- };
-+EXPORT_SYMBOL(bcm63xx_sprom);
  
- int bcm63xx_get_fallback_sprom(struct ssb_bus *bus, struct ssb_sprom *out)
- {
+ #include <linux/init.h>
++#include <linux/export.h>
+ #include <linux/kernel.h>
+ #include <linux/string.h>
+ #include <linux/platform_device.h>
+@@ -387,7 +388,8 @@ struct fallback_sprom_match {
+ 	struct ssb_sprom sprom;
+ };
+ 
+-static struct fallback_sprom_match fallback_sprom;
++struct fallback_sprom_match fallback_sprom;
++EXPORT_SYMBOL(fallback_sprom);
+ 
+ #if defined(CONFIG_SSB_PCIHOST)
+ int bcm63xx_get_fallback_ssb_sprom(struct ssb_bus *bus, struct ssb_sprom *out)

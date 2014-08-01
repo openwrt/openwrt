@@ -21,8 +21,8 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  		   setup.o timer.o dev-dsp.o dev-enet.o dev-flash.o \
  		   dev-pcmcia.o dev-rng.o dev-spi.o dev-hsspi.o dev-uart.o \
  		   dev-wdt.o dev-usb-ehci.o dev-usb-ohci.o dev-usb-usbd.o \
--		   pci-ath9k-fixup.o usb-common.o
-+		   pci-ath9k-fixup.o pci-rt2x00-fixup.o usb-common.o
+-		   pci-ath9k-fixup.o usb-common.o sprom.o
++		   pci-ath9k-fixup.o pci-rt2x00-fixup.o usb-common.o sprom.o
  obj-$(CONFIG_EARLY_PRINTK)	+= early_printk.o
  
  obj-y		+= boards/
@@ -36,7 +36,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  
  #include "board_common.h"
  
-@@ -293,9 +294,19 @@ int __init board_register_devices(void)
+@@ -250,9 +251,19 @@ int __init board_register_devices(void)
  	}
  
  	/* register any fixups */
@@ -158,15 +158,15 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -9,6 +9,7 @@
- #include <bcm63xx_dev_usb_usbd.h>
+@@ -10,6 +10,7 @@
  #include <bcm63xx_dev_dsp.h>
+ #include <bcm63xx_fallback_sprom.h>
  #include <pci_ath9k_fixup.h>
 +#include <pci_rt2x00_fixup.h>
  
  /*
   * flash mapping
-@@ -16,11 +17,15 @@
+@@ -17,11 +18,15 @@
  #define BCM963XX_CFE_VERSION_OFFSET	0x570
  #define BCM963XX_NVRAM_OFFSET		0x580
  
@@ -183,7 +183,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  };
  
  /*
-@@ -45,7 +50,7 @@ struct board_info {
+@@ -47,7 +52,7 @@ struct board_info {
  	unsigned int	has_caldata:2;
  
  	/* wifi calibration data config */
