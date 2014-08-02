@@ -89,9 +89,9 @@ $(eval $(call KernelPackage,iio-mxs-lradc))
 define KernelPackage/crypto-hw-dcp
     TITLE:=i.MX23/28 DCP hardware crypto module
     DEPENDS:=@TARGET_mxs
-    KCONFIG:=CONFIG_CRYPTO_DEV_DCP
-    FILES:=$(LINUX_DIR)/drivers/crypto/dcp.ko
-    AUTOLOAD:=$(call AutoLoad,90,dcp)
+    KCONFIG:=CONFIG_CRYPTO_DEV_MXS_DCP
+    FILES:=$(LINUX_DIR)/drivers/crypto/mxs-dcp.ko
+    AUTOLOAD:=$(call AutoLoad,90,mxs-dcp)
     $(call AddDepends/crypto,+kmod-crypto-authenc +kmod-crypto-des)
 endef
 
