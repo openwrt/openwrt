@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2013.10
+PKG_VERSION:=2014.07
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=8445162690052e6afd4b8f87af2bb557
+PKG_MD5SUM:=36d4bad687edcafa396fee607e505d4e
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -27,7 +27,7 @@ define uboot/Default
 endef
 
 define uboot/mx23_olinuxino
-  TITLE:=U-Boot 2013.10 for the Olinuxino i.MX233
+  TITLE:=U-Boot 2014.07 for the Olinuxino i.MX233
 endef
 
 UBOOTS := \
