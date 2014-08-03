@@ -1,0 +1,32 @@
+--- a/ping_common.h
++++ b/ping_common.h
+@@ -2,6 +2,7 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <time.h>
++#include <sys/types.h>
+ #include <sys/param.h>
+ #include <sys/socket.h>
+ #include <linux/sockios.h>
+@@ -24,6 +25,10 @@
+ 
+ #include "SNAPSHOT.h"
+ 
++#ifndef HZ
++#define HZ 100
++#endif
++
+ #define	DEFDATALEN	(64 - 8)	/* default data length */
+ 
+ #define	MAXWAIT		10		/* max seconds to wait for response */
+--- a/clockdiff.c
++++ b/clockdiff.c
+@@ -13,8 +13,6 @@
+ #include <netinet/in.h>
+ #include <netinet/ip.h>
+ #include <netinet/ip_icmp.h>
+-#define TSPTYPES
+-#include <protocols/timed.h>
+ #include <fcntl.h>
+ #include <netdb.h>
+ #include <arpa/inet.h>
