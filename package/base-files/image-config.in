@@ -142,24 +142,26 @@ menuconfig VERSIONOPT
 		they're useful for release builds or custom OpenWrt redistributions
 		that should carry custom version tags.
 
+if VERSIONOPT
+
 	config VERSION_DIST
 		string
-		prompt "Release distribution" if VERSIONOPT
-		default "OpenWrt" if VERSIONOPT
+		prompt "Release distribution"
+		default "OpenWrt"
 		help
 			This is the name of the release distribution.
 			If unspecified, it defaults to OpenWrt.
 
 	config VERSION_NICK
 		string
-		prompt "Release version nickname" if VERSIONOPT
+		prompt "Release version nickname"
 		help
 			This is the release codename embedded in the image.
 			If unspecified, it defaults to the name of source branch.
 
 	config VERSION_NUMBER
 		string
-		prompt "Release version number" if VERSIONOPT
+		prompt "Release version number"
 		help
 			This is the release version number embedded in the image.
 			If unspecified, it defaults to the svn or git-svn revision
@@ -167,8 +169,8 @@ menuconfig VERSIONOPT
 
 	config VERSION_REPO
 		string
-		prompt "Release repository" if VERSIONOPT
-		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages" if VERSIONOPT
+		prompt "Release repository"
+		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
@@ -183,6 +185,28 @@ menuconfig VERSIONOPT
 			 %d .. Distribution name or "openwrt", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
+
+	config VERSION_MANUFACTURER
+		string
+		prompt "Manufacturer name"
+		help
+			This is the manufacturer name embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_PRODUCT
+		string
+		prompt "Product name"
+		help
+			This is the product name embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_HWREV
+		string
+		prompt "Hardware revision"
+		help
+			This is the hardware revision string embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+endif
 
 menuconfig SMIMEOPT
 	bool "Package signing options" if IMAGEOPT
