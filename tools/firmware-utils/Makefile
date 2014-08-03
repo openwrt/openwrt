@@ -21,7 +21,7 @@ define Host/Compile
 	$(call cc,trx)
 	$(call cc,motorola-bin)
 	$(call cc,dgfirmware)
-	$(call cc,mkdir615h1 md5)
+	$(call cc,mksenaofw md5)
 	$(call cc,trx2usr)
 	$(call cc,ptgen)
 	$(call cc,airlink)

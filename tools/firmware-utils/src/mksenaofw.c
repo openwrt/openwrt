@@ -19,29 +19,28 @@
 #include <unistd.h>
 #include "md5.h"
 
-#define HDR_LEN 		0x60
-#define BUF_SIZE 		0x200
-#define VERSION_SIZE		0x10
-#define MD5_SIZE		0x10
-#define PAD_SIZE		0x20
-#define DEFAULT_MAGIC 		305419896
-#define DEFAULT_VERSION		"123"
-#define DEFAULT_VENDOR_ID	536
-#define DEFAULT_HEAD_VALUE	0x0
-#define DEFAULT_BLOCK_SIZE 	65535
-#define DEFAULT_PRODUCT_ID	48
-#define DEFAULT_FIRMWARE_TYPE	0x03
+#define HDR_LEN                 0x60
+#define BUF_SIZE                0x200
+#define VERSION_SIZE            0x10
+#define MD5_SIZE                0x10
+#define PAD_SIZE                0x20
+
+#define DEFAULT_BLOCK_SIZE      65535
+
+#define DEFAULT_HEAD_VALUE      0x0
+#define DEFAULT_VERSION         "123"
+#define DEFAULT_MAGIC           0x12345678
 
 typedef struct {
 	uint32_t head;
 	uint32_t vendor_id;
 	uint32_t product_id;
-	uint8_t version[VERSION_SIZE];
+	uint8_t  version[VERSION_SIZE];
 	uint32_t firmware_type;
 	uint32_t filesize;
 	uint32_t zero;
-	uint8_t md5sum[MD5_SIZE];
-	uint8_t pad[PAD_SIZE];
+	uint8_t  md5sum[MD5_SIZE];
+	uint8_t  pad[PAD_SIZE];
 	uint32_t chksum;
 	uint32_t magic;
 } img_header;
@@ -56,16 +55,19 @@ typedef enum {
 } op_mode;
 
 static firmware_type FIRMWARE_TYPES[] = {
-		{ 0x01, "bootloader" },
-		{ 0x02,	"kernel" },
-		{ 0x03, "kernelapp" },
-		{ 0x04, "apps" },
-		{ 0x05,	"littleapps" },
-		{ 0x06, "sounds" },
-		{ 0x07, "userconfig" },
-		{ 0x0a,	"factoryapps" },
-		{ 0x0b, "odmapps" },
-		{ 0x0c, "langpack" }
+	{ 0x01, "bootloader" },
+	{ 0x02, "kernel" },
+	{ 0x03, "kernelapp" },
+	{ 0x04, "apps" },
+	/* The types below this line vary by manufacturer */
+	{ 0x05, "littleapps (D-Link)/factoryapps (EnGenius)" },
+	{ 0x06, "sounds (D-Link)/littleapps (EnGenius)" },
+	{ 0x07, "userconfig (D-Link)/appdata (EnGenius)" },
+	{ 0x08, "userconfig (EnGenius)"},
+	{ 0x09, "odmapps (EnGenius)"},
+	{ 0x0a, "factoryapps (D-Link)" },
+	{ 0x0b, "odmapps (D-Link)" },
+	{ 0x0c, "langpack (D-Link)" }
 };
 
 static long get_file_size(const char *filename)
@@ -163,7 +165,7 @@ static int encode_image(const char *input_file_name,
 	}
 
 	if (md5_file(input_file_name, (uint8_t *) &header->md5sum) < 0) {
-		fprintf(stderr, "Md5 failed on file %s\n", input_file_name);
+		fprintf(stderr, "MD5 failed on file %s\n", input_file_name);
 		fclose(fp_input);
 		fclose(fp_output);
 		return -1;
@@ -211,7 +213,7 @@ static int encode_image(const char *input_file_name,
 int decode_image(const char *input_file_name, const char *output_file_name)
 {
 	img_header header;
-	char buf[512];
+	char buf[BUF_SIZE];
 
 	FILE *fp_input;
 	FILE *fp_output;
@@ -287,7 +289,7 @@ static void usage(const char *progname, int status)
 			"  -e <file>		encode image file <file>\n"
 			"  -d <file>		decode image file <file>\n"
 			"  -o <file>		write output to the file <file>\n"
-			"  -t <type>		set image type to <type>, defaults to 3\n"
+			"  -t <type>		set image type to <type>\n"
 			"			valid image <type> values:\n");
 	for (i = 0; i < sizeof(FIRMWARE_TYPES) / sizeof(firmware_type); i++) {
 		fprintf(stream, "			%-5i= %s\n", FIRMWARE_TYPES[i].id,
@@ -298,8 +300,8 @@ static void usage(const char *progname, int status)
 			"  -p <product>		set image product id to <product>\n"
 			"  -m <magic>		set encoding magic <magic>\n"
 			"  -z			enable image padding to <blocksize>\n"
-			"  -b <blocksize>	set image <blocksize>, defaults to 65535\n"
-			"  -h			show this screen\n");
+			"  -b <blocksize>	set image <blocksize>, defaults to %u\n"
+			"  -h			show this screen\n", DEFAULT_BLOCK_SIZE);
 	exit(status);
 }
 
@@ -318,9 +320,6 @@ int main(int argc, char *argv[])
 	memset(&header, 0, sizeof( img_header ));
 	header.magic = DEFAULT_MAGIC;
 	header.head = DEFAULT_HEAD_VALUE;
-	header.vendor_id = DEFAULT_VENDOR_ID;
-	header.product_id = DEFAULT_PRODUCT_ID;
-	header.firmware_type = DEFAULT_FIRMWARE_TYPE;
 	strncpy( (char*)&header.version, DEFAULT_VERSION, VERSION_SIZE - 1);
 
 	while ((opt = getopt(argc, argv, ":o:e:d:t:v:r:p:m:b:h?z")) != -1) {
@@ -346,7 +345,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			if (header.firmware_type == 0) {
-				fprintf(stderr, "Invalid firmware <type>!\n");
+				fprintf(stderr, "Invalid firmware type \"0\"!\n");
 				usage(progname, EXIT_FAILURE);
 			}
 			break;
@@ -355,10 +354,10 @@ int main(int argc, char *argv[])
 					VERSION_SIZE - 1);
 			break;
 		case 'r':
-			header.vendor_id = strtol(optarg, 0, 10);
+			header.vendor_id = strtol(optarg, 0, 0);
 			break;
 		case 'p':
-			header.product_id = strtol(optarg, 0, 10);
+			header.product_id = strtol(optarg, 0, 0);
 			break;
 		case 'm':
 			header.magic = strtoul(optarg, 0, 16);
@@ -386,13 +385,21 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (input_file == NULL || output_file == NULL ) {
+	/* Check required arguments*/
+	if (header.firmware_type == 0) {
+		fprintf(stderr, "Firmware type must be defined\n");
+		usage(progname, EXIT_FAILURE);
+	} else if (input_file == 0 || output_file == 0) {
 		fprintf(stderr, "Input and output files must be defined\n");
+		usage(progname, EXIT_FAILURE);
+	} else if (header.vendor_id == 0 || header.product_id == 0) {
+		fprintf(stderr, "Vendor ID and Product ID must be defined and non-zero\n");
 		usage(progname, EXIT_FAILURE);
 	}
 
 	switch (mode) {
 	case NONE:
+		fprintf(stderr, "A mode must be defined\n");
 		usage(progname, EXIT_FAILURE);
 		break;
 	case ENCODE:
