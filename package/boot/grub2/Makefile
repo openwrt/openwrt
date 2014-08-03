@@ -48,12 +48,14 @@ CONFIGURE_ARGS += \
 	--disable-werror \
 	--disable-nls \
 	--disable-device-mapper \
+	--disable-libzfs \
 	--disable-grub-mkfont
 
 HOST_CONFIGURE_ARGS += \
 	--target=$(REAL_GNU_TARGET_NAME) \
 	--sbindir="$(STAGING_DIR_HOST)/bin" \
 	--disable-werror \
+	--disable-libzfs \
 	--disable-nls
 
 HOST_MAKE_FLAGS += \
