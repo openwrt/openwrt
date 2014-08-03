@@ -1,0 +1,79 @@
+/dts-v1/;
+
+/include/ "Y1.dtsi"
+
+/ {
+	compatible = "lenovo,Y1S", "ralink,mt7620a-soc";
+	model = "Lenovo Y1S";
+
+	ethernet@10100000 {
+		status = "okay";
+		mtd-mac-address = <&factory 0x4>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
+		ralink,port-map = "wllll";
+
+		port@4 {
+			status = "okay";
+			phy-handle = <&phy4>;
+			phy-mode = "rgmii";
+		};
+
+		port@5 {
+			status = "okay";
+			phy-handle = <&phy5>;
+			phy-mode = "rgmii";
+		};
+
+		mdio-bus {
+			status = "okay";
+
+			phy4: ethernet-phy@4 {
+				reg = <4>;
+				phy-mode = "rgmii";
+			};
+
+			phy5: ethernet-phy@5 {
+				reg = <5>;
+				phy-mode = "rgmii";
+			};
+		};
+	};
+
+	gsw@10110000 {
+		ralink,port4 = "gmac";
+	};
+	
+	gpio-leds {
+		compatible = "gpio-leds";
+		power1 {
+			label = "lenovo:yellow:power";
+			gpios = <&gpio0 14 1>;
+		};
+		power2 {
+			label = "lenovo:blue:power";
+			gpios = <&gpio0 9 1>;
+		};
+		wlan1 {
+			label = "lenovo:yellow:wifi";
+			gpios = <&gpio3 0 1>;
+		};
+		wlan2 {
+			label = "lenovo:blue:wifi";
+			gpios = <&gpio2 10 1>;
+		};
+		usb1 {
+			label = "lenovo:yellow:usb";
+			gpios = <&gpio2 13 1>;
+		};
+		usb2 {
+			label = "lenovo:blue:usb";
+			gpios = <&gpio2 12 1>;
+		};
+		internet {
+			label = "lenovo:blue:internet";
+			gpios = <&gpio2 11 1>;
+		};
+	};
+};
