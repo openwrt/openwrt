@@ -377,8 +377,9 @@ Image/Build/Profile/DIR-620-D1=$(call BuildFirmware/Default8M/$(1),$(1),dir-620-
 
 define BuildFirmware/DIR615H1/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),dir-615-h1,DIR-615-H1)
-	-mkdir615h1 -e $(call sysupname,$(1),dir-615-h1) \
-		-o $(call imgname,$(1),dir-615-h1)-factory.bin
+	-mksenaofw -e $(call sysupname,$(1),dir-615-h1) \
+		-o $(call imgname,$(1),dir-615-h1)-factory.bin \
+		-r 0x218 -p 0x30 -t 3
 endef
 BuildFirmware/DIR615H1/initramfs=$(call BuildFirmware/OF/initramfs,$(1),dir-615-h1,DIR-615-H1)
 Image/Build/Profile/DIR615H1=$(call BuildFirmware/DIR615H1/$(1),$(1))
