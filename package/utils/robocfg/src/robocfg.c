@@ -26,6 +26,7 @@
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 /* linux stuff */
 typedef u_int64_t u64;
