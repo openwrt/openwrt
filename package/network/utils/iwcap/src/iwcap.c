@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <syslog.h>
 #include <errno.h>
+#include <byteswap.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
