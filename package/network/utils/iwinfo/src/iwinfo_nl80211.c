@@ -22,6 +22,7 @@
  * Parts of this code are derived from the Linux iw utility.
  */
 
+#include <limits.h>
 #include "iwinfo_nl80211.h"
 
 #define min(x, y) ((x) < (y)) ? (x) : (y)
