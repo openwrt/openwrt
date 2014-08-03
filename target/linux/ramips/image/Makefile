@@ -722,6 +722,8 @@ Image/Build/Profile/DIR-810L=$(call BuildFirmware/CustomFlash/$(1),$(1),dir-810l
 na930_mtd_size=20971520
 Image/Build/Profile/NA930=$(call BuildFirmware/CustomFlash/$(1),$(1),na930,NA930,$(na930_mtd_size))
 Image/Build/Profile/MZK-750DHP=$(call BuildFirmware/Default8M/$(1),$(1),mzk-750dhp,MZK-750DHP)
+Image/Build/Profile/Y1=$(call BuildFirmware/Default16M/$(1),$(1),Lenovo-y1,Y1)
+Image/Build/Profile/Y1S=$(call BuildFirmware/Default16M/$(1),$(1),Lenovo-y1s,Y1S)
 
 ifeq ($(SUBTARGET),mt7620a)
 define Image/Build/Profile/Default
@@ -736,6 +738,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WHR1166D,$(1))
 	$(call Image/Build/Profile/MZK-750DHP,$(1))
 	$(call Image/Build/Profile/NA930,$(1))
+	$(call Image/Build/Profile/Y1,$(1))
+	$(call Image/Build/Profile/Y1S,$(1))
 endef
 endif
 
