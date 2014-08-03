@@ -28,7 +28,7 @@ include $(INCLUDE_DIR)/kernel.mk
 define Package/valgrind
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:=@mips||mipsel||i386||powerpc||arm_v7 +libpthread +librt
+  DEPENDS:=@mips||mipsel||i386||x86_64||powerpc||arm_v7 +libpthread +librt
   TITLE:=debugging and profiling tools for Linux
   URL:=http://www.valgrind.org
 endef
@@ -77,13 +77,20 @@ define Package/valgrind/description
 	to speed up and reduce memory use of your programs.
 endef
 
-CPU := $(patsubst x86,i386,$(LINUX_KARCH))
+CPU := $(patsubst x86_64,amd64,$(patsubst x86,i386,$(LINUX_KARCH)))
 
 CONFIGURE_VARS += \
 	UNAME_R=$(LINUX_VERSION)
 
+ifeq ($(ARCH),x86_64)
+	BITS := 64bit
+else
+	CONFIGURE_ARGS += \
+		--enable-only32bit
+	BITS := 32bit
+endif
+
 CONFIGURE_ARGS += \
-	--enable-only32bit \
 	--enable-tls \
 	--without-x \
 	--without-uiout \
@@ -101,8 +108,8 @@ define Package/valgrind/install
 		$(PKG_INSTALL_DIR)/usr/lib/valgrind/none-* \
 		$(PKG_INSTALL_DIR)/usr/lib/valgrind/vgpreload_core*.so \
 		$(PKG_INSTALL_DIR)/usr/lib/valgrind/$(CPU)-*.xml \
-		$(PKG_INSTALL_DIR)/usr/lib/valgrind/32bit-core*.xml \
-		$(PKG_INSTALL_DIR)/usr/lib/valgrind/32bit-linux*.xml \
+		$(PKG_INSTALL_DIR)/usr/lib/valgrind/$(BITS)-core*.xml \
+		$(PKG_INSTALL_DIR)/usr/lib/valgrind/$(BITS)-linux*.xml \
 		$(PKG_INSTALL_DIR)/usr/lib/valgrind/memcheck-* \
 		$(PKG_INSTALL_DIR)/usr/lib/valgrind/vgpreload_memcheck*.so \
 		$(1)/usr/lib/valgrind/
