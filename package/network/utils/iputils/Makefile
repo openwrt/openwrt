@@ -121,10 +121,14 @@ define Package/iputils-traceroute6/description
   Traces path to a network host (IPv6).
 endef
 
+ifdef CONFIG_USE_MUSL
+  TARGET_CFLAGS += -D__UCLIBC__
+endif
+
 MAKE_FLAGS += \
 	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS) $(TARGET_LDFLAGS)" \
 	CONFIG_IPV6="$(CONFIG_IPV6)" \
-	CONFIG_USE_UCLIBC="$(CONFIG_USE_UCLIBC)" \
+	CONFIG_USE_UCLIBC="$(CONFIG_USE_UCLIBC)$(CONFIG_USE_MUSL)" \
 
 define Package/iputils-arping/install
 	$(INSTALL_DIR) $(1)/usr/bin
