@@ -51,7 +51,7 @@ gre_setup() {
 		exit
 	}
 
-	( proto_add_host_dependency "$cfg" "0.0.0.0" "$tunlink" )
+	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
 
 	[ -z "$ipaddr" ] && {
 		local wanif="$tunlink"
@@ -108,7 +108,7 @@ grev6_setup() {
 		exit
 	}
 
-	( proto_add_host_dependency "$cfg" "::" "$tunlink" )
+	( proto_add_host_dependency "$cfg" "$peer6addr" "$tunlink" )
 
 	[ -z "$ip6addr" ] && {
 		local wanif="$tunlink"
