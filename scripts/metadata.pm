@@ -119,6 +119,7 @@ sub parse_package_metadata($) {
 		/^Build-Depends: \s*(.+)\s*$/ and $pkg->{builddepends} = [ split /\s+/, $1 ];
 		/^Build-Depends\/(\w+): \s*(.+)\s*$/ and $pkg->{"builddepends/$1"} = [ split /\s+/, $2 ];
 		/^Build-Types:\s*(.+)\s*$/ and $pkg->{buildtypes} = [ split /\s+/, $1 ];
+		/^Feed:\s*(.+?)\s*$/ and $pkg->{feed} = $1;
 		/^Category: \s*(.+)\s*$/ and do {
 			$pkg->{category} = $1;
 			defined $category{$1} or $category{$1} = {};

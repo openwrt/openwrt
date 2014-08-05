@@ -208,6 +208,17 @@ if VERSIONOPT
 			Useful for OEMs building OpenWrt based firmware
 endif
 
+
+menuconfig PER_FEED_REPO
+	bool "Separate feed repositories" if IMAGEOPT
+	default n
+	help
+		If set, a separate repository is generated within bin/*/packages/
+		for the core packages and each enabled feed.
+
+source "tmp/.config-feeds.in"
+
+
 menuconfig SMIMEOPT
 	bool "Package signing options" if IMAGEOPT
         default n

@@ -21,15 +21,19 @@ else
   endef
 endif
 
+define feedname
+$(if $(patsubst feeds/%,,$(1)),,$(word 2,$(subst /, ,$(1))))
+endef
+
 define PackageDir
   $(TMP_DIR)/.$(SCAN_TARGET): $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1)
   $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(2)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(2)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(2)/$(DEP))))
 	{ \
 		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(2)) \
 		echo Source-Makefile: $(SCAN_DIR)/$(2)/Makefile; \
-		$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) 2>/dev/null || { \
+		$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) 2>/dev/null || { \
 			mkdir -p "$(TOPDIR)/logs/$(SCAN_DIR)/$(2)"; \
-			$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(TOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
+			$(NO_TRACE_MAKE) --no-print-dir -r DUMP=1 FEED="$(call feedname,$(2))" -C $(SCAN_DIR)/$(2) $(SCAN_MAKEOPTS) > $(TOPDIR)/logs/$(SCAN_DIR)/$(2)/dump.txt 2>&1; \
 			$$(call progress,ERROR: please fix $(SCAN_DIR)/$(2)/Makefile - see logs/$(SCAN_DIR)/$(2)/dump.txt for details\n) \
 			rm -f $$@; \
 		}; \

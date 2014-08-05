@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+include $(INCLUDE_DIR)/feeds.mk
+
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
   ipkg-build -c -o 0 -g 0
@@ -74,7 +76,8 @@ endif
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
-    IPKG_$(1):=$(PACKAGE_DIR)/$(1)_$(VERSION)_$(PKGARCH).ipk
+    PDIR_$(1):=$(call FeedPackageDir,$(1))
+    IPKG_$(1):=$$(PDIR_$(1))/$(1)_$(VERSION)_$(PKGARCH).ipk
     IDIR_$(1):=$(PKG_BUILD_DIR)/ipkg-$(PKGARCH)/$(1)
     KEEP_$(1):=$(strip $(call Package/$(1)/conffiles))
 
@@ -187,11 +190,12 @@ ifeq ($(DUMP),)
 		)
     endif
 
-	$(IPKG_BUILD) $$(IDIR_$(1)) $(PACKAGE_DIR)
+	$(INSTALL_DIR) $$(PDIR_$(1))
+	$(IPKG_BUILD) $$(IDIR_$(1)) $$(PDIR_$(1))
 	@[ -f $$(IPKG_$(1)) ]
 
     $(1)-clean:
-	rm -f $(PACKAGE_DIR)/$(1)_*
+	rm -f $$(PDIR_$(1))/$(1)_*
 
     clean: $(1)-clean
 

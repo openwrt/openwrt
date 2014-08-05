@@ -262,9 +262,15 @@ sub list_feed {
 sub list {
 	my %opts;
 
-	getopts('r:d:sh', \%opts);
+	getopts('r:d:nsh', \%opts);
 	if ($opts{h}) {
 		usage();
+		return 0;
+	}
+	if ($opts{n}) {
+		foreach my $feed (@feeds) {
+			printf "%s\n", $feed->[1];
+		}
 		return 0;
 	}
 	if ($opts{s}) {
@@ -598,6 +604,22 @@ sub update {
 	return 0;
 }
 
+sub feed_config() {
+	foreach my $feed (@feeds) {
+		my $installed = (-f "feeds/$feed->[1].index");
+
+		printf "\tconfig FEED_%s\n", $feed->[1];
+		printf "\t\tbool \"Enable feed %s\"\n", $feed->[1];
+		printf "\t\tdepends on PER_FEED_REPO\n";
+		printf "\t\tdefault y\n" if $installed;
+		printf "\t\thelp\n";
+		printf "\t\t Enable the \\\"%s\\\" feed at %s.\n", $feed->[1], $feed->[2][0];
+		printf "\n";
+	}
+
+	return 0;
+}
+
 sub usage() {
 	print <<EOF;
 Usage: $0 <command> [options]
@@ -605,6 +627,7 @@ Usage: $0 <command> [options]
 Commands:
 	list [options]: List feeds, their content and revisions (if installed)
 	Options:
+	    -n :            List of feed names.
 	    -s :            List of feed names and their URL.
 	    -r <feedname>:  List packages of specified feed.
 	    -d <delimiter>: Use specified delimiter to distinguish rows (default: spaces)
@@ -640,6 +663,7 @@ my %commands = (
 	'install' => \&install,
 	'search' => \&search,
 	'uninstall' => \&uninstall,
+	'feed_config' => \&feed_config,
 	'clean' => sub {
 		system("rm -rf feeds");
 	}
