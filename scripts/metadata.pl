@@ -848,6 +848,16 @@ sub gen_package_source() {
 	}
 }
 
+sub gen_package_feeds() {
+	parse_package_metadata($ARGV[0]) or exit 1;
+	foreach my $name (sort {uc($a) cmp uc($b)} keys %package) {
+		my $pkg = $package{$name};
+		if ($pkg->{name} && $pkg->{feed}) {
+			print "Package/$name/feed = $pkg->{feed}\n";
+		}
+	}
+}
+
 sub parse_command() {
 	my $cmd = shift @ARGV;
 	for ($cmd) {
@@ -856,6 +866,7 @@ sub parse_command() {
 		/^package_config$/ and return gen_package_config();
 		/^kconfig/ and return gen_kconfig_overrides();
 		/^package_source$/ and return gen_package_source();
+		/^package_feeds$/ and return gen_package_feeds();
 	}
 	print <<EOF
 Available Commands:
@@ -864,6 +875,7 @@ Available Commands:
 	$0 package_config [file] 	Package metadata in Kconfig format
 	$0 kconfig [file] [config]	Kernel config overrides
 	$0 package_source [file] 	Package source file information
+	$0 package_feeds [file]		Package feed information in makefile format
 
 EOF
 }

@@ -46,6 +46,7 @@ Type: $(if $(Package/$(1)/targets),$(Package/$(1)/targets),$(if $(PKG_TARGETS),$
 $(if $(KCONFIG),Kernel-Config: $(KCONFIG)
 )$(if $(BUILDONLY),Build-Only: $(BUILDONLY)
 )$(if $(HIDDEN),Hidden: $(HIDDEN)
+)$(if $(FEED),Feed: $(FEED)
 )Description: $(if $(Package/$(1)/description),$(Package/$(1)/description),$(TITLE))
 $(if $(URL),$(URL)
 )$(MAINTAINER)
