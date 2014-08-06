@@ -216,6 +216,13 @@ menuconfig PER_FEED_REPO
 		If set, a separate repository is generated within bin/*/packages/
 		for the core packages and each enabled feed.
 
+	config PER_FEED_REPO_ADD_DISABLED
+		bool "Add installed but disabled feeds to opkg.conf"
+		default y
+		depends on PER_FEED_REPO
+		help
+		  Add installed but disabled feeds as commented out source lines to opkg.conf.
+
 source "tmp/.config-feeds.in"
 
 
