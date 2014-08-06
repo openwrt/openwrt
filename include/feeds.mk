@@ -8,8 +8,9 @@
 -include $(TMP_DIR)/.packagefeeds
 
 FEEDS_AVAILABLE:=$(shell $(SCRIPT_DIR)/feeds list -n)
-FEEDS_INSTALLED:=$(patsubst %.index,%,$(notdir $(wildcard $(TOPDIR)/feeds/*.index)))
+FEEDS_INSTALLED:=$(notdir $(wildcard $(TOPDIR)/package/feeds/*))
 FEEDS_ENABLED:=$(foreach feed,$(FEEDS_INSTALLED),$(if $(CONFIG_FEED_$(feed)),$(feed)))
+FEEDS_DISABLED:=$(filter-out $(FEEDS_ENABLED),$(FEEDS_INSTALLED))
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PER_FEED_REPO \
