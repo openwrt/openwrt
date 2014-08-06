@@ -111,6 +111,11 @@ define Package/opkg/Default/install
 	for d in base $(FEEDS_ENABLED); do \
 		echo "src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
 	done
+    ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
+	for d in $(FEEDS_DISABLED); do \
+		echo "# src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
+	done
+    endif
   endif
 	$(VERSION_SED) $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
