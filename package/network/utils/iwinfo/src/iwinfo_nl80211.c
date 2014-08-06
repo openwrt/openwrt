@@ -1997,6 +1997,7 @@ static int nl80211_get_scanlist(const char *ifname, char *buf, int *len)
 	/* station / ad-hoc / monitor scan */
 	else if (!nl80211_get_mode(ifname, &mode) &&
 	         (mode == IWINFO_OPMODE_ADHOC ||
+	          mode == IWINFO_OPMODE_MASTER ||
 	          mode == IWINFO_OPMODE_CLIENT ||
 	          mode == IWINFO_OPMODE_MONITOR) &&
 	         iwinfo_ifup(ifname))
