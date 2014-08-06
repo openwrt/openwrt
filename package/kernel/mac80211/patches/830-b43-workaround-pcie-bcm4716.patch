@@ -19,28 +19,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/net/wireless/b43/b43.h
 +++ b/drivers/net/wireless/b43/b43.h
-@@ -1054,6 +1054,31 @@ static inline bool b43_using_pio_transfe
+@@ -1054,6 +1054,15 @@ static inline bool b43_using_pio_transfe
  	return dev->__using_pio_transfers;
  }
  
-+/*
-+ * bcm4716 (which includes 4717 & 4718), plus 4706 on PCIe can reorder
-+ * transactions. As a fix, a read after write is performed on certain places
-+ * in the code. Older chips and the newer 5357 family don't require this fix.
-+ */
 +#ifdef CONFIG_BCM47XX_BCMA
-+#include <asm/mach-bcm47xx/bcm47xx.h>
-+static inline void b43_wflush16(struct b43_wldev *dev, u16 offset, u16 value)
-+{
-+	if (b43_bus_host_is_pci(dev->dev) &&
-+	    bcm47xx_bus_type == BCM47XX_BUS_TYPE_BCMA &&
-+	    bcm47xx_bus.bcma.bus.chipinfo.id == BCMA_CHIP_ID_BCM4716) {
-+		b43_write16(dev, offset, value);
-+		b43_read16(dev, offset);
-+	} else {
-+		b43_write16(dev, offset, value);
-+	}
-+}
++void b43_wflush16(struct b43_wldev *dev, u16 offset, u16 value);
 +#else
 +static inline void b43_wflush16(struct b43_wldev *dev, u16 offset, u16 value)
 +{
@@ -74,7 +58,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  struct b43_bus_dev *b43_bus_dev_ssb_init(struct ssb_device *sdev);
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -4464,7 +4464,7 @@ static int b43_phy_versioning(struct b43
+@@ -4481,7 +4481,7 @@ static int b43_phy_versioning(struct b43
  		u16 radio24[3];
  
  		for (tmp = 0; tmp < 3; tmp++) {
@@ -83,7 +67,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  			radio24[tmp] = b43_read16(dev, B43_MMIO_RADIO24_DATA);
  		}
  
-@@ -4481,10 +4481,10 @@ static int b43_phy_versioning(struct b43
+@@ -4498,10 +4498,10 @@ static int b43_phy_versioning(struct b43
  			else
  				tmp = 0x5205017F;
  		} else {
@@ -96,6 +80,33 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  				    B43_RADIOCTL_ID);
  			tmp |= (u32)b43_read16(dev, B43_MMIO_RADIO_DATA_HIGH)
  				<< 16;
+@@ -4576,6 +4576,26 @@ static int b43_phy_versioning(struct b43
+ 	return 0;
+ }
+ 
++/*
++ * bcm4716 (which includes 4717 & 4718), plus 4706 on PCIe can reorder
++ * transactions. As a fix, a read after write is performed on certain places
++ * in the code. Older chips and the newer 5357 family don't require this fix.
++ */
++#ifdef CONFIG_BCM47XX_BCMA
++#include <asm/mach-bcm47xx/bcm47xx.h>
++void b43_wflush16(struct b43_wldev *dev, u16 offset, u16 value)
++{
++	if (b43_bus_host_is_pci(dev->dev) &&
++	    bcm47xx_bus_type == BCM47XX_BUS_TYPE_BCMA &&
++	    bcm47xx_bus.bcma.bus.chipinfo.id == BCMA_CHIP_ID_BCM4716) {
++		b43_write16(dev, offset, value);
++		b43_read16(dev, offset);
++	} else {
++		b43_write16(dev, offset, value);
++	}
++}
++#endif
++
+ static void setup_struct_phy_for_init(struct b43_wldev *dev,
+ 				      struct b43_phy *phy)
+ {
 --- a/drivers/net/wireless/b43/phy_common.c
 +++ b/drivers/net/wireless/b43/phy_common.c
 @@ -275,6 +275,12 @@ void b43_phy_write(struct b43_wldev *dev
@@ -199,7 +210,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
 --- a/drivers/net/wireless/b43/phy_n.c
 +++ b/drivers/net/wireless/b43/phy_n.c
-@@ -6494,14 +6494,14 @@ static inline void check_phyreg(struct b
+@@ -6500,14 +6500,14 @@ static inline void check_phyreg(struct b
  static u16 b43_nphy_op_read(struct b43_wldev *dev, u16 reg)
  {
  	check_phyreg(dev, reg);
@@ -216,7 +227,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_write16(dev, B43_MMIO_PHY_DATA, value);
  }
  
-@@ -6509,7 +6509,7 @@ static void b43_nphy_op_maskset(struct b
+@@ -6515,7 +6515,7 @@ static void b43_nphy_op_maskset(struct b
  				 u16 set)
  {
  	check_phyreg(dev, reg);
@@ -225,7 +236,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	b43_maskset16(dev, B43_MMIO_PHY_DATA, mask, set);
  }
  
-@@ -6523,7 +6523,7 @@ static u16 b43_nphy_op_radio_read(struct
+@@ -6529,7 +6529,7 @@ static u16 b43_nphy_op_radio_read(struct
  	else
  		reg |= 0x100;
  
@@ -234,7 +245,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	return b43_read16(dev, B43_MMIO_RADIO_DATA_LOW);
  }
  
-@@ -6532,7 +6532,7 @@ static void b43_nphy_op_radio_write(stru
+@@ -6538,7 +6538,7 @@ static void b43_nphy_op_radio_write(stru
  	/* Register 1 is a 32-bit register. */
  	B43_WARN_ON(dev->phy.rev < 7 && reg == 1);
  
