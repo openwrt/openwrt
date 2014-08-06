@@ -284,10 +284,11 @@
  	bcma_pmu_resources_init(cc);
  	bcma_pmu_workarounds(cc);
  }
-@@ -480,6 +603,7 @@ void bcma_pmu_spuravoid_pllupdate(struct
+@@ -480,6 +603,8 @@ void bcma_pmu_spuravoid_pllupdate(struct
  		tmp = BCMA_CC_PMU_CTL_PLL_UPD | BCMA_CC_PMU_CTL_NOILPONW;
  		break;
  
++	case BCMA_CHIP_ID_BCM43131:
 +	case BCMA_CHIP_ID_BCM43217:
  	case BCMA_CHIP_ID_BCM43227:
  	case BCMA_CHIP_ID_BCM43228:
@@ -880,7 +881,7 @@
  }
  
  #ifdef CONFIG_PM_SLEEP
-@@ -267,14 +269,17 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+@@ -267,14 +269,18 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
  
  #endif /* CONFIG_PM_SLEEP */
  
@@ -896,6 +897,7 @@
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4365) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
  	{ 0, },
  };
@@ -1233,7 +1235,7 @@
  
  	SPEX(leddc_on_time, SSB_SPROM8_LEDDC, SSB_SPROM8_LEDDC_ON,
  	     SSB_SPROM8_LEDDC_ON_SHIFT);
-@@ -502,12 +528,13 @@ static bool bcma_sprom_onchip_available(
+@@ -502,12 +528,14 @@ static bool bcma_sprom_onchip_available(
  	case BCMA_CHIP_ID_BCM4331:
  		present = chip_status & BCMA_CC_CHIPST_4331_OTP_PRESENT;
  		break;
@@ -1244,11 +1246,12 @@
  		/* for these chips OTP is always available */
  		present = true;
  		break;
++	case BCMA_CHIP_ID_BCM43131:
 +	case BCMA_CHIP_ID_BCM43217:
  	case BCMA_CHIP_ID_BCM43227:
  	case BCMA_CHIP_ID_BCM43228:
  	case BCMA_CHIP_ID_BCM43428:
-@@ -550,7 +577,9 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -550,7 +578,9 @@ int bcma_sprom_get(struct bcma_bus *bus)
  {
  	u16 offset = BCMA_CC_SPROM;
  	u16 *sprom;
@@ -1259,7 +1262,7 @@
  
  	if (!bus->drv_cc.core)
  		return -EOPNOTSUPP;
-@@ -579,32 +608,37 @@ int bcma_sprom_get(struct bcma_bus *bus)
+@@ -579,32 +609,37 @@ int bcma_sprom_get(struct bcma_bus *bus)
  		}
  	}
  
@@ -1340,17 +1343,18 @@
  #define BCMA_CORE_4706_MAC_GBIT		0x52D
  #define BCMA_CORE_AMEMC			0x52E	/* DDR1/2 memory controller core */
  #define BCMA_CORE_ALTA			0x534	/* I2S core */
-@@ -144,6 +157,9 @@ struct bcma_host_ops {
+@@ -144,6 +157,10 @@ struct bcma_host_ops {
  
  /* Chip IDs of PCIe devices */
  #define BCMA_CHIP_ID_BCM4313	0x4313
 +#define BCMA_CHIP_ID_BCM43142	43142
++#define BCMA_CHIP_ID_BCM43131	43131
 +#define BCMA_CHIP_ID_BCM43217	43217
 +#define BCMA_CHIP_ID_BCM43222	43222
  #define BCMA_CHIP_ID_BCM43224	43224
  #define  BCMA_PKG_ID_BCM43224_FAB_CSM	0x8
  #define  BCMA_PKG_ID_BCM43224_FAB_SMIC	0xa
-@@ -176,6 +192,11 @@ struct bcma_host_ops {
+@@ -176,6 +193,11 @@ struct bcma_host_ops {
  #define  BCMA_PKG_ID_BCM5357	11
  #define BCMA_CHIP_ID_BCM53572	53572
  #define  BCMA_PKG_ID_BCM47188	9
@@ -1362,7 +1366,7 @@
  
  /* Board types (on PCI usually equals to the subsystem dev id) */
  /* BCM4313 */
-@@ -315,6 +336,7 @@ struct bcma_bus {
+@@ -315,6 +337,7 @@ struct bcma_bus {
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci[2];
@@ -1370,7 +1374,7 @@
  	struct bcma_drv_mips drv_mips;
  	struct bcma_drv_gmac_cmn drv_gmac_cmn;
  
-@@ -400,7 +422,14 @@ static inline void bcma_maskset16(struct
+@@ -400,7 +423,14 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
