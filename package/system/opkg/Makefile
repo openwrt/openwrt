@@ -7,6 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/version.mk
+include $(INCLUDE_DIR)/feeds.mk
 
 PKG_NAME:=opkg
 PKG_REV:=9c97d5ecd795709c8584e972bfdf3aee3a5b846d
@@ -104,6 +105,13 @@ define Package/opkg/Default/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/opkg$(2).conf $(1)/etc/opkg.conf
+  ifeq ($(CONFIG_PER_FEED_REPO),)
+	echo "src/gz %n %U" >> $(1)/etc/opkg.conf
+  else
+	for d in base $(FEEDS_ENABLED); do \
+		echo "src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
+	done
+  endif
 	$(VERSION_SED) $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 endef
