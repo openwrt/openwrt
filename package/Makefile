@@ -94,7 +94,7 @@ $(curdir)/install: $(TMP_DIR)/.build
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
 	rm -rf $(TARGET_DIR)
 	[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
-	@$(FIND) `sed -e 's|.*|$(PACKAGE_DIR)/&_*.ipk|' $(PACKAGE_INSTALL_FILES)` | sort -u | $(OPKG) install
+	@$(FIND) `sed -e 's|.*|$(PACKAGE_DIR)$(if $(CONFIG_PER_FEED_REPO),/*)/&_*.ipk|' $(PACKAGE_INSTALL_FILES)` | sort -u | $(OPKG) install
 	@for file in $(PACKAGE_INSTALL_FILES); do \
 		[ -s $$file.flags ] || continue; \
 		for flag in `cat $$file.flags`; do \
