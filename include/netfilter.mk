@@ -225,6 +225,16 @@ $(eval $(call nf_add,IPT_QUEUE,CONFIG_IP_NF_QUEUE, $(P_V4)ip_queue, lt 3.5.0))
 $(eval $(call nf_add,IPT_ULOG,CONFIG_IP_NF_TARGET_ULOG, $(P_V4)ipt_ULOG))
 
 
+# nflog
+
+$(eval $(call nf_add,IPT_NFLOG,CONFIG_NETFILTER_XT_TARGET_NFLOG, $(P_XT)xt_NFLOG))
+
+
+# nfqueue
+
+$(eval $(call nf_add,IPT_NFQUEUE,CONFIG_NETFILTER_XT_TARGET_NFQUEUE, $(P_XT)xt_NFQUEUE))
+
+
 # debugging
 
 $(eval $(call nf_add,IPT_DEBUG,CONFIG_NETFILTER_XT_TARGET_TRACE, $(P_XT)xt_TRACE))
@@ -244,6 +254,19 @@ $(eval $(call nf_add,IPT_TEE,CONFIG_NETFILTER_XT_TARGET_TEE, $(P_XT)xt_TEE))
 # u32 
 
 $(eval $(call nf_add,IPT_U32,CONFIG_NETFILTER_XT_MATCH_U32, $(P_XT)xt_u32))
+
+
+# netlink
+
+$(eval $(call nf_add,NFNETLINK,CONFIG_NETFILTER_NETLINK, $(P_XT)nfnetlink))
+
+# nflog
+
+$(eval $(call nf_add,NFNETLINK_LOG,CONFIG_NETFILTER_NETLINK_LOG, $(P_XT)nfnetlink_log))
+
+# nfqueue
+
+$(eval $(call nf_add,NFNETLINK_QUEUE,CONFIG_NETFILTER_NETLINK_QUEUE, $(P_XT)nfnetlink_queue))
 
 #
 # ebtables
@@ -279,6 +302,7 @@ $(eval $(call nf_add,EBTABLES_IP4,CONFIG_BRIDGE_EBT_SNAT, $(P_EBT)ebt_snat))
 $(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_LOG, $(P_EBT)ebt_log))
 $(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_ULOG, $(P_EBT)ebt_ulog))
 $(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_NFLOG, $(P_EBT)ebt_nflog))
+$(eval $(call nf_add,EBTABLES_WATCHERS,CONFIG_BRIDGE_EBT_NFQUEUE, $(P_EBT)ebt_nfqueue))
 
 
 # userland only
@@ -299,6 +323,9 @@ IPT_BUILTIN += $(IPT_NATHELPER_EXTRA-y)
 IPT_BUILTIN += $(IPT_ULOG-y)
 IPT_BUILTIN += $(IPT_DEBUG-y)
 IPT_BUILTIN += $(IPT_TPROXY-y)
+IPT_BUILTIN += $(NFNETLINK-y)
+IPT_BUILTIN += $(NFNETLINK_LOG-y)
+IPT_BUILTIN += $(NFNETLINK_QUEUE-y)
 IPT_BUILTIN += $(EBTABLES-y)
 IPT_BUILTIN += $(EBTABLES_IP4-y)
 IPT_BUILTIN += $(EBTABLES_IP6-y)
