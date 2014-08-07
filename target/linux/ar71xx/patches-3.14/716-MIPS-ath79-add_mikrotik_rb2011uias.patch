@@ -1,0 +1,26 @@
+--- a/arch/mips/ath79/mach-rb2011.c
++++ b/arch/mips/ath79/mach-rb2011.c
+@@ -321,6 +321,13 @@ static void __init rb2011us_setup(void)
+ 
+ MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011US, "2011US", rb2011us_setup);
+ 
++static void __init rb2011r5_setup(void)
++{
++	rb2011_setup(RB2011_FLAG_SFP | RB2011_FLAG_USB);
++}
++
++MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011R5, "2011r5", rb2011r5_setup);
++
+ static void __init rb2011g_setup(void)
+ {
+ 	rb2011_setup(RB2011_FLAG_SFP |
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -93,6 +93,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_RB_2011G,		/* Mikrotik RouterBOARD 2011UAS-2HnD */
+ 	ATH79_MACH_RB_2011L,		/* Mikrotik RouterBOARD 2011L */
+ 	ATH79_MACH_RB_2011US,		/* Mikrotik RouterBOARD 2011UAS */
++	ATH79_MACH_RB_2011R5,		/* Mikrotik RouterBOARD 2011UiAS */
+ 	ATH79_MACH_RB_SXTLITE2ND,	/* Mikrotik RouterBOARD SXT Lite 2nD */
+ 	ATH79_MACH_RB_SXTLITE5ND,	/* Mikrotik RouterBOARD SXT Lite 5nD */
+ 	ATH79_MACH_RW2458N,		/* Redwave RW2458N */

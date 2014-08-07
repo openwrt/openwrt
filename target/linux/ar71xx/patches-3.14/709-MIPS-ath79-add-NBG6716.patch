@@ -1,0 +1,37 @@
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -130,3 +130,4 @@ obj-$(CONFIG_ATH79_MACH_WZR_HP_AG300H)	+
+ obj-$(CONFIG_ATH79_MACH_WZR_HP_G450H)	+= mach-wzr-hp-g450h.o
+ obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
+ obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
++obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -64,6 +64,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_MZK_W04NU,		/* Planex MZK-W04NU */
+ 	ATH79_MACH_MZK_W300NH,		/* Planex MZK-W300NH */
+ 	ATH79_MACH_NBG460N,		/* Zyxel NBG460N/550N/550NH */
++	ATH79_MACH_NBG6716,		/* Zyxel NBG6716 */
+ 	ATH79_MACH_OM2P_HS,		/* OpenMesh OM2P-HS */
+ 	ATH79_MACH_OM2P_LC,		/* OpenMesh OM2P-LC */
+ 	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -899,6 +899,17 @@ config ATH79_MACH_NBG460N
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_WMAC
+ 
++config ATH79_MACH_NBG6716
++	bool "Zyxel NBG6716 board support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_NFC
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_CARAMBOLA2
+ 	bool "8devices Carambola2 board"
+ 	select SOC_AR933X
