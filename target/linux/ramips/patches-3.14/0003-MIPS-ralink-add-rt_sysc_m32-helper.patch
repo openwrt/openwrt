@@ -1,0 +1,31 @@
+From 0f0f041cd6a05eb865e391155d3299bb55ff00e3 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 19 May 2013 00:42:23 +0200
+Subject: [PATCH 03/57] MIPS: ralink: add rt_sysc_m32 helper
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-ralink/ralink_regs.h |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/mips/include/asm/mach-ralink/ralink_regs.h b/arch/mips/include/asm/mach-ralink/ralink_regs.h
+index 5a508f9..bd93014 100644
+--- a/arch/mips/include/asm/mach-ralink/ralink_regs.h
++++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
+@@ -26,6 +26,13 @@ static inline u32 rt_sysc_r32(unsigned reg)
+ 	return __raw_readl(rt_sysc_membase + reg);
+ }
+ 
++static inline void rt_sysc_m32(u32 clr, u32 set, unsigned reg)
++{
++	u32 val = rt_sysc_r32(reg) & ~clr;
++
++	__raw_writel(val | set, rt_sysc_membase + reg);
++}
++
+ static inline void rt_memc_w32(u32 val, unsigned reg)
+ {
+ 	__raw_writel(val, rt_memc_membase + reg);
+-- 
+1.7.10.4
+

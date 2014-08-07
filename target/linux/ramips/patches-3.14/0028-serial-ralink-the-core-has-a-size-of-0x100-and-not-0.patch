@@ -1,0 +1,27 @@
+From b9ba09038dab4d824176ea2c2f2b73f49b567217 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 16 Mar 2014 04:52:01 +0000
+Subject: [PATCH 28/57] serial: ralink: the core has a size of 0x100 and not
+ 0x1000
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/tty/serial/8250/8250_core.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
+index 69932b7..606cbc6 100644
+--- a/drivers/tty/serial/8250/8250_core.c
++++ b/drivers/tty/serial/8250/8250_core.c
+@@ -2517,7 +2517,7 @@ serial8250_pm(struct uart_port *port, unsigned int state,
+ static unsigned int serial8250_port_size(struct uart_8250_port *pt)
+ {
+ 	if (pt->port.iotype == UPIO_AU)
+-		return 0x1000;
++		return 0x100;
+ 	if (is_omap1_8250(pt))
+ 		return 0x16 << pt->port.regshift;
+ 
+-- 
+1.7.10.4
+

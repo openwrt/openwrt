@@ -1,0 +1,60 @@
+From 9c34372c25519234add1cfdfe2b69c0847f2037e Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 27 Jul 2014 09:38:50 +0100
+Subject: [PATCH 33/57] NET: multi phy support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/net/phy/phy.c |    9 ++++++---
+ include/linux/phy.h   |    1 +
+ 2 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/net/phy/phy.c b/drivers/net/phy/phy.c
+index 76d96b9..371f0b6 100644
+--- a/drivers/net/phy/phy.c
++++ b/drivers/net/phy/phy.c
+@@ -715,7 +715,8 @@ void phy_state_machine(struct work_struct *work)
+ 		/* If the link is down, give up on negotiation for now */
+ 		if (!phydev->link) {
+ 			phydev->state = PHY_NOLINK;
+-			netif_carrier_off(phydev->attached_dev);
++			if (!phydev->no_auto_carrier_off)
++				netif_carrier_off(phydev->attached_dev);
+ 			phydev->adjust_link(phydev->attached_dev);
+ 			break;
+ 		}
+@@ -781,7 +782,8 @@ void phy_state_machine(struct work_struct *work)
+ 			netif_carrier_on(phydev->attached_dev);
+ 		} else {
+ 			phydev->state = PHY_NOLINK;
+-			netif_carrier_off(phydev->attached_dev);
++			if (!phydev->no_auto_carrier_off)
++				netif_carrier_off(phydev->attached_dev);
+ 		}
+ 
+ 		phydev->adjust_link(phydev->attached_dev);
+@@ -793,7 +795,8 @@ void phy_state_machine(struct work_struct *work)
+ 	case PHY_HALTED:
+ 		if (phydev->link) {
+ 			phydev->link = 0;
+-			netif_carrier_off(phydev->attached_dev);
++			if (!phydev->no_auto_carrier_off)
++				netif_carrier_off(phydev->attached_dev);
+ 			phydev->adjust_link(phydev->attached_dev);
+ 			do_suspend = 1;
+ 		}
+diff --git a/include/linux/phy.h b/include/linux/phy.h
+index 565188c..91b93f7 100644
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -308,6 +308,7 @@ struct phy_device {
+ 	struct phy_c45_device_ids c45_ids;
+ 	bool is_c45;
+ 	bool is_internal;
++	bool no_auto_carrier_off;
+ 
+ 	enum phy_state state;
+ 
+-- 
+1.7.10.4
+

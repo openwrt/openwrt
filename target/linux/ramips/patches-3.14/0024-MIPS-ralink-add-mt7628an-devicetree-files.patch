@@ -1,0 +1,292 @@
+From fbc9fb0c2d30f2141e1b0b824f473276c3aef528 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 6 Aug 2014 17:53:24 +0200
+Subject: [PATCH 24/57] MIPS: ralink: add mt7628an devicetree files
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/Kconfig               |    4 +
+ arch/mips/ralink/dts/Makefile          |    1 +
+ arch/mips/ralink/dts/mt7628an.dtsi     |  184 ++++++++++++++++++++++++++++++++
+ arch/mips/ralink/dts/mt7628an_eval.dts |   54 ++++++++++
+ 4 files changed, 243 insertions(+)
+ create mode 100644 arch/mips/ralink/dts/mt7628an.dtsi
+ create mode 100644 arch/mips/ralink/dts/mt7628an_eval.dts
+
+diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
+index 6a04360..9174dbc 100644
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -75,6 +75,10 @@ choice
+ 		bool "MT7620A eval kit"
+ 		depends on SOC_MT7620
+ 
++	config DTB_MT7628AN_EVAL
++		bool "MT7620A eval kit"
++		depends on SOC_MT7620
++
+ 	config DTB_MT7621_EVAL
+ 		bool "MT7621 eval kit"
+ 		depends on SOC_MT7621
+diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
+index 9742c73..9f4e1c7 100644
+--- a/arch/mips/ralink/dts/Makefile
++++ b/arch/mips/ralink/dts/Makefile
+@@ -3,3 +3,4 @@ obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
+ obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
+ obj-$(CONFIG_DTB_MT7620A_EVAL) := mt7620a_eval.dtb.o
+ obj-$(CONFIG_DTB_MT7621_EVAL) := mt7621_eval.dtb.o
++obj-$(CONFIG_DTB_MT7628AN_EVAL) := mt7628an_eval.dtb.o
+diff --git a/arch/mips/ralink/dts/mt7628an.dtsi b/arch/mips/ralink/dts/mt7628an.dtsi
+new file mode 100644
+index 0000000..fd17d0a
+--- /dev/null
++++ b/arch/mips/ralink/dts/mt7628an.dtsi
+@@ -0,0 +1,184 @@
++/ {
++	#address-cells = <1>;
++	#size-cells = <1>;
++	compatible = "ralink,mtk7628an-soc";
++
++	cpus {
++		cpu@0 {
++			compatible = "mips,mips24KEc";
++		};
++	};
++
++	cpuintc: cpuintc@0 {
++		#address-cells = <0>;
++		#interrupt-cells = <1>;
++		interrupt-controller;
++		compatible = "mti,cpu-interrupt-controller";
++	};
++
++	palmbus@10000000 {
++		compatible = "palmbus";
++		reg = <0x10000000 0x200000>;
++                ranges = <0x0 0x10000000 0x1FFFFF>;
++
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		sysc@0 {
++			compatible = "ralink,mt7620a-sysc";
++			reg = <0x0 0x100>;
++		};
++
++		watchdog@120 {
++			compatible = "ralink,mt7628an-wdt", "mtk,mt7621-wdt";
++			reg = <0x120 0x10>;
++
++			resets = <&rstctrl 8>;
++			reset-names = "wdt";
++
++			interrupt-parent = <&intc>;
++			interrupts = <24>;
++		};
++
++		intc: intc@200 {
++			compatible = "ralink,mt7628an-intc", "ralink,rt2880-intc";
++			reg = <0x200 0x100>;
++
++			resets = <&rstctrl 9>;
++			reset-names = "intc";
++
++			interrupt-controller;
++			#interrupt-cells = <1>;
++
++			interrupt-parent = <&cpuintc>;
++			interrupts = <2>;
++
++			ralink,intc-registers = <0x9c 0xa0
++						 0x6c 0xa4
++						 0x80 0x78>;
++		};
++
++		memc@300 {
++			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
++			reg = <0x300 0x100>;
++
++			resets = <&rstctrl 20>;
++			reset-names = "mc";
++
++			interrupt-parent = <&intc>;
++			interrupts = <3>;
++		};
++
++		gpio@600 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			compatible = "mtk,mt7628-gpio", "mtk,mt7621-gpio";
++			reg = <0x600 0x100>;
++
++			gpio0: bank@0 {
++				reg = <0>;
++				compatible = "mtk,mt7621-gpio-bank";
++				gpio-controller;
++				#gpio-cells = <2>;
++			};
++
++			gpio1: bank@1 {
++				reg = <1>;
++				compatible = "mtk,mt7621-gpio-bank";
++				gpio-controller;
++				#gpio-cells = <2>;
++			};
++
++			gpio2: bank@2 {
++				reg = <2>;
++				compatible = "mtk,mt7621-gpio-bank";
++				gpio-controller;
++				#gpio-cells = <2>;
++			};
++		};
++
++		spi@b00 {
++			compatible = "ralink,mt7621-spi";
++			reg = <0xb00 0x100>;
++
++			resets = <&rstctrl 18>;
++			reset-names = "spi";
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&spi_pins>;
++
++			status = "disabled";
++		};
++
++		uartlite@c00 {
++			compatible = "ns16550a";
++			reg = <0xc00 0x100>;
++
++			reg-shift = <2>;
++			reg-io-width = <4>;
++			no-loopback-test;
++
++			resets = <&rstctrl 12>;
++			reset-names = "uartl";
++
++			interrupt-parent = <&intc>;
++			interrupts = <20>;
++
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart0_pins>;
++		};
++	};
++
++	pinctrl {
++		compatible = "ralink,rt2880-pinmux";
++		pinctrl-names = "default";
++		pinctrl-0 = <&state_default>;
++		state_default: pinctrl0 {
++		};
++		spi_pins: spi {
++			spi {
++				ralink,group = "spi";
++				ralink,function = "spi";
++			};
++		};
++		uart0_pins: uartlite {
++			uart {
++				ralink,group = "uart0";
++				ralink,function = "uart";
++			};
++		};
++	};
++
++	rstctrl: rstctrl {
++		compatible = "ralink,mt7620a-reset", "ralink,rt2880-reset";
++		#reset-cells = <1>;
++	};
++
++	usbphy {
++		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
++
++		resets = <&rstctrl 22>;
++		reset-names = "host";
++	};
++
++	ehci@101c0000 {
++		compatible = "ralink,rt3xxx-ehci";
++		reg = <0x101c0000 0x1000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++	};
++
++	ohci@101c1000 {
++		compatible = "ralink,rt3xxx-ohci";
++		reg = <0x101c1000 0x1000>;
++
++		interrupt-parent = <&intc>;
++		interrupts = <18>;
++	};
++
++};
+diff --git a/arch/mips/ralink/dts/mt7628an_eval.dts b/arch/mips/ralink/dts/mt7628an_eval.dts
+new file mode 100644
+index 0000000..132c29e
+--- /dev/null
++++ b/arch/mips/ralink/dts/mt7628an_eval.dts
+@@ -0,0 +1,54 @@
++/dts-v1/;
++
++/include/ "mt7628an.dtsi"
++
++/ {
++	compatible = "ralink,mt7628an-eval-board", "ralink,mt7628an-soc";
++	model = "Ralink MT7628AN evaluation board";
++
++	memory@0 {
++		reg = <0x0 0x2000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,57600 init=/init";
++	};
++
++	palmbus@10000000 {
++		spi@b00 {
++			status = "okay";
++
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "en25q64";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "en25q64";
++				spi-max-frequency = <10000000>;
++
++				partition@0 {
++					label = "u-boot";
++					reg = <0x0 0x30000>;
++					read-only;
++				};
++
++				partition@30000 {
++					label = "u-boot-env";
++					reg = <0x30000 0x10000>;
++					read-only;
++				};
++
++				factory: partition@40000 {
++					label = "factory";
++					reg = <0x40000 0x10000>;
++					read-only;
++				};
++
++				partition@50000 {
++					label = "firmware";
++					reg = <0x50000 0x7b0000>;
++				};
++			};
++		};
++	};
++};
+-- 
+1.7.10.4
+

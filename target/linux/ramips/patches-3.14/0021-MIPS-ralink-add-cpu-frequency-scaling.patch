@@ -1,0 +1,100 @@
+From e76ecd496c9b074ab21b17f12494d823a407e89a Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 28 Jul 2013 16:26:41 +0200
+Subject: [PATCH 21/57] MIPS: ralink: add cpu frequency scaling
+
+This feature will break udelay() and cause the delay loop to have longer delays
+when the frequency is scaled causing a performance hit.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/cevt-rt3352.c |   36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/mips/ralink/cevt-rt3352.c b/arch/mips/ralink/cevt-rt3352.c
+index 24bf057..4174b40 100644
+--- a/arch/mips/ralink/cevt-rt3352.c
++++ b/arch/mips/ralink/cevt-rt3352.c
+@@ -29,6 +29,10 @@
+ /* enable the counter */
+ #define CFG_CNT_EN		0x1
+ 
++/* mt7620 frequency scaling defines */
++#define CLK_LUT_CFG	0x40
++#define SLEEP_EN	BIT(31)
++
+ struct systick_device {
+ 	void __iomem *membase;
+ 	struct clock_event_device dev;
+@@ -36,6 +40,8 @@ struct systick_device {
+ 	int freq_scale;
+ };
+ 
++static void (*systick_freq_scaling)(struct systick_device *sdev, int status);
++
+ static void systick_set_clock_mode(enum clock_event_mode mode,
+ 				struct clock_event_device *evt);
+ 
+@@ -87,6 +93,21 @@ static struct irqaction systick_irqaction = {
+ 	.dev_id = &systick.dev,
+ };
+ 
++static inline void mt7620_freq_scaling(struct systick_device *sdev, int status)
++{
++	if (sdev->freq_scale == status)
++		return;
++
++	sdev->freq_scale = status;
++
++	pr_info("%s: %s autosleep mode\n", systick.dev.name,
++			(status) ? ("enable") : ("disable"));
++	if (status)
++		rt_sysc_w32(rt_sysc_r32(CLK_LUT_CFG) | SLEEP_EN, CLK_LUT_CFG);
++	else
++		rt_sysc_w32(rt_sysc_r32(CLK_LUT_CFG) & ~SLEEP_EN, CLK_LUT_CFG);
++}
++
+ static void systick_set_clock_mode(enum clock_event_mode mode,
+ 				struct clock_event_device *evt)
+ {
+@@ -101,9 +122,13 @@ static void systick_set_clock_mode(enum clock_event_mode mode,
+ 		sdev->irq_requested = 1;
+ 		iowrite32(CFG_EXT_STK_EN | CFG_CNT_EN,
+ 				systick.membase + SYSTICK_CONFIG);
++		if (systick_freq_scaling)
++			systick_freq_scaling(sdev, 1);
+ 		break;
+ 
+ 	case CLOCK_EVT_MODE_SHUTDOWN:
++		if (systick_freq_scaling)
++			systick_freq_scaling(sdev, 0);
+ 		if (sdev->irq_requested)
+ 			free_irq(systick.dev.irq, &systick_irqaction);
+ 		sdev->irq_requested = 0;
+@@ -116,12 +141,23 @@ static void systick_set_clock_mode(enum clock_event_mode mode,
+ 	}
+ }
+ 
++static const struct of_device_id systick_match[] = {
++	{ .compatible = "ralink,mt7620-systick", .data = mt7620_freq_scaling},
++	{},
++};
++
+ static void __init ralink_systick_init(struct device_node *np)
+ {
++	const struct of_device_id *match;
++
+ 	systick.membase = of_iomap(np, 0);
+ 	if (!systick.membase)
+ 		return;
+ 
++	match = of_match_node(systick_match, np);
++	if (match)
++		systick_freq_scaling = match->data;
++
+ 	systick_irqaction.name = np->name;
+ 	systick.dev.name = np->name;
+ 	clockevents_calc_mult_shift(&systick.dev, SYSTICK_FREQ, 60);
+-- 
+1.7.10.4
+
