@@ -1,7 +1,7 @@
 Index: linux-3.10.49/drivers/gpio/Kconfig
 ===================================================================
---- linux-3.10.49.orig/drivers/gpio/Kconfig	2014-07-17 23:58:15.000000000 +0100
-+++ linux-3.10.49/drivers/gpio/Kconfig	2014-07-27 05:55:40.312389198 +0100
+--- linux-3.10.49.orig/drivers/gpio/Kconfig	2014-07-18 00:58:15.000000000 +0200
++++ linux-3.10.49/drivers/gpio/Kconfig	2014-08-07 11:41:16.517169817 +0200
 @@ -171,6 +171,14 @@
  	  Qualcomm MSM chips.  Most of the pins on the MSM can be
  	  selected for GPIO, and are controlled by this driver.
@@ -19,8 +19,8 @@ Index: linux-3.10.49/drivers/gpio/Kconfig
  	depends on PLAT_ORION
 Index: linux-3.10.49/drivers/gpio/Makefile
 ===================================================================
---- linux-3.10.49.orig/drivers/gpio/Makefile	2014-07-17 23:58:15.000000000 +0100
-+++ linux-3.10.49/drivers/gpio/Makefile	2014-07-27 05:55:40.312389198 +0100
+--- linux-3.10.49.orig/drivers/gpio/Makefile	2014-07-18 00:58:15.000000000 +0200
++++ linux-3.10.49/drivers/gpio/Makefile	2014-08-07 11:41:16.517169817 +0200
 @@ -10,6 +10,7 @@
  # Device drivers. Generally keep list sorted alphabetically
  obj-$(CONFIG_GPIO_GENERIC)	+= gpio-generic.o
@@ -32,8 +32,8 @@ Index: linux-3.10.49/drivers/gpio/Makefile
 Index: linux-3.10.49/drivers/gpio/gpio-octeon.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.49/drivers/gpio/gpio-octeon.c	2014-07-27 05:55:40.312389198 +0100
-@@ -0,0 +1,159 @@
++++ linux-3.10.49/drivers/gpio/gpio-octeon.c	2014-08-07 11:53:14.733161106 +0200
+@@ -0,0 +1,166 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -57,6 +57,13 @@ Index: linux-3.10.49/drivers/gpio/gpio-octeon.c
 +#define RX_DAT 0x80
 +#define TX_SET 0x88
 +#define TX_CLEAR 0x90
++
++int gpio_to_irq(unsigned gpio)
++{
++	return -EINVAL;
++}
++EXPORT_SYMBOL(gpio_to_irq);
++
 +/*
 + * The address offset of the GPIO configuration register for a given
 + * line.
@@ -195,8 +202,8 @@ Index: linux-3.10.49/drivers/gpio/gpio-octeon.c
 +MODULE_VERSION(DRV_VERSION);
 Index: linux-3.10.49/arch/mips/Kconfig
 ===================================================================
---- linux-3.10.49.orig/arch/mips/Kconfig	2014-07-27 05:55:38.620389229 +0100
-+++ linux-3.10.49/arch/mips/Kconfig	2014-07-27 07:20:50.136294063 +0100
+--- linux-3.10.49.orig/arch/mips/Kconfig	2014-08-07 11:41:14.809169838 +0200
++++ linux-3.10.49/arch/mips/Kconfig	2014-08-07 11:41:16.521169817 +0200
 @@ -769,6 +769,7 @@
  	select USB_ARCH_HAS_OHCI
  	select USB_ARCH_HAS_EHCI
