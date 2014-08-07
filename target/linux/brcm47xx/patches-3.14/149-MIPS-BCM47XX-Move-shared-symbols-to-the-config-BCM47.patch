@@ -1,0 +1,50 @@
+From c949c0bc55571209fe6742f645b1e2eb20099591 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 17 Jun 2014 16:36:50 +0200
+Subject: [PATCH 149/150] MIPS: BCM47XX: Move shared symbols to the config
+ BCM47XX
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Patchwork: https://patchwork.linux-mips.org/patch/7100/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/Kconfig         | 2 ++
+ arch/mips/bcm47xx/Kconfig | 4 ----
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -124,6 +124,8 @@ config BCM47XX
+ 	select SYS_SUPPORTS_LITTLE_ENDIAN
+ 	select SYS_HAS_EARLY_PRINTK
+ 	select EARLY_PRINTK_8250 if EARLY_PRINTK
++	select GPIOLIB
++	select LEDS_GPIO_REGISTER
+ 	help
+ 	 Support for BCM47XX based boards
+ 
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -11,8 +11,6 @@ config BCM47XX_SSB
+ 	select SSB_DRIVER_PCICORE if PCI
+ 	select SSB_PCICORE_HOSTMODE if PCI
+ 	select SSB_DRIVER_GPIO
+-	select GPIOLIB
+-	select LEDS_GPIO_REGISTER
+ 	default y
+ 	help
+ 	 Add support for old Broadcom BCM47xx boards with Sonics Silicon Backplane support.
+@@ -29,8 +27,6 @@ config BCM47XX_BCMA
+ 	select BCMA_HOST_PCI if PCI
+ 	select BCMA_DRIVER_PCI_HOSTMODE if PCI
+ 	select BCMA_DRIVER_GPIO
+-	select GPIOLIB
+-	select LEDS_GPIO_REGISTER
+ 	default y
+ 	help
+ 	 Add support for new Broadcom BCM47xx boards with Broadcom specific Advanced Microcontroller Bus.
