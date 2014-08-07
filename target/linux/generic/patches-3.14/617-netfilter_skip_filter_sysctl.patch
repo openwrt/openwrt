@@ -1,0 +1,87 @@
+--- a/include/net/netns/conntrack.h
++++ b/include/net/netns/conntrack.h
+@@ -73,6 +73,7 @@ struct netns_ct {
+ 	struct ctl_table_header	*helper_sysctl_header;
+ #endif
+ 	char			*slabname;
++	int			skip_filter;
+ 	unsigned int		sysctl_log_invalid; /* Log invalid packets */
+ 	unsigned int		sysctl_events_retry_timeout;
+ 	int			sysctl_events;
+--- a/net/ipv4/netfilter/iptable_filter.c
++++ b/net/ipv4/netfilter/iptable_filter.c
+@@ -15,6 +15,7 @@
+ #include <linux/netfilter_ipv4/ip_tables.h>
+ #include <linux/slab.h>
+ #include <net/ip.h>
++#include <net/netfilter/nf_conntrack.h>
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Netfilter Core Team <coreteam@netfilter.org>");
+@@ -37,6 +38,7 @@ iptable_filter_hook(const struct nf_hook
+ 		    const struct net_device *in, const struct net_device *out,
+ 		    int (*okfn)(struct sk_buff *))
+ {
++	enum ip_conntrack_info ctinfo;
+ 	const struct net *net;
+ 
+ 	if (ops->hooknum == NF_INET_LOCAL_OUT &&
+@@ -46,6 +48,11 @@ iptable_filter_hook(const struct nf_hook
+ 		return NF_ACCEPT;
+ 
+ 	net = dev_net((in != NULL) ? in : out);
++	nf_ct_get(skb, &ctinfo);
++	if ((ctinfo == IP_CT_ESTABLISHED_REPLY || ctinfo == IP_CT_ESTABLISHED) &&
++	    net->ct.skip_filter)
++	    return NF_ACCEPT;
++
+ 	return ipt_do_table(skb, ops->hooknum, in, out,
+ 			    net->ipv4.iptable_filter);
+ }
+--- a/net/ipv6/netfilter/ip6table_filter.c
++++ b/net/ipv6/netfilter/ip6table_filter.c
+@@ -13,6 +13,7 @@
+ #include <linux/moduleparam.h>
+ #include <linux/netfilter_ipv6/ip6_tables.h>
+ #include <linux/slab.h>
++#include <net/netfilter/nf_conntrack.h>
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Netfilter Core Team <coreteam@netfilter.org>");
+@@ -37,6 +38,12 @@ ip6table_filter_hook(const struct nf_hoo
+ 		     int (*okfn)(struct sk_buff *))
+ {
+ 	const struct net *net = dev_net((in != NULL) ? in : out);
++	enum ip_conntrack_info ctinfo;
++
++	nf_ct_get(skb, &ctinfo);
++	if ((ctinfo == IP_CT_ESTABLISHED_REPLY || ctinfo == IP_CT_ESTABLISHED) &&
++	    net->ct.skip_filter)
++	    return NF_ACCEPT;
+ 
+ 	return ip6t_do_table(skb, ops->hooknum, in, out,
+ 			     net->ipv6.ip6table_filter);
+--- a/net/netfilter/nf_conntrack_standalone.c
++++ b/net/netfilter/nf_conntrack_standalone.c
+@@ -477,6 +477,13 @@ static struct ctl_table nf_ct_sysctl_tab
+ 		.extra2		= &log_invalid_proto_max,
+ 	},
+ 	{
++		.procname	= "nf_conntrack_skip_filter",
++		.data		= &init_net.ct.skip_filter,
++		.maxlen		= sizeof(int),
++		.mode		= 0644,
++		.proc_handler	= proc_dointvec,
++	},
++	{
+ 		.procname	= "nf_conntrack_expect_max",
+ 		.data		= &nf_ct_expect_max,
+ 		.maxlen		= sizeof(int),
+@@ -512,6 +519,7 @@ static int nf_conntrack_standalone_init_
+ 	table[2].data = &net->ct.htable_size;
+ 	table[3].data = &net->ct.sysctl_checksum;
+ 	table[4].data = &net->ct.sysctl_log_invalid;
++	table[5].data = &net->ct.skip_filter;
+ 
+ 	/* Don't export sysctls to unprivileged users */
+ 	if (net->user_ns != &init_user_ns)
