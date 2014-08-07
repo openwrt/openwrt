@@ -48,10 +48,13 @@ static struct gpio_keys_button alfa_ap96_gpio_keys[] __initdata = {
 	}
 };
 
+static int alfa_ap96_mmc_get_cd(struct device *dev)
+{
+        return !gpio_get_value(ALFA_AP96_GPIO_MICROSD_CD);
+}
+
 static struct mmc_spi_platform_data alfa_ap96_mmc_data = {
-	.flags		= MMC_SPI_USE_CD_GPIO,
-	.cd_gpio	= ALFA_AP96_GPIO_MICROSD_CD,
-	.cd_debounce	= 1,
+	.get_cd		= alfa_ap96_mmc_get_cd,
 	.caps		= MMC_CAP_NEEDS_POLL,
 	.ocr_mask	= MMC_VDD_32_33 | MMC_VDD_33_34,
 };

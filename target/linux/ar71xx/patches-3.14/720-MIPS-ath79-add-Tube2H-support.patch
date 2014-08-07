@@ -1,0 +1,38 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -141,6 +141,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_TL_WR841N_V9,	/* TP-LINK TL-WR841N/ND v9 */
+ 	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
+ 	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
++	ATH79_MACH_TUBE2H,		/* Alfa Network Tube2H */
+ 	ATH79_MACH_UBNT_AIRROUTER,	/* Ubiquiti AirRouter */
+ 	ATH79_MACH_UBNT_BULLET_M,	/* Ubiquiti Bullet M */
+ 	ATH79_MACH_UBNT_LSSR71,		/* Ubiquiti LS-SR71 */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -29,6 +29,15 @@ config ATH79_MACH_ALFA_NX
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_M25P80
+ 
++config ATH79_MACH_TUBE2H
++	bool "ALFA Network Tube2H board support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_ALL0258N
+ 	bool "Allnet ALL0258N support"
+ 	select SOC_AR724X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -116,6 +116,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V2)	
+ obj-$(CONFIG_ATH79_MACH_TL_WR2543N)	+= mach-tl-wr2543n.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR703N)	+= mach-tl-wr703n.o
+ obj-$(CONFIG_ATH79_MACH_TL_WR720N_V3)	+= mach-tl-wr720n-v3.o
++obj-$(CONFIG_ATH79_MACH_TUBE2H)		+= mach-tube2h.o
+ obj-$(CONFIG_ATH79_MACH_UBNT)		+= mach-ubnt.o
+ obj-$(CONFIG_ATH79_MACH_UBNT_XM)	+= mach-ubnt-xm.o
+ obj-$(CONFIG_ATH79_MACH_WHR_HP_G300N)	+= mach-whr-hp-g300n.o
