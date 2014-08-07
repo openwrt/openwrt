@@ -195,7 +195,7 @@ iptables extensions for user-space packet logging.
 endef
 
 define Package/iptables-mod-nflog
-$(call Package/iptables/Module, +kmod-nfnetlink-log)
+$(call Package/iptables/Module, +kmod-nfnetlink-log +kmod-ipt-nflog)
   TITLE:=Netfilter NFLOG target
 endef
 
@@ -208,7 +208,7 @@ define Package/iptables-mod-nflog/description
 endef
 
 define Package/iptables-mod-nfqueue
-$(call Package/iptables/Module, +kmod-nfnetlink-queue)
+$(call Package/iptables/Module, +kmod-nfnetlink-queue +kmod-ipt-nfqueue)
   TITLE:=Netfilter NFQUEUE target
 endef
 
