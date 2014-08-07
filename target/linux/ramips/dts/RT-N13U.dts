@@ -67,18 +67,13 @@
 		poll-interval = <10>;
 		reset {
 			label = "reset";
-			gpios = <&gpio0 4 1>;
+			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
 		wps {
 			label = "wps";
-			gpios = <&gpio0 10 1>;
-			linux,code = <0x211>;
-		};
-		rfkill {
-			label = "rfkill";
 			gpios = <&gpio0 0 1>;
-			linux,code = <0xf7>;
+			linux,code = <0x211>;
 		};
 	};
 
