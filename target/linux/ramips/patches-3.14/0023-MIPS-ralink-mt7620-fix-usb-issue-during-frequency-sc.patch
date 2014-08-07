@@ -1,0 +1,57 @@
+From 1f1c12e85defba9459b41ec95b86f23b4791f1ab Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 4 Aug 2014 20:43:25 +0200
+Subject: [PATCH 23/57] MIPS: ralink: mt7620: fix usb issue during frequency
+ scaling
+
+ If the USB HCD is running and the cpu is scaled too low, then the USB stops
+ working. Increase the idle speed of the core to fix this if the kernel is
+ built with USB support.
+
+ The values are taken from the Ralink SDK Kernel.
+
+ Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/mt7620.c |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
+index c883973..d68b8ff 100644
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -36,6 +36,12 @@
+ #define PMU1_CFG		0x8C
+ #define DIG_SW_SEL		BIT(25)
+ 
++/* clock scaling */
++#define CLKCFG_FDIV_MASK	0x1f00
++#define CLKCFG_FDIV_USB_VAL	0x0300
++#define CLKCFG_FFRAC_MASK	0x001f
++#define CLKCFG_FFRAC_USB_VAL	0x0003
++
+ /* does the board have sdram or ddram */
+ static int dram_type;
+ 
+@@ -337,6 +343,19 @@ void __init ralink_clk_init(void)
+ 	ralink_clk_add("10000b00.spi", sys_rate);
+ 	ralink_clk_add("10000c00.uartlite", periph_rate);
+ 	ralink_clk_add("10180000.wmac", xtal_rate);
++
++	if (IS_ENABLED(CONFIG_USB)) {
++		/*
++		 * When the CPU goes into sleep mode, the BUS clock will be too low for
++		 * USB to function properly
++		 */
++		u32 val = rt_sysc_r32(SYSC_REG_CPU_SYS_CLKCFG);
++
++		val &= ~(CLKCFG_FDIV_MASK | CLKCFG_FFRAC_MASK);
++		val |= CLKCFG_FDIV_USB_VAL | CLKCFG_FFRAC_USB_VAL;
++
++		rt_sysc_w32(val, SYSC_REG_CPU_SYS_CLKCFG);
++	}
+ }
+ 
+ void __init ralink_of_remap(void)
+-- 
+1.7.10.4
+

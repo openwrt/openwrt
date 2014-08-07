@@ -1,0 +1,50 @@
+From 071e97587a291d3a5bbd614a425f46b7f90310aa Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 16 Mar 2014 04:40:48 +0000
+Subject: [PATCH 08/57] MIPS: ralink: allow manual memory override
+
+RT5350 relies on the bootloader setting up the memc correctly.
+On sme boards the setup is incorrect leading to 32 MB being available but only 16 being recognized. Allow these boards to manually override the memory range
+.
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/of.c |   16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+index eccc552..1b81e8f 100644
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -78,6 +78,17 @@ void __init device_tree_init(void)
+ 	free_bootmem(base, size);
+ }
+ 
++static int memory_dtb;
++
++static int __init early_init_dt_find_memory(unsigned long node, const char *uname,
++				     int depth, void *data)
++{
++	if (depth == 1 && !strcmp(uname, "memory@0"))
++		memory_dtb = 1;
++
++	return 0;
++}
++
+ void __init plat_mem_setup(void)
+ {
+ 	set_io_port_base(KSEG1);
+@@ -88,7 +99,10 @@ void __init plat_mem_setup(void)
+ 	 */
+ 	__dt_setup_arch(&__dtb_start);
+ 
+-	if (soc_info.mem_size)
++	of_scan_flat_dt(early_init_dt_find_memory, NULL);
++	if (memory_dtb)
++		of_scan_flat_dt(early_init_dt_scan_memory, NULL);
++	else if (soc_info.mem_size)
+ 		add_memory_region(soc_info.mem_base, soc_info.mem_size * SZ_1M,
+ 				  BOOT_MEM_RAM);
+ 	else
+-- 
+1.7.10.4
+

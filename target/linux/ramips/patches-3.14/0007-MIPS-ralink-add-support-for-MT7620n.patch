@@ -1,0 +1,73 @@
+From efc0f99cebcab21dbabcc634b9dbb963bbbbcab8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 27 Jul 2014 09:23:36 +0100
+Subject: [PATCH 07/57] MIPS: ralink: add support for MT7620n
+
+This is the small version of MT7620a.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-ralink/mt7620.h |    7 ++-----
+ arch/mips/ralink/mt7620.c                  |   19 ++++++++++++-------
+ 2 files changed, 14 insertions(+), 12 deletions(-)
+
+diff --git a/arch/mips/include/asm/mach-ralink/mt7620.h b/arch/mips/include/asm/mach-ralink/mt7620.h
+index 7ff9290..27b2fa9 100644
+--- a/arch/mips/include/asm/mach-ralink/mt7620.h
++++ b/arch/mips/include/asm/mach-ralink/mt7620.h
+@@ -25,11 +25,8 @@
+ #define SYSC_REG_CPLL_CONFIG0		0x54
+ #define SYSC_REG_CPLL_CONFIG1		0x58
+ 
+-#define MT7620N_CHIP_NAME0		0x33365452
+-#define MT7620N_CHIP_NAME1		0x20203235
+-
+-#define MT7620A_CHIP_NAME0		0x3637544d
+-#define MT7620A_CHIP_NAME1		0x20203032
++#define MT7620_CHIP_NAME0		0x3637544d
++#define MT7620_CHIP_NAME1		0x20203032
+ 
+ #define SYSCFG0_XTAL_FREQ_SEL		BIT(6)
+ 
+diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
+index 5846817..4fdee17 100644
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -357,22 +357,27 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+ 	u32 cfg0;
+ 	u32 pmu0;
+ 	u32 pmu1;
++	u32 bga;
+ 
+ 	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
+ 	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
++	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
++	bga = (rev >> CHIP_REV_PKG_SHIFT) & CHIP_REV_PKG_MASK;
+ 
+-	if (n0 == MT7620N_CHIP_NAME0 && n1 == MT7620N_CHIP_NAME1) {
+-		name = "MT7620N";
+-		soc_info->compatible = "ralink,mt7620n-soc";
+-	} else if (n0 == MT7620A_CHIP_NAME0 && n1 == MT7620A_CHIP_NAME1) {
++	if (n0 != MT7620_CHIP_NAME0 || n1 != MT7620_CHIP_NAME1)
++		panic("mt7620: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
++
++	if (bga) {
+ 		name = "MT7620A";
+ 		soc_info->compatible = "ralink,mt7620a-soc";
+ 	} else {
+-		panic("mt7620: unknown SoC, n0:%08x n1:%08x", n0, n1);
++		name = "MT7620N";
++		soc_info->compatible = "ralink,mt7620n-soc";
++#ifdef CONFIG_PCI
++		panic("mt7620n is only supported for non pci kernels");
++#endif
+ 	}
+ 
+-	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
+-
+ 	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
+ 		"Ralink %s ver:%u eco:%u",
+ 		name,
+-- 
+1.7.10.4
+

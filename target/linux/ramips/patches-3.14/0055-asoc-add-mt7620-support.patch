@@ -1,0 +1,734 @@
+From 241188942603dc73f62cf2553c53cae2235c9957 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 27 Jul 2014 09:31:47 +0100
+Subject: [PATCH 55/57] asoc: add mt7620 support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/of.c            |    2 +
+ sound/soc/Kconfig                |    1 +
+ sound/soc/Makefile               |    1 +
+ sound/soc/ralink/Kconfig         |   15 ++
+ sound/soc/ralink/Makefile        |   11 +
+ sound/soc/ralink/mt7620-i2s.c    |  466 ++++++++++++++++++++++++++++++++++++++
+ sound/soc/ralink/mt7620-wm8960.c |  125 ++++++++++
+ sound/soc/soc-io.c               |   10 -
+ 8 files changed, 621 insertions(+), 10 deletions(-)
+ create mode 100644 sound/soc/ralink/Kconfig
+ create mode 100644 sound/soc/ralink/Makefile
+ create mode 100644 sound/soc/ralink/mt7620-i2s.c
+ create mode 100644 sound/soc/ralink/mt7620-wm8960.c
+
+diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
+index 405b79c..dfda6e6 100644
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
+@@ -15,6 +15,7 @@
+ #include <linux/of_fdt.h>
+ #include <linux/kernel.h>
+ #include <linux/bootmem.h>
++#include <linux/module.h>
+ #include <linux/of_platform.h>
+ #include <linux/of_address.h>
+ 
+@@ -26,6 +27,7 @@
+ #include "common.h"
+ 
+ __iomem void *rt_sysc_membase;
++EXPORT_SYMBOL(rt_sysc_membase);
+ __iomem void *rt_memc_membase;
+ 
+ extern struct boot_param_header __dtb_start;
+diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
+index d62ce48..de91f58 100644
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -47,6 +47,7 @@ source "sound/soc/kirkwood/Kconfig"
+ source "sound/soc/intel/Kconfig"
+ source "sound/soc/mxs/Kconfig"
+ source "sound/soc/pxa/Kconfig"
++source "sound/soc/ralink/Kconfig"
+ source "sound/soc/samsung/Kconfig"
+ source "sound/soc/s6000/Kconfig"
+ source "sound/soc/sh/Kconfig"
+diff --git a/sound/soc/Makefile b/sound/soc/Makefile
+index 62a1822..1d9398c 100644
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -24,6 +24,7 @@ obj-$(CONFIG_SND_SOC)	+= nuc900/
+ obj-$(CONFIG_SND_SOC)	+= omap/
+ obj-$(CONFIG_SND_SOC)	+= kirkwood/
+ obj-$(CONFIG_SND_SOC)	+= pxa/
++obj-$(CONFIG_SND_SOC)	+= ralink/
+ obj-$(CONFIG_SND_SOC)	+= samsung/
+ obj-$(CONFIG_SND_SOC)	+= s6000/
+ obj-$(CONFIG_SND_SOC)	+= sh/
+diff --git a/sound/soc/ralink/Kconfig b/sound/soc/ralink/Kconfig
+new file mode 100644
+index 0000000..d462622
+--- /dev/null
++++ b/sound/soc/ralink/Kconfig
+@@ -0,0 +1,15 @@
++config SND_MT7620_SOC_I2S
++	depends on SOC_MT7620 && SND_SOC
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	tristate "SoC Audio (I2S protocol) for Ralink MT7620 SoC"
++	help
++	  Say Y if you want to use I2S protocol and I2S codec on Ingenic MT7620
++	  based boards.
++
++config SND_MT7620_SOC_WM8960
++	tristate "SoC Audio support for Ralink WM8960"
++	select SND_MT7620_SOC_I2S
++	select SND_SOC_WM8960
++	help
++	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
++	  a.k.a Qi Ben NanoNote.
+diff --git a/sound/soc/ralink/Makefile b/sound/soc/ralink/Makefile
+new file mode 100644
+index 0000000..3d79980
+--- /dev/null
++++ b/sound/soc/ralink/Makefile
+@@ -0,0 +1,11 @@
++#
++# Jz4740 Platform Support
++#
++snd-soc-mt7620-i2s-objs := mt7620-i2s.o
++
++obj-$(CONFIG_SND_MT7620_SOC_I2S) += snd-soc-mt7620-i2s.o
++
++# Jz4740 Machine Support
++snd-soc-mt7620-wm8960-objs := mt7620-wm8960.o
++
++obj-$(CONFIG_SND_MT7620_SOC_WM8960) += snd-soc-mt7620-wm8960.o
+diff --git a/sound/soc/ralink/mt7620-i2s.c b/sound/soc/ralink/mt7620-i2s.c
+new file mode 100644
+index 0000000..846db03
+--- /dev/null
++++ b/sound/soc/ralink/mt7620-i2s.c
+@@ -0,0 +1,466 @@
++/*
++ *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under  the terms of the GNU General  Public License as published by the
++ *  Free Software Foundation;  either version 2 of the License, or (at your
++ *  option) any later version.
++ *
++ *  You should have received a copy of the GNU General Public License along
++ *  with this program; if not, write to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++
++#include <linux/delay.h>
++
++#include <linux/dma-mapping.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/initval.h>
++#include <sound/dmaengine_pcm.h>
++
++#include <ralink_regs.h>
++
++#define I2S_REG_CFG0		0x00
++#define I2S_REG_CFG0_EN		BIT(31)
++#define I2S_REG_CFG0_DMA_EN	BIT(30)
++#define I2S_REG_CFG0_BYTE_SWAP	BIT(28)
++#define I2S_REG_CFG0_TX_EN	BIT(24)
++#define I2S_REG_CFG0_RX_EN	BIT(20)
++#define I2S_REG_CFG0_SLAVE	BIT(16)
++#define I2S_REG_CFG0_RX_THRES	12
++#define I2S_REG_CFG0_TX_THRES	4
++#define I2S_REG_CFG0_DFT_THRES	(4 << I2S_REG_CFG0_RX_THRES) | \
++					(4 << I2S_REG_CFG0_TX_THRES)
++
++#define I2S_REG_INT_STATUS	0x04
++#define I2S_REG_INT_EN		0x08
++#define I2S_REG_FF_STATUS	0x0c
++#define I2S_REG_WREG		0x10
++#define I2S_REG_RREG		0x14
++#define I2S_REG_CFG1		0x18
++
++#define I2S_REG_DIVCMP		0x20
++#define I2S_REG_DIVINT		0x24
++#define I2S_REG_CLK_EN		BIT(31)
++
++struct mt7620_i2s {
++	struct resource *mem;
++	void __iomem *base;
++	dma_addr_t phys_base;
++
++	struct snd_dmaengine_dai_dma_data playback_dma_data;
++	struct snd_dmaengine_dai_dma_data capture_dma_data;
++};
++
++static inline uint32_t mt7620_i2s_read(const struct mt7620_i2s *i2s,
++	unsigned int reg)
++{
++	return readl(i2s->base + reg);
++}
++
++static inline void mt7620_i2s_write(const struct mt7620_i2s *i2s,
++	unsigned int reg, uint32_t value)
++{
++	//printk("i2s --> %p = 0x%08X\n", i2s->base + reg, value);
++	writel(value, i2s->base + reg);
++}
++
++static int mt7620_i2s_startup(struct snd_pcm_substream *substream,
++	struct snd_soc_dai *dai)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	uint32_t cfg;
++
++	if (dai->active)
++		return 0;
++
++	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++	cfg |= I2S_REG_CFG0_EN;
++	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++
++	return 0;
++}
++
++static void mt7620_i2s_shutdown(struct snd_pcm_substream *substream,
++	struct snd_soc_dai *dai)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	uint32_t cfg;
++
++	if (dai->active)
++		return;
++
++	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++	cfg &= ~I2S_REG_CFG0_EN;
++	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++}
++
++static int mt7620_i2s_trigger(struct snd_pcm_substream *substream, int cmd,
++	struct snd_soc_dai *dai)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++
++	uint32_t cfg;
++	uint32_t mask;
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
++		mask = I2S_REG_CFG0_TX_EN;
++	else
++		mask = I2S_REG_CFG0_RX_EN;
++
++	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		cfg |= mask;
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		cfg &= ~mask;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	if (cfg & (I2S_REG_CFG0_TX_EN | I2S_REG_CFG0_RX_EN))
++		cfg |= I2S_REG_CFG0_DMA_EN;
++	else
++		cfg &= ~I2S_REG_CFG0_DMA_EN;
++
++	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++
++	return 0;
++}
++
++static int mt7620_i2s_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	uint32_t cfg;
++
++	cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++
++	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
++	case SND_SOC_DAIFMT_CBS_CFS:
++		cfg |= I2S_REG_CFG0_SLAVE;
++		break;
++	case SND_SOC_DAIFMT_CBM_CFM:
++		cfg &= ~I2S_REG_CFG0_SLAVE;
++		break;
++	case SND_SOC_DAIFMT_CBM_CFS:
++	default:
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
++	case SND_SOC_DAIFMT_I2S:
++	case SND_SOC_DAIFMT_MSB:
++		cfg &= ~I2S_REG_CFG0_BYTE_SWAP;
++		break;
++	case SND_SOC_DAIFMT_LSB:
++		cfg |= I2S_REG_CFG0_BYTE_SWAP;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
++	case SND_SOC_DAIFMT_NB_NF:
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++
++	return 0;
++}
++
++static int mt7620_i2s_hw_params(struct snd_pcm_substream *substream,
++	struct snd_pcm_hw_params *params, struct snd_soc_dai *dai)
++{
++
++	return 0;
++}
++
++unsigned long i2sMaster_inclk_int[11] = {
++	78,     56,     52,     39,     28,     26,     19,     14,     13,     9,      6};
++unsigned long i2sMaster_inclk_comp[11] = {
++	64,     352,    42,     32,     176,    21,     272,    88,     10,     455,    261};
++
++
++static int mt7620_i2s_set_sysclk(struct snd_soc_dai *dai, int clk_id,
++	unsigned int freq, int dir)
++{
++        struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++
++	printk("Internal REFCLK with fractional division\n");
++
++	mt7620_i2s_write(i2s, I2S_REG_DIVINT, i2sMaster_inclk_int[7]);
++	mt7620_i2s_write(i2s, I2S_REG_DIVCMP,
++		i2sMaster_inclk_comp[7] | I2S_REG_CLK_EN);
++
++/*	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	struct clk *parent;
++	int ret = 0;
++
++	switch (clk_id) {
++	case JZ4740_I2S_CLKSRC_EXT:
++		parent = clk_get(NULL, "ext");
++		clk_set_parent(i2s->clk_i2s, parent);
++		break;
++	case JZ4740_I2S_CLKSRC_PLL:
++		parent = clk_get(NULL, "pll half");
++		clk_set_parent(i2s->clk_i2s, parent);
++		ret = clk_set_rate(i2s->clk_i2s, freq);
++		break;
++	default:
++		return -EINVAL;
++	}
++	clk_put(parent);
++
++	return ret;*/
++	return 0;
++}
++
++static int mt7620_i2s_suspend(struct snd_soc_dai *dai)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	uint32_t cfg;
++
++	if (dai->active) {
++		cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++		cfg &= ~I2S_REG_CFG0_TX_EN;
++		mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++	}
++
++	return 0;
++}
++
++static int mt7620_i2s_resume(struct snd_soc_dai *dai)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	uint32_t cfg;
++
++	if (dai->active) {
++		cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
++		cfg |= I2S_REG_CFG0_TX_EN;
++		mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
++	}
++
++	return 0;
++}
++
++static void mt7620_i2c_init_pcm_config(struct mt7620_i2s *i2s)
++{
++	struct snd_dmaengine_dai_dma_data *dma_data;
++
++	/* Playback */
++	dma_data = &i2s->playback_dma_data;
++	dma_data->maxburst = 16;
++	dma_data->slave_id = 2; //JZ4740_DMA_TYPE_AIC_TRANSMIT;
++	dma_data->addr = i2s->phys_base + I2S_REG_WREG;
++
++	/* Capture */
++	dma_data = &i2s->capture_dma_data;
++	dma_data->maxburst = 16;
++	dma_data->slave_id = 3; //JZ4740_DMA_TYPE_AIC_RECEIVE;
++	dma_data->addr = i2s->phys_base + I2S_REG_RREG;
++}
++
++static int mt7620_i2s_dai_probe(struct snd_soc_dai *dai)
++{
++	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
++	uint32_t data;
++
++	mt7620_i2c_init_pcm_config(i2s);
++	dai->playback_dma_data = &i2s->playback_dma_data;
++	dai->capture_dma_data = &i2s->capture_dma_data;
++
++	/* set share pins to i2s/gpio mode and i2c mode */
++	data = rt_sysc_r32(0x60);
++	data &= 0xFFFFFFE2;
++	data |= 0x00000018;
++	rt_sysc_w32(data, 0x60);
++
++	printk("Internal REFCLK with fractional division\n");
++
++	mt7620_i2s_write(i2s, I2S_REG_CFG0, I2S_REG_CFG0_DFT_THRES);
++	mt7620_i2s_write(i2s, I2S_REG_CFG1, 0);
++	mt7620_i2s_write(i2s, I2S_REG_INT_EN, 0);
++
++	mt7620_i2s_write(i2s, I2S_REG_DIVINT, i2sMaster_inclk_int[7]);
++	mt7620_i2s_write(i2s, I2S_REG_DIVCMP,
++		i2sMaster_inclk_comp[7] | I2S_REG_CLK_EN);
++
++	return 0;
++}
++
++static int mt7620_i2s_dai_remove(struct snd_soc_dai *dai)
++{
++	return 0;
++}
++
++static const struct snd_soc_dai_ops mt7620_i2s_dai_ops = {
++	.startup = mt7620_i2s_startup,
++	.shutdown = mt7620_i2s_shutdown,
++	.trigger = mt7620_i2s_trigger,
++	.hw_params = mt7620_i2s_hw_params,
++	.set_fmt = mt7620_i2s_set_fmt,
++	.set_sysclk = mt7620_i2s_set_sysclk,
++};
++
++#define JZ4740_I2S_FMTS (SNDRV_PCM_FMTBIT_S8 | \
++		SNDRV_PCM_FMTBIT_S16_LE)
++
++static struct snd_soc_dai_driver mt7620_i2s_dai = {
++	.probe = mt7620_i2s_dai_probe,
++	.remove = mt7620_i2s_dai_remove,
++	.playback = {
++		.channels_min = 1,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_48000,
++		.formats = JZ4740_I2S_FMTS,
++	},
++	.capture = {
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_48000,
++		.formats = JZ4740_I2S_FMTS,
++	},
++	.symmetric_rates = 1,
++	.ops = &mt7620_i2s_dai_ops,
++	.suspend = mt7620_i2s_suspend,
++	.resume = mt7620_i2s_resume,
++};
++
++static const struct snd_pcm_hardware mt7620_pcm_hardware = {
++	.info = SNDRV_PCM_INFO_MMAP |
++		SNDRV_PCM_INFO_MMAP_VALID |
++		SNDRV_PCM_INFO_INTERLEAVED |
++		SNDRV_PCM_INFO_BLOCK_TRANSFER,
++	.formats = SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S8,
++	.period_bytes_min	= PAGE_SIZE,
++	.period_bytes_max	= 64 * 1024,
++	.periods_min		= 2,
++	.periods_max		= 128,
++	.buffer_bytes_max	= 128 * 1024,
++	.fifo_size		= 32,
++};
++
++static const struct snd_dmaengine_pcm_config mt7620_dmaengine_pcm_config = {
++	.prepare_slave_config = snd_dmaengine_pcm_prepare_slave_config,
++	.pcm_hardware = &mt7620_pcm_hardware,
++	.prealloc_buffer_size = 256 * PAGE_SIZE,
++};
++
++static const struct snd_soc_component_driver mt7620_i2s_component = {
++	.name = "mt7620-i2s",
++};
++
++static int mt7620_i2s_dev_probe(struct platform_device *pdev)
++{
++	struct mt7620_i2s *i2s;
++	int ret;
++
++	snd_dmaengine_pcm_register(&pdev->dev,
++		&mt7620_dmaengine_pcm_config,
++		SND_DMAENGINE_PCM_FLAG_COMPAT);
++
++	i2s = kzalloc(sizeof(*i2s), GFP_KERNEL);
++	if (!i2s)
++		return -ENOMEM;
++
++	i2s->mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!i2s->mem) {
++		ret = -ENOENT;
++		goto err_free;
++	}
++
++	i2s->mem = request_mem_region(i2s->mem->start, resource_size(i2s->mem),
++				pdev->name);
++	if (!i2s->mem) {
++		ret = -EBUSY;
++		goto err_free;
++	}
++
++	i2s->base = ioremap_nocache(i2s->mem->start, resource_size(i2s->mem));
++	if (!i2s->base) {
++		ret = -EBUSY;
++		goto err_release_mem_region;
++	}
++
++	i2s->phys_base = i2s->mem->start;
++
++	platform_set_drvdata(pdev, i2s);
++	ret = snd_soc_register_component(&pdev->dev, &mt7620_i2s_component,
++					 &mt7620_i2s_dai, 1);
++
++	if (!ret) {
++		dev_err(&pdev->dev, "loaded\n");
++		return ret;
++	}
++
++	dev_err(&pdev->dev, "Failed to register DAI\n");
++	iounmap(i2s->base);
++
++err_release_mem_region:
++	release_mem_region(i2s->mem->start, resource_size(i2s->mem));
++err_free:
++	kfree(i2s);
++
++	return ret;
++}
++
++static int mt7620_i2s_dev_remove(struct platform_device *pdev)
++{
++	struct mt7620_i2s *i2s = platform_get_drvdata(pdev);
++
++	snd_soc_unregister_component(&pdev->dev);
++
++	iounmap(i2s->base);
++	release_mem_region(i2s->mem->start, resource_size(i2s->mem));
++
++	kfree(i2s);
++
++	snd_dmaengine_pcm_unregister(&pdev->dev);
++
++	return 0;
++}
++
++static const struct of_device_id mt7620_i2s_match[] = {
++	{ .compatible = "ralink,mt7620a-i2s" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, mt7620_i2s_match);
++
++static struct platform_driver mt7620_i2s_driver = {
++	.probe = mt7620_i2s_dev_probe,
++	.remove = mt7620_i2s_dev_remove,
++	.driver = {
++		.name = "mt7620-i2s",
++		.owner = THIS_MODULE,
++		.of_match_table = mt7620_i2s_match,
++	},
++};
++
++module_platform_driver(mt7620_i2s_driver);
++
++MODULE_AUTHOR("Lars-Peter Clausen, <lars@metafoo.de>");
++MODULE_DESCRIPTION("Ingenic JZ4740 SoC I2S driver");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("platform:mt7620-i2s");
+diff --git a/sound/soc/ralink/mt7620-wm8960.c b/sound/soc/ralink/mt7620-wm8960.c
+new file mode 100644
+index 0000000..c0f6389
+--- /dev/null
++++ b/sound/soc/ralink/mt7620-wm8960.c
+@@ -0,0 +1,125 @@
++/*
++ * Copyright (C) 2009, Lars-Peter Clausen <lars@metafoo.de>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ *  You should have received a copy of the  GNU General Public License along
++ *  with this program; if not, write  to the Free Software Foundation, Inc.,
++ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/moduleparam.h>
++#include <linux/of.h>
++#include <linux/timer.h>
++#include <linux/interrupt.h>
++#include <linux/platform_device.h>
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/soc.h>
++
++
++static const struct snd_soc_dapm_widget mt7620_wm8960_widgets[] = {
++	SND_SOC_DAPM_SPK("Speaker", NULL),
++};
++
++static const struct snd_soc_dapm_route mt7620_wm8960_routes[] = {
++	{"Speaker", NULL, "HP_L"},
++	{"Speaker", NULL, "HP_R"},
++};
++
++#define MT7620_DAIFMT (SND_SOC_DAIFMT_I2S | \
++			SND_SOC_DAIFMT_NB_NF | \
++			SND_SOC_DAIFMT_CBM_CFM)
++
++static int mt7620_wm8960_codec_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct snd_soc_codec *codec = rtd->codec;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++	struct snd_soc_dapm_context *dapm = &codec->dapm;
++	int ret;
++
++	snd_soc_dapm_enable_pin(dapm, "HP_L");
++	snd_soc_dapm_enable_pin(dapm, "HP_R");
++
++	ret = snd_soc_dai_set_fmt(cpu_dai, MT7620_DAIFMT);
++	if (ret < 0) {
++		dev_err(codec->dev, "Failed to set cpu dai format: %d\n", ret);
++		return ret;
++	}
++
++	return 0;
++}
++
++static struct snd_soc_dai_link mt7620_wm8960_dai = {
++	.name = "mt7620",
++	.stream_name = "mt7620",
++	.init = mt7620_wm8960_codec_init,
++	.codec_dai_name = "wm8960-hifi",
++};
++
++static struct snd_soc_card mt7620_wm8960 = {
++	.name = "mt7620-wm8960",
++	.owner = THIS_MODULE,
++	.dai_link = &mt7620_wm8960_dai,
++	.num_links = 1,
++
++	.dapm_widgets = mt7620_wm8960_widgets,
++	.num_dapm_widgets = ARRAY_SIZE(mt7620_wm8960_widgets),
++	.dapm_routes = mt7620_wm8960_routes,
++	.num_dapm_routes = ARRAY_SIZE(mt7620_wm8960_routes),
++};
++
++static int mt7620_wm8960_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct snd_soc_card *card = &mt7620_wm8960;
++	int ret;
++
++	card->dev = &pdev->dev;
++
++	mt7620_wm8960_dai.cpu_of_node = of_parse_phandle(np, "cpu-dai", 0);
++	mt7620_wm8960_dai.codec_of_node = of_parse_phandle(np, "codec-dai", 0);
++	mt7620_wm8960_dai.platform_of_node = mt7620_wm8960_dai.cpu_of_node;
++
++	ret = snd_soc_register_card(card);
++	if (ret) {
++		dev_err(&pdev->dev, "snd_soc_register_card() failed: %d\n",
++			ret);
++	}
++	return ret;
++}
++
++static int mt7620_wm8960_remove(struct platform_device *pdev)
++{
++	struct snd_soc_card *card = platform_get_drvdata(pdev);
++
++	snd_soc_unregister_card(card);
++	return 0;
++}
++
++static const struct of_device_id mt7620_audio_match[] = {
++	{ .compatible = "ralink,wm8960-audio" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, mt7620_audio_match);
++
++static struct platform_driver mt7620_wm8960_driver = {
++	.driver		= {
++		.name	= "wm8960-audio",
++		.owner	= THIS_MODULE,
++		.of_match_table = mt7620_audio_match,
++	},
++	.probe		= mt7620_wm8960_probe,
++	.remove		= mt7620_wm8960_remove,
++};
++
++module_platform_driver(mt7620_wm8960_driver);
++
++MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
++MODULE_DESCRIPTION("ALSA SoC QI LB60 Audio support");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:qi-lb60-audio");
+diff --git a/sound/soc/soc-io.c b/sound/soc/soc-io.c
+index aa886cc..3fdc8c8 100644
+--- a/sound/soc/soc-io.c
++++ b/sound/soc/soc-io.c
+@@ -19,7 +19,6 @@
+ 
+ #include <trace/events/asoc.h>
+ 
+-#ifdef CONFIG_REGMAP
+ static int hw_write(struct snd_soc_codec *codec, unsigned int reg,
+ 		    unsigned int value)
+ {
+@@ -135,12 +134,3 @@ int snd_soc_codec_set_cache_io(struct snd_soc_codec *codec,
+ 	return PTR_ERR_OR_ZERO(codec->control_data);
+ }
+ EXPORT_SYMBOL_GPL(snd_soc_codec_set_cache_io);
+-#else
+-int snd_soc_codec_set_cache_io(struct snd_soc_codec *codec,
+-			       int addr_bits, int data_bits,
+-			       enum snd_soc_control_type control)
+-{
+-	return -ENOTSUPP;
+-}
+-EXPORT_SYMBOL_GPL(snd_soc_codec_set_cache_io);
+-#endif
+-- 
+1.7.10.4
+
