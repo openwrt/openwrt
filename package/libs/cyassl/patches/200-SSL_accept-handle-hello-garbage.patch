@@ -1,6 +1,6 @@
 --- a/src/internal.c
 +++ b/src/internal.c
-@@ -5063,6 +5063,10 @@ int ProcessReply(CYASSL* ssl)
+@@ -5600,6 +5600,10 @@ int ProcessReply(CYASSL* ssl)
                  b1 =
                  ssl->buffers.inputBuffer.buffer[ssl->buffers.inputBuffer.idx++];
                  ssl->curSize = (word16)(((b0 & 0x7f) << 8) | b1);
