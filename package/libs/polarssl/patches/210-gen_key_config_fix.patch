@@ -1,8 +1,6 @@
-Index: polarssl-1.3.7/programs/pkey/gen_key.c
-===================================================================
---- polarssl-1.3.7.orig/programs/pkey/gen_key.c	2014-06-01 11:46:58.917399668 +0200
-+++ polarssl-1.3.7/programs/pkey/gen_key.c	2014-06-01 11:48:18.653397400 +0200
-@@ -215,7 +215,9 @@
+--- a/programs/pkey/gen_key.c
++++ b/programs/pkey/gen_key.c
+@@ -215,7 +215,9 @@ int main( int argc, char *argv[] )
  
      opt.type                = DFL_TYPE;
      opt.rsa_keysize         = DFL_RSA_KEYSIZE;
@@ -12,7 +10,7 @@ Index: polarssl-1.3.7/programs/pkey/gen_key.c
      opt.filename            = DFL_FILENAME;
      opt.format              = DFL_FORMAT;
      opt.use_dev_random      = DFL_USE_DEV_RANDOM;
-@@ -231,8 +233,10 @@
+@@ -231,8 +233,10 @@ int main( int argc, char *argv[] )
          {
              if( strcmp( q, "rsa" ) == 0 )
                  opt.type = POLARSSL_PK_RSA;
@@ -23,7 +21,7 @@ Index: polarssl-1.3.7/programs/pkey/gen_key.c
              else
                  goto usage;
          }
-@@ -251,12 +255,14 @@
+@@ -251,12 +255,14 @@ int main( int argc, char *argv[] )
              if( opt.rsa_keysize < 1024 || opt.rsa_keysize > 8192 )
                  goto usage;
          }
