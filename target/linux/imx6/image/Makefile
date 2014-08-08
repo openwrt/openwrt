@@ -42,9 +42,9 @@ endef
 
 define Image/InstallKernel/Template
 
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL)$(CONFIG_TARGET_imx6_VENTANA),)
+ ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE)$(CONFIG_TARGET_imx6_VENTANA),)
+   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
 	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/
 	ln -sf $(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/uImage
    endif
@@ -59,7 +59,7 @@ define Image/InstallKernel/Template
    endif
  endif
 
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB)$(CONFIG_TARGET_imx6_VENTANA),)
+ ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
 	$(foreach dts,$(shell echo $(1)), \
 		$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb $(TARGET_DIR)/boot/ ; \
