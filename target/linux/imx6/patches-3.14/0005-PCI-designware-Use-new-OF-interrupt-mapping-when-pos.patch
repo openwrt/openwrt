@@ -1,17 +1,23 @@
-commit 62fe03d1dd629a98c6da86cabb2a98b85e89d516
-Author: Lucas Stach <l.stach@pengutronix.de>
-Date:   Wed Mar 5 14:25:51 2014 +0100
+From 804f57b1a63c7435fe43b36942581cc6c79ebb5c Mon Sep 17 00:00:00 2001
+From: Lucas Stach <l.stach@pengutronix.de>
+Date: Wed, 5 Mar 2014 14:25:51 +0100
+Subject: [PATCH] PCI: designware: Use new OF interrupt mapping when possible
 
-    PCI: designware: use new OF interrupt mapping when possible
-    
-    This is the recommended method of doing the IRQ
-    mapping. For old devicetrees we fall back to the
-    previous practice.
-    
-    Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
-    Acked-by: Arnd Bergmann <arnd@arndb.de>
-    Acked-by: Jingoo Han <jg1.han@samsung.com>
-    Reviewed-by: Marek Vasut <marex@denx.de>
+Use new OF interrupt mapping (of_irq_parse_and_map_pci()) when possible.
+This is the recommended method of doing the IRQ mapping.  For old
+devicetrees we fall back to the previous practice.
+
+This makes INTB, INTC, and INTD work on i.MX.
+
+Tested-by: Tim Harvey <tharvey@gateworks.com>
+Signed-off-by: Lucas Stach <l.stach@pengutronix.de>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Reviewed-by: Marek Vasut <marex@denx.de>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Jingoo Han <jg1.han@samsung.com>
+---
+ drivers/pci/host/pcie-designware.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
 
 --- a/drivers/pci/host/pcie-designware.c
 +++ b/drivers/pci/host/pcie-designware.c
