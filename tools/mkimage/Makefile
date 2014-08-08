@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mkimage
-PKG_VERSION:=2014.04
+PKG_VERSION:=2014.07
 
 PKG_SOURCE:=u-boot-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=6d2116d1385a66e9a59742caa9d62a54
+PKG_MD5SUM:=36d4bad687edcafa396fee607e505d4e
 PKG_CAT:=bzcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/u-boot-$(PKG_VERSION)
