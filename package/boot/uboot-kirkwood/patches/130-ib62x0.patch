@@ -1,13 +1,13 @@
 --- a/boards.cfg
 +++ b/boards.cfg
 @@ -198,6 +198,7 @@ Active  arm         arm926ejs      kirkw
- Active  arm         arm926ejs      kirkwood    Marvell         openrd              openrd_client                        openrd:BOARD_IS_OPENRD_CLIENT                                                                                                     -
- Active  arm         arm926ejs      kirkwood    Marvell         openrd              openrd_ultimate                      openrd:BOARD_IS_OPENRD_ULTIMATE                                                                                                   -
- Active  arm         arm926ejs      kirkwood    raidsonic       ib62x0              ib62x0                               -                                                                                                                                 Luka Perkov <luka@openwrt.org>
-+Active  arm         arm926ejs      kirkwood    raidsonic       ib62x0              ib62x0_second_stage                  ib62x0:SECOND_STAGE                                                                                                               Luka Perkov <luka@openwrt.org>
- Active  arm         arm926ejs      kirkwood    Seagate         -                   dockstar                             -                                                                                                                                 Eric Cooper <ecc@cmu.edu>
- Active  arm         arm926ejs      kirkwood    Seagate         dockstar            dockstar_second_stage                dockstar:SECOND_STAGE                                                                                                             Luka Perkov <luka@openwrt.org>
- Active  arm         arm926ejs      kirkwood    Seagate         -                   goflexhome                           -                                                                                                                                 Suriyan Ramasami <suriyan.r@gmail.com>
+ Active  arm         arm926ejs      kirkwood    Marvell         rd6281a             rd6281a                               -                                                                                                                                 Prafulla Wadaskar <prafulla@marvell.com>
+ Active  arm         arm926ejs      kirkwood    Marvell         sheevaplug          sheevaplug                            -                                                                                                                                 Prafulla Wadaskar <prafulla@marvell.com>
+ Active  arm         arm926ejs      kirkwood    raidsonic       ib62x0              ib62x0                                -                                                                                                                                 Luka Perkov <luka@openwrt.org>
++Active  arm         arm926ejs      kirkwood    raidsonic       ib62x0              ib62x0_second_stage                  ib62x0:SECOND_STAGE                                                                                                                Luka Perkov <luka@openwrt.org>
+ Active  arm         arm926ejs      kirkwood    Seagate         dockstar            dockstar                              -                                                                                                                                 Eric Cooper <ecc@cmu.edu>
+ Active  arm         arm926ejs      kirkwood    Seagate         dockstar            dockstar_second_stage                dockstar:SECOND_STAGE                                                                                                              Luka Perkov <luka@openwrt.org>
+ Active  arm         arm926ejs      kirkwood    Seagate         goflexhome          goflexhome                            -                                                                                                                                 Suriyan Ramasami <suriyan.r@gmail.com>
 --- a/include/configs/ib62x0.h
 +++ b/include/configs/ib62x0.h
 @@ -91,7 +91,8 @@
