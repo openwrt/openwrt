@@ -450,7 +450,8 @@ detect_broadcom() {
 config wifi-device  wl${i}
 	option type     broadcom
 	option channel  ${channel:-11}
-
+	option txantenna 3
+	option rxantenna 3
 	# REMOVE THIS LINE TO ENABLE WIFI:
 	option disabled 1
 
