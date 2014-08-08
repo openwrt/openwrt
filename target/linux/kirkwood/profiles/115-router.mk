@@ -19,4 +19,4 @@ endef
 EA4500_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
 EA4500_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
-# $(eval $(call Profile,EA4500))
+$(eval $(call Profile,EA4500))
