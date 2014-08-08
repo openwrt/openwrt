@@ -27,8 +27,6 @@ Signed-off-by: Chris Ball <chris@printf.net>
  drivers/mmc/host/mxs-mmc.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/mmc/host/mxs-mmc.c b/drivers/mmc/host/mxs-mmc.c
-index 073e871..babfea0 100644
 --- a/drivers/mmc/host/mxs-mmc.c
 +++ b/drivers/mmc/host/mxs-mmc.c
 @@ -70,6 +70,7 @@ struct mxs_mmc_host {
@@ -39,7 +37,7 @@ index 073e871..babfea0 100644
  };
  
  static int mxs_mmc_get_cd(struct mmc_host *mmc)
-@@ -78,6 +79,9 @@ static int mxs_mmc_get_cd(struct mmc_host *mmc)
+@@ -78,6 +79,9 @@ static int mxs_mmc_get_cd(struct mmc_hos
  	struct mxs_ssp *ssp = &host->ssp;
  	int present, ret;
  
@@ -49,7 +47,7 @@ index 073e871..babfea0 100644
  	ret = mmc_gpio_get_cd(mmc);
  	if (ret >= 0)
  		return ret;
-@@ -568,6 +572,7 @@ static int mxs_mmc_probe(struct platform_device *pdev)
+@@ -568,6 +572,7 @@ static int mxs_mmc_probe(struct platform
  {
  	const struct of_device_id *of_id =
  			of_match_device(mxs_mmc_dt_ids, &pdev->dev);
@@ -57,7 +55,7 @@ index 073e871..babfea0 100644
  	struct mxs_mmc_host *host;
  	struct mmc_host *mmc;
  	struct resource *iores;
-@@ -634,6 +639,8 @@ static int mxs_mmc_probe(struct platform_device *pdev)
+@@ -634,6 +639,8 @@ static int mxs_mmc_probe(struct platform
  	mmc->caps = MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED |
  		    MMC_CAP_SDIO_IRQ | MMC_CAP_NEEDS_POLL;
  
@@ -66,6 +64,3 @@ index 073e871..babfea0 100644
  	mmc->f_min = 400000;
  	mmc->f_max = 288000000;
  
--- 
-2.0.3
-

@@ -40,7 +40,7 @@
  				auart0_pins_a: auart0@0 {
  					reg = <0>;
  					fsl,pinmux-ids = <
-@@ -443,7 +476,12 @@
+@@ -444,7 +477,12 @@
  			};
  
  			i2c@80058000 {
@@ -55,7 +55,7 @@
  				status = "disabled";
 --- a/arch/arm/boot/dts/imx23-olinuxino.dts
 +++ b/arch/arm/boot/dts/imx23-olinuxino.dts
-@@ -79,6 +79,12 @@
+@@ -73,6 +73,12 @@
  				status = "okay";
  			};
  
@@ -68,7 +68,7 @@
  			duart: serial@80070000 {
  				pinctrl-names = "default";
  				pinctrl-0 = <&duart_pins_a>;
-@@ -94,7 +100,7 @@
+@@ -88,7 +94,7 @@
  			usbphy0: usbphy@8007c000 {
  				status = "okay";
  			};
