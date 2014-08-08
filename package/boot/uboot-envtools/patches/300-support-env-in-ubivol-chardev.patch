@@ -9,11 +9,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  tools/env/fw_env.c | 76 +++++++++++++++++++++++++++++++++++++++++++++++-------
  2 files changed, 71 insertions(+), 10 deletions(-)
 
-diff --git a/tools/env/Makefile b/tools/env/Makefile
-index f5368bc..526d44d 100644
 --- a/tools/env/Makefile
 +++ b/tools/env/Makefile
-@@ -20,6 +20,11 @@ ifeq ($(MTD_VERSION),old)
+@@ -24,6 +24,11 @@ ifeq ($(MTD_VERSION),old)
  HOST_EXTRACFLAGS += -DMTD_OLD
  endif
  
@@ -25,11 +23,9 @@ index f5368bc..526d44d 100644
  always := fw_printenv
  hostprogs-y := fw_printenv_unstripped
  
-diff --git a/tools/env/fw_env.c b/tools/env/fw_env.c
-index 30d5b03..2217a25 100644
 --- a/tools/env/fw_env.c
 +++ b/tools/env/fw_env.c
-@@ -29,6 +29,9 @@
+@@ -30,6 +30,9 @@
  # include <mtd/mtd-user.h>
  #endif
  
@@ -39,7 +35,7 @@ index 30d5b03..2217a25 100644
  #include "fw_env.h"
  
  #include <aes.h>
-@@ -809,6 +812,11 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
+@@ -810,6 +813,11 @@ static int flash_write_buf (int dev, int
  	off_t top_of_range;	/* end of the last block we may use */
  	loff_t blockstart;	/* running start of the current block -
  				   MEMGETBADBLOCK needs 64 bits */
@@ -51,7 +47,7 @@ index 30d5b03..2217a25 100644
  	int rc;
  
  	/*
-@@ -914,7 +922,30 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
+@@ -915,7 +923,30 @@ static int flash_write_buf (int dev, int
  			continue;
  		}
  
@@ -83,7 +79,7 @@ index 30d5b03..2217a25 100644
  			erase.start = blockstart;
  			ioctl(fd, MEMUNLOCK, &erase);
  			/* These do not need an explicit erase cycle */
-@@ -931,7 +962,8 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
+@@ -932,7 +963,8 @@ static int flash_write_buf (int dev, int
  			fprintf (stderr,
  				 "Seek error on %s: %s\n",
  				 DEVNAME (dev), strerror (errno));
@@ -93,7 +89,7 @@ index 30d5b03..2217a25 100644
  		}
  
  #ifdef DEBUG
-@@ -941,10 +973,11 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
+@@ -942,10 +974,11 @@ static int flash_write_buf (int dev, int
  		if (write (fd, data + processed, erasesize) != erasesize) {
  			fprintf (stderr, "Write error on %s: %s\n",
  				 DEVNAME (dev), strerror (errno));
@@ -107,7 +103,7 @@ index 30d5b03..2217a25 100644
  			ioctl(fd, MEMLOCK, &erase);
  
  		processed  += erasesize;
-@@ -955,6 +988,11 @@ static int flash_write_buf (int dev, int fd, void *buf, size_t count,
+@@ -956,6 +989,11 @@ static int flash_write_buf (int dev, int
  	if (write_total > count)
  		free (data);
  
@@ -119,7 +115,7 @@ index 30d5b03..2217a25 100644
  	return processed;
  }
  
-@@ -1066,12 +1104,8 @@ static int flash_read (int fd)
+@@ -1067,12 +1105,8 @@ static int flash_read (int fd)
  
  	if (S_ISCHR(st.st_mode)) {
  		rc = ioctl(fd, MEMGETINFO, &mtdinfo);
@@ -134,7 +130,7 @@ index 30d5b03..2217a25 100644
  		    mtdinfo.type != MTD_NANDFLASH &&
  		    mtdinfo.type != MTD_DATAFLASH &&
  		    mtdinfo.type != MTD_UBIVOLUME) {
-@@ -1079,6 +1113,28 @@ static int flash_read (int fd)
+@@ -1080,6 +1114,28 @@ static int flash_read (int fd)
  				 mtdinfo.type, DEVNAME(dev_current));
  			return -1;
  		}
@@ -163,6 +159,3 @@ index 30d5b03..2217a25 100644
  	} else {
  		memset(&mtdinfo, 0, sizeof(mtdinfo));
  		mtdinfo.type = MTD_ABSENT;
--- 
-2.0.0
-
