@@ -136,7 +136,7 @@ ifeq ($(DUMP),)
 
     $(PKG_INFO_DIR)/$(1).provides: $$(IPKG_$(1))
     $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
-	@rm -rf $(PACKAGE_DIR)/$(1)_* $$(IDIR_$(1))
+	@rm -rf $$(PDIR_$(1))/$(1)_* $$(IDIR_$(1))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
 	$(call Package/$(1)/install,$$(IDIR_$(1)))
 	-find $$(IDIR_$(1)) -name 'CVS' -o -name '.svn' -o -name '.#*' -o -name '*~'| $(XARGS) rm -rf
