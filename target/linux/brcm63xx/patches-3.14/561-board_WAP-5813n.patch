@@ -8,7 +8,7 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
-@@ -4559,6 +4560,99 @@ static struct board_info __initdata boar
+@@ -4559,6 +4560,117 @@ static struct board_info __initdata boar
  	.has_ohci0 = 1,
  	.has_ehci0 = 1,
  };
@@ -27,12 +27,22 @@
 +	}
 +};
 +
++static struct sprom_fixup __initdata wap5813n_fixups[] = {
++	{ .offset = 97, .value = 0xfeed },
++	{ .offset = 98, .value = 0x15d1 },
++	{ .offset = 99, .value = 0xfb0d },
++	{ .offset = 113, .value = 0xfef7 },
++	{ .offset = 114, .value = 0x15f7 },
++	{ .offset = 115, .value = 0xfb1a },
++};
++
 +static struct board_info __initdata board_WAP5813n = {
 +	.name				= "96369R-1231N",
 +	.expected_cpu_id		= 0x6368,
 +
 +	.has_uart0			= 1,
 +	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
 +	.has_ohci0			= 1,
 +	.has_ehci0			= 1,
 +
@@ -102,13 +112,21 @@
 +		},
 +	},
 +
++	.fallback_sprom = {
++		.type 				= SPROM_BCM43222,
++		.pci_bus			= 0,
++		.pci_dev			= 1,
++		.board_fixups			= wap5813n_fixups,
++		.num_board_fixups		= ARRAY_SIZE(wap5813n_fixups),
++	},
++
 +	.spis = WAP5813n_spi_devices,
 +	.num_spis = ARRAY_SIZE(WAP5813n_spi_devices),
 +};
  #endif
  
  /*
-@@ -4942,6 +5036,7 @@ static const struct board_info __initcon
+@@ -4942,6 +5054,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
