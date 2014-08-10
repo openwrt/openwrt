@@ -106,7 +106,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		memcpy(&bcm63xx_sprom, &bcm63xx_default_sprom,
  		       sizeof(bcm63xx_sprom));
 @@ -692,8 +711,19 @@ int __init bcm63xx_register_fallback_spr
- 	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
+ 	memcpy(bcm63xx_sprom.il0mac, data->mac_addr, ETH_ALEN);
  	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
  	memcpy(bcm63xx_sprom.et1mac, data->mac_addr, ETH_ALEN);
 +#endif /* defined(CONFIG_SSB_PCIHOST) || defined(CONFIG_BCMA_HOST_PCI) */

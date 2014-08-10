@@ -48,10 +48,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	int ret = 0;
  
  #ifdef CONFIG_SSB_PCIHOST
--	memcpy(bcm63xx_sprom.et0mac, mac, ETH_ALEN);
+-	memcpy(bcm63xx_sprom.il0mac, mac, ETH_ALEN);
 -	memcpy(bcm63xx_sprom.et0mac, mac, ETH_ALEN);
 -	memcpy(bcm63xx_sprom.et1mac, mac, ETH_ALEN);
-+	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
++	memcpy(bcm63xx_sprom.il0mac, data->mac_addr, ETH_ALEN);
 +	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
 +	memcpy(bcm63xx_sprom.et1mac, data->mac_addr, ETH_ALEN);
  

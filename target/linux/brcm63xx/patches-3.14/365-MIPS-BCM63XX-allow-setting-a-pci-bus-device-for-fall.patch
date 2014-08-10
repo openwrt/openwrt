@@ -76,10 +76,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		sprom_extract(&fallback_sprom.sprom, template_sprom, size);
  	}
  
--	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
+-	memcpy(bcm63xx_sprom.il0mac, data->mac_addr, ETH_ALEN);
 -	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
 -	memcpy(bcm63xx_sprom.et1mac, data->mac_addr, ETH_ALEN);
-+	memcpy(fallback_sprom.sprom.et0mac, data->mac_addr, ETH_ALEN);
++	memcpy(fallback_sprom.sprom.il0mac, data->mac_addr, ETH_ALEN);
 +	memcpy(fallback_sprom.sprom.et0mac, data->mac_addr, ETH_ALEN);
 +	memcpy(fallback_sprom.sprom.et1mac, data->mac_addr, ETH_ALEN);
 +
