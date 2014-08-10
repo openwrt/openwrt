@@ -59,7 +59,7 @@
 +			return -EINVAL;
 +	}
 +
-+	nf_ct_iterate_cleanup(net, kill_matching, &kr);
++	nf_ct_iterate_cleanup(net, kill_matching, &kr, 0, 0);
 +
 +	return count;
 +}
