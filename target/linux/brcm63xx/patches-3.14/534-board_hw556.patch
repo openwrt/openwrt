@@ -8,7 +8,7 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
-@@ -1835,6 +1836,492 @@ static struct board_info __initdata boar
+@@ -1871,6 +1872,492 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -501,7 +501,7 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3371,6 +3858,10 @@ static const struct board_info __initcon
+@@ -3407,6 +3894,10 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r2,
  	&board_ct6373_1,
  	&board_HW553,
@@ -512,7 +512,7 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
-@@ -3390,13 +3881,37 @@ static void __init boardid_fixup(u8 *boo
+@@ -3426,13 +3917,37 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  
