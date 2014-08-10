@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4504,6 +4504,131 @@ static struct board_info __initdata boar
+@@ -4511,6 +4511,131 @@ static struct board_info __initdata boar
   * known 63268/63269 boards
   */
  #ifdef CONFIG_BCM63XX_CPU_63268
@@ -132,7 +132,7 @@
  static struct board_info __initdata board_963269bhr = {
  	.name				= "963269BHR",
  	.expected_cpu_id		= 0x63268,
-@@ -4758,6 +4883,7 @@ static const struct board_info __initcon
+@@ -4765,6 +4890,7 @@ static const struct board_info __initcon
  	&board_96368mvngr,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
