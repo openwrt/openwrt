@@ -8,7 +8,7 @@
  #include <net/net_namespace.h>
  #ifdef CONFIG_SYSCTL
  #include <linux/sysctl.h>
-@@ -268,10 +269,63 @@ static int ct_open(struct inode *inode,
+@@ -268,10 +269,66 @@ static int ct_open(struct inode *inode,
  			sizeof(struct ct_iter_state));
  }
  
@@ -20,16 +20,19 @@
 +static int kill_matching(struct nf_conn *i, void *data)
 +{
 +	struct kill_request *kr = data;
-+	struct nf_conntrack_tuple *t = &i->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
++	struct nf_conntrack_tuple *t1 = &i->tuplehash[IP_CT_DIR_ORIGINAL].tuple;
++	struct nf_conntrack_tuple *t2 = &i->tuplehash[IP_CT_DIR_REPLY].tuple;
 +
 +	if (!kr->family)
 +		return 1;
 +
-+	if (t->src.l3num != kr->family)
++	if (t1->src.l3num != kr->family)
 +		return 0;
 +
-+	return (nf_inet_addr_cmp(&kr->addr, &t->src.u3) ||
-+	        nf_inet_addr_cmp(&kr->addr, &t->dst.u3));
++	return (nf_inet_addr_cmp(&kr->addr, &t1->src.u3) ||
++	        nf_inet_addr_cmp(&kr->addr, &t1->dst.u3) ||
++	        nf_inet_addr_cmp(&kr->addr, &t2->src.u3) ||
++	        nf_inet_addr_cmp(&kr->addr, &t2->dst.u3));
 +}
 +
 +static ssize_t ct_file_write(struct file *file, const char __user *buf,
@@ -72,7 +75,7 @@
  	.llseek  = seq_lseek,
  	.release = seq_release_net,
  };
-@@ -373,7 +427,7 @@ static int nf_conntrack_standalone_init_
+@@ -373,7 +430,7 @@ static int nf_conntrack_standalone_init_
  {
  	struct proc_dir_entry *pde;
  
