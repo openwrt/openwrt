@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -609,6 +609,88 @@ static struct board_info __initdata boar
+@@ -609,6 +609,95 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -10,6 +10,7 @@
 +
 +	.has_uart0			= 1,
 +	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
 +	.has_ohci0			= 1,
 +	.has_ehci0			= 1,
 +	.num_usbh_ports			= 1,
@@ -84,12 +85,18 @@
 +			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
++
++	.fallback_sprom = {
++		.type 				= SPROM_BCM43225,
++		.pci_bus			= 1,
++		.pci_dev			= 0,
++	},
 +};
 +
  static struct board_info __initdata board_A4001N1 = {
  	.name					= "963281T_TEF",
  	.expected_cpu_id			= 0x6328,
-@@ -5345,6 +5427,7 @@ static const struct board_info __initcon
+@@ -5345,6 +5434,7 @@ static const struct board_info __initcon
  	&board_AR5381u,
  	&board_AR5387un,
  	&board_963281TAN,
