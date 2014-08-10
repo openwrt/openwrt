@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4151,6 +4151,49 @@ static struct board_info __initdata boar
+@@ -4151,6 +4151,56 @@ static struct board_info __initdata boar
  	.num_spis = ARRAY_SIZE(ct6373_spi_devices),
  };
  
@@ -10,6 +10,7 @@
 +
 +	.has_uart0			= 1,
 +	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
 +	.has_ohci0			= 1,
 +	.has_ehci0			= 1,
 +
@@ -45,12 +46,18 @@
 +			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
++
++	.fallback_sprom = {
++		.type 				= SPROM_BCM4318,
++		.pci_bus			= 0,
++		.pci_dev			= 1,
++	},
 +};
 +
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -5347,6 +5390,7 @@ static const struct board_info __initcon
+@@ -5347,6 +5397,7 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r1,
  	&board_nb4_fxc_r2,
  	&board_ct6373_1,
