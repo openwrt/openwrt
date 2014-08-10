@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4570,6 +4570,89 @@ static struct sprom_fixup __initdata vr3
+@@ -4570,6 +4570,96 @@ static struct sprom_fixup __initdata vr3
  	{ .offset = 115, .value = 0xfad9 },
  };
  
@@ -10,6 +10,7 @@
 +
 +	.has_uart0			= 1,
 +	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
 +	.has_ohci0			= 1,
 +	.has_ehci0			= 1,
 +
@@ -85,12 +86,18 @@
 +			.active_low	= 1,
 +		},
 +	},
++
++	.fallback_sprom = {
++		.type 				= SPROM_BCM4318,
++		.pci_bus			= 0,
++		.pci_dev			= 1,
++	},
 +};
 +
  static struct board_info __initdata board_VR3025u = {
  	.name					= "96368M-1541N",
  	.expected_cpu_id		= 0x6368,
-@@ -5274,6 +5357,7 @@ static const struct board_info __initcon
+@@ -5274,6 +5364,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
