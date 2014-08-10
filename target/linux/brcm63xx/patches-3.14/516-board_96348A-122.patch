@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -646,6 +646,69 @@ static struct board_info __initdata boar
+@@ -646,6 +646,76 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -11,6 +11,7 @@
 +	.has_uart0			= 1,
 +	.has_enet1			= 1,
 +	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
 +
 +	.enet1 = {
 +		.has_phy		= 1,
@@ -65,12 +66,18 @@
 +			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
 +		},
 +	},
++
++	.fallback_sprom = {
++		.type 				= SPROM_BCM4318,
++		.pci_bus			= 0,
++		.pci_dev			= 1,
++	},
 +};
 +
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -2174,6 +2237,7 @@ static const struct board_info __initcon
+@@ -2174,6 +2244,7 @@ static const struct board_info __initcon
  	&board_V2500V_BB,
  	&board_V2110,
  	&board_ct536_ct5621,
