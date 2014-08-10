@@ -45,7 +45,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		return -EINVAL;
 +	}
 +
- 	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
+ 	memcpy(bcm63xx_sprom.il0mac, data->mac_addr, ETH_ALEN);
  	memcpy(bcm63xx_sprom.et0mac, data->mac_addr, ETH_ALEN);
  	memcpy(bcm63xx_sprom.et1mac, data->mac_addr, ETH_ALEN);
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_fallback_sprom.h
