@@ -6,7 +6,7 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
 ---
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -3798,6 +3798,96 @@ static struct board_info __initdata boar
+@@ -3805,6 +3805,96 @@ static struct board_info __initdata boar
  	.devs = nb6_devices,
  	.num_devs = ARRAY_SIZE(nb6_devices),
  };
@@ -103,7 +103,7 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
  #endif
  
  /*
-@@ -4019,6 +4109,7 @@ static const struct board_info __initcon
+@@ -4026,6 +4116,7 @@ static const struct board_info __initcon
  
  #ifdef CONFIG_BCM63XX_CPU_6362
  	&board_nb6,
