@@ -11,7 +11,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
 @@ -2244,6 +2244,85 @@ static struct board_info __initdata boar
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
 + * known 6368 boards
@@ -90,7 +90,7 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
 +	.has_ohci0 = 1,
 +	.has_ehci0 = 1,
 +};
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_6368 */
 +
 +/*
   * all boards

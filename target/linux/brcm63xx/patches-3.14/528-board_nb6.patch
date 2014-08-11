@@ -19,7 +19,7 @@
  #define CT6373_74X164_GPIO_BASE	64
 @@ -2694,6 +2697,104 @@ static struct board_info __initdata boar
  };
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
  
 +#ifdef CONFIG_BCM63XX_CPU_6362
 +static struct rtl8367_extif_config nb6_rtl8367_extif0_cfg = {
@@ -117,7 +117,7 @@
 +	.devs = nb6_devices,
 +	.num_devs = ARRAY_SIZE(nb6_devices),
 +};
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_6362 */
 +
  /*
   * known 6368 boards

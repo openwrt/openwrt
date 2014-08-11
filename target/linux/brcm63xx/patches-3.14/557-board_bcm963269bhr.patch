@@ -1,7 +1,7 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
 @@ -4515,6 +4515,75 @@ static struct board_info __initdata boar
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
 + * known 63268/63269 boards
@@ -70,7 +70,7 @@
 +		},
 +	},
 +};
-+#endif
++#endif /* CONFIG_BCM63XX_CPU_63268 */
 +
 +/*
   * all boards
