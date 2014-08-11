@@ -255,8 +255,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96328dg2x2,6328,A4001N,,--pad 4)
 	# ADB P.DG A4001N1
 	$(call Image/Build/CFE,$(1),963281T_TEF,6328,A4001N1,,--pad 8)
-	# Asmax AR 1004g
-	$(call Image/Build/CFEFIXUP,$(1),96348GW-10,AR1004G,6348,AR1004G)
 	# BT Voyager V210_BTR
 	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
 	# BT Voyager V210_ROI, V210_WB
@@ -275,10 +273,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
-	# Tecom GW6000
-	$(call Image/Build/CFEFIXUP,$(1),96348GW,GW6000,6348,GW6000)
-	# Tecom GW6200
-	$(call Image/Build/CFEFIXUP,$(1),96348GW,GW6200,6348,GW6200,$(shell printf '\x99'))
 	# Neufbox4
 	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
 	# Zyxel P870HW-51a v2
@@ -292,8 +286,6 @@ define Image/Build
 
 	# Comtrend 6373
 	$(call Image/Build/CFE,$(1),CT6373-1,6358,CT6373)
-	# Comtrend 536, 5621
-	$(call Image/Build/CFEFIXUP,$(1),96348GW-11,CT536_CT5621,6348,CT536_CT5621)
 	# Comtrend AR-5381u
 	$(call Image/Build/CFE,$(1),96328A-1241N,6328,AR-5381u,,--pad 8)
 	# Comtrend AR-5387un
@@ -316,15 +308,9 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),D-4P-W,6348,DSL2640B-B2)
 	# D-Link DSL-2650U
 	$(call Image/Build/CFE,$(1),96358VW2,6358,DSL2650U)
-	# D-Link DSL-2740B/DSL-2741B, rev C2
-	$(call Image/Build/CFEFIXUP,$(1),96358GW,AW4139,6358,DSL274XB-C2)
-	# D-Link DSL-2740B/DSL-2741B, rev C3
-	$(call Image/Build/CFE,$(1),AW4139,6358,DSL274XB-C3)
 	# D-Link DSL-2740B/DSL-2741B, rev F1
 	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-EU,,--signature2="4.06.01.EUF1" --pad 4)
 	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-AU,,--signature2="4.06.01.AUF1" --pad 4)
-	# D-Link DVA-G3810BN/TL
-	$(call Image/Build/CFEFIXUP,$(1),96358VW,DVAG3810BN,6358,DVAG3810BN)
 
 	# TP-Link TD-8810A, TD-8810B, TD-8811A, TD-8811B
 	$(call Image/Build/CFE,$(1),8L-2M-8M,6338,TP8810_8811)
@@ -359,9 +345,6 @@ define Image/Build
 	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
 
-	# T-Com Speedport W 500V
-	$(call Image/Build/CFEFIXUP,$(1),96348GW,SPW500V,6348,SPW500V)
-
 	# Huawei HW520
 	$(call Image/Build/CFE,$(1),HW6358GW_B,6358,HW520,EchoLife_HG520v)
 
@@ -388,5 +371,22 @@ endef
 $(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-4M-flash-generic,,--pad 2))
 $(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
 $(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
+
+# Asmax AR 1004g
+$(eval $(call CfeImageDTB,ar1004g,96348GW-10,6348,AR1004G))
+# Comtrend 536, 5621
+$(eval $(call CfeImageDTB,ct536plus,96348GW-11,6348,CT536_CT5621))
+# Tecom GW6000
+$(eval $(call CfeImageDTB,gw6000,96348GW,6348,GW6000))
+# Tecom GW6200
+$(eval $(call CfeImageDTB,gw6200,96348GW,6348,GW6200,$(shell printf '\x99')))
+# T-Com Speedport W 500V
+$(eval $(call CfeImageDTB,spw500v,96348GW,6348,SPW500V))
+# D-Link DSL-2740B/DSL-2741B, rev C2
+$(eval $(call CfeImageDTB,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
+# D-Link DSL-2740B/DSL-2741B, rev C3
+$(eval $(call CfeImageDTB,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
+# D-Link DVA-G3810BN/TL
+$(eval $(call CfeImageDTB,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
 
 $(eval $(call BuildImage))
