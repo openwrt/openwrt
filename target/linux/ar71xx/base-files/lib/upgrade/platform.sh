@@ -257,6 +257,7 @@ platform_check_image() {
 	el-mini | \
 	gl-inet | \
 	oolite | \
+	smart-300 | \
 	tl-mr10u | \
 	tl-mr11u | \
 	tl-mr13u | \
