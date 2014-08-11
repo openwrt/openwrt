@@ -123,7 +123,7 @@
 +	.spis = WAP5813n_spi_devices,
 +	.num_spis = ARRAY_SIZE(WAP5813n_spi_devices),
 +};
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
 @@ -4940,6 +5052,7 @@ static const struct board_info __initcon

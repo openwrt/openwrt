@@ -79,7 +79,7 @@ Subject: [PATCH 33/63] bcm63xx: add support for 96368MVNgr board.
 +	.has_ohci0 = 1,
 +	.has_ehci0 = 1,
 +};
- #endif
+ #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
 @@ -2380,6 +2446,7 @@ static const struct board_info __initcon
