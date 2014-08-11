@@ -31,6 +31,8 @@ define Image/LimitName16
 $(shell expr substr "$(1)" 1 16)
 endef
 
+TARGET_DTBS:=
+
 define Image/Build/CFE
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -161,21 +163,40 @@ define Image/PrepareLoader
 	rm -f $(KDIR)/vmlinux$(1).lzma
 endef
 
-define Image/Prepare
+define Image/PrepareLoaderDTB
+	# append dtb to vmlinux, then build a standard LZMA loader
+	cat $(KDIR)/vmlinux$(1) $(DTS_DIR)/$(2).dtb > $(KDIR)/vmlinux$(1)-$(2)
+	$(call Image/PrepareLoader,$(1)-$(2))
+endef
 
+define Image/PrepareCFELzmaKernel
 	# CFE is a LZMA nazi! It took me hours to find out the parameters!
 	# Also I think lzma has a bug cause it generates different output depending on
 	# if you use stdin / stdout or not. Use files instead of stdio here, cause
 	# otherwise CFE will complain and not boot the image.
-	$(STAGING_DIR_HOST)/bin/lzma e -d22 -fb64 -a1 $(KDIR)/vmlinux $(KDIR)/vmlinux.lzma.tmp
+	$(STAGING_DIR_HOST)/bin/lzma e -d22 -fb64 -a1 $(KDIR)/vmlinux$(1) $(KDIR)/vmlinux$(1).lzma.tmp
 
 	# Strip out the length, CFE doesn't like this
-	dd if=$(KDIR)/vmlinux.lzma.tmp of=$(KDIR)/vmlinux.lzma.cfe bs=5 count=1
-	dd if=$(KDIR)/vmlinux.lzma.tmp of=$(KDIR)/vmlinux.lzma.cfe ibs=13 obs=5 skip=1 seek=1 conv=notrunc
-	rm -f $(KDIR)/vmlinux.lzma.tmp
+	dd if=$(KDIR)/vmlinux$(1).lzma.tmp of=$(KDIR)/vmlinux$(1).lzma.cfe bs=5 count=1
+	dd if=$(KDIR)/vmlinux$(1).lzma.tmp of=$(KDIR)/vmlinux$(1).lzma.cfe ibs=13 obs=5 skip=1 seek=1 conv=notrunc
+	rm -f $(KDIR)/vmlinux$(1).lzma.tmp
+endef
+
+define Image/PrepareCFELzmaKernelDTB
+	# compile the dts (the dtb will be later reused for the lzma loader)
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(DTS_DIR)/$(1).dtb ../dts/$(1).dts
+	cat $(KDIR)/vmlinux $(DTS_DIR)/$(1).dtb > $(KDIR)/vmlinux-$(1)
+	$(call Image/PrepareCFELzmaKernel,-$(1))
+endef
+
+define Image/Prepare
+	$(call Image/PrepareCFELzmaKernel,)
+
+	$(foreach board,$(sort $(TARGET_DTBS)), $(call Image/PrepareCFELzmaKernelDTB,$(board)))
 
  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/PrepareLoader,-initramfs)
+	$(foreach board,$(sort $(TARGET_DTBS)), $(call Image/PrepareLoaderDTB,-initramfs,$(board)))
  endif
 	rm -f $(KDIR)/fs_mark
 	touch $(KDIR)/fs_mark
