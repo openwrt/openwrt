@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -3530,6 +3530,56 @@ static struct board_info __initdata boar
+@@ -3547,6 +3547,56 @@ static struct board_info __initdata boar
  	.num_spis = ARRAY_SIZE(ct6373_spi_devices),
  };
  
@@ -57,7 +57,7 @@
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -5345,6 +5395,7 @@ static const struct board_info __initcon
+@@ -5362,6 +5412,7 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r1,
  	&board_nb4_fxc_r2,
  	&board_ct6373_1,
