@@ -1,0 +1,255 @@
+Author: Tim Harvey <tharvey@gateworks.com>
+Date:   Thu May 15 00:29:18 2014 -0700
+
+    net: igb: add phy read/write functions that accept phy addr
+    
+    Add igb_write_reg_gs40g/igb_read_reg_gs40g that can be passed a phy address.
+    The existing igb_write_phy_reg_gs40g/igb_read_phy_reg_gs40g become wrappers
+    to this function.
+    
+    Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+
+--- a/drivers/net/ethernet/intel/igb/e1000_82575.c
++++ b/drivers/net/ethernet/intel/igb/e1000_82575.c
+@@ -2142,7 +2142,7 @@ static s32 igb_read_phy_reg_82580(struct
+ 	if (ret_val)
+ 		goto out;
+ 
+-	ret_val = igb_read_phy_reg_mdic(hw, offset, data);
++	ret_val = igb_read_phy_reg_mdic(hw, hw->phy.addr, offset, data);
+ 
+ 	hw->phy.ops.release(hw);
+ 
+@@ -2167,7 +2167,7 @@ static s32 igb_write_phy_reg_82580(struc
+ 	if (ret_val)
+ 		goto out;
+ 
+-	ret_val = igb_write_phy_reg_mdic(hw, offset, data);
++	ret_val = igb_write_phy_reg_mdic(hw, hw->phy.addr, offset, data);
+ 
+ 	hw->phy.ops.release(hw);
+ 
+--- a/drivers/net/ethernet/intel/igb/e1000_phy.c
++++ b/drivers/net/ethernet/intel/igb/e1000_phy.c
+@@ -136,9 +136,8 @@ out:
+  *  Reads the MDI control regsiter in the PHY at offset and stores the
+  *  information read to data.
+  **/
+-s32 igb_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data)
++s32 igb_read_phy_reg_mdic(struct e1000_hw *hw, u8 addr, u32 offset, u16 *data)
+ {
+-	struct e1000_phy_info *phy = &hw->phy;
+ 	u32 i, mdicnfg, mdic = 0;
+ 	s32 ret_val = 0;
+ 
+@@ -157,14 +156,14 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
+ 	case e1000_i211:
+ 		mdicnfg = rd32(E1000_MDICNFG);
+ 		mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
+-		mdicnfg |= (phy->addr << E1000_MDICNFG_PHY_SHIFT);
++		mdicnfg |= (addr << E1000_MDICNFG_PHY_SHIFT);
+ 		wr32(E1000_MDICNFG, mdicnfg);
+ 		mdic = ((offset << E1000_MDIC_REG_SHIFT) |
+ 			(E1000_MDIC_OP_READ));
+ 		break;
+ 	default:
+ 		mdic = ((offset << E1000_MDIC_REG_SHIFT) |
+-			(phy->addr << E1000_MDIC_PHY_SHIFT) |
++			(addr << E1000_MDIC_PHY_SHIFT) |
+ 			(E1000_MDIC_OP_READ));
+ 		break;
+ 	}
+@@ -218,9 +217,8 @@ out:
+  *
+  *  Writes data to MDI control register in the PHY at offset.
+  **/
+-s32 igb_write_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 data)
++s32 igb_write_phy_reg_mdic(struct e1000_hw *hw, u8 addr, u32 offset, u16 data)
+ {
+-	struct e1000_phy_info *phy = &hw->phy;
+ 	u32 i, mdicnfg, mdic = 0;
+ 	s32 ret_val = 0;
+ 
+@@ -239,7 +237,7 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+ 		case e1000_i211:
+ 			mdicnfg = rd32(E1000_MDICNFG);
+ 			mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
+-			mdicnfg |= (phy->addr << E1000_MDICNFG_PHY_SHIFT);
++			mdicnfg |= (addr << E1000_MDICNFG_PHY_SHIFT);
+ 			wr32(E1000_MDICNFG, mdicnfg);
+ 			mdic = (((u32)data) |
+ 				(offset << E1000_MDIC_REG_SHIFT) |
+@@ -248,7 +246,7 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+ 		default:
+ 			mdic = (((u32)data) |
+ 				(offset << E1000_MDIC_REG_SHIFT) |
+-				(phy->addr << E1000_MDIC_PHY_SHIFT) |
++				(addr << E1000_MDIC_PHY_SHIFT) |
+ 				(E1000_MDIC_OP_WRITE));
+ 			break;
+ 	}
+@@ -539,7 +537,7 @@ s32 igb_read_phy_reg_igp(struct e1000_hw
+ 		goto out;
+ 
+ 	if (offset > MAX_PHY_MULTI_PAGE_REG) {
+-		ret_val = igb_write_phy_reg_mdic(hw,
++		ret_val = igb_write_phy_reg_mdic(hw, hw->phy.addr,
+ 						 IGP01E1000_PHY_PAGE_SELECT,
+ 						 (u16)offset);
+ 		if (ret_val) {
+@@ -548,8 +546,8 @@ s32 igb_read_phy_reg_igp(struct e1000_hw
+ 		}
+ 	}
+ 
+-	ret_val = igb_read_phy_reg_mdic(hw, MAX_PHY_REG_ADDRESS & offset,
+-					data);
++	ret_val = igb_read_phy_reg_mdic(hw, hw->phy.addr,
++					MAX_PHY_REG_ADDRESS & offset, data);
+ 
+ 	hw->phy.ops.release(hw);
+ 
+@@ -578,7 +576,7 @@ s32 igb_write_phy_reg_igp(struct e1000_h
+ 		goto out;
+ 
+ 	if (offset > MAX_PHY_MULTI_PAGE_REG) {
+-		ret_val = igb_write_phy_reg_mdic(hw,
++		ret_val = igb_write_phy_reg_mdic(hw, hw->phy.addr,
+ 						 IGP01E1000_PHY_PAGE_SELECT,
+ 						 (u16)offset);
+ 		if (ret_val) {
+@@ -587,8 +585,8 @@ s32 igb_write_phy_reg_igp(struct e1000_h
+ 		}
+ 	}
+ 
+-	ret_val = igb_write_phy_reg_mdic(hw, MAX_PHY_REG_ADDRESS & offset,
+-					 data);
++	ret_val = igb_write_phy_reg_mdic(hw, hw->phy.addr,
++					 MAX_PHY_REG_ADDRESS & offset, data);
+ 
+ 	hw->phy.ops.release(hw);
+ 
+@@ -2554,8 +2552,9 @@ out:
+ }
+ 
+ /**
+- *  igb_write_phy_reg_gs40g - Write GS40G PHY register
++ *  igb_write_reg_gs40g - Write GS40G PHY register
+  *  @hw: pointer to the HW structure
++ *  @addr: phy address to write to
+  *  @offset: lower half is register offset to write to
+  *     upper half is page to use.
+  *  @data: data to write at register offset
+@@ -2563,7 +2562,7 @@ out:
+  *  Acquires semaphore, if necessary, then writes the data to PHY register
+  *  at the offset.  Release any acquired semaphores before exiting.
+  **/
+-s32 igb_write_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 data)
++s32 igb_write_reg_gs40g(struct e1000_hw *hw, u8 addr, u32 offset, u16 data)
+ {
+ 	s32 ret_val;
+ 	u16 page = offset >> GS40G_PAGE_SHIFT;
+@@ -2573,10 +2572,10 @@ s32 igb_write_phy_reg_gs40g(struct e1000
+ 	if (ret_val)
+ 		return ret_val;
+ 
+-	ret_val = igb_write_phy_reg_mdic(hw, GS40G_PAGE_SELECT, page);
++	ret_val = igb_write_phy_reg_mdic(hw, addr, GS40G_PAGE_SELECT, page);
+ 	if (ret_val)
+ 		goto release;
+-	ret_val = igb_write_phy_reg_mdic(hw, offset, data);
++	ret_val = igb_write_phy_reg_mdic(hw, addr, offset, data);
+ 
+ release:
+ 	hw->phy.ops.release(hw);
+@@ -2584,8 +2583,24 @@ release:
+ }
+ 
+ /**
+- *  igb_read_phy_reg_gs40g - Read GS40G  PHY register
++ *  igb_write_phy_reg_gs40g - Write GS40G PHY register
++ *  @hw: pointer to the HW structure
++ *  @offset: lower half is register offset to write to
++ *     upper half is page to use.
++ *  @data: data to write at register offset
++ *
++ *  Acquires semaphore, if necessary, then writes the data to PHY register
++ *  at the offset.  Release any acquired semaphores before exiting.
++ **/
++s32 igb_write_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 data)
++{
++	return igb_write_reg_gs40g(hw, hw->phy.addr, offset, data);
++}
++
++/**
++ *  igb_read_reg_gs40g - Read GS40G  PHY register
+  *  @hw: pointer to the HW structure
++ *  @addr: phy address to read from
+  *  @offset: lower half is register offset to read to
+  *     upper half is page to use.
+  *  @data: data to read at register offset
+@@ -2593,7 +2608,7 @@ release:
+  *  Acquires semaphore, if necessary, then reads the data in the PHY register
+  *  at the offset.  Release any acquired semaphores before exiting.
+  **/
+-s32 igb_read_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 *data)
++s32 igb_read_reg_gs40g(struct e1000_hw *hw, u8 addr, u32 offset, u16 *data)
+ {
+ 	s32 ret_val;
+ 	u16 page = offset >> GS40G_PAGE_SHIFT;
+@@ -2603,10 +2618,10 @@ s32 igb_read_phy_reg_gs40g(struct e1000_
+ 	if (ret_val)
+ 		return ret_val;
+ 
+-	ret_val = igb_write_phy_reg_mdic(hw, GS40G_PAGE_SELECT, page);
++	ret_val = igb_write_phy_reg_mdic(hw, addr, GS40G_PAGE_SELECT, page);
+ 	if (ret_val)
+ 		goto release;
+-	ret_val = igb_read_phy_reg_mdic(hw, offset, data);
++	ret_val = igb_read_phy_reg_mdic(hw, addr, offset, data);
+ 
+ release:
+ 	hw->phy.ops.release(hw);
+@@ -2614,6 +2629,21 @@ release:
+ }
+ 
+ /**
++ *  igb_read_phy_reg_gs40g - Read GS40G  PHY register
++ *  @hw: pointer to the HW structure
++ *  @offset: lower half is register offset to read to
++ *     upper half is page to use.
++ *  @data: data to read at register offset
++ *
++ *  Acquires semaphore, if necessary, then reads the data in the PHY register
++ *  at the offset.  Release any acquired semaphores before exiting.
++ **/
++s32 igb_read_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 *data)
++{
++	return igb_read_reg_gs40g(hw, hw->phy.addr, offset, data);
++}
++
++/**
+  *  igb_set_master_slave_mode - Setup PHY for Master/slave mode
+  *  @hw: pointer to the HW structure
+  *
+--- a/drivers/net/ethernet/intel/igb/e1000_phy.h
++++ b/drivers/net/ethernet/intel/igb/e1000_phy.h
+@@ -65,8 +65,8 @@ s32  igb_phy_has_link(struct e1000_hw *h
+ void igb_power_up_phy_copper(struct e1000_hw *hw);
+ void igb_power_down_phy_copper(struct e1000_hw *hw);
+ s32  igb_phy_init_script_igp3(struct e1000_hw *hw);
+-s32  igb_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data);
+-s32  igb_write_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 data);
++s32  igb_read_phy_reg_mdic(struct e1000_hw *hw, u8 addr, u32 offset, u16 *data);
++s32  igb_write_phy_reg_mdic(struct e1000_hw *hw, u8 addr, u32 offset, u16 data);
+ s32  igb_read_phy_reg_i2c(struct e1000_hw *hw, u32 offset, u16 *data);
+ s32  igb_write_phy_reg_i2c(struct e1000_hw *hw, u32 offset, u16 data);
+ s32  igb_read_sfp_data_byte(struct e1000_hw *hw, u16 offset, u8 *data);
+@@ -77,6 +77,8 @@ s32  igb_phy_force_speed_duplex_82580(st
+ s32  igb_get_cable_length_82580(struct e1000_hw *hw);
+ s32  igb_read_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 *data);
+ s32  igb_write_phy_reg_gs40g(struct e1000_hw *hw, u32 offset, u16 data);
++s32  igb_read_reg_gs40g(struct e1000_hw *hw, u8 addr, u32 offset, u16 *data);
++s32  igb_write_reg_gs40g(struct e1000_hw *hw, u8 addr, u32 offset, u16 data);
+ s32  igb_check_polarity_m88(struct e1000_hw *hw);
+ 
+ /* IGP01E1000 Specific Registers */

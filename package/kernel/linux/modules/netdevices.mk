@@ -129,6 +129,24 @@ endef
 $(eval $(call KernelPackage,et131x))
 
 
+define KernelPackage/gw16083
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Gateworks Ventana Ethernet Expansion Mezzanine driver
+  URL:=http://www.gateworks.com
+  FILES:=$(LINUX_DIR)/drivers/net/phy/gw16083.ko
+  KCONFIG:=CONFIG_GATEWORKS_GW16083
+  DEPENDS:=@TARGET_imx6 @PCI_SUPPORT +kmod-libphy +kmod-igb
+  AUTOLOAD:=$(call AutoLoad,36,gw16083)
+endef
+
+define KernelPackage/gw16083/description
+ This package contains the gw16083 kernel module for supporting the Gateworks
+ Ventana Ethernet Expansion Mezzanine.
+endef
+
+$(eval $(call KernelPackage,gw16083))
+
+
 define KernelPackage/swconfig
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=switch configuration API
