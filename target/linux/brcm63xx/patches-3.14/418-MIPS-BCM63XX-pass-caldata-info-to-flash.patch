@@ -11,7 +11,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
 
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -255,7 +255,7 @@ int __init board_register_devices(void)
+@@ -267,7 +267,7 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  
@@ -22,7 +22,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  	while (led_count < ARRAY_SIZE(board.leds) && board.leds[led_count].name)
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -35,12 +35,15 @@ static struct mtd_partition mtd_partitio
+@@ -37,12 +37,15 @@ static struct mtd_partition mtd_partitio
  	}
  };
  
@@ -38,7 +38,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  };
  
  static struct resource mtd_resources[] = {
-@@ -68,6 +71,7 @@ void __init bcm63xx_flash_force_phys_bas
+@@ -70,6 +73,7 @@ void __init bcm63xx_flash_force_phys_bas
  
  static struct flash_platform_data bcm63xx_flash_data = {
  	.part_probe_types	= bcm63xx_part_types,
@@ -46,7 +46,7 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
  };
  
  static struct spi_board_info bcm63xx_spi_flash_info[] = {
-@@ -195,9 +199,13 @@ void __init bcm63xx_flash_detect(void)
+@@ -197,9 +201,13 @@ void __init bcm63xx_flash_detect(void)
  	}
  }
  

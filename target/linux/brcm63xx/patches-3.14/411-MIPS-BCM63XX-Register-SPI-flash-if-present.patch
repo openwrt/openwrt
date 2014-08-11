@@ -24,7 +24,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  #include <bcm63xx_regs.h>
  #include <bcm63xx_io.h>
  
-@@ -63,6 +66,21 @@ void __init bcm63xx_flash_force_phys_bas
+@@ -65,6 +68,21 @@ void __init bcm63xx_flash_force_phys_bas
  	mtd_resources[0].end = end;
  }
  
@@ -46,7 +46,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  static int __init bcm63xx_detect_flash_type(void)
  {
  	u32 val;
-@@ -70,9 +88,15 @@ static int __init bcm63xx_detect_flash_t
+@@ -72,9 +90,15 @@ static int __init bcm63xx_detect_flash_t
  	switch (bcm63xx_get_cpu_id()) {
  	case BCM6318_CPU_ID:
  		/* only support serial flash */
@@ -62,7 +62,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -91,12 +115,20 @@ static int __init bcm63xx_detect_flash_t
+@@ -93,12 +117,20 @@ static int __init bcm63xx_detect_flash_t
  			return BCM63XX_FLASH_TYPE_SERIAL;
  	case BCM6362_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
@@ -83,7 +83,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
  		case STRAPBUS_6368_BOOT_SEL_NAND:
  			return BCM63XX_FLASH_TYPE_NAND;
-@@ -107,6 +139,11 @@ static int __init bcm63xx_detect_flash_t
+@@ -109,6 +141,11 @@ static int __init bcm63xx_detect_flash_t
  		}
  	case BCM63268_CPU_ID:
  		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
@@ -95,7 +95,7 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -176,8 +213,15 @@ int __init bcm63xx_flash_register(void)
+@@ -181,8 +218,15 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:

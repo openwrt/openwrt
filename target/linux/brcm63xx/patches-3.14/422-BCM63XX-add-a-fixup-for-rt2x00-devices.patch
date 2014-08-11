@@ -36,7 +36,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  
  #include "board_common.h"
  
-@@ -284,9 +285,19 @@ int __init board_register_devices(void)
+@@ -296,9 +297,19 @@ int __init board_register_devices(void)
  	}
  
  	/* register any fixups */
@@ -61,7 +61,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  }
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -199,7 +199,7 @@ void __init bcm63xx_flash_detect(void)
+@@ -201,7 +201,7 @@ void __init bcm63xx_flash_detect(void)
  	}
  }
  
