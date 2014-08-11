@@ -7,6 +7,7 @@
 
 define Profile/Generic
   NAME:=Broadcom SoC, BCM43xx WiFi (b43, default)
+  PACKAGES:=kmod-b43
 endef
 
 define Profile/Generic/Description
