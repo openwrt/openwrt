@@ -74,15 +74,6 @@ define Image/Build/CFEHW553
 		--block-size 0x20000 --image-offset $(4)
 endef
 
-define Image/Build/CFEHW556
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-	--output $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
-	--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
-	--load-addr $(LOADADDR) --tag-version 8 --rsa-signature "$(5)" \
-	--image-offset $(4) --info1 "$(6)" --block-size 0x20000
-endef
-
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -229,6 +220,16 @@ define CfeImageDTB
   TARGET_IMAGES += $(4)
 endef
 
+define HW556ImageDTB
+  define Image/Build/$(2)
+	$$(call Image/Build/CFEDTB,$$(1),$(1),HW556,6358,$(2),EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8)
+  endef
+
+  TARGET_DTBS += $(1)
+  TARGET_IMAGES += $(2)
+endef
+
+
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
@@ -351,9 +352,6 @@ define Image/Build
 	#HW553
 	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
 
-	#HW556
-	$(call Image/Build/CFEHW556,$(1),HW556,6358,0x20000,EchoLife_HG556a,OpenWRT-$(REVISION))
-
 	# T-Com Speedport W 303V Typ B
 	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
 
@@ -388,5 +386,9 @@ $(eval $(call CfeImageDTB,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 $(eval $(call CfeImageDTB,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
 # D-Link DVA-G3810BN/TL
 $(eval $(call CfeImageDTB,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
+# Huawei HW556
+$(eval $(call HW556ImageDTB,hg556a-a,HW556-A))
+$(eval $(call HW556ImageDTB,hg556a-b,HW556-B))
+$(eval $(call HW556ImageDTB,hg556a-c,HW556-C))
 
 $(eval $(call BuildImage))

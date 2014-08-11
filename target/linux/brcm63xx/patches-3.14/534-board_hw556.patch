@@ -8,7 +8,7 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
-@@ -3006,6 +3007,492 @@ static struct board_info __initdata boar
+@@ -3006,6 +3007,495 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -104,6 +104,7 @@
 +};
 +static struct board_info __initdata board_HW556_A = {
 +	.name					= "HW556_A",
++	.of_board_id				= "huawei,hg556a-a",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -231,6 +232,7 @@
 +};
 +static struct board_info __initdata board_HW556_B = {
 +	.name					= "HW556_B",
++	.of_board_id				= "huawei,hg556a-b",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -365,6 +367,7 @@
 +};
 +static struct board_info __initdata board_HW556_C = {
 +	.name					= "HW556_C",
++	.of_board_id				= "huawei,hg556a-c",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -501,7 +504,7 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3446,6 +3933,10 @@ static const struct board_info __initcon
+@@ -3446,6 +3936,10 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r2,
  	&board_ct6373_1,
  	&board_HW553,
@@ -512,51 +515,6 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
-@@ -3465,13 +3956,37 @@ static void __init boardid_fixup(u8 *boo
- 	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
- 	char *board_name = (char *)bcm63xx_nvram_get_name();
- 
--	if (BCMCPU_IS_6358() && (!strcmp(board_name, "96358VW"))) {
--		u8 *p = boot_addr + NB4_PID_OFFSET;
--
--		/* Extract nb4 PID */
--		if (!memcmp(p, "NB4-", 4)) {
--			memcpy(board_name, p, sizeof("NB4-XXX-rX"));
--			return;
-+	if (BCMCPU_IS_6358()) {
-+		if (!strcmp(board_name, "96358VW")) {
-+			u8 *p = boot_addr + NB4_PID_OFFSET;
-+
-+			/* Extract nb4 PID */
-+			if (!memcmp(p, "NB4-", 4)) {
-+				memcpy(board_name, p, sizeof("NB4-XXX-rX"));
-+				return;
-+			}
-+		} else if (!strcmp(board_name, "HW556")) {
-+			/*
-+			 * HW556 has different wlan caldatas depending on
-+			 * hardware version.
-+			 * Detect hardware version and change board id
-+			 */
-+			u8 cal_data_ath9k[4] = { 0xa5, 0x5a, 0, 0 };
-+			u8 cal_data_rt3062[4] = { 0x62, 0x30, 1, 0 };
-+
-+			if (!memcmp(boot_addr + 0xeffe00,
-+				    &cal_data_rt3062, 4)) {
-+				/* Ralink 0xeffe00 */
-+				memcpy(board_name, "HW556_A", 7);
-+			} else if (!memcmp(boot_addr + 0xf7e000,
-+					   &cal_data_ath9k, 4)) {
-+				/* Atheros 0xf7e000 */
-+				memcpy(board_name, "HW556_B", 7);
-+			} else if (!memcmp(boot_addr + 0xefe000,
-+					   &cal_data_ath9k, 4)) {
-+				/* Atheros 0xefe000 */
-+				memcpy(board_name, "HW556_C", 7);
-+			}
- 		}
- 	}
- 
 --- a/drivers/mtd/bcm63xxpart.c
 +++ b/drivers/mtd/bcm63xxpart.c
 @@ -224,6 +224,11 @@ static int bcm63xx_parse_cfe_partitions(
