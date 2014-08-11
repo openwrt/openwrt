@@ -13,9 +13,9 @@
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -35,6 +41,12 @@
- #define CFE_OFFSET_64K			0x10000
- #define CFE_OFFSET_128K			0x20000
+@@ -31,6 +37,12 @@
+ #define BCM963XX_KEYS_POLL_INTERVAL	20
+ #define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
  
 +#define NB4_PID_OFFSET		0xff80
 +#define NB4_74X164_GPIO_BASE	64
@@ -26,7 +26,7 @@
  /*
   * known 3368 boards
   */
-@@ -768,6 +780,270 @@ static struct board_info __initdata boar
+@@ -764,6 +776,270 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -297,7 +297,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -804,6 +1080,8 @@ static const struct board_info __initcon
+@@ -800,6 +1076,8 @@ static const struct board_info __initcon
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,

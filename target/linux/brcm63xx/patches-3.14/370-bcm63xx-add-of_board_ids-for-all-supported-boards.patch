@@ -9,7 +9,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -41,6 +41,7 @@
+@@ -37,6 +37,7 @@
  #ifdef CONFIG_BCM63XX_CPU_3368
  static struct board_info __initdata board_cvg834g = {
  	.name				= "CVG834G_E15R3921",
@@ -17,7 +17,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x3368,
  
  	.has_uart0			= 1,
-@@ -73,6 +74,7 @@ static struct board_info __initdata boar
+@@ -69,6 +70,7 @@ static struct board_info __initdata boar
  #ifdef CONFIG_BCM63XX_CPU_6328
  static struct board_info __initdata board_96328avng = {
  	.name				= "96328avng",
@@ -25,7 +25,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6328,
  
  	.has_uart0			= 1,
-@@ -122,6 +124,7 @@ static struct board_info __initdata boar
+@@ -118,6 +120,7 @@ static struct board_info __initdata boar
  #ifdef CONFIG_BCM63XX_CPU_6338
  static struct board_info __initdata board_96338gw = {
  	.name				= "96338GW",
@@ -33,7 +33,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6338,
  
  	.has_uart0			= 1,
-@@ -165,6 +168,7 @@ static struct board_info __initdata boar
+@@ -161,6 +164,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_96338w = {
  	.name				= "96338W",
@@ -41,7 +41,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6338,
  
  	.has_uart0			= 1,
-@@ -211,6 +215,7 @@ static struct board_info __initdata boar
+@@ -207,6 +211,7 @@ static struct board_info __initdata boar
  #ifdef CONFIG_BCM63XX_CPU_6345
  static struct board_info __initdata board_96345gw2 = {
  	.name				= "96345GW2",
@@ -49,7 +49,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6345,
  
  	.has_uart0			= 1,
-@@ -223,6 +228,7 @@ static struct board_info __initdata boar
+@@ -219,6 +224,7 @@ static struct board_info __initdata boar
  #ifdef CONFIG_BCM63XX_CPU_6348
  static struct board_info __initdata board_96348r = {
  	.name				= "96348R",
@@ -57,7 +57,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -268,6 +274,7 @@ static struct board_info __initdata boar
+@@ -264,6 +270,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_96348gw_10 = {
  	.name				= "96348GW-10",
@@ -65,7 +65,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -329,6 +336,7 @@ static struct board_info __initdata boar
+@@ -325,6 +332,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_96348gw_11 = {
  	.name				= "96348GW-11",
@@ -73,7 +73,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -394,6 +402,7 @@ static struct board_info __initdata boar
+@@ -390,6 +398,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
@@ -81,7 +81,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -463,6 +472,7 @@ static struct board_info __initdata boar
+@@ -459,6 +468,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
@@ -89,7 +89,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -488,6 +498,7 @@ static struct board_info __initdata boar
+@@ -484,6 +494,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_rta1025w_16 = {
  	.name				= "RTA1025W_16",
@@ -97,7 +97,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_enet0			= 1,
-@@ -508,6 +519,7 @@ static struct board_info __initdata boar
+@@ -504,6 +515,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_DV201AMR = {
  	.name				= "DV201AMR",
@@ -105,7 +105,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -529,6 +541,7 @@ static struct board_info __initdata boar
+@@ -525,6 +537,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_96348gw_a = {
  	.name				= "96348GW-A",
@@ -113,7 +113,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6348,
  
  	.has_uart0			= 1,
-@@ -556,6 +569,7 @@ static struct board_info __initdata boar
+@@ -552,6 +565,7 @@ static struct board_info __initdata boar
  #ifdef CONFIG_BCM63XX_CPU_6358
  static struct board_info __initdata board_96358vw = {
  	.name				= "96358VW",
@@ -121,7 +121,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6358,
  
  	.has_uart0			= 1,
-@@ -609,6 +623,7 @@ static struct board_info __initdata boar
+@@ -605,6 +619,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_96358vw2 = {
  	.name				= "96358VW2",
@@ -129,7 +129,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6358,
  
  	.has_uart0			= 1,
-@@ -659,6 +674,7 @@ static struct board_info __initdata boar
+@@ -655,6 +670,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_AGPFS0 = {
  	.name				= "AGPF-S0",
@@ -137,7 +137,7 @@ Subject: [PATCH 48/48] MIPS: BCM63XX: add of_board_ids for all supported boards
  	.expected_cpu_id		= 0x6358,
  
  	.has_uart0			= 1,
-@@ -682,6 +698,7 @@ static struct board_info __initdata boar
+@@ -678,6 +694,7 @@ static struct board_info __initdata boar
  
  static struct board_info __initdata board_DWVS0 = {
  	.name				= "DWV-S0",

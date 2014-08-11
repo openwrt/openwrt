@@ -55,16 +55,6 @@ define Image/Build/CFEDTB
 		$(7) $(8) $(9) $(10)
 endef
 
-define Image/Build/CFEFIXUP
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		--boardid $(2) --chipid $(4) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
-		--info1 "+$(call Image/LimitName16,$(3))" --info2 $(1) \
-		$(7) $(8) $(9) $(10)
-endef
-
 define Image/Build/CFEHW553
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
