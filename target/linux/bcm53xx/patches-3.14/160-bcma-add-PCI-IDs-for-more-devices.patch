@@ -13,12 +13,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
-@@ -282,6 +282,8 @@ static const struct pci_device_id bcma_p
+@@ -282,6 +282,7 @@ static const struct pci_device_id bcma_p
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },
-+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4360) },
  	{ 0, },
  };
  MODULE_DEVICE_TABLE(pci, bcma_pci_bridge_tbl);
