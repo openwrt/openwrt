@@ -3,6 +3,10 @@
 	#size-cells = <1>;
 	compatible = "brcm,bcm6368";
 
+	aliases {
+		pflash = &pflash;
+	};
+
 	cpus {
 		cpu@0 {
 			compatible = "brcm,bmips4350", "mips,mips4Kc";
@@ -19,5 +23,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+	};
+
+	pflash: nor@18000000 {
+		compatible = "cfi-flash";
+		reg = <0x18000000 0x2000000>;
+		bank-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
 	};
 };

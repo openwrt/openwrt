@@ -44,8 +44,8 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
  static int (*board_get_mac_address)(u8 mac[ETH_ALEN]);
 --- a/arch/mips/bcm63xx/boards/board_common.h
 +++ b/arch/mips/bcm63xx/boards/board_common.h
-@@ -15,4 +15,10 @@ void board_bcm963xx_init(void);
- static inline void board_bcm963xx_init(void) { }
+@@ -24,4 +24,10 @@ static inline void board_of_device_prese
+ }
  #endif
  
 +#if defined(CONFIG_BOARD_LIVEBOX)

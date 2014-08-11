@@ -1,0 +1,52 @@
+From 0d0e02d605c5696a5076510f564fefe659127aa4 Mon Sep 17 00:00:00 2001
+From: Grant Likely <grant.likely@linaro.org>
+Date: Thu, 22 May 2014 01:04:17 +0900
+Subject: [PATCH] of: Create unlocked version of for_each_child_of_node()
+
+When iterating over nodes, sometimes it needs to be done when the DT
+lock is already held. This patch makes an unlocked version of the
+for_each_child_of_node() macro.
+
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+---
+ drivers/of/base.c | 22 +++++++++++++++++-----
+ 1 file changed, 17 insertions(+), 5 deletions(-)
+
+--- a/drivers/of/base.c
++++ b/drivers/of/base.c
+@@ -545,6 +545,22 @@ struct device_node *of_get_next_parent(s
+ }
+ EXPORT_SYMBOL(of_get_next_parent);
+ 
++static struct device_node *__of_get_next_child(const struct device_node *node,
++						struct device_node *prev)
++{
++	struct device_node *next;
++
++	next = prev ? prev->sibling : node->child;
++	for (; next; next = next->sibling)
++		if (of_node_get(next))
++			break;
++	of_node_put(prev);
++	return next;
++}
++#define __for_each_child_of_node(parent, child) \
++	for (child = __of_get_next_child(parent, NULL); child != NULL; \
++	     child = __of_get_next_child(parent, child))
++
+ /**
+  *	of_get_next_child - Iterate a node childs
+  *	@node:	parent node
+@@ -560,11 +576,7 @@ struct device_node *of_get_next_child(co
+ 	unsigned long flags;
+ 
+ 	raw_spin_lock_irqsave(&devtree_lock, flags);
+-	next = prev ? prev->sibling : node->child;
+-	for (; next; next = next->sibling)
+-		if (of_node_get(next))
+-			break;
+-	of_node_put(prev);
++	next = __of_get_next_child(node, prev);
+ 	raw_spin_unlock_irqrestore(&devtree_lock, flags);
+ 	return next;
+ }

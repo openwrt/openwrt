@@ -18,7 +18,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  #include "board_common.h"
  
-@@ -184,6 +185,7 @@ int __init board_register_devices(void)
+@@ -196,6 +197,7 @@ int __init board_register_devices(void)
  	int button_count = 0;
  	int led_count = 0;
  	int usbh_ports = 0;
@@ -26,7 +26,7 @@ Subject: [PATCH 58/72] BCM63XX: allow providing fixup data in board data
  
  #if CONFIG_OF
  	if (of_have_populated_dt()) {
-@@ -281,6 +283,10 @@ int __init board_register_devices(void)
+@@ -293,6 +295,10 @@ int __init board_register_devices(void)
  		platform_device_register(&bcm63xx_gpio_keys_device);
  	}
  
