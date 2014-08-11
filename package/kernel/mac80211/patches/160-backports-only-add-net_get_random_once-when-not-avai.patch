@@ -1,0 +1,27 @@
+From 6e5603fa9e5b0d3c602eb1672473e81a1692f61e Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 31 May 2014 15:52:42 +0200
+Subject: [PATCH] backports: only add net_get_random_once() when not available
+
+Upstream commit: d787b3dd3b4fcb5f40eb6532163dc3abdca4fd45
+
+net_get_random_once() was added unconditionally also when the kernel we
+are compiling against already provided this function, this patch checks
+that first.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ backport/backport-include/linux/net.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/backport-include/linux/net.h
++++ b/backport-include/linux/net.h
+@@ -64,7 +64,7 @@ do {								\
+  * may affect tracing. My recommendation is that if you have a need for
+  * static keys you just require at least 3.5 to remain sane.
+  */
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0) && !defined(net_get_random_once)
+ #define __BACKPORT_NET_GET_RANDOM_ONCE 1
+ #endif
+ #endif /* ___NET_RANDOM_STATIC_KEY_INIT */
