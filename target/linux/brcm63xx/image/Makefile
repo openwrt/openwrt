@@ -33,6 +33,8 @@ endef
 
 TARGET_DTBS:=
 
+TARGET_IMAGES:=
+
 define Image/Build/CFE
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -41,6 +43,16 @@ define Image/Build/CFE
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
 		--info1 "-$(call Image/LimitName16,$(4))" --info2 $(1) \
 		$(6) $(7) $(8) $(9)
+endef
+
+define Image/Build/CFEDTB
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
+		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
+		--info1 "-$(call Image/LimitName16,$(5))" --info2 $(1) \
+		$(7) $(8) $(9) $(10)
 endef
 
 define Image/Build/CFEFIXUP
@@ -208,6 +220,15 @@ define Image/Build/Initramfs
 	$(call Image/Build/HCS,initramfs,cvg834g,a020,0001,0022,$(KDIR)/vmlinux-initramfs)
 endef
 
+define CfeImageDTB
+  define Image/Build/$(4)
+	$$(call Image/Build/CFEDTB,$$(1),$(1),$(2),$(3),$(4),$(5),$(6))
+  endef
+
+  TARGET_DTBS += $(1)
+  TARGET_IMAGES += $(4)
+endef
+
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
@@ -358,6 +379,9 @@ define Image/Build
 
 	# Netgear CVG834G
 	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
+
+	# build dtb image list
+	$(foreach image,$(TARGET_IMAGES),$(call Image/Build/$(image),$(1)))
 
   ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
