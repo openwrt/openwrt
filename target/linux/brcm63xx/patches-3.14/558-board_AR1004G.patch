@@ -8,7 +8,7 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
 ---
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1153,6 +1153,51 @@ static struct board_info __initdata boar
+@@ -1428,6 +1428,51 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -57,10 +57,10 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
 +	},
 +};
 +
- #endif
  
- /*
-@@ -4637,6 +4682,7 @@ static const struct board_info __initcon
+ /* BT Voyager 2110 */
+ static struct board_info __initdata board_V2110 = {
+@@ -4635,6 +4680,7 @@ static const struct board_info __initcon
  	&board_96348A_122,
  	&board_CPVA502plus,
  	&board_96348W3,

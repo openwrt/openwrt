@@ -1,7 +1,7 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -590,6 +590,59 @@ static struct board_info __initdata boar
- 	.ephy_reset_gpio_flags		= GPIOF_INIT_HIGH,
+@@ -1162,6 +1162,59 @@ static struct board_info __initdata boar
+ 	.has_ohci0 = 1,
  };
  
 +/* NetGear DG834G v4 */
@@ -57,10 +57,10 @@
 +	},
 +};
 +
- #endif
- 
- /*
-@@ -2637,6 +2690,7 @@ static const struct board_info __initcon
+ static struct board_info __initdata board_96348_D4PW = {
+ 	.name				= "D-4P-W",
+ 	.expected_cpu_id		= 0x6348,
+@@ -2635,6 +2688,7 @@ static const struct board_info __initcon
  	&board_ct536_ct5621,
  	&board_96348A_122,
  	&board_CPVA502plus,
