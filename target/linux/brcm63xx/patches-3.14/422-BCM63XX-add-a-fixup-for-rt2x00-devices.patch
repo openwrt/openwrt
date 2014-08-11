@@ -28,7 +28,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  obj-y		+= boards/
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -34,6 +34,7 @@
+@@ -37,6 +37,7 @@
  #include <bcm63xx_dev_usb_usbd.h>
  #include <board_bcm963xx.h>
  #include <pci_ath9k_fixup.h>
@@ -36,7 +36,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  
  #include "board_common.h"
  
-@@ -250,9 +251,19 @@ int __init board_register_devices(void)
+@@ -284,9 +285,19 @@ int __init board_register_devices(void)
  	}
  
  	/* register any fixups */
@@ -183,7 +183,7 @@ Subject: [PATCH 72/72] 446-BCM63XX-add-a-fixup-for-rt2x00-devices
  };
  
  /*
-@@ -47,7 +52,7 @@ struct board_info {
+@@ -48,7 +53,7 @@ struct board_info {
  	unsigned int	has_caldata:2;
  
  	/* wifi calibration data config */

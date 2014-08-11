@@ -26,7 +26,7 @@
  /*
   * known 3368 boards
   */
-@@ -751,6 +763,605 @@ static struct board_info __initdata boar
+@@ -768,6 +780,605 @@ static struct board_info __initdata boar
  
  	.has_ohci0			= 1,
  };
@@ -632,7 +632,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -787,6 +1398,11 @@ static const struct board_info __initcon
+@@ -804,6 +1415,11 @@ static const struct board_info __initcon
  	&board_96358vw2,
  	&board_AGPFS0,
  	&board_DWVS0,
@@ -644,7 +644,7 @@
  #endif
  };
  
-@@ -795,6 +1411,16 @@ static void __init boardid_fixup(u8 *boo
+@@ -812,6 +1428,16 @@ static void __init boardid_fixup(u8 *boo
  	struct bcm_tag *tag = (struct bcm_tag *)(boot_addr + CFE_OFFSET_64K);
  	char *board_name = (char *)bcm63xx_nvram_get_name();
  

@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1107,6 +1107,57 @@ static struct board_info __initdata boar
+@@ -1117,6 +1117,57 @@ static struct board_info __initdata boar
  	.has_ehci0			= 1,
  };
  
@@ -57,8 +57,8 @@
 +
  static struct board_info __initdata board_rta1025w_16 = {
  	.name				= "RTA1025W_16",
- 	.expected_cpu_id		= 0x6348,
-@@ -2969,6 +3020,7 @@ static const struct board_info __initcon
+ 	.of_board_id			= "dynalink,rta1025w",
+@@ -2986,6 +3037,7 @@ static const struct board_info __initcon
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,

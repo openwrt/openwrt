@@ -1,0 +1,124 @@
+From 318c1fce4aeef298cbb6153416c499c94ad7cda0 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Tue, 24 Jun 2014 10:53:15 +0200
+Subject: [PATCH RFC v3] MIPS: add support for vmlinux.bin appended DTB
+
+Add support for populating initial_boot_params through a dtb
+blob appended to raw vmlinux.bin.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+Changes RFC v2 -> v3
+
+* fixed !smp kernels (TODO: move it to its own patch
+
+Changes RFC v1 -> v2
+
+* changed all occurences of vmlinux to vmlinux.bin
+* clarified this applies to the raw vmlinux.bin without decompressor
+* s/initial_device_params/initial_boot_params/
+
+Initial comments by me still valid:
+
+Mostly adapted from how ARM is doing it.
+
+Sent as an RFC PATCH because I am not sure if this is the right way to
+it, and whether storing the pointer in initial_boot_params is a good
+idea, or a new variable should be introduced.
+
+The reasoning for initial_boot_params is that there is no common
+MIPS interface yet, so the next best thing was using that. This also
+has the advantage of keeping the original fw_args intact.
+
+This patch works for me on bcm63xx, where the bootloader expects
+an lzma compressed kernel, so I didn't want to double compress using
+the in-kernel compressed kernel support.
+
+Completely untested on anything except MIPS32 / big endian.
+
+ arch/mips/Kconfig              | 18 ++++++++++++++++++
+ arch/mips/kernel/head.S        | 19 +++++++++++++++++++
+ arch/mips/kernel/vmlinux.lds.S |  7 +++++++
+ 3 files changed, 43 insertions(+)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2519,6 +2519,24 @@ config RAPIDIO
+ 
+ source "drivers/rapidio/Kconfig"
+ 
++config MIPS_APPENDED_DTB
++	bool "Use appended device tree blob to vmlinux.bin (EXPERIMENTAL)"
++	depends on OF
++	help
++	  With this option, the boot code will look for a device tree binary
++	  DTB) appended to raw vmlinux.bin (without decompressor).
++	  (e.g. cat vmlinux.bin <filename>.dtb > vmlinux_w_dtb).
++
++	  This is meant as a backward compatibility convenience for those
++	  systems with a bootloader that can't be upgraded to accommodate
++	  the documented boot protocol using a device tree.
++
++	  Beware that there is very little in terms of protection against
++	  this option being confused by leftover garbage in memory that might
++	  look like a DTB header after a reboot if no actual DTB is appended
++	  to vmlinux.bin.  Do not leave this option active in a production kernel
++	  if you don't intend to always append a DTB.
++
+ endmenu
+ 
+ menu "Executable file formats"
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -139,6 +139,22 @@ NESTED(kernel_entry, 16, sp)			# kernel
+ 	mtc0	t0, CP0_STATUS
+ #endif /* CONFIG_MIPS_MT_SMTC */
+ 
++#ifdef CONFIG_MIPS_APPENDED_DTB
++	PTR_LA		t0, __appended_dtb
++	PTR_LI		t3, 0
++
++#ifdef CONFIG_CPU_BIG_ENDIAN
++	PTR_LI		t1, 0xd00dfeed
++#else
++	PTR_LI		t1, 0xedfe0dd0
++#endif
++	LONG_L		t2, (t0)
++	bne		t1, t2, not_found
++
++	PTR_LA		t3, __appended_dtb
++
++not_found:
++#endif
+ 	PTR_LA		t0, __bss_start		# clear .bss
+ 	LONG_S		zero, (t0)
+ 	PTR_LA		t1, __bss_stop - LONGSIZE
+@@ -152,6 +168,10 @@ NESTED(kernel_entry, 16, sp)			# kernel
+ 	LONG_S		a2, fw_arg2
+ 	LONG_S		a3, fw_arg3
+ 
++#ifdef CONFIG_MIPS_APPENDED_DTB
++	LONG_S		t3, initial_boot_params
++#endif
++
+ 	MTC0		zero, CP0_CONTEXT	# clear context register
+ 	PTR_LA		$28, init_thread_union
+ 	/* Set the SP after an empty pt_regs.  */
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -125,8 +125,14 @@ SECTIONS
+ 	.exit.data : {
+ 		EXIT_DATA
+ 	}
+-
++#ifdef CONFIG_SMP
+ 	PERCPU_SECTION(1 << CONFIG_MIPS_L1_CACHE_SHIFT)
++#endif
++#ifdef CONFIG_MIPS_APPENDED_DTB
++	__appended_dtb = .;
++	/* leave space for appended DTB */
++	. = . + 0x100000;
++#endif
+ 	/*
+ 	 * Align to 64K in attempt to eliminate holes before the
+ 	 * .bss..swapper_pg_dir section at the start of .bss.  This
