@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -170,6 +170,91 @@ static struct board_info __initdata boar
+@@ -166,6 +166,91 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -92,7 +92,7 @@
  static struct sprom_fixup __initdata ar5387un_fixups[] = {
  	{ .offset = 2, .value = 0x05bb },
  	{ .offset = 65, .value = 0x1204 },
-@@ -2925,6 +3010,7 @@ static const struct board_info __initcon
+@@ -2921,6 +3006,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
