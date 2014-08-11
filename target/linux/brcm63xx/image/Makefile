@@ -232,9 +232,6 @@ endef
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
-	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-4M-flash-generic,,--pad 2)
-	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-8M-flash-generic,,--pad 4)
-	$(call Image/Build/CFE,$(1),96328avng,6328,96328avng-16M-flash-generic,,--pad 8)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-4M-flash-generic,,--pad 2)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-8M-flash-generic,,--pad 4)
 	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-16M-flash-generic,,--pad 8)
@@ -387,5 +384,9 @@ define Image/Build
 	$(call Image/Build/Initramfs)
   endif
 endef
+
+$(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-4M-flash-generic,,--pad 2))
+$(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
+$(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
 
 $(eval $(call BuildImage))
