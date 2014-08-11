@@ -17,7 +17,7 @@
  
  #define CT6373_PID_OFFSET		0xff80
  #define CT6373_74X164_GPIO_BASE	64
-@@ -2717,6 +2720,104 @@ static struct board_info __initdata boar
+@@ -2717,6 +2720,105 @@ static struct board_info __initdata boar
  };
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
@@ -56,6 +56,7 @@
 +
 +static struct board_info __initdata board_nb6 = {
 +	.name				= "NB6",
++	.of_board_id			= "sfr,nb6-ser-r0",
 +	.expected_cpu_id		= 0x6362,
 +
 +	.has_uart0			= 1,
@@ -122,7 +123,7 @@
  /*
   * known 6368 boards
   */
-@@ -2923,6 +3024,10 @@ static const struct board_info __initcon
+@@ -2923,6 +3025,10 @@ static const struct board_info __initcon
  	&board_DVAG3810BN,
  #endif
  
@@ -133,15 +134,3 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -2944,6 +3049,11 @@ static void __init boardid_fixup(u8 *boo
- 		}
- 	}
- 
-+	if (BCMCPU_IS_6362() && (!strncmp(board_name, "NB6-", sizeof("NB6-") - 1))) {
-+		board_name[sizeof("NB6") - 1] = '\0';
-+		return ;
-+	}
-+
- 	/* check if bcm_tag is at 64k offset */
- 	if (strncmp(board_name, tag->board_id, BOARDID_LEN) != 0) {
- 		/* else try 128k */
