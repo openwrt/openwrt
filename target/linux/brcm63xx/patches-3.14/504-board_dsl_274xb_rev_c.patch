@@ -1,12 +1,13 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -907,6 +907,61 @@ static struct board_info __initdata boar
+@@ -907,6 +907,62 @@ static struct board_info __initdata boar
  	.has_ohci0			= 1,
  };
  
 +/* D-Link DSL-274xB revison C2/C3 */
 +static struct board_info __initdata board_dsl_274xb_rev_c = {
 +	.name				= "AW4139",
++	.of_board_id			= "d-link,dsl-274xb-c2",
 +	.expected_cpu_id		= 0x6358,
 +
 +	.has_uart0			= 1,
@@ -62,7 +63,7 @@
  struct spi_gpio_platform_data nb4_spi_gpio_data = {
  	.sck		= NB4_SPI_GPIO_CLK,
  	.mosi		= NB4_SPI_GPIO_MOSI,
-@@ -1543,6 +1598,7 @@ static const struct board_info __initcon
+@@ -1543,6 +1599,7 @@ static const struct board_info __initcon
  	&board_AGPFS0,
  	&board_CPVA642,
  	&board_DWVS0,

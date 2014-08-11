@@ -1,11 +1,12 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -516,6 +516,112 @@ static struct board_info __initdata boar
+@@ -516,6 +516,114 @@ static struct board_info __initdata boar
  	},
  };
  
 +static struct board_info __initdata board_gw6200 = {
 +	.name				= "GW6200",
++	.of_board_id			= "tecom,gw6200",
 +	.expected_cpu_id		= 0x6348,
 +
 +	.has_uart0			= 1,
@@ -68,6 +69,7 @@
 +
 +static struct board_info __initdata board_gw6000 = {
 +	.name				= "GW6000",
++	.of_board_id			= "tecom,gw6000",
 +	.expected_cpu_id		= 0x6348,
 +
 +	.has_uart0			= 1,
@@ -113,7 +115,7 @@
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
  	.of_board_id			= "sagem,f@st2404",
-@@ -1644,6 +1750,8 @@ static const struct board_info __initcon
+@@ -1646,6 +1754,8 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,

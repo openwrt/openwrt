@@ -1,12 +1,13 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -657,6 +657,67 @@ static struct board_info __initdata boar
+@@ -657,6 +657,68 @@ static struct board_info __initdata boar
  		},
  	},
  };
 +
 +static struct board_info __initdata board_spw500v = {
 +	.name				= "SPW500V",
++	.of_board_id			= "t-com,spw500v",
 +	.expected_cpu_id		= 0x6348,
 +
 +	.has_uart0			= 1,
@@ -68,7 +69,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -1590,6 +1651,7 @@ static const struct board_info __initcon
+@@ -1591,6 +1653,7 @@ static const struct board_info __initcon
  	&board_96348gw_a,
  	&board_rta1025w_16,
  	&board_96348_D4PW,
