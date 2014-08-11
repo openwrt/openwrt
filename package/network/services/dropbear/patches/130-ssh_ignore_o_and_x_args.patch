@@ -1,6 +1,6 @@
 --- a/cli-runopts.c
 +++ b/cli-runopts.c
-@@ -309,6 +309,10 @@ void cli_getopts(int argc, char ** argv)
+@@ -312,6 +312,10 @@ void cli_getopts(int argc, char ** argv)
  					debug_trace = 1;
  					break;
  #endif
@@ -11,10 +11,10 @@
  				case 'F':
  				case 'e':
  #ifndef ENABLE_USER_ALGO_LIST
-@@ -322,7 +326,6 @@ void cli_getopts(int argc, char ** argv)
- #ifndef ENABLE_CLI_LOCALTCPFWD
- 				case 'L':
- #endif
+@@ -329,7 +333,6 @@ void cli_getopts(int argc, char ** argv)
+ 					print_version();
+ 					exit(EXIT_SUCCESS);
+ 					break;
 -				case 'o':
  				case 'b':
  					next = &dummy;
