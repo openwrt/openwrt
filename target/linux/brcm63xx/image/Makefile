@@ -274,8 +274,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
-	# Neufbox4
-	$(call Image/Build/CFE,$(1),96358VW,6358,NEUFBOX4,OpenWRT-$(REVISION))
 	# Zyxel P870HW-51a v2
 	$(call Image/Build/ZyXEL,$(1),96368VVW,P870HW-51a_v2,6368,P870HW-51a_v2,ZyXEL,--signature "ZyXEL_0001")
 
@@ -387,6 +385,10 @@ $(eval $(call CfeImageDTB,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
 $(eval $(call HW556ImageDTB,hg556a-a,HW556-A))
 $(eval $(call HW556ImageDTB,hg556a-b,HW556-B))
 $(eval $(call HW556ImageDTB,hg556a-c,HW556-C))
+
+# SFR Neufbox 4
+$(eval $(call CfeImageDTB,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,OpenWRT-$(REVISION)))
+$(eval $(call CfeImageDTB,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,OpenWRT-$(REVISION)))
 
 # SFR neufbox 6
 $(call $(call CfeImageDTB,nb6-ser-r0,NB6-SER-r0,6362,NEUFBOX6,OpenWRT-$(REVISION)))
