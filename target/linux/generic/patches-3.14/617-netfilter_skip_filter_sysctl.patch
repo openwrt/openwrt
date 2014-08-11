@@ -63,7 +63,7 @@
  			     net->ipv6.ip6table_filter);
 --- a/net/netfilter/nf_conntrack_standalone.c
 +++ b/net/netfilter/nf_conntrack_standalone.c
-@@ -477,6 +477,13 @@ static struct ctl_table nf_ct_sysctl_tab
+@@ -510,6 +510,13 @@ static struct ctl_table nf_ct_sysctl_tab
  		.extra2		= &log_invalid_proto_max,
  	},
  	{
@@ -77,7 +77,7 @@
  		.procname	= "nf_conntrack_expect_max",
  		.data		= &nf_ct_expect_max,
  		.maxlen		= sizeof(int),
-@@ -512,6 +519,7 @@ static int nf_conntrack_standalone_init_
+@@ -545,6 +552,7 @@ static int nf_conntrack_standalone_init_
  	table[2].data = &net->ct.htable_size;
  	table[3].data = &net->ct.sysctl_checksum;
  	table[4].data = &net->ct.sysctl_log_invalid;
