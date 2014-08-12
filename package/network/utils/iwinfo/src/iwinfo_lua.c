@@ -362,7 +362,7 @@ static int iwinfo_L_txpwrlist(lua_State *L, int (*func)(const char *, char *, in
 /* Wrapper for scan list */
 static int iwinfo_L_scanlist(lua_State *L, int (*func)(const char *, char *, int *))
 {
-	int i, x, len;
+	int i, x, len = 0;
 	char rv[IWINFO_BUFSIZE];
 	char macstr[18];
 	const char *ifname = luaL_checkstring(L, 1);
