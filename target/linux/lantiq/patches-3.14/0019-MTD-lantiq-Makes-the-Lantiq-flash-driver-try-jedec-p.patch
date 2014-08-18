@@ -1,0 +1,46 @@
+From 4e2a4dcadb70985e86d9cebfca308891be377510 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 7 Aug 2014 18:57:30 +0200
+Subject: [PATCH 19/31] MTD: lantiq: Makes the Lantiq flash driver try jedec
+ probing if cfi probing fails.
+
+(Based on work by Simon Hayes first published on www.psidoc.com and
+http://sourceforge.net/projects/hh2b4ever/)
+
+Signed-off-by: Ben Mulvihill <ben.mulvihill@gmail.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/mtd/maps/lantiq-flash.c |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/mtd/maps/lantiq-flash.c b/drivers/mtd/maps/lantiq-flash.c
+index 710d699..dd1e853 100644
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
+@@ -117,6 +117,11 @@ ltq_mtd_probe(struct platform_device *pdev)
+ 	struct cfi_private *cfi;
+ 	int err;
+ 
++	static const char *rom_probe_types[] = {
++		"cfi_probe", "jedec_probe", NULL
++	};
++	const char **type;
++
+ 	if (of_machine_is_compatible("lantiq,falcon") &&
+ 			(ltq_boot_select() != BS_FLASH)) {
+ 		dev_err(&pdev->dev, "invalid bootstrap options\n");
+@@ -158,7 +163,10 @@ ltq_mtd_probe(struct platform_device *pdev)
+ 	ltq_mtd->map->copy_to = ltq_copy_to;
+ 
+ 	ltq_mtd->map->map_priv_1 = LTQ_NOR_PROBING;
+-	ltq_mtd->mtd = do_map_probe("cfi_probe", ltq_mtd->map);
++
++	for (type = rom_probe_types; !ltq_mtd->mtd && *type; type++)
++		ltq_mtd->mtd = do_map_probe(*type, ltq_mtd->map);
++
+ 	ltq_mtd->map->map_priv_1 = LTQ_NOR_NORMAL;
+ 
+ 	if (!ltq_mtd->mtd) {
+-- 
+1.7.10.4
+

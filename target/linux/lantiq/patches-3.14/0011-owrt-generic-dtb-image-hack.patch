@@ -1,0 +1,27 @@
+From 572e107a37deb7bc8512ca9144f4e8f24b36e451 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 7 Aug 2014 18:32:12 +0200
+Subject: [PATCH 11/31] owrt: generic dtb image hack
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/kernel/head.S |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/mips/kernel/head.S b/arch/mips/kernel/head.S
+index 7b6a5b3..78518b8 100644
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -101,6 +101,9 @@ FEXPORT(__kernel_entry)
+ 	j	kernel_entry
+ #endif
+ 
++	.ascii  "OWRTDTB:"
++	EXPORT(__image_dtb)
++	.fill   0x4000
+ 	__REF
+ 
+ NESTED(kernel_entry, 16, sp)			# kernel entry point
+-- 
+1.7.10.4
+
