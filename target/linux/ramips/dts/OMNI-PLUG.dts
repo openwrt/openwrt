@@ -1,0 +1,226 @@
+/dts-v1/;
+
+/include/ "rt5350.dtsi"
+
+/ {
+	compatible = "OMNI-PLUG", "ralink,rt5350-soc";
+	model = "Omnima MiniPlug";
+	
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "jtag", "uartf";
+				ralink,function = "gpio";
+			};
+		};
+	};
+	
+	gpio-leds {
+		compatible = "gpio-leds";
+		wlan {
+			label = "miniplug:red:wlan";
+			gpios = <&gpio0 9 0>;
+		};
+		mobile {
+			label = "miniplug:green:mobile";
+			gpios = <&gpio0 13 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 0 1>;
+			linux,code = <0x211>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x211>;
+		};
+		mode-one {
+			label = "mode1";
+			gpios = <&gpio0 11 1>;
+			linux,code = <0x211>;
+		};
+		mode-two {
+			label = "mode2";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	palmbus@10000000 {
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l6405d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l6405d";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7b0000>;
+				};
+			};
+		};
+	};
+	
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x4>;
+	};
+
+	esw@10110000 {
+		ralink,portmap = <0x2f>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+	
+	otg@101c0000 {
+		status = "okay";
+	};
+};
+/dts-v1/;
+
+/include/ "rt5350.dtsi"
+
+/ {
+	compatible = "OMNI-PLUG", "ralink,rt5350-soc";
+	model = "Omnima MiniPlug";
+	
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "jtag", "uartf";
+				ralink,function = "gpio";
+			};
+		};
+	};
+	
+	gpio-leds {
+		compatible = "gpio-leds";
+		wlan {
+			label = "miniplug:red:wlan";
+			gpios = <&gpio0 9 0>;
+		};
+		mobile {
+			label = "miniplug:green:mobile";
+			gpios = <&gpio0 13 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 0 1>;
+			linux,code = <0x211>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x211>;
+		};
+		mode-one {
+			label = "mode1";
+			gpios = <&gpio0 11 1>;
+			linux,code = <0x211>;
+		};
+		mode-two {
+			label = "mode2";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	palmbus@10000000 {
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l6405d";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "mx25l6405d";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7b0000>;
+				};
+			};
+		};
+	};
+	
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x4>;
+	};
+
+	esw@10110000 {
+		ralink,portmap = <0x2f>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+	
+	otg@101c0000 {
+		status = "okay";
+	};
+};
