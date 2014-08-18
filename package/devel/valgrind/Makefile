@@ -93,6 +93,7 @@ endif
 CONFIGURE_ARGS += \
 	--enable-tls \
 	--without-x \
+	--without-mpicc \
 	--without-uiout \
 	--disable-valgrindmi \
 	--disable-tui \
