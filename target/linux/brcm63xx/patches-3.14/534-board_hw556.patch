@@ -8,103 +8,13 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
-@@ -2667,6 +2668,495 @@ static struct board_info __initdata boar
+@@ -2667,6 +2668,405 @@ static struct board_info __initdata boar
  	},
  };
  
-+static struct board_info __initdata board_HW556 = {
-+	.name					= "HW556",
-+	.expected_cpu_id			= 0x6358,
-+
-+	.has_uart0				= 1,
-+	.has_pci				= 1,
-+	.has_ohci0				= 1,
-+	.has_ehci0				= 1,
-+	.num_usbh_ports				= 2,
-+
-+	.has_caldata				= 1,
-+	.caldata = {
-+		{
-+			.caldata_offset		= 0xe00000,
-+		},
-+	},
-+
-+	.has_enet1				= 1,
-+	.enet1 = {
-+		.has_phy			= 1,
-+		.phy_id				= 0,
-+		.force_speed_100		= 1,
-+		.force_duplex_full		= 1,
-+	},
-+
-+	.leds = {
-+		{
-+			.name			= "HW556:red:message",
-+			.gpio			= 0,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:hspa",
-+			.gpio			= 1,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:dsl",
-+			.gpio			= 2,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:power",
-+			.gpio			= 3,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "HW556:red:all",
-+			.gpio			= 6,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "help",
-+			.gpio			= 8,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_HELP,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "wlan",
-+			.gpio			= 9,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_WLAN,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "restart",
-+			.gpio			= 10,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "reset",
-+			.gpio			= 11,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_CONFIG,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
-+};
-+static struct board_info __initdata board_HW556_A = {
-+	.name					= "HW556_A",
-+	.of_board_id				= "huawei,hg556a-a",
++static struct board_info __initdata board_HW556_C = {
++	.name					= "HW556_C",
++	.of_board_id				= "huawei,hg556a-c",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -230,9 +140,9 @@
 +		},
 +	},
 +};
-+static struct board_info __initdata board_HW556_B = {
-+	.name					= "HW556_B",
-+	.of_board_id				= "huawei,hg556a-b",
++static struct board_info __initdata board_HW556_A = {
++	.name					= "HW556_A",
++	.of_board_id				= "huawei,hg556a-a",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -365,9 +275,9 @@
 +		},
 +	},
 +};
-+static struct board_info __initdata board_HW556_C = {
-+	.name					= "HW556_C",
-+	.of_board_id				= "huawei,hg556a-c",
++static struct board_info __initdata board_HW556_B = {
++	.name					= "HW556_B",
++	.of_board_id				= "huawei,hg556a-b",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -504,28 +414,13 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3105,6 +3595,10 @@ static const struct board_info __initcon
+@@ -3105,6 +3505,9 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r1,
  	&board_ct6373_1,
  	&board_HW553,
-+	&board_HW556,
 +	&board_HW556_A,
 +	&board_HW556_B,
 +	&board_HW556_C,
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
---- a/drivers/mtd/bcm63xxpart.c
-+++ b/drivers/mtd/bcm63xxpart.c
-@@ -224,6 +224,11 @@ static int bcm63xx_parse_cfe_partitions(
- 			      BCM63XX_CFE_BLOCK_SIZE);
- 
- 	cfelen = cfe_erasesize;
-+
-+	/* Fix HW556 MX29LV128DB */
-+	if (!strncmp(bcm63xx_nvram_get_name(), "HW556", 5))
-+		cfelen = 0x20000;
-+
- 	nvramlen = bcm63xx_nvram_get_psi_size() * SZ_1K;
- 	nvramlen = roundup(nvramlen, cfe_erasesize);
- 	nvramaddr = master->size - nvramlen;
