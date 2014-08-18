@@ -458,6 +458,8 @@ Image/Build/Profile/NW718=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),nw71
 
 Image/Build/Profile/OMNI-EMB=$(call BuildFirmware/Default8M/$(1),$(1),omni-emb,OMNI-EMB)
 
+Image/Build/Profile/OMNI-PLUG=$(call BuildFirmware/Default8M/$(1),$(1),omni-plug,OMNI-PLUG)
+
 Image/Build/Profile/PSR-680W=$(call BuildFirmware/Default4M/$(1),$(1),psr-680w,PSR-680W)
 
 Image/Build/Profile/PWH2004=$(call BuildFirmware/Default8M/$(1),$(1),pwh2004,PWH2004)
@@ -608,6 +610,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/NCS601W,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/OMNI-EMB,$(1))
+	$(call Image/Build/Profile/OMNI-PLUG,$(1))
 	$(call Image/Build/Profile/PSR-680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/PX4885,$(1))
