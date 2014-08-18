@@ -164,6 +164,7 @@ static void __init mr600_base_setup(unsigned num_leds, struct gpio_led *leds)
 static void __init mr600_setup(void)
 {
 	mr600_base_setup(ARRAY_SIZE(mr600_leds_gpio), mr600_leds_gpio);
+	ap9x_pci_setup_wmac_led_pin(0, 0);
 }
 
 MIPS_MACHINE(ATH79_MACH_MR600, "MR600", "OpenMesh MR600", mr600_setup);
