@@ -11,7 +11,24 @@ ramips_set_preinit_iface() {
 		swconfig dev rt305x set reset 1
 	fi
 
-	ifname=eth0
+	if echo $RT3X5X | grep -q RT5350; then
+		# This is a dirty hack to get by while the switch
+		# problem is investigated. When VLAN is disabled, ICMP
+		# pings work as expected, but TCP connections time
+		# out, so telnetting in failsafe is impossible. The
+		# likely reason is TCP checksumming hardware getting
+		# disabled:
+		# https://www.mail-archive.com/openwrt-devel@lists.openwrt.org/msg19870.html
+		swconfig dev rt305x set enable_vlan 1
+		swconfig dev rt305x vlan 1 set ports "0 6"
+		swconfig dev rt305x port 6 set untag 0
+		swconfig dev rt305x set apply 1
+		vconfig add eth0 1
+		ifconfig eth0 up
+		ifname=eth0.1
+	else
+		ifname=eth0
+	fi
 }
 
 boot_hook_add preinit_main ramips_set_preinit_iface
