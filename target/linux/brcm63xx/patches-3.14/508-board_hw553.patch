@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1464,6 +1464,83 @@ static struct board_info __initdata boar
+@@ -1471,6 +1471,83 @@ static struct board_info __initdata boar
  	.spis = nb4_spi_devices,
  	.num_spis = ARRAY_SIZE(nb4_spi_devices),
  };
@@ -84,7 +84,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -1509,6 +1586,7 @@ static const struct board_info __initcon
+@@ -1516,6 +1593,7 @@ static const struct board_info __initcon
  	&board_dsl_274xb_rev_c,
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
