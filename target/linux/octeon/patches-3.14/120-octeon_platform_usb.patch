@@ -1,0 +1,22 @@
+Index: linux-3.10.49/arch/mips/cavium-octeon/octeon-platform.c
+===================================================================
+--- linux-3.10.49.orig/arch/mips/cavium-octeon/octeon-platform.c	2014-07-26 20:39:48.109010152 +0100
++++ linux-3.10.49/arch/mips/cavium-octeon/octeon-platform.c	2014-07-26 20:41:10.005008627 +0100
+@@ -82,7 +82,7 @@
+ 	};
+ 
+ 	/* Only Octeon2 has ehci/ohci */
+-	if (!OCTEON_IS_MODEL(OCTEON_CN63XX))
++	if (!OCTEON_IS_MODEL(OCTEON_CN6XXX))
+ 		return 0;
+ 
+ 	if (octeon_is_simulation() || usb_disabled())
+@@ -131,7 +131,7 @@
+ 	};
+ 
+ 	/* Only Octeon2 has ehci/ohci */
+-	if (!OCTEON_IS_MODEL(OCTEON_CN63XX))
++	if (!OCTEON_IS_MODEL(OCTEON_CN6XXX))
+ 		return 0;
+ 
+ 	if (octeon_is_simulation() || usb_disabled())
