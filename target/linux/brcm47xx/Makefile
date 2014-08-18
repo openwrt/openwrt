@@ -17,6 +17,11 @@ LINUX_VERSION:=3.14.16
 
 include $(INCLUDE_DIR)/target.mk
 
+
+define Target/Description
+	Build firmware images for Broadcom based BCM47xx/53xx routers with MIPS CPU, *not* ARM.
+endef
+
 DEFAULT_PACKAGES += swconfig wpad-mini nvram \
 	kmod-leds-gpio kmod-gpio-button-hotplug \
 	kmod-ledtrig-default-on kmod-ledtrig-timer kmod-ledtrig-netdev
