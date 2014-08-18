@@ -32,8 +32,10 @@ $(shell expr substr "$(1)" 1 16)
 endef
 
 TARGET_DTBS:=
-
 TARGET_IMAGES:=
+
+TARGET_Default_DTBS:=
+TARGET_Default_IMAGES:=
 
 define Image/Build/CFE
 	# Generate the tagged image
@@ -185,11 +187,11 @@ endef
 define Image/Prepare
 	$(call Image/PrepareCFELzmaKernel,)
 
-	$(foreach board,$(sort $(TARGET_DTBS)), $(call Image/PrepareCFELzmaKernelDTB,$(board)))
+	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareCFELzmaKernelDTB,$(board)))
 
  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/PrepareLoader,-initramfs)
-	$(foreach board,$(sort $(TARGET_DTBS)), $(call Image/PrepareLoaderDTB,-initramfs,$(board)))
+	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareLoaderDTB,-initramfs,$(board)))
  endif
 	rm -f $(KDIR)/fs_mark
 	touch $(KDIR)/fs_mark
@@ -201,13 +203,22 @@ define Image/Build/Initramfs
 	$(call Image/Build/HCS,initramfs,cvg834g,a020,0001,0022,$(KDIR)/vmlinux-initramfs)
 endef
 
+# $(1) = Profile
+# $(2) = dtb
+# $(3) = boardname
+# $(4) = chipid
+# $(5) = imagename
+# $(6) = rsa signature
+# $(7) = additional options
 define CfeImageDTB
-  define Image/Build/$(4)
-	$$(call Image/Build/CFEDTB,$$(1),$(1),$(2),$(3),$(4),$(5),$(6))
+  define Image/Build/$(5)
+        $$(call Image/Build/CFEDTB,$$(1),$(2),$(3),$(4),$(5),$(6),$(7))
   endef
 
-  TARGET_DTBS += $(1)
-  TARGET_IMAGES += $(4)
+  TARGET_Default_DTBS += $(2)
+  TARGET_Default_IMAGES += $(5)
+  TARGET_$(1)_DTBS += $(2)
+  TARGET_$(1)_IMAGES += $(5)
 endef
 
 
@@ -335,43 +346,42 @@ define Image/Build
 	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
 
 	# build dtb image list
-	$(foreach image,$(TARGET_IMAGES),$(call Image/Build/$(image),$(1)))
+	$(foreach image,$(TARGET_$(PROFILE)_IMAGES),$(call Image/Build/$(image),$(1)))
 
   ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
 	$(call Image/Build/Initramfs)
   endif
 endef
 
-$(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-4M-flash-generic,,--pad 2))
-$(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
-$(eval $(call CfeImageDTB,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
+# Generic 96328avng
+$(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-4M-flash-generic,,--pad 2))
+$(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
+$(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
 
 # Asmax AR 1004g
-$(eval $(call CfeImageDTB,ar1004g,96348GW-10,6348,AR1004G))
+$(eval $(call CfeImageDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
 # Comtrend 536, 5621
-$(eval $(call CfeImageDTB,ct536plus,96348GW-11,6348,CT536_CT5621))
-# Tecom GW6000
-$(eval $(call CfeImageDTB,gw6000,96348GW,6348,GW6000))
-# Tecom GW6200
-$(eval $(call CfeImageDTB,gw6200,96348GW,6348,GW6200,$(shell printf '\x99')))
-# T-Com Speedport W 500V
-$(eval $(call CfeImageDTB,spw500v,96348GW,6348,SPW500V))
+$(eval $(call CfeImageDTB,CT536_CT5621,ct536plus,96348GW-11,6348,CT536_CT5621))
 # D-Link DSL-2740B/DSL-2741B, rev C2
-$(eval $(call CfeImageDTB,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
+$(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 # D-Link DSL-2740B/DSL-2741B, rev C3
-$(eval $(call CfeImageDTB,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
+$(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
 # D-Link DVA-G3810BN/TL
-$(eval $(call CfeImageDTB,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
+$(eval $(call CfeImageDTB,DVAG3810BN,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
 # Huawei HG556a
-$(eval $(call CfeImageDTB,hg556a-a,HW556,6358,HG556a_A,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x10000 --tag-version 8))
-$(eval $(call CfeImageDTB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
-$(eval $(call CfeImageDTB,hg556a-c,HW556,6358,HG556a_C,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
-
+$(eval $(call CfeImageDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x10000 --tag-version 8))
+$(eval $(call CfeImageDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+$(eval $(call CfeImageDTB,HG556a_C,hg556a-c,HW556,6358,HG556a_C,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+# T-Com Speedport W 500V
+$(eval $(call CfeImageDTB,SPW500V,spw500v,96348GW,6348,SPW500V))
+# Tecom GW6000
+$(eval $(call CfeImageDTB,GW6000,gw6000,96348GW,6348,GW6000))
+# Tecom GW6200
+$(eval $(call CfeImageDTB,GW6200,gw6200,96348GW,6348,GW6200,$(shell printf '\x99')))
 # SFR Neufbox 4
-$(eval $(call CfeImageDTB,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,OpenWRT-$(REVISION)))
-$(eval $(call CfeImageDTB,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,OpenWRT-$(REVISION)))
-
+$(eval $(call CfeImageDTB,Neufbox4,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,OpenWRT-$(REVISION)))
+$(eval $(call CfeImageDTB,Neufbox4,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,OpenWRT-$(REVISION)))
 # SFR neufbox 6
-$(call $(call CfeImageDTB,nb6-ser-r0,NB6-SER-r0,6362,NEUFBOX6,OpenWRT-$(REVISION)))
+$(eval $(call CfeImageDTB,Neufbox6,nb6-ser-r0,NB6-SER-r0,6362,NEUFBOX6,OpenWRT-$(REVISION)))
 
 $(eval $(call BuildImage))
