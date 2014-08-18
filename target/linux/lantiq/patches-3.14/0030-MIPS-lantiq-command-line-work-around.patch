@@ -1,0 +1,26 @@
+From 015e22a637fe6ab9f9d2d94d3be1b0b312d21b39 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 12 Aug 2014 21:40:41 +0200
+Subject: [PATCH 30/31] MIPS: lantiq: command line work around
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/lantiq/prom.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
+index 202e118..227feed 100644
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -74,6 +74,8 @@ void __init plat_mem_setup(void)
+ 	 * parsed resulting in our memory appearing
+ 	 */
+ 	__dt_setup_arch(&__image_dtb);
++
++	strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+ }
+ 
+ void __init device_tree_init(void)
+-- 
+1.7.10.4
+

@@ -1,0 +1,83 @@
+From c4f036afb2016d21433c0214c55c01b8b9b7f4ee Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 27 Jul 2014 09:40:01 +0100
+Subject: [PATCH 24/31] NET: add of_get_mac_address_mtd()
+
+Many embedded devices have information such as mac addresses stored inside mtd
+devices. This patch allows us to add a property inside a node describing a
+network interface. The new property points at a mtd partition with an offset
+where the mac address can be found.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/of/of_net.c    |   37 +++++++++++++++++++++++++++++++++++++
+ include/linux/of_net.h |    1 +
+ 2 files changed, 38 insertions(+)
+
+diff --git a/drivers/of/of_net.c b/drivers/of/of_net.c
+index a208a45..de93111 100644
+--- a/drivers/of/of_net.c
++++ b/drivers/of/of_net.c
+@@ -10,6 +10,7 @@
+ #include <linux/of_net.h>
+ #include <linux/phy.h>
+ #include <linux/export.h>
++#include <linux/mtd/mtd.h>
+ 
+ /**
+  * It maps 'enum phy_interface_t' found in include/linux/phy.h
+@@ -94,3 +95,39 @@ const void *of_get_mac_address(struct device_node *np)
+ 	return NULL;
+ }
+ EXPORT_SYMBOL(of_get_mac_address);
++
++int of_get_mac_address_mtd(struct device_node *np, void *mac)
++{
++	struct device_node *mtd_np = NULL;
++	size_t retlen;
++	int size, ret;
++	struct mtd_info *mtd;
++	const char *part;
++	const __be32 *list;
++	phandle phandle;
++
++	list = of_get_property(np, "mtd-mac-address", &size);
++	if (!list || (size != (2 * sizeof(*list))))
++		return -ENOENT;
++
++	phandle = be32_to_cpup(list++);
++	if (phandle)
++		mtd_np = of_find_node_by_phandle(phandle);
++
++	if (!mtd_np)
++		return -ENOENT;
++
++	part = of_get_property(mtd_np, "label", NULL);
++	if (!part)
++		part = mtd_np->name;
++
++	mtd = get_mtd_device_nm(part);
++	if (IS_ERR(mtd))
++		return PTR_ERR(mtd);
++
++	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, (u_char *) mac);
++	put_mtd_device(mtd);
++
++	return ret;
++}
++EXPORT_SYMBOL_GPL(of_get_mac_address_mtd);
+diff --git a/include/linux/of_net.h b/include/linux/of_net.h
+index 34597c8..cdfbc60 100644
+--- a/include/linux/of_net.h
++++ b/include/linux/of_net.h
+@@ -11,6 +11,7 @@
+ #include <linux/of.h>
+ extern int of_get_phy_mode(struct device_node *np);
+ extern const void *of_get_mac_address(struct device_node *np);
++extern int of_get_mac_address_mtd(struct device_node *np, void *mac);
+ #else
+ static inline int of_get_phy_mode(struct device_node *np)
+ {
+-- 
+1.7.10.4
+

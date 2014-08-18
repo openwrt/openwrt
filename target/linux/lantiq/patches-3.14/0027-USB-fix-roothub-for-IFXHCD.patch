@@ -1,0 +1,38 @@
+From 53c4acc1d3c7eae439b8bf3422de876e8a3e3bdb Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Thu, 6 Dec 2012 19:59:53 +0100
+Subject: [PATCH 27/31] USB: fix roothub for IFXHCD
+
+---
+ arch/mips/lantiq/Kconfig |    1 +
+ drivers/usb/core/hub.c   |    2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
+index 1621b1d..4c9a241 100644
+--- a/arch/mips/lantiq/Kconfig
++++ b/arch/mips/lantiq/Kconfig
+@@ -3,6 +3,7 @@ if LANTIQ
+ config SOC_TYPE_XWAY
+ 	bool
+ 	select PINCTRL_XWAY
++	select USB_ARCH_HAS_HCD
+ 	default n
+ 
+ choice
+diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
+index 64ea219..30f4bdf 100644
+--- a/drivers/usb/core/hub.c
++++ b/drivers/usb/core/hub.c
+@@ -4077,7 +4077,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
+ 		udev->ttport = hdev->ttport;
+ 	} else if (udev->speed != USB_SPEED_HIGH
+ 			&& hdev->speed == USB_SPEED_HIGH) {
+-		if (!hub->tt.hub) {
++		if (hdev->parent && !hub->tt.hub) {
+ 			dev_err(&udev->dev, "parent hub has no TT\n");
+ 			retval = -EINVAL;
+ 			goto fail;
+-- 
+1.7.10.4
+
