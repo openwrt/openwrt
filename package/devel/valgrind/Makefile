@@ -83,6 +83,8 @@ CONFIGURE_VARS += \
 	UNAME_R=$(LINUX_VERSION)
 
 ifeq ($(ARCH),x86_64)
+	CONFIGURE_ARGS += \
+		--enable-only64bit
 	BITS := 64bit
 else
 	CONFIGURE_ARGS += \
