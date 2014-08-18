@@ -401,11 +401,8 @@ Image/BuildKernel/Profile/P2812HNUFX=$(call Image/BuildKernel/Template,P2812HNUF
 Image/InstallKernel/Template/P2812HNUFX=$(call Image/InstallKernel/Template,P2812HNUFX)
 Image/Build/Profile/P2812HNUFX=$(call Image/Build/$(1),$(1),P2812HNUFX)
 
-Image/BuildKernel/Profile/ARV7519RWV11=$(call Image/BuildKernel/Template,ARV7519RWV11,$(1))
-Image/Build/Profile/ARV7519RWV11=$(call Image/Build/$(1),$(1),ARV7519RWV11)
-
-Image/BuildKernel/Profile/ARV7519RWV12=$(call Image/BuildKernel/Template,ARV7519RWV12,$(1))
-Image/Build/Profile/ARV7519RWV12=$(call Image/Build/$(1),$(1),ARV7519RWV12)
+Image/BuildKernel/Profile/ARV7519RW22=$(call Image/BuildKernel/Template,ARV7519RW22,$(1))
+Image/Build/Profile/ARV7519RW22=$(call Image/Build/$(1),$(1),ARV7519RW22)
 
 Image/BuildKernel/Profile/EASY80920NAND=$(call Image/BuildKernel/Template,EASY80920NAND)
 Image/Build/Profile/EASY80920NAND=$(call Image/Build/$(1),$(1),EASY80920NAND)
