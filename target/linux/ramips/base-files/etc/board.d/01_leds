@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/ramips.sh
 
 set_usb_led() {
@@ -11,7 +11,10 @@ set_wifi_led() {
 	ucidef_set_led_netdev "wifi_led" "wifi" "$1" "wlan0"
 }
 
+
 board=$(ramips_board_name)
+
+board_config_update
 
 case $board in
 	3g-6200n)
@@ -167,15 +170,15 @@ case $board in
 	hg255d)
     		set_wifi_led "hg255d:wlan"
     		set_usb_led "hg255d:usb"
-    		ucidef_set_led_netdev "eth" "Internet" "hg255d:internet" "eth0.2"
+    		ucidef_set_led_interface "lan" "hg255d:internet"
 		;;
 	wnce2001)
 		set_wifi_led "netgear:green:wlan"
 		;;
 	rt-n14u)
 		ucidef_set_led_default "power" "power" "asus:blue:power" "1"
-		ucidef_set_led_netdev "lan" "lan" "asus:blue:lan" "eth0.1"
-		ucidef_set_led_netdev "wan" "wan" "asus:blue:wan" "eth0.2"
+		ucidef_set_led_interafce "lan" "asus:blue:lan"
+		ucidef_set_led_netdev "wan" "asus:blue:wan"
 		set_wifi_led "asus:blue:air"
 		set_usb_led "asus:blue:usb"
 		;;
@@ -207,6 +210,6 @@ case $board in
 		;;
 esac
 
-ucidef_commit_leds
+board_config_flush
 
 exit 0

@@ -2,7 +2,7 @@
 
 . /lib/functions.sh
 . /lib/ramips.sh
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/functions/system.sh
 
 ramips_setup_rt3x5x_vlans()
@@ -299,15 +299,10 @@ ramips_setup_macs()
 	[ -n "$wan_mac" ] && ucidef_set_interface_macaddr wan $wan_mac
 }
 
-[ -e /etc/config/network ] && exit 0
-
-touch /etc/config/network
-
+board_config_update
 board=$(ramips_board_name)
-
 ramips_setup_interfaces $board
 ramips_setup_macs $board
-
-uci commit network
+board_config_flush
 
 exit 0
