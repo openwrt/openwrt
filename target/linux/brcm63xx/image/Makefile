@@ -210,15 +210,6 @@ define CfeImageDTB
   TARGET_IMAGES += $(4)
 endef
 
-define HW556ImageDTB
-  define Image/Build/$(2)
-	$$(call Image/Build/CFEDTB,$$(1),$(1),HW556,6358,$(2),EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8)
-  endef
-
-  TARGET_DTBS += $(1)
-  TARGET_IMAGES += $(2)
-endef
-
 
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
@@ -371,10 +362,10 @@ $(eval $(call CfeImageDTB,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 $(eval $(call CfeImageDTB,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
 # D-Link DVA-G3810BN/TL
 $(eval $(call CfeImageDTB,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
-# Huawei HW556
-$(eval $(call HW556ImageDTB,hg556a-a,HW556-A))
-$(eval $(call HW556ImageDTB,hg556a-b,HW556-B))
-$(eval $(call HW556ImageDTB,hg556a-c,HW556-C))
+# Huawei HG556a
+$(eval $(call CfeImageDTB,hg556a-a,HW556,6358,HG556a_A,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x10000 --tag-version 8))
+$(eval $(call CfeImageDTB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+$(eval $(call CfeImageDTB,hg556a-c,HW556,6358,HG556a_C,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 
 # SFR Neufbox 4
 $(eval $(call CfeImageDTB,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,OpenWRT-$(REVISION)))
