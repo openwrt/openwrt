@@ -8,7 +8,7 @@
 define Profile/MPRA1
 	NAME:=HAME MPR-A1
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-usb-net
+		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
 endef
 
 define Profile/MPRA1/Description
@@ -20,9 +20,7 @@ $(eval $(call Profile,MPRA1))
 define Profile/MPRA2
 	NAME:=HAME MPR-A2
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev kmod-ledtrig-timer \
-		kmod-usb-acm kmod-usb-net kmod-usb-net-asix kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option \
-		usb-modeswitch comgt
+		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-netdev
 endef
 
 define Profile/MPRA2/Description
