@@ -373,6 +373,9 @@ dhcp_add() {
 	config_get net "$cfg" interface
 	[ -n "$net" ] || return 0
 
+	config_get dhcpv4 "$cfg" dhcpv4
+	[ "$dhcpv4" != "disabled" ] || return 0
+
 	config_get networkid "$cfg" networkid
 	[ -n "$networkid" ] || networkid="$net"
 
