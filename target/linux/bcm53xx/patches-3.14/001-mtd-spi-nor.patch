@@ -1,0 +1,2443 @@
+This patches adds the SPI-NOR device support code form kernel 3.17-rc1.
+This patch does not contain any further code not in this mainline kernel.
+
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -394,6 +394,8 @@ source "drivers/mtd/onenand/Kconfig"
+ 
+ source "drivers/mtd/lpddr/Kconfig"
+ 
++source "drivers/mtd/spi-nor/Kconfig"
++
+ source "drivers/mtd/ubi/Kconfig"
+ 
+ endif # MTD
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -39,4 +39,5 @@ inftl-objs		:= inftlcore.o inftlmount.o
+ 
+ obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
+ 
++obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor/
+ obj-$(CONFIG_MTD_UBI)		+= ubi/
+--- /dev/null
++++ b/drivers/mtd/spi-nor/fsl-quadspi.c
+@@ -0,0 +1,1009 @@
++/*
++ * Freescale QuadSPI driver.
++ *
++ * Copyright (C) 2013 Freescale Semiconductor, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/errno.h>
++#include <linux/platform_device.h>
++#include <linux/sched.h>
++#include <linux/delay.h>
++#include <linux/io.h>
++#include <linux/clk.h>
++#include <linux/err.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/timer.h>
++#include <linux/jiffies.h>
++#include <linux/completion.h>
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/partitions.h>
++#include <linux/mtd/spi-nor.h>
++
++/* The registers */
++#define QUADSPI_MCR			0x00
++#define QUADSPI_MCR_RESERVED_SHIFT	16
++#define QUADSPI_MCR_RESERVED_MASK	(0xF << QUADSPI_MCR_RESERVED_SHIFT)
++#define QUADSPI_MCR_MDIS_SHIFT		14
++#define QUADSPI_MCR_MDIS_MASK		(1 << QUADSPI_MCR_MDIS_SHIFT)
++#define QUADSPI_MCR_CLR_TXF_SHIFT	11
++#define QUADSPI_MCR_CLR_TXF_MASK	(1 << QUADSPI_MCR_CLR_TXF_SHIFT)
++#define QUADSPI_MCR_CLR_RXF_SHIFT	10
++#define QUADSPI_MCR_CLR_RXF_MASK	(1 << QUADSPI_MCR_CLR_RXF_SHIFT)
++#define QUADSPI_MCR_DDR_EN_SHIFT	7
++#define QUADSPI_MCR_DDR_EN_MASK		(1 << QUADSPI_MCR_DDR_EN_SHIFT)
++#define QUADSPI_MCR_END_CFG_SHIFT	2
++#define QUADSPI_MCR_END_CFG_MASK	(3 << QUADSPI_MCR_END_CFG_SHIFT)
++#define QUADSPI_MCR_SWRSTHD_SHIFT	1
++#define QUADSPI_MCR_SWRSTHD_MASK	(1 << QUADSPI_MCR_SWRSTHD_SHIFT)
++#define QUADSPI_MCR_SWRSTSD_SHIFT	0
++#define QUADSPI_MCR_SWRSTSD_MASK	(1 << QUADSPI_MCR_SWRSTSD_SHIFT)
++
++#define QUADSPI_IPCR			0x08
++#define QUADSPI_IPCR_SEQID_SHIFT	24
++#define QUADSPI_IPCR_SEQID_MASK		(0xF << QUADSPI_IPCR_SEQID_SHIFT)
++
++#define QUADSPI_BUF0CR			0x10
++#define QUADSPI_BUF1CR			0x14
++#define QUADSPI_BUF2CR			0x18
++#define QUADSPI_BUFXCR_INVALID_MSTRID	0xe
++
++#define QUADSPI_BUF3CR			0x1c
++#define QUADSPI_BUF3CR_ALLMST_SHIFT	31
++#define QUADSPI_BUF3CR_ALLMST		(1 << QUADSPI_BUF3CR_ALLMST_SHIFT)
++
++#define QUADSPI_BFGENCR			0x20
++#define QUADSPI_BFGENCR_PAR_EN_SHIFT	16
++#define QUADSPI_BFGENCR_PAR_EN_MASK	(1 << (QUADSPI_BFGENCR_PAR_EN_SHIFT))
++#define QUADSPI_BFGENCR_SEQID_SHIFT	12
++#define QUADSPI_BFGENCR_SEQID_MASK	(0xF << QUADSPI_BFGENCR_SEQID_SHIFT)
++
++#define QUADSPI_BUF0IND			0x30
++#define QUADSPI_BUF1IND			0x34
++#define QUADSPI_BUF2IND			0x38
++#define QUADSPI_SFAR			0x100
++
++#define QUADSPI_SMPR			0x108
++#define QUADSPI_SMPR_DDRSMP_SHIFT	16
++#define QUADSPI_SMPR_DDRSMP_MASK	(7 << QUADSPI_SMPR_DDRSMP_SHIFT)
++#define QUADSPI_SMPR_FSDLY_SHIFT	6
++#define QUADSPI_SMPR_FSDLY_MASK		(1 << QUADSPI_SMPR_FSDLY_SHIFT)
++#define QUADSPI_SMPR_FSPHS_SHIFT	5
++#define QUADSPI_SMPR_FSPHS_MASK		(1 << QUADSPI_SMPR_FSPHS_SHIFT)
++#define QUADSPI_SMPR_HSENA_SHIFT	0
++#define QUADSPI_SMPR_HSENA_MASK		(1 << QUADSPI_SMPR_HSENA_SHIFT)
++
++#define QUADSPI_RBSR			0x10c
++#define QUADSPI_RBSR_RDBFL_SHIFT	8
++#define QUADSPI_RBSR_RDBFL_MASK		(0x3F << QUADSPI_RBSR_RDBFL_SHIFT)
++
++#define QUADSPI_RBCT			0x110
++#define QUADSPI_RBCT_WMRK_MASK		0x1F
++#define QUADSPI_RBCT_RXBRD_SHIFT	8
++#define QUADSPI_RBCT_RXBRD_USEIPS	(0x1 << QUADSPI_RBCT_RXBRD_SHIFT)
++
++#define QUADSPI_TBSR			0x150
++#define QUADSPI_TBDR			0x154
++#define QUADSPI_SR			0x15c
++#define QUADSPI_SR_IP_ACC_SHIFT		1
++#define QUADSPI_SR_IP_ACC_MASK		(0x1 << QUADSPI_SR_IP_ACC_SHIFT)
++#define QUADSPI_SR_AHB_ACC_SHIFT	2
++#define QUADSPI_SR_AHB_ACC_MASK		(0x1 << QUADSPI_SR_AHB_ACC_SHIFT)
++
++#define QUADSPI_FR			0x160
++#define QUADSPI_FR_TFF_MASK		0x1
++
++#define QUADSPI_SFA1AD			0x180
++#define QUADSPI_SFA2AD			0x184
++#define QUADSPI_SFB1AD			0x188
++#define QUADSPI_SFB2AD			0x18c
++#define QUADSPI_RBDR			0x200
++
++#define QUADSPI_LUTKEY			0x300
++#define QUADSPI_LUTKEY_VALUE		0x5AF05AF0
++
++#define QUADSPI_LCKCR			0x304
++#define QUADSPI_LCKER_LOCK		0x1
++#define QUADSPI_LCKER_UNLOCK		0x2
++
++#define QUADSPI_RSER			0x164
++#define QUADSPI_RSER_TFIE		(0x1 << 0)
++
++#define QUADSPI_LUT_BASE		0x310
++
++/*
++ * The definition of the LUT register shows below:
++ *
++ *  ---------------------------------------------------
++ *  | INSTR1 | PAD1 | OPRND1 | INSTR0 | PAD0 | OPRND0 |
++ *  ---------------------------------------------------
++ */
++#define OPRND0_SHIFT		0
++#define PAD0_SHIFT		8
++#define INSTR0_SHIFT		10
++#define OPRND1_SHIFT		16
++
++/* Instruction set for the LUT register. */
++#define LUT_STOP		0
++#define LUT_CMD			1
++#define LUT_ADDR		2
++#define LUT_DUMMY		3
++#define LUT_MODE		4
++#define LUT_MODE2		5
++#define LUT_MODE4		6
++#define LUT_READ		7
++#define LUT_WRITE		8
++#define LUT_JMP_ON_CS		9
++#define LUT_ADDR_DDR		10
++#define LUT_MODE_DDR		11
++#define LUT_MODE2_DDR		12
++#define LUT_MODE4_DDR		13
++#define LUT_READ_DDR		14
++#define LUT_WRITE_DDR		15
++#define LUT_DATA_LEARN		16
++
++/*
++ * The PAD definitions for LUT register.
++ *
++ * The pad stands for the lines number of IO[0:3].
++ * For example, the Quad read need four IO lines, so you should
++ * set LUT_PAD4 which means we use four IO lines.
++ */
++#define LUT_PAD1		0
++#define LUT_PAD2		1
++#define LUT_PAD4		2
++
++/* Oprands for the LUT register. */
++#define ADDR24BIT		0x18
++#define ADDR32BIT		0x20
++
++/* Macros for constructing the LUT register. */
++#define LUT0(ins, pad, opr)						\
++		(((opr) << OPRND0_SHIFT) | ((LUT_##pad) << PAD0_SHIFT) | \
++		((LUT_##ins) << INSTR0_SHIFT))
++
++#define LUT1(ins, pad, opr)	(LUT0(ins, pad, opr) << OPRND1_SHIFT)
++
++/* other macros for LUT register. */
++#define QUADSPI_LUT(x)          (QUADSPI_LUT_BASE + (x) * 4)
++#define QUADSPI_LUT_NUM		64
++
++/* SEQID -- we can have 16 seqids at most. */
++#define SEQID_QUAD_READ		0
++#define SEQID_WREN		1
++#define SEQID_WRDI		2
++#define SEQID_RDSR		3
++#define SEQID_SE		4
++#define SEQID_CHIP_ERASE	5
++#define SEQID_PP		6
++#define SEQID_RDID		7
++#define SEQID_WRSR		8
++#define SEQID_RDCR		9
++#define SEQID_EN4B		10
++#define SEQID_BRWR		11
++
++enum fsl_qspi_devtype {
++	FSL_QUADSPI_VYBRID,
++	FSL_QUADSPI_IMX6SX,
++};
++
++struct fsl_qspi_devtype_data {
++	enum fsl_qspi_devtype devtype;
++	int rxfifo;
++	int txfifo;
++};
++
++static struct fsl_qspi_devtype_data vybrid_data = {
++	.devtype = FSL_QUADSPI_VYBRID,
++	.rxfifo = 128,
++	.txfifo = 64
++};
++
++static struct fsl_qspi_devtype_data imx6sx_data = {
++	.devtype = FSL_QUADSPI_IMX6SX,
++	.rxfifo = 128,
++	.txfifo = 512
++};
++
++#define FSL_QSPI_MAX_CHIP	4
++struct fsl_qspi {
++	struct mtd_info mtd[FSL_QSPI_MAX_CHIP];
++	struct spi_nor nor[FSL_QSPI_MAX_CHIP];
++	void __iomem *iobase;
++	void __iomem *ahb_base; /* Used when read from AHB bus */
++	u32 memmap_phy;
++	struct clk *clk, *clk_en;
++	struct device *dev;
++	struct completion c;
++	struct fsl_qspi_devtype_data *devtype_data;
++	u32 nor_size;
++	u32 nor_num;
++	u32 clk_rate;
++	unsigned int chip_base_addr; /* We may support two chips. */
++};
++
++static inline int is_vybrid_qspi(struct fsl_qspi *q)
++{
++	return q->devtype_data->devtype == FSL_QUADSPI_VYBRID;
++}
++
++static inline int is_imx6sx_qspi(struct fsl_qspi *q)
++{
++	return q->devtype_data->devtype == FSL_QUADSPI_IMX6SX;
++}
++
++/*
++ * An IC bug makes us to re-arrange the 32-bit data.
++ * The following chips, such as IMX6SLX, have fixed this bug.
++ */
++static inline u32 fsl_qspi_endian_xchg(struct fsl_qspi *q, u32 a)
++{
++	return is_vybrid_qspi(q) ? __swab32(a) : a;
++}
++
++static inline void fsl_qspi_unlock_lut(struct fsl_qspi *q)
++{
++	writel(QUADSPI_LUTKEY_VALUE, q->iobase + QUADSPI_LUTKEY);
++	writel(QUADSPI_LCKER_UNLOCK, q->iobase + QUADSPI_LCKCR);
++}
++
++static inline void fsl_qspi_lock_lut(struct fsl_qspi *q)
++{
++	writel(QUADSPI_LUTKEY_VALUE, q->iobase + QUADSPI_LUTKEY);
++	writel(QUADSPI_LCKER_LOCK, q->iobase + QUADSPI_LCKCR);
++}
++
++static irqreturn_t fsl_qspi_irq_handler(int irq, void *dev_id)
++{
++	struct fsl_qspi *q = dev_id;
++	u32 reg;
++
++	/* clear interrupt */
++	reg = readl(q->iobase + QUADSPI_FR);
++	writel(reg, q->iobase + QUADSPI_FR);
++
++	if (reg & QUADSPI_FR_TFF_MASK)
++		complete(&q->c);
++
++	dev_dbg(q->dev, "QUADSPI_FR : 0x%.8x:0x%.8x\n", q->chip_base_addr, reg);
++	return IRQ_HANDLED;
++}
++
++static void fsl_qspi_init_lut(struct fsl_qspi *q)
++{
++	void __iomem *base = q->iobase;
++	int rxfifo = q->devtype_data->rxfifo;
++	u32 lut_base;
++	u8 cmd, addrlen, dummy;
++	int i;
++
++	fsl_qspi_unlock_lut(q);
++
++	/* Clear all the LUT table */
++	for (i = 0; i < QUADSPI_LUT_NUM; i++)
++		writel(0, base + QUADSPI_LUT_BASE + i * 4);
++
++	/* Quad Read */
++	lut_base = SEQID_QUAD_READ * 4;
++
++	if (q->nor_size <= SZ_16M) {
++		cmd = SPINOR_OP_READ_1_1_4;
++		addrlen = ADDR24BIT;
++		dummy = 8;
++	} else {
++		/* use the 4-byte address */
++		cmd = SPINOR_OP_READ_1_1_4;
++		addrlen = ADDR32BIT;
++		dummy = 8;
++	}
++
++	writel(LUT0(CMD, PAD1, cmd) | LUT1(ADDR, PAD1, addrlen),
++			base + QUADSPI_LUT(lut_base));
++	writel(LUT0(DUMMY, PAD1, dummy) | LUT1(READ, PAD4, rxfifo),
++			base + QUADSPI_LUT(lut_base + 1));
++
++	/* Write enable */
++	lut_base = SEQID_WREN * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_WREN), base + QUADSPI_LUT(lut_base));
++
++	/* Page Program */
++	lut_base = SEQID_PP * 4;
++
++	if (q->nor_size <= SZ_16M) {
++		cmd = SPINOR_OP_PP;
++		addrlen = ADDR24BIT;
++	} else {
++		/* use the 4-byte address */
++		cmd = SPINOR_OP_PP;
++		addrlen = ADDR32BIT;
++	}
++
++	writel(LUT0(CMD, PAD1, cmd) | LUT1(ADDR, PAD1, addrlen),
++			base + QUADSPI_LUT(lut_base));
++	writel(LUT0(WRITE, PAD1, 0), base + QUADSPI_LUT(lut_base + 1));
++
++	/* Read Status */
++	lut_base = SEQID_RDSR * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_RDSR) | LUT1(READ, PAD1, 0x1),
++			base + QUADSPI_LUT(lut_base));
++
++	/* Erase a sector */
++	lut_base = SEQID_SE * 4;
++
++	if (q->nor_size <= SZ_16M) {
++		cmd = SPINOR_OP_SE;
++		addrlen = ADDR24BIT;
++	} else {
++		/* use the 4-byte address */
++		cmd = SPINOR_OP_SE;
++		addrlen = ADDR32BIT;
++	}
++
++	writel(LUT0(CMD, PAD1, cmd) | LUT1(ADDR, PAD1, addrlen),
++			base + QUADSPI_LUT(lut_base));
++
++	/* Erase the whole chip */
++	lut_base = SEQID_CHIP_ERASE * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_CHIP_ERASE),
++			base + QUADSPI_LUT(lut_base));
++
++	/* READ ID */
++	lut_base = SEQID_RDID * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_RDID) | LUT1(READ, PAD1, 0x8),
++			base + QUADSPI_LUT(lut_base));
++
++	/* Write Register */
++	lut_base = SEQID_WRSR * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_WRSR) | LUT1(WRITE, PAD1, 0x2),
++			base + QUADSPI_LUT(lut_base));
++
++	/* Read Configuration Register */
++	lut_base = SEQID_RDCR * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_RDCR) | LUT1(READ, PAD1, 0x1),
++			base + QUADSPI_LUT(lut_base));
++
++	/* Write disable */
++	lut_base = SEQID_WRDI * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_WRDI), base + QUADSPI_LUT(lut_base));
++
++	/* Enter 4 Byte Mode (Micron) */
++	lut_base = SEQID_EN4B * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_EN4B), base + QUADSPI_LUT(lut_base));
++
++	/* Enter 4 Byte Mode (Spansion) */
++	lut_base = SEQID_BRWR * 4;
++	writel(LUT0(CMD, PAD1, SPINOR_OP_BRWR), base + QUADSPI_LUT(lut_base));
++
++	fsl_qspi_lock_lut(q);
++}
++
++/* Get the SEQID for the command */
++static int fsl_qspi_get_seqid(struct fsl_qspi *q, u8 cmd)
++{
++	switch (cmd) {
++	case SPINOR_OP_READ_1_1_4:
++		return SEQID_QUAD_READ;
++	case SPINOR_OP_WREN:
++		return SEQID_WREN;
++	case SPINOR_OP_WRDI:
++		return SEQID_WRDI;
++	case SPINOR_OP_RDSR:
++		return SEQID_RDSR;
++	case SPINOR_OP_SE:
++		return SEQID_SE;
++	case SPINOR_OP_CHIP_ERASE:
++		return SEQID_CHIP_ERASE;
++	case SPINOR_OP_PP:
++		return SEQID_PP;
++	case SPINOR_OP_RDID:
++		return SEQID_RDID;
++	case SPINOR_OP_WRSR:
++		return SEQID_WRSR;
++	case SPINOR_OP_RDCR:
++		return SEQID_RDCR;
++	case SPINOR_OP_EN4B:
++		return SEQID_EN4B;
++	case SPINOR_OP_BRWR:
++		return SEQID_BRWR;
++	default:
++		dev_err(q->dev, "Unsupported cmd 0x%.2x\n", cmd);
++		break;
++	}
++	return -EINVAL;
++}
++
++static int
++fsl_qspi_runcmd(struct fsl_qspi *q, u8 cmd, unsigned int addr, int len)
++{
++	void __iomem *base = q->iobase;
++	int seqid;
++	u32 reg, reg2;
++	int err;
++
++	init_completion(&q->c);
++	dev_dbg(q->dev, "to 0x%.8x:0x%.8x, len:%d, cmd:%.2x\n",
++			q->chip_base_addr, addr, len, cmd);
++
++	/* save the reg */
++	reg = readl(base + QUADSPI_MCR);
++
++	writel(q->memmap_phy + q->chip_base_addr + addr, base + QUADSPI_SFAR);
++	writel(QUADSPI_RBCT_WMRK_MASK | QUADSPI_RBCT_RXBRD_USEIPS,
++			base + QUADSPI_RBCT);
++	writel(reg | QUADSPI_MCR_CLR_RXF_MASK, base + QUADSPI_MCR);
++
++	do {
++		reg2 = readl(base + QUADSPI_SR);
++		if (reg2 & (QUADSPI_SR_IP_ACC_MASK | QUADSPI_SR_AHB_ACC_MASK)) {
++			udelay(1);
++			dev_dbg(q->dev, "The controller is busy, 0x%x\n", reg2);
++			continue;
++		}
++		break;
++	} while (1);
++
++	/* trigger the LUT now */
++	seqid = fsl_qspi_get_seqid(q, cmd);
++	writel((seqid << QUADSPI_IPCR_SEQID_SHIFT) | len, base + QUADSPI_IPCR);
++
++	/* Wait for the interrupt. */
++	err = wait_for_completion_timeout(&q->c, msecs_to_jiffies(1000));
++	if (!err) {
++		dev_err(q->dev,
++			"cmd 0x%.2x timeout, addr@%.8x, FR:0x%.8x, SR:0x%.8x\n",
++			cmd, addr, readl(base + QUADSPI_FR),
++			readl(base + QUADSPI_SR));
++		err = -ETIMEDOUT;
++	} else {
++		err = 0;
++	}
++
++	/* restore the MCR */
++	writel(reg, base + QUADSPI_MCR);
++
++	return err;
++}
++
++/* Read out the data from the QUADSPI_RBDR buffer registers. */
++static void fsl_qspi_read_data(struct fsl_qspi *q, int len, u8 *rxbuf)
++{
++	u32 tmp;
++	int i = 0;
++
++	while (len > 0) {
++		tmp = readl(q->iobase + QUADSPI_RBDR + i * 4);
++		tmp = fsl_qspi_endian_xchg(q, tmp);
++		dev_dbg(q->dev, "chip addr:0x%.8x, rcv:0x%.8x\n",
++				q->chip_base_addr, tmp);
++
++		if (len >= 4) {
++			*((u32 *)rxbuf) = tmp;
++			rxbuf += 4;
++		} else {
++			memcpy(rxbuf, &tmp, len);
++			break;
++		}
++
++		len -= 4;
++		i++;
++	}
++}
++
++/*
++ * If we have changed the content of the flash by writing or erasing,
++ * we need to invalidate the AHB buffer. If we do not do so, we may read out
++ * the wrong data. The spec tells us reset the AHB domain and Serial Flash
++ * domain at the same time.
++ */
++static inline void fsl_qspi_invalid(struct fsl_qspi *q)
++{
++	u32 reg;
++
++	reg = readl(q->iobase + QUADSPI_MCR);
++	reg |= QUADSPI_MCR_SWRSTHD_MASK | QUADSPI_MCR_SWRSTSD_MASK;
++	writel(reg, q->iobase + QUADSPI_MCR);
++
++	/*
++	 * The minimum delay : 1 AHB + 2 SFCK clocks.
++	 * Delay 1 us is enough.
++	 */
++	udelay(1);
++
++	reg &= ~(QUADSPI_MCR_SWRSTHD_MASK | QUADSPI_MCR_SWRSTSD_MASK);
++	writel(reg, q->iobase + QUADSPI_MCR);
++}
++
++static int fsl_qspi_nor_write(struct fsl_qspi *q, struct spi_nor *nor,
++				u8 opcode, unsigned int to, u32 *txbuf,
++				unsigned count, size_t *retlen)
++{
++	int ret, i, j;
++	u32 tmp;
++
++	dev_dbg(q->dev, "to 0x%.8x:0x%.8x, len : %d\n",
++		q->chip_base_addr, to, count);
++
++	/* clear the TX FIFO. */
++	tmp = readl(q->iobase + QUADSPI_MCR);
++	writel(tmp | QUADSPI_MCR_CLR_RXF_MASK, q->iobase + QUADSPI_MCR);
++
++	/* fill the TX data to the FIFO */
++	for (j = 0, i = ((count + 3) / 4); j < i; j++) {
++		tmp = fsl_qspi_endian_xchg(q, *txbuf);
++		writel(tmp, q->iobase + QUADSPI_TBDR);
++		txbuf++;
++	}
++
++	/* Trigger it */
++	ret = fsl_qspi_runcmd(q, opcode, to, count);
++
++	if (ret == 0 && retlen)
++		*retlen += count;
++
++	return ret;
++}
++
++static void fsl_qspi_set_map_addr(struct fsl_qspi *q)
++{
++	int nor_size = q->nor_size;
++	void __iomem *base = q->iobase;
++
++	writel(nor_size + q->memmap_phy, base + QUADSPI_SFA1AD);
++	writel(nor_size * 2 + q->memmap_phy, base + QUADSPI_SFA2AD);
++	writel(nor_size * 3 + q->memmap_phy, base + QUADSPI_SFB1AD);
++	writel(nor_size * 4 + q->memmap_phy, base + QUADSPI_SFB2AD);
++}
++
++/*
++ * There are two different ways to read out the data from the flash:
++ *  the "IP Command Read" and the "AHB Command Read".
++ *
++ * The IC guy suggests we use the "AHB Command Read" which is faster
++ * then the "IP Command Read". (What's more is that there is a bug in
++ * the "IP Command Read" in the Vybrid.)
++ *
++ * After we set up the registers for the "AHB Command Read", we can use
++ * the memcpy to read the data directly. A "missed" access to the buffer
++ * causes the controller to clear the buffer, and use the sequence pointed
++ * by the QUADSPI_BFGENCR[SEQID] to initiate a read from the flash.
++ */
++static void fsl_qspi_init_abh_read(struct fsl_qspi *q)
++{
++	void __iomem *base = q->iobase;
++	int seqid;
++
++	/* AHB configuration for access buffer 0/1/2 .*/
++	writel(QUADSPI_BUFXCR_INVALID_MSTRID, base + QUADSPI_BUF0CR);
++	writel(QUADSPI_BUFXCR_INVALID_MSTRID, base + QUADSPI_BUF1CR);
++	writel(QUADSPI_BUFXCR_INVALID_MSTRID, base + QUADSPI_BUF2CR);
++	writel(QUADSPI_BUF3CR_ALLMST, base + QUADSPI_BUF3CR);
++
++	/* We only use the buffer3 */
++	writel(0, base + QUADSPI_BUF0IND);
++	writel(0, base + QUADSPI_BUF1IND);
++	writel(0, base + QUADSPI_BUF2IND);
++
++	/* Set the default lut sequence for AHB Read. */
++	seqid = fsl_qspi_get_seqid(q, q->nor[0].read_opcode);
++	writel(seqid << QUADSPI_BFGENCR_SEQID_SHIFT,
++		q->iobase + QUADSPI_BFGENCR);
++}
++
++/* We use this function to do some basic init for spi_nor_scan(). */
++static int fsl_qspi_nor_setup(struct fsl_qspi *q)
++{
++	void __iomem *base = q->iobase;
++	u32 reg;
++	int ret;
++
++	/* the default frequency, we will change it in the future.*/
++	ret = clk_set_rate(q->clk, 66000000);
++	if (ret)
++		return ret;
++
++	/* Init the LUT table. */
++	fsl_qspi_init_lut(q);
++
++	/* Disable the module */
++	writel(QUADSPI_MCR_MDIS_MASK | QUADSPI_MCR_RESERVED_MASK,
++			base + QUADSPI_MCR);
++
++	reg = readl(base + QUADSPI_SMPR);
++	writel(reg & ~(QUADSPI_SMPR_FSDLY_MASK
++			| QUADSPI_SMPR_FSPHS_MASK
++			| QUADSPI_SMPR_HSENA_MASK
++			| QUADSPI_SMPR_DDRSMP_MASK), base + QUADSPI_SMPR);
++
++	/* Enable the module */
++	writel(QUADSPI_MCR_RESERVED_MASK | QUADSPI_MCR_END_CFG_MASK,
++			base + QUADSPI_MCR);
++
++	/* enable the interrupt */
++	writel(QUADSPI_RSER_TFIE, q->iobase + QUADSPI_RSER);
++
++	return 0;
++}
++
++static int fsl_qspi_nor_setup_last(struct fsl_qspi *q)
++{
++	unsigned long rate = q->clk_rate;
++	int ret;
++
++	if (is_imx6sx_qspi(q))
++		rate *= 4;
++
++	ret = clk_set_rate(q->clk, rate);
++	if (ret)
++		return ret;
++
++	/* Init the LUT table again. */
++	fsl_qspi_init_lut(q);
++
++	/* Init for AHB read */
++	fsl_qspi_init_abh_read(q);
++
++	return 0;
++}
++
++static struct of_device_id fsl_qspi_dt_ids[] = {
++	{ .compatible = "fsl,vf610-qspi", .data = (void *)&vybrid_data, },
++	{ .compatible = "fsl,imx6sx-qspi", .data = (void *)&imx6sx_data, },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, fsl_qspi_dt_ids);
++
++static void fsl_qspi_set_base_addr(struct fsl_qspi *q, struct spi_nor *nor)
++{
++	q->chip_base_addr = q->nor_size * (nor - q->nor);
++}
++
++static int fsl_qspi_read_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
++{
++	int ret;
++	struct fsl_qspi *q = nor->priv;
++
++	ret = fsl_qspi_runcmd(q, opcode, 0, len);
++	if (ret)
++		return ret;
++
++	fsl_qspi_read_data(q, len, buf);
++	return 0;
++}
++
++static int fsl_qspi_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len,
++			int write_enable)
++{
++	struct fsl_qspi *q = nor->priv;
++	int ret;
++
++	if (!buf) {
++		ret = fsl_qspi_runcmd(q, opcode, 0, 1);
++		if (ret)
++			return ret;
++
++		if (opcode == SPINOR_OP_CHIP_ERASE)
++			fsl_qspi_invalid(q);
++
++	} else if (len > 0) {
++		ret = fsl_qspi_nor_write(q, nor, opcode, 0,
++					(u32 *)buf, len, NULL);
++	} else {
++		dev_err(q->dev, "invalid cmd %d\n", opcode);
++		ret = -EINVAL;
++	}
++
++	return ret;
++}
++
++static void fsl_qspi_write(struct spi_nor *nor, loff_t to,
++		size_t len, size_t *retlen, const u_char *buf)
++{
++	struct fsl_qspi *q = nor->priv;
++
++	fsl_qspi_nor_write(q, nor, nor->program_opcode, to,
++				(u32 *)buf, len, retlen);
++
++	/* invalid the data in the AHB buffer. */
++	fsl_qspi_invalid(q);
++}
++
++static int fsl_qspi_read(struct spi_nor *nor, loff_t from,
++		size_t len, size_t *retlen, u_char *buf)
++{
++	struct fsl_qspi *q = nor->priv;
++	u8 cmd = nor->read_opcode;
++	int ret;
++
++	dev_dbg(q->dev, "cmd [%x],read from (0x%p, 0x%.8x, 0x%.8x),len:%d\n",
++		cmd, q->ahb_base, q->chip_base_addr, (unsigned int)from, len);
++
++	/* Wait until the previous command is finished. */
++	ret = nor->wait_till_ready(nor);
++	if (ret)
++		return ret;
++
++	/* Read out the data directly from the AHB buffer.*/
++	memcpy(buf, q->ahb_base + q->chip_base_addr + from, len);
++
++	*retlen += len;
++	return 0;
++}
++
++static int fsl_qspi_erase(struct spi_nor *nor, loff_t offs)
++{
++	struct fsl_qspi *q = nor->priv;
++	int ret;
++
++	dev_dbg(nor->dev, "%dKiB at 0x%08x:0x%08x\n",
++		nor->mtd->erasesize / 1024, q->chip_base_addr, (u32)offs);
++
++	/* Wait until finished previous write command. */
++	ret = nor->wait_till_ready(nor);
++	if (ret)
++		return ret;
++
++	/* Send write enable, then erase commands. */
++	ret = nor->write_reg(nor, SPINOR_OP_WREN, NULL, 0, 0);
++	if (ret)
++		return ret;
++
++	ret = fsl_qspi_runcmd(q, nor->erase_opcode, offs, 0);
++	if (ret)
++		return ret;
++
++	fsl_qspi_invalid(q);
++	return 0;
++}
++
++static int fsl_qspi_prep(struct spi_nor *nor, enum spi_nor_ops ops)
++{
++	struct fsl_qspi *q = nor->priv;
++	int ret;
++
++	ret = clk_enable(q->clk_en);
++	if (ret)
++		return ret;
++
++	ret = clk_enable(q->clk);
++	if (ret) {
++		clk_disable(q->clk_en);
++		return ret;
++	}
++
++	fsl_qspi_set_base_addr(q, nor);
++	return 0;
++}
++
++static void fsl_qspi_unprep(struct spi_nor *nor, enum spi_nor_ops ops)
++{
++	struct fsl_qspi *q = nor->priv;
++
++	clk_disable(q->clk);
++	clk_disable(q->clk_en);
++}
++
++static int fsl_qspi_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct mtd_part_parser_data ppdata;
++	struct device *dev = &pdev->dev;
++	struct fsl_qspi *q;
++	struct resource *res;
++	struct spi_nor *nor;
++	struct mtd_info *mtd;
++	int ret, i = 0;
++	bool has_second_chip = false;
++	const struct of_device_id *of_id =
++			of_match_device(fsl_qspi_dt_ids, &pdev->dev);
++
++	q = devm_kzalloc(dev, sizeof(*q), GFP_KERNEL);
++	if (!q)
++		return -ENOMEM;
++
++	q->nor_num = of_get_child_count(dev->of_node);
++	if (!q->nor_num || q->nor_num > FSL_QSPI_MAX_CHIP)
++		return -ENODEV;
++
++	/* find the resources */
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "QuadSPI");
++	q->iobase = devm_ioremap_resource(dev, res);
++	if (IS_ERR(q->iobase)) {
++		ret = PTR_ERR(q->iobase);
++		goto map_failed;
++	}
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++					"QuadSPI-memory");
++	q->ahb_base = devm_ioremap_resource(dev, res);
++	if (IS_ERR(q->ahb_base)) {
++		ret = PTR_ERR(q->ahb_base);
++		goto map_failed;
++	}
++	q->memmap_phy = res->start;
++
++	/* find the clocks */
++	q->clk_en = devm_clk_get(dev, "qspi_en");
++	if (IS_ERR(q->clk_en)) {
++		ret = PTR_ERR(q->clk_en);
++		goto map_failed;
++	}
++
++	q->clk = devm_clk_get(dev, "qspi");
++	if (IS_ERR(q->clk)) {
++		ret = PTR_ERR(q->clk);
++		goto map_failed;
++	}
++
++	ret = clk_prepare_enable(q->clk_en);
++	if (ret) {
++		dev_err(dev, "can not enable the qspi_en clock\n");
++		goto map_failed;
++	}
++
++	ret = clk_prepare_enable(q->clk);
++	if (ret) {
++		clk_disable_unprepare(q->clk_en);
++		dev_err(dev, "can not enable the qspi clock\n");
++		goto map_failed;
++	}
++
++	/* find the irq */
++	ret = platform_get_irq(pdev, 0);
++	if (ret < 0) {
++		dev_err(dev, "failed to get the irq\n");
++		goto irq_failed;
++	}
++
++	ret = devm_request_irq(dev, ret,
++			fsl_qspi_irq_handler, 0, pdev->name, q);
++	if (ret) {
++		dev_err(dev, "failed to request irq.\n");
++		goto irq_failed;
++	}
++
++	q->dev = dev;
++	q->devtype_data = (struct fsl_qspi_devtype_data *)of_id->data;
++	platform_set_drvdata(pdev, q);
++
++	ret = fsl_qspi_nor_setup(q);
++	if (ret)
++		goto irq_failed;
++
++	if (of_get_property(np, "fsl,qspi-has-second-chip", NULL))
++		has_second_chip = true;
++
++	/* iterate the subnodes. */
++	for_each_available_child_of_node(dev->of_node, np) {
++		const struct spi_device_id *id;
++		char modalias[40];
++
++		/* skip the holes */
++		if (!has_second_chip)
++			i *= 2;
++
++		nor = &q->nor[i];
++		mtd = &q->mtd[i];
++
++		nor->mtd = mtd;
++		nor->dev = dev;
++		nor->priv = q;
++		mtd->priv = nor;
++
++		/* fill the hooks */
++		nor->read_reg = fsl_qspi_read_reg;
++		nor->write_reg = fsl_qspi_write_reg;
++		nor->read = fsl_qspi_read;
++		nor->write = fsl_qspi_write;
++		nor->erase = fsl_qspi_erase;
++
++		nor->prepare = fsl_qspi_prep;
++		nor->unprepare = fsl_qspi_unprep;
++
++		if (of_modalias_node(np, modalias, sizeof(modalias)) < 0)
++			goto map_failed;
++
++		id = spi_nor_match_id(modalias);
++		if (!id)
++			goto map_failed;
++
++		ret = of_property_read_u32(np, "spi-max-frequency",
++				&q->clk_rate);
++		if (ret < 0)
++			goto map_failed;
++
++		/* set the chip address for READID */
++		fsl_qspi_set_base_addr(q, nor);
++
++		ret = spi_nor_scan(nor, id, SPI_NOR_QUAD);
++		if (ret)
++			goto map_failed;
++
++		ppdata.of_node = np;
++		ret = mtd_device_parse_register(mtd, NULL, &ppdata, NULL, 0);
++		if (ret)
++			goto map_failed;
++
++		/* Set the correct NOR size now. */
++		if (q->nor_size == 0) {
++			q->nor_size = mtd->size;
++
++			/* Map the SPI NOR to accessiable address */
++			fsl_qspi_set_map_addr(q);
++		}
++
++		/*
++		 * The TX FIFO is 64 bytes in the Vybrid, but the Page Program
++		 * may writes 265 bytes per time. The write is working in the
++		 * unit of the TX FIFO, not in the unit of the SPI NOR's page
++		 * size.
++		 *
++		 * So shrink the spi_nor->page_size if it is larger then the
++		 * TX FIFO.
++		 */
++		if (nor->page_size > q->devtype_data->txfifo)
++			nor->page_size = q->devtype_data->txfifo;
++
++		i++;
++	}
++
++	/* finish the rest init. */
++	ret = fsl_qspi_nor_setup_last(q);
++	if (ret)
++		goto last_init_failed;
++
++	clk_disable(q->clk);
++	clk_disable(q->clk_en);
++	dev_info(dev, "QuadSPI SPI NOR flash driver\n");
++	return 0;
++
++last_init_failed:
++	for (i = 0; i < q->nor_num; i++)
++		mtd_device_unregister(&q->mtd[i]);
++
++irq_failed:
++	clk_disable_unprepare(q->clk);
++	clk_disable_unprepare(q->clk_en);
++map_failed:
++	dev_err(dev, "Freescale QuadSPI probe failed\n");
++	return ret;
++}
++
++static int fsl_qspi_remove(struct platform_device *pdev)
++{
++	struct fsl_qspi *q = platform_get_drvdata(pdev);
++	int i;
++
++	for (i = 0; i < q->nor_num; i++)
++		mtd_device_unregister(&q->mtd[i]);
++
++	/* disable the hardware */
++	writel(QUADSPI_MCR_MDIS_MASK, q->iobase + QUADSPI_MCR);
++	writel(0x0, q->iobase + QUADSPI_RSER);
++
++	clk_unprepare(q->clk);
++	clk_unprepare(q->clk_en);
++	return 0;
++}
++
++static struct platform_driver fsl_qspi_driver = {
++	.driver = {
++		.name	= "fsl-quadspi",
++		.bus	= &platform_bus_type,
++		.owner	= THIS_MODULE,
++		.of_match_table = fsl_qspi_dt_ids,
++	},
++	.probe          = fsl_qspi_probe,
++	.remove		= fsl_qspi_remove,
++};
++module_platform_driver(fsl_qspi_driver);
++
++MODULE_DESCRIPTION("Freescale QuadSPI Controller Driver");
++MODULE_AUTHOR("Freescale Semiconductor Inc.");
++MODULE_LICENSE("GPL v2");
+--- /dev/null
++++ b/drivers/mtd/spi-nor/Kconfig
+@@ -0,0 +1,17 @@
++menuconfig MTD_SPI_NOR
++	tristate "SPI-NOR device support"
++	depends on MTD
++	help
++	  This is the framework for the SPI NOR which can be used by the SPI
++	  device drivers and the SPI-NOR device driver.
++
++if MTD_SPI_NOR
++
++config SPI_FSL_QUADSPI
++	tristate "Freescale Quad SPI controller"
++	depends on ARCH_MXC
++	help
++	  This enables support for the Quad SPI controller in master mode.
++	  We only connect the NOR to this controller now.
++
++endif # MTD_SPI_NOR
+--- /dev/null
++++ b/drivers/mtd/spi-nor/Makefile
+@@ -0,0 +1,2 @@
++obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
++obj-$(CONFIG_SPI_FSL_QUADSPI)	+= fsl-quadspi.o
+--- /dev/null
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -0,0 +1,1160 @@
++/*
++ * Based on m25p80.c, by Mike Lavender (mike@steroidmicros.com), with
++ * influence from lart.c (Abraham Van Der Merwe) and mtd_dataflash.c
++ *
++ * Copyright (C) 2005, Intec Automation Inc.
++ * Copyright (C) 2014, Freescale Semiconductor, Inc.
++ *
++ * This code is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/err.h>
++#include <linux/errno.h>
++#include <linux/module.h>
++#include <linux/device.h>
++#include <linux/mutex.h>
++#include <linux/math64.h>
++
++#include <linux/mtd/cfi.h>
++#include <linux/mtd/mtd.h>
++#include <linux/of_platform.h>
++#include <linux/spi/flash.h>
++#include <linux/mtd/spi-nor.h>
++
++/* Define max times to check status register before we give up. */
++#define	MAX_READY_WAIT_JIFFIES	(40 * HZ) /* M25P16 specs 40s max chip erase */
++
++#define JEDEC_MFR(_jedec_id)	((_jedec_id) >> 16)
++
++/*
++ * Read the status register, returning its value in the location
++ * Return the status register value.
++ * Returns negative if error occurred.
++ */
++static int read_sr(struct spi_nor *nor)
++{
++	int ret;
++	u8 val;
++
++	ret = nor->read_reg(nor, SPINOR_OP_RDSR, &val, 1);
++	if (ret < 0) {
++		pr_err("error %d reading SR\n", (int) ret);
++		return ret;
++	}
++
++	return val;
++}
++
++/*
++ * Read the flag status register, returning its value in the location
++ * Return the status register value.
++ * Returns negative if error occurred.
++ */
++static int read_fsr(struct spi_nor *nor)
++{
++	int ret;
++	u8 val;
++
++	ret = nor->read_reg(nor, SPINOR_OP_RDFSR, &val, 1);
++	if (ret < 0) {
++		pr_err("error %d reading FSR\n", ret);
++		return ret;
++	}
++
++	return val;
++}
++
++/*
++ * Read configuration register, returning its value in the
++ * location. Return the configuration register value.
++ * Returns negative if error occured.
++ */
++static int read_cr(struct spi_nor *nor)
++{
++	int ret;
++	u8 val;
++
++	ret = nor->read_reg(nor, SPINOR_OP_RDCR, &val, 1);
++	if (ret < 0) {
++		dev_err(nor->dev, "error %d reading CR\n", ret);
++		return ret;
++	}
++
++	return val;
++}
++
++/*
++ * Dummy Cycle calculation for different type of read.
++ * It can be used to support more commands with
++ * different dummy cycle requirements.
++ */
++static inline int spi_nor_read_dummy_cycles(struct spi_nor *nor)
++{
++	switch (nor->flash_read) {
++	case SPI_NOR_FAST:
++	case SPI_NOR_DUAL:
++	case SPI_NOR_QUAD:
++		return 1;
++	case SPI_NOR_NORMAL:
++		return 0;
++	}
++	return 0;
++}
++
++/*
++ * Write status register 1 byte
++ * Returns negative if error occurred.
++ */
++static inline int write_sr(struct spi_nor *nor, u8 val)
++{
++	nor->cmd_buf[0] = val;
++	return nor->write_reg(nor, SPINOR_OP_WRSR, nor->cmd_buf, 1, 0);
++}
++
++/*
++ * Set write enable latch with Write Enable command.
++ * Returns negative if error occurred.
++ */
++static inline int write_enable(struct spi_nor *nor)
++{
++	return nor->write_reg(nor, SPINOR_OP_WREN, NULL, 0, 0);
++}
++
++/*
++ * Send write disble instruction to the chip.
++ */
++static inline int write_disable(struct spi_nor *nor)
++{
++	return nor->write_reg(nor, SPINOR_OP_WRDI, NULL, 0, 0);
++}
++
++static inline struct spi_nor *mtd_to_spi_nor(struct mtd_info *mtd)
++{
++	return mtd->priv;
++}
++
++/* Enable/disable 4-byte addressing mode. */
++static inline int set_4byte(struct spi_nor *nor, u32 jedec_id, int enable)
++{
++	int status;
++	bool need_wren = false;
++	u8 cmd;
++
++	switch (JEDEC_MFR(jedec_id)) {
++	case CFI_MFR_ST: /* Micron, actually */
++		/* Some Micron need WREN command; all will accept it */
++		need_wren = true;
++	case CFI_MFR_MACRONIX:
++	case 0xEF /* winbond */:
++		if (need_wren)
++			write_enable(nor);
++
++		cmd = enable ? SPINOR_OP_EN4B : SPINOR_OP_EX4B;
++		status = nor->write_reg(nor, cmd, NULL, 0, 0);
++		if (need_wren)
++			write_disable(nor);
++
++		return status;
++	default:
++		/* Spansion style */
++		nor->cmd_buf[0] = enable << 7;
++		return nor->write_reg(nor, SPINOR_OP_BRWR, nor->cmd_buf, 1, 0);
++	}
++}
++
++static int spi_nor_wait_till_ready(struct spi_nor *nor)
++{
++	unsigned long deadline;
++	int sr;
++
++	deadline = jiffies + MAX_READY_WAIT_JIFFIES;
++
++	do {
++		cond_resched();
++
++		sr = read_sr(nor);
++		if (sr < 0)
++			break;
++		else if (!(sr & SR_WIP))
++			return 0;
++	} while (!time_after_eq(jiffies, deadline));
++
++	return -ETIMEDOUT;
++}
++
++static int spi_nor_wait_till_fsr_ready(struct spi_nor *nor)
++{
++	unsigned long deadline;
++	int sr;
++	int fsr;
++
++	deadline = jiffies + MAX_READY_WAIT_JIFFIES;
++
++	do {
++		cond_resched();
++
++		sr = read_sr(nor);
++		if (sr < 0) {
++			break;
++		} else if (!(sr & SR_WIP)) {
++			fsr = read_fsr(nor);
++			if (fsr < 0)
++				break;
++			if (fsr & FSR_READY)
++				return 0;
++		}
++	} while (!time_after_eq(jiffies, deadline));
++
++	return -ETIMEDOUT;
++}
++
++/*
++ * Service routine to read status register until ready, or timeout occurs.
++ * Returns non-zero if error.
++ */
++static int wait_till_ready(struct spi_nor *nor)
++{
++	return nor->wait_till_ready(nor);
++}
++
++/*
++ * Erase the whole flash memory
++ *
++ * Returns 0 if successful, non-zero otherwise.
++ */
++static int erase_chip(struct spi_nor *nor)
++{
++	int ret;
++
++	dev_dbg(nor->dev, " %lldKiB\n", (long long)(nor->mtd->size >> 10));
++
++	/* Wait until finished previous write command. */
++	ret = wait_till_ready(nor);
++	if (ret)
++		return ret;
++
++	/* Send write enable, then erase commands. */
++	write_enable(nor);
++
++	return nor->write_reg(nor, SPINOR_OP_CHIP_ERASE, NULL, 0, 0);
++}
++
++static int spi_nor_lock_and_prep(struct spi_nor *nor, enum spi_nor_ops ops)
++{
++	int ret = 0;
++
++	mutex_lock(&nor->lock);
++
++	if (nor->prepare) {
++		ret = nor->prepare(nor, ops);
++		if (ret) {
++			dev_err(nor->dev, "failed in the preparation.\n");
++			mutex_unlock(&nor->lock);
++			return ret;
++		}
++	}
++	return ret;
++}
++
++static void spi_nor_unlock_and_unprep(struct spi_nor *nor, enum spi_nor_ops ops)
++{
++	if (nor->unprepare)
++		nor->unprepare(nor, ops);
++	mutex_unlock(&nor->lock);
++}
++
++/*
++ * Erase an address range on the nor chip.  The address range may extend
++ * one or more erase sectors.  Return an error is there is a problem erasing.
++ */
++static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
++{
++	struct spi_nor *nor = mtd_to_spi_nor(mtd);
++	u32 addr, len;
++	uint32_t rem;
++	int ret;
++
++	dev_dbg(nor->dev, "at 0x%llx, len %lld\n", (long long)instr->addr,
++			(long long)instr->len);
++
++	div_u64_rem(instr->len, mtd->erasesize, &rem);
++	if (rem)
++		return -EINVAL;
++
++	addr = instr->addr;
++	len = instr->len;
++
++	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_ERASE);
++	if (ret)
++		return ret;
++
++	/* whole-chip erase? */
++	if (len == mtd->size) {
++		if (erase_chip(nor)) {
++			ret = -EIO;
++			goto erase_err;
++		}
++
++	/* REVISIT in some cases we could speed up erasing large regions
++	 * by using SPINOR_OP_SE instead of SPINOR_OP_BE_4K.  We may have set up
++	 * to use "small sector erase", but that's not always optimal.
++	 */
++
++	/* "sector"-at-a-time erase */
++	} else {
++		while (len) {
++			if (nor->erase(nor, addr)) {
++				ret = -EIO;
++				goto erase_err;
++			}
++
++			addr += mtd->erasesize;
++			len -= mtd->erasesize;
++		}
++	}
++
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
++
++	instr->state = MTD_ERASE_DONE;
++	mtd_erase_callback(instr);
++
++	return ret;
++
++erase_err:
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
++	instr->state = MTD_ERASE_FAILED;
++	return ret;
++}
++
++static int spi_nor_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
++{
++	struct spi_nor *nor = mtd_to_spi_nor(mtd);
++	uint32_t offset = ofs;
++	uint8_t status_old, status_new;
++	int ret = 0;
++
++	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_LOCK);
++	if (ret)
++		return ret;
++
++	/* Wait until finished previous command */
++	ret = wait_till_ready(nor);
++	if (ret)
++		goto err;
++
++	status_old = read_sr(nor);
++
++	if (offset < mtd->size - (mtd->size / 2))
++		status_new = status_old | SR_BP2 | SR_BP1 | SR_BP0;
++	else if (offset < mtd->size - (mtd->size / 4))
++		status_new = (status_old & ~SR_BP0) | SR_BP2 | SR_BP1;
++	else if (offset < mtd->size - (mtd->size / 8))
++		status_new = (status_old & ~SR_BP1) | SR_BP2 | SR_BP0;
++	else if (offset < mtd->size - (mtd->size / 16))
++		status_new = (status_old & ~(SR_BP0 | SR_BP1)) | SR_BP2;
++	else if (offset < mtd->size - (mtd->size / 32))
++		status_new = (status_old & ~SR_BP2) | SR_BP1 | SR_BP0;
++	else if (offset < mtd->size - (mtd->size / 64))
++		status_new = (status_old & ~(SR_BP2 | SR_BP0)) | SR_BP1;
++	else
++		status_new = (status_old & ~(SR_BP2 | SR_BP1)) | SR_BP0;
++
++	/* Only modify protection if it will not unlock other areas */
++	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) >
++				(status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
++		write_enable(nor);
++		ret = write_sr(nor, status_new);
++		if (ret)
++			goto err;
++	}
++
++err:
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_LOCK);
++	return ret;
++}
++
++static int spi_nor_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
++{
++	struct spi_nor *nor = mtd_to_spi_nor(mtd);
++	uint32_t offset = ofs;
++	uint8_t status_old, status_new;
++	int ret = 0;
++
++	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_UNLOCK);
++	if (ret)
++		return ret;
++
++	/* Wait until finished previous command */
++	ret = wait_till_ready(nor);
++	if (ret)
++		goto err;
++
++	status_old = read_sr(nor);
++
++	if (offset+len > mtd->size - (mtd->size / 64))
++		status_new = status_old & ~(SR_BP2 | SR_BP1 | SR_BP0);
++	else if (offset+len > mtd->size - (mtd->size / 32))
++		status_new = (status_old & ~(SR_BP2 | SR_BP1)) | SR_BP0;
++	else if (offset+len > mtd->size - (mtd->size / 16))
++		status_new = (status_old & ~(SR_BP2 | SR_BP0)) | SR_BP1;
++	else if (offset+len > mtd->size - (mtd->size / 8))
++		status_new = (status_old & ~SR_BP2) | SR_BP1 | SR_BP0;
++	else if (offset+len > mtd->size - (mtd->size / 4))
++		status_new = (status_old & ~(SR_BP0 | SR_BP1)) | SR_BP2;
++	else if (offset+len > mtd->size - (mtd->size / 2))
++		status_new = (status_old & ~SR_BP1) | SR_BP2 | SR_BP0;
++	else
++		status_new = (status_old & ~SR_BP0) | SR_BP2 | SR_BP1;
++
++	/* Only modify protection if it will not lock other areas */
++	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) <
++				(status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
++		write_enable(nor);
++		ret = write_sr(nor, status_new);
++		if (ret)
++			goto err;
++	}
++
++err:
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_UNLOCK);
++	return ret;
++}
++
++struct flash_info {
++	/* JEDEC id zero means "no ID" (most older chips); otherwise it has
++	 * a high byte of zero plus three data bytes: the manufacturer id,
++	 * then a two byte device id.
++	 */
++	u32		jedec_id;
++	u16             ext_id;
++
++	/* The size listed here is what works with SPINOR_OP_SE, which isn't
++	 * necessarily called a "sector" by the vendor.
++	 */
++	unsigned	sector_size;
++	u16		n_sectors;
++
++	u16		page_size;
++	u16		addr_width;
++
++	u16		flags;
++#define	SECT_4K			0x01	/* SPINOR_OP_BE_4K works uniformly */
++#define	SPI_NOR_NO_ERASE	0x02	/* No erase command needed */
++#define	SST_WRITE		0x04	/* use SST byte programming */
++#define	SPI_NOR_NO_FR		0x08	/* Can't do fastread */
++#define	SECT_4K_PMC		0x10	/* SPINOR_OP_BE_4K_PMC works uniformly */
++#define	SPI_NOR_DUAL_READ	0x20    /* Flash supports Dual Read */
++#define	SPI_NOR_QUAD_READ	0x40    /* Flash supports Quad Read */
++#define	USE_FSR			0x80	/* use flag status register */
++};
++
++#define INFO(_jedec_id, _ext_id, _sector_size, _n_sectors, _flags)	\
++	((kernel_ulong_t)&(struct flash_info) {				\
++		.jedec_id = (_jedec_id),				\
++		.ext_id = (_ext_id),					\
++		.sector_size = (_sector_size),				\
++		.n_sectors = (_n_sectors),				\
++		.page_size = 256,					\
++		.flags = (_flags),					\
++	})
++
++#define CAT25_INFO(_sector_size, _n_sectors, _page_size, _addr_width, _flags)	\
++	((kernel_ulong_t)&(struct flash_info) {				\
++		.sector_size = (_sector_size),				\
++		.n_sectors = (_n_sectors),				\
++		.page_size = (_page_size),				\
++		.addr_width = (_addr_width),				\
++		.flags = (_flags),					\
++	})
++
++/* NOTE: double check command sets and memory organization when you add
++ * more nor chips.  This current list focusses on newer chips, which
++ * have been converging on command sets which including JEDEC ID.
++ */
++const struct spi_device_id spi_nor_ids[] = {
++	/* Atmel -- some are (confusingly) marketed as "DataFlash" */
++	{ "at25fs010",  INFO(0x1f6601, 0, 32 * 1024,   4, SECT_4K) },
++	{ "at25fs040",  INFO(0x1f6604, 0, 64 * 1024,   8, SECT_4K) },
++
++	{ "at25df041a", INFO(0x1f4401, 0, 64 * 1024,   8, SECT_4K) },
++	{ "at25df321a", INFO(0x1f4701, 0, 64 * 1024,  64, SECT_4K) },
++	{ "at25df641",  INFO(0x1f4800, 0, 64 * 1024, 128, SECT_4K) },
++
++	{ "at26f004",   INFO(0x1f0400, 0, 64 * 1024,  8, SECT_4K) },
++	{ "at26df081a", INFO(0x1f4501, 0, 64 * 1024, 16, SECT_4K) },
++	{ "at26df161a", INFO(0x1f4601, 0, 64 * 1024, 32, SECT_4K) },
++	{ "at26df321",  INFO(0x1f4700, 0, 64 * 1024, 64, SECT_4K) },
++
++	{ "at45db081d", INFO(0x1f2500, 0, 64 * 1024, 16, SECT_4K) },
++
++	/* EON -- en25xxx */
++	{ "en25f32",    INFO(0x1c3116, 0, 64 * 1024,   64, SECT_4K) },
++	{ "en25p32",    INFO(0x1c2016, 0, 64 * 1024,   64, 0) },
++	{ "en25q32b",   INFO(0x1c3016, 0, 64 * 1024,   64, 0) },
++	{ "en25p64",    INFO(0x1c2017, 0, 64 * 1024,  128, 0) },
++	{ "en25q64",    INFO(0x1c3017, 0, 64 * 1024,  128, SECT_4K) },
++	{ "en25qh128",  INFO(0x1c7018, 0, 64 * 1024,  256, 0) },
++	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512, 0) },
++
++	/* ESMT */
++	{ "f25l32pa", INFO(0x8c2016, 0, 64 * 1024, 64, SECT_4K) },
++
++	/* Everspin */
++	{ "mr25h256", CAT25_INFO( 32 * 1024, 1, 256, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++	{ "mr25h10",  CAT25_INFO(128 * 1024, 1, 256, 3, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++
++	/* GigaDevice */
++	{ "gd25q32", INFO(0xc84016, 0, 64 * 1024,  64, SECT_4K) },
++	{ "gd25q64", INFO(0xc84017, 0, 64 * 1024, 128, SECT_4K) },
++
++	/* Intel/Numonyx -- xxxs33b */
++	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  32, 0) },
++	{ "320s33b",  INFO(0x898912, 0, 64 * 1024,  64, 0) },
++	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 128, 0) },
++
++	/* Macronix */
++	{ "mx25l2005a",  INFO(0xc22012, 0, 64 * 1024,   4, SECT_4K) },
++	{ "mx25l4005a",  INFO(0xc22013, 0, 64 * 1024,   8, SECT_4K) },
++	{ "mx25l8005",   INFO(0xc22014, 0, 64 * 1024,  16, 0) },
++	{ "mx25l1606e",  INFO(0xc22015, 0, 64 * 1024,  32, SECT_4K) },
++	{ "mx25l3205d",  INFO(0xc22016, 0, 64 * 1024,  64, 0) },
++	{ "mx25l3255e",  INFO(0xc29e16, 0, 64 * 1024,  64, SECT_4K) },
++	{ "mx25l6405d",  INFO(0xc22017, 0, 64 * 1024, 128, 0) },
++	{ "mx25l12805d", INFO(0xc22018, 0, 64 * 1024, 256, 0) },
++	{ "mx25l12855e", INFO(0xc22618, 0, 64 * 1024, 256, 0) },
++	{ "mx25l25635e", INFO(0xc22019, 0, 64 * 1024, 512, 0) },
++	{ "mx25l25655e", INFO(0xc22619, 0, 64 * 1024, 512, 0) },
++	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SPI_NOR_QUAD_READ) },
++	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SPI_NOR_QUAD_READ) },
++
++	/* Micron */
++	{ "n25q064",     INFO(0x20ba17, 0, 64 * 1024,  128, 0) },
++	{ "n25q128a11",  INFO(0x20bb18, 0, 64 * 1024,  256, 0) },
++	{ "n25q128a13",  INFO(0x20ba18, 0, 64 * 1024,  256, 0) },
++	{ "n25q256a",    INFO(0x20ba19, 0, 64 * 1024,  512, SECT_4K) },
++	{ "n25q512a",    INFO(0x20bb20, 0, 64 * 1024, 1024, SECT_4K) },
++	{ "n25q512ax3",  INFO(0x20ba20, 0, 64 * 1024, 1024, USE_FSR) },
++	{ "n25q00",      INFO(0x20ba21, 0, 64 * 1024, 2048, USE_FSR) },
++
++	/* PMC */
++	{ "pm25lv512",   INFO(0,        0, 32 * 1024,    2, SECT_4K_PMC) },
++	{ "pm25lv010",   INFO(0,        0, 32 * 1024,    4, SECT_4K_PMC) },
++	{ "pm25lq032",   INFO(0x7f9d46, 0, 64 * 1024,   64, SECT_4K) },
++
++	/* Spansion -- single (large) sector size only, at least
++	 * for the chips listed here (without boot sectors).
++	 */
++	{ "s25sl032p",  INFO(0x010215, 0x4d00,  64 * 1024,  64, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "s25sl064p",  INFO(0x010216, 0x4d00,  64 * 1024, 128, 0) },
++	{ "s25fl256s0", INFO(0x010219, 0x4d00, 256 * 1024, 128, 0) },
++	{ "s25fl256s1", INFO(0x010219, 0x4d01,  64 * 1024, 512, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "s25fl512s",  INFO(0x010220, 0x4d00, 256 * 1024, 256, SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++	{ "s70fl01gs",  INFO(0x010221, 0x4d00, 256 * 1024, 256, 0) },
++	{ "s25sl12800", INFO(0x012018, 0x0300, 256 * 1024,  64, 0) },
++	{ "s25sl12801", INFO(0x012018, 0x0301,  64 * 1024, 256, 0) },
++	{ "s25fl129p0", INFO(0x012018, 0x4d00, 256 * 1024,  64, 0) },
++	{ "s25fl129p1", INFO(0x012018, 0x4d01,  64 * 1024, 256, 0) },
++	{ "s25sl004a",  INFO(0x010212,      0,  64 * 1024,   8, 0) },
++	{ "s25sl008a",  INFO(0x010213,      0,  64 * 1024,  16, 0) },
++	{ "s25sl016a",  INFO(0x010214,      0,  64 * 1024,  32, 0) },
++	{ "s25sl032a",  INFO(0x010215,      0,  64 * 1024,  64, 0) },
++	{ "s25sl064a",  INFO(0x010216,      0,  64 * 1024, 128, 0) },
++	{ "s25fl008k",  INFO(0xef4014,      0,  64 * 1024,  16, SECT_4K) },
++	{ "s25fl016k",  INFO(0xef4015,      0,  64 * 1024,  32, SECT_4K) },
++	{ "s25fl064k",  INFO(0xef4017,      0,  64 * 1024, 128, SECT_4K) },
++
++	/* SST -- large erase sizes are "overlays", "sectors" are 4K */
++	{ "sst25vf040b", INFO(0xbf258d, 0, 64 * 1024,  8, SECT_4K | SST_WRITE) },
++	{ "sst25vf080b", INFO(0xbf258e, 0, 64 * 1024, 16, SECT_4K | SST_WRITE) },
++	{ "sst25vf016b", INFO(0xbf2541, 0, 64 * 1024, 32, SECT_4K | SST_WRITE) },
++	{ "sst25vf032b", INFO(0xbf254a, 0, 64 * 1024, 64, SECT_4K | SST_WRITE) },
++	{ "sst25vf064c", INFO(0xbf254b, 0, 64 * 1024, 128, SECT_4K) },
++	{ "sst25wf512",  INFO(0xbf2501, 0, 64 * 1024,  1, SECT_4K | SST_WRITE) },
++	{ "sst25wf010",  INFO(0xbf2502, 0, 64 * 1024,  2, SECT_4K | SST_WRITE) },
++	{ "sst25wf020",  INFO(0xbf2503, 0, 64 * 1024,  4, SECT_4K | SST_WRITE) },
++	{ "sst25wf040",  INFO(0xbf2504, 0, 64 * 1024,  8, SECT_4K | SST_WRITE) },
++
++	/* ST Microelectronics -- newer production may have feature updates */
++	{ "m25p05",  INFO(0x202010,  0,  32 * 1024,   2, 0) },
++	{ "m25p10",  INFO(0x202011,  0,  32 * 1024,   4, 0) },
++	{ "m25p20",  INFO(0x202012,  0,  64 * 1024,   4, 0) },
++	{ "m25p40",  INFO(0x202013,  0,  64 * 1024,   8, 0) },
++	{ "m25p80",  INFO(0x202014,  0,  64 * 1024,  16, 0) },
++	{ "m25p16",  INFO(0x202015,  0,  64 * 1024,  32, 0) },
++	{ "m25p32",  INFO(0x202016,  0,  64 * 1024,  64, 0) },
++	{ "m25p64",  INFO(0x202017,  0,  64 * 1024, 128, 0) },
++	{ "m25p128", INFO(0x202018,  0, 256 * 1024,  64, 0) },
++	{ "n25q032", INFO(0x20ba16,  0,  64 * 1024,  64, 0) },
++
++	{ "m25p05-nonjedec",  INFO(0, 0,  32 * 1024,   2, 0) },
++	{ "m25p10-nonjedec",  INFO(0, 0,  32 * 1024,   4, 0) },
++	{ "m25p20-nonjedec",  INFO(0, 0,  64 * 1024,   4, 0) },
++	{ "m25p40-nonjedec",  INFO(0, 0,  64 * 1024,   8, 0) },
++	{ "m25p80-nonjedec",  INFO(0, 0,  64 * 1024,  16, 0) },
++	{ "m25p16-nonjedec",  INFO(0, 0,  64 * 1024,  32, 0) },
++	{ "m25p32-nonjedec",  INFO(0, 0,  64 * 1024,  64, 0) },
++	{ "m25p64-nonjedec",  INFO(0, 0,  64 * 1024, 128, 0) },
++	{ "m25p128-nonjedec", INFO(0, 0, 256 * 1024,  64, 0) },
++
++	{ "m45pe10", INFO(0x204011,  0, 64 * 1024,    2, 0) },
++	{ "m45pe80", INFO(0x204014,  0, 64 * 1024,   16, 0) },
++	{ "m45pe16", INFO(0x204015,  0, 64 * 1024,   32, 0) },
++
++	{ "m25pe20", INFO(0x208012,  0, 64 * 1024,  4,       0) },
++	{ "m25pe80", INFO(0x208014,  0, 64 * 1024, 16,       0) },
++	{ "m25pe16", INFO(0x208015,  0, 64 * 1024, 32, SECT_4K) },
++
++	{ "m25px16",    INFO(0x207115,  0, 64 * 1024, 32, SECT_4K) },
++	{ "m25px32",    INFO(0x207116,  0, 64 * 1024, 64, SECT_4K) },
++	{ "m25px32-s0", INFO(0x207316,  0, 64 * 1024, 64, SECT_4K) },
++	{ "m25px32-s1", INFO(0x206316,  0, 64 * 1024, 64, SECT_4K) },
++	{ "m25px64",    INFO(0x207117,  0, 64 * 1024, 128, 0) },
++
++	/* Winbond -- w25x "blocks" are 64K, "sectors" are 4KiB */
++	{ "w25x10", INFO(0xef3011, 0, 64 * 1024,  2,  SECT_4K) },
++	{ "w25x20", INFO(0xef3012, 0, 64 * 1024,  4,  SECT_4K) },
++	{ "w25x40", INFO(0xef3013, 0, 64 * 1024,  8,  SECT_4K) },
++	{ "w25x80", INFO(0xef3014, 0, 64 * 1024,  16, SECT_4K) },
++	{ "w25x16", INFO(0xef3015, 0, 64 * 1024,  32, SECT_4K) },
++	{ "w25x32", INFO(0xef3016, 0, 64 * 1024,  64, SECT_4K) },
++	{ "w25q32", INFO(0xef4016, 0, 64 * 1024,  64, SECT_4K) },
++	{ "w25q32dw", INFO(0xef6016, 0, 64 * 1024,  64, SECT_4K) },
++	{ "w25x64", INFO(0xef3017, 0, 64 * 1024, 128, SECT_4K) },
++	{ "w25q64", INFO(0xef4017, 0, 64 * 1024, 128, SECT_4K) },
++	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
++	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
++	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
++	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
++	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512, SECT_4K) },
++
++	/* Catalyst / On Semiconductor -- non-JEDEC */
++	{ "cat25c11", CAT25_INFO(  16, 8, 16, 1, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++	{ "cat25c03", CAT25_INFO(  32, 8, 16, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++	{ "cat25c09", CAT25_INFO( 128, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++	{ "cat25c17", CAT25_INFO( 256, 8, 32, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++	{ "cat25128", CAT25_INFO(2048, 8, 64, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
++	{ },
++};
++EXPORT_SYMBOL_GPL(spi_nor_ids);
++
++static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
++{
++	int			tmp;
++	u8			id[5];
++	u32			jedec;
++	u16                     ext_jedec;
++	struct flash_info	*info;
++
++	tmp = nor->read_reg(nor, SPINOR_OP_RDID, id, 5);
++	if (tmp < 0) {
++		dev_dbg(nor->dev, " error %d reading JEDEC ID\n", tmp);
++		return ERR_PTR(tmp);
++	}
++	jedec = id[0];
++	jedec = jedec << 8;
++	jedec |= id[1];
++	jedec = jedec << 8;
++	jedec |= id[2];
++
++	ext_jedec = id[3] << 8 | id[4];
++
++	for (tmp = 0; tmp < ARRAY_SIZE(spi_nor_ids) - 1; tmp++) {
++		info = (void *)spi_nor_ids[tmp].driver_data;
++		if (info->jedec_id == jedec) {
++			if (info->ext_id == 0 || info->ext_id == ext_jedec)
++				return &spi_nor_ids[tmp];
++		}
++	}
++	dev_err(nor->dev, "unrecognized JEDEC id %06x\n", jedec);
++	return ERR_PTR(-ENODEV);
++}
++
++static const struct spi_device_id *jedec_probe(struct spi_nor *nor)
++{
++	return nor->read_id(nor);
++}
++
++static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
++			size_t *retlen, u_char *buf)
++{
++	struct spi_nor *nor = mtd_to_spi_nor(mtd);
++	int ret;
++
++	dev_dbg(nor->dev, "from 0x%08x, len %zd\n", (u32)from, len);
++
++	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_READ);
++	if (ret)
++		return ret;
++
++	ret = nor->read(nor, from, len, retlen, buf);
++
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_READ);
++	return ret;
++}
++
++static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
++		size_t *retlen, const u_char *buf)
++{
++	struct spi_nor *nor = mtd_to_spi_nor(mtd);
++	size_t actual;
++	int ret;
++
++	dev_dbg(nor->dev, "to 0x%08x, len %zd\n", (u32)to, len);
++
++	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_WRITE);
++	if (ret)
++		return ret;
++
++	/* Wait until finished previous write command. */
++	ret = wait_till_ready(nor);
++	if (ret)
++		goto time_out;
++
++	write_enable(nor);
++
++	nor->sst_write_second = false;
++
++	actual = to % 2;
++	/* Start write from odd address. */
++	if (actual) {
++		nor->program_opcode = SPINOR_OP_BP;
++
++		/* write one byte. */
++		nor->write(nor, to, 1, retlen, buf);
++		ret = wait_till_ready(nor);
++		if (ret)
++			goto time_out;
++	}
++	to += actual;
++
++	/* Write out most of the data here. */
++	for (; actual < len - 1; actual += 2) {
++		nor->program_opcode = SPINOR_OP_AAI_WP;
++
++		/* write two bytes. */
++		nor->write(nor, to, 2, retlen, buf + actual);
++		ret = wait_till_ready(nor);
++		if (ret)
++			goto time_out;
++		to += 2;
++		nor->sst_write_second = true;
++	}
++	nor->sst_write_second = false;
++
++	write_disable(nor);
++	ret = wait_till_ready(nor);
++	if (ret)
++		goto time_out;
++
++	/* Write out trailing byte if it exists. */
++	if (actual != len) {
++		write_enable(nor);
++
++		nor->program_opcode = SPINOR_OP_BP;
++		nor->write(nor, to, 1, retlen, buf + actual);
++
++		ret = wait_till_ready(nor);
++		if (ret)
++			goto time_out;
++		write_disable(nor);
++	}
++time_out:
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
++	return ret;
++}
++
++/*
++ * Write an address range to the nor chip.  Data must be written in
++ * FLASH_PAGESIZE chunks.  The address range may be any size provided
++ * it is within the physical boundaries.
++ */
++static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
++	size_t *retlen, const u_char *buf)
++{
++	struct spi_nor *nor = mtd_to_spi_nor(mtd);
++	u32 page_offset, page_size, i;
++	int ret;
++
++	dev_dbg(nor->dev, "to 0x%08x, len %zd\n", (u32)to, len);
++
++	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_WRITE);
++	if (ret)
++		return ret;
++
++	/* Wait until finished previous write command. */
++	ret = wait_till_ready(nor);
++	if (ret)
++		goto write_err;
++
++	write_enable(nor);
++
++	page_offset = to & (nor->page_size - 1);
++
++	/* do all the bytes fit onto one page? */
++	if (page_offset + len <= nor->page_size) {
++		nor->write(nor, to, len, retlen, buf);
++	} else {
++		/* the size of data remaining on the first page */
++		page_size = nor->page_size - page_offset;
++		nor->write(nor, to, page_size, retlen, buf);
++
++		/* write everything in nor->page_size chunks */
++		for (i = page_size; i < len; i += page_size) {
++			page_size = len - i;
++			if (page_size > nor->page_size)
++				page_size = nor->page_size;
++
++			wait_till_ready(nor);
++			write_enable(nor);
++
++			nor->write(nor, to + i, page_size, retlen, buf + i);
++		}
++	}
++
++write_err:
++	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
++	return 0;
++}
++
++static int macronix_quad_enable(struct spi_nor *nor)
++{
++	int ret, val;
++
++	val = read_sr(nor);
++	write_enable(nor);
++
++	nor->cmd_buf[0] = val | SR_QUAD_EN_MX;
++	nor->write_reg(nor, SPINOR_OP_WRSR, nor->cmd_buf, 1, 0);
++
++	if (wait_till_ready(nor))
++		return 1;
++
++	ret = read_sr(nor);
++	if (!(ret > 0 && (ret & SR_QUAD_EN_MX))) {
++		dev_err(nor->dev, "Macronix Quad bit not set\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++/*
++ * Write status Register and configuration register with 2 bytes
++ * The first byte will be written to the status register, while the
++ * second byte will be written to the configuration register.
++ * Return negative if error occured.
++ */
++static int write_sr_cr(struct spi_nor *nor, u16 val)
++{
++	nor->cmd_buf[0] = val & 0xff;
++	nor->cmd_buf[1] = (val >> 8);
++
++	return nor->write_reg(nor, SPINOR_OP_WRSR, nor->cmd_buf, 2, 0);
++}
++
++static int spansion_quad_enable(struct spi_nor *nor)
++{
++	int ret;
++	int quad_en = CR_QUAD_EN_SPAN << 8;
++
++	write_enable(nor);
++
++	ret = write_sr_cr(nor, quad_en);
++	if (ret < 0) {
++		dev_err(nor->dev,
++			"error while writing configuration register\n");
++		return -EINVAL;
++	}
++
++	/* read back and check it */
++	ret = read_cr(nor);
++	if (!(ret > 0 && (ret & CR_QUAD_EN_SPAN))) {
++		dev_err(nor->dev, "Spansion Quad bit not set\n");
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int set_quad_mode(struct spi_nor *nor, u32 jedec_id)
++{
++	int status;
++
++	switch (JEDEC_MFR(jedec_id)) {
++	case CFI_MFR_MACRONIX:
++		status = macronix_quad_enable(nor);
++		if (status) {
++			dev_err(nor->dev, "Macronix quad-read not enabled\n");
++			return -EINVAL;
++		}
++		return status;
++	default:
++		status = spansion_quad_enable(nor);
++		if (status) {
++			dev_err(nor->dev, "Spansion quad-read not enabled\n");
++			return -EINVAL;
++		}
++		return status;
++	}
++}
++
++static int spi_nor_check(struct spi_nor *nor)
++{
++	if (!nor->dev || !nor->read || !nor->write ||
++		!nor->read_reg || !nor->write_reg || !nor->erase) {
++		pr_err("spi-nor: please fill all the necessary fields!\n");
++		return -EINVAL;
++	}
++
++	if (!nor->read_id)
++		nor->read_id = spi_nor_read_id;
++	if (!nor->wait_till_ready)
++		nor->wait_till_ready = spi_nor_wait_till_ready;
++
++	return 0;
++}
++
++int spi_nor_scan(struct spi_nor *nor, const struct spi_device_id *id,
++			enum read_mode mode)
++{
++	struct flash_info		*info;
++	struct flash_platform_data	*data;
++	struct device *dev = nor->dev;
++	struct mtd_info *mtd = nor->mtd;
++	struct device_node *np = dev->of_node;
++	int ret;
++	int i;
++
++	ret = spi_nor_check(nor);
++	if (ret)
++		return ret;
++
++	/* Platform data helps sort out which chip type we have, as
++	 * well as how this board partitions it.  If we don't have
++	 * a chip ID, try the JEDEC id commands; they'll work for most
++	 * newer chips, even if we don't recognize the particular chip.
++	 */
++	data = dev_get_platdata(dev);
++	if (data && data->type) {
++		const struct spi_device_id *plat_id;
++
++		for (i = 0; i < ARRAY_SIZE(spi_nor_ids) - 1; i++) {
++			plat_id = &spi_nor_ids[i];
++			if (strcmp(data->type, plat_id->name))
++				continue;
++			break;
++		}
++
++		if (i < ARRAY_SIZE(spi_nor_ids) - 1)
++			id = plat_id;
++		else
++			dev_warn(dev, "unrecognized id %s\n", data->type);
++	}
++
++	info = (void *)id->driver_data;
++
++	if (info->jedec_id) {
++		const struct spi_device_id *jid;
++
++		jid = jedec_probe(nor);
++		if (IS_ERR(jid)) {
++			return PTR_ERR(jid);
++		} else if (jid != id) {
++			/*
++			 * JEDEC knows better, so overwrite platform ID. We
++			 * can't trust partitions any longer, but we'll let
++			 * mtd apply them anyway, since some partitions may be
++			 * marked read-only, and we don't want to lose that
++			 * information, even if it's not 100% accurate.
++			 */
++			dev_warn(dev, "found %s, expected %s\n",
++				 jid->name, id->name);
++			id = jid;
++			info = (void *)jid->driver_data;
++		}
++	}
++
++	mutex_init(&nor->lock);
++
++	/*
++	 * Atmel, SST and Intel/Numonyx serial nor tend to power
++	 * up with the software protection bits set
++	 */
++
++	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ATMEL ||
++	    JEDEC_MFR(info->jedec_id) == CFI_MFR_INTEL ||
++	    JEDEC_MFR(info->jedec_id) == CFI_MFR_SST) {
++		write_enable(nor);
++		write_sr(nor, 0);
++	}
++
++	if (data && data->name)
++		mtd->name = data->name;
++	else
++		mtd->name = dev_name(dev);
++
++	mtd->type = MTD_NORFLASH;
++	mtd->writesize = 1;
++	mtd->flags = MTD_CAP_NORFLASH;
++	mtd->size = info->sector_size * info->n_sectors;
++	mtd->_erase = spi_nor_erase;
++	mtd->_read = spi_nor_read;
++
++	/* nor protection support for STmicro chips */
++	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ST) {
++		mtd->_lock = spi_nor_lock;
++		mtd->_unlock = spi_nor_unlock;
++	}
++
++	/* sst nor chips use AAI word program */
++	if (info->flags & SST_WRITE)
++		mtd->_write = sst_write;
++	else
++		mtd->_write = spi_nor_write;
++
++	if ((info->flags & USE_FSR) &&
++	    nor->wait_till_ready == spi_nor_wait_till_ready)
++		nor->wait_till_ready = spi_nor_wait_till_fsr_ready;
++
++	/* prefer "small sector" erase if possible */
++	if (info->flags & SECT_4K) {
++		nor->erase_opcode = SPINOR_OP_BE_4K;
++		mtd->erasesize = 4096;
++	} else if (info->flags & SECT_4K_PMC) {
++		nor->erase_opcode = SPINOR_OP_BE_4K_PMC;
++		mtd->erasesize = 4096;
++	} else {
++		nor->erase_opcode = SPINOR_OP_SE;
++		mtd->erasesize = info->sector_size;
++	}
++
++	if (info->flags & SPI_NOR_NO_ERASE)
++		mtd->flags |= MTD_NO_ERASE;
++
++	mtd->dev.parent = dev;
++	nor->page_size = info->page_size;
++	mtd->writebufsize = nor->page_size;
++
++	if (np) {
++		/* If we were instantiated by DT, use it */
++		if (of_property_read_bool(np, "m25p,fast-read"))
++			nor->flash_read = SPI_NOR_FAST;
++		else
++			nor->flash_read = SPI_NOR_NORMAL;
++	} else {
++		/* If we weren't instantiated by DT, default to fast-read */
++		nor->flash_read = SPI_NOR_FAST;
++	}
++
++	/* Some devices cannot do fast-read, no matter what DT tells us */
++	if (info->flags & SPI_NOR_NO_FR)
++		nor->flash_read = SPI_NOR_NORMAL;
++
++	/* Quad/Dual-read mode takes precedence over fast/normal */
++	if (mode == SPI_NOR_QUAD && info->flags & SPI_NOR_QUAD_READ) {
++		ret = set_quad_mode(nor, info->jedec_id);
++		if (ret) {
++			dev_err(dev, "quad mode not supported\n");
++			return ret;
++		}
++		nor->flash_read = SPI_NOR_QUAD;
++	} else if (mode == SPI_NOR_DUAL && info->flags & SPI_NOR_DUAL_READ) {
++		nor->flash_read = SPI_NOR_DUAL;
++	}
++
++	/* Default commands */
++	switch (nor->flash_read) {
++	case SPI_NOR_QUAD:
++		nor->read_opcode = SPINOR_OP_READ_1_1_4;
++		break;
++	case SPI_NOR_DUAL:
++		nor->read_opcode = SPINOR_OP_READ_1_1_2;
++		break;
++	case SPI_NOR_FAST:
++		nor->read_opcode = SPINOR_OP_READ_FAST;
++		break;
++	case SPI_NOR_NORMAL:
++		nor->read_opcode = SPINOR_OP_READ;
++		break;
++	default:
++		dev_err(dev, "No Read opcode defined\n");
++		return -EINVAL;
++	}
++
++	nor->program_opcode = SPINOR_OP_PP;
++
++	if (info->addr_width)
++		nor->addr_width = info->addr_width;
++	else if (mtd->size > 0x1000000) {
++		/* enable 4-byte addressing if the device exceeds 16MiB */
++		nor->addr_width = 4;
++		if (JEDEC_MFR(info->jedec_id) == CFI_MFR_AMD) {
++			/* Dedicated 4-byte command set */
++			switch (nor->flash_read) {
++			case SPI_NOR_QUAD:
++				nor->read_opcode = SPINOR_OP_READ4_1_1_4;
++				break;
++			case SPI_NOR_DUAL:
++				nor->read_opcode = SPINOR_OP_READ4_1_1_2;
++				break;
++			case SPI_NOR_FAST:
++				nor->read_opcode = SPINOR_OP_READ4_FAST;
++				break;
++			case SPI_NOR_NORMAL:
++				nor->read_opcode = SPINOR_OP_READ4;
++				break;
++			}
++			nor->program_opcode = SPINOR_OP_PP_4B;
++			/* No small sector erase for 4-byte command set */
++			nor->erase_opcode = SPINOR_OP_SE_4B;
++			mtd->erasesize = info->sector_size;
++		} else
++			set_4byte(nor, info->jedec_id, 1);
++	} else {
++		nor->addr_width = 3;
++	}
++
++	nor->read_dummy = spi_nor_read_dummy_cycles(nor);
++
++	dev_info(dev, "%s (%lld Kbytes)\n", id->name,
++			(long long)mtd->size >> 10);
++
++	dev_dbg(dev,
++		"mtd .name = %s, .size = 0x%llx (%lldMiB), "
++		".erasesize = 0x%.8x (%uKiB) .numeraseregions = %d\n",
++		mtd->name, (long long)mtd->size, (long long)(mtd->size >> 20),
++		mtd->erasesize, mtd->erasesize / 1024, mtd->numeraseregions);
++
++	if (mtd->numeraseregions)
++		for (i = 0; i < mtd->numeraseregions; i++)
++			dev_dbg(dev,
++				"mtd.eraseregions[%d] = { .offset = 0x%llx, "
++				".erasesize = 0x%.8x (%uKiB), "
++				".numblocks = %d }\n",
++				i, (long long)mtd->eraseregions[i].offset,
++				mtd->eraseregions[i].erasesize,
++				mtd->eraseregions[i].erasesize / 1024,
++				mtd->eraseregions[i].numblocks);
++	return 0;
++}
++EXPORT_SYMBOL_GPL(spi_nor_scan);
++
++const struct spi_device_id *spi_nor_match_id(char *name)
++{
++	const struct spi_device_id *id = spi_nor_ids;
++
++	while (id->name[0]) {
++		if (!strcmp(name, id->name))
++			return id;
++		id++;
++	}
++	return NULL;
++}
++EXPORT_SYMBOL_GPL(spi_nor_match_id);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Huang Shijie <shijie8@gmail.com>");
++MODULE_AUTHOR("Mike Lavender");
++MODULE_DESCRIPTION("framework for SPI NOR");
+--- /dev/null
++++ b/include/linux/mtd/spi-nor.h
+@@ -0,0 +1,218 @@
++/*
++ * Copyright (C) 2014 Freescale Semiconductor, Inc.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++
++#ifndef __LINUX_MTD_SPI_NOR_H
++#define __LINUX_MTD_SPI_NOR_H
++
++/*
++ * Note on opcode nomenclature: some opcodes have a format like
++ * SPINOR_OP_FUNCTION{4,}_x_y_z. The numbers x, y, and z stand for the number
++ * of I/O lines used for the opcode, address, and data (respectively). The
++ * FUNCTION has an optional suffix of '4', to represent an opcode which
++ * requires a 4-byte (32-bit) address.
++ */
++
++/* Flash opcodes. */
++#define SPINOR_OP_WREN		0x06	/* Write enable */
++#define SPINOR_OP_RDSR		0x05	/* Read status register */
++#define SPINOR_OP_WRSR		0x01	/* Write status register 1 byte */
++#define SPINOR_OP_READ		0x03	/* Read data bytes (low frequency) */
++#define SPINOR_OP_READ_FAST	0x0b	/* Read data bytes (high frequency) */
++#define SPINOR_OP_READ_1_1_2	0x3b	/* Read data bytes (Dual SPI) */
++#define SPINOR_OP_READ_1_1_4	0x6b	/* Read data bytes (Quad SPI) */
++#define SPINOR_OP_PP		0x02	/* Page program (up to 256 bytes) */
++#define SPINOR_OP_BE_4K		0x20	/* Erase 4KiB block */
++#define SPINOR_OP_BE_4K_PMC	0xd7	/* Erase 4KiB block on PMC chips */
++#define SPINOR_OP_BE_32K	0x52	/* Erase 32KiB block */
++#define SPINOR_OP_CHIP_ERASE	0xc7	/* Erase whole flash chip */
++#define SPINOR_OP_SE		0xd8	/* Sector erase (usually 64KiB) */
++#define SPINOR_OP_RDID		0x9f	/* Read JEDEC ID */
++#define SPINOR_OP_RDCR		0x35	/* Read configuration register */
++#define SPINOR_OP_RDFSR		0x70	/* Read flag status register */
++
++/* 4-byte address opcodes - used on Spansion and some Macronix flashes. */
++#define SPINOR_OP_READ4		0x13	/* Read data bytes (low frequency) */
++#define SPINOR_OP_READ4_FAST	0x0c	/* Read data bytes (high frequency) */
++#define SPINOR_OP_READ4_1_1_2	0x3c	/* Read data bytes (Dual SPI) */
++#define SPINOR_OP_READ4_1_1_4	0x6c	/* Read data bytes (Quad SPI) */
++#define SPINOR_OP_PP_4B		0x12	/* Page program (up to 256 bytes) */
++#define SPINOR_OP_SE_4B		0xdc	/* Sector erase (usually 64KiB) */
++
++/* Used for SST flashes only. */
++#define SPINOR_OP_BP		0x02	/* Byte program */
++#define SPINOR_OP_WRDI		0x04	/* Write disable */
++#define SPINOR_OP_AAI_WP	0xad	/* Auto address increment word program */
++
++/* Used for Macronix and Winbond flashes. */
++#define SPINOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
++#define SPINOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
++
++/* Used for Spansion flashes only. */
++#define SPINOR_OP_BRWR		0x17	/* Bank register write */
++
++/* Status Register bits. */
++#define SR_WIP			1	/* Write in progress */
++#define SR_WEL			2	/* Write enable latch */
++/* meaning of other SR_* bits may differ between vendors */
++#define SR_BP0			4	/* Block protect 0 */
++#define SR_BP1			8	/* Block protect 1 */
++#define SR_BP2			0x10	/* Block protect 2 */
++#define SR_SRWD			0x80	/* SR write protect */
++
++#define SR_QUAD_EN_MX		0x40	/* Macronix Quad I/O */
++
++/* Flag Status Register bits */
++#define FSR_READY		0x80
++
++/* Configuration Register bits. */
++#define CR_QUAD_EN_SPAN		0x2	/* Spansion Quad I/O */
++
++enum read_mode {
++	SPI_NOR_NORMAL = 0,
++	SPI_NOR_FAST,
++	SPI_NOR_DUAL,
++	SPI_NOR_QUAD,
++};
++
++/**
++ * struct spi_nor_xfer_cfg - Structure for defining a Serial Flash transfer
++ * @wren:		command for "Write Enable", or 0x00 for not required
++ * @cmd:		command for operation
++ * @cmd_pins:		number of pins to send @cmd (1, 2, 4)
++ * @addr:		address for operation
++ * @addr_pins:		number of pins to send @addr (1, 2, 4)
++ * @addr_width:		number of address bytes
++ *			(3,4, or 0 for address not required)
++ * @mode:		mode data
++ * @mode_pins:		number of pins to send @mode (1, 2, 4)
++ * @mode_cycles:	number of mode cycles (0 for mode not required)
++ * @dummy_cycles:	number of dummy cycles (0 for dummy not required)
++ */
++struct spi_nor_xfer_cfg {
++	u8		wren;
++	u8		cmd;
++	u8		cmd_pins;
++	u32		addr;
++	u8		addr_pins;
++	u8		addr_width;
++	u8		mode;
++	u8		mode_pins;
++	u8		mode_cycles;
++	u8		dummy_cycles;
++};
++
++#define SPI_NOR_MAX_CMD_SIZE	8
++enum spi_nor_ops {
++	SPI_NOR_OPS_READ = 0,
++	SPI_NOR_OPS_WRITE,
++	SPI_NOR_OPS_ERASE,
++	SPI_NOR_OPS_LOCK,
++	SPI_NOR_OPS_UNLOCK,
++};
++
++/**
++ * struct spi_nor - Structure for defining a the SPI NOR layer
++ * @mtd:		point to a mtd_info structure
++ * @lock:		the lock for the read/write/erase/lock/unlock operations
++ * @dev:		point to a spi device, or a spi nor controller device.
++ * @page_size:		the page size of the SPI NOR
++ * @addr_width:		number of address bytes
++ * @erase_opcode:	the opcode for erasing a sector
++ * @read_opcode:	the read opcode
++ * @read_dummy:		the dummy needed by the read operation
++ * @program_opcode:	the program opcode
++ * @flash_read:		the mode of the read
++ * @sst_write_second:	used by the SST write operation
++ * @cfg:		used by the read_xfer/write_xfer
++ * @cmd_buf:		used by the write_reg
++ * @prepare:		[OPTIONAL] do some preparations for the
++ *			read/write/erase/lock/unlock operations
++ * @unprepare:		[OPTIONAL] do some post work after the
++ *			read/write/erase/lock/unlock operations
++ * @read_xfer:		[OPTIONAL] the read fundamental primitive
++ * @write_xfer:		[OPTIONAL] the writefundamental primitive
++ * @read_reg:		[DRIVER-SPECIFIC] read out the register
++ * @write_reg:		[DRIVER-SPECIFIC] write data to the register
++ * @read_id:		[REPLACEABLE] read out the ID data, and find
++ *			the proper spi_device_id
++ * @wait_till_ready:	[REPLACEABLE] wait till the NOR becomes ready
++ * @read:		[DRIVER-SPECIFIC] read data from the SPI NOR
++ * @write:		[DRIVER-SPECIFIC] write data to the SPI NOR
++ * @erase:		[DRIVER-SPECIFIC] erase a sector of the SPI NOR
++ *			at the offset @offs
++ * @priv:		the private data
++ */
++struct spi_nor {
++	struct mtd_info		*mtd;
++	struct mutex		lock;
++	struct device		*dev;
++	u32			page_size;
++	u8			addr_width;
++	u8			erase_opcode;
++	u8			read_opcode;
++	u8			read_dummy;
++	u8			program_opcode;
++	enum read_mode		flash_read;
++	bool			sst_write_second;
++	struct spi_nor_xfer_cfg	cfg;
++	u8			cmd_buf[SPI_NOR_MAX_CMD_SIZE];
++
++	int (*prepare)(struct spi_nor *nor, enum spi_nor_ops ops);
++	void (*unprepare)(struct spi_nor *nor, enum spi_nor_ops ops);
++	int (*read_xfer)(struct spi_nor *nor, struct spi_nor_xfer_cfg *cfg,
++			 u8 *buf, size_t len);
++	int (*write_xfer)(struct spi_nor *nor, struct spi_nor_xfer_cfg *cfg,
++			  u8 *buf, size_t len);
++	int (*read_reg)(struct spi_nor *nor, u8 opcode, u8 *buf, int len);
++	int (*write_reg)(struct spi_nor *nor, u8 opcode, u8 *buf, int len,
++			int write_enable);
++	const struct spi_device_id *(*read_id)(struct spi_nor *nor);
++	int (*wait_till_ready)(struct spi_nor *nor);
++
++	int (*read)(struct spi_nor *nor, loff_t from,
++			size_t len, size_t *retlen, u_char *read_buf);
++	void (*write)(struct spi_nor *nor, loff_t to,
++			size_t len, size_t *retlen, const u_char *write_buf);
++	int (*erase)(struct spi_nor *nor, loff_t offs);
++
++	void *priv;
++};
++
++/**
++ * spi_nor_scan() - scan the SPI NOR
++ * @nor:	the spi_nor structure
++ * @id:		the spi_device_id provided by the driver
++ * @mode:	the read mode supported by the driver
++ *
++ * The drivers can use this fuction to scan the SPI NOR.
++ * In the scanning, it will try to get all the necessary information to
++ * fill the mtd_info{} and the spi_nor{}.
++ *
++ * The board may assigns a spi_device_id with @id which be used to compared with
++ * the spi_device_id detected by the scanning.
++ *
++ * Return: 0 for success, others for failure.
++ */
++int spi_nor_scan(struct spi_nor *nor, const struct spi_device_id *id,
++			enum read_mode mode);
++extern const struct spi_device_id spi_nor_ids[];
++
++/**
++ * spi_nor_match_id() - find the spi_device_id by the name
++ * @name:	the name of the spi_device_id
++ *
++ * The drivers use this function to find the spi_device_id
++ * specified by the @name.
++ *
++ * Return: returns the right spi_device_id pointer on success,
++ *         and returns NULL on failure.
++ */
++const struct spi_device_id *spi_nor_match_id(char *name);
++
++#endif
