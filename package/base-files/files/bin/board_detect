@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ -d "/etc/board.d/" -a ! -f "/etc/board.json" ] || {
+[ -d "/etc/board.d/" -a ! -f "/etc/board.json" ] && {
 	for a in `ls /etc/board.d/*`; do
 		[ -x $a ] || continue;
 		$(. $a)
