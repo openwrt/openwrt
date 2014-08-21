@@ -243,8 +243,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
 	$(call Image/Build/CFE,$(1),96368MVWG,6368,96368MVWG-generic)
 
-	# ADB P.DG A4001N
-	$(call Image/Build/CFE,$(1),96328dg2x2,6328,A4001N,,--pad 4)
 	# BT Voyager V210_BTR
 	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
 	# BT Voyager V210_ROI, V210_WB
@@ -343,6 +341,8 @@ $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-4M-fla
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
 
+# ADB P.DG A4001N
+$(eval $(call CfeImageDTB,A4001N,a4001n,96328dg2x2,6328,A4001N,,--pad 8))
 # ADB P.DG A4001N1
 $(eval $(call CfeImageDTB,A4001N1,a4001n1,963281T_TEF,6328,A4001N1,,--pad 8))
 # Asmax AR 1004g

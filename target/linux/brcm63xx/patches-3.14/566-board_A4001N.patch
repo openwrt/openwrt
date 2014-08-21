@@ -1,11 +1,12 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -609,6 +609,95 @@ static struct board_info __initdata boar
+@@ -609,6 +609,96 @@ static struct board_info __initdata boar
  	},
  };
  
 +static struct board_info __initdata board_A4001N = {
 +	.name				= "96328dg2x2",
++	.of_board_id			= "adb,a4001n",
 +	.expected_cpu_id		= 0x6328,
 +
 +	.has_uart0			= 1,
@@ -95,8 +96,8 @@
 +
  static struct board_info __initdata board_A4001N1 = {
  	.name					= "963281T_TEF",
- 	.of_board_id			= "comtrend,wap-5813n",
-@@ -4957,6 +5046,7 @@ static const struct board_info __initcon
+ 	.of_board_id			= "adb,a4001n1",
+@@ -4957,6 +5047,7 @@ static const struct board_info __initcon
  	&board_AR5381u,
  	&board_AR5387un,
  	&board_963281TAN,
