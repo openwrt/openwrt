@@ -271,8 +271,6 @@ define Image/Build
 	# Sagem F@ST2504n
 	$(call Image/Build/CFE,$(1),F@ST2504n,6362,F@ST2504n,OpenWRT-$(REVISION))
 
-	# Comtrend VR-3025un
-	$(call Image/Build/CFE,$(1),96368M-1341N,6368,VR-3025un,,--pad 4)
 	# Comtrend WAP-5813n
 	$(call Image/Build/CFE,$(1),96369R-1231N,6368,WAP-5813n,,--pad 4)
 	# Davolink DV201AMR
@@ -363,6 +361,8 @@ $(eval $(call CfeImageDTB,CT5365,ct-5365,96348A-122,6348,CT-5365))
 $(eval $(call CfeImageDTB,CT6373,ct-6373,CT6373-1,6358,CT-6373))
 # Comtrend VR-3025u
 $(eval $(call CfeImageDTB,VR3025u,vr-3025u,96368M-1541N,6368,VR-3025u,,--pad 16 --image-offset 0x20000 --block-size 0x20000))
+# Comtrend VR-3025un
+$(eval $(call CfeImageDTB,VR3025un,vr-3025un,96368M-1341N,6368,VR-3025un,,--pad 4))
 # D-Link DSL-2740B/DSL-2741B, rev C2
 $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 # D-Link DSL-2740B/DSL-2741B, rev C3
