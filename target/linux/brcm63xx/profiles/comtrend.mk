@@ -22,3 +22,13 @@ define Profile/CT5365/Description
   Package set optimized for CT-5365.
 endef
 $(eval $(call Profile,CT5365))
+
+define Profile/CT6373
+  NAME:=Comtrend CT-6373
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/CT6373/Description
+  Package set optimized for CT-6373.
+endef
+$(eval $(call Profile,CT6373))
