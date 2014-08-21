@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=xtables-addons
-PKG_VERSION:=2.3
+PKG_VERSION:=2.5
 PKG_RELEASE:=1
-PKG_MD5SUM:=7d942729c365a549513511061f74c3e3
+PKG_MD5SUM:=335663ece5fb17c7d0bb24dbdc697eb1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SF/xtables-addons
@@ -126,7 +126,6 @@ endef
 #$(eval $(call BuildTemplate,SUFFIX,DESCRIPTION,EXTENSION,MODULE,PRIORITY,DEPENDS))
 
 $(eval $(call BuildTemplate,compat-xtables,API compatibilty layer,,compat_xtables,+IPV6:kmod-ip6tables,CONFIG_NF_CONNTRACK_MARK=y))
-$(eval $(call BuildTemplate,rawpost,RAWPOST,,iptable_rawpost $(if $(CONFIG_IPV6),ip6table_rawpost),+kmod-ipt-compat-xtables +IPV6:kmod-ip6tables))
 $(eval $(call BuildTemplate,nathelper-rtsp,RTSP Conntrack and NAT,,rtsp/nf_conntrack_rtsp rtsp/nf_nat_rtsp,+kmod-ipt-conntrack-extra +kmod-ipt-nat))
 
 $(eval $(call BuildTemplate,account,ACCOUNT,xt_ACCOUNT,ACCOUNT/xt_ACCOUNT,+kmod-ipt-compat-xtables))
@@ -147,8 +146,6 @@ $(eval $(call BuildTemplate,lscan,lscan,xt_lscan,xt_lscan,))
 $(eval $(call BuildTemplate,lua,Lua PacketScript,xt_LUA,LUA/xt_LUA,+kmod-ipt-conntrack-extra))
 $(eval $(call BuildTemplate,psd,psd,xt_psd,xt_psd,))
 $(eval $(call BuildTemplate,quota2,quota2,xt_quota2,xt_quota2,))
-$(eval $(call BuildTemplate,rawnat,RAWNAT,xt_RAWDNAT xt_RAWSNAT,xt_RAWNAT,+kmod-ipt-compat-xtables))
-$(eval $(call BuildTemplate,steal,STEAL,xt_STEAL,xt_STEAL,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,sysrq,SYSRQ,xt_SYSRQ,xt_SYSRQ,+kmod-ipt-compat-xtables))
 $(eval $(call BuildTemplate,tarpit,TARPIT,xt_TARPIT,xt_TARPIT,+kmod-ipt-compat-xtables +IPV6:kmod-ipv6))
 
