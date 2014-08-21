@@ -316,9 +316,6 @@ define Image/Build
 	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
 
-	# Huawei HW520
-	$(call Image/Build/CFE,$(1),HW6358GW_B,6358,HW520,EchoLife_HG520v)
-
 	#HW553
 	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
 
@@ -369,6 +366,8 @@ $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
 # D-Link DVA-G3810BN/TL
 $(eval $(call CfeImageDTB,DVAG3810BN,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
+# Huawei HG520v
+$(eval $(call CfeImageDTB,HG520v,hg520v,HW6358GW_B,6358,HG520v,EchoLife_HG520v))
 # Huawei HG556a
 $(eval $(call CfeImageDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call CfeImageDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
