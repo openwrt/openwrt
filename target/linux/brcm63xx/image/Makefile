@@ -271,8 +271,6 @@ define Image/Build
 	# Sagem F@ST2504n
 	$(call Image/Build/CFE,$(1),F@ST2504n,6362,F@ST2504n,OpenWRT-$(REVISION))
 
-	# Comtrend AR-5381u
-	$(call Image/Build/CFE,$(1),96328A-1241N,6328,AR-5381u,,--pad 8)
 	# Comtrend AR-5387un
 	$(call Image/Build/CFE,$(1),96328A-1441N1,6328,AR-5387un,,--pad 8)
 	# Comtrend VR-3025u
@@ -357,6 +355,8 @@ $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-fl
 
 # Asmax AR 1004g
 $(eval $(call CfeImageDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
+# Comtrend AR-5381u
+$(eval $(call CfeImageDTB,AR5381u,ar-5381u,96328A-1241N,6328,AR-5381u,,--pad 8))
 # Comtrend 536, 5621
 $(eval $(call CfeImageDTB,CT536_CT5621,ct536plus,96348GW-11,6348,CT536_CT5621))
 # Comtrend CT-5365
