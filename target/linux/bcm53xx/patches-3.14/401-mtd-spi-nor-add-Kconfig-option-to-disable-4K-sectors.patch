@@ -1,0 +1,44 @@
+--- a/drivers/mtd/spi-nor/Kconfig
++++ b/drivers/mtd/spi-nor/Kconfig
+@@ -7,6 +7,20 @@ menuconfig MTD_SPI_NOR
+ 
+ if MTD_SPI_NOR
+ 
++config MTD_SPI_NOR_USE_4K_SECTORS
++	bool "Use small 4096 B erase sectors"
++	default y
++	help
++	  Many flash memories support erasing small (4096 B) sectors. Depending
++	  on the usage this feature may provide performance gain in comparison
++	  to erasing whole blocks (32/64 KiB).
++	  Changing small part of flash content is usually faster with small
++	  sectors. On the other hand erasing should be faster when using 64 KiB
++	  block instead of 16 × 4 KiB sectors.
++
++	  Please note that some tools/drivers/filesystems may not work with
++	  4096 B erase size (e.g. UBIFS requires 15 KiB as a minimum).
++
+ config SPI_FSL_QUADSPI
+ 	tristate "Freescale Quad SPI controller"
+ 	depends on ARCH_MXC
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -987,6 +987,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	    nor->wait_till_ready == spi_nor_wait_till_ready)
+ 		nor->wait_till_ready = spi_nor_wait_till_fsr_ready;
+ 
++#ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
+ 	/* prefer "small sector" erase if possible */
+ 	if (info->flags & SECT_4K) {
+ 		nor->erase_opcode = SPINOR_OP_BE_4K;
+@@ -994,7 +995,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	} else if (info->flags & SECT_4K_PMC) {
+ 		nor->erase_opcode = SPINOR_OP_BE_4K_PMC;
+ 		mtd->erasesize = 4096;
+-	} else {
++	} else
++#endif
++	{
+ 		nor->erase_opcode = SPINOR_OP_SE;
+ 		mtd->erasesize = info->sector_size;
+ 	}
