@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/AR5381u
+  NAME:=Comtrend AR-5381u
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/AR5381u/Description
+  Package set optimized for AR-5381u.
+endef
+$(eval $(call Profile,AR5381u))
+
 define Profile/CT536_CT5621
   NAME:=Comtrend CT-536+/CT-5621
   PACKAGES:=kmod-b43 wpad-mini
