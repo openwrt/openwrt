@@ -5,6 +5,15 @@
 # See /LICENSE for more information.
 #
 
+define Profile/HG520v
+  NAME:=Huawei EchoLife HG520v
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/HG520v/Description
+  Package set optimized for Huawei HG520v.
+endef
+$(eval $(call Profile,HG520v))
+
 define Profile/HG556a_AB
   NAME:=Huawei EchoLife HG556a (version A/B - Atheros)
   PACKAGES:=kmod-ath9k wpad-mini \
