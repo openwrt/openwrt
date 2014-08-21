@@ -72,3 +72,13 @@ define Profile/VR3025un/Description
   Package set optimized for VR-3025un.
 endef
 $(eval $(call Profile,VR3025un))
+
+define Profile/WAP5813n
+  NAME:=Comtrend WAP-5813n
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/WAP5813n/Description
+  Package set optimized for WAP-5813n.
+endef
+$(eval $(call Profile,WAP5813n))
