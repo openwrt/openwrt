@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/A4001N
+  NAME:=ADB P.DG A4001N
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/A4001N/Description
+  Package set optimized for A4001N.
+endef
+$(eval $(call Profile,A4001N))
+
 define Profile/A4001N1
   NAME:=ADB P.DG A4001N1
   PACKAGES:=kmod-b43 wpad-mini \
