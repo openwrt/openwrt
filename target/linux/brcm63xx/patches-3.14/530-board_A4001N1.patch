@@ -1,11 +1,12 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -236,6 +236,133 @@ static struct board_info __initdata boar
+@@ -236,6 +236,134 @@ static struct board_info __initdata boar
  	},
  };
  
 +static struct board_info __initdata board_A4001N1 = {
 +	.name					= "963281T_TEF",
++	.of_board_id			= "adb,a4001n1",
 +	.expected_cpu_id			= 0x6328,
 +
 +	.has_uart0				= 1,
@@ -134,7 +135,7 @@
  static struct board_info __initdata board_dsl_274xb_f1 = {
  	.name				= "AW4339U",
  	.expected_cpu_id		= 0x6328,
-@@ -2695,6 +2822,7 @@ static const struct board_info __initcon
+@@ -2695,6 +2823,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
