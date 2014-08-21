@@ -238,7 +238,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,96348GW-11-generic)
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,96348GW-10-generic)
-	$(call Image/Build/CFE,$(1),96348A-122,6348,96348A-122-generic)
 	$(call Image/Build/CFE,$(1),96358VW,6358,96358VW-generic)
 	$(call Image/Build/CFE,$(1),96358VW2,6358,96358VW2-generic)
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
@@ -362,6 +361,8 @@ $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-fl
 $(eval $(call CfeImageDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
 # Comtrend 536, 5621
 $(eval $(call CfeImageDTB,CT536_CT5621,ct536plus,96348GW-11,6348,CT536_CT5621))
+# Comtrend CT-5365
+$(eval $(call CfeImageDTB,CT5365,ct-5365,96348A-122,6348,CT-5365))
 # D-Link DSL-2740B/DSL-2741B, rev C2
 $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 # D-Link DSL-2740B/DSL-2741B, rev C3
