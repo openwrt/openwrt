@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4280,6 +4280,116 @@ static struct board_info __initdata boar
+@@ -4280,6 +4280,117 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -15,6 +15,7 @@
 +
 +static struct board_info __initdata board_VR3025un = {
 +	.name					= "96368M-1341N",
++	.of_board_id			= "comtrend,vr-3025un",
 +	.expected_cpu_id		= 0x6368,
 +
 +	.has_uart0				= 1,
@@ -117,7 +118,7 @@
  static struct b53_platform_data WAP5813n_b53_pdata = {
  	.alias = "eth0",
  };
-@@ -4770,6 +4880,7 @@ static const struct board_info __initcon
+@@ -4770,6 +4881,7 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
  	&board_VR3025u,

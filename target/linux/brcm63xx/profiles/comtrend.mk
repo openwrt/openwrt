@@ -62,3 +62,13 @@ define Profile/VR3025u/Description
   Package set optimized for VR-3025u.
 endef
 $(eval $(call Profile,VR3025u))
+
+define Profile/VR3025un
+  NAME:=Comtrend VR-3025un
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/VR3025un/Description
+  Package set optimized for VR-3025un.
+endef
+$(eval $(call Profile,VR3025un))
