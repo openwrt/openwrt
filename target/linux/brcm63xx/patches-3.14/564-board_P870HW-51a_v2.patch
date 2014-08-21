@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4179,6 +4179,96 @@ static struct sprom_fixup __initdata vr3
+@@ -4180,6 +4180,96 @@ static struct sprom_fixup __initdata vr3
  	{ .offset = 115, .value = 0xfad9 },
  };
  
@@ -97,7 +97,7 @@
  static struct board_info __initdata board_VR3025u = {
  	.name					= "96368M-1541N",
  	.of_board_id			= "comtrend,vr-3025u",
-@@ -4882,6 +4972,7 @@ static const struct board_info __initcon
+@@ -4883,6 +4973,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
