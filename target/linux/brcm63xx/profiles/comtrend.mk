@@ -15,6 +15,16 @@ define Profile/AR5381u/Description
 endef
 $(eval $(call Profile,AR5381u))
 
+define Profile/AR5387un
+  NAME:=Comtrend AR-5387un
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/AR5387un/Description
+  Package set optimized for AR-5387un.
+endef
+$(eval $(call Profile,AR5387un))
+
 define Profile/CT536_CT5621
   NAME:=Comtrend CT-536+/CT-5621
   PACKAGES:=kmod-b43 wpad-mini
