@@ -57,6 +57,20 @@ define Image/Build/CFEDTB
 		$(7) $(8) $(9) $(10)
 endef
 
+define Image/Build/ZYXCFEDTB
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
+		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
+		--info1 "-$(call Image/LimitName16,$(5))" --info2 $(1) \
+		$(7) $(8) $(9) $(10)
+	# Fix up header
+	$(STAGING_DIR_HOST)/bin/zyxbcm -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
+		-o $(BIN_DIR)/openwrt-$(5)-$(1)-zyxcfe.bin
+	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
+endef
+
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -97,20 +111,6 @@ define Image/Build/SPW303V
 	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin \
 		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-factory.bin
 	rm -f $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp
-endef
-
-define Image/Build/ZyXEL
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
-		--boardid $(2) --chipid $(4) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --rsa-signature "$(6)" \
-		--info1 "+$(call Image/LimitName16,$(3))" --info2 $(1) \
-		$(7) $(8) $(9) $(10)
-	# Fix up header
-	$(STAGING_DIR_HOST)/bin/zyxbcm -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin
-	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
 endef
 
 define Image/Build/CFEOLD
@@ -212,6 +212,24 @@ define CfeImageDTB
   TARGET_$(1)_IMAGES += $(5)
 endef
 
+# $(1) = Profile
+# $(2) = dtb
+# $(3) = boardname
+# $(4) = chipid
+# $(5) = imagename
+# $(6) = rsa signature
+# $(7) = additional options
+define ZyxCfeImageDTB
+  define Image/Build/$(5)
+    $$(call Image/Build/ZYXCFEDTB,$$(1),$(2),$(3),$(4),$(5),$(6),$(7))
+  endef
+
+  TARGET_Default_DTBS += $(2)
+  TARGET_Default_IMAGES += $(5)
+  TARGET_$(1)_DTBS += $(2)
+  TARGET_$(1)_IMAGES += $(5)
+endef
+
 
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
@@ -252,8 +270,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
-	# Zyxel P870HW-51a v2
-	$(call Image/Build/ZyXEL,$(1),96368VVW,P870HW-51a_v2,6368,P870HW-51a_v2,ZyXEL,--signature "ZyXEL_0001")
 
 	# Sagem F@ST2504n
 	$(call Image/Build/CFE,$(1),F@ST2504n,6362,F@ST2504n,OpenWRT-$(REVISION))
@@ -373,5 +389,7 @@ $(eval $(call CfeImageDTB,Neufbox4,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,OpenWRT-
 $(eval $(call CfeImageDTB,Neufbox4,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,OpenWRT-$(REVISION)))
 # SFR neufbox 6
 $(eval $(call CfeImageDTB,Neufbox6,nb6-ser-r0,NB6-SER-r0,6362,NEUFBOX6,OpenWRT-$(REVISION)))
+# ZyXEL P870HW-51a v2
+$(eval $(call ZyxCfeImageDTB,P870HW_51a_v2,p870hw-51a-v2,96368VVW,6368,P870HW-51a_v2,ZyXEL,--signature "ZyXEL_0001"))
 
 $(eval $(call BuildImage))
