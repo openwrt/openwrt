@@ -1,0 +1,333 @@
+
+# HG changeset patch
+# User Matt Johnston <matt@ucc.asn.au>
+# Date 1408460936 -28800
+# Node ID 0bb16232e7c4162daa43e8618521cf453847ac16
+# Parent  939944f0fca9b2dcdf8470bb24efcc37a3843e8b
+Make keepalive handling more robust, this should now match what OpenSSH does
+
+diff -r 939944f0fca9 -r 0bb16232e7c4 LICENSE
+--- a/LICENSE	Wed Aug 13 22:07:43 2014 +0800
++++ b/LICENSE	Tue Aug 19 23:08:56 2014 +0800
+@@ -8,7 +8,7 @@
+ Portions of the client-mode work are (c) 2004 Mihnea Stoenescu, under the
+ same license:
+ 
+-Copyright (c) 2002-2013 Matt Johnston
++Copyright (c) 2002-2014 Matt Johnston
+ Portions copyright (c) 2004 Mihnea Stoenescu
+ All rights reserved.
+ 
+diff -r 939944f0fca9 -r 0bb16232e7c4 auth.h
+--- a/auth.h	Wed Aug 13 22:07:43 2014 +0800
++++ b/auth.h	Tue Aug 19 23:08:56 2014 +0800
+@@ -106,7 +106,7 @@
+ 								valid */
+ 	unsigned int failcount; /* Number of (failed) authentication attempts.*/
+ 	unsigned authdone : 1; /* 0 if we haven't authed, 1 if we have. Applies for
+-							  client and server (though has differing [obvious]
++							  client and server (though has differing 
+ 							  meanings). */
+ 	unsigned perm_warn : 1; /* Server only, set if bad permissions on 
+ 							   ~/.ssh/authorized_keys have already been
+diff -r 939944f0fca9 -r 0bb16232e7c4 channel.h
+--- a/channel.h	Wed Aug 13 22:07:43 2014 +0800
++++ b/channel.h	Tue Aug 19 23:08:56 2014 +0800
+@@ -105,6 +105,9 @@
+ void setchannelfds(fd_set *readfd, fd_set *writefd);
+ void channelio(fd_set *readfd, fd_set *writefd);
+ struct Channel* getchannel();
++/* Returns an arbitrary channel that is in a ready state - not
++being initialised and no EOF in either direction. NULL if none. */
++struct Channel* get_any_ready_channel();
+ 
+ void recv_msg_channel_open();
+ void recv_msg_channel_request();
+@@ -128,8 +131,10 @@
+ void recv_msg_channel_open_confirmation();
+ void recv_msg_channel_open_failure();
+ #endif
++void start_send_channel_request(struct Channel *channel, unsigned char *type);
+ 
+ void send_msg_request_success();
+ void send_msg_request_failure();
+ 
++
+ #endif /* _CHANNEL_H_ */
+diff -r 939944f0fca9 -r 0bb16232e7c4 chansession.h
+--- a/chansession.h	Wed Aug 13 22:07:43 2014 +0800
++++ b/chansession.h	Tue Aug 19 23:08:56 2014 +0800
+@@ -89,7 +89,6 @@
+ #ifdef ENABLE_CLI_NETCAT
+ void cli_send_netcat_request();
+ #endif
+-void cli_start_send_channel_request(struct Channel *channel, unsigned char *type);
+ 
+ void svr_chansessinitialise();
+ extern const struct ChanType svrchansess;
+diff -r 939944f0fca9 -r 0bb16232e7c4 cli-agentfwd.c
+--- a/cli-agentfwd.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/cli-agentfwd.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -234,7 +234,7 @@
+ 		return;
+ 	}
+ 	
+-	cli_start_send_channel_request(channel, "auth-agent-req@openssh.com");
++	start_send_channel_request(channel, "auth-agent-req@openssh.com");
+ 	/* Don't want replies */
+ 	buf_putbyte(ses.writepayload, 0);
+ 	encrypt_packet();
+diff -r 939944f0fca9 -r 0bb16232e7c4 cli-chansession.c
+--- a/cli-chansession.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/cli-chansession.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -92,17 +92,6 @@
+ 	}
+ }
+ 
+-void cli_start_send_channel_request(struct Channel *channel, 
+-		unsigned char *type) {
+-
+-	CHECKCLEARTOWRITE();
+-	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
+-	buf_putint(ses.writepayload, channel->remotechan);
+-
+-	buf_putstring(ses.writepayload, type, strlen(type));
+-
+-}
+-
+ /* Taken from OpenSSH's sshtty.c:
+  * RCSID("OpenBSD: sshtty.c,v 1.5 2003/09/19 17:43:35 markus Exp "); */
+ static void cli_tty_setup() {
+@@ -287,7 +276,7 @@
+ 
+ 	TRACE(("enter send_chansess_pty_req"))
+ 
+-	cli_start_send_channel_request(channel, "pty-req");
++	start_send_channel_request(channel, "pty-req");
+ 
+ 	/* Don't want replies */
+ 	buf_putbyte(ses.writepayload, 0);
+@@ -330,7 +319,7 @@
+ 		reqtype = "shell";
+ 	}
+ 
+-	cli_start_send_channel_request(channel, reqtype);
++	start_send_channel_request(channel, reqtype);
+ 
+ 	/* XXX TODO */
+ 	buf_putbyte(ses.writepayload, 0); /* Don't want replies */
+diff -r 939944f0fca9 -r 0bb16232e7c4 cli-session.c
+--- a/cli-session.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/cli-session.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -70,11 +70,15 @@
+ 	{SSH_MSG_USERAUTH_BANNER, recv_msg_userauth_banner}, /* client */
+ 	{SSH_MSG_USERAUTH_SPECIFIC_60, recv_msg_userauth_specific_60}, /* client */
+ 	{SSH_MSG_GLOBAL_REQUEST, recv_msg_global_request_cli},
++	{SSH_MSG_CHANNEL_SUCCESS, ignore_recv_response},
++	{SSH_MSG_CHANNEL_FAILURE, ignore_recv_response},
+ #ifdef  ENABLE_CLI_REMOTETCPFWD
+ 	{SSH_MSG_REQUEST_SUCCESS, cli_recv_msg_request_success}, /* client */
+ 	{SSH_MSG_REQUEST_FAILURE, cli_recv_msg_request_failure}, /* client */
+ #else
+-	{SSH_MSG_REQUEST_FAILURE, ignore_recv_msg_request_failure}, /* for keepalive */
++	/* For keepalive */
++	{SSH_MSG_REQUEST_SUCCESS, ignore_recv_response},
++	{SSH_MSG_REQUEST_FAILURE, ignore_recv_response},
+ #endif
+ 	{0, 0} /* End */
+ };
+diff -r 939944f0fca9 -r 0bb16232e7c4 common-channel.c
+--- a/common-channel.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/common-channel.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -627,7 +627,12 @@
+ 			&& !channel->close_handler_done) {
+ 		channel->type->reqhandler(channel);
+ 	} else {
+-		send_msg_channel_failure(channel);
++		int wantreply;
++		buf_eatstring(ses.payload);
++		wantreply = buf_getbool(ses.payload);
++		if (wantreply) {
++			send_msg_channel_failure(channel);
++		}
+ 	}
+ 
+ 	TRACE(("leave recv_msg_channel_request"))
+@@ -1134,3 +1139,30 @@
+ 	buf_putbyte(ses.writepayload, SSH_MSG_REQUEST_FAILURE);
+ 	encrypt_packet();
+ }
++
++struct Channel* get_any_ready_channel() {
++	if (ses.chancount == 0) {
++		return NULL;
++	}
++	size_t i;
++	for (i = 0; i < ses.chansize; i++) {
++		struct Channel *chan = ses.channels[i];
++		if (chan
++				&& !(chan->sent_eof || chan->recv_eof)
++				&& !(chan->await_open || chan->initconn)) {
++			return chan;
++		}
++	}
++	return NULL;
++}
++
++void start_send_channel_request(struct Channel *channel, 
++		unsigned char *type) {
++
++	CHECKCLEARTOWRITE();
++	buf_putbyte(ses.writepayload, SSH_MSG_CHANNEL_REQUEST);
++	buf_putint(ses.writepayload, channel->remotechan);
++
++	buf_putstring(ses.writepayload, type, strlen(type));
++
++}
+diff -r 939944f0fca9 -r 0bb16232e7c4 common-session.c
+--- a/common-session.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/common-session.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -394,19 +394,30 @@
+ 	return pos+1;
+ }
+ 
+-void ignore_recv_msg_request_failure() {
++void ignore_recv_response() {
+ 	// Do nothing
+-	TRACE(("Ignored msg_request_failure"))
++	TRACE(("Ignored msg_request_response"))
+ }
+ 
+ static void send_msg_keepalive() {
+ 	CHECKCLEARTOWRITE();
+ 	time_t old_time_idle = ses.last_packet_time_idle;
+-	/* Try to force a response from the other end. Some peers will
+-	reply with SSH_MSG_REQUEST_FAILURE, some will reply with SSH_MSG_UNIMPLEMENTED */
+-	buf_putbyte(ses.writepayload, SSH_MSG_GLOBAL_REQUEST);
+-	/* A short string */
+-	buf_putstring(ses.writepayload, "k@dropbear.nl", 0);
++
++	struct Channel *chan = get_any_ready_channel();
++
++	if (chan) {
++		/* Channel requests are preferable, more implementations
++		handle them than SSH_MSG_GLOBAL_REQUEST */
++		TRACE(("keepalive channel request %d", chan->index))
++		start_send_channel_request(chan, DROPBEAR_KEEPALIVE_STRING);
++	} else {
++		TRACE(("keepalive global request"))
++		/* Some peers will reply with SSH_MSG_REQUEST_FAILURE, 
++		some will reply with SSH_MSG_UNIMPLEMENTED, some will exit. */
++		buf_putbyte(ses.writepayload, SSH_MSG_GLOBAL_REQUEST); 
++		buf_putstring(ses.writepayload, DROPBEAR_KEEPALIVE_STRING,
++			strlen(DROPBEAR_KEEPALIVE_STRING));
++	}
+ 	buf_putbyte(ses.writepayload, 1); /* want_reply */
+ 	encrypt_packet();
+ 
+@@ -435,7 +446,10 @@
+ 		send_msg_kexinit();
+ 	}
+ 	
+-	if (opts.keepalive_secs > 0) {
++	if (opts.keepalive_secs > 0 && ses.authstate.authdone) {
++		/* Avoid sending keepalives prior to auth - those are
++		not valid pre-auth packet types */
++
+ 		/* Send keepalives if we've been idle */
+ 		if (now - ses.last_packet_time_any_sent >= opts.keepalive_secs) {
+ 			send_msg_keepalive();
+diff -r 939944f0fca9 -r 0bb16232e7c4 session.h
+--- a/session.h	Wed Aug 13 22:07:43 2014 +0800
++++ b/session.h	Tue Aug 19 23:08:56 2014 +0800
+@@ -47,7 +47,7 @@
+ void session_cleanup();
+ void send_session_identification();
+ void send_msg_ignore();
+-void ignore_recv_msg_request_failure();
++void ignore_recv_response();
+ 
+ void update_channel_prio();
+ 
+diff -r 939944f0fca9 -r 0bb16232e7c4 svr-chansession.c
+--- a/svr-chansession.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/svr-chansession.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -53,6 +53,7 @@
+ static void closechansess(struct Channel *channel);
+ static int newchansess(struct Channel *channel);
+ static void chansessionrequest(struct Channel *channel);
++static int sesscheckclose(struct Channel *channel);
+ 
+ static void send_exitsignalstatus(struct Channel *channel);
+ static void send_msg_chansess_exitstatus(struct Channel * channel,
+@@ -61,6 +62,14 @@
+ 		struct ChanSess * chansess);
+ static void get_termmodes(struct ChanSess *chansess);
+ 
++const struct ChanType svrchansess = {
++	0, /* sepfds */
++	"session", /* name */
++	newchansess, /* inithandler */
++	sesscheckclose, /* checkclosehandler */
++	chansessionrequest, /* reqhandler */
++	closechansess, /* closehandler */
++};
+ 
+ /* required to clear environment */
+ extern char** environ;
+@@ -968,16 +977,6 @@
+ 	dropbear_exit("Child failed");
+ }
+ 
+-const struct ChanType svrchansess = {
+-	0, /* sepfds */
+-	"session", /* name */
+-	newchansess, /* inithandler */
+-	sesscheckclose, /* checkclosehandler */
+-	chansessionrequest, /* reqhandler */
+-	closechansess, /* closehandler */
+-};
+-
+-
+ /* Set up the general chansession environment, in particular child-exit
+  * handling */
+ void svr_chansessinitialise() {
+diff -r 939944f0fca9 -r 0bb16232e7c4 svr-main.c
+--- a/svr-main.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/svr-main.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -409,7 +409,7 @@
+ 	size_t sockpos = 0;
+ 	int nsock;
+ 
+-	TRACE(("listensockets: %d to try\n", svr_opts.portcount))
++	TRACE(("listensockets: %d to try", svr_opts.portcount))
+ 
+ 	for (i = 0; i < svr_opts.portcount; i++) {
+ 
+diff -r 939944f0fca9 -r 0bb16232e7c4 svr-session.c
+--- a/svr-session.c	Wed Aug 13 22:07:43 2014 +0800
++++ b/svr-session.c	Tue Aug 19 23:08:56 2014 +0800
+@@ -58,7 +58,10 @@
+ 	{SSH_MSG_CHANNEL_OPEN, recv_msg_channel_open},
+ 	{SSH_MSG_CHANNEL_EOF, recv_msg_channel_eof},
+ 	{SSH_MSG_CHANNEL_CLOSE, recv_msg_channel_close},
+-	{SSH_MSG_REQUEST_FAILURE, ignore_recv_msg_request_failure}, /* for keepalive */
++	{SSH_MSG_CHANNEL_SUCCESS, ignore_recv_response},
++	{SSH_MSG_CHANNEL_FAILURE, ignore_recv_response},
++	{SSH_MSG_REQUEST_FAILURE, ignore_recv_response}, /* for keepalive */
++	{SSH_MSG_REQUEST_SUCCESS, ignore_recv_response}, /* client */
+ #ifdef USING_LISTENERS
+ 	{SSH_MSG_CHANNEL_OPEN_CONFIRMATION, recv_msg_channel_open_confirmation},
+ 	{SSH_MSG_CHANNEL_OPEN_FAILURE, recv_msg_channel_open_failure},
+diff -r 939944f0fca9 -r 0bb16232e7c4 sysoptions.h
+--- a/sysoptions.h	Wed Aug 13 22:07:43 2014 +0800
++++ b/sysoptions.h	Tue Aug 19 23:08:56 2014 +0800
+@@ -257,4 +257,7 @@
+ #define DROPBEAR_LISTEN_BACKLOG MAX_CHANNELS
+ #endif
+ 
++/* Use this string since some implementations might special-case it */
++#define DROPBEAR_KEEPALIVE_STRING "keepalive@openssh.com"
++
+ /* no include guard for this file */
+
