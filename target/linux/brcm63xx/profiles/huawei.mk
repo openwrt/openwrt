@@ -14,6 +14,16 @@ define Profile/HG520v/Description
 endef
 $(eval $(call Profile,HG520v))
 
+define Profile/HG553
+  NAME:=Huawei EchoLife HG553
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
+endef
+define Profile/HG553/Description
+  Package set optimized for Huawei HG553.
+endef
+$(eval $(call Profile,HG553))
+
 define Profile/HG556a_AB
   NAME:=Huawei EchoLife HG556a (version A/B - Atheros)
   PACKAGES:=kmod-ath9k wpad-mini \

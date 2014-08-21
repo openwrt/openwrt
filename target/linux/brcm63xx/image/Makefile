@@ -57,15 +57,6 @@ define Image/Build/CFEDTB
 		$(7) $(8) $(9) $(10)
 endef
 
-define Image/Build/CFEHW553
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
-		--load-addr $(LOADADDR) --tag-version 7 \
-		--block-size 0x20000 --image-offset $(4)
-endef
-
 define Image/Build/CFEAGPF
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -316,9 +307,6 @@ define Image/Build
 	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
 
-	#HW553
-	$(call Image/Build/CFEHW553,$(1),HW553,6358,0x20000,HW553)
-
 	# T-Com Speedport W 303V Typ B
 	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
 
@@ -368,6 +356,8 @@ $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
 $(eval $(call CfeImageDTB,DVAG3810BN,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
 # Huawei HG520v
 $(eval $(call CfeImageDTB,HG520v,hg520v,HW6358GW_B,6358,HG520v,EchoLife_HG520v))
+# Huawei HG553
+$(eval $(call CfeImageDTB,HG553,hg553,HW553,6358,HG553,EchoLife_HG553,--image-offset 0x20000 --block-size 0x20000 --tag-version 7))
 # Huawei HG556a
 $(eval $(call CfeImageDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call CfeImageDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
