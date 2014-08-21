@@ -245,8 +245,6 @@ define Image/Build
 
 	# ADB P.DG A4001N
 	$(call Image/Build/CFE,$(1),96328dg2x2,6328,A4001N,,--pad 4)
-	# ADB P.DG A4001N1
-	$(call Image/Build/CFE,$(1),963281T_TEF,6328,A4001N1,,--pad 8)
 	# BT Voyager V210_BTR
 	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
 	# BT Voyager V210_ROI, V210_WB
@@ -345,6 +343,8 @@ $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-4M-fla
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
 
+# ADB P.DG A4001N1
+$(eval $(call CfeImageDTB,A4001N1,a4001n1,963281T_TEF,6328,A4001N1,,--pad 8))
 # Asmax AR 1004g
 $(eval $(call CfeImageDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
 # Comtrend AR-5381u
