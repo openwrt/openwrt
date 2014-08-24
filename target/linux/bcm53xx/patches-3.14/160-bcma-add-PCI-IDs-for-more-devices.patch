@@ -1,15 +1,24 @@
-From a0d83e0ad20f6dde0a71ed07da12ca3be8bbdc01 Mon Sep 17 00:00:00 2001
+From 5274195ed2aefa21bcc69de7ecbd13a88bd3f357 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 18 May 2014 17:15:24 +0200
-Subject: [PATCH 12/15] bcma: add PCI IDs for more devices
+Date: Sat, 23 Aug 2014 17:58:11 +0200
+Subject: [PATCH 11/17] bcma: add PCI ID for spromless BCM43217
 
-This adds the PCI IDs for the BCM4360 and BCM43227.
-Both devices were found on a Netgear R6250 with a BCM4708 ARM SoC.
+This adds the PCI ID a BCM43217 without a sprom.
+This devices was found on a Netgear R6250 attached to a BCM4708 ARM SoC.
+
+bcma: bus1: Found chip with id 0xA8D1, rev 0x00 and package 0x08
+bcma: bus1: Core 0 found: ChipCommon (manuf 0x4BF, id 0x800, rev 0x27, class 0x0)
+bcma: bus1: Core 1 found: IEEE 802.11 (manuf 0x4BF, id 0x812, rev 0x1E, class 0x0)
+bcma: bus1: Core 2 found: PCIe (manuf 0x4BF, id 0x820, rev 0x14, class 0x0)
+
+b43-phy0: Broadcom 43217 WLAN found (core revision 30)
+b43-phy0: Found PHY: Analog 9, Type 4 (N), Revision 17
+b43-phy0: Found Radio: Manuf 0x17F, ID 0x2057, Revision 14, Version 1
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/bcma/host_pci.c | 2 ++
- 1 file changed, 2 insertions(+)
+ drivers/bcma/host_pci.c | 1 +
+ 1 file changed, 1 insertion(+)
 
 --- a/drivers/bcma/host_pci.c
 +++ b/drivers/bcma/host_pci.c
@@ -17,7 +26,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
-+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },	/* 0xA8DB */
  	{ 0, },
  };
  MODULE_DEVICE_TABLE(pci, bcma_pci_bridge_tbl);

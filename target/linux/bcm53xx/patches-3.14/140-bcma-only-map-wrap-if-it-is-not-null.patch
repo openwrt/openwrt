@@ -1,15 +1,39 @@
-From f8ea60bbaf880d8d8d99fde3b5155f472e00141f Mon Sep 17 00:00:00 2001
+From c6516d2c672450fb27783866397a487511d90bba Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Mon, 12 May 2014 20:16:39 +0200
-Subject: [PATCH 09/15] bcma: only map wrap if it is not null
+Date: Fri, 22 Aug 2014 08:44:52 +0200
+Subject: [PATCH 08/17] bcma: only map wrapper if its address is available
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-The chipcommon B core does not have a wrap address and it would fail here.
+The Chipcommon B core does not have a wrap address and it would fail here.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
- drivers/bcma/scan.c | 11 +++++++----
- 1 file changed, 7 insertions(+), 4 deletions(-)
+ drivers/bcma/host_soc.c |  4 ++++
+ drivers/bcma/scan.c     | 11 +++++++----
+ 2 files changed, 11 insertions(+), 4 deletions(-)
 
+--- a/drivers/bcma/host_soc.c
++++ b/drivers/bcma/host_soc.c
+@@ -137,12 +137,16 @@ static void bcma_host_soc_block_write(st
+ 
+ static u32 bcma_host_soc_aread32(struct bcma_device *core, u16 offset)
+ {
++	if (WARN_ONCE(!core->io_wrap, "Accessed core has no wrapper/agent\n"))
++		return ~0;
+ 	return readl(core->io_wrap + offset);
+ }
+ 
+ static void bcma_host_soc_awrite32(struct bcma_device *core, u16 offset,
+ 				  u32 value)
+ {
++	if (WARN_ONCE(!core->io_wrap, "Accessed core has no wrapper/agent\n"))
++		return;
+ 	writel(value, core->io_wrap + offset);
+ }
+ 
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -421,10 +421,13 @@ static int bcma_get_next_core(struct bcm

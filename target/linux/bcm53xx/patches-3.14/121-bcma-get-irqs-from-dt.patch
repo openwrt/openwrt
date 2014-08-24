@@ -1,10 +1,14 @@
-From 3e59da41882a408064cd23f4c9124a7938bdb91f Mon Sep 17 00:00:00 2001
+From eaf1943a2c49cbc6eb0ffafa7b6ced45f2d328da Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 9 Jan 2014 19:40:14 +0100
-Subject: [PATCH 06/15] bcma: get irqs from dt
+Subject: [PATCH 05/17] bcma: get IRQ numbers from dt
 
-If bcma was registered with device tree it will search for some nodes
-with the irq number and add it to the core configuration.
+It is not possible to auto detect the irq numbers used by the cores on
+an arm SoC. If bcma was registered with device tree it will search for
+some device tree nodes with the irq number and add it to the core
+configuration.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/bcma/main.c | 42 +++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 41 insertions(+), 1 deletion(-)
@@ -35,7 +39,7 @@ with the irq number and add it to the core configuration.
 +		return NULL;
 +
 +	for_each_child_of_node(parent->dev.of_node, node) {
-+		reg = of_get_address(node, 0, &size, 0);
++		reg = of_get_address(node, 0, &size, NULL);
 +		if (!reg)
 +			continue;
 +		if (be32_to_cpup(reg) == core->addr)

@@ -1,31 +1,61 @@
-From b113f9d3e140f18e63cbf3408b3dcde372242dc8 Mon Sep 17 00:00:00 2001
+From 4e0ab3269a6d260a41a3673157753147f5f71341 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 4 May 2014 13:19:20 +0200
-Subject: [PATCH 04/15] bcm53xx-sprom: add sprom driver
+Subject: [PATCH 03/17] bcm47xx-sprom: add Broadcom sprom parser driver
 
 This driver needs an nvram driver and fetches the sprom values from the
-sprom and provides it to any other driver. The calibration data for the
+nvram and provides it to any other driver. The calibration data for the
 wifi chip the mac address and some more board description data is
 stores in the sprom.
 
+This is based on a copy of arch/mips/bcm47xx/sprom.c and my plan is to
+make the bcm47xx MIPS SoCs also use this driver some time later.
+
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/misc/Kconfig         |   5 +
- drivers/misc/Makefile        |   1 +
- drivers/misc/bcm53xx-sprom.c | 625 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 631 insertions(+)
- create mode 100644 drivers/misc/bcm53xx-sprom.c
+ .../devicetree/bindings/misc/bcm47xx-sprom.txt     |  16 +
+ drivers/misc/Kconfig                               |  11 +
+ drivers/misc/Makefile                              |   1 +
+ drivers/misc/bcm47xx-sprom.c                       | 690 +++++++++++++++++++++
+ 4 files changed, 718 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/misc/bcm47xx-sprom.txt
+ create mode 100644 drivers/misc/bcm47xx-sprom.c
 
+--- /dev/null
++++ b/Documentation/devicetree/bindings/misc/bcm47xx-sprom.txt
+@@ -0,0 +1,16 @@
++Broadcom bcm47xx/bcm53xx sprom converter
++
++This driver provbides an sprom based on a given nvram.
++
++Required properties:
++
++- compatible : brcm,bcm47xx-sprom
++
++- nvram : reference to a nvram driver, e.g. bcm47xx-nvram
++
++Example:
++
++sprom0: sprom@0 {
++	compatible = "brcm,bcm47xx-sprom";
++	nvram = <&nvram0>;
++};
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
-@@ -520,6 +520,11 @@ config BCM47XX_NVRAM
+@@ -520,6 +520,17 @@ config BCM47XX_NVRAM
  	help
  		This adds support for the brcm47xx nvram driver.
  
-+config BCM53XX_SPROM
-+	tristate "BCM53XX sprom driver"
++config BCM47XX_SPROM
++	tristate "BCM47XX sprom driver"
 +	help
-+		This adds support for the brcm53xx sprom driver.
++	  This driver parses the sprom from a given nvram which is found on
++	  Broadcom bcm47xx and bcm53xx SoCs.
++
++	  The sprom contains board configuration data like the
++	  calibration data fro the wifi chips, the mac addresses used
++	  by the board and many other board configuration data. This
++	  driver will provide the sprom to bcma.
 +
  source "drivers/misc/c2port/Kconfig"
  source "drivers/misc/eeprom/Kconfig"
@@ -36,12 +66,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  obj-y				+= mic/
  obj-$(CONFIG_GENWQE)		+= genwqe/
  obj-$(CONFIG_BCM47XX_NVRAM)	+= bcm47xx-nvram.o
-+obj-$(CONFIG_BCM53XX_SPROM)	+= bcm53xx-sprom.o
++obj-$(CONFIG_BCM47XX_SPROM)	+= bcm47xx-sprom.o
 --- /dev/null
-+++ b/drivers/misc/bcm53xx-sprom.c
-@@ -0,0 +1,625 @@
++++ b/drivers/misc/bcm47xx-sprom.c
+@@ -0,0 +1,690 @@
 +/*
-+ * BCM947xx nvram variable access
++ * BCM47xx/BCM53xx nvram variable access
 + *
 + * Copyright (C) 2005 Broadcom Corporation
 + * Copyright (C) 2004 Florian Schirmer <jolt@tuxbox.org>
@@ -67,11 +97,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/io.h>
 +#include <linux/ssb/ssb.h>
 +#include <linux/bcm47xx_nvram.h>
++#include <linux/if_ether.h>
++#include <linux/etherdevice.h>
 +
-+struct bcm53xx_sprom_fill {
++struct bcm47xx_sprom_fill {
 +	const char *prefix;
 +	bool fallback;
-+	int (*getenv)(const struct bcm53xx_sprom_fill *fill, const char *name, char *val, size_t val_len);
++	int (*getenv)(const struct bcm47xx_sprom_fill *fill, const char *name,
++		      char *val, size_t val_len);
 +	const void *priv;
 +};
 +
@@ -88,8 +121,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		snprintf(buf, len, "%s", name);
 +}
 +
-+static int get_nvram_var(const struct bcm53xx_sprom_fill *fill, const char *postfix,
-+			 const char *name, char *buf, int len)
++static int get_nvram_var(const struct bcm47xx_sprom_fill *fill,
++			 const char *postfix, const char *name, char *buf,
++			 int len)
 +{
 +	char key[40];
 +	int err;
@@ -105,7 +139,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 +
 +#define NVRAM_READ_VAL(type)						\
-+static void nvram_read_ ## type (const struct bcm53xx_sprom_fill *fill,	\
++static void nvram_read_ ## type (const struct bcm47xx_sprom_fill *fill,	\
 +				 const char *postfix, const char *name, \
 +				 type *val, type allset)		\
 +{									\
@@ -134,8 +168,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +#undef NVRAM_READ_VAL
 +
-+static void nvram_read_u32_2(const struct bcm53xx_sprom_fill *fill, const char *name,
-+			     u16 *val_lo, u16 *val_hi)
++static void nvram_read_u32_2(const struct bcm47xx_sprom_fill *fill,
++			     const char *name, u16 *val_lo, u16 *val_hi)
 +{
 +	char buf[100];
 +	int err;
@@ -154,8 +188,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	*val_hi = (val & 0xFFFF0000U) >> 16;
 +}
 +
-+static void nvram_read_leddc(const struct bcm53xx_sprom_fill *fill, const char *name,
-+			     u8 *leddc_on_time, u8 *leddc_off_time)
++static void nvram_read_leddc(const struct bcm47xx_sprom_fill *fill,
++			     const char *name, u8 *leddc_on_time,
++			     u8 *leddc_off_time)
 +{
 +	char buf[100];
 +	int err;
@@ -178,8 +213,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	*leddc_off_time = (val >> 16) & 0xff;
 +}
 +
-+static void nvram_read_macaddr(const struct bcm53xx_sprom_fill *fill, const char *name,
-+			       u8 val[6])
++static void nvram_read_macaddr(const struct bcm47xx_sprom_fill *fill,
++			       const char *name, u8 val[6])
 +{
 +	char buf[100];
 +	int err;
@@ -191,8 +226,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	bcm47xx_nvram_parse_macaddr(buf, val);
 +}
 +
-+static void nvram_read_alpha2(const struct bcm53xx_sprom_fill *fill, const char *name,
-+			     char val[2])
++static void nvram_read_alpha2(const struct bcm47xx_sprom_fill *fill,
++			      const char *name, char val[2])
 +{
 +	char buf[10];
 +	int err;
@@ -209,9 +244,10 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	memcpy(val, buf, 2);
 +}
 +
-+static void bcm53xx_sprom_fill_r1234589(struct ssb_sprom *sprom,
-+					const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r1234589(struct ssb_sprom *sprom,
++					const struct bcm47xx_sprom_fill *fill)
 +{
++	nvram_read_u16(fill, NULL, "devid", &sprom->dev_id, 0);
 +	nvram_read_u8(fill, NULL, "ledbh0", &sprom->gpio0, 0xff);
 +	nvram_read_u8(fill, NULL, "ledbh1", &sprom->gpio1, 0xff);
 +	nvram_read_u8(fill, NULL, "ledbh2", &sprom->gpio2, 0xff);
@@ -223,8 +259,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_alpha2(fill, "ccode", sprom->alpha2);
 +}
 +
-+static void bcm53xx_sprom_fill_r12389(struct ssb_sprom *sprom,
-+				      const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r12389(struct ssb_sprom *sprom,
++				      const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u16(fill, NULL, "pa0b0", &sprom->pa0b0, 0);
 +	nvram_read_u16(fill, NULL, "pa0b1", &sprom->pa0b1, 0);
@@ -238,15 +274,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u8(fill, NULL, "pa1maxpwr", &sprom->maxpwr_a, 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r1(struct ssb_sprom *sprom,
-+				  const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r1(struct ssb_sprom *sprom,
++				  const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u16(fill, NULL, "boardflags", &sprom->boardflags_lo, 0);
 +	nvram_read_u8(fill, NULL, "cc", &sprom->country_code, 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r2389(struct ssb_sprom *sprom,
-+				     const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r2389(struct ssb_sprom *sprom,
++				     const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u8(fill, NULL, "opo", &sprom->opo, 0);
 +	nvram_read_u16(fill, NULL, "pa1lob0", &sprom->pa1lob0, 0);
@@ -259,8 +295,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u8(fill, NULL, "pa1himaxpwr", &sprom->maxpwr_ah, 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r389(struct ssb_sprom *sprom,
-+				    const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r389(struct ssb_sprom *sprom,
++				    const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u8(fill, NULL, "bxa2g", &sprom->bxa2g, 0);
 +	nvram_read_u8(fill, NULL, "rssisav2g", &sprom->rssisav2g, 0);
@@ -278,16 +314,16 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_s8(fill, NULL, "rxpo5g", &sprom->rxpo5g, 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r3(struct ssb_sprom *sprom,
-+				  const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r3(struct ssb_sprom *sprom,
++				  const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u8(fill, NULL, "regrev", &sprom->regrev, 0);
 +	nvram_read_leddc(fill, "leddc", &sprom->leddc_on_time,
 +			 &sprom->leddc_off_time);
 +}
 +
-+static void bcm53xx_sprom_fill_r4589(struct ssb_sprom *sprom,
-+				     const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r4589(struct ssb_sprom *sprom,
++				     const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u8(fill, NULL, "regrev", &sprom->regrev, 0);
 +	nvram_read_s8(fill, NULL, "ag2", &sprom->antenna_gain.a2, 0);
@@ -299,8 +335,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			 &sprom->leddc_off_time);
 +}
 +
-+static void bcm53xx_sprom_fill_r458(struct ssb_sprom *sprom,
-+				    const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r458(struct ssb_sprom *sprom,
++				    const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u16(fill, NULL, "cck2gpo", &sprom->cck2gpo, 0);
 +	nvram_read_u32(fill, NULL, "ofdm2gpo", &sprom->ofdm2gpo, 0);
@@ -345,8 +381,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u16(fill, NULL, "mcs5ghpo7", &sprom->mcs5ghpo[7], 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r45(struct ssb_sprom *sprom,
-+				   const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r45(struct ssb_sprom *sprom,
++				   const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u8(fill, NULL, "txpid2ga0", &sprom->txpid2g[0], 0);
 +	nvram_read_u8(fill, NULL, "txpid2ga1", &sprom->txpid2g[1], 0);
@@ -366,8 +402,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u8(fill, NULL, "txpid5gha3", &sprom->txpid5gh[3], 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r89(struct ssb_sprom *sprom,
-+				   const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r89(struct ssb_sprom *sprom,
++				   const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u8(fill, NULL, "tssipos2g", &sprom->fem.ghz2.tssipos, 0);
 +	nvram_read_u8(fill, NULL, "extpagain2g", &sprom->fem.ghz2.extpa_gain, 0);
@@ -429,8 +465,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u8(fill, NULL, "pcieingress_war", &sprom->pcieingress_war, 0);
 +}
 +
-+static void bcm53xx_sprom_fill_r9(struct ssb_sprom *sprom,
-+				  const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_r9(struct ssb_sprom *sprom,
++				  const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u16(fill, NULL, "cckbw202gpo", &sprom->cckbw202gpo, 0);
 +	nvram_read_u16(fill, NULL, "cckbw20ul2gpo", &sprom->cckbw20ul2gpo, 0);
@@ -460,14 +496,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	nvram_read_u8(fill, NULL, "sar5g", &sprom->sar5g, 0);
 +}
 +
-+static void bcm53xx_sprom_fill_path_r4589(struct ssb_sprom *sprom,
-+					  const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_path_r4589(struct ssb_sprom *sprom,
++					  const struct bcm47xx_sprom_fill *fill)
 +{
 +	char postfix[2];
 +	int i;
 +
 +	for (i = 0; i < ARRAY_SIZE(sprom->core_pwr_info); i++) {
 +		struct ssb_sprom_core_pwr_info *pwr_info = &sprom->core_pwr_info[i];
++
 +		snprintf(postfix, sizeof(postfix), "%i", i);
 +		nvram_read_u8(fill, postfix, "maxp2ga", &pwr_info->maxpwr_2g, 0);
 +		nvram_read_u8(fill, postfix, "itt2ga", &pwr_info->itssi_2g, 0);
@@ -490,14 +527,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +}
 +
-+static void bcm53xx_sprom_fill_path_r45(struct ssb_sprom *sprom,
-+					const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_path_r45(struct ssb_sprom *sprom,
++					const struct bcm47xx_sprom_fill *fill)
 +{
 +	char postfix[2];
 +	int i;
 +
 +	for (i = 0; i < ARRAY_SIZE(sprom->core_pwr_info); i++) {
 +		struct ssb_sprom_core_pwr_info *pwr_info = &sprom->core_pwr_info[i];
++
 +		snprintf(postfix, sizeof(postfix), "%i", i);
 +		nvram_read_u16(fill, postfix, "pa2gw3a", &pwr_info->pa_2g[3], 0);
 +		nvram_read_u16(fill, postfix, "pa5gw3a", &pwr_info->pa_5g[3], 0);
@@ -506,8 +544,39 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +}
 +
-+static void bcm53xx_sprom_fill_ethernet(struct ssb_sprom *sprom,
-+					const struct bcm53xx_sprom_fill *fill)
++static bool bcm47xx_is_valid_mac(u8 *mac)
++{
++	return mac && !(mac[0] == 0x00 && mac[1] == 0x90 && mac[2] == 0x4c);
++}
++
++static int bcm47xx_increase_mac_addr(u8 *mac, u8 num)
++{
++	u8 *oui = mac + ETH_ALEN/2 - 1;
++	u8 *p = mac + ETH_ALEN - 1;
++
++	do {
++		(*p) += num;
++		if (*p > num)
++			break;
++		p--;
++		num = 1;
++	} while (p != oui);
++
++	if (p == oui) {
++		pr_err("unable to fetch mac address\n");
++		return -ENOENT;
++	}
++	return 0;
++}
++
++/*
++ * This is a global counter because different instances of sprom will
++ * access the same nvram.
++ */
++static int mac_addr_used = 2;
++
++static void bcm47xx_sprom_fill_ethernet(struct ssb_sprom *sprom,
++					const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_macaddr(fill, "et0macaddr", sprom->et0mac);
 +	nvram_read_u8(fill, NULL, "et0mdcport", &sprom->et0mdcport, 0);
@@ -519,10 +588,35 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	nvram_read_macaddr(fill, "macaddr", sprom->il0mac);
 +	nvram_read_macaddr(fill, "il0macaddr", sprom->il0mac);
++
++	/*
++	 * The address prefix 00:90:4C is used by Broadcom in their initial
++	 * configuration. When a mac address with the prefix 00:90:4C is used
++	 * all devices from the same series are sharing the same mac address.
++	 * To prevent mac address collisions we replace them with a mac address
++	 * based on the base address.
++	 */
++	if (!bcm47xx_is_valid_mac(sprom->il0mac)) {
++		u8 mac[6];
++		struct bcm47xx_sprom_fill fill_no_prefix;
++
++		memcpy(&fill_no_prefix, fill, sizeof(fill_no_prefix));
++		fill_no_prefix.prefix = NULL;
++
++		nvram_read_macaddr(&fill_no_prefix, "et0macaddr", mac);
++		if (bcm47xx_is_valid_mac(mac)) {
++			int err = bcm47xx_increase_mac_addr(mac, mac_addr_used);
++
++			if (!err) {
++				ether_addr_copy(sprom->il0mac, mac);
++				mac_addr_used++;
++			}
++		}
++	}
 +}
 +
-+static void bcm53xx_sprom_fill_board_data(struct ssb_sprom *sprom,
-+					  const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill_board_data(struct ssb_sprom *sprom,
++					  const struct bcm47xx_sprom_fill *fill)
 +{
 +	nvram_read_u16(fill, NULL, "boardrev", &sprom->board_rev, 0);
 +	nvram_read_u16(fill, NULL, "boardnum", &sprom->board_num, 0);
@@ -533,72 +627,72 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			 &sprom->boardflags2_hi);
 +}
 +
-+static void bcm53xx_sprom_fill(struct ssb_sprom *sprom,
-+			const struct bcm53xx_sprom_fill *fill)
++static void bcm47xx_sprom_fill(struct ssb_sprom *sprom,
++			       const struct bcm47xx_sprom_fill *fill)
 +{
-+	bcm53xx_sprom_fill_ethernet(sprom, fill);
-+	bcm53xx_sprom_fill_board_data(sprom, fill);
++	bcm47xx_sprom_fill_ethernet(sprom, fill);
++	bcm47xx_sprom_fill_board_data(sprom, fill);
 +
 +	nvram_read_u8(fill, NULL, "sromrev", &sprom->revision, 0);
 +
 +	switch (sprom->revision) {
 +	case 1:
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r12389(sprom, fill);
-+		bcm53xx_sprom_fill_r1(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r12389(sprom, fill);
++		bcm47xx_sprom_fill_r1(sprom, fill);
 +		break;
 +	case 2:
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r12389(sprom, fill);
-+		bcm53xx_sprom_fill_r2389(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r12389(sprom, fill);
++		bcm47xx_sprom_fill_r2389(sprom, fill);
 +		break;
 +	case 3:
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r12389(sprom, fill);
-+		bcm53xx_sprom_fill_r2389(sprom, fill);
-+		bcm53xx_sprom_fill_r389(sprom, fill);
-+		bcm53xx_sprom_fill_r3(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r12389(sprom, fill);
++		bcm47xx_sprom_fill_r2389(sprom, fill);
++		bcm47xx_sprom_fill_r389(sprom, fill);
++		bcm47xx_sprom_fill_r3(sprom, fill);
 +		break;
 +	case 4:
 +	case 5:
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r4589(sprom, fill);
-+		bcm53xx_sprom_fill_r458(sprom, fill);
-+		bcm53xx_sprom_fill_r45(sprom, fill);
-+		bcm53xx_sprom_fill_path_r4589(sprom, fill);
-+		bcm53xx_sprom_fill_path_r45(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r4589(sprom, fill);
++		bcm47xx_sprom_fill_r458(sprom, fill);
++		bcm47xx_sprom_fill_r45(sprom, fill);
++		bcm47xx_sprom_fill_path_r4589(sprom, fill);
++		bcm47xx_sprom_fill_path_r45(sprom, fill);
 +		break;
 +	case 8:
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r12389(sprom, fill);
-+		bcm53xx_sprom_fill_r2389(sprom, fill);
-+		bcm53xx_sprom_fill_r389(sprom, fill);
-+		bcm53xx_sprom_fill_r4589(sprom, fill);
-+		bcm53xx_sprom_fill_r458(sprom, fill);
-+		bcm53xx_sprom_fill_r89(sprom, fill);
-+		bcm53xx_sprom_fill_path_r4589(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r12389(sprom, fill);
++		bcm47xx_sprom_fill_r2389(sprom, fill);
++		bcm47xx_sprom_fill_r389(sprom, fill);
++		bcm47xx_sprom_fill_r4589(sprom, fill);
++		bcm47xx_sprom_fill_r458(sprom, fill);
++		bcm47xx_sprom_fill_r89(sprom, fill);
++		bcm47xx_sprom_fill_path_r4589(sprom, fill);
 +		break;
 +	case 9:
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r12389(sprom, fill);
-+		bcm53xx_sprom_fill_r2389(sprom, fill);
-+		bcm53xx_sprom_fill_r389(sprom, fill);
-+		bcm53xx_sprom_fill_r4589(sprom, fill);
-+		bcm53xx_sprom_fill_r89(sprom, fill);
-+		bcm53xx_sprom_fill_r9(sprom, fill);
-+		bcm53xx_sprom_fill_path_r4589(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r12389(sprom, fill);
++		bcm47xx_sprom_fill_r2389(sprom, fill);
++		bcm47xx_sprom_fill_r389(sprom, fill);
++		bcm47xx_sprom_fill_r4589(sprom, fill);
++		bcm47xx_sprom_fill_r89(sprom, fill);
++		bcm47xx_sprom_fill_r9(sprom, fill);
++		bcm47xx_sprom_fill_path_r4589(sprom, fill);
 +		break;
 +	default:
 +		pr_warn("Unsupported SPROM revision %d detected. Will extract v1\n",
 +			sprom->revision);
 +		sprom->revision = 1;
-+		bcm53xx_sprom_fill_r1234589(sprom, fill);
-+		bcm53xx_sprom_fill_r12389(sprom, fill);
-+		bcm53xx_sprom_fill_r1(sprom, fill);
++		bcm47xx_sprom_fill_r1234589(sprom, fill);
++		bcm47xx_sprom_fill_r12389(sprom, fill);
++		bcm47xx_sprom_fill_r1(sprom, fill);
 +	}
 +}
 +
-+static int bcm53xx_sprom_getenv(const struct bcm53xx_sprom_fill *fill,
++static int bcm47xx_sprom_getenv(const struct bcm47xx_sprom_fill *fill,
 +				const char *name, char *val, size_t val_len)
 +{
 +	const struct platform_device *nvram_dev = fill->priv;
@@ -606,15 +700,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	return bcm47xx_nvram_getenv(&nvram_dev->dev, name, val, val_len);
 +};
 +
-+static int bcm53xx_sprom_probe(struct platform_device *pdev)
++static int bcm47xx_sprom_probe(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
 +	struct device_node *np = dev->of_node;
 +	struct ssb_sprom *sprom;
-+	const phandle *handle;
++	const __be32 *handle;
 +	struct device_node *nvram_node;
 +	struct platform_device *nvram_dev;
-+	struct bcm53xx_sprom_fill fill;
++	struct bcm47xx_sprom_fill fill;
 +
 +	/* Alloc */
 +	sprom = devm_kzalloc(dev, sizeof(*sprom), GFP_KERNEL);
@@ -633,35 +727,36 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (!nvram_dev)
 +		return -ENOMEM;
 +
-+	fill.prefix = NULL;
++	fill.prefix = of_get_property(np, "prefix", NULL);
++
 +	fill.fallback = false;
-+	fill.getenv = bcm53xx_sprom_getenv;
++	fill.getenv = bcm47xx_sprom_getenv;
 +	fill.priv = nvram_dev;
 +
-+	bcm53xx_sprom_fill(sprom, &fill);
++	bcm47xx_sprom_fill(sprom, &fill);
 +
 +	platform_set_drvdata(pdev, sprom);
 +
 +	return 0;
 +}
 +
-+static const struct of_device_id bcm53xx_sprom_of_match_table[] = {
-+	{ .compatible = "brcm,bcm53xx-sprom", },
++static const struct of_device_id bcm47xx_sprom_of_match_table[] = {
++	{ .compatible = "brcm,bcm47xx-sprom", },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, mvebu_pcie_of_match_table);
 +
-+static struct platform_driver bcm53xx_sprom_driver = {
++static struct platform_driver bcm47xx_sprom_driver = {
 +	.driver = {
 +		.owner = THIS_MODULE,
-+		.name = "bcm53xx-sprom",
-+		.of_match_table = bcm53xx_sprom_of_match_table,
++		.name = "bcm47xx-sprom",
++		.of_match_table = bcm47xx_sprom_of_match_table,
 +		/* driver unloading/unbinding currently not supported */
 +		.suppress_bind_attrs = true,
 +	},
-+	.probe = bcm53xx_sprom_probe,
++	.probe = bcm47xx_sprom_probe,
 +};
-+module_platform_driver(bcm53xx_sprom_driver);
++module_platform_driver(bcm47xx_sprom_driver);
 +
 +MODULE_AUTHOR("Hauke Mehrtens <hauke@hauke-m.de>");
-+MODULE_LICENSE("GPLv2");
++MODULE_LICENSE("GPL v2");
