@@ -1,18 +1,18 @@
-From 7475eee716d11f487076f78f26a6e403c06d0c76 Mon Sep 17 00:00:00 2001
+From cc2cda651fcbc498bf513a6b802dca19944bcb37 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 12 May 2014 11:55:20 +0200
-Subject: [PATCH 14/15] pcie2-bcma: add new PCIe2 driver for bcma
+Subject: [PATCH 13/17] pcie2-bcma: add new PCIe2 driver for bcma
 
 This driver supports the PCIe controller found on the BCM4708 and
 similar SoCs. The controller itself is automatically detected by bcma.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/arm/mach-bcm/Kconfig     |   1 +
+ arch/arm/mach-bcm/Kconfig     |   2 +
  drivers/pci/host/Kconfig      |   7 +
  drivers/pci/host/Makefile     |   1 +
- drivers/pci/host/pcie2-bcma.c | 594 ++++++++++++++++++++++++++++++++++++++++++
- 4 files changed, 603 insertions(+)
+ drivers/pci/host/pcie2-bcma.c | 591 ++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 601 insertions(+)
  create mode 100644 drivers/pci/host/pcie2-bcma.c
 
 --- a/arch/arm/mach-bcm/Kconfig
@@ -48,7 +48,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_PCI_BCMA) += pcie2-bcma.o
 --- /dev/null
 +++ b/drivers/pci/host/pcie2-bcma.c
-@@ -0,0 +1,594 @@
+@@ -0,0 +1,591 @@
 +/*
 + * Northstar PCI-Express driver
 + * Only supports Root-Complex (RC) mode
@@ -133,15 +133,14 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			return 0;
 +		bcma_write32(bdev, SOC_PCIE_EXT_CFG_ADDR, where & 0xffc);
 +		return SOC_PCIE_EXT_CFG_DATA;
-+	} else {
-+		if (fn > 1)
-+			return 0;
-+		addr_reg = (busno & 0xff) << 20 | (slot << 15) | (fn << 12) |
-+			   (where & 0xffc) | (1 & 0x3);
-+
-+		bcma_write32(bdev, SOC_PCIE_CFG_ADDR, addr_reg);
-+		return SOC_PCIE_CFG_DATA;
 +	}
++	if (fn > 1)
++		return 0;
++	addr_reg = (busno & 0xff) << 20 | (slot << 15) | (fn << 12) |
++		   (where & 0xffc) | (1 & 0x3);
++
++	bcma_write32(bdev, SOC_PCIE_CFG_ADDR, addr_reg);
++	return SOC_PCIE_CFG_DATA;
 +}
 +
 +static u32 bcma_pcie2_read_config(struct bcma_device *bdev, int busno,
@@ -149,6 +148,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +{
 +	u32 base;
 +	u32 data_reg;
++	u32 mask;
++	int shift;
 +
 +	base = bcma_pcie2_cfg_base(bdev, busno, devfn, where);
 +
@@ -171,13 +172,12 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	}
 +	/* HEADER_TYPE=00 indicates the port in EP mode */
 +
-+	if (size == 4) {
++	if (size == 4)
 +		return data_reg;
-+	} else {
-+		u32 mask = (1 << (size * 8)) - 1;
-+		int shift = (where % 4) * 8;
-+		return (data_reg >> shift) & mask;
-+	}
++
++	mask = (1 << (size * 8)) - 1;
++	shift = (where % 4) * 8;
++	return (data_reg >> shift) & mask;
 +}
 +
 +static void bcma_pcie2_write_config(struct bcma_device *bdev, int busno,
@@ -195,6 +195,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	if (size < 4) {
 +		u32 mask = (1 << (size * 8)) - 1;
 +		int shift = (where % 4) * 8;
++
 +		data_reg = bcma_read32(bdev, base);
 +		data_reg &= ~(mask << shift);
 +		data_reg |= (val & mask) << shift;
@@ -528,11 +529,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	/* create mem resource */
 +	res = devm_kzalloc(&bdev->dev, sizeof(*res), GFP_KERNEL);
-+	if (!res) {
-+		dev_info(&bdev->dev, "requesting resource at 0x%x failed\n",
-+			 bdev->addr_s[0]);
++	if (!res)
 +		return -EINVAL;
-+	}
++
 +	res->start = bdev->addr_s[0];
 +	res->end = res->start + SZ_128M - 1;
 +	res->name = "PCIe Configuration Space";
@@ -542,11 +541,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +
 +	/* This PCIe controller does not support IO Mem, so use a dummy one. */
 +	res = devm_kzalloc(&bdev->dev, sizeof(*res), GFP_KERNEL);
-+	if (!res) {
-+		dev_info(&bdev->dev, "requesting resource at 0x%x failed\n",
-+			 bdev->addr_s[0]);
++	if (!res)
 +		return -EINVAL;
-+	}
++
 +	res->start = bdev->addr_s[0];
 +	res->end = res->start + SZ_128M - 1;
 +	res->name = "PCIe Configuration Space";

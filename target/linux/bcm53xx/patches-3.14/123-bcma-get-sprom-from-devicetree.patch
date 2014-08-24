@@ -1,7 +1,7 @@
-From 5d94449a92e4121b408e7cb8931a47984135eeea Mon Sep 17 00:00:00 2001
+From bd9106f5907080b467026bdaaea979fac8c7badb Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Sun, 4 May 2014 14:34:31 +0200
-Subject: [PATCH 07/15] bcma: get sprom from devicetree
+Subject: [PATCH 06/17] bcma: get sprom from devicetree
 
 This patch make it possible to device an sprom provider in device tree
 and get the sprom from this driver. Every time there is such a provider
@@ -31,7 +31,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +static int bcma_fill_sprom_with_dt(struct bcma_bus *bus,
 +				   struct ssb_sprom *out)
 +{
-+	const phandle *handle;
++	const __be32 *handle;
 +	struct device_node *sprom_node;
 +	struct platform_device *sprom_dev;
 +	struct ssb_sprom *sprom;

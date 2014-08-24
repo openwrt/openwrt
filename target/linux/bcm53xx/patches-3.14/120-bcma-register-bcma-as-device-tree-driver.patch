@@ -1,17 +1,69 @@
-From bb5d497aeceb8d9f36a1d990538389b54748dfcd Mon Sep 17 00:00:00 2001
+From 04b91da96d7c163fd39c0849d2034e2928103f4d Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jan 2014 23:29:15 +0100
-Subject: [PATCH 05/15] bcma: register bcma as device tree driver
+Subject: [PATCH 04/17] bcma: register bcma as device tree driver
 
-This driver is used by the bcm53xx ARM SoC code.Now it is possible to
-give the address of the chipcommon core in device tree.
+This driver is used by the bcm53xx ARM SoC code. Now it is possible to
+give the address of the chipcommon core in device tree and bcma will
+search for all the other cores.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/bcma/host_soc.c   | 70 +++++++++++++++++++++++++++++++++++++++++++++++
- include/linux/bcma/bcma.h |  2 ++
- 2 files changed, 72 insertions(+)
+ Documentation/devicetree/bindings/bus/bcma.txt | 46 +++++++++++++++++
+ drivers/bcma/host_soc.c                        | 70 ++++++++++++++++++++++++++
+ include/linux/bcma/bcma.h                      |  2 +
+ 3 files changed, 118 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/bus/bcma.txt
 
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/bcma.txt
+@@ -0,0 +1,46 @@
++Broadcom AIX bcma bus driver
++
++
++Required properties:
++
++- compatible : brcm,bus-aix
++
++- reg : iomem address range of chipcommon core
++
++Optional properties:
++
++- sprom: reference to a sprom driver. This is needed for sprom less devices.
++	 Use bcm47xx_sprom for example.
++
++
++The cores on the AIX bus are auto detected by bcma. Detection of the
++IRQ number is not supported on BCM47xx/BCM53xx ARM SoCs, so it is
++possible to provide the IRQ number over device tree. The IRQ number and
++the device tree child entry will be added to the core with the matching
++reg address.
++
++Example:
++
++	aix@18000000 {
++		compatible = "brcm,bus-aix";
++		reg = <0x18000000 0x1000>;
++		ranges = <0x00000000 0x18000000 0x00100000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		sprom = <&sprom0>;
++
++		gmac@0 {
++			reg = <0x18024000 0x1000>;
++			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		gmac@1 {
++			reg = <0x18025000 0x1000>;
++			interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		pcie@0 {
++			reg = <0x18012000 0x1000>;
++			interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>;
++		};
++	};
 --- a/drivers/bcma/host_soc.c
 +++ b/drivers/bcma/host_soc.c
 @@ -7,6 +7,9 @@

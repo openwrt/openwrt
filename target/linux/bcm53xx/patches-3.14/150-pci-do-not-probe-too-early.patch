@@ -1,7 +1,7 @@
-From ea422113a5d2778347db6136d95f45a50e2f2d29 Mon Sep 17 00:00:00 2001
+From cf72936c001056de1cfcb27dd9a232f5484ec59c Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 29 May 2014 20:54:15 +0200
-Subject: [PATCH 13/15] pci: do not probe too early
+Subject: [PATCH 12/17] pci: do not probe too early
 
 Probing is done before the PCIe bridge is fully activated and the
 address spaces does not get assigned to the PCIe devices. Without the
