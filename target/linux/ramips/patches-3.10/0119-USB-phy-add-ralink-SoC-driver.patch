@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
 --- /dev/null
 +++ b/drivers/usb/phy/ralink-phy.c
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,192 @@
 +/*
 + * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
 + *
@@ -66,6 +66,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define RT_SYSCFG1_USB0_HOST_MODE	BIT(10)
 +
 +#define MT7620_CLKCFG1_UPHY0_CLK_EN	BIT(25)
++#define MT7620_CLKCFG1_UPHY1_CLK_EN	BIT(22)
 +#define RT_CLKCFG1_UPHY1_CLK_EN	BIT(20)
 +#define RT_CLKCFG1_UPHY0_CLK_EN	BIT(18)
 +
@@ -145,7 +146,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +static const struct of_device_id ralink_usbphy_dt_match[] = {
 +	{ .compatible = "ralink,rt3xxx-usbphy", .data = (void *) (RT_CLKCFG1_UPHY1_CLK_EN | RT_CLKCFG1_UPHY0_CLK_EN) },
-+	{ .compatible = "ralink,mt7620a-usbphy", .data = (void *) MT7620_CLKCFG1_UPHY0_CLK_EN },
++	{ .compatible = "ralink,mt7620a-usbphy", .data = (void *) (MT7620_CLKCFG1_UPHY1_CLK_EN | MT7620_CLKCFG1_UPHY0_CLK_EN) },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, ralink_usbphy_dt_match);
