@@ -11,11 +11,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 199 insertions(+)
  create mode 100644 drivers/usb/phy/ralink-phy.c
 
-diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
-index 7d1451d..fc04d76 100644
---- a/drivers/usb/phy/Kconfig
-+++ b/drivers/usb/phy/Kconfig
-@@ -251,6 +251,14 @@ config USB_RCAR_GEN2_PHY
+Index: linux-3.14.16/drivers/usb/phy/Kconfig
+===================================================================
+--- linux-3.14.16.orig/drivers/usb/phy/Kconfig	2014-08-08 01:50:59.000000000 +0200
++++ linux-3.14.16/drivers/usb/phy/Kconfig	2014-08-24 12:39:21.094371467 +0200
+@@ -251,6 +251,14 @@
  	  To compile this driver as a module, choose M here: the
  	  module will be called phy-rcar-gen2-usb.
  
@@ -30,21 +30,20 @@ index 7d1451d..fc04d76 100644
  config USB_ULPI
  	bool "Generic ULPI Transceiver Driver"
  	depends on ARM
-diff --git a/drivers/usb/phy/Makefile b/drivers/usb/phy/Makefile
-index be58ada..52d59c1 100644
---- a/drivers/usb/phy/Makefile
-+++ b/drivers/usb/phy/Makefile
-@@ -33,3 +33,4 @@ obj-$(CONFIG_USB_RCAR_GEN2_PHY)		+= phy-rcar-gen2-usb.o
+Index: linux-3.14.16/drivers/usb/phy/Makefile
+===================================================================
+--- linux-3.14.16.orig/drivers/usb/phy/Makefile	2014-08-08 01:50:59.000000000 +0200
++++ linux-3.14.16/drivers/usb/phy/Makefile	2014-08-24 12:39:21.094371467 +0200
+@@ -33,3 +33,4 @@
  obj-$(CONFIG_USB_ULPI)			+= phy-ulpi.o
  obj-$(CONFIG_USB_ULPI_VIEWPORT)		+= phy-ulpi-viewport.o
  obj-$(CONFIG_KEYSTONE_USB_PHY)		+= phy-keystone.o
 +obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
-diff --git a/drivers/usb/phy/ralink-phy.c b/drivers/usb/phy/ralink-phy.c
-new file mode 100644
-index 0000000..28046e5
---- /dev/null
-+++ b/drivers/usb/phy/ralink-phy.c
-@@ -0,0 +1,190 @@
+Index: linux-3.14.16/drivers/usb/phy/ralink-phy.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.16/drivers/usb/phy/ralink-phy.c	2014-08-24 14:28:35.886531881 +0200
+@@ -0,0 +1,191 @@
 +/*
 + * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
 + *
@@ -75,6 +74,7 @@ index 0000000..28046e5
 +#define RT_SYSCFG1_USB0_HOST_MODE	BIT(10)
 +
 +#define MT7620_CLKCFG1_UPHY0_CLK_EN	BIT(25)
++#define MT7620_CLKCFG1_UPHY1_CLK_EN	BIT(22)
 +#define RT_CLKCFG1_UPHY1_CLK_EN	BIT(20)
 +#define RT_CLKCFG1_UPHY0_CLK_EN	BIT(18)
 +
@@ -158,7 +158,7 @@ index 0000000..28046e5
 +
 +static const struct of_device_id ralink_usbphy_dt_match[] = {
 +	{ .compatible = "ralink,rt3xxx-usbphy", .data = (void *) (RT_CLKCFG1_UPHY1_CLK_EN | RT_CLKCFG1_UPHY0_CLK_EN) },
-+	{ .compatible = "ralink,mt7620a-usbphy", .data = (void *) MT7620_CLKCFG1_UPHY0_CLK_EN },
++	{ .compatible = "ralink,mt7620a-usbphy", .data = (void *) (MT7620_CLKCFG1_UPHY1_CLK_EN | MT7620_CLKCFG1_UPHY0_CLK_EN) },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, ralink_usbphy_dt_match);
@@ -235,6 +235,3 @@ index 0000000..28046e5
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("Ralink USB phy");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
--- 
-1.7.10.4
-
