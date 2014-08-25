@@ -109,7 +109,7 @@ start_instance()
 	config_get UHTTPD_KEY  "$cfg" key  /etc/uhttpd.key
 	config_get UHTTPD_CERT "$cfg" cert /etc/uhttpd.crt
 
-	[ -n "$https" ] && {
+	[ -f /lib/libustream-ssl.so ] && [ -n "$https" ] && {
 		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] || {
 			config_foreach generate_keys cert
 		}
