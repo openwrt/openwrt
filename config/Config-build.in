@@ -93,6 +93,15 @@ menu "Global build settings"
 
 		  If you are unsure, select N.
 
+	config PKG_CHECK_FORMAT_SECURITY
+		bool
+		prompt "Enable gcc format-security"
+		default n
+		help
+		  Add -Wformat -Werror=format-security to the CFLAGS
+		  You can disable this per package by adding
+		  PKG_CHECK_FORMAT_SECURITY:=0 in the package Makefile
+
 	config PKG_BUILD_USE_JOBSERVER
 		bool
 		prompt "Use top-level make jobserver for packages"
