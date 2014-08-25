@@ -1,0 +1,24 @@
+comment "Rootfs partition parsers"
+
+config MTD_SPLIT_SQUASHFS_ROOT
+	bool "Squashfs based root partition parser"
+	select MTD_SPLIT
+	default n
+	help
+	  This provides a parsing function which allows to detect the
+	  offset and size of the unused portion of a rootfs partition
+	  containing a squashfs.
+
+comment "Firmware partition parsers"
+
+config MTD_SPLIT_SEAMA_FW
+	bool "Seama firmware parser"
+	select MTD_SPLIT
+
+config MTD_SPLIT_UIMAGE_FW
+	bool "uImage based firmware partition parser"
+	select MTD_SPLIT
+
+config MTD_SPLIT_LZMA_FW
+	bool "LZMA compressed kernel based firmware partition parser"
+	select MTD_SPLIT
