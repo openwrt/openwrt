@@ -145,9 +145,9 @@ static void __init esr900_setup(void)
 {
 	const char *config = (char *) KSEG1ADDR(ESR900_CONFIG_ADDR);
 	u8 *art = (u8 *) KSEG1ADDR(ESR900_CALDATA_ADDR);
-	u8 lan_mac[6];
-	u8 wlan0_mac[6];
-	u8 wlan1_mac[6];
+	u8 lan_mac[ETH_ALEN];
+	u8 wlan0_mac[ETH_ALEN];
+	u8 wlan1_mac[ETH_ALEN];
 
 	if (ath79_nvram_parse_mac_addr(config, ESR900_CONFIG_SIZE,
 				       "ethaddr=", lan_mac) == 0) {
