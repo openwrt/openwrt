@@ -1,30 +1,24 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -37,6 +37,17 @@ config MTD_UIMAGE_SPLIT
+@@ -37,6 +37,8 @@ config MTD_UIMAGE_SPLIT
  	depends on MTD_SPLIT_FIRMWARE
  	default y
  
-+comment "Rootfs partition parsers"
-+
-+config MTD_SPLIT_SQUASHFS_ROOT
-+	bool "Squashfs based root partition parser"
-+	select MTD_SPLIT
-+	default n
-+	help
-+	  This provides a parsing function which allows to detect the
-+	  offset and size of the unused portion of a rootfs partition
-+	  containing a squashfs.
++source "drivers/mtd/mtdsplit/Kconfig"
 +
  config MTD_SPLIT
  	def_bool n
  	help 
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -7,6 +7,7 @@ obj-$(CONFIG_MTD)		+= mtd.o
+@@ -7,6 +7,10 @@ obj-$(CONFIG_MTD)		+= mtd.o
  mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o mtdchar.o
  
  mtd-$(CONFIG_MTD_SPLIT)		+= mtdsplit.o
++mtd-$(CONFIG_MTD_SPLIT_SEAMA_FW) += mtdsplit_seama.o
 +mtd-$(CONFIG_MTD_SPLIT_SQUASHFS_ROOT) += mtdsplit_squashfs.o
++mtd-$(CONFIG_MTD_SPLIT_UIMAGE_FW) += mtdsplit_uimage.o
++mtd-$(CONFIG_MTD_SPLIT_LZMA_FW) += mtdsplit_lzma.o
  
  obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
