@@ -19,7 +19,6 @@ validate_log_section()
 		'log_port:port:514' \
 		'log_proto:or("tcp", "udp"):udp' \
 		'log_prefix:string'
-	return $?
 }
 
 validate_log_daemon()
@@ -27,7 +26,6 @@ validate_log_daemon()
 	uci_validate_section system system "${1}" \
 		'log_size:uinteger:0' \
 		'log_buffer_size:uinteger:0'
-	return $?
 }
 
 start_service_daemon()

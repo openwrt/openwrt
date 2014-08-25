@@ -15,8 +15,6 @@ validate_proto_relayd()
 		'table:range(0, 65535):16800' \
 		'forward_bcast:bool:1' \
 		'forward_dhcp:bool:1'
-
-	return $?
 }
 
 resolve_ifname() {
