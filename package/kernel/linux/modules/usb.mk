@@ -331,7 +331,10 @@ define KernelPackage/usb-ohci
 	CONFIG_USB_OHCI_HCD_OMAP3=y \
 	CONFIG_USB_OHCI_HCD_PLATFORM=y
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
-  AUTOLOAD:=$(call AutoLoad,50,ohci-hcd,1)
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.11.0)),1)
+  FILES+=$(LINUX_DIR)/drivers/usb/host/ohci-platform.ko
+endif
+  AUTOLOAD:=$(call AutoLoad,50,ohci-hcd ohci-platform,1)
   $(call AddDepends/usb)
 endef
 
