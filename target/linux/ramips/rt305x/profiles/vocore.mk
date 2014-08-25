@@ -9,7 +9,8 @@ define Profile/VOCORE
 	NAME:=VoCore
 	PACKAGES:=\
 		kmod-usb-core kmod-usb-ohci kmod-usb2 \
-		kmod-i2c-core kmod-i2c-ralink
+		kmod-i2c-core kmod-i2c-ralink \
+		kmod-spi-dev
 endef
 
 define Profile/VOCORE/Description
