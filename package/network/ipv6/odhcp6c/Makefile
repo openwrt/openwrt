@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcp6c
-PKG_VERSION:=2014-07-21
+PKG_VERSION:=2014-08-25
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://github.com/sbyx/odhcp6c.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=67b311ab81736b35858664219d345844ab08fcc7
+PKG_SOURCE_VERSION:=0300fe7589a1701361735ac068e4b57bb1a1896f
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 
 include $(INCLUDE_DIR)/package.mk
@@ -27,10 +27,6 @@ endif
 
 ifneq ($(CONFIG_PACKAGE_odhcp6c_ext_cer_id),0)
   CMAKE_OPTIONS += -DEXT_CER_ID=$(CONFIG_PACKAGE_odhcp6c_ext_cer_id)
-endif
-
-ifneq ($(CONFIG_PACKAGE_odhcp6c_ext_s46),0)
-  CMAKE_OPTIONS += -DEXT_S46=$(CONFIG_PACKAGE_odhcp6c_ext_s46)
 endif
 
 define Package/odhcp6c
@@ -48,11 +44,6 @@ define Package/odhcp6c/config
 
   config PACKAGE_odhcp6c_ext_cer_id
     int "CER-ID Extension ID (0 = disabled)"
-    depends on PACKAGE_odhcp6c
-    default 0
-
-  config PACKAGE_odhcp6c_ext_s46
-    int "Softwire MAP Extension ID (0 = disabled)"
     depends on PACKAGE_odhcp6c
     default 0
 endef
