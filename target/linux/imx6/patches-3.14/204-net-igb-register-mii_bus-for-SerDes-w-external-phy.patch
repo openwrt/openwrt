@@ -89,7 +89,7 @@ Date:   Thu May 15 12:36:23 2014 -0700
  #include <linux/delay.h>
  #include <linux/interrupt.h>
  #include <linux/ip.h>
-@@ -2183,6 +2184,126 @@ static s32 igb_init_i2c(struct igb_adapt
+@@ -2189,6 +2190,126 @@ static s32 igb_init_i2c(struct igb_adapt
  	return status;
  }
  
@@ -216,7 +216,7 @@ Date:   Thu May 15 12:36:23 2014 -0700
  /**
   *  igb_probe - Device Initialization Routine
   *  @pdev: PCI device information struct
-@@ -2585,6 +2706,13 @@ static int igb_probe(struct pci_dev *pde
+@@ -2591,6 +2712,13 @@ static int igb_probe(struct pci_dev *pde
  	}
  
  	pm_runtime_put_noidle(&pdev->dev);
@@ -230,7 +230,7 @@ Date:   Thu May 15 12:36:23 2014 -0700
  	return 0;
  
  err_register:
-@@ -2728,6 +2856,10 @@ static void igb_remove(struct pci_dev *p
+@@ -2734,6 +2862,10 @@ static void igb_remove(struct pci_dev *p
  	struct e1000_hw *hw = &adapter->hw;
  
  	pm_runtime_get_noresume(&pdev->dev);
@@ -241,7 +241,7 @@ Date:   Thu May 15 12:36:23 2014 -0700
  #ifdef CONFIG_IGB_HWMON
  	igb_sysfs_exit(adapter);
  #endif
-@@ -3032,6 +3164,12 @@ static int __igb_open(struct net_device
+@@ -3038,6 +3170,12 @@ static int __igb_open(struct net_device
  	if (!resuming)
  		pm_runtime_put(&pdev->dev);
  
@@ -254,7 +254,7 @@ Date:   Thu May 15 12:36:23 2014 -0700
  	/* start the watchdog. */
  	hw->mac.get_link_status = 1;
  	schedule_work(&adapter->watchdog_task);
-@@ -7087,21 +7225,41 @@ void igb_alloc_rx_buffers(struct igb_rin
+@@ -7093,21 +7231,41 @@ void igb_alloc_rx_buffers(struct igb_rin
  static int igb_mii_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
  {
  	struct igb_adapter *adapter = netdev_priv(netdev);
