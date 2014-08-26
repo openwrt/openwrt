@@ -1215,6 +1215,21 @@ endef
 $(eval $(call KernelPackage,usb-net-cdc-ncm))
 
 
+define KernelPackage/usb-net-huawei-cdc-ncm
+  TITLE:=Support for Huawei CDC NCM connections
+  KCONFIG:=CONFIG_USB_NET_HUAWEI_CDC_NCM
+  FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/huawei_cdc_ncm.ko
+  AUTOLOAD:=$(call AutoProbe,huawei_cdc_ncm)
+  $(call AddDepends/usb-net,+kmod-usb-wdm @(LINUX_3_13||LINUX_3_14))
+endef
+
+define KernelPackage/usb-net-huawei-cdc-ncm/description
+ Kernel support for Huawei CDC NCM connections
+endef
+
+$(eval $(call KernelPackage,usb-net-huawei-cdc-ncm))
+
+
 define KernelPackage/usb-net-sierrawireless
   TITLE:=Support for Sierra Wireless devices
   KCONFIG:=CONFIG_USB_SIERRA_NET
