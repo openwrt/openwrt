@@ -19,6 +19,7 @@ PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 TOOLCHAIN_NAME:=OpenWrt-Toolchain-$(BOARD)-for-$(ARCH)$(ARCH_SUFFIX)-gcc-$(GCCV)$(DIR_SUFFIX)
 TOOLCHAIN_BUILD_DIR:=$(BUILD_DIR)/$(TOOLCHAIN_NAME)
 EXCLUDE_DIRS:=*/ccache \
+	*/initial \
 	*/stamp \
 	*/stampfiles \
 	*/man \
@@ -46,6 +47,15 @@ $(BIN_DIR)/$(TOOLCHAIN_NAME).tar.bz2: clean
 			ln -sf $(REAL_GNU_TARGET_NAME)-wrapper.sh $(REAL_GNU_TARGET_NAME)-$${app} ; \
 		done; \
 	)
+
+	@-( \
+		find \
+			$(TOOLCHAIN_BUILD_DIR)/*/bin \
+			$(TOOLCHAIN_BUILD_DIR)/*/*/bin \
+			$(TOOLCHAIN_BUILD_DIR)/*/libexec \
+			-type f; \
+	) | xargs strip 2>/dev/null >/dev/null
+
 	echo REVISION:="$(REVISION)" > $(TOOLCHAIN_BUILD_DIR)/version.mk
 	find $(TOOLCHAIN_BUILD_DIR) -name .git | $(XARGS) rm -rf
 	find $(TOOLCHAIN_BUILD_DIR) -name .svn | $(XARGS) rm -rf
