@@ -269,6 +269,9 @@ ifeq ($(CONFIG_BUILD_LOG),y)
   BUILD_LOG:=1
 endif
 
+export BISON_PKGDATADIR:=$(STAGING_DIR_HOST)/share/bison
+export M4:=$(STAGING_DIR_HOST)/bin/m4
+
 define shvar
 V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 endef
