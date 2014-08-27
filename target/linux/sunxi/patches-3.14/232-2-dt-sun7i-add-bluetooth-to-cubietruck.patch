@@ -1,0 +1,78 @@
+From 7ed66f828ad1ae46226ad7c1b56466d5ae6d67b9 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Thu, 26 Dec 2013 17:15:47 +0800
+Subject: [PATCH] ARM: dts: sun7i: add bluetooth module to CubieTruck DTS
+
+The CubieTruck has an AMPAK AP6210 WiFi+Bluetooth module. The
+Bluetooth part is a BCM20710 IC connected to UART2 in the A20
+SoC. The IC also takes a 32.768 KHz low power clock input, a power
+enable signal and a wake signal via GPIO.
+
+The Bluetooth module supports out-of-band interrupt signaling via
+GPIO, but this is not supported in this patch.
+---
+ arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 36 ++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+index 2444806..9a127d1 100644
+--- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
++++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+@@ -105,6 +105,20 @@
+ 				allwinner,drive = <0>;
+ 				allwinner,pull = <0>;
+ 			};
++
++			bt_pwr_pin: bt_pwr_pin@0 {
++				allwinner,pins = "PH18";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			bt_wake_pin: bt_wake_pin@0 {
++				allwinner,pins = "PH24";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
+ 		};
+ 
+ 		uart0: serial@01c28000 {
+@@ -113,6 +127,12 @@
+ 			status = "okay";
+ 		};
+ 
++		uart2: serial@01c28800 {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart2_pins_a>;
++			status = "okay";
++		};
++
+ 		i2c0: i2c@01c2ac00 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&i2c0_pins_a>;
+@@ -194,4 +214,20 @@
+ 		enable-active-high;
+ 		gpio = <&pio 7 9 0>;
+ 	};
++
++	rfkill-switches {
++		compatible = "simple-bus";
++		pinctrl-names = "default";
++
++		rfkill_bt {
++			compatible = "rfkill-gpio";
++			pinctrl-0 = <&bt_pwr_pin>, <&clk_out_a_pins_a>;
++			rfkill-name = "bt";
++			rfkill-type = <2>;
++			bt_shutdown-gpios = <0>, <&pio 7 18 0>; /* PH18 */
++			bt_reset-gpios = <&pio 7 24 0>; /* PH24 */
++			clocks = <&clk_out_a>;
++			clock-frequency = <32768>;
++		};
++	};
+ };
+-- 
+2.0.3
+

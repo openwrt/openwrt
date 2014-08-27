@@ -1,0 +1,40 @@
+From c792a05efcfebcf94ba925135a778961700965f5 Mon Sep 17 00:00:00 2001
+From: Carlo Caione <carlo@caione.org>
+Date: Sat, 1 Mar 2014 17:45:48 +0100
+Subject: [PATCH] ARM: sun7i: dt: Add AXP209 support to the cubieboard2
+
+AXP209 is the PMU used by Cubieboard2. This patch enables the AXP209
+support in the dts file.
+
+This patch requires: "ARM: sun7i/sun6i: irqchip: Add irqchip driver for
+NMI controller"
+
+Signed-off-by: Carlo Caione <carlo@caione.org>
+---
+ arch/arm/boot/dts/sun7i-a20-cubieboard2.dts | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
+index cd9d3c2..40e9c3a 100644
+--- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
++++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
+@@ -74,6 +74,16 @@
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&i2c0_pins_a>;
+ 			status = "okay";
++
++			axp: axp20x@34 {
++				reg = <0x34>;
++				interrupt-parent = <&nmi_intc>;
++				interrupts = <0 8>;
++
++				axp,system-power-controller;
++
++				/include/ "x-powers-axp209.dtsi"
++			};
+ 		};
+ 
+ 		i2c1: i2c@01c2b000 {
+-- 
+2.0.3
+

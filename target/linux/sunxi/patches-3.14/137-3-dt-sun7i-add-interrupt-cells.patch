@@ -1,0 +1,31 @@
+From eda34c0692e479dd9cd2b7cb70986ae57f15187f Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Tue, 7 Jan 2014 18:50:01 +0800
+Subject: [PATCH] ARM: dts: sun7i: Add #interrupt-cells to pinctrl node
+
+The pinctrl device is also an interrupt controller for external
+interrupts. Add the missing #interrupt-cells property.
+
+Also remove the unused #address-cells property.
+
+Signed-off-by: Chen-Yu Tsai <wens@csie.org>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 0c57ac5..30b9aba 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -572,7 +572,7 @@
+ 			clocks = <&apb0_gates 5>;
+ 			gpio-controller;
+ 			interrupt-controller;
+-			#address-cells = <1>;
++			#interrupt-cells = <2>;
+ 			#size-cells = <0>;
+ 			#gpio-cells = <3>;
+ 
+-- 
+2.0.3
+
