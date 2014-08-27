@@ -77,7 +77,7 @@ $(eval $(call KernelPackage,spi-gpio))
 define KernelPackage/spi-dev
   SUBMENU:=$(SPI_MENU)
   TITLE:=User mode SPI device driver
-  KCONFIG:=CONFIG_SPI_SPIDEV=y \
+  KCONFIG:=CONFIG_SPI_SPIDEV \
           CONFIG_SPI=y \
           CONFIG_SPI_MASTER=y
   FILES:=$(LINUX_DIR)/drivers/spi/spidev.ko
