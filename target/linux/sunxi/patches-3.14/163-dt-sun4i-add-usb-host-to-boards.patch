@@ -1,0 +1,295 @@
+From f2509ec45a09013e300460a967f694561d169b98 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sat, 11 Jan 2014 04:47:38 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to hackberry dts
+
+Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
+
+Based on fex file settings, the fex file also contains a mysterious line:
+usb_hub_vcc_en_gpio = port:PB09<1><0><default><0>
+
+Which also clashes with usbc0, which has:
+usb_drv_vbus_gpio = port:PB09<1><0><default><0>
+
+So if usb does not work properly we need someone with a hackberry to look
+closer into this.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-hackberry.dts | 40 +++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-hackberry.dts b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
+index 6692d336..d7c17e4 100644
+--- a/arch/arm/boot/dts/sun4i-a10-hackberry.dts
++++ b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
+@@ -13,6 +13,7 @@
+ 
+ /dts-v1/;
+ /include/ "sun4i-a10.dtsi"
++/include/ "sunxi-common-regulators.dtsi"
+ 
+ / {
+ 	model = "Miniand Hackberry";
+@@ -35,6 +36,28 @@
+ 			};
+ 		};
+ 
++		usbphy: phy@01c13400 {
++			usb1_vbus-supply = <&reg_usb1_vbus>;
++			usb2_vbus-supply = <&reg_usb2_vbus>;
++			status = "okay";
++		};
++
++		ehci0: usb@01c14000 {
++			status = "okay";
++		};
++
++		ohci0: usb@01c14400 {
++			status = "okay";
++		};
++
++		ehci1: usb@01c1c000 {
++			status = "okay";
++		};
++
++		ohci1: usb@01c1c400 {
++			status = "okay";
++		};
++
+ 		pio: pinctrl@01c20800 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&hackberry_hogs>;
+@@ -45,6 +68,13 @@
+ 				allwinner,drive = <0>;
+ 				allwinner,pull = <0>;
+ 			};
++
++			usb2_vbus_pin_hackberry: usb2_vbus_pin@0 {
++					allwinner,pins = "PH12";
++					allwinner,function = "gpio_out";
++					allwinner,drive = <0>;
++					allwinner,pull = <0>;
++			};
+ 		};
+ 
+ 		uart0: serial@01c28000 {
+@@ -62,4 +92,14 @@
+ 		enable-active-high;
+ 		gpio = <&pio 7 19 0>;
+ 	};
++
++	reg_usb1_vbus: usb1-vbus {
++		status = "okay";
++	};
++
++	reg_usb2_vbus: usb2-vbus {
++		pinctrl-0 = <&usb2_vbus_pin_hackberry>;
++		gpio = <&pio 7 12 0>;
++		status = "okay";
++	};
+ };
+-- 
+2.0.3
+
+From dbf6ffa0b3832d91c2509e6753f485cedc791051 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sat, 11 Jan 2014 05:15:06 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to mini-xplus dts
+
+Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-mini-xplus.dts | 31 ++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
+index 70b3323..dd84a9e3 100644
+--- a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
++++ b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
+@@ -13,16 +13,47 @@
+ 
+ /dts-v1/;
+ /include/ "sun4i-a10.dtsi"
++/include/ "sunxi-common-regulators.dtsi"
+ 
+ / {
+ 	model = "PineRiver Mini X-Plus";
+ 	compatible = "pineriver,mini-xplus", "allwinner,sun4i-a10";
+ 
+ 	soc@01c00000 {
++		usbphy: phy@01c13400 {
++			usb1_vbus-supply = <&reg_usb1_vbus>;
++			usb2_vbus-supply = <&reg_usb2_vbus>;
++			status = "okay";
++		};
++
++		ehci0: usb@01c14000 {
++			status = "okay";
++		};
++
++		ohci0: usb@01c14400 {
++			status = "okay";
++		};
++
++		ehci1: usb@01c1c000 {
++			status = "okay";
++		};
++
++		ohci1: usb@01c1c400 {
++			status = "okay";
++		};
++
+ 		uart0: serial@01c28000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&uart0_pins_a>;
+ 			status = "okay";
+ 		};
+ 	};
++
++	reg_usb1_vbus: usb1-vbus {
++		status = "okay";
++	};
++
++	reg_usb2_vbus: usb2-vbus {
++		status = "okay";
++	};
+ };
+-- 
+2.0.3
+
+From 528808ae38fee761be9f3451f51b457cb56d33ee Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 17 Feb 2014 20:41:04 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to pcduino.dts
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-pcduino.dts | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-pcduino.dts b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
+index f5692a3..255b47e 100644
+--- a/arch/arm/boot/dts/sun4i-a10-pcduino.dts
++++ b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
+@@ -12,6 +12,7 @@
+ 
+ /dts-v1/;
+ /include/ "sun4i-a10.dtsi"
++/include/ "sunxi-common-regulators.dtsi"
+ 
+ / {
+ 	model = "LinkSprite pcDuino";
+@@ -33,6 +34,28 @@
+ 			};
+ 		};
+ 
++		usbphy: phy@01c13400 {
++			usb1_vbus-supply = <&reg_usb1_vbus>;
++			usb2_vbus-supply = <&reg_usb2_vbus>;
++			status = "okay";
++		};
++
++		ehci0: usb@01c14000 {
++			status = "okay";
++		};
++
++		ohci0: usb@01c14400 {
++			status = "okay";
++		};
++
++		ehci1: usb@01c1c000 {
++			status = "okay";
++		};
++
++		ohci1: usb@01c1c400 {
++			status = "okay";
++		};
++
+ 		uart0: serial@01c28000 {
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&uart0_pins_a>;
+@@ -45,4 +68,12 @@
+ 			status = "okay";
+ 		};
+ 	};
++
++	reg_usb1_vbus: usb1-vbus {
++		status = "okay";
++	};
++
++	reg_usb2_vbus: usb2-vbus {
++		status = "okay";
++	};
+ };
+-- 
+2.0.3
+
+From 58b778ce8cbc6fdb1fda5a6998fdd114a2b77cc9 Mon Sep 17 00:00:00 2001
+From: Roman Byshko <rbyshko@gmail.com>
+Date: Wed, 18 Sep 2013 22:45:06 +0200
+Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to cubieboard dts
+
+Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
+
+Signed-off-by: Roman Byshko <rbyshko@gmail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10-cubieboard.dts | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
+index 20407ac..4684cbe 100644
+--- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
++++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
+@@ -34,11 +34,33 @@
+ 			};
+ 		};
+ 
++		usbphy: phy@01c13400 {
++			usb1_vbus-supply = <&reg_usb1_vbus>;
++			usb2_vbus-supply = <&reg_usb2_vbus>;
++			status = "okay";
++		};
++
++		ehci0: usb@01c14000 {
++			status = "okay";
++		};
++
++		ohci0: usb@01c14400 {
++			status = "okay";
++		};
++
+ 		ahci: sata@01c18000 {
+ 			target-supply = <&reg_ahci_5v>;
+ 			status = "okay";
+ 		};
+ 
++		ehci1: usb@01c1c000 {
++			status = "okay";
++		};
++
++		ohci1: usb@01c1c400 {
++			status = "okay";
++		};
++
+ 		pinctrl@01c20800 {
+ 			led_pins_cubieboard: led_pins@0 {
+ 				allwinner,pins = "PH20", "PH21";
+@@ -87,4 +109,12 @@
+ 	reg_ahci_5v: ahci-5v {
+ 		status = "okay";
+ 	};
++
++	reg_usb1_vbus: usb1-vbus {
++		status = "okay";
++	};
++
++	reg_usb2_vbus: usb2-vbus {
++		status = "okay";
++	};
+ };
+-- 
+2.0.3
+

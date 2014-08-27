@@ -1,0 +1,86 @@
+From 2fc6dcd5e7c76c203d2e174e70ef21393a231163 Mon Sep 17 00:00:00 2001
+From: Zoltan HERPAI <wigyori@uid0.hu>
+Date: Mon, 13 Jan 2014 14:15:01 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add basic board support for LinkSprite
+ pcDuino
+
+This patch will add a basic board support DT for the
+LinkSprite pcDuino board.
+
+Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/Makefile              |  1 +
+ arch/arm/boot/dts/sun4i-a10-pcduino.dts | 48 +++++++++++++++++++++++++++++++++
+ 2 files changed, 49 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sun4i-a10-pcduino.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 0320303..8e1d636 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -284,6 +284,7 @@ dtb-$(CONFIG_ARCH_SUNXI) += \
+ 	sun4i-a10-cubieboard.dtb \
+ 	sun4i-a10-mini-xplus.dtb \
+ 	sun4i-a10-hackberry.dtb \
++	sun4i-a10-pcduino.dtb \
+ 	sun5i-a10s-olinuxino-micro.dtb \
+ 	sun5i-a13-olinuxino.dtb \
+ 	sun5i-a13-olinuxino-micro.dtb \
+diff --git a/arch/arm/boot/dts/sun4i-a10-pcduino.dts b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
+new file mode 100644
+index 0000000..f5692a3
+--- /dev/null
++++ b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
+@@ -0,0 +1,48 @@
++/*
++ * Copyright 2014 Zoltan HERPAI
++ * Zoltan HERPAI <wigyori@uid0.hu>
++ *
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
++ *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
++ */
++
++/dts-v1/;
++/include/ "sun4i-a10.dtsi"
++
++/ {
++	model = "LinkSprite pcDuino";
++	compatible = "linksprite,a10-pcduino", "allwinner,sun4i-a10";
++
++	soc@01c00000 {
++		emac: ethernet@01c0b000 {
++			pinctrl-names = "default";
++			pinctrl-0 = <&emac_pins_a>;
++			phy = <&phy1>;
++			status = "okay";
++		};
++
++		mdio@01c0b080 {
++			status = "okay";
++
++			phy1: ethernet-phy@1 {
++				reg = <1>;
++			};
++		};
++
++		uart0: serial@01c28000 {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart0_pins_a>;
++			status = "okay";
++		};
++
++		i2c0: i2c@01c2ac00 {
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c0_pins_a>;
++			status = "okay";
++		};
++	};
++};
+-- 
+2.0.3
+

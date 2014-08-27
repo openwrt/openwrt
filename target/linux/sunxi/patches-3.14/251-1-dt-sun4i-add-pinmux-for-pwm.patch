@@ -1,0 +1,41 @@
+From 1d8e9db920352680e9091ec5d2873e90a4a53214 Mon Sep 17 00:00:00 2001
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 28 Apr 2014 18:17:10 +0200
+Subject: [PATCH] ARM: sun4i: dt: add pinmux configuration for the PWM
+
+Add the pinctrl descriptions for both PWM channels of the Allwinner A10.
+
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index fe845eb..8810ce4 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -477,6 +477,20 @@
+ 			#size-cells = <0>;
+ 			#gpio-cells = <3>;
+ 
++			pwm0_pins_a: pwm0@0 {
++				allwinner,pins = "PB2";
++				allwinner,function = "pwm";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			pwm1_pins_a: pwm1@0 {
++				allwinner,pins = "PI3";
++				allwinner,function = "pwm";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
+ 			uart0_pins_a: uart0@0 {
+ 				allwinner,pins = "PB22", "PB23";
+ 				allwinner,function = "uart0";
+-- 
+2.0.3
+

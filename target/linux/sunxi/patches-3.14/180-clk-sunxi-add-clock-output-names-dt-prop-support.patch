@@ -1,0 +1,55 @@
+From 0bf618fda3ad24649add0bf943d16a9b4f5c3463 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Mon, 3 Feb 2014 09:51:37 +0800
+Subject: [PATCH] clk: sunxi: add clock-output-names dt property support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+sunxi clock drivers use dt node name as clock name, but clock
+nodes should be named clk@X, so the names would be the same.
+Let the drivers read clock names from dt clock-output-names
+property.
+
+Signed-off-by: Chen-Yu Tsai <wens@csie.org>
+Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Mike Turquette <mturquette@linaro.org>
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+---
+ drivers/clk/sunxi/clk-sunxi.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
+index abb6c5a..0ed9794 100644
+--- a/drivers/clk/sunxi/clk-sunxi.c
++++ b/drivers/clk/sunxi/clk-sunxi.c
+@@ -51,6 +51,8 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+ 	if (!gate)
+ 		goto err_free_fixed;
+ 
++	of_property_read_string(node, "clock-output-names", &clk_name);
++
+ 	/* set up gate and fixed rate properties */
+ 	gate->reg = of_iomap(node, 0);
+ 	gate->bit_idx = SUNXI_OSC24M_GATE;
+@@ -601,6 +603,8 @@ static void __init sunxi_mux_clk_setup(struct device_node *node,
+ 	       (parents[i] = of_clk_get_parent_name(node, i)) != NULL)
+ 		i++;
+ 
++	of_property_read_string(node, "clock-output-names", &clk_name);
++
+ 	clk = clk_register_mux(NULL, clk_name, parents, i,
+ 			       CLK_SET_RATE_NO_REPARENT, reg,
+ 			       data->shift, SUNXI_MUX_GATE_WIDTH,
+@@ -660,6 +664,8 @@ static void __init sunxi_divider_clk_setup(struct device_node *node,
+ 
+ 	clk_parent = of_clk_get_parent_name(node, 0);
+ 
++	of_property_read_string(node, "clock-output-names", &clk_name);
++
+ 	clk = clk_register_divider(NULL, clk_name, clk_parent, 0,
+ 				   reg, data->shift, data->width,
+ 				   data->pow ? CLK_DIVIDER_POWER_OF_TWO : 0,
+-- 
+2.0.3
+

@@ -1,0 +1,35 @@
+From b5325f9813a6a7cf80ede22fbee66376abbe2384 Mon Sep 17 00:00:00 2001
+From: Roman Byshko <rbyshko@gmail.com>
+Date: Fri, 7 Feb 2014 16:21:51 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add bindings for USB clocks
+
+Signed-off-by: Roman Byshko <rbyshko@gmail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index 132b261..2d623d0 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -315,6 +315,15 @@
+ 			clock-output-names = "ir1";
+ 		};
+ 
++		usb_clk: clk@01c200cc {
++			#clock-cells = <1>;
++		        #reset-cells = <1>;
++			compatible = "allwinner,sun4i-a10-usb-clk";
++			reg = <0x01c200cc 0x4>;
++			clocks = <&pll6 1>;
++			clock-output-names = "usb_ohci0", "usb_ohci1", "usb_phy";
++		};
++
+ 		spi3_clk: clk@01c200d4 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-mod0-clk";
+-- 
+2.0.3
+

@@ -1,0 +1,45 @@
+From 46d3d005e5f91d8221676cbb6307e790d4b63345 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 5 Mar 2014 20:40:26 +0100
+Subject: [PATCH] ARM: sun4i: dt: Add address- and size-cells info to i2c
+ controller nodes
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index 4b90a18..2a705e7 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -712,6 +712,8 @@
+ 			clocks = <&apb1_gates 0>;
+ 			clock-frequency = <100000>;
+ 			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
+ 		};
+ 
+ 		i2c1: i2c@01c2b000 {
+@@ -721,6 +723,8 @@
+ 			clocks = <&apb1_gates 1>;
+ 			clock-frequency = <100000>;
+ 			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
+ 		};
+ 
+ 		i2c2: i2c@01c2b400 {
+@@ -730,6 +734,8 @@
+ 			clocks = <&apb1_gates 2>;
+ 			clock-frequency = <100000>;
+ 			status = "disabled";
++			#address-cells = <1>;
++			#size-cells = <0>;
+ 		};
+ 	};
+ };
+-- 
+2.0.3
+

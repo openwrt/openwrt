@@ -1,0 +1,35 @@
+From 25a4e0f1ac49c9ecafeba0d034806e25c491f012 Mon Sep 17 00:00:00 2001
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Mon, 28 Apr 2014 18:17:11 +0200
+Subject: [PATCH] ARM: sun4i: dt: add PWM support
+
+Add the PWM bindings for the Allwinner A10.
+
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index 8810ce4..4dc3761 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -563,6 +563,14 @@
+ 			interrupts = <24>;
+ 		};
+ 
++		pwm: pwm@01c20e00 {
++			compatible = "allwinner,sun4i-a10-pwm";
++			reg = <0x01c20e00 0xc>;
++			clocks = <&osc24M>;
++			#pwm-cells = <3>;
++			status = "disabled";
++		};
++
+ 		sid: eeprom@01c23800 {
+ 			compatible = "allwinner,sun4i-a10-sid";
+ 			reg = <0x01c23800 0x10>;
+-- 
+2.0.3
+

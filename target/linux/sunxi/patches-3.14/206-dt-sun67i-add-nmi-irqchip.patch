@@ -1,0 +1,54 @@
+From eebb592523672ee7288b9327bd222165db638d1a Mon Sep 17 00:00:00 2001
+From: Carlo Caione <carlo@caione.org>
+Date: Thu, 27 Feb 2014 20:34:21 +0100
+Subject: [PATCH] ARM: sun7i/sun6i: dts: Add NMI irqchip support
+
+This patch adds DTS entries for NMI controller as child of GIC.
+
+Signed-off-by: Carlo Caione <carlo@caione.org>
+---
+ arch/arm/boot/dts/sun6i-a31.dtsi | 8 ++++++++
+ arch/arm/boot/dts/sun7i-a20.dtsi | 8 ++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun6i-a31.dtsi b/arch/arm/boot/dts/sun6i-a31.dtsi
+index 8441733..74d2920 100644
+--- a/arch/arm/boot/dts/sun6i-a31.dtsi
++++ b/arch/arm/boot/dts/sun6i-a31.dtsi
+@@ -421,6 +421,14 @@
+ 			interrupts = <1 9 0xf04>;
+ 		};
+ 
++		nmi_intc: interrupt-controller@01f00c0c {
++			compatible = "allwinner,sun6i-a31-sc-nmi";
++			interrupt-controller;
++			#interrupt-cells = <2>;
++			reg = <0x01f00c0c 0x38>;
++			interrupts = <0 32 4>;
++		};
++
+ 		cpucfg@01f01c00 {
+ 			compatible = "allwinner,sun6i-a31-cpuconfig";
+ 			reg = <0x01f01c00 0x300>;
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 4981f5e..2e66c85 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -401,6 +401,14 @@
+ 		#size-cells = <1>;
+ 		ranges;
+ 
++		nmi_intc: interrupt-controller@01c00030 {
++			compatible = "allwinner,sun7i-a20-sc-nmi";
++			interrupt-controller;
++			#interrupt-cells = <2>;
++			reg = <0x01c00030 0x0c>;
++			interrupts = <0 0 4>;
++		};
++
+ 		spi0: spi@01c05000 {
+ 			compatible = "allwinner,sun4i-a10-spi";
+ 			reg = <0x01c05000 0x1000>;
+-- 
+2.0.3
+

@@ -1,0 +1,13 @@
+diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapi.dts new/arch/arm/boot/dts/sun7i-a20-bananapi.dts
+--- old/arch/arm/boot/dts/sun7i-a20-bananapi.dts	2014-08-01 21:28:06.000000000 +0200
++++ new/arch/arm/boot/dts/sun7i-a20-bananapi.dts	2014-08-04 00:49:24.552906049 +0200
+@@ -12,8 +12,7 @@
+ 
+ /dts-v1/;
+ /include/ "sun7i-a20.dtsi"
+-/include/ "sunxi-ahci-reg.dtsi"
+-/include/ "sun4i-a10-usb-vbus-reg.dtsi"
++/include/ "sunxi-common-regulators.dtsi"
+ #include <dt-bindings/input/input.h>
+ 
+ / {

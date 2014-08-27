@@ -1,0 +1,305 @@
+From a52ae09871d171d6771b4bef2d4c56dd435e740f Mon Sep 17 00:00:00 2001
+From: Roger Quadros <rogerq@ti.com>
+Date: Mon, 20 Jan 2014 16:32:33 +0200
+Subject: [PATCH] ata: ahci_platform: Add DT compatible for Synopsis DWC AHCI
+ controller
+
+Add compatible string "snps,dwc-ahci", which should be used
+for Synopsis Designware SATA cores. e.g. on TI OMAP5 and DRA7 platforms.
+
+Signed-off-by: Roger Quadros <rogerq@ti.com>
+Reviewed-by: Bartlomiej Zolnierkiewicz <b.zolnierkie@samsung.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/ata/ahci_platform.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
+index bdadec1..d7e55ba 100644
+--- a/drivers/ata/ahci_platform.c
++++ b/drivers/ata/ahci_platform.c
+@@ -609,6 +609,7 @@ static const struct of_device_id ahci_of_match[] = {
+ 	{ .compatible = "snps,spear-ahci", },
+ 	{ .compatible = "snps,exynos5440-ahci", },
+ 	{ .compatible = "ibm,476gtr-ahci", },
++	{ .compatible = "snps,dwc-ahci", },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, ahci_of_match);
+-- 
+2.0.3
+
+From 2be39fa6b6531bd083c766999345adc348b14c77 Mon Sep 17 00:00:00 2001
+From: Roger Quadros <rogerq@ti.com>
+Date: Mon, 27 Jan 2014 16:41:18 +0200
+Subject: [PATCH] ata: ahci_platform: Manage SATA PHY
+
+Some platforms have a PHY hooked up to the
+SATA controller. The PHY needs to be initialized
+and powered up for SATA to work. We do that
+using the PHY framework.
+
+CC: Balaji T K <balajitk@ti.com>
+Signed-off-by: Roger Quadros <rogerq@ti.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/ata/ahci.h          |  2 ++
+ drivers/ata/ahci_platform.c | 47 +++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 47 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
+index bf8100c..3ab7ac9 100644
+--- a/drivers/ata/ahci.h
++++ b/drivers/ata/ahci.h
+@@ -37,6 +37,7 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/libata.h>
++#include <linux/phy/phy.h>
+ #include <linux/regulator/consumer.h>
+ 
+ /* Enclosure Management Control */
+@@ -325,6 +326,7 @@ struct ahci_host_priv {
+ 	u32			em_msg_type;	/* EM message type */
+ 	struct clk		*clks[AHCI_MAX_CLKS]; /* Optional */
+ 	struct regulator	*target_pwr;	/* Optional */
++	struct phy		*phy;		/* If platform uses phy */
+ 	void			*plat_data;	/* Other platform data */
+ 	/*
+ 	 * Optional ahci_start_engine override, if not set this gets set to the
+diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
+index d7e55ba..99d38c1 100644
+--- a/drivers/ata/ahci_platform.c
++++ b/drivers/ata/ahci_platform.c
+@@ -23,6 +23,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/libata.h>
+ #include <linux/ahci_platform.h>
++#include <linux/phy/phy.h>
+ #include "ahci.h"
+ 
+ static void ahci_host_stop(struct ata_host *host);
+@@ -147,6 +148,7 @@ EXPORT_SYMBOL_GPL(ahci_platform_disable_clks);
+  *	the following order:
+  *	1) Regulator
+  *	2) Clocks (through ahci_platform_enable_clks)
++ *	3) Phy
+  *
+  *	If resource enabling fails at any point the previous enabled
+  *	resources are disabled in reverse order.
+@@ -171,8 +173,23 @@ int ahci_platform_enable_resources(struct ahci_host_priv *hpriv)
+ 	if (rc)
+ 		goto disable_regulator;
+ 
++	if (hpriv->phy) {
++		rc = phy_init(hpriv->phy);
++		if (rc)
++			goto disable_clks;
++
++		rc = phy_power_on(hpriv->phy);
++		if (rc) {
++			phy_exit(hpriv->phy);
++			goto disable_clks;
++		}
++	}
++
+ 	return 0;
+ 
++disable_clks:
++	ahci_platform_disable_clks(hpriv);
++
+ disable_regulator:
+ 	if (hpriv->target_pwr)
+ 		regulator_disable(hpriv->target_pwr);
+@@ -186,14 +203,20 @@ EXPORT_SYMBOL_GPL(ahci_platform_enable_resources);
+  *
+  *	This function disables all ahci_platform managed resources in
+  *	the following order:
+- *	1) Clocks (through ahci_platform_disable_clks)
+- *	2) Regulator
++ *	1) Phy
++ *	2) Clocks (through ahci_platform_disable_clks)
++ *	3) Regulator
+  *
+  *	LOCKING:
+  *	None.
+  */
+ void ahci_platform_disable_resources(struct ahci_host_priv *hpriv)
+ {
++	if (hpriv->phy) {
++		phy_power_off(hpriv->phy);
++		phy_exit(hpriv->phy);
++	}
++
+ 	ahci_platform_disable_clks(hpriv);
+ 
+ 	if (hpriv->target_pwr)
+@@ -222,6 +245,7 @@ static void ahci_platform_put_resources(struct device *dev, void *res)
+  *	2) regulator for controlling the targets power (optional)
+  *	3) 0 - AHCI_MAX_CLKS clocks, as specified in the devs devicetree node,
+  *	   or for non devicetree enabled platforms a single clock
++ *	4) phy (optional)
+  *
+  *	LOCKING:
+  *	None.
+@@ -283,6 +307,25 @@ struct ahci_host_priv *ahci_platform_get_resources(
+ 		hpriv->clks[i] = clk;
+ 	}
+ 
++	hpriv->phy = devm_phy_get(dev, "sata-phy");
++	if (IS_ERR(hpriv->phy)) {
++		rc = PTR_ERR(hpriv->phy);
++		switch (rc) {
++		case -ENODEV:
++		case -ENOSYS:
++			/* continue normally */
++			hpriv->phy = NULL;
++			break;
++
++		case -EPROBE_DEFER:
++			goto err_out;
++
++		default:
++			dev_err(dev, "couldn't get sata-phy\n");
++			goto err_out;
++		}
++	}
++
+ 	devres_remove_group(dev, NULL);
+ 	return hpriv;
+ 
+-- 
+2.0.3
+
+From 22d93de35a39507bcdf0c62c5e1fab0625f7c6f6 Mon Sep 17 00:00:00 2001
+From: Roger Quadros <rogerq@ti.com>
+Date: Wed, 9 Oct 2013 15:08:59 +0300
+Subject: [PATCH] ata: ahci_platform: runtime resume the device before use
+
+On OMAP platforms the device needs to be runtime resumed before
+it can be accessed. The OMAP HWMOD framework takes care of
+enabling the module and its resources based on the
+device's runtime PM state.
+
+In this patch we runtime resume during .probe() and runtime suspend
+after .remove().
+
+We also update the runtime PM state during .resume().
+
+CC: Balaji T K <balajitk@ti.com>
+Signed-off-by: Roger Quadros <rogerq@ti.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/ata/ahci.h          |  1 +
+ drivers/ata/ahci_platform.c | 15 +++++++++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
+index 3ab7ac9..51af275b 100644
+--- a/drivers/ata/ahci.h
++++ b/drivers/ata/ahci.h
+@@ -324,6 +324,7 @@ struct ahci_host_priv {
+ 	u32 			em_loc; /* enclosure management location */
+ 	u32			em_buf_sz;	/* EM buffer size in byte */
+ 	u32			em_msg_type;	/* EM message type */
++	bool			got_runtime_pm; /* Did we do pm_runtime_get? */
+ 	struct clk		*clks[AHCI_MAX_CLKS]; /* Optional */
+ 	struct regulator	*target_pwr;	/* Optional */
+ 	struct phy		*phy;		/* If platform uses phy */
+diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
+index 99d38c1..75698a4 100644
+--- a/drivers/ata/ahci_platform.c
++++ b/drivers/ata/ahci_platform.c
+@@ -24,6 +24,7 @@
+ #include <linux/libata.h>
+ #include <linux/ahci_platform.h>
+ #include <linux/phy/phy.h>
++#include <linux/pm_runtime.h>
+ #include "ahci.h"
+ 
+ static void ahci_host_stop(struct ata_host *host);
+@@ -229,6 +230,11 @@ static void ahci_platform_put_resources(struct device *dev, void *res)
+ 	struct ahci_host_priv *hpriv = res;
+ 	int c;
+ 
++	if (hpriv->got_runtime_pm) {
++		pm_runtime_put_sync(dev);
++		pm_runtime_disable(dev);
++	}
++
+ 	for (c = 0; c < AHCI_MAX_CLKS && hpriv->clks[c]; c++)
+ 		clk_put(hpriv->clks[c]);
+ }
+@@ -326,6 +332,10 @@ struct ahci_host_priv *ahci_platform_get_resources(
+ 		}
+ 	}
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++	hpriv->got_runtime_pm = true;
++
+ 	devres_remove_group(dev, NULL);
+ 	return hpriv;
+ 
+@@ -635,6 +645,11 @@ int ahci_platform_resume(struct device *dev)
+ 	if (rc)
+ 		goto disable_resources;
+ 
++	/* We resumed so update PM runtime state */
++	pm_runtime_disable(dev);
++	pm_runtime_set_active(dev);
++	pm_runtime_enable(dev);
++
+ 	return 0;
+ 
+ disable_resources:
+-- 
+2.0.3
+
+From 22cccaf7a29b2a9d8a1440d089f399a6d2432b81 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sun, 23 Feb 2014 11:37:17 +0100
+Subject: [PATCH] ahci_sunxi: Use msleep instead of mdelay
+
+ahci_sunxi_phy_init is called from the probe and resume code paths, and
+sleeping is safe in both, so use msleep instead of mdelay.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/ata/ahci_sunxi.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/ata/ahci_sunxi.c b/drivers/ata/ahci_sunxi.c
+index 001f7dfc..d1bf3f7 100644
+--- a/drivers/ata/ahci_sunxi.c
++++ b/drivers/ata/ahci_sunxi.c
+@@ -90,7 +90,7 @@ static int ahci_sunxi_phy_init(struct device *dev, void __iomem *reg_base)
+ 
+ 	/* This magic is from the original code */
+ 	writel(0, reg_base + AHCI_RWCR);
+-	mdelay(5);
++	msleep(5);
+ 
+ 	sunxi_setbits(reg_base + AHCI_PHYCS1R, BIT(19));
+ 	sunxi_clrsetbits(reg_base + AHCI_PHYCS0R,
+@@ -105,7 +105,7 @@ static int ahci_sunxi_phy_init(struct device *dev, void __iomem *reg_base)
+ 			 (0x7 << 20), (0x3 << 20));
+ 	sunxi_clrsetbits(reg_base + AHCI_PHYCS2R,
+ 			 (0x1f << 5), (0x19 << 5));
+-	mdelay(5);
++	msleep(5);
+ 
+ 	sunxi_setbits(reg_base + AHCI_PHYCS0R, (0x1 << 19));
+ 
+@@ -137,7 +137,7 @@ static int ahci_sunxi_phy_init(struct device *dev, void __iomem *reg_base)
+ 		udelay(1);
+ 	} while (1);
+ 
+-	mdelay(15);
++	msleep(15);
+ 
+ 	writel(0x7, reg_base + AHCI_RWCR);
+ 
+-- 
+2.0.3
+
