@@ -13,11 +13,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-ralink.txt
  create mode 100644 drivers/i2c/busses/i2c-ralink.c
 
-diff --git a/Documentation/devicetree/bindings/i2c/i2c-ralink.txt b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
-new file mode 100644
-index 0000000..8fa8ac3
---- /dev/null
-+++ b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
+Index: linux-3.14.16/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.16/Documentation/devicetree/bindings/i2c/i2c-ralink.txt	2014-08-24 16:03:20.586671002 +0200
 @@ -0,0 +1,27 @@
 +I2C for Ralink platforms
 +
@@ -46,11 +45,11 @@ index 0000000..8fa8ac3
 +		};
 +	};
 +};
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index de17c55..d773b72 100644
---- a/drivers/i2c/busses/Kconfig
-+++ b/drivers/i2c/busses/Kconfig
-@@ -658,6 +658,10 @@ config I2C_RIIC
+Index: linux-3.14.16/drivers/i2c/busses/Kconfig
+===================================================================
+--- linux-3.14.16.orig/drivers/i2c/busses/Kconfig	2014-08-08 01:50:59.000000000 +0200
++++ linux-3.14.16/drivers/i2c/busses/Kconfig	2014-08-24 16:03:20.586671002 +0200
+@@ -659,6 +659,10 @@
  	  This driver can also be built as a module.  If so, the module
  	  will be called i2c-riic.
  
@@ -61,11 +60,11 @@ index de17c55..d773b72 100644
  config HAVE_S3C2410_I2C
  	bool
  	help
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index a08931f..9682895 100644
---- a/drivers/i2c/busses/Makefile
-+++ b/drivers/i2c/busses/Makefile
-@@ -63,6 +63,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
+Index: linux-3.14.16/drivers/i2c/busses/Makefile
+===================================================================
+--- linux-3.14.16.orig/drivers/i2c/busses/Makefile	2014-08-08 01:50:59.000000000 +0200
++++ linux-3.14.16/drivers/i2c/busses/Makefile	2014-08-24 16:03:20.586671002 +0200
+@@ -63,6 +63,7 @@
  obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
@@ -73,12 +72,11 @@ index a08931f..9682895 100644
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
  obj-$(CONFIG_I2C_S3C2410)	+= i2c-s3c2410.o
  obj-$(CONFIG_I2C_S6000)		+= i2c-s6000.o
-diff --git a/drivers/i2c/busses/i2c-ralink.c b/drivers/i2c/busses/i2c-ralink.c
-new file mode 100644
-index 0000000..f4dc13d
---- /dev/null
-+++ b/drivers/i2c/busses/i2c-ralink.c
-@@ -0,0 +1,274 @@
+Index: linux-3.14.16/drivers/i2c/busses/i2c-ralink.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.16/drivers/i2c/busses/i2c-ralink.c	2014-08-27 23:07:01.318731261 +0200
+@@ -0,0 +1,271 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -106,7 +104,6 @@ index 0000000..f4dc13d
 +#include <linux/platform_device.h>
 +#include <linux/i2c.h>
 +#include <linux/io.h>
-+#include <linux/of_i2c.h>
 +#include <linux/err.h>
 +
 +#include <asm/mach-ralink/ralink_regs.h>
@@ -303,8 +300,6 @@ index 0000000..f4dc13d
 +	if (ret)
 +		return ret;
 +
-+	of_i2c_register_devices(adapter);
-+
 +	platform_set_drvdata(pdev, adapter);
 +
 +	dev_info(&pdev->dev, "loaded\n");
@@ -353,6 +348,3 @@ index 0000000..f4dc13d
 +MODULE_DESCRIPTION("Ralink I2c host driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:Ralink-I2C");
--- 
-1.7.10.4
-
