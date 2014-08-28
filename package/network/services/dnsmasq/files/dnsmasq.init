@@ -441,13 +441,10 @@ dhcp_domain_add() {
 	[ -n "$ip" ] || return 0
 
 	for name in $names; do
-		[ "${name%.*}" == "$name" ] && \
-			name="$name${DOMAIN:+.$DOMAIN}"
-
-		record="${record:+$record/}$name"
+		record="${record:+$record }$name"
 	done
 
-	xappend "--address=/$record/$ip"
+	echo "$ip $record" >> $HOSTFILE
 }
 
 dhcp_srv_add() {
@@ -572,7 +569,7 @@ start_service() {
 	local lanaddr
 	[ $ADD_LOCAL_HOSTNAME -eq 1 ] && network_get_ipaddr lanaddr "lan" && {
 		local hostname="$(uci_get system @system[0] hostname OpenWrt)"
-		dhcp_hostrecord_add "" "${hostname%.$DOMAIN}${DOMAIN:+.$DOMAIN ${hostname%.$DOMAIN}}" "$lanaddr"
+		dhcp_domain_add "" "$hostname" "$lanaddr"
 	}
 
 	echo >> $CONFIGFILE
