@@ -293,6 +293,11 @@ dhcp_host_add() {
 	config_get ip "$cfg" ip
 	[ -n "$ip" -o -n "$name" ] || return 0
 
+	config_get_bool dns "$cfg" dns 0
+	[ "$dns" = "1" -a -n "$ip" -a -n "$name" ] && {
+		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> $HOSTFILE
+	}
+
 	config_get mac "$cfg" mac
 	[ -z "$mac" ] && {
 		[ -n "$name" ] || return 0
@@ -309,11 +314,6 @@ dhcp_host_add() {
 	[ "$broadcast" = "0" ] && broadcast=
 
 	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}"
-
-	config_get_bool dns "$cfg" dns 0
-	[ "$dns" = "1" ] && {
-		echo "$ip $name${DOMAIN:+.$DOMAIN}" >> $HOSTFILE
-	}
 }
 
 dhcp_tag_add() {
