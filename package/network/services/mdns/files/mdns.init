@@ -41,6 +41,7 @@ start_service() {
 	for n in $network; do
 		procd_add_interface_trigger "interface.*" $n /etc/init.d/mdns reload	
 	done
+	procd_add_raw_trigger "instance.update" 5000 "/bin/ubus" "call" "mdns" "reload"
 	procd_close_trigger
 	procd_close_instance
 }
