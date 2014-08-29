@@ -156,7 +156,7 @@
 +	select SOC_AR71XX
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_SPI
++	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +
 +config ATH79_MACH_HORNET_UB
@@ -225,7 +225,7 @@
 +	select SOC_QCA955X
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_SPI
++	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +	help
@@ -238,7 +238,7 @@
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_NFC
-+	select ATH79_DEV_SPI
++	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +	help
@@ -350,7 +350,7 @@
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_SPI
++	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
@@ -700,7 +700,8 @@
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
 -	select ATH79_DEV_NFC
- 	select ATH79_DEV_SPI
+-	select ATH79_DEV_SPI
++	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
 -	help
@@ -904,7 +905,8 @@
  	select ATH79_DEV_ETH
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
- 	select ATH79_DEV_SPI
+-	select ATH79_DEV_SPI
++	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
 -	help
 -	  Say 'Y' here if you want your kernel to support the
