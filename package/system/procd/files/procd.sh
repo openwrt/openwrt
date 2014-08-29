@@ -321,10 +321,10 @@ procd_add_mdns_service() {
 	json_select ..
 }
 
-_procd_add_mdns() {
+procd_add_mdns() {
 	procd_open_data
 	json_add_object "mdns"
-	mdns_add_service $@
+	procd_add_mdns_service $@
 	json_close_object
 	procd_close_data
 }
@@ -364,5 +364,4 @@ _procd_wrapper \
 	procd_append_param \
 	procd_add_validation \
 	procd_set_config_changed \
-	procd_add_mdns \
 	procd_kill
