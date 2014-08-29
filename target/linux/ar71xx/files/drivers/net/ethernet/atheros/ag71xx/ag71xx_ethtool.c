@@ -75,6 +75,9 @@ static void ag71xx_ethtool_get_ringparam(struct net_device *dev,
 	er->rx_pending = ag->rx_ring.size;
 	er->rx_mini_pending = 0;
 	er->rx_jumbo_pending = 0;
+
+	if (ag->tx_ring.desc_split)
+		er->tx_pending /= AG71XX_TX_RING_DS_PER_PKT;
 }
 
 static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
@@ -102,6 +105,9 @@ static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
 		if (err)
 			return err;
 	}
+
+	if (ag->tx_ring.desc_split)
+		tx_size *= AG71XX_TX_RING_DS_PER_PKT;
 
 	ag->tx_ring.size = tx_size;
 	ag->rx_ring.size = rx_size;
