@@ -195,6 +195,24 @@ _procd_add_config_trigger() {
 	json_close_array
 }
 
+_procd_add_raw_trigger() {
+	json_add_array
+	_procd_add_array_data "$1"
+	shift
+	local timeout=$1
+	shift
+
+	json_add_array
+	json_add_array
+	_procd_add_array_data "run_script" "$@"
+	json_close_array
+	json_close_array
+
+	json_add_int "" "$timeout"
+
+	json_close_array
+}
+
 _procd_add_reload_trigger() {
 	local script=$(readlink "$initscript")
 	local name=$(basename ${script:-$initscript})
@@ -287,6 +305,30 @@ _procd_set_config_changed() {
 	ubus call service event "$(json_dump)"
 }
 
+procd_add_mdns_service() {
+	local service proto port
+	service=$1; shift
+	proto=$1; shift
+	port=$1; shift
+	json_add_object "${service}_$port"
+	json_add_string "service" "_$service._$proto.local"
+	json_add_int port "$port"
+	[ -n "$1" ] && {
+		json_add_array txt
+		for txt in $@; do json_add_string "" $txt; done
+		json_select ..
+	}
+	json_select ..
+}
+
+_procd_add_mdns() {
+	procd_open_data
+	json_add_object "mdns"
+	mdns_add_service $@
+	json_close_object
+	procd_close_data
+}
+
 uci_validate_section()
 {
 	local _package="$1"
@@ -306,6 +348,7 @@ _procd_wrapper \
 	procd_open_service \
 	procd_close_service \
 	procd_add_instance \
+	procd_add_raw_trigger \
 	procd_add_config_trigger \
 	procd_add_interface_trigger \
 	procd_add_reload_trigger \
@@ -321,4 +364,5 @@ _procd_wrapper \
 	procd_append_param \
 	procd_add_validation \
 	procd_set_config_changed \
+	procd_add_mdns \
 	procd_kill
