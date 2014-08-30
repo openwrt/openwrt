@@ -10,6 +10,7 @@ BOARD:=lantiq
 BOARDNAME:=Lantiq
 FEATURES:=squashfs
 SUBTARGETS=xway xrx200
+MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 LINUX_VERSION:=3.10.49
 

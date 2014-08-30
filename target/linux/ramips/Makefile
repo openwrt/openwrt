@@ -11,6 +11,7 @@ BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT3xxx
 SUBTARGETS:=rt305x mt7620a mt7620n mt7621 rt3883 rt288x
 FEATURES:=squashfs gpio
+MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 LINUX_VERSION:=3.14.16
 
