@@ -1,0 +1,53 @@
+From 02c987fb8a3607ab6e0ead0e5aaa7da753ce9537 Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Fri, 21 Feb 2014 11:09:50 +0000
+Subject: [PATCH 024/182] ARM: dts: msm: Add krait-pmu to platforms with Krait
+ CPUs
+
+Allows us to probe the performance counters on Krait CPUs.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Will Deacon <will.deacon@arm.com>
+[olof: Moved 8960 contents to the dtsi instead]
+Signed-off-by: Olof Johansson <olof@lixom.net>
+---
+ arch/arm/boot/dts/qcom-msm8960.dtsi |    6 ++++++
+ arch/arm/boot/dts/qcom-msm8974.dtsi |    5 +++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/qcom-msm8960.dtsi b/arch/arm/boot/dts/qcom-msm8960.dtsi
+index ecfba72..997b7b9 100644
+--- a/arch/arm/boot/dts/qcom-msm8960.dtsi
++++ b/arch/arm/boot/dts/qcom-msm8960.dtsi
+@@ -39,6 +39,12 @@
+ 		};
+ 	};
+ 
++	cpu-pmu {
++		compatible = "qcom,krait-pmu";
++		interrupts = <1 10 0x304>;
++		qcom,no-pc-write;
++	};
++
+ 	intc: interrupt-controller@2000000 {
+ 		compatible = "qcom,msm-qgic2";
+ 		interrupt-controller;
+diff --git a/arch/arm/boot/dts/qcom-msm8974.dtsi b/arch/arm/boot/dts/qcom-msm8974.dtsi
+index 011eb09..f687239 100644
+--- a/arch/arm/boot/dts/qcom-msm8974.dtsi
++++ b/arch/arm/boot/dts/qcom-msm8974.dtsi
+@@ -52,6 +52,11 @@
+ 		};
+ 	};
+ 
++	cpu-pmu {
++		compatible = "qcom,krait-pmu";
++		interrupts = <1 7 0xf04>;
++	};
++
+ 	soc: soc {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+-- 
+1.7.10.4
+

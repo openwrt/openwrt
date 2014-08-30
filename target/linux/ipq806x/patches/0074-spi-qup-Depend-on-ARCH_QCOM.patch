@@ -1,0 +1,36 @@
+From 5148138d2b879c7b024fa3865fb3980c6dc84fcc Mon Sep 17 00:00:00 2001
+From: Paul Bolle <pebolle@tiscali.nl>
+Date: Mon, 7 Apr 2014 16:15:45 +0200
+Subject: [PATCH 074/182] spi: qup: Depend on ARCH_QCOM
+
+Commit 8fc1b0f87d9f ("ARM: qcom: Split Qualcomm support into legacy and
+multiplatform") removed Kconfig symbol ARCH_MSM_DT. But that commit
+left one (optional) dependency on ARCH_MSM_DT untouched.
+
+Three Kconfig symbols used to depend on ARCH_MSM_DT: ARCH_MSM8X60,
+ARCH_MSM8960, and ARCH_MSM8974. These three symbols now depend on
+ARCH_QCOM. So it appears this driver needs to depend on ARCH_QCOM too.
+
+Signed-off-by: Paul Bolle <pebolle@tiscali.nl>
+Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/spi/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 2d9111c..a2d3570 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -383,7 +383,7 @@ config SPI_RSPI
+ 
+ config SPI_QUP
+ 	tristate "Qualcomm SPI controller with QUP interface"
+-	depends on ARCH_MSM_DT || (ARM && COMPILE_TEST)
++	depends on ARCH_QCOM || (ARM && COMPILE_TEST)
+ 	help
+ 	  Qualcomm Universal Peripheral (QUP) core is an AHB slave that
+ 	  provides a common data path (an output FIFO and an input FIFO)
+-- 
+1.7.10.4
+

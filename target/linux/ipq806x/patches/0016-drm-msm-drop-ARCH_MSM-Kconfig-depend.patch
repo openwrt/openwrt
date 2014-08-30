@@ -1,0 +1,33 @@
+From aa3cf89746c43172517378224277ba961c46e28c Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Thu, 30 Jan 2014 14:45:05 -0600
+Subject: [PATCH 016/182] drm/msm: drop ARCH_MSM Kconfig depend
+
+The ARCH_MSM depend is redundant with ARCH_MSM8960, so we can remove it.
+Additionally, we are splitting Qualcomm MSM support into legacy (ARCH_MSM)
+and multiplatform (ARCH_QCOM).  The MSM8960 with be ARCH_QCOM going forward
+so dropping ARCH_MSM will work properly for the new ARCH_QCOM multiplatform
+build.
+
+Acked-by: Rob Clark <robdclark@gmail.com>
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+---
+ drivers/gpu/drm/msm/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/msm/Kconfig b/drivers/gpu/drm/msm/Kconfig
+index c69d1e0..b698497 100644
+--- a/drivers/gpu/drm/msm/Kconfig
++++ b/drivers/gpu/drm/msm/Kconfig
+@@ -3,7 +3,7 @@ config DRM_MSM
+ 	tristate "MSM DRM"
+ 	depends on DRM
+ 	depends on MSM_IOMMU
+-	depends on (ARCH_MSM && ARCH_MSM8960) || (ARM && COMPILE_TEST)
++	depends on ARCH_MSM8960 || (ARM && COMPILE_TEST)
+ 	select DRM_KMS_HELPER
+ 	select SHMEM
+ 	select TMPFS
+-- 
+1.7.10.4
+

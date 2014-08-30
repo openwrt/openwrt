@@ -1,0 +1,75 @@
+From 6632619d49f0f90c4d74caad67749864f154cae4 Mon Sep 17 00:00:00 2001
+From: Georgi Djakov <gdjakov@mm-sol.com>
+Date: Fri, 31 Jan 2014 16:21:56 +0200
+Subject: [PATCH 090/182] ARM: dts: msm: Add SDHC controller nodes for MSM8974
+ and DB8074 board
+
+Add support for the 2 SDHC controllers on the DB8074 board.  The first
+controller (at 0xf9824900) is connected to an on board soldered eMMC.
+The second controller (at 0xf98a4900) is connected to a uSD card slot.
+
+Signed-off-by: Georgi Djakov <gdjakov@mm-sol.com>
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+---
+ arch/arm/boot/dts/qcom-apq8074-dragonboard.dts |   13 +++++++++++++
+ arch/arm/boot/dts/qcom-msm8974.dtsi            |   22 ++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
+
+diff --git a/arch/arm/boot/dts/qcom-apq8074-dragonboard.dts b/arch/arm/boot/dts/qcom-apq8074-dragonboard.dts
+index 13ac3e2..92320c4 100644
+--- a/arch/arm/boot/dts/qcom-apq8074-dragonboard.dts
++++ b/arch/arm/boot/dts/qcom-apq8074-dragonboard.dts
+@@ -3,4 +3,17 @@
+ / {
+ 	model = "Qualcomm APQ8074 Dragonboard";
+ 	compatible = "qcom,apq8074-dragonboard", "qcom,apq8074";
++
++	soc: soc {
++		sdhci@f9824900 {
++			bus-width = <8>;
++			non-removable;
++			status = "ok";
++		};
++
++		sdhci@f98a4900 {
++			cd-gpios = <&msmgpio 62 0x1>;
++			bus-width = <4>;
++		};
++	};
+ };
+diff --git a/arch/arm/boot/dts/qcom-msm8974.dtsi b/arch/arm/boot/dts/qcom-msm8974.dtsi
+index 23aa387..c530a33 100644
+--- a/arch/arm/boot/dts/qcom-msm8974.dtsi
++++ b/arch/arm/boot/dts/qcom-msm8974.dtsi
+@@ -192,6 +192,28 @@
+ 			clock-names = "core", "iface";
+ 		};
+ 
++		sdhci@f9824900 {
++			compatible = "qcom,sdhci-msm-v4";
++			reg = <0xf9824900 0x11c>, <0xf9824000 0x800>;
++			reg-names = "hc_mem", "core_mem";
++			interrupts = <0 123 0>, <0 138 0>;
++			interrupt-names = "hc_irq", "pwr_irq";
++			clocks = <&gcc GCC_SDCC1_APPS_CLK>, <&gcc GCC_SDCC1_AHB_CLK>;
++			clock-names = "core", "iface";
++			status = "disabled";
++		};
++
++		sdhci@f98a4900 {
++			compatible = "qcom,sdhci-msm-v4";
++			reg = <0xf98a4900 0x11c>, <0xf98a4000 0x800>;
++			reg-names = "hc_mem", "core_mem";
++			interrupts = <0 125 0>, <0 221 0>;
++			interrupt-names = "hc_irq", "pwr_irq";
++			clocks = <&gcc GCC_SDCC2_APPS_CLK>, <&gcc GCC_SDCC2_AHB_CLK>;
++			clock-names = "core", "iface";
++			status = "disabled";
++		};
++
+ 		rng@f9bff000 {
+ 			compatible = "qcom,prng";
+ 			reg = <0xf9bff000 0x200>;
+-- 
+1.7.10.4
+

@@ -1,0 +1,36 @@
+From 6417bb8469eb495d7f4e4b6b0ac08cbc1b8606cb Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Fri, 16 May 2014 16:07:10 -0700
+Subject: [PATCH 104/182] clk: qcom: Return highest rate when round_rate()
+ exceeds plan
+
+Some drivers may want to call clk_set_rate() with a very large
+number to force the clock to go as fast as it possibly can
+without having to know the range between the highest rate and
+second highest rate. Add support for this by defaulting to the
+highest rate in the frequency table if we can't find a frequency
+greater than what is requested.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Mike Turquette <mturquette@linaro.org>
+---
+ drivers/clk/qcom/clk-rcg2.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clk/qcom/clk-rcg2.c b/drivers/clk/qcom/clk-rcg2.c
+index 0996a3a..cbecaec 100644
+--- a/drivers/clk/qcom/clk-rcg2.c
++++ b/drivers/clk/qcom/clk-rcg2.c
+@@ -181,7 +181,8 @@ struct freq_tbl *find_freq(const struct freq_tbl *f, unsigned long rate)
+ 		if (rate <= f->freq)
+ 			return f;
+ 
+-	return NULL;
++	/* Default to our fastest rate */
++	return f - 1;
+ }
+ 
+ static long _freq_tbl_determine_rate(struct clk_hw *hw,
+-- 
+1.7.10.4
+

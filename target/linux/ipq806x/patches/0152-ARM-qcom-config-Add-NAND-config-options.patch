@@ -1,0 +1,27 @@
+From d04f697bf7cfe756de6187be1d0e5669d4d5bca0 Mon Sep 17 00:00:00 2001
+From: Andy Gross <agross@codeaurora.org>
+Date: Mon, 16 Jun 2014 17:30:04 -0500
+Subject: [PATCH 152/182] ARM: qcom: config: Add NAND config options
+
+Add NAND config options to enable QCOM NAND controller
+
+Signed-off-by: Andy Gross <agross@codeaurora.org>
+---
+ arch/arm/configs/qcom_defconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/qcom_defconfig b/arch/arm/configs/qcom_defconfig
+index 85a35af..e3f9013 100644
+--- a/arch/arm/configs/qcom_defconfig
++++ b/arch/arm/configs/qcom_defconfig
+@@ -56,6 +56,7 @@ CONFIG_DEVTMPFS_MOUNT=y
+ CONFIG_MTD=y
+ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_M25P80=y
++CONFIG_MTD_NAND=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_SCSI_TGT=y
+-- 
+1.7.10.4
+

@@ -1,0 +1,43 @@
+From 95c831bca9181df62230171fd66286d08ea886a8 Mon Sep 17 00:00:00 2001
+From: Marek Szyprowski <m.szyprowski@samsung.com>
+Date: Fri, 28 Feb 2014 14:42:54 +0100
+Subject: [PATCH 052/182] arm: add support for reserved memory defined by
+ device tree
+
+Enable reserved memory initialization from device tree.
+
+Signed-off-by: Marek Szyprowski <m.szyprowski@samsung.com>
+Signed-off-by: Grant Likely <grant.likely@linaro.org>
+---
+ arch/arm/Kconfig   |    1 +
+ arch/arm/mm/init.c |    2 ++
+ 2 files changed, 3 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index d02ce70..4332e8d 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -1922,6 +1922,7 @@ config USE_OF
+ 	select IRQ_DOMAIN
+ 	select OF
+ 	select OF_EARLY_FLATTREE
++	select OF_RESERVED_MEM
+ 	help
+ 	  Include support for flattened device tree machine descriptions.
+ 
+diff --git a/arch/arm/mm/init.c b/arch/arm/mm/init.c
+index 804d615..2a77ba8 100644
+--- a/arch/arm/mm/init.c
++++ b/arch/arm/mm/init.c
+@@ -323,6 +323,8 @@ void __init arm_memblock_init(struct meminfo *mi,
+ 	if (mdesc->reserve)
+ 		mdesc->reserve();
+ 
++	early_init_fdt_scan_reserved_mem();
++
+ 	/*
+ 	 * reserve memory for DMA contigouos allocations,
+ 	 * must come from DMA area inside low memory
+-- 
+1.7.10.4
+

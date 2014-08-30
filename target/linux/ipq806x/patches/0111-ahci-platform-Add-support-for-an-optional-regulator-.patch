@@ -1,0 +1,142 @@
+From 967f4a7821a3356d9d3c8b641537cd6d5eb15439 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sat, 22 Feb 2014 16:53:32 +0100
+Subject: [PATCH 111/182] ahci-platform: Add support for an optional regulator
+ for sata-target power
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+---
+ .../devicetree/bindings/ata/ahci-platform.txt      |    1 +
+ drivers/ata/ahci.h                                 |    2 ++
+ drivers/ata/ahci_platform.c                        |   36 ++++++++++++++++++--
+ 3 files changed, 37 insertions(+), 2 deletions(-)
+
+diff --git a/Documentation/devicetree/bindings/ata/ahci-platform.txt b/Documentation/devicetree/bindings/ata/ahci-platform.txt
+index 3ced07d..1ac807f 100644
+--- a/Documentation/devicetree/bindings/ata/ahci-platform.txt
++++ b/Documentation/devicetree/bindings/ata/ahci-platform.txt
+@@ -11,6 +11,7 @@ Required properties:
+ Optional properties:
+ - dma-coherent      : Present if dma operations are coherent
+ - clocks            : a list of phandle + clock specifier pairs
++- target-supply     : regulator for SATA target power
+ 
+ Example:
+         sata@ffe08000 {
+diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
+index c12862b..bf8100c 100644
+--- a/drivers/ata/ahci.h
++++ b/drivers/ata/ahci.h
+@@ -37,6 +37,7 @@
+ 
+ #include <linux/clk.h>
+ #include <linux/libata.h>
++#include <linux/regulator/consumer.h>
+ 
+ /* Enclosure Management Control */
+ #define EM_CTRL_MSG_TYPE              0x000f0000
+@@ -323,6 +324,7 @@ struct ahci_host_priv {
+ 	u32			em_buf_sz;	/* EM buffer size in byte */
+ 	u32			em_msg_type;	/* EM message type */
+ 	struct clk		*clks[AHCI_MAX_CLKS]; /* Optional */
++	struct regulator	*target_pwr;	/* Optional */
+ 	void			*plat_data;	/* Other platform data */
+ 	/*
+ 	 * Optional ahci_start_engine override, if not set this gets set to the
+diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
+index 2342a42..8f18ebe 100644
+--- a/drivers/ata/ahci_platform.c
++++ b/drivers/ata/ahci_platform.c
+@@ -186,6 +186,14 @@ static int ahci_probe(struct platform_device *pdev)
+ 		return -ENOMEM;
+ 	}
+ 
++	hpriv->target_pwr = devm_regulator_get_optional(dev, "target");
++	if (IS_ERR(hpriv->target_pwr)) {
++		rc = PTR_ERR(hpriv->target_pwr);
++		if (rc == -EPROBE_DEFER)
++			return -EPROBE_DEFER;
++		hpriv->target_pwr = NULL;
++	}
++
+ 	for (i = 0; i < AHCI_MAX_CLKS; i++) {
+ 		/*
+ 		 * For now we must use clk_get(dev, NULL) for the first clock,
+@@ -207,9 +215,15 @@ static int ahci_probe(struct platform_device *pdev)
+ 		hpriv->clks[i] = clk;
+ 	}
+ 
++	if (hpriv->target_pwr) {
++		rc = regulator_enable(hpriv->target_pwr);
++		if (rc)
++			goto free_clk;
++	}
++
+ 	rc = ahci_enable_clks(dev, hpriv);
+ 	if (rc)
+-		goto free_clk;
++		goto disable_regulator;
+ 
+ 	/*
+ 	 * Some platforms might need to prepare for mmio region access,
+@@ -292,6 +306,9 @@ pdata_exit:
+ 		pdata->exit(dev);
+ disable_unprepare_clk:
+ 	ahci_disable_clks(hpriv);
++disable_regulator:
++	if (hpriv->target_pwr)
++		regulator_disable(hpriv->target_pwr);
+ free_clk:
+ 	ahci_put_clks(hpriv);
+ 	return rc;
+@@ -308,6 +325,9 @@ static void ahci_host_stop(struct ata_host *host)
+ 
+ 	ahci_disable_clks(hpriv);
+ 	ahci_put_clks(hpriv);
++
++	if (hpriv->target_pwr)
++		regulator_disable(hpriv->target_pwr);
+ }
+ 
+ #ifdef CONFIG_PM_SLEEP
+@@ -344,6 +364,9 @@ static int ahci_suspend(struct device *dev)
+ 
+ 	ahci_disable_clks(hpriv);
+ 
++	if (hpriv->target_pwr)
++		regulator_disable(hpriv->target_pwr);
++
+ 	return 0;
+ }
+ 
+@@ -354,9 +377,15 @@ static int ahci_resume(struct device *dev)
+ 	struct ahci_host_priv *hpriv = host->private_data;
+ 	int rc;
+ 
++	if (hpriv->target_pwr) {
++		rc = regulator_enable(hpriv->target_pwr);
++		if (rc)
++			return rc;
++	}
++
+ 	rc = ahci_enable_clks(dev, hpriv);
+ 	if (rc)
+-		return rc;
++		goto disable_regulator;
+ 
+ 	if (pdata && pdata->resume) {
+ 		rc = pdata->resume(dev);
+@@ -378,6 +407,9 @@ static int ahci_resume(struct device *dev)
+ 
+ disable_unprepare_clk:
+ 	ahci_disable_clks(hpriv);
++disable_regulator:
++	if (hpriv->target_pwr)
++		regulator_disable(hpriv->target_pwr);
+ 
+ 	return rc;
+ }
+-- 
+1.7.10.4
+

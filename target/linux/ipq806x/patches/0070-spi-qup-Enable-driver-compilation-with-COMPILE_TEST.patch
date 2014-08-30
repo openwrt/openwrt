@@ -1,0 +1,30 @@
+From 4706cb5844e0f1a08ab25e103f6415fde5328ddc Mon Sep 17 00:00:00 2001
+From: Axel Lin <axel.lin@ingics.com>
+Date: Sun, 23 Feb 2014 13:28:33 +0800
+Subject: [PATCH 070/182] spi: qup: Enable driver compilation with
+ COMPILE_TEST
+
+This helps increasing build testing coverage.
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/spi/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
+index 9e9e3ed..e6a04f8 100644
+--- a/drivers/spi/Kconfig
++++ b/drivers/spi/Kconfig
+@@ -383,7 +383,7 @@ config SPI_RSPI
+ 
+ config SPI_QUP
+ 	tristate "Qualcomm SPI controller with QUP interface"
+-	depends on ARCH_MSM_DT
++	depends on ARCH_MSM_DT || COMPILE_TEST
+ 	help
+ 	  Qualcomm Universal Peripheral (QUP) core is an AHB slave that
+ 	  provides a common data path (an output FIFO and an input FIFO)
+-- 
+1.7.10.4
+

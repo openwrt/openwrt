@@ -1,0 +1,32 @@
+From 6e8707828be07397ee8ee437a6ef1b8f73f82287 Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Thu, 30 Jan 2014 14:46:08 -0600
+Subject: [PATCH 017/182] power: reset: msm - switch Kconfig to ARCH_QCOM
+ depends
+
+We've split Qualcomm MSM support into legacy and multiplatform.  The reset
+driver is only relevant on the multiplatform supported SoCs so switch the
+Kconfig depends to ARCH_QCOM.
+
+Acked-by: Dmitry Eremin-Solenikov
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+---
+ drivers/power/reset/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/power/reset/Kconfig b/drivers/power/reset/Kconfig
+index 6d452a7..fa0e4e0 100644
+--- a/drivers/power/reset/Kconfig
++++ b/drivers/power/reset/Kconfig
+@@ -22,7 +22,7 @@ config POWER_RESET_GPIO
+ 
+ config POWER_RESET_MSM
+ 	bool "Qualcomm MSM power-off driver"
+-	depends on POWER_RESET && ARCH_MSM
++	depends on POWER_RESET && ARCH_QCOM
+ 	help
+ 	  Power off and restart support for Qualcomm boards.
+ 
+-- 
+1.7.10.4
+

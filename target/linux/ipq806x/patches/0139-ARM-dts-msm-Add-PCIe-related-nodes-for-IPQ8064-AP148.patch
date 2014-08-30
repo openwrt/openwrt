@@ -1,0 +1,179 @@
+From 7c6525a0d5cf88f9244187fbe8ee293fa4ee43c1 Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Mon, 12 May 2014 19:36:23 -0500
+Subject: [PATCH 139/182] ARM: dts: msm: Add PCIe related nodes for
+ IPQ8064/AP148
+
+---
+ arch/arm/boot/dts/qcom-ipq8064-ap148.dts |   38 ++++++++++++
+ arch/arm/boot/dts/qcom-ipq8064.dtsi      |   93 ++++++++++++++++++++++++++++++
+ 2 files changed, 131 insertions(+)
+
+diff --git a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+index 158a09f..11f7a77 100644
+--- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
++++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+@@ -21,6 +21,22 @@
+ 				bias-disable;
+ 			};
+ 
++			pcie1_pins: pcie1_pinmux {
++				mux {
++					pins = "gpio3";
++					drive-strength = <2>;
++					bias-disable;
++				};
++			};
++
++			pcie2_pins: pcie2_pinmux {
++				mux {
++					pins = "gpio48";
++					drive-strength = <2>;
++					bias-disable;
++				};
++			};
++
+ 			spi_pins: spi_pins {
+ 				mux {
+ 					pins = "gpio18", "gpio19", "gpio21";
+@@ -80,5 +96,27 @@
+ 				};
+ 			};
+ 		};
++
++		pci@1b500000 {
++			status = "ok";
++			reset-gpio = <&qcom_pinmux 3 0>;
++			pinctrl-0 = <&pcie1_pins>;
++			pinctrl-names = "default";
++
++			ranges = <0x00000000 0 0x00000000 0x0ff00000 0 0x00100000   /* configuration space */
++				  0x81000000 0 0	  0x0fe00000 0 0x00100000   /* downstream I/O */
++				  0x82000000 0 0x00000000 0x08000000 0 0x07e00000>; /* non-prefetchable memory */
++		};
++
++		pci@1b700000 {
++			status = "ok";
++			reset-gpio = <&qcom_pinmux 48 0>;
++			pinctrl-0 = <&pcie2_pins>;
++			pinctrl-names = "default";
++
++			ranges = <0x00000000 0 0x00000000 0x31f00000 0 0x00100000   /* configuration space */
++				  0x81000000 0 0	  0x31e00000 0 0x00100000   /* downstream I/O */
++				  0x82000000 0 0x00000000 0x2e000000 0 0x03e00000>; /* non-prefetchable memory */
++		};
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/qcom-ipq8064.dtsi b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+index 244f857..42a651f 100644
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -2,6 +2,7 @@
+ 
+ #include "skeleton.dtsi"
+ #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
++#include <dt-bindings/reset/qcom,gcc-ipq806x.h>
+ #include <dt-bindings/soc/qcom,gsbi.h>
+ 
+ / {
+@@ -246,5 +247,97 @@
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};
++
++		pci@1b500000 {
++			compatible = "qcom,pcie-ipq8064";
++			reg = <0x1b500000 0x1000
++			       0x1b502000 0x80
++			       0x1b600000 0x100
++				>;
++			reg-names = "base", "elbi", "parf";
++
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++			interrupts = <0 35 0x0
++				      0 36 0x0
++				      0 37 0x0
++				      0 38 0x0
++				      0 39 0x0>;
++			resets = <&gcc PCIE_ACLK_RESET>,
++				 <&gcc PCIE_HCLK_RESET>,
++				 <&gcc PCIE_POR_RESET>,
++				 <&gcc PCIE_PCI_RESET>,
++				 <&gcc PCIE_PHY_RESET>;
++			reset-names = "axi", "ahb", "por", "pci", "phy";
++
++			clocks = <&gcc PCIE_A_CLK>,
++				 <&gcc PCIE_H_CLK>,
++				 <&gcc PCIE_PHY_CLK>;
++			clock-names = "core", "iface", "phy";
++			status = "disabled";
++		};
++
++		pci@1b700000 {
++			compatible = "qcom,pcie-ipq8064";
++			reg = <0x1b700000 0x1000
++			       0x1b702000 0x80
++			       0x1b800000 0x100
++				>;
++			reg-names = "base", "elbi", "parf";
++
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++
++			interrupts = <0 57 0x0
++				      0 58 0x0
++				      0 59 0x0
++				      0 60 0x0
++				      0 61 0x0>;
++			resets = <&gcc PCIE_1_ACLK_RESET>,
++				 <&gcc PCIE_1_HCLK_RESET>,
++				 <&gcc PCIE_1_POR_RESET>,
++				 <&gcc PCIE_1_PCI_RESET>,
++				 <&gcc PCIE_1_PHY_RESET>;
++			reset-names = "axi", "ahb", "por", "pci", "phy";
++
++			clocks = <&gcc PCIE_1_A_CLK>,
++				 <&gcc PCIE_1_H_CLK>,
++				 <&gcc PCIE_1_PHY_CLK>;
++			clock-names = "core", "iface", "phy";
++			status = "disabled";
++		};
++
++		pci@1b900000 {
++			compatible = "qcom,pcie-ipq8064";
++			reg = <0x1b900000 0x1000
++			       0x1b902000 0x80
++			       0x1ba00000 0x100
++				>;
++			reg-names = "base", "elbi", "parf";
++
++			#address-cells = <3>;
++			#size-cells = <2>;
++			device_type = "pci";
++
++			interrupts = <0 71 0x0
++				      0 72 0x0
++				      0 73 0x0
++				      0 74 0x0
++				      0 75 0x0>;
++			resets = <&gcc PCIE_2_ACLK_RESET>,
++				 <&gcc PCIE_2_HCLK_RESET>,
++				 <&gcc PCIE_2_POR_RESET>,
++				 <&gcc PCIE_2_PCI_RESET>,
++				 <&gcc PCIE_2_PHY_RESET>;
++			reset-names = "axi", "ahb", "por", "pci", "phy";
++
++			clocks = <&gcc PCIE_2_A_CLK>,
++				 <&gcc PCIE_2_H_CLK>,
++				 <&gcc PCIE_2_PHY_CLK>;
++			clock-names = "core", "iface", "phy";
++			status = "disabled";
++		};
+ 	};
+ };
+-- 
+1.7.10.4
+

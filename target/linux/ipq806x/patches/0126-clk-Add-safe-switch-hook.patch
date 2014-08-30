@@ -1,0 +1,155 @@
+From b7b3ceec506179d59e46e3a8ea8b370872cc7fcb Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Mon, 31 Mar 2014 16:52:29 -0700
+Subject: [PATCH 126/182] clk: Add safe switch hook
+
+Sometimes clocks can't accept their parent source turning off
+while the source is reprogrammed to a different rate. Most
+notably CPU clocks require a way to switch away from the current
+PLL they're running on, reprogram that PLL to a new rate, and
+then switch back to the PLL with the new rate once they're done.
+Add a hook that drivers can implement allowing them to return a
+'safe parent' that they can switch their parent to while the
+upstream source is reprogrammed to support this.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+---
+ drivers/clk/clk.c            |   53 ++++++++++++++++++++++++++++++++++++------
+ include/linux/clk-private.h  |    2 ++
+ include/linux/clk-provider.h |    1 +
+ 3 files changed, 49 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index b94a311..0582068 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -1356,6 +1356,7 @@ static void clk_calc_subtree(struct clk *clk, unsigned long new_rate,
+ 			     struct clk *new_parent, u8 p_index)
+ {
+ 	struct clk *child;
++	struct clk *parent;
+ 
+ 	clk->new_rate = new_rate;
+ 	clk->new_parent = new_parent;
+@@ -1365,6 +1366,17 @@ static void clk_calc_subtree(struct clk *clk, unsigned long new_rate,
+ 	if (new_parent && new_parent != clk->parent)
+ 		new_parent->new_child = clk;
+ 
++	if (clk->ops->get_safe_parent) {
++		parent = clk->ops->get_safe_parent(clk->hw);
++		if (parent) {
++			p_index = clk_fetch_parent_index(clk, parent);
++			clk->safe_parent_index = p_index;
++			clk->safe_parent = parent;
++		}
++	} else {
++		clk->safe_parent = NULL;
++	}
++
+ 	hlist_for_each_entry(child, &clk->children, child_node) {
+ 		if (child->ops->recalc_rate)
+ 			child->new_rate = child->ops->recalc_rate(child->hw, new_rate);
+@@ -1450,14 +1462,42 @@ out:
+ static struct clk *clk_propagate_rate_change(struct clk *clk, unsigned long event)
+ {
+ 	struct clk *child, *tmp_clk, *fail_clk = NULL;
++	struct clk *old_parent;
+ 	int ret = NOTIFY_DONE;
+ 
+-	if (clk->rate == clk->new_rate)
++	if (clk->rate == clk->new_rate && event != POST_RATE_CHANGE)
+ 		return NULL;
+ 
++	switch (event) {
++	case PRE_RATE_CHANGE:
++		if (clk->safe_parent)
++			clk->ops->set_parent(clk->hw, clk->safe_parent_index);
++		break;
++	case POST_RATE_CHANGE:
++		if (clk->safe_parent) {
++			old_parent = __clk_set_parent_before(clk,
++							     clk->new_parent);
++			if (clk->ops->set_rate_and_parent) {
++				clk->ops->set_rate_and_parent(clk->hw,
++						clk->new_rate,
++						clk->new_parent ?
++						clk->new_parent->rate : 0,
++						clk->new_parent_index);
++			} else if (clk->ops->set_parent) {
++				clk->ops->set_parent(clk->hw,
++						clk->new_parent_index);
++			}
++			__clk_set_parent_after(clk, clk->new_parent,
++					       old_parent);
++		}
++		break;
++	}
++
+ 	if (clk->notifier_count) {
+-		ret = __clk_notify(clk, event, clk->rate, clk->new_rate);
+-		if (ret & NOTIFY_STOP_MASK)
++		if (event != POST_RATE_CHANGE)
++			ret = __clk_notify(clk, event, clk->rate,
++					   clk->new_rate);
++		if (ret & NOTIFY_STOP_MASK && event != POST_RATE_CHANGE)
+ 			fail_clk = clk;
+ 	}
+ 
+@@ -1499,7 +1539,8 @@ static void clk_change_rate(struct clk *clk)
+ 	else if (clk->parent)
+ 		best_parent_rate = clk->parent->rate;
+ 
+-	if (clk->new_parent && clk->new_parent != clk->parent) {
++	if (clk->new_parent && clk->new_parent != clk->parent &&
++			!clk->safe_parent) {
+ 		old_parent = __clk_set_parent_before(clk, clk->new_parent);
+ 
+ 		if (clk->ops->set_rate_and_parent) {
+@@ -1522,9 +1563,6 @@ static void clk_change_rate(struct clk *clk)
+ 	else
+ 		clk->rate = best_parent_rate;
+ 
+-	if (clk->notifier_count && old_rate != clk->rate)
+-		__clk_notify(clk, POST_RATE_CHANGE, old_rate, clk->rate);
+-
+ 	hlist_for_each_entry(child, &clk->children, child_node) {
+ 		/* Skip children who will be reparented to another clock */
+ 		if (child->new_parent && child->new_parent != clk)
+@@ -1598,6 +1636,7 @@ int clk_set_rate(struct clk *clk, unsigned long rate)
+ 	/* change the rates */
+ 	clk_change_rate(top);
+ 
++	clk_propagate_rate_change(top, POST_RATE_CHANGE);
+ out:
+ 	clk_prepare_unlock();
+ 
+diff --git a/include/linux/clk-private.h b/include/linux/clk-private.h
+index efbf70b..f48684a 100644
+--- a/include/linux/clk-private.h
++++ b/include/linux/clk-private.h
+@@ -38,8 +38,10 @@ struct clk {
+ 	struct clk		**parents;
+ 	u8			num_parents;
+ 	u8			new_parent_index;
++	u8			safe_parent_index;
+ 	unsigned long		rate;
+ 	unsigned long		new_rate;
++	struct clk		*safe_parent;
+ 	struct clk		*new_parent;
+ 	struct clk		*new_child;
+ 	unsigned long		flags;
+diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
+index 939533d..300fcb8 100644
+--- a/include/linux/clk-provider.h
++++ b/include/linux/clk-provider.h
+@@ -157,6 +157,7 @@ struct clk_ops {
+ 					struct clk **best_parent_clk);
+ 	int		(*set_parent)(struct clk_hw *hw, u8 index);
+ 	u8		(*get_parent)(struct clk_hw *hw);
++	struct clk	*(*get_safe_parent)(struct clk_hw *hw);
+ 	int		(*set_rate)(struct clk_hw *hw, unsigned long,
+ 				    unsigned long);
+ 	int		(*set_rate_and_parent)(struct clk_hw *hw,
+-- 
+1.7.10.4
+

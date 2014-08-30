@@ -1,0 +1,1482 @@
+From 8c2a00c0129d6f718245f7a613c2bb28976b7973 Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Tue, 21 Jan 2014 17:14:10 -0600
+Subject: [PATCH 005/182] ARM: qcom: Split Qualcomm support into legacy and
+ multiplatform
+
+Introduce a new mach-qcom that will support SoCs that intend to be
+multiplatform compatible while keeping mach-msm to legacy SoC/board
+support that will not transition over to multiplatform.
+
+As part of this, we move support for MSM8X60, MSM8960 and MSM8974 over
+to mach-qcom.
+
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+---
+ MAINTAINERS                   |    8 ++
+ arch/arm/Kconfig              |    7 +-
+ arch/arm/Kconfig.debug        |    2 +-
+ arch/arm/Makefile             |    1 +
+ arch/arm/boot/dts/Makefile    |    6 +-
+ arch/arm/mach-msm/Kconfig     |   45 +------
+ arch/arm/mach-msm/Makefile    |    6 -
+ arch/arm/mach-msm/board-dt.c  |   41 ------
+ arch/arm/mach-msm/platsmp.c   |  137 -------------------
+ arch/arm/mach-msm/scm-boot.c  |   39 ------
+ arch/arm/mach-msm/scm-boot.h  |   22 ---
+ arch/arm/mach-msm/scm.c       |  299 -----------------------------------------
+ arch/arm/mach-msm/scm.h       |   25 ----
+ arch/arm/mach-qcom/Kconfig    |   33 +++++
+ arch/arm/mach-qcom/Makefile   |    5 +
+ arch/arm/mach-qcom/board.c    |   40 ++++++
+ arch/arm/mach-qcom/platsmp.c  |  137 +++++++++++++++++++
+ arch/arm/mach-qcom/scm-boot.c |   39 ++++++
+ arch/arm/mach-qcom/scm-boot.h |   22 +++
+ arch/arm/mach-qcom/scm.c      |  299 +++++++++++++++++++++++++++++++++++++++++
+ arch/arm/mach-qcom/scm.h      |   25 ++++
+ 21 files changed, 619 insertions(+), 619 deletions(-)
+ delete mode 100644 arch/arm/mach-msm/board-dt.c
+ delete mode 100644 arch/arm/mach-msm/platsmp.c
+ delete mode 100644 arch/arm/mach-msm/scm-boot.c
+ delete mode 100644 arch/arm/mach-msm/scm-boot.h
+ delete mode 100644 arch/arm/mach-msm/scm.c
+ delete mode 100644 arch/arm/mach-msm/scm.h
+ create mode 100644 arch/arm/mach-qcom/Kconfig
+ create mode 100644 arch/arm/mach-qcom/Makefile
+ create mode 100644 arch/arm/mach-qcom/board.c
+ create mode 100644 arch/arm/mach-qcom/platsmp.c
+ create mode 100644 arch/arm/mach-qcom/scm-boot.c
+ create mode 100644 arch/arm/mach-qcom/scm-boot.h
+ create mode 100644 arch/arm/mach-qcom/scm.c
+ create mode 100644 arch/arm/mach-qcom/scm.h
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 900d98e..7d23402 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1168,6 +1168,14 @@ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+ W:	http://www.arm.linux.org.uk/
+ S:	Maintained
+ 
++ARM/QUALCOMM SUPPORT
++M:	Kumar Gala <galak@codeaurora.org>
++M:	David Brown <davidb@codeaurora.org>
++L:	linux-arm-msm@vger.kernel.org
++S:	Maintained
++F:	arch/arm/mach-qcom/
++T:	git git://git.kernel.org/pub/scm/linux/kernel/git/galak/linux-qcom.git
++
+ ARM/RADISYS ENP2611 MACHINE SUPPORT
+ M:	Lennert Buytenhek <kernel@wantstofly.org>
+ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 1594945..d02ce70 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -657,9 +657,8 @@ config ARCH_PXA
+ 	help
+ 	  Support for Intel/Marvell's PXA2xx/PXA3xx processor line.
+ 
+-config ARCH_MSM_NODT
+-	bool "Qualcomm MSM"
+-	select ARCH_MSM
++config ARCH_MSM
++	bool "Qualcomm MSM (non-multiplatform)"
+ 	select ARCH_REQUIRE_GPIOLIB
+ 	select COMMON_CLK
+ 	select GENERIC_CLOCKEVENTS
+@@ -1005,6 +1004,8 @@ source "arch/arm/plat-pxa/Kconfig"
+ 
+ source "arch/arm/mach-mmp/Kconfig"
+ 
++source "arch/arm/mach-qcom/Kconfig"
++
+ source "arch/arm/mach-realview/Kconfig"
+ 
+ source "arch/arm/mach-rockchip/Kconfig"
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 0531da8..4491c7b 100644
+--- a/arch/arm/Kconfig.debug
++++ b/arch/arm/Kconfig.debug
+@@ -956,7 +956,7 @@ config DEBUG_STI_UART
+ 
+ config DEBUG_MSM_UART
+ 	bool
+-	depends on ARCH_MSM
++	depends on ARCH_MSM || ARCH_QCOM
+ 
+ config DEBUG_LL_INCLUDE
+ 	string
+diff --git a/arch/arm/Makefile b/arch/arm/Makefile
+index 08a9ef5..51e5bed 100644
+--- a/arch/arm/Makefile
++++ b/arch/arm/Makefile
+@@ -180,6 +180,7 @@ machine-$(CONFIG_ARCH_OMAP2PLUS)	+= omap2
+ machine-$(CONFIG_ARCH_ORION5X)		+= orion5x
+ machine-$(CONFIG_ARCH_PICOXCELL)	+= picoxcell
+ machine-$(CONFIG_ARCH_PXA)		+= pxa
++machine-$(CONFIG_ARCH_QCOM)		+= qcom
+ machine-$(CONFIG_ARCH_REALVIEW)		+= realview
+ machine-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip
+ machine-$(CONFIG_ARCH_RPC)		+= rpc
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 0320303..4a89023 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -119,9 +119,6 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-cloudbox.dtb \
+ 	kirkwood-ts219-6282.dtb
+ dtb-$(CONFIG_ARCH_MARCO) += marco-evb.dtb
+ dtb-$(CONFIG_ARCH_MOXART) += moxart-uc7112lx.dtb
+-dtb-$(CONFIG_ARCH_MSM) += qcom-msm8660-surf.dtb \
+-	qcom-msm8960-cdp.dtb \
+-	qcom-apq8074-dragonboard.dtb
+ dtb-$(CONFIG_ARCH_MVEBU) += armada-370-db.dtb \
+ 	armada-370-mirabox.dtb \
+ 	armada-370-netgear-rn102.dtb \
+@@ -234,6 +231,9 @@ dtb-$(CONFIG_ARCH_OMAP2PLUS) += omap2420-h4.dtb \
+ 	dra7-evm.dtb
+ dtb-$(CONFIG_ARCH_ORION5X) += orion5x-lacie-ethernet-disk-mini-v2.dtb
+ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
++dtb-$(CONFIG_ARCH_QCOM) += qcom-msm8660-surf.dtb \
++	qcom-msm8960-cdp.dtb \
++	qcom-apq8074-dragonboard.dtb
+ dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
+ 	ste-hrefprev60-stuib.dtb \
+ 	ste-hrefprev60-tvk.dtb \
+diff --git a/arch/arm/mach-msm/Kconfig b/arch/arm/mach-msm/Kconfig
+index 3c4eca7..a7f959e 100644
+--- a/arch/arm/mach-msm/Kconfig
++++ b/arch/arm/mach-msm/Kconfig
+@@ -1,50 +1,9 @@
+-config ARCH_MSM
+-	bool
+-
+-config ARCH_MSM_DT
+-	bool "Qualcomm MSM DT Support" if ARCH_MULTI_V7
+-	select ARCH_MSM
+-	select ARCH_REQUIRE_GPIOLIB
+-	select CLKSRC_OF
+-	select GENERIC_CLOCKEVENTS
+-	help
+-	  Support for Qualcomm's devicetree based MSM systems.
+-
+ if ARCH_MSM
+ 
+-menu "Qualcomm MSM SoC Selection"
+-	depends on ARCH_MSM_DT
+-
+-config ARCH_MSM8X60
+-	bool "Enable support for MSM8X60"
+-	select ARM_GIC
+-	select CPU_V7
+-	select HAVE_SMP
+-	select MSM_SCM if SMP
+-	select CLKSRC_QCOM
+-
+-config ARCH_MSM8960
+-	bool "Enable support for MSM8960"
+-	select ARM_GIC
+-	select CPU_V7
+-	select HAVE_SMP
+-	select MSM_SCM if SMP
+-	select CLKSRC_QCOM
+-
+-config ARCH_MSM8974
+-	bool "Enable support for MSM8974"
+-	select ARM_GIC
+-	select CPU_V7
+-	select HAVE_ARM_ARCH_TIMER
+-	select HAVE_SMP
+-	select MSM_SCM if SMP
+-
+-endmenu
+-
+ choice
+ 	prompt "Qualcomm MSM SoC Type"
+ 	default ARCH_MSM7X00A
+-	depends on ARCH_MSM_NODT
++	depends on ARCH_MSM
+ 
+ config ARCH_MSM7X00A
+ 	bool "MSM7x00A / MSM7x01A"
+@@ -99,7 +58,7 @@ config  MSM_VIC
+ 	bool
+ 
+ menu "Qualcomm MSM Board Type"
+-	depends on ARCH_MSM_NODT
++	depends on ARCH_MSM
+ 
+ config MACH_HALIBUT
+ 	depends on ARCH_MSM
+diff --git a/arch/arm/mach-msm/Makefile b/arch/arm/mach-msm/Makefile
+index 04b1bee..27c078a 100644
+--- a/arch/arm/mach-msm/Makefile
++++ b/arch/arm/mach-msm/Makefile
+@@ -13,17 +13,11 @@ obj-$(CONFIG_ARCH_QSD8X50) += dma.o io.o
+ 
+ obj-$(CONFIG_MSM_SMD) += smd.o smd_debug.o
+ obj-$(CONFIG_MSM_SMD) += last_radio_log.o
+-obj-$(CONFIG_MSM_SCM) += scm.o scm-boot.o
+-
+-CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
+-
+-obj-$(CONFIG_SMP) += platsmp.o
+ 
+ obj-$(CONFIG_MACH_TROUT) += board-trout.o board-trout-gpio.o board-trout-mmc.o devices-msm7x00.o
+ obj-$(CONFIG_MACH_TROUT) += board-trout.o board-trout-gpio.o board-trout-mmc.o board-trout-panel.o devices-msm7x00.o
+ obj-$(CONFIG_MACH_HALIBUT) += board-halibut.o devices-msm7x00.o
+ obj-$(CONFIG_ARCH_MSM7X30) += board-msm7x30.o devices-msm7x30.o
+ obj-$(CONFIG_ARCH_QSD8X50) += board-qsd8x50.o devices-qsd8x50.o
+-obj-$(CONFIG_ARCH_MSM_DT) += board-dt.o
+ obj-$(CONFIG_MSM_GPIOMUX) += gpiomux.o
+ obj-$(CONFIG_ARCH_QSD8X50) += gpiomux-8x50.o
+diff --git a/arch/arm/mach-msm/board-dt.c b/arch/arm/mach-msm/board-dt.c
+deleted file mode 100644
+index 1f11d93..0000000
+--- a/arch/arm/mach-msm/board-dt.c
++++ /dev/null
+@@ -1,41 +0,0 @@
+-/* Copyright (c) 2010-2012,2013 The Linux Foundation. All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 and
+- * only version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-
+-#include <linux/init.h>
+-#include <linux/of.h>
+-#include <linux/of_platform.h>
+-
+-#include <asm/mach/arch.h>
+-#include <asm/mach/map.h>
+-
+-#include "common.h"
+-
+-static const char * const msm_dt_match[] __initconst = {
+-	"qcom,msm8660-fluid",
+-	"qcom,msm8660-surf",
+-	"qcom,msm8960-cdp",
+-	NULL
+-};
+-
+-static const char * const apq8074_dt_match[] __initconst = {
+-	"qcom,apq8074-dragonboard",
+-	NULL
+-};
+-
+-DT_MACHINE_START(MSM_DT, "Qualcomm MSM (Flattened Device Tree)")
+-	.smp = smp_ops(msm_smp_ops),
+-	.dt_compat = msm_dt_match,
+-MACHINE_END
+-
+-DT_MACHINE_START(APQ_DT, "Qualcomm MSM (Flattened Device Tree)")
+-	.dt_compat = apq8074_dt_match,
+-MACHINE_END
+diff --git a/arch/arm/mach-msm/platsmp.c b/arch/arm/mach-msm/platsmp.c
+deleted file mode 100644
+index 251a91e..0000000
+--- a/arch/arm/mach-msm/platsmp.c
++++ /dev/null
+@@ -1,137 +0,0 @@
+-/*
+- *  Copyright (C) 2002 ARM Ltd.
+- *  All Rights Reserved
+- *  Copyright (c) 2010, Code Aurora Forum. All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 as
+- * published by the Free Software Foundation.
+- */
+-
+-#include <linux/init.h>
+-#include <linux/errno.h>
+-#include <linux/delay.h>
+-#include <linux/device.h>
+-#include <linux/smp.h>
+-#include <linux/io.h>
+-
+-#include <asm/cputype.h>
+-#include <asm/smp_plat.h>
+-
+-#include "scm-boot.h"
+-#include "common.h"
+-
+-#define VDD_SC1_ARRAY_CLAMP_GFS_CTL 0x15A0
+-#define SCSS_CPU1CORE_RESET 0xD80
+-#define SCSS_DBG_STATUS_CORE_PWRDUP 0xE64
+-
+-extern void secondary_startup(void);
+-
+-static DEFINE_SPINLOCK(boot_lock);
+-
+-#ifdef CONFIG_HOTPLUG_CPU
+-static void __ref msm_cpu_die(unsigned int cpu)
+-{
+-	wfi();
+-}
+-#endif
+-
+-static inline int get_core_count(void)
+-{
+-	/* 1 + the PART[1:0] field of MIDR */
+-	return ((read_cpuid_id() >> 4) & 3) + 1;
+-}
+-
+-static void msm_secondary_init(unsigned int cpu)
+-{
+-	/*
+-	 * Synchronise with the boot thread.
+-	 */
+-	spin_lock(&boot_lock);
+-	spin_unlock(&boot_lock);
+-}
+-
+-static void prepare_cold_cpu(unsigned int cpu)
+-{
+-	int ret;
+-	ret = scm_set_boot_addr(virt_to_phys(secondary_startup),
+-				SCM_FLAG_COLDBOOT_CPU1);
+-	if (ret == 0) {
+-		void __iomem *sc1_base_ptr;
+-		sc1_base_ptr = ioremap_nocache(0x00902000, SZ_4K*2);
+-		if (sc1_base_ptr) {
+-			writel(0, sc1_base_ptr + VDD_SC1_ARRAY_CLAMP_GFS_CTL);
+-			writel(0, sc1_base_ptr + SCSS_CPU1CORE_RESET);
+-			writel(3, sc1_base_ptr + SCSS_DBG_STATUS_CORE_PWRDUP);
+-			iounmap(sc1_base_ptr);
+-		}
+-	} else
+-		printk(KERN_DEBUG "Failed to set secondary core boot "
+-				  "address\n");
+-}
+-
+-static int msm_boot_secondary(unsigned int cpu, struct task_struct *idle)
+-{
+-	static int cold_boot_done;
+-
+-	/* Only need to bring cpu out of reset this way once */
+-	if (cold_boot_done == false) {
+-		prepare_cold_cpu(cpu);
+-		cold_boot_done = true;
+-	}
+-
+-	/*
+-	 * set synchronisation state between this boot processor
+-	 * and the secondary one
+-	 */
+-	spin_lock(&boot_lock);
+-
+-	/*
+-	 * Send the secondary CPU a soft interrupt, thereby causing
+-	 * the boot monitor to read the system wide flags register,
+-	 * and branch to the address found there.
+-	 */
+-	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
+-
+-	/*
+-	 * now the secondary core is starting up let it run its
+-	 * calibrations, then wait for it to finish
+-	 */
+-	spin_unlock(&boot_lock);
+-
+-	return 0;
+-}
+-
+-/*
+- * Initialise the CPU possible map early - this describes the CPUs
+- * which may be present or become present in the system. The msm8x60
+- * does not support the ARM SCU, so just set the possible cpu mask to
+- * NR_CPUS.
+- */
+-static void __init msm_smp_init_cpus(void)
+-{
+-	unsigned int i, ncores = get_core_count();
+-
+-	if (ncores > nr_cpu_ids) {
+-		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
+-			ncores, nr_cpu_ids);
+-		ncores = nr_cpu_ids;
+-	}
+-
+-	for (i = 0; i < ncores; i++)
+-		set_cpu_possible(i, true);
+-}
+-
+-static void __init msm_smp_prepare_cpus(unsigned int max_cpus)
+-{
+-}
+-
+-struct smp_operations msm_smp_ops __initdata = {
+-	.smp_init_cpus		= msm_smp_init_cpus,
+-	.smp_prepare_cpus	= msm_smp_prepare_cpus,
+-	.smp_secondary_init	= msm_secondary_init,
+-	.smp_boot_secondary	= msm_boot_secondary,
+-#ifdef CONFIG_HOTPLUG_CPU
+-	.cpu_die		= msm_cpu_die,
+-#endif
+-};
+diff --git a/arch/arm/mach-msm/scm-boot.c b/arch/arm/mach-msm/scm-boot.c
+deleted file mode 100644
+index 45cee3e..0000000
+--- a/arch/arm/mach-msm/scm-boot.c
++++ /dev/null
+@@ -1,39 +0,0 @@
+-/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 and
+- * only version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+- * 02110-1301, USA.
+- */
+-
+-#include <linux/module.h>
+-#include <linux/slab.h>
+-
+-#include "scm.h"
+-#include "scm-boot.h"
+-
+-/*
+- * Set the cold/warm boot address for one of the CPU cores.
+- */
+-int scm_set_boot_addr(phys_addr_t addr, int flags)
+-{
+-	struct {
+-		unsigned int flags;
+-		phys_addr_t  addr;
+-	} cmd;
+-
+-	cmd.addr = addr;
+-	cmd.flags = flags;
+-	return scm_call(SCM_SVC_BOOT, SCM_BOOT_ADDR,
+-			&cmd, sizeof(cmd), NULL, 0);
+-}
+-EXPORT_SYMBOL(scm_set_boot_addr);
+diff --git a/arch/arm/mach-msm/scm-boot.h b/arch/arm/mach-msm/scm-boot.h
+deleted file mode 100644
+index 7be32ff..0000000
+--- a/arch/arm/mach-msm/scm-boot.h
++++ /dev/null
+@@ -1,22 +0,0 @@
+-/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 and
+- * only version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#ifndef __MACH_SCM_BOOT_H
+-#define __MACH_SCM_BOOT_H
+-
+-#define SCM_BOOT_ADDR			0x1
+-#define SCM_FLAG_COLDBOOT_CPU1		0x1
+-#define SCM_FLAG_WARMBOOT_CPU1		0x2
+-#define SCM_FLAG_WARMBOOT_CPU0		0x4
+-
+-int scm_set_boot_addr(phys_addr_t addr, int flags);
+-
+-#endif
+diff --git a/arch/arm/mach-msm/scm.c b/arch/arm/mach-msm/scm.c
+deleted file mode 100644
+index c536fd6..0000000
+--- a/arch/arm/mach-msm/scm.c
++++ /dev/null
+@@ -1,299 +0,0 @@
+-/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 and
+- * only version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public License
+- * along with this program; if not, write to the Free Software
+- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+- * 02110-1301, USA.
+- */
+-
+-#include <linux/slab.h>
+-#include <linux/io.h>
+-#include <linux/module.h>
+-#include <linux/mutex.h>
+-#include <linux/errno.h>
+-#include <linux/err.h>
+-
+-#include <asm/cacheflush.h>
+-
+-#include "scm.h"
+-
+-/* Cache line size for msm8x60 */
+-#define CACHELINESIZE 32
+-
+-#define SCM_ENOMEM		-5
+-#define SCM_EOPNOTSUPP		-4
+-#define SCM_EINVAL_ADDR		-3
+-#define SCM_EINVAL_ARG		-2
+-#define SCM_ERROR		-1
+-#define SCM_INTERRUPTED		1
+-
+-static DEFINE_MUTEX(scm_lock);
+-
+-/**
+- * struct scm_command - one SCM command buffer
+- * @len: total available memory for command and response
+- * @buf_offset: start of command buffer
+- * @resp_hdr_offset: start of response buffer
+- * @id: command to be executed
+- * @buf: buffer returned from scm_get_command_buffer()
+- *
+- * An SCM command is laid out in memory as follows:
+- *
+- *	------------------- <--- struct scm_command
+- *	| command header  |
+- *	------------------- <--- scm_get_command_buffer()
+- *	| command buffer  |
+- *	------------------- <--- struct scm_response and
+- *	| response header |      scm_command_to_response()
+- *	------------------- <--- scm_get_response_buffer()
+- *	| response buffer |
+- *	-------------------
+- *
+- * There can be arbitrary padding between the headers and buffers so
+- * you should always use the appropriate scm_get_*_buffer() routines
+- * to access the buffers in a safe manner.
+- */
+-struct scm_command {
+-	u32	len;
+-	u32	buf_offset;
+-	u32	resp_hdr_offset;
+-	u32	id;
+-	u32	buf[0];
+-};
+-
+-/**
+- * struct scm_response - one SCM response buffer
+- * @len: total available memory for response
+- * @buf_offset: start of response data relative to start of scm_response
+- * @is_complete: indicates if the command has finished processing
+- */
+-struct scm_response {
+-	u32	len;
+-	u32	buf_offset;
+-	u32	is_complete;
+-};
+-
+-/**
+- * alloc_scm_command() - Allocate an SCM command
+- * @cmd_size: size of the command buffer
+- * @resp_size: size of the response buffer
+- *
+- * Allocate an SCM command, including enough room for the command
+- * and response headers as well as the command and response buffers.
+- *
+- * Returns a valid &scm_command on success or %NULL if the allocation fails.
+- */
+-static struct scm_command *alloc_scm_command(size_t cmd_size, size_t resp_size)
+-{
+-	struct scm_command *cmd;
+-	size_t len = sizeof(*cmd) + sizeof(struct scm_response) + cmd_size +
+-		resp_size;
+-
+-	cmd = kzalloc(PAGE_ALIGN(len), GFP_KERNEL);
+-	if (cmd) {
+-		cmd->len = len;
+-		cmd->buf_offset = offsetof(struct scm_command, buf);
+-		cmd->resp_hdr_offset = cmd->buf_offset + cmd_size;
+-	}
+-	return cmd;
+-}
+-
+-/**
+- * free_scm_command() - Free an SCM command
+- * @cmd: command to free
+- *
+- * Free an SCM command.
+- */
+-static inline void free_scm_command(struct scm_command *cmd)
+-{
+-	kfree(cmd);
+-}
+-
+-/**
+- * scm_command_to_response() - Get a pointer to a scm_response
+- * @cmd: command
+- *
+- * Returns a pointer to a response for a command.
+- */
+-static inline struct scm_response *scm_command_to_response(
+-		const struct scm_command *cmd)
+-{
+-	return (void *)cmd + cmd->resp_hdr_offset;
+-}
+-
+-/**
+- * scm_get_command_buffer() - Get a pointer to a command buffer
+- * @cmd: command
+- *
+- * Returns a pointer to the command buffer of a command.
+- */
+-static inline void *scm_get_command_buffer(const struct scm_command *cmd)
+-{
+-	return (void *)cmd->buf;
+-}
+-
+-/**
+- * scm_get_response_buffer() - Get a pointer to a response buffer
+- * @rsp: response
+- *
+- * Returns a pointer to a response buffer of a response.
+- */
+-static inline void *scm_get_response_buffer(const struct scm_response *rsp)
+-{
+-	return (void *)rsp + rsp->buf_offset;
+-}
+-
+-static int scm_remap_error(int err)
+-{
+-	switch (err) {
+-	case SCM_ERROR:
+-		return -EIO;
+-	case SCM_EINVAL_ADDR:
+-	case SCM_EINVAL_ARG:
+-		return -EINVAL;
+-	case SCM_EOPNOTSUPP:
+-		return -EOPNOTSUPP;
+-	case SCM_ENOMEM:
+-		return -ENOMEM;
+-	}
+-	return -EINVAL;
+-}
+-
+-static u32 smc(u32 cmd_addr)
+-{
+-	int context_id;
+-	register u32 r0 asm("r0") = 1;
+-	register u32 r1 asm("r1") = (u32)&context_id;
+-	register u32 r2 asm("r2") = cmd_addr;
+-	do {
+-		asm volatile(
+-			__asmeq("%0", "r0")
+-			__asmeq("%1", "r0")
+-			__asmeq("%2", "r1")
+-			__asmeq("%3", "r2")
+-#ifdef REQUIRES_SEC
+-			".arch_extension sec\n"
+-#endif
+-			"smc	#0	@ switch to secure world\n"
+-			: "=r" (r0)
+-			: "r" (r0), "r" (r1), "r" (r2)
+-			: "r3");
+-	} while (r0 == SCM_INTERRUPTED);
+-
+-	return r0;
+-}
+-
+-static int __scm_call(const struct scm_command *cmd)
+-{
+-	int ret;
+-	u32 cmd_addr = virt_to_phys(cmd);
+-
+-	/*
+-	 * Flush the entire cache here so callers don't have to remember
+-	 * to flush the cache when passing physical addresses to the secure
+-	 * side in the buffer.
+-	 */
+-	flush_cache_all();
+-	ret = smc(cmd_addr);
+-	if (ret < 0)
+-		ret = scm_remap_error(ret);
+-
+-	return ret;
+-}
+-
+-/**
+- * scm_call() - Send an SCM command
+- * @svc_id: service identifier
+- * @cmd_id: command identifier
+- * @cmd_buf: command buffer
+- * @cmd_len: length of the command buffer
+- * @resp_buf: response buffer
+- * @resp_len: length of the response buffer
+- *
+- * Sends a command to the SCM and waits for the command to finish processing.
+- */
+-int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
+-		void *resp_buf, size_t resp_len)
+-{
+-	int ret;
+-	struct scm_command *cmd;
+-	struct scm_response *rsp;
+-
+-	cmd = alloc_scm_command(cmd_len, resp_len);
+-	if (!cmd)
+-		return -ENOMEM;
+-
+-	cmd->id = (svc_id << 10) | cmd_id;
+-	if (cmd_buf)
+-		memcpy(scm_get_command_buffer(cmd), cmd_buf, cmd_len);
+-
+-	mutex_lock(&scm_lock);
+-	ret = __scm_call(cmd);
+-	mutex_unlock(&scm_lock);
+-	if (ret)
+-		goto out;
+-
+-	rsp = scm_command_to_response(cmd);
+-	do {
+-		u32 start = (u32)rsp;
+-		u32 end = (u32)scm_get_response_buffer(rsp) + resp_len;
+-		start &= ~(CACHELINESIZE - 1);
+-		while (start < end) {
+-			asm ("mcr p15, 0, %0, c7, c6, 1" : : "r" (start)
+-			     : "memory");
+-			start += CACHELINESIZE;
+-		}
+-	} while (!rsp->is_complete);
+-
+-	if (resp_buf)
+-		memcpy(resp_buf, scm_get_response_buffer(rsp), resp_len);
+-out:
+-	free_scm_command(cmd);
+-	return ret;
+-}
+-EXPORT_SYMBOL(scm_call);
+-
+-u32 scm_get_version(void)
+-{
+-	int context_id;
+-	static u32 version = -1;
+-	register u32 r0 asm("r0");
+-	register u32 r1 asm("r1");
+-
+-	if (version != -1)
+-		return version;
+-
+-	mutex_lock(&scm_lock);
+-
+-	r0 = 0x1 << 8;
+-	r1 = (u32)&context_id;
+-	do {
+-		asm volatile(
+-			__asmeq("%0", "r0")
+-			__asmeq("%1", "r1")
+-			__asmeq("%2", "r0")
+-			__asmeq("%3", "r1")
+-#ifdef REQUIRES_SEC
+-			".arch_extension sec\n"
+-#endif
+-			"smc	#0	@ switch to secure world\n"
+-			: "=r" (r0), "=r" (r1)
+-			: "r" (r0), "r" (r1)
+-			: "r2", "r3");
+-	} while (r0 == SCM_INTERRUPTED);
+-
+-	version = r1;
+-	mutex_unlock(&scm_lock);
+-
+-	return version;
+-}
+-EXPORT_SYMBOL(scm_get_version);
+diff --git a/arch/arm/mach-msm/scm.h b/arch/arm/mach-msm/scm.h
+deleted file mode 100644
+index 00b31ea..0000000
+--- a/arch/arm/mach-msm/scm.h
++++ /dev/null
+@@ -1,25 +0,0 @@
+-/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
+- *
+- * This program is free software; you can redistribute it and/or modify
+- * it under the terms of the GNU General Public License version 2 and
+- * only version 2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+- * GNU General Public License for more details.
+- */
+-#ifndef __MACH_SCM_H
+-#define __MACH_SCM_H
+-
+-#define SCM_SVC_BOOT			0x1
+-#define SCM_SVC_PIL			0x2
+-
+-extern int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
+-		void *resp_buf, size_t resp_len);
+-
+-#define SCM_VERSION(major, minor) (((major) << 16) | ((minor) & 0xFF))
+-
+-extern u32 scm_get_version(void);
+-
+-#endif
+diff --git a/arch/arm/mach-qcom/Kconfig b/arch/arm/mach-qcom/Kconfig
+new file mode 100644
+index 0000000..a028be2
+--- /dev/null
++++ b/arch/arm/mach-qcom/Kconfig
+@@ -0,0 +1,33 @@
++config ARCH_QCOM
++	bool "Qualcomm Support" if ARCH_MULTI_V7
++	select ARCH_REQUIRE_GPIOLIB
++	select ARM_GIC
++	select CLKSRC_OF
++	select GENERIC_CLOCKEVENTS
++	select HAVE_SMP
++	select QCOM_SCM if SMP
++	help
++	  Support for Qualcomm's devicetree based systems.
++
++if ARCH_QCOM
++
++menu "Qualcomm SoC Selection"
++
++config ARCH_MSM8X60
++	bool "Enable support for MSM8X60"
++	select CLKSRC_QCOM
++
++config ARCH_MSM8960
++	bool "Enable support for MSM8960"
++	select CLKSRC_QCOM
++
++config ARCH_MSM8974
++	bool "Enable support for MSM8974"
++	select HAVE_ARM_ARCH_TIMER
++
++endmenu
++
++config QCOM_SCM
++	bool
++
++endif
+diff --git a/arch/arm/mach-qcom/Makefile b/arch/arm/mach-qcom/Makefile
+new file mode 100644
+index 0000000..8f756ae
+--- /dev/null
++++ b/arch/arm/mach-qcom/Makefile
+@@ -0,0 +1,5 @@
++obj-y			:= board.o
++obj-$(CONFIG_SMP)	+= platsmp.o
++obj-$(CONFIG_QCOM_SCM)	+= scm.o scm-boot.o
++
++CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
+diff --git a/arch/arm/mach-qcom/board.c b/arch/arm/mach-qcom/board.c
+new file mode 100644
+index 0000000..4529f6b
+--- /dev/null
++++ b/arch/arm/mach-qcom/board.c
+@@ -0,0 +1,40 @@
++/* Copyright (c) 2010-2014 The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++
++#include <asm/mach/arch.h>
++#include <asm/mach/map.h>
++
++extern struct smp_operations msm_smp_ops;
++
++static const char * const qcom_dt_match[] __initconst = {
++	"qcom,msm8660-surf",
++	"qcom,msm8960-cdp",
++	NULL
++};
++
++static const char * const apq8074_dt_match[] __initconst = {
++	"qcom,apq8074-dragonboard",
++	NULL
++};
++
++DT_MACHINE_START(QCOM_DT, "Qualcomm (Flattened Device Tree)")
++	.smp = smp_ops(msm_smp_ops),
++	.dt_compat = qcom_dt_match,
++MACHINE_END
++
++DT_MACHINE_START(APQ_DT, "Qualcomm (Flattened Device Tree)")
++	.dt_compat = apq8074_dt_match,
++MACHINE_END
+diff --git a/arch/arm/mach-qcom/platsmp.c b/arch/arm/mach-qcom/platsmp.c
+new file mode 100644
+index 0000000..67823a7
+--- /dev/null
++++ b/arch/arm/mach-qcom/platsmp.c
+@@ -0,0 +1,137 @@
++/*
++ *  Copyright (C) 2002 ARM Ltd.
++ *  All Rights Reserved
++ *  Copyright (c) 2010, Code Aurora Forum. All rights reserved.
++ *  Copyright (c) 2014 The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++
++#include <linux/init.h>
++#include <linux/errno.h>
++#include <linux/delay.h>
++#include <linux/device.h>
++#include <linux/smp.h>
++#include <linux/io.h>
++
++#include <asm/cputype.h>
++#include <asm/smp_plat.h>
++
++#include "scm-boot.h"
++
++#define VDD_SC1_ARRAY_CLAMP_GFS_CTL 0x15A0
++#define SCSS_CPU1CORE_RESET 0xD80
++#define SCSS_DBG_STATUS_CORE_PWRDUP 0xE64
++
++extern void secondary_startup(void);
++
++static DEFINE_SPINLOCK(boot_lock);
++
++#ifdef CONFIG_HOTPLUG_CPU
++static void __ref msm_cpu_die(unsigned int cpu)
++{
++	wfi();
++}
++#endif
++
++static inline int get_core_count(void)
++{
++	/* 1 + the PART[1:0] field of MIDR */
++	return ((read_cpuid_id() >> 4) & 3) + 1;
++}
++
++static void msm_secondary_init(unsigned int cpu)
++{
++	/*
++	 * Synchronise with the boot thread.
++	 */
++	spin_lock(&boot_lock);
++	spin_unlock(&boot_lock);
++}
++
++static void prepare_cold_cpu(unsigned int cpu)
++{
++	int ret;
++	ret = scm_set_boot_addr(virt_to_phys(secondary_startup),
++				SCM_FLAG_COLDBOOT_CPU1);
++	if (ret == 0) {
++		void __iomem *sc1_base_ptr;
++		sc1_base_ptr = ioremap_nocache(0x00902000, SZ_4K*2);
++		if (sc1_base_ptr) {
++			writel(0, sc1_base_ptr + VDD_SC1_ARRAY_CLAMP_GFS_CTL);
++			writel(0, sc1_base_ptr + SCSS_CPU1CORE_RESET);
++			writel(3, sc1_base_ptr + SCSS_DBG_STATUS_CORE_PWRDUP);
++			iounmap(sc1_base_ptr);
++		}
++	} else
++		printk(KERN_DEBUG "Failed to set secondary core boot "
++				  "address\n");
++}
++
++static int msm_boot_secondary(unsigned int cpu, struct task_struct *idle)
++{
++	static int cold_boot_done;
++
++	/* Only need to bring cpu out of reset this way once */
++	if (cold_boot_done == false) {
++		prepare_cold_cpu(cpu);
++		cold_boot_done = true;
++	}
++
++	/*
++	 * set synchronisation state between this boot processor
++	 * and the secondary one
++	 */
++	spin_lock(&boot_lock);
++
++	/*
++	 * Send the secondary CPU a soft interrupt, thereby causing
++	 * the boot monitor to read the system wide flags register,
++	 * and branch to the address found there.
++	 */
++	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
++
++	/*
++	 * now the secondary core is starting up let it run its
++	 * calibrations, then wait for it to finish
++	 */
++	spin_unlock(&boot_lock);
++
++	return 0;
++}
++
++/*
++ * Initialise the CPU possible map early - this describes the CPUs
++ * which may be present or become present in the system. The msm8x60
++ * does not support the ARM SCU, so just set the possible cpu mask to
++ * NR_CPUS.
++ */
++static void __init msm_smp_init_cpus(void)
++{
++	unsigned int i, ncores = get_core_count();
++
++	if (ncores > nr_cpu_ids) {
++		pr_warn("SMP: %u cores greater than maximum (%u), clipping\n",
++			ncores, nr_cpu_ids);
++		ncores = nr_cpu_ids;
++	}
++
++	for (i = 0; i < ncores; i++)
++		set_cpu_possible(i, true);
++}
++
++static void __init msm_smp_prepare_cpus(unsigned int max_cpus)
++{
++}
++
++struct smp_operations msm_smp_ops __initdata = {
++	.smp_init_cpus		= msm_smp_init_cpus,
++	.smp_prepare_cpus	= msm_smp_prepare_cpus,
++	.smp_secondary_init	= msm_secondary_init,
++	.smp_boot_secondary	= msm_boot_secondary,
++#ifdef CONFIG_HOTPLUG_CPU
++	.cpu_die		= msm_cpu_die,
++#endif
++};
+diff --git a/arch/arm/mach-qcom/scm-boot.c b/arch/arm/mach-qcom/scm-boot.c
+new file mode 100644
+index 0000000..45cee3e
+--- /dev/null
++++ b/arch/arm/mach-qcom/scm-boot.c
+@@ -0,0 +1,39 @@
++/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
++ * 02110-1301, USA.
++ */
++
++#include <linux/module.h>
++#include <linux/slab.h>
++
++#include "scm.h"
++#include "scm-boot.h"
++
++/*
++ * Set the cold/warm boot address for one of the CPU cores.
++ */
++int scm_set_boot_addr(phys_addr_t addr, int flags)
++{
++	struct {
++		unsigned int flags;
++		phys_addr_t  addr;
++	} cmd;
++
++	cmd.addr = addr;
++	cmd.flags = flags;
++	return scm_call(SCM_SVC_BOOT, SCM_BOOT_ADDR,
++			&cmd, sizeof(cmd), NULL, 0);
++}
++EXPORT_SYMBOL(scm_set_boot_addr);
+diff --git a/arch/arm/mach-qcom/scm-boot.h b/arch/arm/mach-qcom/scm-boot.h
+new file mode 100644
+index 0000000..7be32ff
+--- /dev/null
++++ b/arch/arm/mach-qcom/scm-boot.h
+@@ -0,0 +1,22 @@
++/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#ifndef __MACH_SCM_BOOT_H
++#define __MACH_SCM_BOOT_H
++
++#define SCM_BOOT_ADDR			0x1
++#define SCM_FLAG_COLDBOOT_CPU1		0x1
++#define SCM_FLAG_WARMBOOT_CPU1		0x2
++#define SCM_FLAG_WARMBOOT_CPU0		0x4
++
++int scm_set_boot_addr(phys_addr_t addr, int flags);
++
++#endif
+diff --git a/arch/arm/mach-qcom/scm.c b/arch/arm/mach-qcom/scm.c
+new file mode 100644
+index 0000000..c536fd6
+--- /dev/null
++++ b/arch/arm/mach-qcom/scm.c
+@@ -0,0 +1,299 @@
++/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
++ * 02110-1301, USA.
++ */
++
++#include <linux/slab.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/errno.h>
++#include <linux/err.h>
++
++#include <asm/cacheflush.h>
++
++#include "scm.h"
++
++/* Cache line size for msm8x60 */
++#define CACHELINESIZE 32
++
++#define SCM_ENOMEM		-5
++#define SCM_EOPNOTSUPP		-4
++#define SCM_EINVAL_ADDR		-3
++#define SCM_EINVAL_ARG		-2
++#define SCM_ERROR		-1
++#define SCM_INTERRUPTED		1
++
++static DEFINE_MUTEX(scm_lock);
++
++/**
++ * struct scm_command - one SCM command buffer
++ * @len: total available memory for command and response
++ * @buf_offset: start of command buffer
++ * @resp_hdr_offset: start of response buffer
++ * @id: command to be executed
++ * @buf: buffer returned from scm_get_command_buffer()
++ *
++ * An SCM command is laid out in memory as follows:
++ *
++ *	------------------- <--- struct scm_command
++ *	| command header  |
++ *	------------------- <--- scm_get_command_buffer()
++ *	| command buffer  |
++ *	------------------- <--- struct scm_response and
++ *	| response header |      scm_command_to_response()
++ *	------------------- <--- scm_get_response_buffer()
++ *	| response buffer |
++ *	-------------------
++ *
++ * There can be arbitrary padding between the headers and buffers so
++ * you should always use the appropriate scm_get_*_buffer() routines
++ * to access the buffers in a safe manner.
++ */
++struct scm_command {
++	u32	len;
++	u32	buf_offset;
++	u32	resp_hdr_offset;
++	u32	id;
++	u32	buf[0];
++};
++
++/**
++ * struct scm_response - one SCM response buffer
++ * @len: total available memory for response
++ * @buf_offset: start of response data relative to start of scm_response
++ * @is_complete: indicates if the command has finished processing
++ */
++struct scm_response {
++	u32	len;
++	u32	buf_offset;
++	u32	is_complete;
++};
++
++/**
++ * alloc_scm_command() - Allocate an SCM command
++ * @cmd_size: size of the command buffer
++ * @resp_size: size of the response buffer
++ *
++ * Allocate an SCM command, including enough room for the command
++ * and response headers as well as the command and response buffers.
++ *
++ * Returns a valid &scm_command on success or %NULL if the allocation fails.
++ */
++static struct scm_command *alloc_scm_command(size_t cmd_size, size_t resp_size)
++{
++	struct scm_command *cmd;
++	size_t len = sizeof(*cmd) + sizeof(struct scm_response) + cmd_size +
++		resp_size;
++
++	cmd = kzalloc(PAGE_ALIGN(len), GFP_KERNEL);
++	if (cmd) {
++		cmd->len = len;
++		cmd->buf_offset = offsetof(struct scm_command, buf);
++		cmd->resp_hdr_offset = cmd->buf_offset + cmd_size;
++	}
++	return cmd;
++}
++
++/**
++ * free_scm_command() - Free an SCM command
++ * @cmd: command to free
++ *
++ * Free an SCM command.
++ */
++static inline void free_scm_command(struct scm_command *cmd)
++{
++	kfree(cmd);
++}
++
++/**
++ * scm_command_to_response() - Get a pointer to a scm_response
++ * @cmd: command
++ *
++ * Returns a pointer to a response for a command.
++ */
++static inline struct scm_response *scm_command_to_response(
++		const struct scm_command *cmd)
++{
++	return (void *)cmd + cmd->resp_hdr_offset;
++}
++
++/**
++ * scm_get_command_buffer() - Get a pointer to a command buffer
++ * @cmd: command
++ *
++ * Returns a pointer to the command buffer of a command.
++ */
++static inline void *scm_get_command_buffer(const struct scm_command *cmd)
++{
++	return (void *)cmd->buf;
++}
++
++/**
++ * scm_get_response_buffer() - Get a pointer to a response buffer
++ * @rsp: response
++ *
++ * Returns a pointer to a response buffer of a response.
++ */
++static inline void *scm_get_response_buffer(const struct scm_response *rsp)
++{
++	return (void *)rsp + rsp->buf_offset;
++}
++
++static int scm_remap_error(int err)
++{
++	switch (err) {
++	case SCM_ERROR:
++		return -EIO;
++	case SCM_EINVAL_ADDR:
++	case SCM_EINVAL_ARG:
++		return -EINVAL;
++	case SCM_EOPNOTSUPP:
++		return -EOPNOTSUPP;
++	case SCM_ENOMEM:
++		return -ENOMEM;
++	}
++	return -EINVAL;
++}
++
++static u32 smc(u32 cmd_addr)
++{
++	int context_id;
++	register u32 r0 asm("r0") = 1;
++	register u32 r1 asm("r1") = (u32)&context_id;
++	register u32 r2 asm("r2") = cmd_addr;
++	do {
++		asm volatile(
++			__asmeq("%0", "r0")
++			__asmeq("%1", "r0")
++			__asmeq("%2", "r1")
++			__asmeq("%3", "r2")
++#ifdef REQUIRES_SEC
++			".arch_extension sec\n"
++#endif
++			"smc	#0	@ switch to secure world\n"
++			: "=r" (r0)
++			: "r" (r0), "r" (r1), "r" (r2)
++			: "r3");
++	} while (r0 == SCM_INTERRUPTED);
++
++	return r0;
++}
++
++static int __scm_call(const struct scm_command *cmd)
++{
++	int ret;
++	u32 cmd_addr = virt_to_phys(cmd);
++
++	/*
++	 * Flush the entire cache here so callers don't have to remember
++	 * to flush the cache when passing physical addresses to the secure
++	 * side in the buffer.
++	 */
++	flush_cache_all();
++	ret = smc(cmd_addr);
++	if (ret < 0)
++		ret = scm_remap_error(ret);
++
++	return ret;
++}
++
++/**
++ * scm_call() - Send an SCM command
++ * @svc_id: service identifier
++ * @cmd_id: command identifier
++ * @cmd_buf: command buffer
++ * @cmd_len: length of the command buffer
++ * @resp_buf: response buffer
++ * @resp_len: length of the response buffer
++ *
++ * Sends a command to the SCM and waits for the command to finish processing.
++ */
++int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
++		void *resp_buf, size_t resp_len)
++{
++	int ret;
++	struct scm_command *cmd;
++	struct scm_response *rsp;
++
++	cmd = alloc_scm_command(cmd_len, resp_len);
++	if (!cmd)
++		return -ENOMEM;
++
++	cmd->id = (svc_id << 10) | cmd_id;
++	if (cmd_buf)
++		memcpy(scm_get_command_buffer(cmd), cmd_buf, cmd_len);
++
++	mutex_lock(&scm_lock);
++	ret = __scm_call(cmd);
++	mutex_unlock(&scm_lock);
++	if (ret)
++		goto out;
++
++	rsp = scm_command_to_response(cmd);
++	do {
++		u32 start = (u32)rsp;
++		u32 end = (u32)scm_get_response_buffer(rsp) + resp_len;
++		start &= ~(CACHELINESIZE - 1);
++		while (start < end) {
++			asm ("mcr p15, 0, %0, c7, c6, 1" : : "r" (start)
++			     : "memory");
++			start += CACHELINESIZE;
++		}
++	} while (!rsp->is_complete);
++
++	if (resp_buf)
++		memcpy(resp_buf, scm_get_response_buffer(rsp), resp_len);
++out:
++	free_scm_command(cmd);
++	return ret;
++}
++EXPORT_SYMBOL(scm_call);
++
++u32 scm_get_version(void)
++{
++	int context_id;
++	static u32 version = -1;
++	register u32 r0 asm("r0");
++	register u32 r1 asm("r1");
++
++	if (version != -1)
++		return version;
++
++	mutex_lock(&scm_lock);
++
++	r0 = 0x1 << 8;
++	r1 = (u32)&context_id;
++	do {
++		asm volatile(
++			__asmeq("%0", "r0")
++			__asmeq("%1", "r1")
++			__asmeq("%2", "r0")
++			__asmeq("%3", "r1")
++#ifdef REQUIRES_SEC
++			".arch_extension sec\n"
++#endif
++			"smc	#0	@ switch to secure world\n"
++			: "=r" (r0), "=r" (r1)
++			: "r" (r0), "r" (r1)
++			: "r2", "r3");
++	} while (r0 == SCM_INTERRUPTED);
++
++	version = r1;
++	mutex_unlock(&scm_lock);
++
++	return version;
++}
++EXPORT_SYMBOL(scm_get_version);
+diff --git a/arch/arm/mach-qcom/scm.h b/arch/arm/mach-qcom/scm.h
+new file mode 100644
+index 0000000..00b31ea
+--- /dev/null
++++ b/arch/arm/mach-qcom/scm.h
+@@ -0,0 +1,25 @@
++/* Copyright (c) 2010, Code Aurora Forum. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#ifndef __MACH_SCM_H
++#define __MACH_SCM_H
++
++#define SCM_SVC_BOOT			0x1
++#define SCM_SVC_PIL			0x2
++
++extern int scm_call(u32 svc_id, u32 cmd_id, const void *cmd_buf, size_t cmd_len,
++		void *resp_buf, size_t resp_len);
++
++#define SCM_VERSION(major, minor) (((major) << 16) | ((minor) & 0xFF))
++
++extern u32 scm_get_version(void);
++
++#endif
+-- 
+1.7.10.4
+

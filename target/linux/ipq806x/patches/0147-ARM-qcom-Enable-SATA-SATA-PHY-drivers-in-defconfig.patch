@@ -1,0 +1,42 @@
+From 54a945eca8381fa8cda03b20eda3b2f23a88d289 Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Tue, 3 Jun 2014 10:36:41 -0500
+Subject: [PATCH 147/182] ARM: qcom: Enable SATA/SATA-PHY drivers in defconfig
+
+---
+ arch/arm/configs/qcom_defconfig |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/configs/qcom_defconfig b/arch/arm/configs/qcom_defconfig
+index 4866dec..84c6639 100644
+--- a/arch/arm/configs/qcom_defconfig
++++ b/arch/arm/configs/qcom_defconfig
+@@ -57,7 +57,6 @@ CONFIG_MTD_BLOCK=y
+ CONFIG_MTD_M25P80=y
+ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+-CONFIG_SCSI=y
+ CONFIG_SCSI_TGT=y
+ CONFIG_BLK_DEV_SD=y
+ CONFIG_CHR_DEV_SG=y
+@@ -66,6 +65,8 @@ CONFIG_SCSI_MULTI_LUN=y
+ CONFIG_SCSI_CONSTANTS=y
+ CONFIG_SCSI_LOGGING=y
+ CONFIG_SCSI_SCAN_ASYNC=y
++CONFIG_ATA=y
++CONFIG_AHCI_QCOM=y
+ CONFIG_NETDEVICES=y
+ CONFIG_DUMMY=y
+ CONFIG_MDIO_BITBANG=y
+@@ -141,7 +142,7 @@ CONFIG_MSM_GCC_8660=y
+ CONFIG_MSM_MMCC_8960=y
+ CONFIG_MSM_MMCC_8974=y
+ CONFIG_MSM_IOMMU=y
+-CONFIG_GENERIC_PHY=y
++CONFIG_PHY_QCOM_IPQ806X_SATA=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT2_FS_XATTR=y
+ CONFIG_EXT3_FS=y
+-- 
+1.7.10.4
+
