@@ -7,6 +7,7 @@ BOARD:=ipq806x
 BOARDNAME:=Qualcomm Atheros IPQ806X
 FEATURES:=squashfs
 CPU_TYPE:=cortex-a7
+MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 LINUX_VERSION:=3.14.12
 
