@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=binutils
 PKG_VERSION:=2.24
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=@GNU/binutils
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -48,6 +48,7 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 CONFIGURE_ARGS += \
+	--enable-shared \
 	--enable-install-libiberty \
 	--enable-install-libbfd
 
@@ -67,6 +68,8 @@ endef
 define Package/objdump/install
 	$(INSTALL_DIR) $(1)/usr/bin $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/bin/objdump $(1)/usr/bin/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libopcodes*.so $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libbfd*.so $(1)/usr/lib/
 endef
 
 define Package/binutils/install
