@@ -1,0 +1,104 @@
+From f1db56284b01b1212a211023dcaa7846fd07d0ec Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Fri, 30 May 2014 17:16:53 -0700
+Subject: [PATCH 173/182] cpufreq: Add module to register cpufreq-krait device
+
+Register a cpufreq-krait device whenever we detect that a
+"qcom,krait" compatible CPU is present in DT.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+---
+ drivers/cpufreq/Kconfig.arm    |    8 +++++++
+ drivers/cpufreq/Makefile       |    1 +
+ drivers/cpufreq/qcom-cpufreq.c |   48 ++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 57 insertions(+)
+ create mode 100644 drivers/cpufreq/qcom-cpufreq.c
+
+diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
+index 3129749..6ae884d 100644
+--- a/drivers/cpufreq/Kconfig.arm
++++ b/drivers/cpufreq/Kconfig.arm
+@@ -123,6 +123,14 @@ config ARM_OMAP2PLUS_CPUFREQ
+ 	depends on ARCH_OMAP2PLUS
+ 	default ARCH_OMAP2PLUS
+ 
++config ARM_QCOM_CPUFREQ
++	tristate "Qualcomm based"
++	depends on ARCH_QCOM
++	help
++	  This adds the CPUFreq driver for Qualcomm SoC based boards.
++
++	  If in doubt, say N.
++
+ config ARM_S3C_CPUFREQ
+ 	bool
+ 	help
+diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
+index f6f4485..f5d18a3 100644
+--- a/drivers/cpufreq/Makefile
++++ b/drivers/cpufreq/Makefile
+@@ -60,6 +60,7 @@ obj-$(CONFIG_ARM_IMX6Q_CPUFREQ)		+= imx6q-cpufreq.o
+ obj-$(CONFIG_ARM_INTEGRATOR)		+= integrator-cpufreq.o
+ obj-$(CONFIG_ARM_KIRKWOOD_CPUFREQ)	+= kirkwood-cpufreq.o
+ obj-$(CONFIG_ARM_OMAP2PLUS_CPUFREQ)	+= omap-cpufreq.o
++obj-$(CONFIG_ARM_QCOM_CPUFREQ)		+= qcom-cpufreq.o
+ obj-$(CONFIG_PXA25x)			+= pxa2xx-cpufreq.o
+ obj-$(CONFIG_PXA27x)			+= pxa2xx-cpufreq.o
+ obj-$(CONFIG_PXA3xx)			+= pxa3xx-cpufreq.o
+diff --git a/drivers/cpufreq/qcom-cpufreq.c b/drivers/cpufreq/qcom-cpufreq.c
+new file mode 100644
+index 0000000..71f4387
+--- /dev/null
++++ b/drivers/cpufreq/qcom-cpufreq.c
+@@ -0,0 +1,48 @@
++/* Copyright (c) 2014, The Linux Foundation. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 and
++ * only version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/cpu.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/err.h>
++
++static int qcom_cpufreq_driver_init(void)
++{
++	struct platform_device_info devinfo = { .name = "cpufreq-krait", };
++	struct device *cpu_dev;
++	struct device_node *np;
++	struct platform_device *pdev;
++
++	cpu_dev = get_cpu_device(0);
++	if (!cpu_dev)
++		return -ENODEV;
++
++	np = of_node_get(cpu_dev->of_node);
++	if (!np)
++		return -ENOENT;
++
++	if (!of_device_is_compatible(np, "qcom,krait")) {
++		of_node_put(np);
++		return -ENODEV;
++	}
++	of_node_put(np);
++
++	pdev = platform_device_register_full(&devinfo);
++
++	return PTR_ERR_OR_ZERO(pdev);
++}
++module_init(qcom_cpufreq_driver_init);
++
++MODULE_DESCRIPTION("Qualcomm CPUfreq driver");
++MODULE_LICENSE("GPL v2");
+-- 
+1.7.10.4
+

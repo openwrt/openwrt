@@ -1,0 +1,34 @@
+From 840fe915072597b5ba9599c4579f014f47b9638e Mon Sep 17 00:00:00 2001
+From: Josh Cartwright <joshc@codeaurora.org>
+Date: Mon, 3 Mar 2014 10:49:43 -0600
+Subject: [PATCH 058/182] spmi: pmic_arb: make selectable on ARCH_QCOM
+
+With the split of Qualcomm MSM support into legacy and multiplatform,
+the SPMI PMIC arb driver is only relevant on the multiplatform supported
+SoCs. Switch the Kconfig depends to ARCH_QCOM.
+
+Acked-by: Kumar Gala <galak@codeaurora.org>
+Signed-off-by: Josh Cartwright <joshc@codeaurora.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/spmi/Kconfig |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/spmi/Kconfig b/drivers/spmi/Kconfig
+index 075bd79..bf1295e 100644
+--- a/drivers/spmi/Kconfig
++++ b/drivers/spmi/Kconfig
+@@ -14,8 +14,8 @@ config SPMI_MSM_PMIC_ARB
+ 	tristate "Qualcomm MSM SPMI Controller (PMIC Arbiter)"
+ 	depends on ARM
+ 	depends on IRQ_DOMAIN
+-	depends on ARCH_MSM || COMPILE_TEST
+-	default ARCH_MSM
++	depends on ARCH_QCOM || COMPILE_TEST
++	default ARCH_QCOM
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  built-in SPMI PMIC Arbiter interface on Qualcomm MSM family
+-- 
+1.7.10.4
+

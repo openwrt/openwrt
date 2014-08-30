@@ -1,0 +1,30 @@
+From c6a3f7bda60cfd78c2b05e8b2ec0fbf0d39da9ea Mon Sep 17 00:00:00 2001
+From: Axel Lin <axel.lin@ingics.com>
+Date: Fri, 21 Feb 2014 09:33:16 +0800
+Subject: [PATCH 067/182] spi: qup: Remove spi_master_put in spi_qup_remove
+
+This driver uses devm_spi_register_master() so don't explicitly call
+spi_master_put() in spi_qup_remove().
+
+Signed-off-by: Axel Lin <axel.lin@ingics.com>
+Acked-by: Ivan T. Ivanov <iivanov@mm-sol.com>
+Signed-off-by: Mark Brown <broonie@linaro.org>
+---
+ drivers/spi/spi-qup.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
+index b0bcc09..5edc56f 100644
+--- a/drivers/spi/spi-qup.c
++++ b/drivers/spi/spi-qup.c
+@@ -802,7 +802,6 @@ static int spi_qup_remove(struct platform_device *pdev)
+ 
+ 	pm_runtime_put_noidle(&pdev->dev);
+ 	pm_runtime_disable(&pdev->dev);
+-	spi_master_put(master);
+ 	return 0;
+ }
+ 
+-- 
+1.7.10.4
+

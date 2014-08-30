@@ -1,0 +1,31 @@
+From 2cfbd01bd994bd16dbee28a99553796f12848c4c Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Thu, 6 Mar 2014 22:44:43 -0800
+Subject: [PATCH 029/182] pinctrl: msm: Drop OF_IRQ dependency
+
+This driver doesn't rely on any functionality living in
+drivers/of/irq.c to compile. Drop this dependency.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Acked-by: Bjorn Andersson <bjorn.andersson@sonymobile.com>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
+index 1e4e693..06cee01 100644
+--- a/drivers/pinctrl/Kconfig
++++ b/drivers/pinctrl/Kconfig
+@@ -224,7 +224,7 @@ config PINCTRL_MSM
+ 
+ config PINCTRL_MSM8X74
+ 	tristate "Qualcomm 8x74 pin controller driver"
+-	depends on GPIOLIB && OF && OF_IRQ
++	depends on GPIOLIB && OF
+ 	select PINCTRL_MSM
+ 	help
+ 	  This is the pinctrl, pinmux, pinconf and gpiolib driver for the
+-- 
+1.7.10.4
+

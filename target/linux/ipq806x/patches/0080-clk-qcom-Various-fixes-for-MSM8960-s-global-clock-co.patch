@@ -1,0 +1,101 @@
+From 7456451e9df88d4c33479e3d4ea124d8a91ceb57 Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Fri, 4 Apr 2014 11:32:56 -0500
+Subject: [PATCH 080/182] clk: qcom: Various fixes for MSM8960's global clock
+ controller
+
+* Remove CE2_SLEEP_CLK, doesn't exist on 8960 family SoCs
+* Fix incorrect offset for PMIC_SSBI2_RESET
+* Fix typo:
+	SIC_TIC -> SPS_TIC_H
+	SFAB_ADM0_M2_A_CLK -> SFAB_ADM0_M2_H_CLK
+* Fix naming convention:
+	SFAB_CFPB_S_HCLK -> SFAB_CFPB_S_H_CLK
+	SATA_SRC_CLK -> SATA_CLK_SRC
+
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+Reviewed-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Mike Turquette <mturquette@linaro.org>
+---
+ drivers/clk/qcom/gcc-msm8960.c               |    4 ++--
+ include/dt-bindings/clock/qcom,gcc-msm8960.h |    7 +++----
+ include/dt-bindings/reset/qcom,gcc-msm8960.h |    2 +-
+ 3 files changed, 6 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/clk/qcom/gcc-msm8960.c b/drivers/clk/qcom/gcc-msm8960.c
+index 8e2b6dd..f4ffd91 100644
+--- a/drivers/clk/qcom/gcc-msm8960.c
++++ b/drivers/clk/qcom/gcc-msm8960.c
+@@ -2810,7 +2810,7 @@ static const struct qcom_reset_map gcc_msm8960_resets[] = {
+ 	[PPSS_PROC_RESET] = { 0x2594, 1 },
+ 	[PPSS_RESET] = { 0x2594},
+ 	[DMA_BAM_RESET] = { 0x25c0, 7 },
+-	[SIC_TIC_RESET] = { 0x2600, 7 },
++	[SPS_TIC_H_RESET] = { 0x2600, 7 },
+ 	[SLIMBUS_H_RESET] = { 0x2620, 7 },
+ 	[SFAB_CFPB_M_RESET] = { 0x2680, 7 },
+ 	[SFAB_CFPB_S_RESET] = { 0x26c0, 7 },
+@@ -2823,7 +2823,7 @@ static const struct qcom_reset_map gcc_msm8960_resets[] = {
+ 	[SFAB_SFPB_M_RESET] = { 0x2780, 7 },
+ 	[SFAB_SFPB_S_RESET] = { 0x27a0, 7 },
+ 	[RPM_PROC_RESET] = { 0x27c0, 7 },
+-	[PMIC_SSBI2_RESET] = { 0x270c, 12 },
++	[PMIC_SSBI2_RESET] = { 0x280c, 12 },
+ 	[SDC1_RESET] = { 0x2830 },
+ 	[SDC2_RESET] = { 0x2850 },
+ 	[SDC3_RESET] = { 0x2870 },
+diff --git a/include/dt-bindings/clock/qcom,gcc-msm8960.h b/include/dt-bindings/clock/qcom,gcc-msm8960.h
+index 03bbf49..f9f5471 100644
+--- a/include/dt-bindings/clock/qcom,gcc-msm8960.h
++++ b/include/dt-bindings/clock/qcom,gcc-msm8960.h
+@@ -51,7 +51,7 @@
+ #define QDSS_TSCTR_CLK				34
+ #define SFAB_ADM0_M0_A_CLK			35
+ #define SFAB_ADM0_M1_A_CLK			36
+-#define SFAB_ADM0_M2_A_CLK			37
++#define SFAB_ADM0_M2_H_CLK			37
+ #define ADM0_CLK				38
+ #define ADM0_PBUS_CLK				39
+ #define MSS_XPU_CLK				40
+@@ -99,7 +99,7 @@
+ #define CFPB2_H_CLK				82
+ #define SFAB_CFPB_M_H_CLK			83
+ #define CFPB_MASTER_H_CLK			84
+-#define SFAB_CFPB_S_HCLK			85
++#define SFAB_CFPB_S_H_CLK			85
+ #define CFPB_SPLITTER_H_CLK			86
+ #define TSIF_H_CLK				87
+ #define TSIF_INACTIVITY_TIMERS_CLK		88
+@@ -110,7 +110,6 @@
+ #define CE1_SLEEP_CLK				93
+ #define CE2_H_CLK				94
+ #define CE2_CORE_CLK				95
+-#define CE2_SLEEP_CLK				96
+ #define SFPB_H_CLK_SRC				97
+ #define SFPB_H_CLK				98
+ #define SFAB_SFPB_M_H_CLK			99
+@@ -252,7 +251,7 @@
+ #define MSS_S_H_CLK				235
+ #define MSS_CXO_SRC_CLK				236
+ #define SATA_H_CLK				237
+-#define SATA_SRC_CLK				238
++#define SATA_CLK_SRC				238
+ #define SATA_RXOOB_CLK				239
+ #define SATA_PMALIVE_CLK			240
+ #define SATA_PHY_REF_CLK			241
+diff --git a/include/dt-bindings/reset/qcom,gcc-msm8960.h b/include/dt-bindings/reset/qcom,gcc-msm8960.h
+index a840e68..07edd0e 100644
+--- a/include/dt-bindings/reset/qcom,gcc-msm8960.h
++++ b/include/dt-bindings/reset/qcom,gcc-msm8960.h
+@@ -58,7 +58,7 @@
+ #define PPSS_PROC_RESET					41
+ #define PPSS_RESET					42
+ #define DMA_BAM_RESET					43
+-#define SIC_TIC_RESET					44
++#define SPS_TIC_H_RESET					44
+ #define SLIMBUS_H_RESET					45
+ #define SFAB_CFPB_M_RESET				46
+ #define SFAB_CFPB_S_RESET				47
+-- 
+1.7.10.4
+

@@ -1,0 +1,37 @@
+From 77b7f864b03d6b49c143a9c8c19432feef3032b5 Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Fri, 16 May 2014 16:07:14 -0700
+Subject: [PATCH 108/182] clk: qcom: Return error pointers for unimplemented
+ clocks
+
+Not all clocks are implemented but client drivers can still
+request them. Currently we will return a NULL pointer to them if
+the clock isn't implemented in software but NULL pointers are
+valid clock pointers. Return an error pointer so that driver's
+don't proceed without a clock they may actually need.
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Mike Turquette <mturquette@linaro.org>
+---
+ drivers/clk/qcom/common.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clk/qcom/common.c b/drivers/clk/qcom/common.c
+index 86b45fb..9b5a1cf 100644
+--- a/drivers/clk/qcom/common.c
++++ b/drivers/clk/qcom/common.c
+@@ -62,8 +62,10 @@ int qcom_cc_probe(struct platform_device *pdev, const struct qcom_cc_desc *desc)
+ 	data->clk_num = num_clks;
+ 
+ 	for (i = 0; i < num_clks; i++) {
+-		if (!rclks[i])
++		if (!rclks[i]) {
++			clks[i] = ERR_PTR(-ENOENT);
+ 			continue;
++		}
+ 		clk = devm_clk_register_regmap(dev, rclks[i]);
+ 		if (IS_ERR(clk))
+ 			return PTR_ERR(clk);
+-- 
+1.7.10.4
+

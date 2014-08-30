@@ -1,0 +1,55 @@
+From b1325bfad3ad0e543ce90a6b08d74500dc96f4b9 Mon Sep 17 00:00:00 2001
+From: Andy Gross <agross@codeaurora.org>
+Date: Mon, 16 Jun 2014 16:52:55 -0500
+Subject: [PATCH 149/182] pinctrl: qcom: Add BUS_HOLD/Keeper bias
+
+This patch adds the bus_hold bias option for pins.
+
+Signed-off-by: Andy Gross <agross@codeaurora.org>
+---
+ drivers/pinctrl/pinctrl-msm.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
+index 7d67d34..f054b25 100644
+--- a/drivers/pinctrl/pinctrl-msm.c
++++ b/drivers/pinctrl/pinctrl-msm.c
+@@ -207,6 +207,7 @@ static int msm_config_reg(struct msm_pinctrl *pctrl,
+ 	case PIN_CONFIG_BIAS_DISABLE:
+ 	case PIN_CONFIG_BIAS_PULL_DOWN:
+ 	case PIN_CONFIG_BIAS_PULL_UP:
++	case PIN_CONFIG_BIAS_BUS_HOLD:
+ 		*bit = g->pull_bit;
+ 		*mask = 3;
+ 		break;
+@@ -243,6 +244,7 @@ static int msm_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
+ 
+ #define MSM_NO_PULL	0
+ #define MSM_PULL_DOWN	1
++#define MSM_KEEPER	2
+ #define MSM_PULL_UP	3
+ 
+ static unsigned msm_regval_to_drive(u32 val)
+@@ -280,6 +282,9 @@ static int msm_config_group_get(struct pinctrl_dev *pctldev,
+ 	case PIN_CONFIG_BIAS_PULL_DOWN:
+ 		arg = arg == MSM_PULL_DOWN;
+ 		break;
++	case PIN_CONFIG_BIAS_BUS_HOLD:
++		arg = arg == MSM_KEEPER;
++		break;
+ 	case PIN_CONFIG_BIAS_PULL_UP:
+ 		arg = arg == MSM_PULL_UP;
+ 		break;
+@@ -339,6 +344,9 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
+ 		case PIN_CONFIG_BIAS_PULL_DOWN:
+ 			arg = MSM_PULL_DOWN;
+ 			break;
++		case PIN_CONFIG_BIAS_BUS_HOLD:
++			arg = MSM_KEEPER;
++			break;
+ 		case PIN_CONFIG_BIAS_PULL_UP:
+ 			arg = MSM_PULL_UP;
+ 			break;
+-- 
+1.7.10.4
+

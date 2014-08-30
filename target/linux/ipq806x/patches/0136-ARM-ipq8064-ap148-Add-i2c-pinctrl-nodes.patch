@@ -1,0 +1,93 @@
+From e93b9480667cbd0e3a4276e8749279693fe239f4 Mon Sep 17 00:00:00 2001
+From: Andy Gross <agross@codeaurora.org>
+Date: Wed, 14 May 2014 22:49:03 -0500
+Subject: [PATCH 136/182] ARM: ipq8064-ap148: Add i2c pinctrl nodes
+
+Signed-off-by: Andy Gross <agross@codeaurora.org>
+---
+ arch/arm/boot/dts/qcom-ipq8064-ap148.dts |   17 +++++++++++++++++
+ arch/arm/boot/dts/qcom-ipq8064.dtsi      |   27 +++++++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+
+diff --git a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+index 100b6eb..dbb546d 100644
+--- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
++++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+@@ -14,12 +14,29 @@
+ 	};
+ 
+ 	soc {
++		pinmux@800000 {
++			i2c4_pins: i2c4_pinmux {
++				pins = "gpio12", "gpio13";
++				function = "gsbi4";
++				bias-disable;
++			};
++		};
++
+ 		gsbi@16300000 {
+ 			qcom,mode = <GSBI_PROT_I2C_UART>;
+ 			status = "ok";
+ 			serial@16340000 {
+ 				status = "ok";
+ 			};
++
++			i2c4: i2c@16380000 {
++				status = "ok";
++
++				clock-frequency = <200000>;
++
++				pinctrl-0 = <&i2c4_pins>;
++				pinctrl-names = "default";
++			};
+ 		};
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/qcom-ipq8064.dtsi b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+index 952afb7..b39c1ef 100644
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -137,6 +137,20 @@
+ 				clock-names = "core", "iface";
+ 				status = "disabled";
+ 			};
++
++			i2c@124a0000 {
++				compatible = "qcom,i2c-qup-v1.1.1";
++				reg = <0x124a0000 0x1000>;
++				interrupts = <0 196 0>;
++
++				clocks = <&gcc GSBI2_QUP_CLK>, <&gcc GSBI2_H_CLK>;
++				clock-names = "core", "iface";
++				status = "disabled";
++
++				#address-cells = <1>;
++				#size-cells = <0>;
++			};
++
+ 		};
+ 
+ 		gsbi4: gsbi@16300000 {
+@@ -158,6 +172,19 @@
+ 				clock-names = "core", "iface";
+ 				status = "disabled";
+ 			};
++
++			i2c@16380000 {
++				compatible = "qcom,i2c-qup-v1.1.1";
++				reg = <0x16380000 0x1000>;
++				interrupts = <0 153 0>;
++
++				clocks = <&gcc GSBI4_QUP_CLK>, <&gcc GSBI4_H_CLK>;
++				clock-names = "core", "iface";
++				status = "disabled";
++
++				#address-cells = <1>;
++				#size-cells = <0>;
++			};
+ 		};
+ 
+ 		qcom,ssbi@500000 {
+-- 
+1.7.10.4
+

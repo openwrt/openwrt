@@ -1,0 +1,96 @@
+From 258a3ea23ec048603debe1621c681b0cc733f236 Mon Sep 17 00:00:00 2001
+From: Stephen Boyd <sboyd@codeaurora.org>
+Date: Wed, 18 Jun 2014 16:04:37 -0700
+Subject: [PATCH 175/182] ARM: dts: ipq8064: Add necessary DT data for Krait
+ cpufreq
+
+Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
+---
+ arch/arm/boot/dts/qcom-ipq8064.dtsi |   45 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 45 insertions(+)
+
+diff --git a/arch/arm/boot/dts/qcom-ipq8064.dtsi b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+index 6be6ac9..97e4c3d 100644
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -23,6 +23,22 @@
+ 			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc0>;
+ 			qcom,saw = <&saw0>;
++			clocks = <&kraitcc 0>;
++			clock-names = "cpu";
++			operating-points = <
++				/* kHz    ignored */
++				1400000 1000000
++				1200000 1000000
++				1000000 1000000
++				 800000 1000000
++				 600000 1000000
++				 384000 1000000
++			>;
++			clock-latency = <100000>;
++
++			cooling-min-state = <0>;
++			cooling-max-state = <10>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		cpu@1 {
+@@ -33,6 +49,22 @@
+ 			next-level-cache = <&L2>;
+ 			qcom,acc = <&acc1>;
+ 			qcom,saw = <&saw1>;
++			clocks = <&kraitcc 1>;
++			clock-names = "cpu";
++			operating-points = <
++				/* kHz    ignored */
++				1400000 1000000
++				1200000 1000000
++				1000000 1000000
++				 800000 1000000
++				 600000 1000000
++				 384000 1000000
++			>;
++			clock-latency = <100000>;
++
++			cooling-min-state = <0>;
++			cooling-max-state = <10>;
++			#cooling-cells = <2>;
+ 		};
+ 
+ 		L2: l2-cache {
+@@ -46,6 +78,11 @@
+ 		interrupts = <1 10 0x304>;
+ 	};
+ 
++	kraitcc: clock-controller {
++		compatible = "qcom,krait-cc-v1";
++		#clock-cells = <1>;
++	};
++
+ 	reserved-memory {
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+@@ -102,11 +139,19 @@
+ 		acc0: clock-controller@2088000 {
+ 			compatible = "qcom,kpss-acc-v1";
+ 			reg = <0x02088000 0x1000>, <0x02008000 0x1000>;
++			clock-output-names = "acpu0_aux";
+ 		};
+ 
+ 		acc1: clock-controller@2098000 {
+ 			compatible = "qcom,kpss-acc-v1";
+ 			reg = <0x02098000 0x1000>, <0x02008000 0x1000>;
++			clock-output-names = "acpu1_aux";
++		};
++
++		l2cc: clock-controller@2011000 {
++			compatible = "qcom,kpss-gcc";
++			reg = <0x2011000 0x1000>;
++			clock-output-names = "acpu_l2_aux";
+ 		};
+ 
+ 		saw0: regulator@2089000 {
+-- 
+1.7.10.4
+

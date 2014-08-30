@@ -1,0 +1,269 @@
+From 1c6e51ffb10f5bf93a3018c7c1e04d7ed93f944e Mon Sep 17 00:00:00 2001
+From: Kumar Gala <galak@codeaurora.org>
+Date: Fri, 7 Mar 2014 10:56:59 -0600
+Subject: [PATCH 130/182] ARM: qcom: Add initial IPQ8064 SoC and AP148 device
+ trees
+
+Add basic IPQ8064 SoC include device tree and support for basic booting on
+the AP148 Reference board.
+
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+---
+ arch/arm/boot/dts/Makefile               |    1 +
+ arch/arm/boot/dts/qcom-ipq8064-ap148.dts |   25 +++++
+ arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi |    1 +
+ arch/arm/boot/dts/qcom-ipq8064.dtsi      |  176 ++++++++++++++++++++++++++++++
+ arch/arm/mach-qcom/board.c               |    2 +
+ 5 files changed, 205 insertions(+)
+ create mode 100644 arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+ create mode 100644 arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi
+ create mode 100644 arch/arm/boot/dts/qcom-ipq8064.dtsi
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index f2aeb95..f22c51d 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -235,6 +235,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
+ 	qcom-apq8064-ifc6410.dtb \
+ 	qcom-apq8074-dragonboard.dtb \
+ 	qcom-apq8084-mtp.dtb \
++	qcom-ipq8064-ap148.dtb \
+ 	qcom-msm8660-surf.dtb \
+ 	qcom-msm8960-cdp.dtb
+ dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
+diff --git a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+new file mode 100644
+index 0000000..100b6eb
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+@@ -0,0 +1,25 @@
++#include "qcom-ipq8064-v1.0.dtsi"
++
++/ {
++	model = "Qualcomm IPQ8064/AP148";
++	compatible = "qcom,ipq8064-ap148", "qcom,ipq8064";
++
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		rsvd@41200000 {
++			reg = <0x41200000 0x300000>;
++			no-map;
++		};
++	};
++
++	soc {
++		gsbi@16300000 {
++			qcom,mode = <GSBI_PROT_I2C_UART>;
++			status = "ok";
++			serial@16340000 {
++				status = "ok";
++			};
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi b/arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi
+new file mode 100644
+index 0000000..7093b07
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi
+@@ -0,0 +1 @@
++#include "qcom-ipq8064.dtsi"
+diff --git a/arch/arm/boot/dts/qcom-ipq8064.dtsi b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+new file mode 100644
+index 0000000..952afb7
+--- /dev/null
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -0,0 +1,176 @@
++/dts-v1/;
++
++#include "skeleton.dtsi"
++#include <dt-bindings/clock/qcom,gcc-ipq806x.h>
++#include <dt-bindings/soc/qcom,gsbi.h>
++
++/ {
++	model = "Qualcomm IPQ8064";
++	compatible = "qcom,ipq8064";
++	interrupt-parent = <&intc>;
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu@0 {
++			compatible = "qcom,krait";
++			enable-method = "qcom,kpss-acc-v1";
++			device_type = "cpu";
++			reg = <0>;
++			next-level-cache = <&L2>;
++			qcom,acc = <&acc0>;
++			qcom,saw = <&saw0>;
++		};
++
++		cpu@1 {
++			compatible = "qcom,krait";
++			enable-method = "qcom,kpss-acc-v1";
++			device_type = "cpu";
++			reg = <1>;
++			next-level-cache = <&L2>;
++			qcom,acc = <&acc1>;
++			qcom,saw = <&saw1>;
++		};
++
++		L2: l2-cache {
++			compatible = "cache";
++			cache-level = <2>;
++		};
++	};
++
++	cpu-pmu {
++		compatible = "qcom,krait-pmu";
++		interrupts = <1 10 0x304>;
++	};
++
++	reserved-memory {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++
++		nss@40000000 {
++			reg = <0x40000000 0x1000000>;
++			no-map;
++		};
++
++		smem@41000000 {
++			reg = <0x41000000 0x200000>;
++			no-map;
++		};
++	};
++
++	soc: soc {
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges;
++		compatible = "simple-bus";
++
++		qcom_pinmux: pinmux@800000 {
++			compatible = "qcom,ipq8064-pinctrl";
++			reg = <0x800000 0x4000>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++			interrupts = <0 32 0x4>;
++		};
++
++		intc: interrupt-controller@2000000 {
++			compatible = "qcom,msm-qgic2";
++			interrupt-controller;
++			#interrupt-cells = <3>;
++			reg = <0x02000000 0x1000>,
++			      <0x02002000 0x1000>;
++		};
++
++		timer@200a000 {
++			compatible = "qcom,kpss-timer", "qcom,msm-timer";
++			interrupts = <1 1 0x301>,
++				     <1 2 0x301>,
++				     <1 3 0x301>;
++			reg = <0x0200a000 0x100>;
++			clock-frequency = <25000000>,
++					  <32768>;
++			cpu-offset = <0x80000>;
++		};
++
++		acc0: clock-controller@2088000 {
++			compatible = "qcom,kpss-acc-v1";
++			reg = <0x02088000 0x1000>, <0x02008000 0x1000>;
++		};
++
++		acc1: clock-controller@2098000 {
++			compatible = "qcom,kpss-acc-v1";
++			reg = <0x02098000 0x1000>, <0x02008000 0x1000>;
++		};
++
++		saw0: regulator@2089000 {
++			compatible = "qcom,saw2";
++			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;
++			regulator;
++		};
++
++		saw1: regulator@2099000 {
++			compatible = "qcom,saw2";
++			reg = <0x02099000 0x1000>, <0x02009000 0x1000>;
++			regulator;
++		};
++
++		gsbi2: gsbi@12480000 {
++			compatible = "qcom,gsbi-v1.0.0";
++			reg = <0x12480000 0x100>;
++			clocks = <&gcc GSBI2_H_CLK>;
++			clock-names = "iface";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++			status = "disabled";
++
++			serial@12490000 {
++				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
++				reg = <0x12490000 0x1000>,
++				      <0x12480000 0x1000>;
++				interrupts = <0 195 0x0>;
++				clocks = <&gcc GSBI2_UART_CLK>, <&gcc GSBI2_H_CLK>;
++				clock-names = "core", "iface";
++				status = "disabled";
++			};
++		};
++
++		gsbi4: gsbi@16300000 {
++			compatible = "qcom,gsbi-v1.0.0";
++			reg = <0x16300000 0x100>;
++			clocks = <&gcc GSBI4_H_CLK>;
++			clock-names = "iface";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++			status = "disabled";
++
++			serial@16340000 {
++				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
++				reg = <0x16340000 0x1000>,
++				      <0x16300000 0x1000>;
++				interrupts = <0 152 0x0>;
++				clocks = <&gcc GSBI4_UART_CLK>, <&gcc GSBI4_H_CLK>;
++				clock-names = "core", "iface";
++				status = "disabled";
++			};
++		};
++
++		qcom,ssbi@500000 {
++			compatible = "qcom,ssbi";
++			reg = <0x00500000 0x1000>;
++			qcom,controller-type = "pmic-arbiter";
++		};
++
++		gcc: clock-controller@900000 {
++			compatible = "qcom,gcc-ipq8064";
++			reg = <0x00900000 0x4000>;
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++	};
++};
+diff --git a/arch/arm/mach-qcom/board.c b/arch/arm/mach-qcom/board.c
+index c437a99..6d8bbf7 100644
+--- a/arch/arm/mach-qcom/board.c
++++ b/arch/arm/mach-qcom/board.c
+@@ -18,6 +18,8 @@ static const char * const qcom_dt_match[] __initconst = {
+ 	"qcom,apq8064",
+ 	"qcom,apq8074-dragonboard",
+ 	"qcom,apq8084",
++	"qcom,ipq8062",
++	"qcom,ipq8064",
+ 	"qcom,msm8660-surf",
+ 	"qcom,msm8960-cdp",
+ 	NULL
+-- 
+1.7.10.4
+

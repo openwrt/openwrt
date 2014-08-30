@@ -1,0 +1,35 @@
+From b0f93ef8f790e77049b6149416ef0ba05cce7089 Mon Sep 17 00:00:00 2001
+From: Stanimir Varbanov <svarbanov@mm-sol.com>
+Date: Fri, 7 Feb 2014 11:23:07 +0200
+Subject: [PATCH 022/182] ARM: dts: qcom: Add RNG device tree node
+
+Add the necessary DT node to probe the rng driver on
+msm8974 platforms.
+
+Signed-off-by: Stanimir Varbanov <svarbanov@mm-sol.com>
+Acked-by: Stephen Boyd <sboyd@codeaurora.org>
+Signed-off-by: Kumar Gala <galak@codeaurora.org>
+---
+ arch/arm/boot/dts/qcom-msm8974.dtsi |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/qcom-msm8974.dtsi b/arch/arm/boot/dts/qcom-msm8974.dtsi
+index 39eebc5..011eb09 100644
+--- a/arch/arm/boot/dts/qcom-msm8974.dtsi
++++ b/arch/arm/boot/dts/qcom-msm8974.dtsi
+@@ -186,5 +186,12 @@
+ 			clocks = <&gcc GCC_BLSP1_UART2_APPS_CLK>, <&gcc GCC_BLSP1_AHB_CLK>;
+ 			clock-names = "core", "iface";
+ 		};
++
++		rng@f9bff000 {
++			compatible = "qcom,prng";
++			reg = <0xf9bff000 0x200>;
++			clocks = <&gcc GCC_PRNG_AHB_CLK>;
++			clock-names = "core";
++		};
+ 	};
+ };
+-- 
+1.7.10.4
+
