@@ -1257,10 +1257,12 @@ static int ag71xx_probe(struct platform_device *pdev)
 	ag->max_frame_len = pdata->max_frame_len;
 	ag->desc_pktlen_mask = pdata->desc_pktlen_mask;
 
+#ifdef notyet
 	if (!pdata->is_ar724x && !pdata->is_ar91xx) {
 		ag->tx_ring.desc_split = AG71XX_TX_RING_SPLIT;
 		ag->tx_ring.size *= AG71XX_TX_RING_DS_PER_PKT;
 	}
+#endif
 
 	ag->stop_desc = dma_alloc_coherent(NULL,
 		sizeof(struct ag71xx_desc), &ag->stop_desc_dma, GFP_KERNEL);
