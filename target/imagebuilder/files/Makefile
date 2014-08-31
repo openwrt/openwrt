@@ -149,6 +149,7 @@ package_postinst: FORCE
 			IPKG_INSTROOT=$(TARGET_DIR) $(which bash) ./etc/rc.common $$script enable; \
 		done || true; \
 	)
+	rm -f $(TARGET_DIR)/usr/lib/opkg/info/*.postinst
 	$(if $(CONFIG_CLEAN_IPKG),rm -rf $(TARGET_DIR)/usr/lib/opkg)
 
 build_image: FORCE
