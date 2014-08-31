@@ -10,6 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=nettle
 PKG_VERSION:=2.7.1
 PKG_RELEASE:=1
+PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/nettle
