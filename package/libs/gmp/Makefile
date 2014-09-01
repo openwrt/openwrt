@@ -22,6 +22,7 @@ PKG_FIXUP:=autoreconf
 
 PKG_USE_MIPS16:=0
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libgmp
@@ -44,7 +45,6 @@ CONFIGURE_ARGS += \
 	--without-readline \
 	--disable-fft \
 
-
 define Build/Compile
 	$(call Build/Compile/Default, \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
@@ -66,3 +66,4 @@ define Package/libgmp/install
 endef
 
 $(eval $(call BuildPackage,libgmp))
+$(eval $(call HostBuild))
