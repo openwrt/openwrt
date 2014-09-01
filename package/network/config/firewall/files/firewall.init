@@ -15,8 +15,6 @@ validate_firewall_redirect()
 		'dest_ip:cidr' \
 		'dest_port:or(port, portrange)' \
 		'target:or("SNAT", "DNAT")'
-	
-	return $?
 }
 
 validate_firewall_rule()
@@ -28,8 +26,6 @@ validate_firewall_rule()
 		'src_port:or(port, portrange)' \
 		'dest_port:or(port, portrange)' \
 		'target:string'
-	
-	return $?
 }
 
 service_triggers() {

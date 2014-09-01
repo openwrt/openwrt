@@ -50,8 +50,6 @@ validate_atm_bridge_section()
 		'atmdev:uinteger:0' \
 		'encaps:or("llc", "vc"):llc' \
 		'payload:or("bridged", "routed"):bridged'
-
-	return $?
 }
 
 validate_route_section()
@@ -64,8 +62,6 @@ validate_route_section()
 		'metric:uinteger' \
 		'mtu:uinteger' \
 		'table:or(range(0,65535),string)'
-
-	return $?
 }
 
 validate_route6_section()
@@ -77,8 +73,6 @@ validate_route6_section()
 		'metric:uinteger' \
 		'mtu:uinteger' \
 		'table:or(range(0,65535),string)'
-
-	return $?
 }
 
 validate_rule_section()
@@ -94,8 +88,6 @@ validate_rule_section()
 		'lookup:or(range(0,65535),string)' \
 		'goto:range(0,65535)' \
 		'action:or("prohibit", "unreachable", "blackhole", "throw")'
-
-	return $?
 }
 
 validate_rule6_section()
@@ -111,8 +103,6 @@ validate_rule6_section()
 		'lookup:or(range(0,65535),string)' \
 		'goto:range(0,65535)' \
 		'action:or("prohibit", "unreachable", "blackhole", "throw")'
-
-	return $?
 }
 
 validate_switch_section()
@@ -122,8 +112,6 @@ validate_switch_section()
 		'enable:bool' \
 		'enable_vlan:bool' \
 		'reset:bool'
-
-	return $?
 }
 
 validate_switch_vlan()
@@ -132,8 +120,6 @@ validate_switch_vlan()
 		'device:string' \
 		'vlan:uinteger' \
 		'ports:list(ports)'
-
-	return $?
 }
 
 service_triggers()
