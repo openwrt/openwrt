@@ -299,14 +299,16 @@ dhcp_host_add() {
 	}
 
 	config_get mac "$cfg" mac
-	[ -z "$mac" ] && {
+	if [ -n "$mac" ]; then
+		# --dhcp-host=00:20:e0:3b:13:af,192.168.0.199,lap
+		macs=""
+		for m in $mac; do append macs "$m" ","; done
+	else
+		# --dhcp-host=lap,192.168.0.199
 		[ -n "$name" ] || return 0
-		mac="$name"
+		macs="$name"
 		name=""
-	}
-
-	macs=""
-	for m in $mac; do append macs "$m" ","; done
+	fi
 
 	config_get tag "$cfg" tag
 
