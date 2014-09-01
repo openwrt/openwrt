@@ -211,6 +211,9 @@ tplink_board_detect() {
 	"453000"*)
 		model="MERCURY MW4530R"
 		;;
+	"934100"*)
+		model="NC-LINK SMART-300"
+		;;
 	*)
 		hwver=""
 		;;
@@ -516,6 +519,9 @@ ar71xx_board_detect() {
 		;;
 	*RW2458N)
 		name="rw2458n"
+		;;
+	*"SMART-300")
+		name="smart-300"
 		;;
 	*TEW-632BRP)
 		name="tew-632brp"

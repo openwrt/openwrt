@@ -160,6 +160,9 @@ get_status_led() {
 	rw2458n)
 		status_led="rw2458n:green:d3"
 		;;
+	smart-300)
+		status_led="nc-link:green:system"
+		;;
 	oolite)
 		status_led="oolite:red:system"
 		;;
