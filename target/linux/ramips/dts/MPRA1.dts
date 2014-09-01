@@ -41,12 +41,15 @@
 				};
 			};
 		};
+		gpio1: gpio@660 {
+			status = "okay";
+		};
 	};
 
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf";
+				ralink,group = "i2c", "jtag", "rgmii", "mdio", "uartf", "led";
 				ralink,function = "gpio";
 			};
 		};
