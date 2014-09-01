@@ -26,7 +26,11 @@ ppp_generic_setup() {
 	local config="$1"; shift
 
 	json_get_vars ipv6 demand keepalive username password pppd_options pppname
-	[ "$ipv6" = 1 ] || ipv6=""
+	if [ "$ipv6" = 0 ]; then
+		ipv6=""
+	else
+		ipv6=1
+	fi
 	if [ "${demand:-0}" -gt 0 ]; then
 		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
 	else
