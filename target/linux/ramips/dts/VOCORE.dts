@@ -22,14 +22,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				compatible = "s25fl064k";
-				reg = <0 0>;
+				reg = <0>;
 				linux,modalias = "m25p80", "s25fl064k";
 				spi-max-frequency = <10000000>;
 
 				partition@0 {
 					label = "uboot";
 					reg = <0x0 0x30000>;
-					read_only;
+					read-only;
 				};
 
 				partition@30000 {
@@ -49,13 +49,19 @@
 					reg = <0x50000 0x7b0000>;
 				};
 			};
+
+			spidev@1 {
+				compatible = "linux,spidev";
+				spi-max-frequency = <10000000>;
+				reg = <1>;
+			};
 		};
 	};
 
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "jtag", "uartf", "led", "spi_cs1";
+				ralink,group = "jtag", "uartf", "led";
 				ralink,function = "gpio";
 			};
 		};
@@ -191,13 +197,6 @@
 			gpio-export,name = "gpio26";
 			gpio-export,direction_may_change = <1>;
 			gpios = <&gpio1 4 0>;
-		};
-
-		/* SPI_CS1 */
-		gpio27 {
-			gpio-export,name = "gpio27";
-			gpio-export,direction_may_change = <1>;
-			gpios = <&gpio1 5 0>;
 		};
 	};
 
