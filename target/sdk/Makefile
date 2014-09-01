@@ -31,8 +31,7 @@ EXCLUDE_DIRS:=*/ccache \
 	*.install.clean \
 	*.install.flags \
 	*.install \
-	*/doc \
-	$(STAGING_SUBDIR_TARGET)/usr/bin
+	*/doc
 
 SDK_DIRS = \
 		$(STAGING_SUBDIR_HOST) \
