@@ -1,3 +1,5 @@
+/dts-v1/;
+
 /include/ "vr9.dtsi"
 
 / {
@@ -161,6 +163,13 @@
 			status = "disabled";
 			compatible = "lantiq,pci-xway";
 		};
+	};
+
+	gphy-xrx200 {
+		compatible = "lantiq,phy-xrx200";
+		firmware1 = "lantiq/vr9_phy22f_a1x.bin";	/*VR9 1.1*/
+		firmware2 = "lantiq/vr9_phy22f_a2x.bin";	/*VR9 1.2*/
+		phys = [ 00 01 ];
 	};
 
 	gpio-keys-polled {
