@@ -22,7 +22,7 @@ Index: compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c
 -		rt2x00_set_field8(&rfcsr, RFCSR30_TX_H20M, 0);
 -		rt2x00_set_field8(&rfcsr, RFCSR30_RX_H20M, 0);
 +		if(rt2x00_rf(rt2x00dev, RF3322)) {
-+			rt2x00_set_field8(&rfcsr, RF3320_RFCSR30_TX_H20M, conf_is_ht40(conf));
++			rt2x00_set_field8(&rfcsr, RF3322_RFCSR30_TX_H20M, conf_is_ht40(conf));
 +			rt2x00_set_field8(&rfcsr, RF3322_RFCSR30_RX_H20M, conf_is_ht40(conf));
 +		} else {
 +			rt2x00_set_field8(&rfcsr, RFCSR30_TX_H20M, conf_is_ht40(conf));
