@@ -129,6 +129,9 @@ get_status_led() {
 	v22rw-2x2)
 		status_led="v22rw-2x2:green:security"
 		;;
+	vocore)
+		status_led="vocore:green:status"
+		;;
 	w306r-v20)
 		status_led="w306r-v20:green:sys"
 		;;

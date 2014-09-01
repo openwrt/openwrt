@@ -238,6 +238,9 @@ ramips_board_detect() {
 	*"V22RW-2X2")
 		name="v22rw-2x2"
 		;;
+	*"VoCore")
+		name="vocore"
+		;;
 	*"W502U")
 		name="w502u"
 		;;
