@@ -151,7 +151,7 @@
 		};
 
 		spi@b00 {
-			compatible = "ralink,rt5350-spi", "ralink,rt2880-spi";
+			compatible = "ralink,rt5350-spi";
 			reg = <0xb00 0x100>;
 
 			resets = <&rstctrl 18>;
@@ -161,7 +161,7 @@
 			#size-cells = <1>;
 
 			pinctrl-names = "default";
-			pinctrl-0 = <&spi_pins>;
+			pinctrl-0 = <&spi_pins &spi_cs1>;
 
 			status = "disabled";
 		};
