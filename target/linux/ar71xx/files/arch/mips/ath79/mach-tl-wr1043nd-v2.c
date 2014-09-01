@@ -168,7 +168,6 @@ static void __init tl_wr1043nd_v2_setup(void)
 {
 	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
-	u8 tmpmac[ETH_ALEN];
 
 	ath79_register_m25p80(&wr1043nd_v2_flash_data);
 
@@ -178,8 +177,7 @@ static void __init tl_wr1043nd_v2_setup(void)
 					ARRAY_SIZE(tl_wr1043_v2_gpio_keys),
 					tl_wr1043_v2_gpio_keys);
 
-	ath79_init_mac(tmpmac, mac, -1);
-	ath79_register_wmac(art + TL_WR1043_V2_WMAC_CALDATA_OFFSET, tmpmac);
+	ath79_register_wmac(art + TL_WR1043_V2_WMAC_CALDATA_OFFSET, mac);
 
 	mdiobus_register_board_info(wr1043nd_v2_mdio0_info,
 				    ARRAY_SIZE(wr1043nd_v2_mdio0_info));
