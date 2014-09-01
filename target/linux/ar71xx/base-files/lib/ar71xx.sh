@@ -496,6 +496,9 @@ ar71xx_board_detect() {
 	*"RouterBOARD 2011UAS-2HnD")
 		name="rb-2011uas-2hnd"
 		;;
+	*"RouterBOARD 2011UiAS-2HnD")
+		name="rb-2011uias-2hnd"
+		;;
 	*"RouterBOARD SXT Lite2")
 		name="rb-sxt2n"
 		;;
