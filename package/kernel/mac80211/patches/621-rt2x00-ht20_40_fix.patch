@@ -1,0 +1,33 @@
+Index: compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h
+===================================================================
+--- compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800.h	2014-08-31 05:04:55.600142409 +0200
++++ compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h	2014-08-31 05:11:02.068145882 +0200
+@@ -2346,6 +2346,8 @@
+ #define RFCSR30_RX_H20M			FIELD8(0x04)
+ #define RFCSR30_RX_VCM			FIELD8(0x18)
+ #define RFCSR30_RF_CALIBRATION		FIELD8(0x80)
++#define RF3322_RFCSR30_TX_H20M		FIELD8(0x01)
++#define RF3322_RFCSR30_RX_H20M		FIELD8(0x02)
+ 
+ /*
+  * RFCSR 31:
+Index: compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c
+===================================================================
+--- compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800lib.c	2014-08-31 05:04:55.604142409 +0200
++++ compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c	2014-08-31 05:15:02.176148157 +0200
+@@ -3928,8 +3928,13 @@
+ 	    rt2x00_rf(rt2x00dev, RF5390) ||
+ 	    rt2x00_rf(rt2x00dev, RF5392)) {
+ 		rt2800_rfcsr_read(rt2x00dev, 30, &rfcsr);
+-		rt2x00_set_field8(&rfcsr, RFCSR30_TX_H20M, 0);
+-		rt2x00_set_field8(&rfcsr, RFCSR30_RX_H20M, 0);
++		if(rt2x00_rf(rt2x00dev, RF3322)) {
++			rt2x00_set_field8(&rfcsr, RF3322_RFCSR30_TX_H20M, conf_is_ht40(conf));
++			rt2x00_set_field8(&rfcsr, RF3322_RFCSR30_RX_H20M, conf_is_ht40(conf));
++		} else {
++			rt2x00_set_field8(&rfcsr, RFCSR30_TX_H20M, conf_is_ht40(conf));
++			rt2x00_set_field8(&rfcsr, RFCSR30_RX_H20M, conf_is_ht40(conf));
++		}
+ 		rt2800_rfcsr_write(rt2x00dev, 30, rfcsr);
+ 
+ 		rt2800_rfcsr_read(rt2x00dev, 3, &rfcsr);
