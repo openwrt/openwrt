@@ -184,6 +184,9 @@ ramips_board_detect() {
 	*"Omnima MiniEMBWiFi")
 		name="omni-emb"
 		;;
+	*"Omnima MiniPlug")
+		name="omni-plug"
+		;;
 	*"Petatel PSR-680W"*)
 		name="psr-680w"
 		;;
