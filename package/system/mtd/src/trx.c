@@ -107,7 +107,7 @@ trx_check(int imagefd, const char *mtd, char *buf, int *len)
 	const struct trx_header *trx = (const struct trx_header *) buf;
 	int fd;
 
-	if (strcmp(mtd, "linux") != 0)
+	if (strcmp(mtd, "firmware") != 0)
 		return 1;
 
 	*len = read(imagefd, buf, 32);
