@@ -11,7 +11,7 @@ BOARD:=at91
 MAINTAINER:=Claudio Mignanti <c.mignanti@gmail.com>
 BOARDNAME:=Atmel AT91
 FEATURES:=squashfs targz ext2 usb
-CPU_TYPE:=arm926ej-s
+SUBTARGETS:=legacy
 
 LINUX_VERSION:=3.10.49
 
