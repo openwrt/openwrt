@@ -48,7 +48,7 @@ Image/Build/Kernel/AT91SAM9X25EK=$(call MkuImageDtb,9x25ek,at91sam9x25ek)
 Image/Build/Kernel/AT91SAM9X35EK=$(call MkuImageDtb,9x35ek,at91sam9x35ek)
 # CalAmp
 Image/Build/Kernel/LMU5000=$(call MkuImageDtb,lmu5000,lmu5000)
-# Caloa
+# Calao
 Image/Build/Kernel/TNYA9260=$(call MkuImageDtb,tny_a9260,tny_a9260)
 Image/Build/Kernel/TNYA9263=$(call MkuImageDtb,tny_a9263,tny_a9263)
 Image/Build/Kernel/TNYA9G20=$(call MkuImageDtb,tny_a9g20,tny_a9g20)
