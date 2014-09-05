@@ -15,11 +15,9 @@
 #
 # - Nothing useful is done with stdin
 #
-diff --git a/arch/um/drivers/mconsole.h b/arch/um/drivers/mconsole.h
-index 8b22535..77cc5f7 100644
 --- a/arch/um/drivers/mconsole.h
 +++ b/arch/um/drivers/mconsole.h
-@@ -85,6 +85,7 @@ extern void mconsole_cad(struct mc_request *req);
+@@ -85,6 +85,7 @@ extern void mconsole_cad(struct mc_reque
  extern void mconsole_stop(struct mc_request *req);
  extern void mconsole_go(struct mc_request *req);
  extern void mconsole_log(struct mc_request *req);
@@ -27,8 +25,6 @@ index 8b22535..77cc5f7 100644
  extern void mconsole_proc(struct mc_request *req);
  extern void mconsole_stack(struct mc_request *req);
  
-diff --git a/arch/um/drivers/mconsole_kern.c b/arch/um/drivers/mconsole_kern.c
-index 3df3bd5..307bf75 100644
 --- a/arch/um/drivers/mconsole_kern.c
 +++ b/arch/um/drivers/mconsole_kern.c
 @@ -4,6 +4,7 @@
@@ -47,7 +43,7 @@ index 3df3bd5..307bf75 100644
  #include <asm/uaccess.h>
  #include <asm/switch_to.h>
  
-@@ -121,6 +123,59 @@ void mconsole_log(struct mc_request *req)
+@@ -121,6 +123,59 @@ void mconsole_log(struct mc_request *req
  	mconsole_reply(req, "", 0, 0);
  }
  
@@ -107,7 +103,7 @@ index 3df3bd5..307bf75 100644
  void mconsole_proc(struct mc_request *req)
  {
  	struct vfsmount *mnt = task_active_pid_ns(current)->proc_mnt;
-@@ -187,6 +242,7 @@ void mconsole_proc(struct mc_request *req)
+@@ -187,6 +242,7 @@ void mconsole_proc(struct mc_request *re
      stop - pause the UML; it will do nothing until it receives a 'go' \n\
      go - continue the UML after a 'stop' \n\
      log <string> - make UML enter <string> into the kernel log\n\
@@ -115,11 +111,9 @@ index 3df3bd5..307bf75 100644
      proc <file> - returns the contents of the UML's /proc/<file>\n\
      stack <pid> - returns the stack of the specified pid\n\
  "
-diff --git a/arch/um/drivers/mconsole_user.c b/arch/um/drivers/mconsole_user.c
-index 9920982..3ed0d32 100644
 --- a/arch/um/drivers/mconsole_user.c
 +++ b/arch/um/drivers/mconsole_user.c
-@@ -30,6 +30,7 @@ static struct mconsole_command commands[] = {
+@@ -30,6 +30,7 @@ static struct mconsole_command commands[
  	{ "stop", mconsole_stop, MCONSOLE_PROC },
  	{ "go", mconsole_go, MCONSOLE_INTR },
  	{ "log", mconsole_log, MCONSOLE_INTR },
@@ -127,11 +121,9 @@ index 9920982..3ed0d32 100644
  	{ "proc", mconsole_proc, MCONSOLE_PROC },
  	{ "stack", mconsole_stack, MCONSOLE_INTR },
  };
-diff --git a/arch/um/os-Linux/file.c b/arch/um/os-Linux/file.c
-index c17bd6f..1c55fa8 100644
 --- a/arch/um/os-Linux/file.c
 +++ b/arch/um/os-Linux/file.c
-@@ -519,6 +519,8 @@ int os_create_unix_socket(const char *file, int len, int close_on_exec)
+@@ -528,6 +528,8 @@ int os_create_unix_socket(const char *fi
  
  	addr.sun_family = AF_UNIX;
  
@@ -140,8 +132,6 @@ index c17bd6f..1c55fa8 100644
  	snprintf(addr.sun_path, len, "%s", file);
  
  	err = bind(sock, (struct sockaddr *) &addr, sizeof(addr));
-diff --git a/include/linux/kmod.h b/include/linux/kmod.h
-index 0555cc6..476084d 100644
 --- a/include/linux/kmod.h
 +++ b/include/linux/kmod.h
 @@ -62,6 +62,7 @@ struct subprocess_info {
@@ -152,15 +142,13 @@ index 0555cc6..476084d 100644
  	void (*cleanup)(struct subprocess_info *info);
  	void *data;
  };
-@@ -104,4 +105,6 @@ extern int usermodehelper_read_trylock(void);
+@@ -104,4 +105,6 @@ extern int usermodehelper_read_trylock(v
  extern long usermodehelper_read_lock_wait(long timeout);
  extern void usermodehelper_read_unlock(void);
  
 +int call_usermodehelper_stdoutpipe(struct subprocess_info *sub_info, struct file **filp);
 +
  #endif /* __LINUX_KMOD_H__ */
-diff --git a/kernel/kmod.c b/kernel/kmod.c
-index 8241906..2d7f718 100644
 --- a/kernel/kmod.c
 +++ b/kernel/kmod.c
 @@ -39,6 +39,7 @@
@@ -171,7 +159,7 @@ index 8241906..2d7f718 100644
  #include <asm/uaccess.h>
  
  #include <trace/events/module.h>
-@@ -206,6 +207,28 @@ static int ____call_usermodehelper(void *data)
+@@ -209,6 +210,28 @@ static int ____call_usermodehelper(void
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -200,7 +188,7 @@ index 8241906..2d7f718 100644
  	/* We can run anywhere, unlike our parent keventd(). */
  	set_cpus_allowed_ptr(current, cpu_all_mask);
  
-@@ -551,6 +574,20 @@ struct subprocess_info *call_usermodehelper_setup(char *path, char **argv,
+@@ -554,6 +577,20 @@ struct subprocess_info *call_usermodehel
  }
  EXPORT_SYMBOL(call_usermodehelper_setup);
  

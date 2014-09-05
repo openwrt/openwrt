@@ -1,0 +1,3814 @@
+From faec6b6c2cc0219e74569c13f581fc11d8f3fc57 Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <florian@openwrt.org>
+Date: Sun, 17 Mar 2013 20:12:10 +0100
+Subject: [PATCH] UM: fix make headers_install after UAPI header installation
+
+Commit 10b63956 (UAPI: Plumb the UAPI Kbuilds into the user
+header installation and checking) breaks UML make headers_install with
+the following:
+
+$ ARCH=um make headers_install
+  CHK     include/generated/uapi/linux/version.h
+  UPD     include/generated/uapi/linux/version.h
+  HOSTCC  scripts/basic/fixdep
+  WRAP    arch/um/include/generated/asm/bug.h
+[snip]
+  WRAP    arch/um/include/generated/asm/trace_clock.h
+  SYSHDR  arch/x86/syscalls/../include/generated/uapi/asm/unistd_32.h
+  SYSHDR  arch/x86/syscalls/../include/generated/uapi/asm/unistd_64.h
+  SYSHDR  arch/x86/syscalls/../include/generated/uapi/asm/unistd_x32.h
+  SYSTBL  arch/x86/syscalls/../include/generated/asm/syscalls_32.h
+  HOSTCC  scripts/unifdef
+Makefile:912: *** Headers not exportable for the um architecture.  Stop.
+zsh: exit 2     ARCH=um make headers_install
+
+The reason for that is because the top-level Makefile does the
+following:
+        $(if $(wildcard $(srctree)/arch/$(hdr-arch)/include/uapi/asm/Kbuild),, \
+          $(error Headers not exportable for the $(SRCARCH) architecture))
+
+we end-up in the else part of the $(if) statement because UML still uses
+the old path in arch/um/include/asm/Kbuild. This patch fixes the issue
+by moving the header files to be in arch/um/include/uapi/asm/ thus
+making headers_install (and other make targets checking for uapi) to
+succeed.
+
+Signed-off-by: Florian Fainelli <florian@openwrt.org>
+---
+Richard, this has been broken for 3.7+ onwards, if you want me to send
+you separate patches for 3.7 and 3.8 let me know. Thanks!
+
+ arch/um/include/{ => uapi}/asm/Kbuild              |    0
+ arch/um/include/{ => uapi}/asm/a.out-core.h        |    0
+ arch/um/include/{ => uapi}/asm/bugs.h              |    0
+ arch/um/include/{ => uapi}/asm/cache.h             |    0
+ arch/um/include/{ => uapi}/asm/common.lds.S        |    0
+ arch/um/include/{ => uapi}/asm/dma.h               |    0
+ arch/um/include/{ => uapi}/asm/fixmap.h            |    0
+ arch/um/include/{ => uapi}/asm/irq.h               |    0
+ arch/um/include/{ => uapi}/asm/irqflags.h          |    0
+ arch/um/include/{ => uapi}/asm/kmap_types.h        |    0
+ arch/um/include/{ => uapi}/asm/kvm_para.h          |    0
+ arch/um/include/{ => uapi}/asm/mmu.h               |    0
+ arch/um/include/{ => uapi}/asm/mmu_context.h       |    0
+ arch/um/include/{ => uapi}/asm/page.h              |    0
+ arch/um/include/{ => uapi}/asm/pgalloc.h           |    0
+ arch/um/include/{ => uapi}/asm/pgtable-2level.h    |    0
+ arch/um/include/{ => uapi}/asm/pgtable-3level.h    |    0
+ arch/um/include/{ => uapi}/asm/pgtable.h           |    0
+ arch/um/include/{ => uapi}/asm/processor-generic.h |    0
+ arch/um/include/{ => uapi}/asm/ptrace-generic.h    |    0
+ arch/um/include/{ => uapi}/asm/setup.h             |    0
+ arch/um/include/{ => uapi}/asm/smp.h               |    0
+ arch/um/include/{ => uapi}/asm/sysrq.h             |    0
+ arch/um/include/{ => uapi}/asm/thread_info.h       |    0
+ arch/um/include/{ => uapi}/asm/timex.h             |    0
+ arch/um/include/{ => uapi}/asm/tlb.h               |    0
+ arch/um/include/{ => uapi}/asm/tlbflush.h          |    0
+ arch/um/include/{ => uapi}/asm/uaccess.h           |    0
+ 28 files changed, 0 insertions(+), 0 deletions(-)
+ rename arch/um/include/{ => uapi}/asm/Kbuild (100%)
+ rename arch/um/include/{ => uapi}/asm/a.out-core.h (100%)
+ rename arch/um/include/{ => uapi}/asm/bugs.h (100%)
+ rename arch/um/include/{ => uapi}/asm/cache.h (100%)
+ rename arch/um/include/{ => uapi}/asm/common.lds.S (100%)
+ rename arch/um/include/{ => uapi}/asm/dma.h (100%)
+ rename arch/um/include/{ => uapi}/asm/fixmap.h (100%)
+ rename arch/um/include/{ => uapi}/asm/irq.h (100%)
+ rename arch/um/include/{ => uapi}/asm/irqflags.h (100%)
+ rename arch/um/include/{ => uapi}/asm/kmap_types.h (100%)
+ rename arch/um/include/{ => uapi}/asm/kvm_para.h (100%)
+ rename arch/um/include/{ => uapi}/asm/mmu.h (100%)
+ rename arch/um/include/{ => uapi}/asm/mmu_context.h (100%)
+ rename arch/um/include/{ => uapi}/asm/page.h (100%)
+ rename arch/um/include/{ => uapi}/asm/pgalloc.h (100%)
+ rename arch/um/include/{ => uapi}/asm/pgtable-2level.h (100%)
+ rename arch/um/include/{ => uapi}/asm/pgtable-3level.h (100%)
+ rename arch/um/include/{ => uapi}/asm/pgtable.h (100%)
+ rename arch/um/include/{ => uapi}/asm/processor-generic.h (100%)
+ rename arch/um/include/{ => uapi}/asm/ptrace-generic.h (100%)
+ rename arch/um/include/{ => uapi}/asm/setup.h (100%)
+ rename arch/um/include/{ => uapi}/asm/smp.h (100%)
+ rename arch/um/include/{ => uapi}/asm/sysrq.h (100%)
+ rename arch/um/include/{ => uapi}/asm/thread_info.h (100%)
+ rename arch/um/include/{ => uapi}/asm/timex.h (100%)
+ rename arch/um/include/{ => uapi}/asm/tlb.h (100%)
+ rename arch/um/include/{ => uapi}/asm/tlbflush.h (100%)
+ rename arch/um/include/{ => uapi}/asm/uaccess.h (100%)
+
+--- a/arch/um/include/asm/Kbuild
++++ /dev/null
+@@ -1,8 +0,0 @@
+-generic-y += bug.h cputime.h device.h emergency-restart.h futex.h hardirq.h
+-generic-y += hw_irq.h irq_regs.h kdebug.h percpu.h sections.h topology.h xor.h
+-generic-y += ftrace.h pci.h io.h param.h delay.h mutex.h current.h exec.h
+-generic-y += switch_to.h clkdev.h
+-generic-y += trace_clock.h
+-generic-y += preempt.h
+-generic-y += hash.h
+-generic-y += barrier.h
+--- a/arch/um/include/asm/a.out-core.h
++++ /dev/null
+@@ -1,27 +0,0 @@
+-/* a.out coredump register dumper
+- *
+- * Copyright (C) 2007 Red Hat, Inc. All Rights Reserved.
+- * Written by David Howells (dhowells@redhat.com)
+- *
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public Licence
+- * as published by the Free Software Foundation; either version
+- * 2 of the Licence, or (at your option) any later version.
+- */
+-
+-#ifndef __UM_A_OUT_CORE_H
+-#define __UM_A_OUT_CORE_H
+-
+-#ifdef __KERNEL__
+-
+-#include <linux/user.h>
+-
+-/*
+- * fill in the user structure for an a.out core dump
+- */
+-static inline void aout_dump_thread(struct pt_regs *regs, struct user *u)
+-{
+-}
+-
+-#endif /* __KERNEL__ */
+-#endif /* __UM_A_OUT_CORE_H */
+--- a/arch/um/include/asm/bugs.h
++++ /dev/null
+@@ -1,6 +0,0 @@
+-#ifndef __UM_BUGS_H
+-#define __UM_BUGS_H
+-
+-void check_bugs(void);
+-
+-#endif
+--- a/arch/um/include/asm/cache.h
++++ /dev/null
+@@ -1,17 +0,0 @@
+-#ifndef __UM_CACHE_H
+-#define __UM_CACHE_H
+-
+-
+-#if defined(CONFIG_UML_X86) && !defined(CONFIG_64BIT)
+-# define L1_CACHE_SHIFT		(CONFIG_X86_L1_CACHE_SHIFT)
+-#elif defined(CONFIG_UML_X86) /* 64-bit */
+-# define L1_CACHE_SHIFT		6 /* Should be 7 on Intel */
+-#else
+-/* XXX: this was taken from x86, now it's completely random. Luckily only
+- * affects SMP padding. */
+-# define L1_CACHE_SHIFT		5
+-#endif
+-
+-#define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
+-
+-#endif
+--- a/arch/um/include/asm/common.lds.S
++++ /dev/null
+@@ -1,107 +0,0 @@
+-#include <asm-generic/vmlinux.lds.h>
+-
+-  .fini      : { *(.fini)    } =0x9090
+-  _etext = .;
+-  PROVIDE (etext = .);
+-
+-  . = ALIGN(4096);
+-  _sdata = .;
+-  PROVIDE (sdata = .);
+-
+-  RODATA
+-
+-  .unprotected : { *(.unprotected) }
+-  . = ALIGN(4096);
+-  PROVIDE (_unprotected_end = .);
+-
+-  . = ALIGN(4096);
+-  .note : { *(.note.*) }
+-  EXCEPTION_TABLE(0)
+-
+-  BUG_TABLE
+-
+-  .uml.setup.init : {
+-	__uml_setup_start = .;
+-	*(.uml.setup.init)
+-	__uml_setup_end = .;
+-  }
+-	
+-  .uml.help.init : {
+-	__uml_help_start = .;
+-	*(.uml.help.init)
+-	__uml_help_end = .;
+-  }
+-	
+-  .uml.postsetup.init : {
+-	__uml_postsetup_start = .;
+-	*(.uml.postsetup.init)
+-	__uml_postsetup_end = .;
+-  }
+-	
+-  .init.setup : {
+-	INIT_SETUP(0)
+-  }
+-
+-  PERCPU_SECTION(32)
+-	
+-  .initcall.init : {
+-	INIT_CALLS
+-  }
+-
+-  .con_initcall.init : {
+-	CON_INITCALL
+-  }
+-
+-  .uml.initcall.init : {
+-	__uml_initcall_start = .;
+-	*(.uml.initcall.init)
+-	__uml_initcall_end = .;
+-  }
+-
+-  SECURITY_INIT
+-
+-  .exitcall : {
+-	__exitcall_begin = .;
+-	*(.exitcall.exit)
+-	__exitcall_end = .;
+-  }
+-
+-  .uml.exitcall : {
+-	__uml_exitcall_begin = .;
+-	*(.uml.exitcall.exit)
+-	__uml_exitcall_end = .;
+-  }
+-
+-  . = ALIGN(4);
+-  .altinstructions : {
+-	__alt_instructions = .;
+-	*(.altinstructions)
+-	__alt_instructions_end = .;
+-  }
+-  .altinstr_replacement : { *(.altinstr_replacement) }
+-  /* .exit.text is discard at runtime, not link time, to deal with references
+-     from .altinstructions and .eh_frame */
+-  .exit.text : { *(.exit.text) }
+-  .exit.data : { *(.exit.data) }
+-
+-  .preinit_array : {
+-	__preinit_array_start = .;
+-	*(.preinit_array)
+-	__preinit_array_end = .;
+-  }
+-  .init_array : {
+-	__init_array_start = .;
+-	*(.init_array)
+-	__init_array_end = .;
+-  }
+-  .fini_array : {
+-	__fini_array_start = .;
+-	*(.fini_array)
+-	__fini_array_end = .;
+-  }
+-
+-   . = ALIGN(4096);
+-  .init.ramfs : {
+-	INIT_RAM_FS
+-  }
+-
+--- a/arch/um/include/asm/dma.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#ifndef __UM_DMA_H
+-#define __UM_DMA_H
+-
+-#include <asm/io.h>
+-
+-extern unsigned long uml_physmem;
+-
+-#define MAX_DMA_ADDRESS (uml_physmem)
+-
+-#endif
+--- a/arch/um/include/asm/fixmap.h
++++ /dev/null
+@@ -1,60 +0,0 @@
+-#ifndef __UM_FIXMAP_H
+-#define __UM_FIXMAP_H
+-
+-#include <asm/processor.h>
+-#include <asm/kmap_types.h>
+-#include <asm/archparam.h>
+-#include <asm/page.h>
+-#include <linux/threads.h>
+-
+-/*
+- * Here we define all the compile-time 'special' virtual
+- * addresses. The point is to have a constant address at
+- * compile time, but to set the physical address only
+- * in the boot process. We allocate these special  addresses
+- * from the end of virtual memory (0xfffff000) backwards.
+- * Also this lets us do fail-safe vmalloc(), we
+- * can guarantee that these special addresses and
+- * vmalloc()-ed addresses never overlap.
+- *
+- * these 'compile-time allocated' memory buffers are
+- * fixed-size 4k pages. (or larger if used with an increment
+- * highger than 1) use fixmap_set(idx,phys) to associate
+- * physical memory with fixmap indices.
+- *
+- * TLB entries of such buffers will not be flushed across
+- * task switches.
+- */
+-
+-/*
+- * on UP currently we will have no trace of the fixmap mechanizm,
+- * no page table allocations, etc. This might change in the
+- * future, say framebuffers for the console driver(s) could be
+- * fix-mapped?
+- */
+-enum fixed_addresses {
+-#ifdef CONFIG_HIGHMEM
+-	FIX_KMAP_BEGIN,	/* reserved pte's for temporary kernel mappings */
+-	FIX_KMAP_END = FIX_KMAP_BEGIN+(KM_TYPE_NR*NR_CPUS)-1,
+-#endif
+-	__end_of_fixed_addresses
+-};
+-
+-extern void __set_fixmap (enum fixed_addresses idx,
+-			  unsigned long phys, pgprot_t flags);
+-
+-/*
+- * used by vmalloc.c.
+- *
+- * Leave one empty page between vmalloc'ed areas and
+- * the start of the fixmap, and leave one page empty
+- * at the top of mem..
+- */
+-
+-#define FIXADDR_TOP	(TASK_SIZE - 2 * PAGE_SIZE)
+-#define FIXADDR_SIZE	(__end_of_fixed_addresses << PAGE_SHIFT)
+-#define FIXADDR_START	(FIXADDR_TOP - FIXADDR_SIZE)
+-
+-#include <asm-generic/fixmap.h>
+-
+-#endif
+--- a/arch/um/include/asm/irq.h
++++ /dev/null
+@@ -1,23 +0,0 @@
+-#ifndef __UM_IRQ_H
+-#define __UM_IRQ_H
+-
+-#define TIMER_IRQ		0
+-#define UMN_IRQ			1
+-#define CONSOLE_IRQ		2
+-#define CONSOLE_WRITE_IRQ	3
+-#define UBD_IRQ			4
+-#define UM_ETH_IRQ		5
+-#define SSL_IRQ			6
+-#define SSL_WRITE_IRQ		7
+-#define ACCEPT_IRQ		8
+-#define MCONSOLE_IRQ		9
+-#define WINCH_IRQ		10
+-#define SIGIO_WRITE_IRQ 	11
+-#define TELNETD_IRQ 		12
+-#define XTERM_IRQ 		13
+-#define RANDOM_IRQ 		14
+-
+-#define LAST_IRQ RANDOM_IRQ
+-#define NR_IRQS (LAST_IRQ + 1)
+-
+-#endif
+--- a/arch/um/include/asm/irqflags.h
++++ /dev/null
+@@ -1,42 +0,0 @@
+-#ifndef __UM_IRQFLAGS_H
+-#define __UM_IRQFLAGS_H
+-
+-extern int get_signals(void);
+-extern int set_signals(int enable);
+-extern void block_signals(void);
+-extern void unblock_signals(void);
+-
+-static inline unsigned long arch_local_save_flags(void)
+-{
+-	return get_signals();
+-}
+-
+-static inline void arch_local_irq_restore(unsigned long flags)
+-{
+-	set_signals(flags);
+-}
+-
+-static inline void arch_local_irq_enable(void)
+-{
+-	unblock_signals();
+-}
+-
+-static inline void arch_local_irq_disable(void)
+-{
+-	block_signals();
+-}
+-
+-static inline unsigned long arch_local_irq_save(void)
+-{
+-	unsigned long flags;
+-	flags = arch_local_save_flags();
+-	arch_local_irq_disable();
+-	return flags;
+-}
+-
+-static inline bool arch_irqs_disabled(void)
+-{
+-	return arch_local_save_flags() == 0;
+-}
+-
+-#endif
+--- a/arch/um/include/asm/kmap_types.h
++++ /dev/null
+@@ -1,13 +0,0 @@
+-/* 
+- * Copyright (C) 2002 Jeff Dike (jdike@karaya.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_KMAP_TYPES_H
+-#define __UM_KMAP_TYPES_H
+-
+-/* No more #include "asm/arch/kmap_types.h" ! */
+-
+-#define KM_TYPE_NR 14
+-
+-#endif
+--- a/arch/um/include/asm/kvm_para.h
++++ /dev/null
+@@ -1 +0,0 @@
+-#include <asm-generic/kvm_para.h>
+--- a/arch/um/include/asm/mmu.h
++++ /dev/null
+@@ -1,24 +0,0 @@
+-/* 
+- * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __ARCH_UM_MMU_H
+-#define __ARCH_UM_MMU_H
+-
+-#include <mm_id.h>
+-#include <asm/mm_context.h>
+-
+-typedef struct mm_context {
+-	struct mm_id id;
+-	struct uml_arch_mm_context arch;
+-	struct page *stub_pages[2];
+-} mm_context_t;
+-
+-extern void __switch_mm(struct mm_id * mm_idp);
+-
+-/* Avoid tangled inclusion with asm/ldt.h */
+-extern long init_new_ldt(struct mm_context *to_mm, struct mm_context *from_mm);
+-extern void free_ldt(struct mm_context *mm);
+-
+-#endif
+--- a/arch/um/include/asm/mmu_context.h
++++ /dev/null
+@@ -1,58 +0,0 @@
+-/* 
+- * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_MMU_CONTEXT_H
+-#define __UM_MMU_CONTEXT_H
+-
+-#include <linux/sched.h>
+-#include <asm/mmu.h>
+-
+-extern void uml_setup_stubs(struct mm_struct *mm);
+-extern void arch_exit_mmap(struct mm_struct *mm);
+-
+-#define deactivate_mm(tsk,mm)	do { } while (0)
+-
+-extern void force_flush_all(void);
+-
+-static inline void activate_mm(struct mm_struct *old, struct mm_struct *new)
+-{
+-	/*
+-	 * This is called by fs/exec.c and sys_unshare()
+-	 * when the new ->mm is used for the first time.
+-	 */
+-	__switch_mm(&new->context.id);
+-	down_write(&new->mmap_sem);
+-	uml_setup_stubs(new);
+-	up_write(&new->mmap_sem);
+-}
+-
+-static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next, 
+-			     struct task_struct *tsk)
+-{
+-	unsigned cpu = smp_processor_id();
+-
+-	if(prev != next){
+-		cpumask_clear_cpu(cpu, mm_cpumask(prev));
+-		cpumask_set_cpu(cpu, mm_cpumask(next));
+-		if(next != &init_mm)
+-			__switch_mm(&next->context.id);
+-	}
+-}
+-
+-static inline void arch_dup_mmap(struct mm_struct *oldmm, struct mm_struct *mm)
+-{
+-	uml_setup_stubs(mm);
+-}
+-
+-static inline void enter_lazy_tlb(struct mm_struct *mm, 
+-				  struct task_struct *tsk)
+-{
+-}
+-
+-extern int init_new_context(struct task_struct *task, struct mm_struct *mm);
+-
+-extern void destroy_context(struct mm_struct *mm);
+-
+-#endif
+--- a/arch/um/include/asm/page.h
++++ /dev/null
+@@ -1,122 +0,0 @@
+-/*
+- * Copyright (C) 2000 - 2003 Jeff Dike (jdike@addtoit.com)
+- * Copyright 2003 PathScale, Inc.
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PAGE_H
+-#define __UM_PAGE_H
+-
+-#include <linux/const.h>
+-
+-/* PAGE_SHIFT determines the page size */
+-#define PAGE_SHIFT	12
+-#define PAGE_SIZE	(_AC(1, UL) << PAGE_SHIFT)
+-#define PAGE_MASK	(~(PAGE_SIZE-1))
+-
+-#ifndef __ASSEMBLY__
+-
+-struct page;
+-
+-#include <linux/types.h>
+-#include <asm/vm-flags.h>
+-
+-/*
+- * These are used to make use of C type-checking..
+- */
+-
+-#define clear_page(page)	memset((void *)(page), 0, PAGE_SIZE)
+-#define copy_page(to,from)	memcpy((void *)(to), (void *)(from), PAGE_SIZE)
+-
+-#define clear_user_page(page, vaddr, pg)	clear_page(page)
+-#define copy_user_page(to, from, vaddr, pg)	copy_page(to, from)
+-
+-#if defined(CONFIG_3_LEVEL_PGTABLES) && !defined(CONFIG_64BIT)
+-
+-typedef struct { unsigned long pte_low, pte_high; } pte_t;
+-typedef struct { unsigned long pmd; } pmd_t;
+-typedef struct { unsigned long pgd; } pgd_t;
+-#define pte_val(x) ((x).pte_low | ((unsigned long long) (x).pte_high << 32))
+-
+-#define pte_get_bits(pte, bits) ((pte).pte_low & (bits))
+-#define pte_set_bits(pte, bits) ((pte).pte_low |= (bits))
+-#define pte_clear_bits(pte, bits) ((pte).pte_low &= ~(bits))
+-#define pte_copy(to, from) ({ (to).pte_high = (from).pte_high; \
+-			      smp_wmb(); \
+-			      (to).pte_low = (from).pte_low; })
+-#define pte_is_zero(pte) (!((pte).pte_low & ~_PAGE_NEWPAGE) && !(pte).pte_high)
+-#define pte_set_val(pte, phys, prot) \
+-	({ (pte).pte_high = (phys) >> 32; \
+-	   (pte).pte_low = (phys) | pgprot_val(prot); })
+-
+-#define pmd_val(x)	((x).pmd)
+-#define __pmd(x) ((pmd_t) { (x) } )
+-
+-typedef unsigned long long pfn_t;
+-typedef unsigned long long phys_t;
+-
+-#else
+-
+-typedef struct { unsigned long pte; } pte_t;
+-typedef struct { unsigned long pgd; } pgd_t;
+-
+-#ifdef CONFIG_3_LEVEL_PGTABLES
+-typedef struct { unsigned long pmd; } pmd_t;
+-#define pmd_val(x)	((x).pmd)
+-#define __pmd(x) ((pmd_t) { (x) } )
+-#endif
+-
+-#define pte_val(x)	((x).pte)
+-
+-
+-#define pte_get_bits(p, bits) ((p).pte & (bits))
+-#define pte_set_bits(p, bits) ((p).pte |= (bits))
+-#define pte_clear_bits(p, bits) ((p).pte &= ~(bits))
+-#define pte_copy(to, from) ((to).pte = (from).pte)
+-#define pte_is_zero(p) (!((p).pte & ~_PAGE_NEWPAGE))
+-#define pte_set_val(p, phys, prot) (p).pte = (phys | pgprot_val(prot))
+-
+-typedef unsigned long pfn_t;
+-typedef unsigned long phys_t;
+-
+-#endif
+-
+-typedef struct { unsigned long pgprot; } pgprot_t;
+-
+-typedef struct page *pgtable_t;
+-
+-#define pgd_val(x)	((x).pgd)
+-#define pgprot_val(x)	((x).pgprot)
+-
+-#define __pte(x) ((pte_t) { (x) } )
+-#define __pgd(x) ((pgd_t) { (x) } )
+-#define __pgprot(x)	((pgprot_t) { (x) } )
+-
+-extern unsigned long uml_physmem;
+-
+-#define PAGE_OFFSET (uml_physmem)
+-#define KERNELBASE PAGE_OFFSET
+-
+-#define __va_space (8*1024*1024)
+-
+-#include <mem.h>
+-
+-/* Cast to unsigned long before casting to void * to avoid a warning from
+- * mmap_kmem about cutting a long long down to a void *.  Not sure that
+- * casting is the right thing, but 32-bit UML can't have 64-bit virtual
+- * addresses
+- */
+-#define __pa(virt) to_phys((void *) (unsigned long) (virt))
+-#define __va(phys) to_virt((unsigned long) (phys))
+-
+-#define phys_to_pfn(p) ((pfn_t) ((p) >> PAGE_SHIFT))
+-#define pfn_to_phys(pfn) ((phys_t) ((pfn) << PAGE_SHIFT))
+-
+-#define pfn_valid(pfn) ((pfn) < max_mapnr)
+-#define virt_addr_valid(v) pfn_valid(phys_to_pfn(__pa(v)))
+-
+-#include <asm-generic/memory_model.h>
+-#include <asm-generic/getorder.h>
+-
+-#endif	/* __ASSEMBLY__ */
+-#endif	/* __UM_PAGE_H */
+--- a/arch/um/include/asm/pgalloc.h
++++ /dev/null
+@@ -1,61 +0,0 @@
+-/* 
+- * Copyright (C) 2000, 2001, 2002 Jeff Dike (jdike@karaya.com)
+- * Copyright 2003 PathScale, Inc.
+- * Derived from include/asm-i386/pgalloc.h and include/asm-i386/pgtable.h
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PGALLOC_H
+-#define __UM_PGALLOC_H
+-
+-#include <linux/mm.h>
+-
+-#define pmd_populate_kernel(mm, pmd, pte) \
+-	set_pmd(pmd, __pmd(_PAGE_TABLE + (unsigned long) __pa(pte)))
+-
+-#define pmd_populate(mm, pmd, pte) 				\
+-	set_pmd(pmd, __pmd(_PAGE_TABLE +			\
+-		((unsigned long long)page_to_pfn(pte) <<	\
+-			(unsigned long long) PAGE_SHIFT)))
+-#define pmd_pgtable(pmd) pmd_page(pmd)
+-
+-/*
+- * Allocate and free page tables.
+- */
+-extern pgd_t *pgd_alloc(struct mm_struct *);
+-extern void pgd_free(struct mm_struct *mm, pgd_t *pgd);
+-
+-extern pte_t *pte_alloc_one_kernel(struct mm_struct *, unsigned long);
+-extern pgtable_t pte_alloc_one(struct mm_struct *, unsigned long);
+-
+-static inline void pte_free_kernel(struct mm_struct *mm, pte_t *pte)
+-{
+-	free_page((unsigned long) pte);
+-}
+-
+-static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
+-{
+-	pgtable_page_dtor(pte);
+-	__free_page(pte);
+-}
+-
+-#define __pte_free_tlb(tlb,pte, address)		\
+-do {							\
+-	pgtable_page_dtor(pte);				\
+-	tlb_remove_page((tlb),(pte));			\
+-} while (0)
+-
+-#ifdef CONFIG_3_LEVEL_PGTABLES
+-
+-static inline void pmd_free(struct mm_struct *mm, pmd_t *pmd)
+-{
+-	free_page((unsigned long)pmd);
+-}
+-
+-#define __pmd_free_tlb(tlb,x, address)   tlb_remove_page((tlb),virt_to_page(x))
+-#endif
+-
+-#define check_pgt_cache()	do { } while (0)
+-
+-#endif
+-
+--- a/arch/um/include/asm/pgtable-2level.h
++++ /dev/null
+@@ -1,53 +0,0 @@
+-/*
+- * Copyright (C) 2000, 2001, 2002 Jeff Dike (jdike@karaya.com)
+- * Copyright 2003 PathScale, Inc.
+- * Derived from include/asm-i386/pgtable.h
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PGTABLE_2LEVEL_H
+-#define __UM_PGTABLE_2LEVEL_H
+-
+-#include <asm-generic/pgtable-nopmd.h>
+-
+-/* PGDIR_SHIFT determines what a third-level page table entry can map */
+-
+-#define PGDIR_SHIFT	22
+-#define PGDIR_SIZE	(1UL << PGDIR_SHIFT)
+-#define PGDIR_MASK	(~(PGDIR_SIZE-1))
+-
+-/*
+- * entries per page directory level: the i386 is two-level, so
+- * we don't really have any PMD directory physically.
+- */
+-#define PTRS_PER_PTE	1024
+-#define USER_PTRS_PER_PGD ((TASK_SIZE + (PGDIR_SIZE - 1)) / PGDIR_SIZE)
+-#define PTRS_PER_PGD	1024
+-#define FIRST_USER_ADDRESS	0
+-
+-#define pte_ERROR(e) \
+-        printk("%s:%d: bad pte %p(%08lx).\n", __FILE__, __LINE__, &(e), \
+-	       pte_val(e))
+-#define pgd_ERROR(e) \
+-        printk("%s:%d: bad pgd %p(%08lx).\n", __FILE__, __LINE__, &(e), \
+-	       pgd_val(e))
+-
+-static inline int pgd_newpage(pgd_t pgd)	{ return 0; }
+-static inline void pgd_mkuptodate(pgd_t pgd)	{ }
+-
+-#define set_pmd(pmdptr, pmdval) (*(pmdptr) = (pmdval))
+-
+-#define pte_pfn(x) phys_to_pfn(pte_val(x))
+-#define pfn_pte(pfn, prot) __pte(pfn_to_phys(pfn) | pgprot_val(prot))
+-#define pfn_pmd(pfn, prot) __pmd(pfn_to_phys(pfn) | pgprot_val(prot))
+-
+-/*
+- * Bits 0 through 4 are taken
+- */
+-#define PTE_FILE_MAX_BITS	27
+-
+-#define pte_to_pgoff(pte) (pte_val(pte) >> 5)
+-
+-#define pgoff_to_pte(off) ((pte_t) { ((off) << 5) + _PAGE_FILE })
+-
+-#endif
+--- a/arch/um/include/asm/pgtable-3level.h
++++ /dev/null
+@@ -1,136 +0,0 @@
+-/*
+- * Copyright 2003 PathScale Inc
+- * Derived from include/asm-i386/pgtable.h
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PGTABLE_3LEVEL_H
+-#define __UM_PGTABLE_3LEVEL_H
+-
+-#include <asm-generic/pgtable-nopud.h>
+-
+-/* PGDIR_SHIFT determines what a third-level page table entry can map */
+-
+-#ifdef CONFIG_64BIT
+-#define PGDIR_SHIFT	30
+-#else
+-#define PGDIR_SHIFT	31
+-#endif
+-#define PGDIR_SIZE	(1UL << PGDIR_SHIFT)
+-#define PGDIR_MASK	(~(PGDIR_SIZE-1))
+-
+-/* PMD_SHIFT determines the size of the area a second-level page table can
+- * map
+- */
+-
+-#define PMD_SHIFT	21
+-#define PMD_SIZE	(1UL << PMD_SHIFT)
+-#define PMD_MASK	(~(PMD_SIZE-1))
+-
+-/*
+- * entries per page directory level
+- */
+-
+-#define PTRS_PER_PTE 512
+-#ifdef CONFIG_64BIT
+-#define PTRS_PER_PMD 512
+-#define PTRS_PER_PGD 512
+-#else
+-#define PTRS_PER_PMD 1024
+-#define PTRS_PER_PGD 1024
+-#endif
+-
+-#define USER_PTRS_PER_PGD ((TASK_SIZE + (PGDIR_SIZE - 1)) / PGDIR_SIZE)
+-#define FIRST_USER_ADDRESS	0
+-
+-#define pte_ERROR(e) \
+-        printk("%s:%d: bad pte %p(%016lx).\n", __FILE__, __LINE__, &(e), \
+-	       pte_val(e))
+-#define pmd_ERROR(e) \
+-        printk("%s:%d: bad pmd %p(%016lx).\n", __FILE__, __LINE__, &(e), \
+-	       pmd_val(e))
+-#define pgd_ERROR(e) \
+-        printk("%s:%d: bad pgd %p(%016lx).\n", __FILE__, __LINE__, &(e), \
+-	       pgd_val(e))
+-
+-#define pud_none(x)	(!(pud_val(x) & ~_PAGE_NEWPAGE))
+-#define	pud_bad(x)	((pud_val(x) & (~PAGE_MASK & ~_PAGE_USER)) != _KERNPG_TABLE)
+-#define pud_present(x)	(pud_val(x) & _PAGE_PRESENT)
+-#define pud_populate(mm, pud, pmd) \
+-	set_pud(pud, __pud(_PAGE_TABLE + __pa(pmd)))
+-
+-#ifdef CONFIG_64BIT
+-#define set_pud(pudptr, pudval) set_64bit((u64 *) (pudptr), pud_val(pudval))
+-#else
+-#define set_pud(pudptr, pudval) (*(pudptr) = (pudval))
+-#endif
+-
+-static inline int pgd_newpage(pgd_t pgd)
+-{
+-	return(pgd_val(pgd) & _PAGE_NEWPAGE);
+-}
+-
+-static inline void pgd_mkuptodate(pgd_t pgd) { pgd_val(pgd) &= ~_PAGE_NEWPAGE; }
+-
+-#ifdef CONFIG_64BIT
+-#define set_pmd(pmdptr, pmdval) set_64bit((u64 *) (pmdptr), pmd_val(pmdval))
+-#else
+-#define set_pmd(pmdptr, pmdval) (*(pmdptr) = (pmdval))
+-#endif
+-
+-struct mm_struct;
+-extern pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address);
+-
+-static inline void pud_clear (pud_t *pud)
+-{
+-	set_pud(pud, __pud(_PAGE_NEWPAGE));
+-}
+-
+-#define pud_page(pud) phys_to_page(pud_val(pud) & PAGE_MASK)
+-#define pud_page_vaddr(pud) ((unsigned long) __va(pud_val(pud) & PAGE_MASK))
+-
+-/* Find an entry in the second-level page table.. */
+-#define pmd_offset(pud, address) ((pmd_t *) pud_page_vaddr(*(pud)) + \
+-			pmd_index(address))
+-
+-static inline unsigned long pte_pfn(pte_t pte)
+-{
+-	return phys_to_pfn(pte_val(pte));
+-}
+-
+-static inline pte_t pfn_pte(pfn_t page_nr, pgprot_t pgprot)
+-{
+-	pte_t pte;
+-	phys_t phys = pfn_to_phys(page_nr);
+-
+-	pte_set_val(pte, phys, pgprot);
+-	return pte;
+-}
+-
+-static inline pmd_t pfn_pmd(pfn_t page_nr, pgprot_t pgprot)
+-{
+-	return __pmd((page_nr << PAGE_SHIFT) | pgprot_val(pgprot));
+-}
+-
+-/*
+- * Bits 0 through 3 are taken in the low part of the pte,
+- * put the 32 bits of offset into the high part.
+- */
+-#define PTE_FILE_MAX_BITS	32
+-
+-#ifdef CONFIG_64BIT
+-
+-#define pte_to_pgoff(p) ((p).pte >> 32)
+-
+-#define pgoff_to_pte(off) ((pte_t) { ((off) << 32) | _PAGE_FILE })
+-
+-#else
+-
+-#define pte_to_pgoff(pte) ((pte).pte_high)
+-
+-#define pgoff_to_pte(off) ((pte_t) { _PAGE_FILE, (off) })
+-
+-#endif
+-
+-#endif
+-
+--- a/arch/um/include/asm/pgtable.h
++++ /dev/null
+@@ -1,375 +0,0 @@
+-/* 
+- * Copyright (C) 2000 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Copyright 2003 PathScale, Inc.
+- * Derived from include/asm-i386/pgtable.h
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PGTABLE_H
+-#define __UM_PGTABLE_H
+-
+-#include <asm/fixmap.h>
+-
+-#define _PAGE_PRESENT	0x001
+-#define _PAGE_NEWPAGE	0x002
+-#define _PAGE_NEWPROT	0x004
+-#define _PAGE_RW	0x020
+-#define _PAGE_USER	0x040
+-#define _PAGE_ACCESSED	0x080
+-#define _PAGE_DIRTY	0x100
+-/* If _PAGE_PRESENT is clear, we use these: */
+-#define _PAGE_FILE	0x008	/* nonlinear file mapping, saved PTE; unset:swap */
+-#define _PAGE_PROTNONE	0x010	/* if the user mapped it with PROT_NONE;
+-				   pte_present gives true */
+-
+-#ifdef CONFIG_3_LEVEL_PGTABLES
+-#include <asm/pgtable-3level.h>
+-#else
+-#include <asm/pgtable-2level.h>
+-#endif
+-
+-extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
+-
+-/* zero page used for uninitialized stuff */
+-extern unsigned long *empty_zero_page;
+-
+-#define pgtable_cache_init() do ; while (0)
+-
+-/* Just any arbitrary offset to the start of the vmalloc VM area: the
+- * current 8MB value just means that there will be a 8MB "hole" after the
+- * physical memory until the kernel virtual memory starts.  That means that
+- * any out-of-bounds memory accesses will hopefully be caught.
+- * The vmalloc() routines leaves a hole of 4kB between each vmalloced
+- * area for the same reason. ;)
+- */
+-
+-extern unsigned long end_iomem;
+-
+-#define VMALLOC_OFFSET	(__va_space)
+-#define VMALLOC_START ((end_iomem + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
+-#define PKMAP_BASE ((FIXADDR_START - LAST_PKMAP * PAGE_SIZE) & PMD_MASK)
+-#ifdef CONFIG_HIGHMEM
+-# define VMALLOC_END	(PKMAP_BASE-2*PAGE_SIZE)
+-#else
+-# define VMALLOC_END	(FIXADDR_START-2*PAGE_SIZE)
+-#endif
+-#define MODULES_VADDR	VMALLOC_START
+-#define MODULES_END	VMALLOC_END
+-#define MODULES_LEN	(MODULES_VADDR - MODULES_END)
+-
+-#define _PAGE_TABLE	(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_ACCESSED | _PAGE_DIRTY)
+-#define _KERNPG_TABLE	(_PAGE_PRESENT | _PAGE_RW | _PAGE_ACCESSED | _PAGE_DIRTY)
+-#define _PAGE_CHG_MASK	(PAGE_MASK | _PAGE_ACCESSED | _PAGE_DIRTY)
+-#define __PAGE_KERNEL_EXEC                                              \
+-	 (_PAGE_PRESENT | _PAGE_RW | _PAGE_DIRTY | _PAGE_ACCESSED)
+-#define PAGE_NONE	__pgprot(_PAGE_PROTNONE | _PAGE_ACCESSED)
+-#define PAGE_SHARED	__pgprot(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_ACCESSED)
+-#define PAGE_COPY	__pgprot(_PAGE_PRESENT | _PAGE_USER | _PAGE_ACCESSED)
+-#define PAGE_READONLY	__pgprot(_PAGE_PRESENT | _PAGE_USER | _PAGE_ACCESSED)
+-#define PAGE_KERNEL	__pgprot(_PAGE_PRESENT | _PAGE_RW | _PAGE_DIRTY | _PAGE_ACCESSED)
+-#define PAGE_KERNEL_EXEC	__pgprot(__PAGE_KERNEL_EXEC)
+-
+-/*
+- * The i386 can't do page protection for execute, and considers that the same
+- * are read.
+- * Also, write permissions imply read permissions. This is the closest we can
+- * get..
+- */
+-#define __P000	PAGE_NONE
+-#define __P001	PAGE_READONLY
+-#define __P010	PAGE_COPY
+-#define __P011	PAGE_COPY
+-#define __P100	PAGE_READONLY
+-#define __P101	PAGE_READONLY
+-#define __P110	PAGE_COPY
+-#define __P111	PAGE_COPY
+-
+-#define __S000	PAGE_NONE
+-#define __S001	PAGE_READONLY
+-#define __S010	PAGE_SHARED
+-#define __S011	PAGE_SHARED
+-#define __S100	PAGE_READONLY
+-#define __S101	PAGE_READONLY
+-#define __S110	PAGE_SHARED
+-#define __S111	PAGE_SHARED
+-
+-/*
+- * ZERO_PAGE is a global shared page that is always zero: used
+- * for zero-mapped memory areas etc..
+- */
+-#define ZERO_PAGE(vaddr) virt_to_page(empty_zero_page)
+-
+-#define pte_clear(mm,addr,xp) pte_set_val(*(xp), (phys_t) 0, __pgprot(_PAGE_NEWPAGE))
+-
+-#define pmd_none(x)	(!((unsigned long)pmd_val(x) & ~_PAGE_NEWPAGE))
+-#define	pmd_bad(x)	((pmd_val(x) & (~PAGE_MASK & ~_PAGE_USER)) != _KERNPG_TABLE)
+-
+-#define pmd_present(x)	(pmd_val(x) & _PAGE_PRESENT)
+-#define pmd_clear(xp)	do { pmd_val(*(xp)) = _PAGE_NEWPAGE; } while (0)
+-
+-#define pmd_newpage(x)  (pmd_val(x) & _PAGE_NEWPAGE)
+-#define pmd_mkuptodate(x) (pmd_val(x) &= ~_PAGE_NEWPAGE)
+-
+-#define pud_newpage(x)  (pud_val(x) & _PAGE_NEWPAGE)
+-#define pud_mkuptodate(x) (pud_val(x) &= ~_PAGE_NEWPAGE)
+-
+-#define pmd_page(pmd) phys_to_page(pmd_val(pmd) & PAGE_MASK)
+-
+-#define pte_page(x) pfn_to_page(pte_pfn(x))
+-
+-#define pte_present(x)	pte_get_bits(x, (_PAGE_PRESENT | _PAGE_PROTNONE))
+-
+-/*
+- * =================================
+- * Flags checking section.
+- * =================================
+- */
+-
+-static inline int pte_none(pte_t pte)
+-{
+-	return pte_is_zero(pte);
+-}
+-
+-/*
+- * The following only work if pte_present() is true.
+- * Undefined behaviour if not..
+- */
+-static inline int pte_read(pte_t pte)
+-{ 
+-	return((pte_get_bits(pte, _PAGE_USER)) &&
+-	       !(pte_get_bits(pte, _PAGE_PROTNONE)));
+-}
+-
+-static inline int pte_exec(pte_t pte){
+-	return((pte_get_bits(pte, _PAGE_USER)) &&
+-	       !(pte_get_bits(pte, _PAGE_PROTNONE)));
+-}
+-
+-static inline int pte_write(pte_t pte)
+-{
+-	return((pte_get_bits(pte, _PAGE_RW)) &&
+-	       !(pte_get_bits(pte, _PAGE_PROTNONE)));
+-}
+-
+-/*
+- * The following only works if pte_present() is not true.
+- */
+-static inline int pte_file(pte_t pte)
+-{
+-	return pte_get_bits(pte, _PAGE_FILE);
+-}
+-
+-static inline int pte_dirty(pte_t pte)
+-{
+-	return pte_get_bits(pte, _PAGE_DIRTY);
+-}
+-
+-static inline int pte_young(pte_t pte)
+-{
+-	return pte_get_bits(pte, _PAGE_ACCESSED);
+-}
+-
+-static inline int pte_newpage(pte_t pte)
+-{
+-	return pte_get_bits(pte, _PAGE_NEWPAGE);
+-}
+-
+-static inline int pte_newprot(pte_t pte)
+-{ 
+-	return(pte_present(pte) && (pte_get_bits(pte, _PAGE_NEWPROT)));
+-}
+-
+-static inline int pte_special(pte_t pte)
+-{
+-	return 0;
+-}
+-
+-/*
+- * =================================
+- * Flags setting section.
+- * =================================
+- */
+-
+-static inline pte_t pte_mknewprot(pte_t pte)
+-{
+-	pte_set_bits(pte, _PAGE_NEWPROT);
+-	return(pte);
+-}
+-
+-static inline pte_t pte_mkclean(pte_t pte)
+-{
+-	pte_clear_bits(pte, _PAGE_DIRTY);
+-	return(pte);
+-}
+-
+-static inline pte_t pte_mkold(pte_t pte)	
+-{ 
+-	pte_clear_bits(pte, _PAGE_ACCESSED);
+-	return(pte);
+-}
+-
+-static inline pte_t pte_wrprotect(pte_t pte)
+-{ 
+-	pte_clear_bits(pte, _PAGE_RW);
+-	return(pte_mknewprot(pte)); 
+-}
+-
+-static inline pte_t pte_mkread(pte_t pte)
+-{ 
+-	pte_set_bits(pte, _PAGE_USER);
+-	return(pte_mknewprot(pte)); 
+-}
+-
+-static inline pte_t pte_mkdirty(pte_t pte)
+-{ 
+-	pte_set_bits(pte, _PAGE_DIRTY);
+-	return(pte);
+-}
+-
+-static inline pte_t pte_mkyoung(pte_t pte)
+-{
+-	pte_set_bits(pte, _PAGE_ACCESSED);
+-	return(pte);
+-}
+-
+-static inline pte_t pte_mkwrite(pte_t pte)	
+-{
+-	pte_set_bits(pte, _PAGE_RW);
+-	return(pte_mknewprot(pte)); 
+-}
+-
+-static inline pte_t pte_mkuptodate(pte_t pte)	
+-{
+-	pte_clear_bits(pte, _PAGE_NEWPAGE);
+-	if(pte_present(pte))
+-		pte_clear_bits(pte, _PAGE_NEWPROT);
+-	return(pte); 
+-}
+-
+-static inline pte_t pte_mknewpage(pte_t pte)
+-{
+-	pte_set_bits(pte, _PAGE_NEWPAGE);
+-	return(pte);
+-}
+-
+-static inline pte_t pte_mkspecial(pte_t pte)
+-{
+-	return(pte);
+-}
+-
+-static inline void set_pte(pte_t *pteptr, pte_t pteval)
+-{
+-	pte_copy(*pteptr, pteval);
+-
+-	/* If it's a swap entry, it needs to be marked _PAGE_NEWPAGE so
+-	 * fix_range knows to unmap it.  _PAGE_NEWPROT is specific to
+-	 * mapped pages.
+-	 */
+-
+-	*pteptr = pte_mknewpage(*pteptr);
+-	if(pte_present(*pteptr)) *pteptr = pte_mknewprot(*pteptr);
+-}
+-#define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
+-
+-#define __HAVE_ARCH_PTE_SAME
+-static inline int pte_same(pte_t pte_a, pte_t pte_b)
+-{
+-	return !((pte_val(pte_a) ^ pte_val(pte_b)) & ~_PAGE_NEWPAGE);
+-}
+-
+-/*
+- * Conversion functions: convert a page and protection to a page entry,
+- * and a page entry and page directory to the page they refer to.
+- */
+-
+-#define phys_to_page(phys) pfn_to_page(phys_to_pfn(phys))
+-#define __virt_to_page(virt) phys_to_page(__pa(virt))
+-#define page_to_phys(page) pfn_to_phys((pfn_t) page_to_pfn(page))
+-#define virt_to_page(addr) __virt_to_page((const unsigned long) addr)
+-
+-#define mk_pte(page, pgprot) \
+-	({ pte_t pte;					\
+-							\
+-	pte_set_val(pte, page_to_phys(page), (pgprot));	\
+-	if (pte_present(pte))				\
+-		pte_mknewprot(pte_mknewpage(pte));	\
+-	pte;})
+-
+-static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
+-{
+-	pte_set_val(pte, (pte_val(pte) & _PAGE_CHG_MASK), newprot);
+-	return pte; 
+-}
+-
+-/*
+- * the pgd page can be thought of an array like this: pgd_t[PTRS_PER_PGD]
+- *
+- * this macro returns the index of the entry in the pgd page which would
+- * control the given virtual address
+- */
+-#define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD-1))
+-
+-/*
+- * pgd_offset() returns a (pgd_t *)
+- * pgd_index() is used get the offset into the pgd page's array of pgd_t's;
+- */
+-#define pgd_offset(mm, address) ((mm)->pgd+pgd_index(address))
+-
+-/*
+- * a shortcut which implies the use of the kernel's pgd, instead
+- * of a process's
+- */
+-#define pgd_offset_k(address) pgd_offset(&init_mm, address)
+-
+-/*
+- * the pmd page can be thought of an array like this: pmd_t[PTRS_PER_PMD]
+- *
+- * this macro returns the index of the entry in the pmd page which would
+- * control the given virtual address
+- */
+-#define pmd_page_vaddr(pmd) ((unsigned long) __va(pmd_val(pmd) & PAGE_MASK))
+-#define pmd_index(address) (((address) >> PMD_SHIFT) & (PTRS_PER_PMD-1))
+-
+-#define pmd_page_vaddr(pmd) \
+-	((unsigned long) __va(pmd_val(pmd) & PAGE_MASK))
+-
+-/*
+- * the pte page can be thought of an array like this: pte_t[PTRS_PER_PTE]
+- *
+- * this macro returns the index of the entry in the pte page which would
+- * control the given virtual address
+- */
+-#define pte_index(address) (((address) >> PAGE_SHIFT) & (PTRS_PER_PTE - 1))
+-#define pte_offset_kernel(dir, address) \
+-	((pte_t *) pmd_page_vaddr(*(dir)) +  pte_index(address))
+-#define pte_offset_map(dir, address) \
+-	((pte_t *)page_address(pmd_page(*(dir))) + pte_index(address))
+-#define pte_unmap(pte) do { } while (0)
+-
+-struct mm_struct;
+-extern pte_t *virt_to_pte(struct mm_struct *mm, unsigned long addr);
+-
+-#define update_mmu_cache(vma,address,ptep) do ; while (0)
+-
+-/* Encode and de-code a swap entry */
+-#define __swp_type(x)			(((x).val >> 5) & 0x1f)
+-#define __swp_offset(x)			((x).val >> 11)
+-
+-#define __swp_entry(type, offset) \
+-	((swp_entry_t) { ((type) << 5) | ((offset) << 11) })
+-#define __pte_to_swp_entry(pte) \
+-	((swp_entry_t) { pte_val(pte_mkuptodate(pte)) })
+-#define __swp_entry_to_pte(x)		((pte_t) { (x).val })
+-
+-#define kern_addr_valid(addr) (1)
+-
+-#include <asm-generic/pgtable.h>
+-
+-/* Clear a kernel PTE and flush it from the TLB */
+-#define kpte_clear_flush(ptep, vaddr)		\
+-do {						\
+-	pte_clear(&init_mm, (vaddr), (ptep));	\
+-	__flush_tlb_one((vaddr));		\
+-} while (0)
+-
+-#endif
+--- a/arch/um/include/asm/processor-generic.h
++++ /dev/null
+@@ -1,115 +0,0 @@
+-/* 
+- * Copyright (C) 2000 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PROCESSOR_GENERIC_H
+-#define __UM_PROCESSOR_GENERIC_H
+-
+-struct pt_regs;
+-
+-struct task_struct;
+-
+-#include <asm/ptrace.h>
+-#include <registers.h>
+-#include <sysdep/archsetjmp.h>
+-
+-#include <linux/prefetch.h>
+-
+-struct mm_struct;
+-
+-struct thread_struct {
+-	struct pt_regs regs;
+-	struct pt_regs *segv_regs;
+-	int singlestep_syscall;
+-	void *fault_addr;
+-	jmp_buf *fault_catcher;
+-	struct task_struct *prev_sched;
+-	struct arch_thread arch;
+-	jmp_buf switch_buf;
+-	struct {
+-		int op;
+-		union {
+-			struct {
+-				int pid;
+-			} fork, exec;
+-			struct {
+-				int (*proc)(void *);
+-				void *arg;
+-			} thread;
+-			struct {
+-				void (*proc)(void *);
+-				void *arg;
+-			} cb;
+-		} u;
+-	} request;
+-};
+-
+-#define INIT_THREAD \
+-{ \
+-	.regs		   	= EMPTY_REGS,	\
+-	.fault_addr		= NULL, \
+-	.prev_sched		= NULL, \
+-	.arch			= INIT_ARCH_THREAD, \
+-	.request		= { 0 } \
+-}
+-
+-static inline void release_thread(struct task_struct *task)
+-{
+-}
+-
+-extern unsigned long thread_saved_pc(struct task_struct *t);
+-
+-static inline void mm_copy_segments(struct mm_struct *from_mm,
+-				    struct mm_struct *new_mm)
+-{
+-}
+-
+-#define init_stack	(init_thread_union.stack)
+-
+-/*
+- * User space process size: 3GB (default).
+- */
+-extern unsigned long task_size;
+-
+-#define TASK_SIZE (task_size)
+-
+-#undef STACK_TOP
+-#undef STACK_TOP_MAX
+-
+-extern unsigned long stacksizelim;
+-
+-#define STACK_ROOM	(stacksizelim)
+-#define STACK_TOP	(TASK_SIZE - 2 * PAGE_SIZE)
+-#define STACK_TOP_MAX	STACK_TOP
+-
+-/* This decides where the kernel will search for a free chunk of vm
+- * space during mmap's.
+- */
+-#define TASK_UNMAPPED_BASE	(0x40000000)
+-
+-extern void start_thread(struct pt_regs *regs, unsigned long entry, 
+-			 unsigned long stack);
+-
+-struct cpuinfo_um {
+-	unsigned long loops_per_jiffy;
+-	int ipi_pipe[2];
+-};
+-
+-extern struct cpuinfo_um boot_cpu_data;
+-
+-#define my_cpu_data		cpu_data[smp_processor_id()]
+-
+-#ifdef CONFIG_SMP
+-extern struct cpuinfo_um cpu_data[];
+-#define current_cpu_data cpu_data[smp_processor_id()]
+-#else
+-#define cpu_data (&boot_cpu_data)
+-#define current_cpu_data boot_cpu_data
+-#endif
+-
+-
+-#define KSTK_REG(tsk, reg) get_thread_reg(reg, &tsk->thread.switch_buf)
+-extern unsigned long get_wchan(struct task_struct *p);
+-
+-#endif
+--- a/arch/um/include/asm/ptrace-generic.h
++++ /dev/null
+@@ -1,45 +0,0 @@
+-/* 
+- * Copyright (C) 2000 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_PTRACE_GENERIC_H
+-#define __UM_PTRACE_GENERIC_H
+-
+-#ifndef __ASSEMBLY__
+-
+-#include <asm/ptrace-abi.h>
+-#include <sysdep/ptrace.h>
+-
+-struct pt_regs {
+-	struct uml_pt_regs regs;
+-};
+-
+-#define arch_has_single_step()	(1)
+-
+-#define EMPTY_REGS { .regs = EMPTY_UML_PT_REGS }
+-
+-#define PT_REGS_IP(r) UPT_IP(&(r)->regs)
+-#define PT_REGS_SP(r) UPT_SP(&(r)->regs)
+-
+-#define PT_REGS_RESTART_SYSCALL(r) UPT_RESTART_SYSCALL(&(r)->regs)
+-
+-#define PT_REGS_SYSCALL_NR(r) UPT_SYSCALL_NR(&(r)->regs)
+-
+-#define instruction_pointer(regs) PT_REGS_IP(regs)
+-
+-struct task_struct;
+-
+-extern long subarch_ptrace(struct task_struct *child, long request,
+-	unsigned long addr, unsigned long data);
+-extern unsigned long getreg(struct task_struct *child, int regno);
+-extern int putreg(struct task_struct *child, int regno, unsigned long value);
+-
+-extern int arch_copy_tls(struct task_struct *new);
+-extern void clear_flushed_tls(struct task_struct *task);
+-extern void syscall_trace_enter(struct pt_regs *regs);
+-extern void syscall_trace_leave(struct pt_regs *regs);
+-
+-#endif
+-
+-#endif
+--- a/arch/um/include/asm/setup.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#ifndef SETUP_H_INCLUDED
+-#define SETUP_H_INCLUDED
+-
+-/* POSIX mandated with _POSIX_ARG_MAX that we can rely on 4096 chars in the
+- * command line, so this choice is ok.
+- */
+-
+-#define COMMAND_LINE_SIZE 4096
+-
+-#endif		/* SETUP_H_INCLUDED */
+--- a/arch/um/include/asm/smp.h
++++ /dev/null
+@@ -1,32 +0,0 @@
+-#ifndef __UM_SMP_H
+-#define __UM_SMP_H
+-
+-#ifdef CONFIG_SMP
+-
+-#include <linux/bitops.h>
+-#include <asm/current.h>
+-#include <linux/cpumask.h>
+-
+-#define raw_smp_processor_id() (current_thread->cpu)
+-
+-#define cpu_logical_map(n) (n)
+-#define cpu_number_map(n) (n)
+-extern int hard_smp_processor_id(void);
+-#define NO_PROC_ID -1
+-
+-extern int ncpus;
+-
+-
+-static inline void smp_cpus_done(unsigned int maxcpus)
+-{
+-}
+-
+-extern struct task_struct *idle_threads[NR_CPUS];
+-
+-#else
+-
+-#define hard_smp_processor_id()		0
+-
+-#endif
+-
+-#endif
+--- a/arch/um/include/asm/sysrq.h
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#ifndef __UM_SYSRQ_H
+-#define __UM_SYSRQ_H
+-
+-struct task_struct;
+-extern void show_trace(struct task_struct* task, unsigned long *stack);
+-
+-#endif
+--- a/arch/um/include/asm/thread_info.h
++++ /dev/null
+@@ -1,78 +0,0 @@
+-/*
+- * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_THREAD_INFO_H
+-#define __UM_THREAD_INFO_H
+-
+-#ifndef __ASSEMBLY__
+-
+-#include <asm/types.h>
+-#include <asm/page.h>
+-#include <asm/uaccess.h>
+-
+-struct thread_info {
+-	struct task_struct	*task;		/* main task structure */
+-	struct exec_domain	*exec_domain;	/* execution domain */
+-	unsigned long		flags;		/* low level flags */
+-	__u32			cpu;		/* current CPU */
+-	int			preempt_count;  /* 0 => preemptable,
+-						   <0 => BUG */
+-	mm_segment_t		addr_limit;	/* thread address space:
+-					 	   0-0xBFFFFFFF for user
+-						   0-0xFFFFFFFF for kernel */
+-	struct restart_block    restart_block;
+-	struct thread_info	*real_thread;    /* Points to non-IRQ stack */
+-};
+-
+-#define INIT_THREAD_INFO(tsk)			\
+-{						\
+-	.task =		&tsk,			\
+-	.exec_domain =	&default_exec_domain,	\
+-	.flags =		0,		\
+-	.cpu =		0,			\
+-	.preempt_count = INIT_PREEMPT_COUNT,	\
+-	.addr_limit =	KERNEL_DS,		\
+-	.restart_block =  {			\
+-		.fn =  do_no_restart_syscall,	\
+-	},					\
+-	.real_thread = NULL,			\
+-}
+-
+-#define init_thread_info	(init_thread_union.thread_info)
+-#define init_stack		(init_thread_union.stack)
+-
+-#define THREAD_SIZE ((1 << CONFIG_KERNEL_STACK_ORDER) * PAGE_SIZE)
+-/* how to get the thread information struct from C */
+-static inline struct thread_info *current_thread_info(void)
+-{
+-	struct thread_info *ti;
+-	unsigned long mask = THREAD_SIZE - 1;
+-	void *p;
+-
+-	asm volatile ("" : "=r" (p) : "0" (&ti));
+-	ti = (struct thread_info *) (((unsigned long)p) & ~mask);
+-	return ti;
+-}
+-
+-#define THREAD_SIZE_ORDER CONFIG_KERNEL_STACK_ORDER
+-
+-#endif
+-
+-#define TIF_SYSCALL_TRACE	0	/* syscall trace active */
+-#define TIF_SIGPENDING		1	/* signal pending */
+-#define TIF_NEED_RESCHED	2	/* rescheduling necessary */
+-#define TIF_RESTART_BLOCK	4
+-#define TIF_MEMDIE		5	/* is terminating due to OOM killer */
+-#define TIF_SYSCALL_AUDIT	6
+-#define TIF_RESTORE_SIGMASK	7
+-#define TIF_NOTIFY_RESUME	8
+-
+-#define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
+-#define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
+-#define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
+-#define _TIF_MEMDIE		(1 << TIF_MEMDIE)
+-#define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
+-
+-#endif
+--- a/arch/um/include/asm/timex.h
++++ /dev/null
+@@ -1,13 +0,0 @@
+-#ifndef __UM_TIMEX_H
+-#define __UM_TIMEX_H
+-
+-typedef unsigned long cycles_t;
+-
+-static inline cycles_t get_cycles (void)
+-{
+-	return 0;
+-}
+-
+-#define CLOCK_TICK_RATE (HZ)
+-
+-#endif
+--- a/arch/um/include/asm/tlb.h
++++ /dev/null
+@@ -1,122 +0,0 @@
+-#ifndef __UM_TLB_H
+-#define __UM_TLB_H
+-
+-#include <linux/pagemap.h>
+-#include <linux/swap.h>
+-#include <asm/percpu.h>
+-#include <asm/pgalloc.h>
+-#include <asm/tlbflush.h>
+-
+-#define tlb_start_vma(tlb, vma) do { } while (0)
+-#define tlb_end_vma(tlb, vma) do { } while (0)
+-#define tlb_flush(tlb) flush_tlb_mm((tlb)->mm)
+-
+-/* struct mmu_gather is an opaque type used by the mm code for passing around
+- * any data needed by arch specific code for tlb_remove_page.
+- */
+-struct mmu_gather {
+-	struct mm_struct	*mm;
+-	unsigned int		need_flush; /* Really unmapped some ptes? */
+-	unsigned long		start;
+-	unsigned long		end;
+-	unsigned int		fullmm; /* non-zero means full mm flush */
+-};
+-
+-static inline void __tlb_remove_tlb_entry(struct mmu_gather *tlb, pte_t *ptep,
+-					  unsigned long address)
+-{
+-	if (tlb->start > address)
+-		tlb->start = address;
+-	if (tlb->end < address + PAGE_SIZE)
+-		tlb->end = address + PAGE_SIZE;
+-}
+-
+-static inline void init_tlb_gather(struct mmu_gather *tlb)
+-{
+-	tlb->need_flush = 0;
+-
+-	tlb->start = TASK_SIZE;
+-	tlb->end = 0;
+-
+-	if (tlb->fullmm) {
+-		tlb->start = 0;
+-		tlb->end = TASK_SIZE;
+-	}
+-}
+-
+-static inline void
+-tlb_gather_mmu(struct mmu_gather *tlb, struct mm_struct *mm, unsigned long start, unsigned long end)
+-{
+-	tlb->mm = mm;
+-	tlb->start = start;
+-	tlb->end = end;
+-	tlb->fullmm = !(start | (end+1));
+-
+-	init_tlb_gather(tlb);
+-}
+-
+-extern void flush_tlb_mm_range(struct mm_struct *mm, unsigned long start,
+-			       unsigned long end);
+-
+-static inline void
+-tlb_flush_mmu(struct mmu_gather *tlb)
+-{
+-	if (!tlb->need_flush)
+-		return;
+-
+-	flush_tlb_mm_range(tlb->mm, tlb->start, tlb->end);
+-	init_tlb_gather(tlb);
+-}
+-
+-/* tlb_finish_mmu
+- *	Called at the end of the shootdown operation to free up any resources
+- *	that were required.
+- */
+-static inline void
+-tlb_finish_mmu(struct mmu_gather *tlb, unsigned long start, unsigned long end)
+-{
+-	tlb_flush_mmu(tlb);
+-
+-	/* keep the page table cache within bounds */
+-	check_pgt_cache();
+-}
+-
+-/* tlb_remove_page
+- *	Must perform the equivalent to __free_pte(pte_get_and_clear(ptep)),
+- *	while handling the additional races in SMP caused by other CPUs
+- *	caching valid mappings in their TLBs.
+- */
+-static inline int __tlb_remove_page(struct mmu_gather *tlb, struct page *page)
+-{
+-	tlb->need_flush = 1;
+-	free_page_and_swap_cache(page);
+-	return 1; /* avoid calling tlb_flush_mmu */
+-}
+-
+-static inline void tlb_remove_page(struct mmu_gather *tlb, struct page *page)
+-{
+-	__tlb_remove_page(tlb, page);
+-}
+-
+-/**
+- * tlb_remove_tlb_entry - remember a pte unmapping for later tlb invalidation.
+- *
+- * Record the fact that pte's were really umapped in ->need_flush, so we can
+- * later optimise away the tlb invalidate.   This helps when userspace is
+- * unmapping already-unmapped pages, which happens quite a lot.
+- */
+-#define tlb_remove_tlb_entry(tlb, ptep, address)		\
+-	do {							\
+-		tlb->need_flush = 1;				\
+-		__tlb_remove_tlb_entry(tlb, ptep, address);	\
+-	} while (0)
+-
+-#define pte_free_tlb(tlb, ptep, addr) __pte_free_tlb(tlb, ptep, addr)
+-
+-#define pud_free_tlb(tlb, pudp, addr) __pud_free_tlb(tlb, pudp, addr)
+-
+-#define pmd_free_tlb(tlb, pmdp, addr) __pmd_free_tlb(tlb, pmdp, addr)
+-
+-#define tlb_migrate_finish(mm) do {} while (0)
+-
+-#endif
+--- a/arch/um/include/asm/tlbflush.h
++++ /dev/null
+@@ -1,31 +0,0 @@
+-/*
+- * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_TLBFLUSH_H
+-#define __UM_TLBFLUSH_H
+-
+-#include <linux/mm.h>
+-
+-/*
+- * TLB flushing:
+- *
+- *  - flush_tlb() flushes the current mm struct TLBs
+- *  - flush_tlb_all() flushes all processes TLBs
+- *  - flush_tlb_mm(mm) flushes the specified mm context TLB's
+- *  - flush_tlb_page(vma, vmaddr) flushes one page
+- *  - flush_tlb_kernel_vm() flushes the kernel vm area
+- *  - flush_tlb_range(vma, start, end) flushes a range of pages
+- */
+-
+-extern void flush_tlb_all(void);
+-extern void flush_tlb_mm(struct mm_struct *mm);
+-extern void flush_tlb_range(struct vm_area_struct *vma, unsigned long start, 
+-			    unsigned long end);
+-extern void flush_tlb_page(struct vm_area_struct *vma, unsigned long address);
+-extern void flush_tlb_kernel_vm(void);
+-extern void flush_tlb_kernel_range(unsigned long start, unsigned long end);
+-extern void __flush_tlb_one(unsigned long addr);
+-
+-#endif
+--- a/arch/um/include/asm/uaccess.h
++++ /dev/null
+@@ -1,178 +0,0 @@
+-/* 
+- * Copyright (C) 2002 Jeff Dike (jdike@karaya.com)
+- * Licensed under the GPL
+- */
+-
+-#ifndef __UM_UACCESS_H
+-#define __UM_UACCESS_H
+-
+-/* thread_info has a mm_segment_t in it, so put the definition up here */
+-typedef struct {
+-	unsigned long seg;
+-} mm_segment_t;
+-
+-#include <linux/thread_info.h>
+-#include <linux/errno.h>
+-#include <asm/processor.h>
+-#include <asm/elf.h>
+-
+-#define VERIFY_READ 0
+-#define VERIFY_WRITE 1
+-
+-/*
+- * The fs value determines whether argument validity checking should be
+- * performed or not.  If get_fs() == USER_DS, checking is performed, with
+- * get_fs() == KERNEL_DS, checking is bypassed.
+- *
+- * For historical reasons, these macros are grossly misnamed.
+- */
+-
+-#define MAKE_MM_SEG(s)	((mm_segment_t) { (s) })
+-
+-#define KERNEL_DS	MAKE_MM_SEG(0xFFFFFFFF)
+-#define USER_DS		MAKE_MM_SEG(TASK_SIZE)
+-
+-#define get_ds()	(KERNEL_DS)
+-#define get_fs()	(current_thread_info()->addr_limit)
+-#define set_fs(x)	(current_thread_info()->addr_limit = (x))
+-
+-#define segment_eq(a, b) ((a).seg == (b).seg)
+-
+-#define __under_task_size(addr, size) \
+-	(((unsigned long) (addr) < TASK_SIZE) && \
+-	 (((unsigned long) (addr) + (size)) < TASK_SIZE))
+-
+-#define __access_ok_vsyscall(type, addr, size) \
+-	 ((type == VERIFY_READ) && \
+-	  ((unsigned long) (addr) >= FIXADDR_USER_START) && \
+-	  ((unsigned long) (addr) + (size) <= FIXADDR_USER_END) && \
+-	  ((unsigned long) (addr) + (size) >= (unsigned long)(addr)))
+-
+-#define __addr_range_nowrap(addr, size) \
+-	((unsigned long) (addr) <= ((unsigned long) (addr) + (size)))
+-
+-#define access_ok(type, addr, size) \
+-	(__addr_range_nowrap(addr, size) && \
+-	 (__under_task_size(addr, size) || \
+-	  __access_ok_vsyscall(type, addr, size) || \
+-	  segment_eq(get_fs(), KERNEL_DS)))
+-
+-extern int copy_from_user(void *to, const void __user *from, int n);
+-extern int copy_to_user(void __user *to, const void *from, int n);
+-
+-/*
+- * strncpy_from_user: - Copy a NUL terminated string from userspace.
+- * @dst:   Destination address, in kernel space.  This buffer must be at
+- *         least @count bytes long.
+- * @src:   Source address, in user space.
+- * @count: Maximum number of bytes to copy, including the trailing NUL.
+- *
+- * Copies a NUL-terminated string from userspace to kernel space.
+- *
+- * On success, returns the length of the string (not including the trailing
+- * NUL).
+- *
+- * If access to userspace fails, returns -EFAULT (some data may have been
+- * copied).
+- *
+- * If @count is smaller than the length of the string, copies @count bytes
+- * and returns @count.
+- */
+-
+-extern int strncpy_from_user(char *dst, const char __user *src, int count);
+-
+-/*
+- * __clear_user: - Zero a block of memory in user space, with less checking.
+- * @to:   Destination address, in user space.
+- * @n:    Number of bytes to zero.
+- *
+- * Zero a block of memory in user space.  Caller must check
+- * the specified block with access_ok() before calling this function.
+- *
+- * Returns number of bytes that could not be cleared.
+- * On success, this will be zero.
+- */
+-extern int __clear_user(void __user *mem, int len);
+-
+-/*
+- * clear_user: - Zero a block of memory in user space.
+- * @to:   Destination address, in user space.
+- * @n:    Number of bytes to zero.
+- *
+- * Zero a block of memory in user space.
+- *
+- * Returns number of bytes that could not be cleared.
+- * On success, this will be zero.
+- */
+-extern int clear_user(void __user *mem, int len);
+-
+-/*
+- * strlen_user: - Get the size of a string in user space.
+- * @str: The string to measure.
+- * @n:   The maximum valid length
+- *
+- * Get the size of a NUL-terminated string in user space.
+- *
+- * Returns the size of the string INCLUDING the terminating NUL.
+- * On exception, returns 0.
+- * If the string is too long, returns a value greater than @n.
+- */
+-extern int strnlen_user(const void __user *str, int len);
+-
+-#define __copy_from_user(to, from, n) copy_from_user(to, from, n)
+-
+-#define __copy_to_user(to, from, n) copy_to_user(to, from, n)
+-
+-#define __copy_to_user_inatomic __copy_to_user
+-#define __copy_from_user_inatomic __copy_from_user
+-
+-#define __get_user(x, ptr) \
+-({ \
+-	const __typeof__(*(ptr)) __user *__private_ptr = (ptr);	\
+-	__typeof__(x) __private_val;			\
+-	int __private_ret = -EFAULT;			\
+-	(x) = (__typeof__(*(__private_ptr)))0;				\
+-	if (__copy_from_user((__force void *)&__private_val, (__private_ptr),\
+-			     sizeof(*(__private_ptr))) == 0) {		\
+-		(x) = (__typeof__(*(__private_ptr))) __private_val;	\
+-		__private_ret = 0;					\
+-	}								\
+-	__private_ret;							\
+-}) 
+-
+-#define get_user(x, ptr) \
+-({ \
+-        const __typeof__((*(ptr))) __user *private_ptr = (ptr); \
+-        (access_ok(VERIFY_READ, private_ptr, sizeof(*private_ptr)) ? \
+-	 __get_user(x, private_ptr) : ((x) = (__typeof__(*ptr))0, -EFAULT)); \
+-})
+-
+-#define __put_user(x, ptr) \
+-({ \
+-        __typeof__(*(ptr)) __user *__private_ptr = ptr; \
+-        __typeof__(*(__private_ptr)) __private_val; \
+-        int __private_ret = -EFAULT; \
+-        __private_val = (__typeof__(*(__private_ptr))) (x); \
+-        if (__copy_to_user((__private_ptr), &__private_val, \
+-			   sizeof(*(__private_ptr))) == 0) { \
+-		__private_ret = 0; \
+-	} \
+-        __private_ret; \
+-})
+-
+-#define put_user(x, ptr) \
+-({ \
+-        __typeof__(*(ptr)) __user *private_ptr = (ptr); \
+-        (access_ok(VERIFY_WRITE, private_ptr, sizeof(*private_ptr)) ? \
+-	 __put_user(x, private_ptr) : -EFAULT); \
+-})
+-
+-#define strlen_user(str) strnlen_user(str, ~0U >> 1)
+-
+-struct exception_table_entry
+-{
+-        unsigned long insn;
+-	unsigned long fixup;
+-};
+-
+-#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/Kbuild
+@@ -0,0 +1,8 @@
++generic-y += bug.h cputime.h device.h emergency-restart.h futex.h hardirq.h
++generic-y += hw_irq.h irq_regs.h kdebug.h percpu.h sections.h topology.h xor.h
++generic-y += ftrace.h pci.h io.h param.h delay.h mutex.h current.h exec.h
++generic-y += switch_to.h clkdev.h
++generic-y += trace_clock.h
++generic-y += preempt.h
++generic-y += hash.h
++generic-y += barrier.h
+--- /dev/null
++++ b/arch/um/include/uapi/asm/a.out-core.h
+@@ -0,0 +1,27 @@
++/* a.out coredump register dumper
++ *
++ * Copyright (C) 2007 Red Hat, Inc. All Rights Reserved.
++ * Written by David Howells (dhowells@redhat.com)
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public Licence
++ * as published by the Free Software Foundation; either version
++ * 2 of the Licence, or (at your option) any later version.
++ */
++
++#ifndef __UM_A_OUT_CORE_H
++#define __UM_A_OUT_CORE_H
++
++#ifdef __KERNEL__
++
++#include <linux/user.h>
++
++/*
++ * fill in the user structure for an a.out core dump
++ */
++static inline void aout_dump_thread(struct pt_regs *regs, struct user *u)
++{
++}
++
++#endif /* __KERNEL__ */
++#endif /* __UM_A_OUT_CORE_H */
+--- /dev/null
++++ b/arch/um/include/uapi/asm/bugs.h
+@@ -0,0 +1,6 @@
++#ifndef __UM_BUGS_H
++#define __UM_BUGS_H
++
++void check_bugs(void);
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/cache.h
+@@ -0,0 +1,17 @@
++#ifndef __UM_CACHE_H
++#define __UM_CACHE_H
++
++
++#if defined(CONFIG_UML_X86) && !defined(CONFIG_64BIT)
++# define L1_CACHE_SHIFT		(CONFIG_X86_L1_CACHE_SHIFT)
++#elif defined(CONFIG_UML_X86) /* 64-bit */
++# define L1_CACHE_SHIFT		6 /* Should be 7 on Intel */
++#else
++/* XXX: this was taken from x86, now it's completely random. Luckily only
++ * affects SMP padding. */
++# define L1_CACHE_SHIFT		5
++#endif
++
++#define L1_CACHE_BYTES		(1 << L1_CACHE_SHIFT)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/common.lds.S
+@@ -0,0 +1,107 @@
++#include <asm-generic/vmlinux.lds.h>
++
++  .fini      : { *(.fini)    } =0x9090
++  _etext = .;
++  PROVIDE (etext = .);
++
++  . = ALIGN(4096);
++  _sdata = .;
++  PROVIDE (sdata = .);
++
++  RODATA
++
++  .unprotected : { *(.unprotected) }
++  . = ALIGN(4096);
++  PROVIDE (_unprotected_end = .);
++
++  . = ALIGN(4096);
++  .note : { *(.note.*) }
++  EXCEPTION_TABLE(0)
++
++  BUG_TABLE
++
++  .uml.setup.init : {
++	__uml_setup_start = .;
++	*(.uml.setup.init)
++	__uml_setup_end = .;
++  }
++	
++  .uml.help.init : {
++	__uml_help_start = .;
++	*(.uml.help.init)
++	__uml_help_end = .;
++  }
++	
++  .uml.postsetup.init : {
++	__uml_postsetup_start = .;
++	*(.uml.postsetup.init)
++	__uml_postsetup_end = .;
++  }
++	
++  .init.setup : {
++	INIT_SETUP(0)
++  }
++
++  PERCPU_SECTION(32)
++	
++  .initcall.init : {
++	INIT_CALLS
++  }
++
++  .con_initcall.init : {
++	CON_INITCALL
++  }
++
++  .uml.initcall.init : {
++	__uml_initcall_start = .;
++	*(.uml.initcall.init)
++	__uml_initcall_end = .;
++  }
++
++  SECURITY_INIT
++
++  .exitcall : {
++	__exitcall_begin = .;
++	*(.exitcall.exit)
++	__exitcall_end = .;
++  }
++
++  .uml.exitcall : {
++	__uml_exitcall_begin = .;
++	*(.uml.exitcall.exit)
++	__uml_exitcall_end = .;
++  }
++
++  . = ALIGN(4);
++  .altinstructions : {
++	__alt_instructions = .;
++	*(.altinstructions)
++	__alt_instructions_end = .;
++  }
++  .altinstr_replacement : { *(.altinstr_replacement) }
++  /* .exit.text is discard at runtime, not link time, to deal with references
++     from .altinstructions and .eh_frame */
++  .exit.text : { *(.exit.text) }
++  .exit.data : { *(.exit.data) }
++
++  .preinit_array : {
++	__preinit_array_start = .;
++	*(.preinit_array)
++	__preinit_array_end = .;
++  }
++  .init_array : {
++	__init_array_start = .;
++	*(.init_array)
++	__init_array_end = .;
++  }
++  .fini_array : {
++	__fini_array_start = .;
++	*(.fini_array)
++	__fini_array_end = .;
++  }
++
++   . = ALIGN(4096);
++  .init.ramfs : {
++	INIT_RAM_FS
++  }
++
+--- /dev/null
++++ b/arch/um/include/uapi/asm/dma.h
+@@ -0,0 +1,10 @@
++#ifndef __UM_DMA_H
++#define __UM_DMA_H
++
++#include <asm/io.h>
++
++extern unsigned long uml_physmem;
++
++#define MAX_DMA_ADDRESS (uml_physmem)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/fixmap.h
+@@ -0,0 +1,60 @@
++#ifndef __UM_FIXMAP_H
++#define __UM_FIXMAP_H
++
++#include <asm/processor.h>
++#include <asm/kmap_types.h>
++#include <asm/archparam.h>
++#include <asm/page.h>
++#include <linux/threads.h>
++
++/*
++ * Here we define all the compile-time 'special' virtual
++ * addresses. The point is to have a constant address at
++ * compile time, but to set the physical address only
++ * in the boot process. We allocate these special  addresses
++ * from the end of virtual memory (0xfffff000) backwards.
++ * Also this lets us do fail-safe vmalloc(), we
++ * can guarantee that these special addresses and
++ * vmalloc()-ed addresses never overlap.
++ *
++ * these 'compile-time allocated' memory buffers are
++ * fixed-size 4k pages. (or larger if used with an increment
++ * highger than 1) use fixmap_set(idx,phys) to associate
++ * physical memory with fixmap indices.
++ *
++ * TLB entries of such buffers will not be flushed across
++ * task switches.
++ */
++
++/*
++ * on UP currently we will have no trace of the fixmap mechanizm,
++ * no page table allocations, etc. This might change in the
++ * future, say framebuffers for the console driver(s) could be
++ * fix-mapped?
++ */
++enum fixed_addresses {
++#ifdef CONFIG_HIGHMEM
++	FIX_KMAP_BEGIN,	/* reserved pte's for temporary kernel mappings */
++	FIX_KMAP_END = FIX_KMAP_BEGIN+(KM_TYPE_NR*NR_CPUS)-1,
++#endif
++	__end_of_fixed_addresses
++};
++
++extern void __set_fixmap (enum fixed_addresses idx,
++			  unsigned long phys, pgprot_t flags);
++
++/*
++ * used by vmalloc.c.
++ *
++ * Leave one empty page between vmalloc'ed areas and
++ * the start of the fixmap, and leave one page empty
++ * at the top of mem..
++ */
++
++#define FIXADDR_TOP	(TASK_SIZE - 2 * PAGE_SIZE)
++#define FIXADDR_SIZE	(__end_of_fixed_addresses << PAGE_SHIFT)
++#define FIXADDR_START	(FIXADDR_TOP - FIXADDR_SIZE)
++
++#include <asm-generic/fixmap.h>
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/irq.h
+@@ -0,0 +1,23 @@
++#ifndef __UM_IRQ_H
++#define __UM_IRQ_H
++
++#define TIMER_IRQ		0
++#define UMN_IRQ			1
++#define CONSOLE_IRQ		2
++#define CONSOLE_WRITE_IRQ	3
++#define UBD_IRQ			4
++#define UM_ETH_IRQ		5
++#define SSL_IRQ			6
++#define SSL_WRITE_IRQ		7
++#define ACCEPT_IRQ		8
++#define MCONSOLE_IRQ		9
++#define WINCH_IRQ		10
++#define SIGIO_WRITE_IRQ 	11
++#define TELNETD_IRQ 		12
++#define XTERM_IRQ 		13
++#define RANDOM_IRQ 		14
++
++#define LAST_IRQ RANDOM_IRQ
++#define NR_IRQS (LAST_IRQ + 1)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/irqflags.h
+@@ -0,0 +1,42 @@
++#ifndef __UM_IRQFLAGS_H
++#define __UM_IRQFLAGS_H
++
++extern int get_signals(void);
++extern int set_signals(int enable);
++extern void block_signals(void);
++extern void unblock_signals(void);
++
++static inline unsigned long arch_local_save_flags(void)
++{
++	return get_signals();
++}
++
++static inline void arch_local_irq_restore(unsigned long flags)
++{
++	set_signals(flags);
++}
++
++static inline void arch_local_irq_enable(void)
++{
++	unblock_signals();
++}
++
++static inline void arch_local_irq_disable(void)
++{
++	block_signals();
++}
++
++static inline unsigned long arch_local_irq_save(void)
++{
++	unsigned long flags;
++	flags = arch_local_save_flags();
++	arch_local_irq_disable();
++	return flags;
++}
++
++static inline bool arch_irqs_disabled(void)
++{
++	return arch_local_save_flags() == 0;
++}
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/kmap_types.h
+@@ -0,0 +1,13 @@
++/* 
++ * Copyright (C) 2002 Jeff Dike (jdike@karaya.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_KMAP_TYPES_H
++#define __UM_KMAP_TYPES_H
++
++/* No more #include "asm/arch/kmap_types.h" ! */
++
++#define KM_TYPE_NR 14
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/kvm_para.h
+@@ -0,0 +1 @@
++#include <asm-generic/kvm_para.h>
+--- /dev/null
++++ b/arch/um/include/uapi/asm/mmu.h
+@@ -0,0 +1,24 @@
++/* 
++ * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __ARCH_UM_MMU_H
++#define __ARCH_UM_MMU_H
++
++#include <mm_id.h>
++#include <asm/mm_context.h>
++
++typedef struct mm_context {
++	struct mm_id id;
++	struct uml_arch_mm_context arch;
++	struct page *stub_pages[2];
++} mm_context_t;
++
++extern void __switch_mm(struct mm_id * mm_idp);
++
++/* Avoid tangled inclusion with asm/ldt.h */
++extern long init_new_ldt(struct mm_context *to_mm, struct mm_context *from_mm);
++extern void free_ldt(struct mm_context *mm);
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/mmu_context.h
+@@ -0,0 +1,58 @@
++/* 
++ * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_MMU_CONTEXT_H
++#define __UM_MMU_CONTEXT_H
++
++#include <linux/sched.h>
++#include <asm/mmu.h>
++
++extern void uml_setup_stubs(struct mm_struct *mm);
++extern void arch_exit_mmap(struct mm_struct *mm);
++
++#define deactivate_mm(tsk,mm)	do { } while (0)
++
++extern void force_flush_all(void);
++
++static inline void activate_mm(struct mm_struct *old, struct mm_struct *new)
++{
++	/*
++	 * This is called by fs/exec.c and sys_unshare()
++	 * when the new ->mm is used for the first time.
++	 */
++	__switch_mm(&new->context.id);
++	down_write(&new->mmap_sem);
++	uml_setup_stubs(new);
++	up_write(&new->mmap_sem);
++}
++
++static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next, 
++			     struct task_struct *tsk)
++{
++	unsigned cpu = smp_processor_id();
++
++	if(prev != next){
++		cpumask_clear_cpu(cpu, mm_cpumask(prev));
++		cpumask_set_cpu(cpu, mm_cpumask(next));
++		if(next != &init_mm)
++			__switch_mm(&next->context.id);
++	}
++}
++
++static inline void arch_dup_mmap(struct mm_struct *oldmm, struct mm_struct *mm)
++{
++	uml_setup_stubs(mm);
++}
++
++static inline void enter_lazy_tlb(struct mm_struct *mm, 
++				  struct task_struct *tsk)
++{
++}
++
++extern int init_new_context(struct task_struct *task, struct mm_struct *mm);
++
++extern void destroy_context(struct mm_struct *mm);
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/page.h
+@@ -0,0 +1,122 @@
++/*
++ * Copyright (C) 2000 - 2003 Jeff Dike (jdike@addtoit.com)
++ * Copyright 2003 PathScale, Inc.
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PAGE_H
++#define __UM_PAGE_H
++
++#include <linux/const.h>
++
++/* PAGE_SHIFT determines the page size */
++#define PAGE_SHIFT	12
++#define PAGE_SIZE	(_AC(1, UL) << PAGE_SHIFT)
++#define PAGE_MASK	(~(PAGE_SIZE-1))
++
++#ifndef __ASSEMBLY__
++
++struct page;
++
++#include <linux/types.h>
++#include <asm/vm-flags.h>
++
++/*
++ * These are used to make use of C type-checking..
++ */
++
++#define clear_page(page)	memset((void *)(page), 0, PAGE_SIZE)
++#define copy_page(to,from)	memcpy((void *)(to), (void *)(from), PAGE_SIZE)
++
++#define clear_user_page(page, vaddr, pg)	clear_page(page)
++#define copy_user_page(to, from, vaddr, pg)	copy_page(to, from)
++
++#if defined(CONFIG_3_LEVEL_PGTABLES) && !defined(CONFIG_64BIT)
++
++typedef struct { unsigned long pte_low, pte_high; } pte_t;
++typedef struct { unsigned long pmd; } pmd_t;
++typedef struct { unsigned long pgd; } pgd_t;
++#define pte_val(x) ((x).pte_low | ((unsigned long long) (x).pte_high << 32))
++
++#define pte_get_bits(pte, bits) ((pte).pte_low & (bits))
++#define pte_set_bits(pte, bits) ((pte).pte_low |= (bits))
++#define pte_clear_bits(pte, bits) ((pte).pte_low &= ~(bits))
++#define pte_copy(to, from) ({ (to).pte_high = (from).pte_high; \
++			      smp_wmb(); \
++			      (to).pte_low = (from).pte_low; })
++#define pte_is_zero(pte) (!((pte).pte_low & ~_PAGE_NEWPAGE) && !(pte).pte_high)
++#define pte_set_val(pte, phys, prot) \
++	({ (pte).pte_high = (phys) >> 32; \
++	   (pte).pte_low = (phys) | pgprot_val(prot); })
++
++#define pmd_val(x)	((x).pmd)
++#define __pmd(x) ((pmd_t) { (x) } )
++
++typedef unsigned long long pfn_t;
++typedef unsigned long long phys_t;
++
++#else
++
++typedef struct { unsigned long pte; } pte_t;
++typedef struct { unsigned long pgd; } pgd_t;
++
++#ifdef CONFIG_3_LEVEL_PGTABLES
++typedef struct { unsigned long pmd; } pmd_t;
++#define pmd_val(x)	((x).pmd)
++#define __pmd(x) ((pmd_t) { (x) } )
++#endif
++
++#define pte_val(x)	((x).pte)
++
++
++#define pte_get_bits(p, bits) ((p).pte & (bits))
++#define pte_set_bits(p, bits) ((p).pte |= (bits))
++#define pte_clear_bits(p, bits) ((p).pte &= ~(bits))
++#define pte_copy(to, from) ((to).pte = (from).pte)
++#define pte_is_zero(p) (!((p).pte & ~_PAGE_NEWPAGE))
++#define pte_set_val(p, phys, prot) (p).pte = (phys | pgprot_val(prot))
++
++typedef unsigned long pfn_t;
++typedef unsigned long phys_t;
++
++#endif
++
++typedef struct { unsigned long pgprot; } pgprot_t;
++
++typedef struct page *pgtable_t;
++
++#define pgd_val(x)	((x).pgd)
++#define pgprot_val(x)	((x).pgprot)
++
++#define __pte(x) ((pte_t) { (x) } )
++#define __pgd(x) ((pgd_t) { (x) } )
++#define __pgprot(x)	((pgprot_t) { (x) } )
++
++extern unsigned long uml_physmem;
++
++#define PAGE_OFFSET (uml_physmem)
++#define KERNELBASE PAGE_OFFSET
++
++#define __va_space (8*1024*1024)
++
++#include <mem.h>
++
++/* Cast to unsigned long before casting to void * to avoid a warning from
++ * mmap_kmem about cutting a long long down to a void *.  Not sure that
++ * casting is the right thing, but 32-bit UML can't have 64-bit virtual
++ * addresses
++ */
++#define __pa(virt) to_phys((void *) (unsigned long) (virt))
++#define __va(phys) to_virt((unsigned long) (phys))
++
++#define phys_to_pfn(p) ((pfn_t) ((p) >> PAGE_SHIFT))
++#define pfn_to_phys(pfn) ((phys_t) ((pfn) << PAGE_SHIFT))
++
++#define pfn_valid(pfn) ((pfn) < max_mapnr)
++#define virt_addr_valid(v) pfn_valid(phys_to_pfn(__pa(v)))
++
++#include <asm-generic/memory_model.h>
++#include <asm-generic/getorder.h>
++
++#endif	/* __ASSEMBLY__ */
++#endif	/* __UM_PAGE_H */
+--- /dev/null
++++ b/arch/um/include/uapi/asm/pgalloc.h
+@@ -0,0 +1,61 @@
++/* 
++ * Copyright (C) 2000, 2001, 2002 Jeff Dike (jdike@karaya.com)
++ * Copyright 2003 PathScale, Inc.
++ * Derived from include/asm-i386/pgalloc.h and include/asm-i386/pgtable.h
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PGALLOC_H
++#define __UM_PGALLOC_H
++
++#include <linux/mm.h>
++
++#define pmd_populate_kernel(mm, pmd, pte) \
++	set_pmd(pmd, __pmd(_PAGE_TABLE + (unsigned long) __pa(pte)))
++
++#define pmd_populate(mm, pmd, pte) 				\
++	set_pmd(pmd, __pmd(_PAGE_TABLE +			\
++		((unsigned long long)page_to_pfn(pte) <<	\
++			(unsigned long long) PAGE_SHIFT)))
++#define pmd_pgtable(pmd) pmd_page(pmd)
++
++/*
++ * Allocate and free page tables.
++ */
++extern pgd_t *pgd_alloc(struct mm_struct *);
++extern void pgd_free(struct mm_struct *mm, pgd_t *pgd);
++
++extern pte_t *pte_alloc_one_kernel(struct mm_struct *, unsigned long);
++extern pgtable_t pte_alloc_one(struct mm_struct *, unsigned long);
++
++static inline void pte_free_kernel(struct mm_struct *mm, pte_t *pte)
++{
++	free_page((unsigned long) pte);
++}
++
++static inline void pte_free(struct mm_struct *mm, pgtable_t pte)
++{
++	pgtable_page_dtor(pte);
++	__free_page(pte);
++}
++
++#define __pte_free_tlb(tlb,pte, address)		\
++do {							\
++	pgtable_page_dtor(pte);				\
++	tlb_remove_page((tlb),(pte));			\
++} while (0)
++
++#ifdef CONFIG_3_LEVEL_PGTABLES
++
++static inline void pmd_free(struct mm_struct *mm, pmd_t *pmd)
++{
++	free_page((unsigned long)pmd);
++}
++
++#define __pmd_free_tlb(tlb,x, address)   tlb_remove_page((tlb),virt_to_page(x))
++#endif
++
++#define check_pgt_cache()	do { } while (0)
++
++#endif
++
+--- /dev/null
++++ b/arch/um/include/uapi/asm/pgtable-2level.h
+@@ -0,0 +1,53 @@
++/*
++ * Copyright (C) 2000, 2001, 2002 Jeff Dike (jdike@karaya.com)
++ * Copyright 2003 PathScale, Inc.
++ * Derived from include/asm-i386/pgtable.h
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PGTABLE_2LEVEL_H
++#define __UM_PGTABLE_2LEVEL_H
++
++#include <asm-generic/pgtable-nopmd.h>
++
++/* PGDIR_SHIFT determines what a third-level page table entry can map */
++
++#define PGDIR_SHIFT	22
++#define PGDIR_SIZE	(1UL << PGDIR_SHIFT)
++#define PGDIR_MASK	(~(PGDIR_SIZE-1))
++
++/*
++ * entries per page directory level: the i386 is two-level, so
++ * we don't really have any PMD directory physically.
++ */
++#define PTRS_PER_PTE	1024
++#define USER_PTRS_PER_PGD ((TASK_SIZE + (PGDIR_SIZE - 1)) / PGDIR_SIZE)
++#define PTRS_PER_PGD	1024
++#define FIRST_USER_ADDRESS	0
++
++#define pte_ERROR(e) \
++        printk("%s:%d: bad pte %p(%08lx).\n", __FILE__, __LINE__, &(e), \
++	       pte_val(e))
++#define pgd_ERROR(e) \
++        printk("%s:%d: bad pgd %p(%08lx).\n", __FILE__, __LINE__, &(e), \
++	       pgd_val(e))
++
++static inline int pgd_newpage(pgd_t pgd)	{ return 0; }
++static inline void pgd_mkuptodate(pgd_t pgd)	{ }
++
++#define set_pmd(pmdptr, pmdval) (*(pmdptr) = (pmdval))
++
++#define pte_pfn(x) phys_to_pfn(pte_val(x))
++#define pfn_pte(pfn, prot) __pte(pfn_to_phys(pfn) | pgprot_val(prot))
++#define pfn_pmd(pfn, prot) __pmd(pfn_to_phys(pfn) | pgprot_val(prot))
++
++/*
++ * Bits 0 through 4 are taken
++ */
++#define PTE_FILE_MAX_BITS	27
++
++#define pte_to_pgoff(pte) (pte_val(pte) >> 5)
++
++#define pgoff_to_pte(off) ((pte_t) { ((off) << 5) + _PAGE_FILE })
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/pgtable-3level.h
+@@ -0,0 +1,136 @@
++/*
++ * Copyright 2003 PathScale Inc
++ * Derived from include/asm-i386/pgtable.h
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PGTABLE_3LEVEL_H
++#define __UM_PGTABLE_3LEVEL_H
++
++#include <asm-generic/pgtable-nopud.h>
++
++/* PGDIR_SHIFT determines what a third-level page table entry can map */
++
++#ifdef CONFIG_64BIT
++#define PGDIR_SHIFT	30
++#else
++#define PGDIR_SHIFT	31
++#endif
++#define PGDIR_SIZE	(1UL << PGDIR_SHIFT)
++#define PGDIR_MASK	(~(PGDIR_SIZE-1))
++
++/* PMD_SHIFT determines the size of the area a second-level page table can
++ * map
++ */
++
++#define PMD_SHIFT	21
++#define PMD_SIZE	(1UL << PMD_SHIFT)
++#define PMD_MASK	(~(PMD_SIZE-1))
++
++/*
++ * entries per page directory level
++ */
++
++#define PTRS_PER_PTE 512
++#ifdef CONFIG_64BIT
++#define PTRS_PER_PMD 512
++#define PTRS_PER_PGD 512
++#else
++#define PTRS_PER_PMD 1024
++#define PTRS_PER_PGD 1024
++#endif
++
++#define USER_PTRS_PER_PGD ((TASK_SIZE + (PGDIR_SIZE - 1)) / PGDIR_SIZE)
++#define FIRST_USER_ADDRESS	0
++
++#define pte_ERROR(e) \
++        printk("%s:%d: bad pte %p(%016lx).\n", __FILE__, __LINE__, &(e), \
++	       pte_val(e))
++#define pmd_ERROR(e) \
++        printk("%s:%d: bad pmd %p(%016lx).\n", __FILE__, __LINE__, &(e), \
++	       pmd_val(e))
++#define pgd_ERROR(e) \
++        printk("%s:%d: bad pgd %p(%016lx).\n", __FILE__, __LINE__, &(e), \
++	       pgd_val(e))
++
++#define pud_none(x)	(!(pud_val(x) & ~_PAGE_NEWPAGE))
++#define	pud_bad(x)	((pud_val(x) & (~PAGE_MASK & ~_PAGE_USER)) != _KERNPG_TABLE)
++#define pud_present(x)	(pud_val(x) & _PAGE_PRESENT)
++#define pud_populate(mm, pud, pmd) \
++	set_pud(pud, __pud(_PAGE_TABLE + __pa(pmd)))
++
++#ifdef CONFIG_64BIT
++#define set_pud(pudptr, pudval) set_64bit((u64 *) (pudptr), pud_val(pudval))
++#else
++#define set_pud(pudptr, pudval) (*(pudptr) = (pudval))
++#endif
++
++static inline int pgd_newpage(pgd_t pgd)
++{
++	return(pgd_val(pgd) & _PAGE_NEWPAGE);
++}
++
++static inline void pgd_mkuptodate(pgd_t pgd) { pgd_val(pgd) &= ~_PAGE_NEWPAGE; }
++
++#ifdef CONFIG_64BIT
++#define set_pmd(pmdptr, pmdval) set_64bit((u64 *) (pmdptr), pmd_val(pmdval))
++#else
++#define set_pmd(pmdptr, pmdval) (*(pmdptr) = (pmdval))
++#endif
++
++struct mm_struct;
++extern pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address);
++
++static inline void pud_clear (pud_t *pud)
++{
++	set_pud(pud, __pud(_PAGE_NEWPAGE));
++}
++
++#define pud_page(pud) phys_to_page(pud_val(pud) & PAGE_MASK)
++#define pud_page_vaddr(pud) ((unsigned long) __va(pud_val(pud) & PAGE_MASK))
++
++/* Find an entry in the second-level page table.. */
++#define pmd_offset(pud, address) ((pmd_t *) pud_page_vaddr(*(pud)) + \
++			pmd_index(address))
++
++static inline unsigned long pte_pfn(pte_t pte)
++{
++	return phys_to_pfn(pte_val(pte));
++}
++
++static inline pte_t pfn_pte(pfn_t page_nr, pgprot_t pgprot)
++{
++	pte_t pte;
++	phys_t phys = pfn_to_phys(page_nr);
++
++	pte_set_val(pte, phys, pgprot);
++	return pte;
++}
++
++static inline pmd_t pfn_pmd(pfn_t page_nr, pgprot_t pgprot)
++{
++	return __pmd((page_nr << PAGE_SHIFT) | pgprot_val(pgprot));
++}
++
++/*
++ * Bits 0 through 3 are taken in the low part of the pte,
++ * put the 32 bits of offset into the high part.
++ */
++#define PTE_FILE_MAX_BITS	32
++
++#ifdef CONFIG_64BIT
++
++#define pte_to_pgoff(p) ((p).pte >> 32)
++
++#define pgoff_to_pte(off) ((pte_t) { ((off) << 32) | _PAGE_FILE })
++
++#else
++
++#define pte_to_pgoff(pte) ((pte).pte_high)
++
++#define pgoff_to_pte(off) ((pte_t) { _PAGE_FILE, (off) })
++
++#endif
++
++#endif
++
+--- /dev/null
++++ b/arch/um/include/uapi/asm/pgtable.h
+@@ -0,0 +1,375 @@
++/* 
++ * Copyright (C) 2000 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Copyright 2003 PathScale, Inc.
++ * Derived from include/asm-i386/pgtable.h
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PGTABLE_H
++#define __UM_PGTABLE_H
++
++#include <asm/fixmap.h>
++
++#define _PAGE_PRESENT	0x001
++#define _PAGE_NEWPAGE	0x002
++#define _PAGE_NEWPROT	0x004
++#define _PAGE_RW	0x020
++#define _PAGE_USER	0x040
++#define _PAGE_ACCESSED	0x080
++#define _PAGE_DIRTY	0x100
++/* If _PAGE_PRESENT is clear, we use these: */
++#define _PAGE_FILE	0x008	/* nonlinear file mapping, saved PTE; unset:swap */
++#define _PAGE_PROTNONE	0x010	/* if the user mapped it with PROT_NONE;
++				   pte_present gives true */
++
++#ifdef CONFIG_3_LEVEL_PGTABLES
++#include <asm/pgtable-3level.h>
++#else
++#include <asm/pgtable-2level.h>
++#endif
++
++extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
++
++/* zero page used for uninitialized stuff */
++extern unsigned long *empty_zero_page;
++
++#define pgtable_cache_init() do ; while (0)
++
++/* Just any arbitrary offset to the start of the vmalloc VM area: the
++ * current 8MB value just means that there will be a 8MB "hole" after the
++ * physical memory until the kernel virtual memory starts.  That means that
++ * any out-of-bounds memory accesses will hopefully be caught.
++ * The vmalloc() routines leaves a hole of 4kB between each vmalloced
++ * area for the same reason. ;)
++ */
++
++extern unsigned long end_iomem;
++
++#define VMALLOC_OFFSET	(__va_space)
++#define VMALLOC_START ((end_iomem + VMALLOC_OFFSET) & ~(VMALLOC_OFFSET-1))
++#define PKMAP_BASE ((FIXADDR_START - LAST_PKMAP * PAGE_SIZE) & PMD_MASK)
++#ifdef CONFIG_HIGHMEM
++# define VMALLOC_END	(PKMAP_BASE-2*PAGE_SIZE)
++#else
++# define VMALLOC_END	(FIXADDR_START-2*PAGE_SIZE)
++#endif
++#define MODULES_VADDR	VMALLOC_START
++#define MODULES_END	VMALLOC_END
++#define MODULES_LEN	(MODULES_VADDR - MODULES_END)
++
++#define _PAGE_TABLE	(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_ACCESSED | _PAGE_DIRTY)
++#define _KERNPG_TABLE	(_PAGE_PRESENT | _PAGE_RW | _PAGE_ACCESSED | _PAGE_DIRTY)
++#define _PAGE_CHG_MASK	(PAGE_MASK | _PAGE_ACCESSED | _PAGE_DIRTY)
++#define __PAGE_KERNEL_EXEC                                              \
++	 (_PAGE_PRESENT | _PAGE_RW | _PAGE_DIRTY | _PAGE_ACCESSED)
++#define PAGE_NONE	__pgprot(_PAGE_PROTNONE | _PAGE_ACCESSED)
++#define PAGE_SHARED	__pgprot(_PAGE_PRESENT | _PAGE_RW | _PAGE_USER | _PAGE_ACCESSED)
++#define PAGE_COPY	__pgprot(_PAGE_PRESENT | _PAGE_USER | _PAGE_ACCESSED)
++#define PAGE_READONLY	__pgprot(_PAGE_PRESENT | _PAGE_USER | _PAGE_ACCESSED)
++#define PAGE_KERNEL	__pgprot(_PAGE_PRESENT | _PAGE_RW | _PAGE_DIRTY | _PAGE_ACCESSED)
++#define PAGE_KERNEL_EXEC	__pgprot(__PAGE_KERNEL_EXEC)
++
++/*
++ * The i386 can't do page protection for execute, and considers that the same
++ * are read.
++ * Also, write permissions imply read permissions. This is the closest we can
++ * get..
++ */
++#define __P000	PAGE_NONE
++#define __P001	PAGE_READONLY
++#define __P010	PAGE_COPY
++#define __P011	PAGE_COPY
++#define __P100	PAGE_READONLY
++#define __P101	PAGE_READONLY
++#define __P110	PAGE_COPY
++#define __P111	PAGE_COPY
++
++#define __S000	PAGE_NONE
++#define __S001	PAGE_READONLY
++#define __S010	PAGE_SHARED
++#define __S011	PAGE_SHARED
++#define __S100	PAGE_READONLY
++#define __S101	PAGE_READONLY
++#define __S110	PAGE_SHARED
++#define __S111	PAGE_SHARED
++
++/*
++ * ZERO_PAGE is a global shared page that is always zero: used
++ * for zero-mapped memory areas etc..
++ */
++#define ZERO_PAGE(vaddr) virt_to_page(empty_zero_page)
++
++#define pte_clear(mm,addr,xp) pte_set_val(*(xp), (phys_t) 0, __pgprot(_PAGE_NEWPAGE))
++
++#define pmd_none(x)	(!((unsigned long)pmd_val(x) & ~_PAGE_NEWPAGE))
++#define	pmd_bad(x)	((pmd_val(x) & (~PAGE_MASK & ~_PAGE_USER)) != _KERNPG_TABLE)
++
++#define pmd_present(x)	(pmd_val(x) & _PAGE_PRESENT)
++#define pmd_clear(xp)	do { pmd_val(*(xp)) = _PAGE_NEWPAGE; } while (0)
++
++#define pmd_newpage(x)  (pmd_val(x) & _PAGE_NEWPAGE)
++#define pmd_mkuptodate(x) (pmd_val(x) &= ~_PAGE_NEWPAGE)
++
++#define pud_newpage(x)  (pud_val(x) & _PAGE_NEWPAGE)
++#define pud_mkuptodate(x) (pud_val(x) &= ~_PAGE_NEWPAGE)
++
++#define pmd_page(pmd) phys_to_page(pmd_val(pmd) & PAGE_MASK)
++
++#define pte_page(x) pfn_to_page(pte_pfn(x))
++
++#define pte_present(x)	pte_get_bits(x, (_PAGE_PRESENT | _PAGE_PROTNONE))
++
++/*
++ * =================================
++ * Flags checking section.
++ * =================================
++ */
++
++static inline int pte_none(pte_t pte)
++{
++	return pte_is_zero(pte);
++}
++
++/*
++ * The following only work if pte_present() is true.
++ * Undefined behaviour if not..
++ */
++static inline int pte_read(pte_t pte)
++{ 
++	return((pte_get_bits(pte, _PAGE_USER)) &&
++	       !(pte_get_bits(pte, _PAGE_PROTNONE)));
++}
++
++static inline int pte_exec(pte_t pte){
++	return((pte_get_bits(pte, _PAGE_USER)) &&
++	       !(pte_get_bits(pte, _PAGE_PROTNONE)));
++}
++
++static inline int pte_write(pte_t pte)
++{
++	return((pte_get_bits(pte, _PAGE_RW)) &&
++	       !(pte_get_bits(pte, _PAGE_PROTNONE)));
++}
++
++/*
++ * The following only works if pte_present() is not true.
++ */
++static inline int pte_file(pte_t pte)
++{
++	return pte_get_bits(pte, _PAGE_FILE);
++}
++
++static inline int pte_dirty(pte_t pte)
++{
++	return pte_get_bits(pte, _PAGE_DIRTY);
++}
++
++static inline int pte_young(pte_t pte)
++{
++	return pte_get_bits(pte, _PAGE_ACCESSED);
++}
++
++static inline int pte_newpage(pte_t pte)
++{
++	return pte_get_bits(pte, _PAGE_NEWPAGE);
++}
++
++static inline int pte_newprot(pte_t pte)
++{ 
++	return(pte_present(pte) && (pte_get_bits(pte, _PAGE_NEWPROT)));
++}
++
++static inline int pte_special(pte_t pte)
++{
++	return 0;
++}
++
++/*
++ * =================================
++ * Flags setting section.
++ * =================================
++ */
++
++static inline pte_t pte_mknewprot(pte_t pte)
++{
++	pte_set_bits(pte, _PAGE_NEWPROT);
++	return(pte);
++}
++
++static inline pte_t pte_mkclean(pte_t pte)
++{
++	pte_clear_bits(pte, _PAGE_DIRTY);
++	return(pte);
++}
++
++static inline pte_t pte_mkold(pte_t pte)	
++{ 
++	pte_clear_bits(pte, _PAGE_ACCESSED);
++	return(pte);
++}
++
++static inline pte_t pte_wrprotect(pte_t pte)
++{ 
++	pte_clear_bits(pte, _PAGE_RW);
++	return(pte_mknewprot(pte)); 
++}
++
++static inline pte_t pte_mkread(pte_t pte)
++{ 
++	pte_set_bits(pte, _PAGE_USER);
++	return(pte_mknewprot(pte)); 
++}
++
++static inline pte_t pte_mkdirty(pte_t pte)
++{ 
++	pte_set_bits(pte, _PAGE_DIRTY);
++	return(pte);
++}
++
++static inline pte_t pte_mkyoung(pte_t pte)
++{
++	pte_set_bits(pte, _PAGE_ACCESSED);
++	return(pte);
++}
++
++static inline pte_t pte_mkwrite(pte_t pte)	
++{
++	pte_set_bits(pte, _PAGE_RW);
++	return(pte_mknewprot(pte)); 
++}
++
++static inline pte_t pte_mkuptodate(pte_t pte)	
++{
++	pte_clear_bits(pte, _PAGE_NEWPAGE);
++	if(pte_present(pte))
++		pte_clear_bits(pte, _PAGE_NEWPROT);
++	return(pte); 
++}
++
++static inline pte_t pte_mknewpage(pte_t pte)
++{
++	pte_set_bits(pte, _PAGE_NEWPAGE);
++	return(pte);
++}
++
++static inline pte_t pte_mkspecial(pte_t pte)
++{
++	return(pte);
++}
++
++static inline void set_pte(pte_t *pteptr, pte_t pteval)
++{
++	pte_copy(*pteptr, pteval);
++
++	/* If it's a swap entry, it needs to be marked _PAGE_NEWPAGE so
++	 * fix_range knows to unmap it.  _PAGE_NEWPROT is specific to
++	 * mapped pages.
++	 */
++
++	*pteptr = pte_mknewpage(*pteptr);
++	if(pte_present(*pteptr)) *pteptr = pte_mknewprot(*pteptr);
++}
++#define set_pte_at(mm,addr,ptep,pteval) set_pte(ptep,pteval)
++
++#define __HAVE_ARCH_PTE_SAME
++static inline int pte_same(pte_t pte_a, pte_t pte_b)
++{
++	return !((pte_val(pte_a) ^ pte_val(pte_b)) & ~_PAGE_NEWPAGE);
++}
++
++/*
++ * Conversion functions: convert a page and protection to a page entry,
++ * and a page entry and page directory to the page they refer to.
++ */
++
++#define phys_to_page(phys) pfn_to_page(phys_to_pfn(phys))
++#define __virt_to_page(virt) phys_to_page(__pa(virt))
++#define page_to_phys(page) pfn_to_phys((pfn_t) page_to_pfn(page))
++#define virt_to_page(addr) __virt_to_page((const unsigned long) addr)
++
++#define mk_pte(page, pgprot) \
++	({ pte_t pte;					\
++							\
++	pte_set_val(pte, page_to_phys(page), (pgprot));	\
++	if (pte_present(pte))				\
++		pte_mknewprot(pte_mknewpage(pte));	\
++	pte;})
++
++static inline pte_t pte_modify(pte_t pte, pgprot_t newprot)
++{
++	pte_set_val(pte, (pte_val(pte) & _PAGE_CHG_MASK), newprot);
++	return pte; 
++}
++
++/*
++ * the pgd page can be thought of an array like this: pgd_t[PTRS_PER_PGD]
++ *
++ * this macro returns the index of the entry in the pgd page which would
++ * control the given virtual address
++ */
++#define pgd_index(address) (((address) >> PGDIR_SHIFT) & (PTRS_PER_PGD-1))
++
++/*
++ * pgd_offset() returns a (pgd_t *)
++ * pgd_index() is used get the offset into the pgd page's array of pgd_t's;
++ */
++#define pgd_offset(mm, address) ((mm)->pgd+pgd_index(address))
++
++/*
++ * a shortcut which implies the use of the kernel's pgd, instead
++ * of a process's
++ */
++#define pgd_offset_k(address) pgd_offset(&init_mm, address)
++
++/*
++ * the pmd page can be thought of an array like this: pmd_t[PTRS_PER_PMD]
++ *
++ * this macro returns the index of the entry in the pmd page which would
++ * control the given virtual address
++ */
++#define pmd_page_vaddr(pmd) ((unsigned long) __va(pmd_val(pmd) & PAGE_MASK))
++#define pmd_index(address) (((address) >> PMD_SHIFT) & (PTRS_PER_PMD-1))
++
++#define pmd_page_vaddr(pmd) \
++	((unsigned long) __va(pmd_val(pmd) & PAGE_MASK))
++
++/*
++ * the pte page can be thought of an array like this: pte_t[PTRS_PER_PTE]
++ *
++ * this macro returns the index of the entry in the pte page which would
++ * control the given virtual address
++ */
++#define pte_index(address) (((address) >> PAGE_SHIFT) & (PTRS_PER_PTE - 1))
++#define pte_offset_kernel(dir, address) \
++	((pte_t *) pmd_page_vaddr(*(dir)) +  pte_index(address))
++#define pte_offset_map(dir, address) \
++	((pte_t *)page_address(pmd_page(*(dir))) + pte_index(address))
++#define pte_unmap(pte) do { } while (0)
++
++struct mm_struct;
++extern pte_t *virt_to_pte(struct mm_struct *mm, unsigned long addr);
++
++#define update_mmu_cache(vma,address,ptep) do ; while (0)
++
++/* Encode and de-code a swap entry */
++#define __swp_type(x)			(((x).val >> 5) & 0x1f)
++#define __swp_offset(x)			((x).val >> 11)
++
++#define __swp_entry(type, offset) \
++	((swp_entry_t) { ((type) << 5) | ((offset) << 11) })
++#define __pte_to_swp_entry(pte) \
++	((swp_entry_t) { pte_val(pte_mkuptodate(pte)) })
++#define __swp_entry_to_pte(x)		((pte_t) { (x).val })
++
++#define kern_addr_valid(addr) (1)
++
++#include <asm-generic/pgtable.h>
++
++/* Clear a kernel PTE and flush it from the TLB */
++#define kpte_clear_flush(ptep, vaddr)		\
++do {						\
++	pte_clear(&init_mm, (vaddr), (ptep));	\
++	__flush_tlb_one((vaddr));		\
++} while (0)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/processor-generic.h
+@@ -0,0 +1,115 @@
++/* 
++ * Copyright (C) 2000 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PROCESSOR_GENERIC_H
++#define __UM_PROCESSOR_GENERIC_H
++
++struct pt_regs;
++
++struct task_struct;
++
++#include <asm/ptrace.h>
++#include <registers.h>
++#include <sysdep/archsetjmp.h>
++
++#include <linux/prefetch.h>
++
++struct mm_struct;
++
++struct thread_struct {
++	struct pt_regs regs;
++	struct pt_regs *segv_regs;
++	int singlestep_syscall;
++	void *fault_addr;
++	jmp_buf *fault_catcher;
++	struct task_struct *prev_sched;
++	struct arch_thread arch;
++	jmp_buf switch_buf;
++	struct {
++		int op;
++		union {
++			struct {
++				int pid;
++			} fork, exec;
++			struct {
++				int (*proc)(void *);
++				void *arg;
++			} thread;
++			struct {
++				void (*proc)(void *);
++				void *arg;
++			} cb;
++		} u;
++	} request;
++};
++
++#define INIT_THREAD \
++{ \
++	.regs		   	= EMPTY_REGS,	\
++	.fault_addr		= NULL, \
++	.prev_sched		= NULL, \
++	.arch			= INIT_ARCH_THREAD, \
++	.request		= { 0 } \
++}
++
++static inline void release_thread(struct task_struct *task)
++{
++}
++
++extern unsigned long thread_saved_pc(struct task_struct *t);
++
++static inline void mm_copy_segments(struct mm_struct *from_mm,
++				    struct mm_struct *new_mm)
++{
++}
++
++#define init_stack	(init_thread_union.stack)
++
++/*
++ * User space process size: 3GB (default).
++ */
++extern unsigned long task_size;
++
++#define TASK_SIZE (task_size)
++
++#undef STACK_TOP
++#undef STACK_TOP_MAX
++
++extern unsigned long stacksizelim;
++
++#define STACK_ROOM	(stacksizelim)
++#define STACK_TOP	(TASK_SIZE - 2 * PAGE_SIZE)
++#define STACK_TOP_MAX	STACK_TOP
++
++/* This decides where the kernel will search for a free chunk of vm
++ * space during mmap's.
++ */
++#define TASK_UNMAPPED_BASE	(0x40000000)
++
++extern void start_thread(struct pt_regs *regs, unsigned long entry, 
++			 unsigned long stack);
++
++struct cpuinfo_um {
++	unsigned long loops_per_jiffy;
++	int ipi_pipe[2];
++};
++
++extern struct cpuinfo_um boot_cpu_data;
++
++#define my_cpu_data		cpu_data[smp_processor_id()]
++
++#ifdef CONFIG_SMP
++extern struct cpuinfo_um cpu_data[];
++#define current_cpu_data cpu_data[smp_processor_id()]
++#else
++#define cpu_data (&boot_cpu_data)
++#define current_cpu_data boot_cpu_data
++#endif
++
++
++#define KSTK_REG(tsk, reg) get_thread_reg(reg, &tsk->thread.switch_buf)
++extern unsigned long get_wchan(struct task_struct *p);
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/ptrace-generic.h
+@@ -0,0 +1,45 @@
++/* 
++ * Copyright (C) 2000 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_PTRACE_GENERIC_H
++#define __UM_PTRACE_GENERIC_H
++
++#ifndef __ASSEMBLY__
++
++#include <asm/ptrace-abi.h>
++#include <sysdep/ptrace.h>
++
++struct pt_regs {
++	struct uml_pt_regs regs;
++};
++
++#define arch_has_single_step()	(1)
++
++#define EMPTY_REGS { .regs = EMPTY_UML_PT_REGS }
++
++#define PT_REGS_IP(r) UPT_IP(&(r)->regs)
++#define PT_REGS_SP(r) UPT_SP(&(r)->regs)
++
++#define PT_REGS_RESTART_SYSCALL(r) UPT_RESTART_SYSCALL(&(r)->regs)
++
++#define PT_REGS_SYSCALL_NR(r) UPT_SYSCALL_NR(&(r)->regs)
++
++#define instruction_pointer(regs) PT_REGS_IP(regs)
++
++struct task_struct;
++
++extern long subarch_ptrace(struct task_struct *child, long request,
++	unsigned long addr, unsigned long data);
++extern unsigned long getreg(struct task_struct *child, int regno);
++extern int putreg(struct task_struct *child, int regno, unsigned long value);
++
++extern int arch_copy_tls(struct task_struct *new);
++extern void clear_flushed_tls(struct task_struct *task);
++extern void syscall_trace_enter(struct pt_regs *regs);
++extern void syscall_trace_leave(struct pt_regs *regs);
++
++#endif
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/setup.h
+@@ -0,0 +1,10 @@
++#ifndef SETUP_H_INCLUDED
++#define SETUP_H_INCLUDED
++
++/* POSIX mandated with _POSIX_ARG_MAX that we can rely on 4096 chars in the
++ * command line, so this choice is ok.
++ */
++
++#define COMMAND_LINE_SIZE 4096
++
++#endif		/* SETUP_H_INCLUDED */
+--- /dev/null
++++ b/arch/um/include/uapi/asm/smp.h
+@@ -0,0 +1,32 @@
++#ifndef __UM_SMP_H
++#define __UM_SMP_H
++
++#ifdef CONFIG_SMP
++
++#include <linux/bitops.h>
++#include <asm/current.h>
++#include <linux/cpumask.h>
++
++#define raw_smp_processor_id() (current_thread->cpu)
++
++#define cpu_logical_map(n) (n)
++#define cpu_number_map(n) (n)
++extern int hard_smp_processor_id(void);
++#define NO_PROC_ID -1
++
++extern int ncpus;
++
++
++static inline void smp_cpus_done(unsigned int maxcpus)
++{
++}
++
++extern struct task_struct *idle_threads[NR_CPUS];
++
++#else
++
++#define hard_smp_processor_id()		0
++
++#endif
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/sysrq.h
+@@ -0,0 +1,7 @@
++#ifndef __UM_SYSRQ_H
++#define __UM_SYSRQ_H
++
++struct task_struct;
++extern void show_trace(struct task_struct* task, unsigned long *stack);
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/thread_info.h
+@@ -0,0 +1,78 @@
++/*
++ * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_THREAD_INFO_H
++#define __UM_THREAD_INFO_H
++
++#ifndef __ASSEMBLY__
++
++#include <asm/types.h>
++#include <asm/page.h>
++#include <asm/uaccess.h>
++
++struct thread_info {
++	struct task_struct	*task;		/* main task structure */
++	struct exec_domain	*exec_domain;	/* execution domain */
++	unsigned long		flags;		/* low level flags */
++	__u32			cpu;		/* current CPU */
++	int			preempt_count;  /* 0 => preemptable,
++						   <0 => BUG */
++	mm_segment_t		addr_limit;	/* thread address space:
++					 	   0-0xBFFFFFFF for user
++						   0-0xFFFFFFFF for kernel */
++	struct restart_block    restart_block;
++	struct thread_info	*real_thread;    /* Points to non-IRQ stack */
++};
++
++#define INIT_THREAD_INFO(tsk)			\
++{						\
++	.task =		&tsk,			\
++	.exec_domain =	&default_exec_domain,	\
++	.flags =		0,		\
++	.cpu =		0,			\
++	.preempt_count = INIT_PREEMPT_COUNT,	\
++	.addr_limit =	KERNEL_DS,		\
++	.restart_block =  {			\
++		.fn =  do_no_restart_syscall,	\
++	},					\
++	.real_thread = NULL,			\
++}
++
++#define init_thread_info	(init_thread_union.thread_info)
++#define init_stack		(init_thread_union.stack)
++
++#define THREAD_SIZE ((1 << CONFIG_KERNEL_STACK_ORDER) * PAGE_SIZE)
++/* how to get the thread information struct from C */
++static inline struct thread_info *current_thread_info(void)
++{
++	struct thread_info *ti;
++	unsigned long mask = THREAD_SIZE - 1;
++	void *p;
++
++	asm volatile ("" : "=r" (p) : "0" (&ti));
++	ti = (struct thread_info *) (((unsigned long)p) & ~mask);
++	return ti;
++}
++
++#define THREAD_SIZE_ORDER CONFIG_KERNEL_STACK_ORDER
++
++#endif
++
++#define TIF_SYSCALL_TRACE	0	/* syscall trace active */
++#define TIF_SIGPENDING		1	/* signal pending */
++#define TIF_NEED_RESCHED	2	/* rescheduling necessary */
++#define TIF_RESTART_BLOCK	4
++#define TIF_MEMDIE		5	/* is terminating due to OOM killer */
++#define TIF_SYSCALL_AUDIT	6
++#define TIF_RESTORE_SIGMASK	7
++#define TIF_NOTIFY_RESUME	8
++
++#define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
++#define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
++#define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
++#define _TIF_MEMDIE		(1 << TIF_MEMDIE)
++#define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/timex.h
+@@ -0,0 +1,13 @@
++#ifndef __UM_TIMEX_H
++#define __UM_TIMEX_H
++
++typedef unsigned long cycles_t;
++
++static inline cycles_t get_cycles (void)
++{
++	return 0;
++}
++
++#define CLOCK_TICK_RATE (HZ)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/tlb.h
+@@ -0,0 +1,122 @@
++#ifndef __UM_TLB_H
++#define __UM_TLB_H
++
++#include <linux/pagemap.h>
++#include <linux/swap.h>
++#include <asm/percpu.h>
++#include <asm/pgalloc.h>
++#include <asm/tlbflush.h>
++
++#define tlb_start_vma(tlb, vma) do { } while (0)
++#define tlb_end_vma(tlb, vma) do { } while (0)
++#define tlb_flush(tlb) flush_tlb_mm((tlb)->mm)
++
++/* struct mmu_gather is an opaque type used by the mm code for passing around
++ * any data needed by arch specific code for tlb_remove_page.
++ */
++struct mmu_gather {
++	struct mm_struct	*mm;
++	unsigned int		need_flush; /* Really unmapped some ptes? */
++	unsigned long		start;
++	unsigned long		end;
++	unsigned int		fullmm; /* non-zero means full mm flush */
++};
++
++static inline void __tlb_remove_tlb_entry(struct mmu_gather *tlb, pte_t *ptep,
++					  unsigned long address)
++{
++	if (tlb->start > address)
++		tlb->start = address;
++	if (tlb->end < address + PAGE_SIZE)
++		tlb->end = address + PAGE_SIZE;
++}
++
++static inline void init_tlb_gather(struct mmu_gather *tlb)
++{
++	tlb->need_flush = 0;
++
++	tlb->start = TASK_SIZE;
++	tlb->end = 0;
++
++	if (tlb->fullmm) {
++		tlb->start = 0;
++		tlb->end = TASK_SIZE;
++	}
++}
++
++static inline void
++tlb_gather_mmu(struct mmu_gather *tlb, struct mm_struct *mm, unsigned long start, unsigned long end)
++{
++	tlb->mm = mm;
++	tlb->start = start;
++	tlb->end = end;
++	tlb->fullmm = !(start | (end+1));
++
++	init_tlb_gather(tlb);
++}
++
++extern void flush_tlb_mm_range(struct mm_struct *mm, unsigned long start,
++			       unsigned long end);
++
++static inline void
++tlb_flush_mmu(struct mmu_gather *tlb)
++{
++	if (!tlb->need_flush)
++		return;
++
++	flush_tlb_mm_range(tlb->mm, tlb->start, tlb->end);
++	init_tlb_gather(tlb);
++}
++
++/* tlb_finish_mmu
++ *	Called at the end of the shootdown operation to free up any resources
++ *	that were required.
++ */
++static inline void
++tlb_finish_mmu(struct mmu_gather *tlb, unsigned long start, unsigned long end)
++{
++	tlb_flush_mmu(tlb);
++
++	/* keep the page table cache within bounds */
++	check_pgt_cache();
++}
++
++/* tlb_remove_page
++ *	Must perform the equivalent to __free_pte(pte_get_and_clear(ptep)),
++ *	while handling the additional races in SMP caused by other CPUs
++ *	caching valid mappings in their TLBs.
++ */
++static inline int __tlb_remove_page(struct mmu_gather *tlb, struct page *page)
++{
++	tlb->need_flush = 1;
++	free_page_and_swap_cache(page);
++	return 1; /* avoid calling tlb_flush_mmu */
++}
++
++static inline void tlb_remove_page(struct mmu_gather *tlb, struct page *page)
++{
++	__tlb_remove_page(tlb, page);
++}
++
++/**
++ * tlb_remove_tlb_entry - remember a pte unmapping for later tlb invalidation.
++ *
++ * Record the fact that pte's were really umapped in ->need_flush, so we can
++ * later optimise away the tlb invalidate.   This helps when userspace is
++ * unmapping already-unmapped pages, which happens quite a lot.
++ */
++#define tlb_remove_tlb_entry(tlb, ptep, address)		\
++	do {							\
++		tlb->need_flush = 1;				\
++		__tlb_remove_tlb_entry(tlb, ptep, address);	\
++	} while (0)
++
++#define pte_free_tlb(tlb, ptep, addr) __pte_free_tlb(tlb, ptep, addr)
++
++#define pud_free_tlb(tlb, pudp, addr) __pud_free_tlb(tlb, pudp, addr)
++
++#define pmd_free_tlb(tlb, pmdp, addr) __pmd_free_tlb(tlb, pmdp, addr)
++
++#define tlb_migrate_finish(mm) do {} while (0)
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/tlbflush.h
+@@ -0,0 +1,31 @@
++/*
++ * Copyright (C) 2002 - 2007 Jeff Dike (jdike@{addtoit,linux.intel}.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_TLBFLUSH_H
++#define __UM_TLBFLUSH_H
++
++#include <linux/mm.h>
++
++/*
++ * TLB flushing:
++ *
++ *  - flush_tlb() flushes the current mm struct TLBs
++ *  - flush_tlb_all() flushes all processes TLBs
++ *  - flush_tlb_mm(mm) flushes the specified mm context TLB's
++ *  - flush_tlb_page(vma, vmaddr) flushes one page
++ *  - flush_tlb_kernel_vm() flushes the kernel vm area
++ *  - flush_tlb_range(vma, start, end) flushes a range of pages
++ */
++
++extern void flush_tlb_all(void);
++extern void flush_tlb_mm(struct mm_struct *mm);
++extern void flush_tlb_range(struct vm_area_struct *vma, unsigned long start, 
++			    unsigned long end);
++extern void flush_tlb_page(struct vm_area_struct *vma, unsigned long address);
++extern void flush_tlb_kernel_vm(void);
++extern void flush_tlb_kernel_range(unsigned long start, unsigned long end);
++extern void __flush_tlb_one(unsigned long addr);
++
++#endif
+--- /dev/null
++++ b/arch/um/include/uapi/asm/uaccess.h
+@@ -0,0 +1,178 @@
++/* 
++ * Copyright (C) 2002 Jeff Dike (jdike@karaya.com)
++ * Licensed under the GPL
++ */
++
++#ifndef __UM_UACCESS_H
++#define __UM_UACCESS_H
++
++/* thread_info has a mm_segment_t in it, so put the definition up here */
++typedef struct {
++	unsigned long seg;
++} mm_segment_t;
++
++#include <linux/thread_info.h>
++#include <linux/errno.h>
++#include <asm/processor.h>
++#include <asm/elf.h>
++
++#define VERIFY_READ 0
++#define VERIFY_WRITE 1
++
++/*
++ * The fs value determines whether argument validity checking should be
++ * performed or not.  If get_fs() == USER_DS, checking is performed, with
++ * get_fs() == KERNEL_DS, checking is bypassed.
++ *
++ * For historical reasons, these macros are grossly misnamed.
++ */
++
++#define MAKE_MM_SEG(s)	((mm_segment_t) { (s) })
++
++#define KERNEL_DS	MAKE_MM_SEG(0xFFFFFFFF)
++#define USER_DS		MAKE_MM_SEG(TASK_SIZE)
++
++#define get_ds()	(KERNEL_DS)
++#define get_fs()	(current_thread_info()->addr_limit)
++#define set_fs(x)	(current_thread_info()->addr_limit = (x))
++
++#define segment_eq(a, b) ((a).seg == (b).seg)
++
++#define __under_task_size(addr, size) \
++	(((unsigned long) (addr) < TASK_SIZE) && \
++	 (((unsigned long) (addr) + (size)) < TASK_SIZE))
++
++#define __access_ok_vsyscall(type, addr, size) \
++	 ((type == VERIFY_READ) && \
++	  ((unsigned long) (addr) >= FIXADDR_USER_START) && \
++	  ((unsigned long) (addr) + (size) <= FIXADDR_USER_END) && \
++	  ((unsigned long) (addr) + (size) >= (unsigned long)(addr)))
++
++#define __addr_range_nowrap(addr, size) \
++	((unsigned long) (addr) <= ((unsigned long) (addr) + (size)))
++
++#define access_ok(type, addr, size) \
++	(__addr_range_nowrap(addr, size) && \
++	 (__under_task_size(addr, size) || \
++	  __access_ok_vsyscall(type, addr, size) || \
++	  segment_eq(get_fs(), KERNEL_DS)))
++
++extern int copy_from_user(void *to, const void __user *from, int n);
++extern int copy_to_user(void __user *to, const void *from, int n);
++
++/*
++ * strncpy_from_user: - Copy a NUL terminated string from userspace.
++ * @dst:   Destination address, in kernel space.  This buffer must be at
++ *         least @count bytes long.
++ * @src:   Source address, in user space.
++ * @count: Maximum number of bytes to copy, including the trailing NUL.
++ *
++ * Copies a NUL-terminated string from userspace to kernel space.
++ *
++ * On success, returns the length of the string (not including the trailing
++ * NUL).
++ *
++ * If access to userspace fails, returns -EFAULT (some data may have been
++ * copied).
++ *
++ * If @count is smaller than the length of the string, copies @count bytes
++ * and returns @count.
++ */
++
++extern int strncpy_from_user(char *dst, const char __user *src, int count);
++
++/*
++ * __clear_user: - Zero a block of memory in user space, with less checking.
++ * @to:   Destination address, in user space.
++ * @n:    Number of bytes to zero.
++ *
++ * Zero a block of memory in user space.  Caller must check
++ * the specified block with access_ok() before calling this function.
++ *
++ * Returns number of bytes that could not be cleared.
++ * On success, this will be zero.
++ */
++extern int __clear_user(void __user *mem, int len);
++
++/*
++ * clear_user: - Zero a block of memory in user space.
++ * @to:   Destination address, in user space.
++ * @n:    Number of bytes to zero.
++ *
++ * Zero a block of memory in user space.
++ *
++ * Returns number of bytes that could not be cleared.
++ * On success, this will be zero.
++ */
++extern int clear_user(void __user *mem, int len);
++
++/*
++ * strlen_user: - Get the size of a string in user space.
++ * @str: The string to measure.
++ * @n:   The maximum valid length
++ *
++ * Get the size of a NUL-terminated string in user space.
++ *
++ * Returns the size of the string INCLUDING the terminating NUL.
++ * On exception, returns 0.
++ * If the string is too long, returns a value greater than @n.
++ */
++extern int strnlen_user(const void __user *str, int len);
++
++#define __copy_from_user(to, from, n) copy_from_user(to, from, n)
++
++#define __copy_to_user(to, from, n) copy_to_user(to, from, n)
++
++#define __copy_to_user_inatomic __copy_to_user
++#define __copy_from_user_inatomic __copy_from_user
++
++#define __get_user(x, ptr) \
++({ \
++	const __typeof__(*(ptr)) __user *__private_ptr = (ptr);	\
++	__typeof__(x) __private_val;			\
++	int __private_ret = -EFAULT;			\
++	(x) = (__typeof__(*(__private_ptr)))0;				\
++	if (__copy_from_user((__force void *)&__private_val, (__private_ptr),\
++			     sizeof(*(__private_ptr))) == 0) {		\
++		(x) = (__typeof__(*(__private_ptr))) __private_val;	\
++		__private_ret = 0;					\
++	}								\
++	__private_ret;							\
++}) 
++
++#define get_user(x, ptr) \
++({ \
++        const __typeof__((*(ptr))) __user *private_ptr = (ptr); \
++        (access_ok(VERIFY_READ, private_ptr, sizeof(*private_ptr)) ? \
++	 __get_user(x, private_ptr) : ((x) = (__typeof__(*ptr))0, -EFAULT)); \
++})
++
++#define __put_user(x, ptr) \
++({ \
++        __typeof__(*(ptr)) __user *__private_ptr = ptr; \
++        __typeof__(*(__private_ptr)) __private_val; \
++        int __private_ret = -EFAULT; \
++        __private_val = (__typeof__(*(__private_ptr))) (x); \
++        if (__copy_to_user((__private_ptr), &__private_val, \
++			   sizeof(*(__private_ptr))) == 0) { \
++		__private_ret = 0; \
++	} \
++        __private_ret; \
++})
++
++#define put_user(x, ptr) \
++({ \
++        __typeof__(*(ptr)) __user *private_ptr = (ptr); \
++        (access_ok(VERIFY_WRITE, private_ptr, sizeof(*private_ptr)) ? \
++	 __put_user(x, private_ptr) : -EFAULT); \
++})
++
++#define strlen_user(str) strnlen_user(str, ~0U >> 1)
++
++struct exception_table_entry
++{
++        unsigned long insn;
++	unsigned long fixup;
++};
++
++#endif
