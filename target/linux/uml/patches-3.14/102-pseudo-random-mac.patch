@@ -9,10 +9,9 @@ TECHNICAL INFORMATION:
 Applies to vanilla kernel 3.9.4.
 
 ===============================================================================
-diff -aur linux-3.9.4-orig/arch/um/Kconfig.net linux-3.9.4/arch/um/Kconfig.net
---- linux-3.9.4-orig/arch/um/Kconfig.net	2013-05-24 21:45:59.000000000 +0300
-+++ linux-3.9.4/arch/um/Kconfig.net	2013-06-11 13:07:06.363999999 +0300
-@@ -21,6 +21,19 @@
+--- a/arch/um/Kconfig.net
++++ b/arch/um/Kconfig.net
+@@ -21,6 +21,19 @@ config UML_NET
          enable at least one of the following transport options to actually
          make use of UML networking.
  
@@ -32,9 +31,8 @@ diff -aur linux-3.9.4-orig/arch/um/Kconfig.net linux-3.9.4/arch/um/Kconfig.net
  config UML_NET_ETHERTAP
  	bool "Ethertap transport"
  	depends on UML_NET
-diff -aur linux-3.9.4-orig/arch/um/drivers/net_kern.c linux-3.9.4/arch/um/drivers/net_kern.c
---- linux-3.9.4-orig/arch/um/drivers/net_kern.c	2013-05-24 21:45:59.000000000 +0300
-+++ linux-3.9.4/arch/um/drivers/net_kern.c	2013-06-11 13:09:03.452000001 +0300
+--- a/arch/um/drivers/net_kern.c
++++ b/arch/um/drivers/net_kern.c
 @@ -25,6 +25,13 @@
  #include <net_kern.h>
  #include <net_user.h>
@@ -49,7 +47,7 @@ diff -aur linux-3.9.4-orig/arch/um/drivers/net_kern.c linux-3.9.4/arch/um/driver
  #define DRIVER_NAME "uml-netdev"
  
  static DEFINE_SPINLOCK(opened_lock);
-@@ -295,11 +302,47 @@
+@@ -295,11 +302,47 @@ static void uml_net_user_timer_expire(un
  #endif
  }
  
@@ -97,7 +95,7 @@ diff -aur linux-3.9.4-orig/arch/um/drivers/net_kern.c linux-3.9.4/arch/um/driver
  
  	if (str == NULL)
  		goto random;
-@@ -340,9 +383,26 @@
+@@ -340,9 +383,26 @@ static void setup_etheraddr(struct net_d
  	return;
  
  random:
@@ -124,6 +122,3 @@ diff -aur linux-3.9.4-orig/arch/um/drivers/net_kern.c linux-3.9.4/arch/um/driver
  }
  
  static DEFINE_SPINLOCK(devices_lock);
-Only in linux-3.9.4/arch/um/drivers: net_kern.c.orig
-Only in linux-3.9.4/arch/um/drivers: net_kern.c.rej
-Only in linux-3.9.4/arch/um/drivers: net_kern.c~
