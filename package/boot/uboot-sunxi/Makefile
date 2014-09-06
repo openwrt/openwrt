@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2014.01-rc1
+PKG_VERSION:=2014.04
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_SOURCE_VERSION:=1552fe43c3e827d56c9cd212fba3dcba
+PKG_SOURCE_VERSION:=6d2116d1385a66e9a59742caa9d62a54
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
@@ -25,46 +25,46 @@ define uboot/Default
 endef
 
 define uboot/A10-OLinuXino-Lime
-  TITLE:=U-Boot 2014.01-rc1 for the A10 OLinuXino LIME
+  TITLE:=U-Boot 2014.04 for the A10 OLinuXino LIME
 endef
 
 define uboot/A13-OLinuXino
-  TITLE:=U-Boot 2014.01-rc1 for the A13 OlinuXino
+  TITLE:=U-Boot 2014.04 for the A13 OlinuXino
 endef
 
 define uboot/A20-OLinuXino_MICRO
-  TITLE:=U-Boot 2014.01-rc1 for A20 OLinuXino MICRO
+  TITLE:=U-Boot 2014.04 for A20 OLinuXino MICRO
 endef
 
-define uboot/bananapi
-  TITLE:=U-Boot 2014.01-rc1 for BananaPi
+define uboot/Bananapi
+  TITLE:=U-Boot 2014.04 for Bananapi
 endef
 
 define uboot/Cubieboard
-  TITLE:=U-Boot 2014.01-rc1 for Cubieboard
+  TITLE:=U-Boot 2014.04 for Cubieboard
 endef
 
 define uboot/Cubieboard2
-  TITLE:=U-Boot 2014.01-rc1 for Cubieboard2
+  TITLE:=U-Boot 2014.04 for Cubieboard2
 endef
 
 define uboot/Cubietruck
-  TITLE:=U-Boot 2014.01-rc1 for Cubietruck
+  TITLE:=U-Boot 2014.04 for Cubietruck
 endef
 
 define uboot/Hackberry
-  TITLE:=U-Boot 2014.01-rc1 for the Hackbeery
+  TITLE:=U-Boot 2014.04 for the Hackbeery
 endef
 
 define uboot/pcDuino
-  TITLE:=U-Boot 2014.01-rc1 for pcDuino
+  TITLE:=U-Boot 2014.04 for pcDuino
 endef  
 
-define uboot/pcDuino3
-  TITLE:=U-Boot 2014.01-rc1 for pcDuino3
+define uboot/Linksprite_pcDuino3
+  TITLE:=U-Boot 2014.04 for Linksprite pcDuino3
 endef  
 
-UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO bananapi Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino pcDuino3
+UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO Bananapi Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino Linksprite_pcDuino3
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
