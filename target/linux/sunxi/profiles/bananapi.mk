@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/bananaPi
-	NAME:=bananaPi
+define Profile/Bananapi
+	NAME:=Bananapi
 	PACKAGES:=\
-		uboot-sunxi-bananapi kmod-rtc-sunxi
+		uboot-sunxi-Bananapi kmod-rtc-sunxi
 endef
 
-define Profile/bananaPi/Description
-	Package set optimized for the bananaPi
+define Profile/Bananapi/Description
+	Package set optimized for the Bananapi
 endef
 
-$(eval $(call Profile,bananaPi))
+$(eval $(call Profile,Bananapi))
