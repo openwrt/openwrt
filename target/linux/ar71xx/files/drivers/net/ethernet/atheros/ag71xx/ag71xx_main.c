@@ -704,7 +704,12 @@ static int ag71xx_fill_dma_desc(struct ag71xx_ring *ring, u32 addr, int len)
 
 		if (cur_len > split) {
 			cur_len = split;
-			if (len < split + 4)
+
+			/*
+			 * TX will hang if DMA transfers <= 4 bytes,
+			 * make sure next segment is more than 4 bytes long.
+			 */
+			if (len <= split + 4)
 				cur_len -= 4;
 		}
 
