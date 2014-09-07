@@ -521,12 +521,12 @@ define KernelPackage/ath/config
 
 	config PACKAGE_ATH_DFS
 		bool "Enable DFS support"
+		default y
 		help
 		  Dynamic frequency selection (DFS) is required for most of the 5 GHz band
 		  channels in Europe, US, and Japan.
 
-		  Select this option if you want to use such channels. Only EU (ETSI) DFS
-		  is supported at the moment.
+		  Select this option if you want to use such channels.
 
   endif
 endef
