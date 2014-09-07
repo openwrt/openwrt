@@ -940,13 +940,13 @@ void __init ath79_register_eth(unsigned int id)
 			pdata->set_speed = ath79_set_speed_dummy;
 
 			pdata->speed = SPEED_1000;
+			pdata->has_gbit = 1;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ath79_switch_data;
 
 			ath79_switch_data.phy_poll_mask |= BIT(4);
 		}
 
-		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
 		if (!pdata->fifo_cfg1)
