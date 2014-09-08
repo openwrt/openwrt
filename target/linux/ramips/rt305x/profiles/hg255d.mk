@@ -7,7 +7,7 @@
 
 define Profile/HG255D
 	NAME:=HuaWei HG255D
-	PACKAGES:=kmod-leds-gpio wpad-mini kmod-usb-rt305x-dwc_otg
+	PACKAGES:=kmod-leds-gpio wpad-mini kmod-usb-dwc2
 endef
 
 define Profile/HG255D/Description
