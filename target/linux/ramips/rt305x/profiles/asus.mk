@@ -16,7 +16,7 @@ endef
 
 define Profile/RT-N13U
 	NAME:=Asus RT-N13U
-	PACKAGES:=kmod-leds-gpio kmod-rt2800-pci wpad-mini kmod-usb-rt305x-dwc_otg
+	PACKAGES:=kmod-leds-gpio kmod-rt2800-pci wpad-mini kmod-usb-dwc2
 endef
 
 define Profile/RT-N13U/Description

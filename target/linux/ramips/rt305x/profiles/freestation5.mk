@@ -8,7 +8,7 @@
 define Profile/FREESTATION5
 	NAME:=FreeStation5
 	PACKAGES:=\
-		 kmod-usb-rt305x-dwc_otg kmod-rt2500-usb kmod-rt2800-usb kmod-rt2x00-usb
+		 kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb kmod-rt2x00-usb
 endef
 
 define Profile/FREESTATION5/Description

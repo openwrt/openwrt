@@ -7,7 +7,7 @@
 
 define Profile/IP2202
 	NAME:=Poray IP2202
-	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-rt305x-dwc_otg \
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-dwc2 \
 	kmod-ledtrig-netdev kmod-ledtrig-timer
 endef
 

@@ -8,7 +8,7 @@
 define Profile/PX4885
 	NAME:=7Links PX-4885
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-rt305x-dwc_otg kmod-usb2 kmod-usb-ohci \
+		kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
 		kmod-ledtrig-usbdev kmod-leds-gpio
 endef
 

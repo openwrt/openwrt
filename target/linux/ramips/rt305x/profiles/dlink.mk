@@ -8,7 +8,7 @@
 define Profile/DIR615H1
 	NAME:=Dlink DIR-615 H1
         PACKAGES:=\
-                -kmod-usb-core -kmod-usb-rt305x-dwc_otg \
+                -kmod-usb-core -kmod-usb-dwc2 \
                 -kmod-ledtrig-usbdev
 endef
 
@@ -21,7 +21,7 @@ $(eval $(call Profile,DIR615H1))
 define Profile/DIR-615-D
 	NAME:=Dlink DIR-615 D
         PACKAGES:=\
-                -kmod-usb-core -kmod-usb-rt305x-dwc_otg \
+                -kmod-usb-core -kmod-usb-dwc2 \
                 -kmod-ledtrig-usbdev
 endef
 
@@ -34,7 +34,7 @@ $(eval $(call Profile,DIR-615-D))
 define Profile/DCS930
 	NAME:=Dlink DCS-930
         PACKAGES:=kmod-video-core kmod-video-uvc \
-		kmod-usb-core kmod-usb-rt305x-dwc_otg
+		kmod-usb-core kmod-usb-dwc2
 endef
 
 define Profile/DCS930/Description
