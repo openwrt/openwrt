@@ -13,7 +13,7 @@ FEATURES:=squashfs pci
 CPU_TYPE:=fa526
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.9.11
+LINUX_VERSION:=3.10.49
 
 KERNELNAME:="zImage"
 
