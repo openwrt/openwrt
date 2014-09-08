@@ -22,7 +22,7 @@ Subject: [PATCH 18/22] owrt: lantiq: wifi and ethernet eeprom handling
 Index: linux-3.10.49/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.49/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h	2014-07-28 15:42:11.008968725 +0100
++++ linux-3.10.49/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h	2014-09-07 17:34:26.488234696 +0200
 @@ -0,0 +1,6 @@
 +#ifndef _PCI_ATH_FIXUP
 +#define _PCI_ATH_FIXUP
@@ -32,8 +32,8 @@ Index: linux-3.10.49/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
 +#endif /* _PCI_ATH_FIXUP */
 Index: linux-3.10.49/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 ===================================================================
---- linux-3.10.49.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2014-07-17 23:58:15.000000000 +0100
-+++ linux-3.10.49/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2014-07-28 15:42:11.008968725 +0100
+--- linux-3.10.49.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2014-07-18 00:58:15.000000000 +0200
++++ linux-3.10.49/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2014-09-07 17:34:26.488234696 +0200
 @@ -90,5 +90,8 @@
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
@@ -45,8 +45,8 @@ Index: linux-3.10.49/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
  #endif /* _LTQ_XWAY_H__ */
 Index: linux-3.10.49/arch/mips/lantiq/xway/Makefile
 ===================================================================
---- linux-3.10.49.orig/arch/mips/lantiq/xway/Makefile	2014-07-28 15:42:10.976968725 +0100
-+++ linux-3.10.49/arch/mips/lantiq/xway/Makefile	2014-07-28 15:49:51.008978396 +0100
+--- linux-3.10.49.orig/arch/mips/lantiq/xway/Makefile	2014-09-07 17:34:26.448234696 +0200
++++ linux-3.10.49/arch/mips/lantiq/xway/Makefile	2014-09-07 17:41:10.740227820 +0200
 @@ -2,4 +2,7 @@
  
  obj-y += vmmc.o
@@ -58,8 +58,8 @@ Index: linux-3.10.49/arch/mips/lantiq/xway/Makefile
 Index: linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c	2014-07-28 15:46:33.032974234 +0100
-@@ -0,0 +1,277 @@
++++ linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c	2014-09-07 17:41:03.184227948 +0200
+@@ -0,0 +1,282 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -103,7 +103,7 @@ Index: linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c
 +	struct device_node *np = pdev->dev.of_node, *mtd_np;
 +	struct resource *eep_res, *mac_res = NULL;
 +	void __iomem *eep, *mac;
-+	int mac_offset;
++	int mac_offset, led_pin;
 +	u32 mac_inc = 0, pci_slot = 0;
 +	int i;
 +	struct mtd_info *the_mtd;
@@ -193,6 +193,11 @@ Index: linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c
 +                                pci_fixup_device(pci_fixup_early, d);
 +                }
 +
++	}
++
++	if (!of_property_read_u32(np, "ath,led-pin", &led_pin)) {
++		ath9k_pdata.led_pin = led_pin;
++		dev_info(&pdev->dev, "using led pin %d.\n", led_pin);
 +	}
 +
 +	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
@@ -340,7 +345,7 @@ Index: linux-3.10.49/arch/mips/lantiq/xway/ath_eep.c
 Index: linux-3.10.49/arch/mips/lantiq/xway/eth_mac.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.49/arch/mips/lantiq/xway/eth_mac.c	2014-07-28 15:42:11.008968725 +0100
++++ linux-3.10.49/arch/mips/lantiq/xway/eth_mac.c	2014-09-07 17:34:26.488234696 +0200
 @@ -0,0 +1,76 @@
 +/*
 + *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
@@ -421,7 +426,7 @@ Index: linux-3.10.49/arch/mips/lantiq/xway/eth_mac.c
 Index: linux-3.10.49/arch/mips/lantiq/xway/pci-ath-fixup.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.49/arch/mips/lantiq/xway/pci-ath-fixup.c	2014-07-28 15:42:11.008968725 +0100
++++ linux-3.10.49/arch/mips/lantiq/xway/pci-ath-fixup.c	2014-09-07 17:34:26.488234696 +0200
 @@ -0,0 +1,109 @@
 +/*
 + *  Atheros AP94 reference board PCI initialization
@@ -535,7 +540,7 @@ Index: linux-3.10.49/arch/mips/lantiq/xway/pci-ath-fixup.c
 Index: linux-3.10.49/arch/mips/lantiq/xway/rt_eep.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.10.49/arch/mips/lantiq/xway/rt_eep.c	2014-07-28 15:42:11.008968725 +0100
++++ linux-3.10.49/arch/mips/lantiq/xway/rt_eep.c	2014-09-07 17:34:26.488234696 +0200
 @@ -0,0 +1,60 @@
 +/*
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
