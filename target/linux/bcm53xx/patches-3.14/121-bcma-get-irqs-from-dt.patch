@@ -24,8 +24,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
  MODULE_LICENSE("GPL");
-@@ -120,6 +122,38 @@ static void bcma_release_core_dev(struct
- 	kfree(core);
+@@ -131,6 +133,38 @@ static bool bcma_is_core_needed_early(u1
+ 	return false;
  }
  
 +static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
@@ -60,21 +60,21 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	core->irq = irq_of_parse_and_map(node, 0);
 +}
 +
- static int bcma_register_cores(struct bcma_bus *bus)
+ static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
  {
- 	struct bcma_device *core;
-@@ -155,7 +189,13 @@ static int bcma_register_cores(struct bc
- 			break;
- 		case BCMA_HOSTTYPE_SOC:
- 			core->dev.dma_mask = &core->dev.coherent_dma_mask;
--			core->dma_dev = &core->dev;
-+			if (bus->host_pdev) {
-+				core->dma_dev = &bus->host_pdev->dev;
-+				core->dev.parent = &bus->host_pdev->dev;
-+				bcma_of_fill_device(bus->host_pdev, core);
-+			} else {
-+				core->dma_dev = &core->dev;
-+			}
- 			break;
- 		case BCMA_HOSTTYPE_SDIO:
- 			break;
+ 	int err;
+@@ -147,7 +181,13 @@ static void bcma_register_core(struct bc
+ 		break;
+ 	case BCMA_HOSTTYPE_SOC:
+ 		core->dev.dma_mask = &core->dev.coherent_dma_mask;
+-		core->dma_dev = &core->dev;
++		if (bus->host_pdev) {
++			core->dma_dev = &bus->host_pdev->dev;
++			core->dev.parent = &bus->host_pdev->dev;
++			bcma_of_fill_device(bus->host_pdev, core);
++		} else {
++			core->dma_dev = &core->dev;
++		}
+ 		break;
+ 	case BCMA_HOSTTYPE_SDIO:
+ 		break;
