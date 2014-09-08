@@ -1,0 +1,91 @@
+From 9a1a810516ae9cb3259b898b6879901c5b44fa90 Mon Sep 17 00:00:00 2001
+From: Prathap M S <msprathap@ti.com>
+Date: Mon, 2 Sep 2013 12:05:23 +0530
+Subject: [PATCH 343/752] video: da8xx-fb: Add API to register wait for vsync
+ callback
+
+This patch adds APIs to register and unregister wait for vsync callback.
+This is derived from commit id 2d44302545da24fd22912d964102bc31a7489e97
+This commit id was part of 3.2 kernel sources.
+
+Signed-off-by: Prathap M S <msprathap@ti.com>
+---
+ drivers/video/da8xx-fb.c |   33 +++++++++++++++++++++++++++++++++
+ include/video/da8xx-fb.h |    4 ++++
+ 2 files changed, 37 insertions(+)
+
+--- a/drivers/video/da8xx-fb.c
++++ b/drivers/video/da8xx-fb.c
+@@ -197,6 +197,9 @@ static struct fb_fix_screeninfo da8xx_fb
+ 	.accel = FB_ACCEL_NONE
+ };
+ 
++static vsync_callback_t vsync_cb_handler;
++static void *vsync_cb_arg;
++
+ static struct fb_videomode known_lcd_panels[] = {
+ 	/* Sharp LCD035Q3DG01 */
+ 	[0] = {
+@@ -825,6 +828,32 @@ static int lcd_init(struct da8xx_fb_par
+ 	return 0;
+ }
+ 
++int register_vsync_cb(vsync_callback_t handler, void *arg, int idx)
++{
++	if ((vsync_cb_handler == NULL) && (vsync_cb_arg == NULL)) {
++		vsync_cb_arg = arg;
++		vsync_cb_handler = handler;
++	} else {
++		return -EEXIST;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(register_vsync_cb);
++
++int unregister_vsync_cb(vsync_callback_t handler, void *arg, int idx)
++{
++	if ((vsync_cb_handler == handler) && (vsync_cb_arg == arg)) {
++		vsync_cb_handler = NULL;
++		vsync_cb_arg = NULL;
++	} else {
++		return -ENXIO;
++	}
++
++	return 0;
++}
++EXPORT_SYMBOL(unregister_vsync_cb);
++
+ /* IRQ handler for version 2 of LCDC */
+ static irqreturn_t lcdc_irq_handler_rev02(int irq, void *arg)
+ {
+@@ -862,6 +891,8 @@ static irqreturn_t lcdc_irq_handler_rev0
+ 				   LCD_DMA_FRM_BUF_CEILING_ADDR_0_REG);
+ 			par->vsync_flag = 1;
+ 			wake_up_interruptible(&par->vsync_wait);
++			if (vsync_cb_handler)
++				vsync_cb_handler(vsync_cb_arg);
+ 		}
+ 
+ 		if (stat & LCD_END_OF_FRAME1) {
+@@ -937,6 +968,8 @@ static irqreturn_t lcdc_irq_handler_rev0
+ 				   LCD_DMA_FRM_BUF_CEILING_ADDR_1_REG);
+ 			par->vsync_flag = 1;
+ 			wake_up_interruptible(&par->vsync_wait);
++			if (vsync_cb_handler)
++				vsync_cb_handler(vsync_cb_arg);
+ 		}
+ 	}
+ 
+--- a/include/video/da8xx-fb.h
++++ b/include/video/da8xx-fb.h
+@@ -91,5 +91,9 @@ struct lcd_sync_arg {
+ /* Proprietary FB_SYNC_ flags */
+ #define FB_SYNC_CLK_INVERT 0x40000000
+ 
++typedef void (*vsync_callback_t)(void *arg);
++int register_vsync_cb(vsync_callback_t handler, void *arg, int idx);
++int unregister_vsync_cb(vsync_callback_t handler, void *arg, int idx);
++
+ #endif  /* ifndef DA8XX_FB_H */
+ 
