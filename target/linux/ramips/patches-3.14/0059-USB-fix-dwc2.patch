@@ -1,0 +1,21 @@
+Index: linux-3.14.16/drivers/usb/dwc2/hcd.c
+===================================================================
+--- linux-3.14.16.orig/drivers/usb/dwc2/hcd.c	2014-08-08 01:50:59.000000000 +0200
++++ linux-3.14.16/drivers/usb/dwc2/hcd.c	2014-09-07 21:01:06.524023779 +0200
+@@ -47,6 +47,7 @@
+ #include <linux/io.h>
+ #include <linux/slab.h>
+ #include <linux/usb.h>
++#include <linux/reset.h>
+ 
+ #include <linux/usb/hcd.h>
+ #include <linux/usb/ch11.h>
+@@ -2764,6 +2765,8 @@
+ 
+ 	dev_dbg(hsotg->dev, "DWC OTG HCD INIT\n");
+ 
++	device_reset(hsotg->dev);
++
+ 	/* Detect config values from hardware */
+ 	retval = dwc2_get_hwparams(hsotg);
+ 
