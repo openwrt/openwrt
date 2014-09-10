@@ -901,11 +901,12 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
 	int sent = 0;
 	int bytes_compl = 0;
+	int n = 0;
 
 	DBG("%s: processing TX ring\n", ag->dev->name);
 
-	while (ring->dirty != ring->curr) {
-		unsigned int i = ring->dirty % ring->size;
+	while (ring->dirty + n != ring->curr) {
+		unsigned int i = (ring->dirty + n) % ring->size;
 		struct ag71xx_desc *desc = ring->buf[i].desc;
 		struct sk_buff *skb = ring->buf[i].skb;
 
@@ -916,17 +917,22 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 			break;
 		}
 
-		ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+		n++;
+		if (!skb)
+			continue;
 
-		if (skb) {
-			dev_kfree_skb_any(skb);
-			ring->buf[i].skb = NULL;
+		dev_kfree_skb_any(skb);
+		ring->buf[i].skb = NULL;
 
-			bytes_compl += ring->buf[i].len;
-			sent++;
+		bytes_compl += ring->buf[i].len;
+
+		sent++;
+		ring->dirty += n;
+
+		while (n > 0) {
+			ag71xx_wr(ag, AG71XX_REG_TX_STATUS, TX_STATUS_PS);
+			n--;
 		}
-
-		ring->dirty++;
 	}
 
 	DBG("%s: %d packets sent out\n", ag->dev->name, sent);
