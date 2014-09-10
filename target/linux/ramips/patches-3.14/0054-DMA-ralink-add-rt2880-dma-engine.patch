@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  5 files changed, 611 insertions(+)
  create mode 100644 drivers/dma/ralink-gdma.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index 605b016..a9b31ff 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -351,6 +351,12 @@ config MOXART_DMA
@@ -30,8 +28,6 @@ index 605b016..a9b31ff 100644
  config DMA_ENGINE
  	bool
  
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index a029d0f4..419ccc2 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -44,3 +44,4 @@ obj-$(CONFIG_DMA_JZ4740) += dma-jz4740.o
@@ -39,11 +35,9 @@ index a029d0f4..419ccc2 100644
  obj-$(CONFIG_K3_DMA) += k3dma.o
  obj-$(CONFIG_MOXART_DMA) += moxart-dma.o
 +obj-$(CONFIG_DMA_RALINK) += ralink-gdma.o
-diff --git a/drivers/dma/dmaengine.c b/drivers/dma/dmaengine.c
-index ed610b4..cc11e0b 100644
 --- a/drivers/dma/dmaengine.c
 +++ b/drivers/dma/dmaengine.c
-@@ -564,6 +564,32 @@ struct dma_chan *dma_get_any_slave_channel(struct dma_device *device)
+@@ -564,6 +564,32 @@ struct dma_chan *dma_get_any_slave_chann
  EXPORT_SYMBOL_GPL(dma_get_any_slave_channel);
  
  /**
@@ -76,9 +70,6 @@ index ed610b4..cc11e0b 100644
   * __dma_request_channel - try to allocate an exclusive channel
   * @mask: capabilities that the channel must satisfy
   * @fn: optional callback to disposition available channels
-diff --git a/drivers/dma/ralink-gdma.c b/drivers/dma/ralink-gdma.c
-new file mode 100644
-index 0000000..2c3cace
 --- /dev/null
 +++ b/drivers/dma/ralink-gdma.c
 @@ -0,0 +1,577 @@
@@ -659,11 +650,9 @@ index 0000000..2c3cace
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
 +MODULE_DESCRIPTION("GDMA4740 DMA driver");
 +MODULE_LICENSE("GPLv2");
-diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-index c5c92d5..482131e 100644
 --- a/include/linux/dmaengine.h
 +++ b/include/linux/dmaengine.h
-@@ -1072,6 +1072,7 @@ struct dma_chan *dma_request_slave_channel_reason(struct device *dev,
+@@ -1073,6 +1073,7 @@ struct dma_chan *dma_request_slave_chann
  						  const char *name);
  struct dma_chan *dma_request_slave_channel(struct device *dev, const char *name);
  void dma_release_channel(struct dma_chan *chan);
@@ -671,6 +660,3 @@ index c5c92d5..482131e 100644
  #else
  static inline struct dma_chan *dma_find_channel(enum dma_transaction_type tx_type)
  {
--- 
-1.7.10.4
-

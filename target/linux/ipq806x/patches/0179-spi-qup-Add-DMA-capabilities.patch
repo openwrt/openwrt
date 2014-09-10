@@ -12,8 +12,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  drivers/spi/spi-qup.c |  361 ++++++++++++++++++++++++++++++++++++++++++++++---
  1 file changed, 340 insertions(+), 21 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index c137226..28754ae 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
 @@ -22,6 +22,8 @@
@@ -49,7 +47,7 @@ index c137226..28754ae 100644
  };
  
  
-@@ -266,6 +278,221 @@ static void spi_qup_fifo_write(struct spi_qup *controller,
+@@ -266,6 +278,221 @@ static void spi_qup_fifo_write(struct sp
  	}
  }
  
@@ -271,7 +269,7 @@ index c137226..28754ae 100644
  static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
  {
  	struct spi_qup *controller = dev_id;
-@@ -315,11 +542,13 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -315,11 +542,13 @@ static irqreturn_t spi_qup_qup_irq(int i
  		error = -EIO;
  	}
  
@@ -289,7 +287,7 @@ index c137226..28754ae 100644
  
  	spin_lock_irqsave(&controller->lock, flags);
  	controller->error = error;
-@@ -339,6 +568,8 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -339,6 +568,8 @@ static int spi_qup_io_config(struct spi_
  	struct spi_qup *controller = spi_master_get_devdata(spi->master);
  	u32 config, iomode, mode;
  	int ret, n_words, w_size;
@@ -298,7 +296,7 @@ index c137226..28754ae 100644
  
  	if (spi->mode & SPI_LOOP && xfer->len > controller->in_fifo_sz) {
  		dev_err(controller->dev, "too big size for loopback %d > %d\n",
-@@ -367,6 +598,13 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -367,6 +598,13 @@ static int spi_qup_io_config(struct spi_
  	n_words = xfer->len / w_size;
  	controller->w_size = w_size;
  
@@ -312,7 +310,7 @@ index c137226..28754ae 100644
  	if (n_words <= (controller->in_fifo_sz / sizeof(u32))) {
  		mode = QUP_IO_M_MODE_FIFO;
  		writel_relaxed(n_words, controller->base + QUP_MX_READ_CNT);
-@@ -374,19 +612,30 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -374,19 +612,30 @@ static int spi_qup_io_config(struct spi_
  		/* must be zero for FIFO */
  		writel_relaxed(0, controller->base + QUP_MX_INPUT_CNT);
  		writel_relaxed(0, controller->base + QUP_MX_OUTPUT_CNT);
@@ -345,7 +343,7 @@ index c137226..28754ae 100644
  	iomode |= (mode << QUP_IO_M_OUTPUT_MODE_MASK_SHIFT);
  	iomode |= (mode << QUP_IO_M_INPUT_MODE_MASK_SHIFT);
  
-@@ -419,11 +668,20 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -419,11 +668,20 @@ static int spi_qup_io_config(struct spi_
  	config &= ~(QUP_CONFIG_NO_INPUT | QUP_CONFIG_NO_OUTPUT | QUP_CONFIG_N);
  	config |= xfer->bits_per_word - 1;
  	config |= QUP_CONFIG_SPI_MODE;
@@ -366,7 +364,7 @@ index c137226..28754ae 100644
  	return 0;
  }
  
-@@ -452,26 +710,32 @@ static int spi_qup_transfer_one(struct spi_master *master,
+@@ -452,26 +710,32 @@ static int spi_qup_transfer_one(struct s
  	controller->tx_bytes = 0;
  	spin_unlock_irqrestore(&controller->lock, flags);
  
@@ -414,7 +412,7 @@ index c137226..28754ae 100644
  	spi_qup_set_state(controller, QUP_STATE_RESET);
  	spin_lock_irqsave(&controller->lock, flags);
  	controller->xfer = NULL;
-@@ -553,6 +817,7 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -553,6 +817,7 @@ static int spi_qup_probe(struct platform
  	master->transfer_one = spi_qup_transfer_one;
  	master->dev.of_node = pdev->dev.of_node;
  	master->auto_runtime_pm = true;
@@ -422,7 +420,7 @@ index c137226..28754ae 100644
  
  	platform_set_drvdata(pdev, master);
  
-@@ -612,6 +877,55 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -612,6 +877,55 @@ static int spi_qup_probe(struct platform
  	writel_relaxed(SPI_ERROR_CLK_UNDER_RUN | SPI_ERROR_CLK_OVER_RUN,
  		       base + SPI_ERROR_FLAGS_EN);
  
@@ -478,7 +476,7 @@ index c137226..28754ae 100644
  	/* if earlier version of the QUP, disable INPUT_OVERRUN */
  	if (controller->qup_v1)
  		writel_relaxed(QUP_ERROR_OUTPUT_OVER_RUN |
-@@ -730,6 +1044,11 @@ static int spi_qup_remove(struct platform_device *pdev)
+@@ -730,6 +1044,11 @@ static int spi_qup_remove(struct platfor
  	if (ret)
  		return ret;
  
@@ -490,6 +488,3 @@ index c137226..28754ae 100644
  	clk_disable_unprepare(controller->cclk);
  	clk_disable_unprepare(controller->iclk);
  
--- 
-1.7.10.4
-

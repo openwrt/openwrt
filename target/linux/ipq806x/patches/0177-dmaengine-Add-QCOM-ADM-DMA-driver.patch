@@ -21,8 +21,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  3 files changed, 882 insertions(+)
  create mode 100644 drivers/dma/qcom_adm.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index f87cef9..79155fa 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -410,4 +410,14 @@ config QCOM_BAM_DMA
@@ -40,8 +38,6 @@ index f87cef9..79155fa 100644
 +	  peripheral devices.
 +
  endif
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index 5150c82..4a4f521 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -46,3 +46,4 @@ obj-$(CONFIG_K3_DMA) += k3dma.o
@@ -49,9 +45,6 @@ index 5150c82..4a4f521 100644
  obj-$(CONFIG_FSL_EDMA) += fsl-edma.o
  obj-$(CONFIG_QCOM_BAM_DMA) += qcom_bam_dma.o
 +obj-$(CONFIG_QCOM_ADM) += qcom_adm.o
-diff --git a/drivers/dma/qcom_adm.c b/drivers/dma/qcom_adm.c
-new file mode 100644
-index 0000000..035f606
 --- /dev/null
 +++ b/drivers/dma/qcom_adm.c
 @@ -0,0 +1,871 @@
@@ -926,6 +919,3 @@ index 0000000..035f606
 +MODULE_AUTHOR("Andy Gross <agross@codeaurora.org>");
 +MODULE_DESCRIPTION("QCOM ADM DMA engine driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

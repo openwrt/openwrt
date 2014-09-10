@@ -9,8 +9,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi                | 7 +++++++
  2 files changed, 16 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index 822cbe2..15f1f3f 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 @@ -14,6 +14,7 @@
@@ -21,7 +19,7 @@ index 822cbe2..15f1f3f 100644
  
  / {
  	model = "Olimex A20-Olinuxino Micro";
-@@ -96,6 +97,14 @@
+@@ -73,6 +74,14 @@
  			};
  		};
  
@@ -36,11 +34,9 @@ index 822cbe2..15f1f3f 100644
  		uart0: serial@01c28000 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&uart0_pins_a>;
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 1d9b314..0c57ac5 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -735,6 +735,13 @@
+@@ -670,6 +670,13 @@
  			interrupts = <0 24 4>;
  		};
  
@@ -54,6 +50,3 @@ index 1d9b314..0c57ac5 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun7i-a20-sid";
  			reg = <0x01c23800 0x200>;
--- 
-2.0.3
-

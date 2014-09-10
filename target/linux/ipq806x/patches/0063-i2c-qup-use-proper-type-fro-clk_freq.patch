@@ -12,11 +12,9 @@ Fixes: 10c5a8425968 ('i2c: qup: New bus driver for the Qualcomm QUP I2C controll
  drivers/i2c/busses/i2c-qup.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-qup.c b/drivers/i2c/busses/i2c-qup.c
-index ee40980..1b4cf14 100644
 --- a/drivers/i2c/busses/i2c-qup.c
 +++ b/drivers/i2c/busses/i2c-qup.c
-@@ -562,7 +562,7 @@ static int qup_i2c_probe(struct platform_device *pdev)
+@@ -562,7 +562,7 @@ static int qup_i2c_probe(struct platform
  	u32 io_mode, hw_ver, size;
  	int ret, fs_div, hs_div;
  	int src_clk_freq;
@@ -25,6 +23,3 @@ index ee40980..1b4cf14 100644
  
  	qup = devm_kzalloc(&pdev->dev, sizeof(*qup), GFP_KERNEL);
  	if (!qup)
--- 
-1.7.10.4
-

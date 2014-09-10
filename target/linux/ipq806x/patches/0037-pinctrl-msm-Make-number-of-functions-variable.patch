@@ -15,11 +15,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm8x74.c |    3 ++-
  3 files changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 706809e..7d67d34 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -145,12 +145,12 @@ static int msm_pinmux_enable(struct pinctrl_dev *pctldev,
+@@ -145,12 +145,12 @@ static int msm_pinmux_enable(struct pinc
  	if (WARN_ON(g->mux_bit < 0))
  		return -EINVAL;
  
@@ -34,8 +32,6 @@ index 706809e..7d67d34 100644
  		return -EINVAL;
  
  	spin_lock_irqsave(&pctrl->lock, flags);
-diff --git a/drivers/pinctrl/pinctrl-msm.h b/drivers/pinctrl/pinctrl-msm.h
-index 6e26f1b..7b2a227 100644
 --- a/drivers/pinctrl/pinctrl-msm.h
 +++ b/drivers/pinctrl/pinctrl-msm.h
 @@ -65,7 +65,8 @@ struct msm_pingroup {
@@ -48,11 +44,9 @@ index 6e26f1b..7b2a227 100644
  
  	s16 ctl_reg;
  	s16 io_reg;
-diff --git a/drivers/pinctrl/pinctrl-msm8x74.c b/drivers/pinctrl/pinctrl-msm8x74.c
-index dde5529..57766d5 100644
 --- a/drivers/pinctrl/pinctrl-msm8x74.c
 +++ b/drivers/pinctrl/pinctrl-msm8x74.c
-@@ -341,7 +341,7 @@ static const unsigned int sdc2_data_pins[] = { 151 };
+@@ -341,7 +341,7 @@ static const unsigned int sdc2_data_pins
  		.name = "gpio" #id,			\
  		.pins = gpio##id##_pins,		\
  		.npins = ARRAY_SIZE(gpio##id##_pins),	\
@@ -61,7 +55,7 @@ index dde5529..57766d5 100644
  			MSM_MUX_NA, /* gpio mode */	\
  			MSM_MUX_##f1,			\
  			MSM_MUX_##f2,			\
-@@ -351,6 +351,7 @@ static const unsigned int sdc2_data_pins[] = { 151 };
+@@ -351,6 +351,7 @@ static const unsigned int sdc2_data_pins
  			MSM_MUX_##f6,			\
  			MSM_MUX_##f7			\
  		},					\
@@ -69,6 +63,3 @@ index dde5529..57766d5 100644
  		.ctl_reg = 0x1000 + 0x10 * id,		\
  		.io_reg = 0x1004 + 0x10 * id,		\
  		.intr_cfg_reg = 0x1008 + 0x10 * id,	\
--- 
-1.7.10.4
-

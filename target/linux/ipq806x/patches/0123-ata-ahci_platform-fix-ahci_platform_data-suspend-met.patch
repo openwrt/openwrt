@@ -19,11 +19,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/ahci_platform.c |   11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 70fbf66..7bd6adf 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -521,12 +521,19 @@ int ahci_platform_suspend(struct device *dev)
+@@ -521,12 +521,19 @@ int ahci_platform_suspend(struct device
  	if (rc)
  		return rc;
  
@@ -45,6 +43,3 @@ index 70fbf66..7bd6adf 100644
  }
  EXPORT_SYMBOL_GPL(ahci_platform_suspend);
  
--- 
-1.7.10.4
-

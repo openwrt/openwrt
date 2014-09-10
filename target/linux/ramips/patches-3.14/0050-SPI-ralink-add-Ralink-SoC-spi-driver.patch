@@ -14,11 +14,9 @@ Acked-by: John Crispin <blogic@openwrt.org>
  3 files changed, 439 insertions(+)
  create mode 100644 drivers/spi/spi-rt2880.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 581ee2a..009f8f3 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -381,6 +381,12 @@ config SPI_RSPI
+@@ -390,6 +390,12 @@ config SPI_RSPI
  	help
  	  SPI driver for Renesas RSPI and QSPI blocks.
  
@@ -31,11 +29,9 @@ index 581ee2a..009f8f3 100644
  config SPI_S3C24XX
  	tristate "Samsung S3C24XX series SPI"
  	depends on ARCH_S3C24XX
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 95af48d..1f647e5 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -60,6 +60,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_DMA)	+= spi-pxa2xx-dma.o
+@@ -61,6 +61,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_
  obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-platform.o
  obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
@@ -43,9 +39,6 @@ index 95af48d..1f647e5 100644
  obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
  spi-s3c24xx-hw-y			:= spi-s3c24xx.o
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
-diff --git a/drivers/spi/spi-rt2880.c b/drivers/spi/spi-rt2880.c
-new file mode 100644
-index 0000000..ac9de67
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
 @@ -0,0 +1,432 @@
@@ -481,6 +474,3 @@ index 0000000..ac9de67
 +MODULE_AUTHOR("Sergiy <piratfm@gmail.com>");
 +MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org>");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

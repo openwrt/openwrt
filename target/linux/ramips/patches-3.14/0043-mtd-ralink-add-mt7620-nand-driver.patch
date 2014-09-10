@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mtd/maps/ralink_nand.c
  create mode 100644 drivers/mtd/maps/ralink_nand.h
 
-diff --git a/drivers/mtd/maps/Kconfig b/drivers/mtd/maps/Kconfig
-index 310dc7c..344f460d 100644
 --- a/drivers/mtd/maps/Kconfig
 +++ b/drivers/mtd/maps/Kconfig
 @@ -399,4 +399,8 @@ config MTD_LATCH_ADDR
@@ -26,8 +24,6 @@ index 310dc7c..344f460d 100644
 +	depends on RALINK && SOC_MT7620
 +
  endmenu
-diff --git a/drivers/mtd/maps/Makefile b/drivers/mtd/maps/Makefile
-index 141c91a..94d2aa0 100644
 --- a/drivers/mtd/maps/Makefile
 +++ b/drivers/mtd/maps/Makefile
 @@ -43,3 +43,5 @@ obj-$(CONFIG_MTD_VMU)		+= vmu-flash.o
@@ -36,9 +32,6 @@ index 141c91a..94d2aa0 100644
  obj-$(CONFIG_MTD_LANTIQ)	+= lantiq-flash.o
 +obj-$(CONFIG_MTD_NAND_MT7620)	+= ralink_nand.o
 +
-diff --git a/drivers/mtd/maps/ralink_nand.c b/drivers/mtd/maps/ralink_nand.c
-new file mode 100644
-index 0000000..64f9119
 --- /dev/null
 +++ b/drivers/mtd/maps/ralink_nand.c
 @@ -0,0 +1,2136 @@
@@ -2178,9 +2171,6 @@ index 0000000..64f9119
 +
 +
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/mtd/maps/ralink_nand.h b/drivers/mtd/maps/ralink_nand.h
-new file mode 100644
-index 0000000..a408ae9
 --- /dev/null
 +++ b/drivers/mtd/maps/ralink_nand.h
 @@ -0,0 +1,232 @@
@@ -2416,6 +2406,3 @@ index 0000000..a408ae9
 +
 +
 +#endif
--- 
-1.7.10.4
-

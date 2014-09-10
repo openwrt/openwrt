@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 187 insertions(+)
  create mode 100644 drivers/gpio/gpio-mt7621.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 4ac98ca..fd3bbb1 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -437,6 +437,9 @@ config RALINK
@@ -26,8 +24,6 @@ index 4ac98ca..fd3bbb1 100644
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 2d75a68..5dff8d5 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -827,6 +827,12 @@ config GPIO_BCM_KONA
@@ -43,18 +39,13 @@ index 2d75a68..5dff8d5 100644
  comment "USB GPIO expanders:"
  
  config GPIO_VIPERBOARD
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 2cbdbe6..2365e34 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -100,3 +100,4 @@ obj-$(CONFIG_GPIO_WM8350)	+= gpio-wm8350.o
+@@ -100,3 +100,4 @@ obj-$(CONFIG_GPIO_WM8350)	+= gpio-wm8350
  obj-$(CONFIG_GPIO_WM8994)	+= gpio-wm8994.o
  obj-$(CONFIG_GPIO_XILINX)	+= gpio-xilinx.o
  obj-$(CONFIG_GPIO_XTENSA)	+= gpio-xtensa.o
 +obj-$(CONFIG_GPIO_MT7621)	+= gpio-mt7621.o
-diff --git a/drivers/gpio/gpio-mt7621.c b/drivers/gpio/gpio-mt7621.c
-new file mode 100644
-index 0000000..7ae7eb9
 --- /dev/null
 +++ b/drivers/gpio/gpio-mt7621.c
 @@ -0,0 +1,177 @@
@@ -235,6 +226,3 @@ index 0000000..7ae7eb9
 +}
 +
 +subsys_initcall(mediatek_gpio_init);
--- 
-1.7.10.4
-

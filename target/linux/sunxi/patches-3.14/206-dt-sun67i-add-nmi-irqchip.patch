@@ -11,11 +11,9 @@ Signed-off-by: Carlo Caione <carlo@caione.org>
  arch/arm/boot/dts/sun7i-a20.dtsi | 8 ++++++++
  2 files changed, 16 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun6i-a31.dtsi b/arch/arm/boot/dts/sun6i-a31.dtsi
-index 8441733..74d2920 100644
 --- a/arch/arm/boot/dts/sun6i-a31.dtsi
 +++ b/arch/arm/boot/dts/sun6i-a31.dtsi
-@@ -421,6 +421,14 @@
+@@ -370,6 +370,14 @@
  			interrupts = <1 9 0xf04>;
  		};
  
@@ -30,8 +28,6 @@ index 8441733..74d2920 100644
  		cpucfg@01f01c00 {
  			compatible = "allwinner,sun6i-a31-cpuconfig";
  			reg = <0x01f01c00 0x300>;
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 4981f5e..2e66c85 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
 @@ -401,6 +401,14 @@
@@ -49,6 +45,3 @@ index 4981f5e..2e66c85 100644
  		spi0: spi@01c05000 {
  			compatible = "allwinner,sun4i-a10-spi";
  			reg = <0x01c05000 0x1000>;
--- 
-2.0.3
-

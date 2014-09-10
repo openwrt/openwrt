@@ -11,8 +11,6 @@ Subject: [PATCH 138/182] PCI: qcom: Add support for pcie controllers on
  3 files changed, 685 insertions(+)
  create mode 100644 drivers/pci/host/pci-qcom.c
 
-diff --git a/arch/arm/mach-qcom/Kconfig b/arch/arm/mach-qcom/Kconfig
-index 63502cc..4d242e5 100644
 --- a/arch/arm/mach-qcom/Kconfig
 +++ b/arch/arm/mach-qcom/Kconfig
 @@ -7,6 +7,8 @@ config ARCH_QCOM
@@ -24,8 +22,6 @@ index 63502cc..4d242e5 100644
  	select QCOM_SCM if SMP
  	help
  	  Support for Qualcomm's devicetree based systems.
-diff --git a/drivers/pci/host/Makefile b/drivers/pci/host/Makefile
-index 13fb333..be80744 100644
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
 @@ -4,3 +4,4 @@ obj-$(CONFIG_PCI_IMX6) += pci-imx6.o
@@ -33,9 +29,6 @@ index 13fb333..be80744 100644
  obj-$(CONFIG_PCI_TEGRA) += pci-tegra.o
  obj-$(CONFIG_PCI_RCAR_GEN2) += pci-rcar-gen2.o
 +obj-$(CONFIG_ARCH_QCOM) += pci-qcom.o
-diff --git a/drivers/pci/host/pci-qcom.c b/drivers/pci/host/pci-qcom.c
-new file mode 100644
-index 0000000..76d7b88
 --- /dev/null
 +++ b/drivers/pci/host/pci-qcom.c
 @@ -0,0 +1,682 @@
@@ -721,6 +714,3 @@ index 0000000..76d7b88
 +		dev->class = (dev->class & 0xff) | (PCI_CLASS_BRIDGE_PCI << 8);
 +}
 +DECLARE_PCI_FIXUP_EARLY(PCIE_VENDOR_ID_RCP, PCIE_DEVICE_ID_RCP, msm_pcie_fixup_early);
--- 
-1.7.10.4
-

@@ -9,8 +9,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  arch/arm/boot/dts/qcom-ipq8064.dtsi      |   47 ++++++++++++++++++++++++++++++
  2 files changed, 89 insertions(+)
 
-diff --git a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-index dbb546d..158a09f 100644
 --- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 @@ -20,6 +20,15 @@
@@ -68,8 +66,6 @@ index dbb546d..158a09f 100644
 +		};
  	};
  };
-diff --git a/arch/arm/boot/dts/qcom-ipq8064.dtsi b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-index b39c1ef..244f857 100644
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
 @@ -187,6 +187,53 @@
@@ -126,6 +122,3 @@ index b39c1ef..244f857 100644
  		qcom,ssbi@500000 {
  			compatible = "qcom,ssbi";
  			reg = <0x00500000 0x1000>;
--- 
-1.7.10.4
-

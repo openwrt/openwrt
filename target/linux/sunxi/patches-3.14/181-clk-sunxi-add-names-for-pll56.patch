@@ -19,8 +19,6 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c | 27 ++++++++++++++++++---------
  1 file changed, 18 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 0ed9794..7a2ed98 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
 @@ -389,6 +389,7 @@ struct factors_data {
@@ -31,7 +29,7 @@ index 0ed9794..7a2ed98 100644
  };
  
  static struct clk_factors_config sun4i_pll1_config = {
-@@ -457,6 +458,14 @@ static const struct factors_data sun4i_pll5_data __initconst = {
+@@ -457,6 +458,14 @@ static const struct factors_data sun4i_p
  	.enable = 31,
  	.table = &sun4i_pll5_config,
  	.getter = sun4i_get_pll5_factors,
@@ -46,7 +44,7 @@ index 0ed9794..7a2ed98 100644
  };
  
  static const struct factors_data sun4i_apb1_data __initconst = {
-@@ -499,14 +508,14 @@ static struct clk * __init sunxi_factors_clk_setup(struct device_node *node,
+@@ -499,14 +508,14 @@ static struct clk * __init sunxi_factors
  	       (parents[i] = of_clk_get_parent_name(node, i)) != NULL)
  		i++;
  
@@ -69,7 +67,7 @@ index 0ed9794..7a2ed98 100644
  
  	factors = kzalloc(sizeof(struct clk_factors), GFP_KERNEL);
  	if (!factors)
-@@ -838,7 +847,7 @@ static const struct divs_data pll5_divs_data __initconst = {
+@@ -838,7 +847,7 @@ static const struct divs_data pll5_divs_
  };
  
  static const struct divs_data pll6_divs_data __initconst = {
@@ -78,6 +76,3 @@ index 0ed9794..7a2ed98 100644
  	.div = {
  		{ .shift = 0, .table = pll6_sata_tbl, .gate = 14 }, /* M, SATA */
  		{ .fixed = 2 }, /* P, other */
--- 
-2.0.3
-

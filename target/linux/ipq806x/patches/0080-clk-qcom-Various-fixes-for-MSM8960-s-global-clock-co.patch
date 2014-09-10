@@ -22,11 +22,9 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  include/dt-bindings/reset/qcom,gcc-msm8960.h |    2 +-
  3 files changed, 6 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clk/qcom/gcc-msm8960.c b/drivers/clk/qcom/gcc-msm8960.c
-index 8e2b6dd..f4ffd91 100644
 --- a/drivers/clk/qcom/gcc-msm8960.c
 +++ b/drivers/clk/qcom/gcc-msm8960.c
-@@ -2810,7 +2810,7 @@ static const struct qcom_reset_map gcc_msm8960_resets[] = {
+@@ -2810,7 +2810,7 @@ static const struct qcom_reset_map gcc_m
  	[PPSS_PROC_RESET] = { 0x2594, 1 },
  	[PPSS_RESET] = { 0x2594},
  	[DMA_BAM_RESET] = { 0x25c0, 7 },
@@ -35,7 +33,7 @@ index 8e2b6dd..f4ffd91 100644
  	[SLIMBUS_H_RESET] = { 0x2620, 7 },
  	[SFAB_CFPB_M_RESET] = { 0x2680, 7 },
  	[SFAB_CFPB_S_RESET] = { 0x26c0, 7 },
-@@ -2823,7 +2823,7 @@ static const struct qcom_reset_map gcc_msm8960_resets[] = {
+@@ -2823,7 +2823,7 @@ static const struct qcom_reset_map gcc_m
  	[SFAB_SFPB_M_RESET] = { 0x2780, 7 },
  	[SFAB_SFPB_S_RESET] = { 0x27a0, 7 },
  	[RPM_PROC_RESET] = { 0x27c0, 7 },
@@ -44,8 +42,6 @@ index 8e2b6dd..f4ffd91 100644
  	[SDC1_RESET] = { 0x2830 },
  	[SDC2_RESET] = { 0x2850 },
  	[SDC3_RESET] = { 0x2870 },
-diff --git a/include/dt-bindings/clock/qcom,gcc-msm8960.h b/include/dt-bindings/clock/qcom,gcc-msm8960.h
-index 03bbf49..f9f5471 100644
 --- a/include/dt-bindings/clock/qcom,gcc-msm8960.h
 +++ b/include/dt-bindings/clock/qcom,gcc-msm8960.h
 @@ -51,7 +51,7 @@
@@ -83,8 +79,6 @@ index 03bbf49..f9f5471 100644
  #define SATA_RXOOB_CLK				239
  #define SATA_PMALIVE_CLK			240
  #define SATA_PHY_REF_CLK			241
-diff --git a/include/dt-bindings/reset/qcom,gcc-msm8960.h b/include/dt-bindings/reset/qcom,gcc-msm8960.h
-index a840e68..07edd0e 100644
 --- a/include/dt-bindings/reset/qcom,gcc-msm8960.h
 +++ b/include/dt-bindings/reset/qcom,gcc-msm8960.h
 @@ -58,7 +58,7 @@
@@ -96,6 +90,3 @@ index a840e68..07edd0e 100644
  #define SLIMBUS_H_RESET					45
  #define SFAB_CFPB_M_RESET				46
  #define SFAB_CFPB_S_RESET				47
--- 
-1.7.10.4
-

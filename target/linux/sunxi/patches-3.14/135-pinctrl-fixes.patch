@@ -13,11 +13,9 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/pinctrl/pinctrl-sunxi-pins.h | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-sunxi-pins.h b/drivers/pinctrl/pinctrl-sunxi-pins.h
-index 6fd8d4d..3d60669 100644
 --- a/drivers/pinctrl/pinctrl-sunxi-pins.h
 +++ b/drivers/pinctrl/pinctrl-sunxi-pins.h
-@@ -1932,27 +1932,27 @@ static const struct sunxi_desc_pin sun5i_a13_pins[] = {
+@@ -1932,27 +1932,27 @@ static const struct sunxi_desc_pin sun5i
  	SUNXI_PIN(SUNXI_PINCTRL_PIN_PF0,
  		  SUNXI_FUNCTION(0x0, "gpio_in"),
  		  SUNXI_FUNCTION(0x1, "gpio_out"),
@@ -51,24 +49,6 @@ index 6fd8d4d..3d60669 100644
  	/* Hole */
  	SUNXI_PIN(SUNXI_PINCTRL_PIN_PG0,
  		  SUNXI_FUNCTION(0x0, "gpio_in"),
--- 
-2.0.3
-
-From 8d2c11e63a3302bbbdac41fc765c881da8a8eb37 Mon Sep 17 00:00:00 2001
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Sat, 15 Feb 2014 12:58:17 +0100
-Subject: [PATCH] pinctrl-sunxi: Fix hang on gpio irq
-
-Our irq handler was missing chained_irq_enter / exit calls, causing a
-hard hang as soon as a gpio irq happened.
-
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- drivers/pinctrl/pinctrl-sunxi.c | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/drivers/pinctrl/pinctrl-sunxi.c b/drivers/pinctrl/pinctrl-sunxi.c
-index f9fabe9..d16da53 100644
 --- a/drivers/pinctrl/pinctrl-sunxi.c
 +++ b/drivers/pinctrl/pinctrl-sunxi.c
 @@ -13,6 +13,7 @@
@@ -79,7 +59,7 @@ index f9fabe9..d16da53 100644
  #include <linux/irqdomain.h>
  #include <linux/irqchip/chained_irq.h>
  #include <linux/module.h>
-@@ -670,6 +671,8 @@ static void sunxi_pinctrl_irq_handler(unsigned irq, struct irq_desc *desc)
+@@ -670,6 +671,8 @@ static void sunxi_pinctrl_irq_handler(un
  	struct sunxi_pinctrl *pctl = irq_get_handler_data(irq);
  	const unsigned long reg = readl(pctl->membase + IRQ_STATUS_REG);
  
@@ -88,7 +68,7 @@ index f9fabe9..d16da53 100644
  	/* Clear all interrupts */
  	writel(reg, pctl->membase + IRQ_STATUS_REG);
  
-@@ -683,6 +686,7 @@ static void sunxi_pinctrl_irq_handler(unsigned irq, struct irq_desc *desc)
+@@ -683,6 +686,7 @@ static void sunxi_pinctrl_irq_handler(un
  		}
  		chained_irq_exit(chip, desc);
  	}
@@ -96,6 +76,3 @@ index f9fabe9..d16da53 100644
  }
  
  static struct of_device_id sunxi_pinctrl_match[] = {
--- 
-2.0.3
-

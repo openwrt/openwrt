@@ -13,11 +13,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |   14 ++++++++------
  1 file changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 4474e00..87f6c3c 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -258,8 +258,10 @@ static int msm_config_set(struct pinctrl_dev *pctldev, unsigned int pin,
+@@ -258,8 +258,10 @@ static int msm_config_set(struct pinctrl
  #define MSM_PULL_DOWN	1
  #define MSM_PULL_UP	3
  
@@ -30,7 +28,7 @@ index 4474e00..87f6c3c 100644
  
  static int msm_config_group_get(struct pinctrl_dev *pctldev,
  				unsigned int group,
-@@ -296,7 +298,7 @@ static int msm_config_group_get(struct pinctrl_dev *pctldev,
+@@ -296,7 +298,7 @@ static int msm_config_group_get(struct p
  		arg = arg == MSM_PULL_UP;
  		break;
  	case PIN_CONFIG_DRIVE_STRENGTH:
@@ -39,7 +37,7 @@ index 4474e00..87f6c3c 100644
  		break;
  	default:
  		dev_err(pctrl->dev, "Unsupported config parameter: %x\n",
-@@ -349,10 +351,10 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
+@@ -349,10 +351,10 @@ static int msm_config_group_set(struct p
  			break;
  		case PIN_CONFIG_DRIVE_STRENGTH:
  			/* Check for invalid values */
@@ -52,7 +50,7 @@ index 4474e00..87f6c3c 100644
  			break;
  		default:
  			dev_err(pctrl->dev, "Unsupported config parameter: %x\n",
-@@ -531,7 +533,7 @@ static void msm_gpio_dbg_show_one(struct seq_file *s,
+@@ -531,7 +533,7 @@ static void msm_gpio_dbg_show_one(struct
  	pull = (ctl_reg >> g->pull_bit) & 3;
  
  	seq_printf(s, " %-8s: %-3s %d", g->name, is_out ? "out" : "in", func);
@@ -61,6 +59,3 @@ index 4474e00..87f6c3c 100644
  	seq_printf(s, " %s", pulls[pull]);
  }
  
--- 
-1.7.10.4
-

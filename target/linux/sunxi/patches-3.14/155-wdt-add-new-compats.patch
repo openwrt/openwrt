@@ -14,8 +14,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/watchdog/sunxi_wdt.c                             | 1 +
  2 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt b/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt
-index e39cb26..6e8c937 100644
 --- a/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt
 +++ b/Documentation/devicetree/bindings/watchdog/sunxi-wdt.txt
 @@ -2,13 +2,14 @@ Allwinner SoCs Watchdog timer
@@ -36,11 +34,9 @@ index e39cb26..6e8c937 100644
 +	compatible = "allwinner,sun4i-a10-wdt";
  	reg = <0x01c20c90 0x10>;
  };
-diff --git a/drivers/watchdog/sunxi_wdt.c b/drivers/watchdog/sunxi_wdt.c
-index 76332d89..7c8923d 100644
 --- a/drivers/watchdog/sunxi_wdt.c
 +++ b/drivers/watchdog/sunxi_wdt.c
-@@ -206,6 +206,7 @@ static void sunxi_wdt_shutdown(struct platform_device *pdev)
+@@ -206,6 +206,7 @@ static void sunxi_wdt_shutdown(struct pl
  
  static const struct of_device_id sunxi_wdt_dt_ids[] = {
  	{ .compatible = "allwinner,sun4i-wdt" },
@@ -48,6 +44,3 @@ index 76332d89..7c8923d 100644
  	{ /* sentinel */ }
  };
  MODULE_DEVICE_TABLE(of, sunxi_wdt_dt_ids);
--- 
-2.0.3
-

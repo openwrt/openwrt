@@ -16,12 +16,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i-a13.dtsi                 | 29 +++++++++++++++
  5 files changed, 136 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
-index 23611b7..5bc25c7 100644
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index f34e0d8..8ba1ed7 100644
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
-index 11169d5..700f688 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
 @@ -21,6 +21,14 @@
@@ -53,11 +47,9 @@ index 11169d5..700f688 100644
  			led_pins_olinuxinom: led_pins@0 {
  				allwinner,pins = "PG9";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
-index 7a9187b..177196c 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
-@@ -20,6 +20,14 @@
+@@ -21,6 +21,14 @@
  	compatible = "olimex,a13-olinuxino", "allwinner,sun5i-a13";
  
  	soc@01c00000 {
@@ -72,7 +64,7 @@ index 7a9187b..177196c 100644
  		usbphy: phy@01c13400 {
  			usb1_vbus-supply = <&reg_usb1_vbus>;
  			status = "okay";
-@@ -34,6 +42,13 @@
+@@ -35,6 +43,13 @@
  		};
  
  		pinctrl@01c20800 {
@@ -86,8 +78,6 @@ index 7a9187b..177196c 100644
  			led_pins_olinuxino: led_pins@0 {
  				allwinner,pins = "PG9";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 0e9c239..6fc84a4 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -320,6 +320,28 @@
@@ -133,6 +123,3 @@ index 0e9c239..6fc84a4 100644
  		};
  
  		timer@01c20c00 {
--- 
-2.0.3
-

@@ -15,8 +15,6 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  drivers/spi/spi-qup.c |   61 ++++++++-----------------------------------------
  1 file changed, 9 insertions(+), 52 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index 203f0d4..b032e88 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
 @@ -123,11 +123,6 @@
@@ -31,7 +29,7 @@ index 203f0d4..b032e88 100644
  struct spi_qup {
  	void __iomem		*base;
  	struct device		*dev;
-@@ -338,14 +333,13 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -338,14 +333,13 @@ static irqreturn_t spi_qup_qup_irq(int i
  
  
  /* set clock freq ... bits per word */
@@ -49,7 +47,7 @@ index 203f0d4..b032e88 100644
  		dev_err(controller->dev, "too big size for loopback %d > %d\n",
  			xfer->len, controller->in_fifo_sz);
  		return -EIO;
-@@ -399,12 +393,12 @@ static int spi_qup_io_config(struct spi_qup *controller,
+@@ -399,12 +393,12 @@ static int spi_qup_io_config(struct spi_
  
  	config = readl_relaxed(controller->base + SPI_CONFIG);
  
@@ -64,7 +62,7 @@ index 203f0d4..b032e88 100644
  		config &= ~SPI_CONFIG_INPUT_FIRST;
  	else
  		config |= SPI_CONFIG_INPUT_FIRST;
-@@ -413,7 +407,7 @@ static int spi_qup_io_config(struct spi_qup *controller,
+@@ -413,7 +407,7 @@ static int spi_qup_io_config(struct spi_
  	 * HS_MODE improves signal stability for spi-clk high rates,
  	 * but is invalid in loop back mode.
  	 */
@@ -73,7 +71,7 @@ index 203f0d4..b032e88 100644
  		config |= SPI_CONFIG_HS_MODE;
  	else
  		config &= ~SPI_CONFIG_HS_MODE;
-@@ -433,7 +427,6 @@ static int spi_qup_io_config(struct spi_qup *controller,
+@@ -433,7 +427,6 @@ static int spi_qup_io_config(struct spi_
  static void spi_qup_set_cs(struct spi_device *spi, bool enable)
  {
  	struct spi_qup *controller = spi_master_get_devdata(spi->master);
@@ -81,7 +79,7 @@ index 203f0d4..b032e88 100644
  
  	u32 iocontol, mask;
  
-@@ -444,9 +437,9 @@ static void spi_qup_set_cs(struct spi_device *spi, bool enable)
+@@ -444,9 +437,9 @@ static void spi_qup_set_cs(struct spi_de
  	iocontol |= SPI_IO_C_FORCE_CS;
  
  	iocontol &= ~SPI_IO_C_CS_SELECT_MASK;
@@ -93,7 +91,7 @@ index 203f0d4..b032e88 100644
  
  	if (enable)
  		iocontol |= mask;
-@@ -461,11 +454,10 @@ static int spi_qup_transfer_one(struct spi_master *master,
+@@ -461,11 +454,10 @@ static int spi_qup_transfer_one(struct s
  			      struct spi_transfer *xfer)
  {
  	struct spi_qup *controller = spi_master_get_devdata(master);
@@ -145,7 +143,7 @@ index 203f0d4..b032e88 100644
  static int spi_qup_probe(struct platform_device *pdev)
  {
  	struct spi_master *master;
-@@ -561,7 +521,6 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -561,7 +521,6 @@ static int spi_qup_probe(struct platform
  		return PTR_ERR(base);
  
  	irq = platform_get_irq(pdev, 0);
@@ -153,7 +151,7 @@ index 203f0d4..b032e88 100644
  	if (irq < 0)
  		return irq;
  
-@@ -617,8 +576,6 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -617,8 +576,6 @@ static int spi_qup_probe(struct platform
  	master->num_chipselect = SPI_NUM_CHIPSELECTS;
  	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(4, 32);
  	master->max_speed_hz = max_freq;
@@ -162,6 +160,3 @@ index 203f0d4..b032e88 100644
  	master->set_cs = spi_qup_set_cs;
  	master->transfer_one = spi_qup_transfer_one;
  	master->dev.of_node = pdev->dev.of_node;
--- 
-1.7.10.4
-

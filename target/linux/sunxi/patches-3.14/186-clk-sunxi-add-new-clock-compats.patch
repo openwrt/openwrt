@@ -18,11 +18,9 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c                     | 30 +++++++++----------
  2 files changed, 33 insertions(+), 33 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index 256a908..a5160d8 100644
 --- a/Documentation/devicetree/bindings/clock/sunxi.txt
 +++ b/Documentation/devicetree/bindings/clock/sunxi.txt
-@@ -6,37 +6,37 @@ This binding uses the common clock binding[1].
+@@ -6,37 +6,37 @@ This binding uses the common clock bindi
  
  Required properties:
  - compatible : shall be one of the following:
@@ -75,25 +73,23 @@ index 256a908..a5160d8 100644
  	"allwinner,sun7i-a20-out-clk" - for the external output clocks
  	"allwinner,sun7i-a20-gmac-clk" - for the GMAC clock module on A20/A31
  	"allwinner,sun4i-a10-usb-clk" - for usb gates + resets on A10 / A20
-@@ -69,7 +69,7 @@ For example:
+@@ -68,21 +68,21 @@ For example:
  
- osc24M: clk@01c20050 {
+ osc24M: osc24M@01c20050 {
  	#clock-cells = <0>;
 -	compatible = "allwinner,sun4i-osc-clk";
 +	compatible = "allwinner,sun4i-a10-osc-clk";
  	reg = <0x01c20050 0x4>;
  	clocks = <&osc24M_fixed>;
- 	clock-output-names = "osc24M";
-@@ -77,7 +77,7 @@ osc24M: clk@01c20050 {
+ };
  
- pll1: clk@01c20000 {
+ pll1: pll1@01c20000 {
  	#clock-cells = <0>;
 -	compatible = "allwinner,sun4i-pll1-clk";
 +	compatible = "allwinner,sun4i-a10-pll1-clk";
  	reg = <0x01c20000 0x4>;
  	clocks = <&osc24M>;
- 	clock-output-names = "pll1";
-@@ -93,7 +93,7 @@ pll5: clk@01c20020 {
+ };
  
  cpu: cpu@01c20054 {
  	#clock-cells = <0>;
@@ -101,12 +97,10 @@ index 256a908..a5160d8 100644
 +	compatible = "allwinner,sun4i-a10-cpu-clk";
  	reg = <0x01c20054 0x4>;
  	clocks = <&osc32k>, <&osc24M>, <&pll1>;
- 	clock-output-names = "cpu";
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 335c987..23baad9 100644
+ };
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -80,7 +80,7 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+@@ -80,7 +80,7 @@ err_free_gate:
  err_free_fixed:
  	kfree(fixed);
  }
@@ -115,7 +109,7 @@ index 335c987..23baad9 100644
  
  
  
-@@ -1207,52 +1207,52 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+@@ -1207,52 +1207,52 @@ free_clkdata:
  
  /* Matches for factors clocks */
  static const struct of_device_id clk_factors_match[] __initconst = {
@@ -182,6 +176,3 @@ index 335c987..23baad9 100644
  	{.compatible = "allwinner,sun5i-a10s-apb1-gates-clk", .data = &sun5i_a10s_apb1_gates_data,},
  	{.compatible = "allwinner,sun5i-a13-apb1-gates-clk", .data = &sun5i_a13_apb1_gates_data,},
  	{.compatible = "allwinner,sun6i-a31-apb1-gates-clk", .data = &sun6i_a31_apb1_gates_data,},
--- 
-2.0.3
-

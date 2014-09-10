@@ -18,8 +18,6 @@ Signed-off-by: Tejun Heo<tj@kernel.org>
  drivers/ata/ahci_platform.c |   47 +++++++++++++++++++++++++++++++++++++++++--
  2 files changed, 47 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
-index bf8100c..3ab7ac9 100644
 --- a/drivers/ata/ahci.h
 +++ b/drivers/ata/ahci.h
 @@ -37,6 +37,7 @@
@@ -30,7 +28,7 @@ index bf8100c..3ab7ac9 100644
  #include <linux/regulator/consumer.h>
  
  /* Enclosure Management Control */
-@@ -325,6 +326,7 @@ struct ahci_host_priv {
+@@ -326,6 +327,7 @@ struct ahci_host_priv {
  	u32			em_msg_type;	/* EM message type */
  	struct clk		*clks[AHCI_MAX_CLKS]; /* Optional */
  	struct regulator	*target_pwr;	/* Optional */
@@ -38,8 +36,6 @@ index bf8100c..3ab7ac9 100644
  	void			*plat_data;	/* Other platform data */
  	/*
  	 * Optional ahci_start_engine override, if not set this gets set to the
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 968e7d9..243dde3 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
 @@ -22,6 +22,7 @@
@@ -50,7 +46,7 @@ index 968e7d9..243dde3 100644
  #include "ahci.h"
  
  static void ahci_host_stop(struct ata_host *host);
-@@ -140,6 +141,7 @@ EXPORT_SYMBOL_GPL(ahci_platform_disable_clks);
+@@ -140,6 +141,7 @@ EXPORT_SYMBOL_GPL(ahci_platform_disable_
   * following order:
   * 1) Regulator
   * 2) Clocks (through ahci_platform_enable_clks)
@@ -58,7 +54,7 @@ index 968e7d9..243dde3 100644
   *
   * If resource enabling fails at any point the previous enabled resources
   * are disabled in reverse order.
-@@ -161,8 +163,23 @@ int ahci_platform_enable_resources(struct ahci_host_priv *hpriv)
+@@ -161,8 +163,23 @@ int ahci_platform_enable_resources(struc
  	if (rc)
  		goto disable_regulator;
  
@@ -82,7 +78,7 @@ index 968e7d9..243dde3 100644
  disable_regulator:
  	if (hpriv->target_pwr)
  		regulator_disable(hpriv->target_pwr);
-@@ -176,11 +193,17 @@ EXPORT_SYMBOL_GPL(ahci_platform_enable_resources);
+@@ -176,11 +193,17 @@ EXPORT_SYMBOL_GPL(ahci_platform_enable_r
   *
   * This function disables all ahci_platform managed resources in the
   * following order:
@@ -102,7 +98,7 @@ index 968e7d9..243dde3 100644
  	ahci_platform_disable_clks(hpriv);
  
  	if (hpriv->target_pwr)
-@@ -208,6 +231,7 @@ static void ahci_platform_put_resources(struct device *dev, void *res)
+@@ -208,6 +231,7 @@ static void ahci_platform_put_resources(
   * 2) regulator for controlling the targets power (optional)
   * 3) 0 - AHCI_MAX_CLKS clocks, as specified in the devs devicetree node,
   *    or for non devicetree enabled platforms a single clock
@@ -110,7 +106,7 @@ index 968e7d9..243dde3 100644
   *
   * RETURNS:
   * The allocated ahci_host_priv on success, otherwise an ERR_PTR value
-@@ -266,6 +290,25 @@ struct ahci_host_priv *ahci_platform_get_resources(
+@@ -266,6 +290,25 @@ struct ahci_host_priv *ahci_platform_get
  		hpriv->clks[i] = clk;
  	}
  
@@ -136,6 +132,3 @@ index 968e7d9..243dde3 100644
  	devres_remove_group(dev, NULL);
  	return hpriv;
  
--- 
-1.7.10.4
-

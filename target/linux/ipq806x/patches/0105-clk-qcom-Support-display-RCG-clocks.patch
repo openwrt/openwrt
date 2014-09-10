@@ -14,8 +14,6 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/qcom/clk-rcg2.c |  299 ++++++++++++++++++++++++++++++++++++++++---
  2 files changed, 287 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/clk/qcom/clk-rcg.h b/drivers/clk/qcom/clk-rcg.h
-index 1d6b6de..b9ec11d 100644
 --- a/drivers/clk/qcom/clk-rcg.h
 +++ b/drivers/clk/qcom/clk-rcg.h
 @@ -155,5 +155,8 @@ struct clk_rcg2 {
@@ -27,8 +25,6 @@ index 1d6b6de..b9ec11d 100644
 +extern const struct clk_ops clk_pixel_ops;
  
  #endif
-diff --git a/drivers/clk/qcom/clk-rcg2.c b/drivers/clk/qcom/clk-rcg2.c
-index cbecaec..cd185d5 100644
 --- a/drivers/clk/qcom/clk-rcg2.c
 +++ b/drivers/clk/qcom/clk-rcg2.c
 @@ -19,6 +19,7 @@
@@ -39,7 +35,7 @@ index cbecaec..cd185d5 100644
  
  #include <asm/div64.h>
  
-@@ -225,31 +226,25 @@ static long clk_rcg2_determine_rate(struct clk_hw *hw, unsigned long rate,
+@@ -225,31 +226,25 @@ static long clk_rcg2_determine_rate(stru
  	return _freq_tbl_determine_rate(hw, rcg->freq_tbl, rate, p_rate, p);
  }
  
@@ -78,7 +74,7 @@ index cbecaec..cd185d5 100644
  		if (ret)
  			return ret;
  	}
-@@ -260,14 +255,26 @@ static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate)
+@@ -260,14 +255,26 @@ static int __clk_rcg2_set_rate(struct cl
  	cfg |= rcg->parent_map[f->src] << CFG_SRC_SEL_SHIFT;
  	if (rcg->mnd_width && f->n)
  		cfg |= CFG_MODE_DUAL_EDGE;
@@ -373,6 +369,3 @@ index cbecaec..cd185d5 100644
 +	.determine_rate = clk_pixel_determine_rate,
 +};
 +EXPORT_SYMBOL_GPL(clk_pixel_ops);
--- 
-1.7.10.4
-

@@ -18,9 +18,6 @@ Cc: linux-gpio@vger.kernel.org
  create mode 100644 arch/mips/include/asm/mach-ralink/gpio.h
  create mode 100644 drivers/gpio/gpio-ralink.c
 
-diff --git a/arch/mips/include/asm/mach-ralink/gpio.h b/arch/mips/include/asm/mach-ralink/gpio.h
-new file mode 100644
-index 0000000..f68ee16
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/gpio.h
 @@ -0,0 +1,24 @@
@@ -48,8 +45,6 @@ index 0000000..f68ee16
 +#define gpio_to_irq	__gpio_to_irq
 +
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 903f24d..2d75a68 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -260,6 +260,12 @@ config GPIO_SCH311X
@@ -65,11 +60,9 @@ index 903f24d..2d75a68 100644
  config GPIO_SPEAR_SPICS
  	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
  	depends on PLAT_SPEAR
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 5d50179..2cbdbe6 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -63,6 +63,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf857x.o
+@@ -63,6 +63,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf85
  obj-$(CONFIG_GPIO_PCH)		+= gpio-pch.o
  obj-$(CONFIG_GPIO_PL061)	+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
@@ -77,9 +70,6 @@ index 5d50179..2cbdbe6 100644
  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o
  obj-$(CONFIG_GPIO_RDC321X)	+= gpio-rdc321x.o
  obj-$(CONFIG_GPIO_RCAR)		+= gpio-rcar.o
-diff --git a/drivers/gpio/gpio-ralink.c b/drivers/gpio/gpio-ralink.c
-new file mode 100644
-index 0000000..7e5a2e9
 --- /dev/null
 +++ b/drivers/gpio/gpio-ralink.c
 @@ -0,0 +1,345 @@
@@ -428,6 +418,3 @@ index 0000000..7e5a2e9
 +}
 +
 +subsys_initcall(ralink_gpio_init);
--- 
-1.7.10.4
-

@@ -12,11 +12,9 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/qcom/gcc-msm8974.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/qcom/gcc-msm8974.c b/drivers/clk/qcom/gcc-msm8974.c
-index 0d1edc1..7a420fc 100644
 --- a/drivers/clk/qcom/gcc-msm8974.c
 +++ b/drivers/clk/qcom/gcc-msm8974.c
-@@ -1341,7 +1341,7 @@ static struct clk_branch gcc_blsp1_uart6_apps_clk = {
+@@ -1341,7 +1341,7 @@ static struct clk_branch gcc_blsp1_uart6
  };
  
  static struct clk_branch gcc_blsp2_ahb_clk = {
@@ -25,6 +23,3 @@ index 0d1edc1..7a420fc 100644
  	.halt_check = BRANCH_HALT_VOTED,
  	.clkr = {
  		.enable_reg = 0x1484,
--- 
-1.7.10.4
-

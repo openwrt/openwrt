@@ -18,11 +18,9 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  Documentation/devicetree/bindings/arm/cpus.txt |   25 +++++++++++++++++++++++-
  1 file changed, 24 insertions(+), 1 deletion(-)
 
-diff --git a/Documentation/devicetree/bindings/arm/cpus.txt b/Documentation/devicetree/bindings/arm/cpus.txt
-index 9130435..333f4ae 100644
 --- a/Documentation/devicetree/bindings/arm/cpus.txt
 +++ b/Documentation/devicetree/bindings/arm/cpus.txt
-@@ -180,7 +180,11 @@ nodes to be present and contain the properties described below.
+@@ -180,7 +180,11 @@ nodes to be present and contain the prop
  			  be one of:
  			     "spin-table"
  			     "psci"
@@ -35,7 +33,7 @@ index 9130435..333f4ae 100644
  
  	- cpu-release-addr
  		Usage: required for systems that have an "enable-method"
-@@ -191,6 +195,21 @@ nodes to be present and contain the properties described below.
+@@ -191,6 +195,21 @@ nodes to be present and contain the prop
  			  property identifying a 64-bit zero-initialised
  			  memory location.
  
@@ -65,6 +63,3 @@ index 9130435..333f4ae 100644
 +--
 +[1] arm/msm/qcom,saw2.txt
 +[2] arm/msm/qcom,kpss-acc.txt
--- 
-1.7.10.4
-

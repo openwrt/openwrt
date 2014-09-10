@@ -18,8 +18,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/usb/host/xhci-plat.c                       | 1 +
  2 files changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-xhci.txt b/Documentation/devicetree/bindings/usb/usb-xhci.txt
-index 5752df0..90f8f60 100644
 --- a/Documentation/devicetree/bindings/usb/usb-xhci.txt
 +++ b/Documentation/devicetree/bindings/usb/usb-xhci.txt
 @@ -1,14 +1,14 @@
@@ -39,11 +37,9 @@ index 5752df0..90f8f60 100644
  		reg = <0xf0931000 0x8c8>;
  		interrupts = <0x0 0x4e 0x0>;
  	};
-diff --git a/drivers/usb/host/xhci-plat.c b/drivers/usb/host/xhci-plat.c
-index 8abda5c..8affef9 100644
 --- a/drivers/usb/host/xhci-plat.c
 +++ b/drivers/usb/host/xhci-plat.c
-@@ -226,6 +226,7 @@ static const struct dev_pm_ops xhci_plat_pm_ops = {
+@@ -226,6 +226,7 @@ static const struct dev_pm_ops xhci_plat
  
  #ifdef CONFIG_OF
  static const struct of_device_id usb_xhci_of_match[] = {
@@ -51,6 +47,3 @@ index 8abda5c..8affef9 100644
  	{ .compatible = "xhci-platform" },
  	{ },
  };
--- 
-2.0.3
-

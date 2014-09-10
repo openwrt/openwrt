@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 89 insertions(+)
  create mode 100644 arch/mips/ralink/ill_acc.c
 
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index 584a8d9..fc57c16 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
-@@ -10,6 +10,8 @@ obj-y := prom.o of.o reset.o clk.o irq.o timer.o
+@@ -10,6 +10,8 @@ obj-y := prom.o of.o reset.o clk.o irq.o
  
  obj-$(CONFIG_CLKEVT_RT3352) += cevt-rt3352.o
  
@@ -25,9 +23,6 @@ index 584a8d9..fc57c16 100644
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
  obj-$(CONFIG_SOC_RT3883) += rt3883.o
-diff --git a/arch/mips/ralink/ill_acc.c b/arch/mips/ralink/ill_acc.c
-new file mode 100644
-index 0000000..4a3f696
 --- /dev/null
 +++ b/arch/mips/ralink/ill_acc.c
 @@ -0,0 +1,87 @@
@@ -118,6 +113,3 @@ index 0000000..4a3f696
 +}
 +
 +arch_initcall(ill_acc_of_setup);
--- 
-1.7.10.4
-

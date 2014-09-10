@@ -8,7 +8,7 @@
  #include <asm/bootinfo.h>
  #include <asm/idle.h>
  #include <asm/prom.h>
-@@ -278,6 +279,33 @@ static struct fixed_phy_status bcm47xx_f
+@@ -282,6 +283,33 @@ static struct fixed_phy_status bcm47xx_f
  	.duplex	= DUPLEX_FULL,
  };
  
@@ -42,7 +42,7 @@
  static int __init bcm47xx_register_bus_complete(void)
  {
  	switch (bcm47xx_bus_type) {
-@@ -297,6 +325,7 @@ static int __init bcm47xx_register_bus_c
+@@ -301,6 +329,7 @@ static int __init bcm47xx_register_bus_c
  	bcm47xx_workarounds();
  
  	fixed_phy_add(PHY_POLL, 0, &bcm47xx_fixed_phy_status);

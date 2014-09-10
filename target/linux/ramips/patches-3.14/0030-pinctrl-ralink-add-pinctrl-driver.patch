@@ -22,8 +22,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-ralink/pinmux.h
  create mode 100644 drivers/pinctrl/pinctrl-rt2880.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 95fa1f1..4ac98ca 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -435,6 +435,8 @@ config RALINK
@@ -35,8 +33,6 @@ index 95fa1f1..4ac98ca 100644
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-diff --git a/arch/mips/include/asm/mach-ralink/mt7620.h b/arch/mips/include/asm/mach-ralink/mt7620.h
-index c8590df..1976fb8 100644
 --- a/arch/mips/include/asm/mach-ralink/mt7620.h
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -90,7 +90,6 @@ enum mt762x_soc_type {
@@ -94,9 +90,6 @@ index c8590df..1976fb8 100644
  
  static inline int mt7620_get_eco(void)
  {
-diff --git a/arch/mips/include/asm/mach-ralink/pinmux.h b/arch/mips/include/asm/mach-ralink/pinmux.h
-new file mode 100644
-index 0000000..324fa40
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/pinmux.h
 @@ -0,0 +1,53 @@
@@ -153,8 +146,6 @@ index 0000000..324fa40
 +extern struct rt2880_pmx_group *rt2880_pinmux_data;
 +
 +#endif
-diff --git a/arch/mips/include/asm/mach-ralink/rt305x.h b/arch/mips/include/asm/mach-ralink/rt305x.h
-index 069bf37..96f731b 100644
 --- a/arch/mips/include/asm/mach-ralink/rt305x.h
 +++ b/arch/mips/include/asm/mach-ralink/rt305x.h
 @@ -125,24 +125,29 @@ static inline int soc_is_rt5350(void)
@@ -202,8 +193,6 @@ index 069bf37..96f731b 100644
  
  #define RT3352_SYSC_REG_SYSCFG0		0x010
  #define RT3352_SYSC_REG_SYSCFG1         0x014
-diff --git a/arch/mips/include/asm/mach-ralink/rt3883.h b/arch/mips/include/asm/mach-ralink/rt3883.h
-index 058382f..0fbe6f9 100644
 --- a/arch/mips/include/asm/mach-ralink/rt3883.h
 +++ b/arch/mips/include/asm/mach-ralink/rt3883.h
 @@ -112,8 +112,6 @@
@@ -236,8 +225,6 @@ index 058382f..0fbe6f9 100644
  #define RT3883_GPIO_MODE_PCI_SHIFT	11
  #define RT3883_GPIO_MODE_PCI_MASK	0x7
  #define RT3883_GPIO_MODE_PCI		(RT3883_GPIO_MODE_PCI_MASK << RT3883_GPIO_MODE_PCI_SHIFT)
-diff --git a/arch/mips/ralink/common.h b/arch/mips/ralink/common.h
-index 42dfd61..8e7d8e6 100644
 --- a/arch/mips/ralink/common.h
 +++ b/arch/mips/ralink/common.h
 @@ -11,25 +11,6 @@
@@ -266,8 +253,6 @@ index 42dfd61..8e7d8e6 100644
  struct ralink_soc_info {
  	unsigned char sys_type[RAMIPS_SYS_TYPE_LEN];
  	unsigned char *compatible;
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index e590ccf..818a7db 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
 @@ -17,6 +17,7 @@
@@ -446,8 +431,6 @@ index e590ccf..818a7db 100644
  };
  
  static struct rt2880_pmx_func pwm1_grp_mt7628[] = {
-diff --git a/arch/mips/ralink/rt288x.c b/arch/mips/ralink/rt288x.c
-index 90e8934..2bfc660 100644
 --- a/arch/mips/ralink/rt288x.c
 +++ b/arch/mips/ralink/rt288x.c
 @@ -17,46 +17,27 @@
@@ -527,15 +510,13 @@ index 90e8934..2bfc660 100644
  void __init ralink_clk_init(void)
  {
  	unsigned long cpu_rate, wmac_rate = 40000000;
-@@ -141,4 +117,6 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -141,4 +117,6 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_base = RT2880_SDRAM_BASE;
  	soc_info->mem_size_min = RT2880_MEM_SIZE_MIN;
  	soc_info->mem_size_max = RT2880_MEM_SIZE_MAX;
 +
 +        rt2880_pinmux_data = rt2880_pinmux_data_act;
  }
-diff --git a/arch/mips/ralink/rt305x.c b/arch/mips/ralink/rt305x.c
-index bb82a82..356d6a0 100644
 --- a/arch/mips/ralink/rt305x.c
 +++ b/arch/mips/ralink/rt305x.c
 @@ -17,90 +17,76 @@
@@ -622,6 +603,21 @@ index bb82a82..356d6a0 100644
 +	GRP("rgmii", rgmii_func, 1, RT305X_GPIO_MODE_RGMII),
 +	GRP("sdram", sdram_func, 1, RT305X_GPIO_MODE_SDRAM),
 +	{ 0 }
++};
++
++static struct rt2880_pmx_group rt3352_pinmux_data[] = {
++	GRP("i2c", i2c_func, 1, RT305X_GPIO_MODE_I2C),
++	GRP("spi", spi_func, 1, RT305X_GPIO_MODE_SPI),
++	GRP("uartf", uartf_func, RT305X_GPIO_MODE_UART0_MASK,
++		RT305X_GPIO_MODE_UART0_SHIFT),
++	GRP("uartlite", uartlite_func, 1, RT305X_GPIO_MODE_UART1),
++	GRP("jtag", jtag_func, 1, RT305X_GPIO_MODE_JTAG),
++	GRP("mdio", mdio_func, 1, RT305X_GPIO_MODE_MDIO),
++	GRP("rgmii", rt3352_rgmii_func, 1, RT305X_GPIO_MODE_RGMII),
++	GRP("lna", rt3352_lna_func, 1, RT3352_GPIO_MODE_LNA),
++	GRP("pa", rt3352_pa_func, 1, RT3352_GPIO_MODE_PA),
++	GRP("led", rt3352_led_func, 1, RT5350_GPIO_MODE_PHY_LED),
++	{ 0 }
  };
  
 -static struct ralink_pinmux_grp uart_mux[] = {
@@ -664,21 +660,6 @@ index bb82a82..356d6a0 100644
 -		.name = "gpio",
 -		.mask = RT305X_GPIO_MODE_GPIO,
 -	}, {0}
-+static struct rt2880_pmx_group rt3352_pinmux_data[] = {
-+	GRP("i2c", i2c_func, 1, RT305X_GPIO_MODE_I2C),
-+	GRP("spi", spi_func, 1, RT305X_GPIO_MODE_SPI),
-+	GRP("uartf", uartf_func, RT305X_GPIO_MODE_UART0_MASK,
-+		RT305X_GPIO_MODE_UART0_SHIFT),
-+	GRP("uartlite", uartlite_func, 1, RT305X_GPIO_MODE_UART1),
-+	GRP("jtag", jtag_func, 1, RT305X_GPIO_MODE_JTAG),
-+	GRP("mdio", mdio_func, 1, RT305X_GPIO_MODE_MDIO),
-+	GRP("rgmii", rt3352_rgmii_func, 1, RT305X_GPIO_MODE_RGMII),
-+	GRP("lna", rt3352_lna_func, 1, RT3352_GPIO_MODE_LNA),
-+	GRP("pa", rt3352_pa_func, 1, RT3352_GPIO_MODE_PA),
-+	GRP("led", rt3352_led_func, 1, RT5350_GPIO_MODE_PHY_LED),
-+	{ 0 }
-+};
-+
 +static struct rt2880_pmx_group rt5350_pinmux_data[] = {
 +	GRP("i2c", i2c_func, 1, RT305X_GPIO_MODE_I2C),
 +	GRP("spi", spi_func, 1, RT305X_GPIO_MODE_SPI),
@@ -707,7 +688,7 @@ index bb82a82..356d6a0 100644
  static unsigned long rt5350_get_mem_size(void)
  {
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
-@@ -290,11 +268,14 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -290,11 +268,14 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_base = RT305X_SDRAM_BASE;
  	if (soc_is_rt5350()) {
  		soc_info->mem_size = rt5350_get_mem_size();
@@ -722,8 +703,6 @@ index bb82a82..356d6a0 100644
 +		rt2880_pinmux_data = rt3352_pinmux_data;
  	}
  }
-diff --git a/arch/mips/ralink/rt3883.c b/arch/mips/ralink/rt3883.c
-index 58b5b9f..86a535c 100644
 --- a/arch/mips/ralink/rt3883.c
 +++ b/arch/mips/ralink/rt3883.c
 @@ -17,132 +17,50 @@
@@ -849,7 +828,9 @@ index 58b5b9f..86a535c 100644
 +	FUNC("pci-host1", 2, 40, 32),
 +	FUNC("pci-fnc", 3, 40, 32)
  };
--
++static struct rt2880_pmx_func ge1_func[] = { FUNC("ge1", 0, 72, 12) };
++static struct rt2880_pmx_func ge2_func[] = { FUNC("ge1", 0, 84, 12) };
+ 
 -static struct ralink_pinmux_grp pci_mux[] = {
 -	{
 -		.name = "pci-dev",
@@ -877,9 +858,6 @@ index 58b5b9f..86a535c 100644
 -		.gpio_first = RT3883_GPIO_PCI_AD0,
 -		.gpio_last = RT3883_GPIO_PCI_AD31,
 -	}, {0}
-+static struct rt2880_pmx_func ge1_func[] = { FUNC("ge1", 0, 72, 12) };
-+static struct rt2880_pmx_func ge2_func[] = { FUNC("ge1", 0, 84, 12) };
-+
 +static struct rt2880_pmx_group rt3883_pinmux_data[] = {
 +	GRP("i2c", i2c_func, 1, RT3883_GPIO_MODE_I2C),
 +	GRP("spi", spi_func, 1, RT3883_GPIO_MODE_SPI),
@@ -916,15 +894,13 @@ index 58b5b9f..86a535c 100644
  void __init ralink_clk_init(void)
  {
  	unsigned long cpu_rate, sys_rate;
-@@ -244,4 +151,6 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -244,4 +151,6 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_base = RT3883_SDRAM_BASE;
  	soc_info->mem_size_min = RT3883_MEM_SIZE_MIN;
  	soc_info->mem_size_max = RT3883_MEM_SIZE_MAX;
 +
 +	rt2880_pinmux_data = rt3883_pinmux_data;
  }
-diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
-index 1e4e693..1ff1491 100644
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
 @@ -198,6 +198,11 @@ config PINCTRL_LANTIQ
@@ -939,11 +915,9 @@ index 1e4e693..1ff1491 100644
  config PINCTRL_FALCON
  	bool
  	depends on SOC_FALCON
-diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
-index 4b83588..3160836 100644
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -45,6 +45,7 @@ obj-$(CONFIG_PINCTRL_DB8500)	+= pinctrl-nomadik-db8500.o
+@@ -45,6 +45,7 @@ obj-$(CONFIG_PINCTRL_DB8500)	+= pinctrl-
  obj-$(CONFIG_PINCTRL_DB8540)	+= pinctrl-nomadik-db8540.o
  obj-$(CONFIG_PINCTRL_PALMAS)	+= pinctrl-palmas.o
  obj-$(CONFIG_PINCTRL_ROCKCHIP)	+= pinctrl-rockchip.o
@@ -951,9 +925,6 @@ index 4b83588..3160836 100644
  obj-$(CONFIG_PINCTRL_SINGLE)	+= pinctrl-single.o
  obj-$(CONFIG_PINCTRL_SIRF)	+= sirf/
  obj-$(CONFIG_PINCTRL_SUNXI)	+= pinctrl-sunxi.o
-diff --git a/drivers/pinctrl/pinctrl-rt2880.c b/drivers/pinctrl/pinctrl-rt2880.c
-new file mode 100644
-index 0000000..378ed52
 --- /dev/null
 +++ b/drivers/pinctrl/pinctrl-rt2880.c
 @@ -0,0 +1,467 @@
@@ -1424,6 +1395,3 @@ index 0000000..378ed52
 +}
 +
 +core_initcall_sync(rt2880_pinmux_init);
--- 
-1.7.10.4
-

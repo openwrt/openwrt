@@ -17,9 +17,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  create mode 100644 drivers/soc/qcom/qcom_tcsr.c
  create mode 100644 include/dt-bindings/soc/qcom,tcsr.h
 
-diff --git a/Documentation/devicetree/bindings/soc/qcom/qcom,tcsr.txt b/Documentation/devicetree/bindings/soc/qcom/qcom,tcsr.txt
-new file mode 100644
-index 0000000..6ea74c1
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/soc/qcom/qcom,tcsr.txt
 @@ -0,0 +1,25 @@
@@ -48,8 +45,6 @@ index 0000000..6ea74c1
 +		};
 +
 +
-diff --git a/drivers/soc/qcom/Kconfig b/drivers/soc/qcom/Kconfig
-index 7bd2c94..3e4486a 100644
 --- a/drivers/soc/qcom/Kconfig
 +++ b/drivers/soc/qcom/Kconfig
 @@ -9,3 +9,9 @@ config QCOM_GSBI
@@ -62,16 +57,11 @@ index 7bd2c94..3e4486a 100644
 +        help
 +          Say y here to enable TCSR support.  The TCSR provides control
 +          functions for various peripherals.
-diff --git a/drivers/soc/qcom/Makefile b/drivers/soc/qcom/Makefile
-index 4389012..d299492 100644
 --- a/drivers/soc/qcom/Makefile
 +++ b/drivers/soc/qcom/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_QCOM_GSBI)	+=	qcom_gsbi.o
 +obj-$(CONFIG_QCOM_TCSR)	+=	qcom_tcsr.o
-diff --git a/drivers/soc/qcom/qcom_tcsr.c b/drivers/soc/qcom/qcom_tcsr.c
-new file mode 100644
-index 0000000..dd33153
 --- /dev/null
 +++ b/drivers/soc/qcom/qcom_tcsr.c
 @@ -0,0 +1,64 @@
@@ -139,9 +129,6 @@ index 0000000..dd33153
 +MODULE_AUTHOR("Andy Gross <agross@codeaurora.org>");
 +MODULE_DESCRIPTION("QCOM TCSR driver");
 +MODULE_LICENSE("GPL v2");
-diff --git a/include/dt-bindings/soc/qcom,tcsr.h b/include/dt-bindings/soc/qcom,tcsr.h
-new file mode 100644
-index 0000000..c9d497a
 --- /dev/null
 +++ b/include/dt-bindings/soc/qcom,tcsr.h
 @@ -0,0 +1,19 @@
@@ -164,6 +151,3 @@ index 0000000..c9d497a
 +#define TCSR_USB_SELECT_USB3_DUAL	0x3
 +
 +#endif
--- 
-1.7.10.4
-

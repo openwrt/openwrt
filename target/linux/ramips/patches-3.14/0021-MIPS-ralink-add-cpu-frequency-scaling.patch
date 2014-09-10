@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/cevt-rt3352.c |   36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-diff --git a/arch/mips/ralink/cevt-rt3352.c b/arch/mips/ralink/cevt-rt3352.c
-index 24bf057..4174b40 100644
 --- a/arch/mips/ralink/cevt-rt3352.c
 +++ b/arch/mips/ralink/cevt-rt3352.c
 @@ -29,6 +29,10 @@
@@ -35,7 +33,7 @@ index 24bf057..4174b40 100644
  static void systick_set_clock_mode(enum clock_event_mode mode,
  				struct clock_event_device *evt);
  
-@@ -87,6 +93,21 @@ static struct irqaction systick_irqaction = {
+@@ -87,6 +93,21 @@ static struct irqaction systick_irqactio
  	.dev_id = &systick.dev,
  };
  
@@ -57,7 +55,7 @@ index 24bf057..4174b40 100644
  static void systick_set_clock_mode(enum clock_event_mode mode,
  				struct clock_event_device *evt)
  {
-@@ -101,9 +122,13 @@ static void systick_set_clock_mode(enum clock_event_mode mode,
+@@ -101,9 +122,13 @@ static void systick_set_clock_mode(enum
  		sdev->irq_requested = 1;
  		iowrite32(CFG_EXT_STK_EN | CFG_CNT_EN,
  				systick.membase + SYSTICK_CONFIG);
@@ -71,7 +69,7 @@ index 24bf057..4174b40 100644
  		if (sdev->irq_requested)
  			free_irq(systick.dev.irq, &systick_irqaction);
  		sdev->irq_requested = 0;
-@@ -116,12 +141,23 @@ static void systick_set_clock_mode(enum clock_event_mode mode,
+@@ -116,12 +141,23 @@ static void systick_set_clock_mode(enum
  	}
  }
  
@@ -95,6 +93,3 @@ index 24bf057..4174b40 100644
  	systick_irqaction.name = np->name;
  	systick.dev.name = np->name;
  	clockevents_calc_mult_shift(&systick.dev, SYSTICK_FREQ, 60);
--- 
-1.7.10.4
-

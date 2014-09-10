@@ -1,8 +1,6 @@
-Index: linux-3.14.16/arch/arm/mach-at91/Kconfig.non_dt
-===================================================================
---- linux-3.14.16.orig/arch/arm/mach-at91/Kconfig.non_dt	2014-08-31 13:36:59.849640477 -0700
-+++ linux-3.14.16/arch/arm/mach-at91/Kconfig.non_dt	2014-08-31 13:36:59.845640477 -0700
-@@ -281,6 +281,12 @@
+--- a/arch/arm/mach-at91/Kconfig.non_dt
++++ b/arch/arm/mach-at91/Kconfig.non_dt
+@@ -281,6 +281,12 @@ config MACH_AT91SAM9G10EK
  	  Select this if you are using Atmel's AT91SAM9G10-EK Evaluation Kit.
  	  <http://www.atmel.com/dyn/products/tools_card.asp?tool_id=4588>
  
@@ -15,11 +13,9 @@ Index: linux-3.14.16/arch/arm/mach-at91/Kconfig.non_dt
  endif
  
  # ----------------------------------------------------------
-Index: linux-3.14.16/arch/arm/mach-at91/Makefile
-===================================================================
---- linux-3.14.16.orig/arch/arm/mach-at91/Makefile	2014-08-31 13:36:59.849640477 -0700
-+++ linux-3.14.16/arch/arm/mach-at91/Makefile	2014-08-31 13:37:27.125639720 -0700
-@@ -62,6 +62,7 @@
+--- a/arch/arm/mach-at91/Makefile
++++ b/arch/arm/mach-at91/Makefile
+@@ -62,6 +62,7 @@ obj-$(CONFIG_MACH_AT91SAM9G10EK) += boar
  
  # AT91SAM9263 board-specific support
  obj-$(CONFIG_MACH_AT91SAM9263EK) += board-sam9263ek.o

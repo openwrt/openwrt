@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/gpio/consumer.h |    8 +++++
  4 files changed, 90 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/gpio/gpiolib-of.c b/drivers/gpio/gpiolib-of.c
-index e0a98f5..f16f271 100644
 --- a/drivers/gpio/gpiolib-of.c
 +++ b/drivers/gpio/gpiolib-of.c
 @@ -21,6 +21,8 @@
@@ -24,7 +22,7 @@ index e0a98f5..f16f271 100644
  
  struct gpio_desc;
  
-@@ -296,3 +298,69 @@ void of_gpiochip_remove(struct gpio_chip *chip)
+@@ -296,3 +298,69 @@ void of_gpiochip_remove(struct gpio_chip
  	if (chip->of_node)
  		of_node_put(chip->of_node);
  }
@@ -94,8 +92,6 @@ index e0a98f5..f16f271 100644
 +	return platform_driver_probe(&gpio_export_driver, of_gpio_export_probe);
 +}
 +device_initcall(of_gpio_export_init);
-diff --git a/drivers/gpio/gpiolib.c b/drivers/gpio/gpiolib.c
-index 50c4922..aece9f1 100644
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
 @@ -803,7 +803,7 @@ static struct class gpio_class = {
@@ -107,7 +103,7 @@ index 50c4922..aece9f1 100644
  {
  	unsigned long		flags;
  	int			status;
-@@ -843,7 +843,8 @@ int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
+@@ -843,7 +843,8 @@ int gpiod_export(struct gpio_desc *desc,
  	offset = gpio_chip_hwgpio(desc);
  	if (desc->chip->names && desc->chip->names[offset])
  		ioname = desc->chip->names[offset];
@@ -130,11 +126,9 @@ index 50c4922..aece9f1 100644
  EXPORT_SYMBOL_GPL(gpiod_export);
  
  static int match_export(struct device *dev, const void *data)
-diff --git a/include/asm-generic/gpio.h b/include/asm-generic/gpio.h
-index a5f56a0..70a32ee 100644
 --- a/include/asm-generic/gpio.h
 +++ b/include/asm-generic/gpio.h
-@@ -126,6 +126,11 @@ static inline int gpio_export(unsigned gpio, bool direction_may_change)
+@@ -126,6 +126,11 @@ static inline int gpio_export(unsigned g
  	return gpiod_export(gpio_to_desc(gpio), direction_may_change);
  }
  
@@ -146,11 +140,9 @@ index a5f56a0..70a32ee 100644
  static inline int gpio_export_link(struct device *dev, const char *name,
  				   unsigned gpio)
  {
-diff --git a/include/linux/gpio/consumer.h b/include/linux/gpio/consumer.h
-index 7a8144f..085c31c 100644
 --- a/include/linux/gpio/consumer.h
 +++ b/include/linux/gpio/consumer.h
-@@ -219,6 +219,7 @@ static inline struct gpio_chip *gpiod_to_chip(const struct gpio_desc *desc)
+@@ -219,6 +219,7 @@ static inline struct gpio_chip *gpiod_to
  
  #if IS_ENABLED(CONFIG_GPIOLIB) && IS_ENABLED(CONFIG_GPIO_SYSFS)
  
@@ -158,7 +150,7 @@ index 7a8144f..085c31c 100644
  int gpiod_export(struct gpio_desc *desc, bool direction_may_change);
  int gpiod_export_link(struct device *dev, const char *name,
  		      struct gpio_desc *desc);
-@@ -227,6 +228,13 @@ void gpiod_unexport(struct gpio_desc *desc);
+@@ -227,6 +228,13 @@ void gpiod_unexport(struct gpio_desc *de
  
  #else  /* CONFIG_GPIOLIB && CONFIG_GPIO_SYSFS */
  
@@ -172,6 +164,3 @@ index 7a8144f..085c31c 100644
  static inline int gpiod_export(struct gpio_desc *desc,
  			       bool direction_may_change)
  {
--- 
-1.7.10.4
-

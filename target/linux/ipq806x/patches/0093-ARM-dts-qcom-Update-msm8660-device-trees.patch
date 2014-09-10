@@ -15,8 +15,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  arch/arm/boot/dts/qcom-msm8660.dtsi     |  115 ++++++++++++++++++-------------
  2 files changed, 78 insertions(+), 47 deletions(-)
 
-diff --git a/arch/arm/boot/dts/qcom-msm8660-surf.dts b/arch/arm/boot/dts/qcom-msm8660-surf.dts
-index 169bad9..45180ad 100644
 --- a/arch/arm/boot/dts/qcom-msm8660-surf.dts
 +++ b/arch/arm/boot/dts/qcom-msm8660-surf.dts
 @@ -3,4 +3,14 @@
@@ -34,8 +32,6 @@ index 169bad9..45180ad 100644
 +		};
 +	};
  };
-diff --git a/arch/arm/boot/dts/qcom-msm8660.dtsi b/arch/arm/boot/dts/qcom-msm8660.dtsi
-index c52a9e9..53837aaa2f 100644
 --- a/arch/arm/boot/dts/qcom-msm8660.dtsi
 +++ b/arch/arm/boot/dts/qcom-msm8660.dtsi
 @@ -3,6 +3,7 @@
@@ -83,6 +79,14 @@ index c52a9e9..53837aaa2f 100644
 +		#size-cells = <1>;
 +		ranges;
 +		compatible = "simple-bus";
++
++		intc: interrupt-controller@2080000 {
++			compatible = "qcom,msm-8660-qgic";
++			interrupt-controller;
++			#interrupt-cells = <3>;
++			reg = < 0x02080000 0x1000 >,
++			      < 0x02081000 0x1000 >;
++		};
  
 -	timer@2000000 {
 -		compatible = "qcom,scss-timer", "qcom,msm-timer";
@@ -93,24 +97,6 @@ index c52a9e9..53837aaa2f 100644
 -		clock-frequency = <27000000>,
 -				  <32768>;
 -		cpu-offset = <0x40000>;
--	};
-+		intc: interrupt-controller@2080000 {
-+			compatible = "qcom,msm-8660-qgic";
-+			interrupt-controller;
-+			#interrupt-cells = <3>;
-+			reg = < 0x02080000 0x1000 >,
-+			      < 0x02081000 0x1000 >;
-+		};
- 
--	msmgpio: gpio@800000 {
--		compatible = "qcom,msm-gpio";
--		reg = <0x00800000 0x4000>;
--		gpio-controller;
--		#gpio-cells = <2>;
--		ngpio = <173>;
--		interrupts = <0 16 0x4>;
--		interrupt-controller;
--		#interrupt-cells = <2>;
 -	};
 +		timer@2000000 {
 +			compatible = "qcom,scss-timer", "qcom,msm-timer";
@@ -123,11 +109,15 @@ index c52a9e9..53837aaa2f 100644
 +			cpu-offset = <0x40000>;
 +		};
  
--	gcc: clock-controller@900000 {
--		compatible = "qcom,gcc-msm8660";
--		#clock-cells = <1>;
--		#reset-cells = <1>;
--		reg = <0x900000 0x4000>;
+-	msmgpio: gpio@800000 {
+-		compatible = "qcom,msm-gpio";
+-		reg = <0x00800000 0x4000>;
+-		gpio-controller;
+-		#gpio-cells = <2>;
+-		ngpio = <173>;
+-		interrupts = <0 16 0x4>;
+-		interrupt-controller;
+-		#interrupt-cells = <2>;
 -	};
 +		msmgpio: gpio@800000 {
 +			compatible = "qcom,msm-gpio";
@@ -140,6 +130,19 @@ index c52a9e9..53837aaa2f 100644
 +			#interrupt-cells = <2>;
 +		};
  
+-	gcc: clock-controller@900000 {
+-		compatible = "qcom,gcc-msm8660";
+-		#clock-cells = <1>;
+-		#reset-cells = <1>;
+-		reg = <0x900000 0x4000>;
+-	};
++		gcc: clock-controller@900000 {
++			compatible = "qcom,gcc-msm8660";
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++			reg = <0x900000 0x4000>;
++		};
+ 
 -	serial@19c40000 {
 -		compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
 -		reg = <0x19c40000 0x1000>,
@@ -148,13 +151,6 @@ index c52a9e9..53837aaa2f 100644
 -		clocks = <&gcc GSBI12_UART_CLK>, <&gcc GSBI12_H_CLK>;
 -		clock-names = "core", "iface";
 -	};
-+		gcc: clock-controller@900000 {
-+			compatible = "qcom,gcc-msm8660";
-+			#clock-cells = <1>;
-+			#reset-cells = <1>;
-+			reg = <0x900000 0x4000>;
-+		};
-+
 +		gsbi12: gsbi@19c00000 {
 +			compatible = "qcom,gsbi-v1.0.0";
 +			reg = <0x19c00000 0x100>;
@@ -163,11 +159,7 @@ index c52a9e9..53837aaa2f 100644
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +			ranges;
- 
--	qcom,ssbi@500000 {
--		compatible = "qcom,ssbi";
--		reg = <0x500000 0x1000>;
--		qcom,controller-type = "pmic-arbiter";
++
 +			serial@19c40000 {
 +				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
 +				reg = <0x19c40000 0x1000>,
@@ -178,7 +170,11 @@ index c52a9e9..53837aaa2f 100644
 +				status = "disabled";
 +			};
 +		};
-+
+ 
+-	qcom,ssbi@500000 {
+-		compatible = "qcom,ssbi";
+-		reg = <0x500000 0x1000>;
+-		qcom,controller-type = "pmic-arbiter";
 +		qcom,ssbi@500000 {
 +			compatible = "qcom,ssbi";
 +			reg = <0x500000 0x1000>;
@@ -186,6 +182,3 @@ index c52a9e9..53837aaa2f 100644
 +		};
  	};
  };
--- 
-1.7.10.4
-

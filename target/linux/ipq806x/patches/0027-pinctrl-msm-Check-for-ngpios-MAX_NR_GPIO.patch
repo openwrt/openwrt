@@ -14,11 +14,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |    6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index e61b30a..90ac995 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -870,10 +870,14 @@ static int msm_gpio_init(struct msm_pinctrl *pctrl)
+@@ -870,10 +870,14 @@ static int msm_gpio_init(struct msm_pinc
  	int ret;
  	int i;
  	int r;
@@ -34,6 +32,3 @@ index e61b30a..90ac995 100644
  	chip->label = dev_name(pctrl->dev);
  	chip->dev = pctrl->dev;
  	chip->owner = THIS_MODULE;
--- 
-1.7.10.4
-

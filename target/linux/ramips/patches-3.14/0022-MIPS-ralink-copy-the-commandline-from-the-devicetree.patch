@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/of.c |    2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
-index 885cf50..405b79c 100644
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
 @@ -99,6 +99,8 @@ void __init plat_mem_setup(void)
@@ -21,6 +19,3 @@ index 885cf50..405b79c 100644
  	of_scan_flat_dt(early_init_dt_find_memory, NULL);
  	if (memory_dtb)
  		of_scan_flat_dt(early_init_dt_scan_memory, NULL);
--- 
-1.7.10.4
-

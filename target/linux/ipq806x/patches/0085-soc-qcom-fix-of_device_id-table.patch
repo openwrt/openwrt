@@ -11,11 +11,9 @@ Signed-off-by: Arnd Bergmann <arnd@arndb.de>
  drivers/soc/qcom/qcom_gsbi.c |    1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/soc/qcom/qcom_gsbi.c b/drivers/soc/qcom/qcom_gsbi.c
-index 061dd06..447458e 100644
 --- a/drivers/soc/qcom/qcom_gsbi.c
 +++ b/drivers/soc/qcom/qcom_gsbi.c
-@@ -64,6 +64,7 @@ static int gsbi_probe(struct platform_device *pdev)
+@@ -64,6 +64,7 @@ static int gsbi_probe(struct platform_de
  
  static const struct of_device_id gsbi_dt_match[] = {
  	{ .compatible = "qcom,gsbi-v1.0.0", },
@@ -23,6 +21,3 @@ index 061dd06..447458e 100644
  };
  
  MODULE_DEVICE_TABLE(of, gsbi_dt_match);
--- 
-1.7.10.4
-

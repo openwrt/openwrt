@@ -19,8 +19,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 sound/soc/ralink/mt7620-i2s.c
  create mode 100644 sound/soc/ralink/mt7620-wm8960.c
 
-diff --git a/arch/mips/ralink/of.c b/arch/mips/ralink/of.c
-index 405b79c..dfda6e6 100644
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
 @@ -15,6 +15,7 @@
@@ -39,8 +37,6 @@ index 405b79c..dfda6e6 100644
  __iomem void *rt_memc_membase;
  
  extern struct boot_param_header __dtb_start;
-diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
-index d62ce48..de91f58 100644
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
 @@ -47,6 +47,7 @@ source "sound/soc/kirkwood/Kconfig"
@@ -51,8 +47,6 @@ index d62ce48..de91f58 100644
  source "sound/soc/samsung/Kconfig"
  source "sound/soc/s6000/Kconfig"
  source "sound/soc/sh/Kconfig"
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index 62a1822..1d9398c 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -24,6 +24,7 @@ obj-$(CONFIG_SND_SOC)	+= nuc900/
@@ -63,9 +57,6 @@ index 62a1822..1d9398c 100644
  obj-$(CONFIG_SND_SOC)	+= samsung/
  obj-$(CONFIG_SND_SOC)	+= s6000/
  obj-$(CONFIG_SND_SOC)	+= sh/
-diff --git a/sound/soc/ralink/Kconfig b/sound/soc/ralink/Kconfig
-new file mode 100644
-index 0000000..d462622
 --- /dev/null
 +++ b/sound/soc/ralink/Kconfig
 @@ -0,0 +1,15 @@
@@ -84,9 +75,6 @@ index 0000000..d462622
 +	help
 +	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
 +	  a.k.a Qi Ben NanoNote.
-diff --git a/sound/soc/ralink/Makefile b/sound/soc/ralink/Makefile
-new file mode 100644
-index 0000000..3d79980
 --- /dev/null
 +++ b/sound/soc/ralink/Makefile
 @@ -0,0 +1,11 @@
@@ -101,9 +89,6 @@ index 0000000..3d79980
 +snd-soc-mt7620-wm8960-objs := mt7620-wm8960.o
 +
 +obj-$(CONFIG_SND_MT7620_SOC_WM8960) += snd-soc-mt7620-wm8960.o
-diff --git a/sound/soc/ralink/mt7620-i2s.c b/sound/soc/ralink/mt7620-i2s.c
-new file mode 100644
-index 0000000..846db03
 --- /dev/null
 +++ b/sound/soc/ralink/mt7620-i2s.c
 @@ -0,0 +1,466 @@
@@ -573,9 +558,6 @@ index 0000000..846db03
 +MODULE_DESCRIPTION("Ingenic JZ4740 SoC I2S driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mt7620-i2s");
-diff --git a/sound/soc/ralink/mt7620-wm8960.c b/sound/soc/ralink/mt7620-wm8960.c
-new file mode 100644
-index 0000000..c0f6389
 --- /dev/null
 +++ b/sound/soc/ralink/mt7620-wm8960.c
 @@ -0,0 +1,125 @@
@@ -704,8 +686,6 @@ index 0000000..c0f6389
 +MODULE_DESCRIPTION("ALSA SoC QI LB60 Audio support");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:qi-lb60-audio");
-diff --git a/sound/soc/soc-io.c b/sound/soc/soc-io.c
-index aa886cc..3fdc8c8 100644
 --- a/sound/soc/soc-io.c
 +++ b/sound/soc/soc-io.c
 @@ -19,7 +19,6 @@
@@ -716,7 +696,7 @@ index aa886cc..3fdc8c8 100644
  static int hw_write(struct snd_soc_codec *codec, unsigned int reg,
  		    unsigned int value)
  {
-@@ -135,12 +134,3 @@ int snd_soc_codec_set_cache_io(struct snd_soc_codec *codec,
+@@ -135,12 +134,3 @@ int snd_soc_codec_set_cache_io(struct sn
  	return PTR_ERR_OR_ZERO(codec->control_data);
  }
  EXPORT_SYMBOL_GPL(snd_soc_codec_set_cache_io);
@@ -729,6 +709,3 @@ index aa886cc..3fdc8c8 100644
 -}
 -EXPORT_SYMBOL_GPL(snd_soc_codec_set_cache_io);
 -#endif
--- 
-1.7.10.4
-

@@ -1,8 +1,6 @@
-Index: linux-3.14.14/drivers/staging/octeon/ethernet.c
-===================================================================
---- linux-3.14.14.orig/drivers/staging/octeon/ethernet.c	2014-08-07 17:03:44.000000000 +0200
-+++ linux-3.14.14/drivers/staging/octeon/ethernet.c	2014-08-07 17:07:31.768932379 +0200
-@@ -624,6 +624,7 @@
+--- a/drivers/staging/octeon/ethernet.c
++++ b/drivers/staging/octeon/ethernet.c
+@@ -624,6 +624,7 @@ static int cvm_oct_probe(struct platform
  	int interface;
  	int fau = FAU_NUM_PACKET_BUFFERS_TO_FREE;
  	int qos;
@@ -10,7 +8,7 @@ Index: linux-3.14.14/drivers/staging/octeon/ethernet.c
  	struct device_node *pip;
  
  	octeon_mdiobus_force_mod_depencency();
-@@ -707,13 +708,19 @@
+@@ -707,13 +708,19 @@ static int cvm_oct_probe(struct platform
  	}
  
  	num_interfaces = cvmx_helper_get_number_of_interfaces();

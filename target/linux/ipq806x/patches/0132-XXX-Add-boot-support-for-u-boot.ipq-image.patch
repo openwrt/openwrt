@@ -8,11 +8,9 @@ Subject: [PATCH 132/182] XXX: Add boot support for u-boot.ipq image
  arch/arm/boot/Makefile |   11 ++++++++++-
  2 files changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index 51e5bed..e9fc731 100644
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -297,7 +297,7 @@ archprepare:
+@@ -302,7 +302,7 @@ archprepare:
  # Convert bzImage to zImage
  bzImage: zImage
  
@@ -21,8 +19,6 @@ index 51e5bed..e9fc731 100644
  INSTALL_TARGETS	= zinstall uinstall install
  
  PHONY += bzImage $(BOOT_TARGETS) $(INSTALL_TARGETS)
-diff --git a/arch/arm/boot/Makefile b/arch/arm/boot/Makefile
-index ec2f806..3cbc83e 100644
 --- a/arch/arm/boot/Makefile
 +++ b/arch/arm/boot/Makefile
 @@ -25,7 +25,7 @@ INITRD_PHYS := $(initrd_phys-y)
@@ -50,6 +46,3 @@ index ec2f806..3cbc83e 100644
  $(obj)/bootp/bootp: $(obj)/zImage initrd FORCE
  	$(Q)$(MAKE) $(build)=$(obj)/bootp $@
  	@:
--- 
-1.7.10.4
-

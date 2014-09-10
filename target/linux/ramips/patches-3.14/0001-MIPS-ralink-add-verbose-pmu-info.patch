@@ -10,8 +10,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/mt7620.c |   26 ++++++++++++++++++++++++++
  1 file changed, 26 insertions(+)
 
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index a3ad56c..5846817 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
 @@ -20,6 +20,22 @@
@@ -37,7 +35,7 @@ index a3ad56c..5846817 100644
  /* does the board have sdram or ddram */
  static int dram_type;
  
-@@ -339,6 +355,8 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -339,6 +355,8 @@ void prom_soc_init(struct ralink_soc_inf
  	u32 n1;
  	u32 rev;
  	u32 cfg0;
@@ -46,7 +44,7 @@ index a3ad56c..5846817 100644
  
  	n0 = __raw_readl(sysc + SYSC_REG_CHIP_NAME0);
  	n1 = __raw_readl(sysc + SYSC_REG_CHIP_NAME1);
-@@ -386,4 +404,12 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -386,4 +404,12 @@ void prom_soc_init(struct ralink_soc_inf
  		BUG();
  	}
  	soc_info->mem_base = MT7620_DRAM_BASE;
@@ -59,6 +57,3 @@ index a3ad56c..5846817 100644
 +	pr_info("Digital PMU set to %s control\n",
 +		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
  }
--- 
-1.7.10.4
-

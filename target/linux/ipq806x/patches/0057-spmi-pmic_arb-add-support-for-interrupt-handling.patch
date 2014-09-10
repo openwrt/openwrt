@@ -19,8 +19,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/spmi/spmi-pmic-arb.c |  377 +++++++++++++++++++++++++++++++++++++++++-
  2 files changed, 376 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spmi/Kconfig b/drivers/spmi/Kconfig
-index 80b7901..075bd79 100644
 --- a/drivers/spmi/Kconfig
 +++ b/drivers/spmi/Kconfig
 @@ -13,6 +13,7 @@ if SPMI
@@ -31,8 +29,6 @@ index 80b7901..075bd79 100644
  	depends on ARCH_MSM || COMPILE_TEST
  	default ARCH_MSM
  	help
-diff --git a/drivers/spmi/spmi-pmic-arb.c b/drivers/spmi/spmi-pmic-arb.c
-index 2dd27e8..246e03a 100644
 --- a/drivers/spmi/spmi-pmic-arb.c
 +++ b/drivers/spmi/spmi-pmic-arb.c
 @@ -13,6 +13,9 @@
@@ -75,7 +71,7 @@ index 2dd27e8..246e03a 100644
  };
  
  static inline u32 pmic_arb_base_read(struct spmi_pmic_arb_dev *dev, u32 offset)
-@@ -306,12 +325,316 @@ static int pmic_arb_write_cmd(struct spmi_controller *ctrl, u8 opc, u8 sid,
+@@ -306,12 +325,316 @@ static int pmic_arb_write_cmd(struct spm
  	return rc;
  }
  
@@ -393,7 +389,7 @@ index 2dd27e8..246e03a 100644
  	int err, i;
  
  	ctrl = spmi_controller_alloc(&pdev->dev, sizeof(*pa));
-@@ -319,6 +642,7 @@ static int spmi_pmic_arb_probe(struct platform_device *pdev)
+@@ -319,6 +642,7 @@ static int spmi_pmic_arb_probe(struct pl
  		return -ENOMEM;
  
  	pa = spmi_controller_get_drvdata(ctrl);
@@ -401,7 +397,7 @@ index 2dd27e8..246e03a 100644
  
  	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "core");
  	pa->base = devm_ioremap_resource(&ctrl->dev, res);
-@@ -341,6 +665,12 @@ static int spmi_pmic_arb_probe(struct platform_device *pdev)
+@@ -341,6 +665,12 @@ static int spmi_pmic_arb_probe(struct pl
  		goto err_put_ctrl;
  	}
  
@@ -414,7 +410,7 @@ index 2dd27e8..246e03a 100644
  	err = of_property_read_u32(pdev->dev.of_node, "qcom,channel", &channel);
  	if (err) {
  		dev_err(&pdev->dev, "channel unspecified.\n");
-@@ -355,6 +685,29 @@ static int spmi_pmic_arb_probe(struct platform_device *pdev)
+@@ -355,6 +685,29 @@ static int spmi_pmic_arb_probe(struct pl
  
  	pa->channel = channel;
  
@@ -444,7 +440,7 @@ index 2dd27e8..246e03a 100644
  	platform_set_drvdata(pdev, ctrl);
  	raw_spin_lock_init(&pa->lock);
  
-@@ -362,15 +715,31 @@ static int spmi_pmic_arb_probe(struct platform_device *pdev)
+@@ -362,15 +715,31 @@ static int spmi_pmic_arb_probe(struct pl
  	ctrl->read_cmd = pmic_arb_read_cmd;
  	ctrl->write_cmd = pmic_arb_write_cmd;
  
@@ -489,6 +485,3 @@ index 2dd27e8..246e03a 100644
  	spmi_controller_put(ctrl);
  	return 0;
  }
--- 
-1.7.10.4
-

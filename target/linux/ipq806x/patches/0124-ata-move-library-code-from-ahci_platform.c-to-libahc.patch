@@ -23,8 +23,6 @@ Conflicts:
  4 files changed, 544 insertions(+), 518 deletions(-)
  create mode 100644 drivers/ata/libahci_platform.c
 
-diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
-index 868429a..dc950f3 100644
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
 @@ -99,7 +99,7 @@ config SATA_AHCI_PLATFORM
@@ -36,8 +34,6 @@ index 868429a..dc950f3 100644
  	help
  	  This option enables support for the Freescale i.MX SoC's
  	  onboard AHCI SATA.
-diff --git a/drivers/ata/Makefile b/drivers/ata/Makefile
-index 46518c6..366b743 100644
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
 @@ -4,13 +4,13 @@ obj-$(CONFIG_ATA)		+= libata.o
@@ -56,8 +52,6 @@ index 46518c6..366b743 100644
  
  # SFF w/ custom DMA
  obj-$(CONFIG_PDC_ADMA)		+= pdc_adma.o
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 7bd6adf..ef67e79 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
 @@ -12,28 +12,15 @@
@@ -89,7 +83,7 @@ index 7bd6adf..ef67e79 100644
  static const struct ata_port_info ahci_port_info = {
  	.flags		= AHCI_FLAG_COMMON,
  	.pio_mask	= ATA_PIO4,
-@@ -41,345 +28,6 @@ static const struct ata_port_info ahci_port_info = {
+@@ -41,345 +28,6 @@ static const struct ata_port_info ahci_p
  	.port_ops	= &ahci_platform_ops,
  };
  
@@ -605,9 +599,6 @@ index 7bd6adf..ef67e79 100644
  static SIMPLE_DEV_PM_OPS(ahci_pm_ops, ahci_platform_suspend,
  			 ahci_platform_resume);
  
-diff --git a/drivers/ata/libahci_platform.c b/drivers/ata/libahci_platform.c
-new file mode 100644
-index 0000000..7cb3a85
 --- /dev/null
 +++ b/drivers/ata/libahci_platform.c
 @@ -0,0 +1,541 @@
@@ -1152,6 +1143,3 @@ index 0000000..7cb3a85
 +MODULE_DESCRIPTION("AHCI SATA platform library");
 +MODULE_AUTHOR("Anton Vorontsov <avorontsov@ru.mvista.com>");
 +MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

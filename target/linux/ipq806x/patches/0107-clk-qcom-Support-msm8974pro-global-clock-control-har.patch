@@ -16,8 +16,6 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  include/dt-bindings/clock/qcom,gcc-msm8974.h       |    4 +
  3 files changed, 130 insertions(+), 6 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/qcom,gcc.txt b/Documentation/devicetree/bindings/clock/qcom,gcc.txt
-index 7b7104e..9cfcb4f 100644
 --- a/Documentation/devicetree/bindings/clock/qcom,gcc.txt
 +++ b/Documentation/devicetree/bindings/clock/qcom,gcc.txt
 @@ -8,6 +8,8 @@ Required properties :
@@ -29,8 +27,6 @@ index 7b7104e..9cfcb4f 100644
  
  - reg : shall contain base register location and length
  - #clock-cells : shall contain 1
-diff --git a/drivers/clk/qcom/gcc-msm8974.c b/drivers/clk/qcom/gcc-msm8974.c
-index 7a420fc..7af7c18 100644
 --- a/drivers/clk/qcom/gcc-msm8974.c
 +++ b/drivers/clk/qcom/gcc-msm8974.c
 @@ -35,6 +35,7 @@
@@ -94,7 +90,7 @@ index 7a420fc..7af7c18 100644
  static const struct freq_tbl ftbl_gcc_usb30_master_clk[] = {
  	F(125000000, P_GPLL0, 1, 5, 24),
  	{ }
-@@ -812,18 +852,33 @@ static const struct freq_tbl ftbl_gcc_sdcc1_4_apps_clk[] = {
+@@ -812,18 +852,33 @@ static const struct freq_tbl ftbl_gcc_sd
  	{ }
  };
  
@@ -134,7 +130,7 @@ index 7a420fc..7af7c18 100644
  };
  
  static struct clk_rcg2 sdcc2_apps_clk_src = {
-@@ -1995,6 +2050,38 @@ static struct clk_branch gcc_sdcc1_apps_clk = {
+@@ -1995,6 +2050,38 @@ static struct clk_branch gcc_sdcc1_apps_
  	},
  };
  
@@ -173,7 +169,7 @@ index 7a420fc..7af7c18 100644
  static struct clk_branch gcc_sdcc2_ahb_clk = {
  	.halt_reg = 0x0508,
  	.clkr = {
-@@ -2484,6 +2571,10 @@ static struct clk_regmap *gcc_msm8974_clocks[] = {
+@@ -2484,6 +2571,10 @@ static struct clk_regmap *gcc_msm8974_cl
  	[GCC_USB_HSIC_IO_CAL_SLEEP_CLK] = &gcc_usb_hsic_io_cal_sleep_clk.clkr,
  	[GCC_USB_HSIC_SYSTEM_CLK] = &gcc_usb_hsic_system_clk.clkr,
  	[GCC_MMSS_GPLL0_CLK_SRC] = &gcc_mmss_gpll0_clk_src,
@@ -184,7 +180,7 @@ index 7a420fc..7af7c18 100644
  };
  
  static const struct qcom_reset_map gcc_msm8974_resets[] = {
-@@ -2585,14 +2676,41 @@ static const struct qcom_cc_desc gcc_msm8974_desc = {
+@@ -2585,14 +2676,41 @@ static const struct qcom_cc_desc gcc_msm
  
  static const struct of_device_id gcc_msm8974_match_table[] = {
  	{ .compatible = "qcom,gcc-msm8974" },
@@ -226,8 +222,6 @@ index 7a420fc..7af7c18 100644
  
  	/* Temporary until RPM clocks supported */
  	clk = clk_register_fixed_rate(dev, "xo", NULL, CLK_IS_ROOT, 19200000);
-diff --git a/include/dt-bindings/clock/qcom,gcc-msm8974.h b/include/dt-bindings/clock/qcom,gcc-msm8974.h
-index 223ca17..51e51c8 100644
 --- a/include/dt-bindings/clock/qcom,gcc-msm8974.h
 +++ b/include/dt-bindings/clock/qcom,gcc-msm8974.h
 @@ -316,5 +316,9 @@
@@ -240,6 +234,3 @@ index 223ca17..51e51c8 100644
 +#define GCC_SDCC1_CDCCAL_FF_CLK					305
  
  #endif
--- 
-1.7.10.4
-

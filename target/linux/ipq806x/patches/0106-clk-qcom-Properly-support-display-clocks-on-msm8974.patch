@@ -17,8 +17,6 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/qcom/mmcc-msm8974.c |  105 ++++++++++++++++++++-------------------
  1 file changed, 54 insertions(+), 51 deletions(-)
 
-diff --git a/drivers/clk/qcom/mmcc-msm8974.c b/drivers/clk/qcom/mmcc-msm8974.c
-index 62200bb..c65b905 100644
 --- a/drivers/clk/qcom/mmcc-msm8974.c
 +++ b/drivers/clk/qcom/mmcc-msm8974.c
 @@ -41,9 +41,11 @@
@@ -33,7 +31,7 @@ index 62200bb..c65b905 100644
  
  static const u8 mmcc_xo_mmpll0_mmpll1_gpll0_map[] = {
  	[P_XO]		= 0,
-@@ -161,6 +163,24 @@ static const char *mmcc_xo_dsi_hdmi_edp_gpll0[] = {
+@@ -161,6 +163,24 @@ static const char *mmcc_xo_dsi_hdmi_edp_
  	"dsi1pll",
  };
  
@@ -162,7 +160,7 @@ index 62200bb..c65b905 100644
  	},
  };
  
-@@ -826,12 +836,12 @@ static struct clk_rcg2 edplink_clk_src = {
+@@ -826,12 +836,12 @@ static struct clk_rcg2 edplink_clk_src =
  		.parent_names = mmcc_xo_dsi_hdmi_edp_gpll0,
  		.num_parents = 6,
  		.ops = &clk_rcg2_ops,
@@ -178,7 +176,7 @@ index 62200bb..c65b905 100644
  	{ }
  };
  
-@@ -840,12 +850,12 @@ static struct clk_rcg2 edppixel_clk_src = {
+@@ -840,12 +850,12 @@ static struct clk_rcg2 edppixel_clk_src
  	.mnd_width = 8,
  	.hid_width = 5,
  	.parent_map = mmcc_xo_dsi_hdmi_edp_map,
@@ -193,7 +191,7 @@ index 62200bb..c65b905 100644
  	},
  };
  
-@@ -857,11 +867,11 @@ static struct freq_tbl ftbl_mdss_esc0_1_clk[] = {
+@@ -857,11 +867,11 @@ static struct freq_tbl ftbl_mdss_esc0_1_
  static struct clk_rcg2 esc0_clk_src = {
  	.cmd_rcgr = 0x2160,
  	.hid_width = 5,
@@ -238,7 +236,7 @@ index 62200bb..c65b905 100644
  	{ }
  };
  
-@@ -897,12 +899,13 @@ static struct clk_rcg2 extpclk_clk_src = {
+@@ -897,12 +899,13 @@ static struct clk_rcg2 extpclk_clk_src =
  	.cmd_rcgr = 0x2060,
  	.hid_width = 5,
  	.parent_map = mmcc_xo_dsi_hdmi_edp_gpll0_map,
@@ -254,6 +252,3 @@ index 62200bb..c65b905 100644
  	},
  };
  
--- 
-1.7.10.4
-

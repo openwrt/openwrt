@@ -19,11 +19,9 @@ Signed-off-by: John W. Linville <linville@tuxdriver.com>
  drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c b/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
-index fa35b23..bd19323 100644
 --- a/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
 +++ b/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
-@@ -827,7 +827,7 @@ brcmf_sdiod_ramrw(struct brcmf_sdio_dev *sdiodev, bool write, u32 address,
+@@ -827,7 +827,7 @@ brcmf_sdiod_ramrw(struct brcmf_sdio_dev
  		}
  		if (!write)
  			memcpy(data, pkt->data, dsize);
@@ -32,6 +30,3 @@ index fa35b23..bd19323 100644
  
  		/* Adjust for next transfer (if any) */
  		size -= dsize;
--- 
-2.0.3
-

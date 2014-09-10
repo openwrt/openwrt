@@ -16,8 +16,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  3 files changed, 97 insertions(+)
  create mode 100644 drivers/ata/ahci_qcom.c
 
-diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
-index dc950f3..da05034 100644
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
 @@ -106,6 +106,16 @@ config AHCI_IMX
@@ -37,8 +35,6 @@ index dc950f3..da05034 100644
  config SATA_FSL
  	tristate "Freescale 3.0Gbps SATA support"
  	depends on FSL_SOC
-diff --git a/drivers/ata/Makefile b/drivers/ata/Makefile
-index 366b743..e08044f 100644
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
 @@ -11,6 +11,7 @@ obj-$(CONFIG_SATA_SIL24)	+= sata_sil24.o
@@ -49,9 +45,6 @@ index 366b743..e08044f 100644
  
  # SFF w/ custom DMA
  obj-$(CONFIG_PDC_ADMA)		+= pdc_adma.o
-diff --git a/drivers/ata/ahci_qcom.c b/drivers/ata/ahci_qcom.c
-new file mode 100644
-index 0000000..bfb7a77
 --- /dev/null
 +++ b/drivers/ata/ahci_qcom.c
 @@ -0,0 +1,86 @@
@@ -141,6 +134,3 @@ index 0000000..bfb7a77
 +MODULE_DESCRIPTION("Qualcomm AHCI SATA platform driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("ahci:qcom");
--- 
-1.7.10.4
-

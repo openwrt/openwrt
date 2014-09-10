@@ -16,8 +16,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi                |  8 ++++++++
  4 files changed, 47 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index 7bf4935..4bed115 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 @@ -13,12 +13,18 @@
@@ -48,8 +46,6 @@ index 7bf4935..4bed115 100644
 +		status = "okay";
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 025ce52..ef5fed8 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 @@ -13,13 +13,26 @@
@@ -79,7 +75,7 @@ index 025ce52..ef5fed8 100644
  			led_pins_cubietruck: led_pins@0 {
  				allwinner,pins = "PH7", "PH11", "PH20", "PH21";
  				allwinner,function = "gpio_out";
-@@ -90,4 +103,10 @@
+@@ -86,4 +99,10 @@
  			gpios = <&pio 7 7 0>;
  		};
  	};
@@ -90,8 +86,6 @@ index 025ce52..ef5fed8 100644
 +		status = "okay";
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index 9d98316..c9b0f37 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 @@ -13,6 +13,7 @@
@@ -123,8 +117,6 @@ index 9d98316..c9b0f37 100644
 +		status = "okay";
 +	};
  };
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 6161fd8..864b7c6 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
 @@ -450,6 +450,14 @@
@@ -142,6 +134,3 @@ index 6161fd8..864b7c6 100644
  		spi3: spi@01c1f000 {
  			compatible = "allwinner,sun4i-a10-spi";
  			reg = <0x01c1f000 0x1000>;
--- 
-2.0.3
-

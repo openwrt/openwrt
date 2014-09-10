@@ -14,8 +14,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/tty/serial/msm_serial.h |    9 +++
  2 files changed, 146 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/tty/serial/msm_serial.c b/drivers/tty/serial/msm_serial.c
-index b5d779c..053b98e 100644
 --- a/drivers/tty/serial/msm_serial.c
 +++ b/drivers/tty/serial/msm_serial.c
 @@ -39,6 +39,13 @@
@@ -32,7 +30,7 @@ index b5d779c..053b98e 100644
  struct msm_port {
  	struct uart_port	uart;
  	char			name[16];
-@@ -309,6 +316,8 @@ static unsigned int msm_get_mctrl(struct uart_port *port)
+@@ -309,6 +316,8 @@ static unsigned int msm_get_mctrl(struct
  
  static void msm_reset(struct uart_port *port)
  {
@@ -41,7 +39,7 @@ index b5d779c..053b98e 100644
  	/* reset everything */
  	msm_write(port, UART_CR_CMD_RESET_RX, UART_CR);
  	msm_write(port, UART_CR_CMD_RESET_TX, UART_CR);
-@@ -316,6 +325,10 @@ static void msm_reset(struct uart_port *port)
+@@ -316,6 +325,10 @@ static void msm_reset(struct uart_port *
  	msm_write(port, UART_CR_CMD_RESET_BREAK_INT, UART_CR);
  	msm_write(port, UART_CR_CMD_RESET_CTS, UART_CR);
  	msm_write(port, UART_CR_CMD_SET_RFR, UART_CR);
@@ -52,7 +50,7 @@ index b5d779c..053b98e 100644
  }
  
  static void msm_set_mctrl(struct uart_port *port, unsigned int mctrl)
-@@ -711,6 +724,117 @@ static void msm_power(struct uart_port *port, unsigned int state,
+@@ -711,6 +724,117 @@ static void msm_power(struct uart_port *
  	}
  }
  
@@ -182,7 +180,7 @@ index b5d779c..053b98e 100644
  };
  
  static struct msm_port msm_uart_ports[] = {
-@@ -900,7 +1029,10 @@ static struct uart_driver msm_uart_driver = {
+@@ -900,7 +1029,10 @@ static struct uart_driver msm_uart_drive
  static atomic_t msm_uart_next_id = ATOMIC_INIT(0);
  
  static const struct of_device_id msm_uartdm_table[] = {
@@ -194,7 +192,7 @@ index b5d779c..053b98e 100644
  	{ }
  };
  
-@@ -909,6 +1041,7 @@ static int __init msm_serial_probe(struct platform_device *pdev)
+@@ -909,6 +1041,7 @@ static int __init msm_serial_probe(struc
  	struct msm_port *msm_port;
  	struct resource *resource;
  	struct uart_port *port;
@@ -202,7 +200,7 @@ index b5d779c..053b98e 100644
  	int irq;
  
  	if (pdev->id == -1)
-@@ -923,8 +1056,9 @@ static int __init msm_serial_probe(struct platform_device *pdev)
+@@ -923,8 +1056,9 @@ static int __init msm_serial_probe(struc
  	port->dev = &pdev->dev;
  	msm_port = UART_TO_MSM(port);
  
@@ -214,8 +212,6 @@ index b5d779c..053b98e 100644
  	else
  		msm_port->is_uartdm = 0;
  
-diff --git a/drivers/tty/serial/msm_serial.h b/drivers/tty/serial/msm_serial.h
-index 469fda5..1e9b68b 100644
 --- a/drivers/tty/serial/msm_serial.h
 +++ b/drivers/tty/serial/msm_serial.h
 @@ -59,6 +59,7 @@
@@ -241,6 +237,3 @@ index 469fda5..1e9b68b 100644
  #define UARTDM_DMRX		0x34
  #define UARTDM_NCF_TX		0x40
  #define UARTDM_RX_TOTAL_SNAP	0x38
--- 
-1.7.10.4
-

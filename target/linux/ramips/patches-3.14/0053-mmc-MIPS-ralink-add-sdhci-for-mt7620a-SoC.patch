@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mmc/host/mt6575_sd.h
  create mode 100644 drivers/mmc/host/sdhci-mt7620.c
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 1384f67..09a14cb 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -283,6 +283,17 @@ config MMC_SDHCI_BCM2835
@@ -35,11 +33,9 @@ index 1384f67..09a14cb 100644
  config MMC_OMAP
  	tristate "TI OMAP Multimedia Card Interface support"
  	depends on ARCH_OMAP
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index 3483b6b..430824f 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -64,6 +64,7 @@ obj-$(CONFIG_MMC_SDHCI_OF_ESDHC)	+= sdhci-of-esdhc.o
+@@ -65,6 +65,7 @@ obj-$(CONFIG_MMC_SDHCI_OF_ESDHC)	+= sdhc
  obj-$(CONFIG_MMC_SDHCI_OF_HLWD)		+= sdhci-of-hlwd.o
  obj-$(CONFIG_MMC_SDHCI_BCM_KONA)	+= sdhci-bcm-kona.o
  obj-$(CONFIG_MMC_SDHCI_BCM2835)		+= sdhci-bcm2835.o
@@ -47,9 +43,6 @@ index 3483b6b..430824f 100644
  
  ifeq ($(CONFIG_CB710_DEBUG),y)
  	CFLAGS-cb710-mmc	+= -DDEBUG
-diff --git a/drivers/mmc/host/mt6575_sd.h b/drivers/mmc/host/mt6575_sd.h
-new file mode 100644
-index 0000000..406382c
 --- /dev/null
 +++ b/drivers/mmc/host/mt6575_sd.h
 @@ -0,0 +1,1068 @@
@@ -1121,9 +1114,6 @@ index 0000000..406382c
 +
 +#endif
 +
-diff --git a/drivers/mmc/host/sdhci-mt7620.c b/drivers/mmc/host/sdhci-mt7620.c
-new file mode 100644
-index 0000000..a3cb5e4
 --- /dev/null
 +++ b/drivers/mmc/host/sdhci-mt7620.c
 @@ -0,0 +1,2314 @@
@@ -3441,6 +3431,3 @@ index 0000000..a3cb5e4
 +MODULE_AUTHOR("Infinity Chen <infinity.chen@mediatek.com>");
 +
 +EXPORT_SYMBOL(msdc_6575_host);
--- 
-1.7.10.4
-

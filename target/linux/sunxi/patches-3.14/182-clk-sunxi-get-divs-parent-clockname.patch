@@ -19,11 +19,9 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 7a2ed98..736fb60 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -869,7 +869,7 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+@@ -940,7 +940,7 @@ static void __init sunxi_divs_clk_setup(
  					struct divs_data *data)
  {
  	struct clk_onecell_data *clk_data;
@@ -32,7 +30,7 @@ index 7a2ed98..736fb60 100644
  	const char *clk_name;
  	struct clk **clks, *pclk;
  	struct clk_hw *gate_hw, *rate_hw;
-@@ -883,6 +883,7 @@ static void __init sunxi_divs_clk_setup(struct device_node *node,
+@@ -954,6 +954,7 @@ static void __init sunxi_divs_clk_setup(
  
  	/* Set up factor clock that we will be dividing */
  	pclk = sunxi_factors_clk_setup(node, data->factors);
@@ -40,6 +38,3 @@ index 7a2ed98..736fb60 100644
  
  	reg = of_iomap(node, 0);
  
--- 
-2.0.3
-

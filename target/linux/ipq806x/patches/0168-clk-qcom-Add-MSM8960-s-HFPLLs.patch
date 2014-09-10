@@ -10,8 +10,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/qcom/gcc-msm8960.c |   82 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 82 insertions(+)
 
-diff --git a/drivers/clk/qcom/gcc-msm8960.c b/drivers/clk/qcom/gcc-msm8960.c
-index f4ffd91..d04fc99 100644
 --- a/drivers/clk/qcom/gcc-msm8960.c
 +++ b/drivers/clk/qcom/gcc-msm8960.c
 @@ -30,6 +30,7 @@
@@ -107,7 +105,7 @@ index f4ffd91..d04fc99 100644
  static struct clk_pll pll14 = {
  	.l_reg = 0x31c4,
  	.m_reg = 0x31c8,
-@@ -2763,6 +2842,9 @@ static struct clk_regmap *gcc_msm8960_clks[] = {
+@@ -2763,6 +2842,9 @@ static struct clk_regmap *gcc_msm8960_cl
  	[PMIC_ARB1_H_CLK] = &pmic_arb1_h_clk.clkr,
  	[PMIC_SSBI2_CLK] = &pmic_ssbi2_clk.clkr,
  	[RPM_MSG_RAM_H_CLK] = &rpm_msg_ram_h_clk.clkr,
@@ -117,6 +115,3 @@ index f4ffd91..d04fc99 100644
  };
  
  static const struct qcom_reset_map gcc_msm8960_resets[] = {
--- 
-1.7.10.4
-

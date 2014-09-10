@@ -12,7 +12,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/kernel/head.S
 +++ b/arch/mips/kernel/head.S
-@@ -146,6 +146,9 @@ EXPORT(__image_cmdline)
+@@ -107,6 +107,9 @@ EXPORT(__image_cmdline)
  	.fill	0x400
  #endif /* CONFIG_IMAGE_CMDLINE_HACK */
  
@@ -32,7 +32,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#obj-y += dts/
 --- a/arch/mips/ralink/of.c
 +++ b/arch/mips/ralink/of.c
-@@ -90,6 +90,8 @@ static int __init early_init_dt_find_mem
+@@ -91,6 +91,8 @@ static int __init early_init_dt_find_mem
  	return 0;
  }
  
@@ -41,12 +41,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  void __init plat_mem_setup(void)
  {
  	set_io_port_base(KSEG1);
-@@ -98,7 +100,7 @@ void __init plat_mem_setup(void)
+@@ -99,7 +101,7 @@ void __init plat_mem_setup(void)
  	 * Load the builtin devicetree. This causes the chosen node to be
  	 * parsed resulting in our memory appearing
  	 */
 -	__dt_setup_arch(&__dtb_start);
 +	__dt_setup_arch(&__image_dtb);
  
- 	of_scan_flat_dt(early_init_dt_find_memory, NULL);
- 	if (memory_dtb)
+ 	strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+ 

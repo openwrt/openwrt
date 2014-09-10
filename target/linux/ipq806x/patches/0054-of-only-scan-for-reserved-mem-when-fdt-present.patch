@@ -16,11 +16,9 @@ Signed-off-by: Grant Likely <grant.likely@linaro.org>
  drivers/of/fdt.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index 510c0d8..501bc83 100644
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
-@@ -557,6 +557,9 @@ static int __init __fdt_scan_reserved_mem(unsigned long node, const char *uname,
+@@ -557,6 +557,9 @@ static int __init __fdt_scan_reserved_me
   */
  void __init early_init_fdt_scan_reserved_mem(void)
  {
@@ -30,6 +28,3 @@ index 510c0d8..501bc83 100644
  	of_scan_flat_dt(__fdt_scan_reserved_mem, NULL);
  	fdt_init_reserved_mem();
  }
--- 
-1.7.10.4
-

@@ -10,12 +10,10 @@ Signed-off-by: Chen-Yu Tsai <wens@csie.org>
  arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index f9dcb61..025ce52 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-@@ -51,6 +51,18 @@
- 			pinctrl-0 = <&i2c2_pins_a>;
+@@ -47,6 +47,18 @@
+ 			pinctrl-0 = <&uart0_pins_a>;
  			status = "okay";
  		};
 +
@@ -33,6 +31,3 @@ index f9dcb61..025ce52 100644
  	};
  
  	leds {
--- 
-2.0.3
-

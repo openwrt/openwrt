@@ -1,8 +1,6 @@
-diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
-index 03ccdb0..a2acda4 100644
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -418,4 +418,21 @@ config CRYPTO_DEV_MXS_DCP
+@@ -419,4 +419,21 @@ config CRYPTO_DEV_MXS_DCP
  	  To compile this driver as a module, choose M here: the module
  	  will be called mxs-dcp.
  
@@ -24,26 +22,18 @@ index 03ccdb0..a2acda4 100644
 +	  will be called sunxi-ss.
 +
  endif # CRYPTO_HW
-diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
-index 482f090..855292a 100644
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -23,3 +23,4 @@ obj-$(CONFIG_CRYPTO_DEV_S5P) += s5p-sss.o
- obj-$(CONFIG_CRYPTO_DEV_SAHARA) += sahara.o
+@@ -23,3 +23,4 @@ obj-$(CONFIG_CRYPTO_DEV_SAHARA) += sahar
  obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
+ obj-$(CONFIG_CRYPTO_DEV_TEGRA_AES) += tegra-aes.o
  obj-$(CONFIG_CRYPTO_DEV_UX500) += ux500/
 +obj-$(CONFIG_CRYPTO_DEV_SUNXI_SS) += sunxi-ss/
-diff --git a/drivers/crypto/sunxi-ss/Makefile b/drivers/crypto/sunxi-ss/Makefile
-new file mode 100644
-index 0000000..8bb287d
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_CRYPTO_DEV_SUNXI_SS) += sunxi-ss.o
 +sunxi-ss-y += sunxi-ss-core.o sunxi-ss-hash.o sunxi-ss-cipher.o
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss-cipher.c b/drivers/crypto/sunxi-ss/sunxi-ss-cipher.c
-new file mode 100644
-index 0000000..c2422f7
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss-cipher.c
 @@ -0,0 +1,461 @@
@@ -508,9 +498,6 @@ index 0000000..c2422f7
 +	memcpy(op->key, key, keylen);
 +	return 0;
 +}
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss-core.c b/drivers/crypto/sunxi-ss/sunxi-ss-core.c
-new file mode 100644
-index 0000000..c76016e
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss-core.c
 @@ -0,0 +1,308 @@
@@ -822,9 +809,6 @@ index 0000000..c76016e
 +MODULE_DESCRIPTION("Allwinner Security System cryptographic accelerator");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Corentin LABBE <clabbe.montjoie@gmail.com>");
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss-hash.c b/drivers/crypto/sunxi-ss/sunxi-ss-hash.c
-new file mode 100644
-index 0000000..6412bfb
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss-hash.c
 @@ -0,0 +1,241 @@
@@ -1069,9 +1053,6 @@ index 0000000..6412bfb
 +
 +	return sunxi_hash_final(areq);
 +}
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss.h b/drivers/crypto/sunxi-ss/sunxi-ss.h
-new file mode 100644
-index 0000000..94aca20
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss.h
 @@ -0,0 +1,183 @@
@@ -1258,7 +1239,3 @@ index 0000000..94aca20
 +		unsigned int keylen);
 +int sunxi_ss_des3_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
 +		unsigned int keylen);
--- 
-1.8.5.5
-
-  

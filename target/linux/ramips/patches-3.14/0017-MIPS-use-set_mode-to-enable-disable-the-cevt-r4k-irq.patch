@@ -9,11 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/kernel/cevt-r4k.c |   37 +++++++++++++++++++++++++++++++------
  1 file changed, 31 insertions(+), 6 deletions(-)
 
-diff --git a/arch/mips/kernel/cevt-r4k.c b/arch/mips/kernel/cevt-r4k.c
-index 50d3f5a..99585e6 100644
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -38,12 +38,6 @@ static int mips_next_event(unsigned long delta,
+@@ -38,12 +38,6 @@ static int mips_next_event(unsigned long
  
  #endif /* CONFIG_MIPS_MT_SMTC */
  
@@ -26,7 +24,7 @@ index 50d3f5a..99585e6 100644
  DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
  int cp0_timer_irq_installed;
  
-@@ -90,9 +84,38 @@ struct irqaction c0_compare_irqaction = {
+@@ -90,9 +84,38 @@ struct irqaction c0_compare_irqaction =
  	.name = "timer",
  };
  
@@ -80,6 +78,3 @@ index 50d3f5a..99585e6 100644
  
  	return 0;
  }
--- 
-1.7.10.4
-

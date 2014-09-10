@@ -10,11 +10,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  2 files changed, 798 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7621.c
 
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index 137f2a6..d054bc8 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
+@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -22,9 +20,6 @@ index 137f2a6..d054bc8 100644
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
-diff --git a/arch/mips/pci/pci-mt7621.c b/arch/mips/pci/pci-mt7621.c
-new file mode 100644
-index 0000000..0b58fce
 --- /dev/null
 +++ b/arch/mips/pci/pci-mt7621.c
 @@ -0,0 +1,797 @@
@@ -825,6 +820,3 @@ index 0000000..0b58fce
 +{
 +	return 0;
 +}
--- 
-1.7.10.4
-

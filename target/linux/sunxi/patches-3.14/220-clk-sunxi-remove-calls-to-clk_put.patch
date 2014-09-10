@@ -12,11 +12,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clk/sunxi/clk-sunxi.c | 8 ++------
  1 file changed, 2 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 9afd8dd..a10a645 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -1325,17 +1325,13 @@ static void __init sunxi_clock_protect(void)
+@@ -1325,17 +1325,13 @@ static void __init sunxi_clock_protect(v
  
  	/* memory bus clock - sun5i+ */
  	clk = clk_get(NULL, "mbus");
@@ -36,6 +34,3 @@ index 9afd8dd..a10a645 100644
  }
  
  static void __init sunxi_init_clocks(void)
--- 
-2.0.3
-

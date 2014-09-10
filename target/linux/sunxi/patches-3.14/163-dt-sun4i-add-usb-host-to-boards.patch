@@ -19,8 +19,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun4i-a10-hackberry.dts | 40 +++++++++++++++++++++++++++++++
  1 file changed, 40 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10-hackberry.dts b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
-index 6692d336..d7c17e4 100644
 --- a/arch/arm/boot/dts/sun4i-a10-hackberry.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
 @@ -13,6 +13,7 @@
@@ -74,9 +72,9 @@ index 6692d336..d7c17e4 100644
  		};
  
  		uart0: serial@01c28000 {
-@@ -62,4 +92,14 @@
- 		enable-active-high;
- 		gpio = <&pio 7 19 0>;
+@@ -66,4 +96,14 @@
+ 			gpio = <&pio 7 19 0>;
+ 		};
  	};
 +
 +	reg_usb1_vbus: usb1-vbus {
@@ -89,23 +87,6 @@ index 6692d336..d7c17e4 100644
 +		status = "okay";
 +	};
  };
--- 
-2.0.3
-
-From dbf6ffa0b3832d91c2509e6753f485cedc791051 Mon Sep 17 00:00:00 2001
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Sat, 11 Jan 2014 05:15:06 +0100
-Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to mini-xplus dts
-
-Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
-
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- arch/arm/boot/dts/sun4i-a10-mini-xplus.dts | 31 ++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
-
-diff --git a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
-index 70b3323..dd84a9e3 100644
 --- a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
 @@ -13,16 +13,47 @@
@@ -156,21 +137,6 @@ index 70b3323..dd84a9e3 100644
 +		status = "okay";
 +	};
  };
--- 
-2.0.3
-
-From 528808ae38fee761be9f3451f51b457cb56d33ee Mon Sep 17 00:00:00 2001
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Mon, 17 Feb 2014 20:41:04 +0100
-Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to pcduino.dts
-
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- arch/arm/boot/dts/sun4i-a10-pcduino.dts | 31 +++++++++++++++++++++++++++++++
- 1 file changed, 31 insertions(+)
-
-diff --git a/arch/arm/boot/dts/sun4i-a10-pcduino.dts b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
-index f5692a3..255b47e 100644
 --- a/arch/arm/boot/dts/sun4i-a10-pcduino.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
 @@ -12,6 +12,7 @@
@@ -223,24 +189,6 @@ index f5692a3..255b47e 100644
 +		status = "okay";
 +	};
  };
--- 
-2.0.3
-
-From 58b778ce8cbc6fdb1fda5a6998fdd114a2b77cc9 Mon Sep 17 00:00:00 2001
-From: Roman Byshko <rbyshko@gmail.com>
-Date: Wed, 18 Sep 2013 22:45:06 +0200
-Subject: [PATCH] ARM: sun4i: dt: Add USB host nodes to cubieboard dts
-
-Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
-
-Signed-off-by: Roman Byshko <rbyshko@gmail.com>
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- arch/arm/boot/dts/sun4i-a10-cubieboard.dts | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
-
-diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
-index 20407ac..4684cbe 100644
 --- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 @@ -34,11 +34,33 @@
@@ -290,6 +238,3 @@ index 20407ac..4684cbe 100644
 +		status = "okay";
 +	};
  };
--- 
-2.0.3
-

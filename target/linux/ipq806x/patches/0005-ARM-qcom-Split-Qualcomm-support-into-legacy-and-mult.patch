@@ -50,11 +50,9 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  create mode 100644 arch/arm/mach-qcom/scm.c
  create mode 100644 arch/arm/mach-qcom/scm.h
 
-diff --git a/MAINTAINERS b/MAINTAINERS
-index 900d98e..7d23402 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -1168,6 +1168,14 @@ L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
+@@ -1168,6 +1168,14 @@ L:	linux-arm-kernel@lists.infradead.org
  W:	http://www.arm.linux.org.uk/
  S:	Maintained
  
@@ -69,11 +67,9 @@ index 900d98e..7d23402 100644
  ARM/RADISYS ENP2611 MACHINE SUPPORT
  M:	Lennert Buytenhek <kernel@wantstofly.org>
  L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 1594945..d02ce70 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -657,9 +657,8 @@ config ARCH_PXA
+@@ -658,9 +658,8 @@ config ARCH_PXA
  	help
  	  Support for Intel/Marvell's PXA2xx/PXA3xx processor line.
  
@@ -85,7 +81,7 @@ index 1594945..d02ce70 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select COMMON_CLK
  	select GENERIC_CLOCKEVENTS
-@@ -1005,6 +1004,8 @@ source "arch/arm/plat-pxa/Kconfig"
+@@ -1006,6 +1005,8 @@ source "arch/arm/plat-pxa/Kconfig"
  
  source "arch/arm/mach-mmp/Kconfig"
  
@@ -94,8 +90,6 @@ index 1594945..d02ce70 100644
  source "arch/arm/mach-realview/Kconfig"
  
  source "arch/arm/mach-rockchip/Kconfig"
-diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
-index 0531da8..4491c7b 100644
 --- a/arch/arm/Kconfig.debug
 +++ b/arch/arm/Kconfig.debug
 @@ -956,7 +956,7 @@ config DEBUG_STI_UART
@@ -107,11 +101,9 @@ index 0531da8..4491c7b 100644
  
  config DEBUG_LL_INCLUDE
  	string
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index 08a9ef5..51e5bed 100644
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -180,6 +180,7 @@ machine-$(CONFIG_ARCH_OMAP2PLUS)	+= omap2
+@@ -185,6 +185,7 @@ machine-$(CONFIG_ARCH_OMAP2PLUS)	+= omap
  machine-$(CONFIG_ARCH_ORION5X)		+= orion5x
  machine-$(CONFIG_ARCH_PICOXCELL)	+= picoxcell
  machine-$(CONFIG_ARCH_PXA)		+= pxa
@@ -119,11 +111,9 @@ index 08a9ef5..51e5bed 100644
  machine-$(CONFIG_ARCH_REALVIEW)		+= realview
  machine-$(CONFIG_ARCH_ROCKCHIP)		+= rockchip
  machine-$(CONFIG_ARCH_RPC)		+= rpc
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 0320303..4a89023 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -119,9 +119,6 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-cloudbox.dtb \
+@@ -119,9 +119,6 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-
  	kirkwood-ts219-6282.dtb
  dtb-$(CONFIG_ARCH_MARCO) += marco-evb.dtb
  dtb-$(CONFIG_ARCH_MOXART) += moxart-uc7112lx.dtb
@@ -133,7 +123,7 @@ index 0320303..4a89023 100644
  dtb-$(CONFIG_ARCH_MVEBU) += armada-370-db.dtb \
  	armada-370-mirabox.dtb \
  	armada-370-netgear-rn102.dtb \
-@@ -234,6 +231,9 @@ dtb-$(CONFIG_ARCH_OMAP2PLUS) += omap2420-h4.dtb \
+@@ -234,6 +231,9 @@ dtb-$(CONFIG_ARCH_OMAP2PLUS) += omap2420
  	dra7-evm.dtb
  dtb-$(CONFIG_ARCH_ORION5X) += orion5x-lacie-ethernet-disk-mini-v2.dtb
  dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
@@ -143,8 +133,6 @@ index 0320303..4a89023 100644
  dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
  	ste-hrefprev60-stuib.dtb \
  	ste-hrefprev60-tvk.dtb \
-diff --git a/arch/arm/mach-msm/Kconfig b/arch/arm/mach-msm/Kconfig
-index 3c4eca7..a7f959e 100644
 --- a/arch/arm/mach-msm/Kconfig
 +++ b/arch/arm/mach-msm/Kconfig
 @@ -1,50 +1,9 @@
@@ -208,8 +196,6 @@ index 3c4eca7..a7f959e 100644
  
  config MACH_HALIBUT
  	depends on ARCH_MSM
-diff --git a/arch/arm/mach-msm/Makefile b/arch/arm/mach-msm/Makefile
-index 04b1bee..27c078a 100644
 --- a/arch/arm/mach-msm/Makefile
 +++ b/arch/arm/mach-msm/Makefile
 @@ -13,17 +13,11 @@ obj-$(CONFIG_ARCH_QSD8X50) += dma.o io.o
@@ -230,9 +216,6 @@ index 04b1bee..27c078a 100644
 -obj-$(CONFIG_ARCH_MSM_DT) += board-dt.o
  obj-$(CONFIG_MSM_GPIOMUX) += gpiomux.o
  obj-$(CONFIG_ARCH_QSD8X50) += gpiomux-8x50.o
-diff --git a/arch/arm/mach-msm/board-dt.c b/arch/arm/mach-msm/board-dt.c
-deleted file mode 100644
-index 1f11d93..0000000
 --- a/arch/arm/mach-msm/board-dt.c
 +++ /dev/null
 @@ -1,41 +0,0 @@
@@ -277,9 +260,6 @@ index 1f11d93..0000000
 -DT_MACHINE_START(APQ_DT, "Qualcomm MSM (Flattened Device Tree)")
 -	.dt_compat = apq8074_dt_match,
 -MACHINE_END
-diff --git a/arch/arm/mach-msm/platsmp.c b/arch/arm/mach-msm/platsmp.c
-deleted file mode 100644
-index 251a91e..0000000
 --- a/arch/arm/mach-msm/platsmp.c
 +++ /dev/null
 @@ -1,137 +0,0 @@
@@ -420,9 +400,6 @@ index 251a91e..0000000
 -	.cpu_die		= msm_cpu_die,
 -#endif
 -};
-diff --git a/arch/arm/mach-msm/scm-boot.c b/arch/arm/mach-msm/scm-boot.c
-deleted file mode 100644
-index 45cee3e..0000000
 --- a/arch/arm/mach-msm/scm-boot.c
 +++ /dev/null
 @@ -1,39 +0,0 @@
@@ -465,9 +442,6 @@ index 45cee3e..0000000
 -			&cmd, sizeof(cmd), NULL, 0);
 -}
 -EXPORT_SYMBOL(scm_set_boot_addr);
-diff --git a/arch/arm/mach-msm/scm-boot.h b/arch/arm/mach-msm/scm-boot.h
-deleted file mode 100644
-index 7be32ff..0000000
 --- a/arch/arm/mach-msm/scm-boot.h
 +++ /dev/null
 @@ -1,22 +0,0 @@
@@ -493,9 +467,6 @@ index 7be32ff..0000000
 -int scm_set_boot_addr(phys_addr_t addr, int flags);
 -
 -#endif
-diff --git a/arch/arm/mach-msm/scm.c b/arch/arm/mach-msm/scm.c
-deleted file mode 100644
-index c536fd6..0000000
 --- a/arch/arm/mach-msm/scm.c
 +++ /dev/null
 @@ -1,299 +0,0 @@
@@ -798,9 +769,6 @@ index c536fd6..0000000
 -	return version;
 -}
 -EXPORT_SYMBOL(scm_get_version);
-diff --git a/arch/arm/mach-msm/scm.h b/arch/arm/mach-msm/scm.h
-deleted file mode 100644
-index 00b31ea..0000000
 --- a/arch/arm/mach-msm/scm.h
 +++ /dev/null
 @@ -1,25 +0,0 @@
@@ -829,9 +797,6 @@ index 00b31ea..0000000
 -extern u32 scm_get_version(void);
 -
 -#endif
-diff --git a/arch/arm/mach-qcom/Kconfig b/arch/arm/mach-qcom/Kconfig
-new file mode 100644
-index 0000000..a028be2
 --- /dev/null
 +++ b/arch/arm/mach-qcom/Kconfig
 @@ -0,0 +1,33 @@
@@ -868,9 +833,6 @@ index 0000000..a028be2
 +	bool
 +
 +endif
-diff --git a/arch/arm/mach-qcom/Makefile b/arch/arm/mach-qcom/Makefile
-new file mode 100644
-index 0000000..8f756ae
 --- /dev/null
 +++ b/arch/arm/mach-qcom/Makefile
 @@ -0,0 +1,5 @@
@@ -879,9 +841,6 @@ index 0000000..8f756ae
 +obj-$(CONFIG_QCOM_SCM)	+= scm.o scm-boot.o
 +
 +CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
-diff --git a/arch/arm/mach-qcom/board.c b/arch/arm/mach-qcom/board.c
-new file mode 100644
-index 0000000..4529f6b
 --- /dev/null
 +++ b/arch/arm/mach-qcom/board.c
 @@ -0,0 +1,40 @@
@@ -925,9 +884,6 @@ index 0000000..4529f6b
 +DT_MACHINE_START(APQ_DT, "Qualcomm (Flattened Device Tree)")
 +	.dt_compat = apq8074_dt_match,
 +MACHINE_END
-diff --git a/arch/arm/mach-qcom/platsmp.c b/arch/arm/mach-qcom/platsmp.c
-new file mode 100644
-index 0000000..67823a7
 --- /dev/null
 +++ b/arch/arm/mach-qcom/platsmp.c
 @@ -0,0 +1,137 @@
@@ -1068,9 +1024,6 @@ index 0000000..67823a7
 +	.cpu_die		= msm_cpu_die,
 +#endif
 +};
-diff --git a/arch/arm/mach-qcom/scm-boot.c b/arch/arm/mach-qcom/scm-boot.c
-new file mode 100644
-index 0000000..45cee3e
 --- /dev/null
 +++ b/arch/arm/mach-qcom/scm-boot.c
 @@ -0,0 +1,39 @@
@@ -1113,9 +1066,6 @@ index 0000000..45cee3e
 +			&cmd, sizeof(cmd), NULL, 0);
 +}
 +EXPORT_SYMBOL(scm_set_boot_addr);
-diff --git a/arch/arm/mach-qcom/scm-boot.h b/arch/arm/mach-qcom/scm-boot.h
-new file mode 100644
-index 0000000..7be32ff
 --- /dev/null
 +++ b/arch/arm/mach-qcom/scm-boot.h
 @@ -0,0 +1,22 @@
@@ -1141,9 +1091,6 @@ index 0000000..7be32ff
 +int scm_set_boot_addr(phys_addr_t addr, int flags);
 +
 +#endif
-diff --git a/arch/arm/mach-qcom/scm.c b/arch/arm/mach-qcom/scm.c
-new file mode 100644
-index 0000000..c536fd6
 --- /dev/null
 +++ b/arch/arm/mach-qcom/scm.c
 @@ -0,0 +1,299 @@
@@ -1446,9 +1393,6 @@ index 0000000..c536fd6
 +	return version;
 +}
 +EXPORT_SYMBOL(scm_get_version);
-diff --git a/arch/arm/mach-qcom/scm.h b/arch/arm/mach-qcom/scm.h
-new file mode 100644
-index 0000000..00b31ea
 --- /dev/null
 +++ b/arch/arm/mach-qcom/scm.h
 @@ -0,0 +1,25 @@
@@ -1477,6 +1421,3 @@ index 0000000..00b31ea
 +extern u32 scm_get_version(void);
 +
 +#endif
--- 
-1.7.10.4
-

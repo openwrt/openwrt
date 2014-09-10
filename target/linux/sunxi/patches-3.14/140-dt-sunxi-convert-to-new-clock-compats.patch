@@ -15,8 +15,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20.dtsi  | 54 +++++++++++++++++------------------
  5 files changed, 110 insertions(+), 110 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index 2d623d0..f6f41d6 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
 @@ -60,7 +60,7 @@
@@ -289,11 +287,9 @@ index 2d623d0..f6f41d6 100644
  			reg = <0x01c200d4 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "spi3";
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index 905317e..df90a29 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
-@@ -53,7 +53,7 @@
+@@ -49,7 +49,7 @@
  
  		osc24M: clk@01c20050 {
  			#clock-cells = <0>;
@@ -302,7 +298,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20050 0x4>;
  			clock-frequency = <24000000>;
  			clock-output-names = "osc24M";
-@@ -68,7 +68,7 @@
+@@ -64,7 +64,7 @@
  
  		pll1: clk@01c20000 {
  			#clock-cells = <0>;
@@ -311,7 +307,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20000 0x4>;
  			clocks = <&osc24M>;
  			clock-output-names = "pll1";
-@@ -76,7 +76,7 @@
+@@ -72,7 +72,7 @@
  
  		pll4: clk@01c20018 {
  			#clock-cells = <0>;
@@ -320,7 +316,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20018 0x4>;
  			clocks = <&osc24M>;
  			clock-output-names = "pll4";
-@@ -84,7 +84,7 @@
+@@ -80,7 +80,7 @@
  
  		pll5: clk@01c20020 {
  			#clock-cells = <1>;
@@ -329,7 +325,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20020 0x4>;
  			clocks = <&osc24M>;
  			clock-output-names = "pll5_ddr", "pll5_other";
-@@ -92,7 +92,7 @@
+@@ -88,7 +88,7 @@
  
  		pll6: clk@01c20028 {
  			#clock-cells = <1>;
@@ -338,7 +334,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20028 0x4>;
  			clocks = <&osc24M>;
  			clock-output-names = "pll6_sata", "pll6_other", "pll6";
-@@ -101,7 +101,7 @@
+@@ -97,7 +97,7 @@
  		/* dummy is 200M */
  		cpu: cpu@01c20054 {
  			#clock-cells = <0>;
@@ -347,7 +343,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20054 0x4>;
  			clocks = <&osc32k>, <&osc24M>, <&pll1>, <&dummy>;
  			clock-output-names = "cpu";
-@@ -109,7 +109,7 @@
+@@ -105,7 +105,7 @@
  
  		axi: axi@01c20054 {
  			#clock-cells = <0>;
@@ -356,7 +352,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20054 0x4>;
  			clocks = <&cpu>;
  			clock-output-names = "axi";
-@@ -117,7 +117,7 @@
+@@ -113,7 +113,7 @@
  
  		axi_gates: clk@01c2005c {
  			#clock-cells = <1>;
@@ -365,7 +361,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c2005c 0x4>;
  			clocks = <&axi>;
  			clock-output-names = "axi_dram";
-@@ -125,7 +125,7 @@
+@@ -121,7 +121,7 @@
  
  		ahb: ahb@01c20054 {
  			#clock-cells = <0>;
@@ -374,7 +370,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20054 0x4>;
  			clocks = <&axi>;
  			clock-output-names = "ahb";
-@@ -147,7 +147,7 @@
+@@ -143,7 +143,7 @@
  
  		apb0: apb0@01c20054 {
  			#clock-cells = <0>;
@@ -383,7 +379,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20054 0x4>;
  			clocks = <&ahb>;
  			clock-output-names = "apb0";
-@@ -164,7 +164,7 @@
+@@ -160,7 +160,7 @@
  
  		apb1_mux: apb1_mux@01c20058 {
  			#clock-cells = <0>;
@@ -392,7 +388,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20058 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
  			clock-output-names = "apb1_mux";
-@@ -172,7 +172,7 @@
+@@ -168,7 +168,7 @@
  
  		apb1: apb1@01c20058 {
  			#clock-cells = <0>;
@@ -401,7 +397,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20058 0x4>;
  			clocks = <&apb1_mux>;
  			clock-output-names = "apb1";
-@@ -190,7 +190,7 @@
+@@ -186,7 +186,7 @@
  
  		nand_clk: clk@01c20080 {
  			#clock-cells = <0>;
@@ -410,7 +406,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20080 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "nand";
-@@ -198,7 +198,7 @@
+@@ -194,7 +194,7 @@
  
  		ms_clk: clk@01c20084 {
  			#clock-cells = <0>;
@@ -419,7 +415,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20084 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "ms";
-@@ -206,7 +206,7 @@
+@@ -202,7 +202,7 @@
  
  		mmc0_clk: clk@01c20088 {
  			#clock-cells = <0>;
@@ -428,7 +424,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20088 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "mmc0";
-@@ -214,7 +214,7 @@
+@@ -210,7 +210,7 @@
  
  		mmc1_clk: clk@01c2008c {
  			#clock-cells = <0>;
@@ -437,7 +433,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c2008c 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "mmc1";
-@@ -222,7 +222,7 @@
+@@ -218,7 +218,7 @@
  
  		mmc2_clk: clk@01c20090 {
  			#clock-cells = <0>;
@@ -446,7 +442,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20090 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "mmc2";
-@@ -230,7 +230,7 @@
+@@ -226,7 +226,7 @@
  
  		ts_clk: clk@01c20098 {
  			#clock-cells = <0>;
@@ -455,7 +451,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c20098 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "ts";
-@@ -238,7 +238,7 @@
+@@ -234,7 +234,7 @@
  
  		ss_clk: clk@01c2009c {
  			#clock-cells = <0>;
@@ -464,7 +460,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c2009c 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "ss";
-@@ -246,7 +246,7 @@
+@@ -242,7 +242,7 @@
  
  		spi0_clk: clk@01c200a0 {
  			#clock-cells = <0>;
@@ -473,7 +469,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c200a0 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "spi0";
-@@ -254,7 +254,7 @@
+@@ -250,7 +250,7 @@
  
  		spi1_clk: clk@01c200a4 {
  			#clock-cells = <0>;
@@ -482,7 +478,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c200a4 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "spi1";
-@@ -262,7 +262,7 @@
+@@ -258,7 +258,7 @@
  
  		spi2_clk: clk@01c200a8 {
  			#clock-cells = <0>;
@@ -491,7 +487,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c200a8 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "spi2";
-@@ -270,7 +270,7 @@
+@@ -266,7 +266,7 @@
  
  		ir0_clk: clk@01c200b0 {
  			#clock-cells = <0>;
@@ -500,7 +496,7 @@ index 905317e..df90a29 100644
  			reg = <0x01c200b0 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "ir0";
-@@ -287,7 +287,7 @@
+@@ -283,7 +283,7 @@
  
  		mbus_clk: clk@01c2015c {
  			#clock-cells = <0>;
@@ -509,8 +505,6 @@ index 905317e..df90a29 100644
  			reg = <0x01c2015c 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "mbus";
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index d196ebc6..24cd86cb 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -54,7 +54,7 @@
@@ -729,8 +723,6 @@ index d196ebc6..24cd86cb 100644
  			reg = <0x01c2015c 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
  			clock-output-names = "mbus";
-diff --git a/arch/arm/boot/dts/sun6i-a31.dtsi b/arch/arm/boot/dts/sun6i-a31.dtsi
-index d3f1995..af6f87c 100644
 --- a/arch/arm/boot/dts/sun6i-a31.dtsi
 +++ b/arch/arm/boot/dts/sun6i-a31.dtsi
 @@ -95,7 +95,7 @@
@@ -778,8 +770,6 @@ index d3f1995..af6f87c 100644
  			reg = <0x01c20058 0x4>;
  			clocks = <&osc32k>, <&osc24M>, <&pll6>, <&pll6>;
  			clock-output-names = "apb2_mux";
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 911d4e4..d00fbf8 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
 @@ -64,7 +64,7 @@
@@ -1025,6 +1015,3 @@ index 911d4e4..d00fbf8 100644
  			reg = <0x01c2015c 0x4>;
  			clocks = <&osc24M>, <&pll6 2>, <&pll5 1>;
  			clock-output-names = "mbus";
--- 
-2.0.3
-

@@ -21,8 +21,6 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/ahci_platform.c |   46 ++++++-------------------------------------
  1 file changed, 6 insertions(+), 40 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index d3d2bad..8fab4bf 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
 @@ -28,49 +28,17 @@
@@ -80,7 +78,7 @@ index d3d2bad..8fab4bf 100644
  };
  
  static struct scsi_host_template ahci_platform_sht = {
-@@ -416,7 +384,6 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -416,7 +384,6 @@ static int ahci_probe(struct platform_de
  {
  	struct device *dev = &pdev->dev;
  	struct ahci_platform_data *pdata = dev_get_platdata(dev);
@@ -88,7 +86,7 @@ index d3d2bad..8fab4bf 100644
  	const struct ata_port_info *pi_template;
  	struct ahci_host_priv *hpriv;
  	int rc;
-@@ -444,7 +411,7 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -444,7 +411,7 @@ static int ahci_probe(struct platform_de
  	if (pdata && pdata->ata_port_info)
  		pi_template = pdata->ata_port_info;
  	else
@@ -97,7 +95,7 @@ index d3d2bad..8fab4bf 100644
  
  	rc = ahci_platform_init_host(pdev, hpriv, pi_template,
  				     pdata ? pdata->force_port_map : 0,
-@@ -638,7 +605,6 @@ static struct platform_driver ahci_driver = {
+@@ -638,7 +605,6 @@ static struct platform_driver ahci_drive
  		.of_match_table = ahci_of_match,
  		.pm = &ahci_pm_ops,
  	},
@@ -105,6 +103,3 @@ index d3d2bad..8fab4bf 100644
  };
  module_platform_driver(ahci_driver);
  
--- 
-1.7.10.4
-

@@ -21,11 +21,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  kernel/power/Kconfig           |    3 ---
  8 files changed, 13 deletions(-)
 
-diff --git a/Documentation/power/opp.txt b/Documentation/power/opp.txt
-index b8a907d..7b6a021 100644
 --- a/Documentation/power/opp.txt
 +++ b/Documentation/power/opp.txt
-@@ -52,9 +52,6 @@ Typical usage of the OPP library is as follows:
+@@ -52,9 +52,6 @@ Typical usage of the OPP library is as f
  SoC framework	-> modifies on required cases certain OPPs	-> OPP layer
  		-> queries to search/retrieve information	->
  
@@ -35,8 +33,6 @@ index b8a907d..7b6a021 100644
  OPP layer expects each domain to be represented by a unique device pointer. SoC
  framework registers a set of initial OPPs per device with the OPP layer. This
  list is expected to be an optimally small number typically around 5 per device.
-diff --git a/arch/arm/mach-exynos/Kconfig b/arch/arm/mach-exynos/Kconfig
-index 4c414af..67e69a8 100644
 --- a/arch/arm/mach-exynos/Kconfig
 +++ b/arch/arm/mach-exynos/Kconfig
 @@ -107,7 +107,6 @@ config SOC_EXYNOS5440
@@ -47,8 +43,6 @@ index 4c414af..67e69a8 100644
  	select HAVE_ARM_ARCH_TIMER
  	select AUTO_ZRELADDR
  	select MIGHT_HAVE_PCI
-diff --git a/arch/arm/mach-highbank/Kconfig b/arch/arm/mach-highbank/Kconfig
-index 9f74755..43bd782 100644
 --- a/arch/arm/mach-highbank/Kconfig
 +++ b/arch/arm/mach-highbank/Kconfig
 @@ -2,7 +2,6 @@ config ARCH_HIGHBANK
@@ -59,8 +53,6 @@ index 9f74755..43bd782 100644
  	select ARCH_SUPPORTS_BIG_ENDIAN
  	select ARCH_WANT_OPTIONAL_GPIOLIB
  	select ARM_AMBA
-diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
-index 0674cb7..3e6596c 100644
 --- a/arch/arm/mach-omap2/Kconfig
 +++ b/arch/arm/mach-omap2/Kconfig
 @@ -13,7 +13,6 @@ config ARCH_OMAP3
@@ -71,8 +63,6 @@ index 0674cb7..3e6596c 100644
  	select ARM_CPU_SUSPEND if PM
  	select CPU_V7
  	select MULTI_IRQ_HANDLER
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 61d4d31..9fc2dd2 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
 @@ -85,7 +85,6 @@ config ARCH_R8A73A4
@@ -91,8 +81,6 @@ index 61d4d31..9fc2dd2 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select REGULATOR_FIXED_VOLTAGE if REGULATOR
  	select SND_SOC_AK4642 if SND_SIMPLE_CARD
-diff --git a/arch/arm/mach-vexpress/Kconfig b/arch/arm/mach-vexpress/Kconfig
-index ca5b7e5..4ed6e97 100644
 --- a/arch/arm/mach-vexpress/Kconfig
 +++ b/arch/arm/mach-vexpress/Kconfig
 @@ -67,7 +67,6 @@ config ARCH_VEXPRESS_DCSCB
@@ -103,8 +91,6 @@ index ca5b7e5..4ed6e97 100644
  	select PM_OPP
  	help
  	  The TC2 (A15x2 A7x3) versatile express core tile integrates a logic
-diff --git a/drivers/devfreq/Kconfig b/drivers/devfreq/Kconfig
-index 7d2f435..d416754 100644
 --- a/drivers/devfreq/Kconfig
 +++ b/drivers/devfreq/Kconfig
 @@ -68,7 +68,6 @@ comment "DEVFREQ Drivers"
@@ -115,8 +101,6 @@ index 7d2f435..d416754 100644
  	select DEVFREQ_GOV_SIMPLE_ONDEMAND
  	help
  	  This adds the DEVFREQ driver for Exynos4210 memory bus (vdd_int)
-diff --git a/kernel/power/Kconfig b/kernel/power/Kconfig
-index 2fac9cc..caa040c 100644
 --- a/kernel/power/Kconfig
 +++ b/kernel/power/Kconfig
 @@ -253,9 +253,6 @@ config APM_EMULATION
@@ -129,6 +113,3 @@ index 2fac9cc..caa040c 100644
  config PM_OPP
  	bool "Operating Performance Point (OPP) Layer library"
  	depends on ARCH_HAS_OPP
--- 
-1.7.10.4
-

@@ -13,7 +13,7 @@ BOARDNAME:=Atmel AT91
 FEATURES:=squashfs targz ext2 usb
 SUBTARGETS:=legacy sama5d3
 
-LINUX_VERSION:=3.14.16
+LINUX_VERSION:=3.14.18
 
 include $(INCLUDE_DIR)/target.mk
 

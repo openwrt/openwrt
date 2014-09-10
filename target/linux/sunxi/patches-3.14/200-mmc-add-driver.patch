@@ -27,11 +27,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  create mode 100644 drivers/mmc/host/sunxi-mmc.c
  create mode 100644 drivers/mmc/host/sunxi-mmc.h
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 1384f67..7caf266 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -689,3 +689,10 @@ config MMC_REALTEK_PCI
+@@ -714,3 +714,10 @@ config MMC_REALTEK_PCI
  	help
  	  Say Y here to include driver code to support SD/MMC card interface
  	  of Realtek PCI-E card reader
@@ -42,11 +40,9 @@ index 1384f67..7caf266 100644
 +	help
 +	  This selects support for the SD/MMC Host Controller on
 +	  Allwinner sunxi SoCs.
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index 3483b6b..f3c7c243 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -54,6 +54,8 @@ obj-$(CONFIG_MMC_WMT)		+= wmt-sdmmc.o
+@@ -55,6 +55,8 @@ obj-$(CONFIG_MMC_WMT)		+= wmt-sdmmc.o
  
  obj-$(CONFIG_MMC_REALTEK_PCI)	+= rtsx_pci_sdmmc.o
  
@@ -55,9 +51,6 @@ index 3483b6b..f3c7c243 100644
  obj-$(CONFIG_MMC_SDHCI_PLTFM)		+= sdhci-pltfm.o
  obj-$(CONFIG_MMC_SDHCI_CNS3XXX)		+= sdhci-cns3xxx.o
  obj-$(CONFIG_MMC_SDHCI_ESDHC_IMX)	+= sdhci-esdhc-imx.o
-diff --git a/drivers/mmc/host/sunxi-mmc.c b/drivers/mmc/host/sunxi-mmc.c
-new file mode 100644
-index 0000000..a16abd2
 --- /dev/null
 +++ b/drivers/mmc/host/sunxi-mmc.c
 @@ -0,0 +1,853 @@
@@ -914,9 +907,6 @@ index 0000000..a16abd2
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR("David Lanzendörfer <david.lanzendoerfer@o2s.ch>");
 +MODULE_ALIAS("platform:sunxi-mmc");
-diff --git a/drivers/mmc/host/sunxi-mmc.h b/drivers/mmc/host/sunxi-mmc.h
-new file mode 100644
-index 0000000..84bab99
 --- /dev/null
 +++ b/drivers/mmc/host/sunxi-mmc.h
 @@ -0,0 +1,238 @@
@@ -1158,6 +1148,3 @@ index 0000000..84bab99
 +};
 +
 +#endif
--- 
-2.0.3
-

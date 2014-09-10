@@ -15,8 +15,6 @@ Signed-off-by: Carlo Caione <carlo@caione.org>
  4 files changed, 358 insertions(+)
  create mode 100644 drivers/regulator/axp20x-regulator.c
 
-diff --git a/arch/arm/configs/sunxi_defconfig b/arch/arm/configs/sunxi_defconfig
-index 3ed7023..6e305da 100644
 --- a/arch/arm/configs/sunxi_defconfig
 +++ b/arch/arm/configs/sunxi_defconfig
 @@ -72,3 +72,4 @@ CONFIG_NFS_FS=y
@@ -24,8 +22,6 @@ index 3ed7023..6e305da 100644
  CONFIG_NLS=y
  CONFIG_PRINTK_TIME=y
 +CONFIG_REGULATOR_AXP20X=y
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index 6a79328..9f3bc48 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
 @@ -139,6 +139,13 @@ config REGULATOR_AS3722
@@ -42,11 +38,9 @@ index 6a79328..9f3bc48 100644
  config REGULATOR_DA903X
  	tristate "Dialog Semiconductor DA9030/DA9034 regulators"
  	depends on PMIC_DA903X
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index 979f9dd..1dd084a 100644
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_REGULATOR_ANATOP) += anatop-regulator.o
+@@ -20,6 +20,7 @@ obj-$(CONFIG_REGULATOR_ANATOP) += anatop
  obj-$(CONFIG_REGULATOR_ARIZONA) += arizona-micsupp.o arizona-ldo1.o
  obj-$(CONFIG_REGULATOR_AS3711) += as3711-regulator.o
  obj-$(CONFIG_REGULATOR_AS3722) += as3722-regulator.o
@@ -54,9 +48,6 @@ index 979f9dd..1dd084a 100644
  obj-$(CONFIG_REGULATOR_DA903X)	+= da903x.o
  obj-$(CONFIG_REGULATOR_DA9052)	+= da9052-regulator.o
  obj-$(CONFIG_REGULATOR_DA9055)	+= da9055-regulator.o
-diff --git a/drivers/regulator/axp20x-regulator.c b/drivers/regulator/axp20x-regulator.c
-new file mode 100644
-index 0000000..9072f2f
 --- /dev/null
 +++ b/drivers/regulator/axp20x-regulator.c
 @@ -0,0 +1,349 @@
@@ -409,6 +400,3 @@ index 0000000..9072f2f
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR("Carlo Caione <carlo@caione.org>");
 +MODULE_DESCRIPTION("Regulator Driver for AXP20X PMIC");
--- 
-2.0.3
-

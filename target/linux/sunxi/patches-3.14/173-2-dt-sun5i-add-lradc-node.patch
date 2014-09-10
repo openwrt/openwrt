@@ -11,12 +11,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i-a13.dtsi                 | 7 +++++++
  4 files changed, 30 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
-index 5bc25c7..93c6778 100644
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index 8ba1ed7..1795c26 100644
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
-index 177196c..c2c455d 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 @@ -14,6 +14,7 @@
@@ -27,7 +21,7 @@ index 177196c..c2c455d 100644
  
  / {
  	model = "Olimex A13-Olinuxino";
-@@ -64,6 +65,13 @@
+@@ -49,6 +50,13 @@
  			};
  		};
  
@@ -41,11 +35,9 @@ index 177196c..c2c455d 100644
  		uart1: serial@01c28400 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&uart1_pins_b>;
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 6fc84a4..8bc8e14 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
-@@ -458,6 +458,13 @@
+@@ -429,6 +429,13 @@
  			reg = <0x01c20c90 0x10>;
  		};
  
@@ -59,6 +51,3 @@ index 6fc84a4..8bc8e14 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun4i-sid";
  			reg = <0x01c23800 0x10>;
--- 
-2.0.3
-

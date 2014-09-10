@@ -11,11 +11,9 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  drivers/mtd/nand/qcom_adm_dma.c |    6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mtd/nand/qcom_adm_dma.c b/drivers/mtd/nand/qcom_adm_dma.c
-index 46d8473..542f901 100644
 --- a/drivers/mtd/nand/qcom_adm_dma.c
 +++ b/drivers/mtd/nand/qcom_adm_dma.c
-@@ -568,14 +568,14 @@ static int msm_dmov_init_clocks(struct platform_device *pdev)
+@@ -568,14 +568,14 @@ static int msm_dmov_init_clocks(struct p
  	int adm = (pdev->id >= 0) ? pdev->id : 0;
  	int ret;
  
@@ -32,7 +30,7 @@ index 46d8473..542f901 100644
  	if (IS_ERR(dmov_conf[adm].pclk)) {
  		dmov_conf[adm].pclk = NULL;
  		/* pclk not present on all SoCs, don't bail on failure */
-@@ -690,7 +690,7 @@ static int msm_dmov_probe(struct platform_device *pdev)
+@@ -690,7 +690,7 @@ static int msm_dmov_probe(struct platfor
  	}
  
  	/* get resets */
@@ -41,6 +39,3 @@ index 46d8473..542f901 100644
  	if (IS_ERR(dmov_conf[adm].adm_reset)) {
  		dev_err(&pdev->dev, "failed to get adm reset\n");
  		ret = PTR_ERR(dmov_conf[adm].adm_reset);
--- 
-1.7.10.4
-

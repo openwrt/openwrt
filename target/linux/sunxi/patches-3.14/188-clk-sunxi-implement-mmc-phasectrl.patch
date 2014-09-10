@@ -16,11 +16,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  2 files changed, 57 insertions(+)
  create mode 100644 include/linux/clk/sunxi.h
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 23baad9..9afd8dd 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -507,6 +507,41 @@ CLK_OF_DECLARE(sun7i_a20_gmac, "allwinner,sun7i-a20-gmac-clk",
+@@ -507,6 +507,41 @@ CLK_OF_DECLARE(sun7i_a20_gmac, "allwinne
  
  
  /**
@@ -62,9 +60,6 @@ index 23baad9..9afd8dd 100644
   * sunxi_factors_clk_setup() - Setup function for factor clocks
   */
  
-diff --git a/include/linux/clk/sunxi.h b/include/linux/clk/sunxi.h
-new file mode 100644
-index 0000000..1ef5c89
 --- /dev/null
 +++ b/include/linux/clk/sunxi.h
 @@ -0,0 +1,22 @@
@@ -90,6 +85,3 @@ index 0000000..1ef5c89
 +void clk_sunxi_mmc_phase_control(struct clk_hw *hw, u8 sample, u8 output);
 +
 +#endif
--- 
-2.0.3
-

@@ -19,9 +19,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  create mode 100644 Documentation/devicetree/bindings/spi/spi-sun6i.txt
  create mode 100644 drivers/spi/spi-sun6i.c
 
-diff --git a/Documentation/devicetree/bindings/spi/spi-sun6i.txt b/Documentation/devicetree/bindings/spi/spi-sun6i.txt
-new file mode 100644
-index 0000000..21de73d
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/spi/spi-sun6i.txt
 @@ -0,0 +1,24 @@
@@ -49,11 +46,9 @@ index 0000000..21de73d
 +	clock-names = "ahb", "mod";
 +	resets = <&ahb1_rst 21>;
 +};
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 581ee2a..58530d3 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -446,6 +446,12 @@ config SPI_SIRF
+@@ -455,6 +455,12 @@ config SPI_SIRF
  	help
  	  SPI driver for CSR SiRFprimaII SoCs
  
@@ -66,11 +61,9 @@ index 581ee2a..58530d3 100644
  config SPI_MXS
  	tristate "Freescale MXS SPI controller"
  	depends on ARCH_MXS
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 95af48d..13b6ccf9 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -70,6 +70,7 @@ obj-$(CONFIG_SPI_SH_HSPI)		+= spi-sh-hspi.o
+@@ -71,6 +71,7 @@ obj-$(CONFIG_SPI_SH_HSPI)		+= spi-sh-hsp
  obj-$(CONFIG_SPI_SH_MSIOF)		+= spi-sh-msiof.o
  obj-$(CONFIG_SPI_SH_SCI)		+= spi-sh-sci.o
  obj-$(CONFIG_SPI_SIRF)		+= spi-sirf.o
@@ -78,9 +71,6 @@ index 95af48d..13b6ccf9 100644
  obj-$(CONFIG_SPI_TEGRA114)		+= spi-tegra114.o
  obj-$(CONFIG_SPI_TEGRA20_SFLASH)	+= spi-tegra20-sflash.o
  obj-$(CONFIG_SPI_TEGRA20_SLINK)		+= spi-tegra20-slink.o
-diff --git a/drivers/spi/spi-sun6i.c b/drivers/spi/spi-sun6i.c
-new file mode 100644
-index 0000000..94d38d0
 --- /dev/null
 +++ b/drivers/spi/spi-sun6i.c
 @@ -0,0 +1,483 @@
@@ -567,6 +557,3 @@ index 0000000..94d38d0
 +MODULE_AUTHOR("Maxime Ripard <maxime.ripard@free-electrons.com>");
 +MODULE_DESCRIPTION("Allwinner A31 SPI controller driver");
 +MODULE_LICENSE("GPL");
--- 
-2.0.3
-

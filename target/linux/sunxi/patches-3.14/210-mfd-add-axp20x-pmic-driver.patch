@@ -23,8 +23,6 @@ Signed-off-by: Carlo Caione <carlo@caione.org>
  create mode 100644 drivers/mfd/axp20x.c
  create mode 100644 include/linux/mfd/axp20x.h
 
-diff --git a/arch/arm/configs/sunxi_defconfig b/arch/arm/configs/sunxi_defconfig
-index b5df4a5..d25660d 100644
 --- a/arch/arm/configs/sunxi_defconfig
 +++ b/arch/arm/configs/sunxi_defconfig
 @@ -55,6 +55,7 @@ CONFIG_GPIO_SYSFS=y
@@ -35,8 +33,6 @@ index b5df4a5..d25660d 100644
  # CONFIG_USB_SUPPORT is not set
  CONFIG_NEW_LEDS=y
  CONFIG_LEDS_CLASS=y
-diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index 49bb445..24ba61a 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
 @@ -59,6 +59,18 @@ config MFD_AAT2870_CORE
@@ -58,11 +54,9 @@ index 49bb445..24ba61a 100644
  config MFD_CROS_EC
  	tristate "ChromeOS Embedded Controller"
  	select MFD_CORE
-diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
-index 5aea5ef..fb773b5 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
-@@ -101,6 +101,7 @@ obj-$(CONFIG_PMIC_DA9052)	+= da9052-irq.o
+@@ -101,6 +101,7 @@ obj-$(CONFIG_PMIC_DA9052)	+= da9052-irq.
  obj-$(CONFIG_PMIC_DA9052)	+= da9052-core.o
  obj-$(CONFIG_MFD_DA9052_SPI)	+= da9052-spi.o
  obj-$(CONFIG_MFD_DA9052_I2C)	+= da9052-i2c.o
@@ -70,9 +64,6 @@ index 5aea5ef..fb773b5 100644
  
  obj-$(CONFIG_MFD_LP3943)	+= lp3943.o
  obj-$(CONFIG_MFD_LP8788)	+= lp8788.o lp8788-irq.o
-diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
-new file mode 100644
-index 0000000..92e5b0f
 --- /dev/null
 +++ b/drivers/mfd/axp20x.c
 @@ -0,0 +1,250 @@
@@ -326,9 +317,6 @@ index 0000000..92e5b0f
 +MODULE_DESCRIPTION("PMIC MFD core driver for AXP20X");
 +MODULE_AUTHOR("Carlo Caione <carlo@caione.org>");
 +MODULE_LICENSE("GPL");
-diff --git a/include/linux/mfd/axp20x.h b/include/linux/mfd/axp20x.h
-new file mode 100644
-index 0000000..fcef32c
 --- /dev/null
 +++ b/include/linux/mfd/axp20x.h
 @@ -0,0 +1,180 @@
@@ -512,6 +500,3 @@ index 0000000..fcef32c
 +};
 +
 +#endif /* __LINUX_MFD_AXP20X_H */
--- 
-2.0.3
-

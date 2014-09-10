@@ -12,11 +12,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |   27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 91de8bc..19d2feb 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -214,6 +214,11 @@ static int msm_config_reg(struct msm_pinctrl *pctrl,
+@@ -214,6 +214,11 @@ static int msm_config_reg(struct msm_pin
  		*bit = g->drv_bit;
  		*mask = 7;
  		break;
@@ -28,7 +26,7 @@ index 91de8bc..19d2feb 100644
  	default:
  		dev_err(pctrl->dev, "Invalid config param %04x\n", param);
  		return -ENOTSUPP;
-@@ -282,6 +287,14 @@ static int msm_config_group_get(struct pinctrl_dev *pctldev,
+@@ -282,6 +287,14 @@ static int msm_config_group_get(struct p
  	case PIN_CONFIG_DRIVE_STRENGTH:
  		arg = msm_regval_to_drive(arg);
  		break;
@@ -43,7 +41,7 @@ index 91de8bc..19d2feb 100644
  	default:
  		dev_err(pctrl->dev, "Unsupported config parameter: %x\n",
  			param);
-@@ -337,6 +350,20 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
+@@ -337,6 +350,20 @@ static int msm_config_group_set(struct p
  			else
  				arg = (arg / 2) - 1;
  			break;
@@ -64,6 +62,3 @@ index 91de8bc..19d2feb 100644
  		default:
  			dev_err(pctrl->dev, "Unsupported config parameter: %x\n",
  				param);
--- 
-1.7.10.4
-

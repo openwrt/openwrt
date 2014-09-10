@@ -14,13 +14,11 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 18 ++++++++++++++++++
  1 file changed, 18 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 8a1009d..f9dcb61 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-@@ -33,6 +33,24 @@
- 			pinctrl-0 = <&uart0_pins_a>;
- 			status = "okay";
+@@ -112,6 +112,24 @@
+ 				reg = <1>;
+ 			};
  		};
 +
 +		i2c0: i2c@01c2ac00 {
@@ -43,6 +41,3 @@ index 8a1009d..f9dcb61 100644
  	};
  
  	leds {
--- 
-2.0.3
-

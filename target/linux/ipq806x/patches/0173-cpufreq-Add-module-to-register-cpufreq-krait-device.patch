@@ -14,8 +14,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  3 files changed, 57 insertions(+)
  create mode 100644 drivers/cpufreq/qcom-cpufreq.c
 
-diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 3129749..6ae884d 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -123,6 +123,14 @@ config ARM_OMAP2PLUS_CPUFREQ
@@ -33,11 +31,9 @@ index 3129749..6ae884d 100644
  config ARM_S3C_CPUFREQ
  	bool
  	help
-diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
-index f6f4485..f5d18a3 100644
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_ARM_IMX6Q_CPUFREQ)		+= imx6q-cpufreq.o
+@@ -60,6 +60,7 @@ obj-$(CONFIG_ARM_IMX6Q_CPUFREQ)		+= imx6
  obj-$(CONFIG_ARM_INTEGRATOR)		+= integrator-cpufreq.o
  obj-$(CONFIG_ARM_KIRKWOOD_CPUFREQ)	+= kirkwood-cpufreq.o
  obj-$(CONFIG_ARM_OMAP2PLUS_CPUFREQ)	+= omap-cpufreq.o
@@ -45,9 +41,6 @@ index f6f4485..f5d18a3 100644
  obj-$(CONFIG_PXA25x)			+= pxa2xx-cpufreq.o
  obj-$(CONFIG_PXA27x)			+= pxa2xx-cpufreq.o
  obj-$(CONFIG_PXA3xx)			+= pxa3xx-cpufreq.o
-diff --git a/drivers/cpufreq/qcom-cpufreq.c b/drivers/cpufreq/qcom-cpufreq.c
-new file mode 100644
-index 0000000..71f4387
 --- /dev/null
 +++ b/drivers/cpufreq/qcom-cpufreq.c
 @@ -0,0 +1,48 @@
@@ -99,6 +92,3 @@ index 0000000..71f4387
 +
 +MODULE_DESCRIPTION("Qualcomm CPUfreq driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

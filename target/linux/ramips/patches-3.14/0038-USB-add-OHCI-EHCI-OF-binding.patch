@@ -12,11 +12,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/usb/host/ohci-platform.c |   37 +++++++++++++++++++++++++++++++------
  3 files changed, 50 insertions(+), 11 deletions(-)
 
-Index: linux-3.14.16/drivers/usb/Makefile
-===================================================================
---- linux-3.14.16.orig/drivers/usb/Makefile	2014-08-08 01:50:59.000000000 +0200
-+++ linux-3.14.16/drivers/usb/Makefile	2014-08-24 14:33:57.590539754 +0200
-@@ -11,6 +11,8 @@
+--- a/drivers/usb/Makefile
++++ b/drivers/usb/Makefile
+@@ -11,6 +11,8 @@ obj-$(CONFIG_USB_DWC2)		+= dwc2/
  
  obj-$(CONFIG_USB_MON)		+= mon/
  
@@ -25,7 +23,7 @@ Index: linux-3.14.16/drivers/usb/Makefile
  obj-$(CONFIG_PCI)		+= host/
  obj-$(CONFIG_USB_EHCI_HCD)	+= host/
  obj-$(CONFIG_USB_ISP116X_HCD)	+= host/
-@@ -41,7 +43,6 @@
+@@ -41,7 +43,6 @@ obj-$(CONFIG_USB_TMC)		+= class/
  obj-$(CONFIG_USB_STORAGE)	+= storage/
  obj-$(CONFIG_USB)		+= storage/
  
@@ -33,10 +31,8 @@ Index: linux-3.14.16/drivers/usb/Makefile
  obj-$(CONFIG_USB_MICROTEK)	+= image/
  
  obj-$(CONFIG_USB_SERIAL)	+= serial/
-Index: linux-3.14.16/drivers/usb/host/ehci-platform.c
-===================================================================
---- linux-3.14.16.orig/drivers/usb/host/ehci-platform.c	2014-08-24 12:39:18.806371411 +0200
-+++ linux-3.14.16/drivers/usb/host/ehci-platform.c	2014-08-24 12:39:21.102371467 +0200
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
 @@ -29,6 +29,8 @@
  #include <linux/usb.h>
  #include <linux/usb/hcd.h>
@@ -46,7 +42,7 @@ Index: linux-3.14.16/drivers/usb/host/ehci-platform.c
  
  #include "ehci.h"
  
-@@ -124,6 +126,15 @@
+@@ -124,6 +126,15 @@ static int ehci_platform_probe(struct pl
  	hcd->rsrc_start = res_mem->start;
  	hcd->rsrc_len = resource_size(res_mem);
  
@@ -62,7 +58,7 @@ Index: linux-3.14.16/drivers/usb/host/ehci-platform.c
  	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
  	if (IS_ERR(hcd->regs)) {
  		err = PTR_ERR(hcd->regs);
-@@ -161,6 +172,9 @@
+@@ -161,6 +172,9 @@ static int ehci_platform_remove(struct p
  	if (pdata == &ehci_platform_defaults)
  		dev->dev.platform_data = NULL;
  
@@ -72,7 +68,7 @@ Index: linux-3.14.16/drivers/usb/host/ehci-platform.c
  	return 0;
  }
  
-@@ -205,9 +219,8 @@
+@@ -205,9 +219,8 @@ static int ehci_platform_resume(struct d
  #define ehci_platform_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -84,7 +80,7 @@ Index: linux-3.14.16/drivers/usb/host/ehci-platform.c
  	{}
  };
  
-@@ -231,7 +244,7 @@
+@@ -231,7 +244,7 @@ static struct platform_driver ehci_platf
  		.owner	= THIS_MODULE,
  		.name	= "ehci-platform",
  		.pm	= &ehci_platform_pm_ops,
@@ -93,10 +89,8 @@ Index: linux-3.14.16/drivers/usb/host/ehci-platform.c
  	}
  };
  
-Index: linux-3.14.16/drivers/usb/host/ohci-platform.c
-===================================================================
---- linux-3.14.16.orig/drivers/usb/host/ohci-platform.c	2014-08-08 01:50:59.000000000 +0200
-+++ linux-3.14.16/drivers/usb/host/ohci-platform.c	2014-08-24 12:41:51.422375146 +0200
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
 @@ -22,18 +22,22 @@
  #include <linux/platform_device.h>
  #include <linux/usb/ohci_pdriver.h>
@@ -121,7 +115,7 @@ Index: linux-3.14.16/drivers/usb/host/ohci-platform.c
  	struct ohci_hcd *ohci = hcd_to_ohci(hcd);
  
  	if (pdata->big_endian_desc)
-@@ -63,11 +67,18 @@
+@@ -63,11 +67,18 @@ static int ohci_platform_probe(struct pl
  	int irq;
  	int err = -ENOMEM;
  
@@ -144,7 +138,7 @@ Index: linux-3.14.16/drivers/usb/host/ohci-platform.c
  	if (usb_disabled())
  		return -ENODEV;
  
-@@ -99,6 +110,12 @@
+@@ -99,6 +110,12 @@ static int ohci_platform_probe(struct pl
  	hcd->rsrc_start = res_mem->start;
  	hcd->rsrc_len = resource_size(res_mem);
  
@@ -157,7 +151,7 @@ Index: linux-3.14.16/drivers/usb/host/ohci-platform.c
  	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
  	if (IS_ERR(hcd->regs)) {
  		err = PTR_ERR(hcd->regs);
-@@ -134,6 +151,9 @@
+@@ -134,6 +151,9 @@ static int ohci_platform_remove(struct p
  	if (pdata->power_off)
  		pdata->power_off(dev);
  
@@ -167,7 +161,7 @@ Index: linux-3.14.16/drivers/usb/host/ohci-platform.c
  	return 0;
  }
  
-@@ -180,6 +200,11 @@
+@@ -180,6 +200,11 @@ static int ohci_platform_resume(struct d
  #define ohci_platform_resume	NULL
  #endif /* CONFIG_PM */
  
@@ -179,7 +173,7 @@ Index: linux-3.14.16/drivers/usb/host/ohci-platform.c
  static const struct platform_device_id ohci_platform_table[] = {
  	{ "ohci-platform", 0 },
  	{ }
-@@ -200,6 +225,7 @@
+@@ -200,6 +225,7 @@ static struct platform_driver ohci_platf
  		.owner	= THIS_MODULE,
  		.name	= "ohci-platform",
  		.pm	= &ohci_platform_pm_ops,

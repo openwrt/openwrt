@@ -12,11 +12,9 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  drivers/i2c/busses/i2c-qup.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-qup.c b/drivers/i2c/busses/i2c-qup.c
-index c9d5f78..ee40980 100644
 --- a/drivers/i2c/busses/i2c-qup.c
 +++ b/drivers/i2c/busses/i2c-qup.c
-@@ -633,12 +633,12 @@ static int qup_i2c_probe(struct platform_device *pdev)
+@@ -633,12 +633,12 @@ static int qup_i2c_probe(struct platform
  	 * associated with each byte written/received
  	 */
  	size = QUP_OUTPUT_BLOCK_SIZE(io_mode);
@@ -31,6 +29,3 @@ index c9d5f78..ee40980 100644
  		return -EIO;
  	qup->in_blk_sz = blk_sizes[size] / 2;
  
--- 
-1.7.10.4
-

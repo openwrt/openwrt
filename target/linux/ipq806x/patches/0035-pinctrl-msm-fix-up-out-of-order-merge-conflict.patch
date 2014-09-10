@@ -21,11 +21,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |    1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 19d2feb..343f421 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -215,7 +215,6 @@ static int msm_config_reg(struct msm_pinctrl *pctrl,
+@@ -215,7 +215,6 @@ static int msm_config_reg(struct msm_pin
  		*mask = 7;
  		break;
  	case PIN_CONFIG_OUTPUT:
@@ -33,6 +31,3 @@ index 19d2feb..343f421 100644
  		*bit = g->oe_bit;
  		*mask = 1;
  		break;
--- 
-1.7.10.4
-

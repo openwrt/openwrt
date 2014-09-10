@@ -14,11 +14,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |   29 +++++------------------------
  1 file changed, 5 insertions(+), 24 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index ab46e3a..91de8bc 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -200,28 +200,17 @@ static const struct pinmux_ops msm_pinmux_ops = {
+@@ -200,28 +200,17 @@ static const struct pinmux_ops msm_pinmu
  static int msm_config_reg(struct msm_pinctrl *pctrl,
  			  const struct msm_pingroup *g,
  			  unsigned param,
@@ -47,7 +45,7 @@ index ab46e3a..91de8bc 100644
  		*bit = g->drv_bit;
  		*mask = 7;
  		break;
-@@ -230,12 +219,6 @@ static int msm_config_reg(struct msm_pinctrl *pctrl,
+@@ -230,12 +219,6 @@ static int msm_config_reg(struct msm_pin
  		return -ENOTSUPP;
  	}
  
@@ -60,7 +58,7 @@ index ab46e3a..91de8bc 100644
  	return 0;
  }
  
-@@ -273,17 +256,16 @@ static int msm_config_group_get(struct pinctrl_dev *pctldev,
+@@ -273,17 +256,16 @@ static int msm_config_group_get(struct p
  	unsigned mask;
  	unsigned arg;
  	unsigned bit;
@@ -80,7 +78,7 @@ index ab46e3a..91de8bc 100644
  	arg = (val >> bit) & mask;
  
  	/* Convert register value to pinconf value */
-@@ -323,7 +305,6 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
+@@ -323,7 +305,6 @@ static int msm_config_group_set(struct p
  	unsigned mask;
  	unsigned arg;
  	unsigned bit;
@@ -88,7 +86,7 @@ index ab46e3a..91de8bc 100644
  	int ret;
  	u32 val;
  	int i;
-@@ -334,7 +315,7 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
+@@ -334,7 +315,7 @@ static int msm_config_group_set(struct p
  		param = pinconf_to_config_param(configs[i]);
  		arg = pinconf_to_config_argument(configs[i]);
  
@@ -97,7 +95,7 @@ index ab46e3a..91de8bc 100644
  		if (ret < 0)
  			return ret;
  
-@@ -369,10 +350,10 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
+@@ -369,10 +350,10 @@ static int msm_config_group_set(struct p
  		}
  
  		spin_lock_irqsave(&pctrl->lock, flags);
@@ -110,6 +108,3 @@ index ab46e3a..91de8bc 100644
  		spin_unlock_irqrestore(&pctrl->lock, flags);
  	}
  
--- 
-1.7.10.4
-

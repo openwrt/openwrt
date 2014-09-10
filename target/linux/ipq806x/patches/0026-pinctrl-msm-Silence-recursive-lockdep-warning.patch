@@ -43,11 +43,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |    7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 0e43fdd..e61b30a 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -857,6 +857,12 @@ static void msm_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
+@@ -857,6 +857,12 @@ static void msm_gpio_irq_handler(unsigne
  	chained_irq_exit(chip, desc);
  }
  
@@ -60,7 +58,7 @@ index 0e43fdd..e61b30a 100644
  static int msm_gpio_init(struct msm_pinctrl *pctrl)
  {
  	struct gpio_chip *chip;
-@@ -895,6 +901,7 @@ static int msm_gpio_init(struct msm_pinctrl *pctrl)
+@@ -895,6 +901,7 @@ static int msm_gpio_init(struct msm_pinc
  
  	for (i = 0; i < chip->ngpio; i++) {
  		irq = irq_create_mapping(pctrl->domain, i);
@@ -68,6 +66,3 @@ index 0e43fdd..e61b30a 100644
  		irq_set_chip_and_handler(irq, &msm_gpio_irq_chip, handle_edge_irq);
  		irq_set_chip_data(irq, pctrl);
  	}
--- 
-1.7.10.4
-

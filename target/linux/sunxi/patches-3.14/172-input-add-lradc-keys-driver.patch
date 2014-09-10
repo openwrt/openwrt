@@ -24,9 +24,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  create mode 100644 Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt
  create mode 100644 drivers/input/keyboard/sun4i-lradc-keys.c
 
-diff --git a/Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt b/Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt
-new file mode 100644
-index 0000000..7801264
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt
 @@ -0,0 +1,22 @@
@@ -52,8 +49,6 @@ index 0000000..7801264
 +		linux,chan0-keycodes = <KEY_VOLUMEUP KEY_VOLUMEDOWN
 +					KEY_MENU KEY_ENTER KEY_HOME>;
 +	};
-diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-index a673c9f..d8a51cd 100644
 --- a/drivers/input/keyboard/Kconfig
 +++ b/drivers/input/keyboard/Kconfig
 @@ -544,6 +544,16 @@ config KEYBOARD_STMPE
@@ -73,11 +68,9 @@ index a673c9f..d8a51cd 100644
  config KEYBOARD_DAVINCI
  	tristate "TI DaVinci Key Scan"
  	depends on ARCH_DAVINCI_DM365
-diff --git a/drivers/input/keyboard/Makefile b/drivers/input/keyboard/Makefile
-index a699b61..f3265bd 100644
 --- a/drivers/input/keyboard/Makefile
 +++ b/drivers/input/keyboard/Makefile
-@@ -50,6 +50,7 @@ obj-$(CONFIG_KEYBOARD_SH_KEYSC)		+= sh_keysc.o
+@@ -50,6 +50,7 @@ obj-$(CONFIG_KEYBOARD_SH_KEYSC)		+= sh_k
  obj-$(CONFIG_KEYBOARD_SPEAR)		+= spear-keyboard.o
  obj-$(CONFIG_KEYBOARD_STMPE)		+= stmpe-keypad.o
  obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stowaway.o
@@ -85,9 +78,6 @@ index a699b61..f3265bd 100644
  obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd.o
  obj-$(CONFIG_KEYBOARD_TC3589X)		+= tc3589x-keypad.o
  obj-$(CONFIG_KEYBOARD_TEGRA)		+= tegra-kbc.o
-diff --git a/drivers/input/keyboard/sun4i-lradc-keys.c b/drivers/input/keyboard/sun4i-lradc-keys.c
-new file mode 100644
-index 0000000..5c55e17
 --- /dev/null
 +++ b/drivers/input/keyboard/sun4i-lradc-keys.c
 @@ -0,0 +1,243 @@
@@ -334,6 +324,3 @@ index 0000000..5c55e17
 +MODULE_DESCRIPTION("Allwinner sun4i low res adc attached tablet keys driver");
 +MODULE_AUTHOR("Hans de Goede <hdegoede@redhat.com>");
 +MODULE_LICENSE("GPL");
--- 
-2.0.3
-

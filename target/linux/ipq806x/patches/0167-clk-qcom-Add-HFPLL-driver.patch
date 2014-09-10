@@ -16,8 +16,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  3 files changed, 119 insertions(+)
  create mode 100644 drivers/clk/qcom/hfpll.c
 
-diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
-index cfaa54c..de8ba31 100644
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
 @@ -53,3 +53,11 @@ config MSM_MMCC_8974
@@ -32,18 +30,13 @@ index cfaa54c..de8ba31 100644
 +	  Support for the high-frequency PLLs present on Qualcomm devices.
 +	  Say Y if you want to support CPU frequency scaling on devices
 +	  such as MSM8974, APQ8084, etc.
-diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
-index 93fd03f..d0d8e3d 100644
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -16,3 +16,4 @@ obj-$(CONFIG_MSM_GCC_8960) += gcc-msm8960.o
+@@ -16,3 +16,4 @@ obj-$(CONFIG_MSM_GCC_8960) += gcc-msm896
  obj-$(CONFIG_MSM_GCC_8974) += gcc-msm8974.o
  obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
  obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
 +obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
-diff --git a/drivers/clk/qcom/hfpll.c b/drivers/clk/qcom/hfpll.c
-new file mode 100644
-index 0000000..701a377
 --- /dev/null
 +++ b/drivers/clk/qcom/hfpll.c
 @@ -0,0 +1,110 @@
@@ -157,6 +150,3 @@ index 0000000..701a377
 +MODULE_DESCRIPTION("QCOM HFPLL Clock Driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:qcom-hfpll");
--- 
-1.7.10.4
-

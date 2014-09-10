@@ -19,8 +19,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 drivers/clk/qcom/clk-krait.c
  create mode 100644 drivers/clk/qcom/clk-krait.h
 
-diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
-index de8ba31..70b6a7c 100644
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
 @@ -61,3 +61,7 @@ config QCOM_HFPLL
@@ -31,8 +29,6 @@ index de8ba31..70b6a7c 100644
 +config KRAIT_CLOCKS
 +	bool
 +	select KRAIT_L2_ACCESSORS
-diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
-index d0d8e3d..6482165 100644
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
 @@ -7,6 +7,7 @@ clk-qcom-y += clk-rcg.o
@@ -43,9 +39,6 @@ index d0d8e3d..6482165 100644
  clk-qcom-y += clk-hfpll.o
  clk-qcom-y += reset.o
  
-diff --git a/drivers/clk/qcom/clk-krait.c b/drivers/clk/qcom/clk-krait.c
-new file mode 100644
-index 0000000..4283426
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-krait.c
 @@ -0,0 +1,121 @@
@@ -170,9 +163,6 @@ index 0000000..4283426
 +	.get_div = kpss_div2_get_div,
 +};
 +EXPORT_SYMBOL_GPL(clk_div_ops_kpss_div2);
-diff --git a/drivers/clk/qcom/clk-krait.h b/drivers/clk/qcom/clk-krait.h
-new file mode 100644
-index 0000000..9c3eb38
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-krait.h
 @@ -0,0 +1,22 @@
@@ -198,6 +188,3 @@ index 0000000..9c3eb38
 +extern const struct clk_div_ops clk_div_ops_kpss_div2;
 +
 +#endif
--- 
-1.7.10.4
-

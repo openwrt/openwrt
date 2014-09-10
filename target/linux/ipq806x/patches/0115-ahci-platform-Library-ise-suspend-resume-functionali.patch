@@ -17,11 +17,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  include/linux/ahci_platform.h |    5 +++
  2 files changed, 87 insertions(+), 15 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 19e9eaa..01f7bbe 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -432,14 +432,23 @@ static void ahci_host_stop(struct ata_host *host)
+@@ -432,14 +432,23 @@ static void ahci_host_stop(struct ata_ho
  }
  
  #ifdef CONFIG_PM_SLEEP
@@ -48,7 +46,7 @@ index 19e9eaa..01f7bbe 100644
  
  	if (hpriv->flags & AHCI_HFLAG_NO_SUSPEND) {
  		dev_err(dev, "firmware update required for suspend/resume\n");
-@@ -456,7 +465,58 @@ static int ahci_suspend(struct device *dev)
+@@ -456,7 +465,58 @@ static int ahci_suspend(struct device *d
  	writel(ctl, mmio + HOST_CTL);
  	readl(mmio + HOST_CTL); /* flush */
  
@@ -108,7 +106,7 @@ index 19e9eaa..01f7bbe 100644
  	if (rc)
  		return rc;
  
-@@ -467,8 +527,19 @@ static int ahci_suspend(struct device *dev)
+@@ -467,8 +527,19 @@ static int ahci_suspend(struct device *d
  
  	return 0;
  }
@@ -129,7 +127,7 @@ index 19e9eaa..01f7bbe 100644
  {
  	struct ahci_platform_data *pdata = dev_get_platdata(dev);
  	struct ata_host *host = dev_get_drvdata(dev);
-@@ -485,15 +556,9 @@ static int ahci_resume(struct device *dev)
+@@ -485,15 +556,9 @@ static int ahci_resume(struct device *de
  			goto disable_resources;
  	}
  
@@ -161,11 +159,9 @@ index 19e9eaa..01f7bbe 100644
  
  static const struct of_device_id ahci_of_match[] = {
  	{ .compatible = "snps,spear-ahci", },
-diff --git a/include/linux/ahci_platform.h b/include/linux/ahci_platform.h
-index b80c51c..542f268 100644
 --- a/include/linux/ahci_platform.h
 +++ b/include/linux/ahci_platform.h
-@@ -50,4 +50,9 @@ int ahci_platform_init_host(struct platform_device *pdev,
+@@ -50,4 +50,9 @@ int ahci_platform_init_host(struct platf
  			    unsigned int force_port_map,
  			    unsigned int mask_port_map);
  
@@ -175,6 +171,3 @@ index b80c51c..542f268 100644
 +int ahci_platform_resume(struct device *dev);
 +
  #endif /* _AHCI_PLATFORM_H */
--- 
-1.7.10.4
-

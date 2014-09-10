@@ -14,11 +14,9 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/qcom/gcc-msm8660.c |   12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/clk/qcom/gcc-msm8660.c b/drivers/clk/qcom/gcc-msm8660.c
-index 44bc6fa..0c4b727 100644
 --- a/drivers/clk/qcom/gcc-msm8660.c
 +++ b/drivers/clk/qcom/gcc-msm8660.c
-@@ -2718,6 +2718,18 @@ MODULE_DEVICE_TABLE(of, gcc_msm8660_match_table);
+@@ -2718,6 +2718,18 @@ MODULE_DEVICE_TABLE(of, gcc_msm8660_matc
  
  static int gcc_msm8660_probe(struct platform_device *pdev)
  {
@@ -37,6 +35,3 @@ index 44bc6fa..0c4b727 100644
  	return qcom_cc_probe(pdev, &gcc_msm8660_desc);
  }
  
--- 
-1.7.10.4
-

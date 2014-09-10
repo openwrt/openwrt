@@ -14,11 +14,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun4i-a10-pcduino.dts        |  9 +++++++++
  7 files changed, 81 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10-a1000.dts b/arch/arm/boot/dts/sun4i-a10-a1000.dts
-index 68b687e..99f53c0 100644
 --- a/arch/arm/boot/dts/sun4i-a10-a1000.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-a1000.dts
-@@ -96,6 +96,15 @@
+@@ -65,6 +65,15 @@
  			pinctrl-names = "default";
  			pinctrl-0 = <&i2c0_pins_a>;
  			status = "okay";
@@ -34,8 +32,6 @@ index 68b687e..99f53c0 100644
  		};
  	};
  
-diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
-index 13088f0..5e4986c 100644
 --- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 @@ -88,6 +88,15 @@
@@ -54,11 +50,9 @@ index 13088f0..5e4986c 100644
  		};
  
  		i2c1: i2c@01c2b000 {
-diff --git a/arch/arm/boot/dts/sun4i-a10-hackberry.dts b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
-index a4b05d6..18f0030 100644
 --- a/arch/arm/boot/dts/sun4i-a10-hackberry.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-hackberry.dts
-@@ -91,6 +91,21 @@
+@@ -82,6 +82,21 @@
  			pinctrl-0 = <&uart0_pins_a>;
  			status = "okay";
  		};
@@ -79,11 +73,7 @@ index a4b05d6..18f0030 100644
 +		};
  	};
  
- 	reg_emac_3v3: emac-3v3 {
-diff --git a/arch/arm/boot/dts/sun4i-a10-inet97fv2.dts b/arch/arm/boot/dts/sun4i-a10-inet97fv2.dts
-index b73a070..7d3599e 100644
-diff --git a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
-index c906171..4acddf7 100644
+ 	regulators {
 --- a/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-mini-xplus.dts
 @@ -55,6 +55,21 @@
@@ -108,8 +98,6 @@ index c906171..4acddf7 100644
  	};
  
  	reg_usb1_vbus: usb1-vbus {
-diff --git a/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts b/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts
-index e5a2765..2ce7267 100644
 --- a/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-olinuxino-lime.dts
 @@ -90,6 +90,21 @@
@@ -134,8 +122,6 @@ index e5a2765..2ce7267 100644
  	};
  
  	leds {
-diff --git a/arch/arm/boot/dts/sun4i-a10-pcduino.dts b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
-index 2820229..817cdca 100644
 --- a/arch/arm/boot/dts/sun4i-a10-pcduino.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-pcduino.dts
 @@ -74,6 +74,15 @@
@@ -154,6 +140,3 @@ index 2820229..817cdca 100644
  		};
  	};
  
--- 
-2.0.3
-

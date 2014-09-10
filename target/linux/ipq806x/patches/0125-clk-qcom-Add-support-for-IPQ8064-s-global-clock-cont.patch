@@ -24,8 +24,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 include/dt-bindings/clock/qcom,gcc-ipq806x.h
  create mode 100644 include/dt-bindings/reset/qcom,gcc-ipq806x.h
 
-diff --git a/Documentation/devicetree/bindings/clock/qcom,gcc.txt b/Documentation/devicetree/bindings/clock/qcom,gcc.txt
-index 9cfcb4f..0171509 100644
 --- a/Documentation/devicetree/bindings/clock/qcom,gcc.txt
 +++ b/Documentation/devicetree/bindings/clock/qcom,gcc.txt
 @@ -5,6 +5,7 @@ Required properties :
@@ -36,8 +34,6 @@ index 9cfcb4f..0171509 100644
  			"qcom,gcc-msm8660"
  			"qcom,gcc-msm8960"
  			"qcom,gcc-msm8974"
-diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
-index 7f696b7..cfaa54c 100644
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
 @@ -4,6 +4,14 @@ config COMMON_CLK_QCOM
@@ -55,8 +51,6 @@ index 7f696b7..cfaa54c 100644
  config MSM_GCC_8660
  	tristate "MSM8660 Global Clock Controller"
  	depends on COMMON_CLK_QCOM
-diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
-index 689e05b..df2a1b3 100644
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
 @@ -8,6 +8,7 @@ clk-qcom-y += clk-rcg2.o
@@ -67,9 +61,6 @@ index 689e05b..df2a1b3 100644
  obj-$(CONFIG_MSM_GCC_8660) += gcc-msm8660.o
  obj-$(CONFIG_MSM_GCC_8960) += gcc-msm8960.o
  obj-$(CONFIG_MSM_GCC_8974) += gcc-msm8974.o
-diff --git a/drivers/clk/qcom/gcc-ipq806x.c b/drivers/clk/qcom/gcc-ipq806x.c
-new file mode 100644
-index 0000000..278c5fe
 --- /dev/null
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
 @@ -0,0 +1,2424 @@
@@ -2497,9 +2488,6 @@ index 0000000..278c5fe
 +MODULE_DESCRIPTION("QCOM GCC IPQ806x Driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:gcc-ipq806x");
-diff --git a/include/dt-bindings/clock/qcom,gcc-ipq806x.h b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
-new file mode 100644
-index 0000000..3b0f8e7
 --- /dev/null
 +++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
 @@ -0,0 +1,293 @@
@@ -2796,9 +2784,6 @@ index 0000000..3b0f8e7
 +#define UBI32_CORE2_CLK				279
 +
 +#endif
-diff --git a/include/dt-bindings/reset/qcom,gcc-ipq806x.h b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
-new file mode 100644
-index 0000000..0ad5ef9
 --- /dev/null
 +++ b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 @@ -0,0 +1,132 @@
@@ -2934,6 +2919,3 @@ index 0000000..0ad5ef9
 +#define NSSFB0_RESET					113
 +#define NSSFB1_RESET					114
 +#endif
--- 
-1.7.10.4
-

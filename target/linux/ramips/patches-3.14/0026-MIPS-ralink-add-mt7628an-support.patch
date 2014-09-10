@@ -10,8 +10,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/mt7620.c                  |  266 +++++++++++++++++++++++-----
  3 files changed, 232 insertions(+), 47 deletions(-)
 
-diff --git a/arch/mips/include/asm/mach-ralink/mt7620.h b/arch/mips/include/asm/mach-ralink/mt7620.h
-index 27b2fa9..c8590df 100644
 --- a/arch/mips/include/asm/mach-ralink/mt7620.h
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -13,6 +13,13 @@
@@ -46,8 +44,6 @@ index 27b2fa9..c8590df 100644
  #define MT7620_DRAM_BASE		0x0
  #define MT7620_SDRAM_SIZE_MIN		2
  #define MT7620_SDRAM_SIZE_MAX		64
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 9174dbc..f93835f 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -35,7 +35,7 @@ choice
@@ -59,8 +55,6 @@ index 9174dbc..f93835f 100644
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
  
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index d68b8ff..e590ccf 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
 @@ -42,6 +42,8 @@
@@ -321,7 +315,7 @@ index d68b8ff..e590ccf 100644
  void prom_soc_init(struct ralink_soc_info *soc_info)
  {
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7620_SYSC_BASE);
-@@ -384,18 +563,25 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -384,18 +563,25 @@ void prom_soc_init(struct ralink_soc_inf
  	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
  	bga = (rev >> CHIP_REV_PKG_SHIFT) & CHIP_REV_PKG_MASK;
  
@@ -357,7 +351,7 @@ index d68b8ff..e590ccf 100644
  	}
  
  	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
-@@ -407,28 +593,11 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -407,28 +593,11 @@ void prom_soc_init(struct ralink_soc_inf
  	cfg0 = __raw_readl(sysc + SYSC_REG_SYSTEM_CONFIG0);
  	dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
  
@@ -390,7 +384,7 @@ index d68b8ff..e590ccf 100644
  
  	pmu0 = __raw_readl(sysc + PMU0_CFG);
  	pmu1 = __raw_readl(sysc + PMU1_CFG);
-@@ -437,4 +606,9 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -437,4 +606,9 @@ void prom_soc_init(struct ralink_soc_inf
  		(pmu0 & PMU_SW_SET) ? ("sw") : ("hw"));
  	pr_info("Digital PMU set to %s control\n",
  		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
@@ -400,6 +394,3 @@ index d68b8ff..e590ccf 100644
 +	else
 +		rt2880_pinmux_data = mt7620a_pinmux_data;
  }
--- 
-1.7.10.4
-

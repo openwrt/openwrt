@@ -10,8 +10,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun4i-a10.dtsi | 44 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 44 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index f6f41d6..157bc09 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
 @@ -339,6 +339,28 @@
@@ -43,10 +41,12 @@ index f6f41d6..157bc09 100644
  		emac: ethernet@01c0b000 {
  			compatible = "allwinner,sun4i-a10-emac";
  			reg = <0x01c0b000 0x1000>;
-@@ -355,6 +377,28 @@
+@@ -353,6 +375,28 @@
+ 			status = "disabled";
+ 			#address-cells = <1>;
  			#size-cells = <0>;
- 		};
- 
++		};
++
 +		spi2: spi@01c17000 {
 +			compatible = "allwinner,sun4i-a10-spi";
 +			reg = <0x01c17000 0x1000>;
@@ -67,11 +67,6 @@ index f6f41d6..157bc09 100644
 +			status = "disabled";
 +			#address-cells = <1>;
 +			#size-cells = <0>;
-+		};
-+
+ 		};
+ 
  		intc: interrupt-controller@01c20400 {
- 			compatible = "allwinner,sun4i-ic";
- 			reg = <0x01c20400 0x400>;
--- 
-2.0.3
-

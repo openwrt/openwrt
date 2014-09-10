@@ -13,11 +13,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/ahci_platform.c |   11 -----------
  1 file changed, 11 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index fc32863..d3d2bad 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -31,7 +31,6 @@ static void ahci_host_stop(struct ata_host *host);
+@@ -31,7 +31,6 @@ static void ahci_host_stop(struct ata_ho
  enum ahci_type {
  	AHCI,		/* standard platform ahci */
  	IMX53_AHCI,	/* ahci on i.mx53 */
@@ -25,7 +23,7 @@ index fc32863..d3d2bad 100644
  };
  
  static struct platform_device_id ahci_devtype[] = {
-@@ -42,9 +41,6 @@ static struct platform_device_id ahci_devtype[] = {
+@@ -42,9 +41,6 @@ static struct platform_device_id ahci_de
  		.name = "imx53-ahci",
  		.driver_data = IMX53_AHCI,
  	}, {
@@ -35,7 +33,7 @@ index fc32863..d3d2bad 100644
  		/* sentinel */
  	}
  };
-@@ -75,13 +71,6 @@ static const struct ata_port_info ahci_port_info[] = {
+@@ -75,13 +71,6 @@ static const struct ata_port_info ahci_p
  		.udma_mask	= ATA_UDMA6,
  		.port_ops	= &ahci_platform_retry_srst_ops,
  	},
@@ -49,6 +47,3 @@ index fc32863..d3d2bad 100644
  };
  
  static struct scsi_host_template ahci_platform_sht = {
--- 
-1.7.10.4
-

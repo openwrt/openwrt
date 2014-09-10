@@ -15,11 +15,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/qcom/mmcc-msm8960.c |   24 +++++++---
  3 files changed, 73 insertions(+), 55 deletions(-)
 
-diff --git a/drivers/clk/qcom/clk-rcg.c b/drivers/clk/qcom/clk-rcg.c
-index abfc2b6..7bce729 100644
 --- a/drivers/clk/qcom/clk-rcg.c
 +++ b/drivers/clk/qcom/clk-rcg.c
-@@ -67,16 +67,16 @@ static u8 clk_dyn_rcg_get_parent(struct clk_hw *hw)
+@@ -67,16 +67,16 @@ static u8 clk_dyn_rcg_get_parent(struct
  {
  	struct clk_dyn_rcg *rcg = to_clk_dyn_rcg(hw);
  	int num_parents = __clk_get_num_parents(hw->clk);
@@ -40,7 +38,7 @@ index abfc2b6..7bce729 100644
  	ns = ns_to_src(s, ns);
  
  	for (i = 0; i < num_parents; i++)
-@@ -192,90 +192,93 @@ static u32 mn_to_reg(struct mn *mn, u32 m, u32 n, u32 val)
+@@ -192,90 +192,93 @@ static u32 mn_to_reg(struct mn *mn, u32
  
  static void configure_bank(struct clk_dyn_rcg *rcg, const struct freq_tbl *f)
  {
@@ -166,7 +164,7 @@ index abfc2b6..7bce729 100644
  	configure_bank(rcg, &f);
  
  	return 0;
-@@ -336,28 +339,30 @@ clk_dyn_rcg_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+@@ -336,28 +339,30 @@ clk_dyn_rcg_recalc_rate(struct clk_hw *h
  	u32 m, n, pre_div, ns, md, mode, reg;
  	int bank;
  	struct mn *mn;
@@ -208,8 +206,6 @@ index abfc2b6..7bce729 100644
  }
  
  static const
-diff --git a/drivers/clk/qcom/clk-rcg.h b/drivers/clk/qcom/clk-rcg.h
-index b9ec11d..5f8b06d 100644
 --- a/drivers/clk/qcom/clk-rcg.h
 +++ b/drivers/clk/qcom/clk-rcg.h
 @@ -102,7 +102,7 @@ extern const struct clk_ops clk_rcg_ops;
@@ -232,11 +228,9 @@ index b9ec11d..5f8b06d 100644
  
  	u8	mux_sel_bit;
  
-diff --git a/drivers/clk/qcom/mmcc-msm8960.c b/drivers/clk/qcom/mmcc-msm8960.c
-index 12f3c0b..ce48ad1 100644
 --- a/drivers/clk/qcom/mmcc-msm8960.c
 +++ b/drivers/clk/qcom/mmcc-msm8960.c
-@@ -726,9 +726,11 @@ static struct freq_tbl clk_tbl_gfx2d[] = {
+@@ -726,9 +726,11 @@ static struct freq_tbl clk_tbl_gfx2d[] =
  };
  
  static struct clk_dyn_rcg gfx2d0_src = {
@@ -262,7 +256,7 @@ index 12f3c0b..ce48ad1 100644
  	.mn[0] = {
  		.mnctr_en_bit = 8,
  		.mnctr_reset_bit = 25,
-@@ -862,9 +866,11 @@ static struct freq_tbl clk_tbl_gfx3d[] = {
+@@ -862,9 +866,11 @@ static struct freq_tbl clk_tbl_gfx3d[] =
  };
  
  static struct clk_dyn_rcg gfx3d_src = {
@@ -299,7 +293,7 @@ index 12f3c0b..ce48ad1 100644
  	.p[0] = {
  		.pre_div_shift = 22,
  		.pre_div_width = 4,
-@@ -1355,9 +1365,11 @@ static struct freq_tbl clk_tbl_vcodec[] = {
+@@ -1355,9 +1365,11 @@ static struct freq_tbl clk_tbl_vcodec[]
  };
  
  static struct clk_dyn_rcg vcodec_src = {
@@ -312,6 +306,3 @@ index 12f3c0b..ce48ad1 100644
  	.mn[0] = {
  		.mnctr_en_bit = 5,
  		.mnctr_reset_bit = 31,
--- 
-1.7.10.4
-

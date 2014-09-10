@@ -18,8 +18,6 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c | 71 +++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 71 insertions(+)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index 736fb60..23beb6e 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
 @@ -18,6 +18,7 @@
@@ -30,7 +28,7 @@ index 736fb60..23beb6e 100644
  
  #include "clk-factors.h"
  
-@@ -688,6 +689,59 @@ static void __init sunxi_divider_clk_setup(struct device_node *node,
+@@ -688,6 +689,59 @@ static void __init sunxi_divider_clk_set
  
  
  /**
@@ -90,7 +88,7 @@ index 736fb60..23beb6e 100644
   * sunxi_gates_clk_setup() - Setup function for leaf gates on clocks
   */
  
-@@ -695,6 +749,7 @@ static void __init sunxi_divider_clk_setup(struct device_node *node,
+@@ -695,6 +749,7 @@ static void __init sunxi_divider_clk_set
  
  struct gates_data {
  	DECLARE_BITMAP(mask, SUNXI_GATES_MAX_SIZE);
@@ -98,7 +96,7 @@ index 736fb60..23beb6e 100644
  };
  
  static const struct gates_data sun4i_axi_gates_data __initconst = {
-@@ -765,6 +820,7 @@ static void __init sunxi_gates_clk_setup(struct device_node *node,
+@@ -765,6 +820,7 @@ static void __init sunxi_gates_clk_setup
  					 struct gates_data *data)
  {
  	struct clk_onecell_data *clk_data;
@@ -106,7 +104,7 @@ index 736fb60..23beb6e 100644
  	const char *clk_parent;
  	const char *clk_name;
  	void *reg;
-@@ -808,6 +864,21 @@ static void __init sunxi_gates_clk_setup(struct device_node *node,
+@@ -808,6 +864,21 @@ static void __init sunxi_gates_clk_setup
  	clk_data->clk_num = i;
  
  	of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
@@ -128,6 +126,3 @@ index 736fb60..23beb6e 100644
  }
  
  
--- 
-2.0.3
-

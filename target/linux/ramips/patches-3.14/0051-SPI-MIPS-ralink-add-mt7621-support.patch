@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/spi/spi-rt2880.c |  218 +++++++++++++++++++++++++++++++++++++++++++---
  1 file changed, 205 insertions(+), 13 deletions(-)
 
-diff --git a/drivers/spi/spi-rt2880.c b/drivers/spi/spi-rt2880.c
-index ac9de67..1c6b72d 100644
 --- a/drivers/spi/spi-rt2880.c
 +++ b/drivers/spi/spi-rt2880.c
 @@ -21,8 +21,13 @@
@@ -61,7 +59,7 @@ index ac9de67..1c6b72d 100644
  };
  
  static inline struct rt2880_spi *spidev_to_rt2880_spi(struct spi_device *spi)
-@@ -149,6 +175,17 @@ static int rt2880_spi_baudrate_set(struct spi_device *spi, unsigned int speed)
+@@ -149,6 +175,17 @@ static int rt2880_spi_baudrate_set(struc
  	return 0;
  }
  
@@ -79,7 +77,7 @@ index ac9de67..1c6b72d 100644
  /*
   * called only when no transfer is active on the bus
   */
-@@ -164,7 +201,7 @@ rt2880_spi_setup_transfer(struct spi_device *spi, struct spi_transfer *t)
+@@ -164,7 +201,7 @@ rt2880_spi_setup_transfer(struct spi_dev
  
  	if (rs->speed != speed) {
  		dev_dbg(&spi->dev, "speed_hz:%u\n", speed);
@@ -88,7 +86,7 @@ index ac9de67..1c6b72d 100644
  		if (rc)
  			return rc;
  	}
-@@ -180,6 +217,17 @@ static void rt2880_spi_set_cs(struct rt2880_spi *rs, int enable)
+@@ -180,6 +217,17 @@ static void rt2880_spi_set_cs(struct rt2
  		rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_SPIENA);
  }
  
@@ -106,7 +104,7 @@ index ac9de67..1c6b72d 100644
  static inline int rt2880_spi_wait_till_ready(struct rt2880_spi *rs)
  {
  	int i;
-@@ -198,8 +246,26 @@ static inline int rt2880_spi_wait_till_ready(struct rt2880_spi *rs)
+@@ -198,8 +246,26 @@ static inline int rt2880_spi_wait_till_r
  	return -ETIMEDOUT;
  }
  
@@ -235,7 +233,7 @@ index ac9de67..1c6b72d 100644
  static int rt2880_spi_transfer_one_message(struct spi_master *master,
  					   struct spi_message *m)
  {
-@@ -280,25 +440,25 @@ static int rt2880_spi_transfer_one_message(struct spi_master *master,
+@@ -280,25 +440,25 @@ static int rt2880_spi_transfer_one_messa
  		}
  
  		if (!cs_active) {
@@ -265,7 +263,7 @@ index ac9de67..1c6b72d 100644
  
  	m->status = status;
  	spi_finalize_current_message(master);
-@@ -334,8 +494,41 @@ static void rt2880_spi_reset(struct rt2880_spi *rs)
+@@ -334,8 +494,41 @@ static void rt2880_spi_reset(struct rt28
  	rt2880_spi_write(rs, RAMIPS_SPI_CTL, SPICTL_HIZSDO | SPICTL_SPIENA);
  }
  
@@ -307,7 +305,7 @@ index ac9de67..1c6b72d 100644
  	struct spi_master *master;
  	struct rt2880_spi *rs;
  	unsigned long flags;
-@@ -344,6 +537,10 @@ static int rt2880_spi_probe(struct platform_device *pdev)
+@@ -344,6 +537,10 @@ static int rt2880_spi_probe(struct platf
  	int status = 0;
  	struct clk *clk;
  
@@ -318,7 +316,7 @@ index ac9de67..1c6b72d 100644
  	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	base = devm_ioremap_resource(&pdev->dev, r);
  	if (IS_ERR(base))
-@@ -382,12 +579,13 @@ static int rt2880_spi_probe(struct platform_device *pdev)
+@@ -382,12 +579,13 @@ static int rt2880_spi_probe(struct platf
  	rs->clk = clk;
  	rs->master = master;
  	rs->sys_freq = clk_get_rate(rs->clk);
@@ -333,7 +331,7 @@ index ac9de67..1c6b72d 100644
  
  	return spi_register_master(master);
  }
-@@ -408,12 +606,6 @@ static int rt2880_spi_remove(struct platform_device *pdev)
+@@ -408,12 +606,6 @@ static int rt2880_spi_remove(struct plat
  
  MODULE_ALIAS("platform:" DRIVER_NAME);
  
@@ -346,6 +344,3 @@ index ac9de67..1c6b72d 100644
  static struct platform_driver rt2880_spi_driver = {
  	.driver = {
  		.name = DRIVER_NAME,
--- 
-1.7.10.4
-

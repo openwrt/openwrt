@@ -14,11 +14,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.h |    1 +
  2 files changed, 6 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 343f421..706809e 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -665,7 +665,10 @@ static void msm_gpio_irq_ack(struct irq_data *d)
+@@ -665,7 +665,10 @@ static void msm_gpio_irq_ack(struct irq_
  	spin_lock_irqsave(&pctrl->lock, flags);
  
  	val = readl(pctrl->regs + g->intr_status_reg);
@@ -30,7 +28,7 @@ index 343f421..706809e 100644
  	writel(val, pctrl->regs + g->intr_status_reg);
  
  	if (test_bit(d->hwirq, pctrl->dual_edge_irqs))
-@@ -744,6 +747,7 @@ static int msm_gpio_irq_set_type(struct irq_data *d, unsigned int type)
+@@ -744,6 +747,7 @@ static int msm_gpio_irq_set_type(struct
  			break;
  		case IRQ_TYPE_EDGE_BOTH:
  			val |= BIT(g->intr_detection_bit);
@@ -38,8 +36,6 @@ index 343f421..706809e 100644
  			break;
  		case IRQ_TYPE_LEVEL_LOW:
  			break;
-diff --git a/drivers/pinctrl/pinctrl-msm.h b/drivers/pinctrl/pinctrl-msm.h
-index 8fbe9fb..6e26f1b 100644
 --- a/drivers/pinctrl/pinctrl-msm.h
 +++ b/drivers/pinctrl/pinctrl-msm.h
 @@ -84,6 +84,7 @@ struct msm_pingroup {
@@ -50,6 +46,3 @@ index 8fbe9fb..6e26f1b 100644
  
  	unsigned intr_target_bit:5;
  	unsigned intr_raw_status_bit:5;
--- 
-1.7.10.4
-

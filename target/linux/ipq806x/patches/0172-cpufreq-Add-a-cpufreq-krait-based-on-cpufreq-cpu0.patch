@@ -18,8 +18,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  3 files changed, 204 insertions(+)
  create mode 100644 drivers/cpufreq/cpufreq-krait.c
 
-diff --git a/drivers/cpufreq/Kconfig b/drivers/cpufreq/Kconfig
-index 4b029c0..4051528 100644
 --- a/drivers/cpufreq/Kconfig
 +++ b/drivers/cpufreq/Kconfig
 @@ -194,6 +194,19 @@ config GENERIC_CPUFREQ_CPU0
@@ -42,11 +40,9 @@ index 4b029c0..4051528 100644
  menu "x86 CPU frequency scaling drivers"
  depends on X86
  source "drivers/cpufreq/Kconfig.x86"
-diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
-index 7494565..f6f4485 100644
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)	+= cpufreq_conservative.o
+@@ -12,6 +12,7 @@ obj-$(CONFIG_CPU_FREQ_GOV_CONSERVATIVE)
  obj-$(CONFIG_CPU_FREQ_GOV_COMMON)		+= cpufreq_governor.o
  
  obj-$(CONFIG_GENERIC_CPUFREQ_CPU0)	+= cpufreq-cpu0.o
@@ -54,9 +50,6 @@ index 7494565..f6f4485 100644
  
  ##################################################################################
  # x86 drivers.
-diff --git a/drivers/cpufreq/cpufreq-krait.c b/drivers/cpufreq/cpufreq-krait.c
-new file mode 100644
-index 0000000..7b38b9c
 --- /dev/null
 +++ b/drivers/cpufreq/cpufreq-krait.c
 @@ -0,0 +1,190 @@
@@ -250,6 +243,3 @@ index 0000000..7b38b9c
 +
 +MODULE_DESCRIPTION("Krait CPUfreq driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

@@ -13,8 +13,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/dts/mt7628an.dtsi
  create mode 100644 arch/mips/ralink/dts/mt7628an_eval.dts
 
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 6a04360..9174dbc 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -75,6 +75,10 @@ choice
@@ -28,18 +26,13 @@ index 6a04360..9174dbc 100644
  	config DTB_MT7621_EVAL
  		bool "MT7621 eval kit"
  		depends on SOC_MT7621
-diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
-index 9742c73..9f4e1c7 100644
 --- a/arch/mips/ralink/dts/Makefile
 +++ b/arch/mips/ralink/dts/Makefile
-@@ -3,3 +3,4 @@ obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
+@@ -3,3 +3,4 @@ obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_
  obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
  obj-$(CONFIG_DTB_MT7620A_EVAL) := mt7620a_eval.dtb.o
  obj-$(CONFIG_DTB_MT7621_EVAL) := mt7621_eval.dtb.o
 +obj-$(CONFIG_DTB_MT7628AN_EVAL) := mt7628an_eval.dtb.o
-diff --git a/arch/mips/ralink/dts/mt7628an.dtsi b/arch/mips/ralink/dts/mt7628an.dtsi
-new file mode 100644
-index 0000000..fd17d0a
 --- /dev/null
 +++ b/arch/mips/ralink/dts/mt7628an.dtsi
 @@ -0,0 +1,184 @@
@@ -227,9 +220,6 @@ index 0000000..fd17d0a
 +	};
 +
 +};
-diff --git a/arch/mips/ralink/dts/mt7628an_eval.dts b/arch/mips/ralink/dts/mt7628an_eval.dts
-new file mode 100644
-index 0000000..132c29e
 --- /dev/null
 +++ b/arch/mips/ralink/dts/mt7628an_eval.dts
 @@ -0,0 +1,54 @@
@@ -287,6 +277,3 @@ index 0000000..132c29e
 +		};
 +	};
 +};
--- 
-1.7.10.4
-

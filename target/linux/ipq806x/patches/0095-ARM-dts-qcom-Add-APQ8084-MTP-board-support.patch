@@ -14,11 +14,9 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  2 files changed, 7 insertions(+)
  create mode 100644 arch/arm/boot/dts/qcom-apq8084-mtp.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index ee3dfea..f2aeb95 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -234,6 +234,7 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.dtb
+@@ -234,6 +234,7 @@ dtb-$(CONFIG_ARCH_PRIMA2) += prima2-evb.
  dtb-$(CONFIG_ARCH_QCOM) += \
  	qcom-apq8064-ifc6410.dtb \
  	qcom-apq8074-dragonboard.dtb \
@@ -26,9 +24,6 @@ index ee3dfea..f2aeb95 100644
  	qcom-msm8660-surf.dtb \
  	qcom-msm8960-cdp.dtb
  dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
-diff --git a/arch/arm/boot/dts/qcom-apq8084-mtp.dts b/arch/arm/boot/dts/qcom-apq8084-mtp.dts
-new file mode 100644
-index 0000000..9dae387
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-apq8084-mtp.dts
 @@ -0,0 +1,6 @@
@@ -38,6 +33,3 @@ index 0000000..9dae387
 +	model = "Qualcomm APQ 8084-MTP";
 +	compatible = "qcom,apq8084-mtp", "qcom,apq8084";
 +};
--- 
-1.7.10.4
-
