@@ -18,8 +18,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  include/dt-bindings/reset/qcom,gcc-ipq806x.h |   43 ++
  3 files changed, 755 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/qcom/gcc-ipq806x.c b/drivers/clk/qcom/gcc-ipq806x.c
-index 278c5fe..f7916be 100644
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
 @@ -32,6 +32,33 @@
@@ -103,7 +101,7 @@ index 278c5fe..f7916be 100644
  
  static const u8 gcc_pxo_pll8_map[] = {
  	[P_PXO]		= 0,
-@@ -157,6 +219,22 @@ static const char *gcc_pxo_pll8_pll0_map[] = {
+@@ -157,6 +219,22 @@ static const char *gcc_pxo_pll8_pll0_map
  	"pll0",
  };
  
@@ -126,7 +124,7 @@ index 278c5fe..f7916be 100644
  static struct freq_tbl clk_tbl_gsbi_uart[] = {
  	{  1843200, P_PLL8, 2,  6, 625 },
  	{  3686400, P_PLL8, 2, 12, 625 },
-@@ -2132,12 +2210,567 @@ static struct clk_branch usb_fs1_h_clk = {
+@@ -2132,12 +2210,567 @@ static struct clk_branch usb_fs1_h_clk =
  	},
  };
  
@@ -694,7 +692,7 @@ index 278c5fe..f7916be 100644
  	[GSBI1_UART_SRC] = &gsbi1_uart_src.clkr,
  	[GSBI1_UART_CLK] = &gsbi1_uart_clk.clkr,
  	[GSBI2_UART_SRC] = &gsbi2_uart_src.clkr,
-@@ -2232,6 +2865,19 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
+@@ -2232,6 +2865,19 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[USB_FS1_XCVR_SRC] = &usb_fs1_xcvr_clk_src.clkr,
  	[USB_FS1_XCVR_CLK] = &usb_fs1_xcvr_clk.clkr,
  	[USB_FS1_SYSTEM_CLK] = &usb_fs1_sys_clk.clkr,
@@ -714,7 +712,7 @@ index 278c5fe..f7916be 100644
  };
  
  static const struct qcom_reset_map gcc_ipq806x_resets[] = {
-@@ -2350,6 +2996,48 @@ static const struct qcom_reset_map gcc_ipq806x_resets[] = {
+@@ -2350,6 +2996,48 @@ static const struct qcom_reset_map gcc_i
  	[USB30_1_PHY_RESET] = { 0x3b58, 0 },
  	[NSSFB0_RESET] = { 0x3b60, 6 },
  	[NSSFB1_RESET] = { 0x3b60, 7 },
@@ -763,7 +761,7 @@ index 278c5fe..f7916be 100644
  };
  
  static const struct regmap_config gcc_ipq806x_regmap_config = {
-@@ -2378,6 +3066,8 @@ static int gcc_ipq806x_probe(struct platform_device *pdev)
+@@ -2378,6 +3066,8 @@ static int gcc_ipq806x_probe(struct plat
  {
  	struct clk *clk;
  	struct device *dev = &pdev->dev;
@@ -772,7 +770,7 @@ index 278c5fe..f7916be 100644
  
  	/* Temporary until RPM clocks supported */
  	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 25000000);
-@@ -2388,7 +3078,25 @@ static int gcc_ipq806x_probe(struct platform_device *pdev)
+@@ -2388,7 +3078,25 @@ static int gcc_ipq806x_probe(struct plat
  	if (IS_ERR(clk))
  		return PTR_ERR(clk);
  
@@ -799,8 +797,6 @@ index 278c5fe..f7916be 100644
  }
  
  static int gcc_ipq806x_remove(struct platform_device *pdev)
-diff --git a/include/dt-bindings/clock/qcom,gcc-ipq806x.h b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
-index 3b0f8e7..0fd3e8a 100644
 --- a/include/dt-bindings/clock/qcom,gcc-ipq806x.h
 +++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
 @@ -289,5 +289,8 @@
@@ -812,8 +808,6 @@ index 3b0f8e7..0fd3e8a 100644
 +#define NSS_CORE_CLK				282 /* Virtual */
  
  #endif
-diff --git a/include/dt-bindings/reset/qcom,gcc-ipq806x.h b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
-index 0ad5ef9..de9c814 100644
 --- a/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 +++ b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 @@ -129,4 +129,47 @@
@@ -864,6 +858,3 @@ index 0ad5ef9..de9c814 100644
 +#define NSS_SRDS_N_RESET				156
 +
  #endif
--- 
-1.7.10.4
-

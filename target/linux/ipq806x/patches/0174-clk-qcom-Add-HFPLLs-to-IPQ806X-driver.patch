@@ -8,8 +8,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/qcom/gcc-ipq806x.c |   83 ++++++++++++++++++++++++++++++++++++++++
  1 file changed, 83 insertions(+)
 
-diff --git a/drivers/clk/qcom/gcc-ipq806x.c b/drivers/clk/qcom/gcc-ipq806x.c
-index d80dc69..83a73cb 100644
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
 @@ -30,6 +30,7 @@
@@ -106,7 +104,7 @@ index d80dc69..83a73cb 100644
  static struct clk_pll pll14 = {
  	.l_reg = 0x31c4,
  	.m_reg = 0x31c8,
-@@ -2878,6 +2958,9 @@ static struct clk_regmap *gcc_ipq806x_clks[] = {
+@@ -2878,6 +2958,9 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[NSSTCM_CLK_SRC] = &nss_tcm_src.clkr,
  	[NSSTCM_CLK] = &nss_tcm_clk.clkr,
  	[NSS_CORE_CLK] = &nss_core_clk,
@@ -116,6 +114,3 @@ index d80dc69..83a73cb 100644
  };
  
  static const struct qcom_reset_map gcc_ipq806x_resets[] = {
--- 
-1.7.10.4
-

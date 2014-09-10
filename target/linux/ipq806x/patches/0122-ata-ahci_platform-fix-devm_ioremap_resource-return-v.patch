@@ -16,11 +16,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/ahci_platform.c |    6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index db24d2a..70fbf66 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -199,8 +199,7 @@ static void ahci_platform_put_resources(struct device *dev, void *res)
+@@ -199,8 +199,7 @@ static void ahci_platform_put_resources(
   * RETURNS:
   * The allocated ahci_host_priv on success, otherwise an ERR_PTR value
   */
@@ -30,7 +28,7 @@ index db24d2a..70fbf66 100644
  {
  	struct device *dev = &pdev->dev;
  	struct ahci_host_priv *hpriv;
-@@ -219,8 +218,9 @@ struct ahci_host_priv *ahci_platform_get_resources(
+@@ -219,8 +218,9 @@ struct ahci_host_priv *ahci_platform_get
  
  	hpriv->mmio = devm_ioremap_resource(dev,
  			      platform_get_resource(pdev, IORESOURCE_MEM, 0));
@@ -41,6 +39,3 @@ index db24d2a..70fbf66 100644
  		goto err_out;
  	}
  
--- 
-1.7.10.4
-

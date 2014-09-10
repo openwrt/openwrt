@@ -28,11 +28,9 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  arch/arm/mach-vt8500/Kconfig   |    1 -
  11 files changed, 29 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 4332e8d..1a61d4a 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -180,13 +180,6 @@ config ARCH_HAS_ILOG2_U32
+@@ -181,13 +181,6 @@ config ARCH_HAS_ILOG2_U32
  config ARCH_HAS_ILOG2_U64
  	bool
  
@@ -46,7 +44,7 @@ index 4332e8d..1a61d4a 100644
  config ARCH_HAS_BANDGAP
  	bool
  
-@@ -315,7 +308,6 @@ config ARCH_MULTIPLATFORM
+@@ -316,7 +309,6 @@ config ARCH_MULTIPLATFORM
  
  config ARCH_INTEGRATOR
  	bool "ARM Ltd. Integrator family"
@@ -54,7 +52,7 @@ index 4332e8d..1a61d4a 100644
  	select ARM_AMBA
  	select ARM_PATCH_PHYS_VIRT
  	select AUTO_ZRELADDR
-@@ -540,7 +532,6 @@ config ARCH_DOVE
+@@ -541,7 +533,6 @@ config ARCH_DOVE
  
  config ARCH_KIRKWOOD
  	bool "Marvell Kirkwood"
@@ -62,7 +60,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select CPU_FEROCEON
  	select GENERIC_CLOCKEVENTS
-@@ -641,7 +632,6 @@ config ARCH_LPC32XX
+@@ -642,7 +633,6 @@ config ARCH_LPC32XX
  config ARCH_PXA
  	bool "PXA2xx/PXA3xx-based"
  	depends on MMU
@@ -70,7 +68,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_MTD_XIP
  	select ARCH_REQUIRE_GPIOLIB
  	select ARM_CPU_SUSPEND if PM
-@@ -710,7 +700,6 @@ config ARCH_RPC
+@@ -711,7 +701,6 @@ config ARCH_RPC
  
  config ARCH_SA1100
  	bool "SA1100-based"
@@ -78,7 +76,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_MTD_XIP
  	select ARCH_REQUIRE_GPIOLIB
  	select ARCH_SPARSEMEM_ENABLE
-@@ -728,7 +717,6 @@ config ARCH_SA1100
+@@ -729,7 +718,6 @@ config ARCH_SA1100
  
  config ARCH_S3C24XX
  	bool "Samsung S3C24XX SoCs"
@@ -86,7 +84,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select CLKDEV_LOOKUP
  	select CLKSRC_SAMSUNG_PWM
-@@ -748,7 +736,6 @@ config ARCH_S3C24XX
+@@ -749,7 +737,6 @@ config ARCH_S3C24XX
  
  config ARCH_S3C64XX
  	bool "Samsung S3C64XX"
@@ -94,7 +92,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select ARM_AMBA
  	select ARM_VIC
-@@ -809,7 +796,6 @@ config ARCH_S5PC100
+@@ -810,7 +797,6 @@ config ARCH_S5PC100
  
  config ARCH_S5PV210
  	bool "Samsung S5PV210/S5PC110"
@@ -102,7 +100,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_HAS_HOLES_MEMORYMODEL
  	select ARCH_SPARSEMEM_ENABLE
  	select CLKDEV_LOOKUP
-@@ -863,7 +849,6 @@ config ARCH_DAVINCI
+@@ -864,7 +850,6 @@ config ARCH_DAVINCI
  config ARCH_OMAP1
  	bool "TI OMAP1"
  	depends on MMU
@@ -110,7 +108,7 @@ index 4332e8d..1a61d4a 100644
  	select ARCH_HAS_HOLES_MEMORYMODEL
  	select ARCH_OMAP
  	select ARCH_REQUIRE_GPIOLIB
-@@ -2170,9 +2155,7 @@ endmenu
+@@ -2171,9 +2156,7 @@ endmenu
  
  menu "CPU Power Management"
  
@@ -120,8 +118,6 @@ index 4332e8d..1a61d4a 100644
  
  source "drivers/cpuidle/Kconfig"
  
-diff --git a/arch/arm/mach-davinci/Kconfig b/arch/arm/mach-davinci/Kconfig
-index a075b3e..34cfecc 100644
 --- a/arch/arm/mach-davinci/Kconfig
 +++ b/arch/arm/mach-davinci/Kconfig
 @@ -39,7 +39,6 @@ config ARCH_DAVINCI_DA830
@@ -132,8 +128,6 @@ index a075b3e..34cfecc 100644
  	select CP_INTC
  
  config ARCH_DAVINCI_DA8XX
-diff --git a/arch/arm/mach-highbank/Kconfig b/arch/arm/mach-highbank/Kconfig
-index 0aded64..9f74755 100644
 --- a/arch/arm/mach-highbank/Kconfig
 +++ b/arch/arm/mach-highbank/Kconfig
 @@ -1,7 +1,6 @@
@@ -144,8 +138,6 @@ index 0aded64..9f74755 100644
  	select ARCH_HAS_HOLES_MEMORYMODEL
  	select ARCH_HAS_OPP
  	select ARCH_SUPPORTS_BIG_ENDIAN
-diff --git a/arch/arm/mach-imx/Kconfig b/arch/arm/mach-imx/Kconfig
-index 33567aa..e7ae0ee 100644
 --- a/arch/arm/mach-imx/Kconfig
 +++ b/arch/arm/mach-imx/Kconfig
 @@ -103,7 +103,6 @@ config SOC_IMX25
@@ -164,8 +156,6 @@ index 33567aa..e7ae0ee 100644
  	select ARCH_HAS_OPP
  	select ARCH_MXC_IOMUX_V3
  	select CPU_V7
-diff --git a/arch/arm/mach-omap2/Kconfig b/arch/arm/mach-omap2/Kconfig
-index 0af7ca0..0674cb7 100644
 --- a/arch/arm/mach-omap2/Kconfig
 +++ b/arch/arm/mach-omap2/Kconfig
 @@ -93,7 +93,6 @@ config SOC_DRA7XX
@@ -176,8 +166,6 @@ index 0af7ca0..0674cb7 100644
  	select ARCH_HAS_HOLES_MEMORYMODEL
  	select ARCH_OMAP
  	select ARCH_REQUIRE_GPIOLIB
-diff --git a/arch/arm/mach-shmobile/Kconfig b/arch/arm/mach-shmobile/Kconfig
-index 05fa505..61d4d31 100644
 --- a/arch/arm/mach-shmobile/Kconfig
 +++ b/arch/arm/mach-shmobile/Kconfig
 @@ -85,7 +85,6 @@ config ARCH_R8A73A4
@@ -196,8 +184,6 @@ index 05fa505..61d4d31 100644
  	select ARCH_HAS_OPP
  	select ARCH_REQUIRE_GPIOLIB
  	select REGULATOR_FIXED_VOLTAGE if REGULATOR
-diff --git a/arch/arm/mach-spear/Kconfig b/arch/arm/mach-spear/Kconfig
-index ac1710e6..811ba13 100644
 --- a/arch/arm/mach-spear/Kconfig
 +++ b/arch/arm/mach-spear/Kconfig
 @@ -16,7 +16,6 @@ if PLAT_SPEAR
@@ -208,8 +194,6 @@ index ac1710e6..811ba13 100644
  	select ARM_GIC
  	select CPU_V7
  	select GPIO_SPEAR_SPICS
-diff --git a/arch/arm/mach-tegra/Kconfig b/arch/arm/mach-tegra/Kconfig
-index b1232d8..52bfc9e 100644
 --- a/arch/arm/mach-tegra/Kconfig
 +++ b/arch/arm/mach-tegra/Kconfig
 @@ -1,6 +1,5 @@
@@ -219,8 +203,6 @@ index b1232d8..52bfc9e 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select ARCH_SUPPORTS_TRUSTED_FOUNDATIONS
  	select ARM_GIC
-diff --git a/arch/arm/mach-ux500/Kconfig b/arch/arm/mach-ux500/Kconfig
-index 0034d2c..cb1176e 100644
 --- a/arch/arm/mach-ux500/Kconfig
 +++ b/arch/arm/mach-ux500/Kconfig
 @@ -3,7 +3,6 @@ config ARCH_U8500
@@ -231,8 +213,6 @@ index 0034d2c..cb1176e 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select ARM_AMBA
  	select ARM_ERRATA_754322
-diff --git a/arch/arm/mach-vexpress/Kconfig b/arch/arm/mach-vexpress/Kconfig
-index 4a70be4..ca5b7e5 100644
 --- a/arch/arm/mach-vexpress/Kconfig
 +++ b/arch/arm/mach-vexpress/Kconfig
 @@ -67,7 +67,6 @@ config ARCH_VEXPRESS_DCSCB
@@ -243,8 +223,6 @@ index 4a70be4..ca5b7e5 100644
  	select ARCH_HAS_OPP
  	select PM_OPP
  	help
-diff --git a/arch/arm/mach-vt8500/Kconfig b/arch/arm/mach-vt8500/Kconfig
-index 927be93..788d0b4 100644
 --- a/arch/arm/mach-vt8500/Kconfig
 +++ b/arch/arm/mach-vt8500/Kconfig
 @@ -1,6 +1,5 @@
@@ -254,6 +232,3 @@ index 927be93..788d0b4 100644
  	select ARCH_REQUIRE_GPIOLIB
  	select CLKDEV_LOOKUP
  	select CLKSRC_OF
--- 
-1.7.10.4
-

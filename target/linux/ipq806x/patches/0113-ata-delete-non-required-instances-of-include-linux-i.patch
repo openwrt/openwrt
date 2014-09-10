@@ -83,8 +83,6 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/sata_vsc.c          |    1 -
  68 files changed, 68 deletions(-)
 
-diff --git a/drivers/ata/acard-ahci.c b/drivers/ata/acard-ahci.c
-index fd665d9..b51605a 100644
 --- a/drivers/ata/acard-ahci.c
 +++ b/drivers/ata/acard-ahci.c
 @@ -36,7 +36,6 @@
@@ -95,8 +93,6 @@ index fd665d9..b51605a 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/ahci.c b/drivers/ata/ahci.c
-index 8bfc477..a52a5b6 100644
 --- a/drivers/ata/ahci.c
 +++ b/drivers/ata/ahci.c
 @@ -35,7 +35,6 @@
@@ -107,8 +103,6 @@ index 8bfc477..a52a5b6 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 656d285..a32df31 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
 @@ -17,7 +17,6 @@
@@ -119,8 +113,6 @@ index 656d285..a32df31 100644
  #include <linux/interrupt.h>
  #include <linux/device.h>
  #include <linux/platform_device.h>
-diff --git a/drivers/ata/ata_generic.c b/drivers/ata/ata_generic.c
-index 7d19665..9498a7d 100644
 --- a/drivers/ata/ata_generic.c
 +++ b/drivers/ata/ata_generic.c
 @@ -19,7 +19,6 @@
@@ -131,8 +123,6 @@ index 7d19665..9498a7d 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/libahci.c b/drivers/ata/libahci.c
-index f839bb3..fa02770 100644
 --- a/drivers/ata/libahci.c
 +++ b/drivers/ata/libahci.c
 @@ -35,7 +35,6 @@
@@ -143,8 +133,6 @@ index f839bb3..fa02770 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/pata_acpi.c b/drivers/ata/pata_acpi.c
-index 62c9ac8..5108b87 100644
 --- a/drivers/ata/pata_acpi.c
 +++ b/drivers/ata/pata_acpi.c
 @@ -7,7 +7,6 @@
@@ -155,8 +143,6 @@ index 62c9ac8..5108b87 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_amd.c b/drivers/ata/pata_amd.c
-index d23e2b3..1206fa6 100644
 --- a/drivers/ata/pata_amd.c
 +++ b/drivers/ata/pata_amd.c
 @@ -17,7 +17,6 @@
@@ -167,8 +153,6 @@ index d23e2b3..1206fa6 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_artop.c b/drivers/ata/pata_artop.c
-index 1581dee..3aa4e65 100644
 --- a/drivers/ata/pata_artop.c
 +++ b/drivers/ata/pata_artop.c
 @@ -19,7 +19,6 @@
@@ -179,8 +163,6 @@ index 1581dee..3aa4e65 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_at91.c b/drivers/ata/pata_at91.c
-index d63ee8f..e9c8727 100644
 --- a/drivers/ata/pata_at91.c
 +++ b/drivers/ata/pata_at91.c
 @@ -18,7 +18,6 @@
@@ -191,8 +173,6 @@ index d63ee8f..e9c8727 100644
  #include <linux/blkdev.h>
  #include <linux/gfp.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_atiixp.c b/drivers/ata/pata_atiixp.c
-index 24e5105..30fa4ca 100644
 --- a/drivers/ata/pata_atiixp.c
 +++ b/drivers/ata/pata_atiixp.c
 @@ -15,7 +15,6 @@
@@ -203,8 +183,6 @@ index 24e5105..30fa4ca 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_atp867x.c b/drivers/ata/pata_atp867x.c
-index 2ca5026..7e73a0f 100644
 --- a/drivers/ata/pata_atp867x.c
 +++ b/drivers/ata/pata_atp867x.c
 @@ -29,7 +29,6 @@
@@ -215,8 +193,6 @@ index 2ca5026..7e73a0f 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_cmd640.c b/drivers/ata/pata_cmd640.c
-index 8fb69e5..57f1be6 100644
 --- a/drivers/ata/pata_cmd640.c
 +++ b/drivers/ata/pata_cmd640.c
 @@ -15,7 +15,6 @@
@@ -227,8 +203,6 @@ index 8fb69e5..57f1be6 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/gfp.h>
-diff --git a/drivers/ata/pata_cmd64x.c b/drivers/ata/pata_cmd64x.c
-index 1275a8d..6bca350 100644
 --- a/drivers/ata/pata_cmd64x.c
 +++ b/drivers/ata/pata_cmd64x.c
 @@ -26,7 +26,6 @@
@@ -239,8 +213,6 @@ index 1275a8d..6bca350 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_cs5520.c b/drivers/ata/pata_cs5520.c
-index f10baab..bcde4b7 100644
 --- a/drivers/ata/pata_cs5520.c
 +++ b/drivers/ata/pata_cs5520.c
 @@ -34,7 +34,6 @@
@@ -251,8 +223,6 @@ index f10baab..bcde4b7 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_cs5530.c b/drivers/ata/pata_cs5530.c
-index f07f229..8afe854 100644
 --- a/drivers/ata/pata_cs5530.c
 +++ b/drivers/ata/pata_cs5530.c
 @@ -26,7 +26,6 @@
@@ -263,8 +233,6 @@ index f07f229..8afe854 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_cs5535.c b/drivers/ata/pata_cs5535.c
-index 997e16a..2c0986f 100644
 --- a/drivers/ata/pata_cs5535.c
 +++ b/drivers/ata/pata_cs5535.c
 @@ -31,7 +31,6 @@
@@ -275,8 +243,6 @@ index 997e16a..2c0986f 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_cs5536.c b/drivers/ata/pata_cs5536.c
-index 0448860..32ddcae 100644
 --- a/drivers/ata/pata_cs5536.c
 +++ b/drivers/ata/pata_cs5536.c
 @@ -33,7 +33,6 @@
@@ -287,8 +253,6 @@ index 0448860..32ddcae 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/libata.h>
-diff --git a/drivers/ata/pata_cypress.c b/drivers/ata/pata_cypress.c
-index 810bc99..3435bd6 100644
 --- a/drivers/ata/pata_cypress.c
 +++ b/drivers/ata/pata_cypress.c
 @@ -11,7 +11,6 @@
@@ -299,8 +263,6 @@ index 810bc99..3435bd6 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_efar.c b/drivers/ata/pata_efar.c
-index 3c12fd7..f440892 100644
 --- a/drivers/ata/pata_efar.c
 +++ b/drivers/ata/pata_efar.c
 @@ -14,7 +14,6 @@
@@ -311,8 +273,6 @@ index 3c12fd7..f440892 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_ep93xx.c b/drivers/ata/pata_ep93xx.c
-index 980b88e..cad9d45 100644
 --- a/drivers/ata/pata_ep93xx.c
 +++ b/drivers/ata/pata_ep93xx.c
 @@ -34,7 +34,6 @@
@@ -323,8 +283,6 @@ index 980b88e..cad9d45 100644
  #include <linux/blkdev.h>
  #include <scsi/scsi_host.h>
  #include <linux/ata.h>
-diff --git a/drivers/ata/pata_hpt366.c b/drivers/ata/pata_hpt366.c
-index 35b5213..8e76f79 100644
 --- a/drivers/ata/pata_hpt366.c
 +++ b/drivers/ata/pata_hpt366.c
 @@ -19,7 +19,6 @@
@@ -335,8 +293,6 @@ index 35b5213..8e76f79 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_hpt37x.c b/drivers/ata/pata_hpt37x.c
-index a9d74ef..3ba843f 100644
 --- a/drivers/ata/pata_hpt37x.c
 +++ b/drivers/ata/pata_hpt37x.c
 @@ -19,7 +19,6 @@
@@ -347,8 +303,6 @@ index a9d74ef..3ba843f 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_hpt3x2n.c b/drivers/ata/pata_hpt3x2n.c
-index 4be0398..b93c0f0 100644
 --- a/drivers/ata/pata_hpt3x2n.c
 +++ b/drivers/ata/pata_hpt3x2n.c
 @@ -20,7 +20,6 @@
@@ -359,8 +313,6 @@ index 4be0398..b93c0f0 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_hpt3x3.c b/drivers/ata/pata_hpt3x3.c
-index 85cf286..255c5aa 100644
 --- a/drivers/ata/pata_hpt3x3.c
 +++ b/drivers/ata/pata_hpt3x3.c
 @@ -16,7 +16,6 @@
@@ -371,8 +323,6 @@ index 85cf286..255c5aa 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_imx.c b/drivers/ata/pata_imx.c
-index b0b18ec..7e69797 100644
 --- a/drivers/ata/pata_imx.c
 +++ b/drivers/ata/pata_imx.c
 @@ -15,7 +15,6 @@
@@ -383,8 +333,6 @@ index b0b18ec..7e69797 100644
  #include <linux/blkdev.h>
  #include <scsi/scsi_host.h>
  #include <linux/ata.h>
-diff --git a/drivers/ata/pata_it8213.c b/drivers/ata/pata_it8213.c
-index 2a8dd95..81369d1 100644
 --- a/drivers/ata/pata_it8213.c
 +++ b/drivers/ata/pata_it8213.c
 @@ -10,7 +10,6 @@
@@ -395,8 +343,6 @@ index 2a8dd95..81369d1 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_it821x.c b/drivers/ata/pata_it821x.c
-index 581e04d..dc3d787 100644
 --- a/drivers/ata/pata_it821x.c
 +++ b/drivers/ata/pata_it821x.c
 @@ -72,7 +72,6 @@
@@ -407,8 +353,6 @@ index 581e04d..dc3d787 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/slab.h>
-diff --git a/drivers/ata/pata_jmicron.c b/drivers/ata/pata_jmicron.c
-index 76e739b0..b1cfa02 100644
 --- a/drivers/ata/pata_jmicron.c
 +++ b/drivers/ata/pata_jmicron.c
 @@ -10,7 +10,6 @@
@@ -419,8 +363,6 @@ index 76e739b0..b1cfa02 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_marvell.c b/drivers/ata/pata_marvell.c
-index a4f5e78..6bad3df 100644
 --- a/drivers/ata/pata_marvell.c
 +++ b/drivers/ata/pata_marvell.c
 @@ -11,7 +11,6 @@
@@ -431,8 +373,6 @@ index a4f5e78..6bad3df 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_mpiix.c b/drivers/ata/pata_mpiix.c
-index 1f5f28b..f39a537 100644
 --- a/drivers/ata/pata_mpiix.c
 +++ b/drivers/ata/pata_mpiix.c
 @@ -28,7 +28,6 @@
@@ -443,8 +383,6 @@ index 1f5f28b..f39a537 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_netcell.c b/drivers/ata/pata_netcell.c
-index ad1a0fe..e3b9709 100644
 --- a/drivers/ata/pata_netcell.c
 +++ b/drivers/ata/pata_netcell.c
 @@ -7,7 +7,6 @@
@@ -455,8 +393,6 @@ index ad1a0fe..e3b9709 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_ninja32.c b/drivers/ata/pata_ninja32.c
-index 9513e07..56201a6 100644
 --- a/drivers/ata/pata_ninja32.c
 +++ b/drivers/ata/pata_ninja32.c
 @@ -37,7 +37,6 @@
@@ -467,8 +403,6 @@ index 9513e07..56201a6 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_ns87410.c b/drivers/ata/pata_ns87410.c
-index 0c424da..6154c3e 100644
 --- a/drivers/ata/pata_ns87410.c
 +++ b/drivers/ata/pata_ns87410.c
 @@ -20,7 +20,6 @@
@@ -479,8 +413,6 @@ index 0c424da..6154c3e 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_ns87415.c b/drivers/ata/pata_ns87415.c
-index 16dc3a6..d44df7c 100644
 --- a/drivers/ata/pata_ns87415.c
 +++ b/drivers/ata/pata_ns87415.c
 @@ -25,7 +25,6 @@
@@ -491,8 +423,6 @@ index 16dc3a6..d44df7c 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_oldpiix.c b/drivers/ata/pata_oldpiix.c
-index d77b2e1..319b644 100644
 --- a/drivers/ata/pata_oldpiix.c
 +++ b/drivers/ata/pata_oldpiix.c
 @@ -16,7 +16,6 @@
@@ -503,8 +433,6 @@ index d77b2e1..319b644 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_opti.c b/drivers/ata/pata_opti.c
-index 4ea70cd..fb042e0 100644
 --- a/drivers/ata/pata_opti.c
 +++ b/drivers/ata/pata_opti.c
 @@ -26,7 +26,6 @@
@@ -515,8 +443,6 @@ index 4ea70cd..fb042e0 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_optidma.c b/drivers/ata/pata_optidma.c
-index 78ede3f..bb71ea2 100644
 --- a/drivers/ata/pata_optidma.c
 +++ b/drivers/ata/pata_optidma.c
 @@ -25,7 +25,6 @@
@@ -527,8 +453,6 @@ index 78ede3f..bb71ea2 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_pcmcia.c b/drivers/ata/pata_pcmcia.c
-index 40254f4..bcc4b96 100644
 --- a/drivers/ata/pata_pcmcia.c
 +++ b/drivers/ata/pata_pcmcia.c
 @@ -26,7 +26,6 @@
@@ -539,8 +463,6 @@ index 40254f4..bcc4b96 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/slab.h>
-diff --git a/drivers/ata/pata_pdc2027x.c b/drivers/ata/pata_pdc2027x.c
-index 9d874c8..1151f23 100644
 --- a/drivers/ata/pata_pdc2027x.c
 +++ b/drivers/ata/pata_pdc2027x.c
 @@ -25,7 +25,6 @@
@@ -551,8 +473,6 @@ index 9d874c8..1151f23 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_pdc202xx_old.c b/drivers/ata/pata_pdc202xx_old.c
-index c34fc50..defa050 100644
 --- a/drivers/ata/pata_pdc202xx_old.c
 +++ b/drivers/ata/pata_pdc202xx_old.c
 @@ -15,7 +15,6 @@
@@ -563,8 +483,6 @@ index c34fc50..defa050 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_piccolo.c b/drivers/ata/pata_piccolo.c
-index 2beb6b5..0b46be1 100644
 --- a/drivers/ata/pata_piccolo.c
 +++ b/drivers/ata/pata_piccolo.c
 @@ -18,7 +18,6 @@
@@ -575,8 +493,6 @@ index 2beb6b5..0b46be1 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_platform.c b/drivers/ata/pata_platform.c
-index 0279488..a5579b5 100644
 --- a/drivers/ata/pata_platform.c
 +++ b/drivers/ata/pata_platform.c
 @@ -13,7 +13,6 @@
@@ -587,8 +503,6 @@ index 0279488..a5579b5 100644
  #include <linux/blkdev.h>
  #include <scsi/scsi_host.h>
  #include <linux/ata.h>
-diff --git a/drivers/ata/pata_pxa.c b/drivers/ata/pata_pxa.c
-index a6f05ac..73259bf 100644
 --- a/drivers/ata/pata_pxa.c
 +++ b/drivers/ata/pata_pxa.c
 @@ -20,7 +20,6 @@
@@ -599,8 +513,6 @@ index a6f05ac..73259bf 100644
  #include <linux/blkdev.h>
  #include <linux/ata.h>
  #include <linux/libata.h>
-diff --git a/drivers/ata/pata_radisys.c b/drivers/ata/pata_radisys.c
-index f582ba1..be3f102 100644
 --- a/drivers/ata/pata_radisys.c
 +++ b/drivers/ata/pata_radisys.c
 @@ -15,7 +15,6 @@
@@ -611,8 +523,6 @@ index f582ba1..be3f102 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_rdc.c b/drivers/ata/pata_rdc.c
-index 79a970f..521b213 100644
 --- a/drivers/ata/pata_rdc.c
 +++ b/drivers/ata/pata_rdc.c
 @@ -24,7 +24,6 @@
@@ -623,8 +533,6 @@ index 79a970f..521b213 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_rz1000.c b/drivers/ata/pata_rz1000.c
-index 040b093..caedc90 100644
 --- a/drivers/ata/pata_rz1000.c
 +++ b/drivers/ata/pata_rz1000.c
 @@ -14,7 +14,6 @@
@@ -635,8 +543,6 @@ index 040b093..caedc90 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_sc1200.c b/drivers/ata/pata_sc1200.c
-index ce2f828..96a232f 100644
 --- a/drivers/ata/pata_sc1200.c
 +++ b/drivers/ata/pata_sc1200.c
 @@ -32,7 +32,6 @@
@@ -647,8 +553,6 @@ index ce2f828..96a232f 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_scc.c b/drivers/ata/pata_scc.c
-index f35f15f..f1f5b5a 100644
 --- a/drivers/ata/pata_scc.c
 +++ b/drivers/ata/pata_scc.c
 @@ -35,7 +35,6 @@
@@ -659,8 +563,6 @@ index f35f15f..f1f5b5a 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_sch.c b/drivers/ata/pata_sch.c
-index d3830c4..5a1cde0 100644
 --- a/drivers/ata/pata_sch.c
 +++ b/drivers/ata/pata_sch.c
 @@ -27,7 +27,6 @@
@@ -671,8 +573,6 @@ index d3830c4..5a1cde0 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_serverworks.c b/drivers/ata/pata_serverworks.c
-index 96c6a79..e27f31f 100644
 --- a/drivers/ata/pata_serverworks.c
 +++ b/drivers/ata/pata_serverworks.c
 @@ -34,7 +34,6 @@
@@ -683,8 +583,6 @@ index 96c6a79..e27f31f 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_sil680.c b/drivers/ata/pata_sil680.c
-index c4b0b07..73fe362 100644
 --- a/drivers/ata/pata_sil680.c
 +++ b/drivers/ata/pata_sil680.c
 @@ -25,7 +25,6 @@
@@ -695,8 +593,6 @@ index c4b0b07..73fe362 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_sis.c b/drivers/ata/pata_sis.c
-index 1e83636..78d913a 100644
 --- a/drivers/ata/pata_sis.c
 +++ b/drivers/ata/pata_sis.c
 @@ -26,7 +26,6 @@
@@ -707,8 +603,6 @@ index 1e83636..78d913a 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/pata_sl82c105.c b/drivers/ata/pata_sl82c105.c
-index 6816911..900f0e4 100644
 --- a/drivers/ata/pata_sl82c105.c
 +++ b/drivers/ata/pata_sl82c105.c
 @@ -19,7 +19,6 @@
@@ -719,8 +613,6 @@ index 6816911..900f0e4 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_triflex.c b/drivers/ata/pata_triflex.c
-index 94473da..7bc78e2 100644
 --- a/drivers/ata/pata_triflex.c
 +++ b/drivers/ata/pata_triflex.c
 @@ -36,7 +36,6 @@
@@ -731,8 +623,6 @@ index 94473da..7bc78e2 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <scsi/scsi_host.h>
-diff --git a/drivers/ata/pata_via.c b/drivers/ata/pata_via.c
-index c3ab9a6..f6c9632 100644
 --- a/drivers/ata/pata_via.c
 +++ b/drivers/ata/pata_via.c
 @@ -55,7 +55,6 @@
@@ -743,8 +633,6 @@ index c3ab9a6..f6c9632 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/gfp.h>
-diff --git a/drivers/ata/pdc_adma.c b/drivers/ata/pdc_adma.c
-index 8ea6e6a..f10631b 100644
 --- a/drivers/ata/pdc_adma.c
 +++ b/drivers/ata/pdc_adma.c
 @@ -36,7 +36,6 @@
@@ -755,8 +643,6 @@ index 8ea6e6a..f10631b 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_dwc_460ex.c b/drivers/ata/sata_dwc_460ex.c
-index 523524b..73510d0 100644
 --- a/drivers/ata/sata_dwc_460ex.c
 +++ b/drivers/ata/sata_dwc_460ex.c
 @@ -29,7 +29,6 @@
@@ -767,8 +653,6 @@ index 523524b..73510d0 100644
  #include <linux/device.h>
  #include <linux/of_address.h>
  #include <linux/of_irq.h>
-diff --git a/drivers/ata/sata_highbank.c b/drivers/ata/sata_highbank.c
-index b3b18d1..d4df0bf 100644
 --- a/drivers/ata/sata_highbank.c
 +++ b/drivers/ata/sata_highbank.c
 @@ -19,7 +19,6 @@
@@ -779,8 +663,6 @@ index b3b18d1..d4df0bf 100644
  #include <linux/types.h>
  #include <linux/err.h>
  #include <linux/io.h>
-diff --git a/drivers/ata/sata_nv.c b/drivers/ata/sata_nv.c
-index d74def8..ba5f271 100644
 --- a/drivers/ata/sata_nv.c
 +++ b/drivers/ata/sata_nv.c
 @@ -40,7 +40,6 @@
@@ -791,8 +673,6 @@ index d74def8..ba5f271 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_promise.c b/drivers/ata/sata_promise.c
-index 97f4acb..3638887 100644
 --- a/drivers/ata/sata_promise.c
 +++ b/drivers/ata/sata_promise.c
 @@ -35,7 +35,6 @@
@@ -803,8 +683,6 @@ index 97f4acb..3638887 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_qstor.c b/drivers/ata/sata_qstor.c
-index 3b0dd57..9a6bd4c 100644
 --- a/drivers/ata/sata_qstor.c
 +++ b/drivers/ata/sata_qstor.c
 @@ -31,7 +31,6 @@
@@ -815,8 +693,6 @@ index 3b0dd57..9a6bd4c 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_sil.c b/drivers/ata/sata_sil.c
-index b7695e8..3062f86 100644
 --- a/drivers/ata/sata_sil.c
 +++ b/drivers/ata/sata_sil.c
 @@ -37,7 +37,6 @@
@@ -827,8 +703,6 @@ index b7695e8..3062f86 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_sis.c b/drivers/ata/sata_sis.c
-index 1ad2f62..b513428 100644
 --- a/drivers/ata/sata_sis.c
 +++ b/drivers/ata/sata_sis.c
 @@ -33,7 +33,6 @@
@@ -839,8 +713,6 @@ index 1ad2f62..b513428 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_svw.c b/drivers/ata/sata_svw.c
-index dc4f701..c630fa8 100644
 --- a/drivers/ata/sata_svw.c
 +++ b/drivers/ata/sata_svw.c
 @@ -39,7 +39,6 @@
@@ -851,8 +723,6 @@ index dc4f701..c630fa8 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_sx4.c b/drivers/ata/sata_sx4.c
-index 9947010..6cd0312 100644
 --- a/drivers/ata/sata_sx4.c
 +++ b/drivers/ata/sata_sx4.c
 @@ -82,7 +82,6 @@
@@ -863,8 +733,6 @@ index 9947010..6cd0312 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_uli.c b/drivers/ata/sata_uli.c
-index 6d64891..08f98c3 100644
 --- a/drivers/ata/sata_uli.c
 +++ b/drivers/ata/sata_uli.c
 @@ -28,7 +28,6 @@
@@ -875,8 +743,6 @@ index 6d64891..08f98c3 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
-diff --git a/drivers/ata/sata_via.c b/drivers/ata/sata_via.c
-index 87f056e..f72e842 100644
 --- a/drivers/ata/sata_via.c
 +++ b/drivers/ata/sata_via.c
 @@ -36,7 +36,6 @@
@@ -887,8 +753,6 @@ index 87f056e..f72e842 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/device.h>
-diff --git a/drivers/ata/sata_vsc.c b/drivers/ata/sata_vsc.c
-index 44f304b..29e847a 100644
 --- a/drivers/ata/sata_vsc.c
 +++ b/drivers/ata/sata_vsc.c
 @@ -37,7 +37,6 @@
@@ -899,6 +763,3 @@ index 44f304b..29e847a 100644
  #include <linux/blkdev.h>
  #include <linux/delay.h>
  #include <linux/interrupt.h>
--- 
-1.7.10.4
-

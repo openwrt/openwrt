@@ -21,11 +21,9 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  drivers/spi/spi-qup.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index dec339d..886edb4 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -709,7 +709,7 @@ static int spi_qup_pm_suspend_runtime(struct device *device)
+@@ -709,7 +709,7 @@ static int spi_qup_pm_suspend_runtime(st
  
  	/* Enable clocks auto gaiting */
  	config = readl(controller->base + QUP_CONFIG);
@@ -34,7 +32,7 @@ index dec339d..886edb4 100644
  	writel_relaxed(config, controller->base + QUP_CONFIG);
  	return 0;
  }
-@@ -722,7 +722,7 @@ static int spi_qup_pm_resume_runtime(struct device *device)
+@@ -722,7 +722,7 @@ static int spi_qup_pm_resume_runtime(str
  
  	/* Disable clocks auto gaiting */
  	config = readl_relaxed(controller->base + QUP_CONFIG);
@@ -43,6 +41,3 @@ index dec339d..886edb4 100644
  	writel_relaxed(config, controller->base + QUP_CONFIG);
  	return 0;
  }
--- 
-1.7.10.4
-

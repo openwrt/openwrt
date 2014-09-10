@@ -12,8 +12,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  drivers/clk/qcom/clk-pll.h |   20 +++++++++++++
  2 files changed, 87 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/qcom/clk-pll.c b/drivers/clk/qcom/clk-pll.c
-index 0f927c5..80c7a76 100644
 --- a/drivers/clk/qcom/clk-pll.c
 +++ b/drivers/clk/qcom/clk-pll.c
 @@ -97,7 +97,7 @@ static unsigned long
@@ -25,7 +23,7 @@ index 0f927c5..80c7a76 100644
  	unsigned long rate;
  	u64 tmp;
  
-@@ -116,13 +116,79 @@ clk_pll_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
+@@ -116,13 +116,79 @@ clk_pll_recalc_rate(struct clk_hw *hw, u
  		do_div(tmp, n);
  		rate += tmp;
  	}
@@ -105,8 +103,6 @@ index 0f927c5..80c7a76 100644
  };
  EXPORT_SYMBOL_GPL(clk_pll_ops);
  
-diff --git a/drivers/clk/qcom/clk-pll.h b/drivers/clk/qcom/clk-pll.h
-index 0775a99..5f9928b 100644
 --- a/drivers/clk/qcom/clk-pll.h
 +++ b/drivers/clk/qcom/clk-pll.h
 @@ -18,6 +18,21 @@
@@ -150,6 +146,3 @@ index 0775a99..5f9928b 100644
  
  	struct clk_regmap clkr;
  };
--- 
-1.7.10.4
-

@@ -23,11 +23,9 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  3 files changed, 851 insertions(+)
  create mode 100644 drivers/spi/spi-qup.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 581ee2a..9e9e3ed 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -381,6 +381,19 @@ config SPI_RSPI
+@@ -390,6 +390,19 @@ config SPI_RSPI
  	help
  	  SPI driver for Renesas RSPI and QSPI blocks.
  
@@ -47,11 +45,9 @@ index 581ee2a..9e9e3ed 100644
  config SPI_S3C24XX
  	tristate "Samsung S3C24XX series SPI"
  	depends on ARCH_S3C24XX
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 95af48d..e598147 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -59,6 +59,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_PXADMA)	+= spi-pxa2xx-pxadma.o
+@@ -60,6 +60,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_
  spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_DMA)	+= spi-pxa2xx-dma.o
  obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-platform.o
  obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
@@ -59,9 +55,6 @@ index 95af48d..e598147 100644
  obj-$(CONFIG_SPI_RSPI)			+= spi-rspi.o
  obj-$(CONFIG_SPI_S3C24XX)		+= spi-s3c24xx-hw.o
  spi-s3c24xx-hw-y			:= spi-s3c24xx.o
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-new file mode 100644
-index 0000000..b0bcc09
 --- /dev/null
 +++ b/drivers/spi/spi-qup.c
 @@ -0,0 +1,837 @@
@@ -902,6 +895,3 @@ index 0000000..b0bcc09
 +MODULE_LICENSE("GPL v2");
 +MODULE_VERSION("0.4");
 +MODULE_ALIAS("platform:spi_qup");
--- 
-1.7.10.4
-

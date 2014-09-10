@@ -1,7 +1,5 @@
-Index: linux-3.14.16/drivers/usb/dwc2/hcd.c
-===================================================================
---- linux-3.14.16.orig/drivers/usb/dwc2/hcd.c	2014-08-08 01:50:59.000000000 +0200
-+++ linux-3.14.16/drivers/usb/dwc2/hcd.c	2014-09-07 21:01:06.524023779 +0200
+--- a/drivers/usb/dwc2/hcd.c
++++ b/drivers/usb/dwc2/hcd.c
 @@ -47,6 +47,7 @@
  #include <linux/io.h>
  #include <linux/slab.h>
@@ -10,7 +8,7 @@ Index: linux-3.14.16/drivers/usb/dwc2/hcd.c
  
  #include <linux/usb/hcd.h>
  #include <linux/usb/ch11.h>
-@@ -2764,6 +2765,8 @@
+@@ -2764,6 +2765,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hso
  
  	dev_dbg(hsotg->dev, "DWC OTG HCD INIT\n");
  

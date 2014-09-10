@@ -13,11 +13,9 @@ Also add a name to the irq chip.
  drivers/pinctrl/pinctrl-sunxi.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/drivers/pinctrl/pinctrl-sunxi.c b/drivers/pinctrl/pinctrl-sunxi.c
-index 067e7e10..d7a41a8 100644
 --- a/drivers/pinctrl/pinctrl-sunxi.c
 +++ b/drivers/pinctrl/pinctrl-sunxi.c
-@@ -661,6 +661,8 @@ static struct irq_chip sunxi_pinctrl_irq_chip = {
+@@ -661,6 +661,8 @@ static struct irq_chip sunxi_pinctrl_irq
  	.irq_mask_ack	= sunxi_pinctrl_irq_mask_ack,
  	.irq_unmask	= sunxi_pinctrl_irq_unmask,
  	.irq_set_type	= sunxi_pinctrl_irq_set_type,
@@ -26,6 +24,3 @@ index 067e7e10..d7a41a8 100644
  };
  
  static void sunxi_pinctrl_irq_handler(unsigned irq, struct irq_desc *desc)
--- 
-2.0.3
-

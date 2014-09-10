@@ -11,11 +11,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun5i-a13.dtsi  | 9 +++++++++
  2 files changed, 18 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index 99a5120..905317e 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
-@@ -276,6 +276,15 @@
+@@ -272,6 +272,15 @@
  			clock-output-names = "ir0";
  		};
  
@@ -31,8 +29,6 @@ index 99a5120..905317e 100644
  		mbus_clk: clk@01c2015c {
  			#clock-cells = <0>;
  			compatible = "allwinner,sun4i-mod0-clk";
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index b776baa..d196ebc6 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -274,6 +274,15 @@
@@ -51,6 +47,3 @@ index b776baa..d196ebc6 100644
  		mbus_clk: clk@01c2015c {
  			#clock-cells = <0>;
  			compatible = "allwinner,sun4i-mod0-clk";
--- 
-2.0.3
-

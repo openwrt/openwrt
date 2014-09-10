@@ -19,8 +19,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  create mode 100644 drivers/mtd/nand/qcom_nand.c
  create mode 100644 drivers/mtd/nand/qcom_nand.h
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index 90ff447..6e3842f 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -510,4 +510,22 @@ config MTD_NAND_XWAY
@@ -46,11 +44,9 @@ index 90ff447..6e3842f 100644
 +	  Support for some NAND chips connected to the QCOM NAND controller.
 +
  endif # MTD_NAND
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index 542b568..6ef3c02 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
-@@ -49,5 +49,7 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+@@ -49,5 +49,7 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740
  obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
  obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
  obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
@@ -58,9 +54,6 @@ index 542b568..6ef3c02 100644
 +obj-$(CONFIG_MTD_QCOM_DMA)	+= qcom_adm_dma.o
  
  nand-objs := nand_base.o nand_bbt.o
-diff --git a/drivers/mtd/nand/qcom_adm_dma.c b/drivers/mtd/nand/qcom_adm_dma.c
-new file mode 100644
-index 0000000..46d8473
 --- /dev/null
 +++ b/drivers/mtd/nand/qcom_adm_dma.c
 @@ -0,0 +1,797 @@
@@ -861,9 +854,6 @@ index 0000000..46d8473
 +	return 0;
 +}
 +arch_initcall(msm_init_datamover);
-diff --git a/drivers/mtd/nand/qcom_adm_dma.h b/drivers/mtd/nand/qcom_adm_dma.h
-new file mode 100644
-index 0000000..1014d57
 --- /dev/null
 +++ b/drivers/mtd/nand/qcom_adm_dma.h
 @@ -0,0 +1,268 @@
@@ -1135,9 +1125,6 @@ index 0000000..1014d57
 +#define CMD_SRC_CRCI(n)     (((n) & 15) << 3)
 +
 +#endif
-diff --git a/drivers/mtd/nand/qcom_nand.c b/drivers/mtd/nand/qcom_nand.c
-new file mode 100644
-index 0000000..9314132
 --- /dev/null
 +++ b/drivers/mtd/nand/qcom_nand.c
 @@ -0,0 +1,7455 @@
@@ -8596,9 +8583,6 @@ index 0000000..9314132
 +
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("msm_nand flash driver code");
-diff --git a/drivers/mtd/nand/qcom_nand.h b/drivers/mtd/nand/qcom_nand.h
-new file mode 100644
-index 0000000..468186c
 --- /dev/null
 +++ b/drivers/mtd/nand/qcom_nand.h
 @@ -0,0 +1,196 @@
@@ -8798,6 +8782,3 @@ index 0000000..468186c
 +extern struct flash_platform_data msm_nand_data;
 +
 +#endif
--- 
-1.7.10.4
-

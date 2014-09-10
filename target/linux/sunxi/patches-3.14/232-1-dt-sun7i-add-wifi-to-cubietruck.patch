@@ -14,8 +14,6 @@ but this is not supported in this patch.
  arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 47 ++++++++++++++++++++++++++++++
  1 file changed, 47 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 66bb3ef..2444806 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 @@ -28,6 +28,23 @@
@@ -61,9 +59,9 @@ index 66bb3ef..2444806 100644
  			ahci_pwr_pin_cubietruck: ahci_pwr_pin@1 {
  				allwinner,pins = "PH12";
  				allwinner,function = "gpio_out";
-@@ -69,6 +98,13 @@
- 				allwinner,drive = <0>;
- 				allwinner,pull = <0>;
+@@ -83,6 +112,13 @@
+ 					allwinner,drive = <0>;
+ 					allwinner,pull = <2>;
  			};
 +
 +			wifi_host_wake_pin: wifi_host_wake_pin@0 {
@@ -75,7 +73,7 @@ index 66bb3ef..2444806 100644
  		};
  
  		uart0: serial@01c28000 {
-@@ -147,4 +183,15 @@
+@@ -171,4 +207,15 @@
  	reg_usb2_vbus: usb2-vbus {
  		status = "okay";
  	};
@@ -91,6 +89,3 @@ index 66bb3ef..2444806 100644
 +		gpio = <&pio 7 9 0>;
 +	};
  };
--- 
-2.0.3
-

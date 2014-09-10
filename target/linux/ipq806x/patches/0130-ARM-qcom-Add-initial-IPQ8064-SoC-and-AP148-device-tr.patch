@@ -19,8 +19,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  create mode 100644 arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi
  create mode 100644 arch/arm/boot/dts/qcom-ipq8064.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index f2aeb95..f22c51d 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -235,6 +235,7 @@ dtb-$(CONFIG_ARCH_QCOM) += \
@@ -31,9 +29,6 @@ index f2aeb95..f22c51d 100644
  	qcom-msm8660-surf.dtb \
  	qcom-msm8960-cdp.dtb
  dtb-$(CONFIG_ARCH_U8500) += ste-snowball.dtb \
-diff --git a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-new file mode 100644
-index 0000000..100b6eb
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 @@ -0,0 +1,25 @@
@@ -62,16 +57,10 @@ index 0000000..100b6eb
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi b/arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi
-new file mode 100644
-index 0000000..7093b07
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-ipq8064-v1.0.dtsi
 @@ -0,0 +1 @@
 +#include "qcom-ipq8064.dtsi"
-diff --git a/arch/arm/boot/dts/qcom-ipq8064.dtsi b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-new file mode 100644
-index 0000000..952afb7
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
 @@ -0,0 +1,176 @@
@@ -251,11 +240,9 @@ index 0000000..952afb7
 +		};
 +	};
 +};
-diff --git a/arch/arm/mach-qcom/board.c b/arch/arm/mach-qcom/board.c
-index c437a99..6d8bbf7 100644
 --- a/arch/arm/mach-qcom/board.c
 +++ b/arch/arm/mach-qcom/board.c
-@@ -18,6 +18,8 @@ static const char * const qcom_dt_match[] __initconst = {
+@@ -18,6 +18,8 @@ static const char * const qcom_dt_match[
  	"qcom,apq8064",
  	"qcom,apq8074-dragonboard",
  	"qcom,apq8084",
@@ -264,6 +251,3 @@ index c437a99..6d8bbf7 100644
  	"qcom,msm8660-surf",
  	"qcom,msm8960-cdp",
  	NULL
--- 
-1.7.10.4
-

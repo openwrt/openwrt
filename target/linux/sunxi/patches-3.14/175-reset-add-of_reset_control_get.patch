@@ -15,11 +15,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  include/linux/reset.h |  4 ++++
  2 files changed, 34 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/reset/core.c b/drivers/reset/core.c
-index d1b6089..4f3dda7 100644
 --- a/drivers/reset/core.c
 +++ b/drivers/reset/core.c
-@@ -127,15 +127,16 @@ int reset_control_deassert(struct reset_control *rstc)
+@@ -127,15 +127,16 @@ int reset_control_deassert(struct reset_
  EXPORT_SYMBOL_GPL(reset_control_deassert);
  
  /**
@@ -39,7 +37,7 @@ index d1b6089..4f3dda7 100644
  {
  	struct reset_control *rstc = ERR_PTR(-EPROBE_DEFER);
  	struct reset_controller_dev *r, *rcdev;
-@@ -144,13 +145,10 @@ struct reset_control *reset_control_get(struct device *dev, const char *id)
+@@ -144,13 +145,10 @@ struct reset_control *reset_control_get(
  	int rstc_id;
  	int ret;
  
@@ -55,7 +53,7 @@ index d1b6089..4f3dda7 100644
  					 index, &args);
  	if (ret)
  		return ERR_PTR(ret);
-@@ -185,12 +183,35 @@ struct reset_control *reset_control_get(struct device *dev, const char *id)
+@@ -185,12 +183,35 @@ struct reset_control *reset_control_get(
  		return ERR_PTR(-ENOMEM);
  	}
  
@@ -92,8 +90,6 @@ index d1b6089..4f3dda7 100644
  EXPORT_SYMBOL_GPL(reset_control_get);
  
  /**
-diff --git a/include/linux/reset.h b/include/linux/reset.h
-index 6082247..a398025 100644
 --- a/include/linux/reset.h
 +++ b/include/linux/reset.h
 @@ -1,6 +1,8 @@
@@ -105,7 +101,7 @@ index 6082247..a398025 100644
  struct device;
  struct reset_control;
  
-@@ -8,6 +10,8 @@ int reset_control_reset(struct reset_control *rstc);
+@@ -8,6 +10,8 @@ int reset_control_reset(struct reset_con
  int reset_control_assert(struct reset_control *rstc);
  int reset_control_deassert(struct reset_control *rstc);
  
@@ -114,6 +110,3 @@ index 6082247..a398025 100644
  struct reset_control *reset_control_get(struct device *dev, const char *id);
  void reset_control_put(struct reset_control *rstc);
  struct reset_control *devm_reset_control_get(struct device *dev, const char *id);
--- 
-2.0.3
-

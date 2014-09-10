@@ -25,8 +25,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 arch/arm/common/krait-l2-accessors.c
  create mode 100644 arch/arm/include/asm/krait-l2-accessors.h
 
-diff --git a/arch/arm/common/Kconfig b/arch/arm/common/Kconfig
-index c3a4e9c..9da52dc 100644
 --- a/arch/arm/common/Kconfig
 +++ b/arch/arm/common/Kconfig
 @@ -9,6 +9,9 @@ config DMABOUNCE
@@ -39,8 +37,6 @@ index c3a4e9c..9da52dc 100644
  config SHARP_LOCOMO
  	bool
  
-diff --git a/arch/arm/common/Makefile b/arch/arm/common/Makefile
-index 4bdc4162..2836f99 100644
 --- a/arch/arm/common/Makefile
 +++ b/arch/arm/common/Makefile
 @@ -7,6 +7,7 @@ obj-y				+= firmware.o
@@ -51,9 +47,6 @@ index 4bdc4162..2836f99 100644
  obj-$(CONFIG_SHARP_LOCOMO)	+= locomo.o
  obj-$(CONFIG_SHARP_PARAM)	+= sharpsl_param.o
  obj-$(CONFIG_SHARP_SCOOP)	+= scoop.o
-diff --git a/arch/arm/common/krait-l2-accessors.c b/arch/arm/common/krait-l2-accessors.c
-new file mode 100644
-index 0000000..5d514bb
 --- /dev/null
 +++ b/arch/arm/common/krait-l2-accessors.c
 @@ -0,0 +1,58 @@
@@ -115,9 +108,6 @@ index 0000000..5d514bb
 +	return val;
 +}
 +EXPORT_SYMBOL(krait_get_l2_indirect_reg);
-diff --git a/arch/arm/include/asm/krait-l2-accessors.h b/arch/arm/include/asm/krait-l2-accessors.h
-new file mode 100644
-index 0000000..48fe552
 --- /dev/null
 +++ b/arch/arm/include/asm/krait-l2-accessors.h
 @@ -0,0 +1,20 @@
@@ -141,6 +131,3 @@ index 0000000..48fe552
 +extern u32 krait_get_l2_indirect_reg(u32 addr);
 +
 +#endif
--- 
-1.7.10.4
-

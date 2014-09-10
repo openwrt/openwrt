@@ -38,11 +38,16 @@ Acked-by: Alan Stern <stern@rowland.harvard.edu>
  delete mode 100644 Documentation/devicetree/bindings/usb/via,vt8500-ehci.txt
  delete mode 100644 Documentation/devicetree/bindings/usb/vt8500-ehci.txt
 
-diff --git a/Documentation/devicetree/bindings/usb/usb-ehci.txt b/Documentation/devicetree/bindings/usb/usb-ehci.txt
-index fa18612..2c1aeeb 100644
 --- a/Documentation/devicetree/bindings/usb/usb-ehci.txt
 +++ b/Documentation/devicetree/bindings/usb/usb-ehci.txt
-@@ -7,13 +7,14 @@ Required properties:
+@@ -1,19 +1,20 @@
+ USB EHCI controllers
+ 
+ Required properties:
+-  - compatible : should be "usb-ehci".
++  - compatible : should be "generic-ehci".
+   - reg : should contain at least address and length of the standard EHCI
+     register set for the device. Optional platform-dependent registers
      (debug-port or other) can be also specified here, but only after
      definition of standard EHCI registers.
    - interrupts : one EHCI interrupt should be described here.
@@ -71,16 +76,13 @@ index fa18612..2c1aeeb 100644
 +
 +Example (Allwinner sun4i A10 SoC):
 +   ehci0: usb@01c14000 {
-+	   compatible = "allwinner,sun4i-a10-ehci", "usb-ehci";
++	   compatible = "allwinner,sun4i-a10-ehci", "generic-ehci";
 +	   reg = <0x01c14000 0x100>;
 +	   interrupts = <39>;
 +	   clocks = <&ahb_gates 1>;
 +	   phys = <&usbphy 1>;
 +	   phy-names = "usb";
 +   };
-diff --git a/Documentation/devicetree/bindings/usb/via,vt8500-ehci.txt b/Documentation/devicetree/bindings/usb/via,vt8500-ehci.txt
-deleted file mode 100644
-index 17b3ad1..0000000
 --- a/Documentation/devicetree/bindings/usb/via,vt8500-ehci.txt
 +++ /dev/null
 @@ -1,15 +0,0 @@
@@ -99,9 +101,6 @@ index 17b3ad1..0000000
 -		reg = <0xd8007900 0x200>;
 -		interrupts = <43>;
 -	};
-diff --git a/Documentation/devicetree/bindings/usb/vt8500-ehci.txt b/Documentation/devicetree/bindings/usb/vt8500-ehci.txt
-deleted file mode 100644
-index 5fb8fd6..0000000
 --- a/Documentation/devicetree/bindings/usb/vt8500-ehci.txt
 +++ /dev/null
 @@ -1,12 +0,0 @@
@@ -117,20 +116,6 @@ index 5fb8fd6..0000000
 -	reg = <0xD8007100 0x200>;
 -	interrupts = <1>;
 -};
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index a9707da..e28cbe0 100644
---- a/drivers/usb/host/Kconfig
-+++ b/drivers/usb/host/Kconfig
-@@ -255,6 +255,7 @@ config USB_EHCI_ATH79
- 
- config USB_EHCI_HCD_PLATFORM
- 	tristate "Generic EHCI driver for a platform device"
-+	depends on !PPC_OF
- 	default n
- 	---help---
- 	  Adds an EHCI host driver for a generic platform device, which
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index 01536cf..5ebd0b7 100644
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
 @@ -3,6 +3,7 @@
@@ -171,7 +156,20 @@ index 01536cf..5ebd0b7 100644
  
  static const char hcd_name[] = "ehci-platform";
  
-@@ -64,38 +74,90 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
+@@ -45,8 +55,10 @@ static int ehci_platform_reset(struct us
+ 
+ 	hcd->has_tt = pdata->has_tt;
+ 	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
+-	ehci->big_endian_desc = pdata->big_endian_desc;
+-	ehci->big_endian_mmio = pdata->big_endian_mmio;
++	if (pdata->big_endian_desc)
++		ehci->big_endian_desc = 1;
++	if (pdata->big_endian_mmio)
++		ehci->big_endian_mmio = 1;
+ 	ehci->ignore_oc = pdata->ignore_oc;
+ 
+ 	if (pdata->pre_setup) {
+@@ -65,38 +77,91 @@ static int ehci_platform_reset(struct us
  	return 0;
  }
  
@@ -248,6 +246,7 @@ index 01536cf..5ebd0b7 100644
 -	int err;
 +	struct usb_ehci_pdata *pdata = dev_get_platdata(&dev->dev);
 +	struct ehci_platform_priv *priv;
++	struct ehci_hcd *ehci;
 +	int err, irq, clk = 0;
  
  	if (usb_disabled())
@@ -273,7 +272,7 @@ index 01536cf..5ebd0b7 100644
  	irq = platform_get_irq(dev, 0);
  	if (irq < 0) {
  		dev_err(&dev->dev, "no irq provided");
-@@ -107,17 +169,40 @@ static int ehci_platform_probe(struct platform_device *dev)
+@@ -108,17 +173,66 @@ static int ehci_platform_probe(struct pl
  		return -ENXIO;
  	}
  
@@ -285,8 +284,34 @@ index 01536cf..5ebd0b7 100644
 +	platform_set_drvdata(dev, hcd);
 +	dev->dev.platform_data = pdata;
 +	priv = hcd_to_ehci_priv(hcd);
++	ehci = hcd_to_ehci(hcd);
 +
 +	if (pdata == &ehci_platform_defaults && dev->dev.of_node) {
++		if (of_property_read_bool(dev->dev.of_node, "big-endian-regs"))
++			ehci->big_endian_mmio = 1;
++
++		if (of_property_read_bool(dev->dev.of_node, "big-endian-desc"))
++			ehci->big_endian_desc = 1;
++
++		if (of_property_read_bool(dev->dev.of_node, "big-endian"))
++			ehci->big_endian_mmio = ehci->big_endian_desc = 1;
++
++#ifndef CONFIG_USB_EHCI_BIG_ENDIAN_MMIO
++		if (ehci->big_endian_mmio) {
++			dev_err(&dev->dev,
++				"Error big-endian-regs not compiled in\n");
++			err = -EINVAL;
++			goto err_put_hcd;
++		}
++#endif
++#ifndef CONFIG_USB_EHCI_BIG_ENDIAN_DESC
++		if (ehci->big_endian_desc) {
++			dev_err(&dev->dev,
++				"Error big-endian-desc not compiled in\n");
++			err = -EINVAL;
++			goto err_put_hcd;
++		}
++#endif
 +		priv->phy = devm_phy_get(&dev->dev, "usb");
 +		if (IS_ERR(priv->phy)) {
 +			err = PTR_ERR(priv->phy);
@@ -322,7 +347,7 @@ index 01536cf..5ebd0b7 100644
  	}
  
  	hcd->rsrc_start = res_mem->start;
-@@ -126,22 +211,28 @@ static int ehci_platform_probe(struct platform_device *dev)
+@@ -127,22 +241,28 @@ static int ehci_platform_probe(struct pl
  	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
  	if (IS_ERR(hcd->regs)) {
  		err = PTR_ERR(hcd->regs);
@@ -355,7 +380,7 @@ index 01536cf..5ebd0b7 100644
  
  	return err;
  }
-@@ -150,13 +241,19 @@ static int ehci_platform_remove(struct platform_device *dev)
+@@ -151,13 +271,19 @@ static int ehci_platform_remove(struct p
  {
  	struct usb_hcd *hcd = platform_get_drvdata(dev);
  	struct usb_ehci_pdata *pdata = dev_get_platdata(&dev->dev);
@@ -376,177 +401,14 @@ index 01536cf..5ebd0b7 100644
  	if (pdata == &ehci_platform_defaults)
  		dev->dev.platform_data = NULL;
  
-@@ -207,8 +304,10 @@ static int ehci_platform_resume(struct device *dev)
+@@ -208,8 +334,10 @@ static int ehci_platform_resume(struct d
  static const struct of_device_id vt8500_ehci_ids[] = {
  	{ .compatible = "via,vt8500-ehci", },
  	{ .compatible = "wm,prizm-ehci", },
-+	{ .compatible = "usb-ehci", },
++	{ .compatible = "generic-ehci", },
  	{}
  };
 +MODULE_DEVICE_TABLE(of, vt8500_ehci_ids);
  
  static const struct platform_device_id ehci_platform_table[] = {
  	{ "ehci-platform", 0 },
--- 
-2.0.3
-
-From 91fc5f6e5e90d412a6778efbe05e5306a1df5032 Mon Sep 17 00:00:00 2001
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Tue, 21 Jan 2014 16:20:53 +0100
-Subject: [PATCH] ehci-platform: Add support for controllers with big-endian
- regs / descriptors
-
-This uses the already documented devicetree booleans for this, see:
-Documentation/devicetree/bindings/usb/usb-ehci.txt
-
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- drivers/usb/host/ehci-platform.c | 33 +++++++++++++++++++++++++++++++--
- 1 file changed, 31 insertions(+), 2 deletions(-)
-
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index 5ebd0b7..8fde649 100644
---- a/drivers/usb/host/ehci-platform.c
-+++ b/drivers/usb/host/ehci-platform.c
-@@ -55,8 +55,10 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
- 
- 	hcd->has_tt = pdata->has_tt;
- 	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
--	ehci->big_endian_desc = pdata->big_endian_desc;
--	ehci->big_endian_mmio = pdata->big_endian_mmio;
-+	if (pdata->big_endian_desc)
-+		ehci->big_endian_desc = 1;
-+	if (pdata->big_endian_mmio)
-+		ehci->big_endian_mmio = 1;
-	ehci->ignore_oc = pdata->ignore_oc;
-
- 	if (pdata->pre_setup) {
-@@ -142,6 +144,7 @@ static int ehci_platform_probe(struct platform_device *dev)
- 	struct resource *res_mem;
- 	struct usb_ehci_pdata *pdata = dev_get_platdata(&dev->dev);
- 	struct ehci_platform_priv *priv;
-+	struct ehci_hcd *ehci;
- 	int err, irq, clk = 0;
- 
- 	if (usb_disabled())
-@@ -177,8 +180,34 @@ static int ehci_platform_probe(struct platform_device *dev)
- 	platform_set_drvdata(dev, hcd);
- 	dev->dev.platform_data = pdata;
- 	priv = hcd_to_ehci_priv(hcd);
-+	ehci = hcd_to_ehci(hcd);
- 
- 	if (pdata == &ehci_platform_defaults && dev->dev.of_node) {
-+		if (of_property_read_bool(dev->dev.of_node, "big-endian-regs"))
-+			ehci->big_endian_mmio = 1;
-+
-+		if (of_property_read_bool(dev->dev.of_node, "big-endian-desc"))
-+			ehci->big_endian_desc = 1;
-+
-+		if (of_property_read_bool(dev->dev.of_node, "big-endian"))
-+			ehci->big_endian_mmio = ehci->big_endian_desc = 1;
-+
-+#ifndef CONFIG_USB_EHCI_BIG_ENDIAN_MMIO
-+		if (ehci->big_endian_mmio) {
-+			dev_err(&dev->dev,
-+				"Error big-endian-regs not compiled in\n");
-+			err = -EINVAL;
-+			goto err_put_hcd;
-+		}
-+#endif
-+#ifndef CONFIG_USB_EHCI_BIG_ENDIAN_DESC
-+		if (ehci->big_endian_desc) {
-+			dev_err(&dev->dev,
-+				"Error big-endian-desc not compiled in\n");
-+			err = -EINVAL;
-+			goto err_put_hcd;
-+		}
-+#endif
- 		priv->phy = devm_phy_get(&dev->dev, "usb");
- 		if (IS_ERR(priv->phy)) {
- 			err = PTR_ERR(priv->phy);
--- 
-2.0.3
-
-From 4a1ce69fa8c4595483493cd7df21c66dbcca1307 Mon Sep 17 00:00:00 2001
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Tue, 11 Feb 2014 11:46:13 +0100
-Subject: [PATCH] ehci-platform: Change compatible string from usb-ehci to
- generic-ehci
-
-The initial versions of the devicetree enablement patches for ehci-platform
-used "ehci-platform" as compatible string. However this was disliked by various
-reviewers because the platform bus is a Linux invention and devicetree is
-supposed to be OS agnostic. After much discussion I gave up, added a:
-"depends on !PPC_OF" to Kconfig to avoid a known conflict with PPC-OF platforms
-and went with the generic usb-ehci as requested.
-
-In retro-spect I should have chosen something different, the dts files for many
-existing boards already claim to be compatible with "usb-ehci", ie they have:
-
-	compatible = "ti,ehci-omap", "usb-ehci";
-
-In theory this should not be a problem since the "ti,ehci-omap" entry takes
-presedence, but in practice using a conflicting compatible string is an issue,
-because it makes which driver gets used depend on driver registration order.
-
-This patch changes the compatible string claimed by ehci-platform to
-"generic-ehci", avoiding the driver registration / module loading ordering
-problems, and removes the "depends on !PPC_OF" workaround.
-
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- Documentation/devicetree/bindings/usb/usb-ehci.txt | 4 ++--
- drivers/usb/host/Kconfig                           | 1 -
- drivers/usb/host/ehci-platform.c                   | 2 +-
- 3 files changed, 3 insertions(+), 4 deletions(-)
-
-diff --git a/Documentation/devicetree/bindings/usb/usb-ehci.txt b/Documentation/devicetree/bindings/usb/usb-ehci.txt
-index 2c1aeeb..ff151ec 100644
---- a/Documentation/devicetree/bindings/usb/usb-ehci.txt
-+++ b/Documentation/devicetree/bindings/usb/usb-ehci.txt
-@@ -1,7 +1,7 @@
- USB EHCI controllers
- 
- Required properties:
--  - compatible : should be "usb-ehci".
-+  - compatible : should be "generic-ehci".
-   - reg : should contain at least address and length of the standard EHCI
-     register set for the device. Optional platform-dependent registers
-     (debug-port or other) can be also specified here, but only after
-@@ -27,7 +27,7 @@ Example (Sequoia 440EPx):
- 
- Example (Allwinner sun4i A10 SoC):
-    ehci0: usb@01c14000 {
--	   compatible = "allwinner,sun4i-a10-ehci", "usb-ehci";
-+	   compatible = "allwinner,sun4i-a10-ehci", "generic-ehci";
- 	   reg = <0x01c14000 0x100>;
- 	   interrupts = <39>;
- 	   clocks = <&ahb_gates 1>;
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index e28cbe0..a9707da 100644
---- a/drivers/usb/host/Kconfig
-+++ b/drivers/usb/host/Kconfig
-@@ -255,7 +255,6 @@ config USB_EHCI_ATH79
- 
- config USB_EHCI_HCD_PLATFORM
- 	tristate "Generic EHCI driver for a platform device"
--	depends on !PPC_OF
- 	default n
- 	---help---
- 	  Adds an EHCI host driver for a generic platform device, which
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index 8fde649..1178730 100644
---- a/drivers/usb/host/ehci-platform.c
-+++ b/drivers/usb/host/ehci-platform.c
-@@ -333,7 +333,7 @@ static int ehci_platform_resume(struct device *dev)
- static const struct of_device_id vt8500_ehci_ids[] = {
- 	{ .compatible = "via,vt8500-ehci", },
- 	{ .compatible = "wm,prizm-ehci", },
--	{ .compatible = "usb-ehci", },
-+	{ .compatible = "generic-ehci", },
- 	{}
- };
- MODULE_DEVICE_TABLE(of, vt8500_ehci_ids);
--- 
-2.0.3
-

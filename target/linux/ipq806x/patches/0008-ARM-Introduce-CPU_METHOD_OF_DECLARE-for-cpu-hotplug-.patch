@@ -32,8 +32,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  include/asm-generic/vmlinux.lds.h |   10 ++++++++++
  3 files changed, 59 insertions(+)
 
-diff --git a/arch/arm/include/asm/smp.h b/arch/arm/include/asm/smp.h
-index 22a3b9b..772435b 100644
 --- a/arch/arm/include/asm/smp.h
 +++ b/arch/arm/include/asm/smp.h
 @@ -114,6 +114,15 @@ struct smp_operations {
@@ -52,8 +50,6 @@ index 22a3b9b..772435b 100644
  /*
   * set platform specific SMP operations
   */
-diff --git a/arch/arm/kernel/devtree.c b/arch/arm/kernel/devtree.c
-index f751714..c7419a5 100644
 --- a/arch/arm/kernel/devtree.c
 +++ b/arch/arm/kernel/devtree.c
 @@ -18,6 +18,7 @@
@@ -64,7 +60,7 @@ index f751714..c7419a5 100644
  
  #include <asm/cputype.h>
  #include <asm/setup.h>
-@@ -63,6 +64,34 @@ void __init arm_dt_memblock_reserve(void)
+@@ -63,6 +64,34 @@ void __init arm_dt_memblock_reserve(void
  	}
  }
  
@@ -126,11 +122,9 @@ index f751714..c7419a5 100644
  	if (!bootcpu_valid) {
  		pr_warn("DT missing boot CPU MPIDR[23:0], fall back to default cpu_logical_map\n");
  		return;
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index bc2121f..bd02ca7 100644
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
-@@ -167,6 +167,15 @@
+@@ -177,6 +177,15 @@
  #define CLK_OF_TABLES()
  #endif
  
@@ -146,7 +140,7 @@ index bc2121f..bd02ca7 100644
  #define KERNEL_DTB()							\
  	STRUCT_ALIGN();							\
  	VMLINUX_SYMBOL(__dtb_start) = .;				\
-@@ -491,6 +500,7 @@
+@@ -502,6 +511,7 @@
  	MEM_DISCARD(init.rodata)					\
  	CLK_OF_TABLES()							\
  	CLKSRC_OF_TABLES()						\
@@ -154,6 +148,3 @@ index bc2121f..bd02ca7 100644
  	KERNEL_DTB()							\
  	IRQCHIP_OF_MATCH_TABLE()
  
--- 
-1.7.10.4
-

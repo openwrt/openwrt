@@ -24,8 +24,6 @@ Signed-off-by: Vinod Koul <vinod.koul@intel.com>
  3 files changed, 1122 insertions(+)
  create mode 100644 drivers/dma/qcom_bam_dma.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index 605b016..f87cef9 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -401,4 +401,13 @@ config DMATEST
@@ -42,8 +40,6 @@ index 605b016..f87cef9 100644
 +	  provides DMA capabilities for a variety of on-chip devices.
 +
  endif
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index a029d0f4..5150c82 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -44,3 +44,5 @@ obj-$(CONFIG_DMA_JZ4740) += dma-jz4740.o
@@ -52,9 +48,6 @@ index a029d0f4..5150c82 100644
  obj-$(CONFIG_MOXART_DMA) += moxart-dma.o
 +obj-$(CONFIG_FSL_EDMA) += fsl-edma.o
 +obj-$(CONFIG_QCOM_BAM_DMA) += qcom_bam_dma.o
-diff --git a/drivers/dma/qcom_bam_dma.c b/drivers/dma/qcom_bam_dma.c
-new file mode 100644
-index 0000000..82c9231
 --- /dev/null
 +++ b/drivers/dma/qcom_bam_dma.c
 @@ -0,0 +1,1111 @@
@@ -1169,6 +1162,3 @@ index 0000000..82c9231
 +MODULE_AUTHOR("Andy Gross <agross@codeaurora.org>");
 +MODULE_DESCRIPTION("QCOM BAM DMA engine driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

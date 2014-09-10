@@ -13,11 +13,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20.dtsi | 25 +++++++++++++++++--------
  1 file changed, 17 insertions(+), 8 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 2139e0f..78f562a 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -54,11 +54,12 @@
+@@ -62,11 +62,12 @@
  		#size-cells = <1>;
  		ranges;
  
@@ -31,7 +29,7 @@ index 2139e0f..78f562a 100644
  		};
  
  		osc32k: clk@0 {
-@@ -68,21 +69,23 @@
+@@ -76,21 +77,23 @@
  			clock-output-names = "osc32k";
  		};
  
@@ -58,7 +56,7 @@ index 2139e0f..78f562a 100644
  			#clock-cells = <1>;
  			compatible = "allwinner,sun4i-pll5-clk";
  			reg = <0x01c20020 0x4>;
-@@ -90,7 +93,7 @@
+@@ -98,7 +101,7 @@
  			clock-output-names = "pll5_ddr", "pll5_other";
  		};
  
@@ -67,7 +65,7 @@ index 2139e0f..78f562a 100644
  			#clock-cells = <1>;
  			compatible = "allwinner,sun4i-pll6-clk";
  			reg = <0x01c20028 0x4>;
-@@ -103,6 +106,7 @@
+@@ -111,6 +114,7 @@
  			compatible = "allwinner,sun4i-cpu-clk";
  			reg = <0x01c20054 0x4>;
  			clocks = <&osc32k>, <&osc24M>, <&pll1>, <&pll6 1>;
@@ -75,7 +73,7 @@ index 2139e0f..78f562a 100644
  		};
  
  		axi: axi@01c20054 {
-@@ -110,6 +114,7 @@
+@@ -118,6 +122,7 @@
  			compatible = "allwinner,sun4i-axi-clk";
  			reg = <0x01c20054 0x4>;
  			clocks = <&cpu>;
@@ -83,7 +81,7 @@ index 2139e0f..78f562a 100644
  		};
  
  		ahb: ahb@01c20054 {
-@@ -117,9 +122,10 @@
+@@ -125,9 +130,10 @@
  			compatible = "allwinner,sun4i-ahb-clk";
  			reg = <0x01c20054 0x4>;
  			clocks = <&axi>;
@@ -95,7 +93,7 @@ index 2139e0f..78f562a 100644
  			#clock-cells = <1>;
  			compatible = "allwinner,sun7i-a20-ahb-gates-clk";
  			reg = <0x01c20060 0x8>;
-@@ -144,9 +150,10 @@
+@@ -152,9 +158,10 @@
  			compatible = "allwinner,sun4i-apb0-clk";
  			reg = <0x01c20054 0x4>;
  			clocks = <&ahb>;
@@ -107,7 +105,7 @@ index 2139e0f..78f562a 100644
  			#clock-cells = <1>;
  			compatible = "allwinner,sun7i-a20-apb0-gates-clk";
  			reg = <0x01c20068 0x4>;
-@@ -162,6 +169,7 @@
+@@ -170,6 +177,7 @@
  			compatible = "allwinner,sun4i-apb1-mux-clk";
  			reg = <0x01c20058 0x4>;
  			clocks = <&osc24M>, <&pll6 1>, <&osc32k>;
@@ -115,7 +113,7 @@ index 2139e0f..78f562a 100644
  		};
  
  		apb1: apb1@01c20058 {
-@@ -169,9 +177,10 @@
+@@ -177,9 +185,10 @@
  			compatible = "allwinner,sun4i-apb1-clk";
  			reg = <0x01c20058 0x4>;
  			clocks = <&apb1_mux>;
@@ -127,6 +125,3 @@ index 2139e0f..78f562a 100644
  			#clock-cells = <1>;
  			compatible = "allwinner,sun7i-a20-apb1-gates-clk";
  			reg = <0x01c2006c 0x4>;
--- 
-2.0.3
-

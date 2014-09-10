@@ -18,11 +18,9 @@ Signed-off-by: Grant Likely <grant.likely@linaro.org>
  include/linux/of_reserved_mem.h   |   32 ++++++++++++++++++++++++++++++++
  3 files changed, 72 insertions(+)
 
-diff --git a/drivers/of/of_reserved_mem.c b/drivers/of/of_reserved_mem.c
-index 69b8117..daaaf93 100644
 --- a/drivers/of/of_reserved_mem.c
 +++ b/drivers/of/of_reserved_mem.c
-@@ -170,6 +170,33 @@ static int __init __reserved_mem_alloc_size(unsigned long node,
+@@ -170,6 +170,33 @@ static int __init __reserved_mem_alloc_s
  	return 0;
  }
  
@@ -64,11 +62,9 @@ index 69b8117..daaaf93 100644
 +			__reserved_mem_init_node(rmem);
  	}
  }
-diff --git a/include/asm-generic/vmlinux.lds.h b/include/asm-generic/vmlinux.lds.h
-index bd02ca7..146e4ff 100644
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
-@@ -167,6 +167,16 @@
+@@ -177,6 +177,16 @@
  #define CLK_OF_TABLES()
  #endif
  
@@ -85,7 +81,7 @@ index bd02ca7..146e4ff 100644
  #ifdef CONFIG_SMP
  #define CPU_METHOD_OF_TABLES() . = ALIGN(8);				    \
  			   VMLINUX_SYMBOL(__cpu_method_of_table_begin) = .; \
-@@ -499,6 +509,7 @@
+@@ -510,6 +520,7 @@
  	TRACE_SYSCALLS()						\
  	MEM_DISCARD(init.rodata)					\
  	CLK_OF_TABLES()							\
@@ -93,8 +89,6 @@ index bd02ca7..146e4ff 100644
  	CLKSRC_OF_TABLES()						\
  	CPU_METHOD_OF_TABLES()						\
  	KERNEL_DTB()							\
-diff --git a/include/linux/of_reserved_mem.h b/include/linux/of_reserved_mem.h
-index 89226ed..9b1fbb7 100644
 --- a/include/linux/of_reserved_mem.h
 +++ b/include/linux/of_reserved_mem.h
 @@ -1,21 +1,53 @@
@@ -151,6 +145,3 @@ index 89226ed..9b1fbb7 100644
  #endif
  
  #endif /* __OF_RESERVED_MEM_H */
--- 
-1.7.10.4
-

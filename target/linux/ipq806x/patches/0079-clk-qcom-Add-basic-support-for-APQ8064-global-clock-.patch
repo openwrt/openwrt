@@ -21,11 +21,9 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/qcom/gcc-msm8960.c                     |   30 ++++++++++++++++++--
  3 files changed, 30 insertions(+), 5 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/clock/qcom,gcc.txt b/Documentation/devicetree/bindings/clock/qcom,gcc.txt
-index 767401f..7b7104e 100644
 --- a/Documentation/devicetree/bindings/clock/qcom,gcc.txt
 +++ b/Documentation/devicetree/bindings/clock/qcom,gcc.txt
-@@ -4,6 +4,7 @@ Qualcomm Global Clock & Reset Controller Binding
+@@ -4,6 +4,7 @@ Qualcomm Global Clock & Reset Controller
  Required properties :
  - compatible : shall contain only one of the following:
  
@@ -33,8 +31,6 @@ index 767401f..7b7104e 100644
  			"qcom,gcc-msm8660"
  			"qcom,gcc-msm8960"
  			"qcom,gcc-msm8974"
-diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
-index 995bcfa..7f696b7 100644
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
 @@ -13,10 +13,10 @@ config MSM_GCC_8660
@@ -50,8 +46,6 @@ index 995bcfa..7f696b7 100644
  	  Say Y if you want to use peripheral devices such as UART, SPI,
  	  i2c, USB, SD/eMMC, SATA, PCIe, etc.
  
-diff --git a/drivers/clk/qcom/gcc-msm8960.c b/drivers/clk/qcom/gcc-msm8960.c
-index 633b019..8e2b6dd 100644
 --- a/drivers/clk/qcom/gcc-msm8960.c
 +++ b/drivers/clk/qcom/gcc-msm8960.c
 @@ -1,5 +1,5 @@
@@ -61,7 +55,7 @@ index 633b019..8e2b6dd 100644
   *
   * This software is licensed under the terms of the GNU General Public
   * License version 2, as published by the Free Software Foundation, and
-@@ -2868,6 +2868,16 @@ static const struct qcom_reset_map gcc_msm8960_resets[] = {
+@@ -2868,6 +2868,16 @@ static const struct qcom_reset_map gcc_m
  	[RIVA_RESET] = { 0x35e0 },
  };
  
@@ -78,7 +72,7 @@ index 633b019..8e2b6dd 100644
  static const struct regmap_config gcc_msm8960_regmap_config = {
  	.reg_bits	= 32,
  	.reg_stride	= 4,
-@@ -2884,8 +2894,17 @@ static const struct qcom_cc_desc gcc_msm8960_desc = {
+@@ -2884,8 +2894,17 @@ static const struct qcom_cc_desc gcc_msm
  	.num_resets = ARRAY_SIZE(gcc_msm8960_resets),
  };
  
@@ -97,7 +91,7 @@ index 633b019..8e2b6dd 100644
  	{ }
  };
  MODULE_DEVICE_TABLE(of, gcc_msm8960_match_table);
-@@ -2894,6 +2913,11 @@ static int gcc_msm8960_probe(struct platform_device *pdev)
+@@ -2894,6 +2913,11 @@ static int gcc_msm8960_probe(struct plat
  {
  	struct clk *clk;
  	struct device *dev = &pdev->dev;
@@ -109,7 +103,7 @@ index 633b019..8e2b6dd 100644
  
  	/* Temporary until RPM clocks supported */
  	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 19200000);
-@@ -2904,7 +2928,7 @@ static int gcc_msm8960_probe(struct platform_device *pdev)
+@@ -2904,7 +2928,7 @@ static int gcc_msm8960_probe(struct plat
  	if (IS_ERR(clk))
  		return PTR_ERR(clk);
  
@@ -118,6 +112,3 @@ index 633b019..8e2b6dd 100644
  }
  
  static int gcc_msm8960_remove(struct platform_device *pdev)
--- 
-1.7.10.4
-

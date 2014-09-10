@@ -16,8 +16,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  3 files changed, 575 insertions(+)
  create mode 100644 drivers/pinctrl/pinctrl-apq8064.c
 
-diff --git a/drivers/pinctrl/Kconfig b/drivers/pinctrl/Kconfig
-index 06cee01..91993a6 100644
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
 @@ -222,6 +222,14 @@ config PINCTRL_MSM
@@ -35,11 +33,9 @@ index 06cee01..91993a6 100644
  config PINCTRL_MSM8X74
  	tristate "Qualcomm 8x74 pin controller driver"
  	depends on GPIOLIB && OF
-diff --git a/drivers/pinctrl/Makefile b/drivers/pinctrl/Makefile
-index 4b83588..9e1fb67 100644
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -38,6 +38,7 @@ obj-$(CONFIG_PINCTRL_IMX23)	+= pinctrl-imx23.o
+@@ -38,6 +38,7 @@ obj-$(CONFIG_PINCTRL_IMX23)	+= pinctrl-i
  obj-$(CONFIG_PINCTRL_IMX25)	+= pinctrl-imx25.o
  obj-$(CONFIG_PINCTRL_IMX28)	+= pinctrl-imx28.o
  obj-$(CONFIG_PINCTRL_MSM)	+= pinctrl-msm.o
@@ -47,9 +43,6 @@ index 4b83588..9e1fb67 100644
  obj-$(CONFIG_PINCTRL_MSM8X74)	+= pinctrl-msm8x74.o
  obj-$(CONFIG_PINCTRL_NOMADIK)	+= pinctrl-nomadik.o
  obj-$(CONFIG_PINCTRL_STN8815)	+= pinctrl-nomadik-stn8815.o
-diff --git a/drivers/pinctrl/pinctrl-apq8064.c b/drivers/pinctrl/pinctrl-apq8064.c
-new file mode 100644
-index 0000000..7c2a8ba
 --- /dev/null
 +++ b/drivers/pinctrl/pinctrl-apq8064.c
 @@ -0,0 +1,566 @@
@@ -619,6 +612,3 @@ index 0000000..7c2a8ba
 +MODULE_DESCRIPTION("Qualcomm APQ8064 pinctrl driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_DEVICE_TABLE(of, apq8064_pinctrl_of_match);
--- 
-1.7.10.4
-

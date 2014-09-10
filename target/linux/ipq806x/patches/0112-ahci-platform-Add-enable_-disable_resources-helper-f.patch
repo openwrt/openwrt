@@ -13,11 +13,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  include/linux/ahci_platform.h |    2 +
  2 files changed, 71 insertions(+), 37 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 8f18ebe..656d285 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -133,6 +133,62 @@ void ahci_platform_disable_clks(struct ahci_host_priv *hpriv)
+@@ -133,6 +133,62 @@ void ahci_platform_disable_clks(struct a
  }
  EXPORT_SYMBOL_GPL(ahci_platform_disable_clks);
  
@@ -80,7 +78,7 @@ index 8f18ebe..656d285 100644
  static void ahci_put_clks(struct ahci_host_priv *hpriv)
  {
  	int c;
-@@ -215,15 +271,9 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -215,15 +271,9 @@ static int ahci_probe(struct platform_de
  		hpriv->clks[i] = clk;
  	}
  
@@ -98,7 +96,7 @@ index 8f18ebe..656d285 100644
  
  	/*
  	 * Some platforms might need to prepare for mmio region access,
-@@ -234,7 +284,7 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -234,7 +284,7 @@ static int ahci_probe(struct platform_de
  	if (pdata && pdata->init) {
  		rc = pdata->init(dev, hpriv->mmio);
  		if (rc)
@@ -107,7 +105,7 @@ index 8f18ebe..656d285 100644
  	}
  
  	ahci_save_initial_config(dev, hpriv,
-@@ -304,11 +354,8 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -304,11 +354,8 @@ static int ahci_probe(struct platform_de
  pdata_exit:
  	if (pdata && pdata->exit)
  		pdata->exit(dev);
@@ -121,7 +119,7 @@ index 8f18ebe..656d285 100644
  free_clk:
  	ahci_put_clks(hpriv);
  	return rc;
-@@ -323,11 +370,8 @@ static void ahci_host_stop(struct ata_host *host)
+@@ -323,11 +370,8 @@ static void ahci_host_stop(struct ata_ho
  	if (pdata && pdata->exit)
  		pdata->exit(dev);
  
@@ -134,7 +132,7 @@ index 8f18ebe..656d285 100644
  }
  
  #ifdef CONFIG_PM_SLEEP
-@@ -362,10 +406,7 @@ static int ahci_suspend(struct device *dev)
+@@ -362,10 +406,7 @@ static int ahci_suspend(struct device *d
  	if (pdata && pdata->suspend)
  		return pdata->suspend(dev);
  
@@ -146,7 +144,7 @@ index 8f18ebe..656d285 100644
  
  	return 0;
  }
-@@ -377,26 +418,20 @@ static int ahci_resume(struct device *dev)
+@@ -377,26 +418,20 @@ static int ahci_resume(struct device *de
  	struct ahci_host_priv *hpriv = host->private_data;
  	int rc;
  
@@ -177,7 +175,7 @@ index 8f18ebe..656d285 100644
  
  		ahci_init_controller(host);
  	}
-@@ -405,11 +440,8 @@ static int ahci_resume(struct device *dev)
+@@ -405,11 +440,8 @@ static int ahci_resume(struct device *de
  
  	return 0;
  
@@ -191,8 +189,6 @@ index 8f18ebe..656d285 100644
  
  	return rc;
  }
-diff --git a/include/linux/ahci_platform.h b/include/linux/ahci_platform.h
-index 769d065..b674b01 100644
 --- a/include/linux/ahci_platform.h
 +++ b/include/linux/ahci_platform.h
 @@ -33,5 +33,7 @@ struct ahci_platform_data {
@@ -203,6 +199,3 @@ index 769d065..b674b01 100644
 +void ahci_platform_disable_resources(struct ahci_host_priv *hpriv);
  
  #endif /* _AHCI_PLATFORM_H */
--- 
-1.7.10.4
-

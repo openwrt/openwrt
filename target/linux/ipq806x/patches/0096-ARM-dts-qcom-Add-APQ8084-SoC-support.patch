@@ -14,9 +14,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  2 files changed, 180 insertions(+)
  create mode 100644 arch/arm/boot/dts/qcom-apq8084.dtsi
 
-diff --git a/arch/arm/boot/dts/qcom-apq8084.dtsi b/arch/arm/boot/dts/qcom-apq8084.dtsi
-new file mode 100644
-index 0000000..e3e009a
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-apq8084.dtsi
 @@ -0,0 +1,179 @@
@@ -199,8 +196,6 @@ index 0000000..e3e009a
 +		};
 +	};
 +};
-diff --git a/arch/arm/mach-qcom/board.c b/arch/arm/mach-qcom/board.c
-index 350fa8d..c437a99 100644
 --- a/arch/arm/mach-qcom/board.c
 +++ b/arch/arm/mach-qcom/board.c
 @@ -17,6 +17,7 @@
@@ -211,6 +206,3 @@ index 350fa8d..c437a99 100644
  	"qcom,msm8660-surf",
  	"qcom,msm8960-cdp",
  	NULL
--- 
-1.7.10.4
-

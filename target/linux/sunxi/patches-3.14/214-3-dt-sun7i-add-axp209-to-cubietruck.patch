@@ -9,13 +9,11 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts | 10 ++++++++++
  2 files changed, 20 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 9a127d1..ebf6a2f 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-@@ -137,6 +137,16 @@
+@@ -89,6 +89,16 @@
  			pinctrl-names = "default";
- 			pinctrl-0 = <&i2c0_pins_a>;
+ 			pinctrl-0 = <&uart0_pins_a>;
  			status = "okay";
 +
 +			axp: axp20x@34 {
@@ -29,9 +27,7 @@ index 9a127d1..ebf6a2f 100644
 +			};
  		};
  
- 		i2c1: i2c@01c2b000 {
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index 15f1f3f..926f111 100644
+ 		gmac: ethernet@01c50000 {
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 @@ -127,6 +127,16 @@
@@ -51,6 +47,3 @@ index 15f1f3f..926f111 100644
  		};
  
  		i2c1: i2c@01c2b000 {
--- 
-2.0.3
-

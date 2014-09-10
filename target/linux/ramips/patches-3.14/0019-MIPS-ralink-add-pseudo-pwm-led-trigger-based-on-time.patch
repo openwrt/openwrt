@@ -9,8 +9,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/timer.c |  213 ++++++++++++++++++++++++++++++++++++++++++----
  1 file changed, 197 insertions(+), 16 deletions(-)
 
-diff --git a/arch/mips/ralink/timer.c b/arch/mips/ralink/timer.c
-index e38692a..a71a7cb 100644
 --- a/arch/mips/ralink/timer.c
 +++ b/arch/mips/ralink/timer.c
 @@ -12,6 +12,8 @@
@@ -63,7 +61,7 @@ index e38692a..a71a7cb 100644
  };
  
  static inline void rt_timer_w32(struct rt_timer *rt, u8 reg, u32 val)
-@@ -48,18 +68,46 @@ static inline u32 rt_timer_r32(struct rt_timer *rt, u8 reg)
+@@ -48,18 +68,46 @@ static inline u32 rt_timer_r32(struct rt
  static irqreturn_t rt_timer_irq(int irq, void *_rt)
  {
  	struct rt_timer *rt =  (struct rt_timer *) _rt;
@@ -114,7 +112,7 @@ index e38692a..a71a7cb 100644
  	if (err) {
  		dev_err(rt->dev, "failed to request irq\n");
  	} else {
-@@ -81,8 +129,6 @@ static int rt_timer_config(struct rt_timer *rt, unsigned long divisor)
+@@ -81,8 +129,6 @@ static int rt_timer_config(struct rt_tim
  	else
  		rt->timer_div = divisor;
  
@@ -123,7 +121,7 @@ index e38692a..a71a7cb 100644
  	return 0;
  }
  
-@@ -108,11 +154,128 @@ static void rt_timer_disable(struct rt_timer *rt)
+@@ -108,11 +154,128 @@ static void rt_timer_disable(struct rt_t
  	rt_timer_w32(rt, TIMER_REG_TMR0CTL, t);
  }
  
@@ -252,7 +250,7 @@ index e38692a..a71a7cb 100644
  
  	rt = devm_kzalloc(&pdev->dev, sizeof(*rt), GFP_KERNEL);
  	if (!rt) {
-@@ -140,12 +303,29 @@ static int rt_timer_probe(struct platform_device *pdev)
+@@ -140,12 +303,29 @@ static int rt_timer_probe(struct platfor
  	if (!rt->timer_freq)
  		return -EINVAL;
  
@@ -285,7 +283,7 @@ index e38692a..a71a7cb 100644
  
  	dev_info(&pdev->dev, "maximum frequency is %luHz\n", rt->timer_freq);
  
-@@ -156,6 +336,7 @@ static int rt_timer_remove(struct platform_device *pdev)
+@@ -156,6 +336,7 @@ static int rt_timer_remove(struct platfo
  {
  	struct rt_timer *rt = platform_get_drvdata(pdev);
  
@@ -293,7 +291,7 @@ index e38692a..a71a7cb 100644
  	rt_timer_disable(rt);
  	rt_timer_free(rt);
  
-@@ -180,6 +361,6 @@ static struct platform_driver rt_timer_driver = {
+@@ -180,6 +361,6 @@ static struct platform_driver rt_timer_d
  
  module_platform_driver(rt_timer_driver);
  
@@ -301,6 +299,3 @@ index e38692a..a71a7cb 100644
 +MODULE_DESCRIPTION("Ralink RT2880 timer / pseudo pwm");
  MODULE_AUTHOR("John Crispin <blogic@openwrt.org");
  MODULE_LICENSE("GPL");
--- 
-1.7.10.4
-

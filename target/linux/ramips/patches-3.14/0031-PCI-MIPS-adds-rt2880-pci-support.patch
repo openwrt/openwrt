@@ -13,11 +13,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 283 insertions(+)
  create mode 100644 arch/mips/pci/pci-rt2880.c
 
-diff --git a/arch/mips/pci/Makefile b/arch/mips/pci/Makefile
-index d054bc8..6a0f453 100644
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
+@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
  obj-$(CONFIG_SOC_MT7621)	+= pci-mt7621.o
@@ -25,9 +23,6 @@ index d054bc8..6a0f453 100644
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
-diff --git a/arch/mips/pci/pci-rt2880.c b/arch/mips/pci/pci-rt2880.c
-new file mode 100644
-index 0000000..e2c4730
 --- /dev/null
 +++ b/arch/mips/pci/pci-rt2880.c
 @@ -0,0 +1,281 @@
@@ -312,8 +307,6 @@ index 0000000..e2c4730
 +}
 +
 +arch_initcall(pcibios_init);
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index f93835f..eb2b2cd 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -21,6 +21,7 @@ choice
@@ -324,6 +317,3 @@ index f93835f..eb2b2cd 100644
  
  	config SOC_RT305X
  		bool "RT305x"
--- 
-1.7.10.4
-

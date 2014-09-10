@@ -13,11 +13,9 @@ Acked-by: Ivan T. Ivanov <iivanov@mm-sol.com>
  drivers/spi/spi-qup.c |   11 +++++++----
  1 file changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index dc128ac..a404298 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -619,16 +619,19 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -619,16 +619,19 @@ static int spi_qup_probe(struct platform
  	if (ret)
  		goto error;
  
@@ -41,6 +39,3 @@ index dc128ac..a404298 100644
  error:
  	clk_disable_unprepare(cclk);
  	clk_disable_unprepare(iclk);
--- 
-1.7.10.4
-

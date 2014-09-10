@@ -12,11 +12,9 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  drivers/spi/spi-qup.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index b032e88..65bf18e 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -287,7 +287,7 @@ static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
+@@ -287,7 +287,7 @@ static irqreturn_t spi_qup_qup_irq(int i
  	writel_relaxed(opflags, controller->base + QUP_OPERATIONAL);
  
  	if (!xfer) {
@@ -25,7 +23,7 @@ index b032e88..65bf18e 100644
  				    qup_err, spi_err, opflags);
  		return IRQ_HANDLED;
  	}
-@@ -366,7 +366,7 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -366,7 +366,7 @@ static int spi_qup_io_config(struct spi_
  	n_words = xfer->len / w_size;
  	controller->w_size = w_size;
  
@@ -34,6 +32,3 @@ index b032e88..65bf18e 100644
  		mode = QUP_IO_M_MODE_FIFO;
  		writel_relaxed(n_words, controller->base + QUP_MX_READ_CNT);
  		writel_relaxed(n_words, controller->base + QUP_MX_WRITE_CNT);
--- 
-1.7.10.4
-

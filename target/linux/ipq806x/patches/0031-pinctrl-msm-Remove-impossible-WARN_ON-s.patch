@@ -14,11 +14,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/pinctrl-msm.c |   16 ----------------
  1 file changed, 16 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-msm.c b/drivers/pinctrl/pinctrl-msm.c
-index 87f6c3c..ab46e3a 100644
 --- a/drivers/pinctrl/pinctrl-msm.c
 +++ b/drivers/pinctrl/pinctrl-msm.c
-@@ -401,8 +401,6 @@ static int msm_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
+@@ -401,8 +401,6 @@ static int msm_gpio_direction_input(stru
  	u32 val;
  
  	g = &pctrl->soc->groups[offset];
@@ -27,7 +25,7 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
-@@ -423,8 +421,6 @@ static int msm_gpio_direction_output(struct gpio_chip *chip, unsigned offset, in
+@@ -423,8 +421,6 @@ static int msm_gpio_direction_output(str
  	u32 val;
  
  	g = &pctrl->soc->groups[offset];
@@ -36,7 +34,7 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
-@@ -451,8 +447,6 @@ static int msm_gpio_get(struct gpio_chip *chip, unsigned offset)
+@@ -451,8 +447,6 @@ static int msm_gpio_get(struct gpio_chip
  	u32 val;
  
  	g = &pctrl->soc->groups[offset];
@@ -45,7 +43,7 @@ index 87f6c3c..ab46e3a 100644
  
  	val = readl(pctrl->regs + g->io_reg);
  	return !!(val & BIT(g->in_bit));
-@@ -466,8 +460,6 @@ static void msm_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+@@ -466,8 +460,6 @@ static void msm_gpio_set(struct gpio_chi
  	u32 val;
  
  	g = &pctrl->soc->groups[offset];
@@ -54,7 +52,7 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
-@@ -616,8 +608,6 @@ static void msm_gpio_irq_mask(struct irq_data *d)
+@@ -616,8 +608,6 @@ static void msm_gpio_irq_mask(struct irq
  
  	pctrl = irq_data_get_irq_chip_data(d);
  	g = &pctrl->soc->groups[d->hwirq];
@@ -63,7 +61,7 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
-@@ -639,8 +629,6 @@ static void msm_gpio_irq_unmask(struct irq_data *d)
+@@ -639,8 +629,6 @@ static void msm_gpio_irq_unmask(struct i
  
  	pctrl = irq_data_get_irq_chip_data(d);
  	g = &pctrl->soc->groups[d->hwirq];
@@ -72,7 +70,7 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
-@@ -666,8 +654,6 @@ static void msm_gpio_irq_ack(struct irq_data *d)
+@@ -666,8 +654,6 @@ static void msm_gpio_irq_ack(struct irq_
  
  	pctrl = irq_data_get_irq_chip_data(d);
  	g = &pctrl->soc->groups[d->hwirq];
@@ -81,7 +79,7 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
-@@ -692,8 +678,6 @@ static int msm_gpio_irq_set_type(struct irq_data *d, unsigned int type)
+@@ -692,8 +678,6 @@ static int msm_gpio_irq_set_type(struct
  
  	pctrl = irq_data_get_irq_chip_data(d);
  	g = &pctrl->soc->groups[d->hwirq];
@@ -90,6 +88,3 @@ index 87f6c3c..ab46e3a 100644
  
  	spin_lock_irqsave(&pctrl->lock, flags);
  
--- 
-1.7.10.4
-

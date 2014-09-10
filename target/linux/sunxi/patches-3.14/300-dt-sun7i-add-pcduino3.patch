@@ -25,12 +25,10 @@ Signed-off-by: Zoltan HERPAI <wigyori@uid0.hu>
  2 files changed, 121 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/sun7i-a20-pcduino3.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 6967393..b1b59ea 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -353,7 +353,8 @@ dtb-$(CONFIG_MACH_SUN7I) += \
-	sun6i-a31-colombus.dtb \
+@@ -292,7 +292,8 @@ dtb-$(CONFIG_ARCH_SUNXI) += \
+ 	sun6i-a31-colombus.dtb \
  	sun7i-a20-cubieboard2.dtb \
  	sun7i-a20-cubietruck.dtb \
 -	sun7i-a20-olinuxino-micro.dtb
@@ -39,9 +37,3 @@ index 6967393..b1b59ea 100644
  dtb-$(CONFIG_ARCH_TEGRA) += tegra20-harmony.dtb \
  	tegra20-iris-512.dtb \
  	tegra20-medcom-wide.dtb \
-diff --git a/arch/arm/boot/dts/sun7i-a20-pcduino3.dts b/arch/arm/boot/dts/sun7i-a20-pcduino3.dts
-new file mode 100644
-index 0000000..fc6a542
--- 
-2.0.3
-

@@ -54,10 +54,8 @@ Subject: [PATCH 36/57] NET: add mt7621 ethernet driver
  create mode 100644 drivers/net/ethernet/raeth/raether_pdma.c
  create mode 100644 drivers/net/ethernet/raeth/raether_qdma.c
 
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/board-custom.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/board-custom.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/board-custom.h
 @@ -0,0 +1,153 @@
 +/* Copyright Statement:
 + *
@@ -212,10 +210,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/board-custom.h
 +
 +#endif /* __ARCH_ARM_MACH_MT6575_CUSTOM_BOARD_H */
 +
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/eureka_ep430.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/eureka_ep430.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/eureka_ep430.h
 @@ -0,0 +1,204 @@
 +/**************************************************************************
 + *
@@ -421,10 +417,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/eureka_ep430.h
 +#endif
 +
 +#endif
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/generic.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/generic.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/generic.h
 @@ -0,0 +1,42 @@
 +/*
 + * Copyright (C) 2001 Palmchip Corporation.  All rights reserved.
@@ -468,10 +462,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/generic.h
 +
 +
 +#endif  /* __ASM_SURFBOARD_GENERIC_H */
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/lm.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/lm.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/lm.h
 @@ -0,0 +1,32 @@
 +#include <linux/version.h>
 +
@@ -505,10 +497,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/lm.h
 +# define lm_get_drvdata(lm)	dev_get_drvdata(&(lm)->dev)
 +# define lm_set_drvdata(lm,d)	dev_set_drvdata(&(lm)->dev, d)
 +#endif
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/prom.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/prom.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/prom.h
 @@ -0,0 +1,50 @@
 +/*
 + * Carsten Langgaard, carstenl@mips.com
@@ -560,10 +550,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/prom.h
 +};
 +
 +#endif /* !(_MIPS_PROM_H) */
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/rt_mmap.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/rt_mmap.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/rt_mmap.h
 @@ -0,0 +1,796 @@
 +/**************************************************************************
 + *
@@ -1361,10 +1349,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/rt_mmap.h
 +
 +#endif
 +#endif
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/serial_rt2880.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/serial_rt2880.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/serial_rt2880.h
 @@ -0,0 +1,443 @@
 +/**************************************************************************
 + *
@@ -1809,10 +1795,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/serial_rt2880.h
 +#define UART_OMAP_SYSS		0x16	/* System status register */
 +
 +
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/sizes.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/sizes.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/sizes.h
 @@ -0,0 +1,52 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify
@@ -1866,10 +1850,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/sizes.h
 +#endif
 +
 +/*         END */
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/surfboard.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/surfboard.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/surfboard.h
 @@ -0,0 +1,70 @@
 +/*
 + * Copyright (C) 2001 Palmchip Corporation.  All rights reserved.
@@ -1941,10 +1923,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/surfboard.h
 +#define GIC_CPU_INT5            5 /* Core Interrupt 5   */
 +
 +#endif /* !(_SURFBOARD_H) */
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/surfboardint.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/surfboardint.h	2014-08-24 15:51:48.530654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/surfboardint.h
 @@ -0,0 +1,190 @@
 +/*
 + * Copyright (C) 2001 Palmchip Corporation.  All rights reserved.
@@ -2136,10 +2116,8 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/surfboardint.h
 +
 +
 +#endif /* !(_SURFBOARDINT_H) */
-Index: linux-3.14.16/arch/mips/include/asm/rt2880/war.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/arch/mips/include/asm/rt2880/war.h	2014-08-24 15:51:48.534654066 +0200
+--- /dev/null
++++ b/arch/mips/include/asm/rt2880/war.h
 @@ -0,0 +1,25 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -2166,11 +2144,9 @@ Index: linux-3.14.16/arch/mips/include/asm/rt2880/war.h
 +#define MIPS34K_MISSED_ITLB_WAR		0
 +
 +#endif /* __ASM_MIPS_MACH_MIPS_WAR_H */
-Index: linux-3.14.16/drivers/net/ethernet/Kconfig
-===================================================================
---- linux-3.14.16.orig/drivers/net/ethernet/Kconfig	2014-08-24 15:51:48.510654065 +0200
-+++ linux-3.14.16/drivers/net/ethernet/Kconfig	2014-08-24 15:51:48.534654066 +0200
-@@ -135,6 +135,7 @@
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -135,6 +135,7 @@ source "drivers/net/ethernet/packetengin
  source "drivers/net/ethernet/pasemi/Kconfig"
  source "drivers/net/ethernet/qlogic/Kconfig"
  source "drivers/net/ethernet/ralink/Kconfig"
@@ -2178,11 +2154,9 @@ Index: linux-3.14.16/drivers/net/ethernet/Kconfig
  source "drivers/net/ethernet/realtek/Kconfig"
  source "drivers/net/ethernet/renesas/Kconfig"
  source "drivers/net/ethernet/rdc/Kconfig"
-Index: linux-3.14.16/drivers/net/ethernet/Makefile
-===================================================================
---- linux-3.14.16.orig/drivers/net/ethernet/Makefile	2014-08-24 15:51:48.510654065 +0200
-+++ linux-3.14.16/drivers/net/ethernet/Makefile	2014-08-24 15:51:48.534654066 +0200
-@@ -57,6 +57,7 @@
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -57,6 +57,7 @@ obj-$(CONFIG_NET_PACKET_ENGINE) += packe
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
  obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
  obj-$(CONFIG_NET_RALINK) += ralink/
@@ -2190,10 +2164,8 @@ Index: linux-3.14.16/drivers/net/ethernet/Makefile
  obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
  obj-$(CONFIG_SH_ETH) += renesas/
  obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
-Index: linux-3.14.16/drivers/net/ethernet/raeth/Kconfig
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/Kconfig	2014-08-24 15:51:48.534654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/Kconfig
 @@ -0,0 +1,344 @@
 +
 +config RA_NAT_NONE
@@ -2539,10 +2511,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/Kconfig
 +config 100PHY
 +bool
 +default y if GE1_MII_AN || GE2_MII_AN
-Index: linux-3.14.16/drivers/net/ethernet/raeth/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/Makefile	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/Makefile
 @@ -0,0 +1,7 @@
 +obj-$(CONFIG_RAETH) += raeth.o
 +raeth-objs := ra_mac.o mii_mgr.o
@@ -2551,10 +2521,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/Makefile
 +#EXTRA_CFLAGS   += -DCONFIG_RAETH_MULTIPLE_RX_RING
 +
 +raeth-objs += raether.o
-Index: linux-3.14.16/drivers/net/ethernet/raeth/ethtool_readme.txt
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/ethtool_readme.txt	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/ethtool_readme.txt
 @@ -0,0 +1,44 @@
 +
 +Ethtool readme for selecting different PHY address.
@@ -2600,10 +2568,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/ethtool_readme.txt
 +# ethtool eth2
 +
 +
-Index: linux-3.14.16/drivers/net/ethernet/raeth/mii_mgr.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/mii_mgr.c	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/mii_mgr.c
 @@ -0,0 +1,166 @@
 +#include <linux/module.h>
 +#include <linux/version.h>
@@ -2771,10 +2737,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/mii_mgr.c
 +
 +EXPORT_SYMBOL(mii_mgr_write);
 +EXPORT_SYMBOL(mii_mgr_read);
-Index: linux-3.14.16/drivers/net/ethernet/raeth/ra2882ethreg.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/ra2882ethreg.h	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/ra2882ethreg.h
 @@ -0,0 +1,1268 @@
 +#ifndef RA2882ETHREG_H
 +#define RA2882ETHREG_H
@@ -4044,10 +4008,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/ra2882ethreg.h
 +#define RAETH_TX_DONE_INT0 TX_DONE_INT0
 +#define RAETH_DLY_INT_CFG DLY_INT_CFG
 +#endif
-Index: linux-3.14.16/drivers/net/ethernet/raeth/ra_ioctl.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/ra_ioctl.h	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/ra_ioctl.h
 @@ -0,0 +1,92 @@
 +#ifndef _RAETH_IOCTL_H
 +#define _RAETH_IOCTL_H
@@ -4141,10 +4103,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/ra_ioctl.h
 +
 +
 +#endif
-Index: linux-3.14.16/drivers/net/ethernet/raeth/ra_mac.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/ra_mac.c	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/ra_mac.c
 @@ -0,0 +1,98 @@
 +#include <linux/module.h>
 +#include <linux/version.h>
@@ -4244,10 +4204,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/ra_mac.c
 +}
 +
 +
-Index: linux-3.14.16/drivers/net/ethernet/raeth/ra_mac.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/ra_mac.h	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/ra_mac.h
 @@ -0,0 +1,35 @@
 +#ifndef RA_MAC_H
 +#define RA_MAC_H
@@ -4284,10 +4242,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/ra_mac.h
 +int getnext(const char *src, int separator, char *dest);
 +int str_to_ip(unsigned int *ip, const char *str);
 +#endif
-Index: linux-3.14.16/drivers/net/ethernet/raeth/raether.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/raether.c	2014-08-24 16:00:48.998667292 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/raether.c
 @@ -0,0 +1,692 @@
 +#include <linux/module.h>
 +#include <linux/version.h>
@@ -4981,10 +4937,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/raether.c
 +module_init(ra2882eth_init);
 +module_exit(ra2882eth_cleanup_module);
 +MODULE_LICENSE("GPL");
-Index: linux-3.14.16/drivers/net/ethernet/raeth/raether.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/raether.h	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/raether.h
 @@ -0,0 +1,92 @@
 +#ifndef RA2882ETHEND_H
 +#define RA2882ETHEND_H
@@ -5078,10 +5032,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/raether.h
 +void fe_sw_init(void);
 +
 +#endif
-Index: linux-3.14.16/drivers/net/ethernet/raeth/raether_pdma.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/raether_pdma.c	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/raether_pdma.c
 @@ -0,0 +1,212 @@
 +#include <linux/module.h>
 +#include <linux/version.h>
@@ -5295,10 +5247,8 @@ Index: linux-3.14.16/drivers/net/ethernet/raeth/raether_pdma.c
 +EXPORT_SYMBOL(ei_xmit_housekeeping);
 +EXPORT_SYMBOL(fe_dma_init);
 +EXPORT_SYMBOL(rt2880_eth_send);
-Index: linux-3.14.16/drivers/net/ethernet/raeth/raether_qdma.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/net/ethernet/raeth/raether_qdma.c	2014-08-24 15:51:48.542654066 +0200
+--- /dev/null
++++ b/drivers/net/ethernet/raeth/raether_qdma.c
 @@ -0,0 +1,805 @@
 +#include <linux/module.h>
 +#include <linux/version.h>

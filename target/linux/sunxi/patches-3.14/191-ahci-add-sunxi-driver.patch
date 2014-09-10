@@ -25,11 +25,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  4 files changed, 271 insertions(+), 3 deletions(-)
  create mode 100644 drivers/ata/ahci_sunxi.c
 
-diff --git a/Documentation/devicetree/bindings/ata/ahci-platform.txt b/Documentation/devicetree/bindings/ata/ahci-platform.txt
-index 1ac807f..499bfed 100644
 --- a/Documentation/devicetree/bindings/ata/ahci-platform.txt
 +++ b/Documentation/devicetree/bindings/ata/ahci-platform.txt
-@@ -4,7 +4,9 @@ SATA nodes are defined to describe on-chip Serial ATA controllers.
+@@ -4,7 +4,9 @@ SATA nodes are defined to describe on-ch
  Each SATA controller should have its own node.
  
  Required properties:
@@ -60,8 +58,6 @@ index 1ac807f..499bfed 100644
 +		clocks = <&pll6 0>, <&ahb_gates 25>;
 +		target-supply = <&reg_ahci_5v>;
 +	};
-diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
-index 868429a4..10a9c25 100644
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
 @@ -106,6 +106,15 @@ config AHCI_IMX
@@ -80,8 +76,6 @@ index 868429a4..10a9c25 100644
  config SATA_FSL
  	tristate "Freescale 3.0Gbps SATA support"
  	depends on FSL_SOC
-diff --git a/drivers/ata/Makefile b/drivers/ata/Makefile
-index 46518c6..246050b 100644
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
 @@ -11,6 +11,7 @@ obj-$(CONFIG_SATA_SIL24)	+= sata_sil24.o
@@ -92,9 +86,6 @@ index 46518c6..246050b 100644
  
  # SFF w/ custom DMA
  obj-$(CONFIG_PDC_ADMA)		+= pdc_adma.o
-diff --git a/drivers/ata/ahci_sunxi.c b/drivers/ata/ahci_sunxi.c
-new file mode 100644
-index 0000000..001f7dfc
 --- /dev/null
 +++ b/drivers/ata/ahci_sunxi.c
 @@ -0,0 +1,249 @@
@@ -347,6 +338,3 @@ index 0000000..001f7dfc
 +MODULE_DESCRIPTION("Allwinner sunxi AHCI SATA driver");
 +MODULE_AUTHOR("Olliver Schinagl <oliver@schinagl.nl>");
 +MODULE_LICENSE("GPL");
--- 
-2.0.3
-

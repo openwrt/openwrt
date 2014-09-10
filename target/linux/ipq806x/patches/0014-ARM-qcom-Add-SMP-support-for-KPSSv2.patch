@@ -14,8 +14,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  arch/arm/mach-qcom/platsmp.c |  123 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 123 insertions(+)
 
-diff --git a/arch/arm/mach-qcom/platsmp.c b/arch/arm/mach-qcom/platsmp.c
-index cb0783f..d690856 100644
 --- a/arch/arm/mach-qcom/platsmp.c
 +++ b/arch/arm/mach-qcom/platsmp.c
 @@ -34,7 +34,15 @@
@@ -141,7 +139,7 @@ index cb0783f..d690856 100644
  static DEFINE_PER_CPU(int, cold_boot_done);
  
  static int qcom_boot_secondary(unsigned int cpu, int (*func)(unsigned int))
-@@ -204,6 +312,11 @@ static int kpssv1_boot_secondary(unsigned int cpu, struct task_struct *idle)
+@@ -204,6 +312,11 @@ static int kpssv1_boot_secondary(unsigne
  	return qcom_boot_secondary(cpu, kpssv1_release_secondary);
  }
  
@@ -153,7 +151,7 @@ index cb0783f..d690856 100644
  static void __init qcom_smp_prepare_cpus(unsigned int max_cpus)
  {
  	int cpu, map;
-@@ -253,3 +366,13 @@ static struct smp_operations qcom_smp_kpssv1_ops __initdata = {
+@@ -253,3 +366,13 @@ static struct smp_operations qcom_smp_kp
  #endif
  };
  CPU_METHOD_OF_DECLARE(qcom_smp_kpssv1, "qcom,kpss-acc-v1", &qcom_smp_kpssv1_ops);
@@ -167,6 +165,3 @@ index cb0783f..d690856 100644
 +#endif
 +};
 +CPU_METHOD_OF_DECLARE(qcom_smp_kpssv2, "qcom,kpss-acc-v2", &qcom_smp_kpssv2_ops);
--- 
-1.7.10.4
-

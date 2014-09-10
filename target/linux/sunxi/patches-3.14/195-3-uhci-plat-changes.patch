@@ -24,9 +24,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  delete mode 100644 Documentation/devicetree/bindings/usb/platform-uhci.txt
  create mode 100644 Documentation/devicetree/bindings/usb/usb-uhci.txt
 
-diff --git a/Documentation/devicetree/bindings/usb/platform-uhci.txt b/Documentation/devicetree/bindings/usb/platform-uhci.txt
-deleted file mode 100644
-index a4fb071..0000000
 --- a/Documentation/devicetree/bindings/usb/platform-uhci.txt
 +++ /dev/null
 @@ -1,15 +0,0 @@
@@ -45,9 +42,6 @@ index a4fb071..0000000
 -		reg = <0xd8007b00 0x200>;
 -		interrupts = <43>;
 -	};
-diff --git a/Documentation/devicetree/bindings/usb/usb-uhci.txt b/Documentation/devicetree/bindings/usb/usb-uhci.txt
-new file mode 100644
-index 0000000..2981334
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/usb/usb-uhci.txt
 @@ -0,0 +1,15 @@
@@ -66,11 +60,9 @@ index 0000000..2981334
 +		reg = <0xd8007b00 0x200>;
 +		interrupts = <43>;
 +	};
-diff --git a/drivers/usb/host/uhci-platform.c b/drivers/usb/host/uhci-platform.c
-index 44e6c9d..01833ab 100644
 --- a/drivers/usb/host/uhci-platform.c
 +++ b/drivers/usb/host/uhci-platform.c
-@@ -148,6 +148,7 @@ static void uhci_hcd_platform_shutdown(struct platform_device *op)
+@@ -148,6 +148,7 @@ static void uhci_hcd_platform_shutdown(s
  }
  
  static const struct of_device_id platform_uhci_ids[] = {
@@ -78,6 +70,3 @@ index 44e6c9d..01833ab 100644
  	{ .compatible = "platform-uhci", },
  	{}
  };
--- 
-2.0.3
-

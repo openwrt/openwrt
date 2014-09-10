@@ -20,8 +20,6 @@ Signed-off-by: Chris Ball <chris@printf.net>
  3 files changed, 222 insertions(+)
  create mode 100644 drivers/mmc/host/sdhci-msm.c
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 1384f67..c0ea72a 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -334,6 +334,19 @@ config MMC_ATMELMCI
@@ -44,11 +42,9 @@ index 1384f67..c0ea72a 100644
  config MMC_MSM
  	tristate "Qualcomm SDCC Controller Support"
  	depends on MMC && (ARCH_MSM7X00A || ARCH_MSM7X30 || ARCH_QSD8X50)
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index 3483b6b..bbc8445 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -64,6 +64,7 @@ obj-$(CONFIG_MMC_SDHCI_OF_ESDHC)	+= sdhci-of-esdhc.o
+@@ -65,6 +65,7 @@ obj-$(CONFIG_MMC_SDHCI_OF_ESDHC)	+= sdhc
  obj-$(CONFIG_MMC_SDHCI_OF_HLWD)		+= sdhci-of-hlwd.o
  obj-$(CONFIG_MMC_SDHCI_BCM_KONA)	+= sdhci-bcm-kona.o
  obj-$(CONFIG_MMC_SDHCI_BCM2835)		+= sdhci-bcm2835.o
@@ -56,9 +52,6 @@ index 3483b6b..bbc8445 100644
  
  ifeq ($(CONFIG_CB710_DEBUG),y)
  	CFLAGS-cb710-mmc	+= -DDEBUG
-diff --git a/drivers/mmc/host/sdhci-msm.c b/drivers/mmc/host/sdhci-msm.c
-new file mode 100644
-index 0000000..3b0606f
 --- /dev/null
 +++ b/drivers/mmc/host/sdhci-msm.c
 @@ -0,0 +1,208 @@
@@ -270,6 +263,3 @@ index 0000000..3b0606f
 +
 +MODULE_DESCRIPTION("Qualcomm Secure Digital Host Controller Interface driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

@@ -33,8 +33,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  create mode 100644 include/dt-bindings/spmi/spmi.h
  create mode 100644 include/linux/spmi.h
 
-diff --git a/drivers/Kconfig b/drivers/Kconfig
-index b3138fb..e0a4ae6 100644
 --- a/drivers/Kconfig
 +++ b/drivers/Kconfig
 @@ -52,6 +52,8 @@ source "drivers/i2c/Kconfig"
@@ -46,8 +44,6 @@ index b3138fb..e0a4ae6 100644
  source "drivers/hsi/Kconfig"
  
  source "drivers/pps/Kconfig"
-diff --git a/drivers/Makefile b/drivers/Makefile
-index 8e3b8b0..3d6de8b 100644
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
 @@ -66,6 +66,7 @@ obj-$(CONFIG_ATA)		+= ata/
@@ -58,9 +54,6 @@ index 8e3b8b0..3d6de8b 100644
  obj-y				+= hsi/
  obj-y				+= net/
  obj-$(CONFIG_ATM)		+= atm/
-diff --git a/drivers/spmi/Kconfig b/drivers/spmi/Kconfig
-new file mode 100644
-index 0000000..1dbfee0
 --- /dev/null
 +++ b/drivers/spmi/Kconfig
 @@ -0,0 +1,9 @@
@@ -73,9 +66,6 @@ index 0000000..1dbfee0
 +	  SPMI (System Power Management Interface) is a two-wire
 +	  serial interface between baseband and application processors
 +	  and Power Management Integrated Circuits (PMIC).
-diff --git a/drivers/spmi/Makefile b/drivers/spmi/Makefile
-new file mode 100644
-index 0000000..1de1acd
 --- /dev/null
 +++ b/drivers/spmi/Makefile
 @@ -0,0 +1,4 @@
@@ -83,9 +73,6 @@ index 0000000..1de1acd
 +# Makefile for kernel SPMI framework.
 +#
 +obj-$(CONFIG_SPMI)	+= spmi.o
-diff --git a/drivers/spmi/spmi.c b/drivers/spmi/spmi.c
-new file mode 100644
-index 0000000..6122c8f
 --- /dev/null
 +++ b/drivers/spmi/spmi.c
 @@ -0,0 +1,609 @@
@@ -698,9 +685,6 @@ index 0000000..6122c8f
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("SPMI module");
 +MODULE_ALIAS("platform:spmi");
-diff --git a/include/dt-bindings/spmi/spmi.h b/include/dt-bindings/spmi/spmi.h
-new file mode 100644
-index 0000000..d11e1e5
 --- /dev/null
 +++ b/include/dt-bindings/spmi/spmi.h
 @@ -0,0 +1,18 @@
@@ -722,8 +706,6 @@ index 0000000..d11e1e5
 +#define SPMI_GSID	1
 +
 +#endif
-diff --git a/include/linux/mod_devicetable.h b/include/linux/mod_devicetable.h
-index 45e9214..677e474 100644
 --- a/include/linux/mod_devicetable.h
 +++ b/include/linux/mod_devicetable.h
 @@ -432,6 +432,14 @@ struct spi_device_id {
@@ -741,9 +723,6 @@ index 45e9214..677e474 100644
  /* dmi */
  enum dmi_field {
  	DMI_NONE,
-diff --git a/include/linux/spmi.h b/include/linux/spmi.h
-new file mode 100644
-index 0000000..91f5eab
 --- /dev/null
 +++ b/include/linux/spmi.h
 @@ -0,0 +1,191 @@
@@ -938,6 +917,3 @@ index 0000000..91f5eab
 +int spmi_command_shutdown(struct spmi_device *sdev);
 +
 +#endif
--- 
-1.7.10.4
-

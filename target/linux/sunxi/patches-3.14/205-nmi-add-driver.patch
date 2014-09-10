@@ -16,11 +16,9 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  2 files changed, 209 insertions(+)
  create mode 100644 drivers/irqchip/irq-sunxi-nmi.c
 
-diff --git a/drivers/irqchip/Makefile b/drivers/irqchip/Makefile
-index 5194afb..1c0c151 100644
 --- a/drivers/irqchip/Makefile
 +++ b/drivers/irqchip/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_METAG_PERFCOUNTER_IRQS)	+= irq-metag.o
+@@ -12,6 +12,7 @@ obj-$(CONFIG_METAG_PERFCOUNTER_IRQS)	+=
  obj-$(CONFIG_ARCH_MOXART)		+= irq-moxart.o
  obj-$(CONFIG_ORION_IRQCHIP)		+= irq-orion.o
  obj-$(CONFIG_ARCH_SUNXI)		+= irq-sun4i.o
@@ -28,9 +26,6 @@ index 5194afb..1c0c151 100644
  obj-$(CONFIG_ARCH_SPEAR3XX)		+= spear-shirq.o
  obj-$(CONFIG_ARM_GIC)			+= irq-gic.o
  obj-$(CONFIG_ARM_NVIC)			+= irq-nvic.o
-diff --git a/drivers/irqchip/irq-sunxi-nmi.c b/drivers/irqchip/irq-sunxi-nmi.c
-new file mode 100644
-index 0000000..12f547a
 --- /dev/null
 +++ b/drivers/irqchip/irq-sunxi-nmi.c
 @@ -0,0 +1,208 @@
@@ -242,6 +237,3 @@ index 0000000..12f547a
 +	return sunxi_sc_nmi_irq_init(node, &sun7i_reg_offs);
 +}
 +IRQCHIP_DECLARE(sun7i_sc_nmi, "allwinner,sun7i-a20-sc-nmi", sun7i_sc_nmi_irq_init);
--- 
-2.0.3
-

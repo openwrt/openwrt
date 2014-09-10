@@ -13,10 +13,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 Documentation/devicetree/bindings/i2c/i2c-ralink.txt
  create mode 100644 drivers/i2c/busses/i2c-ralink.c
 
-Index: linux-3.14.16/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/Documentation/devicetree/bindings/i2c/i2c-ralink.txt	2014-08-24 16:03:20.586671002 +0200
+--- /dev/null
++++ b/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
 @@ -0,0 +1,27 @@
 +I2C for Ralink platforms
 +
@@ -45,11 +43,9 @@ Index: linux-3.14.16/Documentation/devicetree/bindings/i2c/i2c-ralink.txt
 +		};
 +	};
 +};
-Index: linux-3.14.16/drivers/i2c/busses/Kconfig
-===================================================================
---- linux-3.14.16.orig/drivers/i2c/busses/Kconfig	2014-08-08 01:50:59.000000000 +0200
-+++ linux-3.14.16/drivers/i2c/busses/Kconfig	2014-08-24 16:03:20.586671002 +0200
-@@ -659,6 +659,10 @@
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -659,6 +659,10 @@ config I2C_RIIC
  	  This driver can also be built as a module.  If so, the module
  	  will be called i2c-riic.
  
@@ -60,11 +56,9 @@ Index: linux-3.14.16/drivers/i2c/busses/Kconfig
  config HAVE_S3C2410_I2C
  	bool
  	help
-Index: linux-3.14.16/drivers/i2c/busses/Makefile
-===================================================================
---- linux-3.14.16.orig/drivers/i2c/busses/Makefile	2014-08-08 01:50:59.000000000 +0200
-+++ linux-3.14.16/drivers/i2c/busses/Makefile	2014-08-24 16:03:20.586671002 +0200
-@@ -63,6 +63,7 @@
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -63,6 +63,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
  obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
@@ -72,10 +66,8 @@ Index: linux-3.14.16/drivers/i2c/busses/Makefile
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
  obj-$(CONFIG_I2C_S3C2410)	+= i2c-s3c2410.o
  obj-$(CONFIG_I2C_S6000)		+= i2c-s6000.o
-Index: linux-3.14.16/drivers/i2c/busses/i2c-ralink.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.16/drivers/i2c/busses/i2c-ralink.c	2014-08-27 23:07:01.318731261 +0200
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-ralink.c
 @@ -0,0 +1,271 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c

@@ -25,8 +25,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  arch/arm/mach-msm/Kconfig    |    3 --
  3 files changed, 38 insertions(+), 92 deletions(-)
 
-diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
-index 4491c7b..1a5895d 100644
 --- a/arch/arm/Kconfig.debug
 +++ b/arch/arm/Kconfig.debug
 @@ -353,56 +353,39 @@ choice
@@ -179,8 +177,6 @@ index 4491c7b..1a5895d 100644
  
  config DEBUG_UART_8250_SHIFT
  	int "Register offset shift for the 8250 debug UART"
-diff --git a/arch/arm/include/debug/msm.S b/arch/arm/include/debug/msm.S
-index 9d653d4..9ef5761 100644
 --- a/arch/arm/include/debug/msm.S
 +++ b/arch/arm/include/debug/msm.S
 @@ -15,51 +15,15 @@
@@ -248,8 +244,6 @@ index 9d653d4..9ef5761 100644
  	@ check for TX_EMT in UARTDM_SR
  	ldr	\rd, [\rx, #0x08]
  	tst	\rd, #0x08
-diff --git a/arch/arm/mach-msm/Kconfig b/arch/arm/mach-msm/Kconfig
-index a7f959e..9b26976 100644
 --- a/arch/arm/mach-msm/Kconfig
 +++ b/arch/arm/mach-msm/Kconfig
 @@ -42,9 +42,6 @@ config ARCH_QSD8X50
@@ -262,6 +256,3 @@ index a7f959e..9b26976 100644
  config MSM_SOC_REV_A
  	bool
  
--- 
-1.7.10.4
-

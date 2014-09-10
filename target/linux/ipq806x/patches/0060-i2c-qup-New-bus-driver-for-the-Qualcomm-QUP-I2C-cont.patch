@@ -23,11 +23,9 @@ Signed-off-by: Wolfram Sang <wsa@the-dreams.de>
  3 files changed, 779 insertions(+)
  create mode 100644 drivers/i2c/busses/i2c-qup.c
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index de17c55..1886315 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -648,6 +648,16 @@ config I2C_PXA_SLAVE
+@@ -649,6 +649,16 @@ config I2C_PXA_SLAVE
  	  is necessary for systems where the PXA may be a target on the
  	  I2C bus.
  
@@ -44,8 +42,6 @@ index de17c55..1886315 100644
  config I2C_RIIC
  	tristate "Renesas RIIC adapter"
  	depends on ARCH_SHMOBILE || COMPILE_TEST
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index a08931f..bf2257b 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
 @@ -63,6 +63,7 @@ obj-$(CONFIG_I2C_PNX)		+= i2c-pnx.o
@@ -56,9 +52,6 @@ index a08931f..bf2257b 100644
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
  obj-$(CONFIG_I2C_S3C2410)	+= i2c-s3c2410.o
  obj-$(CONFIG_I2C_S6000)		+= i2c-s6000.o
-diff --git a/drivers/i2c/busses/i2c-qup.c b/drivers/i2c/busses/i2c-qup.c
-new file mode 100644
-index 0000000..c9d5f78
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-qup.c
 @@ -0,0 +1,768 @@
@@ -830,6 +823,3 @@ index 0000000..c9d5f78
 +
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:i2c_qup");
--- 
-1.7.10.4
-

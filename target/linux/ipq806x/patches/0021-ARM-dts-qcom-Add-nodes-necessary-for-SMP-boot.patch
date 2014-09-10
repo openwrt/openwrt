@@ -17,8 +17,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  arch/arm/boot/dts/qcom-msm8974.dtsi |   69 +++++++++++++++++++++++++++++++++++
  3 files changed, 145 insertions(+)
 
-diff --git a/arch/arm/boot/dts/qcom-msm8660.dtsi b/arch/arm/boot/dts/qcom-msm8660.dtsi
-index 69d6c4e..c52a9e9 100644
 --- a/arch/arm/boot/dts/qcom-msm8660.dtsi
 +++ b/arch/arm/boot/dts/qcom-msm8660.dtsi
 @@ -9,6 +9,30 @@
@@ -52,8 +50,6 @@ index 69d6c4e..c52a9e9 100644
  	intc: interrupt-controller@2080000 {
  		compatible = "qcom,msm-8660-qgic";
  		interrupt-controller;
-diff --git a/arch/arm/boot/dts/qcom-msm8960.dtsi b/arch/arm/boot/dts/qcom-msm8960.dtsi
-index ff00282..02231a5 100644
 --- a/arch/arm/boot/dts/qcom-msm8960.dtsi
 +++ b/arch/arm/boot/dts/qcom-msm8960.dtsi
 @@ -9,6 +9,36 @@
@@ -122,8 +118,6 @@ index ff00282..02231a5 100644
  	serial@16440000 {
  		compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
  		reg = <0x16440000 0x1000>,
-diff --git a/arch/arm/boot/dts/qcom-msm8974.dtsi b/arch/arm/boot/dts/qcom-msm8974.dtsi
-index 9e5dadb..39eebc5 100644
 --- a/arch/arm/boot/dts/qcom-msm8974.dtsi
 +++ b/arch/arm/boot/dts/qcom-msm8974.dtsi
 @@ -9,6 +9,49 @@
@@ -209,6 +203,3 @@ index 9e5dadb..39eebc5 100644
  		restart@fc4ab000 {
  			compatible = "qcom,pshold";
  			reg = <0xfc4ab000 0x4>;
--- 
-1.7.10.4
-

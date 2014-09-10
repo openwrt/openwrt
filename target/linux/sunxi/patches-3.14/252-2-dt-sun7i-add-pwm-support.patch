@@ -11,12 +11,10 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/boot/dts/sun7i-a20.dtsi | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 2eaf7c0f..61a4b5e 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -706,6 +706,14 @@
- 			interrupts = <0 24 4>;
+@@ -764,6 +764,14 @@
+ 			status = "disabled";
  		};
  
 +		pwm: pwm@01c20e00 {
@@ -30,6 +28,3 @@ index 2eaf7c0f..61a4b5e 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun7i-a20-sid";
  			reg = <0x01c23800 0x200>;
--- 
-2.0.3
-

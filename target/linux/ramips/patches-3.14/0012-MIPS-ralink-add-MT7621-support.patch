@@ -22,8 +22,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/malta-amon.c
  create mode 100644 arch/mips/ralink/mt7621.c
 
-diff --git a/arch/mips/include/asm/gic.h b/arch/mips/include/asm/gic.h
-index b2e3e93..29fba50 100644
 --- a/arch/mips/include/asm/gic.h
 +++ b/arch/mips/include/asm/gic.h
 @@ -19,7 +19,11 @@
@@ -38,9 +36,6 @@ index b2e3e93..29fba50 100644
  
  #define MSK(n) ((1 << (n)) - 1)
  #define REG32(addr)		(*(volatile unsigned int *) (addr))
-diff --git a/arch/mips/include/asm/mach-ralink/irq.h b/arch/mips/include/asm/mach-ralink/irq.h
-new file mode 100644
-index 0000000..4321865
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/irq.h
 @@ -0,0 +1,9 @@
@@ -53,9 +48,6 @@ index 0000000..4321865
 +#include_next <irq.h>
 +
 +#endif
-diff --git a/arch/mips/include/asm/mach-ralink/mt7621.h b/arch/mips/include/asm/mach-ralink/mt7621.h
-new file mode 100644
-index 0000000..21c8dc2
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ralink/mt7621.h
 @@ -0,0 +1,39 @@
@@ -98,8 +90,6 @@ index 0000000..21c8dc2
 +#define MIPS_GIC_IRQ_BASE           (MIPS_CPU_IRQ_BASE + 8)
 +
 +#endif
-diff --git a/arch/mips/kernel/vmlinux.lds.S b/arch/mips/kernel/vmlinux.lds.S
-index 3b46f7c..fa925b7 100644
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
 @@ -51,6 +51,7 @@ SECTIONS
@@ -110,8 +100,6 @@ index 3b46f7c..fa925b7 100644
  		TEXT_TEXT
  		SCHED_TEXT
  		LOCK_TEXT
-diff --git a/arch/mips/ralink/Kconfig b/arch/mips/ralink/Kconfig
-index 1bfd1c1..6a04360 100644
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
 @@ -7,6 +7,11 @@ config CLKEVT_RT3352
@@ -153,8 +141,6 @@ index 1bfd1c1..6a04360 100644
  endchoice
  
  endif
-diff --git a/arch/mips/ralink/Makefile b/arch/mips/ralink/Makefile
-index fc57c16..ad18cdf 100644
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
 @@ -6,16 +6,21 @@
@@ -180,11 +166,9 @@ index fc57c16..ad18cdf 100644
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
-diff --git a/arch/mips/ralink/Platform b/arch/mips/ralink/Platform
-index 6d9c8c4..6095fcc 100644
 --- a/arch/mips/ralink/Platform
 +++ b/arch/mips/ralink/Platform
-@@ -27,3 +27,8 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt
+@@ -27,3 +27,8 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctr
  #
  load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
  cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7620
@@ -193,9 +177,6 @@ index 6d9c8c4..6095fcc 100644
 +#
 +load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000
 +cflags-$(CONFIG_SOC_MT7621)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
-diff --git a/arch/mips/ralink/irq-gic.c b/arch/mips/ralink/irq-gic.c
-new file mode 100644
-index 0000000..0122d42
 --- /dev/null
 +++ b/arch/mips/ralink/irq-gic.c
 @@ -0,0 +1,271 @@
@@ -470,9 +451,6 @@ index 0000000..0122d42
 +{
 +	of_irq_init(of_irq_ids);
 +}
-diff --git a/arch/mips/ralink/malta-amon.c b/arch/mips/ralink/malta-amon.c
-new file mode 100644
-index 0000000..1e47844
 --- /dev/null
 +++ b/arch/mips/ralink/malta-amon.c
 @@ -0,0 +1,81 @@
@@ -557,9 +535,6 @@ index 0000000..1e47844
 +	smp_rmb();	/* Target will be updating flags soon */
 +	pr_debug("launch: cpu%d gone!\n", cpu);
 +}
-diff --git a/arch/mips/ralink/mt7621.c b/arch/mips/ralink/mt7621.c
-new file mode 100644
-index 0000000..2aac87c
 --- /dev/null
 +++ b/arch/mips/ralink/mt7621.c
 @@ -0,0 +1,183 @@
@@ -746,6 +721,3 @@ index 0000000..2aac87c
 +	if (register_cmp_smp_ops())
 +		panic("failed to register_vsmp_smp_ops()");
 +}
--- 
-1.7.10.4
-

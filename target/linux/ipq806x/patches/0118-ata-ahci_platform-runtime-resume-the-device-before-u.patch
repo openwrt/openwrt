@@ -22,11 +22,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/ahci_platform.c |   15 +++++++++++++++
  2 files changed, 16 insertions(+)
 
-diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
-index 3ab7ac9..51af275 100644
 --- a/drivers/ata/ahci.h
 +++ b/drivers/ata/ahci.h
-@@ -324,6 +324,7 @@ struct ahci_host_priv {
+@@ -325,6 +325,7 @@ struct ahci_host_priv {
  	u32 			em_loc; /* enclosure management location */
  	u32			em_buf_sz;	/* EM buffer size in byte */
  	u32			em_msg_type;	/* EM message type */
@@ -34,8 +32,6 @@ index 3ab7ac9..51af275 100644
  	struct clk		*clks[AHCI_MAX_CLKS]; /* Optional */
  	struct regulator	*target_pwr;	/* Optional */
  	struct phy		*phy;		/* If platform uses phy */
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 243dde3..fc32863 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
 @@ -23,6 +23,7 @@
@@ -46,7 +42,7 @@ index 243dde3..fc32863 100644
  #include "ahci.h"
  
  static void ahci_host_stop(struct ata_host *host);
-@@ -216,6 +217,11 @@ static void ahci_platform_put_resources(struct device *dev, void *res)
+@@ -216,6 +217,11 @@ static void ahci_platform_put_resources(
  	struct ahci_host_priv *hpriv = res;
  	int c;
  
@@ -58,7 +54,7 @@ index 243dde3..fc32863 100644
  	for (c = 0; c < AHCI_MAX_CLKS && hpriv->clks[c]; c++)
  		clk_put(hpriv->clks[c]);
  }
-@@ -309,6 +315,10 @@ struct ahci_host_priv *ahci_platform_get_resources(
+@@ -309,6 +315,10 @@ struct ahci_host_priv *ahci_platform_get
  		}
  	}
  
@@ -69,7 +65,7 @@ index 243dde3..fc32863 100644
  	devres_remove_group(dev, NULL);
  	return hpriv;
  
-@@ -603,6 +613,11 @@ int ahci_platform_resume(struct device *dev)
+@@ -603,6 +613,11 @@ int ahci_platform_resume(struct device *
  	if (rc)
  		goto disable_resources;
  
@@ -81,6 +77,3 @@ index 243dde3..fc32863 100644
  	return 0;
  
  disable_resources:
--- 
-1.7.10.4
-

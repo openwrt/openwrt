@@ -12,8 +12,6 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  drivers/ata/ahci_platform.c                        |   36 ++++++++++++++++++--
  3 files changed, 37 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/ata/ahci-platform.txt b/Documentation/devicetree/bindings/ata/ahci-platform.txt
-index 3ced07d..1ac807f 100644
 --- a/Documentation/devicetree/bindings/ata/ahci-platform.txt
 +++ b/Documentation/devicetree/bindings/ata/ahci-platform.txt
 @@ -11,6 +11,7 @@ Required properties:
@@ -24,8 +22,6 @@ index 3ced07d..1ac807f 100644
  
  Example:
          sata@ffe08000 {
-diff --git a/drivers/ata/ahci.h b/drivers/ata/ahci.h
-index c12862b..bf8100c 100644
 --- a/drivers/ata/ahci.h
 +++ b/drivers/ata/ahci.h
 @@ -37,6 +37,7 @@
@@ -36,7 +32,7 @@ index c12862b..bf8100c 100644
  
  /* Enclosure Management Control */
  #define EM_CTRL_MSG_TYPE              0x000f0000
-@@ -323,6 +324,7 @@ struct ahci_host_priv {
+@@ -324,6 +325,7 @@ struct ahci_host_priv {
  	u32			em_buf_sz;	/* EM buffer size in byte */
  	u32			em_msg_type;	/* EM message type */
  	struct clk		*clks[AHCI_MAX_CLKS]; /* Optional */
@@ -44,11 +40,9 @@ index c12862b..bf8100c 100644
  	void			*plat_data;	/* Other platform data */
  	/*
  	 * Optional ahci_start_engine override, if not set this gets set to the
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 2342a42..8f18ebe 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -186,6 +186,14 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -186,6 +186,14 @@ static int ahci_probe(struct platform_de
  		return -ENOMEM;
  	}
  
@@ -63,7 +57,7 @@ index 2342a42..8f18ebe 100644
  	for (i = 0; i < AHCI_MAX_CLKS; i++) {
  		/*
  		 * For now we must use clk_get(dev, NULL) for the first clock,
-@@ -207,9 +215,15 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -207,9 +215,15 @@ static int ahci_probe(struct platform_de
  		hpriv->clks[i] = clk;
  	}
  
@@ -90,7 +84,7 @@ index 2342a42..8f18ebe 100644
  free_clk:
  	ahci_put_clks(hpriv);
  	return rc;
-@@ -308,6 +325,9 @@ static void ahci_host_stop(struct ata_host *host)
+@@ -308,6 +325,9 @@ static void ahci_host_stop(struct ata_ho
  
  	ahci_disable_clks(hpriv);
  	ahci_put_clks(hpriv);
@@ -100,7 +94,7 @@ index 2342a42..8f18ebe 100644
  }
  
  #ifdef CONFIG_PM_SLEEP
-@@ -344,6 +364,9 @@ static int ahci_suspend(struct device *dev)
+@@ -344,6 +364,9 @@ static int ahci_suspend(struct device *d
  
  	ahci_disable_clks(hpriv);
  
@@ -110,7 +104,7 @@ index 2342a42..8f18ebe 100644
  	return 0;
  }
  
-@@ -354,9 +377,15 @@ static int ahci_resume(struct device *dev)
+@@ -354,9 +377,15 @@ static int ahci_resume(struct device *de
  	struct ahci_host_priv *hpriv = host->private_data;
  	int rc;
  
@@ -127,7 +121,7 @@ index 2342a42..8f18ebe 100644
  
  	if (pdata && pdata->resume) {
  		rc = pdata->resume(dev);
-@@ -378,6 +407,9 @@ static int ahci_resume(struct device *dev)
+@@ -378,6 +407,9 @@ static int ahci_resume(struct device *de
  
  disable_unprepare_clk:
  	ahci_disable_clks(hpriv);
@@ -137,6 +131,3 @@ index 2342a42..8f18ebe 100644
  
  	return rc;
  }
--- 
-1.7.10.4
-

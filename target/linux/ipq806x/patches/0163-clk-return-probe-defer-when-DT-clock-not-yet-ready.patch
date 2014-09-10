@@ -18,8 +18,6 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/clkdev.c |    2 ++
  2 files changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 0582068..a3facad 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
 @@ -2502,7 +2502,7 @@ EXPORT_SYMBOL_GPL(of_clk_del_provider);
@@ -31,11 +29,9 @@ index 0582068..a3facad 100644
  
  	/* Check if we have such a provider in our array */
  	list_for_each_entry(provider, &of_clk_providers, link) {
-diff --git a/drivers/clk/clkdev.c b/drivers/clk/clkdev.c
-index 48f6721..a360b2e 100644
 --- a/drivers/clk/clkdev.c
 +++ b/drivers/clk/clkdev.c
-@@ -167,6 +167,8 @@ struct clk *clk_get(struct device *dev, const char *con_id)
+@@ -167,6 +167,8 @@ struct clk *clk_get(struct device *dev,
  		clk = of_clk_get_by_name(dev->of_node, con_id);
  		if (!IS_ERR(clk))
  			return clk;
@@ -44,6 +40,3 @@ index 48f6721..a360b2e 100644
  	}
  
  	return clk_get_sys(dev_id, con_id);
--- 
-1.7.10.4
-

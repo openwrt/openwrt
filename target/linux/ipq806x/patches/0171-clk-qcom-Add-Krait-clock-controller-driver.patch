@@ -17,8 +17,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  3 files changed, 373 insertions(+)
  create mode 100644 drivers/clk/qcom/krait-cc.c
 
-diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
-index e9e5360..7418108 100644
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
 @@ -70,6 +70,14 @@ config KPSS_XCC
@@ -36,18 +34,13 @@ index e9e5360..7418108 100644
  config KRAIT_CLOCKS
  	bool
  	select KRAIT_L2_ACCESSORS
-diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
-index 29b2a45..1b88abe 100644
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -19,3 +19,4 @@ obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
+@@ -19,3 +19,4 @@ obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8
  obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o
  obj-$(CONFIG_KPSS_XCC) += kpss-xcc.o
  obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
 +obj-$(CONFIG_KRAITCC) += krait-cc.o
-diff --git a/drivers/clk/qcom/krait-cc.c b/drivers/clk/qcom/krait-cc.c
-new file mode 100644
-index 0000000..90985ea
 --- /dev/null
 +++ b/drivers/clk/qcom/krait-cc.c
 @@ -0,0 +1,364 @@
@@ -415,6 +408,3 @@ index 0000000..90985ea
 +
 +MODULE_DESCRIPTION("Krait CPU Clock Driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

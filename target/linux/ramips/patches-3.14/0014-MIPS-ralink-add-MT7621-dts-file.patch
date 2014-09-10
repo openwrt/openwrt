@@ -12,18 +12,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/dts/mt7621.dtsi
  create mode 100644 arch/mips/ralink/dts/mt7621_eval.dts
 
-diff --git a/arch/mips/ralink/dts/Makefile b/arch/mips/ralink/dts/Makefile
-index 18194fa..9742c73 100644
 --- a/arch/mips/ralink/dts/Makefile
 +++ b/arch/mips/ralink/dts/Makefile
-@@ -2,3 +2,4 @@ obj-$(CONFIG_DTB_RT2880_EVAL) := rt2880_eval.dtb.o
+@@ -2,3 +2,4 @@ obj-$(CONFIG_DTB_RT2880_EVAL) := rt2880_
  obj-$(CONFIG_DTB_RT305X_EVAL) := rt3052_eval.dtb.o
  obj-$(CONFIG_DTB_RT3883_EVAL) := rt3883_eval.dtb.o
  obj-$(CONFIG_DTB_MT7620A_EVAL) := mt7620a_eval.dtb.o
 +obj-$(CONFIG_DTB_MT7621_EVAL) := mt7621_eval.dtb.o
-diff --git a/arch/mips/ralink/dts/mt7621.dtsi b/arch/mips/ralink/dts/mt7621.dtsi
-new file mode 100644
-index 0000000..6db2c57
 --- /dev/null
 +++ b/arch/mips/ralink/dts/mt7621.dtsi
 @@ -0,0 +1,257 @@
@@ -284,9 +279,6 @@ index 0000000..6db2c57
 +		reg = <0x1e110000 8000>;
 +	};
 +};
-diff --git a/arch/mips/ralink/dts/mt7621_eval.dts b/arch/mips/ralink/dts/mt7621_eval.dts
-new file mode 100644
-index 0000000..834f59c
 --- /dev/null
 +++ b/arch/mips/ralink/dts/mt7621_eval.dts
 @@ -0,0 +1,16 @@
@@ -306,6 +298,3 @@ index 0000000..834f59c
 +		bootargs = "console=ttyS0,57600";
 +	};
 +};
--- 
-1.7.10.4
-

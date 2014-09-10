@@ -19,11 +19,9 @@ Signed-off-by: John W. Linville <linville@tuxdriver.com>
  drivers/net/wireless/brcm80211/brcmfmac/dhd_sdio.c | 10 ++++++----
  1 file changed, 6 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/net/wireless/brcm80211/brcmfmac/dhd_sdio.c b/drivers/net/wireless/brcm80211/brcmfmac/dhd_sdio.c
-index ddaa9ef..e006e7c 100644
 --- a/drivers/net/wireless/brcm80211/brcmfmac/dhd_sdio.c
 +++ b/drivers/net/wireless/brcm80211/brcmfmac/dhd_sdio.c
-@@ -1955,7 +1955,7 @@ static int brcmf_sdio_txpkt_prep_sg(struct brcmf_sdio *bus,
+@@ -1955,7 +1955,7 @@ static int brcmf_sdio_txpkt_prep_sg(stru
  		memcpy(pkt_pad->data,
  		       pkt->data + pkt->len - tail_chop,
  		       tail_chop);
@@ -32,7 +30,7 @@ index ddaa9ef..e006e7c 100644
  		skb_trim(pkt, pkt->len - tail_chop);
  		skb_trim(pkt_pad, tail_pad + tail_chop);
  		__skb_queue_after(pktq, pkt, pkt_pad);
-@@ -2003,7 +2003,7 @@ brcmf_sdio_txpkt_prep(struct brcmf_sdio *bus, struct sk_buff_head *pktq,
+@@ -2003,7 +2003,7 @@ brcmf_sdio_txpkt_prep(struct brcmf_sdio
  		 * already properly aligned and does not
  		 * need an sdpcm header.
  		 */
@@ -41,7 +39,7 @@ index ddaa9ef..e006e7c 100644
  			continue;
  
  		/* align packet data pointer */
-@@ -2067,11 +2067,11 @@ brcmf_sdio_txpkt_postp(struct brcmf_sdio *bus, struct sk_buff_head *pktq)
+@@ -2067,11 +2067,11 @@ brcmf_sdio_txpkt_postp(struct brcmf_sdio
  	u8 *hdr;
  	u32 dat_offset;
  	u16 tail_pad;
@@ -55,7 +53,7 @@ index ddaa9ef..e006e7c 100644
  		if (dummy_flags & ALIGN_SKB_FLAG) {
  			chop_len = dummy_flags & ALIGN_SKB_CHOP_LEN_MASK;
  			if (chop_len) {
-@@ -2554,6 +2554,8 @@ static int brcmf_sdio_bus_txdata(struct device *dev, struct sk_buff *pkt)
+@@ -2554,6 +2554,8 @@ static int brcmf_sdio_bus_txdata(struct
  
  	/* Priority based enq */
  	spin_lock_irqsave(&bus->txqlock, flags);
@@ -64,6 +62,3 @@ index ddaa9ef..e006e7c 100644
  	if (!brcmf_c_prec_enq(bus->sdiodev->dev, &bus->txq, pkt, prec)) {
  		skb_pull(pkt, bus->tx_hdrlen);
  		brcmf_err("out of bus->txq !!!\n");
--- 
-2.0.3
-

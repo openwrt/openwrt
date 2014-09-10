@@ -11,8 +11,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i-a13-olinuxino.dts | 27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
-index a4ba5ff..7a9187b 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 @@ -13,12 +13,26 @@
@@ -67,23 +65,6 @@ index a4ba5ff..7a9187b 100644
 +		status = "okay";
 +	};
  };
--- 
-2.0.3
-
-From a3396ca280066e9a1ee74b36f5e376c945382bff Mon Sep 17 00:00:00 2001
-From: Hans de Goede <hdegoede@redhat.com>
-Date: Sat, 11 Jan 2014 05:21:43 +0100
-Subject: [PATCH] ARM: sun5i: dt: Add USB host nodes to a13-olinuxino-micro
-
-Add nodes for the usb-phy and ehci- and ohci-usb-host controllers.
-
-Signed-off-by: Hans de Goede <hdegoede@redhat.com>
----
- arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts | 27 +++++++++++++++++++++++++
- 1 file changed, 27 insertions(+)
-
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
-index fe2ce0a..11169d5 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino-micro.dts
 @@ -14,12 +14,26 @@
@@ -138,6 +119,3 @@ index fe2ce0a..11169d5 100644
 +		status = "okay";
 +	};
  };
--- 
-2.0.3
-

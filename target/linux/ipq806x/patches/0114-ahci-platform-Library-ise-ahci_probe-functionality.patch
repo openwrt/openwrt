@@ -28,11 +28,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  include/linux/ahci_platform.h |   14 +++
  2 files changed, 137 insertions(+), 65 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index a32df31..19e9eaa 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -188,64 +188,60 @@ void ahci_platform_disable_resources(struct ahci_host_priv *hpriv)
+@@ -188,64 +188,60 @@ void ahci_platform_disable_resources(str
  }
  EXPORT_SYMBOL_GPL(ahci_platform_disable_resources);
  
@@ -85,31 +83,31 @@ index a32df31..19e9eaa 100644
 -		dev_err(dev, "no mmio space\n");
 -		return -EINVAL;
 -	}
--
++	if (!devres_open_group(dev, NULL, GFP_KERNEL))
++		return ERR_PTR(-ENOMEM);
+ 
 -	irq = platform_get_irq(pdev, 0);
 -	if (irq <= 0) {
 -		dev_err(dev, "no irq\n");
 -		return -EINVAL;
 -	}
-+	if (!devres_open_group(dev, NULL, GFP_KERNEL))
-+		return ERR_PTR(-ENOMEM);
- 
+-
 -	if (pdata && pdata->ata_port_info)
 -		pi = *pdata->ata_port_info;
--
--	hpriv = devm_kzalloc(dev, sizeof(*hpriv), GFP_KERNEL);
--	if (!hpriv) {
--		dev_err(dev, "can't alloc ahci_host_priv\n");
--		return -ENOMEM;
--	}
 +	hpriv = devres_alloc(ahci_platform_put_resources, sizeof(*hpriv),
 +			     GFP_KERNEL);
 +	if (!hpriv)
 +		goto err_out;
  
--	hpriv->flags |= (unsigned long)pi.private_data;
+-	hpriv = devm_kzalloc(dev, sizeof(*hpriv), GFP_KERNEL);
+-	if (!hpriv) {
+-		dev_err(dev, "can't alloc ahci_host_priv\n");
+-		return -ENOMEM;
+-	}
 +	devres_add(dev, hpriv);
  
+-	hpriv->flags |= (unsigned long)pi.private_data;
+-
 -	hpriv->mmio = devm_ioremap(dev, mem->start, resource_size(mem));
 +	hpriv->mmio = devm_ioremap_resource(dev,
 +			      platform_get_resource(pdev, IORESOURCE_MEM, 0));
@@ -129,7 +127,7 @@ index a32df31..19e9eaa 100644
  		hpriv->target_pwr = NULL;
  	}
  
-@@ -264,33 +260,59 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -264,33 +260,59 @@ static int ahci_probe(struct platform_de
  		if (IS_ERR(clk)) {
  			rc = PTR_ERR(clk);
  			if (rc == -EPROBE_DEFER)
@@ -207,7 +205,7 @@ index a32df31..19e9eaa 100644
  	if (hpriv->cap & HOST_CAP_NCQ)
  		pi.flags |= ATA_FLAG_NCQ;
  
-@@ -307,10 +329,8 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -307,10 +329,8 @@ static int ahci_probe(struct platform_de
  	n_ports = max(ahci_nr_ports(hpriv->cap), fls(hpriv->port_map));
  
  	host = ata_host_alloc_pinfo(dev, ppi, n_ports);
@@ -220,7 +218,7 @@ index a32df31..19e9eaa 100644
  
  	host->private_data = hpriv;
  
-@@ -325,7 +345,8 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -325,7 +345,8 @@ static int ahci_probe(struct platform_de
  	for (i = 0; i < host->n_ports; i++) {
  		struct ata_port *ap = host->ports[i];
  
@@ -230,7 +228,7 @@ index a32df31..19e9eaa 100644
  		ata_port_desc(ap, "port 0x%x", 0x100 + ap->port_no * 0x80);
  
  		/* set enclosure management message type */
-@@ -339,13 +360,53 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -339,13 +360,53 @@ static int ahci_probe(struct platform_de
  
  	rc = ahci_reset_controller(host);
  	if (rc)
@@ -296,7 +294,7 @@ index a32df31..19e9eaa 100644
  	return rc;
  }
  
-@@ -370,7 +429,6 @@ static void ahci_host_stop(struct ata_host *host)
+@@ -370,7 +429,6 @@ static void ahci_host_stop(struct ata_ho
  		pdata->exit(dev);
  
  	ahci_platform_disable_resources(hpriv);
@@ -304,8 +302,6 @@ index a32df31..19e9eaa 100644
  }
  
  #ifdef CONFIG_PM_SLEEP
-diff --git a/include/linux/ahci_platform.h b/include/linux/ahci_platform.h
-index b674b01..b80c51c 100644
 --- a/include/linux/ahci_platform.h
 +++ b/include/linux/ahci_platform.h
 @@ -20,7 +20,14 @@
@@ -323,7 +319,7 @@ index b674b01..b80c51c 100644
  struct ahci_platform_data {
  	int (*init)(struct device *dev, void __iomem *addr);
  	void (*exit)(struct device *dev);
-@@ -35,5 +42,12 @@ int ahci_platform_enable_clks(struct ahci_host_priv *hpriv);
+@@ -35,5 +42,12 @@ int ahci_platform_enable_clks(struct ahc
  void ahci_platform_disable_clks(struct ahci_host_priv *hpriv);
  int ahci_platform_enable_resources(struct ahci_host_priv *hpriv);
  void ahci_platform_disable_resources(struct ahci_host_priv *hpriv);
@@ -336,6 +332,3 @@ index b674b01..b80c51c 100644
 +			    unsigned int mask_port_map);
  
  #endif /* _AHCI_PLATFORM_H */
--- 
-1.7.10.4
-

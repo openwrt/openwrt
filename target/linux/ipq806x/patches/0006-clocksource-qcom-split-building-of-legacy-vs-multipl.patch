@@ -14,11 +14,9 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  drivers/clocksource/qcom-timer.c |   23 ++++++++++++-----------
  1 file changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/drivers/clocksource/qcom-timer.c b/drivers/clocksource/qcom-timer.c
-index dca829e..e807acf 100644
 --- a/drivers/clocksource/qcom-timer.c
 +++ b/drivers/clocksource/qcom-timer.c
-@@ -106,15 +106,6 @@ static notrace cycle_t msm_read_timer_count(struct clocksource *cs)
+@@ -106,15 +106,6 @@ static notrace cycle_t msm_read_timer_co
  	return readl_relaxed(source_base + TIMER_COUNT_VAL);
  }
  
@@ -43,7 +41,7 @@ index dca829e..e807acf 100644
  static void __init msm_dt_timer_init(struct device_node *np)
  {
  	u32 freq;
-@@ -281,7 +272,7 @@ static void __init msm_dt_timer_init(struct device_node *np)
+@@ -281,7 +272,7 @@ static void __init msm_dt_timer_init(str
  }
  CLOCKSOURCE_OF_DECLARE(kpss_timer, "qcom,kpss-timer", msm_dt_timer_init);
  CLOCKSOURCE_OF_DECLARE(scss_timer, "qcom,scss-timer", msm_dt_timer_init);
@@ -52,7 +50,7 @@ index dca829e..e807acf 100644
  
  static int __init msm_timer_map(phys_addr_t addr, u32 event, u32 source,
  				u32 sts)
-@@ -301,6 +292,15 @@ static int __init msm_timer_map(phys_addr_t addr, u32 event, u32 source,
+@@ -301,6 +292,15 @@ static int __init msm_timer_map(phys_add
  	return 0;
  }
  
@@ -73,6 +71,3 @@ index dca829e..e807acf 100644
  	msm_timer_init(19200000 / 4, 32, 7, false);
  }
 +#endif
--- 
-1.7.10.4
-

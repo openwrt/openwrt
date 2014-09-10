@@ -47,8 +47,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/usb/dwc_otg/dwc_otg_regs.h
  create mode 100644 drivers/usb/dwc_otg/linux/dwc_otg_plat.h
 
-diff --git a/drivers/usb/Kconfig b/drivers/usb/Kconfig
-index 2e6b832..45d766e 100644
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
 @@ -88,6 +88,8 @@ if USB
@@ -60,8 +58,6 @@ index 2e6b832..45d766e 100644
  source "drivers/usb/mon/Kconfig"
  
  source "drivers/usb/wusbcore/Kconfig"
-diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
-index aaa15d9..5205cf0 100644
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
 @@ -8,6 +8,7 @@ obj-$(CONFIG_USB)		+= core/
@@ -72,9 +68,6 @@ index aaa15d9..5205cf0 100644
  
  obj-$(CONFIG_USB_MON)		+= mon/
  
-diff --git a/drivers/usb/dwc_otg/Kconfig b/drivers/usb/dwc_otg/Kconfig
-new file mode 100644
-index 0000000..6dd75f1
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/Kconfig
 @@ -0,0 +1,24 @@
@@ -102,9 +95,6 @@ index 0000000..6dd75f1
 +config DWC_OTG_DEBUG
 +	bool "Enable debug mode"
 +	depends on DWC_OTG
-diff --git a/drivers/usb/dwc_otg/Makefile b/drivers/usb/dwc_otg/Makefile
-new file mode 100644
-index 0000000..95c5b66
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/Makefile
 @@ -0,0 +1,25 @@
@@ -133,9 +123,6 @@ index 0000000..95c5b66
 +dwc_otg-objs	+= dwc_otg_cil.o dwc_otg_cil_intr.o
 +dwc_otg-objs	+= dwc_otg_pcd.o dwc_otg_pcd_intr.o
 +dwc_otg-objs	+= dwc_otg_hcd.o dwc_otg_hcd_intr.o dwc_otg_hcd_queue.o
-diff --git a/drivers/usb/dwc_otg/dummy_audio.c b/drivers/usb/dwc_otg/dummy_audio.c
-new file mode 100644
-index 0000000..225decf
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dummy_audio.c
 @@ -0,0 +1,1575 @@
@@ -1714,9 +1701,6 @@ index 0000000..225decf
 +	remove_proc_entry("isoc_test", NULL);
 +}
 +module_exit (cleanup);
-diff --git a/drivers/usb/dwc_otg/dwc_otg_attr.c b/drivers/usb/dwc_otg/dwc_otg_attr.c
-new file mode 100644
-index 0000000..8543537
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_attr.c
 @@ -0,0 +1,966 @@
@@ -2686,9 +2670,6 @@ index 0000000..8543537
 +	device_remove_file(dev, &dev_attr_rd_reg_test);
 +	device_remove_file(dev, &dev_attr_wr_reg_test);
 +}
-diff --git a/drivers/usb/dwc_otg/dwc_otg_attr.h b/drivers/usb/dwc_otg/dwc_otg_attr.h
-new file mode 100644
-index 0000000..0862b27
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_attr.h
 @@ -0,0 +1,67 @@
@@ -2759,9 +2740,6 @@ index 0000000..0862b27
 +void dwc_otg_attr_remove (struct device *dev);
 +
 +#endif
-diff --git a/drivers/usb/dwc_otg/dwc_otg_cil.c b/drivers/usb/dwc_otg/dwc_otg_cil.c
-new file mode 100644
-index 0000000..89aa83e
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_cil.c
 @@ -0,0 +1,3692 @@
@@ -6457,9 +6435,6 @@ index 0000000..89aa83e
 +}
 +
 +#endif //DWC_EN_ISOC
-diff --git a/drivers/usb/dwc_otg/dwc_otg_cil.h b/drivers/usb/dwc_otg/dwc_otg_cil.h
-new file mode 100644
-index 0000000..9507992
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_cil.h
 @@ -0,0 +1,1098 @@
@@ -7561,9 +7536,6 @@ index 0000000..9507992
 +
 +#endif
 +
-diff --git a/drivers/usb/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/dwc_otg/dwc_otg_cil_intr.c
-new file mode 100644
-index 0000000..61b17b3
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_cil_intr.c
 @@ -0,0 +1,750 @@
@@ -8317,9 +8289,6 @@ index 0000000..61b17b3
 +
 +        return retval;
 +}
-diff --git a/drivers/usb/dwc_otg/dwc_otg_driver.c b/drivers/usb/dwc_otg/dwc_otg_driver.c
-new file mode 100644
-index 0000000..263494c
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_driver.c
 @@ -0,0 +1,1273 @@
@@ -9596,9 +9565,6 @@ index 0000000..263494c
 + </td></tr>
 +
 +*/
-diff --git a/drivers/usb/dwc_otg/dwc_otg_driver.h b/drivers/usb/dwc_otg/dwc_otg_driver.h
-new file mode 100644
-index 0000000..fd7f0a4
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_driver.h
 @@ -0,0 +1,83 @@
@@ -9685,9 +9651,6 @@ index 0000000..fd7f0a4
 +} dwc_otg_device_t;
 +
 +#endif
-diff --git a/drivers/usb/dwc_otg/dwc_otg_hcd.c b/drivers/usb/dwc_otg/dwc_otg_hcd.c
-new file mode 100644
-index 0000000..fe643b6
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_hcd.c
 @@ -0,0 +1,2852 @@
@@ -12543,9 +12506,6 @@ index 0000000..fe643b6
 +#endif
 +}
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_hcd.h b/drivers/usb/dwc_otg/dwc_otg_hcd.h
-new file mode 100644
-index 0000000..ee41dc9
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_hcd.h
 @@ -0,0 +1,668 @@
@@ -13217,9 +13177,6 @@ index 0000000..ee41dc9
 +#endif
 +#endif
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c
-new file mode 100644
-index 0000000..bdf2db9
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_hcd_intr.c
 @@ -0,0 +1,1873 @@
@@ -15096,9 +15053,6 @@ index 0000000..bdf2db9
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/dwc_otg/dwc_otg_hcd_queue.c
-new file mode 100644
-index 0000000..cfb1f16
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_hcd_queue.c
 @@ -0,0 +1,684 @@
@@ -15786,9 +15740,6 @@ index 0000000..cfb1f16
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_pcd.c b/drivers/usb/dwc_otg/dwc_otg_pcd.c
-new file mode 100644
-index 0000000..030a3f2
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_pcd.c
 @@ -0,0 +1,2523 @@
@@ -18315,9 +18266,6 @@ index 0000000..030a3f2
 +EXPORT_SYMBOL(usb_gadget_unregister_driver);
 +
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_pcd.h b/drivers/usb/dwc_otg/dwc_otg_pcd.h
-new file mode 100644
-index 0000000..48de957
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_pcd.h
 @@ -0,0 +1,248 @@
@@ -18569,9 +18517,6 @@ index 0000000..48de957
 +
 +#endif
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_pcd_intr.c b/drivers/usb/dwc_otg/dwc_otg_pcd_intr.c
-new file mode 100644
-index 0000000..fd44fd8
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_pcd_intr.c
 @@ -0,0 +1,3654 @@
@@ -22229,9 +22174,6 @@ index 0000000..fd44fd8
 +}
 +
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/dwc_otg/dwc_otg_regs.h b/drivers/usb/dwc_otg/dwc_otg_regs.h
-new file mode 100644
-index 0000000..8265766
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/dwc_otg_regs.h
 @@ -0,0 +1,2075 @@
@@ -24310,9 +24252,6 @@ index 0000000..8265766
 +
 +
 +#endif
-diff --git a/drivers/usb/dwc_otg/linux/dwc_otg_plat.h b/drivers/usb/dwc_otg/linux/dwc_otg_plat.h
-new file mode 100644
-index 0000000..618151b
 --- /dev/null
 +++ b/drivers/usb/dwc_otg/linux/dwc_otg_plat.h
 @@ -0,0 +1,260 @@
@@ -24576,6 +24515,3 @@ index 0000000..618151b
 +
 +#endif
 +
--- 
-1.7.10.4
-

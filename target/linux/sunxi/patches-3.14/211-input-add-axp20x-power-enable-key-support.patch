@@ -16,8 +16,6 @@ Signed-off-by: Carlo Caione <carlo@caione.org>
  4 files changed, 279 insertions(+)
  create mode 100644 drivers/input/misc/axp20x-pek.c
 
-diff --git a/arch/arm/configs/sunxi_defconfig b/arch/arm/configs/sunxi_defconfig
-index d25660d..3ed7023 100644
 --- a/arch/arm/configs/sunxi_defconfig
 +++ b/arch/arm/configs/sunxi_defconfig
 @@ -40,6 +40,8 @@ CONFIG_SUN4I_EMAC=y
@@ -29,8 +27,6 @@ index d25660d..3ed7023 100644
  CONFIG_SERIAL_8250=y
  CONFIG_SERIAL_8250_CONSOLE=y
  CONFIG_SERIAL_8250_NR_UARTS=8
-diff --git a/drivers/input/misc/Kconfig b/drivers/input/misc/Kconfig
-index 7904ab0..87244fb 100644
 --- a/drivers/input/misc/Kconfig
 +++ b/drivers/input/misc/Kconfig
 @@ -393,6 +393,17 @@ config INPUT_RETU_PWRBUTTON
@@ -51,11 +47,9 @@ index 7904ab0..87244fb 100644
  config INPUT_TWL4030_PWRBUTTON
  	tristate "TWL4030 Power button Driver"
  	depends on TWL4030_CORE
-diff --git a/drivers/input/misc/Makefile b/drivers/input/misc/Makefile
-index cda71fc..624abf5 100644
 --- a/drivers/input/misc/Makefile
 +++ b/drivers/input/misc/Makefile
-@@ -50,6 +50,7 @@ obj-$(CONFIG_INPUT_POWERMATE)		+= powermate.o
+@@ -50,6 +50,7 @@ obj-$(CONFIG_INPUT_POWERMATE)		+= powerm
  obj-$(CONFIG_INPUT_PWM_BEEPER)		+= pwm-beeper.o
  obj-$(CONFIG_INPUT_RB532_BUTTON)	+= rb532_button.o
  obj-$(CONFIG_INPUT_RETU_PWRBUTTON)	+= retu-pwrbutton.o
@@ -63,9 +57,6 @@ index cda71fc..624abf5 100644
  obj-$(CONFIG_INPUT_GPIO_ROTARY_ENCODER)	+= rotary_encoder.o
  obj-$(CONFIG_INPUT_SGI_BTNS)		+= sgi_btns.o
  obj-$(CONFIG_INPUT_SIRFSOC_ONKEY)	+= sirfsoc-onkey.o
-diff --git a/drivers/input/misc/axp20x-pek.c b/drivers/input/misc/axp20x-pek.c
-new file mode 100644
-index 0000000..799275d
 --- /dev/null
 +++ b/drivers/input/misc/axp20x-pek.c
 @@ -0,0 +1,265 @@
@@ -334,6 +325,3 @@ index 0000000..799275d
 +MODULE_DESCRIPTION("axp20x Power Button");
 +MODULE_AUTHOR("Carlo Caione <carlo@caione.org>");
 +MODULE_LICENSE("GPL");
--- 
-2.0.3
-

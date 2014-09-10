@@ -15,11 +15,9 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  include/linux/ahci_platform.h |    3 ---
  2 files changed, 1 insertion(+), 12 deletions(-)
 
-diff --git a/drivers/ata/ahci_platform.c b/drivers/ata/ahci_platform.c
-index 8fab4bf..db24d2a 100644
 --- a/drivers/ata/ahci_platform.c
 +++ b/drivers/ata/ahci_platform.c
-@@ -384,7 +384,6 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -384,7 +384,6 @@ static int ahci_probe(struct platform_de
  {
  	struct device *dev = &pdev->dev;
  	struct ahci_platform_data *pdata = dev_get_platdata(dev);
@@ -27,7 +25,7 @@ index 8fab4bf..db24d2a 100644
  	struct ahci_host_priv *hpriv;
  	int rc;
  
-@@ -408,14 +407,7 @@ static int ahci_probe(struct platform_device *pdev)
+@@ -408,14 +407,7 @@ static int ahci_probe(struct platform_de
  			goto disable_resources;
  	}
  
@@ -43,8 +41,6 @@ index 8fab4bf..db24d2a 100644
  	if (rc)
  		goto pdata_exit;
  
-diff --git a/include/linux/ahci_platform.h b/include/linux/ahci_platform.h
-index 542f268..1f16d50 100644
 --- a/include/linux/ahci_platform.h
 +++ b/include/linux/ahci_platform.h
 @@ -33,9 +33,6 @@ struct ahci_platform_data {
@@ -57,6 +53,3 @@ index 542f268..1f16d50 100644
  };
  
  int ahci_platform_enable_clks(struct ahci_host_priv *hpriv);
--- 
-1.7.10.4
-

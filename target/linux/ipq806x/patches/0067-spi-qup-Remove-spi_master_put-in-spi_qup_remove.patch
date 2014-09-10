@@ -13,11 +13,9 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  drivers/spi/spi-qup.c |    1 -
  1 file changed, 1 deletion(-)
 
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index b0bcc09..5edc56f 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -802,7 +802,6 @@ static int spi_qup_remove(struct platform_device *pdev)
+@@ -802,7 +802,6 @@ static int spi_qup_remove(struct platfor
  
  	pm_runtime_put_noidle(&pdev->dev);
  	pm_runtime_disable(&pdev->dev);
@@ -25,6 +23,3 @@ index b0bcc09..5edc56f 100644
  	return 0;
  }
  
--- 
-1.7.10.4
-

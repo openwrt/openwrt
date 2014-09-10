@@ -1,8 +1,6 @@
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index 5b34ff29ea38..178b017be827 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -217,6 +217,15 @@ config PWM_SPEAR
+@@ -187,6 +187,15 @@ config PWM_SPEAR
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-spear.
  
@@ -18,11 +16,9 @@ index 5b34ff29ea38..178b017be827 100644
  config PWM_TEGRA
  	tristate "NVIDIA Tegra PWM support"
  	depends on ARCH_TEGRA
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index e57d2c38a794..39997ea2e276 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
+@@ -16,6 +16,7 @@ obj-$(CONFIG_PWM_PXA)		+= pwm-pxa.o
  obj-$(CONFIG_PWM_RENESAS_TPU)	+= pwm-renesas-tpu.o
  obj-$(CONFIG_PWM_SAMSUNG)	+= pwm-samsung.o
  obj-$(CONFIG_PWM_SPEAR)		+= pwm-spear.o
@@ -30,9 +26,6 @@ index e57d2c38a794..39997ea2e276 100644
  obj-$(CONFIG_PWM_TEGRA)		+= pwm-tegra.o
  obj-$(CONFIG_PWM_TIECAP)	+= pwm-tiecap.o
  obj-$(CONFIG_PWM_TIEHRPWM)	+= pwm-tiehrpwm.o
-diff --git a/drivers/pwm/pwm-sunxi.c b/drivers/pwm/pwm-sunxi.c
-new file mode 100644
-index 000000000000..e7c3ca1d3c42
 --- /dev/null
 +++ b/drivers/pwm/pwm-sunxi.c
 @@ -0,0 +1,338 @@

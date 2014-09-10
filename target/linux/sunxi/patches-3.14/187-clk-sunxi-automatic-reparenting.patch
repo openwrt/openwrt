@@ -14,11 +14,9 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-factors.c | 36 ++++++++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-diff --git a/drivers/clk/sunxi/clk-factors.c b/drivers/clk/sunxi/clk-factors.c
-index 9e23264..3806d97 100644
 --- a/drivers/clk/sunxi/clk-factors.c
 +++ b/drivers/clk/sunxi/clk-factors.c
-@@ -77,6 +77,41 @@ static long clk_factors_round_rate(struct clk_hw *hw, unsigned long rate,
+@@ -77,6 +77,41 @@ static long clk_factors_round_rate(struc
  	return rate;
  }
  
@@ -60,7 +58,7 @@ index 9e23264..3806d97 100644
  static int clk_factors_set_rate(struct clk_hw *hw, unsigned long rate,
  				unsigned long parent_rate)
  {
-@@ -113,6 +148,7 @@ static int clk_factors_set_rate(struct clk_hw *hw, unsigned long rate,
+@@ -113,6 +148,7 @@ static int clk_factors_set_rate(struct c
  }
  
  const struct clk_ops clk_factors_ops = {
@@ -68,6 +66,3 @@ index 9e23264..3806d97 100644
  	.recalc_rate = clk_factors_recalc_rate,
  	.round_rate = clk_factors_round_rate,
  	.set_rate = clk_factors_set_rate,
--- 
-2.0.3
-

@@ -9,11 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/tty/serial/8250/8250_core.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/tty/serial/8250/8250_core.c b/drivers/tty/serial/8250/8250_core.c
-index 69932b7..606cbc6 100644
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -2517,7 +2517,7 @@ serial8250_pm(struct uart_port *port, unsigned int state,
+@@ -2517,7 +2517,7 @@ serial8250_pm(struct uart_port *port, un
  static unsigned int serial8250_port_size(struct uart_8250_port *pt)
  {
  	if (pt->port.iotype == UPIO_AU)
@@ -22,6 +20,3 @@ index 69932b7..606cbc6 100644
  	if (is_omap1_8250(pt))
  		return 0x16 << pt->port.regshift;
  
--- 
-1.7.10.4
-

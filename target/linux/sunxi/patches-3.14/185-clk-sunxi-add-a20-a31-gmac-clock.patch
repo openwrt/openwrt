@@ -18,8 +18,6 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c                     | 96 +++++++++++++++++++++++
  2 files changed, 126 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/clock/sunxi.txt b/Documentation/devicetree/bindings/clock/sunxi.txt
-index c37c764..256a908 100644
 --- a/Documentation/devicetree/bindings/clock/sunxi.txt
 +++ b/Documentation/devicetree/bindings/clock/sunxi.txt
 @@ -38,6 +38,7 @@ Required properties:
@@ -30,7 +28,7 @@ index c37c764..256a908 100644
  	"allwinner,sun4i-a10-usb-clk" - for usb gates + resets on A10 / A20
  	"allwinner,sun5i-a13-usb-clk" - for usb gates + resets on A13
  
-@@ -56,6 +57,9 @@ Required properties for all clocks:
+@@ -55,6 +56,9 @@ Additionally, "allwinner,*-gates-clk" cl
  And "allwinner,*-usb-clk" clocks also require:
  - reset-cells : shall be set to 1
  
@@ -40,9 +38,9 @@ index c37c764..256a908 100644
  Clock consumers should specify the desired clocks they use with a
  "clocks" phandle cell. Consumers that are using a gated clock should
  provide an additional ID in their clock property. This ID is the
-@@ -102,3 +106,29 @@ mmc0_clk: clk@01c20088 {
- 	clocks = <&osc24M>, <&pll6 1>, <&pll5 1>;
- 	clock-output-names = "mmc0";
+@@ -82,3 +86,29 @@ cpu: cpu@01c20054 {
+ 	reg = <0x01c20054 0x4>;
+ 	clocks = <&osc32k>, <&osc24M>, <&pll1>;
  };
 +
 +mii_phy_tx_clk: clk@2 {
@@ -70,11 +68,9 @@ index c37c764..256a908 100644
 +	clocks = <&mii_phy_tx_clk>, <&gmac_int_tx_clk>;
 +	clock-output-names = "gmac";
 +};
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index d4cf297..335c987 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -411,6 +411,102 @@ static void sun7i_a20_get_out_factors(u32 *freq, u32 parent_rate,
+@@ -411,6 +411,102 @@ static void sun7i_a20_get_out_factors(u3
  
  
  /**
@@ -177,6 +173,3 @@ index d4cf297..335c987 100644
   * sunxi_factors_clk_setup() - Setup function for factor clocks
   */
  
--- 
-2.0.3
-

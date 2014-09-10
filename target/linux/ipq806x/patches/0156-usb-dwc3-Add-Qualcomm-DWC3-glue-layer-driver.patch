@@ -15,8 +15,6 @@ Signed-off-by: Ivan T. Ivanov <iivanov@mm-sol.com>
  3 files changed, 165 insertions(+)
  create mode 100644 drivers/usb/dwc3/dwc3-qcom.c
 
-diff --git a/drivers/usb/dwc3/Kconfig b/drivers/usb/dwc3/Kconfig
-index e2c730f..2d01983 100644
 --- a/drivers/usb/dwc3/Kconfig
 +++ b/drivers/usb/dwc3/Kconfig
 @@ -59,6 +59,14 @@ config USB_DWC3_EXYNOS
@@ -34,8 +32,6 @@ index e2c730f..2d01983 100644
  config USB_DWC3_PCI
  	tristate "PCIe-based Platforms"
  	depends on PCI
-diff --git a/drivers/usb/dwc3/Makefile b/drivers/usb/dwc3/Makefile
-index 10ac3e7..4066e4e 100644
 --- a/drivers/usb/dwc3/Makefile
 +++ b/drivers/usb/dwc3/Makefile
 @@ -31,5 +31,6 @@ endif
@@ -45,9 +41,6 @@ index 10ac3e7..4066e4e 100644
 +obj-$(CONFIG_USB_DWC3_QCOM)		+= dwc3-qcom.o
  obj-$(CONFIG_USB_DWC3_PCI)		+= dwc3-pci.o
  obj-$(CONFIG_USB_DWC3_KEYSTONE)		+= dwc3-keystone.o
-diff --git a/drivers/usb/dwc3/dwc3-qcom.c b/drivers/usb/dwc3/dwc3-qcom.c
-new file mode 100644
-index 0000000..8d17360
 --- /dev/null
 +++ b/drivers/usb/dwc3/dwc3-qcom.c
 @@ -0,0 +1,156 @@
@@ -207,6 +200,3 @@ index 0000000..8d17360
 +MODULE_ALIAS("platform:qcom-dwc3");
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("DesignWare USB3 QCOM Glue Layer");
--- 
-1.7.10.4
-

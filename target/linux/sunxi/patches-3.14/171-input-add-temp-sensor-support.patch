@@ -17,8 +17,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/input/touchscreen/sun4i-ts.c               | 140 ++++++++++++++++-----
  2 files changed, 114 insertions(+), 31 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt b/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
-index e45927e..6bac67b 100644
 --- a/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
 +++ b/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
 @@ -6,10 +6,15 @@ Required properties:
@@ -37,8 +35,6 @@ index e45927e..6bac67b 100644
  		interrupts = <29>;
 +		allwinner,ts-attached;
  	};
-diff --git a/drivers/input/touchscreen/sun4i-ts.c b/drivers/input/touchscreen/sun4i-ts.c
-index 5945219..16cbb01 100644
 --- a/drivers/input/touchscreen/sun4i-ts.c
 +++ b/drivers/input/touchscreen/sun4i-ts.c
 @@ -3,6 +3,9 @@
@@ -77,7 +73,7 @@ index 5945219..16cbb01 100644
  
  	if (reg_val & FIFO_DATA_PENDING) {
  		x = readl(ts->base + TP_DATA);
-@@ -139,6 +141,20 @@ static irqreturn_t sun4i_ts_irq(int irq, void *dev_id)
+@@ -139,6 +141,20 @@ static irqreturn_t sun4i_ts_irq(int irq,
  		input_report_key(ts->input, BTN_TOUCH, 0);
  		input_sync(ts->input);
  	}
@@ -98,7 +94,7 @@ index 5945219..16cbb01 100644
  
  	writel(reg_val, ts->base + TP_INT_FIFOS);
  
-@@ -149,9 +165,9 @@ static int sun4i_ts_open(struct input_dev *dev)
+@@ -149,9 +165,9 @@ static int sun4i_ts_open(struct input_de
  {
  	struct sun4i_ts_data *ts = input_get_drvdata(dev);
  
@@ -111,7 +107,7 @@ index 5945219..16cbb01 100644
  
  	return 0;
  }
-@@ -160,15 +176,48 @@ static void sun4i_ts_close(struct input_dev *dev)
+@@ -160,15 +176,48 @@ static void sun4i_ts_close(struct input_
  {
  	struct sun4i_ts_data *ts = input_get_drvdata(dev);
  
@@ -162,11 +158,12 @@ index 5945219..16cbb01 100644
  
  	ts = devm_kzalloc(dev, sizeof(struct sun4i_ts_data), GFP_KERNEL);
  	if (!ts)
-@@ -176,24 +225,27 @@ static int sun4i_ts_probe(struct platform_device *pdev)
+@@ -176,24 +225,27 @@ static int sun4i_ts_probe(struct platfor
  
  	ts->dev = dev;
  	ts->ignore_fifo_data = true;
--
++	ts->temp_data = -1;
+ 
 -	ts->input = devm_input_allocate_device(dev);
 -	if (!ts->input)
 -		return -ENOMEM;
@@ -184,8 +181,6 @@ index 5945219..16cbb01 100644
 -	input_set_abs_params(ts->input, ABS_X, 0, 4095, 0, 0);
 -	input_set_abs_params(ts->input, ABS_Y, 0, 4095, 0, 0);
 -	input_set_drvdata(ts->input, ts);
-+	ts->temp_data = -1;
-+
 +	if (ts_attached) {
 +		ts->input = devm_input_allocate_device(dev);
 +		if (!ts->input)
@@ -208,7 +203,7 @@ index 5945219..16cbb01 100644
  
  	ts->base = devm_ioremap_resource(dev,
  			      platform_get_resource(pdev, IORESOURCE_MEM, 0));
-@@ -232,14 +284,39 @@ static int sun4i_ts_probe(struct platform_device *pdev)
+@@ -232,14 +284,39 @@ static int sun4i_ts_probe(struct platfor
  	writel(STYLUS_UP_DEBOUN(5) | STYLUS_UP_DEBOUN_EN(1) | TP_MODE_EN(1),
  	       ts->base + TP_CTRL1);
  
@@ -251,7 +246,7 @@ index 5945219..16cbb01 100644
  static const struct of_device_id sun4i_ts_of_match[] = {
  	{ .compatible = "allwinner,sun4i-ts", },
  	{ /* sentinel */ }
-@@ -253,6 +330,7 @@ static struct platform_driver sun4i_ts_driver = {
+@@ -253,6 +330,7 @@ static struct platform_driver sun4i_ts_d
  		.of_match_table = of_match_ptr(sun4i_ts_of_match),
  	},
  	.probe	= sun4i_ts_probe,
@@ -259,6 +254,3 @@ index 5945219..16cbb01 100644
  };
  
  module_platform_driver(sun4i_ts_driver);
--- 
-2.0.3
-

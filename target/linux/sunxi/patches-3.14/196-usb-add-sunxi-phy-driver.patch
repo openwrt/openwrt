@@ -20,9 +20,6 @@ Acked-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  create mode 100644 Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt
  create mode 100644 drivers/phy/phy-sun4i-usb.c
 
-diff --git a/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt b/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt
-new file mode 100644
-index 0000000..a82361b
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/phy/sun4i-usb-phy.txt
 @@ -0,0 +1,26 @@
@@ -52,8 +49,6 @@ index 0000000..a82361b
 +		resets = <&usb_clk 1>, <&usb_clk 2>;
 +		reset-names = "usb1_reset", "usb2_reset";
 +	};
-diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
-index c7a551c..66f7c4e 100644
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
 @@ -65,4 +65,15 @@ config BCM_KONA_USB2_PHY
@@ -72,18 +67,13 @@ index c7a551c..66f7c4e 100644
 +	  parts, as well as the 2 regular USB 2 host PHYs.
 +
  endmenu
-diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
-index b57c253..9d4f8bb 100644
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -9,3 +9,4 @@ obj-$(CONFIG_PHY_EXYNOS_MIPI_VIDEO)	+= phy-exynos-mipi-video.o
+@@ -9,3 +9,4 @@ obj-$(CONFIG_PHY_EXYNOS_MIPI_VIDEO)	+= p
  obj-$(CONFIG_PHY_MVEBU_SATA)		+= phy-mvebu-sata.o
  obj-$(CONFIG_OMAP_USB2)			+= phy-omap-usb2.o
  obj-$(CONFIG_TWL4030_USB)		+= phy-twl4030-usb.o
 +obj-$(CONFIG_PHY_SUN4I_USB)		+= phy-sun4i-usb.o
-diff --git a/drivers/phy/phy-sun4i-usb.c b/drivers/phy/phy-sun4i-usb.c
-new file mode 100644
-index 0000000..e6e6c4b
 --- /dev/null
 +++ b/drivers/phy/phy-sun4i-usb.c
 @@ -0,0 +1,331 @@
@@ -418,6 +408,3 @@ index 0000000..e6e6c4b
 +MODULE_DESCRIPTION("Allwinner sun4i USB phy driver");
 +MODULE_AUTHOR("Hans de Goede <hdegoede@redhat.com>");
 +MODULE_LICENSE("GPL v2");
--- 
-2.0.3
-

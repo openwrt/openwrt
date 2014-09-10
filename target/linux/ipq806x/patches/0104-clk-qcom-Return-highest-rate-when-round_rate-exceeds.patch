@@ -17,11 +17,9 @@ Signed-off-by: Mike Turquette <mturquette@linaro.org>
  drivers/clk/qcom/clk-rcg2.c |    3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/clk/qcom/clk-rcg2.c b/drivers/clk/qcom/clk-rcg2.c
-index 0996a3a..cbecaec 100644
 --- a/drivers/clk/qcom/clk-rcg2.c
 +++ b/drivers/clk/qcom/clk-rcg2.c
-@@ -181,7 +181,8 @@ struct freq_tbl *find_freq(const struct freq_tbl *f, unsigned long rate)
+@@ -181,7 +181,8 @@ struct freq_tbl *find_freq(const struct
  		if (rate <= f->freq)
  			return f;
  
@@ -31,6 +29,3 @@ index 0996a3a..cbecaec 100644
  }
  
  static long _freq_tbl_determine_rate(struct clk_hw *hw,
--- 
-1.7.10.4
-

@@ -13,8 +13,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  drivers/spi/spi-qup.c                              |   33 ++++----------------
  2 files changed, 12 insertions(+), 27 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/spi/qcom,spi-qup.txt b/Documentation/devicetree/bindings/spi/qcom,spi-qup.txt
-index b82a268..bee6ff2 100644
 --- a/Documentation/devicetree/bindings/spi/qcom,spi-qup.txt
 +++ b/Documentation/devicetree/bindings/spi/qcom,spi-qup.txt
 @@ -23,6 +23,12 @@ Optional properties:
@@ -30,11 +28,9 @@ index b82a268..bee6ff2 100644
  
  SPI slave nodes must be children of the SPI master node and can contain
  properties described in Documentation/devicetree/bindings/spi/spi-bus.txt
-diff --git a/drivers/spi/spi-qup.c b/drivers/spi/spi-qup.c
-index 65bf18e..dc128ac 100644
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
-@@ -424,31 +424,6 @@ static int spi_qup_io_config(struct spi_device *spi, struct spi_transfer *xfer)
+@@ -424,31 +424,6 @@ static int spi_qup_io_config(struct spi_
  	return 0;
  }
  
@@ -66,7 +62,7 @@ index 65bf18e..dc128ac 100644
  static int spi_qup_transfer_one(struct spi_master *master,
  			      struct spi_device *spi,
  			      struct spi_transfer *xfer)
-@@ -571,12 +546,16 @@ static int spi_qup_probe(struct platform_device *pdev)
+@@ -571,12 +546,16 @@ static int spi_qup_probe(struct platform
  		return -ENOMEM;
  	}
  
@@ -85,6 +81,3 @@ index 65bf18e..dc128ac 100644
  	master->transfer_one = spi_qup_transfer_one;
  	master->dev.of_node = pdev->dev.of_node;
  	master->auto_runtime_pm = true;
--- 
-1.7.10.4
-

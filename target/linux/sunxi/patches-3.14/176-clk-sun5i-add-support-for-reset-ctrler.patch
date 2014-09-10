@@ -13,8 +13,6 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  drivers/clocksource/timer-sun5i.c                                   | 6 ++++++
  2 files changed, 10 insertions(+)
 
-diff --git a/Documentation/devicetree/bindings/timer/allwinner,sun5i-a13-hstimer.txt b/Documentation/devicetree/bindings/timer/allwinner,sun5i-a13-hstimer.txt
-index 7c26154..27cfc7d 100644
 --- a/Documentation/devicetree/bindings/timer/allwinner,sun5i-a13-hstimer.txt
 +++ b/Documentation/devicetree/bindings/timer/allwinner,sun5i-a13-hstimer.txt
 @@ -9,6 +9,9 @@ Required properties:
@@ -33,8 +31,6 @@ index 7c26154..27cfc7d 100644
  	clocks = <&ahb1_gates 19>;
 +	resets = <&ahb1rst 19>;
  };
-diff --git a/drivers/clocksource/timer-sun5i.c b/drivers/clocksource/timer-sun5i.c
-index deebcd6..0226844 100644
 --- a/drivers/clocksource/timer-sun5i.c
 +++ b/drivers/clocksource/timer-sun5i.c
 @@ -16,6 +16,7 @@
@@ -53,7 +49,7 @@ index deebcd6..0226844 100644
  	unsigned long rate;
  	struct clk *clk;
  	int ret, irq;
-@@ -162,6 +164,10 @@ static void __init sun5i_timer_init(struct device_node *node)
+@@ -162,6 +164,10 @@ static void __init sun5i_timer_init(stru
  	clk_prepare_enable(clk);
  	rate = clk_get_rate(clk);
  
@@ -64,6 +60,3 @@ index deebcd6..0226844 100644
  	writel(~0, timer_base + TIMER_INTVAL_LO_REG(1));
  	writel(TIMER_CTL_ENABLE | TIMER_CTL_RELOAD,
  	       timer_base + TIMER_CTL_REG(1));
--- 
-2.0.3
-

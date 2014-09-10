@@ -15,8 +15,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi                | 65 +++++++++++++++++++++++++
  4 files changed, 104 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index 68de89f..cd9d3c2 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 @@ -20,6 +20,14 @@
@@ -34,8 +32,6 @@ index 68de89f..cd9d3c2 100644
  		usbphy: phy@01c13400 {
  			usb1_vbus-supply = <&reg_usb1_vbus>;
  			usb2_vbus-supply = <&reg_usb2_vbus>;
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index cb25d3c..66bb3ef 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 @@ -20,6 +20,14 @@
@@ -53,11 +49,9 @@ index cb25d3c..66bb3ef 100644
  		usbphy: phy@01c13400 {
  			usb1_vbus-supply = <&reg_usb1_vbus>;
  			usb2_vbus-supply = <&reg_usb2_vbus>;
-diff --git a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-index eeadf76..822cbe2 100644
 --- a/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
-@@ -31,6 +31,22 @@
+@@ -32,6 +32,22 @@
  			status = "okay";
  		};
  
@@ -80,7 +74,7 @@ index eeadf76..822cbe2 100644
  		usbphy: phy@01c13400 {
  			usb1_vbus-supply = <&reg_usb1_vbus>;
  			usb2_vbus-supply = <&reg_usb2_vbus>;
-@@ -65,6 +81,13 @@
+@@ -66,6 +82,13 @@
  		};
  
  		pinctrl@01c20800 {
@@ -94,8 +88,6 @@ index eeadf76..822cbe2 100644
  			led_pins_olinuxino: led_pins@0 {
  				allwinner,pins = "PH2";
  				allwinner,function = "gpio_out";
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 4cc2f5f..1d9b314 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
 @@ -439,6 +439,50 @@
@@ -177,6 +169,3 @@ index 4cc2f5f..1d9b314 100644
  		};
  
  		timer@01c20c00 {
--- 
-2.0.3
-

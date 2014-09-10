@@ -21,8 +21,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  create mode 100644 drivers/clk/qcom/clk-generic.c
  create mode 100644 include/linux/clk/msm-clk-generic.h
 
-diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
-index df2a1b3..2cc6039 100644
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
 @@ -6,6 +6,7 @@ clk-qcom-y += clk-pll.o
@@ -33,9 +31,6 @@ index df2a1b3..2cc6039 100644
  clk-qcom-y += reset.o
  
  obj-$(CONFIG_IPQ_GCC_806X) += gcc-ipq806x.o
-diff --git a/drivers/clk/qcom/clk-generic.c b/drivers/clk/qcom/clk-generic.c
-new file mode 100644
-index 0000000..a0d778b
 --- /dev/null
 +++ b/drivers/clk/qcom/clk-generic.c
 @@ -0,0 +1,405 @@
@@ -444,9 +439,6 @@ index 0000000..a0d778b
 +	.recalc_rate = mux_div_clk_recalc_rate,
 +};
 +EXPORT_SYMBOL_GPL(clk_ops_mux_div_clk);
-diff --git a/include/linux/clk/msm-clk-generic.h b/include/linux/clk/msm-clk-generic.h
-new file mode 100644
-index 0000000..cee3863
 --- /dev/null
 +++ b/include/linux/clk/msm-clk-generic.h
 @@ -0,0 +1,208 @@
@@ -658,6 +650,3 @@ index 0000000..cee3863
 +extern const struct clk_ops clk_ops_mux_div_clk;
 +
 +#endif
--- 
-1.7.10.4
-

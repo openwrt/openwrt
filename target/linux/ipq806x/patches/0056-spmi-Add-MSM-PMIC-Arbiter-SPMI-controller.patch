@@ -26,8 +26,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 424 insertions(+)
  create mode 100644 drivers/spmi/spmi-pmic-arb.c
 
-diff --git a/drivers/spmi/Kconfig b/drivers/spmi/Kconfig
-index 1dbfee0..80b7901 100644
 --- a/drivers/spmi/Kconfig
 +++ b/drivers/spmi/Kconfig
 @@ -7,3 +7,20 @@ menuconfig SPMI
@@ -51,8 +49,6 @@ index 1dbfee0..80b7901 100644
 +	  other devices that have the SPMI interface.
 +
 +endif
-diff --git a/drivers/spmi/Makefile b/drivers/spmi/Makefile
-index 1de1acd..fc75104 100644
 --- a/drivers/spmi/Makefile
 +++ b/drivers/spmi/Makefile
 @@ -2,3 +2,5 @@
@@ -61,9 +57,6 @@ index 1de1acd..fc75104 100644
  obj-$(CONFIG_SPMI)	+= spmi.o
 +
 +obj-$(CONFIG_SPMI_MSM_PMIC_ARB)	+= spmi-pmic-arb.o
-diff --git a/drivers/spmi/spmi-pmic-arb.c b/drivers/spmi/spmi-pmic-arb.c
-new file mode 100644
-index 0000000..2dd27e8
 --- /dev/null
 +++ b/drivers/spmi/spmi-pmic-arb.c
 @@ -0,0 +1,405 @@
@@ -472,6 +465,3 @@ index 0000000..2dd27e8
 +
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:spmi_pmic_arb");
--- 
-1.7.10.4
-

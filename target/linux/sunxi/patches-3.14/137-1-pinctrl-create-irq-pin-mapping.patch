@@ -13,11 +13,9 @@ Signed-off-by: Chen-Yu Tsai <wens@csie.org>
  drivers/pinctrl/pinctrl-sunxi.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/pinctrl-sunxi.c b/drivers/pinctrl/pinctrl-sunxi.c
-index d16da53..067e7e10 100644
 --- a/drivers/pinctrl/pinctrl-sunxi.c
 +++ b/drivers/pinctrl/pinctrl-sunxi.c
-@@ -531,8 +531,6 @@ static int sunxi_pinctrl_gpio_to_irq(struct gpio_chip *chip, unsigned offset)
+@@ -531,8 +531,6 @@ static int sunxi_pinctrl_gpio_to_irq(str
  	if (!desc)
  		return -EINVAL;
  
@@ -26,7 +24,7 @@ index d16da53..067e7e10 100644
  	dev_dbg(chip->dev, "%s: request IRQ for GPIO %d, return %d\n",
  		chip->label, offset + chip->base, desc->irqnum);
  
-@@ -759,6 +757,9 @@ static int sunxi_pinctrl_build_state(struct platform_device *pdev)
+@@ -759,6 +757,9 @@ static int sunxi_pinctrl_build_state(str
  		struct sunxi_desc_function *func = pin->functions;
  
  		while (func->name) {
@@ -36,6 +34,3 @@ index d16da53..067e7e10 100644
  			sunxi_pinctrl_add_function(pctl, func->name);
  			func++;
  		}
--- 
-2.0.3
-

@@ -18,8 +18,6 @@ Signed-off-by: Ivan T. Ivanov <iivanov@mm-sol.com>
  create mode 100644 drivers/usb/phy/phy-qcom-hsusb.c
  create mode 100644 drivers/usb/phy/phy-qcom-ssusb.c
 
-diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
-index 7d1451d..ddb65be 100644
 --- a/drivers/usb/phy/Kconfig
 +++ b/drivers/usb/phy/Kconfig
 @@ -193,7 +193,7 @@ config USB_ISP1301
@@ -49,11 +47,9 @@ index 7d1451d..ddb65be 100644
  config USB_ULPI
  	bool "Generic ULPI Transceiver Driver"
  	depends on ARM
-diff --git a/drivers/usb/phy/Makefile b/drivers/usb/phy/Makefile
-index be58ada..857f04e 100644
 --- a/drivers/usb/phy/Makefile
 +++ b/drivers/usb/phy/Makefile
-@@ -26,6 +26,8 @@ obj-$(CONFIG_USB_EHCI_TEGRA)		+= phy-tegra-usb.o
+@@ -26,6 +26,8 @@ obj-$(CONFIG_USB_EHCI_TEGRA)		+= phy-teg
  obj-$(CONFIG_USB_GPIO_VBUS)		+= phy-gpio-vbus-usb.o
  obj-$(CONFIG_USB_ISP1301)		+= phy-isp1301.o
  obj-$(CONFIG_USB_MSM_OTG)		+= phy-msm-usb.o
@@ -62,9 +58,6 @@ index be58ada..857f04e 100644
  obj-$(CONFIG_USB_MV_OTG)		+= phy-mv-usb.o
  obj-$(CONFIG_USB_MXS_PHY)		+= phy-mxs-usb.o
  obj-$(CONFIG_USB_RCAR_PHY)		+= phy-rcar-usb.o
-diff --git a/drivers/usb/phy/phy-qcom-hsusb.c b/drivers/usb/phy/phy-qcom-hsusb.c
-new file mode 100644
-index 0000000..f96b2b9
 --- /dev/null
 +++ b/drivers/usb/phy/phy-qcom-hsusb.c
 @@ -0,0 +1,340 @@
@@ -408,9 +401,6 @@ index 0000000..f96b2b9
 +MODULE_ALIAS("platform:qcom-dwc3-hsphy");
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("DesignWare USB3 QCOM HSPHY driver");
-diff --git a/drivers/usb/phy/phy-qcom-ssusb.c b/drivers/usb/phy/phy-qcom-ssusb.c
-new file mode 100644
-index 0000000..3da778f
 --- /dev/null
 +++ b/drivers/usb/phy/phy-qcom-ssusb.c
 @@ -0,0 +1,455 @@
@@ -869,6 +859,3 @@ index 0000000..3da778f
 +MODULE_ALIAS("platform:qcom-dwc3-ssphy");
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("DesignWare USB3 QCOM SSPHY driver");
--- 
-1.7.10.4
-

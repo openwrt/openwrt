@@ -19,11 +19,9 @@ Signed-off-by: Emilio López <emilio@elopez.com.ar>
  drivers/clk/sunxi/clk-sunxi.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index abb6c5a..0ed9794 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -51,6 +51,8 @@ static void __init sun4i_osc_clk_setup(struct device_node *node)
+@@ -51,6 +51,8 @@ static void __init sun4i_osc_clk_setup(s
  	if (!gate)
  		goto err_free_fixed;
  
@@ -32,7 +30,7 @@ index abb6c5a..0ed9794 100644
  	/* set up gate and fixed rate properties */
  	gate->reg = of_iomap(node, 0);
  	gate->bit_idx = SUNXI_OSC24M_GATE;
-@@ -601,6 +603,8 @@ static void __init sunxi_mux_clk_setup(struct device_node *node,
+@@ -601,6 +603,8 @@ static void __init sunxi_mux_clk_setup(s
  	       (parents[i] = of_clk_get_parent_name(node, i)) != NULL)
  		i++;
  
@@ -41,7 +39,7 @@ index abb6c5a..0ed9794 100644
  	clk = clk_register_mux(NULL, clk_name, parents, i,
  			       CLK_SET_RATE_NO_REPARENT, reg,
  			       data->shift, SUNXI_MUX_GATE_WIDTH,
-@@ -660,6 +664,8 @@ static void __init sunxi_divider_clk_setup(struct device_node *node,
+@@ -660,6 +664,8 @@ static void __init sunxi_divider_clk_set
  
  	clk_parent = of_clk_get_parent_name(node, 0);
  
@@ -50,6 +48,3 @@ index abb6c5a..0ed9794 100644
  	clk = clk_register_divider(NULL, clk_name, clk_parent, 0,
  				   reg, data->shift, data->width,
  				   data->pow ? CLK_DIVIDER_POWER_OF_TWO : 0,
--- 
-2.0.3
-

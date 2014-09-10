@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/devices/m25p80.c |  128 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 128 insertions(+)
 
-diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
-index ad19139..6f4290e 100644
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -556,6 +556,58 @@ static int m25p80_read(struct mtd_info *mtd, loff_t from, size_t len,
+@@ -562,6 +562,58 @@ static int m25p80_read(struct mtd_info *
  	return 0;
  }
  
@@ -71,7 +69,7 @@ index ad19139..6f4290e 100644
  /*
   * Write an address range to the flash chip.  Data must be written in
   * FLASH_PAGESIZE chunks.  The address range may be any size provided
-@@ -643,6 +695,76 @@ static int m25p80_write(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -649,6 +701,76 @@ static int m25p80_write(struct mtd_info
  	return 0;
  }
  
@@ -148,7 +146,7 @@ index ad19139..6f4290e 100644
  static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
  		size_t *retlen, const u_char *buf)
  {
-@@ -1252,6 +1374,12 @@ static int m25p_probe(struct spi_device *spi)
+@@ -1260,6 +1382,12 @@ static int m25p_probe(struct spi_device
  		return -EINVAL;
  	}
  
@@ -161,6 +159,3 @@ index ad19139..6f4290e 100644
  	flash->program_opcode = OPCODE_PP;
  
  	if (info->addr_width)
--- 
-1.7.10.4
-

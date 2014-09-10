@@ -22,8 +22,6 @@ Signed-off-by: Kumar Gala <galak@codeaurora.org>
  create mode 100644 drivers/soc/qcom/Makefile
  create mode 100644 drivers/soc/qcom/qcom_gsbi.c
 
-diff --git a/drivers/soc/Kconfig b/drivers/soc/Kconfig
-index 339baa8..c854385 100644
 --- a/drivers/soc/Kconfig
 +++ b/drivers/soc/Kconfig
 @@ -1,3 +1,5 @@
@@ -32,9 +30,6 @@ index 339baa8..c854385 100644
 +source "drivers/soc/qcom/Kconfig"
 +
  endmenu
-diff --git a/drivers/soc/Makefile b/drivers/soc/Makefile
-new file mode 100644
-index 0000000..0f7c447
 --- /dev/null
 +++ b/drivers/soc/Makefile
 @@ -0,0 +1,5 @@
@@ -43,9 +38,6 @@ index 0000000..0f7c447
 +#
 +
 +obj-$(CONFIG_ARCH_QCOM)		+= qcom/
-diff --git a/drivers/soc/qcom/Kconfig b/drivers/soc/qcom/Kconfig
-new file mode 100644
-index 0000000..7bd2c94
 --- /dev/null
 +++ b/drivers/soc/qcom/Kconfig
 @@ -0,0 +1,11 @@
@@ -60,16 +52,10 @@ index 0000000..7bd2c94
 +          functions for connecting the underlying serial UART, SPI, and I2C
 +          devices to the output pins.
 +
-diff --git a/drivers/soc/qcom/Makefile b/drivers/soc/qcom/Makefile
-new file mode 100644
-index 0000000..4389012
 --- /dev/null
 +++ b/drivers/soc/qcom/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_QCOM_GSBI)	+=	qcom_gsbi.o
-diff --git a/drivers/soc/qcom/qcom_gsbi.c b/drivers/soc/qcom/qcom_gsbi.c
-new file mode 100644
-index 0000000..061dd06
 --- /dev/null
 +++ b/drivers/soc/qcom/qcom_gsbi.c
 @@ -0,0 +1,84 @@
@@ -157,6 +143,3 @@ index 0000000..061dd06
 +MODULE_AUTHOR("Andy Gross <agross@codeaurora.org>");
 +MODULE_DESCRIPTION("QCOM GSBI driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

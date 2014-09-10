@@ -7,8 +7,6 @@ Subject: [PATCH 42/57] mtd: cfi cmdset 0002 force word write
  drivers/mtd/chips/cfi_cmdset_0002.c |    9 +++++++--
  1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/chips/cfi_cmdset_0002.c b/drivers/mtd/chips/cfi_cmdset_0002.c
-index 8d92fc1..aa06d16 100644
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
 @@ -41,7 +41,7 @@
@@ -30,7 +28,7 @@ index 8d92fc1..aa06d16 100644
  static int cfi_amdstd_erase_chip(struct mtd_info *, struct erase_info *);
  static int cfi_amdstd_erase_varsize(struct mtd_info *, struct erase_info *);
  static void cfi_amdstd_sync (struct mtd_info *);
-@@ -192,6 +194,7 @@ static void fixup_amd_bootblock(struct mtd_info *mtd)
+@@ -192,6 +194,7 @@ static void fixup_amd_bootblock(struct m
  }
  #endif
  
@@ -38,7 +36,7 @@ index 8d92fc1..aa06d16 100644
  static void fixup_use_write_buffers(struct mtd_info *mtd)
  {
  	struct map_info *map = mtd->priv;
-@@ -201,6 +204,7 @@ static void fixup_use_write_buffers(struct mtd_info *mtd)
+@@ -201,6 +204,7 @@ static void fixup_use_write_buffers(stru
  		mtd->_write = cfi_amdstd_write_buffers;
  	}
  }
@@ -46,7 +44,7 @@ index 8d92fc1..aa06d16 100644
  
  /* Atmel chips don't use the same PRI format as AMD chips */
  static void fixup_convert_atmel_pri(struct mtd_info *mtd)
-@@ -1461,6 +1465,7 @@ static int cfi_amdstd_write_words(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -1461,6 +1465,7 @@ static int cfi_amdstd_write_words(struct
  /*
   * FIXME: interleaved mode not tested, and probably not supported!
   */
@@ -54,7 +52,7 @@ index 8d92fc1..aa06d16 100644
  static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
  				    unsigned long adr, const u_char *buf,
  				    int len)
-@@ -1584,7 +1589,6 @@ static int __xipram do_write_buffer(struct map_info *map, struct flchip *chip,
+@@ -1585,7 +1590,6 @@ static int __xipram do_write_buffer(stru
  	return ret;
  }
  
@@ -62,7 +60,7 @@ index 8d92fc1..aa06d16 100644
  static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
  				    size_t *retlen, const u_char *buf)
  {
-@@ -1659,6 +1663,7 @@ static int cfi_amdstd_write_buffers(struct mtd_info *mtd, loff_t to, size_t len,
+@@ -1660,6 +1664,7 @@ static int cfi_amdstd_write_buffers(stru
  
  	return 0;
  }
@@ -70,6 +68,3 @@ index 8d92fc1..aa06d16 100644
  
  /*
   * Wait for the flash chip to become ready to write data
--- 
-1.7.10.4
-

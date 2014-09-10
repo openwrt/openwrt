@@ -16,11 +16,9 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/spmi/spmi.c |   35 -----------------------------------
  1 file changed, 35 deletions(-)
 
-diff --git a/drivers/spmi/spmi.c b/drivers/spmi/spmi.c
-index 6122c8f..3b57807 100644
 --- a/drivers/spmi/spmi.c
 +++ b/drivers/spmi/spmi.c
-@@ -46,40 +46,6 @@ static const struct device_type spmi_ctrl_type = {
+@@ -46,40 +46,6 @@ static const struct device_type spmi_ctr
  	.release	= spmi_ctrl_release,
  };
  
@@ -61,7 +59,7 @@ index 6122c8f..3b57807 100644
  static int spmi_device_match(struct device *dev, struct device_driver *drv)
  {
  	if (of_driver_match_device(dev, drv))
-@@ -391,7 +357,6 @@ static int spmi_drv_remove(struct device *dev)
+@@ -391,7 +357,6 @@ static int spmi_drv_remove(struct device
  static struct bus_type spmi_bus_type = {
  	.name		= "spmi",
  	.match		= spmi_device_match,
@@ -69,6 +67,3 @@ index 6122c8f..3b57807 100644
  	.probe		= spmi_drv_probe,
  	.remove		= spmi_drv_remove,
  };
--- 
-1.7.10.4
-

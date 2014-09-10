@@ -22,8 +22,6 @@ Signed-off-by: Grant Likely <grant.likely@linaro.org>
  create mode 100644 drivers/of/of_reserved_mem.c
  create mode 100644 include/linux/of_reserved_mem.h
 
-diff --git a/drivers/of/Kconfig b/drivers/of/Kconfig
-index c6973f1..30a7d87 100644
 --- a/drivers/of/Kconfig
 +++ b/drivers/of/Kconfig
 @@ -75,4 +75,10 @@ config OF_MTD
@@ -37,8 +35,6 @@ index c6973f1..30a7d87 100644
 +	  Helpers to allow for reservation of memory regions
 +
  endmenu # OF
-diff --git a/drivers/of/Makefile b/drivers/of/Makefile
-index efd0510..ed9660a 100644
 --- a/drivers/of/Makefile
 +++ b/drivers/of/Makefile
 @@ -9,3 +9,4 @@ obj-$(CONFIG_OF_MDIO)	+= of_mdio.o
@@ -46,8 +42,6 @@ index efd0510..ed9660a 100644
  obj-$(CONFIG_OF_PCI_IRQ)  += of_pci_irq.o
  obj-$(CONFIG_OF_MTD)	+= of_mtd.o
 +obj-$(CONFIG_OF_RESERVED_MEM) += of_reserved_mem.o
-diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
-index 819e112..510c0d8 100644
 --- a/drivers/of/fdt.c
 +++ b/drivers/of/fdt.c
 @@ -15,6 +15,7 @@
@@ -58,7 +52,7 @@ index 819e112..510c0d8 100644
  #include <linux/sizes.h>
  #include <linux/string.h>
  #include <linux/errno.h>
-@@ -450,7 +451,7 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
+@@ -450,7 +451,7 @@ static int __init __reserved_mem_reserve
  	phys_addr_t base, size;
  	unsigned long len;
  	__be32 *prop;
@@ -67,7 +61,7 @@ index 819e112..510c0d8 100644
  
  	prop = of_get_flat_dt_prop(node, "reg", &len);
  	if (!prop)
-@@ -477,6 +478,10 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
+@@ -477,6 +478,10 @@ static int __init __reserved_mem_reserve
  				uname, &base, (unsigned long)size / SZ_1M);
  
  		len -= t_len;
@@ -78,7 +72,7 @@ index 819e112..510c0d8 100644
  	}
  	return 0;
  }
-@@ -512,6 +517,7 @@ static int __init __fdt_scan_reserved_mem(unsigned long node, const char *uname,
+@@ -512,6 +517,7 @@ static int __init __fdt_scan_reserved_me
  {
  	static int found;
  	const char *status;
@@ -86,7 +80,7 @@ index 819e112..510c0d8 100644
  
  	if (!found && depth == 1 && strcmp(uname, "reserved-memory") == 0) {
  		if (__reserved_mem_check_root(node) != 0) {
-@@ -534,7 +540,9 @@ static int __init __fdt_scan_reserved_mem(unsigned long node, const char *uname,
+@@ -534,7 +540,9 @@ static int __init __fdt_scan_reserved_me
  	if (status && strcmp(status, "okay") != 0 && strcmp(status, "ok") != 0)
  		return 0;
  
@@ -97,7 +91,7 @@ index 819e112..510c0d8 100644
  
  	/* scan next node */
  	return 0;
-@@ -550,6 +558,7 @@ static int __init __fdt_scan_reserved_mem(unsigned long node, const char *uname,
+@@ -550,6 +558,7 @@ static int __init __fdt_scan_reserved_me
  void __init early_init_fdt_scan_reserved_mem(void)
  {
  	of_scan_flat_dt(__fdt_scan_reserved_mem, NULL);
@@ -105,9 +99,6 @@ index 819e112..510c0d8 100644
  }
  
  /**
-diff --git a/drivers/of/of_reserved_mem.c b/drivers/of/of_reserved_mem.c
-new file mode 100644
-index 0000000..69b8117
 --- /dev/null
 +++ b/drivers/of/of_reserved_mem.c
 @@ -0,0 +1,188 @@
@@ -299,9 +290,6 @@ index 0000000..69b8117
 +						 &rmem->base, &rmem->size);
 +	}
 +}
-diff --git a/include/linux/of_reserved_mem.h b/include/linux/of_reserved_mem.h
-new file mode 100644
-index 0000000..89226ed
 --- /dev/null
 +++ b/include/linux/of_reserved_mem.h
 @@ -0,0 +1,21 @@
@@ -326,6 +314,3 @@ index 0000000..89226ed
 +#endif
 +
 +#endif /* __OF_RESERVED_MEM_H */
--- 
-1.7.10.4
-

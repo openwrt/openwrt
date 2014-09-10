@@ -27,9 +27,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  create mode 100644 Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
  create mode 100644 drivers/input/touchscreen/sun4i-ts.c
 
-diff --git a/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt b/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
-new file mode 100644
-index 0000000..e45927e
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
 @@ -0,0 +1,15 @@
@@ -48,8 +45,6 @@ index 0000000..e45927e
 +		reg = <0x01c25000 0x100>;
 +		interrupts = <29>;
 +	};
-diff --git a/drivers/input/touchscreen/Kconfig b/drivers/input/touchscreen/Kconfig
-index 07e9e82..f4c5ca3 100644
 --- a/drivers/input/touchscreen/Kconfig
 +++ b/drivers/input/touchscreen/Kconfig
 @@ -906,6 +906,16 @@ config TOUCHSCREEN_STMPE
@@ -69,11 +64,9 @@ index 07e9e82..f4c5ca3 100644
  config TOUCHSCREEN_SUR40
  	tristate "Samsung SUR40 (Surface 2.0/PixelSense) touchscreen"
  	depends on USB
-diff --git a/drivers/input/touchscreen/Makefile b/drivers/input/touchscreen/Makefile
-index 62801f2..c8f7375 100644
 --- a/drivers/input/touchscreen/Makefile
 +++ b/drivers/input/touchscreen/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_TOUCHSCREEN_PIXCIR)	+= pixcir_i2c_ts.o
+@@ -54,6 +54,7 @@ obj-$(CONFIG_TOUCHSCREEN_PIXCIR)	+= pixc
  obj-$(CONFIG_TOUCHSCREEN_S3C2410)	+= s3c2410_ts.o
  obj-$(CONFIG_TOUCHSCREEN_ST1232)	+= st1232.o
  obj-$(CONFIG_TOUCHSCREEN_STMPE)		+= stmpe-ts.o
@@ -81,9 +74,6 @@ index 62801f2..c8f7375 100644
  obj-$(CONFIG_TOUCHSCREEN_SUR40)		+= sur40.o
  obj-$(CONFIG_TOUCHSCREEN_TI_AM335X_TSC)	+= ti_am335x_tsc.o
  obj-$(CONFIG_TOUCHSCREEN_TNETV107X)	+= tnetv107x-ts.o
-diff --git a/drivers/input/touchscreen/sun4i-ts.c b/drivers/input/touchscreen/sun4i-ts.c
-new file mode 100644
-index 0000000..5945219
 --- /dev/null
 +++ b/drivers/input/touchscreen/sun4i-ts.c
 @@ -0,0 +1,262 @@
@@ -349,6 +339,3 @@ index 0000000..5945219
 +MODULE_DESCRIPTION("Allwinner sun4i resistive touchscreen controller driver");
 +MODULE_AUTHOR("Hans de Goede <hdegoede@redhat.com>");
 +MODULE_LICENSE("GPL");
--- 
-2.0.3
-
