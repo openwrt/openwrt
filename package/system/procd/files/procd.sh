@@ -75,7 +75,7 @@ _procd_close_service() {
 }
 
 _procd_add_array_data() {
-	while [ -n "$1" ]; do
+	while [ "$#" -gt 0 ]; do
 		json_add_string "" "$1"
 		shift
 	done
