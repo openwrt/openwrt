@@ -79,7 +79,7 @@ END {
 	# leaf qdisc
 	avpkt = 1200
 	for (i = 1; i <= n; i++) {
-		print "tc qdisc add dev "device" parent 1:"class[i]"0 handle "class[i]"00: fq_codel limit 800 quantum 300"
+		print "tc qdisc add dev "device" parent 1:"class[i]"0 handle "class[i]"00: fq_codel limit 800 quantum 300 noecn"
 	}
 
 	# filter rule
