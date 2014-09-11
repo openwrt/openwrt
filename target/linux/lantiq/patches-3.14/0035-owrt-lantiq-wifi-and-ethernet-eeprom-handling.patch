@@ -1,17 +1,18 @@
-From 9f921445b6dbf2beef397c6aa038db135e92eb80 Mon Sep 17 00:00:00 2001
+From f8c5db89e793a4bc6c1e87bd7b3a5cec16b75bc3 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
-Date: Wed, 13 Mar 2013 10:02:58 +0100
-Subject: [PATCH 10/31] owrt: lantiq: wifi and ethernet eeprom handling
+Date: Wed, 10 Sep 2014 22:42:14 +0200
+Subject: [PATCH 35/36] owrt: lantiq: wifi and ethernet eeprom handling
 
+Signed-off-by: John Crispin <blogic@openwrt.org>
 ---
  arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h  |    6 +
  .../mips/include/asm/mach-lantiq/xway/lantiq_soc.h |    3 +
  arch/mips/lantiq/xway/Makefile                     |    3 +
- arch/mips/lantiq/xway/ath_eep.c                    |  277 ++++++++++++++++++++
+ arch/mips/lantiq/xway/ath_eep.c                    |  282 ++++++++++++++++++++
  arch/mips/lantiq/xway/eth_mac.c                    |   76 ++++++
  arch/mips/lantiq/xway/pci-ath-fixup.c              |  109 ++++++++
  arch/mips/lantiq/xway/rt_eep.c                     |   60 +++++
- 7 files changed, 534 insertions(+)
+ 7 files changed, 539 insertions(+)
  create mode 100644 arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
  create mode 100644 arch/mips/lantiq/xway/ath_eep.c
  create mode 100644 arch/mips/lantiq/xway/eth_mac.c
@@ -57,10 +58,10 @@ index 2dd442c..de876e1 100644
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 diff --git a/arch/mips/lantiq/xway/ath_eep.c b/arch/mips/lantiq/xway/ath_eep.c
 new file mode 100644
-index 0000000..cd07f9a
+index 0000000..aff42ac
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,277 @@
+@@ -0,0 +1,282 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -104,7 +105,7 @@ index 0000000..cd07f9a
 +	struct device_node *np = pdev->dev.of_node, *mtd_np;
 +	struct resource *eep_res, *mac_res = NULL;
 +	void __iomem *eep, *mac;
-+	int mac_offset;
++	int mac_offset, led_pin;
 +	u32 mac_inc = 0, pci_slot = 0;
 +	int i;
 +	struct mtd_info *the_mtd;
@@ -194,6 +195,11 @@ index 0000000..cd07f9a
 +                                pci_fixup_device(pci_fixup_early, d);
 +                }
 +
++	}
++
++	if (!of_property_read_u32(np, "ath,led-pin", &led_pin)) {
++		ath9k_pdata.led_pin = led_pin;
++		dev_info(&pdev->dev, "using led pin %d.\n", led_pin);
 +	}
 +
 +	dev_info(&pdev->dev, "loaded ath9k eeprom\n");

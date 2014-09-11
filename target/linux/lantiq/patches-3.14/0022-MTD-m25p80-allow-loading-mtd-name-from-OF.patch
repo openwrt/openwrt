@@ -1,0 +1,41 @@
+From 4400e1f593ea40a51912128adb4f53d59e62cad8 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 10 Sep 2014 22:40:18 +0200
+Subject: [PATCH 22/36] MTD: m25p80: allow loading mtd name from OF
+
+In accordance with the physmap flash we should honour the linux,mtd-name
+property when deciding what name the mtd device has.
+
+Signed-off-by: Thomas Langer <thomas.langer@lantiq.com>
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/mtd/devices/m25p80.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/mtd/devices/m25p80.c b/drivers/mtd/devices/m25p80.c
+index ad19139..9f7b35a 100644
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -1097,6 +1097,10 @@ static int m25p_probe(struct spi_device *spi)
+ 	struct mtd_part_parser_data	ppdata;
+ 	struct device_node *np = spi->dev.of_node;
+ 	int ret;
++	const char __maybe_unused	*of_mtd_name = NULL;
++
++	of_property_read_string(spi->dev.of_node,
++		"linux,mtd-name", &of_mtd_name);
+ 
+ 	/* Platform data helps sort out which chip type we have, as
+ 	 * well as how this board partitions it.  If we don't have
+@@ -1169,6 +1173,8 @@ static int m25p_probe(struct spi_device *spi)
+ 
+ 	if (data && data->name)
+ 		flash->mtd.name = data->name;
++	else if (of_mtd_name)
++		flash->mtd.name = of_mtd_name;
+ 	else
+ 		flash->mtd.name = dev_name(&spi->dev);
+ 
+-- 
+1.7.10.4
+

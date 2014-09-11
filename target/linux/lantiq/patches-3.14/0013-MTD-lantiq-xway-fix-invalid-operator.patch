@@ -1,7 +1,7 @@
-From c243da18ea2a02e8cfb3f821232783376131948a Mon Sep 17 00:00:00 2001
+From 8e34da603f442624bb70e887d8f42064bb924224 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Sun, 28 Jul 2013 18:03:54 +0200
-Subject: [PATCH 13/31] MTD: lantiq: xway: fix invalid operator
+Subject: [PATCH 13/36] MTD: lantiq: xway: fix invalid operator
 
 xway_read_byte should use a logic or and not an add operator when working out
 the nand address.
