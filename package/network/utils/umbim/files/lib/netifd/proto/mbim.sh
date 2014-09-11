@@ -11,6 +11,9 @@ proto_mbim_init_config() {
 	proto_config_add_string apn
 	proto_config_add_string pincode
 	proto_config_add_string delay
+	proto_config_add_string auth
+	proto_config_add_string username
+	proto_config_add_string password
 }
 
 proto_mbim_setup() {
@@ -19,7 +22,7 @@ proto_mbim_setup() {
 	local ret
 
 	local device apn pincode delay
-	json_get_vars device apn pincode delay
+	json_get_vars device apn pincode delay auth username password
 
 	[ -n "$device" ] || {
 		logger -p daemon.err -t "mbim[$$]" "No control device specified"
@@ -39,7 +42,6 @@ proto_mbim_setup() {
 		proto_block_restart "$interface"
 		return 1
 	}
-
 
 	[ -n "$delay" ] && sleep "$delay"
 
@@ -100,7 +102,7 @@ proto_mbim_setup() {
 	tid=$((tid + 1))
  
 	logger -p daemon.info -t "mbim[$$]" "Connect to network"
-	while ! umbim $DBG -n -t $tid -d $device connect "$apn"; do
+	while ! umbim $DBG -n -t $tid -d $device connect "$apn" "$auth" "$username" "$password"; do
 		tid=$((tid + 1))
 		sleep 1;
 	done
