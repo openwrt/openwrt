@@ -50,9 +50,6 @@ start() {
 	[ $enable_sonmp -gt 0 ] && append args '-s'
 	[ $enable_edp -gt 0 ] && append args '-e'
 
-	user_exists  lldp 121 || user_add  lldp 121 129
-	group_exists lldp 129 || group_add lldp 129
-
 	mkdir -p /var/run/lldp
 	chown lldp:lldp /var/run/lldp
 
