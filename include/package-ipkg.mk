@@ -165,6 +165,7 @@ ifeq ($(DUMP),)
 		$(if $(PKG_LICENSE), echo "License: $(PKG_LICENSE)"; ) \
 		$(if $(PKG_LICENSE_FILES), echo "LicenseFiles: $(PKG_LICENSE_FILES)"; ) \
 		echo "Section: $(SECTION)"; \
+		$(if $(USERID),echo "Require-User: $(USERID)"; ) \
 		$(if $(filter hold,$(PKG_FLAGS)),echo "Status: unknown hold not-installed"; ) \
 		$(if $(filter essential,$(PKG_FLAGS)), echo "Essential: yes"; ) \
 		$(if $(MAINTAINER),echo "Maintainer: $(MAINTAINER)"; ) \
