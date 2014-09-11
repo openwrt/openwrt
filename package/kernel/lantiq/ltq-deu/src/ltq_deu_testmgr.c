@@ -75,6 +75,10 @@
  * Used by test_cipher_speed()
  */
 
+#ifndef INIT_COMPLETION
+#define INIT_COMPLETION(a) reinit_completion(&a)
+#endif
+
 
 static unsigned int sec;
 
