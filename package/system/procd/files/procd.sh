@@ -18,6 +18,7 @@
 #     file: configuration files (array)
 #     netdev: bound network device (detects ifindex changes)
 #     limits: resource limits (passed to the process)
+#     user info: array with 1 values $username
 #
 #   No space separation is done for arrays/tables - use one function argument per command line argument
 #
@@ -138,6 +139,9 @@ _procd_set_param() {
 		;;
 		nice)
 			json_add_int "$type" "$1"
+		;;
+		user)
+			json_add_string "$type" "$1"
 		;;
 	esac
 }
