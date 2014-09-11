@@ -1,7 +1,7 @@
-From e2c285e95e75258c196fbc04a742d91be6d00f49 Mon Sep 17 00:00:00 2001
+From c21eed4418956ecc95966a2e174d47f58397071a Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Wed, 30 Jan 2013 21:12:47 +0100
-Subject: [PATCH 18/31] MTD: lantiq: Add NAND support on Lantiq Falcon SoC.
+Subject: [PATCH 19/36] MTD: lantiq: Add NAND support on Lantiq Falcon SoC.
 
 The driver uses plat_nand. As the platform_device is loaded from DT, we need
 to lookup the node and attach our falcon specific "struct platform_nand_data"

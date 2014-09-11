@@ -1,0 +1,46 @@
+From 85f0df34dee96048515ef1e01d88524bd579f8e0 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 10 Sep 2014 22:39:19 +0200
+Subject: [PATCH 11/36] lantiq: add support for xrx200 firmware depending on
+ soc type
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ arch/mips/lantiq/xway/xrx200_phy_fw.c |   18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/arch/mips/lantiq/xway/xrx200_phy_fw.c b/arch/mips/lantiq/xway/xrx200_phy_fw.c
+index d4d9d31..3479b77 100644
+--- a/arch/mips/lantiq/xway/xrx200_phy_fw.c
++++ b/arch/mips/lantiq/xway/xrx200_phy_fw.c
+@@ -24,7 +24,23 @@ static dma_addr_t xway_gphy_load(struct platform_device *pdev)
+ 	void *fw_addr;
+ 	size_t size;
+ 
+-	if (of_property_read_string(pdev->dev.of_node, "firmware", &fw_name)) {
++	if (of_get_property(pdev->dev.of_node, "firmware1", NULL) || of_get_property(pdev->dev.of_node, "firmware2", NULL)) {
++		switch(ltq_soc_type()) {
++			case SOC_TYPE_VR9:
++				if (of_property_read_string(pdev->dev.of_node, "firmware1", &fw_name)) {
++					dev_err(&pdev->dev, "failed to load firmware filename\n");
++					return 0;
++				}
++				break;
++			case SOC_TYPE_VR9_2:
++				if (of_property_read_string(pdev->dev.of_node, "firmware2", &fw_name)) {
++					dev_err(&pdev->dev, "failed to load firmware filename\n");
++					return 0;
++				}
++				break;
++		}
++	}
++	else if (of_property_read_string(pdev->dev.of_node, "firmware", &fw_name)) {
+ 		dev_err(&pdev->dev, "failed to load firmware filename\n");
+ 		return 0;
+ 	}
+-- 
+1.7.10.4
+

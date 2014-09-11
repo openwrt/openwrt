@@ -1,7 +1,7 @@
-From 748c654a6ba890e9a1b5bd29d0f198ce6b2c091f Mon Sep 17 00:00:00 2001
+From b1b9fca8c317afc3f2b78bb54f877e8a830a819d Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Fri, 9 Aug 2013 18:47:27 +0200
-Subject: [PATCH 29/31] reset: Fix compile when reset RESET_CONTROLLER is not
+Subject: [PATCH 34/36] reset: Fix compile when reset RESET_CONTROLLER is not
  selected
 
 Drivers need to protect their reset api calls with #ifdef to avoid compile
