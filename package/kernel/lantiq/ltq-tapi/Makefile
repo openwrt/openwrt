@@ -9,12 +9,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=drv_tapi
-PKG_VERSION:=3.13.0
-PKG_RELEASE:=3
+PKG_VERSION:=4.7.12
+PKG_RELEASE:=1
 
 PKG_SOURCE:=drv_tapi-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=edb43b494832c540cc035493d18db58f
+PKG_MD5SUM:=52e0ace8b7517ad362857a53222f1862
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_USE_MIPS16:=0
