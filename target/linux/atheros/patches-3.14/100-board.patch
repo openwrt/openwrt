@@ -603,35 +603,21 @@
 +#endif /* __ASM_MACH_AR231X_DMA_COHERENCE_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/gpio.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,16 @@
 +#ifndef __ASM_MACH_AR231X_GPIO_H
 +#define __ASM_MACH_AR231X_GPIO_H
 +
-+#include <ar231x.h>
++#include <asm-generic/gpio.h>
 +
 +#define gpio_get_value __gpio_get_value
 +#define gpio_set_value __gpio_set_value
 +#define gpio_cansleep __gpio_cansleep
++#define gpio_to_irq __gpio_to_irq
 +
-+/*
-+ * Wrappers for the generic GPIO layer
-+ */
-+
-+/* not sure if these are used? */
-+
-+/* Returns IRQ to attach for gpio.  Unchecked function */
-+static inline int gpio_to_irq(unsigned gpio)
-+{
-+	return AR231X_GPIO_IRQ(gpio);
-+}
-+
-+/* Returns gpio for IRQ attached.  Unchecked function */
 +static inline int irq_to_gpio(unsigned irq)
 +{
-+	return irq - AR231X_GPIO_IRQ(0);
++	return -EINVAL;
 +}
-+
-+#include <asm-generic/gpio.h> /* cansleep wrappers */
 +
 +#endif	/* __ASM_MACH_AR231X_GPIO_H */
 --- /dev/null
@@ -2096,7 +2082,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,562 @@
+@@ -0,0 +1,568 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2349,12 +2335,18 @@
 +	return 0;
 +}
 +
++static int ar2315_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
++{
++	return AR231X_GPIO_IRQ_BASE + gpio;
++}
++
 +static struct gpio_chip ar2315_gpio_chip = {
 +	.label                  = "ar2315-gpio",
 +	.direction_input        = ar2315_gpio_direction_input,
 +	.direction_output       = ar2315_gpio_direction_output,
 +	.set                    = ar2315_gpio_set_value,
 +	.get                    = ar2315_gpio_get_value,
++	.to_irq                 = ar2315_gpio_to_irq,
 +	.base                   = 0,
 +	.ngpio                  = AR2315_NUM_GPIO, /* 22 */
 +};
@@ -2741,7 +2733,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x.h
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,39 @@
 +#ifndef __ASM_MACH_AR231X_H
 +#define __ASM_MACH_AR231X_H
 +
@@ -2754,10 +2746,6 @@
 +/* Software's idea of interrupts handled by "CPU Interrupt Controller" */
 +#define AR231X_IRQ_NONE		(MIPS_CPU_IRQ_BASE+0)
 +#define AR231X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE+7) /* C0_CAUSE: 0x8000 */
-+
-+/* GPIO Interrupts, share ARXXXX_MISC_IRQ_GPIO */
-+#define AR231X_GPIO_IRQ_NONE            (AR231X_GPIO_IRQ_BASE+0)
-+#define AR231X_GPIO_IRQ(n)              (AR231X_GPIO_IRQ_BASE+n)
 +
 +static inline u32
 +ar231x_read_reg(u32 reg)
