@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,336 @@
+@@ -0,0 +1,350 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -65,55 +65,64 @@
 +#define AR2315_MEM_SIZE    0x00ffffffUL
 +#define AR2315_IO_SIZE     0x00007fffUL
 +
++/* Arbitrary size of memory region to access the configuration space */
++#define AR2315_PCI_CFG_SIZE	0x00100000
++
 +#define AR2315_PCI_HOST_SLOT	3
 +#define AR2315_PCI_HOST_DEVID	((0xff18 << 16) | PCI_VENDOR_ID_ATHEROS)
 +
-+static unsigned long configspace;
++static void __iomem *ar2315_pci_cfg_mem;
 +
 +static int ar2315_pci_cfg_access(int devfn, int where, int size, u32 *ptr,
 +				 bool write)
 +{
 +	int func = PCI_FUNC(devfn);
 +	int dev = PCI_SLOT(devfn);
-+	u32 value = 0;
-+	int err = 0;
-+	u32 addr;
++	u32 addr = (1 << (13 + dev)) | (func << 8) | (where & ~3);
++	u32 mask = 0xffffffff >> 8 * (4 - size);
++	u32 sh = (where & 3) * 8;
++	u32 value, isr;
 +
++	/* Prevent access past the remapped area */
++	if (addr >= AR2315_PCI_CFG_SIZE || dev > 18)
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
++	/* Clear pending errors */
++	ar231x_write_reg(AR2315_PCI_ISR, AR2315_PCI_INT_ABORT);
 +	/* Select Configuration access */
 +	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, 0, AR2315_PCIMISC_CFG_SEL);
-+	mb();
 +
-+	addr = (u32)configspace + (1 << (13 + dev)) + (func << 8) + where;
-+	if (size == 1)
-+		addr ^= 0x3;
-+	else if (size == 2)
-+		addr ^= 0x2;
++	mb();	/* PCI must see space change before we begin */
++
++	value = __raw_readl(ar2315_pci_cfg_mem + addr);
++
++	isr = ar231x_read_reg(AR2315_PCI_ISR);
++	if (isr & AR2315_PCI_INT_ABORT)
++		goto exit_err;
 +
 +	if (write) {
-+		value = *ptr;
-+		if (size == 1)
-+			err = put_dbe(value, (u8 *)addr);
-+		else if (size == 2)
-+			err = put_dbe(value, (u16 *)addr);
-+		else if (size == 4)
-+			err = put_dbe(value, (u32 *)addr);
++		value = (value & ~(mask << sh)) | *ptr << sh;
++		__raw_writel(value, ar2315_pci_cfg_mem + addr);
++		isr = ar231x_read_reg(AR2315_PCI_ISR);
++		if (isr & AR2315_PCI_INT_ABORT)
++			goto exit_err;
 +	} else {
-+		if (size == 1)
-+			err = get_dbe(value, (u8 *)addr);
-+		else if (size == 2)
-+			err = get_dbe(value, (u16 *)addr);
-+		else if (size == 4)
-+			err = get_dbe(value, (u32 *)addr);
-+		if (err)
-+			*ptr = 0xffffffff;
-+		else
-+			*ptr = value;
++		*ptr = (value >> sh) & mask;
 +	}
 +
++	goto exit;
++
++exit_err:
++	ar231x_write_reg(AR2315_PCI_ISR, AR2315_PCI_INT_ABORT);
++	if (!write)
++		*ptr = 0xffffffff;
++
++exit:
 +	/* Select Memory access */
 +	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, AR2315_PCIMISC_CFG_SEL, 0);
 +
-+	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
++	return isr & AR2315_PCI_INT_ABORT ? PCIBIOS_DEVICE_NOT_FOUND :
++					    PCIBIOS_SUCCESSFUL;
 +}
 +
 +static inline int ar2315_pci_local_cfg_rd(unsigned devfn, int where, u32 *val)
@@ -129,7 +138,7 @@
 +static int ar2315_pci_cfg_read(struct pci_bus *bus, unsigned int devfn,
 +			       int where, int size, u32 *value)
 +{
-+	if ((PCI_SLOT(devfn) != 0) || (PCI_FUNC(devfn) > 2))
++	if (PCI_SLOT(devfn) == AR2315_PCI_HOST_SLOT)
 +		return PCIBIOS_DEVICE_NOT_FOUND;
 +
 +	return ar2315_pci_cfg_access(devfn, where, size, value, 0);
@@ -138,7 +147,7 @@
 +static int ar2315_pci_cfg_write(struct pci_bus *bus, unsigned int devfn,
 +				int where, int size, u32 value)
 +{
-+	if ((PCI_SLOT(devfn) != 0) || (PCI_FUNC(devfn) > 2))
++	if (PCI_SLOT(devfn) == AR2315_PCI_HOST_SLOT)
 +		return PCIBIOS_DEVICE_NOT_FOUND;
 +
 +	return ar2315_pci_cfg_access(devfn, where, size, &value, 1);
@@ -282,8 +291,13 @@
 +		return -ENODEV;
 +
 +	/* Remap PCI config space */
-+	configspace = (unsigned long)ioremap_nocache(AR2315_PCIEXT,
-+						     1 * 1024 * 1024);
++	ar2315_pci_cfg_mem = ioremap_nocache(AR2315_PCIEXT,
++					     AR2315_PCI_CFG_SIZE);
++	if (!ar2315_pci_cfg_mem) {
++		pr_err("ar2315-pci: failed to remap PCI config space\n");
++		return -ENOMEM;
++	}
++
 +	ar2315_pci_controller.io_map_base =
 +			(unsigned long)ioremap_nocache(AR2315_MEM_BASE +
 +			AR2315_MEM_SIZE, AR2315_IO_SIZE);
@@ -339,7 +353,7 @@
 +	return 0;
 +
 +error:
-+	iounmap((void __iomem *)configspace);
++	iounmap(ar2315_pci_cfg_mem);
 +	return res;
 +}
 +
