@@ -41,7 +41,7 @@
  static int ar231x_probe(struct platform_device *pdev)
  {
  	struct net_device *dev;
-@@ -286,6 +313,23 @@ static int ar231x_probe(struct platform_
+@@ -286,6 +313,24 @@ static int ar231x_probe(struct platform_
  
  	mdiobus_register(sp->mii_bus);
  
@@ -51,6 +51,7 @@
 +	 */
 +	if (!no_phy) {
 +		u32 phy_id = 0;
++
 +		get_phy_id(sp->mii_bus, 1, &phy_id);
 +		if (phy_id == 0x00221450)
 +			no_phy = true;
@@ -65,7 +66,7 @@
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -342,8 +386,10 @@ static int ar231x_remove(struct platform
+@@ -343,8 +388,10 @@ static int ar231x_remove(struct platform
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
@@ -78,7 +79,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -1104,6 +1150,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1108,6 +1155,9 @@ static int ar231x_ioctl(struct net_devic
  	struct ar231x_private *sp = netdev_priv(dev);
  	int ret;
  
