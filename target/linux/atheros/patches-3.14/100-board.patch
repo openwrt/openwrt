@@ -84,7 +84,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ar231x/board.c
-@@ -0,0 +1,260 @@
+@@ -0,0 +1,229 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -119,107 +119,82 @@
 +
 +void (*ar231x_irq_dispatch)(void);
 +
-+static inline bool
-+check_radio_magic(u8 *addr)
++static inline bool check_radio_magic(u8 *addr)
 +{
 +	addr += 0x7a; /* offset for flash magic */
-+	if ((addr[0] == 0x5a) && (addr[1] == 0xa5))
-+		return 1;
-+
-+	return 0;
++	return (addr[0] == 0x5a) && (addr[1] == 0xa5);
 +}
 +
-+static inline bool
-+check_board_data(u8 *flash_limit, u8 *addr, bool broken)
++static inline bool check_notempty(u8 *addr)
++{
++	return *(u32 *)addr != 0xffffffff;
++}
++
++static inline bool check_board_data(u8 *flash_limit, u8 *addr, bool broken)
 +{
 +	/* config magic found */
 +	if (*((u32 *)addr) == AR231X_BD_MAGIC)
-+		return 1;
++		return true;
 +
 +	if (!broken)
-+		return 0;
++		return false;
 +
 +	if (check_radio_magic(addr + 0xf8))
 +		ar231x_board.radio = addr + 0xf8;
 +	if ((addr < flash_limit + 0x10000) &&
-+	     check_radio_magic(addr + 0x10000))
++	    check_radio_magic(addr + 0x10000))
 +		ar231x_board.radio = addr + 0x10000;
 +
 +	if (ar231x_board.radio) {
 +		/* broken board data detected, use radio data to find the
 +		 * offset, user will fix this */
-+		return 1;
++		return true;
 +	}
-+	return 0;
++
++	return false;
 +}
 +
-+static u8 *
-+find_board_config(u8 *flash_limit, bool broken)
++static u8 * __init find_board_config(u8 *flash_limit, bool broken)
 +{
 +	u8 *addr;
-+	int found = 0;
++	u8 *begin = flash_limit - 0x1000;
++	u8 *end = flash_limit - 0x30000;
 +
-+	for (addr = flash_limit - 0x1000;
-+		addr >= flash_limit - 0x30000;
-+		addr -= 0x1000) {
++	for (addr = begin; addr >= end; addr -= 0x1000)
++		if (check_board_data(flash_limit, addr, broken))
++			return addr;
 +
-+		if (check_board_data(flash_limit, addr, broken)) {
-+			found = 1;
-+			break;
-+		}
-+	}
-+
-+	if (!found)
-+		addr = NULL;
-+
-+	return addr;
++	return NULL;
 +}
 +
-+static u8 *
-+find_radio_config(u8 *flash_limit, u8 *board_config)
++static u8 * __init find_radio_config(u8 *flash_limit, u8 *bcfg)
 +{
-+	int found;
-+	u8 *radio_config;
++	u8 *rcfg, *begin, *end;
 +
 +	/*
 +	 * Now find the start of Radio Configuration data, using heuristics:
 +	 * Search forward from Board Configuration data by 0x1000 bytes
 +	 * at a time until we find non-0xffffffff.
 +	 */
-+	found = 0;
-+	for (radio_config = board_config + 0x1000;
-+	     (radio_config < flash_limit);
-+	     radio_config += 0x1000) {
-+		if ((*(u32 *)radio_config != 0xffffffff) &&
-+		    check_radio_magic(radio_config)) {
-+			found = 1;
-+			break;
-+		}
-+	}
++	begin = bcfg + 0x1000;
++	end = flash_limit;
++	for (rcfg = begin; rcfg < end; rcfg += 0x1000)
++		if (check_notempty(rcfg) && check_radio_magic(rcfg))
++			return rcfg;
 +
 +	/* AR2316 relocates radio config to new location */
-+	if (!found) {
-+		for (radio_config = board_config + 0xf8;
-+		     (radio_config < flash_limit - 0x1000 + 0xf8);
-+		     radio_config += 0x1000) {
-+			if ((*(u32 *)radio_config != 0xffffffff) &&
-+			    check_radio_magic(radio_config)) {
-+				found = 1;
-+				break;
-+			}
-+		}
-+	}
++	begin = bcfg + 0xf8;
++	end = flash_limit - 0x1000 + 0xf8;
++	for (rcfg = begin; rcfg < end; rcfg += 0x1000)
++		if (check_notempty(rcfg) && check_radio_magic(rcfg))
++			return rcfg;
 +
-+	if (!found) {
-+		pr_warn("WARNING: Could not find Radio Configuration data\n");
-+		radio_config = NULL;
-+	}
++	pr_warn("WARNING: Could not find Radio Configuration data\n");
 +
-+	return radio_config;
++	return NULL;
 +}
 +
-+int __init
-+ar231x_find_config(u8 *flash_limit)
++int __init ar231x_find_config(u8 *flash_limit)
 +{
 +	struct ar231x_boarddata *config;
 +	unsigned int rcfg_size;
@@ -294,16 +269,14 @@
 +	return 0;
 +}
 +
-+static void
-+ar231x_halt(void)
++static void ar231x_halt(void)
 +{
 +	local_irq_disable();
 +	while (1)
 +		;
 +}
 +
-+void __init
-+plat_mem_setup(void)
++void __init plat_mem_setup(void)
 +{
 +	_machine_halt = ar231x_halt;
 +	pm_power_off = ar231x_halt;
@@ -315,27 +288,23 @@
 +	write_c0_watchlo0(0);
 +}
 +
-+asmlinkage void
-+plat_irq_dispatch(void)
++asmlinkage void plat_irq_dispatch(void)
 +{
 +	ar231x_irq_dispatch();
 +}
 +
-+void __init
-+plat_time_init(void)
++void __init plat_time_init(void)
 +{
 +	ar5312_time_init();
 +	ar2315_time_init();
 +}
 +
-+unsigned int __cpuinit
-+get_c0_compare_int(void)
++unsigned int __cpuinit get_c0_compare_int(void)
 +{
 +	return CP0_LEGACY_COMPARE_IRQ;
 +}
 +
-+void __init
-+arch_init_irq(void)
++void __init arch_init_irq(void)
 +{
 +	clear_c0_status(ST0_IM);
 +	mips_cpu_irq_init();
@@ -562,7 +531,7 @@
 +#endif /* __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,77 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -586,9 +555,8 @@
 +
 +	if (dev && dev->bus == &pci_bus_type)
 +		return PCI_DMA_OFFSET;
-+	else
 +#endif
-+		return 0;
++	return 0;
 +}
 +
 +static inline dma_addr_t
@@ -1551,9 +1519,9 @@
 +#define FLASHCTL_WP     0x04000000      /* Write protect */
 +#define FLASHCTL_BM     0x08000000      /* Burst mode */
 +#define FLASHCTL_MW     0x30000000      /* Memory width */
-+#define FLASHCTL_MWx8   0x00000000      /* Memory width x8 */
-+#define FLASHCTL_MWx16  0x10000000      /* Memory width x16 */
-+#define FLASHCTL_MWx32  0x20000000      /* Memory width x32 (not supported) */
++#define FLASHCTL_MW8    0x00000000      /* Memory width x8 */
++#define FLASHCTL_MW16   0x10000000      /* Memory width x16 */
++#define FLASHCTL_MW32   0x20000000      /* Memory width x32 (not supported) */
 +#define FLASHCTL_ATNR   0x00000000      /* Access type == no retry */
 +#define FLASHCTL_ATR    0x80000000      /* Access type == retry every */
 +#define FLASHCTL_ATR4   0xc0000000      /* Access type == retry every 4 */
@@ -1589,7 +1557,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,542 @@
+@@ -0,0 +1,541 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1704,9 +1672,8 @@
 +	u32 dma1 = ar231x_read_reg(AR5312_DMA1);
 +	u32 dma_addr = ar231x_read_reg(AR5312_DMAADDR);   /* clears error */
 +
-+	pr_emerg("AHB interrupt: PROCADDR=0x%8.8x  PROC1=0x%8.8x  "
-+		 "DMAADDR=0x%8.8x  DMA1=0x%8.8x\n", proc_addr, proc1, dma_addr,
-+		 dma1);
++	pr_emerg("AHB interrupt: PROCADDR=0x%8.8x PROC1=0x%8.8x DMAADDR=0x%8.8x DMA1=0x%8.8x\n",
++		 proc_addr, proc1, dma_addr, dma1);
 +
 +	machine_restart("AHB error"); /* Catastrophic failure */
 +	return IRQ_HANDLED;
@@ -1911,10 +1878,10 @@
 +	/* fixup flash width */
 +	fctl = ar231x_read_reg(AR5312_FLASHCTL) & FLASHCTL_MW;
 +	switch (fctl) {
-+	case FLASHCTL_MWx16:
++	case FLASHCTL_MW16:
 +		ar5312_flash_data.width = 2;
 +		break;
-+	case FLASHCTL_MWx8:
++	case FLASHCTL_MW8:
 +	default:
 +		ar5312_flash_data.width = 1;
 +		break;
