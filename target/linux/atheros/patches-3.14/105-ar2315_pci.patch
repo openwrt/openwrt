@@ -382,7 +382,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -566,3 +570,18 @@ ar2315_plat_setup(void)
+@@ -568,3 +572,18 @@ ar2315_plat_setup(void)
  	ar231x_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
  			    ar2315_apb_frequency());
  }
