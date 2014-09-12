@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,518 @@
+@@ -0,0 +1,507 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -56,8 +56,8 @@
 +
 +#include "ar2315_spiflash.h"
 +
++#define DRIVER_NAME "ar2315-spiflash"
 +
-+#define SPIFLASH "spiflash: "
 +#define busy_wait(_priv, _condition, _wait) do { \
 +	while (_condition) { \
 +		spin_unlock_bh(&_priv->lock); \
@@ -227,7 +227,7 @@
 + * and flashconfig_tbl array index for success.
 + */
 +static int
-+spiflash_probe_chip(struct spiflash_priv *priv)
++spiflash_probe_chip(struct platform_device *pdev, struct spiflash_priv *priv)
 +{
 +	u32 sig;
 +	int flash_size;
@@ -254,7 +254,7 @@
 +		flash_size = FLASH_16MB;
 +		break;
 +	default:
-+		pr_warn(SPIFLASH "Read of flash device signature failed!\n");
++		dev_warn(&pdev->dev, "read of flash device signature failed!\n");
 +		return 0;
 +	}
 +
@@ -468,9 +468,9 @@
 +		return PTR_ERR(priv->mmraddr);
 +	}
 +
-+	index = spiflash_probe_chip(priv);
++	index = spiflash_probe_chip(pdev, priv);
 +	if (!index) {
-+		dev_warn(&pdev->dev, SPIFLASH "Found no flash device\n");
++		dev_warn(&pdev->dev, "found no flash device\n");
 +		return -ENODEV;
 +	}
 +
@@ -518,29 +518,18 @@
 +}
 +
 +static struct platform_driver spiflash_driver = {
-+	.driver.name = "ar2315-spiflash",
++	.driver.name = DRIVER_NAME,
 +	.probe = spiflash_probe,
 +	.remove = spiflash_remove,
 +};
 +
-+static int __init
-+spiflash_init(void)
-+{
-+	return platform_driver_register(&spiflash_driver);
-+}
-+
-+static void __exit
-+spiflash_exit(void)
-+{
-+	return platform_driver_unregister(&spiflash_driver);
-+}
-+
-+module_init(spiflash_init);
-+module_exit(spiflash_exit);
++module_platform_driver(spiflash_driver);
 +
 +MODULE_LICENSE("GPL");
-+MODULE_AUTHOR("OpenWrt.org, Atheros Communications Inc");
-+MODULE_DESCRIPTION("MTD driver for SPI Flash on Atheros SOC");
++MODULE_AUTHOR("OpenWrt.org");
++MODULE_AUTHOR("Atheros Communications Inc");
++MODULE_DESCRIPTION("MTD driver for SPI Flash on Atheros AR2315+ SOC");
++MODULE_ALIAS("platform:" DRIVER_NAME);
 +
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315_spiflash.h
