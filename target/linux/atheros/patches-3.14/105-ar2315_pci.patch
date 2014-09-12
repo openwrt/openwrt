@@ -243,9 +243,9 @@
 +arch_initcall(ar2315_pci_init);
 --- a/arch/mips/ar231x/Kconfig
 +++ b/arch/mips/ar231x/Kconfig
-@@ -14,3 +14,10 @@ config ATHEROS_AR2315
- 	select SYS_SUPPORTS_32BIT_KERNEL
- 	select SYS_SUPPORTS_BIG_ENDIAN
+@@ -7,3 +7,10 @@ config ATHEROS_AR2315
+ 	bool "Atheros 2315+ support"
+ 	depends on ATHEROS_AR231X
  	default y
 +
 +config ATHEROS_AR2315_PCI

@@ -49,7 +49,7 @@
 +load-$(CONFIG_ATHEROS_AR231X)          += 0xffffffff80041000
 --- /dev/null
 +++ b/arch/mips/ar231x/Kconfig
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,9 @@
 +config ATHEROS_AR5312
 +	bool "Atheros 5312/2312+ support"
 +	depends on ATHEROS_AR231X
@@ -58,13 +58,6 @@
 +config ATHEROS_AR2315
 +	bool "Atheros 2315+ support"
 +	depends on ATHEROS_AR231X
-+	select DMA_NONCOHERENT
-+	select CEVT_R4K
-+	select CSRC_R4K
-+	select IRQ_CPU
-+	select SYS_HAS_CPU_MIPS32_R1
-+	select SYS_SUPPORTS_32BIT_KERNEL
-+	select SYS_SUPPORTS_BIG_ENDIAN
 +	default y
 --- /dev/null
 +++ b/arch/mips/ar231x/Makefile
