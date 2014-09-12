@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,350 @@
+@@ -0,0 +1,337 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -60,10 +60,6 @@
 +#include <ar231x.h>
 +#include <ar2315_regs.h>
 +#include "devices.h"
-+
-+#define AR2315_MEM_BASE    0x80800000UL
-+#define AR2315_MEM_SIZE    0x00ffffffUL
-+#define AR2315_IO_SIZE     0x00007fffUL
 +
 +/* Arbitrary size of memory region to access the configuration space */
 +#define AR2315_PCI_CFG_SIZE	0x00100000
@@ -160,16 +156,16 @@
 +
 +static struct resource ar2315_mem_resource = {
 +	.name	= "ar2315-pci-mem",
-+	.start	= AR2315_MEM_BASE,
-+	.end	= AR2315_MEM_BASE + AR2315_MEM_SIZE - AR2315_IO_SIZE - 1 +
-+		  0x4000000,
++	.start	= AR2315_PCIEXT,
++	.end	= AR2315_PCIEXT + AR2315_PCIEXT_SZ - 1,
 +	.flags	= IORESOURCE_MEM,
 +};
 +
++/* PCI controller does not support I/O ports */
 +static struct resource ar2315_io_resource = {
 +	.name	= "ar2315-pci-io",
-+	.start	= AR2315_MEM_BASE + AR2315_MEM_SIZE - AR2315_IO_SIZE,
-+	.end	= AR2315_MEM_BASE + AR2315_MEM_SIZE - 1,
++	.start	= 0,
++	.end	= 0,
 +	.flags	= IORESOURCE_IO,
 +};
 +
@@ -298,11 +294,6 @@
 +		return -ENOMEM;
 +	}
 +
-+	ar2315_pci_controller.io_map_base =
-+			(unsigned long)ioremap_nocache(AR2315_MEM_BASE +
-+			AR2315_MEM_SIZE, AR2315_IO_SIZE);
-+	set_io_port_base(ar2315_pci_controller.io_map_base); /* PCI I/O space*/
-+
 +	/* Reset PCI DMA logic */
 +	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
 +	msleep(20);
@@ -337,10 +328,6 @@
 +	ar231x_read_reg(AR2315_PCI_UNCACHE_CFG);
 +
 +	msleep(500);
-+
-+	/* dirty hack - anyone with a datasheet that knows the memory map ? */
-+	ioport_resource.start = 0x10000000;
-+	ioport_resource.end = 0xffffffff;
 +
 +	res = ar2315_pci_host_setup();
 +	if (res)
