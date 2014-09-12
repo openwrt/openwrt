@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,507 @@
+@@ -0,0 +1,461 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -53,6 +53,7 @@
 +#include <linux/root_dev.h>
 +#include <linux/delay.h>
 +#include <linux/io.h>
++#include <linux/mutex.h>
 +
 +#include "ar2315_spiflash.h"
 +
@@ -60,14 +61,12 @@
 +
 +#define busy_wait(_priv, _condition, _wait) do { \
 +	while (_condition) { \
-+		spin_unlock_bh(&_priv->lock); \
 +		if (_wait > 1) \
 +			msleep(_wait); \
 +		else if ((_wait == 1) && need_resched()) \
 +			schedule(); \
 +		else \
 +			udelay(1); \
-+		spin_lock_bh(&_priv->lock); \
 +	} \
 +} while (0)
 +
@@ -141,9 +140,7 @@
 +	struct mtd_info mtd;
 +	void __iomem *readaddr; /* memory mapped data for read  */
 +	void __iomem *mmraddr;  /* memory mapped register space */
-+	wait_queue_head_t wq;
-+	spinlock_t lock;
-+	int state;
++	struct mutex lock;	/* serialize registers access */
 +};
 +
 +#define to_spiflash(_mtd) container_of(_mtd, struct spiflash_priv, mtd)
@@ -220,7 +217,6 @@
 +	return reg;
 +}
 +
-+
 +/*
 + * Probe SPI flash device
 + * Function returns 0 for failure.
@@ -229,13 +225,8 @@
 +static int
 +spiflash_probe_chip(struct platform_device *pdev, struct spiflash_priv *priv)
 +{
-+	u32 sig;
++	u32 sig = spiflash_sendcmd(priv, SPI_RD_SIG, 0);
 +	int flash_size;
-+
-+	/* Read the signature on the flash device */
-+	spin_lock_bh(&priv->lock);
-+	sig = spiflash_sendcmd(priv, SPI_RD_SIG, 0);
-+	spin_unlock_bh(&priv->lock);
 +
 +	switch (sig) {
 +	case STM_8MBIT_SIGNATURE:
@@ -261,47 +252,12 @@
 +	return flash_size;
 +}
 +
-+
-+/* wait until the flash chip is ready and grab a lock */
-+static int spiflash_wait_ready(struct spiflash_priv *priv, int state)
-+{
-+	DECLARE_WAITQUEUE(wait, current);
-+
-+retry:
-+	spin_lock_bh(&priv->lock);
-+	if (priv->state != FL_READY) {
-+		set_current_state(TASK_UNINTERRUPTIBLE);
-+		add_wait_queue(&priv->wq, &wait);
-+		spin_unlock_bh(&priv->lock);
-+		schedule();
-+		remove_wait_queue(&priv->wq, &wait);
-+
-+		if (signal_pending(current))
-+			return 0;
-+
-+		goto retry;
-+	}
-+	priv->state = state;
-+
-+	return 1;
-+}
-+
-+static inline void spiflash_done(struct spiflash_priv *priv)
-+{
-+	priv->state = FL_READY;
-+	spin_unlock_bh(&priv->lock);
-+	wake_up(&priv->wq);
-+}
-+
 +static void
 +spiflash_wait_complete(struct spiflash_priv *priv, unsigned int timeout)
 +{
 +	busy_wait(priv, spiflash_sendcmd(priv, SPI_RD_STATUS, 0) &
 +		SPI_STATUS_WIP, timeout);
-+	spiflash_done(priv);
 +}
-+
-+
 +
 +static int
 +spiflash_erase(struct mtd_info *mtd, struct erase_info *instr)
@@ -313,8 +269,7 @@
 +	if (instr->addr + instr->len > mtd->size)
 +		return -EINVAL;
 +
-+	if (!spiflash_wait_ready(priv, FL_ERASING))
-+		return -EINTR;
++	mutex_lock(&priv->lock);
 +
 +	spiflash_sendcmd(priv, SPI_WRITE_ENABLE, 0);
 +	reg = spiflash_wait_busy(priv);
@@ -328,6 +283,8 @@
 +	spiflash_write_reg(priv, SPI_FLASH_CTL, reg);
 +
 +	spiflash_wait_complete(priv, 20);
++
++	mutex_unlock(&priv->lock);
 +
 +	instr->state = MTD_ERASE_DONE;
 +	mtd_erase_callback(instr);
@@ -349,11 +306,11 @@
 +
 +	*retlen = len;
 +
-+	if (!spiflash_wait_ready(priv, FL_READING))
-+		return -EINTR;
++	mutex_lock(&priv->lock);
 +
 +	memcpy_fromio(buf, priv->readaddr + from, len);
-+	spiflash_done(priv);
++
++	mutex_unlock(&priv->lock);
 +
 +	return 0;
 +}
@@ -391,8 +348,7 @@
 +		if (page_offset > STM_PAGE_SIZE)
 +			read_len -= (page_offset - STM_PAGE_SIZE);
 +
-+		if (!spiflash_wait_ready(priv, FL_WRITING))
-+			return -EINTR;
++		mutex_lock(&priv->lock);
 +
 +		spiflash_sendcmd(priv, SPI_WRITE_ENABLE, 0);
 +		spi_data = 0;
@@ -425,6 +381,8 @@
 +
 +		spiflash_wait_complete(priv, 1);
 +
++		mutex_unlock(&priv->lock);
++
 +		bytes_left -= read_len;
 +		to += read_len;
 +		buf += read_len;
@@ -435,13 +393,11 @@
 +	return 0;
 +}
 +
-+
 +#if defined CONFIG_MTD_REDBOOT_PARTS || CONFIG_MTD_MYLOADER_PARTS
 +static const char * const part_probe_types[] = {
 +	"cmdlinepart", "RedBoot", "MyLoader", NULL
 +};
 +#endif
-+
 +
 +static int
 +spiflash_probe(struct platform_device *pdev)
@@ -456,9 +412,7 @@
 +	if (!priv)
 +		return -ENOMEM;
 +
-+	spin_lock_init(&priv->lock);
-+	init_waitqueue_head(&priv->wq);
-+	priv->state = FL_READY;
++	mutex_init(&priv->lock);
 +	mtd = &priv->mtd;
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
