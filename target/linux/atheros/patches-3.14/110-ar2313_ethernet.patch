@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1250 @@
+@@ -0,0 +1,1231 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1138,27 +1138,8 @@
 +static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
-+	int ret;
 +
 +	switch (cmd) {
-+	case SIOCETHTOOL:
-+		spin_lock_irq(&sp->lock);
-+		ret = phy_ethtool_ioctl(sp->phy_dev, (void *)ifr->ifr_data);
-+		spin_unlock_irq(&sp->lock);
-+		return ret;
-+
-+	case SIOCSIFHWADDR:
-+		if (copy_from_user
-+			(dev->dev_addr, ifr->ifr_data, sizeof(dev->dev_addr)))
-+			return -EFAULT;
-+		return 0;
-+
-+	case SIOCGIFHWADDR:
-+		if (copy_to_user
-+			(ifr->ifr_data, dev->dev_addr, sizeof(dev->dev_addr)))
-+			return -EFAULT;
-+		return 0;
-+
 +	case SIOCGMIIPHY:
 +	case SIOCGMIIREG:
 +	case SIOCSMIIREG:
