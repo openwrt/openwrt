@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,280 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -65,6 +65,9 @@
 +#define AR2315_MEM_SIZE    0x00ffffffUL
 +#define AR2315_IO_SIZE     0x00007fffUL
 +
++#define AR2315_PCI_HOST_SLOT	3
++#define AR2315_PCI_HOST_DEVID	((0xff18 << 16) | PCI_VENDOR_ID_ATHEROS)
++
 +static unsigned long configspace;
 +
 +static int ar2315_pci_cfg_access(int devfn, int where, int size, u32 *ptr,
@@ -75,9 +78,6 @@
 +	u32 value = 0;
 +	int err = 0;
 +	u32 addr;
-+
-+	if (((dev != 0) && (dev != 3)) || (func > 2))
-+		return PCIBIOS_DEVICE_NOT_FOUND;
 +
 +	/* Select Configuration access */
 +	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, 0, AR2315_PCIMISC_CFG_SEL);
@@ -116,15 +116,31 @@
 +	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
 +}
 +
++static inline int ar2315_pci_local_cfg_rd(unsigned devfn, int where, u32 *val)
++{
++	return ar2315_pci_cfg_access(devfn, where, sizeof(u32), val, false);
++}
++
++static inline int ar2315_pci_local_cfg_wr(unsigned devfn, int where, u32 val)
++{
++	return ar2315_pci_cfg_access(devfn, where, sizeof(u32), &val, true);
++}
++
 +static int ar2315_pci_cfg_read(struct pci_bus *bus, unsigned int devfn,
 +			       int where, int size, u32 *value)
 +{
++	if ((PCI_SLOT(devfn) != 0) || (PCI_FUNC(devfn) > 2))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
 +	return ar2315_pci_cfg_access(devfn, where, size, value, 0);
 +}
 +
 +static int ar2315_pci_cfg_write(struct pci_bus *bus, unsigned int devfn,
 +				int where, int size, u32 value)
 +{
++	if ((PCI_SLOT(devfn) != 0) || (PCI_FUNC(devfn) > 2))
++		return PCIBIOS_DEVICE_NOT_FOUND;
++
 +	return ar2315_pci_cfg_access(devfn, where, size, &value, 1);
 +}
 +
@@ -178,33 +194,35 @@
 +	return 0;
 +}
 +
-+static void
-+ar2315_pci_fixup(struct pci_dev *dev)
++static int ar2315_pci_host_setup(void)
 +{
-+	unsigned int devfn = dev->devfn;
++	unsigned devfn = PCI_DEVFN(AR2315_PCI_HOST_SLOT, 0);
++	int res;
++	u32 id;
 +
-+	if (dev->bus->number != 0)
-+		return;
++	res = ar2315_pci_local_cfg_rd(devfn, PCI_VENDOR_ID, &id);
++	if (res != PCIBIOS_SUCCESSFUL || id != AR2315_PCI_HOST_DEVID)
++		return -ENODEV;
 +
-+	/* Only fix up the PCI host settings */
-+	if ((PCI_SLOT(devfn) != 3) || (PCI_FUNC(devfn) != 0))
-+		return;
++	/* Program MBARs */
++	ar2315_pci_local_cfg_wr(devfn, PCI_BASE_ADDRESS_0, HOST_PCI_MBAR0);
++	ar2315_pci_local_cfg_wr(devfn, PCI_BASE_ADDRESS_1, HOST_PCI_MBAR1);
++	ar2315_pci_local_cfg_wr(devfn, PCI_BASE_ADDRESS_2, HOST_PCI_MBAR2);
 +
-+	/* Fix up MBARs */
-+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, HOST_PCI_MBAR0);
-+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_1, HOST_PCI_MBAR1);
-+	pci_write_config_dword(dev, PCI_BASE_ADDRESS_2, HOST_PCI_MBAR2);
-+	pci_write_config_dword(dev, PCI_COMMAND, PCI_COMMAND_MEMORY |
-+			       PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
-+			       PCI_COMMAND_INVALIDATE | PCI_COMMAND_PARITY |
-+			       PCI_COMMAND_SERR | PCI_COMMAND_FAST_BACK);
++	/* Run */
++	ar2315_pci_local_cfg_wr(devfn, PCI_COMMAND, PCI_COMMAND_MEMORY |
++				PCI_COMMAND_MASTER | PCI_COMMAND_SPECIAL |
++				PCI_COMMAND_INVALIDATE | PCI_COMMAND_PARITY |
++				PCI_COMMAND_SERR | PCI_COMMAND_FAST_BACK);
++
++	return 0;
 +}
-+DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, ar2315_pci_fixup);
 +
 +static int __init
 +ar2315_pci_init(void)
 +{
 +	u32 reg;
++	int res;
 +
 +	if (ar231x_devtype != DEV_TYPE_AR2315)
 +		return -ENODEV;
@@ -256,9 +274,17 @@
 +	ioport_resource.start = 0x10000000;
 +	ioport_resource.end = 0xffffffff;
 +
++	res = ar2315_pci_host_setup();
++	if (res)
++		goto error;
++
 +	register_pci_controller(&ar2315_pci_controller);
 +
 +	return 0;
++
++error:
++	iounmap((void __iomem *)configspace);
++	return res;
 +}
 +
 +arch_initcall(ar2315_pci_init);
