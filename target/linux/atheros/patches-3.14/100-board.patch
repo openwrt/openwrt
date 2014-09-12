@@ -2096,7 +2096,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,556 @@
+@@ -0,0 +1,562 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2622,10 +2622,16 @@
 +	/* Detect the hardware based on the device ID */
 +	devid = ar231x_read_reg(AR2315_SREV) & AR2315_REV_CHIP;
 +	switch (devid) {
++	case 0x91:	/* Need to check */
++		ar231x_devtype = DEV_TYPE_AR2318;
++		break;
 +	case 0x90:
-+	case 0x91:
 +		ar231x_devtype = DEV_TYPE_AR2317;
 +		break;
++	case 0x87:
++		ar231x_devtype = DEV_TYPE_AR2316;
++		break;
++	case 0x86:
 +	default:
 +		ar231x_devtype = DEV_TYPE_AR2315;
 +		break;
@@ -2781,7 +2787,7 @@
 +#endif	/* __ASM_MACH_AR231X_H */
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.h
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +#ifndef __AR231X_DEVICES_H
 +#define __AR231X_DEVICES_H
 +
@@ -2795,6 +2801,7 @@
 +	DEV_TYPE_AR2315,
 +	DEV_TYPE_AR2316,
 +	DEV_TYPE_AR2317,
++	DEV_TYPE_AR2318,
 +
 +	DEV_TYPE_UNKNOWN
 +};
@@ -2822,7 +2829,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.c
-@@ -0,0 +1,180 @@
+@@ -0,0 +1,181 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -2931,6 +2938,7 @@
 +	[DEV_TYPE_AR2315] = "Atheros AR2315",
 +	[DEV_TYPE_AR2316] = "Atheros AR2316",
 +	[DEV_TYPE_AR2317] = "Atheros AR2317",
++	[DEV_TYPE_AR2318] = "Atheros AR2318",
 +	[DEV_TYPE_UNKNOWN] = "Atheros (unknown)",
 +};
 +
