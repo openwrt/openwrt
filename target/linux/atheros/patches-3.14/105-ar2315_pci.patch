@@ -358,9 +358,9 @@
 +}
 --- a/arch/mips/ar231x/Kconfig
 +++ b/arch/mips/ar231x/Kconfig
-@@ -8,3 +8,10 @@ config SOC_AR2315
- 	bool "Atheros 2315+ support"
+@@ -9,3 +9,10 @@ config SOC_AR2315
  	depends on ATHEROS_AR231X
+ 	select GPIO_AR2315
  	default y
 +
 +config PCI_AR2315
@@ -371,7 +371,7 @@
 +	default y
 --- a/arch/mips/ar231x/ar2315.c
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -104,6 +104,10 @@ ar2315_irq_dispatch(void)
+@@ -77,6 +77,10 @@ ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
@@ -382,7 +382,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -568,3 +572,18 @@ ar2315_plat_setup(void)
+@@ -458,3 +462,18 @@ ar2315_plat_setup(void)
  	ar231x_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
  			    ar2315_apb_frequency());
  }

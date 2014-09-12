@@ -659,7 +659,7 @@
 +#endif /* __ASM_MACH_AR231X_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,630 @@
+@@ -0,0 +1,608 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -1002,32 +1002,10 @@
 +#define AMBACLK_CLK_DIV_M           0x0000000c
 +#define AMBACLK_CLK_DIV_S           2
 +
-+/*
-+ * GPIO
-+ */
-+#define AR2315_GPIO_DI          (AR2315_DSLBASE + 0x0088)
-+#define AR2315_GPIO_DO          (AR2315_DSLBASE + 0x0090)
-+#define AR2315_GPIO_DIR         (AR2315_DSLBASE + 0x0098)
-+#define AR2315_GPIO_INT         (AR2315_DSLBASE + 0x00a0)
-+
-+#define AR2315_GPIO_DIR_M(x)               (1 << (x))       /* mask for i/o */
-+#define AR2315_GPIO_DIR_O(x)               (1 << (x))       /* output */
-+#define AR2315_GPIO_DIR_I(x)               (0)              /* input */
-+
-+#define AR2315_GPIO_INT_S(x)	(x)             /* interrupt enable */
-+#define AR2315_GPIO_INT_M	(0x3F)          /* mask for int */
-+#define AR2315_GPIO_INT_LVL(x)	((x) << 6)      /* interrupt level */
-+#define AR2315_GPIO_INT_LVL_M	((0x3) << 6)    /* mask for int level */
-+
-+#define AR2315_GPIO_INT_MAX_Y		1   /* Maximum value of Y for
-+					     * AR2315_GPIO_INT_* macros */
-+#define AR2315_GPIO_INT_LVL_OFF		0   /* Triggerring off */
-+#define AR2315_GPIO_INT_LVL_LOW		1   /* Low Level Triggered */
-+#define AR2315_GPIO_INT_LVL_HIGH	2   /* High Level Triggered */
-+#define AR2315_GPIO_INT_LVL_EDGE	3   /* Edge Triggered */
++/* GPIO MMR base address */
++#define AR2315_GPIO			(AR2315_DSLBASE + 0x0088)
 +
 +#define AR2315_RESET_GPIO       5
-+#define AR2315_NUM_GPIO         22
 +
 +/*
 + *  PCI Clock Control
@@ -2009,7 +1987,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,570 @@
+@@ -0,0 +1,431 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2049,34 +2027,6 @@
 +#include "devices.h"
 +#include "ar2315.h"
 +
-+static u32 gpiointmask, gpiointval;
-+
-+static void ar2315_gpio_irq_handler(unsigned irq, struct irq_desc *desc)
-+{
-+	u32 pend;
-+	int bit = -1;
-+
-+	/* only do one gpio interrupt at a time */
-+	pend = (ar231x_read_reg(AR2315_GPIO_DI) ^ gpiointval) & gpiointmask;
-+
-+	if (pend) {
-+		bit = fls(pend) - 1;
-+		pend &= ~(1 << bit);
-+		gpiointval ^= (1 << bit);
-+	}
-+
-+	if (!pend)
-+		ar231x_write_reg(AR2315_ISR, AR2315_ISR_GPIO);
-+
-+	/* Enable interrupt with edge detection */
-+	if ((ar231x_read_reg(AR2315_GPIO_DIR) & AR2315_GPIO_DIR_M(bit)) !=
-+	    AR2315_GPIO_DIR_I(bit))
-+		return;
-+
-+	if (bit >= 0)
-+		generic_handle_irq(AR231X_GPIO_IRQ_BASE + bit);
-+}
-+
 +static void ar2315_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
 +	unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
@@ -2088,9 +2038,10 @@
 +		generic_handle_irq(AR2315_MISC_IRQ_TIMER);
 +	else if (misc_intr & AR2315_ISR_AHB)
 +		generic_handle_irq(AR2315_MISC_IRQ_AHB);
-+	else if (misc_intr & AR2315_ISR_GPIO)
++	else if (misc_intr & AR2315_ISR_GPIO) {
++		ar231x_write_reg(AR2315_ISR, AR2315_ISR_GPIO);
 +		generic_handle_irq(AR2315_MISC_IRQ_GPIO);
-+	else if (misc_intr & AR2315_ISR_UART0)
++	} else if (misc_intr & AR2315_ISR_UART0)
 +		generic_handle_irq(AR2315_MISC_IRQ_UART0);
 +	else if (misc_intr & AR2315_ISR_WD) {
 +		ar231x_write_reg(AR2315_ISR, AR2315_ISR_WD);
@@ -2123,44 +2074,6 @@
 +	else
 +		spurious_interrupt();
 +}
-+
-+static void ar2315_set_gpiointmask(int gpio, int level)
-+{
-+	u32 reg;
-+
-+	reg = ar231x_read_reg(AR2315_GPIO_INT);
-+	reg &= ~(AR2315_GPIO_INT_M | AR2315_GPIO_INT_LVL_M);
-+	reg |= gpio | AR2315_GPIO_INT_LVL(level);
-+	ar231x_write_reg(AR2315_GPIO_INT, reg);
-+}
-+
-+static void ar2315_gpio_irq_unmask(struct irq_data *d)
-+{
-+	unsigned int gpio = d->irq - AR231X_GPIO_IRQ_BASE;
-+
-+	/* Enable interrupt with edge detection */
-+	if ((ar231x_read_reg(AR2315_GPIO_DIR) & AR2315_GPIO_DIR_M(gpio)) !=
-+	    AR2315_GPIO_DIR_I(gpio))
-+		return;
-+
-+	gpiointmask |= (1 << gpio);
-+	ar2315_set_gpiointmask(gpio, 3);
-+}
-+
-+static void ar2315_gpio_irq_mask(struct irq_data *d)
-+{
-+	unsigned int gpio = d->irq - AR231X_GPIO_IRQ_BASE;
-+
-+	/* Disable interrupt */
-+	gpiointmask &= ~(1 << gpio);
-+	ar2315_set_gpiointmask(gpio, 0);
-+}
-+
-+static struct irq_chip ar2315_gpio_irq_chip = {
-+	.name		= "AR2315-GPIO",
-+	.irq_unmask	= ar2315_gpio_irq_unmask,
-+	.irq_mask	= ar2315_gpio_irq_mask,
-+};
 +
 +static void
 +ar2315_misc_irq_unmask(struct irq_data *d)
@@ -2213,74 +2126,15 @@
 +		return;
 +
 +	ar231x_irq_dispatch = ar2315_irq_dispatch;
-+	gpiointval = ar231x_read_reg(AR2315_GPIO_DI);
 +	for (i = 0; i < AR2315_MISC_IRQ_COUNT; i++) {
 +		int irq = AR231X_MISC_IRQ_BASE + i;
 +
 +		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
 +					 handle_level_irq);
 +	}
-+	for (i = 0; i < AR2315_NUM_GPIO; i++) {
-+		int irq = AR231X_GPIO_IRQ_BASE + i;
-+
-+		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
-+					 handle_level_irq);
-+	}
-+	irq_set_chained_handler(AR2315_MISC_IRQ_GPIO, ar2315_gpio_irq_handler);
 +	setup_irq(AR2315_MISC_IRQ_AHB, &ar2315_ahb_proc_interrupt);
 +	irq_set_chained_handler(AR2315_IRQ_MISC_INTRS, ar2315_misc_irq_handler);
 +}
-+
-+/*
-+ * gpiolib implementation
-+ */
-+static int
-+ar2315_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
-+{
-+	return (ar231x_read_reg(AR2315_GPIO_DI) >> gpio) & 1;
-+}
-+
-+static void
-+ar2315_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
-+{
-+	u32 reg = ar231x_read_reg(AR2315_GPIO_DO);
-+
-+	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
-+	ar231x_write_reg(AR2315_GPIO_DO, reg);
-+}
-+
-+static int
-+ar2315_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
-+{
-+	ar231x_mask_reg(AR2315_GPIO_DIR, 1 << gpio, 0);
-+	return 0;
-+}
-+
-+static int
-+ar2315_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
-+{
-+	ar231x_mask_reg(AR2315_GPIO_DIR, 0, 1 << gpio);
-+	ar2315_gpio_set_value(chip, gpio, value);
-+	return 0;
-+}
-+
-+static int ar2315_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
-+{
-+	return AR231X_GPIO_IRQ_BASE + gpio;
-+}
-+
-+static struct gpio_chip ar2315_gpio_chip = {
-+	.label                  = "ar2315-gpio",
-+	.direction_input        = ar2315_gpio_direction_input,
-+	.direction_output       = ar2315_gpio_direction_output,
-+	.set                    = ar2315_gpio_set_value,
-+	.get                    = ar2315_gpio_get_value,
-+	.to_irq                 = ar2315_gpio_to_irq,
-+	.base                   = 0,
-+	.ngpio                  = AR2315_NUM_GPIO, /* 22 */
-+};
-+
-+/* end of gpiolib */
 +
 +static void ar2315_device_reset_set(u32 mask)
 +{
@@ -2511,20 +2365,6 @@
 +	mips_hpt_frequency = ar2315_cpu_frequency() / 2;
 +}
 +
-+static int __init
-+ar2315_gpio_init(void)
-+{
-+	int ret = gpiochip_add(&ar2315_gpio_chip);
-+
-+	if (ret) {
-+		pr_err("%s: failed to add gpiochip\n", ar2315_gpio_chip.label);
-+		return ret;
-+	}
-+	pr_info("%s: registered %d GPIOs\n", ar2315_gpio_chip.label,
-+		ar2315_gpio_chip.ngpio);
-+	return ret;
-+}
-+
 +void __init
 +ar2315_prom_init(void)
 +{
@@ -2557,7 +2397,6 @@
 +		ar231x_devtype = DEV_TYPE_AR2315;
 +		break;
 +	}
-+	ar2315_gpio_init();
 +	ar231x_board.devid = devid;
 +}
 +
