@@ -108,7 +108,7 @@
 +	return config_access(devfn, where, size, &value, 1);
 +}
 +
-+struct pci_ops ar231x_pci_ops = {
++static struct pci_ops ar231x_pci_ops = {
 +	.read	= ar231x_pci_read,
 +	.write	= ar231x_pci_write,
 +};
@@ -128,7 +128,7 @@
 +	.flags	= IORESOURCE_IO,
 +};
 +
-+struct pci_controller ar231x_pci_controller = {
++static struct pci_controller ar231x_pci_controller = {
 +	.pci_ops		= &ar231x_pci_ops,
 +	.mem_resource	= &ar231x_mem_resource,
 +	.io_resource	= &ar231x_io_resource,
@@ -272,7 +272,7 @@
 +	ar231x_write_reg(AR2315_PCI_INT_STATUS, AR2315_PCI_EXT_INT);
 +}
 +
-+void ar2315_pci_irq(int irq)
++static void ar2315_pci_irq(int irq)
 +{
 +	if (ar231x_read_reg(AR2315_PCI_INT_STATUS) == AR2315_PCI_ABORT_INT)
 +		pci_abort_irq();
