@@ -2697,11 +2697,11 @@
 +
 +#ifdef CONFIG_ATHEROS_AR2315
 +
-+extern void ar2315_irq_init(void);
-+extern int ar2315_init_devices(void);
-+extern void ar2315_prom_init(void);
-+extern void ar2315_plat_setup(void);
-+extern void ar2315_time_init(void);
++void ar2315_irq_init(void);
++int ar2315_init_devices(void);
++void ar2315_prom_init(void);
++void ar2315_plat_setup(void);
++void ar2315_time_init(void);
 +
 +#else
 +
@@ -2731,18 +2731,17 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.h
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,37 @@
 +#ifndef __AR5312_H
 +#define __AR5312_H
 +
 +#ifdef CONFIG_ATHEROS_AR5312
 +
-+extern void ar5312_irq_init(void);
-+extern int ar5312_init_devices(void);
-+extern void ar5312_prom_init(void);
-+extern void ar5312_plat_setup(void);
-+extern void ar5312_time_init(void);
-+extern void ar5312_time_init(void);
++void ar5312_irq_init(void);
++int ar5312_init_devices(void);
++void ar5312_prom_init(void);
++void ar5312_plat_setup(void);
++void ar5312_time_init(void);
 +
 +#else
 +
@@ -2840,11 +2839,11 @@
 +extern struct ar231x_board_config ar231x_board;
 +extern asmlinkage void (*ar231x_irq_dispatch)(void);
 +
-+extern int ar231x_find_config(u8 *flash_limit);
-+extern void ar231x_serial_setup(u32 mapbase, int irq, unsigned int uartclk);
-+extern int ar231x_add_wmac(int nr, u32 base, int irq);
-+extern int ar231x_add_ethernet(int nr, u32 base, const char *mii_name,
-+			       u32 mii_base, int irq, void *pdata);
++int ar231x_find_config(u8 *flash_limit);
++void ar231x_serial_setup(u32 mapbase, int irq, unsigned int uartclk);
++int ar231x_add_wmac(int nr, u32 base, int irq);
++int ar231x_add_ethernet(int nr, u32 base, const char *mii_name, u32 mii_base,
++			int irq, void *pdata);
 +
 +static inline bool is_2315(void)
 +{
