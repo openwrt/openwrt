@@ -563,7 +563,7 @@
 +#endif /* __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,78 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -623,7 +623,6 @@
 +
 +static inline void plat_extra_sync_for_device(struct device *dev)
 +{
-+	return;
 +}
 +
 +static inline int plat_dma_mapping_error(struct device *dev,

@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1254 @@
+@@ -0,0 +1,1250 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -793,8 +793,6 @@
 +
 +	if (i)
 +		sp->rx_skbprd = idx;
-+
-+	return;
 +}
 +
 +#define AR2313_MAX_PKTS_PER_CALL        64
@@ -931,8 +929,6 @@
 +	}
 +
 +	sp->tx_csm = idx;
-+
-+	return;
 +}
 +
 +
