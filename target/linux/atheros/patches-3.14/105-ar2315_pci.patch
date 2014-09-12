@@ -1,14 +1,16 @@
---- a/arch/mips/ar231x/Makefile
-+++ b/arch/mips/ar231x/Makefile
-@@ -14,3 +14,5 @@ obj-$(CONFIG_EARLY_PRINTK) += early_prin
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -19,6 +19,7 @@ obj-$(CONFIG_BCM47XX)		+= pci-bcm47xx.o
+ obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o fixup-bcm63xx.o \
+ 					ops-bcm63xx.o
+ obj-$(CONFIG_MIPS_ALCHEMY)	+= pci-alchemy.o
++obj-$(CONFIG_PCI_AR2315)	+= pci-ar2315.o
+ obj-$(CONFIG_SOC_AR71XX)	+= pci-ar71xx.o
+ obj-$(CONFIG_PCI_AR724X)	+= pci-ar724x.o
  
- obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
- obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
-+obj-$(CONFIG_PCI_AR2315) += pci.o
-+
 --- /dev/null
-+++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,340 @@
++++ b/arch/mips/pci/pci-ar2315.c
+@@ -0,0 +1,345 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -50,6 +52,7 @@
 +
 +#include <linux/types.h>
 +#include <linux/pci.h>
++#include <linux/platform_device.h>
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/mm.h>
@@ -60,7 +63,6 @@
 +#include <ar231x_platform.h>
 +#include <ar231x.h>
 +#include <ar2315_regs.h>
-+#include "devices.h"
 +
 +/* Arbitrary size of memory region to access the configuration space */
 +#define AR2315_PCI_CFG_SIZE	0x00100000
@@ -178,16 +180,6 @@
 +	.io_offset      = 0x00000000UL,
 +};
 +
-+int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
-+{
-+	return AR2315_PCI_IRQ_EXT;
-+}
-+
-+int pcibios_plat_dev_init(struct pci_dev *dev)
-+{
-+	return 0;
-+}
-+
 +static int ar2315_pci_host_setup(void)
 +{
 +	unsigned devfn = PCI_DEVFN(AR2315_PCI_HOST_SLOT, 0);
@@ -281,20 +273,17 @@
 +	ar231x_mask_reg(AR2315_PCI_IER, 0, AR2315_PCI_IER_ENABLE);
 +}
 +
-+static int __init
-+ar2315_pci_init(void)
++static int ar2315_pci_probe(struct platform_device *pdev)
 +{
++	struct device *dev = &pdev->dev;
 +	u32 reg;
 +	int res;
 +
-+	if (ar231x_devtype != DEV_TYPE_AR2315)
-+		return -ENODEV;
-+
 +	/* Remap PCI config space */
-+	ar2315_pci_cfg_mem = ioremap_nocache(AR2315_PCIEXT,
-+					     AR2315_PCI_CFG_SIZE);
++	ar2315_pci_cfg_mem = devm_ioremap_nocache(dev, AR2315_PCIEXT,
++						  AR2315_PCI_CFG_SIZE);
 +	if (!ar2315_pci_cfg_mem) {
-+		pr_err("ar2315-pci: failed to remap PCI config space\n");
++		dev_err(dev, "failed to remap PCI config space\n");
 +		return -ENOMEM;
 +	}
 +
@@ -335,20 +324,38 @@
 +
 +	res = ar2315_pci_host_setup();
 +	if (res)
-+		goto error;
++		return res;
 +
 +	ar2315_pci_irq_init();
 +
 +	register_pci_controller(&ar2315_pci_controller);
 +
 +	return 0;
-+
-+error:
-+	iounmap(ar2315_pci_cfg_mem);
-+	return res;
 +}
 +
++static struct platform_driver ar2315_pci_driver = {
++	.probe = ar2315_pci_probe,
++	.driver = {
++		.name = "ar2315-pci",
++		.owner = THIS_MODULE,
++	},
++};
++
++static int __init ar2315_pci_init(void)
++{
++	return platform_driver_register(&ar2315_pci_driver);
++}
 +arch_initcall(ar2315_pci_init);
++
++int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
++{
++	return AR2315_PCI_IRQ_EXT;
++}
++
++int pcibios_plat_dev_init(struct pci_dev *dev)
++{
++	return 0;
++}
 --- a/arch/mips/ar231x/Kconfig
 +++ b/arch/mips/ar231x/Kconfig
 @@ -7,3 +7,10 @@ config ATHEROS_AR2315
@@ -375,3 +382,22 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
+@@ -554,3 +558,18 @@ ar2315_plat_setup(void)
+ 	ar231x_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
+ 			    ar2315_apb_frequency());
+ }
++
++#ifdef CONFIG_PCI_AR2315
++static int __init ar2315_pci_init(void)
++{
++	struct platform_device *pdev;
++
++	if (!is_2315() || ar231x_devtype != DEV_TYPE_AR2315)
++		return -ENODEV;
++
++	pdev = platform_device_register_simple("ar2315-pci", -1, NULL, 0);
++
++	return pdev ? 0 : -ENODEV;
++}
++arch_initcall(ar2315_pci_init);
++#endif
