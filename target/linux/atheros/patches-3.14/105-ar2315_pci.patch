@@ -1,10 +1,11 @@
 --- a/arch/mips/ar231x/Makefile
 +++ b/arch/mips/ar231x/Makefile
-@@ -14,3 +14,4 @@ obj-$(CONFIG_EARLY_PRINTK) += early_prin
+@@ -14,3 +14,5 @@ obj-$(CONFIG_EARLY_PRINTK) += early_prin
  
  obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
  obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
-+obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
++obj-$(CONFIG_PCI_AR2315) += pci.o
++
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
 @@ -0,0 +1,340 @@
@@ -355,8 +356,8 @@
  	depends on ATHEROS_AR231X
  	default y
 +
-+config ATHEROS_AR2315_PCI
-+	bool "PCI support"
++config PCI_AR2315
++	bool "AR2315 PCI controller support"
 +	depends on ATHEROS_AR2315
 +	select HW_HAS_PCI
 +	select PCI
@@ -367,7 +368,7 @@
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
-+#ifdef CONFIG_ATHEROS_AR2315_PCI
++#ifdef CONFIG_PCI_AR2315
 +	else if (pending & CAUSEF_IP5)
 +		do_IRQ(AR2315_IRQ_LCBUS_PCI);
 +#endif
