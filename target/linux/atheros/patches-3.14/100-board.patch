@@ -1591,7 +1591,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,540 @@
+@@ -0,0 +1,542 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1731,6 +1731,7 @@
 +	ar231x_irq_dispatch = ar5312_irq_dispatch;
 +	for (i = 0; i < AR5312_MISC_IRQ_COUNT; i++) {
 +		int irq = AR231X_MISC_IRQ_BASE + i;
++
 +		irq_set_chip_and_handler(irq, &ar5312_misc_irq_chip,
 +					 handle_level_irq);
 +	}
@@ -1751,6 +1752,7 @@
 +ar5312_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
 +{
 +	u32 reg = ar231x_read_reg(AR5312_GPIO_DO);
++
 +	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
 +	ar231x_write_reg(AR5312_GPIO_DO, reg);
 +}
@@ -2080,8 +2082,8 @@
 +static int __init
 +ar5312_gpio_init(void)
 +{
-+	int ret;
-+	ret = gpiochip_add(&ar5312_gpio_chip);
++	int ret = gpiochip_add(&ar5312_gpio_chip);
++
 +	if (ret) {
 +		pr_err("%s: failed to add gpiochip\n", ar5312_gpio_chip.label);
 +		return ret;
@@ -2134,7 +2136,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,556 @@
+@@ -0,0 +1,559 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2339,11 +2341,13 @@
 +	gpiointval = ar231x_read_reg(AR2315_GPIO_DI);
 +	for (i = 0; i < AR2315_MISC_IRQ_COUNT; i++) {
 +		int irq = AR231X_MISC_IRQ_BASE + i;
++
 +		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
 +			handle_level_irq);
 +	}
 +	for (i = 0; i < AR2315_NUM_GPIO; i++) {
 +		int irq = AR231X_GPIO_IRQ_BASE + i;
++
 +		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
 +			handle_level_irq);
 +	}
@@ -2365,6 +2369,7 @@
 +ar2315_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
 +{
 +	u32 reg = ar231x_read_reg(AR2315_GPIO_DO);
++
 +	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
 +	ar231x_write_reg(AR2315_GPIO_DO, reg);
 +}
@@ -2629,8 +2634,8 @@
 +static int __init
 +ar2315_gpio_init(void)
 +{
-+	int ret;
-+	ret = gpiochip_add(&ar2315_gpio_chip);
++	int ret = gpiochip_add(&ar2315_gpio_chip);
++
 +	if (ret) {
 +		pr_err("%s: failed to add gpiochip\n", ar2315_gpio_chip.label);
 +		return ret;

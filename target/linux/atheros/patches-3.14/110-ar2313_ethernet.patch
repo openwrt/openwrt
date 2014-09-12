@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1250 @@
+@@ -0,0 +1,1254 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -375,6 +375,7 @@
 +{
 +	struct net_device *dev = platform_get_drvdata(pdev);
 +	struct ar231x_private *sp = netdev_priv(dev);
++
 +	rx_tasklet_cleanup(dev);
 +	ar231x_init_cleanup(dev);
 +	unregister_netdev(dev);
@@ -416,6 +417,7 @@
 +static void ar231x_free_descriptors(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
++
 +	if (sp->rx_ring != NULL) {
 +		kfree((void *)KSEG0ADDR(sp->rx_ring));
 +		sp->rx_ring = NULL;
@@ -458,6 +460,7 @@
 +	/* Initialize the transmit Descriptors */
 +	for (j = 0; j < AR2313_DESCR_ENTRIES; j++) {
 +		ar231x_descr_t *td = &sp->tx_ring[j];
++
 +		td->status = 0;
 +		td->devcs = DMA_TX1_CHAINED;
 +		td->addr = 0;
@@ -945,6 +948,7 @@
 +		tasklet_hi_schedule(&sp->rx_tasklet);
 +	} else {
 +		unsigned long flags;
++
 +		spin_lock_irqsave(&sp->lock, flags);
 +		sp->dma_regs->intr_ena |= DMA_STATUS_RI;
 +		spin_unlock_irqrestore(&sp->lock, flags);
