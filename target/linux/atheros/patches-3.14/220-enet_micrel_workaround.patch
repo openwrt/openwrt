@@ -66,7 +66,7 @@
  	if (ar231x_mdiobus_probe(dev) != 0) {
  		printk(KERN_ERR "%s: mdiobus_probe failed\n", dev->name);
  		rx_tasklet_cleanup(dev);
-@@ -330,8 +375,10 @@ static int ar231x_remove(struct platform
+@@ -329,8 +374,10 @@ static int ar231x_remove(struct platform
  	rx_tasklet_cleanup(dev);
  	ar231x_init_cleanup(dev);
  	unregister_netdev(dev);
@@ -79,7 +79,7 @@
  	kfree(dev);
  	return 0;
  }
-@@ -1090,6 +1137,9 @@ static int ar231x_ioctl(struct net_devic
+@@ -1079,6 +1126,9 @@ static int ar231x_ioctl(struct net_devic
  {
  	struct ar231x_private *sp = netdev_priv(dev);
  

@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1218 @@
+@@ -0,0 +1,1206 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -241,7 +241,7 @@
 +	dev->features |= NETIF_F_HIGHDMA;
 +	dev->netdev_ops = &ar231x_ops;
 +
-+	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long) dev);
++	tasklet_init(&sp->rx_tasklet, rx_tasklet_func, (unsigned long)dev);
 +	tasklet_disable(&sp->rx_tasklet);
 +
 +	sp->eth_regs = ioremap_nocache(ar_eth_base, sizeof(*sp->eth_regs));
@@ -324,7 +324,6 @@
 +	return 0;
 +}
 +
-+
 +static void ar231x_multicast_list(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
@@ -372,7 +371,6 @@
 +	return 0;
 +}
 +
-+
 +/**
 + * Restart the AR2313 ethernet controller.
 + */
@@ -412,7 +410,6 @@
 +	}
 +}
 +
-+
 +static int ar231x_allocate_descriptors(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
@@ -431,7 +428,7 @@
 +		return 1;
 +
 +	/* invalidate caches */
-+	dma_cache_inv((unsigned int) space, size);
++	dma_cache_inv((unsigned int)space, size);
 +
 +	/* now convert pointer to KSEG1 */
 +	space = (ar231x_descr_t *)KSEG1ADDR(space);
@@ -456,7 +453,6 @@
 +
 +	return 0;
 +}
-+
 +
 +/**
 + * Generic cleanup handling data allocated during init. Used when the
@@ -509,7 +505,7 @@
 +	init_timer(&sp->link_timer);
 +
 +	sp->link_timer.function = ar231x_link_timer_fn;
-+	sp->link_timer.data = (int) dev;
++	sp->link_timer.data = (int)dev;
 +	sp->link_timer.expires = jiffies + HZ;
 +
 +	add_timer(&sp->link_timer);
@@ -568,7 +564,7 @@
 +			}
 +
 +			printk(KERN_INFO "%s: Configuring MAC for %s duplex\n",
-+				   dev->name, (duplex) ? "full" : "half");
++			       dev->name, (duplex) ? "full" : "half");
 +
 +			if (duplex) {
 +				/* full duplex */
@@ -649,7 +645,6 @@
 +	return 0;
 +}
 +
-+
 +static int ar231x_init(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
@@ -667,7 +662,7 @@
 +	if (sp->rx_skb == NULL) {
 +		sp->rx_skb =
 +			kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES,
-+					GFP_KERNEL);
++				GFP_KERNEL);
 +		if (!(sp->rx_skb)) {
 +			printk("%s: %s: rx_skb kmalloc failed\n",
 +			       dev->name, __func__);
@@ -680,7 +675,7 @@
 +	if (sp->tx_skb == NULL) {
 +		sp->tx_skb =
 +			kmalloc(sizeof(struct sk_buff *) * AR2313_DESCR_ENTRIES,
-+					GFP_KERNEL);
++				GFP_KERNEL);
 +		if (!(sp->tx_skb)) {
 +			printk("%s: %s: tx_skb kmalloc failed\n",
 +			       dev->name, __func__);
@@ -714,16 +709,13 @@
 +	ar231x_reset_reg(dev);
 +
 +	/* Get the IRQ */
-+	ecode =
-+		request_irq(dev->irq, &ar231x_interrupt,
-+					IRQF_DISABLED,
-+					dev->name, dev);
++	ecode = request_irq(dev->irq, &ar231x_interrupt, IRQF_DISABLED,
++			    dev->name, dev);
 +	if (ecode) {
 +		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n",
 +		       dev->name, __func__, dev->irq);
 +		goto init_error;
 +	}
-+
 +
 +	tasklet_enable(&sp->rx_tasklet);
 +
@@ -866,7 +858,6 @@
 +	return rval;
 +}
 +
-+
 +static void ar231x_tx_int(struct net_device *dev)
 +{
 +	struct ar231x_private *sp = netdev_priv(dev);
@@ -917,7 +908,6 @@
 +
 +	sp->tx_csm = idx;
 +}
-+
 +
 +static void rx_tasklet_func(unsigned long data)
 +{
@@ -981,7 +971,6 @@
 +
 +	return IRQ_HANDLED;
 +}
-+
 +
 +static int ar231x_open(struct net_device *dev)
 +{
@@ -1245,16 +1234,15 @@
 +	sp->oldduplex = -1;
 +	sp->phy_dev = phydev;
 +
-+	printk(KERN_INFO "%s: attached PHY driver [%s] "
-+		"(mii_bus:phy_addr=%s)\n",
-+		dev->name, phydev->drv->name, dev_name(&phydev->dev));
++	printk(KERN_INFO "%s: attached PHY driver [%s] (mii_bus:phy_addr=%s)\n",
++	       dev->name, phydev->drv->name, dev_name(&phydev->dev));
 +
 +	return 0;
 +}
 +
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.h
-@@ -0,0 +1,295 @@
+@@ -0,0 +1,288 @@
 +/*
 + * ar231x.h: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -1404,15 +1392,12 @@
 +#define DMA_CONTROL_ST		BIT(13)	/* start transmit */
 +#define DMA_CONTROL_SF		BIT(21)	/* store and forward */
 +
-+
 +typedef struct {
 +	volatile unsigned int status;	/* OWN, Device control and status. */
 +	volatile unsigned int devcs;	/* pkt Control bits + Length */
 +	volatile unsigned int addr;	/* Current Address. */
 +	volatile unsigned int descr;	/* Next descriptor in chain. */
 +} ar231x_descr_t;
-+
-+
 +
 +/**
 + * New Combo structure for Both Eth0 AND eth1
@@ -1430,7 +1415,6 @@
 +	volatile unsigned int vlan_tag;	/* 0x20 */
 +	volatile unsigned int pad[7];	/* 0x24 - 0x3c */
 +	volatile unsigned int ucast_table[8];	/* 0x40-0x5c */
-+
 +} ETHERNET_STRUCT;
 +
 +typedef struct {
@@ -1496,7 +1480,6 @@
 +	ar231x_descr_t *rx_ring;
 +	ar231x_descr_t *tx_ring;
 +
-+
 +	struct sk_buff **rx_skb;
 +	struct sk_buff **tx_skb;
 +
@@ -1516,7 +1499,6 @@
 +		char *mapping;
 +	} desc;
 +
-+
 +	struct timer_list link_timer;
 +	unsigned short phy;		/* merlot phy = 1, samsung phy = 0x1f */
 +	unsigned short mac;
@@ -1531,7 +1513,6 @@
 +	int oldduplex;
 +};
 +
-+
 +/* Prototypes */
 +static int ar231x_init(struct net_device *dev);
 +#ifdef TX_TIMEOUT
@@ -1543,10 +1524,10 @@
 +static int ar231x_open(struct net_device *dev);
 +static int ar231x_start_xmit(struct sk_buff *skb, struct net_device *dev);
 +static int ar231x_close(struct net_device *dev);
-+static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr,
-+						int cmd);
++static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd);
 +static void ar231x_init_cleanup(struct net_device *dev);
 +static int ar231x_setup_timer(struct net_device *dev);
 +static void ar231x_link_timer_fn(unsigned long data);
 +static void ar231x_check_link(struct net_device *dev);
-+#endif							/* _AR2313_H_ */
++
++#endif	/* _AR2313_H_ */

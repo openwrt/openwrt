@@ -681,7 +681,7 @@
 +#endif /* __ASM_MACH_AR231X_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,617 @@
+@@ -0,0 +1,614 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -707,7 +707,6 @@
 +#define AR2315_IRQ_LCBUS_PCI    (MIPS_CPU_IRQ_BASE+5) /* C0_CAUSE: 0x2000 */
 +#define AR2315_IRQ_WLAN0_POLL   (MIPS_CPU_IRQ_BASE+6) /* C0_CAUSE: 0x4000 */
 +
-+
 +/*
 + * Miscellaneous interrupts, which share IP2.
 + */
@@ -722,7 +721,6 @@
 +#define AR2315_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+8)
 +#define AR2315_MISC_IRQ_IR_RSVD		(AR231X_MISC_IRQ_BASE+9)
 +#define AR2315_MISC_IRQ_COUNT		10
-+
 +
 +/*
 + * Address map
@@ -742,7 +740,7 @@
 +#define AR2315_ENET0_MII	(AR2315_ENET0 + 0x14)
 +
 +/*
-+ * Reset Register
++ * Cold reset register
 + */
 +#define AR2315_COLD_RESET       (AR2315_DSLBASE + 0x0000)
 +
@@ -756,7 +754,9 @@
 +	 RESET_COLD_AHB)                                   /* full system */
 +#define AR2317_RESET_SYSTEM                0x00000010
 +
-+
++/*
++ * Reset register
++ */
 +#define AR2315_RESET            (AR2315_DSLBASE + 0x0004)
 +
 +/* warm reset WLAN0 MAC */
@@ -836,7 +836,6 @@
 +#define AR2315_CONFIG_CPU_PCI              0x00020000
 +#define AR2315_CONFIG_CPU_MMR              0x00040000
 +#define AR2315_CONFIG_BIG                  0x00000400
-+
 +
 +/*
 + * NMI control
@@ -1173,7 +1172,6 @@
 +#define AR2315_PCI_HOST_OUT_DIS (AR2315_PCI + 0x0904)
 +#define AR2315_PCI_HOST_OUT_PTR (AR2315_PCI + 0x0908)
 +
-+
 +/*
 + * Local Bus Interface Registers
 + */
@@ -1219,7 +1217,6 @@
 +#define AR2315_LBM_TIMEOUT_MASK 0x00FFFF80
 +#define AR2315_LBM_TIMEOUT_SHFT 7
 +#define AR2315_LBM_PORTMUX      0x07000000
-+
 +
 +#define AR2315_LB_RXTSOFF       (AR2315_LOCAL + 0x0010)
 +
@@ -1301,7 +1298,7 @@
 +#endif /* __ASM_MACH_AR231X_AR2315_REGS_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,249 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1320,13 +1317,11 @@
 +/*
 + * IRQs
 + */
-+
 +#define AR5312_IRQ_WLAN0_INTRS  (MIPS_CPU_IRQ_BASE+2) /* C0_CAUSE: 0x0400 */
 +#define AR5312_IRQ_ENET0_INTRS  (MIPS_CPU_IRQ_BASE+3) /* C0_CAUSE: 0x0800 */
 +#define AR5312_IRQ_ENET1_INTRS  (MIPS_CPU_IRQ_BASE+4) /* C0_CAUSE: 0x1000 */
 +#define AR5312_IRQ_WLAN1_INTRS  (MIPS_CPU_IRQ_BASE+5) /* C0_CAUSE: 0x2000 */
 +#define AR5312_IRQ_MISC_INTRS   (MIPS_CPU_IRQ_BASE+6) /* C0_CAUSE: 0x4000 */
-+
 +
 +/*
 + * Miscellaneous interrupts, which share IP6.
@@ -1343,8 +1338,9 @@
 +#define AR5312_MISC_IRQ_SPI		(AR231X_MISC_IRQ_BASE+9)
 +#define AR5312_MISC_IRQ_COUNT		10
 +
-+
-+/* Address Map */
++/*
++ * Address Map
++ */
 +#define AR5312_WLAN0            0x18000000
 +#define AR5312_WLAN1            0x18500000
 +#define AR5312_ENET0            0x18100000
@@ -1465,7 +1461,6 @@
 +#define AR2313_CLOCKCTL1_MULTIPLIER_SHIFT          16
 +#define AR2313_CLOCKCTL1_DOUBLER_MASK      0x00000000
 +
-+
 +/* AR5312_ENABLE register bit field definitions */
 +#define AR5312_ENABLE_WLAN0              0x0001
 +#define AR5312_ENABLE_ENET0              0x0002
@@ -1552,12 +1547,10 @@
 +#define AR5312_GPIO_CR_UART(x) (1 << ((x)+16))          /* uart multiplex */
 +#define AR5312_NUM_GPIO		8
 +
-+
 +#endif	/* __ASM_MACH_AR231X_AR5312_REGS_H */
-+
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,541 @@
+@@ -0,0 +1,534 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1634,7 +1627,6 @@
 +		do_IRQ(AR231X_IRQ_CPU_CLOCK);
 +}
 +
-+
 +/* Enable the specified AR5312_MISC_IRQ interrupt */
 +static void
 +ar5312_misc_irq_unmask(struct irq_data *d)
@@ -1664,7 +1656,6 @@
 +	.irq_mask	= ar5312_misc_irq_mask,
 +};
 +
-+
 +static irqreturn_t ar5312_ahb_proc_handler(int cpl, void *dev_id)
 +{
 +	u32 proc1 = ar231x_read_reg(AR5312_PROC1);
@@ -1679,12 +1670,10 @@
 +	return IRQ_HANDLED;
 +}
 +
-+
 +static struct irqaction ar5312_ahb_proc_interrupt  = {
 +	.handler = ar5312_ahb_proc_handler,
 +	.name    = "ar5312_ahb_proc_interrupt",
 +};
-+
 +
 +void __init ar5312_irq_init(void)
 +{
@@ -1951,7 +1940,6 @@
 +	return 0;
 +}
 +
-+
 +static void ar5312_restart(char *command)
 +{
 +	/* reset the system */
@@ -1960,13 +1948,11 @@
 +		ar231x_write_reg(AR5312_RESET, AR5312_RESET_SYSTEM);
 +}
 +
-+
 +/*
 + * This table is indexed by bits 5..4 of the CLOCKCTL1 register
 + * to determine the predevisor value.
 + */
 +static int clockctl1_predivide_table[4] __initdata = { 1, 2, 4, 5 };
-+
 +
 +static int __init
 +ar5312_cpu_frequency(void)
@@ -2079,7 +2065,7 @@
 +	devid = ar231x_read_reg(AR5312_REV);
 +	devid >>= AR5312_REV_WMAC_MIN_S;
 +	devid &= AR5312_REV_CHIP;
-+	ar231x_board.devid = (u16) devid;
++	ar231x_board.devid = (u16)devid;
 +	ar5312_gpio_init();
 +}
 +
@@ -2101,7 +2087,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/ar2315.c
-@@ -0,0 +1,559 @@
+@@ -0,0 +1,556 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2308,13 +2294,13 @@
 +		int irq = AR231X_MISC_IRQ_BASE + i;
 +
 +		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
-+			handle_level_irq);
++					 handle_level_irq);
 +	}
 +	for (i = 0; i < AR2315_NUM_GPIO; i++) {
 +		int irq = AR231X_GPIO_IRQ_BASE + i;
 +
 +		irq_set_chip_and_handler(irq, &ar2315_gpio_irq_chip,
-+			handle_level_irq);
++					 handle_level_irq);
 +	}
 +	irq_set_chained_handler(AR2315_MISC_IRQ_GPIO, ar2315_gpio_irq_handler);
 +	setup_irq(AR2315_MISC_IRQ_AHB, &ar2315_ahb_proc_interrupt);
@@ -2529,7 +2515,6 @@
 +	mips_reset_vec();
 +}
 +
-+
 +/*
 + * This table is indexed by bits 5..4 of the CLOCKCTL1 register
 + * to determine the predevisor value.
@@ -2609,8 +2594,6 @@
 +		ar2315_gpio_chip.ngpio);
 +	return ret;
 +}
-+
-+
 +
 +void __init
 +ar2315_prom_init(void)
@@ -2830,7 +2813,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ar231x/devices.c
-@@ -0,0 +1,182 @@
+@@ -0,0 +1,180 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -2915,7 +2898,6 @@
 +	}
 +};
 +
-+
 +static struct platform_device ar231x_wmac[] = {
 +	{
 +		.id = 0,
@@ -2946,11 +2928,10 @@
 +const char *get_system_type(void)
 +{
 +	if ((ar231x_devtype >= ARRAY_SIZE(devtype_strings)) ||
-+		!devtype_strings[ar231x_devtype])
++	    !devtype_strings[ar231x_devtype])
 +		return devtype_strings[DEV_TYPE_UNKNOWN];
 +	return devtype_strings[ar231x_devtype];
 +}
-+
 +
 +int __init
 +ar231x_add_ethernet(int nr, u32 base, const char *mii_name, u32 mii_base,

@@ -183,7 +183,7 @@
 +	op = &stm_opcodes[opcode];
 +	reg = spiflash_wait_busy(priv);
 +	spiflash_write_reg(priv, SPI_FLASH_OPCODE,
-+		((u32) op->code) | (addr << 8));
++			   ((u32)op->code) | (addr << 8));
 +
 +	reg &= ~SPI_CTL_TX_RX_CNT_MASK;
 +	reg |= SPI_CTL_START | op->tx_cnt | (op->rx_cnt << 4);
@@ -453,7 +453,7 @@
 +	/* parse redboot partitions */
 +
 +	result = mtd_device_parse_register(mtd, part_probe_types,
-+			NULL, NULL, 0);
++					   NULL, NULL, 0);
 +#endif
 +
 +	return result;
