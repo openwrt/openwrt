@@ -1292,7 +1292,7 @@
 +#endif /* __ASM_MACH_AR231X_AR2315_REGS_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,235 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1525,24 +1525,12 @@
 +#define MEM_CFG1_AC1    0x00007000      /* bank 1: SDRAM addr check (added) */
 +#define MEM_CFG1_AC1_S  12
 +
-+/* GPIO Address Map */
 +#define AR5312_GPIO         (AR5312_APBBASE  + 0x2000)
-+#define AR5312_GPIO_DO      (AR5312_GPIO + 0x00)        /* output register */
-+#define AR5312_GPIO_DI      (AR5312_GPIO + 0x04)        /* intput register */
-+#define AR5312_GPIO_CR      (AR5312_GPIO + 0x08)        /* control register */
-+
-+/* GPIO Control Register bit field definitions */
-+#define AR5312_GPIO_CR_M(x)    (1 << (x))               /* mask for i/o */
-+#define AR5312_GPIO_CR_O(x)    (0 << (x))               /* mask for output */
-+#define AR5312_GPIO_CR_I(x)    (1 << (x))               /* mask for input */
-+#define AR5312_GPIO_CR_INT(x)  (1 << ((x)+8))           /* mask for interrupt*/
-+#define AR5312_GPIO_CR_UART(x) (1 << ((x)+16))          /* uart multiplex */
-+#define AR5312_NUM_GPIO		8
 +
 +#endif	/* __ASM_MACH_AR231X_AR5312_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ar231x/ar5312.c
-@@ -0,0 +1,536 @@
+@@ -0,0 +1,476 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1686,51 +1674,6 @@
 +	setup_irq(AR5312_MISC_IRQ_AHB_PROC, &ar5312_ahb_proc_interrupt);
 +	irq_set_chained_handler(AR5312_IRQ_MISC_INTRS, ar5312_misc_irq_handler);
 +}
-+
-+/*
-+ * gpiolib implementations
-+ */
-+static int
-+ar5312_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
-+{
-+	return (ar231x_read_reg(AR5312_GPIO_DI) >> gpio) & 1;
-+}
-+
-+static void
-+ar5312_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
-+{
-+	u32 reg = ar231x_read_reg(AR5312_GPIO_DO);
-+
-+	reg = value ? reg | (1 << gpio) : reg & ~(1 << gpio);
-+	ar231x_write_reg(AR5312_GPIO_DO, reg);
-+}
-+
-+static int
-+ar5312_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
-+{
-+	ar231x_mask_reg(AR5312_GPIO_CR, 0, 1 << gpio);
-+	return 0;
-+}
-+
-+static int
-+ar5312_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int value)
-+{
-+	ar231x_mask_reg(AR5312_GPIO_CR, 1 << gpio, 0);
-+	ar5312_gpio_set_value(chip, gpio, value);
-+	return 0;
-+}
-+
-+static struct gpio_chip ar5312_gpio_chip = {
-+	.label                  = "ar5312-gpio",
-+	.direction_input        = ar5312_gpio_direction_input,
-+	.direction_output       = ar5312_gpio_direction_output,
-+	.set                    = ar5312_gpio_set_value,
-+	.get                    = ar5312_gpio_get_value,
-+	.base                   = 0,
-+	.ngpio                  = AR5312_NUM_GPIO, /* 8 */
-+};
-+
-+/* end of gpiolib */
 +
 +static void ar5312_device_reset_set(u32 mask)
 +{
@@ -2024,20 +1967,6 @@
 +	mips_hpt_frequency = ar5312_cpu_frequency() / 2;
 +}
 +
-+static int __init
-+ar5312_gpio_init(void)
-+{
-+	int ret = gpiochip_add(&ar5312_gpio_chip);
-+
-+	if (ret) {
-+		pr_err("%s: failed to add gpiochip\n", ar5312_gpio_chip.label);
-+		return ret;
-+	}
-+	pr_info("%s: registered %d GPIOs\n", ar5312_gpio_chip.label,
-+		ar5312_gpio_chip.ngpio);
-+	return ret;
-+}
-+
 +void __init
 +ar5312_prom_init(void)
 +{
@@ -2060,7 +1989,6 @@
 +	devid >>= AR5312_REV_WMAC_MIN_S;
 +	devid &= AR5312_REV_CHIP;
 +	ar231x_board.devid = (u16)devid;
-+	ar5312_gpio_init();
 +}
 +
 +void __init
