@@ -358,14 +358,14 @@
 +}
 --- a/arch/mips/ar231x/Kconfig
 +++ b/arch/mips/ar231x/Kconfig
-@@ -7,3 +7,10 @@ config ATHEROS_AR2315
+@@ -7,3 +7,10 @@ config SOC_AR2315
  	bool "Atheros 2315+ support"
  	depends on ATHEROS_AR231X
  	default y
 +
 +config PCI_AR2315
 +	bool "AR2315 PCI controller support"
-+	depends on ATHEROS_AR2315
++	depends on SOC_AR2315
 +	select HW_HAS_PCI
 +	select PCI
 +	default y

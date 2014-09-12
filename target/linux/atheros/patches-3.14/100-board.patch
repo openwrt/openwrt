@@ -50,12 +50,12 @@
 --- /dev/null
 +++ b/arch/mips/ar231x/Kconfig
 @@ -0,0 +1,9 @@
-+config ATHEROS_AR5312
++config SOC_AR5312
 +	bool "Atheros 5312/2312+ support"
 +	depends on ATHEROS_AR231X
 +	default y
 +
-+config ATHEROS_AR2315
++config SOC_AR2315
 +	bool "Atheros 2315+ support"
 +	depends on ATHEROS_AR231X
 +	default y
@@ -73,8 +73,8 @@
 +#
 +
 +obj-y += board.o prom.o devices.o
-+obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
-+obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
++obj-$(CONFIG_SOC_AR5312) += ar5312.o
++obj-$(CONFIG_SOC_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ar231x/board.c
 @@ -0,0 +1,229 @@
@@ -476,7 +476,7 @@
 +/* #define cpu_has_mcheck		? */
 +#define cpu_has_ejtag			1
 +
-+#if !defined(CONFIG_ATHEROS_AR5312)
++#if !defined(CONFIG_SOC_AR5312)
 +#  define cpu_has_llsc			1
 +#else
 +/*
@@ -500,7 +500,7 @@
 +
 +#define cpu_has_mips32r1		1
 +
-+#if !defined(CONFIG_ATHEROS_AR5312)
++#if !defined(CONFIG_SOC_AR5312)
 +#  define cpu_has_mips32r2		1
 +#endif
 +
@@ -2665,7 +2665,7 @@
 +#ifndef __AR2315_H
 +#define __AR2315_H
 +
-+#ifdef CONFIG_ATHEROS_AR2315
++#ifdef CONFIG_SOC_AR2315
 +
 +void ar2315_irq_init(void);
 +int ar2315_init_devices(void);
@@ -2705,7 +2705,7 @@
 +#ifndef __AR5312_H
 +#define __AR5312_H
 +
-+#ifdef CONFIG_ATHEROS_AR5312
++#ifdef CONFIG_SOC_AR5312
 +
 +void ar5312_irq_init(void);
 +int ar5312_init_devices(void);

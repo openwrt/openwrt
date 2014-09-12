@@ -56,8 +56,8 @@
 +
 +obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
 +
- obj-$(CONFIG_ATHEROS_AR5312) += ar5312.o
- obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
+ obj-$(CONFIG_SOC_AR5312) += ar5312.o
+ obj-$(CONFIG_SOC_AR2315) += ar2315.o
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -154,6 +154,7 @@ config ATHEROS_AR231X
