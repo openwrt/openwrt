@@ -674,7 +674,7 @@
 +#endif /* __ASM_MACH_AR231X_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,614 @@
+@@ -0,0 +1,624 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -714,6 +714,16 @@
 +#define AR2315_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+8)
 +#define AR2315_MISC_IRQ_IR_RSVD		(AR231X_MISC_IRQ_BASE+9)
 +#define AR2315_MISC_IRQ_COUNT		10
++
++/*
++ * PCI interrupts, which share IP5
++ * Keep ordered according to AR2315_PCI_INT_XXX bits
++ */
++#define AR2315_PCI_IRQ_BASE		0x50
++#define AR2315_PCI_IRQ_EXT		(AR2315_PCI_IRQ_BASE+0)
++#define AR2315_PCI_IRQ_ABORT		(AR2315_PCI_IRQ_BASE+1)
++#define AR2315_PCI_IRQ_COUNT		2
++#define AR2315_PCI_IRQ_SHIFT		25	/* in AR2315_PCI_INT_STATUS */
 +
 +/*
 + * Address map
@@ -1138,25 +1148,25 @@
 +
 +#define AR2315_PCI_OUT_PTR      (AR2315_PCI + 0x0408)
 +
-+#define AR2315_PCI_INT_STATUS   (AR2315_PCI + 0x0500)   /* write one to clr */
-+#define AR2315_PCI_TXINT        0x00000001      /* Desc In Completed */
-+#define AR2315_PCI_TXOK         0x00000002      /* Desc In OK */
-+#define AR2315_PCI_TXERR        0x00000004      /* Desc In ERR */
-+#define AR2315_PCI_TXEOL        0x00000008      /* Desc In End-of-List */
-+#define AR2315_PCI_RXINT        0x00000010      /* Desc Out Completed */
-+#define AR2315_PCI_RXOK         0x00000020      /* Desc Out OK */
-+#define AR2315_PCI_RXERR        0x00000040      /* Desc Out ERR */
-+#define AR2315_PCI_RXEOL        0x00000080      /* Desc Out EOL */
-+#define AR2315_PCI_TXOOD        0x00000200      /* Desc In Out-of-Desc */
-+#define AR2315_PCI_MASK         0x0000FFFF      /* Desc Mask */
-+#define AR2315_PCI_EXT_INT      0x02000000
-+#define AR2315_PCI_ABORT_INT    0x04000000
++#define AR2315_PCI_ISR          (AR2315_PCI + 0x0500)   /* write one to clr */
++#define AR2315_PCI_INT_TX       0x00000001      /* Desc In Completed */
++#define AR2315_PCI_INT_TXOK     0x00000002      /* Desc In OK */
++#define AR2315_PCI_INT_TXERR    0x00000004      /* Desc In ERR */
++#define AR2315_PCI_INT_TXEOL    0x00000008      /* Desc In End-of-List */
++#define AR2315_PCI_INT_RX       0x00000010      /* Desc Out Completed */
++#define AR2315_PCI_INT_RXOK     0x00000020      /* Desc Out OK */
++#define AR2315_PCI_INT_RXERR    0x00000040      /* Desc Out ERR */
++#define AR2315_PCI_INT_RXEOL    0x00000080      /* Desc Out EOL */
++#define AR2315_PCI_INT_TXOOD    0x00000200      /* Desc In Out-of-Desc */
++#define AR2315_PCI_INT_DESCMASK 0x0000FFFF      /* Desc Mask */
++#define AR2315_PCI_INT_EXT      0x02000000      /* Extern PCI INTA */
++#define AR2315_PCI_INT_ABORT    0x04000000      /* PCI bus abort event */
 +
-+#define AR2315_PCI_INT_MASK     (AR2315_PCI + 0x0504)  /* same as INT_STATUS */
++#define AR2315_PCI_IMR          (AR2315_PCI + 0x0504)  /* mask _PCI_ISR bits */
 +
-+#define AR2315_PCI_INTEN_REG    (AR2315_PCI + 0x0508)
-+#define AR2315_PCI_INT_DISABLE  0x00            /* disable pci interrupts */
-+#define AR2315_PCI_INT_ENABLE   0x01            /* enable pci interrupts */
++#define AR2315_PCI_IER          (AR2315_PCI + 0x0508)  /* global PCI int en */
++#define AR2315_PCI_IER_DISABLE  0x00            /* disable pci interrupts */
++#define AR2315_PCI_IER_ENABLE   0x01            /* enable pci interrupts */
 +
 +#define AR2315_PCI_HOST_IN_EN   (AR2315_PCI + 0x0800)
 +#define AR2315_PCI_HOST_IN_DIS  (AR2315_PCI + 0x0804)
