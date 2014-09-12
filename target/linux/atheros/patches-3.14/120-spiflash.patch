@@ -23,7 +23,7 @@
  
 --- /dev/null
 +++ b/drivers/mtd/devices/ar2315.c
-@@ -0,0 +1,536 @@
+@@ -0,0 +1,518 @@
 +
 +/*
 + * MTD driver for the SPI Flash Memory support on Atheros AR2315
@@ -452,41 +452,33 @@
 +	int index;
 +	int result = 0;
 +
-+	priv = kzalloc(sizeof(struct spiflash_priv), GFP_KERNEL);
++	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
 +	spin_lock_init(&priv->lock);
 +	init_waitqueue_head(&priv->wq);
 +	priv->state = FL_READY;
 +	mtd = &priv->mtd;
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-+	if (!res) {
-+		dev_err(&pdev->dev, "No MMR resource found\n");
-+		goto error;
-+	}
-+
-+	priv->mmraddr = ioremap_nocache(res->start, resource_size(res));
-+	if (!priv->mmraddr) {
-+		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
-+		goto error;
++	priv->mmraddr = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(priv->mmraddr)) {
++		dev_warn(&pdev->dev, "failed to map flash MMR\n");
++		return PTR_ERR(priv->mmraddr);
 +	}
 +
 +	index = spiflash_probe_chip(priv);
 +	if (!index) {
 +		dev_warn(&pdev->dev, SPIFLASH "Found no flash device\n");
-+		goto error;
++		return -ENODEV;
 +	}
 +
 +	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	if (!res) {
-+		dev_err(&pdev->dev, "No flash readmem resource found\n");
-+		goto error;
-+	}
-+
-+	priv->readaddr = ioremap_nocache(res->start,
-+					 flashconfig_tbl[index].byte_cnt);
-+	if (!priv->readaddr) {
-+		dev_warn(&pdev->dev, SPIFLASH "Failed to map flash device\n");
-+		goto error;
++	priv->readaddr = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(priv->readaddr)) {
++		dev_warn(&pdev->dev, "failed to map flash read mem\n");
++		return PTR_ERR(priv->readaddr);
 +	}
 +
 +	platform_set_drvdata(pdev, priv);
@@ -513,24 +505,14 @@
 +#endif
 +
 +	return result;
-+
-+error:
-+	if (priv->mmraddr)
-+		iounmap(priv->mmraddr);
-+	kfree(priv);
-+	return -ENXIO;
 +}
 +
 +static int
 +spiflash_remove(struct platform_device *pdev)
 +{
 +	struct spiflash_priv *priv = platform_get_drvdata(pdev);
-+	struct mtd_info *mtd = &priv->mtd;
 +
-+	mtd_device_unregister(mtd);
-+	iounmap(priv->mmraddr);
-+	iounmap(priv->readaddr);
-+	kfree(priv);
++	mtd_device_unregister(&priv->mtd);
 +
 +	return 0;
 +}
