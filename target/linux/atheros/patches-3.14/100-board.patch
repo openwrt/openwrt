@@ -674,7 +674,7 @@
 +#endif /* __ASM_MACH_AR231X_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,624 @@
+@@ -0,0 +1,625 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -738,6 +738,7 @@
 +#define AR2315_UART0            0x11100000      /* UART MMR */
 +#define AR2315_SPI_MMR          0x11300000      /* SPI FLASH MMR */
 +#define AR2315_PCIEXT           0x80000000      /* pci external */
++#define AR2315_PCIEXT_SZ	0x40000000
 +
 +/* MII registers offset inside Ethernet MMR region */
 +#define AR2315_ENET0_MII	(AR2315_ENET0 + 0x14)
