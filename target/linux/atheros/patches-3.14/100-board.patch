@@ -524,7 +524,7 @@
 +#endif /* __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,76 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -537,9 +537,8 @@
 +#ifndef __ASM_MACH_AR231X_DMA_COHERENCE_H
 +#define __ASM_MACH_AR231X_DMA_COHERENCE_H
 +
-+#define PCI_DMA_OFFSET	0x20000000
-+
 +#include <linux/device.h>
++#include <ar2315_regs.h>
 +
 +static inline dma_addr_t ar231x_dev_offset(struct device *dev)
 +{
@@ -547,7 +546,7 @@
 +	extern struct bus_type pci_bus_type;
 +
 +	if (dev && dev->bus == &pci_bus_type)
-+		return PCI_DMA_OFFSET;
++		return AR2315_PCI_HOST_SDRAM_BASEADDR;
 +#endif
 +	return 0;
 +}
@@ -674,7 +673,7 @@
 +#endif /* __ASM_MACH_AR231X_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
-@@ -0,0 +1,625 @@
+@@ -0,0 +1,631 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -1291,13 +1290,19 @@
 +#define AR2315_IRCFG_SEQ_END_WIN_THRESH	0x001f0000
 +#define AR2315_IRCFG_NUM_BACKOFF_WORDS	0x01e00000
 +
-+#define HOST_PCI_DEV_ID         3
-+#define HOST_PCI_MBAR0          0x10000000
-+#define HOST_PCI_MBAR1          0x20000000
-+#define HOST_PCI_MBAR2          0x30000000
++/*
++ * We need some arbitrary non-zero value to be programmed to the BAR1 register
++ * of PCI host controller to enable DMA. The same value should be used as the
++ * offset to calculate the physical address of DMA buffer for PCI devices.
++ */
++#define AR2315_PCI_HOST_SDRAM_BASEADDR	0x20000000
 +
-+#define HOST_PCI_SDRAM_BASEADDR HOST_PCI_MBAR1
-+#define PCI_DEVICE_MEM_SPACE    0x800000
++/* ??? access BAR */
++#define AR2315_PCI_HOST_MBAR0		0x10000000
++/* RAM access BAR */
++#define AR2315_PCI_HOST_MBAR1		AR2315_PCI_HOST_SDRAM_BASEADDR
++/* ??? access BAR */
++#define AR2315_PCI_HOST_MBAR2		0x30000000
 +
 +#endif /* __ASM_MACH_AR231X_AR2315_REGS_H */
 --- /dev/null
