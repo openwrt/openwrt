@@ -84,7 +84,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ar231x/board.c
-@@ -0,0 +1,263 @@
+@@ -0,0 +1,260 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -255,7 +255,7 @@
 +	if (broken_boarddata) {
 +		pr_warn("WARNING: broken board data detected\n");
 +		config = ar231x_board.config;
-+		if (!memcmp(config->enet0_mac, "\x00\x00\x00\x00\x00\x00", 6)) {
++		if (is_zero_ether_addr(config->enet0_mac)) {
 +			pr_info("Fixing up empty mac addresses\n");
 +			config->reset_config_gpio = 0xffff;
 +			config->sys_led_gpio = 0xffff;
@@ -265,7 +265,6 @@
 +			random_ether_addr(config->enet1_mac);
 +		}
 +	}
-+
 +
 +	/* Radio config starts 0x100 bytes after board config, regardless
 +	 * of what the physical layout on the flash chip looks like */
@@ -289,7 +288,7 @@
 +	mac_addr = &radio_data[0x1d * 2];
 +	if (is_broadcast_ether_addr(mac_addr)) {
 +		pr_info("Radio MAC is blank; using board-data\n");
-+		memcpy(mac_addr, ar231x_board.config->wlan0_mac, ETH_ALEN);
++		ether_addr_copy(mac_addr, ar231x_board.config->wlan0_mac);
 +	}
 +
 +	return 0;
@@ -315,7 +314,6 @@
 +	/* Disable data watchpoints */
 +	write_c0_watchlo0(0);
 +}
-+
 +
 +asmlinkage void
 +plat_irq_dispatch(void)
@@ -346,7 +344,6 @@
 +	ar5312_irq_init();
 +	ar2315_irq_init();
 +}
-+
 +
 --- /dev/null
 +++ b/arch/mips/ar231x/prom.c
@@ -390,9 +387,11 @@
 +}
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,85 @@
 +#ifndef __ASM_MACH_AR231X_PLATFORM_H
 +#define __ASM_MACH_AR231X_PLATFORM_H
++
++#include <linux/etherdevice.h>
 +
 +/*
 + * This is board-specific data that is stored in a "fixed" location in flash.
@@ -435,15 +434,15 @@
 +	u32 sys_freq;                /* System frequency in Hz */
 +	u32 cnt_freq;                /* Calculated C0_COUNT frequency */
 +
-+	u8  wlan0_mac[6];
-+	u8  enet0_mac[6];
-+	u8  enet1_mac[6];
++	u8  wlan0_mac[ETH_ALEN];
++	u8  enet0_mac[ETH_ALEN];
++	u8  enet1_mac[ETH_ALEN];
 +
 +	u16 pci_id;                  /* Pseudo PCIID for common code */
 +	u16 mem_cap;                 /* cap bank1 in MB */
 +
 +	/* version 3 */
-+	u8  wlan1_mac[6];            /* (ar5212) */
++	u8  wlan1_mac[ETH_ALEN];     /* (ar5212) */
 +};
 +
 +#define BOARD_CONFIG_BUFSZ		0x1000
@@ -1929,12 +1928,12 @@
 +#endif
 +
 +	/* Fix up MAC addresses if necessary */
-+	if (!memcmp(config->enet0_mac, "\xff\xff\xff\xff\xff\xff", 6))
-+		memcpy(config->enet0_mac, config->enet1_mac, 6);
++	if (is_broadcast_ether_addr(config->enet0_mac))
++		ether_addr_copy(config->enet0_mac, config->enet1_mac);
 +
 +	/* If ENET0 and ENET1 have the same mac address,
 +	 * increment the one from ENET1 */
-+	if (memcmp(config->enet0_mac, config->enet1_mac, 6) == 0) {
++	if (ether_addr_equal(config->enet0_mac, config->enet1_mac)) {
 +		c = config->enet1_mac + 5;
 +		while ((c >= config->enet1_mac) && !(++(*c)))
 +			c--;
