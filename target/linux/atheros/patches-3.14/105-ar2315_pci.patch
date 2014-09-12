@@ -7,7 +7,7 @@
 +obj-$(CONFIG_ATHEROS_AR2315_PCI) += pci.o
 --- /dev/null
 +++ b/arch/mips/ar231x/pci.c
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,254 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -21,6 +21,30 @@
 + *
 + * You should have received a copy of the GNU General Public License
 + * along with this program; if not, see <http://www.gnu.org/licenses/>.
++ */
++
++/**
++ * Both AR2315 and AR2316 chips have PCI interface unit, which supports DMA
++ * and interrupt. PCI interface supports MMIO access method, but does not
++ * seem to support I/O ports.
++ *
++ * Read/write operation in the region 0x80000000-0xBFFFFFFF causes
++ * a memory read/write command on the PCI bus. 30 LSBs of address on
++ * the bus are taken from memory read/write request and 2 MSBs are
++ * determined by PCI unit configuration.
++ *
++ * To work with the configuration space instead of memory is necessary set
++ * the CFG_SEL bit in the PCI_MISC_CONFIG register.
++ *
++ * Devices on the bus can perform DMA requests via chip BAR1. PCI host
++ * controller BARs are programmend as if an external device is programmed.
++ * Which means that during configuration, IDSEL pin of the chip should be
++ * asserted.
++ *
++ * We know (and support) only one board that uses the PCI interface -
++ * Fonera 2.0g (FON2202). It has a USB EHCI controller connected to the
++ * AR2315 PCI bus. IDSEL pin of USB controller is connected to AD[13] line
++ * and IDSEL pin of AR125 is connected to AD[16] line.
 + */
 +
 +#include <linux/types.h>
@@ -43,7 +67,8 @@
 +
 +static unsigned long configspace;
 +
-+static int config_access(int devfn, int where, int size, u32 *ptr, bool write)
++static int ar2315_pci_cfg_access(int devfn, int where, int size, u32 *ptr,
++				 bool write)
 +{
 +	int func = PCI_FUNC(devfn);
 +	int dev = PCI_SLOT(devfn);
@@ -91,42 +116,42 @@
 +	return err ? PCIBIOS_DEVICE_NOT_FOUND : PCIBIOS_SUCCESSFUL;
 +}
 +
-+static int ar231x_pci_read(struct pci_bus *bus, unsigned int devfn, int where,
-+			   int size, u32 *value)
++static int ar2315_pci_cfg_read(struct pci_bus *bus, unsigned int devfn,
++			       int where, int size, u32 *value)
 +{
-+	return config_access(devfn, where, size, value, 0);
++	return ar2315_pci_cfg_access(devfn, where, size, value, 0);
 +}
 +
-+static int ar231x_pci_write(struct pci_bus *bus, unsigned int devfn, int where,
-+			    int size, u32 value)
++static int ar2315_pci_cfg_write(struct pci_bus *bus, unsigned int devfn,
++				int where, int size, u32 value)
 +{
-+	return config_access(devfn, where, size, &value, 1);
++	return ar2315_pci_cfg_access(devfn, where, size, &value, 1);
 +}
 +
-+static struct pci_ops ar231x_pci_ops = {
-+	.read	= ar231x_pci_read,
-+	.write	= ar231x_pci_write,
++static struct pci_ops ar2315_pci_ops = {
++	.read	= ar2315_pci_cfg_read,
++	.write	= ar2315_pci_cfg_write,
 +};
 +
-+static struct resource ar231x_mem_resource = {
-+	.name	= "AR2315 PCI MEM",
++static struct resource ar2315_mem_resource = {
++	.name	= "ar2315-pci-mem",
 +	.start	= AR2315_MEM_BASE,
 +	.end	= AR2315_MEM_BASE + AR2315_MEM_SIZE - AR2315_IO_SIZE - 1 +
 +		  0x4000000,
 +	.flags	= IORESOURCE_MEM,
 +};
 +
-+static struct resource ar231x_io_resource = {
-+	.name	= "AR2315 PCI I/O",
++static struct resource ar2315_io_resource = {
++	.name	= "ar2315-pci-io",
 +	.start	= AR2315_MEM_BASE + AR2315_MEM_SIZE - AR2315_IO_SIZE,
 +	.end	= AR2315_MEM_BASE + AR2315_MEM_SIZE - 1,
 +	.flags	= IORESOURCE_IO,
 +};
 +
-+static struct pci_controller ar231x_pci_controller = {
-+	.pci_ops		= &ar231x_pci_ops,
-+	.mem_resource	= &ar231x_mem_resource,
-+	.io_resource	= &ar231x_io_resource,
++static struct pci_controller ar2315_pci_controller = {
++	.pci_ops	= &ar2315_pci_ops,
++	.mem_resource	= &ar2315_mem_resource,
++	.io_resource	= &ar2315_io_resource,
 +	.mem_offset     = 0x00000000UL,
 +	.io_offset      = 0x00000000UL,
 +};
@@ -187,10 +212,10 @@
 +	/* Remap PCI config space */
 +	configspace = (unsigned long)ioremap_nocache(AR2315_PCIEXT,
 +						     1 * 1024 * 1024);
-+	ar231x_pci_controller.io_map_base =
++	ar2315_pci_controller.io_map_base =
 +			(unsigned long)ioremap_nocache(AR2315_MEM_BASE +
 +			AR2315_MEM_SIZE, AR2315_IO_SIZE);
-+	set_io_port_base(ar231x_pci_controller.io_map_base); /* PCI I/O space*/
++	set_io_port_base(ar2315_pci_controller.io_map_base); /* PCI I/O space*/
 +
 +	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
 +	msleep(20);
@@ -231,7 +256,7 @@
 +	ioport_resource.start = 0x10000000;
 +	ioport_resource.end = 0xffffffff;
 +
-+	register_pci_controller(&ar231x_pci_controller);
++	register_pci_controller(&ar2315_pci_controller);
 +
 +	return 0;
 +}
