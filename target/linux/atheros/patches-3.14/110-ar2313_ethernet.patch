@@ -33,7 +33,7 @@
 +obj-$(CONFIG_NET_AR231X) += ar231x.o
 --- /dev/null
 +++ b/drivers/net/ethernet/atheros/ar231x/ar231x.c
-@@ -0,0 +1,1231 @@
+@@ -0,0 +1,1218 @@
 +/*
 + * ar231x.c: Linux driver for the Atheros AR231x Ethernet device.
 + *
@@ -55,38 +55,25 @@
 + */
 +
 +#include <linux/module.h>
-+#include <linux/version.h>
 +#include <linux/types.h>
 +#include <linux/errno.h>
 +#include <linux/ioport.h>
-+#include <linux/pci.h>
 +#include <linux/netdevice.h>
 +#include <linux/etherdevice.h>
 +#include <linux/interrupt.h>
-+#include <linux/hardirq.h>
 +#include <linux/skbuff.h>
 +#include <linux/init.h>
 +#include <linux/delay.h>
 +#include <linux/mm.h>
-+#include <linux/highmem.h>
-+#include <linux/sockios.h>
-+#include <linux/pkt_sched.h>
 +#include <linux/mii.h>
 +#include <linux/phy.h>
-+#include <linux/ethtool.h>
-+#include <linux/ctype.h>
 +#include <linux/platform_device.h>
 +#include <linux/io.h>
-+#include <linux/uaccess.h>
-+
-+#include <net/sock.h>
-+#include <net/ip.h>
 +
 +#define AR2313_MTU                     1692
 +#define AR2313_PRIOS                   1
 +#define AR2313_QUEUES                  (2*AR2313_PRIOS)
 +#define AR2313_DESCR_ENTRIES           64
-+
 +
 +#ifndef min
 +#define min(a, b)	(((a) < (b)) ? (a) : (b))
