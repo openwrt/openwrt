@@ -43,7 +43,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 	bool
 	prompt "Use external toolchain"  if DEVEL
 	help
-	  If enabled, OpenWrt will compile using an existing toolchain instead of compiling one
+	  If enabled, OpenWrt will compile using an existing toolchain instead of
+	  compiling one.
 
 	config NATIVE_TOOLCHAIN
 		bool
@@ -51,7 +52,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		depends on EXTERNAL_TOOLCHAIN
 		select NO_STRIP
 		help
-		  If enabled, OpenWrt will compile using the native toolchain for your host instead of compiling one
+		  If enabled, OpenWrt will compile using the native toolchain for your
+		  host instead of compiling one.
 
 	config TARGET_NAME
 		string
@@ -95,10 +97,10 @@ menuconfig EXTERNAL_TOOLCHAIN
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "uclibc"
 		help
-		  Specify the libc type used by the external toolchain. The given value us passed as -m
-		  flag to all gcc and g++ invocations. This is mainly intended for multilib toolchains
-		  which support glibc and uclibc at the same time. If no value is specified, no -m flag
-		  is passed.
+		  Specify the libc type used by the external toolchain. The given value
+		  is passed as -m flag to all gcc and g++ invocations. This is mainly
+		  intended for multilib toolchains which support glibc and uclibc at
+		  the same time. If no value is specified, no -m flag is passed.
 
 	config TOOLCHAIN_BIN_PATH
 		string
@@ -106,8 +108,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "./usr/bin ./bin"
 		help
-		  Specify additional directories searched for toolchain binaries (override PATH)
-		  Use ./DIR for directories relative to the root above
+		  Specify additional directories searched for toolchain binaries
+		  (override PATH). Use ./DIR for directories relative to the root above.
 
 	config TOOLCHAIN_INC_PATH
 		string
@@ -115,8 +117,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "./usr/include ./include"
 		help
-		  Specify additional directories searched for header files (override CPPFLAGS)
-		  Use ./DIR for directories relative to the root above
+		  Specify additional directories searched for header files (override
+		  CPPFLAGS). Use ./DIR for directories relative to the root above.
 
 	config TOOLCHAIN_LIB_PATH
 		string
@@ -124,8 +126,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
 		default "./usr/lib ./lib"
 		help
-		  Specify additional directories searched for libraries (override LDFLAGS)
-		  Use ./DIR for directories relative to the root above
+		  Specify additional directories searched for libraries (override LDFLAGS).
+		  Use ./DIR for directories relative to the root above.
 
 config NEED_TOOLCHAIN
 	bool
@@ -237,7 +239,7 @@ config GDB
 	prompt "Build gdb" if TOOLCHAINOPTS
 	default y if !EXTERNAL_TOOLCHAIN
 	help
-		Enable if you want to build the gdb
+	  Enable if you want to build the gdb.
 
 config INSIGHT
 	bool
@@ -245,7 +247,7 @@ config INSIGHT
 	select GDB
 	default n
 	help
-		Enable if you want to build insight-gdb
+	  Enable if you want to build insight-gdb.
 
 config USE_EGLIBC
 	bool
