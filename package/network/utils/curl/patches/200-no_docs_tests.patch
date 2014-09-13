@@ -1,6 +1,6 @@
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -66,7 +66,7 @@ CLEANFILES = $(VC6LIBDSP) $(VC8LIBPRJ)
+@@ -128,7 +128,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
  bin_SCRIPTS = curl-config
  
  SUBDIRS = lib src include
@@ -11,12 +11,12 @@
  pkgconfig_DATA = libcurl.pc
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -506,7 +506,7 @@ EXTRA_DIST = CHANGES COPYING maketgz Mak
- CLEANFILES = $(VC6LIBDSP) $(VC8LIBPRJ)
+@@ -574,7 +574,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
+ 
  bin_SCRIPTS = curl-config
  SUBDIRS = lib src include
 -DIST_SUBDIRS = $(SUBDIRS) tests packages docs
 +DIST_SUBDIRS = $(SUBDIRS) packages
  pkgconfigdir = $(libdir)/pkgconfig
  pkgconfig_DATA = libcurl.pc
- VSOURCES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c vtls/qssl.c	\
+ LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c	\
