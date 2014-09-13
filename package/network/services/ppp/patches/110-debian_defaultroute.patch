@@ -153,7 +153,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  .B nodeflate
 --- a/pppd/pppd.h
 +++ b/pppd/pppd.h
-@@ -664,7 +664,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
+@@ -667,7 +667,7 @@ int  sif6addr __P((int, eui64_t, eui64_t
  int  cif6addr __P((int, eui64_t, eui64_t));
  				/* Remove an IPv6 address from i/f */
  #endif
@@ -164,16 +164,16 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  				/* Delete default route through i/f */
 --- a/pppd/sys-linux.c
 +++ b/pppd/sys-linux.c
-@@ -206,6 +206,8 @@ static unsigned char inbuf[512]; /* buff
- 
+@@ -207,6 +207,8 @@ static unsigned char inbuf[512]; /* buff
  static int	if_is_up;	/* Interface has been marked up */
+ static int	if6_is_up;	/* Interface has been marked up for IPv6, to help differentiate */
  static int	have_default_route;	/* Gateway for default route added */
 +static struct	rtentry old_def_rt;	/* Old default route */
 +static int	default_rt_repl_rest;	/* replace and restore old default rt */
  static u_int32_t proxy_arp_addr;	/* Addr for proxy arp entry added */
  static char proxy_arp_dev[16];		/* Device for proxy arp entry */
  static u_int32_t our_old_addr;		/* for detecting address changes */
-@@ -1544,6 +1546,9 @@ static int read_route_table(struct rtent
+@@ -1552,6 +1554,9 @@ static int read_route_table(struct rtent
  	p = NULL;
      }
  
@@ -183,7 +183,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      SIN_ADDR(rt->rt_dst) = strtoul(cols[route_dest_col], NULL, 16);
      SIN_ADDR(rt->rt_gateway) = strtoul(cols[route_gw_col], NULL, 16);
      SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
-@@ -1613,20 +1618,51 @@ int have_route_to(u_int32_t addr)
+@@ -1621,20 +1626,51 @@ int have_route_to(u_int32_t addr)
  /********************************************************************
   *
   * sifdefaultroute - assign a default route through the address given.
@@ -248,7 +248,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      }
  
      memset (&rt, 0, sizeof (rt));
-@@ -1641,10 +1677,16 @@ int sifdefaultroute (int unit, u_int32_t
+@@ -1649,10 +1685,16 @@ int sifdefaultroute (int unit, u_int32_t
  
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCADDRT, &rt) < 0) {
@@ -266,7 +266,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
      have_default_route = 1;
      return 1;
-@@ -1675,11 +1717,21 @@ int cifdefaultroute (int unit, u_int32_t
+@@ -1683,11 +1725,21 @@ int cifdefaultroute (int unit, u_int32_t
      rt.rt_flags = RTF_UP;
      if (ioctl(sock_fd, SIOCDELRT, &rt) < 0 && errno != ESRCH) {
  	if (still_ppp()) {
@@ -291,7 +291,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  }
 --- a/pppd/sys-solaris.c
 +++ b/pppd/sys-solaris.c
-@@ -2036,12 +2036,18 @@ cifaddr(u, o, h)
+@@ -2039,12 +2039,18 @@ cifaddr(u, o, h)
   * sifdefaultroute - assign a default route through the address given.
   */
  int
