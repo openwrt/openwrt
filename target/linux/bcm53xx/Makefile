@@ -23,6 +23,6 @@ endef
 
 KERNELNAME:="zImage dtbs"
 
-DEFAULT_PACKAGES += swconfig wpad-mini
+DEFAULT_PACKAGES += swconfig wpad-mini nvram
 
 $(eval $(call BuildTarget))
