@@ -1,0 +1,157 @@
+Backport essential fixes from 3.15
+
+From Linux 3.10 on this driver required platform data to load, which makes it
+unusable in OpenWRT. This commit backports the following fixes:
+  * Move to regulator framework for scaling
+  * Set endianness of the ADC to Big endian
+  * Fix device-removal path
+This commit should not be moved to newer kernel versions!
+
+Signed-off-by: Hartmut Knaack <knaack.h@gmx.de>
+---
+--- a/drivers/staging/iio/adc/ad799x_core.c
++++ b/drivers/staging/iio/adc/ad799x_core.c
+@@ -163,7 +163,6 @@ static int ad799x_read_raw(struct iio_de
+ {
+ 	int ret;
+ 	struct ad799x_state *st = iio_priv(indio_dev);
+-	unsigned int scale_uv;
+ 
+ 	switch (m) {
+ 	case IIO_CHAN_INFO_RAW:
+@@ -180,10 +179,12 @@ static int ad799x_read_raw(struct iio_de
+ 			RES_MASK(chan->scan_type.realbits);
+ 		return IIO_VAL_INT;
+ 	case IIO_CHAN_INFO_SCALE:
+-		scale_uv = (st->int_vref_mv * 1000) >> chan->scan_type.realbits;
+-		*val =  scale_uv / 1000;
+-		*val2 = (scale_uv % 1000) * 1000;
+-		return IIO_VAL_INT_PLUS_MICRO;
++		ret = regulator_get_voltage(st->vref);
++		if (ret < 0)
++			return ret;
++		*val =  ret / 1000;
++		*val2 = chan->scan_type.realbits;
++		return IIO_VAL_FRACTIONAL_LOG2;
+ 	}
+ 	return -EINVAL;
+ }
+@@ -474,7 +475,13 @@ static const struct iio_info ad7993_4_7_
+ 	.info_mask_separate = BIT(IIO_CHAN_INFO_RAW), \
+ 	.info_mask_shared_by_type = BIT(IIO_CHAN_INFO_SCALE), \
+ 	.scan_index = (_index), \
+-	.scan_type = IIO_ST('u', _realbits, 16, 12 - (_realbits)), \
++	.scan_type = { \
++		.sign = 'u', \
++		.realbits = (_realbits), \
++		.storagebits = 16, \
++		.shift = 12 - (_realbits), \
++		.endianness = IIO_BE, \
++		}, \
+ 	.event_mask = (_evmask), \
+ }
+ 
+@@ -584,7 +591,6 @@ static int ad799x_probe(struct i2c_clien
+ 				   const struct i2c_device_id *id)
+ {
+ 	int ret;
+-	struct ad799x_platform_data *pdata = client->dev.platform_data;
+ 	struct ad799x_state *st;
+ 	struct iio_dev *indio_dev = iio_device_alloc(sizeof(*st));
+ 
+@@ -601,17 +607,21 @@ static int ad799x_probe(struct i2c_clien
+ 
+ 	/* TODO: Add pdata options for filtering and bit delay */
+ 
+-	if (!pdata)
+-		return -EINVAL;
+-
+-	st->int_vref_mv = pdata->vref_mv;
+-
+-	st->reg = regulator_get(&client->dev, "vcc");
+-	if (!IS_ERR(st->reg)) {
+-		ret = regulator_enable(st->reg);
+-		if (ret)
+-			goto error_put_reg;
++	st->reg = devm_regulator_get(&client->dev, "vcc");
++	if (IS_ERR(st->reg))
++		return PTR_ERR(st->reg);
++	ret = regulator_enable(st->reg);
++	if (ret)
++		return ret;
++	st->vref = devm_regulator_get(&client->dev, "vref");
++	if (IS_ERR(st->vref)) {
++		ret = PTR_ERR(st->vref);
++		goto error_disable_reg;
+ 	}
++	ret = regulator_enable(st->vref);
++	if (ret)
++		goto error_disable_reg;
++
+ 	st->client = client;
+ 
+ 	indio_dev->dev.parent = &client->dev;
+@@ -624,7 +634,7 @@ static int ad799x_probe(struct i2c_clien
+ 
+ 	ret = ad799x_register_ring_funcs_and_init(indio_dev);
+ 	if (ret)
+-		goto error_disable_reg;
++		goto error_disable_vref;
+ 
+ 	if (client->irq > 0) {
+ 		ret = request_threaded_irq(client->irq,
+@@ -648,12 +658,10 @@ error_free_irq:
+ 		free_irq(client->irq, indio_dev);
+ error_cleanup_ring:
+ 	ad799x_ring_cleanup(indio_dev);
++error_disable_vref:
++	regulator_disable(st->vref);
+ error_disable_reg:
+-	if (!IS_ERR(st->reg))
+-		regulator_disable(st->reg);
+-error_put_reg:
+-	if (!IS_ERR(st->reg))
+-		regulator_put(st->reg);
++	regulator_disable(st->reg);
+ 	iio_device_free(indio_dev);
+ 
+ 	return ret;
+@@ -669,10 +677,8 @@ static int ad799x_remove(struct i2c_clie
+ 		free_irq(client->irq, indio_dev);
+ 
+ 	ad799x_ring_cleanup(indio_dev);
+-	if (!IS_ERR(st->reg)) {
+-		regulator_disable(st->reg);
+-		regulator_put(st->reg);
+-	}
++	regulator_disable(st->vref);
++	regulator_disable(st->reg);
+ 	kfree(st->rx_buf);
+ 	iio_device_free(indio_dev);
+ 
+--- a/drivers/staging/iio/adc/ad799x.h
++++ b/drivers/staging/iio/adc/ad799x.h
+@@ -103,7 +103,7 @@ struct ad799x_state {
+ 	struct i2c_client		*client;
+ 	const struct ad799x_chip_info	*chip_info;
+ 	struct regulator		*reg;
+-	u16				int_vref_mv;
++	struct regulator		*vref;
+ 	unsigned			id;
+ 	u16				config;
+ 
+@@ -111,14 +111,6 @@ struct ad799x_state {
+ 	unsigned int			transfer_size;
+ };
+ 
+-/*
+- * TODO: struct ad799x_platform_data needs to go into include/linux/iio
+- */
+-
+-struct ad799x_platform_data {
+-	u16				vref_mv;
+-};
+-
+ #ifdef CONFIG_AD799X_RING_BUFFER
+ int ad799x_register_ring_funcs_and_init(struct iio_dev *indio_dev);
+ void ad799x_ring_cleanup(struct iio_dev *indio_dev);
