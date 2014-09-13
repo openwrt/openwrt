@@ -10,7 +10,7 @@ menu "Target Images"
 		bool "ramdisk"
 		default y if USES_INITRAMFS
 		help
-		  Embed the rootfs into the kernel (initramfs)
+		  Embed the root filesystem into the kernel (initramfs).
 
 		choice
 			prompt "Compression"
@@ -48,7 +48,7 @@ menu "Target Images"
 			prompt "Use external cpio" if TARGET_ROOTFS_INITRAMFS
 			default ""
 			help
-			  Kernel uses specified external cpio as INITRAMFS_SOURCE
+			  Kernel uses specified external cpio as INITRAMFS_SOURCE.
 
 	comment "Root filesystem archives"
 
@@ -56,13 +56,13 @@ menu "Target Images"
 		bool "cpio.gz"
 		default y if USES_CPIOGZ
 		help
-		  Build a compressed cpio archive of the the root filesystem
+		  Build a compressed cpio archive of the root filesystem.
 
 	config TARGET_ROOTFS_TARGZ
 		bool "tar.gz"
 		default y if USES_TARGZ
 		help
-		  Build a compressed tar archive of the the root filesystem
+		  Build a compressed tar archive of the root filesystem.
 
 	comment "Root filesystem images"
 
@@ -70,28 +70,28 @@ menu "Target Images"
 		bool "ext4"
 		default y if USES_EXT4
 		help
-		  Build a ext4 root filesystem
+		  Build an ext4 root filesystem.
 
 		config TARGET_EXT4_MAXINODE
 			int "Maximum number of inodes in root filesystem"
 			depends on TARGET_ROOTFS_EXT4FS
 			default 6000
 			help
-			  Allows you to change the maximum number of inodes in the root filesystem
+			  Select the maximum number of inodes in the root filesystem.
 
 		config TARGET_EXT4_RESERVED_PCT
 			int "Percentage of reserved blocks in root filesystem"
 			depends on TARGET_ROOTFS_EXT4FS
 			default 0
 			help
-			  Allows you to change the percentage of reserved blocks in the root filesystem
+			  Select the percentage of reserved blocks in the root filesystem.
 
 		choice
 			prompt "Root filesystem block size"
 			default TARGET_EXT4_BLOCKSIZE_4K
 			depends on TARGET_ROOTFS_EXT4FS
 			help
-			  Allows you to change the block size of the root filesystem
+			  Select the block size of the root filesystem.
 
 			config TARGET_EXT4_BLOCKSIZE_4K
 				bool "4k"
@@ -115,33 +115,33 @@ menu "Target Images"
 			depends on TARGET_ROOTFS_EXT4FS
 			default n
 			help
-			  Create an ext4 filesystem with a journal
+			  Create an ext4 filesystem with a journal.
 
 	config TARGET_ROOTFS_ISO
 		bool "iso"
 		default n
 		depends on TARGET_x86_generic
 		help
-		  Create some bootable ISO image
+		  Create a bootable ISO image.
 
 	config TARGET_ROOTFS_JFFS2
 		bool "jffs2"
 		default y if USES_JFFS2
 		help
-		  Build a jffs2 root filesystem
+		  Build a JFFS2 root filesystem.
 
 	config TARGET_ROOTFS_JFFS2_NAND
 		bool "jffs2 for NAND"
 		default y if USES_JFFS2_NAND
 		depends on USES_JFFS2_NAND
 		help
-		  Build a jffs2 root filesystem for NAND flash
+		  Build a JFFS2 root filesystem for NAND flash.
 
 	menuconfig TARGET_ROOTFS_SQUASHFS
 		bool "squashfs"
 		default y if USES_SQUASHFS
 		help
-		  Build a squashfs-lzma root filesystem
+		  Build a squashfs-lzma root filesystem.
 
 		config TARGET_SQUASHFS_BLOCK_SIZE
 			int "Block size (in KiB)"
@@ -154,7 +154,7 @@ menu "Target Images"
 		default y if USES_UBIFS
 		depends on USES_UBIFS
 		help
-		  Build a ubifs root filesystem
+		  Build a UBIFS root filesystem.
 
 		choice
 			prompt "compression"
@@ -177,7 +177,7 @@ menu "Target Images"
 			bool "free space fixup" if TARGET_ROOTFS_UBIFS
 			default y
 			help
-			  The file-system free space has to be fixed up on first mount
+			  The filesystem free space has to be fixed up on first mount.
 
 		config TARGET_UBIFS_JOURNAL_SIZE
 			string
@@ -262,7 +262,7 @@ menu "Target Images"
 		depends on GRUB_IMAGES || TARGET_ROOTFS_EXT4FS || TARGET_rb532
 		default 48
 		help
-		  Allows you to change the root filesystem partition size
+		  Select the root filesystem partition size.
 
 	config TARGET_ROOTFS_PARTNAME
 		string "Root partition on target device"
@@ -279,7 +279,7 @@ menu "Target Images"
 		depends on TARGET_ROOTFS_UBIFS || TARGET_ROOTFS_EXT4FS
 		default n
 		help
-		  Include the kernel image in the rootfs. Typically the image is placed
+		  Include the kernel image in the rootfs. Typically, the image is placed
 		  below /boot.
 
 		config TARGET_ROOTFS_INCLUDE_UIMAGE
