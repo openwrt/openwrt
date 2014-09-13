@@ -242,14 +242,18 @@ define KernelPackage/iio-ad799x
   KCONFIG:= \
 	CONFIG_AD799X_RING_BUFFER=y \
 	CONFIG_AD799X
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.16.0)),1)
+  FILES:=$(LINUX_DIR)/drivers/iio/adc/ad799x.ko
+else
   FILES:=$(LINUX_DIR)/drivers/staging/iio/adc/ad799x.ko
+endif
   AUTOLOAD:=$(call AutoLoad,56,ad799x)
 endef
 
 define KernelPackage/iio-ad799x/description
  support for Analog Devices:
  ad7991, ad7995, ad7999, ad7992, ad7993, ad7994, ad7997, ad7998
- i2c analog to digital converters (ADC). WARNING! This driver is still staging!
+ i2c analog to digital converters (ADC).
 endef
 
 $(eval $(call KernelPackage,iio-ad799x))
