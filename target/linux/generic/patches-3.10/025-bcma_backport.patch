@@ -35,7 +35,10 @@
  
 --- a/drivers/bcma/Makefile
 +++ b/drivers/bcma/Makefile
-@@ -3,6 +3,7 @@ bcma-y					+= driver_chipcommon.o driver
+@@ -1,8 +1,10 @@
+ bcma-y					+= main.o scan.o core.o sprom.o
+ bcma-y					+= driver_chipcommon.o driver_chipcommon_pmu.o
++bcma-y					+= driver_chipcommon_b.o
  bcma-$(CONFIG_BCMA_SFLASH)		+= driver_chipcommon_sflash.o
  bcma-$(CONFIG_BCMA_NFLASH)		+= driver_chipcommon_nflash.o
  bcma-y					+= driver_pci.o
@@ -63,6 +66,17 @@
  
  /* scan.c */
  int bcma_bus_scan(struct bcma_bus *bus);
+@@ -50,6 +50,10 @@ void bcma_chipco_serial_init(struct bcma
+ extern struct platform_device bcma_pflash_dev;
+ #endif /* CONFIG_BCMA_DRIVER_MIPS */
+ 
++/* driver_chipcommon_b.c */
++int bcma_core_chipcommon_b_init(struct bcma_drv_cc_b *ccb);
++void bcma_core_chipcommon_b_free(struct bcma_drv_cc_b *ccb);
++
+ /* driver_chipcommon_pmu.c */
+ u32 bcma_pmu_get_alp_clock(struct bcma_drv_cc *cc);
+ u32 bcma_pmu_get_cpu_clock(struct bcma_drv_cc *cc);
 --- a/drivers/bcma/core.c
 +++ b/drivers/bcma/core.c
 @@ -9,6 +9,25 @@
@@ -963,7 +977,7 @@
  }
  
  static void bcma_release_core_dev(struct device *dev)
-@@ -103,10 +111,53 @@ static void bcma_release_core_dev(struct
+@@ -103,55 +111,78 @@ static void bcma_release_core_dev(struct
  	kfree(core);
  }
  
@@ -1019,8 +1033,10 @@
  
  	list_for_each_entry(core, &bus->cores, list) {
  		/* We support that cores ourself */
-@@ -115,43 +166,22 @@ static int bcma_register_cores(struct bc
+ 		switch (core->id.id) {
+ 		case BCMA_CORE_4706_CHIPCOMMON:
  		case BCMA_CORE_CHIPCOMMON:
++		case BCMA_CORE_NS_CHIPCOMMON_B:
  		case BCMA_CORE_PCI:
  		case BCMA_CORE_PCIE:
 +		case BCMA_CORE_PCIE2:
@@ -1069,7 +1085,7 @@
  	}
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
-@@ -218,7 +248,7 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -218,7 +249,7 @@ int bcma_bus_register(struct bcma_bus *b
  	err = bcma_bus_scan(bus);
  	if (err) {
  		bcma_err(bus, "Failed to scan: %d\n", err);
@@ -1078,7 +1094,7 @@
  	}
  
  	/* Early init CC core */
-@@ -228,6 +258,12 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -228,6 +259,12 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_early_init(&bus->drv_cc);
  	}
  
@@ -1091,7 +1107,21 @@
  	/* Try to get SPROM */
  	err = bcma_sprom_get(bus);
  	if (err == -ENOENT) {
-@@ -263,6 +299,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -242,6 +279,13 @@ int bcma_bus_register(struct bcma_bus *b
+ 		bcma_core_chipcommon_init(&bus->drv_cc);
+ 	}
+ 
++	/* Init CC core */
++	core = bcma_find_core(bus, BCMA_CORE_NS_CHIPCOMMON_B);
++	if (core) {
++		bus->drv_cc_b.core = core;
++		bcma_core_chipcommon_b_init(&bus->drv_cc_b);
++	}
++
+ 	/* Init MIPS core */
+ 	core = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
+ 	if (core) {
+@@ -263,6 +307,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci[1]);
  	}
  
@@ -1105,7 +1135,7 @@
  	/* Init GBIT MAC COMMON core */
  	core = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
  	if (core) {
-@@ -271,7 +314,7 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -271,7 +322,7 @@ int bcma_bus_register(struct bcma_bus *b
  	}
  
  	/* Register found cores */
@@ -1114,7 +1144,16 @@
  
  	bcma_info(bus, "Bus registered\n");
  
-@@ -308,8 +351,6 @@ int __init bcma_bus_early_register(struc
+@@ -289,6 +340,8 @@ void bcma_bus_unregister(struct bcma_bus
+ 	else if (err)
+ 		bcma_err(bus, "Can not unregister GPIO driver: %i\n", err);
+ 
++	bcma_core_chipcommon_b_free(&bus->drv_cc_b);
++
+ 	cores[0] = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
+ 	cores[1] = bcma_find_core(bus, BCMA_CORE_PCIE);
+ 	cores[2] = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
+@@ -308,8 +361,6 @@ int __init bcma_bus_early_register(struc
  	struct bcma_device *core;
  	struct bcma_device_id match;
  
@@ -1162,7 +1201,7 @@
  	}
  
  	addrl = ent & SCAN_ADDR_ADDR;
-@@ -257,11 +269,13 @@ static struct bcma_device *bcma_find_cor
+@@ -257,12 +269,14 @@ static struct bcma_device *bcma_find_cor
  	return NULL;
  }
  
@@ -1173,11 +1212,21 @@
  			      struct bcma_device *core)
  {
 -	s32 tmp;
+-	u8 i, j;
 +	u32 tmp;
- 	u8 i, j;
++	u8 i, j, k;
  	s32 cia, cib;
  	u8 ports[2], wrappers[2];
-@@ -339,11 +353,11 @@ static int bcma_get_next_core(struct bcm
+ 
+@@ -300,6 +314,7 @@ static int bcma_get_next_core(struct bcm
+ 		/* Some specific cores don't need wrappers */
+ 		switch (core->id.id) {
+ 		case BCMA_CORE_4706_MAC_GBIT_COMMON:
++		case BCMA_CORE_NS_CHIPCOMMON_B:
+ 		/* Not used yet: case BCMA_CORE_OOB_ROUTER: */
+ 			break;
+ 		default:
+@@ -339,11 +354,11 @@ static int bcma_get_next_core(struct bcm
  	 * the main register space for the core
  	 */
  	tmp = bcma_erom_get_addr_desc(bus, eromptr, SCAN_ADDR_TYPE_SLAVE, 0);
@@ -1191,7 +1240,12 @@
  			return -EILSEQ;
  		} else {
  			bcma_info(bus, "Bridge found\n");
-@@ -357,7 +371,7 @@ static int bcma_get_next_core(struct bcm
+@@ -353,18 +368,19 @@ static int bcma_get_next_core(struct bcm
+ 	core->addr = tmp;
+ 
+ 	/* get & parse slave ports */
++	k = 0;
+ 	for (i = 0; i < ports[1]; i++) {
  		for (j = 0; ; j++) {
  			tmp = bcma_erom_get_addr_desc(bus, eromptr,
  				SCAN_ADDR_TYPE_SLAVE, i);
@@ -1200,7 +1254,17 @@
  				/* no more entries for port _i_ */
  				/* pr_debug("erom: slave port %d "
  				 * "has %d descriptors\n", i, j); */
-@@ -374,7 +388,7 @@ static int bcma_get_next_core(struct bcm
+ 				break;
+-			} else {
+-				if (i == 0 && j == 0)
+-					core->addr1 = tmp;
++			} else if (k < ARRAY_SIZE(core->addr_s)) {
++				core->addr_s[k] = tmp;
++				k++;
+ 			}
+ 		}
+ 	}
+@@ -374,7 +390,7 @@ static int bcma_get_next_core(struct bcm
  		for (j = 0; ; j++) {
  			tmp = bcma_erom_get_addr_desc(bus, eromptr,
  				SCAN_ADDR_TYPE_MWRAP, i);
@@ -1209,7 +1273,7 @@
  				/* no more entries for port _i_ */
  				/* pr_debug("erom: master wrapper %d "
  				 * "has %d descriptors\n", i, j); */
-@@ -392,7 +406,7 @@ static int bcma_get_next_core(struct bcm
+@@ -392,7 +408,7 @@ static int bcma_get_next_core(struct bcm
  		for (j = 0; ; j++) {
  			tmp = bcma_erom_get_addr_desc(bus, eromptr,
  				SCAN_ADDR_TYPE_SWRAP, i + hack);
@@ -1218,7 +1282,7 @@
  				/* no more entries for port _i_ */
  				/* pr_debug("erom: master wrapper %d "
  				 * has %d descriptors\n", i, j); */
-@@ -407,10 +421,13 @@ static int bcma_get_next_core(struct bcm
+@@ -407,10 +423,13 @@ static int bcma_get_next_core(struct bcm
  		core->io_addr = ioremap_nocache(core->addr, BCMA_CORE_SIZE);
  		if (!core->io_addr)
  			return -ENOMEM;
@@ -1236,7 +1300,7 @@
  		}
  	}
  	return 0;
-@@ -421,9 +438,6 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -421,9 +440,6 @@ void bcma_init_bus(struct bcma_bus *bus)
  	s32 tmp;
  	struct bcma_chipinfo *chipinfo = &(bus->chipinfo);
  
@@ -1246,7 +1310,7 @@
  	INIT_LIST_HEAD(&bus->cores);
  	bus->nr_cores = 0;
  
-@@ -435,8 +449,6 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -435,8 +451,6 @@ void bcma_init_bus(struct bcma_bus *bus)
  	chipinfo->pkg = (tmp & BCMA_CC_ID_PKG) >> BCMA_CC_ID_PKG_SHIFT;
  	bcma_info(bus, "Found chip with id 0x%04X, rev 0x%02X and package 0x%02X\n",
  		  chipinfo->id, chipinfo->rev, chipinfo->pkg);
@@ -1255,7 +1319,7 @@
  }
  
  int bcma_bus_scan(struct bcma_bus *bus)
-@@ -446,8 +458,6 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -446,8 +460,6 @@ int bcma_bus_scan(struct bcma_bus *bus)
  
  	int err, core_num = 0;
  
@@ -1545,7 +1609,16 @@
  
  /* Board types (on PCI usually equals to the subsystem dev id) */
  /* BCM4313 */
-@@ -310,11 +332,11 @@ struct bcma_bus {
+@@ -245,7 +267,7 @@ struct bcma_device {
+ 	u8 core_unit;
+ 
+ 	u32 addr;
+-	u32 addr1;
++	u32 addr_s[8];
+ 	u32 wrap;
+ 
+ 	void __iomem *io_addr;
+@@ -310,11 +332,12 @@ struct bcma_bus {
  	struct bcma_device *mapped_core;
  	struct list_head cores;
  	u8 nr_cores;
@@ -1553,12 +1626,13 @@
  	u8 num;
  
  	struct bcma_drv_cc drv_cc;
++	struct bcma_drv_cc_b drv_cc_b;
  	struct bcma_drv_pci drv_pci[2];
 +	struct bcma_drv_pcie2 drv_pcie2;
  	struct bcma_drv_mips drv_mips;
  	struct bcma_drv_gmac_cmn drv_gmac_cmn;
  
-@@ -400,7 +422,14 @@ static inline void bcma_maskset16(struct
+@@ -400,7 +423,14 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
@@ -1659,7 +1733,7 @@
  /* Data for the PMU, if available.
   * Check availability with ((struct bcma_chipcommon)->capabilities & BCMA_CC_CAP_PMU)
   */
-@@ -585,6 +640,7 @@ struct bcma_drv_cc {
+@@ -585,9 +640,16 @@ struct bcma_drv_cc {
  	spinlock_t gpio_lock;
  #ifdef CONFIG_BCMA_DRIVER_GPIO
  	struct gpio_chip gpio;
@@ -1667,6 +1741,22 @@
  #endif
  };
  
++struct bcma_drv_cc_b {
++	struct bcma_device *core;
++	u8 setup_done:1;
++	void __iomem *mii;
++};
++
+ /* Register access */
+ #define bcma_cc_read32(cc, offset) \
+ 	bcma_read32((cc)->core, offset)
+@@ -643,4 +705,6 @@ extern void bcma_pmu_spuravoid_pllupdate
+ 
+ extern u32 bcma_pmu_get_bus_clock(struct bcma_drv_cc *cc);
+ 
++void bcma_chipco_b_mii_write(struct bcma_drv_cc_b *ccb, u32 offset, u32 value);
++
+ #endif /* LINUX_BCMA_DRIVER_CC_H_ */
 --- a/include/linux/bcma/bcma_driver_pci.h
 +++ b/include/linux/bcma/bcma_driver_pci.h
 @@ -181,10 +181,31 @@ struct pci_dev;
@@ -2101,3 +2191,78 @@
  /* BCMA PCI config space registers. */
  #define BCMA_PCI_PMCSR			0x44
  #define  BCMA_PCI_PE			0x100
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -238,7 +238,7 @@ static int bcma_hcd_probe(struct bcma_de
+ 	bcma_hcd_init_chip(dev);
+ 
+ 	/* In AI chips EHCI is addrspace 0, OHCI is 1 */
+-	ohci_addr = dev->addr1;
++	ohci_addr = dev->addr_s[0];
+ 	if ((chipinfo->id == 0x5357 || chipinfo->id == 0x4749)
+ 	    && chipinfo->rev == 0)
+ 		ohci_addr = 0x18009000;
+--- /dev/null
++++ b/drivers/bcma/driver_chipcommon_b.c
+@@ -0,0 +1,61 @@
++/*
++ * Broadcom specific AMBA
++ * ChipCommon B Unit driver
++ *
++ * Copyright 2014, Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include "bcma_private.h"
++#include <linux/export.h>
++#include <linux/bcma/bcma.h>
++
++static bool bcma_wait_reg(struct bcma_bus *bus, void __iomem *addr, u32 mask,
++			  u32 value, int timeout)
++{
++	unsigned long deadline = jiffies + timeout;
++	u32 val;
++
++	do {
++		val = readl(addr);
++		if ((val & mask) == value)
++			return true;
++		cpu_relax();
++		udelay(10);
++	} while (!time_after_eq(jiffies, deadline));
++
++	bcma_err(bus, "Timeout waiting for register %p\n", addr);
++
++	return false;
++}
++
++void bcma_chipco_b_mii_write(struct bcma_drv_cc_b *ccb, u32 offset, u32 value)
++{
++	struct bcma_bus *bus = ccb->core->bus;
++
++	writel(offset, ccb->mii + 0x00);
++	bcma_wait_reg(bus, ccb->mii + 0x00, 0x0100, 0x0000, 100);
++	writel(value, ccb->mii + 0x04);
++	bcma_wait_reg(bus, ccb->mii + 0x00, 0x0100, 0x0000, 100);
++}
++EXPORT_SYMBOL_GPL(bcma_chipco_b_mii_write);
++
++int bcma_core_chipcommon_b_init(struct bcma_drv_cc_b *ccb)
++{
++	if (ccb->setup_done)
++		return 0;
++
++	ccb->setup_done = 1;
++	ccb->mii = ioremap_nocache(ccb->core->addr_s[1], BCMA_CORE_SIZE);
++	if (!ccb->mii)
++		return -ENOMEM;
++
++	return 0;
++}
++
++void bcma_core_chipcommon_b_free(struct bcma_drv_cc_b *ccb)
++{
++	if (ccb->mii)
++		iounmap(ccb->mii);
++}
