@@ -873,7 +873,17 @@
  
  	/* Map MMIO */
  	err = -ENOMEM;
-@@ -235,7 +238,6 @@ static void bcma_host_pci_remove(struct
+@@ -205,6 +208,9 @@ static int bcma_host_pci_probe(struct pc
+ 	bus->boardinfo.vendor = bus->host_pci->subsystem_vendor;
+ 	bus->boardinfo.type = bus->host_pci->subsystem_device;
+ 
++	/* Initialize struct, detect chip */
++	bcma_init_bus(bus);
++
+ 	/* Register */
+ 	err = bcma_bus_register(bus);
+ 	if (err)
+@@ -235,7 +241,6 @@ static void bcma_host_pci_remove(struct
  	pci_release_regions(dev);
  	pci_disable_device(dev);
  	kfree(bus);
@@ -881,7 +891,7 @@
  }
  
  #ifdef CONFIG_PM_SLEEP
-@@ -267,14 +269,18 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+@@ -267,15 +272,20 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
  
  #endif /* CONFIG_PM_SLEEP */
  
@@ -899,8 +909,10 @@
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },	/* 0xA8DB */
  	{ 0, },
  };
+ MODULE_DEVICE_TABLE(pci, bcma_pci_bridge_tbl);
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
 @@ -69,28 +69,36 @@ static u16 bcma_cc_core_id(struct bcma_b
@@ -951,7 +963,63 @@
  }
  
  static void bcma_release_core_dev(struct device *dev)
-@@ -115,6 +123,7 @@ static int bcma_register_cores(struct bc
+@@ -103,10 +111,53 @@ static void bcma_release_core_dev(struct
+ 	kfree(core);
+ }
+ 
+-static int bcma_register_cores(struct bcma_bus *bus)
++static bool bcma_is_core_needed_early(u16 core_id)
++{
++	switch (core_id) {
++	case BCMA_CORE_NS_NAND:
++	case BCMA_CORE_NS_QSPI:
++		return true;
++	}
++
++	return false;
++}
++
++static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
++{
++	int err;
++
++	core->dev.release = bcma_release_core_dev;
++	core->dev.bus = &bcma_bus_type;
++	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
++
++	switch (bus->hosttype) {
++	case BCMA_HOSTTYPE_PCI:
++		core->dev.parent = &bus->host_pci->dev;
++		core->dma_dev = &bus->host_pci->dev;
++		core->irq = bus->host_pci->irq;
++		break;
++	case BCMA_HOSTTYPE_SOC:
++		core->dev.dma_mask = &core->dev.coherent_dma_mask;
++		core->dma_dev = &core->dev;
++		break;
++	case BCMA_HOSTTYPE_SDIO:
++		break;
++	}
++
++	err = device_register(&core->dev);
++	if (err) {
++		bcma_err(bus, "Could not register dev for core 0x%03X\n",
++			 core->id.id);
++		put_device(&core->dev);
++		return;
++	}
++	core->dev_registered = true;
++}
++
++static int bcma_register_devices(struct bcma_bus *bus)
+ {
+ 	struct bcma_device *core;
+-	int err, dev_id = 0;
++	int err;
+ 
+ 	list_for_each_entry(core, &bus->cores, list) {
+ 		/* We support that cores ourself */
+@@ -115,43 +166,22 @@ static int bcma_register_cores(struct bc
  		case BCMA_CORE_CHIPCOMMON:
  		case BCMA_CORE_PCI:
  		case BCMA_CORE_PCIE:
@@ -959,15 +1027,49 @@
  		case BCMA_CORE_MIPS_74K:
  		case BCMA_CORE_4706_MAC_GBIT_COMMON:
  			continue;
-@@ -148,6 +157,7 @@ static int bcma_register_cores(struct bc
- 			bcma_err(bus,
- 				 "Could not register dev for core 0x%03X\n",
- 				 core->id.id);
-+			put_device(&core->dev);
- 			continue;
  		}
- 		core->dev_registered = true;
-@@ -218,7 +228,7 @@ int bcma_bus_register(struct bcma_bus *b
+ 
++		/* Early cores were already registered */
++		if (bcma_is_core_needed_early(core->id.id))
++			continue;
++
+ 		/* Only first GMAC core on BCM4706 is connected and working */
+ 		if (core->id.id == BCMA_CORE_4706_MAC_GBIT &&
+ 		    core->core_unit > 0)
+ 			continue;
+ 
+-		core->dev.release = bcma_release_core_dev;
+-		core->dev.bus = &bcma_bus_type;
+-		dev_set_name(&core->dev, "bcma%d:%d", bus->num, dev_id);
+-
+-		switch (bus->hosttype) {
+-		case BCMA_HOSTTYPE_PCI:
+-			core->dev.parent = &bus->host_pci->dev;
+-			core->dma_dev = &bus->host_pci->dev;
+-			core->irq = bus->host_pci->irq;
+-			break;
+-		case BCMA_HOSTTYPE_SOC:
+-			core->dev.dma_mask = &core->dev.coherent_dma_mask;
+-			core->dma_dev = &core->dev;
+-			break;
+-		case BCMA_HOSTTYPE_SDIO:
+-			break;
+-		}
+-
+-		err = device_register(&core->dev);
+-		if (err) {
+-			bcma_err(bus,
+-				 "Could not register dev for core 0x%03X\n",
+-				 core->id.id);
+-			continue;
+-		}
+-		core->dev_registered = true;
+-		dev_id++;
++		bcma_register_core(bus, core);
+ 	}
+ 
+ #ifdef CONFIG_BCMA_DRIVER_MIPS
+@@ -218,7 +248,7 @@ int bcma_bus_register(struct bcma_bus *b
  	err = bcma_bus_scan(bus);
  	if (err) {
  		bcma_err(bus, "Failed to scan: %d\n", err);
@@ -976,7 +1078,20 @@
  	}
  
  	/* Early init CC core */
-@@ -263,6 +273,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -228,6 +258,12 @@ int bcma_bus_register(struct bcma_bus *b
+ 		bcma_core_chipcommon_early_init(&bus->drv_cc);
+ 	}
+ 
++	/* Cores providing flash access go before SPROM init */
++	list_for_each_entry(core, &bus->cores, list) {
++		if (bcma_is_core_needed_early(core->id.id))
++			bcma_register_core(bus, core);
++	}
++
+ 	/* Try to get SPROM */
+ 	err = bcma_sprom_get(bus);
+ 	if (err == -ENOENT) {
+@@ -263,6 +299,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci[1]);
  	}
  
@@ -990,6 +1105,24 @@
  	/* Init GBIT MAC COMMON core */
  	core = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
  	if (core) {
+@@ -271,7 +314,7 @@ int bcma_bus_register(struct bcma_bus *b
+ 	}
+ 
+ 	/* Register found cores */
+-	bcma_register_cores(bus);
++	bcma_register_devices(bus);
+ 
+ 	bcma_info(bus, "Bus registered\n");
+ 
+@@ -308,8 +351,6 @@ int __init bcma_bus_early_register(struc
+ 	struct bcma_device *core;
+ 	struct bcma_device_id match;
+ 
+-	bcma_init_bus(bus);
+-
+ 	match.manuf = BCMA_MANUF_BCM;
+ 	match.id = bcma_cc_core_id(bus);
+ 	match.class = BCMA_CL_SIM;
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -32,6 +32,18 @@ static const struct bcma_device_id_name
@@ -1103,6 +1236,34 @@
  		}
  	}
  	return 0;
+@@ -421,9 +438,6 @@ void bcma_init_bus(struct bcma_bus *bus)
+ 	s32 tmp;
+ 	struct bcma_chipinfo *chipinfo = &(bus->chipinfo);
+ 
+-	if (bus->init_done)
+-		return;
+-
+ 	INIT_LIST_HEAD(&bus->cores);
+ 	bus->nr_cores = 0;
+ 
+@@ -435,8 +449,6 @@ void bcma_init_bus(struct bcma_bus *bus)
+ 	chipinfo->pkg = (tmp & BCMA_CC_ID_PKG) >> BCMA_CC_ID_PKG_SHIFT;
+ 	bcma_info(bus, "Found chip with id 0x%04X, rev 0x%02X and package 0x%02X\n",
+ 		  chipinfo->id, chipinfo->rev, chipinfo->pkg);
+-
+-	bus->init_done = true;
+ }
+ 
+ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -446,8 +458,6 @@ int bcma_bus_scan(struct bcma_bus *bus)
+ 
+ 	int err, core_num = 0;
+ 
+-	bcma_init_bus(bus);
+-
+ 	erombase = bcma_scan_read32(bus, 0, BCMA_CC_EROM);
+ 	if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
+ 		eromptr = ioremap_nocache(erombase, BCMA_CORE_SIZE);
 --- a/drivers/bcma/sprom.c
 +++ b/drivers/bcma/sprom.c
 @@ -72,12 +72,12 @@ fail:
@@ -1384,7 +1545,12 @@
  
  /* Board types (on PCI usually equals to the subsystem dev id) */
  /* BCM4313 */
-@@ -315,6 +337,7 @@ struct bcma_bus {
+@@ -310,11 +332,11 @@ struct bcma_bus {
+ 	struct bcma_device *mapped_core;
+ 	struct list_head cores;
+ 	u8 nr_cores;
+-	u8 init_done:1;
+ 	u8 num;
  
  	struct bcma_drv_cc drv_cc;
  	struct bcma_drv_pci drv_pci[2];
@@ -1392,7 +1558,7 @@
  	struct bcma_drv_mips drv_mips;
  	struct bcma_drv_gmac_cmn drv_gmac_cmn;
  
-@@ -400,7 +423,14 @@ static inline void bcma_maskset16(struct
+@@ -400,7 +422,14 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
@@ -1893,6 +2059,34 @@
  	writel(value, core->io_wrap + offset);
  }
  
+@@ -161,7 +165,6 @@ static const struct bcma_host_ops bcma_h
+ int __init bcma_host_soc_register(struct bcma_soc *soc)
+ {
+ 	struct bcma_bus *bus = &soc->bus;
+-	int err;
+ 
+ 	/* iomap only first core. We have to read some register on this core
+ 	 * to scan the bus.
+@@ -174,7 +177,18 @@ int __init bcma_host_soc_register(struct
+ 	bus->hosttype = BCMA_HOSTTYPE_SOC;
+ 	bus->ops = &bcma_host_soc_ops;
+ 
+-	/* Register */
++	/* Initialize struct, detect chip */
++	bcma_init_bus(bus);
++
++	return 0;
++}
++
++int __init bcma_host_soc_init(struct bcma_soc *soc)
++{
++	struct bcma_bus *bus = &soc->bus;
++	int err;
++
++	/* Scan bus and initialize it */
+ 	err = bcma_bus_early_register(bus, &soc->core_cc, &soc->core_mips);
+ 	if (err)
+ 		iounmap(bus->mmio);
 --- a/include/linux/bcma/bcma_regs.h
 +++ b/include/linux/bcma/bcma_regs.h
 @@ -39,6 +39,11 @@
