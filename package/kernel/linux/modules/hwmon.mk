@@ -119,7 +119,7 @@ define KernelPackage/hwmon-lm75
   KCONFIG:=CONFIG_SENSORS_LM75
   FILES:=$(LINUX_DIR)/drivers/hwmon/lm75.ko
   AUTOLOAD:=$(call AutoProbe,lm75)
-  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-thermal)
+  $(call AddDepends/hwmon,+kmod-i2c-core +PACKAGE_kmod-thermal:kmod-thermal)
 endef
 
 define KernelPackage/hwmon-lm75/description
