@@ -81,7 +81,7 @@ network_get_ipaddrs6() {
 	if __network_ifstatus "__addr" "$2" "['ipv6-address','ipv6-prefix-assignment'][*].address"; then
 		for __addr in $__addr; do
 			case "$__addr" in
-				*:)	__list="${__list:+$__list }${__addr}1" ;;
+				*:) __list="${__list:+$__list }${__addr}1" ;;
 				*)  __list="${__list:+$__list }${__addr}"  ;;
 			esac
 		done

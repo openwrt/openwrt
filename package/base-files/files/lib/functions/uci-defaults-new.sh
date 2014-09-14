@@ -13,7 +13,7 @@ json_select_array() {
 	json_add_array $1
 	json_close_array
 
-        json_select "$1"
+	json_select "$1"
 }
 
 json_select_object() {
@@ -25,7 +25,7 @@ json_select_object() {
 	json_add_object $1
 	json_close_object
 
-        json_select "$1"
+	json_select "$1"
 }
 
 _ucidef_set_interface() {
@@ -34,7 +34,7 @@ _ucidef_set_interface() {
 
 	json_select_object $name
 	json_add_string ifname "${iface%%.*}"
-	[ "$iface" == "${iface%%.*}" ] || json_add_boolean create_vlan 1 
+	[ "$iface" == "${iface%%.*}" ] || json_add_boolean create_vlan 1
 	json_select ..
 }
 
@@ -69,7 +69,7 @@ ucidef_add_switch() {
 
 	json_select_object switch
 
-        json_select_object $name
+	json_select_object $name
 	[ "$enable" -eq 1 ] && json_add_boolean enable 1
 	[ "$reset" -eq 1 ] && json_add_boolean reset 1
 	json_select ..
@@ -84,7 +84,7 @@ ucidef_add_switch_attr() {
 
 	json_select_object switch
 
-        json_select_object $name
+	json_select_object $name
 	json_add_string $key $val
 	json_select ..
 
