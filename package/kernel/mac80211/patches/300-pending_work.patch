@@ -1,3 +1,21 @@
+commit fb77a822cc68745186b38db7d105ad97e0622152
+Author: Johannes Stezenbach <js@sig21.net>
+Date:   Fri Sep 12 22:36:51 2014 +0200
+
+    ath9k_htc: fix random decryption failure
+    
+    In v3.15 the driver stopped to accept network packets after successful
+    authentification, which could be worked around by passing the
+    nohwcrypt=1 module parameter.  This was not reproducible by
+    everyone, and showed random behaviour in some tests.
+    It was caused by an uninitialized variable introduced
+    in 4ed1a8d4a257 ("ath9k_htc: use ath9k_cmn_rx_accept") and
+    used in 341b29b9cd2f ("ath9k_htc: use ath9k_cmn_rx_skb_postprocess").
+    
+    Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=78581
+    Fixes: 341b29b9cd2f ("ath9k_htc: use ath9k_cmn_rx_skb_postprocess")
+    Signed-off-by: Johannes Stezenbach <js@sig21.net>
+
 commit 11f17631d9bf2a9e910dac7d09ba4581f5693831
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Tue Sep 9 09:48:30 2014 +0200
@@ -3291,3 +3309,14 @@ Date:   Mon May 19 21:20:49 2014 +0200
  
  #define AR_RTC_9160_PLL_DIV	0x000003ff
  #define AR_RTC_9160_PLL_DIV_S   0
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
+@@ -978,7 +978,7 @@ static bool ath9k_rx_prepare(struct ath9
+ 	struct ath_hw *ah = common->ah;
+ 	struct ath_htc_rx_status *rxstatus;
+ 	struct ath_rx_status rx_stats;
+-	bool decrypt_error;
++	bool decrypt_error = false;
+ 
+ 	if (skb->len < HTC_RX_FRAME_HEADER_SIZE) {
+ 		ath_err(common, "Corrupted RX frame, dropping (len: %d)\n",
