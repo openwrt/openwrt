@@ -196,13 +196,13 @@ hostapd_set_bss_options() {
 		config_get device_type "$vif" wps_device_type "6-0050F204-1"
 		config_get device_name "$vif" wps_device_name "OpenWrt AP"
 		config_get manufacturer "$vif" wps_manufacturer "openwrt.org"
-		config_get wps_pin "$vif" wps_pin "12345670"
+		config_get wps_pin "$vif" wps_pin
 
 		config_get_bool ext_registrar "$vif" ext_registrar 0
 		[ "$ext_registrar" -gt 0 -a -n "$bridge" ] && append "$var" "upnp_iface=$bridge" "$N"
 
 		append "$var" "eap_server=1" "$N"
-		append "$var" "ap_pin=$wps_pin" "$N"
+		[ -n "$wps_pin" ] && append "$var" "ap_pin=$wps_pin" "$N"
 		append "$var" "wps_state=${wps_not_configured:-2}" "$N"
 		append "$var" "ap_setup_locked=0" "$N"
 		append "$var" "device_type=$device_type" "$N"
