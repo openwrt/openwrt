@@ -14,11 +14,11 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
  create mode 100644 drivers/net/ethernet/lantiq_xrx200.c
  create mode 100644 drivers/net/ethernet/lantiq_xrx200_sw.h
 
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index 506b024..0a0dbe6 100644
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -84,7 +84,13 @@ config LANTIQ_ETOP
+Index: linux-3.14.18/drivers/net/ethernet/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/net/ethernet/Kconfig	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/drivers/net/ethernet/Kconfig	2014-09-13 05:02:42.601066602 +0200
+@@ -84,7 +84,13 @@
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -33,11 +33,11 @@ index 506b024..0a0dbe6 100644
  
  source "drivers/net/ethernet/marvell/Kconfig"
  source "drivers/net/ethernet/mellanox/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index c0b8789..459cce8 100644
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -38,6 +38,7 @@ obj-$(CONFIG_IP1000) += icplus/
+Index: linux-3.14.18/drivers/net/ethernet/Makefile
+===================================================================
+--- linux-3.14.18.orig/drivers/net/ethernet/Makefile	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/drivers/net/ethernet/Makefile	2014-09-13 05:02:42.601066602 +0200
+@@ -38,6 +38,7 @@
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -45,11 +45,10 @@ index c0b8789..459cce8 100644
  obj-$(CONFIG_NET_VENDOR_MARVELL) += marvell/
  obj-$(CONFIG_NET_VENDOR_MELLANOX) += mellanox/
  obj-$(CONFIG_NET_VENDOR_MICREL) += micrel/
-diff --git a/drivers/net/ethernet/lantiq_pce.h b/drivers/net/ethernet/lantiq_pce.h
-new file mode 100644
-index 0000000..0c38efe
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_pce.h
+Index: linux-3.14.18/drivers/net/ethernet/lantiq_pce.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/net/ethernet/lantiq_pce.h	2014-09-13 05:02:42.601066602 +0200
 @@ -0,0 +1,163 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
@@ -214,12 +213,11 @@ index 0000000..0c38efe
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +	MC_ENTRY(0x0000, 0x0000, 39, OUT_NONE,   0, INSTR,   FLAG_END,   0),
 +};
-diff --git a/drivers/net/ethernet/lantiq_xrx200.c b/drivers/net/ethernet/lantiq_xrx200.c
-new file mode 100644
-index 0000000..2da9d47
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1798 @@
+Index: linux-3.14.18/drivers/net/ethernet/lantiq_xrx200.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/net/ethernet/lantiq_xrx200.c	2014-09-13 05:04:05.185068633 +0200
+@@ -0,0 +1,1796 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -1851,7 +1849,6 @@ index 0000000..2da9d47
 +	struct xrx200_priv *priv;
 +	struct device_node *port;
 +	const __be32 *wan;
-+	const __be32 *sw;
 +
 +	/* alloc the network device */
 +	hw->devs[hw->num_devs] = alloc_etherdev(sizeof(struct xrx200_priv));
@@ -1876,8 +1873,7 @@ index 0000000..2da9d47
 +		priv->wan = 1;
 +
 +	/* should the switch be enabled on this interface ? */
-+	sw = of_get_property(iface, "lantiq,switch", NULL);
-+	if (sw && (*sw == 1))
++	if (of_find_property(iface, "lantiq,switch", NULL))
 +		priv->sw = 1;
 +
 +	/* load the ports that are part of the interface */
@@ -2018,11 +2014,10 @@ index 0000000..2da9d47
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Lantiq SoC XRX200 ethernet");
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/net/ethernet/lantiq_xrx200_sw.h b/drivers/net/ethernet/lantiq_xrx200_sw.h
-new file mode 100644
-index 0000000..e7188a2
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200_sw.h
+Index: linux-3.14.18/drivers/net/ethernet/lantiq_xrx200_sw.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/net/ethernet/lantiq_xrx200_sw.h	2014-09-13 05:02:42.605066602 +0200
 @@ -0,0 +1,1328 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
@@ -3352,6 +3347,3 @@ index 0000000..e7188a2
 +};
 +
 +
--- 
-1.7.10.4
-
