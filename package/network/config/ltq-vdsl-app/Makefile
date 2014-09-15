@@ -7,12 +7,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-app
-PKG_VERSION:=4.11.11
+PKG_VERSION:=4.11.4
 PKG_RELEASE:=1
 PKG_BASE_NAME:=dsl_cpe_control_vrx
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=4e32b427d870512c671a9d70d10c7c9b
+PKG_MD5SUM:=e9152ced26a91fbeefa4f34badb97484
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
 
 PKG_BUILD_DEPENDS:=kmod-ltq-vdsl-vr9
@@ -24,7 +24,7 @@ define Package/ltq-vdsl-app
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt
+  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread
 endef
 
 define Package/ltq-vdsl-app/description
