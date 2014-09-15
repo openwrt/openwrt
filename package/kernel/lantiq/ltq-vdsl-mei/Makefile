@@ -7,14 +7,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9-mei
-PKG_VERSION:=1.2.1
+PKG_VERSION:=1.2.0
 PKG_RELEASE:=1
 
 PKG_BASE_NAME:=drv_mei_cpe
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=6e15653adbfa135c8611b35b307d1db7
+PKG_MD5SUM:=cf2fccc1bc72390b2aec46650abf2f20
 PKG_FIXUP:=autoreconf
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 PKG_USE_MIPS16:=0

@@ -7,14 +7,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9
-PKG_VERSION:=4.11.11
+PKG_VERSION:=4.11.4
 PKG_RELEASE:=1
 
 PKG_BASE_NAME:=drv_dsl_cpe_api_vrx
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_MD5SUM:=7cc1986cf7539046ca89765db6589e50
+PKG_MD5SUM:=b6d9c1e3c5db1bfcd6e81bb2f582cadb
 
 PKG_USE_MIPS16:=0
 
