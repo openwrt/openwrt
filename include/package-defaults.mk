@@ -98,7 +98,9 @@ CONFIGURE_VARS = \
 CONFIGURE_PATH = .
 CONFIGURE_CMD = ./configure
 
-replace_script=$(FIND) $(1) -name $(2) | $(XARGS) chmod u+w; $(FIND) $(1) -name $(2) | $(XARGS) -n1 cp $(SCRIPT_DIR)/$(2);
+replace_script=$(FIND) $(1) -name $(2) | $(XARGS) chmod u+w; \
+	       $(FIND) $(1) -name $(2) | $(XARGS) -n1 cp --remove-destination \
+	       $(SCRIPT_DIR)/$(2);
 
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR)/$(CONFIGURE_PATH)/$(strip $(3)); \
