@@ -166,6 +166,9 @@ get_status_led() {
 	oolite)
 		status_led="oolite:red:system"
 		;;
+	qihoo-c301)
+		status_led="qihoo:green:status"
+		;;
 	tew-632brp)
 		status_led="tew-632brp:green:status"
 		;;

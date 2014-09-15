@@ -226,6 +226,7 @@ platform_check_image() {
 		return 1
 		;;
 
+	qihoo-c301 | \
 	mynet-n600 | \
 	mynet-n750)
 		[ "$magic_long" != "5ea3a417" ] && {
