@@ -190,6 +190,7 @@ platform_check_image() {
 	airgateway | \
 	airrouter | \
 	bullet-m | \
+	loco-m-xw | \
 	nanostation-m | \
 	rocket-m | \
 	nanostation-m-xw | \
