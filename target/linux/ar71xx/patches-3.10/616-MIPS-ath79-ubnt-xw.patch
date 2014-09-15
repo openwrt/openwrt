@@ -1,8 +1,6 @@
-Index: linux-3.10.49/arch/mips/ath79/mach-ubnt-xm.c
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/mach-ubnt-xm.c	2014-08-15 22:55:37.890080659 +0200
-+++ linux-3.10.49/arch/mips/ath79/mach-ubnt-xm.c	2014-08-15 22:58:31.061570912 +0200
-@@ -332,3 +332,67 @@
+--- a/arch/mips/ath79/mach-ubnt-xm.c
++++ b/arch/mips/ath79/mach-ubnt-xm.c
+@@ -332,3 +332,78 @@ static void __init ubnt_uap_pro_setup(vo
  MIPS_MACHINE(ATH79_MACH_UBNT_UAP_PRO, "UAP-PRO", "Ubiquiti UniFi AP Pro",
  	     ubnt_uap_pro_setup);
  
@@ -67,15 +65,27 @@ Index: linux-3.10.49/arch/mips/ath79/mach-ubnt-xm.c
 +	ath79_register_eth(0);
 +}
 +
++static void __init ubnt_loco_m_xw_setup(void)
++{
++	ubnt_xw_init();
++
++	ath79_register_mdio(0, ~BIT(1));
++	ath79_eth0_data.phy_mask = BIT(1);
++	ath79_register_eth(0);
++}
++
 +MIPS_MACHINE(ATH79_MACH_UBNT_NANO_M_XW, "UBNT-NM-XW", "Ubiquiti Nanostation M XW",
 +	     ubnt_nano_m_xw_setup);
 +
++MIPS_MACHINE(ATH79_MACH_UBNT_LOCO_M_XW, "UBNT-LOCO-XW", "Ubiquiti Loco M XW",
++	     ubnt_loco_m_xw_setup);
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -121,9 +121,10 @@ enum ath79_mach_type {
+@@ -121,9 +121,11 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
  	ATH79_MACH_UBNT_AIRROUTER,	/* Ubiquiti AirRouter */
  	ATH79_MACH_UBNT_BULLET_M,	/* Ubiquiti Bullet M */
++	ATH79_MACH_UBNT_LOCO_M_XW, 	/* Ubiquiti Loco M XW */
  	ATH79_MACH_UBNT_LSSR71,		/* Ubiquiti LS-SR71 */
  	ATH79_MACH_UBNT_LSX,		/* Ubiquiti LSX */
  	ATH79_MACH_UBNT_NANO_M, 	/* Ubiquiti NanoStation M */

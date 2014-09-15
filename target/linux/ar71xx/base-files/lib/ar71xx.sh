@@ -352,6 +352,9 @@ ar71xx_board_detect() {
 	*"Bullet M")
 		name="bullet-m"
 		;;
+	*"Loco M XW")
+		name="loco-m-xw"
+		;;
 	*"Nanostation M")
 		name="nanostation-m"
 		;;
