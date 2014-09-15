@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/A13_OLinuXino
+define Profile/A13-OLinuXino
 	NAME:=A13 OLinuXino
 	PACKAGES:=\
 		uboot-sunxi-A13-OLinuXino kmod-rtl8192cu
 endef
 
-define Profile/A13_OLinuXino/Description
+define Profile/A13-OLinuXino/Description
 	Package set optimized for the Olimex A13 OLinuXino
 endef
 
-$(eval $(call Profile,A13_OLinuXino))
+$(eval $(call Profile,A13-OLinuXino))
