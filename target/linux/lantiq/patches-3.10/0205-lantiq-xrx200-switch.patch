@@ -1,5 +1,7 @@
---- a/drivers/net/ethernet/lantiq_xrx200.c
-+++ b/drivers/net/ethernet/lantiq_xrx200.c
+Index: linux-3.10.49/drivers/net/ethernet/lantiq_xrx200.c
+===================================================================
+--- linux-3.10.49.orig/drivers/net/ethernet/lantiq_xrx200.c	2014-09-13 05:05:35.449070854 +0200
++++ linux-3.10.49/drivers/net/ethernet/lantiq_xrx200.c	2014-09-13 05:17:26.065088335 +0200
 @@ -16,6 +16,7 @@
   *   Copyright (C) 2012 John Crispin <blogic@openwrt.org>
   */
@@ -35,7 +37,7 @@
  #define XRX200_DMA_DATA_LEN	0x600
  #define XRX200_DMA_IRQ		INT_NUM_IM2_IRL0
  #define XRX200_DMA_RX		0
-@@ -225,6 +230,8 @@ struct xrx200_hw {
+@@ -225,6 +230,8 @@
  	unsigned short wan_map;
  
  	spinlock_t lock;
@@ -44,7 +46,7 @@
  };
  
  struct xrx200_priv {
-@@ -233,7 +240,8 @@ struct xrx200_priv {
+@@ -233,7 +240,8 @@
  
  	struct xrx200_port port[XRX200_MAX_PORT];
  	int num_port;
@@ -54,7 +56,7 @@
  	unsigned short port_map;
  	unsigned char mac[6];
  
-@@ -265,6 +273,585 @@ static __iomem void *xrx200_pmac_membase
+@@ -265,6 +273,585 @@
  #define ltq_pmac_w32_mask(x, y, z) \
  			ltq_w32_mask(x, y, xrx200_pmac_membase + (z))
  
@@ -640,7 +642,7 @@
  static int xrx200_open(struct net_device *dev)
  {
  	struct xrx200_priv *priv = netdev_priv(dev);
-@@ -346,7 +933,7 @@ static void xrx200_hw_receive(struct xrx
+@@ -346,7 +933,7 @@
  	struct xrx200_priv *priv = netdev_priv(dev);
  	struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
  	struct sk_buff *skb = ch->skb[ch->dma.desc];
@@ -649,7 +651,7 @@
  	unsigned long flags;
  
  	spin_lock_irqsave(&priv->hw->lock, flags);
-@@ -924,9 +1511,9 @@ static void xrx200_hw_init(struct xrx200
+@@ -924,9 +1511,9 @@
  		PMAC_HD_CTL);
  #endif
  
@@ -661,27 +663,18 @@
  		ltq_switch_w32_mask(0, 0x01, SDMA_PCTRLx(i));
  		ltq_switch_w32_mask(0, PCE_INGRESS, PCE_PCTRL_REG(i, 0));
  	}
-@@ -1042,6 +1629,7 @@ static void xrx200_of_iface(struct xrx20
- 	struct xrx200_priv *priv;
- 	struct device_node *port;
- 	const __be32 *wan;
-+	const __be32 *sw;
- 
- 	/* alloc the network device */
- 	hw->devs[hw->num_devs] = alloc_etherdev(sizeof(struct xrx200_priv));
-@@ -1065,6 +1653,11 @@ static void xrx200_of_iface(struct xrx20
+@@ -1065,6 +1652,10 @@
  	if (wan && (*wan == 1))
  		priv->wan = 1;
  
 +	/* should the switch be enabled on this interface ? */
-+	sw = of_get_property(iface, "lantiq,switch", NULL);
-+	if (sw && (*sw == 1))
++	if (of_find_property(iface, "lantiq,switch", NULL))
 +		priv->sw = 1;
 +
  	/* load the ports that are part of the interface */
  	for_each_child_of_node(iface, port)
  		if (of_device_is_compatible(port, "lantiq,xrx200-pdi-port"))
-@@ -1138,6 +1731,8 @@ static int xrx200_probe(struct platform_
+@@ -1138,6 +1729,8 @@
  		return -ENOENT;
  	}
  
@@ -690,8 +683,10 @@
  	/* set wan port mask */
  	ltq_pmac_w32(xrx200_hw.wan_map, PMAC_EWAN);
  
---- /dev/null
-+++ b/drivers/net/ethernet/lantiq_xrx200_sw.h
+Index: linux-3.10.49/drivers/net/ethernet/lantiq_xrx200_sw.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/drivers/net/ethernet/lantiq_xrx200_sw.h	2014-09-13 05:05:35.469070854 +0200
 @@ -0,0 +1,1328 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
