@@ -133,7 +133,7 @@ $(STAGING_DIR_HOST)/bin/stat: $(STAGING_DIR)/.prepared
 		false; \
 	fi
 
-$(STAGING_DIR_HOST)/bin/ldconfig:
+$(STAGING_DIR_HOST)/bin/ldconfig: $(STAGING_DIR)/.prepared
 	touch $@
 	chmod +x $@
 
