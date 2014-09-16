@@ -176,6 +176,7 @@ ifeq ($(DUMP),)
 	chmod 644 $$(IDIR_$(1))/CONTROL/control
 	( \
 		echo "#!/bin/sh"; \
+		echo "[ \"\$$$${IPKG_NO_SCRIPT}\" = \"1\" ] && exit 0"; \
 		echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
 		echo "default_postinst \$$$$0 \$$$$@"; \
 	) > $$(IDIR_$(1))/CONTROL/postinst
