@@ -23,6 +23,8 @@ PKG_CHECK_FORMAT_SECURITY:=0
 PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
+PKG_USE_MIPS16:=0
+
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
