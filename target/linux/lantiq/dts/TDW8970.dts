@@ -65,7 +65,6 @@
 			>;
 			interrupt-parent = <&icu0>;
 			interrupts = <73 72>;
-			lantiq,switch;
 
 			lan: interface@0 {
 				compatible = "lantiq,xrx200-pdi";
@@ -73,6 +72,7 @@
 				#size-cells = <0>;
 				reg = <0>;
 				mtd-mac-address = <&ath9k_cal 0xf100>;
+				lantiq,switch;
 
 				ethernet@0 {
 					compatible = "lantiq,xrx200-pdi-port";
