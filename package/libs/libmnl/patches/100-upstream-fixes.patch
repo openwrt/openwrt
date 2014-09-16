@@ -1,0 +1,416 @@
+diff --git a/configure.ac b/configure.ac
+index 718ab1c..313a015 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -27,5 +27,5 @@ regular_CFLAGS="-Wall -Waggregate-return -Wmissing-declarations \
+ 	-Wformat=2 -pipe"
+ AC_SUBST([regular_CPPFLAGS])
+ AC_SUBST([regular_CFLAGS])
+-AC_CONFIG_FILES([Makefile src/Makefile include/Makefile include/libmnl/Makefile include/linux/Makefile examples/Makefile examples/genl/Makefile examples/netfilter/Makefile examples/rtnl/Makefile libmnl.pc doxygen.cfg])
++AC_CONFIG_FILES([Makefile src/Makefile include/Makefile include/libmnl/Makefile include/linux/Makefile include/linux/netfilter/Makefile examples/Makefile examples/genl/Makefile examples/netfilter/Makefile examples/rtnl/Makefile libmnl.pc doxygen.cfg])
+ AC_OUTPUT
+diff --git a/include/libmnl/libmnl.h b/include/libmnl/libmnl.h
+index a647fd9..223709c 100644
+--- a/include/libmnl/libmnl.h
++++ b/include/libmnl/libmnl.h
+@@ -1,14 +1,9 @@
+ #ifndef _LIBMNL_H_
+ #define _LIBMNL_H_
+ 
+-#ifdef __cplusplus
+-#	include <cstdio>
+-#	include <cstdint>
+-#else
+-#	include <stdbool.h> /* not in C++ */
+-#	include <stdio.h>
+-#	include <stdint.h>
+-#endif
++#include <stdbool.h>
++#include <stdio.h>
++#include <stdint.h>
+ #include <unistd.h>
+ #include <sys/socket.h> /* for sa_family_t */
+ #include <linux/netlink.h>
+diff --git a/include/linux/Makefile.am b/include/linux/Makefile.am
+index 2d02887..08c600b 100644
+--- a/include/linux/Makefile.am
++++ b/include/linux/Makefile.am
+@@ -1 +1,2 @@
+-noinst_HEADERS = netlink.h
++SUBDIRS = netfilter
++noinst_HEADERS = netlink.h socket.h
+diff --git a/include/linux/netfilter/Makefile.am b/include/linux/netfilter/Makefile.am
+new file mode 100644
+index 0000000..64a975e
+--- /dev/null
++++ b/include/linux/netfilter/Makefile.am
+@@ -0,0 +1 @@
++noinst_HEADERS = nfnetlink_conntrack.h
+diff --git a/include/linux/netfilter/nfnetlink_conntrack.h b/include/linux/netfilter/nfnetlink_conntrack.h
+new file mode 100644
+index 0000000..08fabc6
+--- /dev/null
++++ b/include/linux/netfilter/nfnetlink_conntrack.h
+@@ -0,0 +1,252 @@
++#ifndef _IPCONNTRACK_NETLINK_H
++#define _IPCONNTRACK_NETLINK_H
++#include <linux/netfilter/nfnetlink.h>
++
++enum cntl_msg_types {
++	IPCTNL_MSG_CT_NEW,
++	IPCTNL_MSG_CT_GET,
++	IPCTNL_MSG_CT_DELETE,
++	IPCTNL_MSG_CT_GET_CTRZERO,
++	IPCTNL_MSG_CT_GET_STATS_CPU,
++	IPCTNL_MSG_CT_GET_STATS,
++	IPCTNL_MSG_CT_GET_DYING,
++	IPCTNL_MSG_CT_GET_UNCONFIRMED,
++
++	IPCTNL_MSG_MAX
++};
++
++enum ctnl_exp_msg_types {
++	IPCTNL_MSG_EXP_NEW,
++	IPCTNL_MSG_EXP_GET,
++	IPCTNL_MSG_EXP_DELETE,
++	IPCTNL_MSG_EXP_GET_STATS_CPU,
++
++	IPCTNL_MSG_EXP_MAX
++};
++
++
++enum ctattr_type {
++	CTA_UNSPEC,
++	CTA_TUPLE_ORIG,
++	CTA_TUPLE_REPLY,
++	CTA_STATUS,
++	CTA_PROTOINFO,
++	CTA_HELP,
++	CTA_NAT_SRC,
++#define CTA_NAT	CTA_NAT_SRC	/* backwards compatibility */
++	CTA_TIMEOUT,
++	CTA_MARK,
++	CTA_COUNTERS_ORIG,
++	CTA_COUNTERS_REPLY,
++	CTA_USE,
++	CTA_ID,
++	CTA_NAT_DST,
++	CTA_TUPLE_MASTER,
++	CTA_NAT_SEQ_ADJ_ORIG,
++	CTA_NAT_SEQ_ADJ_REPLY,
++	CTA_SECMARK,		/* obsolete */
++	CTA_ZONE,
++	CTA_SECCTX,
++	CTA_TIMESTAMP,
++	CTA_MARK_MASK,
++	CTA_LABELS,
++	CTA_LABELS_MASK,
++	__CTA_MAX
++};
++#define CTA_MAX (__CTA_MAX - 1)
++
++enum ctattr_tuple {
++	CTA_TUPLE_UNSPEC,
++	CTA_TUPLE_IP,
++	CTA_TUPLE_PROTO,
++	__CTA_TUPLE_MAX
++};
++#define CTA_TUPLE_MAX (__CTA_TUPLE_MAX - 1)
++
++enum ctattr_ip {
++	CTA_IP_UNSPEC,
++	CTA_IP_V4_SRC,
++	CTA_IP_V4_DST,
++	CTA_IP_V6_SRC,
++	CTA_IP_V6_DST,
++	__CTA_IP_MAX
++};
++#define CTA_IP_MAX (__CTA_IP_MAX - 1)
++
++enum ctattr_l4proto {
++	CTA_PROTO_UNSPEC,
++	CTA_PROTO_NUM,
++	CTA_PROTO_SRC_PORT,
++	CTA_PROTO_DST_PORT,
++	CTA_PROTO_ICMP_ID,
++	CTA_PROTO_ICMP_TYPE,
++	CTA_PROTO_ICMP_CODE,
++	CTA_PROTO_ICMPV6_ID,
++	CTA_PROTO_ICMPV6_TYPE,
++	CTA_PROTO_ICMPV6_CODE,
++	__CTA_PROTO_MAX
++};
++#define CTA_PROTO_MAX (__CTA_PROTO_MAX - 1)
++
++enum ctattr_protoinfo {
++	CTA_PROTOINFO_UNSPEC,
++	CTA_PROTOINFO_TCP,
++	CTA_PROTOINFO_DCCP,
++	CTA_PROTOINFO_SCTP,
++	__CTA_PROTOINFO_MAX
++};
++#define CTA_PROTOINFO_MAX (__CTA_PROTOINFO_MAX - 1)
++
++enum ctattr_protoinfo_tcp {
++	CTA_PROTOINFO_TCP_UNSPEC,
++	CTA_PROTOINFO_TCP_STATE,
++	CTA_PROTOINFO_TCP_WSCALE_ORIGINAL,
++	CTA_PROTOINFO_TCP_WSCALE_REPLY,
++	CTA_PROTOINFO_TCP_FLAGS_ORIGINAL,
++	CTA_PROTOINFO_TCP_FLAGS_REPLY,
++	__CTA_PROTOINFO_TCP_MAX
++};
++#define CTA_PROTOINFO_TCP_MAX (__CTA_PROTOINFO_TCP_MAX - 1)
++
++enum ctattr_protoinfo_dccp {
++	CTA_PROTOINFO_DCCP_UNSPEC,
++	CTA_PROTOINFO_DCCP_STATE,
++	CTA_PROTOINFO_DCCP_ROLE,
++	CTA_PROTOINFO_DCCP_HANDSHAKE_SEQ,
++	__CTA_PROTOINFO_DCCP_MAX,
++};
++#define CTA_PROTOINFO_DCCP_MAX (__CTA_PROTOINFO_DCCP_MAX - 1)
++
++enum ctattr_protoinfo_sctp {
++	CTA_PROTOINFO_SCTP_UNSPEC,
++	CTA_PROTOINFO_SCTP_STATE,
++	CTA_PROTOINFO_SCTP_VTAG_ORIGINAL,
++	CTA_PROTOINFO_SCTP_VTAG_REPLY,
++	__CTA_PROTOINFO_SCTP_MAX
++};
++#define CTA_PROTOINFO_SCTP_MAX (__CTA_PROTOINFO_SCTP_MAX - 1)
++
++enum ctattr_counters {
++	CTA_COUNTERS_UNSPEC,
++	CTA_COUNTERS_PACKETS,		/* 64bit counters */
++	CTA_COUNTERS_BYTES,		/* 64bit counters */
++	CTA_COUNTERS32_PACKETS,		/* old 32bit counters, unused */
++	CTA_COUNTERS32_BYTES,		/* old 32bit counters, unused */
++	__CTA_COUNTERS_MAX
++};
++#define CTA_COUNTERS_MAX (__CTA_COUNTERS_MAX - 1)
++
++enum ctattr_tstamp {
++	CTA_TIMESTAMP_UNSPEC,
++	CTA_TIMESTAMP_START,
++	CTA_TIMESTAMP_STOP,
++	__CTA_TIMESTAMP_MAX
++};
++#define CTA_TIMESTAMP_MAX (__CTA_TIMESTAMP_MAX - 1)
++
++enum ctattr_nat {
++	CTA_NAT_UNSPEC,
++	CTA_NAT_V4_MINIP,
++#define CTA_NAT_MINIP CTA_NAT_V4_MINIP
++	CTA_NAT_V4_MAXIP,
++#define CTA_NAT_MAXIP CTA_NAT_V4_MAXIP
++	CTA_NAT_PROTO,
++	CTA_NAT_V6_MINIP,
++	CTA_NAT_V6_MAXIP,
++	__CTA_NAT_MAX
++};
++#define CTA_NAT_MAX (__CTA_NAT_MAX - 1)
++
++enum ctattr_protonat {
++	CTA_PROTONAT_UNSPEC,
++	CTA_PROTONAT_PORT_MIN,
++	CTA_PROTONAT_PORT_MAX,
++	__CTA_PROTONAT_MAX
++};
++#define CTA_PROTONAT_MAX (__CTA_PROTONAT_MAX - 1)
++
++enum ctattr_natseq {
++	CTA_NAT_SEQ_UNSPEC,
++	CTA_NAT_SEQ_CORRECTION_POS,
++	CTA_NAT_SEQ_OFFSET_BEFORE,
++	CTA_NAT_SEQ_OFFSET_AFTER,
++	__CTA_NAT_SEQ_MAX
++};
++#define CTA_NAT_SEQ_MAX (__CTA_NAT_SEQ_MAX - 1)
++
++enum ctattr_expect {
++	CTA_EXPECT_UNSPEC,
++	CTA_EXPECT_MASTER,
++	CTA_EXPECT_TUPLE,
++	CTA_EXPECT_MASK,
++	CTA_EXPECT_TIMEOUT,
++	CTA_EXPECT_ID,
++	CTA_EXPECT_HELP_NAME,
++	CTA_EXPECT_ZONE,
++	CTA_EXPECT_FLAGS,
++	CTA_EXPECT_CLASS,
++	CTA_EXPECT_NAT,
++	CTA_EXPECT_FN,
++	__CTA_EXPECT_MAX
++};
++#define CTA_EXPECT_MAX (__CTA_EXPECT_MAX - 1)
++
++enum ctattr_expect_nat {
++	CTA_EXPECT_NAT_UNSPEC,
++	CTA_EXPECT_NAT_DIR,
++	CTA_EXPECT_NAT_TUPLE,
++	__CTA_EXPECT_NAT_MAX
++};
++#define CTA_EXPECT_NAT_MAX (__CTA_EXPECT_NAT_MAX - 1)
++
++enum ctattr_help {
++	CTA_HELP_UNSPEC,
++	CTA_HELP_NAME,
++	CTA_HELP_INFO,
++	__CTA_HELP_MAX
++};
++#define CTA_HELP_MAX (__CTA_HELP_MAX - 1)
++
++enum ctattr_secctx {
++	CTA_SECCTX_UNSPEC,
++	CTA_SECCTX_NAME,
++	__CTA_SECCTX_MAX
++};
++#define CTA_SECCTX_MAX (__CTA_SECCTX_MAX - 1)
++
++enum ctattr_stats_cpu {
++	CTA_STATS_UNSPEC,
++	CTA_STATS_SEARCHED,
++	CTA_STATS_FOUND,
++	CTA_STATS_NEW,
++	CTA_STATS_INVALID,
++	CTA_STATS_IGNORE,
++	CTA_STATS_DELETE,
++	CTA_STATS_DELETE_LIST,
++	CTA_STATS_INSERT,
++	CTA_STATS_INSERT_FAILED,
++	CTA_STATS_DROP,
++	CTA_STATS_EARLY_DROP,
++	CTA_STATS_ERROR,
++	CTA_STATS_SEARCH_RESTART,
++	__CTA_STATS_MAX,
++};
++#define CTA_STATS_MAX (__CTA_STATS_MAX - 1)
++
++enum ctattr_stats_global {
++	CTA_STATS_GLOBAL_UNSPEC,
++	CTA_STATS_GLOBAL_ENTRIES,
++	__CTA_STATS_GLOBAL_MAX,
++};
++#define CTA_STATS_GLOBAL_MAX (__CTA_STATS_GLOBAL_MAX - 1)
++
++enum ctattr_expect_stats {
++	CTA_STATS_EXP_UNSPEC,
++	CTA_STATS_EXP_NEW,
++	CTA_STATS_EXP_CREATE,
++	CTA_STATS_EXP_DELETE,
++	__CTA_STATS_EXP_MAX,
++};
++#define CTA_STATS_EXP_MAX (__CTA_STATS_EXP_MAX - 1)
++
++#endif /* _IPCONNTRACK_NETLINK_H */
+diff --git a/include/linux/netlink.h b/include/linux/netlink.h
+index f55ed8c..ced0e1a 100644
+--- a/include/linux/netlink.h
++++ b/include/linux/netlink.h
+@@ -1,14 +1,14 @@
+ #ifndef __LINUX_NETLINK_H
+ #define __LINUX_NETLINK_H
+ 
+-#include <linux/socket.h> /* for sa_family_t */
++#include <linux/socket.h> /* for __kernel_sa_family_t */
+ #include <linux/types.h>
+ 
+ #define NETLINK_ROUTE		0	/* Routing/device hook				*/
+ #define NETLINK_UNUSED		1	/* Unused number				*/
+ #define NETLINK_USERSOCK	2	/* Reserved for user mode socket protocols 	*/
+-#define NETLINK_FIREWALL	3	/* Firewalling hook				*/
+-#define NETLINK_INET_DIAG	4	/* INET socket monitoring			*/
++#define NETLINK_FIREWALL	3	/* Unused number, formerly ip_queue		*/
++#define NETLINK_SOCK_DIAG	4	/* socket monitoring				*/
+ #define NETLINK_NFLOG		5	/* netfilter/iptables ULOG */
+ #define NETLINK_XFRM		6	/* ipsec */
+ #define NETLINK_SELINUX		7	/* SELinux event notifications */
+@@ -24,11 +24,15 @@
+ /* leave room for NETLINK_DM (DM Events) */
+ #define NETLINK_SCSITRANSPORT	18	/* SCSI Transports */
+ #define NETLINK_ECRYPTFS	19
++#define NETLINK_RDMA		20
++#define NETLINK_CRYPTO		21	/* Crypto layer */
++
++#define NETLINK_INET_DIAG	NETLINK_SOCK_DIAG
+ 
+ #define MAX_LINKS 32		
+ 
+ struct sockaddr_nl {
+-	sa_family_t	nl_family;	/* AF_NETLINK	*/
++	__kernel_sa_family_t	nl_family;	/* AF_NETLINK	*/
+ 	unsigned short	nl_pad;		/* zero		*/
+ 	__u32		nl_pid;		/* port ID	*/
+        	__u32		nl_groups;	/* multicast groups mask */
+@@ -48,6 +52,7 @@ struct nlmsghdr {
+ #define NLM_F_MULTI		2	/* Multipart message, terminated by NLMSG_DONE */
+ #define NLM_F_ACK		4	/* Reply with ack, with zero or error code */
+ #define NLM_F_ECHO		8	/* Echo this request 		*/
++#define NLM_F_DUMP_INTR		16	/* Dump was inconsistent due to sequence change */
+ 
+ /* Modifiers to GET request */
+ #define NLM_F_ROOT	0x100	/* specify tree	root	*/
+@@ -145,4 +150,4 @@ struct nlattr {
+ #define NLA_HDRLEN		((int) NLA_ALIGN(sizeof(struct nlattr)))
+ 
+ 
+-#endif	/* __LINUX_NETLINK_H */
++#endif /* __LINUX_NETLINK_H */
+diff --git a/include/linux/socket.h b/include/linux/socket.h
+new file mode 100644
+index 0000000..8c1e501
+--- /dev/null
++++ b/include/linux/socket.h
+@@ -0,0 +1,21 @@
++#ifndef _LINUX_SOCKET_H
++#define _LINUX_SOCKET_H
++
++/*
++ * Desired design of maximum size and alignment (see RFC2553)
++ */
++#define _K_SS_MAXSIZE	128	/* Implementation specific max size */
++#define _K_SS_ALIGNSIZE	(__alignof__ (struct sockaddr *))
++				/* Implementation specific desired alignment */
++
++typedef unsigned short __kernel_sa_family_t;
++
++struct __kernel_sockaddr_storage {
++	__kernel_sa_family_t	ss_family;		/* address family */
++	/* Following field(s) are implementation specific */
++	char		__data[_K_SS_MAXSIZE - sizeof(unsigned short)];
++				/* space to achieve desired size, */
++				/* _SS_MAXSIZE value minus size of ss_family */
++} __attribute__ ((aligned(_K_SS_ALIGNSIZE)));	/* force desired alignment */
++
++#endif /* _LINUX_SOCKET_H */
+diff --git a/src/attr.c b/src/attr.c
+index 1136c50..c3c57e6 100644
+--- a/src/attr.c
++++ b/src/attr.c
+@@ -200,6 +200,7 @@ static const size_t mnl_attr_data_type_len[MNL_TYPE_MAX] = {
+ 	[MNL_TYPE_U16]		= sizeof(uint16_t),
+ 	[MNL_TYPE_U32]		= sizeof(uint32_t),
+ 	[MNL_TYPE_U64]		= sizeof(uint64_t),
++	[MNL_TYPE_MSECS]	= sizeof(uint64_t),
+ };
+ 
+ /**
+diff --git a/src/callback.c b/src/callback.c
+index 6337acc..f023401 100644
+--- a/src/callback.c
++++ b/src/callback.c
+@@ -65,6 +65,12 @@ __mnl_cb_run(const void *buf, size_t numbytes, unsigned int seq,
+ 			return -1;
+ 		}
+ 
++		/* dump was interrupted */
++		if (nlh->nlmsg_flags & NLM_F_DUMP_INTR) {
++			errno = EINTR;
++			return -1;
++		}
++
+ 		/* netlink data message handling */
+ 		if (nlh->nlmsg_type >= NLMSG_MIN_TYPE) { 
+ 			if (cb_data){
+
