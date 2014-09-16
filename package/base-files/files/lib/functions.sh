@@ -197,9 +197,12 @@ default_postinst() {
 			done
 		done
 	}
-	[ -n "${IPKG_INSTROOT}" -o "$PKG_UPGRADE" = "1" ] || for i in `cat /usr/lib/opkg/info/${name}.list | grep "^/etc/init.d/"`; do
-		$i enable
-		$i start
+	[ "$PKG_UPGRADE" = "1" ] || for i in `cat ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.list | grep "^/etc/init.d/"`; do
+		[ -n "${IPKG_INSTROOT}" ] && $(which bash) ${IPKG_INSTROOT}/etc/rc.common ${IPKG_INSTROOT}$i enable; \
+		[ -n "${IPKG_INSTROOT}" ] || {
+			$i enable
+			$i start
+		}
 	done
 	return 0
 }
