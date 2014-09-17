@@ -246,9 +246,7 @@ define KernelPackage/ipt-nat6
   KCONFIG:=$(KCONFIG_IPT_NAT6)
   FILES:=$(foreach mod,$(IPT_NAT6-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoLoad,43,$(notdir $(IPT_NAT6-m)))
-  $(call AddDepends/ipt,+kmod-ipt-conntrack)
-  $(call AddDepends/ipt,+kmod-ipt-nat)
-  $(call AddDepends/ipt,+kmod-ip6tables)
+  $(call AddDepends/ipt,+kmod-nf-nat6)
 endef
 
 define KernelPackage/ipt-nat6/description
