@@ -1,0 +1,1495 @@
+From 86f31982ac62e80fe586cad2e0a49a7b22e3d4ee Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:07 +0000
+Subject: [PATCH] ARM: HYP/non-sec: move switch to non-sec to the last boot
+ phase
+
+Having the switch to non-secure in the "prep" phase is causing
+all kind of troubles, as that stage can be called multiple times.
+
+Instead, move the switch to non-secure to the last possible phase,
+when there is no turning back anymore.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/lib/bootm.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/lib/bootm.c b/arch/arm/lib/bootm.c
+index 47ee070..10634a4 100644
+--- a/arch/arm/lib/bootm.c
++++ b/arch/arm/lib/bootm.c
+@@ -242,7 +242,6 @@ static void boot_prep_linux(bootm_headers_t *images)
+ 		printf("FDT and ATAGS support not compiled in - hanging\n");
+ 		hang();
+ 	}
+-	do_nonsec_virt_switch();
+ }
+ 
+ /* Subcommand: GO */
+@@ -287,8 +286,10 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
+ 	else
+ 		r2 = gd->bd->bi_boot_params;
+ 
+-	if (!fake)
++	if (!fake) {
++		do_nonsec_virt_switch();
+ 		kernel_entry(0, machid, r2);
++	}
+ #endif
+ }
+ 
+From c26d288f6cbc6d53219001d42476f314c403257b Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:08 +0000
+Subject: [PATCH] ARM: HYP/non-sec: add a barrier after setting SCR.NS==1
+
+A CP15 instruction execution can be reordered, requiring an
+isb to be sure it is executed in program order.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/nonsec_virt.S | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/cpu/armv7/nonsec_virt.S b/arch/arm/cpu/armv7/nonsec_virt.S
+index 6367e09..12de5c2 100644
+--- a/arch/arm/cpu/armv7/nonsec_virt.S
++++ b/arch/arm/cpu/armv7/nonsec_virt.S
+@@ -46,6 +46,7 @@ _secure_monitor:
+ #endif
+ 
+ 	mcr	p15, 0, r1, c1, c1, 0		@ write SCR (with NS bit set)
++	isb
+ 
+ #ifdef CONFIG_ARMV7_VIRT
+ 	mrceq	p15, 0, r0, c12, c0, 1		@ get MVBAR value
+From 06feeea3c84cc58ff3d5c19f6a430886495f86ce Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:09 +0000
+Subject: [PATCH] ARM: non-sec: reset CNTVOFF to zero
+
+Before switching to non-secure, make sure that CNTVOFF is set
+to zero on all CPUs. Otherwise, kernel running in non-secure
+without HYP enabled (hence using virtual timers) may observe
+timers that are not synchronized, effectively seeing time
+going backward...
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/nonsec_virt.S | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/cpu/armv7/nonsec_virt.S b/arch/arm/cpu/armv7/nonsec_virt.S
+index 12de5c2..b5c946f 100644
+--- a/arch/arm/cpu/armv7/nonsec_virt.S
++++ b/arch/arm/cpu/armv7/nonsec_virt.S
+@@ -38,10 +38,10 @@ _secure_monitor:
+ 	bic	r1, r1, #0x4e			@ clear IRQ, FIQ, EA, nET bits
+ 	orr	r1, r1, #0x31			@ enable NS, AW, FW bits
+ 
+-#ifdef CONFIG_ARMV7_VIRT
+ 	mrc	p15, 0, r0, c0, c1, 1		@ read ID_PFR1
+ 	and	r0, r0, #CPUID_ARM_VIRT_MASK	@ mask virtualization bits
+ 	cmp	r0, #(1 << CPUID_ARM_VIRT_SHIFT)
++#ifdef CONFIG_ARMV7_VIRT
+ 	orreq	r1, r1, #0x100			@ allow HVC instruction
+ #endif
+ 
+@@ -52,7 +52,14 @@ _secure_monitor:
+ 	mrceq	p15, 0, r0, c12, c0, 1		@ get MVBAR value
+ 	mcreq	p15, 4, r0, c12, c0, 0		@ write HVBAR
+ #endif
++	bne	1f
+ 
++	@ Reset CNTVOFF to 0 before leaving monitor mode
++	mrc	p15, 0, r0, c0, c1, 1		@ read ID_PFR1
++	ands	r0, r0, #CPUID_ARM_GENTIMER_MASK	@ test arch timer bits
++	movne	r0, #0
++	mcrrne	p15, 4, r0, r0, c14		@ Reset CNTVOFF to zero
++1:
+ 	movs	pc, lr				@ return to non-secure SVC
+ 
+ _hyp_trap:
+From 054bcf5147ff5a20298bce5b3bdfbf3e1c797594 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:10 +0000
+Subject: [PATCH] ARM: add missing HYP mode constant
+
+In order to be able to use the various mode constants (far more
+readable than random hex values), add the missing HYP and A
+values.
+
+Also update arm/lib/interrupts.c to display HYP instead of an
+unknown value.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/include/asm/proc-armv/ptrace.h | 2 ++
+ arch/arm/lib/interrupts.c               | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/include/asm/proc-armv/ptrace.h b/arch/arm/include/asm/proc-armv/ptrace.h
+index 21aef58..71df5a9 100644
+--- a/arch/arm/include/asm/proc-armv/ptrace.h
++++ b/arch/arm/include/asm/proc-armv/ptrace.h
+@@ -38,12 +38,14 @@ struct pt_regs {
+ #define IRQ_MODE	0x12
+ #define SVC_MODE	0x13
+ #define ABT_MODE	0x17
++#define HYP_MODE	0x1a
+ #define UND_MODE	0x1b
+ #define SYSTEM_MODE	0x1f
+ #define MODE_MASK	0x1f
+ #define T_BIT		0x20
+ #define F_BIT		0x40
+ #define I_BIT		0x80
++#define A_BIT		0x100
+ #define CC_V_BIT	(1 << 28)
+ #define CC_C_BIT	(1 << 29)
+ #define CC_Z_BIT	(1 << 30)
+diff --git a/arch/arm/lib/interrupts.c b/arch/arm/lib/interrupts.c
+index 758b013..f6b7c03 100644
+--- a/arch/arm/lib/interrupts.c
++++ b/arch/arm/lib/interrupts.c
+@@ -103,7 +103,7 @@ void show_regs (struct pt_regs *regs)
+ 	"UK12_26",	"UK13_26",	"UK14_26",	"UK15_26",
+ 	"USER_32",	"FIQ_32",	"IRQ_32",	"SVC_32",
+ 	"UK4_32",	"UK5_32",	"UK6_32",	"ABT_32",
+-	"UK8_32",	"UK9_32",	"UK10_32",	"UND_32",
++	"UK8_32",	"UK9_32",	"HYP_32",	"UND_32",
+ 	"UK12_32",	"UK13_32",	"UK14_32",	"SYS_32",
+ 	};
+ 
+From 213a8d9b7e613210d3c7d8b99c95b454ad0527d8 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:11 +0000
+Subject: [PATCH] ARM: HYP/non-sec: add separate section for secure code
+
+In anticipation of refactoring the HYP/non-secure code to run
+from secure RAM, add a new linker section that will contain that
+code.
+
+Nothing is using it just yet.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/config.mk      |  2 +-
+ arch/arm/cpu/u-boot.lds | 30 ++++++++++++++++++++++++++++++
+ arch/arm/lib/sections.c |  2 ++
+ 3 files changed, 33 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/config.mk b/arch/arm/config.mk
+index 66ecc2e..2bdfca5 100644
+--- a/arch/arm/config.mk
++++ b/arch/arm/config.mk
+@@ -113,7 +113,7 @@ endif
+ ifdef CONFIG_ARM64
+ OBJCOPYFLAGS += -j .text -j .rodata -j .data -j .u_boot_list -j .rela.dyn
+ else
+-OBJCOPYFLAGS += -j .text -j .rodata -j .hash -j .data -j .got.plt -j .u_boot_list -j .rel.dyn
++OBJCOPYFLAGS += -j .text -j .secure_text -j .rodata -j .hash -j .data -j .got.plt -j .u_boot_list -j .rel.dyn
+ endif
+ 
+ ifneq ($(CONFIG_IMX_CONFIG),)
+diff --git a/arch/arm/cpu/u-boot.lds b/arch/arm/cpu/u-boot.lds
+index 33c1f99..f45885d 100644
+--- a/arch/arm/cpu/u-boot.lds
++++ b/arch/arm/cpu/u-boot.lds
+@@ -7,6 +7,8 @@
+  * SPDX-License-Identifier:	GPL-2.0+
+  */
+ 
++#include <config.h>
++
+ OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
+ OUTPUT_ARCH(arm)
+ ENTRY(_start)
+@@ -22,6 +24,34 @@ SECTIONS
+ 		*(.text*)
+ 	}
+ 
++#if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT) || defined(CONFIG_ARMV7_PSCI)
++
++#ifndef CONFIG_ARMV7_SECURE_BASE
++#define CONFIG_ARMV7_SECURE_BASE
++#endif
++
++	.__secure_start : {
++		. = ALIGN(0x1000);
++		*(.__secure_start)
++	}
++
++	.secure_text CONFIG_ARMV7_SECURE_BASE :
++		AT(ADDR(.__secure_start) + SIZEOF(.__secure_start))
++	{
++		*(._secure.text)
++	}
++
++	. = LOADADDR(.__secure_start) +
++		SIZEOF(.__secure_start) +
++		SIZEOF(.secure_text);
++
++	__secure_end_lma = .;
++	.__secure_end : AT(__secure_end_lma) {
++		*(.__secure_end)
++		LONG(0x1d1071c);	/* Must output something to reset LMA */
++	}
++#endif
++
+ 	. = ALIGN(4);
+ 	.rodata : { *(SORT_BY_ALIGNMENT(SORT_BY_NAME(.rodata*))) }
+ 
+diff --git a/arch/arm/lib/sections.c b/arch/arm/lib/sections.c
+index 5b30bcb..a1205c3 100644
+--- a/arch/arm/lib/sections.c
++++ b/arch/arm/lib/sections.c
+@@ -25,4 +25,6 @@ char __image_copy_start[0] __attribute__((section(".__image_copy_start")));
+ char __image_copy_end[0] __attribute__((section(".__image_copy_end")));
+ char __rel_dyn_start[0] __attribute__((section(".__rel_dyn_start")));
+ char __rel_dyn_end[0] __attribute__((section(".__rel_dyn_end")));
++char __secure_start[0] __attribute__((section(".__secure_start")));
++char __secure_end[0] __attribute__((section(".__secure_end")));
+ char _end[0] __attribute__((section(".__end")));
+From d7ebd8f57e84ea92ef0cf55080f0acec9c6d1ace Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:12 +0000
+Subject: [PATCH] ARM: HYP/non-sec: allow relocation to secure RAM
+
+The current non-sec switching code suffers from one major issue:
+it cannot run in secure RAM, as a large part of u-boot still needs
+to be run while we're switched to non-secure.
+
+This patch reworks the whole HYP/non-secure strategy by:
+- making sure the secure code is the *last* thing u-boot executes
+  before entering the payload
+- performing an exception return from secure mode directly into
+  the payload
+- allowing the code to be dynamically relocated to secure RAM
+  before switching to non-secure.
+
+This involves quite a bit of horrible code, specially as u-boot
+relocation is quite primitive.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/nonsec_virt.S | 161 +++++++++++++++++++--------------------
+ arch/arm/cpu/armv7/virt-v7.c     |  59 +++++---------
+ arch/arm/include/asm/armv7.h     |  10 ++-
+ arch/arm/include/asm/secure.h    |  26 +++++++
+ arch/arm/lib/bootm.c             |  22 +++---
+ 5 files changed, 138 insertions(+), 140 deletions(-)
+ create mode 100644 arch/arm/include/asm/secure.h
+
+diff --git a/arch/arm/cpu/armv7/nonsec_virt.S b/arch/arm/cpu/armv7/nonsec_virt.S
+index b5c946f..2a43e3c 100644
+--- a/arch/arm/cpu/armv7/nonsec_virt.S
++++ b/arch/arm/cpu/armv7/nonsec_virt.S
+@@ -10,10 +10,13 @@
+ #include <linux/linkage.h>
+ #include <asm/gic.h>
+ #include <asm/armv7.h>
++#include <asm/proc-armv/ptrace.h>
+ 
+ .arch_extension sec
+ .arch_extension virt
+ 
++	.pushsection ._secure.text, "ax"
++
+ 	.align	5
+ /* the vector table for secure state and HYP mode */
+ _monitor_vectors:
+@@ -22,51 +25,86 @@ _monitor_vectors:
+ 	adr pc, _secure_monitor
+ 	.word 0
+ 	.word 0
+-	adr pc, _hyp_trap
++	.word 0
+ 	.word 0
+ 	.word 0
+ 
++.macro is_cpu_virt_capable	tmp
++	mrc	p15, 0, \tmp, c0, c1, 1		@ read ID_PFR1
++	and	\tmp, \tmp, #CPUID_ARM_VIRT_MASK	@ mask virtualization bits
++	cmp	\tmp, #(1 << CPUID_ARM_VIRT_SHIFT)
++.endm
++
+ /*
+  * secure monitor handler
+  * U-boot calls this "software interrupt" in start.S
+  * This is executed on a "smc" instruction, we use a "smc #0" to switch
+  * to non-secure state.
+- * We use only r0 and r1 here, due to constraints in the caller.
++ * r0, r1, r2: passed to the callee
++ * ip: target PC
+  */
+ _secure_monitor:
+-	mrc	p15, 0, r1, c1, c1, 0		@ read SCR
+-	bic	r1, r1, #0x4e			@ clear IRQ, FIQ, EA, nET bits
+-	orr	r1, r1, #0x31			@ enable NS, AW, FW bits
++	mrc	p15, 0, r5, c1, c1, 0		@ read SCR
++	bic	r5, r5, #0x4e			@ clear IRQ, FIQ, EA, nET bits
++	orr	r5, r5, #0x31			@ enable NS, AW, FW bits
+ 
+-	mrc	p15, 0, r0, c0, c1, 1		@ read ID_PFR1
+-	and	r0, r0, #CPUID_ARM_VIRT_MASK	@ mask virtualization bits
+-	cmp	r0, #(1 << CPUID_ARM_VIRT_SHIFT)
++	mov	r6, #SVC_MODE			@ default mode is SVC
++	is_cpu_virt_capable r4
+ #ifdef CONFIG_ARMV7_VIRT
+-	orreq	r1, r1, #0x100			@ allow HVC instruction
++	orreq	r5, r5, #0x100			@ allow HVC instruction
++	moveq	r6, #HYP_MODE			@ Enter the kernel as HYP
+ #endif
+ 
+-	mcr	p15, 0, r1, c1, c1, 0		@ write SCR (with NS bit set)
++	mcr	p15, 0, r5, c1, c1, 0		@ write SCR (with NS bit set)
+ 	isb
+ 
+-#ifdef CONFIG_ARMV7_VIRT
+-	mrceq	p15, 0, r0, c12, c0, 1		@ get MVBAR value
+-	mcreq	p15, 4, r0, c12, c0, 0		@ write HVBAR
+-#endif
+ 	bne	1f
+ 
+ 	@ Reset CNTVOFF to 0 before leaving monitor mode
+-	mrc	p15, 0, r0, c0, c1, 1		@ read ID_PFR1
+-	ands	r0, r0, #CPUID_ARM_GENTIMER_MASK	@ test arch timer bits
+-	movne	r0, #0
+-	mcrrne	p15, 4, r0, r0, c14		@ Reset CNTVOFF to zero
++	mrc	p15, 0, r4, c0, c1, 1		@ read ID_PFR1
++	ands	r4, r4, #CPUID_ARM_GENTIMER_MASK	@ test arch timer bits
++	movne	r4, #0
++	mcrrne	p15, 4, r4, r4, c14		@ Reset CNTVOFF to zero
+ 1:
+-	movs	pc, lr				@ return to non-secure SVC
+-
+-_hyp_trap:
+-	mrs	lr, elr_hyp	@ for older asm: .byte 0x00, 0xe3, 0x0e, 0xe1
+-	mov pc, lr				@ do no switch modes, but
+-						@ return to caller
+-
++	mov	lr, ip
++	mov	ip, #(F_BIT | I_BIT | A_BIT)	@ Set A, I and F
++	tst	lr, #1				@ Check for Thumb PC
++	orrne	ip, ip, #T_BIT			@ Set T if Thumb
++	orr	ip, ip, r6			@ Slot target mode in
++	msr	spsr_cxfs, ip			@ Set full SPSR
++	movs	pc, lr				@ ERET to non-secure
++
++ENTRY(_do_nonsec_entry)
++	mov	ip, r0
++	mov	r0, r1
++	mov	r1, r2
++	mov	r2, r3
++	smc	#0
++ENDPROC(_do_nonsec_entry)
++
++.macro get_cbar_addr	addr
++#ifdef CONFIG_ARM_GIC_BASE_ADDRESS
++	ldr	\addr, =CONFIG_ARM_GIC_BASE_ADDRESS
++#else
++	mrc	p15, 4, \addr, c15, c0, 0	@ read CBAR
++	bfc	\addr, #0, #15			@ clear reserved bits
++#endif
++.endm
++
++.macro get_gicd_addr	addr
++	get_cbar_addr	\addr
++	add	\addr, \addr, #GIC_DIST_OFFSET	@ GIC dist i/f offset
++.endm
++
++.macro get_gicc_addr	addr, tmp
++	get_cbar_addr	\addr
++	is_cpu_virt_capable \tmp
++	movne	\tmp, #GIC_CPU_OFFSET_A9	@ GIC CPU offset for A9
++	moveq	\tmp, #GIC_CPU_OFFSET_A15	@ GIC CPU offset for A15/A7
++	add	\addr, \addr, \tmp
++.endm
++
++#ifndef CONFIG_ARMV7_PSCI
+ /*
+  * Secondary CPUs start here and call the code for the core specific parts
+  * of the non-secure and HYP mode transition. The GIC distributor specific
+@@ -74,31 +112,21 @@ _hyp_trap:
+  * Then they go back to wfi and wait to be woken up by the kernel again.
+  */
+ ENTRY(_smp_pen)
+-	mrs	r0, cpsr
+-	orr	r0, r0, #0xc0
+-	msr	cpsr, r0			@ disable interrupts
+-	ldr	r1, =_start
+-	mcr	p15, 0, r1, c12, c0, 0		@ set VBAR
++	cpsid	i
++	cpsid	f
+ 
+ 	bl	_nonsec_init
+-	mov	r12, r0				@ save GICC address
+-#ifdef CONFIG_ARMV7_VIRT
+-	bl	_switch_to_hyp
+-#endif
+-
+-	ldr	r1, [r12, #GICC_IAR]		@ acknowledge IPI
+-	str	r1, [r12, #GICC_EOIR]		@ signal end of interrupt
+ 
+ 	adr	r0, _smp_pen			@ do not use this address again
+ 	b	smp_waitloop			@ wait for IPIs, board specific
+ ENDPROC(_smp_pen)
++#endif
+ 
+ /*
+  * Switch a core to non-secure state.
+  *
+  *  1. initialize the GIC per-core interface
+  *  2. allow coprocessor access in non-secure modes
+- *  3. switch the cpu mode (by calling "smc #0")
+  *
+  * Called from smp_pen by secondary cores and directly by the BSP.
+  * Do not assume that the stack is available and only use registers
+@@ -108,38 +136,23 @@ ENDPROC(_smp_pen)
+  * though, but we check this in C before calling this function.
+  */
+ ENTRY(_nonsec_init)
+-#ifdef CONFIG_ARM_GIC_BASE_ADDRESS
+-	ldr	r2, =CONFIG_ARM_GIC_BASE_ADDRESS
+-#else
+-	mrc	p15, 4, r2, c15, c0, 0		@ read CBAR
+-	bfc	r2, #0, #15			@ clear reserved bits
+-#endif
+-	add	r3, r2, #GIC_DIST_OFFSET	@ GIC dist i/f offset
++	get_gicd_addr	r3
++
+ 	mvn	r1, #0				@ all bits to 1
+ 	str	r1, [r3, #GICD_IGROUPRn]	@ allow private interrupts
+ 
+-	mrc	p15, 0, r0, c0, c0, 0		@ read MIDR
+-	ldr	r1, =MIDR_PRIMARY_PART_MASK
+-	and	r0, r0, r1			@ mask out variant and revision
++	get_gicc_addr	r3, r1
+ 
+-	ldr	r1, =MIDR_CORTEX_A7_R0P0 & MIDR_PRIMARY_PART_MASK
+-	cmp	r0, r1				@ check for Cortex-A7
+-
+-	ldr	r1, =MIDR_CORTEX_A15_R0P0 & MIDR_PRIMARY_PART_MASK
+-	cmpne	r0, r1				@ check for Cortex-A15
+-
+-	movne	r1, #GIC_CPU_OFFSET_A9		@ GIC CPU offset for A9
+-	moveq	r1, #GIC_CPU_OFFSET_A15		@ GIC CPU offset for A15/A7
+-	add	r3, r2, r1			@ r3 = GIC CPU i/f addr
+-
+-	mov	r1, #1				@ set GICC_CTLR[enable]
++	mov	r1, #3				@ Enable both groups
+ 	str	r1, [r3, #GICC_CTLR]		@ and clear all other bits
+ 	mov	r1, #0xff
+ 	str	r1, [r3, #GICC_PMR]		@ set priority mask register
+ 
++	mrc	p15, 0, r0, c1, c1, 2
+ 	movw	r1, #0x3fff
+-	movt	r1, #0x0006
+-	mcr	p15, 0, r1, c1, c1, 2		@ NSACR = all copros to non-sec
++	movt	r1, #0x0004
++	orr	r0, r0, r1
++	mcr	p15, 0, r0, c1, c1, 2		@ NSACR = all copros to non-sec
+ 
+ /* The CNTFRQ register of the generic timer needs to be
+  * programmed in secure state. Some primary bootloaders / firmware
+@@ -157,21 +170,9 @@ ENTRY(_nonsec_init)
+ 
+ 	adr	r1, _monitor_vectors
+ 	mcr	p15, 0, r1, c12, c0, 1		@ set MVBAR to secure vectors
+-
+-	mrc	p15, 0, ip, c12, c0, 0		@ save secure copy of VBAR
+-
+ 	isb
+-	smc	#0				@ call into MONITOR mode
+-
+-	mcr	p15, 0, ip, c12, c0, 0		@ write non-secure copy of VBAR
+-
+-	mov	r1, #1
+-	str	r1, [r3, #GICC_CTLR]		@ enable non-secure CPU i/f
+-	add	r2, r2, #GIC_DIST_OFFSET
+-	str	r1, [r2, #GICD_CTLR]		@ allow private interrupts
+ 
+ 	mov	r0, r3				@ return GICC address
+-
+ 	bx	lr
+ ENDPROC(_nonsec_init)
+ 
+@@ -183,18 +184,10 @@ ENTRY(smp_waitloop)
+ 	ldr	r1, [r1]
+ 	cmp	r0, r1			@ make sure we dont execute this code
+ 	beq	smp_waitloop		@ again (due to a spurious wakeup)
+-	mov	pc, r1
++	mov	r0, r1
++	b	_do_nonsec_entry
+ ENDPROC(smp_waitloop)
+ .weak smp_waitloop
+ #endif
+ 
+-ENTRY(_switch_to_hyp)
+-	mov	r0, lr
+-	mov	r1, sp				@ save SVC copy of LR and SP
+-	isb
+-	hvc #0			 @ for older asm: .byte 0x70, 0x00, 0x40, 0xe1
+-	mov	sp, r1
+-	mov	lr, r0				@ restore SVC copy of LR and SP
+-
+-	bx	lr
+-ENDPROC(_switch_to_hyp)
++	.popsection
+diff --git a/arch/arm/cpu/armv7/virt-v7.c b/arch/arm/cpu/armv7/virt-v7.c
+index 2cd604f..6500030 100644
+--- a/arch/arm/cpu/armv7/virt-v7.c
++++ b/arch/arm/cpu/armv7/virt-v7.c
+@@ -13,17 +13,10 @@
+ #include <asm/armv7.h>
+ #include <asm/gic.h>
+ #include <asm/io.h>
++#include <asm/secure.h>
+ 
+ unsigned long gic_dist_addr;
+ 
+-static unsigned int read_cpsr(void)
+-{
+-	unsigned int reg;
+-
+-	asm volatile ("mrs %0, cpsr\n" : "=r" (reg));
+-	return reg;
+-}
+-
+ static unsigned int read_id_pfr1(void)
+ {
+ 	unsigned int reg;
+@@ -72,6 +65,18 @@ static unsigned long get_gicd_base_address(void)
+ #endif
+ }
+ 
++static void relocate_secure_section(void)
++{
++#ifdef CONFIG_ARMV7_SECURE_BASE
++	size_t sz = __secure_end - __secure_start;
++
++	memcpy((void *)CONFIG_ARMV7_SECURE_BASE, __secure_start, sz);
++	flush_dcache_range(CONFIG_ARMV7_SECURE_BASE,
++			   CONFIG_ARMV7_SECURE_BASE + sz + 1);
++	invalidate_icache_all();
++#endif
++}
++
+ static void kick_secondary_cpus_gic(unsigned long gicdaddr)
+ {
+ 	/* kick all CPUs (except this one) by writing to GICD_SGIR */
+@@ -83,35 +88,7 @@ void __weak smp_kick_all_cpus(void)
+ 	kick_secondary_cpus_gic(gic_dist_addr);
+ }
+ 
+-int armv7_switch_hyp(void)
+-{
+-	unsigned int reg;
+-
+-	/* check whether we are in HYP mode already */
+-	if ((read_cpsr() & 0x1f) == 0x1a) {
+-		debug("CPU already in HYP mode\n");
+-		return 0;
+-	}
+-
+-	/* check whether the CPU supports the virtualization extensions */
+-	reg = read_id_pfr1();
+-	if ((reg & CPUID_ARM_VIRT_MASK) != 1 << CPUID_ARM_VIRT_SHIFT) {
+-		printf("HYP mode: Virtualization extensions not implemented.\n");
+-		return -1;
+-	}
+-
+-	/* call the HYP switching code on this CPU also */
+-	_switch_to_hyp();
+-
+-	if ((read_cpsr() & 0x1F) != 0x1a) {
+-		printf("HYP mode: switch not successful.\n");
+-		return -1;
+-	}
+-
+-	return 0;
+-}
+-
+-int armv7_switch_nonsec(void)
++int armv7_init_nonsec(void)
+ {
+ 	unsigned int reg;
+ 	unsigned itlinesnr, i;
+@@ -147,11 +124,13 @@ int armv7_switch_nonsec(void)
+ 	for (i = 1; i <= itlinesnr; i++)
+ 		writel((unsigned)-1, gic_dist_addr + GICD_IGROUPRn + 4 * i);
+ 
+-	smp_set_core_boot_addr((unsigned long)_smp_pen, -1);
++#ifndef CONFIG_ARMV7_PSCI
++	smp_set_core_boot_addr((unsigned long)secure_ram_addr(_smp_pen), -1);
+ 	smp_kick_all_cpus();
++#endif
+ 
+ 	/* call the non-sec switching code on this CPU also */
+-	_nonsec_init();
+-
++	relocate_secure_section();
++	secure_ram_addr(_nonsec_init)();
+ 	return 0;
+ }
+diff --git a/arch/arm/include/asm/armv7.h b/arch/arm/include/asm/armv7.h
+index 395444e..11476dd 100644
+--- a/arch/arm/include/asm/armv7.h
++++ b/arch/arm/include/asm/armv7.h
+@@ -78,13 +78,17 @@ void v7_outer_cache_inval_range(u32 start, u32 end);
+ 
+ #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
+ 
+-int armv7_switch_nonsec(void);
+-int armv7_switch_hyp(void);
++int armv7_init_nonsec(void);
+ 
+ /* defined in assembly file */
+ unsigned int _nonsec_init(void);
++void _do_nonsec_entry(void *target_pc, unsigned long r0,
++		      unsigned long r1, unsigned long r2);
+ void _smp_pen(void);
+-void _switch_to_hyp(void);
++
++extern char __secure_start[];
++extern char __secure_end[];
++
+ #endif /* CONFIG_ARMV7_NONSEC || CONFIG_ARMV7_VIRT */
+ 
+ #endif /* ! __ASSEMBLY__ */
+diff --git a/arch/arm/include/asm/secure.h b/arch/arm/include/asm/secure.h
+new file mode 100644
+index 0000000..effdb18
+--- /dev/null
++++ b/arch/arm/include/asm/secure.h
+@@ -0,0 +1,26 @@
++#ifndef __ASM_SECURE_H
++#define __ASM_SECURE_H
++
++#include <config.h>
++
++#ifdef CONFIG_ARMV7_SECURE_BASE
++/*
++ * Warning, horror ahead.
++ *
++ * The target code lives in our "secure ram", but u-boot doesn't know
++ * that, and has blindly added reloc_off to every relocation
++ * entry. Gahh. Do the opposite conversion. This hack also prevents
++ * GCC from generating code veeners, which u-boot doesn't relocate at
++ * all...
++ */
++#define secure_ram_addr(_fn) ({						\
++			DECLARE_GLOBAL_DATA_PTR;			\
++			void *__fn = _fn;				\
++			typeof(_fn) *__tmp = (__fn - gd->reloc_off);	\
++			__tmp;						\
++		})
++#else
++#define secure_ram_addr(_fn)	(_fn)
++#endif
++
++#endif
+diff --git a/arch/arm/lib/bootm.c b/arch/arm/lib/bootm.c
+index 10634a4..61aa14e 100644
+--- a/arch/arm/lib/bootm.c
++++ b/arch/arm/lib/bootm.c
+@@ -20,6 +20,7 @@
+ #include <libfdt.h>
+ #include <fdt_support.h>
+ #include <asm/bootm.h>
++#include <asm/secure.h>
+ #include <linux/compiler.h>
+ 
+ #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
+@@ -184,27 +185,17 @@ static void setup_end_tag(bd_t *bd)
+ 
+ __weak void setup_board_tags(struct tag **in_params) {}
+ 
++#ifdef CONFIG_ARM64
+ static void do_nonsec_virt_switch(void)
+ {
+-#if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
+-	if (armv7_switch_nonsec() == 0)
+-#ifdef CONFIG_ARMV7_VIRT
+-		if (armv7_switch_hyp() == 0)
+-			debug("entered HYP mode\n");
+-#else
+-		debug("entered non-secure state\n");
+-#endif
+-#endif
+-
+-#ifdef CONFIG_ARM64
+ 	smp_kick_all_cpus();
+ 	flush_dcache_all();	/* flush cache before swtiching to EL2 */
+ 	armv8_switch_to_el2();
+ #ifdef CONFIG_ARMV8_SWITCH_TO_EL1
+ 	armv8_switch_to_el1();
+ #endif
+-#endif
+ }
++#endif
+ 
+ /* Subcommand: PREP */
+ static void boot_prep_linux(bootm_headers_t *images)
+@@ -287,8 +278,13 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
+ 		r2 = gd->bd->bi_boot_params;
+ 
+ 	if (!fake) {
+-		do_nonsec_virt_switch();
++#if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
++		armv7_init_nonsec();
++		secure_ram_addr(_do_nonsec_entry)(kernel_entry,
++						  0, machid, r2);
++#else
+ 		kernel_entry(0, machid, r2);
++#endif
+ 	}
+ #endif
+ }
+From 8ea1554da4a6e556d3213a77cf59daa1c154bdb5 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:13 +0000
+Subject: [PATCH] ARM: HYP/non-sec: add generic ARMv7 PSCI code
+
+Implement core support for PSCI. As this is generic code, it doesn't
+implement anything really useful (all the functions are returning
+Not Implemented).
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/Makefile |   4 ++
+ arch/arm/cpu/armv7/psci.S   | 105 ++++++++++++++++++++++++++++++++++++++++++++
+ arch/arm/include/asm/psci.h |  35 +++++++++++++++
+ 3 files changed, 144 insertions(+)
+ create mode 100644 arch/arm/cpu/armv7/psci.S
+ create mode 100644 arch/arm/include/asm/psci.h
+
+diff --git a/arch/arm/cpu/armv7/Makefile b/arch/arm/cpu/armv7/Makefile
+index 6f17771..0cf5c45 100644
+--- a/arch/arm/cpu/armv7/Makefile
++++ b/arch/arm/cpu/armv7/Makefile
+@@ -24,6 +24,10 @@ obj-y	+= nonsec_virt.o
+ obj-y	+= virt-v7.o
+ endif
+ 
++ifneq ($(CONFIG_ARMV7_PSCI),)
++obj-y	+= psci.o
++endif
++
+ obj-$(CONFIG_KONA) += kona-common/
+ obj-$(CONFIG_OMAP_COMMON) += omap-common/
+ obj-$(CONFIG_TEGRA) += tegra-common/
+diff --git a/arch/arm/cpu/armv7/psci.S b/arch/arm/cpu/armv7/psci.S
+new file mode 100644
+index 0000000..a9341e0
+--- /dev/null
++++ b/arch/arm/cpu/armv7/psci.S
+@@ -0,0 +1,105 @@
++/*
++ * Copyright (C) 2013 - ARM Ltd
++ * Author: Marc Zyngier <marc.zyngier@arm.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <config.h>
++#include <linux/linkage.h>
++#include <asm/psci.h>
++
++	.pushsection ._secure.text, "ax"
++
++	.arch_extension	sec
++
++	.align	5
++	.globl _psci_vectors
++_psci_vectors:
++	b	default_psci_vector	@ reset
++	b	default_psci_vector	@ undef
++	b	_smc_psci		@ smc
++	b	default_psci_vector	@ pabort
++	b	default_psci_vector	@ dabort
++	b	default_psci_vector	@ hyp
++	b	default_psci_vector	@ irq
++	b	psci_fiq_enter		@ fiq
++
++ENTRY(psci_fiq_enter)
++	movs	pc, lr
++ENDPROC(psci_fiq_enter)
++.weak psci_fiq_enter
++
++ENTRY(default_psci_vector)
++	movs	pc, lr
++ENDPROC(default_psci_vector)
++.weak default_psci_vector
++
++ENTRY(psci_cpu_suspend)
++ENTRY(psci_cpu_off)
++ENTRY(psci_cpu_on)
++ENTRY(psci_migrate)
++	mov	r0, #ARM_PSCI_RET_NI	@ Return -1 (Not Implemented)
++	mov	pc, lr
++ENDPROC(psci_migrate)
++ENDPROC(psci_cpu_on)
++ENDPROC(psci_cpu_off)
++ENDPROC(psci_cpu_suspend)
++.weak psci_cpu_suspend
++.weak psci_cpu_off
++.weak psci_cpu_on
++.weak psci_migrate
++
++_psci_table:
++	.word	ARM_PSCI_FN_CPU_SUSPEND
++	.word	psci_cpu_suspend
++	.word	ARM_PSCI_FN_CPU_OFF
++	.word	psci_cpu_off
++	.word	ARM_PSCI_FN_CPU_ON
++	.word	psci_cpu_on
++	.word	ARM_PSCI_FN_MIGRATE
++	.word	psci_migrate
++	.word	0
++	.word	0
++
++_smc_psci:
++	push	{r3-r7,lr}
++
++	@ Switch to secure
++	mrc	p15, 0, r7, c1, c1, 0
++	bic	r4, r7, #1
++	mcr	p15, 0, r4, c1, c1, 0
++	isb
++
++	adr	r4, _psci_table
++1:	ldr	r5, [r4]	@ Load PSCI function ID
++	ldr	r6, [r4, #4]	@ Load target PC
++	cmp	r5, #0		@ If reach the end, bail out
++	mvneq	r0, #0		@ Return -1 (Not Implemented)
++	beq	2f
++	cmp	r0, r5		@ If not matching, try next entry
++	addne	r4, r4, #8
++	bne	1b
++	cmp	r6, #0		@ Not implemented
++	moveq	r0, #ARM_PSCI_RET_NI
++	beq	2f
++
++	blx	r6		@ Execute PSCI function
++
++	@ Switch back to non-secure
++	mcr	p15, 0, r7, c1, c1, 0
++
++2:	pop	{r3-r7, lr}
++	movs	pc, lr		@ Return to the kernel
++
++	.popsection
+diff --git a/arch/arm/include/asm/psci.h b/arch/arm/include/asm/psci.h
+new file mode 100644
+index 0000000..704b4b0
+--- /dev/null
++++ b/arch/arm/include/asm/psci.h
+@@ -0,0 +1,35 @@
++/*
++ * Copyright (C) 2013 - ARM Ltd
++ * Author: Marc Zyngier <marc.zyngier@arm.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#ifndef __ARM_PSCI_H__
++#define __ARM_PSCI_H__
++
++/* PSCI interface */
++#define ARM_PSCI_FN_BASE		0x95c1ba5e
++#define ARM_PSCI_FN(n)			(ARM_PSCI_FN_BASE + (n))
++
++#define ARM_PSCI_FN_CPU_SUSPEND		ARM_PSCI_FN(0)
++#define ARM_PSCI_FN_CPU_OFF		ARM_PSCI_FN(1)
++#define ARM_PSCI_FN_CPU_ON		ARM_PSCI_FN(2)
++#define ARM_PSCI_FN_MIGRATE		ARM_PSCI_FN(3)
++
++#define ARM_PSCI_RET_SUCCESS		0
++#define ARM_PSCI_RET_NI			(-1)
++#define ARM_PSCI_RET_INVAL		(-2)
++#define ARM_PSCI_RET_DENIED		(-3)
++
++#endif /* __ARM_PSCI_H__ */
+From 0ca6171c385fed00125b320592ee94922f44f13a Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:14 +0000
+Subject: [PATCH] ARM: HYP/non-sec: add the option for a second-stage monitor
+
+Allow the switch to a second stage secure monitor just before
+switching to non-secure.
+
+This allows a resident piece of firmware to be active once the
+kernel has been entered (the u-boot monitor is dead anyway,
+its pages being reused).
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/nonsec_virt.S | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/cpu/armv7/nonsec_virt.S b/arch/arm/cpu/armv7/nonsec_virt.S
+index 2a43e3c..745670e 100644
+--- a/arch/arm/cpu/armv7/nonsec_virt.S
++++ b/arch/arm/cpu/armv7/nonsec_virt.S
+@@ -44,10 +44,19 @@ _monitor_vectors:
+  * ip: target PC
+  */
+ _secure_monitor:
++#ifdef CONFIG_ARMV7_PSCI
++	ldr	r5, =_psci_vectors		@ Switch to the next monitor
++	mcr	p15, 0, r5, c12, c0, 1
++	isb
++
++	@ Obtain a secure stack, and configure the PSCI backend
++	bl	psci_arch_init
++#endif
++
+ 	mrc	p15, 0, r5, c1, c1, 0		@ read SCR
+-	bic	r5, r5, #0x4e			@ clear IRQ, FIQ, EA, nET bits
++	bic	r5, r5, #0x4a			@ clear IRQ, EA, nET bits
+ 	orr	r5, r5, #0x31			@ enable NS, AW, FW bits
+-
++						@ FIQ preserved for secure mode
+ 	mov	r6, #SVC_MODE			@ default mode is SVC
+ 	is_cpu_virt_capable r4
+ #ifdef CONFIG_ARMV7_VIRT
+From 9aa373162eb2cc0055a6e4ecd46977c911de1124 Mon Sep 17 00:00:00 2001
+From: Ma Haijun <mahaijuns@gmail.com>
+Date: Sat, 15 Feb 2014 12:51:10 +0000
+Subject: [PATCH] ARM: convert arch_fixup_memory_node to a generic FDT fixup
+ function
+
+Some architecture needs extra device tree setup. Instead of adding
+yet another hook, convert arch_fixup_memory_node to be a generic
+FDT fixup function.
+
+[maz: collapsed 3 patches into one, rewrote commit message]
+
+Signed-off-by: Ma Haijun <mahaijuns@gmail.com>
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/lib/bootm-fdt.c | 2 +-
+ arch/arm/lib/bootm.c     | 2 +-
+ common/image-fdt.c       | 7 +++++--
+ include/common.h         | 6 +++---
+ 4 files changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/arch/arm/lib/bootm-fdt.c b/arch/arm/lib/bootm-fdt.c
+index e40691d..8394e15 100644
+--- a/arch/arm/lib/bootm-fdt.c
++++ b/arch/arm/lib/bootm-fdt.c
+@@ -20,7 +20,7 @@
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+-int arch_fixup_memory_node(void *blob)
++int arch_fixup_fdt(void *blob)
+ {
+ 	bd_t *bd = gd->bd;
+ 	int bank;
+diff --git a/arch/arm/lib/bootm.c b/arch/arm/lib/bootm.c
+index 61aa14e..4cff6b0 100644
+--- a/arch/arm/lib/bootm.c
++++ b/arch/arm/lib/bootm.c
+@@ -357,7 +357,7 @@ void boot_prep_vxworks(bootm_headers_t *images)
+ 	if (images->ft_addr) {
+ 		off = fdt_path_offset(images->ft_addr, "/memory");
+ 		if (off < 0) {
+-			if (arch_fixup_memory_node(images->ft_addr))
++			if (arch_fixup_fdt(images->ft_addr))
+ 				puts("## WARNING: fixup memory failed!\n");
+ 		}
+ 	}
+diff --git a/common/image-fdt.c b/common/image-fdt.c
+index a54a919..6f074de 100644
+--- a/common/image-fdt.c
++++ b/common/image-fdt.c
+@@ -445,7 +445,7 @@ __weak int ft_verify_fdt(void *fdt)
+ 	return 1;
+ }
+ 
+-__weak int arch_fixup_memory_node(void *blob)
++__weak int arch_fixup_fdt(void *blob)
+ {
+ 	return 0;
+ }
+@@ -462,7 +462,10 @@ int image_setup_libfdt(bootm_headers_t *images, void *blob,
+ 		puts(" - must RESET the board to recover.\n");
+ 		return -1;
+ 	}
+-	arch_fixup_memory_node(blob);
++	if (arch_fixup_fdt(blob) < 0) {
++		puts("ERROR: arch specific fdt fixup failed");
++		return -1;
++	}
+ 	if (IMAGE_OF_BOARD_SETUP)
+ 		ft_board_setup(blob, gd->bd);
+ 	fdt_fixup_ethernet(blob);
+diff --git a/include/common.h b/include/common.h
+index cbd3c9e..700b015 100644
+--- a/include/common.h
++++ b/include/common.h
+@@ -326,14 +326,14 @@ int arch_early_init_r(void);
+ void board_show_dram(ulong size);
+ 
+ /**
+- * arch_fixup_memory_node() - Write arch-specific memory information to fdt
++ * arch_fixup_fdt() - Write arch-specific information to fdt
+  *
+- * Defined in arch/$(ARCH)/lib/bootm.c
++ * Defined in arch/$(ARCH)/lib/bootm-fdt.c
+  *
+  * @blob:	FDT blob to write to
+  * @return 0 if ok, or -ve FDT_ERR_... on failure
+  */
+-int arch_fixup_memory_node(void *blob);
++int arch_fixup_fdt(void *blob);
+ 
+ /* common/flash.c */
+ void flash_perror (int);
+From ccdf689da800c9f1c5226146e936b071c7ec8800 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:15 +0000
+Subject: [PATCH] ARM: HYP/non-sec/PSCI: emit DT nodes
+
+Generate the PSCI node in the device tree.
+
+Also add a reserve section for the "secure" code that lives in
+in normal RAM, so that the kernel knows it'd better not trip on
+it.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/Makefile  |   1 +
+ arch/arm/cpu/armv7/virt-dt.c | 100 +++++++++++++++++++++++++++++++++++++++++++
+ arch/arm/include/asm/armv7.h |   1 +
+ arch/arm/lib/bootm-fdt.c     |  11 ++++-
+ 4 files changed, 111 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/cpu/armv7/virt-dt.c
+
+diff --git a/arch/arm/cpu/armv7/Makefile b/arch/arm/cpu/armv7/Makefile
+index 0cf5c45..93a5a69 100644
+--- a/arch/arm/cpu/armv7/Makefile
++++ b/arch/arm/cpu/armv7/Makefile
+@@ -22,6 +22,7 @@ endif
+ ifneq ($(CONFIG_ARMV7_NONSEC)$(CONFIG_ARMV7_VIRT),)
+ obj-y	+= nonsec_virt.o
+ obj-y	+= virt-v7.o
++obj-y	+= virt-dt.o
+ endif
+ 
+ ifneq ($(CONFIG_ARMV7_PSCI),)
+diff --git a/arch/arm/cpu/armv7/virt-dt.c b/arch/arm/cpu/armv7/virt-dt.c
+new file mode 100644
+index 0000000..0b0d6a7
+--- /dev/null
++++ b/arch/arm/cpu/armv7/virt-dt.c
+@@ -0,0 +1,100 @@
++/*
++ * Copyright (C) 2013 - ARM Ltd
++ * Author: Marc Zyngier <marc.zyngier@arm.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <common.h>
++#include <stdio_dev.h>
++#include <linux/ctype.h>
++#include <linux/types.h>
++#include <asm/global_data.h>
++#include <libfdt.h>
++#include <fdt_support.h>
++#include <asm/armv7.h>
++#include <asm/psci.h>
++
++static int fdt_psci(void *fdt)
++{
++#ifdef CONFIG_ARMV7_PSCI
++	int nodeoff;
++	int tmp;
++
++	nodeoff = fdt_path_offset(fdt, "/cpus");
++	if (nodeoff < 0) {
++		printf("couldn't find /cpus\n");
++		return nodeoff;
++	}
++
++	/* add 'enable-method = "psci"' to each cpu node */
++	for (tmp = fdt_first_subnode(fdt, nodeoff);
++	     tmp >= 0;
++	     tmp = fdt_next_subnode(fdt, tmp)) {
++		const struct fdt_property *prop;
++		int len;
++
++		prop = fdt_get_property(fdt, tmp, "device_type", &len);
++		if (!prop)
++			continue;
++		if (len < 4)
++			continue;
++		if (strcmp(prop->data, "cpu"))
++			continue;
++
++		fdt_setprop_string(fdt, tmp, "enable-method", "psci");
++	}
++
++	nodeoff = fdt_path_offset(fdt, "/psci");
++	if (nodeoff < 0) {
++		nodeoff = fdt_path_offset(fdt, "/");
++		if (nodeoff < 0)
++			return nodeoff;
++
++		nodeoff = fdt_add_subnode(fdt, nodeoff, "psci");
++		if (nodeoff < 0)
++			return nodeoff;
++	}
++
++	tmp = fdt_setprop_string(fdt, nodeoff, "compatible", "arm,psci");
++	if (tmp)
++		return tmp;
++	tmp = fdt_setprop_string(fdt, nodeoff, "method", "smc");
++	if (tmp)
++		return tmp;
++	tmp = fdt_setprop_u32(fdt, nodeoff, "cpu_suspend", ARM_PSCI_FN_CPU_SUSPEND);
++	if (tmp)
++		return tmp;
++	tmp = fdt_setprop_u32(fdt, nodeoff, "cpu_off", ARM_PSCI_FN_CPU_OFF);
++	if (tmp)
++		return tmp;
++	tmp = fdt_setprop_u32(fdt, nodeoff, "cpu_on", ARM_PSCI_FN_CPU_ON);
++	if (tmp)
++		return tmp;
++	tmp = fdt_setprop_u32(fdt, nodeoff, "migrate", ARM_PSCI_FN_MIGRATE);
++	if (tmp)
++		return tmp;
++#endif
++	return 0;
++}
++
++int armv7_update_dt(void *fdt)
++{
++#ifndef CONFIG_ARMV7_SECURE_BASE
++	/* secure code lives in RAM, keep it alive */
++	fdt_add_mem_rsv(fdt, (unsigned long)__secure_start,
++			__secure_end - __secure_start);
++#endif
++
++	return fdt_psci(fdt);
++}
+diff --git a/arch/arm/include/asm/armv7.h b/arch/arm/include/asm/armv7.h
+index 11476dd..323f282 100644
+--- a/arch/arm/include/asm/armv7.h
++++ b/arch/arm/include/asm/armv7.h
+@@ -79,6 +79,7 @@ void v7_outer_cache_inval_range(u32 start, u32 end);
+ #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
+ 
+ int armv7_init_nonsec(void);
++int armv7_update_dt(void *fdt);
+ 
+ /* defined in assembly file */
+ unsigned int _nonsec_init(void);
+diff --git a/arch/arm/lib/bootm-fdt.c b/arch/arm/lib/bootm-fdt.c
+index 8394e15..ccb76c7 100644
+--- a/arch/arm/lib/bootm-fdt.c
++++ b/arch/arm/lib/bootm-fdt.c
+@@ -17,13 +17,14 @@
+ 
+ #include <common.h>
+ #include <fdt_support.h>
++#include <asm/armv7.h>
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
+ int arch_fixup_fdt(void *blob)
+ {
+ 	bd_t *bd = gd->bd;
+-	int bank;
++	int bank, ret;
+ 	u64 start[CONFIG_NR_DRAM_BANKS];
+ 	u64 size[CONFIG_NR_DRAM_BANKS];
+ 
+@@ -32,5 +33,11 @@ int arch_fixup_fdt(void *blob)
+ 		size[bank] = bd->bi_dram[bank].size;
+ 	}
+ 
+-	return fdt_fixup_memory_banks(blob, start, size, CONFIG_NR_DRAM_BANKS);
++	ret = fdt_fixup_memory_banks(blob, start, size, CONFIG_NR_DRAM_BANKS);
++	if (ret)
++		return ret;
++
++#if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
++	return armv7_update_dt(blob);
++#endif
+ }
+From d5ee64675e6481e4f29e48e494ea132cd74786c8 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:17 +0000
+Subject: [PATCH] sunxi: HYP/non-sec: add sun7i PSCI backend
+
+So far, only supporting the CPU_ON method.
+Other functions can be added later.
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ arch/arm/cpu/armv7/sunxi/Makefile |   3 +
+ arch/arm/cpu/armv7/sunxi/psci.S   | 162 ++++++++++++++++++++++++++++++++++++++
+ include/configs/sun7i.h           |   6 ++
+ 3 files changed, 171 insertions(+)
+ create mode 100644 arch/arm/cpu/armv7/sunxi/psci.S
+
+diff --git a/arch/arm/cpu/armv7/sunxi/Makefile b/arch/arm/cpu/armv7/sunxi/Makefile
+index 19e4b17..0df6772 100644
+--- a/arch/arm/cpu/armv7/sunxi/Makefile
++++ b/arch/arm/cpu/armv7/sunxi/Makefile
+@@ -32,6 +32,9 @@ obj-y	+= cpu_info.o
+ ifdef CONFIG_CMD_WATCHDOG
+ obj-$(CONFIG_CMD_WATCHDOG)	+= cmd_watchdog.o
+ endif
++ifdef CONFIG_ARMV7_PSCI
++obj-y	+= psci.o
++endif
+ endif
+ 
+ ifdef CONFIG_SPL_BUILD
+diff --git a/arch/arm/cpu/armv7/sunxi/psci.S b/arch/arm/cpu/armv7/sunxi/psci.S
+new file mode 100644
+index 0000000..0084c81
+--- /dev/null
++++ b/arch/arm/cpu/armv7/sunxi/psci.S
+@@ -0,0 +1,162 @@
++/*
++ * Copyright (C) 2013 - ARM Ltd
++ * Author: Marc Zyngier <marc.zyngier@arm.com>
++ *
++ * Based on code by Carl van Schaik <carl@ok-labs.com>.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <config.h>
++#include <asm/psci.h>
++#include <asm/arch/cpu.h>
++
++/*
++ * Memory layout:
++ *
++ * SECURE_RAM to text_end :
++ *	._secure_text section
++ * text_end to ALIGN_PAGE(text_end):
++ *	nothing
++ * ALIGN_PAGE(text_end) to ALIGN_PAGE(text_end) + 0x1000)
++ *	1kB of stack per CPU (4 CPUs max).
++ */
++
++	.pushsection ._secure.text, "ax"
++
++	.arch_extension sec
++
++#define	ONE_MS			(CONFIG_SYS_CLK_FREQ / 1000)
++#define	TEN_MS			(10 * ONE_MS)
++
++.macro	timer_wait	reg, ticks
++	@ Program CNTP_TVAL
++	movw	\reg, #(\ticks & 0xffff)
++	movt	\reg, #(\ticks >> 16)
++	mcr	p15, 0, \reg, c14, c2, 0
++	isb
++	@ Enable physical timer, mask interrupt
++	mov	\reg, #3
++	mcr	p15, 0, \reg, c14, c2, 1
++	@ Poll physical timer until ISTATUS is on
++1:	isb
++	mrc	p15, 0, \reg, c14, c2, 1
++	ands	\reg, \reg, #4
++	bne	1b
++	@ Disable timer
++	mov	\reg, #0
++	mcr	p15, 0, \reg, c14, c2, 1
++	isb
++.endm
++
++.globl	psci_arch_init
++psci_arch_init:
++	mrc	p15, 0, r5, c1, c1, 0	@ Read SCR
++	bic	r5, r5, #1		@ Secure mode
++	mcr	p15, 0, r5, c1, c1, 0	@ Write SCR
++	isb
++
++	mrc	p15, 0, r4, c0, c0, 5	@ MPIDR
++	and	r4, r4, #3		@ cpu number in cluster
++	mov	r5, #400		@ 1kB of stack per CPU
++	mul	r4, r4, r5
++
++	adr	r5, text_end		@ end of text
++	add	r5, r5, #0x2000		@ Skip two pages
++	lsr	r5, r5, #12		@ Align to start of page
++	lsl	r5, r5, #12
++	sub	sp, r5, r4		@ here's our stack!
++
++	bx	lr
++
++	@ r1 = target CPU
++	@ r2 = target PC
++.globl	psci_cpu_on
++psci_cpu_on:
++	adr	r0, _target_pc
++	str	r2, [r0]
++	dsb
++
++	movw	r0, #(SUNXI_CPUCFG_BASE & 0xffff)
++	movt	r0, #(SUNXI_CPUCFG_BASE >> 16)
++
++	@ CPU mask
++	and	r1, r1, #3	@ only care about first cluster
++	mov	r4, #1
++	lsl	r4, r4, r1
++
++	adr	r6, _sunxi_cpu_entry
++	str	r6, [r0, #0x1a4] @ PRIVATE_REG (boot vector)
++
++	@ Assert reset on target CPU
++	mov	r6, #0
++	lsl	r5, r1, #6	@ 64 bytes per CPU
++	add	r5, r5, #0x40	@ Offset from base
++	add	r5, r5, r0	@ CPU control block
++	str	r6, [r5]	@ Reset CPU
++
++	@ l1 invalidate
++	ldr	r6, [r0, #0x184]
++	bic	r6, r6, r4
++	str	r6, [r0, #0x184]
++
++	@ Lock CPU
++	ldr	r6, [r0, #0x1e4]
++	bic	r6, r6, r4
++	str	r6, [r0, #0x1e4]
++
++	@ Release power clamp
++	movw	r6, #0x1ff
++	movt	r6, #0
++1:	lsrs	r6, r6, #1
++	str	r6, [r0, #0x1b0]
++	bne	1b
++
++	timer_wait r1, TEN_MS
++
++	@ Clear power gating
++	ldr	r6, [r0, #0x1b4]
++	bic	r6, r6, #1
++	str	r6, [r0, #0x1b4]
++
++	@ Deassert reset on target CPU
++	mov	r6, #3
++	str	r6, [r5]
++
++	@ Unlock CPU
++	ldr	r6, [r0, #0x1e4]
++	orr	r6, r6, r4
++	str	r6, [r0, #0x1e4]
++
++	mov	r0, #ARM_PSCI_RET_SUCCESS	@ Return PSCI_RET_SUCCESS
++	mov	pc, lr
++
++_target_pc:
++	.word	0
++
++_sunxi_cpu_entry:
++	@ Set SMP bit
++	mrc	p15, 0, r0, c1, c0, 1
++	orr	r0, r0, #0x40
++	mcr	p15, 0, r0, c1, c0, 1
++	isb
++
++	bl	_nonsec_init
++	bl	psci_arch_init
++
++	adr	r0, _target_pc
++	ldr	r0, [r0]
++	b	_do_nonsec_entry
++
++text_end:
++	.popsection
+diff --git a/include/configs/sun7i.h b/include/configs/sun7i.h
+index 11cc9ea..bae7b37 100644
+--- a/include/configs/sun7i.h
++++ b/include/configs/sun7i.h
+@@ -22,6 +22,12 @@
+ #define CONFIG_BOARD_POSTCLK_INIT 1
+ #endif
+ 
++#define CONFIG_ARMV7_VIRT		1
++#define CONFIG_ARMV7_NONSEC		1
++#define CONFIG_ARMV7_PSCI		1
++#define CONFIG_ARMV7_PSCI_NR_CPUS	2
++#define CONFIG_ARMV7_SECURE_BASE	SUNXI_SRAM_B_BASE
++
+ /*
+  * Include common sunxi configuration where most the settings are
+  */
+From a74a847c3727209a45c30a80c01b930938941dd4 Mon Sep 17 00:00:00 2001
+From: Marc Zyngier <marc.zyngier@arm.com>
+Date: Sat, 7 Dec 2013 11:19:18 +0000
+Subject: [PATCH] sunxi: HYP/non-sec: configure CNTFRQ on all CPUs
+
+CNTFRQ needs to be properly configured on all CPUs. Otherwise,
+virtual machines hoping to find valuable information on secondary
+CPUs will be disapointed...
+
+Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>
+---
+ include/configs/sun7i.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/configs/sun7i.h b/include/configs/sun7i.h
+index bae7b37..58a254b 100644
+--- a/include/configs/sun7i.h
++++ b/include/configs/sun7i.h
+@@ -27,6 +27,7 @@
+ #define CONFIG_ARMV7_PSCI		1
+ #define CONFIG_ARMV7_PSCI_NR_CPUS	2
+ #define CONFIG_ARMV7_SECURE_BASE	SUNXI_SRAM_B_BASE
++#define CONFIG_SYS_CLK_FREQ		24000000
+ 
+ /*
+  * Include common sunxi configuration where most the settings are
