@@ -117,7 +117,7 @@ $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_ECN, $(P_XT)xt_ecn))
 # userland only
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_DSCP, xt_tos)))
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_DSCP, xt_TOS)))
-$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_HL, ipt_ttl)))
+$(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_HL, ipt_ttl)))
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_TARGET_HL, ipt_TTL)))
 
 $(eval $(call nf_add,IPT_IPOPT,CONFIG_NETFILTER_XT_MATCH_HL, $(P_XT)xt_hl))
