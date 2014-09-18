@@ -19,7 +19,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  static char loop_name[20];
  static unsigned char inbuf[512]; /* buffer for chars read from loopback */
-@@ -213,8 +213,8 @@ static int	looped;			/* 1 if using loop
+@@ -214,8 +214,8 @@ static int	looped;			/* 1 if using loop
  static int	link_mtu;		/* mtu for the link (not bundle) */
  
  static struct utsname utsname;	/* for the kernel version */
@@ -29,7 +29,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  #define MAX_IFS		100
  
-@@ -1443,11 +1443,12 @@ int ccp_fatal_error (int unit)
+@@ -1451,11 +1451,12 @@ int ccp_fatal_error (int unit)
   *
   * path_to_procfs - find the path to the proc file system mount point
   */
@@ -44,7 +44,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      struct mntent *mntent;
      FILE *fp;
  
-@@ -1469,6 +1470,7 @@ static char *path_to_procfs(const char *
+@@ -1477,6 +1478,7 @@ static char *path_to_procfs(const char *
  	    fclose (fp);
  	}
      }
@@ -52,7 +52,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
      strlcpy(proc_path + proc_path_len, tail,
  	    sizeof(proc_path) - proc_path_len);
-@@ -2121,15 +2123,19 @@ int ppp_available(void)
+@@ -2129,15 +2131,19 @@ int ppp_available(void)
      int    my_version, my_modification, my_patch;
      int osmaj, osmin, ospatch;
  
@@ -72,7 +72,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  	/* XXX should get from driver */
  	driver_version = 2;
-@@ -2189,6 +2195,7 @@ int ppp_available(void)
+@@ -2197,6 +2203,7 @@ int ppp_available(void)
  
      if (ok && ((ifr.ifr_hwaddr.sa_family & ~0xFF) != ARPHRD_PPP))
  	ok = 0;
@@ -80,7 +80,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
  
  /*
   *  This is the PPP device. Validate the version of the driver at this
-@@ -2684,6 +2691,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2730,6 +2737,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
      }
  #endif /* TIOCGPTN */
  
@@ -88,7 +88,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      if (sfd < 0) {
  	/* the old way - scan through the pty name space */
  	for (i = 0; i < 64; ++i) {
-@@ -2702,6 +2710,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
+@@ -2748,6 +2756,7 @@ get_pty(master_fdp, slave_fdp, slave_nam
  	    }
  	}
      }
@@ -138,7 +138,7 @@ Signed-off-by: Jo-Philipp Wich <jow@openwrt.org>
      info("RP-PPPoE plugin version %s compiled against pppd %s",
 --- a/pppd/plugins/pppol2tp/pppol2tp.c
 +++ b/pppd/plugins/pppol2tp/pppol2tp.c
-@@ -500,12 +500,7 @@ static void pppol2tp_cleanup(void)
+@@ -486,12 +486,7 @@ static void pppol2tp_cleanup(void)
  
  void plugin_init(void)
  {
