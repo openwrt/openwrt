@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
-PKG_VERSION:=7.36.0
+PKG_VERSION:=7.38.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -18,7 +18,7 @@ PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
 	ftp://ftp.planetmirror.com/pub/curl/ \
 	http://www.mirrormonster.com/curl/download/ \
 	http://curl.mirrors.cyberservers.net/download/
-PKG_MD5SUM:=e6d1f9d1b59da5062109ffe14e0569a4
+PKG_MD5SUM:=af6b3c299bd891f43cb5f76c4091b7b4
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
