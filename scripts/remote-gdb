@@ -65,6 +65,11 @@ if( opendir SD, "$Bin/../staging_dir" )
 		-f $ARGV[0] and $cmd = "core-file";
 		print $fh "$cmd $ARGV[0]\n";
 
+		# History settings
+		print $fh "set history filename $Bin/../tmp/.gdb_history\n";
+		print $fh "set history size 100000000\n";
+		print $fh "set history save on\n";
+
 		my $file = -f "$sysroot/$ARGV[1]" ? "$sysroot/$ARGV[1]" : $ARGV[1];
 		system($gdb, '-x', $fp, $file);
 
