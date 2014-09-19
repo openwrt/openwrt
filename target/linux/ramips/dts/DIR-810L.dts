@@ -93,6 +93,10 @@
 		status = "okay";
 	};
 
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -113,15 +117,15 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		power {
-			label = "dlink:green:power";
+			label = "dlink:power:green";
 			gpios = <&gpio0 9 0>;
 		};
 		internet {
-			label = "asus:yellow:internet";
+			label = "dlink:internet:orange";
 			gpios = <&gpio0 12 0>;
 		};
 		status {
-			label = "asus:internet:status";
+			label = "dlink:power:orange";
 			gpios = <&gpio0 13 0>;
 		};
 	};
