@@ -69,6 +69,7 @@ define Host/Install
 		done; \
 	);
 	$(if $(CONFIG_EXTRA_TARGET_ARCH),$(call SetupExtraArch))
+	$(RM) $(TOOLCHAIN_DIR)/lib/libiberty.a
 	$(SCRIPT_DIR)/patch-specs.sh "$(TOOLCHAIN_DIR)"
 endef
 
