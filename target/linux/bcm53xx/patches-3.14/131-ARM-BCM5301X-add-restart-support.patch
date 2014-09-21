@@ -26,7 +26,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	struct device_node *np;
 +	struct platform_device *pdev;
 +
-+	np = of_find_compatible_node(NULL, NULL, "brcm,bus-aix");
++	np = of_find_compatible_node(NULL, NULL, "brcm,bus-axi");
 +	if (!np)
 +		return NULL;
 +

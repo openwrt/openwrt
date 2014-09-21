@@ -1,7 +1,7 @@
-From 04b91da96d7c163fd39c0849d2034e2928103f4d Mon Sep 17 00:00:00 2001
+From ef8bdd6f383d3b43a96cdaa990b5412e40dbf238 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Mon, 6 Jan 2014 23:29:15 +0100
-Subject: [PATCH 04/17] bcma: register bcma as device tree driver
+Subject: [PATCH v3 1/2] bcma: register bcma as device tree driver
 
 This driver is used by the bcm53xx ARM SoC code. Now it is possible to
 give the address of the chipcommon core in device tree and bcma will
@@ -9,61 +9,79 @@ search for all the other cores.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- Documentation/devicetree/bindings/bus/bcma.txt | 46 +++++++++++++++++
- drivers/bcma/host_soc.c                        | 70 ++++++++++++++++++++++++++
+ Documentation/devicetree/bindings/bus/bcma.txt | 39 ++++++++++++
+ drivers/bcma/bcma_private.h                    | 14 +++++
+ drivers/bcma/host_soc.c                        | 82 ++++++++++++++++++++++++++
+ drivers/bcma/main.c                            |  6 ++
  include/linux/bcma/bcma.h                      |  2 +
- 3 files changed, 118 insertions(+)
+ 5 files changed, 143 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/bus/bcma.txt
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/bus/bcma.txt
-@@ -0,0 +1,46 @@
-+Broadcom AIX bcma bus driver
-+
+@@ -0,0 +1,39 @@
++Driver for ARM AXI Bus with Broadcom Plugins (bcma)
 +
 +Required properties:
 +
-+- compatible : brcm,bus-aix
++- compatible : brcm,bus-axi
 +
 +- reg : iomem address range of chipcommon core
 +
-+Optional properties:
-+
-+- sprom: reference to a sprom driver. This is needed for sprom less devices.
-+	 Use bcm47xx_sprom for example.
-+
-+
-+The cores on the AIX bus are auto detected by bcma. Detection of the
-+IRQ number is not supported on BCM47xx/BCM53xx ARM SoCs, so it is
-+possible to provide the IRQ number over device tree. The IRQ number and
-+the device tree child entry will be added to the core with the matching
-+reg address.
++The cores on the AXI bus are automatically detected by bcma with the
++memory ranges they are using and they get registered afterwards.
++Automatic detection of the IRQ number is not reliable on
++BCM47xx/BCM53xx ARM SoCs. To assign IRQ numbers to the cores, provide
++them manually through device tree. The IRQ number and the device tree
++child entry will get assigned to the core with the matching reg address.
 +
 +Example:
 +
-+	aix@18000000 {
-+		compatible = "brcm,bus-aix";
++	axi@18000000 {
++		compatible = "brcm,bus-axi";
 +		reg = <0x18000000 0x1000>;
 +		ranges = <0x00000000 0x18000000 0x00100000>;
 +		#address-cells = <1>;
 +		#size-cells = <1>;
-+		sprom = <&sprom0>;
 +
-+		gmac@0 {
-+			reg = <0x18024000 0x1000>;
++		pcie@12000 {
++			reg = <0x00012000 0x1000>;
++			interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		ethernet@24000 {
++			reg = <0x00024000 0x1000>;
 +			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
 +		};
 +
-+		gmac@1 {
-+			reg = <0x18025000 0x1000>;
++		ethernet@25000 {
++			reg = <0x00025000 0x1000>;
 +			interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH>;
 +		};
-+
-+		pcie@0 {
-+			reg = <0x18012000 0x1000>;
-+			interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>;
-+		};
 +	};
+--- a/drivers/bcma/bcma_private.h
++++ b/drivers/bcma/bcma_private.h
+@@ -88,6 +88,20 @@ extern int __init bcma_host_pci_init(voi
+ extern void __exit bcma_host_pci_exit(void);
+ #endif /* CONFIG_BCMA_HOST_PCI */
+ 
++/* host_soc.c */
++#if defined(CONFIG_BCMA_HOST_SOC) && defined(CONFIG_OF)
++extern int __init bcma_host_soc_register_driver(void);
++extern void __exit bcma_host_soc_unregister_driver(void);
++#else
++static inline int __init bcma_host_soc_register_driver(void)
++{
++	return 0;
++}
++static inline void __exit bcma_host_soc_unregister_driver(void)
++{
++}
++#endif /* CONFIG_BCMA_HOST_SOC && CONFIG_OF */
++
+ /* driver_pci.c */
+ u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
+ 
 --- a/drivers/bcma/host_soc.c
 +++ b/drivers/bcma/host_soc.c
 @@ -7,6 +7,9 @@
@@ -84,7 +102,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	/* Initialize struct, detect chip */
  	bcma_init_bus(bus);
-@@ -195,3 +199,72 @@ int __init bcma_host_soc_init(struct bcm
+@@ -195,3 +199,81 @@ int __init bcma_host_soc_init(struct bcm
  
  	return err;
  }
@@ -141,7 +159,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +}
 +
 +static const struct of_device_id bcma_host_soc_of_match[] = {
-+	{ .compatible = "brcm,bus-aix", },
++	{ .compatible = "brcm,bus-axi", },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, bcma_host_soc_of_match);
@@ -155,8 +173,39 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	.probe		= bcma_host_soc_probe,
 +	.remove		= bcma_host_soc_remove,
 +};
-+module_platform_driver(bcma_host_soc_driver);
++
++int __init bcma_host_soc_register_driver(void)
++{
++	return platform_driver_register(&bcma_host_soc_driver);
++}
++
++void __exit bcma_host_soc_unregister_driver(void)
++{
++	platform_driver_unregister(&bcma_host_soc_driver);
++}
 +#endif /* CONFIG_OF */
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -528,6 +528,11 @@ static int __init bcma_modinit(void)
+ 	if (err)
+ 		return err;
+ 
++	err = bcma_host_soc_register_driver();
++	if (err) {
++		pr_err("SoC host initialization failed\n");
++		err = 0;
++	}
+ #ifdef CONFIG_BCMA_HOST_PCI
+ 	err = bcma_host_pci_init();
+ 	if (err) {
+@@ -545,6 +550,7 @@ static void __exit bcma_modexit(void)
+ #ifdef CONFIG_BCMA_HOST_PCI
+ 	bcma_host_pci_exit();
+ #endif
++	bcma_host_soc_unregister_driver();
+ 	bus_unregister(&bcma_bus_type);
+ }
+ module_exit(bcma_modexit)
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
 @@ -323,6 +323,8 @@ struct bcma_bus {

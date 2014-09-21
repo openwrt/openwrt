@@ -1,7 +1,7 @@
-From eaf1943a2c49cbc6eb0ffafa7b6ced45f2d328da Mon Sep 17 00:00:00 2001
+From 6611afa6c49434780096cdf2c1028f0ac277f9bc Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
 Date: Thu, 9 Jan 2014 19:40:14 +0100
-Subject: [PATCH 05/17] bcma: get IRQ numbers from dt
+Subject: [PATCH v3 2/2] bcma: get IRQ numbers from dt
 
 It is not possible to auto detect the irq numbers used by the cores on
 an arm SoC. If bcma was registered with device tree it will search for
@@ -10,9 +10,9 @@ configuration.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/bcma/main.c | 42 +++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 41 insertions(+), 1 deletion(-)
-
+ drivers/bcma/main.c | 49 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 48 insertions(+), 1 deletion(-)
+ 
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
 @@ -10,6 +10,8 @@
@@ -24,10 +24,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
  MODULE_LICENSE("GPL");
-@@ -131,6 +133,38 @@ static bool bcma_is_core_needed_early(u1
+@@ -131,6 +133,45 @@ static bool bcma_is_core_needed_early(u1
  	return false;
  }
  
++#ifdef CONFIG_OF
 +static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
 +						     struct bcma_device *core)
 +{
@@ -42,7 +43,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		reg = of_get_address(node, 0, &size, NULL);
 +		if (!reg)
 +			continue;
-+		if (be32_to_cpup(reg) == core->addr)
++		if (of_translate_address(node, reg) == core->addr)
 +			return node;
 +	}
 +	return NULL;
@@ -59,11 +60,17 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	core->dev.of_node = node;
 +	core->irq = irq_of_parse_and_map(node, 0);
 +}
++#else
++static void bcma_of_fill_device(struct platform_device *parent,
++				struct bcma_device *core)
++{
++}
++#endif /* CONFIG_OF */
 +
  static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
  {
  	int err;
-@@ -147,7 +181,13 @@ static void bcma_register_core(struct bc
+@@ -147,7 +188,13 @@ static void bcma_register_core(struct bc
  		break;
  	case BCMA_HOSTTYPE_SOC:
  		core->dev.dma_mask = &core->dev.coherent_dma_mask;
