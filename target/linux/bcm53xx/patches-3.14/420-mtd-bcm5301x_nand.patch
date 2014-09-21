@@ -1,0 +1,1616 @@
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
+@@ -510,4 +510,10 @@ config MTD_NAND_XWAY
+ 	  Enables support for NAND Flash chips on Lantiq XWAY SoCs. NAND is attached
+ 	  to the External Bus Unit (EBU).
+ 
++config MTD_NAND_BCM
++	tristate "Support for NAND on some Broadcom SoC"
++	help
++	  This driver is currently used for the NAND flash controller on the
++	  Broadcom BCM5301X (NorthStar) SoCs.
++
+ endif # MTD_NAND
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
+@@ -49,5 +49,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740
+ obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
+ obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
+ obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
++obj-$(CONFIG_MTD_NAND_BCM)		+= bcm_nand.o
+ 
+ nand-objs := nand_base.o nand_bbt.o
+--- /dev/null
++++ b/drivers/mtd/nand/bcm_nand.c
+@@ -0,0 +1,1591 @@
++/*
++ * Nortstar NAND controller driver
++ * for Linux NAND library and MTD interface
++ *
++ * (c) Broadcom, Inc. 2012 All Rights Reserved.
++ * Copyright 2014 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ *
++ * This module interfaces the NAND controller and hardware ECC capabilities
++ * tp the generic NAND chip support in the NAND library.
++ *
++ * Notes:
++ *	This driver depends on generic NAND driver, but works at the
++ *	page level for operations.
++ *
++ *	When a page is written, the ECC calculated also protects the OOB
++ *	bytes not taken by ECC, and so the OOB must be combined with any
++ *	OOB data that preceded the page-write operation in order for the
++ *	ECC to be calculated correctly.
++ *	Also, when the page is erased, but OOB data is not, HW ECC will
++ *	indicate an error, because it checks OOB too, which calls for some
++ *	help from the software in this driver.
++ *
++ * TBD:
++ *	Block locking/unlocking support, OTP support
++ */
++
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/io.h>
++#include <linux/ioport.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/slab.h>
++#include <linux/bcma/bcma.h>
++#include <linux/of_irq.h>
++
++#include <linux/mtd/mtd.h>
++#include <linux/mtd/nand.h>
++
++#define NANDC_MAX_CHIPS		2	/* Only 2 CSn supported in NorthStar */
++
++#define DRV_NAME	"bcmnand"
++#define DRV_DESC	"Northstar on-chip NAND Flash Controller driver"
++
++/*
++ * Driver private control structure
++ */
++struct bcmnand_ctrl {
++	struct mtd_info		mtd;
++	struct nand_chip	nand;
++	struct bcma_device	*core;
++
++	struct completion	op_completion;
++
++	struct nand_ecclayout	ecclayout;
++	int			cmd_ret;	/* saved error code */
++	unsigned char		oob_index;
++	unsigned char		id_byte_index;
++	unsigned char		chip_num;
++	unsigned char		last_cmd;
++	unsigned char		ecc_level;
++	unsigned char		sector_size_shift;
++	unsigned char		sec_per_page_shift;
++};
++
++
++/*
++ * IRQ numbers - offset from first irq in nandc_irq resource
++ */
++#define NANDC_IRQ_RD_MISS		0
++#define NANDC_IRQ_ERASE_COMPLETE	1
++#define NANDC_IRQ_COPYBACK_COMPLETE	2
++#define NANDC_IRQ_PROGRAM_COMPLETE	3
++#define NANDC_IRQ_CONTROLLER_RDY	4
++#define NANDC_IRQ_RDBSY_RDY		5
++#define NANDC_IRQ_ECC_UNCORRECTABLE	6
++#define NANDC_IRQ_ECC_CORRECTABLE	7
++#define NANDC_IRQ_NUM			8
++
++struct bcmnand_reg_field {
++	unsigned int reg;
++	unsigned int pos;
++	unsigned int width;
++};
++
++/*
++ * REGISTERS
++ *
++ * Individual bit-fields aof registers are specificed here
++ * for clarity, and the rest of the code will access each field
++ * as if it was its own register.
++ *
++ * Following registers are off <reg_base>:
++ */
++#define REG_BIT_FIELD(r, p, w)	((struct bcmnand_reg_field){(r), (p), (w)})
++
++#define NANDC_8KB_PAGE_SUPPORT		REG_BIT_FIELD(0x0, 31, 1)
++#define NANDC_REV_MAJOR			REG_BIT_FIELD(0x0, 8, 8)
++#define NANDC_REV_MINOR			REG_BIT_FIELD(0x0, 0, 8)
++
++#define NANDC_CMD_START_OPCODE		REG_BIT_FIELD(0x4, 24, 5)
++
++#define NANDC_CMD_CS_SEL		REG_BIT_FIELD(0x8, 16, 3)
++#define NANDC_CMD_EXT_ADDR		REG_BIT_FIELD(0x8, 0, 16)
++
++#define NANDC_CMD_ADDRESS		REG_BIT_FIELD(0xc, 0, 32)
++#define NANDC_CMD_END_ADDRESS		REG_BIT_FIELD(0x10, 0, 32)
++
++#define NANDC_INT_STATUS		REG_BIT_FIELD(0x14, 0, 32)
++#define NANDC_INT_STAT_CTLR_RDY		REG_BIT_FIELD(0x14, 31, 1)
++#define NANDC_INT_STAT_FLASH_RDY	REG_BIT_FIELD(0x14, 30, 1)
++#define NANDC_INT_STAT_CACHE_VALID	REG_BIT_FIELD(0x14, 29, 1)
++#define NANDC_INT_STAT_SPARE_VALID	REG_BIT_FIELD(0x14, 28, 1)
++#define NANDC_INT_STAT_ERASED		REG_BIT_FIELD(0x14, 27, 1)
++#define NANDC_INT_STAT_PLANE_RDY	REG_BIT_FIELD(0x14, 26, 1)
++#define NANDC_INT_STAT_FLASH_STATUS	REG_BIT_FIELD(0x14, 0, 8)
++
++#define NANDC_CS_LOCK			REG_BIT_FIELD(0x18, 31, 1)
++#define NANDC_CS_AUTO_CONFIG		REG_BIT_FIELD(0x18, 30, 1)
++#define NANDC_CS_NAND_WP		REG_BIT_FIELD(0x18, 29, 1)
++#define NANDC_CS_BLK0_WP		REG_BIT_FIELD(0x18, 28, 1)
++#define NANDC_CS_SW_USING_CS(n)		REG_BIT_FIELD(0x18, 8+(n), 1)
++#define NANDC_CS_MAP_SEL_CS(n)		REG_BIT_FIELD(0x18, 0+(n), 1)
++
++#define NANDC_XOR_ADDR_BLK0_ONLY	REG_BIT_FIELD(0x1c, 31, 1)
++#define NANDC_XOR_ADDR_CS(n)		REG_BIT_FIELD(0x1c, 0+(n), 1)
++
++#define NANDC_LL_OP_RET_IDLE		REG_BIT_FIELD(0x20, 31, 1)
++#define NANDC_LL_OP_CLE			REG_BIT_FIELD(0x20, 19, 1)
++#define NANDC_LL_OP_ALE			REG_BIT_FIELD(0x20, 18, 1)
++#define NANDC_LL_OP_WE			REG_BIT_FIELD(0x20, 17, 1)
++#define NANDC_LL_OP_RE			REG_BIT_FIELD(0x20, 16, 1)
++#define NANDC_LL_OP_DATA		REG_BIT_FIELD(0x20, 0, 16)
++
++#define NANDC_MPLANE_ADDR_EXT		REG_BIT_FIELD(0x24, 0, 16)
++#define NANDC_MPLANE_ADDR		REG_BIT_FIELD(0x28, 0, 32)
++
++#define NANDC_ACC_CTRL_CS(n)		REG_BIT_FIELD(0x50+((n)<<4), 0, 32)
++#define NANDC_ACC_CTRL_RD_ECC(n)	REG_BIT_FIELD(0x50+((n)<<4), 31, 1)
++#define NANDC_ACC_CTRL_WR_ECC(n)	REG_BIT_FIELD(0x50+((n)<<4), 30, 1)
++#define NANDC_ACC_CTRL_CE_CARE(n)	REG_BIT_FIELD(0x50+((n)<<4), 29, 1)
++#define NANDC_ACC_CTRL_PGM_RDIN(n)	REG_BIT_FIELD(0x50+((n)<<4), 28, 1)
++#define NANDC_ACC_CTRL_ERA_ECC_ERR(n)	REG_BIT_FIELD(0x50+((n)<<4), 27, 1)
++#define NANDC_ACC_CTRL_PGM_PARTIAL(n)	REG_BIT_FIELD(0x50+((n)<<4), 26, 1)
++#define NANDC_ACC_CTRL_WR_PREEMPT(n)	REG_BIT_FIELD(0x50+((n)<<4), 25, 1)
++#define NANDC_ACC_CTRL_PG_HIT(n)	REG_BIT_FIELD(0x50+((n)<<4), 24, 1)
++#define NANDC_ACC_CTRL_PREFETCH(n)	REG_BIT_FIELD(0x50+((n)<<4), 23, 1)
++#define NANDC_ACC_CTRL_CACHE_MODE(n)	REG_BIT_FIELD(0x50+((n)<<4), 22, 1)
++#define NANDC_ACC_CTRL_CACHE_LASTPG(n)	REG_BIT_FIELD(0x50+((n)<<4), 21, 1)
++#define NANDC_ACC_CTRL_ECC_LEVEL(n)	REG_BIT_FIELD(0x50+((n)<<4), 16, 5)
++#define NANDC_ACC_CTRL_SECTOR_1K(n)	REG_BIT_FIELD(0x50+((n)<<4), 7, 1)
++#define NANDC_ACC_CTRL_SPARE_SIZE(n)	REG_BIT_FIELD(0x50+((n)<<4), 0, 7)
++
++#define NANDC_CONFIG_CS(n)		REG_BIT_FIELD(0x54+((n)<<4), 0, 32)
++#define NANDC_CONFIG_LOCK(n)		REG_BIT_FIELD(0x54+((n)<<4), 31, 1)
++#define NANDC_CONFIG_BLK_SIZE(n)	REG_BIT_FIELD(0x54+((n)<<4), 28, 3)
++#define NANDC_CONFIG_CHIP_SIZE(n)	REG_BIT_FIELD(0x54+((n)<<4), 24, 4)
++#define NANDC_CONFIG_CHIP_WIDTH(n)	REG_BIT_FIELD(0x54+((n)<<4), 23, 1)
++#define NANDC_CONFIG_PAGE_SIZE(n)	REG_BIT_FIELD(0x54+((n)<<4), 20, 2)
++#define NANDC_CONFIG_FUL_ADDR_BYTES(n)	REG_BIT_FIELD(0x54+((n)<<4), 16, 3)
++#define NANDC_CONFIG_COL_ADDR_BYTES(n)	REG_BIT_FIELD(0x54+((n)<<4), 12, 3)
++#define NANDC_CONFIG_BLK_ADDR_BYTES(n)	REG_BIT_FIELD(0x54+((n)<<4), 8, 3)
++
++#define NANDC_TIMING_1_CS(n)		REG_BIT_FIELD(0x58+((n)<<4), 0, 32)
++#define NANDC_TIMING_2_CS(n)		REG_BIT_FIELD(0x5c+((n)<<4), 0, 32)
++	/* Individual bits for Timing registers - TBD */
++
++#define NANDC_CORR_STAT_THRESH_CS(n)	REG_BIT_FIELD(0xc0, 6*(n), 6)
++
++#define NANDC_BLK_WP_END_ADDR		REG_BIT_FIELD(0xc8, 0, 32)
++
++#define NANDC_MPLANE_ERASE_CYC2_OPCODE	REG_BIT_FIELD(0xcc, 24, 8)
++#define NANDC_MPLANE_READ_STAT_OPCODE	REG_BIT_FIELD(0xcc, 16, 8)
++#define NANDC_MPLANE_PROG_ODD_OPCODE	REG_BIT_FIELD(0xcc, 8, 8)
++#define NANDC_MPLANE_PROG_TRL_OPCODE	REG_BIT_FIELD(0xcc, 0, 8)
++
++#define NANDC_MPLANE_PGCACHE_TRL_OPCODE	REG_BIT_FIELD(0xd0, 24, 8)
++#define NANDC_MPLANE_READ_STAT2_OPCODE	REG_BIT_FIELD(0xd0, 16, 8)
++#define NANDC_MPLANE_READ_EVEN_OPCODE	REG_BIT_FIELD(0xd0, 8, 8)
++#define NANDC_MPLANE_READ_ODD__OPCODE	REG_BIT_FIELD(0xd0, 0, 8)
++
++#define NANDC_MPLANE_CTRL_ERASE_CYC2_EN	REG_BIT_FIELD(0xd4, 31, 1)
++#define NANDC_MPLANE_CTRL_RD_ADDR_SIZE	REG_BIT_FIELD(0xd4, 30, 1)
++#define NANDC_MPLANE_CTRL_RD_CYC_ADDR	REG_BIT_FIELD(0xd4, 29, 1)
++#define NANDC_MPLANE_CTRL_RD_COL_ADDR	REG_BIT_FIELD(0xd4, 28, 1)
++
++#define NANDC_UNCORR_ERR_COUNT		REG_BIT_FIELD(0xfc, 0, 32)
++
++#define NANDC_CORR_ERR_COUNT		REG_BIT_FIELD(0x100, 0, 32)
++
++#define NANDC_READ_CORR_BIT_COUNT	REG_BIT_FIELD(0x104, 0, 32)
++
++#define NANDC_BLOCK_LOCK_STATUS		REG_BIT_FIELD(0x108, 0, 8)
++
++#define NANDC_ECC_CORR_ADDR_CS		REG_BIT_FIELD(0x10c, 16, 3)
++#define NANDC_ECC_CORR_ADDR_EXT		REG_BIT_FIELD(0x10c, 0, 16)
++
++#define NANDC_ECC_CORR_ADDR		REG_BIT_FIELD(0x110, 0, 32)
++
++#define NANDC_ECC_UNC_ADDR_CS		REG_BIT_FIELD(0x114, 16, 3)
++#define NANDC_ECC_UNC_ADDR_EXT		REG_BIT_FIELD(0x114, 0, 16)
++
++#define NANDC_ECC_UNC_ADDR		REG_BIT_FIELD(0x118, 0, 32)
++
++#define NANDC_READ_ADDR_CS		REG_BIT_FIELD(0x11c, 16, 3)
++#define NANDC_READ_ADDR_EXT		REG_BIT_FIELD(0x11c, 0, 16)
++#define NANDC_READ_ADDR			REG_BIT_FIELD(0x120, 0, 32)
++
++#define NANDC_PROG_ADDR_CS		REG_BIT_FIELD(0x124, 16, 3)
++#define NANDC_PROG_ADDR_EXT		REG_BIT_FIELD(0x124, 0, 16)
++#define NANDC_PROG_ADDR			REG_BIT_FIELD(0x128, 0, 32)
++
++#define NANDC_CPYBK_ADDR_CS		REG_BIT_FIELD(0x12c, 16, 3)
++#define NANDC_CPYBK_ADDR_EXT		REG_BIT_FIELD(0x12c, 0, 16)
++#define NANDC_CPYBK_ADDR		REG_BIT_FIELD(0x130, 0, 32)
++
++#define NANDC_ERASE_ADDR_CS		REG_BIT_FIELD(0x134, 16, 3)
++#define NANDC_ERASE_ADDR_EXT		REG_BIT_FIELD(0x134, 0, 16)
++#define NANDC_ERASE_ADDR		REG_BIT_FIELD(0x138, 0, 32)
++
++#define NANDC_INV_READ_ADDR_CS		REG_BIT_FIELD(0x13c, 16, 3)
++#define NANDC_INV_READ_ADDR_EXT		REG_BIT_FIELD(0x13c, 0, 16)
++#define NANDC_INV_READ_ADDR		REG_BIT_FIELD(0x140, 0, 32)
++
++#define NANDC_INIT_STAT			REG_BIT_FIELD(0x144, 0, 32)
++#define NANDC_INIT_ONFI_DONE		REG_BIT_FIELD(0x144, 31, 1)
++#define NANDC_INIT_DEVID_DONE		REG_BIT_FIELD(0x144, 30, 1)
++#define NANDC_INIT_SUCCESS		REG_BIT_FIELD(0x144, 29, 1)
++#define NANDC_INIT_FAIL			REG_BIT_FIELD(0x144, 28, 1)
++#define NANDC_INIT_BLANK		REG_BIT_FIELD(0x144, 27, 1)
++#define NANDC_INIT_TIMEOUT		REG_BIT_FIELD(0x144, 26, 1)
++#define NANDC_INIT_UNC_ERROR		REG_BIT_FIELD(0x144, 25, 1)
++#define NANDC_INIT_CORR_ERROR		REG_BIT_FIELD(0x144, 24, 1)
++#define NANDC_INIT_PARAM_RDY		REG_BIT_FIELD(0x144, 23, 1)
++#define NANDC_INIT_AUTH_FAIL		REG_BIT_FIELD(0x144, 22, 1)
++
++#define NANDC_ONFI_STAT			REG_BIT_FIELD(0x148, 0, 32)
++#define NANDC_ONFI_DEBUG		REG_BIT_FIELD(0x148, 28, 4)
++#define NANDC_ONFI_PRESENT		REG_BIT_FIELD(0x148, 27, 1)
++#define NANDC_ONFI_BADID_PG2		REG_BIT_FIELD(0x148, 5, 1)
++#define NANDC_ONFI_BADID_PG1		REG_BIT_FIELD(0x148, 4, 1)
++#define NANDC_ONFI_BADID_PG0		REG_BIT_FIELD(0x148, 3, 1)
++#define NANDC_ONFI_BADCRC_PG2		REG_BIT_FIELD(0x148, 2, 1)
++#define NANDC_ONFI_BADCRC_PG1		REG_BIT_FIELD(0x148, 1, 1)
++#define NANDC_ONFI_BADCRC_PG0		REG_BIT_FIELD(0x148, 0, 1)
++
++#define NANDC_ONFI_DEBUG_DATA		REG_BIT_FIELD(0x14c, 0, 32)
++
++#define NANDC_SEMAPHORE			REG_BIT_FIELD(0x150, 0, 8)
++
++#define NANDC_DEVID_BYTE(b)		REG_BIT_FIELD(0x194+((b)&0x4), \
++						24-(((b)&3)<<3), 8)
++
++#define NANDC_LL_RDDATA			REG_BIT_FIELD(0x19c, 0, 16)
++
++#define NANDC_INT_N_REG(n)		REG_BIT_FIELD(0xf00|((n)<<2), 0, 1)
++#define NANDC_INT_DIREC_READ_MISS	REG_BIT_FIELD(0xf00, 0, 1)
++#define NANDC_INT_ERASE_DONE		REG_BIT_FIELD(0xf04, 0, 1)
++#define NANDC_INT_CPYBK_DONE		REG_BIT_FIELD(0xf08, 0, 1)
++#define NANDC_INT_PROGRAM_DONE		REG_BIT_FIELD(0xf0c, 0, 1)
++#define NANDC_INT_CONTROLLER_RDY	REG_BIT_FIELD(0xf10, 0, 1)
++#define NANDC_INT_RDBSY_RDY		REG_BIT_FIELD(0xf14, 0, 1)
++#define NANDC_INT_ECC_UNCORRECTABLE	REG_BIT_FIELD(0xf18, 0, 1)
++#define NANDC_INT_ECC_CORRECTABLE	REG_BIT_FIELD(0xf1c, 0, 1)
++
++/*
++ * Following  registers are treated as contigous IO memory, offset is from
++ * <reg_base>, and the data is in big-endian byte order
++ */
++#define NANDC_SPARE_AREA_READ_OFF	0x200
++#define NANDC_SPARE_AREA_WRITE_OFF	0x280
++#define NANDC_CACHE_OFF			0x400
++#define NANDC_CACHE_SIZE		(128*4)
++
++struct bcmnand_areg_field {
++	unsigned int reg;
++	unsigned int pos;
++	unsigned int width;
++};
++
++/*
++ * Following are IDM (a.k.a. Slave Wrapper) registers are off <idm_base>:
++ */
++#define IDMREG_BIT_FIELD(r, p, w)	((struct bcmnand_areg_field){(r), (p), (w)})
++
++#define NANDC_IDM_AXI_BIG_ENDIAN	IDMREG_BIT_FIELD(0x408, 28, 1)
++#define NANDC_IDM_APB_LITTLE_ENDIAN	IDMREG_BIT_FIELD(0x408, 24, 1)
++#define NANDC_IDM_TM			IDMREG_BIT_FIELD(0x408, 16, 5)
++#define NANDC_IDM_IRQ_CORRECABLE_EN	IDMREG_BIT_FIELD(0x408, 9, 1)
++#define NANDC_IDM_IRQ_UNCORRECABLE_EN	IDMREG_BIT_FIELD(0x408, 8, 1)
++#define NANDC_IDM_IRQ_RDYBSY_RDY_EN	IDMREG_BIT_FIELD(0x408, 7, 1)
++#define NANDC_IDM_IRQ_CONTROLLER_RDY_EN	IDMREG_BIT_FIELD(0x408, 6, 1)
++#define NANDC_IDM_IRQ_PRPOGRAM_COMP_EN	IDMREG_BIT_FIELD(0x408, 5, 1)
++#define NANDC_IDM_IRQ_COPYBK_COMP_EN	IDMREG_BIT_FIELD(0x408, 4, 1)
++#define NANDC_IDM_IRQ_ERASE_COMP_EN	IDMREG_BIT_FIELD(0x408, 3, 1)
++#define NANDC_IDM_IRQ_READ_MISS_EN	IDMREG_BIT_FIELD(0x408, 2, 1)
++#define NANDC_IDM_IRQ_N_EN(n)		IDMREG_BIT_FIELD(0x408, 2+(n), 1)
++
++#define NANDC_IDM_CLOCK_EN		IDMREG_BIT_FIELD(0x408, 0, 1)
++
++#define NANDC_IDM_IO_ECC_CORR		IDMREG_BIT_FIELD(0x500, 3, 1)
++#define NANDC_IDM_IO_ECC_UNCORR		IDMREG_BIT_FIELD(0x500, 2, 1)
++#define NANDC_IDM_IO_RDYBSY		IDMREG_BIT_FIELD(0x500, 1, 1)
++#define NANDC_IDM_IO_CTRL_RDY		IDMREG_BIT_FIELD(0x500, 0, 1)
++
++#define NANDC_IDM_RESET			IDMREG_BIT_FIELD(0x800, 0, 1)
++	/* Remaining IDM registers do not seem to be useful, skipped */
++
++/*
++ * NAND Controller has its own command opcodes
++ * different from opcodes sent to the actual flash chip
++ */
++#define NANDC_CMD_OPCODE_NULL		0
++#define NANDC_CMD_OPCODE_PAGE_READ	1
++#define NANDC_CMD_OPCODE_SPARE_READ	2
++#define NANDC_CMD_OPCODE_STATUS_READ	3
++#define NANDC_CMD_OPCODE_PAGE_PROG	4
++#define NANDC_CMD_OPCODE_SPARE_PROG	5
++#define NANDC_CMD_OPCODE_DEVID_READ	7
++#define NANDC_CMD_OPCODE_BLOCK_ERASE	8
++#define NANDC_CMD_OPCODE_FLASH_RESET	9
++
++/*
++ * NAND Controller hardware ECC data size
++ *
++ * The following table contains the number of bytes needed for
++ * each of the ECC levels, per "sector", which is either 512 or 1024 bytes.
++ * The actual layout is as follows:
++ * The entire spare area is equally divided into as many sections as there
++ * are sectors per page, and the ECC data is located at the end of each
++ * of these sections.
++ * For example, given a 2K per page and 64 bytes spare device, configured for
++ * sector size 1k and ECC level of 4, the spare area will be divided into 2
++ * sections 32 bytes each, and the last 14 bytes of 32 in each section will
++ * be filled with ECC data.
++ * Note: the name of the algorythm and the number of error bits it can correct
++ * is of no consequence to this driver, therefore omitted.
++ */
++struct bcmnand_ecc_size_s {
++	unsigned char sector_size_shift;
++	unsigned char ecc_level;
++	unsigned char ecc_bytes_per_sec;
++	unsigned char reserved;
++};
++
++static const struct bcmnand_ecc_size_s bcmnand_ecc_sizes[] = {
++	{ 9,	0,	0 },
++	{ 10,	0,	0 },
++	{ 9,	1,	2 },
++	{ 10,	1,	4 },
++	{ 9,	2,	4 },
++	{ 10,	2,	7 },
++	{ 9,	3,	6 },
++	{ 10,	3,	11 },
++	{ 9,	4,	7 },
++	{ 10,	4,	14 },
++	{ 9,	5,	9 },
++	{ 10,	5,	18 },
++	{ 9,	6,	11 },
++	{ 10,	6,	21 },
++	{ 9,	7,	13 },
++	{ 10,	7,	25 },
++	{ 9,	8,	14 },
++	{ 10,	8,	28 },
++
++	{ 9,	9,	16 },
++	{ 9,	10,	18 },
++	{ 9,	11,	20 },
++	{ 9,	12,	21 },
++
++	{ 10,	9,	32 },
++	{ 10,	10,	35 },
++	{ 10,	11,	39 },
++	{ 10,	12,	42 },
++};
++
++/*
++ * Populate the various fields that depend on how
++ * the hardware ECC data is located in the spare area
++ *
++ * For this controiller, it is easier to fill-in these
++ * structures at run time.
++ *
++ * The bad-block marker is assumed to occupy one byte
++ * at chip->badblockpos, which must be in the first
++ * sector of the spare area, namely it is either
++ * at offset 0 or 5.
++ * Some chips use both for manufacturer's bad block
++ * markers, but we ingore that issue here, and assume only
++ * one byte is used as bad-block marker always.
++ */
++static int bcmnand_hw_ecc_layout(struct bcmnand_ctrl *ctrl)
++{
++	struct nand_ecclayout *layout;
++	unsigned int i, j, k;
++	unsigned int ecc_per_sec, oob_per_sec;
++	unsigned int bbm_pos = ctrl->nand.badblockpos;
++
++	/* Caclculate spare area per sector size */
++	oob_per_sec = ctrl->mtd.oobsize >> ctrl->sec_per_page_shift;
++
++	/* Try to calculate the amount of ECC bytes per sector with a formula */
++	if (ctrl->sector_size_shift == 9)
++		ecc_per_sec = ((ctrl->ecc_level * 14) + 7) >> 3;
++	else if (ctrl->sector_size_shift == 10)
++		ecc_per_sec = ((ctrl->ecc_level * 14) + 3) >> 2;
++	else
++		ecc_per_sec = oob_per_sec + 1;	/* cause an error if not in table */
++
++	/* Now find out the answer according to the table */
++	for (i = 0; i < ARRAY_SIZE(bcmnand_ecc_sizes); i++) {
++		if (bcmnand_ecc_sizes[i].ecc_level == ctrl->ecc_level &&
++		    bcmnand_ecc_sizes[i].sector_size_shift ==
++				ctrl->sector_size_shift) {
++			break;
++		}
++	}
++
++	/* Table match overrides formula */
++	if (bcmnand_ecc_sizes[i].ecc_level == ctrl->ecc_level &&
++	    bcmnand_ecc_sizes[i].sector_size_shift == ctrl->sector_size_shift)
++		ecc_per_sec = bcmnand_ecc_sizes[i].ecc_bytes_per_sec;
++
++	/* Return an error if calculated ECC leaves no room for OOB */
++	if ((ctrl->sec_per_page_shift != 0 && ecc_per_sec >= oob_per_sec) ||
++	    (ctrl->sec_per_page_shift == 0 && ecc_per_sec >= (oob_per_sec - 1))) {
++		pr_err("%s: ECC level %d too high, leaves no room for OOB data\n",
++		       DRV_NAME, ctrl->ecc_level);
++		return -EINVAL;
++	}
++
++	/* Fill in the needed fields */
++	ctrl->nand.ecc.size = ctrl->mtd.writesize >> ctrl->sec_per_page_shift;
++	ctrl->nand.ecc.bytes = ecc_per_sec;
++	ctrl->nand.ecc.steps = 1 << ctrl->sec_per_page_shift;
++	ctrl->nand.ecc.total = ecc_per_sec << ctrl->sec_per_page_shift;
++	ctrl->nand.ecc.strength = ctrl->ecc_level;
++
++	/* Build an ecc layout data structure */
++	layout = &ctrl->ecclayout;
++	memset(layout, 0, sizeof(*layout));
++
++	/* Total number of bytes used by HW ECC */
++	layout->eccbytes = ecc_per_sec << ctrl->sec_per_page_shift;
++
++	/* Location for each of the HW ECC bytes */
++	for (i = j = 0, k = 1;
++	     i < ARRAY_SIZE(layout->eccpos) && i < layout->eccbytes;
++	     i++, j++) {
++		/* switch sector # */
++		if (j == ecc_per_sec) {
++			j = 0;
++			k++;
++		}
++		/* save position of each HW-generated ECC byte */
++		layout->eccpos[i] = (oob_per_sec * k) - ecc_per_sec + j;
++
++		/* Check that HW ECC does not overlap bad-block marker */
++		if (bbm_pos == layout->eccpos[i]) {
++			pr_err("%s: ECC level %d too high, HW ECC collides with bad-block marker position\n",
++			       DRV_NAME, ctrl->ecc_level);
++			return -EINVAL;
++		}
++	}
++
++	/* Location of all user-available OOB byte-ranges */
++	for (i = 0; i < ARRAY_SIZE(layout->oobfree); i++) {
++		struct nand_oobfree *oobfree = &layout->oobfree[i];
++
++		if (i >= (1 << ctrl->sec_per_page_shift))
++			break;
++		oobfree->offset = oob_per_sec * i;
++		oobfree->length = oob_per_sec - ecc_per_sec;
++
++		/* Bad-block marker must be in the first sector spare area */
++		if (WARN_ON(bbm_pos >= (oobfree->offset + oobfree->length)))
++			return -EINVAL;
++
++		if (i != 0)
++			continue;
++
++		/* Remove bad-block marker from available byte range */
++		if (bbm_pos == oobfree->offset) {
++			oobfree->offset += 1;
++			oobfree->length -= 1;
++		} else if (bbm_pos == (oobfree->offset + oobfree->length - 1)) {
++			oobfree->length -= 1;
++		} else {
++			layout->oobfree[i + 1].offset = bbm_pos + 1;
++			layout->oobfree[i + 1].length =
++				oobfree->length - bbm_pos - 1;
++			oobfree->length = bbm_pos;
++			i++;
++		}
++	}
++
++	layout->oobavail = ((oob_per_sec - ecc_per_sec)
++		<< ctrl->sec_per_page_shift) - 1;
++
++	ctrl->mtd.oobavail = layout->oobavail;
++	ctrl->nand.ecc.layout = layout;
++
++	/* Output layout for debugging */
++	pr_debug("%s: Spare area=%d eccbytes %d, ecc bytes located at:\n",
++		 DRV_NAME, ctrl->mtd.oobsize, layout->eccbytes);
++	for (i = j = 0;
++	     i < ARRAY_SIZE(layout->eccpos) && i < layout->eccbytes; i++)
++		pr_debug(" %d", layout->eccpos[i]);
++
++	pr_debug("\n%s: Available %d bytes at (off,len):\n", DRV_NAME,
++		 layout->oobavail);
++	for (i = 0; i < ARRAY_SIZE(layout->oobfree); i++)
++		pr_debug("(%d,%d) ", layout->oobfree[i].offset,
++			 layout->oobfree[i].length);
++
++	pr_debug("\n");
++
++	return 0;
++}
++
++/*
++ * Register bit-field manipulation routines
++ */
++
++static inline unsigned int bcmnand_reg_read(struct bcmnand_ctrl *ctrl,
++					    struct bcmnand_reg_field rbf)
++{
++	u32 val;
++
++	val = bcma_read32(ctrl->core, rbf.reg);
++	val >>= rbf.pos;
++	val &= (1 << rbf.width) - 1;
++
++	return val;
++}
++
++static inline void bcmnand_reg_write(struct bcmnand_ctrl *ctrl,
++				     struct bcmnand_reg_field rbf,
++				     unsigned newval)
++{
++	u32 val, msk;
++
++	msk = (1 << rbf.width) - 1;
++	msk <<= rbf.pos;
++	newval <<= rbf.pos;
++	newval &= msk;
++
++	val = bcma_read32(ctrl->core, rbf.reg);
++	val &= ~msk;
++	val |= newval;
++	bcma_write32(ctrl->core, rbf.reg, val);
++}
++
++static inline unsigned int bcmnand_reg_aread(struct bcmnand_ctrl *ctrl,
++					     struct bcmnand_areg_field rbf)
++{
++	u32 val;
++
++	val = bcma_aread32(ctrl->core, rbf.reg);
++	val >>= rbf.pos;
++	val &= (1 << rbf.width) - 1;
++
++	return val;
++}
++
++static inline void bcmnand_reg_awrite(struct bcmnand_ctrl *ctrl,
++				      struct bcmnand_areg_field rbf,
++				      unsigned int newval)
++{
++	u32 val, msk;
++
++	msk = (1 << rbf.width) - 1;
++	msk <<= rbf.pos;
++	newval <<= rbf.pos;
++	newval &= msk;
++
++	val = bcma_aread32(ctrl->core, rbf.reg);
++	val &= ~msk;
++	val |= newval;
++	bcma_awrite32(ctrl->core, rbf.reg, val);
++}
++
++/*
++ * NAND Interface - dev_ready
++ *
++ * Return 1 iff device is ready, 0 otherwise
++ */
++static int bcmnand_dev_ready(struct mtd_info *mtd)
++{
++	struct nand_chip *chip = mtd->priv;
++	struct bcmnand_ctrl *ctrl = chip->priv;
++
++	return bcmnand_reg_aread(ctrl, NANDC_IDM_IO_CTRL_RDY);
++}
++
++/*
++ * Interrupt service routines
++ */
++static irqreturn_t bcmnand_isr(int irq, void *dev_id)
++{
++	struct bcmnand_ctrl *ctrl = dev_id;
++	int irq_off;
++
++	irq_off = irq - ctrl->core->irq;
++	WARN_ON(irq_off < 0 || irq_off >= NANDC_IRQ_NUM);
++
++	if (!bcmnand_reg_read(ctrl, NANDC_INT_N_REG(irq_off)))
++		return IRQ_NONE;
++
++	/* Acknowledge interrupt */
++	bcmnand_reg_write(ctrl, NANDC_INT_N_REG(irq_off), 1);
++
++	/* Wake up task */
++	complete(&ctrl->op_completion);
++
++	return IRQ_HANDLED;
++}
++
++static int bcmnand_wait_interrupt(struct bcmnand_ctrl *ctrl,
++				  unsigned int irq_off,
++				  unsigned int timeout_usec)
++{
++	long timeout_jiffies;
++	int ret = 0;
++
++	reinit_completion(&ctrl->op_completion);
++
++	/* Acknowledge interrupt */
++	bcmnand_reg_write(ctrl, NANDC_INT_N_REG(irq_off), 1);
++
++	/* Enable IRQ to wait on */
++	bcmnand_reg_awrite(ctrl, NANDC_IDM_IRQ_N_EN(irq_off), 1);
++
++	timeout_jiffies = 1 + usecs_to_jiffies(timeout_usec);
++
++	if (irq_off != NANDC_IRQ_CONTROLLER_RDY ||
++		0 == bcmnand_reg_aread(ctrl, NANDC_IDM_IO_CTRL_RDY)) {
++
++		timeout_jiffies = wait_for_completion_interruptible_timeout(
++					&ctrl->op_completion, timeout_jiffies);
++
++		if (timeout_jiffies < 0)
++			ret =  timeout_jiffies;
++		if (timeout_jiffies == 0)
++			ret = -ETIME;
++	}
++
++	/* Disable IRQ, we're done waiting */
++	bcmnand_reg_awrite(ctrl, NANDC_IDM_IRQ_N_EN(irq_off), 0);
++
++	if (bcmnand_reg_aread(ctrl, NANDC_IDM_IO_CTRL_RDY))
++		ret = 0;
++
++	return ret;
++}
++
++/*
++ * wait for command completion
++ */
++static int bcmnand_wait_cmd(struct bcmnand_ctrl *ctrl, unsigned int timeout_usec)
++{
++	unsigned int retries;
++
++	if (bcmnand_reg_read(ctrl, NANDC_INT_STAT_CTLR_RDY))
++		return 0;
++
++	/* If the timeout is long, wait for interrupt */
++	if (timeout_usec >= jiffies_to_usecs(1) >> 4)
++		return bcmnand_wait_interrupt(
++			ctrl, NANDC_IRQ_CONTROLLER_RDY, timeout_usec);
++
++	/* Wait for completion of the prior command */
++	retries = (timeout_usec >> 3) + 1;
++
++	while (retries-- &&
++		0 == bcmnand_reg_read(ctrl, NANDC_INT_STAT_CTLR_RDY)) {
++		cpu_relax();
++		udelay(6);
++	}
++
++	if (retries == 0)
++		return -ETIME;
++
++	return 0;
++}
++
++
++/*
++ * NAND Interface - waitfunc
++ */
++static int bcmnand_waitfunc(struct mtd_info *mtd, struct nand_chip *chip)
++{
++	struct bcmnand_ctrl *ctrl = chip->priv;
++	unsigned int to;
++	int ret;
++
++	/* figure out timeout based on what command is on */
++	switch (ctrl->last_cmd) {
++	default:
++	case NAND_CMD_ERASE1:
++	case NAND_CMD_ERASE2:
++		to = 1 << 16;
++		break;
++	case NAND_CMD_STATUS:
++	case NAND_CMD_RESET:
++		to = 256;
++		break;
++	case NAND_CMD_READID:
++		to = 1024;
++		break;
++	case NAND_CMD_READ1:
++	case NAND_CMD_READ0:
++		to = 2048;
++		break;
++	case NAND_CMD_PAGEPROG:
++		to = 4096;
++		break;
++	case NAND_CMD_READOOB:
++		to = 512;
++		break;
++	}
++
++	/* deliver deferred error code if any */
++	ret = ctrl->cmd_ret;
++	if (ret < 0)
++		ctrl->cmd_ret = 0;
++	else
++		ret = bcmnand_wait_cmd(ctrl, to);
++
++	/* Timeout */
++	if (ret < 0)
++		return NAND_STATUS_FAIL;
++
++	ret = bcmnand_reg_read(ctrl, NANDC_INT_STAT_FLASH_STATUS);
++
++	return ret;
++}
++
++/*
++ * NAND Interface - read_oob
++ */
++static int bcmnand_read_oob(struct mtd_info *mtd, struct nand_chip *chip,
++			    int page)
++{
++	struct bcmnand_ctrl *ctrl = chip->priv;
++	unsigned int n = ctrl->chip_num;
++	void __iomem *ctrl_spare;
++	unsigned int spare_per_sec, sector;
++	u64 nand_addr;
++
++	ctrl_spare = ctrl->core->io_addr + NANDC_SPARE_AREA_READ_OFF;
++
++	/* Set the page address for the following commands */
++	nand_addr = ((u64)page << chip->page_shift);
++	bcmnand_reg_write(ctrl, NANDC_CMD_EXT_ADDR, nand_addr >> 32);
++
++	spare_per_sec = mtd->oobsize >> ctrl->sec_per_page_shift;
++
++	/* Disable ECC validation for spare area reads */
++	bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_RD_ECC(n), 0);
++
++	/* Loop all sectors in page */
++	for (sector = 0; sector < (1<<ctrl->sec_per_page_shift); sector++) {
++		unsigned int col;
++
++		col = (sector << ctrl->sector_size_shift);
++
++		/* Issue command to read partial page */
++		bcmnand_reg_write(ctrl, NANDC_CMD_ADDRESS, nand_addr + col);
++
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_SPARE_READ);
++
++		/* Wait for the command to complete */
++		if (bcmnand_wait_cmd(ctrl, (sector == 0) ? 10000 : 100))
++			return -EIO;
++
++		if (!bcmnand_reg_read(ctrl, NANDC_INT_STAT_SPARE_VALID))
++			return -EIO;
++
++		/* Set controller to Little Endian mode for copying */
++		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 1);
++
++		memcpy(chip->oob_poi + sector * spare_per_sec,
++			ctrl_spare,
++			spare_per_sec);
++
++		/* Return to Big Endian mode for commands etc */
++		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
++	}
++
++	return 0;
++}
++
++/*
++ * NAND Interface - write_oob
++ */
++static int bcmnand_write_oob(struct mtd_info *mtd, struct nand_chip *chip,
++			     int page)
++{
++	struct bcmnand_ctrl *ctrl = chip->priv;
++	unsigned int n = ctrl->chip_num;
++	void __iomem *ctrl_spare;
++	unsigned int spare_per_sec, sector, num_sec;
++	u64 nand_addr;
++	int to, status = 0;
++
++	ctrl_spare = ctrl->core->io_addr + NANDC_SPARE_AREA_WRITE_OFF;
++
++	/* Disable ECC generation for spare area writes */
++	bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_WR_ECC(n), 0);
++
++	spare_per_sec = mtd->oobsize >> ctrl->sec_per_page_shift;
++
++	/* Set the page address for the following commands */
++	nand_addr = ((u64)page << chip->page_shift);
++	bcmnand_reg_write(ctrl, NANDC_CMD_EXT_ADDR, nand_addr >> 32);
++
++	/* Must allow partial programming to change spare area only */
++	bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_PGM_PARTIAL(n), 1);
++
++	num_sec = 1 << ctrl->sec_per_page_shift;
++	/* Loop all sectors in page */
++	for (sector = 0; sector < num_sec; sector++) {
++		unsigned int col;
++
++		/* Spare area accessed by the data sector offset */
++		col = (sector << ctrl->sector_size_shift);
++
++		bcmnand_reg_write(ctrl, NANDC_CMD_ADDRESS, nand_addr + col);
++
++		/* Set controller to Little Endian mode for copying */
++		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 1);
++
++		memcpy(ctrl_spare,
++			chip->oob_poi + sector * spare_per_sec,
++			spare_per_sec);
++
++		/* Return to Big Endian mode for commands etc */
++		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
++
++		/* Push spare bytes into internal buffer, last goes to flash */
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_SPARE_PROG);
++
++		if (sector == (num_sec - 1))
++			to = 1 << 16;
++		else
++			to = 1 << 10;
++
++		if (bcmnand_wait_cmd(ctrl, to))
++			return -EIO;
++	}
++
++	/* Restore partial programming inhibition */
++	bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_PGM_PARTIAL(n), 0);
++
++	status = bcmnand_waitfunc(mtd, chip);
++	return status & NAND_STATUS_FAIL ? -EIO : 0;
++}
++
++/*
++ * verify that a buffer is all erased
++ */
++static bool bcmnand_buf_erased(const void *buf, unsigned int len)
++{
++	unsigned int i;
++	const u32 *p = buf;
++
++	for (i = 0; i < (len >> 2); i++) {
++		if (p[i] != 0xffffffff)
++			return false;
++	}
++	return true;
++}
++
++/*
++ * read a page, with or without ECC checking
++ */
++static int bcmnand_read_page_do(struct mtd_info *mtd, struct nand_chip *chip,
++				uint8_t *buf, int page, bool ecc)
++{
++	struct bcmnand_ctrl *ctrl = chip->priv;
++	unsigned int n = ctrl->chip_num;
++	void __iomem *ctrl_cache;
++	void __iomem *ctrl_spare;
++	unsigned int data_bytes;
++	unsigned int spare_per_sec;
++	unsigned int sector, to = 1 << 16;
++	u32 err_soft_reg, err_hard_reg;
++	unsigned int hard_err_count = 0;
++	int ret;
++	u64 nand_addr;
++
++	ctrl_cache = ctrl->core->io_addr + NANDC_CACHE_OFF;
++	ctrl_spare = ctrl->core->io_addr + NANDC_SPARE_AREA_READ_OFF;
++
++	/* Reset  ECC error stats */
++	err_hard_reg = bcmnand_reg_read(ctrl, NANDC_UNCORR_ERR_COUNT);
++	err_soft_reg = bcmnand_reg_read(ctrl, NANDC_READ_CORR_BIT_COUNT);
++
++	spare_per_sec = mtd->oobsize >> ctrl->sec_per_page_shift;
++
++	/* Set the page address for the following commands */
++	nand_addr = ((u64)page << chip->page_shift);
++	bcmnand_reg_write(ctrl, NANDC_CMD_EXT_ADDR, nand_addr >> 32);
++
++	/* Enable ECC validation for ecc page reads */
++	bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_RD_ECC(n), ecc);
++
++	/* Loop all sectors in page */
++	for (sector = 0; sector < (1 << ctrl->sec_per_page_shift); sector++) {
++		data_bytes  = 0;
++
++		/* Copy partial sectors sized by cache reg */
++		while (data_bytes < (1<<ctrl->sector_size_shift)) {
++			unsigned int col;
++
++			col = data_bytes + (sector << ctrl->sector_size_shift);
++
++			bcmnand_reg_write(ctrl, NANDC_CMD_ADDRESS,
++					  nand_addr + col);
++
++			/* Issue command to read partial page */
++			bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++					  NANDC_CMD_OPCODE_PAGE_READ);
++
++			/* Wait for the command to complete */
++			ret = bcmnand_wait_cmd(ctrl, to);
++			if (ret < 0)
++				return ret;
++
++			/* Set controller to Little Endian mode for copying */
++			bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 1);
++
++			if (data_bytes == 0) {
++				memcpy(chip->oob_poi + sector * spare_per_sec,
++				       ctrl_spare, spare_per_sec);
++			}
++
++			memcpy(buf + col, ctrl_cache, NANDC_CACHE_SIZE);
++			data_bytes += NANDC_CACHE_SIZE;
++
++			/* Return to Big Endian mode for commands etc */
++			bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
++
++			/* Next iterations should go fast */
++			to = 1 << 10;
++
++			/* capture hard errors for each partial */
++			if (err_hard_reg != bcmnand_reg_read(ctrl, NANDC_UNCORR_ERR_COUNT)) {
++				int era = bcmnand_reg_read(ctrl, NANDC_INT_STAT_ERASED);
++
++				if (!era &&
++				    !bcmnand_buf_erased(buf + col, NANDC_CACHE_SIZE))
++					hard_err_count++;
++
++				err_hard_reg = bcmnand_reg_read(ctrl,
++							NANDC_UNCORR_ERR_COUNT);
++			}
++		}
++	}
++
++	if (!ecc)
++		return 0;
++
++	/* Report hard ECC errors */
++	if (hard_err_count)
++		mtd->ecc_stats.failed++;
++
++	/* Get ECC soft error stats */
++	mtd->ecc_stats.corrected += err_soft_reg -
++			bcmnand_reg_read(ctrl, NANDC_READ_CORR_BIT_COUNT);
++
++	return 0;
++}
++
++/*
++ * NAND Interface - read_page_ecc
++ */
++static int bcmnand_read_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
++				 uint8_t *buf, int oob_required, int page)
++{
++	return bcmnand_read_page_do(mtd, chip, buf, page, true);
++}
++
++/*
++ * NAND Interface - read_page_raw
++ */
++static int bcmnand_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
++				 uint8_t *buf, int oob_required, int page)
++{
++	return bcmnand_read_page_do(mtd, chip, buf, page, true);
++}
++
++/*
++ * do page write, with or without ECC generation enabled
++ */
++static int bcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip,
++				 const uint8_t *buf, bool ecc)
++{
++	struct bcmnand_ctrl *ctrl = chip->priv;
++	unsigned int n = ctrl->chip_num;
++	void __iomem *ctrl_cache;
++	void __iomem *ctrl_spare;
++	unsigned int spare_per_sec, sector, num_sec;
++	unsigned int data_bytes, spare_bytes;
++	int i, to;
++	uint8_t *tmp_poi;
++	u32 nand_addr;
++
++	ctrl_cache = ctrl->core->io_addr + NANDC_CACHE_OFF;
++	ctrl_spare = ctrl->core->io_addr + NANDC_SPARE_AREA_WRITE_OFF;
++
++	/* Get start-of-page address */
++	nand_addr = bcmnand_reg_read(ctrl, NANDC_CMD_ADDRESS);
++
++	tmp_poi = kmalloc(mtd->oobsize, GFP_KERNEL);
++	if (!tmp_poi)
++		return -ENOMEM;
++
++	/* Retreive pre-existing OOB values */
++	memcpy(tmp_poi, chip->oob_poi, mtd->oobsize);
++	ctrl->cmd_ret = bcmnand_read_oob(mtd, chip,
++					 nand_addr >> chip->page_shift);
++	if (ctrl->cmd_ret < 0) {
++		kfree(tmp_poi);
++		return ctrl->cmd_ret;
++	}
++
++	/* Apply new OOB data bytes just like they would end up on the chip */
++	for (i = 0; i < mtd->oobsize; i++)
++		chip->oob_poi[i] &= tmp_poi[i];
++	kfree(tmp_poi);
++
++	spare_per_sec = mtd->oobsize >> ctrl->sec_per_page_shift;
++
++	/* Enable ECC generation for ecc page write, if requested */
++	bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_WR_ECC(n), ecc);
++
++	spare_bytes = 0;
++	num_sec = 1 << ctrl->sec_per_page_shift;
++
++	/* Loop all sectors in page */
++	for (sector = 0; sector < num_sec; sector++) {
++		data_bytes  = 0;
++
++		/* Copy partial sectors sized by cache reg */
++		while (data_bytes < (1<<ctrl->sector_size_shift)) {
++			unsigned int col;
++
++			col = data_bytes +
++				(sector << ctrl->sector_size_shift);
++
++			/* Set address of 512-byte sub-page */
++			bcmnand_reg_write(ctrl, NANDC_CMD_ADDRESS,
++					  nand_addr + col);
++
++			/* Set controller to Little Endian mode for copying */
++			bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN,
++					   1);
++
++			/* Set spare area is written at each sector start */
++			if (data_bytes == 0) {
++				memcpy(ctrl_spare,
++					chip->oob_poi + spare_bytes,
++					spare_per_sec);
++				spare_bytes += spare_per_sec;
++			}
++
++			/* Copy sub-page data */
++			memcpy(ctrl_cache, buf + col, NANDC_CACHE_SIZE);
++			data_bytes += NANDC_CACHE_SIZE;
++
++			/* Return to Big Endian mode for commands etc */
++			bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
++
++			/* Push data into internal cache */
++			bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++					  NANDC_CMD_OPCODE_PAGE_PROG);
++
++			/* Wait for the command to complete */
++			if (sector == (num_sec - 1))
++				to = 1 << 16;
++			else
++				to = 1 << 10;
++			ctrl->cmd_ret = bcmnand_wait_cmd(ctrl, to);
++			if (ctrl->cmd_ret < 0)
++				return ctrl->cmd_ret;
++		}
++	}
++	return 0;
++}
++
++/*
++ * NAND Interface = write_page_ecc
++ */
++static int bcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
++				  const uint8_t *buf, int oob_required)
++{
++	return bcmnand_write_page_do(mtd, chip, buf, true);
++}
++
++/*
++ * NAND Interface = write_page_raw
++ */
++static int bcmnand_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
++				  const uint8_t *buf, int oob_required)
++{
++	return bcmnand_write_page_do(mtd, chip, buf, false);
++}
++
++/*
++ * MTD Interface - read_byte
++ *
++ * This function emulates simple controllers behavior
++ * for just a few relevant commands
++ */
++static uint8_t bcmnand_read_byte(struct mtd_info *mtd)
++{
++	struct nand_chip *nand = mtd->priv;
++	struct bcmnand_ctrl *ctrl = nand->priv;
++	uint8_t b = ~0;
++
++	switch (ctrl->last_cmd) {
++	case NAND_CMD_READID:
++		if (ctrl->id_byte_index < 8) {
++			b = bcmnand_reg_read(ctrl, NANDC_DEVID_BYTE(
++							ctrl->id_byte_index));
++			ctrl->id_byte_index++;
++		}
++		break;
++	case NAND_CMD_READOOB:
++		if (ctrl->oob_index < mtd->oobsize)
++			b = nand->oob_poi[ctrl->oob_index++];
++		break;
++	case NAND_CMD_STATUS:
++		b = bcmnand_reg_read(ctrl, NANDC_INT_STAT_FLASH_STATUS);
++		break;
++	default:
++		pr_err("%s: got unkown command: 0x%x in %s\n", DRV_NAME,
++		       ctrl->last_cmd, __func__);
++	}
++	return b;
++}
++
++/*
++ * MTD Interface - read_word
++ *
++ * Can not be tested without x16 chip, but the SoC does not support x16 i/f.
++ */
++static u16 bcmnand_read_word(struct mtd_info *mtd)
++{
++	u16 w = ~0;
++
++	w = bcmnand_read_byte(mtd);
++	barrier();
++	w |= bcmnand_read_byte(mtd) << 8;
++
++	return w;
++}
++
++/*
++ * MTD Interface - select a chip from an array
++ */
++static void bcmnand_select_chip(struct mtd_info *mtd, int chip)
++{
++	struct nand_chip *nand = mtd->priv;
++	struct bcmnand_ctrl *ctrl = nand->priv;
++
++	ctrl->chip_num = chip;
++	bcmnand_reg_write(ctrl, NANDC_CMD_CS_SEL, chip);
++}
++
++/*
++ * NAND Interface - emulate low-level NAND commands
++ *
++ * Only a few low-level commands are really needed by generic NAND,
++ * and they do not call for CMD_LL operations the controller can support.
++ */
++static void bcmnand_cmdfunc(struct mtd_info *mtd, unsigned int command,
++			    int column, int page_addr)
++{
++	struct nand_chip *nand = mtd->priv;
++	struct bcmnand_ctrl *ctrl = nand->priv;
++	u64 nand_addr;
++	unsigned int to = 1;
++
++	ctrl->last_cmd = command;
++
++	/* Set address for some commands */
++	switch (command) {
++	case NAND_CMD_ERASE1:
++		column = 0;
++		/*FALLTHROUGH*/
++	case NAND_CMD_SEQIN:
++	case NAND_CMD_READ0:
++	case NAND_CMD_READ1:
++		WARN_ON(column >= mtd->writesize);
++		nand_addr = (u64) column |
++			((u64)page_addr << nand->page_shift);
++		bcmnand_reg_write(ctrl, NANDC_CMD_EXT_ADDR, nand_addr >> 32);
++		bcmnand_reg_write(ctrl, NANDC_CMD_ADDRESS, nand_addr);
++		break;
++	case NAND_CMD_ERASE2:
++	case NAND_CMD_RESET:
++	case NAND_CMD_READID:
++	case NAND_CMD_READOOB:
++	case NAND_CMD_PAGEPROG:
++	default:
++		/* Do nothing, address not used */
++		break;
++	}
++
++	/* Issue appropriate command to controller */
++	switch (command) {
++	case NAND_CMD_SEQIN:
++		/* Only need to load command address, done */
++		return;
++
++	case NAND_CMD_RESET:
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_FLASH_RESET);
++		to = 1 << 8;
++		break;
++
++	case NAND_CMD_READID:
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_DEVID_READ);
++		ctrl->id_byte_index = 0;
++		to = 1 << 8;
++		break;
++
++	case NAND_CMD_READ0:
++	case NAND_CMD_READ1:
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_PAGE_READ);
++		to = 1 << 15;
++		break;
++	case NAND_CMD_STATUS:
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_STATUS_READ);
++		to = 1 << 8;
++		break;
++	case NAND_CMD_ERASE1:
++		return;
++
++	case NAND_CMD_ERASE2:
++		bcmnand_reg_write(ctrl, NANDC_CMD_START_OPCODE,
++				  NANDC_CMD_OPCODE_BLOCK_ERASE);
++		to = 1 << 18;
++		break;
++
++	case NAND_CMD_PAGEPROG:
++		/* Cmd already set from write_page */
++		return;
++
++	case NAND_CMD_READOOB:
++		/* Emulate simple interface */
++		bcmnand_read_oob(mtd, nand, page_addr);
++		ctrl->oob_index = 0;
++		return;
++
++	default:
++		pr_err("%s: got unkown command: 0x%x in %s\n", DRV_NAME,
++		       ctrl->last_cmd, __func__);
++	}
++
++	/* Wait for command to complete */
++	ctrl->cmd_ret = bcmnand_wait_cmd(ctrl, to);
++
++}
++
++static int bcmnand_scan(struct mtd_info *mtd)
++{
++	struct nand_chip *nand = mtd->priv;
++	struct bcmnand_ctrl *ctrl = nand->priv;
++	bool sector_1k = false;
++	unsigned int chip_num = 0;
++	int ecc_level = 0;
++	int ret;
++
++	ret = nand_scan_ident(mtd, NANDC_MAX_CHIPS, NULL);
++	if (ret)
++		return ret;
++
++	/* Get configuration from first chip */
++	sector_1k = bcmnand_reg_read(ctrl, NANDC_ACC_CTRL_SECTOR_1K(0));
++	ecc_level = bcmnand_reg_read(ctrl, NANDC_ACC_CTRL_ECC_LEVEL(0));
++	mtd->writesize_shift = nand->page_shift;
++
++	ctrl->ecc_level = ecc_level;
++	ctrl->sector_size_shift = sector_1k ? 10 : 9;
++
++	/* Configure spare area, tweak as needed */
++	do {
++		ctrl->sec_per_page_shift =
++			mtd->writesize_shift - ctrl->sector_size_shift;
++
++		/* will return -EINVAL if OOB space exhausted */
++		ret = bcmnand_hw_ecc_layout(ctrl);
++
++		/* First try to bump sector size to 1k, then decrease level */
++		if (ret && nand->page_shift > 9 && ctrl->sector_size_shift < 10)
++			ctrl->sector_size_shift = 10;
++		else if (ret)
++			ctrl->ecc_level--;
++
++	} while (ret && ctrl->ecc_level > 0);
++
++	if (WARN_ON(ctrl->ecc_level == 0))
++		return -ENOENT;
++
++	if ((ctrl->sector_size_shift  > 9) != (sector_1k == 1)) {
++		pr_info("%s: sector size adjusted to 1k\n", DRV_NAME);
++		sector_1k = 1;
++	}
++
++	if (ecc_level != ctrl->ecc_level) {
++		pr_info("%s: ECC level adjusted from %u to %u\n",
++			DRV_NAME, ecc_level, ctrl->ecc_level);
++		ecc_level = ctrl->ecc_level;
++	}
++
++	/* handle the hardware chip config registers */
++	for (chip_num = 0; chip_num < nand->numchips; chip_num++) {
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_SECTOR_1K(chip_num),
++				  sector_1k);
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_ECC_LEVEL(chip_num),
++				  ecc_level);
++
++		/* Large pages: no partial page programming */
++		if (mtd->writesize > 512) {
++			bcmnand_reg_write(ctrl,
++				NANDC_ACC_CTRL_PGM_RDIN(chip_num), 0);
++			bcmnand_reg_write(ctrl,
++				NANDC_ACC_CTRL_PGM_PARTIAL(chip_num), 0);
++		}
++
++		/* Do not raise ECC error when reading erased pages */
++		/* This bit has only partial effect, driver needs to help */
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_ERA_ECC_ERR(chip_num),
++				  0);
++
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_PG_HIT(chip_num), 0);
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_PREFETCH(chip_num), 0);
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_CACHE_MODE(chip_num), 0);
++		bcmnand_reg_write(ctrl, NANDC_ACC_CTRL_CACHE_LASTPG(chip_num),
++				  0);
++
++		/* TBD: consolidate or at least verify the s/w and h/w geometries agree */
++	}
++
++	/* Allow writing on device */
++	if (!(nand->options & NAND_ROM))
++		bcmnand_reg_write(ctrl, NANDC_CS_NAND_WP, 0);
++
++	pr_debug("%s: layout.oobavail=%d\n", DRV_NAME,
++		 nand->ecc.layout->oobavail);
++
++	ret = nand_scan_tail(mtd);
++
++	if (nand->badblockbits == 0)
++		nand->badblockbits = 8;
++	if (WARN_ON((1 << nand->page_shift) != mtd->writesize))
++		return -EIO;
++
++	/* Spit out some key chip parameters as detected by nand_base */
++	pr_debug("%s: erasesize=%d writesize=%d oobsize=%d page_shift=%d badblockpos=%d badblockbits=%d\n",
++		 DRV_NAME, mtd->erasesize, mtd->writesize, mtd->oobsize,
++		 nand->page_shift, nand->badblockpos, nand->badblockbits);
++
++	return ret;
++}
++
++/*
++ * main intiailization function
++ */
++static int bcmnand_ctrl_init(struct bcmnand_ctrl *ctrl)
++{
++	unsigned int chip;
++	struct nand_chip *nand;
++	struct mtd_info *mtd;
++	unsigned int n = 0;
++	int ret;
++
++	/* Software variables init */
++	nand = &ctrl->nand;
++	mtd = &ctrl->mtd;
++
++	init_completion(&ctrl->op_completion);
++
++	mtd->priv = nand;
++	mtd->owner = THIS_MODULE;
++	mtd->name = DRV_NAME;
++
++	nand->priv = ctrl;
++
++	nand->chip_delay = 5;	/* not used */
++	nand->IO_ADDR_R = nand->IO_ADDR_W = (void *)~0L;
++
++	if (bcmnand_reg_read(ctrl, NANDC_CONFIG_CHIP_WIDTH(n)))
++		nand->options |= NAND_BUSWIDTH_16;
++	nand->options |= NAND_SKIP_BBTSCAN;	/* Dont need BBTs */
++
++	nand->options |= NAND_NO_SUBPAGE_WRITE; /* Subpages unsupported */
++
++	nand->dev_ready			= bcmnand_dev_ready;
++	nand->read_byte			= bcmnand_read_byte;
++	nand->read_word			= bcmnand_read_word;
++	nand->select_chip		= bcmnand_select_chip;
++	nand->cmdfunc			= bcmnand_cmdfunc;
++	nand->waitfunc			= bcmnand_waitfunc;
++
++	nand->ecc.mode			= NAND_ECC_HW;
++	nand->ecc.read_page_raw		= bcmnand_read_page_raw;
++	nand->ecc.write_page_raw	= bcmnand_write_page_raw;
++	nand->ecc.read_page		= bcmnand_read_page_ecc;
++	nand->ecc.write_page		= bcmnand_write_page_ecc;
++	nand->ecc.read_oob		= bcmnand_read_oob;
++	nand->ecc.write_oob		= bcmnand_write_oob;
++
++	/* Set AUTO_CNFIG bit - try to auto-detect chips */
++	bcmnand_reg_write(ctrl, NANDC_CS_AUTO_CONFIG, 1);
++
++	usleep_range(1000, 1500);
++
++	/* Print out current chip config */
++	for (chip = 0; chip < NANDC_MAX_CHIPS; chip++) {
++		pr_debug("%s: chip[%d]: size=%#x block=%#x page=%#x ecc_level=%#x\n",
++			 DRV_NAME, chip,
++			 bcmnand_reg_read(ctrl, NANDC_CONFIG_CHIP_SIZE(chip)),
++			 bcmnand_reg_read(ctrl, NANDC_CONFIG_BLK_SIZE(chip)),
++			 bcmnand_reg_read(ctrl, NANDC_CONFIG_PAGE_SIZE(chip)),
++			 bcmnand_reg_read(ctrl, NANDC_ACC_CTRL_ECC_LEVEL(chip)));
++	}
++
++	pr_debug("%s: Nand controller is reads=%d\n", DRV_NAME,
++		bcmnand_reg_aread(ctrl, NANDC_IDM_IO_CTRL_RDY));
++
++	ret = bcmnand_scan(mtd);
++	if (ret) {
++		pr_err("%s: scanning the nand flash chip failed with %i\n",
++		       DRV_NAME, ret);
++		return ret;
++	}
++
++	return 0;
++}
++
++static int __init bcmnand_idm_init(struct bcmnand_ctrl *ctrl)
++{
++	int irq_off;
++	unsigned int retries = 0x1000;
++
++	if (bcmnand_reg_aread(ctrl, NANDC_IDM_RESET))
++		pr_err("%s: stuck in reset\n", DRV_NAME);
++
++	bcmnand_reg_awrite(ctrl, NANDC_IDM_RESET, 1);
++	if (!bcmnand_reg_aread(ctrl, NANDC_IDM_RESET)) {
++		pr_err("%s: reset of failed\n", DRV_NAME);
++		return -EIO;
++	}
++
++	while (bcmnand_reg_aread(ctrl, NANDC_IDM_RESET)) {
++		bcmnand_reg_awrite(ctrl, NANDC_IDM_RESET, 0);
++		cpu_relax();
++		usleep_range(100, 150);
++		if (!(retries--)) {
++			pr_err("%s: did not came back from reset\n",
++			       DRV_NAME);
++			return -ETIMEDOUT;
++		}
++	}
++
++	bcmnand_reg_awrite(ctrl, NANDC_IDM_CLOCK_EN, 1);
++	bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
++	udelay(10);
++
++	pr_info("%s: NAND Controller rev %d.%d\n", DRV_NAME,
++		bcmnand_reg_read(ctrl, NANDC_REV_MAJOR),
++		bcmnand_reg_read(ctrl, NANDC_REV_MINOR));
++
++	usleep_range(250, 350);
++
++	/* Disable all IRQs */
++	for (irq_off = 0; irq_off < NANDC_IRQ_NUM; irq_off++)
++		bcmnand_reg_awrite(ctrl, NANDC_IDM_IRQ_N_EN(irq_off), 0);
++
++	return 0;
++}
++
++static const char * const part_probes[] = { "bcm47xxpart", "cmdlinepart", NULL };
++
++/*
++ * Top-level init function
++ */
++static int bcmnand_probe(struct bcma_device *core)
++{
++	struct device *dev = &core->dev;
++	struct device_node *np = dev->of_node;
++	struct bcmnand_ctrl *ctrl;
++	int res, i, irq;
++
++	if (!np) {
++		pr_err("%s: no device tree node found\n", DRV_NAME);
++		return -ENOENT;
++	}
++
++	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
++	if (!ctrl)
++		return -ENOMEM;
++
++	bcma_set_drvdata(core, ctrl);
++
++	ctrl->mtd.dev.parent = &core->dev;
++	ctrl->core = core;
++
++	/* Acquire all interrupt lines */
++	for (i = 0; i < of_irq_count(np); i++) {
++		irq = irq_of_parse_and_map(np, i);
++		res = devm_request_irq(dev, irq, bcmnand_isr, 0, DRV_NAME, ctrl);
++		if (res < 0) {
++			pr_err("%s: problem requesting irq: %i (idx: %i)\n",
++			       DRV_NAME, irq, i);
++			return res;
++		}
++	}
++
++	res = bcmnand_idm_init(ctrl);
++	if (res)
++		return res;
++
++	res = bcmnand_ctrl_init(ctrl);
++	if (res)
++		return res;
++
++	res = mtd_device_parse_register(&ctrl->mtd, part_probes, NULL, NULL, 0);
++	if (res) {
++		pr_err("%s: Failed to register MTD device: %d\n", DRV_NAME, res);
++		return res;
++	}
++	return 0;
++}
++
++static void bcmnand_remove(struct bcma_device *core)
++{
++	struct bcmnand_ctrl *ctrl = bcma_get_drvdata(core);
++
++	mtd_device_unregister(&ctrl->mtd);
++}
++
++static const struct bcma_device_id bcmnand_bcma_tbl[] = {
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_NAND, BCMA_ANY_REV, BCMA_ANY_CLASS),
++	BCMA_CORETABLE_END
++};
++MODULE_DEVICE_TABLE(bcma, bgmac_bcma_tbl);
++
++static struct bcma_driver bcmnand_bcma_driver = {
++	.name		= KBUILD_MODNAME,
++	.id_table	= bcmnand_bcma_tbl,
++	.probe		= bcmnand_probe,
++	.remove		= bcmnand_remove,
++};
++
++static int __init bcmnand_init(void)
++{
++	int err;
++
++	err = bcma_driver_register(&bcmnand_bcma_driver);
++	if (err)
++		return err;
++	pr_info("%s: Broadcom NAND Controller driver loaded\n", DRV_NAME);
++
++	return 0;
++}
++
++static void __exit bcmnand_exit(void)
++{
++	bcma_driver_unregister(&bcmnand_bcma_driver);
++}
++
++module_init(bcmnand_init)
++module_exit(bcmnand_exit)
++
++MODULE_LICENSE("GPL");
++MODULE_DESCRIPTION(DRV_DESC);

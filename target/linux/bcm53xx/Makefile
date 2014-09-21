@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=bcm53xx
 BOARDNAME:=Broadcom BCM47xx/53xx (ARM)
-FEATURES:=squashfs usb pci pcie gpio
+FEATURES:=squashfs nand usb pci pcie gpio
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 CPU_TYPE:=cortex-a9
 
