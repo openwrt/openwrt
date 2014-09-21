@@ -12,6 +12,7 @@ BOARDNAME:=Broadcom BCM47xx/53xx (ARM)
 FEATURES:=squashfs nand usb pci pcie gpio
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 CPU_TYPE:=cortex-a9
+CPU_SUBTYPE:=vfpv3
 
 LINUX_VERSION:=3.14.18
 
