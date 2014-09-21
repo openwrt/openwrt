@@ -7,6 +7,7 @@ obj.seama = seama.o md5.o
 obj.ar71xx = trx.o $(obj.seama)
 obj.brcm = trx.o
 obj.brcm47xx = $(obj.brcm)
+obj.bcm53xx = $(obj.brcm)
 obj.brcm63xx = imagetag.o
 obj.ramips = $(obj.seama)
 
