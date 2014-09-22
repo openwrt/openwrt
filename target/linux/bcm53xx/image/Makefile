@@ -16,14 +16,14 @@ endef
 # $(1): dts filename (also used for the firmware file).
 define Image/Build/initramfs/DTB
 	$(call Image/Build/DTB,zImage-initramfs,$(1))
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/$(IMG_PREFIX)-initramfs-$(1).trx \
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/$(IMG_PREFIX)-$(1)-initramfs.trx \
 		-f $(KDIR)/zImage-initramfs-$(1).lzma
 endef
 
 # $(1): dts filename (also used for the firmware file).
 define Image/Build/squashfs/DTB
 	$(call Image/Build/DTB,zImage,$(1))
-	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/$(IMG_PREFIX)-squashfs-$(1).trx \
+	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/$(IMG_PREFIX)-$(1)-squashfs.trx \
 		-f $(KDIR)/zImage-$(1).lzma \
 		-a 1024 -f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
 endef
@@ -43,7 +43,7 @@ endef
 # $(4): region.
 define Image/Build/Chk
 	$(call Image/Build/$(1)/DTB,$(2))
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(1).chk -k $(KDIR)/$(IMG_PREFIX)-$(1)-$(2).trx -b $(3) -r $(4)
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(1).chk -k $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx -b $(3) -r $(4)
 endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
