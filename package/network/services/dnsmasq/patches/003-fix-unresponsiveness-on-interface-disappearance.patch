@@ -1,0 +1,47 @@
+From 5782649ad95382dd558df97b33b64e854d8789fb Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Thu, 18 Sep 2014 22:08:58 +0100
+Subject: [PATCH] Fix bug which caused dnsmasq to become unresponsive when an
+ interface goes.
+
+---
+
+diff --git a/src/util.c b/src/util.c
+index df751c7..a729f33 100644
+--- a/src/util.c
++++ b/src/util.c
+@@ -570,18 +570,28 @@ void bump_maxfd(int fd, int *max)
+ 
+ int retry_send(void)
+ {
+-   struct timespec waiter;
++  /* Linux kernels can return EAGAIN in perpetuity when calling
++     sendmsg() and the relevant interface has gone. Here we loop
++     retrying in EAGAIN for 1 second max, to avoid this hanging 
++     dnsmasq. */
++
++  static int retries = 0;
++  struct timespec waiter;
++
+    if (errno == EAGAIN || errno == EWOULDBLOCK)
+      {
+        waiter.tv_sec = 0;
+        waiter.tv_nsec = 10000;
+        nanosleep(&waiter, NULL);
+-       return 1;
++       if (retries++ < 1000)
++	 return 1;
+      }
++
++   retries = 0;
+    
+    if (errno == EINTR)
+      return 1;
+-
++   
+    return 0;
+ }
+ 
+-- 
+1.9.1
+
