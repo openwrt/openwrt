@@ -43,7 +43,7 @@ endef
 # $(4): region.
 define Image/Build/Chk
 	$(call Image/Build/$(1)/DTB,$(2))
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(1).chk -k $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx -b $(3) -r $(4)
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).chk -k $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx -b $(3) -r $(4)
 endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
