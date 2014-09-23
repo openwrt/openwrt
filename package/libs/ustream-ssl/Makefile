@@ -32,14 +32,14 @@ endef
 define Package/libustream-openssl
   $(Package/libustream/default)
   TITLE += (openssl)
-  DEPENDS += +libopenssl
+  DEPENDS += +PACKAGE_libustream-openssl:libopenssl
   VARIANT:=openssl
 endef
 
 define Package/libustream-cyassl
   $(Package/libustream/default)
   TITLE += (cyassl)
-  DEPENDS += +libcyassl
+  DEPENDS += +PACKAGE_libustream-cyassl:libcyassl
   VARIANT:=cyassl
 endef
 
@@ -48,6 +48,7 @@ define Package/libustream-polarssl
   TITLE += (polarssl)
   DEPENDS += +libpolarssl
   VARIANT:=polarssl
+  DEFAULT_VARIANT:=1
 endef
 
 ifeq ($(BUILD_VARIANT),cyassl)
