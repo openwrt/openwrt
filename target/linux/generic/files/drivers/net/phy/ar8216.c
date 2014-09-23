@@ -73,8 +73,7 @@ struct ar8xxx_chip {
 
 	void (*init_globals)(struct ar8xxx_priv *priv);
 	void (*init_port)(struct ar8xxx_priv *priv, int port);
-	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 egress,
-			   u32 ingress, u32 members, u32 pvid);
+	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 members);
 	u32 (*read_port_status)(struct ar8xxx_priv *priv, int port);
 	int (*atu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
@@ -722,10 +721,24 @@ ar8216_read_port_status(struct ar8xxx_priv *priv, int port)
 }
 
 static void
-ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
-		  u32 members, u32 pvid)
+ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 {
 	u32 header;
+	u32 egress, ingress;
+	u32 pvid;
+
+	if (priv->vlan) {
+		pvid = priv->vlan_id[priv->pvid[port]];
+		if (priv->vlan_tagged & (1 << port))
+			egress = AR8216_OUT_ADD_VLAN;
+		else
+			egress = AR8216_OUT_STRIP_VLAN;
+		ingress = AR8216_IN_SECURE;
+	} else {
+		pvid = port;
+		egress = AR8216_OUT_KEEP;
+		ingress = AR8216_IN_PORT_ONLY;
+	}
 
 	if (chip_is_ar8216(priv) && priv->vlan && port == AR8216_PORT_CPU)
 		header = AR8216_PORT_CTRL_HEADER;
@@ -807,9 +820,24 @@ static const struct ar8xxx_chip ar8216_chip = {
 };
 
 static void
-ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
-		  u32 members, u32 pvid)
+ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 {
+	u32 egress, ingress;
+	u32 pvid;
+
+	if (priv->vlan) {
+		pvid = priv->vlan_id[priv->pvid[port]];
+		if (priv->vlan_tagged & (1 << port))
+			egress = AR8216_OUT_ADD_VLAN;
+		else
+			egress = AR8216_OUT_STRIP_VLAN;
+		ingress = AR8216_IN_SECURE;
+	} else {
+		pvid = port;
+		egress = AR8216_OUT_KEEP;
+		ingress = AR8216_IN_PORT_ONLY;
+	}
+
 	ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
 		   AR8216_PORT_CTRL_LEARN | AR8216_PORT_CTRL_VLAN_MODE |
 		   AR8216_PORT_CTRL_SINGLE_VLAN | AR8216_PORT_CTRL_STATE |
@@ -1731,31 +1759,31 @@ ar8327_vtu_load_vlan(struct ar8xxx_priv *priv, u32 vid, u32 port_mask)
 }
 
 static void
-ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
-		  u32 members, u32 pvid)
+ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 {
 	u32 t;
-	u32 mode;
+	u32 egress, ingress;
+	u32 pvid;
+
+	if (priv->vlan) {
+		pvid = priv->vlan_id[priv->pvid[port]];
+		if (priv->vlan_tagged & (1 << port))
+			egress = AR8327_PORT_VLAN1_OUT_MODE_TAG;
+		else
+			egress = AR8327_PORT_VLAN1_OUT_MODE_UNTAG;
+		ingress = AR8216_IN_SECURE;
+	} else {
+		pvid = port;
+		egress = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH;
+		ingress = AR8216_IN_PORT_ONLY;
+	}
 
 	t = pvid << AR8327_PORT_VLAN0_DEF_SVID_S;
 	t |= pvid << AR8327_PORT_VLAN0_DEF_CVID_S;
 	priv->write(priv, AR8327_REG_PORT_VLAN0(port), t);
 
-	mode = AR8327_PORT_VLAN1_OUT_MODE_UNMOD;
-	switch (egress) {
-	case AR8216_OUT_KEEP:
-		mode = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH;
-		break;
-	case AR8216_OUT_STRIP_VLAN:
-		mode = AR8327_PORT_VLAN1_OUT_MODE_UNTAG;
-		break;
-	case AR8216_OUT_ADD_VLAN:
-		mode = AR8327_PORT_VLAN1_OUT_MODE_TAG;
-		break;
-	}
-
 	t = AR8327_PORT_VLAN1_PORT_VLAN_PROP;
-	t |= mode << AR8327_PORT_VLAN1_OUT_MODE_S;
+	t |= egress << AR8327_PORT_VLAN1_OUT_MODE_S;
 	priv->write(priv, AR8327_REG_PORT_VLAN1(port), t);
 
 	t = members;
@@ -2041,24 +2069,7 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 
 	/* update the port destination mask registers and tag settings */
 	for (i = 0; i < dev->ports; i++) {
-		int egress, ingress;
-		int pvid;
-
-		if (priv->vlan) {
-			pvid = priv->vlan_id[priv->pvid[i]];
-			if (priv->vlan_tagged & (1 << i))
-				egress = AR8216_OUT_ADD_VLAN;
-			else
-				egress = AR8216_OUT_STRIP_VLAN;
-			ingress = AR8216_IN_SECURE;
-		} else {
-			pvid = i;
-			egress = AR8216_OUT_KEEP;
-			ingress = AR8216_IN_PORT_ONLY;
-		}
-
-		priv->chip->setup_port(priv, i, egress, ingress, portmask[i],
-				       pvid);
+		priv->chip->setup_port(priv, i, portmask[i]);
 	}
 
 	ar8xxx_set_mirror_regs(priv);
