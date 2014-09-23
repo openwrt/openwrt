@@ -53,6 +53,7 @@ define Package/Default
   HIDDEN:=
   URL:=
   VARIANT:=
+  DEFAULT_VARIANT:=
   USERID:=
 endef
 
