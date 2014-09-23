@@ -1748,7 +1748,7 @@ ar8327_vtu_load_vlan(struct ar8xxx_priv *priv, u32 vid, u32 port_mask)
 			mode = AR8327_VTU_FUNC0_EG_MODE_NOT;
 		else if (priv->vlan == 0)
 			mode = AR8327_VTU_FUNC0_EG_MODE_KEEP;
-		else if (priv->vlan_tagged & BIT(i))
+		else if ((priv->vlan_tagged & BIT(i)) || (priv->vlan_id[priv->pvid[i]] != vid))
 			mode = AR8327_VTU_FUNC0_EG_MODE_TAG;
 		else
 			mode = AR8327_VTU_FUNC0_EG_MODE_UNTAG;
@@ -1767,10 +1767,7 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 	if (priv->vlan) {
 		pvid = priv->vlan_id[priv->pvid[port]];
-		if (priv->vlan_tagged & (1 << port))
-			egress = AR8327_PORT_VLAN1_OUT_MODE_TAG;
-		else
-			egress = AR8327_PORT_VLAN1_OUT_MODE_UNTAG;
+		egress = AR8327_PORT_VLAN1_OUT_MODE_UNMOD;
 		ingress = AR8216_IN_SECURE;
 	} else {
 		pvid = port;
@@ -1903,6 +1900,30 @@ ar8xxx_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
 }
 
 static int
+ar8327_sw_get_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u8 ports = priv->vlan_table[val->port_vlan];
+	int i;
+
+	val->len = 0;
+	for (i = 0; i < dev->ports; i++) {
+		struct switch_port *p;
+
+		if (!(ports & (1 << i)))
+			continue;
+
+		p = &val->value.ports[val->len++];
+		p->id = i;
+		if ((priv->vlan_tagged & (1 << i)) || (priv->pvid[i] != val->port_vlan))
+			p->flags = (1 << SWITCH_PORT_FLAG_TAGGED);
+		else
+			p->flags = 0;
+	}
+	return 0;
+}
+
+static int
 ar8xxx_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
@@ -1926,6 +1947,31 @@ ar8xxx_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 					continue;
 				priv->vlan_table[j] &= ~(1 << p->id);
 			}
+		}
+
+		*vt |= 1 << p->id;
+	}
+	return 0;
+}
+
+static int
+ar8327_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	u8 *vt = &priv->vlan_table[val->port_vlan];
+	int i, j;
+
+	*vt = 0;
+	for (i = 0; i < val->len; i++) {
+		struct switch_port *p = &val->value.ports[i];
+
+		if (p->flags & (1 << SWITCH_PORT_FLAG_TAGGED)) {
+			if (val->port_vlan == priv->pvid[p->id]) {
+				priv->vlan_tagged |= (1 << p->id);
+			}
+		} else {
+			priv->vlan_tagged &= ~(1 << p->id);
+			priv->pvid[p->id] = val->port_vlan;
 		}
 
 		*vt |= 1 << p->id;
@@ -2475,8 +2521,8 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	},
 	.get_port_pvid = ar8xxx_sw_get_pvid,
 	.set_port_pvid = ar8xxx_sw_set_pvid,
-	.get_vlan_ports = ar8xxx_sw_get_ports,
-	.set_vlan_ports = ar8xxx_sw_set_ports,
+	.get_vlan_ports = ar8327_sw_get_ports,
+	.set_vlan_ports = ar8327_sw_set_ports,
 	.apply_config = ar8xxx_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
