@@ -66,7 +66,7 @@ proto_directip_setup() {
 	}
 
 	logger -p daemon.info -t "directip[$$]" "Connected, starting DHCP"
-	proto_init_update "*" 1
+	proto_init_update "$ifname" 1
 	proto_send_update "$interface"
 
 	json_init
