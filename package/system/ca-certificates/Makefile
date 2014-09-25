@@ -34,6 +34,15 @@ endef
 define Package/ca-certificates/install
 	$(INSTALL_DIR) $(1)/etc/ssl/certs
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/share/ca-certificates/*/*.crt $(1)/etc/ssl/certs/
+
+	for CERTFILE in `ls -1 $(1)/etc/ssl/certs`; do \
+		HASH=`openssl x509 -hash -noout -in $(1)/etc/ssl/certs/$$$$CERTFILE` ; \
+		SUFFIX=0 ; \
+		while [ -h "$(1)/etc/ssl/certs/$$$$HASH.$$$$SUFFIX" ]; do \
+			let "SUFFIX += 1" ; \
+		done ; \
+		ln -s "$$$$CERTFILE" "$(1)/etc/ssl/certs/$$$$HASH.$$$$SUFFIX" ; \
+	done
 endef
 
 $(eval $(call BuildPackage,ca-certificates))
