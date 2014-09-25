@@ -97,6 +97,7 @@ CONFIGURE_ARGS += \
 	--disable-manual \
 	--disable-verbose \
 	--without-ca-bundle \
+	--with-ca-path=/etc/ssl/certs/ \
 	--without-krb4 \
 	--without-libidn \
 	--without-nss \
