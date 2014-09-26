@@ -8,7 +8,6 @@ proto_directip_init_config() {
 	available=1
 	no_device=1
 	proto_config_add_string "device:device"
-	proto_config_add_string "ifname"
 	proto_config_add_string "apn"
 	proto_config_add_string "pincode"
 	proto_config_add_string "auth"
@@ -18,16 +17,20 @@ proto_directip_init_config() {
 
 proto_directip_setup() {
 	local interface="$1"
-	local chat
+	local chat devpath devname
 
 	local device apn pincode ifname auth username password
-	json_get_vars device apn pincode ifname auth username password
+	json_get_vars device apn pincode auth username password
 
 	[ -e "$device" ] || {
 		proto_notify_error "$interface" NO_DEVICE
 		proto_set_available "$interface" 0
 		return 1
 	}
+
+	devname="$(basename "$device")"
+	devpath="$(readlink -f /sys/class/tty/$devname/device)"
+	ifname="$( ls "$devpath"/../../*/net )"
 
 	[ -n "$ifname" ] || {
 		proto_notify_error "$interface" NO_IFNAME
