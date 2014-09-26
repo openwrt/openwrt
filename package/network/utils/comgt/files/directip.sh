@@ -56,9 +56,9 @@ proto_directip_setup() {
 	gcom -d "$device" -s /etc/gcom/getcarrier.gcom || return 1
 
 	local auth_type=0
-	[ -z "$auth" ] && case $auth in
+	case $auth in
 	pap) auth_type=1;;
-	chap) auth_type=1;;
+	chap) auth_type=2;;
 	esac
 
 	USE_APN="$apn" USE_USER="$username" USE_PASS="$password" USE_AUTH="$auth_type" \
