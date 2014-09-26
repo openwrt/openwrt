@@ -195,6 +195,20 @@ endef
 
 $(eval $(call KernelPackage,hwmon-lm95241))
 
+define KernelPackage/hwmon-ltc4151
+  TITLE:=LTC4151 monitoring support
+  KCONFIG:=CONFIG_SENSORS_LTC4151
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ltc4151.ko
+  AUTOLOAD:=$(call AutoProbe,ltc4151)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-ltc4151/description
+ Kernel module for Linear Technology LTC4151 current and voltage monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-ltc4151))
+
 define KernelPackage/hwmon-sht21
   TITLE:=Sensiron SHT21 and compat. monitoring support
   KCONFIG:=CONFIG_SENSORS_SHT21
