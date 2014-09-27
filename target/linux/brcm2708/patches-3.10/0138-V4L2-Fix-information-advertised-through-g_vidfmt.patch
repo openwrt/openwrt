@@ -1,7 +1,7 @@
-From afd8800a96b940049ac37fb90cc24deeeea5c57e Mon Sep 17 00:00:00 2001
+From e583299dcd36a6e23a8479d8597a85b6c9e6cbbb Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Mon, 9 Dec 2013 17:29:39 +0000
-Subject: [PATCH 138/174] V4L2: Fix information advertised through g_vidfmt
+Subject: [PATCH 138/196] V4L2: Fix information advertised through g_vidfmt
 
 Width and height were being stored based on incorrect
 values.
@@ -11,9 +11,11 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/bcm2835-camera.c | 10 ++++++++--
  1 file changed, 8 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index c8d8742..4766a9c 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
-@@ -1028,13 +1028,19 @@ static int mmal_setup_components(struct
+@@ -1028,13 +1028,19 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
  		if (!ret) {
  			dev->capture.fmt = mfmt;
  			dev->capture.stride = f->fmt.pix.bytesperline;
@@ -35,3 +37,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  		}
  	}
  
+-- 
+1.9.1
+

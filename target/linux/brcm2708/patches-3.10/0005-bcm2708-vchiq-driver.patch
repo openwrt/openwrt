@@ -1,7 +1,7 @@
-From 2fdd1c3ab61a7a58a3ef3bc5b3d1504202bbc108 Mon Sep 17 00:00:00 2001
+From 8edd8c6dbdb6a5288c7116ea6e9dc59705b15a6a Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 2 Jul 2013 23:42:01 +0100
-Subject: [PATCH 005/174] bcm2708 vchiq driver
+Subject: [PATCH 005/196] bcm2708 vchiq driver
 
 Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
@@ -71,6 +71,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  create mode 100644 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
  create mode 100644 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 
+diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
+index c002d86..84d3100 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -536,4 +536,6 @@ source "drivers/misc/carma/Kconfig"
@@ -80,6 +82,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +source "drivers/misc/vc04_services/Kconfig"
  endmenu
 +
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index c235d5b..d72aaf2 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -53,3 +53,4 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
@@ -87,6 +91,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  obj-$(CONFIG_LATTICE_ECP3_CONFIG)	+= lattice-ecp3-config.o
  obj-$(CONFIG_SRAM)		+= sram.o
 +obj-y				+= vc04_services/
+diff --git a/drivers/misc/vc04_services/Kconfig b/drivers/misc/vc04_services/Kconfig
+new file mode 100644
+index 0000000..b48a3f3
 --- /dev/null
 +++ b/drivers/misc/vc04_services/Kconfig
 @@ -0,0 +1,10 @@
@@ -100,6 +107,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +		Defaults to Y when the Broadcom Videocore services
 +		are included in the build, N otherwise.
 +
+diff --git a/drivers/misc/vc04_services/Makefile b/drivers/misc/vc04_services/Makefile
+new file mode 100644
+index 0000000..1aeb20a
 --- /dev/null
 +++ b/drivers/misc/vc04_services/Makefile
 @@ -0,0 +1,18 @@
@@ -121,6 +131,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +endif
 +
+diff --git a/drivers/misc/vc04_services/interface/vchi/connections/connection.h b/drivers/misc/vc04_services/interface/vchi/connections/connection.h
+new file mode 100644
+index 0000000..fef6ac3
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/connections/connection.h
 @@ -0,0 +1,328 @@
@@ -452,6 +465,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif /* CONNECTION_H_ */
 +
 +/****************************** End of file **********************************/
+diff --git a/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h b/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h
+new file mode 100644
+index 0000000..8b3f767
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h
 @@ -0,0 +1,204 @@
@@ -659,6 +675,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif // _VCHI_MESSAGE_H_
 +
 +/****************************** End of file ***********************************/
+diff --git a/drivers/misc/vc04_services/interface/vchi/vchi.h b/drivers/misc/vc04_services/interface/vchi/vchi.h
+new file mode 100644
+index 0000000..cee5291
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi.h
 @@ -0,0 +1,373 @@
@@ -1035,6 +1054,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif /* VCHI_H_ */
 +
 +/****************************** End of file **********************************/
+diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h b/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h
+new file mode 100644
+index 0000000..26bc2d3
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h
 @@ -0,0 +1,224 @@
@@ -1262,6 +1284,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif /* VCHI_CFG_H_ */
 +
 +/****************************** End of file **********************************/
+diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h b/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h
+new file mode 100644
+index 0000000..35dcba4
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h
 @@ -0,0 +1,71 @@
@@ -1336,6 +1361,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +//#define VCHI_RX_NANOLOCKS
 +
 +#endif /*VCHI_CFG_INTERNAL_H_*/
+diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_common.h b/drivers/misc/vc04_services/interface/vchi/vchi_common.h
+new file mode 100644
+index 0000000..9e6c00e
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_common.h
 @@ -0,0 +1,163 @@
@@ -1502,6 +1530,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +
 +#endif // VCHI_COMMON_H_
+diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_mh.h b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
+new file mode 100644
+index 0000000..198bd07
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
 @@ -0,0 +1,42 @@
@@ -1547,6 +1578,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#define VCHI_MEM_HANDLE_INVALID 0
 +
 +#endif
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h
+new file mode 100644
+index 0000000..f87dcbd
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h
 @@ -0,0 +1,41 @@
@@ -1591,6 +1625,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif
 +
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
+new file mode 100644
+index 0000000..7ea5c64
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
 @@ -0,0 +1,42 @@
@@ -1636,6 +1673,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#define VCHIQ_PLATFORM_FRAGMENTS_COUNT_IDX  1
 +
 +#endif /* VCHIQ_2835_H */
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
+new file mode 100644
+index 0000000..2b5fa56
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
 @@ -0,0 +1,538 @@
@@ -2177,6 +2217,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +	kfree(pagelist);
 +}
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
+new file mode 100644
+index 0000000..f44d4b4
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
 @@ -0,0 +1,2813 @@
@@ -4993,6 +5036,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +module_exit(vchiq_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Broadcom Corporation");
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h
+new file mode 100644
+index 0000000..75ad4c6
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h
 @@ -0,0 +1,212 @@
@@ -5208,6 +5254,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +
 +#endif /* VCHIQ_ARM_H */
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h
+new file mode 100644
+index 0000000..df64581
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h
 @@ -0,0 +1,37 @@
@@ -5248,6 +5297,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +const char *vchiq_get_build_version(void);
 +const char *vchiq_get_build_time(void);
 +const char *vchiq_get_build_date(void);
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h
+new file mode 100644
+index 0000000..493c86c
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h
 @@ -0,0 +1,60 @@
@@ -5311,6 +5363,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* VCHIQ_CFG_H */
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
+new file mode 100644
+index 0000000..65f4b52
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
 @@ -0,0 +1,119 @@
@@ -5433,6 +5488,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	mutex_unlock(&g_connected_mutex);
 +}
 +EXPORT_SYMBOL(vchiq_add_connected_callback);
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h
+new file mode 100644
+index 0000000..e4cfdcc
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h
 @@ -0,0 +1,51 @@
@@ -5487,6 +5545,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif /* VCHIQ_CONNECTED_H */
 +
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
+new file mode 100644
+index 0000000..f35ed4f
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
 @@ -0,0 +1,3824 @@
@@ -9314,6 +9375,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +			numBytes = 0;
 +	}
 +}
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
+new file mode 100644
+index 0000000..47cdf27
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
 @@ -0,0 +1,706 @@
@@ -10023,6 +10087,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	size_t numBytes);
 +
 +#endif
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion
+new file mode 100644
+index 0000000..77dd613
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion
 @@ -0,0 +1,89 @@
@@ -10115,6 +10182,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +EOF
 +
 +
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h
+new file mode 100644
+index 0000000..50359b0
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h
 @@ -0,0 +1,188 @@
@@ -10306,6 +10376,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +      short *peer_version);
 +
 +#endif /* VCHIQ_IF_H */
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h
+new file mode 100644
+index 0000000..e248037
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h
 @@ -0,0 +1,129 @@
@@ -10438,6 +10511,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#define VCHIQ_IOC_MAX                  15
 +
 +#endif
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
+new file mode 100644
+index 0000000..be9735f
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 @@ -0,0 +1,456 @@
@@ -10897,6 +10973,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +	return status;
 +}
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h
+new file mode 100644
+index 0000000..d02e776
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h
 @@ -0,0 +1,71 @@
@@ -10971,6 +11050,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	const VCHIQ_PLATFORM_DATA_T * platform_data);
 +
 +#endif
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h
+new file mode 100644
+index 0000000..54a3ece
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h
 @@ -0,0 +1,58 @@
@@ -11032,6 +11114,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +} FRAGMENTS_T;
 +
 +#endif /* VCHIQ_PAGELIST_H */
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c
+new file mode 100644
+index 0000000..dc3bdda
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_proc.c
 @@ -0,0 +1,254 @@
@@ -11289,6 +11374,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif
 +
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
+new file mode 100644
+index 0000000..f752f8d
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 @@ -0,0 +1,815 @@
@@ -12107,6 +12195,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	return ret;
 +}
 +EXPORT_SYMBOL(vchi_service_release);
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
+new file mode 100644
+index 0000000..c2eefef
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
 @@ -0,0 +1,151 @@
@@ -12261,6 +12352,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +	return header;
 +}
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
+new file mode 100644
+index 0000000..7c4bf7c
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
 @@ -0,0 +1,82 @@
@@ -12346,6 +12440,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif
 +
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
+new file mode 100644
+index 0000000..b6bfa21
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 @@ -0,0 +1,59 @@
@@ -12408,3 +12505,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +{
 +   return vchiq_build_time;
 +}
+-- 
+1.9.1
+

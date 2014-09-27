@@ -1,7 +1,7 @@
-From ff28398a53a45795382bdb25db71f2a8b3394dab Mon Sep 17 00:00:00 2001
+From 15b3faf99f1b16184620bc89be78a5f205acbe92 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 3 Jul 2013 00:31:47 +0100
-Subject: [PATCH 006/174] cma: Add vc_cma driver to enable use of CMA
+Subject: [PATCH 006/196] cma: Add vc_cma driver to enable use of CMA
 
 Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
@@ -20,6 +20,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  create mode 100644 drivers/char/broadcom/vc_cma/vc_cma.c
  create mode 100644 include/linux/broadcom/vc_cma.h
 
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index 3bb6fa3..022b91c 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -586,6 +586,8 @@ config DEVPORT
@@ -31,6 +33,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  config MSM_SMD_PKT
  	bool "Enable device interface for some SMD packet ports"
  	default n
+diff --git a/drivers/char/Makefile b/drivers/char/Makefile
+index 7ff1d0d..c594502 100644
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
 @@ -62,3 +62,6 @@ obj-$(CONFIG_JS_RTC)		+= js-rtc.o
@@ -40,6 +44,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +obj-$(CONFIG_BRCM_CHAR_DRIVERS) += broadcom/
 +
+diff --git a/drivers/char/broadcom/Kconfig b/drivers/char/broadcom/Kconfig
+new file mode 100644
+index 0000000..e23b440
 --- /dev/null
 +++ b/drivers/char/broadcom/Kconfig
 @@ -0,0 +1,16 @@
@@ -59,11 +66,17 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +        help
 +          Helper for videocore CMA access.
 +
+diff --git a/drivers/char/broadcom/Makefile b/drivers/char/broadcom/Makefile
+new file mode 100644
+index 0000000..c8574c8
 --- /dev/null
 +++ b/drivers/char/broadcom/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_BCM_VC_CMA)	+= vc_cma/
 +
+diff --git a/drivers/char/broadcom/vc_cma/Makefile b/drivers/char/broadcom/vc_cma/Makefile
+new file mode 100644
+index 0000000..ae71918
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_cma/Makefile
 @@ -0,0 +1,15 @@
@@ -82,6 +95,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +vc-cma-objs := vc_cma.o
 +
+diff --git a/drivers/char/broadcom/vc_cma/vc_cma.c b/drivers/char/broadcom/vc_cma/vc_cma.c
+new file mode 100644
+index 0000000..fe80887
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_cma/vc_cma.c
 @@ -0,0 +1,1143 @@
@@ -1228,6 +1244,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +module_exit(vc_cma_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Broadcom Corporation");
+diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
+index d72aaf2..24b40c3 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -53,4 +53,4 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
@@ -1236,6 +1254,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  obj-$(CONFIG_SRAM)		+= sram.o
 -obj-y				+= vc04_services/
 +obj-$(CONFIG_BCM2708_VCHIQ)	+= vc04_services/
+diff --git a/include/linux/broadcom/vc_cma.h b/include/linux/broadcom/vc_cma.h
+new file mode 100644
+index 0000000..bdc9d79
 --- /dev/null
 +++ b/include/linux/broadcom/vc_cma.h
 @@ -0,0 +1,30 @@
@@ -1269,3 +1290,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif /* VC_CMA_H */
 +
+-- 
+1.9.1
+

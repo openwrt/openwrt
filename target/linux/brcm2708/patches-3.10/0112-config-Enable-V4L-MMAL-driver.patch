@@ -1,12 +1,14 @@
-From de21dc3310c018b1d90a51b7eaf89329f2a1d5c9 Mon Sep 17 00:00:00 2001
+From 23658a07c8ae6a98513a97bb961ce3715b8fbb5a Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Mon, 2 Dec 2013 16:57:44 +0000
-Subject: [PATCH 112/174] config: Enable V4L / MMAL driver
+Subject: [PATCH 112/196] config: Enable V4L / MMAL driver
 
 ---
  arch/arm/configs/bcmrpi_defconfig | 3 +++
  1 file changed, 3 insertions(+)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 2532583..76f3ad7 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -687,6 +687,9 @@ CONFIG_DVB_B2C2_FLEXCOP_USB=m
@@ -19,3 +21,6 @@ Subject: [PATCH 112/174] config: Enable V4L / MMAL driver
  CONFIG_RADIO_SI470X=y
  CONFIG_USB_SI470X=m
  CONFIG_I2C_SI470X=m
+-- 
+1.9.1
+

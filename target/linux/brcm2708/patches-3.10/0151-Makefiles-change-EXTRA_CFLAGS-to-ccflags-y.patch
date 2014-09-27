@@ -1,7 +1,7 @@
-From 6544998027a0bb96d3f64ec5429757344c9a729a Mon Sep 17 00:00:00 2001
+From c2ab501c1e79c78de711a3592816a2fa93b2e527 Mon Sep 17 00:00:00 2001
 From: Daniel Santos <daniel.santos@pobox.com>
 Date: Fri, 3 Jan 2014 17:52:19 -0600
-Subject: [PATCH 151/174] Makefiles: change EXTRA_CFLAGS to ccflags-y
+Subject: [PATCH 151/196] Makefiles: change EXTRA_CFLAGS to ccflags-y
 
 According to section 3.7 of Documentation/kbuild/makefiles.txt, using
 EXTRA_CFLAGS in Makefiles is "still supported but their usage is
@@ -18,6 +18,8 @@ fixes the problem.
  sound/arm/Makefile                              |  2 +-
  6 files changed, 46 insertions(+), 46 deletions(-)
 
+diff --git a/drivers/char/broadcom/vc_cma/Makefile b/drivers/char/broadcom/vc_cma/Makefile
+index 61682bf..2d773f8 100644
 --- a/drivers/char/broadcom/vc_cma/Makefile
 +++ b/drivers/char/broadcom/vc_cma/Makefile
 @@ -1,12 +1,12 @@
@@ -26,21 +28,24 @@ fixes the problem.
 -EXTRA_CFLAGS  += -I"drivers/misc/vc04_services"
 -EXTRA_CFLAGS  += -I"drivers/misc/vc04_services/interface/vchi"
 -EXTRA_CFLAGS  += -I"drivers/misc/vc04_services/interface/vchiq_arm"
+-
+-EXTRA_CFLAGS  += -D__KERNEL__
+-EXTRA_CFLAGS  += -D__linux__
+-EXTRA_CFLAGS  += -Werror
 +ccflags-y += -Wall -Wstrict-prototypes -Wno-trigraphs
 +ccflags-y += -Werror
 +ccflags-y += -Idrivers/misc/vc04_services
 +ccflags-y += -Idrivers/misc/vc04_services/interface/vchi
 +ccflags-y += -Idrivers/misc/vc04_services/interface/vchiq_arm
- 
--EXTRA_CFLAGS  += -D__KERNEL__
--EXTRA_CFLAGS  += -D__linux__
--EXTRA_CFLAGS  += -Werror
++
 +ccflags-y += -D__KERNEL__
 +ccflags-y += -D__linux__
 +ccflags-y += -Werror
  
  obj-$(CONFIG_BCM_VC_CMA) += vc-cma.o
  
+diff --git a/drivers/misc/vc04_services/Makefile b/drivers/misc/vc04_services/Makefile
+index 1aeb20a..92e7525 100644
 --- a/drivers/misc/vc04_services/Makefile
 +++ b/drivers/misc/vc04_services/Makefile
 @@ -12,7 +12,7 @@ vchiq-objs := \
@@ -52,6 +57,8 @@ fixes the problem.
  
  endif
  
+diff --git a/drivers/usb/host/dwc_common_port/Makefile b/drivers/usb/host/dwc_common_port/Makefile
+index 63e3485..ec890b5 100644
 --- a/drivers/usb/host/dwc_common_port/Makefile
 +++ b/drivers/usb/host/dwc_common_port/Makefile
 @@ -4,16 +4,16 @@
@@ -62,17 +69,16 @@ fixes the problem.
 -#EXTRA_CFLAGS	+= -DDEBUG
 -#EXTRA_CFLAGS	+= -DDWC_DEBUG_REGS
 -#EXTRA_CFLAGS	+= -DDWC_DEBUG_MEMORY
--
++ccflags-y	+= -DDWC_LINUX
++#ccflags-y	+= -DDEBUG
++#ccflags-y	+= -DDWC_DEBUG_REGS
++#ccflags-y	+= -DDWC_DEBUG_MEMORY
+ 
 -EXTRA_CFLAGS	+= -DDWC_LIBMODULE
 -EXTRA_CFLAGS	+= -DDWC_CCLIB
 -#EXTRA_CFLAGS	+= -DDWC_CRYPTOLIB
 -EXTRA_CFLAGS	+= -DDWC_NOTIFYLIB
 -EXTRA_CFLAGS	+= -DDWC_UTFLIB
-+ccflags-y	+= -DDWC_LINUX
-+#ccflags-y	+= -DDEBUG
-+#ccflags-y	+= -DDWC_DEBUG_REGS
-+#ccflags-y	+= -DDWC_DEBUG_MEMORY
-+
 +ccflags-y	+= -DDWC_LIBMODULE
 +ccflags-y	+= -DDWC_CCLIB
 +#ccflags-y	+= -DDWC_CRYPTOLIB
@@ -81,7 +87,7 @@ fixes the problem.
  
  obj-$(CONFIG_USB_DWCOTG)	+= dwc_common_port_lib.o
  dwc_common_port_lib-objs := dwc_cc.o dwc_modpow.o dwc_dh.o \
-@@ -24,8 +24,8 @@ kernrelwd := $(subst ., ,$(KERNELRELEASE
+@@ -24,8 +24,8 @@ kernrelwd := $(subst ., ,$(KERNELRELEASE))
  kernrel3 := $(word 1,$(kernrelwd)).$(word 2,$(kernrelwd)).$(word 3,$(kernrelwd))
  			    
  ifneq ($(kernrel3),2.6.20)
@@ -92,6 +98,8 @@ fixes the problem.
  endif
  
  else
+diff --git a/drivers/usb/host/dwc_common_port/Makefile.linux b/drivers/usb/host/dwc_common_port/Makefile.linux
+index 961df3f..0cef7b4 100644
 --- a/drivers/usb/host/dwc_common_port/Makefile.linux
 +++ b/drivers/usb/host/dwc_common_port/Makefile.linux
 @@ -3,16 +3,16 @@
@@ -102,16 +110,17 @@ fixes the problem.
 -#EXTRA_CFLAGS	+= -DDEBUG
 -#EXTRA_CFLAGS	+= -DDWC_DEBUG_REGS
 -#EXTRA_CFLAGS	+= -DDWC_DEBUG_MEMORY
-+ccflags-y	+= -DDWC_LINUX
-+#ccflags-y	+= -DDEBUG
-+#ccflags-y	+= -DDWC_DEBUG_REGS
-+#ccflags-y	+= -DDWC_DEBUG_MEMORY
- 
+-
 -EXTRA_CFLAGS	+= -DDWC_LIBMODULE
 -EXTRA_CFLAGS	+= -DDWC_CCLIB
 -EXTRA_CFLAGS	+= -DDWC_CRYPTOLIB
 -EXTRA_CFLAGS	+= -DDWC_NOTIFYLIB
 -EXTRA_CFLAGS	+= -DDWC_UTFLIB
++ccflags-y	+= -DDWC_LINUX
++#ccflags-y	+= -DDEBUG
++#ccflags-y	+= -DDWC_DEBUG_REGS
++#ccflags-y	+= -DDWC_DEBUG_MEMORY
++
 +ccflags-y	+= -DDWC_LIBMODULE
 +ccflags-y	+= -DDWC_CCLIB
 +ccflags-y	+= -DDWC_CRYPTOLIB
@@ -120,6 +129,8 @@ fixes the problem.
  
  obj-m			 := dwc_common_port_lib.o
  dwc_common_port_lib-objs := dwc_cc.o dwc_modpow.o dwc_dh.o \
+diff --git a/drivers/usb/host/dwc_otg/Makefile b/drivers/usb/host/dwc_otg/Makefile
+index 6bd6a2e..c11cbc2 100644
 --- a/drivers/usb/host/dwc_otg/Makefile
 +++ b/drivers/usb/host/dwc_otg/Makefile
 @@ -12,22 +12,22 @@ ifeq ($(BUS_INTERFACE),)
@@ -135,9 +146,7 @@ fixes the problem.
  # device-only mode.
 -#EXTRA_CFLAGS        += -DDWC_HOST_ONLY
 -#EXTRA_CFLAGS        += -DDWC_DEVICE_ONLY
-+#ccflags-y        += -DDWC_HOST_ONLY
-+#ccflags-y        += -DDWC_DEVICE_ONLY
- 
+-
 -EXTRA_CFLAGS	+= -Dlinux -DDWC_HS_ELECT_TST
 -#EXTRA_CFLAGS	+= -DDWC_EN_ISOC
 -EXTRA_CFLAGS   	+= -I$(obj)/../dwc_common_port
@@ -146,6 +155,9 @@ fixes the problem.
 -EXTRA_CFLAGS   	+= $(CFI)
 -EXTRA_CFLAGS	+= $(BUS_INTERFACE)
 -#EXTRA_CFLAGS	+= -DDWC_DEV_SRPCAP
++#ccflags-y        += -DDWC_HOST_ONLY
++#ccflags-y        += -DDWC_DEVICE_ONLY
++
 +ccflags-y	+= -Dlinux -DDWC_HS_ELECT_TST
 +#ccflags-y	+= -DDWC_EN_ISOC
 +ccflags-y   	+= -I$(obj)/../dwc_common_port
@@ -157,7 +169,7 @@ fixes the problem.
  
  obj-$(CONFIG_USB_DWCOTG) += dwc_otg.o
  
-@@ -45,7 +45,7 @@ kernrelwd := $(subst ., ,$(KERNELRELEASE
+@@ -45,7 +45,7 @@ kernrelwd := $(subst ., ,$(KERNELRELEASE))
  kernrel3 := $(word 1,$(kernrelwd)).$(word 2,$(kernrelwd)).$(word 3,$(kernrelwd))
  
  ifneq ($(kernrel3),2.6.20)
@@ -166,6 +178,8 @@ fixes the problem.
  endif
  
  else
+diff --git a/sound/arm/Makefile b/sound/arm/Makefile
+index 181cb57..63cdfb7 100644
 --- a/sound/arm/Makefile
 +++ b/sound/arm/Makefile
 @@ -18,5 +18,5 @@ snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
@@ -175,3 +189,6 @@ fixes the problem.
 -EXTRA_CFLAGS += -Idrivers/misc/vc04_services -Idrivers/misc/vc04_services/interface/vcos/linuxkernel -D__VCCOREVER__=0x04000000
 +ccflags-y += -Idrivers/misc/vc04_services -Idrivers/misc/vc04_services/interface/vcos/linuxkernel -D__VCCOREVER__=0x04000000
  
+-- 
+1.9.1
+

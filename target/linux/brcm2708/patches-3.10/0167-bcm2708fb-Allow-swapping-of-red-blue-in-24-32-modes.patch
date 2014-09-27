@@ -1,15 +1,17 @@
-From 4e0660161587681630da35f525cacf17bed58795 Mon Sep 17 00:00:00 2001
+From 4072d89852bcc0d69eab31908b0ea7870c6b9e1e Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 12 Feb 2014 12:01:56 +0000
-Subject: [PATCH 167/174] bcm2708fb: Allow swapping of red/blue in 24/32 modes
+Subject: [PATCH 167/196] bcm2708fb: Allow swapping of red/blue in 24/32 modes
 
 ---
  drivers/video/bcm2708_fb.c | 14 +++++++++++---
  1 file changed, 11 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index e8bbcc3..86f07fd 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
-@@ -53,6 +53,7 @@ static u32 dma_busy_wait_threshold = 1<<
+@@ -53,6 +53,7 @@ static u32 dma_busy_wait_threshold = 1<<15;
  module_param(dma_busy_wait_threshold, int, 0644);
  MODULE_PARM_DESC(dma_busy_wait_threshold, "Busy-wait for DMA completion below this area");
  
@@ -17,7 +19,7 @@ Subject: [PATCH 167/174] bcm2708fb: Allow swapping of red/blue in 24/32 modes
  
  /* this data structure describes each frame buffer device we find */
  
-@@ -185,7 +186,12 @@ static int bcm2708_fb_set_bitfields(stru
+@@ -185,7 +186,12 @@ static int bcm2708_fb_set_bitfields(struct fb_var_screeninfo *var)
  	 * encoded in the pixel data.  Calculate their position from
  	 * the bitfield length defined above.
  	 */
@@ -31,7 +33,7 @@ Subject: [PATCH 167/174] bcm2708fb: Allow swapping of red/blue in 24/32 modes
  		var->red.offset = 0;
  		var->green.offset = var->red.offset + var->red.length;
  		var->blue.offset = var->green.offset + var->green.length;
-@@ -618,8 +624,8 @@ static int bcm2708_fb_register(struct bc
+@@ -618,8 +624,8 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
  
  	fb_set_var(&fb->fb, &fb->fb.var);
  
@@ -55,3 +57,6 @@ Subject: [PATCH 167/174] bcm2708fb: Allow swapping of red/blue in 24/32 modes
  MODULE_PARM_DESC(fbheight, "Height of ARM Framebuffer");
  MODULE_PARM_DESC(fbdepth, "Bit depth of ARM Framebuffer");
 +MODULE_PARM_DESC(fbswap, "Swap order of red and blue in 24 and 32 bit modes");
+-- 
+1.9.1
+

@@ -1,13 +1,15 @@
-From 2d491bef93b86787eb5b5e83c46d1f4d87edf84f Mon Sep 17 00:00:00 2001
+From 0ff0d5f9c59d1d9cde9bcc56f6bfa163fd1b15a3 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Fri, 31 May 2013 14:50:09 +0100
-Subject: [PATCH 065/174] rtl8192cu: select required config options to allow
+Subject: [PATCH 065/196] rtl8192cu: select required config options to allow
  builds without other wifi modules. Thanks UrsusArctos
 
 ---
  drivers/net/wireless/rtl8192cu/Kconfig | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/net/wireless/rtl8192cu/Kconfig b/drivers/net/wireless/rtl8192cu/Kconfig
+index bee5ed6..ef46361 100644
 --- a/drivers/net/wireless/rtl8192cu/Kconfig
 +++ b/drivers/net/wireless/rtl8192cu/Kconfig
 @@ -1,6 +1,8 @@
@@ -20,3 +22,6 @@ Subject: [PATCH 065/174] rtl8192cu: select required config options to allow
 -	  Help message of RTL8192CU
 +	  Enable wireless network adapters based on Realtek RTL8192C chipset family, such as EDUP nano series
  
+-- 
+1.9.1
+

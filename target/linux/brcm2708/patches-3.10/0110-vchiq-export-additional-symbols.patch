@@ -1,16 +1,18 @@
-From f5a30bc0daed31795078a29b13f85c48613ccd65 Mon Sep 17 00:00:00 2001
+From c213b1ef30855c2a795bd622b9ae1cee38ba0958 Mon Sep 17 00:00:00 2001
 From: Vincent Sanders <vincent.sanders@collabora.co.uk>
 Date: Sat, 9 Nov 2013 22:37:21 +0000
-Subject: [PATCH 110/174] vchiq: export additional symbols
+Subject: [PATCH 110/196] vchiq: export additional symbols
 
 Signed-off-by: Daniel Stone <daniels@collabora.com>
 ---
  drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c | 2 ++
  1 file changed, 2 insertions(+)
 
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
+index fe9bd80..a0b069d 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
-@@ -405,6 +405,7 @@ int32_t vchi_held_msg_release(VCHI_HELD_
+@@ -405,6 +405,7 @@ int32_t vchi_held_msg_release(VCHI_HELD_MSG_T *message)
  
  	return 0;
  }
@@ -18,7 +20,7 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  /***********************************************************
   * Name: vchi_msg_hold
-@@ -450,6 +451,7 @@ int32_t vchi_msg_hold(VCHI_SERVICE_HANDL
+@@ -450,6 +451,7 @@ int32_t vchi_msg_hold(VCHI_SERVICE_HANDLE_T handle,
  
  	return 0;
  }
@@ -26,3 +28,6 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  /***********************************************************
   * Name: vchi_initialise
+-- 
+1.9.1
+

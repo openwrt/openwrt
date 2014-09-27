@@ -1,12 +1,14 @@
-From 2e7a6ee154b800b1e749e99d20a29673eea70aa1 Mon Sep 17 00:00:00 2001
+From 1234701636ab3dca340a336aa9ddfadd64914e58 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Sun, 24 Feb 2013 16:30:57 +0000
-Subject: [PATCH 052/174] Add retry on error and tidy of temperature driver
+Subject: [PATCH 052/196] Add retry on error and tidy of temperature driver
 
 ---
  drivers/thermal/bcm2835-thermal.c | 78 ++++++++++++++-------------------------
  1 file changed, 27 insertions(+), 51 deletions(-)
 
+diff --git a/drivers/thermal/bcm2835-thermal.c b/drivers/thermal/bcm2835-thermal.c
+index 3f9a733..85fceb5 100644
 --- a/drivers/thermal/bcm2835-thermal.c
 +++ b/drivers/thermal/bcm2835-thermal.c
 @@ -33,7 +33,6 @@
@@ -30,7 +32,7 @@ Subject: [PATCH 052/174] Add retry on error and tidy of temperature driver
  /* --- GLOBALS --- */
  static struct bcm2835_thermal_data bcm2835_data;
  
-@@ -79,64 +72,47 @@ static struct bcm2835_thermal_data bcm28
+@@ -79,64 +72,47 @@ static struct bcm2835_thermal_data bcm2835_data;
  static struct thermal_zone_device_ops ops;
  
  /* --- FUNCTIONS --- */
@@ -122,3 +124,6 @@ Subject: [PATCH 052/174] Add retry on error and tidy of temperature driver
  
  static int bcm2835_get_trip_type(struct thermal_zone_device * thermal_dev, int trip_num, enum thermal_trip_type *trip_type)
  {
+-- 
+1.9.1
+

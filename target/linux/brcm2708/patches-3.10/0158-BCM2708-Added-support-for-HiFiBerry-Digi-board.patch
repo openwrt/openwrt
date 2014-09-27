@@ -1,7 +1,7 @@
-From cdc5a0a83c2eed46dd646f50f532f7820b18c28d Mon Sep 17 00:00:00 2001
+From d6b3cadd9e3b884a63fe00f78956362c846122e1 Mon Sep 17 00:00:00 2001
 From: Daniel Matuschek <info@crazy-audio.com>
 Date: Thu, 16 Jan 2014 07:26:08 +0100
-Subject: [PATCH 158/174] BCM2708: Added support for HiFiBerry Digi board Board
+Subject: [PATCH 158/196] BCM2708: Added support for HiFiBerry Digi board Board
  initalization by I2C
 
 Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
@@ -9,9 +9,11 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  arch/arm/mach-bcm2708/bcm2708.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 46586d8..993379c 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -654,6 +654,21 @@ static struct platform_device snd_pcm510
+@@ -654,6 +654,21 @@ static struct platform_device snd_pcm5102a_codec_device = {
  };
  #endif
  
@@ -45,3 +47,6 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  #if defined(CONFIG_SND_BCM2708_SOC_RPI_DAC) || defined(CONFIG_SND_BCM2708_SOC_RPI_DAC_MODULE)
          bcm_register_device(&snd_rpi_dac_device);
          bcm_register_device(&snd_pcm1794a_codec_device);
+-- 
+1.9.1
+

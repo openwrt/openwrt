@@ -1,7 +1,7 @@
-From 17b1eb8e7fdbca81bc6d74c003b02ca3b08f1fa4 Mon Sep 17 00:00:00 2001
+From 9ffc237e5d245d9eda21b10b82dab448ec920620 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Wed, 9 Jan 2013 16:12:04 +0000
-Subject: [PATCH 044/174] dwc_otg: fix bug in dwc_otg_hcd.c resulting in silent
+Subject: [PATCH 044/196] dwc_otg: fix bug in dwc_otg_hcd.c resulting in silent
  kernel 	 memory corruption, escalating to OOPS under high USB load.
 
 ---
@@ -9,9 +9,11 @@ Subject: [PATCH 044/174] dwc_otg: fix bug in dwc_otg_hcd.c resulting in silent
  drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c | 1 +
  2 files changed, 1 insertion(+), 2 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index 2b7945a..d5c94f4 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -500,8 +500,6 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+@@ -500,8 +500,6 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
  		DWC_ERROR("DWC OTG HCD URB Enqueue failed adding QTD. "
  			  "Error status %d\n", retval);
  		dwc_otg_hcd_qtd_free(qtd);
@@ -20,9 +22,11 @@ Subject: [PATCH 044/174] dwc_otg: fix bug in dwc_otg_hcd.c resulting in silent
  	}
  	intr_mask.d32 = DWC_READ_REG32(&hcd->core_if->core_global_regs->gintmsk);
  	if (!intr_mask.b.sofintr && retval == 0) {
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+index e6b2a7b..b337e1b 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-@@ -946,6 +946,7 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t *
+@@ -946,6 +946,7 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t * qtd,
  	if (retval == 0) {
  		DWC_CIRCLEQ_INSERT_TAIL(&((*qh)->qtd_list), qtd,
  					qtd_list_entry);
@@ -30,3 +34,6 @@ Subject: [PATCH 044/174] dwc_otg: fix bug in dwc_otg_hcd.c resulting in silent
  	}
  	DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
  
+-- 
+1.9.1
+

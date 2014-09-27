@@ -1,13 +1,15 @@
-From d3ea04a7506cca51d1e154cde5bcc7063595c98c Mon Sep 17 00:00:00 2001
+From b0ffe239799004245e53a998216d361f6ab67f96 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 8 May 2013 11:46:50 +0100
-Subject: [PATCH 025/174] enabling the realtime clock 1-wire chip DS1307 and
+Subject: [PATCH 025/196] enabling the realtime clock 1-wire chip DS1307 and
  1-wire on GPIO4 (as a module)
 
 ---
  arch/arm/mach-bcm2708/bcm2708.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 03b8ec5..18f7ede 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -32,6 +32,7 @@
@@ -28,7 +30,7 @@ Subject: [PATCH 025/174] enabling the realtime clock 1-wire chip DS1307 and
  /* command line parameters */
  static unsigned boardrev, serial;
  static unsigned uart_clock;
-@@ -251,6 +255,19 @@ static struct platform_device bcm2708_dm
+@@ -251,6 +255,19 @@ static struct platform_device bcm2708_dmaman_device = {
  	.num_resources = ARRAY_SIZE(bcm2708_dmaman_resources),
  };
  
@@ -58,3 +60,6 @@ Subject: [PATCH 025/174] enabling the realtime clock 1-wire chip DS1307 and
  	bcm_register_device(&bcm2708_systemtimer_device);
  	bcm_register_device(&bcm2708_fb_device);
  	bcm_register_device(&bcm2708_usb_device);
+-- 
+1.9.1
+

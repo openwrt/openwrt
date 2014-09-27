@@ -1,7 +1,7 @@
-From 635578168de091d59e7d1a837286cff86fb9badb Mon Sep 17 00:00:00 2001
+From 53e5848c799c1fa6a7f6c3464d2bb2f5c85f555f Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Mon, 5 Aug 2013 11:42:12 +0100
-Subject: [PATCH 087/174] dwc_otg: make fiq_split_enable imply fiq_fix_enable
+Subject: [PATCH 087/196] dwc_otg: make fiq_split_enable imply fiq_fix_enable
 
 Failing to set up the FIQ correctly would result in
 "IRQ 32: nobody cared" errors in dmesg.
@@ -9,9 +9,11 @@ Failing to set up the FIQ correctly would result in
  drivers/usb/host/dwc_otg/dwc_otg_driver.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+index 6c89a69..4735f51 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
-@@ -1070,6 +1070,12 @@ static int __init dwc_otg_driver_init(vo
+@@ -1070,6 +1070,12 @@ static int __init dwc_otg_driver_init(void)
  	int retval = 0;
  	int error;
          struct device_driver *drv;
@@ -24,3 +26,6 @@ Failing to set up the FIQ correctly would result in
  	printk(KERN_INFO "%s: version %s (%s bus)\n", dwc_driver_name,
  	       DWC_DRIVER_VERSION,
  #ifdef LM_INTERFACE
+-- 
+1.9.1
+

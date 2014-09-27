@@ -1,15 +1,17 @@
-From 03f44ba654e40b60ffcec14030abf35152d0b639 Mon Sep 17 00:00:00 2001
+From ed5a728f2593fbd3950c5c17ab7143bafc295e57 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 13 Jun 2013 16:46:54 +0100
-Subject: [PATCH 067/174] Avoid responding to unexpected I2C interrupts
+Subject: [PATCH 067/196] Avoid responding to unexpected I2C interrupts
 
 ---
  drivers/i2c/busses/i2c-bcm2708.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
+diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
+index edc90c0..33f4e7d 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
-@@ -175,6 +175,11 @@ static irqreturn_t bcm2708_i2c_interrupt
+@@ -175,6 +175,11 @@ static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
  
  	spin_lock(&bi->lock);
  
@@ -21,7 +23,7 @@ Subject: [PATCH 067/174] Avoid responding to unexpected I2C interrupts
  	s = bcm2708_rd(bi, BSC_S);
  
  	if (s & (BSC_S_CLKT | BSC_S_ERR)) {
-@@ -208,6 +213,7 @@ static irqreturn_t bcm2708_i2c_interrupt
+@@ -208,6 +213,7 @@ static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
  		handled = false;
  	}
  
@@ -29,3 +31,6 @@ Subject: [PATCH 067/174] Avoid responding to unexpected I2C interrupts
  	spin_unlock(&bi->lock);
  
  	return handled ? IRQ_HANDLED : IRQ_NONE;
+-- 
+1.9.1
+

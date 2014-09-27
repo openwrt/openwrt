@@ -1,7 +1,7 @@
-From f73a2a0e2756e2959e4e6ae487ce1e1bdd5441f0 Mon Sep 17 00:00:00 2001
+From bf6804bf90bb62f70942a5a97dfaf3245c9e2dad Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Fri, 22 Nov 2013 19:21:34 +0100
-Subject: [PATCH 121/174] BCM2708: Add HifiBerry DAC to board file
+Subject: [PATCH 121/196] BCM2708: Add HifiBerry DAC to board file
 
 This adds the initalization of the HifiBerry DAC
 to the mach-bcm2708 board file.
@@ -11,9 +11,11 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  arch/arm/mach-bcm2708/bcm2708.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 42d613f..155a50c 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -639,6 +639,20 @@ static struct platform_device bcm2708_i2
+@@ -639,6 +639,20 @@ static struct platform_device bcm2708_i2s_device = {
  };
  #endif
  
@@ -46,3 +48,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
+-- 
+1.9.1
+

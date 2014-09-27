@@ -1,7 +1,7 @@
-From 0dd387f3d3d1184fe45b57afbe73796e2ebe8d39 Mon Sep 17 00:00:00 2001
+From 503ed51d257784037165695334e7a3d03d85d674 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Fri, 27 Sep 2013 14:42:24 +0100
-Subject: [PATCH 095/174] dwc_otg: Don't issue traffic to LS devices in FS mode
+Subject: [PATCH 095/196] dwc_otg: Don't issue traffic to LS devices in FS mode
 
 Issuing low-speed packets when the root port is in full-speed mode
 causes the root port to stop responding. Explicitly fail when
@@ -10,9 +10,11 @@ enqueuing URBs to a LS endpoint on a FS bus.
  drivers/usb/host/dwc_otg/dwc_otg_hcd.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index be1d25b..b3e1944 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -501,6 +501,7 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+@@ -501,6 +501,7 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
  	dwc_otg_transaction_type_e tr_type;
  	dwc_otg_qtd_t *qtd;
  	gintmsk_data_t intr_mask = {.d32 = 0 };
@@ -20,7 +22,7 @@ enqueuing URBs to a LS endpoint on a FS bus.
  
  #ifdef DEBUG /* integrity checks (Broadcom) */
  	if (NULL == hcd->core_if) {
-@@ -515,6 +516,16 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
+@@ -515,6 +516,16 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
  		return -DWC_E_NO_DEVICE;
  	}
  
@@ -37,3 +39,6 @@ enqueuing URBs to a LS endpoint on a FS bus.
  	qtd = dwc_otg_hcd_qtd_create(dwc_otg_urb, atomic_alloc);
  	if (qtd == NULL) {
  		DWC_ERROR("DWC OTG HCD URB Enqueue failed creating QTD\n");
+-- 
+1.9.1
+

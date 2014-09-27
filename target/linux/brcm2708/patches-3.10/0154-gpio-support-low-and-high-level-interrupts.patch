@@ -1,12 +1,14 @@
-From c334aa8da6e17555823ebf05bdb429ff224e99b3 Mon Sep 17 00:00:00 2001
+From 504b5a3a5f492deccf35a3ed5e7b9a48a069ece2 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 9 Jan 2014 16:05:20 +0000
-Subject: [PATCH 154/174] gpio: support low and high level interrupts
+Subject: [PATCH 154/196] gpio: support low and high level interrupts
 
 ---
  arch/arm/mach-bcm2708/bcm2708_gpio.c | 52 +++++++++++++++++++++++++-----------
  1 file changed, 37 insertions(+), 15 deletions(-)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708_gpio.c b/arch/arm/mach-bcm2708/bcm2708_gpio.c
+index 96fae74..1d93ad8 100644
 --- a/arch/arm/mach-bcm2708/bcm2708_gpio.c
 +++ b/arch/arm/mach-bcm2708/bcm2708_gpio.c
 @@ -58,6 +58,8 @@ struct bcm2708_gpio {
@@ -18,7 +20,7 @@ Subject: [PATCH 154/174] gpio: support low and high level interrupts
  };
  
  static int bcm2708_set_function(struct gpio_chip *gc, unsigned offset,
-@@ -145,20 +147,22 @@ static int bcm2708_gpio_irq_set_type(str
+@@ -145,20 +147,22 @@ static int bcm2708_gpio_irq_set_type(struct irq_data *d, unsigned type)
  	unsigned irq = d->irq;
  	struct bcm2708_gpio *gpio = irq_get_chip_data(irq);
  
@@ -51,7 +53,7 @@ Subject: [PATCH 154/174] gpio: support low and high level interrupts
  	return 0;
  }
  
-@@ -168,13 +172,17 @@ static void bcm2708_gpio_irq_mask(struct
+@@ -168,13 +172,17 @@ static void bcm2708_gpio_irq_mask(struct irq_data *d)
  	struct bcm2708_gpio *gpio = irq_get_chip_data(irq);
  	unsigned gn = __bcm2708_irq_to_gpio(irq);
  	unsigned gb = gn / 32;
@@ -71,7 +73,7 @@ Subject: [PATCH 154/174] gpio: support low and high level interrupts
  }
  
  static void bcm2708_gpio_irq_unmask(struct irq_data *d)
-@@ -183,24 +191,38 @@ static void bcm2708_gpio_irq_unmask(stru
+@@ -183,24 +191,38 @@ static void bcm2708_gpio_irq_unmask(struct irq_data *d)
  	struct bcm2708_gpio *gpio = irq_get_chip_data(irq);
  	unsigned gn = __bcm2708_irq_to_gpio(irq);
  	unsigned gb = gn / 32;
@@ -113,3 +115,6 @@ Subject: [PATCH 154/174] gpio: support low and high level interrupts
  }
  
  static struct irq_chip bcm2708_irqchip = {
+-- 
+1.9.1
+

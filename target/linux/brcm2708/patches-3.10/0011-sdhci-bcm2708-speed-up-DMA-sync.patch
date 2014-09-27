@@ -1,7 +1,7 @@
-From e38d3d05747f6877a2ad1a7af1ac26e6a48a8be3 Mon Sep 17 00:00:00 2001
+From 07947cfde701f7ba29b06574e9533bd6459da8ad Mon Sep 17 00:00:00 2001
 From: Grigori Goronzy <greg@blackbox>
 Date: Mon, 4 Jun 2012 04:27:48 +0200
-Subject: [PATCH 011/174] sdhci-bcm2708: speed up DMA sync
+Subject: [PATCH 011/196] sdhci-bcm2708: speed up DMA sync
 
 Experiments show that it doesn't really take that long to sync, so we
 can reduce the poll interval slightly. Might improve performance a bit.
@@ -9,9 +9,11 @@ can reduce the poll interval slightly. Might improve performance a bit.
  drivers/mmc/host/sdhci-bcm2708.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index ae8edf7..a6bdc25 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -897,7 +897,7 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -897,7 +897,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  		while (0 != (sdhci_bcm2708_raw_readl(host, SDHCI_PRESENT_STATE) 
  			& state_mask) && --timeout > 0)
  		{
@@ -20,3 +22,6 @@ can reduce the poll interval slightly. Might improve performance a bit.
  			continue;
  		}
  		if (timeout <= 0)
+-- 
+1.9.1
+

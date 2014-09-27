@@ -1,0 +1,33 @@
+From 3f886d852f31d4980226bc83346a88f3dfa159a0 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 5 Mar 2014 23:24:00 +0000
+Subject: [PATCH 176/196] config: Enable CONFIG_CHR_DEV_SG for SCSI generic
+ devices See: https://github.com/raspberrypi/linux/issues/540
+
+---
+ arch/arm/configs/bcmrpi_defconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 56068e2..fe1cff3 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -392,6 +392,7 @@ CONFIG_BLK_DEV_SD=y
+ CONFIG_CHR_DEV_ST=m
+ CONFIG_CHR_DEV_OSST=m
+ CONFIG_BLK_DEV_SR=m
++CONFIG_CHR_DEV_SG=m
+ CONFIG_SCSI_MULTI_LUN=y
+ CONFIG_SCSI_ISCSI_ATTRS=y
+ CONFIG_ISCSI_TCP=m
+@@ -738,7 +739,6 @@ CONFIG_SND_USB_CAIAQ=m
+ CONFIG_SND_USB_CAIAQ_INPUT=y
+ CONFIG_SND_USB_6FIRE=m
+ CONFIG_SND_SOC=m
+-CONFIG_SND_SOC_WM8804=m
+ CONFIG_SND_BCM2708_SOC_I2S=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+-- 
+1.9.1
+

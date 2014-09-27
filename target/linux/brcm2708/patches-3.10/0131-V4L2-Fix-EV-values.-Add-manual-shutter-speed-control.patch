@@ -1,7 +1,7 @@
-From 75f2608b89d80e627d50aca40f2124253a8275b0 Mon Sep 17 00:00:00 2001
+From 6519115a0742befaa2e5864a496398367aab97b0 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Mon, 9 Dec 2013 10:58:01 +0000
-Subject: [PATCH 131/174] V4L2: Fix EV values. Add manual shutter speed control
+Subject: [PATCH 131/196] V4L2: Fix EV values. Add manual shutter speed control
 
 V4L2 EV values should be in units of 1/1000. Corrected.
 Add support for V4L2_CID_EXPOSURE_ABSOLUTE which should
@@ -15,6 +15,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/mmal-parameters.h |  1 +
  3 files changed, 76 insertions(+), 23 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.h b/drivers/media/platform/bcm2835/bcm2835-camera.h
+index 883eab7..5640492 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.h
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
 @@ -15,7 +15,7 @@
@@ -35,6 +37,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	/* allocated mmal instance and components */
  	struct vchiq_mmal_instance   *instance;
+diff --git a/drivers/media/platform/bcm2835/controls.c b/drivers/media/platform/bcm2835/controls.c
+index d1408e5..481d1f6 100644
 --- a/drivers/media/platform/bcm2835/controls.c
 +++ b/drivers/media/platform/bcm2835/controls.c
 @@ -30,11 +30,23 @@
@@ -64,7 +68,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  /* Supported ISO values
-@@ -166,6 +178,22 @@ static int ctrl_set_value(struct bm2835_
+@@ -166,6 +178,22 @@ static int ctrl_set_value(struct bm2835_mmal_dev *dev,
  					     &u32_value, sizeof(u32_value));
  }
  
@@ -87,7 +91,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  static int ctrl_set_rotate(struct bm2835_mmal_dev *dev,
  		      struct v4l2_ctrl *ctrl,
  		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
-@@ -245,34 +273,50 @@ static int ctrl_set_exposure(struct bm28
+@@ -245,34 +273,50 @@ static int ctrl_set_exposure(struct bm2835_mmal_dev *dev,
  		      struct v4l2_ctrl *ctrl,
  		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
  {
@@ -103,18 +107,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
 -	case V4L2_EXPOSURE_AUTO:
 -		u32_value = MMAL_PARAM_EXPOSUREMODE_AUTO;
 -		break;
--
--	case V4L2_EXPOSURE_MANUAL:
--		u32_value = MMAL_PARAM_EXPOSUREMODE_OFF;
--		break;
--
--	case V4L2_EXPOSURE_SHUTTER_PRIORITY:
--		u32_value = MMAL_PARAM_EXPOSUREMODE_SPORTS;
--		break;
--
--	case V4L2_EXPOSURE_APERTURE_PRIORITY:
--		u32_value = MMAL_PARAM_EXPOSUREMODE_NIGHT;
--		break;
 +	if (mmal_ctrl->mmal_id == MMAL_PARAMETER_SHUTTER_SPEED)	{
 +		/* V4L2 is in 100usec increments.
 +		 * MMAL is 1usec.
@@ -125,15 +117,24 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
 +		case V4L2_EXPOSURE_AUTO:
 +			exp_mode = MMAL_PARAM_EXPOSUREMODE_AUTO;
 +			break;
-+
+ 
+-	case V4L2_EXPOSURE_MANUAL:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_OFF;
+-		break;
 +		case V4L2_EXPOSURE_MANUAL:
 +			exp_mode = MMAL_PARAM_EXPOSUREMODE_OFF;
 +			break;
-+
+ 
+-	case V4L2_EXPOSURE_SHUTTER_PRIORITY:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_SPORTS;
+-		break;
 +		case V4L2_EXPOSURE_SHUTTER_PRIORITY:
 +			exp_mode = MMAL_PARAM_EXPOSUREMODE_SPORTS;
 +			break;
-+
+ 
+-	case V4L2_EXPOSURE_APERTURE_PRIORITY:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_NIGHT;
+-		break;
 +		case V4L2_EXPOSURE_APERTURE_PRIORITY:
 +			exp_mode = MMAL_PARAM_EXPOSUREMODE_NIGHT;
 +			break;
@@ -159,7 +160,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  }
  
  static int ctrl_set_metering_mode(struct bm2835_mmal_dev *dev,
-@@ -578,10 +622,16 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -578,10 +622,16 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  	},
   */
  	{
@@ -177,6 +178,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	},
  	{
  		V4L2_CID_EXPOSURE_METERING,
+diff --git a/drivers/media/platform/bcm2835/mmal-parameters.h b/drivers/media/platform/bcm2835/mmal-parameters.h
+index c611b58..d8aace5 100644
 --- a/drivers/media/platform/bcm2835/mmal-parameters.h
 +++ b/drivers/media/platform/bcm2835/mmal-parameters.h
 @@ -161,6 +161,7 @@ enum mmal_parameter_camera_type {
@@ -187,3 +190,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  enum mmal_parameter_camera_config_timestamp_mode {
+-- 
+1.9.1
+

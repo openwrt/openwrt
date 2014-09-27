@@ -1,15 +1,17 @@
-From 10a2ded6cbf58da71121f0c7a35462f52f49dfae Mon Sep 17 00:00:00 2001
+From 2be2a87be13a5e4df2e3afb13a6089fcd7073906 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 17 Apr 2013 12:16:36 +0100
-Subject: [PATCH 035/174] Enable multiple ALSA channels
+Subject: [PATCH 035/196] Enable multiple ALSA channels
 
 ---
  arch/arm/mach-bcm2708/bcm2708.c | 54 ++++++++++++++++++++++++++++++++++++-----
  1 file changed, 48 insertions(+), 6 deletions(-)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index ab8bac6..5a7437b 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -471,12 +471,54 @@ struct platform_device bcm2708_powerman_
+@@ -471,12 +471,54 @@ struct platform_device bcm2708_powerman_device = {
  
  
  static struct platform_device bcm2708_alsa_devices[] = {
@@ -70,3 +72,6 @@ Subject: [PATCH 035/174] Enable multiple ALSA channels
  };
  
  static struct resource bcm2708_spi_resources[] = {
+-- 
+1.9.1
+

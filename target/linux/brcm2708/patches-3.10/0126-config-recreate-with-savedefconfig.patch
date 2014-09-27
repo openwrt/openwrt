@@ -1,12 +1,14 @@
-From b9054daf1190829201f0f8c099a699ac8cbe09ed Mon Sep 17 00:00:00 2001
+From d373452a8e28350103ada064054898c3b5445d06 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 12 Dec 2013 11:11:03 +0000
-Subject: [PATCH 126/174] config: recreate with savedefconfig
+Subject: [PATCH 126/196] config: recreate with savedefconfig
 
 ---
  arch/arm/configs/bcmrpi_defconfig | 7 -------
  1 file changed, 7 deletions(-)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index d0328d8..75c17bc 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -734,14 +734,9 @@ CONFIG_SND_USB_CAIAQ=m
@@ -33,3 +35,6 @@ Subject: [PATCH 126/174] config: recreate with savedefconfig
  CONFIG_UIO=m
  CONFIG_UIO_PDRV=m
  CONFIG_UIO_PDRV_GENIRQ=m
+-- 
+1.9.1
+

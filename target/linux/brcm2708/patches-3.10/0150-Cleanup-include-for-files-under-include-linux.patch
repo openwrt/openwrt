@@ -1,7 +1,7 @@
-From d8088f3740de018fd6ae975f290db057194fe243 Mon Sep 17 00:00:00 2001
+From 6815e4637c297d0932c622084006b662401ba09b Mon Sep 17 00:00:00 2001
 From: Daniel Santos <daniel.santos@pobox.com>
 Date: Fri, 3 Jan 2014 17:24:46 -0600
-Subject: [PATCH 150/174] Cleanup include for files under include/linux
+Subject: [PATCH 150/196] Cleanup include for files under include/linux
 
 Adding include/linux/anything is bad form. This fixes this prior to
 other changes that touches this Makefile.
@@ -10,6 +10,8 @@ other changes that touches this Makefile.
  drivers/char/broadcom/vc_cma/vc_cma.c | 2 +-
  2 files changed, 1 insertion(+), 2 deletions(-)
 
+diff --git a/drivers/char/broadcom/vc_cma/Makefile b/drivers/char/broadcom/vc_cma/Makefile
+index ae71918..61682bf 100644
 --- a/drivers/char/broadcom/vc_cma/Makefile
 +++ b/drivers/char/broadcom/vc_cma/Makefile
 @@ -1,6 +1,5 @@
@@ -19,6 +21,8 @@ other changes that touches this Makefile.
  EXTRA_CFLAGS  += -I"drivers/misc/vc04_services"
  EXTRA_CFLAGS  += -I"drivers/misc/vc04_services/interface/vchi"
  EXTRA_CFLAGS  += -I"drivers/misc/vc04_services/interface/vchiq_arm"
+diff --git a/drivers/char/broadcom/vc_cma/vc_cma.c b/drivers/char/broadcom/vc_cma/vc_cma.c
+index fe80887..13485c1 100644
 --- a/drivers/char/broadcom/vc_cma/vc_cma.c
 +++ b/drivers/char/broadcom/vc_cma/vc_cma.c
 @@ -46,7 +46,7 @@
@@ -30,3 +34,6 @@ other changes that touches this Makefile.
  
  #include "vchiq_util.h"
  #include "vchiq_connected.h"
+-- 
+1.9.1
+

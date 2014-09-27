@@ -1,12 +1,14 @@
-From e2fe98dc5d658c504d31a0ad1eb9748a2001ce09 Mon Sep 17 00:00:00 2001
+From 6fa3166b901b1f3a88e52c232c09df48c430303d Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 11 Feb 2014 17:03:51 +0000
-Subject: [PATCH 166/174] bcm2708: Allow disk activity led gpio to be specified
+Subject: [PATCH 166/196] bcm2708: Allow disk activity led gpio to be specified
 
 ---
  arch/arm/mach-bcm2708/bcm2708.c | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 993379c..caa9f48 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -83,6 +83,8 @@
@@ -18,7 +20,7 @@ Subject: [PATCH 166/174] bcm2708: Allow disk activity led gpio to be specified
  static unsigned reboot_part = 0;
  static unsigned w1_gpio_pin = W1_GPIO;
  
-@@ -965,7 +967,9 @@ static struct platform_device bcm2708_le
+@@ -965,7 +967,9 @@ static struct platform_device bcm2708_led_device = {
  
  static void __init bcm2708_init_led(void)
  {
@@ -37,3 +39,6 @@ Subject: [PATCH 166/174] bcm2708: Allow disk activity led gpio to be specified
 +module_param(disk_led_active_low, uint, 0644);
  module_param(reboot_part, uint, 0644);
  module_param(w1_gpio_pin, uint, 0644);
+-- 
+1.9.1
+

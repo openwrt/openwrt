@@ -1,7 +1,7 @@
-From 32dd343121ac18b02d642046517f0184c0652c57 Mon Sep 17 00:00:00 2001
+From 4800df016d86e646023966b727915a06f9c9ccd9 Mon Sep 17 00:00:00 2001
 From: Daniel Matuschek <info@crazy-audio.com>
 Date: Wed, 15 Jan 2014 21:42:08 +0100
-Subject: [PATCH 157/174] ASoC: BCM:Add support for HiFiBerry Digi. Driver is
+Subject: [PATCH 157/196] ASoC: BCM:Add support for HiFiBerry Digi. Driver is
  based on the patched WM8804 driver.
 
 Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
@@ -12,6 +12,8 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  3 files changed, 163 insertions(+), 1 deletion(-)
  create mode 100644 sound/soc/bcm/hifiberry_digi.c
 
+diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
+index 1c1f5cf..7e2afc2 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -16,9 +16,16 @@ config SND_BCM2708_SOC_HIFIBERRY_DAC
@@ -33,9 +35,11 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
 -         Say Y or M if you want to add support for RPi-DAC.
 \ No newline at end of file
 +         Say Y or M if you want to add support for RPi-DAC.
+diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
+index 95a9d44..54e37eb 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -5,7 +5,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
+@@ -5,7 +5,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
  
  # BCM2708 Machine Support
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
@@ -45,6 +49,9 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
 +obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
+diff --git a/sound/soc/bcm/hifiberry_digi.c b/sound/soc/bcm/hifiberry_digi.c
+new file mode 100644
+index 0000000..5b37e66
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_digi.c
 @@ -0,0 +1,153 @@
@@ -201,3 +208,6 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
 +MODULE_AUTHOR("Daniel Matuschek <info@crazy-audio.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HifiBerry Digi");
 +MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+

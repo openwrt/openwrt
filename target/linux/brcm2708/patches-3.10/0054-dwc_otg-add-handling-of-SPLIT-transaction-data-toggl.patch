@@ -1,7 +1,7 @@
-From f90755cd13b722cd3ea79bee92c29d2828b3905f Mon Sep 17 00:00:00 2001
+From 70303c1e07d940f6f0b2b8b9359930be1c0f566e Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Sun, 3 Mar 2013 14:45:53 +0000
-Subject: [PATCH 054/174] dwc_otg: add handling of SPLIT transaction data
+Subject: [PATCH 054/196] dwc_otg: add handling of SPLIT transaction data
  toggle errors
 
 Previously a data toggle error on packets from a USB1.1 device behind
@@ -13,9 +13,11 @@ for devices that have a broken initial toggle state (FT8U232/FT232BM).
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 19 ++++++++++++++-----
  1 file changed, 14 insertions(+), 5 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 0c81a64..16e8c6c 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -1921,13 +1921,20 @@ static int32_t handle_hc_datatglerr_intr
+@@ -1921,13 +1921,20 @@ static int32_t handle_hc_datatglerr_intr(dwc_otg_hcd_t * hcd,
  					 dwc_otg_qtd_t * qtd)
  {
  	DWC_DEBUGPL(DBG_HCDI, "--Host Channel %d Interrupt: "
@@ -41,7 +43,7 @@ for devices that have a broken initial toggle state (FT8U232/FT232BM).
  	}
  
  	disable_hc_int(hc_regs, datatglerr);
-@@ -2080,6 +2087,8 @@ static void handle_hc_chhltd_intr_dma(dw
+@@ -2080,6 +2087,8 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
  		handle_hc_babble_intr(hcd, hc, hc_regs, qtd);
  	} else if (hcint.b.frmovrun) {
  		handle_hc_frmovrun_intr(hcd, hc, hc_regs, qtd);
@@ -50,3 +52,6 @@ for devices that have a broken initial toggle state (FT8U232/FT232BM).
  	} else if (!out_nak_enh) {
  		if (hcint.b.nyet) {
  			/*
+-- 
+1.9.1
+

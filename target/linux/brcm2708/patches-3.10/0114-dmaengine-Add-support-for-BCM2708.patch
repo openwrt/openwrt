@@ -1,7 +1,7 @@
-From 5fa4eb7d17acff35c1ea9a7def5dec5802566565 Mon Sep 17 00:00:00 2001
+From f7a2665c5c7690e769a6010a88e2aca3477e5b1f Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Fri, 22 Nov 2013 14:22:53 +0100
-Subject: [PATCH 114/174] dmaengine: Add support for BCM2708
+Subject: [PATCH 114/196] dmaengine: Add support for BCM2708
 
 Add support for DMA controller of BCM2708 as used in the Raspberry Pi.
 Currently it only supports cyclic DMA.
@@ -14,6 +14,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  3 files changed, 595 insertions(+)
  create mode 100644 drivers/dma/bcm2708-dmaengine.c
 
+diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
+index 0ba5a95..9a99add 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -305,6 +305,12 @@ config DMA_OMAP
@@ -29,6 +31,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  config MMP_PDMA
  	bool "MMP PDMA support"
  	depends on (ARCH_MMP || ARCH_PXA)
+diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
+index a2b0df5..d0f5b32 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -37,4 +37,5 @@ obj-$(CONFIG_EP93XX_DMA) += ep93xx_dma.o
@@ -37,6 +41,9 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  obj-$(CONFIG_DMA_OMAP) += omap-dma.o
 +obj-$(CONFIG_DMA_BCM2708) += bcm2708-dmaengine.o
  obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
+diff --git a/drivers/dma/bcm2708-dmaengine.c b/drivers/dma/bcm2708-dmaengine.c
+new file mode 100644
+index 0000000..3ba3cec
 --- /dev/null
 +++ b/drivers/dma/bcm2708-dmaengine.c
 @@ -0,0 +1,588 @@
@@ -628,3 +635,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
 +MODULE_DESCRIPTION("BCM2708 DMA engine driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+

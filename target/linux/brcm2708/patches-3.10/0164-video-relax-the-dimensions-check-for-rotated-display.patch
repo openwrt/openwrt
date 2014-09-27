@@ -1,16 +1,18 @@
-From cadc956e10cf0811927600dfe1f4657d92aad32a Mon Sep 17 00:00:00 2001
+From c53c5708dcae81fbda536e38bbca6fa45886ffa9 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 29 Jan 2014 21:37:00 +0000
-Subject: [PATCH 164/174] video: relax the dimensions check for rotated
+Subject: [PATCH 164/196] video: relax the dimensions check for rotated
  displays
 
 ---
  drivers/video/bcm2708_fb.c | 6 +++---
  1 file changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index 5758146..935288d 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
-@@ -255,8 +255,8 @@ static int bcm2708_fb_check_var(struct f
+@@ -255,8 +255,8 @@ static int bcm2708_fb_check_var(struct fb_var_screeninfo *var,
  	else if (var->vmode & FB_VMODE_INTERLACED)
  		yres = (yres + 1) / 2;
  
@@ -21,7 +23,7 @@ Subject: [PATCH 164/174] video: relax the dimensions check for rotated
  		       "special treatment required! (TODO)\n");
  		return -EINVAL;
  	}
-@@ -415,7 +415,7 @@ static void bcm2708_fb_copyarea(struct f
+@@ -415,7 +415,7 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
  
  	/* Fallback to cfb_copyarea() if we don't like something */
  	if (bytes_per_pixel > 4 ||
@@ -30,3 +32,6 @@ Subject: [PATCH 164/174] video: relax the dimensions check for rotated
  	    region->width <= 0 || region->width > info->var.xres ||
  	    region->height <= 0 || region->height > info->var.yres ||
  	    region->sx < 0 || region->sx >= info->var.xres ||
+-- 
+1.9.1
+

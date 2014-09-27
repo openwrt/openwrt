@@ -1,16 +1,18 @@
-From 04bb053f81e848f89b510cbd902ed22ce6bf4969 Mon Sep 17 00:00:00 2001
+From 2a1440a912c08b81aa22660d4ce0ba74b6f63116 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Fri, 14 Feb 2014 17:08:18 +0000
-Subject: [PATCH 172/174] V4L2: Drop logging msg from info to debug
+Subject: [PATCH 172/196] V4L2: Drop logging msg from info to debug
 
 Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
 ---
  drivers/media/platform/bcm2835/mmal-vchiq.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/media/platform/bcm2835/mmal-vchiq.c b/drivers/media/platform/bcm2835/mmal-vchiq.c
+index 67d1ce6..76f249e 100644
 --- a/drivers/media/platform/bcm2835/mmal-vchiq.c
 +++ b/drivers/media/platform/bcm2835/mmal-vchiq.c
-@@ -1326,7 +1326,7 @@ static int port_parameter_get(struct vch
+@@ -1326,7 +1326,7 @@ static int port_parameter_get(struct vchiq_mmal_instance *instance,
  		memcpy(value, &rmsg->u.port_parameter_get_reply.value,
  		       rmsg->u.port_parameter_get_reply.size);
  
@@ -19,3 +21,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	        ret, port->component->handle, port->handle, parameter_id);
  
  release_msg:
+-- 
+1.9.1
+

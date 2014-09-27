@@ -1,7 +1,7 @@
-From 353d37b0b26870a4bfd3e0cac6e535895ba4a01e Mon Sep 17 00:00:00 2001
+From b339e078538e1470dc5d88a34f927ec1dd44151f Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 7 May 2013 22:20:24 +0100
-Subject: [PATCH 062/174] Add quick config.
+Subject: [PATCH 062/196] Add quick config.
 
 This is designed for quick compiling when developing.
 No modules are needed and it includes all Pi specific drivers
@@ -10,6 +10,9 @@ No modules are needed and it includes all Pi specific drivers
  1 file changed, 197 insertions(+)
  create mode 100644 arch/arm/configs/bcmrpi_quick_defconfig
 
+diff --git a/arch/arm/configs/bcmrpi_quick_defconfig b/arch/arm/configs/bcmrpi_quick_defconfig
+new file mode 100644
+index 0000000..e5efe75
 --- /dev/null
 +++ b/arch/arm/configs/bcmrpi_quick_defconfig
 @@ -0,0 +1,197 @@
@@ -210,3 +213,6 @@ No modules are needed and it includes all Pi specific drivers
 +# CONFIG_CRYPTO_HW is not set
 +CONFIG_CRC_ITU_T=y
 +CONFIG_LIBCRC32C=y
+-- 
+1.9.1
+

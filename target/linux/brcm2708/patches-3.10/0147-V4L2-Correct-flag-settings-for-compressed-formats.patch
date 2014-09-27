@@ -1,7 +1,7 @@
-From dfd619eb2e3415681d726f749984ab5ecf355736 Mon Sep 17 00:00:00 2001
+From 3481fef0091c023c634ecf747b3dea455b24b32c Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Thu, 2 Jan 2014 15:57:06 +0000
-Subject: [PATCH 147/174] V4L2: Correct flag settings for compressed formats
+Subject: [PATCH 147/196] V4L2: Correct flag settings for compressed formats
 
 Set flags field correctly on enum_fmt_vid_cap for compressed
 image formats.
@@ -12,6 +12,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/mmal-common.h    | 1 +
  2 files changed, 10 insertions(+)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index 166039e..7f99a14 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
 @@ -69,6 +69,7 @@ static struct mmal_fmt formats[] = {
@@ -62,7 +64,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	 .mmal = MMAL_ENCODING_MJPEG,
  	 .depth = 8,
  	 .mmal_component = MMAL_COMPONENT_VIDEO_ENCODE,
-@@ -555,6 +561,7 @@ static int vidioc_enum_fmt_vid_overlay(s
+@@ -555,6 +561,7 @@ static int vidioc_enum_fmt_vid_overlay(struct file *file, void *priv,
  
  	strlcpy(f->description, fmt->name, sizeof(f->description));
  	f->pixelformat = fmt->fourcc;
@@ -70,7 +72,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	return 0;
  }
-@@ -750,6 +757,8 @@ static int vidioc_enum_fmt_vid_cap(struc
+@@ -750,6 +757,8 @@ static int vidioc_enum_fmt_vid_cap(struct file *file, void *priv,
  
  	strlcpy(f->description, fmt->name, sizeof(f->description));
  	f->pixelformat = fmt->fourcc;
@@ -79,6 +81,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	return 0;
  }
  
+diff --git a/drivers/media/platform/bcm2835/mmal-common.h b/drivers/media/platform/bcm2835/mmal-common.h
+index 602b4a7..076f9a8 100644
 --- a/drivers/media/platform/bcm2835/mmal-common.h
 +++ b/drivers/media/platform/bcm2835/mmal-common.h
 @@ -26,6 +26,7 @@
@@ -89,3 +93,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	u32   mmal;
  	int   depth;
  	u32   mmal_component;  /* MMAL component index to be used to encode */
+-- 
+1.9.1
+

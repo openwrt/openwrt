@@ -1,7 +1,7 @@
-From a35663826cfd0dea9a44d7b7a506ce9db9c703e3 Mon Sep 17 00:00:00 2001
+From 4b91c17e8ac97e4326df2068a56a3ead2b920e93 Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Fri, 22 Nov 2013 14:37:51 +0100
-Subject: [PATCH 117/174] BCM2708: Extend mach header
+Subject: [PATCH 117/196] BCM2708: Extend mach header
 
 Extend the headers of the mach-bcm2708
 in order to support I2S and DMA engine.
@@ -12,6 +12,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  arch/arm/mach-bcm2708/include/mach/platform.h | 2 ++
  2 files changed, 4 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
+index ac7a4a0..f2568d4 100644
 --- a/arch/arm/mach-bcm2708/include/mach/dma.h
 +++ b/arch/arm/mach-bcm2708/include/mach/dma.h
 @@ -45,6 +45,8 @@
@@ -23,6 +25,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  #define BCM2708_DMA_NEXTCB	0x1C
  #define BCM2708_DMA_DEBUG	0x20
  
+diff --git a/arch/arm/mach-bcm2708/include/mach/platform.h b/arch/arm/mach-bcm2708/include/mach/platform.h
+index 992a630..2e7e1bb 100644
 --- a/arch/arm/mach-bcm2708/include/mach/platform.h
 +++ b/arch/arm/mach-bcm2708/include/mach/platform.h
 @@ -62,10 +62,12 @@
@@ -38,3 +42,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  #define SPI0_BASE		 (BCM2708_PERI_BASE + 0x204000) /* SPI0 */
  #define BSC0_BASE		 (BCM2708_PERI_BASE + 0x205000) /* BSC0 I2C/TWI */
  #define UART1_BASE               (BCM2708_PERI_BASE + 0x215000) /* Uart 1 */
+-- 
+1.9.1
+
