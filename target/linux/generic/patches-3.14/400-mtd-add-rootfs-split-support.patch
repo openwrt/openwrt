@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -12,6 +12,32 @@ menuconfig MTD
+@@ -12,6 +12,33 @@ menuconfig MTD
  
  if MTD
  
@@ -12,6 +12,7 @@
 +
 +config MTD_ROOTFS_SPLIT
 +	bool "Automatically split 'rootfs' partition for squashfs"
++	select MTD_SPLIT
 +	default y
 +
 +config MTD_SPLIT_FIRMWARE
@@ -35,7 +36,7 @@
  	depends on m
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -29,6 +29,7 @@
+@@ -29,9 +29,11 @@
  #include <linux/kmod.h>
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
@@ -43,7 +44,11 @@
  #include <linux/err.h>
  
  #include "mtdcore.h"
-@@ -45,13 +46,14 @@ struct mtd_part {
++#include "mtdsplit.h"
+ 
+ /* Our partition linked list */
+ static LIST_HEAD(mtd_partitions);
+@@ -45,13 +47,14 @@ struct mtd_part {
  	struct list_head list;
  };
  
@@ -59,7 +64,7 @@
  /*
   * MTD methods which simply translate the effective address and pass through
   * to the _real_ device.
-@@ -534,8 +536,10 @@ out_register:
+@@ -534,8 +537,10 @@ out_register:
  	return slave;
  }
  
@@ -72,7 +77,7 @@
  {
  	struct mtd_partition part;
  	struct mtd_part *p, *new;
-@@ -567,21 +571,24 @@ int mtd_add_partition(struct mtd_info *m
+@@ -567,21 +572,24 @@ int mtd_add_partition(struct mtd_info *m
  	end = offset + length;
  
  	mutex_lock(&mtd_partitions_mutex);
@@ -107,7 +112,7 @@
  
  	return ret;
  err_inv:
-@@ -591,6 +598,12 @@ err_inv:
+@@ -591,6 +599,12 @@ err_inv:
  }
  EXPORT_SYMBOL_GPL(mtd_add_partition);
  
@@ -120,7 +125,7 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -614,6 +627,144 @@ int mtd_del_partition(struct mtd_info *m
+@@ -614,6 +628,117 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -135,43 +140,16 @@
 +	return len;
 +}
 +
-+#define ROOTFS_SPLIT_NAME "rootfs_data"
-+
-+struct squashfs_super_block {
-+	__le32 s_magic;
-+	__le32 pad0[9];
-+	__le64 bytes_used;
-+};
-+
-+
 +static int split_squashfs(struct mtd_info *master, int offset, int *split_offset)
 +{
-+	struct squashfs_super_block sb;
++	size_t squashfs_len;
 +	int len, ret;
 +
-+	ret = mtd_read(master, offset, sizeof(sb), &len, (void *) &sb);
-+	if (ret || (len != sizeof(sb))) {
-+		printk(KERN_ALERT "split_squashfs: error occured while reading "
-+			"from \"%s\"\n", master->name);
-+		return -EINVAL;
-+	}
++	ret = mtd_get_squashfs_len(master, offset, &squashfs_len);
++	if (ret)
++		return ret;
 +
-+	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic) ) {
-+		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
-+			master->name);
-+		*split_offset = 0;
-+		return 0;
-+	}
-+
-+	if (le64_to_cpu((sb.bytes_used)) <= 0) {
-+		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
-+			master->name);
-+		*split_offset = 0;
-+		return 0;
-+	}
-+
-+	len = (u32) le64_to_cpu(sb.bytes_used);
-+	len = mtd_pad_erasesize(master, offset, len);
++	len = mtd_pad_erasesize(master, offset, squashfs_len);
 +	*split_offset = offset + len;
 +
 +	return 0;
@@ -265,7 +243,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -643,6 +794,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -643,6 +768,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
