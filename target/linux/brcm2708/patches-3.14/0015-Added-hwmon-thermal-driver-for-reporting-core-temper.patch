@@ -1,0 +1,510 @@
+From 22964c3b89f28e0957965aee59e713670d3a7729 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 26 Mar 2013 19:24:24 +0000
+Subject: [PATCH 15/54] Added hwmon/thermal driver for reporting core
+ temperature. Thanks Dorian
+
+---
+ arch/arm/mach-bcm2708/bcm2708.c   |  11 ++
+ drivers/hwmon/Kconfig             |  10 ++
+ drivers/hwmon/Makefile            |   1 +
+ drivers/hwmon/bcm2835-hwmon.c     | 219 ++++++++++++++++++++++++++++++++++++++
+ drivers/thermal/Kconfig           |   6 ++
+ drivers/thermal/Makefile          |   1 +
+ drivers/thermal/bcm2835-thermal.c | 184 ++++++++++++++++++++++++++++++++
+ 7 files changed, 432 insertions(+)
+ create mode 100644 drivers/hwmon/bcm2835-hwmon.c
+ create mode 100644 drivers/thermal/bcm2835-thermal.c
+
+Index: linux-3.14.18/arch/arm/mach-bcm2708/bcm2708.c
+===================================================================
+--- linux-3.14.18.orig/arch/arm/mach-bcm2708/bcm2708.c	2014-09-27 12:03:08.607411837 -0700
++++ linux-3.14.18/arch/arm/mach-bcm2708/bcm2708.c	2014-09-27 12:03:08.603411837 -0700
+@@ -483,6 +483,14 @@
+ 	       },
+ };
+ 
++static struct platform_device bcm2835_hwmon_device = {
++	.name = "bcm2835_hwmon",
++};
++
++static struct platform_device bcm2835_thermal_device = {
++	.name = "bcm2835_thermal",
++};
++
+ int __init bcm_register_device(struct platform_device *pdev)
+ {
+ 	int ret;
+@@ -594,6 +602,9 @@
+ 	for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
+ 		bcm_register_device(&bcm2708_alsa_devices[i]);
+ 
++	bcm_register_device(&bcm2835_hwmon_device);
++	bcm_register_device(&bcm2835_thermal_device);
++
+ 	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
+ 		struct amba_device *d = amba_devs[i];
+ 		amba_device_register(d, &iomem_resource);
+Index: linux-3.14.18/drivers/hwmon/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/hwmon/Kconfig	2014-09-27 12:03:08.607411837 -0700
++++ linux-3.14.18/drivers/hwmon/Kconfig	2014-09-27 12:03:08.603411837 -0700
+@@ -1565,6 +1565,16 @@
+         help
+           Support for the A/D converter on MC13783 and MC13892 PMIC.
+ 
++config SENSORS_BCM2835
++	depends on THERMAL_BCM2835=n
++	tristate "Broadcom BCM2835 HWMON Driver"
++	help
++	  If you say yes here you get support for the hardware
++	  monitoring features of the BCM2835 Chip
++
++	  This driver can also be built as a module.  If so, the module
++	  will be called bcm2835-hwmon.
++
+ if ACPI
+ 
+ comment "ACPI drivers"
+Index: linux-3.14.18/drivers/hwmon/bcm2835-hwmon.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/hwmon/bcm2835-hwmon.c	2014-09-27 12:03:08.603411837 -0700
+@@ -0,0 +1,219 @@
++/*****************************************************************************
++* Copyright 2011 Broadcom Corporation.  All rights reserved.
++*
++* Unless you and Broadcom execute a separate written software license
++* agreement governing use of this software, this software is licensed to you
++* under the terms of the GNU General Public License version 2, available at
++* http://www.broadcom.com/licenses/GPLv2.php (the "GPL").
++*
++* Notwithstanding the above, under no circumstances may you combine this
++* software in any way with any other Broadcom software provided under a
++* license other than the GPL, without Broadcom's express prior written
++* consent.
++*****************************************************************************/
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/hwmon.h>
++#include <linux/hwmon-sysfs.h>
++#include <linux/platform_device.h>
++#include <linux/sysfs.h>
++#include <mach/vcio.h>
++#include <linux/slab.h>
++#include <linux/err.h>
++
++#define MODULE_NAME "bcm2835_hwmon"
++
++/*#define HWMON_DEBUG_ENABLE*/
++
++#ifdef HWMON_DEBUG_ENABLE
++#define print_debug(fmt,...) printk(KERN_INFO "%s:%s:%d: "fmt"\n", MODULE_NAME, __func__, __LINE__, ##__VA_ARGS__)
++#else
++#define print_debug(fmt,...)
++#endif
++#define print_err(fmt,...) printk(KERN_ERR "%s:%s:%d: "fmt"\n", MODULE_NAME, __func__,__LINE__, ##__VA_ARGS__)
++#define print_info(fmt,...) printk(KERN_INFO "%s: "fmt"\n", MODULE_NAME, ##__VA_ARGS__)
++
++#define VC_TAG_GET_TEMP 0x00030006
++#define VC_TAG_GET_MAX_TEMP 0x0003000A
++
++/* --- STRUCTS --- */
++struct bcm2835_hwmon_data {
++	struct device *hwmon_dev;
++};
++
++/* tag part of the message */
++struct vc_msg_tag {
++	uint32_t tag_id;		/* the tag ID for the temperature */
++	uint32_t buffer_size;	/* size of the buffer (should be 8) */
++	uint32_t request_code;	/* identifies message as a request (should be 0) */
++	uint32_t id;			/* extra ID field (should be 0) */
++	uint32_t val;			/* returned value of the temperature */
++};
++
++/* message structure to be sent to videocore */
++struct vc_msg {
++	uint32_t msg_size;		/* simply, sizeof(struct vc_msg) */
++	uint32_t request_code;		/* holds various information like the success and number of bytes returned (refer to mailboxes wiki) */
++	struct vc_msg_tag tag;		/* the tag structure above to make */
++	uint32_t end_tag;		/* an end identifier, should be set to NULL */
++};
++
++typedef enum {
++	TEMP,
++	MAX_TEMP,
++} temp_type;
++
++/* --- PROTOTYPES --- */
++static ssize_t bcm2835_get_temp(struct device *dev, struct device_attribute *attr, char *buf);
++static ssize_t bcm2835_get_name(struct device *dev, struct device_attribute *attr, char *buf);
++
++/* --- GLOBALS --- */
++
++static struct bcm2835_hwmon_data *bcm2835_data;
++static struct platform_driver bcm2835_hwmon_driver;
++
++static SENSOR_DEVICE_ATTR(name, S_IRUGO,bcm2835_get_name,NULL,0);
++static SENSOR_DEVICE_ATTR(temp1_input,S_IRUGO,bcm2835_get_temp,NULL,TEMP);
++static SENSOR_DEVICE_ATTR(temp1_max,S_IRUGO,bcm2835_get_temp,NULL,MAX_TEMP);
++
++static struct attribute* bcm2835_attributes[] = {
++	&sensor_dev_attr_name.dev_attr.attr,
++	&sensor_dev_attr_temp1_input.dev_attr.attr,
++	&sensor_dev_attr_temp1_max.dev_attr.attr,
++	NULL,
++};
++
++static struct attribute_group bcm2835_attr_group = {
++	.attrs = bcm2835_attributes,
++};
++
++/* --- FUNCTIONS --- */
++
++static ssize_t bcm2835_get_name(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	return sprintf(buf,"bcm2835_hwmon\n");
++}
++
++static ssize_t bcm2835_get_temp(struct device *dev, struct device_attribute *attr, char *buf)
++{
++	struct vc_msg msg;
++	int result;
++	uint temp = 0;
++	int index = ((struct sensor_device_attribute*)to_sensor_dev_attr(attr))->index;
++
++	print_debug("IN");
++
++	/* wipe all previous message data */
++	memset(&msg, 0, sizeof msg);
++
++	/* determine the message type */
++	if(index == TEMP)
++		msg.tag.tag_id = VC_TAG_GET_TEMP;
++	else if (index == MAX_TEMP)
++		msg.tag.tag_id = VC_TAG_GET_MAX_TEMP;
++	else
++	{
++		print_debug("Unknown temperature message!");
++		return -EINVAL;
++	}
++
++	msg.msg_size = sizeof msg;
++	msg.tag.buffer_size = 8;
++
++	/* send the message */
++	result = bcm_mailbox_property(&msg, sizeof msg);
++
++	/* check if it was all ok and return the rate in milli degrees C */
++	if (result == 0 && (msg.request_code & 0x80000000))
++		temp = (uint)msg.tag.val;
++	#ifdef HWMON_DEBUG_ENABLE
++	else
++		print_debug("Failed to get temperature!");
++	#endif
++	print_debug("Got temperature as %u",temp);
++	print_debug("OUT");
++	return sprintf(buf, "%u\n", temp);
++}
++
++
++static int bcm2835_hwmon_probe(struct platform_device *pdev)
++{
++	int err;
++
++	print_debug("IN");
++	print_debug("HWMON Driver has been probed!");
++
++	/* check that the device isn't null!*/
++	if(pdev == NULL)
++	{
++		print_debug("Platform device is empty!");
++		return -ENODEV;
++	}
++
++	/* allocate memory for neccessary data */
++	bcm2835_data = kzalloc(sizeof(struct bcm2835_hwmon_data),GFP_KERNEL);
++	if(!bcm2835_data)
++	{
++		print_debug("Unable to allocate memory for hwmon data!");
++		err = -ENOMEM;
++		goto kzalloc_error;
++	}
++
++	/* create the sysfs files */
++	if(sysfs_create_group(&pdev->dev.kobj, &bcm2835_attr_group))
++	{
++		print_debug("Unable to create sysfs files!");
++		err = -EFAULT;
++		goto sysfs_error;
++	}
++
++	/* register the hwmon device */
++	bcm2835_data->hwmon_dev = hwmon_device_register(&pdev->dev);
++	if (IS_ERR(bcm2835_data->hwmon_dev))
++	{
++		err = PTR_ERR(bcm2835_data->hwmon_dev);
++		goto hwmon_error;
++	}
++	print_debug("OUT");
++	return 0;
++
++	/* error goto's */
++	hwmon_error:
++	sysfs_remove_group(&pdev->dev.kobj, &bcm2835_attr_group);
++
++	sysfs_error:
++	kfree(bcm2835_data);
++
++	kzalloc_error:
++
++	return err;
++
++}
++
++static int bcm2835_hwmon_remove(struct platform_device *pdev)
++{
++	print_debug("IN");
++	hwmon_device_unregister(bcm2835_data->hwmon_dev);
++
++	sysfs_remove_group(&pdev->dev.kobj, &bcm2835_attr_group);
++	print_debug("OUT");
++	return 0;
++}
++
++/* Hwmon Driver */
++static struct platform_driver bcm2835_hwmon_driver = {
++	.probe = bcm2835_hwmon_probe,
++	.remove = bcm2835_hwmon_remove,
++	.driver = {
++				.name = "bcm2835_hwmon",
++				.owner = THIS_MODULE,
++			},
++};
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Dorian Peake");
++MODULE_DESCRIPTION("HW Monitor driver for bcm2835 chip");
++
++module_platform_driver(bcm2835_hwmon_driver);
+Index: linux-3.14.18/drivers/thermal/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/thermal/Kconfig	2014-09-27 12:03:08.607411837 -0700
++++ linux-3.14.18/drivers/thermal/Kconfig	2014-09-27 12:03:08.603411837 -0700
+@@ -196,6 +196,12 @@
+ 	  enforce idle time which results in more package C-state residency. The
+ 	  user interface is exposed via generic thermal framework.
+ 
++config THERMAL_BCM2835
++	tristate "BCM2835 Thermal Driver"
++	help
++	  This will enable temperature monitoring for the Broadcom BCM2835
++	  chip. If built as a module, it will be called 'bcm2835-thermal'.
++
+ config X86_PKG_TEMP_THERMAL
+ 	tristate "X86 package temperature thermal driver"
+ 	depends on X86_THERMAL_VECTOR
+Index: linux-3.14.18/drivers/thermal/Makefile
+===================================================================
+--- linux-3.14.18.orig/drivers/thermal/Makefile	2014-09-27 12:03:08.607411837 -0700
++++ linux-3.14.18/drivers/thermal/Makefile	2014-09-27 12:03:08.603411837 -0700
+@@ -28,6 +28,7 @@
+ obj-$(CONFIG_IMX_THERMAL)	+= imx_thermal.o
+ obj-$(CONFIG_DB8500_CPUFREQ_COOLING)	+= db8500_cpufreq_cooling.o
+ obj-$(CONFIG_INTEL_POWERCLAMP)	+= intel_powerclamp.o
++obj-$(CONFIG_THERMAL_BCM2835)	+= bcm2835-thermal.o
+ obj-$(CONFIG_X86_PKG_TEMP_THERMAL)	+= x86_pkg_temp_thermal.o
+ obj-$(CONFIG_TI_SOC_THERMAL)	+= ti-soc-thermal/
+ obj-$(CONFIG_ACPI_INT3403_THERMAL)	+= int3403_thermal.o
+Index: linux-3.14.18/drivers/thermal/bcm2835-thermal.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/thermal/bcm2835-thermal.c	2014-09-27 12:03:08.603411837 -0700
+@@ -0,0 +1,184 @@
++/*****************************************************************************
++* Copyright 2011 Broadcom Corporation.  All rights reserved.
++*
++* Unless you and Broadcom execute a separate written software license
++* agreement governing use of this software, this software is licensed to you
++* under the terms of the GNU General Public License version 2, available at
++* http://www.broadcom.com/licenses/GPLv2.php (the "GPL").
++*
++* Notwithstanding the above, under no circumstances may you combine this
++* software in any way with any other Broadcom software provided under a
++* license other than the GPL, without Broadcom's express prior written
++* consent.
++*****************************************************************************/
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/slab.h>
++#include <linux/sysfs.h>
++#include <mach/vcio.h>
++#include <linux/thermal.h>
++
++
++/* --- DEFINITIONS --- */
++#define MODULE_NAME "bcm2835_thermal"
++
++/*#define THERMAL_DEBUG_ENABLE*/
++
++#ifdef THERMAL_DEBUG_ENABLE
++#define print_debug(fmt,...) printk(KERN_INFO "%s:%s:%d: "fmt"\n", MODULE_NAME, __func__, __LINE__, ##__VA_ARGS__)
++#else
++#define print_debug(fmt,...)
++#endif
++#define print_err(fmt,...) printk(KERN_ERR "%s:%s:%d: "fmt"\n", MODULE_NAME, __func__,__LINE__, ##__VA_ARGS__)
++
++#define VC_TAG_GET_TEMP 0x00030006
++#define VC_TAG_GET_MAX_TEMP 0x0003000A
++
++typedef enum {
++	TEMP,
++	MAX_TEMP,
++} temp_type;
++
++/* --- STRUCTS --- */
++/* tag part of the message */
++struct vc_msg_tag {
++	uint32_t tag_id;		/* the tag ID for the temperature */
++	uint32_t buffer_size;	/* size of the buffer (should be 8) */
++	uint32_t request_code;	/* identifies message as a request (should be 0) */
++	uint32_t id;			/* extra ID field (should be 0) */
++	uint32_t val;			/* returned value of the temperature */
++};
++
++/* message structure to be sent to videocore */
++struct vc_msg {
++	uint32_t msg_size;		/* simply, sizeof(struct vc_msg) */
++	uint32_t request_code;		/* holds various information like the success and number of bytes returned (refer to mailboxes wiki) */
++	struct vc_msg_tag tag;		/* the tag structure above to make */
++	uint32_t end_tag;		/* an end identifier, should be set to NULL */
++};
++
++struct bcm2835_thermal_data {
++	struct thermal_zone_device *thermal_dev;
++	struct vc_msg msg;
++};
++
++/* --- GLOBALS --- */
++static struct bcm2835_thermal_data bcm2835_data;
++
++/* Thermal Device Operations */
++static struct thermal_zone_device_ops ops;
++
++/* --- FUNCTIONS --- */
++
++static int bcm2835_get_temp_or_max(struct thermal_zone_device *thermal_dev, unsigned long *temp, unsigned tag_id)
++{
++	int result = -1, retry = 3;
++	print_debug("IN");
++
++	*temp = 0;
++	while (result != 0 && retry-- > 0) {
++		/* wipe all previous message data */
++		memset(&bcm2835_data.msg, 0, sizeof bcm2835_data.msg);
++
++		/* prepare message */
++		bcm2835_data.msg.msg_size = sizeof bcm2835_data.msg;
++		bcm2835_data.msg.tag.buffer_size = 8;
++		bcm2835_data.msg.tag.tag_id = tag_id;
++
++		/* send the message */
++		result = bcm_mailbox_property(&bcm2835_data.msg, sizeof bcm2835_data.msg);
++		print_debug("Got %stemperature as %u (%d,%x)\n", tag_id==VC_TAG_GET_MAX_TEMP ? "max ":"", (uint)bcm2835_data.msg.tag.val, result, bcm2835_data.msg.request_code);
++		if (!(bcm2835_data.msg.request_code & 0x80000000))
++			result = -1;
++	}
++
++	/* check if it was all ok and return the rate in milli degrees C */
++	if (result == 0)
++		*temp = (uint)bcm2835_data.msg.tag.val;
++	else
++		print_err("Failed to get temperature! (%x:%d)\n", tag_id, result);
++	print_debug("OUT");
++	return result;
++}
++
++static int bcm2835_get_temp(struct thermal_zone_device *thermal_dev, unsigned long *temp)
++{
++	return bcm2835_get_temp_or_max(thermal_dev, temp, VC_TAG_GET_TEMP);
++}
++
++static int bcm2835_get_max_temp(struct thermal_zone_device *thermal_dev, int trip_num, unsigned long *temp)
++{
++	return bcm2835_get_temp_or_max(thermal_dev, temp, VC_TAG_GET_MAX_TEMP);
++}
++
++static int bcm2835_get_trip_type(struct thermal_zone_device * thermal_dev, int trip_num, enum thermal_trip_type *trip_type)
++{
++	*trip_type = THERMAL_TRIP_HOT;
++	return 0;
++}
++
++
++static int bcm2835_get_mode(struct thermal_zone_device *thermal_dev, enum thermal_device_mode *dev_mode)
++{
++	*dev_mode = THERMAL_DEVICE_ENABLED;
++	return 0;
++}
++
++
++static int bcm2835_thermal_probe(struct platform_device *pdev)
++{
++	print_debug("IN");
++	print_debug("THERMAL Driver has been probed!");
++
++	/* check that the device isn't null!*/
++	if(pdev == NULL)
++	{
++		print_debug("Platform device is empty!");
++		return -ENODEV;
++	}
++
++	if(!(bcm2835_data.thermal_dev = thermal_zone_device_register("bcm2835_thermal",  1, 0, NULL, &ops, NULL, 0, 0)))
++	{
++		print_debug("Unable to register the thermal device!");
++		return -EFAULT;
++	}
++	return 0;
++}
++
++
++static int bcm2835_thermal_remove(struct platform_device *pdev)
++{
++	print_debug("IN");
++
++	thermal_zone_device_unregister(bcm2835_data.thermal_dev);
++
++	print_debug("OUT");
++
++	return 0;
++}
++
++static struct thermal_zone_device_ops ops  = {
++	.get_temp = bcm2835_get_temp,
++	.get_trip_temp = bcm2835_get_max_temp,
++	.get_trip_type = bcm2835_get_trip_type,
++	.get_mode = bcm2835_get_mode,
++};
++
++/* Thermal Driver */
++static struct platform_driver bcm2835_thermal_driver = {
++	.probe = bcm2835_thermal_probe,
++	.remove = bcm2835_thermal_remove,
++	.driver = {
++				.name = "bcm2835_thermal",
++				.owner = THIS_MODULE,
++			},
++};
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Dorian Peake");
++MODULE_DESCRIPTION("Thermal driver for bcm2835 chip");
++
++module_platform_driver(bcm2835_thermal_driver);

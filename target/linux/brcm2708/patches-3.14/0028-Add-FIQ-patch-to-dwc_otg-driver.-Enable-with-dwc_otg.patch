@@ -1,0 +1,3324 @@
+From 5128234c3c1c86a2587b5f0baf3bbd34445f5632 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 3 Jul 2013 00:46:42 +0100
+Subject: [PATCH 28/54] Add FIQ patch to dwc_otg driver. Enable with
+ dwc_otg.fiq_fix_enable=1. Should give about 10% more ARM performance. Thanks
+ to Gordon and Costas
+
+Avoid dynamic memory allocation for channel lock in USB driver. Thanks ddv2005.
+
+Add NAK holdoff scheme. Enabled by default, disable with dwc_otg.nak_holdoff_enable=0. Thanks gsh
+
+Make sure we wait for the reset to finish
+
+dwc_otg: fix bug in dwc_otg_hcd.c resulting in silent kernel
+	 memory corruption, escalating to OOPS under high USB load.
+
+dwc_otg: Fix unsafe access of QTD during URB enqueue
+
+In dwc_otg_hcd_urb_enqueue during qtd creation, it was possible that the
+transaction could complete almost immediately after the qtd was assigned
+to a host channel during URB enqueue, which meant the qtd pointer was no
+longer valid having been completed and removed. Usually, this resulted in
+an OOPS during URB submission. By predetermining whether transactions
+need to be queued or not, this unsafe pointer access is avoided.
+
+This bug was only evident on the Pi model A where a device was attached
+that had no periodic endpoints (e.g. USB pendrive or some wlan devices).
+
+dwc_otg: Fix incorrect URB allocation error handling
+
+If the memory allocation for a dwc_otg_urb failed, the kernel would OOPS
+because for some reason a member of the *unallocated* struct was set to
+zero. Error handling changed to fail correctly.
+
+dwc_otg: fix potential use-after-free case in interrupt handler
+
+If a transaction had previously aborted, certain interrupts are
+enabled to track error counts and reset where necessary. On IN
+endpoints the host generates an ACK interrupt near-simultaneously
+with completion of transfer. In the case where this transfer had
+previously had an error, this results in a use-after-free on
+the QTD memory space with a 1-byte length being overwritten to
+0x00.
+
+dwc_otg: add handling of SPLIT transaction data toggle errors
+
+Previously a data toggle error on packets from a USB1.1 device behind
+a TT would result in the Pi locking up as the driver never handled
+the associated interrupt. Patch adds basic retry mechanism and
+interrupt acknowledgement to cater for either a chance toggle error or
+for devices that have a broken initial toggle state (FT8U232/FT232BM).
+
+dwc_otg: implement tasklet for returning URBs to usbcore hcd layer
+
+The dwc_otg driver interrupt handler for transfer completion will spend
+a very long time with interrupts disabled when a URB is completed -
+this is because usb_hcd_giveback_urb is called from within the handler
+which for a USB device driver with complicated processing (e.g. webcam)
+will take an exorbitant amount of time to complete. This results in
+missed completion interrupts for other USB packets which lead to them
+being dropped due to microframe overruns.
+
+This patch splits returning the URB to the usb hcd layer into a
+high-priority tasklet. This will have most benefit for isochronous IN
+transfers but will also have incidental benefit where multiple periodic
+devices are active at once.
+
+dwc_otg: fix NAK holdoff and allow on split transactions only
+
+This corrects a bug where if a single active non-periodic endpoint
+had at least one transaction in its qh, on frnum == MAX_FRNUM the qh
+would get skipped and never get queued again. This would result in
+a silent device until error detection (automatic or otherwise) would
+either reset the device or flush and requeue the URBs.
+
+Additionally the NAK holdoff was enabled for all transactions - this
+would potentially stall a HS endpoint for 1ms if a previous error state
+enabled this interrupt and the next response was a NAK. Fix so that
+only split transactions get held off.
+
+dwc_otg: Call usb_hcd_unlink_urb_from_ep with lock held in completion handler
+
+usb_hcd_unlink_urb_from_ep must be called with the HCD lock held.  Calling it
+asynchronously in the tasklet was not safe (regression in
+c4564d4a1a0a9b10d4419e48239f5d99e88d2667).
+
+This change unlinks it from the endpoint prior to queueing it for handling in
+the tasklet, and also adds a check to ensure the urb is OK to be unlinked
+before doing so.
+
+NULL pointer dereference kernel oopses had been observed in usb_hcd_giveback_urb
+when a USB device was unplugged/replugged during data transfer.  This effect
+was reproduced using automated USB port power control, hundreds of replug
+events were performed during active transfers to confirm that the problem was
+eliminated.
+
+USB fix using a FIQ to implement split transactions
+
+This commit adds a FIQ implementaion that schedules
+the split transactions using a FIQ so we don't get
+held off by the interrupt latency of Linux
+
+dwc_otg: fix device attributes and avoid kernel warnings on boot
+
+dcw_otg: avoid logging function that can cause panics
+
+See: https://github.com/raspberrypi/firmware/issues/21
+Thanks to cleverca22 for fix
+
+dwc_otg: mask correct interrupts after transaction error recovery
+
+The dwc_otg driver will unmask certain interrupts on a transaction
+that previously halted in the error state in order to reset the
+QTD error count. The various fine-grained interrupt handlers do not
+consider that other interrupts besides themselves were unmasked.
+
+By disabling the two other interrupts only ever enabled in DMA mode
+for this purpose, we can avoid unnecessary function calls in the
+IRQ handler. This will also prevent an unneccesary FIQ interrupt
+from being generated if the FIQ is enabled.
+
+dwc_otg: fiq: prevent FIQ thrash and incorrect state passing to IRQ
+
+In the case of a transaction to a device that had previously aborted
+due to an error, several interrupts are enabled to reset the error
+count when a device responds. This has the side-effect of making the
+FIQ thrash because the hardware will generate multiple instances of
+a NAK on an IN bulk/interrupt endpoint and multiple instances of ACK
+on an OUT bulk/interrupt endpoint. Make the FIQ mask and clear the
+associated interrupts.
+
+Additionally, on non-split transactions make sure that only unmasked
+interrupts are cleared. This caused a hard-to-trigger but serious
+race condition when you had the combination of an endpoint awaiting
+error recovery and a transaction completed on an endpoint - due to
+the sequencing and timing of interrupts generated by the dwc_otg core,
+it was possible to confuse the IRQ handler.
+
+Fix function tracing
+
+dwc_otg: whitespace cleanup in dwc_otg_urb_enqueue
+
+dwc_otg: prevent OOPSes during device disconnects
+
+The dwc_otg_urb_enqueue function is thread-unsafe. In particular the
+access of urb->hcpriv, usb_hcd_link_urb_to_ep, dwc_otg_urb->qtd and
+friends does not occur within a critical section and so if a device
+was unplugged during activity there was a high chance that the
+usbcore hub_thread would try to disable the endpoint with partially-
+formed entries in the URB queue. This would result in BUG() or null
+pointer dereferences.
+
+Fix so that access of urb->hcpriv, enqueuing to the hardware and
+adding to usbcore endpoint URB lists is contained within a single
+critical section.
+
+dwc_otg: prevent BUG() in TT allocation if hub address is > 16
+
+A fixed-size array is used to track TT allocation. This was
+previously set to 16 which caused a crash because
+dwc_otg_hcd_allocate_port would read past the end of the array.
+
+This was hit if a hub was plugged in which enumerated as addr > 16,
+due to previous device resets or unplugs.
+
+Also add #ifdef FIQ_DEBUG around hcd->hub_port_alloc[], which grows
+to a large size if 128 hub addresses are supported. This field is
+for debug only for tracking which frame an allocate happened in.
+
+dwc_otg: make channel halts with unknown state less damaging
+
+If the IRQ received a channel halt interrupt through the FIQ
+with no other bits set, the IRQ would not release the host
+channel and never complete the URB.
+
+Add catchall handling to treat as a transaction error and retry.
+
+dwc_otg: fiq_split: use TTs with more granularity
+
+This fixes certain issues with split transaction scheduling.
+
+- Isochronous multi-packet OUT transactions now hog the TT until
+  they are completed - this prevents hubs aborting transactions
+  if they get a periodic start-split out-of-order
+- Don't perform TT allocation on non-periodic endpoints - this
+  allows simultaneous use of the TT's bulk/control and periodic
+  transaction buffers
+
+This commit will mainly affect USB audio playback.
+
+dwc_otg: fix potential sleep while atomic during urb enqueue
+
+Fixes a regression introduced with eb1b482a. Kmalloc called from
+dwc_otg_hcd_qtd_add / dwc_otg_hcd_qtd_create did not always have
+the GPF_ATOMIC flag set. Force this flag when inside the larger
+critical section.
+
+dwc_otg: make fiq_split_enable imply fiq_fix_enable
+
+Failing to set up the FIQ correctly would result in
+"IRQ 32: nobody cared" errors in dmesg.
+
+dwc_otg: prevent crashes on host port disconnects
+
+Fix several issues resulting in crashes or inconsistent state
+if a Model A root port was disconnected.
+
+- Clean up queue heads properly in kill_urbs_in_qh_list by
+  removing the empty QHs from the schedule lists
+- Set the halt status properly to prevent IRQ handlers from
+  using freed memory
+- Add fiq_split related cleanup for saved registers
+- Make microframe scheduling reclaim host channels if
+  active during a disconnect
+- Abort URBs with -ESHUTDOWN status response, informing
+  device drivers so they respond in a more correct fashion
+  and don't try to resubmit URBs
+- Prevent IRQ handlers from attempting to handle channel
+  interrupts if the associated URB was dequeued (and the
+  driver state was cleared)
+
+dwc_otg: prevent leaking URBs during enqueue
+
+A dwc_otg_urb would get leaked if the HCD enqueue function
+failed for any reason. Free the URB at the appropriate points.
+
+dwc_otg: Enable NAK holdoff for control split transactions
+
+Certain low-speed devices take a very long time to complete a
+data or status stage of a control transaction, producing NAK
+responses until they complete internal processing - the USB2.0
+spec limit is up to 500mS. This causes the same type of interrupt
+storm as seen with USB-serial dongles prior to c8edb238.
+
+In certain circumstances, usually while booting, this interrupt
+storm could cause SD card timeouts.
+
+dwc_otg: Fix for occasional lockup on boot when doing a USB reset
+
+dwc_otg: Don't issue traffic to LS devices in FS mode
+
+Issuing low-speed packets when the root port is in full-speed mode
+causes the root port to stop responding. Explicitly fail when
+enqueuing URBs to a LS endpoint on a FS bus.
+
+Fix ARM architecture issue with local_irq_restore()
+
+If local_fiq_enable() is called before a local_irq_restore(flags) where
+the flags variable has the F bit set, the FIQ will be erroneously disabled.
+
+Fixup arch_local_irq_restore to avoid trampling the F bit in CPSR.
+
+Also fix some of the hacks previously implemented for previous dwc_otg
+incarnations.
+---
+ arch/arm/Kconfig                                   |   1 +
+ arch/arm/include/asm/irqflags.h                    |  16 +-
+ arch/arm/kernel/fiqasm.S                           |   4 +
+ arch/arm/mach-bcm2708/armctrl.c                    |  19 +-
+ arch/arm/mach-bcm2708/bcm2708.c                    |  29 +-
+ arch/arm/mach-bcm2708/include/mach/irqs.h          | 155 ++---
+ arch/arm/mach-bcm2708/include/mach/platform.h      |   2 +
+ .../usb/host/dwc_common_port/dwc_common_linux.c    |  11 +
+ drivers/usb/host/dwc_common_port/dwc_list.h        |  14 +-
+ drivers/usb/host/dwc_common_port/dwc_os.h          |   2 +
+ drivers/usb/host/dwc_otg/Makefile                  |   1 +
+ drivers/usb/host/dwc_otg/dwc_otg_attr.c            |  14 +-
+ drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c        |  47 +-
+ drivers/usb/host/dwc_otg/dwc_otg_dbg.h             |   1 +
+ drivers/usb/host/dwc_otg/dwc_otg_driver.c          |  52 +-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c             | 304 +++++++--
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.h             |  37 +-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c        |   3 +-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h          |   5 +
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c        | 705 ++++++++++++++++++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c       | 159 +++--
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c       |  53 +-
+ drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c        | 113 ++++
+ drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h        |  48 ++
+ drivers/usb/host/dwc_otg/dwc_otg_os_dep.h          |   3 +
+ drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c        |   2 +-
+ 26 files changed, 1548 insertions(+), 252 deletions(-)
+ create mode 100755 drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
+ create mode 100755 drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index be8a752..7cdab14 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -394,6 +394,7 @@ config ARCH_BCM2708
+ 	select ARM_ERRATA_411920
+ 	select MACH_BCM2708
+ 	select VC4
++	select FIQ
+ 	help
+ 	  This enables support for Broadcom BCM2708 boards.
+ 
+diff --git a/arch/arm/include/asm/irqflags.h b/arch/arm/include/asm/irqflags.h
+index 3b763d6..5770408 100644
+--- a/arch/arm/include/asm/irqflags.h
++++ b/arch/arm/include/asm/irqflags.h
+@@ -145,12 +145,22 @@ static inline unsigned long arch_local_save_flags(void)
+ }
+ 
+ /*
+- * restore saved IRQ & FIQ state
++ * restore saved IRQ state
+  */
+ static inline void arch_local_irq_restore(unsigned long flags)
+ {
+-	asm volatile(
+-		"	msr	" IRQMASK_REG_NAME_W ", %0	@ local_irq_restore"
++	unsigned long temp = 0;
++	flags &= ~(1 << 6);
++	asm volatile (
++		" mrs %0, cpsr"
++		: "=r" (temp)
++		:
++		: "memory", "cc");
++		/* Preserve FIQ bit */
++		temp &= (1 << 6);
++		flags = flags | temp;
++	asm volatile (
++		"    msr    cpsr_c, %0    @ local_irq_restore"
+ 		:
+ 		: "r" (flags)
+ 		: "memory", "cc");
+diff --git a/arch/arm/kernel/fiqasm.S b/arch/arm/kernel/fiqasm.S
+index 207f9d6..5233d54 100644
+--- a/arch/arm/kernel/fiqasm.S
++++ b/arch/arm/kernel/fiqasm.S
+@@ -47,3 +47,7 @@ ENTRY(__get_fiq_regs)
+ 	mov	r0, r0		@ avoid hazard prior to ARMv4
+ 	mov	pc, lr
+ ENDPROC(__get_fiq_regs)
++
++ENTRY(__FIQ_Branch)
++	mov pc, r8
++ENDPROC(__FIQ_Branch)
+diff --git a/arch/arm/mach-bcm2708/armctrl.c b/arch/arm/mach-bcm2708/armctrl.c
+index da18725..274aa30 100644
+--- a/arch/arm/mach-bcm2708/armctrl.c
++++ b/arch/arm/mach-bcm2708/armctrl.c
+@@ -52,8 +52,12 @@ static void armctrl_mask_irq(struct irq_data *d)
+ 		0
+ 	};
+ 
+-	unsigned int data = (unsigned int)irq_get_chip_data(d->irq);
+-	writel(1 << (data & 0x1f), __io_address(disables[(data >> 5) & 0x3]));
++	if (d->irq >= FIQ_START) {
++		writel(0, __io_address(ARM_IRQ_FAST));
++	} else {
++		unsigned int data = (unsigned int)irq_get_chip_data(d->irq);
++		writel(1 << (data & 0x1f), __io_address(disables[(data >> 5) & 0x3]));
++	}
+ }
+ 
+ static void armctrl_unmask_irq(struct irq_data *d)
+@@ -65,8 +69,14 @@ static void armctrl_unmask_irq(struct irq_data *d)
+ 		0
+ 	};
+ 
+-	unsigned int data = (unsigned int)irq_get_chip_data(d->irq);
+-	writel(1 << (data & 0x1f), __io_address(enables[(data >> 5) & 0x3]));
++	if (d->irq >= FIQ_START) {
++		unsigned int data =
++		    (unsigned int)irq_get_chip_data(d->irq) - FIQ_START;
++		writel(0x80 | data, __io_address(ARM_IRQ_FAST));
++	} else {
++		unsigned int data = (unsigned int)irq_get_chip_data(d->irq);
++		writel(1 << (data & 0x1f), __io_address(enables[(data >> 5) & 0x3]));
++	}
+ }
+ 
+ #if defined(CONFIG_PM)
+@@ -204,5 +214,6 @@ int __init armctrl_init(void __iomem * base, unsigned int irq_start,
+ 	}
+ 
+ 	armctrl_pm_register(base, irq_start, resume_sources);
++	init_FIQ(FIQ_START);
+ 	return 0;
+ }
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 221d145..47a66f8 100644
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -321,12 +321,32 @@ static struct resource bcm2708_usb_resources[] = {
+ 	       .flags = IORESOURCE_MEM,
+ 	       },
+ 	[1] = {
+-	       .start = IRQ_USB,
+-	       .end = IRQ_USB,
++		.start = MPHI_BASE,
++		.end = MPHI_BASE + SZ_4K - 1,
++		.flags = IORESOURCE_MEM,
++	      },
++	[2] = {
++	       .start = IRQ_HOSTPORT,
++	       .end = IRQ_HOSTPORT,
+ 	       .flags = IORESOURCE_IRQ,
+ 	       },
+ };
+ 
++bool fiq_fix_enable = true;
++
++static struct resource bcm2708_usb_resources_no_fiq_fix[] = {
++	[0] = {
++		.start = USB_BASE,
++		.end = USB_BASE + SZ_128K - 1,
++		.flags = IORESOURCE_MEM,
++		},
++	[1] = {
++		.start = IRQ_USB,
++		.end = IRQ_USB,
++		.flags = IORESOURCE_IRQ,
++		},
++};
++
+ static u64 usb_dmamask = DMA_BIT_MASK(DMA_MASK_BITS_COMMON);
+ 
+ static struct platform_device bcm2708_usb_device = {
+@@ -709,6 +729,11 @@ void __init bcm2708_init(void)
+ #endif
+ 	bcm_register_device(&bcm2708_systemtimer_device);
+ 	bcm_register_device(&bcm2708_fb_device);
++	if (!fiq_fix_enable)
++	{
++		bcm2708_usb_device.resource = bcm2708_usb_resources_no_fiq_fix;
++		bcm2708_usb_device.num_resources = ARRAY_SIZE(bcm2708_usb_resources_no_fiq_fix);
++	}
+ 	bcm_register_device(&bcm2708_usb_device);
+ 	bcm_register_device(&bcm2708_uart1_device);
+ 	bcm_register_device(&bcm2708_powerman_device);
+diff --git a/arch/arm/mach-bcm2708/include/mach/irqs.h b/arch/arm/mach-bcm2708/include/mach/irqs.h
+index faf5d1a..4299054 100644
+--- a/arch/arm/mach-bcm2708/include/mach/irqs.h
++++ b/arch/arm/mach-bcm2708/include/mach/irqs.h
+@@ -106,89 +106,92 @@
+ #define IRQ_PENDING1          (IRQ_ARMCTRL_START + INTERRUPT_PENDING1)
+ #define IRQ_PENDING2          (IRQ_ARMCTRL_START + INTERRUPT_PENDING2)
+ 
++#define FIQ_START             HARD_IRQS
++
+ /*
+  *  FIQ interrupts definitions are the same as the INT definitions.
+  */
+-#define FIQ_TIMER0            INT_TIMER0
+-#define FIQ_TIMER1            INT_TIMER1
+-#define FIQ_TIMER2            INT_TIMER2
+-#define FIQ_TIMER3            INT_TIMER3
+-#define FIQ_CODEC0            INT_CODEC0
+-#define FIQ_CODEC1            INT_CODEC1
+-#define FIQ_CODEC2            INT_CODEC2
+-#define FIQ_JPEG              INT_JPEG
+-#define FIQ_ISP               INT_ISP
+-#define FIQ_USB               INT_USB
+-#define FIQ_3D                INT_3D
+-#define FIQ_TRANSPOSER        INT_TRANSPOSER
+-#define FIQ_MULTICORESYNC0    INT_MULTICORESYNC0
+-#define FIQ_MULTICORESYNC1    INT_MULTICORESYNC1
+-#define FIQ_MULTICORESYNC2    INT_MULTICORESYNC2
+-#define FIQ_MULTICORESYNC3    INT_MULTICORESYNC3
+-#define FIQ_DMA0              INT_DMA0
+-#define FIQ_DMA1              INT_DMA1
+-#define FIQ_DMA2              INT_DMA2
+-#define FIQ_DMA3              INT_DMA3
+-#define FIQ_DMA4              INT_DMA4
+-#define FIQ_DMA5              INT_DMA5
+-#define FIQ_DMA6              INT_DMA6
+-#define FIQ_DMA7              INT_DMA7
+-#define FIQ_DMA8              INT_DMA8
+-#define FIQ_DMA9              INT_DMA9
+-#define FIQ_DMA10             INT_DMA10
+-#define FIQ_DMA11             INT_DMA11
+-#define FIQ_DMA12             INT_DMA12
+-#define FIQ_AUX               INT_AUX
+-#define FIQ_ARM               INT_ARM
+-#define FIQ_VPUDMA            INT_VPUDMA
+-#define FIQ_HOSTPORT          INT_HOSTPORT
+-#define FIQ_VIDEOSCALER       INT_VIDEOSCALER
+-#define FIQ_CCP2TX            INT_CCP2TX
+-#define FIQ_SDC               INT_SDC
+-#define FIQ_DSI0              INT_DSI0
+-#define FIQ_AVE               INT_AVE
+-#define FIQ_CAM0              INT_CAM0
+-#define FIQ_CAM1              INT_CAM1
+-#define FIQ_HDMI0             INT_HDMI0
+-#define FIQ_HDMI1             INT_HDMI1
+-#define FIQ_PIXELVALVE1       INT_PIXELVALVE1
+-#define FIQ_I2CSPISLV         INT_I2CSPISLV
+-#define FIQ_DSI1              INT_DSI1
+-#define FIQ_PWA0              INT_PWA0
+-#define FIQ_PWA1              INT_PWA1
+-#define FIQ_CPR               INT_CPR
+-#define FIQ_SMI               INT_SMI
+-#define FIQ_GPIO0             INT_GPIO0
+-#define FIQ_GPIO1             INT_GPIO1
+-#define FIQ_GPIO2             INT_GPIO2
+-#define FIQ_GPIO3             INT_GPIO3
+-#define FIQ_I2C               INT_I2C
+-#define FIQ_SPI               INT_SPI
+-#define FIQ_I2SPCM            INT_I2SPCM
+-#define FIQ_SDIO              INT_SDIO
+-#define FIQ_UART              INT_UART
+-#define FIQ_SLIMBUS           INT_SLIMBUS
+-#define FIQ_VEC               INT_VEC
+-#define FIQ_CPG               INT_CPG
+-#define FIQ_RNG               INT_RNG
+-#define FIQ_ARASANSDIO        INT_ARASANSDIO
+-#define FIQ_AVSPMON           INT_AVSPMON
++#define FIQ_TIMER0            (FIQ_START+INTERRUPT_TIMER0)
++#define FIQ_TIMER1            (FIQ_START+INTERRUPT_TIMER1)
++#define FIQ_TIMER2            (FIQ_START+INTERRUPT_TIMER2)
++#define FIQ_TIMER3            (FIQ_START+INTERRUPT_TIMER3)
++#define FIQ_CODEC0            (FIQ_START+INTERRUPT_CODEC0)
++#define FIQ_CODEC1            (FIQ_START+INTERRUPT_CODEC1)
++#define FIQ_CODEC2            (FIQ_START+INTERRUPT_CODEC2)
++#define FIQ_JPEG              (FIQ_START+INTERRUPT_JPEG)
++#define FIQ_ISP               (FIQ_START+INTERRUPT_ISP)
++#define FIQ_USB               (FIQ_START+INTERRUPT_USB)
++#define FIQ_3D                (FIQ_START+INTERRUPT_3D)
++#define FIQ_TRANSPOSER        (FIQ_START+INTERRUPT_TRANSPOSER)
++#define FIQ_MULTICORESYNC0    (FIQ_START+INTERRUPT_MULTICORESYNC0)
++#define FIQ_MULTICORESYNC1    (FIQ_START+INTERRUPT_MULTICORESYNC1)
++#define FIQ_MULTICORESYNC2    (FIQ_START+INTERRUPT_MULTICORESYNC2)
++#define FIQ_MULTICORESYNC3    (FIQ_START+INTERRUPT_MULTICORESYNC3)
++#define FIQ_DMA0              (FIQ_START+INTERRUPT_DMA0)
++#define FIQ_DMA1              (FIQ_START+INTERRUPT_DMA1)
++#define FIQ_DMA2              (FIQ_START+INTERRUPT_DMA2)
++#define FIQ_DMA3              (FIQ_START+INTERRUPT_DMA3)
++#define FIQ_DMA4              (FIQ_START+INTERRUPT_DMA4)
++#define FIQ_DMA5              (FIQ_START+INTERRUPT_DMA5)
++#define FIQ_DMA6              (FIQ_START+INTERRUPT_DMA6)
++#define FIQ_DMA7              (FIQ_START+INTERRUPT_DMA7)
++#define FIQ_DMA8              (FIQ_START+INTERRUPT_DMA8)
++#define FIQ_DMA9              (FIQ_START+INTERRUPT_DMA9)
++#define FIQ_DMA10             (FIQ_START+INTERRUPT_DMA10)
++#define FIQ_DMA11             (FIQ_START+INTERRUPT_DMA11)
++#define FIQ_DMA12             (FIQ_START+INTERRUPT_DMA12)
++#define FIQ_AUX               (FIQ_START+INTERRUPT_AUX)
++#define FIQ_ARM               (FIQ_START+INTERRUPT_ARM)
++#define FIQ_VPUDMA            (FIQ_START+INTERRUPT_VPUDMA)
++#define FIQ_HOSTPORT          (FIQ_START+INTERRUPT_HOSTPORT)
++#define FIQ_VIDEOSCALER       (FIQ_START+INTERRUPT_VIDEOSCALER)
++#define FIQ_CCP2TX            (FIQ_START+INTERRUPT_CCP2TX)
++#define FIQ_SDC               (FIQ_START+INTERRUPT_SDC)
++#define FIQ_DSI0              (FIQ_START+INTERRUPT_DSI0)
++#define FIQ_AVE               (FIQ_START+INTERRUPT_AVE)
++#define FIQ_CAM0              (FIQ_START+INTERRUPT_CAM0)
++#define FIQ_CAM1              (FIQ_START+INTERRUPT_CAM1)
++#define FIQ_HDMI0             (FIQ_START+INTERRUPT_HDMI0)
++#define FIQ_HDMI1             (FIQ_START+INTERRUPT_HDMI1)
++#define FIQ_PIXELVALVE1       (FIQ_START+INTERRUPT_PIXELVALVE1)
++#define FIQ_I2CSPISLV         (FIQ_START+INTERRUPT_I2CSPISLV)
++#define FIQ_DSI1              (FIQ_START+INTERRUPT_DSI1)
++#define FIQ_PWA0              (FIQ_START+INTERRUPT_PWA0)
++#define FIQ_PWA1              (FIQ_START+INTERRUPT_PWA1)
++#define FIQ_CPR               (FIQ_START+INTERRUPT_CPR)
++#define FIQ_SMI               (FIQ_START+INTERRUPT_SMI)
++#define FIQ_GPIO0             (FIQ_START+INTERRUPT_GPIO0)
++#define FIQ_GPIO1             (FIQ_START+INTERRUPT_GPIO1)
++#define FIQ_GPIO2             (FIQ_START+INTERRUPT_GPIO2)
++#define FIQ_GPIO3             (FIQ_START+INTERRUPT_GPIO3)
++#define FIQ_I2C               (FIQ_START+INTERRUPT_I2C)
++#define FIQ_SPI               (FIQ_START+INTERRUPT_SPI)
++#define FIQ_I2SPCM            (FIQ_START+INTERRUPT_I2SPCM)
++#define FIQ_SDIO              (FIQ_START+INTERRUPT_SDIO)
++#define FIQ_UART              (FIQ_START+INTERRUPT_UART)
++#define FIQ_SLIMBUS           (FIQ_START+INTERRUPT_SLIMBUS)
++#define FIQ_VEC               (FIQ_START+INTERRUPT_VEC)
++#define FIQ_CPG               (FIQ_START+INTERRUPT_CPG)
++#define FIQ_RNG               (FIQ_START+INTERRUPT_RNG)
++#define FIQ_ARASANSDIO        (FIQ_START+INTERRUPT_ARASANSDIO)
++#define FIQ_AVSPMON           (FIQ_START+INTERRUPT_AVSPMON)
+ 
+-#define FIQ_ARM_TIMER         INT_ARM_TIMER
+-#define FIQ_ARM_MAILBOX       INT_ARM_MAILBOX
+-#define FIQ_ARM_DOORBELL_0    INT_ARM_DOORBELL_0
+-#define FIQ_ARM_DOORBELL_1    INT_ARM_DOORBELL_1
+-#define FIQ_VPU0_HALTED       INT_VPU0_HALTED
+-#define FIQ_VPU1_HALTED       INT_VPU1_HALTED
+-#define FIQ_ILLEGAL_TYPE0     INT_ILLEGAL_TYPE0
+-#define FIQ_ILLEGAL_TYPE1     INT_ILLEGAL_TYPE1
+-#define FIQ_PENDING1          INT_PENDING1
+-#define FIQ_PENDING2          INT_PENDING2
++#define FIQ_ARM_TIMER         (FIQ_START+INTERRUPT_ARM_TIMER)
++#define FIQ_ARM_MAILBOX       (FIQ_START+INTERRUPT_ARM_MAILBOX)
++#define FIQ_ARM_DOORBELL_0    (FIQ_START+INTERRUPT_ARM_DOORBELL_0)
++#define FIQ_ARM_DOORBELL_1    (FIQ_START+INTERRUPT_ARM_DOORBELL_1)
++#define FIQ_VPU0_HALTED       (FIQ_START+INTERRUPT_VPU0_HALTED)
++#define FIQ_VPU1_HALTED       (FIQ_START+INTERRUPT_VPU1_HALTED)
++#define FIQ_ILLEGAL_TYPE0     (FIQ_START+INTERRUPT_ILLEGAL_TYPE0)
++#define FIQ_ILLEGAL_TYPE1     (FIQ_START+INTERRUPT_ILLEGAL_TYPE1)
++#define FIQ_PENDING1          (FIQ_START+INTERRUPT_PENDING1)
++#define FIQ_PENDING2          (FIQ_START+INTERRUPT_PENDING2)
+ 
+ #define HARD_IRQS	      (64 + 21)
+-#define GPIO_IRQ_START  (HARD_IRQS)
++#define FIQ_IRQS        (64 + 21)
++#define GPIO_IRQ_START  (HARD_IRQS + FIQ_IRQS)
+ #define GPIO_IRQS	      (32*5)
+ #define SPARE_IRQS		  (64)
+-#define NR_IRQS		      (HARD_IRQS+GPIO_IRQS+SPARE_IRQS)
++#define NR_IRQS		      (HARD_IRQS+FIQ_IRQS+GPIO_IRQS+SPARE_IRQS)
+ 
+ #endif /* _BCM2708_IRQS_H_ */
+diff --git a/arch/arm/mach-bcm2708/include/mach/platform.h b/arch/arm/mach-bcm2708/include/mach/platform.h
+index f4bb733..992a630 100644
+--- a/arch/arm/mach-bcm2708/include/mach/platform.h
++++ b/arch/arm/mach-bcm2708/include/mach/platform.h
+@@ -56,7 +56,9 @@
+  */
+ 
+ #define BCM2708_PERI_BASE        0x20000000
++#define IC0_BASE                 (BCM2708_PERI_BASE + 0x2000)
+ #define ST_BASE                  (BCM2708_PERI_BASE + 0x3000)   /* System Timer */
++#define MPHI_BASE		 (BCM2708_PERI_BASE + 0x6000)	/* Message -based Parallel Host Interface */
+ #define DMA_BASE		 (BCM2708_PERI_BASE + 0x7000)	/* DMA controller */
+ #define ARM_BASE                 (BCM2708_PERI_BASE + 0xB000)	 /* BCM2708 ARM control block */
+ #define PM_BASE			 (BCM2708_PERI_BASE + 0x100000) /* Power Management, Reset controller and Watchdog registers */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_common_linux.c b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
+index 440bcfc..6d01261 100644
+--- a/drivers/usb/host/dwc_common_port/dwc_common_linux.c
++++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
+@@ -580,7 +580,13 @@ void DWC_WRITE_REG64(uint64_t volatile *reg, uint64_t value)
+ 
+ void DWC_MODIFY_REG32(uint32_t volatile *reg, uint32_t clear_mask, uint32_t set_mask)
+ {
++	unsigned long flags;
++
++	local_irq_save(flags);
++	local_fiq_disable();
+ 	writel((readl(reg) & ~clear_mask) | set_mask, reg);
++	local_fiq_enable();
++	local_irq_restore(flags);
+ }
+ 
+ #if 0
+@@ -991,6 +997,11 @@ void DWC_TASK_SCHEDULE(dwc_tasklet_t *task)
+ 	tasklet_schedule(&task->t);
+ }
+ 
++void DWC_TASK_HI_SCHEDULE(dwc_tasklet_t *task)
++{
++	tasklet_hi_schedule(&task->t);
++}
++
+ 
+ /* workqueues
+  - run in process context (can sleep)
+diff --git a/drivers/usb/host/dwc_common_port/dwc_list.h b/drivers/usb/host/dwc_common_port/dwc_list.h
+index 89cc325..4ce560d 100644
+--- a/drivers/usb/host/dwc_common_port/dwc_list.h
++++ b/drivers/usb/host/dwc_common_port/dwc_list.h
+@@ -384,17 +384,17 @@ struct {								\
+ #define DWC_TAILQ_PREV(elm, headname, field)				\
+ 	(*(((struct headname *)((elm)->field.tqe_prev))->tqh_last))
+ #define DWC_TAILQ_EMPTY(head)						\
+-	(TAILQ_FIRST(head) == TAILQ_END(head))
++	(DWC_TAILQ_FIRST(head) == DWC_TAILQ_END(head))
+ 
+ #define DWC_TAILQ_FOREACH(var, head, field)				\
+-	for((var) = TAILQ_FIRST(head);					\
+-	    (var) != TAILQ_END(head);					\
+-	    (var) = TAILQ_NEXT(var, field))
++	for ((var) = DWC_TAILQ_FIRST(head);				\
++	    (var) != DWC_TAILQ_END(head);				\
++	    (var) = DWC_TAILQ_NEXT(var, field))
+ 
+ #define DWC_TAILQ_FOREACH_REVERSE(var, head, headname, field)		\
+-	for((var) = TAILQ_LAST(head, headname);				\
+-	    (var) != TAILQ_END(head);					\
+-	    (var) = TAILQ_PREV(var, headname, field))
++	for ((var) = DWC_TAILQ_LAST(head, headname);			\
++	    (var) != DWC_TAILQ_END(head);				\
++	    (var) = DWC_TAILQ_PREV(var, headname, field))
+ 
+ /*
+  * Tail queue functions.
+diff --git a/drivers/usb/host/dwc_common_port/dwc_os.h b/drivers/usb/host/dwc_common_port/dwc_os.h
+index 9ffe929..09ed244 100644
+--- a/drivers/usb/host/dwc_common_port/dwc_os.h
++++ b/drivers/usb/host/dwc_common_port/dwc_os.h
+@@ -981,6 +981,8 @@ extern void DWC_TASK_FREE(dwc_tasklet_t *task);
+ extern void DWC_TASK_SCHEDULE(dwc_tasklet_t *task);
+ #define dwc_task_schedule DWC_TASK_SCHEDULE
+ 
++extern void DWC_TASK_HI_SCHEDULE(dwc_tasklet_t *task);
++#define dwc_task_hi_schedule DWC_TASK_HI_SCHEDULE
+ 
+ /** @name Timer
+  *
+diff --git a/drivers/usb/host/dwc_otg/Makefile b/drivers/usb/host/dwc_otg/Makefile
+index 236c47c..a56f193 100644
+--- a/drivers/usb/host/dwc_otg/Makefile
++++ b/drivers/usb/host/dwc_otg/Makefile
+@@ -36,6 +36,7 @@ dwc_otg-objs	+= dwc_otg_cil.o dwc_otg_cil_intr.o
+ dwc_otg-objs	+= dwc_otg_pcd_linux.o dwc_otg_pcd.o dwc_otg_pcd_intr.o
+ dwc_otg-objs	+= dwc_otg_hcd.o dwc_otg_hcd_linux.o dwc_otg_hcd_intr.o dwc_otg_hcd_queue.o dwc_otg_hcd_ddma.o
+ dwc_otg-objs	+= dwc_otg_adp.o
++dwc_otg-objs	+= dwc_otg_mphi_fix.o
+ ifneq ($(CFI),)
+ dwc_otg-objs	+= dwc_otg_cfi.o
+ endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.c b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
+index fab2961..9da0c92 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_attr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
+@@ -909,7 +909,7 @@ static ssize_t regdump_show(struct device *_dev,
+ 	return sprintf(buf, "Register Dump\n");
+ }
+ 
+-DEVICE_ATTR(regdump, S_IRUGO | S_IWUSR, regdump_show, 0);
++DEVICE_ATTR(regdump, S_IRUGO, regdump_show, 0);
+ 
+ /**
+  * Dump global registers and either host or device registers (depending on the
+@@ -920,12 +920,12 @@ static ssize_t spramdump_show(struct device *_dev,
+ {
+         dwc_otg_device_t *otg_dev = dwc_otg_drvdev(_dev);
+ 
+-	dwc_otg_dump_spram(otg_dev->core_if);
++	//dwc_otg_dump_spram(otg_dev->core_if);
+ 
+ 	return sprintf(buf, "SPRAM Dump\n");
+ }
+ 
+-DEVICE_ATTR(spramdump, S_IRUGO | S_IWUSR, spramdump_show, 0);
++DEVICE_ATTR(spramdump, S_IRUGO, spramdump_show, 0);
+ 
+ /**
+  * Dump the current hcd state.
+@@ -940,7 +940,7 @@ static ssize_t hcddump_show(struct device *_dev,
+ 	return sprintf(buf, "HCD Dump\n");
+ }
+ 
+-DEVICE_ATTR(hcddump, S_IRUGO | S_IWUSR, hcddump_show, 0);
++DEVICE_ATTR(hcddump, S_IRUGO, hcddump_show, 0);
+ 
+ /**
+  * Dump the average frame remaining at SOF. This can be used to
+@@ -958,7 +958,7 @@ static ssize_t hcd_frrem_show(struct device *_dev,
+ 	return sprintf(buf, "HCD Dump Frame Remaining\n");
+ }
+ 
+-DEVICE_ATTR(hcd_frrem, S_IRUGO | S_IWUSR, hcd_frrem_show, 0);
++DEVICE_ATTR(hcd_frrem, S_IRUGO, hcd_frrem_show, 0);
+ 
+ /**
+  * Displays the time required to read the GNPTXFSIZ register many times (the
+@@ -986,7 +986,7 @@ static ssize_t rd_reg_test_show(struct device *_dev,
+ 		       RW_REG_COUNT, time * MSEC_PER_JIFFIE, time);
+ }
+ 
+-DEVICE_ATTR(rd_reg_test, S_IRUGO | S_IWUSR, rd_reg_test_show, 0);
++DEVICE_ATTR(rd_reg_test, S_IRUGO, rd_reg_test_show, 0);
+ 
+ /**
+  * Displays the time required to write the GNPTXFSIZ register many times (the
+@@ -1014,7 +1014,7 @@ static ssize_t wr_reg_test_show(struct device *_dev,
+ 		       RW_REG_COUNT, time * MSEC_PER_JIFFIE, time);
+ }
+ 
+-DEVICE_ATTR(wr_reg_test, S_IRUGO | S_IWUSR, wr_reg_test_show, 0);
++DEVICE_ATTR(wr_reg_test, S_IRUGO, wr_reg_test_show, 0);
+ 
+ #ifdef CONFIG_USB_DWC_OTG_LPM
+ 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
+index 59fc862..2f8b3bd 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
+@@ -45,6 +45,7 @@
+ #include "dwc_otg_driver.h"
+ #include "dwc_otg_pcd.h"
+ #include "dwc_otg_hcd.h"
++#include "dwc_otg_mphi_fix.h"
+ 
+ #ifdef DEBUG
+ inline const char *op_state_str(dwc_otg_core_if_t * core_if)
+@@ -1318,7 +1319,7 @@ static int32_t dwc_otg_handle_lpm_intr(dwc_otg_core_if_t * core_if)
+ /**
+  * This function returns the Core Interrupt register.
+  */
+-static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if)
++static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if, gintmsk_data_t *reenable_gintmsk)
+ {
+ 	gahbcfg_data_t gahbcfg = {.d32 = 0 };
+ 	gintsts_data_t gintsts;
+@@ -1335,26 +1336,45 @@ static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if)
+ 	gintmsk_common.b.lpmtranrcvd = 1;
+ #endif
+ 	gintmsk_common.b.restoredone = 1;
+-	/** @todo: The port interrupt occurs while in device
+-         * mode. Added code to CIL to clear the interrupt for now!
+-         */
+-	gintmsk_common.b.portintr = 1;
+-
++	if(dwc_otg_is_device_mode(core_if))
++	{
++		/** @todo: The port interrupt occurs while in device
++		 * mode. Added code to CIL to clear the interrupt for now!
++		 */
++		gintmsk_common.b.portintr = 1;
++	}
+ 	gintsts.d32 = DWC_READ_REG32(&core_if->core_global_regs->gintsts);
+ 	gintmsk.d32 = DWC_READ_REG32(&core_if->core_global_regs->gintmsk);
++	{
++		unsigned long flags;
++
++		// Re-enable the saved interrupts
++		local_irq_save(flags);
++		local_fiq_disable();
++		gintmsk.d32 |= gintmsk_common.d32;
++		gintsts_saved.d32 &= ~gintmsk_common.d32;
++		reenable_gintmsk->d32 = gintmsk.d32;
++		local_irq_restore(flags);
++	}
++
+ 	gahbcfg.d32 = DWC_READ_REG32(&core_if->core_global_regs->gahbcfg);
+ 
+ #ifdef DEBUG
+ 	/* if any common interrupts set */
+ 	if (gintsts.d32 & gintmsk_common.d32) {
+-		DWC_DEBUGPL(DBG_ANY, "gintsts=%08x  gintmsk=%08x\n",
++		DWC_DEBUGPL(DBG_ANY, "common_intr: gintsts=%08x  gintmsk=%08x\n",
+ 			    gintsts.d32, gintmsk.d32);
+ 	}
+ #endif
+-	if (gahbcfg.b.glblintrmsk)
++	if (!fiq_fix_enable){
++		if (gahbcfg.b.glblintrmsk)
++			return ((gintsts.d32 & gintmsk.d32) & gintmsk_common.d32);
++		else
++			return 0;
++	}
++	else {
+ 		return ((gintsts.d32 & gintmsk.d32) & gintmsk_common.d32);
+-	else
+-		return 0;
++	}
+ 
+ }
+ 
+@@ -1386,6 +1406,7 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+ {
+ 	int retval = 0;
+ 	gintsts_data_t gintsts;
++	gintmsk_data_t reenable_gintmsk;
+ 	gpwrdn_data_t gpwrdn = {.d32 = 0 };
+ 	dwc_otg_device_t *otg_dev = dev;
+ 	dwc_otg_core_if_t *core_if = otg_dev->core_if;
+@@ -1407,7 +1428,7 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+ 	}
+ 
+ 	if (core_if->hibernation_suspend <= 0) {
+-		gintsts.d32 = dwc_otg_read_common_intr(core_if);
++		gintsts.d32 = dwc_otg_read_common_intr(core_if, &reenable_gintmsk);
+ 
+ 		if (gintsts.b.modemismatch) {
+ 			retval |= dwc_otg_handle_mode_mismatch_intr(core_if);
+@@ -1504,8 +1525,12 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+ 			gintsts.b.portintr = 1;
+ 			DWC_WRITE_REG32(&core_if->core_global_regs->gintsts,gintsts.d32);
+ 			retval |= 1;
++			reenable_gintmsk.b.portintr = 1;
+ 
+ 		}
++
++		DWC_WRITE_REG32(&core_if->core_global_regs->gintmsk, reenable_gintmsk.d32);
++
+ 	} else {
+ 		DWC_DEBUGPL(DBG_ANY, "gpwrdn=%08x\n", gpwrdn.d32);
+ 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_dbg.h b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
+index 8900318..ccc24e0 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
+@@ -49,6 +49,7 @@ static inline uint32_t SET_DEBUG_LEVEL(const uint32_t new)
+ 	return old;
+ }
+ 
++#define DBG_USER	(0x1)
+ /** When debug level has the DBG_CIL bit set, display CIL Debug messages. */
+ #define DBG_CIL		(0x2)
+ /** When debug level has the DBG_CILV bit set, display CIL Verbose debug
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+index ac2c846..f06c3d22 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+@@ -64,6 +64,8 @@ bool microframe_schedule=true;
+ 
+ static const char dwc_driver_name[] = "dwc_otg";
+ 
++extern void* dummy_send;
++
+ extern int pcd_init(
+ #ifdef LM_INTERFACE
+ 			   struct lm_device *_dev
+@@ -238,6 +240,14 @@ static struct dwc_otg_driver_module_params dwc_otg_module_params = {
+ 	.adp_enable = -1,
+ };
+ 
++//Global variable to switch the fiq fix on or off (declared in bcm2708.c)
++extern bool fiq_fix_enable;
++// Global variable to enable the split transaction fix
++bool fiq_split_enable = true;
++//Global variable to switch the nak holdoff on or off
++bool nak_holdoff_enable = true;
++
++
+ /**
+  * This function shows the Driver Version.
+  */
+@@ -779,17 +789,33 @@ static int dwc_otg_driver_probe(
+                     _dev->resource->start,
+                     _dev->resource->end - _dev->resource->start + 1);
+ #if 1
+-        if (!request_mem_region(_dev->resource->start,
+-                                _dev->resource->end - _dev->resource->start + 1,
++        if (!request_mem_region(_dev->resource[0].start,
++                                _dev->resource[0].end - _dev->resource[0].start + 1,
+                                 "dwc_otg")) {
+           dev_dbg(&_dev->dev, "error reserving mapped memory\n");
+           retval = -EFAULT;
+           goto fail;
+         }
+ 
+-	dwc_otg_device->os_dep.base = ioremap_nocache(_dev->resource->start,
+-                                                      _dev->resource->end -
+-                                                      _dev->resource->start+1);
++	dwc_otg_device->os_dep.base = ioremap_nocache(_dev->resource[0].start,
++                                                      _dev->resource[0].end -
++                                                      _dev->resource[0].start+1);
++	if (fiq_fix_enable)
++	{
++		if (!request_mem_region(_dev->resource[1].start,
++	                                _dev->resource[1].end - _dev->resource[1].start + 1,
++	                                "dwc_otg")) {
++	          dev_dbg(&_dev->dev, "error reserving mapped memory\n");
++	          retval = -EFAULT;
++	          goto fail;
++	}
++
++		dwc_otg_device->os_dep.mphi_base = ioremap_nocache(_dev->resource[1].start,
++							    _dev->resource[1].end -
++							    _dev->resource[1].start + 1);
++		dummy_send = (void *) kmalloc(16, GFP_ATOMIC);
++	}
++
+ #else
+         {
+                 struct map_desc desc = {
+@@ -1044,6 +1070,12 @@ static int __init dwc_otg_driver_init(void)
+ 	int retval = 0;
+ 	int error;
+         struct device_driver *drv;
++
++	if(fiq_split_enable && !fiq_fix_enable) {
++		printk(KERN_WARNING "dwc_otg: fiq_split_enable was set without fiq_fix_enable! Correcting.\n");
++		fiq_fix_enable = 1;
++	}
++
+ 	printk(KERN_INFO "%s: version %s (%s bus)\n", dwc_driver_name,
+ 	       DWC_DRIVER_VERSION,
+ #ifdef LM_INTERFACE
+@@ -1063,6 +1095,9 @@ static int __init dwc_otg_driver_init(void)
+ 		printk(KERN_ERR "%s retval=%d\n", __func__, retval);
+ 		return retval;
+ 	}
++	printk(KERN_DEBUG "dwc_otg: FIQ %s\n", fiq_fix_enable ? "enabled":"disabled");
++	printk(KERN_DEBUG "dwc_otg: NAK holdoff %s\n", nak_holdoff_enable ? "enabled":"disabled");
++	printk(KERN_DEBUG "dwc_otg: FIQ split fix %s\n", fiq_split_enable ? "enabled":"disabled");
+ 
+ 	error = driver_create_file(drv, &driver_attr_version);
+ #ifdef DEBUG
+@@ -1343,6 +1378,13 @@ MODULE_PARM_DESC(otg_ver, "OTG revision supported 0=OTG 1.3 1=OTG 2.0");
+ module_param(microframe_schedule, bool, 0444);
+ MODULE_PARM_DESC(microframe_schedule, "Enable the microframe scheduler");
+ 
++module_param(fiq_fix_enable, bool, 0444);
++MODULE_PARM_DESC(fiq_fix_enable, "Enable the fiq fix");
++module_param(nak_holdoff_enable, bool, 0444);
++MODULE_PARM_DESC(nak_holdoff_enable, "Enable the NAK holdoff");
++module_param(fiq_split_enable, bool, 0444);
++MODULE_PARM_DESC(fiq_split_enable, "Enable the FIQ fix on split transactions");
++
+ /** @page "Module Parameters"
+  *
+  * The following parameters may be specified when starting the module.
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index ab935c0..22300f0 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -40,10 +40,14 @@
+  * header file.
+  */
+ 
++#include <linux/usb.h>
++#include <linux/usb/hcd.h>
++
+ #include "dwc_otg_hcd.h"
+ #include "dwc_otg_regs.h"
++#include "dwc_otg_mphi_fix.h"
+ 
+-extern bool microframe_schedule;
++extern bool microframe_schedule, nak_holdoff_enable;
+ 
+ //#define DEBUG_HOST_CHANNELS
+ #ifdef DEBUG_HOST_CHANNELS
+@@ -53,6 +57,13 @@ static int last_sel_trans_num_avail_hc_at_start = 0;
+ static int last_sel_trans_num_avail_hc_at_end = 0;
+ #endif /* DEBUG_HOST_CHANNELS */
+ 
++extern int g_next_sched_frame, g_np_count, g_np_sent;
++
++extern haint_data_t haint_saved;
++extern hcintmsk_data_t hcintmsk_saved[MAX_EPS_CHANNELS];
++extern hcint_data_t hcint_saved[MAX_EPS_CHANNELS];
++extern gintsts_data_t ginsts_saved;
++
+ dwc_otg_hcd_t *dwc_otg_hcd_alloc_hcd(void)
+ {
+ 	return DWC_ALLOC(sizeof(dwc_otg_hcd_t));
+@@ -162,31 +173,43 @@ static void del_timers(dwc_otg_hcd_t * hcd)
+ 
+ /**
+  * Processes all the URBs in a single list of QHs. Completes them with
+- * -ETIMEDOUT and frees the QTD.
++ * -ESHUTDOWN and frees the QTD.
+  */
+ static void kill_urbs_in_qh_list(dwc_otg_hcd_t * hcd, dwc_list_link_t * qh_list)
+ {
+-	dwc_list_link_t *qh_item;
++	dwc_list_link_t *qh_item, *qh_tmp;
+ 	dwc_otg_qh_t *qh;
+ 	dwc_otg_qtd_t *qtd, *qtd_tmp;
+ 
+-	DWC_LIST_FOREACH(qh_item, qh_list) {
++	DWC_LIST_FOREACH_SAFE(qh_item, qh_tmp, qh_list) {
+ 		qh = DWC_LIST_ENTRY(qh_item, dwc_otg_qh_t, qh_list_entry);
+ 		DWC_CIRCLEQ_FOREACH_SAFE(qtd, qtd_tmp,
+ 					 &qh->qtd_list, qtd_list_entry) {
+ 			qtd = DWC_CIRCLEQ_FIRST(&qh->qtd_list);
+ 			if (qtd->urb != NULL) {
+ 				hcd->fops->complete(hcd, qtd->urb->priv,
+-						    qtd->urb, -DWC_E_TIMEOUT);
++						    qtd->urb, -DWC_E_SHUTDOWN);
+ 				dwc_otg_hcd_qtd_remove_and_free(hcd, qtd, qh);
+ 			}
+ 
+ 		}
++		if(qh->channel) {
++			/* Using hcchar.chen == 1 is not a reliable test.
++			 * It is possible that the channel has already halted
++			 * but not yet been through the IRQ handler.
++			 */
++			dwc_otg_hc_halt(hcd->core_if, qh->channel,
++				DWC_OTG_HC_XFER_URB_DEQUEUE);
++			if(microframe_schedule)
++				hcd->available_host_channels++;
++			qh->channel = NULL;
++		}
++		dwc_otg_hcd_qh_remove(hcd, qh);
+ 	}
+ }
+ 
+ /**
+- * Responds with an error status of ETIMEDOUT to all URBs in the non-periodic
++ * Responds with an error status of ESHUTDOWN to all URBs in the non-periodic
+  * and periodic schedules. The QTD associated with each URB is removed from
+  * the schedule and freed. This function may be called when a disconnect is
+  * detected or when the HCD is being stopped.
+@@ -272,7 +295,8 @@ static int32_t dwc_otg_hcd_disconnect_cb(void *p)
+ 	 */
+ 	dwc_otg_hcd->flags.b.port_connect_status_change = 1;
+ 	dwc_otg_hcd->flags.b.port_connect_status = 0;
+-
++	if(fiq_fix_enable)
++		local_fiq_disable();
+ 	/*
+ 	 * Shutdown any transfers in process by clearing the Tx FIFO Empty
+ 	 * interrupt mask and status bits and disabling subsequent host
+@@ -368,8 +392,22 @@ static int32_t dwc_otg_hcd_disconnect_cb(void *p)
+ 				channel->qh = NULL;
+ 			}
+ 		}
++		if(fiq_split_enable) {
++			for(i=0; i < 128; i++) {
++				dwc_otg_hcd->hub_port[i] = 0;
++			}
++			haint_saved.d32 = 0;
++			for(i=0; i < MAX_EPS_CHANNELS; i++) {
++				hcint_saved[i].d32 = 0;
++				hcintmsk_saved[i].d32 = 0;
++			}
++		}
++
+ 	}
+ 
++	if(fiq_fix_enable)
++		local_fiq_enable();
++
+ 	if (dwc_otg_hcd->fops->disconnect) {
+ 		dwc_otg_hcd->fops->disconnect(dwc_otg_hcd);
+ 	}
+@@ -407,6 +445,7 @@ static int dwc_otg_hcd_sleep_cb(void *p)
+ }
+ #endif
+ 
++
+ /**
+  * HCD Callback function for Remote Wakeup.
+  *
+@@ -457,10 +496,12 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
+ 			    dwc_otg_hcd_urb_t * dwc_otg_urb, void **ep_handle,
+ 			    int atomic_alloc)
+ {
+-	dwc_irqflags_t flags;
+ 	int retval = 0;
++	uint8_t needs_scheduling = 0;
++	dwc_otg_transaction_type_e tr_type;
+ 	dwc_otg_qtd_t *qtd;
+ 	gintmsk_data_t intr_mask = {.d32 = 0 };
++	hprt0_data_t hprt0 = { .d32 = 0 };
+ 
+ #ifdef DEBUG /* integrity checks (Broadcom) */
+ 	if (NULL == hcd->core_if) {
+@@ -475,6 +516,16 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
+ 		return -DWC_E_NO_DEVICE;
+ 	}
+ 
++	/* Some core configurations cannot support LS traffic on a FS root port */
++	if ((hcd->fops->speed(hcd, dwc_otg_urb->priv) == USB_SPEED_LOW) &&
++		(hcd->core_if->hwcfg2.b.fs_phy_type == 1) &&
++		(hcd->core_if->hwcfg2.b.hs_phy_type == 1)) {
++			hprt0.d32 = DWC_READ_REG32(hcd->core_if->host_if->hprt0);
++			if (hprt0.b.prtspd == DWC_HPRT0_PRTSPD_FULL_SPEED) {
++				return -DWC_E_NO_DEVICE;
++			}
++	}
++
+ 	qtd = dwc_otg_hcd_qtd_create(dwc_otg_urb, atomic_alloc);
+ 	if (qtd == NULL) {
+ 		DWC_ERROR("DWC OTG HCD URB Enqueue failed creating QTD\n");
+@@ -490,32 +541,27 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
+ 		return -DWC_E_NO_MEMORY;
+ 	}
+ #endif
+-	retval =
+-	    dwc_otg_hcd_qtd_add(qtd, hcd, (dwc_otg_qh_t **) ep_handle, atomic_alloc);
++	intr_mask.d32 = DWC_READ_REG32(&hcd->core_if->core_global_regs->gintmsk);
++	if(!intr_mask.b.sofintr) needs_scheduling = 1;
++	if((((dwc_otg_qh_t *)ep_handle)->ep_type == UE_BULK) && !(qtd->urb->flags & URB_GIVEBACK_ASAP))
++		/* Do not schedule SG transactions until qtd has URB_GIVEBACK_ASAP set */
++		needs_scheduling = 0;
++
++	retval = dwc_otg_hcd_qtd_add(qtd, hcd, (dwc_otg_qh_t **) ep_handle, atomic_alloc);
+             // creates a new queue in ep_handle if it doesn't exist already
+ 	if (retval < 0) {
+ 		DWC_ERROR("DWC OTG HCD URB Enqueue failed adding QTD. "
+ 			  "Error status %d\n", retval);
+ 		dwc_otg_hcd_qtd_free(qtd);
+-	} else {
+-		qtd->qh = *ep_handle;
++		return retval;
+ 	}
+-	intr_mask.d32 = DWC_READ_REG32(&hcd->core_if->core_global_regs->gintmsk);
+-	if (!intr_mask.b.sofintr && retval == 0) {
+-		dwc_otg_transaction_type_e tr_type;
+-		if ((qtd->qh->ep_type == UE_BULK)
+-		    && !(qtd->urb->flags & URB_GIVEBACK_ASAP)) {
+-			/* Do not schedule SG transactions until qtd has URB_GIVEBACK_ASAP set */
+-			return 0;
+-		}
+-		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
++
++	if(needs_scheduling) {
+ 		tr_type = dwc_otg_hcd_select_transactions(hcd);
+ 		if (tr_type != DWC_OTG_TRANSACTION_NONE) {
+ 			dwc_otg_hcd_queue_transactions(hcd, tr_type);
+ 		}
+-		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
+ 	}
+-
+ 	return retval;
+ }
+ 
+@@ -524,6 +570,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
+ {
+ 	dwc_otg_qh_t *qh;
+ 	dwc_otg_qtd_t *urb_qtd;
++	BUG_ON(!hcd);
++	BUG_ON(!dwc_otg_urb);
+ 
+ #ifdef DEBUG /* integrity checks (Broadcom) */
+ 
+@@ -540,14 +588,17 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
+ 		return -DWC_E_INVALID;
+ 	}
+ 	urb_qtd = dwc_otg_urb->qtd;
++	BUG_ON(!urb_qtd);
+ 	if (urb_qtd->qh == NULL) {
+ 		DWC_ERROR("**** DWC OTG HCD URB Dequeue with QTD with NULL Q handler\n");
+ 		return -DWC_E_INVALID;
+ 	}
+ #else
+ 	urb_qtd = dwc_otg_urb->qtd;
++	BUG_ON(!urb_qtd);
+ #endif
+ 	qh = urb_qtd->qh;
++	BUG_ON(!qh);
+ 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
+ 		if (urb_qtd->in_process) {
+ 			dump_channel_info(hcd, qh);
+@@ -571,6 +622,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
+ 			 */
+ 			dwc_otg_hc_halt(hcd->core_if, qh->channel,
+ 					DWC_OTG_HC_XFER_URB_DEQUEUE);
++
++			dwc_otg_hcd_release_port(hcd, qh);
+ 		}
+ 	}
+ 
+@@ -687,6 +740,33 @@ static void reset_tasklet_func(void *data)
+ 	dwc_otg_hcd->flags.b.port_reset_change = 1;
+ }
+ 
++static void completion_tasklet_func(void *ptr)
++{
++	dwc_otg_hcd_t *hcd = (dwc_otg_hcd_t *) ptr;
++	struct urb *urb;
++	urb_tq_entry_t *item;
++	dwc_irqflags_t flags;
++
++	/* This could just be spin_lock_irq */
++	DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
++	while (!DWC_TAILQ_EMPTY(&hcd->completed_urb_list)) {
++		item = DWC_TAILQ_FIRST(&hcd->completed_urb_list);
++		urb = item->urb;
++		DWC_TAILQ_REMOVE(&hcd->completed_urb_list, item,
++				urb_tq_entries);
++		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
++		DWC_FREE(item);
++
++		usb_hcd_giveback_urb(hcd->priv, urb, urb->status);
++
++		fiq_print(FIQDBG_PORTHUB, "COMPLETE");
++
++		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
++	}
++	DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
++	return;
++}
++
+ static void qh_list_free(dwc_otg_hcd_t * hcd, dwc_list_link_t * qh_list)
+ {
+ 	dwc_list_link_t *item;
+@@ -819,12 +899,14 @@ static void dwc_otg_hcd_free(dwc_otg_hcd_t * dwc_otg_hcd)
+ 	} else if (dwc_otg_hcd->status_buf != NULL) {
+ 		DWC_FREE(dwc_otg_hcd->status_buf);
+ 	}
++	DWC_SPINLOCK_FREE(dwc_otg_hcd->channel_lock);
+ 	DWC_SPINLOCK_FREE(dwc_otg_hcd->lock);
+ 	/* Set core_if's lock pointer to NULL */
+ 	dwc_otg_hcd->core_if->lock = NULL;
+ 
+ 	DWC_TIMER_FREE(dwc_otg_hcd->conn_timer);
+ 	DWC_TASK_FREE(dwc_otg_hcd->reset_tasklet);
++	DWC_TASK_FREE(dwc_otg_hcd->completion_tasklet);
+ 
+ #ifdef DWC_DEV_SRPCAP
+ 	if (dwc_otg_hcd->core_if->power_down == 2 &&
+@@ -845,6 +927,7 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
+ 	dwc_hc_t *channel;
+ 
+ 	hcd->lock = DWC_SPINLOCK_ALLOC();
++	hcd->channel_lock = DWC_SPINLOCK_ALLOC();
+         DWC_DEBUGPL(DBG_HCDV, "init of HCD %p given core_if %p\n",
+                     hcd, core_if);
+ 	if (!hcd->lock) {
+@@ -868,7 +951,7 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
+ 	DWC_LIST_INIT(&hcd->periodic_sched_ready);
+ 	DWC_LIST_INIT(&hcd->periodic_sched_assigned);
+ 	DWC_LIST_INIT(&hcd->periodic_sched_queued);
+-
++	DWC_TAILQ_INIT(&hcd->completed_urb_list);
+ 	/*
+ 	 * Create a host channel descriptor for each host channel implemented
+ 	 * in the controller. Initialize the channel descriptor array.
+@@ -906,6 +989,9 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
+ 
+ 	/* Initialize reset tasklet. */
+ 	hcd->reset_tasklet = DWC_TASK_ALLOC("reset_tasklet", reset_tasklet_func, hcd);
++
++	hcd->completion_tasklet = DWC_TASK_ALLOC("completion_tasklet",
++						completion_tasklet_func, hcd);
+ #ifdef DWC_DEV_SRPCAP
+ 	if (hcd->core_if->power_down == 2) {
+ 		/* Initialize Power on timer for Host power up in case hibernation */
+@@ -938,6 +1024,12 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
+ 	hcd->frame_list = NULL;
+ 	hcd->frame_list_dma = 0;
+ 	hcd->periodic_qh_count = 0;
++
++	DWC_MEMSET(hcd->hub_port, 0, sizeof(hcd->hub_port));
++#ifdef FIQ_DEBUG
++	DWC_MEMSET(hcd->hub_port_alloc, -1, sizeof(hcd->hub_port_alloc));
++#endif
++
+ out:
+ 	return retval;
+ }
+@@ -1083,7 +1175,12 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 		uint32_t hub_addr, port_addr;
+ 		hc->do_split = 1;
+ 		hc->xact_pos = qtd->isoc_split_pos;
+-		hc->complete_split = qtd->complete_split;
++		/* We don't need to do complete splits anymore */
++		if(fiq_split_enable)
++			hc->complete_split = qtd->complete_split = 0;
++		else
++			hc->complete_split = qtd->complete_split;
++
+ 		hcd->fops->hub_info(hcd, urb->priv, &hub_addr, &port_addr);
+ 		hc->hub_addr = (uint8_t) hub_addr;
+ 		hc->port_addr = (uint8_t) port_addr;
+@@ -1230,6 +1327,65 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 	hc->qh = qh;
+ }
+ 
++/*
++** Check the transaction to see if the port / hub has already been assigned for
++** a split transaction
++**
++** Return 0 - Port is already in use
++*/
++int dwc_otg_hcd_allocate_port(dwc_otg_hcd_t * hcd, dwc_otg_qh_t *qh)
++{
++	uint32_t hub_addr, port_addr;
++
++	if(!fiq_split_enable)
++		return 0;
++
++	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
++
++	if(hcd->hub_port[hub_addr] & (1 << port_addr))
++	{
++		fiq_print(FIQDBG_PORTHUB, "H%dP%d:S%02d", hub_addr, port_addr, qh->skip_count);
++
++		qh->skip_count++;
++
++		if(qh->skip_count > 40000)
++		{
++			printk_once(KERN_ERR "Error: Having to skip port allocation");
++			local_fiq_disable();
++			BUG();
++			return 0;
++		}
++		return 1;
++	}
++	else
++	{
++		qh->skip_count = 0;
++		hcd->hub_port[hub_addr] |= 1 << port_addr;
++		fiq_print(FIQDBG_PORTHUB, "H%dP%d:A %d", hub_addr, port_addr, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->pipe_info.ep_num);
++#ifdef FIQ_DEBUG
++		hcd->hub_port_alloc[hub_addr * 16 + port_addr] = dwc_otg_hcd_get_frame_number(hcd);
++#endif
++		return 0;
++	}
++}
++void dwc_otg_hcd_release_port(dwc_otg_hcd_t * hcd, dwc_otg_qh_t *qh)
++{
++	uint32_t hub_addr, port_addr;
++
++	if(!fiq_split_enable)
++		return;
++
++	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
++
++	hcd->hub_port[hub_addr] &= ~(1 << port_addr);
++#ifdef FIQ_DEBUG
++	hcd->hub_port_alloc[hub_addr * 16 + port_addr] = -1;
++#endif
++	fiq_print(FIQDBG_PORTHUB, "H%dP%d:RO%d", hub_addr, port_addr, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->pipe_info.ep_num);
++
++}
++
++
+ /**
+  * This function selects transactions from the HCD transfer schedule and
+  * assigns them to available host channels. It is called from HCD interrupt
+@@ -1243,9 +1399,10 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+ {
+ 	dwc_list_link_t *qh_ptr;
+ 	dwc_otg_qh_t *qh;
++	dwc_otg_qtd_t *qtd;
+ 	int num_channels;
+ 	dwc_irqflags_t flags;
+-	dwc_spinlock_t *channel_lock = DWC_SPINLOCK_ALLOC();
++	dwc_spinlock_t *channel_lock = hcd->channel_lock;
+ 	dwc_otg_transaction_type_e ret_val = DWC_OTG_TRANSACTION_NONE;
+ 
+ #ifdef DEBUG_SOF
+@@ -1263,11 +1420,29 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+ 
+ 	while (qh_ptr != &hcd->periodic_sched_ready &&
+ 	       !DWC_CIRCLEQ_EMPTY(&hcd->free_hc_list)) {
++
++		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
++
++		if(qh->do_split) {
++			qtd = DWC_CIRCLEQ_FIRST(&qh->qtd_list);
++			if(!(qh->ep_type == UE_ISOCHRONOUS &&
++					(qtd->isoc_split_pos == DWC_HCSPLIT_XACTPOS_MID ||
++					qtd->isoc_split_pos == DWC_HCSPLIT_XACTPOS_END))) {
++				if(dwc_otg_hcd_allocate_port(hcd, qh))
++				{
++					qh_ptr = DWC_LIST_NEXT(qh_ptr);
++					g_next_sched_frame = dwc_frame_num_inc(dwc_otg_hcd_get_frame_number(hcd), 1);
++					continue;
++				}
++			}
++		}
++
+ 		if (microframe_schedule) {
+ 			// Make sure we leave one channel for non periodic transactions.
+ 			DWC_SPINLOCK_IRQSAVE(channel_lock, &flags);
+ 			if (hcd->available_host_channels <= 1) {
+ 				DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
++				if(qh->do_split) dwc_otg_hcd_release_port(hcd, qh);
+ 				break;
+ 			}
+ 			hcd->available_host_channels--;
+@@ -1288,8 +1463,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+ 		DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_assigned,
+ 				   &qh->qh_list_entry);
+ 		DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
+-
+-		ret_val = DWC_OTG_TRANSACTION_PERIODIC;
+ 	}
+ 
+ 	/*
+@@ -1304,6 +1477,31 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+ 		num_channels - hcd->periodic_channels) &&
+ 	       !DWC_CIRCLEQ_EMPTY(&hcd->free_hc_list)) {
+ 
++		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
++
++		/*
++		 * Check to see if this is a NAK'd retransmit, in which case ignore for retransmission
++		 * we hold off on bulk retransmissions to reduce NAK interrupt overhead for full-speed
++		 * cheeky devices that just hold off using NAKs
++		 */
++		if (nak_holdoff_enable && qh->do_split) {
++			if (qh->nak_frame != 0xffff &&
++				dwc_full_frame_num(qh->nak_frame) ==
++				dwc_full_frame_num(dwc_otg_hcd_get_frame_number(hcd))) {
++				/*
++				 * Revisit: Need to avoid trampling on periodic scheduling.
++				 * Currently we are safe because g_np_count != g_np_sent whenever we hit this,
++				 * but if this behaviour is changed then periodic endpoints will get a slower
++				 * polling rate.
++				 */
++				g_next_sched_frame = ((qh->nak_frame + 8) & ~7) & DWC_HFNUM_MAX_FRNUM;
++				qh_ptr = DWC_LIST_NEXT(qh_ptr);
++				continue;
++			} else {
++				qh->nak_frame = 0xffff;
++			}
++		}
++
+ 		if (microframe_schedule) {
+ 				DWC_SPINLOCK_IRQSAVE(channel_lock, &flags);
+ 				if (hcd->available_host_channels < 1) {
+@@ -1316,7 +1514,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+ 				last_sel_trans_num_nonper_scheduled++;
+ #endif /* DEBUG_HOST_CHANNELS */
+ 		}
+-		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
+ 
+ 		assign_and_init_hc(hcd, qh);
+ 
+@@ -1330,21 +1527,22 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+ 				   &qh->qh_list_entry);
+ 		DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
+ 
+-		if (ret_val == DWC_OTG_TRANSACTION_NONE) {
+-			ret_val = DWC_OTG_TRANSACTION_NON_PERIODIC;
+-		} else {
+-			ret_val = DWC_OTG_TRANSACTION_ALL;
+-		}
++		g_np_sent++;
+ 
+ 		if (!microframe_schedule)
+ 			hcd->non_periodic_channels++;
+ 	}
+ 
++	if(!DWC_LIST_EMPTY(&hcd->periodic_sched_assigned))
++		ret_val |= DWC_OTG_TRANSACTION_PERIODIC;
++
++	if(!DWC_LIST_EMPTY(&hcd->non_periodic_sched_active))
++		ret_val |= DWC_OTG_TRANSACTION_NON_PERIODIC;
++
++
+ #ifdef DEBUG_HOST_CHANNELS
+ 	last_sel_trans_num_avail_hc_at_end = hcd->available_host_channels;
+ #endif /* DEBUG_HOST_CHANNELS */
+-
+-	DWC_SPINLOCK_FREE(channel_lock);
+ 	return ret_val;
+ }
+ 
+@@ -1458,6 +1656,15 @@ static void process_periodic_channels(dwc_otg_hcd_t * hcd)
+ 
+ 		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
+ 
++		// Do not send a split start transaction any later than frame .6
++		// Note, we have to schedule a periodic in .5 to make it go in .6
++		if(fiq_split_enable && qh->do_split && ((dwc_otg_hcd_get_frame_number(hcd) + 1) & 7) > 6)
++		{
++			qh_ptr = qh_ptr->next;
++			g_next_sched_frame = dwc_otg_hcd_get_frame_number(hcd) | 7;
++			continue;
++		}
++
+ 		/*
+ 		 * Set a flag if we're queuing high-bandwidth in slave mode.
+ 		 * The flag prevents any halts to get into the request queue in
+@@ -1587,6 +1794,15 @@ static void process_non_periodic_channels(dwc_otg_hcd_t * hcd)
+ 
+ 		qh = DWC_LIST_ENTRY(hcd->non_periodic_qh_ptr, dwc_otg_qh_t,
+ 				    qh_list_entry);
++
++		// Do not send a split start transaction any later than frame .5
++		// non periodic transactions will start immediately in this uframe
++		if(fiq_split_enable && qh->do_split && ((dwc_otg_hcd_get_frame_number(hcd) + 1) & 7) > 6)
++		{
++			g_next_sched_frame = dwc_otg_hcd_get_frame_number(hcd) | 7;
++			break;
++		}
++
+ 		status =
+ 		    queue_transaction(hcd, qh->channel,
+ 				      tx_status.b.nptxfspcavail);
+@@ -3112,17 +3328,13 @@ dwc_otg_hcd_urb_t *dwc_otg_hcd_urb_alloc(dwc_otg_hcd_t * hcd,
+ 	else
+ 		dwc_otg_urb = DWC_ALLOC(size);
+ 
+-        if (NULL != dwc_otg_urb)
+-                dwc_otg_urb->packet_count = iso_desc_count;
++        if (dwc_otg_urb)
++		dwc_otg_urb->packet_count = iso_desc_count;
+         else {
+-                dwc_otg_urb->packet_count = 0;
+-                if (size != 0) {
+-                        DWC_ERROR("**** DWC OTG HCD URB alloc - "
+-                                  "%salloc of %db failed\n",
+-                                  atomic_alloc?"atomic ":"", size);
+-                }
+-        }
+-
++		DWC_ERROR("**** DWC OTG HCD URB alloc - "
++			"%salloc of %db failed\n",
++			atomic_alloc?"atomic ":"", size);
++	}
+ 	return dwc_otg_urb;
+ }
+ 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+index bb4f67a..0007fa1 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+@@ -168,10 +168,10 @@ typedef enum dwc_otg_control_phase {
+ 
+ /** Transaction types. */
+ typedef enum dwc_otg_transaction_type {
+-	DWC_OTG_TRANSACTION_NONE,
+-	DWC_OTG_TRANSACTION_PERIODIC,
+-	DWC_OTG_TRANSACTION_NON_PERIODIC,
+-	DWC_OTG_TRANSACTION_ALL
++	DWC_OTG_TRANSACTION_NONE          = 0,
++	DWC_OTG_TRANSACTION_PERIODIC      = 1,
++	DWC_OTG_TRANSACTION_NON_PERIODIC  = 2,
++	DWC_OTG_TRANSACTION_ALL           = DWC_OTG_TRANSACTION_PERIODIC + DWC_OTG_TRANSACTION_NON_PERIODIC
+ } dwc_otg_transaction_type_e;
+ 
+ struct dwc_otg_qh;
+@@ -321,6 +321,11 @@ typedef struct dwc_otg_qh {
+ 	 */
+ 	uint16_t sched_frame;
+ 
++	/*
++	** Frame a NAK was received on this queue head, used to minimise NAK retransmission
++	*/
++	uint16_t nak_frame;
++
+ 	/** (micro)frame at which last start split was initialized. */
+ 	uint16_t start_split_frame;
+ 
+@@ -365,10 +370,19 @@ typedef struct dwc_otg_qh {
+ 
+ 	uint16_t speed;
+ 	uint16_t frame_usecs[8];
++
++	uint32_t skip_count;
+ } dwc_otg_qh_t;
+ 
+ DWC_CIRCLEQ_HEAD(hc_list, dwc_hc);
+ 
++typedef struct urb_tq_entry {
++	struct urb *urb;
++	DWC_TAILQ_ENTRY(urb_tq_entry) urb_tq_entries;
++} urb_tq_entry_t;
++
++DWC_TAILQ_HEAD(urb_list, urb_tq_entry);
++
+ /**
+  * This structure holds the state of the HCD, including the non-periodic and
+  * periodic schedules.
+@@ -546,9 +560,12 @@ struct dwc_otg_hcd {
+ 	/* Tasket to do a reset */
+ 	dwc_tasklet_t *reset_tasklet;
+ 
++	dwc_tasklet_t *completion_tasklet;
++	struct urb_list completed_urb_list;
++
+ 	/*  */
+ 	dwc_spinlock_t *lock;
+-
++	dwc_spinlock_t *channel_lock;
+ 	/**
+ 	 * Private data that could be used by OS wrapper.
+ 	 */
+@@ -559,6 +576,12 @@ struct dwc_otg_hcd {
+ 	/** Frame List */
+ 	uint32_t *frame_list;
+ 
++	/** Hub - Port assignment */
++	int hub_port[128];
++#ifdef FIQ_DEBUG
++	int hub_port_alloc[2048];
++#endif
++
+ 	/** Frame List DMA address */
+ 	dma_addr_t frame_list_dma;
+ 
+@@ -589,6 +612,10 @@ extern dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t
+ extern void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t * hcd,
+ 					   dwc_otg_transaction_type_e tr_type);
+ 
++int dwc_otg_hcd_allocate_port(dwc_otg_hcd_t * hcd, dwc_otg_qh_t *qh);
++void dwc_otg_hcd_release_port(dwc_otg_hcd_t * dwc_otg_hcd, dwc_otg_qh_t *qh);
++
++
+ /** @} */
+ 
+ /** @name Interrupt Handler Functions */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
+index 274967b..ee920c4 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
+@@ -276,7 +276,7 @@ void dump_frame_list(dwc_otg_hcd_t * hcd)
+ static void release_channel_ddma(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ {
+ 	dwc_irqflags_t flags;
+-	dwc_spinlock_t *channel_lock = DWC_SPINLOCK_ALLOC();
++	dwc_spinlock_t *channel_lock = hcd->channel_lock;
+ 
+ 	dwc_hc_t *hc = qh->channel;
+ 	if (dwc_qh_is_non_per(qh)) {
+@@ -306,7 +306,6 @@ static void release_channel_ddma(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 		dwc_memset(qh->desc_list, 0x00,
+ 			   sizeof(dwc_otg_host_dma_desc_t) * max_desc_num(qh));
+ 	}
+-	DWC_SPINLOCK_FREE(channel_lock);
+ }
+ 
+ /**
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
+index 4823167..fb57db0 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
+@@ -113,6 +113,11 @@ extern void dwc_otg_hcd_remove(dwc_otg_hcd_t * hcd);
+  */
+ extern int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd);
+ 
++/** This function is used to handle the fast interrupt
++ *
++ */
++extern void __attribute__ ((naked)) dwc_otg_hcd_handle_fiq(void);
++
+ /**
+  * Returns private data set by
+  * dwc_otg_hcd_set_priv_data function.
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index b41e164..64d33a5 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -34,6 +34,12 @@
+ 
+ #include "dwc_otg_hcd.h"
+ #include "dwc_otg_regs.h"
++#include "dwc_otg_mphi_fix.h"
++
++#include <linux/jiffies.h>
++#include <mach/hardware.h>
++#include <asm/fiq.h>
++
+ 
+ extern bool microframe_schedule;
+ 
+@@ -41,38 +47,487 @@ extern bool microframe_schedule;
+  * This file contains the implementation of the HCD Interrupt handlers.
+  */
+ 
++/*
++ * Some globals to communicate between the FIQ and INTERRUPT
++ */
++
++void * dummy_send;
++mphi_regs_t c_mphi_regs;
++volatile void *dwc_regs_base;
++int fiq_done, int_done;
++
++gintsts_data_t  gintsts_saved = {.d32 = 0};
++hcint_data_t    hcint_saved[MAX_EPS_CHANNELS];
++hcintmsk_data_t hcintmsk_saved[MAX_EPS_CHANNELS];
++int             split_out_xfersize[MAX_EPS_CHANNELS];
++haint_data_t    haint_saved;
++
++int g_next_sched_frame, g_np_count, g_np_sent;
++static int mphi_int_count = 0 ;
++
++hcchar_data_t nak_hcchar;
++hctsiz_data_t nak_hctsiz;
++hcsplt_data_t nak_hcsplt;
++int nak_count;
++
++int complete_sched[MAX_EPS_CHANNELS] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
++int split_start_frame[MAX_EPS_CHANNELS];
++int queued_port[MAX_EPS_CHANNELS];
++
++#ifdef FIQ_DEBUG
++char buffer[1000*16];
++int wptr;
++void notrace _fiq_print(FIQDBG_T dbg_lvl, char *fmt, ...)
++{
++	FIQDBG_T dbg_lvl_req = FIQDBG_PORTHUB;
++	va_list args;
++	char text[17];
++	hfnum_data_t hfnum = { .d32 = FIQ_READ(dwc_regs_base + 0x408) };
++	unsigned long flags;
++
++	local_irq_save(flags);
++	local_fiq_disable();
++	if(dbg_lvl & dbg_lvl_req || dbg_lvl == FIQDBG_ERR)
++	{
++		snprintf(text, 9, "%4d%d:%d ", hfnum.b.frnum/8, hfnum.b.frnum%8, 8 - hfnum.b.frrem/937);
++		va_start(args, fmt);
++		vsnprintf(text+8, 9, fmt, args);
++		va_end(args);
++
++		memcpy(buffer + wptr, text, 16);
++		wptr = (wptr + 16) % sizeof(buffer);
++	}
++	local_irq_restore(flags);
++}
++#endif
++
++void notrace fiq_queue_request(int channel, int odd_frame)
++{
++	hcchar_data_t   hcchar   = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x0)  };
++	hcsplt_data_t   hcsplt   = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x4)  };
++	hctsiz_data_t   hctsiz   = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x10) };
++
++	if(hcsplt.b.spltena	== 0)
++	{
++		fiq_print(FIQDBG_ERR, "SPLTENA ");
++		BUG();
++	}
++
++	if(hcchar.b.epdir == 1)
++	{
++		fiq_print(FIQDBG_SCHED, "IN  Ch %d", channel);
++	}
++	else
++	{
++		hctsiz.b.xfersize = 0;
++		fiq_print(FIQDBG_SCHED, "OUT Ch %d", channel);
++	}
++	FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0x10), hctsiz.d32);
++
++	hcsplt.b.compsplt = 1;
++	FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0x4), hcsplt.d32);
++
++	// Send the Split complete
++	hcchar.b.chen = 1;
++	hcchar.b.oddfrm = odd_frame ? 1 : 0;
++
++	// Post this for transmit on the next frame for periodic or this frame for non-periodic
++	fiq_print(FIQDBG_SCHED, "SND_%s", odd_frame ? "ODD " : "EVEN");
++
++	FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0x0), hcchar.d32);
++}
++
++static int last_sof = -1;
++
++/*
++** Function to handle the start of frame interrupt, choose whether we need to do anything and
++** therefore trigger the main interrupt
++**
++** returns int != 0 - interrupt has been handled
++*/
++int diff;
++
++int notrace fiq_sof_handle(hfnum_data_t hfnum)
++{
++	int handled = 0;
++	int i;
++
++	// Just check that once we're running we don't miss a SOF
++	/*if(last_sof != -1 && (hfnum.b.frnum != ((last_sof + 1) & 0x3fff)))
++	{
++		fiq_print(FIQDBG_ERR, "LASTSOF ");
++		fiq_print(FIQDBG_ERR, "%4d%d   ", last_sof / 8, last_sof & 7);
++		fiq_print(FIQDBG_ERR, "%4d%d   ", hfnum.b.frnum / 8, hfnum.b.frnum & 7);
++		BUG();
++	}*/
++
++	// Only start remembering the last sof when the interrupt has been
++	// enabled (we don't check the mask to come in here...)
++	if(last_sof != -1 || FIQ_READ(dwc_regs_base + 0x18) & (1<<3))
++		last_sof = hfnum.b.frnum;
++
++	for(i = 0; i < MAX_EPS_CHANNELS; i++)
++	{
++		if(complete_sched[i] != -1)
++		{
++			if(complete_sched[i] <= hfnum.b.frnum || (complete_sched[i] > 0x3f00 && hfnum.b.frnum < 0xf0))
++			{
++				fiq_queue_request(i, hfnum.b.frnum & 1);
++				complete_sched[i] = -1;
++			}
++		}
++
++		if(complete_sched[i] != -1)
++		{
++			// This is because we've seen a split complete occur with no start...
++			// most likely because missed the complete 0x3fff frames ago!
++
++			diff = (hfnum.b.frnum + 0x3fff - complete_sched[i]) & 0x3fff ;
++			if(diff > 32 && diff < 0x3f00)
++			{
++				fiq_print(FIQDBG_ERR, "SPLTMISS");
++				BUG();
++			}
++		}
++	}
++
++	if(g_np_count == g_np_sent && dwc_frame_num_gt(g_next_sched_frame, hfnum.b.frnum))
++	{
++		/*
++		 * If np_count != np_sent that means we need to queue non-periodic (bulk) packets this packet
++		 * g_next_sched_frame is the next frame we have periodic packets for
++		 *
++		 * if neither of these are required for this frame then just clear the interrupt
++		 */
++		handled = 1;
++
++	}
++
++	return handled;
++}
++
++int notrace port_id(hcsplt_data_t hcsplt)
++{
++	return hcsplt.b.prtaddr + (hcsplt.b.hubaddr << 8);
++}
++
++int notrace fiq_hcintr_handle(int channel, hfnum_data_t hfnum)
++{
++	hcchar_data_t   hcchar   = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x0) };
++	hcsplt_data_t   hcsplt   = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x4) };
++	hcint_data_t    hcint    = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x8) };
++	hcintmsk_data_t hcintmsk = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0xc) };
++	hctsiz_data_t   hctsiz   = { .d32 = FIQ_READ(dwc_regs_base + 0x500 + (channel * 0x20) + 0x10)};
++
++	hcint_saved[channel].d32 |= hcint.d32;
++	hcintmsk_saved[channel].d32 =  hcintmsk.d32;
++
++	if(hcsplt.b.spltena)
++	{
++		fiq_print(FIQDBG_PORTHUB, "ph: %4x", port_id(hcsplt));
++		if(hcint.b.chhltd)
++		{
++			fiq_print(FIQDBG_SCHED, "CH HLT %d", channel);
++			fiq_print(FIQDBG_SCHED, "%08x", hcint_saved[channel]);
++		}
++		if(hcint.b.stall || hcint.b.xacterr || hcint.b.bblerr || hcint.b.frmovrun || hcint.b.datatglerr)
++		{
++			queued_port[channel] = 0;
++			fiq_print(FIQDBG_ERR, "CHAN ERR");
++		}
++		if(hcint.b.xfercomp)
++		{
++			// Clear the port allocation and transmit anything also on this port
++			queued_port[channel] = 0;
++			fiq_print(FIQDBG_SCHED, "XFERCOMP");
++		}
++		if(hcint.b.nak)
++		{
++			queued_port[channel] = 0;
++			fiq_print(FIQDBG_SCHED, "NAK");
++		}
++		if(hcint.b.ack && !hcsplt.b.compsplt)
++		{
++			int i;
++
++			// Do not complete isochronous out transactions
++			if(hcchar.b.eptype == 1 && hcchar.b.epdir == 0)
++			{
++				queued_port[channel] = 0;
++				fiq_print(FIQDBG_SCHED, "ISOC_OUT");
++			}
++			else
++			{
++				// Make sure we check the port / hub combination that we sent this split on.
++				// Do not queue a second request to the same port
++				for(i = 0; i < MAX_EPS_CHANNELS; i++)
++				{
++					if(port_id(hcsplt) == queued_port[i])
++					{
++						fiq_print(FIQDBG_ERR, "PORTERR ");
++						//BUG();
++					}
++				}
++
++				split_start_frame[channel] = (hfnum.b.frnum + 1) & ~7;
++
++				// Note, the size of an OUT is in the start split phase, not
++				// the complete split
++				split_out_xfersize[channel] = hctsiz.b.xfersize;
++
++				hcint_saved[channel].b.chhltd = 0;
++				hcint_saved[channel].b.ack = 0;
++
++				queued_port[channel] = port_id(hcsplt);
++
++				if(hcchar.b.eptype & 1)
++				{
++					// Send the periodic complete in the same oddness frame as the ACK went...
++					fiq_queue_request(channel, !(hfnum.b.frnum & 1));
++	//				complete_sched[channel] = dwc_frame_num_inc(hfnum.b.frnum, 1);
++				}
++				else
++				{
++					// Schedule the split complete to occur later
++					complete_sched[channel] = dwc_frame_num_inc(hfnum.b.frnum, 2);
++					fiq_print(FIQDBG_SCHED, "ACK%04d%d", complete_sched[channel]/8, complete_sched[channel]%8);
++				}
++			}
++		}
++		if(hcint.b.nyet)
++		{
++			fiq_print(FIQDBG_ERR, "NYETERR1");
++			//BUG();
++			// Can transmit a split complete up to uframe .0 of the next frame
++			if(hfnum.b.frnum <= dwc_frame_num_inc(split_start_frame[channel], 8))
++			{
++				// Send it next frame
++				if(hcchar.b.eptype & 1) // type 1 & 3 are interrupt & isoc
++				{
++					fiq_print(FIQDBG_SCHED, "NYT:SEND");
++					fiq_queue_request(channel, !(hfnum.b.frnum & 1));
++				}
++				else
++				{
++					// Schedule non-periodic access for next frame (the odd-even bit doesn't effect NP)
++					complete_sched[channel] = dwc_frame_num_inc(hfnum.b.frnum, 1);
++					fiq_print(FIQDBG_SCHED, "NYT%04d%d", complete_sched[channel]/8, complete_sched[channel]%8);
++				}
++				hcint_saved[channel].b.chhltd = 0;
++				hcint_saved[channel].b.nyet = 0;
++			}
++			else
++			{
++				queued_port[channel] = 0;
++				fiq_print(FIQDBG_ERR, "NYETERR2");
++				//BUG();
++			}
++		}
++	}
++	else
++	{
++		/*
++		 * If we have any of NAK, ACK, Datatlgerr active on a
++		 * non-split channel, the sole reason is to reset error
++		 * counts for a previously broken transaction. The FIQ
++		 * will thrash on NAK IN and ACK OUT in particular so
++		 * handle it "once" and allow the IRQ to do the rest.
++		 */
++		hcint.d32 &= hcintmsk.d32;
++		if(hcint.b.nak)
++		{
++			hcintmsk.b.nak = 0;
++			FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0xc), hcintmsk.d32);
++		}
++		if (hcint.b.ack)
++		{
++			hcintmsk.b.ack = 0;
++			FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0xc), hcintmsk.d32);
++		}
++	}
++
++	// Clear the interrupt, this will also clear the HAINT bit
++	FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0x8), hcint.d32);
++	return hcint_saved[channel].d32 == 0;
++}
++
++gintsts_data_t gintsts;
++gintmsk_data_t gintmsk;
++// triggered: The set of interrupts that were triggered
++// handled:   The set of interrupts that have been handled (no IRQ is
++//            required)
++// keep:      The set of interrupts we want to keep unmasked even though we
++//            want to trigger an IRQ to handle it (SOF and HCINTR)
++gintsts_data_t triggered, handled, keep;
++hfnum_data_t hfnum;
++
++void __attribute__ ((naked)) notrace dwc_otg_hcd_handle_fiq(void)
++{
++
++	/* entry takes care to store registers we will be treading on here */
++	asm __volatile__ (
++		"mov     ip, sp ;"
++		/* stash FIQ and normal regs */
++		"stmdb	sp!, {r0-r12,  lr};"
++		/* !! THIS SETS THE FRAME, adjust to > sizeof locals */
++		"sub     fp, ip, #512 ;"
++		);
++
++	// Cannot put local variables at the beginning of the function
++	// because otherwise 'C' will play with the stack pointer. any locals
++	// need to be inside the following block
++	do
++	{
++		fiq_done++;
++		gintsts.d32 = FIQ_READ(dwc_regs_base + 0x14);
++		gintmsk.d32 = FIQ_READ(dwc_regs_base + 0x18);
++		hfnum.d32 =   FIQ_READ(dwc_regs_base + 0x408);
++		triggered.d32 = gintsts.d32 & gintmsk.d32;
++		handled.d32 = 0;
++		keep.d32 = 0;
++		fiq_print(FIQDBG_INT, "FIQ     ");
++		fiq_print(FIQDBG_INT, "%08x", gintsts.d32);
++		fiq_print(FIQDBG_INT, "%08x", gintmsk.d32);
++		if(gintsts.d32)
++		{
++			// If port enabled
++			if((FIQ_READ(dwc_regs_base + 0x440) & 0xf) == 0x5)
++			{
++				if(gintsts.b.sofintr)
++				{
++					if(fiq_sof_handle(hfnum))
++					{
++						handled.b.sofintr = 1; /* Handled in FIQ */
++					}
++					else
++					{
++						/* Keer interrupt unmasked */
++						keep.b.sofintr = 1;
++					}
++					{
++						// Need to make sure the read and clearing of the SOF interrupt is as close as possible to avoid the possibility of missing
++						// a start of frame interrupt
++						gintsts_data_t gintsts = { .b.sofintr = 1 };
++						FIQ_WRITE((dwc_regs_base + 0x14), gintsts.d32);
++					}
++				}
++
++				if(fiq_split_enable && gintsts.b.hcintr)
++				{
++					int i;
++					haint_data_t    haint;
++					haintmsk_data_t haintmsk;
++
++					haint.d32 = FIQ_READ(dwc_regs_base + 0x414);
++					haintmsk.d32 = FIQ_READ(dwc_regs_base + 0x418);
++					haint.d32 &= haintmsk.d32;
++					haint_saved.d32 |= haint.d32;
++
++					fiq_print(FIQDBG_INT, "hcintr");
++					fiq_print(FIQDBG_INT, "%08x", FIQ_READ(dwc_regs_base + 0x414));
++
++					// Go through each channel that has an enabled interrupt
++					for(i = 0; i < 16; i++)
++						if((haint.d32 >> i) & 1)
++							if(fiq_hcintr_handle(i, hfnum))
++								haint_saved.d32 &= ~(1 << i); /* this was handled */
++
++					/* If we've handled all host channel interrupts then don't trigger the interrupt */
++					if(haint_saved.d32 == 0)
++					{
++						handled.b.hcintr = 1;
++					}
++					else
++					{
++						/* Make sure we keep the channel interrupt unmasked when triggering the IRQ */
++						keep.b.hcintr = 1;
++					}
++
++					{
++						gintsts_data_t gintsts = { .b.hcintr = 1 };
++
++						// Always clear the channel interrupt
++						FIQ_WRITE((dwc_regs_base + 0x14), gintsts.d32);
++					}
++				}
++			}
++			else
++			{
++				last_sof = -1;
++			}
++		}
++
++		// Mask out the interrupts triggered - those handled - don't mask out the ones we want to keep
++		gintmsk.d32 = keep.d32 | (gintmsk.d32 & ~(triggered.d32 & ~handled.d32));
++		// Save those that were triggered but not handled
++		gintsts_saved.d32 |= triggered.d32 & ~handled.d32;
++		FIQ_WRITE(dwc_regs_base + 0x18, gintmsk.d32);
++
++		// Clear and save any unhandled interrupts and trigger the interrupt
++		if(gintsts_saved.d32)
++		{
++			/* To enable the MPHI interrupt  (INT 32)
++			 */
++			FIQ_WRITE( c_mphi_regs.outdda, (int) dummy_send);
++			FIQ_WRITE( c_mphi_regs.outddb, (1 << 29));
++
++			mphi_int_count++;
++		}
++	}
++	while(0);
++
++	mb();
++
++	/* exit back to normal mode restoring everything */
++	asm __volatile__ (
++		/* return FIQ regs back to pristine state
++		 * and get normal regs back
++		 */
++		"ldmia	sp!, {r0-r12, lr};"
++
++		/* return */
++		"subs	pc, lr, #4;"
++	);
++}
++
+ /** This function handles interrupts for the HCD. */
+ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+ {
+ 	int retval = 0;
++	static int last_time;
+ 
+ 	dwc_otg_core_if_t *core_if = dwc_otg_hcd->core_if;
+ 	gintsts_data_t gintsts;
++	gintmsk_data_t gintmsk;
++	hfnum_data_t hfnum;
++
+ #ifdef DEBUG
+ 	dwc_otg_core_global_regs_t *global_regs = core_if->core_global_regs;
+ 
+-        //GRAYG: debugging
+-        if (NULL == global_regs) {
+-                DWC_DEBUGPL(DBG_HCD, "**** NULL regs: dwc_otg_hcd=%p "
+-                            "core_if=%p\n",
+-                            dwc_otg_hcd, global_regs);
+-                return retval;
+-        }
+ #endif
+ 
++	gintsts.d32 = DWC_READ_REG32(&core_if->core_global_regs->gintsts);
++	gintmsk.d32 = DWC_READ_REG32(&core_if->core_global_regs->gintmsk);
++
+ 	/* Exit from ISR if core is hibernated */
+ 	if (core_if->hibernation_suspend == 1) {
+-		return retval;
++		goto exit_handler_routine;
+ 	}
+ 	DWC_SPINLOCK(dwc_otg_hcd->lock);
+ 	/* Check if HOST Mode */
+ 	if (dwc_otg_is_host_mode(core_if)) {
+-		gintsts.d32 = dwc_otg_read_core_intr(core_if);
++		local_fiq_disable();
++		gintmsk.d32 |= gintsts_saved.d32;
++		gintsts.d32 |= gintsts_saved.d32;
++		gintsts_saved.d32 = 0;
++		local_fiq_enable();
+ 		if (!gintsts.d32) {
+-			DWC_SPINUNLOCK(dwc_otg_hcd->lock);
+-			return 0;
++			goto exit_handler_routine;
+ 		}
++		gintsts.d32 &= gintmsk.d32;
++
+ #ifdef DEBUG
++		// We should be OK doing this because the common interrupts should already have been serviced
+ 		/* Don't print debug message in the interrupt handler on SOF */
+ #ifndef DEBUG_SOF
+ 		if (gintsts.d32 != DWC_SOF_INTR_MASK)
+@@ -88,10 +543,16 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+ 				    "DWC OTG HCD Interrupt Detected gintsts&gintmsk=0x%08x core_if=%p\n",
+ 				    gintsts.d32, core_if);
+ #endif
+-
+-		if (gintsts.b.sofintr) {
++		hfnum.d32 = DWC_READ_REG32(&dwc_otg_hcd->core_if->host_if->host_global_regs->hfnum);
++		if (gintsts.b.sofintr && g_np_count == g_np_sent && dwc_frame_num_gt(g_next_sched_frame, hfnum.b.frnum))
++		{
++			/* Note, we should never get here if the FIQ is doing it's job properly*/
+ 			retval |= dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd);
+ 		}
++		else if (gintsts.b.sofintr) {
++			retval |= dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd);
++		}
++
+ 		if (gintsts.b.rxstsqlvl) {
+ 			retval |=
+ 			    dwc_otg_hcd_handle_rx_status_q_level_intr
+@@ -106,7 +567,10 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+ 			/** @todo Implement i2cintr handler. */
+ 		}
+ 		if (gintsts.b.portintr) {
++
++			gintmsk_data_t gintmsk = { .b.portintr = 1};
+ 			retval |= dwc_otg_hcd_handle_port_intr(dwc_otg_hcd);
++			DWC_MODIFY_REG32(&core_if->core_global_regs->gintmsk, 0, gintmsk.d32);
+ 		}
+ 		if (gintsts.b.hcintr) {
+ 			retval |= dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd);
+@@ -138,11 +602,48 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+ #endif
+ 
+ 	}
++
++exit_handler_routine:
++
++	if (fiq_fix_enable)
++	{
++		local_fiq_disable();
++		// Make sure that we don't clear the interrupt if we've still got pending work to do
++		if(gintsts_saved.d32 == 0)
++		{
++			/* Clear the MPHI interrupt */
++			DWC_WRITE_REG32(c_mphi_regs.intstat, (1<<16));
++			if (mphi_int_count >= 60)
++			{
++				DWC_WRITE_REG32(c_mphi_regs.ctrl, ((1<<31) + (1<<16)));
++				while(!(DWC_READ_REG32(c_mphi_regs.ctrl) & (1 << 17)))
++					;
++				DWC_WRITE_REG32(c_mphi_regs.ctrl, (1<<31));
++				mphi_int_count = 0;
++			}
++			int_done++;
++		}
++
++		// Unmask handled interrupts
++		FIQ_WRITE(dwc_regs_base + 0x18, gintmsk.d32);
++		//DWC_MODIFY_REG32((uint32_t *)IO_ADDRESS(USB_BASE + 0x8), 0 , 1);
++
++		local_fiq_enable();
++
++		if((jiffies / HZ) > last_time)
++		{
++			/* Once a second output the fiq and irq numbers, useful for debug */
++			last_time = jiffies / HZ;
++			DWC_DEBUGPL(DBG_USER, "int_done = %d fiq_done = %d\n", int_done, fiq_done);
++		}
++	}
++
+ 	DWC_SPINUNLOCK(dwc_otg_hcd->lock);
+ 	return retval;
+ }
+ 
+ #ifdef DWC_TRACK_MISSED_SOFS
++
+ #warning Compiling code to track missed SOFs
+ #define FRAME_NUM_ARRAY_SIZE 1000
+ /**
+@@ -188,7 +689,8 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd)
+ 	dwc_list_link_t *qh_entry;
+ 	dwc_otg_qh_t *qh;
+ 	dwc_otg_transaction_type_e tr_type;
+-	gintsts_data_t gintsts = {.d32 = 0 };
++	int did_something = 0;
++	int32_t next_sched_frame = -1;
+ 
+ 	hfnum.d32 =
+ 	    DWC_READ_REG32(&hcd->core_if->host_if->host_global_regs->hfnum);
+@@ -212,17 +714,31 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd)
+ 		qh = DWC_LIST_ENTRY(qh_entry, dwc_otg_qh_t, qh_list_entry);
+ 		qh_entry = qh_entry->next;
+ 		if (dwc_frame_num_le(qh->sched_frame, hcd->frame_number)) {
++
+ 			/*
+ 			 * Move QH to the ready list to be executed next
+ 			 * (micro)frame.
+ 			 */
+ 			DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_ready,
+ 					   &qh->qh_list_entry);
++
++			did_something = 1;
++		}
++		else
++		{
++			if(next_sched_frame < 0 || dwc_frame_num_le(qh->sched_frame, next_sched_frame))
++			{
++				next_sched_frame = qh->sched_frame;
++			}
+ 		}
+ 	}
++
++	g_next_sched_frame = next_sched_frame;
++
+ 	tr_type = dwc_otg_hcd_select_transactions(hcd);
+ 	if (tr_type != DWC_OTG_TRANSACTION_NONE) {
+ 		dwc_otg_hcd_queue_transactions(hcd, tr_type);
++		did_something = 1;
+ 	}
+ 
+ 	/* Clear interrupt */
+@@ -511,6 +1027,15 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+ 
+ 	haint.d32 = dwc_otg_read_host_all_channels_intr(dwc_otg_hcd->core_if);
+ 
++	// Overwrite with saved interrupts from fiq handler
++	if(fiq_split_enable)
++	{
++		local_fiq_disable();
++		haint.d32 = haint_saved.d32;
++		haint_saved.d32 = 0;
++		local_fiq_enable();
++	}
++
+ 	for (i = 0; i < dwc_otg_hcd->core_if->core_params->host_channels; i++) {
+ 		if (haint.b2.chint & (1 << i)) {
+ 			retval |= dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd, i);
+@@ -551,7 +1076,10 @@ static uint32_t get_actual_xfer_length(dwc_hc_t * hc,
+ 				*short_read = (hctsiz.b.xfersize != 0);
+ 			}
+ 		} else if (hc->qh->do_split) {
+-			length = qtd->ssplit_out_xfer_count;
++			if(fiq_split_enable)
++				length = split_out_xfersize[hc->hc_num];
++			else
++				length = qtd->ssplit_out_xfer_count;
+ 		} else {
+ 			length = hc->xfer_len;
+ 		}
+@@ -595,7 +1123,6 @@ static int update_urb_state_xfer_comp(dwc_hc_t * hc,
+ 					     DWC_OTG_HC_XFER_COMPLETE,
+ 					     &short_read);
+ 
+-
+ 	/* non DWORD-aligned buffer case handling. */
+ 	if (hc->align_buff && xfer_length && hc->ep_is_in) {
+ 		dwc_memcpy(urb->buf + urb->actual_length, hc->qh->dw_align_buf,
+@@ -797,11 +1324,24 @@ static void release_channel(dwc_otg_hcd_t * hcd,
+ 	dwc_otg_transaction_type_e tr_type;
+ 	int free_qtd;
+ 	dwc_irqflags_t flags;
+-	dwc_spinlock_t *channel_lock = DWC_SPINLOCK_ALLOC();
++	dwc_spinlock_t *channel_lock = hcd->channel_lock;
++#ifdef FIQ_DEBUG
++	int endp = qtd->urb ? qtd->urb->pipe_info.ep_num : 0;
++#endif
++	int hog_port = 0;
+ 
+ 	DWC_DEBUGPL(DBG_HCDV, "  %s: channel %d, halt_status %d, xfer_len %d\n",
+ 		    __func__, hc->hc_num, halt_status, hc->xfer_len);
+ 
++	if(fiq_split_enable && hc->do_split) {
++		if(!hc->ep_is_in && hc->ep_type == UE_ISOCHRONOUS) {
++			if(hc->xact_pos == DWC_HCSPLIT_XACTPOS_MID ||
++					hc->xact_pos == DWC_HCSPLIT_XACTPOS_BEGIN) {
++				hog_port = 1;
++			}
++		}
++	}
++
+ 	switch (halt_status) {
+ 	case DWC_OTG_HC_XFER_URB_COMPLETE:
+ 		free_qtd = 1;
+@@ -876,15 +1416,32 @@ cleanup:
+ 
+ 		DWC_SPINLOCK_IRQSAVE(channel_lock, &flags);
+ 		hcd->available_host_channels++;
++		fiq_print(FIQDBG_PORTHUB, "AHC = %d ", hcd->available_host_channels);
+ 		DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
+ 	}
+ 
++	if(fiq_split_enable && hc->do_split)
++	{
++		if(!(hcd->hub_port[hc->hub_addr] & (1 << hc->port_addr)))
++		{
++			fiq_print(FIQDBG_ERR, "PRTNOTAL");
++			//BUG();
++		}
++		if(!hog_port && (hc->ep_type == DWC_OTG_EP_TYPE_ISOC ||
++				hc->ep_type == DWC_OTG_EP_TYPE_INTR)) {
++			hcd->hub_port[hc->hub_addr] &= ~(1 << hc->port_addr);
++#ifdef FIQ_DEBUG
++			hcd->hub_port_alloc[hc->hub_addr * 16 + hc->port_addr] = -1;
++#endif
++			fiq_print(FIQDBG_PORTHUB, "H%dP%d:RR%d", hc->hub_addr, hc->port_addr, endp);
++		}
++	}
++
+ 	/* Try to queue more transfers now that there's a free channel. */
+ 	tr_type = dwc_otg_hcd_select_transactions(hcd);
+ 	if (tr_type != DWC_OTG_TRANSACTION_NONE) {
+ 		dwc_otg_hcd_queue_transactions(hcd, tr_type);
+ 	}
+-	DWC_SPINLOCK_FREE(channel_lock);
+ }
+ 
+ /**
+@@ -1295,6 +1852,17 @@ static int32_t handle_hc_nak_intr(dwc_otg_hcd_t * hcd,
+ 		    "NAK Received--\n", hc->hc_num);
+ 
+ 	/*
++	 * When we get bulk NAKs then remember this so we holdoff on this qh until
++	 * the beginning of the next frame
++	 */
++	switch(dwc_otg_hcd_get_pipe_type(&qtd->urb->pipe_info)) {
++		case UE_BULK:
++		case UE_CONTROL:
++		if (nak_holdoff_enable)
++			hc->qh->nak_frame = dwc_otg_hcd_get_frame_number(hcd);
++	}
++
++	/*
+ 	 * Handle NAK for IN/OUT SSPLIT/CSPLIT transfers, bulk, control, and
+ 	 * interrupt.  Re-start the SSPLIT transfer.
+ 	 */
+@@ -1316,7 +1884,11 @@ static int32_t handle_hc_nak_intr(dwc_otg_hcd_t * hcd,
+ 			 * transfers in DMA mode for the sole purpose of
+ 			 * resetting the error count after a transaction error
+ 			 * occurs. The core will continue transferring data.
++			 * Disable other interrupts unmasked for the same
++			 * reason.
+ 			 */
++			disable_hc_int(hc_regs, datatglerr);
++			disable_hc_int(hc_regs, ack);
+ 			qtd->error_count = 0;
+ 			goto handle_nak_done;
+ 		}
+@@ -1428,6 +2000,15 @@ static int32_t handle_hc_ack_intr(dwc_otg_hcd_t * hcd,
+ 			halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_ACK);
+ 		}
+ 	} else {
++		/*
++		 * An unmasked ACK on a non-split DMA transaction is
++		 * for the sole purpose of resetting error counts. Disable other
++		 * interrupts unmasked for the same reason.
++		 */
++		if(hcd->core_if->dma_enable) {
++			disable_hc_int(hc_regs, datatglerr);
++			disable_hc_int(hc_regs, nak);
++		}
+ 		qtd->error_count = 0;
+ 
+ 		if (hc->qh->ping_state) {
+@@ -1490,8 +2071,10 @@ static int32_t handle_hc_nyet_intr(dwc_otg_hcd_t * hcd,
+ 		    hc->ep_type == DWC_OTG_EP_TYPE_ISOC) {
+ 			int frnum = dwc_otg_hcd_get_frame_number(hcd);
+ 
++			// With the FIQ running we only ever see the failed NYET
+ 			if (dwc_full_frame_num(frnum) !=
+-			    dwc_full_frame_num(hc->qh->sched_frame)) {
++			    dwc_full_frame_num(hc->qh->sched_frame) ||
++			    fiq_split_enable) {
+ 				/*
+ 				 * No longer in the same full speed frame.
+ 				 * Treat this as a transaction error.
+@@ -1778,13 +2361,28 @@ static int32_t handle_hc_datatglerr_intr(dwc_otg_hcd_t * hcd,
+ 					 dwc_otg_qtd_t * qtd)
+ {
+ 	DWC_DEBUGPL(DBG_HCDI, "--Host Channel %d Interrupt: "
+-		    "Data Toggle Error--\n", hc->hc_num);
++		"Data Toggle Error on %s transfer--\n",
++		hc->hc_num, (hc->ep_is_in ? "IN" : "OUT"));
+ 
+-	if (hc->ep_is_in) {
++	/* Data toggles on split transactions cause the hc to halt.
++	 * restart transfer */
++	if(hc->qh->do_split)
++	{
++		qtd->error_count++;
++		dwc_otg_hcd_save_data_toggle(hc, hc_regs, qtd);
++		update_urb_state_xfer_intr(hc, hc_regs,
++			qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
++		halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
++	} else if (hc->ep_is_in) {
++		/* An unmasked data toggle error on a non-split DMA transaction is
++		 * for the sole purpose of resetting error counts. Disable other
++		 * interrupts unmasked for the same reason.
++		 */
++		if(hcd->core_if->dma_enable) {
++			disable_hc_int(hc_regs, ack);
++			disable_hc_int(hc_regs, nak);
++		}
+ 		qtd->error_count = 0;
+-	} else {
+-		DWC_ERROR("Data Toggle Error on OUT transfer,"
+-			  "channel %d\n", hc->hc_num);
+ 	}
+ 
+ 	disable_hc_int(hc_regs, datatglerr);
+@@ -1862,10 +2460,10 @@ static inline int halt_status_ok(dwc_otg_hcd_t * hcd,
+ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+ 				      dwc_hc_t * hc,
+ 				      dwc_otg_hc_regs_t * hc_regs,
+-				      dwc_otg_qtd_t * qtd)
++				      dwc_otg_qtd_t * qtd,
++				      hcint_data_t hcint,
++				      hcintmsk_data_t hcintmsk)
+ {
+-	hcint_data_t hcint;
+-	hcintmsk_data_t hcintmsk;
+ 	int out_nak_enh = 0;
+ 
+ 	/* For core with OUT NAK enhancement, the flow for high-
+@@ -1897,8 +2495,11 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+ 	}
+ 
+ 	/* Read the HCINTn register to determine the cause for the halt. */
+-	hcint.d32 = DWC_READ_REG32(&hc_regs->hcint);
+-	hcintmsk.d32 = DWC_READ_REG32(&hc_regs->hcintmsk);
++	if(!fiq_split_enable)
++	{
++		hcint.d32 = DWC_READ_REG32(&hc_regs->hcint);
++		hcintmsk.d32 = DWC_READ_REG32(&hc_regs->hcintmsk);
++	}
+ 
+ 	if (hcint.b.xfercomp) {
+ 		/** @todo This is here because of a possible hardware bug.  Spec
+@@ -1937,6 +2538,8 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+ 		handle_hc_babble_intr(hcd, hc, hc_regs, qtd);
+ 	} else if (hcint.b.frmovrun) {
+ 		handle_hc_frmovrun_intr(hcd, hc, hc_regs, qtd);
++	} else if (hcint.b.datatglerr) {
++		handle_hc_datatglerr_intr(hcd, hc, hc_regs, qtd);
+ 	} else if (!out_nak_enh) {
+ 		if (hcint.b.nyet) {
+ 			/*
+@@ -1986,12 +2589,24 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+ 				     DWC_READ_REG32(&hcd->
+ 						    core_if->core_global_regs->
+ 						    gintsts));
++				/* Failthrough: use 3-strikes rule */
++				qtd->error_count++;
++				dwc_otg_hcd_save_data_toggle(hc, hc_regs, qtd);
++				update_urb_state_xfer_intr(hc, hc_regs,
++					   qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
++				halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
+ 			}
+ 
+ 		}
+ 	} else {
+ 		DWC_PRINTF("NYET/NAK/ACK/other in non-error case, 0x%08x\n",
+ 			   hcint.d32);
++		/* Failthrough: use 3-strikes rule */
++		qtd->error_count++;
++		dwc_otg_hcd_save_data_toggle(hc, hc_regs, qtd);
++		update_urb_state_xfer_intr(hc, hc_regs,
++			   qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
++		halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
+ 	}
+ }
+ 
+@@ -2009,13 +2624,15 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+ static int32_t handle_hc_chhltd_intr(dwc_otg_hcd_t * hcd,
+ 				     dwc_hc_t * hc,
+ 				     dwc_otg_hc_regs_t * hc_regs,
+-				     dwc_otg_qtd_t * qtd)
++				     dwc_otg_qtd_t * qtd,
++				     hcint_data_t hcint,
++				     hcintmsk_data_t hcintmsk)
+ {
+ 	DWC_DEBUGPL(DBG_HCDI, "--Host Channel %d Interrupt: "
+ 		    "Channel Halted--\n", hc->hc_num);
+ 
+ 	if (hcd->core_if->dma_enable) {
+-		handle_hc_chhltd_intr_dma(hcd, hc, hc_regs, qtd);
++		handle_hc_chhltd_intr_dma(hcd, hc, hc_regs, qtd, hcint, hcintmsk);
+ 	} else {
+ #ifdef DEBUG
+ 		if (!halt_status_ok(hcd, hc, hc_regs, qtd)) {
+@@ -2032,7 +2649,7 @@ static int32_t handle_hc_chhltd_intr(dwc_otg_hcd_t * hcd,
+ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+ {
+ 	int retval = 0;
+-	hcint_data_t hcint;
++	hcint_data_t hcint, hcint_orig;
+ 	hcintmsk_data_t hcintmsk;
+ 	dwc_hc_t *hc;
+ 	dwc_otg_hc_regs_t *hc_regs;
+@@ -2042,15 +2659,33 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+ 
+ 	hc = dwc_otg_hcd->hc_ptr_array[num];
+ 	hc_regs = dwc_otg_hcd->core_if->host_if->hc_regs[num];
++	if(hc->halt_status == DWC_OTG_HC_XFER_URB_DEQUEUE) {
++		/* We are responding to a channel disable. Driver
++		 * state is cleared - our qtd has gone away.
++		 */
++		release_channel(dwc_otg_hcd, hc, NULL, hc->halt_status);
++		return 1;
++	}
+ 	qtd = DWC_CIRCLEQ_FIRST(&hc->qh->qtd_list);
+ 
+ 	hcint.d32 = DWC_READ_REG32(&hc_regs->hcint);
++	hcint_orig = hcint;
+ 	hcintmsk.d32 = DWC_READ_REG32(&hc_regs->hcintmsk);
+ 	DWC_DEBUGPL(DBG_HCDV,
+ 		    "  hcint 0x%08x, hcintmsk 0x%08x, hcint&hcintmsk 0x%08x\n",
+ 		    hcint.d32, hcintmsk.d32, (hcint.d32 & hcintmsk.d32));
+ 	hcint.d32 = hcint.d32 & hcintmsk.d32;
+ 
++	if(fiq_split_enable)
++	{
++		// replace with the saved interrupts from the fiq handler
++		local_fiq_disable();
++		hcint_orig.d32 = hcint_saved[num].d32;
++		hcint.d32 = hcint_orig.d32 & hcintmsk_saved[num].d32;
++		hcint_saved[num].d32 = 0;
++		local_fiq_enable();
++	}
++
+ 	if (!dwc_otg_hcd->core_if->dma_enable) {
+ 		if (hcint.b.chhltd && hcint.d32 != 0x2) {
+ 			hcint.b.chhltd = 0;
+@@ -2068,7 +2703,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+ 		hcint.b.nyet = 0;
+ 	}
+ 	if (hcint.b.chhltd) {
+-		retval |= handle_hc_chhltd_intr(dwc_otg_hcd, hc, hc_regs, qtd);
++		retval |= handle_hc_chhltd_intr(dwc_otg_hcd, hc, hc_regs, qtd, hcint_orig, hcintmsk_saved[num]);
+ 	}
+ 	if (hcint.b.ahberr) {
+ 		retval |= handle_hc_ahberr_intr(dwc_otg_hcd, hc, hc_regs, qtd);
+@@ -2080,7 +2715,8 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+ 		retval |= handle_hc_nak_intr(dwc_otg_hcd, hc, hc_regs, qtd);
+ 	}
+ 	if (hcint.b.ack) {
+-		retval |= handle_hc_ack_intr(dwc_otg_hcd, hc, hc_regs, qtd);
++		if(!hcint.b.chhltd)
++			retval |= handle_hc_ack_intr(dwc_otg_hcd, hc, hc_regs, qtd);
+ 	}
+ 	if (hcint.b.nyet) {
+ 		retval |= handle_hc_nyet_intr(dwc_otg_hcd, hc, hc_regs, qtd);
+@@ -2102,5 +2738,4 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+ 
+ 	return retval;
+ }
+-
+ #endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index e4787f5..ee8eec9 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+@@ -1,3 +1,4 @@
++
+ /* ==========================================================================
+  * $File: //dwh/usb_iip/dev/software/otg/linux/drivers/dwc_otg_hcd_linux.c $
+  * $Revision: #20 $
+@@ -50,6 +51,7 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/version.h>
+ #include <asm/io.h>
++#include <asm/fiq.h>
+ #include <linux/usb.h>
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35)
+ #include <../drivers/usb/core/hcd.h>
+@@ -67,6 +69,8 @@
+ #include "dwc_otg_dbg.h"
+ #include "dwc_otg_driver.h"
+ #include "dwc_otg_hcd.h"
++#include "dwc_otg_mphi_fix.h"
++
+ /**
+  * Gets the endpoint number from a _bEndpointAddress argument. The endpoint is
+  * qualified with its direction (possible 32 endpoints per device).
+@@ -76,6 +80,8 @@
+ 
+ static const char dwc_otg_hcd_name[] = "dwc_otg_hcd";
+ 
++extern bool fiq_fix_enable;
++
+ /** @name Linux HC Driver API Functions */
+ /** @{ */
+ /* manage i/o requests, device state */
+@@ -259,13 +265,15 @@ static void free_bus_bandwidth(struct usb_hcd *hcd, uint32_t bw,
+ 
+ /**
+  * Sets the final status of an URB and returns it to the device driver. Any
+- * required cleanup of the URB is performed.
++ * required cleanup of the URB is performed.  The HCD lock should be held on
++ * entry.
+  */
+ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+ 		     dwc_otg_hcd_urb_t * dwc_otg_urb, int32_t status)
+ {
+ 	struct urb *urb = (struct urb *)urb_handle;
+-
++	urb_tq_entry_t *new_entry;
++	int rc = 0;
+ 	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
+ 		DWC_PRINTF("%s: urb %p, device %d, ep %d %s, status=%d\n",
+ 			   __func__, urb, usb_pipedevice(urb->pipe),
+@@ -279,7 +287,7 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+ 			}
+ 		}
+ 	}
+-
++	new_entry = DWC_ALLOC_ATOMIC(sizeof(urb_tq_entry_t));
+ 	urb->actual_length = dwc_otg_hcd_urb_get_actual_length(dwc_otg_urb);
+ 	/* Convert status value. */
+ 	switch (status) {
+@@ -301,6 +309,9 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+ 	case -DWC_E_OVERFLOW:
+ 		status = -EOVERFLOW;
+ 		break;
++	case -DWC_E_SHUTDOWN:
++		status = -ESHUTDOWN;
++		break;
+ 	default:
+ 		if (status) {
+ 			DWC_PRINTF("Uknown urb status %d\n", status);
+@@ -342,18 +353,33 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+ 	}
+ 
+ 	DWC_FREE(dwc_otg_urb);
+-
++	if (!new_entry) {
++		DWC_ERROR("dwc_otg_hcd: complete: cannot allocate URB TQ entry\n");
++		urb->status = -EPROTO;
++		/* don't schedule the tasklet -
++		 * directly return the packet here with error. */
+ #if USB_URB_EP_LINKING
+-        usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
++		usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
+ #endif
+-	DWC_SPINUNLOCK(hcd->lock);
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
+-	usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb);
++		usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb);
+ #else
+-	usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb, status);
++		usb_hcd_giveback_urb(dwc_otg_hcd_to_hcd(hcd), urb, urb->status);
+ #endif
+-	DWC_SPINLOCK(hcd->lock);
+-
++	} else {
++		new_entry->urb = urb;
++#if USB_URB_EP_LINKING
++		rc = usb_hcd_check_unlink_urb(dwc_otg_hcd_to_hcd(hcd), urb, urb->status);
++		if(0 == rc) {
++			usb_hcd_unlink_urb_from_ep(dwc_otg_hcd_to_hcd(hcd), urb);
++		}
++#endif
++		if(0 == rc) {
++			DWC_TAILQ_INSERT_TAIL(&hcd->completed_urb_list, new_entry,
++						urb_tq_entries);
++			DWC_TASK_HI_SCHEDULE(hcd->completion_tasklet);
++		}
++	}
+ 	return 0;
+ }
+ 
+@@ -366,6 +392,16 @@ static struct dwc_otg_hcd_function_ops hcd_fops = {
+ 	.get_b_hnp_enable = _get_b_hnp_enable,
+ };
+ 
++static struct fiq_handler fh = {
++  .name = "usb_fiq",
++};
++struct fiq_stack_s {
++	int magic1;
++	uint8_t stack[2048];
++	int magic2;
++} fiq_stack;
++
++extern mphi_regs_t c_mphi_regs;
+ /**
+  * Initializes the HCD. This function allocates memory for and initializes the
+  * static parts of the usb_hcd and dwc_otg_hcd structures. It also registers the
+@@ -379,6 +415,7 @@ int hcd_init(dwc_bus_dev_t *_dev)
+ 	dwc_otg_device_t *otg_dev = DWC_OTG_BUSDRVDATA(_dev);
+ 	int retval = 0;
+         u64 dmamask;
++	struct pt_regs regs;
+ 
+ 	DWC_DEBUGPL(DBG_HCD, "DWC OTG HCD INIT otg_dev=%p\n", otg_dev);
+ 
+@@ -396,6 +433,20 @@ int hcd_init(dwc_bus_dev_t *_dev)
+         pci_set_consistent_dma_mask(_dev, dmamask);
+ #endif
+ 
++	if (fiq_fix_enable)
++	{
++		// Set up fiq
++		claim_fiq(&fh);
++		set_fiq_handler(__FIQ_Branch, 4);
++		memset(&regs,0,sizeof(regs));
++		regs.ARM_r8 = (long)dwc_otg_hcd_handle_fiq;
++		regs.ARM_r9 = (long)0;
++		regs.ARM_sp = (long)fiq_stack.stack + sizeof(fiq_stack.stack) - 4;
++		set_fiq_regs(&regs);
++		fiq_stack.magic1 = 0xdeadbeef;
++		fiq_stack.magic2 = 0xaa995566;
++	}
++
+ 	/*
+ 	 * Allocate memory for the base HCD plus the DWC OTG HCD.
+ 	 * Initialize the base HCD.
+@@ -415,6 +466,30 @@ int hcd_init(dwc_bus_dev_t *_dev)
+ 
+ 	hcd->regs = otg_dev->os_dep.base;
+ 
++	if (fiq_fix_enable)
++	{
++		volatile extern void *dwc_regs_base;
++
++		//Set the mphi periph to  the required registers
++		c_mphi_regs.base    = otg_dev->os_dep.mphi_base;
++		c_mphi_regs.ctrl    = otg_dev->os_dep.mphi_base + 0x4c;
++		c_mphi_regs.outdda  = otg_dev->os_dep.mphi_base + 0x28;
++		c_mphi_regs.outddb  = otg_dev->os_dep.mphi_base + 0x2c;
++		c_mphi_regs.intstat = otg_dev->os_dep.mphi_base + 0x50;
++
++		dwc_regs_base = otg_dev->os_dep.base;
++
++		//Enable mphi peripheral
++		writel((1<<31),c_mphi_regs.ctrl);
++#ifdef DEBUG
++		if (readl(c_mphi_regs.ctrl) & 0x80000000)
++			DWC_DEBUGPL(DBG_USER, "MPHI periph has been enabled\n");
++		else
++			DWC_DEBUGPL(DBG_USER, "MPHI periph has NOT been enabled\n");
++#endif
++		// Enable FIQ interrupt from USB peripheral
++		enable_fiq(INTERRUPT_VC_USB);
++	}
+ 	/* Initialize the DWC OTG HCD. */
+ 	dwc_otg_hcd = dwc_otg_hcd_alloc_hcd();
+ 	if (!dwc_otg_hcd) {
+@@ -607,9 +682,7 @@ static int dwc_otg_urb_enqueue(struct usb_hcd *hcd,
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,28)
+ 	struct usb_host_endpoint *ep = urb->ep;
+ #endif
+-#if USB_URB_EP_LINKING
+ 	dwc_irqflags_t irqflags;
+-#endif
+         void **ref_ep_hcpriv = &ep->hcpriv;
+ 	dwc_otg_hcd_t *dwc_otg_hcd = hcd_to_dwc_otg_hcd(hcd);
+ 	dwc_otg_hcd_urb_t *dwc_otg_urb;
+@@ -661,9 +734,8 @@ static int dwc_otg_urb_enqueue(struct usb_hcd *hcd,
+ 	if(dwc_otg_urb == NULL)
+ 		return -ENOMEM;
+ 
+-        urb->hcpriv = dwc_otg_urb;
+-        if (!dwc_otg_urb && urb->number_of_packets)
+-                return -ENOMEM;
++	if (!dwc_otg_urb && urb->number_of_packets)
++		return -ENOMEM;
+ 
+ 	dwc_otg_hcd_urb_set_pipeinfo(dwc_otg_urb, usb_pipedevice(urb->pipe),
+ 				     usb_pipeendpoint(urb->pipe), ep_type,
+@@ -703,37 +775,42 @@ static int dwc_otg_urb_enqueue(struct usb_hcd *hcd,
+ 						    iso_frame_desc[i].length);
+ 	}
+ 
++	DWC_SPINLOCK_IRQSAVE(dwc_otg_hcd->lock, &irqflags);
++	urb->hcpriv = dwc_otg_urb;
+ #if USB_URB_EP_LINKING
+-        DWC_SPINLOCK_IRQSAVE(dwc_otg_hcd->lock, &irqflags);
+ 	retval = usb_hcd_link_urb_to_ep(hcd, urb);
+-        DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, irqflags);
+ 	if (0 == retval)
+ #endif
+-        {
+-                retval = dwc_otg_hcd_urb_enqueue(dwc_otg_hcd, dwc_otg_urb,
+-                                                 /*(dwc_otg_qh_t **)*/
+-                                                 ref_ep_hcpriv,
+-                                                 mem_flags == GFP_ATOMIC ? 1 : 0);
+-                if (0 == retval) {
+-                        if (alloc_bandwidth) {
+-                                allocate_bus_bandwidth(hcd,
+-                                        dwc_otg_hcd_get_ep_bandwidth(
+-                                                dwc_otg_hcd, *ref_ep_hcpriv),
+-                                                       urb);
+-                        }
+-                } else {
++	{
++		retval = dwc_otg_hcd_urb_enqueue(dwc_otg_hcd, dwc_otg_urb,
++						/*(dwc_otg_qh_t **)*/
++						ref_ep_hcpriv, 1);
++		if (0 == retval) {
++			if (alloc_bandwidth) {
++				allocate_bus_bandwidth(hcd,
++						dwc_otg_hcd_get_ep_bandwidth(
++							dwc_otg_hcd, *ref_ep_hcpriv),
++						urb);
++			}
++		} else {
++			DWC_DEBUGPL(DBG_HCD, "DWC OTG dwc_otg_hcd_urb_enqueue failed rc %d\n", retval);
+ #if USB_URB_EP_LINKING
+-			dwc_irqflags_t irqflags;
+-                        DWC_DEBUGPL(DBG_HCD, "DWC OTG dwc_otg_hcd_urb_enqueue failed rc %d\n", retval);
+-                        DWC_SPINLOCK_IRQSAVE(dwc_otg_hcd->lock, &irqflags);
+-                        usb_hcd_unlink_urb_from_ep(hcd, urb);
+-                        DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, irqflags);
++			usb_hcd_unlink_urb_from_ep(hcd, urb);
+ #endif
+-                        if (retval == -DWC_E_NO_DEVICE) {
+-                                retval = -ENODEV;
+-                        }
+-                }
+-        }
++			DWC_FREE(dwc_otg_urb);
++			urb->hcpriv = NULL;
++			if (retval == -DWC_E_NO_DEVICE)
++				retval = -ENODEV;
++		}
++	}
++#if USB_URB_EP_LINKING
++	else
++	{
++		DWC_FREE(dwc_otg_urb);
++		urb->hcpriv = NULL;
++	}
++#endif
++	DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, irqflags);
+ 	return retval;
+ }
+ 
+@@ -777,6 +854,8 @@ static int dwc_otg_urb_dequeue(struct usb_hcd *hcd, struct urb *urb, int status)
+                 usb_hcd_unlink_urb_from_ep(hcd, urb);
+ #endif
+ 		DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, flags);
++
++
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
+                 usb_hcd_giveback_urb(hcd, urb);
+ #else
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+index 9761566..db95851 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+@@ -41,6 +41,7 @@
+ 
+ #include "dwc_otg_hcd.h"
+ #include "dwc_otg_regs.h"
++#include "dwc_otg_mphi_fix.h"
+ 
+ extern bool microframe_schedule;
+ 
+@@ -181,6 +182,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh, dwc_otg_hcd_urb_t * urb)
+ 	if (microframe_schedule)
+ 		qh->speed = dev_speed;
+ 
++	qh->nak_frame = 0xffff;
+ 
+ 	if (((dev_speed == USB_SPEED_LOW) ||
+ 	     (dev_speed == USB_SPEED_FULL)) &&
+@@ -190,6 +192,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh, dwc_otg_hcd_urb_t * urb)
+ 			    dwc_otg_hcd_get_ep_num(&urb->pipe_info), hub_addr,
+ 			    hub_port);
+ 		qh->do_split = 1;
++		qh->skip_count = 0;
+ 	}
+ 
+ 	if (qh->ep_type == UE_INTERRUPT || qh->ep_type == UE_ISOCHRONOUS) {
+@@ -572,6 +575,9 @@ static int check_max_xfer_size(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 	return status;
+ }
+ 
++
++extern int g_next_sched_frame, g_np_count, g_np_sent;
++
+ /**
+  * Schedules an interrupt or isochronous transfer in the periodic schedule.
+  *
+@@ -630,8 +636,13 @@ static int schedule_periodic(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 		DWC_LIST_INSERT_TAIL(&hcd->periodic_sched_ready, &qh->qh_list_entry);
+ 	}
+ 	else {
+-	/* Always start in the inactive schedule. */
+-	DWC_LIST_INSERT_TAIL(&hcd->periodic_sched_inactive, &qh->qh_list_entry);
++		if(DWC_LIST_EMPTY(&hcd->periodic_sched_inactive) || dwc_frame_num_le(qh->sched_frame, g_next_sched_frame))
++		{
++			g_next_sched_frame = qh->sched_frame;
++
++		}
++		/* Always start in the inactive schedule. */
++		DWC_LIST_INSERT_TAIL(&hcd->periodic_sched_inactive, &qh->qh_list_entry);
+ 	}
+ 
+ 	if (!microframe_schedule) {
+@@ -645,6 +656,7 @@ static int schedule_periodic(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 	return status;
+ }
+ 
++
+ /**
+  * This function adds a QH to either the non periodic or periodic schedule if
+  * it is not already in the schedule. If the QH is already in the schedule, no
+@@ -667,6 +679,7 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 		/* Always start in the inactive schedule. */
+ 		DWC_LIST_INSERT_TAIL(&hcd->non_periodic_sched_inactive,
+ 				     &qh->qh_list_entry);
++		g_np_count++;
+ 	} else {
+ 		status = schedule_periodic(hcd, qh);
+ 		if ( !hcd->periodic_qh_count ) {
+@@ -726,6 +739,9 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 			    hcd->non_periodic_qh_ptr->next;
+ 		}
+ 		DWC_LIST_REMOVE_INIT(&qh->qh_list_entry);
++
++		// If we've removed the last non-periodic entry then there are none left!
++		g_np_count = g_np_sent;
+ 	} else {
+ 		deschedule_periodic(hcd, qh);
+ 		hcd->periodic_qh_count--;
+@@ -754,6 +770,24 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
+ 			       int sched_next_periodic_split)
+ {
+ 	if (dwc_qh_is_non_per(qh)) {
++
++		dwc_otg_qh_t *qh_tmp;
++		dwc_list_link_t *qh_list;
++		DWC_LIST_FOREACH(qh_list, &hcd->non_periodic_sched_inactive)
++		{
++			qh_tmp = DWC_LIST_ENTRY(qh_list, struct dwc_otg_qh, qh_list_entry);
++			if(qh_tmp == qh)
++			{
++				/*
++				 *  FIQ is being disabled because this one nevers gets a np_count increment
++				 *  This is still not absolutely correct, but it should fix itself with
++				 *  just an unnecessary extra interrupt
++				 */
++				g_np_sent = g_np_count;
++			}
++		}
++
++
+ 		dwc_otg_hcd_qh_remove(hcd, qh);
+ 		if (!DWC_CIRCLEQ_EMPTY(&qh->qtd_list)) {
+ 			/* Add back to inactive non-periodic schedule. */
+@@ -767,6 +801,7 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
+ 			if (sched_next_periodic_split) {
+ 
+ 				qh->sched_frame = frame_number;
++
+ 				if (dwc_frame_num_le(frame_number,
+ 						     dwc_frame_num_inc
+ 						     (qh->start_split_frame,
+@@ -815,6 +850,11 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
+ 				DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_ready,
+ 						   &qh->qh_list_entry);
+ 			} else {
++				if(!dwc_frame_num_le(g_next_sched_frame, qh->sched_frame))
++				{
++					g_next_sched_frame = qh->sched_frame;
++				}
++
+ 				DWC_LIST_MOVE_HEAD
+ 				    (&hcd->periodic_sched_inactive,
+ 				     &qh->qh_list_entry);
+@@ -879,6 +919,7 @@ void dwc_otg_hcd_qtd_init(dwc_otg_qtd_t * qtd, dwc_otg_hcd_urb_t * urb)
+  * QH to place the QTD into.  If it does not find a QH, then it will create a
+  * new QH. If the QH to which the QTD is added is not currently scheduled, it
+  * is placed into the proper schedule based on its EP type.
++ * HCD lock must be held and interrupts must be disabled on entry
+  *
+  * @param[in] qtd The QTD to add
+  * @param[in] hcd The DWC HCD structure
+@@ -891,8 +932,6 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t * qtd,
+ 			dwc_otg_hcd_t * hcd, dwc_otg_qh_t ** qh, int atomic_alloc)
+ {
+ 	int retval = 0;
+-	dwc_irqflags_t flags;
+-
+ 	dwc_otg_hcd_urb_t *urb = qtd->urb;
+ 
+ 	/*
+@@ -902,18 +941,16 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t * qtd,
+ 	if (*qh == NULL) {
+ 		*qh = dwc_otg_hcd_qh_create(hcd, urb, atomic_alloc);
+ 		if (*qh == NULL) {
+-			retval = -1;
++			retval = -DWC_E_NO_MEMORY;
+ 			goto done;
+ 		}
+ 	}
+-	DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+ 	retval = dwc_otg_hcd_qh_add(hcd, *qh);
+ 	if (retval == 0) {
+ 		DWC_CIRCLEQ_INSERT_TAIL(&((*qh)->qtd_list), qtd,
+ 					qtd_list_entry);
++		qtd->qh = *qh;
+ 	}
+-	DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
+-
+ done:
+ 
+ 	return retval;
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
+new file mode 100755
+index 0000000..50b94a8
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
+@@ -0,0 +1,113 @@
++#include "dwc_otg_regs.h"
++#include "dwc_otg_dbg.h"
++
++void dwc_debug_print_core_int_reg(gintsts_data_t gintsts, const char* function_name)
++{
++	DWC_DEBUGPL(DBG_USER,   "*** Debugging from within the %s  function: ***\n"
++				"curmode:     %1i    Modemismatch: %1i    otgintr:    %1i    sofintr:    %1i\n"
++				"rxstsqlvl:   %1i    nptxfempty  : %1i    ginnakeff:  %1i    goutnakeff: %1i\n"
++				"ulpickint:   %1i    i2cintr:      %1i    erlysuspend:%1i    usbsuspend: %1i\n"
++				"usbreset:    %1i    enumdone:     %1i    isooutdrop: %1i    eopframe:   %1i\n"
++				"restoredone: %1i    epmismatch:   %1i    inepint:    %1i    outepintr:  %1i\n"
++				"incomplisoin:%1i    incomplisoout:%1i    fetsusp:    %1i    resetdet:   %1i\n"
++				"portintr:    %1i    hcintr:       %1i    ptxfempty:  %1i    lpmtranrcvd:%1i\n"
++				"conidstschng:%1i    disconnect:   %1i    sessreqintr:%1i    wkupintr:   %1i\n",
++				function_name,
++				gintsts.b.curmode,
++				gintsts.b.modemismatch,
++				gintsts.b.otgintr,
++				gintsts.b.sofintr,
++				gintsts.b.rxstsqlvl,
++				gintsts.b.nptxfempty,
++				gintsts.b.ginnakeff,
++				gintsts.b.goutnakeff,
++				gintsts.b.ulpickint,
++				gintsts.b.i2cintr,
++				gintsts.b.erlysuspend,
++				gintsts.b.usbsuspend,
++				gintsts.b.usbreset,
++				gintsts.b.enumdone,
++				gintsts.b.isooutdrop,
++				gintsts.b.eopframe,
++				gintsts.b.restoredone,
++				gintsts.b.epmismatch,
++				gintsts.b.inepint,
++				gintsts.b.outepintr,
++				gintsts.b.incomplisoin,
++				gintsts.b.incomplisoout,
++				gintsts.b.fetsusp,
++				gintsts.b.resetdet,
++				gintsts.b.portintr,
++				gintsts.b.hcintr,
++				gintsts.b.ptxfempty,
++				gintsts.b.lpmtranrcvd,
++				gintsts.b.conidstschng,
++				gintsts.b.disconnect,
++				gintsts.b.sessreqintr,
++				gintsts.b.wkupintr);
++	return;
++}
++
++void dwc_debug_core_int_mask(gintmsk_data_t gintmsk, const char* function_name)
++{
++	DWC_DEBUGPL(DBG_USER,	"Interrupt Mask status (called from %s) :\n"
++				"modemismatch: %1i     otgintr:    %1i    sofintr:    %1i    rxstsqlvl:   %1i\n"
++				"nptxfempty:   %1i     ginnakeff:  %1i    goutnakeff: %1i    ulpickint:   %1i\n"
++				"i2cintr:      %1i     erlysuspend:%1i    usbsuspend: %1i    usbreset:    %1i\n"
++				"enumdone:     %1i     isooutdrop: %1i    eopframe:   %1i    restoredone: %1i\n"
++				"epmismatch:   %1i     inepintr:   %1i    outepintr:  %1i    incomplisoin:%1i\n"
++				"incomplisoout:%1i     fetsusp:    %1i    resetdet:   %1i    portintr:    %1i\n"
++				"hcintr:       %1i     ptxfempty:  %1i    lpmtranrcvd:%1i    conidstschng:%1i\n"
++				"disconnect:   %1i     sessreqintr:%1i    wkupintr:   %1i\n",
++				function_name,
++				gintmsk.b.modemismatch,
++				gintmsk.b.otgintr,
++				gintmsk.b.sofintr,
++				gintmsk.b.rxstsqlvl,
++				gintmsk.b.nptxfempty,
++				gintmsk.b.ginnakeff,
++				gintmsk.b.goutnakeff,
++				gintmsk.b.ulpickint,
++				gintmsk.b.i2cintr,
++				gintmsk.b.erlysuspend,
++				gintmsk.b.usbsuspend,
++				gintmsk.b.usbreset,
++				gintmsk.b.enumdone,
++				gintmsk.b.isooutdrop,
++				gintmsk.b.eopframe,
++				gintmsk.b.restoredone,
++				gintmsk.b.epmismatch,
++				gintmsk.b.inepintr,
++				gintmsk.b.outepintr,
++				gintmsk.b.incomplisoin,
++				gintmsk.b.incomplisoout,
++				gintmsk.b.fetsusp,
++				gintmsk.b.resetdet,
++				gintmsk.b.portintr,
++				gintmsk.b.hcintr,
++				gintmsk.b.ptxfempty,
++				gintmsk.b.lpmtranrcvd,
++				gintmsk.b.conidstschng,
++				gintmsk.b.disconnect,
++				gintmsk.b.sessreqintr,
++				gintmsk.b.wkupintr);
++	return;
++}
++
++void dwc_debug_otg_int(gotgint_data_t gotgint, const char* function_name)
++{
++	DWC_DEBUGPL(DBG_USER,	"otg int register (from %s function):\n"
++				"sesenddet:%1i    sesreqsucstschung:%2i    hstnegsucstschng:%1i\n"
++				"hstnegdet:%1i    adevtoutchng:     %2i    debdone:         %1i\n"
++				"mvic:     %1i\n",
++				function_name,
++				gotgint.b.sesenddet,
++				gotgint.b.sesreqsucstschng,
++				gotgint.b.hstnegsucstschng,
++				gotgint.b.hstnegdet,
++				gotgint.b.adevtoutchng,
++				gotgint.b.debdone,
++				gotgint.b.mvic);
++
++	return;
++}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
+new file mode 100755
+index 0000000..ca17379
+--- /dev/null
++++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
+@@ -0,0 +1,48 @@
++#ifndef __DWC_OTG_MPHI_FIX_H__
++#define __DWC_OTG_MPHI_FIX_H__
++#define FIQ_WRITE(_addr_,_data_) (*(volatile uint32_t *) (_addr_) = (_data_))
++#define FIQ_READ(_addr_) (*(volatile uint32_t *) (_addr_))
++
++typedef struct {
++	volatile void* base;
++	volatile void* ctrl;
++	volatile void* outdda;
++	volatile void* outddb;
++	volatile void* intstat;
++} mphi_regs_t;
++
++void dwc_debug_print_core_int_reg(gintsts_data_t gintsts, const char* function_name);
++void dwc_debug_core_int_mask(gintsts_data_t gintmsk, const char* function_name);
++void dwc_debug_otg_int(gotgint_data_t gotgint, const char* function_name);
++
++extern gintsts_data_t gintsts_saved;
++
++#ifdef DEBUG
++#define DWC_DBG_PRINT_CORE_INT(_arg_) dwc_debug_print_core_int_reg(_arg_,__func__)
++#define DWC_DBG_PRINT_CORE_INT_MASK(_arg_) dwc_debug_core_int_mask(_arg_,__func__)
++#define DWC_DBG_PRINT_OTG_INT(_arg_) dwc_debug_otg_int(_arg_,__func__)
++
++#else
++#define DWC_DBG_PRINT_CORE_INT(_arg_)
++#define DWC_DBG_PRINT_CORE_INT_MASK(_arg_)
++#define DWC_DBG_PRINT_OTG_INT(_arg_)
++
++#endif
++
++typedef enum {
++	FIQDBG_SCHED = (1 << 0),
++	FIQDBG_INT   = (1 << 1),
++	FIQDBG_ERR   = (1 << 2),
++	FIQDBG_PORTHUB = (1 << 3),
++} FIQDBG_T;
++
++void _fiq_print(FIQDBG_T dbg_lvl, char *fmt, ...);
++#ifdef FIQ_DEBUG
++#define fiq_print _fiq_print
++#else
++#define fiq_print(x, y, ...)
++#endif
++
++extern bool fiq_fix_enable, nak_holdoff_enable, fiq_split_enable;
++
++#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
+index e46d9bb..6b2c7d0 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
+@@ -97,6 +97,9 @@ typedef struct os_dependent {
+ 	/** Register offset for Diagnostic API */
+ 	uint32_t reg_offset;
+ 
++	/** Base address for MPHI peripheral */
++	void *mphi_base;
++
+ #ifdef LM_INTERFACE
+ 	struct lm_device *lmdev;
+ #elif  defined(PCI_INTERFACE)
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
+index 1b1f83c..c8590b5 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
+@@ -4276,7 +4276,7 @@ do { \
+ 									&& (pcd->ep0state == EP0_OUT_DATA_PHASE))
+ 									status.d32 = core_if->dev_if->out_desc_addr->status.d32;
+ 								if (pcd->ep0state == EP0_OUT_STATUS_PHASE)
+-									status.d32 = status.d32 = core_if->dev_if->
++									status.d32 = core_if->dev_if->
+ 									out_desc_addr->status.d32;
+ 
+ 								if (status.b.sr) {
+-- 
+1.9.1
+

@@ -1,0 +1,53 @@
+From c5749de8927e1b64eaf5e6c7401a24d1ee0fdc68 Mon Sep 17 00:00:00 2001
+From: Florian Meier <florian.meier@koalo.de>
+Date: Fri, 22 Nov 2013 19:21:34 +0100
+Subject: [PATCH 39/54] BCM2708: Add HifiBerry DAC to board file
+
+This adds the initalization of the HifiBerry DAC
+to the mach-bcm2708 board file.
+
+Signed-off-by: Florian Meier <florian.meier@koalo.de>
+---
+ arch/arm/mach-bcm2708/bcm2708.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 07da1fd..82b09a5 100644
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -637,6 +637,20 @@ static struct platform_device bcm2708_i2s_device = {
+ };
+ #endif
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC_MODULE)
++static struct platform_device snd_hifiberry_dac_device = {
++        .name = "snd-hifiberry-dac",
++        .id = 0,
++        .num_resources = 0,
++};
++
++static struct platform_device snd_pcm5102a_codec_device = {
++        .name = "pcm5102a-codec",
++        .id = -1,
++        .num_resources = 0,
++};
++#endif
++
+ int __init bcm_register_device(struct platform_device *pdev)
+ {
+ 	int ret;
+@@ -764,6 +778,11 @@ void __init bcm2708_init(void)
+ 	bcm_register_device(&bcm2708_i2s_device);
+ #endif
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC_MODULE)
++        bcm_register_device(&snd_hifiberry_dac_device);
++        bcm_register_device(&snd_pcm5102a_codec_device);
++#endif
++
+ 	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
+ 		struct amba_device *d = amba_devs[i];
+ 		amba_device_register(d, &iomem_resource);
+-- 
+1.9.1
+
