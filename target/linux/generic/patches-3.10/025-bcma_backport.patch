@@ -378,7 +378,7 @@
  	bcma_chipco_gpio_pullup(cc, 1 << gpio, 0);
  }
  
-+#if IS_BUILTIN(CONFIG_BCMA_HOST_SOC)
++#if IS_BUILTIN(CONFIG_BCM47XX)
  static int bcma_gpio_to_irq(struct gpio_chip *chip, unsigned gpio)
  {
  	struct bcma_drv_cc *cc = bcma_gpio_get_cc(chip);
@@ -516,7 +516,7 @@
  	chip->set		= bcma_gpio_set_value;
  	chip->direction_input	= bcma_gpio_direction_input;
  	chip->direction_output	= bcma_gpio_direction_output;
-+#if IS_BUILTIN(CONFIG_BCMA_HOST_SOC)
++#if IS_BUILTIN(CONFIG_BCM47XX)
  	chip->to_irq		= bcma_gpio_to_irq;
 -	chip->ngpio		= 16;
 +#endif
@@ -1300,26 +1300,33 @@
  		}
  	}
  	return 0;
-@@ -421,9 +440,6 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -420,9 +439,7 @@ void bcma_init_bus(struct bcma_bus *bus)
+ {
  	s32 tmp;
  	struct bcma_chipinfo *chipinfo = &(bus->chipinfo);
- 
+-
 -	if (bus->init_done)
 -		return;
--
++	char chip_id[8];
+ 
  	INIT_LIST_HEAD(&bus->cores);
  	bus->nr_cores = 0;
- 
-@@ -435,8 +451,6 @@ void bcma_init_bus(struct bcma_bus *bus)
+@@ -433,10 +450,11 @@ void bcma_init_bus(struct bcma_bus *bus)
+ 	chipinfo->id = (tmp & BCMA_CC_ID_ID) >> BCMA_CC_ID_ID_SHIFT;
+ 	chipinfo->rev = (tmp & BCMA_CC_ID_REV) >> BCMA_CC_ID_REV_SHIFT;
  	chipinfo->pkg = (tmp & BCMA_CC_ID_PKG) >> BCMA_CC_ID_PKG_SHIFT;
- 	bcma_info(bus, "Found chip with id 0x%04X, rev 0x%02X and package 0x%02X\n",
- 		  chipinfo->id, chipinfo->rev, chipinfo->pkg);
--
+-	bcma_info(bus, "Found chip with id 0x%04X, rev 0x%02X and package 0x%02X\n",
+-		  chipinfo->id, chipinfo->rev, chipinfo->pkg);
+ 
 -	bus->init_done = true;
++	snprintf(chip_id, ARRAY_SIZE(chip_id),
++		 (chipinfo->id > 0x9999) ? "%d" : "0x%04X", chipinfo->id);
++	bcma_info(bus, "Found chip with id %s, rev 0x%02X and package 0x%02X\n",
++		  chip_id, chipinfo->rev, chipinfo->pkg);
  }
  
  int bcma_bus_scan(struct bcma_bus *bus)
-@@ -446,8 +460,6 @@ int bcma_bus_scan(struct bcma_bus *bus)
+@@ -446,8 +464,6 @@ int bcma_bus_scan(struct bcma_bus *bus)
  
  	int err, core_num = 0;
  
