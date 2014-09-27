@@ -385,7 +385,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -459,7 +459,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -460,7 +460,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
@@ -741,7 +741,7 @@
  		if (xb)
  			return i * 32 + 31 - __fls(ntohl(xb));
  	}
-@@ -670,12 +674,13 @@ int ip6_dst_hoplimit(struct dst_entry *d
+@@ -668,12 +672,13 @@ int ip6_dst_hoplimit(struct dst_entry *d
  static inline void ip6_flow_hdr(struct ipv6hdr *hdr, unsigned int tclass,
  				__be32 flowlabel)
  {
@@ -765,8 +765,8 @@
  #include <linux/types.h>
 +#include <linux/in6.h>
  
- __u32 secure_ip_id(__be32 daddr);
- __u32 secure_ipv6_id(const __be32 daddr[4]);
+ u32 secure_ipv4_port_ephemeral(__be32 saddr, __be32 daddr, __be16 dport);
+ u32 secure_ipv6_port_ephemeral(const __be32 *saddr, const __be32 *daddr,
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
 @@ -78,7 +78,7 @@ enum {
@@ -808,7 +808,7 @@
  	secret[4] = net_secret[4] + (__force u32)dport;
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
  		secret[i] = net_secret[i];
-@@ -175,11 +177,12 @@ u64 secure_dccpv6_sequence_number(__be32
+@@ -150,11 +152,12 @@ u64 secure_dccpv6_sequence_number(__be32
  	u32 hash[MD5_DIGEST_WORDS];
  	u64 seq;
  	u32 i;
