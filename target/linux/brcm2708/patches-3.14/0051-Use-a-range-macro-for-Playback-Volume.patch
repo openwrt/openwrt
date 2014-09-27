@@ -1,0 +1,29 @@
+From 53f059eb1ce439b171516c0e6673ab88ca25e166 Mon Sep 17 00:00:00 2001
+From: Howard Mitchell <hm@hmbedded.co.uk>
+Date: Fri, 28 Mar 2014 16:40:31 +0000
+Subject: [PATCH 51/54] Use a range macro for Playback Volume.
+
+This allows limiting the output gain to avoid clipping in the
+DAC ouput stages.
+---
+ sound/soc/codecs/pcm512x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
+index 55b6200..2653311 100644
+--- a/sound/soc/codecs/pcm512x.c
++++ b/sound/soc/codecs/pcm512x.c
+@@ -240,8 +240,8 @@ static const struct soc_enum pcm512x_veds =
+ 			pcm512x_ramp_step_text);
+ 
+ static const struct snd_kcontrol_new pcm512x_controls[] = {
+-SOC_DOUBLE_R_TLV("Playback Digital Volume", PCM512x_DIGITAL_VOLUME_2,
+-		 PCM512x_DIGITAL_VOLUME_3, 0, 255, 1, digital_tlv),
++SOC_DOUBLE_R_RANGE_TLV("Playback Digital Volume", PCM512x_DIGITAL_VOLUME_2,
++		 PCM512x_DIGITAL_VOLUME_3, 0, 48, 255, 1, digital_tlv),
+ SOC_DOUBLE("Playback Digital Switch", PCM512x_MUTE, PCM512x_RQML_SHIFT,
+ 	   PCM512x_RQMR_SHIFT, 1, 1),
+ 
+-- 
+1.9.1
+

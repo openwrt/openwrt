@@ -1,0 +1,460 @@
+From c2731f282848af32425043a2df88c1289538983e Mon Sep 17 00:00:00 2001
+From: Siarhei Siamashka <siarhei.siamashka@gmail.com>
+Date: Mon, 17 Jun 2013 16:00:25 +0300
+Subject: [PATCH 26/54] bcm2708_fb: DMA acceleration for fb_copyarea
+
+Based on http://www.raspberrypi.org/phpBB3/viewtopic.php?p=62425#p62425
+Also used Simon's dmaer_master module as a reference for tweaking DMA
+settings for better performance.
+
+For now busylooping only. IRQ support might be added later.
+With non-overclocked Raspberry Pi, the performance is ~360 MB/s
+for simple copy or ~260 MB/s for two-pass copy (used when dragging
+windows to the right).
+
+In the case of using DMA channel 0, the performance improves
+to ~440 MB/s.
+
+For comparison, VFP optimized CPU copy can only do ~114 MB/s in
+the same conditions (hindered by reading uncached source buffer).
+
+Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
+
+bcm2708_fb: report number of dma copies
+
+Add a counter (exported via debugfs) reporting the
+number of dma copies that the framebuffer driver
+has done, in order to help evaluate different
+optimization strategies.
+
+Signed-off-by: Luke Diamand <luked@broadcom.com>
+
+bcm2708_fb: use IRQ for DMA copies
+
+The copyarea ioctl() uses DMA to speed things along. This
+was busy-waiting for completion. This change supports using
+an interrupt instead for larger transfers. For small
+transfers, busy-waiting is still likely to be faster.
+
+Signed-off-by: Luke Diamand <luke@diamand.org>
+---
+ arch/arm/mach-bcm2708/dma.c              |   8 +
+ arch/arm/mach-bcm2708/include/mach/dma.h |   2 +
+ drivers/video/bcm2708_fb.c               | 273 ++++++++++++++++++++++++++++++-
+ 3 files changed, 278 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-bcm2708/dma.c b/arch/arm/mach-bcm2708/dma.c
+index 51d147a..1da2413 100644
+--- a/arch/arm/mach-bcm2708/dma.c
++++ b/arch/arm/mach-bcm2708/dma.c
+@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iomem *dma_chan_base)
+ 
+ EXPORT_SYMBOL_GPL(bcm_dma_start);
+ 
++extern bool bcm_dma_is_busy(void __iomem *dma_chan_base)
++{
++	dsb();
++
++	return readl(dma_chan_base + BCM2708_DMA_CS) & BCM2708_DMA_ACTIVE;
++}
++EXPORT_SYMBOL_GPL(bcm_dma_is_busy);
++
+ /* Complete an ongoing DMA (assuming its results are to be ignored)
+    Does nothing if there is no DMA in progress.
+    This routine waits for the current AXI transfer to complete before
+diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
+index ac7a4a0..6d2f9a0 100644
+--- a/arch/arm/mach-bcm2708/include/mach/dma.h
++++ b/arch/arm/mach-bcm2708/include/mach/dma.h
+@@ -62,11 +62,13 @@ struct bcm2708_dma_cb {
+ 	unsigned long next;
+ 	unsigned long pad[2];
+ };
++struct scatterlist;
+ 
+ extern int bcm_sg_suitable_for_dma(struct scatterlist *sg_ptr, int sg_len);
+ extern void bcm_dma_start(void __iomem *dma_chan_base,
+ 			  dma_addr_t control_block);
+ extern void bcm_dma_wait_idle(void __iomem *dma_chan_base);
++extern bool bcm_dma_is_busy(void __iomem *dma_chan_base);
+ extern int /*rc*/ bcm_dma_abort(void __iomem *dma_chan_base);
+ 
+ /* When listing features we can ask for when allocating DMA channels give
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index 54cd760..798eb52 100644
+--- a/drivers/video/bcm2708_fb.c
++++ b/drivers/video/bcm2708_fb.c
+@@ -21,13 +21,16 @@
+ #include <linux/mm.h>
+ #include <linux/fb.h>
+ #include <linux/init.h>
++#include <linux/interrupt.h>
+ #include <linux/ioport.h>
+ #include <linux/list.h>
+ #include <linux/platform_device.h>
+ #include <linux/clk.h>
+ #include <linux/printk.h>
+ #include <linux/console.h>
++#include <linux/debugfs.h>
+ 
++#include <mach/dma.h>
+ #include <mach/platform.h>
+ #include <mach/vcio.h>
+ 
+@@ -51,6 +54,10 @@ static int fbheight = 480; /* module parameter */
+ static int fbdepth = 16;   /* module parameter */
+ static int fbswap = 0;     /* module parameter */
+ 
++static u32 dma_busy_wait_threshold = 1<<15;
++module_param(dma_busy_wait_threshold, int, 0644);
++MODULE_PARM_DESC(dma_busy_wait_threshold, "Busy-wait for DMA completion below this area");
++
+ /* this data structure describes each frame buffer device we find */
+ 
+ struct fbinfo_s {
+@@ -62,16 +69,73 @@ struct fbinfo_s {
+ 	u16 cmap[256];
+ };
+ 
++struct bcm2708_fb_stats {
++	struct debugfs_regset32 regset;
++	u32 dma_copies;
++	u32 dma_irqs;
++};
++
+ struct bcm2708_fb {
+ 	struct fb_info fb;
+ 	struct platform_device *dev;
+ 	struct fbinfo_s *info;
+ 	dma_addr_t dma;
+ 	u32 cmap[16];
++	int dma_chan;
++	int dma_irq;
++	void __iomem *dma_chan_base;
++	void *cb_base;		/* DMA control blocks */
++	dma_addr_t cb_handle;
++	struct dentry *debugfs_dir;
++	wait_queue_head_t dma_waitq;
++	struct bcm2708_fb_stats stats;
+ };
+ 
+ #define to_bcm2708(info)	container_of(info, struct bcm2708_fb, fb)
+ 
++static void bcm2708_fb_debugfs_deinit(struct bcm2708_fb *fb)
++{
++	debugfs_remove_recursive(fb->debugfs_dir);
++	fb->debugfs_dir = NULL;
++}
++
++static int bcm2708_fb_debugfs_init(struct bcm2708_fb *fb)
++{
++	static struct debugfs_reg32 stats_registers[] = {
++		{
++			"dma_copies",
++			offsetof(struct bcm2708_fb_stats, dma_copies)
++		},
++		{
++			"dma_irqs",
++			offsetof(struct bcm2708_fb_stats, dma_irqs)
++		},
++	};
++
++	fb->debugfs_dir = debugfs_create_dir(DRIVER_NAME, NULL);
++	if (!fb->debugfs_dir) {
++		pr_warn("%s: could not create debugfs entry\n",
++			__func__);
++		return -EFAULT;
++	}
++
++	fb->stats.regset.regs = stats_registers;
++	fb->stats.regset.nregs = ARRAY_SIZE(stats_registers);
++	fb->stats.regset.base = &fb->stats;
++
++	if (!debugfs_create_regset32(
++		"stats", 0444, fb->debugfs_dir, &fb->stats.regset)) {
++		pr_warn("%s: could not create statistics registers\n",
++			__func__);
++		goto fail;
++	}
++	return 0;
++
++fail:
++	bcm2708_fb_debugfs_deinit(fb);
++	return -EFAULT;
++}
++
+ static int bcm2708_fb_set_bitfields(struct fb_var_screeninfo *var)
+ {
+ 	int ret = 0;
+@@ -322,11 +386,148 @@ static void bcm2708_fb_fillrect(struct fb_info *info,
+ 	cfb_fillrect(info, rect);
+ }
+ 
++/* A helper function for configuring dma control block */
++static void set_dma_cb(struct bcm2708_dma_cb *cb,
++		       int        burst_size,
++		       dma_addr_t dst,
++		       int        dst_stride,
++		       dma_addr_t src,
++		       int        src_stride,
++		       int        w,
++		       int        h)
++{
++	cb->info = BCM2708_DMA_BURST(burst_size) | BCM2708_DMA_S_WIDTH |
++		   BCM2708_DMA_S_INC | BCM2708_DMA_D_WIDTH |
++		   BCM2708_DMA_D_INC | BCM2708_DMA_TDMODE;
++	cb->dst = dst;
++	cb->src = src;
++	/*
++	 * This is not really obvious from the DMA documentation,
++	 * but the top 16 bits must be programmmed to "height -1"
++	 * and not "height" in 2D mode.
++	 */
++	cb->length = ((h - 1) << 16) | w;
++	cb->stride = ((dst_stride - w) << 16) | (u16)(src_stride - w);
++	cb->pad[0] = 0;
++	cb->pad[1] = 0;
++}
++
+ static void bcm2708_fb_copyarea(struct fb_info *info,
+ 				const struct fb_copyarea *region)
+ {
+-	/*print_debug("bcm2708_fb_copyarea\n"); */
+-	cfb_copyarea(info, region);
++	struct bcm2708_fb *fb = to_bcm2708(info);
++	struct bcm2708_dma_cb *cb = fb->cb_base;
++	int bytes_per_pixel = (info->var.bits_per_pixel + 7) >> 3;
++	/* Channel 0 supports larger bursts and is a bit faster */
++	int burst_size = (fb->dma_chan == 0) ? 8 : 2;
++	int pixels = region->width * region->height;
++
++	/* Fallback to cfb_copyarea() if we don't like something */
++	if (bytes_per_pixel > 4 ||
++	    info->var.xres * info->var.yres > 1920 * 1200 ||
++	    region->width <= 0 || region->width > info->var.xres ||
++	    region->height <= 0 || region->height > info->var.yres ||
++	    region->sx < 0 || region->sx >= info->var.xres ||
++	    region->sy < 0 || region->sy >= info->var.yres ||
++	    region->dx < 0 || region->dx >= info->var.xres ||
++	    region->dy < 0 || region->dy >= info->var.yres ||
++	    region->sx + region->width > info->var.xres ||
++	    region->dx + region->width > info->var.xres ||
++	    region->sy + region->height > info->var.yres ||
++	    region->dy + region->height > info->var.yres) {
++		cfb_copyarea(info, region);
++		return;
++	}
++
++	if (region->dy == region->sy && region->dx > region->sx) {
++		/*
++		 * A difficult case of overlapped copy. Because DMA can't
++		 * copy individual scanlines in backwards direction, we need
++		 * two-pass processing. We do it by programming a chain of dma
++		 * control blocks in the first 16K part of the buffer and use
++		 * the remaining 48K as the intermediate temporary scratch
++		 * buffer. The buffer size is sufficient to handle up to
++		 * 1920x1200 resolution at 32bpp pixel depth.
++		 */
++		int y;
++		dma_addr_t control_block_pa = fb->cb_handle;
++		dma_addr_t scratchbuf = fb->cb_handle + 16 * 1024;
++		int scanline_size = bytes_per_pixel * region->width;
++		int scanlines_per_cb = (64 * 1024 - 16 * 1024) / scanline_size;
++
++		for (y = 0; y < region->height; y += scanlines_per_cb) {
++			dma_addr_t src =
++				fb->fb.fix.smem_start +
++				bytes_per_pixel * region->sx +
++				(region->sy + y) * fb->fb.fix.line_length;
++			dma_addr_t dst =
++				fb->fb.fix.smem_start +
++				bytes_per_pixel * region->dx +
++				(region->dy + y) * fb->fb.fix.line_length;
++
++			if (region->height - y < scanlines_per_cb)
++				scanlines_per_cb = region->height - y;
++
++			set_dma_cb(cb, burst_size, scratchbuf, scanline_size,
++				   src, fb->fb.fix.line_length,
++				   scanline_size, scanlines_per_cb);
++			control_block_pa += sizeof(struct bcm2708_dma_cb);
++			cb->next = control_block_pa;
++			cb++;
++
++			set_dma_cb(cb, burst_size, dst, fb->fb.fix.line_length,
++				   scratchbuf, scanline_size,
++				   scanline_size, scanlines_per_cb);
++			control_block_pa += sizeof(struct bcm2708_dma_cb);
++			cb->next = control_block_pa;
++			cb++;
++		}
++		/* move the pointer back to the last dma control block */
++		cb--;
++	} else {
++		/* A single dma control block is enough. */
++		int sy, dy, stride;
++		if (region->dy <= region->sy) {
++			/* processing from top to bottom */
++			dy = region->dy;
++			sy = region->sy;
++			stride = fb->fb.fix.line_length;
++		} else {
++			/* processing from bottom to top */
++			dy = region->dy + region->height - 1;
++			sy = region->sy + region->height - 1;
++			stride = -fb->fb.fix.line_length;
++		}
++		set_dma_cb(cb, burst_size,
++			   fb->fb.fix.smem_start + dy * fb->fb.fix.line_length +
++						   bytes_per_pixel * region->dx,
++			   stride,
++			   fb->fb.fix.smem_start + sy * fb->fb.fix.line_length +
++						   bytes_per_pixel * region->sx,
++			   stride,
++			   region->width * bytes_per_pixel,
++			   region->height);
++	}
++
++	/* end of dma control blocks chain */
++	cb->next = 0;
++
++
++	if (pixels < dma_busy_wait_threshold) {
++		bcm_dma_start(fb->dma_chan_base, fb->cb_handle);
++		bcm_dma_wait_idle(fb->dma_chan_base);
++	} else {
++		void __iomem *dma_chan = fb->dma_chan_base;
++		cb->info |= BCM2708_DMA_INT_EN;
++		bcm_dma_start(fb->dma_chan_base, fb->cb_handle);
++		while (bcm_dma_is_busy(dma_chan)) {
++			wait_event_interruptible(
++				fb->dma_waitq,
++				!bcm_dma_is_busy(dma_chan));
++		}
++		fb->stats.dma_irqs++;
++	}
++	fb->stats.dma_copies++;
+ }
+ 
+ static void bcm2708_fb_imageblit(struct fb_info *info,
+@@ -336,6 +537,24 @@ static void bcm2708_fb_imageblit(struct fb_info *info,
+ 	cfb_imageblit(info, image);
+ }
+ 
++static irqreturn_t bcm2708_fb_dma_irq(int irq, void *cxt)
++{
++	struct bcm2708_fb *fb = cxt;
++
++	/* FIXME: should read status register to check if this is
++	 * actually interrupting us or not, in case this interrupt
++	 * ever becomes shared amongst several DMA channels
++	 *
++	 * readl(dma_chan_base + BCM2708_DMA_CS) & BCM2708_DMA_IRQ;
++	 */
++
++	/* acknowledge the interrupt */
++	writel(BCM2708_DMA_INT, fb->dma_chan_base + BCM2708_DMA_CS);
++
++	wake_up(&fb->dma_waitq);
++	return IRQ_HANDLED;
++}
++
+ static struct fb_ops bcm2708_fb_ops = {
+ 	.owner = THIS_MODULE,
+ 	.fb_check_var = bcm2708_fb_check_var,
+@@ -365,7 +584,7 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
+ 		fb->dma = dma;
+ 	}
+ 	fb->fb.fbops = &bcm2708_fb_ops;
+-	fb->fb.flags = FBINFO_FLAG_DEFAULT;
++	fb->fb.flags = FBINFO_FLAG_DEFAULT | FBINFO_HWACCEL_COPYAREA;
+ 	fb->fb.pseudo_palette = fb->cmap;
+ 
+ 	strncpy(fb->fb.fix.id, bcm2708_name, sizeof(fb->fb.fix.id));
+@@ -396,6 +615,7 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
+ 	fb->fb.monspecs.dclkmax = 100000000;
+ 
+ 	bcm2708_fb_set_bitfields(&fb->fb.var);
++	init_waitqueue_head(&fb->dma_waitq);
+ 
+ 	/*
+ 	 * Allocate colourmap.
+@@ -421,14 +641,45 @@ static int bcm2708_fb_probe(struct platform_device *dev)
+ 	struct bcm2708_fb *fb;
+ 	int ret;
+ 
+-	fb = kmalloc(sizeof(struct bcm2708_fb), GFP_KERNEL);
++	fb = kzalloc(sizeof(struct bcm2708_fb), GFP_KERNEL);
+ 	if (!fb) {
+ 		dev_err(&dev->dev,
+ 			"could not allocate new bcm2708_fb struct\n");
+ 		ret = -ENOMEM;
+ 		goto free_region;
+ 	}
+-	memset(fb, 0, sizeof(struct bcm2708_fb));
++
++	bcm2708_fb_debugfs_init(fb);
++
++	fb->cb_base = dma_alloc_writecombine(&dev->dev, SZ_64K,
++					     &fb->cb_handle, GFP_KERNEL);
++	if (!fb->cb_base) {
++		dev_err(&dev->dev, "cannot allocate DMA CBs\n");
++		ret = -ENOMEM;
++		goto free_fb;
++	}
++
++	pr_info("BCM2708FB: allocated DMA memory %08x\n",
++	       fb->cb_handle);
++
++	ret = bcm_dma_chan_alloc(BCM_DMA_FEATURE_BULK,
++				 &fb->dma_chan_base, &fb->dma_irq);
++	if (ret < 0) {
++		dev_err(&dev->dev, "couldn't allocate a DMA channel\n");
++		goto free_cb;
++	}
++	fb->dma_chan = ret;
++
++	ret = request_irq(fb->dma_irq, bcm2708_fb_dma_irq,
++			  0, "bcm2708_fb dma", fb);
++	if (ret) {
++		pr_err("%s: failed to request DMA irq\n", __func__);
++		goto free_dma_chan;
++	}
++
++
++	pr_info("BCM2708FB: allocated DMA channel %d @ %p\n",
++	       fb->dma_chan, fb->dma_chan_base);
+ 
+ 	fb->dev = dev;
+ 
+@@ -438,6 +689,11 @@ static int bcm2708_fb_probe(struct platform_device *dev)
+ 		goto out;
+ 	}
+ 
++free_dma_chan:
++	bcm_dma_chan_free(fb->dma_chan);
++free_cb:
++	dma_free_writecombine(&dev->dev, SZ_64K, fb->cb_base, fb->cb_handle);
++free_fb:
+ 	kfree(fb);
+ free_region:
+ 	dev_err(&dev->dev, "probe failed, err %d\n", ret);
+@@ -455,8 +711,15 @@ static int bcm2708_fb_remove(struct platform_device *dev)
+ 		iounmap(fb->fb.screen_base);
+ 	unregister_framebuffer(&fb->fb);
+ 
++	dma_free_writecombine(&dev->dev, SZ_64K, fb->cb_base, fb->cb_handle);
++	bcm_dma_chan_free(fb->dma_chan);
++
+ 	dma_free_coherent(NULL, PAGE_ALIGN(sizeof(*fb->info)), (void *)fb->info,
+ 			  fb->dma);
++	bcm2708_fb_debugfs_deinit(fb);
++
++	free_irq(fb->dma_irq, fb);
++
+ 	kfree(fb);
+ 
+ 	return 0;
+-- 
+1.9.1
+

@@ -1,0 +1,77 @@
+From 2bdcc63f2648ad4dfa88aaf035e025b2b193a1cc Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 9 May 2014 15:45:13 +0100
+Subject: [PATCH 54/54] fb: distinguish physical and bus addresses
+
+---
+ drivers/video/bcm2708_fb.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index 798eb52..b3b1e04 100644
+--- a/drivers/video/bcm2708_fb.c
++++ b/drivers/video/bcm2708_fb.c
+@@ -89,6 +89,7 @@ struct bcm2708_fb {
+ 	struct dentry *debugfs_dir;
+ 	wait_queue_head_t dma_waitq;
+ 	struct bcm2708_fb_stats stats;
++	unsigned long fb_bus_address;
+ };
+ 
+ #define to_bcm2708(info)	container_of(info, struct bcm2708_fb, fb)
+@@ -314,13 +315,15 @@ static int bcm2708_fb_set_par(struct fb_info *info)
+ 		else
+ 			fb->fb.fix.visual = FB_VISUAL_TRUECOLOR;
+ 
++		fb->fb_bus_address = fbinfo->base;
++		fbinfo->base &= ~0xc0000000;
+ 		fb->fb.fix.smem_start = fbinfo->base;
+ 		fb->fb.fix.smem_len = fbinfo->pitch * fbinfo->yres_virtual;
+ 		fb->fb.screen_size = fbinfo->screen_size;
+ 		if (fb->fb.screen_base)
+ 			iounmap(fb->fb.screen_base);
+ 		fb->fb.screen_base =
+-			(void *)ioremap_wc(fb->fb.fix.smem_start, fb->fb.screen_size);
++			(void *)ioremap_wc(fbinfo->base, fb->fb.screen_size);
+ 		if (!fb->fb.screen_base) {
+ 			/* the console may currently be locked */
+ 			console_trylock();
+@@ -331,7 +334,7 @@ static int bcm2708_fb_set_par(struct fb_info *info)
+ 	}
+ 	print_debug
+ 	    ("BCM2708FB: start = %p,%p width=%d, height=%d, bpp=%d, pitch=%d size=%d success=%d\n",
+-	     (void *)fb->fb.screen_base, (void *)fb->fb.fix.smem_start,
++	     (void *)fb->fb.screen_base, (void *)fb->fb_bus_address,
+ 	     fbinfo->xres, fbinfo->yres, fbinfo->bpp,
+ 	     fbinfo->pitch, (int)fb->fb.screen_size, val);
+ 
+@@ -457,11 +460,11 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
+ 
+ 		for (y = 0; y < region->height; y += scanlines_per_cb) {
+ 			dma_addr_t src =
+-				fb->fb.fix.smem_start +
++				fb->fb_bus_address +
+ 				bytes_per_pixel * region->sx +
+ 				(region->sy + y) * fb->fb.fix.line_length;
+ 			dma_addr_t dst =
+-				fb->fb.fix.smem_start +
++				fb->fb_bus_address +
+ 				bytes_per_pixel * region->dx +
+ 				(region->dy + y) * fb->fb.fix.line_length;
+ 
+@@ -499,10 +502,10 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
+ 			stride = -fb->fb.fix.line_length;
+ 		}
+ 		set_dma_cb(cb, burst_size,
+-			   fb->fb.fix.smem_start + dy * fb->fb.fix.line_length +
++			   fb->fb_bus_address + dy * fb->fb.fix.line_length +
+ 						   bytes_per_pixel * region->dx,
+ 			   stride,
+-			   fb->fb.fix.smem_start + sy * fb->fb.fix.line_length +
++			   fb->fb_bus_address + sy * fb->fb.fix.line_length +
+ 						   bytes_per_pixel * region->sx,
+ 			   stride,
+ 			   region->width * bytes_per_pixel,
+-- 
+1.9.1
+
