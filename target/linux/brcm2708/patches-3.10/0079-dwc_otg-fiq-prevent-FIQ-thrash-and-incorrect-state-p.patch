@@ -1,7 +1,7 @@
-From 4d44d8447b13ded9c6931583938183c76b1846ed Mon Sep 17 00:00:00 2001
+From 6a276a4e4878b5b3e92c8975a87eb641d57669c4 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Sat, 13 Jul 2013 21:48:41 +0100
-Subject: [PATCH 079/174] dwc_otg: fiq: prevent FIQ thrash and incorrect state
+Subject: [PATCH 079/196] dwc_otg: fiq: prevent FIQ thrash and incorrect state
  passing to IRQ
 
 In the case of a transaction to a device that had previously aborted
@@ -22,9 +22,11 @@ it was possible to confuse the IRQ handler.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 27b673f..d655363 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -324,6 +324,27 @@ int fiq_hcintr_handle(int channel, hfnum
+@@ -324,6 +324,27 @@ int fiq_hcintr_handle(int channel, hfnum_data_t hfnum)
  			}
  		}
  	}
@@ -52,3 +54,6 @@ it was possible to confuse the IRQ handler.
  
  	// Clear the interrupt, this will also clear the HAINT bit
  	FIQ_WRITE((dwc_regs_base + 0x500 + (channel * 0x20) + 0x8), hcint.d32);
+-- 
+1.9.1
+

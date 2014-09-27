@@ -1,7 +1,7 @@
-From 3f65aaaabc3ddc09bacf06bb608f8bab5671fb18 Mon Sep 17 00:00:00 2001
+From d63cca1d57881d931236d101fe16fd249d91b060 Mon Sep 17 00:00:00 2001
 From: Grigori Goronzy <greg@blackbox>
 Date: Mon, 11 Jun 2012 18:52:04 +0200
-Subject: [PATCH 012/174] sdhci-bcm2708: remove custom clock handling
+Subject: [PATCH 012/196] sdhci-bcm2708: remove custom clock handling
 
 The custom clock handling code is redundant and buggy. The MMC/SDHCI
 subsystem does a better job than it, so remove it for good.
@@ -9,9 +9,11 @@ subsystem does a better job than it, so remove it for good.
  drivers/mmc/host/sdhci-bcm2708.c | 65 +---------------------------------------
  1 file changed, 1 insertion(+), 64 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index a6bdc25..0ed4d85 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -353,68 +353,9 @@ void sdhci_bcm2708_writeb(struct sdhci_h
+@@ -353,68 +353,9 @@ void sdhci_bcm2708_writeb(struct sdhci_host *host, u8 val, int reg)
  
  static unsigned int sdhci_bcm2708_get_max_clock(struct sdhci_host *host)
  {
@@ -81,7 +83,7 @@ subsystem does a better job than it, so remove it for good.
  /*****************************************************************************\
   *									     *
   * DMA Operation							     *
-@@ -1189,11 +1130,7 @@ static struct sdhci_ops sdhci_bcm2708_op
+@@ -1189,11 +1130,7 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
  #else
  #error The BCM2708 SDHCI driver needs CONFIG_MMC_SDHCI_IO_ACCESSORS to be set
  #endif
@@ -93,3 +95,6 @@ subsystem does a better job than it, so remove it for good.
  
  #ifdef CONFIG_MMC_SDHCI_BCM2708_DMA
  	// Platform DMA operations
+-- 
+1.9.1
+

@@ -1,16 +1,18 @@
-From 7653ccf871836bc9a49f55df82d7f14596115146 Mon Sep 17 00:00:00 2001
+From 7f68345942e44b3ff6b922d00d9650abae485eac Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 3 Jul 2013 11:39:46 +0100
-Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
+Subject: [PATCH 073/196] dwc_otg: fix device attributes and avoid kernel
  warnings on boot
 
 ---
  drivers/usb/host/dwc_otg/dwc_otg_attr.c | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.c b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
+index 95eb7f8..9602fda 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_attr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
-@@ -909,7 +909,7 @@ static ssize_t regdump_show(struct devic
+@@ -909,7 +909,7 @@ static ssize_t regdump_show(struct device *_dev,
  	return sprintf(buf, "Register Dump\n");
  }
  
@@ -19,7 +21,7 @@ Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
  
  /**
   * Dump global registers and either host or device registers (depending on the
-@@ -925,7 +925,7 @@ static ssize_t spramdump_show(struct dev
+@@ -925,7 +925,7 @@ static ssize_t spramdump_show(struct device *_dev,
  	return sprintf(buf, "SPRAM Dump\n");
  }
  
@@ -28,7 +30,7 @@ Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
  
  /**
   * Dump the current hcd state.
-@@ -940,7 +940,7 @@ static ssize_t hcddump_show(struct devic
+@@ -940,7 +940,7 @@ static ssize_t hcddump_show(struct device *_dev,
  	return sprintf(buf, "HCD Dump\n");
  }
  
@@ -37,7 +39,7 @@ Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
  
  /**
   * Dump the average frame remaining at SOF. This can be used to
-@@ -958,7 +958,7 @@ static ssize_t hcd_frrem_show(struct dev
+@@ -958,7 +958,7 @@ static ssize_t hcd_frrem_show(struct device *_dev,
  	return sprintf(buf, "HCD Dump Frame Remaining\n");
  }
  
@@ -46,7 +48,7 @@ Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
  
  /**
   * Displays the time required to read the GNPTXFSIZ register many times (the
-@@ -986,7 +986,7 @@ static ssize_t rd_reg_test_show(struct d
+@@ -986,7 +986,7 @@ static ssize_t rd_reg_test_show(struct device *_dev,
  		       RW_REG_COUNT, time * MSEC_PER_JIFFIE, time);
  }
  
@@ -55,7 +57,7 @@ Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
  
  /**
   * Displays the time required to write the GNPTXFSIZ register many times (the
-@@ -1014,7 +1014,7 @@ static ssize_t wr_reg_test_show(struct d
+@@ -1014,7 +1014,7 @@ static ssize_t wr_reg_test_show(struct device *_dev,
  		       RW_REG_COUNT, time * MSEC_PER_JIFFIE, time);
  }
  
@@ -64,3 +66,6 @@ Subject: [PATCH 073/174] dwc_otg: fix device attributes and avoid kernel
  
  #ifdef CONFIG_USB_DWC_OTG_LPM
  
+-- 
+1.9.1
+

@@ -1,7 +1,7 @@
-From 55ed27d2c44fcf2e808ba26cc2a1c9c4041500da Mon Sep 17 00:00:00 2001
+From 4e5732952c3c2f14058bd7dbcba67d911d77bd39 Mon Sep 17 00:00:00 2001
 From: Grigori Goronzy <greg@blackbox>
 Date: Mon, 11 Jun 2012 18:58:40 +0200
-Subject: [PATCH 015/174] sdhci-bcm2708: assume 50 MHz eMMC clock
+Subject: [PATCH 015/196] sdhci-bcm2708: assume 50 MHz eMMC clock
 
 80 MHz clock isnt't suited well to be dividable to get SD clocks of 25
 MHz (default mode) or 50 MHz (high speed mode). 50 MHz are perfect to
@@ -10,6 +10,8 @@ drive the SD interface at ideal frequencies.
  drivers/mmc/host/sdhci-bcm2708.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index c64de21..d174938 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -73,7 +73,7 @@
@@ -21,3 +23,6 @@ drive the SD interface at ideal frequencies.
  
  /*****************************************************************************\
   *									     *
+-- 
+1.9.1
+

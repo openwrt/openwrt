@@ -1,7 +1,7 @@
-From 038fbc00d6468c8087ff67b3946d098dd888a219 Mon Sep 17 00:00:00 2001
+From bd863949a53390a5b95380a68aac3f035635eb47 Mon Sep 17 00:00:00 2001
 From: Daniel Matuschek <info@crazy-audio.com>
 Date: Thu, 16 Jan 2014 07:27:28 +0100
-Subject: [PATCH 159/174] BCM2708: Added HiFiBerry Digi configuration option It
+Subject: [PATCH 159/196] BCM2708: Added HiFiBerry Digi configuration option It
  will be compiled as a module by default. This also includes the WM8804
  driver.
 
@@ -10,6 +10,8 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  arch/arm/configs/bcmrpi_defconfig | 2 ++
  1 file changed, 2 insertions(+)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index fb23712..6f21b7c 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -737,8 +737,10 @@ CONFIG_SND_USB_CAIAQ=m
@@ -23,3 +25,6 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  CONFIG_SND_BCM2708_SOC_RPI_DAC=m
  CONFIG_SOUND_PRIME=m
  CONFIG_HIDRAW=y
+-- 
+1.9.1
+

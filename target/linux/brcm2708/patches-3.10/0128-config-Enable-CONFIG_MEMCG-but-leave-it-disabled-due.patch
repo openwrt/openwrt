@@ -1,7 +1,7 @@
-From 7793e8e7ab80fb41381652e46dbfe29dae3d7eea Mon Sep 17 00:00:00 2001
+From 10e9081e9311264f34259527c8d08a8c95beb2da Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 18 Dec 2013 22:16:19 +0000
-Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
+Subject: [PATCH 128/196] config: Enable CONFIG_MEMCG, but leave it disabled
  (due to memory cost). Enable with cgroup_enable=memory.
 
 ---
@@ -10,6 +10,8 @@ Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
  mm/memcontrol.c                   |  1 +
  3 files changed, 33 insertions(+)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 31010e4..fd3229a 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -18,6 +18,7 @@ CONFIG_CGROUP_FREEZER=y
@@ -20,9 +22,11 @@ Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
  CONFIG_BLK_CGROUP=y
  CONFIG_NAMESPACES=y
  CONFIG_SCHED_AUTOGROUP=y
+diff --git a/kernel/cgroup.c b/kernel/cgroup.c
+index d0def7f..de9d91a 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -5127,6 +5127,37 @@ static int __init cgroup_disable(char *s
+@@ -5127,6 +5127,37 @@ static int __init cgroup_disable(char *str)
  }
  __setup("cgroup_disable=", cgroup_disable);
  
@@ -60,9 +64,11 @@ Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
  /*
   * Functons for CSS ID.
   */
+diff --git a/mm/memcontrol.c b/mm/memcontrol.c
+index f45e21a..28a7e40 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -6970,6 +6970,7 @@ struct cgroup_subsys mem_cgroup_subsys =
+@@ -6970,6 +6970,7 @@ struct cgroup_subsys mem_cgroup_subsys = {
  	.base_cftypes = mem_cgroup_files,
  	.early_init = 0,
  	.use_id = 1,
@@ -70,3 +76,6 @@ Subject: [PATCH 128/174] config: Enable CONFIG_MEMCG, but leave it disabled
  };
  
  #ifdef CONFIG_MEMCG_SWAP
+-- 
+1.9.1
+

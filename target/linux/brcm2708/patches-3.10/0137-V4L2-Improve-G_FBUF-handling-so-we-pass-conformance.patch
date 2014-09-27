@@ -1,7 +1,7 @@
-From 6f5cc6eb60f7db36b94b9c960b5330464b4e729f Mon Sep 17 00:00:00 2001
+From cd3d0404cf78e7ae0d4f3320c9d900ad88dbd5ed Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Mon, 9 Dec 2013 17:30:09 +0000
-Subject: [PATCH 137/174] V4L2: Improve G_FBUF handling so we pass conformance
+Subject: [PATCH 137/196] V4L2: Improve G_FBUF handling so we pass conformance
 
 Return some sane numbers for get framebuffer so that
 we pass conformance.
@@ -11,9 +11,11 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/bcm2835-camera.c | 14 +++++++++++---
  1 file changed, 11 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index 8c38d03..c8d8742 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
-@@ -664,10 +664,18 @@ static int vidioc_g_fbuf(struct file *fi
+@@ -664,10 +664,18 @@ static int vidioc_g_fbuf(struct file *file, void *fh,
  {
  	/* The video overlay must stay within the framebuffer and can't be
  	   positioned independently. */
@@ -35,3 +37,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	return 0;
  }
+-- 
+1.9.1
+

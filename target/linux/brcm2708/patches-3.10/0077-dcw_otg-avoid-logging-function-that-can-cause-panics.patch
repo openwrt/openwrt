@@ -1,7 +1,7 @@
-From 9112b4c659edaf09792f1af02fe9e9c4753fb411 Mon Sep 17 00:00:00 2001
+From 0b4709bfe4dc73b8e2923b7d8a6c29db8a5ce47f Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Mon, 15 Jul 2013 23:55:52 +0100
-Subject: [PATCH 077/174] dcw_otg: avoid logging function that can cause panics
+Subject: [PATCH 077/196] dcw_otg: avoid logging function that can cause panics
 
 See: https://github.com/raspberrypi/firmware/issues/21
 Thanks to cleverca22 for fix
@@ -9,9 +9,11 @@ Thanks to cleverca22 for fix
  drivers/usb/host/dwc_otg/dwc_otg_attr.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.c b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
+index 9602fda..c6966af 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_attr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
-@@ -920,7 +920,7 @@ static ssize_t spramdump_show(struct dev
+@@ -920,7 +920,7 @@ static ssize_t spramdump_show(struct device *_dev,
  {
          dwc_otg_device_t *otg_dev = dwc_otg_drvdev(_dev);
  
@@ -20,3 +22,6 @@ Thanks to cleverca22 for fix
  
  	return sprintf(buf, "SPRAM Dump\n");
  }
+-- 
+1.9.1
+

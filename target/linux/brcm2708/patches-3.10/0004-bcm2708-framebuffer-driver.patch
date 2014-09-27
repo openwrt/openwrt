@@ -1,7 +1,7 @@
-From c9fbd3932a41a14af51d04fb6f43c45d60e66f8c Mon Sep 17 00:00:00 2001
+From db56ac21f4312a9cf97d4f9f35ff2593b5b81f7d Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 1 May 2013 19:55:09 +0100
-Subject: [PATCH 004/174] bcm2708 framebuffer driver
+Subject: [PATCH 004/196] bcm2708 framebuffer driver
 
 Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
@@ -12,6 +12,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  4 files changed, 1387 insertions(+), 1602 deletions(-)
  create mode 100644 drivers/video/bcm2708_fb.c
 
+diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
+index 2e937bd..9f4c58f 100644
 --- a/drivers/video/Kconfig
 +++ b/drivers/video/Kconfig
 @@ -310,6 +310,20 @@ config FB_PM2_FIFO_DISCONNECT
@@ -35,9 +37,11 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  config FB_ARMCLCD
  	tristate "ARM PrimeCell PL110 support"
  	depends on FB && ARM && ARM_AMBA
+diff --git a/drivers/video/Makefile b/drivers/video/Makefile
+index e8bae8d..032f386 100644
 --- a/drivers/video/Makefile
 +++ b/drivers/video/Makefile
-@@ -100,6 +100,7 @@ obj-$(CONFIG_FB_PVR2)             += pvr
+@@ -100,6 +100,7 @@ obj-$(CONFIG_FB_PVR2)             += pvr2fb.o
  obj-$(CONFIG_FB_VOODOO1)          += sstfb.o
  obj-$(CONFIG_FB_ARMCLCD)	  += amba-clcd.o
  obj-$(CONFIG_FB_GOLDFISH)         += goldfishfb.o
@@ -45,6 +49,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  obj-$(CONFIG_FB_68328)            += 68328fb.o
  obj-$(CONFIG_FB_GBE)              += gbefb.o
  obj-$(CONFIG_FB_CIRRUS)		  += cirrusfb.o
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+new file mode 100644
+index 0000000..08d9238
 --- /dev/null
 +++ b/drivers/video/bcm2708_fb.c
 @@ -0,0 +1,491 @@
@@ -539,6 +546,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +MODULE_PARM_DESC(fbwidth, "Width of ARM Framebuffer");
 +MODULE_PARM_DESC(fbheight, "Height of ARM Framebuffer");
 +MODULE_PARM_DESC(fbdepth, "Bit depth of ARM Framebuffer");
+diff --git a/drivers/video/logo/logo_linux_clut224.ppm b/drivers/video/logo/logo_linux_clut224.ppm
+index 3c14e43..7626beb 100644
 --- a/drivers/video/logo/logo_linux_clut224.ppm
 +++ b/drivers/video/logo/logo_linux_clut224.ppm
 @@ -1,1604 +1,883 @@
@@ -3027,3 +3036,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0
+-- 
+1.9.1
+

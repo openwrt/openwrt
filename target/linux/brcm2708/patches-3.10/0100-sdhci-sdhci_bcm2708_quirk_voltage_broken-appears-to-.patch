@@ -1,7 +1,7 @@
-From 45f717497730b7e98f3bd934ba09757748d8418d Mon Sep 17 00:00:00 2001
+From 2b7ffec03e2dda5b3f78a354668e9bf1945f5805 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 12 Nov 2013 23:01:30 +0000
-Subject: [PATCH 100/174] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
+Subject: [PATCH 100/196] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
  be a no-op
 
 ---
@@ -10,9 +10,11 @@ Subject: [PATCH 100/174] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
  drivers/mmc/host/sdhci.h         | 1 -
  3 files changed, 13 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 7fdd815..c775666 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -1114,11 +1114,6 @@ static unsigned int sdhci_bcm2708_quirk_
+@@ -1114,11 +1114,6 @@ static unsigned int sdhci_bcm2708_quirk_spurious_crc_acmd51(struct sdhci_host *h
          return 1;
  }
  
@@ -24,7 +26,7 @@ Subject: [PATCH 100/174] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
  static unsigned int sdhci_bcm2708_uhs_broken(struct sdhci_host *host)
  {
          return 1;
-@@ -1155,7 +1150,6 @@ static struct sdhci_ops sdhci_bcm2708_op
+@@ -1155,7 +1150,6 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
  	.pdma_reset = sdhci_bcm2708_platdma_reset,
  #endif
  	.extra_ints = sdhci_bcm2708_quirk_extra_ints,
@@ -32,9 +34,11 @@ Subject: [PATCH 100/174] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
  	.uhs_broken = sdhci_bcm2708_uhs_broken,
  };
  
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index 13e4e11..237158c 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -3245,12 +3245,6 @@ int sdhci_add_host(struct sdhci_host *ho
+@@ -3245,12 +3245,6 @@ int sdhci_add_host(struct sdhci_host *host)
  				   SDHCI_MAX_CURRENT_MULTIPLIER;
  	}
  
@@ -47,6 +51,8 @@ Subject: [PATCH 100/174] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
  	mmc->ocr_avail = ocr_avail;
  	mmc->ocr_avail_sdio = ocr_avail;
  	if (host->ocr_avail_sdio)
+diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
+index cc393af..fc6fcf3 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
 @@ -299,7 +299,6 @@ struct sdhci_ops {
@@ -57,3 +63,6 @@ Subject: [PATCH 100/174] sdhci: sdhci_bcm2708_quirk_voltage_broken appears to
  	unsigned int	(*uhs_broken)(struct sdhci_host *host);
  	unsigned int	(*missing_status)(struct sdhci_host *host);
  
+-- 
+1.9.1
+

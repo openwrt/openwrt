@@ -1,0 +1,50 @@
+From 2999c8b8c0b45cf22121f57d8efe4c55d4065898 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Fri, 4 Apr 2014 16:57:45 +0100
+Subject: [PATCH 190/196] V4L2: Add support for more image formats
+
+Adds YVU420 (YV12), YVU420SP (NV21), and BGR888.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index b1eac21..fd8e2e2 100644
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -150,6 +150,30 @@ static struct mmal_fmt formats[] = {
+ 	 .depth = 12,
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+ 	 },
++	{
++	 .name = "RGB24 (BE)",
++	 .fourcc = V4L2_PIX_FMT_BGR24,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_RGB24,
++	 .depth = 24,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:0, packed YVU",
++	 .fourcc = V4L2_PIX_FMT_YVU420,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_YV12,
++	 .depth = 12,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:0, packed, NV21",
++	 .fourcc = V4L2_PIX_FMT_NV21,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_NV21,
++	 .depth = 12,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
+ };
+ 
+ static struct mmal_fmt *get_format(struct v4l2_format *f)
+-- 
+1.9.1
+

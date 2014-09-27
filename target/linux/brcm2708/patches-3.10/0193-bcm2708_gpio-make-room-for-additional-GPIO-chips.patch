@@ -1,0 +1,77 @@
+From a3d6a8b1bd041e8428b8cd1edeed8fe9259e54b1 Mon Sep 17 00:00:00 2001
+From: notro <notro@tronnes.org>
+Date: Sun, 20 Apr 2014 18:55:24 +0200
+Subject: [PATCH 193/196] bcm2708_gpio: make room for additional GPIO chips
+
+ARCH_NR_GPIOS is set to 54, and all is used by the onboard gpio controller.
+This makes no room for additional gpio controllers to be added.
+
+ARCH_NR_GPIOS limits how many gpios that can be used on a platform.
+From gpiolib.c:
+static struct gpio_desc gpio_desc[ARCH_NR_GPIOS];
+
+Lift this restraint by using the default value for ARCH_NR_GPIOS, which is 256,
+and make a new macro for the on-chip number of gpios.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+---
+ arch/arm/mach-bcm2708/bcm2708_gpio.c      | 8 ++++----
+ arch/arm/mach-bcm2708/include/mach/gpio.h | 2 +-
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/mach-bcm2708/bcm2708_gpio.c b/arch/arm/mach-bcm2708/bcm2708_gpio.c
+index bab8a49..120929ff 100644
+--- a/arch/arm/mach-bcm2708/bcm2708_gpio.c
++++ b/arch/arm/mach-bcm2708/bcm2708_gpio.c
+@@ -72,7 +72,7 @@ static int bcm2708_set_function(struct gpio_chip *gc, unsigned offset,
+ 	unsigned gpio_field_offset = (offset - 10 * gpio_bank) * 3;
+ 
+ //printk(KERN_ERR DRIVER_NAME ": bcm2708_gpio_set_function %p (%d,%d)\n", gc, offset, function);
+-	if (offset >= ARCH_NR_GPIOS)
++	if (offset >= BCM2708_NR_GPIOS)
+ 		return -EINVAL;
+ 
+ 	spin_lock_irqsave(&lock, flags);
+@@ -110,7 +110,7 @@ static int bcm2708_gpio_get(struct gpio_chip *gc, unsigned offset)
+ 	unsigned gpio_field_offset = (offset - 32 * gpio_bank);
+ 	unsigned lev;
+ 
+-	if (offset >= ARCH_NR_GPIOS)
++	if (offset >= BCM2708_NR_GPIOS)
+ 		return 0;
+ 	lev = readl(gpio->base + GPIOLEV(gpio_bank));
+ //printk(KERN_ERR DRIVER_NAME ": bcm2708_gpio_get %p (%d)=%d\n", gc, offset, 0x1 & (lev>>gpio_field_offset));
+@@ -123,7 +123,7 @@ static void bcm2708_gpio_set(struct gpio_chip *gc, unsigned offset, int value)
+ 	unsigned gpio_bank = offset / 32;
+ 	unsigned gpio_field_offset = (offset - 32 * gpio_bank);
+ //printk(KERN_ERR DRIVER_NAME ": bcm2708_gpio_set %p (%d=%d)\n", gc, offset, value);
+-	if (offset >= ARCH_NR_GPIOS)
++	if (offset >= BCM2708_NR_GPIOS)
+ 		return;
+ 	if (value)
+ 		writel(1 << gpio_field_offset, gpio->base + GPIOSET(gpio_bank));
+@@ -302,7 +302,7 @@ static int bcm2708_gpio_probe(struct platform_device *dev)
+ 
+ 	ucb->gc.label = "bcm2708_gpio";
+ 	ucb->gc.base = 0;
+-	ucb->gc.ngpio = ARCH_NR_GPIOS;
++	ucb->gc.ngpio = BCM2708_NR_GPIOS;
+ 	ucb->gc.owner = THIS_MODULE;
+ 
+ 	ucb->gc.direction_input = bcm2708_gpio_dir_in;
+diff --git a/arch/arm/mach-bcm2708/include/mach/gpio.h b/arch/arm/mach-bcm2708/include/mach/gpio.h
+index f600bc7..d8b3a90 100644
+--- a/arch/arm/mach-bcm2708/include/mach/gpio.h
++++ b/arch/arm/mach-bcm2708/include/mach/gpio.h
+@@ -9,7 +9,7 @@
+ #ifndef __ASM_ARCH_GPIO_H
+ #define __ASM_ARCH_GPIO_H
+ 
+-#define ARCH_NR_GPIOS 54 // number of gpio lines
++#define BCM2708_NR_GPIOS 54 // number of gpio lines
+ 
+ #define gpio_to_irq(x)	((x) + GPIO_IRQ_START)
+ #define irq_to_gpio(x)	((x) - GPIO_IRQ_START)
+-- 
+1.9.1
+

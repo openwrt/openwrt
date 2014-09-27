@@ -1,0 +1,26 @@
+From 5f9db4323315fa80c43275170ca2a4f02e0b94a3 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 27 Mar 2014 00:56:15 +0000
+Subject: [PATCH 189/196] config: Add CONFIG_L2TP_IP and CONFIG_L2TP_ETH
+
+---
+ arch/arm/configs/bcmrpi_defconfig | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 90fe241..21e34bd 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -269,6 +269,9 @@ CONFIG_BRIDGE_EBT_ULOG=m
+ CONFIG_BRIDGE_EBT_NFLOG=m
+ CONFIG_SCTP_COOKIE_HMAC_SHA1=y
+ CONFIG_L2TP=m
++CONFIG_L2TP_V3=y
++CONFIG_L2TP_IP=m
++CONFIG_L2TP_ETH=m
+ CONFIG_BRIDGE=m
+ CONFIG_VLAN_8021Q=m
+ CONFIG_VLAN_8021Q_GVRP=y
+-- 
+1.9.1
+

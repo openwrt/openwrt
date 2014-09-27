@@ -1,7 +1,7 @@
-From 77d44ee6fab1ed0775634e85a950fdfa6a00c74f Mon Sep 17 00:00:00 2001
+From d4147755dd7adb7270ca1d84d3695c75d5c8ad00 Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Mon, 2 Dec 2013 20:28:22 +0100
-Subject: [PATCH 123/174] BCM2708: Add I2S and DMA support to default config
+Subject: [PATCH 123/196] BCM2708: Add I2S and DMA support to default config
 
 This commit adds several modules that are needed for
 I2S support for the Raspberry Pi to the defconfig.
@@ -11,6 +11,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  arch/arm/configs/bcmrpi_defconfig | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 1a0b8d9..c3c4e1a 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -733,6 +733,13 @@ CONFIG_SND_USB_UA101=m
@@ -38,3 +40,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  CONFIG_UIO=m
  CONFIG_UIO_PDRV=m
  CONFIG_UIO_PDRV_GENIRQ=m
+-- 
+1.9.1
+

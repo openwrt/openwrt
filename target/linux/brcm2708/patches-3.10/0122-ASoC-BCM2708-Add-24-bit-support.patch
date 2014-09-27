@@ -1,7 +1,7 @@
-From d44c918e6f017acb488bf41c4ab91159ac423084 Mon Sep 17 00:00:00 2001
+From 0d1bc8d7dd1f6abce818484285872975865217f4 Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Fri, 6 Dec 2013 18:55:53 +0100
-Subject: [PATCH 122/174] ASoC: BCM2708: Add 24 bit support
+Subject: [PATCH 122/196] ASoC: BCM2708: Add 24 bit support
 
 This adds 24 bit support to the I2S driver of the BCM2708.
 Besides enabling the 24 bit flags, it includes two bug fixes:
@@ -18,9 +18,11 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  sound/soc/bcm/bcm2708-i2s.c | 13 +++++++++----
  1 file changed, 9 insertions(+), 4 deletions(-)
 
+diff --git a/sound/soc/bcm/bcm2708-i2s.c b/sound/soc/bcm/bcm2708-i2s.c
+index ebaf3d6..a179216 100644
 --- a/sound/soc/bcm/bcm2708-i2s.c
 +++ b/sound/soc/bcm/bcm2708-i2s.c
-@@ -346,6 +346,10 @@ static int bcm2708_i2s_hw_params(struct
+@@ -346,6 +346,10 @@ static int bcm2708_i2s_hw_params(struct snd_pcm_substream *substream,
  		data_length = 16;
  		bclk_ratio = 40;
  		break;
@@ -31,7 +33,7 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  	case SNDRV_PCM_FORMAT_S32_LE:
  		data_length = 32;
  		bclk_ratio = 80;
-@@ -424,7 +428,7 @@ static int bcm2708_i2s_hw_params(struct
+@@ -424,7 +428,7 @@ static int bcm2708_i2s_hw_params(struct snd_pcm_substream *substream,
  	/* Setup the frame format */
  	format = BCM2708_I2S_CHEN;
  
@@ -40,7 +42,7 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  		format |= BCM2708_I2S_CHWEX;
  
  	format |= BCM2708_I2S_CHWID((data_length-8)&0xf);
-@@ -714,6 +718,7 @@ static struct snd_soc_dai_driver bcm2708
+@@ -714,6 +718,7 @@ static struct snd_soc_dai_driver bcm2708_i2s_dai = {
  		.channels_max = 2,
  		.rates =	SNDRV_PCM_RATE_8000_192000,
  		.formats =	SNDRV_PCM_FMTBIT_S16_LE
@@ -48,7 +50,7 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  				| SNDRV_PCM_FMTBIT_S32_LE
  		},
  	.capture = {
-@@ -721,6 +726,7 @@ static struct snd_soc_dai_driver bcm2708
+@@ -721,6 +726,7 @@ static struct snd_soc_dai_driver bcm2708_i2s_dai = {
  		.channels_max = 2,
  		.rates =	SNDRV_PCM_RATE_8000_192000,
  		.formats =	SNDRV_PCM_FMTBIT_S16_LE
@@ -70,3 +72,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  				  SNDRV_PCM_FMTBIT_S32_LE,
  	.period_bytes_min	= 32,
  	.period_bytes_max	= 64 * PAGE_SIZE,
+-- 
+1.9.1
+

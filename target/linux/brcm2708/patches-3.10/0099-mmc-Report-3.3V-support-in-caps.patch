@@ -1,7 +1,7 @@
-From c24b41600f008f5662a467de17644d26a0c269fd Mon Sep 17 00:00:00 2001
+From f88d56e9c6976ebd217993062e0e53d65877685b Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Sat, 9 Nov 2013 17:42:58 +0000
-Subject: [PATCH 099/174] mmc: Report 3.3V support in caps
+Subject: [PATCH 099/196] mmc: Report 3.3V support in caps
 
 sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstream code
 ---
@@ -9,9 +9,11 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  drivers/mmc/host/sdhci.c         | 82 ++++++++++++++++++++++------------------
  2 files changed, 47 insertions(+), 37 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 4770680..7fdd815 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -1282,6 +1282,8 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1282,6 +1282,8 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  	    host_priv->dma_chan, host_priv->dma_chan_base,
  	    host_priv->dma_irq);
  
@@ -20,9 +22,11 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
      if (allow_highspeed)
          host->mmc->caps |= MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED;
  
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index 470860b..13e4e11 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -210,6 +210,14 @@ static void sdhci_spin_disable_schedule(
+@@ -210,6 +210,14 @@ static void sdhci_spin_disable_schedule(struct sdhci_host *host)
  #endif
  }
  
@@ -37,7 +41,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  static void sdhci_clear_set_irqs(struct sdhci_host *host, u32 clear, u32 set)
  {
  	u32 ier;
-@@ -374,7 +382,7 @@ static void sdhci_led_control(struct led
+@@ -374,7 +382,7 @@ static void sdhci_led_control(struct led_classdev *led,
  	struct sdhci_host *host = container_of(led, struct sdhci_host, led);
  	unsigned long flags;
  
@@ -46,7 +50,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	if (host->runtime_suspended)
  		goto out;
-@@ -384,7 +392,7 @@ static void sdhci_led_control(struct led
+@@ -384,7 +392,7 @@ static void sdhci_led_control(struct led_classdev *led,
  	else
  		sdhci_activate_led(host);
  out:
@@ -55,7 +59,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  #endif
  
-@@ -1419,7 +1427,7 @@ static void sdhci_request(struct mmc_hos
+@@ -1419,7 +1427,7 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
  
  	sdhci_runtime_pm_get(host);
  
@@ -64,7 +68,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	WARN_ON(host->mrq != NULL);
  
-@@ -1477,9 +1485,9 @@ static void sdhci_request(struct mmc_hos
+@@ -1477,9 +1485,9 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
  					mmc->card->type == MMC_TYPE_MMC ?
  					MMC_SEND_TUNING_BLOCK_HS200 :
  					MMC_SEND_TUNING_BLOCK;
@@ -76,7 +80,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  				/* Restore original mmc_request structure */
  				host->mrq = mrq;
-@@ -1493,7 +1501,7 @@ static void sdhci_request(struct mmc_hos
+@@ -1493,7 +1501,7 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
  	}
  
  	mmiowb();
@@ -85,7 +89,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  
  static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
-@@ -1502,10 +1510,10 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1502,10 +1510,10 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  	int vdd_bit = -1;
  	u8 ctrl;
  
@@ -98,7 +102,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  		if (host->vmmc && ios->power_mode == MMC_POWER_OFF)
  			mmc_regulator_set_ocr(host->mmc, host->vmmc, 0);
  		return;
-@@ -1532,9 +1540,9 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1532,9 +1540,9 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  		vdd_bit = sdhci_set_power(host, ios->vdd);
  
  	if (host->vmmc && vdd_bit != -1) {
@@ -110,7 +114,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  	}
  
  	if (host->ops->platform_send_init_74_clocks)
-@@ -1672,7 +1680,7 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1672,7 +1680,7 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
  
  	mmiowb();
@@ -119,7 +123,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  
  static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
-@@ -1720,7 +1728,7 @@ static int sdhci_check_ro(struct sdhci_h
+@@ -1720,7 +1728,7 @@ static int sdhci_check_ro(struct sdhci_host *host)
  	unsigned long flags;
  	int is_readonly;
  
@@ -128,7 +132,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	if (host->flags & SDHCI_DEVICE_DEAD)
  		is_readonly = 0;
-@@ -1730,7 +1738,7 @@ static int sdhci_check_ro(struct sdhci_h
+@@ -1730,7 +1738,7 @@ static int sdhci_check_ro(struct sdhci_host *host)
  		is_readonly = !(sdhci_readl(host, SDHCI_PRESENT_STATE)
  				& SDHCI_WRITE_PROTECT);
  
@@ -137,7 +141,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	/* This quirk needs to be replaced by a callback-function later */
  	return host->quirks & SDHCI_QUIRK_INVERTED_WRITE_PROTECT ?
-@@ -1803,9 +1811,9 @@ static void sdhci_enable_sdio_irq(struct
+@@ -1803,9 +1811,9 @@ static void sdhci_enable_sdio_irq(struct mmc_host *mmc, int enable)
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -149,7 +153,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  
  static int sdhci_do_start_signal_voltage_switch(struct sdhci_host *host,
-@@ -2149,7 +2157,7 @@ static void sdhci_card_event(struct mmc_
+@@ -2149,7 +2157,7 @@ static void sdhci_card_event(struct mmc_host *mmc)
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -158,7 +162,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	/* Check host->mrq first in case we are runtime suspended */
  	if (host->mrq &&
-@@ -2166,7 +2174,7 @@ static void sdhci_card_event(struct mmc_
+@@ -2166,7 +2174,7 @@ static void sdhci_card_event(struct mmc_host *mmc)
  		tasklet_schedule(&host->finish_tasklet);
  	}
  
@@ -167,7 +171,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  
  static const struct mmc_host_ops sdhci_ops = {
-@@ -2205,14 +2213,14 @@ static void sdhci_tasklet_finish(unsigne
+@@ -2205,14 +2213,14 @@ static void sdhci_tasklet_finish(unsigned long param)
  
  	host = (struct sdhci_host*)param;
  
@@ -184,7 +188,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  		return;
  	}
  
-@@ -2250,7 +2258,7 @@ static void sdhci_tasklet_finish(unsigne
+@@ -2250,7 +2258,7 @@ static void sdhci_tasklet_finish(unsigned long param)
  #endif
  
  	mmiowb();
@@ -193,7 +197,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	mmc_request_done(host->mmc, mrq);
  	sdhci_runtime_pm_put(host);
-@@ -2263,7 +2271,7 @@ static void sdhci_timeout_timer(unsigned
+@@ -2263,7 +2271,7 @@ static void sdhci_timeout_timer(unsigned long data)
  
  	host = (struct sdhci_host*)data;
  
@@ -202,7 +206,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	if (host->mrq) {
  		pr_err("%s: Timeout waiting for hardware "
-@@ -2284,7 +2292,7 @@ static void sdhci_timeout_timer(unsigned
+@@ -2284,7 +2292,7 @@ static void sdhci_timeout_timer(unsigned long data)
  	}
  
  	mmiowb();
@@ -211,7 +215,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  
  static void sdhci_tuning_timer(unsigned long data)
-@@ -2294,11 +2302,11 @@ static void sdhci_tuning_timer(unsigned
+@@ -2294,11 +2302,11 @@ static void sdhci_tuning_timer(unsigned long data)
  
  	host = (struct sdhci_host *)data;
  
@@ -225,7 +229,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  }
  
  /*****************************************************************************\
-@@ -2522,10 +2530,10 @@ static irqreturn_t sdhci_irq(int irq, vo
+@@ -2522,10 +2530,10 @@ static irqreturn_t sdhci_irq(int irq, void *dev_id)
  	u32 intmask, unexpected = 0;
  	int cardint = 0, max_loops = 16;
  
@@ -247,7 +251,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	if (unexpected) {
  		pr_err("%s: Unexpected interrupt 0x%08x.\n",
-@@ -2791,15 +2799,15 @@ int sdhci_runtime_suspend_host(struct sd
+@@ -2791,15 +2799,15 @@ int sdhci_runtime_suspend_host(struct sdhci_host *host)
  		host->flags &= ~SDHCI_NEEDS_RETUNING;
  	}
  
@@ -267,7 +271,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	return ret;
  }
-@@ -2825,16 +2833,16 @@ int sdhci_runtime_resume_host(struct sdh
+@@ -2825,16 +2833,16 @@ int sdhci_runtime_resume_host(struct sdhci_host *host)
  	sdhci_do_start_signal_voltage_switch(host, &host->mmc->ios);
  	if ((host_flags & SDHCI_PV_ENABLED) &&
  		!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN)) {
@@ -287,7 +291,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	host->runtime_suspended = false;
  
-@@ -2845,7 +2853,7 @@ int sdhci_runtime_resume_host(struct sdh
+@@ -2845,7 +2853,7 @@ int sdhci_runtime_resume_host(struct sdhci_host *host)
  	/* Enable Card Detection */
  	sdhci_enable_card_detection(host);
  
@@ -296,7 +300,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  	return ret;
  }
-@@ -3401,7 +3409,7 @@ void sdhci_remove_host(struct sdhci_host
+@@ -3401,7 +3409,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
  	unsigned long flags;
  
  	if (dead) {
@@ -305,7 +309,7 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  
  		host->flags |= SDHCI_DEVICE_DEAD;
  
-@@ -3413,7 +3421,7 @@ void sdhci_remove_host(struct sdhci_host
+@@ -3413,7 +3421,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
  			tasklet_schedule(&host->finish_tasklet);
  		}
  
@@ -314,3 +318,6 @@ sdhci: Use macros for out spin lock/unlock functions to reduce diffs with upstre
  	}
  
  	sdhci_disable_card_detection(host);
+-- 
+1.9.1
+

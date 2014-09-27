@@ -1,7 +1,7 @@
-From 5342341058c0706fe56a05ebd473fd38ca8654a9 Mon Sep 17 00:00:00 2001
+From ca0e3a11c5cb7a46a98fbad909250ce81a19f1f8 Mon Sep 17 00:00:00 2001
 From: Joerg Faschingbauer <jf@faschingbauer.co.at>
 Date: Tue, 7 Jan 2014 13:55:15 +0000
-Subject: [PATCH 153/174] bcm2708: fix gpio_to_irq() name clash
+Subject: [PATCH 153/196] bcm2708: fix gpio_to_irq() name clash
 
 <mach/gpio.h> has gpio_to_irq() defined as a macro. the macro is
 obviously intended as the direct implementation of that
@@ -18,9 +18,11 @@ together with their uses.
  arch/arm/mach-bcm2708/include/mach/gpio.h |  4 ++--
  2 files changed, 12 insertions(+), 12 deletions(-)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708_gpio.c b/arch/arm/mach-bcm2708/bcm2708_gpio.c
+index d0339eb..96fae74 100644
 --- a/arch/arm/mach-bcm2708/bcm2708_gpio.c
 +++ b/arch/arm/mach-bcm2708/bcm2708_gpio.c
-@@ -135,9 +135,9 @@ static void bcm2708_gpio_set(struct gpio
+@@ -135,9 +135,9 @@ static void bcm2708_gpio_set(struct gpio_chip *gc, unsigned offset, int value)
  
  #if BCM_GPIO_USE_IRQ
  
@@ -32,7 +34,7 @@ together with their uses.
  }
  
  static int bcm2708_gpio_irq_set_type(struct irq_data *d, unsigned type)
-@@ -149,15 +149,15 @@ static int bcm2708_gpio_irq_set_type(str
+@@ -149,15 +149,15 @@ static int bcm2708_gpio_irq_set_type(struct irq_data *d, unsigned type)
  		return -EINVAL;
  
  	if (type & IRQ_TYPE_EDGE_RISING) {
@@ -52,7 +54,7 @@ together with their uses.
  	}
  	return 0;
  }
-@@ -166,7 +166,7 @@ static void bcm2708_gpio_irq_mask(struct
+@@ -166,7 +166,7 @@ static void bcm2708_gpio_irq_mask(struct irq_data *d)
  {
  	unsigned irq = d->irq;
  	struct bcm2708_gpio *gpio = irq_get_chip_data(irq);
@@ -61,7 +63,7 @@ together with their uses.
  	unsigned gb = gn / 32;
  	unsigned long rising = readl(gpio->base + GPIOREN(gb));
  	unsigned long falling = readl(gpio->base + GPIOFEN(gb));
-@@ -181,7 +181,7 @@ static void bcm2708_gpio_irq_unmask(stru
+@@ -181,7 +181,7 @@ static void bcm2708_gpio_irq_unmask(struct irq_data *d)
  {
  	unsigned irq = d->irq;
  	struct bcm2708_gpio *gpio = irq_get_chip_data(irq);
@@ -70,7 +72,7 @@ together with their uses.
  	unsigned gb = gn / 32;
  	unsigned long rising = readl(gpio->base + GPIOREN(gb));
  	unsigned long falling = readl(gpio->base + GPIOFEN(gb));
-@@ -222,7 +222,7 @@ static irqreturn_t bcm2708_gpio_interrup
+@@ -222,7 +222,7 @@ static irqreturn_t bcm2708_gpio_interrupt(int irq, void *dev_id)
  		edsr = readl(__io_address(GPIO_BASE) + GPIOEDS(bank));
  		for_each_set_bit(i, &edsr, 32) {
  			gpio = i + bank * 32;
@@ -79,7 +81,7 @@ together with their uses.
  		}
  		writel(0xffffffff, __io_address(GPIO_BASE) + GPIOEDS(bank));
  	}
-@@ -239,7 +239,7 @@ static void bcm2708_gpio_irq_init(struct
+@@ -239,7 +239,7 @@ static void bcm2708_gpio_irq_init(struct bcm2708_gpio *ucb)
  {
  	unsigned irq;
  
@@ -88,6 +90,8 @@ together with their uses.
  
  	for (irq = GPIO_IRQ_START; irq < (GPIO_IRQ_START + GPIO_IRQS); irq++) {
  		irq_set_chip_data(irq, ucb);
+diff --git a/arch/arm/mach-bcm2708/include/mach/gpio.h b/arch/arm/mach-bcm2708/include/mach/gpio.h
+index f600bc7..f09639a 100644
 --- a/arch/arm/mach-bcm2708/include/mach/gpio.h
 +++ b/arch/arm/mach-bcm2708/include/mach/gpio.h
 @@ -11,8 +11,8 @@
@@ -101,3 +105,6 @@ together with their uses.
  
  #endif
  
+-- 
+1.9.1
+

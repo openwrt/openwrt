@@ -1,7 +1,7 @@
-From 68f187f8fa966229b9820edec5dda455bdff52ea Mon Sep 17 00:00:00 2001
+From 84a69f4eea629347522bcb4e7fe6a04ed687686e Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 13 Nov 2013 11:40:56 +0000
-Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
+Subject: [PATCH 101/196] sdhci: sdhci_bcm2708_uhs_broken should be handled
  through caps reported
 
 ---
@@ -10,9 +10,11 @@ Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
  drivers/mmc/host/sdhci.h         | 1 -
  3 files changed, 1 insertion(+), 8 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index c775666..2797ae6 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -1114,11 +1114,6 @@ static unsigned int sdhci_bcm2708_quirk_
+@@ -1114,11 +1114,6 @@ static unsigned int sdhci_bcm2708_quirk_spurious_crc_acmd51(struct sdhci_host *h
          return 1;
  }
  
@@ -24,7 +26,7 @@ Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
  static unsigned int sdhci_bcm2708_missing_status(struct sdhci_host *host)
  {
  	return 1;
-@@ -1150,7 +1145,6 @@ static struct sdhci_ops sdhci_bcm2708_op
+@@ -1150,7 +1145,6 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
  	.pdma_reset = sdhci_bcm2708_platdma_reset,
  #endif
  	.extra_ints = sdhci_bcm2708_quirk_extra_ints,
@@ -32,9 +34,11 @@ Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
  };
  
  /*****************************************************************************\
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index 237158c..9c93e00 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -1581,7 +1581,7 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1581,7 +1581,7 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  	else
  		ctrl &= ~SDHCI_CTRL_HISPD;
  
@@ -43,6 +47,8 @@ Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
  		u16 clk, ctrl_2;
  
  		/* In case of UHS-I modes, set High Speed Enable */
+diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
+index fc6fcf3..9c3970b 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
 @@ -299,7 +299,6 @@ struct sdhci_ops {
@@ -53,3 +59,6 @@ Subject: [PATCH 101/174] sdhci: sdhci_bcm2708_uhs_broken should be handled
  	unsigned int	(*missing_status)(struct sdhci_host *host);
  
  	void	(*hw_reset)(struct sdhci_host *host);
+-- 
+1.9.1
+

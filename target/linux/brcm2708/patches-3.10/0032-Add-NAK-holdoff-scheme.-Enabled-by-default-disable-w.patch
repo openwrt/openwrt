@@ -1,7 +1,7 @@
-From 99e6d36a5f752bb0237a61143bea29c93e6da22c Mon Sep 17 00:00:00 2001
+From 56822de577325e209a9ecfcf3e62d8bb70c2f2cc Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Mon, 8 Apr 2013 21:12:48 +0100
-Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
+Subject: [PATCH 032/196] Add NAK holdoff scheme. Enabled by default, disable
  with dwc_otg.nak_holdoff_enable=0. Thanks gsh
 
 ---
@@ -12,9 +12,11 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c | 19 +++++++++++++++++++
  5 files changed, 70 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+index 3ac720b..d353a9a 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
-@@ -243,6 +243,9 @@ static struct dwc_otg_driver_module_para
+@@ -243,6 +243,9 @@ static struct dwc_otg_driver_module_params dwc_otg_module_params = {
  //Global variable to switch the fiq fix on or off (declared in bcm2708.c)
  extern bool fiq_fix_enable;
  
@@ -24,7 +26,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  
  /**
   * This function shows the Driver Version.
-@@ -1086,6 +1089,7 @@ static int __init dwc_otg_driver_init(vo
+@@ -1086,6 +1089,7 @@ static int __init dwc_otg_driver_init(void)
  		return retval;
  	}
  	printk(KERN_DEBUG "dwc_otg: FIQ %s\n", fiq_fix_enable ? "enabled":"disabled");
@@ -32,7 +34,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  
  	error = driver_create_file(drv, &driver_attr_version);
  #ifdef DEBUG
-@@ -1366,9 +1370,10 @@ MODULE_PARM_DESC(otg_ver, "OTG revision
+@@ -1366,9 +1370,10 @@ MODULE_PARM_DESC(otg_ver, "OTG revision supported 0=OTG 1.3 1=OTG 2.0");
  module_param(microframe_schedule, bool, 0444);
  MODULE_PARM_DESC(microframe_schedule, "Enable the microframe scheduler");
  
@@ -44,9 +46,11 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  
  /** @page "Module Parameters"
   *
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index 0ce7e46..2b7945a 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -527,6 +527,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
+@@ -527,6 +527,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
  {
  	dwc_otg_qh_t *qh;
  	dwc_otg_qtd_t *urb_qtd;
@@ -55,7 +59,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  
  #ifdef DEBUG /* integrity checks (Broadcom) */
  
-@@ -543,14 +545,17 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
+@@ -543,14 +545,17 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
  		return -DWC_E_INVALID;
  	}
  	urb_qtd = dwc_otg_urb->qtd;
@@ -73,7 +77,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
  		if (urb_qtd->in_process) {
  			dump_channel_info(hcd, qh);
-@@ -1309,6 +1314,22 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1309,6 +1314,22 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  		num_channels - hcd->periodic_channels) &&
  	       !DWC_CIRCLEQ_EMPTY(&hcd->free_hc_list)) {
  
@@ -96,7 +100,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  		if (microframe_schedule) {
  				DWC_SPINLOCK_IRQSAVE(channel_lock, &flags);
  				if (hcd->available_host_channels < 1) {
-@@ -1321,7 +1342,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1321,7 +1342,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  				last_sel_trans_num_nonper_scheduled++;
  #endif /* DEBUG_HOST_CHANNELS */
  		}
@@ -104,6 +108,8 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  
  		assign_and_init_hc(hcd, qh);
  
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+index 6d82127..45e44ea 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -321,6 +321,11 @@ typedef struct dwc_otg_qh {
@@ -118,6 +124,8 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  	/** (micro)frame at which last start split was initialized. */
  	uint16_t start_split_frame;
  
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 21e8f09..3e762e2 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -56,7 +56,12 @@ int fiq_done, int_done;
@@ -143,7 +151,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  		if((jiffies / HZ) > last_time)
  		{
  			/* Once a second output the fiq and irq numbers, useful for debug */
-@@ -1419,6 +1424,18 @@ static int32_t handle_hc_nak_intr(dwc_ot
+@@ -1419,6 +1424,18 @@ static int32_t handle_hc_nak_intr(dwc_otg_hcd_t * hcd,
  		    "NAK Received--\n", hc->hc_num);
  
  	/*
@@ -162,9 +170,11 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  	 * Handle NAK for IN/OUT SSPLIT/CSPLIT transfers, bulk, control, and
  	 * interrupt.  Re-start the SSPLIT transfer.
  	 */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+index ac10323..e6b2a7b 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-@@ -181,6 +181,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_ot
+@@ -181,6 +181,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh, dwc_otg_hcd_urb_t * urb)
  	if (microframe_schedule)
  		qh->speed = dev_speed;
  
@@ -172,7 +182,7 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  
  	if (((dev_speed == USB_SPEED_LOW) ||
  	     (dev_speed == USB_SPEED_FULL)) &&
-@@ -764,6 +765,24 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
+@@ -764,6 +765,24 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
  			       int sched_next_periodic_split)
  {	
  	if (dwc_qh_is_non_per(qh)) {
@@ -197,3 +207,6 @@ Subject: [PATCH 032/174] Add NAK holdoff scheme. Enabled by default, disable
  		dwc_otg_hcd_qh_remove(hcd, qh);
  		if (!DWC_CIRCLEQ_EMPTY(&qh->qtd_list)) {
  			/* Add back to inactive non-periodic schedule. */
+-- 
+1.9.1
+

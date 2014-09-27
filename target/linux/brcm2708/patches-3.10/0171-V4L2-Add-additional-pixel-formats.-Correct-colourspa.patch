@@ -1,7 +1,7 @@
-From 0be62650adff2cfac1aab39fc72a41b08df59885 Mon Sep 17 00:00:00 2001
+From 1f1d93391b9662de72187a5a709bacf2d25f6e86 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Wed, 12 Feb 2014 15:35:41 +0000
-Subject: [PATCH 171/174] V4L2: Add additional pixel formats. Correct
+Subject: [PATCH 171/196] V4L2: Add additional pixel formats. Correct
  colourspace
 
 Adds the other flavours of YUYV, and NV12.
@@ -12,6 +12,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/bcm2835-camera.c | 36 +++++++++++++++++++++++--
  1 file changed, 34 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index 8285e6a..3dea993 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
 @@ -114,7 +114,39 @@ static struct mmal_fmt formats[] = {
@@ -55,7 +57,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  static struct mmal_fmt *get_format(struct v4l2_format *f)
-@@ -691,7 +723,7 @@ static int vidioc_g_fbuf(struct file *fi
+@@ -691,7 +723,7 @@ static int vidioc_g_fbuf(struct file *file, void *fh,
  	a->fmt.bytesperline = (preview_port->es.video.width * 3)>>1;
  	a->fmt.sizeimage = (preview_port->es.video.width *
  			       preview_port->es.video.height * 3)>>1;
@@ -64,3 +66,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	return 0;
  }
+-- 
+1.9.1
+

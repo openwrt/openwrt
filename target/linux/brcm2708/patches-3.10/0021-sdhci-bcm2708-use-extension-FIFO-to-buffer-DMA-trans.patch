@@ -1,7 +1,7 @@
-From 3e9891e91d7dda096ab1cc2518830938ad69880d Mon Sep 17 00:00:00 2001
+From b802bfd3bb337e92226bd521f8ebbbcfc6642333 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Sun, 12 May 2013 12:25:52 +0100
-Subject: [PATCH 021/174] sdhci-bcm2708: use extension FIFO to buffer DMA
+Subject: [PATCH 021/196] sdhci-bcm2708: use extension FIFO to buffer DMA
  transfers
 
 The additional FIFO might speed up transfers in some cases.
@@ -9,6 +9,8 @@ The additional FIFO might speed up transfers in some cases.
  drivers/mmc/host/sdhci-bcm2708.c | 11 +++++++++++
  1 file changed, 11 insertions(+)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 3792b9f..326b962 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -74,6 +74,9 @@
@@ -21,7 +23,7 @@ The additional FIFO might speed up transfers in some cases.
  /*****************************************************************************\
   *									     *
   * Debug								     *
-@@ -957,10 +960,12 @@ static ssize_t attr_dma_store(struct dev
+@@ -957,10 +960,12 @@ static ssize_t attr_dma_store(struct device *_dev,
  		int on = simple_strtol(buf, NULL, 0);
  		if (on) {
  			host->flags |= SDHCI_USE_PLATDMA;
@@ -34,7 +36,7 @@ The additional FIFO might speed up transfers in some cases.
  			printk(KERN_INFO "%s: DMA disabled\n",
  			       mmc_hostname(host->mmc));
  		}
-@@ -1272,6 +1277,12 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1272,6 +1277,12 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  	ret = device_create_file(&pdev->dev, &dev_attr_dma_wait);
  	ret = device_create_file(&pdev->dev, &dev_attr_status);
  
@@ -47,3 +49,6 @@ The additional FIFO might speed up transfers in some cases.
  	printk(KERN_INFO "%s: BCM2708 SDHC host at 0x%08llx DMA %d IRQ %d\n",
  	       mmc_hostname(host->mmc), (unsigned long long)iomem->start,
  	       host_priv->dma_chan, host_priv->dma_irq);
+-- 
+1.9.1
+

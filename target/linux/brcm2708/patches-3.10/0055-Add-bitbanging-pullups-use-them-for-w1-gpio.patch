@@ -1,7 +1,7 @@
-From 28ca85a46bbdae4152b48a669872ac205d053856 Mon Sep 17 00:00:00 2001
+From 0a2fa5a85c2ed9599acb2215f24e06db0379a133 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 1 May 2013 21:14:28 +0100
-Subject: [PATCH 055/174] Add bitbanging pullups, use them for w1-gpio
+Subject: [PATCH 055/196] Add bitbanging pullups, use them for w1-gpio
 
 Allows parasite power to work, uses module option pullup=1
 ---
@@ -11,6 +11,8 @@ Allows parasite power to work, uses module option pullup=1
  drivers/w1/w1_io.c           | 18 +++++++++++++++---
  4 files changed, 50 insertions(+), 10 deletions(-)
 
+diff --git a/drivers/w1/masters/w1-gpio.c b/drivers/w1/masters/w1-gpio.c
+index 46d9701..f615f80 100644
 --- a/drivers/w1/masters/w1-gpio.c
 +++ b/drivers/w1/masters/w1-gpio.c
 @@ -23,6 +23,9 @@
@@ -40,7 +42,7 @@ Allows parasite power to work, uses module option pullup=1
  #if defined(CONFIG_OF)
  static struct of_device_id w1_gpio_dt_ids[] = {
  	{ .compatible = "w1-gpio" },
-@@ -133,6 +146,13 @@ static int w1_gpio_probe(struct platform
+@@ -133,6 +146,13 @@ static int w1_gpio_probe(struct platform_device *pdev)
  		master->write_bit = w1_gpio_write_bit_dir;
  	}
  
@@ -54,6 +56,8 @@ Allows parasite power to work, uses module option pullup=1
  	err = w1_add_master_device(master);
  	if (err) {
  		dev_err(&pdev->dev, "w1_add_master device failed\n");
+diff --git a/drivers/w1/w1.h b/drivers/w1/w1.h
+index 45908e5..0ba75f6 100644
 --- a/drivers/w1/w1.h
 +++ b/drivers/w1/w1.h
 @@ -148,6 +148,12 @@ struct w1_bus_master
@@ -69,9 +73,11 @@ Allows parasite power to work, uses module option pullup=1
  	/** Really nice hardware can handles the different types of ROM search
  	 *  w1_master* is passed to the slave found callback.
  	 */
+diff --git a/drivers/w1/w1_int.c b/drivers/w1/w1_int.c
+index 5a98649..a4d69b6 100644
 --- a/drivers/w1/w1_int.c
 +++ b/drivers/w1/w1_int.c
-@@ -117,19 +117,21 @@ int w1_add_master_device(struct w1_bus_m
+@@ -117,19 +117,21 @@ int w1_add_master_device(struct w1_bus_master *master)
  		printk(KERN_ERR "w1_add_master_device: invalid function set\n");
  		return(-EINVAL);
          }
@@ -100,9 +106,11 @@ Allows parasite power to work, uses module option pullup=1
  	/* Lock until the device is added (or not) to w1_masters. */
  	mutex_lock(&w1_mlock);
  	/* Search for the first available id (starting at 1). */
+diff --git a/drivers/w1/w1_io.c b/drivers/w1/w1_io.c
+index e10acc2..667fdd5 100644
 --- a/drivers/w1/w1_io.c
 +++ b/drivers/w1/w1_io.c
-@@ -127,10 +127,22 @@ static void w1_pre_write(struct w1_maste
+@@ -127,10 +127,22 @@ static void w1_pre_write(struct w1_master *dev)
  static void w1_post_write(struct w1_master *dev)
  {
  	if (dev->pullup_duration) {
@@ -117,14 +125,17 @@ Allows parasite power to work, uses module option pullup=1
 +			} else if (dev->bus_master->bitbang_pullup) {
 +				dev->bus_master->
 +				    bitbang_pullup(dev->bus_master->data, 1);
- 			msleep(dev->pullup_duration);
++			msleep(dev->pullup_duration);
 +				dev->bus_master->
 +				    bitbang_pullup(dev->bus_master->data, 0);
 +			}
 +		} else {
-+			msleep(dev->pullup_duration);
+ 			msleep(dev->pullup_duration);
 +		}
 +
  		dev->pullup_duration = 0;
  	}
  }
+-- 
+1.9.1
+

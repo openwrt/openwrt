@@ -1,7 +1,7 @@
-From c80392fbbb9a09f035f66a7d2a9fed2469373210 Mon Sep 17 00:00:00 2001
+From 5e4c6e64d0c5fd6adc6c68cc1366f0f7c0ad84ba Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 3 Jul 2013 00:46:42 +0100
-Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
+Subject: [PATCH 027/196] Add FIQ patch to dwc_otg driver. Enable with
  dwc_otg.fiq_fix_enable=1. Should give about 10% more ARM performance. Thanks
  to Gordon and Costas
 
@@ -31,6 +31,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  create mode 100755 drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
  create mode 100755 drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index eb291c7..5468f1f 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -373,6 +373,7 @@ config ARCH_BCM2708
@@ -41,6 +43,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  	help
  	  This enables support for Broadcom BCM2708 boards.
  
+diff --git a/arch/arm/include/asm/fiq.h b/arch/arm/include/asm/fiq.h
+index d493d0b..f1a131b 100644
 --- a/arch/arm/include/asm/fiq.h
 +++ b/arch/arm/include/asm/fiq.h
 @@ -42,6 +42,7 @@ extern void disable_fiq(int fiq);
@@ -51,9 +55,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  static inline void set_fiq_regs(struct pt_regs const *regs)
  {
+diff --git a/arch/arm/kernel/fiq.c b/arch/arm/kernel/fiq.c
+index 25442f4..74ff4ba 100644
 --- a/arch/arm/kernel/fiq.c
 +++ b/arch/arm/kernel/fiq.c
-@@ -141,6 +141,7 @@ void disable_fiq(int fiq)
+@@ -145,6 +145,7 @@ void disable_fiq(int fiq)
  EXPORT_SYMBOL(set_fiq_handler);
  EXPORT_SYMBOL(__set_fiq_regs);	/* defined in fiqasm.S */
  EXPORT_SYMBOL(__get_fiq_regs);	/* defined in fiqasm.S */
@@ -61,6 +67,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  EXPORT_SYMBOL(claim_fiq);
  EXPORT_SYMBOL(release_fiq);
  EXPORT_SYMBOL(enable_fiq);
+diff --git a/arch/arm/kernel/fiqasm.S b/arch/arm/kernel/fiqasm.S
+index 207f9d6..93eddfe 100644
 --- a/arch/arm/kernel/fiqasm.S
 +++ b/arch/arm/kernel/fiqasm.S
 @@ -25,6 +25,9 @@
@@ -81,9 +89,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
 +ENTRY(__FIQ_Branch)
 +	mov pc, r8
 +ENDPROC(__FIQ_Branch)
+diff --git a/arch/arm/mach-bcm2708/armctrl.c b/arch/arm/mach-bcm2708/armctrl.c
+index da18725..274aa30 100644
 --- a/arch/arm/mach-bcm2708/armctrl.c
 +++ b/arch/arm/mach-bcm2708/armctrl.c
-@@ -52,8 +52,12 @@ static void armctrl_mask_irq(struct irq_
+@@ -52,8 +52,12 @@ static void armctrl_mask_irq(struct irq_data *d)
  		0
  	};
  
@@ -98,7 +108,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  }
  
  static void armctrl_unmask_irq(struct irq_data *d)
-@@ -65,8 +69,14 @@ static void armctrl_unmask_irq(struct ir
+@@ -65,8 +69,14 @@ static void armctrl_unmask_irq(struct irq_data *d)
  		0
  	};
  
@@ -115,16 +125,18 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  }
  
  #if defined(CONFIG_PM)
-@@ -204,5 +214,6 @@ int __init armctrl_init(void __iomem * b
+@@ -204,5 +214,6 @@ int __init armctrl_init(void __iomem * base, unsigned int irq_start,
  	}
  
  	armctrl_pm_register(base, irq_start, resume_sources);
 +	init_FIQ(FIQ_START);
  	return 0;
  }
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 18f7ede..b9aa2de 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -309,12 +309,32 @@ static struct resource bcm2708_usb_resou
+@@ -309,12 +309,32 @@ static struct resource bcm2708_usb_resources[] = {
  	       .flags = IORESOURCE_MEM,
  	       },
  	[1] = {
@@ -171,6 +183,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  	bcm_register_device(&bcm2708_usb_device);
  	bcm_register_device(&bcm2708_uart1_device);
  	bcm_register_device(&bcm2708_powerman_device);
+diff --git a/arch/arm/mach-bcm2708/include/mach/irqs.h b/arch/arm/mach-bcm2708/include/mach/irqs.h
+index e8bb068..9aaedf1 100644
 --- a/arch/arm/mach-bcm2708/include/mach/irqs.h
 +++ b/arch/arm/mach-bcm2708/include/mach/irqs.h
 @@ -106,91 +106,94 @@
@@ -246,17 +260,6 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
 -#define FIQ_RNG               INT_RNG
 -#define FIQ_ARASANSDIO        INT_ARASANSDIO
 -#define FIQ_AVSPMON           INT_AVSPMON
--
--#define FIQ_ARM_TIMER         INT_ARM_TIMER
--#define FIQ_ARM_MAILBOX       INT_ARM_MAILBOX
--#define FIQ_ARM_DOORBELL_0    INT_ARM_DOORBELL_0
--#define FIQ_ARM_DOORBELL_1    INT_ARM_DOORBELL_1
--#define FIQ_VPU0_HALTED       INT_VPU0_HALTED
--#define FIQ_VPU1_HALTED       INT_VPU1_HALTED
--#define FIQ_ILLEGAL_TYPE0     INT_ILLEGAL_TYPE0
--#define FIQ_ILLEGAL_TYPE1     INT_ILLEGAL_TYPE1
--#define FIQ_PENDING1          INT_PENDING1
--#define FIQ_PENDING2          INT_PENDING2
 +#define FIQ_TIMER0            (FIQ_START+INTERRUPT_TIMER0)
 +#define FIQ_TIMER1            (FIQ_START+INTERRUPT_TIMER1)
 +#define FIQ_TIMER2            (FIQ_START+INTERRUPT_TIMER2)
@@ -321,7 +324,17 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
 +#define FIQ_RNG               (FIQ_START+INTERRUPT_RNG)
 +#define FIQ_ARASANSDIO        (FIQ_START+INTERRUPT_ARASANSDIO)
 +#define FIQ_AVSPMON           (FIQ_START+INTERRUPT_AVSPMON)
-+
+ 
+-#define FIQ_ARM_TIMER         INT_ARM_TIMER
+-#define FIQ_ARM_MAILBOX       INT_ARM_MAILBOX
+-#define FIQ_ARM_DOORBELL_0    INT_ARM_DOORBELL_0
+-#define FIQ_ARM_DOORBELL_1    INT_ARM_DOORBELL_1
+-#define FIQ_VPU0_HALTED       INT_VPU0_HALTED
+-#define FIQ_VPU1_HALTED       INT_VPU1_HALTED
+-#define FIQ_ILLEGAL_TYPE0     INT_ILLEGAL_TYPE0
+-#define FIQ_ILLEGAL_TYPE1     INT_ILLEGAL_TYPE1
+-#define FIQ_PENDING1          INT_PENDING1
+-#define FIQ_PENDING2          INT_PENDING2
 +#define FIQ_ARM_TIMER         (FIQ_START+INTERRUPT_ARM_TIMER)
 +#define FIQ_ARM_MAILBOX       (FIQ_START+INTERRUPT_ARM_MAILBOX)
 +#define FIQ_ARM_DOORBELL_0    (FIQ_START+INTERRUPT_ARM_DOORBELL_0)
@@ -347,6 +360,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  
  #endif /* _BCM2708_IRQS_H_ */
+diff --git a/arch/arm/mach-bcm2708/include/mach/platform.h b/arch/arm/mach-bcm2708/include/mach/platform.h
+index 4d3c15d..89e72d1 100644
 --- a/arch/arm/mach-bcm2708/include/mach/platform.h
 +++ b/arch/arm/mach-bcm2708/include/mach/platform.h
 @@ -56,7 +56,9 @@
@@ -359,9 +374,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  #define DMA_BASE		 (BCM2708_PERI_BASE + 0x7000)	/* DMA controller */
  #define ARM_BASE                 (BCM2708_PERI_BASE + 0xB000)	 /* BCM2708 ARM control block */
  #define PM_BASE			 (BCM2708_PERI_BASE + 0x100000) /* Power Management, Reset controller and Watchdog registers */
+diff --git a/drivers/usb/host/dwc_otg/Makefile b/drivers/usb/host/dwc_otg/Makefile
+index c4c6e4e..6bd6a2e 100644
 --- a/drivers/usb/host/dwc_otg/Makefile
 +++ b/drivers/usb/host/dwc_otg/Makefile
-@@ -36,6 +36,7 @@ dwc_otg-objs	+= dwc_otg_cil.o dwc_otg_ci
+@@ -36,6 +36,7 @@ dwc_otg-objs	+= dwc_otg_cil.o dwc_otg_cil_intr.o
  dwc_otg-objs	+= dwc_otg_pcd_linux.o dwc_otg_pcd.o dwc_otg_pcd_intr.o 
  dwc_otg-objs	+= dwc_otg_hcd.o dwc_otg_hcd_linux.o dwc_otg_hcd_intr.o dwc_otg_hcd_queue.o dwc_otg_hcd_ddma.o
  dwc_otg-objs	+= dwc_otg_adp.o
@@ -369,6 +386,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  ifneq ($(CFI),)
  dwc_otg-objs	+= dwc_otg_cfi.o
  endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
+index 21804c4..b861b55 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 @@ -45,6 +45,9 @@
@@ -381,7 +400,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  #ifdef DEBUG
  inline const char *op_state_str(dwc_otg_core_if_t * core_if)
-@@ -1351,10 +1354,15 @@ static inline uint32_t dwc_otg_read_comm
+@@ -1351,10 +1354,15 @@ static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if)
  			    gintsts.d32, gintmsk.d32);
  	}
  #endif
@@ -400,9 +419,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  }
  
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_dbg.h b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
+index 8681aa9..2ff1532 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
-@@ -49,6 +49,7 @@ static inline uint32_t SET_DEBUG_LEVEL(c
+@@ -49,6 +49,7 @@ static inline uint32_t SET_DEBUG_LEVEL(const uint32_t new)
  	return old;
  }
  
@@ -410,6 +431,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /** When debug level has the DBG_CIL bit set, display CIL Debug messages. */
  #define DBG_CIL		(0x2)
  /** When debug level has the DBG_CILV bit set, display CIL Verbose debug
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+index e7f99e1..3ac720b 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 @@ -64,6 +64,8 @@ bool microframe_schedule=true;
@@ -421,7 +444,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  extern int pcd_init(
  #ifdef LM_INTERFACE
  			   struct lm_device *_dev
-@@ -238,6 +240,10 @@ static struct dwc_otg_driver_module_para
+@@ -238,6 +240,10 @@ static struct dwc_otg_driver_module_params dwc_otg_module_params = {
  	.adp_enable = -1,
  };
  
@@ -471,7 +494,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  #else
          {
                  struct map_desc desc = {
-@@ -1063,6 +1085,7 @@ static int __init dwc_otg_driver_init(vo
+@@ -1063,6 +1085,7 @@ static int __init dwc_otg_driver_init(void)
  		printk(KERN_ERR "%s retval=%d\n", __func__, retval);
  		return retval;
  	}
@@ -479,7 +502,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  	error = driver_create_file(drv, &driver_attr_version);
  #ifdef DEBUG
-@@ -1343,6 +1366,10 @@ MODULE_PARM_DESC(otg_ver, "OTG revision
+@@ -1343,6 +1366,10 @@ MODULE_PARM_DESC(otg_ver, "OTG revision supported 0=OTG 1.3 1=OTG 2.0");
  module_param(microframe_schedule, bool, 0444);
  MODULE_PARM_DESC(microframe_schedule, "Enable the microframe scheduler");
  
@@ -490,9 +513,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /** @page "Module Parameters"
   *
   * The following parameters may be specified when starting the module.
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index 434d0c4..20f989e 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -53,6 +53,8 @@ static int last_sel_trans_num_avail_hc_a
+@@ -53,6 +53,8 @@ static int last_sel_trans_num_avail_hc_at_start = 0;
  static int last_sel_trans_num_avail_hc_at_end = 0;
  #endif /* DEBUG_HOST_CHANNELS */
  
@@ -509,7 +534,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /**
   * HCD Callback function for Remote Wakeup.
   *
-@@ -1330,6 +1333,8 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1330,6 +1333,8 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  				   &qh->qh_list_entry);
  		DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
  
@@ -518,9 +543,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  		if (ret_val == DWC_OTG_TRANSACTION_NONE) {
  			ret_val = DWC_OTG_TRANSACTION_NON_PERIODIC;
  		} else {
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+index 8075595..dd30f47 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
-@@ -594,7 +594,7 @@ extern void dwc_otg_hcd_queue_transactio
+@@ -594,7 +594,7 @@ extern void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t * hcd,
  /** @name Interrupt Handler Functions */
  /** @{ */
  extern int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd);
@@ -529,9 +556,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  extern int32_t dwc_otg_hcd_handle_rx_status_q_level_intr(dwc_otg_hcd_t *
  							 dwc_otg_hcd);
  extern int32_t dwc_otg_hcd_handle_np_tx_fifo_empty_intr(dwc_otg_hcd_t *
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
+index b3dc806..04ca4c2 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
-@@ -113,6 +113,11 @@ extern void dwc_otg_hcd_remove(dwc_otg_h
+@@ -113,6 +113,11 @@ extern void dwc_otg_hcd_remove(dwc_otg_hcd_t * hcd);
   */
  extern int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd);
  
@@ -543,6 +572,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /**
   * Returns private data set by
   * dwc_otg_hcd_set_priv_data function.
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 63c1b55..f1658fa 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -34,6 +34,11 @@
@@ -673,7 +704,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  		}
  #ifdef DEBUG
  		/* Don't print debug message in the interrupt handler on SOF */
-@@ -88,9 +162,14 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -88,9 +162,14 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  				    "DWC OTG HCD Interrupt Detected gintsts&gintmsk=0x%08x core_if=%p\n",
  				    gintsts.d32, core_if);
  #endif
@@ -691,7 +722,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  		}
  		if (gintsts.b.rxstsqlvl) {
  			retval |=
-@@ -138,11 +217,37 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -138,11 +217,37 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  #endif
  
  	}
@@ -729,7 +760,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  #warning Compiling code to track missed SOFs
  #define FRAME_NUM_ARRAY_SIZE 1000
  /**
-@@ -182,13 +287,15 @@ static inline void track_missed_sofs(uin
+@@ -182,13 +287,15 @@ static inline void track_missed_sofs(uint16_t curr_frame_number)
   * (micro)frame. Periodic transactions may be queued to the controller for the
   * next (micro)frame.
   */
@@ -746,7 +777,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  	hfnum.d32 =
  	    DWC_READ_REG32(&hcd->core_if->host_if->host_global_regs->hfnum);
-@@ -218,12 +325,30 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_
+@@ -218,12 +325,30 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd)
  			 */
  			DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_ready,
  					   &qh->qh_list_entry);
@@ -777,12 +808,14 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  
  	/* Clear interrupt */
  	gintsts.b.sofintr = 1;
-@@ -2102,5 +2227,4 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
+@@ -2102,5 +2227,4 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
  
  	return retval;
  }
 -
  #endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index 4a985a6..9702f81 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -1,3 +1,4 @@
@@ -816,7 +849,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /** @name Linux HC Driver API Functions */
  /** @{ */
  /* manage i/o requests, device state */
-@@ -366,6 +372,12 @@ static struct dwc_otg_hcd_function_ops h
+@@ -366,6 +372,12 @@ static struct dwc_otg_hcd_function_ops hcd_fops = {
  	.get_b_hnp_enable = _get_b_hnp_enable,
  };
  
@@ -883,9 +916,11 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  	/* Initialize the DWC OTG HCD. */
  	dwc_otg_hcd = dwc_otg_hcd_alloc_hcd();
  	if (!dwc_otg_hcd) {
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+index 08c1669..ac10323 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-@@ -572,6 +572,9 @@ static int check_max_xfer_size(dwc_otg_h
+@@ -572,6 +572,9 @@ static int check_max_xfer_size(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  	return status;
  }
  
@@ -895,7 +930,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /**
   * Schedules an interrupt or isochronous transfer in the periodic schedule.
   *
-@@ -630,8 +633,13 @@ static int schedule_periodic(dwc_otg_hcd
+@@ -630,8 +633,13 @@ static int schedule_periodic(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  		DWC_LIST_INSERT_TAIL(&hcd->periodic_sched_ready, &qh->qh_list_entry);
  	}
  	else {
@@ -911,7 +946,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  	}
  
  	if (!microframe_schedule) {
-@@ -645,6 +653,7 @@ static int schedule_periodic(dwc_otg_hcd
+@@ -645,6 +653,7 @@ static int schedule_periodic(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  	return status;
  }
  
@@ -919,7 +954,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  /**
   * This function adds a QH to either the non periodic or periodic schedule if
   * it is not already in the schedule. If the QH is already in the schedule, no
-@@ -667,6 +676,7 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * h
+@@ -667,6 +676,7 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  		/* Always start in the inactive schedule. */
  		DWC_LIST_INSERT_TAIL(&hcd->non_periodic_sched_inactive,
  				     &qh->qh_list_entry);
@@ -927,7 +962,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  	} else {
  		status = schedule_periodic(hcd, qh);
  		if ( !hcd->periodic_qh_count ) {
-@@ -767,6 +777,7 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
+@@ -767,6 +777,7 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
  			if (sched_next_periodic_split) {
  
  				qh->sched_frame = frame_number;
@@ -935,7 +970,7 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  				if (dwc_frame_num_le(frame_number,
  						     dwc_frame_num_inc
  						     (qh->start_split_frame,
-@@ -815,6 +826,11 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
+@@ -815,6 +826,11 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
  				DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_ready,
  						   &qh->qh_list_entry);
  			} else {
@@ -947,6 +982,9 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  				DWC_LIST_MOVE_HEAD
  				    (&hcd->periodic_sched_inactive,
  				     &qh->qh_list_entry);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
+new file mode 100755
+index 0000000..b70ca68
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
 @@ -0,0 +1,113 @@
@@ -1063,6 +1101,9 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
 +
 +	return;
 +}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
+new file mode 100755
+index 0000000..22f28e1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 @@ -0,0 +1,36 @@
@@ -1102,6 +1143,8 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
 +#endif
 +
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
+index a7e9076..bb1c42d 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
 @@ -97,6 +97,9 @@ typedef struct os_dependent {
@@ -1114,3 +1157,6 @@ Subject: [PATCH 027/174] Add FIQ patch to dwc_otg driver. Enable with
  #ifdef LM_INTERFACE
  	struct lm_device *lmdev;
  #elif  defined(PCI_INTERFACE)
+-- 
+1.9.1
+

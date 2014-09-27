@@ -1,7 +1,7 @@
-From aceebc39876d7cec8f2b4289a09ddeb94a5697d9 Mon Sep 17 00:00:00 2001
+From f4206d9063a2b73cf7ca7aa497c1f7e3def1859b Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Mon, 9 Dec 2013 11:03:54 +0000
-Subject: [PATCH 139/174] V4L2: Add support for inline H264 headers
+Subject: [PATCH 139/196] V4L2: Add support for inline H264 headers
 
 Add support for V4L2_CID_MPEG_VIDEO_REPEAT_SEQ_HEADER
 to control H264 inline headers.
@@ -15,6 +15,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/mmal-parameters.h |  11 ++-
  3 files changed, 103 insertions(+), 25 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.h b/drivers/media/platform/bcm2835/bcm2835-camera.h
+index 0f29b1a..25aa91f 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.h
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
 @@ -15,7 +15,7 @@
@@ -26,6 +28,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  enum {
  	MMAL_COMPONENT_CAMERA = 0,
+diff --git a/drivers/media/platform/bcm2835/controls.c b/drivers/media/platform/bcm2835/controls.c
+index e965ca3..cb062a9 100644
 --- a/drivers/media/platform/bcm2835/controls.c
 +++ b/drivers/media/platform/bcm2835/controls.c
 @@ -96,6 +96,7 @@ struct bm2835_mmal_v4l2_ctrl {
@@ -36,7 +40,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  struct v4l2_to_mmal_effects_setting {
-@@ -606,12 +607,29 @@ static int ctrl_set_image_encode_output(
+@@ -606,12 +607,29 @@ static int ctrl_set_image_encode_output(struct bm2835_mmal_dev *dev,
  					     &u32_value, sizeof(u32_value));
  }
  
@@ -66,7 +70,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	if ((mmal_ctrl == NULL) ||
  	    (mmal_ctrl->id != ctrl->id) ||
-@@ -620,7 +638,10 @@ static int bm2835_mmal_s_ctrl(struct v4l
+@@ -620,7 +638,10 @@ static int bm2835_mmal_s_ctrl(struct v4l2_ctrl *ctrl)
  		return -EINVAL;
  	}
  
@@ -78,7 +82,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  }
  
  static const struct v4l2_ctrl_ops bm2835_mmal_ctrl_ops = {
-@@ -633,32 +654,44 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -633,32 +654,44 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  	{
  		V4L2_CID_SATURATION, MMAL_CONTROL_TYPE_STD,
  		-100, 100, 0, 1, NULL,
@@ -129,7 +133,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	},
  /*	{
  		0, MMAL_CONTROL_TYPE_CLUSTER, 3, 1, 0, NULL, 0, NULL
-@@ -666,7 +699,9 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -666,7 +699,9 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  */	{
  		V4L2_CID_EXPOSURE_AUTO, MMAL_CONTROL_TYPE_STD_MENU,
  		~0x03, 3, V4L2_EXPOSURE_AUTO, 0, NULL,
@@ -140,7 +144,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	},
  /* todo this needs mixing in with set exposure
  	{
-@@ -677,86 +712,120 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -677,86 +712,120 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  		V4L2_CID_EXPOSURE_ABSOLUTE, MMAL_CONTROL_TYPE_STD,
  		/* Units of 100usecs */
  		1, 1*1000*10, 100*10, 1, NULL,
@@ -276,6 +280,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  				break;
  		}
  	}
+diff --git a/drivers/media/platform/bcm2835/mmal-parameters.h b/drivers/media/platform/bcm2835/mmal-parameters.h
+index 0f2bd50..b08a4b0 100644
 --- a/drivers/media/platform/bcm2835/mmal-parameters.h
 +++ b/drivers/media/platform/bcm2835/mmal-parameters.h
 @@ -421,7 +421,16 @@ enum mmal_parameter_video_type {
@@ -296,3 +302,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  /** Valid mirror modes */
+-- 
+1.9.1
+

@@ -1,15 +1,17 @@
-From 75c9b03f90ca974cb072d96f423884b773ca5425 Mon Sep 17 00:00:00 2001
+From 4b64ce34aaf88c2869c74efad7cbe5167920625b Mon Sep 17 00:00:00 2001
 From: notro <notro@tronnes.org>
 Date: Sat, 26 Jan 2013 20:38:03 +0100
-Subject: [PATCH 056/174] spi-bcm2708: add 9-bit support using LoSSI mode
+Subject: [PATCH 056/196] spi-bcm2708: add 9-bit support using LoSSI mode
 
 ---
  drivers/spi/spi-bcm2708.c | 30 ++++++++++++++++++++++++++++--
  1 file changed, 28 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/spi/spi-bcm2708.c b/drivers/spi/spi-bcm2708.c
+index b74aa32..abaa5a6 100644
 --- a/drivers/spi/spi-bcm2708.c
 +++ b/drivers/spi/spi-bcm2708.c
-@@ -146,10 +146,31 @@ static inline void bcm2708_rd_fifo(struc
+@@ -146,10 +146,31 @@ static inline void bcm2708_rd_fifo(struct bcm2708_spi *bs, int len)
  static inline void bcm2708_wr_fifo(struct bcm2708_spi *bs, int len)
  {
  	u8 byte;
@@ -41,7 +43,7 @@ Subject: [PATCH 056/174] spi-bcm2708: add 9-bit support using LoSSI mode
  	while (len--) {
  		byte = bs->tx_buf ? *bs->tx_buf++ : 0;
  		bcm2708_wr(bs, SPI_FIFO, byte);
-@@ -234,8 +255,12 @@ static int bcm2708_setup_state(struct sp
+@@ -234,8 +255,12 @@ static int bcm2708_setup_state(struct spi_master *master,
  	switch (bpw) {
  	case 8:
  		break;
@@ -55,7 +57,7 @@ Subject: [PATCH 056/174] spi-bcm2708: add 9-bit support using LoSSI mode
  			bpw);
  		return -EINVAL;
  	}
-@@ -283,7 +308,8 @@ static int bcm2708_process_transfer(stru
+@@ -283,7 +308,8 @@ static int bcm2708_process_transfer(struct bcm2708_spi *bs,
  		ret = bcm2708_setup_state(spi->master, &spi->dev, &state,
  			xfer->speed_hz ? xfer->speed_hz : spi->max_speed_hz,
  			spi->chip_select, spi->mode,
@@ -65,3 +67,6 @@ Subject: [PATCH 056/174] spi-bcm2708: add 9-bit support using LoSSI mode
  		if (ret)
  			return ret;
  
+-- 
+1.9.1
+

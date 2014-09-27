@@ -1,7 +1,7 @@
-From b68b4448dc37e5fd510f1bb9bbd62722ad497f41 Mon Sep 17 00:00:00 2001
+From d02bc1f83cf08d59c159eb2e1263a3b4a2addc90 Mon Sep 17 00:00:00 2001
 From: Daniel Santos <daniel.santos@pobox.com>
 Date: Sun, 5 Jan 2014 17:39:26 -0600
-Subject: [PATCH 168/174] spidev: fix hang when transfer_one_message fails
+Subject: [PATCH 168/196] spidev: fix hang when transfer_one_message fails
 
 commit e120cc0dcf2880a4c5c0a6cb27b655600a1cfa1d upstream.
 
@@ -25,9 +25,11 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  drivers/spi/spi.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/spi/spi.c b/drivers/spi/spi.c
+index 32b7bb1..ca99ac9 100644
 --- a/drivers/spi/spi.c
 +++ b/drivers/spi/spi.c
-@@ -584,7 +584,9 @@ static void spi_pump_messages(struct kth
+@@ -584,7 +584,9 @@ static void spi_pump_messages(struct kthread_work *work)
  	ret = master->transfer_one_message(master, master->cur_msg);
  	if (ret) {
  		dev_err(&master->dev,
@@ -38,3 +40,6 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  		return;
  	}
  }
+-- 
+1.9.1
+

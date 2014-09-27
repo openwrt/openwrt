@@ -1,13 +1,15 @@
-From 84b32065ee2dd4e871c1b12ed45171477320a19f Mon Sep 17 00:00:00 2001
+From 2d05b923f1fee3d6e7a2d0d2589325af6d2027eb Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Fri, 10 Jan 2014 17:04:34 +0000
-Subject: [PATCH 155/174] config: Remove CONFIG_RTC_HCTOSYS See:
+Subject: [PATCH 155/196] config: Remove CONFIG_RTC_HCTOSYS See:
  https://github.com/raspberrypi/linux/issues/163
 
 ---
  arch/arm/configs/bcmrpi_defconfig | 1 +
  1 file changed, 1 insertion(+)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index c9bcc7e..fb23712 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -902,6 +902,7 @@ CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
@@ -18,3 +20,6 @@ Subject: [PATCH 155/174] config: Remove CONFIG_RTC_HCTOSYS See:
  CONFIG_RTC_DRV_DS1307=m
  CONFIG_RTC_DRV_DS1374=m
  CONFIG_RTC_DRV_DS1672=m
+-- 
+1.9.1
+

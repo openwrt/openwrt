@@ -1,12 +1,14 @@
-From bd9a95701602937c6e402a4fc6786d1675431117 Mon Sep 17 00:00:00 2001
+From 24ecdf1266c6dd4213f7fc5e2a01c3b661877c81 Mon Sep 17 00:00:00 2001
 From: ddv2005 <ddv@abinet.com>
 Date: Sun, 5 Aug 2012 10:42:12 -0400
-Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
+Subject: [PATCH 024/196] Fix spinlock recursion in sdhci-bcm2708.c
 
 ---
  drivers/mmc/host/sdhci-bcm2708.c | 14 +++++++-------
  1 file changed, 7 insertions(+), 7 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 8243593..7a703c2 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -643,11 +643,11 @@ void
@@ -23,7 +25,7 @@ Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
  
  	if (host_priv->dma_wanted) {
  		if (NULL == data) {
-@@ -727,7 +727,7 @@ sdhci_bcm2708_platdma_reset(struct sdhci
+@@ -727,7 +727,7 @@ sdhci_bcm2708_platdma_reset(struct sdhci_host *host, struct mmc_data *data)
  #endif
  	}
  
@@ -32,7 +34,7 @@ Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
  }
  
  
-@@ -740,11 +740,11 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -740,11 +740,11 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  	int sg_len;
  	int sg_ix;
  	int sg_todo;
@@ -46,7 +48,7 @@ Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
  	data = host->data;
  
  #ifdef CHECK_DMA_USE
-@@ -769,7 +769,7 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -769,7 +769,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  
  	if (NULL == data) {
  		DBG("PDMA unused completion - status 0x%X\n", dma_cs);
@@ -55,7 +57,7 @@ Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
  		return;
  	}
  	sg = data->sg;
-@@ -862,7 +862,7 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -862,7 +862,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  						SDHCI_INT_SPACE_AVAIL);
  		}
  	}
@@ -64,3 +66,6 @@ Subject: [PATCH 024/174] Fix spinlock recursion in sdhci-bcm2708.c
  }
  
  static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
+-- 
+1.9.1
+

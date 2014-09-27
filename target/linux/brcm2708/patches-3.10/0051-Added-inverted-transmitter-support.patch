@@ -1,12 +1,14 @@
-From f1f13a6b3798161ccc3852320bd2184b85c9209b Mon Sep 17 00:00:00 2001
+From 09eb4e8210da3acb95f874f3ed2292f13e1f6ad3 Mon Sep 17 00:00:00 2001
 From: pjennings <pjennings-git@pjennings.net>
 Date: Wed, 20 Feb 2013 17:51:43 -0600
-Subject: [PATCH 051/174] Added inverted transmitter support
+Subject: [PATCH 051/196] Added inverted transmitter support
 
 ---
  drivers/staging/media/lirc/lirc_rpi.c | 17 +++++++++++------
  1 file changed, 11 insertions(+), 6 deletions(-)
 
+diff --git a/drivers/staging/media/lirc/lirc_rpi.c b/drivers/staging/media/lirc/lirc_rpi.c
+index 96acab0..5bb0dfe 100644
 --- a/drivers/staging/media/lirc/lirc_rpi.c
 +++ b/drivers/staging/media/lirc/lirc_rpi.c
 @@ -68,6 +68,8 @@ static int debug;
@@ -18,7 +20,7 @@ Subject: [PATCH 051/174] Added inverted transmitter support
  
  struct gpio_chip *gpiochip;
  struct irq_chip *irqchip;
-@@ -135,10 +137,10 @@ static long send_pulse_softcarrier(unsig
+@@ -135,10 +137,10 @@ static long send_pulse_softcarrier(unsigned long length)
  	actual = 0; target = 0; flag = 0;
  	while (actual < length) {
  		if (flag) {
@@ -31,7 +33,7 @@ Subject: [PATCH 051/174] Added inverted transmitter support
  			target += pulse_width;
  		}
  		d = (target - actual -
-@@ -162,7 +164,7 @@ static long send_pulse(unsigned long len
+@@ -162,7 +164,7 @@ static long send_pulse(unsigned long length)
  	if (softcarrier) {
  		return send_pulse_softcarrier(length);
  	} else {
@@ -40,7 +42,7 @@ Subject: [PATCH 051/174] Added inverted transmitter support
  		safe_udelay(length);
  		return 0;
  	}
-@@ -170,7 +172,7 @@ static long send_pulse(unsigned long len
+@@ -170,7 +172,7 @@ static long send_pulse(unsigned long length)
  
  static void send_space(long length)
  {
@@ -58,7 +60,7 @@ Subject: [PATCH 051/174] Added inverted transmitter support
  
  	irq = gpiochip->to_irq(gpiochip, gpio_in_pin);
  	dprintk("to_irq %d\n", irq);
-@@ -457,7 +459,7 @@ static ssize_t lirc_write(struct file *f
+@@ -457,7 +459,7 @@ static ssize_t lirc_write(struct file *file, const char *buf,
  		else
  			delta = send_pulse(wbuf[i]);
  	}
@@ -67,7 +69,7 @@ Subject: [PATCH 051/174] Added inverted transmitter support
  
  	spin_unlock_irqrestore(&lock, flags);
  	kfree(wbuf);
-@@ -683,5 +685,8 @@ MODULE_PARM_DESC(sense, "Override autode
+@@ -683,5 +685,8 @@ MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
  module_param(softcarrier, bool, S_IRUGO);
  MODULE_PARM_DESC(softcarrier, "Software carrier (0 = off, 1 = on, default on)");
  
@@ -76,3 +78,6 @@ Subject: [PATCH 051/174] Added inverted transmitter support
 +
  module_param(debug, bool, S_IRUGO | S_IWUSR);
  MODULE_PARM_DESC(debug, "Enable debugging messages");
+-- 
+1.9.1
+

@@ -1,16 +1,18 @@
-From 4548721c4c1b160a8b5702b6226c5b6403b3df8b Mon Sep 17 00:00:00 2001
+From 9572b1f23fb60dc2c55bde196a7070f57fc20a92 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 1 Aug 2012 19:02:14 +0100
-Subject: [PATCH 023/174] Add module parameter for missing_status quirk.
+Subject: [PATCH 023/196] Add module parameter for missing_status quirk.
  sdhci-bcm2708.missing_status=0 may improve interrupt latency
 
 ---
  drivers/mmc/host/sdhci-bcm2708.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index c6d6bb0..8243593 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -134,6 +134,7 @@ static inline unsigned long int since_ns
+@@ -134,6 +134,7 @@ static inline unsigned long int since_ns(hptime_t t)
  static bool allow_highspeed = 1;
  static int emmc_clock_freq = BCM2708_EMMC_CLOCK_FREQ;
  static bool sync_after_dma = 1;
@@ -18,7 +20,7 @@ Subject: [PATCH 023/174] Add module parameter for missing_status quirk.
  
  #if 0
  static void hptime_test(void)
-@@ -1150,7 +1151,6 @@ static struct sdhci_ops sdhci_bcm2708_op
+@@ -1150,7 +1151,6 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
  	.spurious_crc_acmd51 = sdhci_bcm2708_quirk_spurious_crc,
  	.voltage_broken = sdhci_bcm2708_quirk_voltage_broken,
  	.uhs_broken = sdhci_bcm2708_uhs_broken,
@@ -26,7 +28,7 @@ Subject: [PATCH 023/174] Add module parameter for missing_status quirk.
  };
  
  /*****************************************************************************\
-@@ -1189,6 +1189,9 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1189,6 +1189,9 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  		ret = PTR_ERR(host);
  		goto err;
  	}
@@ -51,3 +53,6 @@ Subject: [PATCH 023/174] Add module parameter for missing_status quirk.
 +MODULE_PARM_DESC(missing_status, "Use the missing status quirk");
  
  
+-- 
+1.9.1
+

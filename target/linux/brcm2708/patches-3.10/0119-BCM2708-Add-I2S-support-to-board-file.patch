@@ -1,7 +1,7 @@
-From d873c79a7f4c512b41644d3f140d17e662ffde5e Mon Sep 17 00:00:00 2001
+From 2c64d1db0de9c5fecc7a7ca44a1a8b0d85eddfbe Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Fri, 22 Nov 2013 19:04:54 +0100
-Subject: [PATCH 119/174] BCM2708: Add I2S support to board file
+Subject: [PATCH 119/196] BCM2708: Add I2S support to board file
 
 Adds the required initializations for I2S
 to the board file of mach-bcm2708.
@@ -11,9 +11,11 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  arch/arm/mach-bcm2708/bcm2708.c | 26 ++++++++++++++++++++++++++
  1 file changed, 26 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 13b91de..42d613f 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -617,6 +617,28 @@ static struct platform_device bcm2835_th
+@@ -617,6 +617,28 @@ static struct platform_device bcm2835_thermal_device = {
  	.name = "bcm2835_thermal",
  };
  
@@ -53,3 +55,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
+-- 
+1.9.1
+

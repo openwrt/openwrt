@@ -1,15 +1,17 @@
-From 7063eab83522ea1f24934b971418bfdd4c5578f1 Mon Sep 17 00:00:00 2001
+From c655ceea69b95ccf2cc486a83048e41c3f664d1f Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 17 May 2012 14:44:19 +0100
-Subject: [PATCH 010/174] sdcard patch improvements from naren
+Subject: [PATCH 010/196] sdcard patch improvements from naren
 
 ---
  drivers/mmc/host/sdhci-bcm2708.c | 23 +++++++----------------
  1 file changed, 7 insertions(+), 16 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index a405114..ae8edf7 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -886,8 +886,7 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -886,8 +886,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  		   We get CRC and DEND errors unless we wait for
  		   the SD controller to finish reading/writing to the card. */
  		u32 state_mask;
@@ -19,7 +21,7 @@ Subject: [PATCH 010/174] sdcard patch improvements from naren
  
  		DBG("PDMA over - sync card\n");
  		if (data->flags & MMC_DATA_READ)
-@@ -895,17 +894,12 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -895,17 +894,12 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  		else
  			state_mask = SDHCI_DOING_WRITE;
  
@@ -42,7 +44,7 @@ Subject: [PATCH 010/174] sdcard patch improvements from naren
  		if (timeout <= 0)
  			printk(KERN_ERR"%s: final %s to SD card still "
  			       "running\n",
-@@ -1175,10 +1169,7 @@ static unsigned int sdhci_bcm2708_uhs_br
+@@ -1175,10 +1169,7 @@ static unsigned int sdhci_bcm2708_uhs_broken(struct sdhci_host *host)
  
  static unsigned int sdhci_bcm2708_missing_status(struct sdhci_host *host)
  {
@@ -54,3 +56,6 @@ Subject: [PATCH 010/174] sdcard patch improvements from naren
  }
  
  /***************************************************************************** \
+-- 
+1.9.1
+

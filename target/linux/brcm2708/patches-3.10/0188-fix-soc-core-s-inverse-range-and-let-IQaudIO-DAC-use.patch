@@ -1,0 +1,56 @@
+From 23744308d6343449e4a037d6bf35d9566c711983 Mon Sep 17 00:00:00 2001
+From: Gordon Garrity <gordon@iqaudio.com>
+Date: Sun, 30 Mar 2014 13:52:33 +0100
+Subject: [PATCH 188/196] fix soc-core's inverse range and let IQaudIO DAC use
+ this fixed SOC_DOUBLE_R_RANGE_TLV support
+
+---
+ sound/soc/codecs/pcm512x.c | 3 ++-
+ sound/soc/soc-core.c       | 8 ++++----
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
+index 5bc96ec..504da38 100644
+--- a/sound/soc/codecs/pcm512x.c
++++ b/sound/soc/codecs/pcm512x.c
+@@ -239,9 +239,10 @@ static const struct soc_enum pcm512x_veds =
+ 	SOC_ENUM_SINGLE(PCM512x_DIGITAL_MUTE_2, PCM512x_VEDS_SHIFT, 4,
+ 			pcm512x_ramp_step_text);
+ 
++/* Don't let the DAC go into clipping by limiting the alsa volume control range */ 
+ static const struct snd_kcontrol_new pcm512x_controls[] = {
+ SOC_DOUBLE_R_RANGE_TLV("Playback Digital Volume", PCM512x_DIGITAL_VOLUME_2,
+-		 PCM512x_DIGITAL_VOLUME_3, 0, 48, 255, 1, digital_tlv),
++		 PCM512x_DIGITAL_VOLUME_3, 0, 40, 255, 1, digital_tlv),
+ SOC_DOUBLE("Playback Digital Switch", PCM512x_MUTE, PCM512x_RQML_SHIFT,
+ 	   PCM512x_RQMR_SHIFT, 1, 1),
+ 
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index be302e1..2c28df1 100644
+--- a/sound/soc/soc-core.c
++++ b/sound/soc/soc-core.c
+@@ -2959,8 +2959,8 @@ int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
+ 
+ 	if (invert)
+ 		val = ((max - ucontrol->value.integer.value[0] + min) & mask);
+-    else
+-    	val = (ucontrol->value.integer.value[0] & mask);
++	else
++    		val = (ucontrol->value.integer.value[0] & mask);
+ 	val_mask = mask << shift;
+ 	val = val << shift;
+ 
+@@ -2971,8 +2971,8 @@ int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
+ 	if (snd_soc_volsw_is_stereo(mc)) {
+ 		if (invert)
+ 			val = ((max - ucontrol->value.integer.value[1] + min) & mask);
+-        else
+-            val = (ucontrol->value.integer.value[1] & mask);
++		else
++			val = (ucontrol->value.integer.value[1] & mask);
+ 		val_mask = mask << shift;
+ 		val = val << shift;
+ 
+-- 
+1.9.1
+

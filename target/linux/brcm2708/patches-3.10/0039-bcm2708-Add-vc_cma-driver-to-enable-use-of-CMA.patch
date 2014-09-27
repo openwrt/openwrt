@@ -1,12 +1,14 @@
-From bf571a571b090c16cd49458126e996243d8a2626 Mon Sep 17 00:00:00 2001
+From 4998fad71d9539a6f6e28c7ad54142950c85cbe5 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 28 Mar 2013 00:10:32 +0000
-Subject: [PATCH 039/174] bcm2708: Add vc_cma driver to enable use of CMA
+Subject: [PATCH 039/196] bcm2708: Add vc_cma driver to enable use of CMA
 
 ---
  arch/arm/mach-bcm2708/bcm2708.c | 16 ++++++++++++++++
  1 file changed, 16 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 5a7437b..13b91de 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -60,6 +60,11 @@
@@ -53,3 +55,6 @@ Subject: [PATCH 039/174] bcm2708: Add vc_cma driver to enable use of CMA
  MACHINE_END
  
  module_param(boardrev, uint, 0644);
+-- 
+1.9.1
+

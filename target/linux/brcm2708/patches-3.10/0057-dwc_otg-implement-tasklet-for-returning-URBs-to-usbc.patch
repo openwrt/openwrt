@@ -1,7 +1,7 @@
-From 71109f7d314b6205259d5cecf8314708f84fb9e6 Mon Sep 17 00:00:00 2001
+From f5908d1de6a9231622ebe7ae174749305a69878f Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Thu, 21 Mar 2013 19:36:17 +0000
-Subject: [PATCH 057/174] dwc_otg: implement tasklet for returning URBs to
+Subject: [PATCH 057/196] dwc_otg: implement tasklet for returning URBs to
  usbcore hcd layer
 
 The dwc_otg driver interrupt handler for transfer completion will spend
@@ -25,9 +25,11 @@ devices are active at once.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c       | 25 ++++++++++------
  6 files changed, 73 insertions(+), 17 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_common_port/dwc_common_linux.c b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
+index f00a9ff..6814e51 100644
 --- a/drivers/usb/host/dwc_common_port/dwc_common_linux.c
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
-@@ -991,6 +991,11 @@ void DWC_TASK_SCHEDULE(dwc_tasklet_t *ta
+@@ -991,6 +991,11 @@ void DWC_TASK_SCHEDULE(dwc_tasklet_t *task)
  	tasklet_schedule(&task->t);
  }
  
@@ -39,6 +41,8 @@ devices are active at once.
  
  /* workqueues
   - run in process context (can sleep)
+diff --git a/drivers/usb/host/dwc_common_port/dwc_list.h b/drivers/usb/host/dwc_common_port/dwc_list.h
+index 89cc325..4ce560d 100644
 --- a/drivers/usb/host/dwc_common_port/dwc_list.h
 +++ b/drivers/usb/host/dwc_common_port/dwc_list.h
 @@ -384,17 +384,17 @@ struct {								\
@@ -66,9 +70,11 @@ devices are active at once.
  
  /*
   * Tail queue functions.
+diff --git a/drivers/usb/host/dwc_common_port/dwc_os.h b/drivers/usb/host/dwc_common_port/dwc_os.h
+index 308ddd5..8eb24ea 100644
 --- a/drivers/usb/host/dwc_common_port/dwc_os.h
 +++ b/drivers/usb/host/dwc_common_port/dwc_os.h
-@@ -981,6 +981,8 @@ extern void DWC_TASK_FREE(dwc_tasklet_t
+@@ -981,6 +981,8 @@ extern void DWC_TASK_FREE(dwc_tasklet_t *task);
  extern void DWC_TASK_SCHEDULE(dwc_tasklet_t *task);
  #define dwc_task_schedule DWC_TASK_SCHEDULE
  
@@ -77,6 +83,8 @@ devices are active at once.
  
  /** @name Timer
   *
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index fcec97f..91eefec 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 @@ -40,6 +40,9 @@
@@ -89,7 +97,7 @@ devices are active at once.
  #include "dwc_otg_hcd.h"
  #include "dwc_otg_regs.h"
  
-@@ -694,6 +697,31 @@ static void reset_tasklet_func(void *dat
+@@ -694,6 +697,31 @@ static void reset_tasklet_func(void *data)
  	dwc_otg_hcd->flags.b.port_reset_change = 1;
  }
  
@@ -121,7 +129,7 @@ devices are active at once.
  static void qh_list_free(dwc_otg_hcd_t * hcd, dwc_list_link_t * qh_list)
  {
  	dwc_list_link_t *item;
-@@ -833,6 +861,7 @@ static void dwc_otg_hcd_free(dwc_otg_hcd
+@@ -833,6 +861,7 @@ static void dwc_otg_hcd_free(dwc_otg_hcd_t * dwc_otg_hcd)
  
  	DWC_TIMER_FREE(dwc_otg_hcd->conn_timer);
  	DWC_TASK_FREE(dwc_otg_hcd->reset_tasklet);
@@ -129,7 +137,7 @@ devices are active at once.
  
  #ifdef DWC_DEV_SRPCAP
  	if (dwc_otg_hcd->core_if->power_down == 2 &&
-@@ -877,7 +906,7 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
+@@ -877,7 +906,7 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
  	DWC_LIST_INIT(&hcd->periodic_sched_ready);
  	DWC_LIST_INIT(&hcd->periodic_sched_assigned);
  	DWC_LIST_INIT(&hcd->periodic_sched_queued);
@@ -138,7 +146,7 @@ devices are active at once.
  	/*
  	 * Create a host channel descriptor for each host channel implemented
  	 * in the controller. Initialize the channel descriptor array.
-@@ -915,6 +944,9 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
+@@ -915,6 +944,9 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
  
  	/* Initialize reset tasklet. */
  	hcd->reset_tasklet = DWC_TASK_ALLOC("reset_tasklet", reset_tasklet_func, hcd);
@@ -148,6 +156,8 @@ devices are active at once.
  #ifdef DWC_DEV_SRPCAP
  	if (hcd->core_if->power_down == 2) {
  		/* Initialize Power on timer for Host power up in case hibernation */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+index 45e44ea..0493dbf 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -374,6 +374,13 @@ typedef struct dwc_otg_qh {
@@ -174,9 +184,11 @@ devices are active at once.
  	/*  */
  	dwc_spinlock_t *lock;
  	dwc_spinlock_t *channel_lock;
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index 9702f81..7bb133a 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -271,7 +271,7 @@ static int _complete(dwc_otg_hcd_t * hcd
+@@ -271,7 +271,7 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
  		     dwc_otg_hcd_urb_t * dwc_otg_urb, int32_t status)
  {
  	struct urb *urb = (struct urb *)urb_handle;
@@ -185,7 +197,7 @@ devices are active at once.
  	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
  		DWC_PRINTF("%s: urb %p, device %d, ep %d %s, status=%d\n",
  			   __func__, urb, usb_pipedevice(urb->pipe),
-@@ -285,7 +285,7 @@ static int _complete(dwc_otg_hcd_t * hcd
+@@ -285,7 +285,7 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
  			}
  		}
  	}
@@ -194,7 +206,7 @@ devices are active at once.
  	urb->actual_length = dwc_otg_hcd_urb_get_actual_length(dwc_otg_urb);
  	/* Convert status value. */
  	switch (status) {
-@@ -348,18 +348,25 @@ static int _complete(dwc_otg_hcd_t * hcd
+@@ -348,18 +348,25 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
  	}
  
  	DWC_FREE(dwc_otg_urb);
@@ -227,3 +239,6 @@ devices are active at once.
  	return 0;
  }
  
+-- 
+1.9.1
+

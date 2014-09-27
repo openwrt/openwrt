@@ -1,13 +1,15 @@
-From dc54a9801e33f0e7c0685f0535b90237ab3d4837 Mon Sep 17 00:00:00 2001
+From f9fb4aaaf959dc36b36a7ee1734fada2d68da15f Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 19 Jul 2012 16:00:28 +0100
-Subject: [PATCH 034/174] config: add missing options from 3.6.y kernel
+Subject: [PATCH 034/196] config: add missing options from 3.6.y kernel
 
 ---
  arch/arm/configs/bcmrpi_defconfig        | 653 ++++++++++++++++++++++++++-----
  drivers/net/wireless/ath/ath9k/hif_usb.c |   2 +
  2 files changed, 564 insertions(+), 91 deletions(-)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 6219df3..36fcd49 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -1,11 +1,17 @@
@@ -927,9 +929,11 @@ Subject: [PATCH 034/174] config: add missing options from 3.6.y kernel
  # CONFIG_CRYPTO_ANSI_CPRNG is not set
  # CONFIG_CRYPTO_HW is not set
  CONFIG_CRC_ITU_T=y
+diff --git a/drivers/net/wireless/ath/ath9k/hif_usb.c b/drivers/net/wireless/ath/ath9k/hif_usb.c
+index 75a6376..8cb8d8d 100644
 --- a/drivers/net/wireless/ath/ath9k/hif_usb.c
 +++ b/drivers/net/wireless/ath/ath9k/hif_usb.c
-@@ -37,9 +37,11 @@ static struct usb_device_id ath9k_hif_us
+@@ -37,9 +37,11 @@ static struct usb_device_id ath9k_hif_usb_ids[] = {
  	{ USB_DEVICE(0x13D3, 0x3350) }, /* Azurewave */
  	{ USB_DEVICE(0x04CA, 0x4605) }, /* Liteon */
  	{ USB_DEVICE(0x040D, 0x3801) }, /* VIA */
@@ -941,3 +945,6 @@ Subject: [PATCH 034/174] config: add missing options from 3.6.y kernel
  
  	{ USB_DEVICE(0x0cf3, 0x7015),
  	  .driver_info = AR9287_USB },  /* Atheros */
+-- 
+1.9.1
+

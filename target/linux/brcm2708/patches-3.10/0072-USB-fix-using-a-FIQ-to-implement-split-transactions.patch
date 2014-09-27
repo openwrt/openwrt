@@ -1,7 +1,7 @@
-From d0f04f1be88d3ad42f3c875f9ab45a1cdb2129bd Mon Sep 17 00:00:00 2001
+From 0b8275da8346466af37b50d5ba687a386df9b0f4 Mon Sep 17 00:00:00 2001
 From: Gordon Hollingworth <gordon@holliweb.co.uk>
 Date: Thu, 4 Apr 2013 11:05:21 +0100
-Subject: [PATCH 072/174] USB fix using a FIQ to implement split transactions
+Subject: [PATCH 072/196] USB fix using a FIQ to implement split transactions
 
 This commit adds a FIQ implementaion that schedules
 the split transactions using a FIQ so we don't get
@@ -19,9 +19,11 @@ held off by the interrupt latency of Linux
  drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c        |   2 +-
  10 files changed, 696 insertions(+), 114 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_common_port/dwc_common_linux.c b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
+index 6814e51..0812d3a 100644
 --- a/drivers/usb/host/dwc_common_port/dwc_common_linux.c
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
-@@ -580,7 +580,12 @@ void DWC_WRITE_REG64(uint64_t volatile *
+@@ -580,7 +580,12 @@ void DWC_WRITE_REG64(uint64_t volatile *reg, uint64_t value)
  
  void DWC_MODIFY_REG32(uint32_t volatile *reg, uint32_t clear_mask, uint32_t set_mask)
  {
@@ -43,6 +45,8 @@ held off by the interrupt latency of Linux
  EXPORT_SYMBOL(__DWC_DMA_ALLOC_ATOMIC);
  EXPORT_SYMBOL(__DWC_DMA_FREE);
  EXPORT_SYMBOL(__DWC_ALLOC);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
+index b861b55..b5a007d 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 @@ -47,8 +47,6 @@
@@ -54,7 +58,7 @@ held off by the interrupt latency of Linux
  #ifdef DEBUG
  inline const char *op_state_str(dwc_otg_core_if_t * core_if)
  {
-@@ -1321,7 +1319,7 @@ static int32_t dwc_otg_handle_lpm_intr(d
+@@ -1321,7 +1319,7 @@ static int32_t dwc_otg_handle_lpm_intr(dwc_otg_core_if_t * core_if)
  /**
   * This function returns the Core Interrupt register.
   */
@@ -63,7 +67,7 @@ held off by the interrupt latency of Linux
  {
  	gahbcfg_data_t gahbcfg = {.d32 = 0 };
  	gintsts_data_t gintsts;
-@@ -1338,19 +1336,33 @@ static inline uint32_t dwc_otg_read_comm
+@@ -1338,19 +1336,33 @@ static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if)
  	gintmsk_common.b.lpmtranrcvd = 1;
  #endif
  	gintmsk_common.b.restoredone = 1;
@@ -103,7 +107,7 @@ held off by the interrupt latency of Linux
  			    gintsts.d32, gintmsk.d32);
  	}
  #endif
-@@ -1394,6 +1406,7 @@ int32_t dwc_otg_handle_common_intr(void
+@@ -1394,6 +1406,7 @@ int32_t dwc_otg_handle_common_intr(void *dev)
  {
  	int retval = 0;
  	gintsts_data_t gintsts;
@@ -111,7 +115,7 @@ held off by the interrupt latency of Linux
  	gpwrdn_data_t gpwrdn = {.d32 = 0 };
  	dwc_otg_device_t *otg_dev = dev;
  	dwc_otg_core_if_t *core_if = otg_dev->core_if;
-@@ -1415,7 +1428,7 @@ int32_t dwc_otg_handle_common_intr(void
+@@ -1415,7 +1428,7 @@ int32_t dwc_otg_handle_common_intr(void *dev)
  	}
  
  	if (core_if->hibernation_suspend <= 0) {
@@ -120,7 +124,7 @@ held off by the interrupt latency of Linux
  
  		if (gintsts.b.modemismatch) {
  			retval |= dwc_otg_handle_mode_mismatch_intr(core_if);
-@@ -1512,8 +1525,12 @@ int32_t dwc_otg_handle_common_intr(void
+@@ -1512,8 +1525,12 @@ int32_t dwc_otg_handle_common_intr(void *dev)
  			gintsts.b.portintr = 1;
  			DWC_WRITE_REG32(&core_if->core_global_regs->gintsts,gintsts.d32);
  			retval |= 1;
@@ -133,9 +137,11 @@ held off by the interrupt latency of Linux
  	} else {
  		DWC_DEBUGPL(DBG_ANY, "gpwrdn=%08x\n", gpwrdn.d32);
  
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+index cea8fcb..6c89a69 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
-@@ -242,7 +242,8 @@ static struct dwc_otg_driver_module_para
+@@ -242,7 +242,8 @@ static struct dwc_otg_driver_module_params dwc_otg_module_params = {
  
  //Global variable to switch the fiq fix on or off (declared in bcm2708.c)
  extern bool fiq_fix_enable;
@@ -145,7 +151,7 @@ held off by the interrupt latency of Linux
  //Global variable to switch the nak holdoff on or off
  bool nak_holdoff_enable = true;
  
-@@ -1090,6 +1091,7 @@ static int __init dwc_otg_driver_init(vo
+@@ -1090,6 +1091,7 @@ static int __init dwc_otg_driver_init(void)
  	}
  	printk(KERN_DEBUG "dwc_otg: FIQ %s\n", fiq_fix_enable ? "enabled":"disabled");
  	printk(KERN_DEBUG "dwc_otg: NAK holdoff %s\n", nak_holdoff_enable ? "enabled":"disabled");
@@ -153,7 +159,7 @@ held off by the interrupt latency of Linux
  
  	error = driver_create_file(drv, &driver_attr_version);
  #ifdef DEBUG
-@@ -1374,6 +1376,8 @@ module_param(fiq_fix_enable, bool, 0444)
+@@ -1374,6 +1376,8 @@ module_param(fiq_fix_enable, bool, 0444);
  MODULE_PARM_DESC(fiq_fix_enable, "Enable the fiq fix");
  module_param(nak_holdoff_enable, bool, 0444);
  MODULE_PARM_DESC(nak_holdoff_enable, "Enable the NAK holdoff");
@@ -162,6 +168,8 @@ held off by the interrupt latency of Linux
  
  /** @page "Module Parameters"
   *
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index 9c2e71a..af9108c 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 @@ -45,6 +45,7 @@
@@ -172,7 +180,7 @@ held off by the interrupt latency of Linux
  
  extern bool microframe_schedule, nak_holdoff_enable;
  
-@@ -581,6 +582,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
+@@ -581,6 +582,8 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
  			 */
  			dwc_otg_hc_halt(hcd->core_if, qh->channel,
  					DWC_OTG_HC_XFER_URB_DEQUEUE);
@@ -181,7 +189,7 @@ held off by the interrupt latency of Linux
  		}
  	}
  
-@@ -716,6 +719,8 @@ static void completion_tasklet_func(void
+@@ -716,6 +719,8 @@ static void completion_tasklet_func(void *ptr)
  
  		usb_hcd_giveback_urb(hcd->priv, urb, urb->status);
  
@@ -190,7 +198,7 @@ held off by the interrupt latency of Linux
  		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
  	}
  	DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
-@@ -979,6 +984,10 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
+@@ -979,6 +984,10 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
  	hcd->frame_list = NULL;
  	hcd->frame_list_dma = 0;
  	hcd->periodic_qh_count = 0;
@@ -201,7 +209,7 @@ held off by the interrupt latency of Linux
  out:
  	return retval;
  }
-@@ -1124,7 +1133,12 @@ static void assign_and_init_hc(dwc_otg_h
+@@ -1124,7 +1133,12 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  		uint32_t hub_addr, port_addr;
  		hc->do_split = 1;
  		hc->xact_pos = qtd->isoc_split_pos;
@@ -215,7 +223,7 @@ held off by the interrupt latency of Linux
  		hcd->fops->hub_info(hcd, urb->priv, &hub_addr, &port_addr);
  		hc->hub_addr = (uint8_t) hub_addr;
  		hc->port_addr = (uint8_t) port_addr;
-@@ -1271,6 +1285,62 @@ static void assign_and_init_hc(dwc_otg_h
+@@ -1271,6 +1285,62 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  	hc->qh = qh;
  }
  
@@ -278,7 +286,7 @@ held off by the interrupt latency of Linux
  /**
   * This function selects transactions from the HCD transfer schedule and
   * assigns them to available host channels. It is called from HCD interrupt
-@@ -1304,11 +1374,22 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1304,11 +1374,22 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  
  	while (qh_ptr != &hcd->periodic_sched_ready &&
  	       !DWC_CIRCLEQ_EMPTY(&hcd->free_hc_list)) {
@@ -301,7 +309,7 @@ held off by the interrupt latency of Linux
  				break;
  			}
  			hcd->available_host_channels--;
-@@ -1329,8 +1410,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1329,8 +1410,6 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  		DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_assigned,
  				   &qh->qh_list_entry);
  		DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
@@ -310,7 +318,7 @@ held off by the interrupt latency of Linux
  	}
  
  	/*
-@@ -1369,10 +1448,19 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1369,10 +1448,19 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  				qh->nak_frame = 0xffff;
  			}
  		}
@@ -330,7 +338,7 @@ held off by the interrupt latency of Linux
  					break;
  				}
  				hcd->available_host_channels--;
-@@ -1396,16 +1484,17 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1396,16 +1484,17 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  
  		g_np_sent++;
  
@@ -354,7 +362,7 @@ held off by the interrupt latency of Linux
  #ifdef DEBUG_HOST_CHANNELS
  	last_sel_trans_num_avail_hc_at_end = hcd->available_host_channels;
  #endif /* DEBUG_HOST_CHANNELS */
-@@ -1522,6 +1611,15 @@ static void process_periodic_channels(dw
+@@ -1522,6 +1611,15 @@ static void process_periodic_channels(dwc_otg_hcd_t * hcd)
  
  		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
  
@@ -370,7 +378,7 @@ held off by the interrupt latency of Linux
  		/*
  		 * Set a flag if we're queuing high-bandwidth in slave mode.
  		 * The flag prevents any halts to get into the request queue in
-@@ -1651,6 +1749,15 @@ static void process_non_periodic_channel
+@@ -1651,6 +1749,15 @@ static void process_non_periodic_channels(dwc_otg_hcd_t * hcd)
  
  		qh = DWC_LIST_ENTRY(hcd->non_periodic_qh_ptr, dwc_otg_qh_t,
  				    qh_list_entry);
@@ -386,6 +394,8 @@ held off by the interrupt latency of Linux
  		status =
  		    queue_transaction(hcd, qh->channel,
  				      tx_status.b.nptxfspcavail);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+index 0493dbf..d3d6e997 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -168,10 +168,10 @@ typedef enum dwc_otg_control_phase {
@@ -423,7 +433,7 @@ held off by the interrupt latency of Linux
  	/** Frame List DMA address */
  	dma_addr_t frame_list_dma;
  
-@@ -604,12 +610,16 @@ extern dwc_otg_transaction_type_e dwc_ot
+@@ -604,12 +610,16 @@ extern dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t
  extern void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t * hcd,
  					   dwc_otg_transaction_type_e tr_type);
  
@@ -441,6 +451,8 @@ held off by the interrupt latency of Linux
  extern int32_t dwc_otg_hcd_handle_rx_status_q_level_intr(dwc_otg_hcd_t *
  							 dwc_otg_hcd);
  extern int32_t dwc_otg_hcd_handle_np_tx_fifo_empty_intr(dwc_otg_hcd_t *
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 16e8c6c..e8b4d35 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -38,6 +38,7 @@
@@ -752,7 +764,7 @@ held off by the interrupt latency of Linux
  
  	/* entry takes care to store registers we will be treading on here */
  	asm __volatile__ (
-@@ -74,43 +349,112 @@ void __attribute__ ((naked)) dwc_otg_hcd
+@@ -74,43 +349,112 @@ void __attribute__ ((naked)) dwc_otg_hcd_handle_fiq(void)
  		/* stash FIQ and normal regs */
  		"stmdb	sp!, {r0-r12,  lr};"
  		/* !! THIS SETS THE FRAME, adjust to > sizeof locals */
@@ -888,7 +900,7 @@ held off by the interrupt latency of Linux
  	mb();
  
  	/* exit back to normal mode restoring everything */
-@@ -133,6 +477,7 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -133,6 +477,7 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  
  	dwc_otg_core_if_t *core_if = dwc_otg_hcd->core_if;
  	gintsts_data_t gintsts;
@@ -896,7 +908,7 @@ held off by the interrupt latency of Linux
  	hfnum_data_t hfnum;
  
  #ifdef DEBUG
-@@ -140,6 +485,9 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -140,6 +485,9 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  
  #endif
  
@@ -906,7 +918,7 @@ held off by the interrupt latency of Linux
  	/* Exit from ISR if core is hibernated */
  	if (core_if->hibernation_suspend == 1) {
  		goto exit_handler_routine;
-@@ -147,11 +495,18 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -147,11 +495,18 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  	DWC_SPINLOCK(dwc_otg_hcd->lock);
  	/* Check if HOST Mode */
  	if (dwc_otg_is_host_mode(core_if)) {
@@ -926,7 +938,7 @@ held off by the interrupt latency of Linux
  		/* Don't print debug message in the interrupt handler on SOF */
  #ifndef DEBUG_SOF
  		if (gintsts.d32 != DWC_SOF_INTR_MASK)
-@@ -171,11 +526,12 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -171,11 +526,12 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  		if (gintsts.b.sofintr && g_np_count == g_np_sent && dwc_frame_num_gt(g_next_sched_frame, hfnum.b.frnum))
  		{
  			/* Note, we should never get here if the FIQ is doing it's job properly*/
@@ -941,7 +953,7 @@ held off by the interrupt latency of Linux
  		if (gintsts.b.rxstsqlvl) {
  			retval |=
  			    dwc_otg_hcd_handle_rx_status_q_level_intr
-@@ -190,7 +546,10 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
+@@ -190,7 +546,10 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  			/** @todo Implement i2cintr handler. */
  		}
  		if (gintsts.b.portintr) {
@@ -1000,7 +1012,7 @@ held off by the interrupt latency of Linux
  	}
  
  	DWC_SPINUNLOCK(dwc_otg_hcd->lock);
-@@ -294,13 +662,12 @@ static inline void track_missed_sofs(uin
+@@ -294,13 +662,12 @@ static inline void track_missed_sofs(uint16_t curr_frame_number)
   * (micro)frame. Periodic transactions may be queued to the controller for the
   * next (micro)frame.
   */
@@ -1015,7 +1027,7 @@ held off by the interrupt latency of Linux
  	int did_something = 0;
  	int32_t next_sched_frame = -1;
  
-@@ -326,6 +693,7 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_
+@@ -326,6 +693,7 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd, int32_t work_expected)
  		qh = DWC_LIST_ENTRY(qh_entry, dwc_otg_qh_t, qh_list_entry);
  		qh_entry = qh_entry->next;
  		if (dwc_frame_num_le(qh->sched_frame, hcd->frame_number)) {
@@ -1023,7 +1035,7 @@ held off by the interrupt latency of Linux
  			/*
  			 * Move QH to the ready list to be executed next
  			 * (micro)frame.
-@@ -351,15 +719,10 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_
+@@ -351,15 +719,10 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd, int32_t work_expected)
  		dwc_otg_hcd_queue_transactions(hcd, tr_type);
  		did_something = 1;
  	}
@@ -1041,7 +1053,7 @@ held off by the interrupt latency of Linux
  
  	return 1;
  }
-@@ -643,6 +1006,15 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_o
+@@ -643,6 +1006,15 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd_t * dwc_otg_hcd)
  
  	haint.d32 = dwc_otg_read_host_all_channels_intr(dwc_otg_hcd->core_if);
  
@@ -1057,7 +1069,7 @@ held off by the interrupt latency of Linux
  	for (i = 0; i < dwc_otg_hcd->core_if->core_params->host_channels; i++) {
  		if (haint.b2.chint & (1 << i)) {
  			retval |= dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd, i);
-@@ -683,7 +1055,10 @@ static uint32_t get_actual_xfer_length(d
+@@ -683,7 +1055,10 @@ static uint32_t get_actual_xfer_length(dwc_hc_t * hc,
  				*short_read = (hctsiz.b.xfersize != 0);
  			}
  		} else if (hc->qh->do_split) {
@@ -1069,7 +1081,7 @@ held off by the interrupt latency of Linux
  		} else {
  			length = hc->xfer_len;
  		}
-@@ -727,7 +1102,6 @@ static int update_urb_state_xfer_comp(dw
+@@ -727,7 +1102,6 @@ static int update_urb_state_xfer_comp(dwc_hc_t * hc,
  					     DWC_OTG_HC_XFER_COMPLETE,
  					     &short_read);
  
@@ -1077,7 +1089,7 @@ held off by the interrupt latency of Linux
  	/* non DWORD-aligned buffer case handling. */
  	if (hc->align_buff && xfer_length && hc->ep_is_in) {
  		dwc_memcpy(urb->buf + urb->actual_length, hc->qh->dw_align_buf,
-@@ -930,6 +1304,9 @@ static void release_channel(dwc_otg_hcd_
+@@ -930,6 +1304,9 @@ static void release_channel(dwc_otg_hcd_t * hcd,
  	int free_qtd;
  	dwc_irqflags_t flags;
  	dwc_spinlock_t *channel_lock = hcd->channel_lock;
@@ -1112,7 +1124,7 @@ held off by the interrupt latency of Linux
  	/* Try to queue more transfers now that there's a free channel. */
  	tr_type = dwc_otg_hcd_select_transactions(hcd);
  	if (tr_type != DWC_OTG_TRANSACTION_NONE) {
-@@ -1633,8 +2025,10 @@ static int32_t handle_hc_nyet_intr(dwc_o
+@@ -1633,8 +2025,10 @@ static int32_t handle_hc_nyet_intr(dwc_otg_hcd_t * hcd,
  		    hc->ep_type == DWC_OTG_EP_TYPE_ISOC) {
  			int frnum = dwc_otg_hcd_get_frame_number(hcd);
  
@@ -1124,7 +1136,7 @@ held off by the interrupt latency of Linux
  				/*
  				 * No longer in the same full speed frame.
  				 * Treat this as a transaction error.
-@@ -2012,10 +2406,10 @@ static inline int halt_status_ok(dwc_otg
+@@ -2012,10 +2406,10 @@ static inline int halt_status_ok(dwc_otg_hcd_t * hcd,
  static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
  				      dwc_hc_t * hc,
  				      dwc_otg_hc_regs_t * hc_regs,
@@ -1138,7 +1150,7 @@ held off by the interrupt latency of Linux
  	int out_nak_enh = 0;
  
  	/* For core with OUT NAK enhancement, the flow for high-
-@@ -2047,8 +2441,11 @@ static void handle_hc_chhltd_intr_dma(dw
+@@ -2047,8 +2441,11 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
  	}
  
  	/* Read the HCINTn register to determine the cause for the halt. */
@@ -1152,7 +1164,7 @@ held off by the interrupt latency of Linux
  
  	if (hcint.b.xfercomp) {
  		/** @todo This is here because of a possible hardware bug.  Spec
-@@ -2161,13 +2558,15 @@ static void handle_hc_chhltd_intr_dma(dw
+@@ -2161,13 +2558,15 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
  static int32_t handle_hc_chhltd_intr(dwc_otg_hcd_t * hcd,
  				     dwc_hc_t * hc,
  				     dwc_otg_hc_regs_t * hc_regs,
@@ -1170,7 +1182,7 @@ held off by the interrupt latency of Linux
  	} else {
  #ifdef DEBUG
  		if (!halt_status_ok(hcd, hc, hc_regs, qtd)) {
-@@ -2184,7 +2583,7 @@ static int32_t handle_hc_chhltd_intr(dwc
+@@ -2184,7 +2583,7 @@ static int32_t handle_hc_chhltd_intr(dwc_otg_hcd_t * hcd,
  int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
  {
  	int retval = 0;
@@ -1179,7 +1191,7 @@ held off by the interrupt latency of Linux
  	hcintmsk_data_t hcintmsk;
  	dwc_hc_t *hc;
  	dwc_otg_hc_regs_t *hc_regs;
-@@ -2197,12 +2596,23 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
+@@ -2197,12 +2596,23 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
  	qtd = DWC_CIRCLEQ_FIRST(&hc->qh->qtd_list);
  
  	hcint.d32 = DWC_READ_REG32(&hc_regs->hcint);
@@ -1203,7 +1215,7 @@ held off by the interrupt latency of Linux
  	if (!dwc_otg_hcd->core_if->dma_enable) {
  		if (hcint.b.chhltd && hcint.d32 != 0x2) {
  			hcint.b.chhltd = 0;
-@@ -2220,7 +2630,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
+@@ -2220,7 +2630,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
  		hcint.b.nyet = 0;
  	}
  	if (hcint.b.chhltd) {
@@ -1212,9 +1224,11 @@ held off by the interrupt latency of Linux
  	}
  	if (hcint.b.ahberr) {
  		retval |= handle_hc_ahberr_intr(dwc_otg_hcd, hc, hc_regs, qtd);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index fef557d..0d6f5f4 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -392,7 +392,11 @@ static struct dwc_otg_hcd_function_ops h
+@@ -392,7 +392,11 @@ static struct dwc_otg_hcd_function_ops hcd_fops = {
  static struct fiq_handler fh = {
    .name = "usb_fiq",
  };
@@ -1259,7 +1273,7 @@ held off by the interrupt latency of Linux
  		//Enable mphi peripheral
  		writel((1<<31),c_mphi_regs.ctrl);
  #ifdef DEBUG
-@@ -839,6 +849,8 @@ static int dwc_otg_urb_dequeue(struct us
+@@ -839,6 +849,8 @@ static int dwc_otg_urb_dequeue(struct usb_hcd *hcd, struct urb *urb, int status)
                  usb_hcd_unlink_urb_from_ep(hcd, urb);
  #endif
          	DWC_SPINUNLOCK_IRQRESTORE(dwc_otg_hcd->lock, flags);
@@ -1268,6 +1282,8 @@ held off by the interrupt latency of Linux
  #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,28)
                  usb_hcd_giveback_urb(hcd, urb);
  #else
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+index b3e6e52..8125307 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 @@ -41,6 +41,7 @@
@@ -1278,7 +1294,7 @@ held off by the interrupt latency of Linux
  
  extern bool microframe_schedule;
  
-@@ -191,6 +192,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_ot
+@@ -191,6 +192,7 @@ void qh_init(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh, dwc_otg_hcd_urb_t * urb)
  			    dwc_otg_hcd_get_ep_num(&urb->pipe_info), hub_addr,
  			    hub_port);
  		qh->do_split = 1;
@@ -1286,7 +1302,7 @@ held off by the interrupt latency of Linux
  	}
  
  	if (qh->ep_type == UE_INTERRUPT || qh->ep_type == UE_ISOCHRONOUS) {
-@@ -737,6 +739,9 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t
+@@ -737,6 +739,9 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
  			    hcd->non_periodic_qh_ptr->next;
  		}
  		DWC_LIST_REMOVE_INIT(&qh->qh_list_entry);
@@ -1296,7 +1312,7 @@ held off by the interrupt latency of Linux
  	} else {
  		deschedule_periodic(hcd, qh);
  		hcd->periodic_qh_count--;
-@@ -766,21 +771,21 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
+@@ -766,21 +771,21 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
  {	
  	if (dwc_qh_is_non_per(qh)) {
  
@@ -1331,6 +1347,8 @@ held off by the interrupt latency of Linux
  
  
  		dwc_otg_hcd_qh_remove(hcd, qh);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
+index 22f28e1..ca17379 100755
 --- a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 @@ -1,10 +1,7 @@
@@ -1362,19 +1380,19 @@ held off by the interrupt latency of Linux
  
  #ifdef DEBUG
  #define DWC_DBG_PRINT_CORE_INT(_arg_) dwc_debug_print_core_int_reg(_arg_,__func__)
-@@ -30,7 +27,22 @@ void dwc_debug_otg_int(gotgint_data_t go
+@@ -30,7 +27,22 @@ void dwc_debug_otg_int(gotgint_data_t gotgint, const char* function_name);
  #define DWC_DBG_PRINT_CORE_INT_MASK(_arg_)
  #define DWC_DBG_PRINT_OTG_INT(_arg_)
  
 +#endif
- 
++
 +typedef enum {
 +	FIQDBG_SCHED = (1 << 0),
 +	FIQDBG_INT   = (1 << 1),
 +	FIQDBG_ERR   = (1 << 2),
 +	FIQDBG_PORTHUB = (1 << 3),
 +} FIQDBG_T;
-+
+ 
 +void _fiq_print(FIQDBG_T dbg_lvl, char *fmt, ...);
 +#ifdef FIQ_DEBUG
 +#define fiq_print _fiq_print
@@ -1385,6 +1403,8 @@ held off by the interrupt latency of Linux
 +extern bool fiq_fix_enable, nak_holdoff_enable, fiq_split_enable;
 +
  #endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
+index 27061d3..9720937 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
 @@ -4276,7 +4276,7 @@ do { \
@@ -1396,3 +1416,6 @@ held off by the interrupt latency of Linux
  									out_desc_addr->status.d32;
  
  								if (status.b.sr) {
+-- 
+1.9.1
+

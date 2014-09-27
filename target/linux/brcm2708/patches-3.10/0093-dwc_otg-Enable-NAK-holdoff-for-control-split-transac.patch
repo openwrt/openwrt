@@ -1,7 +1,7 @@
-From 3d8a3a5cbcd4d36768cf53e778d8165aefabd5b0 Mon Sep 17 00:00:00 2001
+From 2fb3834b3ce43c6320c8186795b86ffa2257bd21 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Fri, 20 Sep 2013 16:08:27 +0100
-Subject: [PATCH 093/174] dwc_otg: Enable NAK holdoff for control split
+Subject: [PATCH 093/196] dwc_otg: Enable NAK holdoff for control split
  transactions
 
 Certain low-speed devices take a very long time to complete a
@@ -16,9 +16,11 @@ storm could cause SD card timeouts.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 19abea0..509b629 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -1857,8 +1857,7 @@ static int32_t handle_hc_nak_intr(dwc_ot
+@@ -1857,8 +1857,7 @@ static int32_t handle_hc_nak_intr(dwc_otg_hcd_t * hcd,
  	 */
  	switch(dwc_otg_hcd_get_pipe_type(&qtd->urb->pipe_info)) {
  		case UE_BULK:
@@ -28,3 +30,6 @@ storm could cause SD card timeouts.
  		if (nak_holdoff_enable)
  			hc->qh->nak_frame = dwc_otg_hcd_get_frame_number(hcd);
  	}
+-- 
+1.9.1
+

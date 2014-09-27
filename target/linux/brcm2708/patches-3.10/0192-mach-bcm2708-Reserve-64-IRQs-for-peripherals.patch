@@ -1,0 +1,33 @@
+From 4f11f18f656b0c3538bb92cffcea62401f351660 Mon Sep 17 00:00:00 2001
+From: notro <notro@tronnes.org>
+Date: Sun, 20 Apr 2014 18:51:40 +0200
+Subject: [PATCH 192/196] mach-bcm2708: Reserve 64 IRQs for peripherals
+
+The Raspberry Pi does not support dynamic IRQs.  Some peripherals, such
+as the STMPE, add IRQ controllers.  If there aren't any reserved IRQs, then
+these peripherals will just fail.
+
+Signed-off-by: Sean Cross <xobs@kosagi.com>
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+---
+ arch/arm/mach-bcm2708/include/mach/irqs.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm/mach-bcm2708/include/mach/irqs.h b/arch/arm/mach-bcm2708/include/mach/irqs.h
+index 9aaedf1..1947d91 100644
+--- a/arch/arm/mach-bcm2708/include/mach/irqs.h
++++ b/arch/arm/mach-bcm2708/include/mach/irqs.h
+@@ -192,8 +192,9 @@
+ #define HARD_IRQS	      (64 + 21)
+ #define FIQ_IRQS              (64 + 21)
+ #define GPIO_IRQS	      (32*5)
++#define SPARE_IRQS		(64)
+ 
+-#define NR_IRQS		      HARD_IRQS+FIQ_IRQS+GPIO_IRQS
++#define NR_IRQS		      HARD_IRQS+FIQ_IRQS+GPIO_IRQS+SPARE_IRQS
+ 
+ 
+ #endif /* _BCM2708_IRQS_H_ */
+-- 
+1.9.1
+

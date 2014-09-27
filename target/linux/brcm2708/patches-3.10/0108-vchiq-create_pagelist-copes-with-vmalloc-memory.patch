@@ -1,16 +1,18 @@
-From 974102eef65cd2576157b089db47386c5b29dee6 Mon Sep 17 00:00:00 2001
+From f3978e548747dfe988016ef7c99fe50975da90df Mon Sep 17 00:00:00 2001
 From: Vincent Sanders <vincent.sanders@collabora.co.uk>
 Date: Mon, 2 Sep 2013 16:44:57 +0100
-Subject: [PATCH 108/174] vchiq: create_pagelist copes with vmalloc memory
+Subject: [PATCH 108/196] vchiq: create_pagelist copes with vmalloc memory
 
 Signed-off-by: Daniel Stone <daniels@collabora.com>
 ---
  .../interface/vchiq_arm/vchiq_2835_arm.c           | 83 ++++++++++++++--------
  1 file changed, 53 insertions(+), 30 deletions(-)
 
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
+index 2b5fa56..b3bdaa2 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
-@@ -374,6 +374,7 @@ create_pagelist(char __user *buf, size_t
+@@ -374,6 +374,7 @@ create_pagelist(char __user *buf, size_t count, unsigned short type,
  	unsigned int num_pages, offset, i;
  	char *addr, *base_addr, *next_addr;
  	int run, addridx, actual_pages;
@@ -18,7 +20,7 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  	offset = (unsigned int)buf & (PAGE_SIZE - 1);
  	num_pages = (count + offset + PAGE_SIZE - 1) / PAGE_SIZE;
-@@ -384,9 +385,10 @@ create_pagelist(char __user *buf, size_t
+@@ -384,9 +385,10 @@ create_pagelist(char __user *buf, size_t count, unsigned short type,
  	** list
  	*/
  	pagelist = kmalloc(sizeof(PAGELIST_T) +
@@ -32,7 +34,7 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  	vchiq_log_trace(vchiq_arm_log_level,
  		"create_pagelist - %x", (unsigned int)pagelist);
-@@ -394,28 +396,44 @@ create_pagelist(char __user *buf, size_t
+@@ -394,28 +396,44 @@ create_pagelist(char __user *buf, size_t count, unsigned short type,
  		return -ENOMEM;
  
  	addrs = pagelist->addrs;
@@ -98,7 +100,7 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  	pagelist->length = count;
  	pagelist->type = type;
-@@ -482,6 +500,7 @@ create_pagelist(char __user *buf, size_t
+@@ -482,6 +500,7 @@ create_pagelist(char __user *buf, size_t count, unsigned short type,
  static void
  free_pagelist(PAGELIST_T *pagelist, int actual)
  {
@@ -106,7 +108,7 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  	struct page **pages;
  	unsigned int num_pages, i;
  
-@@ -492,7 +511,8 @@ free_pagelist(PAGELIST_T *pagelist, int
+@@ -492,7 +511,8 @@ free_pagelist(PAGELIST_T *pagelist, int actual)
  		(pagelist->length + pagelist->offset + PAGE_SIZE - 1) /
  		PAGE_SIZE;
  
@@ -116,7 +118,7 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  	/* Deal with any partial cache lines (fragments) */
  	if (pagelist->type >= PAGELIST_READ_WITH_FRAGMENTS) {
-@@ -528,11 +548,14 @@ free_pagelist(PAGELIST_T *pagelist, int
+@@ -528,11 +548,14 @@ free_pagelist(PAGELIST_T *pagelist, int actual)
  		up(&g_free_fragments_sema);
  	}
  
@@ -136,3 +138,6 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  
  	kfree(pagelist);
  }
+-- 
+1.9.1
+

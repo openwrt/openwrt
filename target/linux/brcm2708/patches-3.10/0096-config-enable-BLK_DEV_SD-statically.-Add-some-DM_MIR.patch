@@ -1,7 +1,7 @@
-From 062e7d1247624034c6b9ff1515245930baee8862 Mon Sep 17 00:00:00 2001
+From f4ae99bfa423d21fa311ca21c360e9800dc86fb5 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 6 Nov 2013 12:08:46 +0000
-Subject: [PATCH 096/174] config: enable BLK_DEV_SD statically. Add some
+Subject: [PATCH 096/196] config: enable BLK_DEV_SD statically. Add some
  DM_MIRROR raid options. Add ISCSI_TCP. Add R8712U
 
 kernel: config: add missing PPP config options
@@ -23,6 +23,8 @@ config: Set CONFIG_SPI_SPIDEV=y
  arch/arm/configs/bcmrpi_defconfig | 93 +++++++++++++++++++++++++++++++++------
  1 file changed, 80 insertions(+), 13 deletions(-)
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 36fcd49..20c1c4f 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -33,18 +33,21 @@ CONFIG_MODULES=y
@@ -301,3 +303,6 @@ config: Set CONFIG_SPI_SPIDEV=y
  CONFIG_CRYPTO_CAST5=m
  CONFIG_CRYPTO_DES=y
  # CONFIG_CRYPTO_ANSI_CPRNG is not set
+-- 
+1.9.1
+

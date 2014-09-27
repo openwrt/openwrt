@@ -1,13 +1,15 @@
-From 3afa67312a9675ac945cffd9499341a19d55c94d Mon Sep 17 00:00:00 2001
+From 2a8704be59bf6566d55cdc7e2b905173e7a6b71c Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 27 Nov 2013 22:52:53 +0000
-Subject: [PATCH 106/174] dvb: Add support for CableStar Device
+Subject: [PATCH 106/196] dvb: Add support for CableStar Device
 
 ---
  drivers/media/dvb-core/dvb-usb-ids.h  |  1 +
  drivers/media/usb/dvb-usb-v2/az6007.c | 59 +++++++++++++++++++++++++++++++++++
  2 files changed, 60 insertions(+)
 
+diff --git a/drivers/media/dvb-core/dvb-usb-ids.h b/drivers/media/dvb-core/dvb-usb-ids.h
+index 335a8f4..110c197 100644
 --- a/drivers/media/dvb-core/dvb-usb-ids.h
 +++ b/drivers/media/dvb-core/dvb-usb-ids.h
 @@ -365,6 +365,7 @@
@@ -18,9 +20,11 @@ Subject: [PATCH 106/174] dvb: Add support for CableStar Device
  #define USB_PID_TECHNISAT_AIRSTAR_TELESTICK_2		0x0004
  #define USB_PID_TECHNISAT_USB2_DVB_S2			0x0500
  #endif
+diff --git a/drivers/media/usb/dvb-usb-v2/az6007.c b/drivers/media/usb/dvb-usb-v2/az6007.c
+index 44c64ef3..c1051c3 100644
 --- a/drivers/media/usb/dvb-usb-v2/az6007.c
 +++ b/drivers/media/usb/dvb-usb-v2/az6007.c
-@@ -68,6 +68,19 @@ static struct drxk_config terratec_h7_dr
+@@ -68,6 +68,19 @@ static struct drxk_config terratec_h7_drxk = {
  	.microcode_name = "dvb-usb-terratec-h7-drxk.fw",
  };
  
@@ -40,7 +44,7 @@ Subject: [PATCH 106/174] dvb: Add support for CableStar Device
  static int drxk_gate_ctrl(struct dvb_frontend *fe, int enable)
  {
  	struct az6007_device_state *st = fe_to_priv(fe);
-@@ -630,6 +643,27 @@ static int az6007_frontend_attach(struct
+@@ -630,6 +643,27 @@ static int az6007_frontend_attach(struct dvb_usb_adapter *adap)
  	return 0;
  }
  
@@ -68,7 +72,7 @@ Subject: [PATCH 106/174] dvb: Add support for CableStar Device
  static int az6007_tuner_attach(struct dvb_usb_adapter *adap)
  {
  	struct dvb_usb_device *d = adap_to_d(adap);
-@@ -868,6 +902,29 @@ static struct dvb_usb_device_properties
+@@ -868,6 +902,29 @@ static struct dvb_usb_device_properties az6007_props = {
  	}
  };
  
@@ -98,7 +102,7 @@ Subject: [PATCH 106/174] dvb: Add support for CableStar Device
  static struct usb_device_id az6007_usb_table[] = {
  	{DVB_USB_DEVICE(USB_VID_AZUREWAVE, USB_PID_AZUREWAVE_6007,
  		&az6007_props, "Azurewave 6007", RC_MAP_EMPTY)},
-@@ -875,6 +932,8 @@ static struct usb_device_id az6007_usb_t
+@@ -875,6 +932,8 @@ static struct usb_device_id az6007_usb_table[] = {
  		&az6007_props, "Terratec H7", RC_MAP_NEC_TERRATEC_CINERGY_XS)},
  	{DVB_USB_DEVICE(USB_VID_TERRATEC, USB_PID_TERRATEC_H7_2,
  		&az6007_props, "Terratec H7", RC_MAP_NEC_TERRATEC_CINERGY_XS)},
@@ -107,3 +111,6 @@ Subject: [PATCH 106/174] dvb: Add support for CableStar Device
  	{0},
  };
  
+-- 
+1.9.1
+

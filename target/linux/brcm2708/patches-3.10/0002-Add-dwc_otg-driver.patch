@@ -1,7 +1,7 @@
-From ee24f1f0affd88d3e101a7e66c5ebfd8e582b868 Mon Sep 17 00:00:00 2001
+From 344d6f31638c96846ac26f40a74ee1cc495f421e Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 1 May 2013 19:46:17 +0100
-Subject: [PATCH 002/174] Add dwc_otg driver
+Subject: [PATCH 002/196] Add dwc_otg driver
 
 Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
@@ -129,6 +129,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  create mode 100644 drivers/usb/host/dwc_otg/test/test_mod_param.pl
  create mode 100644 drivers/usb/host/dwc_otg/test/test_sysfs.pl
 
+diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
+index c41feba..0b5c606 100644
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
 @@ -23,6 +23,7 @@ obj-$(CONFIG_USB_U132_HCD)	+= host/
@@ -139,9 +141,11 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  obj-$(CONFIG_USB_IMX21_HCD)	+= host/
  obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= host/
  
+diff --git a/drivers/usb/core/generic.c b/drivers/usb/core/generic.c
+index acbfeb0..7d675c8 100644
 --- a/drivers/usb/core/generic.c
 +++ b/drivers/usb/core/generic.c
-@@ -152,6 +152,7 @@ int usb_choose_configuration(struct usb_
+@@ -152,6 +152,7 @@ int usb_choose_configuration(struct usb_device *udev)
  		dev_warn(&udev->dev,
  			"no configuration chosen from %d choice%s\n",
  			num_configs, plural(num_configs));
@@ -149,6 +153,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  	}
  	return i;
  }
+diff --git a/drivers/usb/core/message.c b/drivers/usb/core/message.c
+index 444d30e..3ff77fa 100644
 --- a/drivers/usb/core/message.c
 +++ b/drivers/usb/core/message.c
 @@ -1875,6 +1875,85 @@ free_interfaces:
@@ -237,6 +243,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  
  	/* Now that the interfaces are installed, re-enable LPM. */
  	usb_unlocked_enable_lpm(dev);
+diff --git a/drivers/usb/core/otg_whitelist.h b/drivers/usb/core/otg_whitelist.h
+index e8cdce5..3a0da17 100644
 --- a/drivers/usb/core/otg_whitelist.h
 +++ b/drivers/usb/core/otg_whitelist.h
 @@ -19,33 +19,82 @@
@@ -328,20 +336,14 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  static int is_targeted(struct usb_device *dev)
  {
  	struct usb_device_id	*id = whitelist_table;
-@@ -55,58 +104,83 @@ static int is_targeted(struct usb_device
+@@ -55,58 +104,83 @@ static int is_targeted(struct usb_device *dev)
  		return 1;
  
  	/* HNP test device is _never_ targeted (see OTG spec 6.6.6) */
 -	if ((le16_to_cpu(dev->descriptor.idVendor) == 0x1a0a &&
 -	     le16_to_cpu(dev->descriptor.idProduct) == 0xbadd))
 -		return 0;
-+	if (dev->descriptor.idVendor == 0x1a0a && 
-+            dev->descriptor.idProduct == 0xbadd) {
-+                return 0;
-+	} else if (!enable_whitelist) {
-+		return 1;
-+        } else {
- 
+-
 -	/* NOTE: can't use usb_match_id() since interface caches
 -	 * aren't set up yet. this is cut/paste from that code.
 -	 */
@@ -375,6 +377,13 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 -		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_PROTOCOL) &&
 -		    (id->bDeviceProtocol != dev->descriptor.bDeviceProtocol))
 -			continue;
++	if (dev->descriptor.idVendor == 0x1a0a && 
++            dev->descriptor.idProduct == 0xbadd) {
++                return 0;
++	} else if (!enable_whitelist) {
++		return 1;
++        } else {
++
 +#ifdef DEBUG
 +                dev_dbg(&dev->dev, "device V:%04x P:%04x DC:%04x SC:%04x PR:%04x \n",
 +                        dev->descriptor.idVendor,
@@ -454,6 +463,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  #endif
  }
  
+diff --git a/drivers/usb/gadget/file_storage.c b/drivers/usb/gadget/file_storage.c
+new file mode 100644
+index 0000000..a896d73
 --- /dev/null
 +++ b/drivers/usb/gadget/file_storage.c
 @@ -0,0 +1,3676 @@
@@ -4133,6 +4145,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	kref_put(&fsg->ref, fsg_release);
 +}
 +module_exit(fsg_cleanup);
+diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
+index 344d5e2..0937bde 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -663,6 +663,19 @@ config USB_HWA_HCD
@@ -4155,6 +4169,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  config USB_IMX21_HCD
         tristate "i.MX21 HCD support"
         depends on ARM && ARCH_MXC
+diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
+index 4fb73c1..76d97de 100644
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
 @@ -47,6 +47,8 @@ obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
@@ -4166,6 +4182,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  obj-$(CONFIG_USB_IMX21_HCD)	+= imx21-hcd.o
  obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= fsl-mph-dr-of.o
  obj-$(CONFIG_USB_OCTEON2_COMMON) += octeon2-common.o
+diff --git a/drivers/usb/host/dwc_common_port/Makefile b/drivers/usb/host/dwc_common_port/Makefile
+new file mode 100644
+index 0000000..63e3485
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/Makefile
 @@ -0,0 +1,58 @@
@@ -4227,6 +4246,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +clean:
 +	rm -rf *.o *.ko .*.cmd *.mod.c .*.o.d .*.o.tmp modules.order Module.markers Module.symvers .tmp_versions/
+diff --git a/drivers/usb/host/dwc_common_port/Makefile.fbsd b/drivers/usb/host/dwc_common_port/Makefile.fbsd
+new file mode 100644
+index 0000000..45db991
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/Makefile.fbsd
 @@ -0,0 +1,17 @@
@@ -4247,6 +4269,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +       dwc_common_fbsd.c dwc_mem.c
 +
 +.include <bsd.kmod.mk>
+diff --git a/drivers/usb/host/dwc_common_port/Makefile.linux b/drivers/usb/host/dwc_common_port/Makefile.linux
+new file mode 100644
+index 0000000..961df3f
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/Makefile.linux
 @@ -0,0 +1,49 @@
@@ -4299,6 +4324,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +clean:
 +	rm -rf *.o *.ko .*.cmd *.mod.c .*.o.d .*.o.tmp modules.order Module.markers Module.symvers .tmp_versions/
+diff --git a/drivers/usb/host/dwc_common_port/changes.txt b/drivers/usb/host/dwc_common_port/changes.txt
+new file mode 100644
+index 0000000..f6839f9
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/changes.txt
 @@ -0,0 +1,174 @@
@@ -4476,6 +4504,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +A DWC_LIBMODULE #define has also been added. If this is not defined, then the
 +module code in dwc_common_linux.c is not compiled in. This allows linking the
 +library code directly into a driver module, instead of as a standalone module.
+diff --git a/drivers/usb/host/dwc_common_port/doc/doxygen.cfg b/drivers/usb/host/dwc_common_port/doc/doxygen.cfg
+new file mode 100644
+index 0000000..605b9dab
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/doc/doxygen.cfg
 @@ -0,0 +1,270 @@
@@ -4749,6 +4780,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +# Configuration::additions related to the search engine   
 +#---------------------------------------------------------------------------
 +SEARCHENGINE           = NO
+diff --git a/drivers/usb/host/dwc_common_port/dwc_cc.c b/drivers/usb/host/dwc_common_port/dwc_cc.c
+new file mode 100644
+index 0000000..613c901
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_cc.c
 @@ -0,0 +1,532 @@
@@ -5284,6 +5318,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif	/* DWC_CCLIB */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_cc.h b/drivers/usb/host/dwc_common_port/dwc_cc.h
+new file mode 100644
+index 0000000..6b2bbaf
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_cc.h
 @@ -0,0 +1,225 @@
@@ -5512,6 +5549,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif /* _DWC_CC_H_ */
 +
+diff --git a/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c b/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c
+new file mode 100644
+index 0000000..6dd04b5
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c
 @@ -0,0 +1,1308 @@
@@ -6823,6 +6863,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +{
 +	return wq->pending;
 +}
+diff --git a/drivers/usb/host/dwc_common_port/dwc_common_linux.c b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
+new file mode 100644
+index 0000000..f00a9ff
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
 @@ -0,0 +1,1421 @@
@@ -8247,6 +8290,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +MODULE_LICENSE ("GPL");
 +
 +#endif	/* DWC_LIBMODULE */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c b/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c
+new file mode 100644
+index 0000000..49b07e1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c
 @@ -0,0 +1,1275 @@
@@ -9525,6 +9571,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +{
 +	return wq->pending;
 +}
+diff --git a/drivers/usb/host/dwc_common_port/dwc_crypto.c b/drivers/usb/host/dwc_common_port/dwc_crypto.c
+new file mode 100644
+index 0000000..3b03532
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_crypto.c
 @@ -0,0 +1,308 @@
@@ -9836,6 +9885,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif	/* DWC_CRYPTOLIB */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_crypto.h b/drivers/usb/host/dwc_common_port/dwc_crypto.h
+new file mode 100644
+index 0000000..26fcddc
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_crypto.h
 @@ -0,0 +1,111 @@
@@ -9950,6 +10002,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* _DWC_CRYPTO_H_ */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_dh.c b/drivers/usb/host/dwc_common_port/dwc_dh.c
+new file mode 100644
+index 0000000..997f753
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_dh.c
 @@ -0,0 +1,291 @@
@@ -10244,6 +10299,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif /* !CONFIG_MACH_IPMATE */
 +
 +#endif /* DWC_CRYPTOLIB */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_dh.h b/drivers/usb/host/dwc_common_port/dwc_dh.h
+new file mode 100644
+index 0000000..25c1cc0
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_dh.h
 @@ -0,0 +1,106 @@
@@ -10353,6 +10411,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* _DWC_DH_H_ */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_list.h b/drivers/usb/host/dwc_common_port/dwc_list.h
+new file mode 100644
+index 0000000..89cc325
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_list.h
 @@ -0,0 +1,594 @@
@@ -10950,6 +11011,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* _DWC_LIST_H_ */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_mem.c b/drivers/usb/host/dwc_common_port/dwc_mem.c
+new file mode 100644
+index 0000000..ad645ff
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_mem.c
 @@ -0,0 +1,245 @@
@@ -11198,6 +11262,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_DEBUG_MEMORY */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_modpow.c b/drivers/usb/host/dwc_common_port/dwc_modpow.c
+new file mode 100644
+index 0000000..b7c456b
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_modpow.c
 @@ -0,0 +1,636 @@
@@ -11837,6 +11904,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif /* CONFIG_MACH_IPMATE */
 +
 +#endif /*DWC_CRYPTOLIB */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_modpow.h b/drivers/usb/host/dwc_common_port/dwc_modpow.h
+new file mode 100644
+index 0000000..64f00c2
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_modpow.h
 @@ -0,0 +1,34 @@
@@ -11874,6 +11944,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* _LINUX_BIGNUM_H */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_notifier.c b/drivers/usb/host/dwc_common_port/dwc_notifier.c
+new file mode 100644
+index 0000000..8b3772a
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_notifier.c
 @@ -0,0 +1,319 @@
@@ -12196,6 +12269,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif	/* DWC_NOTIFYLIB */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_notifier.h b/drivers/usb/host/dwc_common_port/dwc_notifier.h
+new file mode 100644
+index 0000000..4a8cdfe
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_notifier.h
 @@ -0,0 +1,122 @@
@@ -12321,6 +12397,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* __DWC_NOTIFIER_H__ */
+diff --git a/drivers/usb/host/dwc_common_port/dwc_os.h b/drivers/usb/host/dwc_common_port/dwc_os.h
+new file mode 100644
+index 0000000..308ddd5
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_os.h
 @@ -0,0 +1,1260 @@
@@ -13584,6 +13663,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* _DWC_OS_H_ */
+diff --git a/drivers/usb/host/dwc_common_port/usb.h b/drivers/usb/host/dwc_common_port/usb.h
+new file mode 100644
+index 0000000..27bda82
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/usb.h
 @@ -0,0 +1,946 @@
@@ -14533,6 +14615,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif /* _USB_H_ */
+diff --git a/drivers/usb/host/dwc_otg/Makefile b/drivers/usb/host/dwc_otg/Makefile
+new file mode 100644
+index 0000000..c4c6e4e
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/Makefile
 @@ -0,0 +1,80 @@
@@ -14616,6 +14701,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	rm -rf   *.o *.ko .*cmd *.mod.c .tmp_versions Module.symvers
 +
 +endif
+diff --git a/drivers/usb/host/dwc_otg/doc/doxygen.cfg b/drivers/usb/host/dwc_otg/doc/doxygen.cfg
+new file mode 100644
+index 0000000..537c676
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/doc/doxygen.cfg
 @@ -0,0 +1,224 @@
@@ -14843,6 +14931,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +# Configuration::additions related to the search engine   
 +#---------------------------------------------------------------------------
 +SEARCHENGINE           = NO
+diff --git a/drivers/usb/host/dwc_otg/dummy_audio.c b/drivers/usb/host/dwc_otg/dummy_audio.c
+new file mode 100644
+index 0000000..530ac8b
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dummy_audio.c
 @@ -0,0 +1,1575 @@
@@ -16421,6 +16512,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	remove_proc_entry("isoc_test", NULL);
 +}
 +module_exit (cleanup);
+diff --git a/drivers/usb/host/dwc_otg/dwc_cfi_common.h b/drivers/usb/host/dwc_otg/dwc_cfi_common.h
+new file mode 100644
+index 0000000..be56af4
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_cfi_common.h
 @@ -0,0 +1,142 @@
@@ -16566,6 +16660,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +typedef struct cfi_string cfi_string_t;
 +
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_adp.c b/drivers/usb/host/dwc_otg/dwc_otg_adp.c
+new file mode 100644
+index 0000000..0877472
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_adp.c
 @@ -0,0 +1,854 @@
@@ -17423,6 +17520,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +	return 1;
 +}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_adp.h b/drivers/usb/host/dwc_otg/dwc_otg_adp.h
+new file mode 100644
+index 0000000..d8c3f85
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_adp.h
 @@ -0,0 +1,80 @@
@@ -17506,6 +17606,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +extern int32_t dwc_otg_adp_handle_srp_intr(dwc_otg_core_if_t * core_if);
 +
 +#endif //__DWC_OTG_ADP_H__
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.c b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
+new file mode 100644
+index 0000000..95eb7f8
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
 @@ -0,0 +1,1210 @@
@@ -18719,6 +18822,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	device_remove_file(&dev->dev, &dev_attr_sleep_status);
 +#endif
 +}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.h b/drivers/usb/host/dwc_otg/dwc_otg_attr.h
+new file mode 100644
+index 0000000..fc14d94
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.h
 @@ -0,0 +1,89 @@
@@ -18811,6 +18917,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +    );
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cfi.c b/drivers/usb/host/dwc_otg/dwc_otg_cfi.c
+new file mode 100644
+index 0000000..a9878d6
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cfi.c
 @@ -0,0 +1,1876 @@
@@ -20690,6 +20799,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif //DWC_UTE_CFI
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cfi.h b/drivers/usb/host/dwc_otg/dwc_otg_cfi.h
+new file mode 100644
+index 0000000..cbccdab
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cfi.h
 @@ -0,0 +1,320 @@
@@ -21013,6 +21125,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +int cfi_setup(struct dwc_otg_pcd *pcd, struct cfi_usb_ctrlrequest *ctrl);
 +
 +#endif /* (__DWC_OTG_CFI_H__) */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil.c b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
+new file mode 100644
+index 0000000..9b67537
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
 @@ -0,0 +1,7151 @@
@@ -28167,6 +28282,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	dwc_otg_pcd_start_srp_timer(core_if);
 +	return;
 +}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil.h b/drivers/usb/host/dwc_otg/dwc_otg_cil.h
+new file mode 100644
+index 0000000..d367cd1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.h
 @@ -0,0 +1,1464 @@
@@ -29634,6 +29752,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +//////////////////////////////////////////////////////////////////////
 +
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
+new file mode 100644
+index 0000000..21804c4
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 @@ -0,0 +1,1563 @@
@@ -31200,6 +31321,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +	return retval;
 +}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_core_if.h b/drivers/usb/host/dwc_otg/dwc_otg_core_if.h
+new file mode 100644
+index 0000000..10b68c4
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_core_if.h
 @@ -0,0 +1,705 @@
@@ -31908,6 +32032,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +/** @} */
 +
 +#endif				/* __DWC_CORE_IF_H__ */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_dbg.h b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
+new file mode 100644
+index 0000000..8681aa9
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
 @@ -0,0 +1,116 @@
@@ -32027,6 +32154,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif /*DEBUG*/
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+new file mode 100644
+index 0000000..e7f99e1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 @@ -0,0 +1,1700 @@
@@ -33730,6 +33860,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 + </td></tr>
 +
 +*/
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.h b/drivers/usb/host/dwc_otg/dwc_otg_driver.h
+new file mode 100644
+index 0000000..8a0e41b
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.h
 @@ -0,0 +1,86 @@
@@ -33819,6 +33952,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+new file mode 100644
+index 0000000..434d0c4
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 @@ -0,0 +1,3473 @@
@@ -37295,6 +37431,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
+new file mode 100644
+index 0000000..8075595
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -0,0 +1,824 @@
@@ -38122,6 +38261,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif
 +#endif
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
+new file mode 100644
+index 0000000..d0d5fa1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
 @@ -0,0 +1,1133 @@
@@ -39258,6 +39400,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
+new file mode 100644
+index 0000000..b3dc806
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
 @@ -0,0 +1,412 @@
@@ -39673,6 +39818,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +#endif /* __DWC_HCD_IF_H__ */
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+new file mode 100644
+index 0000000..63c1b55
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -0,0 +1,2106 @@
@@ -41782,6 +41930,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+new file mode 100644
+index 0000000..4a985a6
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -0,0 +1,893 @@
@@ -42678,6 +42829,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+new file mode 100644
+index 0000000..08c1669
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 @@ -0,0 +1,922 @@
@@ -43603,6 +43757,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
+new file mode 100644
+index 0000000..a7e9076
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
 @@ -0,0 +1,185 @@
@@ -43791,6 +43948,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +
 +#endif /* _DWC_OS_DEP_H_ */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd.c
+new file mode 100644
+index 0000000..c97d65c
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd.c
 @@ -0,0 +1,2708 @@
@@ -46502,6 +46662,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_HOST_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd.h b/drivers/usb/host/dwc_otg/dwc_otg_pcd.h
+new file mode 100644
+index 0000000..8ef7ba6
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd.h
 @@ -0,0 +1,266 @@
@@ -46771,6 +46934,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +extern void do_test_mode(void *data);
 +#endif
 +#endif /* DWC_HOST_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h b/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h
+new file mode 100644
+index 0000000..c8d2e0e
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h
 @@ -0,0 +1,360 @@
@@ -47134,6 +47300,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +#endif				/* __DWC_PCD_IF_H__ */
 +
 +#endif				/* DWC_HOST_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
+new file mode 100644
+index 0000000..27061d3
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
 @@ -0,0 +1,5147 @@
@@ -52284,6 +52453,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +}
 +
 +#endif /* DWC_HOST_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
+new file mode 100644
+index 0000000..a591d89
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
 @@ -0,0 +1,1358 @@
@@ -53645,6 +53817,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +EXPORT_SYMBOL(usb_gadget_unregister_driver);
 +
 +#endif /* DWC_HOST_ONLY */
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_regs.h b/drivers/usb/host/dwc_otg/dwc_otg_regs.h
+new file mode 100644
+index 0000000..0572642
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_regs.h
 @@ -0,0 +1,2550 @@
@@ -56198,6 +56373,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +} gpwrdn_data_t;
 +
 +#endif
+diff --git a/drivers/usb/host/dwc_otg/test/Makefile b/drivers/usb/host/dwc_otg/test/Makefile
+new file mode 100644
+index 0000000..fc45375
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/Makefile
 @@ -0,0 +1,16 @@
@@ -56217,6 +56395,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +	  else echo "=======> $$test, FAILED" ; \
 +	  fi \
 +	done
+diff --git a/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm b/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm
+new file mode 100644
+index 0000000..233b04a
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm
 @@ -0,0 +1,337 @@
@@ -56557,6 +56738,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +);
 +
 +1;
+diff --git a/drivers/usb/host/dwc_otg/test/test_mod_param.pl b/drivers/usb/host/dwc_otg/test/test_mod_param.pl
+new file mode 100644
+index 0000000..e887dce
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/test_mod_param.pl
 @@ -0,0 +1,133 @@
@@ -56693,6 +56877,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +test_main();
 +0;
+diff --git a/drivers/usb/host/dwc_otg/test/test_sysfs.pl b/drivers/usb/host/dwc_otg/test/test_sysfs.pl
+new file mode 100644
+index 0000000..abcf284
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/test_sysfs.pl
 @@ -0,0 +1,193 @@
@@ -56889,3 +57076,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +
 +test_main();
 +0;
+-- 
+1.9.1
+

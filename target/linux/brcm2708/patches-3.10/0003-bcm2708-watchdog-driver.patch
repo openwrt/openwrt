@@ -1,7 +1,7 @@
-From dd611b3364087514ef5fc59c6106d8924d2a2a30 Mon Sep 17 00:00:00 2001
+From 34844524c88edbb0fd75339fd655f6b69b221b0a Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 1 May 2013 19:54:32 +0100
-Subject: [PATCH 003/174] bcm2708 watchdog driver
+Subject: [PATCH 003/196] bcm2708 watchdog driver
 
 Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
@@ -11,6 +11,8 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  3 files changed, 392 insertions(+)
  create mode 100644 drivers/watchdog/bcm2708_wdog.c
 
+diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
+index e89fc31..60ca320 100644
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
 @@ -391,6 +391,12 @@ config RETU_WATCHDOG
@@ -26,9 +28,11 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  # AVR32 Architecture
  
  config AT32AP700X_WDT
+diff --git a/drivers/watchdog/Makefile b/drivers/watchdog/Makefile
+index a300b94..0e357711 100644
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_
+@@ -54,6 +54,7 @@ obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_wdt.o
  obj-$(CONFIG_IMX2_WDT) += imx2_wdt.o
  obj-$(CONFIG_UX500_WATCHDOG) += ux500_wdt.o
  obj-$(CONFIG_RETU_WATCHDOG) += retu_wdt.o
@@ -36,6 +40,9 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  
  # AVR32 Architecture
  obj-$(CONFIG_AT32AP700X_WDT) += at32ap700x_wdt.o
+diff --git a/drivers/watchdog/bcm2708_wdog.c b/drivers/watchdog/bcm2708_wdog.c
+new file mode 100644
+index 0000000..dd33c35
 --- /dev/null
 +++ b/drivers/watchdog/bcm2708_wdog.c
 @@ -0,0 +1,385 @@
@@ -424,3 +431,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
 +MODULE_ALIAS_MISCDEV(TEMP_MINOR);
 +MODULE_LICENSE("GPL");
 +
+-- 
+1.9.1
+

@@ -1,15 +1,17 @@
-From b74d345f074c12d21e8dda2807750e8559588822 Mon Sep 17 00:00:00 2001
+From c8b4c6968c3a8c1b195de2dc522268e0ce81b6c7 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Fri, 17 May 2013 15:19:49 +0100
-Subject: [PATCH 064/174] Add missing ids for Netgear WNA1000N and D-Link Alpha
+Subject: [PATCH 064/196] Add missing ids for Netgear WNA1000N and D-Link Alpha
 
 ---
  drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c | 1 +
  1 file changed, 1 insertion(+)
 
+diff --git a/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c b/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
+index 9d303f4..2e54e74 100644
 --- a/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
 +++ b/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
-@@ -114,6 +114,7 @@ static struct usb_device_id rtw_usb_id_t
+@@ -114,6 +114,7 @@ static struct usb_device_id rtw_usb_id_tbl[] ={
  	{USB_DEVICE(0x4856, 0x0091)},//NetweeN - Feixun
  	{USB_DEVICE(0x2019, 0x4902)},//Planex - Etop
  	{USB_DEVICE(0x2019, 0xAB2E)},//SW-WF02-AD15 -Abocom
@@ -17,3 +19,6 @@ Subject: [PATCH 064/174] Add missing ids for Netgear WNA1000N and D-Link Alpha
  
  	/****** 8188 RU ********/
  	{USB_DEVICE(0x0BDA, 0x317F)},//Netcore,Netcore
+-- 
+1.9.1
+

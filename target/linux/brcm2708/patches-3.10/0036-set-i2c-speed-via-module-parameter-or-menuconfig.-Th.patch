@@ -1,7 +1,7 @@
-From 17bb1be5d09fe58cd14084c5eac0052f03d6d71f Mon Sep 17 00:00:00 2001
+From ec78c7da4fe9f7289cdc3e948b70a43c900f2be4 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 3 Oct 2012 20:08:19 +0100
-Subject: [PATCH 036/174] set i2c speed via module-parameter or menuconfig.
+Subject: [PATCH 036/196] set i2c speed via module-parameter or menuconfig.
  Thanks FrankBoesing
 
 ---
@@ -9,9 +9,11 @@ Subject: [PATCH 036/174] set i2c speed via module-parameter or menuconfig.
  drivers/i2c/busses/i2c-bcm2708.c | 12 ++++++++----
  2 files changed, 19 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 290aee4..abaff1a 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
-@@ -353,6 +353,17 @@ config I2C_BCM2708
+@@ -355,6 +355,17 @@ config I2C_BCM2708
  	  support for the BCM2708. BSC is a Broadcom proprietary bus compatible
  	  with I2C/TWI/SMBus.
  
@@ -29,6 +31,8 @@ Subject: [PATCH 036/174] set i2c speed via module-parameter or menuconfig.
  config I2C_BLACKFIN_TWI
  	tristate "Blackfin TWI I2C support"
  	depends on BLACKFIN
+diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
+index 7cae615..3391889 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -66,11 +66,15 @@
@@ -48,7 +52,7 @@ Subject: [PATCH 036/174] set i2c speed via module-parameter or menuconfig.
  struct bcm2708_i2c {
  	struct i2c_adapter adapter;
  
-@@ -148,7 +152,7 @@ static inline void bcm2708_bsc_setup(str
+@@ -148,7 +152,7 @@ static inline void bcm2708_bsc_setup(struct bcm2708_i2c *bi)
  	u32 c = BSC_C_I2CEN | BSC_C_INTD | BSC_C_ST | BSC_C_CLEAR_1;
  
  	bus_hz = clk_get_rate(bi->clk);
@@ -57,7 +61,7 @@ Subject: [PATCH 036/174] set i2c speed via module-parameter or menuconfig.
  
  	if (bi->msg->flags & I2C_M_RD)
  		c |= BSC_C_INTR | BSC_C_READ;
-@@ -331,8 +335,8 @@ static int bcm2708_i2c_probe(struct plat
+@@ -331,8 +335,8 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
  		goto out_free_irq;
  	}
  
@@ -68,3 +72,6 @@ Subject: [PATCH 036/174] set i2c speed via module-parameter or menuconfig.
  
  	return 0;
  
+-- 
+1.9.1
+

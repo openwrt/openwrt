@@ -1,7 +1,7 @@
-From 87b48ac64b6b2aeb97b53eee080e74cb83ff25fe Mon Sep 17 00:00:00 2001
+From ed83da894caf28e267eab3a01ef037a7198391a1 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Mon, 19 Nov 2012 18:27:05 +0000
-Subject: [PATCH 041/174] Add Simon Hall's dma helper module, useful in future
+Subject: [PATCH 041/196] Add Simon Hall's dma helper module, useful in future
  for X acceleration
 
 ---
@@ -15,6 +15,8 @@ Subject: [PATCH 041/174] Add Simon Hall's dma helper module, useful in future
  create mode 100755 arch/arm/mach-bcm2708/include/mach/vc_support.h
  create mode 100755 arch/arm/mach-bcm2708/vc_support.c
 
+diff --git a/arch/arm/mach-bcm2708/Kconfig b/arch/arm/mach-bcm2708/Kconfig
+index a35ff89..b85bb8d 100644
 --- a/arch/arm/mach-bcm2708/Kconfig
 +++ b/arch/arm/mach-bcm2708/Kconfig
 @@ -38,4 +38,12 @@ config BCM2708_SPIDEV
@@ -30,15 +32,20 @@ Subject: [PATCH 041/174] Add Simon Hall's dma helper module, useful in future
 +          Enable DMA helper for accelerating X composition
 +
  endmenu
+diff --git a/arch/arm/mach-bcm2708/Makefile b/arch/arm/mach-bcm2708/Makefile
+index 164ecb2..0da162c 100644
 --- a/arch/arm/mach-bcm2708/Makefile
 +++ b/arch/arm/mach-bcm2708/Makefile
-@@ -6,3 +6,6 @@ obj-$(CONFIG_MACH_BCM2708) 	+= clock.o b
+@@ -6,3 +6,6 @@ obj-$(CONFIG_MACH_BCM2708) 	+= clock.o bcm2708.o armctrl.o vcio.o power.o dma.o
  obj-$(CONFIG_BCM2708_GPIO)	+= bcm2708_gpio.o
  obj-$(CONFIG_BCM2708_VCMEM)	+= vc_mem.o
  
 +obj-$(CONFIG_BCM2708_DMAER)	+= dmaer_master.o
 +dmaer_master-objs		:= dmaer.o vc_support.o
 +
+diff --git a/arch/arm/mach-bcm2708/dmaer.c b/arch/arm/mach-bcm2708/dmaer.c
+new file mode 100755
+index 0000000..d1bc0fa
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/dmaer.c
 @@ -0,0 +1,887 @@
@@ -929,6 +936,9 @@ Subject: [PATCH 041/174] Add Simon Hall's dma helper module, useful in future
 +module_init(dmaer_init);
 +module_exit(dmaer_exit);
 +
+diff --git a/arch/arm/mach-bcm2708/include/mach/vc_support.h b/arch/arm/mach-bcm2708/include/mach/vc_support.h
+new file mode 100755
+index 0000000..70e809f
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/include/mach/vc_support.h
 @@ -0,0 +1,69 @@
@@ -1001,6 +1011,9 @@ Subject: [PATCH 041/174] Add Simon Hall's dma helper module, useful in future
 +		unsigned int r0, unsigned int r1, unsigned int r2, unsigned int r3, unsigned int r4, unsigned int r5);
 +
 +#endif
+diff --git a/arch/arm/mach-bcm2708/vc_support.c b/arch/arm/mach-bcm2708/vc_support.c
+new file mode 100755
+index 0000000..5cb1335
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/vc_support.c
 @@ -0,0 +1,319 @@
@@ -1323,3 +1336,6 @@ Subject: [PATCH 041/174] Add Simon Hall's dma helper module, useful in future
 +	}
 +}
 +
+-- 
+1.9.1
+
