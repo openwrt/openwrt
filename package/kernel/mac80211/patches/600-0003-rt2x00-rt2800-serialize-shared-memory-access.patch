@@ -187,7 +187,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -4898,14 +4931,19 @@ static int rt2800_init_registers(struct 
+@@ -4901,14 +4934,19 @@ static int rt2800_init_registers(struct 
  	/*
  	 * ASIC will keep garbage value after boot, clear encryption keys.
  	 */
@@ -207,7 +207,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -5031,8 +5069,10 @@ static int rt2800_wait_bbp_ready(struct 
+@@ -5034,8 +5072,10 @@ static int rt2800_wait_bbp_ready(struct 
  	 * BBP was enabled after firmware was loaded,
  	 * but we need to reactivate it now.
  	 */
@@ -218,7 +218,7 @@ Changes since v1: ---
  	msleep(1);
  
  	for (i = 0; i < REGISTER_BUSY_COUNT; i++) {
-@@ -6728,11 +6768,19 @@ int rt2800_enable_radio(struct rt2x00_de
+@@ -6731,11 +6771,19 @@ int rt2800_enable_radio(struct rt2x00_de
  	/*
  	 * Send signal during boot time to initialize firmware.
  	 */
@@ -239,7 +239,7 @@ Changes since v1: ---
  	msleep(1);
  
  	/*
-@@ -7738,6 +7786,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -7744,6 +7792,8 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	int retval;
  	u32 reg;
  
@@ -248,7 +248,7 @@ Changes since v1: ---
  	retval = rt2800_probe_rt(rt2x00dev);
  	if (retval)
  		return retval;
-@@ -7817,8 +7867,11 @@ void rt2800_get_tkip_seq(struct ieee8021
+@@ -7823,8 +7873,11 @@ void rt2800_get_tkip_seq(struct ieee8021
  	u32 offset;
  
  	offset = MAC_IVEIV_ENTRY(hw_key_idx);
@@ -486,9 +486,9 @@ Changes since v1: ---
  /*
   * Queue handlers.
   */
-@@ -260,8 +281,10 @@ static int rt2800usb_write_firmware(stru
- 	rt2x00usb_register_multiwrite(rt2x00dev, FIRMWARE_IMAGE_BASE,
- 				      data + offset, length);
+@@ -294,8 +315,10 @@ static int rt2800usb_write_firmware(stru
+ 					      data + offset, length);
+ 	}
  
 +	rt2800_shared_mem_lock(rt2x00dev);
  	rt2x00usb_register_write(rt2x00dev, H2M_MAILBOX_CID, ~0);
@@ -497,7 +497,7 @@ Changes since v1: ---
  
  	/*
  	 * Send firmware request to device to load firmware,
-@@ -276,7 +299,10 @@ static int rt2800usb_write_firmware(stru
+@@ -310,7 +333,10 @@ static int rt2800usb_write_firmware(stru
  	}
  
  	msleep(10);
@@ -508,7 +508,7 @@ Changes since v1: ---
  
  	return 0;
  }
-@@ -294,8 +320,10 @@ static int rt2800usb_init_registers(stru
+@@ -328,8 +354,10 @@ static int rt2800usb_init_registers(stru
  	if (rt2800_wait_csr_ready(rt2x00dev))
  		return -EBUSY;
  
@@ -519,7 +519,7 @@ Changes since v1: ---
  
  	reg = 0;
  	rt2x00_set_field32(&reg, MAC_SYS_CTRL_RESET_CSR, 1);
-@@ -810,6 +838,9 @@ static const struct rt2800_ops rt2800usb
+@@ -859,6 +887,9 @@ static const struct rt2800_ops rt2800usb
  	.drv_write_firmware	= rt2800usb_write_firmware,
  	.drv_init_registers	= rt2800usb_init_registers,
  	.drv_get_txwi		= rt2800usb_get_txwi,

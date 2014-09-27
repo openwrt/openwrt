@@ -10,19 +10,19 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -4393,6 +4393,7 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4395,6 +4395,7 @@ void rt2800_vco_calibration(struct rt2x0
  	case RF3053:
  	case RF3070:
  	case RF3290:
 +	case RF3853:
  	case RF5360:
+ 	case RF5362:
  	case RF5370:
- 	case RF5372:
-@@ -7861,6 +7862,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -7866,6 +7867,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3053:
  	case RF3070:
  	case RF3290:
 +	case RF3853:
  	case RF5360:
+ 	case RF5362:
  	case RF5370:
- 	case RF5372:

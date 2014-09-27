@@ -10,7 +10,7 @@
  	case AR5416_AR9100_DEVID:
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -34,6 +34,7 @@
+@@ -35,6 +35,7 @@
  
  #define ATHEROS_VENDOR_ID	0x168c
  
@@ -20,7 +20,7 @@
  #define AR9160_DEVID_PCI	0x0027
 --- a/drivers/net/wireless/ath/ath9k/pci.c
 +++ b/drivers/net/wireless/ath/ath9k/pci.c
-@@ -658,6 +658,7 @@ static DEFINE_PCI_DEVICE_TABLE(ath_pci_i
+@@ -658,6 +658,7 @@ static const struct pci_device_id ath_pc
  	{ PCI_VDEVICE(ATHEROS, 0x0036),
  	  .driver_data = ATH9K_PCI_BT_ANT_DIV },
  

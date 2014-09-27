@@ -1,8 +1,6 @@
-Index: compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h
-===================================================================
---- compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800.h	2014-08-31 05:04:55.600142409 +0200
-+++ compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h	2014-08-31 05:11:02.068145882 +0200
-@@ -2346,6 +2346,8 @@
+--- a/drivers/net/wireless/rt2x00/rt2800.h
++++ b/drivers/net/wireless/rt2x00/rt2800.h
+@@ -2321,6 +2321,8 @@ struct mac_iveiv_entry {
  #define RFCSR30_RX_H20M			FIELD8(0x04)
  #define RFCSR30_RX_VCM			FIELD8(0x18)
  #define RFCSR30_RF_CALIBRATION		FIELD8(0x80)
@@ -11,11 +9,9 @@ Index: compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h
  
  /*
   * RFCSR 31:
-Index: compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c
-===================================================================
---- compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800lib.c	2014-08-31 05:04:55.604142409 +0200
-+++ compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c	2014-08-31 05:15:02.176148157 +0200
-@@ -3928,8 +3928,13 @@
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -3551,8 +3551,13 @@ static void rt2800_config_channel(struct
  	    rt2x00_rf(rt2x00dev, RF5390) ||
  	    rt2x00_rf(rt2x00dev, RF5392)) {
  		rt2800_rfcsr_read(rt2x00dev, 30, &rfcsr);
