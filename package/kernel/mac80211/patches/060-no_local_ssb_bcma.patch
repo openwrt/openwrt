@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -403,42 +403,6 @@ USB_CDC_PHONET=
+@@ -414,42 +414,6 @@ USB_CDC_PHONET=
  USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
@@ -54,7 +54,7 @@
 -
  source net/nfc/Kconfig
  
- source drivers/regulator/Kconfig
+ source drivers/media/Kconfig
 --- a/Makefile.kernel
 +++ b/Makefile.kernel
 @@ -25,8 +25,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
@@ -68,7 +68,7 @@
  obj-$(CPTCFG_NFC) += net/nfc/
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -2733,7 +2733,7 @@ static struct ssb_device *b43_ssb_gpio_d
+@@ -2828,7 +2828,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
  
@@ -77,7 +77,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4698,7 +4698,7 @@ static int b43_wireless_core_init(struct
+@@ -4858,7 +4858,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */

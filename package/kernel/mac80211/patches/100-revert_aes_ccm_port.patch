@@ -246,7 +246,7 @@
  		struct {
 --- a/net/mac80211/wpa.c
 +++ b/net/mac80211/wpa.c
-@@ -301,15 +301,22 @@ ieee80211_crypto_tkip_decrypt(struct iee
+@@ -304,15 +304,22 @@ ieee80211_crypto_tkip_decrypt(struct iee
  }
  
  
@@ -271,7 +271,7 @@
  	/*
  	 * Mask FC: zero subtype b4 b5 b6 (if not mgmt)
  	 * Retry, PwrMgt, MoreData; set Protected
-@@ -331,21 +338,20 @@ static void ccmp_special_blocks(struct s
+@@ -334,21 +341,20 @@ static void ccmp_special_blocks(struct s
  	else
  		qos_tid = 0;
  
@@ -300,7 +300,7 @@
  
  	/* AAD (extra authenticate-only data) / masked 802.11 header
  	 * FC | A1 | A2 | A3 | SC | [A4] | [QC] */
-@@ -401,8 +407,7 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -404,8 +410,7 @@ static int ccmp_encrypt_skb(struct ieee8
  	u8 *pos;
  	u8 pn[6];
  	u64 pn64;
@@ -310,7 +310,7 @@
  
  	if (info->control.hw_key &&
  	    !(info->control.hw_key->flags & IEEE80211_KEY_FLAG_GENERATE_IV) &&
-@@ -458,9 +463,9 @@ static int ccmp_encrypt_skb(struct ieee8
+@@ -461,9 +466,9 @@ static int ccmp_encrypt_skb(struct ieee8
  		return 0;
  
  	pos += IEEE80211_CCMP_HDR_LEN;
@@ -323,7 +323,7 @@
  
  	return 0;
  }
-@@ -523,16 +528,16 @@ ieee80211_crypto_ccmp_decrypt(struct iee
+@@ -526,16 +531,16 @@ ieee80211_crypto_ccmp_decrypt(struct iee
  	}
  
  	if (!(status->flag & RX_FLAG_DECRYPTED)) {

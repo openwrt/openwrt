@@ -60,7 +60,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	switch (rt2x00dev->chip.rf) {
  	case RF2020:
  	case RF3020:
-@@ -3528,6 +3564,15 @@ static void rt2800_config_channel(struct
+@@ -3530,6 +3566,15 @@ static void rt2800_config_channel(struct
  		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 64, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 77, 0x98);
@@ -76,7 +76,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	} else {
  		rt2800_bbp_write(rt2x00dev, 62, 0x37 - rt2x00dev->lna_gain);
  		rt2800_bbp_write(rt2x00dev, 63, 0x37 - rt2x00dev->lna_gain);
-@@ -3540,6 +3585,7 @@ static void rt2800_config_channel(struct
+@@ -3542,6 +3587,7 @@ static void rt2800_config_channel(struct
  		    !rt2x00_rt(rt2x00dev, RT5392)) {
  			if (rt2x00_has_cap_external_lna_bg(rt2x00dev)) {
  				rt2800_bbp_write(rt2x00dev, 82, 0x62);
@@ -84,7 +84,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  				rt2800_bbp_write(rt2x00dev, 75, 0x46);
  			} else {
  				if (rt2x00_rt(rt2x00dev, RT3593))
-@@ -3548,19 +3594,22 @@ static void rt2800_config_channel(struct
+@@ -3550,19 +3596,22 @@ static void rt2800_config_channel(struct
  					rt2800_bbp_write(rt2x00dev, 82, 0x84);
  				rt2800_bbp_write(rt2x00dev, 75, 0x50);
  			}
@@ -110,7 +110,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			rt2800_bbp_write(rt2x00dev, 83, 0x9a);
  
  		if (rt2x00_has_cap_external_lna_a(rt2x00dev))
-@@ -3685,6 +3734,23 @@ static void rt2800_config_channel(struct
+@@ -3687,6 +3736,23 @@ static void rt2800_config_channel(struct
  		usleep_range(1000, 1500);
  	}
  

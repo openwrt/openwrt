@@ -117,7 +117,7 @@
  		ath9k_hw_start_nfcal(ah, false);
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -695,10 +695,8 @@ struct ath_hw_ops {
+@@ -696,10 +696,8 @@ struct ath_hw_ops {
  				     bool power_off);
  	void (*rx_enable)(struct ath_hw *ah);
  	void (*set_desc_link)(void *ds, u32 link);
@@ -142,7 +142,7 @@
  
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -857,6 +857,7 @@ static ssize_t read_file_reset(struct fi
+@@ -863,6 +863,7 @@ static ssize_t read_file_reset(struct fi
  		[RESET_TYPE_MAC_HANG] = "MAC Hang",
  		[RESET_TYPE_BEACON_STUCK] = "Stuck Beacon",
  		[RESET_TYPE_MCI] = "MCI Reset",

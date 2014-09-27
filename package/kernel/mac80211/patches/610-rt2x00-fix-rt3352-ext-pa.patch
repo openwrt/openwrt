@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -3550,11 +3550,18 @@ static void rt2800_config_channel(struct
+@@ -3552,11 +3552,18 @@ static void rt2800_config_channel(struct
  	/*
  	 * Change BBP settings
  	 */
@@ -19,7 +19,7 @@
  	} else if (rt2x00_rt(rt2x00dev, RT3593)) {
  		if (rf->channel > 14) {
  			/* Disable CCK Packet detection on 5GHz */
-@@ -6608,6 +6615,12 @@ static void rt2800_init_rfcsr_3290(struc
+@@ -6611,6 +6618,12 @@ static void rt2800_init_rfcsr_3290(struc
  
  static void rt2800_init_rfcsr_3352(struct rt2x00_dev *rt2x00dev)
  {
@@ -32,7 +32,7 @@
  	rt2800_rf_init_calibration(rt2x00dev, 30);
  
  	rt2800_rfcsr_write(rt2x00dev, 0, 0xf0);
-@@ -6643,15 +6656,30 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6646,15 +6659,30 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 31, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 32, 0x80);
  	rt2800_rfcsr_write(rt2x00dev, 33, 0x00);
@@ -66,7 +66,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 43, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 44, 0xdb);
  	rt2800_rfcsr_write(rt2x00dev, 45, 0xdb);
-@@ -6659,15 +6687,20 @@ static void rt2800_init_rfcsr_3352(struc
+@@ -6662,15 +6690,20 @@ static void rt2800_init_rfcsr_3352(struc
  	rt2800_rfcsr_write(rt2x00dev, 47, 0x0d);
  	rt2800_rfcsr_write(rt2x00dev, 48, 0x14);
  	rt2800_rfcsr_write(rt2x00dev, 49, 0x00);
@@ -96,7 +96,7 @@
  	rt2800_rfcsr_write(rt2x00dev, 59, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 60, 0x00);
  	rt2800_rfcsr_write(rt2x00dev, 61, 0x00);
-@@ -7688,6 +7721,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7691,6 +7724,7 @@ static int rt2800_init_eeprom(struct rt2
  	 * RT53xx: defined in "EEPROM_CHIP_ID" field
  	 */
  	if (rt2x00_rt(rt2x00dev, RT3290) ||
@@ -104,7 +104,7 @@
  	    rt2x00_rt(rt2x00dev, RT5390) ||
  	    rt2x00_rt(rt2x00dev, RT5392))
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
-@@ -7782,7 +7816,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7786,7 +7820,8 @@ static int rt2800_init_eeprom(struct rt2
  	/*
  	 * Detect if this device has Bluetooth co-existence.
  	 */
@@ -114,7 +114,7 @@
  		__set_bit(CAPABILITY_BT_COEXIST, &rt2x00dev->cap_flags);
  
  	/*
-@@ -7811,6 +7846,22 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7815,6 +7850,22 @@ static int rt2800_init_eeprom(struct rt2
  					EIRP_MAX_TX_POWER_LIMIT)
  		__set_bit(CAPABILITY_POWER_LIMIT, &rt2x00dev->cap_flags);
  
@@ -139,7 +139,7 @@
  
 --- a/drivers/net/wireless/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/rt2x00/rt2800.h
-@@ -2333,6 +2333,12 @@ struct mac_iveiv_entry {
+@@ -2335,6 +2335,12 @@ struct mac_iveiv_entry {
  #define RFCSR36_RF_BS			FIELD8(0x80)
  
  /*
@@ -152,7 +152,7 @@
   * RFCSR 38:
   */
  #define RFCSR38_RX_LO1_EN		FIELD8(0x20)
-@@ -2344,6 +2350,18 @@ struct mac_iveiv_entry {
+@@ -2346,6 +2352,18 @@ struct mac_iveiv_entry {
  #define RFCSR39_RX_LO2_EN		FIELD8(0x80)
  
  /*
@@ -171,7 +171,7 @@
   * RFCSR 49:
   */
  #define RFCSR49_TX			FIELD8(0x3f)
-@@ -2356,6 +2374,8 @@ struct mac_iveiv_entry {
+@@ -2358,6 +2376,8 @@ struct mac_iveiv_entry {
   * RFCSR 50:
   */
  #define RFCSR50_TX			FIELD8(0x3f)
@@ -180,7 +180,7 @@
  #define RFCSR50_EP			FIELD8(0xc0)
  /* bits for RT3593 */
  #define RFCSR50_TX_LO1_EN		FIELD8(0x20)
-@@ -2503,6 +2523,8 @@ enum rt2800_eeprom_word {
+@@ -2505,6 +2525,8 @@ enum rt2800_eeprom_word {
   * INTERNAL_TX_ALC: 0: disable, 1: enable
   * BT_COEXIST: 0: disable, 1: enable
   * DAC_TEST: 0: disable, 1: enable
@@ -189,7 +189,7 @@
   */
  #define EEPROM_NIC_CONF1_HW_RADIO		FIELD16(0x0001)
  #define EEPROM_NIC_CONF1_EXTERNAL_TX_ALC	FIELD16(0x0002)
-@@ -2519,6 +2541,8 @@ enum rt2800_eeprom_word {
+@@ -2521,6 +2543,8 @@ enum rt2800_eeprom_word {
  #define EEPROM_NIC_CONF1_INTERNAL_TX_ALC	FIELD16(0x2000)
  #define EEPROM_NIC_CONF1_BT_COEXIST		FIELD16(0x4000)
  #define EEPROM_NIC_CONF1_DAC_TEST		FIELD16(0x8000)
@@ -200,7 +200,7 @@
   * EEPROM frequency
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -714,6 +714,8 @@ enum rt2x00_capability_flags {
+@@ -715,6 +715,8 @@ enum rt2x00_capability_flags {
  	CAPABILITY_DOUBLE_ANTENNA,
  	CAPABILITY_BT_COEXIST,
  	CAPABILITY_VCO_RECALIBRATION,

@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800.h
 +++ b/drivers/net/wireless/rt2x00/rt2800.h
-@@ -2169,6 +2169,7 @@ struct mac_iveiv_entry {
+@@ -2171,6 +2171,7 @@ struct mac_iveiv_entry {
  /*
   * RFCSR 2:
   */
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  /*
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -6833,6 +6833,144 @@ static void rt2800_init_rfcsr_3593(struc
+@@ -6836,6 +6836,144 @@ static void rt2800_init_rfcsr_3593(struc
  	/* TODO: enable stream mode support */
  }
  
@@ -166,7 +166,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  static void rt2800_init_rfcsr_5390(struct rt2x00_dev *rt2x00dev)
  {
  	rt2800_rf_init_calibration(rt2x00dev, 2);
-@@ -7064,6 +7202,9 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -7067,6 +7205,9 @@ static void rt2800_init_rfcsr(struct rt2
  	case RT3390:
  		rt2800_init_rfcsr_3390(rt2x00dev);
  		break;

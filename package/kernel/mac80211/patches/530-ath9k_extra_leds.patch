@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -565,6 +565,9 @@ static inline int ath9k_dump_btcoex(stru
+@@ -799,6 +799,9 @@ static inline int ath9k_dump_btcoex(stru
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,9 +10,9 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -703,6 +706,13 @@ void ath_ant_comb_scan(struct ath_softc 
- #define PS_BEACON_SYNC            BIT(4)
- #define PS_WAIT_FOR_ANI           BIT(5)
+@@ -939,6 +942,13 @@ void ath_ant_comb_scan(struct ath_softc 
+ 
+ #define ATH9K_NUM_CHANCTX  2 /* supports 2 operating channels */
  
 +struct ath_led {
 +	struct list_head list;
@@ -24,8 +24,8 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -745,9 +755,8 @@ struct ath_softc {
- 	struct ath_beacon beacon;
+@@ -990,9 +1000,8 @@ struct ath_softc {
+ 	spinlock_t chan_lock;
  
  #ifdef CPTCFG_MAC80211_LEDS
 -	bool led_registered;
@@ -35,7 +35,7 @@
 +	struct list_head leds;
  #endif
  
- 	struct ath9k_hw_cal_data caldata;
+ #ifdef CPTCFG_ATH9K_DEBUGFS
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
 @@ -24,40 +24,102 @@
@@ -162,7 +162,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -815,7 +815,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -889,7 +889,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -173,7 +173,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1381,6 +1381,61 @@ static const struct file_operations fops
+@@ -1410,6 +1410,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -235,7 +235,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1405,6 +1460,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1434,6 +1489,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);

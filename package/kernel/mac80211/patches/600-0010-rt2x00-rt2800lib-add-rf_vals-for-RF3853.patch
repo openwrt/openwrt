@@ -21,17 +21,17 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
   * RF5592 2.4G/5G 2T2R
   * RF3070 2.4G 1T1R
   * RF5360 2.4G 1T1R
-@@ -71,6 +72,7 @@
+@@ -72,6 +73,7 @@
  #define RF5592				0x000f
  #define RF3070				0x3070
  #define RF3290				0x3290
 +#define RF3853				0x3853
  #define RF5360				0x5360
+ #define RF5362				0x5362
  #define RF5370				0x5370
- #define RF5372				0x5372
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -7454,6 +7454,66 @@ static const struct rf_channel rf_vals_3
+@@ -7458,6 +7458,66 @@ static const struct rf_channel rf_vals_3
  	{173, 0x61, 0, 9},
  };
  
@@ -98,7 +98,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  static const struct rf_channel rf_vals_5592_xtal20[] = {
  	/* Channel, N, K, mod, R */
  	{1, 482, 4, 10, 3},
-@@ -7682,6 +7742,11 @@ static int rt2800_probe_hw_mode(struct r
+@@ -7687,6 +7747,11 @@ static int rt2800_probe_hw_mode(struct r
  		spec->channels = rf_vals_3x;
  		break;
  

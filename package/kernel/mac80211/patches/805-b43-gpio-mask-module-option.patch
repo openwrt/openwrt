@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/b43/b43.h
 +++ b/drivers/net/wireless/b43/b43.h
-@@ -820,6 +820,7 @@ struct b43_wldev {
+@@ -837,6 +837,7 @@ struct b43_wldev {
  	bool qos_enabled;		/* TRUE, if QoS is used. */
  	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
  	bool use_pio;			/* TRUE if next init should use PIO */
@@ -22,7 +22,7 @@
  static int modparam_bad_frames_preempt;
  module_param_named(bad_frames_preempt, modparam_bad_frames_preempt, int, 0444);
  MODULE_PARM_DESC(bad_frames_preempt,
-@@ -2814,10 +2819,10 @@ static int b43_gpio_init(struct b43_wlde
+@@ -2844,10 +2849,10 @@ static int b43_gpio_init(struct b43_wlde
  	u32 mask, set;
  
  	b43_maskset32(dev, B43_MMIO_MACCTL, ~B43_MACCTL_GPOUTSMSK, 0);

@@ -1,3322 +1,413 @@
-commit fb77a822cc68745186b38db7d105ad97e0622152
-Author: Johannes Stezenbach <js@sig21.net>
-Date:   Fri Sep 12 22:36:51 2014 +0200
-
-    ath9k_htc: fix random decryption failure
-    
-    In v3.15 the driver stopped to accept network packets after successful
-    authentification, which could be worked around by passing the
-    nohwcrypt=1 module parameter.  This was not reproducible by
-    everyone, and showed random behaviour in some tests.
-    It was caused by an uninitialized variable introduced
-    in 4ed1a8d4a257 ("ath9k_htc: use ath9k_cmn_rx_accept") and
-    used in 341b29b9cd2f ("ath9k_htc: use ath9k_cmn_rx_skb_postprocess").
-    
-    Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=78581
-    Fixes: 341b29b9cd2f ("ath9k_htc: use ath9k_cmn_rx_skb_postprocess")
-    Signed-off-by: Johannes Stezenbach <js@sig21.net>
-
-commit 11f17631d9bf2a9e910dac7d09ba4581f5693831
+commit c11113bc25df22898fb995d3205bdc4f27c98073
 Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Tue Sep 9 09:48:30 2014 +0200
+Date:   Sat Sep 27 18:04:58 2014 +0200
 
-    ath9k_hw: fix PLL clock initialization for newer SoC
+    ath5k: add missing include for debug code
     
-    On AR934x and newer SoC devices, the layout of the AR_RTC_PLL_CONTROL
-    register changed. This currently breaks at least 5/10 MHz operation.
-    AR933x uses the old layout.
-    
-    It might also have been causing other stability issues because of the
-    different location of the PLL_BYPASS bit which needs to be set during
-    PLL clock initialization.
-    
-    This patch also removes more instances of hardcoded register values in
-    favor of properly computed ones with the PLL_BYPASS bit added.
-    
-    Reported-by: Lorenzo Bianconi <lorenzo.bianconi83@gmail.com>
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit 0fecedddd4a0945873db1bd230ec6a168b3cc4fe
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Mon Sep 8 18:35:08 2014 +0200
-
-    ath9k_hw: reduce ANI spur immunity setting on HT40 extension channel
-    
-    The cycpwr_thr1 value needs to be lower on the extension channel than on
-    the control channel, similar to how the register settings are programmed
-    in the initvals.
-    
-    Also drop the unnecessary check for HT40 - this register can always be
-    written. This patch has been reported to improve HT40 stability and
-    throughput in some environments.
+    Needed for calling vmalloc()/vfree()
     
     Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-commit 30d7434ccb853b96de698a040888fa4dacd0cc19
+commit 83f76a9f9a42773c7eef90bb86b4b2c16b0b3755
 Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Mon Sep 8 18:31:26 2014 +0200
+Date:   Sat Sep 27 15:58:51 2014 +0200
 
-    Revert "ath9k_hw: reduce ANI firstep range for older chips"
-    
-    This reverts commit 09efc56345be4146ab9fc87a55c837ed5d6ea1ab
-    
-    I've received reports that this change is decreasing throughput in some
-    rare conditions on an AR9280 based device
-    
-    Cc: stable@vger.kernel.org
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit 15ed54948f508ad1baad79c30050e2d29a21696d
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Fri Jul 25 16:18:03 2014 +0200
-
-    mac80211: fix smps mode check for AP_VLAN
-    
-    In ieee80211_sta_ps_deliver_wakeup, sdata->smps_mode is checked. This is
-    initialized only for the base AP interface, not the individual VLANs.
+    ath5k: fix AHB kconfig dependency
     
     Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
-commit bc74ad816bba291359ae46301173ea744bdda9d2
+commit ddd67f2a5cfd73fad4b78190025402d419b9f0a9
 Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Fri Jul 25 16:15:44 2014 +0200
+Date:   Sat Sep 27 15:57:09 2014 +0200
 
-    mac80211: ignore AP_VLAN in ieee80211_recalc_chanctx_chantype
+    Revert "ath5k: Remove AHB bus support"
     
-    When bringing down the AP, a WARN_ON is hit because the bss config chandef
-    is empty here.
-    Since AP_VLAN channel settings do not matter for anything chanctx related
-    (always inherits the settings from the AP interface), let's just ignore
-    it here.
-    
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+    This reverts commit 093ec3c5337434f40d77c1af06c139da3e5ba6dc.
 
-commit ff354dbdd743e5fe186df8cd17982db19f78231a
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Wed Jul 23 15:33:26 2014 +0200
-
-    ath9k: fix aggregation session lockup
-    
-    If an aggregation session fails, frames still end up in the driver queue
-    with IEEE80211_TX_CTL_AMPDU set.
-    This causes tx for the affected station/tid to stall, since
-    ath_tx_get_tid_subframe returning packets to send.
-    
-    Fix this by clearing IEEE80211_TX_CTL_AMPDU as long as no aggregation
-    session is running.
-    
-    Cc: stable@vger.kernel.org
-    Reported-by: Antonio Quartulli <antonio@open-mesh.com>
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit 38695a6e5a940e6a524523b88a33916b016fb2a1
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Fri Jul 11 12:06:18 2014 +0200
-
-    mac80211: fix crash on getting sta info with uninitialized rate control
-    
-    If the expected throughput is queried before rate control has been
-    initialized, the minstrel op for it will crash while trying to access
-    the rate table.
-    Check for WLAN_STA_RATE_CONTROL before attempting to use the rate
-    control op.
-    
-    Reported-by: Jean-Pierre Tosoni <jp.tosoni@acksys.fr>
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit c0ee7fa4c0da824ccccc172bf175fb1f86540921
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Wed Jul 16 18:00:31 2014 +0200
-
-    ath9k: fix pending tx frames accounting
-    
-    Packets originally buffered for the regular hardware tx queues can end
-    up being transmitted through the U-APSD queue (via PS-Poll or U-APSD).
-    When packets are dropped due to retransmit failures, the pending frames
-    counter is not always updated properly.
-    Fix this by keeping track of the queue that a frame was accounted for in
-    the ath_frame_info struct, and using that on completion to decide
-    whether the counter should be updated.
-    This fixes some spurious transmit queue hangs.
-    
-    Cc: stable@vger.kernel.org
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit edcdf0989410a05a6a4b8438df4010447eaa7d9a
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Sun Jun 22 13:36:20 2014 +0200
-
-    Revert "cfg80211: Use 5MHz bandwidth by default when checking usable channels"
-    
-    It enables channels that are not supposed to be enabled according to the
-    regulatory rules.
-    
-    This reverts commit 8eca1fb692cc9557f386eddce75c300a3855d11a.
-
-commit 6e7341074823d2a45b81f2742cbf75f1da790031
-Author: Rafał Miłecki <zajec5@gmail.com>
-Date:   Sat May 31 19:40:45 2014 +0200
-
-    b43: disable 5 GHz on G-PHY
-    
-    This fixes regression introduced by adding some G-PHY devices to the
-    list of dual band devices. There is simply no support for 5 GHz on
-    G-PHY devices in b43. It results in:
-    WARNING: CPU: 0 PID: 79 at drivers/net/wireless/b43/phy_g.c:75 b43_gphy_channel_switch+0x125/0x130 [b43]()
-    b43-phy1 ERROR: PHY init: Channel switch to default failed
-    
-    Regression was introduced by the following commit:
-    
-    commit 773cfc508f4d64c14547ff8751b5cbd473124364
-    Author: Rafał Miłecki <zajec5@gmail.com>
-    Date:   Mon May 19 23:18:55 2014 +0200
-    
-        b43: add more devices to the bands database
-    
-    Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
-    Signed-off-by: John W. Linville <linville@tuxdriver.com>
-
-commit 1186edbef91f15722e5bdf56326ce0abc2935ce7
-Author: Stanislaw Gruszka <sgruszka@redhat.com>
-Date:   Tue Jun 10 12:51:06 2014 +0200
-
-    rt2x00: disable TKIP on USB
-    
-    On USB we can not get atomically TKIP key. We have to disable support
-    for TKIP acceleration on USB hardware to avoid bug as showed bellow.
-    
-    [  860.827243] BUG: scheduling while atomic: hostapd/3397/0x00000002
-    <snip>
-    [  860.827280] Call Trace:
-    [  860.827282]  [<ffffffff81682ea6>] dump_stack+0x4d/0x66
-    [  860.827284]  [<ffffffff8167eb9b>] __schedule_bug+0x47/0x55
-    [  860.827285]  [<ffffffff81685bb3>] __schedule+0x733/0x7b0
-    [  860.827287]  [<ffffffff81685c59>] schedule+0x29/0x70
-    [  860.827289]  [<ffffffff81684f8a>] schedule_timeout+0x15a/0x2b0
-    [  860.827291]  [<ffffffff8105ac50>] ? ftrace_raw_event_tick_stop+0xc0/0xc0
-    [  860.827294]  [<ffffffff810c13c2>] ? __module_text_address+0x12/0x70
-    [  860.827296]  [<ffffffff81686823>] wait_for_completion_timeout+0xb3/0x140
-    [  860.827298]  [<ffffffff81080fc0>] ? wake_up_state+0x20/0x20
-    [  860.827301]  [<ffffffff814d5b3d>] usb_start_wait_urb+0x7d/0x150
-    [  860.827303]  [<ffffffff814d5cd5>] usb_control_msg+0xc5/0x110
-    [  860.827305]  [<ffffffffa02fb0c6>] rt2x00usb_vendor_request+0xc6/0x160  [rt2x00usb]
-    [  860.827307]  [<ffffffffa02fb215>] rt2x00usb_vendor_req_buff_lock+0x75/0x150 [rt2x00usb]
-    [  860.827309]  [<ffffffffa02fb393>] rt2x00usb_vendor_request_buff+0xa3/0xe0 [rt2x00usb]
-    [  860.827311]  [<ffffffffa023d1a3>] rt2x00usb_register_multiread+0x33/0x40 [rt2800usb]
-    [  860.827314]  [<ffffffffa05805f9>] rt2800_get_tkip_seq+0x39/0x50  [rt2800lib]
-    [  860.827321]  [<ffffffffa0480f88>] ieee80211_get_key+0x218/0x2a0  [mac80211]
-    [  860.827322]  [<ffffffff815cc68c>] ? __nlmsg_put+0x6c/0x80
-    [  860.827329]  [<ffffffffa051b02e>] nl80211_get_key+0x22e/0x360 [cfg80211]
-    
-    Cc: stable@vger.kernel.org
-    Reported-and-tested-by: Peter Wu <lekensteyn@gmail.com>
-    Reported-and-tested-by: Pontus Fuchs <pontus.fuchs@gmail.com>
-    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
-    Signed-off-by: John W. Linville <linville@tuxdriver.com>
-
-commit 5f313a15da92dda80ac4c9a137bc42d7d0b49adf
-Author: Rafał Miłecki <zajec5@gmail.com>
-Date:   Thu Jun 12 09:28:38 2014 +0200
-
-    b43: fix frequency reported on G-PHY with /new/ firmware
-
-commit d3a58df87a2e4c2301ac843604202d290a48440b
-Author: Avraham Stern <avraham.stern@intel.com>
-Date:   Thu May 22 12:17:47 2014 +0300
-
-    mac80211: set new interfaces as idle upon init
-    
-    Mark new interfaces as idle to allow operations that require that
-    interfaces are idle to take place. Interface types that are always
-    not idle (like AP interfaces) will be set as not idle when they are
-    assigned a channel context.
-    
-    Signed-off-by: Avraham Stern <avraham.stern@intel.com>
-    Signed-off-by: Emmanuel Grumbach<emmanuel.grumbach@intel.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit 923eaf367206e01f22c97aee22300e332d071916
-Author: Arik Nemtsov <arik@wizery.com>
-Date:   Mon May 26 14:40:51 2014 +0300
-
-    mac80211: don't check netdev state for debugfs read/write
-    
-    Doing so will lead to an oops for a p2p-dev interface, since it has
-    no netdev.
-    
-    Cc: stable@vger.kernel.org
-    Signed-off-by: Arik Nemtsov <arikx.nemtsov@intel.com>
-    Signed-off-by: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit a9fb54169b197f31aff24c8d6270dd1e56cde395
-Author: chaitanya.mgit@gmail.com <chaitanya.mgit@gmail.com>
-Date:   Mon May 26 18:01:44 2014 +0530
-
-    regdb: Generalize the mW to dBm power conversion
-    
-    Generalize the power conversion from mW to dBm
-    using log. This should fix the below compilation
-    error for country NO which adds a new power value
-    2000mW which is not handled earlier.
-    
-     CC [M]  net/wireless/wext-sme.o
-     CC [M]  net/wireless/regdb.o
-    net/wireless/regdb.c:1130:1: error: Unknown undeclared here (not in
-    a function)
-    net/wireless/regdb.c:1130:9: error: expected } before power
-    make[2]: *** [net/wireless/regdb.o] Error 1
-    make[1]: *** [net/wireless] Error 2
-    make: *** [net] Error 2
-    
-    Reported-By:  John Walker <john@x109.net>
-    Signed-off-by: Chaitanya T K <chaitanya.mgit@gmail.com>
-    Acked-by: John W. Linville <linville@tuxdriver.com>
-    [remove unneeded parentheses, fix rounding by using %.0f]
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit c7d37a66e345df2fdf1aa7b2c9a6d3d53846ca5b
-Author: Krzysztof Hałasa <khalasa@piap.pl>
-Date:   Mon May 26 14:14:46 2014 +0200
-
-    mac80211: fix IBSS join by initializing last_scan_completed
-    
-    Without this fix, freshly rebooted Linux creates a new IBSS
-    instead of joining an existing one. Only when jiffies counter
-    overflows after 5 minutes the IBSS can be successfully joined.
-    
-    Signed-off-by: Krzysztof Hałasa <khalasa@piap.pl>
-    [edit commit message slightly]
-    Cc: stable@vger.kernel.org
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit 34171dc0d623be2c1032416bf7d3819f388ed70d
-Author: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
-Date:   Sun May 25 15:35:41 2014 +0300
-
-    mac80211: fix virtual monitor interface addition
-    
-    Since the commit below, cfg80211_chandef_dfs_required()
-    will warn if it gets a an NL80211_IFTYPE_UNSPECIFIED iftype
-    as explicitely written in the commit log.
-    When an virtual monitor interface is added, its type is set
-    in ieee80211_sub_if_data.vif.type, but not in
-    ieee80211_sub_if_data.wdev.iftype which is passed to
-    cfg80211_chandef_dfs_required() hence resulting in the
-    following warning:
-    
-    WARNING: CPU: 1 PID: 21265 at net/wireless/chan.c:376 cfg80211_chandef_dfs_required+0xbc/0x130 [cfg80211]()
-    Modules linked in: [...]
-    CPU: 1 PID: 21265 Comm: ifconfig Tainted: G        W  O 3.13.11+ #12
-    Hardware name: Dell Inc. Latitude E6410/0667CC, BIOS A01 03/05/2010
-     0000000000000009 ffff88008f5fdb08 ffffffff817d4219 ffff88008f5fdb50
-     ffff88008f5fdb40 ffffffff8106f57d 0000000000000000 0000000000000000
-     ffff880081062fb8 ffff8800810604e0 0000000000000001 ffff88008f5fdba0
-    Call Trace:
-     [<ffffffff817d4219>] dump_stack+0x4d/0x66
-     [<ffffffff8106f57d>] warn_slowpath_common+0x7d/0xa0
-     [<ffffffff8106f5ec>] warn_slowpath_fmt+0x4c/0x50
-     [<ffffffffa04ea4ec>] cfg80211_chandef_dfs_required+0xbc/0x130 [cfg80211]
-     [<ffffffffa06b1024>] ieee80211_vif_use_channel+0x94/0x500 [mac80211]
-     [<ffffffffa0684e6b>] ieee80211_add_virtual_monitor+0x1ab/0x5c0 [mac80211]
-     [<ffffffffa0686ae5>] ieee80211_do_open+0xe75/0x1580 [mac80211]
-     [<ffffffffa0687259>] ieee80211_open+0x69/0x70 [mac80211]
-    [snip]
-    
-    Fixes: 00ec75fc5a64 ("cfg80211: pass the actual iftype when calling cfg80211_chandef_dfs_required()")
-    Signed-off-by: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
-    Acked-by: Luciano Coelho <luciano.coelho@intel.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit d93cc72b37b4e2c314e1c499e80e8801907c2fea
-Author: Michal Kazior <michal.kazior@tieto.com>
-Date:   Thu Jun 5 14:21:37 2014 +0200
-
-    mac80211: use csa counter offsets instead of csa_active
-    
-    vif->csa_active is protected by mutexes only. This
-    means it is unreliable to depend on it on codeflow
-    in non-sleepable beacon and CSA code. There was no
-    guarantee to have vif->csa_active update be
-    visible before beacons are updated on SMP systems.
-    
-    Using csa counter offsets which are embedded in
-    beacon struct (and thus are protected with single
-    RCU assignment) is much safer.
-    
-    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit d2746694fcdef24e0a7a1947d8c70082cde81a26
-Author: Michal Kazior <michal.kazior@tieto.com>
-Date:   Thu Jun 5 14:21:36 2014 +0200
-
-    mac80211: move csa counters from sdata to beacon/presp
-    
-    Having csa counters part of beacon and probe_resp
-    structures makes it easier to get rid of possible
-    races between setting a beacon and updating
-    counters on SMP systems by guaranteeing counters
-    are always consistent against given beacon struct.
-    
-    While at it relax WARN_ON into WARN_ON_ONCE to
-    prevent spamming logs and racing.
-    
-    Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit 5dcb54f3a1a8cd7e0331e773487574f9743615db
-Author: Janusz Dziedzic <janusz.dziedzic@tieto.com>
-Date:   Thu Jun 5 08:12:57 2014 +0200
-
-    mac80211: allow tx via monitor iface when DFS
-    
-    Allow send frames using monitor interface
-    when DFS chandef and we pass CAC (beaconing
-    allowed).
-    
-    This fix problem when old kernel and new backports used,
-    in such case hostapd create/use also monitor interface.
-    Before this patch all frames hostapd send using monitor
-    iface were dropped when AP was configured on DFS channel.
-    
-    Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit 6f09a1beb0d2007572248c986780562219bd206f
-Author: Johannes Berg <johannes.berg@intel.com>
-Date:   Wed Jun 4 17:31:56 2014 +0200
-
-    cfg80211: make ethtool the driver's responsibility
-    
-    Currently, cfg80211 tries to implement ethtool, but that doesn't
-    really scale well, with all the different operations. Make the
-    lower-level driver responsible for it, which currently only has
-    an effect on mac80211. It will similarly not scale well at that
-    level though, since mac80211 also has many drivers.
-    
-    To cleanly implement this in mac80211, introduce a new file and
-    move some code to appropriate places.
-    
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit 6b0c6f133de8f90caeb1c4a902e6140567c5bf96
-Author: Johannes Berg <johannes.berg@intel.com>
-Date:   Wed Jun 4 17:06:23 2014 +0200
-
-    mac80211: remove weak WEP IV accounting
-    
-    Since WEP is practically dead, there seems very little
-    point in keeping WEP weak IV accounting.
-    
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit aecdc89fb4664c76baa4bbd46008f220532309ff
-Author: Luciano Coelho <luciano.coelho@intel.com>
-Date:   Fri May 23 11:04:50 2014 +0300
-
-    ath9k/ath10k: remove unnecessary channel_switch_beacon callbacks
-    
-    The channel_switch_beacon callback is optional, so it doesn't have to
-    be defined if it's not going to do anything useful with it.  Both
-    ath9k and ath10k define the callback and just returns.  This commit
-    removes them.
-    
-    Cc: Michal Kazior <michal.kazior@tieto.com>
-    Signed-off-by: Luciano Coelho <luciano.coelho@intel.com>
-    Signed-off-by: Kalle Valo <kvalo@qca.qualcomm.com>
-
-commit 60ccc107c9b9fb732fdee1f76bb2dad44f0e1798
-Author: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
-Date:   Tue May 27 16:58:02 2014 +0530
-
-    ath9k: Fix deadlock while updating p2p beacon timer
-    
-    pm_lock is taken twice while syncing HW TSF of p2p vif.
-    Fix this by taking the lock at caller side.
-    
-    Cc: Felix Fietkau <nbd@openwrt.org>
-    Signed-off-by: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
-    Signed-off-by: John W. Linville <linville@tuxdriver.com>
-
-commit f3831a4e3903dbc1a57d5df56deb6a143fd001bc
-Author: Stanislaw Gruszka <sgruszka@redhat.com>
-Date:   Thu Jun 5 13:52:27 2014 +0200
-
-    rt2x00: do not initialize BCN_OFFSET registers
-    
-    We setup BCN_OFFSET{0,1} registers dynamically, don't have to
-    initialize them.
-    
-    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
-
-commit e5c58ca7a48d4c82f282749a978052c47fd95998
-Author: Stanislaw Gruszka <sgruszka@redhat.com>
-Date:   Thu Jun 5 13:52:26 2014 +0200
-
-    rt2x00: change order when stop beaconing
-    
-    When no beaconing is needed, first stop beacon queue (disable beaconing
-    globally) to avoid possible sending of not prepared beacon on short
-    period after clearing beacon and before stop of BCN queue.
-    
-    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
-
-commit 382c1b9e03f52d0cd741ef1d942cad0f649f0744
-Author: Stanislaw Gruszka <sgruszka@redhat.com>
-Date:   Thu Jun 5 13:52:25 2014 +0200
-
-    rt2x00: change default MAC_BSSID_DW1_BSS_BCN_NUM
-    
-    We setup MAC_BSSID_DW1_BSS_BCN_NUM dynamically when numbers of active
-    beacons increase. Change default to 0 to tell hardware that we want to
-    send only one beacon as default.
-    
-    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
-
-commit 3b400571dd033e46fa7e76c5bb92a3ce8198afa9
-Author: Stanislaw Gruszka <sgruszka@redhat.com>
-Date:   Thu Jun 5 13:52:24 2014 +0200
-
-    rt2x00: change beaconing setup on RT2800
-    
-    As reported by Matthias, on 5572 chip, even if we clear up TXWI
-    of corresponding beacon, hardware still try to send it or do other
-    action that increase power consumption peak up to 1A.
-    
-    To avoid the issue, setup beaconing dynamically by configuring offsets
-    of currently active beacons and MAC_BSSID_DW1_BSS_BCN_NUM variable,
-    which limit number of beacons that hardware will try to send.
-    
-    Reported-by: Matthias Fend <Matthias.Fend@wolfvision.net>
-    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
-
-commit 916e591b2cc41f7e572992175ca56d866d7bc958
-Author: Stanislaw Gruszka <sgruszka@redhat.com>
-Date:   Thu Jun 5 13:52:23 2014 +0200
-
-    rt2x00: change beaconing locking
-    
-    This patch is needed for further changes to keep global variables
-    consistent when changing beaconing on diffrent vif's.
-    
-    Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
-
-commit 930b0dffd1731f3f418f9132faea720a23b7af61
-Author: Johannes Berg <johannes.berg@intel.com>
-Date:   Tue Jun 3 11:18:47 2014 +0200
-
-    mac80211: fix station/driver powersave race
-    
-    It is currently possible to have a race due to the station PS
-    unblock work like this:
-     * station goes to sleep with frames buffered in the driver
-     * driver blocks wakeup
-     * station wakes up again
-     * driver flushes/returns frames, and unblocks, which schedules
-       the unblock work
-     * unblock work starts to run, and checks that the station is
-       awake (i.e. that the WLAN_STA_PS_STA flag isn't set)
-     * we process a received frame with PM=1, setting the flag again
-     * ieee80211_sta_ps_deliver_wakeup() runs, delivering all frames
-       to the driver, and then clearing the WLAN_STA_PS_DRIVER and
-       WLAN_STA_PS_STA flags
-    
-    In this scenario, mac80211 will think that the station is awake,
-    while it really is asleep, and any TX'ed frames should be filtered
-    by the device (it will know that the station is sleeping) but then
-    passed to mac80211 again, which will not buffer it either as it
-    thinks the station is awake, and eventually the packets will be
-    dropped.
-    
-    Fix this by moving the clearing of the flags to exactly where we
-    learn about the situation. This creates a problem of reordering,
-    so introduce another flag indicating that delivery is being done,
-    this new flag also queues frames and is cleared only while the
-    spinlock is held (which the queuing code also holds) so that any
-    concurrent delivery/TX is handled correctly.
-    
-    Reported-by: Andrei Otcheretianski <andrei.otcheretianski@intel.com>
-    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
-
-commit 6df35206bc6c1c6aad1d8077df5786b4a7f77873
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Fri May 23 19:58:14 2014 +0200
-
-    mac80211: reduce packet loss notifications under load
-    
-    During strong signal fluctuations under high throughput, few consecutive
-    failed A-MPDU transmissions can easily trigger packet loss notification,
-    and thus (in AP mode) client disconnection.
-    
-    Reduce the number of false positives by checking the A-MPDU status flag
-    and treating a failed A-MPDU as a single packet.
-    
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit 7b7843a36fbcc568834404c7430ff895d8502131
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Fri May 23 19:26:32 2014 +0200
-
-    mac80211: fix a memory leak on sta rate selection table
-    
-    Cc: stable@vger.kernel.org
-    Reported-by: Christophe Prévotaux <cprevotaux@nltinc.com>
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
-commit 96892d6aa0a153423070addf3070bc79578b3897
-Author: Felix Fietkau <nbd@openwrt.org>
-Date:   Mon May 19 21:20:49 2014 +0200
-
-    ath9k: avoid passing buffers to the hardware during flush
-    
-    The commit "ath9k: fix possible hang on flush" changed the receive code
-    to always link rx descriptors of processed frames, even when flushing.
-    In some cases, this leads to flushed rx buffers being passed to the
-    hardware while rx is already stopped.
-    
-    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
-
---- a/drivers/net/wireless/ath/ath9k/recv.c
-+++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -34,7 +34,8 @@ static inline bool ath9k_check_auto_slee
-  * buffer (or rx fifo). This can incorrectly acknowledge packets
-  * to a sender if last desc is self-linked.
-  */
--static void ath_rx_buf_link(struct ath_softc *sc, struct ath_rxbuf *bf)
-+static void ath_rx_buf_link(struct ath_softc *sc, struct ath_rxbuf *bf,
-+			    bool flush)
- {
- 	struct ath_hw *ah = sc->sc_ah;
- 	struct ath_common *common = ath9k_hw_common(ah);
-@@ -59,18 +60,19 @@ static void ath_rx_buf_link(struct ath_s
- 			     common->rx_bufsize,
- 			     0);
+--- a/drivers/net/wireless/ath/ath5k/Kconfig
++++ b/drivers/net/wireless/ath/ath5k/Kconfig
+@@ -2,12 +2,14 @@ config ATH5K
+ 	tristate "Atheros 5xxx wireless cards support"
+ 	depends on m
+ 	depends on PCI && MAC80211
++	depends on (PCI || ATHEROS_AR231X) && MAC80211
+ 	select ATH_COMMON
+ 	select MAC80211_LEDS
+ 	select BACKPORT_LEDS_CLASS
+ 	select BACKPORT_NEW_LEDS
+ 	select BACKPORT_AVERAGE
+-	select ATH5K_PCI
++	select ATH5K_AHB if ATHEROS_AR231X
++	select ATH5K_PCI if !ATHEROS_AR231X
+ 	---help---
+ 	  This module adds support for wireless adapters based on
+ 	  Atheros 5xxx chipset.
+@@ -52,9 +54,16 @@ config ATH5K_TRACER
  
--	if (sc->rx.rxlink == NULL)
--		ath9k_hw_putrxbuf(ah, bf->bf_daddr);
--	else
-+	if (sc->rx.rxlink)
- 		*sc->rx.rxlink = bf->bf_daddr;
-+	else if (!flush)
-+		ath9k_hw_putrxbuf(ah, bf->bf_daddr);
+ 	  If unsure, say N.
  
- 	sc->rx.rxlink = &ds->ds_link;
- }
- 
--static void ath_rx_buf_relink(struct ath_softc *sc, struct ath_rxbuf *bf)
-+static void ath_rx_buf_relink(struct ath_softc *sc, struct ath_rxbuf *bf,
-+			      bool flush)
- {
- 	if (sc->rx.buf_hold)
--		ath_rx_buf_link(sc, sc->rx.buf_hold);
-+		ath_rx_buf_link(sc, sc->rx.buf_hold, flush);
- 
- 	sc->rx.buf_hold = bf;
- }
-@@ -442,7 +444,7 @@ int ath_startrecv(struct ath_softc *sc)
- 	sc->rx.buf_hold = NULL;
- 	sc->rx.rxlink = NULL;
- 	list_for_each_entry_safe(bf, tbf, &sc->rx.rxbuf, list) {
--		ath_rx_buf_link(sc, bf);
-+		ath_rx_buf_link(sc, bf, false);
- 	}
- 
- 	/* We could have deleted elements so the list may be empty now */
-@@ -1118,12 +1120,12 @@ requeue_drop_frag:
- requeue:
- 		list_add_tail(&bf->list, &sc->rx.rxbuf);
- 
--		if (edma) {
--			ath_rx_edma_buf_link(sc, qtype);
--		} else {
--			ath_rx_buf_relink(sc, bf);
-+		if (!edma) {
-+			ath_rx_buf_relink(sc, bf, flush);
- 			if (!flush)
- 				ath9k_hw_rxena(ah);
-+		} else if (!flush) {
-+			ath_rx_edma_buf_link(sc, qtype);
- 		}
- 
- 		if (!budget--)
---- a/net/mac80211/sta_info.c
-+++ b/net/mac80211/sta_info.c
-@@ -100,7 +100,8 @@ static void __cleanup_single_sta(struct 
- 	struct ps_data *ps;
- 
- 	if (test_sta_flag(sta, WLAN_STA_PS_STA) ||
--	    test_sta_flag(sta, WLAN_STA_PS_DRIVER)) {
-+	    test_sta_flag(sta, WLAN_STA_PS_DRIVER) ||
-+	    test_sta_flag(sta, WLAN_STA_PS_DELIVER)) {
- 		if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
- 		    sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
- 			ps = &sdata->bss->ps;
-@@ -111,6 +112,7 @@ static void __cleanup_single_sta(struct 
- 
- 		clear_sta_flag(sta, WLAN_STA_PS_STA);
- 		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
-+		clear_sta_flag(sta, WLAN_STA_PS_DELIVER);
- 
- 		atomic_dec(&ps->num_sta_ps);
- 		sta_info_recalc_tim(sta);
-@@ -125,7 +127,7 @@ static void __cleanup_single_sta(struct 
- 	if (ieee80211_vif_is_mesh(&sdata->vif))
- 		mesh_sta_cleanup(sta);
- 
--	cancel_work_sync(&sta->drv_unblock_wk);
-+	cancel_work_sync(&sta->drv_deliver_wk);
- 
- 	/*
- 	 * Destroy aggregation state here. It would be nice to wait for the
-@@ -227,6 +229,7 @@ struct sta_info *sta_info_get_by_idx(str
-  */
- void sta_info_free(struct ieee80211_local *local, struct sta_info *sta)
- {
-+	struct ieee80211_sta_rates *rates;
- 	int i;
- 
- 	if (sta->rate_ctrl)
-@@ -238,6 +241,10 @@ void sta_info_free(struct ieee80211_loca
- 		kfree(sta->tx_lat);
- 	}
- 
-+	rates = rcu_dereference_protected(sta->sta.rates, true);
-+	if (rates)
-+		kfree(rates);
++config ATH5K_AHB
++	bool "Atheros 5xxx AHB bus support"
++	depends on ATHEROS_AR231X
++	---help---
++	  This adds support for WiSoC type chipsets of the 5xxx Atheros
++	  family.
 +
- 	sta_dbg(sta->sdata, "Destroyed STA %pM\n", sta->sta.addr);
- 
- 	kfree(sta);
-@@ -252,33 +259,23 @@ static void sta_info_hash_add(struct iee
- 	rcu_assign_pointer(local->sta_hash[STA_HASH(sta->sta.addr)], sta);
- }
- 
--static void sta_unblock(struct work_struct *wk)
-+static void sta_deliver_ps_frames(struct work_struct *wk)
- {
- 	struct sta_info *sta;
- 
--	sta = container_of(wk, struct sta_info, drv_unblock_wk);
-+	sta = container_of(wk, struct sta_info, drv_deliver_wk);
- 
- 	if (sta->dead)
- 		return;
- 
--	if (!test_sta_flag(sta, WLAN_STA_PS_STA)) {
--		local_bh_disable();
-+	local_bh_disable();
-+	if (!test_sta_flag(sta, WLAN_STA_PS_STA))
- 		ieee80211_sta_ps_deliver_wakeup(sta);
--		local_bh_enable();
--	} else if (test_and_clear_sta_flag(sta, WLAN_STA_PSPOLL)) {
--		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
--
--		local_bh_disable();
-+	else if (test_and_clear_sta_flag(sta, WLAN_STA_PSPOLL))
- 		ieee80211_sta_ps_deliver_poll_response(sta);
--		local_bh_enable();
--	} else if (test_and_clear_sta_flag(sta, WLAN_STA_UAPSD)) {
--		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
--
--		local_bh_disable();
-+	else if (test_and_clear_sta_flag(sta, WLAN_STA_UAPSD))
- 		ieee80211_sta_ps_deliver_uapsd(sta);
--		local_bh_enable();
--	} else
--		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
-+	local_bh_enable();
- }
- 
- static int sta_prepare_rate_control(struct ieee80211_local *local,
-@@ -340,7 +337,7 @@ struct sta_info *sta_info_alloc(struct i
- 
- 	spin_lock_init(&sta->lock);
- 	spin_lock_init(&sta->ps_lock);
--	INIT_WORK(&sta->drv_unblock_wk, sta_unblock);
-+	INIT_WORK(&sta->drv_deliver_wk, sta_deliver_ps_frames);
- 	INIT_WORK(&sta->ampdu_mlme.work, ieee80211_ba_session_work);
- 	mutex_init(&sta->ampdu_mlme.mtx);
- #ifdef CPTCFG_MAC80211_MESH
-@@ -1101,8 +1098,11 @@ void ieee80211_sta_ps_deliver_wakeup(str
- 	unsigned long flags;
- 	struct ps_data *ps;
- 
--	if (sdata->vif.type == NL80211_IFTYPE_AP ||
--	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-+	if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-+		sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
-+				     u.ap);
-+
-+	if (sdata->vif.type == NL80211_IFTYPE_AP)
- 		ps = &sdata->bss->ps;
- 	else if (ieee80211_vif_is_mesh(&sdata->vif))
- 		ps = &sdata->u.mesh.ps;
-@@ -1140,8 +1140,15 @@ void ieee80211_sta_ps_deliver_wakeup(str
- 	}
- 
- 	ieee80211_add_pending_skbs(local, &pending);
--	clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
--	clear_sta_flag(sta, WLAN_STA_PS_STA);
-+
-+	/* now we're no longer in the deliver code */
-+	clear_sta_flag(sta, WLAN_STA_PS_DELIVER);
-+
-+	/* The station might have polled and then woken up before we responded,
-+	 * so clear these flags now to avoid them sticking around.
-+	 */
-+	clear_sta_flag(sta, WLAN_STA_PSPOLL);
-+	clear_sta_flag(sta, WLAN_STA_UAPSD);
- 	spin_unlock(&sta->ps_lock);
- 
- 	atomic_dec(&ps->num_sta_ps);
-@@ -1542,10 +1549,26 @@ void ieee80211_sta_block_awake(struct ie
- 
- 	trace_api_sta_block_awake(sta->local, pubsta, block);
- 
--	if (block)
-+	if (block) {
- 		set_sta_flag(sta, WLAN_STA_PS_DRIVER);
--	else if (test_sta_flag(sta, WLAN_STA_PS_DRIVER))
--		ieee80211_queue_work(hw, &sta->drv_unblock_wk);
-+		return;
-+	}
-+
-+	if (!test_sta_flag(sta, WLAN_STA_PS_DRIVER))
-+		return;
-+
-+	if (!test_sta_flag(sta, WLAN_STA_PS_STA)) {
-+		set_sta_flag(sta, WLAN_STA_PS_DELIVER);
-+		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
-+		ieee80211_queue_work(hw, &sta->drv_deliver_wk);
-+	} else if (test_sta_flag(sta, WLAN_STA_PSPOLL) ||
-+		   test_sta_flag(sta, WLAN_STA_UAPSD)) {
-+		/* must be asleep in this case */
-+		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
-+		ieee80211_queue_work(hw, &sta->drv_deliver_wk);
-+	} else {
-+		clear_sta_flag(sta, WLAN_STA_PS_DRIVER);
-+	}
- }
- EXPORT_SYMBOL(ieee80211_sta_block_awake);
- 
-@@ -1703,3 +1726,140 @@ u8 sta_info_tx_streams(struct sta_info *
- 	return ((ht_cap->mcs.tx_params & IEEE80211_HT_MCS_TX_MAX_STREAMS_MASK)
- 			>> IEEE80211_HT_MCS_TX_MAX_STREAMS_SHIFT) + 1;
- }
-+
-+void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo)
-+{
-+	struct ieee80211_sub_if_data *sdata = sta->sdata;
-+	struct ieee80211_local *local = sdata->local;
-+	struct rate_control_ref *ref = NULL;
-+	struct timespec uptime;
-+	u64 packets = 0;
-+	u32 thr = 0;
-+	int i, ac;
-+
-+	if (test_sta_flag(sta, WLAN_STA_RATE_CONTROL))
-+		ref = local->rate_ctrl;
-+
-+	sinfo->generation = sdata->local->sta_generation;
-+
-+	sinfo->filled = STATION_INFO_INACTIVE_TIME |
-+			STATION_INFO_RX_BYTES64 |
-+			STATION_INFO_TX_BYTES64 |
-+			STATION_INFO_RX_PACKETS |
-+			STATION_INFO_TX_PACKETS |
-+			STATION_INFO_TX_RETRIES |
-+			STATION_INFO_TX_FAILED |
-+			STATION_INFO_TX_BITRATE |
-+			STATION_INFO_RX_BITRATE |
-+			STATION_INFO_RX_DROP_MISC |
-+			STATION_INFO_BSS_PARAM |
-+			STATION_INFO_CONNECTED_TIME |
-+			STATION_INFO_STA_FLAGS |
-+			STATION_INFO_BEACON_LOSS_COUNT;
-+
-+	do_posix_clock_monotonic_gettime(&uptime);
-+	sinfo->connected_time = uptime.tv_sec - sta->last_connected;
-+
-+	sinfo->inactive_time = jiffies_to_msecs(jiffies - sta->last_rx);
-+	sinfo->tx_bytes = 0;
-+	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
-+		sinfo->tx_bytes += sta->tx_bytes[ac];
-+		packets += sta->tx_packets[ac];
-+	}
-+	sinfo->tx_packets = packets;
-+	sinfo->rx_bytes = sta->rx_bytes;
-+	sinfo->rx_packets = sta->rx_packets;
-+	sinfo->tx_retries = sta->tx_retry_count;
-+	sinfo->tx_failed = sta->tx_retry_failed;
-+	sinfo->rx_dropped_misc = sta->rx_dropped;
-+	sinfo->beacon_loss_count = sta->beacon_loss_count;
-+
-+	if ((sta->local->hw.flags & IEEE80211_HW_SIGNAL_DBM) ||
-+	    (sta->local->hw.flags & IEEE80211_HW_SIGNAL_UNSPEC)) {
-+		sinfo->filled |= STATION_INFO_SIGNAL | STATION_INFO_SIGNAL_AVG;
-+		if (!local->ops->get_rssi ||
-+		    drv_get_rssi(local, sdata, &sta->sta, &sinfo->signal))
-+			sinfo->signal = (s8)sta->last_signal;
-+		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
-+	}
-+	if (sta->chains) {
-+		sinfo->filled |= STATION_INFO_CHAIN_SIGNAL |
-+				 STATION_INFO_CHAIN_SIGNAL_AVG;
-+
-+		sinfo->chains = sta->chains;
-+		for (i = 0; i < ARRAY_SIZE(sinfo->chain_signal); i++) {
-+			sinfo->chain_signal[i] = sta->chain_signal_last[i];
-+			sinfo->chain_signal_avg[i] =
-+				(s8) -ewma_read(&sta->chain_signal_avg[i]);
-+		}
-+	}
-+
-+	sta_set_rate_info_tx(sta, &sta->last_tx_rate, &sinfo->txrate);
-+	sta_set_rate_info_rx(sta, &sinfo->rxrate);
-+
-+	if (ieee80211_vif_is_mesh(&sdata->vif)) {
-+#ifdef CPTCFG_MAC80211_MESH
-+		sinfo->filled |= STATION_INFO_LLID |
-+				 STATION_INFO_PLID |
-+				 STATION_INFO_PLINK_STATE |
-+				 STATION_INFO_LOCAL_PM |
-+				 STATION_INFO_PEER_PM |
-+				 STATION_INFO_NONPEER_PM;
-+
-+		sinfo->llid = sta->llid;
-+		sinfo->plid = sta->plid;
-+		sinfo->plink_state = sta->plink_state;
-+		if (test_sta_flag(sta, WLAN_STA_TOFFSET_KNOWN)) {
-+			sinfo->filled |= STATION_INFO_T_OFFSET;
-+			sinfo->t_offset = sta->t_offset;
-+		}
-+		sinfo->local_pm = sta->local_pm;
-+		sinfo->peer_pm = sta->peer_pm;
-+		sinfo->nonpeer_pm = sta->nonpeer_pm;
-+#endif
-+	}
-+
-+	sinfo->bss_param.flags = 0;
-+	if (sdata->vif.bss_conf.use_cts_prot)
-+		sinfo->bss_param.flags |= BSS_PARAM_FLAGS_CTS_PROT;
-+	if (sdata->vif.bss_conf.use_short_preamble)
-+		sinfo->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_PREAMBLE;
-+	if (sdata->vif.bss_conf.use_short_slot)
-+		sinfo->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_SLOT_TIME;
-+	sinfo->bss_param.dtim_period = sdata->local->hw.conf.ps_dtim_period;
-+	sinfo->bss_param.beacon_interval = sdata->vif.bss_conf.beacon_int;
-+
-+	sinfo->sta_flags.set = 0;
-+	sinfo->sta_flags.mask = BIT(NL80211_STA_FLAG_AUTHORIZED) |
-+				BIT(NL80211_STA_FLAG_SHORT_PREAMBLE) |
-+				BIT(NL80211_STA_FLAG_WME) |
-+				BIT(NL80211_STA_FLAG_MFP) |
-+				BIT(NL80211_STA_FLAG_AUTHENTICATED) |
-+				BIT(NL80211_STA_FLAG_ASSOCIATED) |
-+				BIT(NL80211_STA_FLAG_TDLS_PEER);
-+	if (test_sta_flag(sta, WLAN_STA_AUTHORIZED))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_AUTHORIZED);
-+	if (test_sta_flag(sta, WLAN_STA_SHORT_PREAMBLE))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_SHORT_PREAMBLE);
-+	if (test_sta_flag(sta, WLAN_STA_WME))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_WME);
-+	if (test_sta_flag(sta, WLAN_STA_MFP))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_MFP);
-+	if (test_sta_flag(sta, WLAN_STA_AUTH))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_AUTHENTICATED);
-+	if (test_sta_flag(sta, WLAN_STA_ASSOC))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_ASSOCIATED);
-+	if (test_sta_flag(sta, WLAN_STA_TDLS_PEER))
-+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
-+
-+	/* check if the driver has a SW RC implementation */
-+	if (ref && ref->ops->get_expected_throughput)
-+		thr = ref->ops->get_expected_throughput(sta->rate_ctrl_priv);
-+	else
-+		thr = drv_get_expected_throughput(local, &sta->sta);
-+
-+	if (thr != 0) {
-+		sinfo->filled |= STATION_INFO_EXPECTED_THROUGHPUT;
-+		sinfo->expected_throughput = thr;
-+	}
-+}
---- a/net/mac80211/status.c
-+++ b/net/mac80211/status.c
-@@ -541,6 +541,23 @@ static void ieee80211_tx_latency_end_msr
-  */
- #define STA_LOST_PKT_THRESHOLD	50
- 
-+static void ieee80211_lost_packet(struct sta_info *sta, struct sk_buff *skb)
-+{
-+	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-+
-+	/* This packet was aggregated but doesn't carry status info */
-+	if ((info->flags & IEEE80211_TX_CTL_AMPDU) &&
-+	    !(info->flags & IEEE80211_TX_STAT_AMPDU))
-+		return;
-+
-+	if (++sta->lost_packets < STA_LOST_PKT_THRESHOLD)
-+		return;
-+
-+	cfg80211_cqm_pktloss_notify(sta->sdata->dev, sta->sta.addr,
-+				    sta->lost_packets, GFP_ATOMIC);
-+	sta->lost_packets = 0;
-+}
-+
- void ieee80211_tx_status(struct ieee80211_hw *hw, struct sk_buff *skb)
- {
- 	struct sk_buff *skb2;
-@@ -680,12 +697,8 @@ void ieee80211_tx_status(struct ieee8021
- 			if (info->flags & IEEE80211_TX_STAT_ACK) {
- 				if (sta->lost_packets)
- 					sta->lost_packets = 0;
--			} else if (++sta->lost_packets >= STA_LOST_PKT_THRESHOLD) {
--				cfg80211_cqm_pktloss_notify(sta->sdata->dev,
--							    sta->sta.addr,
--							    sta->lost_packets,
--							    GFP_ATOMIC);
--				sta->lost_packets = 0;
-+			} else {
-+				ieee80211_lost_packet(sta, skb);
- 			}
- 		}
- 
---- a/net/mac80211/rx.c
-+++ b/net/mac80211/rx.c
-@@ -1107,6 +1107,8 @@ static void sta_ps_end(struct sta_info *
- 		return;
- 	}
- 
-+	set_sta_flag(sta, WLAN_STA_PS_DELIVER);
-+	clear_sta_flag(sta, WLAN_STA_PS_STA);
- 	ieee80211_sta_ps_deliver_wakeup(sta);
- }
- 
---- a/net/mac80211/sta_info.h
-+++ b/net/mac80211/sta_info.h
-@@ -82,6 +82,7 @@ enum ieee80211_sta_info_flags {
- 	WLAN_STA_TOFFSET_KNOWN,
- 	WLAN_STA_MPSP_OWNER,
- 	WLAN_STA_MPSP_RECIPIENT,
-+	WLAN_STA_PS_DELIVER,
- };
- 
- #define ADDBA_RESP_INTERVAL HZ
-@@ -265,7 +266,7 @@ struct ieee80211_tx_latency_stat {
-  * @last_rx_rate_vht_nss: rx status nss of last data packet
-  * @lock: used for locking all fields that require locking, see comments
-  *	in the header file.
-- * @drv_unblock_wk: used for driver PS unblocking
-+ * @drv_deliver_wk: used for delivering frames after driver PS unblocking
-  * @listen_interval: listen interval of this station, when we're acting as AP
-  * @_flags: STA flags, see &enum ieee80211_sta_info_flags, do not use directly
-  * @ps_lock: used for powersave (when mac80211 is the AP) related locking
-@@ -278,7 +279,6 @@ struct ieee80211_tx_latency_stat {
-  * @driver_buffered_tids: bitmap of TIDs the driver has data buffered on
-  * @rx_packets: Number of MSDUs received from this STA
-  * @rx_bytes: Number of bytes received from this STA
-- * @wep_weak_iv_count: number of weak WEP IVs received from this station
-  * @last_rx: time (in jiffies) when last frame was received from this STA
-  * @last_connected: time (in seconds) when a station got connected
-  * @num_duplicates: number of duplicate frames received from this STA
-@@ -345,7 +345,7 @@ struct sta_info {
- 	void *rate_ctrl_priv;
- 	spinlock_t lock;
- 
--	struct work_struct drv_unblock_wk;
-+	struct work_struct drv_deliver_wk;
- 
- 	u16 listen_interval;
- 
-@@ -367,7 +367,6 @@ struct sta_info {
- 	/* Updated from RX path only, no locking requirements */
- 	unsigned long rx_packets;
- 	u64 rx_bytes;
--	unsigned long wep_weak_iv_count;
- 	unsigned long last_rx;
- 	long last_connected;
- 	unsigned long num_duplicates;
-@@ -628,6 +627,8 @@ void sta_set_rate_info_tx(struct sta_inf
- 			  struct rate_info *rinfo);
- void sta_set_rate_info_rx(struct sta_info *sta,
- 			  struct rate_info *rinfo);
-+void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo);
-+
- void ieee80211_sta_expire(struct ieee80211_sub_if_data *sdata,
- 			  unsigned long exp_time);
- u8 sta_info_tx_streams(struct sta_info *sta);
---- a/net/mac80211/tx.c
-+++ b/net/mac80211/tx.c
-@@ -469,7 +469,8 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
- 		return TX_CONTINUE;
- 
- 	if (unlikely((test_sta_flag(sta, WLAN_STA_PS_STA) ||
--		      test_sta_flag(sta, WLAN_STA_PS_DRIVER)) &&
-+		      test_sta_flag(sta, WLAN_STA_PS_DRIVER) ||
-+		      test_sta_flag(sta, WLAN_STA_PS_DELIVER)) &&
- 		     !(info->flags & IEEE80211_TX_CTL_NO_PS_BUFFER))) {
- 		int ac = skb_get_queue_mapping(tx->skb);
- 
-@@ -486,7 +487,8 @@ ieee80211_tx_h_unicast_ps_buf(struct iee
- 		 * ahead and Tx the packet.
- 		 */
- 		if (!test_sta_flag(sta, WLAN_STA_PS_STA) &&
--		    !test_sta_flag(sta, WLAN_STA_PS_DRIVER)) {
-+		    !test_sta_flag(sta, WLAN_STA_PS_DRIVER) &&
-+		    !test_sta_flag(sta, WLAN_STA_PS_DELIVER)) {
- 			spin_unlock(&sta->ps_lock);
- 			return TX_CONTINUE;
- 		}
-@@ -1618,12 +1620,12 @@ netdev_tx_t ieee80211_monitor_start_xmit
- {
- 	struct ieee80211_local *local = wdev_priv(dev->ieee80211_ptr);
- 	struct ieee80211_chanctx_conf *chanctx_conf;
--	struct ieee80211_channel *chan;
- 	struct ieee80211_radiotap_header *prthdr =
- 		(struct ieee80211_radiotap_header *)skb->data;
- 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
- 	struct ieee80211_hdr *hdr;
- 	struct ieee80211_sub_if_data *tmp_sdata, *sdata;
-+	struct cfg80211_chan_def *chandef;
- 	u16 len_rthdr;
- 	int hdrlen;
- 
-@@ -1721,9 +1723,9 @@ netdev_tx_t ieee80211_monitor_start_xmit
- 	}
- 
- 	if (chanctx_conf)
--		chan = chanctx_conf->def.chan;
-+		chandef = &chanctx_conf->def;
- 	else if (!local->use_chanctx)
--		chan = local->_oper_chandef.chan;
-+		chandef = &local->_oper_chandef;
- 	else
- 		goto fail_rcu;
- 
-@@ -1743,10 +1745,11 @@ netdev_tx_t ieee80211_monitor_start_xmit
- 	 * radar detection by itself. We can do that later by adding a
- 	 * monitor flag interfaces used for AP support.
- 	 */
--	if ((chan->flags & (IEEE80211_CHAN_NO_IR | IEEE80211_CHAN_RADAR)))
-+	if (!cfg80211_reg_can_beacon(local->hw.wiphy, chandef,
-+				     sdata->vif.type))
- 		goto fail_rcu;
- 
--	ieee80211_xmit(sdata, skb, chan->band);
-+	ieee80211_xmit(sdata, skb, chandef->chan->band);
- 	rcu_read_unlock();
- 
- 	return NETDEV_TX_OK;
-@@ -2425,7 +2428,7 @@ static void ieee80211_set_csa(struct iee
- 	u8 *beacon_data;
- 	size_t beacon_data_len;
- 	int i;
--	u8 count = sdata->csa_current_counter;
-+	u8 count = beacon->csa_current_counter;
- 
- 	switch (sdata->vif.type) {
- 	case NL80211_IFTYPE_AP:
-@@ -2444,46 +2447,54 @@ static void ieee80211_set_csa(struct iee
- 		return;
- 	}
- 
-+	rcu_read_lock();
- 	for (i = 0; i < IEEE80211_MAX_CSA_COUNTERS_NUM; ++i) {
--		u16 counter_offset_beacon =
--			sdata->csa_counter_offset_beacon[i];
--		u16 counter_offset_presp = sdata->csa_counter_offset_presp[i];
--
--		if (counter_offset_beacon) {
--			if (WARN_ON(counter_offset_beacon >= beacon_data_len))
--				return;
--
--			beacon_data[counter_offset_beacon] = count;
--		}
--
--		if (sdata->vif.type == NL80211_IFTYPE_AP &&
--		    counter_offset_presp) {
--			rcu_read_lock();
--			resp = rcu_dereference(sdata->u.ap.probe_resp);
-+		resp = rcu_dereference(sdata->u.ap.probe_resp);
- 
--			/* If nl80211 accepted the offset, this should
--			 * not happen.
--			 */
--			if (WARN_ON(!resp)) {
-+		if (beacon->csa_counter_offsets[i]) {
-+			if (WARN_ON_ONCE(beacon->csa_counter_offsets[i] >=
-+					 beacon_data_len)) {
- 				rcu_read_unlock();
- 				return;
- 			}
--			resp->data[counter_offset_presp] = count;
--			rcu_read_unlock();
-+
-+			beacon_data[beacon->csa_counter_offsets[i]] = count;
- 		}
-+
-+		if (sdata->vif.type == NL80211_IFTYPE_AP && resp &&
-+		    resp->csa_counter_offsets)
-+			resp->data[resp->csa_counter_offsets[i]] = count;
- 	}
-+	rcu_read_unlock();
- }
- 
- u8 ieee80211_csa_update_counter(struct ieee80211_vif *vif)
- {
- 	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
-+	struct beacon_data *beacon = NULL;
-+	u8 count = 0;
-+
-+	rcu_read_lock();
-+
-+	if (sdata->vif.type == NL80211_IFTYPE_AP)
-+		beacon = rcu_dereference(sdata->u.ap.beacon);
-+	else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
-+		beacon = rcu_dereference(sdata->u.ibss.presp);
-+	else if (ieee80211_vif_is_mesh(&sdata->vif))
-+		beacon = rcu_dereference(sdata->u.mesh.beacon);
-+
-+	if (!beacon)
-+		goto unlock;
- 
--	sdata->csa_current_counter--;
-+	beacon->csa_current_counter--;
- 
- 	/* the counter should never reach 0 */
--	WARN_ON(!sdata->csa_current_counter);
-+	WARN_ON_ONCE(!beacon->csa_current_counter);
-+	count = beacon->csa_current_counter;
- 
--	return sdata->csa_current_counter;
-+unlock:
-+	rcu_read_unlock();
-+	return count;
- }
- EXPORT_SYMBOL(ieee80211_csa_update_counter);
- 
-@@ -2493,7 +2504,6 @@ bool ieee80211_csa_is_complete(struct ie
- 	struct beacon_data *beacon = NULL;
- 	u8 *beacon_data;
- 	size_t beacon_data_len;
--	int counter_beacon = sdata->csa_counter_offset_beacon[0];
- 	int ret = false;
- 
- 	if (!ieee80211_sdata_running(sdata))
-@@ -2531,10 +2541,13 @@ bool ieee80211_csa_is_complete(struct ie
- 		goto out;
- 	}
- 
--	if (WARN_ON(counter_beacon > beacon_data_len))
-+	if (!beacon->csa_counter_offsets[0])
-+		goto out;
-+
-+	if (WARN_ON_ONCE(beacon->csa_counter_offsets[0] > beacon_data_len))
- 		goto out;
- 
--	if (beacon_data[counter_beacon] == 1)
-+	if (beacon_data[beacon->csa_counter_offsets[0]] == 1)
- 		ret = true;
-  out:
- 	rcu_read_unlock();
-@@ -2550,6 +2563,7 @@ __ieee80211_beacon_get(struct ieee80211_
- 		       bool is_template)
- {
- 	struct ieee80211_local *local = hw_to_local(hw);
-+	struct beacon_data *beacon = NULL;
- 	struct sk_buff *skb = NULL;
- 	struct ieee80211_tx_info *info;
- 	struct ieee80211_sub_if_data *sdata = NULL;
-@@ -2571,10 +2585,10 @@ __ieee80211_beacon_get(struct ieee80211_
- 
- 	if (sdata->vif.type == NL80211_IFTYPE_AP) {
- 		struct ieee80211_if_ap *ap = &sdata->u.ap;
--		struct beacon_data *beacon = rcu_dereference(ap->beacon);
- 
-+		beacon = rcu_dereference(ap->beacon);
- 		if (beacon) {
--			if (sdata->vif.csa_active) {
-+			if (beacon->csa_counter_offsets[0]) {
- 				if (!is_template)
- 					ieee80211_csa_update_counter(vif);
- 
-@@ -2615,37 +2629,37 @@ __ieee80211_beacon_get(struct ieee80211_
- 	} else if (sdata->vif.type == NL80211_IFTYPE_ADHOC) {
- 		struct ieee80211_if_ibss *ifibss = &sdata->u.ibss;
- 		struct ieee80211_hdr *hdr;
--		struct beacon_data *presp = rcu_dereference(ifibss->presp);
- 
--		if (!presp)
-+		beacon = rcu_dereference(ifibss->presp);
-+		if (!beacon)
- 			goto out;
- 
--		if (sdata->vif.csa_active) {
-+		if (beacon->csa_counter_offsets[0]) {
- 			if (!is_template)
- 				ieee80211_csa_update_counter(vif);
- 
--			ieee80211_set_csa(sdata, presp);
-+			ieee80211_set_csa(sdata, beacon);
- 		}
- 
--		skb = dev_alloc_skb(local->tx_headroom + presp->head_len +
-+		skb = dev_alloc_skb(local->tx_headroom + beacon->head_len +
- 				    local->hw.extra_beacon_tailroom);
- 		if (!skb)
- 			goto out;
- 		skb_reserve(skb, local->tx_headroom);
--		memcpy(skb_put(skb, presp->head_len), presp->head,
--		       presp->head_len);
-+		memcpy(skb_put(skb, beacon->head_len), beacon->head,
-+		       beacon->head_len);
- 
- 		hdr = (struct ieee80211_hdr *) skb->data;
- 		hdr->frame_control = cpu_to_le16(IEEE80211_FTYPE_MGMT |
- 						 IEEE80211_STYPE_BEACON);
- 	} else if (ieee80211_vif_is_mesh(&sdata->vif)) {
- 		struct ieee80211_if_mesh *ifmsh = &sdata->u.mesh;
--		struct beacon_data *bcn = rcu_dereference(ifmsh->beacon);
- 
--		if (!bcn)
-+		beacon = rcu_dereference(ifmsh->beacon);
-+		if (!beacon)
- 			goto out;
- 
--		if (sdata->vif.csa_active) {
-+		if (beacon->csa_counter_offsets[0]) {
- 			if (!is_template)
- 				/* TODO: For mesh csa_counter is in TU, so
- 				 * decrementing it by one isn't correct, but
-@@ -2654,40 +2668,42 @@ __ieee80211_beacon_get(struct ieee80211_
- 				 */
- 				ieee80211_csa_update_counter(vif);
- 
--			ieee80211_set_csa(sdata, bcn);
-+			ieee80211_set_csa(sdata, beacon);
- 		}
- 
- 		if (ifmsh->sync_ops)
--			ifmsh->sync_ops->adjust_tbtt(sdata, bcn);
-+			ifmsh->sync_ops->adjust_tbtt(sdata, beacon);
- 
- 		skb = dev_alloc_skb(local->tx_headroom +
--				    bcn->head_len +
-+				    beacon->head_len +
- 				    256 + /* TIM IE */
--				    bcn->tail_len +
-+				    beacon->tail_len +
- 				    local->hw.extra_beacon_tailroom);
- 		if (!skb)
- 			goto out;
- 		skb_reserve(skb, local->tx_headroom);
--		memcpy(skb_put(skb, bcn->head_len), bcn->head, bcn->head_len);
-+		memcpy(skb_put(skb, beacon->head_len), beacon->head,
-+		       beacon->head_len);
- 		ieee80211_beacon_add_tim(sdata, &ifmsh->ps, skb, is_template);
- 
- 		if (offs) {
--			offs->tim_offset = bcn->head_len;
--			offs->tim_length = skb->len - bcn->head_len;
-+			offs->tim_offset = beacon->head_len;
-+			offs->tim_length = skb->len - beacon->head_len;
- 		}
- 
--		memcpy(skb_put(skb, bcn->tail_len), bcn->tail, bcn->tail_len);
-+		memcpy(skb_put(skb, beacon->tail_len), beacon->tail,
-+		       beacon->tail_len);
- 	} else {
- 		WARN_ON(1);
- 		goto out;
- 	}
- 
- 	/* CSA offsets */
--	if (offs) {
-+	if (offs && beacon) {
- 		int i;
- 
- 		for (i = 0; i < IEEE80211_MAX_CSA_COUNTERS_NUM; i++) {
--			u16 csa_off = sdata->csa_counter_offset_beacon[i];
-+			u16 csa_off = beacon->csa_counter_offsets[i];
- 
- 			if (!csa_off)
- 				continue;
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -947,6 +947,40 @@ static inline u8 rt2800_get_beacon_offse
- 	return BEACON_BASE_TO_OFFSET(rt2800_hw_beacon_base(rt2x00dev, index));
- }
- 
-+static void rt2800_update_beacons_setup(struct rt2x00_dev *rt2x00dev)
-+{
-+	struct data_queue *queue = rt2x00dev->bcn;
-+	struct queue_entry *entry;
-+	int i, bcn_num = 0;
-+	u64 off, reg = 0;
-+	u32 bssid_dw1;
-+
-+	/*
-+	 * Setup offsets of all active beacons in BCN_OFFSET{0,1} registers.
-+	 */
-+	for (i = 0; i < queue->limit; i++) {
-+		entry = &queue->entries[i];
-+		if (!test_bit(ENTRY_BCN_ENABLED, &entry->flags))
-+			continue;
-+		off = rt2800_get_beacon_offset(rt2x00dev, entry->entry_idx);
-+		reg |= off << (8 * bcn_num);
-+		bcn_num++;
-+	}
-+
-+	WARN_ON_ONCE(bcn_num != rt2x00dev->intf_beaconing);
-+
-+	rt2800_register_write(rt2x00dev, BCN_OFFSET0, (u32) reg);
-+	rt2800_register_write(rt2x00dev, BCN_OFFSET1, (u32) (reg >> 32));
-+
-+	/*
-+	 * H/W sends up to MAC_BSSID_DW1_BSS_BCN_NUM + 1 consecutive beacons.
-+	 */
-+	rt2800_register_read(rt2x00dev, MAC_BSSID_DW1, &bssid_dw1);
-+	rt2x00_set_field32(&bssid_dw1, MAC_BSSID_DW1_BSS_BCN_NUM,
-+			   bcn_num > 0 ? bcn_num - 1 : 0);
-+	rt2800_register_write(rt2x00dev, MAC_BSSID_DW1, bssid_dw1);
-+}
-+
- void rt2800_write_beacon(struct queue_entry *entry, struct txentry_desc *txdesc)
- {
- 	struct rt2x00_dev *rt2x00dev = entry->queue->rt2x00dev;
-@@ -1003,6 +1037,12 @@ void rt2800_write_beacon(struct queue_en
- 
- 	rt2800_register_multiwrite(rt2x00dev, beacon_base, entry->skb->data,
- 				   entry->skb->len + padding_len);
-+	__set_bit(ENTRY_BCN_ENABLED, &entry->flags);
-+
-+	/*
-+	 * Change global beacons settings.
-+	 */
-+	rt2800_update_beacons_setup(rt2x00dev);
- 
- 	/*
- 	 * Restore beaconing state.
-@@ -1053,8 +1093,13 @@ void rt2800_clear_beacon(struct queue_en
- 	 * Clear beacon.
- 	 */
- 	rt2800_clear_beacon_register(rt2x00dev, entry->entry_idx);
-+	__clear_bit(ENTRY_BCN_ENABLED, &entry->flags);
- 
- 	/*
-+	 * Change global beacons settings.
-+	 */
-+	rt2800_update_beacons_setup(rt2x00dev);
-+	/*
- 	 * Restore beaconing state.
- 	 */
- 	rt2800_register_write(rt2x00dev, BCN_TIME_CFG, orig_reg);
-@@ -1556,7 +1601,7 @@ void rt2800_config_intf(struct rt2x00_de
- 		if (!is_zero_ether_addr((const u8 *)conf->bssid)) {
- 			reg = le32_to_cpu(conf->bssid[1]);
- 			rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_ID_MASK, 3);
--			rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_BCN_NUM, 7);
-+			rt2x00_set_field32(&reg, MAC_BSSID_DW1_BSS_BCN_NUM, 0);
- 			conf->bssid[1] = cpu_to_le32(reg);
- 		}
- 
-@@ -4517,28 +4562,6 @@ static int rt2800_init_registers(struct 
- 	if (ret)
- 		return ret;
- 
--	rt2800_register_read(rt2x00dev, BCN_OFFSET0, &reg);
--	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN0,
--			   rt2800_get_beacon_offset(rt2x00dev, 0));
--	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN1,
--			   rt2800_get_beacon_offset(rt2x00dev, 1));
--	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN2,
--			   rt2800_get_beacon_offset(rt2x00dev, 2));
--	rt2x00_set_field32(&reg, BCN_OFFSET0_BCN3,
--			   rt2800_get_beacon_offset(rt2x00dev, 3));
--	rt2800_register_write(rt2x00dev, BCN_OFFSET0, reg);
--
--	rt2800_register_read(rt2x00dev, BCN_OFFSET1, &reg);
--	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN4,
--			   rt2800_get_beacon_offset(rt2x00dev, 4));
--	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN5,
--			   rt2800_get_beacon_offset(rt2x00dev, 5));
--	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN6,
--			   rt2800_get_beacon_offset(rt2x00dev, 6));
--	rt2x00_set_field32(&reg, BCN_OFFSET1_BCN7,
--			   rt2800_get_beacon_offset(rt2x00dev, 7));
--	rt2800_register_write(rt2x00dev, BCN_OFFSET1, reg);
--
- 	rt2800_register_write(rt2x00dev, LEGACY_BASIC_RATE, 0x0000013f);
- 	rt2800_register_write(rt2x00dev, HT_BASIC_RATE, 0x00008003);
- 
---- a/drivers/net/wireless/rt2x00/rt2x00dev.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00dev.c
-@@ -141,8 +141,11 @@ static void rt2x00lib_intf_scheduled_ite
- 	if (!test_bit(DEVICE_STATE_ENABLED_RADIO, &rt2x00dev->flags))
- 		return;
- 
--	if (test_and_clear_bit(DELAYED_UPDATE_BEACON, &intf->delayed_flags))
-+	if (test_and_clear_bit(DELAYED_UPDATE_BEACON, &intf->delayed_flags)) {
-+		mutex_lock(&intf->beacon_skb_mutex);
- 		rt2x00queue_update_beacon(rt2x00dev, vif);
-+		mutex_unlock(&intf->beacon_skb_mutex);
-+	}
- }
- 
- static void rt2x00lib_intf_scheduled(struct work_struct *work)
-@@ -216,7 +219,7 @@ static void rt2x00lib_beaconupdate_iter(
- 	 * never be called for USB devices.
- 	 */
- 	WARN_ON(rt2x00_is_usb(rt2x00dev));
--	rt2x00queue_update_beacon_locked(rt2x00dev, vif);
-+	rt2x00queue_update_beacon(rt2x00dev, vif);
- }
- 
- void rt2x00lib_beacondone(struct rt2x00_dev *rt2x00dev)
---- a/drivers/net/wireless/rt2x00/rt2x00mac.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00mac.c
-@@ -487,6 +487,8 @@ int rt2x00mac_set_key(struct ieee80211_h
- 	crypto.cipher = rt2x00crypto_key_to_cipher(key);
- 	if (crypto.cipher == CIPHER_NONE)
- 		return -EOPNOTSUPP;
-+	if (crypto.cipher == CIPHER_TKIP && rt2x00_is_usb(rt2x00dev))
-+		return -EOPNOTSUPP;
- 
- 	crypto.cmd = cmd;
- 
-@@ -624,25 +626,24 @@ void rt2x00mac_bss_info_changed(struct i
- 	 * Start/stop beaconing.
- 	 */
- 	if (changes & BSS_CHANGED_BEACON_ENABLED) {
-+		mutex_lock(&intf->beacon_skb_mutex);
- 		if (!bss_conf->enable_beacon && intf->enable_beacon) {
- 			rt2x00dev->intf_beaconing--;
- 			intf->enable_beacon = false;
--			/*
--			 * Clear beacon in the H/W for this vif. This is needed
--			 * to disable beaconing on this particular interface
--			 * and keep it running on other interfaces.
--			 */
--			rt2x00queue_clear_beacon(rt2x00dev, vif);
- 
- 			if (rt2x00dev->intf_beaconing == 0) {
- 				/*
- 				 * Last beaconing interface disabled
- 				 * -> stop beacon queue.
- 				 */
--				mutex_lock(&intf->beacon_skb_mutex);
- 				rt2x00queue_stop_queue(rt2x00dev->bcn);
--				mutex_unlock(&intf->beacon_skb_mutex);
- 			}
-+			/*
-+			 * Clear beacon in the H/W for this vif. This is needed
-+			 * to disable beaconing on this particular interface
-+			 * and keep it running on other interfaces.
-+			 */
-+			rt2x00queue_clear_beacon(rt2x00dev, vif);
- 		} else if (bss_conf->enable_beacon && !intf->enable_beacon) {
- 			rt2x00dev->intf_beaconing++;
- 			intf->enable_beacon = true;
-@@ -658,11 +659,10 @@ void rt2x00mac_bss_info_changed(struct i
- 				 * First beaconing interface enabled
- 				 * -> start beacon queue.
- 				 */
--				mutex_lock(&intf->beacon_skb_mutex);
- 				rt2x00queue_start_queue(rt2x00dev->bcn);
--				mutex_unlock(&intf->beacon_skb_mutex);
- 			}
- 		}
-+		mutex_unlock(&intf->beacon_skb_mutex);
- 	}
- 
- 	/*
---- a/drivers/net/wireless/rt2x00/rt2x00queue.c
-+++ b/drivers/net/wireless/rt2x00/rt2x00queue.c
-@@ -754,8 +754,6 @@ int rt2x00queue_clear_beacon(struct rt2x
- 	if (unlikely(!intf->beacon))
- 		return -ENOBUFS;
- 
--	mutex_lock(&intf->beacon_skb_mutex);
--
- 	/*
- 	 * Clean up the beacon skb.
- 	 */
-@@ -768,13 +766,11 @@ int rt2x00queue_clear_beacon(struct rt2x
- 	if (rt2x00dev->ops->lib->clear_beacon)
- 		rt2x00dev->ops->lib->clear_beacon(intf->beacon);
- 
--	mutex_unlock(&intf->beacon_skb_mutex);
--
- 	return 0;
- }
- 
--int rt2x00queue_update_beacon_locked(struct rt2x00_dev *rt2x00dev,
--				     struct ieee80211_vif *vif)
-+int rt2x00queue_update_beacon(struct rt2x00_dev *rt2x00dev,
-+			      struct ieee80211_vif *vif)
- {
- 	struct rt2x00_intf *intf = vif_to_intf(vif);
- 	struct skb_frame_desc *skbdesc;
-@@ -815,19 +811,6 @@ int rt2x00queue_update_beacon_locked(str
- 
- }
- 
--int rt2x00queue_update_beacon(struct rt2x00_dev *rt2x00dev,
--			      struct ieee80211_vif *vif)
--{
--	struct rt2x00_intf *intf = vif_to_intf(vif);
--	int ret;
--
--	mutex_lock(&intf->beacon_skb_mutex);
--	ret = rt2x00queue_update_beacon_locked(rt2x00dev, vif);
--	mutex_unlock(&intf->beacon_skb_mutex);
--
--	return ret;
--}
--
- bool rt2x00queue_for_each_entry(struct data_queue *queue,
- 				enum queue_index start,
- 				enum queue_index end,
---- a/drivers/net/wireless/rt2x00/rt2x00queue.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00queue.h
-@@ -353,6 +353,7 @@ struct txentry_desc {
-  */
- enum queue_entry_flags {
- 	ENTRY_BCN_ASSIGNED,
-+	ENTRY_BCN_ENABLED,
- 	ENTRY_OWNER_DEVICE_DATA,
- 	ENTRY_DATA_PENDING,
- 	ENTRY_DATA_IO_FAILED,
---- a/drivers/net/wireless/ath/ath9k/main.c
-+++ b/drivers/net/wireless/ath/ath9k/main.c
-@@ -1757,7 +1757,6 @@ out:
- void ath9k_update_p2p_ps(struct ath_softc *sc, struct ieee80211_vif *vif)
- {
- 	struct ath_vif *avp = (void *)vif->drv_priv;
--	unsigned long flags;
- 	u32 tsf;
- 
- 	if (!sc->p2p_ps_timer)
-@@ -1767,14 +1766,9 @@ void ath9k_update_p2p_ps(struct ath_soft
- 		return;
- 
- 	sc->p2p_ps_vif = avp;
--
--	spin_lock_irqsave(&sc->sc_pm_lock, flags);
--	if (!(sc->ps_flags & PS_BEACON_SYNC)) {
--		tsf = ath9k_hw_gettsf32(sc->sc_ah);
--		ieee80211_parse_p2p_noa(&vif->bss_conf.p2p_noa_attr, &avp->noa, tsf);
--		ath9k_update_p2p_ps_timer(sc, avp);
--	}
--	spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
-+	tsf = ath9k_hw_gettsf32(sc->sc_ah);
-+	ieee80211_parse_p2p_noa(&vif->bss_conf.p2p_noa_attr, &avp->noa, tsf);
-+	ath9k_update_p2p_ps_timer(sc, avp);
- }
- 
- static void ath9k_bss_info_changed(struct ieee80211_hw *hw,
-@@ -1791,6 +1785,7 @@ static void ath9k_bss_info_changed(struc
- 	struct ath_hw *ah = sc->sc_ah;
- 	struct ath_common *common = ath9k_hw_common(ah);
- 	struct ath_vif *avp = (void *)vif->drv_priv;
-+	unsigned long flags;
- 	int slottime;
- 
- 	ath9k_ps_wakeup(sc);
-@@ -1853,7 +1848,10 @@ static void ath9k_bss_info_changed(struc
- 
- 	if (changed & BSS_CHANGED_P2P_PS) {
- 		spin_lock_bh(&sc->sc_pcu_lock);
--		ath9k_update_p2p_ps(sc, vif);
-+		spin_lock_irqsave(&sc->sc_pm_lock, flags);
-+		if (!(sc->ps_flags & PS_BEACON_SYNC))
-+			ath9k_update_p2p_ps(sc, vif);
-+		spin_unlock_irqrestore(&sc->sc_pm_lock, flags);
- 		spin_unlock_bh(&sc->sc_pcu_lock);
- 	}
- 
-@@ -2232,14 +2230,6 @@ static void ath9k_sw_scan_complete(struc
- 	clear_bit(ATH_OP_SCANNING, &common->op_flags);
- }
- 
--static void ath9k_channel_switch_beacon(struct ieee80211_hw *hw,
--					struct ieee80211_vif *vif,
--					struct cfg80211_chan_def *chandef)
--{
--	/* depend on vif->csa_active only */
--	return;
--}
--
- struct ieee80211_ops ath9k_ops = {
- 	.tx 		    = ath9k_tx,
- 	.start 		    = ath9k_start,
-@@ -2287,5 +2277,4 @@ struct ieee80211_ops ath9k_ops = {
- #endif
- 	.sw_scan_start	    = ath9k_sw_scan_start,
- 	.sw_scan_complete   = ath9k_sw_scan_complete,
--	.channel_switch_beacon     = ath9k_channel_switch_beacon,
- };
---- a/drivers/net/wireless/ath/ath10k/mac.c
-+++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -4142,14 +4142,6 @@ static int ath10k_set_bitrate_mask(struc
- 					   fixed_nss, force_sgi);
- }
- 
--static void ath10k_channel_switch_beacon(struct ieee80211_hw *hw,
--					 struct ieee80211_vif *vif,
--					 struct cfg80211_chan_def *chandef)
--{
--	/* there's no need to do anything here. vif->csa_active is enough */
--	return;
--}
--
- static void ath10k_sta_rc_update(struct ieee80211_hw *hw,
- 				 struct ieee80211_vif *vif,
- 				 struct ieee80211_sta *sta,
-@@ -4256,7 +4248,6 @@ static const struct ieee80211_ops ath10k
- 	.restart_complete		= ath10k_restart_complete,
- 	.get_survey			= ath10k_get_survey,
- 	.set_bitrate_mask		= ath10k_set_bitrate_mask,
--	.channel_switch_beacon		= ath10k_channel_switch_beacon,
- 	.sta_rc_update			= ath10k_sta_rc_update,
- 	.get_tsf			= ath10k_get_tsf,
- #ifdef CONFIG_PM
---- a/net/mac80211/cfg.c
-+++ b/net/mac80211/cfg.c
-@@ -468,327 +468,6 @@ void sta_set_rate_info_rx(struct sta_inf
- 		rinfo->flags |= RATE_INFO_FLAGS_160_MHZ_WIDTH;
- }
- 
--static void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo)
--{
--	struct ieee80211_sub_if_data *sdata = sta->sdata;
--	struct ieee80211_local *local = sdata->local;
--	struct rate_control_ref *ref = local->rate_ctrl;
--	struct timespec uptime;
--	u64 packets = 0;
--	u32 thr = 0;
--	int i, ac;
--
--	sinfo->generation = sdata->local->sta_generation;
--
--	sinfo->filled = STATION_INFO_INACTIVE_TIME |
--			STATION_INFO_RX_BYTES64 |
--			STATION_INFO_TX_BYTES64 |
--			STATION_INFO_RX_PACKETS |
--			STATION_INFO_TX_PACKETS |
--			STATION_INFO_TX_RETRIES |
--			STATION_INFO_TX_FAILED |
--			STATION_INFO_TX_BITRATE |
--			STATION_INFO_RX_BITRATE |
--			STATION_INFO_RX_DROP_MISC |
--			STATION_INFO_BSS_PARAM |
--			STATION_INFO_CONNECTED_TIME |
--			STATION_INFO_STA_FLAGS |
--			STATION_INFO_BEACON_LOSS_COUNT;
--
--	do_posix_clock_monotonic_gettime(&uptime);
--	sinfo->connected_time = uptime.tv_sec - sta->last_connected;
--
--	sinfo->inactive_time = jiffies_to_msecs(jiffies - sta->last_rx);
--	sinfo->tx_bytes = 0;
--	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
--		sinfo->tx_bytes += sta->tx_bytes[ac];
--		packets += sta->tx_packets[ac];
--	}
--	sinfo->tx_packets = packets;
--	sinfo->rx_bytes = sta->rx_bytes;
--	sinfo->rx_packets = sta->rx_packets;
--	sinfo->tx_retries = sta->tx_retry_count;
--	sinfo->tx_failed = sta->tx_retry_failed;
--	sinfo->rx_dropped_misc = sta->rx_dropped;
--	sinfo->beacon_loss_count = sta->beacon_loss_count;
--
--	if ((sta->local->hw.flags & IEEE80211_HW_SIGNAL_DBM) ||
--	    (sta->local->hw.flags & IEEE80211_HW_SIGNAL_UNSPEC)) {
--		sinfo->filled |= STATION_INFO_SIGNAL | STATION_INFO_SIGNAL_AVG;
--		if (!local->ops->get_rssi ||
--		    drv_get_rssi(local, sdata, &sta->sta, &sinfo->signal))
--			sinfo->signal = (s8)sta->last_signal;
--		sinfo->signal_avg = (s8) -ewma_read(&sta->avg_signal);
--	}
--	if (sta->chains) {
--		sinfo->filled |= STATION_INFO_CHAIN_SIGNAL |
--				 STATION_INFO_CHAIN_SIGNAL_AVG;
--
--		sinfo->chains = sta->chains;
--		for (i = 0; i < ARRAY_SIZE(sinfo->chain_signal); i++) {
--			sinfo->chain_signal[i] = sta->chain_signal_last[i];
--			sinfo->chain_signal_avg[i] =
--				(s8) -ewma_read(&sta->chain_signal_avg[i]);
--		}
--	}
--
--	sta_set_rate_info_tx(sta, &sta->last_tx_rate, &sinfo->txrate);
--	sta_set_rate_info_rx(sta, &sinfo->rxrate);
--
--	if (ieee80211_vif_is_mesh(&sdata->vif)) {
--#ifdef CPTCFG_MAC80211_MESH
--		sinfo->filled |= STATION_INFO_LLID |
--				 STATION_INFO_PLID |
--				 STATION_INFO_PLINK_STATE |
--				 STATION_INFO_LOCAL_PM |
--				 STATION_INFO_PEER_PM |
--				 STATION_INFO_NONPEER_PM;
--
--		sinfo->llid = sta->llid;
--		sinfo->plid = sta->plid;
--		sinfo->plink_state = sta->plink_state;
--		if (test_sta_flag(sta, WLAN_STA_TOFFSET_KNOWN)) {
--			sinfo->filled |= STATION_INFO_T_OFFSET;
--			sinfo->t_offset = sta->t_offset;
--		}
--		sinfo->local_pm = sta->local_pm;
--		sinfo->peer_pm = sta->peer_pm;
--		sinfo->nonpeer_pm = sta->nonpeer_pm;
--#endif
--	}
--
--	sinfo->bss_param.flags = 0;
--	if (sdata->vif.bss_conf.use_cts_prot)
--		sinfo->bss_param.flags |= BSS_PARAM_FLAGS_CTS_PROT;
--	if (sdata->vif.bss_conf.use_short_preamble)
--		sinfo->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_PREAMBLE;
--	if (sdata->vif.bss_conf.use_short_slot)
--		sinfo->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_SLOT_TIME;
--	sinfo->bss_param.dtim_period = sdata->local->hw.conf.ps_dtim_period;
--	sinfo->bss_param.beacon_interval = sdata->vif.bss_conf.beacon_int;
--
--	sinfo->sta_flags.set = 0;
--	sinfo->sta_flags.mask = BIT(NL80211_STA_FLAG_AUTHORIZED) |
--				BIT(NL80211_STA_FLAG_SHORT_PREAMBLE) |
--				BIT(NL80211_STA_FLAG_WME) |
--				BIT(NL80211_STA_FLAG_MFP) |
--				BIT(NL80211_STA_FLAG_AUTHENTICATED) |
--				BIT(NL80211_STA_FLAG_ASSOCIATED) |
--				BIT(NL80211_STA_FLAG_TDLS_PEER);
--	if (test_sta_flag(sta, WLAN_STA_AUTHORIZED))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_AUTHORIZED);
--	if (test_sta_flag(sta, WLAN_STA_SHORT_PREAMBLE))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_SHORT_PREAMBLE);
--	if (test_sta_flag(sta, WLAN_STA_WME))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_WME);
--	if (test_sta_flag(sta, WLAN_STA_MFP))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_MFP);
--	if (test_sta_flag(sta, WLAN_STA_AUTH))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_AUTHENTICATED);
--	if (test_sta_flag(sta, WLAN_STA_ASSOC))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_ASSOCIATED);
--	if (test_sta_flag(sta, WLAN_STA_TDLS_PEER))
--		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
--
--	/* check if the driver has a SW RC implementation */
--	if (ref && ref->ops->get_expected_throughput)
--		thr = ref->ops->get_expected_throughput(sta->rate_ctrl_priv);
--	else
--		thr = drv_get_expected_throughput(local, &sta->sta);
--
--	if (thr != 0) {
--		sinfo->filled |= STATION_INFO_EXPECTED_THROUGHPUT;
--		sinfo->expected_throughput = thr;
--	}
--}
--
--static const char ieee80211_gstrings_sta_stats[][ETH_GSTRING_LEN] = {
--	"rx_packets", "rx_bytes", "wep_weak_iv_count",
--	"rx_duplicates", "rx_fragments", "rx_dropped",
--	"tx_packets", "tx_bytes", "tx_fragments",
--	"tx_filtered", "tx_retry_failed", "tx_retries",
--	"beacon_loss", "sta_state", "txrate", "rxrate", "signal",
--	"channel", "noise", "ch_time", "ch_time_busy",
--	"ch_time_ext_busy", "ch_time_rx", "ch_time_tx"
--};
--#define STA_STATS_LEN	ARRAY_SIZE(ieee80211_gstrings_sta_stats)
--
--static int ieee80211_get_et_sset_count(struct wiphy *wiphy,
--				       struct net_device *dev,
--				       int sset)
--{
--	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
--	int rv = 0;
--
--	if (sset == ETH_SS_STATS)
--		rv += STA_STATS_LEN;
--
--	rv += drv_get_et_sset_count(sdata, sset);
--
--	if (rv == 0)
--		return -EOPNOTSUPP;
--	return rv;
--}
--
--static void ieee80211_get_et_stats(struct wiphy *wiphy,
--				   struct net_device *dev,
--				   struct ethtool_stats *stats,
--				   u64 *data)
--{
--	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
--	struct ieee80211_chanctx_conf *chanctx_conf;
--	struct ieee80211_channel *channel;
--	struct sta_info *sta;
--	struct ieee80211_local *local = sdata->local;
--	struct station_info sinfo;
--	struct survey_info survey;
--	int i, q;
--#define STA_STATS_SURVEY_LEN 7
--
--	memset(data, 0, sizeof(u64) * STA_STATS_LEN);
--
--#define ADD_STA_STATS(sta)				\
--	do {						\
--		data[i++] += sta->rx_packets;		\
--		data[i++] += sta->rx_bytes;		\
--		data[i++] += sta->wep_weak_iv_count;	\
--		data[i++] += sta->num_duplicates;	\
--		data[i++] += sta->rx_fragments;		\
--		data[i++] += sta->rx_dropped;		\
--							\
--		data[i++] += sinfo.tx_packets;		\
--		data[i++] += sinfo.tx_bytes;		\
--		data[i++] += sta->tx_fragments;		\
--		data[i++] += sta->tx_filtered_count;	\
--		data[i++] += sta->tx_retry_failed;	\
--		data[i++] += sta->tx_retry_count;	\
--		data[i++] += sta->beacon_loss_count;	\
--	} while (0)
--
--	/* For Managed stations, find the single station based on BSSID
--	 * and use that.  For interface types, iterate through all available
--	 * stations and add stats for any station that is assigned to this
--	 * network device.
--	 */
--
--	mutex_lock(&local->sta_mtx);
--
--	if (sdata->vif.type == NL80211_IFTYPE_STATION) {
--		sta = sta_info_get_bss(sdata, sdata->u.mgd.bssid);
--
--		if (!(sta && !WARN_ON(sta->sdata->dev != dev)))
--			goto do_survey;
--
--		sinfo.filled = 0;
--		sta_set_sinfo(sta, &sinfo);
--
--		i = 0;
--		ADD_STA_STATS(sta);
--
--		data[i++] = sta->sta_state;
--
--
--		if (sinfo.filled & STATION_INFO_TX_BITRATE)
--			data[i] = 100000 *
--				cfg80211_calculate_bitrate(&sinfo.txrate);
--		i++;
--		if (sinfo.filled & STATION_INFO_RX_BITRATE)
--			data[i] = 100000 *
--				cfg80211_calculate_bitrate(&sinfo.rxrate);
--		i++;
--
--		if (sinfo.filled & STATION_INFO_SIGNAL_AVG)
--			data[i] = (u8)sinfo.signal_avg;
--		i++;
--	} else {
--		list_for_each_entry(sta, &local->sta_list, list) {
--			/* Make sure this station belongs to the proper dev */
--			if (sta->sdata->dev != dev)
--				continue;
--
--			sinfo.filled = 0;
--			sta_set_sinfo(sta, &sinfo);
--			i = 0;
--			ADD_STA_STATS(sta);
--		}
--	}
--
--do_survey:
--	i = STA_STATS_LEN - STA_STATS_SURVEY_LEN;
--	/* Get survey stats for current channel */
--	survey.filled = 0;
--
--	rcu_read_lock();
--	chanctx_conf = rcu_dereference(sdata->vif.chanctx_conf);
--	if (chanctx_conf)
--		channel = chanctx_conf->def.chan;
--	else
--		channel = NULL;
--	rcu_read_unlock();
--
--	if (channel) {
--		q = 0;
--		do {
--			survey.filled = 0;
--			if (drv_get_survey(local, q, &survey) != 0) {
--				survey.filled = 0;
--				break;
--			}
--			q++;
--		} while (channel != survey.channel);
--	}
--
--	if (survey.filled)
--		data[i++] = survey.channel->center_freq;
--	else
--		data[i++] = 0;
--	if (survey.filled & SURVEY_INFO_NOISE_DBM)
--		data[i++] = (u8)survey.noise;
--	else
--		data[i++] = -1LL;
--	if (survey.filled & SURVEY_INFO_CHANNEL_TIME)
--		data[i++] = survey.channel_time;
--	else
--		data[i++] = -1LL;
--	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_BUSY)
--		data[i++] = survey.channel_time_busy;
--	else
--		data[i++] = -1LL;
--	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_EXT_BUSY)
--		data[i++] = survey.channel_time_ext_busy;
--	else
--		data[i++] = -1LL;
--	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_RX)
--		data[i++] = survey.channel_time_rx;
--	else
--		data[i++] = -1LL;
--	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_TX)
--		data[i++] = survey.channel_time_tx;
--	else
--		data[i++] = -1LL;
--
--	mutex_unlock(&local->sta_mtx);
--
--	if (WARN_ON(i != STA_STATS_LEN))
--		return;
--
--	drv_get_et_stats(sdata, stats, &(data[STA_STATS_LEN]));
--}
--
--static void ieee80211_get_et_strings(struct wiphy *wiphy,
--				     struct net_device *dev,
--				     u32 sset, u8 *data)
--{
--	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
--	int sz_sta_stats = 0;
--
--	if (sset == ETH_SS_STATS) {
--		sz_sta_stats = sizeof(ieee80211_gstrings_sta_stats);
--		memcpy(data, ieee80211_gstrings_sta_stats, sz_sta_stats);
--	}
--	drv_get_et_strings(sdata, sset, &(data[sz_sta_stats]));
--}
--
- static int ieee80211_dump_station(struct wiphy *wiphy, struct net_device *dev,
- 				  int idx, u8 *mac, struct station_info *sinfo)
- {
-@@ -875,7 +554,8 @@ static int ieee80211_set_monitor_channel
- }
- 
- static int ieee80211_set_probe_resp(struct ieee80211_sub_if_data *sdata,
--				    const u8 *resp, size_t resp_len)
-+				    const u8 *resp, size_t resp_len,
-+				    const struct ieee80211_csa_settings *csa)
- {
- 	struct probe_resp *new, *old;
- 
-@@ -891,6 +571,11 @@ static int ieee80211_set_probe_resp(stru
- 	new->len = resp_len;
- 	memcpy(new->data, resp, resp_len);
- 
-+	if (csa)
-+		memcpy(new->csa_counter_offsets, csa->counter_offsets_presp,
-+		       csa->n_counter_offsets_presp *
-+		       sizeof(new->csa_counter_offsets[0]));
-+
- 	rcu_assign_pointer(sdata->u.ap.probe_resp, new);
- 	if (old)
- 		kfree_rcu(old, rcu_head);
-@@ -899,7 +584,8 @@ static int ieee80211_set_probe_resp(stru
- }
- 
- static int ieee80211_assign_beacon(struct ieee80211_sub_if_data *sdata,
--				   struct cfg80211_beacon_data *params)
-+				   struct cfg80211_beacon_data *params,
-+				   const struct ieee80211_csa_settings *csa)
- {
- 	struct beacon_data *new, *old;
- 	int new_head_len, new_tail_len;
-@@ -943,6 +629,13 @@ static int ieee80211_assign_beacon(struc
- 	new->head_len = new_head_len;
- 	new->tail_len = new_tail_len;
- 
-+	if (csa) {
-+		new->csa_current_counter = csa->count;
-+		memcpy(new->csa_counter_offsets, csa->counter_offsets_beacon,
-+		       csa->n_counter_offsets_beacon *
-+		       sizeof(new->csa_counter_offsets[0]));
-+	}
-+
- 	/* copy in head */
- 	if (params->head)
- 		memcpy(new->head, params->head, new_head_len);
-@@ -957,7 +650,7 @@ static int ieee80211_assign_beacon(struc
- 			memcpy(new->tail, old->tail, new_tail_len);
- 
- 	err = ieee80211_set_probe_resp(sdata, params->probe_resp,
--				       params->probe_resp_len);
-+				       params->probe_resp_len, csa);
- 	if (err < 0)
- 		return err;
- 	if (err == 0)
-@@ -1042,7 +735,7 @@ static int ieee80211_start_ap(struct wip
- 		sdata->vif.bss_conf.p2p_noa_attr.oppps_ctwindow |=
- 					IEEE80211_P2P_OPPPS_ENABLE_BIT;
- 
--	err = ieee80211_assign_beacon(sdata, &params->beacon);
-+	err = ieee80211_assign_beacon(sdata, &params->beacon, NULL);
- 	if (err < 0) {
- 		ieee80211_vif_release_channel(sdata);
- 		return err;
-@@ -1090,7 +783,7 @@ static int ieee80211_change_beacon(struc
- 	if (!old)
- 		return -ENOENT;
- 
--	err = ieee80211_assign_beacon(sdata, params);
-+	err = ieee80211_assign_beacon(sdata, params, NULL);
- 	if (err < 0)
- 		return err;
- 	ieee80211_bss_info_change_notify(sdata, err);
-@@ -3073,7 +2766,8 @@ static int ieee80211_set_after_csa_beaco
- 
- 	switch (sdata->vif.type) {
- 	case NL80211_IFTYPE_AP:
--		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon);
-+		err = ieee80211_assign_beacon(sdata, sdata->u.ap.next_beacon,
-+					      NULL);
- 		kfree(sdata->u.ap.next_beacon);
- 		sdata->u.ap.next_beacon = NULL;
- 
-@@ -3176,6 +2870,7 @@ static int ieee80211_set_csa_beacon(stru
- 				    struct cfg80211_csa_settings *params,
- 				    u32 *changed)
- {
-+	struct ieee80211_csa_settings csa = {};
- 	int err;
- 
- 	switch (sdata->vif.type) {
-@@ -3210,20 +2905,13 @@ static int ieee80211_set_csa_beacon(stru
- 		     IEEE80211_MAX_CSA_COUNTERS_NUM))
- 			return -EINVAL;
- 
--		/* make sure we don't have garbage in other counters */
--		memset(sdata->csa_counter_offset_beacon, 0,
--		       sizeof(sdata->csa_counter_offset_beacon));
--		memset(sdata->csa_counter_offset_presp, 0,
--		       sizeof(sdata->csa_counter_offset_presp));
--
--		memcpy(sdata->csa_counter_offset_beacon,
--		       params->counter_offsets_beacon,
--		       params->n_counter_offsets_beacon * sizeof(u16));
--		memcpy(sdata->csa_counter_offset_presp,
--		       params->counter_offsets_presp,
--		       params->n_counter_offsets_presp * sizeof(u16));
-+		csa.counter_offsets_beacon = params->counter_offsets_beacon;
-+		csa.counter_offsets_presp = params->counter_offsets_presp;
-+		csa.n_counter_offsets_beacon = params->n_counter_offsets_beacon;
-+		csa.n_counter_offsets_presp = params->n_counter_offsets_presp;
-+		csa.count = params->count;
- 
--		err = ieee80211_assign_beacon(sdata, &params->beacon_csa);
-+		err = ieee80211_assign_beacon(sdata, &params->beacon_csa, &csa);
- 		if (err < 0) {
- 			kfree(sdata->u.ap.next_beacon);
- 			return err;
-@@ -3367,7 +3055,6 @@ __ieee80211_channel_switch(struct wiphy 
- 	sdata->csa_radar_required = params->radar_required;
- 	sdata->csa_chandef = params->chandef;
- 	sdata->csa_block_tx = params->block_tx;
--	sdata->csa_current_counter = params->count;
- 	sdata->vif.csa_active = true;
- 
- 	if (sdata->csa_block_tx)
-@@ -3515,10 +3202,23 @@ static int ieee80211_mgmt_tx(struct wiph
- 	     sdata->vif.type == NL80211_IFTYPE_ADHOC) &&
- 	    params->n_csa_offsets) {
- 		int i;
--		u8 c = sdata->csa_current_counter;
-+		struct beacon_data *beacon = NULL;
-+
-+		rcu_read_lock();
- 
--		for (i = 0; i < params->n_csa_offsets; i++)
--			data[params->csa_offsets[i]] = c;
-+		if (sdata->vif.type == NL80211_IFTYPE_AP)
-+			beacon = rcu_dereference(sdata->u.ap.beacon);
-+		else if (sdata->vif.type == NL80211_IFTYPE_ADHOC)
-+			beacon = rcu_dereference(sdata->u.ibss.presp);
-+		else if (ieee80211_vif_is_mesh(&sdata->vif))
-+			beacon = rcu_dereference(sdata->u.mesh.beacon);
-+
-+		if (beacon)
-+			for (i = 0; i < params->n_csa_offsets; i++)
-+				data[params->csa_offsets[i]] =
-+					beacon->csa_current_counter;
-+
-+		rcu_read_unlock();
- 	}
- 
- 	IEEE80211_SKB_CB(skb)->flags = flags;
-@@ -3598,21 +3298,6 @@ static int ieee80211_get_antenna(struct 
- 	return drv_get_antenna(local, tx_ant, rx_ant);
- }
- 
--static int ieee80211_set_ringparam(struct wiphy *wiphy, u32 tx, u32 rx)
--{
--	struct ieee80211_local *local = wiphy_priv(wiphy);
--
--	return drv_set_ringparam(local, tx, rx);
--}
--
--static void ieee80211_get_ringparam(struct wiphy *wiphy,
--				    u32 *tx, u32 *tx_max, u32 *rx, u32 *rx_max)
--{
--	struct ieee80211_local *local = wiphy_priv(wiphy);
--
--	drv_get_ringparam(local, tx, tx_max, rx, rx_max);
--}
--
- static int ieee80211_set_rekey_data(struct wiphy *wiphy,
- 				    struct net_device *dev,
- 				    struct cfg80211_gtk_rekey_data *data)
-@@ -3844,8 +3529,6 @@ const struct cfg80211_ops mac80211_confi
- 	.mgmt_frame_register = ieee80211_mgmt_frame_register,
- 	.set_antenna = ieee80211_set_antenna,
- 	.get_antenna = ieee80211_get_antenna,
--	.set_ringparam = ieee80211_set_ringparam,
--	.get_ringparam = ieee80211_get_ringparam,
- 	.set_rekey_data = ieee80211_set_rekey_data,
- 	.tdls_oper = ieee80211_tdls_oper,
- 	.tdls_mgmt = ieee80211_tdls_mgmt,
-@@ -3854,9 +3537,6 @@ const struct cfg80211_ops mac80211_confi
- #ifdef CONFIG_PM
- 	.set_wakeup = ieee80211_set_wakeup,
- #endif
--	.get_et_sset_count = ieee80211_get_et_sset_count,
--	.get_et_stats = ieee80211_get_et_stats,
--	.get_et_strings = ieee80211_get_et_strings,
- 	.get_channel = ieee80211_cfg_get_channel,
- 	.start_radar_detection = ieee80211_start_radar_detection,
- 	.channel_switch = ieee80211_channel_switch,
---- a/net/mac80211/debugfs_sta.c
-+++ b/net/mac80211/debugfs_sta.c
-@@ -587,7 +587,6 @@ void ieee80211_sta_debugfs_add(struct st
- 	DEBUGFS_ADD_COUNTER(tx_filtered, tx_filtered_count);
- 	DEBUGFS_ADD_COUNTER(tx_retry_failed, tx_retry_failed);
- 	DEBUGFS_ADD_COUNTER(tx_retry_count, tx_retry_count);
--	DEBUGFS_ADD_COUNTER(wep_weak_iv_count, wep_weak_iv_count);
- 
- 	if (sizeof(sta->driver_buffered_tids) == sizeof(u32))
- 		debugfs_create_x32("driver_buffered_tids", 0400,
---- a/net/mac80211/wep.c
-+++ b/net/mac80211/wep.c
-@@ -271,22 +271,6 @@ static int ieee80211_wep_decrypt(struct 
- 	return ret;
- }
- 
--
--static bool ieee80211_wep_is_weak_iv(struct sk_buff *skb,
--				     struct ieee80211_key *key)
--{
--	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
--	unsigned int hdrlen;
--	u8 *ivpos;
--	u32 iv;
--
--	hdrlen = ieee80211_hdrlen(hdr->frame_control);
--	ivpos = skb->data + hdrlen;
--	iv = (ivpos[0] << 16) | (ivpos[1] << 8) | ivpos[2];
--
--	return ieee80211_wep_weak_iv(iv, key->conf.keylen);
--}
--
- ieee80211_rx_result
- ieee80211_crypto_wep_decrypt(struct ieee80211_rx_data *rx)
- {
-@@ -301,16 +285,12 @@ ieee80211_crypto_wep_decrypt(struct ieee
- 	if (!(status->flag & RX_FLAG_DECRYPTED)) {
- 		if (skb_linearize(rx->skb))
- 			return RX_DROP_UNUSABLE;
--		if (rx->sta && ieee80211_wep_is_weak_iv(rx->skb, rx->key))
--			rx->sta->wep_weak_iv_count++;
- 		if (ieee80211_wep_decrypt(rx->local, rx->skb, rx->key))
- 			return RX_DROP_UNUSABLE;
- 	} else if (!(status->flag & RX_FLAG_IV_STRIPPED)) {
- 		if (!pskb_may_pull(rx->skb, ieee80211_hdrlen(fc) +
- 					    IEEE80211_WEP_IV_LEN))
- 			return RX_DROP_UNUSABLE;
--		if (rx->sta && ieee80211_wep_is_weak_iv(rx->skb, rx->key))
--			rx->sta->wep_weak_iv_count++;
- 		ieee80211_wep_remove_iv(rx->local, rx->skb, rx->key);
- 		/* remove ICV */
- 		if (pskb_trim(rx->skb, rx->skb->len - IEEE80211_WEP_ICV_LEN))
---- a/include/net/cfg80211.h
-+++ b/include/net/cfg80211.h
-@@ -2278,16 +2278,6 @@ struct cfg80211_qos_map {
-  *
-  * @set_noack_map: Set the NoAck Map for the TIDs.
-  *
-- * @get_et_sset_count:  Ethtool API to get string-set count.
-- *	See @ethtool_ops.get_sset_count
-- *
-- * @get_et_stats:  Ethtool API to get a set of u64 stats.
-- *	See @ethtool_ops.get_ethtool_stats
-- *
-- * @get_et_strings:  Ethtool API to get a set of strings to describe stats
-- *	and perhaps other supported types of ethtool data-sets.
-- *	See @ethtool_ops.get_strings
-- *
-  * @get_channel: Get the current operating channel for the virtual interface.
-  *	For monitor interfaces, it should return %NULL unless there's a single
-  *	current monitoring channel.
-@@ -2529,13 +2519,6 @@ struct cfg80211_ops {
- 				  struct net_device *dev,
- 				  u16 noack_map);
- 
--	int	(*get_et_sset_count)(struct wiphy *wiphy,
--				     struct net_device *dev, int sset);
--	void	(*get_et_stats)(struct wiphy *wiphy, struct net_device *dev,
--				struct ethtool_stats *stats, u64 *data);
--	void	(*get_et_strings)(struct wiphy *wiphy, struct net_device *dev,
--				  u32 sset, u8 *data);
--
- 	int	(*get_channel)(struct wiphy *wiphy,
- 			       struct wireless_dev *wdev,
- 			       struct cfg80211_chan_def *chandef);
-@@ -4846,6 +4829,10 @@ void cfg80211_stop_iface(struct wiphy *w
-  */
- void cfg80211_shutdown_all_interfaces(struct wiphy *wiphy);
- 
-+
-+/* ethtool helper */
-+void cfg80211_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info);
-+
- /* Logging, debugging and troubleshooting/diagnostic helpers. */
- 
- /* wiphy_printk helpers, similar to dev_printk */
---- a/net/mac80211/Makefile
-+++ b/net/mac80211/Makefile
-@@ -17,6 +17,7 @@ mac80211-y := \
- 	aes_ccm.o \
- 	aes_cmac.o \
- 	cfg.o \
-+	ethtool.o \
- 	rx.o \
- 	spectmgmt.o \
- 	tx.o \
---- a/net/mac80211/ieee80211_i.h
-+++ b/net/mac80211/ieee80211_i.h
-@@ -229,16 +229,29 @@ struct ieee80211_rx_data {
- 	u16 tkip_iv16;
- };
- 
-+struct ieee80211_csa_settings {
-+	const u16 *counter_offsets_beacon;
-+	const u16 *counter_offsets_presp;
-+
-+	int n_counter_offsets_beacon;
-+	int n_counter_offsets_presp;
-+
-+	u8 count;
-+};
-+
- struct beacon_data {
- 	u8 *head, *tail;
- 	int head_len, tail_len;
- 	struct ieee80211_meshconf_ie *meshconf;
-+	u16 csa_counter_offsets[IEEE80211_MAX_CSA_COUNTERS_NUM];
-+	u8 csa_current_counter;
- 	struct rcu_head rcu_head;
- };
- 
- struct probe_resp {
- 	struct rcu_head rcu_head;
- 	int len;
-+	u16 csa_counter_offsets[IEEE80211_MAX_CSA_COUNTERS_NUM];
- 	u8 data[0];
- };
- 
-@@ -754,8 +767,6 @@ struct ieee80211_sub_if_data {
- 	struct mac80211_qos_map __rcu *qos_map;
- 
- 	struct work_struct csa_finalize_work;
--	u16 csa_counter_offset_beacon[IEEE80211_MAX_CSA_COUNTERS_NUM];
--	u16 csa_counter_offset_presp[IEEE80211_MAX_CSA_COUNTERS_NUM];
- 	bool csa_radar_required;
- 	bool csa_block_tx; /* write-protected by sdata_lock and local->mtx */
- 	struct cfg80211_chan_def csa_chandef;
-@@ -767,7 +778,6 @@ struct ieee80211_sub_if_data {
- 	struct ieee80211_chanctx *reserved_chanctx;
- 	struct cfg80211_chan_def reserved_chandef;
- 	bool reserved_radar_required;
--	u8 csa_current_counter;
- 
- 	/* used to reconfigure hardware SM PS */
- 	struct work_struct recalc_smps;
-@@ -1850,6 +1860,8 @@ int ieee80211_tdls_oper(struct wiphy *wi
- 			const u8 *peer, enum nl80211_tdls_operation oper);
- 
- 
-+extern const struct ethtool_ops ieee80211_ethtool_ops;
-+
- #ifdef CPTCFG_MAC80211_NOINLINE
- #define debug_noinline noinline
- #else
---- a/net/mac80211/iface.c
-+++ b/net/mac80211/iface.c
-@@ -399,6 +399,7 @@ int ieee80211_add_virtual_monitor(struct
- 	sdata->vif.type = NL80211_IFTYPE_MONITOR;
- 	snprintf(sdata->name, IFNAMSIZ, "%s-monitor",
- 		 wiphy_name(local->hw.wiphy));
-+	sdata->wdev.iftype = NL80211_IFTYPE_MONITOR;
- 
- 	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
- 
-@@ -1303,6 +1304,7 @@ static void ieee80211_setup_sdata(struct
- 	sdata->control_port_protocol = cpu_to_be16(ETH_P_PAE);
- 	sdata->control_port_no_encrypt = false;
- 	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
-+	sdata->vif.bss_conf.idle = true;
- 
- 	sdata->noack_map = 0;
- 
-@@ -1721,6 +1723,8 @@ int ieee80211_if_add(struct ieee80211_lo
- 
- 		ndev->features |= local->hw.netdev_features;
- 
-+		netdev_set_default_ethtool_ops(ndev, &ieee80211_ethtool_ops);
-+
- 		ret = register_netdevice(ndev);
- 		if (ret) {
- 			free_netdev(ndev);
---- a/net/wireless/core.c
-+++ b/net/wireless/core.c
-@@ -25,7 +25,6 @@
- #include "sysfs.h"
- #include "debugfs.h"
- #include "wext-compat.h"
--#include "ethtool.h"
- #include "rdev-ops.h"
- 
- /* name for sysfs, %d is appended */
-@@ -940,8 +939,6 @@ static int cfg80211_netdev_notifier_call
- 		/* allow mac80211 to determine the timeout */
- 		wdev->ps_timeout = -1;
- 
--		netdev_set_default_ethtool_ops(dev, &cfg80211_ethtool_ops);
--
- 		if ((wdev->iftype == NL80211_IFTYPE_STATION ||
- 		     wdev->iftype == NL80211_IFTYPE_P2P_CLIENT ||
- 		     wdev->iftype == NL80211_IFTYPE_ADHOC) && !wdev->use_4addr)
---- a/net/wireless/ethtool.c
-+++ b/net/wireless/ethtool.c
-@@ -1,11 +1,9 @@
- #include <linux/utsname.h>
- #include <net/cfg80211.h>
- #include "core.h"
--#include "ethtool.h"
- #include "rdev-ops.h"
- 
--static void cfg80211_get_drvinfo(struct net_device *dev,
--					struct ethtool_drvinfo *info)
-+void cfg80211_get_drvinfo(struct net_device *dev, struct ethtool_drvinfo *info)
- {
- 	struct wireless_dev *wdev = dev->ieee80211_ptr;
- 
-@@ -23,84 +21,4 @@ static void cfg80211_get_drvinfo(struct 
- 	strlcpy(info->bus_info, dev_name(wiphy_dev(wdev->wiphy)),
- 		sizeof(info->bus_info));
- }
--
--static int cfg80211_get_regs_len(struct net_device *dev)
--{
--	/* For now, return 0... */
--	return 0;
--}
--
--static void cfg80211_get_regs(struct net_device *dev, struct ethtool_regs *regs,
--			void *data)
--{
--	struct wireless_dev *wdev = dev->ieee80211_ptr;
--
--	regs->version = wdev->wiphy->hw_version;
--	regs->len = 0;
--}
--
--static void cfg80211_get_ringparam(struct net_device *dev,
--				   struct ethtool_ringparam *rp)
--{
--	struct wireless_dev *wdev = dev->ieee80211_ptr;
--	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
--
--	memset(rp, 0, sizeof(*rp));
--
--	if (rdev->ops->get_ringparam)
--		rdev_get_ringparam(rdev, &rp->tx_pending, &rp->tx_max_pending,
--				   &rp->rx_pending, &rp->rx_max_pending);
--}
--
--static int cfg80211_set_ringparam(struct net_device *dev,
--				  struct ethtool_ringparam *rp)
--{
--	struct wireless_dev *wdev = dev->ieee80211_ptr;
--	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
--
--	if (rp->rx_mini_pending != 0 || rp->rx_jumbo_pending != 0)
--		return -EINVAL;
--
--	if (rdev->ops->set_ringparam)
--		return rdev_set_ringparam(rdev, rp->tx_pending, rp->rx_pending);
--
--	return -ENOTSUPP;
--}
--
--static int cfg80211_get_sset_count(struct net_device *dev, int sset)
--{
--	struct wireless_dev *wdev = dev->ieee80211_ptr;
--	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
--	if (rdev->ops->get_et_sset_count)
--		return rdev_get_et_sset_count(rdev, dev, sset);
--	return -EOPNOTSUPP;
--}
--
--static void cfg80211_get_stats(struct net_device *dev,
--			       struct ethtool_stats *stats, u64 *data)
--{
--	struct wireless_dev *wdev = dev->ieee80211_ptr;
--	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
--	if (rdev->ops->get_et_stats)
--		rdev_get_et_stats(rdev, dev, stats, data);
--}
--
--static void cfg80211_get_strings(struct net_device *dev, u32 sset, u8 *data)
--{
--	struct wireless_dev *wdev = dev->ieee80211_ptr;
--	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
--	if (rdev->ops->get_et_strings)
--		rdev_get_et_strings(rdev, dev, sset, data);
--}
--
--const struct ethtool_ops cfg80211_ethtool_ops = {
--	.get_drvinfo = cfg80211_get_drvinfo,
--	.get_regs_len = cfg80211_get_regs_len,
--	.get_regs = cfg80211_get_regs,
--	.get_link = ethtool_op_get_link,
--	.get_ringparam = cfg80211_get_ringparam,
--	.set_ringparam = cfg80211_set_ringparam,
--	.get_strings = cfg80211_get_strings,
--	.get_ethtool_stats = cfg80211_get_stats,
--	.get_sset_count = cfg80211_get_sset_count,
--};
-+EXPORT_SYMBOL(cfg80211_get_drvinfo);
---- a/net/wireless/ethtool.h
-+++ /dev/null
-@@ -1,6 +0,0 @@
--#ifndef __CFG80211_ETHTOOL__
--#define __CFG80211_ETHTOOL__
--
--extern const struct ethtool_ops cfg80211_ethtool_ops;
--
--#endif /* __CFG80211_ETHTOOL__ */
---- a/net/wireless/rdev-ops.h
-+++ b/net/wireless/rdev-ops.h
-@@ -714,25 +714,6 @@ static inline int rdev_get_antenna(struc
- 	return ret;
- }
- 
--static inline int rdev_set_ringparam(struct cfg80211_registered_device *rdev,
--				     u32 tx, u32 rx)
--{
--	int ret;
--	trace_rdev_set_ringparam(&rdev->wiphy, tx, rx);
--	ret = rdev->ops->set_ringparam(&rdev->wiphy, tx, rx);
--	trace_rdev_return_int(&rdev->wiphy, ret);
--	return ret;
--}
--
--static inline void rdev_get_ringparam(struct cfg80211_registered_device *rdev,
--				      u32 *tx, u32 *tx_max, u32 *rx,
--				      u32 *rx_max)
--{
--	trace_rdev_get_ringparam(&rdev->wiphy);
--	rdev->ops->get_ringparam(&rdev->wiphy, tx, tx_max, rx, rx_max);
--	trace_rdev_return_void_tx_rx(&rdev->wiphy, *tx, *tx_max, *rx, *rx_max);
--}
--
- static inline int
- rdev_sched_scan_start(struct cfg80211_registered_device *rdev,
- 		      struct net_device *dev,
-@@ -816,35 +797,6 @@ static inline int rdev_set_noack_map(str
- }
- 
- static inline int
--rdev_get_et_sset_count(struct cfg80211_registered_device *rdev,
--		       struct net_device *dev, int sset)
--{
--	int ret;
--	trace_rdev_get_et_sset_count(&rdev->wiphy, dev, sset);
--	ret = rdev->ops->get_et_sset_count(&rdev->wiphy, dev, sset);
--	trace_rdev_return_int(&rdev->wiphy, ret);
--	return ret;
--}
--
--static inline void rdev_get_et_stats(struct cfg80211_registered_device *rdev,
--				     struct net_device *dev,
--				     struct ethtool_stats *stats, u64 *data)
--{
--	trace_rdev_get_et_stats(&rdev->wiphy, dev);
--	rdev->ops->get_et_stats(&rdev->wiphy, dev, stats, data);
--	trace_rdev_return_void(&rdev->wiphy);
--}
--
--static inline void rdev_get_et_strings(struct cfg80211_registered_device *rdev,
--				       struct net_device *dev, u32 sset,
--				       u8 *data)
--{
--	trace_rdev_get_et_strings(&rdev->wiphy, dev, sset);
--	rdev->ops->get_et_strings(&rdev->wiphy, dev, sset, data);
--	trace_rdev_return_void(&rdev->wiphy);
--}
--
--static inline int
- rdev_get_channel(struct cfg80211_registered_device *rdev,
- 		 struct wireless_dev *wdev,
- 		 struct cfg80211_chan_def *chandef)
---- a/net/wireless/trace.h
-+++ b/net/wireless/trace.h
-@@ -298,11 +298,6 @@ DEFINE_EVENT(wiphy_only_evt, rdev_return
- 	TP_ARGS(wiphy)
- );
- 
--DEFINE_EVENT(wiphy_only_evt, rdev_get_ringparam,
--	TP_PROTO(struct wiphy *wiphy),
--	TP_ARGS(wiphy)
--);
--
- DEFINE_EVENT(wiphy_only_evt, rdev_get_antenna,
- 	TP_PROTO(struct wiphy *wiphy),
- 	TP_ARGS(wiphy)
-@@ -580,11 +575,6 @@ DEFINE_EVENT(wiphy_netdev_evt, rdev_stop
- 	TP_ARGS(wiphy, netdev)
- );
- 
--DEFINE_EVENT(wiphy_netdev_evt, rdev_get_et_stats,
--	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev),
--	TP_ARGS(wiphy, netdev)
--);
--
- DEFINE_EVENT(wiphy_netdev_evt, rdev_sched_scan_stop,
- 	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev),
- 	TP_ARGS(wiphy, netdev)
-@@ -1439,11 +1429,6 @@ DECLARE_EVENT_CLASS(tx_rx_evt,
- 		  WIPHY_PR_ARG, __entry->tx, __entry->rx)
- );
- 
--DEFINE_EVENT(tx_rx_evt, rdev_set_ringparam,
--	TP_PROTO(struct wiphy *wiphy, u32 tx, u32 rx),
--	TP_ARGS(wiphy, rx, tx)
--);
--
- DEFINE_EVENT(tx_rx_evt, rdev_set_antenna,
- 	TP_PROTO(struct wiphy *wiphy, u32 tx, u32 rx),
- 	TP_ARGS(wiphy, rx, tx)
-@@ -1725,40 +1710,6 @@ TRACE_EVENT(rdev_set_noack_map,
- 		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->noack_map)
- );
- 
--TRACE_EVENT(rdev_get_et_sset_count,
--	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, int sset),
--	TP_ARGS(wiphy, netdev, sset),
--	TP_STRUCT__entry(
--		WIPHY_ENTRY
--		NETDEV_ENTRY
--		__field(int, sset)
--	),
--	TP_fast_assign(
--		WIPHY_ASSIGN;
--		NETDEV_ASSIGN;
--		__entry->sset = sset;
--	),
--	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", sset: %d",
--		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->sset)
--);
--
--TRACE_EVENT(rdev_get_et_strings,
--	TP_PROTO(struct wiphy *wiphy, struct net_device *netdev, u32 sset),
--	TP_ARGS(wiphy, netdev, sset),
--	TP_STRUCT__entry(
--		WIPHY_ENTRY
--		NETDEV_ENTRY
--		__field(u32, sset)
--	),
--	TP_fast_assign(
--		WIPHY_ASSIGN;
--		NETDEV_ASSIGN;
--		__entry->sset = sset;
--	),
--	TP_printk(WIPHY_PR_FMT ", " NETDEV_PR_FMT ", sset: %u",
--		  WIPHY_PR_ARG, NETDEV_PR_ARG, __entry->sset)
--);
--
- DEFINE_EVENT(wiphy_wdev_evt, rdev_get_channel,
- 	TP_PROTO(struct wiphy *wiphy, struct wireless_dev *wdev),
- 	TP_ARGS(wiphy, wdev)
+ config ATH5K_PCI
+ 	bool "Atheros 5xxx PCI bus support"
+-	depends on PCI
++	depends on !ATHEROS_AR231X
+ 	---help---
+ 	  This adds support for PCI type chipsets of the 5xxx Atheros
+ 	  family.
 --- /dev/null
-+++ b/net/mac80211/ethtool.c
-@@ -0,0 +1,244 @@
++++ b/drivers/net/wireless/ath/ath5k/ahb.c
+@@ -0,0 +1,234 @@
 +/*
-+ * mac80211 ethtool hooks for cfg80211
++ * Copyright (c) 2008-2009 Atheros Communications Inc.
++ * Copyright (c) 2009 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (c) 2009 Imre Kaloz <kaloz@openwrt.org>
 + *
-+ * Copied from cfg.c - originally
-+ * Copyright 2006-2010	Johannes Berg <johannes@sipsolutions.net>
-+ * Copyright 2014	Intel Corporation (Author: Johannes Berg)
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
 + *
-+ * This file is GPLv2 as found in COPYING.
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 + */
-+#include <linux/types.h>
-+#include <net/cfg80211.h>
-+#include "ieee80211_i.h"
-+#include "sta_info.h"
-+#include "driver-ops.h"
 +
-+static int ieee80211_set_ringparam(struct net_device *dev,
-+				   struct ethtool_ringparam *rp)
++#include <linux/nl80211.h>
++#include <linux/platform_device.h>
++#include <linux/etherdevice.h>
++#include <linux/export.h>
++#include <ar231x_platform.h>
++#include "ath5k.h"
++#include "debug.h"
++#include "base.h"
++#include "reg.h"
++
++/* return bus cachesize in 4B word units */
++static void ath5k_ahb_read_cachesize(struct ath_common *common, int *csz)
 +{
-+	struct ieee80211_local *local = wiphy_priv(dev->ieee80211_ptr->wiphy);
-+
-+	if (rp->rx_mini_pending != 0 || rp->rx_jumbo_pending != 0)
-+		return -EINVAL;
-+
-+	return drv_set_ringparam(local, rp->tx_pending, rp->rx_pending);
++	*csz = L1_CACHE_BYTES >> 2;
 +}
 +
-+static void ieee80211_get_ringparam(struct net_device *dev,
-+				    struct ethtool_ringparam *rp)
++static bool
++ath5k_ahb_eeprom_read(struct ath_common *common, u32 off, u16 *data)
 +{
-+	struct ieee80211_local *local = wiphy_priv(dev->ieee80211_ptr->wiphy);
++	struct ath5k_hw *ah = common->priv;
++	struct platform_device *pdev = to_platform_device(ah->dev);
++	struct ar231x_board_config *bcfg = dev_get_platdata(&pdev->dev);
++	u16 *eeprom, *eeprom_end;
 +
-+	memset(rp, 0, sizeof(*rp));
++	eeprom = (u16 *) bcfg->radio;
++	eeprom_end = ((void *) bcfg->config) + BOARD_CONFIG_BUFSZ;
 +
-+	drv_get_ringparam(local, &rp->tx_pending, &rp->tx_max_pending,
-+			  &rp->rx_pending, &rp->rx_max_pending);
++	eeprom += off;
++	if (eeprom > eeprom_end)
++		return false;
++
++	*data = *eeprom;
++	return true;
 +}
 +
-+static const char ieee80211_gstrings_sta_stats[][ETH_GSTRING_LEN] = {
-+	"rx_packets", "rx_bytes",
-+	"rx_duplicates", "rx_fragments", "rx_dropped",
-+	"tx_packets", "tx_bytes", "tx_fragments",
-+	"tx_filtered", "tx_retry_failed", "tx_retries",
-+	"beacon_loss", "sta_state", "txrate", "rxrate", "signal",
-+	"channel", "noise", "ch_time", "ch_time_busy",
-+	"ch_time_ext_busy", "ch_time_rx", "ch_time_tx"
-+};
-+#define STA_STATS_LEN	ARRAY_SIZE(ieee80211_gstrings_sta_stats)
-+
-+static int ieee80211_get_sset_count(struct net_device *dev, int sset)
++int ath5k_hw_read_srev(struct ath5k_hw *ah)
 +{
-+	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-+	int rv = 0;
-+
-+	if (sset == ETH_SS_STATS)
-+		rv += STA_STATS_LEN;
-+
-+	rv += drv_get_et_sset_count(sdata, sset);
-+
-+	if (rv == 0)
-+		return -EOPNOTSUPP;
-+	return rv;
-+}
-+
-+static void ieee80211_get_stats(struct net_device *dev,
-+				struct ethtool_stats *stats,
-+				u64 *data)
-+{
-+	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-+	struct ieee80211_chanctx_conf *chanctx_conf;
-+	struct ieee80211_channel *channel;
-+	struct sta_info *sta;
-+	struct ieee80211_local *local = sdata->local;
-+	struct station_info sinfo;
-+	struct survey_info survey;
-+	int i, q;
-+#define STA_STATS_SURVEY_LEN 7
-+
-+	memset(data, 0, sizeof(u64) * STA_STATS_LEN);
-+
-+#define ADD_STA_STATS(sta)				\
-+	do {						\
-+		data[i++] += sta->rx_packets;		\
-+		data[i++] += sta->rx_bytes;		\
-+		data[i++] += sta->num_duplicates;	\
-+		data[i++] += sta->rx_fragments;		\
-+		data[i++] += sta->rx_dropped;		\
-+							\
-+		data[i++] += sinfo.tx_packets;		\
-+		data[i++] += sinfo.tx_bytes;		\
-+		data[i++] += sta->tx_fragments;		\
-+		data[i++] += sta->tx_filtered_count;	\
-+		data[i++] += sta->tx_retry_failed;	\
-+		data[i++] += sta->tx_retry_count;	\
-+		data[i++] += sta->beacon_loss_count;	\
-+	} while (0)
-+
-+	/* For Managed stations, find the single station based on BSSID
-+	 * and use that.  For interface types, iterate through all available
-+	 * stations and add stats for any station that is assigned to this
-+	 * network device.
-+	 */
-+
-+	mutex_lock(&local->sta_mtx);
-+
-+	if (sdata->vif.type == NL80211_IFTYPE_STATION) {
-+		sta = sta_info_get_bss(sdata, sdata->u.mgd.bssid);
-+
-+		if (!(sta && !WARN_ON(sta->sdata->dev != dev)))
-+			goto do_survey;
-+
-+		sinfo.filled = 0;
-+		sta_set_sinfo(sta, &sinfo);
-+
-+		i = 0;
-+		ADD_STA_STATS(sta);
-+
-+		data[i++] = sta->sta_state;
-+
-+
-+		if (sinfo.filled & STATION_INFO_TX_BITRATE)
-+			data[i] = 100000 *
-+				cfg80211_calculate_bitrate(&sinfo.txrate);
-+		i++;
-+		if (sinfo.filled & STATION_INFO_RX_BITRATE)
-+			data[i] = 100000 *
-+				cfg80211_calculate_bitrate(&sinfo.rxrate);
-+		i++;
-+
-+		if (sinfo.filled & STATION_INFO_SIGNAL_AVG)
-+			data[i] = (u8)sinfo.signal_avg;
-+		i++;
-+	} else {
-+		list_for_each_entry(sta, &local->sta_list, list) {
-+			/* Make sure this station belongs to the proper dev */
-+			if (sta->sdata->dev != dev)
-+				continue;
-+
-+			sinfo.filled = 0;
-+			sta_set_sinfo(sta, &sinfo);
-+			i = 0;
-+			ADD_STA_STATS(sta);
-+		}
-+	}
-+
-+do_survey:
-+	i = STA_STATS_LEN - STA_STATS_SURVEY_LEN;
-+	/* Get survey stats for current channel */
-+	survey.filled = 0;
-+
-+	rcu_read_lock();
-+	chanctx_conf = rcu_dereference(sdata->vif.chanctx_conf);
-+	if (chanctx_conf)
-+		channel = chanctx_conf->def.chan;
-+	else
-+		channel = NULL;
-+	rcu_read_unlock();
-+
-+	if (channel) {
-+		q = 0;
-+		do {
-+			survey.filled = 0;
-+			if (drv_get_survey(local, q, &survey) != 0) {
-+				survey.filled = 0;
-+				break;
-+			}
-+			q++;
-+		} while (channel != survey.channel);
-+	}
-+
-+	if (survey.filled)
-+		data[i++] = survey.channel->center_freq;
-+	else
-+		data[i++] = 0;
-+	if (survey.filled & SURVEY_INFO_NOISE_DBM)
-+		data[i++] = (u8)survey.noise;
-+	else
-+		data[i++] = -1LL;
-+	if (survey.filled & SURVEY_INFO_CHANNEL_TIME)
-+		data[i++] = survey.channel_time;
-+	else
-+		data[i++] = -1LL;
-+	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_BUSY)
-+		data[i++] = survey.channel_time_busy;
-+	else
-+		data[i++] = -1LL;
-+	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_EXT_BUSY)
-+		data[i++] = survey.channel_time_ext_busy;
-+	else
-+		data[i++] = -1LL;
-+	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_RX)
-+		data[i++] = survey.channel_time_rx;
-+	else
-+		data[i++] = -1LL;
-+	if (survey.filled & SURVEY_INFO_CHANNEL_TIME_TX)
-+		data[i++] = survey.channel_time_tx;
-+	else
-+		data[i++] = -1LL;
-+
-+	mutex_unlock(&local->sta_mtx);
-+
-+	if (WARN_ON(i != STA_STATS_LEN))
-+		return;
-+
-+	drv_get_et_stats(sdata, stats, &(data[STA_STATS_LEN]));
-+}
-+
-+static void ieee80211_get_strings(struct net_device *dev, u32 sset, u8 *data)
-+{
-+	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
-+	int sz_sta_stats = 0;
-+
-+	if (sset == ETH_SS_STATS) {
-+		sz_sta_stats = sizeof(ieee80211_gstrings_sta_stats);
-+		memcpy(data, ieee80211_gstrings_sta_stats, sz_sta_stats);
-+	}
-+	drv_get_et_strings(sdata, sset, &(data[sz_sta_stats]));
-+}
-+
-+static int ieee80211_get_regs_len(struct net_device *dev)
-+{
++	struct platform_device *pdev = to_platform_device(ah->dev);
++	struct ar231x_board_config *bcfg = dev_get_platdata(&pdev->dev);
++	ah->ah_mac_srev = bcfg->devid;
 +	return 0;
 +}
 +
-+static void ieee80211_get_regs(struct net_device *dev,
-+			       struct ethtool_regs *regs,
-+			       void *data)
++static int ath5k_ahb_eeprom_read_mac(struct ath5k_hw *ah, u8 *mac)
 +{
-+	struct wireless_dev *wdev = dev->ieee80211_ptr;
++	struct platform_device *pdev = to_platform_device(ah->dev);
++	struct ar231x_board_config *bcfg = dev_get_platdata(&pdev->dev);
++	u8 *cfg_mac;
 +
-+	regs->version = wdev->wiphy->hw_version;
-+	regs->len = 0;
++	if (to_platform_device(ah->dev)->id == 0)
++		cfg_mac = bcfg->config->wlan0_mac;
++	else
++		cfg_mac = bcfg->config->wlan1_mac;
++
++	memcpy(mac, cfg_mac, ETH_ALEN);
++	return 0;
 +}
 +
-+const struct ethtool_ops ieee80211_ethtool_ops = {
-+	.get_drvinfo = cfg80211_get_drvinfo,
-+	.get_regs_len = ieee80211_get_regs_len,
-+	.get_regs = ieee80211_get_regs,
-+	.get_link = ethtool_op_get_link,
-+	.get_ringparam = ieee80211_get_ringparam,
-+	.set_ringparam = ieee80211_set_ringparam,
-+	.get_strings = ieee80211_get_strings,
-+	.get_ethtool_stats = ieee80211_get_stats,
-+	.get_sset_count = ieee80211_get_sset_count,
++static const struct ath_bus_ops ath_ahb_bus_ops = {
++	.ath_bus_type = ATH_AHB,
++	.read_cachesize = ath5k_ahb_read_cachesize,
++	.eeprom_read = ath5k_ahb_eeprom_read,
++	.eeprom_read_mac = ath5k_ahb_eeprom_read_mac,
 +};
---- a/net/mac80211/ibss.c
-+++ b/net/mac80211/ibss.c
-@@ -143,7 +143,7 @@ ieee80211_ibss_build_presp(struct ieee80
- 		*pos++ = csa_settings->block_tx ? 1 : 0;
- 		*pos++ = ieee80211_frequency_to_channel(
- 				csa_settings->chandef.chan->center_freq);
--		sdata->csa_counter_offset_beacon[0] = (pos - presp->head);
-+		presp->csa_counter_offsets[0] = (pos - presp->head);
- 		*pos++ = csa_settings->count;
- 	}
- 
-@@ -1677,6 +1677,7 @@ int ieee80211_ibss_join(struct ieee80211
- 	sdata->u.ibss.control_port = params->control_port;
- 	sdata->u.ibss.userspace_handles_dfs = params->userspace_handles_dfs;
- 	sdata->u.ibss.basic_rates = params->basic_rates;
-+	sdata->u.ibss.last_scan_completed = jiffies;
- 
- 	/* fix basic_rates if channel does not support these rates */
- 	rate_flags = ieee80211_chandef_rate_flags(&params->chandef);
---- a/net/mac80211/mesh.c
-+++ b/net/mac80211/mesh.c
-@@ -679,7 +679,7 @@ ieee80211_mesh_build_beacon(struct ieee8
- 		*pos++ = 0x0;
- 		*pos++ = ieee80211_frequency_to_channel(
- 				csa->settings.chandef.chan->center_freq);
--		sdata->csa_counter_offset_beacon[0] = hdr_len + 6;
-+		bcn->csa_counter_offsets[0] = hdr_len + 6;
- 		*pos++ = csa->settings.count;
- 		*pos++ = WLAN_EID_CHAN_SWITCH_PARAM;
- 		*pos++ = 6;
---- a/net/wireless/genregdb.awk
-+++ b/net/wireless/genregdb.awk
-@@ -65,17 +65,7 @@ function parse_reg_rule()
- 	sub(/,/, "", units)
- 	dfs_cac = $9
- 	if (units == "mW") {
--		if (power == 100) {
--			power = 20
--		} else if (power == 200) {
--			power = 23
--		} else if (power == 500) {
--			power = 27
--		} else if (power == 1000) {
--			power = 30
--		} else {
--			print "Unknown power value in database!"
--		}
-+		power = 10 * log(power)/log(10)
- 	} else {
- 		dfs_cac = $8
- 	}
-@@ -114,7 +104,7 @@ function parse_reg_rule()
- 
- 	}
- 	flags = flags "0"
--	printf "\t\tREG_RULE_EXT(%d, %d, %d, %d, %d, %d, %s),\n", start, end, bw, gain, power, dfs_cac, flags
-+	printf "\t\tREG_RULE_EXT(%d, %d, %d, %d, %.0f, %d, %s),\n", start, end, bw, gain, power, dfs_cac, flags
- 	rules++
- }
- 
---- a/net/mac80211/debugfs_netdev.c
-+++ b/net/mac80211/debugfs_netdev.c
-@@ -34,8 +34,7 @@ static ssize_t ieee80211_if_read(
- 	ssize_t ret = -EINVAL;
- 
- 	read_lock(&dev_base_lock);
--	if (sdata->dev->reg_state == NETREG_REGISTERED)
--		ret = (*format)(sdata, buf, sizeof(buf));
-+	ret = (*format)(sdata, buf, sizeof(buf));
- 	read_unlock(&dev_base_lock);
- 
- 	if (ret >= 0)
-@@ -62,8 +61,7 @@ static ssize_t ieee80211_if_write(
- 
- 	ret = -ENODEV;
- 	rtnl_lock();
--	if (sdata->dev->reg_state == NETREG_REGISTERED)
--		ret = (*write)(sdata, buf, count);
-+	ret = (*write)(sdata, buf, count);
- 	rtnl_unlock();
- 
- 	return ret;
---- a/drivers/net/wireless/b43/xmit.c
-+++ b/drivers/net/wireless/b43/xmit.c
-@@ -811,9 +811,13 @@ void b43_rx(struct b43_wldev *dev, struc
- 		break;
- 	case B43_PHYTYPE_G:
- 		status.band = IEEE80211_BAND_2GHZ;
--		/* chanid is the radio channel cookie value as used
--		 * to tune the radio. */
--		status.freq = chanid + 2400;
-+		/* Somewhere between 478.104 and 508.1084 firmware for G-PHY
-+		 * has been modified to be compatible with N-PHY and others.
-+		 */
-+		if (dev->fw.rev >= 508)
-+			status.freq = ieee80211_channel_to_frequency(chanid, status.band);
++
++/*Initialization*/
++static int ath_ahb_probe(struct platform_device *pdev)
++{
++	struct ar231x_board_config *bcfg = dev_get_platdata(&pdev->dev);
++	struct ath5k_hw *ah;
++	struct ieee80211_hw *hw;
++	struct resource *res;
++	void __iomem *mem;
++	int irq;
++	int ret = 0;
++	u32 reg;
++
++	if (!dev_get_platdata(&pdev->dev)) {
++		dev_err(&pdev->dev, "no platform data specified\n");
++		ret = -EINVAL;
++		goto err_out;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (res == NULL) {
++		dev_err(&pdev->dev, "no memory resource found\n");
++		ret = -ENXIO;
++		goto err_out;
++	}
++
++	mem = ioremap_nocache(res->start, resource_size(res));
++	if (mem == NULL) {
++		dev_err(&pdev->dev, "ioremap failed\n");
++		ret = -ENOMEM;
++		goto err_out;
++	}
++
++	res = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
++	if (res == NULL) {
++		dev_err(&pdev->dev, "no IRQ resource found\n");
++		ret = -ENXIO;
++		goto err_iounmap;
++	}
++
++	irq = res->start;
++
++	hw = ieee80211_alloc_hw(sizeof(struct ath5k_hw), &ath5k_hw_ops);
++	if (hw == NULL) {
++		dev_err(&pdev->dev, "no memory for ieee80211_hw\n");
++		ret = -ENOMEM;
++		goto err_iounmap;
++	}
++
++	ah = hw->priv;
++	ah->hw = hw;
++	ah->dev = &pdev->dev;
++	ah->iobase = mem;
++	ah->irq = irq;
++	ah->devid = bcfg->devid;
++
++	if (bcfg->devid >= AR5K_SREV_AR2315_R6) {
++		/* Enable WMAC AHB arbitration */
++		reg = ioread32((void __iomem *) AR5K_AR2315_AHB_ARB_CTL);
++		reg |= AR5K_AR2315_AHB_ARB_CTL_WLAN;
++		iowrite32(reg, (void __iomem *) AR5K_AR2315_AHB_ARB_CTL);
++
++		/* Enable global WMAC swapping */
++		reg = ioread32((void __iomem *) AR5K_AR2315_BYTESWAP);
++		reg |= AR5K_AR2315_BYTESWAP_WMAC;
++		iowrite32(reg, (void __iomem *) AR5K_AR2315_BYTESWAP);
++	} else {
++		/* Enable WMAC DMA access (assuming 5312 or 231x*/
++		/* TODO: check other platforms */
++		reg = ioread32((void __iomem *) AR5K_AR5312_ENABLE);
++		if (to_platform_device(ah->dev)->id == 0)
++			reg |= AR5K_AR5312_ENABLE_WLAN0;
 +		else
-+			status.freq = chanid + 2400;
- 		break;
- 	case B43_PHYTYPE_N:
- 	case B43_PHYTYPE_LP:
---- a/drivers/net/wireless/b43/main.c
-+++ b/drivers/net/wireless/b43/main.c
-@@ -5216,6 +5216,7 @@ static int b43_wireless_core_attach(stru
- 	/* We don't support 5 GHz on some PHYs yet */
- 	switch (dev->phy.type) {
- 	case B43_PHYTYPE_A:
-+	case B43_PHYTYPE_G:
- 	case B43_PHYTYPE_N:
- 	case B43_PHYTYPE_LP:
- 	case B43_PHYTYPE_HT:
---- a/net/wireless/reg.c
-+++ b/net/wireless/reg.c
-@@ -935,7 +935,7 @@ freq_reg_info_regd(struct wiphy *wiphy, 
- 		if (!band_rule_found)
- 			band_rule_found = freq_in_rule_band(fr, center_freq);
- 
--		bw_fits = reg_does_bw_fit(fr, center_freq, MHZ_TO_KHZ(5));
-+		bw_fits = reg_does_bw_fit(fr, center_freq, MHZ_TO_KHZ(20));
- 
- 		if (band_rule_found && bw_fits)
- 			return rr;
-@@ -1019,10 +1019,10 @@ static void chan_reg_rule_print_dbg(cons
- }
- #endif
- 
--/* Find an ieee80211_reg_rule such that a 5MHz channel with frequency
-- * chan->center_freq fits there.
-- * If there is no such reg_rule, disable the channel, otherwise set the
-- * flags corresponding to the bandwidths allowed in the particular reg_rule
-+/*
-+ * Note that right now we assume the desired channel bandwidth
-+ * is always 20 MHz for each individual channel (HT40 uses 20 MHz
-+ * per channel, the primary and the extension channel).
-  */
- static void handle_channel(struct wiphy *wiphy,
- 			   enum nl80211_reg_initiator initiator,
-@@ -1083,12 +1083,8 @@ static void handle_channel(struct wiphy 
- 	if (reg_rule->flags & NL80211_RRF_AUTO_BW)
- 		max_bandwidth_khz = reg_get_max_bandwidth(regd, reg_rule);
- 
--	if (max_bandwidth_khz < MHZ_TO_KHZ(10))
--		bw_flags = IEEE80211_CHAN_NO_10MHZ;
--	if (max_bandwidth_khz < MHZ_TO_KHZ(20))
--		bw_flags |= IEEE80211_CHAN_NO_20MHZ;
- 	if (max_bandwidth_khz < MHZ_TO_KHZ(40))
--		bw_flags |= IEEE80211_CHAN_NO_HT40;
-+		bw_flags = IEEE80211_CHAN_NO_HT40;
- 	if (max_bandwidth_khz < MHZ_TO_KHZ(80))
- 		bw_flags |= IEEE80211_CHAN_NO_80MHZ;
- 	if (max_bandwidth_khz < MHZ_TO_KHZ(160))
-@@ -1522,12 +1518,8 @@ static void handle_channel_custom(struct
- 	if (reg_rule->flags & NL80211_RRF_AUTO_BW)
- 		max_bandwidth_khz = reg_get_max_bandwidth(regd, reg_rule);
- 
--	if (max_bandwidth_khz < MHZ_TO_KHZ(10))
--		bw_flags = IEEE80211_CHAN_NO_10MHZ;
--	if (max_bandwidth_khz < MHZ_TO_KHZ(20))
--		bw_flags |= IEEE80211_CHAN_NO_20MHZ;
- 	if (max_bandwidth_khz < MHZ_TO_KHZ(40))
--		bw_flags |= IEEE80211_CHAN_NO_HT40;
-+		bw_flags = IEEE80211_CHAN_NO_HT40;
- 	if (max_bandwidth_khz < MHZ_TO_KHZ(80))
- 		bw_flags |= IEEE80211_CHAN_NO_80MHZ;
- 	if (max_bandwidth_khz < MHZ_TO_KHZ(160))
---- a/drivers/net/wireless/ath/ath9k/ath9k.h
-+++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -185,7 +185,8 @@ struct ath_atx_ac {
- 
- struct ath_frame_info {
- 	struct ath_buf *bf;
--	int framelen;
-+	u16 framelen;
-+	s8 txq;
- 	enum ath9k_key_type keytype;
- 	u8 keyix;
- 	u8 rtscts_rate;
---- a/drivers/net/wireless/ath/ath9k/xmit.c
-+++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -147,15 +147,13 @@ static void ath_set_rates(struct ieee802
- static void ath_txq_skb_done(struct ath_softc *sc, struct ath_txq *txq,
- 			     struct sk_buff *skb)
- {
--	int q;
--
--	q = skb_get_queue_mapping(skb);
--	if (txq == sc->tx.uapsdq)
--		txq = sc->tx.txq_map[q];
-+	struct ath_frame_info *fi = get_frame_info(skb);
-+	int q = fi->txq;
- 
--	if (txq != sc->tx.txq_map[q])
-+	if (q < 0)
- 		return;
- 
-+	txq = sc->tx.txq_map[q];
- 	if (WARN_ON(--txq->pending_frames < 0))
- 		txq->pending_frames = 0;
- 
-@@ -887,6 +885,15 @@ ath_tx_get_tid_subframe(struct ath_softc
- 
- 		tx_info = IEEE80211_SKB_CB(skb);
- 		tx_info->flags &= ~IEEE80211_TX_CTL_CLEAR_PS_FILT;
++			reg |= AR5K_AR5312_ENABLE_WLAN1;
++		iowrite32(reg, (void __iomem *) AR5K_AR5312_ENABLE);
 +
 +		/*
-+		 * No aggregation session is running, but there may be frames
-+		 * from a previous session or a failed attempt in the queue.
-+		 * Send them out as normal data frames
++		 * On a dual-band AR5312, the multiband radio is only
++		 * used as pass-through. Disable 2 GHz support in the
++		 * driver for it
 +		 */
-+		if (!tid->active)
-+			tx_info->flags &= ~IEEE80211_TX_CTL_AMPDU;
++		if (to_platform_device(ah->dev)->id == 0 &&
++		    (bcfg->config->flags & (BD_WLAN0 | BD_WLAN1)) ==
++		     (BD_WLAN1 | BD_WLAN0))
++			ah->ah_capabilities.cap_needs_2GHz_ovr = true;
++		else
++			ah->ah_capabilities.cap_needs_2GHz_ovr = false;
++	}
 +
- 		if (!(tx_info->flags & IEEE80211_TX_CTL_AMPDU)) {
- 			bf->bf_state.bf_type = 0;
- 			return bf;
-@@ -1999,6 +2006,7 @@ static void setup_frame_info(struct ieee
- 		an = (struct ath_node *) sta->drv_priv;
- 
- 	memset(fi, 0, sizeof(*fi));
-+	fi->txq = -1;
- 	if (hw_key)
- 		fi->keyix = hw_key->hw_key_idx;
- 	else if (an && ieee80211_is_data(hdr->frame_control) && an->ps_key > 0)
-@@ -2150,6 +2158,7 @@ int ath_tx_start(struct ieee80211_hw *hw
- 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
- 	struct ieee80211_sta *sta = txctl->sta;
- 	struct ieee80211_vif *vif = info->control.vif;
-+	struct ath_frame_info *fi = get_frame_info(skb);
- 	struct ath_softc *sc = hw->priv;
- 	struct ath_txq *txq = txctl->txq;
- 	struct ath_atx_tid *tid = NULL;
-@@ -2170,11 +2179,13 @@ int ath_tx_start(struct ieee80211_hw *hw
- 	q = skb_get_queue_mapping(skb);
- 
- 	ath_txq_lock(sc, txq);
--	if (txq == sc->tx.txq_map[q] &&
--	    ++txq->pending_frames > sc->tx.txq_max_pending[q] &&
--	    !txq->stopped) {
--		ieee80211_stop_queue(sc->hw, q);
--		txq->stopped = true;
-+	if (txq == sc->tx.txq_map[q]) {
-+		fi->txq = q;
-+		if (++txq->pending_frames > sc->tx.txq_max_pending[q] &&
-+		    !txq->stopped) {
-+			ieee80211_stop_queue(sc->hw, q);
-+			txq->stopped = true;
-+		}
- 	}
- 
- 	if (txctl->an && ieee80211_is_data_present(hdr->frame_control))
---- a/net/mac80211/chan.c
-+++ b/net/mac80211/chan.c
-@@ -521,6 +521,8 @@ static void ieee80211_recalc_chanctx_cha
- 			continue;
- 		if (rcu_access_pointer(sdata->vif.chanctx_conf) != conf)
- 			continue;
-+		if (sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
-+			continue;
- 
- 		if (!compat)
- 			compat = &sdata->vif.bss_conf.chandef;
---- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -1004,9 +1004,11 @@ static bool ar5008_hw_ani_control_new(st
- 	case ATH9K_ANI_FIRSTEP_LEVEL:{
- 		u32 level = param;
- 
--		value = level;
-+		value = level * 2;
- 		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG,
- 			      AR_PHY_FIND_SIG_FIRSTEP, value);
-+		REG_RMW_FIELD(ah, AR_PHY_FIND_SIG_LOW,
-+			      AR_PHY_FIND_SIG_FIRSTEP_LOW, value);
- 
- 		if (level != aniState->firstepLevel) {
- 			ath_dbg(common, ANI,
-@@ -1040,9 +1042,8 @@ static bool ar5008_hw_ani_control_new(st
- 		REG_RMW_FIELD(ah, AR_PHY_TIMING5,
- 			      AR_PHY_TIMING5_CYCPWR_THR1, value);
- 
--		if (IS_CHAN_HT40(ah->curchan))
--			REG_RMW_FIELD(ah, AR_PHY_EXT_CCA,
--				      AR_PHY_EXT_TIMING5_CYCPWR_THR1, value);
-+		REG_RMW_FIELD(ah, AR_PHY_EXT_CCA,
-+				  AR_PHY_EXT_TIMING5_CYCPWR_THR1, value - 1);
- 
- 		if (level != aniState->spurImmunityLevel) {
- 			ath_dbg(common, ANI,
---- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-+++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -517,6 +517,23 @@ static void ar9003_hw_spur_mitigate(stru
- 	ar9003_hw_spur_mitigate_ofdm(ah, chan);
- }
- 
-+static u32 ar9003_hw_compute_pll_control_soc(struct ath_hw *ah,
-+					     struct ath9k_channel *chan)
-+{
-+	u32 pll;
++	ret = ath5k_init_ah(ah, &ath_ahb_bus_ops);
++	if (ret != 0) {
++		dev_err(&pdev->dev, "failed to attach device, err=%d\n", ret);
++		ret = -ENODEV;
++		goto err_free_hw;
++	}
 +
-+	pll = SM(0x5, AR_RTC_9300_SOC_PLL_REFDIV);
++	platform_set_drvdata(pdev, hw);
 +
-+	if (chan && IS_CHAN_HALF_RATE(chan))
-+		pll |= SM(0x1, AR_RTC_9300_SOC_PLL_CLKSEL);
-+	else if (chan && IS_CHAN_QUARTER_RATE(chan))
-+		pll |= SM(0x2, AR_RTC_9300_SOC_PLL_CLKSEL);
++	return 0;
 +
-+	pll |= SM(0x2c, AR_RTC_9300_SOC_PLL_DIV_INT);
-+
-+	return pll;
++ err_free_hw:
++	ieee80211_free_hw(hw);
++ err_iounmap:
++        iounmap(mem);
++ err_out:
++	return ret;
 +}
 +
- static u32 ar9003_hw_compute_pll_control(struct ath_hw *ah,
- 					 struct ath9k_channel *chan)
++static int ath_ahb_remove(struct platform_device *pdev)
++{
++	struct ar231x_board_config *bcfg = dev_get_platdata(&pdev->dev);
++	struct ieee80211_hw *hw = platform_get_drvdata(pdev);
++	struct ath5k_hw *ah;
++	u32 reg;
++
++	if (!hw)
++		return 0;
++
++	ah = hw->priv;
++
++	if (bcfg->devid >= AR5K_SREV_AR2315_R6) {
++		/* Disable WMAC AHB arbitration */
++		reg = ioread32((void __iomem *) AR5K_AR2315_AHB_ARB_CTL);
++		reg &= ~AR5K_AR2315_AHB_ARB_CTL_WLAN;
++		iowrite32(reg, (void __iomem *) AR5K_AR2315_AHB_ARB_CTL);
++	} else {
++		/*Stop DMA access */
++		reg = ioread32((void __iomem *) AR5K_AR5312_ENABLE);
++		if (to_platform_device(ah->dev)->id == 0)
++			reg &= ~AR5K_AR5312_ENABLE_WLAN0;
++		else
++			reg &= ~AR5K_AR5312_ENABLE_WLAN1;
++		iowrite32(reg, (void __iomem *) AR5K_AR5312_ENABLE);
++	}
++
++	ath5k_deinit_ah(ah);
++	iounmap(ah->iobase);
++	ieee80211_free_hw(hw);
++
++	return 0;
++}
++
++static struct platform_driver ath_ahb_driver = {
++	.probe      = ath_ahb_probe,
++	.remove     = ath_ahb_remove,
++	.driver		= {
++		.name	= "ar231x-wmac",
++		.owner	= THIS_MODULE,
++	},
++};
++
++module_platform_driver(ath_ahb_driver);
+--- a/drivers/net/wireless/ath/ath5k/ath5k.h
++++ b/drivers/net/wireless/ath/ath5k/ath5k.h
+@@ -1647,6 +1647,32 @@ static inline struct ath_regulatory *ath
+ 	return &(ath5k_hw_common(ah)->regulatory);
+ }
+ 
++#ifdef CONFIG_ATHEROS_AR231X
++#define AR5K_AR2315_PCI_BASE	((void __iomem *)0xb0100000)
++
++static inline void __iomem *ath5k_ahb_reg(struct ath5k_hw *ah, u16 reg)
++{
++	/* On AR2315 and AR2317 the PCI clock domain registers
++	 * are outside of the WMAC register space */
++	if (unlikely((reg >= 0x4000) && (reg < 0x5000) &&
++	    (ah->ah_mac_srev >= AR5K_SREV_AR2315_R6)))
++		return AR5K_AR2315_PCI_BASE + reg;
++
++	return ah->iobase + reg;
++}
++
++static inline u32 ath5k_hw_reg_read(struct ath5k_hw *ah, u16 reg)
++{
++	return ioread32(ath5k_ahb_reg(ah, reg));
++}
++
++static inline void ath5k_hw_reg_write(struct ath5k_hw *ah, u32 val, u16 reg)
++{
++	iowrite32(val, ath5k_ahb_reg(ah, reg));
++}
++
++#else
++
+ static inline u32 ath5k_hw_reg_read(struct ath5k_hw *ah, u16 reg)
  {
-@@ -1779,7 +1796,12 @@ void ar9003_hw_attach_phy_ops(struct ath
+ 	return ioread32(ah->iobase + reg);
+@@ -1657,6 +1683,8 @@ static inline void ath5k_hw_reg_write(st
+ 	iowrite32(val, ah->iobase + reg);
+ }
  
- 	priv_ops->rf_set_freq = ar9003_hw_set_channel;
- 	priv_ops->spur_mitigate_freq = ar9003_hw_spur_mitigate;
--	priv_ops->compute_pll_control = ar9003_hw_compute_pll_control;
++#endif
 +
-+	if (AR_SREV_9340(ah) || AR_SREV_9550(ah) || AR_SREV_9531(ah))
-+		priv_ops->compute_pll_control = ar9003_hw_compute_pll_control_soc;
-+	else
-+		priv_ops->compute_pll_control = ar9003_hw_compute_pll_control;
-+
- 	priv_ops->set_channel_regs = ar9003_hw_set_channel_regs;
- 	priv_ops->init_bb = ar9003_hw_init_bb;
- 	priv_ops->process_ini = ar9003_hw_process_ini;
---- a/drivers/net/wireless/ath/ath9k/hw.c
-+++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -702,6 +702,8 @@ static void ath9k_hw_init_pll(struct ath
+ static inline enum ath_bus_type ath5k_get_bus_type(struct ath5k_hw *ah)
  {
- 	u32 pll;
+ 	return ath5k_hw_common(ah)->bus_ops->ath_bus_type;
+--- a/drivers/net/wireless/ath/ath5k/base.c
++++ b/drivers/net/wireless/ath/ath5k/base.c
+@@ -99,6 +99,15 @@ static int ath5k_reset(struct ath5k_hw *
  
-+	pll = ath9k_hw_compute_pll_control(ah, chan);
-+
- 	if (AR_SREV_9485(ah) || AR_SREV_9565(ah)) {
- 		/* program BB PLL ki and kd value, ki=0x4, kd=0x40 */
- 		REG_RMW_FIELD(ah, AR_CH0_BB_DPLL2,
-@@ -752,7 +754,8 @@ static void ath9k_hw_init_pll(struct ath
- 		REG_RMW_FIELD(ah, AR_CH0_DDR_DPLL3,
- 			      AR_CH0_DPLL3_PHASE_SHIFT, 0x1);
+ /* Known SREVs */
+ static const struct ath5k_srev_name srev_names[] = {
++#ifdef CONFIG_ATHEROS_AR231X
++	{ "5312",	AR5K_VERSION_MAC,	AR5K_SREV_AR5312_R2 },
++	{ "5312",	AR5K_VERSION_MAC,	AR5K_SREV_AR5312_R7 },
++	{ "2313",	AR5K_VERSION_MAC,	AR5K_SREV_AR2313_R8 },
++	{ "2315",	AR5K_VERSION_MAC,	AR5K_SREV_AR2315_R6 },
++	{ "2315",	AR5K_VERSION_MAC,	AR5K_SREV_AR2315_R7 },
++	{ "2317",	AR5K_VERSION_MAC,	AR5K_SREV_AR2317_R1 },
++	{ "2317",	AR5K_VERSION_MAC,	AR5K_SREV_AR2317_R2 },
++#else
+ 	{ "5210",	AR5K_VERSION_MAC,	AR5K_SREV_AR5210 },
+ 	{ "5311",	AR5K_VERSION_MAC,	AR5K_SREV_AR5311 },
+ 	{ "5311A",	AR5K_VERSION_MAC,	AR5K_SREV_AR5311A },
+@@ -117,6 +126,7 @@ static const struct ath5k_srev_name srev
+ 	{ "5418",	AR5K_VERSION_MAC,	AR5K_SREV_AR5418 },
+ 	{ "2425",	AR5K_VERSION_MAC,	AR5K_SREV_AR2425 },
+ 	{ "2417",	AR5K_VERSION_MAC,	AR5K_SREV_AR2417 },
++#endif
+ 	{ "xxxxx",	AR5K_VERSION_MAC,	AR5K_SREV_UNKNOWN },
+ 	{ "5110",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_5110 },
+ 	{ "5111",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_5111 },
+@@ -132,6 +142,10 @@ static const struct ath5k_srev_name srev
+ 	{ "5413",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_5413 },
+ 	{ "5424",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_5424 },
+ 	{ "5133",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_5133 },
++#ifdef CONFIG_ATHEROS_AR231X
++	{ "2316",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_2316 },
++	{ "2317",	AR5K_VERSION_RAD,	AR5K_SREV_RAD_2317 },
++#endif
+ 	{ "xxxxx",	AR5K_VERSION_RAD,	AR5K_SREV_UNKNOWN },
+ };
  
--		REG_WRITE(ah, AR_RTC_PLL_CONTROL, 0x1142c);
-+		REG_WRITE(ah, AR_RTC_PLL_CONTROL,
-+			  pll | AR_RTC_9300_PLL_BYPASS);
- 		udelay(1000);
+--- a/drivers/net/wireless/ath/ath5k/led.c
++++ b/drivers/net/wireless/ath/ath5k/led.c
+@@ -163,14 +163,20 @@ int ath5k_init_leds(struct ath5k_hw *ah)
+ {
+ 	int ret = 0;
+ 	struct ieee80211_hw *hw = ah->hw;
++#ifndef CONFIG_ATHEROS_AR231X
+ 	struct pci_dev *pdev = ah->pdev;
++#endif
+ 	char name[ATH5K_LED_MAX_NAME_LEN + 1];
+ 	const struct pci_device_id *match;
  
- 		/* program refdiv, nint, frac to RTC register */
-@@ -768,7 +771,8 @@ static void ath9k_hw_init_pll(struct ath
- 	} else if (AR_SREV_9340(ah) || AR_SREV_9550(ah) || AR_SREV_9531(ah)) {
- 		u32 regval, pll2_divint, pll2_divfrac, refdiv;
+ 	if (!ah->pdev)
+ 		return 0;
  
--		REG_WRITE(ah, AR_RTC_PLL_CONTROL, 0x1142c);
-+		REG_WRITE(ah, AR_RTC_PLL_CONTROL,
-+			  pll | AR_RTC_9300_SOC_PLL_BYPASS);
- 		udelay(1000);
++#ifdef CONFIG_ATHEROS_AR231X
++	match = NULL;
++#else
+ 	match = pci_match_id(&ath5k_led_devices[0], pdev);
++#endif
+ 	if (match) {
+ 		__set_bit(ATH_STAT_LEDSOFT, ah->status);
+ 		ah->led_pin = ATH_PIN(match->driver_data);
+--- a/drivers/net/wireless/ath/ath5k/debug.c
++++ b/drivers/net/wireless/ath/ath5k/debug.c
+@@ -65,6 +65,7 @@
  
- 		REG_SET_BIT(ah, AR_PHY_PLL_MODE, 0x1 << 16);
-@@ -840,7 +844,6 @@ static void ath9k_hw_init_pll(struct ath
- 		udelay(1000);
- 	}
- 
--	pll = ath9k_hw_compute_pll_control(ah, chan);
- 	if (AR_SREV_9565(ah))
- 		pll |= 0x40000;
- 	REG_WRITE(ah, AR_RTC_PLL_CONTROL, pll);
---- a/drivers/net/wireless/ath/ath9k/reg.h
-+++ b/drivers/net/wireless/ath/ath9k/reg.h
-@@ -1236,12 +1236,23 @@ enum {
- #define AR_CH0_DPLL3_PHASE_SHIFT_S   23
- #define AR_PHY_CCA_NOM_VAL_2GHZ      -118
- 
-+#define AR_RTC_9300_SOC_PLL_DIV_INT          0x0000003f
-+#define AR_RTC_9300_SOC_PLL_DIV_INT_S        0
-+#define AR_RTC_9300_SOC_PLL_DIV_FRAC         0x000fffc0
-+#define AR_RTC_9300_SOC_PLL_DIV_FRAC_S       6
-+#define AR_RTC_9300_SOC_PLL_REFDIV           0x01f00000
-+#define AR_RTC_9300_SOC_PLL_REFDIV_S         20
-+#define AR_RTC_9300_SOC_PLL_CLKSEL           0x06000000
-+#define AR_RTC_9300_SOC_PLL_CLKSEL_S         25
-+#define AR_RTC_9300_SOC_PLL_BYPASS           0x08000000
-+
- #define AR_RTC_9300_PLL_DIV          0x000003ff
- #define AR_RTC_9300_PLL_DIV_S        0
- #define AR_RTC_9300_PLL_REFDIV       0x00003C00
- #define AR_RTC_9300_PLL_REFDIV_S     10
- #define AR_RTC_9300_PLL_CLKSEL       0x0000C000
- #define AR_RTC_9300_PLL_CLKSEL_S     14
-+#define AR_RTC_9300_PLL_BYPASS       0x00010000
- 
- #define AR_RTC_9160_PLL_DIV	0x000003ff
- #define AR_RTC_9160_PLL_DIV_S   0
---- a/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
-+++ b/drivers/net/wireless/ath/ath9k/htc_drv_txrx.c
-@@ -978,7 +978,7 @@ static bool ath9k_rx_prepare(struct ath9
- 	struct ath_hw *ah = common->ah;
- 	struct ath_htc_rx_status *rxstatus;
- 	struct ath_rx_status rx_stats;
--	bool decrypt_error;
-+	bool decrypt_error = false;
- 
- 	if (skb->len < HTC_RX_FRAME_HEADER_SIZE) {
- 		ath_err(common, "Corrupted RX frame, dropping (len: %d)\n",
+ #include <linux/seq_file.h>
+ #include <linux/list.h>
++#include <linux/vmalloc.h>
+ #include "debug.h"
+ #include "ath5k.h"
+ #include "reg.h"
