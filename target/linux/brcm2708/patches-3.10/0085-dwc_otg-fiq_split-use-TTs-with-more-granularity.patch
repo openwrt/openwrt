@@ -1,7 +1,7 @@
-From 2b66f2f4f07ed87db0e241489d4e93881fe50a85 Mon Sep 17 00:00:00 2001
+From fa6cd2944967a33088bc4cb66d1dc0323665b7c6 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Tue, 30 Jul 2013 09:58:48 +0100
-Subject: [PATCH 085/174] dwc_otg: fiq_split: use TTs with more granularity
+Subject: [PATCH 085/196] dwc_otg: fiq_split: use TTs with more granularity
 
 This fixes certain issues with split transaction scheduling.
 
@@ -18,9 +18,11 @@ This commit will mainly affect USB audio playback.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 20 ++++++++++++++++----
  2 files changed, 29 insertions(+), 17 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index 3c619b4..c42172f 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -1356,6 +1356,7 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1356,6 +1356,7 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  {
  	dwc_list_link_t *qh_ptr;
  	dwc_otg_qh_t *qh;
@@ -28,7 +30,7 @@ This commit will mainly affect USB audio playback.
  	int num_channels;
  	dwc_irqflags_t flags;
  	dwc_spinlock_t *channel_lock = hcd->channel_lock;
-@@ -1379,11 +1380,18 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1379,11 +1380,18 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  
  		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
  
@@ -52,7 +54,7 @@ This commit will mainly affect USB audio playback.
  		}
  
  		if (microframe_schedule) {
-@@ -1451,18 +1459,10 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
+@@ -1451,18 +1459,10 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
  			}
  		}
  
@@ -71,9 +73,11 @@ This commit will mainly affect USB audio playback.
  					break;
  				}
  				hcd->available_host_channels--;
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 488defb..7d521d9 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -1328,10 +1328,20 @@ static void release_channel(dwc_otg_hcd_
+@@ -1328,10 +1328,20 @@ static void release_channel(dwc_otg_hcd_t * hcd,
  #ifdef FIQ_DEBUG
  	int endp = qtd->urb ? qtd->urb->pipe_info.ep_num : 0;
  #endif
@@ -113,3 +117,6 @@ This commit will mainly affect USB audio playback.
  	}
  
  	/* Try to queue more transfers now that there's a free channel. */
+-- 
+1.9.1
+

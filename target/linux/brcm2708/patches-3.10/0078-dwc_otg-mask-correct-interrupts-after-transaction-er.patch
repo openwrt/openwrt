@@ -1,7 +1,7 @@
-From cb902630ae7ef709c8f40ca3f506cf5052077701 Mon Sep 17 00:00:00 2001
+From 5608eaff0f301e9bf73998da020644f1673b66e4 Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Sat, 13 Jul 2013 20:41:26 +0100
-Subject: [PATCH 078/174] dwc_otg: mask correct interrupts after transaction
+Subject: [PATCH 078/196] dwc_otg: mask correct interrupts after transaction
  error recovery
 
 The dwc_otg driver will unmask certain interrupts on a transaction
@@ -17,9 +17,11 @@ from being generated if the FIQ is enabled.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index e8b4d35..27b673f 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -1851,7 +1851,11 @@ static int32_t handle_hc_nak_intr(dwc_ot
+@@ -1851,7 +1851,11 @@ static int32_t handle_hc_nak_intr(dwc_otg_hcd_t * hcd,
  			 * transfers in DMA mode for the sole purpose of
  			 * resetting the error count after a transaction error
  			 * occurs. The core will continue transferring data.
@@ -31,7 +33,7 @@ from being generated if the FIQ is enabled.
  			qtd->error_count = 0;
  			goto handle_nak_done;
  		}
-@@ -1963,6 +1967,15 @@ static int32_t handle_hc_ack_intr(dwc_ot
+@@ -1963,6 +1967,15 @@ static int32_t handle_hc_ack_intr(dwc_otg_hcd_t * hcd,
  			halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_ACK);
  		}
  	} else {
@@ -47,7 +49,7 @@ from being generated if the FIQ is enabled.
  		qtd->error_count = 0;
  
  		if (hc->qh->ping_state) {
-@@ -2328,6 +2341,14 @@ static int32_t handle_hc_datatglerr_intr
+@@ -2328,6 +2341,14 @@ static int32_t handle_hc_datatglerr_intr(dwc_otg_hcd_t * hcd,
  			qtd->urb, qtd, DWC_OTG_HC_XFER_XACT_ERR);
  		halt_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_XACT_ERR);
  	} else if (hc->ep_is_in) {
@@ -62,3 +64,6 @@ from being generated if the FIQ is enabled.
  		qtd->error_count = 0;
  	}
  
+-- 
+1.9.1
+

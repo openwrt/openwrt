@@ -1,7 +1,7 @@
-From 2807aef659483de0d569b2c01e2b68be046496d3 Mon Sep 17 00:00:00 2001
+From ceb70800efa2f4c92f0c89bf472005decd577d65 Mon Sep 17 00:00:00 2001
 From: Luke Diamand <luked@broadcom.com>
 Date: Tue, 31 Dec 2013 23:07:36 +0000
-Subject: [PATCH 148/174] bcm2708_fb: report number of dma copies
+Subject: [PATCH 148/196] bcm2708_fb: report number of dma copies
 
 Add a counter (exported via debugfs) reporting the
 number of dma copies that the framebuffer driver
@@ -13,6 +13,8 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  drivers/video/bcm2708_fb.c | 55 ++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 55 insertions(+)
 
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index c10c5ee..4d7d963 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
 @@ -27,6 +27,7 @@
@@ -88,7 +90,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  static int bcm2708_fb_set_bitfields(struct fb_var_screeninfo *var)
  {
  	int ret = 0;
-@@ -443,8 +491,10 @@ static void bcm2708_fb_copyarea(struct f
+@@ -443,8 +491,10 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
  	/* end of dma control blocks chain */
  	cb->next = 0;
  
@@ -99,7 +101,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  }
  
  static void bcm2708_fb_imageblit(struct fb_info *info,
-@@ -552,6 +602,9 @@ static int bcm2708_fb_probe(struct platf
+@@ -552,6 +602,9 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  	}
  	memset(fb, 0, sizeof(struct bcm2708_fb));
  
@@ -109,7 +111,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  	fb->cb_base = dma_alloc_writecombine(&dev->dev, SZ_64K,
  					     &fb->cb_handle, GFP_KERNEL);
  	if (!fb->cb_base) {
-@@ -607,6 +660,8 @@ static int bcm2708_fb_remove(struct plat
+@@ -607,6 +660,8 @@ static int bcm2708_fb_remove(struct platform_device *dev)
  
  	dma_free_coherent(NULL, PAGE_ALIGN(sizeof(*fb->info)), (void *)fb->info,
  			  fb->dma);
@@ -118,3 +120,6 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  	kfree(fb);
  
  	return 0;
+-- 
+1.9.1
+

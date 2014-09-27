@@ -1,7 +1,7 @@
-From d6442f505a7bf1bebe9bd4689d021f007a269cd6 Mon Sep 17 00:00:00 2001
+From d94e2bd60b27f2ff7d6e9ff7ee43848bb2090c06 Mon Sep 17 00:00:00 2001
 From: dero <de@ro>
 Date: Mon, 19 Nov 2012 12:46:06 +0100
-Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
+Subject: [PATCH 038/196] Lazy CRC quirk: Implemented retrying mechanisms for
  SD SSR and SCR, disabled missing_status and spurious CRC ACMD51 quirks by
  default (should be fixed by the retrying-mechanishm)
 
@@ -10,6 +10,8 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  drivers/mmc/host/sdhci-bcm2708.c |  11 +++-
  2 files changed, 108 insertions(+), 18 deletions(-)
 
+diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
+index 9e645e1..1ee6cf3 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
 @@ -13,6 +13,8 @@
@@ -21,7 +23,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  
  #include <linux/mmc/host.h>
  #include <linux/mmc/card.h>
-@@ -58,6 +60,15 @@ static const unsigned int tacc_mant[] =
+@@ -58,6 +60,15 @@ static const unsigned int tacc_mant[] = {
  		__res & __mask;						\
  	})
  
@@ -37,7 +39,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  /*
   * Given the decoded CSD structure, decode the raw CID to our CID structure.
   */
-@@ -210,12 +221,62 @@ static int mmc_decode_scr(struct mmc_car
+@@ -210,12 +221,62 @@ static int mmc_decode_scr(struct mmc_card *card)
  }
  
  /*
@@ -102,7 +104,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  	u32 *ssr;
  
  	if (!(card->csd.cmdclass & CCC_APP_SPEC)) {
-@@ -227,15 +288,41 @@ static int mmc_read_ssr(struct mmc_card
+@@ -227,15 +288,41 @@ static int mmc_read_ssr(struct mmc_card *card)
  	ssr = kmalloc(64, GFP_KERNEL);
  	if (!ssr)
  		return -ENOMEM;
@@ -150,7 +152,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  	for (i = 0; i < 16; i++)
  		ssr[i] = be32_to_cpu(ssr[i]);
  
-@@ -808,15 +895,11 @@ int mmc_sd_setup_card(struct mmc_host *h
+@@ -808,15 +895,11 @@ int mmc_sd_setup_card(struct mmc_host *host, struct mmc_card *card,
  
  	if (!reinit) {
  		/*
@@ -170,6 +172,8 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  
  		/*
  		 * Fetch and process SD Status register.
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index ffd7310..3556ed3 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -137,6 +137,7 @@ static bool allow_highspeed = 1;
@@ -180,7 +184,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  bool enable_llm = 1;
  
  #if 0
-@@ -1103,7 +1104,7 @@ static unsigned int sdhci_bcm2708_quirk_
+@@ -1103,7 +1104,7 @@ static unsigned int sdhci_bcm2708_quirk_extra_ints(struct sdhci_host *host)
          return 1;
  }
  
@@ -189,7 +193,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  {
          return 1;
  }
-@@ -1149,7 +1150,6 @@ static struct sdhci_ops sdhci_bcm2708_op
+@@ -1149,7 +1150,6 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
  	.pdma_reset = sdhci_bcm2708_platdma_reset,
  #endif
  	.extra_ints = sdhci_bcm2708_quirk_extra_ints,
@@ -197,7 +201,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  	.voltage_broken = sdhci_bcm2708_quirk_voltage_broken,
  	.uhs_broken = sdhci_bcm2708_uhs_broken,
  };
-@@ -1194,6 +1194,11 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1194,6 +1194,11 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  		sdhci_bcm2708_ops.missing_status = sdhci_bcm2708_missing_status;
  	}
  
@@ -209,7 +213,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  	printk("sdhci: %s low-latency mode\n",enable_llm?"Enable":"Disable");
  
  	host->hw_name = "BCM2708_Arasan";
-@@ -1389,6 +1394,7 @@ module_param(allow_highspeed, bool, 0444
+@@ -1389,6 +1394,7 @@ module_param(allow_highspeed, bool, 0444);
  module_param(emmc_clock_freq, int, 0444);
  module_param(sync_after_dma, bool, 0444);
  module_param(missing_status, bool, 0444);
@@ -217,7 +221,7 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  module_param(enable_llm, bool, 0444);
  module_param(cycle_delay, int, 0444);
  
-@@ -1401,6 +1407,7 @@ MODULE_PARM_DESC(allow_highspeed, "Allow
+@@ -1401,6 +1407,7 @@ MODULE_PARM_DESC(allow_highspeed, "Allow high speed transfers modes");
  MODULE_PARM_DESC(emmc_clock_freq, "Specify the speed of emmc clock");
  MODULE_PARM_DESC(sync_after_dma, "Block in driver until dma complete");
  MODULE_PARM_DESC(missing_status, "Use the missing status quirk");
@@ -225,3 +229,6 @@ Subject: [PATCH 038/174] Lazy CRC quirk: Implemented retrying mechanisms for
  MODULE_PARM_DESC(enable_llm, "Enable low-latency mode");
  
  
+-- 
+1.9.1
+

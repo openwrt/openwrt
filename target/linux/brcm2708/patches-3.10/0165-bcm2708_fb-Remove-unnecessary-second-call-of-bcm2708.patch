@@ -1,7 +1,7 @@
-From 543d19bb3d96c1e34a2eedc0d7e2d7f1b14e5f3d Mon Sep 17 00:00:00 2001
+From fc133162fe020547e00f04ce1d74a3bcf19dabdb Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 5 Feb 2014 17:00:22 +0000
-Subject: [PATCH 165/174] bcm2708_fb: Remove unnecessary second call of
+Subject: [PATCH 165/196] bcm2708_fb: Remove unnecessary second call of
  bcm2708_fb_debugfs_init
 
 See: https://github.com/raspberrypi/linux/issues/521
@@ -9,9 +9,11 @@ See: https://github.com/raspberrypi/linux/issues/521
  drivers/video/bcm2708_fb.c | 3 ---
  1 file changed, 3 deletions(-)
 
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index 935288d..e8bbcc3 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
-@@ -646,9 +646,6 @@ static int bcm2708_fb_probe(struct platf
+@@ -646,9 +646,6 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  
  	bcm2708_fb_debugfs_init(fb);
  
@@ -21,3 +23,6 @@ See: https://github.com/raspberrypi/linux/issues/521
  	fb->cb_base = dma_alloc_writecombine(&dev->dev, SZ_64K,
  					     &fb->cb_handle, GFP_KERNEL);
  	if (!fb->cb_base) {
+-- 
+1.9.1
+

@@ -1,12 +1,14 @@
-From 7776b6ebf1063d2f9fac33313c8d049b424fce46 Mon Sep 17 00:00:00 2001
+From f038d0681b072b929bb026bbb539cc8575d30c4f Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Sat, 8 Jun 2013 22:14:13 +0100
-Subject: [PATCH 066/174] Only init gpio pins of selected i2c bus
+Subject: [PATCH 066/196] Only init gpio pins of selected i2c bus
 
 ---
  drivers/i2c/busses/i2c-bcm2708.c | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
+index 3391889..edc90c0 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -97,7 +97,7 @@ struct bcm2708_i2c {
@@ -18,7 +20,7 @@ Subject: [PATCH 066/174] Only init gpio pins of selected i2c bus
  {
  #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
  #define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
-@@ -105,8 +105,10 @@ static void bcm2708_i2c_init_pinmode(voi
+@@ -105,8 +105,10 @@ static void bcm2708_i2c_init_pinmode(void)
  	int pin;
  	u32 *gpio = ioremap(0x20200000, SZ_16K);
  
@@ -30,7 +32,7 @@ Subject: [PATCH 066/174] Only init gpio pins of selected i2c bus
  		INP_GPIO(pin);		/* set mode to GPIO input first */
  		SET_GPIO_ALT(pin, 0);	/* set mode to ALT 0 */
  	}
-@@ -279,7 +281,7 @@ static int bcm2708_i2c_probe(struct plat
+@@ -279,7 +281,7 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
  		return PTR_ERR(clk);
  	}
  
@@ -39,3 +41,6 @@ Subject: [PATCH 066/174] Only init gpio pins of selected i2c bus
  
  	bi = kzalloc(sizeof(*bi), GFP_KERNEL);
  	if (!bi)
+-- 
+1.9.1
+

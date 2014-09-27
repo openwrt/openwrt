@@ -1,7 +1,7 @@
-From 444149f35455bfe551ce9dfa21d00b5b34ffb04f Mon Sep 17 00:00:00 2001
+From 78948302252dcffa18716390f784ba03e4320c67 Mon Sep 17 00:00:00 2001
 From: Kamal Mostafa <kamal@whence.com>
 Date: Mon, 22 Oct 2012 15:52:44 -0700
-Subject: [PATCH 046/174] spi/spi-bcm2708: respect per-transfer SPI clock
+Subject: [PATCH 046/196] spi/spi-bcm2708: respect per-transfer SPI clock
  speed_hz value
 
 The bcm2708 SPI driver's bcm2708_process_transfer() was ignoring the
@@ -17,9 +17,11 @@ Signed-off-by: Kamal Mostafa <kamal@whence.com>
  drivers/spi/spi-bcm2708.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/spi/spi-bcm2708.c b/drivers/spi/spi-bcm2708.c
+index 8513704..b74aa32 100644
 --- a/drivers/spi/spi-bcm2708.c
 +++ b/drivers/spi/spi-bcm2708.c
-@@ -259,6 +259,10 @@ static int bcm2708_setup_state(struct sp
+@@ -259,6 +259,10 @@ static int bcm2708_setup_state(struct spi_master *master,
  	if (state) {
  		state->cs = cs;
  		state->cdiv = cdiv;
@@ -30,7 +32,7 @@ Signed-off-by: Kamal Mostafa <kamal@whence.com>
  	}
  
  	return 0;
-@@ -277,7 +281,8 @@ static int bcm2708_process_transfer(stru
+@@ -277,7 +281,8 @@ static int bcm2708_process_transfer(struct bcm2708_spi *bs,
  
  	if (xfer->bits_per_word || xfer->speed_hz) {
  		ret = bcm2708_setup_state(spi->master, &spi->dev, &state,
@@ -40,3 +42,6 @@ Signed-off-by: Kamal Mostafa <kamal@whence.com>
  			spi->bits_per_word);
  		if (ret)
  			return ret;
+-- 
+1.9.1
+

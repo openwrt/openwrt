@@ -1,7 +1,7 @@
-From f83ff3e87f95ca90af499af93233fa2732e4dbbb Mon Sep 17 00:00:00 2001
+From 50720aa9a0e4af2d8c6dbf9305d45e0a91929951 Mon Sep 17 00:00:00 2001
 From: Florian Meier <florian.meier@koalo.de>
 Date: Fri, 6 Dec 2013 20:50:28 +0100
-Subject: [PATCH 124/174] ASoC: BCM2708: Add support for RPi-DAC
+Subject: [PATCH 124/196] ASoC: BCM2708: Add support for RPi-DAC
 
 This adds a machine driver for the RPi-DAC.
 
@@ -19,6 +19,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  create mode 100644 sound/soc/bcm/rpi-dac.c
  create mode 100644 sound/soc/codecs/pcm1794a.c
 
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index c3c4e1a..d0328d8 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -738,8 +738,10 @@ CONFIG_SND_SOC_DMAENGINE_PCM=y
@@ -32,9 +34,11 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  CONFIG_SOUND_PRIME=m
  CONFIG_HIDRAW=y
  CONFIG_HID_A4TECH=m
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 155a50c..90debb4 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -653,6 +653,20 @@ static struct platform_device snd_pcm510
+@@ -653,6 +653,20 @@ static struct platform_device snd_pcm5102a_codec_device = {
  };
  #endif
  
@@ -67,6 +71,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
+diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
+index 8b14e37..1c1f5cf 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -15,3 +15,10 @@ config SND_BCM2708_SOC_HIFIBERRY_DAC
@@ -81,9 +87,11 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
 +        help
 +         Say Y or M if you want to add support for RPi-DAC.
 \ No newline at end of file
+diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
+index 6834b4d..95a9d44 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -5,5 +5,7 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
+@@ -5,5 +5,7 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
  
  # BCM2708 Machine Support
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
@@ -91,6 +99,9 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
 +obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
+diff --git a/sound/soc/bcm/rpi-dac.c b/sound/soc/bcm/rpi-dac.c
+new file mode 100644
+index 0000000..ef3cd93
 --- /dev/null
 +++ b/sound/soc/bcm/rpi-dac.c
 @@ -0,0 +1,97 @@
@@ -191,6 +202,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_DESCRIPTION("ASoC Driver for RPi-DAC");
 +MODULE_LICENSE("GPL v2");
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index 7c43413..ef9ac1e 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -55,6 +55,7 @@ config SND_SOC_ALL_CODECS
@@ -211,6 +224,8 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  config SND_SOC_PCM5102A
  	tristate
  
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index 0677eb5..e98b865 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
 @@ -43,6 +43,7 @@ snd-soc-mc13783-objs := mc13783.o
@@ -221,7 +236,7 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  snd-soc-pcm5102a-objs := pcm5102a.o
  snd-soc-rt5631-objs := rt5631.o
  snd-soc-sgtl5000-objs := sgtl5000.o
-@@ -171,6 +172,7 @@ obj-$(CONFIG_SND_SOC_MC13783)	+= snd-soc
+@@ -171,6 +172,7 @@ obj-$(CONFIG_SND_SOC_MC13783)	+= snd-soc-mc13783.o
  obj-$(CONFIG_SND_SOC_ML26124)	+= snd-soc-ml26124.o
  obj-$(CONFIG_SND_SOC_OMAP_HDMI_CODEC) += snd-soc-omap-hdmi-codec.o
  obj-$(CONFIG_SND_SOC_PCM3008)	+= snd-soc-pcm3008.o
@@ -229,6 +244,9 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  obj-$(CONFIG_SND_SOC_PCM5102A)	+= snd-soc-pcm5102a.o
  obj-$(CONFIG_SND_SOC_RT5631)	+= snd-soc-rt5631.o
  obj-$(CONFIG_SND_SOC_SGTL5000)  += snd-soc-sgtl5000.o
+diff --git a/sound/soc/codecs/pcm1794a.c b/sound/soc/codecs/pcm1794a.c
+new file mode 100644
+index 0000000..b4eaa44
 --- /dev/null
 +++ b/sound/soc/codecs/pcm1794a.c
 @@ -0,0 +1,62 @@
@@ -294,3 +312,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
 +MODULE_DESCRIPTION("ASoC PCM1794A codec driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
+-- 
+1.9.1
+

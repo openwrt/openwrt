@@ -1,16 +1,18 @@
-From 6d8dc87966b488c93a365657588690137de13ed1 Mon Sep 17 00:00:00 2001
+From 4791194922d8ab361136d462a23e897b459d1a2a Mon Sep 17 00:00:00 2001
 From: Vincent Sanders <vincent.sanders@collabora.co.uk>
 Date: Mon, 30 Sep 2013 17:04:55 +0100
-Subject: [PATCH 109/174] vchiq: fix the shim message release
+Subject: [PATCH 109/196] vchiq: fix the shim message release
 
 Signed-off-by: Daniel Stone <daniels@collabora.com>
 ---
  .../vc04_services/interface/vchiq_arm/vchiq_shim.c | 47 +++++++++++++---------
  1 file changed, 29 insertions(+), 18 deletions(-)
 
+diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
+index f752f8d..fe9bd80 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
-@@ -545,47 +545,58 @@ static VCHIQ_STATUS_T shim_callback(VCHI
+@@ -545,47 +545,58 @@ static VCHIQ_STATUS_T shim_callback(VCHIQ_REASON_T reason,
  	SHIM_SERVICE_T *service =
  		(SHIM_SERVICE_T *)VCHIQ_GET_SERVICE_USERDATA(handle);
  
@@ -87,3 +89,6 @@ Signed-off-by: Daniel Stone <daniels@collabora.com>
  	return VCHIQ_SUCCESS;
  }
  
+-- 
+1.9.1
+

@@ -1,7 +1,7 @@
-From 9878725ea0cedbc79d962e0ac041acdc1135d79c Mon Sep 17 00:00:00 2001
+From 640a6391ca5a617196bb250d3378f775fe16b9f8 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Mon, 23 Dec 2013 15:42:21 +0000
-Subject: [PATCH 142/174] V4L2: Enable MJPEG encoding
+Subject: [PATCH 142/196] V4L2: Enable MJPEG encoding
 
 Requires GPU firmware update to support MJPEG encoder.
 
@@ -11,6 +11,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/mmal-encodings.h | 1 +
  2 files changed, 8 insertions(+)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index 4780107..166039e 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
 @@ -100,6 +100,13 @@ static struct mmal_fmt formats[] = {
@@ -27,6 +29,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	 }
  };
  
+diff --git a/drivers/media/platform/bcm2835/mmal-encodings.h b/drivers/media/platform/bcm2835/mmal-encodings.h
+index 856e80e..764bb12 100644
 --- a/drivers/media/platform/bcm2835/mmal-encodings.h
 +++ b/drivers/media/platform/bcm2835/mmal-encodings.h
 @@ -27,6 +27,7 @@
@@ -37,3 +41,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  #define MMAL_ENCODING_JPEG             MMAL_FOURCC('J', 'P', 'E', 'G')
  #define MMAL_ENCODING_GIF              MMAL_FOURCC('G', 'I', 'F', ' ')
+-- 
+1.9.1
+

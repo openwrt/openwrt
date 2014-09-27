@@ -1,7 +1,7 @@
-From ba65074e39e6aee492bd3c077f640b29a0a89c05 Mon Sep 17 00:00:00 2001
+From 370c8243ec8e7f3abd8171b7d2dde170f4c5e63a Mon Sep 17 00:00:00 2001
 From: Siarhei Siamashka <siarhei.siamashka@gmail.com>
 Date: Mon, 17 Jun 2013 16:00:25 +0300
-Subject: [PATCH 070/174] bcm2708_fb: DMA acceleration for fb_copyarea
+Subject: [PATCH 070/196] bcm2708_fb: DMA acceleration for fb_copyarea
 
 Based on http://www.raspberrypi.org/phpBB3/viewtopic.php?p=62425#p62425
 Also used Simon's dmaer_master module as a reference for tweaking DMA
@@ -23,6 +23,8 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  drivers/video/bcm2708_fb.c | 162 ++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 159 insertions(+), 3 deletions(-)
 
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index 08d9238..c10c5ee 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
 @@ -28,6 +28,7 @@
@@ -45,7 +47,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  };
  
  #define to_bcm2708(info)	container_of(info, struct bcm2708_fb, fb)
-@@ -312,11 +318,133 @@ static void bcm2708_fb_fillrect(struct f
+@@ -312,11 +318,133 @@ static void bcm2708_fb_fillrect(struct fb_info *info,
  	cfb_fillrect(info, rect);
  }
  
@@ -181,7 +183,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  }
  
  static void bcm2708_fb_imageblit(struct fb_info *info,
-@@ -359,7 +487,7 @@ static int bcm2708_fb_register(struct bc
+@@ -359,7 +487,7 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
  		fb->dma = dma;
  	}
  	fb->fb.fbops = &bcm2708_fb_ops;
@@ -190,7 +192,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  	fb->fb.pseudo_palette = fb->cmap;
  
  	strncpy(fb->fb.fix.id, bcm2708_name, sizeof(fb->fb.fix.id));
-@@ -424,6 +552,28 @@ static int bcm2708_fb_probe(struct platf
+@@ -424,6 +552,28 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  	}
  	memset(fb, 0, sizeof(struct bcm2708_fb));
  
@@ -219,7 +221,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  	fb->dev = dev;
  
  	ret = bcm2708_fb_register(fb);
-@@ -432,6 +582,9 @@ static int bcm2708_fb_probe(struct platf
+@@ -432,6 +582,9 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  		goto out;
  	}
  
@@ -229,7 +231,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  	kfree(fb);
  free_region:
  	dev_err(&dev->dev, "probe failed, err %d\n", ret);
-@@ -449,6 +602,9 @@ static int bcm2708_fb_remove(struct plat
+@@ -449,6 +602,9 @@ static int bcm2708_fb_remove(struct platform_device *dev)
  		iounmap(fb->fb.screen_base);
  	unregister_framebuffer(&fb->fb);
  
@@ -239,3 +241,6 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  	dma_free_coherent(NULL, PAGE_ALIGN(sizeof(*fb->info)), (void *)fb->info,
  			  fb->dma);
  	kfree(fb);
+-- 
+1.9.1
+

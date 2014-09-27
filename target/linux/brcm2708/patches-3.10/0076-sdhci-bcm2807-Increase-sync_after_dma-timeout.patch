@@ -1,7 +1,7 @@
-From a1cd8994c1f5d01f8932ad5d047677d6a264f711 Mon Sep 17 00:00:00 2001
+From 702b7652ec63948bb7acc7c86641599b5b69404a Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 10 Jul 2013 23:53:31 +0100
-Subject: [PATCH 076/174] sdhci-bcm2807: Increase sync_after_dma timeout
+Subject: [PATCH 076/196] sdhci-bcm2807: Increase sync_after_dma timeout
 
 The current timeout is being hit with some cards that complete successfully with a longer timeout.
 The timeout is not handled well, and is believed to be a code path that causes corruption.
@@ -10,9 +10,11 @@ The timeout is not handled well, and is believed to be a code path that causes c
  drivers/mmc/host/sdhci-bcm2708.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index c2409b9..4770680 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -842,7 +842,7 @@ static void sdhci_bcm2708_dma_complete_i
+@@ -842,7 +842,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
  			   We get CRC and DEND errors unless we wait for
  			   the SD controller to finish reading/writing to the card. */
  			u32 state_mask;
@@ -21,3 +23,6 @@ The timeout is not handled well, and is believed to be a code path that causes c
  
  			DBG("PDMA over - sync card\n");
  			if (data->flags & MMC_DATA_READ)
+-- 
+1.9.1
+

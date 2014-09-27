@@ -1,7 +1,7 @@
-From f779191cd42376e2b1f555be1b2c486dd99b2fef Mon Sep 17 00:00:00 2001
+From 06d314090d1c837d5f2c42c9686c8e8fa7db7370 Mon Sep 17 00:00:00 2001
 From: Grigori Goronzy <greg@blackbox>
 Date: Mon, 11 Jun 2012 18:57:13 +0200
-Subject: [PATCH 014/174] sdhci-bcm2708: add allow_highspeed parameter
+Subject: [PATCH 014/196] sdhci-bcm2708: add allow_highspeed parameter
 
 Add a parameter to disable high-speed mode for the few cards that
 still might have problems. High-speed mode is enabled by default.
@@ -9,9 +9,11 @@ still might have problems. High-speed mode is enabled by default.
  drivers/mmc/host/sdhci-bcm2708.c | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 3001836..c64de21 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -129,6 +129,8 @@ static inline unsigned long int since_ns
+@@ -129,6 +129,8 @@ static inline unsigned long int since_ns(hptime_t t)
  	return (unsigned long)((hptime() - t) * HPTIME_CLK_NS);
  }
  
@@ -20,7 +22,7 @@ still might have problems. High-speed mode is enabled by default.
  #if 0
  static void hptime_test(void)
  {
-@@ -1254,7 +1256,8 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1254,7 +1256,8 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  	    host_priv->dma_chan, host_priv->dma_chan_base,
  	    host_priv->dma_irq);
  
@@ -43,3 +45,6 @@ still might have problems. High-speed mode is enabled by default.
  
 +MODULE_PARM_DESC(allow_highspeed, "Allow high speed transfers modes");
 +
+-- 
+1.9.1
+

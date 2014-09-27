@@ -1,7 +1,7 @@
-From afde583fbb644cff07984f2b47f75c0410d72205 Mon Sep 17 00:00:00 2001
+From 53e5476701371e6f8b85cdeeb6099cdaea3872ce Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Mon, 5 Aug 2013 11:47:12 +0100
-Subject: [PATCH 088/174] dwc_otg: prevent crashes on host port disconnects
+Subject: [PATCH 088/196] dwc_otg: prevent crashes on host port disconnects
 
 Fix several issues resulting in crashes or inconsistent state
 if a Model A root port was disconnected.
@@ -25,9 +25,11 @@ if a Model A root port was disconnected.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c |  3 ++
  3 files changed, 48 insertions(+), 6 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index c42172f..be1d25b 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -59,6 +59,11 @@ static int last_sel_trans_num_avail_hc_a
+@@ -59,6 +59,11 @@ static int last_sel_trans_num_avail_hc_at_end = 0;
  
  extern int g_next_sched_frame, g_np_count, g_np_sent;
  
@@ -39,7 +41,7 @@ if a Model A root port was disconnected.
  dwc_otg_hcd_t *dwc_otg_hcd_alloc_hcd(void)
  {
  	return DWC_ALLOC(sizeof(dwc_otg_hcd_t));
-@@ -168,31 +173,43 @@ static void del_timers(dwc_otg_hcd_t * h
+@@ -168,31 +173,43 @@ static void del_timers(dwc_otg_hcd_t * hcd)
  
  /**
   * Processes all the URBs in a single list of QHs. Completes them with
@@ -88,7 +90,7 @@ if a Model A root port was disconnected.
   * and periodic schedules. The QTD associated with each URB is removed from
   * the schedule and freed. This function may be called when a disconnect is
   * detected or when the HCD is being stopped.
-@@ -278,7 +295,8 @@ static int32_t dwc_otg_hcd_disconnect_cb
+@@ -278,7 +295,8 @@ static int32_t dwc_otg_hcd_disconnect_cb(void *p)
  	 */
  	dwc_otg_hcd->flags.b.port_connect_status_change = 1;
  	dwc_otg_hcd->flags.b.port_connect_status = 0;
@@ -98,7 +100,7 @@ if a Model A root port was disconnected.
  	/*
  	 * Shutdown any transfers in process by clearing the Tx FIFO Empty
  	 * interrupt mask and status bits and disabling subsequent host
-@@ -374,8 +392,22 @@ static int32_t dwc_otg_hcd_disconnect_cb
+@@ -374,8 +392,22 @@ static int32_t dwc_otg_hcd_disconnect_cb(void *p)
  				channel->qh = NULL;
  			}
  		}
@@ -121,9 +123,11 @@ if a Model A root port was disconnected.
  	if (dwc_otg_hcd->fops->disconnect) {
  		dwc_otg_hcd->fops->disconnect(dwc_otg_hcd);
  	}
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index 7d521d9..19abea0 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -2660,6 +2660,13 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
+@@ -2660,6 +2660,13 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
  
  	hc = dwc_otg_hcd->hc_ptr_array[num];
  	hc_regs = dwc_otg_hcd->core_if->host_if->hc_regs[num];
@@ -137,9 +141,11 @@ if a Model A root port was disconnected.
  	qtd = DWC_CIRCLEQ_FIRST(&hc->qh->qtd_list);
  
  	hcint.d32 = DWC_READ_REG32(&hc_regs->hcint);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index 80690f9..0d49b50 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -309,6 +309,9 @@ static int _complete(dwc_otg_hcd_t * hcd
+@@ -309,6 +309,9 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
  	case -DWC_E_OVERFLOW:
  		status = -EOVERFLOW;
  		break;
@@ -149,3 +155,6 @@ if a Model A root port was disconnected.
  	default:
  		if (status) {
  			DWC_PRINTF("Uknown urb status %d\n", status);
+-- 
+1.9.1
+

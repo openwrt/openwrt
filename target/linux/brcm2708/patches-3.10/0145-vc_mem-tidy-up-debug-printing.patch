@@ -1,7 +1,7 @@
-From 3d55e3e65ac2277c2b9a1803c39847fc6b9a0a5d Mon Sep 17 00:00:00 2001
+From 9c4e06f1061c7b8c0fe5a83937275d4fd54d4853 Mon Sep 17 00:00:00 2001
 From: Luke Diamand <luked@broadcom.com>
 Date: Sat, 28 Dec 2013 07:39:51 +0000
-Subject: [PATCH 145/174] vc_mem: tidy up debug printing
+Subject: [PATCH 145/196] vc_mem: tidy up debug printing
 
 Replace explicit use of printk() with pr_XXX() calls to
 better conform to kernel coding style.
@@ -11,6 +11,8 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  arch/arm/mach-bcm2708/vc_mem.c | 47 +++++++++++++++++-------------------------
  1 file changed, 19 insertions(+), 28 deletions(-)
 
+diff --git a/arch/arm/mach-bcm2708/vc_mem.c b/arch/arm/mach-bcm2708/vc_mem.c
+index 007754d..2adac12 100644
 --- a/arch/arm/mach-bcm2708/vc_mem.c
 +++ b/arch/arm/mach-bcm2708/vc_mem.c
 @@ -35,16 +35,6 @@
@@ -30,7 +32,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  // Device (/dev) related variables
  static dev_t vc_mem_devnum = 0;
  static struct class *vc_mem_class = NULL;
-@@ -95,7 +85,7 @@ vc_mem_open(struct inode *inode, struct
+@@ -95,7 +85,7 @@ vc_mem_open(struct inode *inode, struct file *file)
  	(void) inode;
  	(void) file;
  
@@ -39,7 +41,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  
  	return 0;
  }
-@@ -112,7 +102,7 @@ vc_mem_release(struct inode *inode, stru
+@@ -112,7 +102,7 @@ vc_mem_release(struct inode *inode, struct file *file)
  	(void) inode;
  	(void) file;
  
@@ -48,7 +50,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  
  	return 0;
  }
-@@ -167,12 +157,12 @@ vc_mem_ioctl(struct file *file, unsigned
+@@ -167,12 +157,12 @@ vc_mem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
  	(void) cmd;
  	(void) arg;
  
@@ -63,7 +65,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  				__func__, (void *) mm_vc_mem_phys_addr);
  
  			if (copy_to_user((void *) arg, &mm_vc_mem_phys_addr,
-@@ -186,7 +176,7 @@ vc_mem_ioctl(struct file *file, unsigned
+@@ -186,7 +176,7 @@ vc_mem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
  			// Get the videocore memory size first
  			vc_mem_get_size();
  
@@ -72,7 +74,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  				mm_vc_mem_size);
  
  			if (copy_to_user((void *) arg, &mm_vc_mem_size,
-@@ -200,7 +190,7 @@ vc_mem_ioctl(struct file *file, unsigned
+@@ -200,7 +190,7 @@ vc_mem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
  			// Get the videocore memory base
  			vc_mem_get_base();
  
@@ -81,7 +83,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  				mm_vc_mem_base);
  
  			if (copy_to_user((void *) arg, &mm_vc_mem_base,
-@@ -214,7 +204,7 @@ vc_mem_ioctl(struct file *file, unsigned
+@@ -214,7 +204,7 @@ vc_mem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
  			// Get the videocore memory base
  			vc_mem_get_base();
  
@@ -90,7 +92,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  				mm_vc_mem_base);
  
  			if (copy_to_user((void *) arg, &mm_vc_mem_base,
-@@ -228,7 +218,7 @@ vc_mem_ioctl(struct file *file, unsigned
+@@ -228,7 +218,7 @@ vc_mem_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
  			return -ENOTTY;
  		}
  	}
@@ -99,7 +101,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  
  	return rc;
  }
-@@ -246,12 +236,12 @@ vc_mem_mmap(struct file *filp, struct vm
+@@ -246,12 +236,12 @@ vc_mem_mmap(struct file *filp, struct vm_area_struct *vma)
  	unsigned long length = vma->vm_end - vma->vm_start;
  	unsigned long offset = vma->vm_pgoff << PAGE_SHIFT;
  
@@ -114,7 +116,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  		return -EINVAL;
  	}
  	// Do not cache the memory map
-@@ -261,7 +251,7 @@ vc_mem_mmap(struct file *filp, struct vm
+@@ -261,7 +251,7 @@ vc_mem_mmap(struct file *filp, struct vm_area_struct *vma)
  			     (mm_vc_mem_phys_addr >> PAGE_SHIFT) +
  			     vma->vm_pgoff, length, vma->vm_page_prot);
  	if (rc != 0) {
@@ -180,3 +182,6 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  
  	if (vc_mem_inited) {
  #if CONFIG_DEBUG_FS
+-- 
+1.9.1
+

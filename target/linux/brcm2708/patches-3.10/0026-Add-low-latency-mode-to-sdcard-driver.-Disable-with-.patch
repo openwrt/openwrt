@@ -1,7 +1,7 @@
-From fc153c5cb49f20f5e9644d92b8be064ed9159a16 Mon Sep 17 00:00:00 2001
+From 4ec6de1f59d1f0b5ed9cfebf3c1b4080d7215dc2 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Sun, 12 May 2013 12:27:48 +0100
-Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
+Subject: [PATCH 026/196] Add low-latency mode to sdcard driver. Disable with
  sdhci-bcm2708.enable_llm=0. Thanks ddv2005.
 
 ---
@@ -11,6 +11,8 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  include/linux/mmc/sdhci.h        |   1 +
  4 files changed, 145 insertions(+), 44 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 7a703c2..7ce2829 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -135,6 +135,7 @@ static bool allow_highspeed = 1;
@@ -21,7 +23,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  #if 0
  static void hptime_test(void)
-@@ -871,12 +872,11 @@ static irqreturn_t sdhci_bcm2708_dma_irq
+@@ -871,12 +872,11 @@ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
  	struct sdhci_host *host = dev_id;
  	struct sdhci_bcm2708_priv *host_priv = SDHCI_HOST_PRIV(host);
  	u32 dma_cs; /* control and status register */
@@ -35,7 +37,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	dma_cs = readl(host_priv->dma_chan_base + BCM2708_DMA_CS);
  
-@@ -917,8 +917,7 @@ static irqreturn_t sdhci_bcm2708_dma_irq
+@@ -917,8 +917,7 @@ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
  
  		result = IRQ_HANDLED;
  	}
@@ -45,7 +47,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	return result;
  }
-@@ -1193,9 +1192,12 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1193,9 +1192,12 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  		sdhci_bcm2708_ops.missing_status = sdhci_bcm2708_missing_status;
  	}
  
@@ -58,7 +60,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	host->quirks = SDHCI_QUIRK_BROKEN_CARD_DETECTION |
  		       SDHCI_QUIRK_DATA_TIMEOUT_USES_SDCLK |
-@@ -1256,12 +1258,13 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1256,12 +1258,13 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  	}
  	host_priv->dma_chan = ret;
  
@@ -74,7 +76,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  	DBG("DMA CBs %p handle %08X DMA%d %p DMA IRQ %d\n",
  	    host_priv->cb_base, (unsigned)host_priv->cb_handle,
  	    host_priv->dma_chan, host_priv->dma_chan_base,
-@@ -1384,6 +1387,7 @@ module_param(allow_highspeed, bool, 0444
+@@ -1384,6 +1387,7 @@ module_param(allow_highspeed, bool, 0444);
  module_param(emmc_clock_freq, int, 0444);
  module_param(sync_after_dma, bool, 0444);
  module_param(missing_status, bool, 0444);
@@ -82,16 +84,18 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  MODULE_DESCRIPTION("Secure Digital Host Controller Interface platform driver");
  MODULE_AUTHOR("Broadcom <info@broadcom.com>");
-@@ -1394,5 +1398,6 @@ MODULE_PARM_DESC(allow_highspeed, "Allow
+@@ -1394,5 +1398,6 @@ MODULE_PARM_DESC(allow_highspeed, "Allow high speed transfers modes");
  MODULE_PARM_DESC(emmc_clock_freq, "Specify the speed of emmc clock");
  MODULE_PARM_DESC(sync_after_dma, "Block in driver until dma complete");
  MODULE_PARM_DESC(missing_status, "Use the missing status quirk");
 +MODULE_PARM_DESC(enable_llm, "Enable low-latency mode");
  
  
+diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
+index 179e83e..470860b 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -124,6 +124,91 @@ static void sdhci_dumpregs(struct sdhci_
+@@ -124,6 +124,91 @@ static void sdhci_dumpregs(struct sdhci_host *host)
   * Low level functions                                                       *
   *                                                                           *
  \*****************************************************************************/
@@ -183,7 +187,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  static void sdhci_clear_set_irqs(struct sdhci_host *host, u32 clear, u32 set)
  {
-@@ -289,7 +374,7 @@ static void sdhci_led_control(struct led
+@@ -289,7 +374,7 @@ static void sdhci_led_control(struct led_classdev *led,
  	struct sdhci_host *host = container_of(led, struct sdhci_host, led);
  	unsigned long flags;
  
@@ -192,7 +196,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	if (host->runtime_suspended)
  		goto out;
-@@ -299,7 +384,7 @@ static void sdhci_led_control(struct led
+@@ -299,7 +384,7 @@ static void sdhci_led_control(struct led_classdev *led,
  	else
  		sdhci_activate_led(host);
  out:
@@ -201,7 +205,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  #endif
  
-@@ -1007,7 +1092,9 @@ static void sdhci_send_command(struct sd
+@@ -1007,7 +1092,9 @@ static void sdhci_send_command(struct sdhci_host *host, struct mmc_command *cmd)
  			return;
  		}
  		timeout--;
@@ -221,7 +225,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  	}
  
  	clk |= SDHCI_CLOCK_CARD_EN;
-@@ -1330,7 +1419,7 @@ static void sdhci_request(struct mmc_hos
+@@ -1330,7 +1419,7 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
  
  	sdhci_runtime_pm_get(host);
  
@@ -230,7 +234,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	WARN_ON(host->mrq != NULL);
  
-@@ -1388,9 +1477,9 @@ static void sdhci_request(struct mmc_hos
+@@ -1388,9 +1477,9 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
  					mmc->card->type == MMC_TYPE_MMC ?
  					MMC_SEND_TUNING_BLOCK_HS200 :
  					MMC_SEND_TUNING_BLOCK;
@@ -242,7 +246,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  				/* Restore original mmc_request structure */
  				host->mrq = mrq;
-@@ -1404,7 +1493,7 @@ static void sdhci_request(struct mmc_hos
+@@ -1404,7 +1493,7 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
  	}
  
  	mmiowb();
@@ -251,7 +255,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  
  static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
-@@ -1413,10 +1502,10 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1413,10 +1502,10 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  	int vdd_bit = -1;
  	u8 ctrl;
  
@@ -264,7 +268,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  		if (host->vmmc && ios->power_mode == MMC_POWER_OFF)
  			mmc_regulator_set_ocr(host->mmc, host->vmmc, 0);
  		return;
-@@ -1443,9 +1532,9 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1443,9 +1532,9 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  		vdd_bit = sdhci_set_power(host, ios->vdd);
  
  	if (host->vmmc && vdd_bit != -1) {
@@ -276,7 +280,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  	}
  
  	if (host->ops->platform_send_init_74_clocks)
-@@ -1583,7 +1672,7 @@ static void sdhci_do_set_ios(struct sdhc
+@@ -1583,7 +1672,7 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
  		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
  
  	mmiowb();
@@ -285,7 +289,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  
  static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
-@@ -1631,7 +1720,7 @@ static int sdhci_check_ro(struct sdhci_h
+@@ -1631,7 +1720,7 @@ static int sdhci_check_ro(struct sdhci_host *host)
  	unsigned long flags;
  	int is_readonly;
  
@@ -294,7 +298,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	if (host->flags & SDHCI_DEVICE_DEAD)
  		is_readonly = 0;
-@@ -1641,7 +1730,7 @@ static int sdhci_check_ro(struct sdhci_h
+@@ -1641,7 +1730,7 @@ static int sdhci_check_ro(struct sdhci_host *host)
  		is_readonly = !(sdhci_readl(host, SDHCI_PRESENT_STATE)
  				& SDHCI_WRITE_PROTECT);
  
@@ -303,7 +307,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	/* This quirk needs to be replaced by a callback-function later */
  	return host->quirks & SDHCI_QUIRK_INVERTED_WRITE_PROTECT ?
-@@ -1714,9 +1803,9 @@ static void sdhci_enable_sdio_irq(struct
+@@ -1714,9 +1803,9 @@ static void sdhci_enable_sdio_irq(struct mmc_host *mmc, int enable)
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -315,7 +319,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  
  static int sdhci_do_start_signal_voltage_switch(struct sdhci_host *host,
-@@ -2060,7 +2149,7 @@ static void sdhci_card_event(struct mmc_
+@@ -2060,7 +2149,7 @@ static void sdhci_card_event(struct mmc_host *mmc)
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -324,7 +328,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	/* Check host->mrq first in case we are runtime suspended */
  	if (host->mrq &&
-@@ -2077,7 +2166,7 @@ static void sdhci_card_event(struct mmc_
+@@ -2077,7 +2166,7 @@ static void sdhci_card_event(struct mmc_host *mmc)
  		tasklet_schedule(&host->finish_tasklet);
  	}
  
@@ -333,7 +337,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  
  static const struct mmc_host_ops sdhci_ops = {
-@@ -2116,14 +2205,14 @@ static void sdhci_tasklet_finish(unsigne
+@@ -2116,14 +2205,14 @@ static void sdhci_tasklet_finish(unsigned long param)
  
  	host = (struct sdhci_host*)param;
  
@@ -350,7 +354,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  		return;
  	}
  
-@@ -2161,7 +2250,7 @@ static void sdhci_tasklet_finish(unsigne
+@@ -2161,7 +2250,7 @@ static void sdhci_tasklet_finish(unsigned long param)
  #endif
  
  	mmiowb();
@@ -359,7 +363,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	mmc_request_done(host->mmc, mrq);
  	sdhci_runtime_pm_put(host);
-@@ -2174,7 +2263,7 @@ static void sdhci_timeout_timer(unsigned
+@@ -2174,7 +2263,7 @@ static void sdhci_timeout_timer(unsigned long data)
  
  	host = (struct sdhci_host*)data;
  
@@ -368,7 +372,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	if (host->mrq) {
  		pr_err("%s: Timeout waiting for hardware "
-@@ -2195,7 +2284,7 @@ static void sdhci_timeout_timer(unsigned
+@@ -2195,7 +2284,7 @@ static void sdhci_timeout_timer(unsigned long data)
  	}
  
  	mmiowb();
@@ -377,7 +381,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  
  static void sdhci_tuning_timer(unsigned long data)
-@@ -2205,11 +2294,11 @@ static void sdhci_tuning_timer(unsigned
+@@ -2205,11 +2294,11 @@ static void sdhci_tuning_timer(unsigned long data)
  
  	host = (struct sdhci_host *)data;
  
@@ -391,7 +395,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  }
  
  /*****************************************************************************\
-@@ -2433,10 +2522,10 @@ static irqreturn_t sdhci_irq(int irq, vo
+@@ -2433,10 +2522,10 @@ static irqreturn_t sdhci_irq(int irq, void *dev_id)
  	u32 intmask, unexpected = 0;
  	int cardint = 0, max_loops = 16;
  
@@ -413,7 +417,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	if (unexpected) {
  		pr_err("%s: Unexpected interrupt 0x%08x.\n",
-@@ -2702,15 +2791,15 @@ int sdhci_runtime_suspend_host(struct sd
+@@ -2702,15 +2791,15 @@ int sdhci_runtime_suspend_host(struct sdhci_host *host)
  		host->flags &= ~SDHCI_NEEDS_RETUNING;
  	}
  
@@ -433,7 +437,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	return ret;
  }
-@@ -2736,16 +2825,16 @@ int sdhci_runtime_resume_host(struct sdh
+@@ -2736,16 +2825,16 @@ int sdhci_runtime_resume_host(struct sdhci_host *host)
  	sdhci_do_start_signal_voltage_switch(host, &host->mmc->ios);
  	if ((host_flags & SDHCI_PV_ENABLED) &&
  		!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN)) {
@@ -453,7 +457,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	host->runtime_suspended = false;
  
-@@ -2756,7 +2845,7 @@ int sdhci_runtime_resume_host(struct sdh
+@@ -2756,7 +2845,7 @@ int sdhci_runtime_resume_host(struct sdhci_host *host)
  	/* Enable Card Detection */
  	sdhci_enable_card_detection(host);
  
@@ -462,7 +466,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  	return ret;
  }
-@@ -3248,7 +3337,7 @@ int sdhci_add_host(struct sdhci_host *ho
+@@ -3248,7 +3337,7 @@ int sdhci_add_host(struct sdhci_host *host)
  		host->tuning_timer.function = sdhci_tuning_timer;
  	}
  
@@ -471,7 +475,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  		mmc_hostname(mmc), host);
  	if (ret) {
  		pr_err("%s: Failed to request IRQ %d: %d\n",
-@@ -3312,7 +3401,7 @@ void sdhci_remove_host(struct sdhci_host
+@@ -3312,7 +3401,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
  	unsigned long flags;
  
  	if (dead) {
@@ -480,7 +484,7 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  
  		host->flags |= SDHCI_DEVICE_DEAD;
  
-@@ -3324,7 +3413,7 @@ void sdhci_remove_host(struct sdhci_host
+@@ -3324,7 +3413,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
  			tasklet_schedule(&host->finish_tasklet);
  		}
  
@@ -489,9 +493,11 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  	}
  
  	sdhci_disable_card_detection(host);
+diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
+index f90574e..cc393af 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
-@@ -441,4 +441,10 @@ extern int sdhci_runtime_suspend_host(st
+@@ -441,4 +441,10 @@ extern int sdhci_runtime_suspend_host(struct sdhci_host *host);
  extern int sdhci_runtime_resume_host(struct sdhci_host *host);
  #endif
  
@@ -502,6 +508,8 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
 +
 +
  #endif /* __SDHCI_HW_H */
+diff --git a/include/linux/mmc/sdhci.h b/include/linux/mmc/sdhci.h
+index f3a39c1..58bfab0 100644
 --- a/include/linux/mmc/sdhci.h
 +++ b/include/linux/mmc/sdhci.h
 @@ -97,6 +97,7 @@ struct sdhci_host {
@@ -512,3 +520,6 @@ Subject: [PATCH 026/174] Add low-latency mode to sdcard driver. Disable with
  	void __iomem *ioaddr;	/* Mapped address */
  
  	const struct sdhci_ops *ops;	/* Low level hw interface */
+-- 
+1.9.1
+

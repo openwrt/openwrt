@@ -1,7 +1,7 @@
-From 6b3c057ec5705d3c7556d4755103a2650d3aaaf5 Mon Sep 17 00:00:00 2001
+From 94cf90dae250a9dcb3b52b655a94e2106a422698 Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Wed, 12 Feb 2014 11:18:20 +0000
-Subject: [PATCH 169/174] V4L2: H264 profile & level ctrls, FPS control and
+Subject: [PATCH 169/196] V4L2: H264 profile & level ctrls, FPS control and
  auto exp pri
 
 Several control handling updates.
@@ -17,6 +17,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/mmal-parameters.h |  87 +++++++++
  4 files changed, 383 insertions(+), 48 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index 7f99a14..6d0d77a 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.c
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
 @@ -36,7 +36,8 @@
@@ -29,7 +31,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  #define MAX_WIDTH 2592
  #define MAX_HEIGHT 1944
  #define MIN_BUFFER_SIZE (80*1024)
-@@ -56,7 +57,7 @@ MODULE_PARM_DESC(bcm2835_v4l2_debug, "De
+@@ -56,7 +57,7 @@ MODULE_PARM_DESC(bcm2835_v4l2_debug, "Debug level 0-2");
  static struct bm2835_mmal_dev *gdev;	/* global device data */
  
  #define FPS_MIN 1
@@ -38,7 +40,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  /* timeperframe: min/max and default */
  static const struct v4l2_fract
-@@ -903,10 +904,8 @@ static int mmal_setup_components(struct
+@@ -903,10 +904,8 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
  	camera_port->es.video.crop.y = 0;
  	camera_port->es.video.crop.width = f->fmt.pix.width;
  	camera_port->es.video.crop.height = f->fmt.pix.height;
@@ -51,7 +53,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	ret = vchiq_mmal_port_set_format(dev->instance, camera_port);
  
-@@ -940,8 +939,10 @@ static int mmal_setup_components(struct
+@@ -940,8 +939,10 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
  		preview_port->es.video.crop.y = 0;
  		preview_port->es.video.crop.width = f->fmt.pix.width;
  		preview_port->es.video.crop.height = f->fmt.pix.height;
@@ -64,7 +66,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  		ret = vchiq_mmal_port_set_format(dev->instance, preview_port);
  		if (overlay_enabled) {
  			ret = vchiq_mmal_port_connect_tunnel(
-@@ -1116,22 +1117,56 @@ static int vidioc_s_fmt_vid_cap(struct f
+@@ -1116,22 +1117,56 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
  	}
  
  	ret = mmal_setup_components(dev, f);
@@ -123,7 +125,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	fival->type = V4L2_FRMIVAL_TYPE_CONTINUOUS;
  
-@@ -1167,7 +1202,6 @@ static int vidioc_s_parm(struct file *fi
+@@ -1167,7 +1202,6 @@ static int vidioc_s_parm(struct file *file, void *priv,
  	struct bm2835_mmal_dev *dev = video_drvdata(file);
  	struct v4l2_fract tpf;
  	struct mmal_parameter_rational fps_param;
@@ -131,7 +133,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	if (parm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
  		return -EINVAL;
-@@ -1183,27 +1217,11 @@ static int vidioc_s_parm(struct file *fi
+@@ -1183,27 +1217,11 @@ static int vidioc_s_parm(struct file *file, void *priv,
  	parm->parm.capture.timeperframe = tpf;
  	parm->parm.capture.readbuffers  = 1;
  
@@ -164,7 +166,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	return 0;
  }
-@@ -1236,6 +1254,7 @@ static const struct v4l2_ioctl_ops camer
+@@ -1236,6 +1254,7 @@ static const struct v4l2_ioctl_ops camera0_ioctl_ops = {
  	.vidioc_querybuf = vb2_ioctl_querybuf,
  	.vidioc_qbuf = vb2_ioctl_qbuf,
  	.vidioc_dqbuf = vb2_ioctl_dqbuf,
@@ -172,7 +174,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	.vidioc_enum_frameintervals = vidioc_enum_frameintervals,
  	.vidioc_g_parm        = vidioc_g_parm,
  	.vidioc_s_parm        = vidioc_s_parm,
-@@ -1331,10 +1350,8 @@ static int __init mmal_init(struct bm283
+@@ -1331,10 +1350,8 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
  	format->es->video.crop.y = 0;
  	format->es->video.crop.width = 1024;
  	format->es->video.crop.height = 768;
@@ -185,7 +187,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	format =
  	    &dev->component[MMAL_COMPONENT_CAMERA]->
-@@ -1349,10 +1366,8 @@ static int __init mmal_init(struct bm283
+@@ -1349,10 +1366,8 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
  	format->es->video.crop.y = 0;
  	format->es->video.crop.width = 1024;
  	format->es->video.crop.height = 768;
@@ -198,7 +200,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	format =
  	    &dev->component[MMAL_COMPONENT_CAMERA]->
-@@ -1366,7 +1381,7 @@ static int __init mmal_init(struct bm283
+@@ -1366,7 +1381,7 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
  	format->es->video.crop.y = 0;
  	format->es->video.crop.width = 2592;
  	format->es->video.crop.height = 1944;
@@ -207,7 +209,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	format->es->video.frame_rate.den = 1;
  
  	dev->capture.width = format->es->video.width;
-@@ -1374,6 +1389,8 @@ static int __init mmal_init(struct bm283
+@@ -1374,6 +1389,8 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
  	dev->capture.fmt = &formats[0];
  	dev->capture.encode_component = NULL;
  	dev->capture.timeperframe = tpf_default;
@@ -216,7 +218,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  	/* get the preview component ready */
  	ret = vchiq_mmal_component_init(
-@@ -1420,6 +1437,14 @@ static int __init mmal_init(struct bm283
+@@ -1420,6 +1437,14 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
  	}
  
  	{
@@ -231,6 +233,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  		unsigned int enable = 1;
  		vchiq_mmal_port_parameter_set(
  			dev->instance,
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.h b/drivers/media/platform/bcm2835/bcm2835-camera.h
+index 25aa91f..8822a1a 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.h
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
 @@ -15,7 +15,7 @@
@@ -279,9 +283,11 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  /* Debug helpers */
  
+diff --git a/drivers/media/platform/bcm2835/controls.c b/drivers/media/platform/bcm2835/controls.c
+index cb062a9..45cf790 100644
 --- a/drivers/media/platform/bcm2835/controls.c
 +++ b/drivers/media/platform/bcm2835/controls.c
-@@ -69,7 +69,6 @@ static const s64 bitrate_mode_qmenu[] =
+@@ -69,7 +69,6 @@ static const s64 bitrate_mode_qmenu[] = {
  	(s64)V4L2_MPEG_VIDEO_BITRATE_MODE_CBR,
  };
  
@@ -289,7 +295,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  enum bm2835_mmal_ctrl_type {
  	MMAL_CONTROL_TYPE_STD,
  	MMAL_CONTROL_TYPE_STD_MENU,
-@@ -329,6 +328,9 @@ static int ctrl_set_exposure(struct bm28
+@@ -329,6 +328,9 @@ static int ctrl_set_exposure(struct bm2835_mmal_dev *dev,
  
  		}
  		dev->exposure_mode = exp_mode;
@@ -299,7 +305,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	}
  
  	if (dev->exposure_mode == MMAL_PARAM_EXPOSUREMODE_OFF)
-@@ -340,6 +342,8 @@ static int ctrl_set_exposure(struct bm28
+@@ -340,6 +342,8 @@ static int ctrl_set_exposure(struct bm2835_mmal_dev *dev,
  	ret += vchiq_mmal_port_parameter_set(dev->instance, control,
  					     MMAL_PARAMETER_EXPOSURE_MODE,
  					     &exp_mode, sizeof(u32));
@@ -308,7 +314,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	return ret;
  }
  
-@@ -540,8 +544,8 @@ static int ctrl_set_colfx(struct bm2835_
+@@ -540,8 +544,8 @@ static int ctrl_set_colfx(struct bm2835_mmal_dev *dev,
  					&dev->colourfx, sizeof(dev->colourfx));
  
  	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
@@ -319,7 +325,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  			(ret == 0 ? 0 : -EINVAL));
  	return (ret == 0 ? 0 : EINVAL);
  }
-@@ -623,6 +627,117 @@ static int ctrl_set_video_encode_param_o
+@@ -623,6 +627,117 @@ static int ctrl_set_video_encode_param_output(struct bm2835_mmal_dev *dev,
  					     &u32_value, sizeof(u32_value));
  }
  
@@ -437,7 +443,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  static int bm2835_mmal_s_ctrl(struct v4l2_ctrl *ctrl)
  {
  	struct bm2835_mmal_dev *dev =
-@@ -639,6 +754,9 @@ static int bm2835_mmal_s_ctrl(struct v4l
+@@ -639,6 +754,9 @@ static int bm2835_mmal_s_ctrl(struct v4l2_ctrl *ctrl)
  	}
  
  	ret = mmal_ctrl->setter(dev, ctrl, mmal_ctrl);
@@ -447,7 +453,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	if (mmal_ctrl->ignore_errors)
  		ret = 0;
  	return ret;
-@@ -725,6 +843,14 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -725,6 +843,14 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  		false
  	},
  	{
@@ -462,7 +468,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  		V4L2_CID_EXPOSURE_METERING,
  		MMAL_CONTROL_TYPE_STD_MENU,
  		~0x7, 2, V4L2_EXPOSURE_METERING_AVERAGE, 0, NULL,
-@@ -814,6 +940,39 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -814,6 +940,39 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  		&ctrl_set_video_encode_param_output,
  		true	/* Errors ignored as requires latest firmware to work */
  	},
@@ -502,7 +508,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  int bm2835_mmal_set_all_camera_controls(struct bm2835_mmal_dev *dev)
-@@ -825,13 +984,71 @@ int bm2835_mmal_set_all_camera_controls(
+@@ -825,13 +984,71 @@ int bm2835_mmal_set_all_camera_controls(struct bm2835_mmal_dev *dev)
  		if ((dev->ctrls[c]) && (v4l2_ctrls[c].setter)) {
  			ret = v4l2_ctrls[c].setter(dev, dev->ctrls[c],
  						   &v4l2_ctrls[c]);
@@ -575,9 +581,11 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  int bm2835_mmal_init_controls(struct bm2835_mmal_dev *dev,
  			      struct v4l2_ctrl_handler *hdl)
  {
+diff --git a/drivers/media/platform/bcm2835/mmal-parameters.h b/drivers/media/platform/bcm2835/mmal-parameters.h
+index b08a4b0..ae8fef9 100644
 --- a/drivers/media/platform/bcm2835/mmal-parameters.h
 +++ b/drivers/media/platform/bcm2835/mmal-parameters.h
-@@ -182,6 +182,14 @@ enum mmal_parameter_camera_config_timest
+@@ -182,6 +182,14 @@ enum mmal_parameter_camera_config_timestamp_mode {
  					      */
  };
  
@@ -678,3 +686,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  /* video parameters */
  
  enum mmal_parameter_video_type {
+-- 
+1.9.1
+

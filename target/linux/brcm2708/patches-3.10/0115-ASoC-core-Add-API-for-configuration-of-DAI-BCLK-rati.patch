@@ -1,7 +1,7 @@
-From 5c080b18934d9dcea2bf902c09d640daf6fe49d4 Mon Sep 17 00:00:00 2001
+From 573a4bcbf022cae315a2b40ddd7b96c29d22971a Mon Sep 17 00:00:00 2001
 From: Liam Girdwood <liam.r.girdwood@linux.intel.com>
 Date: Mon, 16 Sep 2013 13:01:46 +0100
-Subject: [PATCH 115/174] ASoC: core: Add API for configuration of DAI BCLK
+Subject: [PATCH 115/196] ASoC: core: Add API for configuration of DAI BCLK
  ratio
 
 Some codec drivers when running in slave mode require that BCLK to sample rate ratio
@@ -18,9 +18,11 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  sound/soc/soc-core.c    | 16 ++++++++++++++++
  2 files changed, 19 insertions(+)
 
+diff --git a/include/sound/soc-dai.h b/include/sound/soc-dai.h
+index ae9a227..d8acf0c 100644
 --- a/include/sound/soc-dai.h
 +++ b/include/sound/soc-dai.h
-@@ -105,6 +105,8 @@ int snd_soc_dai_set_clkdiv(struct snd_so
+@@ -105,6 +105,8 @@ int snd_soc_dai_set_clkdiv(struct snd_soc_dai *dai,
  int snd_soc_dai_set_pll(struct snd_soc_dai *dai,
  	int pll_id, int source, unsigned int freq_in, unsigned int freq_out);
  
@@ -37,9 +39,11 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
  
  	/*
  	 * DAI format configuration
+diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
+index d56bbea..d18272c 100644
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -3463,6 +3463,22 @@ int snd_soc_codec_set_pll(struct snd_soc
+@@ -3463,6 +3463,22 @@ int snd_soc_codec_set_pll(struct snd_soc_codec *codec, int pll_id, int source,
  EXPORT_SYMBOL_GPL(snd_soc_codec_set_pll);
  
  /**
@@ -62,3 +66,6 @@ Signed-off-by: Mark Brown <broonie@linaro.org>
   * snd_soc_dai_set_fmt - configure DAI hardware audio format.
   * @dai: DAI
   * @fmt: SND_SOC_DAIFMT_ format value.
+-- 
+1.9.1
+

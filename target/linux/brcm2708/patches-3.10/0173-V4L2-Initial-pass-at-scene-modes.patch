@@ -1,7 +1,7 @@
-From ba09044961948d93db7aa166f2829d46e81e875a Mon Sep 17 00:00:00 2001
+From 1073798a92010ecd467fba0cc720752992fd7a2a Mon Sep 17 00:00:00 2001
 From: Dave Stevenson <dsteve@broadcom.com>
 Date: Fri, 14 Feb 2014 17:12:08 +0000
-Subject: [PATCH 173/174] V4L2: Initial pass at scene modes.
+Subject: [PATCH 173/196] V4L2: Initial pass at scene modes.
 
 Only supports exposure mode and metering modes.
 
@@ -11,6 +11,8 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  drivers/media/platform/bcm2835/controls.c       | 225 ++++++++++++++++++++----
  2 files changed, 199 insertions(+), 36 deletions(-)
 
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.h b/drivers/media/platform/bcm2835/bcm2835-camera.h
+index 8822a1a..f389bea 100644
 --- a/drivers/media/platform/bcm2835/bcm2835-camera.h
 +++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
 @@ -15,7 +15,7 @@
@@ -40,9 +42,11 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	unsigned int		  manual_shutter_speed;
  	bool			  exp_auto_priority;
  
+diff --git a/drivers/media/platform/bcm2835/controls.c b/drivers/media/platform/bcm2835/controls.c
+index 45cf790..b7a7e88 100644
 --- a/drivers/media/platform/bcm2835/controls.c
 +++ b/drivers/media/platform/bcm2835/controls.c
-@@ -145,6 +145,25 @@ static const struct v4l2_to_mmal_effects
+@@ -145,6 +145,25 @@ static const struct v4l2_to_mmal_effects_setting
  		1,   1,    0,    0,   0, {0, 0, 0, 0, 0} }
  };
  
@@ -68,7 +72,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  /* control handlers*/
  
-@@ -296,7 +315,7 @@ static int ctrl_set_exposure(struct bm28
+@@ -296,7 +315,7 @@ static int ctrl_set_exposure(struct bm2835_mmal_dev *dev,
  		      struct v4l2_ctrl *ctrl,
  		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
  {
@@ -77,7 +81,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	u32 shutter_speed = 0;
  	struct vchiq_mmal_port *control;
  	int ret = 0;
-@@ -317,31 +336,32 @@ static int ctrl_set_exposure(struct bm28
+@@ -317,31 +336,32 @@ static int ctrl_set_exposure(struct bm2835_mmal_dev *dev,
  		case V4L2_EXPOSURE_MANUAL:
  			exp_mode = MMAL_PARAM_EXPOSUREMODE_OFF;
  			break;
@@ -129,7 +133,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	ret += set_framerate_params(dev);
  
  	return ret;
-@@ -351,35 +371,38 @@ static int ctrl_set_metering_mode(struct
+@@ -351,35 +371,38 @@ static int ctrl_set_metering_mode(struct bm2835_mmal_dev *dev,
  			   struct v4l2_ctrl *ctrl,
  			   const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
  {
@@ -178,7 +182,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  }
  
  static int ctrl_set_flicker_avoidance(struct bm2835_mmal_dev *dev,
-@@ -738,6 +761,113 @@ static int ctrl_set_video_encode_profile
+@@ -738,6 +761,113 @@ static int ctrl_set_video_encode_profile_level(struct bm2835_mmal_dev *dev,
  	return ret;
  }
  
@@ -292,7 +296,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  static int bm2835_mmal_s_ctrl(struct v4l2_ctrl *ctrl)
  {
  	struct bm2835_mmal_dev *dev =
-@@ -973,6 +1103,15 @@ static const struct bm2835_mmal_v4l2_ctr
+@@ -973,6 +1103,15 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
  		&ctrl_set_video_encode_profile_level,
  		false
  	},
@@ -308,7 +312,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  };
  
  int bm2835_mmal_set_all_camera_controls(struct bm2835_mmal_dev *dev)
-@@ -1000,8 +1139,7 @@ int set_framerate_params(struct bm2835_m
+@@ -1000,8 +1139,7 @@ int set_framerate_params(struct bm2835_mmal_dev *dev)
  	struct mmal_parameter_fps_range fps_range;
  	int ret;
  
@@ -318,7 +322,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  	     (dev->exp_auto_priority)) {
  		/* Variable FPS. Define min FPS as 1fps.
  		 * Max as max defined FPS.
-@@ -1049,6 +1187,7 @@ int set_framerate_params(struct bm2835_m
+@@ -1049,6 +1187,7 @@ int set_framerate_params(struct bm2835_mmal_dev *dev)
  	return ret;
  
  }
@@ -326,7 +330,7 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  int bm2835_mmal_init_controls(struct bm2835_mmal_dev *dev,
  			      struct v4l2_ctrl_handler *hdl)
  {
-@@ -1068,10 +1207,30 @@ int bm2835_mmal_init_controls(struct bm2
+@@ -1068,10 +1207,30 @@ int bm2835_mmal_init_controls(struct bm2835_mmal_dev *dev,
  			break;
  
  		case MMAL_CONTROL_TYPE_STD_MENU:
@@ -358,3 +362,6 @@ Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
  
  		case MMAL_CONTROL_TYPE_INT_MENU:
  			dev->ctrls[c] = v4l2_ctrl_new_int_menu(hdl,
+-- 
+1.9.1
+

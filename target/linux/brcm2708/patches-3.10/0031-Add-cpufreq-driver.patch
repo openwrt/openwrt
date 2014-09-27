@@ -1,7 +1,7 @@
-From d19db6057337b577baab7766718781d55c402fbb Mon Sep 17 00:00:00 2001
+From 083183f7770ae4fb6f23c99a64a3c5058b9b3b40 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Sat, 2 Nov 2013 22:44:41 +0000
-Subject: [PATCH 031/174] Add cpufreq driver
+Subject: [PATCH 031/196] Add cpufreq driver
 
 ---
  arch/arm/Kconfig                  |   1 +
@@ -11,6 +11,8 @@ Subject: [PATCH 031/174] Add cpufreq driver
  4 files changed, 249 insertions(+)
  create mode 100755 drivers/cpufreq/bcm2835-cpufreq.c
 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 5468f1f..4e36ccd 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -369,6 +369,7 @@ config ARCH_BCM2708
@@ -21,6 +23,8 @@ Subject: [PATCH 031/174] Add cpufreq driver
  	select GENERIC_CLOCKEVENTS
  	select ARM_ERRATA_411920
  	select MACH_BCM2708
+diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
+index 6e57543..bf40783 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -150,3 +150,11 @@ config ARM_SPEAR_CPUFREQ
@@ -35,9 +39,11 @@ Subject: [PATCH 031/174] Add cpufreq driver
 +	  This adds the CPUFreq driver for BCM2835
 +
 +	  If in doubt, say N.
+diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
+index 3b95322..3a30bab 100644
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -72,6 +72,7 @@ obj-$(CONFIG_ARM_SA1100_CPUFREQ)	+= sa11
+@@ -72,6 +72,7 @@ obj-$(CONFIG_ARM_SA1100_CPUFREQ)	+= sa1100-cpufreq.o
  obj-$(CONFIG_ARM_SA1110_CPUFREQ)	+= sa1110-cpufreq.o
  obj-$(CONFIG_ARM_SPEAR_CPUFREQ)		+= spear-cpufreq.o
  obj-$(CONFIG_ARCH_TEGRA)		+= tegra-cpufreq.o
@@ -45,6 +51,9 @@ Subject: [PATCH 031/174] Add cpufreq driver
  
  ##################################################################################
  # PowerPC platform drivers
+diff --git a/drivers/cpufreq/bcm2835-cpufreq.c b/drivers/cpufreq/bcm2835-cpufreq.c
+new file mode 100755
+index 0000000..822139a
 --- /dev/null
 +++ b/drivers/cpufreq/bcm2835-cpufreq.c
 @@ -0,0 +1,239 @@
@@ -287,3 +296,6 @@ Subject: [PATCH 031/174] Add cpufreq driver
 +module_init(bcm2835_cpufreq_module_init);
 +module_exit(bcm2835_cpufreq_module_exit);
 +
+-- 
+1.9.1
+

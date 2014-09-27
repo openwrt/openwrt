@@ -1,7 +1,7 @@
-From e9bdcaa2b42e66aa2774b5cbdd0238b2f4d9f345 Mon Sep 17 00:00:00 2001
+From 8a9745e5671060860dd795573bff57cbcb33507f Mon Sep 17 00:00:00 2001
 From: Daniel Matuschek <info@crazy-audio.com>
 Date: Thu, 16 Jan 2014 07:36:35 +0100
-Subject: [PATCH 160/174] ASoC: wm8804: Set idle_bias_off to false Idle bias
+Subject: [PATCH 160/196] ASoC: wm8804: Set idle_bias_off to false Idle bias
  has been change to remove warning on driver startup
 
 Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
@@ -9,9 +9,11 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  sound/soc/codecs/wm8804.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/sound/soc/codecs/wm8804.c b/sound/soc/codecs/wm8804.c
+index 7ec8381..50d0f0c 100644
 --- a/sound/soc/codecs/wm8804.c
 +++ b/sound/soc/codecs/wm8804.c
-@@ -685,7 +685,7 @@ static struct snd_soc_codec_driver soc_c
+@@ -685,7 +685,7 @@ static struct snd_soc_codec_driver soc_codec_dev_wm8804 = {
  	.suspend = wm8804_suspend,
  	.resume = wm8804_resume,
  	.set_bias_level = wm8804_set_bias_level,
@@ -20,3 +22,6 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  
  	.controls = wm8804_snd_controls,
  	.num_controls = ARRAY_SIZE(wm8804_snd_controls),
+-- 
+1.9.1
+

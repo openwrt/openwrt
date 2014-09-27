@@ -1,7 +1,7 @@
-From 445255441aa03cca3d1318d1e7ff58872c91c645 Mon Sep 17 00:00:00 2001
+From ce5fb2face9a3974693b0f08ce226d7f0406541a Mon Sep 17 00:00:00 2001
 From: P33M <P33M@github.com>
 Date: Fri, 2 Aug 2013 10:04:18 +0100
-Subject: [PATCH 086/174] dwc_otg: fix potential sleep while atomic during urb
+Subject: [PATCH 086/196] dwc_otg: fix potential sleep while atomic during urb
  enqueue
 
 Fixes a regression introduced with eb1b482a. Kmalloc called from
@@ -12,9 +12,11 @@ critical section.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index ad03ff1..80690f9 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -781,8 +781,7 @@ static int dwc_otg_urb_enqueue(struct us
+@@ -781,8 +781,7 @@ static int dwc_otg_urb_enqueue(struct usb_hcd *hcd,
  	{
  		retval = dwc_otg_hcd_urb_enqueue(dwc_otg_hcd, dwc_otg_urb,
  						/*(dwc_otg_qh_t **)*/
@@ -24,3 +26,6 @@ critical section.
  		if (0 == retval) {
  			if (alloc_bandwidth) {
  				allocate_bus_bandwidth(hcd,
+-- 
+1.9.1
+

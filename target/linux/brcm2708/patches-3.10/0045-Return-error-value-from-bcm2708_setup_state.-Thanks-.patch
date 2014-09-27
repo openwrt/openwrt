@@ -1,16 +1,18 @@
-From 96bf154aade59a5527611b93bdc3ff5faf8ecc10 Mon Sep 17 00:00:00 2001
+From 3edf2fdaaf5c1b126e3e93519dcc1fea2e7954c5 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Mon, 21 Jan 2013 23:03:53 +0000
-Subject: [PATCH 045/174] Return error value from bcm2708_setup_state. Thanks
+Subject: [PATCH 045/196] Return error value from bcm2708_setup_state. Thanks
  notro
 
 ---
  drivers/spi/spi-bcm2708.c | 1 +
  1 file changed, 1 insertion(+)
 
+diff --git a/drivers/spi/spi-bcm2708.c b/drivers/spi/spi-bcm2708.c
+index 9f1580e..8513704 100644
 --- a/drivers/spi/spi-bcm2708.c
 +++ b/drivers/spi/spi-bcm2708.c
-@@ -378,6 +378,7 @@ static int bcm2708_spi_setup(struct spi_
+@@ -378,6 +378,7 @@ static int bcm2708_spi_setup(struct spi_device *spi)
  	if (ret < 0) {
  		kfree(state);
  		spi->controller_state = NULL;
@@ -18,3 +20,6 @@ Subject: [PATCH 045/174] Return error value from bcm2708_setup_state. Thanks
  	}
  
  	dev_dbg(&spi->dev,
+-- 
+1.9.1
+

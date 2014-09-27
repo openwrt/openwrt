@@ -1,13 +1,15 @@
-From bd5ea6c71eb31d1c65f718a2938ea9a4272c8b8e Mon Sep 17 00:00:00 2001
+From 6bcf2da9cea3a1565a87f848f4e17bc634bb160c Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 26 Mar 2013 17:26:38 +0000
-Subject: [PATCH 008/174] Allow mac address to be set in smsc95xx
+Subject: [PATCH 008/196] Allow mac address to be set in smsc95xx
 
 Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
  drivers/net/usb/smsc95xx.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 56 insertions(+)
 
+diff --git a/drivers/net/usb/smsc95xx.c b/drivers/net/usb/smsc95xx.c
+index 9375b8c..f024562 100644
 --- a/drivers/net/usb/smsc95xx.c
 +++ b/drivers/net/usb/smsc95xx.c
 @@ -61,6 +61,7 @@
@@ -29,7 +31,7 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
  					    u32 *data, int in_pm)
  {
-@@ -765,8 +770,59 @@ static int smsc95xx_ioctl(struct net_dev
+@@ -765,8 +770,59 @@ static int smsc95xx_ioctl(struct net_device *netdev, struct ifreq *rq, int cmd)
  	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
  }
  
@@ -89,3 +91,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  	/* try reading mac address from EEPROM */
  	if (smsc95xx_read_eeprom(dev, EEPROM_MAC_OFFSET, ETH_ALEN,
  			dev->net->dev_addr) == 0) {
+-- 
+1.9.1
+

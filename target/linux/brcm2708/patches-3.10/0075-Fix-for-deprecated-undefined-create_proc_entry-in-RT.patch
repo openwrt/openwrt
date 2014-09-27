@@ -1,13 +1,15 @@
-From 9fc9389ab723f75d183813ca8012b89a01a70a1a Mon Sep 17 00:00:00 2001
+From 581798214a3fc7e7cd983e7b4f1bfa353ec3b9a3 Mon Sep 17 00:00:00 2001
 From: Jonathan Bensen <cybertronic@gmail.com>
 Date: Mon, 8 Jul 2013 09:49:56 -0700
-Subject: [PATCH 075/174] Fix for deprecated/undefined create_proc_entry in
+Subject: [PATCH 075/196] Fix for deprecated/undefined create_proc_entry in
  RTL8192cu driver
 
 ---
  drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
+diff --git a/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c b/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c
+index 8feb780..b88a5eb 100644
 --- a/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c
 +++ b/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c
 @@ -255,6 +255,18 @@ static char rtw_proc_name[IFNAMSIZ];
@@ -29,7 +31,7 @@ Subject: [PATCH 075/174] Fix for deprecated/undefined create_proc_entry in
  void rtw_proc_init_one(struct net_device *dev)
  {
  	struct proc_dir_entry *dir_dev = NULL;
-@@ -525,6 +537,7 @@ void rtw_proc_remove_one(struct net_devi
+@@ -525,6 +537,7 @@ void rtw_proc_remove_one(struct net_device *dev)
  	}
  }
  #endif
@@ -37,3 +39,6 @@ Subject: [PATCH 075/174] Fix for deprecated/undefined create_proc_entry in
  
  uint loadparam( _adapter *padapter,  _nic_hdl	pnetdev)
  {
+-- 
+1.9.1
+

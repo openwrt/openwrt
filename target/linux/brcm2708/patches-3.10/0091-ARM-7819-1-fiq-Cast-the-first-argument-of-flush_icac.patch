@@ -1,7 +1,7 @@
-From 3c174c25ed6ef1108d0a0f8c106c074225d7194b Mon Sep 17 00:00:00 2001
+From cfd79481c07339df7d30fe15011dbfbf994c3503 Mon Sep 17 00:00:00 2001
 From: Fabio Estevam <festevam@gmail.com>
 Date: Fri, 16 Aug 2013 12:55:56 +0100
-Subject: [PATCH 091/174] ARM: 7819/1: fiq: Cast the first argument of
+Subject: [PATCH 091/196] ARM: 7819/1: fiq: Cast the first argument of
  flush_icache_range()
 
 Commit 2ba85e7af4 (ARM: Fix FIQ code on VIVT CPUs) causes the following build warning:
@@ -16,9 +16,11 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  arch/arm/kernel/fiq.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
+diff --git a/arch/arm/kernel/fiq.c b/arch/arm/kernel/fiq.c
+index 9ac7935..aac11f8 100644
 --- a/arch/arm/kernel/fiq.c
 +++ b/arch/arm/kernel/fiq.c
-@@ -89,7 +89,8 @@ void set_fiq_handler(void *start, unsign
+@@ -89,7 +89,8 @@ void set_fiq_handler(void *start, unsigned int length)
  
  	memcpy(base + offset, start, length);
  	if (!cache_is_vipt_nonaliasing())
@@ -28,3 +30,6 @@ Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
  	flush_icache_range(0xffff0000 + offset, 0xffff0000 + offset + length);
  }
  
+-- 
+1.9.1
+

@@ -1,7 +1,7 @@
-From 40934fa5ae748fab27146883be929d4190b35c16 Mon Sep 17 00:00:00 2001
+From 4c7d4bffe1986d856b37460f87950dabe29c616e Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Tue, 26 Mar 2013 19:24:24 +0000
-Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
+Subject: [PATCH 033/196] Added hwmon/thermal driver for reporting core
  temperature. Thanks Dorian
 
 ---
@@ -16,9 +16,11 @@ Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
  create mode 100644 drivers/hwmon/bcm2835-hwmon.c
  create mode 100644 drivers/thermal/bcm2835-thermal.c
 
---- a/arch/arm/mach-bcm2708/bcm2708.c
-+++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -562,6 +562,14 @@ static struct platform_device bcm2708_bs
+Index: linux-3.10.49/arch/arm/mach-bcm2708/bcm2708.c
+===================================================================
+--- linux-3.10.49.orig/arch/arm/mach-bcm2708/bcm2708.c	2014-09-27 11:40:40.999449257 -0700
++++ linux-3.10.49/arch/arm/mach-bcm2708/bcm2708.c	2014-09-27 11:40:40.979449258 -0700
+@@ -562,6 +562,14 @@
  	.resource = bcm2708_bsc1_resources,
  };
  
@@ -33,7 +35,7 @@ Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
  int __init bcm_register_device(struct platform_device *pdev)
  {
  	int ret;
-@@ -682,6 +690,9 @@ void __init bcm2708_init(void)
+@@ -682,6 +690,9 @@
  	bcm_register_device(&bcm2708_bsc0_device);
  	bcm_register_device(&bcm2708_bsc1_device);
  
@@ -43,9 +45,11 @@ Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
---- a/drivers/hwmon/Kconfig
-+++ b/drivers/hwmon/Kconfig
-@@ -1537,6 +1537,16 @@ config SENSORS_MC13783_ADC
+Index: linux-3.10.49/drivers/hwmon/Kconfig
+===================================================================
+--- linux-3.10.49.orig/drivers/hwmon/Kconfig	2014-09-27 11:40:40.999449257 -0700
++++ linux-3.10.49/drivers/hwmon/Kconfig	2014-09-27 11:40:40.979449258 -0700
+@@ -1537,6 +1537,16 @@
          help
            Support for the A/D converter on MC13783 and MC13892 PMIC.
  
@@ -62,8 +66,10 @@ Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
  if ACPI
  
  comment "ACPI drivers"
---- /dev/null
-+++ b/drivers/hwmon/bcm2835-hwmon.c
+Index: linux-3.10.49/drivers/hwmon/bcm2835-hwmon.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/drivers/hwmon/bcm2835-hwmon.c	2014-09-27 11:40:40.979449258 -0700
 @@ -0,0 +1,219 @@
 +/*****************************************************************************
 +* Copyright 2011 Broadcom Corporation.  All rights reserved.
@@ -284,9 +290,11 @@ Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
 +MODULE_DESCRIPTION("HW Monitor driver for bcm2835 chip");
 +
 +module_platform_driver(bcm2835_hwmon_driver);
---- a/drivers/thermal/Kconfig
-+++ b/drivers/thermal/Kconfig
-@@ -169,4 +169,11 @@ config INTEL_POWERCLAMP
+Index: linux-3.10.49/drivers/thermal/Kconfig
+===================================================================
+--- linux-3.10.49.orig/drivers/thermal/Kconfig	2014-09-27 11:40:40.999449257 -0700
++++ linux-3.10.49/drivers/thermal/Kconfig	2014-09-27 11:40:40.983449258 -0700
+@@ -169,4 +169,11 @@
  	  enforce idle time which results in more package C-state residency. The
  	  user interface is exposed via generic thermal framework.
  
@@ -298,16 +306,20 @@ Subject: [PATCH 033/174] Added hwmon/thermal driver for reporting core
 +
  endif
 +
---- a/drivers/thermal/Makefile
-+++ b/drivers/thermal/Makefile
-@@ -23,4 +23,5 @@ obj-$(CONFIG_DB8500_THERMAL)	+= db8500_t
+Index: linux-3.10.49/drivers/thermal/Makefile
+===================================================================
+--- linux-3.10.49.orig/drivers/thermal/Makefile	2014-09-27 11:40:40.999449257 -0700
++++ linux-3.10.49/drivers/thermal/Makefile	2014-09-27 11:40:40.983449258 -0700
+@@ -23,4 +23,5 @@
  obj-$(CONFIG_ARMADA_THERMAL)	+= armada_thermal.o
  obj-$(CONFIG_DB8500_CPUFREQ_COOLING)	+= db8500_cpufreq_cooling.o
  obj-$(CONFIG_INTEL_POWERCLAMP)	+= intel_powerclamp.o
 +obj-$(CONFIG_THERMAL_BCM2835)	+= bcm2835-thermal.o
  
---- /dev/null
-+++ b/drivers/thermal/bcm2835-thermal.c
+Index: linux-3.10.49/drivers/thermal/bcm2835-thermal.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/drivers/thermal/bcm2835-thermal.c	2014-09-27 11:40:40.983449258 -0700
 @@ -0,0 +1,208 @@
 +/*****************************************************************************
 +* Copyright 2011 Broadcom Corporation.  All rights reserved.

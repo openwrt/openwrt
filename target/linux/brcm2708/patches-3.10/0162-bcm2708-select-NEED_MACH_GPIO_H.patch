@@ -1,7 +1,7 @@
-From d1df97f2d10654ace3d14a77a2de866ce4cd8d4b Mon Sep 17 00:00:00 2001
+From 89fe6af687fcbbae28b05e10debe0de60b6ee5a3 Mon Sep 17 00:00:00 2001
 From: Joerg Faschingbauer <jf@faschingbauer.co.at>
 Date: Sat, 18 Jan 2014 23:15:07 +0100
-Subject: [PATCH 162/174] bcm2708: select NEED_MACH_GPIO_H
+Subject: [PATCH 162/196] bcm2708: select NEED_MACH_GPIO_H
 
 makers out there use to use gpio_to_irq() in board setup code. it is
 necessary that gpio_to_irq() be defined as a macro for this to work.
@@ -18,6 +18,8 @@ makers (though this clearly is in the way of devicetree).
  arch/arm/Kconfig | 1 +
  1 file changed, 1 insertion(+)
 
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 4e36ccd..7707c27 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -367,6 +367,7 @@ config ARCH_BCM2708
@@ -28,3 +30,6 @@ makers (though this clearly is in the way of devicetree).
  	select NEED_MACH_MEMORY_H
  	select CLKDEV_LOOKUP
  	select ARCH_HAS_CPUFREQ
+-- 
+1.9.1
+

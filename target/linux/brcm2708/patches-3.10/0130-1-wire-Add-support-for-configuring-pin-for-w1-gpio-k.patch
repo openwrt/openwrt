@@ -1,13 +1,15 @@
-From 539f6945d211e91b73bd098b11270beb766c8475 Mon Sep 17 00:00:00 2001
+From 9f49a38c6a2e2966982f307fab54c8a27f88d13b Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Thu, 19 Dec 2013 18:05:31 +0000
-Subject: [PATCH 130/174] 1-wire: Add support for configuring pin for w1-gpio
+Subject: [PATCH 130/196] 1-wire: Add support for configuring pin for w1-gpio
  kernel module See: https://github.com/raspberrypi/linux/pull/457
 
 ---
  arch/arm/mach-bcm2708/bcm2708.c | 3 +++
  1 file changed, 3 insertions(+)
 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 90debb4..46586d8 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -84,6 +84,7 @@
@@ -31,3 +33,6 @@ Subject: [PATCH 130/174] 1-wire: Add support for configuring pin for w1-gpio
  module_param(uart_clock, uint, 0644);
  module_param(reboot_part, uint, 0644);
 +module_param(w1_gpio_pin, uint, 0644);
+-- 
+1.9.1
+

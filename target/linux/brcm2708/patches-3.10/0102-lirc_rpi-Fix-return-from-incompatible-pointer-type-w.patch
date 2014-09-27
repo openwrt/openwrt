@@ -1,13 +1,15 @@
-From 1007843b7b431973897f0059c7025355fa3ff75d Mon Sep 17 00:00:00 2001
+From b80da4978ba9731cabeb3ab81fb15feca71a657d Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Du=C5=A1an=20Dragi=C4=87?= <dragic.dusan@gmail.com>
 Date: Wed, 25 Sep 2013 18:20:09 +0200
-Subject: [PATCH 102/174] lirc_rpi: Fix return from incompatible pointer type
+Subject: [PATCH 102/196] lirc_rpi: Fix return from incompatible pointer type
  warnings
 
 ---
  drivers/staging/media/lirc/lirc_rpi.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/staging/media/lirc/lirc_rpi.c b/drivers/staging/media/lirc/lirc_rpi.c
+index 5bb0dfe..cb32042 100644
 --- a/drivers/staging/media/lirc/lirc_rpi.c
 +++ b/drivers/staging/media/lirc/lirc_rpi.c
 @@ -63,13 +63,13 @@ static int gpio_in_pin = 18;
@@ -27,7 +29,7 @@ Subject: [PATCH 102/174] lirc_rpi: Fix return from incompatible pointer type
  
  struct gpio_chip *gpiochip;
  struct irq_chip *irqchip;
-@@ -678,7 +678,7 @@ MODULE_PARM_DESC(gpio_in_pin, "GPIO inpu
+@@ -678,7 +678,7 @@ MODULE_PARM_DESC(gpio_in_pin, "GPIO input pin number of the BCM processor."
  		 " Valid pin numbers are: 0, 1, 4, 8, 7, 9, 10, 11, 14, 15,"
  		 " 17, 18, 21, 22, 23, 24, 25, default 18");
  
@@ -36,3 +38,6 @@ Subject: [PATCH 102/174] lirc_rpi: Fix return from incompatible pointer type
  MODULE_PARM_DESC(sense, "Override autodetection of IR receiver circuit"
  		 " (0 = active high, 1 = active low )");
  
+-- 
+1.9.1
+

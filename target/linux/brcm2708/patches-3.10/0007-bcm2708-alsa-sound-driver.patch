@@ -1,7 +1,7 @@
-From 7868fb252f8846b21a00b9a42a8bfa10f1c969ee Mon Sep 17 00:00:00 2001
+From f99826368eeb17ddaf6b9459f577356c0387f365 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Mon, 26 Mar 2012 22:15:50 +0100
-Subject: [PATCH 007/174] bcm2708: alsa sound driver
+Subject: [PATCH 007/196] bcm2708: alsa sound driver
 
     Signed-off-by: popcornmix <popcornmix@gmail.com>
 ---
@@ -24,6 +24,8 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
  create mode 100755 sound/arm/bcm2835.h
  create mode 100644 sound/arm/vc_vchi_audioserv_defs.h
 
+diff --git a/arch/arm/configs/bcmrpi_cutdown_defconfig b/arch/arm/configs/bcmrpi_cutdown_defconfig
+index 74f2dc9..e519412 100644
 --- a/arch/arm/configs/bcmrpi_cutdown_defconfig
 +++ b/arch/arm/configs/bcmrpi_cutdown_defconfig
 @@ -208,6 +208,26 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
@@ -53,6 +55,8 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
  CONFIG_HID_PID=y
  CONFIG_USB_HIDDEV=y
  CONFIG_HID_A4TECH=m
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 339aabf..df947e5 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -225,6 +225,26 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
@@ -82,9 +86,11 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
  CONFIG_HID_PID=y
  CONFIG_USB_HIDDEV=y
  CONFIG_HID_A4TECH=m
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 64a2783..67f3608 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -424,6 +424,16 @@ struct platform_device bcm2708_powerman_
+@@ -424,6 +424,16 @@ struct platform_device bcm2708_powerman_device = {
  		.coherent_dma_mask = 0xffffffffUL},
  };
  
@@ -110,6 +116,8 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
  
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
+diff --git a/sound/arm/Kconfig b/sound/arm/Kconfig
+index 885683a..f7ceafd 100644
 --- a/sound/arm/Kconfig
 +++ b/sound/arm/Kconfig
 @@ -39,5 +39,12 @@ config SND_PXA2XX_AC97
@@ -125,9 +133,11 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +
  endif	# SND_ARM
  
+diff --git a/sound/arm/Makefile b/sound/arm/Makefile
+index 8c0c851..181cb57 100644
 --- a/sound/arm/Makefile
 +++ b/sound/arm/Makefile
-@@ -14,3 +14,9 @@ snd-pxa2xx-lib-$(CONFIG_SND_PXA2XX_LIB_A
+@@ -14,3 +14,9 @@ snd-pxa2xx-lib-$(CONFIG_SND_PXA2XX_LIB_AC97)	+= pxa2xx-ac97-lib.o
  
  obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
  snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
@@ -137,6 +147,9 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +
 +EXTRA_CFLAGS += -Idrivers/misc/vc04_services -Idrivers/misc/vc04_services/interface/vcos/linuxkernel -D__VCCOREVER__=0x04000000
 +
+diff --git a/sound/arm/bcm2835-ctl.c b/sound/arm/bcm2835-ctl.c
+new file mode 100755
+index 0000000..c3e0f7a
 --- /dev/null
 +++ b/sound/arm/bcm2835-ctl.c
 @@ -0,0 +1,200 @@
@@ -340,6 +353,9 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +	}
 +	return 0;
 +}
+diff --git a/sound/arm/bcm2835-pcm.c b/sound/arm/bcm2835-pcm.c
+new file mode 100755
+index 0000000..4206b7e
 --- /dev/null
 +++ b/sound/arm/bcm2835-pcm.c
 @@ -0,0 +1,409 @@
@@ -752,6 +768,9 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +
 +	return 0;
 +}
+diff --git a/sound/arm/bcm2835-vchiq.c b/sound/arm/bcm2835-vchiq.c
+new file mode 100755
+index 0000000..9ecb2d6
 --- /dev/null
 +++ b/sound/arm/bcm2835-vchiq.c
 @@ -0,0 +1,844 @@
@@ -1599,6 +1618,9 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +
 +module_param(force_bulk, bool, 0444);
 +MODULE_PARM_DESC(force_bulk, "Force use of vchiq bulk for audio");
+diff --git a/sound/arm/bcm2835.c b/sound/arm/bcm2835.c
+new file mode 100755
+index 0000000..e5ac894
 --- /dev/null
 +++ b/sound/arm/bcm2835.c
 @@ -0,0 +1,413 @@
@@ -2015,6 +2037,9 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +MODULE_DESCRIPTION("Alsa driver for BCM2835 chip");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:bcm2835_alsa");
+diff --git a/sound/arm/bcm2835.h b/sound/arm/bcm2835.h
+new file mode 100755
+index 0000000..b966e28
 --- /dev/null
 +++ b/sound/arm/bcm2835.h
 @@ -0,0 +1,155 @@
@@ -2173,6 +2198,9 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +void bcm2835_audio_flush_playback_buffers(bcm2835_alsa_stream_t * alsa_stream);
 +
 +#endif /* __SOUND_ARM_BCM2835_H */
+diff --git a/sound/arm/vc_vchi_audioserv_defs.h b/sound/arm/vc_vchi_audioserv_defs.h
+new file mode 100644
+index 0000000..af3e6eb
 --- /dev/null
 +++ b/sound/arm/vc_vchi_audioserv_defs.h
 @@ -0,0 +1,116 @@
@@ -2292,3 +2320,6 @@ Subject: [PATCH 007/174] bcm2708: alsa sound driver
 +} VC_AUDIO_MSG_T;
 +
 +#endif // _VC_AUDIO_DEFS_H_
+-- 
+1.9.1
+

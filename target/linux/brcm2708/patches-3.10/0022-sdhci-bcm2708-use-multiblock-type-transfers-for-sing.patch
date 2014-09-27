@@ -1,7 +1,7 @@
-From 9f5c2a77277b99949398e97cc753074d1b8e9521 Mon Sep 17 00:00:00 2001
+From d91049bd18e847ba86d661889b92a25cd7ce53cc Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Wed, 3 Jul 2013 00:42:49 +0100
-Subject: [PATCH 022/174] sdhci-bcm2708: use multiblock-type transfers for
+Subject: [PATCH 022/196] sdhci-bcm2708: use multiblock-type transfers for
  single blocks
 
 There are issues with both single block reads (missed completion)
@@ -14,9 +14,11 @@ adds a quirk for this and uses it.
  include/linux/mmc/host.h         | 1 +
  3 files changed, 5 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
+index 9aca946..0d0c4ad 100644
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -1333,7 +1333,7 @@ static void mmc_blk_rw_rq_prep(struct mm
+@@ -1333,7 +1333,7 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
  			brq->data.blocks = 1;
  	}
  
@@ -25,9 +27,11 @@ adds a quirk for this and uses it.
  		/* SPI multiblock writes terminate using a special
  		 * token, not a STOP_TRANSMISSION request.
  		 */
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 326b962..c6d6bb0 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
-@@ -1266,6 +1266,9 @@ static int sdhci_bcm2708_probe(struct pl
+@@ -1266,6 +1266,9 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
  
      if (allow_highspeed)
          host->mmc->caps |= MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED;
@@ -37,6 +41,8 @@ adds a quirk for this and uses it.
  #endif
  
  	ret = sdhci_add_host(host);
+diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
+index e326ae2..70020e3 100644
 --- a/include/linux/mmc/host.h
 +++ b/include/linux/mmc/host.h
 @@ -281,6 +281,7 @@ struct mmc_host {
@@ -47,3 +53,6 @@ adds a quirk for this and uses it.
  
  	mmc_pm_flag_t		pm_caps;	/* supported pm features */
  
+-- 
+1.9.1
+

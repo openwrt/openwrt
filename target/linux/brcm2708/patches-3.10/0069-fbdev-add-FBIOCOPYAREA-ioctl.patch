@@ -1,7 +1,7 @@
-From bae48dcebc8f847977f6077910afb93f754708d6 Mon Sep 17 00:00:00 2001
+From 422d5162d6b4e5cd8f7a9470b128577d1b826bdd Mon Sep 17 00:00:00 2001
 From: Siarhei Siamashka <siarhei.siamashka@gmail.com>
 Date: Mon, 17 Jun 2013 13:32:11 +0300
-Subject: [PATCH 069/174] fbdev: add FBIOCOPYAREA ioctl
+Subject: [PATCH 069/196] fbdev: add FBIOCOPYAREA ioctl
 
 Based on the patch authored by Ali Gholami Rudi at
     https://lkml.org/lkml/2009/7/13/153
@@ -15,9 +15,11 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  include/uapi/linux/fb.h |  5 +++++
  2 files changed, 35 insertions(+)
 
+diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
+index 098bfc6..da8e53b 100644
 --- a/drivers/video/fbmem.c
 +++ b/drivers/video/fbmem.c
-@@ -1074,6 +1074,25 @@ fb_blank(struct fb_info *info, int blank
+@@ -1074,6 +1074,25 @@ fb_blank(struct fb_info *info, int blank)
   	return ret;
  }
  
@@ -43,7 +45,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
  			unsigned long arg)
  {
-@@ -1084,6 +1103,7 @@ static long do_fb_ioctl(struct fb_info *
+@@ -1084,6 +1103,7 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
  	struct fb_cmap cmap_from;
  	struct fb_cmap_user cmap;
  	struct fb_event event;
@@ -51,7 +53,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  	void __user *argp = (void __user *)arg;
  	long ret = 0;
  
-@@ -1193,6 +1213,15 @@ static long do_fb_ioctl(struct fb_info *
+@@ -1193,6 +1213,15 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
  		console_unlock();
  		unlock_fb_info(info);
  		break;
@@ -67,7 +69,7 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  	default:
  		if (!lock_fb_info(info))
  			return -ENODEV;
-@@ -1345,6 +1374,7 @@ static long fb_compat_ioctl(struct file
+@@ -1345,6 +1374,7 @@ static long fb_compat_ioctl(struct file *file, unsigned int cmd,
  	case FBIOPAN_DISPLAY:
  	case FBIOGET_CON2FBMAP:
  	case FBIOPUT_CON2FBMAP:
@@ -75,6 +77,8 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  		arg = (unsigned long) compat_ptr(arg);
  	case FBIOBLANK:
  		ret = do_fb_ioctl(info, cmd, arg);
+diff --git a/include/uapi/linux/fb.h b/include/uapi/linux/fb.h
+index fb795c3..fa72af0 100644
 --- a/include/uapi/linux/fb.h
 +++ b/include/uapi/linux/fb.h
 @@ -34,6 +34,11 @@
@@ -89,3 +93,6 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  
  #define FB_TYPE_PACKED_PIXELS		0	/* Packed Pixels	*/
  #define FB_TYPE_PLANES			1	/* Non interleaved planes */
+-- 
+1.9.1
+

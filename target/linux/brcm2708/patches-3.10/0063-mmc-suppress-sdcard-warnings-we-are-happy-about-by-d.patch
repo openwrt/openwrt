@@ -1,13 +1,15 @@
-From dfe5d158300e7500873f1f81d89a05842460befc Mon Sep 17 00:00:00 2001
+From c20b5189fa65427d6a9f2e70f7f8f2c485d21296 Mon Sep 17 00:00:00 2001
 From: popcornmix <popcornmix@gmail.com>
 Date: Fri, 10 May 2013 19:42:38 +0100
-Subject: [PATCH 063/174] mmc: suppress sdcard warnings we are happy about by
+Subject: [PATCH 063/196] mmc: suppress sdcard warnings we are happy about by
  default
 
 ---
  drivers/mmc/host/sdhci-bcm2708.c | 11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
+diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
+index 3556ed3..c2409b9 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -139,6 +139,7 @@ static bool sync_after_dma = 1;
@@ -18,7 +20,7 @@ Subject: [PATCH 063/174] mmc: suppress sdcard warnings we are happy about by
  
  #if 0
  static void hptime_test(void)
-@@ -672,13 +673,16 @@ sdhci_bcm2708_platdma_reset(struct sdhci
+@@ -672,13 +673,16 @@ sdhci_bcm2708_platdma_reset(struct sdhci_host *host, struct mmc_data *data)
  			cs = readl(host_priv->dma_chan_base + BCM2708_DMA_CS);
  
  			if (!(BCM2708_DMA_ACTIVE & cs))
@@ -36,7 +38,7 @@ Subject: [PATCH 063/174] mmc: suppress sdcard warnings we are happy about by
  			else
  				printk(KERN_INFO "%s: resetting ongoing cmd %d"
  				       "DMA before %d/%d [%d]/[%d] complete\n",
-@@ -903,7 +907,8 @@ static irqreturn_t sdhci_bcm2708_dma_irq
+@@ -903,7 +907,8 @@ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
  
  		if (!host_priv->dma_wanted) {
  			/* ignore this interrupt - it was reset */
@@ -46,7 +48,7 @@ Subject: [PATCH 063/174] mmc: suppress sdcard warnings we are happy about by
  			       "results were reset\n",
  			       mmc_hostname(host->mmc), dma_cs);
  #ifdef CHECK_DMA_USE
-@@ -1397,6 +1402,7 @@ module_param(missing_status, bool, 0444)
+@@ -1397,6 +1402,7 @@ module_param(missing_status, bool, 0444);
  module_param(spurious_crc_acmd51, bool, 0444);
  module_param(enable_llm, bool, 0444);
  module_param(cycle_delay, int, 0444);
@@ -54,10 +56,13 @@ Subject: [PATCH 063/174] mmc: suppress sdcard warnings we are happy about by
  
  MODULE_DESCRIPTION("Secure Digital Host Controller Interface platform driver");
  MODULE_AUTHOR("Broadcom <info@broadcom.com>");
-@@ -1409,5 +1415,6 @@ MODULE_PARM_DESC(sync_after_dma, "Block
+@@ -1409,5 +1415,6 @@ MODULE_PARM_DESC(sync_after_dma, "Block in driver until dma complete");
  MODULE_PARM_DESC(missing_status, "Use the missing status quirk");
  MODULE_PARM_DESC(spurious_crc_acmd51, "Use the spurious crc quirk for reading SCR (ACMD51)");
  MODULE_PARM_DESC(enable_llm, "Enable low-latency mode");
 +MODULE_PARM_DESC(extra_messages, "Enable more sdcard warning messages");
  
  
+-- 
+1.9.1
+

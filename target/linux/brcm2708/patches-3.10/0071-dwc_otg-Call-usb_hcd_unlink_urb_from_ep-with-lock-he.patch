@@ -1,7 +1,7 @@
-From 9b8c30f46a381533c92a6424ff25f9014d8802b0 Mon Sep 17 00:00:00 2001
+From f017dca7748948138205b11490d0b345602ce4db Mon Sep 17 00:00:00 2001
 From: Mike Bradley <mike.bradley@incanetworks.com>
 Date: Mon, 17 Jun 2013 11:31:42 -0700
-Subject: [PATCH 071/174] dwc_otg: Call usb_hcd_unlink_urb_from_ep with lock
+Subject: [PATCH 071/196] dwc_otg: Call usb_hcd_unlink_urb_from_ep with lock
  held in completion handler
 
 usb_hcd_unlink_urb_from_ep must be called with the HCD lock held.  Calling it
@@ -22,9 +22,11 @@ eliminated.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 18 ++++++++++++++----
  2 files changed, 15 insertions(+), 5 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index eaa8f38..9c2e71a 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -704,6 +704,7 @@ static void completion_tasklet_func(void
+@@ -704,6 +704,7 @@ static void completion_tasklet_func(void *ptr)
  	urb_tq_entry_t *item;
  	dwc_irqflags_t flags;
  
@@ -32,7 +34,7 @@ eliminated.
  	DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
  	while (!DWC_TAILQ_EMPTY(&hcd->completed_urb_list)) {
  		item = DWC_TAILQ_FIRST(&hcd->completed_urb_list);
-@@ -713,7 +714,6 @@ static void completion_tasklet_func(void
+@@ -713,7 +714,6 @@ static void completion_tasklet_func(void *ptr)
  		DWC_SPINUNLOCK_IRQRESTORE(hcd->lock, flags);
  		DWC_FREE(item);
  
@@ -40,9 +42,11 @@ eliminated.
  		usb_hcd_giveback_urb(hcd->priv, urb, urb->status);
  
  		DWC_SPINLOCK_IRQSAVE(hcd->lock, &flags);
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+index 7bb133a..fef557d 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-@@ -265,13 +265,15 @@ static void free_bus_bandwidth(struct us
+@@ -265,13 +265,15 @@ static void free_bus_bandwidth(struct usb_hcd *hcd, uint32_t bw,
  
  /**
   * Sets the final status of an URB and returns it to the device driver. Any
@@ -59,7 +63,7 @@ eliminated.
  	if (CHK_DEBUG_LEVEL(DBG_HCDV | DBG_HCD_URB)) {
  		DWC_PRINTF("%s: urb %p, device %d, ep %d %s, status=%d\n",
  			   __func__, urb, usb_pipedevice(urb->pipe),
-@@ -363,9 +365,17 @@ static int _complete(dwc_otg_hcd_t * hcd
+@@ -363,9 +365,17 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
  #endif
  	} else {
  		new_entry->urb = urb;
@@ -80,3 +84,6 @@ eliminated.
  	}
  	return 0;
  }
+-- 
+1.9.1
+

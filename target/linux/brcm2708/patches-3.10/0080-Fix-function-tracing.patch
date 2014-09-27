@@ -1,12 +1,14 @@
-From f7785b067f07e444934fe0e6c31fff36f5863079 Mon Sep 17 00:00:00 2001
+From cf9f56af2d067396b32e65cf10b9d2b072d08033 Mon Sep 17 00:00:00 2001
 From: Gordon Hollingworth <gordon@holliweb.co.uk>
 Date: Mon, 8 Jul 2013 04:12:19 +0100
-Subject: [PATCH 080/174] Fix function tracing
+Subject: [PATCH 080/196] Fix function tracing
 
 ---
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 12 ++++++------
  1 file changed, 6 insertions(+), 6 deletions(-)
 
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index d655363..765451b 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -77,7 +77,7 @@ int queued_port[MAX_EPS_CHANNELS];
@@ -18,7 +20,7 @@ Subject: [PATCH 080/174] Fix function tracing
  {
  	FIQDBG_T dbg_lvl_req = FIQDBG_PORTHUB;
  	va_list args;
-@@ -101,7 +101,7 @@ void _fiq_print(FIQDBG_T dbg_lvl, char *
+@@ -101,7 +101,7 @@ void _fiq_print(FIQDBG_T dbg_lvl, char *fmt, ...)
  }
  #endif
  
@@ -60,3 +62,6 @@ Subject: [PATCH 080/174] Fix function tracing
  {
  
  	/* entry takes care to store registers we will be treading on here */
+-- 
+1.9.1
+

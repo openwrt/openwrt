@@ -1,7 +1,7 @@
-From ab41011a32fdc35352ee6b308f29b6954056d787 Mon Sep 17 00:00:00 2001
+From 298c1744068079c5174e0c6023a89cb5ad3576c4 Mon Sep 17 00:00:00 2001
 From: Luke Diamand <luked@broadcom.com>
 Date: Wed, 1 Jan 2014 00:45:29 +0000
-Subject: [PATCH 149/174] bcm2708_fb: use IRQ for DMA copies
+Subject: [PATCH 149/196] bcm2708_fb: use IRQ for DMA copies
 
 The copyarea ioctl() uses DMA to speed things along. This
 was busy-waiting for completion. This change supports using
@@ -15,9 +15,11 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  drivers/video/bcm2708_fb.c               | 64 ++++++++++++++++++++++++++++++--
  3 files changed, 70 insertions(+), 4 deletions(-)
 
+diff --git a/arch/arm/mach-bcm2708/dma.c b/arch/arm/mach-bcm2708/dma.c
+index 51d147a..1da2413 100644
 --- a/arch/arm/mach-bcm2708/dma.c
 +++ b/arch/arm/mach-bcm2708/dma.c
-@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iom
+@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iomem *dma_chan_base)
  
  EXPORT_SYMBOL_GPL(bcm_dma_start);
  
@@ -32,6 +34,8 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  /* Complete an ongoing DMA (assuming its results are to be ignored)
     Does nothing if there is no DMA in progress.
     This routine waits for the current AXI transfer to complete before
+diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
+index f2568d4..a4aac4c 100644
 --- a/arch/arm/mach-bcm2708/include/mach/dma.h
 +++ b/arch/arm/mach-bcm2708/include/mach/dma.h
 @@ -64,11 +64,13 @@ struct bcm2708_dma_cb {
@@ -48,6 +52,8 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  extern int /*rc*/ bcm_dma_abort(void __iomem *dma_chan_base);
  
  /* When listing features we can ask for when allocating DMA channels give
+diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
+index 4d7d963..5758146 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
 @@ -21,6 +21,7 @@
@@ -58,7 +64,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  #include <linux/ioport.h>
  #include <linux/list.h>
  #include <linux/platform_device.h>
-@@ -48,6 +49,11 @@ static const char *bcm2708_name = "BCM27
+@@ -48,6 +49,11 @@ static const char *bcm2708_name = "BCM2708 FB";
  
  #define DRIVER_NAME "bcm2708_fb"
  
@@ -78,7 +84,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  	struct bcm2708_fb_stats stats;
  };
  
-@@ -95,6 +102,10 @@ static int bcm2708_fb_debugfs_init(struc
+@@ -95,6 +102,10 @@ static int bcm2708_fb_debugfs_init(struct bcm2708_fb *fb)
  			"dma_copies",
  			offsetof(struct bcm2708_fb_stats, dma_copies)
  		},
@@ -89,7 +95,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  	};
  
  	fb->debugfs_dir = debugfs_create_dir(DRIVER_NAME, NULL);
-@@ -400,6 +411,7 @@ static void bcm2708_fb_copyarea(struct f
+@@ -400,6 +411,7 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
  	int bytes_per_pixel = (info->var.bits_per_pixel + 7) >> 3;
  	/* Channel 0 supports larger bursts and is a bit faster */
  	int burst_size = (fb->dma_chan == 0) ? 8 : 2;
@@ -97,7 +103,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  
  	/* Fallback to cfb_copyarea() if we don't like something */
  	if (bytes_per_pixel > 4 ||
-@@ -492,8 +504,20 @@ static void bcm2708_fb_copyarea(struct f
+@@ -492,8 +504,20 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
  	cb->next = 0;
  
  
@@ -120,7 +126,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  	fb->stats.dma_copies++;
  }
  
-@@ -504,6 +528,24 @@ static void bcm2708_fb_imageblit(struct
+@@ -504,6 +528,24 @@ static void bcm2708_fb_imageblit(struct fb_info *info,
  	cfb_imageblit(info, image);
  }
  
@@ -145,7 +151,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  static struct fb_ops bcm2708_fb_ops = {
  	.owner = THIS_MODULE,
  	.fb_check_var = bcm2708_fb_check_var,
-@@ -568,6 +610,7 @@ static int bcm2708_fb_register(struct bc
+@@ -568,6 +610,7 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
  	fb->fb.monspecs.dclkmax = 100000000;
  
  	bcm2708_fb_set_bitfields(&fb->fb.var);
@@ -153,7 +159,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  
  	/*
  	 * Allocate colourmap.
-@@ -593,14 +636,15 @@ static int bcm2708_fb_probe(struct platf
+@@ -593,14 +636,15 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  	struct bcm2708_fb *fb;
  	int ret;
  
@@ -171,7 +177,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  
  
  	bcm2708_fb_debugfs_init(fb);
-@@ -624,6 +668,14 @@ static int bcm2708_fb_probe(struct platf
+@@ -624,6 +668,14 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  	}
  	fb->dma_chan = ret;
  
@@ -186,7 +192,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  	pr_info("BCM2708FB: allocated DMA channel %d @ %p\n",
  	       fb->dma_chan, fb->dma_chan_base);
  
-@@ -635,6 +687,8 @@ static int bcm2708_fb_probe(struct platf
+@@ -635,6 +687,8 @@ static int bcm2708_fb_probe(struct platform_device *dev)
  		goto out;
  	}
  
@@ -195,7 +201,7 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  free_cb:
  	dma_free_writecombine(&dev->dev, SZ_64K, fb->cb_base, fb->cb_handle);
  free_fb:
-@@ -662,6 +716,8 @@ static int bcm2708_fb_remove(struct plat
+@@ -662,6 +716,8 @@ static int bcm2708_fb_remove(struct platform_device *dev)
  			  fb->dma);
  	bcm2708_fb_debugfs_deinit(fb);
  
@@ -204,3 +210,6 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  	kfree(fb);
  
  	return 0;
+-- 
+1.9.1
+

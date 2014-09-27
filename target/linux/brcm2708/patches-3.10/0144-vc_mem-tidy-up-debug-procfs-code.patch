@@ -1,7 +1,7 @@
-From e9db9a1035224a30ebb6be44e760e57518d19533 Mon Sep 17 00:00:00 2001
+From 1533d883e78022ef323358cadf73d8cf059fe1fa Mon Sep 17 00:00:00 2001
 From: Luke Diamand <luked@broadcom.com>
 Date: Sat, 28 Dec 2013 07:39:51 +0000
-Subject: [PATCH 144/174] vc_mem: tidy up debug procfs code
+Subject: [PATCH 144/196] vc_mem: tidy up debug procfs code
 
 Remove commented-out procfs code, which was generating
 a warning and no longer worked. Replace this with
@@ -12,6 +12,8 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  arch/arm/mach-bcm2708/vc_mem.c | 119 +++++++++++++++++------------------------
  1 file changed, 49 insertions(+), 70 deletions(-)
 
+diff --git a/arch/arm/mach-bcm2708/vc_mem.c b/arch/arm/mach-bcm2708/vc_mem.c
+index aeae4d5..007754d 100644
 --- a/arch/arm/mach-bcm2708/vc_mem.c
 +++ b/arch/arm/mach-bcm2708/vc_mem.c
 @@ -19,7 +19,7 @@
@@ -23,7 +25,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  #include <asm/uaccess.h>
  #include <linux/dma-mapping.h>
  
-@@ -51,8 +51,9 @@ static struct class *vc_mem_class = NULL
+@@ -51,8 +51,9 @@ static struct class *vc_mem_class = NULL;
  static struct cdev vc_mem_cdev;
  static int vc_mem_inited = 0;
  
@@ -35,7 +37,7 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  
  /*
   * Videocore memory addresses and size
-@@ -280,75 +281,60 @@ static const struct file_operations vc_m
+@@ -280,75 +281,60 @@ static const struct file_operations vc_mem_fops = {
  	.mmap = vc_mem_mmap,
  };
  
@@ -94,21 +96,15 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
 -	char input_str[10];
 -
 -	memset(input_str, 0, sizeof (input_str));
--
--	if (count > sizeof (input_str)) {
--		LOG_ERR("%s: input string length too long", __func__);
--		goto out;
--	}
--
--	if (copy_from_user(input_str, buffer, count - 1)) {
--		LOG_ERR("%s: failed to get input string", __func__);
--		goto out;
 +	vc_mem_debugfs_entry = debugfs_create_dir(DRIVER_NAME, NULL);
 +	if (!vc_mem_debugfs_entry) {
 +		dev_warn(dev, "could not create debugfs entry\n");
 +		return -EFAULT;
 +	}
-+
+ 
+-	if (count > sizeof (input_str)) {
+-		LOG_ERR("%s: input string length too long", __func__);
+-		goto out;
 +	if (!debugfs_create_x32("vc_mem_phys_addr",
 +				0444,
 +				vc_mem_debugfs_entry,
@@ -116,8 +112,11 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
 +		dev_warn(dev, "%s:could not create vc_mem_phys entry\n",
 +			__func__);
 +		goto fail;
-+	}
-+
+ 	}
+ 
+-	if (copy_from_user(input_str, buffer, count - 1)) {
+-		LOG_ERR("%s: failed to get input string", __func__);
+-		goto out;
 +	if (!debugfs_create_x32("vc_mem_size",
 +				0444,
 +				vc_mem_debugfs_entry,
@@ -125,8 +124,11 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
 +		dev_warn(dev, "%s:could not create vc_mem_size entry\n",
 +			__func__);
 +		goto fail;
-+	}
-+
+ 	}
+ 
+-	if (strncmp(input_str, "connect", strlen("connect")) == 0) {
+-		// Get the videocore memory size from the videocore
+-		vc_mem_get_size();
 +	if (!debugfs_create_x32("vc_mem_base",
 +				0444,
 +				vc_mem_debugfs_entry,
@@ -136,14 +138,10 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
 +		goto fail;
  	}
  
--	if (strncmp(input_str, "connect", strlen("connect")) == 0) {
--		// Get the videocore memory size from the videocore
--		vc_mem_get_size();
--	}
-+	return 0;
- 
 -      out:
 -	return rc;
++	return 0;
++
 +fail:
 +	vc_mem_debugfs_deinit();
 +	return -EFAULT;
@@ -191,3 +189,6 @@ Signed-off-by: Luke Diamand <luked@broadcom.com>
  #endif
  		device_destroy(vc_mem_class, vc_mem_devnum);
  		class_destroy(vc_mem_class);
+-- 
+1.9.1
+
