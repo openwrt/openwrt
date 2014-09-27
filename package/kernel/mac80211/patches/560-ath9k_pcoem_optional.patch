@@ -194,7 +194,7 @@
  	 ((_ah)->hw_version.macRev >= AR_SREV_REVISION_9485_11))
  #define AR_SREV_9485_OR_LATER(_ah) \
  	(((_ah)->hw_version.macVersion >= AR_SREV_VERSION_9485))
-@@ -911,34 +922,30 @@
+@@ -915,34 +926,30 @@
      (AR_SREV_9285_12_OR_LATER(_ah) && \
       ((REG_READ(_ah, AR_AN_SYNTH9) & 0x7) == 0x1))
  
