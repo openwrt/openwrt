@@ -56,6 +56,10 @@ define uboot/Hackberry
   TITLE:=U-Boot 2014.04 for the Hackbeery
 endef
 
+define uboot/OLIMEX-A13-SOM
+  TITLE:=U-Boot 2014.04 for the Olimex A13 SOM
+endef
+
 define uboot/pcDuino
   TITLE:=U-Boot 2014.04 for pcDuino
 endef  
@@ -64,7 +68,7 @@ define uboot/Linksprite_pcDuino3
   TITLE:=U-Boot 2014.04 for Linksprite pcDuino3
 endef  
 
-UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO Bananapi Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino Linksprite_pcDuino3
+UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO Bananapi Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino Linksprite_pcDuino3 OLIMEX-A13-SOM
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
