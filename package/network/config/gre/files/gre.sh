@@ -13,8 +13,8 @@ gre_generic_setup() {
 	local local="$3"
 	local remote="$4"
 	local link="$5"
-	local mtu ttl zone ikey okey icsum ocsum iseqno oseqno
-	json_get_vars mtu ttl zone ikey okey icsum ocsum iseqno oseqno
+	local mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno
+	json_get_vars mtu ttl tos zone ikey okey icsum ocsum iseqno oseqno
 
 	[ -z "$zone" ] && zone="wan"
 
@@ -25,6 +25,7 @@ gre_generic_setup() {
 	json_add_int mtu "${mtu:-1280}"
 	[ -n "$df" ] && json_add_boolean df "$df"
 	json_add_int ttl "${ttl:-64}"
+	[ -n "$tos" ] && json_add_string tos "$tos"
 	json_add_string local "$local"
 	json_add_string remote "$remote"
 	[ -n "$tunlink" ] && json_add_string link "$tunlink"
@@ -193,6 +194,7 @@ gre_generic_init_config() {
 
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_string "tos"
 	proto_config_add_string "tunlink"
 	proto_config_add_string "zone"
 	proto_config_add_int "ikey"
