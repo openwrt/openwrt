@@ -79,7 +79,7 @@
  /**
   * ar9003_hw_set_channel - set channel on single-chip device
   * @ah: atheros hardware structure
-@@ -954,11 +940,6 @@ static bool ar9003_hw_ani_control(struct
+@@ -971,11 +957,6 @@ static bool ar9003_hw_ani_control(struct
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath9k_channel *chan = ah->curchan;
  	struct ar5416AniState *aniState = &ah->ani;
@@ -91,7 +91,7 @@
  	s32 value, value2;
  
  	switch (cmd & ah->ani_function) {
-@@ -972,61 +953,6 @@ static bool ar9003_hw_ani_control(struct
+@@ -989,61 +970,6 @@ static bool ar9003_hw_ani_control(struct
  		 */
  		u32 on = param ? 1 : 0;
  
