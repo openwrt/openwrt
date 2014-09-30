@@ -26,6 +26,7 @@ PKG_VERSION:=$(firstword $(subst +, ,$(GCC_VERSION)))
 GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
+    LINARO_RELEASE:=
     ifeq ($(CONFIG_GCC_VERSION),"4.6-linaro")
       PKG_REV:=4.6-2013.05
       PKG_VERSION:=4.6.4
@@ -40,7 +41,19 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
       PKG_MD5SUM:=5ba2f3a449b1658ccc09d27cc7ab3c03
       PKG_COMP:=xz
     endif
-    PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/$(PKG_VERSION_MAJOR)/$(PKG_REV)/+download/
+    ifeq ($(CONFIG_GCC_VERSION),"4.9-linaro")
+      LINARO_RELEASE:=14.09
+      PKG_REV:=4.9-2014.09
+      PKG_VERSION:=4.9.2
+      PKG_VERSION_MAJOR:=4.9
+      PKG_MD5SUM:=ac920b5800623ff99137d3cf23ad09ca
+      PKG_COMP:=xz
+    endif
+    ifneq ($(LINARO_RELEASE),)
+      PKG_SOURCE_URL:=http://releases.linaro.org/$(LINARO_RELEASE)/components/toolchain/gcc-linaro/$(PKG_VERSION_MAJOR)
+    else
+      PKG_SOURCE_URL:=http://launchpad.net/gcc-linaro/$(PKG_VERSION_MAJOR)/$(PKG_REV)/+download/
+    endif
     PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.$(PKG_COMP)
     GCC_DIR:=gcc-linaro-$(PKG_REV)
     HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)

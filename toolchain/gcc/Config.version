@@ -13,6 +13,9 @@ config GCC_VERSION_4_8_LINARO
 config GCC_VERSION_4_8_0
 	bool
 
+config GCC_VERSION_4_9_LINARO
+	bool
+
 config GCC_VERSION
 	string
 	default "4.4.7"	    if GCC_VERSION_4_4_7
@@ -20,6 +23,7 @@ config GCC_VERSION
 	default "4.8.0"	    if GCC_VERSION_4_8_0
 	default "4.6-linaro"    if GCC_VERSION_4_6_LINARO
 	default "4.8-linaro"    if GCC_VERSION_4_8_LINARO
+	default "4.9-linaro"    if GCC_VERSION_4_9_LINARO
 	default "4.6-linaro"
 
 config GCC_VERSION_4_4
@@ -34,3 +38,6 @@ config GCC_VERSION_4_8
 	bool
 	default y	if (GCC_VERSION_4_8_0 || GCC_VERSION_4_8_LINARO)
 
+config GCC_VERSION_4_9
+	bool
+	default y	if GCC_VERSION_4_9_LINARO

@@ -25,6 +25,10 @@ choice
 		select GCC_VERSION_4_8_LINARO
 		bool "gcc 4.8.x with Linaro enhancements"
 
+	config GCC_USE_VERSION_4_9_LINARO
+		select GCC_VERSION_4_9_LINARO
+		bool "gcc 4.9.x with Linaro enhancements"
+
 endchoice
 
 config GCC_USE_GRAPHITE
