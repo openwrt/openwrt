@@ -45,7 +45,7 @@ define Package/binutils/description
   The Binutils package contains a linker, an assembler, and other tools for handling object files
 endef
 
-TARGET_CFLAGS += $(FPIC)
+TARGET_CFLAGS += $(FPIC) -Wno-unused-value
 
 CONFIGURE_ARGS += \
 	--enable-shared \
