@@ -75,7 +75,7 @@
  struct ath9k_hw_version {
  	u32 magic;
  	u16 devid;
-@@ -763,6 +769,8 @@ struct ath_hw {
+@@ -764,6 +770,8 @@ struct ath_hw {
  	u32 rfkill_polarity;
  	u32 ah_flags;
  
@@ -84,7 +84,7 @@
  	bool reset_power_on;
  	bool htc_reset_init;
  
-@@ -1017,6 +1025,7 @@ void ath9k_hw_check_nav(struct ath_hw *a
+@@ -1018,6 +1026,7 @@ void ath9k_hw_check_nav(struct ath_hw *a
  bool ath9k_hw_check_alive(struct ath_hw *ah);
  
  bool ath9k_hw_setpower(struct ath_hw *ah, enum ath9k_power_mode mode);
