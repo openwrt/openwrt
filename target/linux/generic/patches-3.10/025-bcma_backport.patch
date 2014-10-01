@@ -77,6 +77,27 @@
  /* driver_chipcommon_pmu.c */
  u32 bcma_pmu_get_alp_clock(struct bcma_drv_cc *cc);
  u32 bcma_pmu_get_cpu_clock(struct bcma_drv_cc *cc);
+@@ -84,6 +88,20 @@ extern int __init bcma_host_pci_init(voi
+ extern void __exit bcma_host_pci_exit(void);
+ #endif /* CONFIG_BCMA_HOST_PCI */
+ 
++/* host_soc.c */
++#if defined(CONFIG_BCMA_HOST_SOC) && defined(CONFIG_OF)
++extern int __init bcma_host_soc_register_driver(void);
++extern void __exit bcma_host_soc_unregister_driver(void);
++#else
++static inline int __init bcma_host_soc_register_driver(void)
++{
++	return 0;
++}
++static inline void __exit bcma_host_soc_unregister_driver(void)
++{
++}
++#endif /* CONFIG_BCMA_HOST_SOC && CONFIG_OF */
++
+ /* driver_pci.c */
+ u32 bcma_pcie_read(struct bcma_drv_pci *pc, u32 address);
+ 
 --- a/drivers/bcma/core.c
 +++ b/drivers/bcma/core.c
 @@ -9,6 +9,25 @@
@@ -512,13 +533,17 @@
  
  	chip->label		= "bcma_gpio";
  	chip->owner		= THIS_MODULE;
-@@ -95,8 +215,18 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+@@ -95,8 +215,22 @@ int bcma_gpio_init(struct bcma_drv_cc *c
  	chip->set		= bcma_gpio_set_value;
  	chip->direction_input	= bcma_gpio_direction_input;
  	chip->direction_output	= bcma_gpio_direction_output;
 +#if IS_BUILTIN(CONFIG_BCM47XX)
  	chip->to_irq		= bcma_gpio_to_irq;
 -	chip->ngpio		= 16;
++#endif
++#if IS_BUILTIN(CONFIG_OF)
++	if (cc->core->bus->hosttype == BCMA_HOSTTYPE_SOC)
++		chip->of_node	= cc->core->dev.of_node;
 +#endif
 +	switch (cc->core->bus->chipinfo.id) {
 +	case BCMA_CHIP_ID_BCM5357:
@@ -532,7 +557,7 @@
  	/* There is just one SoC in one device and its GPIO addresses should be
  	 * deterministic to address them more easily. The other buses could get
  	 * a random base number. */
-@@ -105,10 +235,21 @@ int bcma_gpio_init(struct bcma_drv_cc *c
+@@ -105,10 +239,21 @@ int bcma_gpio_init(struct bcma_drv_cc *c
  	else
  		chip->base		= -1;
  
@@ -929,7 +954,15 @@
  MODULE_DEVICE_TABLE(pci, bcma_pci_bridge_tbl);
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -69,28 +69,36 @@ static u16 bcma_cc_core_id(struct bcma_b
+@@ -10,6 +10,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/bcma/bcma.h>
+ #include <linux/slab.h>
++#include <linux/of_address.h>
+ 
+ MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
+ MODULE_LICENSE("GPL");
+@@ -69,28 +70,36 @@ static u16 bcma_cc_core_id(struct bcma_b
  	return BCMA_CORE_CHIPCOMMON;
  }
  
@@ -977,7 +1010,7 @@
  }
  
  static void bcma_release_core_dev(struct device *dev)
-@@ -103,55 +111,78 @@ static void bcma_release_core_dev(struct
+@@ -103,55 +112,121 @@ static void bcma_release_core_dev(struct
  	kfree(core);
  }
  
@@ -992,6 +1025,43 @@
 +
 +	return false;
 +}
++
++#ifdef CONFIG_OF
++static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
++						     struct bcma_device *core)
++{
++	struct device_node *node;
++	u64 size;
++	const __be32 *reg;
++
++	if (!parent || !parent->dev.of_node)
++		return NULL;
++
++	for_each_child_of_node(parent->dev.of_node, node) {
++		reg = of_get_address(node, 0, &size, NULL);
++		if (!reg)
++			continue;
++		if (of_translate_address(node, reg) == core->addr)
++			return node;
++	}
++	return NULL;
++}
++
++static void bcma_of_fill_device(struct platform_device *parent,
++				struct bcma_device *core)
++{
++	struct device_node *node;
++
++	node = bcma_of_find_child_device(parent, core);
++	if (node)
++		core->dev.of_node = node;
++}
++#else
++static void bcma_of_fill_device(struct platform_device *parent,
++				struct bcma_device *core)
++{
++}
++#endif /* CONFIG_OF */
 +
 +static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
 +{
@@ -1009,7 +1079,13 @@
 +		break;
 +	case BCMA_HOSTTYPE_SOC:
 +		core->dev.dma_mask = &core->dev.coherent_dma_mask;
-+		core->dma_dev = &core->dev;
++		if (bus->host_pdev) {
++			core->dma_dev = &bus->host_pdev->dev;
++			core->dev.parent = &bus->host_pdev->dev;
++			bcma_of_fill_device(bus->host_pdev, core);
++		} else {
++			core->dma_dev = &core->dev;
++		}
 +		break;
 +	case BCMA_HOSTTYPE_SDIO:
 +		break;
@@ -1085,7 +1161,7 @@
  	}
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
-@@ -218,7 +249,7 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -218,7 +293,7 @@ int bcma_bus_register(struct bcma_bus *b
  	err = bcma_bus_scan(bus);
  	if (err) {
  		bcma_err(bus, "Failed to scan: %d\n", err);
@@ -1094,7 +1170,7 @@
  	}
  
  	/* Early init CC core */
-@@ -228,6 +259,12 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -228,6 +303,12 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_early_init(&bus->drv_cc);
  	}
  
@@ -1107,7 +1183,7 @@
  	/* Try to get SPROM */
  	err = bcma_sprom_get(bus);
  	if (err == -ENOENT) {
-@@ -242,6 +279,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -242,6 +323,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_init(&bus->drv_cc);
  	}
  
@@ -1121,7 +1197,7 @@
  	/* Init MIPS core */
  	core = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
  	if (core) {
-@@ -263,6 +307,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -263,6 +351,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci[1]);
  	}
  
@@ -1135,7 +1211,7 @@
  	/* Init GBIT MAC COMMON core */
  	core = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
  	if (core) {
-@@ -271,7 +322,7 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -271,7 +366,7 @@ int bcma_bus_register(struct bcma_bus *b
  	}
  
  	/* Register found cores */
@@ -1144,7 +1220,7 @@
  
  	bcma_info(bus, "Bus registered\n");
  
-@@ -289,6 +340,8 @@ void bcma_bus_unregister(struct bcma_bus
+@@ -289,6 +384,8 @@ void bcma_bus_unregister(struct bcma_bus
  	else if (err)
  		bcma_err(bus, "Can not unregister GPIO driver: %i\n", err);
  
@@ -1153,7 +1229,7 @@
  	cores[0] = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
  	cores[1] = bcma_find_core(bus, BCMA_CORE_PCIE);
  	cores[2] = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
-@@ -308,8 +361,6 @@ int __init bcma_bus_early_register(struc
+@@ -308,8 +405,6 @@ int __init bcma_bus_early_register(struc
  	struct bcma_device *core;
  	struct bcma_device_id match;
  
@@ -1162,6 +1238,26 @@
  	match.manuf = BCMA_MANUF_BCM;
  	match.id = bcma_cc_core_id(bus);
  	match.class = BCMA_CL_SIM;
+@@ -468,6 +563,11 @@ static int __init bcma_modinit(void)
+ 	if (err)
+ 		return err;
+ 
++	err = bcma_host_soc_register_driver();
++	if (err) {
++		pr_err("SoC host initialization failed\n");
++		err = 0;
++	}
+ #ifdef CONFIG_BCMA_HOST_PCI
+ 	err = bcma_host_pci_init();
+ 	if (err) {
+@@ -485,6 +585,7 @@ static void __exit bcma_modexit(void)
+ #ifdef CONFIG_BCMA_HOST_PCI
+ 	bcma_host_pci_exit();
+ #endif
++	bcma_host_soc_unregister_driver();
+ 	bus_unregister(&bcma_bus_type);
+ }
+ module_exit(bcma_modexit)
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -32,6 +32,18 @@ static const struct bcma_device_id_name
@@ -1625,7 +1721,16 @@
  	u32 wrap;
  
  	void __iomem *io_addr;
-@@ -310,11 +332,12 @@ struct bcma_bus {
+@@ -301,6 +323,8 @@ struct bcma_bus {
+ 		struct pci_dev *host_pci;
+ 		/* Pointer to the SDIO device (only for BCMA_HOSTTYPE_SDIO) */
+ 		struct sdio_func *host_sdio;
++		/* Pointer to platform device (only for BCMA_HOSTTYPE_SOC) */
++		struct platform_device *host_pdev;
+ 	};
+ 
+ 	struct bcma_chipinfo chipinfo;
+@@ -310,11 +334,12 @@ struct bcma_bus {
  	struct bcma_device *mapped_core;
  	struct list_head cores;
  	u8 nr_cores;
@@ -1639,7 +1744,7 @@
  	struct bcma_drv_mips drv_mips;
  	struct bcma_drv_gmac_cmn drv_gmac_cmn;
  
-@@ -400,7 +423,14 @@ static inline void bcma_maskset16(struct
+@@ -400,7 +425,14 @@ static inline void bcma_maskset16(struct
  	bcma_write16(cc, offset, (bcma_read16(cc, offset) & mask) | set);
  }
  
@@ -2139,7 +2244,17 @@
  void bcma_core_mips_early_init(struct bcma_drv_mips *mcore)
 --- a/drivers/bcma/host_soc.c
 +++ b/drivers/bcma/host_soc.c
-@@ -134,12 +134,16 @@ static void bcma_host_soc_block_write(st
+@@ -7,6 +7,9 @@
+ 
+ #include "bcma_private.h"
+ #include "scan.h"
++#include <linux/slab.h>
++#include <linux/module.h>
++#include <linux/of_address.h>
+ #include <linux/bcma/bcma.h>
+ #include <linux/bcma/bcma_soc.h>
+ 
+@@ -134,12 +137,16 @@ static void bcma_host_soc_block_write(st
  
  static u32 bcma_host_soc_aread32(struct bcma_device *core, u16 offset)
  {
@@ -2156,7 +2271,7 @@
  	writel(value, core->io_wrap + offset);
  }
  
-@@ -161,7 +165,6 @@ static const struct bcma_host_ops bcma_h
+@@ -161,7 +168,6 @@ static const struct bcma_host_ops bcma_h
  int __init bcma_host_soc_register(struct bcma_soc *soc)
  {
  	struct bcma_bus *bus = &soc->bus;
@@ -2164,9 +2279,11 @@
  
  	/* iomap only first core. We have to read some register on this core
  	 * to scan the bus.
-@@ -174,7 +177,18 @@ int __init bcma_host_soc_register(struct
+@@ -173,11 +179,100 @@ int __init bcma_host_soc_register(struct
+ 	/* Host specific */
  	bus->hosttype = BCMA_HOSTTYPE_SOC;
  	bus->ops = &bcma_host_soc_ops;
++	bus->host_pdev = NULL;
  
 -	/* Register */
 +	/* Initialize struct, detect chip */
@@ -2184,6 +2301,86 @@
  	err = bcma_bus_early_register(bus, &soc->core_cc, &soc->core_mips);
  	if (err)
  		iounmap(bus->mmio);
+ 
+ 	return err;
+ }
++
++#ifdef CONFIG_OF
++static int bcma_host_soc_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct bcma_bus *bus;
++	int err;
++
++	/* Alloc */
++	bus = devm_kzalloc(dev, sizeof(*bus), GFP_KERNEL);
++	if (!bus)
++		return -ENOMEM;
++
++	/* Map MMIO */
++	bus->mmio = of_iomap(np, 0);
++	if (!bus->mmio)
++		return -ENOMEM;
++
++	/* Host specific */
++	bus->hosttype = BCMA_HOSTTYPE_SOC;
++	bus->ops = &bcma_host_soc_ops;
++	bus->host_pdev = pdev;
++
++	/* Initialize struct, detect chip */
++	bcma_init_bus(bus);
++
++	/* Register */
++	err = bcma_bus_register(bus);
++	if (err)
++		goto err_unmap_mmio;
++
++	platform_set_drvdata(pdev, bus);
++
++	return err;
++
++err_unmap_mmio:
++	iounmap(bus->mmio);
++	return err;
++}
++
++static int bcma_host_soc_remove(struct platform_device *pdev)
++{
++	struct bcma_bus *bus = platform_get_drvdata(pdev);
++
++	bcma_bus_unregister(bus);
++	iounmap(bus->mmio);
++	platform_set_drvdata(pdev, NULL);
++
++	return 0;
++}
++
++static const struct of_device_id bcma_host_soc_of_match[] = {
++	{ .compatible = "brcm,bus-axi", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, bcma_host_soc_of_match);
++
++static struct platform_driver bcma_host_soc_driver = {
++	.driver = {
++		.name = "bcma-host-soc",
++		.of_match_table = bcma_host_soc_of_match,
++	},
++	.probe		= bcma_host_soc_probe,
++	.remove		= bcma_host_soc_remove,
++};
++
++int __init bcma_host_soc_register_driver(void)
++{
++	return platform_driver_register(&bcma_host_soc_driver);
++}
++
++void __exit bcma_host_soc_unregister_driver(void)
++{
++	platform_driver_unregister(&bcma_host_soc_driver);
++}
++#endif /* CONFIG_OF */
 --- a/include/linux/bcma/bcma_regs.h
 +++ b/include/linux/bcma/bcma_regs.h
 @@ -39,6 +39,11 @@
@@ -2296,3 +2493,38 @@
  		panic("Failed to initialize BCMA bus (err %d)", err);
  
  	bcm47xx_fill_bcma_boardinfo(&bcm47xx_bus.bcma.bus.boardinfo, NULL);
+--- /dev/null
++++ b/Documentation/devicetree/bindings/bus/bcma.txt
+@@ -0,0 +1,32 @@
++Driver for ARM AXI Bus with Broadcom Plugins (bcma)
++
++Required properties:
++
++- compatible : brcm,bus-axi
++
++- reg : iomem address range of chipcommon core
++
++The cores on the AXI bus are automatically detected by bcma with the
++memory ranges they are using and they get registered afterwards.
++
++The top-level axi bus may contain children representing attached cores
++(devices). This is needed since some hardware details can't be auto
++detected (e.g. IRQ numbers). Also some of the cores may be responsible
++for extra things, e.g. ChipCommon providing access to the GPIO chip.
++
++Example:
++
++	axi@18000000 {
++		compatible = "brcm,bus-axi";
++		reg = <0x18000000 0x1000>;
++		ranges = <0x00000000 0x18000000 0x00100000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		chipcommon {
++			reg = <0x00000000 0x1000>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++		};
++	};
