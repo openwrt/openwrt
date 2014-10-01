@@ -9,11 +9,10 @@ Subject: [PATCH 07/17] ARM: BCM5301X: register bcma bus
 
 --- a/arch/arm/boot/dts/bcm5301x.dtsi
 +++ b/arch/arm/boot/dts/bcm5301x.dtsi
-@@ -92,4 +92,100 @@
- 			clock-frequency = <400000000>;
+@@ -94,18 +94,102 @@
  		};
  	};
-+
+ 
 +	nvram0: nvram@1c000000 {
 +		compatible = "brcm,bcm47xx-nvram";
 +		reg = <0x1c000000 0x01000000>;
@@ -24,18 +23,21 @@ Subject: [PATCH 07/17] ARM: BCM5301X: register bcma bus
 +		nvram = <&nvram0>;
 +	};
 +
-+	axi@18000000 {
-+		compatible = "brcm,bus-axi";
-+		reg = <0x18000000 0x1000>;
-+		ranges = <0x00000000 0x18000000 0x00100000>;
-+		#address-cells = <1>;
-+		#size-cells = <1>;
+ 	axi@18000000 {
+ 		compatible = "brcm,bus-axi";
+ 		reg = <0x18000000 0x1000>;
+ 		ranges = <0x00000000 0x18000000 0x00100000>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
 +		sprom = <&sprom0>;
-+
-+		chipcommon@0 {
-+			reg = <0x00000000 0x1000>;
+ 
+ 		chipcommon: chipcommon@0 {
+ 			reg = <0x00000000 0x1000>;
 +			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
-+		};
+ 
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 		};
 +
 +		pcie@12000 {
 +			reg = <0x00012000 0x1000>;
@@ -108,5 +110,5 @@ Subject: [PATCH 07/17] ARM: BCM5301X: register bcma bus
 +				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
 +				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
 +		};
-+	};
+ 	};
  };
