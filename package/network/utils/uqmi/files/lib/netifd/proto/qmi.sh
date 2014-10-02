@@ -24,13 +24,13 @@ proto_qmi_setup() {
 	json_get_vars device apn auth username password pincode delay modes
 
 	[ -n "$device" ] || {
-		logger -p daemon.err -t "qmi[$$]" "No control device specified"
+		echo "No control device specified"
 		proto_notify_error "$interface" NO_DEVICE
 		proto_block_restart "$interface"
 		return 1
 	}
 	[ -c "$device" ] || {
-		logger -p daemon.err -t "qmi[$$]" "The specified control device does not exist"
+		echo "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
 		proto_block_restart "$interface"
 		return 1
@@ -40,7 +40,7 @@ proto_qmi_setup() {
 	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
 	ifname="$( ls "$devpath"/net )"
 	[ -n "$ifname" ] || {
-		logger -p daemon.err -t "qmi[$$]" "The interface could not be found."
+		echo "The interface could not be found."
 		proto_notify_error "$interface" NO_IFACE
 		proto_block_restart "$interface"
 		return 1
@@ -54,7 +54,7 @@ proto_qmi_setup() {
 
 	[ -n "$pincode" ] && {
 		uqmi -s -d "$device" --verify-pin1 "$pincode" || {
-			logger -p daemon.err -t "qmi[$$]" "Unable to verify PIN"
+			echo "Unable to verify PIN"
 			proto_notify_error "$interface" PIN_FAILED
 			proto_block_restart "$interface"
 			return 1
@@ -62,23 +62,23 @@ proto_qmi_setup() {
 	}
 
 	[ -n "$apn" ] || {
-		logger -p daemon.err -t "qmi[$$]" "No APN specified"
+		echo "No APN specified"
 		proto_notify_error "$interface" NO_APN
 		proto_block_restart "$interface"
 		return 1
 	}
 
-	logger -p daemon.info -t "qmi[$$]" "Waiting for network registration"
+	echo "Waiting for network registration"
 	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
 		sleep 5;
 	done
 
 	[ -n "$modes" ] && uqmi -s -d "$device" --set-network-modes "$modes"
 
-	logger -p daemon.info -t "qmi[$$]" "Starting network $apn"
+	echo "Starting network $apn"
 	cid=`uqmi -s -d "$device" --get-client-id wds`
 	[ $? -ne 0 ] && {
-		logger -p daemon.err -t "qmi[$$]" "Unable to obtain client ID"
+		echo "Unable to obtain client ID"
 		proto_notify_error "$interface" NO_CID
 		proto_block_restart "$interface"
 		return 1
@@ -90,7 +90,7 @@ proto_qmi_setup() {
 	${username:+--username $username} \
 	${password:+--password $password}`
 	[ $? -ne 0 ] && {
-		logger -p daemon.err -t "qmi[$$]" "Unable to connect, check APN and authentication"
+		echo "Unable to connect, check APN and authentication"
 		proto_notify_error "$interface" NO_PDH
 		proto_block_restart "$interface"
 		return 1
@@ -98,13 +98,13 @@ proto_qmi_setup() {
 	uci_set_state network $interface pdh "$pdh"
 
 	if ! uqmi -s -d "$device" --get-data-status | grep '"connected"' > /dev/null; then
-		logger -p daemon.err -t "qmi[$$]" "Connection lost"
+		echo "Connection lost"
 		proto_notify_error "$interface" NOT_CONNECTED
 		proto_block_restart "$interface"
 		return 1
 	fi
 
-	logger -p daemon.info -t "qmi[$$]" "Connected, starting DHCP"
+	echo "Connected, starting DHCP"
 	proto_init_update "$ifname" 1
 	proto_send_update "$interface"
 
@@ -131,7 +131,7 @@ proto_qmi_teardown() {
 	local cid=$(uci_get_state network $interface cid)
 	local pdh=$(uci_get_state network $interface pdh)
 
-	logger -p daemon.info -t "qmi[$$]" "Stopping network"
+	echo "Stopping network"
 	[ -n "$cid" ] && {
 		[ -n "$pdh" ] && {
 			uqmi -s -d "$device" --set-client-id wds,"$cid" --stop-network "$pdh"
