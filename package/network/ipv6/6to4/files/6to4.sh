@@ -34,8 +34,8 @@ proto_6to4_setup() {
 	local iface="$2"
 	local link="6to4-$cfg"
 
-	local mtu ttl ipaddr sourcerouting
-	json_get_vars mtu ttl ipaddr sourcerouting
+	local mtu ttl tos ipaddr sourcerouting
+	json_get_vars mtu ttl tos ipaddr sourcerouting
 
 	( proto_add_host_dependency "$cfg" 0.0.0.0 )
 
@@ -77,6 +77,7 @@ proto_6to4_setup() {
 	json_add_string mode sit
 	json_add_int mtu "${mtu:-1280}"
 	json_add_int ttl "${ttl:-64}"
+	[ -n "$tos" ] && json_add_string tos "$tos"
 	json_add_string local "$ipaddr"
 	proto_close_tunnel
 
@@ -94,6 +95,7 @@ proto_6to4_init_config() {
 	proto_config_add_string "ipaddr"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_string "tos"
 	proto_config_add_boolean "sourcerouting"
 }
 
