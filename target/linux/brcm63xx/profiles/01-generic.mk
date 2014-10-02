@@ -23,6 +23,15 @@ define Profile/96328avng/Description
 endef
 $(eval $(call Profile,96328avng))
 
+define Profile/96338GW
+  NAME:=Generic 96338GW
+  PACKAGES:=
+endef
+define Profile/96338GW/Description
+  Package set optimized for 96338GW.
+endef
+$(eval $(call Profile,96338GW))
+
 define Profile/96345GW2
   NAME:=Generic 96345GW2
   PACKAGES:=
