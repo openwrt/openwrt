@@ -24,6 +24,7 @@ endef
 
 KERNELNAME:="zImage dtbs"
 
-DEFAULT_PACKAGES += swconfig wpad-mini nvram
+DEFAULT_PACKAGES += swconfig wpad-mini nvram \
+	kmod-leds-gpio kmod-ledtrig-default-on kmod-ledtrig-timer
 
 $(eval $(call BuildTarget))
