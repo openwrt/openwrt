@@ -85,6 +85,8 @@ proto_qmi_setup() {
 
 	qmi_disconnect
 
+	uqmi -s -d "$device" --set-data-format 802.3
+
 	echo "Waiting for network registration"
 	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
 		sleep 5;
