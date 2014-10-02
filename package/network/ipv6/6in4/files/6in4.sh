@@ -14,8 +14,8 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	local mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey sourcerouting
-	json_get_vars mtu ttl ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey sourcerouting
+	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey sourcerouting
+	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey sourcerouting
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -56,6 +56,7 @@ proto_6in4_setup() {
 	json_add_string mode sit
 	json_add_int mtu "${mtu:-1280}"
 	json_add_int ttl "${ttl:-64}"
+	[ -n "$tos" ] && json_add_string tos "$tos"
 	json_add_string local "$ipaddr"
 	json_add_string remote "$peeraddr"
 	proto_close_tunnel
@@ -96,6 +97,7 @@ proto_6in4_init_config() {
 	proto_config_add_string "updatekey"
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
+	proto_config_add_string "tos"
 	proto_config_add_boolean "sourcerouting"
 }
 
