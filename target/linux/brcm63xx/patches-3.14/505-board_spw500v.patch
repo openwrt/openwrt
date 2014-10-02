@@ -1,9 +1,17 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -653,6 +653,75 @@ static struct board_info __initdata boar
+@@ -653,6 +653,85 @@ static struct board_info __initdata boar
  		},
  	},
  };
++
++static struct sprom_fixup __initdata spw500v_fixups[] = {
++	{ .offset = 46, .value = 0x3046 },
++	{ .offset = 47, .value = 0x15a7 },
++	{ .offset = 48, .value = 0xfa89 },
++	{ .offset = 49, .value = 0xfe79 },
++	{ .offset = 57, .value = 0x6a49 },
++};
 +
 +static struct board_info __initdata board_spw500v = {
 +	.name				= "SPW500V",
@@ -71,12 +79,14 @@
 +		.type			= SPROM_BCM4318,
 +		.pci_bus		= 0,
 +		.pci_dev		= 1,
++		.board_fixups		= &spw500v_fixups,
++		.num_board_fixups	= ARRAY_SIZE(spw500v_fixups),
 +	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -1252,6 +1321,7 @@ static const struct board_info __initcon
+@@ -1252,6 +1331,7 @@ static const struct board_info __initcon
  	&board_96348gw_a,
  	&board_rta1025w_16,
  	&board_96348_D4PW,
