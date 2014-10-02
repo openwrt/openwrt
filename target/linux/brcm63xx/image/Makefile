@@ -234,7 +234,6 @@ endef
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
-	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
 	$(call Image/Build/CFE,$(1),96358VW,6358,96358VW-generic)
 	$(call Image/Build/CFE,$(1),96358VW2,6358,96358VW2-generic)
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
@@ -335,6 +334,8 @@ $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-8M-fla
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,,--pad 8))
 # Generic 96338GW
 $(eval $(call CfeImageDTB,96338GW,bcm96338GW,6338GW,6338,96338GW-generic))
+# Generic 96338W
+$(eval $(call CfeImageDTB,96338W,bcm96338W,6338W,6338,96338W-generic))
 # Generic 96345GW2
 $(eval $(call CfeImageDTB,96345GW2,bcm96345GW2,96345GW2,6345,96345GW2-generic))
 $(eval $(call CfeImageDTB,96345GW2,bcm96345GW2,96345GW2,6345,96345GW2-bc221,,--layoutver 5))
