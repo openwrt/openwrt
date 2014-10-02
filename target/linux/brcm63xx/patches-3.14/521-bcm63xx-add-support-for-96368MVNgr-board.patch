@@ -9,13 +9,14 @@ Subject: [PATCH 33/63] bcm63xx: add support for 96368MVNgr board.
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -2012,6 +2012,72 @@ static struct board_info __initdata boar
+@@ -2012,6 +2012,73 @@ static struct board_info __initdata boar
  	.has_ohci0 = 1,
  	.has_ehci0 = 1,
  };
 +
 +static struct board_info __initdata board_96368mvngr = {
 +	.name				= "96368MVNgr",
++	.of_board_id			= "brcm,bcm96368mvngr",
 +	.expected_cpu_id		= 0x6368,
 +
 +	.has_uart0			= 1,
@@ -82,7 +83,7 @@ Subject: [PATCH 33/63] bcm63xx: add support for 96368MVNgr board.
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
-@@ -2069,6 +2135,7 @@ static const struct board_info __initcon
+@@ -2069,6 +2136,7 @@ static const struct board_info __initcon
  
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,

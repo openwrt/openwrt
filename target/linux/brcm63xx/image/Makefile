@@ -234,7 +234,6 @@ endef
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
-	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
 	$(call Image/Build/CFE,$(1),96368MVWG,6368,96368MVWG-generic)
 
 	# BT Voyager V210_BTR
@@ -350,6 +349,8 @@ $(eval $(call CfeImageDTB,96348R,bcm96348R,96348R,6348,96348R-generic))
 $(eval $(call CfeImageDTB,96358VW,bcm96358VW,96358VW,6358,96358VW-generic))
 # Generic 96358VW2
 $(eval $(call CfeImageDTB,96358VW2,bcm96358VW2,96358VW2,6358,96358VW2-generic))
+# Generic 96368MVNgr
+$(eval $(call CfeImageDTB,96368MVNgr,bcm96368MVNgr,96368MVNgr,6368,96368MVNgr-generic))
 
 # ADB P.DG A4001N
 $(eval $(call CfeImageDTB,A4001N,a4001n,96328dg2x2,6328,A4001N,,--pad 8))
