@@ -103,3 +103,12 @@ define Profile/96358VW2/Description
   Package set optimized for 96358VW2.
 endef
 $(eval $(call Profile,96358VW2))
+
+define Profile/96368MVNgr
+  NAME:=Generic 96368MVNgr
+  PACKAGES:=
+endef
+define Profile/96368MVNgr/Description
+  Package set optimized for 96368MVNgr.
+endef
+$(eval $(call Profile,96368MVNgr))
