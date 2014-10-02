@@ -238,7 +238,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),6338GW,6338,6338GW-generic,,)
 	$(call Image/Build/CFE,$(1),6338W,6338,6338W-generic,,)
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,96348GW-11-generic)
-	$(call Image/Build/CFE,$(1),96348GW-10,6348,96348GW-10-generic)
 	$(call Image/Build/CFE,$(1),96358VW,6358,96358VW-generic)
 	$(call Image/Build/CFE,$(1),96358VW2,6358,96358VW2-generic)
 	$(call Image/Build/CFE,$(1),96368MVNgr,6368,96368MVNgr-generic)
@@ -343,6 +342,8 @@ $(eval $(call CfeImageDTB,96345GW2,bcm96345GW2,96345GW2,6345,96345GW2-bc221,,--l
 # Generic 96348GW
 $(eval $(call CfeImageDTB,96348GW,bcm96348GW,96348GW,6348,96348GW-generic))
 $(eval $(call CfeImageDTB,96348GW,bcm96348GW,96348GW,6348,96348GW-bc221,,--layoutver 5))
+# Generic 96348GW-10
+$(eval $(call CfeImageDTB,96348GW_10,bcm96348GW-10,96348GW-10,6348,96348GW-10-generic))
 
 # ADB P.DG A4001N
 $(eval $(call CfeImageDTB,A4001N,a4001n,96328dg2x2,6328,A4001N,,--pad 8))
