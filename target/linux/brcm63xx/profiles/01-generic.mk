@@ -5,6 +5,15 @@
 # See /LICENSE for more information.
 #
 
+define Profile/963281TAN
+  NAME:=Generic 963281TAN
+  PACKAGES:=
+endef
+define Profile/963281TAN/Description
+  Package set optimized for 963281TAN.
+endef
+$(eval $(call Profile,963281TAN))
+
 define Profile/96328avng
   NAME:=Generic 96328avng
   PACKAGES:=

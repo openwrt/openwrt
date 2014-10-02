@@ -234,9 +234,6 @@ endef
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	# Various routers
-	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-4M-flash-generic,,--pad 2)
-	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-8M-flash-generic,,--pad 4)
-	$(call Image/Build/CFE,$(1),963281TAN,6328,963281TAN-16M-flash-generic,,--pad 8)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96345GW2-generic)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,96348GW2-bc221,,--layoutver 5)
 	$(call Image/Build/CFE,$(1),96345GW2,6345,92345GW2-rev,OpenWRT-$(REVISION))
@@ -337,6 +334,10 @@ define Image/Build
   endif
 endef
 
+# Generic 963281TAN
+$(eval $(call CfeImageDTB,963281TAN,bcm963281TAN,963281TAN,6328,963281TAN-4M-flash-generic,,--pad 2))
+$(eval $(call CfeImageDTB,963281TAN,bcm963281TAN,963281TAN,6328,963281TAN-8M-flash-generic,,--pad 4))
+$(eval $(call CfeImageDTB,963281TAN,bcm963281TAN,963281TAN,6328,963281TAN-16M-flash-generic,,--pad 8))
 # Generic 96328avng
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-4M-flash-generic,,--pad 2))
 $(eval $(call CfeImageDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,,--pad 4))
