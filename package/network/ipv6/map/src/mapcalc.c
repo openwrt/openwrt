@@ -343,14 +343,17 @@ int main(int argc, char *argv[])
 		}
 
 
-		if (psidlen == 0) {
-			printf("RULE_%d_PORTSETS=0-65535\n", rulecnt);
-		} else if (psid >= 0) {
+		if (psidlen > 0 && psid >= 0) {
 			printf("RULE_%d_PORTSETS='", rulecnt);
 			for (int k = (offset) ? 1 : 0; k < (1 << offset); ++k) {
 				int start = (k << (16 - offset)) | (psid >> offset);
 				int end = start + (1 << (16 - offset - psidlen)) - 1;
-				printf("%d-%d ", start, end);
+
+				if (start == 0)
+					start = 1;
+
+				if (start <= end)
+					printf("%d-%d ", start, end);
 			}
 			printf("'\n");
 		}
