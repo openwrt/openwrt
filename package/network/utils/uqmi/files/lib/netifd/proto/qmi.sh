@@ -25,6 +25,13 @@ qmi_disconnect() {
 		--autoconnect > /dev/null
 }
 
+qmi_wds_release() {
+	[ -n "$cid" ] || return 0
+
+	uqmi -s -d "$device" --set-client-id wds,"$cid" --release-client-id wds
+	uci_revert_state network $interface cid
+}
+
 proto_qmi_setup() {
 	local interface="$1"
 
@@ -101,13 +108,7 @@ proto_qmi_setup() {
 		${password:+--password $password} \
 		--autoconnect > /dev/null
 
-	if ! uqmi -s -d "$device" --get-data-status | grep '"connected"' > /dev/null; then
-		echo "Connection lost"
-		proto_notify_error "$interface" NOT_CONNECTED
-		return 1
-	fi
-
-	echo "Connected, starting DHCP"
+	echo "Starting DHCP"
 	proto_init_update "$ifname" 1
 	proto_send_update "$interface"
 
@@ -135,10 +136,7 @@ proto_qmi_teardown() {
 
 	echo "Stopping network"
 	qmi_disconnect
-	[ -n "$cid" ] && {
-		uqmi -s -d "$device" --set-client-id wds,"$cid" --release-client-id wds
-		uci_revert_state network $interface cid
-	}
+	qmi_wds_release
 
 	proto_init_update "*" 0
 	proto_send_update "$interface"
