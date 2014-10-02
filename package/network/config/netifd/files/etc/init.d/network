@@ -32,8 +32,9 @@ reload_service() {
 	/sbin/wifi reload_legacy
 }
 
-stop_service() {
+stop() {
 	/sbin/wifi down
+	procd_kill network ''
 }
 
 service_running() {
