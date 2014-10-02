@@ -147,7 +147,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		break;
 +	case SPROM_BCM4318:
 +		memcpy(&template_sprom, &bcm4318_sprom, sizeof(bcm4318_sprom));
-+		size = ARRAY_SIZE(bcm4306_sprom);
++		size = ARRAY_SIZE(bcm4318_sprom);
 +		break;
 +	case SPROM_BCM4321:
 +		memcpy(&template_sprom, &bcm4321_sprom, sizeof(bcm4321_sprom));
