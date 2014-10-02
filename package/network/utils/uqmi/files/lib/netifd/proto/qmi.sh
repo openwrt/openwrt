@@ -17,6 +17,14 @@ proto_qmi_init_config() {
 	proto_config_add_string modes
 }
 
+qmi_disconnect() {
+	# disable previous autoconnect state using the global handle
+	# do not reuse previous wds client id to prevent hangs caused by stale data
+	uqmi -s -d "$device" \
+		--stop-network 0xffffffff \
+		--autoconnect > /dev/null
+}
+
 proto_qmi_setup() {
 	local interface="$1"
 
@@ -68,6 +76,8 @@ proto_qmi_setup() {
 		return 1
 	}
 
+	qmi_disconnect
+
 	echo "Waiting for network registration"
 	while uqmi -s -d "$device" --get-serving-system | grep '"searching"' > /dev/null; do
 		sleep 5;
@@ -83,24 +93,17 @@ proto_qmi_setup() {
 		proto_block_restart "$interface"
 		return 1
 	}
-	uci_set_state network $interface cid "$cid"
 
-	pdh=`uqmi -s -d "$device" --set-client-id wds,"$cid" --start-network "$apn" \
-	${auth:+--auth-type $auth} \
-	${username:+--username $username} \
-	${password:+--password $password}`
-	[ $? -ne 0 ] && {
-		echo "Unable to connect, check APN and authentication"
-		proto_notify_error "$interface" NO_PDH
-		proto_block_restart "$interface"
-		return 1
-	}
-	uci_set_state network $interface pdh "$pdh"
+	uqmi -s -d "$device" --set-client-id wds,"$cid" \
+		--start-network "$apn" \
+		${auth:+--auth-type $auth} \
+		${username:+--username $username} \
+		${password:+--password $password} \
+		--autoconnect > /dev/null
 
 	if ! uqmi -s -d "$device" --get-data-status | grep '"connected"' > /dev/null; then
 		echo "Connection lost"
 		proto_notify_error "$interface" NOT_CONNECTED
-		proto_block_restart "$interface"
 		return 1
 	fi
 
@@ -129,14 +132,10 @@ proto_qmi_teardown() {
 	local device
 	json_get_vars device
 	local cid=$(uci_get_state network $interface cid)
-	local pdh=$(uci_get_state network $interface pdh)
 
 	echo "Stopping network"
+	qmi_disconnect
 	[ -n "$cid" ] && {
-		[ -n "$pdh" ] && {
-			uqmi -s -d "$device" --set-client-id wds,"$cid" --stop-network "$pdh"
-			uci_revert_state network $interface pdh
-		}
 		uqmi -s -d "$device" --set-client-id wds,"$cid" --release-client-id wds
 		uci_revert_state network $interface cid
 	}
