@@ -6,24 +6,13 @@
  
 +#if defined(CONFIG_SSB_PCIHOST) && defined(CONFIG_BOARD_BCM963XX)
 +#include <linux/ssb/ssb.h>
-+extern struct ssb_sprom bcm63xx_sprom;
++extern int bcm63xx_get_fallback_sprom(uint pci_bus, uint pci_slot, struct ssb_sprom *out);
 +#endif
 +
  #ifdef WLTEST
  #include <sbsprom.h>
  #endif /* WLTEST */
-@@ -2058,6 +2063,10 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
- 	bool flash = FALSE;
- 	int err = 0;
- 
-+#if defined(CONFIG_SSB_PCIHOST) && defined(CONFIG_BOARD_BCM963XX)
-+	char eabuf[18];
-+#endif
-+
- 	/*
- 	 * Apply CRC over SROM content regardless SROM is present or not,
- 	 * and use variable <devpath>sromrev's existance in flash to decide
-@@ -2120,6 +2129,58 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
+@@ -2120,6 +2125,63 @@ BCMATTACHFN(initvars_srom_pci)(si_t *sih
  			goto varscont;
  		}
  
@@ -32,9 +21,14 @@
 +
 +		if( base != NULL )
 +		{
-+			varbuf_init(&b, base, MAXSZ_NVRAM_VARS);
++			char eabuf[18];
++			struct ssb_sprom bcm63xx_sprom;
++			uint pci_bus = osl_pci_bus(osh), pci_slot = osl_pci_slot(osh);
 +
-+			printk("Got version %i SPROM from SSB\n", bcm63xx_sprom.revision);
++			bcm63xx_get_fallback_sprom(pci_bus, pci_slot, &bcm63xx_sprom);
++			printk("BCM%X(%02x:%02x) using sprom version %i\n", sih->chip, pci_bus, pci_slot, bcm63xx_sprom.revision);
++
++			varbuf_init(&b, base, MAXSZ_NVRAM_VARS);
 +
 +			varbuf_append(&b, vstr_sromrev, bcm63xx_sprom.revision);
 +			varbuf_append(&b, vstr_boardrev, bcm63xx_sprom.board_rev);
