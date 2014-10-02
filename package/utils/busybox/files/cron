@@ -17,7 +17,7 @@ start_service () {
 	loglevel=$(uci_get "system.@system[0].cronloglevel")
 
 	[ -z "${loglevel}" ] || {
-		/sbin/validate_data uinteger "${loglevel}"
+		/sbin/validate_data uinteger "${loglevel}" 2>/dev/null
 		[ "$?" -eq 0 ] || {
 			echo "validation failed"
 			return 1
