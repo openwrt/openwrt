@@ -1763,14 +1763,12 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 {
 	u32 t;
 	u32 egress, ingress;
-	u32 pvid;
+	u32 pvid = priv->vlan_id[priv->pvid[port]];
 
 	if (priv->vlan) {
-		pvid = priv->vlan_id[priv->pvid[port]];
 		egress = AR8327_PORT_VLAN1_OUT_MODE_UNMOD;
 		ingress = AR8216_IN_SECURE;
 	} else {
-		pvid = port;
 		egress = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH;
 		ingress = AR8216_IN_PORT_ONLY;
 	}
