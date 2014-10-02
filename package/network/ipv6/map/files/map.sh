@@ -122,19 +122,28 @@ proto_map_setup() {
 	[ "$zone" != "-" ] && json_add_string zone "$zone"
 
 	json_add_array firewall
-	  for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
-            for proto in icmp tcp udp; do
-	      json_add_object ""
-	        json_add_string type nat
-	        json_add_string target SNAT
-	        json_add_string family inet
-	        json_add_string proto "$proto"
-                json_add_boolean connlimit_ports 1
-                json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
-                json_add_string snat_port "$portset"
-	      json_close_object
-            done
-	  done
+	  if [ -z "$(eval "echo \$RULE_${k}_PORTSETS")" ]; then
+	    json_add_object ""
+	      json_add_string type nat
+	      json_add_string target SNAT
+	      json_add_string family inet
+	      json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
+	    json_close_object
+	  else
+	    for portset in $(eval "echo \$RULE_${k}_PORTSETS"); do
+              for proto in icmp tcp udp; do
+	        json_add_object ""
+	          json_add_string type nat
+	          json_add_string target SNAT
+	          json_add_string family inet
+	          json_add_string proto "$proto"
+                  json_add_boolean connlimit_ports 1
+                  json_add_string snat_ip $(eval "echo \$RULE_${k}_IPV4ADDR")
+                  json_add_string snat_port "$portset"
+	        json_close_object
+              done
+	    done
+	  fi
 	  if [ "$type" = "map-t" ]; then
 	  	json_add_object ""
 	  		json_add_string type rule
