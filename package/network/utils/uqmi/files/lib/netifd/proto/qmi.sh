@@ -5,6 +5,8 @@
 init_proto "$@"
 
 proto_qmi_init_config() {
+	available=1
+	no_device=1
 	proto_config_add_string "device:device"
 	proto_config_add_string apn
 	proto_config_add_string auth
@@ -30,6 +32,16 @@ proto_qmi_setup() {
 	[ -c "$device" ] || {
 		logger -p daemon.err -t "qmi[$$]" "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
+		proto_block_restart "$interface"
+		return 1
+	}
+
+	devname="$(basename "$device")"
+	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
+	ifname="$( ls "$devpath"/net )"
+	[ -n "$ifname" ] || {
+		logger -p daemon.err -t "qmi[$$]" "The interface could not be found."
+		proto_notify_error "$interface" NO_IFACE
 		proto_block_restart "$interface"
 		return 1
 	}
@@ -93,7 +105,7 @@ proto_qmi_setup() {
 	fi
 
 	logger -p daemon.info -t "qmi[$$]" "Connected, starting DHCP"
-	proto_init_update "*" 1
+	proto_init_update "$ifname" 1
 	proto_send_update "$interface"
 
 	json_init
