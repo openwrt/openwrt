@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ "$(uci get network.globals.ula_prefix)" != "auto" ] && exit 0
+[ "$(uci -q get network.globals.ula_prefix)" != "auto" ] && exit 0
 
 r1=$(dd if=/dev/urandom bs=1 count=1 |hexdump -e '1/1 "%02x"')
 r2=$(dd if=/dev/urandom bs=2 count=1 |hexdump -e '2/1 "%02x"')
