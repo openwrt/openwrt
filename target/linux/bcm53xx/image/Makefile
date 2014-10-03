@@ -48,7 +48,7 @@ endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 define Image/Build
-	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,U12H245T00_NETGEAR,2)
+	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,U12H245T00_NETGEAR,1)
 	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,U12H240T00_NETGEAR,1)
 endef
 
