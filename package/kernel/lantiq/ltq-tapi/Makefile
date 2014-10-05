@@ -20,14 +20,13 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 PKG_USE_MIPS16:=0
 PKG_CHECK_FORMAT_SECURITY:=0
 
-include $(INCLUDE_DIR)/ltqtapi.mk
 include $(INCLUDE_DIR)/package.mk
 
 define KernelPackage/ltq-tapi
   SUBMENU:=Voice over IP
   TITLE:=Lantiq TAPI subsystem
   URL:=http://www.lantiq.com/
-  DEPENDS:=$(LTQ_TAPI_TARGET) +kmod-ltq-ifxos
+  DEPENDS:=@(TARGET_lantiq_falcon||TARGET_lantiq_xway) +kmod-ltq-ifxos
   FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.ko
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
 endef
