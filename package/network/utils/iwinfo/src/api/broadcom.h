@@ -55,6 +55,7 @@
 #define WLC_PHY_TYPE_G				2
 #define WLC_PHY_TYPE_N				4
 #define WLC_PHY_TYPE_LP				5
+#define WLC_PHY_TYPE_HT				7
 
 #define WLC_BAND_5G				1
 #define WLC_BAND_2G				2
