@@ -18,6 +18,6 @@ LINUX_VERSION:=3.10.49
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += ixp4xx-microcode fconfig
-KERNELNAME:="zImage"
+KERNELNAME:=zImage
 
 $(eval $(call BuildTarget))

@@ -11,7 +11,7 @@ MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 LINUX_VERSION:=3.14.18
 
-KERNELNAME="Image dtbs"
+KERNELNAME:=Image dtbs
 
 include $(INCLUDE_DIR)/target.mk
 

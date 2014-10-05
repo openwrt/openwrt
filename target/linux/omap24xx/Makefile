@@ -19,7 +19,7 @@ define Target/Description
 	TI OMAP-24xx
 endef
 
-KERNELNAME:="zImage"
+KERNELNAME:=zImage
 
 include $(INCLUDE_DIR)/target.mk
 

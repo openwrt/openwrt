@@ -23,6 +23,6 @@ define Target/Description
 	Build firmware images for AMCC/IBM PPC44x based boards.
 endef
 
-KERNELNAME:="uImage cuImage.taishan"
+KERNELNAME:=uImage cuImage.taishan
 
 $(eval $(call BuildTarget))

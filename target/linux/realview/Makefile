@@ -24,6 +24,6 @@ define Target/Description
 	Build images for ARM Ltd. Realview boards to be run with qemu
 endef
 
-KERNELNAME:="zImage"
+KERNELNAME:=zImage
 
 $(eval $(call BuildTarget))
