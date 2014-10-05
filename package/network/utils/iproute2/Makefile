@@ -31,7 +31,11 @@ define Package/iproute2/Default
   VARIANT:=$(1)
 endef
 
-Package/ip=$(call Package/iproute2/Default,tiny,Minimal)
+define Package/ip
+$(call Package/iproute2/Default,tiny,Minimal)
+  CONFLICTS:=ip-full
+endef
+
 Package/ip-full=$(call Package/iproute2/Default,full,Full)
 
 define Package/ip/conffiles
