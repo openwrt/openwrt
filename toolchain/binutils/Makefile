@@ -24,12 +24,6 @@ else
   ifeq ($(PKG_VERSION),2.20.1)
     PKG_MD5SUM:=9cdfb9d6ec0578c166d3beae5e15c4e5
   endif
-  ifeq ($(PKG_VERSION),2.22)
-    PKG_MD5SUM:=ee0f10756c84979622b992a4a61ea3f5
-  endif
-  ifeq ($(PKG_VERSION),2.23.1)
-    PKG_MD5SUM:=33adb18c3048d057ac58d07a3f1adb38
-  endif
 endif
 
 HOST_BUILD_PARALLEL:=1
