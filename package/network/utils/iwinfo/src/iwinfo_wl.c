@@ -601,6 +601,8 @@ static int wl_get_hwmodelist(const char *ifname, int *buf)
 			case WLC_PHY_TYPE_B:
 				*buf = IWINFO_80211_B;
 				break;
+			case WLC_PHY_TYPE_AC:
+				*buf |= IWINFO_80211_AC;
 			case WLC_PHY_TYPE_HT:
 			case WLC_PHY_TYPE_N:
 				*buf |= IWINFO_80211_N;
