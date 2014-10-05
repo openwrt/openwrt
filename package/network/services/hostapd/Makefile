@@ -105,6 +105,7 @@ define Package/hostapd
 $(call Package/hostapd/Default)
   TITLE+= (full)
   VARIANT:=full
+  CONFLICTS:=wpad wpad-mini
 endef
 
 define Package/hostapd/description
@@ -116,6 +117,7 @@ define Package/hostapd-mini
 $(call Package/hostapd/Default)
   TITLE+= (WPA-PSK only)
   VARIANT:=mini
+  CONFLICTS:=wpad wpad-mini
 endef
 
 define Package/hostapd-mini/description
@@ -169,6 +171,7 @@ define Package/wpa-supplicant
   TITLE:=WPA Supplicant
   URL:=http://hostap.epitest.fi/wpa_supplicant/
   DEPENDS:=$(DRV_DEPENDS) +WPA_SUPPLICANT_OPENSSL:libopenssl
+  CONFLICTS:=wpad wpad-mini
   VARIANT:=supplicant-full
 endef
 
@@ -184,6 +187,7 @@ define Package/wpa-supplicant-p2p
   $(Package/wpa-supplicant)
   TITLE:=WPA Supplicant (with Wi-Fi P2P support)
   DEPENDS:=$(DRV_DEPENDS)
+  CONFLICTS:=wpad wpad-mini
   VARIANT:=supplicant-p2p
 endef
 
@@ -195,6 +199,7 @@ define Package/wpa-supplicant-mini
   $(Package/wpa-supplicant)
   TITLE:=WPA Supplicant (minimal version)
   DEPENDS:=$(DRV_DEPENDS)
+  CONFLICTS:=wpad wpad-mini
   VARIANT:=supplicant-mini
 endef
 
