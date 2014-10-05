@@ -160,6 +160,11 @@ ifeq ($(DUMP),)
 			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
 		done; \
 		[ -z "$$$$DEPENDS" ] || echo "Depends: $$$$DEPENDS"; \
+		CONFLICTS=''; \
+		for conflict in $(CONFLICTS); do \
+			CONFLICTS=$$$${CONFLICTS:+$$$$CONFLICTS, }$$$$conflict; \
+		done; \
+		[ -z "$$$$CONFLICTS" ] || echo "Conflicts: $$$$CONFLICTS"; \
 		$(if $(PROVIDES), echo "Provides: $(PROVIDES)"; ) \
 		echo "Source: $(SOURCE)"; \
 		$(if $(PKG_LICENSE), echo "License: $(PKG_LICENSE)"; ) \
