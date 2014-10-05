@@ -150,7 +150,7 @@ endef
 
 define Kernel/CompileImage/Default
 	rm -f $(TARGET_DIR)/init
-	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
+	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME)) modules
 	#")
 	$(call Kernel/CopyImage)
 endef
@@ -160,7 +160,7 @@ define Kernel/CompileImage/Initramfs
 	$(call Kernel/Configure/Initramfs)
 	$(CP) $(GENERIC_PLATFORM_DIR)/base-files/init $(TARGET_DIR)/init
 	rm -rf $(KERNEL_BUILD_DIR)/linux-$(LINUX_VERSION)/usr/initramfs_data.cpio*
-	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME))
+	+$(MAKE) $(KERNEL_MAKEOPTS) $(subst ",,$(KERNELNAME)) modules
 	#")
 	#")
 	$(call Kernel/CopyImage,-initramfs)
