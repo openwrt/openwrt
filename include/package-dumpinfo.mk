@@ -31,6 +31,7 @@ $(if $(MENU),Menu: $(MENU)
 )$(if $(findstring $(PREREQ_CHECK),1),Prereq-Check: 1
 )Version: $(VERSION)
 Depends: $(call PKG_FIXUP_DEPENDS,$(1),$(DEPENDS))
+Conflicts: $(CONFLICTS)
 Menu-Depends: $(MDEPENDS)
 Provides: $(PROVIDES)
 $(if $(VARIANT),Build-Variant: $(VARIANT)
