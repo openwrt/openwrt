@@ -25,6 +25,6 @@ define Target/Description
 	Currently produces SD Card image for Raspberry Pi.
 endef
 
-KERNELNAME="Image"
+KERNELNAME:=Image
 
 $(eval $(call BuildTarget))

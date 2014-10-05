@@ -16,7 +16,7 @@ LINUX_VERSION:=3.10.49
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:="zImage"
+KERNELNAME:=zImage
 
 DEFAULT_PACKAGES += kmod-ath9k kmod-crypto-mv-cesa wpad-mini kmod-i2c-core kmod-i2c-mv64xxx kmod-rtc-isl1208
 

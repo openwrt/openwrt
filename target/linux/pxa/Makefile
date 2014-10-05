@@ -20,6 +20,6 @@ define Target/Description
 	Build images for PXA2xx systems, eg. Gumstix.
 endef
 
-KERNELNAME:="uImage"
+KERNELNAME:=uImage
 
 $(eval $(call BuildTarget))

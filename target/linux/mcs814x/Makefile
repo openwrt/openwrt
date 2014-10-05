@@ -26,6 +26,6 @@ DEFAULT_PACKAGES := $(filter-out ppp%,$(DEFAULT_PACKAGES)) \
 		  kmod-nls-utf8 \
 		  kmod-mcs814x-wdt kmod-ledtrig-usbdev
 
-KERNELNAME:="zImage dtbs"
+KERNELNAME:=zImage dtbs
 
 $(eval $(call BuildTarget))

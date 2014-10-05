@@ -17,7 +17,7 @@ LINUX_VERSION:=3.13.7
 
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-KERNELNAME:="zImage dtbs"
+KERNELNAME:=zImage dtbs
 
 include $(INCLUDE_DIR)/target.mk
 

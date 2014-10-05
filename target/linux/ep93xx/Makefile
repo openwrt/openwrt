@@ -19,6 +19,6 @@ DEVICE_TYPE:=developerboard
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:="uImage"
+KERNELNAME:=uImage
 
 $(eval $(call BuildTarget))

@@ -20,6 +20,6 @@ define Target/Description
 	Build images for the Freescale MPC52xx based boards.
 endef
 
-KERNELNAME:="zImage"
+KERNELNAME:=zImage
 
 $(eval $(call BuildTarget))

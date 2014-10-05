@@ -18,7 +18,7 @@ LINUX_VERSION:=3.14.18
 
 include $(INCLUDE_DIR)/target.mk
 
-KERNELNAME:="zImage dtbs"
+KERNELNAME:=zImage dtbs
 
 DEFAULT_PACKAGES += uboot-envtools
 

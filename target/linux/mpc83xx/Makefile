@@ -23,6 +23,6 @@ define Target/Description
 	Build firmware images for Freescale MPC83xx based boards (eg. RouterBoard 600).
 endef
 
-KERNELNAME:="uImage dtbImage.rb600 dtbImage.rb333"
+KERNELNAME:=uImage dtbImage.rb600 dtbImage.rb333
 
 $(eval $(call BuildTarget))

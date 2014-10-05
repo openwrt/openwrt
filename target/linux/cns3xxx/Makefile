@@ -23,7 +23,7 @@ define Target/Description
 	eg. the Gateworks Laguna family
 endef
 
-KERNELNAME:="zImage"
+KERNELNAME:=zImage
 
 DEFAULT_PACKAGES += kmod-ath9k kmod-usb2 wpad-mini
 
