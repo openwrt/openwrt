@@ -19,6 +19,7 @@ define Package/Default
   CATEGORY:=Extra packages
   DEPENDS:=
   MDEPENDS:=
+  CONFLICTS:=
   PROVIDES:=
   EXTRA_DEPENDS:=
   MAINTAINER:=$(PKG_MAINTAINER)
