@@ -23,6 +23,7 @@
  */
 
 #include <limits.h>
+#include <glob.h>
 #include "iwinfo_nl80211.h"
 
 #define min(x, y) ((x) < (y)) ? (x) : (y)
@@ -209,6 +210,51 @@ static struct nl80211_msg_conveyor * nl80211_ctl(int cmd, int flags)
 	return nl80211_new(nls->nlctrl, cmd, flags);
 }
 
+static int nl80211_phy_idx_from_uci(const char *name)
+{
+	struct uci_section *s;
+	const char *opt;
+	char buf[128];
+	glob_t gl;
+	FILE *f = NULL;
+	int idx = -1;
+	int err;
+
+	s = iwinfo_uci_get_radio(name, "mac80211");
+	if (!s)
+		goto free;
+
+	opt = uci_lookup_option_string(uci_ctx, s, "path");
+	if (!opt)
+		goto free;
+
+	snprintf(buf, sizeof(buf), "/sys/devices/%s/ieee80211/*/index", opt);
+	err = glob(buf, 0, NULL, &gl);
+	if (err)
+		goto free;
+
+	if (gl.gl_pathc)
+		f = fopen(gl.gl_pathv[0], "r");
+
+	globfree(&gl);
+
+	if (!f)
+		goto free;
+
+	err = fread(buf, 1, sizeof(buf) - 1, f);
+	fclose(f);
+
+	if (err <= 0)
+		goto free;
+
+	buf[err] = 0;
+	idx = atoi(buf);
+
+free:
+	iwinfo_uci_free();
+	return idx;
+}
+
 static struct nl80211_msg_conveyor * nl80211_msg(const char *ifname,
                                                  int cmd, int flags)
 {
@@ -224,7 +270,7 @@ static struct nl80211_msg_conveyor * nl80211_msg(const char *ifname,
 	if (!strncmp(ifname, "phy", 3))
 		phyidx = atoi(&ifname[3]);
 	else if (!strncmp(ifname, "radio", 5))
-		phyidx = atoi(&ifname[5]);
+		phyidx = nl80211_phy_idx_from_uci(ifname);
 	else if (!strncmp(ifname, "mon.", 4))
 		ifidx = if_nametoindex(&ifname[4]);
 	else
@@ -510,7 +556,7 @@ static char * nl80211_phy2ifname(const char *ifname)
 	else if (!strncmp(ifname, "phy", 3))
 		phyidx = atoi(&ifname[3]);
 	else if (!strncmp(ifname, "radio", 5))
-		phyidx = atoi(&ifname[5]);
+		phyidx = nl80211_phy_idx_from_uci(ifname);
 	else
 		return NULL;
 

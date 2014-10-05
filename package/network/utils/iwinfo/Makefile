@@ -24,7 +24,7 @@ define Package/libiwinfo
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Generalized Wireless Information Library (iwinfo)
-  DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny
+  DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny +libuci
   ABI_VERSION:=$(PKG_RELEASE)
   MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
