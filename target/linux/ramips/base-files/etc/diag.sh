@@ -63,6 +63,9 @@ get_status_led() {
 	hlk-rm04)
 		status_led="hlk-rm04:red:power"
 		;;
+	ht-tm02)
+		status_led="ht-tm02:white:status"
+		;;
 	all0239-3g|\
 	hw550-3g)
 		status_led="hw550-3g:green:status"

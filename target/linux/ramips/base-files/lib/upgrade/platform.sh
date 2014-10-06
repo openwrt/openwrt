@@ -52,6 +52,7 @@ platform_check_image() {
 	hw550-3g | \
 	hg255d | \
 	hlk-rm04 | \
+	ht-tm02 | \
 	ip2202 | \
 	m3 | \
 	m4 | \

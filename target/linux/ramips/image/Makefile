@@ -434,6 +434,8 @@ define BuildFirmware/HLKRM04/initramfs
 endef
 Image/Build/Profile/HLKRM04=$(call BuildFirmware/HLKRM04/$(1),$(1),hlk-rm04,HLKRM04,HLK-RM02)
 
+Image/Build/Profile/HT-TM02=$(call BuildFirmware/Default8M/$(1),$(1),ht-tm02,HT-TM02)
+
 Image/Build/Profile/M3=$(call BuildFirmware/Poray4M/$(1),$(1),m3,M3)
 
 Image/Build/Profile/M4=$(call BuildFirmware/PorayDualSize/$(1),$(1),m4,M4)
@@ -598,6 +600,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/FREESTATION5,$(1))
 #	$(call Image/Build/Profile/HG255D,$(1))
 	$(call Image/Build/Profile/HLKRM04,$(1))
+	$(call Image/Build/Profile/HT-TM02,$(1))
 	$(call Image/Build/Profile/HW550-3G,$(1))
 	$(call Image/Build/Profile/IP2202,$(1))
 	$(call Image/Build/Profile/M3,$(1))
