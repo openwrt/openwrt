@@ -30,6 +30,12 @@
 					// 0x1b0000 - 0x1000000 : rootfs (squashfs)
 					// 0x390000 - 0x1000000 : rootfs_data
 				};
+
+				partition@1f80000 {
+					label = "board_config";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
 			};
 		};
 	};

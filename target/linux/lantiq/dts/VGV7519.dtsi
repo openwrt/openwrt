@@ -71,6 +71,8 @@
 					lantiq,groups = "gphy0 led1", "gphy1 led0";
 					lantiq,function = "gphy";
 					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
 				};
 			};
 		};
@@ -215,6 +217,11 @@
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/vr9_phy11g_a1x.bin";
 		phys = [ 00 01 ];
+	};
+
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT2860.eeprom";
 	};
 
 	gpio-keys-polled {
