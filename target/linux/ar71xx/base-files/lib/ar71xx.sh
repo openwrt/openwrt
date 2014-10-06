@@ -152,7 +152,7 @@ tplink_board_detect() {
 		model="TP-Link TL-WA901N/ND"
 		;;
 	"094100"*)
-		if [ "$hwid" == "09410002" -a "$mid" == "00420001" ]; then
+		if [ "$hwid" = "09410002" -a "$mid" = "00420001" ]; then
 			model="Rosewill RNX-N360RT"
 			hwver=""
 		else
