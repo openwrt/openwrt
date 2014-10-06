@@ -38,18 +38,7 @@
  static inline unsigned long
  mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
  {
-@@ -660,6 +691,10 @@ static void split_rootfs_data(struct mtd
- 	unsigned int split_size;
- 	int ret;
- 
-+	ret = run_parsers_by_type(part, MTD_PARSER_TYPE_ROOTFS);
-+	if (ret > 0)
-+		return;
-+
- 	ret = split_squashfs(master, part->offset, &split_offset);
- 	if (ret)
- 		return;
-@@ -709,6 +744,12 @@ static void split_uimage(struct mtd_info
+@@ -709,6 +740,12 @@ static void split_uimage(struct mtd_info
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
@@ -62,6 +51,20 @@
  	if (config_enabled(CONFIG_MTD_UIMAGE_SPLIT))
  		split_uimage(master, part);
  }
+@@ -726,9 +763,12 @@ static void mtd_partition_split(struct m
+ 		return;
+ 
+ 	if (!strcmp(part->mtd.name, "rootfs")) {
++		int ret;
++
+ 		rootfs_found = 1;
+ 
+-		if (config_enabled(CONFIG_MTD_ROOTFS_SPLIT))
++		ret = run_parsers_by_type(part, MTD_PARSER_TYPE_ROOTFS);
++		if (ret <= 0 && config_enabled(CONFIG_MTD_ROOTFS_SPLIT))
+ 			split_rootfs_data(master, part);
+ 	}
+ 
 --- a/include/linux/mtd/partitions.h
 +++ b/include/linux/mtd/partitions.h
 @@ -70,6 +70,8 @@ struct mtd_part_parser_data {
