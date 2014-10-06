@@ -38,7 +38,7 @@
  static inline unsigned long
  mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
  {
-@@ -709,6 +740,12 @@ static void split_uimage(struct mtd_info
+@@ -714,6 +745,12 @@ static void split_uimage(struct mtd_info
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
@@ -51,7 +51,7 @@
  	if (config_enabled(CONFIG_MTD_UIMAGE_SPLIT))
  		split_uimage(master, part);
  }
-@@ -726,9 +763,12 @@ static void mtd_partition_split(struct m
+@@ -731,9 +768,12 @@ static void mtd_partition_split(struct m
  		return;
  
  	if (!strcmp(part->mtd.name, "rootfs")) {
