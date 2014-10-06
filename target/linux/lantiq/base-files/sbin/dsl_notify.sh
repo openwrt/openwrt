@@ -21,10 +21,10 @@ config_load system
 config_get default led_adsl default
 if [ "$default" != 1 ]; then
 	case "$DSL_INTERFACE_STATUS" in
-	  "HANDSHAKE")  led_timer adsl 500 500;;
-	  "TRAINING")   led_timer adsl 200 200;;
-	  "UP")		led_on adsl;;
-	  *)		led_off adsl
+	  "HANDSHAKE")  led_timer dsl 500 500;;
+	  "TRAINING")   led_timer dsl 200 200;;
+	  "UP")		led_on dsl;;
+	  *)		led_off dsl
 	esac
 fi
 
