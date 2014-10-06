@@ -1,0 +1,63 @@
+From ace4c5eb69ee7dace955acdb23e30e8229b18619 Mon Sep 17 00:00:00 2001
+From: Steven Barth <cyrus@openwrt.org>
+Date: Wed, 1 Oct 2014 22:40:31 +0200
+Subject: [PATCH 1/2] build: allow disabling libreadline-support
+
+This makes nftables a bit more embedded-friendly.
+
+Signed-off-by: Steven Barth <cyrus@openwrt.org>
+---
+ configure.ac    | 11 +++++++++--
+ src/Makefile.in |  2 ++
+ src/main.c      |  6 ++++++
+ 3 files changed, 17 insertions(+), 2 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -71,8 +71,15 @@ AC_CHECK_LIB([nftnl], [nft_rule_alloc],
+ AC_CHECK_LIB([gmp], [__gmpz_init], ,
+ 	     AC_MSG_ERROR([No suitable version of libgmp found]))
+ 
+-AC_CHECK_LIB([readline], [readline], ,
+-	     AC_MSG_ERROR([No suitable version of libreadline found]))
++
++AC_ARG_WITH([libreadline], [AS_HELP_STRING([--without-libreadline],
++            [Disable libreadline support (no interactive CLI)])], [],
++            [with_libreadline=yes])
++AS_IF([test "x$with_libreadline" != xno], [
++AC_CHECK_LIB([readline],[readline], , AC_MSG_ERROR([No suitable version of libreadline found]))
++])
++AC_SUBST(with_libreadline)
++
+ 
+ # Checks for header files.
+ AC_HEADER_STDC
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -3,7 +3,9 @@ PROGRAMS		+= nft
+ nft-destdir		:= @sbindir@
+ 
+ nft-obj			+= main.o
++ifeq (@with_libreadline@,yes)
+ nft-obj			+= cli.o
++endif
+ nft-obj			+= rule.o
+ nft-obj			+= statement.o
+ nft-obj			+= datatype.o
+--- a/src/main.c
++++ b/src/main.c
+@@ -335,8 +335,14 @@ int main(int argc, char * const *argv)
+ 		if (scanner_read_file(scanner, filename, &internal_location) < 0)
+ 			goto out;
+ 	} else if (interactive) {
++#ifdef HAVE_LIBREADLINE
+ 		cli_init(&state);
+ 		return 0;
++#else
++		fprintf(stderr, "%s: interactive CLI not supported in this build\n",
++			argv[0]);
++		exit(NFT_EXIT_FAILURE);
++#endif
+ 	} else {
+ 		fprintf(stderr, "%s: no command specified\n", argv[0]);
+ 		exit(NFT_EXIT_FAILURE);
