@@ -28,12 +28,9 @@ index 15ae11c..3e43f17 100644
  dtb-$(CONFIG_ARCH_BERLIN) += \
  	berlin2-sony-nsz-gs7.dtb	\
  	berlin2cd-google-chromecast.dtb
-diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
-new file mode 100644
-index 0000000..5e96492
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,94 @@
 +/*
 + * Broadcom BCM470X / BCM5301X arm platform code.
 + * DTS for Netgear R6300 V2
@@ -68,7 +65,63 @@ index 0000000..5e96492
 +			status = "okay";
 +		};
 +	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		logo {
++			label = "bcm53xx:white:logo";
++			gpios = <&chipcommon 1 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "default-on";
++		};
++
++		power0 {
++			label = "bcm53xx:green:power";
++			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++
++		power1 {
++			label = "bcm53xx:amber:power";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		usb {
++			label = "bcm53xx:blue:usb";
++			gpios = <&chipcommon 8 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++
++		wireless {
++			label = "bcm53xx:blue:wireless";
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys-polled";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <200>;
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 4 GPIO_ACTIVE_LOW>;
++		};
++
++		rfkill {
++			label = "WiFi";
++			linux,code = <KEY_RFKILL>;
++			gpios = <&chipcommon 5 GPIO_ACTIVE_LOW>;
++		};
++
++		restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
++		};
++	};
 +};
--- 
-1.8.4.5
-
