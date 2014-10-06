@@ -117,15 +117,15 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		power {
-			label = "dlink:power:green";
+			label = "d-link:green:power";
 			gpios = <&gpio0 9 0>;
 		};
-		internet {
-			label = "dlink:internet:orange";
+		wan {
+			label = "d-link:orange:wan";
 			gpios = <&gpio0 12 0>;
 		};
 		status {
-			label = "dlink:power:orange";
+			label = "d-link:orange:power";
 			gpios = <&gpio0 13 0>;
 		};
 	};
