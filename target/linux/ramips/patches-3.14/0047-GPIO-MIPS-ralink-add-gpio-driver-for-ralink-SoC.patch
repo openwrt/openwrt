@@ -18,8 +18,10 @@ Cc: linux-gpio@vger.kernel.org
  create mode 100644 arch/mips/include/asm/mach-ralink/gpio.h
  create mode 100644 drivers/gpio/gpio-ralink.c
 
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/gpio.h
+Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/gpio.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/gpio.h	2014-09-13 02:13:22.536816660 +0200
 @@ -0,0 +1,24 @@
 +/*
 + *  Ralink SoC GPIO API support
@@ -45,9 +47,11 @@ Cc: linux-gpio@vger.kernel.org
 +#define gpio_to_irq	__gpio_to_irq
 +
 +#endif /* __ASM_MACH_RALINK_GPIO_H */
---- a/drivers/gpio/Kconfig
-+++ b/drivers/gpio/Kconfig
-@@ -260,6 +260,12 @@ config GPIO_SCH311X
+Index: linux-3.14.18/drivers/gpio/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/gpio/Kconfig	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/drivers/gpio/Kconfig	2014-10-02 21:52:28.693719524 +0200
+@@ -260,6 +260,12 @@
  	  To compile this driver as a module, choose M here: the module will
  	  be called gpio-sch311x.
  
@@ -60,9 +64,11 @@ Cc: linux-gpio@vger.kernel.org
  config GPIO_SPEAR_SPICS
  	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
  	depends on PLAT_SPEAR
---- a/drivers/gpio/Makefile
-+++ b/drivers/gpio/Makefile
-@@ -63,6 +63,7 @@ obj-$(CONFIG_GPIO_PCF857X)	+= gpio-pcf85
+Index: linux-3.14.18/drivers/gpio/Makefile
+===================================================================
+--- linux-3.14.18.orig/drivers/gpio/Makefile	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/drivers/gpio/Makefile	2014-10-02 21:52:28.693719524 +0200
+@@ -63,6 +63,7 @@
  obj-$(CONFIG_GPIO_PCH)		+= gpio-pch.o
  obj-$(CONFIG_GPIO_PL061)	+= gpio-pl061.o
  obj-$(CONFIG_GPIO_PXA)		+= gpio-pxa.o
@@ -70,9 +76,11 @@ Cc: linux-gpio@vger.kernel.org
  obj-$(CONFIG_GPIO_RC5T583)	+= gpio-rc5t583.o
  obj-$(CONFIG_GPIO_RDC321X)	+= gpio-rdc321x.o
  obj-$(CONFIG_GPIO_RCAR)		+= gpio-rcar.o
---- /dev/null
-+++ b/drivers/gpio/gpio-ralink.c
-@@ -0,0 +1,345 @@
+Index: linux-3.14.18/drivers/gpio/gpio-ralink.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/gpio/gpio-ralink.c	2014-10-02 21:52:24.081719605 +0200
+@@ -0,0 +1,353 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -333,6 +341,13 @@ Cc: linux-gpio@vger.kernel.org
 +	return pinctrl_request_gpio(gpio);
 +}
 +
++static void ralink_gpio_free(struct gpio_chip *chip, unsigned offset)
++{
++	int gpio = chip->base + offset;
++
++	pinctrl_free_gpio(gpio);
++}
++
 +static int ralink_gpio_probe(struct platform_device *pdev)
 +{
 +	struct device_node *np = pdev->dev.of_node;
@@ -386,6 +401,7 @@ Cc: linux-gpio@vger.kernel.org
 +	rg->chip.set = ralink_gpio_set;
 +	rg->chip.request = ralink_gpio_request;
 +	rg->chip.to_irq = ralink_gpio_to_irq;
++	rg->chip.free = ralink_gpio_free;
 +
 +	/* set polarity to low for all lines */
 +	rt_gpio_w32(rg, GPIO_REG_POL, 0);
