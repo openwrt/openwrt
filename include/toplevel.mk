@@ -43,6 +43,8 @@ unexport LPATH
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
+unexport TAR_OPTIONS
+
 ifneq ($(shell $(HOSTCC) 2>&1 | grep clang),)
   export HOSTCC_REAL?=$(HOSTCC)
   export HOSTCC_WRAPPER:=$(TOPDIR)/scripts/clang-gcc-wrapper
