@@ -125,6 +125,11 @@ esr900)
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "engenius:blue:wlan-5g" "phy1tpt"
 	;;
 
+esr1750)
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "esr1750:blue:wlan-2g" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "esr1750:blue:wlan-5g" "phy1tpt"
+	;;
+
 hiwifi-hc6361)
 	ucidef_set_led_netdev "inet" "INET" "hiwifi:blue:internet" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "hiwifi:blue:wlan-2p4" "phy0tpt"
