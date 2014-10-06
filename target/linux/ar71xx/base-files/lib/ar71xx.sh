@@ -214,6 +214,13 @@ tplink_board_detect() {
 	"934100"*)
 		model="NC-LINK SMART-300"
 		;;
+	"c50000"*)
+		model="TP-Link Archer C5"
+		;;
+	"750000"*|\
+	"c70000"*)
+		model="TP-Link Archer C7"
+		;;
 	*)
 		hwver=""
 		;;
