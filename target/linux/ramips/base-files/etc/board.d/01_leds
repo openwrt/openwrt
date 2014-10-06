@@ -112,6 +112,10 @@ case $board in
 	hlk-rm04)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+        ht-tm02)
+		ucidef_set_led_netdev "eth" "ETH" "ht-tm02:white:status" "eth0"
+		set_wifi_led "ht-tm02:blue:wifi"
+                ;;
 	all0239-3g|\
 	hw550-3g)
 		set_usb_led "hw550-3g:green:usb"
