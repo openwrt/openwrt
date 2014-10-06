@@ -188,10 +188,11 @@
 		};
 
 		pci@E105400 {
+			status = "okay";
 			#address-cells = <3>;
 			#size-cells = <2>;
 			#interrupt-cells = <1>;
-			compatible = "lantiq,pci-xway1";
+			compatible = "lantiq,pci-xway";
 			bus-range = <0x0 0x0>;
 			ranges = <0x2000000 0 0x8000000 0x8000000 0 0x2000000   /* pci memory */
 				0x1000000 0 0x00000000 0xAE00000 0 0x200000>; /* io space */
@@ -205,7 +206,7 @@
 			interrupt-map = <
 				0x7000 0 0 1 &icu0 29 1 // slot 14, irq 29
 				>;
-			gpios-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 0>;
 			req-mask = <0x1>;	/* GNT1 */
 		};
 	};
