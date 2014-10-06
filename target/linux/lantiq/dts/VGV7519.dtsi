@@ -38,10 +38,6 @@
 			reg = <0xE100B10 0xA0>;
 
 			state_default: pinmux {
-				exin3 {
-					lantiq,groups = "exin3";
-					lantiq,function = "exin";
-				};
 				stp {
 					lantiq,groups = "stp";
 					lantiq,function = "stp";
@@ -71,10 +67,6 @@
 					lantiq,groups = "gphy0 led1", "gphy1 led0";
 					lantiq,function = "gphy";
 					lantiq,open-drain = <0>;
-				};
-				conf_in {
-					lantiq,pins = "io39"; /* exin3 */
-					lantiq,pull = <2>;
 				};
 			};
 		};
