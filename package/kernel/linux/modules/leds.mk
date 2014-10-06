@@ -151,6 +151,21 @@ endef
 $(eval $(call KernelPackage,ledtrig-timer))
 
 
+define KernelPackage/ledtrig-transient
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=LED Transient Trigger
+  KCONFIG:=CONFIG_LEDS_TRIGGER_TRANSIENT
+  FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-transient.ko
+  AUTOLOAD:=$(call AutoLoad,50,ledtrig-transient,1)
+endef
+
+define KernelPackage/ledtrig-transient/description
+ Kernel module that allows LEDs one time activation of a transient state.
+endef
+
+$(eval $(call KernelPackage,ledtrig-transient))
+
+
 define KernelPackage/ledtrig-oneshot
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED One-Shot Trigger
