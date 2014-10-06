@@ -173,7 +173,7 @@ default_prerm() {
 default_postinst() {
 	local name rusers
 	name=$(echo $(basename $1) | cut -d. -f1)
-	[ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg ] && . ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg
+	[ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg ] && ( . ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg )
 	rusers=$(grep "Require-User:" ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.control)
 	[ -n "$rusers" ] && {
 		local user group
