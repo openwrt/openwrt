@@ -505,6 +505,24 @@ endef
 $(eval $(call KernelPackage,pwm-gpio))
 
 
+define KernelPackage/rtc-ds1307
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
+  $(call AddDepends/rtc)
+  DEPENDS+=+kmod-i2c-core
+  KCONFIG:=CONFIG_RTC_DRV_DS1307
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-ds1307)
+endef
+
+define KernelPackage/rtc-ds1307/description
+ Kernel module for Dallas/Maxim DS1307/DS1337/DS1338/DS1340/DS1388/DS3231,
+ Epson RX-8025 and various other compatible RTC chips connected via I2C.
+endef
+
+$(eval $(call KernelPackage,rtc-ds1307))
+
+
 define KernelPackage/rtc-ds1672
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1672 RTC support
