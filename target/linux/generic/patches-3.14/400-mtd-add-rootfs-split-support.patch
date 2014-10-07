@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -12,6 +12,33 @@ menuconfig MTD
+@@ -12,6 +12,28 @@ menuconfig MTD
  
  if MTD
  
@@ -8,11 +8,6 @@
 +
 +config MTD_ROOTFS_ROOT_DEV
 +	bool "Automatically set 'rootfs' partition to be root filesystem"
-+	default y
-+
-+config MTD_ROOTFS_SPLIT
-+	bool "Automatically split 'rootfs' partition for squashfs"
-+	select MTD_SPLIT
 +	default y
 +
 +config MTD_SPLIT_FIRMWARE
@@ -125,7 +120,7 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -614,6 +628,122 @@ int mtd_del_partition(struct mtd_info *m
+@@ -614,6 +628,74 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -138,47 +133,6 @@
 +	len = (len + mask) & ~mask;
 +	len -= offset & mask;
 +	return len;
-+}
-+
-+static int split_squashfs(struct mtd_info *master, int offset, int *split_offset)
-+{
-+	size_t squashfs_len;
-+	int len, ret;
-+
-+	ret = mtd_get_squashfs_len(master, offset, &squashfs_len);
-+	if (ret)
-+		return ret;
-+
-+	len = mtd_pad_erasesize(master, offset, squashfs_len);
-+	*split_offset = offset + len;
-+
-+	return 0;
-+}
-+
-+static void split_rootfs_data(struct mtd_info *master, struct mtd_part *part)
-+{
-+	unsigned int split_offset = 0;
-+	unsigned int split_size;
-+	int ret;
-+
-+	ret = split_squashfs(master, part->offset, &split_offset);
-+	if (ret)
-+		return;
-+
-+	if (split_offset <= 0)
-+		return;
-+
-+	if (config_enabled(CONFIG_MTD_SPLIT_SQUASHFS_ROOT))
-+		pr_err("Dedicated partitioner didn't create \"rootfs_data\" partition, please fill a bug report!\n");
-+	else
-+		pr_warn("Support for built-in \"rootfs_data\" splitter will be removed, please use CONFIG_MTD_SPLIT_SQUASHFS_ROOT\n");
-+
-+	split_size = part->mtd.size - (split_offset - part->offset);
-+	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=0x%x, len=0x%x\n",
-+		ROOTFS_SPLIT_NAME, split_offset, split_size);
-+
-+	__mtd_add_partition(master, ROOTFS_SPLIT_NAME, split_offset,
-+			    split_size, false);
 +}
 +
 +#define UBOOT_MAGIC	0x27051956
@@ -231,13 +185,6 @@
 +	if (rootfs_found)
 +		return;
 +
-+	if (!strcmp(part->mtd.name, "rootfs")) {
-+		rootfs_found = 1;
-+
-+		if (config_enabled(CONFIG_MTD_ROOTFS_SPLIT))
-+			split_rootfs_data(master, part);
-+	}
-+
 +	if (!strcmp(part->mtd.name, SPLIT_FIRMWARE_NAME) &&
 +	    config_enabled(CONFIG_MTD_SPLIT_FIRMWARE))
 +		split_firmware(master, part);
@@ -248,7 +195,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -643,6 +773,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -643,6 +725,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
