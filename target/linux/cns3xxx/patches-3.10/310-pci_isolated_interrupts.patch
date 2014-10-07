@@ -30,7 +30,7 @@
  #include <linux/gpio.h>
  #include <linux/dma-mapping.h>
  #include <linux/serial_core.h>
-@@ -869,12 +870,45 @@ static int laguna_register_gpio(struct g
+@@ -869,12 +870,42 @@ static int laguna_register_gpio(struct g
  	return ret;
  }
  
@@ -70,10 +70,7 @@
 +	}
 +	printk("laguna: using shared PCI interrupts: irq%d\n",
 +	       IRQ_CNS3XXX_PCIE0_DEVICE);
-+	irqs[0] = IRQ_CNS3XXX_PCIE0_DEVICE;
-+	irqs[1] = IRQ_CNS3XXX_PCIE0_DEVICE;
-+	irqs[2] = IRQ_CNS3XXX_PCIE0_DEVICE;
-+	return cns3xxx_pcie_init(irqs, NULL);
++	return cns3xxx_pcie_init(NULL, NULL);
  }
  subsys_initcall(laguna_pcie_init);
  
