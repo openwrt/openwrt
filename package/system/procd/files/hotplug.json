@@ -70,7 +70,7 @@
 	],
 	[ "if",
 		[ "eq", "SUBSYSTEM",
-			[ "net", "input", "usb", "ieee1394", "block", "atm", "zaptel", "tty", "button" ]
+			[ "net", "input", "usb", "usbmisc", "ieee1394", "block", "atm", "zaptel", "tty", "button" ]
 		],
 		[ "exec", "/sbin/hotplug-call", "%SUBSYSTEM%" ]
 	],
