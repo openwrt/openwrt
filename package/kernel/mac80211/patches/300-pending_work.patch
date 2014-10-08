@@ -1,3 +1,187 @@
+commit 6fb7eefaa4d8377e6b124435059656dd6f643e91
+Author: Karl Beldan <karl.beldan@rivierawaves.com>
+Date:   Tue Oct 7 15:53:38 2014 +0200
+
+    mac80211/trivial: fix typo in starting baserate for rts_cts_rate_idx
+    
+    Fixes: 5253ffb8 ("mac80211: always pick a basic rate to tx RTS/CTS for pre-HT rates")
+    Signed-off-by: Karl Beldan <karl.beldan@rivierawaves.com>
+
+commit b18111d911980af52bead74ee45250cc96ad5108
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Tue Oct 7 10:14:37 2014 +0530
+
+    ath9k: Fix crash in MCC mode
+    
+    When a channel context is removed, the hw_queue_base
+    is set to -1, this will result in a panic because
+    ath9k_chanctx_stop_queues() can be called on an interface
+    that is not assigned to any context yet - for example,
+    when trying to scan.
+    
+    Fix this issue by setting the hw_queue_base to zero
+    when a channel context is removed.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit e2cba8d7590e76661e86f1f0987ef9f8c13c9a6d
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:20 2014 +0530
+
+    ath9k: Fix flushing in MCC mode
+    
+    When we are attempting to switch to a new
+    channel context, the TX queues are flushed, but
+    the mac80211 queues are not stopped and traffic
+    can still come down to the driver.
+    
+    This patch fixes it by stopping the queues
+    assigned to the current context/vif before
+    trying to flush.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 5ba8d9d2f018f2c4e23f9e68b90ca5b9d5470457
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:19 2014 +0530
+
+    ath9k: Fix queue handling for channel contexts
+    
+    When a full chip reset is done, all the queues
+    across all VIFs are stopped, but if MCC is enabled,
+    only the queues of the current context is awakened,
+    when we complete the reset.
+    
+    This results in unfairness for the inactive context.
+    Since frames are queued internally in the driver if
+    there is a context mismatch, we can awaken all the
+    queues when coming out of a reset.
+    
+    The VIF-specific queues are still used in flow control,
+    to ensure fairness when traffic is high.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit a064eaa10ca4ec58d5a405c9a7f87efc6d2fa423
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:18 2014 +0530
+
+    ath9k: Add ath9k_chanctx_stop_queues()
+    
+    This can be used when the queues of a context
+    needs to be stopped.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit b39031536aab9cb1324328cf46fa4ef940bd975f
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:17 2014 +0530
+
+    ath9k: Pass context to ath9k_chanctx_wake_queues()
+    
+    Change the ath9k_chanctx_wake_queues() API so
+    that we can pass the channel context that needs its
+    queues to be stopped.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 4f82eecf73019c27537f65c160e90385e159afd8
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:16 2014 +0530
+
+    ath9k: Fix queue handling in flush()
+    
+    When draining of the TX queues fails, a
+    full HW reset is done. ath_reset() makes sure
+    that the queues in mac80211 are restarted,
+    so there is no need to wake them up again.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 60913f4d2951f6410eed969aae4717c7ced37044
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:15 2014 +0530
+
+    ath9k: Remove duplicate code
+    
+    ath9k_has_tx_pending() can be used to
+    check if there are pending frames instead
+    of having duplicate code.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit fc1314c75e0558c03cb434e2af2c257caa201e76
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:14 2014 +0530
+
+    ath9k: Fix pending frame check
+    
+    Checking for the queue depth outside of
+    the TX queue lock is incorrect and in this
+    case, is not required since it is done inside
+    ath9k_has_pending_frames().
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit b736728575af03488388e84fceac7bf0eac5dbb6
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:13 2014 +0530
+
+    ath9k: Check pending frames properly
+    
+    There is no need to check if the current
+    channel context has active ACs queued up
+    if the TX queue is not empty.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 4b60af4ab4363bd79eeba94bb6bed396cf2aaf62
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Thu Oct 2 06:33:12 2014 +0530
+
+    ath9k: Print RoC expiration
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit 4d9f634b02e4240f86719f30e4c9e62f6a4c4d36
+Author: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date:   Tue Sep 30 14:15:23 2014 +0530
+
+    ath9k: Check early for HW reset
+    
+    chan_lock is not required for checking if
+    we are in the middle of a HW reset, so do it
+    early. This also removes the small window
+    where the lock is dropped and reacquired.
+    
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
+commit c393d179924685d5c8c72446c5b6401f25fdb2a0
+Author: Marek Puzyniak <marek.puzyniak@tieto.com>
+Date:   Tue Oct 7 17:04:30 2014 +0200
+
+    ath9k_htc: avoid kernel panic in ath9k_hw_reset
+    
+    hw pointer of ath_hw is not assigned to proper value
+    in function ath9k_hw_reset what finally causes kernel panic.
+    This can be solved by proper initialization of ath_hw in
+    ath9k_init_priv.
+    
+    Signed-off-by: Marek Puzyniak <marek.puzyniak@tieto.com>
+    Acked-by: Oleksij Rempel <linux@rempel-privat.de>
+    Signed-off-by: John W. Linville <linville@tuxdriver.com>
+
 commit 065e0b64f71632f5ad7f00c102fde09c534cfbf0
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Tue Sep 30 11:00:33 2014 +0200
@@ -858,3 +1042,247 @@ Date:   Sat Sep 27 15:57:09 2014 +0200
  	if (!bf_isampdu(bf)) {
  		if (!flush) {
  			info = IEEE80211_SKB_CB(bf->bf_mpdu);
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -455,7 +455,8 @@ void ath9k_p2p_bss_info_changed(struct a
+ void ath9k_beacon_add_noa(struct ath_softc *sc, struct ath_vif *avp,
+ 			  struct sk_buff *skb);
+ void ath9k_p2p_ps_timer(void *priv);
+-void ath9k_chanctx_wake_queues(struct ath_softc *sc);
++void ath9k_chanctx_wake_queues(struct ath_softc *sc, struct ath_chanctx *ctx);
++void ath9k_chanctx_stop_queues(struct ath_softc *sc, struct ath_chanctx *ctx);
+ void ath_chanctx_check_active(struct ath_softc *sc, struct ath_chanctx *ctx);
+ 
+ void ath_chanctx_beacon_recv_ev(struct ath_softc *sc,
+@@ -525,7 +526,12 @@ static inline void ath9k_beacon_add_noa(
+ static inline void ath9k_p2p_ps_timer(struct ath_softc *sc)
+ {
+ }
+-static inline void ath9k_chanctx_wake_queues(struct ath_softc *sc)
++static inline void ath9k_chanctx_wake_queues(struct ath_softc *sc,
++					     struct ath_chanctx *ctx)
++{
++}
++static inline void ath9k_chanctx_stop_queues(struct ath_softc *sc,
++					     struct ath_chanctx *ctx)
+ {
+ }
+ static inline void ath_chanctx_check_active(struct ath_softc *sc,
+--- a/drivers/net/wireless/ath/ath9k/channel.c
++++ b/drivers/net/wireless/ath/ath9k/channel.c
+@@ -761,6 +761,13 @@ void ath_offchannel_next(struct ath_soft
+ 
+ void ath_roc_complete(struct ath_softc *sc, bool abort)
+ {
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++
++	if (abort)
++		ath_dbg(common, CHAN_CTX, "RoC aborted\n");
++	else
++		ath_dbg(common, CHAN_CTX, "RoC expired\n");
++
+ 	sc->offchannel.roc_vif = NULL;
+ 	sc->offchannel.roc_chan = NULL;
+ 	if (!abort)
+@@ -1037,9 +1044,11 @@ static void ath_offchannel_channel_chang
+ void ath_chanctx_set_next(struct ath_softc *sc, bool force)
+ {
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
++	struct ath_chanctx *old_ctx;
+ 	struct timespec ts;
+ 	bool measure_time = false;
+ 	bool send_ps = false;
++	bool queues_stopped = false;
+ 
+ 	spin_lock_bh(&sc->chan_lock);
+ 	if (!sc->next_chan) {
+@@ -1069,6 +1078,10 @@ void ath_chanctx_set_next(struct ath_sof
+ 			getrawmonotonic(&ts);
+ 			measure_time = true;
+ 		}
++
++		ath9k_chanctx_stop_queues(sc, sc->cur_chan);
++		queues_stopped = true;
++
+ 		__ath9k_flush(sc->hw, ~0, true);
+ 
+ 		if (ath_chanctx_send_ps_frame(sc, true))
+@@ -1082,6 +1095,7 @@ void ath_chanctx_set_next(struct ath_sof
+ 			sc->cur_chan->tsf_val = ath9k_hw_gettsf64(sc->sc_ah);
+ 		}
+ 	}
++	old_ctx = sc->cur_chan;
+ 	sc->cur_chan = sc->next_chan;
+ 	sc->cur_chan->stopped = false;
+ 	sc->next_chan = NULL;
+@@ -1104,7 +1118,16 @@ void ath_chanctx_set_next(struct ath_sof
+ 		if (measure_time)
+ 			sc->sched.channel_switch_time =
+ 				ath9k_hw_get_tsf_offset(&ts, NULL);
++		/*
++		 * A reset will ensure that all queues are woken up,
++		 * so there is no need to awaken them again.
++		 */
++		goto out;
+ 	}
++
++	if (queues_stopped)
++		ath9k_chanctx_wake_queues(sc, old_ctx);
++out:
+ 	if (send_ps)
+ 		ath_chanctx_send_ps_frame(sc, false);
+ 
+@@ -1170,18 +1193,37 @@ bool ath9k_is_chanctx_enabled(void)
+ /* Queue management */
+ /********************/
+ 
+-void ath9k_chanctx_wake_queues(struct ath_softc *sc)
++void ath9k_chanctx_stop_queues(struct ath_softc *sc, struct ath_chanctx *ctx)
++{
++	struct ath_hw *ah = sc->sc_ah;
++	int i;
++
++	if (ctx == &sc->offchannel.chan) {
++		ieee80211_stop_queue(sc->hw,
++				     sc->hw->offchannel_tx_hw_queue);
++	} else {
++		for (i = 0; i < IEEE80211_NUM_ACS; i++)
++			ieee80211_stop_queue(sc->hw,
++					     ctx->hw_queue_base + i);
++	}
++
++	if (ah->opmode == NL80211_IFTYPE_AP)
++		ieee80211_stop_queue(sc->hw, sc->hw->queues - 2);
++}
++
++
++void ath9k_chanctx_wake_queues(struct ath_softc *sc, struct ath_chanctx *ctx)
+ {
+ 	struct ath_hw *ah = sc->sc_ah;
+ 	int i;
+ 
+-	if (sc->cur_chan == &sc->offchannel.chan) {
++	if (ctx == &sc->offchannel.chan) {
+ 		ieee80211_wake_queue(sc->hw,
+ 				     sc->hw->offchannel_tx_hw_queue);
+ 	} else {
+ 		for (i = 0; i < IEEE80211_NUM_ACS; i++)
+ 			ieee80211_wake_queue(sc->hw,
+-					     sc->cur_chan->hw_queue_base + i);
++					     ctx->hw_queue_base + i);
+ 	}
+ 
+ 	if (ah->opmode == NL80211_IFTYPE_AP)
+--- a/drivers/net/wireless/ath/ath9k/htc_drv_init.c
++++ b/drivers/net/wireless/ath/ath9k/htc_drv_init.c
+@@ -464,6 +464,7 @@ static int ath9k_init_priv(struct ath9k_
+ 		return -ENOMEM;
+ 
+ 	ah->dev = priv->dev;
++	ah->hw = priv->hw;
+ 	ah->hw_version.devid = devid;
+ 	ah->hw_version.usbdev = drv_info;
+ 	ah->ah_flags |= AH_USE_EEPROM;
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -60,8 +60,10 @@ static bool ath9k_has_pending_frames(str
+ 
+ 	spin_lock_bh(&txq->axq_lock);
+ 
+-	if (txq->axq_depth)
++	if (txq->axq_depth) {
+ 		pending = true;
++		goto out;
++	}
+ 
+ 	if (txq->mac80211_qnum >= 0) {
+ 		struct list_head *list;
+@@ -70,6 +72,7 @@ static bool ath9k_has_pending_frames(str
+ 		if (!list_empty(list))
+ 			pending = true;
+ 	}
++out:
+ 	spin_unlock_bh(&txq->axq_lock);
+ 	return pending;
+ }
+@@ -261,12 +264,7 @@ static bool ath_complete_reset(struct at
+ 
+ 	ath9k_hw_set_interrupts(ah);
+ 	ath9k_hw_enable_interrupts(ah);
+-
+-	if (!ath9k_is_chanctx_enabled())
+-		ieee80211_wake_queues(sc->hw);
+-	else
+-		ath9k_chanctx_wake_queues(sc);
+-
++	ieee80211_wake_queues(sc->hw);
+ 	ath9k_p2p_ps_timer(sc);
+ 
+ 	return true;
+@@ -1971,9 +1969,6 @@ static bool ath9k_has_tx_pending(struct 
+ 		if (!ATH_TXQ_SETUP(sc, i))
+ 			continue;
+ 
+-		if (!sc->tx.txq[i].axq_depth)
+-			continue;
+-
+ 		npend = ath9k_has_pending_frames(sc, &sc->tx.txq[i]);
+ 		if (npend)
+ 			break;
+@@ -1999,7 +1994,6 @@ void __ath9k_flush(struct ieee80211_hw *
+ 	struct ath_common *common = ath9k_hw_common(ah);
+ 	int timeout = HZ / 5; /* 200 ms */
+ 	bool drain_txq;
+-	int i;
+ 
+ 	cancel_delayed_work_sync(&sc->tx_complete_work);
+ 
+@@ -2027,10 +2021,6 @@ void __ath9k_flush(struct ieee80211_hw *
+ 			ath_reset(sc);
+ 
+ 		ath9k_ps_restore(sc);
+-		for (i = 0; i < IEEE80211_NUM_ACS; i++) {
+-			ieee80211_wake_queue(sc->hw,
+-					     sc->cur_chan->hw_queue_base + i);
+-		}
+ 	}
+ 
+ 	ieee80211_queue_delayed_work(hw, &sc->tx_complete_work, 0);
+@@ -2039,16 +2029,8 @@ void __ath9k_flush(struct ieee80211_hw *
+ static bool ath9k_tx_frames_pending(struct ieee80211_hw *hw)
+ {
+ 	struct ath_softc *sc = hw->priv;
+-	int i;
+-
+-	for (i = 0; i < ATH9K_NUM_TX_QUEUES; i++) {
+-		if (!ATH_TXQ_SETUP(sc, i))
+-			continue;
+ 
+-		if (ath9k_has_pending_frames(sc, &sc->tx.txq[i]))
+-			return true;
+-	}
+-	return false;
++	return ath9k_has_tx_pending(sc);
+ }
+ 
+ static int ath9k_tx_last_beacon(struct ieee80211_hw *hw)
+@@ -2350,7 +2332,7 @@ static void ath9k_remove_chanctx(struct 
+ 		conf->def.chan->center_freq);
+ 
+ 	ctx->assigned = false;
+-	ctx->hw_queue_base = -1;
++	ctx->hw_queue_base = 0;
+ 	ath_chanctx_event(sc, NULL, ATH_CHANCTX_EVENT_UNASSIGN);
+ 
+ 	mutex_unlock(&sc->mutex);
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -448,7 +448,7 @@ static void rate_fixup_ratelist(struct i
+ 	 */
+ 	if (!(rates[0].flags & IEEE80211_TX_RC_MCS)) {
+ 		u32 basic_rates = vif->bss_conf.basic_rates;
+-		s8 baserate = basic_rates ? ffs(basic_rates - 1) : 0;
++		s8 baserate = basic_rates ? ffs(basic_rates) - 1 : 0;
+ 
+ 		rate = &sband->bitrates[rates[0].idx];
+ 
