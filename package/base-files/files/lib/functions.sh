@@ -176,24 +176,36 @@ default_postinst() {
 	[ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg ] && ( . ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg )
 	rusers=$(grep "Require-User:" ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.control)
 	[ -n "$rusers" ] && {
-		local user group
+		local user group uid gid
 		for a in $(echo $rusers | sed "s/Require-User://g"); do
 			user=""
 			group=""
 			for b in $(echo $a | sed "s/:/ /g"); do
+				local name id
+
+				name=$(echo $b | cut -d= -f1)
+				id=$(echo $b | cut -d= -f2)
+
 				[ -z "$user" ] && {
-					user=$b
+					user=$name
+					uid=$id
 					continue
 				}
-				[ -z "$group" ] && {
-					group=$b
-					group_add_next $b
+
+				gid=$id
+				[ -n "$gid" ] && group_add $name $gid
+				[ -z "$gid" ] && {
+					group_add_next $name
 					gid=$?
-					user_exists $user || user_add $user "" $gid
+				}
+
+				[ -z "$group" ] && {
+					user_exists $user || user_add $user "$uid" $gid
+					group=$name
 					continue
 				}
-				group_add_next $b
-				group_add_user $b $user
+
+				group_add_user $name $user
 			done
 		done
 	}
