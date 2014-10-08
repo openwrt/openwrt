@@ -16,7 +16,7 @@ ppp_generic_init_config() {
 	proto_config_add_string pppd_options
 	proto_config_add_string 'connect:file'
 	proto_config_add_string 'disconnect:file'
-	proto_config_add_boolean ipv6
+	proto_config_add_string ipv6
 	proto_config_add_boolean authfail
 	proto_config_add_int mtu
 	proto_config_add_string pppname
@@ -28,9 +28,11 @@ ppp_generic_setup() {
 	json_get_vars ipv6 demand keepalive username password pppd_options pppname
 	if [ "$ipv6" = 0 ]; then
 		ipv6=""
-	else
+	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
 		ipv6=1
+		proto_export "IPV6IFACE=${config}6"
 	fi
+
 	if [ "${demand:-0}" -gt 0 ]; then
 		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
 	else
