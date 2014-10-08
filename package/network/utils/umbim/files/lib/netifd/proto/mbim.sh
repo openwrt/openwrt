@@ -1,9 +1,10 @@
 #!/bin/sh
 
-. /lib/functions.sh
-. ../netifd-proto.sh
-init_proto "$@"
-
+[ -n "$INCLUDE_ONLY" ] || {
+	. /lib/functions.sh
+	. ../netifd-proto.sh
+	init_proto "$@"
+}
 #DBG=-v
 
 proto_mbim_init_config() {
@@ -25,6 +26,8 @@ proto_mbim_setup() {
 
 	local device apn pincode delay
 	json_get_vars device apn pincode delay auth username password
+
+	[ -n "$ctl_device" ] && device=$ctl_device
 
 	[ -n "$device" ] || {
 		echo "mbim[$$]" "No control device specified"
@@ -144,6 +147,8 @@ proto_mbim_teardown() {
 	json_get_vars device
 	local tid=$(uci_get_state network $interface tid)
 
+	[ -n "$ctl_device" ] && device=$ctl_device
+
 	echo "mbim[$$]" "Stopping network"
 	[ -n "$tid" ] && {
 		umbim $DBG -t$tid -d "$device" disconnect
@@ -154,4 +159,4 @@ proto_mbim_teardown() {
 	proto_send_update "$interface"
 }
 
-add_protocol mbim
+[ -n "$INCLUDE_ONLY" ] || add_protocol mbim
