@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/cmake.mk
 define Package/uqmi
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+libubox +libblobmsg-json
+  DEPENDS:=+libubox +libblobmsg-json +kmod-usb-net-qmi-wwan
   TITLE:=Control utility for mobile broadband modems
 endef
 
