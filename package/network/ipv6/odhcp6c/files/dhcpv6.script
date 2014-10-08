@@ -26,6 +26,15 @@ setup_interface () {
 
 	for prefix in $PREFIXES; do
 		proto_add_ipv6_prefix "$prefix"
+                local entry="${prefix#*/}"
+                entry="${entry#*,}"
+                entry="${entry#*,}"
+                local valid="${entry%%,*}"
+
+		if [ -z "$RA_ADDRESSES" -a -z "$RA_ROUTES" -a \
+				-z "$RA_DNS" -a "$FAKE_ROUTES" = 1 ]; then
+			RA_ROUTES="::/0,$SERVER,$valid,4096"
+		fi
 	done
 
 	[ -n "$USERPREFIX" ] && proto_add_ipv6_prefix "$USERPREFIX"
@@ -51,6 +60,11 @@ setup_interface () {
 		local valid="${entry%%,*}"
 
 		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid" 1
+
+                if [ -z "$RA_ADDRESSES" -a -z "$RA_ROUTES" -a \
+                                -z "$RA_DNS" -a "$FAKE_ROUTES" = 1 ]; then
+                        RA_ROUTES="::/0,$SERVER,$valid,4096"
+                fi
 	done
 
 	for entry in $RA_ROUTES; do
