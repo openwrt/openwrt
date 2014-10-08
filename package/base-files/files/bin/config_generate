@@ -62,7 +62,7 @@ EOF
 set network.$1.proto='dhcp'
 delete network.wan6
 set network.wan6='interface'
-set network.wan6.ifname='@wan'
+set network.wan6.ifname='$ifname'
 set network.wan6.proto='dhcpv6'
 EOF
 		;;
