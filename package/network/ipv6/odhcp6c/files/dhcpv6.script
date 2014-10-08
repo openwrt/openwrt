@@ -158,6 +158,9 @@ case "$2" in
 	informed|updated|rebound|ra-updated)
 		setup_interface "$1"
 	;;
+	ra-updated)
+		[ -n "$ADDRESSES$RA_ADDRESSES$PREFIXES$USERPREFIX" ] && setup_interface "$1"
+	;;
 	started|stopped|unbound)
 		teardown_interface "$1"
 	;;
