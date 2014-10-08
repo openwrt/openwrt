@@ -7,6 +7,8 @@ init_proto "$@"
 #DBG=-v
 
 proto_mbim_init_config() {
+	available=1
+	no_device=1
 	proto_config_add_string "device:device"
 	proto_config_add_string apn
 	proto_config_add_string pincode
@@ -36,6 +38,18 @@ proto_mbim_setup() {
 		proto_block_restart "$interface"
 		return 1
 	}
+
+	devname="$(basename "$device")"
+	devpath="$(readlink -f /sys/class/usbmisc/$devname/device/)"
+	ifname="$( ls "$devpath"/net )"
+
+	[ -n "$ifname" ] || {
+		logger -p daemon.err -t "mbim[$$]" "Failed to find matching interface"
+		proto_notify_error "$interface" NO_IFNAME
+		proto_set_available "$interface" 0
+		return 1
+	}
+
 	[ -n "$apn" ] || {
 		logger -p daemon.err -t "mbim[$$]" "No APN specified"
 		proto_notify_error "$interface" NO_APN
@@ -116,14 +130,14 @@ proto_mbim_setup() {
 
 	json_init
 	json_add_string name "${interface}_dhcp"
-	json_add_string ifname "@$interface"
+	json_add_string ifname "$ifname"
 	json_add_string proto "dhcp"
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 
 	json_init
 	json_add_string name "${interface}_dhcpv6"
-	json_add_string ifname "@$interface"
+	json_add_string ifname "$ifname"
 	json_add_string proto "dhcpv6"
 	ubus call network add_dynamic "$(json_dump)"
 }
