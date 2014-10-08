@@ -41,13 +41,13 @@ proto_qmi_setup() {
 	[ -n "$device" ] || {
 		echo "No control device specified"
 		proto_notify_error "$interface" NO_DEVICE
-		proto_block_restart "$interface"
+		proto_set_available "$interface" 0
 		return 1
 	}
 	[ -c "$device" ] || {
 		echo "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
-		proto_block_restart "$interface"
+		proto_set_available "$interface" 0
 		return 1
 	}
 
@@ -57,7 +57,7 @@ proto_qmi_setup() {
 	[ -n "$ifname" ] || {
 		echo "The interface could not be found."
 		proto_notify_error "$interface" NO_IFACE
-		proto_block_restart "$interface"
+		proto_set_available "$interface" 0
 		return 1
 	}
 
@@ -79,7 +79,6 @@ proto_qmi_setup() {
 	[ -n "$apn" ] || {
 		echo "No APN specified"
 		proto_notify_error "$interface" NO_APN
-		proto_block_restart "$interface"
 		return 1
 	}
 
@@ -99,7 +98,6 @@ proto_qmi_setup() {
 	[ $? -ne 0 ] && {
 		echo "Unable to obtain client ID"
 		proto_notify_error "$interface" NO_CID
-		proto_block_restart "$interface"
 		return 1
 	}
 
