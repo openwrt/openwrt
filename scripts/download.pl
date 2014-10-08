@@ -157,6 +157,11 @@ foreach my $mirror (@ARGV) {
 		push @mirrors, "ftp://ftp.belnet.be/mirror/ftp.gnu.org/gnu/$1";
 		push @mirrors, "ftp://ftp.mirror.nl/pub/mirror/gnu/$1";
 		push @mirrors, "http://mirror.switch.ch/ftp/mirror/gnu/$1";
+	} elsif ($mirror =~ /^\@SAVANNAH\/(.+)$/) {
+		push @mirrors, "http://download.savannah.gnu.org/releases/$1";
+		push @mirrors, "http://nongnu.uib.no/$1";
+		push @mirrors, "http://ftp.igh.cnrs.fr/pub/nongnu/$1";
+		push @mirrors, "http://download-mirror.savannah.gnu.org/releases/$1";
 	} elsif ($mirror =~ /^\@KERNEL\/(.+)$/) {
 		my @extra = ( $1 );
 		if ($filename =~ /linux-\d+\.\d+(?:\.\d+)?-rc/) {
