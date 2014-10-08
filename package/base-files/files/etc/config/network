@@ -14,9 +14,5 @@ config interface lan
 	option netmask	255.255.255.0
 	option ip6assign 60
 
-config interface wan6
-	option ifname	@wan
-	option proto	dhcpv6
-
 config globals globals
 	option ula_prefix auto
