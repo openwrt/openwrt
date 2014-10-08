@@ -1,8 +1,10 @@
 #!/bin/sh
 
-. /lib/functions.sh
-. ../netifd-proto.sh
-init_proto "$@"
+[ -n "$INCLUDE_ONLY" ] || {
+	. /lib/functions.sh
+	. ../netifd-proto.sh
+	init_proto "$@"
+}
 
 proto_directip_init_config() {
 	available=1
@@ -21,6 +23,8 @@ proto_directip_setup() {
 
 	local device apn pincode ifname auth username password
 	json_get_vars device apn pincode auth username password
+
+	[ -n "$ctl_device" ] && device=$ctl_device
 
 	[ -e "$device" ] || {
 		proto_notify_error "$interface" NO_DEVICE
@@ -93,10 +97,14 @@ proto_directip_teardown() {
 	local device
 	json_get_vars device
 
+	[ -n "$ctl_device" ] && device=$ctl_device
+
 	gcom -d "$device" -s /etc/gcom/directip-stop.gcom || proto_notify_error "$interface" CONNECT_FAILED
 
 	proto_init_update "*" 0
 	proto_send_update "$interface"
 }
 
-add_protocol directip
+[ -n "$INCLUDE_ONLY" ] || {
+	add_protocol directip
+}

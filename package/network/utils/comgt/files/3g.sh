@@ -1,9 +1,13 @@
 #!/bin/sh
-INCLUDE_ONLY=1
 
-. ../netifd-proto.sh
-. ./ppp.sh
-init_proto "$@"
+[ -n "$INCLUDE_ONLY" ] || {
+	NOT_INCLUDED=1
+	INCLUDE_ONLY=1
+
+	. ../netifd-proto.sh
+	. ./ppp.sh
+	init_proto "$@"
+}
 
 proto_3g_init_config() {
 	no_device=1
@@ -26,6 +30,7 @@ proto_3g_setup() {
 	json_get_var pincode pincode
 	json_get_var dialnumber dialnumber
 
+	[ -n "$dat_device" ] && device=$dat_device
 	[ -e "$device" ] || {
 		proto_set_available "$interface" 0
 		return 1
@@ -101,4 +106,4 @@ proto_3g_teardown() {
 	proto_kill_command "$interface"
 }
 
-add_protocol 3g
+[ -z "NOT_INCLUDED" ] || add_protocol 3g
