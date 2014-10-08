@@ -27,15 +27,15 @@ proto_mbim_setup() {
 	json_get_vars device apn pincode delay auth username password
 
 	[ -n "$device" ] || {
-		logger -p daemon.err -t "mbim[$$]" "No control device specified"
+		echo "mbim[$$]" "No control device specified"
 		proto_notify_error "$interface" NO_DEVICE
-		proto_block_restart "$interface"
+		proto_set_available "$interface" 0
 		return 1
 	}
 	[ -c "$device" ] || {
-		logger -p daemon.err -t "mbim[$$]" "The specified control device does not exist"
+		echo "mbim[$$]" "The specified control device does not exist"
 		proto_notify_error "$interface" NO_DEVICE
-		proto_block_restart "$interface"
+		proto_set_available "$interface" 0
 		return 1
 	}
 
@@ -44,34 +44,32 @@ proto_mbim_setup() {
 	ifname="$( ls "$devpath"/net )"
 
 	[ -n "$ifname" ] || {
-		logger -p daemon.err -t "mbim[$$]" "Failed to find matching interface"
+		echo "mbim[$$]" "Failed to find matching interface"
 		proto_notify_error "$interface" NO_IFNAME
 		proto_set_available "$interface" 0
 		return 1
 	}
 
 	[ -n "$apn" ] || {
-		logger -p daemon.err -t "mbim[$$]" "No APN specified"
+		echo "mbim[$$]" "No APN specified"
 		proto_notify_error "$interface" NO_APN
-		proto_block_restart "$interface"
 		return 1
 	}
 
 	[ -n "$delay" ] && sleep "$delay"
 
-	logger -p daemon.info -t "mbim[$$]" "Reading capabilities"
+	echo "mbim[$$]" "Reading capabilities"
 	umbim $DBG -n -d $device caps || {
-		logger -p daemon.err -t "mbim[$$]" "Failed to read modem caps"
+		echo "mbim[$$]" "Failed to read modem caps"
 		proto_notify_error "$interface" PIN_FAILED
-		proto_block_restart "$interface"
 		return 1
 	}
 	tid=$((tid + 1))
 
 	[ "$pincode" ] && {
-		logger -p daemon.info -t "mbim[$$]" "Sending pin"
+		echo "mbim[$$]" "Sending pin"
 		umbim $DBG -n -t $tid -d $device unlock "$pincode" || {
-			logger -p daemon.err -t "mbim[$$]" "Unable to verify PIN"
+			echo "mbim[$$]" "Unable to verify PIN"
 			proto_notify_error "$interface" PIN_FAILED
 			proto_block_restart "$interface"
 			return 1
@@ -79,43 +77,40 @@ proto_mbim_setup() {
 	}
 	tid=$((tid + 1))
 
-	logger -p daemon.info -t "mbim[$$]" "Checking pin"
+	echo "mbim[$$]" "Checking pin"
 	umbim $DBG -n -t $tid -d $device pinstate || {
-		logger -p daemon.err -t "mbim[$$]" "PIN required"
+		echo "mbim[$$]" "PIN required"
 		proto_notify_error "$interface" PIN_FAILED
 		proto_block_restart "$interface"
 		return 1
 	}
 	tid=$((tid + 1))
 
-	logger -p daemon.info -t "mbim[$$]" "Checking subscriber"
+	echo "mbim[$$]" "Checking subscriber"
  	umbim $DBG -n -t $tid -d $device subscriber || {
-		logger -p daemon.err -t "mbim[$$]" "Subscriber init failed"
+		echo "mbim[$$]" "Subscriber init failed"
 		proto_notify_error "$interface" NO_SUBSCRIBER
-		proto_block_restart "$interface"
 		return 1
 	}
 	tid=$((tid + 1))
 
-	logger -p daemon.info -t "mbim[$$]" "Register with network"
+	echo "mbim[$$]" "Register with network"
   	umbim $DBG -n -t $tid -d $device registration || {
-		logger -p daemon.err -t "mbim[$$]" "Subscriber registration failed"
+		echo "mbim[$$]" "Subscriber registration failed"
 		proto_notify_error "$interface" NO_REGISTRATION
-		proto_block_restart "$interface"
 		return 1
 	}
 	tid=$((tid + 1))
 
-	logger -p daemon.info -t "mbim[$$]" "Attach to network"
+	echo "mbim[$$]" "Attach to network"
    	umbim $DBG -n -t $tid -d $device attach || {
-		logger -p daemon.err -t "mbim[$$]" "Failed to attach to network"
+		echo "mbim[$$]" "Failed to attach to network"
 		proto_notify_error "$interface" ATTACH_FAILED
-		proto_block_restart "$interface"
 		return 1
 	}
 	tid=$((tid + 1))
  
-	logger -p daemon.info -t "mbim[$$]" "Connect to network"
+	echo "mbim[$$]" "Connect to network"
 	while ! umbim $DBG -n -t $tid -d $device connect "$apn" "$auth" "$username" "$password"; do
 		tid=$((tid + 1))
 		sleep 1;
@@ -124,20 +119,20 @@ proto_mbim_setup() {
 
 	uci_set_state network $interface tid "$tid"
 
-	logger -p daemon.info -t "mbim[$$]" "Connected, starting DHCP"
-	proto_init_update "*" 1
+	echo "mbim[$$]" "Connected, starting DHCP"
+	proto_init_update "$ifname" 1
 	proto_send_update "$interface"
 
 	json_init
 	json_add_string name "${interface}_dhcp"
-	json_add_string ifname "$ifname"
+	json_add_string ifname "@$interface"
 	json_add_string proto "dhcp"
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
 
 	json_init
 	json_add_string name "${interface}_dhcpv6"
-	json_add_string ifname "$ifname"
+	json_add_string ifname "@$interface"
 	json_add_string proto "dhcpv6"
 	ubus call network add_dynamic "$(json_dump)"
 }
@@ -149,7 +144,7 @@ proto_mbim_teardown() {
 	json_get_vars device
 	local tid=$(uci_get_state network $interface tid)
 
-	logger -p daemon.info -t "mbim[$$]" "Stopping network"
+	echo "mbim[$$]" "Stopping network"
 	[ -n "$tid" ] && {
 		umbim $DBG -t$tid -d "$device" disconnect
 		uci_revert_state network $interface tid
