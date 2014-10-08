@@ -31,7 +31,7 @@ define Package/lldpd
   TITLE:=Link Layer Discovery Protocol daemon
   URL:=https://github.com/vincentbernat/lldpd/wiki
   DEPENDS:=+libevent2 +USE_EGLIBC:libbsd
-  USERID:=lldp:lldp
+  USERID:=lldp=121:lldp=129
 endef
 
 define Package/lldpd/description
