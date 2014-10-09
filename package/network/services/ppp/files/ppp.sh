@@ -30,7 +30,7 @@ ppp_generic_setup() {
 		ipv6=""
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
 		ipv6=1
-		proto_export "IPV6IFACE=${config}6"
+		proto_export "AUTOIPV6=1"
 	fi
 
 	if [ "${demand:-0}" -gt 0 ]; then
