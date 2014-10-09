@@ -19,3 +19,12 @@ proto_send_update "$PPP_IPPARAM"
 		[ -x "$SCRIPT" ] && "$SCRIPT" "$@"
 	done
 }
+
+if [ -n "$AUTOIPV6" ]; then
+	json_init
+	json_add_string name "${PPP_IPPARAM}_dhcpv6"
+	json_add_string ifname "@$PPP_IPPARAM"
+	json_add_string proto "dhcpv6"
+	json_close_object
+	ubus call network add_dynamic "$(json_dump)"
+fi
