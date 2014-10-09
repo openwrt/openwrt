@@ -94,6 +94,29 @@ network_get_ipaddrs6() {
 	return 1
 }
 
+# determine all IP addresses of given logical interface
+# 1: destination variable
+# 2: interface
+network_get_ipaddrs_all() {
+	local __addr
+	local __list=""
+
+	if __network_ifstatus "__addr" "$2" "['ipv4-address','ipv6-address','ipv6-prefix-assignment'][*].address"; then
+		for __addr in $__addr; do
+			case "$__addr" in
+				*:) __list="${__list:+$__list }${__addr}1" ;;
+				*)  __list="${__list:+$__list }${__addr}"  ;;
+			esac
+		done
+
+		export "$1=$__list"
+		return 0
+	fi
+
+	unset "$1"
+	return 1
+}
+
 # determine all IPv4 subnets of given logical interface
 # 1: destination variable
 # 2: interface
