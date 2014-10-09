@@ -39,6 +39,13 @@ endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 # $(2): dts filename (also used for the firmware file).
+define Image/Build/Trx
+	$(call Image/Build/$(1)/DTB,$(2))
+	cp $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx $(BIN_DIR)/
+endef
+
+# $(1): filesystem type (e.g. squashfs, initramfs).
+# $(2): dts filename (also used for the firmware file).
 # $(3): board_id (device specific magic).
 # $(4): region.
 define Image/Build/Chk
@@ -48,6 +55,8 @@ endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 define Image/Build
+	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp)
+
 	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,U12H245T00_NETGEAR,1)
 	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,U12H240T00_NETGEAR,1)
 endef
