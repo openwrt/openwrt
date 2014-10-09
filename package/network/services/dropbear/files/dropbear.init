@@ -14,20 +14,15 @@ EXTRA_HELP="	killclients Kill ${NAME} processes except servers and yourself"
 
 append_ports()
 {
-	local ifname="$1"
+	local ipaddrs="$1"
 	local port="$2"
 
-	grep -qs "^ *$ifname:" /proc/net/dev || {
+	[ -z "$ipaddrs" ] && {
 		procd_append_param command -p "$port"
 		return
 	}
 
-	for addr in $(
-		ifconfig "$ifname" | sed -ne '
-			/addr: *fe[89ab][0-9a-f]:/d
-			s/.* addr: *\([0-9a-f:\.]*\).*/\1/p
-		'
-	); do
+	for addr in $ipaddrs; do
 		procd_append_param command -p "$addr:$port"
 	done
 }
@@ -55,11 +50,18 @@ dropbear_instance()
 	local PasswordAuth enable Interface GatewayPorts \
 		RootPasswordAuth RootLogin rsakeyfile \
 		dsskeyfile BannerFile Port SSHKeepAlive IdleTimeout \
-		mdns
+		mdns ipaddrs
 
 	validate_section_dropbear "${1}" || {
 		echo "validation failed"
 		return 1
+	}
+
+	[ -n "${Interface}" ] && {
+		network_get_ipaddrs_all ipaddrs "${Interface}" || {
+			echo "interface ${Interface} has no physdev or physdev has no suitable ip"
+			return 1
+		}
 	}
 
 	[ "${enable}" = "0" ] && return 1
@@ -75,8 +77,7 @@ dropbear_instance()
 	[ -n "${rsakeyfile}" ] && procd_append_param command -r "${rsakeyfile}"
 	[ -n "${dsskeyfile}" ] && procd_append_param command -d "${dsskeyfile}"
 	[ -n "${BannerFile}" ] && procd_append_param command -b "${BannerFile}"
-	[ -n "${Interface}" ] && network_get_device Interface "${Interface}"
-	append_ports "${Interface}" "${Port}"
+	append_ports "${ipaddrs}" "${Port}"
 	[ "${IdleTimeout}" -ne 0 ] && procd_append_param command -I "${IdleTimeout}"
 	[ "${SSHKeepAlive}" -ne 0 ] && procd_append_param command -K "${SSHKeepAlive}"
 	[ "${mdns}" -ne 0 ] && procd_add_mdns "ssh" "tcp" "$Port" "daemon=dropbear"
