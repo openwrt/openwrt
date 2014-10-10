@@ -40,6 +40,12 @@ $(call Package/comgt/Default)
   DEPENDS:=+comgt +kmod-usb-serial +kmod-usb-serial-sierrawireless +kmod-usb-net +kmod-usb-net-sierrawireless
 endef
 
+define Package/comgt-ncm
+$(call Package/comgt/Default)
+  TITLE+=NCM 3G/4G Support
+  DEPENDS:=+comgt +kmod-usb-serial +kmod-usb-serial-option +kmod-usb-net +kmod-usb-net-cdc-ncm +kmod-usb-net-huawei-cdc-ncm
+endef
+
 define Package/comgt/description
  comgt is a scripting language interpreter useful for establishing 
  communications on serial lines and through PCMCIA modems as well as GPRS 
@@ -86,5 +92,14 @@ define Package/comgt-directip/install
 	$(INSTALL_BIN) ./files/directip.sh $(1)/lib/netifd/proto/directip.sh
 endef
 
+define Package/comgt-ncm/install
+	$(INSTALL_DIR) $(1)/etc/gcom
+	$(INSTALL_DATA) ./files/ncm.json $(1)/etc/gcom/ncm.json
+	$(INSTALL_DATA) ./files/runcommand.gcom $(1)/etc/gcom/runcommand.gcom
+	$(INSTALL_DIR) $(1)/lib/netifd/proto
+	$(INSTALL_BIN) ./files/ncm.sh $(1)/lib/netifd/proto/ncm.sh
+endef
+
 $(eval $(call BuildPackage,comgt))
 $(eval $(call BuildPackage,comgt-directip))
+$(eval $(call BuildPackage,comgt-ncm))
