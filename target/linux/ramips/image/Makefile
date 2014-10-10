@@ -550,6 +550,13 @@ Image/Build/Profile/WNCE2001=$(call BuildFirmware/WNCE2001/$(1),$(1),wnce2001,WN
 
 Image/Build/Profile/WR512-3GN=$(call BuildFirmware/DefaultDualSize/$(1),$(1),wr512-3ng,WR512-3GN)
 
+define BuildFirmware/WT1520/initramfs
+	$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
+endef
+BuildFirmware/WT1520/squashfs=$(call BuildFirmware/Default4M/squashfs,$(1),$(2),$(3),$(4))
+
+Image/Build/Profile/WT1520=$(call BuildFirmware/WT1520/$(1),$(1),wt1520,WT1520,WT1520)
+
 Image/Build/Profile/UR-326N4G=$(call BuildFirmware/Default4M/$(1),$(1),ur-326n4g,UR-326N4G)
 
 Image/Build/Profile/UR-336UN=$(call BuildFirmware/Default8M/$(1),$(1),ur-336un,UR-336UN)
@@ -638,6 +645,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WNCE2001,$(1))
 	$(call Image/Build/Profile/WR512-3GN,$(1))
 	$(call Image/Build/Profile/WR6202,$(1))
+	$(call Image/Build/Profile/WT1520,$(1))
 	$(call Image/Build/Profile/X5,$(1))
 	$(call Image/Build/Profile/X8,$(1))
 	$(call Image/Build/Profile/XDXRN502J,$(1))

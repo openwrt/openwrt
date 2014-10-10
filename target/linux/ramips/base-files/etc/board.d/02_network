@@ -110,7 +110,8 @@ ramips_setup_interfaces()
 	dir-615-h1 | \
 	hlk-rm04 | \
 	mzk-w300nh2 | \
-	mzk-750dhp)
+	mzk-750dhp | \
+	wt1520)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 6t"

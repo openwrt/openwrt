@@ -181,6 +181,9 @@ ramips_board_detect() {
 	*"NexAira BC2")
 		name="bc2"
 		;;
+	*"Nexx WT1520")
+		name="wt1520"
+		;;
 	*"NW718")
 		name="nw718"
 		;;

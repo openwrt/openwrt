@@ -90,6 +90,7 @@ platform_check_image() {
 	wnce2001 | \
 	wli-tx4-ag300n | \
 	whr-g300n |\
+	wt1520 |\
 	ur-326n4g |\
 	ur-336un |\
 	wr512-3gn |\

@@ -210,6 +210,9 @@ case $board in
 		set_usb_led "wr8305rt:usb"
 		set_wifi_led "wr8305rt:wifi"
 		;;
+	wt1520)
+		set_wifi_led "rt2800pci-phy0::radio"
+		;;
 	y1 |\
 	y1s)
 		ucidef_set_led_default "power" "power" "lenovo:blue:power" "1"
