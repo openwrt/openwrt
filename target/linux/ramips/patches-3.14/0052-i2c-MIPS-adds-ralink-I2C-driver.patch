@@ -75,8 +75,8 @@ Index: linux-3.14.18/drivers/i2c/busses/Makefile
 Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/i2c/busses/i2c-ralink.c	2014-10-06 15:53:32.416500362 +0200
-@@ -0,0 +1,298 @@
++++ linux-3.14.18/drivers/i2c/busses/i2c-ralink.c	2014-10-09 19:38:29.242416182 +0200
+@@ -0,0 +1,299 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -107,7 +107,6 @@ Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 +#include <linux/platform_device.h>
 +#include <linux/i2c.h>
 +#include <linux/io.h>
-+#include <linux/of_i2c.h>
 +#include <linux/err.h>
 +
 +#include <asm/mach-ralink/ralink_regs.h>
@@ -200,7 +199,7 @@ Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 +	int nblock = msg->len / READ_BLOCK;
 +        int rem = msg->len % READ_BLOCK;
 +	int ret = 0;
-+	/*printk("i2c handle msg len:%d\n",msg->len);*/
++
 +	if (msg->flags & I2C_M_TEN) {
 +		printk("10 bits addr not supported\n");
 +		return -EINVAL;
@@ -209,14 +208,16 @@ Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 +	if (msg->flags & I2C_M_RD) {
 +		for (i = 0; i < nblock; i++) {
 +	                if (rt_i2c_wait_idle()) {
-+       		            printk("i2c-read line busy\n");
-+                 	    return -ETIMEDOUT;
-+                	}
++		            printk("i2c-read line busy\n");
++				return -ETIMEDOUT;
++			}
 +			rt_i2c_w32(READ_BLOCK - 1, REG_BYTECNT_REG);
 +			rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
 +			for (j = 0; j < READ_BLOCK; j++) {
-+				if (rt_i2c_wait_rx_done()<0) ret = rt_i2c_wait_rx_done();
-+                                if (rt_i2c_get_ack()<0)      ret = rt_i2c_get_ack();
++				if (rt_i2c_wait_rx_done() < 0)
++					ret = rt_i2c_wait_rx_done();
++                                if (rt_i2c_get_ack() < 0)
++					ret = rt_i2c_get_ack();
 +				msg->buf[pos++] = rt_i2c_r32(REG_DATAIN_REG);
 +			}
 +		}
@@ -225,13 +226,15 @@ Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 +			printk("i2c-read line busy\n");
 +			return -ETIMEDOUT;
 +		}
-+		if (rem){
-+		rt_i2c_w32(rem - 1, REG_BYTECNT_REG);
-+		rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
++		if (rem) {
++			rt_i2c_w32(rem - 1, REG_BYTECNT_REG);
++			rt_i2c_w32(READ_CMD, REG_STARTXFR_REG);
 +		}
 +		for (i = 0; i < rem; i++) {
-+			if (rt_i2c_wait_rx_done()<0) ret = rt_i2c_wait_rx_done();
-+                        if (rt_i2c_get_ack()     <0) ret = rt_i2c_get_ack();
++			if (rt_i2c_wait_rx_done() < 0)
++				ret = rt_i2c_wait_rx_done();
++                        if (rt_i2c_get_ack() < 0)
++				ret = rt_i2c_get_ack();
 +
 +			msg->buf[pos++] = rt_i2c_r32(REG_DATAIN_REG);
 +		}
@@ -245,10 +248,10 @@ Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 +			rt_i2c_w32(msg->buf[i], REG_DATAOUT_REG);
 +			rt_i2c_w32(WRITE_CMD, REG_STARTXFR_REG);
 +
-+			if (rt_i2c_wait_tx_done()<0) ret = rt_i2c_wait_tx_done();
-+                        if (rt_i2c_get_ack()<0)      ret = rt_i2c_get_ack();
-+
-+
++			if (rt_i2c_wait_tx_done() < 0)
++				ret = rt_i2c_wait_tx_done();
++                        if (rt_i2c_get_ack() < 0)
++				ret = rt_i2c_get_ack();
 +		}
 +	}
 +
@@ -324,8 +327,6 @@ Index: linux-3.14.18/drivers/i2c/busses/i2c-ralink.c
 +	ret = i2c_add_numbered_adapter(adapter);
 +	if (ret)
 +		return ret;
-+
-+	of_i2c_register_devices(adapter);
 +
 +	platform_set_drvdata(pdev, adapter);
 +
