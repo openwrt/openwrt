@@ -8,7 +8,7 @@ find_3g_iface() {
 
 	local proto
 	config_get proto "$cfg" proto
-	[ "$proto" = 3g ] || return 0
+	[ "$proto" = 3g ] || [ "$proto" = ncm ] || return 0
 
 	# bypass state vars here because 00-netstate could clobber .device
 	local dev=$(uci_get network "$cfg" device)
