@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-NAND_BLOCKSIZE=2048:128k
+NAND_BLOCKSIZE=2048-128k
 
 define Image/BuildKernel
 	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
