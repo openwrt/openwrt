@@ -69,6 +69,7 @@ fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addprefix jffs2-,$(JFFS2_BLOCKSIZE))
 fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2_NAND) += $(addprefix jffs2-nand-,$(NAND_BLOCKSIZE))
 fs-types-$(CONFIG_TARGET_ROOTFS_EXT4FS) += ext4
 fs-types-$(CONFIG_TARGET_ROOTFS_ISO) += iso
+fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-,$(JFFS2_BLOCKSIZE)))
 TARGET_FILESYSTEMS := $(fs-types-y)
 
 define add_jffs2_mark
@@ -102,14 +103,17 @@ define Image/BuildKernel/MkFIT
 endef
 
 define Image/mkfs/jffs2/sub
-		# FIXME: removing this line will cause strange behaviour in the foreach loop below
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) --pad -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2)-raw -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
+endef
+
+define Image/mkfs/jffs2/sub-raw
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2)-raw -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 endef
 
 define Image/mkfs/jffs2/template
   Image/mkfs/jffs2-$(1) = $$(call Image/mkfs/jffs2/sub,$(1),$(1),$(JFFS2OPTS))
+  Image/mkfs/jffs2-$(1)-raw = $$(call Image/mkfs/jffs2/sub-raw,$(1),$(1),$(JFFS2OPTS))
 
 endef
 
@@ -275,7 +279,7 @@ define BuildImage
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
 	$(call Image/InstallKernel)
 
-  $(foreach fs,$(TARGET_FILESYSTEMS),$(call BuildImage/mkfs,$(fs)))
+  $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
 
   install: kernel_prepare install-targets
 	$(call Image/mkfs/cpiogz)
