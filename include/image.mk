@@ -70,6 +70,9 @@ fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2_NAND) += $(addprefix jffs2-nand-,$(NAND_BL
 fs-types-$(CONFIG_TARGET_ROOTFS_EXT4FS) += ext4
 fs-types-$(CONFIG_TARGET_ROOTFS_ISO) += iso
 fs-subtypes-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addsuffix -raw,$(addprefix jffs2-,$(JFFS2_BLOCKSIZE)))
+fs-subtypes-$(CONFIG_TARGET_ROOTFS_CPIOGZ) += cpiogz
+fs-subtypes-$(CONFIG_TARGET_ROOTFS_TARGZ) += targz
+
 TARGET_FILESYSTEMS := $(fs-types-y)
 
 define add_jffs2_mark
@@ -198,18 +201,13 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
     endef
 endif
 
-ifneq ($(CONFIG_TARGET_ROOTFS_CPIOGZ),)
-  define Image/mkfs/cpiogz
-		( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
-  endef
-endif
+define Image/mkfs/cpiogz
+	( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
+endef
 
-ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
-  define Image/mkfs/targz
-		# Preserve permissions (-p) when building as non-root user
-		$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE),-$(PROFILE))-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
-  endef
-endif
+define Image/mkfs/targz
+	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE),-$(PROFILE))-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+endef
 
 E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024/$(CONFIG_TARGET_EXT4_BLOCKSIZE))))
 
@@ -282,8 +280,6 @@ define BuildImage
   $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
 
   install: kernel_prepare install-targets
-	$(call Image/mkfs/cpiogz)
-	$(call Image/mkfs/targz)
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$(call Image/Build,$(fs))
 	)
