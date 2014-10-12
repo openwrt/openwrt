@@ -122,7 +122,7 @@ nand_upgrade_prepare_ubi() {
 		ubiattach -m "$mtdnum"
 		sync
 		ubidev="$( nand_find_ubi "$CI_UBIPART" )"
-	 	[ -z "$has_env" ] || {
+		[ "$has_env" -gt 0 ] && {
 			ubimkvol /dev/$ubidev -n 0 -N ubootenv -s 1MiB
 			ubimkvol /dev/$ubidev -n 1 -N ubootenv2 -s 1MiB
 		}
