@@ -250,52 +250,35 @@ define BuildImage
 
   download:
   prepare:
+  compile:
+  clean:
+  image_prepare:
 
   ifeq ($(IB),)
     compile: compile-targets FORCE
 		$(call Build/Compile)
-  else
-    compile:
-  endif
 
-  ifeq ($(IB),)
-    install: compile install-targets FORCE
-		$(call Image/Prepare)
-		$(call Image/mkfs/prepare)
-		$(call Image/BuildKernel)
-		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
-		$(call Image/InstallKernel)
-		$(call Image/mkfs/cpiogz)
-		$(call Image/mkfs/targz)
-		$(call Image/mkfs/ext4)
-		$(call Image/mkfs/iso)
-		$(call Image/mkfs/jffs2)
-		$(call Image/mkfs/jffs2_nand)
-		$(call Image/mkfs/squashfs)
-		$(call Image/mkfs/ubifs)
-		$(call Image/Checksum)
-  else
-    install: compile install-targets
-		$(call Image/BuildKernel)
-		$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
-		$(call Image/InstallKernel)
-		$(call Image/mkfs/cpiogz)
-		$(call Image/mkfs/targz)
-		$(call Image/mkfs/ext4)
-		$(call Image/mkfs/iso)
-		$(call Image/mkfs/jffs2)
-		$(call Image/mkfs/jffs2_nand)
-		$(call Image/mkfs/squashfs)
-		$(call Image/mkfs/ubifs)
-		$(call Image/Checksum)
-  endif
-
-  ifeq ($(IB),)
     clean: clean-targets
 		$(call Build/Clean)
-  else
-    clean:
+
+    image_prepare: compile FORCE
+		$(call Image/Prepare)
+		$(call Image/mkfs/prepare)
   endif
+
+  install: image_prepare install-targets FORCE
+	$(call Image/BuildKernel)
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
+	$(call Image/InstallKernel)
+	$(call Image/mkfs/cpiogz)
+	$(call Image/mkfs/targz)
+	$(call Image/mkfs/ext4)
+	$(call Image/mkfs/iso)
+	$(call Image/mkfs/jffs2)
+	$(call Image/mkfs/jffs2_nand)
+	$(call Image/mkfs/squashfs)
+	$(call Image/mkfs/ubifs)
+	$(call Image/Checksum)
 
   compile-targets:
   install-targets:
