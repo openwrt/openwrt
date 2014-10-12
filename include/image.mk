@@ -263,10 +263,12 @@ define BuildImage
 
     image_prepare: compile FORCE
 		$(call Image/Prepare)
-		$(call Image/mkfs/prepare)
   endif
 
-  install: image_prepare install-targets FORCE
+  mkfs_prepare: image_prepare
+	$(call Image/mkfs/prepare)
+
+  install: mkfs_prepare install-targets FORCE
 	$(call Image/BuildKernel)
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
 	$(call Image/InstallKernel)
