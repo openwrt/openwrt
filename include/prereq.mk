@@ -39,6 +39,7 @@ define Require
     CHECK_$(1):=1
 
     .SILENT: prereq-$(1) check-$(1)
+    .NOTPARALLEL:
   endif
 endef
 
@@ -59,4 +60,3 @@ define RequireHeader
   $$(eval $$(call Require,$(1),$(2)))
 endef
 
-.NOTPARALLEL:
