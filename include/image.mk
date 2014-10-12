@@ -10,8 +10,9 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
 
-override MAKEFLAGS=
-override MAKE:=$(SUBMAKE)
+override MAKE:=$(_SINGLE)$(SUBMAKE)
+override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
+
 KDIR=$(KERNEL_BUILD_DIR)
 DTS_DIR:=$(LINUX_DIR)/arch/$(ARCH)/boot/dts/
 
@@ -63,6 +64,13 @@ endif
 
 JFFS2_BLOCKSIZE ?= 64k 128k
 
+fs-types-$(CONFIG_TARGET_ROOTFS_SQUASHFS) += squashfs
+fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2) += $(addprefix jffs2-,$(JFFS2_BLOCKSIZE))
+fs-types-$(CONFIG_TARGET_ROOTFS_JFFS2_NAND) += $(addprefix jffs2-nand-,$(NAND_BLOCKSIZE))
+fs-types-$(CONFIG_TARGET_ROOTFS_EXT4FS) += ext4
+fs-types-$(CONFIG_TARGET_ROOTFS_ISO) += iso
+TARGET_FILESYSTEMS := $(fs-types-y)
+
 define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
@@ -98,31 +106,27 @@ define Image/mkfs/jffs2/sub
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) --pad -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2)-raw -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
-		$(call Image/Build,jffs2-$(2))
 endef
 
-ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2),)
-    define Image/mkfs/jffs2
-		$(foreach SZ,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/sub,$(SZ),$(SZ),$(JFFS2OPTS)))
-    endef
-endif
+define Image/mkfs/jffs2/template
+  Image/mkfs/jffs2-$(1) = $$(call Image/mkfs/jffs2/sub,$(1),$(1),$(JFFS2OPTS))
 
-ifneq ($(CONFIG_TARGET_ROOTFS_JFFS2_NAND),)
-    define Image/mkfs/jffs2_nand
-		$(foreach SZ,$(NAND_BLOCKSIZE), $(call Image/mkfs/jffs2/sub, \
-			$(word 2,$(subst :, ,$(SZ))),nand-$(subst :,-,$(SZ)), \
-			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst :, ,$(SZ)))) \
-		)
-    endef
-endif
+endef
 
-ifneq ($(CONFIG_TARGET_ROOTFS_SQUASHFS),)
-    define Image/mkfs/squashfs
-		@mkdir -p $(TARGET_DIR)/overlay
-		$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp $(SQUASHFSCOMP) $(SQUASHFSOPT) -processors $(if $(CONFIG_PKG_BUILD_JOBS),$(CONFIG_PKG_BUILD_JOBS),1)
-		$(call Image/Build,squashfs)
-    endef
-endif
+define Image/mkfs/jffs2-nand/template
+  Image/mkfs/jffs2-nand-$(1) = \
+	$$(call Image/mkfs/jffs2/sub, \
+		$(word 2,$(subst -, ,$(1))),nand-$(1), \
+			$(JFFS2OPTS) --no-cleanmarkers --pagesize=$(word 1,$(subst -, ,$(1))))
+
+endef
+
+$(eval $(foreach S,$(JFFS2_BLOCKSIZE),$(call Image/mkfs/jffs2/template,$(S))))
+$(eval $(foreach S,$(NAND_BLOCKSIZE),$(call Image/mkfs/jffs2-nand/template,$(S))))
+
+define Image/mkfs/squashfs
+	$(STAGING_DIR_HOST)/bin/mksquashfs4 $(TARGET_DIR) $(KDIR)/root.squashfs -nopad -noappend -root-owned -comp $(SQUASHFSCOMP) $(SQUASHFSOPT) -processors $(if $(CONFIG_PKG_BUILD_JOBS),$(CONFIG_PKG_BUILD_JOBS),1)
+endef
 
 # $(1): board name
 # $(2): rootfs type
@@ -203,33 +207,23 @@ ifneq ($(CONFIG_TARGET_ROOTFS_TARGZ),)
   endef
 endif
 
-ifneq ($(CONFIG_TARGET_ROOTFS_EXT4FS),)
-  E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024/$(CONFIG_TARGET_EXT4_BLOCKSIZE))))
+E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024/$(CONFIG_TARGET_EXT4_BLOCKSIZE))))
 
-  define Image/mkfs/ext4
+define Image/mkfs/ext4
 # generate an ext2 fs
 	$(STAGING_DIR_HOST)/bin/genext2fs -U -B $(CONFIG_TARGET_EXT4_BLOCKSIZE) -b $(E2SIZE) -N $(CONFIG_TARGET_EXT4_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext4 -m $(CONFIG_TARGET_EXT4_RESERVED_PCT) $(MKFS_DEVTABLE_OPT)
 # convert it to ext4
 	$(STAGING_DIR_HOST)/bin/tune2fs $(if $(CONFIG_TARGET_EXT4_JOURNAL),-j) -O extents,uninit_bg,dir_index $(KDIR)/root.ext4
 # fix it up
 	$(STAGING_DIR_HOST)/bin/e2fsck -fy $(KDIR)/root.ext4
-	$(call Image/Build,ext4)
-  endef
-endif
-
-ifneq ($(CONFIG_TARGET_ROOTFS_ISO),)
-  define Image/mkfs/iso
-		$(call Image/Build,iso)
-  endef
-endif
-
+endef
 
 define Image/mkfs/prepare/default
 	# Use symbolic permissions to avoid clobbering SUID/SGID/sticky bits
 	- $(FIND) $(TARGET_DIR) -type f -not -perm +0100 -not -name 'ssh_host*' -not -name 'shadow' -print0 | $(XARGS) -0 chmod u+rw,g+r,o+r
 	- $(FIND) $(TARGET_DIR) -type f -perm +0100 -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
 	- $(FIND) $(TARGET_DIR) -type d -print0 | $(XARGS) -0 chmod u+rwx,g+rx,o+rx
-	$(INSTALL_DIR) $(TARGET_DIR)/tmp
+	$(INSTALL_DIR) $(TARGET_DIR)/tmp $(TARGET_DIR)/overlay
 	chmod 1777 $(TARGET_DIR)/tmp
 endef
 
@@ -245,6 +239,13 @@ define Image/Checksum
 	)
 endef
 
+define BuildImage/mkfs
+  install: mkfs-$(1)
+  .PHONY: mkfs-$(1)
+  mkfs-$(1): mkfs_prepare
+	$(Image/mkfs/$(1))
+
+endef
 
 define BuildImage
 
@@ -255,30 +256,33 @@ define BuildImage
   image_prepare:
 
   ifeq ($(IB),)
-    compile: compile-targets FORCE
+    .PHONY: download prepare compile clean image_prepare mkfs_prepare kernel_prepare install
+    compile: compile-targets
 		$(call Build/Compile)
 
     clean: clean-targets
 		$(call Build/Clean)
 
-    image_prepare: compile FORCE
+    image_prepare: compile
 		$(call Image/Prepare)
   endif
 
   mkfs_prepare: image_prepare
 	$(call Image/mkfs/prepare)
 
-  install: mkfs_prepare install-targets FORCE
+  kernel_prepare: mkfs_prepare
 	$(call Image/BuildKernel)
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
 	$(call Image/InstallKernel)
+
+  $(foreach fs,$(TARGET_FILESYSTEMS),$(call BuildImage/mkfs,$(fs)))
+
+  install: kernel_prepare install-targets
 	$(call Image/mkfs/cpiogz)
 	$(call Image/mkfs/targz)
-	$(call Image/mkfs/ext4)
-	$(call Image/mkfs/iso)
-	$(call Image/mkfs/jffs2)
-	$(call Image/mkfs/jffs2_nand)
-	$(call Image/mkfs/squashfs)
+	$(foreach fs,$(TARGET_FILESYSTEMS),
+		$(call Image/Build,$(fs))
+	)
 	$(call Image/mkfs/ubifs)
 	$(call Image/Checksum)
 

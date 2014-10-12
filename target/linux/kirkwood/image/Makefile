@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-NAND_BLOCKSIZE := 2048:128k
+NAND_BLOCKSIZE := 2048-128k
 
 define sanitize_profile_name
 $(shell echo $(PROFILE) | tr '[:upper:]' '[:lower:]')
