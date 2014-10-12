@@ -65,6 +65,7 @@ setup_interface () {
 		[ -n "$IFACE6RD_DELEGATE" ] && json_add_boolean delegate "$IFACE6RD_DELEGATE"
 		[ -n "$ZONE6RD" ] || ZONE6RD=$ZONE
 		[ -n "$ZONE6RD" ] && json_add_string zone "$ZONE6RD"
+		[ -n "$MTU6RD" ] && json_add_string mtu "$MTU6RD"
 		json_close_object
 
 		ubus call network add_dynamic "$(json_dump)"
