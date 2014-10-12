@@ -259,10 +259,10 @@ define BuildImage
 
   ifeq ($(IB),)
     .PHONY: download prepare compile clean image_prepare mkfs_prepare kernel_prepare install
-    compile: compile-targets
+    compile:
 		$(call Build/Compile)
 
-    clean: clean-targets
+    clean:
 		$(call Build/Clean)
 
     image_prepare: compile
@@ -279,15 +279,11 @@ define BuildImage
 
   $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
 
-  install: kernel_prepare install-targets
+  install: kernel_prepare
 	$(foreach fs,$(TARGET_FILESYSTEMS),
 		$(call Image/Build,$(fs))
 	)
 	$(call Image/mkfs/ubifs)
 	$(call Image/Checksum)
-
-  compile-targets:
-  install-targets:
-  clean-targets:
 
 endef
