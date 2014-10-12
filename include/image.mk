@@ -10,7 +10,6 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
 
-.NOTPARALLEL:
 override MAKEFLAGS=
 override MAKE:=$(SUBMAKE)
 KDIR=$(KERNEL_BUILD_DIR)
