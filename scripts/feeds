@@ -585,7 +585,8 @@ sub update {
 	if ( ($#ARGV == -1) or $opts{a}) {
 		foreach my $feed (@feeds) {
 			my ($type, $name, $src) = @$feed;
-			update_feed($type, $name, $src, $perform_update);
+			next unless update_feed($type, $name, $src, $perform_update) == 1;
+			last;
 		}
 	} else {
 		while ($feed_name = shift @ARGV) {
