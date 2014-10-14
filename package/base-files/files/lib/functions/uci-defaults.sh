@@ -140,7 +140,7 @@ EOF
 
 ucidef_commit_leds()
 {
-	[ "$UCIDEF_LEDS_CHANGED" == "1" ] && uci commit system
+	[ "$UCIDEF_LEDS_CHANGED" = "1" ] && uci commit system
 }
 
 ucidef_set_interface_loopback() {

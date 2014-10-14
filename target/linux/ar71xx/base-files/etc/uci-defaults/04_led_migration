@@ -26,7 +26,7 @@ do_led_update_sysfs()
 
 		new_sysfs=$(echo ${sysfs} | sed "s/${old}/${new}/")
 
-		[ "${new_sysfs}" == "${sysfs}" ] && continue
+		[ "$new_sysfs" = "$sysfs" ] && continue
 
 		uci set system.${cfg}.sysfs="${new_sysfs}"
 		LED_OPTIONS_CHANGED=1
@@ -80,6 +80,6 @@ wnr612-v2)
 	;;
 esac
 
-[ "$LED_OPTIONS_CHANGED" == "1" ] && uci commit system
+[ "$LED_OPTIONS_CHANGED" = "1" ] && uci commit system
 
 exit 0

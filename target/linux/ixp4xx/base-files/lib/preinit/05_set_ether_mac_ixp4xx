@@ -6,7 +6,7 @@ set_ether_mac() {
 
 	for npe in eth0 eth1 eth2
 	do
-		if [ "$(ifconfig $npe 2>/dev/null | grep -c 00:00:00:00:00:00)" == "1" ]; then
+		if [ "$(ifconfig $npe 2>/dev/null | grep -c 00:00:00:00:00:00)" = "1" ]; then
 			ifconfig $npe hw ether $(fconfig -s -r -d /dev/$RB_CONFIG -n npe_"$npe"_esa)
 		fi
 	done
@@ -14,16 +14,16 @@ set_ether_mac() {
 	# Some developers should be shot on sight at Zcom/Netgear
 	# -- Fixup for the WG302v1, need someone with a WAG302v1 to fix that, too
 
-	if [ "$(ifconfig eth0 2>/dev/null | grep -c 00:00:00:00:00:00)" == "1" ]; then
+	if [ "$(ifconfig eth0 2>/dev/null | grep -c 00:00:00:00:00:00)" = "1" ]; then
 			ifconfig eth0 hw ether $(fconfig -s -r -d /dev/$RB_CONFIG -n zcom_npe_esa)
 	fi
 
 	# Others (*cough*, Tonze) are dumb enough to not handle mac addresses at all
 
-	if [ "$(ifconfig eth0 2>/dev/null | grep -c 00:00:00:00:00:00)" == "1" ]; then
+	if [ "$(ifconfig eth0 2>/dev/null | grep -c 00:00:00:00:00:00)" = "1" ]; then
 		ifconfig eth0 hw ether 00:11:22:33:44:55
 	fi
-	if [ "$(ifconfig eth1 2>/dev/null | grep -c 00:00:00:00:00:00)" == "1" ]; then
+	if [ "$(ifconfig eth1 2>/dev/null | grep -c 00:00:00:00:00:00)" = "1" ]; then
 		ifconfig eth1 hw ether 00:11:22:33:44:56
 	fi
 }

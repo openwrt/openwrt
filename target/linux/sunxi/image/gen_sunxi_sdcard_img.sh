@@ -8,7 +8,7 @@
 #
 
 set -x 
-[ $# == 6 ] || {
+[ $# -eq 6 ] || {
     echo "SYNTAX: $0 <file> <bootfs image> <rootfs image> <bootfs size> <rootfs size> <u-boot image>"
     exit 1
 }

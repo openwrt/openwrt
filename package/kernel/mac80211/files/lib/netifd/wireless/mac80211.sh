@@ -476,7 +476,7 @@ mac80211_setup_adhoc() {
 	json_get_vars bssid ssid key mcast_rate
 
 	keyspec=
-	[ "$auth_type" == "wep" ] && {
+	[ "$auth_type" = "wep" ] && {
 		set_default key 1
 		case "$key" in
 			[1234])

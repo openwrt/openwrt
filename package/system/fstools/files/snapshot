@@ -38,16 +38,16 @@ do_config_push() {
 
 do_snapshot_upgrade() {
 	opkg update
-	[ $? == 0 ] || exit 1
+	[ $? -eq 0 ] || exit 1
 
 	opkg list-upgradable
-	[ $? == 0 ] || exit 2
+	[ $? -eq 0 ] || exit 2
 	
 	UPDATES=`opkg list-upgradable | cut -d" " -f1`
 	[ -z "${UPDATES}" ] && exit 0
 
 	opkg upgrade ${UPDATES}
-	[ $? == 0 ] || exit 3
+	[ $? -eq 0 ] || exit 3
 
 	do_snapshot_push
 	sleep 5

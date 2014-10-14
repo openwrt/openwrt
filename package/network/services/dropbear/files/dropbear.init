@@ -165,7 +165,7 @@ killclients()
 		skip=0
 		for server in ${ignore}
 		 do
-			if [ "${pid}" == "${server}" ]
+			if [ "${pid}" = "${server}" ]
 			 then
 				skip=1
 				break

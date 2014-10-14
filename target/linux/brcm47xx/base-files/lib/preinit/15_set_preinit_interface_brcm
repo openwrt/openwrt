@@ -11,6 +11,6 @@ preinit_ip() {
 		ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
 
 		local try=0;
-		while [ $((try++)) -le 5 ] && [ ! $(cat /sys/class/net/$pi_ifname/operstate) == "up" ]; do sleep 1; done
+		while [ $((try++)) -le 5 ] && [ ! "$(cat /sys/class/net/$pi_ifname/operstate)" = "up" ]; do sleep 1; done
 	}
 }
