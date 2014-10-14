@@ -1,0 +1,47 @@
+From fee1501c494954f6e889563ca44aadfe4a83a643 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 14 Oct 2014 00:05:42 +0200
+Subject: [PATCH] bcma: register SoC later (as a module)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This is temporary workaround required for easier debugging.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/bcma/host_soc.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/bcma/host_soc.c b/drivers/bcma/host_soc.c
+index 335cbcf..c7e12f2 100644
+--- a/drivers/bcma/host_soc.c
++++ b/drivers/bcma/host_soc.c
+@@ -265,14 +265,22 @@ static struct platform_driver bcma_host_soc_driver = {
+ 	.probe		= bcma_host_soc_probe,
+ 	.remove		= bcma_host_soc_remove,
+ };
++/* FIXME: Using module_platform_driver is a temp hack to get bcma SoC
++ * initialzed *after* serial console. This way we get some logs in case of hang
++ * inside bcma or related driver. We need that for debugging problems and it's
++ * also useful for development. Otherwise any hang (in flash driver, PCIe
++ * driver, USB driver, etc.) would result in not getting logs at all.
++ */
++module_platform_driver(bcma_host_soc_driver);
+ 
+ int __init bcma_host_soc_register_driver(void)
+ {
+-	return platform_driver_register(&bcma_host_soc_driver);
++	/* return platform_driver_register(&bcma_host_soc_driver); */
++	return 0;
+ }
+ 
+ void __exit bcma_host_soc_unregister_driver(void)
+ {
+-	platform_driver_unregister(&bcma_host_soc_driver);
++	/* platform_driver_unregister(&bcma_host_soc_driver); */
+ }
+ #endif /* CONFIG_OF */
+-- 
+1.8.4.5
+
