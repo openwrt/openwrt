@@ -1,0 +1,51 @@
+--- linux-3.10.49.orig/arch/mips/pci/ifxmips_pcie.c
++++ linux-3.10.49/arch/mips/pci/ifxmips_pcie.c
+@@ -18,6 +18,8 @@
+ #include <linux/pci_regs.h>
+ #include <linux/module.h>
+ 
++#include <linux/of_platform.h>
++
+ #include "ifxmips_pcie.h"
+ #include "ifxmips_pcie_reg.h"
+ 
+@@ -1048,7 +1050,7 @@
+ extern int (*ltq_pci_plat_arch_init)(struct pci_dev *dev);
+ extern int (*ltq_pci_map_irq)(const struct pci_dev *dev, u8 slot, u8 pin);
+ 
+-static int __init ifx_pcie_bios_init(void)
++static int __init ifx_pcie_bios_probe(struct platform_device *pdev)
+ {
+     void __iomem *io_map_base;
+     int pcie_port;
+@@ -1090,6 +1092,30 @@
+ 
+     return 0;
+ }
++
++static const struct of_device_id ifxmips_pcie_match[] = {
++        { .compatible = "lantiq,pcie-xrx200" },
++        {},
++};
++MODULE_DEVICE_TABLE(of, ifxmips_pcie_match);
++
++static struct platform_driver ltq_pci_driver = {
++        .probe = ifx_pcie_bios_probe,
++        .driver = {
++                .name = "pcie-xrx200",
++                .owner = THIS_MODULE,
++                .of_match_table = ifxmips_pcie_match,
++        },
++};
++
++int __init ifx_pcie_bios_init(void)
++{
++        int ret = platform_driver_register(&ltq_pci_driver);
++        if (ret)
++                pr_info("pcie-xrx200: Error registering platform driver!");
++        return ret;
++}
++
+ arch_initcall(ifx_pcie_bios_init);
+ 
+ MODULE_LICENSE("GPL");
