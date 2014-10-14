@@ -193,7 +193,7 @@ default_postinst() {
 				}
 
 				gid=$id
-				[ -n "$gid" ] && group_add $name $gid
+				[ -n "$gid" ] && group_exists $name || group_add $name $gid
 				[ -z "$gid" ] && {
 					group_add_next $name
 					gid=$?
