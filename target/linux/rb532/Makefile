@@ -11,9 +11,9 @@ BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
 FEATURES:=pci targz
 
-LINUX_VERSION:=3.10.49
+LINUX_VERSION:=3.14.18
 
 include $(INCLUDE_DIR)/target.mk
-DEFAULT_PACKAGES += wpad-mini kmod-madwifi kmod-input-rb532
+DEFAULT_PACKAGES += wpad-mini kmod-ath5k kmod-input-rb532
 
 $(eval $(call BuildTarget))
