@@ -1,0 +1,37 @@
+From patchwork Thu May 15 08:35:44 2014
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: MIPS: RC32434: fix broken PCI resource initialization
+From: Gabor Juhos <juhosg@openwrt.org>
+X-Patchwork-Id: 6940
+Message-Id: <1400142944-32147-1-git-send-email-juhosg@openwrt.org>
+To: Ralf Baechle <ralf@linux-mips.org>
+Cc: linux-mips@linux-mips.org, Gabor Juhos <juhosg@openwrt.org>
+Date: Thu, 15 May 2014 10:35:44 +0200
+
+The parent field of the 'rc32434_res_pci_mem1' resource points to
+the resource itself which is obviously wrong. Due to the broken
+initialitazion, the PCI devices on the Mikrotik RB532 boards are
+not working since commit 22283178 (MIPS: avoid possible resource
+conflict in register_pci_controller).
+
+Remove the field initialization to fix the issue.
+
+Reported-by: Waldemar Brodkorb <wbx@openadk.org>
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+
+---
+arch/mips/pci/pci-rc32434.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/arch/mips/pci/pci-rc32434.c
++++ b/arch/mips/pci/pci-rc32434.c
+@@ -53,7 +53,6 @@ static struct resource rc32434_res_pci_m
+ 	.start = 0x50000000,
+ 	.end = 0x5FFFFFFF,
+ 	.flags = IORESOURCE_MEM,
+-	.parent = &rc32434_res_pci_mem1,
+ 	.sibling = NULL,
+ 	.child = &rc32434_res_pci_mem2
+ };
