@@ -11,12 +11,12 @@ get_ifname() {
 
 	scan_interfaces
 	config_get cfgt "$interface" TYPE
-	[ "$cfgt" == "interface" ] && config_get "$interface" ifname
+	[ "$cfgt" = "interface" ] && config_get "$interface" ifname
 }
 
 config_cb() {
 	config_get TYPE "$CONFIG_SECTION" TYPE
-	[ "interface" == "$TYPE" ] && {
+	[ "interface" = "$TYPE" ] && {
 		config_get device "$CONFIG_SECTION" ifname
 		[ -z "$device" ] && device="$(get_ifname ${CONFIG_SECTION})"
 		config_set "$CONFIG_SECTION" device "$device"

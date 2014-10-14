@@ -34,7 +34,7 @@ migrate_switch_name() {
 	config_foreach do_change_switch_name switch name $oldname $newname
 	config_foreach do_change_switch_name switch_vlan device $oldname $newname
 
-	[ "$SWITCH_NAME_CHANGED" == "1" ] && {
+	[ "$SWITCH_NAME_CHANGED" = "1" ] && {
 		logger -t migrate-switchX "Switch names updated, saving network configuration"
 		uci commit network
 	}

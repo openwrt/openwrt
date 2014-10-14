@@ -108,7 +108,7 @@ wifi_fixup_hwmode() {
 _wifi_updown() {
 	for device in ${2:-$DEVICES}; do (
 		config_get disabled "$device" disabled
-		[ 1 == "$disabled" ] && {
+		[ "$disabled" = "1" ] && {
 			echo "'$device' is disabled"
 			set disable
 		}

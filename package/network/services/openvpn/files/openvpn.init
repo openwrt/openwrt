@@ -29,7 +29,7 @@ append_bools() {
 	local p; local v; local s="$1"; shift
 	for p in $*; do
 		config_get_bool v "$s" "$p"
-		[ "$v" == 1 ] && append_param "$s" "$p" && echo >> "/var/etc/openvpn-$s.conf"
+		[ "$v" = 1 ] && append_param "$s" "$p" && echo >> "/var/etc/openvpn-$s.conf"
 	done
 }
 

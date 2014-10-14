@@ -274,8 +274,8 @@ nand_do_upgrade_stage2() {
 
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART="rootfs"
 
-	[ "$file_type" == "ubi" ] && nand_upgrade_ubinized $1
-	[ "$file_type" == "ubifs" ] && nand_upgrade_ubifs $1
+	[ "$file_type" = "ubi" ] && nand_upgrade_ubinized $1
+	[ "$file_type" = "ubifs" ] && nand_upgrade_ubifs $1
 	nand_upgrade_tar $1
 }
 

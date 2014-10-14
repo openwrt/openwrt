@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -x 
-[ $# == 5 ] || {
+[ $# -eq 5 ] || {
     echo "SYNTAX: $0 <file> <bootfs image> <rootfs image> <bootfs size> <rootfs size>"
     exit 1
 }
