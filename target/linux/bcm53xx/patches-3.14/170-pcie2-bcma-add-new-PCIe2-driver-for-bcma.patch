@@ -48,7 +48,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_PCI_BCMA) += pcie2-bcma.o
 --- /dev/null
 +++ b/drivers/pci/host/pcie2-bcma.c
-@@ -0,0 +1,591 @@
+@@ -0,0 +1,619 @@
 +/*
 + * Northstar PCI-Express driver
 + * Only supports Root-Complex (RC) mode
@@ -112,6 +112,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#define BCM4352_D11AC_ID	0x43b1	/* 4352 802.11ac dualband device */
 +#define BCM4352_D11AC2G_ID	0x43b2	/* 4352 802.11ac 2.4G device */
 +#define BCM4352_D11AC5G_ID	0x43b3	/* 4352 802.11ac 5G device */
++
++static struct pci_ops bcma_pcie2_ops;
 +
 +static int bcma_pcie2_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 +{
@@ -268,11 +270,26 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * Check link status, return 0 if link is up in RC mode,
 + * otherwise return non-zero
 + */
-+static int bcma_pcie2_check_link(struct bcma_device *bdev, u32 allow_gen2)
++static int bcma_pcie2_check_link(struct bcma_device *bdev,
++				 struct pci_sys_data *sys, u32 allow_gen2)
 +{
 +	u32 devfn = 0;
-+	u8 tmp8;
 +	u32 tmp32;
++	u16 tmp16;
++	u8 tmp8;
++	int pos;
++	bool link = false;
++	/*
++	 * Setup callback (bcma_pcie2_setup) is called in pcibios_init_hw before
++	 * creating bus root, so we don't have it here yet. On the other hand
++	 * we really want to use pci_bus_find_capability helper to check NLW.
++	 * Let's fake simple pci_bus just to query for capabilities.
++	 */
++	struct pci_bus bus = {
++		.number = 0,
++		.ops = &bcma_pcie2_ops,
++		.sysdata = sys,
++	};
 +
 +	tmp32 = bcma_pcie2_read_config32(bdev, 0, devfn, 0xdc);
 +	tmp32 &= ~0xf;
@@ -292,7 +309,18 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		return -ENODEV;
 +	}
 +
-+	return 0;
++	/* NS PAX only changes NLW field when card is present */
++	pos = pci_bus_find_capability(&bus, devfn, PCI_CAP_ID_EXP);
++	if (pos) {
++		u8 nlw;
++
++		pci_bus_read_config_word(&bus, devfn, pos + PCI_EXP_LNKSTA,
++					 &tmp16);
++		nlw = (tmp16 & PCI_EXP_LNKSTA_NLW) >> PCI_EXP_LNKSTA_NLW_SHIFT;
++		link = (tmp16 & PCI_EXP_LNKSTA_DLLLA) || nlw != 0;
++	}
++
++	return link ? 0 : -ENODEV;
 +}
 +
 +/*
@@ -559,7 +587,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		 * Skip inactive ports -
 +		 * will need to change this for hot-plugging
 +		 */
-+		linkfail = bcma_pcie2_check_link(bdev, allow_gen2);
++		linkfail = bcma_pcie2_check_link(bdev, sys, allow_gen2);
 +		if (linkfail)
 +			break;
 +
