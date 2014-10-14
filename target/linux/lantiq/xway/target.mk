@@ -1,7 +1,7 @@
 ARCH:=mips
 SUBTARGET:=xway
 BOARDNAME:=XWAY
-FEATURES:=squashfs atm mips16 nand ubifs
+FEATURES:=squashfs atm mips16 nand ubifs ramdisk
 CPU_TYPE:=34kc
 CPU_SUBTYPE:=dsp
 
