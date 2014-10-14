@@ -673,13 +673,15 @@ define Image/Build/Seama
 	-rm -f $(KDIR_TMP)/image-$(2).tmp
 	$(call CatFiles,$(KDIR_TMP)/loader-$(2).bin.lzma,$$$$(($(6) - 64)),$(KDIR)/root.$(1),$(7),$(KDIR_TMP)/image-$(2).tmp)
 	[ -e "$(KDIR_TMP)/image-$(2).tmp" ] && { \
+		head -c -4 "$(KDIR_TMP)/image-$(2).tmp" > "$(KDIR_TMP)/image-$(2).no-jffs2mark.tmp"; \
 		$(STAGING_DIR_HOST)/bin/seama \
-		-i $(KDIR_TMP)/image-$(2).tmp \
+		-i $(KDIR_TMP)/image-$(2).no-jffs2mark.tmp \
 		-m "dev=/dev/mtdblock/1" -m "type=firmware"; \
 		$(STAGING_DIR_HOST)/bin/seama \
 			-s $(call imgname,$(1),$(2))-factory.bin \
 			-m "signature=$(5)" \
-			-i $(KDIR_TMP)/image-$(2).tmp.seama; \
+			-i $(KDIR_TMP)/image-$(2).no-jffs2mark.tmp.seama; \
+		tail -c 4 "$(KDIR_TMP)/image-$(2).tmp" >> $(call imgname,$(1),$(2))-factory.bin; \
 	}
 	cat $(KDIR_TMP)/loader-$(2).bin.lzma > $(KDIR_TMP)/image-$(2)-sysupgrade.tmp
 	$(STAGING_DIR_HOST)/bin/seama \
