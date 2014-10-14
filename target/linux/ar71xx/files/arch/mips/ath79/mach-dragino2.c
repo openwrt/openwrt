@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 2011-2012 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2012 Elektra Wagenrad <elektra@villagetelco.org>
+ *  Copyright (C) 2014 Vittorio Gambaletta <openwrt@vittgam.net>
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License version 2 as published
@@ -27,12 +28,12 @@
 #define DRAGINO2_GPIO_LED_WAN		17
 
 /*
- * The following GPIO is actually named "Router" on the board.
- * However, since the "Router" feature is not supported as of yet
- * we use it to display USB activity.
+ * The following GPIO is named "SYS" on newer revisions of the the board.
+ * It was previously used to indicate USB activity, even though it was
+ * named "Router".
  */
 
-#define DRAGINO2_GPIO_LED_USB		28
+#define DRAGINO2_GPIO_LED_SYS		28
 #define DRAGINO2_GPIO_BTN_JUMPSTART	11
 #define DRAGINO2_GPIO_BTN_RESET		12
 
@@ -46,23 +47,23 @@
 
 static struct gpio_led dragino2_leds_gpio[] __initdata = {
 	{
-		.name		= "dragino2:red:lan",
-		.gpio		= DRAGINO2_GPIO_LED_LAN,
-		.active_low	= 0,
-	},
-	{
 		.name		= "dragino2:red:wlan",
 		.gpio		= DRAGINO2_GPIO_LED_WLAN,
 		.active_low	= 0,
 	},
-		{
+	{
 		.name		= "dragino2:red:wan",
 		.gpio		= DRAGINO2_GPIO_LED_WAN,
-		.active_low	= 0,
+		.active_low	= 1,
 	},
 	{
-		.name		= "dragino2:red:usb",
-		.gpio		= DRAGINO2_GPIO_LED_USB,
+		.name		= "dragino2:red:lan",
+		.gpio		= DRAGINO2_GPIO_LED_LAN,
+		.active_low	= 1,
+	},
+	{
+		.name		= "dragino2:red:system",
+		.gpio		= DRAGINO2_GPIO_LED_SYS,
 		.active_low	= 0,
 	},
 };
@@ -99,15 +100,23 @@ static void __init dragino2_common_setup(void)
 
 	ath79_register_mdio(0, 0x0);
 
-	/* Enable GPIO15 and GPIO16 and possibly GPIO26 and GPIO27 */
-	ath79_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
-				    AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN);
+	/* Enable GPIO13, GPIO14, GPIO15, GPIO16 and GPIO17 */
+	ath79_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
+				    AR933X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
-	/* LAN ports */
+	/* LAN port */
 	ath79_register_eth(1);
 
 	/* WAN port */
 	ath79_register_eth(0);
+
+	/* Enable GPIO26 and GPIO27 */
+	ath79_reset_wr(AR933X_RESET_REG_BOOTSTRAP,
+		       ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP) |
+		       AR933X_BOOTSTRAP_MDIO_GPIO_EN);
 }
 
 static void __init dragino2_setup(void)
