@@ -80,7 +80,15 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	if (options.lazy_loading_overridden)
 --- a/fs/yaffs2/yaffs_mtdif.c
 +++ b/fs/yaffs2/yaffs_mtdif.c
-@@ -276,7 +276,8 @@ struct mtd_info * yaffs_get_mtd_device(d
+@@ -16,6 +16,7 @@
+ #include "yaffs_mtdif.h"
+
+ #include "linux/mtd/mtd.h"
++#include "uapi/linux/major.h"
+ #include "linux/types.h"
+ #include "linux/time.h"
+ #include "linux/mtd/nand.h"
+@@ -277,7 +277,8 @@ struct mtd_info * yaffs_get_mtd_device(d
  	return mtd;
  }
  
@@ -90,7 +98,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  {
  	if (yaffs_version == 2) {
  		if ((WRITE_SIZE(mtd) < YAFFS_MIN_YAFFS2_CHUNK_SIZE ||
-@@ -295,6 +296,12 @@ int yaffs_verify_mtd(struct mtd_info *mt
+@@ -296,6 +297,12 @@ int yaffs_verify_mtd(struct mtd_info *mt
  			);
  			return -1;
  		}
