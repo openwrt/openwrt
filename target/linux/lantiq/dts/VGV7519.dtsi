@@ -38,43 +38,41 @@
 			reg = <0xE100B10 0xA0>;
 
 			state_default: pinmux {
-				exin3 {
-					lantiq,groups = "exin3";
-					lantiq,function = "exin";
-				};
 				stp {
 					lantiq,groups = "stp";
 					lantiq,function = "stp";
 				};
 				spi {
-					lantiq,groups = "spi", "spi_cs4";
+					lantiq,groups = "spi";
 					lantiq,function = "spi";
 				};
 				mdio {
 					lantiq,groups = "mdio";
 					lantiq,function = "mdio";
 				};
-				pci {
-					lantiq,groups = "gnt1", "req1";
-					lantiq,function = "pci";
-				};
-				conf_out {
-					lantiq,pins = "io4", "io5", "io6", /* stp */
-							"io21",
-							"io33",
-							"io7", "io44"; /* Internal ethernet phy leds */
-					lantiq,open-drain;
+				gphy-leds_out {
+					lantiq,pins = "io7", "io44";
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
-				pcie-rst {
-					lantiq,pins = "io38";
+				stp_out {
+					lantiq,pins = "io4", "io5", "io6";
+					lantiq,open-drain = <0>;
+					lantiq,output = <1>;
+					lantiq,pull = <0>;
+				};
+				pci-rst {
+					lantiq,pins = "io21";
+					lantiq,open-drain = <0>;
 					lantiq,pull = <0>;
 					lantiq,output = <1>;
 				};
-				conf_in {
-					lantiq,pins = "io39"; /* exin3 */
-					lantiq,pull = <2>;
+				gphy-leds {
+					lantiq,groups = "gphy0 led1", "gphy1 led0";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
 				};
 			};
 		};
@@ -146,27 +144,22 @@
 				phy0: ethernet-phy@0 {
 					reg = <0x0>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
 				phy1: ethernet-phy@1 {
 					reg = <0x1>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
 				phy5: ethernet-phy@5 {
 					reg = <0x5>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
 				phy11: ethernet-phy@11 {
 					reg = <0x11>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
 				phy13: ethernet-phy@13 {
 					reg = <0x13>;
 					compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
-					lantiq,c45-reg-init = <1 0 0 0>; 
 				};
 			};
 		};
@@ -192,10 +185,11 @@
 		};
 
 		pci@E105400 {
+			status = "okay";
 			#address-cells = <3>;
 			#size-cells = <2>;
 			#interrupt-cells = <1>;
-			compatible = "lantiq,pci-xway1";
+			compatible = "lantiq,pci-xway";
 			bus-range = <0x0 0x0>;
 			ranges = <0x2000000 0 0x8000000 0x8000000 0 0x2000000   /* pci memory */
 				0x1000000 0 0x00000000 0xAE00000 0 0x200000>; /* io space */
@@ -209,7 +203,7 @@
 			interrupt-map = <
 				0x7000 0 0 1 &icu0 29 1 // slot 14, irq 29
 				>;
-			gpios-reset = <&gpio 21 0>;
+			gpio-reset = <&gpio 21 0>;
 			req-mask = <0x1>;	/* GNT1 */
 		};
 	};
@@ -218,6 +212,11 @@
 		compatible = "lantiq,phy-xrx200";
 		firmware = "lantiq/vr9_phy11g_a1x.bin";
 		phys = [ 00 01 ];
+	};
+
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT2860.eeprom";
 	};
 
 	gpio-keys-polled {

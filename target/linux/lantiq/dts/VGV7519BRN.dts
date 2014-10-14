@@ -22,6 +22,12 @@
 					label = "rootfs_data";
 					reg = <0x880000 0x780000>;
 				};
+
+				partition@1f80000 {
+					label = "board_config";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
 			};
 		};
 	};
