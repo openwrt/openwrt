@@ -216,6 +216,7 @@ default_postinst() {
 			$i start
 		}
 	done
+	[ -n "${IPKG_INSTROOT}" ] || rm -f /tmp/luci-indexcache 2>/dev/null
 	return 0
 }
 
