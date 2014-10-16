@@ -11,6 +11,8 @@ define Image/Prepare
 	rm -f $(KDIR)/fs_mark
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
+
+	$(CP) ./ubinize.cfg $(KDIR)
 endef
 
 define trx2ndpart/serial
@@ -73,6 +75,8 @@ endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 define Image/Build
+	( cd $(KDIR); $(STAGING_DIR_HOST)/bin/ubinize -p 128KiB -m 2048 -o $(KDIR)/root-block-0x20000-min-0x800.ubi ubinize.cfg )
+
 	$(call Image/Build/AsusTrx,$(1),bcm47081-asus-rt-n18u,serial,RT-N18U)
 
 	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,serial,U12H245T00_NETGEAR,1)
