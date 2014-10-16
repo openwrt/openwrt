@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <stdint.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define cpu_to_le16(x) bswap_16(x)
@@ -124,7 +125,7 @@ static inline unsigned long round_to_kb(long sect) {
 }
 
 /* check the partition sizes and write the partition table */
-static int gen_ptable(int nr)
+static int gen_ptable(uint32_t signature, int nr)
 {
 	struct pte pte[4];
 	unsigned long sect = 0; 
@@ -159,6 +160,12 @@ static int gen_ptable(int nr)
 		return -1;
 	}
 
+	lseek(fd, 440, SEEK_SET);
+	if (write(fd, &signature, sizeof(signature)) != sizeof(signature)) {
+		fprintf(stderr, "write failed.\n");
+		goto fail;
+	}
+
 	lseek(fd, 446, SEEK_SET);
 	if (write(fd, pte, sizeof(struct pte) * 4) != sizeof(struct pte) * 4) {
 		fprintf(stderr, "write failed.\n");
@@ -187,8 +194,9 @@ int main (int argc, char **argv)
 	char type = 0x83;
 	int ch;
 	int part = 0;
+	uint32_t signature = 0x5452574F; /* 'OWRT' */
 
-	while ((ch = getopt(argc, argv, "h:s:p:a:t:o:vl:")) != -1) {
+	while ((ch = getopt(argc, argv, "h:s:p:a:t:o:vl:S:")) != -1) {
 		switch (ch) {
 		case 'o':
 			filename = optarg;
@@ -221,6 +229,9 @@ int main (int argc, char **argv)
 		case 'l':
 			kb_align = (int) strtoul(optarg, NULL, 0) * 2;
 			break;
+		case 'S':
+			signature = strtoul(optarg, NULL, 0);
+			break;
 		case '?':
 		default:
 			usage(argv[0]);
@@ -229,6 +240,6 @@ int main (int argc, char **argv)
 	argc -= optind;
 	if (argc || (heads <= 0) || (sectors <= 0) || !filename) 
 		usage(argv[0]);
-	
-	return gen_ptable(part);
+
+	return gen_ptable(signature, part);
 }
