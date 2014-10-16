@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2008 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -38,7 +38,9 @@ SDK_DIRS = \
 		$(STAGING_SUBDIR_TARGET) \
 		$(STAGING_SUBDIR_TOOLCHAIN)
 
-SVN_PACKAGE_URL=$(shell svn info ../../package | awk '/^URL:/ { print $$2; }')
+BASE_FEED:=$(shell git config --get remote.origin.url 2>/dev/null | sed -ne 's/^/src-git base /p')
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C git svn info 2>/dev/null | sed -ne 's/^URL: /src-gitsvn base /p'))
+BASE_FEED:=$(if $(BASE_FEED),$(BASE_FEED),$(shell cd $(TOPDIR); LC_ALL=C svn info 2>/dev/null | sed -ne 's/^URL: /src-svn base /p'))
 
 KDIR_BASE = $(patsubst $(TOPDIR)/%,%,$(LINUX_DIR))
 
@@ -102,11 +104,14 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 	$(CP) \
 		$(TOPDIR)/package/Makefile \
 		$(SDK_BUILD_DIR)/package/
-	$(if $(SVN_PACKAGE_URL),echo "src-svn trunk $(SVN_PACKAGE_URL)" \
-		> $(SDK_BUILD_DIR)/feeds.conf.default,\
-		-rm -f $(SDK_BUILD_DIR)/feeds.conf.default)
-	cat $(TOPDIR)/feeds.conf.default \
-		>> $(SDK_BUILD_DIR)/feeds.conf.default
+
+	-rm -f $(SDK_BUILD_DIR)/feeds.conf.default
+	$(if $(BASE_FEED),echo "$(BASE_FEED)" > $(SDK_BUILD_DIR)/feeds.conf.default)
+	if [ -f $(TOPDIR)/feeds.conf ]; then \
+		cat $(TOPDIR)/feeds.conf >> $(SDK_BUILD_DIR)/feeds.conf.default; \
+	else \
+		cat $(TOPDIR)/feeds.conf.default >> $(SDK_BUILD_DIR)/feeds.conf.default; \
+	fi
 	$(SED) 's,^# REVISION:=.*,REVISION:=$(REVISION),g' $(SDK_BUILD_DIR)/include/version.mk
 	$(SED) '/LINUX_VERMAGIC:=/ { s,unknown,$(LINUX_VERMAGIC),g }' $(SDK_BUILD_DIR)/include/kernel.mk
 	find $(SDK_BUILD_DIR) -name .git | $(XARGS) rm -rf
