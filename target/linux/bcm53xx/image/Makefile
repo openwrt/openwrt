@@ -19,6 +19,10 @@ define trx2ndpart/serial
 -a 1024 -f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
 endef
 
+define trx2ndpart/nand-0x20000-0x800
+-a 0x20000 -f $(KDIR)/root-block-0x20000-min-0x800.ubi -a 0x20000 -A $(KDIR)/fs_mark
+endef
+
 # $(1): dts filename (also used for the firmware file).
 # $(2): flash type (not used).
 define Image/Build/initramfs/DTB
@@ -79,11 +83,11 @@ define Image/Build
 
 	$(call Image/Build/AsusTrx,$(1),bcm47081-asus-rt-n18u,serial,RT-N18U)
 
-	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,serial,U12H245T00_NETGEAR,1)
-	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,serial,U12H240T00_NETGEAR,1)
+	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,nand-0x20000-0x800,U12H245T00_NETGEAR,1)
+	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,nand-0x20000-0x800,U12H240T00_NETGEAR,1)
  
-	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp,serial)
-	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-600dhp2,serial)
+	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp,nand-0x20000-0x800)
+	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-600dhp2,nand-0x20000-0x800)
 endef
 
 define Image/Build/Initramfs
