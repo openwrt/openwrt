@@ -13,7 +13,12 @@ define Image/Prepare
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
+define trx2ndpart/serial
+-a 1024 -f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
+endef
+
 # $(1): dts filename (also used for the firmware file).
+# $(2): flash type (not used).
 define Image/Build/initramfs/DTB
 	$(call Image/Build/DTB,zImage-initramfs,$(1))
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/$(IMG_PREFIX)-$(1)-initramfs.trx \
@@ -21,11 +26,12 @@ define Image/Build/initramfs/DTB
 endef
 
 # $(1): dts filename (also used for the firmware file).
+# $(2): flash type.
 define Image/Build/squashfs/DTB
 	$(call Image/Build/DTB,zImage,$(1))
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/$(IMG_PREFIX)-$(1)-squashfs.trx \
 		-f $(KDIR)/zImage-$(1).lzma \
-		-a 1024 -f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
+		$(call trx2ndpart/$(2))
 endef
 
 # $(1): kernel (Linux) image file
@@ -39,38 +45,41 @@ endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 # $(2): dts filename (also used for the firmware file).
-# $(3): device specific magic.
+# $(3): flash type.
+# $(4): device specific magic.
 define Image/Build/AsusTrx
-	$(call Image/Build/$(1)/DTB,$(2))
+	$(call Image/Build/$(1)/DTB,$(2),$(3))
 	# TODO: Put magic in TRX file
 	cp $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx $(BIN_DIR)/
 endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 # $(2): dts filename (also used for the firmware file).
+# $(3): flash type.
 define Image/Build/Trx
-	$(call Image/Build/$(1)/DTB,$(2))
+	$(call Image/Build/$(1)/DTB,$(2),$(3))
 	cp $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx $(BIN_DIR)/
 endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 # $(2): dts filename (also used for the firmware file).
-# $(3): board_id (device specific magic).
-# $(4): region.
+# $(3): flash type.
+# $(4): board_id (device specific magic).
+# $(5): region.
 define Image/Build/Chk
-	$(call Image/Build/$(1)/DTB,$(2))
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).chk -k $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx -b $(3) -r $(4)
+	$(call Image/Build/$(1)/DTB,$(2),$(3))
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).chk -k $(KDIR)/$(IMG_PREFIX)-$(2)-$(1).trx -b $(4) -r $(5)
 endef
 
 # $(1): filesystem type (e.g. squashfs, initramfs).
 define Image/Build
-	$(call Image/Build/AsusTrx,$(1),bcm47081-asus-rt-n18u,RT-N18U)
+	$(call Image/Build/AsusTrx,$(1),bcm47081-asus-rt-n18u,serial,RT-N18U)
 
-	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,U12H245T00_NETGEAR,1)
-	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,U12H240T00_NETGEAR,1)
+	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,serial,U12H245T00_NETGEAR,1)
+	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,serial,U12H240T00_NETGEAR,1)
  
-	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp)
-	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-600dhp2)
+	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp,serial)
+	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-600dhp2,serial)
 endef
 
 define Image/Build/Initramfs
