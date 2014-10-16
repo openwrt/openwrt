@@ -113,7 +113,7 @@ define Package/opkg/Default/install
 	done
     ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
 	for d in $(FEEDS_DISABLED); do \
-		echo "# src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
+		echo "$(if $(CONFIG_PER_FEED_REPO_ADD_COMMENTED),# )src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
 	done
     endif
   endif
