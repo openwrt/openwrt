@@ -18,6 +18,6 @@ KERNELNAME:=bzImage
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += kmod-e1000
+DEFAULT_PACKAGES += kmod-e1000 kmod-r8169
 
 $(eval $(call BuildTarget))
