@@ -1,14 +1,14 @@
 --- a/src/utils/os_unix.c
 +++ b/src/utils/os_unix.c
-@@ -9,6 +9,7 @@
- #include "includes.h"
+@@ -10,6 +10,7 @@
  
  #include <time.h>
+ #include <sys/wait.h>
 +#include <fcntl.h>
  
  #ifdef ANDROID
  #include <sys/capability.h>
-@@ -154,59 +155,46 @@ int os_gmtime(os_time_t t, struct os_tm 
+@@ -155,59 +156,46 @@ int os_gmtime(os_time_t t, struct os_tm
  	return 0;
  }
  
