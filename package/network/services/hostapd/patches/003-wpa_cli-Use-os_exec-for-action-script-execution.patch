@@ -1,0 +1,54 @@
+From c5f258de76dbb67fb64beab39a99e5c5711f41fe Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <jouni@qca.qualcomm.com>
+Date: Mon, 6 Oct 2014 17:25:52 +0300
+Subject: [PATCH 2/3] wpa_cli: Use os_exec() for action script execution
+
+Use os_exec() to run the action script operations to avoid undesired
+command line processing for control interface event strings. Previously,
+it could have been possible for some of the event strings to include
+unsanitized data which is not suitable for system() use. (CVE-2014-3686)
+
+Signed-off-by: Jouni Malinen <jouni@qca.qualcomm.com>
+---
+ wpa_supplicant/wpa_cli.c | 25 ++++++++-----------------
+ 1 file changed, 8 insertions(+), 17 deletions(-)
+
+--- a/wpa_supplicant/wpa_cli.c
++++ b/wpa_supplicant/wpa_cli.c
+@@ -3149,28 +3149,19 @@ static int str_match(const char *a, cons
+ static int wpa_cli_exec(const char *program, const char *arg1,
+ 			const char *arg2)
+ {
+-	char *cmd;
++	char *arg;
+ 	size_t len;
+ 	int res;
+-	int ret = 0;
+ 
+-	len = os_strlen(program) + os_strlen(arg1) + os_strlen(arg2) + 3;
+-	cmd = os_malloc(len);
+-	if (cmd == NULL)
++	len = os_strlen(arg1) + os_strlen(arg2) + 2;
++	arg = os_malloc(len);
++	if (arg == NULL)
+ 		return -1;
+-	res = os_snprintf(cmd, len, "%s %s %s", program, arg1, arg2);
+-	if (res < 0 || (size_t) res >= len) {
+-		os_free(cmd);
+-		return -1;
+-	}
+-	cmd[len - 1] = '\0';
+-#ifndef _WIN32_WCE
+-	if (system(cmd) < 0)
+-		ret = -1;
+-#endif /* _WIN32_WCE */
+-	os_free(cmd);
++	os_snprintf(arg, len, "%s %s", arg1, arg2);
++	res = os_exec(program, arg, 1);
++	os_free(arg);
+ 
+-	return ret;
++	return res;
+ }
+ 
+ 
