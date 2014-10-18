@@ -1,0 +1,33 @@
+From: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date: Fri, 17 Oct 2014 07:40:19 +0530
+Subject: [PATCH] ath9k: Send AUTHORIZED event only for station mode
+
+ATH_CHANCTX_EVENT_AUTHORIZED is required to trigger
+the MCC scheduler when a station interface becomes
+authorized. But, since the driver gets station state
+notifications when the current operating mode is AP
+too, make sure that we send ATH_CHANCTX_EVENT_AUTHORIZED
+only when the interface is in station mode.
+
+Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1590,10 +1590,12 @@ static int ath9k_sta_state(struct ieee80
+ 	}
+ 
+ 	if (ath9k_is_chanctx_enabled()) {
+-		if (old_state == IEEE80211_STA_ASSOC &&
+-		    new_state == IEEE80211_STA_AUTHORIZED)
+-			ath_chanctx_event(sc, vif,
+-					  ATH_CHANCTX_EVENT_AUTHORIZED);
++		if (vif->type == NL80211_IFTYPE_STATION) {
++			if (old_state == IEEE80211_STA_ASSOC &&
++			    new_state == IEEE80211_STA_AUTHORIZED)
++				ath_chanctx_event(sc, vif,
++						  ATH_CHANCTX_EVENT_AUTHORIZED);
++		}
+ 	}
+ 
+ 	return ret;

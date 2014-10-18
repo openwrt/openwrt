@@ -1,3 +1,12 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 18 Oct 2014 13:36:41 +0200
+Subject: [PATCH] ath9k: clean up debugfs print of reset causes
+
+Reduce code duplication
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
 @@ -852,36 +852,30 @@ static ssize_t read_file_reset(struct fi

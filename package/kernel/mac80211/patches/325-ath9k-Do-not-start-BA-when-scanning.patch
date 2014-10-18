@@ -1,0 +1,60 @@
+From: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date: Fri, 17 Oct 2014 07:40:30 +0530
+Subject: [PATCH] ath9k: Do not start BA when scanning
+
+mac80211 currently has a race which can be hit
+with this sequence:
+
+* Start a scan operation.
+* TX BA is initiated by ieee80211_start_tx_ba_session().
+* Driver sets up internal state and calls
+  ieee80211_start_tx_ba_cb_irqsafe().
+* mac80211 adds a packet to sdata->skb_queue with
+  type IEEE80211_SDATA_QUEUE_AGG_START.
+* ieee80211_iface_work() doesn't process the
+  packet because scan is in progress.
+* ADDBA response timer expires and the sta/tid is
+  torn down.
+* Driver receives BA stop notification and calls
+  ieee80211_stop_tx_ba_cb_irqsafe().
+* This is also added to the queue by mac80211.
+* Now, scan finishes.
+
+At this point, the queued up packets might be processed
+if some other operation schedules the sdata work. Since
+the tids have been cleaned up already, warnings are hit.
+
+If this doesn't happen, the packets are left in the queue
+until the interface is torn down.
+
+Since initiating a BA session when scan is in progress
+leads to flaky connections, especially in MCC mode, we
+can drop the TX BA request. This improves connectivity
+with legacy clients in MCC mode.
+
+Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/main.c
++++ b/drivers/net/wireless/ath/ath9k/main.c
+@@ -1885,6 +1885,7 @@ static int ath9k_ampdu_action(struct iee
+ 			      u16 tid, u16 *ssn, u8 buf_size)
+ {
+ 	struct ath_softc *sc = hw->priv;
++	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	bool flush = false;
+ 	int ret = 0;
+ 
+@@ -1896,6 +1897,12 @@ static int ath9k_ampdu_action(struct iee
+ 	case IEEE80211_AMPDU_RX_STOP:
+ 		break;
+ 	case IEEE80211_AMPDU_TX_START:
++		if (ath9k_is_chanctx_enabled()) {
++			if (test_bit(ATH_OP_SCANNING, &common->op_flags)) {
++				ret = -EBUSY;
++				break;
++			}
++		}
+ 		ath9k_ps_wakeup(sc);
+ 		ret = ath_tx_aggr_start(sc, sta, tid, ssn);
+ 		if (!ret)
