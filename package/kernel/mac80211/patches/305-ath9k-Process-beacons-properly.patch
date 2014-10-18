@@ -1,0 +1,37 @@
+From: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date: Fri, 17 Oct 2014 07:40:10 +0530
+Subject: [PATCH] ath9k: Process beacons properly
+
+When the current operating channel context has
+been marked as ATH_CHANCTX_STATE_FORCE_ACTIVE,
+do not process beacons that might be received,
+since we have to wait for the station to become
+authorized.
+
+Also, since the cached TSF value will be zero
+initially do not rearm the timer in this
+case when a beacon is received, since it results
+in spurious values.
+
+Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/channel.c
++++ b/drivers/net/wireless/ath/ath9k/channel.c
+@@ -495,10 +495,15 @@ void ath_chanctx_event(struct ath_softc 
+ 		    sc->cur_chan == &sc->offchannel.chan)
+ 			break;
+ 
+-		ath_chanctx_adjust_tbtt_delta(sc);
+ 		sc->sched.beacon_pending = false;
+ 		sc->sched.beacon_miss = 0;
+ 
++		if (sc->sched.state == ATH_CHANCTX_STATE_FORCE_ACTIVE ||
++		    !sc->cur_chan->tsf_val)
++			break;
++
++		ath_chanctx_adjust_tbtt_delta(sc);
++
+ 		/* TSF time might have been updated by the incoming beacon,
+ 		 * need update the channel switch timer to reflect the change.
+ 		 */

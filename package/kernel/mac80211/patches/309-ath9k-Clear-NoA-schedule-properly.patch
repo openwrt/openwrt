@@ -1,0 +1,36 @@
+From: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+Date: Fri, 17 Oct 2014 07:40:14 +0530
+Subject: [PATCH] ath9k: Clear NoA schedule properly
+
+When an active context transitions to inactive
+state, the NoA schedule needs to be removed
+for the context that has beaconing enabled.
+Not doing this will affect p2p clients.
+
+Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/channel.c
++++ b/drivers/net/wireless/ath/ath9k/channel.c
+@@ -356,6 +356,21 @@ void ath_chanctx_event(struct ath_softc 
+ 				"Move chanctx state from WAIT_FOR_TIMER to WAIT_FOR_BEACON\n");
+ 		}
+ 
++		/*
++		 * When a context becomes inactive, for example,
++		 * disassociation of a station context, the NoA
++		 * attribute needs to be removed from subsequent
++		 * beacons.
++		 */
++		if (!ctx->active && avp->noa_duration &&
++		    sc->sched.state != ATH_CHANCTX_STATE_WAIT_FOR_BEACON) {
++			avp->noa_duration = 0;
++			avp->periodic_noa = false;
++
++			ath_dbg(common, CHAN_CTX,
++				"Clearing NoA schedule\n");
++		}
++
+ 		if (sc->sched.state != ATH_CHANCTX_STATE_WAIT_FOR_BEACON)
+ 			break;
+ 

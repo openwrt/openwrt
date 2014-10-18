@@ -1,3 +1,13 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 18 Oct 2014 18:31:49 +0200
+Subject: [PATCH] ath9k: use a random MAC address if the EEPROM address
+ is invalid
+
+Based on OpenWrt patch by Gabor Juhos
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
 @@ -19,6 +19,7 @@

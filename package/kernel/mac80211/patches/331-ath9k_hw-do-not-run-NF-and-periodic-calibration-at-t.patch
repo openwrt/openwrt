@@ -1,3 +1,14 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 18 Oct 2014 13:39:11 +0200
+Subject: [PATCH] ath9k_hw: do not run NF and periodic calibration at the
+ same time
+
+It can cause inconsistent calibration results or in some cases turn the
+radio deaf.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
 --- a/drivers/net/wireless/ath/ath9k/ar9002_calib.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9002_calib.c
 @@ -660,7 +660,6 @@ static void ar9002_hw_olc_temp_compensat

@@ -1,3 +1,15 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 18 Oct 2014 18:24:15 +0200
+Subject: [PATCH] ath9k: add support for endian swap of eeprom from
+ platform data
+
+On some devices (especially little-endian ones), the flash EEPROM data
+has a different endian, which needs to be detected.
+Add a flag to the platform data to allow overriding that behavior
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
 --- a/drivers/net/wireless/ath/ath9k/eeprom_def.c
 +++ b/drivers/net/wireless/ath/ath9k/eeprom_def.c
 @@ -262,7 +262,7 @@ static int ath9k_hw_def_check_eeprom(str
@@ -47,31 +59,9 @@
  		}
  	}
  
---- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
-+++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
-@@ -57,7 +57,7 @@ static bool ath9k_hw_4k_fill_eeprom(stru
- {
- 	struct ath_common *common = ath9k_hw_common(ah);
- 
--	if (!ath9k_hw_use_flash(ah)) {
-+	if (!(ah->ah_flags & AH_NO_EEP_SWAP)) {
- 		ath_dbg(common, EEPROM, "Reading from EEPROM, not flash\n");
- 	}
- 
---- a/drivers/net/wireless/ath/ath9k/eeprom_9287.c
-+++ b/drivers/net/wireless/ath/ath9k/eeprom_9287.c
-@@ -60,7 +60,7 @@ static bool ath9k_hw_ar9287_fill_eeprom(
- {
- 	struct ath_common *common = ath9k_hw_common(ah);
- 
--	if (!ath9k_hw_use_flash(ah)) {
-+	if (!(ah->ah_flags & AH_NO_EEP_SWAP)) {
- 		ath_dbg(common, EEPROM, "Reading from EEPROM, not flash\n");
- 	}
- 
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -726,6 +726,7 @@ enum ath_cal_list {
+@@ -731,6 +731,7 @@ enum ath_cal_list {
  #define AH_USE_EEPROM   0x1
  #define AH_UNPLUGGED    0x2 /* The card has been physically removed. */
  #define AH_FASTCC       0x4
@@ -81,7 +71,7 @@
  	struct ath_ops reg_ops;
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -528,6 +528,8 @@ static int ath9k_init_softc(u16 devid, s
+@@ -531,6 +531,8 @@ static int ath9k_init_softc(u16 devid, s
  		ah->is_clk_25mhz = pdata->is_clk_25mhz;
  		ah->get_mac_revision = pdata->get_mac_revision;
  		ah->external_reset = pdata->external_reset;
