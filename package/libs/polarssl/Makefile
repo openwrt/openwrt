@@ -51,6 +51,7 @@ CMAKE_OPTIONS += \
 	-DCMAKE_BUILD_TYPE:String="Release" \
 	-DUSE_SHARED_POLARSSL_LIBRARY:Bool=ON \
 	-DENABLE_TESTING:Bool=OFF \
+	-DENABLE_PROGRAMS:Bool=OFF \
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
