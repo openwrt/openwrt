@@ -20,7 +20,7 @@ move_config() {
 			PARTUUID=[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-02)
 				uuid="${cmdline#PARTUUID=}"
 				uuid="${uuid%-02}"
-				for disk in /dev/sd[a-z]; do
+				for disk in /dev/[hsv]d[a-z]; do
 					set -- $(dd if=$disk bs=1 skip=440 count=4 2>/dev/null | hexdump -v -e '4/1 "%02x "')
 					if [ "$4$3$2$1" = "$uuid" ]; then
 						dev="${disk}1"
