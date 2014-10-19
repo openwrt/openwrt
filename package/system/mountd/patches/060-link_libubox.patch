@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -2,7 +2,7 @@ PROG=mountd
+ OBJS=main.o lib/log.o lib/sys.o lib/autofs.o lib/mount.o lib/timer.o lib/signal.o lib/ucix.o lib/led.o lib/fs.o lib/ucix.o
+ 
+ LDFLAGS?=
+-LDFLAGS+=-ldl -luci
++LDFLAGS+=-ldl -luci -lubox
+ 
+ CFLAGS?=
+ CFLAGS+= -Wall
