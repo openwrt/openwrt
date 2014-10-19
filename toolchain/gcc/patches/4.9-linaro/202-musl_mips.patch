@@ -1,0 +1,13 @@
+--- a/gcc/config/mips/linux.h
++++ b/gcc/config/mips/linux.h
+@@ -23,3 +23,10 @@ along with GCC; see the file COPYING3.  
+ #undef UCLIBC_DYNAMIC_LINKER
+ #define UCLIBC_DYNAMIC_LINKER \
+   "%{mnan=2008:/lib/ld-uClibc-mipsn8.so.0;:/lib/ld-uClibc.so.0}"
++
++#if TARGET_ENDIAN_DEFAULT == 0 /* LE */
++#define MUSL_DYNAMIC_LINKER_E "%{EB:;:el}"
++#else
++#define MUSL_DYNAMIC_LINKER_E "%{EL:el}"
++#endif
++#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-mips" MUSL_DYNAMIC_LINKER_E ".so.1"
