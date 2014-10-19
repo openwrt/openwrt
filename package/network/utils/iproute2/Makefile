@@ -81,6 +81,9 @@ ifdef CONFIG_USE_EGLIBC
     TARGET_CFLAGS += -DHAVE_SETNS
   endif
 endif
+ifdef CONFIG_USE_MUSL
+  TARGET_CFLAGS += -DHAVE_SETNS
+endif
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 
