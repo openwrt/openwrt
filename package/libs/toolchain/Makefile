@@ -476,7 +476,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 		$(TOOLCHAIN_DIR)/lib/libc.so* \
 		$(1)/lib/
 	ln -s ../../lib/$(LD_MUSL_NAME) $(1)/usr/bin/ldd
-	$(if $(findstring -sf.so,$(LD_MUSL_NAME)),ln -s $(LD_MUSL_NAME) $(1)/lib/$(subst -sf.so,.so,$(LD_MUSL_NAME)))
   endef
 
   define Package/libc/install
