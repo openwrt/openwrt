@@ -1,0 +1,45 @@
+--- a/coregrind/vg_preloaded.c
++++ b/coregrind/vg_preloaded.c
+@@ -56,7 +56,7 @@
+ void VG_NOTIFY_ON_LOAD(freeres)( void );
+ void VG_NOTIFY_ON_LOAD(freeres)( void )
+ {
+-#  if !defined(__UCLIBC__) \
++#  if !defined(__UCLIBC__) && defined(__GLIBC__) \
+    && !defined(VGPV_arm_linux_android) && !defined(VGPV_x86_linux_android) \
+    && !defined(VGPV_mips32_linux_android)
+    extern void __libc_freeres(void);
+--- a/include/pub_tool_redir.h
++++ b/include/pub_tool_redir.h
+@@ -241,7 +241,7 @@
+ /* --- Soname of the standard C library. --- */
+ 
+ #if defined(VGO_linux)
+-#  define  VG_Z_LIBC_SONAME  libcZdsoZa              // libc.so*
++#  define  VG_Z_LIBC_SONAME  libcZdZa                // libc.*
+ 
+ #elif defined(VGO_darwin) && (DARWIN_VERS <= DARWIN_10_6)
+ #  define  VG_Z_LIBC_SONAME  libSystemZdZaZddylib    // libSystem.*.dylib
+@@ -273,7 +273,11 @@
+ /* --- Soname of the pthreads library. --- */
+ 
+ #if defined(VGO_linux)
++# if defined(__GLIBC__) || defined(__UCLIBC__)
+ #  define  VG_Z_LIBPTHREAD_SONAME  libpthreadZdsoZd0     // libpthread.so.0
++# else
++#  define  VG_Z_LIBPTHREAD_SONAME  libcZdZa              // libc.*
++# endif
+ #elif defined(VGO_darwin)
+ #  define  VG_Z_LIBPTHREAD_SONAME  libSystemZdZaZddylib  // libSystem.*.dylib
+ #else
+--- a/configure.ac
++++ b/configure.ac
+@@ -1031,8 +1031,6 @@ case "${GLIBC_VERSION}" in
+ 
+      *)
+ 	AC_MSG_RESULT([unsupported version ${GLIBC_VERSION}])
+-	AC_MSG_ERROR([Valgrind requires glibc version 2.2 - 2.19])
+-	AC_MSG_ERROR([or Darwin or Bionic libc])
+ 	;;
+ esac
+ 
