@@ -2,7 +2,7 @@
 
 RAM_ROOT=/tmp/root
 
-ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
+[ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
 libs() { ldd $* | awk '{print $3}'; }
 
 install_file() { # <file> [ <file> ... ]
