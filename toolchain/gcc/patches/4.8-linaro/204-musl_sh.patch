@@ -1,0 +1,17 @@
+--- a/gcc/config/sh/linux.h
++++ b/gcc/config/sh/linux.h
+@@ -43,7 +43,14 @@ along with GCC; see the file COPYING3.  
+ 
+ #define TARGET_ASM_FILE_END file_end_indicate_exec_stack
+ 
++#if TARGET_BIG_ENDIAN_DEFAULT /* BE */
++#define MUSL_DYNAMIC_LINKER_E "eb"
++#else
++#define MUSL_DYNAMIC_LINKER_E
++#endif
++
+ #define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.2"
++#define MUSL_DYNAMIC_LINKER "/lib/ld-musl-sh" MUSL_DYNAMIC_LINKER_E ".so.1"
+ 
+ #undef SUBTARGET_LINK_EMUL_SUFFIX
+ #define SUBTARGET_LINK_EMUL_SUFFIX "_linux"

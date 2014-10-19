@@ -1,8 +1,8 @@
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
-@@ -81,10 +81,15 @@
- #undef  MUSL_DYNAMIC_LINKER
- #define MUSL_DYNAMIC_LINKER "/lib/ld-musl-arm.so.1"
+@@ -94,10 +94,15 @@
+ #define MUSL_DYNAMIC_LINKER \
+   "/lib/ld-musl-arm" MUSL_DYNAMIC_LINKER_E "%{mfloat-abi=hard:hf}.so.1"
  
 +/* For armv4 we pass --fix-v4bx to linker to support EABI */
 +#undef TARGET_FIX_V4BX_SPEC
