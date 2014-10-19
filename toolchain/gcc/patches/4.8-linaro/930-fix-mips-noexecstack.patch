@@ -46,11 +46,9 @@ sellcey@mips.com
  libgcc/config/mips/vr4120-div.S | 4 ++++
  5 files changed, 18 insertions(+)
 
-diff --git a/gcc/config/mips/mips.c b/gcc/config/mips/mips.c
-index 41c5d6b..33d9793 100644
 --- a/gcc/config/mips/mips.c
 +++ b/gcc/config/mips/mips.c
-@@ -18223,6 +18223,9 @@ mips_expand_vec_minmax (rtx target, rtx op0, rtx op1,
+@@ -18223,6 +18223,9 @@ mips_expand_vec_minmax (rtx target, rtx 
  #undef TARGET_VECTORIZE_VEC_PERM_CONST_OK
  #define TARGET_VECTORIZE_VEC_PERM_CONST_OK mips_vectorize_vec_perm_const_ok
  
@@ -60,11 +58,9 @@ index 41c5d6b..33d9793 100644
  struct gcc_target targetm = TARGET_INITIALIZER;
  
  #include "gt-mips.h"
-diff --git a/libgcc/config/mips/crti.S b/libgcc/config/mips/crti.S
-index c7418db..e5f2762 100644
 --- a/libgcc/config/mips/crti.S
 +++ b/libgcc/config/mips/crti.S
-@@ -21,6 +21,10 @@ a copy of the GCC Runtime Library Exception along with this program;
+@@ -21,6 +21,10 @@ a copy of the GCC Runtime Library Except
  see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
  <http://www.gnu.org/licenses/>.  */
  
@@ -75,11 +71,9 @@ index c7418db..e5f2762 100644
  /* 4 slots for argument spill area.  1 for cpreturn, 1 for stack.
     Return spill offset of 40 and 20.  Aligned to 16 bytes for n32.  */
  
-diff --git a/libgcc/config/mips/crtn.S b/libgcc/config/mips/crtn.S
-index 59d1a90..5cc03bf 100644
 --- a/libgcc/config/mips/crtn.S
 +++ b/libgcc/config/mips/crtn.S
-@@ -21,6 +21,9 @@ a copy of the GCC Runtime Library Exception along with this program;
+@@ -21,6 +21,9 @@ a copy of the GCC Runtime Library Except
  see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
  <http://www.gnu.org/licenses/>.  */
  
@@ -89,11 +83,9 @@ index 59d1a90..5cc03bf 100644
  /* 4 slots for argument spill area.  1 for cpreturn, 1 for stack.
     Return spill offset of 40 and 20.  Aligned to 16 bytes for n32.  */
  
-diff --git a/libgcc/config/mips/mips16.S b/libgcc/config/mips/mips16.S
-index ab3a794..4ded5da 100644
 --- a/libgcc/config/mips/mips16.S
 +++ b/libgcc/config/mips/mips16.S
-@@ -27,6 +27,10 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+@@ -27,6 +27,10 @@ see the files COPYING3 and COPYING.RUNTI
     values using the soft-float calling convention, but do the actual
     operation using the hard floating point instructions.  */
  
@@ -104,11 +96,9 @@ index ab3a794..4ded5da 100644
  #if defined _MIPS_SIM && (_MIPS_SIM == _ABIO32 || _MIPS_SIM == _ABIO64)
  
  /* This file contains 32-bit assembly code.  */
-diff --git a/libgcc/config/mips/vr4120-div.S b/libgcc/config/mips/vr4120-div.S
-index 6e9242a..1e260cd 100644
 --- a/libgcc/config/mips/vr4120-div.S
 +++ b/libgcc/config/mips/vr4120-div.S
-@@ -26,6 +26,10 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
+@@ -26,6 +26,10 @@ see the files COPYING3 and COPYING.RUNTI
     -mfix-vr4120.  div and ddiv do not give the correct result when one
     of the operands is negative.  */
  
@@ -119,6 +109,3 @@ index 6e9242a..1e260cd 100644
  	.set	nomips16
  
  #define DIV								\
--- 
-1.9.1
-

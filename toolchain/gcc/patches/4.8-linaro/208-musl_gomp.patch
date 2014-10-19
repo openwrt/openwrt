@@ -1,0 +1,11 @@
+--- a/libgomp/config/posix/time.c
++++ b/libgomp/config/posix/time.c
+@@ -28,6 +28,8 @@
+    The following implementation uses the most simple POSIX routines.
+    If present, POSIX 4 clocks should be used instead.  */
+ 
++#define _POSIX_C_SOURCE 199309L /* for clocks */
++
+ #include "libgomp.h"
+ #include <unistd.h>
+ #if TIME_WITH_SYS_TIME
