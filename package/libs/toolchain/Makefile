@@ -468,13 +468,14 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   LD_MUSL_NAME = $(notdir $(firstword $(wildcard $(TOOLCHAIN_DIR)/lib/ld-musl-*.so*)))
 
   define Package/musl/install
-	$(INSTALL_DIR) $(1)/lib
+	$(INSTALL_DIR) $(1)/lib $(1)/usr/bin
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld-musl-*.so* \
 		$(1)/lib/
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libc.so* \
 		$(1)/lib/
+	ln -s ../../lib/$(LD_MUSL_NAME) $(1)/usr/bin/ldd
 	$(if $(findstring -sf.so,$(LD_MUSL_NAME)),ln -s $(LD_MUSL_NAME) $(1)/lib/$(subst -sf.so,.so,$(LD_MUSL_NAME)))
   endef
 
