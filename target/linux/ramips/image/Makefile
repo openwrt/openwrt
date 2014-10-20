@@ -56,7 +56,9 @@ endef
 #
 # The real magic happens inside these templates
 #
-
+# $(1), compression method
+# $(2), filename of image data
+# $(3), output filename
 define MkImage
 	$(eval imagename=$(if $(4),$(4),MIPS OpenWrt Linux-$(LINUX_VERSION)))
 	-mkimage -A mips -O linux -T kernel -C $(1) $(call kernel_entry)\
@@ -79,6 +81,9 @@ define MkImageSysupgrade/squashfs
 	fi
 endef
 
+# $(1), lowercase board name like "mt7620a_v22sg"
+# $(2), DTS filename without .dts extension
+# $(3), optional filename suffix, e.g. "-initramfs"
 define PatchKernelLzmaDtb
 	cp $(KDIR)/vmlinux$(3) $(KDIR)/vmlinux-$(1)$(3)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(KDIR)/$(2).dtb ../dts/$(2).dts
@@ -86,16 +91,29 @@ define PatchKernelLzmaDtb
 	$(call CompressLzma,$(KDIR)/vmlinux-$(1)$(3),$(KDIR)/vmlinux-$(1)$(3).bin.lzma)
 endef
 
+# $(1), lowercase board name
+# $(2), DTS filename without .dts extension
+# $(3), ih_name field of uImage header
+# $(4), optional filename suffix, e.g. "-initramfs"
 define MkImageLzmaDtb
 	$(call PatchKernelLzmaDtb,$(1),$(2),$(4))
 	$(call MkImage,lzma,$(KDIR)/vmlinux-$(1)$(4).bin.lzma,$(KDIR)/vmlinux-$(1)$(4).uImage,$(3))
 endef
 
+# $(1), Rootfs type, e.g. squashfs
+# $(2), lowercase board name
+# $(3), DTS filename without .dts extension
+# $(4), maximum size of sysupgrade image
+# $(5), uImage header's ih_name field
 define BuildFirmware/OF
 	$(call MkImageLzmaDtb,$(2),$(3),$(5))
 	$(call MkImageSysupgrade/$(1),$(1),$(2),$(4),$(6))
 endef
 
+# $(1), squashfs/initramfs
+# $(2), lowercase board name
+# $(3), DTS filename without .dts extension
+# $(4), ih_name field of uImage header
 define BuildFirmware/OF/initramfs
 	$(call MkImageLzmaDtb,$(2),$(3),$(4),-initramfs)
 	$(CP) $(KDIR)/vmlinux-$(2)-initramfs.uImage $(call imgname,$(1),$(2))-uImage.bin
@@ -116,6 +134,7 @@ BuildFirmware/Default4M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(
 # $(1) = squashfs/initramfs
 # $(2) = lowercase board name
 # $(3) = dts file
+# $(4) = uImage header name field
 ralink_default_fw_size_8M=8060928
 BuildFirmware/Default8M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_8M),$(4))
 BuildFirmware/Default8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
