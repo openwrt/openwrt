@@ -215,6 +215,14 @@ define ubinize
 	( cd $(2); $(STAGING_DIR_HOST)/bin/ubinize -o $(3) -p $(4) -m $(5) $(6) $(1))
 endef
 
+#
+# Embed lzma-compressed kernel inside lzma-loader.
+#
+# $(1), suffix of output filename, e.g. generic, lowercase board name, etc.
+# $(2), suffix of target file to build, e.g. bin, gz, elf
+# $(3), kernel command line to pass from lzma-loader to kernel
+# $(4), unused here
+# $(5), suffix of kernel filename, e.g. -initramfs, or empty
 define Image/BuildLoader
 	-rm -rf $(KDIR)/lzma-loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)"\
@@ -224,6 +232,13 @@ define Image/BuildLoader
 	-$(CP) $(KDIR)/loader-$(1).$(2) $(KDIR)/loader-$(1)$(5).$(2)
 endef
 
+#
+# Build lzma-loader alone which will search for lzma-compressed kernel identified by
+# uImage header with magic "OKLI" at boot time.
+#
+# $(4), offset into the flash space to start searching uImage magic "OKLI".
+# $(5), size of search range starting at $(4).  With 0 as the value, uImage
+#	header is expected to be at precisely $(4)
 define Image/BuildLoaderAlone
 	-rm -rf $(KDIR)/lzma-loader
 	$(LOADER_MAKE) LOADER=loader-$(1).$(2) KERNEL_CMDLINE="$(3)" \
@@ -1015,6 +1030,8 @@ define Image/Build/Zcomax
 endef
 
 
+# $(1): template name to be defined, etc. squashfs-only, 64k, 64kraw, etc.
+# $(2): jffs2 blocksize.
 define Jffs2Template
   define Image/Build/Template/$(1)/jffs2-$(2)
     $$(call Image/Build/$$(1),jffs2-$(2),$$(2),$$(3),$$(4),$$(5),$$(6),$$(7),$$(8),$$(9),$$(10))
