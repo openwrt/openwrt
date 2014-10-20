@@ -134,6 +134,8 @@ hostapd_common_add_bss_config() {
 
 	config_add_string 'key1:wepkey' 'key2:wepkey' 'key3:wepkey' 'key4:wepkey' 'password:wpakey'
 
+	config_add_string wpa_psk_file
+
 	config_add_boolean wps_pushbutton wps_label ext_registrar wps_pbc_in_m1
 	config_add_string wps_device_type wps_device_name wps_manufacturer wps_pin
 
@@ -202,7 +204,7 @@ hostapd_set_bss_options() {
 			wps_not_configured=1
 		;;
 		psk)
-			json_get_vars key
+			json_get_vars key wpa_psk_file
 			if [ ${#key} -lt 8 ]; then
 				wireless_setup_vif_failed INVALID_WPA_PSK
 				return 1
@@ -211,6 +213,10 @@ hostapd_set_bss_options() {
 			else
 				append bss_conf "wpa_passphrase=$key" "$N"
 			fi
+			[ -n "$wpa_psk_file" ] && {
+				[ -e "$wpa_psk_file" ] || touch "$wpa_psk_file"
+				append bss_conf "wpa_psk_file=$wpa_psk_file" "$N"
+			}
 			wps_possible=1
 		;;
 		eap)
