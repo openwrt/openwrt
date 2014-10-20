@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 define cc
-	$(HOSTCC) $(HOST_CFLAGS) -include endian.h $(HOST_STATIC_LINKING) -o $(HOST_BUILD_DIR)/bin/$(firstword $(1)) $(foreach src,$(1),src/$(src).c) $(2)
+	$(HOSTCC) $(HOST_CFLAGS) -include endian.h $(HOST_STATIC_LINKING) $(HOST_LDFLAGS) -o $(HOST_BUILD_DIR)/bin/$(firstword $(1)) $(foreach src,$(1),src/$(src).c) $(2)
 endef
 
 define Host/Compile
@@ -65,7 +65,7 @@ define Host/Compile
 	$(call cc,fix-u-media-header cyg_crc32,-Wall)
 	$(call cc,hcsmakeimage bcmalgo)
 	$(call cc,mkporayfw, -Wall)
-	#$(call cc,mkhilinkfw, -lcrypto)
+	$(call cc,mkhilinkfw, -lcrypto)
 	$(call cc,mkdcs932, -Wall)
 	$(call cc,mkheader_gemtek,-lz)
 	$(call cc,mkrtn56uimg, -lz)
