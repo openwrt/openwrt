@@ -89,13 +89,13 @@ calc_crc(image_header_t *hdr, void *data, uint32_t len)
 	/*
 	 * Calculate payload checksum
 	 */
-	hdr->ih_dcrc = htonl(crc32(0, data, len));
+	hdr->ih_dcrc = htonl(crc32(0, (Bytef *)data, len));
 	hdr->ih_size = htonl(len);
 	/*
 	 * Calculate header checksum
 	 */
 	hdr->ih_hcrc = 0;
-	hdr->ih_hcrc = htonl(crc32(0, hdr, sizeof(image_header_t)));
+	hdr->ih_hcrc = htonl(crc32(0, (Bytef *)hdr, sizeof(image_header_t)));
 }
 
 
@@ -166,7 +166,7 @@ process_image(char *progname, char *filename, op_mode_t opmode)
 	}
 
 	if (opmode == FACTORY) {
-		strncpy(&namebuf, (char *)&hdr->tail.ih_name, IH_NMLEN);
+		strncpy(namebuf, hdr->tail.ih_name, IH_NMLEN);
 		hdr->tail.asus.kernel.major = 0;
 		hdr->tail.asus.kernel.minor = 0;
 		hdr->tail.asus.fs.major = 0;
@@ -231,7 +231,7 @@ process_image(char *progname, char *filename, op_mode_t opmode)
 	if (opmode == FACTORY) {
 		hdr = ptr+offset_sec_header;
 		memcpy(hdr, ptr, sizeof(image_header_t));
-		strncpy((char *)&hdr->tail.ih_name, &namebuf, IH_NMLEN);
+		strncpy(hdr->tail.ih_name, namebuf, IH_NMLEN);
 		calc_crc(hdr, ptr+offset_kernel, offset_sqfs - offset_kernel);
 		calc_crc((image_header_t *)ptr, ptr+offset_kernel, offset_image_end - offset_kernel);
 	} else {
