@@ -42,11 +42,11 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
       PKG_COMP:=xz
     endif
     ifeq ($(CONFIG_GCC_VERSION),"4.9-linaro")
-      LINARO_RELEASE:=14.09
-      PKG_REV:=4.9-2014.09
+      LINARO_RELEASE:=14.10
+      PKG_REV:=4.9-2014.10
       PKG_VERSION:=4.9.2
       PKG_VERSION_MAJOR:=4.9
-      PKG_MD5SUM:=ac920b5800623ff99137d3cf23ad09ca
+      PKG_MD5SUM:=230da25b1e7661a8659eb770c5c88442
       PKG_COMP:=xz
     endif
     ifneq ($(LINARO_RELEASE),)
