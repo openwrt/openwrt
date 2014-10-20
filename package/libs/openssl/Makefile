@@ -28,6 +28,11 @@ PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST \
 
 include $(INCLUDE_DIR)/package.mk
 
+ifneq ($(CONFIG_CCACHE),)
+HOSTCC=$(HOSTCC_NOCACHE)
+HOSTCXX=$(HOSTCXX_NOCACHE)
+endif
+
 define Package/openssl/Default
   TITLE:=Open source SSL toolkit
   URL:=http://www.openssl.org/
