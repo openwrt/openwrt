@@ -213,6 +213,9 @@ case $board in
 	wt1520)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;
+	wt3020)
+		ucidef_set_led_default "power" "power" "nexx:blue:power" "0"
+		;;
 	y1 |\
 	y1s)
 		ucidef_set_led_default "power" "power" "lenovo:blue:power" "1"
