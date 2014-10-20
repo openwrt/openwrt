@@ -27,6 +27,8 @@ PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST \
 	CONFIG_OPENSSL_WITH_EC CONFIG_OPENSSL_WITH_EC2M
 
 include $(INCLUDE_DIR)/package.mk
+include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/host-build.mk
 
 define Package/openssl/Default
   TITLE:=Open source SSL toolkit
@@ -198,5 +200,59 @@ define Package/openssl-util/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/openssl $(1)/usr/bin/
 endef
 
+
+HOST_CPPFLAGS += $(HOST_FPIC)
+
+ifeq ($(HOST_ARCH),x86_64)
+  OPENSSL_HOST_TARGET:=linux-x86_64
+else
+  OPENSSL_HOST_TARGET:=linux-generic32
+endif
+
+define Host/Configure
+	[ -f $(HOST_STAMP_CONFIGURED) ] || { \
+		rm -f $(HOST_BUILD_DIR)/*.so.* $(HOST_BUILD_DIR)/*.a; \
+		find $(HOST_BUILD_DIR) -name \*.o | xargs rm -f; \
+	}
+	(cd $(HOST_BUILD_DIR); \
+		./Configure "$(OPENSSL_HOST_TARGET)" \
+			--prefix=/usr \
+			--openssldir=/etc/ssl \
+			$(HOST_CPPFLAGS) \
+			$(HOST_LDFLAGS) -ldl \
+			$(OPENSSL_NO_CIPHERS) \
+			shared zlib-dynamic \
+	)
+	# XXX: OpenSSL "make depend" will look for installed headers before its own,
+	# so remove installed stuff first
+	-$(SUBMAKE) -j1 clean-staging
+	+$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR) \
+		MAKEDEPPROG="$(HOSTCC)" \
+		depend
+endef
+
+define Host/Compile
+	+$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC)" \
+		all
+	+$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC)" \
+		build-shared
+	# Work around openssl build bug to link libssl.so with libcrypto.so.
+	-rm $(HOST_BUILD_DIR)/libssl.so.*.*.*
+	+$(MAKE) $(PKG_JOBS) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC)" \
+		do_linux-shared
+endef
+
+define Host/Install
+	$(MAKE) -C $(HOST_BUILD_DIR) \
+		CC="$(HOSTCC)" \
+		INSTALL_PREFIX="$(STAGING_DIR_HOST)" \
+		install
+endef
+
+
 $(eval $(call BuildPackage,libopenssl))
 $(eval $(call BuildPackage,openssl-util))
+$(eval $(call HostBuild))
