@@ -97,6 +97,7 @@ platform_check_image() {
 	wr8305rt |\
 	wrtnode |\
 	wt1520 |\
+	wt3020 |\
 	x5 |\
 	x8 |\
 	y1 |\

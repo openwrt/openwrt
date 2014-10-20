@@ -1,0 +1,319 @@
+From fceb829eca2bc088ad66b18099b57dc96f1bae43 Mon Sep 17 00:00:00 2001
+From: Roger Pueyo Centelles <roger.pueyo@guifi.net>
+Date: Sun, 19 Oct 2014 17:50:01 +0200
+Subject: [PATCH] ramips: add support for Nexx WT3020 devices
+
+---
+ target/linux/ramips/base-files/etc/board.d/01_leds |   3 +
+ .../linux/ramips/base-files/etc/board.d/02_network |   1 +
+ target/linux/ramips/base-files/etc/diag.sh         |   3 +
+ target/linux/ramips/base-files/lib/ramips.sh       |   3 +
+ .../ramips/base-files/lib/upgrade/platform.sh      |   1 +
+ target/linux/ramips/dts/WT3020-4M.dts              | 100 +++++++++++++++++++++
+ target/linux/ramips/dts/WT3020-8M.dts              | 100 +++++++++++++++++++++
+ target/linux/ramips/image/Makefile                 |   2 +
+ 8 files changed, 213 insertions(+)
+ create mode 100644 target/linux/ramips/dts/WT3020-4M.dts
+ create mode 100644 target/linux/ramips/dts/WT3020-8M.dts
+
+diff --git a/target/linux/ramips/base-files/etc/board.d/01_leds b/target/linux/ramips/base-files/etc/board.d/01_leds
+index 26f384d..7ca7ffb 100755
+--- a/target/linux/ramips/base-files/etc/board.d/01_leds
++++ b/target/linux/ramips/base-files/etc/board.d/01_leds
+@@ -213,6 +213,9 @@ case $board in
+ 	wt1520)
+ 		set_wifi_led "rt2800pci-phy0::radio"
+ 		;;
++	wt3020)
++		ucidef_set_led_default "power" "power" "nexx:blue:power" "0"
++		;;
+ 	y1 |\
+ 	y1s)
+ 		ucidef_set_led_default "power" "power" "lenovo:blue:power" "1"
+diff --git a/target/linux/ramips/base-files/etc/board.d/02_network b/target/linux/ramips/base-files/etc/board.d/02_network
+index 7ecec5f..ff8fbc0 100755
+--- a/target/linux/ramips/base-files/etc/board.d/02_network
++++ b/target/linux/ramips/base-files/etc/board.d/02_network
+@@ -127,6 +127,7 @@ ramips_setup_interfaces()
+ 	hg255d | \
+ 	rt-n14u | \
+ 	wrtnode | \
++	wt3020 | \
+ 	ur-326n4g | \
+ 	zbt-wa05)
+ 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+diff --git a/target/linux/ramips/base-files/etc/diag.sh b/target/linux/ramips/base-files/etc/diag.sh
+index aed7d6a..2977099 100755
+--- a/target/linux/ramips/base-files/etc/diag.sh
++++ b/target/linux/ramips/base-files/etc/diag.sh
+@@ -170,6 +170,9 @@ get_status_led() {
+ 	nexx-wt1520)
+ 		status_led="nexx-wt1520:white:power"
+ 		;;
++	nexx-wt3020)
++		status_led="nexx:blue:power"
++		;;
+ 	mzk-w300nh2)
+ 		status_led="mzkw300nh2:green:power"
+ 		;;
+diff --git a/target/linux/ramips/base-files/lib/ramips.sh b/target/linux/ramips/base-files/lib/ramips.sh
+index 08c5dff..88fa623 100755
+--- a/target/linux/ramips/base-files/lib/ramips.sh
++++ b/target/linux/ramips/base-files/lib/ramips.sh
+@@ -184,6 +184,9 @@ ramips_board_detect() {
+ 	*"Nexx WT1520")
+ 		name="wt1520"
+ 		;;
++	*"Nexx WT3020")
++		name="wt3020"
++		;;
+ 	*"NW718")
+ 		name="nw718"
+ 		;;
+diff --git a/target/linux/ramips/base-files/lib/upgrade/platform.sh b/target/linux/ramips/base-files/lib/upgrade/platform.sh
+index 61a0935..c9a418e 100755
+--- a/target/linux/ramips/base-files/lib/upgrade/platform.sh
++++ b/target/linux/ramips/base-files/lib/upgrade/platform.sh
+@@ -97,6 +97,7 @@ platform_check_image() {
+ 	wr8305rt |\
+ 	wrtnode |\
+ 	wt1520 |\
++	wt3020 |\
+ 	x5 |\
+ 	x8 |\
+ 	y1 |\
+diff --git a/target/linux/ramips/dts/WT3020-4M.dts b/target/linux/ramips/dts/WT3020-4M.dts
+new file mode 100644
+index 0000000..7583680
+--- /dev/null
++++ b/target/linux/ramips/dts/WT3020-4M.dts
+@@ -0,0 +1,100 @@
++/dts-v1/;
++
++/include/ "mt7620n.dtsi"
++
++/ {
++	compatible = "wt3020", "ralink,mt7620n-soc";
++	model = "Nexx WT3020";
++
++	palmbus@10000000 {
++                gpio2: gpio@660 {
++                        status = "okay";
++                };
++
++                gpio3: gpio@688 {
++                        status = "okay";
++                };
++
++		spi@b00 {
++			status = "okay";
++
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "w25q32";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "w25q32";
++				spi-max-frequency = <10000000>;
++
++				partition@0 {
++					label = "u-boot";
++					reg = <0x0 0x30000>;
++					read-only;
++				};
++
++				partition@30000 {
++					label = "u-boot-env";
++					reg = <0x30000 0x10000>;
++					read-only;
++				};
++
++				factory: partition@40000 {
++					label = "factory";
++					reg = <0x40000 0x10000>;
++					read-only;
++				};
++
++				partition@50000 {
++					label = "firmware";
++					reg = <0x50000 0x3b0000>;
++				};
++			};
++		};
++	};
++
++	ehci@101c0000 {
++		status = "okay";
++	};
++
++	ohci@101c1000 {
++		status = "okay";
++	};
++
++	ethernet@10100000 {
++		mtd-mac-address = <&factory 0x4>;
++		ralink,port-map = "wllll";
++	};
++
++	wmac@10180000 {
++		ralink,mtd-eeprom = <&factory 0>;
++	};
++
++	pinctrl {
++		state_default: pinctrl0 {
++			default {
++				ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf";
++				ralink,function = "gpio";
++			};
++		};
++	};
++
++	gpio-keys-polled {
++		compatible = "gpio-keys-polled";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <20>;
++		reset {
++			label = "reset";
++			gpios = <&gpio0 1 1>;
++			linux,code = <0x198>;
++		};
++	};
++
++        gpio-leds {
++                compatible = "gpio-leds";
++                power {
++                        label = "nexx:blue:power";
++                        gpios = <&gpio3 0 0>;
++                };
++        };
++};
+diff --git a/target/linux/ramips/dts/WT3020-8M.dts b/target/linux/ramips/dts/WT3020-8M.dts
+new file mode 100644
+index 0000000..5fa7c92
+--- /dev/null
++++ b/target/linux/ramips/dts/WT3020-8M.dts
+@@ -0,0 +1,100 @@
++/dts-v1/;
++
++/include/ "mt7620n.dtsi"
++
++/ {
++	compatible = "wt3020", "ralink,mt7620n-soc";
++	model = "Nexx WT3020";
++
++	palmbus@10000000 {
++                gpio2: gpio@660 {
++                        status = "okay";
++                };
++
++                gpio3: gpio@688 {
++                        status = "okay";
++                };
++
++		spi@b00 {
++			status = "okay";
++
++			m25p80@0 {
++				#address-cells = <1>;
++				#size-cells = <1>;
++				compatible = "w25q64";
++				reg = <0 0>;
++				linux,modalias = "m25p80", "w25q64";
++				spi-max-frequency = <10000000>;
++
++				partition@0 {
++					label = "u-boot";
++					reg = <0x0 0x30000>;
++					read-only;
++				};
++
++				partition@30000 {
++					label = "u-boot-env";
++					reg = <0x30000 0x10000>;
++					read-only;
++				};
++
++				factory: partition@40000 {
++					label = "factory";
++					reg = <0x40000 0x10000>;
++					read-only;
++				};
++
++				partition@50000 {
++					label = "firmware";
++					reg = <0x50000 0x7b0000>;
++				};
++			};
++		};
++	};
++
++	ehci@101c0000 {
++		status = "okay";
++	};
++
++	ohci@101c1000 {
++		status = "okay";
++	};
++
++	ethernet@10100000 {
++		mtd-mac-address = <&factory 0x4>;
++		ralink,port-map = "wllll";
++	};
++
++	wmac@10180000 {
++		ralink,mtd-eeprom = <&factory 0>;
++	};
++
++	pinctrl {
++		state_default: pinctrl0 {
++			default {
++				ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf";
++				ralink,function = "gpio";
++			};
++		};
++	};
++
++	gpio-keys-polled {
++		compatible = "gpio-keys-polled";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <20>;
++		reset {
++			label = "reset";
++			gpios = <&gpio0 1 1>;
++			linux,code = <0x198>;
++		};
++	};
++
++        gpio-leds {
++                compatible = "gpio-leds";
++                power {
++                        label = "nexx:blue:power";
++                        gpios = <&gpio3 0 0>;
++                };
++        };
++};
+diff --git a/target/linux/ramips/image/Makefile b/target/linux/ramips/image/Makefile
+index f048caf..a93b82c 100644
+--- a/target/linux/ramips/image/Makefile
++++ b/target/linux/ramips/image/Makefile
+@@ -769,6 +769,7 @@ Image/Build/Profile/WMR300=$(call BuildFirmware/Default8M/$(1),$(1),wmr-300,WMR3
+ Image/Build/Profile/RT-N14U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n14u,RT-N14U)
+ Image/Build/Profile/WR8305RT=$(call BuildFirmware/Default8M/$(1),$(1),wr8305rt,WR8305RT)
+ Image/Build/Profile/WRTNODE=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode,WRTNODE)
++Image/Build/Profile/WT3020=$(call BuildFirmware/DefaultDualSize/$(1),$(1),wt3020,WT3020)
+ Image/Build/Profile/ZBT-WA05=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wa05,ZBT-WA05)
+ 
+ ifeq ($(SUBTARGET),mt7620n)
+@@ -778,6 +779,7 @@ define Image/Build/Profile/Default
+ 	$(call Image/Build/Profile/RT-N14U,$(1))
+ 	$(call Image/Build/Profile/WR8305RT,$(1))
+ 	$(call Image/Build/Profile/WRTNODE,$(1))
++	$(call Image/Build/Profile/WT3020,$(1))
+ 	$(call Image/Build/Profile/ZBT-WA05,$(1))
+ endef
+ endif
+-- 
+2.1.1
+

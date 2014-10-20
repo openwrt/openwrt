@@ -170,6 +170,9 @@ get_status_led() {
 	nexx-wt1520)
 		status_led="nexx-wt1520:white:power"
 		;;
+	nexx-wt3020)
+		status_led="nexx:blue:power"
+		;;
 	mzk-w300nh2)
 		status_led="mzkw300nh2:green:power"
 		;;
