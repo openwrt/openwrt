@@ -67,8 +67,8 @@ static DES_key_schedule schedule;
 static void show_usage(const char *arg0);
 static void exit_cleanup(void);
 static void copy_file(int src, int dst);
-static void encrypt(void *p, off_t len);
-static void decrypt(void *p, off_t len);
+static void do_encrypt(void *p, off_t len);
+static void do_decrypt(void *p, off_t len);
  
  
 int main(int argc, char **argv)
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 			munmap(p, file_len);
 			exit(EXIT_FAILURE);
 		}
-		encrypt(p, len);
+		do_encrypt(p, len);
 		munmap(p, file_len);
 		if (len != file_len) {
 			if (ftruncate(temp_fd, len) < 0) {
@@ -223,7 +223,7 @@ int main(int argc, char **argv)
 	if (decrypt_opt) {
 		off_t header_len = min(file_len, sizeof(image_header_t) + 3);
 		memcpy(buf, p, header_len);
-		decrypt(buf, header_len);
+		do_decrypt(buf, header_len);
 		header = (image_header_t *)buf;
 		if (ntohl(header->ih_magic) != IH_MAGIC) {
 			fprintf(stderr, "Header magic incorrect: "
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 			        IH_MAGIC, ntohl(header->ih_magic));
 			exit(EXIT_FAILURE);
 		}
-		decrypt(p, file_len);
+		do_decrypt(p, file_len);
 		munmap(p, file_len);
 	}
  
@@ -281,7 +281,7 @@ static void copy_file(int src, int dst)
     }
 }
  
-static void encrypt(void *p, off_t len)
+static void do_encrypt(void *p, off_t len)
 {
 	DES_cblock *pblock;
 	int num_blocks;
@@ -301,7 +301,7 @@ static void encrypt(void *p, off_t len)
 	}
 }
  
-static void decrypt(void *p, off_t len)
+static void do_decrypt(void *p, off_t len)
 {
 	DES_cblock *pblock;
 	int num_blocks;
