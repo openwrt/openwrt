@@ -70,7 +70,6 @@ static int crypt_file(void)
 {
 	unsigned char *buf = NULL;
 	ssize_t src_len;
-	ssize_t crypt_len;
 	int err;
 	int ret = -1;
 
@@ -92,7 +91,6 @@ static int crypt_file(void)
 		goto out;
 	}
 
-	crypt_len = (src_len > 512) ? 512 : src_len;
 	if (do_decrypt)
 		crypt_header(buf, 512, crypt_key2, crypt_key1);
 	else
