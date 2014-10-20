@@ -168,13 +168,17 @@ $(eval $(call RequireCommand,svn, \
 	Please install the subversion client. \
 ))
 
-define Require/openssl
+define Require/libssl
 	echo 'int main(int argc, char **argv) { SSL_library_init(); return 0; }' | \
 		gcc -include openssl/ssl.h -x c -o $(TMP_DIR)/a.out - -lcrypto -lssl
 endef
 
-$(eval $(call Require,openssl, \
-	Please install openssl (with development headers) \
+$(eval $(call Require,libssl, \
+	Please install the openssl library (with development headers) \
+))
+
+$(eval $(call RequireCommand,openssl, \
+       Please install openssl. \
 ))
 
 define Require/gnu-find
