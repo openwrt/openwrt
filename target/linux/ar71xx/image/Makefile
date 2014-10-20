@@ -317,7 +317,7 @@ define Image/BuildKernel
 	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(UIMAGE)-lzma.bin)
 	cp $(KDIR)/loader-generic.elf $(VMLINUX)-lzma.elf
 	-mkdir -p $(KDIR_TMP)
-	$(call Image/Build/Profile/$(PROFILE),buildkernel)
+	$(call Image/Build/Profile/$(IMAGE_PROFILE),buildkernel)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	cp $(KDIR)/vmlinux-initramfs.elf $(VMLINUX)-initramfs.elf
 	cp $(KDIR)/vmlinux-initramfs $(VMLINUX)-initramfs.bin
