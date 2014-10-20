@@ -65,6 +65,7 @@ define Host/Prepare
 	$(call Host/Prepare/Default)
 	ln -snf $(notdir $(HOST_BUILD_DIR)) $(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(HOST_BUILD_DIR)/
+	$(SED) 's, " Linaro.*,,' $(HOST_BUILD_DIR)/bfd/version.h
 endef
 
 define Host/Configure
