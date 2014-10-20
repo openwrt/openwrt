@@ -1,0 +1,29 @@
+--- a/comgt.c
++++ b/comgt.c
+@@ -30,7 +30,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <signal.h>
+-#include <termio.h>
++#include <termios.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+ #include <string.h>
+@@ -81,7 +81,7 @@ char token[MAXTOKEN];   /* For gettoken(
+ char scriptfile[MAXPATH]; /* Script file name */
+ char scriptfilepath[MAXPATH]; /* temp storage for full path */
+ BOOL verbose=0; /* Log actions */
+-struct termio cons, stbuf, svbuf;  /* termios: svbuf=before, stbuf=while */
++struct termios cons, stbuf, svbuf;  /* termios: svbuf=before, stbuf=while */
+ int comfd=0; /* Communication file descriptor.  Defaults to stdin. */
+ char msg[STRINGL]; /* Massage messages here */
+ int preturn,returns[MAXGOSUBS];
+@@ -926,7 +926,7 @@ void setcom(void) {
+ }
+ 
+ void doset(void) {
+-  struct termio console;
++  struct termios console;
+   int a,b;
+   gettoken();
+   if(strcmp(token,"echo")==0) {
