@@ -1,5 +1,6 @@
 #!/bin/sh
 [ -f /etc/banner ] && cat /etc/banner
+[ -e /tmp/.failsafe ] && cat /etc/banner.failsafe
 
 export PATH=/usr/bin:/usr/sbin:/bin:/sbin
 export HOME=$(grep -e "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
