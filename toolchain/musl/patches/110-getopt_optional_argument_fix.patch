@@ -1,0 +1,20 @@
+--- a/src/misc/getopt.c
++++ b/src/misc/getopt.c
+@@ -55,7 +55,9 @@ int getopt(int argc, char * const argv[]
+ 		return '?';
+ 	}
+ 	if (optstring[i+1] == ':') {
++		if (optstring[i+2] == ':') optarg = 0;
+ 		if (optind >= argc) {
++			if (optstring[i+2] == ':') return c;
+ 			if (optstring[0] == ':') return ':';
+ 			if (opterr) {
+ 				write(2, argv[0], strlen(argv[0]));
+@@ -65,7 +67,6 @@ int getopt(int argc, char * const argv[]
+ 			}
+ 			return '?';
+ 		}
+-		if (optstring[i+2] == ':') optarg = 0;
+ 		if (optstring[i+2] != ':' || optpos) {
+ 			optarg = argv[optind++] + optpos;
+ 			optpos = 0;
