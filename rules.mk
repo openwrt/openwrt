@@ -278,8 +278,7 @@ V_$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
 endef
 
 define shexport
-$(call shvar,$(1))=$$(call $(1))
-export $(call shvar,$(1))
+export $(call shvar,$(1))=$$(call $(1))
 endef
 
 define include_mk
