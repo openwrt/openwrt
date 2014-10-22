@@ -1284,6 +1284,7 @@ $(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G
 $(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPAG300H,wzr-hp-ag300h,WZR-HP-AG300H,ttyS0,115200,WZR-HP-AG300H))
 $(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPG450H,wzr-hp-g450h,WZR-HP-G450H,ttyS0,115200,WZR-HP-AG450H))
 $(eval $(call SingleProfile,WZRHP64K,64kraw,WZR600DHP,wzr-600dhp,WZR-HP-AG300H,ttyS0,115200,WZR-600DHP))
+$(eval $(call SingleProfile,WZRHP64K,64kraw,WZR450HP2,wzr-450hp2,WZR-450HP2,ttyS0,115200,WZR-450HP2))
 
 $(eval $(call SingleProfile,Zcomax,64k,ZCN1523H28,zcn-1523h-2-8,ZCN-1523H-2,ttyS0,115200,$$(zcn1523h_mtdlayout)))
 $(eval $(call SingleProfile,Zcomax,64k,ZCN1523H516,zcn-1523h-5-16,ZCN-1523H-5,ttyS0,115200,$$(zcn1523h_mtdlayout)))
