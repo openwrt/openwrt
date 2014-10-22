@@ -21,6 +21,7 @@ qstrip=$(strip $(subst ",,$(1)))
 
 empty:=
 space:= $(empty) $(empty)
+comma:=,
 merge=$(subst $(space),,$(1))
 confvar=$(call merge,$(foreach v,$(1),$(if $($(v)),y,n)))
 strip_last=$(patsubst %.$(lastword $(subst .,$(space),$(1))),%,$(1))
