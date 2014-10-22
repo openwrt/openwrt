@@ -109,7 +109,7 @@ ifeq ($(DUMP),)
 			echo "$(1)" >> $(PKG_INSTALL_STAMP)
         endif
       else
-        $$(info WARNING: skipping $(1) -- package not selected)
+        $(if $(CONFIG_PACKAGE_$(1)),$$(info WARNING: skipping $(1) -- package not selected))
       endif
     endif
     endif
