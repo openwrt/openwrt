@@ -102,9 +102,7 @@ ifeq ($(DUMP),)
 			echo "$(1)" >> $(PKG_INSTALL_STAMP)
         endif
       else
-        compile: $(1)-disabled
-        $(1)-disabled:
-		@echo "WARNING: skipping $(1) -- package not selected" >&2
+        $$(info WARNING: skipping $(1) -- package not selected)
       endif
     endif
     endif
