@@ -18,6 +18,7 @@ PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 export SHELL:=/bin/sh
+.ONESHELL:
 
 include $(INCLUDE_DIR)/package.mk
 
