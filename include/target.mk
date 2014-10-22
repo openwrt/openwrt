@@ -63,8 +63,8 @@ ifndef Profile
 define Profile
   $(eval $(call Profile/Default))
   $(eval $(call Profile/$(1)))
-  $(eval $(call shexport,Profile/$(1)/Config))
-  $(eval $(call shexport,Profile/$(1)/Description))
+  dumpinfo : $(call shexport,Profile/$(1)/Config)
+  dumpinfo : $(call shexport,Profile/$(1)/Description)
   DUMPINFO += \
 	echo "Target-Profile: $(1)"; \
 	echo "Target-Profile-Name: $(NAME)"; \
@@ -73,10 +73,10 @@ define Profile
 		echo "Target-Profile-Kconfig: yes"; \
 	fi; \
 	echo "Target-Profile-Config: "; \
-	$(SH_FUNC) getvar "$(call shvar,Profile/$(1)/Config)"; \
+	echo "$$$$$$$$$(call shvar,Profile/$(1)/Config)"; \
 	echo "@@"; \
 	echo "Target-Profile-Description:"; \
-	$(SH_FUNC) getvar "$(call shvar,Profile/$(1)/Description)"; \
+	echo "$$$$$$$$$(call shvar,Profile/$(1)/Description)"; \
 	echo "@@"; \
 	echo;
   ifeq ($(CONFIG_TARGET_$(call target_conf,$(BOARD)_$(if $(SUBTARGET),$(SUBTARGET)_))$(1)),y)
@@ -103,8 +103,6 @@ else
     $(eval $(call IncludeProfiles))
   endif
 endif
-
-$(eval $(call shexport,Target/Description))
 
 ifneq ($(TARGET_BUILD)$(if $(DUMP),,1),)
   include $(INCLUDE_DIR)/kernel-version.mk
@@ -259,6 +257,7 @@ endif
 
 define BuildTargets/DumpCurrent
   .PHONY: dumpinfo
+  dumpinfo : export DESCRIPTION=$$(Target/Description)
   dumpinfo:
 	@echo 'Target: $(TARGETID)'; \
 	 echo 'Target-Board: $(BOARD)'; \
@@ -273,9 +272,9 @@ define BuildTargets/DumpCurrent
 	 echo 'Linux-Version: $(LINUX_VERSION)'; \
 	 echo 'Linux-Release: $(LINUX_RELEASE)'; \
 	 echo 'Linux-Kernel-Arch: $(LINUX_KARCH)'; \
-	$(if $(SUBTARGET),,$(if $(DEFAULT_SUBTARGET), echo 'Default-Subtarget: $(DEFAULT_SUBTARGET)'; ))
+	$(if $(SUBTARGET),,$(if $(DEFAULT_SUBTARGET), echo 'Default-Subtarget: $(DEFAULT_SUBTARGET)'; )) \
 	 echo 'Target-Description:'; \
-	 $(SH_FUNC) getvar $(call shvar,Target/Description); \
+	 echo "$$$$DESCRIPTION"; \
 	 echo '@@'; \
 	 echo 'Default-Packages: $(DEFAULT_PACKAGES) $(call extra_packages,$(DEFAULT_PACKAGES))'; \
 	 $(DUMPINFO)
