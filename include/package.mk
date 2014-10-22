@@ -251,9 +251,6 @@ endif
     endif
   )
 
-  $(call shexport,Package/$(1)/description)
-  $(call shexport,Package/$(1)/config)
-
   $(if $(DUMP), \
     $(Dumpinfo/Package), \
     $(foreach target, \

@@ -15,8 +15,8 @@ IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
 define BuildIPKGVariable
 ifdef Package/$(1)/$(2)
-  $(call shexport,Package/$(1)/$(2))
-  $(1)_COMMANDS += var2file "$(call shvar,Package/$(1)/$(2))" $(2)$(3);
+  $$(IPKG_$(1)) : VAR_$(2)$(3)=$$(Package/$(1)/$(2))
+  $(1)_COMMANDS += echo "$$$$$(2)$(3)" > $(2)$(3);
 endif
 endef
 
@@ -73,6 +73,13 @@ ifneq ($(PKG_NAME),toolchain)
 	)
   endef
 endif
+
+_addsep=$(word 1,$(1))$(foreach w,$(wordlist 2,$(words $(1)),$(1)),$(strip $(2) $(w)))
+_cleansep=$(subst $(space)$(2)$(space),$(2)$(space),$(1))
+mergelist=$(call _cleansep,$(call _addsep,$(1),$(comma)),$(comma))
+addfield=$(if $(strip $(2)),$(1): $(2))
+_define=define
+_endef=endef
 
 ifeq ($(DUMP),)
   define BuildTarget/ipkg
@@ -132,7 +139,32 @@ ifeq ($(DUMP),)
 	echo '$(ABI_VERSION)' | cmp -s - $$@ || \
 		echo '$(ABI_VERSION)' > $$@
 
+    Package/$(1)/DEPENDS := $$(call mergelist,$$(filter-out @%,$$(IDEPEND_$(1))))
+    ifneq ($$(EXTRA_DEPENDS),)
+      Package/$(1)/DEPENDS := $$(EXTRA_DEPENDS)$$(if $$(Package/$(1)/DEPENDS),$$(comma) $$(Package/$(1)/DEPENDS))
+    endif
+
+$(_define) Package/$(1)/CONTROL
+Package: $(1)
+Version: $(VERSION)
+$$(call addfield,Depends,$$(Package/$(1)/DEPENDS)
+)$$(call addfield,Conflicts,$$(call mergelist,$(CONFLICTS))
+)$$(call addfield,Provides,$(PROVIDES)
+)$$(call addfield,Source,$(SOURCE)
+)$$(call addfield,License,$$(PKG_LICENSE)
+)$$(call addfield,LicenseFiles,$$(PKG_LICENSE_FILES)
+)$$(call addfield,Section,$(SECTION)
+)$$(call addfield,Require-User,$(USERID)
+)$(if $(filter hold,$(PKG_FLAGS)),Status: unknown hold not-installed
+)$(if $(filter essential,$(PKG_FLAGS)),Essential: yes
+)$(if $(MAINTAINER),Maintainer: $(MAINTAINER)
+)Architecture: $(PKGARCH)
+Installed-Size: 0
+$(_endef)
+
     $(PKG_INFO_DIR)/$(1).provides: $$(IPKG_$(1))
+    $$(IPKG_$(1)) : export CONTROL=$$(Package/$(1)/CONTROL)
+    $$(IPKG_$(1)) : export DESCRIPTION=$$(Package/$(1)/description)
     $$(IPKG_$(1)): $(STAMP_BUILT) $(INCLUDE_DIR)/package-ipkg.mk
 	@rm -rf $$(PDIR_$(1))/$(1)_* $$(IDIR_$(1))
 	mkdir -p $(PACKAGE_DIR) $$(IDIR_$(1))/CONTROL $(PKG_INFO_DIR)
@@ -150,46 +182,24 @@ ifeq ($(DUMP),)
 	$(CheckDependencies)
 
 	$(RSTRIP) $$(IDIR_$(1))
-	( \
-		echo "Package: $(1)"; \
-		echo "Version: $(VERSION)"; \
-		DEPENDS='$(EXTRA_DEPENDS)'; \
-		for depend in $$(filter-out @%,$$(IDEPEND_$(1))); do \
-			DEPENDS=$$$${DEPENDS:+$$$$DEPENDS, }$$$${depend##+}; \
-		done; \
-		[ -z "$$$$DEPENDS" ] || echo "Depends: $$$$DEPENDS"; \
-		CONFLICTS=''; \
-		for conflict in $(CONFLICTS); do \
-			CONFLICTS=$$$${CONFLICTS:+$$$$CONFLICTS, }$$$$conflict; \
-		done; \
-		[ -z "$$$$CONFLICTS" ] || echo "Conflicts: $$$$CONFLICTS"; \
-		$(if $(PROVIDES), echo "Provides: $(PROVIDES)"; ) \
-		echo "Source: $(SOURCE)"; \
-		$(if $(PKG_LICENSE), echo "License: $(PKG_LICENSE)"; ) \
-		$(if $(PKG_LICENSE_FILES), echo "LicenseFiles: $(PKG_LICENSE_FILES)"; ) \
-		echo "Section: $(SECTION)"; \
-		$(if $(USERID),echo "Require-User: $(USERID)"; ) \
-		$(if $(filter hold,$(PKG_FLAGS)),echo "Status: unknown hold not-installed"; ) \
-		$(if $(filter essential,$(PKG_FLAGS)), echo "Essential: yes"; ) \
-		$(if $(MAINTAINER),echo "Maintainer: $(MAINTAINER)"; ) \
-		echo "Architecture: $(PKGARCH)"; \
-		echo "Installed-Size: 0"; \
-		echo -n "Description: "; $(SH_FUNC) getvar $(call shvar,Package/$(1)/description) | sed -e 's,^[[:space:]]*, ,g'; \
- 	) > $$(IDIR_$(1))/CONTROL/control
-	chmod 644 $$(IDIR_$(1))/CONTROL/control
-	( \
-		echo "#!/bin/sh"; \
-		echo "[ \"\$$$${IPKG_NO_SCRIPT}\" = \"1\" ] && exit 0"; \
-		echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
-		echo "default_postinst \$$$$0 \$$$$@"; \
-	) > $$(IDIR_$(1))/CONTROL/postinst
-	( \
-		echo "#!/bin/sh"; \
-		echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
-		echo "default_prerm \$$$$0 \$$$$@"; \
-	) > $$(IDIR_$(1))/CONTROL/prerm
-	chmod 0755 $$(IDIR_$(1))/CONTROL/prerm
-	$(SH_FUNC) (cd $$(IDIR_$(1))/CONTROL; \
+	(cd $$(IDIR_$(1))/CONTROL; \
+		( \
+			echo "$$$$CONTROL"; \
+			echo -n "Description: "; echo "$$$$DESCRIPTION" | sed -e 's,^[[:space:]]*, ,g'; \
+		) > control; \
+		chmod 644 control; \
+		( \
+			echo "#!/bin/sh"; \
+			echo "[ \"\$$$${IPKG_NO_SCRIPT}\" = \"1\" ] && exit 0"; \
+			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
+			echo "default_postinst \$$$$0 \$$$$@"; \
+		) > postinst; \
+		( \
+			echo "#!/bin/sh"; \
+			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
+			echo "default_prerm \$$$$0 \$$$$@"; \
+		) > prerm; \
+		chmod 0755 prerm; \
 		$($(1)_COMMANDS) \
 	)
 
