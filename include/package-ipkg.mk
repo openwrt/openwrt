@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/feeds.mk
 
 # invoke ipkg-build with some default options
 IPKG_BUILD:= \
-  ipkg-build -c -o 0 -g 0
+  $(STAGING_DIR_HOST)/bin/ipkg-build -c -o 0 -g 0
 
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
@@ -185,7 +185,7 @@ $(_endef)
 	(cd $$(IDIR_$(1))/CONTROL; \
 		( \
 			echo "$$$$CONTROL"; \
-			echo -n "Description: "; echo "$$$$DESCRIPTION" | sed -e 's,^[[:space:]]*, ,g'; \
+			printf "Description: "; echo "$$$$DESCRIPTION" | sed -e 's,^[[:space:]]*, ,g'; \
 		) > control; \
 		chmod 644 control; \
 		( \
