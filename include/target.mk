@@ -19,7 +19,6 @@ DEFAULT_PACKAGES.bootloader:=
 
 ifneq ($(DUMP),)
   all: dumpinfo
-  .ONESHELL:
 endif
 
 target_conf=$(subst .,_,$(subst -,_,$(subst /,_,$(1))))
