@@ -15,7 +15,6 @@ empty:=
 space:= $(empty) $(empty)
 $(if $(findstring $(space),$(TOPDIR)),$(error ERROR: The path to the OpenWrt directory must not include any spaces))
 
-.ONESHELL:
 world:
 
 include $(TOPDIR)/include/host.mk
