@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -811,6 +811,9 @@ static inline int ath9k_dump_btcoex(stru
+@@ -812,6 +812,9 @@ static inline int ath9k_dump_btcoex(stru
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -951,6 +954,13 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -952,6 +955,13 @@ void ath_ant_comb_scan(struct ath_softc 
  
  #define ATH9K_NUM_CHANCTX  2 /* supports 2 operating channels */
  
@@ -162,7 +162,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -899,7 +899,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -902,7 +902,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
