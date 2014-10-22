@@ -49,6 +49,17 @@ endef
 
 $(eval $(call Profile,WZRHPG450H))
 
+define Profile/WZR450HP2
+	NAME:=Buffalo WZR-450HP2
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/WZR450HP2/Description
+	Package set optimized for the Buffalo WZR-450HP2
+endef
+
+$(eval $(call Profile,WZR450HP2))
+
 define Profile/WZR600DHP
 	NAME:=Buffalo WZR-600DHP
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
