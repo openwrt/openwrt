@@ -33,17 +33,18 @@
  	if (!wiphy->bands[IEEE80211_BAND_5GHZ])
  		return;
  
-@@ -632,6 +644,10 @@ ath_regd_init_wiphy(struct ath_regulator
- {
+@@ -633,6 +645,11 @@ ath_regd_init_wiphy(struct ath_regulator
  	const struct ieee80211_regdomain *regd;
  
+ 	wiphy->reg_notifier = reg_notifier;
++
 +#ifdef CPTCFG_ATH_USER_REGD
 +	return 0;
 +#endif
 +
- 	wiphy->reg_notifier = reg_notifier;
  	wiphy->regulatory_flags |= REGULATORY_STRICT_REG |
  				   REGULATORY_CUSTOM_REG;
+ 
 --- a/drivers/net/wireless/ath/Kconfig
 +++ b/drivers/net/wireless/ath/Kconfig
 @@ -21,6 +21,9 @@ menuconfig ATH_CARDS
