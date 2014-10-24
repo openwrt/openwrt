@@ -261,7 +261,7 @@
  
  		if (++ring->start >= BGMAC_RX_RING_SLOTS)
  			ring->start = 0;
-@@ -418,9 +494,6 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -418,9 +494,6 @@ static int bgmac_dma_alloc(struct bgmac 
  		ring = &bgmac->tx_ring[i];
  		ring->num_slots = BGMAC_TX_RING_SLOTS;
  		ring->mmio_base = ring_base[i];
@@ -271,7 +271,7 @@
  
  		/* Alloc ring of descriptors */
  		size = ring->num_slots * sizeof(struct bgmac_dma_desc);
-@@ -435,6 +508,13 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -435,6 +508,13 @@ static int bgmac_dma_alloc(struct bgmac 
  		if (ring->dma_base & 0xC0000000)
  			bgmac_warn(bgmac, "DMA address using 0xC0000000 bit(s), it may need translation trick\n");
  
@@ -285,7 +285,7 @@
  		/* No need to alloc TX slots yet */
  	}
  
-@@ -444,9 +524,6 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -444,9 +524,6 @@ static int bgmac_dma_alloc(struct bgmac 
  		ring = &bgmac->rx_ring[i];
  		ring->num_slots = BGMAC_RX_RING_SLOTS;
  		ring->mmio_base = ring_base[i];
@@ -295,7 +295,7 @@
  
  		/* Alloc ring of descriptors */
  		size = ring->num_slots * sizeof(struct bgmac_dma_desc);
-@@ -462,6 +539,13 @@ static int bgmac_dma_alloc(struct bgmac
+@@ -462,6 +539,13 @@ static int bgmac_dma_alloc(struct bgmac 
  		if (ring->dma_base & 0xC0000000)
  			bgmac_warn(bgmac, "DMA address using 0xC0000000 bit(s), it may need translation trick\n");
  
@@ -333,7 +333,7 @@
  
  		ring->start = 0;
  		ring->end = 0;	/* Points the slot that should *not* be read */
-@@ -505,32 +589,20 @@ static void bgmac_dma_init(struct bgmac
+@@ -505,32 +589,20 @@ static void bgmac_dma_init(struct bgmac 
  
  		ring = &bgmac->rx_ring[i];
  
@@ -373,7 +373,7 @@
  			    ring->num_slots * sizeof(struct bgmac_dma_desc));
  
  		ring->start = 0;
-@@ -633,70 +705,6 @@ static int bgmac_phy_write(struct bgmac
+@@ -633,70 +705,6 @@ static int bgmac_phy_write(struct bgmac 
  	return 0;
  }
  
@@ -458,7 +458,7 @@
  		bgmac_err(bgmac, "PHY reset failed\n");
  	bgmac_phy_init(bgmac);
  }
-@@ -762,13 +768,13 @@ static void bgmac_cmdcfg_maskset(struct
+@@ -762,13 +768,13 @@ static void bgmac_cmdcfg_maskset(struct 
  	u32 cmdcfg = bgmac_read(bgmac, BGMAC_CMDCFG);
  	u32 new_val = (cmdcfg & mask) | set;
  
@@ -692,7 +692,7 @@
  	if (full_init) {
  		bgmac_dma_init(bgmac);
  		if (1) /* FIXME: is there any case we don't want IRQs? */
-@@ -1153,6 +1196,8 @@ static int bgmac_open(struct net_device
+@@ -1153,6 +1196,8 @@ static int bgmac_open(struct net_device 
  	}
  	napi_enable(&bgmac->napi);
  
@@ -701,7 +701,7 @@
  	netif_carrier_on(net_dev);
  
  err_out:
-@@ -1165,6 +1210,8 @@ static int bgmac_stop(struct net_device
+@@ -1165,6 +1210,8 @@ static int bgmac_stop(struct net_device 
  
  	netif_carrier_off(net_dev);
  
@@ -710,7 +710,7 @@
  	napi_disable(&bgmac->napi);
  	bgmac_chip_intrs_off(bgmac);
  	free_irq(bgmac->core->irq, net_dev);
-@@ -1201,27 +1248,11 @@ static int bgmac_set_mac_address(struct
+@@ -1201,27 +1248,11 @@ static int bgmac_set_mac_address(struct 
  static int bgmac_ioctl(struct net_device *net_dev, struct ifreq *ifr, int cmd)
  {
  	struct bgmac *bgmac = netdev_priv(net_dev);

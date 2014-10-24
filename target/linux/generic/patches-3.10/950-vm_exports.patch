@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -2883,6 +2883,15 @@ static struct dentry_operations anon_ops
+@@ -2965,6 +2965,15 @@ static struct dentry_operations anon_ops
  	.d_dname = simple_dname
  };
  
@@ -16,7 +16,7 @@
  /**
   * shmem_file_setup - get an unlinked file living in tmpfs
   * @name: name for dentry (to be seen in /proc/<pid>/maps
-@@ -2956,11 +2965,8 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -3038,11 +3047,8 @@ int shmem_zero_setup(struct vm_area_stru
  	file = shmem_file_setup("dev/zero", size, vma->vm_flags);
  	if (IS_ERR(file))
  		return PTR_ERR(file);
@@ -41,7 +41,7 @@
  {
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -501,6 +501,8 @@ static void exit_mm(struct task_struct *
+@@ -502,6 +502,8 @@ static void exit_mm(struct task_struct *
  	mm_update_next_owner(mm);
  	mmput(mm);
  }

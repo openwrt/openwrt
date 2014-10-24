@@ -199,7 +199,7 @@
  			 &fib_triestat_fops))
  		goto out2;
  
-@@ -2600,17 +2602,21 @@ int __net_init fib_proc_init(struct net
+@@ -2600,17 +2602,21 @@ int __net_init fib_proc_init(struct net 
  	return 0;
  
  out3:
@@ -239,7 +239,7 @@
  
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -423,6 +423,9 @@ static struct pernet_operations ip_rt_pr
+@@ -424,6 +424,9 @@ static struct pernet_operations ip_rt_pr
  
  static int __init ip_rt_proc_init(void)
  {
