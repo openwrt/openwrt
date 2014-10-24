@@ -229,7 +229,7 @@
  #include <asm/uaccess.h>
  
  #include <linux/proc_fs.h>
-@@ -763,10 +764,10 @@ static void tcp_v6_send_response(struct
+@@ -763,10 +764,10 @@ static void tcp_v6_send_response(struct 
  	topt = (__be32 *)(t1 + 1);
  
  	if (tsecr) {
@@ -380,7 +380,7 @@
  	for (p = *head; p; p = p->next) {
 --- a/net/ipv4/route.c
 +++ b/net/ipv4/route.c
-@@ -461,7 +461,7 @@ static struct neighbour *ipv4_neigh_look
+@@ -462,7 +462,7 @@ static struct neighbour *ipv4_neigh_look
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
  
@@ -662,7 +662,7 @@
  #include <linux/netdevice.h>
 --- a/include/net/inet_ecn.h
 +++ b/include/net/inet_ecn.h
-@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct
+@@ -115,13 +115,13 @@ static inline int IP6_ECN_set_ce(struct 
  {
  	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
  		return 0;
@@ -720,7 +720,7 @@
  		return false;
  
  	return true;
-@@ -587,13 +591,13 @@ static inline void ipv6_addr_set_v4mappe
+@@ -592,13 +596,13 @@ static inline void ipv6_addr_set_v4mappe
   */
  static inline int __ipv6_addr_diff32(const void *token1, const void *token2, int addrlen)
  {
@@ -736,7 +736,7 @@
  		if (xb)
  			return i * 32 + 31 - __fls(ntohl(xb));
  	}
-@@ -657,12 +661,13 @@ extern void ipv6_select_ident(struct fra
+@@ -660,12 +664,13 @@ static inline int ipv6_addr_diff(const s
  static inline void ip6_flow_hdr(struct ipv6hdr *hdr, unsigned int tclass,
  				__be32 flowlabel)
  {
@@ -760,8 +760,8 @@
  #include <linux/types.h>
 +#include <linux/in6.h>
  
- extern __u32 secure_ip_id(__be32 daddr);
- extern __u32 secure_ipv6_id(const __be32 daddr[4]);
+ extern u32 secure_ipv4_port_ephemeral(__be32 saddr, __be32 daddr, __be16 dport);
+ extern u32 secure_ipv6_port_ephemeral(const __be32 *saddr, const __be32 *daddr,
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
 @@ -55,7 +55,7 @@ enum {
@@ -803,7 +803,7 @@
  	secret[4] = net_secret[4] + (__force u32)dport;
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
  		secret[i] = net_secret[i];
-@@ -185,11 +187,12 @@ u64 secure_dccpv6_sequence_number(__be32
+@@ -160,11 +162,12 @@ u64 secure_dccpv6_sequence_number(__be32
  	u32 hash[MD5_DIGEST_WORDS];
  	u64 seq;
  	u32 i;
@@ -855,7 +855,7 @@
  	ptr = ip6hoff + sizeof(struct ipv6hdr);
 --- a/net/xfrm/xfrm_input.c
 +++ b/net/xfrm/xfrm_input.c
-@@ -77,8 +77,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
+@@ -77,8 +77,8 @@ int xfrm_parse_spi(struct sk_buff *skb, 
  	if (!pskb_may_pull(skb, hlen))
  		return -EINVAL;
  

@@ -1,7 +1,5 @@
-Index: linux-3.10.49/arch/mips/ath79/mach-rb2011.c
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/mach-rb2011.c
-+++ linux-3.10.49/arch/mips/ath79/mach-rb2011.c
+--- a/arch/mips/ath79/mach-rb2011.c
++++ b/arch/mips/ath79/mach-rb2011.c
 @@ -323,7 +323,7 @@ MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011US
  
  static void __init rb2011r5_setup(void)
@@ -11,10 +9,8 @@ Index: linux-3.10.49/arch/mips/ath79/mach-rb2011.c
  }
  
  MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011R5, "2011r5", rb2011r5_setup);
-Index: linux-3.10.49/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.10.49.orig/arch/mips/ath79/machtypes.h
-+++ linux-3.10.49/arch/mips/ath79/machtypes.h
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
 @@ -99,7 +99,7 @@ enum ath79_mach_type {
  	ATH79_MACH_RB_2011G,		/* Mikrotik RouterBOARD 2011UAS-2HnD */
  	ATH79_MACH_RB_2011L,		/* Mikrotik RouterBOARD 2011L */
