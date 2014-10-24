@@ -1,0 +1,13 @@
+Index: linux-3.14.16/arch/mips/netlogic/xlp/Makefile
+===================================================================
+--- linux-3.14.16.orig/arch/mips/netlogic/xlp/Makefile	2014-08-07 16:50:59.000000000 -0700
++++ linux-3.14.16/arch/mips/netlogic/xlp/Makefile	2014-09-25 12:12:29.853539866 -0700
+@@ -1,4 +1,6 @@
+ obj-y				+= setup.o nlm_hal.o cop2-ex.o dt.o
+ obj-$(CONFIG_SMP)		+= wakeup.o
+-obj-$(CONFIG_USB)		+= usb-init.o
+-obj-$(CONFIG_USB)		+= usb-init-xlp2.o
++ifdef CONFIG_USB
++obj-y				+= usb-init.o
++obj-y				+= usb-init-xlp2.o
++endif
