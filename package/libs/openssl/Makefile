@@ -105,7 +105,7 @@ ifndef CONFIG_OPENSSL_WITH_EC2M
 endif
 
 ifeq ($(CONFIG_x86_64),y)
-  OPENSSL_TARGET:=linux-x86_64
+  OPENSSL_TARGET:=linux-x86_64-openwrt
   OPENSSL_MAKEFLAGS += LIBDIR=lib
 else
   OPENSSL_OPTIONS+=no-sse2
