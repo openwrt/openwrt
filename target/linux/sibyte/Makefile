@@ -14,7 +14,7 @@ CPU_TYPE:=sb1
 CPU_CFLAGS_sb1:=-march=sb1
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-LINUX_VERSION:=3.3.8
+KERNEL_PATCHVER:=3.3
 
 include $(INCLUDE_DIR)/target.mk
 

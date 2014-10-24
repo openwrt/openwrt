@@ -13,7 +13,7 @@ FEATURES:=usb squashfs
 CPU_TYPE:=arm926ej-s
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.3.8
+KERNEL_PATCHVER:=3.3
 
 DEVICE_TYPE:=other
 
