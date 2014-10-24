@@ -29,11 +29,13 @@
 -	u32 bootstrap;
 +	void __iomem *phy_reg;
 +	u32 t;
-+
+ 
+-	bootstrap = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
+-	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
 +	phy_reg = ioremap(base, 4);
 +	if (!phy_reg)
-+		return;
-+
+ 		return;
+ 
 +	t = ioread32(phy_reg);
 +	t &= ~0xff;
 +	t |= 0x58;
@@ -41,14 +43,12 @@
 +
 +	iounmap(phy_reg);
 +}
- 
--	bootstrap = ath79_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
--	if (bootstrap & AR934X_BOOTSTRAP_USB_MODE_DEVICE)
++
 +static void ar934x_usb_reset_notifier(struct platform_device *pdev)
 +{
 +	if (pdev->id != -1)
- 		return;
- 
++		return;
++
 +	enable_tx_tx_idp_violation_fix(0x18116c94);
 +	dev_info(&pdev->dev, "TX-TX IDP fix enabled\n");
 +}
