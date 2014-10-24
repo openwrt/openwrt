@@ -12,7 +12,7 @@ FEATURES:=squashfs
 SUBTARGETS=xway xrx200
 MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-LINUX_VERSION:=3.14.18
+KERNEL_PATCHVER:=3.14
 
 CPU_TYPE:=mips32r2
 

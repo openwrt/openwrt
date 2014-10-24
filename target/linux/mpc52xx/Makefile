@@ -12,7 +12,7 @@ BOARDNAME:=Freescale MPC52xx
 CPU_TYPE:=603e
 FEATURES:=targz ext4
 
-LINUX_VERSION:=3.8.13
+KERNEL_PATCHVER:=3.8
 
 include $(INCLUDE_DIR)/target.mk
 

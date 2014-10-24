@@ -10,7 +10,7 @@ ARCH:=mips
 BOARD:=amazon
 BOARDNAME:=Infineon Amazon
 FEATURES:=squashfs broken
-LINUX_VERSION:=3.3.8
+KERNEL_PATCHVER:=3.3
 
 include $(INCLUDE_DIR)/target.mk
 
