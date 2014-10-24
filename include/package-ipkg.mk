@@ -13,10 +13,14 @@ IPKG_BUILD:= \
 
 IPKG_STATE_DIR:=$(TARGET_DIR)/usr/lib/opkg
 
+# 1: package name
+# 2: variable name
+# 3: variable suffix
 define BuildIPKGVariable
 ifdef Package/$(1)/$(2)
   $$(IPKG_$(1)) : VAR_$(2)$(3)=$$(Package/$(1)/$(2))
-  $(1)_COMMANDS += echo "$$$$$(2)$(3)" > $(2)$(3);
+  $(call shexport,Package/$(1)/$(2))
+  $(1)_COMMANDS += echo "$$$$$$$$$(call shvar,Package/$(1)/$(2))" > $(2)$(3);
 endif
 endef
 
