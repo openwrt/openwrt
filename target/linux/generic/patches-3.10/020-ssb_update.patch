@@ -169,7 +169,7 @@
  static int ssb_gpio_chipco_get_value(struct gpio_chip *chip, unsigned gpio)
  {
  	struct ssb_bus *bus = ssb_gpio_get_bus(chip);
-@@ -74,19 +98,129 @@ static void ssb_gpio_chipco_free(struct
+@@ -74,19 +98,129 @@ static void ssb_gpio_chipco_free(struct 
  	ssb_chipco_gpio_pullup(&bus->chipco, 1 << gpio, 0);
  }
  

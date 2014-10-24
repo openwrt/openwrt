@@ -145,7 +145,7 @@
  }
  EXPORT_SYMBOL_GPL(bcma_core_disable);
  
-@@ -43,6 +64,7 @@ int bcma_core_enable(struct bcma_device
+@@ -43,6 +64,7 @@ int bcma_core_enable(struct bcma_device 
  	bcma_aread32(core, BCMA_IOCTL);
  
  	bcma_awrite32(core, BCMA_RESET_CTL, 0);
@@ -374,7 +374,7 @@
  };
  
  static void bcma_sflash_cmd(struct bcma_drv_cc *cc, u32 opcode)
-@@ -89,7 +89,7 @@ int bcma_sflash_init(struct bcma_drv_cc
+@@ -89,7 +89,7 @@ int bcma_sflash_init(struct bcma_drv_cc 
  {
  	struct bcma_bus *bus = cc->core->bus;
  	struct bcma_sflash *sflash = &cc->sflash;
@@ -609,7 +609,7 @@
  				u8 address, u16 data)
  {
  	int max_retries = 10;
-@@ -137,6 +137,13 @@ static void bcma_pcie_mdio_write(struct
+@@ -137,6 +137,13 @@ static void bcma_pcie_mdio_write(struct 
  	pcicore_write32(pc, BCMA_CORE_PCI_MDIO_CONTROL, 0);
  }
  
@@ -922,7 +922,7 @@
  	/* Register */
  	err = bcma_bus_register(bus);
  	if (err)
-@@ -235,7 +241,6 @@ static void bcma_host_pci_remove(struct
+@@ -235,7 +241,6 @@ static void bcma_host_pci_remove(struct 
  	pci_release_regions(dev);
  	pci_disable_device(dev);
  	kfree(bus);
@@ -1260,7 +1260,7 @@
  module_exit(bcma_modexit)
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -32,6 +32,18 @@ static const struct bcma_device_id_name
+@@ -32,6 +32,18 @@ static const struct bcma_device_id_name 
  	{ BCMA_CORE_4706_CHIPCOMMON, "BCM4706 ChipCommon" },
  	{ BCMA_CORE_4706_SOC_RAM, "BCM4706 SOC RAM" },
  	{ BCMA_CORE_4706_MAC_GBIT, "BCM4706 GBit MAC" },
@@ -2169,7 +2169,7 @@
  static const char * const part_probes[] = { "bcm47xxpart", NULL };
  
  static struct physmap_flash_data bcma_pflash_data = {
-@@ -229,11 +237,51 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
+@@ -229,11 +237,51 @@ u32 bcma_cpu_clock(struct bcma_drv_mips 
  }
  EXPORT_SYMBOL(bcma_cpu_clock);
  

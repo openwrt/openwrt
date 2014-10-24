@@ -69,7 +69,7 @@ Signed-off-by: Jason Cooper <jason@lakedaemon.net>
 +EXPORT_SYMBOL_GPL(of_pci_get_devfn);
 --- a/include/linux/of_pci.h
 +++ b/include/linux/of_pci.h
-@@ -10,5 +10,6 @@ int of_irq_map_pci(const struct pci_dev
+@@ -10,5 +10,6 @@ int of_irq_map_pci(const struct pci_dev 
  struct device_node;
  struct device_node *of_pci_find_child_device(struct device_node *parent,
  					     unsigned int devfn);
