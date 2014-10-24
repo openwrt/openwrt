@@ -13,7 +13,7 @@ FEATURES:=squashfs jffs2 ext4 pci usb
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 SUBTARGETS:=xlp xlr
 
-LINUX_VERSION:=3.14.16
+KERNEL_PATCHVER:=3.14
 
 include $(INCLUDE_DIR)/target.mk
 
