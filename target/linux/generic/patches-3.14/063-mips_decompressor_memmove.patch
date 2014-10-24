@@ -1,0 +1,24 @@
+Index: linux-3.14.16/arch/mips/boot/compressed/string.c
+===================================================================
+--- linux-3.14.16.orig/arch/mips/boot/compressed/string.c	2014-08-07 16:50:59.000000000 -0700
++++ linux-3.14.16/arch/mips/boot/compressed/string.c	2014-10-23 16:42:01.015003995 -0700
+@@ -26,3 +26,19 @@
+ 		ss[i] = c;
+ 	return s;
+ }
++
++void *memmove(void *__dest, __const void *__src, size_t count)
++{
++	unsigned char *d = __dest;
++	const unsigned char *s = __src;
++
++	if (__dest == __src)
++		return __dest;
++
++	if (__dest < __src)
++		return memcpy(__dest, __src, count);
++
++	while (count--)
++		d[count] = s[count];
++	return __dest;
++}
