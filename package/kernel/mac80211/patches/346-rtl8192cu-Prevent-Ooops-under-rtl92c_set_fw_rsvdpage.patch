@@ -1,0 +1,107 @@
+From: Karsten Wiese <fzuuzf@googlemail.com>
+Date: Wed, 22 Oct 2014 15:47:34 +0200
+Subject: [PATCH] rtl8192cu: Prevent Ooops under rtl92c_set_fw_rsvdpagepkt
+
+rtl92c_set_fw_rsvdpagepkt is used by rtl8192cu and its pci sibling rtl8192ce.
+rtl_cmd_send_packet crashes when called inside rtl8192cu because it works on
+memory allocated only by rtl8192ce.
+Fix the crash by calling a dummy function when used in rtl8192cu.
+Comparision with the realtek vendor driver makes me think, something is missing in
+the dummy function.
+Short test as WPA2 station show good results connected to an 802.11g basestation.
+Traffic stops after few MBytes as WPA2 station connected to an 802.11n basestation.
+
+Signed-off-by: Karsten Wiese <fzuuzf@googlemail.com>
+---
+
+--- a/drivers/net/wireless/rtlwifi/rtl8192c/fw_common.c
++++ b/drivers/net/wireless/rtlwifi/rtl8192c/fw_common.c
+@@ -656,7 +656,8 @@ static u8 reserved_page_packet[TOTAL_RES
+ 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+ };
+ 
+-void rtl92c_set_fw_rsvdpagepkt(struct ieee80211_hw *hw, bool b_dl_finished)
++void rtl92c_set_fw_rsvdpagepkt(struct ieee80211_hw *hw,
++	 bool (*cmd_send_packet)(struct ieee80211_hw *, struct sk_buff *))
+ {
+ 	struct rtl_priv *rtlpriv = rtl_priv(hw);
+ 	struct rtl_mac *mac = rtl_mac(rtl_priv(hw));
+@@ -722,7 +723,10 @@ void rtl92c_set_fw_rsvdpagepkt(struct ie
+ 	memcpy((u8 *)skb_put(skb, totalpacketlen),
+ 	       &reserved_page_packet, totalpacketlen);
+ 
+-	rtstatus = rtl_cmd_send_packet(hw, skb);
++	if (cmd_send_packet)
++		rtstatus = cmd_send_packet(hw, skb);
++	else
++		rtstatus = rtl_cmd_send_packet(hw, skb);
+ 
+ 	if (rtstatus)
+ 		b_dlok = true;
+--- a/drivers/net/wireless/rtlwifi/rtl8192c/fw_common.h
++++ b/drivers/net/wireless/rtlwifi/rtl8192c/fw_common.h
+@@ -109,7 +109,9 @@ void rtl92c_fill_h2c_cmd(struct ieee8021
+ 			 u32 cmd_len, u8 *p_cmdbuffer);
+ void rtl92c_firmware_selfreset(struct ieee80211_hw *hw);
+ void rtl92c_set_fw_pwrmode_cmd(struct ieee80211_hw *hw, u8 mode);
+-void rtl92c_set_fw_rsvdpagepkt(struct ieee80211_hw *hw, bool b_dl_finished);
++void rtl92c_set_fw_rsvdpagepkt
++	(struct ieee80211_hw *hw,
++	 bool (*cmd_send_packet)(struct ieee80211_hw *, struct sk_buff *));
+ void rtl92c_set_fw_joinbss_report_cmd(struct ieee80211_hw *hw, u8 mstatus);
+ void usb_writeN_async(struct rtl_priv *rtlpriv, u32 addr, void *data, u16 len);
+ void rtl92c_set_p2p_ps_offload_cmd(struct ieee80211_hw *hw, u8 p2p_ps_state);
+--- a/drivers/net/wireless/rtlwifi/rtl8192ce/hw.c
++++ b/drivers/net/wireless/rtlwifi/rtl8192ce/hw.c
+@@ -459,7 +459,7 @@ void rtl92ce_set_hw_reg(struct ieee80211
+ 				rtl_write_byte(rtlpriv, REG_FWHW_TXQ_CTRL + 2,
+ 					       tmp_reg422 & (~BIT(6)));
+ 
+-				rtl92c_set_fw_rsvdpagepkt(hw, 0);
++				rtl92c_set_fw_rsvdpagepkt(hw, NULL);
+ 
+ 				_rtl92ce_set_bcn_ctrl_reg(hw, BIT(3), 0);
+ 				_rtl92ce_set_bcn_ctrl_reg(hw, 0, BIT(4));
+--- a/drivers/net/wireless/rtlwifi/rtl8192cu/hw.c
++++ b/drivers/net/wireless/rtlwifi/rtl8192cu/hw.c
+@@ -1592,6 +1592,20 @@ void rtl92cu_get_hw_reg(struct ieee80211
+ 	}
+ }
+ 
++bool usb_cmd_send_packet(struct ieee80211_hw *hw, struct sk_buff *skb)
++{
++  /* Currently nothing happens here.
++   * Traffic stops after some seconds in WPA2 802.11n mode.
++   * Maybe because rtl8192cu chip should be set from here?
++   * If I understand correctly, the realtek vendor driver sends some urbs
++   * if its "here".
++   *
++   * This is maybe necessary:
++   * rtlpriv->cfg->ops->fill_tx_cmddesc(hw, buffer, 1, 1, skb);
++   */
++	return true;
++}
++
+ void rtl92cu_set_hw_reg(struct ieee80211_hw *hw, u8 variable, u8 *val)
+ {
+ 	struct rtl_priv *rtlpriv = rtl_priv(hw);
+@@ -1939,7 +1953,8 @@ void rtl92cu_set_hw_reg(struct ieee80211
+ 					recover = true;
+ 				rtl_write_byte(rtlpriv, REG_FWHW_TXQ_CTRL + 2,
+ 					       tmp_reg422 & (~BIT(6)));
+-				rtl92c_set_fw_rsvdpagepkt(hw, 0);
++				rtl92c_set_fw_rsvdpagepkt(hw,
++							  &usb_cmd_send_packet);
+ 				_rtl92cu_set_bcn_ctrl_reg(hw, BIT(3), 0);
+ 				_rtl92cu_set_bcn_ctrl_reg(hw, 0, BIT(4));
+ 				if (recover)
+--- a/drivers/net/wireless/rtlwifi/rtl8192cu/hw.h
++++ b/drivers/net/wireless/rtlwifi/rtl8192cu/hw.h
+@@ -104,7 +104,6 @@ bool rtl92cu_gpio_radio_on_off_checking(
+ void rtl92cu_set_check_bssid(struct ieee80211_hw *hw, bool check_bssid);
+ int rtl92c_download_fw(struct ieee80211_hw *hw);
+ void rtl92c_set_fw_pwrmode_cmd(struct ieee80211_hw *hw, u8 mode);
+-void rtl92c_set_fw_rsvdpagepkt(struct ieee80211_hw *hw, bool dl_finished);
+ void rtl92c_set_fw_joinbss_report_cmd(struct ieee80211_hw *hw, u8 mstatus);
+ void rtl92c_fill_h2c_cmd(struct ieee80211_hw *hw,
+ 			 u8 element_id, u32 cmd_len, u8 *p_cmdbuffer);
