@@ -1,3 +1,16 @@
+commit c35074725eb19f353beb5f71266f9e985e46f583
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Wed Oct 22 18:16:14 2014 +0200
+
+    ath9k_common: always update value in ath9k_cmn_update_txpow
+    
+    In some cases the limit may be the same as reg->power_limit, but the
+    actual value that the hardware uses is not up to date. In that case, a
+    wrong value for current tx power is tracked internally.
+    Fix this by unconditionally updating it.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 11f17631d9bf2a9e910dac7d09ba4581f5693831
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Tue Sep 9 09:48:30 2014 +0200
@@ -3291,3 +3304,21 @@ Date:   Mon May 19 21:20:49 2014 +0200
  
  #define AR_RTC_9160_PLL_DIV	0x000003ff
  #define AR_RTC_9160_PLL_DIV_S   0
+--- a/drivers/net/wireless/ath/ath9k/common.c
++++ b/drivers/net/wireless/ath/ath9k/common.c
+@@ -368,11 +368,11 @@ void ath9k_cmn_update_txpow(struct ath_h
+ {
+ 	struct ath_regulatory *reg = ath9k_hw_regulatory(ah);
+ 
+-	if (reg->power_limit != new_txpow) {
++	if (reg->power_limit != new_txpow)
+ 		ath9k_hw_set_txpowerlimit(ah, new_txpow, false);
+-		/* read back in case value is clamped */
+-		*txpower = reg->max_power_level;
+-	}
++
++	/* read back in case value is clamped */
++	*txpower = reg->max_power_level;
+ }
+ EXPORT_SYMBOL(ath9k_cmn_update_txpow);
+ 
