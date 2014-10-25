@@ -1,0 +1,158 @@
+>From 0078a6c784da339cc529b4f0bf1156ca52692e4c Mon Sep 17 00:00:00 2001
+From: Adam Borowski <kilobyte@angband.pl>
+Date: Thu, 6 Jun 2013 18:41:53 +0000
+Subject: [PATCH] Fix time_t vs long int mismatches.
+
+Old gnulibs used randomly either time_t or long int, with a compile-time
+assert to ensure sizeof(time_t) <= sizeof(long int).  This is not the
+case on x32 where the machine word is 32 bit, yet time_t is 64 bit to
+be able to handle dates after 2038.
+
+This is not relevant for modern versions of gnulib which has rewritten
+this code, but, sadly, findutils 4.4.* uses an embedded copy of ancient
+gnulib.
+---
+ gnulib/lib/getdate.y | 46 ++++++++++++++++++++++++----------------------
+ 1 file changed, 24 insertions(+), 22 deletions(-)
+
+diff --git a/gnulib/lib/getdate.y b/gnulib/lib/getdate.y
+index e292f5e..347cc77 100644
+--- a/gnulib/lib/getdate.y
++++ b/gnulib/lib/getdate.y
+@@ -112,16 +112,18 @@
+ /* Lots of this code assumes time_t and time_t-like values fit into
+    long int.  It also assumes that signed integer overflow silently
+    wraps around, but there's no portable way to check for that at
+-   compile-time.  */
++   compile-time.
++   [1KB]: replaced suspicious uses of long_t by time_t.
+ verify (TYPE_IS_INTEGER (time_t));
+ verify (LONG_MIN <= TYPE_MINIMUM (time_t) && TYPE_MAXIMUM (time_t) <= LONG_MAX);
++*/
+ 
+ /* An integer value, and the number of digits in its textual
+    representation.  */
+ typedef struct
+ {
+   bool negative;
+-  long int value;
++  time_t value;
+   size_t digits;
+ } textint;
+ 
+@@ -206,7 +208,7 @@ typedef struct
+ union YYSTYPE;
+ static int yylex (union YYSTYPE *, parser_control *);
+ static int yyerror (parser_control const *, char const *);
+-static long int time_zone_hhmm (textint, long int);
++static time_t time_zone_hhmm (textint, time_t);
+ 
+ /* Extract into *PC any date and time info from a string of digits
+    of the form e.g., YYYYMMDD, YYMMDD, HHMM, HH (and sometimes YYY,
+@@ -817,8 +819,8 @@ static table const military_table[] =
+    minutes.  If MM is negative, then S is of the form HHMM and needs
+    to be picked apart; otherwise, S is of the form HH.  */
+ 
+-static long int
+-time_zone_hhmm (textint s, long int mm)
++static time_t
++time_zone_hhmm (textint s, time_t mm)
+ {
+   if (mm < 0)
+     return (s.value / 100) * 60 + s.value % 100;
+@@ -884,7 +886,7 @@ lookup_zone (parser_control const *pc, char const *name)
+    measured in seconds, ignoring leap seconds.
+    The body of this function is taken directly from the GNU C Library;
+    see src/strftime.c.  */
+-static long int
++static time_t
+ tm_diff (struct tm const *a, struct tm const *b)
+ {
+   /* Compute intervening leap days correctly even if year is negative.
+@@ -896,9 +898,9 @@ tm_diff (struct tm const *a, struct tm const *b)
+   int a400 = SHR (a100, 2);
+   int b400 = SHR (b100, 2);
+   int intervening_leap_days = (a4 - b4) - (a100 - b100) + (a400 - b400);
+-  long int ayear = a->tm_year;
+-  long int years = ayear - b->tm_year;
+-  long int days = (365 * years + intervening_leap_days
++  time_t ayear = a->tm_year;
++  time_t years = ayear - b->tm_year;
++  time_t int days = (365 * years + intervening_leap_days
+ 		   + (a->tm_yday - b->tm_yday));
+   return (60 * (60 * (24 * days + (a->tm_hour - b->tm_hour))
+ 		+ (a->tm_min - b->tm_min))
+@@ -1200,7 +1202,7 @@ bool
+ get_date (struct timespec *result, char const *p, struct timespec const *now)
+ {
+   time_t Start;
+-  long int Start_ns;
++  time_t Start_ns;
+   struct tm const *tmp;
+   struct tm tm;
+   struct tm tm0;
+@@ -1407,16 +1409,16 @@ get_date (struct timespec *result, char const *p, struct timespec const *now)
+ 		 problem, set the time zone to 1 hour behind UTC temporarily
+ 		 by setting TZ="XXX1:00" and try mktime again.  */
+ 
+-	      long int time_zone = pc.time_zone;
+-	      long int abs_time_zone = time_zone < 0 ? - time_zone : time_zone;
+-	      long int abs_time_zone_hour = abs_time_zone / 60;
++	      time_t time_zone = pc.time_zone;
++	      time_t abs_time_zone = time_zone < 0 ? - time_zone : time_zone;
++	      time_t abs_time_zone_hour = abs_time_zone / 60;
+ 	      int abs_time_zone_min = abs_time_zone % 60;
+ 	      char tz1buf[sizeof "XXX+0:00"
+ 			  + sizeof pc.time_zone * CHAR_BIT / 3];
+ 	      if (!tz_was_altered)
+ 		tz0 = get_tz (tz0buf);
+ 	      sprintf (tz1buf, "XXX%s%ld:%02d", "-" + (time_zone < 0),
+-		       abs_time_zone_hour, abs_time_zone_min);
++		       (long int)abs_time_zone_hour, abs_time_zone_min);
+ 	      if (setenv ("TZ", tz1buf, 1) != 0)
+ 		goto fail;
+ 	      tz_was_altered = true;
+@@ -1439,7 +1441,7 @@ get_date (struct timespec *result, char const *p, struct timespec const *now)
+ 
+       if (pc.zones_seen)
+ 	{
+-	  long int delta = pc.time_zone * 60;
++	  time_t delta = pc.time_zone * 60;
+ 	  time_t t1;
+ #ifdef HAVE_TM_GMTOFF
+ 	  delta -= tm.tm_gmtoff;
+@@ -1486,16 +1488,16 @@ get_date (struct timespec *result, char const *p, struct timespec const *now)
+ 	 must be applied before relative times, and if mktime is applied
+ 	 again the time zone will be lost.  */
+       {
+-	long int sum_ns = pc.seconds.tv_nsec + pc.rel.ns;
+-	long int normalized_ns = (sum_ns % BILLION + BILLION) % BILLION;
++	time_t sum_ns = pc.seconds.tv_nsec + pc.rel.ns;
++	time_t normalized_ns = (sum_ns % BILLION + BILLION) % BILLION;
+ 	time_t t0 = Start;
+-	long int d1 = 60 * 60 * pc.rel.hour;
++	time_t d1 = 60 * 60 * pc.rel.hour;
+ 	time_t t1 = t0 + d1;
+-	long int d2 = 60 * pc.rel.minutes;
++	time_t d2 = 60 * pc.rel.minutes;
+ 	time_t t2 = t1 + d2;
+-	long int d3 = pc.rel.seconds;
++	time_t d3 = pc.rel.seconds;
+ 	time_t t3 = t2 + d3;
+-	long int d4 = (sum_ns - normalized_ns) / BILLION;
++	time_t d4 = (sum_ns - normalized_ns) / BILLION;
+ 	time_t t4 = t3 + d4;
+ 
+ 	if ((d1 / (60 * 60) ^ pc.rel.hour)
+@@ -1542,7 +1544,7 @@ main (int ac, char **av)
+ 	printf ("Bad format - couldn't convert.\n");
+       else if (! (tm = localtime (&d.tv_sec)))
+ 	{
+-	  long int sec = d.tv_sec;
++	  time_t sec = d.tv_sec;
+ 	  printf ("localtime (%ld) failed\n", sec);
+ 	}
+       else
+-- 
+1.8.3.rc3
+
