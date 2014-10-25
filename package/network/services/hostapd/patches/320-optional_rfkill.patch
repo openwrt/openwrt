@@ -8,7 +8,7 @@
  
  ifdef CONFIG_LIBNL32
    DRV_LIBS += -lnl-3
-@@ -114,7 +113,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
+@@ -115,7 +114,6 @@ DRV_WPA_CFLAGS += -DCONFIG_DRIVER_WEXT
  CONFIG_WIRELESS_EXTENSION=y
  NEED_NETLINK=y
  NEED_LINUX_IOCTL=y
@@ -16,7 +16,7 @@
  endif
  
  ifdef CONFIG_DRIVER_NDIS
-@@ -140,7 +138,6 @@ endif
+@@ -141,7 +139,6 @@ endif
  ifdef CONFIG_WIRELESS_EXTENSION
  DRV_WPA_CFLAGS += -DCONFIG_WIRELESS_EXTENSION
  DRV_WPA_OBJS += ../src/drivers/driver_wext.o
@@ -24,7 +24,7 @@
  endif
  
  ifdef NEED_NETLINK
-@@ -153,6 +150,7 @@ endif
+@@ -154,6 +151,7 @@ endif
  
  ifdef NEED_RFKILL
  DRV_OBJS += ../src/drivers/rfkill.o

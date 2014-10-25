@@ -8,7 +8,7 @@
  #include "crypto/random.h"
  #include "crypto/tls.h"
  #include "common/version.h"
-@@ -558,7 +559,7 @@ int main(int argc, char *argv[])
+@@ -560,7 +561,7 @@ int main(int argc, char *argv[])
  
  	wpa_supplicant_event = hostapd_wpa_event;
  	for (;;) {
@@ -17,7 +17,7 @@
  		if (c < 0)
  			break;
  		switch (c) {
-@@ -595,6 +596,8 @@ int main(int argc, char *argv[])
+@@ -597,6 +598,8 @@ int main(int argc, char *argv[])
  			break;
  #endif /* CONFIG_DEBUG_LINUX_TRACING */
  		case 'v':
