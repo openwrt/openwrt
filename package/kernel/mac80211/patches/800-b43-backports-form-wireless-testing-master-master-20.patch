@@ -433,7 +433,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  
  	phy->gmode = gmode;
  	b43_phy_put_into_reset(dev);
-@@ -3796,38 +3903,29 @@ static void b43_set_retry_limits(struct
+@@ -3796,38 +3903,29 @@ static void b43_set_retry_limits(struct 
  static int b43_op_config(struct ieee80211_hw *hw, u32 changed)
  {
  	struct b43_wl *wl = hw_to_b43_wl(hw);
@@ -817,7 +817,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	if (ops->exit)
  		ops->exit(dev);
  }
-@@ -403,9 +411,6 @@ int b43_switch_channel(struct b43_wldev
+@@ -403,9 +411,6 @@ int b43_switch_channel(struct b43_wldev 
  	u16 channelcookie, savedcookie;
  	int err;
  
@@ -827,7 +827,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	/* First we set the channel radio code to prevent the
  	 * firmware from sending ghost packets.
  	 */
-@@ -423,7 +428,6 @@ int b43_switch_channel(struct b43_wldev
+@@ -423,7 +428,6 @@ int b43_switch_channel(struct b43_wldev 
  	if (err)
  		goto err_restore_cookie;
  
@@ -1496,7 +1496,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	struct ssb_sprom *sprom = dev->dev->bus_sprom;
  	enum ieee80211_band band = b43_current_band(dev->wl);
  	u16 offset;
-@@ -897,7 +1230,7 @@ static void b43_radio_2056_setup(struct
+@@ -897,7 +1230,7 @@ static void b43_radio_2056_setup(struct 
  					offset | B2056_TX_MIXG_BOOST_TUNE,
  					mixg_boost);
  			} else {
@@ -1505,7 +1505,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  				b43_radio_write(dev,
  					offset | B2056_TX_INTPAG_IMAIN_STAT,
  					bias);
-@@ -911,7 +1244,7 @@ static void b43_radio_2056_setup(struct
+@@ -911,7 +1244,7 @@ static void b43_radio_2056_setup(struct 
  			b43_radio_write(dev, offset | B2056_TX_PA_SPARE1, 0xee);
  		}
  	} else if (dev->phy.n->ipa5g_on && band == IEEE80211_BAND_5GHZ) {
@@ -1563,7 +1563,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	struct b43_phy_n *nphy = dev->phy.n;
  	int i;
  	u16 seq_mode;
-@@ -1261,17 +1593,35 @@ static void b43_nphy_run_samples(struct
+@@ -1261,17 +1593,35 @@ static void b43_nphy_run_samples(struct 
  
  	b43_nphy_stay_in_carrier_search(dev, true);
  
@@ -1605,7 +1605,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  
  	b43_phy_write(dev, B43_NPHY_SAMP_DEPCNT, (samps - 1));
  
-@@ -1289,10 +1639,8 @@ static void b43_nphy_run_samples(struct
+@@ -1289,10 +1639,8 @@ static void b43_nphy_run_samples(struct 
  		b43_phy_mask(dev, B43_NPHY_IQLOCAL_CMDGCTL, 0x7FFF);
  		b43_phy_set(dev, B43_NPHY_IQLOCAL_CMDGCTL, 0x8000);
  	} else {
@@ -2274,7 +2274,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  		b43_ntab_write(dev, B43_NTAB32(16, 3), 0x18D);
  		b43_ntab_write(dev, B43_NTAB32(16, 127), 0x18D);
  	} else {
-@@ -2930,6 +3461,7 @@ static void b43_nphy_workarounds(struct
+@@ -2930,6 +3461,7 @@ static void b43_nphy_workarounds(struct 
  	b43_phy_set(dev, B43_NPHY_IQFLIP,
  		    B43_NPHY_IQFLIP_ADC1 | B43_NPHY_IQFLIP_ADC2);
  
@@ -2282,7 +2282,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	if (dev->phy.rev >= 7)
  		b43_nphy_workarounds_rev7plus(dev);
  	else if (dev->phy.rev >= 3)
-@@ -2950,12 +3482,13 @@ static void b43_nphy_workarounds(struct
+@@ -2950,12 +3482,13 @@ static void b43_nphy_workarounds(struct 
   * http://bcm-v4.sipsolutions.net/802.11/PHY/N/TXTone
   */
  static int b43_nphy_tx_tone(struct b43_wldev *dev, u32 freq, u16 max_val,
@@ -2609,7 +2609,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	}
  }
  
-@@ -3688,7 +4285,9 @@ static void b43_nphy_pa_override(struct
+@@ -3688,7 +4285,9 @@ static void b43_nphy_pa_override(struct 
  		nphy->rfctrl_intc2_save = b43_phy_read(dev,
  						       B43_NPHY_RFCTL_INTC2);
  		band = b43_current_band(dev->wl);
@@ -2620,7 +2620,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  			if (band == IEEE80211_BAND_5GHZ)
  				tmp = 0x600;
  			else
-@@ -3709,21 +4308,28 @@ static void b43_nphy_pa_override(struct
+@@ -3709,21 +4308,28 @@ static void b43_nphy_pa_override(struct 
  	}
  }
  
@@ -2995,7 +2995,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	struct b43_phy_n *nphy = dev->phy.n;
  
  	u16 coef[4];
-@@ -4562,7 +5329,26 @@ static void b43_nphy_restore_cal(struct
+@@ -4562,7 +5329,26 @@ static void b43_nphy_restore_cal(struct 
  	}
  
  	/* TODO use some definitions */
@@ -3023,7 +3023,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  		b43_radio_write(dev, 0x2021, txcal_radio_regs[0]);
  		b43_radio_write(dev, 0x2022, txcal_radio_regs[1]);
  		b43_radio_write(dev, 0x3021, txcal_radio_regs[2]);
-@@ -4585,6 +5371,7 @@ static int b43_nphy_cal_tx_iq_lo(struct
+@@ -4585,6 +5371,7 @@ static int b43_nphy_cal_tx_iq_lo(struct 
  				struct nphy_txgains target,
  				bool full, bool mphase)
  {
@@ -3031,7 +3031,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	struct b43_phy_n *nphy = dev->phy.n;
  	int i;
  	int error = 0;
-@@ -4625,7 +5412,7 @@ static int b43_nphy_cal_tx_iq_lo(struct
+@@ -4625,7 +5412,7 @@ static int b43_nphy_cal_tx_iq_lo(struct 
  		(dev->phy.rev == 5 && nphy->ipa2g_on &&
  		b43_current_band(dev->wl) == IEEE80211_BAND_2GHZ);
  	if (phy6or5x) {
@@ -3040,7 +3040,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  			b43_ntab_write_bulk(dev, B43_NTAB16(15, 0), 18,
  					tbl_tx_iqlo_cal_loft_ladder_40);
  			b43_ntab_write_bulk(dev, B43_NTAB16(15, 32), 18,
-@@ -4638,18 +5425,24 @@ static int b43_nphy_cal_tx_iq_lo(struct
+@@ -4638,18 +5425,24 @@ static int b43_nphy_cal_tx_iq_lo(struct 
  		}
  	}
  
@@ -3070,7 +3070,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  
  	if (error == 0) {
  		if (nphy->mphase_cal_phase_id > 2) {
-@@ -4777,9 +5570,9 @@ static int b43_nphy_cal_tx_iq_lo(struct
+@@ -4777,9 +5570,9 @@ static int b43_nphy_cal_tx_iq_lo(struct 
  						nphy->txiqlocal_bestc);
  			nphy->txiqlocal_coeffsvalid = true;
  			nphy->txiqlocal_chanspec.center_freq =

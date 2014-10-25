@@ -1,5 +1,5 @@
---- a/drivers/net/wireless/rt2x00/rt2800.h	2014-06-30 01:05:26.000000000 +0300
-+++ b/drivers/net/wireless/rt2x00/rt2800.h	2014-06-30 01:23:42.000000000 +0300
+--- a/drivers/net/wireless/rt2x00/rt2800.h
++++ b/drivers/net/wireless/rt2x00/rt2800.h
 @@ -79,6 +79,7 @@
  #define RF5372				0x5372
  #define RF5390				0x5390
@@ -62,8 +62,8 @@
  /* TX_PWR_CFG_7 */
  #define TX_PWR_CFG_7			0x13d4
  #define TX_PWR_CFG_7_OFDM54_CH0		FIELD32(0x0000000f)
---- a/drivers/net/wireless/rt2x00/rt2800lib.c	2014-06-30 01:05:26.000000000 +0300
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c	2014-06-30 17:31:35.000000000 +0300
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
 @@ -61,6 +61,8 @@
  	rt2800_regbusy_read((__dev), BBP_CSR_CFG, BBP_CSR_CFG_BUSY, (__reg))
  #define WAIT_FOR_RFCSR(__dev, __reg) \
@@ -539,7 +539,7 @@
  	default:
  		rt2800_config_channel_rf2xxx(rt2x00dev, conf, rf, info);
  	}
-@@ -3631,7 +4010,7 @@ static void rt2800_config_channel(struct
+@@ -3636,7 +4015,7 @@ static void rt2800_config_channel(struct
  		else if (rt2x00_rt(rt2x00dev, RT3593) ||
  			 rt2x00_rt(rt2x00dev, RT3883))
  			rt2800_bbp_write(rt2x00dev, 82, 0x82);
@@ -548,7 +548,7 @@
  			rt2800_bbp_write(rt2x00dev, 82, 0xf2);
  
  		if (rt2x00_rt(rt2x00dev, RT3593) ||
-@@ -3653,7 +4032,7 @@ static void rt2800_config_channel(struct
+@@ -3658,7 +4037,7 @@ static void rt2800_config_channel(struct
  	if (rt2x00_rt(rt2x00dev, RT3572))
  		rt2800_rfcsr_write(rt2x00dev, 8, 0);
  
@@ -557,7 +557,7 @@
  
  	switch (rt2x00dev->default_ant.tx_chain_num) {
  	case 3:
-@@ -3702,6 +4081,7 @@ static void rt2800_config_channel(struct
+@@ -3707,6 +4086,7 @@ static void rt2800_config_channel(struct
  
  	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_RFTR_EN, 1);
  	rt2x00_set_field32(&tx_pin, TX_PIN_CFG_TRSW_EN, 1);
@@ -565,7 +565,7 @@
  
  	rt2800_register_write(rt2x00dev, TX_PIN_CFG, tx_pin);
  
-@@ -4710,6 +5090,14 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4715,6 +5095,14 @@ void rt2800_vco_calibration(struct rt2x0
  		rt2x00_set_field8(&rfcsr, RFCSR3_VCOCAL_EN, 1);
  		rt2800_rfcsr_write(rt2x00dev, 3, rfcsr);
  		break;
@@ -580,7 +580,7 @@
  	default:
  		return;
  	}
-@@ -5110,9 +5498,42 @@ static int rt2800_init_registers(struct
+@@ -5115,9 +5503,42 @@ static int rt2800_init_registers(struct 
  	} else if (rt2x00_rt(rt2x00dev, RT5390) ||
  		   rt2x00_rt(rt2x00dev, RT5392) ||
  		   rt2x00_rt(rt2x00dev, RT5592)) {
@@ -626,7 +626,7 @@
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  	} else {
-@@ -6144,6 +6565,225 @@ static void rt2800_init_bbp_5592(struct
+@@ -6149,6 +6570,225 @@ static void rt2800_init_bbp_5592(struct 
  		rt2800_bbp_write(rt2x00dev, 103, 0xc0);
  }
  
@@ -852,7 +852,7 @@
  static void rt2800_init_bbp(struct rt2x00_dev *rt2x00dev)
  {
  	unsigned int i;
-@@ -6186,7 +6826,10 @@ static void rt2800_init_bbp(struct rt2x0
+@@ -6191,7 +6831,10 @@ static void rt2800_init_bbp(struct rt2x0
  		return;
  	case RT5390:
  	case RT5392:
@@ -864,7 +864,7 @@
  		break;
  	case RT5592:
  		rt2800_init_bbp_5592(rt2x00dev);
-@@ -7400,6 +8043,295 @@ static void rt2800_init_rfcsr_5592(struc
+@@ -7405,6 +8048,295 @@ static void rt2800_init_rfcsr_5592(struc
  	rt2800_led_open_drain_enable(rt2x00dev);
  }
  
@@ -1160,7 +1160,7 @@
  static void rt2800_init_rfcsr(struct rt2x00_dev *rt2x00dev)
  {
  	if (rt2800_is_305x_soc(rt2x00dev)) {
-@@ -7435,7 +8367,10 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -7440,7 +8372,10 @@ static void rt2800_init_rfcsr(struct rt2
  		rt2800_init_rfcsr_5350(rt2x00dev);
  		break;
  	case RT5390:
@@ -1172,7 +1172,7 @@
  		break;
  	case RT5392:
  		rt2800_init_rfcsr_5392(rt2x00dev);
-@@ -7866,6 +8801,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7871,6 +8806,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF5390:
  	case RF5392:
  	case RF5592:
@@ -1180,7 +1180,7 @@
  		break;
  	default:
  		rt2x00_err(rt2x00dev, "Invalid RF chipset 0x%04x detected\n",
-@@ -8431,6 +9367,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8436,6 +9372,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5372:
  	case RF5390:
  	case RF5392:
@@ -1188,7 +1188,7 @@
  		spec->num_channels = 14;
  		if (spec->clk_is_20mhz)
  			spec->channels = rf_vals_xtal20mhz_3x;
-@@ -8570,6 +9507,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8575,6 +9512,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5372:
  	case RF5390:
  	case RF5392:

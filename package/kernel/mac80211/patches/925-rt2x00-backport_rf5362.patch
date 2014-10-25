@@ -1,6 +1,5 @@
-diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800.h compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h
---- compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800.h	2014-10-10 14:53:56.000000000 +0200
-+++ compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800.h	2014-10-10 15:09:36.000000000 +0200
+--- a/drivers/net/wireless/rt2x00/rt2800.h
++++ b/drivers/net/wireless/rt2x00/rt2800.h
 @@ -53,6 +53,7 @@
   * RF5592 2.4G/5G 2T2R
   * RF3070 2.4G 1T1R
@@ -17,7 +16,7 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  #define RF5370				0x5370
  #define RF5372				0x5372
  #define RF5390				0x5390
-@@ -2207,7 +2209,7 @@
+@@ -2207,7 +2209,7 @@ struct mac_iveiv_entry {
  /* Bits [7-4] for RF3320 (RT3370/RT3390), on other chipsets reserved */
  #define RFCSR3_PA1_BIAS_CCK		FIELD8(0x70)
  #define RFCSR3_PA2_CASCODE_BIAS_CCKK	FIELD8(0x80)
@@ -26,10 +25,9 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  #define RFCSR3_VCOCAL_EN		FIELD8(0x80)
  /* Bits for RF3050 */
  #define RFCSR3_BIT1			FIELD8(0x02)
-diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800lib.c compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c
---- compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800lib.c	2014-10-10 14:53:56.000000000 +0200
-+++ compat-wireless-2014-05-22/drivers/net/wireless/rt2x00/rt2800lib.c	2014-10-10 15:10:43.000000000 +0200
-@@ -3902,6 +3902,7 @@
+--- a/drivers/net/wireless/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+@@ -3902,6 +3902,7 @@ static void rt2800_config_channel(struct
  	case RF3070:
  	case RF5350:
  	case RF5360:
@@ -37,7 +35,7 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  	case RF5370:
  	case RF5372:
  	case RF5390:
-@@ -3923,6 +3924,7 @@
+@@ -3923,6 +3924,7 @@ static void rt2800_config_channel(struct
  	    rt2x00_rf(rt2x00dev, RF3322) ||
  	    rt2x00_rf(rt2x00dev, RF5350) ||
  	    rt2x00_rf(rt2x00dev, RF5360) ||
@@ -45,7 +43,7 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  	    rt2x00_rf(rt2x00dev, RF5370) ||
  	    rt2x00_rf(rt2x00dev, RF5372) ||
  	    rt2x00_rf(rt2x00dev, RF5390) ||
-@@ -5087,6 +5089,7 @@
+@@ -5087,6 +5089,7 @@ void rt2800_vco_calibration(struct rt2x0
  	case RF3853:
  	case RF5350:
  	case RF5360:
@@ -53,7 +51,7 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  	case RF5370:
  	case RF5372:
  	case RF5390:
-@@ -8801,6 +8804,7 @@
+@@ -8801,6 +8804,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF3853:
  	case RF5350:
  	case RF5360:
@@ -61,7 +59,7 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  	case RF5370:
  	case RF5372:
  	case RF5390:
-@@ -9368,6 +9372,7 @@
+@@ -9368,6 +9372,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3322:
  	case RF5350:
  	case RF5360:
@@ -69,7 +67,7 @@ diff -u -N -r compat-wireless-2014-05-22.orig/drivers/net/wireless/rt2x00/rt2800
  	case RF5370:
  	case RF5372:
  	case RF5390:
-@@ -9508,6 +9513,7 @@
+@@ -9508,6 +9513,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3853:
  	case RF5350:
  	case RF5360:
