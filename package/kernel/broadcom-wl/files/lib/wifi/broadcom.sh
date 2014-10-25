@@ -199,11 +199,20 @@ enable_broadcom() {
 	}
 
 	# Use 'chanspec' instead of 'channel' for 'N' modes (See bcmwifi.h)
-	[ ${nmode:-0} -ne 0 -a -n "$band" -a -n "$channel" ] && {
+	[ -n "$nmode" -a -n "$band" -a -n "$channel" ] && {
 		case "$htmode" in
-			HT40-)	chanspec=$(printf 0x%x%x%02x $band 0xe $(($channel - 2))); channel=;;
-			HT40+)	chanspec=$(printf 0x%x%x%02x $band 0xd $(($channel + 2))); channel=;;
-			HT20)	chanspec=$(printf 0x%x%x%02x $band 0xb $channel); channel=;;
+			HT40)
+				if [ -n "$gmode" ]; then
+					[ $channel -lt 7 ] && htmode="HT40+" || htmode="HT40-"
+				else
+					[ $(( ($channel / 4) % 2 )) -eq 1 ] && htmode="HT40+" || htmode="HT40-"
+				fi
+			;;
+		esac
+		case "$htmode" in
+			HT40-)	chanspec=$(printf 0x%x%x%02x $band 0xe $(($channel - 2))); nmode=1; channel=;;
+			HT40+)	chanspec=$(printf 0x%x%x%02x $band 0xd $(($channel + 2))); nmode=1; channel=;;
+			HT20)	chanspec=$(printf 0x%x%x%02x $band 0xb $channel); nmode=1; channel=;;
 			*) ;;
 		esac
 	}
