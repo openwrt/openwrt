@@ -64,7 +64,7 @@
  #ifdef CONFIG_DEBUG_FILE
  static char *last_path = NULL;
  #endif /* CONFIG_DEBUG_FILE */
-@@ -592,7 +566,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
+@@ -594,7 +568,7 @@ void wpa_msg_register_ifname_cb(wpa_msg_
  }
  
  
@@ -73,7 +73,7 @@
  {
  	va_list ap;
  	char *buf;
-@@ -630,7 +604,7 @@ void wpa_msg(void *ctx, int level, const
+@@ -632,7 +606,7 @@ void wpa_msg(void *ctx, int level, const
  }
  
  
@@ -166,7 +166,7 @@
  
  /**
   * wpa_hexdump_ascii_key - conditional hex dump, hide keys
-@@ -142,8 +177,14 @@ void wpa_hexdump_ascii(int level, const
+@@ -142,8 +177,14 @@ void wpa_hexdump_ascii(int level, const 
   * bytes per line will be shown. This works like wpa_hexdump_ascii(), but by
   * default, does not include secret keys (passwords, etc.) in debug output.
   */
@@ -183,7 +183,7 @@
  
  /*
   * wpa_dbg() behaves like wpa_msg(), but it can be removed from build to reduce
-@@ -178,7 +219,12 @@ void wpa_hexdump_ascii_key(int level, co
+@@ -179,7 +220,12 @@ void wpa_hexdump_ascii_key(int level, co
   *
   * Note: New line '\n' is added to the end of the text when printing to stdout.
   */
@@ -197,7 +197,7 @@
  
  /**
   * wpa_msg_ctrl - Conditional printf for ctrl_iface monitors
-@@ -192,8 +238,13 @@ void wpa_msg(void *ctx, int level, const
+@@ -193,8 +239,13 @@ void wpa_msg(void *ctx, int level, const
   * attached ctrl_iface monitors. In other words, it can be used for frequent
   * events that do not need to be sent to syslog.
   */

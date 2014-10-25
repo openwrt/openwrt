@@ -1,6 +1,6 @@
 --- a/wpa_supplicant/wpa_supplicant_i.h
 +++ b/wpa_supplicant/wpa_supplicant_i.h
-@@ -108,6 +108,11 @@ struct wpa_interface {
+@@ -109,6 +109,11 @@ struct wpa_interface {
  	const char *ifname;
  
  	/**
@@ -12,7 +12,7 @@
  	 * bridge_ifname - Optional bridge interface name
  	 *
  	 * If the driver interface (ifname) is included in a Linux bridge
-@@ -395,6 +400,8 @@ struct wpa_supplicant {
+@@ -406,6 +411,8 @@ struct wpa_supplicant {
  #endif /* CONFIG_CTRL_IFACE_DBUS_NEW */
  	char bridge_ifname[16];
  
@@ -101,8 +101,8 @@
  /* Configure default/group WEP keys for static WEP */
  int wpa_set_wep_keys(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid)
  {
-@@ -711,8 +760,12 @@ void wpa_supplicant_set_state(struct wpa
- #endif /* CONFIG_P2P */
+@@ -731,8 +780,12 @@ void wpa_supplicant_set_state(struct wpa
+ 		wpas_p2p_completed(wpa_s);
  
  		sme_sched_obss_scan(wpa_s, 1);
 +		if (wpa_s->hostapd)
@@ -114,7 +114,7 @@
  		wpa_s->new_connection = 1;
  		wpa_drv_set_operstate(wpa_s, 0);
  #ifndef IEEE8021X_EAPOL
-@@ -3595,6 +3648,20 @@ static int wpa_supplicant_init_iface(str
+@@ -3753,6 +3806,20 @@ static int wpa_supplicant_init_iface(str
  			   sizeof(wpa_s->bridge_ifname));
  	}
  
@@ -135,7 +135,7 @@
  	/* RSNA Supplicant Key Management - INITIALIZE */
  	eapol_sm_notify_portEnabled(wpa_s->eapol, FALSE);
  	eapol_sm_notify_portValid(wpa_s->eapol, FALSE);
-@@ -3798,6 +3865,11 @@ static void wpa_supplicant_deinit_iface(
+@@ -3967,6 +4034,11 @@ static void wpa_supplicant_deinit_iface(
  	if (terminate)
  		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_TERMINATING);
  
@@ -157,7 +157,7 @@
  #include "drivers/driver.h"
  #include "wpa_supplicant_i.h"
  #include "config.h"
-@@ -247,6 +248,10 @@ static void calculate_update_time(const
+@@ -247,6 +248,10 @@ static void calculate_update_time(const 
  static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
  			     struct os_reltime *fetch_time)
  {
