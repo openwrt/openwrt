@@ -10,10 +10,11 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/wireless/ath/ath9k/ar9002_calib.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9002_calib.c
-@@ -854,6 +854,7 @@ static bool ar9002_hw_init_cal(struct at
+@@ -856,6 +856,8 @@ static bool ar9002_hw_init_cal(struct at
  
  	/* Do PA Calibration */
  	ar9002_hw_pa_cal(ah, true);
++	ath9k_hw_loadnf(ah, chan);
 +	ath9k_hw_start_nfcal(ah, true);
  
  	if (ah->caldata)
