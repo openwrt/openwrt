@@ -50,12 +50,15 @@
  #define UBI_VERSION 1
 --- a/mkfs.ubifs/mkfs.ubifs.h
 +++ b/mkfs.ubifs/mkfs.ubifs.h
-@@ -34,7 +34,14 @@
+@@ -34,7 +34,17 @@
  #include <endian.h>
  #include <byteswap.h>
  #include <linux/types.h>
 +#ifdef __linux__
  #include <linux/fs.h>
++# if defined(__x86_64__) && defined(__ILP32__)
++#  define llseek lseek64
++# endif
 +#else
 +# ifndef O_LARGEFILE
 +#  define O_LARGEFILE 0
