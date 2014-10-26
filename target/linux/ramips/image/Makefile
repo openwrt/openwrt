@@ -275,12 +275,12 @@ define BuildFirmware/PorayDualSize/squashfs
 	if [ -e "$(call sysupname,$(1),$(2)-4M)" ]; then \
 		mkporayfw -B $(3) -F 4M \
 			-f $(call sysupname,$(1),$(2)-4M) \
-			-o $(call imgname,$(1),$(2))-4M-factory.bin; \
+			-o $(call imgname,$(1),$(2)-4M)-factory.bin; \
 	fi
 	if [ -e "$(call sysupname,$(1),$(2)-8M)" ]; then \
 		mkporayfw -B $(3) -F 8M \
 			-f $(call sysupname,$(1),$(2)-8M) \
-			-o $(call imgname,$(1),$(2))-8M-factory.bin; \
+			-o $(call imgname,$(1),$(2)-8M)-factory.bin; \
 	fi
 endef
 BuildFirmware/PorayDualSize/initramfs=$(call BuildFirmware/DefaultDualSize/initramfs,$(1),$(2),$(3))
