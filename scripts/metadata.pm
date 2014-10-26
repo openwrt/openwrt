@@ -97,6 +97,8 @@ sub parse_package_metadata($) {
 		/^Submenu: \s*(.+)\s*$/ and $pkg->{submenu} = $1;
 		/^Submenu-Depends: \s*(.+)\s*$/ and $pkg->{submenudep} = $1;
 		/^Source: \s*(.+)\s*$/ and $pkg->{source} = $1;
+		/^License: \s*(.+)\s*$/ and $pkg->{license} = $1;
+		/^LicenseFiles: \s*(.+)\s*$/ and $pkg->{licensefiles} = $1;
 		/^Default: \s*(.+)\s*$/ and $pkg->{default} = $1;
 		/^Provides: \s*(.+)\s*$/ and do {
 			my @vpkg = split /\s+/, $1;
