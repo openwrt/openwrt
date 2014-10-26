@@ -8,7 +8,7 @@ opengt
 :start
  send "sending -> "
  send $env("COMMAND")
- send "^n"
+ send "^m"
 
  waitfor 15 "OK","ERR","ERROR"
  if % = 0 goto continue
