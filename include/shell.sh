@@ -1,3 +1,7 @@
+getvar() {
+	eval "echo \"\${$1}\""
+}
+
 var2file() {
 	local var
 	eval "var=\"\${$1}\""
