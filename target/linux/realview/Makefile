@@ -14,7 +14,7 @@ CPU_TYPE:=mpcore
 CPU_SUBTYPE:=vfp
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-LINUX_VERSION:=3.10.49
+KERNEL_PATCHVER:=3.10
 
 DEVICE_TYPE:=developerboard
 

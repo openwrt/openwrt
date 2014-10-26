@@ -12,7 +12,7 @@ BOARDNAME:=x86
 FEATURES:=squashfs ext4 vdi vmdk pcmcia targz
 SUBTARGETS=generic olpc xen_domu net5501 kvm_guest alix2 thincan
 
-LINUX_VERSION:=3.10.49
+KERNEL_PATCHVER:=3.10
 
 KERNELNAME:=bzImage
 
