@@ -35,8 +35,7 @@ endef
 
 define Package/e2fsprogs/description
  This package contains essential ext2 filesystem utilities which consists of
- e2fsck, mke2fs, tune2fs, and most of the other core ext2
- filesystem utilities.
+ e2fsck, mke2fs and most of the other core ext2 filesystem utilities.
 endef
 
 define Package/libext2fs
