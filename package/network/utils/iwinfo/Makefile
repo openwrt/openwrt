@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2014 Jo-Philipp Wich <xm@subsignal.org>
+# Copyright (C) 2010-2014 Jo-Philipp Wich <jow@openwrt.org>
 #
 # This is free software, licensed under the GPL 2 license.
 #
@@ -7,9 +7,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libiwinfo
-PKG_RELEASE:=51
+PKG_VERSION:=2014-10-27
+PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
-PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
+PKG_SOURCE_PROTO:=git
+PKG_SOURCE_URL:=http://git.openwrt.org/project/iwinfo.git
+PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_VERSION:=32dad1a63aa73168ad431603b104a16c0b7f69fc
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+
 PKG_CONFIG_DEPENDS := \
 	CONFIG_PACKAGE_kmod-brcm-wl \
 	CONFIG_PACKAGE_kmod-brcm-wl-mini \
@@ -26,7 +33,6 @@ define Package/libiwinfo
   TITLE:=Generalized Wireless Information Library (iwinfo)
   DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny +libuci
   ABI_VERSION:=$(PKG_RELEASE)
-  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
 define Package/libiwinfo/description
@@ -41,7 +47,6 @@ define Package/libiwinfo-lua
   CATEGORY:=Languages
   TITLE:=libiwinfo Lua binding
   DEPENDS:=+libiwinfo +liblua
-  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
 define Package/libiwinfo-lua/description
@@ -55,18 +60,12 @@ define Package/iwinfo
   CATEGORY:=Utilities
   TITLE:=Generalized Wireless Information utility
   DEPENDS:=+libiwinfo
-  MAINTAINER:=Jo-Philipp Wich <xm@subsignal.org>
 endef
 
 define Package/iwinfo/description
   Command line frontend for the wireless information library.
 endef
 
-
-define Build/Prepare
-	mkdir -p $(PKG_BUILD_DIR)
-	$(CP) ./src/* $(PKG_BUILD_DIR)/
-endef
 
 define Build/Configure
 endef
