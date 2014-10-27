@@ -268,10 +268,11 @@ menu "Target Images"
 		string "Root partition on target device"
 		depends on OLPC_BOOTSCRIPT_IMAGES || GRUB_IMAGES
 		default "/dev/xvda2" if TARGET_x86_xen_domu
-		default "/dev/sda2" if ! TARGET_x86_xen_domu
+		default "/dev/sda2" if TARGET_x86 && ! TARGET_x86_xen_domu
 		help
-		  The root partition on the final device.  If you don't know,
-		  you probably want the default (/dev/sda2).
+		  Override the root partition on the final device. If left empty,
+		  it will be mounted by PARTUUID which makes the kernel find the
+		  appropriate disk automatically.
 
 
 	menuconfig TARGET_ROOTFS_INCLUDE_KERNEL
