@@ -1,3 +1,15 @@
+commit 536b05e91ac2715942f792184c26beb43dbaa522
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Mon Oct 27 11:50:28 2014 +0100
+
+    mac80211: flush keys for AP mode on ieee80211_do_stop
+    
+    Userspace can add keys to an AP mode interface before start_ap has been
+    called. If there have been no calls to start_ap/stop_ap in the mean
+    time, the keys will still be around when the interface is brought down.
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit c35074725eb19f353beb5f71266f9e985e46f583
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Wed Oct 22 18:16:14 2014 +0200
@@ -2080,7 +2092,15 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	if (err < 0)
  		return err;
  	ieee80211_bss_info_change_notify(sdata, err);
-@@ -3073,7 +2766,8 @@ static int ieee80211_set_after_csa_beaco
+@@ -1164,7 +857,6 @@ static int ieee80211_stop_ap(struct wiph
+ 	sdata->u.ap.driver_smps_mode = IEEE80211_SMPS_OFF;
+ 
+ 	__sta_info_flush(sdata, true);
+-	ieee80211_free_keys(sdata, true);
+ 
+ 	sdata->vif.bss_conf.enable_beacon = false;
+ 	sdata->vif.bss_conf.ssid_len = 0;
+@@ -3073,7 +2765,8 @@ static int ieee80211_set_after_csa_beaco
  
  	switch (sdata->vif.type) {
  	case NL80211_IFTYPE_AP:
@@ -2090,7 +2110,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  		kfree(sdata->u.ap.next_beacon);
  		sdata->u.ap.next_beacon = NULL;
  
-@@ -3176,6 +2870,7 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3176,6 +2869,7 @@ static int ieee80211_set_csa_beacon(stru
  				    struct cfg80211_csa_settings *params,
  				    u32 *changed)
  {
@@ -2098,7 +2118,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	int err;
  
  	switch (sdata->vif.type) {
-@@ -3210,20 +2905,13 @@ static int ieee80211_set_csa_beacon(stru
+@@ -3210,20 +2904,13 @@ static int ieee80211_set_csa_beacon(stru
  		     IEEE80211_MAX_CSA_COUNTERS_NUM))
  			return -EINVAL;
  
@@ -2125,7 +2145,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  		if (err < 0) {
  			kfree(sdata->u.ap.next_beacon);
  			return err;
-@@ -3367,7 +3055,6 @@ __ieee80211_channel_switch(struct wiphy 
+@@ -3367,7 +3054,6 @@ __ieee80211_channel_switch(struct wiphy 
  	sdata->csa_radar_required = params->radar_required;
  	sdata->csa_chandef = params->chandef;
  	sdata->csa_block_tx = params->block_tx;
@@ -2133,7 +2153,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	sdata->vif.csa_active = true;
  
  	if (sdata->csa_block_tx)
-@@ -3515,10 +3202,23 @@ static int ieee80211_mgmt_tx(struct wiph
+@@ -3515,10 +3201,23 @@ static int ieee80211_mgmt_tx(struct wiph
  	     sdata->vif.type == NL80211_IFTYPE_ADHOC) &&
  	    params->n_csa_offsets) {
  		int i;
@@ -2160,7 +2180,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	}
  
  	IEEE80211_SKB_CB(skb)->flags = flags;
-@@ -3598,21 +3298,6 @@ static int ieee80211_get_antenna(struct 
+@@ -3598,21 +3297,6 @@ static int ieee80211_get_antenna(struct 
  	return drv_get_antenna(local, tx_ant, rx_ant);
  }
  
@@ -2182,7 +2202,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  static int ieee80211_set_rekey_data(struct wiphy *wiphy,
  				    struct net_device *dev,
  				    struct cfg80211_gtk_rekey_data *data)
-@@ -3844,8 +3529,6 @@ const struct cfg80211_ops mac80211_confi
+@@ -3844,8 +3528,6 @@ const struct cfg80211_ops mac80211_confi
  	.mgmt_frame_register = ieee80211_mgmt_frame_register,
  	.set_antenna = ieee80211_set_antenna,
  	.get_antenna = ieee80211_get_antenna,
@@ -2191,7 +2211,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	.set_rekey_data = ieee80211_set_rekey_data,
  	.tdls_oper = ieee80211_tdls_oper,
  	.tdls_mgmt = ieee80211_tdls_mgmt,
-@@ -3854,9 +3537,6 @@ const struct cfg80211_ops mac80211_confi
+@@ -3854,9 +3536,6 @@ const struct cfg80211_ops mac80211_confi
  #ifdef CONFIG_PM
  	.set_wakeup = ieee80211_set_wakeup,
  #endif
@@ -2375,7 +2395,17 @@ Date:   Mon May 19 21:20:49 2014 +0200
  
  	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
  
-@@ -1303,6 +1304,7 @@ static void ieee80211_setup_sdata(struct
+@@ -928,9 +929,6 @@ static void ieee80211_do_stop(struct iee
+ 		 * another CPU.
+ 		 */
+ 		ieee80211_free_keys(sdata, true);
+-
+-		/* fall through */
+-	case NL80211_IFTYPE_AP:
+ 		skb_queue_purge(&sdata->skb_queue);
+ 	}
+ 
+@@ -1303,6 +1301,7 @@ static void ieee80211_setup_sdata(struct
  	sdata->control_port_protocol = cpu_to_be16(ETH_P_PAE);
  	sdata->control_port_no_encrypt = false;
  	sdata->encrypt_headroom = IEEE80211_ENCRYPT_HEADROOM;
@@ -2383,7 +2413,7 @@ Date:   Mon May 19 21:20:49 2014 +0200
  
  	sdata->noack_map = 0;
  
-@@ -1721,6 +1723,8 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1721,6 +1720,8 @@ int ieee80211_if_add(struct ieee80211_lo
  
  		ndev->features |= local->hw.netdev_features;
  
