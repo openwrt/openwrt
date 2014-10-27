@@ -1,0 +1,114 @@
+From 414f0ad9b3a8e8ee6eaf09c6d79d5f448ac28630 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 25 Jan 2014 17:03:07 +0100
+Subject: [PATCH 07/17] ARM: BCM5301X: register bcma bus
+
+---
+ arch/arm/boot/dts/bcm4708.dtsi | 58 ++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -94,18 +94,102 @@
+ 		};
+ 	};
+ 
++	nvram0: nvram@1c000000 {
++		compatible = "brcm,bcm47xx-nvram";
++		reg = <0x1c000000 0x01000000>;
++	};
++
++	sprom0: sprom@0 {
++		compatible = "brcm,bcm47xx-sprom";
++		nvram = <&nvram0>;
++	};
++
+ 	axi@18000000 {
+ 		compatible = "brcm,bus-axi";
+ 		reg = <0x18000000 0x1000>;
+ 		ranges = <0x00000000 0x18000000 0x00100000>;
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
++		sprom = <&sprom0>;
+ 
+ 		chipcommon: chipcommon@0 {
+ 			reg = <0x00000000 0x1000>;
++			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+ 
+ 			gpio-controller;
+ 			#gpio-cells = <2>;
+ 		};
++
++		pcie@12000 {
++			reg = <0x00012000 0x1000>;
++			interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 129 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 130 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		pcie@13000 {
++			reg = <0x00013000 0x1000>;
++			interrupts = <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		pcie@14000 {
++			reg = <0x00014000 0x1000>;
++			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 139 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		usb2@21000 {
++			reg = <0x00021000 0x1000>;
++			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		usb3@23000 {
++			reg = <0x00023000 0x1000>;
++			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		ethernet@24000 {
++			reg = <0x00024000 0x1000>;
++			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		ethernet@25000 {
++			reg = <0x00025000 0x1000>;
++			interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		ethernet@26000 {
++			reg = <0x00026000 0x1000>;
++			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		ethernet@27000 {
++			reg = <0x00027000 0x1000>;
++			interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH>;
++		};
++
++		nand@28000 {
++			reg = <0x00028000 0x1000>;
++			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
++		};
+ 	};
+ };

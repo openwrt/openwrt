@@ -1,0 +1,125 @@
+From 788069f86c7fc1ce54661651e695943fb47a5188 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 2 Oct 2014 21:02:33 +0200
+Subject: [PATCH] ARM: BCM5301X: Add DT for Netgear R6300 V2
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/Makefile                     |  4 ++-
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts | 35 ++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -54,7 +54,9 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4e
+ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
+ dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
+ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
+-dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
++dtb-$(CONFIG_ARCH_BCM_5301X) += \
++	bcm4708-netgear-r6250.dtb \
++	bcm4708-netgear-r6300-v2.dtb
+ dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
+ dtb-$(CONFIG_ARCH_BCM_MOBILE) += bcm28155-ap.dtb \
+ 	bcm21664-garnet.dtb
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+@@ -0,0 +1,94 @@
++/*
++ * Broadcom BCM470X / BCM5301X arm platform code.
++ * DTS for Netgear R6300 V2
++ *
++ * Copyright © 2014 Rafał Miłecki <zajec5@gmail.com>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++/dts-v1/;
++
++#include "bcm4708.dtsi"
++
++/ {
++	compatible = "netgear,r6300v2", "brcm,bcm4708";
++	model = "Netgear R6300 V2 (BCM4708)";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++	};
++
++	memory {
++		reg = <0x00000000 0x08000000>;
++	};
++
++	chipcommonA {
++		uart0: serial@0300 {
++			status = "okay";
++		};
++
++		uart1: serial@0400 {
++			status = "okay";
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		logo {
++			label = "bcm53xx:white:logo";
++			gpios = <&chipcommon 1 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "default-on";
++		};
++
++		power0 {
++			label = "bcm53xx:green:power";
++			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++
++		power1 {
++			label = "bcm53xx:amber:power";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		usb {
++			label = "bcm53xx:blue:usb";
++			gpios = <&chipcommon 8 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++
++		wireless {
++			label = "bcm53xx:blue:wireless";
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys-polled";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		poll-interval = <200>;
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 4 GPIO_ACTIVE_LOW>;
++		};
++
++		rfkill {
++			label = "WiFi";
++			linux,code = <KEY_RFKILL>;
++			gpios = <&chipcommon 5 GPIO_ACTIVE_LOW>;
++		};
++
++		restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 6 GPIO_ACTIVE_LOW>;
++		};
++	};
++};

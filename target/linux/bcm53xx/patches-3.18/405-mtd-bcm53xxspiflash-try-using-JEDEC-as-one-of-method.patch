@@ -1,0 +1,42 @@
+--- a/drivers/mtd/spi-nor/bcm53xxspiflash.c
++++ b/drivers/mtd/spi-nor/bcm53xxspiflash.c
+@@ -173,7 +173,8 @@ static const struct spi_device_id *bcm53
+ 
+ 	/* TODO: Try more ID commands */
+ 
+-	return ERR_PTR(-ENODEV);
++	/* Some chips used by Broadcom may actually support JEDEC */
++	return spi_nor_read_id(nor);
+ 
+ found_name:
+ 	id = spi_nor_match_id(name);
+--- a/drivers/mtd/spi-nor/spi-nor.c
++++ b/drivers/mtd/spi-nor/spi-nor.c
+@@ -630,7 +630,7 @@ const struct spi_device_id spi_nor_ids[]
+ };
+ EXPORT_SYMBOL_GPL(spi_nor_ids);
+ 
+-static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
++const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
+ {
+ 	int			tmp;
+ 	u8			id[5];
+@@ -661,6 +661,7 @@ static const struct spi_device_id *spi_n
+ 	dev_err(nor->dev, "unrecognized JEDEC id %06x\n", jedec);
+ 	return ERR_PTR(-ENODEV);
+ }
++EXPORT_SYMBOL_GPL(spi_nor_read_id);
+ 
+ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
+ 			size_t *retlen, u_char *buf)
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -188,6 +188,8 @@ struct spi_nor {
+ 	void *priv;
+ };
+ 
++const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor);
++
+ /**
+  * spi_nor_scan() - scan the SPI NOR
+  * @nor:	the spi_nor structure
