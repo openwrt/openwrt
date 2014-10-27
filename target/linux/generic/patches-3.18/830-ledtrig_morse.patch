@@ -1,0 +1,28 @@
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -108,4 +108,8 @@ config LEDS_TRIGGER_CAMERA
+ 	  This enables direct flash/torch on/off by the driver, kernel space.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_MORSE
++	tristate "LED Morse Trigger"
++	depends on LEDS_TRIGGERS
++
+ endif # LEDS_TRIGGERS
+--- a/drivers/leds/Makefile
++++ b/drivers/leds/Makefile
+@@ -62,3 +62,4 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-d
+ 
+ # LED Triggers
+ obj-$(CONFIG_LEDS_TRIGGERS)		+= trigger/
++obj-$(CONFIG_LEDS_TRIGGER_MORSE)	+= ledtrig-morse.o
+--- a/drivers/leds/ledtrig-morse.c
++++ b/drivers/leds/ledtrig-morse.c
+@@ -26,7 +26,6 @@
+ #include <linux/list.h>
+ #include <linux/spinlock.h>
+ #include <linux/device.h>
+-#include <linux/sysdev.h>
+ #include <linux/timer.h>
+ #include <linux/ctype.h>
+ #include <linux/leds.h>

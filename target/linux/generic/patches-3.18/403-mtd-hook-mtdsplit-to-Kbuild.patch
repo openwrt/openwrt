@@ -1,0 +1,25 @@
+--- a/drivers/mtd/Kconfig
++++ b/drivers/mtd/Kconfig
+@@ -32,6 +32,11 @@ config MTD_UIMAGE_SPLIT
+ 	depends on MTD_SPLIT_FIRMWARE
+ 	default y
+ 
++config MTD_SPLIT
++	def_bool n
++	help 
++	  Generic MTD split support.
++
+ endmenu
+ 
+ config MTD_TESTS
+--- a/drivers/mtd/Makefile
++++ b/drivers/mtd/Makefile
+@@ -6,6 +6,8 @@
+ obj-$(CONFIG_MTD)		+= mtd.o
+ mtd-y				:= mtdcore.o mtdsuper.o mtdconcat.o mtdpart.o mtdchar.o
+ 
++mtd-$(CONFIG_MTD_SPLIT)		+= mtdsplit.o
++
+ obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
+ obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
+ obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o
