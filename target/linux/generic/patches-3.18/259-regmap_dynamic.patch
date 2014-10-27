@@ -1,6 +1,6 @@
 --- a/drivers/base/regmap/Kconfig
 +++ b/drivers/base/regmap/Kconfig
-@@ -3,23 +3,28 @@
+@@ -3,26 +3,31 @@
  # subsystems should select the appropriate symbols.
  
  config REGMAP
@@ -13,18 +13,21 @@
  
  config REGMAP_I2C
 -	tristate
-+	select REGMAP
 +	tristate "Regmap I2C
++	select REGMAP
+ 	depends on I2C
  
  config REGMAP_SPI
 -	tristate
++	tristate "Regmap SPI"
 +	select REGMAP
 +	depends on SPI_MASTER
-+	tristate "Regmap SPI"
+ 	depends on SPI
  
  config REGMAP_SPMI
 +	select REGMAP
  	tristate
+ 	depends on SPMI
  
  config REGMAP_MMIO
 +	select REGMAP
@@ -67,8 +70,8 @@
 +#include <linux/module.h>
  #include <linux/mutex.h>
  #include <linux/err.h>
- #include <linux/rbtree.h>
-@@ -2247,3 +2248,5 @@ static int __init regmap_initcall(void)
+ #include <linux/of.h>
+@@ -2635,3 +2636,5 @@ static int __init regmap_initcall(void)
  	return 0;
  }
  postcore_initcall(regmap_initcall);

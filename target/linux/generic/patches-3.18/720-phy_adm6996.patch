@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -128,6 +128,13 @@ config MICREL_PHY
+@@ -132,6 +132,13 @@ config MICREL_PHY
  	---help---
  	  Supports the KSZ9021, VSC8201, KS8001 PHYs.
  
@@ -16,7 +16,7 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -16,6 +16,7 @@ obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
+@@ -18,6 +18,7 @@ obj-$(CONFIG_BCM63XX_PHY)	+= bcm63xx.o
  obj-$(CONFIG_BCM7XXX_PHY)	+= bcm7xxx.o
  obj-$(CONFIG_BCM87XX_PHY)	+= bcm87xx.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o

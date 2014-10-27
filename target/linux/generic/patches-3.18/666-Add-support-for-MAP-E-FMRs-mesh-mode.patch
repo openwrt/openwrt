@@ -43,6 +43,32 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  
  	__be16			i_flags;
  	__be16			o_flags;
+--- a/include/uapi/linux/if_tunnel.h
++++ b/include/uapi/linux/if_tunnel.h
+@@ -57,10 +57,23 @@ enum {
+ 	IFLA_IPTUN_ENCAP_FLAGS,
+ 	IFLA_IPTUN_ENCAP_SPORT,
+ 	IFLA_IPTUN_ENCAP_DPORT,
++	IFLA_IPTUN_FMRS,
+ 	__IFLA_IPTUN_MAX,
+ };
+ #define IFLA_IPTUN_MAX	(__IFLA_IPTUN_MAX - 1)
+ 
++enum {
++	IFLA_IPTUN_FMR_UNSPEC,
++	IFLA_IPTUN_FMR_IP6_PREFIX,
++	IFLA_IPTUN_FMR_IP4_PREFIX,
++	IFLA_IPTUN_FMR_IP6_PREFIX_LEN,
++	IFLA_IPTUN_FMR_IP4_PREFIX_LEN,
++	IFLA_IPTUN_FMR_EA_LEN,
++	IFLA_IPTUN_FMR_OFFSET,
++	__IFLA_IPTUN_FMR_MAX,
++};
++#define IFLA_IPTUN_FMR_MAX (__IFLA_IPTUN_FMR_MAX - 1)
++
+ enum tunnel_encap_types {
+ 	TUNNEL_ENCAP_NONE,
+ 	TUNNEL_ENCAP_FOU,
 --- a/net/ipv6/ip6_tunnel.c
 +++ b/net/ipv6/ip6_tunnel.c
 @@ -16,6 +16,8 @@

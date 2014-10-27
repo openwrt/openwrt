@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -143,6 +143,11 @@ config IP17XX_PHY
+@@ -147,6 +147,11 @@ config IP17XX_PHY
  	tristate "Driver for IC+ IP17xx switches"
  	select SWCONFIG
  
@@ -14,7 +14,7 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
+@@ -22,6 +22,7 @@ obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
  obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
  obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o

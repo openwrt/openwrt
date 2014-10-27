@@ -1,13 +1,13 @@
 --- a/scripts/kallsyms.c
 +++ b/scripts/kallsyms.c
-@@ -59,6 +59,7 @@ static struct sym_entry *table;
+@@ -58,6 +58,7 @@ static struct addr_range percpu_range =
+ static struct sym_entry *table;
  static unsigned int table_size, table_cnt;
  static int all_symbols = 0;
- static int absolute_percpu = 0;
 +static int uncompressed = 0;
+ static int absolute_percpu = 0;
  static char symbol_prefix_char = '\0';
  static unsigned long long kernel_start_addr = 0;
- 
 @@ -392,6 +393,9 @@ static void write_src(void)
  
  	free(markers);

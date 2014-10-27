@@ -50,7 +50,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
-@@ -87,7 +87,7 @@
+@@ -89,7 +89,7 @@
  #ifdef CONFIG_FTRACE_MCOUNT_RECORD
  #define MCOUNT_REC()	. = ALIGN(8);				\
  			VMLINUX_SYMBOL(__start_mcount_loc) = .; \
@@ -59,7 +59,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			VMLINUX_SYMBOL(__stop_mcount_loc) = .;
  #else
  #define MCOUNT_REC()
-@@ -95,7 +95,7 @@
+@@ -97,7 +97,7 @@
  
  #ifdef CONFIG_TRACE_BRANCH_PROFILING
  #define LIKELY_PROFILE()	VMLINUX_SYMBOL(__start_annotated_branch_profile) = .; \
@@ -68,7 +68,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  				VMLINUX_SYMBOL(__stop_annotated_branch_profile) = .;
  #else
  #define LIKELY_PROFILE()
-@@ -103,7 +103,7 @@
+@@ -105,7 +105,7 @@
  
  #ifdef CONFIG_PROFILE_ALL_BRANCHES
  #define BRANCH_PROFILE()	VMLINUX_SYMBOL(__start_branch_profile) = .;   \
@@ -77,7 +77,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  				VMLINUX_SYMBOL(__stop_branch_profile) = .;
  #else
  #define BRANCH_PROFILE()
-@@ -112,7 +112,7 @@
+@@ -123,7 +123,7 @@
  #ifdef CONFIG_EVENT_TRACING
  #define FTRACE_EVENTS()	. = ALIGN(8);					\
  			VMLINUX_SYMBOL(__start_ftrace_events) = .;	\
@@ -86,7 +86,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			VMLINUX_SYMBOL(__stop_ftrace_events) = .;
  #else
  #define FTRACE_EVENTS()
-@@ -120,7 +120,7 @@
+@@ -131,7 +131,7 @@
  
  #ifdef CONFIG_TRACING
  #define TRACE_PRINTKS() VMLINUX_SYMBOL(__start___trace_bprintk_fmt) = .;      \
@@ -95,7 +95,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			 VMLINUX_SYMBOL(__stop___trace_bprintk_fmt) = .;
  #define TRACEPOINT_STR() VMLINUX_SYMBOL(__start___tracepoint_str) = .;	\
  			 *(__tracepoint_str) /* Trace_printk fmt' pointer */ \
-@@ -133,7 +133,7 @@
+@@ -144,7 +144,7 @@
  #ifdef CONFIG_FTRACE_SYSCALLS
  #define TRACE_SYSCALLS() . = ALIGN(8);					\
  			 VMLINUX_SYMBOL(__start_syscalls_metadata) = .;	\
@@ -104,40 +104,18 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			 VMLINUX_SYMBOL(__stop_syscalls_metadata) = .;
  #else
  #define TRACE_SYSCALLS()
-@@ -142,8 +142,8 @@
- #ifdef CONFIG_CLKSRC_OF
- #define CLKSRC_OF_TABLES() . = ALIGN(8);				\
- 			   VMLINUX_SYMBOL(__clksrc_of_table) = .;	\
--			   *(__clksrc_of_table)				\
--			   *(__clksrc_of_table_end)
-+			   KEEP(*(__clksrc_of_table))			\
-+			   KEEP(*(__clksrc_of_table_end))
- #else
- #define CLKSRC_OF_TABLES()
- #endif
-@@ -152,8 +152,8 @@
- #define IRQCHIP_OF_MATCH_TABLE()					\
+@@ -158,8 +158,8 @@
+ #define _OF_TABLE_1(name)						\
  	. = ALIGN(8);							\
- 	VMLINUX_SYMBOL(__irqchip_begin) = .;				\
--	*(__irqchip_of_table)		  				\
--	*(__irqchip_of_end)
-+	KEEP(*(__irqchip_of_table))	  				\
-+	KEEP(*(__irqchip_of_end))
- #else
- #define IRQCHIP_OF_MATCH_TABLE()
- #endif
-@@ -161,8 +161,8 @@
- #ifdef CONFIG_COMMON_CLK
- #define CLK_OF_TABLES() . = ALIGN(8);				\
- 			VMLINUX_SYMBOL(__clk_of_table) = .;	\
--			*(__clk_of_table)			\
--			*(__clk_of_table_end)
-+			KEEP(*(__clk_of_table))			\
-+			KEEP(*(__clk_of_table_end))
- #else
- #define CLK_OF_TABLES()
- #endif
-@@ -170,7 +170,7 @@
+ 	VMLINUX_SYMBOL(__##name##_of_table) = .;			\
+-	*(__##name##_of_table)						\
+-	*(__##name##_of_table_end)
++	KEEP(*(__##name##_of_table))					\
++	KEEP(*(__##name##_of_table_end))
+ 
+ #define CLKSRC_OF_TABLES()	OF_TABLE(CONFIG_CLKSRC_OF, clksrc)
+ #define IRQCHIP_OF_MATCH_TABLE() OF_TABLE(CONFIG_IRQCHIP, irqchip)
+@@ -171,7 +171,7 @@
  #define KERNEL_DTB()							\
  	STRUCT_ALIGN();							\
  	VMLINUX_SYMBOL(__dtb_start) = .;				\
@@ -146,7 +124,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	VMLINUX_SYMBOL(__dtb_end) = .;
  
  /* .data section */
-@@ -186,16 +186,17 @@
+@@ -187,16 +187,17 @@
  	/* implement dynamic printk debug */				\
  	. = ALIGN(8);                                                   \
  	VMLINUX_SYMBOL(__start___jump_table) = .;                       \
@@ -167,7 +145,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  /*
   * Data section helpers
-@@ -249,32 +250,32 @@
+@@ -250,35 +251,35 @@
  	/* PCI quirks */						\
  	.pci_fixup        : AT(ADDR(.pci_fixup) - LOAD_OFFSET) {	\
  		VMLINUX_SYMBOL(__start_pci_fixups_early) = .;		\
@@ -198,6 +176,10 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 -		*(.pci_fixup_suspend)					\
 +		KEEP(*(.pci_fixup_suspend))				\
  		VMLINUX_SYMBOL(__end_pci_fixups_suspend) = .;		\
+ 		VMLINUX_SYMBOL(__start_pci_fixups_suspend_late) = .;	\
+-		*(.pci_fixup_suspend_late)				\
++		KEEP(*(.pci_fixup_suspend_late))			\
+ 		VMLINUX_SYMBOL(__end_pci_fixups_suspend_late) = .;	\
  	}								\
  									\
  	/* Built-in firmware blobs */					\
@@ -208,7 +190,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__end_builtin_fw) = .;			\
  	}								\
  									\
-@@ -283,49 +284,49 @@
+@@ -287,49 +288,49 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
@@ -265,7 +247,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__stop___kcrctab_gpl) = .;		\
  	}								\
  									\
-@@ -339,14 +340,14 @@
+@@ -343,14 +344,14 @@
  	/* Kernel symbol table: GPL-only unused symbols */		\
  	__kcrctab_unused_gpl : AT(ADDR(__kcrctab_unused_gpl) - LOAD_OFFSET) { \
  		VMLINUX_SYMBOL(__start___kcrctab_unused_gpl) = .;	\
@@ -282,7 +264,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__stop___kcrctab_gpl_future) = .;	\
  	}								\
  									\
-@@ -365,14 +366,14 @@
+@@ -369,14 +370,14 @@
  	/* Built-in module parameters. */				\
  	__param : AT(ADDR(__param) - LOAD_OFFSET) {			\
  		VMLINUX_SYMBOL(__start___param) = .;			\
@@ -299,7 +281,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__stop___modver) = .;			\
  		. = ALIGN((align));					\
  		VMLINUX_SYMBOL(__end_rodata) = .;			\
-@@ -428,7 +429,7 @@
+@@ -432,7 +433,7 @@
  #define ENTRY_TEXT							\
  		ALIGN_FUNCTION();					\
  		VMLINUX_SYMBOL(__entry_text_start) = .;			\
@@ -308,7 +290,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__entry_text_end) = .;
  
  #ifdef CONFIG_FUNCTION_GRAPH_TRACER
-@@ -456,7 +457,7 @@
+@@ -460,7 +461,7 @@
  	. = ALIGN(align);						\
  	__ex_table : AT(ADDR(__ex_table) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___ex_table) = .;			\
@@ -317,7 +299,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__stop___ex_table) = .;			\
  	}
  
-@@ -472,8 +473,8 @@
+@@ -476,8 +477,8 @@
  #ifdef CONFIG_CONSTRUCTORS
  #define KERNEL_CTORS()	. = ALIGN(8);			   \
  			VMLINUX_SYMBOL(__ctors_start) = .; \
@@ -328,7 +310,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			VMLINUX_SYMBOL(__ctors_end) = .;
  #else
  #define KERNEL_CTORS()
-@@ -517,7 +518,7 @@
+@@ -525,7 +526,7 @@
  #define SBSS(sbss_align)						\
  	. = ALIGN(sbss_align);						\
  	.sbss : AT(ADDR(.sbss) - LOAD_OFFSET) {				\
@@ -337,7 +319,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		*(.scommon)						\
  	}
  
-@@ -535,7 +536,7 @@
+@@ -543,7 +544,7 @@
  		BSS_FIRST_SECTIONS					\
  		*(.bss..page_aligned)					\
  		*(.dynbss)						\
@@ -346,7 +328,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		*(COMMON)						\
  	}
  
-@@ -596,7 +597,7 @@
+@@ -604,7 +605,7 @@
  	. = ALIGN(4);							\
  	.tracedata : AT(ADDR(.tracedata) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__tracedata_start) = .;			\
@@ -355,7 +337,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		VMLINUX_SYMBOL(__tracedata_end) = .;			\
  	}
  #else
-@@ -613,17 +614,17 @@
+@@ -621,17 +622,17 @@
  #define INIT_SETUP(initsetup_align)					\
  		. = ALIGN(initsetup_align);				\
  		VMLINUX_SYMBOL(__setup_start) = .;			\
@@ -377,7 +359,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		INIT_CALLS_LEVEL(0)					\
  		INIT_CALLS_LEVEL(1)					\
  		INIT_CALLS_LEVEL(2)					\
-@@ -637,21 +638,21 @@
+@@ -645,21 +646,21 @@
  
  #define CON_INITCALL							\
  		VMLINUX_SYMBOL(__con_initcall_start) = .;		\
@@ -521,7 +503,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	.init.data : {
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
-@@ -120,6 +120,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
+@@ -122,6 +122,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
  ORIG_CFLAGS := $(KBUILD_CFLAGS)
  KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
  endif

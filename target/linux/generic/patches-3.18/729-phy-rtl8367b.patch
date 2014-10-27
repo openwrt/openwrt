@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -277,6 +277,10 @@ config RTL8367_PHY
+@@ -281,6 +281,10 @@ config RTL8367_PHY
  	tristate "Driver for the Realtek RTL8367R/M switches"
  	select SWCONFIG
  
@@ -13,7 +13,7 @@
  endif # PHYLIB
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -26,6 +26,7 @@ obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi
+@@ -28,6 +28,7 @@ obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi
  obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
  obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb.o
  obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o

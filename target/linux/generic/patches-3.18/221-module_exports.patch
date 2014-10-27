@@ -1,6 +1,6 @@
 --- a/include/asm-generic/vmlinux.lds.h
 +++ b/include/asm-generic/vmlinux.lds.h
-@@ -52,6 +52,16 @@
+@@ -54,6 +54,16 @@
  #define LOAD_OFFSET 0
  #endif
  
@@ -17,7 +17,7 @@
  #include <linux/export.h>
  
  /* Align . to a 8 byte boundary equals to maximum function alignment. */
-@@ -284,14 +294,14 @@
+@@ -288,14 +298,14 @@
  	/* Kernel symbol table: Normal symbols */			\
  	__ksymtab         : AT(ADDR(__ksymtab) - LOAD_OFFSET) {		\
  		VMLINUX_SYMBOL(__start___ksymtab) = .;			\
@@ -34,7 +34,7 @@
  		VMLINUX_SYMBOL(__stop___ksymtab_gpl) = .;		\
  	}								\
  									\
-@@ -353,7 +363,7 @@
+@@ -357,7 +367,7 @@
  									\
  	/* Kernel symbol table: strings */				\
          __ksymtab_strings : AT(ADDR(__ksymtab_strings) - LOAD_OFFSET) {	\
@@ -43,7 +43,7 @@
  	}								\
  									\
  	/* __*init sections */						\
-@@ -671,6 +681,8 @@
+@@ -679,6 +689,8 @@
  	EXIT_TEXT							\
  	EXIT_DATA							\
  	EXIT_CALL							\
@@ -54,7 +54,7 @@
  	}
 --- a/scripts/Makefile.build
 +++ b/scripts/Makefile.build
-@@ -349,7 +349,7 @@ targets += $(extra-y) $(MAKECMDGOALS) $(
+@@ -298,7 +298,7 @@ targets += $(extra-y) $(MAKECMDGOALS) $(
  # Linker scripts preprocessor (.lds.S -> .lds)
  # ---------------------------------------------------------------------------
  quiet_cmd_cpp_lds_S = LDS     $@

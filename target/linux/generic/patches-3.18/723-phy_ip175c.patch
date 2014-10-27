@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -139,6 +139,10 @@ config MVSWITCH_PHY
+@@ -143,6 +143,10 @@ config MVSWITCH_PHY
  	tristate "Driver for Marvell 88E6060 switches"
  	select ETHERNET_PACKET_MANGLE
  
@@ -13,7 +13,7 @@
  	depends on PHYLIB=y
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -18,6 +18,7 @@ obj-$(CONFIG_BCM87XX_PHY)	+= bcm87xx.o
+@@ -20,6 +20,7 @@ obj-$(CONFIG_BCM87XX_PHY)	+= bcm87xx.o
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
  obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
