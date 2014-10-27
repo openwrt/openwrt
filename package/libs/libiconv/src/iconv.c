@@ -244,7 +244,7 @@ static inline int utf8dec_wchar(wchar_t *c, unsigned char *in, size_t inb)
 	return -1;
 }
 
-static inline char latin9_translit(wchar_t c)
+static inline wchar_t latin9_translit(wchar_t c)
 {
 	/* a number of trivial iso-8859-15 <> utf-8 transliterations */
 	switch (c) {
@@ -256,7 +256,7 @@ static inline char latin9_translit(wchar_t c)
 	case 0x0152: return 0xBC; /* OE */
 	case 0x0153: return 0xBD; /* oe */
 	case 0x0178: return 0xBE; /* Y diaeresis */
-	default:     return '?';
+	default:     return 0xFFFD; /* cannot translate */
 	}
 }
 
@@ -394,9 +394,9 @@ charok:
 				c = latin9_translit(c);
 			/* fall through */
 		case LATIN_1:
+			if (c > 0xff) goto ilseq;
 			if (!*outb) goto toobig;
-			if (c < 0x100) **out = c;
-			else x++, **out = '*'; //FIXME: translit?
+			**out = c;
 			++*out;
 			--*outb;
 			break;
