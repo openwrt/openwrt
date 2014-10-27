@@ -8,10 +8,10 @@
  #include <linux/fs.h>
  #include <linux/blkdev.h>
  #include <linux/bio.h>
-@@ -211,13 +212,14 @@ static void block2mtd_free_device(struct
+@@ -210,13 +211,16 @@ static void block2mtd_free_device(struct
+ }
  
  
- /* FIXME: ensure that mtd->size % erase_size == 0 */
 -static struct block2mtd_dev *add_device(char *devname, int erase_size, const char *mtdname)
 +static struct block2mtd_dev *add_device(char *devname, int erase_size, const char *mtdname, int timeout)
  {
@@ -21,11 +21,13 @@
  	struct block2mtd_dev *dev;
  	struct mtd_partition *part;
  	char *name;
++#ifndef MODULE
 +	int i;
++#endif
  
  	if (!devname)
  		return NULL;
-@@ -228,15 +230,20 @@ static struct block2mtd_dev *add_device(
+@@ -227,15 +231,20 @@ static struct block2mtd_dev *add_device(
  
  	/* Get a handle on the device */
  	bdev = blkdev_get_by_path(devname, mode, dev);
@@ -52,7 +54,7 @@
  	}
  #endif
  
-@@ -355,11 +362,12 @@ static char block2mtd_paramline[80 + 12]
+@@ -361,11 +370,12 @@ static char block2mtd_paramline[80 + 12]
  
  static int block2mtd_setup2(const char *val)
  {
@@ -67,7 +69,7 @@
  	int i, ret;
  
  	if (strnlen(val, sizeof(buf)) >= sizeof(buf)) {
-@@ -370,7 +378,7 @@ static int block2mtd_setup2(const char *
+@@ -376,7 +386,7 @@ static int block2mtd_setup2(const char *
  	strcpy(str, val);
  	kill_final_newline(str);
  
@@ -76,7 +78,7 @@
  		token[i] = strsep(&str, ",");
  
  	if (str) {
-@@ -399,7 +407,10 @@ static int block2mtd_setup2(const char *
+@@ -405,7 +415,10 @@ static int block2mtd_setup2(const char *
  	if (token[2] && (strlen(token[2]) + 1 > 80))
  		pr_err("mtd device name too long\n");
  
@@ -88,7 +90,7 @@
  
  	return 0;
  }
-@@ -433,7 +444,7 @@ static int block2mtd_setup(const char *v
+@@ -439,7 +452,7 @@ static int block2mtd_setup(const char *v
  
  
  module_param_call(block2mtd, block2mtd_setup, NULL, NULL, 0200);
@@ -97,7 +99,7 @@
  
  static int __init block2mtd_init(void)
  {
-@@ -467,7 +478,7 @@ static void block2mtd_exit(void)
+@@ -474,7 +487,7 @@ static void block2mtd_exit(void)
  }
  
  

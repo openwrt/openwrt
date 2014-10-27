@@ -51,14 +51,15 @@ Signed-off-by: Florian Fainelli <florian@openwrt.org>
  			/*
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
-@@ -57,6 +57,7 @@ static int ehci_platform_reset(struct us
+@@ -226,6 +226,8 @@ static int ehci_platform_probe(struct pl
+ 		ehci->big_endian_desc = 1;
+ 	if (pdata->big_endian_mmio)
+ 		ehci->big_endian_mmio = 1;
++	if (pdata->ignore_oc)
++		ehci->ignore_oc = 1;
  
- 	hcd->has_tt = pdata->has_tt;
- 	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
-+	ehci->ignore_oc = pdata->ignore_oc;
- 
- 	if (pdata->pre_setup) {
- 		retval = pdata->pre_setup(hcd);
+ #ifndef CONFIG_USB_EHCI_BIG_ENDIAN_MMIO
+ 	if (ehci->big_endian_mmio) {
 --- a/drivers/usb/host/ehci.h
 +++ b/drivers/usb/host/ehci.h
 @@ -226,6 +226,7 @@ struct ehci_hcd {			/* one per controlle

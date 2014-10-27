@@ -72,15 +72,7 @@
   * zap_page_range_single - remove user pages in a given range
 --- a/mm/vmalloc.c
 +++ b/mm/vmalloc.c
-@@ -1231,6 +1231,7 @@ int map_kernel_range_noflush(unsigned lo
- {
- 	return vmap_page_range_noflush(addr, addr + size, prot, pages);
- }
-+EXPORT_SYMBOL_GPL(unmap_kernel_range);
- 
- /**
-  * unmap_kernel_range_noflush - unmap kernel VM area
-@@ -1372,6 +1373,7 @@ struct vm_struct *get_vm_area(unsigned l
+@@ -1372,6 +1372,7 @@ struct vm_struct *get_vm_area(unsigned l
  				  NUMA_NO_NODE, GFP_KERNEL,
  				  __builtin_return_address(0));
  }

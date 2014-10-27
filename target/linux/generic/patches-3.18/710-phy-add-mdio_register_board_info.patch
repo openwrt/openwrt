@@ -9,7 +9,7 @@
  /**
   * mdiobus_alloc_size - allocate a mii_bus structure
   * @size: extra amount of memory to allocate for private storage.
-@@ -224,15 +226,33 @@ void mdiobus_free(struct mii_bus *bus)
+@@ -335,9 +337,21 @@ void mdiobus_free(struct mii_bus *bus)
  }
  EXPORT_SYMBOL(mdiobus_free);
  
@@ -31,8 +31,9 @@
  	int err;
  
  	phydev = get_phy_device(bus, addr, false);
- 	if (IS_ERR(phydev) || phydev == NULL)
- 		return phydev;
+@@ -350,6 +364,12 @@ struct phy_device *mdiobus_scan(struct m
+ 	 */
+ 	of_mdiobus_link_phydev(bus, phydev);
  
 +	mutex_lock(&__mdio_board_lock);
 +	list_for_each_entry(be, &__mdio_board_list, list)
@@ -45,7 +46,7 @@
  		phy_device_free(phydev);
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -667,4 +667,22 @@ int __init mdio_bus_init(void);
+@@ -785,4 +785,22 @@ int __init mdio_bus_init(void);
  void mdio_bus_exit(void);
  
  extern struct bus_type mdio_bus_type;

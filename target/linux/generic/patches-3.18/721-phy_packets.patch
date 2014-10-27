@@ -1,40 +1,16 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1245,6 +1245,11 @@ struct net_device {
- 	const struct ethtool_ops *ethtool_ops;
- 	const struct forwarding_accel_ops *fwd_ops;
+@@ -1216,6 +1216,7 @@ enum netdev_priv_flags {
+ 	IFF_LIVE_ADDR_CHANGE		= 1<<20,
+ 	IFF_MACVLAN			= 1<<21,
+ 	IFF_XMIT_DST_RELEASE_PERM	= 1<<22,
++	IFF_NO_IP_ALIGN			= 1<<23,
+ };
  
-+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
-+	void (*eth_mangle_rx)(struct net_device *dev, struct sk_buff *skb);
-+	struct sk_buff *(*eth_mangle_tx)(struct net_device *dev, struct sk_buff *skb);
-+#endif
-+
- 	/* Hardware header description */
- 	const struct header_ops *header_ops;
- 
-@@ -1313,6 +1318,9 @@ struct net_device {
- 	void			*ax25_ptr;	/* AX.25 specific data */
- 	struct wireless_dev	*ieee80211_ptr;	/* IEEE 802.11 specific data,
- 						   assign before registering */
-+#ifdef CONFIG_ETHERNET_PACKET_MANGLE
-+	void			*phy_ptr; /* PHY device specific data */
-+#endif
- 
- /*
-  * Cache lines mostly used on receive path (including eth_type_trans())
---- a/include/uapi/linux/if.h
-+++ b/include/uapi/linux/if.h
-@@ -84,6 +84,7 @@
- #define IFF_LIVE_ADDR_CHANGE 0x100000	/* device supports hardware address
- 					 * change when it's running */
- #define IFF_MACVLAN 0x200000		/* Macvlan device */
-+#define IFF_NO_IP_ALIGN	0x400000	/* do not ip-align allocated rx pkts */
- 
- 
- #define IF_GET_IFACE	0x0001		/* for querying only */
+ #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -1858,6 +1858,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2044,6 +2044,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -45,7 +21,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -1984,16 +1988,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2170,16 +2174,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -64,7 +40,7 @@
  {
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -24,6 +24,12 @@ menuconfig NET
+@@ -25,6 +25,12 @@ menuconfig NET
  
  if NET
  
@@ -79,42 +55,42 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2614,10 +2614,20 @@ int dev_hard_start_xmit(struct sk_buff *
- 		if (!list_empty(&ptype_all))
- 			dev_queue_xmit_nit(skb, dev);
+@@ -2607,10 +2607,20 @@ static int xmit_one(struct sk_buff *skb,
+ 	if (!list_empty(&ptype_all))
+ 		dev_queue_xmit_nit(skb, dev);
  
--		skb_len = skb->len;
--		trace_net_dev_start_xmit(skb, dev);
--		rc = ops->ndo_start_xmit(skb, dev);
--		trace_net_dev_xmit(skb, rc, dev, skb_len);
+-	len = skb->len;
+-	trace_net_dev_start_xmit(skb, dev);
+-	rc = netdev_start_xmit(skb, dev, txq, more);
+-	trace_net_dev_xmit(skb, rc, dev, len);
 +#ifdef CONFIG_ETHERNET_PACKET_MANGLE
-+		if (!dev->eth_mangle_tx ||
-+		    (skb = dev->eth_mangle_tx(dev, skb)) != NULL)
++	if (!dev->eth_mangle_tx ||
++	    (skb = dev->eth_mangle_tx(dev, skb)) != NULL)
 +#else
-+		if (1)
++	if (1)
 +#endif
-+		{
-+			skb_len = skb->len;
-+			trace_net_dev_start_xmit(skb, dev);
-+			rc = ops->ndo_start_xmit(skb, dev);
-+			trace_net_dev_xmit(skb, rc, dev, skb_len);
-+		} else {
-+			rc = NETDEV_TX_OK;
-+		}
- 		if (rc == NETDEV_TX_OK)
- 			txq_trans_update(txq);
- 		return rc;
++	{
++		len = skb->len;
++		trace_net_dev_start_xmit(skb, dev);
++		rc = netdev_start_xmit(skb, dev, txq, more);
++		trace_net_dev_xmit(skb, rc, dev, len);
++	} else {
++		rc = NETDEV_TX_OK;
++	}
+ 
+ 	return rc;
+ }
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -62,6 +62,7 @@
- #include <linux/scatterlist.h>
+@@ -63,6 +63,7 @@
  #include <linux/errqueue.h>
  #include <linux/prefetch.h>
+ #include <linux/if_vlan.h>
 +#include <linux/if.h>
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -439,6 +440,22 @@ struct sk_buff *__netdev_alloc_skb(struc
+@@ -451,6 +452,22 @@ struct sk_buff *__netdev_alloc_skb(struc
  }
  EXPORT_SYMBOL(__netdev_alloc_skb);
  
@@ -139,7 +115,7 @@
  {
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
-@@ -161,6 +161,12 @@ __be16 eth_type_trans(struct sk_buff *sk
+@@ -188,6 +188,12 @@ __be16 eth_type_trans(struct sk_buff *sk
  	const struct ethhdr *eth;
  
  	skb->dev = dev;

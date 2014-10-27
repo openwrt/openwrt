@@ -1,16 +1,16 @@
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -174,6 +174,7 @@ struct net_bridge_port
- #define BR_ADMIN_COST		0x00000010
- #define BR_LEARNING		0x00000020
+@@ -172,6 +172,7 @@ struct net_bridge_port
  #define BR_FLOOD		0x00000040
-+#define BR_ISOLATE_MODE	0x00000080
+ #define BR_AUTO_MASK (BR_FLOOD | BR_LEARNING)
+ #define BR_PROMISC		0x00000080
++#define BR_ISOLATE_MODE		0x00000100
  
  #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
- 	struct bridge_mcast_query	ip4_query;
+ 	struct bridge_mcast_own_query	ip4_own_query;
 --- a/net/bridge/br_sysfs_if.c
 +++ b/net/bridge/br_sysfs_if.c
-@@ -161,6 +161,22 @@ BRPORT_ATTR_FLAG(root_block, BR_ROOT_BLO
+@@ -171,6 +171,22 @@ BRPORT_ATTR_FLAG(root_block, BR_ROOT_BLO
  BRPORT_ATTR_FLAG(learning, BR_LEARNING);
  BRPORT_ATTR_FLAG(unicast_flood, BR_FLOOD);
  
@@ -33,7 +33,7 @@
  #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
  static ssize_t show_multicast_router(struct net_bridge_port *p, char *buf)
  {
-@@ -203,6 +219,7 @@ static const struct brport_attribute *br
+@@ -213,6 +229,7 @@ static const struct brport_attribute *br
  	&brport_attr_multicast_router,
  	&brport_attr_multicast_fast_leave,
  #endif
@@ -56,7 +56,7 @@
  		skb = NULL;
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
-@@ -119,7 +119,7 @@ void br_deliver(const struct net_bridge_
+@@ -116,7 +116,7 @@ void br_deliver(const struct net_bridge_
  /* called with rcu_read_lock */
  void br_forward(const struct net_bridge_port *to, struct sk_buff *skb, struct sk_buff *skb0)
  {
@@ -65,7 +65,7 @@
  		if (skb0)
  			deliver_clone(to, skb, __br_forward);
  		else
-@@ -175,7 +175,7 @@ static void br_flood(struct net_bridge *
+@@ -172,7 +172,7 @@ static void br_flood(struct net_bridge *
  		     struct sk_buff *skb0,
  		     void (*__packet_hook)(const struct net_bridge_port *p,
  					   struct sk_buff *skb),
@@ -74,7 +74,7 @@
  {
  	struct net_bridge_port *p;
  	struct net_bridge_port *prev;
-@@ -183,6 +183,8 @@ static void br_flood(struct net_bridge *
+@@ -180,6 +180,8 @@ static void br_flood(struct net_bridge *
  	prev = NULL;
  
  	list_for_each_entry_rcu(p, &br->port_list, list) {
@@ -83,7 +83,7 @@
  		/* Do not flood unicast traffic to ports that turn it off */
  		if (unicast && !(p->flags & BR_FLOOD))
  			continue;
-@@ -209,14 +211,14 @@ out:
+@@ -206,14 +208,14 @@ out:
  /* called with rcu_read_lock */
  void br_flood_deliver(struct net_bridge *br, struct sk_buff *skb, bool unicast)
  {

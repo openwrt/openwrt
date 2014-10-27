@@ -11,7 +11,7 @@
  
 --- a/drivers/tty/serial/8250/Kconfig
 +++ b/drivers/tty/serial/8250/Kconfig
-@@ -90,6 +90,10 @@ config SERIAL_8250_CONSOLE
+@@ -91,6 +91,10 @@ config SERIAL_8250_CONSOLE
  
  	  If unsure, say N.
  
@@ -19,6 +19,6 @@
 +	bool "Magic sysrq support on 8250/16550 devices"
 +	depends on SERIAL_8250_CONSOLE
 +
- config FIX_EARLYCON_MEM
- 	bool
- 	depends on X86
+ config SERIAL_8250_GSC
+ 	tristate
+ 	depends on SERIAL_8250 && GSC

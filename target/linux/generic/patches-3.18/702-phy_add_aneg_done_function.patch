@@ -1,12 +1,6 @@
 --- a/include/linux/phy.h
 +++ b/include/linux/phy.h
-@@ -417,9 +417,18 @@ struct phy_driver {
- 	 */
- 	int (*config_aneg)(struct phy_device *phydev);
- 
-+	/* Determine if autonegotiation is done */
-+	int (*aneg_done)(struct phy_device *phydev);
-+
+@@ -484,6 +484,12 @@ struct phy_driver {
  	/* Determines the negotiated speed and duplex */
  	int (*read_status)(struct phy_device *phydev);
  
@@ -21,7 +15,7 @@
  
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -881,6 +881,9 @@ int genphy_update_link(struct phy_device
+@@ -914,6 +914,9 @@ int genphy_update_link(struct phy_device
  {
  	int status;
  
@@ -31,19 +25,3 @@
  	/* Do a fake read */
  	status = phy_read(phydev, MII_BMSR);
  	if (status < 0)
---- a/drivers/net/phy/phy.c
-+++ b/drivers/net/phy/phy.c
-@@ -99,7 +99,12 @@ static int phy_config_interrupt(struct p
-  */
- static inline int phy_aneg_done(struct phy_device *phydev)
- {
--	int retval = phy_read(phydev, MII_BMSR);
-+	int retval;
-+
-+	if (phydev->drv->aneg_done)
-+		return phydev->drv->aneg_done(phydev);
-+
-+	retval = phy_read(phydev, MII_BMSR);
- 
- 	return (retval < 0) ? retval : (retval & BMSR_ANEGCOMPLETE);
- }
