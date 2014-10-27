@@ -1,0 +1,29 @@
+From e7b1065712e769eb4de7b9d4aa222a4531c2b8fd Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 20 Sep 2014 18:21:19 +0200
+Subject: [PATCH V2] ARM: BCM5301X: select GPIOLIB as optional
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+All routers (or 99% of them) based on BCM5301X use GPIOs to control LEDs
+and buttons.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+V2: Don't select GPIOLIB. We may still think about making it default at
+    some point, but we dont' really require it to boot successfully.
+---
+ arch/arm/mach-bcm/Kconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/mach-bcm/Kconfig
++++ b/arch/arm/mach-bcm/Kconfig
+@@ -119,6 +119,7 @@ config ARCH_BCM_63XX
+ config ARCH_BRCMSTB
+ 	bool "Broadcom BCM7XXX based boards" if ARCH_MULTI_V7
+ 	depends on MMU
++	select ARCH_WANT_OPTIONAL_GPIOLIB
+ 	select ARM_GIC
+ 	select MIGHT_HAVE_PCI
+ 	select HAVE_SMP

@@ -1,0 +1,29 @@
+From cf72936c001056de1cfcb27dd9a232f5484ec59c Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 29 May 2014 20:54:15 +0200
+Subject: [PATCH 12/17] pci: do not probe too early
+
+Probing is done before the PCIe bridge is fully activated and the
+address spaces does not get assigned to the PCIe devices. Without the
+address space the driver can not register to this device. With this
+patch the driver reregistration is done later.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/pci/probe.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -2093,7 +2093,10 @@ struct pci_bus *pci_scan_root_bus(struct
+ 	if (!found)
+ 		pci_bus_update_busn_res_end(b, max);
+ 
+-	pci_bus_add_devices(b);
++	/* this should be done in arch/arm/kernel/bios32.c, because the
++	   resources for the PCI devices are initilized later and doing
++	   it here will fail. */
++	/* pci_bus_add_devices(b); */
+ 	return b;
+ }
+ EXPORT_SYMBOL(pci_scan_root_bus);
