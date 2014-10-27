@@ -102,8 +102,6 @@ generate_switch() {
 	json_select $key
 	json_get_vars enable reset blinkrate cpu_port
 
-	[ -n "$cpu_port" ] || return
-
 	uci -q batch <<EOF
 add network switch
 set network.@switch[-1].name='$key'
@@ -111,9 +109,10 @@ set network.@switch[-1].reset='$reset'
 set network.@switch[-1].enable_vlan='$enable'
 set network.@switch[-1].blinkrate='$blinkrate'
 EOF
-
-	json_get_keys vlans vlans
-	for vlan in $vlans; do generate_switch_vlan $1 $vlan $cpu_port; done
+	[ -n "$cpu_port" ] && {
+		json_get_keys vlans vlans
+		for vlan in $vlans; do generate_switch_vlan $1 $vlan $cpu_port; done
+	}
 	json_select ..
 	json_select ..
 }
