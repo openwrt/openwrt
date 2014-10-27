@@ -1000,6 +1000,26 @@ static int x509write_make_sign(x509_raw *chain, rsa_context *privkey)
 }
 
 /*
+ * Create a random serial
+ */
+static int get_random_serial(void)
+{
+    int random = 0;
+    FILE *fd;
+
+    fd = fopen("/dev/urandom", "r");
+
+    if (fd) {
+	if (fread(&random, 1, sizeof(random), fd) != sizeof(random))
+            random = 0;
+
+        fclose(fd);
+    }
+
+    return random;
+}
+
+/*
  * Create a self signed certificate
  */
 int x509write_create_sign(x509_raw *chain, rsa_context *privkey)
@@ -1020,8 +1040,11 @@ int x509write_create_sign(x509_raw *chain, rsa_context *privkey)
     /*
      *  CertificateSerialNumber  ::=  INTEGER
      */
-    srand((unsigned int) time(NULL));
-    serial = rand();
+    serial = get_random_serial();
+
+    if (serial == 0)
+        return 1;
+
     if ((ret = asn1_add_int(serial, &chain->serial)) != 0)
         return ret;
 
