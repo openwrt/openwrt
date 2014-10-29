@@ -1079,7 +1079,7 @@ register_switch(struct switch_dev *dev, struct net_device *netdev)
 	/* fill device name */
 	snprintf(dev->devname, IFNAMSIZ, SWCONFIG_DEVNAME, i);
 
-	list_add(&dev->dev_list, &swdevs);
+	list_add_last(&dev->dev_list, &swdevs);
 	swconfig_unlock();
 
 	err = swconfig_create_led_trigger(dev);
