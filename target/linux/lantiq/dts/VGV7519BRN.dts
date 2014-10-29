@@ -13,6 +13,11 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 
+				partition@40000 {
+					label = "board_config";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
 				partition@80000 {
 					label = "firmware";
 					reg = <0x80000 0x780000>;
@@ -21,12 +26,6 @@
 				partition@880000 {
 					label = "rootfs_data";
 					reg = <0x880000 0x780000>;
-				};
-
-				partition@1f80000 {
-					label = "board_config";
-					reg = <0x40000 0x10000>;
-					read-only;
 				};
 			};
 		};
