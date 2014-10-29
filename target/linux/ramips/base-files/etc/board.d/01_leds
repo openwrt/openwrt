@@ -27,6 +27,9 @@ case $board in
 	3g300m)
 		set_usb_led "tenda:blue:3g"
 		;;
+	a5-v11)
+		ucidef_set_led_default "power" "POWER" "a5-v11:red:power" "1"
+		;;
 	air3gii)
 		set_wifi_led "airlive:green:wlan"
 		set_usb_led "airlive:green:mobile"
