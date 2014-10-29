@@ -37,6 +37,12 @@ ramips_setup_interfaces()
 	ucidef_set_interface_loopback
 
 	case $board in
+	a5-v11)
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 6t"
+		;;
+
 	3g300m | \
 	w150m | \
 	all0256n | \
@@ -252,6 +258,7 @@ ramips_setup_macs()
 		lan_mac=$(macaddr_add "$lan_mac" -2)
 		;;
 
+	a5-v11 |\
 	bc2 |\
 	broadway |\
 	d105 |\
