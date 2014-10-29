@@ -258,6 +258,26 @@ endef
 
 $(eval $(call KernelPackage,iio-ad799x))
 
+
+define KernelPackage/iio-dht11
+  SUBMENU:=$(OTHER_MENU)
+  DEPENDS:=kmod-iio-core @GPIO_SUPPORT @USES_DEVICETREE
+  TITLE:=DHT11 (and compatible) humidity and temperature sensors
+  KCONFIG:= \
+	CONFIG_DHT11
+  FILES:=$(LINUX_DIR)/drivers/iio/humidity/dht11.ko
+  AUTOLOAD:=$(call AutoLoad,56,dht11)
+endef
+
+define KernelPackage/iio-dht11/description
+ support for DHT11 and DHT22 digitial humidity and temperature sensors
+ attached at GPIO lines. You will need a custom device tree file to
+ specify the GPIO line to use.
+endef
+
+$(eval $(call KernelPackage,iio-dht11))
+
+
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
