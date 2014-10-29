@@ -1,7 +1,11 @@
 #!/bin/sh /etc/rc.common
-# Copyright (C) 2012 OpenWrt.org
+# Copyright (C) 2012-2014 OpenWrt.org
 
-XDSL_CTRL=dsl_cpe_control
+if [ "$( which vdsl_cpe_control )" ]; then
+	XDSL_CTRL=vdsl_cpe_control
+else
+	XDSL_CTRL=dsl_cpe_control
+fi
 
 #
 # Basic functions to send CLI commands to the vdsl_cpe_control daemon
@@ -212,7 +216,7 @@ line_state() {
 		*)		s="unknown" ;;
 	esac
 
-	if [ $action = "lucistat" ]; then
+	if [ "$action" = "lucistat" ]; then
 		echo "dsl.line_state_num=$ls"
 		echo "dsl.line_state_detail=\"$s\""
 		if [ "$ls" = "0x801" ]; then
