@@ -66,12 +66,21 @@ proto_6in4_setup() {
 	[ -n "$tunnelid" -a -n "$username" -a \( -n "$password" -o -n "$updatekey" \) ] && {
 		[ -n "$updatekey" ] && password="$updatekey"
 
-		local url="http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
+		local http="http"
+		local wget_opts="-qO/dev/null"
+		if wget --version | grep -qF "+https"; then
+			http="https"
+			[ -z "$(find ${SSL_CERT_DIR-/etc/ssl/certs} -name "*.0" 2>/dev/null)" ] && {
+				wget_opts="$wget_opts --no-check-certificate"
+			}
+		fi
+
+		local url="$http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
 		local try=0
 		local max=3
 
 		while [ $((++try)) -le $max ]; do
-			( exec wget -qO/dev/null "$url" 2>/dev/null ) &
+			( exec wget $wget_opts "$url" 2>/dev/null ) &
 			local pid=$!
 			( sleep 5; kill $pid 2>/dev/null ) &
 			wait $pid && break
