@@ -16,7 +16,7 @@ $(eval $(call Profile,VG3503J_V2))
 
 define Profile/VGV7519NOR
   NAME:=Experiabox 8 VGV7519
-  PACKAGES:=kmod-ath9k wpad-mini \
+  PACKAGES:=kmod-rt2800-pci wpad-mini \
 	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
@@ -27,7 +27,7 @@ $(eval $(call Profile,VGV7519NOR))
 
 define Profile/VGV7519BRN
   NAME:=Experiabox 8 VGV7519 (BRN)
-  PACKAGES:=kmod-ath9k wpad-mini \
+  PACKAGES:=kmod-rt2800-pci wpad-mini \
 	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
