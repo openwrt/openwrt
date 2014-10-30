@@ -97,7 +97,7 @@ Index: linux-3.14.18/arch/mips/ralink/rt305x.c
 Index: linux-3.14.18/drivers/net/ethernet/Kconfig
 ===================================================================
 --- linux-3.14.18.orig/drivers/net/ethernet/Kconfig	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/drivers/net/ethernet/Kconfig	2014-10-30 09:02:30.444086136 +0100
++++ linux-3.14.18/drivers/net/ethernet/Kconfig	2014-10-30 09:43:22.196245753 +0100
 @@ -134,6 +134,7 @@
  source "drivers/net/ethernet/packetengines/Kconfig"
  source "drivers/net/ethernet/pasemi/Kconfig"
@@ -109,7 +109,7 @@ Index: linux-3.14.18/drivers/net/ethernet/Kconfig
 Index: linux-3.14.18/drivers/net/ethernet/Makefile
 ===================================================================
 --- linux-3.14.18.orig/drivers/net/ethernet/Makefile	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/drivers/net/ethernet/Makefile	2014-10-30 09:02:30.444086136 +0100
++++ linux-3.14.18/drivers/net/ethernet/Makefile	2014-10-30 09:43:22.196245753 +0100
 @@ -56,6 +56,7 @@
  obj-$(CONFIG_NET_PACKET_ENGINE) += packetengines/
  obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
@@ -2876,8 +2876,8 @@ Index: linux-3.14.18/drivers/net/ethernet/ralink/mdio_rt2880.h
 Index: linux-3.14.18/drivers/net/ethernet/ralink/mt7530.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/net/ethernet/ralink/mt7530.c	2014-10-30 09:02:23.967839289 +0100
-@@ -0,0 +1,579 @@
++++ linux-3.14.18/drivers/net/ethernet/ralink/mt7530.c	2014-10-30 09:37:26.847089658 +0100
+@@ -0,0 +1,588 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -2940,6 +2940,9 @@ Index: linux-3.14.18/drivers/net/ethernet/ralink/mt7530.c
 +#define REG_ESW_PORT_PCR(x)	(0x2004 | ((x) << 8))
 +#define REG_ESW_PORT_PVC(x)	(0x2010 | ((x) << 8))
 +#define REG_ESW_PORT_PPBV1(x)	(0x2014 | ((x) << 8))
++
++#define REG_HWTRAP		0x7804
++
 +enum {
 +	/* Global attributes. */
 +	MT7530_ATTR_ENABLE_VLAN,
@@ -3448,12 +3451,18 @@ Index: linux-3.14.18/drivers/net/ethernet/ralink/mt7530.c
 +		return ret;
 +	}
 +
-+	dev_info(dev, "loaded %s driver\n", swdev->name);
 +
 +	map = mt7530_find_mapping(dev->of_node);
 +	if (map)
 +		mt7530_apply_mapping(mt7530, map);
 +	mt7530_apply_config(swdev);
++
++	/* magic vodoo */
++	if (bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
++	        dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
++		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
++	}
++	dev_info(dev, "loaded %s driver\n", swdev->name);
 +
 +	return 0;
 +}
