@@ -131,6 +131,7 @@ start() {
 	local tone
 	local tone_adsl
 	local tone_vdsl
+	local xtse
 	local xtse_adsl
 	local mode
 
@@ -154,7 +155,12 @@ start() {
 	esac
 
 	eval "xtse_adsl=\"\${xtse_adsl_$annex}\""
-	[ -z "${xtse_adsl}" ] && xtse_adsl=$xtse_adsl_a
+	if [ "${xtse_adsl}" ]; then
+		xtse=$xtse_adsl
+	else
+		xtse_adsl=$xtse_adsl_a
+		xtse=$xtse_vdsl
+	fi
 
 	eval "tone_adsl=\"\${tone_adsl_$tone}\""
 	[ -z "${tone_adsl}" ] && tone_adsl=$tone_adsl_av
@@ -173,7 +179,7 @@ start() {
 	lowlevel_cfg "${tone_adsl}" "${tone_vdsl}"
 
 	service_start /sbin/vdsl_cpe_control \
-			-i `echo $xtse_adsl | sed "s/ /_/g"` \
+			-i `echo $xtse | sed "s/ /_/g"` \
 			-n /sbin/dsl_notify.sh \
 			-f ${firmware} \
 			-a /tmp/adsl.scr \
