@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=1.0.1j
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
 PKG_BUILD_PARALLEL:=1
@@ -23,8 +23,12 @@ PKG_MD5SUM:=f7175c9cd3c39bb1907ac8bba9df8ed3
 PKG_LICENSE:=SSLEAY OPENSSL
 PKG_LICENSE_FILES:=LICENSE
 PKG_BUILD_DEPENDS:=ocf-crypto-headers
-PKG_CONFIG_DEPENDS:=CONFIG_OPENSSL_ENGINE_CRYPTO CONFIG_OPENSSL_ENGINE_DIGEST \
-	CONFIG_OPENSSL_WITH_EC CONFIG_OPENSSL_WITH_EC2M
+PKG_CONFIG_DEPENDS:= \
+	CONFIG_OPENSSL_ENGINE_CRYPTO \
+	CONFIG_OPENSSL_ENGINE_DIGEST \
+	CONFIG_OPENSSL_WITH_EC \
+	CONFIG_OPENSSL_WITH_EC2M \
+	CONFIG_OPENSSL_WITH_SSL3
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -83,9 +87,8 @@ This package contains the OpenSSL command-line utility.
 endef
 
 
-OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
-	no-aes192 no-camellia no-ans1 no-krb5
-OPENSSL_OPTIONS:= shared no-err no-hw zlib-dynamic no-sse2
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-camellia no-krb5
+OPENSSL_OPTIONS:= shared no-err no-hw zlib-dynamic no-sse2 no-ssl2 no-cms
 
 ifdef CONFIG_OPENSSL_ENGINE_CRYPTO
   OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
@@ -102,6 +105,10 @@ endif
 
 ifndef CONFIG_OPENSSL_WITH_EC2M
   OPENSSL_OPTIONS += no-ec2m
+endif
+
+ifndef CONFIG_OPENSSL_WITH_SSL3
+  OPENSSL_OPTIONS += no-ssl3
 endif
 
 ifeq ($(CONFIG_x86_64),y)
