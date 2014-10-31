@@ -1,3 +1,22 @@
+From 2c58080407554e1bac8fd50d23cb02420524caed Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Mon, 12 Aug 2013 12:50:22 +0200
+Subject: [PATCH] MIPS: partially inline dma ops
+
+Several DMA ops are no-op on many platforms, and the indirection through
+the mips_dma_map_ops function table is causing the compiler to emit
+unnecessary code.
+
+Inlining visibly improves network performance in my tests (on a 24Kc
+based system), and also slightly reduces code size of a few drivers.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+ arch/mips/Kconfig                   |   4 +
+ arch/mips/include/asm/dma-mapping.h | 360 +++++++++++++++++++++++++++++++++++-
+ arch/mips/mm/dma-default.c          | 163 ++--------------
+ 3 files changed, 373 insertions(+), 154 deletions(-)
+
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -1620,6 +1620,9 @@ config SYS_HAS_CPU_XLR
