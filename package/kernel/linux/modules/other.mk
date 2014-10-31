@@ -764,7 +764,8 @@ define KernelPackage/zram
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
 	CONFIG_ZRAM_DEBUG=n \
-	CONFIG_PGTABLE_MAPPING=n
+	CONFIG_PGTABLE_MAPPING=n \
+	CONFIG_ZRAM_LZ4_COMPRESS=y
 ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.14.0)),1)
   FILES:=\
 	$(LINUX_DIR)/mm/zsmalloc.ko \
