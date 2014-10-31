@@ -19,15 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1145,6 +1145,7 @@ config CPU_LOONGSON2F
- 	depends on SYS_HAS_CPU_LOONGSON2F
- 	select CPU_LOONGSON2
- 	select ARCH_REQUIRE_GPIOLIB
-+	select SYS_HAS_DMA_OPS
- 	help
- 	  The Loongson 2F processor implements the MIPS III instruction set
- 	  with many extensions.
-@@ -1377,6 +1378,7 @@ config CPU_CAVIUM_OCTEON
+@@ -1377,6 +1377,7 @@ config CPU_CAVIUM_OCTEON
  	select LIBFDT
  	select USE_OF
  	select USB_EHCI_BIG_ENDIAN_MMIO
@@ -35,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	help
  	  The Cavium Octeon processor is a highly integrated chip containing
  	  many ethernet hardware widgets for networking tasks. The processor
-@@ -1599,6 +1601,9 @@ config SYS_HAS_CPU_XLR
+@@ -1599,6 +1600,9 @@ config SYS_HAS_CPU_XLR
  config SYS_HAS_CPU_XLP
  	bool
  
