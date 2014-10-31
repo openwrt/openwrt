@@ -1221,7 +1221,7 @@ define KernelPackage/usb-net-huawei-cdc-ncm
   KCONFIG:=CONFIG_USB_NET_HUAWEI_CDC_NCM
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/huawei_cdc_ncm.ko
   AUTOLOAD:=$(call AutoProbe,huawei_cdc_ncm)
-  $(call AddDepends/usb-net,+kmod-usb-wdm @(LINUX_3_13||LINUX_3_14))
+  $(call AddDepends/usb-net,+kmod-usb-wdm @!LINUX_3_3 @!LINUX_3_8 @!LINUX_3_10)
 endef
 
 define KernelPackage/usb-net-huawei-cdc-ncm/description
