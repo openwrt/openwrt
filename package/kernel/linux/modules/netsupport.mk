@@ -144,6 +144,20 @@ endef
 
 $(eval $(call KernelPackage,8021q))
 
+define KernelPackage/vxlan
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=Native VXLAN Kernel support
+  KCONFIG:=CONFIG_VXLAN
+  FILES:=$(LINUX_DIR)/drivers/net/vxlan.ko
+  AUTOLOAD:=$(call AutoLoad,13,vxlan)
+endef
+
+define KernelPackage/vxlan/description
+ Kernel module for supporting VXLAN in the Kernel.
+ Requires Kernel 3.12 or newer.
+endef
+
+$(eval $(call KernelPackage,vxlan))
 
 define KernelPackage/capi
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
