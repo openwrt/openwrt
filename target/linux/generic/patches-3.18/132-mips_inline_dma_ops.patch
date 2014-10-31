@@ -78,7 +78,7 @@
  }
  
  static inline bool dma_capable(struct device *dev, dma_addr_t addr, size_t size)
-@@ -30,12 +73,312 @@ static inline bool dma_capable(struct de
+@@ -30,12 +73,304 @@ static inline bool dma_capable(struct de
  
  static inline void dma_mark_clean(void *addr, size_t size) {}
  
@@ -356,14 +356,6 @@
 +
 +#define dma_mmap_coherent(d, v, c, h, s) dma_mmap_attrs(d, v, c, h, s, NULL)
 +
-+static inline int dma_mmap_writecombine(struct device *dev, struct vm_area_struct *vma,
-+		      void *cpu_addr, dma_addr_t dma_addr, size_t size)
-+{
-+	DEFINE_DMA_ATTRS(attrs);
-+	dma_set_attr(DMA_ATTR_WRITE_COMBINE, &attrs);
-+	return dma_mmap_attrs(dev, vma, cpu_addr, dma_addr, size, &attrs);
-+}
-+
 +int
 +dma_common_get_sgtable(struct device *dev, struct sg_table *sgt,
 +		       void *cpu_addr, dma_addr_t dma_addr, size_t size);
@@ -393,7 +385,7 @@
  }
  
  static inline int dma_mapping_error(struct device *dev, u64 mask)
-@@ -43,7 +386,9 @@ static inline int dma_mapping_error(stru
+@@ -43,7 +378,9 @@ static inline int dma_mapping_error(stru
  	struct dma_map_ops *ops = get_dma_ops(dev);
  
  	debug_dma_mapping_error(dev, mask);
@@ -404,7 +396,7 @@
  }
  
  static inline int
-@@ -74,7 +419,11 @@ static inline void *dma_alloc_attrs(stru
+@@ -74,7 +411,11 @@ static inline void *dma_alloc_attrs(stru
  	void *ret;
  	struct dma_map_ops *ops = get_dma_ops(dev);
  
@@ -417,7 +409,7 @@
  
  	debug_dma_alloc_coherent(dev, size, *dma_handle, ret);
  
-@@ -89,7 +438,10 @@ static inline void dma_free_attrs(struct
+@@ -89,7 +430,10 @@ static inline void dma_free_attrs(struct
  {
  	struct dma_map_ops *ops = get_dma_ops(dev);
  
