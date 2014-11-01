@@ -17,8 +17,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/bcma/scan.c         | 1 +
  3 files changed, 8 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/bcma/bcma_private.h b/drivers/bcma/bcma_private.h
-index b6412b2..314ae40 100644
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
 @@ -24,6 +24,7 @@ struct bcma_bus;
@@ -29,11 +27,9 @@ index b6412b2..314ae40 100644
  int bcma_bus_register(struct bcma_bus *bus);
  void bcma_bus_unregister(struct bcma_bus *bus);
  int __init bcma_bus_early_register(struct bcma_bus *bus,
-diff --git a/drivers/bcma/main.c b/drivers/bcma/main.c
-index 5e7a3d4..70d0f23 100644
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -172,10 +172,8 @@ static void bcma_of_fill_device(struct platform_device *parent,
+@@ -172,10 +172,8 @@ static void bcma_of_fill_device(struct p
  }
  #endif /* CONFIG_OF */
  
@@ -45,7 +41,7 @@ index 5e7a3d4..70d0f23 100644
  	core->dev.release = bcma_release_core_dev;
  	core->dev.bus = &bcma_bus_type;
  	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
-@@ -199,6 +197,11 @@ static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
+@@ -199,6 +197,11 @@ static void bcma_register_core(struct bc
  	case BCMA_HOSTTYPE_SDIO:
  		break;
  	}
@@ -57,8 +53,6 @@ index 5e7a3d4..70d0f23 100644
  
  	err = device_register(&core->dev);
  	if (err) {
-diff --git a/drivers/bcma/scan.c b/drivers/bcma/scan.c
-index 14b5656..9175207 100644
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
 @@ -505,6 +505,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
@@ -69,6 +63,3 @@ index 14b5656..9175207 100644
  
  		bcma_info(bus, "Core %d found: %s (manuf 0x%03X, id 0x%03X, rev 0x%02X, class 0x%X)\n",
  			  core->core_index, bcma_device_name(&core->id),
--- 
-1.8.4.5
-

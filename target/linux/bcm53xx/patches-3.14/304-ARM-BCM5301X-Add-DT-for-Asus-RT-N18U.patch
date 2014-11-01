@@ -16,11 +16,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  create mode 100644 arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
  create mode 100644 arch/arm/boot/dts/bcm47081.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 17c717b..330e0e0 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -53,7 +53,8 @@ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
+@@ -53,7 +53,8 @@ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rp
  dtb-$(CONFIG_ARCH_BCM_5301X) += \
  	bcm4708-buffalo-wzr-1750dhp.dtb \
  	bcm4708-netgear-r6250.dtb \
@@ -30,9 +28,6 @@ index 17c717b..330e0e0 100644
  dtb-$(CONFIG_ARCH_BERLIN) += \
  	berlin2-sony-nsz-gs7.dtb	\
  	berlin2cd-google-chromecast.dtb
-diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
-new file mode 100644
-index 0000000..cf8e9a5
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 @@ -0,0 +1,88 @@
@@ -124,9 +119,6 @@ index 0000000..cf8e9a5
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/bcm47081.dtsi b/arch/arm/boot/dts/bcm47081.dtsi
-new file mode 100644
-index 0000000..f720012
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm47081.dtsi
 @@ -0,0 +1,26 @@
@@ -156,11 +148,9 @@ index 0000000..f720012
 +		};
 +	};
 +};
-diff --git a/arch/arm/mach-bcm/bcm_5301x.c b/arch/arm/mach-bcm/bcm_5301x.c
-index b0a6da9..de29646 100644
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
-@@ -81,6 +81,7 @@ static void bcm5301x_restart(enum reboot_mode mode, const char *cmd)
+@@ -81,6 +81,7 @@ static void bcm5301x_restart(enum reboot
  
  static const char __initconst *bcm5301x_dt_compat[] = {
  	"brcm,bcm4708",
@@ -168,6 +158,3 @@ index b0a6da9..de29646 100644
  	NULL,
  };
  
--- 
-1.8.4.5
-
