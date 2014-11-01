@@ -29,7 +29,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  int __init bcma_bus_early_register(struct bcma_bus *bus,
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -172,10 +172,8 @@ static void bcma_of_fill_device(struct p
+@@ -169,10 +169,8 @@ static void bcma_of_fill_device(struct p
  }
  #endif /* CONFIG_OF */
  
@@ -41,7 +41,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	core->dev.release = bcma_release_core_dev;
  	core->dev.bus = &bcma_bus_type;
  	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
-@@ -199,6 +197,11 @@ static void bcma_register_core(struct bc
+@@ -196,6 +194,11 @@ static void bcma_register_core(struct bc
  	case BCMA_HOSTTYPE_SDIO:
  		break;
  	}
