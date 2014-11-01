@@ -1,0 +1,23 @@
+From 5e7384adfd587ded31a107f059ebf929acc105c3 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 1 Nov 2014 12:48:45 +0100
+Subject: [PATCH] ARM: BCM5310X: activate early printk for Netgear R6250
+
+This activates early printk on the Netgear R6250 by default.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -16,7 +16,7 @@
+ 	model = "Netgear R6250 V1 (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
