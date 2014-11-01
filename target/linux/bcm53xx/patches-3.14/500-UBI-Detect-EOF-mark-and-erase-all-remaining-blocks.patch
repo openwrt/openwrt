@@ -11,8 +11,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/mtd/ubi/io.c | 5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/mtd/ubi/io.c b/drivers/mtd/ubi/io.c
-index d361349..f9bba3c 100644
 --- a/drivers/mtd/ubi/io.c
 +++ b/drivers/mtd/ubi/io.c
 @@ -727,6 +727,7 @@ bad:
@@ -23,7 +21,7 @@ index d361349..f9bba3c 100644
  int ubi_io_read_ec_hdr(struct ubi_device *ubi, int pnum,
  		       struct ubi_ec_hdr *ec_hdr, int verbose)
  {
-@@ -753,6 +754,10 @@ int ubi_io_read_ec_hdr(struct ubi_device *ubi, int pnum,
+@@ -753,6 +754,10 @@ int ubi_io_read_ec_hdr(struct ubi_device
  	}
  
  	magic = be32_to_cpu(ec_hdr->magic);
@@ -34,6 +32,3 @@ index d361349..f9bba3c 100644
  	if (magic != UBI_EC_HDR_MAGIC) {
  		if (mtd_is_eccerr(read_err))
  			return UBI_IO_BAD_HDR_EBADMSG;
--- 
-1.8.4.5
-

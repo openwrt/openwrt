@@ -13,11 +13,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/bcma/host_soc.c | 12 ++++++++++--
  1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/bcma/host_soc.c b/drivers/bcma/host_soc.c
-index 335cbcf..c7e12f2 100644
 --- a/drivers/bcma/host_soc.c
 +++ b/drivers/bcma/host_soc.c
-@@ -265,14 +265,22 @@ static struct platform_driver bcma_host_soc_driver = {
+@@ -265,14 +265,22 @@ static struct platform_driver bcma_host_
  	.probe		= bcma_host_soc_probe,
  	.remove		= bcma_host_soc_remove,
  };
@@ -42,6 +40,3 @@ index 335cbcf..c7e12f2 100644
 +	/* platform_driver_unregister(&bcma_host_soc_driver); */
  }
  #endif /* CONFIG_OF */
--- 
-1.8.4.5
-

@@ -13,8 +13,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  2 files changed, 69 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 330e0e0..64c8f3f 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -54,7 +54,8 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
@@ -27,9 +25,6 @@ index 330e0e0..64c8f3f 100644
  dtb-$(CONFIG_ARCH_BERLIN) += \
  	berlin2-sony-nsz-gs7.dtb	\
  	berlin2cd-google-chromecast.dtb
-diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
-new file mode 100644
-index 0000000..84de5de
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 @@ -0,0 +1,67 @@
@@ -100,6 +95,3 @@ index 0000000..84de5de
 +		};
 +	};
 +};
--- 
-1.8.4.5
-

@@ -18,8 +18,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  create mode 100644 arch/arm/boot/compressed/head-bcm_5301x-mpcore.S
  create mode 100644 arch/arm/boot/compressed/mpcore_cache.S
 
-diff --git a/arch/arm/boot/compressed/Makefile b/arch/arm/boot/compressed/Makefile
-index 9312edc..ce7438c 100644
 --- a/arch/arm/boot/compressed/Makefile
 +++ b/arch/arm/boot/compressed/Makefile
 @@ -44,6 +44,11 @@ ifeq ($(CONFIG_ARCH_ACORN),y)
@@ -34,9 +32,6 @@ index 9312edc..ce7438c 100644
  ifeq ($(CONFIG_ARCH_SA1100),y)
  OBJS		+= head-sa1100.o
  endif
-diff --git a/arch/arm/boot/compressed/head-bcm_5301x-mpcore.S b/arch/arm/boot/compressed/head-bcm_5301x-mpcore.S
-new file mode 100644
-index 0000000..fd076a0
 --- /dev/null
 +++ b/arch/arm/boot/compressed/head-bcm_5301x-mpcore.S
 @@ -0,0 +1,37 @@
@@ -77,9 +72,6 @@ index 0000000..fd076a0
 +
 +	@ Restore
 +	mov	r8, r12
-diff --git a/arch/arm/boot/compressed/mpcore_cache.S b/arch/arm/boot/compressed/mpcore_cache.S
-new file mode 100644
-index 0000000..ada734c
 --- /dev/null
 +++ b/arch/arm/boot/compressed/mpcore_cache.S
 @@ -0,0 +1,118 @@
@@ -201,6 +193,3 @@ index 0000000..ada734c
 +	isb
 +	mov	pc, lr
 +ENDPROC(v7_all_dcache_invalidate)
--- 
-1.8.4.5
-
