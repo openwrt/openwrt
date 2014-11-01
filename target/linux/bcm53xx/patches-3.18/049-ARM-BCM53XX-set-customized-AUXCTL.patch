@@ -1,0 +1,28 @@
+From 4a658590f83c1e916ab63ed7fe6f0841924247db Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 3 Oct 2014 18:37:33 +0200
+Subject: [PATCH 2/2] ARM: BCM53XX: set customized AUXCTL
+
+This activated some more features in the l310 cache.
+
+This is based on some vendor code
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/arm/mach-bcm/bcm_5301x.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/mach-bcm/bcm_5301x.c
++++ b/arch/arm/mach-bcm/bcm_5301x.c
+@@ -49,7 +49,10 @@ static const char __initconst *bcm5301x_
+ };
+ 
+ DT_MACHINE_START(BCM5301X, "BCM5301X")
+-	.l2c_aux_val	= 0,
++	.l2c_aux_val	= L310_AUX_CTRL_CACHE_REPLACE_RR |
++			  L310_AUX_CTRL_DATA_PREFETCH |
++			  L310_AUX_CTRL_INSTR_PREFETCH |
++			  L310_AUX_CTRL_EARLY_BRESP,
+ 	.l2c_aux_mask	= ~0,
+ 	.init_early	= bcm5301x_init_early,
+ 	.dt_compat	= bcm5301x_dt_compat,
