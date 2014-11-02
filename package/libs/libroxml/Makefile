@@ -19,6 +19,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
+PKG_LICENSE:=LGPL-2.1+
 
 include $(INCLUDE_DIR)/package.mk
 

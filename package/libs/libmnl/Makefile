@@ -21,6 +21,7 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
+PKG_LICENSE:=LGPL-2.1+
 
 include $(INCLUDE_DIR)/package.mk
 

@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=http://ipset.netfilter.org
 PKG_MD5SUM:=8af741492752fbf24d3a28a9d1473d40
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=GPL-2.0
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

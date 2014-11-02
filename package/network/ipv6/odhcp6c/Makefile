@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=git://github.com/sbyx/odhcp6c.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=940e2141ab13727af6323c4d30002f785e466318
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk

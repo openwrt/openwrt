@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=https://polarssl.org/code/releases
 PKG_MD5SUM:=d1a2b4f21727e888f143414d2e3144e6
 
 PKG_BUILD_PARALLEL:=1
+PKG_LICENSE:=GPL-2.0+
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk

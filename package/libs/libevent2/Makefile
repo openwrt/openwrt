@@ -17,6 +17,7 @@ PKG_SOURCE_URL:=http://www.monkey.org/~provos/ \
 	@SF/levent
 PKG_MD5SUM:=b2405cc9ebf264aa47ff615d9de527a2
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=BSD-3-Clause
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

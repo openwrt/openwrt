@@ -19,6 +19,7 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 include $(INCLUDE_DIR)/package.mk
 
 PKG_FIXUP:=autoreconf
+PKG_LICENSE:=GPL-2.0+
 
 define Package/igmpproxy
   SECTION:=net

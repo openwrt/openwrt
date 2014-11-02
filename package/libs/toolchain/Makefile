@@ -10,6 +10,7 @@ PKG_NAME:=toolchain
 PKG_RELEASE:=1
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_LICENSE:=GPL-3.0-with-GCC-exception
 
 include $(INCLUDE_DIR)/package.mk
 

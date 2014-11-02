@@ -17,6 +17,7 @@ PKG_MD5SUM:=7f5a02375ad960d4e33a6dae7d63cfcb
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
+PKG_LICENSE:=LGPL-2.1
 
 PKG_MAINTAINER := Felix Fietkau <nbd@openwrt.org>
 

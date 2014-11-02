@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=git://git.netfilter.org/libnftnl
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=b858137bf744126531c50643587be328310f0280
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
-PKG_LICENSE:=GPL-2.0
+PKG_LICENSE:=GPL-2.0+
 
 PKG_FIXUP:=autoreconf
 

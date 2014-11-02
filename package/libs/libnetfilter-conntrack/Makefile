@@ -19,6 +19,7 @@ PKG_MD5SUM:=73394a3d8d0cfecc6abb6027b4792d52
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
 PKG_FIXUP:=autoreconf
+PKG_LICENSE:=GPL-2.0+
 
 PKG_INSTALL:=1
 

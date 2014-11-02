@@ -8,6 +8,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=owipcalc
 PKG_RELEASE:=3
+PKG_LICENSE:=Apache-2.0
 
 include $(INCLUDE_DIR)/package.mk
 

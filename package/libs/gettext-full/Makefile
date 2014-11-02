@@ -18,6 +18,7 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/gettext-$(PKG_VERSION)
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/gettext-$(PKG_VERSION)
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=GPL-3.0+
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://media.luffy.cx/files/lldpd
 PKG_MD5SUM:=9031734c69940dd79a0a175123275f83
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=ISC
 
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1

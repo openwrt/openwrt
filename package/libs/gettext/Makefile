@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=gettext
 PKG_RELEASE:=2
 
-PKG_LICENSE:=FREE
+PKG_LICENSE:=FSFULLR
 PKG_LICENSE_FILES:=LICENSE
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>

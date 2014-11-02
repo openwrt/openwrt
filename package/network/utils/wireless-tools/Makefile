@@ -18,6 +18,7 @@ PKG_MD5SUM:=e06c222e186f7cc013fd272d023710cb
 TAR_OPTIONS += || true
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_LICENSE:=GPL-2.0
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/wireless_tools.$(PKG_VERSION)
 

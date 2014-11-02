@@ -18,6 +18,7 @@ PKG_SOURCE_URL:= \
 	http://mirrors.evolva.ro/netfilter.org/libnfnetlink/
 PKG_MD5SUM:=98927583d2016a9fb1936fed992e2c5e
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=GPL-2.0+
 
 PKG_FIXUP:=autoreconf
 
