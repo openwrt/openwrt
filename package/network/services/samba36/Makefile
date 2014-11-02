@@ -16,7 +16,7 @@ PKG_SOURCE_URL:=http://ftp.samba.org/pub/samba \
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_MD5SUM:=d98425c0c2b73e08f048d31ffc727fb0
 
-PKG_LICENSE:=GPLv3
+PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=COPYING
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>

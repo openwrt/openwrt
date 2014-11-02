@@ -19,6 +19,7 @@ PKG_MD5SUM:=2a4bb0654ae675a52d2e8d1c06090b94
 PKG_MAINTAINER:=Yousong Zhou <yszhou4tech@gmail.com>
 
 PKG_FIXUP:=autoreconf
+PKG_LICENSE:=GPL-2.0+
 
 PKG_INSTALL:=1
 

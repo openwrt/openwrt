@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=https://www.kernel.org/pub/software/network/iw
 PKG_MD5SUM:=3b77ad7ec44a865a3bb2ab6c1c463bba
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 

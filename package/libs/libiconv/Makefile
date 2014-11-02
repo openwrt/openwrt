@@ -13,7 +13,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=libiconv
 PKG_RELEASE:=7
 
-PKG_LICENSE:=FREE
+PKG_LICENSE:=LGPL-2.1
 PKG_LICENSE_FILES:=LICENSE
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>

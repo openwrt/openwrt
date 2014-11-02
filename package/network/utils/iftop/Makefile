@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://www.ex-parrot.com/~pdw/iftop/download
 PKG_MD5SUM:=fef521a49ec0122458d02c64212af3c5
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
+PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
 

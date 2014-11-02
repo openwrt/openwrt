@@ -18,6 +18,7 @@ PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=b7e5cb7ab91a9487ec71a14b706b5589cefe9052
 
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
+PKG_LICENSE:=LGPL-2.1
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk

@@ -16,6 +16,7 @@ PKG_SOURCE_URL:=http://valgrind.org/downloads/
 PKG_MD5SUM:=7c311a72a20388aceced1aa5573ce970
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
+PKG_LICENSE:=GPL-2.0+
 
 PKG_FIXUP = autoreconf
 PKG_INSTALL := 1
