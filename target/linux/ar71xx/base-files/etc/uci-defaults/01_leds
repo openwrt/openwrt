@@ -432,6 +432,16 @@ wlae-ag300n)
 	ucidef_set_led_netdev "wireless" "WIRELESS" "buffalo:green:wireless" "wlan0"
 	;;
 
+wnr2000-v4)
+	ucidef_set_led_netdev "wan" "WAN" "wnr2000-v4:green:wan" "eth1"
+	ucidef_set_led_netdev "wlan" "WLAN" "wnr2000-v4:blue:wlan" "wlan0"
+	ucidef_set_led_switch "lan1" "LAN1" "wnr2000-v4:amber:lan1" "switch0" "0x04"
+	ucidef_set_led_switch "lan2" "LAN2" "wnr2000-v4:amber:lan2" "switch0" "0x08"
+	ucidef_set_led_switch "lan3" "LAN3" "wnr2000-v4:amber:lan3" "switch0" "0x10"
+	ucidef_set_led_switch "lan4" "LAN4" "wnr2000-v4:amber:lan4" "switch0" "0x02"
+	ucidef_set_led_usbdev "usb" "USB" "wnr2000-v4:amber:status" "1-1"
+    ;;
+
 wzr-hp-ag300h)
 	ucidef_set_led_default "diag" "DIAG" "buffalo:red:diag" "0"
 	ucidef_set_led_netdev "router" "ROUTER" "buffalo:green:router" "eth1"
