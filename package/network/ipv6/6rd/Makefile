@@ -12,9 +12,6 @@ PKG_VERSION:=7
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/6rd

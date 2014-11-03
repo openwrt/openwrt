@@ -15,9 +15,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://andrzejekiert.ovh.org/software/fconfig/
 PKG_MD5SUM:=dac355e9f2a0f48c414c52e2034b6346
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=
-
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk

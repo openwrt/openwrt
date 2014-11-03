@@ -14,9 +14,6 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 PKG_CHECK_FORMAT_SECURITY:=0
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mountd

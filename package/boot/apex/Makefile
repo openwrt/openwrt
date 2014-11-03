@@ -16,9 +16,6 @@ PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
 PKG_MD5SUM:=9606cf2e3fd2c9a86fe0b61388509a30
 PKG_TARGETS:=bin
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=COPYING
-
 include $(INCLUDE_DIR)/package.mk
 
 export GCC_HONOUR_COPTS=s

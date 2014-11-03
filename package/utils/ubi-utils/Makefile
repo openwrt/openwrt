@@ -22,7 +22,7 @@ PKG_INSTALL:=1
 
 PKG_BUILD_DEPENDS:=util-linux liblzo zlib
 
-PKG_LICENSE:=GPL-2.0
+PKG_LICENSE:=GPLv2
 PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>

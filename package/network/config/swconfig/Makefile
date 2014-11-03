@@ -13,9 +13,6 @@ PKG_RELEASE:=10
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0 LGPL-2.1
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 

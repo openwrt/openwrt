@@ -10,9 +10,6 @@ PKG_NAME:=owipcalc
 PKG_RELEASE:=3
 PKG_LICENSE:=Apache-2.0
 
-PKG_LICENSE:=Apache-2.0
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 

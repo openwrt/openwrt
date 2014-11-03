@@ -17,9 +17,6 @@ PKG_MD5SUM:=a3e4f24155aa3ba5aa502bc63fdaa6ad
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=gpl.txt
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/yamonenv

@@ -10,9 +10,6 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=usbreset
 PKG_RELEASE:=4
 
-PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/usbreset

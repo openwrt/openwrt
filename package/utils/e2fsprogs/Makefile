@@ -18,9 +18,6 @@ PKG_SOURCE_URL:=@SF/e2fsprogs
 PKG_BUILD_DEPENDS:=util-linux
 PKG_INSTALL:=1
 
-PKG_LICENSE:=GPL-2.0 LGPL-2.0 BSD-3-Clause MIT
-PKG_LICENSE_FILES:=COPYING
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/e2fsprogs/Default

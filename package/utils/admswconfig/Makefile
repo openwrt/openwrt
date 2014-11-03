@@ -15,9 +15,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://downloads.openwrt.org/sources
 PKG_MD5SUM:=faafd4618f970119a665b11b21ac6a26
 
-PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/admswconfig

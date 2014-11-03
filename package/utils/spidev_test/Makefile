@@ -11,9 +11,6 @@ include $(INCLUDE_DIR)/kernel.mk
 PKG_NAME:=spidev-test
 PKG_RELEASE:=$(LINUX_VERSION)
 
-PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/spidev-test
