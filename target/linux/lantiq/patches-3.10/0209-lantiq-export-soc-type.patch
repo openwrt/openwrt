@@ -11,7 +11,7 @@
  #define IOPORT_RESOURCE_END	0xffffffff
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
-@@ -35,6 +35,11 @@ const char *get_system_type(void)
+@@ -35,6 +35,13 @@ const char *get_system_type(void)
  	return soc_info.sys_type;
  }
  
@@ -19,6 +19,8 @@
 +{
 +	return soc_info.type;
 +}
++
++EXPORT_SYMBOL(ltq_soc_type);
 +
  void prom_free_prom_memory(void)
  {
