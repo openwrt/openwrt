@@ -5,11 +5,20 @@
     model = "VGV7519 - KPN Experiabox V8";
 
 	chosen {
-		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit maxvpes=1 maxtcs=1 phym=64M mem=62M panic=1 vpe1_load_addr=0x83e00000 vpe1_mem=2M vpe1_wired_tlb_entries=1";
 	};
 
 	memory@0 {
 		reg = <0x0 0x4000000>;
+	};
+
+	sram@1F000000 {
+		vmmc@107000 {
+			status = "okay";
+			gpios = <&gpio 30 0  //fxs relay
+				 &gpio 31 0  //still unknown
+				 &gpio 3 0>; //reset_slic?
+		};
 	};
 	
 	fpi@10000000 {
