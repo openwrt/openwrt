@@ -143,7 +143,7 @@ int selfsigned(char **arg)
 	char *keypath = NULL, *certpath = NULL;
 	bool pem = true;
 	time_t from = time(NULL), to;
-	char fstr[20], tstr[20];
+	char fstr[20], tstr[20], sstr[17];
 	int len;
 
 	while (*arg && **arg == '-') {
@@ -222,8 +222,12 @@ int selfsigned(char **arg)
 	x509write_crt_set_subject_key_identifier(&cert);
 	x509write_crt_set_authority_key_identifier(&cert);
 
+	_urandom(NULL, buf, 8);
+	for (len = 0; len < 8; len++)
+		sprintf(sstr + len*2, "%02x", (unsigned char) buf[len]);
+
 	mpi_init(&serial);
-	mpi_read_string(&serial, 10, "1");
+	mpi_read_string(&serial, 16, sstr);
 	x509write_crt_set_serial(&cert, &serial);
 
 	if (pem) {
