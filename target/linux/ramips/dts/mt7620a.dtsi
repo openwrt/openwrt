@@ -441,6 +441,11 @@
 		interrupts = <4>;
 
 		status = "disabled";
+
+		pcie-bridge {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+		};
 	};
 
 	wmac@10180000 {
