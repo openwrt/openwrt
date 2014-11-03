@@ -147,6 +147,7 @@ $(eval $(call KernelPackage,8021q))
 define KernelPackage/vxlan
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Native VXLAN Kernel support
+  DEPENDS:=+kmod-iptunnel
   KCONFIG:=CONFIG_VXLAN
   FILES:=$(LINUX_DIR)/drivers/net/vxlan.ko
   AUTOLOAD:=$(call AutoLoad,13,vxlan)
