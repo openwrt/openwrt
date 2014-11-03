@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://repository.timesys.com/buildsources/k/kobs-ng/kobs-ng-$(PKG_VERSION)/
 PKG_MD5SUM:=26104c577f59a6b81782a5bd16aadd82
 
-PKG_LICENSE:=GPLv2
+PKG_LICENSE:=GPL-2.0+
 PKG_LICENSE_FILES:=COPYING
 
 include $(INCLUDE_DIR)/package.mk

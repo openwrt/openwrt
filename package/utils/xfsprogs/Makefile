@@ -10,10 +10,14 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=xfsprogs
 PKG_RELEASE:=1
 PKG_VERSION:=3.1.7
+
 PKG_SOURCE_URL:=ftp://oss.sgi.com/projects/xfs/previous/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_MD5SUM:=049cf9873794ea49d0bb3f12d45748a4
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_LICENSE:=GPL-2.0 LGPL-2.1
+PKG_LICENSE_FILES:=debian/copyright
+
 PKG_INSTALL:=1
 PKG_FIXUP:=autoreconf
 PKG_CHECK_FORMAT_SECURITY:=0

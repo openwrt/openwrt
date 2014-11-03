@@ -14,6 +14,9 @@ CMAKE_INSTALL:=1
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=ISC
 
+PKG_LICENSE:=ISC
+PKG_LICENSE_FILES:=
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 

@@ -54,4 +54,3 @@ define Package/libbsd/install
 endef
 
 $(eval $(call BuildPackage,libbsd))
-

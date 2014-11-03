@@ -13,6 +13,9 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://trabant.uid0.hu/openwrt/
 PKG_MD5SUM:=82e375193b66ca643023c1656d536282
 
+PKG_LICENSE:=GPL-2.0+
+PKG_LICENSE_FILES:=
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/imx-bootlets

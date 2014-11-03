@@ -19,6 +19,9 @@ PKG_SOURCE_URL:=http://www.netfilter.org/projects/iptables/files \
 	ftp://ftp.no.netfilter.org/pub/netfilter/iptables/
 PKG_MD5SUM:=536d048c8e8eeebcd9757d0863ebb0c0
 
+PKG_LICENSE:=GPL-2.0+
+PKG_LICENSE_FILES:=COPYING
+
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1

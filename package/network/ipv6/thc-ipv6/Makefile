@@ -18,6 +18,9 @@ PKG_MD5SUM:=5c9be9ad38ac15c368bb5140d031c051
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
+PKG_LICENSE:=GPL-3.0+
+PKG_LICENSE_FILES:=LICENSE
+
 include $(INCLUDE_DIR)/package.mk
 
 THC_APPLETS := \

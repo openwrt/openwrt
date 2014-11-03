@@ -16,6 +16,9 @@ PKG_MD5SUM:=f619282081c8bfc65ea64c37fa5285ed
 
 PKG_INSTALL:=1
 
+PKG_LICENSE:=GPL-2.0+
+PKG_LICENSE_FILES:=
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/ca-certificates

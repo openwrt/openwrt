@@ -10,6 +10,9 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=rbcfg
 PKG_RELEASE:=1
 
+PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=
+
 PKG_BUILD_DIR := $(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk

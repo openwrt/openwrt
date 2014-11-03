@@ -12,6 +12,9 @@ PKG_VERSION:=2
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0
 
+PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=
+
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 

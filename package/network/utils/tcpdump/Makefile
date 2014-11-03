@@ -24,6 +24,9 @@ PKG_BUILD_PARALLEL:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=BSD-3-Clause
 
+PKG_LICENSE:=BSD-3-Clause
+PKG_LICENSE_FILES:=LICENSE
+
 PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
