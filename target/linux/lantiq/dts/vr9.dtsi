@@ -64,6 +64,14 @@
 			reg = <0x106a00 0x200>;
 		};
 
+		vmmc@107000 {
+			status = "disabled";
+			compatible = "lantiq,vmmc";
+			reg = <0x103000 0x400>;
+			interrupt-parent = <&icu0>;
+			interrupts = <150 151 152 153 154 155>;
+		};
+
 		rcu0: rcu@203000 {
 			compatible = "lantiq,rcu-xrx200";
 			reg = <0x203000 0x1000>;
