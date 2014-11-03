@@ -10,6 +10,9 @@ PKG_NAME:=iwcap
 PKG_RELEASE:=1
 PKG_LICENSE:=Apache-2.0
 
+PKG_LICENSE:=Apache-2.0
+PKG_LICENSE_FILES:=
+
 include $(INCLUDE_DIR)/package.mk
 
 

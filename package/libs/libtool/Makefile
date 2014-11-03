@@ -1,4 +1,4 @@
-# 
+#
 # Copyright (C) 2006 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
@@ -15,7 +15,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@GNU/libtool
 PKG_MD5SUM:=b32b04148ecdd7344abc6fe8bd1bb021
 
-PKG_LICENSE:=GPL-2.0+
+PKG_LICENSE:=GPL-2.0+ LGPL-2.0+
 PKG_LICENSE_FILES:=COPYING
 
 PKG_BUILD_PARALLEL:=0

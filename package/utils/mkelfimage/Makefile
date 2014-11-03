@@ -13,6 +13,9 @@ PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/m/mkelfimage/
 PKG_MD5SUM:=e505cb87e9c0cdc44cf03d2c4ea8c74b
 
+PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=COPYING
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/mkelfimage

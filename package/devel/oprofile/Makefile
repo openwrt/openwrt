@@ -17,6 +17,9 @@ PKG_MD5SUM:=00aec1287da2dfffda17a9b1c0a01868
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
+PKG_LICENSE:=GPL-2.0+
+PKG_LICENSE_FILES:=COPYING
+
 PKG_BUILD_DEPENDS:=binutils
 PKG_LICENSE:=GPL-2.0+
 PKG_FIXUP:=autoreconf

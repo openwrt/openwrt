@@ -11,6 +11,9 @@ PKG_NAME:=robocfg
 PKG_VERSION:=0.01
 PKG_RELEASE:=1
 
+PKG_LICENSE:=GPL-2.0
+PKG_LICENSE_FILES:=
+
 PKG_BUILD_DIR:=$(BUILD_DIR)/robocfg
 
 include $(INCLUDE_DIR)/package.mk

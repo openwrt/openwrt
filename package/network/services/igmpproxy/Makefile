@@ -16,6 +16,9 @@ PKG_SOURCE_URL:=@SF/igmpproxy
 PKG_MD5SUM:=c56f41ec195bc1fe016369bf74efc5a1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
+PKG_LICENSE:=GPL-2.0+
+PKG_LICENSE_FILES:=GPL.txt
+
 include $(INCLUDE_DIR)/package.mk
 
 PKG_FIXUP:=autoreconf

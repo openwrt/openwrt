@@ -23,6 +23,9 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
 
 PKG_BUILD_DEPENDS:=+fstools
 
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/uboot-envtools
