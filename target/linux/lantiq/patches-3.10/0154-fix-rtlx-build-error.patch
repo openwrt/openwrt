@@ -1,0 +1,24 @@
+From b90b3802624e1f2a509f3e9f39775d94ec4762d7 Mon Sep 17 00:00:00 2001
+From: Ralf Baechle <ralf@linux-mips.org>
+Date: Fri, 21 Jun 2013 18:07:03 +0200
+Subject: [PATCH] MIPS: Fix rtlx build error.
+
+---
+ arch/mips/kernel/rtlx.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
+
+diff --git a/arch/mips/kernel/rtlx.c b/arch/mips/kernel/rtlx.c
+index 6fa198d..d763f11 100644
+--- a/arch/mips/kernel/rtlx.c
++++ b/arch/mips/kernel/rtlx.c
+@@ -437,7 +437,6 @@
+ 			  size_t count, loff_t * ppos)
+ {
+ 	int minor = iminor(file_inode(file));
+-	struct rtlx_channel *rt = &rtlx->channel[minor];
+ 
+ 	/* any space left... */
+ 	if (!rtlx_write_poll(minor)) {
+
+--
+Gitblit v1.3.1
