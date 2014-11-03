@@ -295,9 +295,35 @@ define BuildFirmware/Gemtek/squashfs
 endef
 BuildFirmware/Gemtek/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3))
 
+# Airlink101 AR670W -- LZMA without uImage header
+define BuildFirmware/AR670W/squashfs
+	$(call PatchKernelLzmaDtb,$(2),$(3),$(5))
+
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-$(if $(4),$(4),sysupgrade).bin)
+	$(eval factory_name=$(IMG_PREFIX)-$(2)-$(1)-factory.bin)
+
+	( dd if=$(KDIR)/vmlinux-$(2).bin.lzma bs=65536 \
+		conv=sync; dd if=$(KDIR)/root.$(1) ) > $(KDIR)/$(output_name)
+
+	$(call prepare_generic_squashfs,$(KDIR)/$(output_name))
+
+	if [ `stat -c%s "$(KDIR)/$(output_name)"` \
+		-gt $(ralink_default_fw_size_4M) ]; then \
+		echo "Warning: $(KDIR)/$(output_name) is too big" >&2; \
+	else \
+		mkwrgimg -i $(KDIR)/$(output_name) \
+			-d "/dev/mtdblock/2" \
+			-s "wrgn16a_airlink_ar670w" \
+			-o $(BIN_DIR)/$(factory_name); \
+		$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name); \
+	fi
+endef
+
 #
 # RT288X Profiles
 #
+
+Image/Build/Profile/AR670W=$(call BuildFirmware/AR670W/$(1),$(1),ar670w,AR670W)
 
 Image/Build/Profile/AR725W=$(call BuildFirmware/Gemtek/$(1),$(1),ar725w,AR725W)
 
@@ -313,6 +339,7 @@ Image/Build/Profile/WLITX4AG300N=$(call BuildFirmware/Default4M/$(1),$(1),wli-tx
 
 ifeq ($(SUBTARGET),rt288x)
 define Image/Build/Profile/Default
+	$(call Image/Build/Profile/AR670W,$(1))
 	$(call Image/Build/Profile/AR725W,$(1))
 	$(call Image/Build/Profile/F5D8235V1,$(1))
 	$(call Image/Build/Profile/RTN15,$(1))
