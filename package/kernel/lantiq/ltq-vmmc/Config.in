@@ -13,10 +13,10 @@ choice
 #		bool "AR9 family"
 #		depends on TARGET_lantiq_ar9
 
-#	config VOICE_CPE_VMMC_WITH_DEVICE_VR9
-#		bool "VR9 family"
-#		depends on TARGET_lantiq_vr9
-#	
+	config VOICE_CPE_VMMC_WITH_DEVICE_VR9
+		bool "VR9 family"
+		depends on TARGET_lantiq_xrx200
+	
 	config VOICE_VMMC_WITH_DEVICE_FALCON
 		bool "FALC-ON"
 		depends on (TARGET_lantiq_falcon||TARGET_lantiq_falcon_stable)

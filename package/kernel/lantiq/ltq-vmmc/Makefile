@@ -120,7 +120,19 @@ endif
 
 ifeq ($(CONFIG_VOICE_CPE_VMMC_WITH_DEVICE_VR9),y)
   CONFIGURE_ARGS += --with-device=VR9
-  # TODO: add fw/coef
+  FW_TARGET:=voice_ar9_firmware.bin
+  FW_SOURCE:=voip_R2.3.1.7.0-enc.bin
+  FW_FILE=fw_voip_vr9-2.3.1.7.0.tar.gz
+  FW_MD5SUM:=635edd1e2af8ca249cc7e80b779f3270
+  FW_DOWNLOAD:=1
+  COEF_SRC:=ETSI_3_10.BIN
+  COEF_TARGET:=vr9_bbd_fxs.bin
+  COEF_FILE:=coef_voip_vr9-0.9.3.tar.gz
+  COEF_MD5SUM:=66fa5c6a4110726b1f8658359b8008e6
+  COEF_DOWNLOAD:=1
+
+  COEF_SRC_FXO:=FXO_ETSI_0_0.BIN
+  COEF_TARGET_FXO:=vr9_bbd.bin
 endif
 
 define Download/firmware
@@ -163,6 +175,7 @@ define KernelPackage/ltq-vmmc/install
 	$(CP) $(PKG_BUILD_DIR)/firmware/$(FW_SOURCE) $(1)/$(FW_DIR)/$(FW_TARGET)
 	ln -s /$(FW_DIR)/$(FW_TARGET) $(1)/$(FW_DIR)/$(FW_TARGET_GENERIC)
 	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_SRC) $(1)/$(FW_DIR)/$(COEF_TARGET)
+	$(CP) $(PKG_BUILD_DIR)/coef/$(COEF_SRC_FXO) $(1)/$(FW_DIR)/$(COEF_TARGET_FXO)
 	ln -s /$(FW_DIR)/$(COEF_TARGET) $(1)/$(FW_DIR)/$(COEF_TARGET_GENERIC)
 endef
 
