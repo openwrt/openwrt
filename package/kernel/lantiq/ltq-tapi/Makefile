@@ -27,7 +27,8 @@ define KernelPackage/ltq-tapi
   SUBMENU:=Voice over IP
   TITLE:=Lantiq TAPI subsystem
   URL:=http://www.lantiq.com/
-  DEPENDS:=$(LTQ_TAPI_TARGET) +kmod-ltq-ifxos
+  #DEPENDS:=$(LTQ_TAPI_TARGET) +kmod-ltq-ifxos
+  DEPENDS:=+kmod-ltq-ifxos
   FILES:=$(PKG_BUILD_DIR)/src/drv_tapi.ko
   AUTOLOAD:=$(call AutoLoad,20,drv_tapi)
 endef
