@@ -385,6 +385,14 @@ platform_check_image() {
 		fi
 		return 0
 		;;
+    wnr2000-v4)
+		[ "$magic_long" != "32303034" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+
 	esac
 
 	echo "Sysupgrade is not yet supported on $board."

@@ -230,6 +230,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 };
 
 #define FW_MAGIC_WNR2000V3	0x32303033
+#define FW_MAGIC_WNR2000V4	0x32303034
 #define FW_MAGIC_WNR2200	0x32323030
 #define FW_MAGIC_WNR612V2	0x32303631
 #define FW_MAGIC_WNDR3700	0x33373030
@@ -237,6 +238,7 @@ static struct mtd_part_parser uimage_generic_parser = {
 
 static bool uimage_verify_wndr3700(struct uimage_header *header)
 {
+	uint8_t expected_type = IH_TYPE_FILESYSTEM;
 	switch be32_to_cpu(header->ih_magic) {
 	case FW_MAGIC_WNR612V2:
 	case FW_MAGIC_WNR2000V3:
@@ -244,12 +246,15 @@ static bool uimage_verify_wndr3700(struct uimage_header *header)
 	case FW_MAGIC_WNDR3700:
 	case FW_MAGIC_WNDR3700V2:
 		break;
+	case FW_MAGIC_WNR2000V4:
+		expected_type = IH_TYPE_KERNEL;
+		break;
 	default:
 		return false;
 	}
 
 	if (header->ih_os != IH_OS_LINUX ||
-	    header->ih_type != IH_TYPE_FILESYSTEM)
+	    header->ih_type != expected_type)
 		return false;
 
 	return true;
