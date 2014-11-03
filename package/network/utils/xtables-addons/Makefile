@@ -23,9 +23,6 @@ PKG_CHECK_FORMAT_SECURITY:=0
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=LICENSE
-
 PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk

@@ -18,9 +18,6 @@ PKG_MD5SUM:=fef521a49ec0122458d02c64212af3c5
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=COPYING
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/iftop

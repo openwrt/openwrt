@@ -16,9 +16,6 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/ead
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/kernel.mk
 

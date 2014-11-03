@@ -11,9 +11,6 @@ PKG_NAME:=resolveip
 PKG_RELEASE:=2
 PKG_LICENSE:=GPL-2.0
 
-PKG_LICENSE:=GPL-2.0
-PKG_LICENSE_FILES:=
-
 include $(INCLUDE_DIR)/package.mk
 
 define Package/resolveip

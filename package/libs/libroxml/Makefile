@@ -17,9 +17,6 @@ PKG_SOURCE_URL:=http://download.libroxml.net/pool/v2.x
 PKG_MD5SUM:=a975f91be150f7a19168a45ce15769ca
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
-KG_LICENSE:=LGPL-2.1+
-PKG_LICENSE_FILES:=License.txt
-
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=LGPL-2.1+

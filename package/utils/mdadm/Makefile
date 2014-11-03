@@ -17,9 +17,6 @@ PKG_MD5SUM:=2fd33dedcdb06f0d1461f50ddabb7e4a
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
-PKG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=COPYING
-
 PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk

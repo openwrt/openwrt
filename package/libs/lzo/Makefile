@@ -15,9 +15,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.oberhumer.com/opensource/lzo/download/
 PKG_MD5SUM:=fcec64c26a0f4f4901468f360029678f
 
-KG_LICENSE:=GPL-2.0+
-PKG_LICENSE_FILES:=COPYING
-
 PKG_FIXUP:=autoreconf
 PKG_INSTALL:=1
 PKG_LICENSE:=GPL-2.0+

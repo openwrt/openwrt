@@ -19,9 +19,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=ISC
 
-PKG_LICENSE:=ISC
-PKG_LICENSE_FILES:=
-
 PKG_BUILD_DEPENDS = ustream-ssl
 
 include $(INCLUDE_DIR)/package.mk
