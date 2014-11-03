@@ -110,6 +110,13 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	ar670w)
+		[ "$magic" != "6d000080" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
 	cy-swr1100 |\
 	dir-610-a1 |\
 	dir-645)
