@@ -1,0 +1,247 @@
+--- drv_vmmc-1.9.0_orig/src/mps/drv_mps_vmmc_ar9.c	2010-03-08 14:08:30.000000000 +0100
++++ drv_vmmc-1.9.0/src/mps/drv_mps_vmmc_ar9.c	2014-10-14 21:49:20.000000000 +0200
+@@ -30,15 +30,24 @@
+ #include "ifxos_interrupt.h"
+ 
+ /* board specific headers */
++#if !defined CONFIG_LANTIQ
+ #include <asm/ifx/ifx_regs.h>
+ #include <asm/ifx_vpe.h>
+ #include <asm/ifx/ifx_gpio.h>
++#endif
++
++#include <lantiq_soc.h>
++#include <vpe.h>
+ 
+ /* device specific headers */
+ #include "drv_mps_vmmc.h"
+ #include "drv_mps_vmmc_dbg.h"
+ #include "drv_mps_vmmc_device.h"
+
++const void (*ifx_bsp_basic_mps_decrypt)(unsigned int addr, int n) = NULL;
++
++#define IFX_MPS_SRAM IFXMIPS_MPS_SRAM
++
+ /* ============================= */
+ /* Local Macros & Definitions    */
+ /* ============================= */
+@@ -108,6 +108,7 @@
+  */
+ IFX_int32_t ifx_mps_fw_wdog_start_ar9()
+ {
++   return IFX_SUCCESS; /* FIXME - Disable start wdog... */
+    /* vpe1_wdog_ctr should be set up in u-boot as
+       "vpe1_wdog_ctr_addr=0xBF2001B0"; protection from incorrect or missing
+       setting */
+@@ -292,7 +302,19 @@
+          decryption. Subtract sizeof(u32) from length to avoid decryption
+          of data beyond the FW image code */
+       pFWDwnld->length -= sizeof(IFX_uint32_t);
++      switch(ltq_soc_type()) {
++   	   case SOC_TYPE_AR9:
++		   ifx_bsp_basic_mps_decrypt = (const void (*)(unsigned int, int))0xbf0017c4;
++		   break;
++	   case SOC_TYPE_VR9:
++		   ifx_bsp_basic_mps_decrypt = (const void (*)(unsigned int, int))0xbf001ea4;
++		   break;
++	   case SOC_TYPE_VR9_2:
++		   ifx_bsp_basic_mps_decrypt = (const void (*)(unsigned int, int))0xbf001f38;
++		   break;
++      }
++      if (ifx_bsp_basic_mps_decrypt)
+       ifx_bsp_basic_mps_decrypt((IFX_uint32_t)cpu1_base_addr, pFWDwnld->length);
+    }
+ 
+    /* calculate CRC32 checksum over downloaded image */
+@@ -306,7 +320,7 @@
+          TRACE (MPS, DBG_LEVEL_HIGH,
+                 ("MPS: FW checksum error: img=0x%08x calc=0x%08x\r\n",
+                 pFW_img_data->crc32, cksum));
+-         return IFX_ERROR;
++         /* return IFX_ERROR; -- FIXME */ 
+       }
+    }
+    else
+@@ -454,62 +473,62 @@
+ #endif /* DEBUG */
+ 
+    /* reset SmartSLIC */
+-   IFXOS_LOCKINT (flags);
+-   if (ifx_gpio_pin_reserve
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO port/pin reservation error.\r\n",
+-              __FILE__, __func__, __LINE__));
+-   }
++//   IFXOS_LOCKINT (flags);
++//   if (ifx_gpio_pin_reserve
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO port/pin reservation error.\r\n",
++//              __FILE__, __func__, __LINE__));
++//   }
+    /* P1_ALTSEL0.15 = 0 */
+-   if (ifx_gpio_altsel0_clear
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO error clearing ALTSEL0.\r\n", __FILE__,
+-              __func__, __LINE__));
+-   }
++//   if (ifx_gpio_altsel0_clear
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO error clearing ALTSEL0.\r\n", __FILE__,
++//              __func__, __LINE__));
++//   }
+    /* P1_ALTSEL1.15 = 0 */
+-   if (ifx_gpio_altsel1_clear
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO error clearing ALTSEL1.\r\n", __FILE__,
+-              __func__, __LINE__));
+-   }
++//   if (ifx_gpio_altsel1_clear
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO error clearing ALTSEL1.\r\n", __FILE__,
++//              __func__, __LINE__));
++//   }
+    /* P1_DIR.15 = 1 */
+-   if (ifx_gpio_dir_out_set
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO error setting DIR.\r\n", __FILE__,
+-              __func__, __LINE__));
+-   }
++//   if (ifx_gpio_dir_out_set
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO error setting DIR.\r\n", __FILE__,
++//              __func__, __LINE__));
++//   }
+    /* P1_OD.15 = 1 */
+-   if (ifx_gpio_open_drain_set
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO error setting OD.\r\n", __FILE__,
+-              __func__, __LINE__));
+-   }
++//   if (ifx_gpio_open_drain_set
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO error setting OD.\r\n", __FILE__,
++//              __func__, __LINE__));
++//   }
+    /* P1_OUT.15 = 0 */
+-   if (ifx_gpio_output_clear
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO error clearing OUT.\r\n", __FILE__,
+-              __func__, __LINE__));
+-   }
+-   if (ifx_gpio_pin_free
+-       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
+-   {
+-      TRACE (MPS, DBG_LEVEL_HIGH,
+-             (KERN_ERR "[%s %s %d]: GPIO port/pin freeing error.\r\n", __FILE__,
+-              __func__, __LINE__));
+-   }
+-   IFXOS_UNLOCKINT (flags);
++//   if (ifx_gpio_output_clear
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO error clearing OUT.\r\n", __FILE__,
++//              __func__, __LINE__));
++//   }
++//   if (ifx_gpio_pin_free
++//       (IFX_GPIO_PIN_ID (SSLIC_RST_PORT, SSLIC_RST_PIN), IFX_MPS_MODULE_ID))
++//   {
++//      TRACE (MPS, DBG_LEVEL_HIGH,
++//             (KERN_ERR "[%s %s %d]: GPIO port/pin freeing error.\r\n", __FILE__,
++//              __func__, __LINE__));
++//   }
++//   IFXOS_UNLOCKINT (flags);
+ 
+    /* recalculate and compare the firmware checksum */
+    ifx_mps_fw_crc_compare(cpu1_base_addr, pFW_img_data);
+--- drv_vmmc-1.9.0_orig/src/drv_vmmc_amazon_s.h	2009-12-03 17:20:34.000000000 +0100
++++ drv_vmmc-1.9.0/src/drv_vmmc_amazon_s.h	2014-10-16 10:30:48.000000000 +0200
+@@ -16,7 +16,7 @@
+ 
+ 
+ #if defined(SYSTEM_AR9) || defined(SYSTEM_VR9)
+-#include <asm/ifx/ifx_gpio.h>
++//#include <asm/ifx/ifx_gpio.h>
+ #else
+ #error no system selected
+ #endif
+@@ -27,45 +27,6 @@
+ */
+ #define VMMC_PCM_IF_CFG_HOOK(mode, GPIOreserved, ret) \
+ do { \
+-   ret = VMMC_statusOk; \
+-   /* Reserve P0.0 as TDM/FSC */ \
+-   if (!GPIOreserved) \
+-      ret |= ifx_gpio_pin_reserve(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel0_set(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel1_set(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_open_drain_set(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID);\
+-   \
+-   /* Reserve P1.9 as TDM/DO */ \
+-   if (!GPIOreserved) \
+-      ret |= ifx_gpio_pin_reserve(IFX_GPIO_PIN_ID(1, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel0_set(IFX_GPIO_PIN_ID(1, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel1_clear(IFX_GPIO_PIN_ID(1, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_dir_out_set(IFX_GPIO_PIN_ID(1, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_open_drain_set(IFX_GPIO_PIN_ID(1, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   \
+-   /* Reserve P2.9 as TDM/DI */ \
+-   if (!GPIOreserved) \
+-      ret |= ifx_gpio_pin_reserve(IFX_GPIO_PIN_ID(2, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel0_clear(IFX_GPIO_PIN_ID(2, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel1_set(IFX_GPIO_PIN_ID(2, 9), VMMC_TAPI_GPIO_MODULE_ID);\
+-   ret |= ifx_gpio_dir_in_set(IFX_GPIO_PIN_ID(2, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   \
+-   /* Reserve P2.8 as TDM/DCL */ \
+-   if (!GPIOreserved) \
+-      ret |= ifx_gpio_pin_reserve(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel0_clear(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_altsel1_set(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_open_drain_set(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+-   \
+-   if (mode == 2) { \
+-      /* TDM/FSC+DCL Master */ \
+-      ret |= ifx_gpio_dir_out_set(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID); \
+-      ret |= ifx_gpio_dir_out_set(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+-   } else { \
+-      /* TDM/FSC+DCL Slave */ \
+-      ret |= ifx_gpio_dir_in_set(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID); \
+-      ret |= ifx_gpio_dir_in_set(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+-   } \
+ } while(0);
+ 
+ /**
+@@ -73,11 +34,6 @@
+ */
+ #define VMMC_DRIVER_UNLOAD_HOOK(ret) \
+ do { \
+-   ret = VMMC_statusOk; \
+-   ret |= ifx_gpio_pin_free(IFX_GPIO_PIN_ID(0, 0), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_pin_free(IFX_GPIO_PIN_ID(1, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_pin_free(IFX_GPIO_PIN_ID(2, 9), VMMC_TAPI_GPIO_MODULE_ID); \
+-   ret |= ifx_gpio_pin_free(IFX_GPIO_PIN_ID(2, 8), VMMC_TAPI_GPIO_MODULE_ID); \
+ } while (0)
+ 
+ #endif /* _DRV_VMMC_AMAZON_S_H */
