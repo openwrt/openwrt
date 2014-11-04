@@ -1,0 +1,24 @@
+diff -ruN old/arch/arm/boot/dts/sun7i-a20-cubietruck.dts new/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+--- old/arch/arm/boot/dts/sun7i-a20-cubietruck.dts	2014-09-06 01:34:59.000000000 +0200
++++ new/arch/arm/boot/dts/sun7i-a20-cubietruck.dts	2014-11-04 22:14:48.756886672 +0100
+@@ -26,6 +26,20 @@
+ 				allwinner,drive = <0>;
+ 				allwinner,pull = <0>;
+ 			};
++
++                        usb1_vbus_pin: usb1_vbus_pin@0 {
++                                        allwinner,pins = "PH6";
++                                        allwinner,function = "gpio_out";
++                                        allwinner,drive = <0>;
++                                        allwinner,pull = <2>;
++                        };
++
++                        usb2_vbus_pin: usb2_vbus_pin@0 {
++                                        allwinner,pins = "PH3";
++                                        allwinner,function = "gpio_out";
++                                        allwinner,drive = <0>;
++                                        allwinner,pull = <2>;
++                        };
+ 		};
+ 
+ 		uart0: serial@01c28000 {
