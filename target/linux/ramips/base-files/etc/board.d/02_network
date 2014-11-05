@@ -221,6 +221,7 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0"
 		;;
 
+	e1700 | \
 	mt7620a_mt7530)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch1" "1" "1"
@@ -300,6 +301,10 @@ ramips_setup_macs()
 	dir-645)
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
+		;;
+
+	e1700)
+		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
 
 	wcr-150gn)

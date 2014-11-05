@@ -48,6 +48,9 @@ get_status_led() {
 	dap-1350)
 		status_led="d-link:blue:power"
 		;;
+	e1700)
+		status_led="linksys:green:power"
+		;;
 	esr-9753)
 		status_led="esr-9753:orange:power"
 		;;
