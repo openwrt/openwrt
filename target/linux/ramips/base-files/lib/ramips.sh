@@ -175,6 +175,9 @@ ramips_board_detect() {
 	*"Kingston MLW221")
 		name="mlw221"
 		;;
+	*"Linksys E1700")
+		name="e1700"
+		;;
 	*"Planex MZK-750DHP")
 		name="mzk-750dhp"
 		;;
