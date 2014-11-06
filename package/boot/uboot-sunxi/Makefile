@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2013-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -25,50 +25,61 @@ define uboot/Default
 endef
 
 define uboot/A10-OLinuXino-Lime
-  TITLE:=U-Boot 2014.04 for the A10 OLinuXino LIME
+  TITLE:=U-Boot for the A10 OLinuXino LIME
 endef
 
 define uboot/A13-OLinuXino
-  TITLE:=U-Boot 2014.04 for the A13 OlinuXino
+  TITLE:=U-Boot for the A13 OlinuXino
 endef
 
 define uboot/A20-OLinuXino_MICRO
-  TITLE:=U-Boot 2014.04 for A20 OLinuXino MICRO
+  TITLE:=U-Boot for A20 OLinuXino MICRO
 endef
 
 define uboot/Bananapi
-  TITLE:=U-Boot 2014.04 for Bananapi
+  TITLE:=U-Boot for Bananapi
 endef
 
 define uboot/Cubieboard
-  TITLE:=U-Boot 2014.04 for Cubieboard
+  TITLE:=U-Boot for Cubieboard
 endef
 
 define uboot/Cubieboard2
-  TITLE:=U-Boot 2014.04 for Cubieboard2
+  TITLE:=U-Boot for Cubieboard2
 endef
 
 define uboot/Cubietruck
-  TITLE:=U-Boot 2014.04 for Cubietruck
+  TITLE:=U-Boot for Cubietruck
 endef
 
 define uboot/Hackberry
-  TITLE:=U-Boot 2014.04 for the Hackbeery
+  TITLE:=U-Boot for the Hackbeery
 endef
 
 define uboot/OLIMEX-A13-SOM
-  TITLE:=U-Boot 2014.04 for the Olimex A13 SOM
+  TITLE:=U-Boot for the Olimex A13 SOM
 endef
 
 define uboot/pcDuino
-  TITLE:=U-Boot 2014.04 for pcDuino
+  TITLE:=U-Boot for pcDuino
 endef  
 
 define uboot/Linksprite_pcDuino3
-  TITLE:=U-Boot 2014.04 for Linksprite pcDuino3
+  TITLE:=U-Boot for Linksprite pcDuino3
 endef  
 
-UBOOTS:=A10-OLinuXino-Lime A13-OLinuXino A20-OLinuXino_MICRO Bananapi Cubieboard Cubieboard2 Cubietruck Hackberry pcDuino Linksprite_pcDuino3 OLIMEX-A13-SOM
+UBOOTS:= \
+	A10-OLinuXino-Lime \
+	A13-OLinuXino \
+	A20-OLinuXino_MICRO \
+	Bananapi \
+	Cubieboard \
+	Cubieboard2 \
+	Cubietruck \
+	Hackberry \
+	OLIMEX-A13-SOM \
+	pcDuino \
+	Linksprite_pcDuino3 \
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
