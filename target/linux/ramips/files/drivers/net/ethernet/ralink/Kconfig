@@ -1,0 +1,31 @@
+config NET_RALINK
+	tristate "Ralink RT288X/RT3X5X/RT3662/RT3883/MT7620 ethernet driver"
+	depends on RALINK
+	help
+	  This driver supports the ethernet mac inside the ralink wisocs
+
+if NET_RALINK
+
+config NET_RALINK_MDIO
+	def_bool NET_RALINK
+	depends on (SOC_RT288X || SOC_RT3883 || SOC_MT7620)
+	select PHYLIB
+
+config NET_RALINK_MDIO_RT2880
+	def_bool NET_RALINK
+	depends on (SOC_RT288X || SOC_RT3883)
+	select NET_RALINK_MDIO
+
+config NET_RALINK_ESW_RT3052
+	def_bool NET_RALINK
+	depends on SOC_RT305X
+	select PHYLIB
+	select SWCONFIG
+
+config NET_RALINK_GSW_MT7620
+	def_bool NET_RALINK
+	depends on SOC_MT7620
+	select NET_RALINK_MDIO
+	select PHYLIB
+	select SWCONFIG
+endif
