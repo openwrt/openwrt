@@ -18,7 +18,19 @@
 #include <linux/module.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
+#ifdef CONFIG_SOC_MT7620
+static inline int soc_is_rt3352(void)
+{
+	return 0;
+}
+
+static inline int soc_is_rt3052(void)
+{
+	return 0;
+}
+#else
 #include <asm/mach-ralink/rt305x.h>
+#endif
 
 #include "ralink_soc_eth.h"
 #include "mdio_rt2880.h"
@@ -79,6 +91,9 @@ static void rt305x_fe_reset(void)
 static void rt5350_init_data(struct fe_soc_data *data,
 		struct net_device *netdev)
 {
+	struct fe_priv *priv = netdev_priv(netdev);
+
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG;
 	netdev->hw_features = NETIF_F_SG | NETIF_F_RXCSUM;
 }
 
