@@ -20,6 +20,7 @@ BOARDS:= \
 	sun7i-a20-bananapi \
 	sun7i-a20-cubieboard2 \
 	sun7i-a20-cubietruck \
+	sun7i-a20-olinuxino-lime \
 	sun7i-a20-olinuxino-micro \
 	sun7i-a20-pcduino3
 
@@ -67,6 +68,10 @@ endef
 
 define Image/Build/Profile/A13-OLinuXino
 	$(call Image/Build/SDCard,$(1),sun5i-a13-olinuxino)
+endef
+
+define Image/Build/Profile/A20-OLinuXino_Lime
+	$(call Image/Build/SDCard,$(1),sun7i-a20-olinuxino-lime)
 endef
 
 define Image/Build/Profile/A20-OLinuXino_MICRO
