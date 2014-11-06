@@ -73,7 +73,6 @@
 #define GSW_REG_IMR		0x7008
 #define GSW_REG_ISR		0x700c
 #define GSW_REG_GPC1		0x7014
-#define GSW_PHY1_DISABLE	BIT(25)
 
 #define SYSC_REG_CFG1		0x14
 
@@ -409,15 +408,19 @@ void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 	}
 }
 
-static void gsw_hw_init(struct mt7620_gsw *gsw)
+static void gsw_hw_init(struct mt7620_gsw *gsw, struct device_node *np)
 {
 	u32 is_BGA = mt7620_is_bga();
 
 	rt_sysc_w32(rt_sysc_r32(SYSC_REG_CFG1) | BIT(8), SYSC_REG_CFG1);
 	gsw_w32(gsw, gsw_r32(gsw, GSW_REG_CKGCR) & ~(0x3 << 4), GSW_REG_CKGCR);
 
-	/* EPHY1 fixup - only run if the ephy is enabled */
-	if (gsw_r32(gsw, GSW_REG_GPC1) & GSW_PHY1_DISABLE == GSW_PHY1_DISABLE) {
+	if (of_property_read_bool(np, "mediatek,mt7530")) {
+		gsw_w32(gsw, gsw_r32(gsw, GSW_REG_GPC1) | (0x1f << 24), GSW_REG_GPC1);
+		pr_info("gsw: truning EPHY off\n");
+	} else {
+		/* EPHY1 fixup - only run if the ephy is enabled */
+
 		/*correct  PHY  setting L3.0 BGA*/
 		_mt7620_mii_write(gsw, 1, 31, 0x4000); //global, page 4
 
@@ -565,7 +568,7 @@ int mt7620_gsw_probe(struct fe_priv *priv)
 	else
 		WARN_ON(port4);
 
-	gsw_hw_init(gsw);
+	gsw_hw_init(gsw, np);
 
 	gsw_w32(gsw, ~PORT_IRQ_ST_CHG, GSW_REG_IMR);
 	request_irq(gsw->irq, gsw_interrupt, 0, "gsw", priv);
