@@ -32,6 +32,10 @@ define uboot/A13-OLinuXino
   TITLE:=U-Boot for the A13 OlinuXino
 endef
 
+define uboot/A20-OLinuXino_Lime
+  TITLE:=U-Boot for the A20 OLinuXino LIME
+endef
+
 define uboot/A20-OLinuXino_MICRO
   TITLE:=U-Boot for A20 OLinuXino MICRO
 endef
@@ -71,6 +75,7 @@ endef
 UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
+	A20-OLinuXino_Lime \
 	A20-OLinuXino_MICRO \
 	Bananapi \
 	Cubieboard \
