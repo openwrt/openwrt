@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 OpenWrt.org
+# Copyright (C) 2007-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -135,9 +135,9 @@ define Package/samba36-server/install
 	$(INSTALL_BIN) ./files/samba.init $(1)/etc/init.d/samba
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_BIN)/samba_multicall $(1)/usr/sbin
-	ln -sf samba_multicall $(1)/usr/sbin/smbd
-	ln -sf samba_multicall $(1)/usr/sbin/nmbd
-	ln -sf samba_multicall $(1)/usr/sbin/smbpasswd
+	$(LN) samba_multicall $(1)/usr/sbin/smbd
+	$(LN) samba_multicall $(1)/usr/sbin/nmbd
+	$(LN) samba_multicall $(1)/usr/sbin/smbpasswd
 endef
 
 define Package/samba36-client/install

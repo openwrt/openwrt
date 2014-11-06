@@ -372,8 +372,8 @@ define Package/wpad/install
 	$(call Install/hostapd,$(1))
 	$(call Install/supplicant,$(1))
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/wpad $(1)/usr/sbin/
-	ln -sf wpad $(1)/usr/sbin/hostapd
-	ln -sf wpad $(1)/usr/sbin/wpa_supplicant
+	$(LN) wpad $(1)/usr/sbin/hostapd
+	$(LN) wpad $(1)/usr/sbin/wpa_supplicant
 endef
 Package/wpad-mini/install = $(Package/wpad/install)
 

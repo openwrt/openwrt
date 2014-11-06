@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -149,7 +149,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/lnum_config.h $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/liblua.{a,so*} $(1)/usr/lib/
-	ln -sf liblua.so.$(PKG_VERSION) $(1)/usr/lib/liblualib.so
+	$(LN) liblua.so.$(PKG_VERSION) $(1)/usr/lib/liblualib.so
 	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
 	$(CP) $(PKG_BUILD_DIR)/etc/lua.pc $(1)/usr/lib/pkgconfig/
 endef

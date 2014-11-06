@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -107,10 +107,10 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/dropbearmulti $(1)/usr/sbin/dropbear
 	$(INSTALL_DIR) $(1)/usr/bin
-	ln -sf ../sbin/dropbear $(1)/usr/bin/scp
-	ln -sf ../sbin/dropbear $(1)/usr/bin/ssh
-	ln -sf ../sbin/dropbear $(1)/usr/bin/dbclient
-	ln -sf ../sbin/dropbear $(1)/usr/bin/dropbearkey
+	$(LN) ../sbin/dropbear $(1)/usr/bin/scp
+	$(LN) ../sbin/dropbear $(1)/usr/bin/ssh
+	$(LN) ../sbin/dropbear $(1)/usr/bin/dbclient
+	$(LN) ../sbin/dropbear $(1)/usr/bin/dropbearkey
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_DATA) ./files/dropbear.config $(1)/etc/config/dropbear
 	$(INSTALL_DIR) $(1)/etc/init.d
