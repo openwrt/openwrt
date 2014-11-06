@@ -1,0 +1,222 @@
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "ralink,mtk7628an-soc";
+
+	cpus {
+		cpu@0 {
+			compatible = "mips,mips24KEc";
+		};
+	};
+
+	cpuintc: cpuintc@0 {
+		#address-cells = <0>;
+		#interrupt-cells = <1>;
+		interrupt-controller;
+		compatible = "mti,cpu-interrupt-controller";
+	};
+
+	palmbus@10000000 {
+		compatible = "palmbus";
+		reg = <0x10000000 0x200000>;
+                ranges = <0x0 0x10000000 0x1FFFFF>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sysc@0 {
+			compatible = "ralink,mt7620a-sysc";
+			reg = <0x0 0x100>;
+		};
+
+		watchdog@120 {
+			compatible = "ralink,mt7628an-wdt", "mtk,mt7621-wdt";
+			reg = <0x120 0x10>;
+
+			resets = <&rstctrl 8>;
+			reset-names = "wdt";
+
+			interrupt-parent = <&intc>;
+			interrupts = <24>;
+		};
+
+		intc: intc@200 {
+			compatible = "ralink,mt7628an-intc", "ralink,rt2880-intc";
+			reg = <0x200 0x100>;
+
+			resets = <&rstctrl 9>;
+			reset-names = "intc";
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpuintc>;
+			interrupts = <2>;
+
+			ralink,intc-registers = <0x9c 0xa0
+						 0x6c 0xa4
+						 0x80 0x78>;
+		};
+
+		memc@300 {
+			compatible = "ralink,mt7620a-memc", "ralink,rt3050-memc";
+			reg = <0x300 0x100>;
+
+			resets = <&rstctrl 20>;
+			reset-names = "mc";
+
+			interrupt-parent = <&intc>;
+			interrupts = <3>;
+		};
+
+		gpio@600 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			compatible = "mtk,mt7628-gpio", "mtk,mt7621-gpio";
+			reg = <0x600 0x100>;
+
+			gpio0: bank@0 {
+				reg = <0>;
+				compatible = "mtk,mt7621-gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpio1: bank@1 {
+				reg = <1>;
+				compatible = "mtk,mt7621-gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpio2: bank@2 {
+				reg = <2>;
+				compatible = "mtk,mt7621-gpio-bank";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
+		spi@b00 {
+			compatible = "ralink,mt7621-spi";
+			reg = <0xb00 0x100>;
+
+			resets = <&rstctrl 18>;
+			reset-names = "spi";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
+
+			status = "disabled";
+		};
+
+		uartlite@c00 {
+			compatible = "ns16550a";
+			reg = <0xc00 0x100>;
+
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			no-loopback-test;
+
+			resets = <&rstctrl 12>;
+			reset-names = "uartl";
+
+			interrupt-parent = <&intc>;
+			interrupts = <20>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart0_pins>;
+		};
+	};
+
+	pinctrl {
+		compatible = "ralink,rt2880-pinmux";
+		pinctrl-names = "default";
+		pinctrl-0 = <&state_default>;
+		state_default: pinctrl0 {
+		};
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
+			};
+		};
+		uart0_pins: uartlite {
+			uart {
+				ralink,group = "uart0";
+				ralink,function = "uart";
+			};
+		};
+	};
+
+	rstctrl: rstctrl {
+		compatible = "ralink,mt7620a-reset", "ralink,rt2880-reset";
+		#reset-cells = <1>;
+	};
+
+	usbphy {
+		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
+
+		resets = <&rstctrl 22>;
+		reset-names = "host";
+	};
+
+	ehci@101c0000 {
+		compatible = "ralink,rt3xxx-ehci";
+		reg = <0x101c0000 0x1000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <18>;
+	};
+
+	ohci@101c1000 {
+		compatible = "ralink,rt3xxx-ohci";
+		reg = <0x101c1000 0x1000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <18>;
+	};
+
+	ethernet@10100000 {
+		compatible = "ralink,rt5350-eth";
+		reg = <0x10100000 10000>;
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <5>;
+	};
+
+	esw@10110000 {
+		compatible = "ralink,rt3050-esw";
+		reg = <0x10110000 8000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <17>;
+	};
+
+	pcie@10140000 {
+		compatible = "mediatek,mt7620-pci";
+		reg = <0x10140000 0x100
+			0x10142000 0x100>;
+
+		ranges = <0x2000000 0 0x8000000 0x2000000 0 0x1000000	/* pci memory */
+			  0x1000000 0 0x00000000 0x10160000 0 0x10000>;	/* io space */
+
+		resets = <&rstctrl 26>;
+		reset-names = "pcie0";
+
+		interrupt-parent = <&cpuintc>;
+		interrupts = <4>;
+
+		status = "disabled";
+
+		pcie-bridge {
+			reg = <0x0000 0 0 0 0>;
+			device_type = "pci";
+		};
+	};
+
+};

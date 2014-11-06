@@ -355,6 +355,9 @@ ramips_board_detect() {
 	*"Lenovo Y1S")
 		name="y1s"
 		;;
+	*"Mediatek MT7628AN evaluation board")
+		name="mt7628"
+		;;
 	*)
 		name="generic"
 		;;
