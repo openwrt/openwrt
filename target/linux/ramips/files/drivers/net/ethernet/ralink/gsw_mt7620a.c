@@ -72,6 +72,8 @@
 
 #define GSW_REG_IMR		0x7008
 #define GSW_REG_ISR		0x700c
+#define GSW_REG_GPC1		0x7014
+#define GSW_PHY1_DISABLE	BIT(25)
 
 #define SYSC_REG_CFG1		0x14
 
@@ -414,43 +416,46 @@ static void gsw_hw_init(struct mt7620_gsw *gsw)
 	rt_sysc_w32(rt_sysc_r32(SYSC_REG_CFG1) | BIT(8), SYSC_REG_CFG1);
 	gsw_w32(gsw, gsw_r32(gsw, GSW_REG_CKGCR) & ~(0x3 << 4), GSW_REG_CKGCR);
 
-	/*correct  PHY  setting L3.0 BGA*/
-	_mt7620_mii_write(gsw, 1, 31, 0x4000); //global, page 4
+	/* EPHY1 fixup - only run if the ephy is enabled */
+	if (gsw_r32(gsw, GSW_REG_GPC1) & GSW_PHY1_DISABLE == GSW_PHY1_DISABLE) {
+		/*correct  PHY  setting L3.0 BGA*/
+		_mt7620_mii_write(gsw, 1, 31, 0x4000); //global, page 4
 
-	_mt7620_mii_write(gsw, 1, 17, 0x7444);
-	if (is_BGA)
-		_mt7620_mii_write(gsw, 1, 19, 0x0114);
-	else
-		_mt7620_mii_write(gsw, 1, 19, 0x0117);
+		_mt7620_mii_write(gsw, 1, 17, 0x7444);
+		if (is_BGA)
+			_mt7620_mii_write(gsw, 1, 19, 0x0114);
+		else
+			_mt7620_mii_write(gsw, 1, 19, 0x0117);
 
-	_mt7620_mii_write(gsw, 1, 22, 0x10cf);
-	_mt7620_mii_write(gsw, 1, 25, 0x6212);
-	_mt7620_mii_write(gsw, 1, 26, 0x0777);
-	_mt7620_mii_write(gsw, 1, 29, 0x4000);
-	_mt7620_mii_write(gsw, 1, 28, 0xc077);
-	_mt7620_mii_write(gsw, 1, 24, 0x0000);
+		_mt7620_mii_write(gsw, 1, 22, 0x10cf);
+		_mt7620_mii_write(gsw, 1, 25, 0x6212);
+		_mt7620_mii_write(gsw, 1, 26, 0x0777);
+		_mt7620_mii_write(gsw, 1, 29, 0x4000);
+		_mt7620_mii_write(gsw, 1, 28, 0xc077);
+		_mt7620_mii_write(gsw, 1, 24, 0x0000);
 
-	_mt7620_mii_write(gsw, 1, 31, 0x3000); //global, page 3
-	_mt7620_mii_write(gsw, 1, 17, 0x4838);
+		_mt7620_mii_write(gsw, 1, 31, 0x3000); //global, page 3
+		_mt7620_mii_write(gsw, 1, 17, 0x4838);
 
-	_mt7620_mii_write(gsw, 1, 31, 0x2000); //global, page 2
-	if (is_BGA) {
-		_mt7620_mii_write(gsw, 1, 21, 0x0515);
-		_mt7620_mii_write(gsw, 1, 22, 0x0053);
-		_mt7620_mii_write(gsw, 1, 23, 0x00bf);
-		_mt7620_mii_write(gsw, 1, 24, 0x0aaf);
-		_mt7620_mii_write(gsw, 1, 25, 0x0fad);
-		_mt7620_mii_write(gsw, 1, 26, 0x0fc1);
-	} else {
-		_mt7620_mii_write(gsw, 1, 21, 0x0517);
-		_mt7620_mii_write(gsw, 1, 22, 0x0fd2);
-		_mt7620_mii_write(gsw, 1, 23, 0x00bf);
-		_mt7620_mii_write(gsw, 1, 24, 0x0aab);
-		_mt7620_mii_write(gsw, 1, 25, 0x00ae);
-		_mt7620_mii_write(gsw, 1, 26, 0x0fff);
+		_mt7620_mii_write(gsw, 1, 31, 0x2000); //global, page 2
+		if (is_BGA) {
+			_mt7620_mii_write(gsw, 1, 21, 0x0515);
+			_mt7620_mii_write(gsw, 1, 22, 0x0053);
+			_mt7620_mii_write(gsw, 1, 23, 0x00bf);
+			_mt7620_mii_write(gsw, 1, 24, 0x0aaf);
+			_mt7620_mii_write(gsw, 1, 25, 0x0fad);
+			_mt7620_mii_write(gsw, 1, 26, 0x0fc1);
+		} else {
+			_mt7620_mii_write(gsw, 1, 21, 0x0517);
+			_mt7620_mii_write(gsw, 1, 22, 0x0fd2);
+			_mt7620_mii_write(gsw, 1, 23, 0x00bf);
+			_mt7620_mii_write(gsw, 1, 24, 0x0aab);
+			_mt7620_mii_write(gsw, 1, 25, 0x00ae);
+			_mt7620_mii_write(gsw, 1, 26, 0x0fff);
+		}
+		_mt7620_mii_write(gsw, 1, 31, 0x1000); //global, page 1
+		_mt7620_mii_write(gsw, 1, 17, 0xe7f8);
 	}
-	_mt7620_mii_write(gsw, 1, 31, 0x1000); //global, page 1
-	_mt7620_mii_write(gsw, 1, 17, 0xe7f8);
 
 	_mt7620_mii_write(gsw, 1, 31, 0x8000); //local, page 0
 	_mt7620_mii_write(gsw, 0, 30, 0xa000);
