@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2013 OpenWrt.org
+# Copyright (C) 2010-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -39,10 +39,10 @@ endef
 TARGET_CFLAGS += $(FPIC)
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(STAGING_DIR)/host/bin
-
+	$(INSTALL_DIR) $(1)
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/
-	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(STAGING_DIR)/host/bin
+	$(INSTALL_DIR) $(2)/bin
+	$(CP) $(PKG_INSTALL_DIR)/usr/bin/libusb-config $(2)/bin/
 endef
 
 define Package/libusb-compat/install
