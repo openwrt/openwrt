@@ -1,0 +1,59 @@
+/dts-v1/;
+
+/include/ "mt7628an.dtsi"
+
+/ {
+	compatible = "mediatek,mt7628an-eval-board", "mediatek,mt7628an-soc";
+	model = "Mediatek MT7628AN evaluation board";
+
+	memory@0 {
+		reg = <0x0 0x2000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600 init=/init";
+	};
+
+	palmbus@10000000 {
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "en25q64";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "en25q64";
+				spi-max-frequency = <10000000>;
+				m25p,chunked-io = <1>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7b0000>;
+				};
+			};
+		};
+	};
+
+	pcie@10140000 {
+		status = "okay";
+	};
+};
