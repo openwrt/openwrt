@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2014 OpenWrt.org
 # Copyright 2010 Vertical Communications
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -106,9 +106,9 @@ define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/mke2fs $(1)/usr/sbin/
-	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext2
-	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext3
-	ln -sf mke2fs $(1)/usr/sbin/mkfs.ext4
+	$(LN) mke2fs $(1)/usr/sbin/mkfs.ext2
+	$(LN) mke2fs $(1)/usr/sbin/mkfs.ext3
+	$(LN) mke2fs $(1)/usr/sbin/mkfs.ext4
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libe2p.so.* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d

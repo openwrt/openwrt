@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2012 OpenWrt.org
+# Copyright (C) 2007-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -427,7 +427,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   define Package/eglibc/install
 	$(CP) ./eglibc-files/* $(1)/
 	rm -f $(1)/etc/localtime
-	ln -sf /tmp/localtime $(1)/etc/localtime
+	$(LN) /tmp/localtime $(1)/etc/localtime
 	$(INSTALL_DIR) $(1)/lib
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/ld*.so.* \
@@ -476,7 +476,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 	$(CP) \
 		$(TOOLCHAIN_DIR)/lib/libc.so* \
 		$(1)/lib/
-	ln -s ../../lib/$(LD_MUSL_NAME) $(1)/usr/bin/ldd
+	$(LN) ../../lib/$(LD_MUSL_NAME) $(1)/usr/bin/ldd
   endef
 
   define Package/libc/install

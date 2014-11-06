@@ -166,8 +166,8 @@ endef
 define Package/nas/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nas $(1)/usr/sbin/
-	ln -sf nas $(1)/usr/sbin/nas4not
-	ln -sf nas $(1)/usr/sbin/nas4wds
+	$(LN) nas $(1)/usr/sbin/nas4not
+	$(LN) nas $(1)/usr/sbin/nas4wds
 endef
 
 $(eval $(call KernelPackage,brcm-wl))
