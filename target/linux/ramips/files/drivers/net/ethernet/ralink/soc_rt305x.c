@@ -91,9 +91,6 @@ static void rt305x_fe_reset(void)
 static void rt5350_init_data(struct fe_soc_data *data,
 		struct net_device *netdev)
 {
-	struct fe_priv *priv = netdev_priv(netdev);
-
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_PADDING_BUG;
 	netdev->hw_features = NETIF_F_SG | NETIF_F_RXCSUM;
 }
 
