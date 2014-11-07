@@ -1,3 +1,64 @@
+commit 77980bee5f1f743b46f8749185aca28b8ec69741
+Author: Johannes Berg <johannes.berg@intel.com>
+Date:   Mon Nov 3 14:29:09 2014 +0100
+
+    mac80211: fix use-after-free in defragmentation
+    
+    Upon receiving the last fragment, all but the first fragment
+    are freed, but the multicast check for statistics at the end
+    of the function refers to the current skb (the last fragment)
+    causing a use-after-free bug.
+    
+    Since multicast frames cannot be fragmented and we check for
+    this early in the function, just modify that check to also
+    do the accounting to fix the issue.
+    
+    Cc: stable@vger.kernel.org
+    Reported-by: Yosef Khyal <yosefx.khyal@intel.com>
+    Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+
+commit e252be2d718dada0abd72208a44b9f1b63919883
+Author: Hauke Mehrtens <hauke@hauke-m.de>
+Date:   Wed Nov 5 23:31:07 2014 +0100
+
+    b43: fix NULL pointer dereference in b43_phy_copy()
+    
+    phy_read and phy_write are not set for every phy any more sine this:
+    commit d342b95dd735014a590f9051b1ba227eb54ca8f6
+    Author: RafaÅ‚ MiÅ‚ecki <zajec5@gmail.com>
+    Date:   Thu Jul 31 21:59:43 2014 +0200
+    
+        b43: don't duplicate common PHY read/write ops
+    
+    b43_phy_copy() accesses phy_read and phy_write directly and will fail
+    with some phys. This patch fixes the regression by using the
+    b43_phy_read() and b43_phy_write() functions which should be used for
+    read and write access.
+    
+    This should fix this bug report:
+    https://bugzilla.kernel.org/show_bug.cgi?id=87731
+    
+    Reported-by: Volker Kempter <v.kempter@pe.tu-clausthal.de>
+    Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+
+commit ddf93ad61cb009ed05ff2547923fb269a3604408
+Author: Miaoqing Pan <miaoqing@qca.qualcomm.com>
+Date:   Thu Nov 6 10:52:23 2014 +0530
+
+    ath9k: Fix RTC_DERIVED_CLK usage
+    
+    Based on the reference clock, which could be 25MHz or 40MHz,
+    AR_RTC_DERIVED_CLK is programmed differently for AR9340 and AR9550.
+    But, when a chip reset is done, processing the initvals
+    sets the register back to the default value.
+    
+    Fix this by moving the code in ath9k_hw_init_pll() to
+    ar9003_hw_override_ini(). Also, do this override for AR9531.
+    
+    Cc: stable@vger.kernel.org
+    Signed-off-by: Miaoqing Pan <miaoqing@qca.qualcomm.com>
+    Signed-off-by: Sujith Manoharan <c_manoha@qca.qualcomm.com>
+
 commit 536b05e91ac2715942f792184c26beb43dbaa522
 Author: Felix Fietkau <nbd@openwrt.org>
 Date:   Mon Oct 27 11:50:28 2014 +0100
@@ -998,6 +1059,36 @@ Date:   Mon May 19 21:20:49 2014 +0200
 +	set_sta_flag(sta, WLAN_STA_PS_DELIVER);
 +	clear_sta_flag(sta, WLAN_STA_PS_STA);
  	ieee80211_sta_ps_deliver_wakeup(sta);
+ }
+ 
+@@ -1646,11 +1648,14 @@ ieee80211_rx_h_defragment(struct ieee802
+ 	sc = le16_to_cpu(hdr->seq_ctrl);
+ 	frag = sc & IEEE80211_SCTL_FRAG;
+ 
+-	if (likely((!ieee80211_has_morefrags(fc) && frag == 0) ||
+-		   is_multicast_ether_addr(hdr->addr1))) {
+-		/* not fragmented */
++	if (likely(!ieee80211_has_morefrags(fc) && frag == 0))
++		goto out;
++
++	if (is_multicast_ether_addr(hdr->addr1)) {
++		rx->local->dot11MulticastReceivedFrameCount++;
+ 		goto out;
+ 	}
++
+ 	I802_DEBUG_INC(rx->local->rx_handlers_fragments);
+ 
+ 	if (skb_linearize(rx->skb))
+@@ -1743,10 +1748,7 @@ ieee80211_rx_h_defragment(struct ieee802
+  out:
+ 	if (rx->sta)
+ 		rx->sta->rx_packets++;
+-	if (is_multicast_ether_addr(hdr->addr1))
+-		rx->local->dot11MulticastReceivedFrameCount++;
+-	else
+-		ieee80211_led_rx(rx->local);
++	ieee80211_led_rx(rx->local);
+ 	return RX_CONTINUE;
  }
  
 --- a/net/mac80211/sta_info.h
@@ -3255,7 +3346,27 @@ Date:   Mon May 19 21:20:49 2014 +0200
  static u32 ar9003_hw_compute_pll_control(struct ath_hw *ah,
  					 struct ath9k_channel *chan)
  {
-@@ -1779,7 +1796,12 @@ void ar9003_hw_attach_phy_ops(struct ath
+@@ -647,6 +664,19 @@ static void ar9003_hw_override_ini(struc
+ 		ah->enabled_cals |= TX_CL_CAL;
+ 	else
+ 		ah->enabled_cals &= ~TX_CL_CAL;
++
++	if (AR_SREV_9340(ah) || AR_SREV_9531(ah) || AR_SREV_9550(ah)) {
++		if (ah->is_clk_25mhz) {
++			REG_WRITE(ah, AR_RTC_DERIVED_CLK, 0x17c << 1);
++			REG_WRITE(ah, AR_SLP32_MODE, 0x0010f3d7);
++			REG_WRITE(ah, AR_SLP32_INC, 0x0001e7ae);
++		} else {
++			REG_WRITE(ah, AR_RTC_DERIVED_CLK, 0x261 << 1);
++			REG_WRITE(ah, AR_SLP32_MODE, 0x0010f400);
++			REG_WRITE(ah, AR_SLP32_INC, 0x0001e800);
++		}
++		udelay(100);
++	}
+ }
+ 
+ static void ar9003_hw_prog_ini(struct ath_hw *ah,
+@@ -1779,7 +1809,12 @@ void ar9003_hw_attach_phy_ops(struct ath
  
  	priv_ops->rf_set_freq = ar9003_hw_set_channel;
  	priv_ops->spur_mitigate_freq = ar9003_hw_spur_mitigate;
@@ -3308,6 +3419,26 @@ Date:   Mon May 19 21:20:49 2014 +0200
  	if (AR_SREV_9565(ah))
  		pll |= 0x40000;
  	REG_WRITE(ah, AR_RTC_PLL_CONTROL, pll);
+@@ -858,19 +861,6 @@ static void ath9k_hw_init_pll(struct ath
+ 	udelay(RTC_PLL_SETTLE_DELAY);
+ 
+ 	REG_WRITE(ah, AR_RTC_SLEEP_CLK, AR_RTC_FORCE_DERIVED_CLK);
+-
+-	if (AR_SREV_9340(ah) || AR_SREV_9550(ah)) {
+-		if (ah->is_clk_25mhz) {
+-			REG_WRITE(ah, AR_RTC_DERIVED_CLK, 0x17c << 1);
+-			REG_WRITE(ah, AR_SLP32_MODE, 0x0010f3d7);
+-			REG_WRITE(ah,  AR_SLP32_INC, 0x0001e7ae);
+-		} else {
+-			REG_WRITE(ah, AR_RTC_DERIVED_CLK, 0x261 << 1);
+-			REG_WRITE(ah, AR_SLP32_MODE, 0x0010f400);
+-			REG_WRITE(ah,  AR_SLP32_INC, 0x0001e800);
+-		}
+-		udelay(100);
+-	}
+ }
+ 
+ static void ath9k_hw_init_interrupt_masks(struct ath_hw *ah,
 --- a/drivers/net/wireless/ath/ath9k/reg.h
 +++ b/drivers/net/wireless/ath/ath9k/reg.h
 @@ -1236,12 +1236,23 @@ enum {
@@ -3352,3 +3483,15 @@ Date:   Mon May 19 21:20:49 2014 +0200
  }
  EXPORT_SYMBOL(ath9k_cmn_update_txpow);
  
+--- a/drivers/net/wireless/b43/phy_common.c
++++ b/drivers/net/wireless/b43/phy_common.c
+@@ -276,8 +276,7 @@ void b43_phy_write(struct b43_wldev *dev
+ void b43_phy_copy(struct b43_wldev *dev, u16 destreg, u16 srcreg)
+ {
+ 	assert_mac_suspended(dev);
+-	dev->phy.ops->phy_write(dev, destreg,
+-		dev->phy.ops->phy_read(dev, srcreg));
++	b43_phy_write(dev, destreg, b43_phy_read(dev, srcreg));
+ }
+ 
+ void b43_phy_mask(struct b43_wldev *dev, u16 offset, u16 mask)

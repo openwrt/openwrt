@@ -817,7 +817,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	if (ops->exit)
  		ops->exit(dev);
  }
-@@ -403,9 +411,6 @@ int b43_switch_channel(struct b43_wldev 
+@@ -402,9 +410,6 @@ int b43_switch_channel(struct b43_wldev 
  	u16 channelcookie, savedcookie;
  	int err;
  
@@ -827,7 +827,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	/* First we set the channel radio code to prevent the
  	 * firmware from sending ghost packets.
  	 */
-@@ -423,7 +428,6 @@ int b43_switch_channel(struct b43_wldev 
+@@ -422,7 +427,6 @@ int b43_switch_channel(struct b43_wldev 
  	if (err)
  		goto err_restore_cookie;
  
@@ -835,7 +835,7 @@ This brings b43 up to wireless-testing/master master-2014-07-29-1
  	/* Wait for the radio to tune to the channel and stabilize. */
  	msleep(8);
  
-@@ -542,10 +546,9 @@ void b43_phyop_switch_analog_generic(str
+@@ -541,10 +545,9 @@ void b43_phyop_switch_analog_generic(str
  }
  
  
