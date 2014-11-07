@@ -173,7 +173,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1405,6 +1405,61 @@ static const struct file_operations fops
+@@ -1406,6 +1406,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -235,7 +235,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1429,6 +1484,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1430,6 +1485,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);

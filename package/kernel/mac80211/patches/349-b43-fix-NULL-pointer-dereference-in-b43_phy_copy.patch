@@ -1,0 +1,38 @@
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Wed, 5 Nov 2014 23:31:07 +0100
+Subject: [PATCH] b43: fix NULL pointer dereference in b43_phy_copy()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+phy_read and phy_write are not set for every phy any more sine this:
+commit d342b95dd735014a590f9051b1ba227eb54ca8f6
+Author: RafaÅ‚ MiÅ‚ecki <zajec5@gmail.com>
+Date:   Thu Jul 31 21:59:43 2014 +0200
+
+    b43: don't duplicate common PHY read/write ops
+
+b43_phy_copy() accesses phy_read and phy_write directly and will fail
+with some phys. This patch fixes the regression by using the
+b43_phy_read() and b43_phy_write() functions which should be used for
+read and write access.
+
+This should fix this bug report:
+https://bugzilla.kernel.org/show_bug.cgi?id=87731
+
+Reported-by: Volker Kempter <v.kempter@pe.tu-clausthal.de>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+
+--- a/drivers/net/wireless/b43/phy_common.c
++++ b/drivers/net/wireless/b43/phy_common.c
+@@ -301,8 +301,7 @@ void b43_phy_write(struct b43_wldev *dev
+ void b43_phy_copy(struct b43_wldev *dev, u16 destreg, u16 srcreg)
+ {
+ 	assert_mac_suspended(dev);
+-	dev->phy.ops->phy_write(dev, destreg,
+-		dev->phy.ops->phy_read(dev, srcreg));
++	b43_phy_write(dev, destreg, b43_phy_read(dev, srcreg));
+ }
+ 
+ void b43_phy_mask(struct b43_wldev *dev, u16 offset, u16 mask)
