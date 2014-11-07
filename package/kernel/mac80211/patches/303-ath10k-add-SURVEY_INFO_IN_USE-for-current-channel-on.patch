@@ -1,13 +1,14 @@
 From: Felix Fietkau <nbd@openwrt.org>
 Date: Wed, 22 Oct 2014 18:44:03 +0200
-Subject: [PATCH] ath10k: add SURVEY_INFO_IN_USE for current channel on survey
+Subject: [PATCH] ath10k: add SURVEY_INFO_IN_USE for current channel on
+ survey
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
 
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -3975,6 +3975,9 @@ static int ath10k_get_survey(struct ieee
+@@ -4044,6 +4044,9 @@ static int ath10k_get_survey(struct ieee
  
  	survey->channel = &sband->channels[idx];
  
