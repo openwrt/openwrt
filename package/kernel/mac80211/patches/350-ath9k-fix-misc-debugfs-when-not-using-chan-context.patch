@@ -1,0 +1,33 @@
+From: Ben Greear <greearb@candelatech.com>
+Date: Tue, 4 Nov 2014 15:22:49 -0800
+Subject: [PATCH] ath9k: fix misc debugfs when not using chan context
+
+When channel-context is not enabled, all vifs belong to
+the first context, but it is not configured as 'assigned'.
+
+Fix misc debugfs file to print out info for non-assigned
+contexts, and also print whether ctx is assigned or not.
+
+Signed-off-by: Ben Greear <greearb@candelatech.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/debug.c
++++ b/drivers/net/wireless/ath/ath9k/debug.c
+@@ -828,13 +828,14 @@ static ssize_t read_file_misc(struct fil
+ 
+ 	i = 0;
+ 	ath_for_each_chanctx(sc, ctx) {
+-		if (!ctx->assigned || list_empty(&ctx->vifs))
++		if (list_empty(&ctx->vifs))
+ 			continue;
+ 		ath9k_calculate_iter_data(sc, ctx, &iter_data);
+ 
+ 		len += scnprintf(buf + len, sizeof(buf) - len,
+-			"VIF-COUNTS: CTX %i AP: %i STA: %i MESH: %i WDS: %i",
+-			i++, iter_data.naps, iter_data.nstations,
++			"VIFS: CTX %i(%i) AP: %i STA: %i MESH: %i WDS: %i",
++			i++, (int)(ctx->assigned), iter_data.naps,
++			iter_data.nstations,
+ 			iter_data.nmeshes, iter_data.nwds);
+ 		len += scnprintf(buf + len, sizeof(buf) - len,
+ 			" ADHOC: %i TOTAL: %hi BEACON-VIF: %hi\n",
