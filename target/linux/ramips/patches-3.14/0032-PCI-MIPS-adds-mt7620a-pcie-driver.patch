@@ -11,9 +11,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 365 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7620a.c
 
---- a/arch/mips/pci/Makefile
-+++ b/arch/mips/pci/Makefile
-@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
+Index: linux-3.14.18/arch/mips/pci/Makefile
+===================================================================
+--- linux-3.14.18.orig/arch/mips/pci/Makefile	2014-11-07 11:21:04.465149498 +0100
++++ linux-3.14.18/arch/mips/pci/Makefile	2014-11-07 11:21:04.477149928 +0100
+@@ -42,6 +42,7 @@
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
  obj-$(CONFIG_SOC_MT7621)	+= pci-mt7621.o
@@ -21,9 +23,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
---- /dev/null
-+++ b/arch/mips/pci/pci-mt7620a.c
-@@ -0,0 +1,401 @@
+Index: linux-3.14.18/arch/mips/pci/pci-mt7620a.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/pci/pci-mt7620a.c	2014-11-07 11:26:15.884263666 +0100
+@@ -0,0 +1,412 @@
 +/*
 + *  Ralink MT7620A SoC PCI support
 + *
@@ -224,8 +228,19 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.write	= pci_config_write,
 +};
 +
-+static struct resource mt7620_res_pci_mem1;
-+static struct resource mt7620_res_pci_io1;
++static struct resource mt7620_res_pci_mem1 = {
++	.name	= "pci memory",
++	.start	= RALINK_PCI_MM_MAP_BASE,
++	.end	= (u32) ((RALINK_PCI_MM_MAP_BASE + (unsigned char *)0x0fffffff)),
++	.flags	= IORESOURCE_MEM,
++};
++static struct resource mt7620_res_pci_io1 = {
++	.name	= "pci io",
++	.start	= RALINK_PCI_IO_MAP_BASE,
++	.end	= (u32) ((RALINK_PCI_IO_MAP_BASE + (unsigned char *)0x0ffff)),
++	.flags	= IORESOURCE_IO,
++};
++
 +struct pci_controller mt7620_controller = {
 +	.pci_ops	= &mt7620_pci_ops,
 +	.mem_resource	= &mt7620_res_pci_mem1,
@@ -425,9 +440,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +arch_initcall(mt7620_pci_init);
---- a/arch/mips/ralink/Kconfig
-+++ b/arch/mips/ralink/Kconfig
-@@ -39,6 +39,7 @@ choice
+Index: linux-3.14.18/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/Kconfig	2014-11-07 11:21:04.465149498 +0100
++++ linux-3.14.18/arch/mips/ralink/Kconfig	2014-11-07 11:21:04.477149928 +0100
+@@ -39,6 +39,7 @@
  		bool "MT7620/8"
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
@@ -435,9 +452,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	config SOC_MT7621
  		bool "MT7621"
---- a/arch/mips/include/asm/mach-ralink/mt7620.h
-+++ b/arch/mips/include/asm/mach-ralink/mt7620.h
-@@ -19,6 +19,7 @@ enum mt762x_soc_type {
+Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
+===================================================================
+--- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-07 11:21:04.453149067 +0100
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-07 11:21:04.477149928 +0100
+@@ -19,6 +19,7 @@
  	MT762X_SOC_MT7620N,
  	MT762X_SOC_MT7628AN,
  };
