@@ -24,6 +24,16 @@
  	help
  	  Driver to provide access to the GPIO pins on the bus.
  
+--- a/drivers/ssb/b43_pci_bridge.c
++++ b/drivers/ssb/b43_pci_bridge.c
+@@ -38,6 +38,7 @@ static const struct pci_device_id b43_pc
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x432b) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x432c) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4350) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4351) },
+ 	{ 0, },
+ };
+ MODULE_DEVICE_TABLE(pci, b43_pci_bridge_tbl);
 --- a/drivers/ssb/driver_chipcommon_sflash.c
 +++ b/drivers/ssb/driver_chipcommon_sflash.c
 @@ -9,6 +9,19 @@
