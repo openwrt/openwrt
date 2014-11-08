@@ -1,6 +1,6 @@
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -36,6 +36,7 @@
+@@ -40,6 +40,7 @@
  #define ML_MAGIC2			0x26594131
  #define TRX_MAGIC			0x30524448
  #define SQSH_MAGIC			0x71736873	/* shsq */
@@ -8,7 +8,7 @@
  
  struct trx_header {
  	uint32_t magic;
-@@ -46,7 +47,7 @@ struct trx_header {
+@@ -50,7 +51,7 @@ struct trx_header {
  	uint32_t offset[3];
  } __packed;
  
@@ -17,7 +17,7 @@
  				 u64 offset, uint32_t mask_flags)
  {
  	part->name = name;
-@@ -54,6 +55,26 @@ static void bcm47xxpart_add_part(struct
+@@ -58,6 +59,26 @@ static void bcm47xxpart_add_part(struct
  	part->mask_flags = mask_flags;
  }
  
@@ -44,7 +44,7 @@
  static int bcm47xxpart_parse(struct mtd_info *master,
  			     struct mtd_partition **pparts,
  			     struct mtd_part_parser_data *data)
-@@ -147,6 +168,8 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -151,6 +172,8 @@ static int bcm47xxpart_parse(struct mtd_
  
  		/* TRX */
  		if (buf[0x000 / 4] == TRX_MAGIC) {
@@ -53,14 +53,14 @@
  			if (BCM47XXPART_MAX_PARTS - curr_part < 4) {
  				pr_warn("Not enough partitions left to register trx, scanning stopped!\n");
  				break;
-@@ -177,7 +200,9 @@ static int bcm47xxpart_parse(struct mtd_
- 			 * trx->length - trx->offset[i]. We don't fill it as
+@@ -186,8 +209,9 @@ static int bcm47xxpart_parse(struct mtd_
  			 * we want to have jffs2 (overlay) in the same mtd.
  			 */
--			bcm47xxpart_add_part(&parts[curr_part++], "rootfs",
-+			name = bcm47xxpart_trx_data_part_name(master,
-+							      offset + trx->offset[i]);
-+			bcm47xxpart_add_part(&parts[curr_part++], name,
- 					     offset + trx->offset[i], 0);
- 			i++;
- 
+ 			if (trx->offset[i]) {
++				name = bcm47xxpart_trx_data_part_name(master, offset + trx->offset[i]);
+ 				bcm47xxpart_add_part(&parts[curr_part++],
+-						     "rootfs",
++						     name,
+ 						     offset + trx->offset[i],
+ 						     0);
+ 				i++;
