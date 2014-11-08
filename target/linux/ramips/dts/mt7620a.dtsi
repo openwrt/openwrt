@@ -434,6 +434,9 @@
 		reg = <0x10140000 0x100
 			0x10142000 0x100>;
 
+		#address-cells = <3>;
+		#size-cells = <2>;
+
 		resets = <&rstctrl 26>;
 		reset-names = "pcie0";
 
@@ -444,6 +447,10 @@
 
 		pcie-bridge {
 			reg = <0x0000 0 0 0 0>;
+
+			#address-cells = <3>;
+			#size-cells = <2>;
+
 			device_type = "pci";
 		};
 	};
