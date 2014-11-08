@@ -92,6 +92,14 @@
 
 	pcie@10140000 {
 		status = "okay";
+
+		pcie-bridge {
+			mt76@0,0 {
+				reg = <0x0000 0 0 0 0>;
+				device_type = "pci";
+				ralink,mtd-eeprom = <&factory 32768>;
+			};
+		};
 	};
 	
 	gpio-leds {
