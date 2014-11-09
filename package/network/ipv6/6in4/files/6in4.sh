@@ -67,23 +67,42 @@ proto_6in4_setup() {
 		[ -n "$updatekey" ] && password="$updatekey"
 
 		local http="http"
-		local wget_opts="-qO/dev/null"
-		if wget --version | grep -qF "+https"; then
-			http="https"
-			[ -z "$(find ${SSL_CERT_DIR-/etc/ssl/certs} -name "*.0" 2>/dev/null)" ] && {
-				wget_opts="$wget_opts --no-check-certificate"
-			}
+		local urlget="wget"
+		local urlget_opts="-qO/dev/stdout"
+		local ca_path="${SSL_CERT_DIR-/etc/ssl/certs}"
+
+		if [ -n "$(which curl)" ]; then
+			urlget="curl"
+			urlget_opts="-s -S"
+			if curl -V | grep "Protocols:" | grep -qF "https"; then
+				http="https"
+				urlget_opts="$urlget_opts --capath $ca_path"
+			fi
 		fi
+		if [ "$http" = "http" ] &&
+			wget --version 2>&1 | grep -qF "+https"; then
+			urlget="wget"
+			urlget_opts="-qO/dev/stdout --ca-directory=$ca_path"
+			http="https"
+		fi
+		[ "$http" = "https" -a -z "$(find $ca_path -name "*.0" 2>/dev/null)" ] && {
+			if [ "$urlget" = "curl" ]; then
+				urlget_opts="$urlget_opts -k"
+			else
+				urlget_opts="$urlget_opts --no-check-certificate"
+			fi
+		}
 
 		local url="$http://ipv4.tunnelbroker.net/nic/update?username=$username&password=$password&hostname=$tunnelid"
 		local try=0
 		local max=3
 
 		while [ $((++try)) -le $max ]; do
-			( exec wget $wget_opts "$url" 2>/dev/null ) &
+			( exec $urlget $urlget_opts "$url" | logger -t "$link" ) &
 			local pid=$!
-			( sleep 5; kill $pid 2>/dev/null ) &
+			( sleep 20; kill $pid 2>/dev/null ) &
 			wait $pid && break
+			sleep 20;
 		done
 	}
 }
@@ -93,7 +112,7 @@ proto_6in4_teardown() {
 }
 
 proto_6in4_init_config() {
-	no_device=1             
+	no_device=1
 	available=1
 
 	proto_config_add_string "ipaddr"
