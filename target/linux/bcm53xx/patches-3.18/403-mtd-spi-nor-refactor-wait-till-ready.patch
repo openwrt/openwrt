@@ -36,7 +36,7 @@
  		return ret;
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -163,81 +163,69 @@ static inline int set_4byte(struct spi_n
+@@ -165,81 +165,69 @@ static inline int set_4byte(struct spi_n
  		return nor->write_reg(nor, SPINOR_OP_BRWR, nor->cmd_buf, 1, 0);
  	}
  }
@@ -154,7 +154,7 @@
  	return nor->write_reg(nor, SPINOR_OP_CHIP_ERASE, NULL, 0, 0);
  }
  
-@@ -290,6 +278,8 @@ static int spi_nor_erase(struct mtd_info
+@@ -292,6 +280,8 @@ static int spi_nor_erase(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -163,7 +163,7 @@
  	/* whole-chip erase? */
  	if (len == mtd->size) {
  		if (erase_chip(nor)) {
-@@ -297,6 +287,10 @@ static int spi_nor_erase(struct mtd_info
+@@ -299,6 +289,10 @@ static int spi_nor_erase(struct mtd_info
  			goto erase_err;
  		}
  
@@ -174,7 +174,7 @@
  	/* REVISIT in some cases we could speed up erasing large regions
  	 * by using SPINOR_OP_SE instead of SPINOR_OP_BE_4K.  We may have set up
  	 * to use "small sector erase", but that's not always optimal.
-@@ -312,9 +306,15 @@ static int spi_nor_erase(struct mtd_info
+@@ -314,9 +308,15 @@ static int spi_nor_erase(struct mtd_info
  
  			addr += mtd->erasesize;
  			len -= mtd->erasesize;
@@ -190,7 +190,7 @@
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
  
  	instr->state = MTD_ERASE_DONE;
-@@ -339,11 +339,6 @@ static int spi_nor_lock(struct mtd_info
+@@ -341,11 +341,6 @@ static int spi_nor_lock(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -202,7 +202,7 @@
  	status_old = read_sr(nor);
  
  	if (offset < mtd->size - (mtd->size / 2))
-@@ -386,11 +381,6 @@ static int spi_nor_unlock(struct mtd_inf
+@@ -388,11 +383,6 @@ static int spi_nor_unlock(struct mtd_inf
  	if (ret)
  		return ret;
  
@@ -214,7 +214,7 @@
  	status_old = read_sr(nor);
  
  	if (offset+len > mtd->size - (mtd->size / 64))
-@@ -703,11 +693,6 @@ static int sst_write(struct mtd_info *mt
+@@ -704,11 +694,6 @@ static int sst_write(struct mtd_info *mt
  	if (ret)
  		return ret;
  
@@ -226,7 +226,7 @@
  	write_enable(nor);
  
  	nor->sst_write_second = false;
-@@ -719,7 +704,7 @@ static int sst_write(struct mtd_info *mt
+@@ -720,7 +705,7 @@ static int sst_write(struct mtd_info *mt
  
  		/* write one byte. */
  		nor->write(nor, to, 1, retlen, buf);
@@ -235,7 +235,7 @@
  		if (ret)
  			goto time_out;
  	}
-@@ -731,7 +716,7 @@ static int sst_write(struct mtd_info *mt
+@@ -732,7 +717,7 @@ static int sst_write(struct mtd_info *mt
  
  		/* write two bytes. */
  		nor->write(nor, to, 2, retlen, buf + actual);
@@ -244,7 +244,7 @@
  		if (ret)
  			goto time_out;
  		to += 2;
-@@ -740,7 +725,7 @@ static int sst_write(struct mtd_info *mt
+@@ -741,7 +726,7 @@ static int sst_write(struct mtd_info *mt
  	nor->sst_write_second = false;
  
  	write_disable(nor);
@@ -253,7 +253,7 @@
  	if (ret)
  		goto time_out;
  
-@@ -751,7 +736,7 @@ static int sst_write(struct mtd_info *mt
+@@ -752,7 +737,7 @@ static int sst_write(struct mtd_info *mt
  		nor->program_opcode = SPINOR_OP_BP;
  		nor->write(nor, to, 1, retlen, buf + actual);
  
@@ -262,7 +262,7 @@
  		if (ret)
  			goto time_out;
  		write_disable(nor);
-@@ -779,11 +764,6 @@ static int spi_nor_write(struct mtd_info
+@@ -780,11 +765,6 @@ static int spi_nor_write(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -274,7 +274,7 @@
  	write_enable(nor);
  
  	page_offset = to & (nor->page_size - 1);
-@@ -802,16 +782,20 @@ static int spi_nor_write(struct mtd_info
+@@ -803,16 +783,20 @@ static int spi_nor_write(struct mtd_info
  			if (page_size > nor->page_size)
  				page_size = nor->page_size;
  
@@ -297,7 +297,7 @@
  }
  
  static int macronix_quad_enable(struct spi_nor *nor)
-@@ -824,7 +808,7 @@ static int macronix_quad_enable(struct s
+@@ -825,7 +809,7 @@ static int macronix_quad_enable(struct s
  	nor->cmd_buf[0] = val | SR_QUAD_EN_MX;
  	nor->write_reg(nor, SPINOR_OP_WRSR, nor->cmd_buf, 1, 0);
  
@@ -306,7 +306,7 @@
  		return 1;
  
  	ret = read_sr(nor);
-@@ -906,8 +890,6 @@ static int spi_nor_check(struct spi_nor
+@@ -907,8 +891,6 @@ static int spi_nor_check(struct spi_nor
  
  	if (!nor->read_id)
  		nor->read_id = spi_nor_read_id;
@@ -315,7 +315,7 @@
  
  	return 0;
  }
-@@ -978,9 +960,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -983,9 +965,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else
  		mtd->_write = spi_nor_write;
  

@@ -9,19 +9,19 @@
 +	return spi_nor_read_id(nor);
  
  found_name:
- 	id = spi_nor_match_id(name);
+ //	id = spi_nor_match_id(name);
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -630,7 +630,7 @@ const struct spi_device_id spi_nor_ids[]
+@@ -631,7 +631,7 @@ static const struct spi_device_id spi_no
+ 	{ },
  };
- EXPORT_SYMBOL_GPL(spi_nor_ids);
  
 -static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
 +const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
  {
  	int			tmp;
  	u8			id[5];
-@@ -661,6 +661,7 @@ static const struct spi_device_id *spi_n
+@@ -662,6 +662,7 @@ static const struct spi_device_id *spi_n
  	dev_err(nor->dev, "unrecognized JEDEC id %06x\n", jedec);
  	return ERR_PTR(-ENODEV);
  }

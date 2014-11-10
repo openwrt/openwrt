@@ -198,11 +198,11 @@
 +	return ERR_PTR(-ENODEV);
 +
 +found_name:
-+	id = spi_nor_match_id(name);
-+	if (!id) {
-+		dev_err(dev, "No matching entry for %s flash\n", name);
-+		return ERR_PTR(-ENOENT);
-+	}
++//	id = spi_nor_match_id(name);
++//	if (!id) {
++//		dev_err(dev, "No matching entry for %s flash\n", name);
++//		return ERR_PTR(-ENOENT);
++//	}
 +
 +	return id;
 +}
@@ -235,7 +235,7 @@
 +	b53sf->nor.read_id = bcm53xxspiflash_read_id;
 +	b53sf->nor.priv = b53sf;
 +
-+	err = spi_nor_scan(&b53sf->nor, NULL, SPI_NOR_NORMAL);
++	err = spi_nor_scan(&b53sf->nor, "w25q128", SPI_NOR_NORMAL);
 +	if (err)
 +		return err;
 +

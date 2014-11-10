@@ -1,6 +1,6 @@
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -89,6 +89,7 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -93,6 +93,7 @@ static int bcm47xxpart_parse(struct mtd_
  	int trx_part = -1;
  	int last_trx_part = -1;
  	int possible_nvram_sizes[] = { 0x8000, 0xF000, 0x10000, };
@@ -8,7 +8,7 @@
  
  	if (blocksize <= 0x10000)
  		blocksize = 0x10000;
-@@ -269,12 +270,23 @@ static int bcm47xxpart_parse(struct mtd_
+@@ -281,12 +282,23 @@ static int bcm47xxpart_parse(struct mtd_
  		if (buf[0] == NVRAM_HEADER) {
  			bcm47xxpart_add_part(&parts[curr_part++], "nvram",
  					     master->size - blocksize, 0);
