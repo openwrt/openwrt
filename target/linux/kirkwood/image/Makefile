@@ -117,6 +117,9 @@ Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 Image/BuildKernel/Template/DOCKSTAR=$(call Image/BuildKernel/Template,dockstar)
 Image/InstallKernel/Template/DOCKSTAR=$(call Image/InstallKernel/Template,dockstar)
 
+Image/BuildKernel/Template/EA3500=$(call Image/BuildKernel/Template,ea3500)
+Image/InstallKernel/Template/EA3500=$(call Image/InstallKernel/Template,ea3500)
+
 Image/BuildKernel/Template/EA4500=$(call Image/BuildKernel/Template,ea4500)
 Image/InstallKernel/Template/EA4500=$(call Image/InstallKernel/Template,ea4500)
 
