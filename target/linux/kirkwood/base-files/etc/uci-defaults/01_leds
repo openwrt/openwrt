@@ -13,6 +13,9 @@ case "$board" in
 	ucidef_set_led_default "health" "status:green:health" "1"
 	ucidef_set_led_default "fault" "status:orange:fault" "1"
 	;;
+"ea3500")
+	ucidef_set_led_default "power" "ea3500:green:power" "1"
+	;;
 "ea4500")
 	ucidef_set_led_default "health" "ea4500:white:health" "1"
 	ucidef_set_led_default "pulse" "ea4500:white:pulse" "1"

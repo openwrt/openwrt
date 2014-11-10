@@ -40,6 +40,9 @@ case "$board" in
 "pogo_e02")
 	set_lan_dhcp "eth0"
 	;;
+"ea3500")
+	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	;;
 "ea4500")
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	;;
