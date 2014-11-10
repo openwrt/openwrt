@@ -56,7 +56,7 @@
  		skb = NULL;
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
-@@ -116,7 +116,7 @@ void br_deliver(const struct net_bridge_
+@@ -117,7 +117,7 @@ EXPORT_SYMBOL_GPL(br_deliver);
  /* called with rcu_read_lock */
  void br_forward(const struct net_bridge_port *to, struct sk_buff *skb, struct sk_buff *skb0)
  {
@@ -65,7 +65,7 @@
  		if (skb0)
  			deliver_clone(to, skb, __br_forward);
  		else
-@@ -172,7 +172,7 @@ static void br_flood(struct net_bridge *
+@@ -173,7 +173,7 @@ static void br_flood(struct net_bridge *
  		     struct sk_buff *skb0,
  		     void (*__packet_hook)(const struct net_bridge_port *p,
  					   struct sk_buff *skb),
@@ -74,7 +74,7 @@
  {
  	struct net_bridge_port *p;
  	struct net_bridge_port *prev;
-@@ -180,6 +180,8 @@ static void br_flood(struct net_bridge *
+@@ -181,6 +181,8 @@ static void br_flood(struct net_bridge *
  	prev = NULL;
  
  	list_for_each_entry_rcu(p, &br->port_list, list) {
@@ -83,7 +83,7 @@
  		/* Do not flood unicast traffic to ports that turn it off */
  		if (unicast && !(p->flags & BR_FLOOD))
  			continue;
-@@ -206,14 +208,14 @@ out:
+@@ -207,14 +209,14 @@ out:
  /* called with rcu_read_lock */
  void br_flood_deliver(struct net_bridge *br, struct sk_buff *skb, bool unicast)
  {

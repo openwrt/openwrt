@@ -52,7 +52,7 @@
   * When we die, we re-parent all our children, and try to:
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3147,6 +3147,7 @@ int can_nice(const struct task_struct *p
+@@ -3188,6 +3188,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }
@@ -62,7 +62,7 @@
  
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -1403,6 +1403,7 @@ void zap_page_range(struct vm_area_struc
+@@ -1404,6 +1404,7 @@ void zap_page_range(struct vm_area_struc
  	mmu_notifier_invalidate_range_end(mm, start, end);
  	tlb_finish_mmu(&tlb, start, end);
  }

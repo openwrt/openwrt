@@ -291,7 +291,7 @@
  	rcu_assign_pointer(*pp, p);
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
-@@ -167,6 +167,29 @@ out:
+@@ -168,6 +168,29 @@ out:
  	return p;
  }
  
@@ -321,7 +321,7 @@
  /* called under bridge lock */
  static void br_flood(struct net_bridge *br, struct sk_buff *skb,
  		     struct sk_buff *skb0,
-@@ -231,6 +254,7 @@ static void br_multicast_flood(struct ne
+@@ -232,6 +255,7 @@ static void br_multicast_flood(struct ne
  	struct net_bridge_port *prev = NULL;
  	struct net_bridge_port_group *p;
  	struct hlist_node *rp;
@@ -329,7 +329,7 @@
  
  	rp = rcu_dereference(hlist_first_rcu(&br->router_list));
  	p = mdst ? rcu_dereference(mdst->ports) : NULL;
-@@ -241,10 +265,19 @@ static void br_multicast_flood(struct ne
+@@ -242,10 +266,19 @@ static void br_multicast_flood(struct ne
  		rport = rp ? hlist_entry(rp, struct net_bridge_port, rlist) :
  			     NULL;
  

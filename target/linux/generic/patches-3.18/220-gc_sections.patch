@@ -25,9 +25,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
 +endif
 +
- cflags-y += -ffreestanding
- 
  #
+ # pass -msoft-float to GAS if it supports it.  However on newer binutils
+ # (specifically newer than 2.24.51.20140728) we then also need to explicitly
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
 @@ -67,7 +67,7 @@ SECTIONS

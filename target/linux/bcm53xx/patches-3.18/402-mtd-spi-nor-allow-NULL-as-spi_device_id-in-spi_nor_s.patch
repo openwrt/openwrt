@@ -1,8 +1,8 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -926,29 +926,23 @@ int spi_nor_scan(struct spi_nor *nor, co
- 	if (ret)
- 		return ret;
+@@ -931,29 +931,23 @@ int spi_nor_scan(struct spi_nor *nor, co
+ 	if (!id)
+ 		return -ENOENT;
  
 -	info = (void *)id->driver_data;
 -
