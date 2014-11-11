@@ -56,7 +56,7 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "i2c", "uartf", "rgmii1", "wled", "nd_sd";
+				ralink,group = "i2c", "uartf", "wled", "nd_sd";
 				ralink,function = "gpio";
 			};
 		};
@@ -64,7 +64,7 @@
 
 	ethernet@10100000 {
 		pinctrl-names = "default";
-		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+		pinctrl-0 = <&rgmii1_pins &mdio_pins>;
 
 		port@5 {
 			status = "okay";
