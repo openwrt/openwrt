@@ -34,6 +34,7 @@ $(eval $(call Profile,DIR-615-D))
 define Profile/DCS930
 	NAME:=Dlink DCS-930
         PACKAGES:=kmod-video-core kmod-video-uvc \
+		kmod-sound-core kmod-usb-audio \
 		kmod-usb-core kmod-usb-dwc2
 endef
 
