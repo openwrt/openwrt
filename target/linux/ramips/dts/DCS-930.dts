@@ -92,34 +92,12 @@
 		};
 	};
 
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x4>;
+	};
+
 	esw@10110000 {
 		ralink,portmap = <0x2f>;
-
-		port@0 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <0 4>;
-		};
-		port@1 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <1 3>;
-		};
-		port@2 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <2 2>;
-		};
-		port@3 {
-			compatible = "swconfig,port";
-			swconfig,segment = "lan";
-			swconfig,portmap = <3 1>;
-		};
-		port@4 {
-			compatible = "swconfig,port";
-			swconfig,segment = "wan";
-			swconfig,portmap = <4 0>;
-		};
 	};
 
 	wmac@10180000 {
