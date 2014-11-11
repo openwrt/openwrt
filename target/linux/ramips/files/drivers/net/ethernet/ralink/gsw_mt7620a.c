@@ -299,6 +299,9 @@ static void gsw_auto_poll(struct mt7620_gsw *gsw)
 		msb = phy;
 	}
 
+	if (lsb)
+		lsb--;
+
 	gsw_w32(gsw, PHY_AN_EN | PHY_PRE_EN | PMY_MDC_CONF(5) | (msb << 8) | lsb, ESW_PHY_POLLING);
 }
 
