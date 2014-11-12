@@ -1,7 +1,7 @@
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "ralink,mtk7620a-soc";
+	compatible = "mediatek,mtk7621-soc";
 
 	cpus {
 		cpu@0 {
@@ -201,28 +201,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		ralink,port-map = "llllw";
-		
 		interrupt-parent = <&gic>;
 		interrupts = <3>;
 
-/*		resets = <&rstctrl 21 &rstctrl 23>;
-		reset-names = "fe", "esw";
-
-		port@4 {
-			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
-			reg = <4>;
-
-			status = "disabled";
-		};
-
-		port@5 {
-			compatible = "ralink,mt7620a-gsw-port", "ralink,eth-port";
-			reg = <5>;
-
-			status = "disabled";
-		};
-*/
 		mdio-bus {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -230,9 +211,6 @@
 			phy1f: ethernet-phy@1f {
 				reg = <0x1f>;
 				phy-mode = "rgmii";
-		
-				interrupt-parent = <&gic>;
-				interrupts = <23>; 
 			};
 		};
 	};
@@ -240,6 +218,7 @@
 	gsw@1e110000 {
 		compatible = "ralink,mt7620a-gsw";
 		reg = <0x1e110000 8000>;
-
+		interrupt-parent = <&gic>;
+		interrupts = <23>; 
 	};
 };
