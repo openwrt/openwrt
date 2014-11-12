@@ -29,10 +29,13 @@
 #define MT7620_DMA_VID		(MT7620A_CDMA_CSG_CFG | 0x30)
 #define MT7620A_DMA_2B_OFFSET	BIT(31)
 #define MT7620A_RESET_FE	BIT(21)
+#define MT7621_RESET_FE		BIT(6)
 #define MT7620A_RESET_ESW	BIT(23)
 #define MT7620_L4_VALID		BIT(23)
+#define MT7621_L4_VALID		BIT(24)
 
 #define MT7620_TX_DMA_UDF	BIT(15)
+#define MT7621_TX_DMA_UDF	BIT(19)
 #define TX_DMA_FP_BMAP		((0xff) << 19)
 
 #define SYSC_REG_RESET_CTRL     0x34
@@ -51,6 +54,11 @@
 #define MT7620_GDM1_TX_GBCNT	(MT7620_REG_MIB_OFFSET + 0x300)
 #define MT7620_GDM2_TX_GBCNT	(MT7620_GDM1_TX_GBCNT + 0x40)
 
+#define GSW_REG_GDMA1_MAC_ADRL	0x508
+#define GSW_REG_GDMA1_MAC_ADRH	0x50C
+
+#define MT7621_FE_RST_GL	(FE_FE_OFFSET + 0x04)
+
 static const u32 mt7620_reg_table[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
 	[FE_REG_PDMA_RST_CFG] = RT5350_PDMA_RST_CFG,
@@ -65,12 +73,23 @@ static const u32 mt7620_reg_table[FE_REG_COUNT] = {
 	[FE_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
 	[FE_REG_FE_DMA_VID_BASE] = MT7620_DMA_VID,
 	[FE_REG_FE_COUNTER_BASE] = MT7620_GDM1_TX_GBCNT,
+	[FE_REG_FE_RST_GL] = MT7621_FE_RST_GL,
 };
 
 static void mt7620_fe_reset(void)
 {
-	rt_sysc_w32(MT7620A_RESET_FE | MT7620A_RESET_ESW, SYSC_REG_RESET_CTRL);
-	rt_sysc_w32(0, SYSC_REG_RESET_CTRL);
+	u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
+
+	rt_sysc_w32(val | MT7620A_RESET_FE | MT7620A_RESET_ESW, SYSC_REG_RESET_CTRL);
+	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+}
+
+static void mt7621_fe_reset(void)
+{
+	u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
+
+	rt_sysc_w32(val | MT7621_RESET_FE, SYSC_REG_RESET_CTRL);
+	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
 }
 
 static void mt7620_rxcsum_config(bool enable)
@@ -109,9 +128,26 @@ static int mt7620_fwd_config(struct fe_priv *priv)
 	return 0;
 }
 
+static int mt7621_fwd_config(struct fe_priv *priv)
+{
+	struct net_device *dev = priv_netdev(priv);
+
+	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~0xffff, MT7620A_GDMA1_FWD_CFG);
+
+	mt7620_txcsum_config((dev->features & NETIF_F_IP_CSUM));
+	mt7620_rxcsum_config((dev->features & NETIF_F_RXCSUM));
+
+	return 0;
+}
+
 static void mt7620_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
 {
 	priv->tx_dma[idx].txd4 = 0;
+}
+
+static void mt7621_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
+{
+	priv->tx_dma[idx].txd4 = BIT(25);
 }
 
 static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
@@ -128,9 +164,20 @@ static void mt7620_init_data(struct fe_soc_data *data,
 	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 		NETIF_F_HW_VLAN_CTAG_TX;
 
-	if (mt7620_get_eco() >= 5)
+	if (mt7620_get_eco() >= 5 || IS_ENABLED(CONFIG_SOC_MT7621))
 		netdev->hw_features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 |
 			NETIF_F_IPV6_CSUM;
+}
+
+static void mt7621_set_mac(struct fe_priv *priv, unsigned char *mac)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&priv->page_lock, flags);
+	fe_w32((mac[0] << 8) | mac[1], GSW_REG_GDMA1_MAC_ADRH);
+	fe_w32((mac[2] << 24) | (mac[3] << 16) | (mac[4] << 8) | mac[5],
+		GSW_REG_GDMA1_MAC_ADRL);
+	spin_unlock_irqrestore(&priv->page_lock, flags);
 }
 
 static struct fe_soc_data mt7620_data = {
@@ -156,8 +203,31 @@ static struct fe_soc_data mt7620_data = {
 	.mdio_adjust_link = mt7620_mdio_link_adjust,
 };
 
+static struct fe_soc_data mt7621_data = {
+	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.init_data = mt7620_init_data,
+	.reset_fe = mt7621_fe_reset,
+	.set_mac = mt7621_set_mac,
+	.fwd_config = mt7621_fwd_config,
+	.tx_dma = mt7621_tx_dma,
+	.rx_dma = mt7620_rx_dma,
+	.switch_init = mt7620_gsw_probe,
+	.switch_config = mt7621_gsw_config,
+	.reg_table = mt7620_reg_table,
+	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS | MT7620A_DMA_2B_OFFSET,
+	.rx_dly_int = RT5350_RX_DLY_INT,
+	.tx_dly_int = RT5350_TX_DLY_INT,
+	.checksum_bit = MT7621_L4_VALID,
+	.tx_udf_bit = MT7621_TX_DMA_UDF,
+	.has_carrier = mt7620a_has_carrier,
+	.mdio_read = mt7620_mdio_read,
+	.mdio_write = mt7620_mdio_write,
+	.mdio_adjust_link = mt7620_mdio_link_adjust,
+};
+
 const struct of_device_id of_fe_match[] = {
 	{ .compatible = "ralink,mt7620a-eth", .data = &mt7620_data },
+	{ .compatible = "ralink,mt7621-eth", .data = &mt7621_data },
 	{},
 };
 
