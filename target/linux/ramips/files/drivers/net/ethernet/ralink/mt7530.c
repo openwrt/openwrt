@@ -578,7 +578,7 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vl
 	mt7530_apply_config(swdev);
 
 	/* magic vodoo */
-	if (bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
+	if (!IS_ENABLED(CONFIG_SOC_MT7621) && bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
 	        dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
 		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
 	}

@@ -19,6 +19,7 @@
 #define _RALINK_GSW_MT7620_H__
 
 extern int mt7620_gsw_config(struct fe_priv *priv);
+extern int mt7621_gsw_config(struct fe_priv *priv);
 extern int mt7620_gsw_probe(struct fe_priv *priv);
 extern void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac);
 extern int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);

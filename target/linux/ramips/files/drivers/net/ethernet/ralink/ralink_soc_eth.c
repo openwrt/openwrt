@@ -79,6 +79,7 @@ static const u32 fe_reg_table_default[FE_REG_COUNT] = {
 	[FE_REG_FE_INT_STATUS] = FE_FE_INT_STATUS,
 	[FE_REG_FE_DMA_VID_BASE] = FE_DMA_VID0,
 	[FE_REG_FE_COUNTER_BASE] = FE_GDMA1_TX_GBCNT,
+	[FE_REG_FE_RST_GL] = FE_FE_RST_GL,
 };
 
 static const u32 *fe_reg_table = fe_reg_table_default;
@@ -390,10 +391,17 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 
 	do {
 		start = u64_stats_fetch_begin_bh(&hwstats->syncp);
-		storage->rx_packets = hwstats->rx_packets;
-		storage->tx_packets = hwstats->tx_packets;
-		storage->rx_bytes = hwstats->rx_bytes;
-		storage->tx_bytes = hwstats->tx_bytes;
+		if (IS_ENABLED(CONFIG_SOC_MT7621)) {
+			storage->rx_packets = dev->stats.rx_packets;
+			storage->tx_packets = dev->stats.tx_packets;
+			storage->rx_bytes = dev->stats.rx_bytes;
+			storage->tx_bytes = dev->stats.tx_bytes;
+		} else {
+			storage->rx_packets = dev->stats.rx_packets;
+			storage->tx_packets = dev->stats.tx_packets;
+			storage->rx_bytes = dev->stats.rx_bytes;
+			storage->tx_bytes = dev->stats.tx_bytes;
+		}
 		storage->collisions = hwstats->tx_collisions;
 		storage->rx_length_errors = hwstats->rx_short_errors +
 			hwstats->rx_long_errors;
@@ -441,9 +449,12 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 
 	/* VLAN header offload */
 	if (vlan_tx_tag_present(skb)) {
-		txd->txd4 |= TX_DMA_INS_VLAN |
-			((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
-			(vlan_tx_tag_get(skb) & 0xF);
+		if (IS_ENABLED(CONFIG_SOC_MT7620))
+			txd->txd4 |= TX_DMA_INS_VLAN |
+				((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
+				(vlan_tx_tag_get(skb) & 0xF);
+		else
+			txd->txd4 |= TX_DMA_INS_VLAN_MT7621 | vlan_tx_tag_get(skb);
 	}
 
 	/* TSO: fill MSS info in tcp checksum field */
@@ -951,8 +962,10 @@ static int fe_hw_init(struct net_device *dev)
 	if (priv->soc->fwd_config(priv))
 		netdev_err(dev, "unable to get clock\n");
 
-	fe_w32(1, FE_FE_RST_GL);
-	fe_w32(0, FE_FE_RST_GL);
+	if (fe_reg_table[FE_REG_FE_RST_GL]) {
+		fe_reg_w32(1, FE_REG_FE_RST_GL);
+		fe_reg_w32(0, FE_REG_FE_RST_GL);
+	}
 
 	return 0;
 }
