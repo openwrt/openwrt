@@ -12,9 +12,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 187 insertions(+)
  create mode 100644 drivers/gpio/gpio-mt7621.c
 
---- a/arch/mips/Kconfig
-+++ b/arch/mips/Kconfig
-@@ -437,6 +437,9 @@ config RALINK
+Index: linux-3.14.18/arch/mips/Kconfig
+===================================================================
+--- linux-3.14.18.orig/arch/mips/Kconfig	2014-11-14 14:22:08.782141921 +0100
++++ linux-3.14.18/arch/mips/Kconfig	2014-11-14 14:22:08.994149701 +0100
+@@ -437,6 +437,9 @@
  	select RESET_CONTROLLER
  	select PINCTRL
  	select PINCTRL_RT2880
@@ -24,9 +26,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
---- a/drivers/gpio/Kconfig
-+++ b/drivers/gpio/Kconfig
-@@ -827,6 +827,12 @@ config GPIO_BCM_KONA
+Index: linux-3.14.18/drivers/gpio/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/gpio/Kconfig	2014-11-14 14:22:08.982149261 +0100
++++ linux-3.14.18/drivers/gpio/Kconfig	2014-11-14 14:22:08.998149848 +0100
+@@ -827,6 +827,12 @@
  	help
  	  Turn on GPIO support for Broadcom "Kona" chips.
  
@@ -39,16 +43,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  comment "USB GPIO expanders:"
  
  config GPIO_VIPERBOARD
---- a/drivers/gpio/Makefile
-+++ b/drivers/gpio/Makefile
-@@ -100,3 +100,4 @@ obj-$(CONFIG_GPIO_WM8350)	+= gpio-wm8350
+Index: linux-3.14.18/drivers/gpio/Makefile
+===================================================================
+--- linux-3.14.18.orig/drivers/gpio/Makefile	2014-11-14 14:22:08.982149261 +0100
++++ linux-3.14.18/drivers/gpio/Makefile	2014-11-14 14:22:08.998149848 +0100
+@@ -100,3 +100,4 @@
  obj-$(CONFIG_GPIO_WM8994)	+= gpio-wm8994.o
  obj-$(CONFIG_GPIO_XILINX)	+= gpio-xilinx.o
  obj-$(CONFIG_GPIO_XTENSA)	+= gpio-xtensa.o
 +obj-$(CONFIG_GPIO_MT7621)	+= gpio-mt7621.o
---- /dev/null
-+++ b/drivers/gpio/gpio-mt7621.c
-@@ -0,0 +1,177 @@
+Index: linux-3.14.18/drivers/gpio/gpio-mt7621.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/gpio/gpio-mt7621.c	2014-11-14 14:36:19.321724539 +0100
+@@ -0,0 +1,178 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -178,6 +186,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	rg->chip.direction_output = mediatek_gpio_direction_output;
 +	rg->chip.get = mediatek_gpio_get;
 +	rg->chip.set = mediatek_gpio_set;
++	rg->bank = be32_to_cpu(*id);
 +
 +	/* set polarity to low for all gpios */
 +	mtk_gpio_w32(rg, GPIO_REG_POL, 0);
