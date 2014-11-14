@@ -9,12 +9,14 @@ OTHER_MENU:=Other modules
 define KernelPackage/sdhci-mt7620
   SUBMENU:=Other modules
   TITLE:=MT7620 SDCI
-  DEPENDS:=@TARGET_ramips_mt7620a +kmod-sdhci
+  DEPENDS:=@(TARGET_ramips_mt7620a||TARGET_ramips_mt7628||TARGET_ramips_mt7621) +kmod-sdhci
   KCONFIG:= \
-	CONFIG_MMC_SDHCI_MT7620
+	CONFIG_MTK_MMC \
+	CONFIG_MTK_AEE_KDUMP=n \
+	CONFIG_MTK_MMC_CD_POLL=n
   FILES:= \
-	$(LINUX_DIR)/drivers/mmc/host/sdhci-mt7620.ko
-  AUTOLOAD:=$(call AutoProbe,sdhci-mt7620,1)
+	$(LINUX_DIR)/drivers/mmc/host/mtk-mmc/mtk_sd.ko
+  AUTOLOAD:=$(call AutoProbe,mtk_sd,1)
 endef
 
 $(eval $(call KernelPackage,sdhci-mt7620))
