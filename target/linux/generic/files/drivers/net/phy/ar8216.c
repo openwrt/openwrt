@@ -1957,7 +1957,7 @@ ar8327_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 {
 	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
 	u8 *vt = &priv->vlan_table[val->port_vlan];
-	int i, j;
+	int i;
 
 	*vt = 0;
 	for (i = 0; i < val->len; i++) {
