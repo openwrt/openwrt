@@ -156,3 +156,4 @@ static void __init mr900_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_MR900, "MR900", "OpenMesh MR900", mr900_setup);
+MIPS_MACHINE(ATH79_MACH_MR900v2, "MR900v2", "OpenMesh MR900v2", mr900_setup);
