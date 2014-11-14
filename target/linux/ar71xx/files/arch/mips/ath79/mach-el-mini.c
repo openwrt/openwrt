@@ -40,7 +40,7 @@ static struct flash_platform_data mini_flash_data = {
 
 static struct gpio_led mini_leds_gpio[] __initdata = {
 	{
-		.name		= "ELINK:green:system",
+		.name		= "easylink:green:system",
 		.gpio		= MINI_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	},
