@@ -1,0 +1,12 @@
+Index: linux-3.14.18/arch/mips/ralink/reset.c
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/reset.c	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/arch/mips/ralink/reset.c	2014-11-14 14:28:44.548764125 +0100
+@@ -98,7 +98,6 @@
+ {
+ 	_machine_restart = ralink_restart;
+ 	_machine_halt = ralink_halt;
+-	pm_power_off = ralink_halt;
+ 
+ 	return 0;
+ }
