@@ -13,8 +13,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 Index: linux-3.14.18/arch/mips/pci/Makefile
 ===================================================================
---- linux-3.14.18.orig/arch/mips/pci/Makefile	2014-11-08 01:45:46.691495137 +0100
-+++ linux-3.14.18/arch/mips/pci/Makefile	2014-11-08 01:45:46.703495582 +0100
+--- linux-3.14.18.orig/arch/mips/pci/Makefile	2014-11-12 15:57:29.098559332 +0100
++++ linux-3.14.18/arch/mips/pci/Makefile	2014-11-12 15:57:29.118560067 +0100
 @@ -42,6 +42,7 @@
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -26,8 +26,8 @@ Index: linux-3.14.18/arch/mips/pci/Makefile
 Index: linux-3.14.18/arch/mips/pci/pci-mt7620a.c
 ===================================================================
 --- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/pci/pci-mt7620a.c	2014-11-08 01:53:41.205013063 +0100
-@@ -0,0 +1,415 @@
++++ linux-3.14.18/arch/mips/pci/pci-mt7620a.c	2014-11-12 17:24:58.339670670 +0100
+@@ -0,0 +1,405 @@
 +/*
 + *  Ralink MT7620A SoC PCI support
 + *
@@ -277,16 +277,6 @@ Index: linux-3.14.18/arch/mips/pci/pci-mt7620a.c
 +	}
 +	rt_sysc_m32(BIT(18) | BIT(17), BIT(19) | BIT(31), PPLL_DRV);
 +
-+	mdelay(100);
-+	reset_control_assert(rstpcie0);
-+	rt_sysc_m32(0x30, 2 << 4, RALINK_SYSCFG1);
-+
-+	rt_sysc_m32(~0x7fffffff, 0x80000000, RALINK_PCIE_CLK_GEN);
-+	rt_sysc_m32(~0x80ffffff, 0xa << 24, RALINK_PCIE_CLK_GEN1);
-+
-+	mdelay(50);
-+	reset_control_deassert(rstpcie0);
-+
 +	return 0;
 +}
 +
@@ -445,8 +435,8 @@ Index: linux-3.14.18/arch/mips/pci/pci-mt7620a.c
 +arch_initcall(mt7620_pci_init);
 Index: linux-3.14.18/arch/mips/ralink/Kconfig
 ===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/Kconfig	2014-11-08 01:45:46.691495137 +0100
-+++ linux-3.14.18/arch/mips/ralink/Kconfig	2014-11-08 01:45:46.703495582 +0100
+--- linux-3.14.18.orig/arch/mips/ralink/Kconfig	2014-11-12 15:57:29.098559332 +0100
++++ linux-3.14.18/arch/mips/ralink/Kconfig	2014-11-12 15:57:29.118560067 +0100
 @@ -39,6 +39,7 @@
  		bool "MT7620/8"
  		select USB_ARCH_HAS_OHCI
@@ -457,8 +447,8 @@ Index: linux-3.14.18/arch/mips/ralink/Kconfig
  		bool "MT7621"
 Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
 ===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-08 01:45:46.659493958 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-08 01:45:46.703495582 +0100
+--- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-12 15:57:29.082558746 +0100
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-12 15:57:29.118560067 +0100
 @@ -19,6 +19,7 @@
  	MT762X_SOC_MT7620N,
  	MT762X_SOC_MT7628AN,
