@@ -39,12 +39,12 @@ endef
 $(eval $(call Profile,MR600))
 
 define Profile/MR900
-        NAME:=OpenMesh MR900
+        NAME:=OpenMesh MR900/MR900v2
         PACKAGES:=kmod-ath9k om-watchdog
 endef
 
 define Profile/MR900/Description
-        Package set optimized for the OpenMesh MR900.
+        Package set optimized for the OpenMesh MR900/MR900v2.
 endef
 
 $(eval $(call Profile,MR900))
