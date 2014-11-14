@@ -392,6 +392,9 @@ ar71xx_board_detect() {
 	*MR600)
 		name="mr600"
 		;;
+	*MR900)
+		name="mr900"
+		;;
 	*"My Net N600")
 		name="mynet-n600"
 		;;
