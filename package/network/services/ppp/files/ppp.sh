@@ -113,6 +113,7 @@ proto_pppoe_init_config() {
 	ppp_generic_init_config
 	proto_config_add_string "ac"
 	proto_config_add_string "service"
+	proto_config_add_string host_uniq
 }
 
 proto_pppoe_setup() {
@@ -128,12 +129,14 @@ proto_pppoe_setup() {
 
 	json_get_var ac ac
 	json_get_var service service
+	json_get_var host_uniq host_uniq
 
 	ppp_generic_setup "$config" \
 		plugin rp-pppoe.so \
 		${ac:+rp_pppoe_ac "$ac"} \
 		${service:+rp_pppoe_service "$service"} \
-		"nic-$iface"
+		"nic-$iface" \
+		${host_uniq:+host-uniq "$host_uniq"}
 }
 
 proto_pppoe_teardown() {
