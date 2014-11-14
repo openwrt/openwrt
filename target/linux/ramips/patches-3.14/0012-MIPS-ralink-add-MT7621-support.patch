@@ -22,8 +22,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/malta-amon.c
  create mode 100644 arch/mips/ralink/mt7621.c
 
---- a/arch/mips/include/asm/gic.h
-+++ b/arch/mips/include/asm/gic.h
+Index: linux-3.14.18/arch/mips/include/asm/gic.h
+===================================================================
+--- linux-3.14.18.orig/arch/mips/include/asm/gic.h	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/arch/mips/include/asm/gic.h	2014-11-12 18:15:37.293244085 +0100
 @@ -19,7 +19,11 @@
  #define GIC_TRIG_EDGE			1
  #define GIC_TRIG_LEVEL			0
@@ -36,8 +38,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #define MSK(n) ((1 << (n)) - 1)
  #define REG32(addr)		(*(volatile unsigned int *) (addr))
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/irq.h
+Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/irq.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/irq.h	2014-11-12 18:15:37.297244234 +0100
 @@ -0,0 +1,9 @@
 +#ifndef __ASM_MACH_RALINK_IRQ_H
 +#define __ASM_MACH_RALINK_IRQ_H
@@ -48,8 +52,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include_next <irq.h>
 +
 +#endif
---- /dev/null
-+++ b/arch/mips/include/asm/mach-ralink/mt7621.h
+Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7621.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7621.h	2014-11-12 18:15:37.297244234 +0100
 @@ -0,0 +1,39 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -90,9 +96,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define MIPS_GIC_IRQ_BASE           (MIPS_CPU_IRQ_BASE + 8)
 +
 +#endif
---- a/arch/mips/kernel/vmlinux.lds.S
-+++ b/arch/mips/kernel/vmlinux.lds.S
-@@ -51,6 +51,7 @@ SECTIONS
+Index: linux-3.14.18/arch/mips/kernel/vmlinux.lds.S
+===================================================================
+--- linux-3.14.18.orig/arch/mips/kernel/vmlinux.lds.S	2014-11-12 18:15:35.441175040 +0100
++++ linux-3.14.18/arch/mips/kernel/vmlinux.lds.S	2014-11-12 18:15:37.297244234 +0100
+@@ -51,6 +51,7 @@
  	/* read-only */
  	_text = .;	/* Text and read-only data */
  	.text : {
@@ -100,9 +108,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		TEXT_TEXT
  		SCHED_TEXT
  		LOCK_TEXT
---- a/arch/mips/ralink/Kconfig
-+++ b/arch/mips/ralink/Kconfig
-@@ -7,6 +7,11 @@ config CLKEVT_RT3352
+Index: linux-3.14.18/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/Kconfig	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/arch/mips/ralink/Kconfig	2014-11-13 10:37:45.371792998 +0100
+@@ -7,6 +7,11 @@
  	select CLKSRC_OF
  	select CLKSRC_MMIO
  
@@ -114,7 +124,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
-@@ -34,6 +39,15 @@ choice
+@@ -34,6 +39,15 @@
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
  
@@ -130,7 +140,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endchoice
  
  choice
-@@ -61,6 +75,10 @@ choice
+@@ -61,6 +75,10 @@
  		bool "MT7620A eval kit"
  		depends on SOC_MT7620
  
@@ -141,8 +151,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endchoice
  
  endif
---- a/arch/mips/ralink/Makefile
-+++ b/arch/mips/ralink/Makefile
+Index: linux-3.14.18/arch/mips/ralink/Makefile
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/Makefile	2014-11-12 18:15:37.225241550 +0100
++++ linux-3.14.18/arch/mips/ralink/Makefile	2014-11-13 10:37:43.947738138 +0100
 @@ -6,16 +6,21 @@
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
@@ -166,9 +178,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
---- a/arch/mips/ralink/Platform
-+++ b/arch/mips/ralink/Platform
-@@ -27,3 +27,8 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctr
+Index: linux-3.14.18/arch/mips/ralink/Platform
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/Platform	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/arch/mips/ralink/Platform	2014-11-12 18:15:37.297244234 +0100
+@@ -27,3 +27,8 @@
  #
  load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
  cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7620
@@ -177,8 +191,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#
 +load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000
 +cflags-$(CONFIG_SOC_MT7621)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
---- /dev/null
-+++ b/arch/mips/ralink/irq-gic.c
+Index: linux-3.14.18/arch/mips/ralink/irq-gic.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/ralink/irq-gic.c	2014-11-12 18:15:37.297244234 +0100
 @@ -0,0 +1,271 @@
 +#include <linux/init.h>
 +#include <linux/sched.h>
@@ -451,8 +467,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	of_irq_init(of_irq_ids);
 +}
---- /dev/null
-+++ b/arch/mips/ralink/malta-amon.c
+Index: linux-3.14.18/arch/mips/ralink/malta-amon.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/ralink/malta-amon.c	2014-11-12 18:15:37.297244234 +0100
 @@ -0,0 +1,81 @@
 +/*
 + * Copyright (C) 2007  MIPS Technologies, Inc.
@@ -535,8 +553,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	smp_rmb();	/* Target will be updating flags soon */
 +	pr_debug("launch: cpu%d gone!\n", cpu);
 +}
---- /dev/null
-+++ b/arch/mips/ralink/mt7621.c
+Index: linux-3.14.18/arch/mips/ralink/mt7621.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/arch/mips/ralink/mt7621.c	2014-11-13 10:32:56.960683223 +0100
 @@ -0,0 +1,183 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -592,10 +612,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define MT7621_GPIO_MODE_SDHCI_SHIFT	18
 +#define MT7621_GPIO_MODE_SDHCI_GPIO	1
 +
-+static struct rt2880_pmx_func uart1_grp[] =  { FUNC("uart1", 0, 1, 2) };
++static struct rt2880_pmx_func uart1_grp[] =  { FUNC("uart", 0, 1, 2) };
 +static struct rt2880_pmx_func i2c_grp[] =  { FUNC("i2c", 0, 3, 2) };
-+static struct rt2880_pmx_func uart3_grp[] = { FUNC("uart3", 0, 5, 4) };
-+static struct rt2880_pmx_func uart2_grp[] = { FUNC("uart2", 0, 9, 4) };
++static struct rt2880_pmx_func uart3_grp[] = { FUNC("uart", 0, 5, 4) };
++static struct rt2880_pmx_func uart2_grp[] = { FUNC("uart", 0, 9, 4) };
 +static struct rt2880_pmx_func jtag_grp[] = { FUNC("jtag", 0, 13, 5) };
 +static struct rt2880_pmx_func wdt_grp[] = {
 +	FUNC("wdt rst", 0, 18, 1),
@@ -606,7 +626,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	FUNC("pcie refclk", MT7621_GPIO_MODE_PCIE_REF, 19, 1)
 +};
 +static struct rt2880_pmx_func mdio_grp[] = { FUNC("mdio", 0, 20, 2) };
-+static struct rt2880_pmx_func rgmii2_grp[] = { FUNC("rgmii2", 0, 22, 12) };
++static struct rt2880_pmx_func rgmii2_grp[] = { FUNC("rgmii", 0, 22, 12) };
 +static struct rt2880_pmx_func spi_grp[] = {
 +	FUNC("spi", 0, 34, 7),
 +	FUNC("nand", 2, 34, 8),
@@ -615,7 +635,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	FUNC("sdhci", 0, 41, 8),
 +	FUNC("nand", 2, 41, 8),
 +};
-+static struct rt2880_pmx_func rgmii1_grp[] = { FUNC("rgmii1", 0, 49, 12) };
++static struct rt2880_pmx_func rgmii1_grp[] = { FUNC("rgmii", 0, 49, 12) };
 +
 +static struct rt2880_pmx_group mt7621_pinmux_data[] = {
 +	GRP("uart1", uart1_grp, 1, MT7621_GPIO_MODE_UART1),
