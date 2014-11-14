@@ -1,0 +1,149 @@
+/dts-v1/;
+
+/include/ "mt7621.dtsi"
+
+/ {
+	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
+	model = "Buffalo WSR-1166";
+
+	memory@0 {
+		reg = <0x0 0x8000000>;
+	};
+
+	chosen {
+		bootargs = "console=ttyS0,57600";
+	};
+
+	palmbus@1E000000 {
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "mx25l12805d";
+				reg = <0 0>;
+				linux,modalias = "m25p80";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x6b0000>;
+				};
+
+				partition@f700000 {
+					label = "usercfg";
+					reg = <0x700000 0x100000>;
+				};
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		internet_g {
+			label = "buffalo:green:internet";
+			gpios = <&gpio1 9 1>;
+		};
+		router_g {
+			label = "buffalo:green:router";
+			gpios = <&gpio1 10 1>;
+		};
+		router_o {
+			label = "buffalo:orange:router";
+			gpios = <&gpio1 11 1>;
+		};
+		internet_o {
+			label = "buffalo:orange:internet";
+			gpios = <&gpio1 12 1>;
+		};
+		wifi_o {
+			label = "buffalo:orange:wifi";
+			gpios = <&gpio1 13 1>;
+		};
+		power {
+			label = "buffalo:green:power";
+			gpios = <&gpio0 14 1>;
+		};
+		diag {
+			label = "buffalo:orange:diag";
+			gpios = <&gpio1 15 1>;
+		};
+		wifi_g {
+			label = "buffalo:green:wifi";
+			gpios = <&gpio1 16 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		power {
+			label = "power";
+			gpios = <&gpio0 18 1>;
+			linux,code = <0x74>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 3 1>;
+			linux,code = <0x198>;
+		};
+		aoss {
+			label = "aoss";
+			gpios = <&gpio0 6 1>;
+			linux,code = <0x211>;
+		};
+		auto {
+			label = "mode";
+			gpios = <&gpio0 7 0>;
+			linux,code = <0x100>;
+			linux,input-type = <5>; /* EV_SW */
+		};
+		ap {
+			label = "ap";
+			gpios = <&gpio0 10 0>;
+			linux,code = <0x100>;
+			linux,input-type = <5>; /* EV_SW */
+		};
+		router {
+			label = "router";
+			gpios = <&gpio0 12 0>;
+			linux,code = <0x100>;
+			linux,input-type = <5>; /* EV_SW */
+		};
+	};
+
+	gpio_poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&gpio0 0 1>;
+	};
+};

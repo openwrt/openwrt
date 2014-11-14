@@ -89,6 +89,8 @@ platform_check_image() {
 	whr-g300n |\
 	whr-600d |\
 	whr-1166d |\
+	wsr-600 |\
+	wsr-1166 |\
 	wl-330n | \
 	wl-330n3g | \
 	wl-351 | \
