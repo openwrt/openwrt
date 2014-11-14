@@ -596,7 +596,7 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 
 	/* turn off all PHYs */
 	for (i = 0; i <= 4; i++) {
-		_mt7620_mii_read(gsw, i, 0x0);
+		val = _mt7620_mii_read(gsw, i, 0x0);
 		val |= (0x1 << 11);
 		_mt7620_mii_write(gsw, i, 0x0, val);
 	}
