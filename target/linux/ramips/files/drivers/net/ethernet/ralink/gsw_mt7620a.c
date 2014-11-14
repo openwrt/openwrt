@@ -478,8 +478,22 @@ static void gsw_hw_init_mt7620(struct mt7620_gsw *gsw, struct device_node *np)
 	gsw_w32(gsw, gsw_r32(gsw, GSW_REG_CKGCR) & ~(0x3 << 4), GSW_REG_CKGCR);
 
 	if (of_property_read_bool(np, "mediatek,mt7530")) {
-		gsw_w32(gsw, gsw_r32(gsw, GSW_REG_GPC1) | (0x1f << 24), GSW_REG_GPC1);
-		pr_info("gsw: truning EPHY off\n");
+		u32 val;
+
+		/* turn off ephy and set phy base addr to 12 */
+		gsw_w32(gsw, gsw_r32(gsw, GSW_REG_GPC1) | (0x1f << 24) | (0xc << 16), GSW_REG_GPC1);
+
+		/* set MT7530 central align */
+		val = mt7530_mdio_r32(gsw, 0x7830);
+		val &= ~1;
+		val |= 1<<1;
+		mt7530_mdio_w32(gsw, 0x7830, val);
+
+		val = mt7530_mdio_r32(gsw, 0x7a40);
+		val &= ~(1<<30);
+		mt7530_mdio_w32(gsw, 0x7a40, val);
+
+		mt7530_mdio_w32(gsw, 0x7a78, 0x855);
 	} else {
 		/* EPHY1 fixup - only run if the ephy is enabled */
 
