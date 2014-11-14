@@ -25,6 +25,13 @@ BTHOMEHUBV2B)
 	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "nas0"
 	ucidef_set_led_usbdev "usb" "usb" "soc:blue:phone" "1-1"
 	;;
+VGV7519)
+	ucidef_set_led_default "power" "power" "power" "0"
+	ucidef_set_led_default "power2" "power2" "power2" "1"
+	ucidef_set_led_wlan "wireless_yellow" "wireless_yellow" "wireless_yellow" "phy0radio"
+	ucidef_set_led_netdev "internet_yellow" "internet_yellow" "internet_yellow" "nas0"
+	ucidef_set_led_netdev "broadband_yellow" "broadband_yellow" "broadband_yellow" "pppoe-wan"
+	;;
 *)
 	;;
 esac
