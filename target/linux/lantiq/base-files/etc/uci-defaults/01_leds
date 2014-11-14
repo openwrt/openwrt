@@ -12,11 +12,6 @@
 [ -e "/sys/class/leds/usb2" ] && ucidef_set_led_usbdev "usb2" "usb2" "usb2" "2-1"
 [ -e "/sys/class/leds/internet" ] && ucidef_set_led_netdev "internet" "internet" "internet" "pppoe-wan"
 
-for a in `ls /sys/class/leds/`; do
-	grep -q "\[none\]" /sys/class/leds/$a/trigger
-	[ $? -eq 0 ] && ucidef_set_led_default $a $a $a `cat /sys/class/leds/$a/brightness`
-done
-
 board=$(lantiq_board_name)
 
 case "$board" in
@@ -33,6 +28,11 @@ BTHOMEHUBV2B)
 *)
 	;;
 esac
+
+for a in `ls /sys/class/leds/`; do
+	grep -q "\[none\]" /sys/class/leds/$a/trigger
+	[ $? -eq 0 ] && ucidef_set_led_default $a $a $a `cat /sys/class/leds/$a/brightness`
+done
 
 ucidef_commit_leds
 
