@@ -246,6 +246,7 @@ platform_check_image() {
 	mr600 | \
 	mr600v2 | \
 	mr900 | \
+	mr900v2 | \
 	om2p | \
 	om2pv2 | \
 	om2p-hs | \
@@ -437,6 +438,7 @@ platform_do_upgrade() {
 	mr600 | \
 	mr600v2 | \
 	mr900 | \
+	mr900v2 | \
 	om2p | \
 	om2pv2 | \
 	om2p-hs | \
