@@ -38,28 +38,6 @@
 #include <linux/mii.h>
 
 #include <ralink_regs.h>
-#ifdef CONFIG_SOC_MT7620
-static inline int soc_is_rt3352(void)
-{
-	return 0;
-}
-
-static inline int soc_is_mt7628(void)
-{
-	return 1;
-}
-
-static inline int soc_is_rt5350(void)
-{
-	return 0;
-}
-#else
-#include <asm/mach-ralink/rt305x.h>
-static inline int soc_is_mt7628(void)
-{
-	return 0;
-}
-#endif
 
 #include <asm/mach-ralink/rt305x_esw_platform.h>
 
@@ -532,7 +510,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 	for (i = 0; i < 6; i++)
 		esw->ports[i].disable = (port_disable & (1 << i)) != 0;
 
-	if (soc_is_rt3352()) {
+	if (ralink_soc == RT305X_SOC_RT3352) {
 		/* reset EPHY */
 		u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
 		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
@@ -583,7 +561,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 29, 0x598b);
 		/* select local register */
 		rt305x_mii_write(esw, 0, 31, 0x8000);
-	} else if (soc_is_rt5350()) {
+	} else if (ralink_soc == RT305X_SOC_RT5350) {
 		/* reset EPHY */
 		u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
 		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
@@ -638,9 +616,9 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 29, 0x598b);
 		/* select local register */
 		rt305x_mii_write(esw, 0, 31, 0x8000);
-	} else if (soc_is_mt7628()) {
+	} else if (ralink_soc == MT762X_SOC_MT7628AN) {
 		int i;
-		u32 phy_val;
+//		u32 phy_val;
 		u32 val;
 
 		/* reset EPHY */
@@ -1071,7 +1049,7 @@ esw_get_port_tr_badgood(struct switch_dev *dev,
 	int shift = attr->id == RT5350_ESW_ATTR_PORT_TR_GOOD ? 0 : 16;
 	u32 reg;
 
-	if (!soc_is_rt5350() && !soc_is_mt7628())
+	if ((ralink_soc != RT305X_SOC_RT5350) && (ralink_soc != MT762X_SOC_MT7628AN))
 		return -EINVAL;
 
 	if (idx < 0 || idx >= RT305X_ESW_NUM_LANWAN)
