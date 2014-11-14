@@ -25,6 +25,9 @@ boot() {
 			"mr600v2")
 				service_start /sbin/om-watchdog 15
 				;;
+			"mr900")
+				service_start /sbin/om-watchdog 16
+				;;
 		esac
 	else
 		#we assume it is om1p in this case
