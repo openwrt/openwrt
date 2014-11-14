@@ -152,7 +152,8 @@ mr600)
 	ucidef_set_led_wlan "wlan58" "WLAN58" "mr600:green:wlan58" "phy0tpt"
 	;;
 
-mr900)
+mr900 | \
+mr900v2)
 	ucidef_set_led_netdev "lan" "LAN" "mr900:blue:wan" "eth0"
 	ucidef_set_led_wlan "wlan24" "WLAN24" "mr900:blue:wlan24" "phy0tpt"
 	ucidef_set_led_wlan "wlan58" "WLAN58" "mr900:blue:wlan58" "phy1tpt"
