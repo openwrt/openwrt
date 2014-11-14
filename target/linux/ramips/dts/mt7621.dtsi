@@ -92,8 +92,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-/*			pinctrl-names = "default";
-			pinctrl-0 = <&spi_pins>;*/
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
 
 			m25p80@0 {
 				#address-cells = <1>;
@@ -136,6 +136,84 @@
 		};
 	};
 
+	pinctrl {
+		compatible = "ralink,rt2880-pinmux";
+		pinctrl-names = "default";
+		pinctrl-0 = <&state_default>;
+		state_default: pinctrl0 {
+		};
+		spi_pins: spi {
+			spi {
+				ralink,group = "spi";
+				ralink,function = "spi";
+			};
+		};
+		i2c_pins: i2c {
+			i2c {
+				lantiq,group = "i2c";
+				lantiq,function = "i2c";
+			};
+		};
+		uart1_pins: uart1 {
+			uart1 {
+				ralink,group = "uart1";
+				ralink,function = "uart";
+			};
+		};
+		uart2_pins: uart2 {
+			uart2 {
+				ralink,group = "uart2";
+				ralink,function = "uart";
+			};
+		};
+		uart3_pins: uart3 {
+			uart3 {
+				ralink,group = "uart3";
+				ralink,function = "uart";
+			};
+		};
+		rgmii1_pins: rgmii1 {
+			rgmii1 {
+				ralink,group = "rgmii1";
+				ralink,function = "rgmii";
+			};
+		};
+		rgmii2_pins: rgmii2 {
+			rgmii2 {
+				ralink,group = "rgmii2";
+				ralink,function = "rgmii";
+			};
+		};
+		mdio_pins: mdio {
+			mdio {
+				ralink,group = "mdio";
+				ralink,function = "mdio";
+			};
+		};
+		pcie_pins: pcie {
+			pcie {
+				ralink,group = "pcie";
+				ralink,function = "pcie rst";
+			};
+		};
+		nand_pins: nand {
+			spi-nand {
+				ralink,group = "spi";
+				ralink,function = "nand";
+			};
+			sdhci-nand {
+				ralink,group = "sdhci";
+				ralink,function = "nand";
+			};
+		};
+		sdhci_pins: sdhci {
+			sdhci {
+				ralink,group = "sdhci";
+				ralink,function = "sdhci";
+			};
+		};
+	};
+
 	rstctrl: rstctrl {
 		compatible = "ralink,rt2880-reset";
 		#reset-cells = <1>;
@@ -150,7 +228,7 @@
 	};
 
 	xhci@1E1C0000 {
-		compatible = "xhci-platform1";
+		compatible = "xhci-platform";
 		reg = <0x1E1C0000 4000>;
 
 		interrupt-parent = <&gic>;
