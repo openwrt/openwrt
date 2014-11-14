@@ -18,19 +18,6 @@
 #include <linux/module.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
-#ifdef CONFIG_SOC_MT7620
-static inline int soc_is_rt3352(void)
-{
-	return 0;
-}
-
-static inline int soc_is_rt3052(void)
-{
-	return 0;
-}
-#else
-#include <asm/mach-ralink/rt305x.h>
-#endif
 
 #include "ralink_soc_eth.h"
 #include "mdio_rt2880.h"
@@ -69,14 +56,14 @@ static int rt3050_fwd_config(struct fe_priv *priv)
 {
 	int ret;
 
-	if (soc_is_rt3052()) {
+	if (ralink_soc != RT305X_SOC_RT3052) {
 		ret = fe_set_clock_cycle(priv);
 		if (ret)
 			return ret;
 	}
 
 	fe_fwd_config(priv);
-	if (!soc_is_rt3352())
+	if (ralink_soc != RT305X_SOC_RT3352)
 		fe_w32(FE_PSE_FQFC_CFG_INIT, FE_PSE_FQ_CFG);
 	fe_csum_config(priv);
 
