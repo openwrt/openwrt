@@ -44,7 +44,7 @@ static struct flash_platform_data EL_M150_flash_data = {
 
 static struct gpio_led EL_M150_leds_gpio[] __initdata = {
 	{
-		.name		= "ELINK:green:system",
+		.name		= "easylink:green:system",
 		.gpio		= EL_M150_GPIO_LED_SYSTEM,
 		.active_low	= 1,
 	},

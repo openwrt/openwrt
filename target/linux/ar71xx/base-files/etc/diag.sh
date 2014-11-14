@@ -73,7 +73,7 @@ get_status_led() {
 		;;
 	el-mini | \
 	el-m150)
-		status_led="EasyLink:green:system"
+		status_led="easylink:green:system"
 		;;
 	gl-inet)
 		status_led="gl-connect:green:lan"
