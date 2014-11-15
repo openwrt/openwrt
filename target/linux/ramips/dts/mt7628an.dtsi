@@ -165,6 +165,16 @@
 		reset-names = "host";
 	};
 
+	sdhci@10130000 {
+		compatible = "ralink,mt7620-sdhci";
+		reg = <0x10130000 4000>;
+
+		interrupt-parent = <&intc>;
+		interrupts = <14>;
+
+		status = "disabled";
+	};
+
 	ehci@101c0000 {
 		compatible = "ralink,rt3xxx-ehci";
 		reg = <0x101c0000 0x1000>;

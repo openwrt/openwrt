@@ -23,20 +23,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mmc/host/mtk-mmc/mt6575_sd.h
  create mode 100644 drivers/mmc/host/mtk-mmc/sd.c
 
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index ef6bf59..73362eb 100644
---- a/drivers/mmc/host/Kconfig
-+++ b/drivers/mmc/host/Kconfig
-@@ -657,3 +657,5 @@ config MMC_REALTEK_PCI
+Index: linux-3.14.18/drivers/mmc/host/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/mmc/host/Kconfig	2014-11-15 14:13:20.210278242 +0100
++++ linux-3.14.18/drivers/mmc/host/Kconfig	2014-11-15 14:13:20.998305852 +0100
+@@ -714,3 +714,5 @@
  	help
  	  Say Y here to include driver code to support SD/MMC card interface
  	  of Realtek PCI-E card reader
 +
 +source "drivers/mmc/host/mtk-mmc/Kconfig"
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index c800bed..b68b10e 100644
---- a/drivers/mmc/host/Makefile
-+++ b/drivers/mmc/host/Makefile
+Index: linux-3.14.18/drivers/mmc/host/Makefile
+===================================================================
+--- linux-3.14.18.orig/drivers/mmc/host/Makefile	2014-11-15 14:13:20.210278242 +0100
++++ linux-3.14.18/drivers/mmc/host/Makefile	2014-11-15 14:13:20.998305852 +0100
 @@ -2,6 +2,7 @@
  # Makefile for MMC/SD host controller drivers
  #
@@ -45,11 +45,10 @@ index c800bed..b68b10e 100644
  obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
  obj-$(CONFIG_MMC_PXA)		+= pxamci.o
  obj-$(CONFIG_MMC_MXC)		+= mxcmmc.o
-diff --git a/drivers/mmc/host/mtk-mmc/Kconfig b/drivers/mmc/host/mtk-mmc/Kconfig
-new file mode 100644
-index 0000000..a58b0f3
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/Kconfig
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/Kconfig	2014-11-15 14:13:20.998305852 +0100
 @@ -0,0 +1,16 @@
 +config MTK_MMC
 +	tristate "MTK SD/MMC"
@@ -67,11 +66,10 @@ index 0000000..a58b0f3
 +	bool "eMMC 8-bit support"
 +	depends on MTK_MMC && RALINK_MT7628
 +
-diff --git a/drivers/mmc/host/mtk-mmc/Makefile b/drivers/mmc/host/mtk-mmc/Makefile
-new file mode 100644
-index 0000000..caead0b
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/Makefile
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/Makefile	2014-11-15 14:13:20.998305852 +0100
 @@ -0,0 +1,42 @@
 +# Copyright Statement:
 +#
@@ -115,11 +113,10 @@ index 0000000..caead0b
 +
 +clean:
 +	@rm -f *.o modules.order .*.cmd
-diff --git a/drivers/mmc/host/mtk-mmc/board.h b/drivers/mmc/host/mtk-mmc/board.h
-new file mode 100644
-index 0000000..33bfc7b
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/board.h
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/board.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/board.h	2014-11-15 14:13:20.998305852 +0100
 @@ -0,0 +1,137 @@
 +/* Copyright Statement:
 + *
@@ -258,11 +255,10 @@ index 0000000..33bfc7b
 +
 +#endif /* __ARCH_ARM_MACH_BOARD_H */
 +
-diff --git a/drivers/mmc/host/mtk-mmc/dbg.c b/drivers/mmc/host/mtk-mmc/dbg.c
-new file mode 100644
-index 0000000..4dc115b
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/dbg.c
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.c	2014-11-15 14:13:20.998305852 +0100
 @@ -0,0 +1,347 @@
 +/* Copyright Statement:
 + *
@@ -611,12 +607,11 @@ index 0000000..4dc115b
 +}
 +EXPORT_SYMBOL_GPL(msdc_debug_proc_init);
 +#endif
-diff --git a/drivers/mmc/host/mtk-mmc/dbg.h b/drivers/mmc/host/mtk-mmc/dbg.h
-new file mode 100644
-index 0000000..6b141e6
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/dbg.h
-@@ -0,0 +1,153 @@
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.h	2014-11-15 14:13:20.998305852 +0100
+@@ -0,0 +1,156 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -728,13 +723,15 @@ index 0000000..6b141e6
 +}while(0)
 +#endif /* end of +++ */
 +
-+#define N_MSG(evt, fmt, args...) \
++#define N_MSG(evt, fmt, args...)
++/*
 +do {    \
 +    if ((DBG_EVT_##evt) & sd_debug_zone[host->id]) { \
 +        printk(KERN_ERR TAG"%d -> "fmt" <- %s() : L<%d> PID<%s><0x%x>\n", \
 +            host->id,  ##args , __FUNCTION__, __LINE__, current->comm, current->pid);	\
 +    } \
 +} while(0)
++*/
 +
 +#define ERR_MSG(fmt, args...) \
 +do { \
@@ -742,7 +739,8 @@ index 0000000..6b141e6
 +        host->id,  ##args , __FUNCTION__, __LINE__, current->comm, current->pid); \
 +} while(0); 
 +
-+#if defined CONFIG_MTK_MMC_CD_POLL        
++#if 1
++//defined CONFIG_MTK_MMC_CD_POLL        
 +#define INIT_MSG(fmt, args...)
 +#define IRQ_MSG(fmt, args...) 
 +#else
@@ -770,11 +768,10 @@ index 0000000..6b141e6
 +void msdc_performance(u32 opcode, u32 sizes, u32 bRx, u32 ticks);   
 +
 +#endif
-diff --git a/drivers/mmc/host/mtk-mmc/mt6575_sd.h b/drivers/mmc/host/mtk-mmc/mt6575_sd.h
-new file mode 100644
-index 0000000..e90c4f1
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/mt6575_sd.h
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/mt6575_sd.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/mt6575_sd.h	2014-11-15 14:13:20.998305852 +0100
 @@ -0,0 +1,1001 @@
 +/* Copyright Statement:
 + *
@@ -1777,12 +1774,11 @@ index 0000000..e90c4f1
 +
 +#endif
 +
-diff --git a/drivers/mmc/host/mtk-mmc/sd.c b/drivers/mmc/host/mtk-mmc/sd.c
-new file mode 100644
-index 0000000..0bb60c1
---- /dev/null
-+++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3041 @@
+Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/sd.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/drivers/mmc/host/mtk-mmc/sd.c	2014-11-15 14:41:50.334227875 +0100
+@@ -0,0 +1,3047 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -1852,12 +1848,18 @@ index 0000000..0bb60c1
 +#define MSDC_HIGHSPEED      (1 << 7)
 +
 +//#define IRQ_SDC 14	//MT7620 /*FIXME*/
++#ifdef CONFIG_SOC_MT7621
++#define RALINK_SYSCTL_BASE		0xbe000000
++#define RALINK_MSDC_BASE		0xbe130000
++#else
 +#define RALINK_SYSCTL_BASE		0xb0000000
 +#define RALINK_MSDC_BASE		0xb0130000
++#endif
 +#define IRQ_SDC			22	/*FIXME*/
 +
 +#include <asm/dma.h>
 +/* end of +++ */
++
 +
 +#include <asm/mach-ralink/ralink_regs.h>
 +
@@ -4010,7 +4012,7 @@ index 0000000..0bb60c1
 +        "LEGACY", "MMC_HS", "SD_HS"
 +    };
 +
-+    N_MSG(CFG, "SET_IOS: CLK(%dkHz), BUS(%s), BW(%u), PWR(%s), VDD(%s), TIMING(%s)",
++    printk("SET_IOS: CLK(%dkHz), BUS(%s), BW(%u), PWR(%s), VDD(%s), TIMING(%s)",
 +        ios->clock / 1000, bus_mode[ios->bus_mode],
 +        (ios->bus_width == MMC_BUS_WIDTH_4) ? 4 : 1,
 +        power_mode[ios->power_mode], vdd[ios->vdd], timing[ios->timing]);
@@ -4735,8 +4737,8 @@ index 0000000..0bb60c1
 +}
 +#endif
 +
-+static const struct of_device_id mt7620a_sdhci_match[] = {
-+	{ .compatible = "ralink,mt7620a-sdhci" },
++static const struct of_device_id mt7620_sdhci_match[] = {
++	{ .compatible = "ralink,mt7620-sdhci" },
 +	{},
 +};
 +MODULE_DEVICE_TABLE(of, rt288x_wdt_match);
@@ -4751,7 +4753,7 @@ index 0000000..0bb60c1
 +    .driver  = {
 +        .name  = DRV_NAME,
 +        .owner = THIS_MODULE,
-+	.of_match_table = mt7620a_sdhci_match,
++	.of_match_table = mt7620_sdhci_match,
 +    },
 +};
 +
@@ -4795,7 +4797,7 @@ index 0000000..0bb60c1
 +//#endif
 +}
 +    sdr_write32((volatile u32*)(RALINK_SYSCTL_BASE + 0x60), reg);
-+    platform_device_register(&mtk_sd_device);
++    //platform_device_register(&mtk_sd_device);
 +/* end of +++ */
 +
 +    ret = platform_driver_register(&mt_msdc_driver);
@@ -4813,7 +4815,7 @@ index 0000000..0bb60c1
 +
 +static void __exit mt_msdc_exit(void)
 +{
-+    platform_device_unregister(&mtk_sd_device);
++//    platform_device_unregister(&mtk_sd_device);
 +    platform_driver_unregister(&mt_msdc_driver);
 +}
 +
@@ -4824,6 +4826,3 @@ index 0000000..0bb60c1
 +MODULE_AUTHOR("Infinity Chen <infinity.chen@mediatek.com>");
 +
 +EXPORT_SYMBOL(msdc_6575_host);
--- 
-1.7.10.4
-
