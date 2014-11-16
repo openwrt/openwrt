@@ -1,0 +1,23 @@
+--- a/backport-include/linux/device.h
++++ b/backport-include/linux/device.h
+@@ -177,4 +177,20 @@ static inline void *devm_kmalloc_array(s
+ }
+ #endif
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
++#define devm_kmemdup LINUX_BACKPORT(devm_kmemdup)
++static inline void *devm_kmemdup(struct device *dev, const void *src,
++				 size_t len, gfp_t gfp)
++{
++	void *p;
++
++	p = devm_kmalloc(dev, len, gfp);
++	if (p)
++		memcpy(p, src, len);
++
++	return p;
++}
++#endif
++
++
+ #endif /* __BACKPORT_DEVICE_H */
