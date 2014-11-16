@@ -1,0 +1,22 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 15 Nov 2014 03:45:56 +0100
+Subject: [PATCH] mac80211: skip legacy rate mask handling for VHT rates
+
+The rate mask code currently assumes that a rate is legacy if
+IEEE80211_TX_RC_MCS is not set. This might be the cause of bogus VHT
+rates being reported with minstrel_ht.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -385,7 +385,7 @@ static void rate_idx_match_mask(struct i
+ 			*rate = alt_rate;
+ 			return;
+ 		}
+-	} else {
++	} else if (!(rate->flags & IEEE80211_TX_RC_VHT_MCS)) {
+ 		/* handle legacy rates */
+ 		if (rate_idx_match_legacy_mask(rate, sband->n_bitrates, mask))
+ 			return;
