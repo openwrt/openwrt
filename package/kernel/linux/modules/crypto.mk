@@ -299,8 +299,13 @@ define KernelPackage/crypto-crc32c
   TITLE:=CRC32c CRC module
   DEPENDS:=+kmod-crypto-hash
   KCONFIG:=CONFIG_CRYPTO_CRC32C
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.15.0)),1)
+  FILES:=$(LINUX_DIR)/crypto/crc32c_generic.ko
+  AUTOLOAD:=$(call AutoLoad,04,crc32c_generic,1)
+else
   FILES:=$(LINUX_DIR)/crypto/crc32c.ko
   AUTOLOAD:=$(call AutoLoad,04,crc32c,1)
+endif
   $(call AddDepends/crypto)
 endef
 
