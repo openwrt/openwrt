@@ -302,8 +302,8 @@
 		};
 		i2c_pins: i2c {
 			i2c {
-				lantiq,group = "i2c";
-				lantiq,function = "i2c";
+				ralink,group = "i2c";
+				ralink,function = "i2c";
 			};
 		};
 		uartlite_pins: uartlite {
@@ -340,6 +340,12 @@
 			rgmii2 {
 				ralink,group = "rgmii2";
 				ralink,function = "rgmii2";
+			};
+		};
+		pcie_pins: pcie {
+			pcie {
+				ralink,group = "pcie";
+				ralink,function = "pcie rst";
 			};
 		};
 	};
@@ -442,6 +448,9 @@
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <4>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie_pins>;
 
 		device_type = "pci";
 
