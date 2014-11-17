@@ -1,7 +1,7 @@
 Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
 ===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-14 14:37:58.341438796 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-14 14:38:04.453668044 +0100
+--- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-17 19:54:59.683128174 +0100
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-17 19:54:59.975139185 +0100
 @@ -13,14 +13,6 @@
  #ifndef _MT7620_REGS_H_
  #define _MT7620_REGS_H_
@@ -19,8 +19,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
  #define SYSC_REG_CHIP_NAME0		0x00
 Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h
 ===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-14 14:37:58.341438796 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-14 14:38:04.453668044 +0100
+--- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-17 19:54:59.379116714 +0100
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-17 19:54:59.975139185 +0100
 @@ -13,6 +13,20 @@
  #ifndef _RALINK_REGS_H_
  #define _RALINK_REGS_H_
@@ -44,8 +44,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h
  
 Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h
 ===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-14 14:37:58.341438796 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-14 14:38:04.453668044 +0100
+--- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-17 19:54:59.663127421 +0100
++++ linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-17 19:54:59.975139185 +0100
 @@ -13,25 +13,16 @@
  #ifndef _RT305X_REGS_H_
  #define _RT305X_REGS_H_
@@ -98,8 +98,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h
  #define RT305X_SYSC_BASE		0x10000000
 Index: linux-3.14.18/arch/mips/ralink/mt7620.c
 ===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/mt7620.c	2014-11-14 14:37:58.341438796 +0100
-+++ linux-3.14.18/arch/mips/ralink/mt7620.c	2014-11-14 14:38:04.453668044 +0100
+--- linux-3.14.18.orig/arch/mips/ralink/mt7620.c	2014-11-17 19:54:59.663127421 +0100
++++ linux-3.14.18/arch/mips/ralink/mt7620.c	2014-11-17 19:54:59.975139185 +0100
 @@ -43,8 +43,6 @@
  #define CLKCFG_FFRAC_MASK	0x001f
  #define CLKCFG_FFRAC_USB_VAL	0x0003
@@ -170,8 +170,8 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  		rt2880_pinmux_data = mt7620a_pinmux_data;
 Index: linux-3.14.18/arch/mips/ralink/rt305x.c
 ===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/rt305x.c	2014-11-14 14:37:58.341438796 +0100
-+++ linux-3.14.18/arch/mips/ralink/rt305x.c	2014-11-14 14:38:04.453668044 +0100
+--- linux-3.14.18.orig/arch/mips/ralink/rt305x.c	2014-11-17 19:54:59.715129381 +0100
++++ linux-3.14.18/arch/mips/ralink/rt305x.c	2014-11-17 19:54:59.975139185 +0100
 @@ -21,8 +21,6 @@
  
  #include "common.h"
@@ -213,8 +213,8 @@ Index: linux-3.14.18/arch/mips/ralink/rt305x.c
  	} else {
 Index: linux-3.14.18/arch/mips/ralink/prom.c
 ===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/prom.c	2014-11-14 14:37:58.341438796 +0100
-+++ linux-3.14.18/arch/mips/ralink/prom.c	2014-11-14 18:36:23.815612485 +0100
+--- linux-3.14.18.orig/arch/mips/ralink/prom.c	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/arch/mips/ralink/prom.c	2014-11-17 19:54:59.975139185 +0100
 @@ -15,9 +15,13 @@
  #include <asm/bootinfo.h>
  #include <asm/addrspace.h>
@@ -229,3 +229,15 @@ Index: linux-3.14.18/arch/mips/ralink/prom.c
  
  const char *get_system_type(void)
  {
+Index: linux-3.14.18/arch/mips/ralink/mt7621.c
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/mt7621.c	2014-11-17 19:54:59.471120181 +0100
++++ linux-3.14.18/arch/mips/ralink/mt7621.c	2014-11-17 19:58:52.667916008 +0100
+@@ -175,6 +175,7 @@
+ 	soc_info->mem_size_min = MT7621_DDR2_SIZE_MIN;
+ 	soc_info->mem_size_max = MT7621_DDR2_SIZE_MAX;
+ 	soc_info->mem_base = MT7621_DRAM_BASE;
++	ralink_soc = MT762X_SOC_MT7621AT;
+ 
+ 	rt2880_pinmux_data = mt7621_pinmux_data;
+ 
