@@ -5,6 +5,17 @@
 # See /LICENSE for more information.
 #
 
+define Profile/DHP1565A1
+	NAME:=D-Link DHP-1565 rev. A1
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/DHP1565A1/Description
+	Package set optimized for the D-Link DHP-1565 rev. A1.
+endef
+
+$(eval $(call Profile,DHP1565A1))
+
 define Profile/DIR505A1
 	NAME:=D-Link DIR-505 rev. A1
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev

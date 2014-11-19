@@ -167,6 +167,7 @@ platform_check_image() {
 	ap81 | \
 	ap83 | \
 	ap132 | \
+	dhp-1565-a1 |\
 	dir-505-a1 | \
 	dir-600-a1 | \
 	dir-615-c1 | \

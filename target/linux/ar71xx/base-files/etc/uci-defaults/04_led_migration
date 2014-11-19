@@ -46,6 +46,7 @@ migrate_leds()
 board=$(ar71xx_board_name)
 
 case "$board" in
+dhp-1565-a1|\
 dir-825-c1|\
 dir-835-a1)
 	migrate_leds ":orange:=:amber:" ":wifi_bgn=:wlan2g"
