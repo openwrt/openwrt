@@ -1,0 +1,43 @@
+--- a/src/misc/getopt.c
++++ b/src/misc/getopt.c
+@@ -24,8 +24,23 @@ int getopt(int argc, char * const argv[]
+ 		optind = 1;
+ 	}
+ 
+-	if (optind >= argc || !argv[optind] || argv[optind][0] != '-' || !argv[optind][1])
++	if (optind >= argc || !argv[optind])
+ 		return -1;
++
++	if (argv[optind][0] != '-') {
++		/* GNU extension */
++		if (optstring[0] == '-') {
++			optarg = argv[optind];
++			optind++;
++			return 1;
++		}
++
++		return -1;
++	}
++
++	if (!argv[optind][1])
++		return -1;
++
+ 	if (argv[optind][1] == '-' && !argv[optind][2])
+ 		return optind++, -1;
+ 
+--- a/src/misc/getopt_long.c
++++ b/src/misc/getopt_long.c
+@@ -12,7 +12,12 @@ static int __getopt_long(int argc, char
+ 		__optpos = 0;
+ 		optind = 1;
+ 	}
+-	if (optind >= argc || !argv[optind] || argv[optind][0] != '-') return -1;
++	if (optind >= argc || !argv[optind])
++		return -1;
++
++	if (argv[optind][0] != '-')
++		return getopt(argc, argv, optstring);
++
+ 	if ((longonly && argv[optind][1]) ||
+ 		(argv[optind][1] == '-' && argv[optind][2]))
+ 	{
