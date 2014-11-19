@@ -35,41 +35,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_K3_DMA) += k3dma.o
  obj-$(CONFIG_MOXART_DMA) += moxart-dma.o
 +obj-$(CONFIG_DMA_RALINK) += ralink-gdma.o
---- a/drivers/dma/dmaengine.c
-+++ b/drivers/dma/dmaengine.c
-@@ -564,6 +564,32 @@ struct dma_chan *dma_get_any_slave_chann
- EXPORT_SYMBOL_GPL(dma_get_any_slave_channel);
- 
- /**
-+ * dma_request_slave_channel - try to get specific channel exclusively
-+ * @chan: target channel
-+ */
-+struct dma_chan *dma_get_slave_channel(struct dma_chan *chan)
-+{
-+	int err = -EBUSY;
-+
-+	/* lock against __dma_request_channel */
-+	mutex_lock(&dma_list_mutex);
-+
-+	if (chan->client_count == 0) {
-+		err = dma_chan_get(chan);
-+		if (err)
-+			pr_debug("%s: failed to get %s: (%d)\n",
-+				__func__, dma_chan_name(chan), err);
-+	} else
-+		chan = NULL;
-+
-+	mutex_unlock(&dma_list_mutex);
-+
-+	return chan;
-+}
-+EXPORT_SYMBOL_GPL(dma_get_slave_channel);
-+
-+
-+/**
-  * __dma_request_channel - try to allocate an exclusive channel
-  * @mask: capabilities that the channel must satisfy
-  * @fn: optional callback to disposition available channels
 --- /dev/null
 +++ b/drivers/dma/ralink-gdma.c
 @@ -0,0 +1,577 @@
