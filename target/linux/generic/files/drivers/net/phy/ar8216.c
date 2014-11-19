@@ -316,6 +316,31 @@ split_addr(u32 regaddr, u16 *r1, u16 *r2, u16 *page)
 	*page = regaddr & 0x1ff;
 }
 
+/* inspired by phy_poll_reset in drivers/net/phy/phy_device.c */
+static int
+ar8xxx_phy_poll_reset(struct mii_bus *bus)
+{
+        unsigned int sleep_msecs = 20;
+        int ret, elapsed, i;
+
+        for (elapsed = sleep_msecs; elapsed <= 600;
+	     elapsed += sleep_msecs) {
+                msleep(sleep_msecs);
+                for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
+                        ret = mdiobus_read(bus, i, MII_BMCR);
+                        if (ret < 0)
+				return ret;
+                        if (ret & BMCR_RESET)
+				break;
+                        if (i == AR8XXX_NUM_PHYS - 1) {
+                                usleep_range(1000, 2000);
+                                return 0;
+                        }
+                }
+        }
+        return -ETIMEDOUT;
+}
+
 static u32
 ar8xxx_mii_read(struct ar8xxx_priv *priv, int reg)
 {
@@ -876,7 +901,8 @@ ar8236_hw_init(struct ar8xxx_priv *priv)
 			      ADVERTISE_PAUSE_ASYM);
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
-	msleep(1000);
+
+	ar8xxx_phy_poll_reset(bus);
 
 	priv->initialized = true;
 	return 0;
@@ -964,7 +990,7 @@ ar8316_hw_init(struct ar8xxx_priv *priv)
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
 
-	msleep(1000);
+	ar8xxx_phy_poll_reset(bus);
 
 out:
 	priv->initialized = true;
@@ -1622,7 +1648,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
 
-	msleep(1000);
+	ar8xxx_phy_poll_reset(bus);
 
 	return 0;
 }
