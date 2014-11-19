@@ -432,6 +432,7 @@ struct fe_priv
 	int				link[8];
 
 	struct fe_hw_stats		*hw_stats;
+	unsigned long			vlan_map;
 };
 
 extern const struct of_device_id of_fe_match[];

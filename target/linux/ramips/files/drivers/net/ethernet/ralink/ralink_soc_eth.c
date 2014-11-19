@@ -418,6 +418,54 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 	return storage;
 }
 
+static int fe_vlan_rx_add_vid(struct net_device *dev,
+		__be16 proto, u16 vid)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 idx = (vid & 0xf);
+	u32 vlan_cfg;
+
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
+			(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+		return 0;
+
+	if (test_bit(idx, &priv->vlan_map)) {
+		netdev_warn(dev, "disable tx vlan offload\n");
+		dev->wanted_features &= ~NETIF_F_HW_VLAN_CTAG_TX;
+		netdev_update_features(dev);
+	} else {
+		vlan_cfg = fe_r32(fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
+				((idx >> 1) << 2));
+		if (idx & 0x1) {
+			vlan_cfg &= 0xffff;
+			vlan_cfg |= (vid << 16);
+		} else {
+			vlan_cfg &= 0xffff0000;
+			vlan_cfg |= vid;
+		}
+		fe_w32(vlan_cfg, fe_reg_table[FE_REG_FE_DMA_VID_BASE] +
+				((idx >> 1) << 2));
+		set_bit(idx, &priv->vlan_map);
+	}
+
+	return 0;
+}
+
+static int fe_vlan_rx_kill_vid(struct net_device *dev,
+		__be16 proto, u16 vid)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 idx = (vid & 0xf);
+
+	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
+				(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+		return 0;
+
+	clear_bit(idx, &priv->vlan_map);
+
+	return 0;
+}
+
 static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		int idx)
 {
@@ -1182,6 +1230,8 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_change_mtu		= fe_change_mtu,
 	.ndo_tx_timeout		= fe_tx_timeout,
 	.ndo_get_stats64        = fe_get_stats64,
+	.ndo_vlan_rx_add_vid	= fe_vlan_rx_add_vid,
+	.ndo_vlan_rx_kill_vid	= fe_vlan_rx_kill_vid,
 };
 
 static int fe_probe(struct platform_device *pdev)
@@ -1236,6 +1286,10 @@ static int fe_probe(struct platform_device *pdev)
 	netdev->vlan_features = netdev->hw_features &
 		~(NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX);
 	netdev->features |= netdev->hw_features;
+
+	/* fake rx vlan filter func. to support tx vlan offload func */
+	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
+		netdev->features |= NETIF_F_HW_VLAN_CTAG_FILTER;
 
 	priv = netdev_priv(netdev);
 	spin_lock_init(&priv->page_lock);
