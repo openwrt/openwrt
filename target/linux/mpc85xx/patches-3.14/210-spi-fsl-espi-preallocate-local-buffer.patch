@@ -1,0 +1,154 @@
+From: Gabor Juhos <juhosg@openwrt.org>
+Subject: spi-fsl-espi: avoid frequent high order allocations
+
+The driver allocates 64KiB of memory fro a local buffer before
+each transfer and releases that afterwards. When the memory is
+fragmented this allocation often fails and causes a warning like
+this:
+
+  kworker/u2:2: page allocation failure: order:4, mode:0x10c0d0
+  CPU: 0 PID: 7011 Comm: kworker/u2:2 Not tainted 3.10.24 #1
+  Workqueue: ffe07000.spi mpc8xxx_spi_work
+  Call Trace:
+  [c1c6dcf0] [c0006914] show_stack+0x50/0x170 (unreliable)
+  [c1c6dd30] [c0259858] dump_stack+0x24/0x34
+  [c1c6dd40] [c00672e8] warn_alloc_failed+0x120/0x13c
+  [c1c6dd90] [c0069920] __alloc_pages_nodemask+0x574/0x5c8
+  [c1c6de20] [c0069990] __get_free_pages+0x1c/0x4c
+  [c1c6de30] [c0185174] fsl_espi_do_one_msg+0x128/0x2a0
+  [c1c6de90] [c0184290] mpc8xxx_spi_work+0x50/0x7c
+  [c1c6dea0] [c0037af8] process_one_work+0x208/0x30c
+  [c1c6dec0] [c00387a0] worker_thread+0x20c/0x308
+  [c1c6def0] [c003de60] kthread+0xa4/0xa8
+  [c1c6df40] [c000c4bc] ret_from_kernel_thread+0x5c/0x64
+
+  m25p80 spi0.0: error -12 reading SR
+  end_request: I/O error, dev mtdblock3, sector 680
+  SQUASHFS error: squashfs_read_data failed to read block 0x54a4a
+  SQUASHFS error: Unable to read data cache entry [54a4a]
+
+Preallocate the buffer from the probe routine to avoid
+this.
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ drivers/spi/spi-fsl-espi.c | 34 ++++++++++++++++------------------
+ drivers/spi/spi-fsl-lib.h  |  1 +
+ 2 files changed, 17 insertions(+), 18 deletions(-)
+
+diff --git a/drivers/spi/spi-fsl-espi.c b/drivers/spi/spi-fsl-espi.c
+index 428dc7a..5207176 100644
+--- a/drivers/spi/spi-fsl-espi.c
++++ b/drivers/spi/spi-fsl-espi.c
+@@ -334,17 +334,13 @@ static void fsl_espi_do_trans(struct spi_message *m,
+ static void fsl_espi_cmd_trans(struct spi_message *m,
+ 				struct fsl_espi_transfer *trans, u8 *rx_buff)
+ {
++	struct spi_device *spi = m->spi;
++	struct mpc8xxx_spi *mspi = spi_master_get_devdata(spi->master);
+ 	struct spi_transfer *t;
+-	u8 *local_buf;
++	u8 *local_buf = mspi->local_buf;
+ 	int i = 0;
+ 	struct fsl_espi_transfer *espi_trans = trans;
+ 
+-	local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
+-	if (!local_buf) {
+-		espi_trans->status = -ENOMEM;
+-		return;
+-	}
+-
+ 	list_for_each_entry(t, &m->transfers, transfer_list) {
+ 		if (t->tx_buf) {
+ 			memcpy(local_buf + i, t->tx_buf, t->len);
+@@ -357,28 +353,23 @@ static void fsl_espi_cmd_trans(struct spi_message *m,
+ 	fsl_espi_do_trans(m, espi_trans);
+ 
+ 	espi_trans->actual_length = espi_trans->len;
+-	kfree(local_buf);
+ }
+ 
+ static void fsl_espi_rw_trans(struct spi_message *m,
+ 				struct fsl_espi_transfer *trans, u8 *rx_buff)
+ {
++	struct spi_device *spi = m->spi;
++	struct mpc8xxx_spi *mspi = spi_master_get_devdata(spi->master);
+ 	struct fsl_espi_transfer *espi_trans = trans;
+ 	unsigned int n_tx = espi_trans->n_tx;
+ 	unsigned int n_rx = espi_trans->n_rx;
+ 	struct spi_transfer *t;
+-	u8 *local_buf;
++	u8 *local_buf = mspi->local_buf;
+ 	u8 *rx_buf = rx_buff;
+ 	unsigned int trans_len;
+ 	unsigned int addr;
+ 	int i, pos, loop;
+ 
+-	local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
+-	if (!local_buf) {
+-		espi_trans->status = -ENOMEM;
+-		return;
+-	}
+-
+ 	for (pos = 0, loop = 0; pos < n_rx; pos += trans_len, loop++) {
+ 		trans_len = n_rx - pos;
+ 		if (trans_len > SPCOM_TRANLEN_MAX - n_tx)
+@@ -412,8 +403,6 @@ static void fsl_espi_rw_trans(struct spi_message *m,
+ 		else
+ 			espi_trans->actual_length += espi_trans->len;
+ 	}
+-
+-	kfree(local_buf);
+ }
+ 
+ static void fsl_espi_do_one_msg(struct spi_message *m)
+@@ -581,6 +570,7 @@ static irqreturn_t fsl_espi_irq(s32 irq, void *context_data)
+ static void fsl_espi_remove(struct mpc8xxx_spi *mspi)
+ {
+ 	iounmap(mspi->reg_base);
++	kfree(mspi->local_buf);
+ }
+ 
+ static struct spi_master * fsl_espi_probe(struct device *dev,
+@@ -612,10 +602,16 @@ static struct spi_master * fsl_espi_probe(struct device *dev,
+ 	mpc8xxx_spi->spi_do_one_msg = fsl_espi_do_one_msg;
+ 	mpc8xxx_spi->spi_remove = fsl_espi_remove;
+ 
++	mpc8xxx_spi->local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
++	if (!mpc8xxx_spi->local_buf) {
++		ret = -ENOMEM;
++		goto err_probe;
++	}
++
+ 	mpc8xxx_spi->reg_base = ioremap(mem->start, resource_size(mem));
+ 	if (!mpc8xxx_spi->reg_base) {
+ 		ret = -ENOMEM;
+-		goto err_probe;
++		goto free_buf;
+ 	}
+ 
+ 	reg_base = mpc8xxx_spi->reg_base;
+@@ -658,6 +654,8 @@ unreg_master:
+ 	free_irq(mpc8xxx_spi->irq, mpc8xxx_spi);
+ free_irq:
+ 	iounmap(mpc8xxx_spi->reg_base);
++free_buf:
++	kfree(mpc8xxx_spi->local_buf);
+ err_probe:
+ 	spi_master_put(master);
+ err:
+diff --git a/drivers/spi/spi-fsl-lib.h b/drivers/spi/spi-fsl-lib.h
+index 52db693..8dda68b 100644
+--- a/drivers/spi/spi-fsl-lib.h
++++ b/drivers/spi/spi-fsl-lib.h
+@@ -30,6 +30,7 @@ struct mpc8xxx_spi {
+ 	void *rx;
+ #ifdef CONFIG_SPI_FSL_ESPI
+ 	int len;
++	u8 *local_buf;
+ #endif
+ 
+ 	int subblock;
+-- 
+2.1.3
+
