@@ -4,13 +4,14 @@
  	&wg302v1_eth[0],
  };
  
-+static char wg302v1_mem_fixup[] __initdata = "mem=32M ";
++static char wg302v1_mem_fixup[] __initdata = " mem=32M";
 +
 +static void __init wg302v1_fixup(struct tag *tags, char **cmdline,
 +				 struct meminfo *mi)
 +{
 +	struct tag *t = tags;
 +	char *p = *cmdline;
++	size_t fixlen, cmdlen;
 +
 +	/* Find the end of the tags table, taking note of any cmdline tag. */
 +	for (; t->hdr.size; t = tag_next(t)) {
@@ -19,18 +20,17 @@
 +		}
 +	}
 +
-+	/* Overwrite the end of the table with a new cmdline tag. */
-+	t->hdr.tag = ATAG_CMDLINE;
-+	t->hdr.size = (sizeof (struct tag_header) +
-+		strlen(wg302v1_mem_fixup) + strlen(p) + 1 + 4) >> 2;
-+	strlcpy(t->u.cmdline.cmdline, wg302v1_mem_fixup, COMMAND_LINE_SIZE);
-+	strlcpy(t->u.cmdline.cmdline + strlen(wg302v1_mem_fixup), p,
-+		COMMAND_LINE_SIZE - strlen(wg302v1_mem_fixup));
++	fixlen = strlen(wg302v1_mem_fixup);
++	cmdlen = strlen(p);
++	if (fixlen + cmdlen >= COMMAND_LINE_SIZE)
++		return;
 +
-+	/* Terminate the table. */
-+	t = tag_next(t);
-+	t->hdr.tag = ATAG_NONE;
-+	t->hdr.size = 0;
++	/* append the fixup to the cmdline */
++	memmove(p + cmdlen, wg302v1_mem_fixup, fixlen + 1);
++
++	/* Adjust the size of the atag if there was one */
++	if (t->hdr.size)
++		t->hdr.size += fixlen;
 +}
 +
  static void __init wg302v1_init(void)
