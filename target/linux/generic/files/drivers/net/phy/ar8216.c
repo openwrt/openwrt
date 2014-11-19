@@ -51,6 +51,8 @@ struct ar8xxx_priv;
 #define AR8XXX_CAP_GIGE			BIT(0)
 #define AR8XXX_CAP_MIB_COUNTERS		BIT(1)
 
+#define AR8XXX_NUM_PHYS 	5
+
 enum {
 	AR8XXX_VER_AR8216 = 0x01,
 	AR8XXX_VER_AR8236 = 0x03,
@@ -868,7 +870,7 @@ ar8236_hw_init(struct ar8xxx_priv *priv)
 
 	/* Initialize the PHYs */
 	bus = priv->mii_bus;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
 		mdiobus_write(bus, i, MII_ADVERTISE,
 			      ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
 			      ADVERTISE_PAUSE_ASYM);
@@ -954,7 +956,7 @@ ar8316_hw_init(struct ar8xxx_priv *priv)
 
 	/* Initialize the ports */
 	bus = priv->mii_bus;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
 		/* initialize the port itself */
 		mdiobus_write(bus, i, MII_ADVERTISE,
 			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
@@ -1609,7 +1611,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	ar8327_leds_init(priv);
 
 	bus = priv->mii_bus;
-	for (i = 0; i < AR8327_NUM_PHYS; i++) {
+	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
 		ar8327_phy_fixup(priv, i);
 
 		/* start aneg on the PHY */
