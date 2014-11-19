@@ -80,6 +80,7 @@ struct ar8xxx_chip {
 	int (*atu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
+	void (*fixup_phys)(struct ar8xxx_priv *priv);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
@@ -1636,10 +1637,10 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 
 	ar8327_leds_init(priv);
 
+	priv->chip->fixup_phys(priv);
+
 	bus = priv->mii_bus;
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
-		ar8327_phy_fixup(priv, i);
-
 		/* start aneg on the PHY */
 		mdiobus_write(bus, i, MII_ADVERTISE, ADVERTISE_ALL |
 						     ADVERTISE_PAUSE_CAP |
@@ -1816,6 +1817,15 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
 }
 
+static void
+ar8327_fixup_phys(struct ar8xxx_priv *priv)
+{
+	int i;
+
+	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
+		ar8327_phy_fixup(priv, i);
+}
+
 static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.hw_init = ar8327_hw_init,
@@ -1827,6 +1837,7 @@ static const struct ar8xxx_chip ar8327_chip = {
 	.atu_flush = ar8327_atu_flush,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
+	.fixup_phys = ar8327_fixup_phys,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
