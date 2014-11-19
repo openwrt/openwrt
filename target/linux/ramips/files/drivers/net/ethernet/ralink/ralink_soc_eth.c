@@ -353,18 +353,33 @@ void fe_stats_update(struct fe_priv *priv)
 
 	u64_stats_update_begin(&hwstats->syncp);
 
-	hwstats->tx_bytes			+= fe_r32(base);
-	hwstats->tx_packets			+= fe_r32(base + 0x04);
-	hwstats->tx_skip			+= fe_r32(base + 0x08);
-	hwstats->tx_collisions			+= fe_r32(base + 0x0c);
-	hwstats->rx_bytes			+= fe_r32(base + 0x20);
-	hwstats->rx_packets			+= fe_r32(base + 0x24);
-	hwstats->rx_overflow			+= fe_r32(base + 0x28);
-	hwstats->rx_fcs_errors			+= fe_r32(base + 0x2c);
-	hwstats->rx_short_errors		+= fe_r32(base + 0x30);
-	hwstats->rx_long_errors			+= fe_r32(base + 0x34);
-	hwstats->rx_checksum_errors		+= fe_r32(base + 0x38);
-	hwstats->rx_flow_control_packets	+= fe_r32(base + 0x3c);
+	if (IS_ENABLED(CONFIG_SOC_MT7621)) {
+		hwstats->rx_bytes			+= fe_r32(base);
+		hwstats->rx_packets			+= fe_r32(base + 0x08);
+		hwstats->rx_overflow			+= fe_r32(base + 0x10);
+		hwstats->rx_fcs_errors			+= fe_r32(base + 0x14);
+		hwstats->rx_short_errors		+= fe_r32(base + 0x18);
+		hwstats->rx_long_errors			+= fe_r32(base + 0x1c);
+		hwstats->rx_checksum_errors		+= fe_r32(base + 0x20);
+		hwstats->rx_flow_control_packets	+= fe_r32(base + 0x24);
+		hwstats->tx_skip			+= fe_r32(base + 0x28);
+		hwstats->tx_collisions			+= fe_r32(base + 0x2c);
+		hwstats->tx_bytes			+= fe_r32(base + 0x30);
+		hwstats->tx_packets			+= fe_r32(base + 0x38);
+	} else {
+		hwstats->tx_bytes			+= fe_r32(base);
+		hwstats->tx_packets			+= fe_r32(base + 0x04);
+		hwstats->tx_skip			+= fe_r32(base + 0x08);
+		hwstats->tx_collisions			+= fe_r32(base + 0x0c);
+		hwstats->rx_bytes			+= fe_r32(base + 0x20);
+		hwstats->rx_packets			+= fe_r32(base + 0x24);
+		hwstats->rx_overflow			+= fe_r32(base + 0x28);
+		hwstats->rx_fcs_errors			+= fe_r32(base + 0x2c);
+		hwstats->rx_short_errors		+= fe_r32(base + 0x30);
+		hwstats->rx_long_errors			+= fe_r32(base + 0x34);
+		hwstats->rx_checksum_errors		+= fe_r32(base + 0x38);
+		hwstats->rx_flow_control_packets	+= fe_r32(base + 0x3c);
+	}
 
 	u64_stats_update_end(&hwstats->syncp);
 }
@@ -391,17 +406,10 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 
 	do {
 		start = u64_stats_fetch_begin_bh(&hwstats->syncp);
-		if (IS_ENABLED(CONFIG_SOC_MT7621)) {
-			storage->rx_packets = dev->stats.rx_packets;
-			storage->tx_packets = dev->stats.tx_packets;
-			storage->rx_bytes = dev->stats.rx_bytes;
-			storage->tx_bytes = dev->stats.tx_bytes;
-		} else {
-			storage->rx_packets = dev->stats.rx_packets;
-			storage->tx_packets = dev->stats.tx_packets;
-			storage->rx_bytes = dev->stats.rx_bytes;
-			storage->tx_bytes = dev->stats.tx_bytes;
-		}
+		storage->rx_packets = hwstats->rx_packets;
+		storage->tx_packets = hwstats->tx_packets;
+		storage->rx_bytes = hwstats->rx_bytes;
+		storage->tx_bytes = hwstats->tx_bytes;
 		storage->collisions = hwstats->tx_collisions;
 		storage->rx_length_errors = hwstats->rx_short_errors +
 			hwstats->rx_long_errors;
@@ -497,12 +505,12 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 
 	/* VLAN header offload */
 	if (vlan_tx_tag_present(skb)) {
-		if (IS_ENABLED(CONFIG_SOC_MT7620))
+		if (IS_ENABLED(CONFIG_SOC_MT7621))
+			txd->txd4 |= TX_DMA_INS_VLAN_MT7621 | vlan_tx_tag_get(skb);
+		else
 			txd->txd4 |= TX_DMA_INS_VLAN |
 				((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
 				(vlan_tx_tag_get(skb) & 0xF);
-		else
-			txd->txd4 |= TX_DMA_INS_VLAN_MT7621 | vlan_tx_tag_get(skb);
 	}
 
 	/* TSO: fill MSS info in tcp checksum field */
