@@ -2863,15 +2863,6 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	return ret;
 }
 
-static int
-ar8xxx_phy_config_aneg(struct phy_device *phydev)
-{
-	if (phydev->addr == 0)
-		return 0;
-
-	return genphy_config_aneg(phydev);
-}
-
 static const u32 ar8xxx_phy_ids[] = {
 	0x004dd033,
 	0x004dd034, /* AR8327 */
@@ -3043,7 +3034,7 @@ static struct phy_driver ar8xxx_phy_driver = {
 	.remove		= ar8xxx_phy_remove,
 	.detach		= ar8xxx_phy_detach,
 	.config_init	= ar8xxx_phy_config_init,
-	.config_aneg	= ar8xxx_phy_config_aneg,
+	.config_aneg	= genphy_config_aneg,
 	.read_status	= ar8xxx_phy_read_status,
 	.driver		= { .owner = THIS_MODULE },
 };
