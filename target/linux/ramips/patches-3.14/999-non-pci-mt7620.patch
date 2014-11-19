@@ -1,0 +1,14 @@
+Index: linux-3.14.18/arch/mips/ralink/mt7620.c
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/mt7620.c	2014-11-18 20:57:21.506801623 +0100
++++ linux-3.14.18/arch/mips/ralink/mt7620.c	2014-11-18 22:12:05.133116492 +0100
+@@ -511,9 +511,6 @@
+ 			ralink_soc = MT762X_SOC_MT7620N;
+ 			name = "MT7620N";
+ 			soc_info->compatible = "ralink,mt7620n-soc";
+-#ifdef CONFIG_PCI
+-			panic("mt7620n is only supported for non pci kernels");
+-#endif
+ 		}
+ 	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
+ 		ralink_soc = MT762X_SOC_MT7628AN;
