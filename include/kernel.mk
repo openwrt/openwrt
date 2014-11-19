@@ -84,10 +84,8 @@ define ModuleAutoLoad
 		boot="$$$$$$$$2"; \
 		shift 2; \
 		for mod in $$$$$$$$mods; do \
-			if [ -e $(2)/$(MODULES_SUBDIR)/$$$$$$$$mod.ko ]; then \
-				mkdir -p $(2)/etc/modules.d; \
-				echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
-			fi; \
+			mkdir -p $(2)/etc/modules.d; \
+			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
 		done; \
 		if [ -e $(2)/etc/modules.d/$(1) ]; then \
 			if [ "$$$$$$$$boot" = "1" ]; then \
@@ -103,10 +101,8 @@ define ModuleAutoLoad
 		boot="$$$$$$$$3"; \
 		shift 3; \
 		for mod in $$$$$$$$mods; do \
-			if [ -e $(2)/$(MODULES_SUBDIR)/$$$$$$$$mod.ko ]; then \
-				mkdir -p $(2)/etc/modules.d; \
-				echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
-			fi; \
+			mkdir -p $(2)/etc/modules.d; \
+			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
 		done; \
 		if [ -e $(2)/etc/modules.d/$$$$$$$$priority-$(1) ]; then \
 			if [ "$$$$$$$$boot" = "1" ]; then \
