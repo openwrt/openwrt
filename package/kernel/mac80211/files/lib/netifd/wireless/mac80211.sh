@@ -326,6 +326,13 @@ ${max_listen_int:+max_listen_interval=$max_listen_int}
 EOF
 }
 
+mac80211_get_addr() {
+	local phy="$1"
+	local idx="$(($2 + 1))"
+
+	head -n $(($macidx + 1)) /sys/class/ieee80211/${phy}/addresses | tail -n1
+}
+
 mac80211_generate_mac() {
 	local phy="$1"
 	local id="${macidx:-0}"
@@ -333,7 +340,18 @@ mac80211_generate_mac() {
 	local ref="$(cat /sys/class/ieee80211/${phy}/macaddress)"
 	local mask="$(cat /sys/class/ieee80211/${phy}/address_mask)"
 
-	[ "$mask" = "00:00:00:00:00:00" ] && mask="ff:ff:ff:ff:ff:ff";
+	[ "$mask" = "00:00:00:00:00:00" ] && {
+		mask="ff:ff:ff:ff:ff:ff";
+
+		[ "$(wc -l < /sys/class/ieee80211/${phy}/addresses)" -gt 1 ] && {
+			addr="$(mac80211_get_addr "$phy" "$id")"
+			[ -n "$addr" ] && {
+				echo "$addr"
+				return
+			}
+		}
+	}
+
 	local oIFS="$IFS"; IFS=":"; set -- $mask; IFS="$oIFS"
 
 	local mask1=$1
