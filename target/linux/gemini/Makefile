@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=gemini
 BOARDNAME:=Cortina Systems CS351x
+SUBTARGETS:=raidsonic wiligear
 FEATURES:=squashfs pci
 CPU_TYPE:=fa526
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
