@@ -1,0 +1,43 @@
+From 4586bc54a322568d5258d6a1b04e361d4a95597b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 12 Nov 2014 09:06:22 +0100
+Subject: [PATCH][RFC] mtd: bcm47xxpart: lower minimal blocksize to 4Ki (from
+ 64Ki)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some devices like Netgear WNR1000v3 or WGR614v10 have partitions aligned
+to 0x1000. Using bigger blocksize stopped us from detecting some parts.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+Most of supported devices use flashes with erasesize 0x10000 (64Ki), so
+this change shouldn't affect them (no regressions expected).
+Any objections?
+---
+ drivers/mtd/bcm47xxpart.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
+index dfd57a0..948f535 100644
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -95,8 +95,12 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+ 	int possible_nvram_sizes[] = { 0x8000, 0xF000, 0x10000, };
+ 	bool found_nvram = false;
+ 
+-	if (blocksize <= 0x10000)
+-		blocksize = 0x10000;
++	/*
++	 * Some really old flashes (like AT45DB*) had smaller erasesize-s, but
++	 * partitions were aligned to at least 0x1000 anyway.
++	 */
++	if (blocksize < 0x1000)
++		blocksize = 0x1000;
+ 
+ 	/* Alloc */
+ 	parts = kzalloc(sizeof(struct mtd_partition) * BCM47XXPART_MAX_PARTS,
+-- 
+1.8.4.5
+
