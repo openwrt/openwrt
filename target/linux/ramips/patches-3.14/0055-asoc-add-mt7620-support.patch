@@ -19,8 +19,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 sound/soc/ralink/mt7620-i2s.c
  create mode 100644 sound/soc/ralink/mt7620-wm8960.c
 
---- a/arch/mips/ralink/of.c
-+++ b/arch/mips/ralink/of.c
+Index: linux-3.14.18/arch/mips/ralink/of.c
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/of.c	2014-11-18 10:45:55.010989756 +0100
++++ linux-3.14.18/arch/mips/ralink/of.c	2014-11-18 13:54:21.586438562 +0100
 @@ -15,6 +15,7 @@
  #include <linux/of_fdt.h>
  #include <linux/kernel.h>
@@ -37,9 +39,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  __iomem void *rt_memc_membase;
  
  extern struct boot_param_header __dtb_start;
---- a/sound/soc/Kconfig
-+++ b/sound/soc/Kconfig
-@@ -47,6 +47,7 @@ source "sound/soc/kirkwood/Kconfig"
+Index: linux-3.14.18/sound/soc/Kconfig
+===================================================================
+--- linux-3.14.18.orig/sound/soc/Kconfig	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/sound/soc/Kconfig	2014-11-18 10:45:55.351159766 +0100
+@@ -47,6 +47,7 @@
  source "sound/soc/intel/Kconfig"
  source "sound/soc/mxs/Kconfig"
  source "sound/soc/pxa/Kconfig"
@@ -47,9 +51,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  source "sound/soc/samsung/Kconfig"
  source "sound/soc/s6000/Kconfig"
  source "sound/soc/sh/Kconfig"
---- a/sound/soc/Makefile
-+++ b/sound/soc/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_SND_SOC)	+= nuc900/
+Index: linux-3.14.18/sound/soc/Makefile
+===================================================================
+--- linux-3.14.18.orig/sound/soc/Makefile	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/sound/soc/Makefile	2014-11-18 10:45:55.351159766 +0100
+@@ -24,6 +24,7 @@
  obj-$(CONFIG_SND_SOC)	+= omap/
  obj-$(CONFIG_SND_SOC)	+= kirkwood/
  obj-$(CONFIG_SND_SOC)	+= pxa/
@@ -57,8 +63,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SND_SOC)	+= samsung/
  obj-$(CONFIG_SND_SOC)	+= s6000/
  obj-$(CONFIG_SND_SOC)	+= sh/
---- /dev/null
-+++ b/sound/soc/ralink/Kconfig
+Index: linux-3.14.18/sound/soc/ralink/Kconfig
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/sound/soc/ralink/Kconfig	2014-11-18 10:45:55.351159766 +0100
 @@ -0,0 +1,15 @@
 +config SND_MT7620_SOC_I2S
 +	depends on SOC_MT7620 && SND_SOC
@@ -75,8 +83,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	help
 +	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
 +	  a.k.a Qi Ben NanoNote.
---- /dev/null
-+++ b/sound/soc/ralink/Makefile
+Index: linux-3.14.18/sound/soc/ralink/Makefile
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/sound/soc/ralink/Makefile	2014-11-18 10:45:55.351159766 +0100
 @@ -0,0 +1,11 @@
 +#
 +# Jz4740 Platform Support
@@ -89,9 +99,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +snd-soc-mt7620-wm8960-objs := mt7620-wm8960.o
 +
 +obj-$(CONFIG_SND_MT7620_SOC_WM8960) += snd-soc-mt7620-wm8960.o
---- /dev/null
-+++ b/sound/soc/ralink/mt7620-i2s.c
-@@ -0,0 +1,466 @@
+Index: linux-3.14.18/sound/soc/ralink/mt7620-i2s.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/sound/soc/ralink/mt7620-i2s.c	2014-11-18 10:45:55.351159766 +0100
+@@ -0,0 +1,436 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
 + *
@@ -331,34 +343,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+static int mt7620_i2s_suspend(struct snd_soc_dai *dai)
-+{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	uint32_t cfg;
-+
-+	if (dai->active) {
-+		cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
-+		cfg &= ~I2S_REG_CFG0_TX_EN;
-+		mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
-+	}
-+
-+	return 0;
-+}
-+
-+static int mt7620_i2s_resume(struct snd_soc_dai *dai)
-+{
-+	struct mt7620_i2s *i2s = snd_soc_dai_get_drvdata(dai);
-+	uint32_t cfg;
-+
-+	if (dai->active) {
-+		cfg = mt7620_i2s_read(i2s, I2S_REG_CFG0);
-+		cfg |= I2S_REG_CFG0_TX_EN;
-+		mt7620_i2s_write(i2s, I2S_REG_CFG0, cfg);
-+	}
-+
-+	return 0;
-+}
-+
 +static void mt7620_i2c_init_pcm_config(struct mt7620_i2s *i2s)
 +{
 +	struct snd_dmaengine_dai_dma_data *dma_data;
@@ -418,8 +402,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.set_sysclk = mt7620_i2s_set_sysclk,
 +};
 +
-+#define JZ4740_I2S_FMTS (SNDRV_PCM_FMTBIT_S8 | \
-+		SNDRV_PCM_FMTBIT_S16_LE)
++#define JZ4740_I2S_FMTS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
++			 SNDRV_PCM_FMTBIT_S24_LE)
 +
 +static struct snd_soc_dai_driver mt7620_i2s_dai = {
 +	.probe = mt7620_i2s_dai_probe,
@@ -438,8 +422,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	},
 +	.symmetric_rates = 1,
 +	.ops = &mt7620_i2s_dai_ops,
-+	.suspend = mt7620_i2s_suspend,
-+	.resume = mt7620_i2s_resume,
 +};
 +
 +static const struct snd_pcm_hardware mt7620_pcm_hardware = {
@@ -558,136 +540,248 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +MODULE_DESCRIPTION("Ingenic JZ4740 SoC I2S driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mt7620-i2s");
---- /dev/null
-+++ b/sound/soc/ralink/mt7620-wm8960.c
-@@ -0,0 +1,125 @@
+Index: linux-3.14.18/sound/soc/ralink/mt7620-wm8960.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.18/sound/soc/ralink/mt7620-wm8960.c	2014-11-18 11:56:57.570299500 +0100
+@@ -0,0 +1,233 @@
 +/*
-+ * Copyright (C) 2009, Lars-Peter Clausen <lars@metafoo.de>
++ * Copyright 2013 Freescale Semiconductor, Inc.
 + *
-+ * This program is free software; you can redistribute it and/or modify
-+ * it under the terms of the GNU General Public License version 2 as
-+ * published by the Free Software Foundation.
++ * Based on mt7620-sgtl5000.c
++ * Copyright 2012 Freescale Semiconductor, Inc.
++ * Copyright 2012 Linaro Ltd.
 + *
-+ *  You should have received a copy of the  GNU General Public License along
-+ *  with this program; if not, write  to the Free Software Foundation, Inc.,
-+ *  675 Mass Ave, Cambridge, MA 02139, USA.
++ * The code contained herein is licensed under the GNU General Public
++ * License. You may obtain a copy of the GNU General Public License
++ * Version 2 or later at the following locations:
 + *
++ * http://www.opensource.org/licenses/gpl-license.html
++ * http://www.gnu.org/copyleft/gpl.html
 + */
 +
 +#include <linux/module.h>
-+#include <linux/moduleparam.h>
-+#include <linux/of.h>
-+#include <linux/timer.h>
-+#include <linux/interrupt.h>
-+#include <linux/platform_device.h>
-+#include <sound/core.h>
-+#include <sound/pcm.h>
++#include <linux/of_platform.h>
++#include <linux/i2c.h>
++#include <linux/slab.h>
 +#include <sound/soc.h>
++#include <sound/pcm_params.h>
++#include <sound/soc-dapm.h>
++#include <linux/pinctrl/consumer.h>
 +
++#include "../codecs/wm8960.h"
 +
-+static const struct snd_soc_dapm_widget mt7620_wm8960_widgets[] = {
-+	SND_SOC_DAPM_SPK("Speaker", NULL),
++#define DAI_NAME_SIZE	32
++
++struct mt7620_wm8960_data {
++	struct snd_soc_dai_link dai;
++	struct snd_soc_card card;
++	char codec_dai_name[DAI_NAME_SIZE];
++	char platform_name[DAI_NAME_SIZE];
++	unsigned int clk_frequency;
 +};
 +
-+static const struct snd_soc_dapm_route mt7620_wm8960_routes[] = {
-+	{"Speaker", NULL, "HP_L"},
-+	{"Speaker", NULL, "HP_R"},
++struct mt7620_priv {
++	struct platform_device *pdev;
++};
++static struct mt7620_priv card_priv;
++
++static const struct snd_soc_dapm_widget mt7620_wm8960_dapm_widgets[] = {
++	SND_SOC_DAPM_HP("Headphone Jack", NULL),
++	SND_SOC_DAPM_SPK("Ext Spk", NULL),
++	SND_SOC_DAPM_MIC("AMIC", NULL),
++	SND_SOC_DAPM_MIC("DMIC", NULL),
 +};
 +
-+#define MT7620_DAIFMT (SND_SOC_DAIFMT_I2S | \
-+			SND_SOC_DAIFMT_NB_NF | \
-+			SND_SOC_DAIFMT_CBM_CFM)
++static int sample_rate = 44100;
++static snd_pcm_format_t sample_format = SNDRV_PCM_FORMAT_S16_LE;
 +
-+static int mt7620_wm8960_codec_init(struct snd_soc_pcm_runtime *rtd)
++static int mt7620_hifi_hw_params(struct snd_pcm_substream *substream,
++		struct snd_pcm_hw_params *params)
 +{
-+	struct snd_soc_codec *codec = rtd->codec;
-+	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
-+	struct snd_soc_dapm_context *dapm = &codec->dapm;
++	sample_rate = params_rate(params);
++	sample_format = params_format(params);
++
++	return 0;
++}
++
++static struct snd_soc_ops mt7620_hifi_ops = {
++	.hw_params = mt7620_hifi_hw_params,
++};
++
++static int mt7620_wm8960_set_bias_level(struct snd_soc_card *card,
++					struct snd_soc_dapm_context *dapm,
++					enum snd_soc_bias_level level)
++{
++	struct snd_soc_dai *codec_dai = card->rtd[0].codec_dai;
++	struct mt7620_priv *priv = &card_priv;
++	struct mt7620_wm8960_data *data = snd_soc_card_get_drvdata(card);
++	struct device *dev = &priv->pdev->dev;
 +	int ret;
 +
-+	snd_soc_dapm_enable_pin(dapm, "HP_L");
-+	snd_soc_dapm_enable_pin(dapm, "HP_R");
++	if (dapm->dev != codec_dai->dev)
++		return 0;
 +
-+	ret = snd_soc_dai_set_fmt(cpu_dai, MT7620_DAIFMT);
-+	if (ret < 0) {
-+		dev_err(codec->dev, "Failed to set cpu dai format: %d\n", ret);
-+		return ret;
++	switch (level) {
++	case SND_SOC_BIAS_PREPARE:
++		if (dapm->bias_level == SND_SOC_BIAS_STANDBY) {
++		}
++		break;
++
++	case SND_SOC_BIAS_STANDBY:
++		if (dapm->bias_level == SND_SOC_BIAS_PREPARE) {
++			ret = snd_soc_dai_set_sysclk(codec_dai,
++					WM8960_SYSCLK_MCLK, data->clk_frequency,
++					SND_SOC_CLOCK_IN);
++			if (ret < 0) {
++				dev_err(dev,
++					"failed to switch away from FLL: %d\n",
++					ret);
++				return ret;
++			}
++		}
++		break;
++
++	default:
++		break;
 +	}
 +
 +	return 0;
 +}
 +
-+static struct snd_soc_dai_link mt7620_wm8960_dai = {
-+	.name = "mt7620",
-+	.stream_name = "mt7620",
-+	.init = mt7620_wm8960_codec_init,
-+	.codec_dai_name = "wm8960-hifi",
-+};
++static int mt7620_wm8960_late_probe(struct snd_soc_card *card)
++{
++	struct snd_soc_dai *codec_dai = card->rtd[0].codec_dai;
++	struct mt7620_priv *priv = &card_priv;
++	struct mt7620_wm8960_data *data = snd_soc_card_get_drvdata(card);
++	struct device *dev = &priv->pdev->dev;
++	int ret;
 +
-+static struct snd_soc_card mt7620_wm8960 = {
-+	.name = "mt7620-wm8960",
-+	.owner = THIS_MODULE,
-+	.dai_link = &mt7620_wm8960_dai,
-+	.num_links = 1,
++	ret = snd_soc_dai_set_sysclk(codec_dai, WM8960_SYSCLK_MCLK,
++			data->clk_frequency, SND_SOC_CLOCK_IN);
++	if (ret < 0)
++		dev_err(dev, "failed to set sysclk in %s\n", __func__);
 +
-+	.dapm_widgets = mt7620_wm8960_widgets,
-+	.num_dapm_widgets = ARRAY_SIZE(mt7620_wm8960_widgets),
-+	.dapm_routes = mt7620_wm8960_routes,
-+	.num_dapm_routes = ARRAY_SIZE(mt7620_wm8960_routes),
-+};
++	return ret;
++}
 +
 +static int mt7620_wm8960_probe(struct platform_device *pdev)
 +{
-+	struct device_node *np = pdev->dev.of_node;
-+	struct snd_soc_card *card = &mt7620_wm8960;
++	struct device_node *i2s_np, *codec_np;
++	struct platform_device *i2s_pdev;
++	struct mt7620_priv *priv = &card_priv;
++	struct i2c_client *codec_dev;
++	struct mt7620_wm8960_data *data;
 +	int ret;
 +
-+	card->dev = &pdev->dev;
++	priv->pdev = pdev;
 +
-+	mt7620_wm8960_dai.cpu_of_node = of_parse_phandle(np, "cpu-dai", 0);
-+	mt7620_wm8960_dai.codec_of_node = of_parse_phandle(np, "codec-dai", 0);
-+	mt7620_wm8960_dai.platform_of_node = mt7620_wm8960_dai.cpu_of_node;
-+
-+	ret = snd_soc_register_card(card);
-+	if (ret) {
-+		dev_err(&pdev->dev, "snd_soc_register_card() failed: %d\n",
-+			ret);
++	i2s_np = of_parse_phandle(pdev->dev.of_node, "i2s-controller", 0);
++	codec_np = of_parse_phandle(pdev->dev.of_node, "audio-codec", 0);
++	if (!i2s_np || !codec_np) {
++		dev_err(&pdev->dev, "phandle missing or invalid\n");
++		ret = -EINVAL;
++		goto fail;
 +	}
++
++	i2s_pdev = of_find_device_by_node(i2s_np);
++	if (!i2s_pdev) {
++		dev_err(&pdev->dev, "failed to find SSI platform device\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++	codec_dev = of_find_i2c_device_by_node(codec_np);
++	if (!codec_dev || !codec_dev->dev.driver) {
++		dev_err(&pdev->dev, "failed to find codec platform device\n");
++		ret = -EINVAL;
++		goto fail;
++	}
++
++	data = devm_kzalloc(&pdev->dev, sizeof(*data), GFP_KERNEL);
++	if (!data) {
++		ret = -ENOMEM;
++		goto fail;
++	}
++
++	data->clk_frequency = 12000000;
++	data->dai.name = "HiFi";
++	data->dai.stream_name = "HiFi";
++	data->dai.codec_dai_name = "wm8960-hifi";
++	data->dai.codec_of_node = codec_np;
++	data->dai.cpu_dai_name = dev_name(&i2s_pdev->dev);
++	data->dai.platform_of_node = i2s_np;
++	data->dai.ops = &mt7620_hifi_ops;
++	data->dai.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++			    SND_SOC_DAIFMT_CBM_CFM;
++
++	data->card.dev = &pdev->dev;
++	ret = snd_soc_of_parse_card_name(&data->card, "model");
++	if (ret)
++		goto fail;
++	ret = snd_soc_of_parse_audio_routing(&data->card, "audio-routing");
++	if (ret)
++		goto fail;
++	data->card.num_links = 1;
++	data->card.dai_link = &data->dai;
++	data->card.dapm_widgets = mt7620_wm8960_dapm_widgets;
++	data->card.num_dapm_widgets = ARRAY_SIZE(mt7620_wm8960_dapm_widgets);
++
++	data->card.late_probe = mt7620_wm8960_late_probe;
++	data->card.set_bias_level = mt7620_wm8960_set_bias_level;
++
++	platform_set_drvdata(pdev, &data->card);
++	snd_soc_card_set_drvdata(&data->card, data);
++
++	ret = devm_snd_soc_register_card(&pdev->dev, &data->card);
++	if (ret) {
++		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
++		goto fail;
++	}
++
++	of_node_put(i2s_np);
++	of_node_put(codec_np);
++
++	return 0;
++fail:
++	if (i2s_np)
++		of_node_put(i2s_np);
++	if (codec_np)
++		of_node_put(codec_np);
++
 +	return ret;
 +}
 +
 +static int mt7620_wm8960_remove(struct platform_device *pdev)
 +{
-+	struct snd_soc_card *card = platform_get_drvdata(pdev);
-+
-+	snd_soc_unregister_card(card);
 +	return 0;
 +}
 +
-+static const struct of_device_id mt7620_audio_match[] = {
-+	{ .compatible = "ralink,wm8960-audio" },
-+	{},
++static const struct of_device_id mt7620_wm8960_dt_ids[] = {
++	{ .compatible = "mediatek,mt7620-audio-wm8960", },
++	{ /* sentinel */ }
 +};
-+MODULE_DEVICE_TABLE(of, mt7620_audio_match);
++MODULE_DEVICE_TABLE(of, mt7620_wm8960_dt_ids);
 +
 +static struct platform_driver mt7620_wm8960_driver = {
-+	.driver		= {
-+		.name	= "wm8960-audio",
-+		.owner	= THIS_MODULE,
-+		.of_match_table = mt7620_audio_match,
++	.driver = {
++		.name = "mt7620-wm8960",
++		.owner = THIS_MODULE,
++		.pm = &snd_soc_pm_ops,
++		.of_match_table = mt7620_wm8960_dt_ids,
 +	},
-+	.probe		= mt7620_wm8960_probe,
-+	.remove		= mt7620_wm8960_remove,
++	.probe = mt7620_wm8960_probe,
++	.remove = mt7620_wm8960_remove,
 +};
-+
 +module_platform_driver(mt7620_wm8960_driver);
 +
-+MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
-+MODULE_DESCRIPTION("ALSA SoC QI LB60 Audio support");
++MODULE_AUTHOR("Freescale Semiconductor, Inc.");
++MODULE_DESCRIPTION("Freescale i.MX WM8962 ASoC machine driver");
 +MODULE_LICENSE("GPL v2");
-+MODULE_ALIAS("platform:qi-lb60-audio");
---- a/sound/soc/soc-io.c
-+++ b/sound/soc/soc-io.c
++MODULE_ALIAS("platform:mt7620-wm8962");
+Index: linux-3.14.18/sound/soc/soc-io.c
+===================================================================
+--- linux-3.14.18.orig/sound/soc/soc-io.c	2014-09-06 01:34:59.000000000 +0200
++++ linux-3.14.18/sound/soc/soc-io.c	2014-11-18 10:45:55.355161766 +0100
 @@ -19,7 +19,6 @@
  
  #include <trace/events/asoc.h>
@@ -696,7 +790,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int hw_write(struct snd_soc_codec *codec, unsigned int reg,
  		    unsigned int value)
  {
-@@ -135,12 +134,3 @@ int snd_soc_codec_set_cache_io(struct sn
+@@ -135,12 +134,3 @@
  	return PTR_ERR_OR_ZERO(codec->control_data);
  }
  EXPORT_SYMBOL_GPL(snd_soc_codec_set_cache_io);
