@@ -342,6 +342,28 @@ ar8xxx_phy_poll_reset(struct mii_bus *bus)
         return -ETIMEDOUT;
 }
 
+static void
+ar8xxx_phy_init(struct ar8xxx_priv *priv, bool support_1000)
+{
+	int i;
+	struct mii_bus *bus;
+
+	if (priv->chip->fixup_phys)
+		priv->chip->fixup_phys(priv);
+
+	bus = priv->mii_bus;
+	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
+		/* initialize the port itself */
+		mdiobus_write(bus, i, MII_ADVERTISE,
+			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
+		if (support_1000)
+			mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
+		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+	}
+
+	ar8xxx_phy_poll_reset(bus);
+}
+
 static u32
 ar8xxx_mii_read(struct ar8xxx_priv *priv, int reg)
 {
@@ -888,22 +910,10 @@ ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 static int
 ar8236_hw_init(struct ar8xxx_priv *priv)
 {
-	int i;
-	struct mii_bus *bus;
-
 	if (priv->initialized)
 		return 0;
 
-	/* Initialize the PHYs */
-	bus = priv->mii_bus;
-	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
-		mdiobus_write(bus, i, MII_ADVERTISE,
-			      ADVERTISE_ALL | ADVERTISE_PAUSE_CAP |
-			      ADVERTISE_PAUSE_ASYM);
-		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
-	}
-
-	ar8xxx_phy_poll_reset(bus);
+	ar8xxx_phy_init(priv, false);
 
 	priv->initialized = true;
 	return 0;
@@ -940,9 +950,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 static int
 ar8316_hw_init(struct ar8xxx_priv *priv)
 {
-	int i;
 	u32 val, newval;
-	struct mii_bus *bus;
 
 	val = priv->read(priv, AR8316_REG_POSTRIP);
 
@@ -981,17 +989,7 @@ ar8316_hw_init(struct ar8xxx_priv *priv)
 		msleep(1000);
 	}
 
-	/* Initialize the ports */
-	bus = priv->mii_bus;
-	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
-		/* initialize the port itself */
-		mdiobus_write(bus, i, MII_ADVERTISE,
-			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
-		mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
-		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
-	}
-
-	ar8xxx_phy_poll_reset(bus);
+	ar8xxx_phy_init(priv, true);
 
 out:
 	priv->initialized = true;
@@ -1622,9 +1620,7 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
 {
-	struct mii_bus *bus;
 	int ret;
-	int i;
 
 	if (priv->phy->dev.of_node)
 		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
@@ -1637,19 +1633,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 
 	ar8327_leds_init(priv);
 
-	priv->chip->fixup_phys(priv);
-
-	bus = priv->mii_bus;
-	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
-		/* start aneg on the PHY */
-		mdiobus_write(bus, i, MII_ADVERTISE, ADVERTISE_ALL |
-						     ADVERTISE_PAUSE_CAP |
-						     ADVERTISE_PAUSE_ASYM);
-		mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
-		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
-	}
-
-	ar8xxx_phy_poll_reset(bus);
+	ar8xxx_phy_init(priv, true);
 
 	return 0;
 }
