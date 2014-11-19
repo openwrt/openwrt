@@ -1,0 +1,152 @@
+Index: linux-3.10.49/arch/mips/include/asm/mach-ralink/ralink_regs.h
+===================================================================
+--- linux-3.10.49.orig/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-19 00:10:56.662374797 +0100
++++ linux-3.10.49/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-19 00:11:31.511729604 +0100
+@@ -13,6 +13,20 @@
+ #ifndef _RALINK_REGS_H_
+ #define _RALINK_REGS_H_
+ 
++enum ralink_soc_type {
++	RALINK_UNKNOWN = 0,
++	RT305X_SOC_RT3050,
++	RT305X_SOC_RT3052,
++	RT305X_SOC_RT3350,
++	RT305X_SOC_RT3352,
++	RT305X_SOC_RT5350,
++	MT762X_SOC_MT7620A,
++	MT762X_SOC_MT7620N,
++	MT762X_SOC_MT7621AT,
++	MT762X_SOC_MT7628AN,
++};
++extern enum ralink_soc_type ralink_soc;
++
+ extern __iomem void *rt_sysc_membase;
+ extern __iomem void *rt_memc_membase;
+ 
+Index: linux-3.10.49/arch/mips/include/asm/mach-ralink/rt305x.h
+===================================================================
+--- linux-3.10.49.orig/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-19 00:10:56.662374797 +0100
++++ linux-3.10.49/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-19 00:11:31.511729604 +0100
+@@ -13,25 +13,16 @@
+ #ifndef _RT305X_REGS_H_
+ #define _RT305X_REGS_H_
+ 
+-enum rt305x_soc_type {
+-	RT305X_SOC_UNKNOWN = 0,
+-	RT305X_SOC_RT3050,
+-	RT305X_SOC_RT3052,
+-	RT305X_SOC_RT3350,
+-	RT305X_SOC_RT3352,
+-	RT305X_SOC_RT5350,
+-};
+-
+-extern enum rt305x_soc_type rt305x_soc;
++extern enum ralink_soc_type ralink_soc;
+ 
+ static inline int soc_is_rt3050(void)
+ {
+-	return rt305x_soc == RT305X_SOC_RT3050;
++	return ralink_soc == RT305X_SOC_RT3050;
+ }
+ 
+ static inline int soc_is_rt3052(void)
+ {
+-	return rt305x_soc == RT305X_SOC_RT3052;
++	return ralink_soc == RT305X_SOC_RT3052;
+ }
+ 
+ static inline int soc_is_rt305x(void)
+@@ -41,17 +32,17 @@
+ 
+ static inline int soc_is_rt3350(void)
+ {
+-	return rt305x_soc == RT305X_SOC_RT3350;
++	return ralink_soc == RT305X_SOC_RT3350;
+ }
+ 
+ static inline int soc_is_rt3352(void)
+ {
+-	return rt305x_soc == RT305X_SOC_RT3352;
++	return ralink_soc == RT305X_SOC_RT3352;
+ }
+ 
+ static inline int soc_is_rt5350(void)
+ {
+-	return rt305x_soc == RT305X_SOC_RT5350;
++	return ralink_soc == RT305X_SOC_RT5350;
+ }
+ 
+ #define RT305X_SYSC_BASE		0x10000000
+Index: linux-3.10.49/arch/mips/ralink/rt305x.c
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ralink/rt305x.c	2014-11-19 00:10:07.980482146 +0100
++++ linux-3.10.49/arch/mips/ralink/rt305x.c	2014-11-19 00:11:31.511729604 +0100
+@@ -21,8 +21,6 @@
+ 
+ #include "common.h"
+ 
+-enum rt305x_soc_type rt305x_soc;
+-
+ static struct rt2880_pmx_func i2c_func[] =  { FUNC("i2c", 0, 1, 2) };
+ static struct rt2880_pmx_func spi_func[] = { FUNC("spi", 0, 3, 4) };
+ static struct rt2880_pmx_func uartf_func[] = {
+@@ -234,24 +232,24 @@
+ 
+ 		icache_sets = (read_c0_config1() >> 22) & 7;
+ 		if (icache_sets == 1) {
+-			rt305x_soc = RT305X_SOC_RT3050;
++			ralink_soc = RT305X_SOC_RT3050;
+ 			name = "RT3050";
+ 			soc_info->compatible = "ralink,rt3050-soc";
+ 		} else {
+-			rt305x_soc = RT305X_SOC_RT3052;
++			ralink_soc = RT305X_SOC_RT3052;
+ 			name = "RT3052";
+ 			soc_info->compatible = "ralink,rt3052-soc";
+ 		}
+ 	} else if (n0 == RT3350_CHIP_NAME0 && n1 == RT3350_CHIP_NAME1) {
+-		rt305x_soc = RT305X_SOC_RT3350;
++		ralink_soc = RT305X_SOC_RT3350;
+ 		name = "RT3350";
+ 		soc_info->compatible = "ralink,rt3350-soc";
+ 	} else if (n0 == RT3352_CHIP_NAME0 && n1 == RT3352_CHIP_NAME1) {
+-		rt305x_soc = RT305X_SOC_RT3352;
++		ralink_soc = RT305X_SOC_RT3352;
+ 		name = "RT3352";
+ 		soc_info->compatible = "ralink,rt3352-soc";
+ 	} else if (n0 == RT5350_CHIP_NAME0 && n1 == RT5350_CHIP_NAME1) {
+-		rt305x_soc = RT305X_SOC_RT5350;
++		ralink_soc = RT305X_SOC_RT5350;
+ 		name = "RT5350";
+ 		soc_info->compatible = "ralink,rt5350-soc";
+ 	} else {
+Index: linux-3.10.49/arch/mips/ralink/prom.c
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ralink/prom.c	2014-11-19 00:10:56.662374797 +0100
++++ linux-3.10.49/arch/mips/ralink/prom.c	2014-11-19 00:11:31.511729604 +0100
+@@ -15,9 +15,13 @@
+ #include <asm/bootinfo.h>
+ #include <asm/addrspace.h>
+ 
++#include <asm/mach-ralink/ralink_regs.h>
++
+ #include "common.h"
+ 
+ struct ralink_soc_info soc_info;
++enum ralink_soc_type ralink_soc;
++EXPORT_SYMBOL_GPL(ralink_soc);
+ 
+ const char *get_system_type(void)
+ {
+Index: linux-3.10.49/arch/mips/ralink/mt7621.c
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ralink/mt7621.c	2014-11-19 00:10:56.662374797 +0100
++++ linux-3.10.49/arch/mips/ralink/mt7621.c	2014-11-19 00:11:31.511729604 +0100
+@@ -175,6 +175,7 @@
+ 	soc_info->mem_size_min = MT7621_DDR2_SIZE_MIN;
+ 	soc_info->mem_size_max = MT7621_DDR2_SIZE_MAX;
+ 	soc_info->mem_base = MT7621_DRAM_BASE;
++	ralink_soc = MT762X_SOC_MT7621AT;
+ 
+ 	rt2880_pinmux_data = mt7621_pinmux_data;
+ 
