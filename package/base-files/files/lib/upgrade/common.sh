@@ -3,7 +3,7 @@
 RAM_ROOT=/tmp/root
 
 [ -x /usr/bin/ldd ] || ldd() { LD_TRACE_LOADED_OBJECTS=1 $*; }
-libs() { ldd $* | sed -r 's/(.* => )?(.*) .*/\2/'; }
+libs() { ldd $* 2>/dev/null | sed -r 's/(.* => )?(.*) .*/\2/'; }
 
 install_file() { # <file> [ <file> ... ]
 	for file in "$@"; do
