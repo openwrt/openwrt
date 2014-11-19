@@ -11,9 +11,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 365 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7620a.c
 
---- a/arch/mips/pci/Makefile
-+++ b/arch/mips/pci/Makefile
-@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
+Index: linux-3.10.49/arch/mips/pci/Makefile
+===================================================================
+--- linux-3.10.49.orig/arch/mips/pci/Makefile	2014-11-19 00:10:07.524464417 +0100
++++ linux-3.10.49/arch/mips/pci/Makefile	2014-11-19 00:59:40.008028418 +0100
+@@ -41,6 +41,7 @@
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -21,9 +23,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
---- /dev/null
-+++ b/arch/mips/pci/pci-mt7620a.c
-@@ -0,0 +1,363 @@
+Index: linux-3.10.49/arch/mips/pci/pci-mt7620a.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.10.49/arch/mips/pci/pci-mt7620a.c	2014-11-19 00:59:33.679782361 +0100
+@@ -0,0 +1,365 @@
 +/*
 + *  Ralink MT7620A SoC PCI support
 + *
@@ -274,10 +278,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* PCIE: Elastic buffer control */
 +	pcie_phy(0x68, 0xB4);
 +
++	rt_sysc_m32(0x3 << 16, 0, RALINK_GPIOMODE);
++	pcie_m32(0, BIT(1), RALINK_PCI_PCICFG_ADDR);
++
 +	reset_control_assert(rstpcie0);
 +	rt_sysc_m32(RALINK_PCIE0_CLK_EN, 0, RALINK_CLKCFG1);
 +	rt_sysc_m32(1<<19, 1<<31, PPLL_DRV);
-+	rt_sysc_m32(0x3 << 16, 0, RALINK_GPIOMODE);
 +
 +	reset_control_deassert(rstpcie0);
 +	rt_sysc_m32(0, RALINK_PCIE0_CLK_EN, RALINK_CLKCFG1);
@@ -387,9 +393,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 +
 +arch_initcall(mt7620a_pci_init);
---- a/arch/mips/ralink/Kconfig
-+++ b/arch/mips/ralink/Kconfig
-@@ -33,6 +33,7 @@ choice
+Index: linux-3.10.49/arch/mips/ralink/Kconfig
+===================================================================
+--- linux-3.10.49.orig/arch/mips/ralink/Kconfig	2014-11-19 00:10:07.524464417 +0100
++++ linux-3.10.49/arch/mips/ralink/Kconfig	2014-11-19 00:59:40.208036193 +0100
+@@ -33,6 +33,7 @@
  		bool "MT7620"
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
