@@ -914,6 +914,18 @@ static irqreturn_t fe_handle_irq(int irq, void *dev)
 	return IRQ_HANDLED;
 }
 
+#ifdef CONFIG_NET_POLL_CONTROLLER
+static void fe_poll_controller(struct net_device *dev)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+	u32 dly_int = priv->soc->tx_dly_int | priv->soc->rx_dly_int;
+
+	fe_int_disable(dly_int);
+	fe_handle_irq(dev->irq, dev);
+	fe_int_enable(dly_int);
+}
+#endif
+
 int fe_set_clock_cycle(struct fe_priv *priv)
 {
 	unsigned long sysclk = priv->sysclk;
@@ -1232,6 +1244,9 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_get_stats64        = fe_get_stats64,
 	.ndo_vlan_rx_add_vid	= fe_vlan_rx_add_vid,
 	.ndo_vlan_rx_kill_vid	= fe_vlan_rx_kill_vid,
+#ifdef CONFIG_NET_POLL_CONTROLLER
+	.ndo_poll_controller	= fe_poll_controller,
+#endif
 };
 
 static int fe_probe(struct platform_device *pdev)
