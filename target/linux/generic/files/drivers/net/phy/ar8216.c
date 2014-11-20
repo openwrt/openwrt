@@ -80,7 +80,7 @@ struct ar8xxx_chip {
 	int (*atu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
-	void (*fixup_phys)(struct ar8xxx_priv *priv);
+	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
@@ -343,20 +343,20 @@ ar8xxx_phy_poll_reset(struct mii_bus *bus)
 }
 
 static void
-ar8xxx_phy_init(struct ar8xxx_priv *priv, bool support_1000)
+ar8xxx_phy_init(struct ar8xxx_priv *priv)
 {
 	int i;
 	struct mii_bus *bus;
 
-	if (priv->chip->fixup_phys)
-		priv->chip->fixup_phys(priv);
-
 	bus = priv->mii_bus;
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++) {
+		if (priv->chip->phy_fixup)
+			priv->chip->phy_fixup(priv, i);
+
 		/* initialize the port itself */
 		mdiobus_write(bus, i, MII_ADVERTISE,
 			ADVERTISE_ALL | ADVERTISE_PAUSE_CAP | ADVERTISE_PAUSE_ASYM);
-		if (support_1000)
+		if (ar8xxx_has_gige(priv))
 			mdiobus_write(bus, i, MII_CTRL1000, ADVERTISE_1000FULL);
 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
 	}
@@ -913,7 +913,7 @@ ar8236_hw_init(struct ar8xxx_priv *priv)
 	if (priv->initialized)
 		return 0;
 
-	ar8xxx_phy_init(priv, false);
+	ar8xxx_phy_init(priv);
 
 	priv->initialized = true;
 	return 0;
@@ -989,7 +989,7 @@ ar8316_hw_init(struct ar8xxx_priv *priv)
 		msleep(1000);
 	}
 
-	ar8xxx_phy_init(priv, true);
+	ar8xxx_phy_init(priv);
 
 out:
 	priv->initialized = true;
@@ -1633,7 +1633,7 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 
 	ar8327_leds_init(priv);
 
-	ar8xxx_phy_init(priv, true);
+	ar8xxx_phy_init(priv);
 
 	return 0;
 }
@@ -1801,15 +1801,6 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
 }
 
-static void
-ar8327_fixup_phys(struct ar8xxx_priv *priv)
-{
-	int i;
-
-	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
-		ar8327_phy_fixup(priv, i);
-}
-
 static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.hw_init = ar8327_hw_init,
@@ -1821,7 +1812,7 @@ static const struct ar8xxx_chip ar8327_chip = {
 	.atu_flush = ar8327_atu_flush,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
-	.fixup_phys = ar8327_fixup_phys,
+	.phy_fixup = ar8327_phy_fixup,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
