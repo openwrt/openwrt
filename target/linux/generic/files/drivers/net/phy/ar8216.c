@@ -814,6 +814,12 @@ ar8216_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 static int
 ar8216_hw_init(struct ar8xxx_priv *priv)
 {
+	if (priv->initialized)
+		return 0;
+
+	ar8xxx_phy_init(priv);
+
+	priv->initialized = true;
 	return 0;
 }
 
@@ -907,18 +913,6 @@ ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 		   (members << AR8236_PORT_VLAN2_MEMBER_S));
 }
 
-static int
-ar8236_hw_init(struct ar8xxx_priv *priv)
-{
-	if (priv->initialized)
-		return 0;
-
-	ar8xxx_phy_init(priv);
-
-	priv->initialized = true;
-	return 0;
-}
-
 static void
 ar8236_init_globals(struct ar8xxx_priv *priv)
 {
@@ -934,7 +928,7 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 
 static const struct ar8xxx_chip ar8236_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
-	.hw_init = ar8236_hw_init,
+	.hw_init = ar8216_hw_init,
 	.init_globals = ar8236_init_globals,
 	.init_port = ar8216_init_port,
 	.setup_port = ar8236_setup_port,
