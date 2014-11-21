@@ -1,0 +1,34 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Fri, 21 Nov 2014 23:27:33 +0100
+Subject: [PATCH] mac80211: add more missing checks for VHT tx rates
+
+Fixes a crash on attempting to calculate the frame duration for a VHT
+packet (which needs to be handled by hw/driver instead).
+
+Reported-by: Jouni Malinen <j@w1.fi>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -446,7 +446,8 @@ static void rate_fixup_ratelist(struct i
+ 	 *
+ 	 * XXX: Should this check all retry rates?
+ 	 */
+-	if (!(rates[0].flags & IEEE80211_TX_RC_MCS)) {
++	if (!(rates[0].flags &
++	      (IEEE80211_TX_RC_MCS | IEEE80211_TX_RC_VHT_MCS))) {
+ 		u32 basic_rates = vif->bss_conf.basic_rates;
+ 		s8 baserate = basic_rates ? ffs(basic_rates) - 1 : 0;
+ 
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -60,7 +60,7 @@ static __le16 ieee80211_duration(struct 
+ 	rcu_read_unlock();
+ 
+ 	/* assume HW handles this */
+-	if (tx->rate.flags & IEEE80211_TX_RC_MCS)
++	if (tx->rate.flags & (IEEE80211_TX_RC_MCS | IEEE80211_TX_RC_VHT_MCS))
+ 		return 0;
+ 
+ 	/* uh huh? */
