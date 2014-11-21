@@ -1,0 +1,68 @@
+From e4127db9b980a5684c537d9010ed2aaa05a1e79a Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Sat, 24 May 2014 20:53:49 +0200
+Subject: [PATCH] ARM: dts: sun7i: Add OOB irq support to boards with broadcom
+ sdio wifi
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 11 +++++++++++
+ arch/arm/boot/dts/sun7i-a20-i12-tvbox.dts  | 11 +++++++++++
+ 2 files changed, 22 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+index a6c1a3c..f9ab5d4 100644
+--- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
++++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+@@ -31,12 +31,23 @@
+ 		};
+ 
+ 		mmc3: mmc@01c12000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&mmc3_pins_a>;
+ 			vmmc-supply = <&reg_vmmc3>;
+ 			bus-width = <4>;
+ 			non-removable;
+ 			status = "okay";
++
++			brcmf: bcrmf@1 {
++				reg = <1>;
++				compatible = "brcm,bcm4329-fmac";
++				interrupt-parent = <&pio>;
++				interrupts = <10 8>; /* PH10 / EINT10 */
++				interrupt-names = "host-wake";
++			};
+ 		};
+ 
+ 		usbphy: phy@01c13400 {
+diff --git a/arch/arm/boot/dts/sun7i-a20-i12-tvbox.dts b/arch/arm/boot/dts/sun7i-a20-i12-tvbox.dts
+index 6a67712d..f620aea 100644
+--- a/arch/arm/boot/dts/sun7i-a20-i12-tvbox.dts
++++ b/arch/arm/boot/dts/sun7i-a20-i12-tvbox.dts
+@@ -29,12 +29,23 @@
+ 		};
+ 
+ 		mmc3: mmc@01c12000 {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
+ 			pinctrl-names = "default";
+ 			pinctrl-0 = <&mmc3_pins_a>;
+ 			vmmc-supply = <&reg_vmmc3>;
+ 			bus-width = <4>;
+ 			non-removable;
+ 			status = "okay";
++
++			brcmf: bcrmf@1 {
++				reg = <1>;
++				compatible = "brcm,bcm4329-fmac";
++				interrupt-parent = <&pio>;
++				interrupts = <10 8>; /* PH10 / EINT10 */
++				interrupt-names = "host-wake";
++			};
+ 		};
+ 
+ 		usbphy: phy@01c13400 {

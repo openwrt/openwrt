@@ -1,0 +1,57 @@
+From ff774d842a2bf9136b9c7ddd7f5085a9062705ac Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 16 Jun 2014 20:06:43 +0200
+Subject: [PATCH] ARM: dts: sunxi: Adjust touchscreen compatible for sun5i and
+ later
+
+The touchscreen controller in the A13 and later has a different temperature
+curve than the one in the original A10, change the compatible for the A13 and
+later so that the kernel will use the correct curve.
+
+Reported-by: Tong Zhang <lovewilliam@gmail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 2 +-
+ arch/arm/boot/dts/sun5i-a13.dtsi  | 2 +-
+ arch/arm/boot/dts/sun7i-a20.dtsi  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index 7c6c883..7089284 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -533,7 +533,7 @@
+ 		};
+ 
+ 		rtp: rtp@01c25000 {
+-			compatible = "allwinner,sun4i-a10-ts";
++			compatible = "allwinner,sun5i-a13-ts";
+ 			reg = <0x01c25000 0x100>;
+ 			interrupts = <29>;
+ 		};
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index aa0482c..b05ab04 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -481,7 +481,7 @@
+ 		};
+ 
+ 		rtp: rtp@01c25000 {
+-			compatible = "allwinner,sun4i-a10-ts";
++			compatible = "allwinner,sun5i-a13-ts";
+ 			reg = <0x01c25000 0x100>;
+ 			interrupts = <29>;
+ 		};
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 9174423..81d4e55 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -924,7 +924,7 @@
+ 		};
+ 
+ 		rtp: rtp@01c25000 {
+-			compatible = "allwinner,sun4i-a10-ts";
++			compatible = "allwinner,sun5i-a13-ts";
+ 			reg = <0x01c25000 0x100>;
+ 			interrupts = <0 29 4>;
+ 		};
