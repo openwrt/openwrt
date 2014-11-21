@@ -30,7 +30,7 @@ PKG_BUILD_DEPENDS:= \
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_WPA_SUPPLICANT_NO_TIMESTAMP_CHECK \
 	CONFIG_PACKAGE_kmod-ath9k \
-	CONFIG_PACKAGE_kmod-mac80211 \
+	CONFIG_PACKAGE_kmod-cfg80211 \
 	CONFIG_PACKAGE_kmod-madwifi \
 	CONFIG_PACKAGE_hostapd \
 	CONFIG_PACKAGE_hostapd-mini \
@@ -65,7 +65,7 @@ ifneq ($(CONFIG_DRIVER_11N_SUPPORT),)
 endif
 
 DRIVER_MAKEOPTS= \
-	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-mac80211) \
+	CONFIG_DRIVER_NL80211=$(CONFIG_PACKAGE_kmod-cfg80211) \
 	CONFIG_DRIVER_MADWIFI=$(CONFIG_PACKAGE_kmod-madwifi) \
 	CONFIG_DRIVER_HOSTAP=$(CONFIG_PACKAGE_kmod-hostap) \
 	CONFIG_IEEE80211N=$(HOSTAPD_IEEE80211N) \
@@ -92,7 +92,7 @@ ifdef CONFIG_USE_EGLIBC
   TARGET_LDFLAGS_C += -lrt
 endif
 
-DRV_DEPENDS:=+PACKAGE_kmod-mac80211:libnl-tiny @(!TARGET_avr32||BROKEN)
+DRV_DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny @(!TARGET_avr32||BROKEN)
 
 define Package/hostapd/Default
   SECTION:=net
@@ -273,7 +273,7 @@ ifeq ($(findstring supplicant,$(BUILD_VARIANT)),)
   TARGET_LDFLAGS += -lubox -lubus
 endif
 
-ifdef CONFIG_PACKAGE_kmod-mac80211
+ifdef CONFIG_PACKAGE_kmod-cfg80211
   TARGET_LDFLAGS += -lm -lnl-tiny
 endif
 
