@@ -1,0 +1,28 @@
+From f65624ca1b67c5683317b75da2c09ffadc22fa2e Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 1 Oct 2014 00:40:57 +0200
+Subject: [PATCH] ARM: dts: sun7i: Add mmc2_pins_a pinctrl definition
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index cecf32c..f0a75c6 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -833,6 +833,13 @@
+ 				allwinner,pull = <1>;
+ 			};
+ 
++			mmc2_pins_a: mmc2@0 {
++				allwinner,pins = "PC6","PC7","PC8","PC9","PC10","PC11";
++				allwinner,function = "mmc2";
++				allwinner,drive = <2>;
++				allwinner,pull = <1>;
++			};
++
+ 			mmc3_pins_a: mmc3@0 {
+ 				allwinner,pins = "PI4","PI5","PI6","PI7","PI8","PI9";
+ 				allwinner,function = "mmc3";
