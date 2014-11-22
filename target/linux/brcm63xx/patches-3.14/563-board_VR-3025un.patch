@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4295,6 +4295,117 @@ static struct board_info __initdata boar
+@@ -4255,6 +4255,116 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -15,7 +15,6 @@
 +
 +static struct board_info __initdata board_VR3025un = {
 +	.name					= "96368M-1341N",
-+	.of_board_id			= "comtrend,vr-3025un",
 +	.expected_cpu_id		= 0x6368,
 +
 +	.has_uart0				= 1,
@@ -118,11 +117,19 @@
  static struct b53_platform_data WAP5813n_b53_pdata = {
  	.alias = "eth0",
  };
-@@ -4786,6 +4897,7 @@ static const struct board_info __initcon
+@@ -4745,6 +4855,7 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
  	&board_VR3025u,
 +	&board_VR3025un,
  	&board_WAP5813n,
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_63268
+@@ -4811,6 +4922,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
+ 	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
+ 	{ .compatible = "comtrend,vr-3025u", .data = &board_VR3025u, },
++	{ .compatible = "comtrend,vr-3025un", .data = &board_VR3025un, },
+ 	{ .compatible = "comtrend,wap-5813n", .data = &board_WAP5813n, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
