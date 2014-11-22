@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -4139,6 +4139,75 @@ static struct board_info __initdata boar
+@@ -4101,6 +4101,75 @@ static struct board_info __initdata boar
  #endif /* CONFIG_BCM63XX_CPU_6368 */
  
  /*
@@ -76,7 +76,7 @@
   * all boards
   */
  static const struct board_info __initconst *bcm963xx_boards[] = {
-@@ -4219,6 +4288,9 @@ static const struct board_info __initcon
+@@ -4181,6 +4250,9 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
  #endif
@@ -85,4 +85,4 @@
 +#endif
  };
  
- /*
+ static struct of_device_id const bcm963xx_boards_dt[] = {

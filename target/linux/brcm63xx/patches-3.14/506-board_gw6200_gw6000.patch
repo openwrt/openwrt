@@ -1,12 +1,11 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -512,6 +512,114 @@ static struct board_info __initdata boar
+@@ -503,6 +503,112 @@ static struct board_info __initdata boar
  	},
  };
  
 +static struct board_info __initdata board_gw6200 = {
 +	.name				= "GW6200",
-+	.of_board_id			= "tecom,gw6200",
 +	.expected_cpu_id		= 0x6348,
 +
 +	.has_uart0			= 1,
@@ -69,7 +68,6 @@
 +
 +static struct board_info __initdata board_gw6000 = {
 +	.name				= "GW6000",
-+	.of_board_id			= "tecom,gw6000",
 +	.expected_cpu_id		= 0x6348,
 +
 +	.has_uart0			= 1,
@@ -114,8 +112,8 @@
 +
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
- 	.of_board_id			= "sagem,f@st2404",
-@@ -1324,6 +1432,8 @@ static const struct board_info __initcon
+ 	.expected_cpu_id		= 0x6348,
+@@ -1303,6 +1409,8 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,
@@ -124,3 +122,12 @@
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,
+@@ -1348,6 +1456,8 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
+ 	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },
+ 	{ .compatible = "t-com,spw500v", .data = &board_spw500v, },
++	{ .compatible = "tecom,gw6000", .data = &board_gw6000, },
++	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6358
+ 	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },

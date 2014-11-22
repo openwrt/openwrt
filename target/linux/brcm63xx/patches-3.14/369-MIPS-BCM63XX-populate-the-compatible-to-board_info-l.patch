@@ -1,0 +1,58 @@
+From e71eea9953c774dfadb754258824fb1888c279f4 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Fri, 21 Nov 2014 16:54:06 +0100
+Subject: [PATCH 47/48] MIPS: BCM63XX: populate the compatible to board_info
+ list
+
+Populate the compatible to board_info list to allow dtbs to be used
+for known boards.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |   35 +++++++++++++++++++++++++++++
+ 1 file changed, 35 insertions(+)
+
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -736,6 +736,41 @@ static const struct board_info __initcon
+ };
+ 
+ static struct of_device_id const bcm963xx_boards_dt[] = {
++#ifdef CONFIG_OF
++#ifdef CONFIG_BCM63XX_CPU_3368
++	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6328
++	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6338
++	{ .compatible = "brcm,bcm96338gw", .data = &board_96338gw, },
++	{ .compatible = "brcm,bcm96338w", .data = &board_96338w, },
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6345
++	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6348
++	{ .compatible = "brcm,bcm96348r", .data = &board_96348r, },
++	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
++	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
++	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },
++	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
++	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6358
++	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
++	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
++	{ .compatible = "pirelli,a226g", .data = &board_DWVS0, },
++	{ .compatible = "pirelli,a226m", .data = &board_DWVS0, },
++	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },
++#endif
++#ifdef CONFIG_BCM63XX_CPU_6368
++#endif
++#ifdef CONFIG_BCM63XX_CPU_63268
++	{ .compatible = "brcm,bcm963268bu_p300", .data = &board_963268bu_p300, },
++#endif
++#endif /* CONFIG_OF */
+ 	{ },
+ };
+ 

@@ -8,13 +8,12 @@
  #include <linux/platform_device.h>
  #include <linux/spi/spi.h>
  #include <linux/spi/spi_gpio.h>
-@@ -2691,6 +2692,405 @@ static struct board_info __initdata boar
+@@ -2660,6 +2661,402 @@ static struct board_info __initdata boar
  	},
  };
  
 +static struct board_info __initdata board_HW556_C = {
 +	.name					= "HW556_C",
-+	.of_board_id				= "huawei,hg556a-c",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -142,7 +141,6 @@
 +};
 +static struct board_info __initdata board_HW556_A = {
 +	.name					= "HW556_A",
-+	.of_board_id				= "huawei,hg556a-a",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -277,7 +275,6 @@
 +};
 +static struct board_info __initdata board_HW556_B = {
 +	.name					= "HW556_B",
-+	.of_board_id				= "huawei,hg556a-b",
 +	.expected_cpu_id			= 0x6358,
 +
 +	.has_uart0				= 1,
@@ -414,7 +411,7 @@
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3131,6 +3531,9 @@ static const struct board_info __initcon
+@@ -3096,6 +3493,9 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r1,
  	&board_ct6373_1,
  	&board_HW553,
@@ -424,3 +421,13 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
+@@ -3150,6 +3550,9 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
+ 	{ .compatible = "d-link,dva-g3810bn/tl", .data = &board_DVAG3810BN, },
+ 	{ .compatible = "huawei,hg553", .data = &board_HW553, },
++	{ .compatible = "huawei,hg556a-a", .data = &board_HW556_A, },
++	{ .compatible = "huawei,hg556a-b", .data = &board_HW556_B, },
++	{ .compatible = "huawei,hg556a-c", .data = &board_HW556_C, },
+ 	{ .compatible = "pirelli,a226g", .data = &board_DWVS0, },
+ 	{ .compatible = "pirelli,a226m", .data = &board_DWVS0, },
+ 	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },

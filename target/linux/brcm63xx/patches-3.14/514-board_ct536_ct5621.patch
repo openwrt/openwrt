@@ -1,12 +1,11 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -539,6 +539,59 @@ static struct board_info __initdata boar
+@@ -531,6 +531,58 @@ static struct board_info __initdata boar
  };
  
  
 +static struct board_info __initdata board_ct536_ct5621 = {
 +	.name				= "CT536_CT5621",
-+	.of_board_id			= "comtrend,ct-536+",
 +	.expected_cpu_id		= 0x6348,
 +
 +	.has_uart0			= 1,
@@ -59,8 +58,8 @@
 +
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
- 	.of_board_id			= "brcm,bcm96348gw",
-@@ -1818,6 +1871,7 @@ static const struct board_info __initcon
+ 	.expected_cpu_id		= 0x6348,
+@@ -1794,6 +1846,7 @@ static const struct board_info __initcon
  	&board_96348sv,
  	&board_V2500V_BB,
  	&board_V2110,
@@ -68,3 +67,12 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
+@@ -1830,6 +1883,8 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
+ 	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
+ 	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },
++	{ .compatible = "comtrend,ct-536+", .data = &board_ct536_ct5621, },
++	{ .compatible = "comtrend,ct-5621", .data = &board_ct536_ct5621, },
+ 	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
+ 	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },
+ 	{ .compatible = "t-com,spw500v", .data = &board_spw500v, },

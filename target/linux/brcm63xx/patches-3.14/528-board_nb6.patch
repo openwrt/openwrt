@@ -17,7 +17,7 @@
  
  #define CT6373_PID_OFFSET		0xff80
  #define CT6373_74X164_GPIO_BASE	64
-@@ -2399,6 +2402,105 @@ static struct board_info __initdata boar
+@@ -2370,6 +2373,104 @@ static struct board_info __initdata boar
  };
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
@@ -56,7 +56,6 @@
 +
 +static struct board_info __initdata board_nb6 = {
 +	.name				= "NB6",
-+	.of_board_id			= "sfr,nb6-ser-r0",
 +	.expected_cpu_id		= 0x6362,
 +
 +	.has_uart0			= 1,
@@ -123,7 +122,7 @@
  /*
   * known 6368 boards
   */
-@@ -2604,6 +2706,10 @@ static const struct board_info __initcon
+@@ -2573,6 +2674,10 @@ static const struct board_info __initcon
  	&board_DVAG3810BN,
  #endif
  
@@ -134,3 +133,13 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
+@@ -2622,6 +2727,9 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "sfr,nb4-ser-r0", .data = &board_nb4_ser_r0, },
+ 	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
+ #endif
++#ifdef CONFIG_BCM63XX_CPU_6362
++	{ .compatible = "sfr,nb6-ser-r0", .data = &board_nb6, },
++#endif
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ 	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
+ 	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },

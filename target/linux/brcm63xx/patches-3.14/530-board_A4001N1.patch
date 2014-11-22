@@ -1,12 +1,11 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -237,6 +237,134 @@ static struct board_info __initdata boar
+@@ -234,6 +234,133 @@ static struct board_info __initdata boar
  	},
  };
  
 +static struct board_info __initdata board_A4001N1 = {
 +	.name					= "963281T_TEF",
-+	.of_board_id			= "adb,a4001n1",
 +	.expected_cpu_id			= 0x6328,
 +
 +	.has_uart0				= 1,
@@ -135,7 +134,7 @@
  static struct board_info __initdata board_dsl_274xb_f1 = {
  	.name				= "AW4339U",
  	.expected_cpu_id		= 0x6328,
-@@ -2709,6 +2837,7 @@ static const struct board_info __initcon
+@@ -2677,6 +2804,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
@@ -143,3 +142,11 @@
  	&board_dsl_274xb_f1,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
+@@ -2742,6 +2870,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6328
++	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },
+ 	{ .compatible = "brcm,bcm963281TAN", .data = &board_963281TAN, },
+ 	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },
+ #endif
