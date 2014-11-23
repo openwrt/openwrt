@@ -18,7 +18,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		return IRQ_NONE;
  
 -	/* shared irq, not for us */
-+	if (test_bit(ATH_OP_HW_RESET, &common->op_flags))
++	if (!AR_SREV_9100(ah) && test_bit(ATH_OP_HW_RESET, &common->op_flags))
 +		return IRQ_NONE;
  
 +	/* shared irq, not for us */
@@ -33,7 +33,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	/*
  	 * Figure out the reason(s) for the interrupt.  Note
  	 * that the hal returns a pseudo-ISR that may include
-@@ -613,6 +610,7 @@ int ath_reset(struct ath_softc *sc, stru
+@@ -532,6 +529,9 @@ irqreturn_t ath_isr(int irq, void *dev)
+ 	ath9k_debug_sync_cause(sc, sync_cause);
+ 	status &= ah->imask;	/* discard unasked-for bits */
+ 
++	if (AR_SREV_9100(ah) && test_bit(ATH_OP_HW_RESET, &common->op_flags))
++		return IRQ_HANDLED;
++
+ 	/*
+ 	 * If there are no status bits set, then this interrupt was not
+ 	 * for me (should have been caught above).
+@@ -613,6 +613,7 @@ int ath_reset(struct ath_softc *sc, stru
  	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
  	int r;
  
@@ -41,7 +51,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	set_bit(ATH_OP_HW_RESET, &common->op_flags);
  
  	ath9k_ps_wakeup(sc);
-@@ -633,6 +631,7 @@ void ath9k_queue_reset(struct ath_softc 
+@@ -633,6 +634,7 @@ void ath9k_queue_reset(struct ath_softc 
  #ifdef CPTCFG_ATH9K_DEBUGFS
  	RESET_STAT_INC(sc, type);
  #endif
