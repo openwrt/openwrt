@@ -1,0 +1,40 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -39,6 +39,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
+ 	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
+ 	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
++	ATH79_MACH_DHP_1565_A1,		/* D-Link DHP-1565 rev. A1 */
+ 	ATH79_MACH_DIR_505_A1,		/* D-Link DIR-505 rev. A1 */
+ 	ATH79_MACH_DIR_600_A1,		/* D-Link DIR-600 rev. A1 */
+ 	ATH79_MACH_DIR_615_C1,		/* D-Link DIR-615 rev. C1 */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -293,6 +293,17 @@ config ATH79_MACH_WPE72
+ 	select ATH79_DEV_USB
+ 	select MYLOADER
+ 
++config ATH79_MACH_DHP_1565_A1
++	bool "D-Link DHP-1565 rev. A1 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_DIR_505_A1
+ 	bool "D-Link DIR-505-A1 support"
+ 	select SOC_AR933X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -54,6 +54,7 @@ obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mac
+ obj-$(CONFIG_ATH79_MACH_BHU_BXU2000N2_A)+= mach-bhu-bxu2000n2-a.o
+ obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
+ obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
++obj-$(CONFIG_ATH79_MACH_DHP_1565_A1)	+= mach-dhp-1565-a1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_505_A1)	+= mach-dir-505-a1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_600_A1)	+= mach-dir-600-a1.o
+ obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= mach-dir-615-c1.o
