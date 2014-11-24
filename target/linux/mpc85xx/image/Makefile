@@ -21,7 +21,7 @@ endef
 
 zImage:=$(BIN_DIR)/$(IMG_PREFIX)-zImage
 
-DTS_TARGETS = mpc8548cds_32b p1010rdb tl-wdr4900-v1 p1020rdb
+DTS_TARGETS = mpc8548cds_32b p1010rdb-pa tl-wdr4900-v1 p1020rdb
 BOOT_IMAGES:=zImage cuImage.tl-wdr4900-v1
 
 define Image/Prepare
