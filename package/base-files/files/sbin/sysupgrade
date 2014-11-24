@@ -109,7 +109,12 @@ add_uci_conffiles() {
 
 add_overlayfiles() {
 	local file="$1"
-	find /overlay/etc/ -type f -o -type l | sed \
+	if [ -d /overlay/upper ]; then
+		local overlaydir="/overlay/upper"
+	else
+		local overlaydir="/overlay"
+	fi
+	find $overlaydir/etc/ -type f -o -type l | sed \
 		-e 's,^/overlay/,/,' \
 		-e '\,/META_[a-zA-Z0-9]*$,d' \
 		-e '\,/functions.sh$,d' \
