@@ -107,8 +107,8 @@ Subject: [PATCH 32/63] bcm63xx: add support for 96368MVWG board.
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
-@@ -2014,6 +2097,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
+@@ -2018,6 +2101,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6368
 +	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },

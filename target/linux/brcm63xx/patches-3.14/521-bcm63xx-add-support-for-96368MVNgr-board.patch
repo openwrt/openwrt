@@ -90,8 +90,8 @@ Subject: [PATCH 33/63] bcm63xx: add support for 96368MVNgr board.
  #endif
  };
  
-@@ -2097,6 +2164,7 @@ static struct of_device_id const bcm963x
- 	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
+@@ -2101,6 +2168,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6368
 +	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },

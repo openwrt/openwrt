@@ -70,11 +70,11 @@
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
  #endif
-@@ -1216,6 +1272,7 @@ static struct of_device_id const bcm963x
- #ifdef CONFIG_BCM63XX_CPU_6358
+@@ -1218,6 +1274,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
  	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
  	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
 +	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
  	{ .compatible = "pirelli,a226g", .data = &board_DWVS0, },
  	{ .compatible = "pirelli,a226m", .data = &board_DWVS0, },
- 	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },
+ 	{ .compatible = "pirelli,a226m-fwb", .data = &board_DWVS0, },
