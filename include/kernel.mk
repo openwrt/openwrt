@@ -66,7 +66,7 @@ ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
 else
   ifeq (,$(LINUX_KARCH))
-    LINUX_KARCH=$(strip $(subst i386,x86,$(subst armeb,arm,$(subst mipsel,mips,$(subst mips64,mips,$(subst mips64el,mips,$(subst sh2,sh,$(subst sh3,sh,$(subst sh4,sh,$(ARCH))))))))))
+    LINUX_KARCH=$(strip $(subst i386,x86,$(subst armeb,arm,$(subst mipsel,mips,$(subst mips64,mips,$(subst mips64el,mips,$(subst sh2,sh,$(subst sh3,sh,$(subst sh4,sh,$(subst aarch64,arm64,$(subst aarch64_be,arm64,$(ARCH))))))))))))
   endif
 endif
 

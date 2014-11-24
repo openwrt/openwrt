@@ -91,6 +91,15 @@ config ARCH_64BIT
 
 # Architecture selection
 
+config aarch64
+	select ARCH_64BIT
+	bool
+
+config aarch64_be
+	select ARCH_64BIT
+	select BIG_ENDIAN
+	bool
+
 config arm
 	bool
 
@@ -175,6 +184,8 @@ config x86_64
 
 config ARCH
 	string
+	default "aarch64"   if aarch64
+	default "aarch64_be" if aarch64_be
 	default "arm"       if arm
 	default "armeb"     if armeb
 	default "avr32"     if avr32

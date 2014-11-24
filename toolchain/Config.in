@@ -59,6 +59,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		string
 		prompt "Target name"  if DEVEL
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "aarch64-unknown-linux-gnu"  if aarch64
+		default "aarch64_be-unknown-linux-gnu"  if aarch64_be
 		default "arm-unknown-linux-gnu"      if arm
 		default "armeb-unknown-linux-gnu"    if armeb
 		default "i486-unknown-linux-gnu"     if i386
@@ -71,6 +73,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		string
 		prompt "Toolchain prefix"  if DEVEL
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "aarch64-unknown-linux-gnu"  if aarch64
+		default "aarch64_be-unknown-linux-gnu"  if aarch64_be
 		default "arm-unknown-linux-gnu-"      if arm
 		default "armeb-unknown-linux-gnu-"    if armeb
 		default "i486-unknown-linux-gnu-"     if i386
@@ -83,6 +87,8 @@ menuconfig EXTERNAL_TOOLCHAIN
 		string
 		prompt "Toolchain root"  if DEVEL
 		depends on EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN
+		default "/opt/cross/aarch64-unknown-linux-gnu"  if aarch64
+		default "/opt/cross/aarch64_be-unknown-linux-gnu"  if aarch64_be
 		default "/opt/cross/arm-unknown-linux-gnu"      if arm
 		default "/opt/cross/armeb-unknown-linux-gnu"    if armeb
 		default "/opt/cross/i486-unknown-linux-gnu"     if i386
@@ -205,6 +211,7 @@ comment "C Library"
 
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
+	default LIBC_USE_EGLIBC if (aarch64 || aarch64_be)
 	default LIBC_USE_UCLIBC
 	help
 	  Select the C library implementation.
@@ -217,11 +224,12 @@ choice
 	config LIBC_USE_UCLIBC
 		select USE_UCLIBC
 		bool "Use uClibc"
+		depends on !(aarch64 || aarch64_be)
 
 	config LIBC_USE_MUSL
-		bool "Use musl"
 		select USE_MUSL
-		depends on !(mips64 || mips64el)
+		bool "Use musl"
+		depends on !(mips64 || mips64el || aarch64 || aarch64_be)
 
 endchoice
 
@@ -234,7 +242,7 @@ comment "Debuggers"
 
 config GDB
 	bool
-	depends on !avr32
+	depends on !(avr32 || aarch64 || aarch64_be)
 	prompt "Build gdb" if TOOLCHAINOPTS
 	default y if !EXTERNAL_TOOLCHAIN
 	help
@@ -250,11 +258,11 @@ config INSIGHT
 
 config USE_EGLIBC
 	bool
-	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && octeon
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && (aarch64 || aarch64_be || octeon)
 
 config USE_UCLIBC
 	bool
-	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && !octeon
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && !(aarch64 || aarch64_be || octeon)
 
 config USE_MUSL
 	bool

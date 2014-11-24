@@ -2,6 +2,7 @@
 
 choice
 	prompt "Binutils Version" if TOOLCHAINOPTS
+	default BINUTILS_VERSION_2_23_1 if (aarch64 || aarch64_be)
 	default BINUTILS_VERSION_2_20_1 if avr32
 	default BINUTILS_VERSION_LINARO if !avr32
 	help
