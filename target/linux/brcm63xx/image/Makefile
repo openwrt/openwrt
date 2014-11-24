@@ -57,6 +57,13 @@ define Image/Build/CFEDTB
 		$(7) $(8) $(9) $(10)
 endef
 
+define Image/Build/OLDCFEDTB
+	$(TOPDIR)/scripts/brcmImage.pl -t -p \
+		-b $(3) -c $(4)	-e $(KERNEL_ENTRY) -a $(LOADADDR) \
+		-k $(KDIR)/vmlinux-$(2).lzma.cfe -r $(KDIR)/root.$(1) \
+		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin $(6)
+endef
+
 define Image/Build/ZYXCFEDTB
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
@@ -92,14 +99,6 @@ define Image/Build/SPW303V
 	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin \
 		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-factory.bin
 	rm -f $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp
-endef
-
-define Image/Build/CFEOLD
-	$(TOPDIR)/scripts/brcmImage.pl -t -p	\
-		-b $(2) -c $(3)			\
-		-k $(KDIR)/vmlinux.lzma.cfe	\
-		-r $(KDIR)/root.$(1)		\
-		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin
 endef
 
 define Image/Build/HCS
@@ -198,6 +197,23 @@ endef
 # $(3) = boardname
 # $(4) = chipid
 # $(5) = imagename
+# $(6) = additional options
+define OldCfeImageDTB
+  define Image/Build/$(5)
+        $$(call Image/Build/OLDCFEDTB,$$(1),$(2),$(3),$(4),$(5),$(6))
+  endef
+
+  TARGET_Default_DTBS += $(2)
+  TARGET_Default_IMAGES += $(5)
+  TARGET_$(1)_DTBS += $(2)
+  TARGET_$(1)_IMAGES += $(5)
+endef
+
+# $(1) = Profile
+# $(2) = dtb
+# $(3) = boardname
+# $(4) = chipid
+# $(5) = imagename
 # $(6) = rsa signature
 # $(7) = additional options
 define ZyxCfeImageDTB
@@ -237,8 +253,6 @@ define Image/Build
 	# Sagem F@ST2504n
 	$(call Image/Build/CFE,$(1),F@ST2504n,6362,F@ST2504n,OpenWRT-$(REVISION))
 
-	# Davolink DV201AMR
-	$(call Image/Build/CFEOLD,$(1),DV201AMR,6348)
 	# USR 9108
 	$(call Image/Build/CFE,$(1),96348GW-A,6348,USR9108)
 	# NetGear DG834GT, DG834PN
@@ -350,6 +364,8 @@ $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 $(eval $(call CfeImageDTB,DSL274XB_C,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
 # D-Link DVA-G3810BN/TL
 $(eval $(call CfeImageDTB,DVAG3810BN,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
+# Davolink DV-201AMR
+$(eval $(call OldCfeImageDTB,DV201AMR,dv-201amr,DV201AMR,6348,DV-201AMR))
 # Huawei HG520v
 $(eval $(call CfeImageDTB,HG520v,hg520v,HW6358GW_B,6358,HG520v,EchoLife_HG520v))
 # Huawei HG553
