@@ -252,6 +252,10 @@ ifeq ($(DUMP),1)
     CPU_TYPE = sparc
     CPU_CFLAGS_ultrasparc = -mcpu=ultrasparc
   endif
+  ifeq ($(ARCH),aarch64)
+    CPU_TYPE ?= armv8-a
+    CPU_CFLAGS_armv8-a = -mcpu=armv8-a
+  endif
   DEFAULT_CFLAGS=$(strip $(CPU_CFLAGS) $(CPU_CFLAGS_$(CPU_TYPE)) $(CPU_CFLAGS_$(CPU_SUBTYPE)))
 endif
 
