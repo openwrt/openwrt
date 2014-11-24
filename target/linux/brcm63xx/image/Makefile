@@ -288,9 +288,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),F@ST2704V2,6328,F@ST2704V2,OpenWRT-$(REVISION))
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
-	# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
-	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,AGV2+W-cfe)
-	$(call Image/Build/CFEAGPF,$(1),AGPF-S0,6358,0x20000,AGV2+W)
 	# Pirelli A226G
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G-cfe)
 	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G)
@@ -388,6 +385,8 @@ $(eval $(call CfeImageDTB,HG553,hg553,HW553,6358,HG553,EchoLife_HG553,--image-of
 $(eval $(call CfeImageDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call CfeImageDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 $(eval $(call CfeImageDTB,HG556a_C,hg556a-c,HW556,6358,HG556a_C,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+# Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
+$(eval $(call CfeImageDTB,AGPF_S0,agpf-s0,AGPF-S0,6358,AGV2+W,,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # T-Com Speedport W 500V
 $(eval $(call CfeImageDTB,SPW500V,spw500v,96348GW,6348,SPW500V))
 # Tecom GW6000
