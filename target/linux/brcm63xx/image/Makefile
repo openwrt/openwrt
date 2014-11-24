@@ -71,16 +71,6 @@ define Image/Build/ZYXCFEDTB
 	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
 endef
 
-define Image/Build/CFEAGPF
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
-		--load-addr $(LOADADDR) --tag-version 8 \
-		--signature2 IMAGE --block-size 0x20000 \
-		--image-offset $(4) --info1 "-$(call Image/LimitName16,$(5))" --info2 $(1)
-endef
-
 define Image/Build/RG100A
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
@@ -288,13 +278,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),F@ST2704V2,6328,F@ST2704V2,OpenWRT-$(REVISION))
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
-	# Pirelli A226G
-	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G-cfe)
-	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x10000,A226G)
-
-	# Pirelli A226M
-	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x20000,A226M-cfe)
-	$(call Image/Build/CFEAGPF,$(1),DWV-S0,6358,0x20000,A226M)
 
 	# RG100A,DB120 etc.
 	$(call Image/Build/RG100A,$(1),96358VW2,6358,0x20000,RG100A_DB120)
@@ -387,6 +370,11 @@ $(eval $(call CfeImageDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,EchoLife_HG556a
 $(eval $(call CfeImageDTB,HG556a_C,hg556a-c,HW556,6358,HG556a_C,EchoLife_HG556a,--image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
 $(eval $(call CfeImageDTB,AGPF_S0,agpf-s0,AGPF-S0,6358,AGV2+W,,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
+# Pirelli A226G
+$(eval $(call CfeImageDTB,A226G,a226g,DWV-S0,6358,A226G,,--signature2 IMAGE --tag-version 8))
+# Pirelli A226M/A226M-FWB
+$(eval $(call CfeImageDTB,A226M,a226m,DWV-S0,6358,A226M,,--signature2 IMAGE --tag-version 8))
+$(eval $(call CfeImageDTB,A226M,a226m-fwb,DWV-S0,6358,A226M-FWB,,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # T-Com Speedport W 500V
 $(eval $(call CfeImageDTB,SPW500V,spw500v,96348GW,6348,SPW500V))
 # Tecom GW6000
