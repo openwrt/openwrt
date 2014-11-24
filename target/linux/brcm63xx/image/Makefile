@@ -71,15 +71,6 @@ define Image/Build/ZYXCFEDTB
 	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
 endef
 
-define Image/Build/RG100A
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		--boardid $(2) --chipid $(3) --entry $(LOADADDR) \
-		--load-addr $(LOADADDR) --block-size 0x20000 \
-		--image-offset $(4) --info1 "-$(call Image/LimitName16,$(5))" --info2 $(1)
-endef
-
 define Image/Build/RedBoot
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
 	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
@@ -279,9 +270,6 @@ define Image/Build
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 
-	# RG100A,DB120 etc.
-	$(call Image/Build/RG100A,$(1),96358VW2,6358,0x20000,RG100A_DB120)
-
 	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
 
@@ -336,6 +324,8 @@ $(eval $(call CfeImageDTB,96368MVWG,bcm96368MVWG,96368MVWG,6368,96368MVWG-generi
 $(eval $(call CfeImageDTB,A4001N,a4001n,96328dg2x2,6328,A4001N,,--pad 8))
 # ADB P.DG A4001N1
 $(eval $(call CfeImageDTB,A4001N1,a4001n1,963281T_TEF,6328,A4001N1,,--pad 8))
+# Alcatel RG100A
+$(eval $(call CfeImageDTB,RG100A,rg100a,96358VW2,6358,RG100A,,--block-size 0x20000 --image-offset 0x20000))
 # Asmax AR 1004g
 $(eval $(call CfeImageDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
 # Comtrend AR-5381u
