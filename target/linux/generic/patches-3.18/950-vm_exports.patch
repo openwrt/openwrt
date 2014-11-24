@@ -52,7 +52,7 @@
   * When we die, we re-parent all our children, and try to:
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3188,6 +3188,7 @@ int can_nice(const struct task_struct *p
+@@ -3159,6 +3159,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }
