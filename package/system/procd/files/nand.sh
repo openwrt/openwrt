@@ -250,10 +250,10 @@ nand_upgrade_tar() {
 	local has_kernel=1
 	local has_env=0
 
-	[ "kernel_length" = 0 -o -z "$kernel_mtd" ] || {
+	[ "$kernel_length" != 0 -a -n "$kernel_mtd" ] && {
 		tar xf $tar_file sysupgrade-$board_name/kernel -O | mtd write - $CI_KERNPART
 	}
-	[ "kernel_length" = 0 -o ! -z "$kernel_mtd" ] && has_kernel=0
+	[ "$kernel_length" = 0 -o ! -z "$kernel_mtd" ] && has_kernel=0
 
 	nand_upgrade_prepare_ubi "$rootfs_length" "$rootfs_type" "$has_kernel" "$has_env"
 
@@ -277,9 +277,11 @@ nand_do_upgrade_stage2() {
 
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART="rootfs"
 
-	[ "$file_type" = "ubi" ] && nand_upgrade_ubinized $1
-	[ "$file_type" = "ubifs" ] && nand_upgrade_ubifs $1
-	nand_upgrade_tar $1
+	case "$file_type" in
+		"ubi")		nand_upgrade_ubinized $1;;
+		"ubifs")	nand_upgrade_ubifs $1;;
+		*)		nand_upgrade_tar $1;;
+	esac
 }
 
 nand_upgrade_stage2() {
