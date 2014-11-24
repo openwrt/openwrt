@@ -64,6 +64,20 @@ define Image/Build/OLDCFEDTB
 		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin $(6)
 endef
 
+define Image/Build/SPW303VCFEDTB
+	# Generate the tagged image
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
+		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --rsa-signature "$(6)" $(7)
+	# Fix up header
+	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
+		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe-sysupgrade.bin
+	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(5)-$(1)-cfe-sysupgrade.bin \
+		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe-factory.bin
+	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
+endef
+
 define Image/Build/ZYXCFEDTB
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
@@ -84,21 +98,6 @@ define Image/Build/RedBoot
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
 	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(1)-vmlinux.lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(1)-vmlinux.gz bs=65536 conv=sync
-endef
-
-define Image/Build/SPW303V
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
-		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
-		--pad 4 $(6) $(7) $(8) $(9)
-	# Fix up header
-	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp \
-		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin
-	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-sysupgrade.bin \
-		-o $(BIN_DIR)/openwrt-$(4)-$(1)-cfe-factory.bin
-	rm -f $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin.tmp
 endef
 
 define Image/Build/HCS
@@ -216,6 +215,24 @@ endef
 # $(5) = imagename
 # $(6) = rsa signature
 # $(7) = additional options
+define Spw303vCfeImageDTB
+  define Image/Build/$(5)
+    $$(call Image/Build/SPW303VCFEDTB,$$(1),$(2),$(3),$(4),$(5),$(6),$(7))
+  endef
+
+  TARGET_Default_DTBS += $(2)
+  TARGET_Default_IMAGES += $(5)
+  TARGET_$(1)_DTBS += $(2)
+  TARGET_$(1)_IMAGES += $(5)
+endef
+
+# $(1) = Profile
+# $(2) = dtb
+# $(3) = boardname
+# $(4) = chipid
+# $(5) = imagename
+# $(6) = rsa signature
+# $(7) = additional options
 define ZyxCfeImageDTB
   define Image/Build/$(5)
     $$(call Image/Build/ZYXCFEDTB,$$(1),$(2),$(3),$(4),$(5),$(6),$(7))
@@ -286,9 +303,6 @@ define Image/Build
 
 	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
-
-	# T-Com Speedport W 303V Typ B
-	$(call Image/Build/SPW303V,$(1),96358-502V,6358,SPW303V)
 
 	# Netgear CVG834G
 	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
@@ -381,6 +395,8 @@ $(eval $(call CfeImageDTB,A226G,a226g,DWV-S0,6358,A226G,,--signature2 IMAGE --ta
 # Pirelli A226M/A226M-FWB
 $(eval $(call CfeImageDTB,A226M,a226m,DWV-S0,6358,A226M,,--signature2 IMAGE --tag-version 8))
 $(eval $(call CfeImageDTB,A226M,a226m-fwb,DWV-S0,6358,A226M-FWB,,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
+# T-Com Speedport W 303V Typ B
+$(eval $(call Spw303vCfeImageDTB,SPW303V,spw303v,96358-502V,6358,SPW303V,,--pad 4))
 # T-Com Speedport W 500V
 $(eval $(call CfeImageDTB,SPW500V,spw500v,96348GW,6348,SPW500V))
 # Tecom GW6000
