@@ -1,0 +1,13 @@
+This multi-platform ARMv8 target can be used either with ARM Ltd.'s Foundation_V8
+fast-model doing the following:
+
+Foundation_v8 --image bin/arm64-eglibc/openwrt-arm64-vexpress-foundation.axf
+
+or you can also use QEMU:
+
+qemu-system-aarch64 -machine virt -cpu cortex-a57 -machine type=virt -nographic \
+	-smp 1 -m 2048 \
+	-kernel bin/arm64-eglibc/openwrt-arm64-qemu-virt-initramfs.Image \
+	--append "console=ttyAMA0"
+
+and enjoy the system booting.
