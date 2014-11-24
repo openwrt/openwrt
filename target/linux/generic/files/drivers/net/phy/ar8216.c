@@ -36,6 +36,7 @@
 #include <linux/of_device.h>
 #include <linux/leds.h>
 #include <linux/gpio.h>
+#include <linux/version.h>
 
 #include "ar8216.h"
 
@@ -340,6 +341,29 @@ ar8xxx_phy_poll_reset(struct mii_bus *bus)
                 }
         }
         return -ETIMEDOUT;
+}
+
+static int
+ar8xxx_phy_check_aneg(struct phy_device *phydev)
+{
+	int ret;
+
+	if (phydev->autoneg != AUTONEG_ENABLE)
+		return 0;
+	/*
+	 * BMCR_ANENABLE might have been cleared
+	 * by phy_init_hw in certain kernel versions
+	 * therefore check for it
+	 */
+	ret = phy_read(phydev, MII_BMCR);
+	if (ret < 0)
+		return ret;
+	if (ret & BMCR_ANENABLE)
+		return 0;
+
+	dev_info(&phydev->dev, "ANEG disabled, re-enabling ...\n");
+	ret |= BMCR_ANENABLE | BMCR_ANRESTART;
+	return phy_write(phydev, MII_BMCR, ret);
 }
 
 static void
@@ -2774,7 +2798,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 		return -ENODEV;
 
 	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
-		return 0;
+		return ar8xxx_phy_check_aneg(phydev);
 
 	priv->phy = phydev;
 
@@ -2846,6 +2870,15 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	phydev->adjust_link(phydev->attached_dev);
 
 	return ret;
+}
+
+static int
+ar8xxx_phy_config_aneg(struct phy_device *phydev)
+{
+	if (phydev->addr == 0)
+		return 0;
+
+	return genphy_config_aneg(phydev);
 }
 
 static const u32 ar8xxx_phy_ids[] = {
@@ -3010,6 +3043,15 @@ ar8xxx_phy_remove(struct phy_device *phydev)
 	ar8xxx_free(priv);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
+static int
+ar8xxx_phy_soft_reset(struct phy_device *phydev)
+{
+	/* we don't need an extra reset */
+	return 0;
+}
+#endif
+
 static struct phy_driver ar8xxx_phy_driver = {
 	.phy_id		= 0x004d0000,
 	.name		= "Atheros AR8216/AR8236/AR8316",
@@ -3019,8 +3061,11 @@ static struct phy_driver ar8xxx_phy_driver = {
 	.remove		= ar8xxx_phy_remove,
 	.detach		= ar8xxx_phy_detach,
 	.config_init	= ar8xxx_phy_config_init,
-	.config_aneg	= genphy_config_aneg,
+	.config_aneg	= ar8xxx_phy_config_aneg,
 	.read_status	= ar8xxx_phy_read_status,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
+	.soft_reset	= ar8xxx_phy_soft_reset,
+#endif
 	.driver		= { .owner = THIS_MODULE },
 };
 
