@@ -248,18 +248,6 @@ endef
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 
-	# BT Voyager V210_BTR
-	$(call Image/Build/CFE,$(1),V210_BB,6348,BTV210_BTR,,--layoutver 5)
-	# BT Voyager V210_ROI, V210_WB
-	$(call Image/Build/CFE,$(1),V210,6348,BTV210_ROI_WB,,--layoutver 5)
-	# BT Voyager V2091_BTR
-	$(call Image/Build/CFE,$(1),V2091_BB,6348,BTV2091_BTR,,--layoutver 5)
-	# BT Voyager V2091_ROI, V2091_WB
-	$(call Image/Build/CFE,$(1),V2091,6348,BTV2091_ROI_WB,,--layoutver 5)
-	# BT Voyager V220V, V220V_MGCP_BTR
-	$(call Image/Build/CFE,$(1),RTA1052V,6348,BTV220V_MGCP_BTR,,--layoutver 5)
-	# BT Voyager V2110, V2110_AA, V2110_ROI
-	$(call Image/Build/CFE,$(1),V2110,6348,BTV2110,,--layoutver 5)
 	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
 	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,--layoutver 5)
 	# RTA1025W_16 (numerous routers)
@@ -284,8 +272,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-EU,,--signature2="4.06.01.EUF1" --pad 4)
 	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-AU,,--signature2="4.06.01.AUF1" --pad 4)
 
-	# TP-Link TD-8810A, TD-8810B, TD-8811A, TD-8811B
-	$(call Image/Build/CFE,$(1),8L-2M-8M,6338,TP8810_8811)
 	# TP-Link 8900GB
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,TD8900GB,$(shell printf 'PRID\x89\x10\x00\x02'))
 
