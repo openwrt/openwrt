@@ -1,0 +1,29 @@
+Index: linux-3.14.18/arch/mips/ralink/reset.c
+===================================================================
+--- linux-3.14.18.orig/arch/mips/ralink/reset.c	2014-11-23 00:32:23.268612766 +0100
++++ linux-3.14.18/arch/mips/ralink/reset.c	2014-11-23 01:13:46.850117349 +0100
+@@ -18,8 +18,10 @@
+ #include <asm/mach-ralink/ralink_regs.h>
+ 
+ /* Reset Control */
+-#define SYSC_REG_RESET_CTRL     0x034
+-#define RSTCTL_RESET_SYSTEM     BIT(0)
++#define SYSC_REG_RESET_CTRL	0x034
++
++#define RSTCTL_RESET_PCI	BIT(26)
++#define RSTCTL_RESET_SYSTEM	BIT(0)
+ 
+ static int ralink_assert_device(struct reset_controller_dev *rcdev,
+ 				unsigned long id)
+@@ -83,6 +85,11 @@
+ 
+ static void ralink_restart(char *command)
+ {
++	if (IS_ENABLED(CONFIG_PCI)) {
++		rt_sysc_m32(0, RSTCTL_RESET_PCI, SYSC_REG_RESET_CTRL);
++		mdelay(50);
++	}
++
+ 	local_irq_disable();
+ 	rt_sysc_w32(RSTCTL_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
+ 	unreachable();
