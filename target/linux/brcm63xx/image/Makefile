@@ -58,6 +58,7 @@ define Image/Build/CFEDTB
 endef
 
 define Image/Build/OLDCFEDTB
+	# Generate the tagged image
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
 		-b $(3) -c $(4)	-e $(KERNEL_ENTRY) -a $(LOADADDR) \
 		-k $(KDIR)/vmlinux-$(2).lzma.cfe -r $(KDIR)/root.$(1) \
