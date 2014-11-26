@@ -43,6 +43,9 @@ get_status_led() {
 	cap4200ag)
 		status_led="senao:green:pwr"
 		;;
+	cpe510)
+		status_led="tp-link:green:link4"
+		;;
 	db120)
 		status_led="db120:green:status"
 		;;

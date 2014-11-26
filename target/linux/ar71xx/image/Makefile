@@ -276,6 +276,7 @@ cameo_ap121_mtdlayout_8M=mtdparts=spi0.0:64k(u-boot)ro,64k(art)ro,64k(mac)ro,64k
 cameo_db120_mtdlayout=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,15936k(firmware),192k(lang)ro,64k(mac)ro,64k(art)ro
 cameo_db120_mtdlayout_8M=mtdparts=spi0.0:64k(uboot)ro,64k(nvram)ro,7872k(firmware),128k(lang)ro,64k(art)ro
 cap4200ag_mtdlayout=mtdparts=spi0.0:256k(u-boot),64k(u-boot-env),320k(custom)ro,1536k(kernel),12096k(rootfs),2048k(failsafe),64k(art),13632k@0xa0000(firmware)
+cpe510_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(pation-table)ro,64k(product-info)ro,1536k(kernel),6144k(rootfs),192k(config)ro,64k(ART)ro,7680k@0x40000(firmware)
 eap300v2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),320k(custom),13632k(firmware),2048k(failsafe),64k(art)ro
 db120_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
 cameo_ap94_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,1600k(unknown)ro,64k@0x7f0000(caldata_copy)
@@ -831,6 +832,32 @@ define Image/Build/TPLINK-LZMA/initramfs
 endef
 
 
+Image/Build/TPLINK-SAFELOADER/buildkernel=$(call PatchKernelLzma,$(2),$(3) $(4))
+
+define Image/Build/TPLINK-SAFELOADER
+	-rm -rf $(KDIR)/lzma-loader
+	$(LOADER_MAKE) LOADER=loader-$(2).elf\
+		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
+		LOADER_DATA="$(KDIR_TMP)/vmlinux-$(2).bin.lzma" BOARD="$(2)" \
+		compile loader.elf
+
+	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
+		-B $(5) \
+		-k $(KDIR)/loader-$(2).elf \
+		-r $(KDIR)/root.$(1) \
+		-V $(REVISION) \
+		-j \
+		-o $(call factoryname,$(1),$(2))
+	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
+		-B $(5) \
+		-k $(KDIR)/loader-$(2).elf \
+		-r $(KDIR)/root.$(1) \
+		-V $(REVISION) \
+		-j -S \
+		-o $(call sysupname,$(1),$(2))
+endef
+
+
 define Image/Build/CyberTAN
 	echo -n '' > $(KDIR_TMP)/empty.bin
 	$(STAGING_DIR_HOST)/bin/trx -o $(KDIR)/image.tmp \
@@ -1263,6 +1290,8 @@ $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWDR4300V1IL,tl-wdr4300-v1-il,TL
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWDR4310V1,tl-wdr4310-v1,TL-WDR4300,ttyS0,115200,0x43100001,1,8Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWDR4900V2,tl-wdr4900-v2,TL-WDR4900-v2,ttyS0,115200,0x49000002,1,8Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,MW4530RV1,mw4530r-v1,TL-WDR4300,ttyS0,115200,0x45300001,1,8Mlzma))
+
+$(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,CPE510,ttyS0,115200,$$(cpe510_mtdlayout),CPE510))
 
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,SMART-300,smart-300,SMART-300,ttyS0,115200,0x93410001,1,8Mlzma))
 
