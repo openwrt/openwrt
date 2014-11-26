@@ -537,7 +537,7 @@ static struct resource cns3xxx_usb_otg_resources[] = {
 static u64 cns3xxx_usb_otg_dma_mask = DMA_BIT_MASK(32);
 
 static struct platform_device cns3xxx_usb_otg_device = {
-	.name          = "dwc_otg",
+	.name          = "dwc2",
 	.num_resources = ARRAY_SIZE(cns3xxx_usb_otg_resources),
 	.resource      = cns3xxx_usb_otg_resources,
 	.dev           = {
