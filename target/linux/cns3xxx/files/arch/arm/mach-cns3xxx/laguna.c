@@ -341,12 +341,17 @@ static struct resource laguna_net_resource[] = {
 	}
 };
 
+static u64 laguna_net_dmamask = DMA_BIT_MASK(32);
 static struct platform_device laguna_net_device = {
 	.name = "cns3xxx_eth",
 	.id = 0,
 	.resource = laguna_net_resource,
 	.num_resources = ARRAY_SIZE(laguna_net_resource),
-	.dev.platform_data = &laguna_net_data,
+	.dev = {
+		.dma_mask = &laguna_net_dmamask,
+		.coherent_dma_mask = DMA_BIT_MASK(32),
+		.platform_data = &laguna_net_data,
+	}
 };
 
 /*
