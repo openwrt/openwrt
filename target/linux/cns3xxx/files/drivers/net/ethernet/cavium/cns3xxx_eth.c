@@ -288,6 +288,7 @@ struct sw {
 	struct _rx_ring rx_ring;
 	struct sk_buff *frag_first;
 	struct sk_buff *frag_last;
+	struct device *dev;
 	int rx_irq;
 	int stat_irq;
 };
@@ -524,9 +525,9 @@ static void cns3xxx_alloc_rx_buf(struct sw *sw, int received)
 		if (!buf)
 			break;
 
-		phys = dma_map_single(NULL, buf + SKB_HEAD_ALIGN,
+		phys = dma_map_single(sw->dev, buf + SKB_HEAD_ALIGN,
 				      RX_SEGMENT_MRU, DMA_FROM_DEVICE);
-		if (dma_mapping_error(NULL, phys)) {
+		if (dma_mapping_error(sw->dev, phys)) {
 			kfree(buf);
 			break;
 		}
@@ -600,7 +601,7 @@ static void eth_complete_tx(struct sw *sw)
 			tx_ring->buff_tab[index] = 0;
 			if (skb)
 				dev_kfree_skb_any(skb);
-			dma_unmap_single(NULL, tx_ring->phys_tab[index],
+			dma_unmap_single(sw->dev, tx_ring->phys_tab[index],
 				desc->sdl, DMA_TO_DEVICE);
 			if (++index == TX_DESCS) {
 				index = 0;
@@ -635,7 +636,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 			break;
 
 		/* process received frame */
-		dma_unmap_single(NULL, rx_ring->phys_tab[i],
+		dma_unmap_single(sw->dev, rx_ring->phys_tab[i],
 				 RX_SEGMENT_MRU, DMA_FROM_DEVICE);
 
 		skb = build_skb(rx_ring->buff_tab[i], 0);
@@ -735,13 +736,14 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	return received;
 }
 
-static void eth_set_desc(struct _tx_ring *tx_ring, int index, int index_last,
-			 void *data, int len, u32 config0, u32 pmap)
+static void eth_set_desc(struct sw *sw, struct _tx_ring *tx_ring, int index,
+			 int index_last, void *data, int len, u32 config0,
+			 u32 pmap)
 {
 	struct tx_desc *tx_desc = &(tx_ring)->desc[index];
 	unsigned int phys;
 
-	phys = dma_map_single(NULL, data, len, DMA_TO_DEVICE);
+	phys = dma_map_single(sw->dev, data, len, DMA_TO_DEVICE);
 	tx_desc->sdp = phys;
 	tx_desc->pmap = pmap;
 	tx_ring->phys_tab[index] = phys;
@@ -805,7 +807,7 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 		frag = &skb_shinfo(skb)->frags[i];
 		addr = page_address(skb_frag_page(frag)) + frag->page_offset;
 
-		eth_set_desc(tx_ring, index, index_last, addr, frag->size,
+		eth_set_desc(sw, tx_ring, index, index_last, addr, frag->size,
 			     config0, pmap);
 	}
 
@@ -816,12 +818,12 @@ static int eth_xmit(struct sk_buff *skb, struct net_device *dev)
 		index = (index + 1) % TX_DESCS;
 		len0 -= skb1->len;
 
-		eth_set_desc(tx_ring, index, index_last, skb1->data, skb1->len,
-			     config0, pmap);
+		eth_set_desc(sw, tx_ring, index, index_last, skb1->data,
+			     skb1->len, config0, pmap);
 	}
 
 	tx_ring->buff_tab[index0] = skb;
-	eth_set_desc(tx_ring, index0, index_last, skb->data, len0,
+	eth_set_desc(sw, tx_ring, index0, index_last, skb->data, len0,
 		     config0 | FIRST_SEGMENT, pmap);
 
 	wmb();
@@ -896,7 +898,7 @@ static int init_rings(struct sw *sw)
 
 	__raw_writel(QUEUE_THRESHOLD, &sw->regs->dma_ring_ctrl);
 
-	if (!(rx_dma_pool = dma_pool_create(DRV_NAME, NULL,
+	if (!(rx_dma_pool = dma_pool_create(DRV_NAME, sw->dev,
 					    RX_POOL_ALLOC_SIZE, 32, 0)))
 		return -ENOMEM;
 
@@ -920,9 +922,9 @@ static int init_rings(struct sw *sw)
 		desc->fsd = 1;
 		desc->lsd = 1;
 
-		desc->sdp = dma_map_single(NULL, buf + SKB_HEAD_ALIGN,
+		desc->sdp = dma_map_single(sw->dev, buf + SKB_HEAD_ALIGN,
 					   RX_SEGMENT_MRU, DMA_FROM_DEVICE);
-		if (dma_mapping_error(NULL, desc->sdp))
+		if (dma_mapping_error(sw->dev, desc->sdp))
 			return -EIO;
 
 		rx_ring->buff_tab[i] = buf;
@@ -932,7 +934,7 @@ static int init_rings(struct sw *sw)
 	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_ptr0);
 	__raw_writel(rx_ring->phys_addr, &sw->regs->fs_desc_base_addr0);
 
-	if (!(tx_dma_pool = dma_pool_create(DRV_NAME, NULL,
+	if (!(tx_dma_pool = dma_pool_create(DRV_NAME, sw->dev,
 					    TX_POOL_ALLOC_SIZE, 32, 0)))
 		return -ENOMEM;
 
@@ -968,7 +970,7 @@ static void destroy_rings(struct sw *sw)
 			if (!skb)
 				continue;
 
-			dma_unmap_single(NULL, desc->sdp, RX_SEGMENT_MRU,
+			dma_unmap_single(sw->dev, desc->sdp, RX_SEGMENT_MRU,
 					 DMA_FROM_DEVICE);
 			dev_kfree_skb(skb);
 		}
@@ -983,7 +985,7 @@ static void destroy_rings(struct sw *sw)
 			struct tx_desc *desc = &(tx_ring)->desc[i];
 			struct sk_buff *skb = sw->tx_ring.buff_tab[i];
 			if (skb) {
-				dma_unmap_single(NULL, desc->sdp,
+				dma_unmap_single(sw->dev, desc->sdp,
 					skb->len, DMA_TO_DEVICE);
 				dev_kfree_skb(skb);
 			}
@@ -1199,6 +1201,7 @@ static int eth_init_one(struct platform_device *pdev)
 	sw = netdev_priv(napi_dev);
 	memset(sw, 0, sizeof(struct sw));
 	sw->regs = regs;
+	sw->dev = &pdev->dev;
 
 	sw->rx_irq = platform_get_irq_byname(pdev, "eth_rx");
 	sw->stat_irq = platform_get_irq_byname(pdev, "eth_stat");
