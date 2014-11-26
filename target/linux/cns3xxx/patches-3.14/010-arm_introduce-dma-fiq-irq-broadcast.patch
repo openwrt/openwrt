@@ -1,6 +1,6 @@
 --- a/arch/arm/include/asm/glue-cache.h
 +++ b/arch/arm/include/asm/glue-cache.h
-@@ -129,11 +129,19 @@
+@@ -156,11 +156,19 @@ extern inline void nop_dma_unmap_area(co
  #define __cpuc_flush_user_range		__glue(_CACHE,_flush_user_cache_range)
  #define __cpuc_coherent_kern_range	__glue(_CACHE,_coherent_kern_range)
  #define __cpuc_coherent_user_range	__glue(_CACHE,_coherent_user_range)
@@ -22,7 +22,7 @@
  #endif
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
-@@ -823,6 +823,17 @@ config DMA_CACHE_RWFO
+@@ -843,6 +843,17 @@ config DMA_CACHE_RWFO
  	  in hardware, other workarounds are needed (e.g. cache
  	  maintenance broadcasting in software via FIQ).
  
@@ -42,15 +42,23 @@
  
 --- a/arch/arm/mm/flush.c
 +++ b/arch/arm/mm/flush.c
-@@ -286,7 +286,10 @@ void flush_dcache_page(struct page *page
+@@ -281,6 +281,7 @@ void __sync_icache_dcache(pte_t pteval)
+ void flush_dcache_page(struct page *page)
+ {
+ 	struct address_space *mapping;
++	bool skip_broadcast = true;
+ 
+ 	/*
+ 	 * The zero page is never written to, so never has any dirty
+@@ -291,7 +292,10 @@ void flush_dcache_page(struct page *page
  
  	mapping = page_mapping(page);
  
 -	if (!cache_ops_need_broadcast() &&
-+	if (
 +#ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST
-+		!cache_ops_need_broadcast() &&
++	skip_broadcast = !cache_ops_need_broadcast();
 +#endif
- 	    mapping && !mapping_mapped(mapping))
++	if (skip_broadcast &&
+ 	    mapping && !page_mapped(page))
  		clear_bit(PG_dcache_clean, &page->flags);
  	else {

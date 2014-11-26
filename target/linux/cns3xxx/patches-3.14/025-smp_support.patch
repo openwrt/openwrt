@@ -20,9 +20,9 @@
  
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -11,6 +11,7 @@
- #ifndef __CNS3XXX_CORE_H
- #define __CNS3XXX_CORE_H
+@@ -13,6 +13,7 @@
+ 
+ #include <linux/reboot.h>
  
 +extern struct smp_operations cns3xxx_smp_ops;
  extern void cns3xxx_timer_init(void);
