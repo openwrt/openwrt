@@ -505,7 +505,7 @@ resume:
 
 				if (mtd_block_is_bad(fd, e)) {
 					if (!quiet)
-						fprintf(stderr, "\nSkipping bad block at 0x%08x   ", e);
+						fprintf(stderr, "\nSkipping bad block at 0x%08zx   ", e);
 
 					skip_bad_blocks += erasesize;
 					e += erasesize;
@@ -563,7 +563,6 @@ resume:
 	if (!quiet)
 		fprintf(stderr, "\b\b\b\b    ");
 
-done:
 	if (quiet < 2)
 		fprintf(stderr, "\n");
 
