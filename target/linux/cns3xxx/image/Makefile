@@ -18,10 +18,6 @@ define BuildFirmware/Generic
 	sh $(TOPDIR)/scripts/combined-image.sh \
 		$(KDIR)/uImage.pad \
 		$(KDIR)/root.$(1).pad \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))-uboot-sysupgrade.bin
-	sh $(TOPDIR)/scripts/combined-image.sh \
-		$(KDIR)/uImage.pad \
-		$(KDIR)/root.$(1).pad \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))-sysupgrade.bin
 endef
 
