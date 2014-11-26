@@ -38,6 +38,7 @@ board=$(ar71xx_board_name)
 case "$FIRMWARE" in
 "soc_wmac.eeprom")
 	case $board in
+	r6100 | \
 	wndr3700v4 | \
 	wndr4300)
 		ath9k_eeprom_extract "caldata" 4096 2048

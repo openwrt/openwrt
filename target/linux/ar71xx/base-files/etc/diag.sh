@@ -263,6 +263,7 @@ get_status_led() {
 	wzr-hp-g300nh2)
 		status_led="buffalo:red:diag"
 		;;
+	r6100 | \
 	wndap360 | \
 	wndr3700 | \
 	wndr3700v4 | \
