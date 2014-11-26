@@ -1,0 +1,62 @@
+Index: linux-3.18-rc4/arch/arm/include/asm/glue-cache.h
+===================================================================
+--- linux-3.18-rc4.orig/arch/arm/include/asm/glue-cache.h
++++ linux-3.18-rc4/arch/arm/include/asm/glue-cache.h
+@@ -156,11 +156,19 @@ static inline void nop_dma_unmap_area(co
+ #define __cpuc_flush_user_range		__glue(_CACHE,_flush_user_cache_range)
+ #define __cpuc_coherent_kern_range	__glue(_CACHE,_coherent_kern_range)
+ #define __cpuc_coherent_user_range	__glue(_CACHE,_coherent_user_range)
++#ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST
+ #define __cpuc_flush_dcache_area	__glue(_CACHE,_flush_kern_dcache_area)
+ 
+ #define dmac_map_area			__glue(_CACHE,_dma_map_area)
+ #define dmac_unmap_area			__glue(_CACHE,_dma_unmap_area)
+ #define dmac_flush_range		__glue(_CACHE,_dma_flush_range)
++#else
++#define __cpuc_flush_dcache_area	__glue(fiq,_flush_kern_dcache_area)
++
++#define dmac_map_area			__glue(fiq,_dma_map_area)
++#define dmac_unmap_area			__glue(fiq,_dma_unmap_area)
++#define dmac_flush_range		__glue(fiq,_dma_flush_range)
++#endif /* CONFIG_DMA_CACHE_FIQ_BROADCAST */
+ #endif
+ 
+ #endif
+Index: linux-3.18-rc4/arch/arm/mm/Kconfig
+===================================================================
+--- linux-3.18-rc4.orig/arch/arm/mm/Kconfig
++++ linux-3.18-rc4/arch/arm/mm/Kconfig
+@@ -843,6 +843,17 @@ config DMA_CACHE_RWFO
+ 	  in hardware, other workarounds are needed (e.g. cache
+ 	  maintenance broadcasting in software via FIQ).
+ 
++config DMA_CACHE_FIQ_BROADCAST
++	bool "Enable fiq broadcast DMA cache maintenance"
++	depends on CPU_V6K && SMP
++	select FIQ
++	help
++	  The Snoop Control Unit on ARM11MPCore does not detect the
++	  cache maintenance operations and the dma_{map,unmap}_area()
++	  functions may leave stale cache entries on other CPUs. By
++	  enabling this option, fiq broadcast in the ARMv6
++	  DMA cache maintenance functions is performed.
++
+ config OUTER_CACHE
+ 	bool
+ 
+Index: linux-3.18-rc4/arch/arm/mm/flush.c
+===================================================================
+--- linux-3.18-rc4.orig/arch/arm/mm/flush.c
++++ linux-3.18-rc4/arch/arm/mm/flush.c
+@@ -314,7 +314,11 @@ void flush_dcache_page(struct page *page
+ 
+ 	mapping = page_mapping(page);
+ 
++#ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST
+ 	if (!cache_ops_need_broadcast() &&
++#else
++	if (
++#endif
+ 	    mapping && !page_mapped(page))
+ 		clear_bit(PG_dcache_clean, &page->flags);
+ 	else {
