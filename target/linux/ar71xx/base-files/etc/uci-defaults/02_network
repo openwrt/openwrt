@@ -63,6 +63,13 @@ tl-wdr4900-v2)
 	ucidef_add_switch_vlan "switch0" "2" "1 6"
 	;;
 
+cpe510)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0t 5"
+	ucidef_add_switch_vlan "switch0" "2" "0t 4"
+	;;
+
 db120 |\
 rb-2011l | \
 rb-2011uas |\

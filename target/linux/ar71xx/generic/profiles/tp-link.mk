@@ -16,6 +16,17 @@ endef
 $(eval $(call Profile,ARCHERC7))
 
 
+define Profile/CPE510
+	NAME:=TP-LINK CPE210/220/510/520
+	PACKAGES:=rssileds
+endef
+
+define Profile/CPE510/Description
+	Package set optimized for the TP-LINK CPE210/220/510/520.
+endef
+$(eval $(call Profile,CPE510))
+
+
 define Profile/TLMR10U
 	NAME:=TP-LINK TL-MR10U
 	PACKAGES:=kmod-usb-core kmod-usb2
