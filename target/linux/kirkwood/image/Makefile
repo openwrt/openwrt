@@ -135,6 +135,9 @@ Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconne
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
 
+Image/BuildKernel/Template/IOMEGA_IX2_200=$(call Image/BuildKernel/Template,iomega_ix2_200)
+Image/InstallKernel/Template/IOMEGA_IX2_200=$(call Image/InstallKernel/Template,iomega_ix2_200)
+
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template/$(PROFILE))
 endef
