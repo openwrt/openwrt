@@ -1,0 +1,13 @@
+diff --git a/common/cmd_bootm.c b/common/cmd_bootm.c
+index 166b901..9af3fd3 100644
+--- a/common/cmd_bootm.c
++++ b/common/cmd_bootm.c
+@@ -745,7 +745,7 @@ static int do_bootm_subcommand(cmd_tbl_t *cmdtp, int flag, int argc,
+ 		return CMD_RET_USAGE;
+ 	}
+ 
+-	if (state != BOOTM_STATE_START && images.state >= state) {
++	if (!(state & BOOTM_STATE_START) && images.state >= state) {
+ 		printf("Trying to execute a command out of order\n");
+ 		return CMD_RET_USAGE;
+ 	}
