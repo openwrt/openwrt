@@ -11,14 +11,14 @@
  
 --- a/arch/arm/mach-cns3xxx/core.h
 +++ b/arch/arm/mach-cns3xxx/core.h
-@@ -17,7 +17,7 @@ extern void cns3xxx_pcie_iotable_init(vo
+@@ -19,7 +19,7 @@ extern void cns3xxx_pcie_iotable_init(vo
  
  void __init cns3xxx_map_io(void);
  void __init cns3xxx_init_irq(void);
 -int  __init cns3xxx_pcie_init(void);
 +int  __init cns3xxx_pcie_init(int *pcie0_irqs, int *pcie1_irqs);
  void cns3xxx_power_off(void);
- void cns3xxx_restart(char, const char *);
+ void cns3xxx_restart(enum reboot_mode, const char *);
  
 --- a/arch/arm/mach-cns3xxx/laguna.c
 +++ b/arch/arm/mach-cns3xxx/laguna.c
@@ -30,7 +30,7 @@
  #include <linux/gpio.h>
  #include <linux/dma-mapping.h>
  #include <linux/serial_core.h>
-@@ -869,12 +870,42 @@ static int laguna_register_gpio(struct g
+@@ -868,12 +869,42 @@ static int laguna_register_gpio(struct g
  	return ret;
  }
  
@@ -74,7 +74,7 @@
  }
  subsys_initcall(laguna_pcie_init);
  
-@@ -889,8 +923,33 @@ static int __init laguna_model_setup(voi
+@@ -888,8 +919,33 @@ static int __init laguna_model_setup(voi
  	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
  	cns3xxx_gpio_init( 0, 32, CNS3XXX_GPIOA_BASE_VIRT, IRQ_CNS3XXX_GPIOA,
  		NR_IRQS_CNS3XXX);

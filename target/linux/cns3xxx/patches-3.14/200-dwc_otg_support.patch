@@ -1,6 +1,6 @@
 --- a/drivers/usb/Kconfig
 +++ b/drivers/usb/Kconfig
-@@ -136,6 +136,8 @@ source "drivers/usb/musb/Kconfig"
+@@ -96,6 +96,8 @@ source "drivers/usb/host/Kconfig"
  
  source "drivers/usb/renesas_usbhs/Kconfig"
  
@@ -26,7 +26,7 @@
  
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
-@@ -1404,6 +1404,9 @@ struct urb {
+@@ -1431,6 +1431,9 @@ struct urb {
  	unsigned int transfer_flags;	/* (in) URB_SHORT_NOT_OK | ...*/
  	void *transfer_buffer;		/* (in) associated data buffer */
  	dma_addr_t transfer_dma;	/* (in) dma addr for transfer_buffer */
@@ -38,10 +38,10 @@
  	int num_sgs;			/* (in) number of entries in the sg list */
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
-@@ -7,6 +7,7 @@
- obj-$(CONFIG_USB)		+= core/
+@@ -8,6 +8,7 @@ obj-$(CONFIG_USB)		+= core/
  
  obj-$(CONFIG_USB_DWC3)		+= dwc3/
+ obj-$(CONFIG_USB_DWC2)		+= dwc2/
 +obj-$(CONFIG_USB_DWC_OTG)	+= dwc/
  
  obj-$(CONFIG_USB_MON)		+= mon/

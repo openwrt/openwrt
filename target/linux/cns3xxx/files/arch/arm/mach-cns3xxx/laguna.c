@@ -31,8 +31,8 @@
 #include <linux/mtd/partitions.h>
 #include <linux/leds.h>
 #include <linux/i2c.h>
-#include <linux/i2c/at24.h>
-#include <linux/i2c/pca953x.h>
+#include <linux/platform_data/at24.h>
+#include <linux/platform_data/pca953x.h>
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/if_ether.h>
