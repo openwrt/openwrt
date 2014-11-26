@@ -1256,6 +1256,7 @@ static int eth_init_one(struct platform_device *pdev)
 		temp |= (PORT_DISABLE | PORT_BLOCK_STATE | PORT_LEARN_DIS);
 		__raw_writel(temp, &sw->regs->mac_cfg[port->id]);
 
+		SET_NETDEV_DEV(dev, &pdev->dev);
 		dev->netdev_ops = &cns3xxx_netdev_ops;
 		dev->ethtool_ops = &cns3xxx_ethtool_ops;
 		dev->tx_queue_len = 1000;
