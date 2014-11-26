@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Copyright (C) 2013 OpenWrt.org
+#
+
+[ -e /etc/config/ubootenv ] && exit 0
+
+touch /etc/config/ubootenv
+
+. /lib/oxnas.sh
+. /lib/uboot-envtools.sh
+. /lib/functions.sh
+
+board=$(oxnas_board_name)
+
+case "$board" in
+stg212)
+	ubootenv_add_uci_config "/dev/ubi0_0" "0x0" "0x4000" "0x1F000" "1"
+	ubootenv_add_uci_config "/dev/ubi0_1" "0x0" "0x4000" "0x1F000" "1"
+	;;
+kd20)
+	ubootenv_add_uci_config "/dev/mtd0" "0x220000" "0x02000" "0x20000" "1"
+	;;
+esac
+
+config_load ubootenv
+config_foreach ubootenv_add_app_config ubootenv
+
+exit 0
