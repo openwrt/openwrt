@@ -94,6 +94,10 @@ ifneq ($(CONFIG_TARGET_mxs),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_BIN) ./files/mxs $(1)/etc/uci-defaults/30_uboot-envtools
 endif
+ifneq ($(CONFIG_TARGET_oxnas),)
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	$(INSTALL_BIN) ./files/oxnas $(1)/etc/uci-defaults/30_uboot-envtools
+endif
 ifneq ($(CONFIG_TARGET_ramips),)
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
 	$(INSTALL_DATA) ./files/ramips $(1)/etc/uci-defaults/30_uboot-envtools
