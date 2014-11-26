@@ -13,6 +13,8 @@ DEVICE_TYPE?=router
 
 # Default packages - the really basic set
 DEFAULT_PACKAGES:=base-files libc libgcc busybox dropbear mtd uci opkg netifd fstools
+# For nas targets
+DEFAULT_PACKAGES.nas:=block-mount fdisk lvm2 lsblk mdadm
 # For router targets
 DEFAULT_PACKAGES.router:=dnsmasq iptables ip6tables ppp ppp-mod-pppoe kmod-nf-nathelper firewall odhcpd odhcp6c
 DEFAULT_PACKAGES.bootloader:=
