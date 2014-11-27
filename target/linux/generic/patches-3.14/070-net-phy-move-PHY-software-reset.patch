@@ -1,0 +1,71 @@
+commit 797ac07137d9ae8572008e21e6123a9ae17dae50
+Author: Florian Fainelli <f.fainelli@gmail.com>
+Date:   Mon Feb 17 13:34:02 2014 -0800
+
+    net: phy: move PHY software reset to genphy_soft_reset
+    
+    As pointed out by Shaohui, this function is generic for 10/100/1000
+    PHYs, but 10G PHYs might have a slightly different reset sequence which
+    prevents most of them from using this function.
+    
+    Move the BMCR_RESET based software resent sequence to
+    genphy_soft_reset() in preparation for allowing PHY drivers to implement
+    a soft_reset() callback.
+    
+    Reported-by: Shaohui Xie <Shaohui.Xie@freescale.com>
+    Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -539,11 +539,7 @@ int phy_init_hw(struct phy_device *phyde
+ 	if (!phydev->drv || !phydev->drv->config_init)
+ 		return 0;
+ 
+-	ret = phy_write(phydev, MII_BMCR, BMCR_RESET);
+-	if (ret < 0)
+-		return ret;
+-
+-	ret = phy_poll_reset(phydev);
++	ret = genphy_soft_reset(phydev);
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1029,6 +1025,27 @@ static int gen10g_read_status(struct phy
+ 	return 0;
+ }
+ 
++/**
++ * genphy_soft_reset - software reset the PHY via BMCR_RESET bit
++ * @phydev: target phy_device struct
++ *
++ * Description: Perform a software PHY reset using the standard
++ * BMCR_RESET bit and poll for the reset bit to be cleared.
++ *
++ * Returns: 0 on success, < 0 on failure
++ */
++int genphy_soft_reset(struct phy_device *phydev)
++{
++	int ret;
++
++	ret = phy_write(phydev, MII_BMCR, BMCR_RESET);
++	if (ret < 0)
++		return ret;
++
++	return phy_poll_reset(phydev);
++}
++EXPORT_SYMBOL(genphy_soft_reset);
++
+ static int genphy_config_init(struct phy_device *phydev)
+ {
+ 	int val;
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -616,6 +616,7 @@ int genphy_update_link(struct phy_device
+ int genphy_read_status(struct phy_device *phydev);
+ int genphy_suspend(struct phy_device *phydev);
+ int genphy_resume(struct phy_device *phydev);
++int genphy_soft_reset(struct phy_device *phydev);
+ void phy_driver_unregister(struct phy_driver *drv);
+ void phy_drivers_unregister(struct phy_driver *drv, int n);
+ int phy_driver_register(struct phy_driver *new_driver);

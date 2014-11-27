@@ -1,0 +1,81 @@
+commit 9df81dd7583d14862d0cfb673a941b261f3b2112
+Author: Florian Fainelli <f.fainelli@gmail.com>
+Date:   Mon Feb 17 13:34:03 2014 -0800
+
+    net: phy: allow PHY drivers to implement their own software reset
+    
+    As pointed out by Shaohui, most 10G PHYs out there have a non-standard
+    compliant software reset sequence, eventually something much more
+    complex than just toggling the BMCR_RESET bit. Allow PHY driver to
+    implement their own soft_reset() callback to deal with that. If no
+    callback is provided, call into genphy_soft_reset() which makes sure the
+    existing behavior is kept intact.
+    
+    Reported-by: Shaohui Xie <Shaohui.Xie@freescale.com>
+    Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -534,12 +534,16 @@ static int phy_poll_reset(struct phy_dev
+ 
+ int phy_init_hw(struct phy_device *phydev)
+ {
+-	int ret;
++	int ret = 0;
+ 
+ 	if (!phydev->drv || !phydev->drv->config_init)
+ 		return 0;
+ 
+-	ret = genphy_soft_reset(phydev);
++	if (phydev->drv->soft_reset)
++		ret = phydev->drv->soft_reset(phydev);
++	else
++		ret = genphy_soft_reset(phydev);
++
+ 	if (ret < 0)
+ 		return ret;
+ 
+@@ -1092,6 +1096,12 @@ static int genphy_config_init(struct phy
+ 	return 0;
+ }
+ 
++static int gen10g_soft_reset(struct phy_device *phydev)
++{
++	/* Do nothing for now */
++	return 0;
++}
++
+ static int gen10g_config_init(struct phy_device *phydev)
+ {
+ 	/* Temporarily just say we support everything */
+@@ -1266,6 +1276,7 @@ static struct phy_driver genphy_driver[]
+ 	.phy_id		= 0xffffffff,
+ 	.phy_id_mask	= 0xffffffff,
+ 	.name		= "Generic PHY",
++	.soft_reset	= genphy_soft_reset,
+ 	.config_init	= genphy_config_init,
+ 	.features	= 0,
+ 	.config_aneg	= genphy_config_aneg,
+@@ -1277,6 +1288,7 @@ static struct phy_driver genphy_driver[]
+ 	.phy_id         = 0xffffffff,
+ 	.phy_id_mask    = 0xffffffff,
+ 	.name           = "Generic 10G PHY",
++	.soft_reset	= gen10g_soft_reset,
+ 	.config_init    = gen10g_config_init,
+ 	.features       = 0,
+ 	.config_aneg    = gen10g_config_aneg,
+--- a/include/linux/phy.h
++++ b/include/linux/phy.h
+@@ -394,6 +394,11 @@ struct phy_driver {
+ 	u32 flags;
+ 
+ 	/*
++	 * Called to issue a PHY software reset
++	 */
++	int (*soft_reset)(struct phy_device *phydev);
++
++	/*
+ 	 * Called to initialize the PHY,
+ 	 * including after a reset
+ 	 */
