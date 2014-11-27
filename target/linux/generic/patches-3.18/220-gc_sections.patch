@@ -77,6 +77,15 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  				VMLINUX_SYMBOL(__stop_branch_profile) = .;
  #else
  #define BRANCH_PROFILE()
+@@ -114,7 +114,7 @@
+ #ifdef CONFIG_KPROBES
+ #define KPROBE_BLACKLIST()	. = ALIGN(8);				      \
+ 				VMLINUX_SYMBOL(__start_kprobe_blacklist) = .; \
+-				*(_kprobe_blacklist)			      \
++				KEEP(*(_kprobe_blacklist))		      \
+ 				VMLINUX_SYMBOL(__stop_kprobe_blacklist) = .;
+ #else
+ #define KPROBE_BLACKLIST()
 @@ -123,7 +123,7 @@
  #ifdef CONFIG_EVENT_TRACING
  #define FTRACE_EVENTS()	. = ALIGN(8);					\
@@ -328,6 +337,15 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		*(COMMON)						\
  	}
  
+@@ -592,7 +593,7 @@
+ 	. = ALIGN(8);							\
+ 	__bug_table : AT(ADDR(__bug_table) - LOAD_OFFSET) {		\
+ 		VMLINUX_SYMBOL(__start___bug_table) = .;		\
+-		*(__bug_table)						\
++		KEEP(*(__bug_table))					\
+ 		VMLINUX_SYMBOL(__stop___bug_table) = .;			\
+ 	}
+ #else
 @@ -604,7 +605,7 @@
  	. = ALIGN(4);							\
  	.tracedata : AT(ADDR(.tracedata) - LOAD_OFFSET) {		\
