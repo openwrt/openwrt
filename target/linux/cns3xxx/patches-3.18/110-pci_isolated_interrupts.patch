@@ -1,0 +1,188 @@
+--- a/arch/arm/mach-cns3xxx/laguna.c
++++ b/arch/arm/mach-cns3xxx/laguna.c
+@@ -21,6 +21,7 @@
+ #include <linux/kernel.h>
+ #include <linux/compiler.h>
+ #include <linux/io.h>
++#include <linux/irq.h>
+ #include <linux/gpio.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/serial_core.h>
+@@ -872,6 +873,47 @@ static int laguna_register_gpio(struct g
+ 	return ret;
+ }
+ 
++/* allow disabling of external isolated PCIe IRQs */
++static int cns3xxx_pciextirq = 1;
++static int __init cns3xxx_pciextirq_disable(char *s)
++{
++      cns3xxx_pciextirq = 0;
++      return 1;
++}
++__setup("noextirq", cns3xxx_pciextirq_disable);
++
++static int __init laguna_pcie_init_irq(void)
++{
++	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
++	u32 reg = (__raw_readl(mem) >> 26) & 0xf;
++	int irqs[] = {
++		IRQ_CNS3XXX_EXTERNAL_PIN0,
++		IRQ_CNS3XXX_EXTERNAL_PIN1,
++		IRQ_CNS3XXX_EXTERNAL_PIN2,
++		154,
++	};
++
++	if (!machine_is_gw2388())
++		return 0;
++
++	/* Verify GPIOB[26:29] == 0001b indicating support for ext irqs */
++	if (cns3xxx_pciextirq && reg != 1)
++		cns3xxx_pciextirq = 0;
++
++	if (cns3xxx_pciextirq) {
++		printk("laguna: using isolated PCI interrupts:"
++		       " irq%d/irq%d/irq%d/irq%d\n",
++		       irqs[0], irqs[1], irqs[2], irqs[3]);
++		cns3xxx_pcie_set_irqs(0, irqs);
++	} else {
++		printk("laguna: using shared PCI interrupts: irq%d\n",
++		       IRQ_CNS3XXX_PCIE0_DEVICE);
++	}
++
++	return 0;
++}
++subsys_initcall(laguna_pcie_init_irq);
++
+ static int __init laguna_model_setup(void)
+ {
+ 	u32 __iomem *mem;
+@@ -883,8 +925,33 @@ static int __init laguna_model_setup(voi
+ 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
+ 	cns3xxx_gpio_init( 0, 32, CNS3XXX_GPIOA_BASE_VIRT, IRQ_CNS3XXX_GPIOA,
+ 		NR_IRQS_CNS3XXX);
+-	cns3xxx_gpio_init(32, 32, CNS3XXX_GPIOB_BASE_VIRT, IRQ_CNS3XXX_GPIOB,
+-		NR_IRQS_CNS3XXX + 32);
++
++	/*
++	 * If pcie external interrupts are supported and desired
++	 * configure IRQ types and configure pin function.
++	 * Note that cns3xxx_pciextirq is enabled by default, but can be
++	 * unset via the 'noextirq' kernel param or by laguna_pcie_init() if
++	 * the baseboard model does not support this hardware feature.
++	 */
++	if (cns3xxx_pciextirq) {
++		mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0018);
++		reg = __raw_readl(mem);
++		/* GPIO26 is gpio, EXT_INT[0:2] not gpio func */
++		reg &= ~0x3c000000;
++		reg |= 0x38000000;
++		__raw_writel(reg, mem);
++
++		cns3xxx_gpio_init(32, 32, CNS3XXX_GPIOB_BASE_VIRT,
++				  IRQ_CNS3XXX_GPIOB, NR_IRQS_CNS3XXX + 32);
++
++		irq_set_irq_type(154, IRQ_TYPE_LEVEL_LOW);
++		irq_set_irq_type(93, IRQ_TYPE_LEVEL_HIGH);
++		irq_set_irq_type(94, IRQ_TYPE_LEVEL_HIGH);
++		irq_set_irq_type(95, IRQ_TYPE_LEVEL_HIGH);
++	} else {
++		cns3xxx_gpio_init(32, 32, CNS3XXX_GPIOB_BASE_VIRT,
++				  IRQ_CNS3XXX_GPIOB, NR_IRQS_CNS3XXX + 32);
++	}
+ 
+ 	if (strncmp(laguna_info.model, "GW", 2) == 0) {
+ 		if (laguna_info.config_bitmap & ETH0_LOAD)
+--- a/arch/arm/mach-cns3xxx/pcie.c
++++ b/arch/arm/mach-cns3xxx/pcie.c
+@@ -18,6 +18,7 @@
+ #include <linux/io.h>
+ #include <linux/ioport.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
+ #include <linux/ptrace.h>
+ #include <asm/mach/map.h>
+ #include "cns3xxx.h"
+@@ -27,7 +28,7 @@ struct cns3xxx_pcie {
+ 	void __iomem *host_regs; /* PCI config registers for host bridge */
+ 	void __iomem *cfg0_regs; /* PCI Type 0 config registers */
+ 	void __iomem *cfg1_regs; /* PCI Type 1 config registers */
+-	unsigned int irqs[2];
++	unsigned int irqs[5];
+ 	struct resource res_io;
+ 	struct resource res_mem;
+ 	struct hw_pci hw_pci;
+@@ -97,7 +98,7 @@ static inline int check_master_abort(str
+ 		void __iomem *host_base;
+ 		u32 sreg, ereg;
+ 
+-		host_base = (void __iomem *) cnspci->cfg_bases[CNS3XXX_HOST_TYPE].virtual;
++		host_base = (void __iomem *) cnspci->host_regs;
+ 		sreg = __raw_readw(host_base + 0x6) & 0xF900;
+ 		ereg = __raw_readl(host_base + 0x104); // Uncorrectable Error Status Reg
+ 
+@@ -251,7 +252,7 @@ static struct pci_ops cns3xxx_pcie_ops =
+ static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+ {
+ 	struct cns3xxx_pcie *cnspci = pdev_to_cnspci(dev);
+-	int irq = cnspci->irqs[!!dev->bus->number];
++	int irq = cnspci->irqs[!!dev->bus->number + pin - 1];
+ 
+ 	pr_info("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n",
+ 		pci_domain_nr(dev->bus), dev->bus->number, PCI_SLOT(dev->devfn),
+@@ -277,7 +278,12 @@ static struct cns3xxx_pcie cns3xxx_pcie[
+ 			.end = CNS3XXX_PCIE0_HOST_BASE - 1, /* 176 MiB */
+ 			.flags = IORESOURCE_MEM,
+ 		},
+-		.irqs = { IRQ_CNS3XXX_PCIE0_RC, IRQ_CNS3XXX_PCIE0_DEVICE, },
++		.irqs = { IRQ_CNS3XXX_PCIE0_RC,
++			  IRQ_CNS3XXX_PCIE0_DEVICE,
++			  IRQ_CNS3XXX_PCIE0_DEVICE,
++			  IRQ_CNS3XXX_PCIE0_DEVICE,
++			  IRQ_CNS3XXX_PCIE0_DEVICE,
++			},
+ 		.hw_pci = {
+ 			.domain = 0,
+ 			.nr_controllers = 1,
+@@ -302,7 +308,13 @@ static struct cns3xxx_pcie cns3xxx_pcie[
+ 			.end = CNS3XXX_PCIE1_HOST_BASE - 1, /* 176 MiB */
+ 			.flags = IORESOURCE_MEM,
+ 		},
+-		.irqs = { IRQ_CNS3XXX_PCIE1_RC, IRQ_CNS3XXX_PCIE1_DEVICE, },
++		.irqs = {
++			IRQ_CNS3XXX_PCIE1_RC,
++			IRQ_CNS3XXX_PCIE1_DEVICE,
++			IRQ_CNS3XXX_PCIE1_DEVICE,
++			IRQ_CNS3XXX_PCIE1_DEVICE,
++			IRQ_CNS3XXX_PCIE1_DEVICE,
++		},
+ 		.hw_pci = {
+ 			.domain = 1,
+ 			.nr_controllers = 1,
+@@ -412,6 +424,14 @@ static int cns3xxx_pcie_abort_handler(un
+ 	return 0;
+ }
+ 
++void __init cns3xxx_pcie_set_irqs(int bus, int *irqs)
++{
++	int i;
++
++	for (i = 0; i < 4; i++)
++		cns3xxx_pcie[bus].irqs[i + 1] = irqs[i];
++}
++
+ void __init cns3xxx_pcie_init_late(void)
+ {
+ 	int i;
+--- a/arch/arm/mach-cns3xxx/core.h
++++ b/arch/arm/mach-cns3xxx/core.h
+@@ -18,8 +18,10 @@ extern void cns3xxx_timer_init(void);
+ 
+ #ifdef CONFIG_PCI
+ extern void __init cns3xxx_pcie_init_late(void);
++extern void __init cns3xxx_pcie_set_irqs(int bus, int *irqs);
+ #else
+ static inline void __init cns3xxx_pcie_init_late(void) {}
++static inline void cns3xxx_pcie_set_irqs(int bus, int *irqs) {}
+ #endif
+ 
+ void __init cns3xxx_map_io(void);
