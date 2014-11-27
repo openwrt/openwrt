@@ -34,7 +34,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <error.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -143,6 +142,14 @@ static const unsigned char cpe510_support_list[] =
 	"CPE220(TP-LINK|UN|N300-2):1.0\r\n"
 	"\r\n\xff";
 
+#define error(_ret, _errno, _str, ...)				\
+	do {							\
+		fprintf(stderr, _str ": %s\n", ## __VA_ARGS__,	\
+			strerror(_errno));			\
+		if (_ret)					\
+			exit(_ret);				\
+	} while (0)
+
 
 /** Allocates a new image partition */
 struct image_partition_entry alloc_image_partition(const char *name, size_t len) {
@@ -200,6 +207,7 @@ struct image_partition_entry make_soft_version(uint32_t rev) {
 	struct soft_version *s = (struct soft_version *)entry.data;
 
 	time_t t;
+
 	if (time(&t) == (time_t)(-1))
 		error(1, errno, "time");
 
