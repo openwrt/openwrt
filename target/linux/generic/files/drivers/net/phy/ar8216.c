@@ -3043,7 +3043,7 @@ ar8xxx_phy_remove(struct phy_device *phydev)
 	ar8xxx_free(priv);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)
 static int
 ar8xxx_phy_soft_reset(struct phy_device *phydev)
 {
@@ -3063,7 +3063,7 @@ static struct phy_driver ar8xxx_phy_driver = {
 	.config_init	= ar8xxx_phy_config_init,
 	.config_aneg	= ar8xxx_phy_config_aneg,
 	.read_status	= ar8xxx_phy_read_status,
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,14,0)
 	.soft_reset	= ar8xxx_phy_soft_reset,
 #endif
 	.driver		= { .owner = THIS_MODULE },
