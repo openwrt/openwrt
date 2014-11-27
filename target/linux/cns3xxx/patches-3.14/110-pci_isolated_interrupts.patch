@@ -30,7 +30,7 @@
  #include <linux/gpio.h>
  #include <linux/dma-mapping.h>
  #include <linux/serial_core.h>
-@@ -868,12 +869,42 @@ static int laguna_register_gpio(struct g
+@@ -873,12 +874,42 @@ static int laguna_register_gpio(struct g
  	return ret;
  }
  
@@ -74,7 +74,7 @@
  }
  subsys_initcall(laguna_pcie_init);
  
-@@ -888,8 +919,33 @@ static int __init laguna_model_setup(voi
+@@ -893,8 +924,33 @@ static int __init laguna_model_setup(voi
  	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
  	cns3xxx_gpio_init( 0, 32, CNS3XXX_GPIOA_BASE_VIRT, IRQ_CNS3XXX_GPIOA,
  		NR_IRQS_CNS3XXX);
