@@ -126,3 +126,15 @@ define Profile/DIR835A1/Description
 endef
 
 $(eval $(call Profile,DIR835A1))
+
+
+define Profile/DGL5500A1
+	NAME:=D-Link DGL-5500 rev. A1
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ath10k
+endef
+
+define Profile/DIR5500A1/Description
+	Package set optimized for the D-Link DGL-5500 rev. A1.
+endef
+
+$(eval $(call Profile,DGL5500A1))

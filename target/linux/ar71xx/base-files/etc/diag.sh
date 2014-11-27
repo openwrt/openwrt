@@ -49,6 +49,7 @@ get_status_led() {
 	db120)
 		status_led="db120:green:status"
 		;;
+	dgl-5500-a1 |\
 	dhp-1565-a1|\
 	dir-505-a1 |\
 	dir-600-a1 |\
