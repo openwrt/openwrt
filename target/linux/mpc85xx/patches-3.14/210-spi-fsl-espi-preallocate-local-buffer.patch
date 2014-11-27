@@ -36,11 +36,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  drivers/spi/spi-fsl-lib.h  |  1 +
  2 files changed, 17 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/spi/spi-fsl-espi.c b/drivers/spi/spi-fsl-espi.c
-index 428dc7a..5207176 100644
 --- a/drivers/spi/spi-fsl-espi.c
 +++ b/drivers/spi/spi-fsl-espi.c
-@@ -334,17 +334,13 @@ static void fsl_espi_do_trans(struct spi_message *m,
+@@ -334,17 +334,13 @@ static void fsl_espi_do_trans(struct spi
  static void fsl_espi_cmd_trans(struct spi_message *m,
  				struct fsl_espi_transfer *trans, u8 *rx_buff)
  {
@@ -61,7 +59,7 @@ index 428dc7a..5207176 100644
  	list_for_each_entry(t, &m->transfers, transfer_list) {
  		if (t->tx_buf) {
  			memcpy(local_buf + i, t->tx_buf, t->len);
-@@ -357,28 +353,23 @@ static void fsl_espi_cmd_trans(struct spi_message *m,
+@@ -357,28 +353,23 @@ static void fsl_espi_cmd_trans(struct sp
  	fsl_espi_do_trans(m, espi_trans);
  
  	espi_trans->actual_length = espi_trans->len;
@@ -93,7 +91,7 @@ index 428dc7a..5207176 100644
  	for (pos = 0, loop = 0; pos < n_rx; pos += trans_len, loop++) {
  		trans_len = n_rx - pos;
  		if (trans_len > SPCOM_TRANLEN_MAX - n_tx)
-@@ -412,8 +403,6 @@ static void fsl_espi_rw_trans(struct spi_message *m,
+@@ -412,8 +403,6 @@ static void fsl_espi_rw_trans(struct spi
  		else
  			espi_trans->actual_length += espi_trans->len;
  	}
@@ -102,7 +100,7 @@ index 428dc7a..5207176 100644
  }
  
  static void fsl_espi_do_one_msg(struct spi_message *m)
-@@ -581,6 +570,7 @@ static irqreturn_t fsl_espi_irq(s32 irq, void *context_data)
+@@ -581,6 +570,7 @@ static irqreturn_t fsl_espi_irq(s32 irq,
  static void fsl_espi_remove(struct mpc8xxx_spi *mspi)
  {
  	iounmap(mspi->reg_base);
@@ -110,7 +108,7 @@ index 428dc7a..5207176 100644
  }
  
  static struct spi_master * fsl_espi_probe(struct device *dev,
-@@ -612,10 +602,16 @@ static struct spi_master * fsl_espi_probe(struct device *dev,
+@@ -612,10 +602,16 @@ static struct spi_master * fsl_espi_prob
  	mpc8xxx_spi->spi_do_one_msg = fsl_espi_do_one_msg;
  	mpc8xxx_spi->spi_remove = fsl_espi_remove;
  
@@ -137,8 +135,6 @@ index 428dc7a..5207176 100644
  err_probe:
  	spi_master_put(master);
  err:
-diff --git a/drivers/spi/spi-fsl-lib.h b/drivers/spi/spi-fsl-lib.h
-index 52db693..8dda68b 100644
 --- a/drivers/spi/spi-fsl-lib.h
 +++ b/drivers/spi/spi-fsl-lib.h
 @@ -30,6 +30,7 @@ struct mpc8xxx_spi {
@@ -149,6 +145,3 @@ index 52db693..8dda68b 100644
  #endif
  
  	int subblock;
--- 
-2.1.3
-

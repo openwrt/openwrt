@@ -22,11 +22,9 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  create mode 100644 arch/powerpc/boot/dts/tl-wdr4900-v1.dts
  create mode 100644 arch/powerpc/platforms/85xx/tl_wdr4900_v1.c
 
-diff --git a/arch/powerpc/boot/Makefile b/arch/powerpc/boot/Makefile
-index 90e9d95..663fd31 100644
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -99,6 +99,8 @@ src-plat-$(CONFIG_EMBEDDED6xx) += cuboot-pq2.c cuboot-mpc7448hpc2.c \
+@@ -99,6 +99,8 @@ src-plat-$(CONFIG_EMBEDDED6xx) += cuboot
  src-plat-$(CONFIG_AMIGAONE) += cuboot-amigaone.c
  src-plat-$(CONFIG_PPC_PS3) += ps3-head.S ps3-hvcall.S ps3.c
  src-plat-$(CONFIG_EPAPR_BOOT) += epapr.c epapr-wrapper.c
@@ -35,7 +33,7 @@ index 90e9d95..663fd31 100644
  
  src-wlib := $(sort $(src-wlib-y))
  src-plat := $(sort $(src-plat-y))
-@@ -279,6 +281,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm8555
+@@ -279,6 +281,7 @@ image-$(CONFIG_TQM8555)			+= cuImage.tqm
  image-$(CONFIG_TQM8560)			+= cuImage.tqm8560
  image-$(CONFIG_SBC8548)			+= cuImage.sbc8548
  image-$(CONFIG_KSI8560)			+= cuImage.ksi8560
@@ -43,9 +41,6 @@ index 90e9d95..663fd31 100644
  
  # Board ports in arch/powerpc/platform/embedded6xx/Kconfig
  image-$(CONFIG_STORCENTER)		+= cuImage.storcenter
-diff --git a/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c b/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c
-new file mode 100644
-index 0000000..095e777
 --- /dev/null
 +++ b/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c
 @@ -0,0 +1,164 @@
@@ -213,9 +208,6 @@ index 0000000..095e777
 +
 +	platform_ops.fixups = platform_fixups;
 +}
-diff --git a/arch/powerpc/boot/dts/tl-wdr4900-v1.dts b/arch/powerpc/boot/dts/tl-wdr4900-v1.dts
-new file mode 100644
-index 0000000..49e516c
 --- /dev/null
 +++ b/arch/powerpc/boot/dts/tl-wdr4900-v1.dts
 @@ -0,0 +1,212 @@
@@ -431,8 +423,6 @@ index 0000000..49e516c
 +};
 +
 +/include/ "fsl/p1010si-post.dtsi"
-diff --git a/arch/powerpc/boot/wrapper b/arch/powerpc/boot/wrapper
-index d27a255..4b43e41 100755
 --- a/arch/powerpc/boot/wrapper
 +++ b/arch/powerpc/boot/wrapper
 @@ -205,6 +205,10 @@ cuboot*)
@@ -446,8 +436,6 @@ index d27a255..4b43e41 100755
      *-amigaone)
          link_address='0x800000'
          ;;
-diff --git a/arch/powerpc/platforms/85xx/Kconfig b/arch/powerpc/platforms/85xx/Kconfig
-index c17aae8..ead6513 100644
 --- a/arch/powerpc/platforms/85xx/Kconfig
 +++ b/arch/powerpc/platforms/85xx/Kconfig
 @@ -159,6 +159,17 @@ config STX_GP3
@@ -468,8 +456,6 @@ index c17aae8..ead6513 100644
  config TQM8540
  	bool "TQ Components TQM8540"
  	help
-diff --git a/arch/powerpc/platforms/85xx/Makefile b/arch/powerpc/platforms/85xx/Makefile
-index 25cebe7..14ca496 100644
 --- a/arch/powerpc/platforms/85xx/Makefile
 +++ b/arch/powerpc/platforms/85xx/Makefile
 @@ -22,6 +22,7 @@ obj-$(CONFIG_TWR_P102x)   += twr_p102x.o
@@ -480,9 +466,6 @@ index 25cebe7..14ca496 100644
  obj-$(CONFIG_SBC8548)     += sbc8548.o
  obj-$(CONFIG_PPA8548)     += ppa8548.o
  obj-$(CONFIG_SOCRATES)    += socrates.o socrates_fpga_pic.o
-diff --git a/arch/powerpc/platforms/85xx/tl_wdr4900_v1.c b/arch/powerpc/platforms/85xx/tl_wdr4900_v1.c
-new file mode 100644
-index 0000000..95afa4d
 --- /dev/null
 +++ b/arch/powerpc/platforms/85xx/tl_wdr4900_v1.c
 @@ -0,0 +1,145 @@
@@ -631,6 +614,3 @@ index 0000000..95afa4d
 +	.calibrate_decr		= generic_calibrate_decr,
 +	.progress		= udbg_progress,
 +};
--- 
-2.1.3
-
