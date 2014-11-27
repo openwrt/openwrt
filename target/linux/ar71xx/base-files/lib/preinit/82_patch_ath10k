@@ -1,0 +1,37 @@
+#!/bin/sh
+
+. /lib/functions/system.sh
+. /lib/ar71xx.sh
+
+firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-3.bin"
+firmware_md5_orig="5163aa8de591f80b06c77f22e9777473"
+firmware_md5_current="$(md5sum $firmware_file)"
+firmware_md5_current="${firmware_md5_current%% *}"
+
+
+do_patch_ath10k_firmware() {
+	# verify md5sum before patching
+	[ "firmware_md5_orig" != "firmware_md5_current" ] || {
+		return
+	}
+
+	# some boards have bogus mac in otp, patch the default mac in the firmware
+	case $(ar71xx_board_name) in
+		dgl-5500-a1)
+			local mac
+			mac=$(mtd_get_mac_ascii nvram wlan1_mac)
+
+			cp $firmware_file /tmp/ath10k-firmware.bin
+			macaddr_2bin $mac | dd of=/tmp/ath10k-firmware.bin \
+				conv=notrunc bs=1 seek=280 count=6
+
+		;;
+	esac
+	[ -f /tmp/ath10k-firmware.bin ] || {
+		return
+	}
+	cp /tmp/ath10k-firmware.bin $firmware_file
+	rm /tmp/ath10k-firmware.bin
+}
+
+boot_hook_add preinit_main do_patch_ath10k_firmware
