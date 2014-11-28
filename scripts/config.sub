@@ -126,7 +126,7 @@ case $maybe_os in
   linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
   knetbsd*-gnu* | netbsd*-gnu* | \
   kopensolaris*-gnu* | \
-  storm-chaos* | os2-emx* | rtmk-nova*)
+  storm-chaos* | os2-emx* | rtmk-nova* | linux-musl*)
     os=-$maybe_os
     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
     ;;
@@ -1354,7 +1354,7 @@ case $os in
 	      | -chorusos* | -chorusrdb* | -cegcc* \
 	      | -cygwin* | -msys* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
 	      | -mingw32* | -linux-gnu* | -linux-android* \
-	      | -linux-newlib* | -linux-uclibc* \
+	      | -linux-newlib* | -linux-uclibc* | -linux-musl* \
 	      | -uxpv* | -beos* | -mpeix* | -udk* \
 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
