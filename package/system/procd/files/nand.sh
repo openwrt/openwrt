@@ -330,12 +330,12 @@ append sysupgrade_pre_upgrade nand_upgrade_stage1
 #    MAGIC
 # 2) UBIFS - should contain UBIFS partition that will replace "rootfs" volume,
 #    header is checked for the proper MAGIC
-# 3) TRX - archive has to include "sysupgrade-BOARD" directory with a non-empty
+# 3) TAR - archive has to include "sysupgrade-BOARD" directory with a non-empty
 #    "CONTROL" file (at this point its content isn't verified)
 #
 # You usually want to call this function in platform_check_image.
 #
-# $(1): board name, used in case of passing TRX file
+# $(1): board name, used in case of passing TAR file
 # $(2): file to be checked
 nand_do_platform_check() {
 	local board_name="$1"
