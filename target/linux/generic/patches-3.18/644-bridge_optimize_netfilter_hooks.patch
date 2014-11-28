@@ -96,22 +96,17 @@
  	if (vlan_tx_tag_present(skb))
 --- a/net/bridge/br_private.h
 +++ b/net/bridge/br_private.h
-@@ -769,15 +769,29 @@ static inline int br_vlan_enabled(struct
- 
- /* br_netfilter.c */
- #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
-+extern int brnf_call_ebtables;
- int br_nf_core_init(void);
- void br_nf_core_fini(void);
- void br_netfilter_rtable_init(struct net_bridge *);
-+bool br_netfilter_run_hooks(void);
- #else
- static inline int br_nf_core_init(void) { return 0; }
- static inline void br_nf_core_fini(void) {}
+@@ -778,6 +778,24 @@ static inline void br_nf_core_fini(void)
  #define br_netfilter_rtable_init(x)
-+#define br_netfilter_run_hooks()	false
  #endif
  
++#if IS_BUILTIN(CONFIG_BRIDGE_NETFILTER)
++extern int brnf_call_ebtables;
++bool br_netfilter_run_hooks(void);
++#else
++#define br_netfilter_run_hooks()	false
++#endif
++
 +static inline int
 +BR_HOOK(uint8_t pf, unsigned int hook, struct sk_buff *skb,
 +	struct net_device *in, struct net_device *out,
@@ -139,17 +134,39 @@
  
 --- a/net/bridge/netfilter/ebtables.c
 +++ b/net/bridge/netfilter/ebtables.c
-@@ -2414,11 +2414,13 @@ static int __init ebtables_init(void)
+@@ -2414,11 +2414,19 @@ static int __init ebtables_init(void)
  	}
  
  	printk(KERN_INFO "Ebtables v2.0 registered\n");
++
++#if IS_BUILTIN(CONFIG_BRIDGE_NETFILTER)
 +	brnf_call_ebtables = 1;
++#endif
++
  	return 0;
  }
  
  static void __exit ebtables_fini(void)
  {
++#if IS_BUILTIN(CONFIG_BRIDGE_NETFILTER)
 +	brnf_call_ebtables = 0;
++#endif
  	nf_unregister_sockopt(&ebt_sockopts);
  	xt_unregister_target(&ebt_standard_target);
  	printk(KERN_INFO "Ebtables v2.0 unregistered\n");
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -177,11 +177,11 @@ config NETFILTER_ADVANCED
+ 	  If unsure, say Y.
+ 
+ config BRIDGE_NETFILTER
+-	tristate "Bridged IP/ARP packets filtering"
++	bool "Bridged IP/ARP packets filtering"
+ 	depends on BRIDGE
+ 	depends on NETFILTER && INET
+ 	depends on NETFILTER_ADVANCED
+-	default m
++	default y
+ 	---help---
+ 	  Enabling this option will let arptables resp. iptables see bridged
+ 	  ARP resp. IP traffic. If you want a bridging firewall, you probably
