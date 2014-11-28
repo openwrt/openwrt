@@ -1,0 +1,23 @@
+--- a/drivers/mtd/mtdblock.c
++++ b/drivers/mtd/mtdblock.c
+@@ -63,7 +63,7 @@ static void erase_callback(struct erase_
+ 	wake_up(wait_q);
+ }
+ 
+-static int erase_write (struct mtd_info *mtd, unsigned long pos,
++int erase_write (struct mtd_info *mtd, unsigned long pos,
+ 			int len, const char *buf)
+ {
+ 	struct erase_info erase;
+--- a/include/linux/mtd/mtd.h
++++ b/include/linux/mtd/mtd.h
+@@ -414,6 +414,9 @@ extern void register_mtd_user (struct mt
+ extern int unregister_mtd_user (struct mtd_notifier *old);
+ void *mtd_kmalloc_up_to(const struct mtd_info *mtd, size_t *size);
+ 
++int erase_write (struct mtd_info *mtd, unsigned long pos,
++		 int len, const char *buf);
++
+ void mtd_erase_callback(struct erase_info *instr);
+ 
+ static inline int mtd_is_bitflip(int err) {
