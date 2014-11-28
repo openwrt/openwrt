@@ -5,6 +5,7 @@ START=98
 
 USE_PROCD=1
 PROG=/usr/sbin/ntpd
+HOTPLUG_SCRIPT=/usr/sbin/ntpd-hotplug
 
 validate_ntp_section() {
 	uci_validate_section system timeserver "${1}" \
@@ -26,6 +27,7 @@ start_service() {
 	procd_open_instance
 	procd_set_param command "$PROG" -n
 	[ "$enable_server" = "1" ] && procd_append_param command -l
+	[ -x "$HOTPLUG_SCRIPT" ] && procd_append_param command -S "$HOTPLUG_SCRIPT"
 	for peer in $server; do
 		procd_append_param command -p $peer
 	done
