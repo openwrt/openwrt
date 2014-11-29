@@ -1,6 +1,6 @@
 --- a/include/compiler.h
 +++ b/include/compiler.h
-@@ -53,6 +53,11 @@
+@@ -58,6 +58,11 @@ typedef uint8_t __u8;
  typedef uint16_t __u16;
  typedef uint32_t __u32;
  typedef unsigned int uint;
@@ -14,7 +14,7 @@
  	((((x) & 0xff00) >> 8) | \
 --- a/include/linux/posix_types.h
 +++ b/include/linux/posix_types.h
-@@ -43,6 +43,8 @@
+@@ -43,6 +43,8 @@ typedef void (*__kernel_sighandler_t)(in
  /* Type of a SYSV IPC key.  */
  typedef int __kernel_key_t;
  
