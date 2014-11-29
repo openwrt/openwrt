@@ -20,6 +20,9 @@ PKG_SOURCE_URL:= \
 
 PKG_MD5SUM:=6d2116d1385a66e9a59742caa9d62a54
 
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
+
 include $(INCLUDE_DIR)/package.mk
 
 define uboot/Default

@@ -18,6 +18,9 @@ PKG_SOURCE_URL:= \
 	ftp://ftp.denx.de/pub/u-boot
 PKG_MD5SUM:=36d4bad687edcafa396fee607e505d4e
 
+PKG_LICENSE:=GPL-2.0 GPL-2.0+
+PKG_LICENSE_FILES:=Licenses/README
+
 include $(INCLUDE_DIR)/package.mk
 
 define uboot/Default
