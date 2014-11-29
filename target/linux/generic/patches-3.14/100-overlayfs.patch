@@ -318,7 +318,7 @@
  extern const struct file_operations pipefifo_fops;
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -414,6 +414,7 @@ int __inode_permission(struct inode *ino
+@@ -415,6 +415,7 @@ int __inode_permission(struct inode *ino
  
  	return security_inode_permission(inode, mask);
  }
@@ -344,7 +344,7 @@
  		goto out;
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
-@@ -1541,6 +1541,33 @@ void drop_collected_mounts(struct vfsmou
+@@ -1581,6 +1581,33 @@ void drop_collected_mounts(struct vfsmou
  	namespace_unlock();
  }
  
@@ -3219,7 +3219,7 @@
  file_ra_state_init(struct file_ra_state *ra, struct address_space *mapping);
 --- a/include/linux/mount.h
 +++ b/include/linux/mount.h
-@@ -74,6 +74,9 @@ extern void mnt_pin(struct vfsmount *mnt
+@@ -81,6 +81,9 @@ extern void mnt_pin(struct vfsmount *mnt
  extern void mnt_unpin(struct vfsmount *mnt);
  extern int __mnt_is_readonly(struct vfsmount *mnt);
  

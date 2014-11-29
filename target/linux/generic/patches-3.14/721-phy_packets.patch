@@ -106,15 +106,15 @@
  		return rc;
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
-@@ -62,6 +62,7 @@
- #include <linux/scatterlist.h>
+@@ -63,6 +63,7 @@
  #include <linux/errqueue.h>
  #include <linux/prefetch.h>
+ #include <linux/if_vlan.h>
 +#include <linux/if.h>
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -439,6 +440,22 @@ struct sk_buff *__netdev_alloc_skb(struc
+@@ -440,6 +441,22 @@ struct sk_buff *__netdev_alloc_skb(struc
  }
  EXPORT_SYMBOL(__netdev_alloc_skb);
  

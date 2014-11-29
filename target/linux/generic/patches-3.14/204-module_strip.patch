@@ -99,7 +99,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1830,6 +1830,13 @@ config MODULE_SIG_HASH
+@@ -1831,6 +1831,13 @@ config MODULE_SIG_HASH
  	default "sha384" if MODULE_SIG_SHA384
  	default "sha512" if MODULE_SIG_SHA512
  
@@ -115,7 +115,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  config INIT_ALL_POSSIBLE
 --- a/kernel/module.c
 +++ b/kernel/module.c
-@@ -2661,6 +2661,7 @@ static struct module *setup_load_info(st
+@@ -2663,6 +2663,7 @@ static struct module *setup_load_info(st
  
  static int check_modinfo(struct module *mod, struct load_info *info, int flags)
  {
@@ -123,7 +123,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	const char *modmagic = get_modinfo(info, "vermagic");
  	int err;
  
-@@ -2686,6 +2687,7 @@ static int check_modinfo(struct module *
+@@ -2688,6 +2689,7 @@ static int check_modinfo(struct module *
  		pr_warn("%s: module is from the staging directory, the quality "
  			"is unknown, you have been warned.\n", mod->name);
  	}

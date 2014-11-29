@@ -1,6 +1,6 @@
 --- a/mm/shmem.c
 +++ b/mm/shmem.c
-@@ -3043,6 +3043,15 @@ put_memory:
+@@ -2985,6 +2985,15 @@ put_memory:
  	return res;
  }
  
@@ -16,7 +16,7 @@
  /**
   * shmem_kernel_file_setup - get an unlinked file living in tmpfs which must be
   * 	kernel internal.  There will be NO LSM permission checks against the
-@@ -3082,11 +3091,8 @@ int shmem_zero_setup(struct vm_area_stru
+@@ -3024,11 +3033,8 @@ int shmem_zero_setup(struct vm_area_stru
  	file = shmem_file_setup("dev/zero", size, vma->vm_flags);
  	if (IS_ERR(file))
  		return PTR_ERR(file);
@@ -52,7 +52,7 @@
   * When we die, we re-parent all our children, and try to:
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -3052,6 +3052,7 @@ int can_nice(const struct task_struct *p
+@@ -3056,6 +3056,7 @@ int can_nice(const struct task_struct *p
  	return (nice_rlim <= task_rlimit(p, RLIMIT_NICE) ||
  		capable(CAP_SYS_NICE));
  }

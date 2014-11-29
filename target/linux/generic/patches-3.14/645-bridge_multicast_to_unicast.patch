@@ -270,7 +270,7 @@
  
  #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
  	struct bridge_mcast_query	ip4_query;
-@@ -468,7 +472,8 @@ void br_multicast_free_pg(struct rcu_hea
+@@ -471,7 +475,8 @@ void br_multicast_free_pg(struct rcu_hea
  struct net_bridge_port_group *
  br_multicast_new_port_group(struct net_bridge_port *port, struct br_ip *group,
  			    struct net_bridge_port_group __rcu *next,
