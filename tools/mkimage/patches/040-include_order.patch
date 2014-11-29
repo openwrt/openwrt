@@ -1,10 +1,10 @@
 --- a/tools/Makefile
 +++ b/tools/Makefile
-@@ -193,7 +193,7 @@
+@@ -194,7 +194,7 @@ endif # !LOGO_BMP
  # Define _GNU_SOURCE to obtain the getline prototype from stdio.h
  #
  HOST_EXTRACFLAGS += -include $(srctree)/include/libfdt_env.h \
--		$(patsubst -I%,-idirafter%, $(UBOOTINCLUDE)) \
+-		$(patsubst -I%,-idirafter%, $(filter -I%, $(UBOOTINCLUDE))) \
 +		-I$(srctree)/include \
  		-I$(srctree)/lib/libfdt \
  		-I$(srctree)/tools \
