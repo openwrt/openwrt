@@ -104,7 +104,7 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
  
  /* UBIFS file system VFS magic number */
  #define UBIFS_SUPER_MAGIC 0x24051905
-@@ -1209,6 +1218,7 @@ struct ubifs_debug_info;
+@@ -1208,6 +1217,7 @@ struct ubifs_debug_info;
   * @need_recovery: %1 if the file-system needs recovery
   * @replaying: %1 during journal replay
   * @mounting: %1 while mounting
@@ -112,7 +112,7 @@ Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
   * @remounting_rw: %1 while re-mounting from R/O mode to R/W mode
   * @replay_list: temporary list used during journal replay
   * @replay_buds: list of buds to replay
-@@ -1441,6 +1451,7 @@ struct ubifs_info {
+@@ -1439,6 +1449,7 @@ struct ubifs_info {
  	unsigned int replaying:1;
  	unsigned int mounting:1;
  	unsigned int remounting_rw:1;
