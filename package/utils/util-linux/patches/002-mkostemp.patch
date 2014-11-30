@@ -16,20 +16,21 @@ Patches revert upstream changes in order to support older
 machines.
 
 Signed-off-by: Mark Hatle <mark.hatle@windriver.com>
+---
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -299,6 +299,7 @@ AC_CHECK_FUNCS([ \
+@@ -315,6 +315,7 @@ AC_CHECK_FUNCS([ \
  	llseek \
  	lseek64 \
  	mempcpy \
 +	mkostemp \
  	nanosleep \
+ 	open_memstream \
  	personality \
- 	posix_fadvise \
 --- a/include/c.h
 +++ b/include/c.h
-@@ -236,6 +236,13 @@ static inline int dirfd(DIR *d)
+@@ -233,6 +233,13 @@ static inline int dirfd(DIR *d)
  #endif
  
  /*
@@ -43,23 +44,3 @@ Signed-off-by: Mark Hatle <mark.hatle@windriver.com>
   * MAXHOSTNAMELEN replacement
   */
  static inline size_t get_hostname_max(void)
---- a/lib/randutils.c
-+++ b/lib/randutils.c
-@@ -16,6 +16,7 @@
- #include <sys/syscall.h>
- 
- #include "randutils.h"
-+#include "c.h"
- 
- #ifdef HAVE_TLS
- #define THREAD_LOCAL static __thread
---- a/lib/wholedisk.c
-+++ b/lib/wholedisk.c
-@@ -10,6 +10,7 @@
- 
- #include "blkdev.h"
- #include "wholedisk.h"
-+#include "c.h"
- 
- int is_whole_disk_fd(int fd, const char *name)
- {
