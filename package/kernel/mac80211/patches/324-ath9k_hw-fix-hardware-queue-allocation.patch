@@ -1,0 +1,31 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 30 Nov 2014 20:30:46 +0100
+Subject: [PATCH] ath9k_hw: fix hardware queue allocation
+
+The driver passes the desired hardware queue index for a WMM data queue
+in qinfo->tqi_subtype. This was ignored in ath9k_hw_setuptxqueue, which
+instead relied on the order in which the function is called.
+
+Cc: stable@vger.kernel.org
+Reported-by: Hubert Feurstein <h.feurstein@gmail.com>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -311,14 +311,7 @@ int ath9k_hw_setuptxqueue(struct ath_hw 
+ 		q = ATH9K_NUM_TX_QUEUES - 3;
+ 		break;
+ 	case ATH9K_TX_QUEUE_DATA:
+-		for (q = 0; q < ATH9K_NUM_TX_QUEUES; q++)
+-			if (ah->txq[q].tqi_type ==
+-			    ATH9K_TX_QUEUE_INACTIVE)
+-				break;
+-		if (q == ATH9K_NUM_TX_QUEUES) {
+-			ath_err(common, "No available TX queue\n");
+-			return -1;
+-		}
++		q = qinfo->tqi_subtype;
+ 		break;
+ 	default:
+ 		ath_err(common, "Invalid TX queue type: %u\n", type);
