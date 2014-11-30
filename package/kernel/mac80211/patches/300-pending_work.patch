@@ -1,3 +1,29 @@
+commit 228ee4473b89118993c17ead26381c490c44f9fb
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Nov 30 20:34:16 2014 +0100
+
+    ath9k: fix BE/BK queue order
+    
+    Hardware queues are ordered by priority. Use queue index 0 for BK, which
+    has lower priority than BE.
+    
+    Cc: stable@vger.kernel.org
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit cae76a90c891c5f96895b9628060449e3deb08c6
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Sun Nov 30 20:30:46 2014 +0100
+
+    ath9k_hw: fix hardware queue allocation
+    
+    The driver passes the desired hardware queue index for a WMM data queue
+    in qinfo->tqi_subtype. This was ignored in ath9k_hw_setuptxqueue, which
+    instead relied on the order in which the function is called.
+    
+    Cc: stable@vger.kernel.org
+    Reported-by: Hubert Feurstein <h.feurstein@gmail.com>
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
 commit 77980bee5f1f743b46f8749185aca28b8ec69741
 Author: Johannes Berg <johannes.berg@intel.com>
 Date:   Mon Nov 3 14:29:09 2014 +0100
@@ -3495,3 +3521,34 @@ Date:   Mon May 19 21:20:49 2014 +0200
  }
  
  void b43_phy_mask(struct b43_wldev *dev, u16 offset, u16 mask)
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -216,8 +216,8 @@
+ #define AH_WOW_BEACON_MISS		BIT(3)
+ 
+ enum ath_hw_txq_subtype {
+-	ATH_TXQ_AC_BE = 0,
+-	ATH_TXQ_AC_BK = 1,
++	ATH_TXQ_AC_BK = 0,
++	ATH_TXQ_AC_BE = 1,
+ 	ATH_TXQ_AC_VI = 2,
+ 	ATH_TXQ_AC_VO = 3,
+ };
+--- a/drivers/net/wireless/ath/ath9k/mac.c
++++ b/drivers/net/wireless/ath/ath9k/mac.c
+@@ -311,14 +311,7 @@ int ath9k_hw_setuptxqueue(struct ath_hw 
+ 		q = ATH9K_NUM_TX_QUEUES - 3;
+ 		break;
+ 	case ATH9K_TX_QUEUE_DATA:
+-		for (q = 0; q < ATH9K_NUM_TX_QUEUES; q++)
+-			if (ah->txq[q].tqi_type ==
+-			    ATH9K_TX_QUEUE_INACTIVE)
+-				break;
+-		if (q == ATH9K_NUM_TX_QUEUES) {
+-			ath_err(common, "No available TX queue\n");
+-			return -1;
+-		}
++		q = qinfo->tqi_subtype;
+ 		break;
+ 	default:
+ 		ath_err(common, "Invalid TX queue type: %u\n", type);
