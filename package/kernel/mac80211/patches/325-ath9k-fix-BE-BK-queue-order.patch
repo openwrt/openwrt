@@ -1,0 +1,24 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 30 Nov 2014 20:34:16 +0100
+Subject: [PATCH] ath9k: fix BE/BK queue order
+
+Hardware queues are ordered by priority. Use queue index 0 for BK, which
+has lower priority than BE.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/hw.h
++++ b/drivers/net/wireless/ath/ath9k/hw.h
+@@ -217,8 +217,8 @@
+ #define AH_WOW_BEACON_MISS		BIT(3)
+ 
+ enum ath_hw_txq_subtype {
+-	ATH_TXQ_AC_BE = 0,
+-	ATH_TXQ_AC_BK = 1,
++	ATH_TXQ_AC_BK = 0,
++	ATH_TXQ_AC_BE = 1,
+ 	ATH_TXQ_AC_VI = 2,
+ 	ATH_TXQ_AC_VO = 3,
+ };
