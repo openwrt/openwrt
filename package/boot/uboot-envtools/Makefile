@@ -9,22 +9,22 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uboot-envtools
 PKG_DISTNAME:=u-boot
-PKG_VERSION:=2014.07
+PKG_VERSION:=2014.10
 PKG_RELEASE:=1
 
+PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_DISTNAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:= \
+PKG_SOURCE_URL:=\
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-
-PKG_MD5SUM:=36d4bad687edcafa396fee607e505d4e
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/u-boot-$(PKG_VERSION)
+PKG_MD5SUM:=3ddcaee2f05b7c464778112ec83664b5
 
 PKG_BUILD_DEPENDS:=+fstools
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
+
+PKG_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
