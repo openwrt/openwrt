@@ -1,0 +1,126 @@
+From 6508db29ded734ac4ff5e5e19486c143c9eb3d89 Mon Sep 17 00:00:00 2001
+From: Karel Zak <kzak@redhat.com>
+Date: Fri, 21 Nov 2014 12:23:47 +0100
+Subject: [PATCH] lib/colors: use static buffers when parse scheme
+
+* use static buffers when parse scheme colors
+* cleanup deallocation on error in sequence parser
+
+Signed-off-by: Karel Zak <kzak@redhat.com>
+---
+
+This is modified upstream patch.
+
+--- a/lib/colors.c
++++ b/lib/colors.c
+@@ -416,28 +416,31 @@ static int colors_add_scheme(struct ul_c
+ 			     char *name,
+ 			     char *seq0)
+ {
+-	struct ul_color_scheme *cs;
+-	char *seq;
++	struct ul_color_scheme *cs = NULL;
++	char *seq = NULL;
+ 	int rc;
+ 
+ 	if (!cc || !name || !*name || !seq0 || !*seq0)
+ 		return -EINVAL;
+ 
+ 	rc = cn_sequence(seq0, &seq);
+-	free(seq0);
+ 	if (rc)
+ 		return rc;
+ 
++	rc = -ENOMEM;
++
+ 	/* convert logical name (e.g. "red") to real ESC code */
+ 	if (isalpha(*seq)) {
+ 		const char *s = color_sequence_from_colorname(seq);
+ 		char *p;
+ 
+-		if (!s)
+-			return -EINVAL;
++		if (!s) {
++			rc = -EINVAL;
++			goto err;
++		}
+ 		p = strdup(s);
+ 		if (!p)
+-			return -ENOMEM;
++			goto err;
+ 		free(seq);
+ 		seq = p;
+ 	}
+@@ -447,17 +450,28 @@ static int colors_add_scheme(struct ul_c
+ 		void *tmp = realloc(cc->schemes, (cc->nschemes + 10)
+ 					* sizeof(struct ul_color_scheme));
+ 		if (!tmp)
+-			return -ENOMEM;
++			goto err;
+ 		cc->schemes = tmp;
+ 		cc->schemes_sz = cc->nschemes + 10;
+ 	}
+ 
+ 	/* add a new item */
+-	cs = &cc->schemes[cc->nschemes++];
+-	cs->name = name;
++	cs = &cc->schemes[cc->nschemes];
+ 	cs->seq = seq;
++	cs->name = strdup(name);
++	if (!cs->name)
++		goto err;
+ 
++	cc->nschemes++;
+ 	return 0;
++err:
++	if (cs) {
++		free(cs->seq);
++		free(cs->name);
++		cs->seq = cs->name = NULL;
++	} else
++		free(seq);
++	return rc;
+ }
+ 
+ /*
+@@ -543,7 +557,8 @@ static int colors_read_schemes(struct ul
+ {
+ 	int rc = 0;
+ 	FILE *f = NULL;
+-	char buf[BUFSIZ];
++	char buf[BUFSIZ],
++	     cn[129], seq[129];
+ 
+ 	if (!cc->configured)
+ 		rc = colors_read_configuration(cc);
+@@ -560,7 +575,6 @@ static int colors_read_schemes(struct ul
+ 	}
+ 
+ 	while (fgets(buf, sizeof(buf), f)) {
+-		char *cn = NULL, *seq = NULL;
+ 		char *p = strchr(buf, '\n');
+ 
+ 		if (!p) {
+@@ -576,17 +590,14 @@ static int colors_read_schemes(struct ul
+ 		if (*p == '\0' || *p == '#')
+ 			continue;
+ 
+-		rc = sscanf(p,  UL_SCNsA" "	/* name */
+-				UL_SCNsA,	/* color */
+-				&cn, &seq);
+-		if (rc == 2 && cn && seq)
++		rc = sscanf(p, "%128[^ ] %128[^\n ]", cn, seq);
++		if (rc == 2 && *cn && *seq) {
+ 			rc = colors_add_scheme(cc, cn, seq);	/* set rc=0 on success */
+-		if (rc) {
+-			free(cn);
+-			free(seq);
++			if (rc)
++				goto done;
+ 		}
+-		rc = 0;
+ 	}
++	rc = 0;
+ 
+ done:
+ 	if (f)
