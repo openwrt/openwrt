@@ -1,22 +1,20 @@
 --- a/include/configs/dockstar.h
 +++ b/include/configs/dockstar.h
-@@ -15,21 +15,26 @@
+@@ -17,20 +17,25 @@
  /*
   * Version number information
   */
 -#define CONFIG_IDENT_STRING	"\nSeagate FreeAgent DockStar"
-+#define CONFIG_IDENT_STRING	" Seagate FreeAgent DockStar"
++#define CONFIG_IDENT_STRING	"Seagate FreeAgent DockStar"
  
  /*
 - * High Level Configuration Options (easy to change)
-+ * High level configuration options
++ * High Level Configuration Options
   */
 -#define CONFIG_FEROCEON_88FR131	1	/* CPU Core subversion */
--#define CONFIG_KIRKWOOD		1	/* SOC Family Name */
 -#define CONFIG_KW88F6281	1	/* SOC Name */
 -#define CONFIG_MACH_DOCKSTAR	/* Machine type */
 +#define CONFIG_FEROCEON_88FR131		/* CPU Core subversion */
-+#define CONFIG_KIRKWOOD			/* SOC Family Name */
 +#define CONFIG_KW88F6281		/* SOC Name */
  #define CONFIG_SKIP_LOWLEVEL_INIT	/* disable board lowlevel_init */
  
@@ -34,7 +32,7 @@
  #include <config_cmd_default.h>
  #define CONFIG_CMD_DHCP
  #define CONFIG_CMD_ENV
-@@ -37,55 +42,58 @@
+@@ -38,55 +43,58 @@
  #define CONFIG_CMD_NAND
  #define CONFIG_CMD_PING
  #define CONFIG_CMD_USB
@@ -120,7 +118,7 @@
   */
  #ifdef CONFIG_CMD_NET
  #define CONFIG_MVGBE_PORTS	{1, 0}	/* enable port 0 only */
-@@ -101,7 +109,7 @@
+@@ -102,7 +110,7 @@
  #define CONFIG_CMD_UBI
  #define CONFIG_CMD_UBIFS
  #define CONFIG_RBTREE
@@ -129,13 +127,3 @@
  #define CONFIG_MTD_PARTITIONS
  #define CONFIG_CMD_MTDPARTS
  #define CONFIG_LZO
---- a/boards.cfg
-+++ b/boards.cfg
-@@ -198,6 +198,7 @@ Active  arm         arm926ejs      kirkw
- Active  arm         arm926ejs      kirkwood    Marvell         sheevaplug          sheevaplug                            -                                                                                                                                 Prafulla Wadaskar <prafulla@marvell.com>
- Active  arm         arm926ejs      kirkwood    raidsonic       ib62x0              ib62x0                                -                                                                                                                                 Luka Perkov <luka@openwrt.org>
- Active  arm         arm926ejs      kirkwood    Seagate         dockstar            dockstar                              -                                                                                                                                 Eric Cooper <ecc@cmu.edu>
-+Active  arm         arm926ejs      kirkwood    Seagate         dockstar            dockstar_second_stage                dockstar:SECOND_STAGE                                                                                                              Luka Perkov <luka@openwrt.org>
- Active  arm         arm926ejs      kirkwood    Seagate         goflexhome          goflexhome                            -                                                                                                                                 Suriyan Ramasami <suriyan.r@gmail.com>
- Active  arm         arm926ejs      lpc32xx     timll           devkit3250          devkit3250                            -                                                                                                                                 Vladimir Zapolskiy <vz@mleia.com>
- Active  arm         arm926ejs      mb86r0x     syteco          jadecpu             jadecpu                               -                                                                                                                                 Matthias Weisser <weisserm@arcor.de>

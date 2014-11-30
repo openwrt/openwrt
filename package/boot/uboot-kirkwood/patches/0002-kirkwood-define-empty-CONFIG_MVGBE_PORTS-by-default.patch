@@ -1,0 +1,32 @@
+From 292d4cf9257921912e8ea352687c977208e7553d Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Mon, 11 Nov 2013 07:27:53 +0100
+Subject: [PATCH 2/9] kirkwood: define empty CONFIG_MVGBE_PORTS by default
+
+Each board with defines it's own set of values. If we do not define
+CONFIG_MVGBE_PORTS we will hit following error:
+
+mvgbe.c: In function 'mvgbe_initialize':
+mvgbe.c:700:34: error: 'CONFIG_MVGBE_PORTS' undeclared (first use in this function)
+  u8 used_ports[MAX_MVGBE_DEVS] = CONFIG_MVGBE_PORTS;
+
+This patch fixes above described problem.
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+---
+ drivers/net/mvgbe.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/drivers/net/mvgbe.c
++++ b/drivers/net/mvgbe.c
+@@ -35,6 +35,10 @@
+ 
+ DECLARE_GLOBAL_DATA_PTR;
+ 
++#ifndef CONFIG_MVGBE_PORTS
++# define CONFIG_MVGBE_PORTS {0, 0}
++#endif
++
+ #define MV_PHY_ADR_REQUEST 0xee
+ #define MVGBE_SMI_REG (((struct mvgbe_registers *)MVGBE0_BASE)->smi)
+ 
