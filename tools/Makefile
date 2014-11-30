@@ -73,6 +73,7 @@ $(curdir)/padjffs2/compile := $(curdir)/findutils/install
 $(curdir)/cloog/compile := $(curdir)/ppl/install
 $(curdir)/bc/compile := $(curdir)/bison/install
 $(curdir)/findutils/compile := $(curdir)/bison/install
+$(curdir)/gengetopt/compile := $(curdir)/automake/install
 
 ifneq ($(CONFIG_CCACHE),)
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
