@@ -8,15 +8,15 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2014.07
+PKG_VERSION:=2014.10
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:= \
+PKG_SOURCE_URL:=\
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=36d4bad687edcafa396fee607e505d4e
+PKG_MD5SUM:=3ddcaee2f05b7c464778112ec83664b5
 PKG_TARGETS:=bin
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
@@ -28,8 +28,6 @@ include $(INCLUDE_DIR)/package.mk
 
 define uboot/Default
   TITLE:=
-  CONFIG:=
-  IMAGE:=
 endef
 
 define uboot/dockstar
@@ -97,15 +95,15 @@ define BuildUBootPackage
 	$(call Package/uboot/template,$(1),$(TITLE))
 endef
 
-ifdef BUILD_VARIANT
-$(eval $(call uboot/$(BUILD_VARIANT)))
-UBOOT_CONFIG:=$(if $(CONFIG),$(CONFIG),$(BUILD_VARIANT))
-UBOOT_IMAGE:=$(if $(IMAGE),$(IMAGE),openwrt-$(BOARD)-$(BUILD_VARIANT)-u-boot.bin)
-endif
-
 define Build/Configure
+	$(if $(findstring _second_stage,$(BUILD_VARIANT)),
+		$(CP) \
+			$(PKG_BUILD_DIR)/configs/$(subst _second_stage,,$(BUILD_VARIANT))_defconfig \
+			$(PKG_BUILD_DIR)/configs/$(BUILD_VARIANT)_defconfig
+		echo CONFIG_SECOND_STAGE=y >> $(PKG_BUILD_DIR)/configs/$(BUILD_VARIANT)_defconfig
+	)
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		$(UBOOT_CONFIG)_config
+		$(BUILD_VARIANT)_config V=1
 endef
 
 define Build/Compile

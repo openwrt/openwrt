@@ -1,0 +1,96 @@
+From 76a9fed9e5580945827a82963ac7315186fd0ebe Mon Sep 17 00:00:00 2001
+From: Luka Perkov <luka@openwrt.org>
+Date: Mon, 11 Nov 2013 06:45:44 +0100
+Subject: [PATCH 1/9] cosmetic: kirkwood: style fixes in kwbimage.cfg files
+
+When diffing through the changes only the relevant changes
+should be displayed.
+
+Signed-off-by: Luka Perkov <luka@openwrt.org>
+---
+ board/iomega/iconnect/kwbimage.cfg  |  4 ++--
+ board/raidsonic/ib62x0/kwbimage.cfg | 22 +++++++++++-----------
+ 2 files changed, 13 insertions(+), 13 deletions(-)
+
+--- a/board/iomega/iconnect/kwbimage.cfg
++++ b/board/iomega/iconnect/kwbimage.cfg
+@@ -20,7 +20,7 @@ NAND_PAGE_SIZE	0x0800
+ # Configure RGMII-0 interface pad voltage to 1.8V
+ DATA 0xffd100e0 0x1b1b1b9b
+ 
+-#Dram initalization for SINGLE x16 CL=5 @ 400MHz
++# Dram initalization for SINGLE x16 CL=5 @ 400MHz
+ DATA 0xffd01400 0x43000c30	# DDR Configuration register
+ # bit13-0:  0xc30, (3120 DDR2 clks refresh rate)
+ # bit23-14: 0x0,
+@@ -87,7 +87,7 @@ DATA 0xffd0141c 0x00000c52	# DDR Mode
+ # bit6-4:   0x4, CL=5
+ # bit7:     0x0, TestMode=0 normal
+ # bit8:     0x0, DLL reset=0 normal
+-# bit11-9:  0x6, auto-precharge write recovery ????????????
++# bit11-9:  0x6, auto-precharge write recovery
+ # bit12:    0x0, PD must be zero
+ # bit31-13: 0x0, required
+ 
+--- a/board/raidsonic/ib62x0/kwbimage.cfg
++++ b/board/raidsonic/ib62x0/kwbimage.cfg
+@@ -11,7 +11,7 @@
+ #
+ 
+ # Boot Media configurations
+-BOOT_FROM	nand	# change from nand to uart if building UART image
++BOOT_FROM	nand
+ NAND_ECC_MODE	default
+ NAND_PAGE_SIZE	0x0800
+ 
+@@ -21,12 +21,12 @@ NAND_PAGE_SIZE	0x0800
+ # Configure RGMII-0 interface pad voltage to 1.8V
+ DATA 0xffd100e0 0x1b1b1b9b
+ 
+-#Dram initalization for SINGLE x16 CL=5 @ 400MHz
++# Dram initalization for SINGLE x16 CL=5 @ 400MHz
+ DATA 0xffd01400 0x43000c30	# DDR Configuration register
+ # bit13-0:  0xc30, (3120 DDR2 clks refresh rate)
+ # bit23-14: 0x0,
+-# bit24:    0x1,     enable exit self refresh mode on DDR access
+-# bit25:    0x1,     required
++# bit24:    0x1,   enable exit self refresh mode on DDR access
++# bit25:    0x1,   required
+ # bit29-26: 0x0,
+ # bit31-30: 0x1,
+ 
+@@ -64,10 +64,10 @@ DATA 0xffd01410 0x0000000c	# DDR Address
+ # bit3-2:   11,  Cs0size (1Gb)
+ # bit5-4:   00,  Cs1width (x8)
+ # bit7-6:   11,  Cs1size (1Gb)
+-# bit9-8:   00,  Cs2width (nonexistent
+-# bit11-10: 00,  Cs2size  (nonexistent
+-# bit13-12: 00,  Cs3width (nonexistent
+-# bit15-14: 00,  Cs3size  (nonexistent
++# bit9-8:   00,  Cs2width (nonexistent)
++# bit11-10: 00,  Cs2size (nonexistent)
++# bit13-12: 00,  Cs3width (nonexistent)
++# bit15-14: 00,  Cs3size (nonexistent)
+ # bit16:    0,   Cs0AddrSel
+ # bit17:    0,   Cs1AddrSel
+ # bit18:    0,   Cs2AddrSel
+@@ -88,7 +88,7 @@ DATA 0xffd0141c 0x00000c52	# DDR Mode
+ # bit6-4:   0x4, CL=5
+ # bit7:     0x0, TestMode=0 normal
+ # bit8:     0x0, DLL reset=0 normal
+-# bit11-9:  0x6, auto-precharge write recovery ????????????
++# bit11-9:  0x6, auto-precharge write recovery
+ # bit12:    0x0, PD must be zero
+ # bit31-13: 0x0, required
+ 
+@@ -148,8 +148,8 @@ DATA 0xffd0149c 0x0000e803	# CPU ODT Con
+ DATA 0xffd01480 0x00000001	# DDR Initialization Control
+ # bit0: 0x1, enable DDR init upon this register write
+ 
+-DATA 0xFFD20134 0x66666666      # L2 RAM Timing 0 Register
+-DATA 0xFFD20138 0x66666666      # L2 RAM Timing 1 Register
++DATA 0xffd20134 0x66666666	# L2 RAM Timing 0 Register
++DATA 0xffd20138 0x66666666	# L2 RAM Timing 1 Register
+ 
+ # End of Header extension
+ DATA 0x0 0x0

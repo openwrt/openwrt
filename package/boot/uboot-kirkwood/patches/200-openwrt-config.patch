@@ -1,6 +1,16 @@
+--- a/arch/arm/cpu/arm926ejs/kirkwood/Kconfig
++++ b/arch/arm/cpu/arm926ejs/kirkwood/Kconfig
+@@ -84,4 +84,7 @@
+ source "board/Seagate/dockstar/Kconfig"
+ source "board/Seagate/goflexhome/Kconfig"
+ 
++config SECOND_STAGE
++	bool "OpenWrt second stage hack"
++
+ endif
 --- a/include/configs/dockstar.h
 +++ b/include/configs/dockstar.h
-@@ -114,4 +114,6 @@
+@@ -115,4 +115,6 @@
  #define CONFIG_CMD_MTDPARTS
  #define CONFIG_LZO
  
@@ -9,7 +19,7 @@
  #endif /* _CONFIG_DOCKSTAR_H */
 --- a/include/configs/ib62x0.h
 +++ b/include/configs/ib62x0.h
-@@ -144,4 +144,6 @@
+@@ -145,4 +145,6 @@
  #define CONFIG_MTD_PARTITIONS
  #define CONFIG_CMD_MTDPARTS
  
@@ -18,7 +28,7 @@
  #endif /* _CONFIG_IB62x0_H */
 --- a/include/configs/iconnect.h
 +++ b/include/configs/iconnect.h
-@@ -117,4 +117,6 @@
+@@ -118,4 +118,6 @@
  #define CONFIG_MTD_PARTITIONS
  #define CONFIG_CMD_MTDPARTS
  
@@ -82,7 +92,7 @@
 +#endif /* __OPENWRT_KIRKWOOD_COMMON_H */
 --- a/include/configs/pogo_e02.h
 +++ b/include/configs/pogo_e02.h
-@@ -114,4 +114,6 @@
+@@ -115,4 +115,6 @@
  #define CONFIG_CMD_MTDPARTS
  #define CONFIG_LZO
  
@@ -91,7 +101,7 @@
  #endif /* _CONFIG_POGO_E02_H */
 --- a/include/configs/sheevaplug.h
 +++ b/include/configs/sheevaplug.h
-@@ -95,4 +95,6 @@
+@@ -143,4 +143,6 @@
  #define CONFIG_CMD_MTDPARTS
  #define CONFIG_LZO
  
