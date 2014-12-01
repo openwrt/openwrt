@@ -135,7 +135,7 @@ endef
 define Package/blkid
 $(call Package/util-linux/Default)
   TITLE:=locate/print block device attributes
-  DEPENDS:= +libblkid
+  DEPENDS:= +libblkid +libuuid
   SUBMENU=disc
 endef
 
@@ -157,7 +157,7 @@ endef
 define Package/cfdisk
 $(call Package/util-linux/Default)
   TITLE:=display or manipulate disk partition table
-  DEPENDS:= +libblkid +libncurses
+  DEPENDS:= +libblkid +libncurses +libsmartcols
   SUBMENU:=disc
 endef
 
@@ -309,7 +309,7 @@ endef
 define Package/partx-utils
 $(call Package/util-linux/Default)
   TITLE:=inform kernel about the presence and numbering of on-disk partitions
-  DEPENDS:= +libblkid
+  DEPENDS:= +libblkid +libsmartcols
   SUBMENU=disc
 endef
 
