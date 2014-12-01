@@ -14,6 +14,15 @@ define Profile/FAST2404/Description
 endef
 $(eval $(call Profile,FAST2404))
 
+define Profile/FAST2504n
+  NAME:=Sagem F@ST2504n
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/FAST2504n/Description
+  Package set optimized for F@ST2504n.
+endef
+$(eval $(call Profile,FAST2504n))
+
 define Profile/FAST2604
   NAME:=Sagem F@ST2604
   PACKAGES:=kmod-b43 wpad-mini
