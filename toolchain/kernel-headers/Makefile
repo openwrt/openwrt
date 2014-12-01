@@ -57,6 +57,7 @@ ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
 	$(CP) \
 		$(HOST_BUILD_DIR)/arch/mips/include/asm/asm.h \
 		$(HOST_BUILD_DIR)/arch/mips/include/asm/regdef.h \
+		$(if $(call kernel_patchver_ge,3.15.0),$(HOST_BUILD_DIR)/arch/mips/include/asm/asm-eva.h) \
 		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/
   endef
 endif
