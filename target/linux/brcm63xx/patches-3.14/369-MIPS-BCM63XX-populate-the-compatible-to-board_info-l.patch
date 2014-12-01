@@ -14,7 +14,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -736,6 +736,44 @@ static const struct board_info __initcon
+@@ -736,6 +736,45 @@ static const struct board_info __initcon
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
@@ -45,6 +45,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
 +	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
 +	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
++	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
 +	{ .compatible = "pirelli,a226g", .data = &board_DWVS0, },
 +	{ .compatible = "pirelli,a226m", .data = &board_DWVS0, },
 +	{ .compatible = "pirelli,a226m-fwb", .data = &board_DWVS0, },
