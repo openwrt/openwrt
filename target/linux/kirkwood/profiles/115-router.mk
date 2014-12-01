@@ -25,7 +25,7 @@ define Profile/EA4500
   NAME:=Linksys EA4500
   PACKAGES:= \
 	kmod-mwl8k kmod-usb2 kmod-usb-storage \
-	uboot-envtools
+	swconfig uboot-envtools
 endef
 
 define Profile/EA4500/Description

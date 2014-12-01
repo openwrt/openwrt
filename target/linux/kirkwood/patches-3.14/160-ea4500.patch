@@ -10,7 +10,7 @@
  	kirkwood-ib62x0.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-ea4500.dts
-@@ -0,0 +1,156 @@
+@@ -0,0 +1,167 @@
 +/*
 + * kirkwood-ea4500.dts - Device Tree file for Linksys EA4500
 + *
@@ -119,6 +119,17 @@
 +			label = "ea4500:white:pulse";
 +			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 +		};
++	};
++
++	mvsw6171 {
++		compatible = "marvell,88e6171";
++		status = "okay";
++		reg = <0x10>;
++
++		mii-bus = <&mdio>;
++		cpu-port-0 = <5>;
++		cpu-port-1 = <6>;
++		is-indirect;
 +	};
 +};
 +
