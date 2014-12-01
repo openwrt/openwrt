@@ -1,0 +1,133 @@
+From d135d94b3d1fe599d13e7198d5f502912d694c13 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Sun, 3 Jul 2011 15:00:38 +0200
+Subject: [PATCH 29/60] MIPS: BCM63XX: Register SPI flash if present
+
+Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
+---
+ arch/mips/bcm63xx/dev-flash.c                     |   33 +++++++++++++++++++-
+ arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |    2 +
+ 2 files changed, 33 insertions(+), 2 deletions(-)
+
+--- a/arch/mips/bcm63xx/dev-flash.c
++++ b/arch/mips/bcm63xx/dev-flash.c
+@@ -16,9 +16,12 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+ #include <linux/mtd/physmap.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/flash.h>
+ 
+ #include <bcm63xx_cpu.h>
+ #include <bcm63xx_dev_flash.h>
++#include <bcm63xx_dev_hsspi.h>
+ #include <bcm63xx_regs.h>
+ #include <bcm63xx_io.h>
+ 
+@@ -65,6 +68,21 @@ void __init bcm63xx_flash_force_phys_bas
+ 	mtd_resources[0].end = end;
+ }
+ 
++static struct flash_platform_data bcm63xx_flash_data = {
++	.part_probe_types	= bcm63xx_part_types,
++};
++
++static struct spi_board_info bcm63xx_spi_flash_info[] = {
++	{
++		.bus_num	= 0,
++		.chip_select	= 0,
++		.mode		= 0,
++		.max_speed_hz	= 781000,
++		.modalias	= "m25p80",
++		.platform_data	= &bcm63xx_flash_data,
++	},
++};
++
+ static int __init bcm63xx_detect_flash_type(void)
+ {
+ 	u32 val;
+@@ -72,9 +90,15 @@ static int __init bcm63xx_detect_flash_t
+ 	switch (bcm63xx_get_cpu_id()) {
+ 	case BCM6318_CPU_ID:
+ 		/* only support serial flash */
++		bcm63xx_spi_flash_info[0].max_speed_hz = 62500000;
+ 		return BCM63XX_FLASH_TYPE_SERIAL;
+ 	case BCM6328_CPU_ID:
+ 		val = bcm_misc_readl(MISC_STRAPBUS_6328_REG);
++		if (val & STRAPBUS_6328_HSSPI_CLK_FAST)
++			bcm63xx_spi_flash_info[0].max_speed_hz = 33333334;
++		else
++			bcm63xx_spi_flash_info[0].max_speed_hz = 16666667;
++
+ 		if (val & STRAPBUS_6328_BOOT_SEL_SERIAL)
+ 			return BCM63XX_FLASH_TYPE_SERIAL;
+ 		else
+@@ -93,12 +117,20 @@ static int __init bcm63xx_detect_flash_t
+ 			return BCM63XX_FLASH_TYPE_SERIAL;
+ 	case BCM6362_CPU_ID:
+ 		val = bcm_misc_readl(MISC_STRAPBUS_6362_REG);
++		if (val & STRAPBUS_6362_HSSPI_CLK_FAST)
++			bcm63xx_spi_flash_info[0].max_speed_hz = 50000000;
++		else
++			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
++
+ 		if (val & STRAPBUS_6362_BOOT_SEL_SERIAL)
+ 			return BCM63XX_FLASH_TYPE_SERIAL;
+ 		else
+ 			return BCM63XX_FLASH_TYPE_NAND;
+ 	case BCM6368_CPU_ID:
+ 		val = bcm_gpio_readl(GPIO_STRAPBUS_REG);
++		if (val & STRAPBUS_6368_SPI_CLK_FAST)
++			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
++
+ 		switch (val & STRAPBUS_6368_BOOT_SEL_MASK) {
+ 		case STRAPBUS_6368_BOOT_SEL_NAND:
+ 			return BCM63XX_FLASH_TYPE_NAND;
+@@ -109,6 +141,11 @@ static int __init bcm63xx_detect_flash_t
+ 		}
+ 	case BCM63268_CPU_ID:
+ 		val = bcm_misc_readl(MISC_STRAPBUS_63268_REG);
++		if (val & STRAPBUS_63268_HSSPI_CLK_FAST)
++			bcm63xx_spi_flash_info[0].max_speed_hz = 50000000;
++		else
++			bcm63xx_spi_flash_info[0].max_speed_hz = 20000000;
++
+ 		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
+ 			return BCM63XX_FLASH_TYPE_SERIAL;
+ 		else
+@@ -181,8 +218,15 @@ int __init bcm63xx_flash_register(void)
+ 
+ 		return platform_device_register(&mtd_dev);
+ 	case BCM63XX_FLASH_TYPE_SERIAL:
+-		pr_warn("unsupported serial flash detected\n");
+-		return -ENODEV;
++		if (BCMCPU_IS_6318() || BCMCPU_IS_6328() || BCMCPU_IS_6362() ||
++		    BCMCPU_IS_63268())
++			bcm63xx_spi_flash_info[0].bus_num = 1;
++
++		if (BCMCPU_IS_6358() || BCMCPU_IS_6368())
++			bcm63xx_flash_data.max_transfer_len = SPI_6358_MSG_DATA_SIZE;
++
++		return spi_register_board_info(bcm63xx_spi_flash_info,
++					ARRAY_SIZE(bcm63xx_spi_flash_info));
+ 	case BCM63XX_FLASH_TYPE_NAND:
+ 		pr_warn("unsupported NAND flash detected\n");
+ 		return -ENODEV;
+--- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
++++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
+@@ -708,6 +708,7 @@
+ #define GPIO_STRAPBUS_REG		0x40
+ #define STRAPBUS_6358_BOOT_SEL_PARALLEL (1 << 1)
+ #define STRAPBUS_6358_BOOT_SEL_SERIAL	(0 << 1)
++#define STRAPBUS_6368_SPI_CLK_FAST	(1 << 6)
+ #define STRAPBUS_6368_BOOT_SEL_MASK	0x3
+ #define STRAPBUS_6368_BOOT_SEL_NAND	0
+ #define STRAPBUS_6368_BOOT_SEL_SERIAL	1
+@@ -1578,6 +1579,7 @@
+ #define IDDQ_CTRL_63268_USBH		(1 << 4)
+ 
+ #define MISC_STRAPBUS_6328_REG		0x240
++#define STRAPBUS_6328_HSSPI_CLK_FAST	(1 << 4)
+ #define STRAPBUS_6328_FCVO_SHIFT	7
+ #define STRAPBUS_6328_FCVO_MASK		(0x1f << STRAPBUS_6328_FCVO_SHIFT)
+ #define STRAPBUS_6328_BOOT_SEL_SERIAL	(1 << 28)

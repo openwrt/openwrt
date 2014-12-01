@@ -1,0 +1,315 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -12,6 +12,12 @@
+ #include <linux/string.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
++#include <linux/platform_device.h>
++#include <linux/spi/spi.h>
++#include <linux/spi/spi_gpio.h>
++#if 0 /* FIXME: 3.14 removed non-DT support */
++#include <linux/spi/74x164.h>
++#endif
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+@@ -31,6 +37,12 @@
+ #define BCM963XX_KEYS_POLL_INTERVAL	20
+ #define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
+ 
++#define NB4_PID_OFFSET		0xff80
++#define NB4_74X164_GPIO_BASE	64
++#define NB4_SPI_GPIO_MOSI	7
++#define NB4_SPI_GPIO_CLK	6
++#define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
++
+ /*
+  * known 3368 boards
+  */
+@@ -747,6 +759,268 @@ static struct board_info __initdata boar
+ 
+ 	.has_ohci0			= 1,
+ };
++
++struct spi_gpio_platform_data nb4_spi_gpio_data = {
++	.sck		= NB4_SPI_GPIO_CLK,
++	.mosi		= NB4_SPI_GPIO_MOSI,
++	.miso		= SPI_GPIO_NO_MISO,
++	.num_chipselect	= 1,
++};
++
++
++static struct platform_device nb4_spi_gpio = {
++	.name = "spi_gpio",
++	.id   = 1,
++	.dev = {
++		.platform_data = &nb4_spi_gpio_data,
++	},
++};
++
++static struct platform_device * __initdata nb4_devices[] = {
++	&nb4_spi_gpio,
++};
++
++#if 0 /* FIXME: 3.14 removed non-DT support */
++const struct gen_74x164_chip_platform_data nb4_74x164_platform_data = {
++	.base = NB4_74X164_GPIO_BASE
++};
++#endif
++
++static struct spi_board_info nb4_spi_devices[] = {
++#if 0 /* FIXME: 3.14 removed non-DT support */
++	{
++		.modalias = "74x164",
++		.max_speed_hz = 781000,
++		.bus_num = 1,
++		.controller_data = (void *) SPI_GPIO_NO_CHIPSELECT,
++		.mode = SPI_MODE_0,
++		.platform_data = &nb4_74x164_platform_data
++	}
++#endif
++};
++
++static struct board_info __initdata board_nb4_ser_r0 = {
++	.name				= "NB4-SER-r0",
++	.expected_cpu_id		= 0x6358,
++
++	.has_uart0			= 1,
++	.has_enet0			= 1,
++	.has_enet1			= 1,
++	.has_pci			= 1,
++
++	.enet0 = {
++		.has_phy		= 1,
++		.use_internal_phy	= 1,
++	},
++
++	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
++		.force_speed_100	= 1,
++		.force_duplex_full	= 1,
++	},
++
++
++	.has_ohci0 = 1,
++	.has_pccard = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports			= 2,
++
++	.leds = {
++		{
++			.name		= "NB4-SER-r0:white:adsl",
++			.gpio		= NB4_74HC64_GPIO(4),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:white:traffic",
++			.gpio		= 2,
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:white:tel",
++			.gpio		= NB4_74HC64_GPIO(3),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:white:tv",
++			.gpio		= NB4_74HC64_GPIO(2),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:white:wifi",
++			.gpio		= 15,
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:white:alarm",
++			.gpio		= NB4_74HC64_GPIO(0),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:red:service",
++			.gpio		= 29,
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:green:service",
++			.gpio		= 30,
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-SER-r0:blue:service",
++			.gpio		= 4,
++			.active_low	= 1,
++		},
++	},
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 34,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "service",
++			.gpio		= 27,
++			.type		= EV_KEY,
++			.code		= BTN_0,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "clip",
++			.gpio		= 31,
++			.type		= EV_KEY,
++			.code		= BTN_1,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
++};
++
++static struct board_info __initdata board_nb4_fxc_r1 = {
++	.name				= "NB4-FXC-r1",
++	.expected_cpu_id		= 0x6358,
++
++	.has_uart0			= 1,
++	.has_enet0			= 1,
++	.has_enet1			= 1,
++	.has_pci			= 1,
++
++	.enet0 = {
++		.has_phy		= 1,
++		.use_internal_phy	= 1,
++	},
++
++	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
++		.force_speed_100	= 1,
++		.force_duplex_full	= 1,
++	},
++
++
++	.has_ohci0 = 1,
++	.has_pccard = 1,
++	.has_ehci0 = 1,
++	.num_usbh_ports			= 2,
++
++	.leds = {
++		{
++			.name		= "NB4-FXC-r1:white:adsl",
++			.gpio		= NB4_74HC64_GPIO(4),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-FXC-r1:white:traffic",
++			.gpio		= 2,
++		},
++		{
++			.name		= "NB4-FXC-r1:white:tel",
++			.gpio		= NB4_74HC64_GPIO(3),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-FXC-r1:white:tv",
++			.gpio		= NB4_74HC64_GPIO(2),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-FXC-r1:white:wifi",
++			.gpio		= 15,
++		},
++		{
++			.name		= "NB4-FXC-r1:white:alarm",
++			.gpio		= NB4_74HC64_GPIO(0),
++			.active_low	= 1,
++		},
++		{
++			.name		= "NB4-FXC-r1:red:service",
++			.gpio		= 29,
++		},
++		{
++			.name		= "NB4-FXC-r1:green:service",
++			.gpio		= 30,
++		},
++		{
++			.name		= "NB4-FXC-r1:blue:service",
++			.gpio		= 4,
++		},
++	},
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 34,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 37,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "service",
++			.gpio		= 27,
++			.type		= EV_KEY,
++			.code		= BTN_0,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++		{
++			.desc		= "clip",
++			.gpio		= 31,
++			.type		= EV_KEY,
++			.code		= BTN_1,
++			.active_low	= 1,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++	.devs = nb4_devices,
++	.num_devs = ARRAY_SIZE(nb4_devices),
++	.spis = nb4_spi_devices,
++	.num_spis = ARRAY_SIZE(nb4_spi_devices),
++};
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
+ 
+ /*
+@@ -783,6 +1057,8 @@ static const struct board_info __initcon
+ 	&board_96358vw2,
+ 	&board_AGPFS0,
+ 	&board_DWVS0,
++	&board_nb4_ser_r0,
++	&board_nb4_fxc_r1,
+ #endif
+ };
+ 
+@@ -819,6 +1095,8 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "pirelli,a226m", .data = &board_DWVS0, },
+ 	{ .compatible = "pirelli,a226m-fwb", .data = &board_DWVS0, },
+ 	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },
++	{ .compatible = "sfr,nb4-ser-r0", .data = &board_nb4_ser_r0, },
++	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ #endif

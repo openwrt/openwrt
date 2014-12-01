@@ -1,0 +1,115 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -4154,6 +4154,96 @@ static struct sprom_fixup __initdata vr3
+ 	{ .offset = 115, .value = 0xfad9 },
+ };
+ 
++static struct board_info __initdata board_P870HW51A_V2 = {
++	.name				= "P870HW-51a_v2",
++	.expected_cpu_id		= 0x6368,
++
++	.has_uart0			= 1,
++	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
++	.has_ohci0			= 1,
++	.has_ehci0			= 1,
++
++	.has_enetsw			= 1,
++	.enetsw = {
++		.used_ports = {
++			[0] = {
++				.used	= 1,
++				.phy_id	= 1,
++				.name	= "port1",
++			},
++			[1] = {
++				.used	= 1,
++				.phy_id	= 2,
++				.name	= "port2",
++			},
++			[2] = {
++				.used	= 1,
++				.phy_id	= 3,
++				.name	= "port3",
++			},
++			[3] = {
++				.used	= 1,
++				.phy_id	= 4,
++				.name	= "port4",
++			},
++		},
++	},
++
++	.leds = {
++		{
++			.name		= "P870HW-51a:green:power",
++			.gpio		= 0,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "P870HW-51a:green:dsl",
++			.gpio		= 2,
++			.active_low	= 1,
++		},
++		{
++			.name		= "P870HW-51a:green:inet",
++			.gpio		= 22,
++			.active_low	= 1,
++		},
++		{
++			.name		= "P870HW-51a:orange:wps",
++			.gpio		= 24,
++			.active_low	= 1,
++		},
++		{
++			.name		= "P870HW-51a:red:inet",
++			.gpio		= 33,
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 34,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 35,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++	},
++
++	.fallback_sprom = {
++		.type 				= SPROM_BCM4318,
++		.pci_bus			= 0,
++		.pci_dev			= 1,
++	},
++};
++
+ static struct board_info __initdata board_VR3025u = {
+ 	.name					= "96368M-1541N",
+ 	.expected_cpu_id		= 0x6368,
+@@ -4854,6 +4944,7 @@ static const struct board_info __initcon
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ 	&board_96368mvwg,
+ 	&board_96368mvngr,
++	&board_P870HW51A_V2,
+ 	&board_VR3025u,
+ 	&board_VR3025un,
+ 	&board_WAP5813n,
+@@ -4933,6 +5024,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "comtrend,vr-3025u", .data = &board_VR3025u, },
+ 	{ .compatible = "comtrend,vr-3025un", .data = &board_VR3025un, },
+ 	{ .compatible = "comtrend,wap-5813n", .data = &board_WAP5813n, },
++	{ .compatible = "zyxel,p870hw-51a-v2", .data = &board_P870HW51A_V2, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_63268
+ 	{ .compatible = "brcm,bcm963268bu_p300", .data = &board_963268bu_p300, },

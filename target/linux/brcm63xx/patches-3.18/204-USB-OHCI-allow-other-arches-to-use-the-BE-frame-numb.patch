@@ -1,0 +1,31 @@
+From b2f399dcd674a692a64bb3b300b77b78ae57b530 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sun, 12 Jan 2014 16:47:35 +0100
+Subject: [PATCH] USB: OHCI: allow other arches to use the BE frame number
+ quirk
+
+Intead of guarding it with a certain PPC SoC and expanding the list
+for each SoC requiring it, just guard it with USB_OHCI_BIG_ENDIAN_DESC.
+
+This makes it less suprising that passing no_big_frame_no = 1 for the
+platform data does not do what expected (or
+
+Checking it for all big endian descriptor setups should not impact
+performance much as USB1.1 is rather slow anyway.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ drivers/usb/host/ohci.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/usb/host/ohci.h
++++ b/drivers/usb/host/ohci.h
+@@ -652,7 +652,7 @@ static inline u32 hc32_to_cpup (const st
+  * some big-endian SOC implementations.  Same thing happens with PSW access.
+  */
+ 
+-#ifdef CONFIG_PPC_MPC52xx
++#ifdef CONFIG_USB_OHCI_BIG_ENDIAN_DESC
+ #define big_endian_frame_no_quirk(ohci)	(ohci->flags & OHCI_QUIRK_FRAME_NO)
+ #else
+ #define big_endian_frame_no_quirk(ohci)	0

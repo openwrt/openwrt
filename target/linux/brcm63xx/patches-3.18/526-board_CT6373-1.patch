@@ -1,0 +1,156 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -43,6 +43,12 @@
+ #define NB4_SPI_GPIO_CLK	6
+ #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
+ 
++#define CT6373_PID_OFFSET		0xff80
++#define CT6373_74X164_GPIO_BASE	64
++#define CT6373_SPI_GPIO_MOSI	7
++#define CT6373_SPI_GPIO_CLK		6
++#define CT6373_74HC64_GPIO(X)	(CT6373_74X164_GPIO_BASE + (X))
++
+ /*
+  * known 3368 boards
+  */
+@@ -2035,6 +2041,124 @@ static struct board_info __initdata boar
+ 	.num_spis = ARRAY_SIZE(nb4_spi_devices),
+ };
+ 
++
++struct spi_gpio_platform_data ct6373_spi_gpio_data = {
++	.sck		= CT6373_SPI_GPIO_CLK,
++	.mosi		= CT6373_SPI_GPIO_MOSI,
++	.miso		= SPI_GPIO_NO_MISO,
++	.num_chipselect	= 1,
++};
++
++static struct platform_device ct6373_spi_gpio = {
++	.name = "spi_gpio",
++	.id   = 1,
++	.dev = {
++		.platform_data = &ct6373_spi_gpio_data,
++	},
++};
++
++static struct platform_device * __initdata ct6373_devices[] = {
++	&ct6373_spi_gpio,
++};
++
++#if 0 /* FIXME: 3.14 dropped non-DT support */
++const struct gen_74x164_chip_platform_data ct6373_74x164_platform_data = {
++	.base = CT6373_74X164_GPIO_BASE
++};
++#endif
++
++static struct spi_board_info ct6373_spi_devices[] = {
++#if 0 /* FIXME: 3.14 dropped non-DT support */
++	{
++		.modalias = "74x164",
++		.max_speed_hz = 781000,
++		.bus_num = 1,
++		.controller_data = (void *) SPI_GPIO_NO_CHIPSELECT,
++		.mode = SPI_MODE_0,
++		.platform_data = &ct6373_74x164_platform_data
++	}
++#endif
++};
++
++static struct board_info __initdata board_ct6373_1 = {
++	.name				= "CT6373-1",
++	.expected_cpu_id	= 0x6358,
++
++	.has_uart0			= 1,
++	.has_pci			= 1,
++	.use_fallback_sprom		= 1,
++	.has_ohci0			= 1,
++	.has_ehci0			= 1,
++
++	.has_enet1			= 1,
++	.enet1 = {
++		.has_phy		= 1,
++		.phy_id			= 0,
++		.force_speed_100	= 1,
++		.force_duplex_full	= 1,
++	},
++
++	.leds = {
++		{
++			.name		= "CT6373-1:green:power",
++			.gpio		= 0,
++			.default_trigger = "default-on",
++		},
++		{
++			.name		= "CT6373-1:green:usb",
++			.gpio		= 3,
++			.active_low	= 1,
++		},
++		{
++			.name		= "CT6373-1:green:wlan",
++			.gpio		= 9,
++			.active_low	= 1,
++		},
++		{
++			.name		= "CT6373-1:green:adsl",
++			.gpio		= CT6373_74HC64_GPIO(0),
++			.active_low	= 1,
++		},
++		{
++			.name		= "CT6373-1:green:line",
++			.gpio		= CT6373_74HC64_GPIO(1),
++			.active_low	= 1,
++		},
++		{
++			.name		= "CT6373-1:green:fxs1",
++			.gpio		= CT6373_74HC64_GPIO(2),
++			.active_low	= 1,
++		},
++		{
++			.name		= "CT6373-1:green:fxs2",
++			.gpio		= CT6373_74HC64_GPIO(3),
++			.active_low	= 1,
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 35,
++			.active_low	= 1,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++		},
++	},
++
++	.fallback_sprom = {
++		.type 				= SPROM_BCM4318,
++		.pci_bus			= 0,
++		.pci_dev			= 1,
++	},
++
++	.devs = ct6373_devices,
++	.num_devs = ARRAY_SIZE(ct6373_devices),
++	.spis = ct6373_spi_devices,
++	.num_spis = ARRAY_SIZE(ct6373_spi_devices),
++};
++
+ static struct board_info __initdata board_HW553 = {
+ 	.name                           = "HW553",
+ 	.expected_cpu_id                = 0x6358,
+@@ -2376,6 +2500,7 @@ static const struct board_info __initcon
+ 	&board_dsl_274xb_rev_c,
+ 	&board_nb4_ser_r0,
+ 	&board_nb4_fxc_r1,
++	&board_ct6373_1,
+ 	&board_HW553,
+ 	&board_spw303v,
+ #endif
+@@ -2422,6 +2547,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
+ 	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
+ 	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
++	{ .compatible = "comtrend,ct-6373", .data = &board_ct6373_1, },
+ 	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
+ 	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
+ 	{ .compatible = "huawei,hg553", .data = &board_HW553, },

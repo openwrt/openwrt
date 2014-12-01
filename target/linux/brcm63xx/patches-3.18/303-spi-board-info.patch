@@ -1,0 +1,33 @@
+--- a/arch/mips/bcm63xx/boards/board_common.c
++++ b/arch/mips/bcm63xx/boards/board_common.c
+@@ -13,6 +13,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/ssb/ssb.h>
+ #include <linux/gpio_keys.h>
++#include <linux/spi/spi.h>
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+@@ -225,6 +226,9 @@ int __init board_register_devices(void)
+ 	if (board.num_devs)
+ 		platform_add_devices(board.devs, board.num_devs);
+ 
++	if (board.num_spis)
++		spi_register_board_info(board.spis, board.num_spis);
++
+ 	bcm63xx_flash_register();
+ 
+ 	/* count number of LEDs defined by this device */
+--- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
++++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
+@@ -61,6 +61,10 @@ struct board_info {
+ 	/* Additional platform devices */
+ 	struct platform_device **devs;
+ 	unsigned int	num_devs;
++
++	/* Additional platform devices */
++	struct spi_board_info *spis;
++	unsigned int	num_spis;
+ };
+ 
+ #endif /* ! BOARD_BCM963XX_H_ */
