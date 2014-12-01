@@ -76,6 +76,10 @@ struct ar8xxx_chip {
 	bool config_at_probe;
 	bool mii_lo_first;
 
+	/* parameters to calculate REG_PORT_STATS_BASE */
+	unsigned reg_port_stats_start;
+	unsigned reg_port_stats_length;
+
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
 
@@ -577,13 +581,8 @@ ar8xxx_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
 
 	lockdep_assert_held(&priv->mib_lock);
 
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
-		base = AR8327_REG_PORT_STATS_BASE(port);
-	else if (chip_is_ar8236(priv) ||
-		 chip_is_ar8316(priv))
-		base = AR8236_REG_PORT_STATS_BASE(port);
-	else
-		base = AR8216_REG_PORT_STATS_BASE(port);
+	base = priv->chip->reg_port_stats_start +
+	       priv->chip->reg_port_stats_length * port;
 
 	mib_stats = &priv->mib_stats[port * priv->chip->num_mibs];
 	for (i = 0; i < priv->chip->num_mibs; i++) {
@@ -885,6 +884,9 @@ ar8216_init_port(struct ar8xxx_priv *priv, int port)
 static const struct ar8xxx_chip ar8216_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
 
+	.reg_port_stats_start = 0x19000,
+	.reg_port_stats_length = 0xa0,
+
 	.hw_init = ar8216_hw_init,
 	.init_globals = ar8216_init_globals,
 	.init_port = ar8216_init_port,
@@ -953,6 +955,10 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 
 static const struct ar8xxx_chip ar8236_chip = {
 	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+
 	.hw_init = ar8216_hw_init,
 	.init_globals = ar8236_init_globals,
 	.init_port = ar8216_init_port,
@@ -1038,6 +1044,10 @@ ar8316_init_globals(struct ar8xxx_priv *priv)
 
 static const struct ar8xxx_chip ar8316_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+
 	.hw_init = ar8316_hw_init,
 	.init_globals = ar8316_init_globals,
 	.init_port = ar8216_init_port,
@@ -1830,6 +1840,9 @@ static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.config_at_probe = true,
 	.mii_lo_first = true,
+
+	.reg_port_stats_start = 0x1000,
+	.reg_port_stats_length = 0x100,
 
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
