@@ -14,6 +14,15 @@ define Profile/DSL274XB_C/Description
 endef
 $(eval $(call Profile,DSL274XB_C))
 
+define Profile/DSL274XB_F
+  NAME:=D-Link DSL-2740B/DSL-2741B rev F1
+  PACKAGES:=kmod-ath9k wpad-mini
+endef
+define Profile/DSL274XB_F/Description
+  Package set optimized for DSL-2740B/DSL-2741B rev F1.
+endef
+$(eval $(call Profile,DSL274XB_F))
+
 define Profile/DVAG3810BN
   NAME:=D-Link DVA-G3810BN/TL
   PACKAGES:=kmod-b43 wpad-mini \

@@ -210,9 +210,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),D-4P-W,6348,DSL2640B-B2)
 	# D-Link DSL-2650U
 	$(call Image/Build/CFE,$(1),96358VW2,6358,DSL2650U)
-	# D-Link DSL-2740B/DSL-2741B, rev F1
-	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-EU,,--signature2="4.06.01.EUF1" --pad 4)
-	$(call Image/Build/CFE,$(1),AW4339U,6328,DSL274XB-F1-AU,,--signature2="4.06.01.AUF1" --pad 4)
 
 	# TP-Link 8900GB
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,TD8900GB,$(shell printf 'PRID\x89\x10\x00\x02'))
@@ -295,6 +292,9 @@ $(eval $(call ImageDTB,CFEDTB,WAP5813n,wap-5813n,96369R-1231N,6368,WAP-5813n,--p
 $(eval $(call ImageDTB,CFEDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
 # D-Link DSL-2740B/DSL-2741B, rev C3
 $(eval $(call ImageDTB,CFEDTB,DSL274XB_C,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
+# D-Link DSL-2740B/DSL-2741B, rev F1
+$(eval $(call ImageDTB,CFEDTB,DSL274XB_F,dsl-274xb-f,AW4339U,6328,DSL274XB-F1-EU,--signature2 "4.06.01.EUF1" --pad 4))
+$(eval $(call ImageDTB,CFEDTB,DSL274XB_F,dsl-274xb-f,AW4339U,6328,DSL274XB-F1-AU,--signature2 "4.06.01.AUF1" --pad 4))
 # D-Link DVA-G3810BN/TL
 $(eval $(call ImageDTB,CFEDTB,DVAG3810BN,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
 # Davolink DV-201AMR
