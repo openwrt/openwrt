@@ -194,23 +194,26 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  	spi_resources[0].start = bcm63xx_regset_address(RSET_SPI);
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
-@@ -441,6 +441,16 @@ static void bcm63xx_init_irq(void)
- 		ext_irq_count = 4;
- 		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_3368;
+@@ -49,6 +49,19 @@ static void bcm63xx_init_irq(void)
+ 		ext_irqs[3] = BCM_3368_EXT_IRQ3;
+ 		ext_shift = 4;
  		break;
 +	case BCM6318_CPU_ID:
-+		irq_stat_addr[0] += PERF_IRQSTAT_6318_REG;
-+		irq_mask_addr[0] += PERF_IRQMASK_6318_REG;
-+		irq_bits = 128;
++		l2_intc_bases[0] += PERF_IRQMASK_6318_REG;
++		l2_irq_count = 1;
++		l2_width = 4;
++
++		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6318;
 +		ext_irq_count = 4;
-+		is_ext_irq_cascaded = 1;
-+		ext_irq_start = BCM_6318_EXT_IRQ0 - IRQ_INTERNAL_BASE;
-+		ext_irq_end = BCM_6318_EXT_IRQ3 - IRQ_INTERNAL_BASE;
-+		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6318;
++		ext_irqs[0] = BCM_6318_EXT_IRQ0;
++		ext_irqs[1] = BCM_6318_EXT_IRQ0;
++		ext_irqs[2] = BCM_6318_EXT_IRQ0;
++		ext_irqs[3] = BCM_6318_EXT_IRQ0;
++		ext_shift = 4;
 +		break;
  	case BCM6328_CPU_ID:
- 		irq_stat_addr[0] += PERF_IRQSTAT_6328_REG(0);
- 		irq_mask_addr[0] += PERF_IRQMASK_6328_REG(0);
+ 		l2_intc_bases[0] += PERF_IRQMASK_6328_REG(0);
+ 		l2_intc_bases[1] += PERF_IRQMASK_6328_REG(1);
 --- a/arch/mips/bcm63xx/prom.c
 +++ b/arch/mips/bcm63xx/prom.c
 @@ -72,7 +72,7 @@ void __init prom_init(void)
@@ -527,7 +530,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define PERF_EXTIRQ_CFG_REG_6328	0x18
  #define PERF_EXTIRQ_CFG_REG_6338	0x14
  #define PERF_EXTIRQ_CFG_REG_6345	0x14
-@@ -320,6 +370,7 @@
+@@ -321,6 +371,7 @@
  
  /* Soft Reset register */
  #define PERF_SOFTRESET_REG		0x28
@@ -535,7 +538,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define PERF_SOFTRESET_6328_REG		0x10
  #define PERF_SOFTRESET_6358_REG		0x34
  #define PERF_SOFTRESET_6362_REG		0x10
-@@ -333,6 +384,18 @@
+@@ -334,6 +385,18 @@
  #define SOFTRESET_3368_USBS_MASK	(1 << 11)
  #define SOFTRESET_3368_PCM_MASK		(1 << 13)
  
@@ -554,7 +557,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define SOFTRESET_6328_SPI_MASK		(1 << 0)
  #define SOFTRESET_6328_EPHY_MASK	(1 << 1)
  #define SOFTRESET_6328_SAR_MASK		(1 << 2)
-@@ -504,8 +567,17 @@
+@@ -505,8 +568,17 @@
  #define TIMER_IRQSTAT_TIMER1_IR_EN	(1 << 9)
  #define TIMER_IRQSTAT_TIMER2_IR_EN	(1 << 10)
  
@@ -572,7 +575,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  #define TIMER_CTL0_REG			0x4
  #define TIMER_CTL1_REG			0x8
  #define TIMER_CTL2_REG			0xC
-@@ -1252,6 +1324,8 @@
+@@ -1253,6 +1325,8 @@
  #define SDRAM_CFG_32B_MASK		(1 << SDRAM_CFG_32B_SHIFT)
  #define SDRAM_CFG_BANK_SHIFT		13
  #define SDRAM_CFG_BANK_MASK		(1 << SDRAM_CFG_BANK_SHIFT)
