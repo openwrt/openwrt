@@ -12,7 +12,7 @@ SUBTARGETS:=le be le64 be64
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-KERNEL_PATCHVER:=3.10
+KERNEL_PATCHVER:=3.14
 
 DEVICE_TYPE:=developerboard
 
