@@ -172,8 +172,8 @@ static int ehci_oxnas_drv_probe(struct platform_device *ofdev)
 
 	oxnas = (struct oxnas_hcd *)hcd_to_ehci(hcd)->priv;
 
-	oxnas->use_pllb = of_property_read_bool(np, "plxtch,ehci_use_pllb");
-	oxnas->use_phya = of_property_read_bool(np, "plxtch,ehci_use_phya");
+	oxnas->use_pllb = of_property_read_bool(np, "plxtech,ehci_use_pllb");
+	oxnas->use_phya = of_property_read_bool(np, "plxtech,ehci_use_phya");
 
 	oxnas->clk = of_clk_get_by_name(np, "usb");
 	if (IS_ERR(oxnas->clk)) {
@@ -276,7 +276,7 @@ static int ehci_oxnas_drv_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id oxnas_ehci_dt_ids[] = {
-	{ .compatible = "plxtch,nas782x-ehci" },
+	{ .compatible = "plxtech,nas782x-ehci" },
 	{ /* sentinel */ }
 };
 
