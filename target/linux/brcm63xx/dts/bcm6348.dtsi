@@ -18,6 +18,14 @@
 		};
 	};
 
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
 	memory { device_type = "memory"; reg = <0 0>; };
 
 	pflash: nor@1fc00000 {
@@ -35,5 +43,27 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
+
+		periph_intc: interrupt-controller@fffe000c {
+			compatible = "brcm,bcm6345-l2-intc";
+			reg = <0xfffe000c 0x8>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <2>;
+		};
+
+		ext_intc: interrupt-controller@fffe0014 {
+			compatible = "brcm,bcm6348-ext-intc";
+			reg = <0xfffe0014 0x4>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <3>, <4>, <5>, <6>;
+		};
 	};
 };

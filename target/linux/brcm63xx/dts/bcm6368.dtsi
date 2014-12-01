@@ -24,6 +24,14 @@
 		};
 	};
 
+	cpu_intc: interrupt-controller {
+		#address-cells = <0>;
+		compatible = "mti,cpu-interrupt-controller";
+
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
 	memory { device_type = "memory"; reg = <0 0>; };
 
 	ubus@10000000 {
@@ -31,6 +39,40 @@
 		#size-cells = <1>;
 		ranges;
 		compatible = "simple-bus";
+
+		ext_intc0: interrupt-controller@10000018 {
+			compatible = "brcm,bcm6345-ext-intc";
+			reg = <0x10000018 0x4>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <20>, <21>, <22>, <23>;
+		};
+
+		ext_intc1: interrupt-controller@1000001c {
+			compatible = "brcm,bcm6345-ext-intc";
+			reg = <0x1000001c 0x4>;
+
+			interrupt-controller;
+			#interrupt-cells = <2>;
+
+			interrupt-parent = <&periph_intc>;
+			interrupts = <24>, <25>;
+		};
+
+		periph_intc: interrupt-controller@10000020 {
+			compatible = "brcm,bcm6345-l2-intc";
+			reg = <0x10000020 0x10>,
+			      <0x10000030 0x10>;
+
+			interrupt-controller;
+			#interrupt-cells = <1>;
+
+			interrupt-parent = <&cpu_intc>;
+			interrupts = <2>, <3>;
+		};
 	};
 
 	pflash: nor@18000000 {
