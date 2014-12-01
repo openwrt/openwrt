@@ -4,12 +4,19 @@
 	compatible = "brcm,bcm6362";
 
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <0>;
 		};
 
 		cpu@1 {
 			compatible = "brcm,bmips4350", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <1>;
 		};
 	};
 

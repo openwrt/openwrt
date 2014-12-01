@@ -8,8 +8,13 @@
 	};
 
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
 			compatible = "brcm,bmips3300", "mips,mips4Kc";
+			device_type = "cpu";
+			reg = <0>;
 		};
 	};
 
