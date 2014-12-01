@@ -1,0 +1,41 @@
+From 266c506f4b262bd6aba0776a03d82c98e65d9906 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 1 May 2012 17:32:36 +0200
+Subject: [PATCH 63/79] MTD: physmap: allow passing pp_data
+
+---
+ drivers/mtd/maps/physmap.c  |    4 +++-
+ include/linux/mtd/physmap.h |    1 +
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/maps/physmap.c
++++ b/drivers/mtd/maps/physmap.c
+@@ -96,6 +96,7 @@ static int physmap_flash_probe(struct pl
+ {
+ 	struct physmap_flash_data *physmap_data;
+ 	struct physmap_flash_info *info;
++	struct mtd_part_parser_data *pp_data;
+ 	const char * const *probe_type;
+ 	const char * const *part_types;
+ 	int err = 0;
+@@ -187,8 +188,9 @@ static int physmap_flash_probe(struct pl
+ 	spin_lock_init(&info->vpp_lock);
+ 
+ 	part_types = physmap_data->part_probe_types ? : part_probe_types;
++	pp_data = physmap_data->pp_data ? physmap_data->pp_data : NULL;
+ 
+-	mtd_device_parse_register(info->cmtd, part_types, NULL,
++	mtd_device_parse_register(info->cmtd, part_types, pp_data,
+ 				  physmap_data->parts, physmap_data->nr_parts);
+ 	return 0;
+ 
+--- a/include/linux/mtd/physmap.h
++++ b/include/linux/mtd/physmap.h
+@@ -31,6 +31,7 @@ struct physmap_flash_data {
+ 	char                    *probe_type;
+ 	struct mtd_partition	*parts;
+ 	const char * const	*part_probe_types;
++	struct mtd_part_parser_data *pp_data;
+ };
+ 
+ #endif /* __LINUX_MTD_PHYSMAP__ */

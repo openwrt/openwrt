@@ -1,0 +1,145 @@
+--- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
++++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
+@@ -18,6 +18,7 @@
+ #if 0 /* FIXME: 3.14 removed non-DT support */
+ #include <linux/spi/74x164.h>
+ #endif
++#include <linux/rtl8367.h>
+ #include <asm/addrspace.h>
+ #include <bcm63xx_board.h>
+ #include <bcm63xx_cpu.h>
+@@ -42,6 +43,8 @@
+ #define NB4_SPI_GPIO_MOSI	7
+ #define NB4_SPI_GPIO_CLK	6
+ #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
++#define NB6_GPIO_RTL8367_SDA	18
++#define NB6_GPIO_RTL8367_SCK	20
+ 
+ #define CT6373_PID_OFFSET		0xff80
+ #define CT6373_74X164_GPIO_BASE	64
+@@ -2370,6 +2373,104 @@ static struct board_info __initdata boar
+ };
+ #endif /* CONFIG_BCM63XX_CPU_6358 */
+ 
++#ifdef CONFIG_BCM63XX_CPU_6362
++static struct rtl8367_extif_config nb6_rtl8367_extif0_cfg = {
++	.mode = RTL8367_EXTIF_MODE_RGMII,
++	.txdelay = 1,
++	.rxdelay = 5,
++	.ability = {
++		.force_mode = 1,
++		.txpause = 1,
++		.rxpause = 1,
++		.link = 1,
++		.duplex = 1,
++		.speed = RTL8367_PORT_SPEED_1000,
++	},
++};
++
++static struct rtl8367_platform_data nb6_rtl8367_data = {
++	.gpio_sda	= NB6_GPIO_RTL8367_SDA,
++	.gpio_sck	= NB6_GPIO_RTL8367_SCK,
++	.extif0_cfg	= &nb6_rtl8367_extif0_cfg,
++};
++
++static struct platform_device nb6_rtl8367_device = {
++	.name		= RTL8367_DRIVER_NAME,
++	.id		= -1,
++	.dev = {
++		.platform_data	= &nb6_rtl8367_data,
++	}
++};
++
++static struct platform_device * __initdata nb6_devices[] = {
++	&nb6_rtl8367_device,
++};
++
++static struct board_info __initdata board_nb6 = {
++	.name				= "NB6",
++	.expected_cpu_id		= 0x6362,
++
++	.has_uart0			= 1,
++
++	.has_ohci0			= 1,
++	.has_ehci0			= 1,
++	.num_usbh_ports			= 2,
++
++	.has_enetsw			= 1,
++
++	.enetsw = {
++		.used_ports = {
++			[4] = {
++				.used	= 1,
++				.phy_id	= 0xff,
++				.bypass_link = 1,
++				.force_speed = 1000,
++				.force_duplex_full = 1,
++				.name	= "RGMII",
++			},
++		},
++	},
++
++	.buttons = {
++		{
++			.desc		= "reset",
++			.gpio		= 24,
++			.type		= EV_KEY,
++			.code		= KEY_RESTART,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "wps",
++			.gpio		= 25,
++			.type		= EV_KEY,
++			.code		= KEY_WPS_BUTTON,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "wlan",
++			.gpio		= 12,
++			.type		= EV_KEY,
++			.code		= KEY_WLAN,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++		{
++			.desc		= "service",
++			.gpio		= 10,
++			.type		= EV_KEY,
++			.code		= BTN_0,
++			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
++			.active_low	= 1,
++		},
++	},
++
++	.devs = nb6_devices,
++	.num_devs = ARRAY_SIZE(nb6_devices),
++};
++#endif /* CONFIG_BCM63XX_CPU_6362 */
++
+ /*
+  * known 6368 boards
+  */
+@@ -2573,6 +2674,10 @@ static const struct board_info __initcon
+ 	&board_DVAG3810BN,
+ #endif
+ 
++#ifdef CONFIG_BCM63XX_CPU_6362
++	&board_nb6,
++#endif
++
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ 	&board_96368mvwg,
+ 	&board_96368mvngr,
+@@ -2628,6 +2733,9 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },
+ 	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
+ #endif
++#ifdef CONFIG_BCM63XX_CPU_6362
++	{ .compatible = "sfr,nb6-ser-r0", .data = &board_nb6, },
++#endif
+ #ifdef CONFIG_BCM63XX_CPU_6368
+ 	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
+ 	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
