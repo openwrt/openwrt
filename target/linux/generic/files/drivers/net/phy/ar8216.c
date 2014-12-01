@@ -54,6 +54,9 @@ struct ar8xxx_priv;
 
 #define AR8XXX_NUM_PHYS 	5
 
+static void ar8216_set_mirror_regs(struct ar8xxx_priv *priv);
+static void ar8327_set_mirror_regs(struct ar8xxx_priv *priv);
+
 enum {
 	AR8XXX_VER_AR8216 = 0x01,
 	AR8XXX_VER_AR8236 = 0x03,
@@ -83,6 +86,7 @@ struct ar8xxx_chip {
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
 	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
+	void (*set_mirror_regs)(struct ar8xxx_priv *priv);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
@@ -891,6 +895,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8216_mibs),
 	.mib_decs = ar8216_mibs,
@@ -958,6 +963,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
@@ -1042,6 +1048,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.atu_flush = ar8216_atu_flush,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
@@ -1832,6 +1839,7 @@ static const struct ar8xxx_chip ar8327_chip = {
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
+	.set_mirror_regs = ar8327_set_mirror_regs,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
@@ -2093,16 +2101,6 @@ ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
 			   AR8216_PORT_CTRL_MIRROR_TX);
 }
 
-static void
-ar8xxx_set_mirror_regs(struct ar8xxx_priv *priv)
-{
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv)) {
-		ar8327_set_mirror_regs(priv);
-	} else {
-		ar8216_set_mirror_regs(priv);
-	}
-}
-
 static int
 ar8xxx_sw_hw_apply(struct switch_dev *dev)
 {
@@ -2150,7 +2148,7 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 		priv->chip->setup_port(priv, i, portmask[i]);
 	}
 
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
@@ -2222,7 +2220,7 @@ ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->mirror_rx = !!val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2247,7 +2245,7 @@ ar8xxx_sw_set_mirror_tx_enable(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->mirror_tx = !!val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2272,7 +2270,7 @@ ar8xxx_sw_set_mirror_monitor_port(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->monitor_port = val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
@@ -2297,7 +2295,7 @@ ar8xxx_sw_set_mirror_source_port(struct switch_dev *dev,
 
 	mutex_lock(&priv->reg_mutex);
 	priv->source_port = val->value.i;
-	ar8xxx_set_mirror_regs(priv);
+	priv->chip->set_mirror_regs(priv);
 	mutex_unlock(&priv->reg_mutex);
 
 	return 0;
