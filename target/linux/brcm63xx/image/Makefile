@@ -200,9 +200,6 @@ define Image/Build
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
 
-	# Sagem F@ST2504n
-	$(call Image/Build/CFE,$(1),F@ST2504n,6362,F@ST2504n,OpenWRT-$(REVISION))
-
 	# USR 9108
 	$(call Image/Build/CFE,$(1),96348GW-A,6348,USR9108)
 	# NetGear DG834GT, DG834PN
@@ -319,6 +316,8 @@ $(eval $(call ImageDTB,CFEDTB,A226M,a226m,DWV-S0,6358,A226M,--signature2 IMAGE -
 $(eval $(call ImageDTB,CFEDTB,A226M,a226m-fwb,DWV-S0,6358,A226M-FWB,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # Sagem F@ST2404
 $(eval $(call ImageDTB,CFEDTB,FAST2404,fast2404,F@ST2404,6348,F@ST2404))
+# Sagem F@ST2504n
+$(eval $(call ImageDTB,CFEDTB,FAST2504n,fast2504n,F@ST2504n,6362,F@ST2504n))
 # Sagem F@ST2604
 $(eval $(call ImageDTB,CFEDTB,FAST2604,fast2604,F@ST2604,6348,F@ST2604))
 # Sagem F@ST2704V2
