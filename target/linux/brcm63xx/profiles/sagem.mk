@@ -22,3 +22,13 @@ define Profile/FAST2604/Description
   Package set optimized for F@ST2604.
 endef
 $(eval $(call Profile,FAST2604))
+
+define Profile/FAST2704V2
+  NAME:=Sagem F@ST2704V2
+  PACKAGES:=kmod-b43 wpad-mini\
+	kmod-usb2 kmod-usb-ohci
+endef
+define Profile/FAST2704V2/Description
+  Package set optimized for F@ST2704V2.
+endef
+$(eval $(call Profile,FAST2704V2))
