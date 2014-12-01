@@ -220,9 +220,6 @@ define Image/Build
 	# TP-Link 8900GB
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,TD8900GB,$(shell printf 'PRID\x89\x10\x00\x02'))
 
-	# Sagem F@ST2404
-	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404-cfe)
-	$(call Image/Build/CFE,$(1),F@ST2404,6348,F@ST2404,OpenWRT-$(REVISION))
 	# Sagem F@ST2604
 	$(call Image/Build/CFE,$(1),F@ST2604,6348,F@ST2604-cfe)
 	$(call Image/Build/CFE,$(1),F@ST2604,6348,F@ST2604,OpenWRT-$(REVISION))
@@ -326,6 +323,8 @@ $(eval $(call ImageDTB,CFEDTB,A226G,a226g,DWV-S0,6358,A226G,--signature2 IMAGE -
 # Pirelli A226M/A226M-FWB
 $(eval $(call ImageDTB,CFEDTB,A226M,a226m,DWV-S0,6358,A226M,--signature2 IMAGE --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,A226M,a226m-fwb,DWV-S0,6358,A226M-FWB,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
+# Sagem F@ST2404
+$(eval $(call ImageDTB,CFEDTB,FAST2404,fast2404,F@ST2404,6348,F@ST2404))
 # T-Com Speedport W 303V Typ B
 $(eval $(call ImageDTB,SPW303VCFEDTB,SPW303V,spw303v,96358-502V,6358,SPW303V,--pad 4))
 # T-Com Speedport W 500V
