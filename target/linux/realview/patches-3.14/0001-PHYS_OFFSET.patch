@@ -1,0 +1,47 @@
+Index: linux-3.14.25/arch/arm/mach-realview/include/mach/memory.h
+===================================================================
+--- linux-3.14.25.orig/arch/arm/mach-realview/include/mach/memory.h	2014-11-21 18:23:44.000000000 +0100
++++ linux-3.14.25/arch/arm/mach-realview/include/mach/memory.h	2014-12-01 09:07:15.907431483 +0100
+@@ -29,6 +29,8 @@
+ #define PLAT_PHYS_OFFSET		UL(0x00000000)
+ #endif
+ 
++#define PHYS_OFFSET PLAT_PHYS_OFFSET
++
+ #ifdef CONFIG_SPARSEMEM
+ 
+ /*
+Index: linux-3.14.25/openwrt/trunk/target/linux/realview/Makefile
+===================================================================
+--- linux-3.14.25.orig/openwrt/trunk/target/linux/realview/Makefile	2014-12-01 07:30:52.455222932 +0100
++++ /dev/null	1970-01-01 00:00:00.000000000 +0000
+@@ -1,29 +0,0 @@
+-#
+-# Copyright (C) 2010-2011 OpenWrt.org
+-#
+-# This is free software, licensed under the GNU General Public License v2.
+-# See /LICENSE for more information.
+-#
+-include $(TOPDIR)/rules.mk
+-
+-ARCH:=arm
+-BOARD:=realview
+-BOARDNAME:=ARM Ltd. Realview board (qemu)
+-FEATURES:=fpu ramdisk
+-CPU_TYPE:=mpcore
+-CPU_SUBTYPE:=vfp
+-MAINTAINER:=Florian Fainelli <florian@openwrt.org>
+-
+-KERNEL_PATCHVER:=3.14
+-
+-DEVICE_TYPE:=developerboard
+-
+-include $(INCLUDE_DIR)/target.mk
+-
+-define Target/Description
+-	Build images for ARM Ltd. Realview boards to be run with qemu
+-endef
+-
+-KERNELNAME:=zImage
+-
+-$(eval $(call BuildTarget))
