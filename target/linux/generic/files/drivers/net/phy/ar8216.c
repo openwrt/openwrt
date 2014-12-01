@@ -146,9 +146,7 @@ struct ar8xxx_priv {
 	u8 chip_ver;
 	u8 chip_rev;
 	const struct ar8xxx_chip *chip;
-	union {
-		struct ar8327_data ar8327;
-	} chip_data;
+	void *chip_data;
 	bool initialized;
 	bool port4_phy;
 	char buf[2048];
@@ -1412,7 +1410,7 @@ static int
 ar8327_led_create(struct ar8xxx_priv *priv,
 		  const struct ar8327_led_info *led_info)
 {
-	struct ar8327_data *data = &priv->chip_data.ar8327;
+	struct ar8327_data *data = priv->chip_data;
 	struct ar8327_led *aled;
 	int ret;
 
@@ -1473,13 +1471,11 @@ ar8327_led_destroy(struct ar8327_led *aled)
 static void
 ar8327_leds_init(struct ar8xxx_priv *priv)
 {
-	struct ar8327_data *data;
+	struct ar8327_data *data = priv->chip_data;
 	unsigned i;
 
 	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
 		return;
-
-	data = &priv->chip_data.ar8327;
 
 	for (i = 0; i < data->num_leds; i++) {
 		struct ar8327_led *aled;
@@ -1498,7 +1494,7 @@ ar8327_leds_init(struct ar8xxx_priv *priv)
 static void
 ar8327_leds_cleanup(struct ar8xxx_priv *priv)
 {
-	struct ar8327_data *data = &priv->chip_data.ar8327;
+	struct ar8327_data *data = priv->chip_data;
 	unsigned i;
 
 	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
@@ -1519,7 +1515,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		       struct ar8327_platform_data *pdata)
 {
 	struct ar8327_led_cfg *led_cfg;
-	struct ar8327_data *data;
+	struct ar8327_data *data = priv->chip_data;
 	u32 pos, new_pos;
 	u32 t;
 
@@ -1527,8 +1523,6 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		return -EINVAL;
 
 	priv->get_port_link = pdata->get_port_link;
-
-	data = &priv->chip_data.ar8327;
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
@@ -1602,6 +1596,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 static int
 ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 {
+	struct ar8327_data *data = priv->chip_data;
 	const __be32 *paddr;
 	int len;
 	int i;
@@ -1621,10 +1616,10 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 
 		switch (reg) {
 		case AR8327_REG_PORT_STATUS(0):
-			priv->chip_data.ar8327.port0_status = val;
+			data->port0_status = val;
 			break;
 		case AR8327_REG_PORT_STATUS(6):
-			priv->chip_data.ar8327.port6_status = val;
+			data->port6_status = val;
 			break;
 		default:
 			priv->write(priv, reg, val);
@@ -1646,6 +1641,10 @@ static int
 ar8327_hw_init(struct ar8xxx_priv *priv)
 {
 	int ret;
+
+	priv->chip_data = kzalloc(sizeof(struct ar8327_data), GFP_KERNEL);
+	if (!priv->chip_data)
+		return -ENOMEM;
 
 	if (priv->phy->dev.of_node)
 		ret = ar8327_hw_config_of(priv, priv->phy->dev.of_node);
@@ -1706,12 +1705,13 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 static void
 ar8327_init_port(struct ar8xxx_priv *priv, int port)
 {
+	struct ar8327_data *data = priv->chip_data;
 	u32 t;
 
 	if (port == AR8216_PORT_CPU)
-		t = priv->chip_data.ar8327.port0_status;
+		t = data->port0_status;
 	else if (port == 6)
-		t = priv->chip_data.ar8327.port6_status;
+		t = data->port6_status;
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
@@ -2700,6 +2700,7 @@ ar8xxx_free(struct ar8xxx_priv *priv)
 	if (priv->chip && priv->chip->cleanup)
 		priv->chip->cleanup(priv);
 
+	kfree(priv->chip_data);
 	kfree(priv->mib_stats);
 	kfree(priv);
 }
