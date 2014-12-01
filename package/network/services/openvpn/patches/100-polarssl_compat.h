@@ -11,7 +11,7 @@
  struct _buffer_entry {
 --- a/src/openvpn/ssl_polarssl.c
 +++ b/src/openvpn/ssl_polarssl.c
-@@ -45,7 +45,7 @@
+@@ -46,7 +46,7 @@
  #include "manage.h"
  #include "ssl_common.h"
  
@@ -20,12 +20,13 @@
  #include <polarssl/havege.h>
  
  #include "ssl_verify_polarssl.h"
-@@ -209,12 +209,12 @@ tls_ctx_load_dh_params (struct tls_root_
+@@ -212,13 +212,13 @@ tls_ctx_load_dh_params (struct tls_root_
  {
-   if (!strcmp (dh_file, INLINE_FILE_TAG) && dh_file_inline)
+   if (!strcmp (dh_file, INLINE_FILE_TAG) && dh_inline)
      {
--      if (0 != x509parse_dhm(ctx->dhm_ctx, dh_file_inline, strlen(dh_file_inline)))
-+      if (0 != dhm_parse_dhm(ctx->dhm_ctx, dh_file_inline, strlen(dh_file_inline)))
+-      if (0 != x509parse_dhm(ctx->dhm_ctx, (const unsigned char *) dh_inline,
++      if (0 != dhm_parse_dhm(ctx->dhm_ctx, (const unsigned char *) dh_inline,
+ 	  strlen(dh_inline)))
  	msg (M_FATAL, "Cannot read inline DH parameters");
    }
  else
@@ -35,13 +36,13 @@
        msg (M_FATAL, "Cannot read DH parameters from file %s", dh_file);
    }
  
-@@ -249,13 +249,13 @@ tls_ctx_load_cert_file (struct tls_root_
+@@ -253,13 +253,13 @@ tls_ctx_load_cert_file (struct tls_root_
  
-   if (!strcmp (cert_file, INLINE_FILE_TAG) && cert_file_inline)
+   if (!strcmp (cert_file, INLINE_FILE_TAG) && cert_inline)
      {
--      if (0 != x509parse_crt(ctx->crt_chain, cert_file_inline,
-+      if (0 != x509_crt_parse(ctx->crt_chain, cert_file_inline,
- 	  strlen(cert_file_inline)))
+-      if (0 != x509parse_crt(ctx->crt_chain,
++      if (0 != x509_crt_parse(ctx->crt_chain,
+ 	  (const unsigned char *) cert_inline, strlen(cert_inline)))
          msg (M_FATAL, "Cannot load inline certificate file");
      }
    else
@@ -51,12 +52,31 @@
  	msg (M_FATAL, "Cannot load certificate file %s", cert_file);
      }
  }
-@@ -476,13 +476,13 @@ void tls_ctx_load_ca (struct tls_root_ct
- 
-   if (ca_file && !strcmp (ca_file, INLINE_FILE_TAG) && ca_file_inline)
+@@ -277,7 +277,7 @@ tls_ctx_load_priv_file (struct tls_root_
+       status = x509parse_key(ctx->priv_key,
+ 	  (const unsigned char *) priv_key_inline, strlen(priv_key_inline),
+ 	  NULL, 0);
+-      if (POLARSSL_ERR_X509_PASSWORD_REQUIRED == status)
++      if (POLARSSL_ERR_PK_PASSWORD_REQUIRED == status)
+ 	{
+ 	  char passbuf[512] = {0};
+ 	  pem_password_callback(passbuf, 512, 0, NULL);
+@@ -289,7 +289,7 @@ tls_ctx_load_priv_file (struct tls_root_
+   else
      {
--      if (0 != x509parse_crt(ctx->ca_chain, ca_file_inline, strlen(ca_file_inline)))
-+      if (0 != x509_crt_parse(ctx->ca_chain, ca_file_inline, strlen(ca_file_inline)))
+       status = x509parse_keyfile(ctx->priv_key, priv_key_file, NULL);
+-      if (POLARSSL_ERR_X509_PASSWORD_REQUIRED == status)
++      if (POLARSSL_ERR_PK_PASSWORD_REQUIRED == status)
+ 	{
+ 	  char passbuf[512] = {0};
+ 	  pem_password_callback(passbuf, 512, 0, NULL);
+@@ -480,14 +480,14 @@ void tls_ctx_load_ca (struct tls_root_ct
+ 
+   if (ca_file && !strcmp (ca_file, INLINE_FILE_TAG) && ca_inline)
+     {
+-      if (0 != x509parse_crt(ctx->ca_chain, (const unsigned char *) ca_inline,
++      if (0 != x509_crt_parse(ctx->ca_chain, (const unsigned char *) ca_inline,
+ 	  strlen(ca_inline)))
  	msg (M_FATAL, "Cannot load inline CA certificates");
      }
    else
@@ -67,13 +87,14 @@
  	msg (M_FATAL, "Cannot load CA certificate file %s", ca_file);
      }
  }
-@@ -496,13 +496,13 @@ tls_ctx_load_extra_certs (struct tls_roo
+@@ -501,14 +501,14 @@ tls_ctx_load_extra_certs (struct tls_roo
  
-   if (!strcmp (extra_certs_file, INLINE_FILE_TAG) && extra_certs_file_inline)
+   if (!strcmp (extra_certs_file, INLINE_FILE_TAG) && extra_certs_inline)
      {
--      if (0 != x509parse_crt(ctx->crt_chain, extra_certs_file_inline,
-+      if (0 != x509_crt_parse(ctx->crt_chain, extra_certs_file_inline,
- 	  strlen(extra_certs_file_inline)))
+-      if (0 != x509parse_crt(ctx->crt_chain,
++      if (0 != x509_crt_parse(ctx->crt_chain,
+ 	  (const unsigned char *) extra_certs_inline,
+ 	  strlen(extra_certs_inline)))
          msg (M_FATAL, "Cannot load inline extra-certs file");
      }
    else
@@ -83,7 +104,7 @@
  	msg (M_FATAL, "Cannot load extra-certs file: %s", extra_certs_file);
      }
  }
-@@ -684,7 +684,7 @@ void key_state_ssl_init(struct key_state
+@@ -724,7 +724,7 @@ void key_state_ssl_init(struct key_state
  	   external_key_len );
        else
  #endif
@@ -92,7 +113,7 @@
  
        /* Initialise SSL verification */
  #if P2MP_SERVER
-@@ -1026,7 +1026,7 @@ print_details (struct key_state_ssl * ks
+@@ -1068,7 +1068,7 @@ print_details (struct key_state_ssl * ks
    cert = ssl_get_peer_cert(ks_ssl->ctx);
    if (cert != NULL)
      {
@@ -103,7 +124,7 @@
    msg (D_HANDSHAKE, "%s%s", s1, s2);
 --- a/src/openvpn/crypto_polarssl.c
 +++ b/src/openvpn/crypto_polarssl.c
-@@ -466,7 +466,12 @@ int cipher_ctx_mode (const cipher_contex
+@@ -487,7 +487,12 @@ cipher_ctx_get_cipher_kt (const cipher_c
  
  int cipher_ctx_reset (cipher_context_t *ctx, uint8_t *iv_buf)
  {
@@ -218,7 +239,7 @@
  	{
 --- a/configure.ac
 +++ b/configure.ac
-@@ -809,13 +809,13 @@ if test "${with_crypto_library}" = "pola
+@@ -819,13 +819,13 @@ if test "${with_crypto_library}" = "pola
  #include <polarssl/version.h>
  			]],
  			[[
