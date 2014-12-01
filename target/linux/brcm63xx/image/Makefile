@@ -220,9 +220,6 @@ define Image/Build
 	# TP-Link 8900GB
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,TD8900GB,$(shell printf 'PRID\x89\x10\x00\x02'))
 
-	# Sagem F@ST2704V2
-	$(call Image/Build/CFE,$(1),F@ST2704V2,6328,F@ST2704V2-cfe)
-	$(call Image/Build/CFE,$(1),F@ST2704V2,6328,F@ST2704V2,OpenWRT-$(REVISION))
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 
@@ -324,6 +321,8 @@ $(eval $(call ImageDTB,CFEDTB,A226M,a226m-fwb,DWV-S0,6358,A226M-FWB,--block-size
 $(eval $(call ImageDTB,CFEDTB,FAST2404,fast2404,F@ST2404,6348,F@ST2404))
 # Sagem F@ST2604
 $(eval $(call ImageDTB,CFEDTB,FAST2604,fast2604,F@ST2604,6348,F@ST2604))
+# Sagem F@ST2704V2
+$(eval $(call ImageDTB,CFEDTB,FAST2704V2,fast2704v2,F@ST2704V2,6328,F@ST2704V2))
 # T-Com Speedport W 303V Typ B
 $(eval $(call ImageDTB,SPW303VCFEDTB,SPW303V,spw303v,96358-502V,6358,SPW303V,--pad 4))
 # T-Com Speedport W 500V

@@ -143,3 +143,11 @@ Signed-off-by: Marcin Jurkowski <marcin1j@gmail.com>
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
+@@ -3576,6 +3693,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },
+ 	{ .compatible = "comtrend,ar-5381u", .data = &board_AR5381u, },
+ 	{ .compatible = "comtrend,ar-5387un", .data = &board_AR5387un, },
++	{ .compatible = "sagem,f@st2704v2", .data = &board_FAST2704V2, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6338
+ 	{ .compatible = "brcm,bcm96338gw", .data = &board_96338gw, },
