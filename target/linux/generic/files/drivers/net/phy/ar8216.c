@@ -74,6 +74,7 @@ struct ar8xxx_mib_desc {
 struct ar8xxx_chip {
 	unsigned long caps;
 	bool config_at_probe;
+	bool mii_lo_first;
 
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
@@ -152,7 +153,6 @@ struct ar8xxx_priv {
 	char buf[2048];
 
 	bool init;
-	bool mii_lo_first;
 
 	struct mutex mib_lock;
 	struct delayed_work mib_work;
@@ -428,7 +428,7 @@ ar8xxx_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
 
 	bus->write(bus, 0x18, 0, r3);
 	usleep_range(1000, 2000); /* wait for the page switch to propagate */
-	if (priv->mii_lo_first) {
+	if (priv->chip->mii_lo_first) {
 		bus->write(bus, 0x10 | r2, r1, lo);
 		bus->write(bus, 0x10 | r2, r1 + 1, hi);
 	} else {
@@ -464,7 +464,7 @@ ar8xxx_mii_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 	lo = ret & 0xffff;
 	hi = (u16) (ret >> 16);
 
-	if (priv->mii_lo_first) {
+	if (priv->chip->mii_lo_first) {
 		bus->write(bus, 0x10 | r2, r1, lo);
 		bus->write(bus, 0x10 | r2, r1 + 1, hi);
 	} else {
@@ -1829,6 +1829,8 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.config_at_probe = true,
+	.mii_lo_first = true,
+
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
 	.init_globals = ar8327_init_globals,
@@ -2596,11 +2598,9 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 		priv->chip = &ar8316_chip;
 		break;
 	case AR8XXX_VER_AR8327:
-		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
 	case AR8XXX_VER_AR8337:
-		priv->mii_lo_first = true;
 		priv->chip = &ar8327_chip;
 		break;
 	default:
