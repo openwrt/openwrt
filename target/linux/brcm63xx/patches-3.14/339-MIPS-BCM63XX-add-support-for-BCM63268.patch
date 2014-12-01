@@ -284,57 +284,27 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		spi_pdata.msg_type_shift = SPI_6358_MSG_TYPE_SHIFT;
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
-@@ -158,6 +158,7 @@ static void __internal_irq_unmask_##widt
- 
- BUILD_IPIC_INTERNAL(32);
- BUILD_IPIC_INTERNAL(64);
-+BUILD_IPIC_INTERNAL(128);
- 
- asmlinkage void plat_irq_dispatch(void)
- {
-@@ -343,6 +344,7 @@ static int bcm63xx_external_irq_set_type
- 	case BCM6358_CPU_ID:
- 	case BCM6362_CPU_ID:
- 	case BCM6368_CPU_ID:
-+	case BCM63268_CPU_ID:
- 		if (levelsense)
- 			reg |= EXTIRQ_CFG_LEVELSENSE(irq);
- 		else
-@@ -515,6 +517,18 @@ static void bcm63xx_init_irq(void)
- 		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6368;
- 		ext_irq_cfg_reg2 = PERF_EXTIRQ_CFG_REG2_6368;
+@@ -150,6 +150,20 @@ static void bcm63xx_init_irq(void)
+ 		ext_irqs[5] = BCM_6368_EXT_IRQ5;
+ 		ext_shift = 4;
  		break;
 +	case BCM63268_CPU_ID:
-+		irq_stat_addr[0] += PERF_IRQSTAT_63268_REG(0);
-+		irq_mask_addr[0] += PERF_IRQMASK_63268_REG(0);
-+		irq_stat_addr[1] += PERF_IRQSTAT_63268_REG(1);
-+		irq_mask_addr[1] += PERF_IRQMASK_63268_REG(1);
-+		irq_bits = 128;
++		l2_intc_bases[0] += PERF_IRQSTAT_63268_REG(0);
++		l2_intc_bases[1] += PERF_IRQSTAT_63268_REG(1);
++		l2_irq_count = 2;
++		l2_width = 4;
++
++		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_63268;
 +		ext_irq_count = 4;
-+		is_ext_irq_cascaded = 1;
-+		ext_irq_start = BCM_63268_EXT_IRQ0 - IRQ_INTERNAL_BASE;
-+		ext_irq_end = BCM_63268_EXT_IRQ3 - IRQ_INTERNAL_BASE;
-+		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_63268;
++		ext_irqs[0] = BCM_63268_EXT_IRQ0;
++		ext_irqs[1] = BCM_63268_EXT_IRQ1;
++		ext_irqs[2] = BCM_63268_EXT_IRQ2;
++		ext_irqs[3] = BCM_63268_EXT_IRQ3;
++		ext_shift = 4;
 +		break;
  	default:
  		BUG();
  	}
-@@ -523,10 +537,14 @@ static void bcm63xx_init_irq(void)
- 		dispatch_internal = __dispatch_internal_32;
- 		internal_irq_mask = __internal_irq_mask_32;
- 		internal_irq_unmask = __internal_irq_unmask_32;
--	} else {
-+	} else if (irq_bits == 64) {
- 		dispatch_internal = __dispatch_internal_64;
- 		internal_irq_mask = __internal_irq_mask_64;
- 		internal_irq_unmask = __internal_irq_unmask_64;
-+	} else {
-+		dispatch_internal = __dispatch_internal_128;
-+		internal_irq_mask = __internal_irq_mask_128;
-+		internal_irq_unmask = __internal_irq_unmask_128;
- 	}
- }
- 
 --- a/arch/mips/bcm63xx/reset.c
 +++ b/arch/mips/bcm63xx/reset.c
 @@ -125,6 +125,20 @@
@@ -479,7 +449,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  extern const unsigned long *bcm63xx_regs_base;
  
-@@ -1084,6 +1147,73 @@ enum bcm63xx_irq {
+@@ -1086,6 +1149,73 @@ enum bcm63xx_irq {
  #define BCM_6368_EXT_IRQ4		(IRQ_INTERNAL_BASE + 24)
  #define BCM_6368_EXT_IRQ5		(IRQ_INTERNAL_BASE + 25)
  
@@ -650,9 +620,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #define PERF_EXTIRQ_CFG_REG_6368	0x18
 +#define PERF_EXTIRQ_CFG_REG_63268	0x18
  
+ #define PERF_EXTIRQ_CFG_REG2_6358	0x1c
  #define PERF_EXTIRQ_CFG_REG2_6368	0x1c
- 
-@@ -273,6 +324,7 @@
+@@ -274,6 +325,7 @@
  #define PERF_SOFTRESET_6358_REG		0x34
  #define PERF_SOFTRESET_6362_REG		0x10
  #define PERF_SOFTRESET_6368_REG		0x10
@@ -660,7 +630,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  #define SOFTRESET_3368_SPI_MASK		(1 << 0)
  #define SOFTRESET_3368_ENET_MASK	(1 << 2)
-@@ -366,6 +418,26 @@
+@@ -367,6 +419,26 @@
  #define SOFTRESET_6368_USBH_MASK	(1 << 12)
  #define SOFTRESET_6368_PCM_MASK		(1 << 13)
  
@@ -687,7 +657,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /* MIPS PLL control register */
  #define PERF_MIPSPLLCTL_REG		0x34
  #define MIPSPLLCTL_N1_SHIFT		20
-@@ -1379,6 +1451,13 @@
+@@ -1380,6 +1452,13 @@
  #define STRAPBUS_6362_BOOT_SEL_SERIAL	(1 << 15)
  #define STRAPBUS_6362_BOOT_SEL_NAND	(0 << 15)
  

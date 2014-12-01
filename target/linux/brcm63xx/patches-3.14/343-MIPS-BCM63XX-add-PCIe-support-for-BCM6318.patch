@@ -79,7 +79,7 @@ Subject: [PATCH 53/53] MIPS: BCM63XX: add PCIe support for BCM6318
  #define BCM_PCIE_MEM_END_PA_6328	(BCM_PCIE_MEM_BASE_PA_6328 +	\
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -1542,6 +1542,17 @@
+@@ -1543,6 +1543,17 @@
   * _REG relative to RSET_PCIE
   *************************************************************************/
  
@@ -97,7 +97,7 @@ Subject: [PATCH 53/53] MIPS: BCM63XX: add PCIe support for BCM6318
  #define PCIE_CONFIG2_REG		0x408
  #define CONFIG2_BAR1_SIZE_EN		1
  #define CONFIG2_BAR1_SIZE_MASK		0xf
-@@ -1587,7 +1598,54 @@
+@@ -1588,7 +1599,54 @@
  #define PCIE_RC_INT_C			(1 << 2)
  #define PCIE_RC_INT_D			(1 << 3)
  

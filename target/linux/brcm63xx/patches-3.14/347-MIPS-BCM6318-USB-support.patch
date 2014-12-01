@@ -58,7 +58,7 @@
  	spin_unlock_irqrestore(&usb_priv_reg_lock, flags);
 --- a/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h
-@@ -680,6 +680,12 @@
+@@ -681,6 +681,12 @@
  #define GPIO_MODE_6368_SPI_SSN4		(1 << 30)
  #define GPIO_MODE_6368_SPI_SSN5		(1 << 31)
  
@@ -71,7 +71,7 @@
  
  #define GPIO_PINMUX_OTHR_REG		0x24
  #define GPIO_PINMUX_OTHR_6328_USB_SHIFT 12
-@@ -998,6 +1004,7 @@
+@@ -999,6 +1005,7 @@
  
  #define USBH_PRIV_SWAP_6358_REG		0x0
  #define USBH_PRIV_SWAP_6368_REG		0x1c
@@ -79,7 +79,7 @@
  
  #define USBH_PRIV_SWAP_USBD_SHIFT	6
  #define USBH_PRIV_SWAP_USBD_MASK	(1 << USBH_PRIV_SWAP_USBD_SHIFT)
-@@ -1023,6 +1030,13 @@
+@@ -1024,6 +1031,13 @@
  #define USBH_PRIV_SETUP_IOC_SHIFT	4
  #define USBH_PRIV_SETUP_IOC_MASK	(1 << USBH_PRIV_SETUP_IOC_SHIFT)
  
