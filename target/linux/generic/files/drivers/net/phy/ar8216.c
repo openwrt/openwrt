@@ -86,6 +86,7 @@ struct ar8xxx_chip {
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
+	unsigned mib_func;
 };
 
 enum ar8327_led_pattern {
@@ -532,15 +533,10 @@ ar8xxx_reg_wait(struct ar8xxx_priv *priv, u32 reg, u32 mask, u32 val,
 static int
 ar8xxx_mib_op(struct ar8xxx_priv *priv, u32 op)
 {
-	unsigned mib_func;
+	unsigned mib_func = priv->chip->mib_func;
 	int ret;
 
 	lockdep_assert_held(&priv->mib_lock);
-
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
-		mib_func = AR8327_REG_MIB_FUNC;
-	else
-		mib_func = AR8216_REG_MIB_FUNC;
 
 	/* Capture the hardware statistics for all ports */
 	ar8xxx_rmw(priv, mib_func, AR8216_MIB_FUNC, (op << AR8216_MIB_FUNC_S));
@@ -898,6 +894,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8216_mibs),
 	.mib_decs = ar8216_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
 };
 
 static void
@@ -964,6 +961,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
 };
 
 static int
@@ -1047,6 +1045,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
 };
 
 static u32
@@ -1836,6 +1835,7 @@ static const struct ar8xxx_chip ar8327_chip = {
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
 	.mib_decs = ar8236_mibs,
+	.mib_func = AR8327_REG_MIB_FUNC
 };
 
 static int
