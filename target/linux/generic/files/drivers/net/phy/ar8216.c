@@ -70,6 +70,7 @@ struct ar8xxx_mib_desc {
 
 struct ar8xxx_chip {
 	unsigned long caps;
+	bool config_at_probe;
 
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
@@ -1821,6 +1822,7 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.config_at_probe = true,
 	.hw_init = ar8327_hw_init,
 	.cleanup = ar8327_cleanup,
 	.init_globals = ar8327_init_globals,
@@ -2797,7 +2799,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	if (WARN_ON(!priv))
 		return -ENODEV;
 
-	if (chip_is_ar8327(priv) || chip_is_ar8337(priv))
+	if (priv->chip->config_at_probe)
 		return ar8xxx_phy_check_aneg(phydev);
 
 	priv->phy = phydev;
@@ -2973,7 +2975,7 @@ found:
 			phydev->advertising = ADVERTISED_100baseT_Full;
 		}
 
-		if (chip_is_ar8327(priv) || chip_is_ar8337(priv)) {
+		if (priv->chip->config_at_probe) {
 			priv->phy = phydev;
 
 			ret = ar8xxx_start(priv);
