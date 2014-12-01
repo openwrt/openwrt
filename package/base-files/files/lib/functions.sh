@@ -173,7 +173,6 @@ default_prerm() {
 default_postinst() {
 	local name rusers
 	name=$(echo $(basename $1) | cut -d. -f1)
-	[ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg ] && ( . ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg )
 	rusers=$(grep "Require-User:" ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.control)
 	[ -n "$rusers" ] && {
 		local user group uid gid
@@ -212,6 +211,10 @@ default_postinst() {
 			done
 		done
 	}
+
+	[ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg ] && ( . ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.postinst-pkg )
+	[ -n "${IPKG_INSTROOT}" ] || rm -f /tmp/luci-indexcache 2>/dev/null
+
 	[ "$PKG_UPGRADE" = "1" ] || for i in `cat ${IPKG_INSTROOT}/usr/lib/opkg/info/${name}.list | grep "^/etc/init.d/"`; do
 		[ -n "${IPKG_INSTROOT}" ] && $(which bash) ${IPKG_INSTROOT}/etc/rc.common ${IPKG_INSTROOT}$i enable; \
 		[ -n "${IPKG_INSTROOT}" ] || {
@@ -219,7 +222,6 @@ default_postinst() {
 			$i start
 		}
 	done
-	[ -n "${IPKG_INSTROOT}" ] || rm -f /tmp/luci-indexcache 2>/dev/null
 	return 0
 }
 
