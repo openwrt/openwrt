@@ -276,8 +276,9 @@ mtd_erase(const char *mtd)
 static int
 mtd_dump(const char *mtd, int size)
 {
-	int ret = 0;
+	int ret = 0, offset = 0;
 	int fd;
+	char *buf;
 
 	if (quiet < 2)
 		fprintf(stderr, "Dumping %s ...\n", mtd);
@@ -288,9 +289,15 @@ mtd_dump(const char *mtd, int size)
 		return -1;
 	}
 
+	if (!size)
+		size = mtdsize;
+
+	buf = malloc(erasesize);
+	if (!buf)
+		return -1;
+
 	do {
-		char buf[256];
-		int len = (size > sizeof(buf)) ? (sizeof(buf)) : (size);
+		int len = (size > erasesize) ? (erasesize) : (size);
 		int rlen = read(fd, buf, len);
 
 		if (rlen < 0) {
@@ -299,9 +306,15 @@ mtd_dump(const char *mtd, int size)
 			ret = -1;
 			goto out;
 		}
-		if (!rlen)
+		if (!rlen || rlen != len)
 			break;
-		write(1, buf, rlen);
+		if (mtd_block_is_bad(fd, offset)) {
+			fprintf(stderr, "skipping bad block at 0x%08x\n", offset);
+		} else {
+			size -= rlen;
+			write(1, buf, rlen);
+		}
+		offset += rlen;
 	} while (size > 0);
 
 out:
