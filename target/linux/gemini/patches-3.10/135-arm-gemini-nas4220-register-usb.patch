@@ -1,9 +1,9 @@
 --- a/arch/arm/mach-gemini/board-nas4220b.c
 +++ b/arch/arm/mach-gemini/board-nas4220b.c
-@@ -96,6 +96,8 @@ static void __init ib4220b_init(void)
- 	platform_device_register(&ib4220b_key_device);
- 	platform_register_rtc();
+@@ -146,6 +146,8 @@ static void __init ib4220b_init(void)
  	platform_register_watchdog();
+ 	platform_device_register(&ib4220b_phy_device);
+ 	platform_register_ethernet(&ib4220b_gmac_data);
 +	platform_register_usb(0);
 +	platform_register_usb(1);
  }
