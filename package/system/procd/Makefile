@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2014-11-19
+PKG_VERSION:=2014-12-02
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/procd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=02e1a4eac725aaae10c119ec2ec20d0da4a2c958
+PKG_SOURCE_VERSION:=e1a27d486c2374f46abd264f3fd6561815155ebd
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -32,7 +32,7 @@ TARGET_LDFLAGS += $(if $(CONFIG_USE_EGLIBC),-lrt)
 define Package/procd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_EGLIBC:librt +libubox +libubus +NAND_SUPPORT:procd-nand
+  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_EGLIBC:librt +libubox +libubus +NAND_SUPPORT:procd-nand +PROCD_ZRAM_TMPFS:kmod-zram +PROCD_ZRAM_TMPFS:e2fsprogs
   TITLE:=OpenWrt system process manager
 endef
 
@@ -51,13 +51,22 @@ config PROCD_SHOW_BOOT
 	bool
 	default n
 	prompt "Print the shutdown to the console as well as logging it to syslog"
+
+config PROCD_ZRAM_TMPFS
+	bool
+	default n
+	prompt "Mount /tmp using zram."
 endmenu
 endef
 
-PKG_CONFIG_DEPENDS:= PROCD_SHOW_BOOT
+PKG_CONFIG_DEPENDS:= PROCD_SHOW_BOOT PROCD_ZRAM_TMPFS
 
-ifeq ($(CONFIG_PACKAGE_PROCD_SHOW_BOOT),y)
-  CMAKE_OPTIONS += -DSHOW_BOOT_ON_CONSOLE
+ifeq ($(CONFIG_PROCD_SHOW_BOOT),y)
+  CMAKE_OPTIONS += -DSHOW_BOOT_ON_CONSOLE=1
+endif
+
+ifeq ($(CONFIG_PROCD_ZRAM_TMPFS),y)
+  CMAKE_OPTIONS += -DZRAM_TMPFS=1
 endif
 
 define Package/procd/install
