@@ -123,10 +123,11 @@
 			label = "kd20:blue:usb";
 			gpios = <&GPIOB 8 0>;
 		};
-		buzzer {
-			label = "kd20:buzzer";
-			gpios = <&GPIOB 11 0>;
-		};
+	};
+
+	beeper: beeper {
+		compatible = "gpio-beeper";
+		gpios = <&GPIOB 11 0>;
 	};
 
 	gpio-fan {
