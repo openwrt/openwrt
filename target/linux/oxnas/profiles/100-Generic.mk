@@ -40,7 +40,8 @@ endef
 define Profile/KD20
   NAME:=Shuttle KD20
   PACKAGES:= \
-	uboot-envtools kmod-usb2-oxnas kmod-usb3 kmod-rtc-pcf8563 kmod-gpio-beeper
+	uboot-envtools kmod-usb2-oxnas kmod-usb3 kmod-usb-storage \
+	kmod-rtc-pcf8563 kmod-gpio-beeper
 endef
 
 define Profile/KD20/Description
