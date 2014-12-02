@@ -24,9 +24,9 @@ Index: opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/pkg.c
  	    pkg->dest ? pkg->dest->root_dir : conf->default_dest->root_dir, 1);
  
 +	if (pkg->is_upgrade)
-+		setenv("PKG_UPGRADE", "1", 0);
++		setenv("PKG_UPGRADE", "1", 1);
 +	else
-+		setenv("PKG_UPGRADE", "0", 0);
++		setenv("PKG_UPGRADE", "0", 1);
 +
 +
       if (! file_exists(path)) {
