@@ -950,3 +950,22 @@ define KernelPackage/thermal-kirkwood/description
 endef
 
 $(eval $(call KernelPackage,thermal-kirkwood))
+
+
+define KernelPackage/gpio-beeper
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=GPIO beeper support
+  KCONFIG:= \
+	CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_GPIO_BEEPER
+  FILES:= \
+	$(LINUX_DIR)/drivers/input/misc/gpio-beeper.ko
+  AUTOLOAD:=$(call AutoLoad,50,gpio-beeper)
+  $(call AddDepends/input)
+endef
+
+define KernelPackage/gpio-beeper/description
+ This enables playing beeps through an GPIO-connected buzzer
+endef
+
+$(eval $(call KernelPackage,gpio-beeper))
