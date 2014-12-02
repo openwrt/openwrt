@@ -4,6 +4,8 @@
 /* High Level Configuration Options */
 #define CONFIG_ARM1136
 #define CONFIG_OX820
+#define CONFIG_SYS_GENERIC_BOARD
+#define CONFIG_BOARD_EARLY_INIT_F
 
 #include <asm/arch/cpu.h>	/* get chip and board defs */
 
@@ -50,7 +52,7 @@
 #define CONFIG_SYS_ATA_REG_OFFSET	0
 #define CONFIG_SYS_ATA_ALT_OFFSET	0
 #define CONFIG_IDE_PLX
-#define CONFIG_SYS_IDE_MAXDEVICE	1
+#define CONFIG_SYS_IDE_MAXDEVICE	2
 #define CONFIG_SYS_IDE_MAXBUS		1
 #define CONFIG_IDE_PREINIT
 #define CONFIG_LBA48
@@ -340,7 +342,6 @@
 #define CONFIG_CMD_ZIP
 #define CONFIG_CMD_UNZIP
 #define CONFIG_CMD_TIME
-#define CONFIG_CMD_TERMINAL
 #define CONFIG_CMD_SETEXPR
 #define CONFIG_CMD_MD5SUM
 #define CONFIG_CMD_HASH
