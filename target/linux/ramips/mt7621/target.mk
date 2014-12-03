@@ -4,12 +4,11 @@
 
 SUBTARGET:=mt7621
 BOARDNAME:=MT7621 based boards
-ARCH_PACKAGES:=ramips_24kec
+ARCH_PACKAGES:=ramips_1004kc
 FEATURES+=usb
-CPU_TYPE:=24kec
+CPU_TYPE:=1004kc
 CPU_SUBTYPE:=dsp
-
-DEFAULT_PACKAGES += kmod-rt2800-pci
+CFLAGS:=-pipe -mmt -mips32r2 -mtune=1004kc
 
 define Target/Description
 	Build firmware images for Ralink MT7621 based boards.
