@@ -11,7 +11,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
-@@ -1209,6 +1209,36 @@ static struct mtd_info * __init open_mtd
+@@ -1209,6 +1209,47 @@
  	return mtd;
  }
  
@@ -29,6 +29,17 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +		mtd = open_mtd_device("data");
 +
 +	if (!IS_ERR(mtd)) {
++		size_t len;
++		char magic[6];
++
++		/* check for a tar file magic */
++		err = mtd_read(mtd, 261, 6, &len, (void *) magic);
++		if (!err && len == 6 && !strncmp(magic, "ustar", 5)) {
++			ubi_err("cannot attach mtd%d as there is a valid tar magic", mtd->index);
++			put_mtd_device(mtd);
++			return;
++		}
++
 +		/* auto-add only media types where UBI makes sense */
 +		if (mtd->type == MTD_NANDFLASH ||
 +		    mtd->type == MTD_DATAFLASH ||
@@ -48,7 +59,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int __init ubi_init(void)
  {
  	int err, i, k;
-@@ -1298,6 +1328,12 @@ static int __init ubi_init(void)
+@@ -1298,6 +1339,12 @@
  		}
  	}
  
