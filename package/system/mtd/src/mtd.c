@@ -274,7 +274,7 @@ mtd_erase(const char *mtd)
 }
 
 static int
-mtd_dump(const char *mtd, int size)
+mtd_dump(const char *mtd, int part_offset, int size)
 {
 	int ret = 0, offset = 0;
 	int fd;
@@ -291,6 +291,9 @@ mtd_dump(const char *mtd, int size)
 
 	if (!size)
 		size = mtdsize;
+
+	if (part_offset)
+		lseek(fd, part_offset, SEEK_SET);
 
 	buf = malloc(erasesize);
 	if (!buf)
@@ -769,10 +772,6 @@ int main (int argc, char **argv)
 				}
 				break;
 			case 'o':
-				if (!mtd_fixtrx) {
-					fprintf(stderr, "-o: is not available on this platform\n");
-					usage();
-				}
 				errno = 0;
 				offset = strtoul(optarg, 0, 0);
 				if (errno) {
@@ -872,7 +871,7 @@ int main (int argc, char **argv)
 			mtd_verify(device, imagefile);
 			break;
 		case CMD_DUMP:
-			mtd_dump(device, dump_len);
+			mtd_dump(device, offset, dump_len);
 			break;
 		case CMD_ERASE:
 			if (!unlocked)
