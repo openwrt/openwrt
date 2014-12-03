@@ -24,7 +24,7 @@ Add it back, so we can use it.
  obj-$(CONFIG_PHY_MICREL) += micrel.o
 --- /dev/null
 +++ b/drivers/net/phy/icplus.c
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,93 @@
 +/*
 + * ICPlus PHY drivers
 + *
@@ -43,6 +43,15 @@ Add it back, so we can use it.
 +#define IP101A_G_IRQ_CONF_STATUS        0x11    /* Conf Info IRQ & Status Reg */
 +#define IP101A_G_IRQ_PIN_USED           (1<<15) /* INTR pin used */
 +#define IP101A_G_IRQ_DEFAULT            IP101A_G_IRQ_PIN_USED
++#define IP1001LF_DRIVE_MASK     (15 << 5)
++#define IP1001LF_RXCLKDRIVE_HI  (2  << 5)
++#define IP1001LF_RXDDRIVE_HI    (2  << 7)
++#define IP1001LF_RXCLKDRIVE_M   (1  << 5)
++#define IP1001LF_RXDDRIVE_M     (1  << 7)
++#define IP1001LF_RXCLKDRIVE_L   (0  << 5)
++#define IP1001LF_RXDDRIVE_L     (0  << 7)
++#define IP1001LF_RXCLKDRIVE_VL  (3  << 5)
++#define IP1001LF_RXDDRIVE_VL    (3  << 7)
 +
 +static int ip1001_config(struct phy_device *phydev)
 +{
@@ -73,6 +82,10 @@ Add it back, so we can use it.
 +			return c;
 +
 +		c |= IP1001_PHASE_SEL_MASK;
++		/* adjust digtial drive strength */
++		c &= ~IP1001LF_DRIVE_MASK;
++		c |=  IP1001LF_RXCLKDRIVE_M;
++		c |=  IP1001LF_RXDDRIVE_M;
 +		c = phy_write(phydev, MDIO_DEVAD_NONE, IP10XX_SPEC_CTRL_STATUS,
 +			      c);
 +		if (c < 0)
