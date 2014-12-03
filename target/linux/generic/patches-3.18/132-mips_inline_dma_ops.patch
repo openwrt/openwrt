@@ -423,6 +423,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static inline int
+@@ -54,7 +391,7 @@ dma_set_mask(struct device *dev, u64 mas
+ 	if(!dev->dma_mask || !dma_supported(dev, mask))
+ 		return -EIO;
+ 
+-	if (ops->set_dma_mask)
++	if (ops && ops->set_dma_mask)
+ 		return ops->set_dma_mask(dev, mask);
+ 
+ 	*dev->dma_mask = mask;
 @@ -74,7 +411,11 @@ static inline void *dma_alloc_attrs(stru
  	void *ret;
  	struct dma_map_ops *ops = get_dma_ops(dev);
