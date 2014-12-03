@@ -43,6 +43,13 @@ define Package/procd-nand
   TITLE:=OpenWrt sysupgrade nand helper
 endef
 
+define Package/procd-nand-firstboot
+  SECTION:=utils
+  CATEGORY:=Utilities
+  DEPENDS:=procd-nand
+  TITLE:=OpenWrt firstboot nand helper
+endef
+
 define Package/procd/config
 menu "Configuration"
 	depends on PACKAGE_procd
@@ -85,5 +92,12 @@ define Package/procd-nand/install
 	$(INSTALL_DATA) ./files/nand.sh $(1)/lib/upgrade/
 endef
 
+define Package/procd-nand-firstboot/install
+	$(INSTALL_DIR) $(1)/lib/preinit
+
+	$(INSTALL_DATA) ./files/nand-preinit.sh $(1)/lib/preinit/60-nand-firstboot.sh
+endef
+
 $(eval $(call BuildPackage,procd))
 $(eval $(call BuildPackage,procd-nand))
+$(eval $(call BuildPackage,procd-nand-firstboot))
