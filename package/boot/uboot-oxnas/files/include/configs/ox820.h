@@ -76,6 +76,7 @@
 #define CONFIG_CMD_MII
 #define CONFIG_PHYLIB
 #define CONFIG_PHY_REALTEK
+#define CONFIG_PHY_ICPLUS
 
 /* spl */
 #ifdef CONFIG_SPL_BUILD
