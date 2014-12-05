@@ -25,11 +25,14 @@ platform_get_rootfs() {
 
 platform_copy_config() {
 	local board="$(octeon_board_name)"
-	local rootfs="$(platform_get_rootfs)"
 
-	mount -t ext4 -o rw,noatime "${rootfs}" /mnt
-	cp -af "$CONF_TAR" /mnt/
-	umount /mnt
+	case "$board" in
+	erlite)
+		mount -t vfat /dev/sda1 /mnt
+		cp -af "$CONF_TAR" /mnt/
+		umount /mnt
+		;;
+	esac
 }
 
 platform_do_upgrade() {
