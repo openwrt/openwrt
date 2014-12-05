@@ -15,7 +15,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/pci/probe.c
 +++ b/drivers/pci/probe.c
-@@ -2093,7 +2093,10 @@ struct pci_bus *pci_scan_root_bus(struct
+@@ -2097,7 +2097,10 @@ struct pci_bus *pci_scan_root_bus(struct
  	if (!found)
  		pci_bus_update_busn_res_end(b, max);
  
