@@ -1,0 +1,87 @@
+From 983e3532c2de15df70aaf80b8906be2d0734dc37 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Fri, 5 Dec 2014 12:16:12 +0100
+Subject: [PATCH] ARM: BCM5301X: Switch DT files to "gpio-keys-polled"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We don't support GPIO interrupts yet, so use this as a workaround.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  | 2 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts        | 2 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts     | 2 +-
+ arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts        | 2 +-
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+index 5fc0fae..583720e 100644
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -24,7 +24,7 @@
+ 	};
+ 
+ 	gpio-keys {
+-		compatible = "gpio-keys";
++		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		poll-interval = <200>;
+diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+index 05e80b1..70a1093 100644
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -68,7 +68,7 @@
+ 	};
+ 
+ 	gpio-keys {
+-		compatible = "gpio-keys";
++		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		poll-interval = <200>;
+diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+index 12fc2a0..ac299a2 100644
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+@@ -58,7 +58,7 @@
+ 	};
+ 
+ 	gpio-keys {
+-		compatible = "gpio-keys";
++		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		poll-interval = <200>;
+diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+index fb76378..934b244 100644
+--- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+@@ -58,7 +58,7 @@
+ 	};
+ 
+ 	gpio-keys {
+-		compatible = "gpio-keys";
++		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		poll-interval = <200>;
+diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+index bbb414f..d2aefef 100644
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -24,7 +24,7 @@
+ 	};
+ 
+ 	gpio-keys {
+-		compatible = "gpio-keys";
++		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 		poll-interval = <200>;
+-- 
+1.8.4.5
+

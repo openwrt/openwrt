@@ -1,16 +1,17 @@
-From 788069f86c7fc1ce54661651e695943fb47a5188 Mon Sep 17 00:00:00 2001
+From 302a5ef29d497449280422576a1b55c72fc0ba4c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Thu, 2 Oct 2014 21:02:33 +0200
+Date: Thu, 4 Dec 2014 10:22:02 +0100
 Subject: [PATCH] ARM: BCM5301X: Add DT for Netgear R6300 V2
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- arch/arm/boot/dts/Makefile                     |  4 ++-
- arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts | 35 ++++++++++++++++++++++++++
- 2 files changed, 38 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/Makefile                     |  4 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts | 84 ++++++++++++++++++++++++++
+ 2 files changed, 87 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 
 --- a/arch/arm/boot/dts/Makefile
@@ -28,12 +29,12 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	berlin2cd-google-chromecast.dtb
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
-@@ -0,0 +1,94 @@
+@@ -0,0 +1,84 @@
 +/*
-+ * Broadcom BCM470X / BCM5301X arm platform code.
++ * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Netgear R6300 V2
 + *
-+ * Copyright © 2014 Rafał Miłecki <zajec5@gmail.com>
++ * Copyright (C) 2014 Rafał Miłecki <zajec5@gmail.com>
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
@@ -47,21 +48,11 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	model = "Netgear R6300 V2 (BCM4708)";
 +
 +	chosen {
-+		bootargs = "console=ttyS0,115200 earlyprintk";
++		bootargs = "console=ttyS0,115200";
 +	};
 +
 +	memory {
 +		reg = <0x00000000 0x08000000>;
-+	};
-+
-+	chipcommonA {
-+		uart0: serial@0300 {
-+			status = "okay";
-+		};
-+
-+		uart1: serial@0400 {
-+			status = "okay";
-+		};
 +	};
 +
 +	leds {
@@ -99,7 +90,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	};
 +
 +	gpio-keys {
-+		compatible = "gpio-keys-polled";
++		compatible = "gpio-keys";
 +		#address-cells = <1>;
 +		#size-cells = <0>;
 +		poll-interval = <200>;

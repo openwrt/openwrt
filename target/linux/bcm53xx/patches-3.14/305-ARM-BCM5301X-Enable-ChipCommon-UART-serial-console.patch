@@ -1,0 +1,103 @@
+From 6c223da976a9225ba9fae8d6f891a8fffaae6092 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Fri, 5 Dec 2014 17:38:40 +0100
+Subject: [PATCH] ARM: BCM5301X: Enable ChipCommon UART (serial console)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  | 10 ++++++++++
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts     | 10 ++++++++++
+ arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts        | 10 ++++++++++
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 10 ++++++++++
+ 4 files changed, 40 insertions(+)
+
+diff --git a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+index 583720e..d472c36 100644
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -23,6 +23,16 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
++	chipcommonA {
++		uart0: serial@0300 {
++			status = "okay";
++		};
++
++		uart1: serial@0400 {
++			status = "okay";
++		};
++	};
++
+ 	gpio-keys {
+ 		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+index ac299a2..257d6da 100644
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+@@ -23,6 +23,16 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
++	chipcommonA {
++		uart0: serial@0300 {
++			status = "okay";
++		};
++
++		uart1: serial@0400 {
++			status = "okay";
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+index 934b244..cad0e85 100644
+--- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+@@ -23,6 +23,16 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
++	chipcommonA {
++		uart0: serial@0300 {
++			status = "okay";
++		};
++
++		uart1: serial@0400 {
++			status = "okay";
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+index d2aefef..f3a0326 100644
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -23,6 +23,16 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
++	chipcommonA {
++		uart0: serial@0300 {
++			status = "okay";
++		};
++
++		uart1: serial@0400 {
++			status = "okay";
++		};
++	};
++
+ 	gpio-keys {
+ 		compatible = "gpio-keys-polled";
+ 		#address-cells = <1>;
+-- 
+1.8.4.5
+
