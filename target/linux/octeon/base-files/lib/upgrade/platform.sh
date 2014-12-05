@@ -36,7 +36,7 @@ platform_do_upgrade() {
 	local board=$(octeon_board_name)
 	local rootfs="$(platform_get_rootfs)"
 
-	[ -d "${rootfs}" ] || return 1
+	[ -b "${rootfs}" ] || return 1
 
 	case "$board" in
 	erlite)
