@@ -15,7 +15,7 @@ CPU_TYPE:=mpcore
 
 MAINTAINER:=Daniel Golle <daniel@makrotopia.org>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=3.14
 
 include $(INCLUDE_DIR)/target.mk
 
