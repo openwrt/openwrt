@@ -1,0 +1,28 @@
+Index: linux-3.14.18/drivers/mtd/nand/Kconfig
+===================================================================
+--- linux-3.14.18.orig/drivers/mtd/nand/Kconfig
++++ linux-3.14.18/drivers/mtd/nand/Kconfig
+@@ -510,4 +510,12 @@ config MTD_NAND_XWAY
+ 	  Enables support for NAND Flash chips on Lantiq XWAY SoCs. NAND is attached
+ 	  to the External Bus Unit (EBU).
+ 
++config MTD_NAND_OXNAS
++	tristate "Support for NAND on Plxtech NAS782X SoC"
++	depends on ARCH_OXNAS
++	select MTD_NAND_PLATFORM
++	help
++	  Enables support for NAND Flash chips on Plxtech NAS782X SoCs. NAND is attached
++	  to the STATIC Unit.
++
+ endif # MTD_NAND
+Index: linux-3.14.18/drivers/mtd/nand/Makefile
+===================================================================
+--- linux-3.14.18.orig/drivers/mtd/nand/Makefile
++++ linux-3.14.18/drivers/mtd/nand/Makefile
+@@ -49,5 +49,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740
+ obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
+ obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o
+ obj-$(CONFIG_MTD_NAND_BCM47XXNFLASH)	+= bcm47xxnflash/
++obj-$(CONFIG_MTD_NAND_OXNAS)		+= oxnas_nand.o
+ 
+ nand-objs := nand_base.o nand_bbt.o
