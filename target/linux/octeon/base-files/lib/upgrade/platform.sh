@@ -23,6 +23,15 @@ platform_get_rootfs() {
 	fi
 }
 
+platform_copy_config() {
+	local board="$(octeon_board_name)"
+	local rootfs="$(platform_get_rootfs)"
+
+	mount -t ext4 -o rw,noatime "${rootfs}" /mnt
+	cp -af "$CONF_TAR" /mnt/
+	umount /mnt
+}
+
 platform_do_upgrade() {
 	local board=$(octeon_board_name)
 	local rootfs="$(platform_get_rootfs)"
