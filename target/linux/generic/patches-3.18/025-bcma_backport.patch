@@ -1,22 +1,3 @@
-From 487b997353e2e3afe9c452b20ff5e4320d76e9c3 Mon Sep 17 00:00:00 2001
-From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Thu, 2 Oct 2014 12:28:54 +0200
-Subject: [PATCH][RFC] bcma: fill core details for every device
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
-
-We were setting things like dma_dev, IRQ, etc. during core registration
-only. We need such info for cores handled internally (e.g. ChipCommon)
-as well.
-
-Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
----
- drivers/bcma/bcma_private.h | 1 +
- drivers/bcma/main.c         | 9 ++++++---
- drivers/bcma/scan.c         | 1 +
- 3 files changed, 8 insertions(+), 3 deletions(-)
-
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
 @@ -24,6 +24,7 @@ struct bcma_bus;
