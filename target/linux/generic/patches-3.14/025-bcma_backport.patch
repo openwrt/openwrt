@@ -248,14 +248,23 @@
  	/* Register */
  	err = bcma_bus_register(bus);
  	if (err)
-@@ -279,7 +282,10 @@ static const struct pci_device_id bcma_p
+@@ -272,14 +275,18 @@ static SIMPLE_DEV_PM_OPS(bcma_pm_ops, bc
+ static const struct pci_device_id bcma_pci_bridge_tbl[] = {
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x0576) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4313) },
+-	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43224) },
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43224) },	/* 0xa8d8 */
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4331) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4353) },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4357) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4358) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4359) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4365) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43a9) },
 +	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x43aa) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
-+	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },	/* 0xA8DB */
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },	/* 0xa8db, BCM43217 (sic!) */
++	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43228) },	/* 0xa8dc */
  	{ 0, },
  };
  MODULE_DEVICE_TABLE(pci, bcma_pci_bridge_tbl);
@@ -269,7 +278,7 @@
  
  MODULE_DESCRIPTION("Broadcom's specific AMBA driver");
  MODULE_LICENSE("GPL");
-@@ -120,56 +121,121 @@ static void bcma_release_core_dev(struct
+@@ -120,56 +121,124 @@ static void bcma_release_core_dev(struct
  	kfree(core);
  }
  
@@ -285,7 +294,7 @@
 +	return false;
 +}
 +
-+#ifdef CONFIG_OF
++#if defined(CONFIG_OF) && defined(CONFIG_OF_ADDRESS)
 +static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
 +						     struct bcma_device *core)
 +{
@@ -322,10 +331,8 @@
 +}
 +#endif /* CONFIG_OF */
 +
-+static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
++void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core)
 +{
-+	int err;
-+
 +	core->dev.release = bcma_release_core_dev;
 +	core->dev.bus = &bcma_bus_type;
 +	dev_set_name(&core->dev, "bcma%d:%d", bus->num, core->core_index);
@@ -349,6 +356,11 @@
 +	case BCMA_HOSTTYPE_SDIO:
 +		break;
 +	}
++}
++
++static void bcma_register_core(struct bcma_bus *bus, struct bcma_device *core)
++{
++	int err;
 +
 +	err = device_register(&core->dev);
 +	if (err) {
@@ -421,7 +433,7 @@
  	}
  
  #ifdef CONFIG_BCMA_DRIVER_MIPS
-@@ -246,6 +312,12 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -246,6 +315,12 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_early_init(&bus->drv_cc);
  	}
  
@@ -434,7 +446,7 @@
  	/* Try to get SPROM */
  	err = bcma_sprom_get(bus);
  	if (err == -ENOENT) {
-@@ -260,6 +332,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -260,6 +335,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_chipcommon_init(&bus->drv_cc);
  	}
  
@@ -448,7 +460,7 @@
  	/* Init MIPS core */
  	core = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
  	if (core) {
-@@ -281,6 +360,13 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -281,6 +363,13 @@ int bcma_bus_register(struct bcma_bus *b
  		bcma_core_pci_init(&bus->drv_pci[1]);
  	}
  
@@ -462,7 +474,7 @@
  	/* Init GBIT MAC COMMON core */
  	core = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
  	if (core) {
-@@ -289,7 +375,7 @@ int bcma_bus_register(struct bcma_bus *b
+@@ -289,7 +378,7 @@ int bcma_bus_register(struct bcma_bus *b
  	}
  
  	/* Register found cores */
@@ -471,7 +483,7 @@
  
  	bcma_info(bus, "Bus registered\n");
  
-@@ -307,6 +393,8 @@ void bcma_bus_unregister(struct bcma_bus
+@@ -307,6 +396,8 @@ void bcma_bus_unregister(struct bcma_bus
  	else if (err)
  		bcma_err(bus, "Can not unregister GPIO driver: %i\n", err);
  
@@ -480,7 +492,7 @@
  	cores[0] = bcma_find_core(bus, BCMA_CORE_MIPS_74K);
  	cores[1] = bcma_find_core(bus, BCMA_CORE_PCIE);
  	cores[2] = bcma_find_core(bus, BCMA_CORE_4706_MAC_GBIT_COMMON);
-@@ -326,8 +414,6 @@ int __init bcma_bus_early_register(struc
+@@ -326,8 +417,6 @@ int __init bcma_bus_early_register(struc
  	struct bcma_device *core;
  	struct bcma_device_id match;
  
@@ -489,7 +501,7 @@
  	match.manuf = BCMA_MANUF_BCM;
  	match.id = bcma_cc_core_id(bus);
  	match.class = BCMA_CL_SIM;
-@@ -486,6 +572,11 @@ static int __init bcma_modinit(void)
+@@ -486,6 +575,11 @@ static int __init bcma_modinit(void)
  	if (err)
  		return err;
  
@@ -501,7 +513,7 @@
  #ifdef CONFIG_BCMA_HOST_PCI
  	err = bcma_host_pci_init();
  	if (err) {
-@@ -503,6 +594,7 @@ static void __exit bcma_modexit(void)
+@@ -503,6 +597,7 @@ static void __exit bcma_modexit(void)
  #ifdef CONFIG_BCMA_HOST_PCI
  	bcma_host_pci_exit();
  #endif
@@ -939,6 +951,14 @@
  	erombase = bcma_scan_read32(bus, 0, BCMA_CC_EROM);
  	if (bus->hosttype == BCMA_HOSTTYPE_SOC) {
  		eromptr = ioremap_nocache(erombase, BCMA_CORE_SIZE);
+@@ -503,6 +505,7 @@ int bcma_bus_scan(struct bcma_bus *bus)
+ 		bus->nr_cores++;
+ 		other_core = bcma_find_core_reverse(bus, core->id.id);
+ 		core->core_unit = (other_core == NULL) ? 0 : other_core->core_unit + 1;
++		bcma_prepare_core(bus, core);
+ 
+ 		bcma_info(bus, "Core %d found: %s (manuf 0x%03X, id 0x%03X, rev 0x%02X, class 0x%X)\n",
+ 			  core->core_index, bcma_device_name(&core->id),
 --- a/drivers/bcma/host_soc.c
 +++ b/drivers/bcma/host_soc.c
 @@ -7,6 +7,9 @@
@@ -1195,7 +1215,15 @@
  		ohci_addr = 0x18009000;
 --- a/drivers/bcma/bcma_private.h
 +++ b/drivers/bcma/bcma_private.h
-@@ -50,6 +50,10 @@ void bcma_chipco_serial_init(struct bcma
+@@ -24,6 +24,7 @@ struct bcma_bus;
+ /* main.c */
+ bool bcma_wait_value(struct bcma_device *core, u16 reg, u32 mask, u32 value,
+ 		     int timeout);
++void bcma_prepare_core(struct bcma_bus *bus, struct bcma_device *core);
+ int bcma_bus_register(struct bcma_bus *bus);
+ void bcma_bus_unregister(struct bcma_bus *bus);
+ int __init bcma_bus_early_register(struct bcma_bus *bus,
+@@ -50,6 +51,10 @@ void bcma_chipco_serial_init(struct bcma
  extern struct platform_device bcma_pflash_dev;
  #endif /* CONFIG_BCMA_DRIVER_MIPS */
  
@@ -1206,7 +1234,7 @@
  /* driver_chipcommon_pmu.c */
  u32 bcma_pmu_get_alp_clock(struct bcma_drv_cc *cc);
  u32 bcma_pmu_get_cpu_clock(struct bcma_drv_cc *cc);
-@@ -84,6 +88,20 @@ extern int __init bcma_host_pci_init(voi
+@@ -84,6 +89,20 @@ extern int __init bcma_host_pci_init(voi
  extern void __exit bcma_host_pci_exit(void);
  #endif /* CONFIG_BCMA_HOST_PCI */
  
