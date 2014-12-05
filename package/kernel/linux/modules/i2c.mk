@@ -32,7 +32,6 @@ endif
 
 define KernelPackage/i2c-core
   $(call i2c_defaults,$(I2C_CORE_MODULES),51)
-  AUTOLOAD:=
   TITLE:=I2C support
 endef
 
