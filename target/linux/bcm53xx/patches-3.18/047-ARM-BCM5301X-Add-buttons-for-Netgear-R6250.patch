@@ -1,20 +1,20 @@
-From e1b44fc2e3cf76be1213bde07fc37c47eff39158 Mon Sep 17 00:00:00 2001
+From f6f8234439737171e571a41264280e844a429699 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Thu, 2 Oct 2014 13:49:13 +0200
-Subject: [PATCH] ARM: BCM5301X: Add buttons support for Netgear R6250
+Date: Sun, 30 Nov 2014 18:28:29 +0100
+Subject: [PATCH] ARM: BCM5301X: Add buttons for Netgear R6250
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-We use "gpio-keys-polled" for now, as ChipCommon/GPIO interrupts are
-not implemented yet.
-
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  arch/arm/boot/dts/bcm4708-netgear-r6250.dts | 25 +++++++++++++++++++++++++
  arch/arm/boot/dts/bcm5301x.dtsi             |  1 +
  2 files changed, 26 insertions(+)
 
+diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+index 58d999d..4ed7de1 100644
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 @@ -66,4 +66,29 @@
@@ -23,7 +23,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
 +
 +	gpio-keys {
-+		compatible = "gpio-keys-polled";
++		compatible = "gpio-keys";
 +		#address-cells = <1>;
 +		#size-cells = <0>;
 +		poll-interval = <200>;
@@ -47,6 +47,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +		};
 +	};
  };
+diff --git a/arch/arm/boot/dts/bcm5301x.dtsi b/arch/arm/boot/dts/bcm5301x.dtsi
+index b7c4e9e..78aec62 100644
 --- a/arch/arm/boot/dts/bcm5301x.dtsi
 +++ b/arch/arm/boot/dts/bcm5301x.dtsi
 @@ -9,6 +9,7 @@
@@ -57,3 +59,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  #include <dt-bindings/interrupt-controller/irq.h>
  #include <dt-bindings/interrupt-controller/arm-gic.h>
  #include "skeleton.dtsi"
+-- 
+1.8.4.5
+
