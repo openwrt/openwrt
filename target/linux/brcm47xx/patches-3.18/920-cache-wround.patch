@@ -86,7 +86,7 @@
  	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
  #endif
  
-@@ -1894,6 +1900,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -1902,6 +1908,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
  	build_restore_work_registers(p);
