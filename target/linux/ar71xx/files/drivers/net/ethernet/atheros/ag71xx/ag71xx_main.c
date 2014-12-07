@@ -470,18 +470,18 @@ static void ag71xx_hw_init(struct ag71xx *ag)
 		reset_mask &= ~(AR71XX_RESET_GE0_PHY | AR71XX_RESET_GE1_PHY);
 
 		ath79_device_reset_set(reset_phy);
-		mdelay(50);
+		msleep(50);
 		ath79_device_reset_clear(reset_phy);
-		mdelay(200);
+		msleep(200);
 	}
 
 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_SR);
 	udelay(20);
 
 	ath79_device_reset_set(reset_mask);
-	mdelay(100);
+	msleep(100);
 	ath79_device_reset_clear(reset_mask);
-	mdelay(200);
+	msleep(200);
 
 	ag71xx_hw_setup(ag);
 
