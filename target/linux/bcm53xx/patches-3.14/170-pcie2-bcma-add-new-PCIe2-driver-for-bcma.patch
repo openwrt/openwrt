@@ -17,7 +17,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
-@@ -46,6 +46,7 @@ config ARCH_BCM_5301X
+@@ -45,6 +45,7 @@ config ARCH_BCM_5301X
  	select ARM_GLOBAL_TIMER
  	select CLKSRC_ARM_GLOBAL_TIMER_SCHED_CLOCK
  	select MIGHT_HAVE_PCI
@@ -120,7 +120,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct pci_sys_data *sys = pdev->sysdata;
 +	struct bcma_device *bdev = sys->private_data;
 +
-+	return bdev->irq;
++	return bcma_core_irq(bdev, 5);
 +}
 +
 +static u32 bcma_pcie2_cfg_base(struct bcma_device *bdev, int busno,
