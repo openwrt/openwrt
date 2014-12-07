@@ -22,10 +22,9 @@
  nand-objs := nand_base.o nand_bbt.o
 --- /dev/null
 +++ b/drivers/mtd/nand/bcm_nand.c
-@@ -0,0 +1,1590 @@
+@@ -0,0 +1,1580 @@
 +/*
 + * Nortstar NAND controller driver
-+ * for Linux NAND library and MTD interface
 + *
 + * (c) Broadcom, Inc. 2012 All Rights Reserved.
 + * Copyright 2014 Hauke Mehrtens <hauke@hauke-m.de>
@@ -67,9 +66,6 @@
 +#include <linux/mtd/nand.h>
 +
 +#define NANDC_MAX_CHIPS		2	/* Only 2 CSn supported in NorthStar */
-+
-+#define DRV_NAME	"bcmnand"
-+#define DRV_DESC	"Northstar on-chip NAND Flash Controller driver"
 +
 +/*
 + * Driver private control structure
@@ -421,6 +417,7 @@
 +static int bcmnand_hw_ecc_layout(struct bcmnand_ctrl *ctrl)
 +{
 +	struct nand_ecclayout *layout;
++	struct device *dev = &ctrl->core->dev;
 +	unsigned int i, j, k;
 +	unsigned int ecc_per_sec, oob_per_sec;
 +	unsigned int bbm_pos = ctrl->nand.badblockpos;
@@ -453,8 +450,8 @@
 +	/* Return an error if calculated ECC leaves no room for OOB */
 +	if ((ctrl->sec_per_page_shift != 0 && ecc_per_sec >= oob_per_sec) ||
 +	    (ctrl->sec_per_page_shift == 0 && ecc_per_sec >= (oob_per_sec - 1))) {
-+		pr_err("%s: ECC level %d too high, leaves no room for OOB data\n",
-+		       DRV_NAME, ctrl->ecc_level);
++		dev_err(dev, "ECC level %d too high, leaves no room for OOB data\n",
++			ctrl->ecc_level);
 +		return -EINVAL;
 +	}
 +
@@ -486,8 +483,8 @@
 +
 +		/* Check that HW ECC does not overlap bad-block marker */
 +		if (bbm_pos == layout->eccpos[i]) {
-+			pr_err("%s: ECC level %d too high, HW ECC collides with bad-block marker position\n",
-+			       DRV_NAME, ctrl->ecc_level);
++			dev_err(dev, "ECC level %d too high, HW ECC collides with bad-block marker position\n",
++				ctrl->ecc_level);
 +			return -EINVAL;
 +		}
 +	}
@@ -530,18 +527,17 @@
 +	ctrl->nand.ecc.layout = layout;
 +
 +	/* Output layout for debugging */
-+	pr_debug("%s: Spare area=%d eccbytes %d, ecc bytes located at:\n",
-+		 DRV_NAME, ctrl->mtd.oobsize, layout->eccbytes);
++	dev_dbg(dev, "Spare area=%d eccbytes %d, ecc bytes located at:\n",
++		ctrl->mtd.oobsize, layout->eccbytes);
 +	for (i = j = 0;
 +	     i < ARRAY_SIZE(layout->eccpos) && i < layout->eccbytes; i++)
 +		pr_debug(" %d", layout->eccpos[i]);
++	pr_debug("\n");
 +
-+	pr_debug("\n%s: Available %d bytes at (off,len):\n", DRV_NAME,
-+		 layout->oobavail);
++	dev_dbg(dev, "Available %d bytes at (off,len):\n", layout->oobavail);
 +	for (i = 0; i < ARRAY_SIZE(layout->oobfree); i++)
 +		pr_debug("(%d,%d) ", layout->oobfree[i].offset,
 +			 layout->oobfree[i].length);
-+
 +	pr_debug("\n");
 +
 +	return 0;
@@ -811,8 +807,7 @@
 +		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 1);
 +
 +		memcpy(chip->oob_poi + sector * spare_per_sec,
-+			ctrl_spare,
-+			spare_per_sec);
++		       ctrl_spare, spare_per_sec);
 +
 +		/* Return to Big Endian mode for commands etc */
 +		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
@@ -861,9 +856,8 @@
 +		/* Set controller to Little Endian mode for copying */
 +		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 1);
 +
-+		memcpy(ctrl_spare,
-+			chip->oob_poi + sector * spare_per_sec,
-+			spare_per_sec);
++		memcpy(ctrl_spare, chip->oob_poi + sector * spare_per_sec,
++		       spare_per_sec);
 +
 +		/* Return to Big Endian mode for commands etc */
 +		bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
@@ -1149,6 +1143,7 @@
 +{
 +	struct nand_chip *nand = mtd->priv;
 +	struct bcmnand_ctrl *ctrl = nand->priv;
++	struct device *dev = &ctrl->core->dev;
 +	uint8_t b = ~0;
 +
 +	switch (ctrl->last_cmd) {
@@ -1167,8 +1162,8 @@
 +		b = bcmnand_reg_read(ctrl, NANDC_INT_STAT_FLASH_STATUS);
 +		break;
 +	default:
-+		pr_err("%s: got unkown command: 0x%x in %s\n", DRV_NAME,
-+		       ctrl->last_cmd, __func__);
++		dev_err(dev, "got unkown command: 0x%x in read_byte\n",
++			ctrl->last_cmd);
 +	}
 +	return b;
 +}
@@ -1212,6 +1207,7 @@
 +{
 +	struct nand_chip *nand = mtd->priv;
 +	struct bcmnand_ctrl *ctrl = nand->priv;
++	struct device *dev = &ctrl->core->dev;
 +	u64 nand_addr;
 +	unsigned int to = 1;
 +
@@ -1291,8 +1287,8 @@
 +		return;
 +
 +	default:
-+		pr_err("%s: got unkown command: 0x%x in %s\n", DRV_NAME,
-+		       ctrl->last_cmd, __func__);
++		dev_err(dev, "got unkown command: 0x%x in cmdfunc\n",
++			ctrl->last_cmd);
 +	}
 +
 +	/* Wait for command to complete */
@@ -1304,6 +1300,7 @@
 +{
 +	struct nand_chip *nand = mtd->priv;
 +	struct bcmnand_ctrl *ctrl = nand->priv;
++	struct device *dev = &ctrl->core->dev;
 +	bool sector_1k = false;
 +	unsigned int chip_num = 0;
 +	int ecc_level = 0;
@@ -1340,14 +1337,14 @@
 +	if (WARN_ON(ctrl->ecc_level == 0))
 +		return -ENOENT;
 +
-+	if ((ctrl->sector_size_shift  > 9) != (sector_1k == 1)) {
-+		pr_info("%s: sector size adjusted to 1k\n", DRV_NAME);
++	if ((ctrl->sector_size_shift > 9) != (sector_1k == 1)) {
++		dev_info(dev, "sector size adjusted to 1k\n");
 +		sector_1k = 1;
 +	}
 +
 +	if (ecc_level != ctrl->ecc_level) {
-+		pr_info("%s: ECC level adjusted from %u to %u\n",
-+			DRV_NAME, ecc_level, ctrl->ecc_level);
++		dev_info(dev, "ECC level adjusted from %u to %u\n",
++			 ecc_level, ctrl->ecc_level);
 +		ecc_level = ctrl->ecc_level;
 +	}
 +
@@ -1384,8 +1381,7 @@
 +	if (!(nand->options & NAND_ROM))
 +		bcmnand_reg_write(ctrl, NANDC_CS_NAND_WP, 0);
 +
-+	pr_debug("%s: layout.oobavail=%d\n", DRV_NAME,
-+		 nand->ecc.layout->oobavail);
++	dev_dbg(dev, "layout.oobavail=%d\n", nand->ecc.layout->oobavail);
 +
 +	ret = nand_scan_tail(mtd);
 +
@@ -1395,9 +1391,9 @@
 +		return -EIO;
 +
 +	/* Spit out some key chip parameters as detected by nand_base */
-+	pr_debug("%s: erasesize=%d writesize=%d oobsize=%d page_shift=%d badblockpos=%d badblockbits=%d\n",
-+		 DRV_NAME, mtd->erasesize, mtd->writesize, mtd->oobsize,
-+		 nand->page_shift, nand->badblockpos, nand->badblockbits);
++	dev_dbg(dev, "erasesize=%d writesize=%d oobsize=%d page_shift=%d badblockpos=%d badblockbits=%d\n",
++		mtd->erasesize, mtd->writesize, mtd->oobsize,
++		nand->page_shift, nand->badblockpos, nand->badblockbits);
 +
 +	return ret;
 +}
@@ -1410,7 +1406,7 @@
 +	unsigned int chip;
 +	struct nand_chip *nand;
 +	struct mtd_info *mtd;
-+	unsigned int n = 0;
++	struct device *dev = &ctrl->core->dev;
 +	int ret;
 +
 +	/* Software variables init */
@@ -1421,14 +1417,14 @@
 +
 +	mtd->priv = nand;
 +	mtd->owner = THIS_MODULE;
-+	mtd->name = DRV_NAME;
++	mtd->name = KBUILD_MODNAME;
 +
 +	nand->priv = ctrl;
 +
 +	nand->chip_delay = 5;	/* not used */
 +	nand->IO_ADDR_R = nand->IO_ADDR_W = (void *)~0L;
 +
-+	if (bcmnand_reg_read(ctrl, NANDC_CONFIG_CHIP_WIDTH(n)))
++	if (bcmnand_reg_read(ctrl, NANDC_CONFIG_CHIP_WIDTH(0)))
 +		nand->options |= NAND_BUSWIDTH_16;
 +	nand->options |= NAND_SKIP_BBTSCAN;	/* Dont need BBTs */
 +
@@ -1456,38 +1452,39 @@
 +
 +	/* Print out current chip config */
 +	for (chip = 0; chip < NANDC_MAX_CHIPS; chip++) {
-+		pr_debug("%s: chip[%d]: size=%#x block=%#x page=%#x ecc_level=%#x\n",
-+			 DRV_NAME, chip,
-+			 bcmnand_reg_read(ctrl, NANDC_CONFIG_CHIP_SIZE(chip)),
-+			 bcmnand_reg_read(ctrl, NANDC_CONFIG_BLK_SIZE(chip)),
-+			 bcmnand_reg_read(ctrl, NANDC_CONFIG_PAGE_SIZE(chip)),
-+			 bcmnand_reg_read(ctrl, NANDC_ACC_CTRL_ECC_LEVEL(chip)));
++		dev_dbg(dev, "chip[%d]: size=%#x block=%#x page=%#x ecc_level=%#x\n",
++			chip,
++			bcmnand_reg_read(ctrl, NANDC_CONFIG_CHIP_SIZE(chip)),
++			bcmnand_reg_read(ctrl, NANDC_CONFIG_BLK_SIZE(chip)),
++			bcmnand_reg_read(ctrl, NANDC_CONFIG_PAGE_SIZE(chip)),
++			bcmnand_reg_read(ctrl, NANDC_ACC_CTRL_ECC_LEVEL(chip)));
 +	}
 +
-+	pr_debug("%s: Nand controller is reads=%d\n", DRV_NAME,
++	dev_dbg(dev, "Nand controller is reads=%d\n",
 +		bcmnand_reg_aread(ctrl, NANDC_IDM_IO_CTRL_RDY));
 +
 +	ret = bcmnand_scan(mtd);
 +	if (ret) {
-+		pr_err("%s: scanning the nand flash chip failed with %i\n",
-+		       DRV_NAME, ret);
++		dev_err(dev, "scanning the nand flash chip failed with %i\n",
++			ret);
 +		return ret;
 +	}
 +
 +	return 0;
 +}
 +
-+static int __init bcmnand_idm_init(struct bcmnand_ctrl *ctrl)
++static int bcmnand_idm_init(struct bcmnand_ctrl *ctrl)
 +{
 +	int irq_off;
 +	unsigned int retries = 0x1000;
++	struct device *dev = &ctrl->core->dev;
 +
 +	if (bcmnand_reg_aread(ctrl, NANDC_IDM_RESET))
-+		pr_err("%s: stuck in reset\n", DRV_NAME);
++		dev_info(dev, "stuck in reset\n");
 +
 +	bcmnand_reg_awrite(ctrl, NANDC_IDM_RESET, 1);
 +	if (!bcmnand_reg_aread(ctrl, NANDC_IDM_RESET)) {
-+		pr_err("%s: reset of failed\n", DRV_NAME);
++		dev_err(dev, "reset of failed\n");
 +		return -EIO;
 +	}
 +
@@ -1496,8 +1493,7 @@
 +		cpu_relax();
 +		usleep_range(100, 150);
 +		if (!(retries--)) {
-+			pr_err("%s: did not came back from reset\n",
-+			       DRV_NAME);
++			dev_err(dev, "did not came back from reset\n");
 +			return -ETIMEDOUT;
 +		}
 +	}
@@ -1506,7 +1502,7 @@
 +	bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
 +	udelay(10);
 +
-+	pr_info("%s: NAND Controller rev %d.%d\n", DRV_NAME,
++	dev_info(dev, "NAND Controller rev %d.%d\n",
 +		bcmnand_reg_read(ctrl, NANDC_REV_MAJOR),
 +		bcmnand_reg_read(ctrl, NANDC_REV_MINOR));
 +
@@ -1543,14 +1539,14 @@
 +	for (i = 0; i < NANDC_IRQ_NUM; i++) {
 +		irq = bcma_core_irq(core, i);
 +		if (!irq) {
-+			pr_err("%s: IRQ no available irq: %i (idx: %i)\n",
-+			       DRV_NAME, irq, i);
-+			return res;
++			dev_err(dev, "IRQ idx %i not available\n", i);
++			return -ENOENT;
 +		}
-+		res = devm_request_irq(dev, irq, bcmnand_isr, 0, DRV_NAME, ctrl);
++		res = devm_request_irq(dev, irq, bcmnand_isr, 0,
++				       KBUILD_MODNAME, ctrl);
 +		if (res < 0) {
-+			pr_err("%s: problem requesting irq: %i (idx: %i)\n",
-+			       DRV_NAME, irq, i);
++			dev_err(dev, "problem requesting irq: %i (idx: %i)\n",
++				irq, i);
 +			return res;
 +		}
 +	}
@@ -1565,7 +1561,7 @@
 +
 +	res = mtd_device_parse_register(&ctrl->mtd, part_probes, NULL, NULL, 0);
 +	if (res) {
-+		pr_err("%s: Failed to register MTD device: %d\n", DRV_NAME, res);
++		dev_err(dev, "Failed to register MTD device: %d\n", res);
 +		return res;
 +	}
 +	return 0;
@@ -1593,14 +1589,7 @@
 +
 +static int __init bcmnand_init(void)
 +{
-+	int err;
-+
-+	err = bcma_driver_register(&bcmnand_bcma_driver);
-+	if (err)
-+		return err;
-+	pr_info("%s: Broadcom NAND Controller driver loaded\n", DRV_NAME);
-+
-+	return 0;
++	return bcma_driver_register(&bcmnand_bcma_driver);
 +}
 +
 +static void __exit bcmnand_exit(void)
@@ -1612,4 +1601,5 @@
 +module_exit(bcmnand_exit)
 +
 +MODULE_LICENSE("GPL");
-+MODULE_DESCRIPTION(DRV_DESC);
++MODULE_AUTHOR("Hauke Mehrtens");
++MODULE_DESCRIPTION("Northstar on-chip NAND Flash Controller driver");
