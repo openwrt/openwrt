@@ -58,8 +58,8 @@
 #define HWID_PORAY_X5_X6	0x35353335
 #define HWID_PORAY_X8		0x36353335
 #define HWID_PORAY_X1		0x38353335
-#define HWID_NEXX_WT15XXX	0x30353332
-#define HWID_NEXX_WT3020A	0x30323033
+#define HWID_NEXX_WT1520	0x30353332
+#define HWID_NEXX_WT3020	0x30323033
 #define HWID_A5_V11		0x32473352
 
 /* Recognized XOR obfuscation keys */
@@ -212,16 +212,30 @@ static struct board_info boards[] = {
 		.layout_id	= "8M",
 		.key		= KEY_PORAY_1,
 	}, {
-		.id		= "WT15XXX",
-		.hw_id		= HWID_NEXX_WT15XXX,
+		.id		= "WT1520",
+		.hw_id		= HWID_NEXX_WT1520,
 		.layout_id	= "4M",
 		.key		= KEY_NEXX_1,
 	}, {
-		.id		= "WT3020A",
-		.hw_id		= HWID_NEXX_WT3020A,
-		.layout_id	= "4M",
-		.key		= KEY_NEXX_2,
-	}, {
+		.id		= "WT1520",
+		.hw_id		= HWID_NEXX_WT1520,
+		.layout_id	= "8M",
+		.key		= KEY_NEXX_1,
+        }, {
+                .id             = "WT3020",
+                .hw_id          = HWID_NEXX_WT3020,
+                .layout_id      = "4M",
+                .key            = KEY_NEXX_2,
+        }, {
+                .id             = "WT3020",
+                .hw_id          = HWID_NEXX_WT3020,
+                .layout_id      = "8M",
+                .key            = KEY_NEXX_2,
+        }, {
+
+
+
+
 		/* terminating entry */
 	}
 };
