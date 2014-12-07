@@ -12,7 +12,7 @@ BOARDNAME:=Infineon WildPass ADM8668
 FEATURES:=squashfs usb pci
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-KERNEL_PATCHVER:=3.3
+KERNEL_PATCHVER:=3.14
 
 include $(INCLUDE_DIR)/target.mk
 
