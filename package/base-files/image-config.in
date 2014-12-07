@@ -18,11 +18,11 @@ config TARGET_PREINIT_SUPPRESS_STDERR
 	default y
 	help
 		Sends stderr to null during preinit.  This is the default behaviour
-		in previous versions of OpenWRT.  This also prevents init process
+		in previous versions of OpenWrt.  This also prevents init process
 		itself from displaying stderr, however processes launched by init
 		in multiuser through inittab will use the current terminal (e.g.
 		the ash shell launched by inittab will display stderr).  That's
-		the same behaviour as seen in previous version of OpenWRT.
+		the same behaviour as seen in previous version of OpenWrt.
 
 config TARGET_PREINIT_TIMEOUT
 	int
@@ -128,7 +128,7 @@ menuconfig INITOPT
 		help
 			Prevents showing stderr messages for init command if not already
 			suppressed during preinit.  This is the default behaviour in
-			previous versions of OpenWRT.  Removing this does nothing if
+			previous versions of OpenWrt.  Removing this does nothing if
 			stderr is suppressed during preinit (which is the default).
 
 

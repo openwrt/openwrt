@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-# OpenWRT download directory cleanup utility.
+# OpenWrt download directory cleanup utility.
 # Delete all but the very last version of the program tarballs.
 #
 # Copyright (C) 2010 Michael Buesch <mb@bu3sch.de>
@@ -146,7 +146,7 @@ class Entry:
 		return self.version >= y.version
 
 def usage():
-	print "OpenWRT download directory cleanup utility"
+	print "OpenWrt download directory cleanup utility"
 	print "Usage: " + sys.argv[0] + " [OPTIONS] <path/to/dl>"
 	print ""
 	print " -d|--dry-run            Do a dry-run. Don't delete any files"
