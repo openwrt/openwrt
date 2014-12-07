@@ -596,12 +596,7 @@ Image/Build/Profile/WNCE2001=$(call BuildFirmware/WNCE2001/$(1),$(1),wnce2001,WN
 
 Image/Build/Profile/WR512-3GN=$(call BuildFirmware/DefaultDualSize/$(1),$(1),wr512-3ng,WR512-3GN)
 
-define BuildFirmware/WT1520/initramfs
-	$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
-endef
-BuildFirmware/WT1520/squashfs=$(call BuildFirmware/Default4M/squashfs,$(1),$(2),$(3),$(4))
-
-Image/Build/Profile/WT1520=$(call BuildFirmware/WT1520/$(1),$(1),wt1520,WT1520,WT1520)
+Image/Build/Profile/WT1520=$(call BuildFirmware/PorayDualSize/$(1),$(1),wt1520,WT1520)
 
 Image/Build/Profile/UR-326N4G=$(call BuildFirmware/Default4M/$(1),$(1),ur-326n4g,UR-326N4G)
 
@@ -793,7 +788,7 @@ Image/Build/Profile/WMR300=$(call BuildFirmware/Default8M/$(1),$(1),wmr-300,WMR3
 Image/Build/Profile/RT-N14U=$(call BuildFirmware/Default8M/$(1),$(1),rt-n14u,RT-N14U)
 Image/Build/Profile/WR8305RT=$(call BuildFirmware/Default8M/$(1),$(1),wr8305rt,WR8305RT)
 Image/Build/Profile/WRTNODE=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode,WRTNODE)
-Image/Build/Profile/WT3020=$(call BuildFirmware/DefaultDualSize/$(1),$(1),wt3020,WT3020)
+Image/Build/Profile/WT3020=$(call BuildFirmware/PorayDualSize/$(1),$(1),wt3020,WT3020)
 Image/Build/Profile/ZBT-WA05=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wa05,ZBT-WA05)
 
 
