@@ -241,7 +241,7 @@ void usage()
 			"1) ASUS WL-500g Deluxe stock config (eth0 is WAN, eth0.1 is LAN):\n"
 			"robocfg switch disable vlans enable reset vlan 0 ports \"0 5u\" vlan 1 ports \"1 2 3 4 5t\""
 			" port 0 state enabled stp none switch enable\n"
-			"2) WRT54g, WL-500g Deluxe OpenWRT config (vlan0 is LAN, vlan1 is WAN):\n"
+			"2) WRT54g, WL-500g Deluxe OpenWrt config (vlan0 is LAN, vlan1 is WAN):\n"
 			"robocfg switch disable vlans enable reset vlan 0 ports \"1 2 3 4 5t\" vlan 1 ports \"0 5t\""
 			" port 0 state enabled stp none switch enable\n",
 			rxtx[0], rxtx[1], rxtx[2], rxtx[3], stp[0], stp[1], stp[2], stp[3], stp[4], stp[5],
