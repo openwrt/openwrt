@@ -88,6 +88,7 @@ define Image/Build
  
 	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp,nand-0x20000-0x800)
 	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-600dhp2,nand-0x20000-0x800)
+	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-900dhp,nand-0x20000-0x800)
 endef
 
 define Image/Build/Initramfs
