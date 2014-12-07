@@ -1113,10 +1113,10 @@ void __init ath79_register_eth(unsigned int id)
 
 	/* Reset the device */
 	ath79_device_reset_set(pdata->reset_bit);
-	mdelay(100);
+	msleep(100);
 
 	ath79_device_reset_clear(pdata->reset_bit);
-	mdelay(100);
+	msleep(100);
 
 	platform_device_register(pdev);
 	ath79_eth_instance++;
