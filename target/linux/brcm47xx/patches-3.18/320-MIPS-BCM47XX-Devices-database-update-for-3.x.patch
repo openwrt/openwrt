@@ -12,11 +12,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h | 1 +
  2 files changed, 2 insertions(+)
 
-diff --git a/arch/mips/bcm47xx/board.c b/arch/mips/bcm47xx/board.c
-index e2cc84a..47294a8 100644
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
-@@ -165,6 +165,7 @@ static const
+@@ -165,9 +165,11 @@ static const
  struct bcm47xx_board_type_list1 bcm47xx_board_list_board_id[] __initconst = {
  	{{BCM47XX_BOARD_NETGEAR_WGR614V8, "Netgear WGR614 V8"}, "U12H072T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WGR614V9, "Netgear WGR614 V9"}, "U12H094T00_NETGEAR"},
@@ -24,11 +22,13 @@ index e2cc84a..47294a8 100644
  	{{BCM47XX_BOARD_NETGEAR_WNDR3300, "Netgear WNDR3300"}, "U12H093T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR3400V1, "Netgear WNDR3400 V1"}, "U12H155T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR3400V2, "Netgear WNDR3400 V2"}, "U12H187T00_NETGEAR"},
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-index 1f5643b..4211dd9 100644
++	{{BCM47XX_BOARD_NETGEAR_WNDR3400_V3, "Netgear WNDR3400 V3"}, "U12H208T00_NETGEAR"},
+ 	{{BCM47XX_BOARD_NETGEAR_WNDR3400VCNA, "Netgear WNDR3400 Vcna"}, "U12H155T01_NETGEAR"},
+ 	{{BCM47XX_BOARD_NETGEAR_WNDR3700V3, "Netgear WNDR3700 V3"}, "U12H194T00_NETGEAR"},
+ 	{{BCM47XX_BOARD_NETGEAR_WNDR4000, "Netgear WNDR4000"}, "U12H181T00_NETGEAR"},
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-@@ -86,6 +86,7 @@ enum bcm47xx_board {
+@@ -86,9 +86,11 @@ enum bcm47xx_board {
  
  	BCM47XX_BOARD_NETGEAR_WGR614V8,
  	BCM47XX_BOARD_NETGEAR_WGR614V9,
@@ -36,6 +36,7 @@ index 1f5643b..4211dd9 100644
  	BCM47XX_BOARD_NETGEAR_WNDR3300,
  	BCM47XX_BOARD_NETGEAR_WNDR3400V1,
  	BCM47XX_BOARD_NETGEAR_WNDR3400V2,
--- 
-1.8.4.5
-
++	BCM47XX_BOARD_NETGEAR_WNDR3400_V3,
+ 	BCM47XX_BOARD_NETGEAR_WNDR3400VCNA,
+ 	BCM47XX_BOARD_NETGEAR_WNDR3700V3,
+ 	BCM47XX_BOARD_NETGEAR_WNDR4000,
