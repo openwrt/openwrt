@@ -445,7 +445,7 @@ static int __ar7240sw_reg_wait(struct mii_bus *mii, u32 reg, u32 mask, u32 val,
 		if ((t & mask) == val)
 			return 0;
 
-		msleep(1);
+		usleep_range(1000, 2000);
 	}
 
 	return -ETIMEDOUT;
@@ -654,7 +654,7 @@ static int ar7240sw_reset(struct ar7240sw *as)
 		ar7240sw_disable_port(as, i);
 
 	/* Wait for transmit queues to drain. */
-	msleep(2);
+	usleep_range(2000, 3000);
 
 	/* Reset the switch. */
 	ar7240sw_reg_write(mii, AR7240_REG_MASK_CTRL,
