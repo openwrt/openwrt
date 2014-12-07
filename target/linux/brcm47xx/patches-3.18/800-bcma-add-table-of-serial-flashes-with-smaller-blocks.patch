@@ -11,8 +11,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/bcma/driver_chipcommon_sflash.c | 29 +++++++++++++++++++++++++++++
  1 file changed, 29 insertions(+)
 
-diff --git a/drivers/bcma/driver_chipcommon_sflash.c b/drivers/bcma/driver_chipcommon_sflash.c
-index 7e11ef4..25d9e17 100644
 --- a/drivers/bcma/driver_chipcommon_sflash.c
 +++ b/drivers/bcma/driver_chipcommon_sflash.c
 @@ -9,6 +9,7 @@
@@ -23,7 +21,7 @@ index 7e11ef4..25d9e17 100644
  
  static struct resource bcma_sflash_resource = {
  	.name	= "bcma_sflash",
-@@ -41,6 +42,13 @@ static const struct bcma_sflash_tbl_e bcma_sflash_st_tbl[] = {
+@@ -41,6 +42,13 @@ static const struct bcma_sflash_tbl_e bc
  	{ NULL },
  };
  
@@ -37,7 +35,7 @@ index 7e11ef4..25d9e17 100644
  static const struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
  	{ "SST25WF512", 1, 0x1000, 16, },
  	{ "SST25VF512", 0x48, 0x1000, 16, },
-@@ -84,6 +92,23 @@ static void bcma_sflash_cmd(struct bcma_drv_cc *cc, u32 opcode)
+@@ -84,6 +92,23 @@ static void bcma_sflash_cmd(struct bcma_
  	bcma_err(cc->core->bus, "SFLASH control command failed (timeout)!\n");
  }
  
@@ -61,7 +59,7 @@ index 7e11ef4..25d9e17 100644
  /* Initialize serial flash access */
  int bcma_sflash_init(struct bcma_drv_cc *cc)
  {
-@@ -114,6 +139,10 @@ int bcma_sflash_init(struct bcma_drv_cc *cc)
+@@ -114,6 +139,10 @@ int bcma_sflash_init(struct bcma_drv_cc
  		case 0x13:
  			return -ENOTSUPP;
  		default:
@@ -72,6 +70,3 @@ index 7e11ef4..25d9e17 100644
  			for (e = bcma_sflash_st_tbl; e->name; e++) {
  				if (e->id == id)
  					break;
--- 
-1.8.4.5
-
