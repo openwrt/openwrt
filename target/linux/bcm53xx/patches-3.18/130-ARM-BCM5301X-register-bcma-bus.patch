@@ -9,7 +9,7 @@ Subject: [PATCH 07/17] ARM: BCM5301X: register bcma bus
 
 --- a/arch/arm/boot/dts/bcm5301x.dtsi
 +++ b/arch/arm/boot/dts/bcm5301x.dtsi
-@@ -95,18 +95,102 @@
+@@ -95,12 +95,23 @@
  		};
  	};
  
@@ -31,84 +31,36 @@ Subject: [PATCH 07/17] ARM: BCM5301X: register bcma bus
  		#size-cells = <1>;
 +		sprom = <&sprom0>;
  
- 		chipcommon: chipcommon@0 {
- 			reg = <0x00000000 0x1000>;
-+			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+ 		#interrupt-cells = <1>;
+ 		interrupt-map-mask = <0x000fffff 0xffff>;
+@@ -108,6 +119,30 @@
+ 			/* ChipCommon */
+ 			<0x00000000 0 &gic GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>,
  
- 			gpio-controller;
- 			#gpio-cells = <2>;
- 		};
++			/* PCIe Controller 0 */
++			<0x00012000 0 &gic GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00012000 1 &gic GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00012000 2 &gic GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00012000 3 &gic GIC_SPI 129 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00012000 4 &gic GIC_SPI 130 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00012000 5 &gic GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>,
 +
-+		pcie@12000 {
-+			reg = <0x00012000 0x1000>;
-+			interrupts = <GIC_SPI 131 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 126 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 127 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 129 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 130 IRQ_TYPE_LEVEL_HIGH>;
-+		};
++			/* PCIe Controller 1 */
++			<0x00013000 0 &gic GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00013000 1 &gic GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00013000 2 &gic GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00013000 3 &gic GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00013000 4 &gic GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00013000 5 &gic GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
 +
-+		pcie@13000 {
-+			reg = <0x00013000 0x1000>;
-+			interrupts = <GIC_SPI 137 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 132 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 133 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 134 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 135 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 136 IRQ_TYPE_LEVEL_HIGH>;
-+		};
++			/* PCIe Controller 2 */
++			<0x00014000 0 &gic GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00014000 1 &gic GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00014000 2 &gic GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00014000 3 &gic GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00014000 4 &gic GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>,
++			<0x00014000 5 &gic GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>,
 +
-+		pcie@14000 {
-+			reg = <0x00014000 0x1000>;
-+			interrupts = <GIC_SPI 143 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 138 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 139 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 140 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 141 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 142 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		usb2@21000 {
-+			reg = <0x00021000 0x1000>;
-+			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		usb3@23000 {
-+			reg = <0x00023000 0x1000>;
-+			interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		ethernet@24000 {
-+			reg = <0x00024000 0x1000>;
-+			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		ethernet@25000 {
-+			reg = <0x00025000 0x1000>;
-+			interrupts = <GIC_SPI 148 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		ethernet@26000 {
-+			reg = <0x00026000 0x1000>;
-+			interrupts = <GIC_SPI 149 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		ethernet@27000 {
-+			reg = <0x00027000 0x1000>;
-+			interrupts = <GIC_SPI 150 IRQ_TYPE_LEVEL_HIGH>;
-+		};
-+
-+		nand@28000 {
-+			reg = <0x00028000 0x1000>;
-+			interrupts = <GIC_SPI 64 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 66 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 67 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 69 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>,
-+				     <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
-+		};
- 	};
- };
+ 			/* USB 2.0 Controller */
+ 			<0x00021000 0 &gic GIC_SPI 79 IRQ_TYPE_LEVEL_HIGH>,
+ 

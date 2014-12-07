@@ -120,7 +120,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	struct pci_sys_data *sys = pdev->sysdata;
 +	struct bcma_device *bdev = sys->private_data;
 +
-+	return bdev->irq;
++	return bcma_core_irq(bdev, 5);
 +}
 +
 +static u32 bcma_pcie2_cfg_base(struct bcma_device *bdev, int busno,

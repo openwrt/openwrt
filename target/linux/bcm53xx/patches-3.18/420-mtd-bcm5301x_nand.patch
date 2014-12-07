@@ -22,7 +22,7 @@
  nand-objs := nand_base.o nand_bbt.o nand_timings.o
 --- /dev/null
 +++ b/drivers/mtd/nand/bcm_nand.c
-@@ -0,0 +1,1591 @@
+@@ -0,0 +1,1590 @@
 +/*
 + * Nortstar NAND controller driver
 + * for Linux NAND library and MTD interface
@@ -1527,14 +1527,8 @@
 +static int bcmnand_probe(struct bcma_device *core)
 +{
 +	struct device *dev = &core->dev;
-+	struct device_node *np = dev->of_node;
 +	struct bcmnand_ctrl *ctrl;
 +	int res, i, irq;
-+
-+	if (!np) {
-+		pr_err("%s: no device tree node found\n", DRV_NAME);
-+		return -ENOENT;
-+	}
 +
 +	ctrl = devm_kzalloc(dev, sizeof(*ctrl), GFP_KERNEL);
 +	if (!ctrl)
@@ -1546,8 +1540,13 @@
 +	ctrl->core = core;
 +
 +	/* Acquire all interrupt lines */
-+	for (i = 0; i < of_irq_count(np); i++) {
-+		irq = irq_of_parse_and_map(np, i);
++	for (i = 0; i < NANDC_IRQ_NUM; i++) {
++		irq = bcma_core_irq(core, i);
++		if (!irq) {
++			pr_err("%s: IRQ no available irq: %i (idx: %i)\n",
++			       DRV_NAME, irq, i);
++			return res;
++		}
 +		res = devm_request_irq(dev, irq, bcmnand_isr, 0, DRV_NAME, ctrl);
 +		if (res < 0) {
 +			pr_err("%s: problem requesting irq: %i (idx: %i)\n",
