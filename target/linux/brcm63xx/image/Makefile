@@ -207,9 +207,6 @@ define Image/Build
 	# Belkin f5d7633
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,F5D7633)
 
-	# TP-Link 8900GB
-	$(call Image/Build/CFE,$(1),96348GW-11,6348,TD8900GB,$(shell printf 'PRID\x89\x10\x00\x02'))
-
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 
@@ -329,6 +326,8 @@ $(eval $(call ImageDTB,CFEDTB,GW6000,gw6000,96348GW,6348,GW6000))
 $(eval $(call ImageDTB,CFEDTB,GW6200,gw6200,96348GW,6348,GW6200,--rsa-signature "$(shell printf '\x99')"))
 # Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 $(eval $(call ImageDTB,CFEDTB,CPVA642,cpva642,CPVA642,6358,CPA-ZNTE60T,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4))
+# TP-Link TD-W8900GB
+$(eval $(call ImageDTB,CFEDTB,TDW8900GB,td-w8900gb,96348GW-11,6348,TD-W8900GB,--rsa-signature "$(shell printf 'PRID\x89\x10\x00\x02')" --image-offset 0x20000))
 # SFR Neufbox 4
 $(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,--rsa-signature "OpenWRT-$(REVISION)"))
 $(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,--rsa-signature "OpenWRT-$(REVISION)"))
