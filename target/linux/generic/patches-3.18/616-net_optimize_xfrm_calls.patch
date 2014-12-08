@@ -4,7 +4,7 @@
  	struct dst_entry *dst;
  	int err;
  
-+	if (!dev_net(skb->dev)->xfrm.policy_count[XFRM_POLICY_OUT])
++	if (skb->dev && !dev_net(skb->dev)->xfrm.policy_count[XFRM_POLICY_OUT])
 +		return 0;
 +
  	err = xfrm_decode_session(skb, &fl, family);
