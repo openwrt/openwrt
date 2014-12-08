@@ -206,8 +206,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,DG834GT_DG834PN)
 	# Belkin f5d7633
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,F5D7633)
-	# D-Link DSL-2640B, rev B2
-	$(call Image/Build/CFE,$(1),D-4P-W,6348,DSL2640B-B2)
 
 	# TP-Link 8900GB
 	$(call Image/Build/CFE,$(1),96348GW-11,6348,TD8900GB,$(shell printf 'PRID\x89\x10\x00\x02'))
@@ -283,6 +281,8 @@ $(eval $(call ImageDTB,CFEDTB,VR3025u,vr-3025u,96368M-1541N,6368,VR-3025u,--pad 
 $(eval $(call ImageDTB,CFEDTB,VR3025un,vr-3025un,96368M-1341N,6368,VR-3025un,--pad 4))
 # Comtrend WAP-5813n
 $(eval $(call ImageDTB,CFEDTB,WAP5813n,wap-5813n,96369R-1231N,6368,WAP-5813n,--pad 4))
+# D-Link DSL-2640B, rev B2
+$(eval $(call ImageDTB,CFEDTB,DSL2640B_B,dsl-2640b-b,D-4P-W,6348,DSL2640B-B2))
 # D-Link DSL-2650U
 $(eval $(call ImageDTB,CFEDTB,DSL2650U,dsl-2650u,96358VW2,6358,DSL2650U))
 # D-Link DSL-2740B/DSL-2741B, rev C2
