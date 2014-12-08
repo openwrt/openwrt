@@ -40,3 +40,28 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	BCM47XX_BOARD_NETGEAR_WNDR3400VCNA,
  	BCM47XX_BOARD_NETGEAR_WNDR3700V3,
  	BCM47XX_BOARD_NETGEAR_WNDR4000,
+--- a/arch/mips/bcm47xx/buttons.c
++++ b/arch/mips/bcm47xx/buttons.c
+@@ -327,6 +327,12 @@ bcm47xx_buttons_netgear_wndr3400v1[] __i
+ };
+ 
+ static const struct gpio_keys_button
++bcm47xx_buttons_netgear_wndr3400_v3[] __initconst = {
++	BCM47XX_GPIO_KEY(12, KEY_RESTART),
++	BCM47XX_GPIO_KEY(23, KEY_WPS_BUTTON),
++};
++
++static const struct gpio_keys_button
+ bcm47xx_buttons_netgear_wndr3700v3[] __initconst = {
+ 	BCM47XX_GPIO_KEY(2, KEY_RFKILL),
+ 	BCM47XX_GPIO_KEY(3, KEY_RESTART),
+@@ -557,6 +563,9 @@ int __init bcm47xx_buttons_register(void
+ 	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3400v1);
+ 		break;
++	case BCM47XX_BOARD_NETGEAR_WNDR3400_V3:
++		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3400_v3);
++		break;
+ 	case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3700v3);
+ 		break;
