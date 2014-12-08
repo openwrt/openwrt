@@ -1,12 +1,19 @@
-Index: opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/opkg_install.c
-===================================================================
---- opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d.orig/libopkg/opkg_install.c	2014-09-07 22:06:37.875956909 +0200
-+++ opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/opkg_install.c	2014-09-07 22:10:30.579952951 +0200
-@@ -1463,10 +1463,11 @@
-                /* removing files from old package, to avoid ghost files */
-                remove_data_files_and_list(old_pkg);
-                remove_maintainer_scripts(old_pkg);
+--- a/libopkg/opkg_install.c
++++ b/libopkg/opkg_install.c
+@@ -1405,9 +1405,10 @@
+ 	  opkg_state_changed++;
+ 	  pkg->state_flag |= SF_FILELIST_CHANGED;
+ 
+-	  if (old_pkg)
++	  if (old_pkg) {
+                pkg_remove_orphan_dependent(pkg, old_pkg);
+-
 +	       pkg->is_upgrade = 1;
++	  }
+ 	  /* XXX: BUG: we really should treat replacement more like an upgrade
+ 	   *      Instead, we're going to remove the replacees
+ 	   */
+@@ -1466,7 +1467,7 @@
  	  }
  
  
@@ -15,10 +22,8 @@ Index: opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/opkg_install.c
  	  if (install_maintainer_scripts(pkg, old_pkg)) {
  		opkg_msg(ERROR, "Failed to extract maintainer scripts for %s."
  			       " Package debris may remain!\n",
-Index: opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/pkg.c
-===================================================================
---- opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d.orig/libopkg/pkg.c	2014-09-07 22:06:37.863956909 +0200
-+++ opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/pkg.c	2014-09-07 22:09:09.387954332 +0200
+--- a/libopkg/pkg.c
++++ b/libopkg/pkg.c
 @@ -1285,6 +1285,12 @@
       setenv("PKG_ROOT",
  	    pkg->dest ? pkg->dest->root_dir : conf->default_dest->root_dir, 1);
@@ -32,10 +37,8 @@ Index: opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/pkg.c
       if (! file_exists(path)) {
  	  free(path);
  	  return 0;
-Index: opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/pkg.h
-===================================================================
---- opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d.orig/libopkg/pkg.h	2014-03-21 16:56:11.000000000 +0100
-+++ opkg-9c97d5ecd795709c8584e972bfdf3aee3a5b846d/libopkg/pkg.h	2014-09-07 22:09:26.315954044 +0200
+--- a/libopkg/pkg.h
++++ b/libopkg/pkg.h
 @@ -184,6 +184,7 @@
       /* this flag specifies whether the package was installed to satisfy another
        * package's dependancies */
