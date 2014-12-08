@@ -1,0 +1,30 @@
+/dts-v1/;
+
+/include/ "bcm6358.dtsi"
+
+/ {
+	model = "Telsey CPVA642-type (CPA-ZNTE60T)";
+	compatible = "telsey,cpva642", "brcm,bcm6358";
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x010000>;
+		read-only;
+	};
+
+	linux@10000 {
+		label = "linux";
+		reg = <0x010000 0x7e0000>;
+	};
+
+	nvram@7f0000 {
+		label = "nvram";
+		reg = <0x7f0000 0x010000>;
+	};
+};
