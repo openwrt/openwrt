@@ -196,6 +196,8 @@ define Build/Compile
 			-I$(LINUX_DIR)/include -I$(LINUX_DIR)/include/$(LINUX_UAPI_DIR) \
 			-I$(LINUX_DIR)/include/generated/uapi/ -Iarch/$(LINUX_KARCH)/include \
 			-Iarch/$(LINUX_KARCH)/include/$(LINUX_UAPI_DIR) \
+			-Iarch/$(LINUX_KARCH)/include/generated \
+			-Iarch/$(LINUX_KARCH)/include/generated/$(LINUX_UAPI_DIR) \
 			-include generated/autoconf.h \
 			-include backport/backport.h " \
 		V="$(V)" \
