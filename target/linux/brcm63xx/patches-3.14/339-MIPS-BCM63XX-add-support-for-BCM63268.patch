@@ -289,10 +289,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		ext_shift = 4;
  		break;
 +	case BCM63268_CPU_ID:
-+		l2_intc_bases[0] += PERF_IRQSTAT_63268_REG(0);
-+		l2_intc_bases[1] += PERF_IRQSTAT_63268_REG(1);
-+		l2_irq_count = 2;
-+		l2_width = 4;
++		periph_bases[0] += PERF_IRQSTAT_63268_REG(0);
++		periph_bases[1] += PERF_IRQSTAT_63268_REG(1);
++		periph_irq_count = 2;
++		periph_width = 4;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_63268;
 +		ext_irq_count = 4;

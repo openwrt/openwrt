@@ -1,7 +1,7 @@
-From e3c68bbba30b212326fb69bf64b2220750dead3e Mon Sep 17 00:00:00 2001
+From 4fd286c3e5a5bebab0391cf1937695b3ed6721a3 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 30 Nov 2014 20:20:30 +0100
-Subject: [PATCH 20/20] MIPS: BCM63XX: wire up BCM6358's external interrupts 4
+Subject: [PATCH 4/5] MIPS: BCM63XX: wire up BCM6358's external interrupts 4
  and 5
 
 Due to the external interrupts being non consecutive, the previous
@@ -19,7 +19,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 --- a/arch/mips/bcm63xx/irq.c
 +++ b/arch/mips/bcm63xx/irq.c
 @@ -109,11 +109,14 @@ static void bcm63xx_init_irq(void)
- 		l2_width = 1;
+ 		periph_width = 1;
  
  		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6358;
 -		ext_irq_count = 4;

@@ -1,37 +1,42 @@
-From 6896b5f0538a7a7cfb7fac2d9ed3c6841c72ed40 Mon Sep 17 00:00:00 2001
+From ac60253478d58fc73b4c0a390eb6229222460e8a Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 30 Nov 2014 14:54:27 +0100
-Subject: [PATCH 18/20] irqchip: add support for bcm6345-style external
+Subject: [PATCH 2/5] irqchip: add support for bcm6345-style external
  interrupt controller
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- .../interrupt-controller/brcm,bcm6345-ext-intc.txt |   24 ++
+ .../interrupt-controller/brcm,bcm6345-ext-intc.txt |   29 ++
  drivers/irqchip/Kconfig                            |    4 +
  drivers/irqchip/Makefile                           |    1 +
- drivers/irqchip/irq-bcm6345-ext.c                  |  296 ++++++++++++++++++++
- include/linux/irqchip/irq-bcm6345-ext-intc.h       |   14 +
- 5 files changed, 339 insertions(+)
+ drivers/irqchip/irq-bcm6345-ext.c                  |  286 ++++++++++++++++++++
+ include/linux/irqchip/irq-bcm6345-ext.h            |   14 +
+ 5 files changed, 334 insertions(+)
  create mode 100644 Documentation/devicetree/bindings/interrupt-controller/brcm,bcm6345-ext-intc.txt
  create mode 100644 drivers/irqchip/irq-bcm6345-ext.c
- create mode 100644 include/linux/irqchip/irq-bcm6345-ext-intc.h
+ create mode 100644 include/linux/irqchip/irq-bcm6345-ext.h
 
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/interrupt-controller/brcm,bcm6345-ext-intc.txt
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,29 @@
 +Broadcom BCM6345-style external interrupt controller
 +
 +Required properties:
 +
-+- compatible: should be "brcm,bcm6345-l2-intc" or "brcm,bcm6345-l2-intc"
-+- reg: specifies the base physical addresses and size of the registers.
-+- interrupt-controller: identifies the node as an interrupt controller
-+- #interrupt-cells: specifies the number of cells needed to encode an interrupt
-+  source, should be 2
-+- interrupt-parent: specifies the phandle to the parent interrupt controller
-+  this one is cascaded from
-+- interrupts: specifies the interrupt line(s) in the interrupt-parent controller
-+  node, valid values depend on the type of parent interrupt controller
++- compatible: Should be "brcm,bcm6345-l2-intc".
++- reg: Specifies the base physical addresses and size of the registers. 
++- interrupt-controller: identifies the node as an interrupt controller.
++- #interrupt-cells: Specifies the number of cells needed to encode an interrupt
++  source, Should be 2.
++- interrupt-parent: Specifies the phandle to the parent interrupt controller
++  this one is cascaded from.
++- interrupts: Specifies the interrupt line(s) in the interrupt-parent controller
++  node, valid values depend on the type of parent interrupt controller.
++
++Optional properties:
++
++- brcm,field-width: Size of each field (mask, clear, sense, ...) in bits in the
++  register. Defaults to 4.
 +
 +Example:
 +
@@ -53,7 +58,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	bool
 +	select IRQ_DOMAIN
 +
- config BCM6345_L2_IRQ
+ config BCM6345_PERIPH_IRQ
  	bool
  	select IRQ_DOMAIN
 --- a/drivers/irqchip/Makefile
@@ -63,12 +68,12 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_ARCH_MXS)			+= irq-mxs.o
  obj-$(CONFIG_ARCH_S3C24XX)		+= irq-s3c24xx.o
 +obj-$(CONFIG_BCM6345_EXT_IRQ)		+= irq-bcm6345-ext.o
- obj-$(CONFIG_BCM6345_L2_IRQ)		+= irq-bcm6345-l2.o
+ obj-$(CONFIG_BCM6345_PERIPH_IRQ)	+= irq-bcm6345-periph.o
  obj-$(CONFIG_DW_APB_ICTL)		+= irq-dw-apb-ictl.o
  obj-$(CONFIG_METAG)			+= irq-metag-ext.o
 --- /dev/null
 +++ b/drivers/irqchip/irq-bcm6345-ext.c
-@@ -0,0 +1,296 @@
+@@ -0,0 +1,288 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -80,7 +85,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +#include <linux/ioport.h>
 +#include <linux/irq.h>
 +#include <linux/irqchip/chained_irq.h>
-+#include <linux/irqchip/irq-bcm6345-ext-intc.h>
++#include <linux/irqchip/irq-bcm6345-ext.h>
 +#include <linux/kernel.h>
 +#include <linux/of.h>
 +#include <linux/of_irq.h>
@@ -110,7 +115,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +struct intc_data {
 +	struct irq_chip chip;
 +	struct irq_domain *domain;
-+	spinlock_t lock;
++	raw_spinlock_t lock;
 +
 +	int parent_irq[MAX_IRQS];
 +	void __iomem *reg;
@@ -141,11 +146,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	irq_hw_number_t hwirq = irqd_to_hwirq(data);
 +	u32 reg;
 +
-+	raw_spin_lock(priv->lock);
++	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
 +	reg |= hwirq << (EXTIRQ_CFG_CLEAR * priv->shift);
 +	__raw_writel(reg, priv->reg);
-+	raw_spin_unlock(priv->lock);
++	raw_spin_unlock(&priv->lock);
 +}
 +
 +static void bcm6345_ext_intc_irq_mask(struct irq_data *data)
@@ -154,11 +159,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	irq_hw_number_t hwirq = irqd_to_hwirq(data);
 +	u32 reg;
 +
-+	raw_spin_lock(priv->lock);
++	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
 +	reg &= ~(hwirq << (EXTIRQ_CFG_MASK * priv->shift));
 +	__raw_writel(reg, priv->reg);
-+	raw_spin_unlock(priv->lock);
++	raw_spin_unlock(&priv->lock);
 +}
 +
 +static void bcm6345_ext_intc_irq_unmask(struct irq_data *data)
@@ -167,11 +172,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	irq_hw_number_t hwirq = irqd_to_hwirq(data);
 +	u32 reg;
 +
-+	raw_spin_lock(priv->lock);
++	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
 +	reg |= hwirq << (EXTIRQ_CFG_MASK * priv->shift);
 +	__raw_writel(reg, priv->reg);
-+	raw_spin_unlock(priv->lock);
++	raw_spin_unlock(&priv->lock);
 +}
 +
 +static int bcm6345_ext_intc_set_type(struct irq_data *data,
@@ -213,7 +218,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		return -EINVAL;
 +	}
 +
-+	raw_spin_lock(priv->lock);
++	raw_spin_lock(&priv->lock);
 +	reg = __raw_readl(priv->reg);
 +
 +	if (levelsense)
@@ -230,7 +235,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		reg &= ~(hwirq << (EXTIRQ_CFG_BOTHEDGE * priv->shift));
 +
 +	__raw_writel(reg, priv->reg);
-+	raw_spin_unlock(priv->lock);
++	raw_spin_unlock(&priv->lock);
 +
 +	irqd_set_trigger_type(data, flow_type);
 +	if (flow_type & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH))
@@ -268,6 +273,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	data = kzalloc(sizeof(*data), GFP_KERNEL);
 +	if (!data)
 +		return -ENOMEM;
++
++	raw_spin_lock_init(&data->lock);
 +
 +	for (i = 0; i < num_irqs; i++) {
 +		data->parent_irq[i] = irqs[i];
@@ -311,19 +318,22 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +}
 +
 +#ifdef CONFIG_OF
-+static int __init bcm63xx_ext_intc_of_init(struct device_node *node,
-+					   struct device_node *parent,
-+					   int shift)
++static int __init bcm6345_ext_intc_of_init(struct device_node *node,
++					   struct device_node *parent)
 +{
 +	int num_irqs, ret = -EINVAL;
 +	unsigned i;
 +	void __iomem *base;
 +	int irqs[MAX_IRQS] = { 0 };
++	u32 shift;
 +
 +	num_irqs = of_irq_count(node);
 +
 +	if (!num_irqs || num_irqs > MAX_IRQS)
 +		return -EINVAL;
++
++	if (of_property_read_u32(node, "brcm,field-width", &shift))
++		shift = 4;
 +
 +	for (i = 0; i < num_irqs; i++) {
 +		irqs[i] = irq_of_parse_and_map(node, i);
@@ -349,24 +359,11 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	return ret;
 +}
 +
-+static int __init bcm6345_ext_intc_of_init(struct device_node *node,
-+					   struct device_node *parent)
-+{
-+	return bcm63xx_ext_intc_of_init(node, parent, 4);
-+}
-+static int __init bcm6348_ext_intc_of_init(struct device_node *node,
-+					   struct device_node *parent)
-+{
-+	return bcm63xx_ext_intc_of_init(node, parent, 5);
-+}
-+
 +IRQCHIP_DECLARE(bcm6345_ext_intc, "brcm,bcm6345-ext-intc",
 +		bcm6345_ext_intc_of_init);
-+IRQCHIP_DECLARE(bcm6348_ext_intc, "brcm,bcm6348-ext-intc",
-+		bcm6348_ext_intc_of_init);
 +#endif
 --- /dev/null
-+++ b/include/linux/irqchip/irq-bcm6345-ext-intc.h
++++ b/include/linux/irqchip/irq-bcm6345-ext.h
 @@ -0,0 +1,14 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -376,9 +373,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 + * Copyright (C) 2014 Jonas Gorski <jogo@openwrt.org>
 + */
 +
-+#ifndef __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_INTC_H
-+#define __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_INTC_H
++#ifndef __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_H
++#define __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_H
 +
 +void bcm6345_ext_intc_init(int n_irqs, int *irqs, void __iomem *reg, int shift);
 +
-+#endif /* __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_INTC_H */
++#endif /* __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_EXT_H */

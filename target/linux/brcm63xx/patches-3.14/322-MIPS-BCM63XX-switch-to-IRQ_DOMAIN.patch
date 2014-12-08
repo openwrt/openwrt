@@ -19,7 +19,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	select DMA_NONCOHERENT
  	select IRQ_CPU
 +	select BCM6345_EXT_IRQ
-+	select BCM6345_L2_IRQ
++	select BCM6345_PERIPH_IRQ
 +	select IRQ_DOMAIN
  	select SYS_SUPPORTS_32BIT_KERNEL
  	select SYS_SUPPORTS_BIG_ENDIAN
@@ -32,8 +32,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #include <linux/irq.h>
 -#include <linux/spinlock.h>
 +#include <linux/irqchip.h>
-+#include <linux/irqchip/irq-bcm6345-ext-intc.h>
-+#include <linux/irqchip/irq-bcm6345-l2-intc.h>
++#include <linux/irqchip/irq-bcm6345-ext.h>
++#include <linux/irqchip/irq-bcm6345-periph.h>
  #include <asm/irq_cpu.h>
  #include <asm/mipsregs.h>
  #include <bcm63xx_cpu.h>
@@ -449,14 +449,14 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -	irq_mask_addr[0] = bcm63xx_regset_address(RSET_PERF);
 -	irq_stat_addr[1] = bcm63xx_regset_address(RSET_PERF);
 -	irq_mask_addr[1] = bcm63xx_regset_address(RSET_PERF);
-+	void __iomem *l2_intc_bases[2];
++	void __iomem *periph_bases[2];
 +	void __iomem *ext_intc_bases[2];
-+	int l2_irq_count, l2_width, ext_irq_count, ext_shift;
-+	int l2_irqs[2] = { 2, 3 };
++	int periph_irq_count, periph_width, ext_irq_count, ext_shift;
++	int periph_irqs[2] = { 2, 3 };
 +	int ext_irqs[6];
 +
-+	l2_intc_bases[0] = (void __iomem *)bcm63xx_regset_address(RSET_PERF);
-+	l2_intc_bases[1] = (void __iomem *)bcm63xx_regset_address(RSET_PERF);
++	periph_bases[0] = (void __iomem *)bcm63xx_regset_address(RSET_PERF);
++	periph_bases[1] = (void __iomem *)bcm63xx_regset_address(RSET_PERF);
 +	ext_intc_bases[0] = (void __iomem *)bcm63xx_regset_address(RSET_PERF);
 +	ext_intc_bases[1] = (void __iomem *)bcm63xx_regset_address(RSET_PERF);
  
@@ -469,9 +469,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		irq_bits = 32;
 -		ext_irq_count = 4;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_3368;
-+		l2_intc_bases[0] += PERF_IRQMASK_3368_REG;
-+		l2_irq_count = 1;
-+		l2_width = 1;
++		periph_bases[0] += PERF_IRQMASK_3368_REG;
++		periph_irq_count = 1;
++		periph_width = 1;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_3368;
 +		ext_irq_count = 4;
@@ -492,10 +492,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		ext_irq_start = BCM_6328_EXT_IRQ0 - IRQ_INTERNAL_BASE;
 -		ext_irq_end = BCM_6328_EXT_IRQ3 - IRQ_INTERNAL_BASE;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6328;
-+		l2_intc_bases[0] += PERF_IRQMASK_6328_REG(0);
-+		l2_intc_bases[1] += PERF_IRQMASK_6328_REG(1);
-+		l2_irq_count = 2;
-+		l2_width = 2;
++		periph_bases[0] += PERF_IRQMASK_6328_REG(0);
++		periph_bases[1] += PERF_IRQMASK_6328_REG(1);
++		periph_irq_count = 2;
++		periph_width = 2;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6328;
 +		ext_irq_count = 4;
@@ -513,9 +513,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		irq_bits = 32;
 -		ext_irq_count = 4;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6338;
-+		l2_intc_bases[0] += PERF_IRQMASK_6338_REG;
-+		l2_irq_count = 1;
-+		l2_width = 1;
++		periph_bases[0] += PERF_IRQMASK_6338_REG;
++		periph_irq_count = 1;
++		periph_width = 1;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6338;
 +		ext_irq_count = 4;
@@ -533,9 +533,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		irq_bits = 32;
 -		ext_irq_count = 4;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6345;
-+		l2_intc_bases[0] += PERF_IRQMASK_6345_REG;
-+		l2_irq_count = 1;
-+		l2_width = 1;
++		periph_bases[0] += PERF_IRQMASK_6345_REG;
++		periph_irq_count = 1;
++		periph_width = 1;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6345;
 +		ext_irq_count = 4;
@@ -553,9 +553,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		irq_bits = 32;
 -		ext_irq_count = 4;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6348;
-+		l2_intc_bases[0] += PERF_IRQMASK_6348_REG;
-+		l2_irq_count = 1;
-+		l2_width = 1;
++		periph_bases[0] += PERF_IRQMASK_6348_REG;
++		periph_irq_count = 1;
++		periph_width = 1;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6348;
 +		ext_irq_count = 4;
@@ -576,10 +576,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		ext_irq_start = BCM_6358_EXT_IRQ0 - IRQ_INTERNAL_BASE;
 -		ext_irq_end = BCM_6358_EXT_IRQ3 - IRQ_INTERNAL_BASE;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6358;
-+		l2_intc_bases[0] += PERF_IRQMASK_6358_REG(0);
-+		l2_intc_bases[1] += PERF_IRQMASK_6358_REG(1);
-+		l2_irq_count = 2;
-+		l2_width = 1;
++		periph_bases[0] += PERF_IRQMASK_6358_REG(0);
++		periph_bases[1] += PERF_IRQMASK_6358_REG(1);
++		periph_irq_count = 2;
++		periph_width = 1;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6358;
 +		ext_irq_count = 4;
@@ -600,10 +600,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		ext_irq_start = BCM_6362_EXT_IRQ0 - IRQ_INTERNAL_BASE;
 -		ext_irq_end = BCM_6362_EXT_IRQ3 - IRQ_INTERNAL_BASE;
 -		ext_irq_cfg_reg1 = PERF_EXTIRQ_CFG_REG_6362;
-+		l2_intc_bases[0] += PERF_IRQMASK_6362_REG(0);
-+		l2_intc_bases[1] += PERF_IRQMASK_6362_REG(1);
-+		l2_irq_count = 2;
-+		l2_width = 2;
++		periph_bases[0] += PERF_IRQMASK_6362_REG(0);
++		periph_bases[1] += PERF_IRQMASK_6362_REG(1);
++		periph_irq_count = 2;
++		periph_width = 2;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6362;
 +		ext_irq_count = 4;
@@ -619,10 +619,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		irq_stat_addr[1] += PERF_IRQSTAT_6368_REG(1);
 -		irq_mask_addr[1] += PERF_IRQMASK_6368_REG(1);
 -		irq_bits = 64;
-+		l2_intc_bases[0] += PERF_IRQMASK_6368_REG(0);
-+		l2_intc_bases[1] += PERF_IRQMASK_6368_REG(1);
-+		l2_irq_count = 2;
-+		l2_width = 2;
++		periph_bases[0] += PERF_IRQMASK_6368_REG(0);
++		periph_bases[1] += PERF_IRQMASK_6368_REG(1);
++		periph_irq_count = 2;
++		periph_width = 2;
 +
 +		ext_intc_bases[0] += PERF_EXTIRQ_CFG_REG_6368;
 +		ext_intc_bases[1] += PERF_EXTIRQ_CFG_REG2_6368;
@@ -654,7 +654,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -		internal_irq_unmask = __internal_irq_unmask_64;
 -	}
 +	mips_cpu_irq_init();
-+	bcm6345_l2_intc_init(l2_irq_count, l2_irqs, l2_intc_bases, l2_width);
++	bcm6345_periph_intc_init(periph_irq_count, periph_irqs, periph_bases, periph_width);
 +	bcm6345_ext_intc_init(4, ext_irqs, ext_intc_bases[0], ext_shift);
 +	if (ext_irq_count > 4)
 +		bcm6345_ext_intc_init(2, &ext_irqs[4], ext_intc_bases[1],
