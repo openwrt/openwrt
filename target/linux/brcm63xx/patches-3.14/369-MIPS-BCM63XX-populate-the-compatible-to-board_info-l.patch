@@ -14,7 +14,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -736,6 +736,47 @@ static const struct board_info __initcon
+@@ -736,6 +736,48 @@ static const struct board_info __initcon
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
@@ -33,6 +33,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
 +#endif
 +#ifdef CONFIG_BCM63XX_CPU_6348
++	{ .compatible = "belkin,f5d7633", .data = &board_96348gw_10, },
 +	{ .compatible = "brcm,bcm96348r", .data = &board_96348r, },
 +	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
 +	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
