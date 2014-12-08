@@ -1,7 +1,5 @@
-Index: linux-3.14.18/drivers/pci/host/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/pci/host/Kconfig
-+++ linux-3.14.18/drivers/pci/host/Kconfig
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
 @@ -33,4 +33,9 @@ config PCI_RCAR_GEN2
  	  There are 3 internal PCI controllers available with a single
  	  built-in EHCI/OHCI host controller present on each one.
@@ -12,10 +10,8 @@ Index: linux-3.14.18/drivers/pci/host/Kconfig
 +	select PCIEPORTBUS
 +
  endmenu
-Index: linux-3.14.18/drivers/pci/host/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/pci/host/Makefile
-+++ linux-3.14.18/drivers/pci/host/Makefile
+--- a/drivers/pci/host/Makefile
++++ b/drivers/pci/host/Makefile
 @@ -4,3 +4,4 @@ obj-$(CONFIG_PCI_IMX6) += pci-imx6.o
  obj-$(CONFIG_PCI_MVEBU) += pci-mvebu.o
  obj-$(CONFIG_PCI_TEGRA) += pci-tegra.o

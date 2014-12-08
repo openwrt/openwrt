@@ -1,8 +1,6 @@
-Index: linux-3.14.25/arch/arm/mach-ixp4xx/Kconfig
-===================================================================
---- linux-3.14.25.orig/arch/arm/mach-ixp4xx/Kconfig	2014-11-30 15:26:41.488079161 +0100
-+++ linux-3.14.25/arch/arm/mach-ixp4xx/Kconfig	2014-12-01 07:28:47.406514014 +0100
-@@ -21,6 +21,14 @@
+--- a/arch/arm/mach-ixp4xx/Kconfig
++++ b/arch/arm/mach-ixp4xx/Kconfig
+@@ -21,6 +21,14 @@ config MACH_AVILA
  	  Avila Network Platform. For more information on this platform,
  	  see <file:Documentation/arm/IXP4xx>.
  
@@ -17,7 +15,7 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/Kconfig
  config MACH_LOFT
      bool "Loft"
      depends on MACH_AVILA
-@@ -218,7 +226,7 @@
+@@ -218,7 +226,7 @@ config CPU_IXP46X
  
  config CPU_IXP43X
  	bool
@@ -26,11 +24,9 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/Kconfig
  	default y
  
  config MACH_GTWX5715
-Index: linux-3.14.25/arch/arm/mach-ixp4xx/Makefile
-===================================================================
---- linux-3.14.25.orig/arch/arm/mach-ixp4xx/Makefile	2014-11-30 15:26:41.488079161 +0100
-+++ linux-3.14.25/arch/arm/mach-ixp4xx/Makefile	2014-12-01 07:28:47.406514014 +0100
-@@ -7,6 +7,7 @@
+--- a/arch/arm/mach-ixp4xx/Makefile
++++ b/arch/arm/mach-ixp4xx/Makefile
+@@ -7,6 +7,7 @@ obj-pci-n	:=
  
  obj-pci-$(CONFIG_ARCH_IXDP4XX)		+= ixdp425-pci.o
  obj-pci-$(CONFIG_MACH_AVILA)		+= avila-pci.o
@@ -38,7 +34,7 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/Makefile
  obj-pci-$(CONFIG_MACH_IXDPG425)		+= ixdpg425-pci.o
  obj-pci-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-pci.o
  obj-pci-$(CONFIG_MACH_GTWX5715)		+= gtwx5715-pci.o
-@@ -31,6 +32,7 @@
+@@ -31,6 +32,7 @@ obj-y	+= common.o
  
  obj-$(CONFIG_ARCH_IXDP4XX)	+= ixdp425-setup.o
  obj-$(CONFIG_MACH_AVILA)	+= avila-setup.o
@@ -46,10 +42,8 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/Makefile
  obj-$(CONFIG_MACH_IXDPG425)	+= coyote-setup.o
  obj-$(CONFIG_ARCH_ADI_COYOTE)	+= coyote-setup.o
  obj-$(CONFIG_MACH_GTWX5715)	+= gtwx5715-setup.o
-Index: linux-3.14.25/arch/arm/mach-ixp4xx/cambria-pci.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.25/arch/arm/mach-ixp4xx/cambria-pci.c	2014-11-30 15:26:41.728087272 +0100
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/cambria-pci.c
 @@ -0,0 +1,78 @@
 +/*
 + * arch/arch/mach-ixp4xx/cambria-pci.c
@@ -129,10 +123,8 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/cambria-pci.c
 +}
 +
 +subsys_initcall(cambria_pci_init);
-Index: linux-3.14.25/arch/arm/mach-ixp4xx/cambria-setup.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.25/arch/arm/mach-ixp4xx/cambria-setup.c	2014-11-30 16:06:45.622389213 +0100
+--- /dev/null
++++ b/arch/arm/mach-ixp4xx/cambria-setup.c
 @@ -0,0 +1,1003 @@
 +/*
 + * arch/arm/mach-ixp4xx/cambria-setup.c

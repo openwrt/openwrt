@@ -12,8 +12,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  arch/arm/mach-bcm2708/include/mach/platform.h | 2 ++
  2 files changed, 4 insertions(+)
 
-diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
-index 6d2f9a0..a4aac4c 100644
 --- a/arch/arm/mach-bcm2708/include/mach/dma.h
 +++ b/arch/arm/mach-bcm2708/include/mach/dma.h
 @@ -45,6 +45,8 @@
@@ -25,8 +23,6 @@ index 6d2f9a0..a4aac4c 100644
  #define BCM2708_DMA_NEXTCB	0x1C
  #define BCM2708_DMA_DEBUG	0x20
  
-diff --git a/arch/arm/mach-bcm2708/include/mach/platform.h b/arch/arm/mach-bcm2708/include/mach/platform.h
-index 992a630..2e7e1bb 100644
 --- a/arch/arm/mach-bcm2708/include/mach/platform.h
 +++ b/arch/arm/mach-bcm2708/include/mach/platform.h
 @@ -62,10 +62,12 @@
@@ -42,6 +38,3 @@ index 992a630..2e7e1bb 100644
  #define SPI0_BASE		 (BCM2708_PERI_BASE + 0x204000) /* SPI0 */
  #define BSC0_BASE		 (BCM2708_PERI_BASE + 0x205000) /* BSC0 I2C/TWI */
  #define UART1_BASE               (BCM2708_PERI_BASE + 0x215000) /* Uart 1 */
--- 
-1.9.1
-

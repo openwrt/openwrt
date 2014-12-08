@@ -16,11 +16,9 @@ Subject: [PATCH 15/54] Added hwmon/thermal driver for reporting core
  create mode 100644 drivers/hwmon/bcm2835-hwmon.c
  create mode 100644 drivers/thermal/bcm2835-thermal.c
 
-Index: linux-3.14.18/arch/arm/mach-bcm2708/bcm2708.c
-===================================================================
---- linux-3.14.18.orig/arch/arm/mach-bcm2708/bcm2708.c	2014-09-27 12:03:08.607411837 -0700
-+++ linux-3.14.18/arch/arm/mach-bcm2708/bcm2708.c	2014-09-27 12:03:08.603411837 -0700
-@@ -483,6 +483,14 @@
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -483,6 +483,14 @@ static struct platform_device bcm2708_al
  	       },
  };
  
@@ -35,7 +33,7 @@ Index: linux-3.14.18/arch/arm/mach-bcm2708/bcm2708.c
  int __init bcm_register_device(struct platform_device *pdev)
  {
  	int ret;
-@@ -594,6 +602,9 @@
+@@ -594,6 +602,9 @@ void __init bcm2708_init(void)
  	for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
  		bcm_register_device(&bcm2708_alsa_devices[i]);
  
@@ -45,11 +43,9 @@ Index: linux-3.14.18/arch/arm/mach-bcm2708/bcm2708.c
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
-Index: linux-3.14.18/drivers/hwmon/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/hwmon/Kconfig	2014-09-27 12:03:08.607411837 -0700
-+++ linux-3.14.18/drivers/hwmon/Kconfig	2014-09-27 12:03:08.603411837 -0700
-@@ -1565,6 +1565,16 @@
+--- a/drivers/hwmon/Kconfig
++++ b/drivers/hwmon/Kconfig
+@@ -1565,6 +1565,16 @@ config SENSORS_MC13783_ADC
          help
            Support for the A/D converter on MC13783 and MC13892 PMIC.
  
@@ -66,10 +62,8 @@ Index: linux-3.14.18/drivers/hwmon/Kconfig
  if ACPI
  
  comment "ACPI drivers"
-Index: linux-3.14.18/drivers/hwmon/bcm2835-hwmon.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/hwmon/bcm2835-hwmon.c	2014-09-27 12:03:08.603411837 -0700
+--- /dev/null
++++ b/drivers/hwmon/bcm2835-hwmon.c
 @@ -0,0 +1,219 @@
 +/*****************************************************************************
 +* Copyright 2011 Broadcom Corporation.  All rights reserved.
@@ -290,11 +284,9 @@ Index: linux-3.14.18/drivers/hwmon/bcm2835-hwmon.c
 +MODULE_DESCRIPTION("HW Monitor driver for bcm2835 chip");
 +
 +module_platform_driver(bcm2835_hwmon_driver);
-Index: linux-3.14.18/drivers/thermal/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/thermal/Kconfig	2014-09-27 12:03:08.607411837 -0700
-+++ linux-3.14.18/drivers/thermal/Kconfig	2014-09-27 12:03:08.603411837 -0700
-@@ -196,6 +196,12 @@
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -196,6 +196,12 @@ config INTEL_POWERCLAMP
  	  enforce idle time which results in more package C-state residency. The
  	  user interface is exposed via generic thermal framework.
  
@@ -307,11 +299,9 @@ Index: linux-3.14.18/drivers/thermal/Kconfig
  config X86_PKG_TEMP_THERMAL
  	tristate "X86 package temperature thermal driver"
  	depends on X86_THERMAL_VECTOR
-Index: linux-3.14.18/drivers/thermal/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/thermal/Makefile	2014-09-27 12:03:08.607411837 -0700
-+++ linux-3.14.18/drivers/thermal/Makefile	2014-09-27 12:03:08.603411837 -0700
-@@ -28,6 +28,7 @@
+--- a/drivers/thermal/Makefile
++++ b/drivers/thermal/Makefile
+@@ -28,6 +28,7 @@ obj-$(CONFIG_ARMADA_THERMAL)	+= armada_t
  obj-$(CONFIG_IMX_THERMAL)	+= imx_thermal.o
  obj-$(CONFIG_DB8500_CPUFREQ_COOLING)	+= db8500_cpufreq_cooling.o
  obj-$(CONFIG_INTEL_POWERCLAMP)	+= intel_powerclamp.o
@@ -319,10 +309,8 @@ Index: linux-3.14.18/drivers/thermal/Makefile
  obj-$(CONFIG_X86_PKG_TEMP_THERMAL)	+= x86_pkg_temp_thermal.o
  obj-$(CONFIG_TI_SOC_THERMAL)	+= ti-soc-thermal/
  obj-$(CONFIG_ACPI_INT3403_THERMAL)	+= int3403_thermal.o
-Index: linux-3.14.18/drivers/thermal/bcm2835-thermal.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/thermal/bcm2835-thermal.c	2014-09-27 12:03:08.603411837 -0700
+--- /dev/null
++++ b/drivers/thermal/bcm2835-thermal.c
 @@ -0,0 +1,184 @@
 +/*****************************************************************************
 +* Copyright 2011 Broadcom Corporation.  All rights reserved.

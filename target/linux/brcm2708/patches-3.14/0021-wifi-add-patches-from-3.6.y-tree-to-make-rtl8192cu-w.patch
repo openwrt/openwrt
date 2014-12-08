@@ -13,8 +13,6 @@ wifi: add missing patch from 3.6.y tree to disable debug
  drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c |  1 +
  5 files changed, 23 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/net/wireless/rtl8192cu/Kconfig b/drivers/net/wireless/rtl8192cu/Kconfig
-index bee5ed6..ef46361 100644
 --- a/drivers/net/wireless/rtl8192cu/Kconfig
 +++ b/drivers/net/wireless/rtl8192cu/Kconfig
 @@ -1,6 +1,8 @@
@@ -27,8 +25,6 @@ index bee5ed6..ef46361 100644
 -	  Help message of RTL8192CU
 +	  Enable wireless network adapters based on Realtek RTL8192C chipset family, such as EDUP nano series
  
-diff --git a/drivers/net/wireless/rtl8192cu/Makefile b/drivers/net/wireless/rtl8192cu/Makefile
-index c399011..f85c59f 100644
 --- a/drivers/net/wireless/rtl8192cu/Makefile
 +++ b/drivers/net/wireless/rtl8192cu/Makefile
 @@ -38,7 +38,7 @@ CONFIG_RTL8192CU_REDEFINE_1X1 = n
@@ -51,8 +47,6 @@ index c399011..f85c59f 100644
  ifneq ($(USER_MODULE_NAME),)
  MODULE_NAME := $(USER_MODULE_NAME)
  endif
-diff --git a/drivers/net/wireless/rtl8192cu/include/autoconf.h b/drivers/net/wireless/rtl8192cu/include/autoconf.h
-index 12294df..1341ff0 100644
 --- a/drivers/net/wireless/rtl8192cu/include/autoconf.h
 +++ b/drivers/net/wireless/rtl8192cu/include/autoconf.h
 @@ -296,7 +296,7 @@
@@ -64,8 +58,6 @@ index 12294df..1341ff0 100644
  
  #define CONFIG_PROC_DEBUG	1
  
-diff --git a/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c b/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c
-index 82dee6d..b0bf0e9 100644
 --- a/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c
 +++ b/drivers/net/wireless/rtl8192cu/os_dep/linux/os_intfs.c
 @@ -277,6 +277,18 @@ static int	rtw_proc_cnt = 0;
@@ -87,7 +79,7 @@ index 82dee6d..b0bf0e9 100644
  void rtw_proc_init_one(struct net_device *dev)
  {
  	struct proc_dir_entry *dir_dev = NULL;
-@@ -751,6 +763,7 @@ void rtw_proc_remove_one(struct net_device *dev)
+@@ -751,6 +763,7 @@ void rtw_proc_remove_one(struct net_devi
  		}
  	}
  }
@@ -95,11 +87,9 @@ index 82dee6d..b0bf0e9 100644
  #endif
  
  uint loadparam( _adapter *padapter,  _nic_hdl	pnetdev);
-diff --git a/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c b/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
-index 4c1089a..baccb59 100644
 --- a/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
 +++ b/drivers/net/wireless/rtl8192cu/os_dep/linux/usb_intf.c
-@@ -138,6 +138,7 @@ static void rtw_dev_remove(struct usb_interface *pusb_intf);
+@@ -138,6 +138,7 @@ static void rtw_dev_remove(struct usb_in
  	{USB_DEVICE(0x2001, 0x3307)},/* D-Link - Cameo */ \
  	{USB_DEVICE(0x2001, 0x330A)},/* D-Link - Alpha */ \
  	{USB_DEVICE(0x2001, 0x3309)},/* D-Link - Alpha */ \
@@ -107,6 +97,3 @@ index 4c1089a..baccb59 100644
  	{USB_DEVICE(0x0586, 0x341F)},/* Zyxel - Abocom */ \
  	{USB_DEVICE(0x7392, 0x7822)},/* Edimax - Edimax */ \
  	{USB_DEVICE(0x2019, 0xAB2B)},/* Planex - Abocom */ \
--- 
-1.9.1
-

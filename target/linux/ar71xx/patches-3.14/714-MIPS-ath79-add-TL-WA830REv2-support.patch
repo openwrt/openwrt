@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -666,6 +666,16 @@ config ATH79_MACH_TL_WAX50RE
+@@ -675,6 +675,16 @@ config ATH79_MACH_TL_WAX50RE
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_WMAC
  
@@ -19,7 +19,7 @@
  	select SOC_AR724X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -96,6 +96,7 @@ obj-$(CONFIG_ATH79_MACH_TL_MR13U)	+= mac
+@@ -97,6 +97,7 @@ obj-$(CONFIG_ATH79_MACH_TL_MR13U)	+= mac
  obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= mach-tl-mr3020.o
  obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
  obj-$(CONFIG_ATH79_MACH_TL_WAX50RE)     += mach-tl-wax50re.o
@@ -29,7 +29,7 @@
  obj-$(CONFIG_ATH79_MACH_TL_WDR3500)     += mach-tl-wdr3500.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -114,6 +114,7 @@ enum ath79_mach_type {
+@@ -115,6 +115,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WA7510N_V1,	/* TP-LINK TL-WA7510N v1*/
  	ATH79_MACH_TL_WA850RE,		/* TP-LINK TL-WA850RE */
  	ATH79_MACH_TL_WA801ND_V2,	/* TP-LINK TL-WA801ND v2 */

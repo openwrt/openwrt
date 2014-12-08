@@ -27,8 +27,6 @@ The correct baudrate is shown in the log after the cdiv > 0xffff correction.
  create mode 100644 drivers/i2c/busses/i2c-bcm2708.c
  create mode 100644 drivers/spi/spi-bcm2708.c
 
-diff --git a/arch/arm/configs/bcmrpi_cutdown_defconfig b/arch/arm/configs/bcmrpi_cutdown_defconfig
-index e519412..2c2e29e 100644
 --- a/arch/arm/configs/bcmrpi_cutdown_defconfig
 +++ b/arch/arm/configs/bcmrpi_cutdown_defconfig
 @@ -492,3 +492,12 @@ CONFIG_CRYPTO_DEFLATE=m
@@ -44,8 +42,6 @@ index e519412..2c2e29e 100644
 +CONFIG_SPI=y
 +CONFIG_SPI_MASTER=y
 +CONFIG_SPI_BCM2708=m
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index df947e5..31f5afaa 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -214,6 +214,12 @@ CONFIG_SERIAL_AMBA_PL011=y
@@ -61,8 +57,6 @@ index df947e5..31f5afaa 100644
  CONFIG_GPIO_SYSFS=y
  # CONFIG_HWMON is not set
  CONFIG_WATCHDOG=y
-diff --git a/arch/arm/mach-bcm2708/Kconfig b/arch/arm/mach-bcm2708/Kconfig
-index 9355841..e151ed4 100644
 --- a/arch/arm/mach-bcm2708/Kconfig
 +++ b/arch/arm/mach-bcm2708/Kconfig
 @@ -31,4 +31,11 @@ config BCM2708_NOL2CACHE
@@ -77,8 +71,6 @@ index 9355841..e151ed4 100644
 +	help
 +	  Binds spidev driver to the SPI0 master
  endmenu
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 314bbcc..e892006 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -31,6 +31,7 @@
@@ -121,7 +113,7 @@ index 314bbcc..e892006 100644
  	 }
  };
  
-@@ -483,6 +491,89 @@ static struct platform_device bcm2708_alsa_devices[] = {
+@@ -483,6 +491,89 @@ static struct platform_device bcm2708_al
  	       },
  };
  
@@ -234,8 +226,6 @@ index 314bbcc..e892006 100644
  }
  
  static void timer_set_mode(enum clock_event_mode mode,
-diff --git a/arch/arm/mach-bcm2708/include/mach/platform.h b/arch/arm/mach-bcm2708/include/mach/platform.h
-index ecd854e..f4bb733 100644
 --- a/arch/arm/mach-bcm2708/include/mach/platform.h
 +++ b/arch/arm/mach-bcm2708/include/mach/platform.h
 @@ -64,9 +64,12 @@
@@ -251,8 +241,6 @@ index ecd854e..f4bb733 100644
  #define USB_BASE                 (BCM2708_PERI_BASE + 0x980000) /* DTC_OTG USB controller */
  #define MCORE_BASE               (BCM2708_PERI_BASE + 0x0000)   /* Fake frame buffer device (actually the multicore sync block*/
  
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index c5eec02..315421d 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -348,6 +348,25 @@ config I2C_BCM2835
@@ -281,11 +269,9 @@ index c5eec02..315421d 100644
  config I2C_BCM_KONA
  	tristate "BCM Kona I2C adapter"
  	depends on ARCH_BCM_MOBILE
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index a08931f..a62fadf 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
-@@ -32,6 +32,7 @@ obj-$(CONFIG_I2C_POWERMAC)	+= i2c-powermac.o
+@@ -32,6 +32,7 @@ obj-$(CONFIG_I2C_POWERMAC)	+= i2c-powerm
  obj-$(CONFIG_I2C_AT91)		+= i2c-at91.o
  obj-$(CONFIG_I2C_AU1550)	+= i2c-au1550.o
  obj-$(CONFIG_I2C_BCM2835)	+= i2c-bcm2835.o
@@ -293,9 +279,6 @@ index a08931f..a62fadf 100644
  obj-$(CONFIG_I2C_BLACKFIN_TWI)	+= i2c-bfin-twi.o
  obj-$(CONFIG_I2C_CBUS_GPIO)	+= i2c-cbus-gpio.o
  obj-$(CONFIG_I2C_CPM)		+= i2c-cpm.o
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-new file mode 100644
-index 0000000..b3d96f0
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -0,0 +1,419 @@
@@ -718,8 +701,6 @@ index 0000000..b3d96f0
 +MODULE_AUTHOR("Chris Boot <bootc@bootc.net>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:" DRV_NAME);
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 581ee2a..6029f6f 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -85,6 +85,14 @@ config SPI_BCM2835
@@ -737,11 +718,9 @@ index 581ee2a..6029f6f 100644
  config SPI_BFIN5XX
  	tristate "SPI controller driver for ADI Blackfin5xx"
  	depends on BLACKFIN && !BF60x
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 95af48d..51996c2 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_SPI_BCM63XX)		+= spi-bcm63xx.o
+@@ -19,6 +19,7 @@ obj-$(CONFIG_SPI_BCM63XX)		+= spi-bcm63x
  obj-$(CONFIG_SPI_BCM63XX_HSSPI)		+= spi-bcm63xx-hsspi.o
  obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5xx.o
  obj-$(CONFIG_SPI_BFIN_V3)               += spi-bfin-v3.o
@@ -749,9 +728,6 @@ index 95af48d..51996c2 100644
  obj-$(CONFIG_SPI_BFIN_SPORT)		+= spi-bfin-sport.o
  obj-$(CONFIG_SPI_BITBANG)		+= spi-bitbang.o
  obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
-diff --git a/drivers/spi/spi-bcm2708.c b/drivers/spi/spi-bcm2708.c
-new file mode 100644
-index 0000000..180264a
 --- /dev/null
 +++ b/drivers/spi/spi-bcm2708.c
 @@ -0,0 +1,626 @@
@@ -1381,6 +1357,3 @@ index 0000000..180264a
 +MODULE_AUTHOR("Chris Boot <bootc@bootc.net>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:" DRV_NAME);
--- 
-1.9.1
-

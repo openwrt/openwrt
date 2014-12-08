@@ -8,8 +8,6 @@ Subject: [PATCH 32/36] USB: fix roothub for IFXHCD
  drivers/usb/core/hub.c   |    2 +-
  2 files changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/mips/lantiq/Kconfig b/arch/mips/lantiq/Kconfig
-index 1621b1d..4c9a241 100644
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
 @@ -3,6 +3,7 @@ if LANTIQ
@@ -20,11 +18,9 @@ index 1621b1d..4c9a241 100644
  	default n
  
  choice
-diff --git a/drivers/usb/core/hub.c b/drivers/usb/core/hub.c
-index 64ea219..30f4bdf 100644
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4077,7 +4077,7 @@ hub_port_init (struct usb_hub *hub, struct usb_device *udev, int port1,
+@@ -4156,7 +4156,7 @@ hub_port_init (struct usb_hub *hub, stru
  		udev->ttport = hdev->ttport;
  	} else if (udev->speed != USB_SPEED_HIGH
  			&& hdev->speed == USB_SPEED_HIGH) {
@@ -33,6 +29,3 @@ index 64ea219..30f4bdf 100644
  			dev_err(&udev->dev, "parent hub has no TT\n");
  			retval = -EINVAL;
  			goto fail;
--- 
-1.7.10.4
-

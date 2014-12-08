@@ -15,11 +15,9 @@ Signed-off-by: Alexsey Shestacov <wingrime@linux-sunxi.org>
  arch/arm/boot/dts/sun7i-a20-cubietruck.dts  | 6 ++++++
  2 files changed, 12 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-index 97bcb2a..81bf3df 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubieboard2.dts
-@@ -66,6 +66,12 @@
+@@ -64,6 +64,12 @@
  			};
  		};
  
@@ -32,12 +30,10 @@ index 97bcb2a..81bf3df 100644
  		uart0: serial@01c28000 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&uart0_pins_a>;
-diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-index 624e0a5..3931986 100644
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 @@ -114,6 +114,12 @@
- 			status = "okay";
+                         };
  		};
  
 +		ir0: ir@01c21800 {

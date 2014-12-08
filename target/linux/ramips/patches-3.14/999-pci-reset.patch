@@ -1,7 +1,5 @@
-Index: linux-3.14.18/arch/mips/ralink/reset.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/reset.c	2014-11-23 00:32:23.268612766 +0100
-+++ linux-3.14.18/arch/mips/ralink/reset.c	2014-11-23 02:55:41.492326840 +0100
+--- a/arch/mips/ralink/reset.c
++++ b/arch/mips/ralink/reset.c
 @@ -11,6 +11,7 @@
  #include <linux/pm.h>
  #include <linux/io.h>
@@ -23,7 +21,7 @@ Index: linux-3.14.18/arch/mips/ralink/reset.c
  
  static int ralink_assert_device(struct reset_controller_dev *rcdev,
  				unsigned long id)
-@@ -83,6 +86,11 @@
+@@ -83,6 +86,11 @@ void ralink_rst_init(void)
  
  static void ralink_restart(char *command)
  {

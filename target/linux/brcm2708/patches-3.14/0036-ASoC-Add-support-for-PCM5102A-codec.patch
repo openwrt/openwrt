@@ -14,8 +14,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  3 files changed, 69 insertions(+)
  create mode 100644 sound/soc/codecs/pcm5102a.c
 
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 983d087a..f0d76ec 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -59,6 +59,7 @@ config SND_SOC_ALL_CODECS
@@ -36,8 +34,6 @@ index 983d087a..f0d76ec 100644
  config SND_SOC_RT5631
  	tristate
  
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index bc12676..612f414 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
 @@ -46,6 +46,7 @@ snd-soc-hdmi-codec-objs := hdmi.o
@@ -48,7 +44,7 @@ index bc12676..612f414 100644
  snd-soc-rt5631-objs := rt5631.o
  snd-soc-rt5640-objs := rt5640.o
  snd-soc-sgtl5000-objs := sgtl5000.o
-@@ -179,6 +180,7 @@ obj-$(CONFIG_SND_SOC_HDMI_CODEC) += snd-soc-hdmi-codec.o
+@@ -179,6 +180,7 @@ obj-$(CONFIG_SND_SOC_HDMI_CODEC) += snd-
  obj-$(CONFIG_SND_SOC_PCM1681)	+= snd-soc-pcm1681.o
  obj-$(CONFIG_SND_SOC_PCM1792A)	+= snd-soc-pcm1792a-codec.o
  obj-$(CONFIG_SND_SOC_PCM3008)	+= snd-soc-pcm3008.o
@@ -56,9 +52,6 @@ index bc12676..612f414 100644
  obj-$(CONFIG_SND_SOC_RT5631)	+= snd-soc-rt5631.o
  obj-$(CONFIG_SND_SOC_RT5640)	+= snd-soc-rt5640.o
  obj-$(CONFIG_SND_SOC_SGTL5000)  += snd-soc-sgtl5000.o
-diff --git a/sound/soc/codecs/pcm5102a.c b/sound/soc/codecs/pcm5102a.c
-new file mode 100644
-index 0000000..126f1e9
 --- /dev/null
 +++ b/sound/soc/codecs/pcm5102a.c
 @@ -0,0 +1,63 @@
@@ -125,6 +118,3 @@ index 0000000..126f1e9
 +MODULE_DESCRIPTION("ASoC PCM5102A codec driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.9.1
-

@@ -1,7 +1,5 @@
-Index: linux-3.14.18/drivers/mtd/nand/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/mtd/nand/Kconfig
-+++ linux-3.14.18/drivers/mtd/nand/Kconfig
+--- a/drivers/mtd/nand/Kconfig
++++ b/drivers/mtd/nand/Kconfig
 @@ -510,4 +510,12 @@ config MTD_NAND_XWAY
  	  Enables support for NAND Flash chips on Lantiq XWAY SoCs. NAND is attached
  	  to the External Bus Unit (EBU).
@@ -15,10 +13,8 @@ Index: linux-3.14.18/drivers/mtd/nand/Kconfig
 +	  to the STATIC Unit.
 +
  endif # MTD_NAND
-Index: linux-3.14.18/drivers/mtd/nand/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/mtd/nand/Makefile
-+++ linux-3.14.18/drivers/mtd/nand/Makefile
+--- a/drivers/mtd/nand/Makefile
++++ b/drivers/mtd/nand/Makefile
 @@ -49,5 +49,6 @@ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740
  obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
  obj-$(CONFIG_MTD_NAND_XWAY)		+= xway_nand.o

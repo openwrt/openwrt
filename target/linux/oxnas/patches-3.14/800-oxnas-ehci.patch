@@ -1,7 +1,5 @@
-Index: linux-3.14.18/drivers/usb/host/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/usb/host/Kconfig
-+++ linux-3.14.18/drivers/usb/host/Kconfig
+--- a/drivers/usb/host/Kconfig
++++ b/drivers/usb/host/Kconfig
 @@ -273,6 +273,13 @@ config USB_OCTEON_EHCI
  	  USB 2.0 device support.  All CN6XXX based chips with USB are
  	  supported.
@@ -16,10 +14,8 @@ Index: linux-3.14.18/drivers/usb/host/Kconfig
  endif # USB_EHCI_HCD
  
  config USB_OXU210HP_HCD
-Index: linux-3.14.18/drivers/usb/host/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/usb/host/Makefile
-+++ linux-3.14.18/drivers/usb/host/Makefile
+--- a/drivers/usb/host/Makefile
++++ b/drivers/usb/host/Makefile
 @@ -37,6 +37,7 @@ obj-$(CONFIG_USB_EHCI_HCD_AT91) += ehci-
  obj-$(CONFIG_USB_EHCI_MSM)	+= ehci-msm.o
  obj-$(CONFIG_USB_EHCI_TEGRA)	+= ehci-tegra.o

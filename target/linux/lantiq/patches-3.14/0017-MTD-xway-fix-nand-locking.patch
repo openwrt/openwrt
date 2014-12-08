@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/nand/xway_nand.c |   15 +++------------
  1 file changed, 3 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/mtd/nand/xway_nand.c b/drivers/mtd/nand/xway_nand.c
-index f813a55..e430f2d 100644
 --- a/drivers/mtd/nand/xway_nand.c
 +++ b/drivers/mtd/nand/xway_nand.c
-@@ -80,13 +80,16 @@ static void xway_reset_chip(struct nand_chip *chip)
+@@ -80,13 +80,16 @@ static void xway_reset_chip(struct nand_
  
  static void xway_select_chip(struct mtd_info *mtd, int chip)
  {
@@ -29,7 +27,7 @@ index f813a55..e430f2d 100644
  		ltq_ebu_w32_mask(0, NAND_CON_NANDM, EBU_NAND_CON);
  		ltq_ebu_w32_mask(0, NAND_CON_CE, EBU_NAND_CON);
  		break;
-@@ -99,7 +102,6 @@ static void xway_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
+@@ -99,7 +102,6 @@ static void xway_cmd_ctrl(struct mtd_inf
  {
  	struct nand_chip *this = mtd->priv;
  	unsigned long nandaddr = (unsigned long) this->IO_ADDR_W;
@@ -37,7 +35,7 @@ index f813a55..e430f2d 100644
  
  	if (ctrl & NAND_CTRL_CHANGE) {
  		if (ctrl & NAND_CLE)
-@@ -109,11 +111,9 @@ static void xway_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
+@@ -109,11 +111,9 @@ static void xway_cmd_ctrl(struct mtd_inf
  	}
  
  	if (cmd != NAND_CMD_NONE) {
@@ -49,7 +47,7 @@ index f813a55..e430f2d 100644
  	}
  }
  
-@@ -126,12 +126,9 @@ static unsigned char xway_read_byte(struct mtd_info *mtd)
+@@ -126,12 +126,9 @@ static unsigned char xway_read_byte(stru
  {
  	struct nand_chip *this = mtd->priv;
  	unsigned long nandaddr = (unsigned long) this->IO_ADDR_R;
@@ -62,7 +60,7 @@ index f813a55..e430f2d 100644
  
  	return ret;
  }
-@@ -140,26 +137,20 @@ static void xway_read_buf(struct mtd_info *mtd, u_char *buf, int len)
+@@ -140,26 +137,20 @@ static void xway_read_buf(struct mtd_inf
  {
  	struct nand_chip *this = mtd->priv;
  	unsigned long nandaddr = (unsigned long) this->IO_ADDR_R;
@@ -89,6 +87,3 @@ index f813a55..e430f2d 100644
  }
  
  static int xway_nand_probe(struct platform_device *pdev)
--- 
-1.7.10.4
-

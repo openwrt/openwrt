@@ -18,8 +18,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  3 files changed, 955 insertions(+)
  create mode 100644 sound/soc/bcm/bcm2708-i2s.c
 
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index 6a834e1..7e5b945 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -7,3 +7,14 @@ config SND_BCM2835_SOC_I2S
@@ -37,11 +35,9 @@ index 6a834e1..7e5b945 100644
 +	  Say Y or M if you want to add support for codecs attached to
 +	  the BCM2708 I2S interface. You will also need
 +	  to select the audio interfaces to support below.
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index bc816b7..f8bbe1f 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -3,3 +3,7 @@ snd-soc-bcm2835-i2s-objs := bcm2835-i2s.o
+@@ -3,3 +3,7 @@ snd-soc-bcm2835-i2s-objs := bcm2835-i2s.
  
  obj-$(CONFIG_SND_BCM2835_SOC_I2S) += snd-soc-bcm2835-i2s.o
  
@@ -49,9 +45,6 @@ index bc816b7..f8bbe1f 100644
 +snd-soc-bcm2708-i2s-objs := bcm2708-i2s.o
 +
 +obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
-diff --git a/sound/soc/bcm/bcm2708-i2s.c b/sound/soc/bcm/bcm2708-i2s.c
-new file mode 100644
-index 0000000..ebaf3d6
 --- /dev/null
 +++ b/sound/soc/bcm/bcm2708-i2s.c
 @@ -0,0 +1,940 @@
@@ -995,6 +988,3 @@ index 0000000..ebaf3d6
 +MODULE_DESCRIPTION("BCM2708 I2S interface");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.9.1
-

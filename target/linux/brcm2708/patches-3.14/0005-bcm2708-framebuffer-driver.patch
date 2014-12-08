@@ -12,8 +12,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  4 files changed, 1395 insertions(+), 1602 deletions(-)
  create mode 100644 drivers/video/bcm2708_fb.c
 
-diff --git a/drivers/video/Kconfig b/drivers/video/Kconfig
-index dade5b7..4afc29b 100644
 --- a/drivers/video/Kconfig
 +++ b/drivers/video/Kconfig
 @@ -310,6 +310,20 @@ config FB_PM2_FIFO_DISCONNECT
@@ -37,11 +35,9 @@ index dade5b7..4afc29b 100644
  config FB_ARMCLCD
  	tristate "ARM PrimeCell PL110 support"
  	depends on ARM || ARM64 || COMPILE_TEST
-diff --git a/drivers/video/Makefile b/drivers/video/Makefile
-index ae17ddf..35654ba 100644
 --- a/drivers/video/Makefile
 +++ b/drivers/video/Makefile
-@@ -100,6 +100,7 @@ obj-$(CONFIG_FB_PVR2)             += pvr2fb.o
+@@ -100,6 +100,7 @@ obj-$(CONFIG_FB_PVR2)             += pvr
  obj-$(CONFIG_FB_VOODOO1)          += sstfb.o
  obj-$(CONFIG_FB_ARMCLCD)	  += amba-clcd.o
  obj-$(CONFIG_FB_GOLDFISH)         += goldfishfb.o
@@ -49,9 +45,6 @@ index ae17ddf..35654ba 100644
  obj-$(CONFIG_FB_68328)            += 68328fb.o
  obj-$(CONFIG_FB_GBE)              += gbefb.o
  obj-$(CONFIG_FB_CIRRUS)		  += cirrusfb.o
-diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
-new file mode 100644
-index 0000000..54cd760
 --- /dev/null
 +++ b/drivers/video/bcm2708_fb.c
 @@ -0,0 +1,499 @@
@@ -554,8 +547,6 @@ index 0000000..54cd760
 +MODULE_PARM_DESC(fbheight, "Height of ARM Framebuffer");
 +MODULE_PARM_DESC(fbdepth, "Bit depth of ARM Framebuffer");
 +MODULE_PARM_DESC(fbswap, "Swap order of red and blue in 24 and 32 bit modes");
-diff --git a/drivers/video/logo/logo_linux_clut224.ppm b/drivers/video/logo/logo_linux_clut224.ppm
-index 3c14e43..7626beb 100644
 --- a/drivers/video/logo/logo_linux_clut224.ppm
 +++ b/drivers/video/logo/logo_linux_clut224.ppm
 @@ -1,1604 +1,883 @@
@@ -3044,6 +3035,3 @@ index 3c14e43..7626beb 100644
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0
--- 
-1.9.1
-

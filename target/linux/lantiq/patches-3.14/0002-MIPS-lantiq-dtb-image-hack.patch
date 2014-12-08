@@ -9,8 +9,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/prom.c   |    4 +++-
  2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/lantiq/Makefile b/arch/mips/lantiq/Makefile
-index d6bdc57..690257a 100644
 --- a/arch/mips/lantiq/Makefile
 +++ b/arch/mips/lantiq/Makefile
 @@ -6,8 +6,6 @@
@@ -22,11 +20,9 @@ index d6bdc57..690257a 100644
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
  obj-$(CONFIG_SOC_TYPE_XWAY) += xway/
-diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
-index 19686c5..202e118 100644
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
-@@ -58,6 +58,8 @@ static void __init prom_init_cmdline(void)
+@@ -58,6 +58,8 @@ static void __init prom_init_cmdline(voi
  	}
  }
  
@@ -44,6 +40,3 @@ index 19686c5..202e118 100644
  }
  
  void __init device_tree_init(void)
--- 
-1.7.10.4
-

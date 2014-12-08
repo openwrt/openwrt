@@ -1,7 +1,5 @@
-Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
-===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-17 19:54:59.683128174 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-17 19:54:59.975139185 +0100
+--- a/arch/mips/include/asm/mach-ralink/mt7620.h
++++ b/arch/mips/include/asm/mach-ralink/mt7620.h
 @@ -13,14 +13,6 @@
  #ifndef _MT7620_REGS_H_
  #define _MT7620_REGS_H_
@@ -17,10 +15,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
  #define MT7620_SYSC_BASE		0x10000000
  
  #define SYSC_REG_CHIP_NAME0		0x00
-Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h
-===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-17 19:54:59.379116714 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h	2014-11-17 19:54:59.975139185 +0100
+--- a/arch/mips/include/asm/mach-ralink/ralink_regs.h
++++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
 @@ -13,6 +13,20 @@
  #ifndef _RALINK_REGS_H_
  #define _RALINK_REGS_H_
@@ -42,10 +38,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/ralink_regs.h
  extern __iomem void *rt_sysc_membase;
  extern __iomem void *rt_memc_membase;
  
-Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h
-===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-17 19:54:59.663127421 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h	2014-11-17 19:54:59.975139185 +0100
+--- a/arch/mips/include/asm/mach-ralink/rt305x.h
++++ b/arch/mips/include/asm/mach-ralink/rt305x.h
 @@ -13,25 +13,16 @@
  #ifndef _RT305X_REGS_H_
  #define _RT305X_REGS_H_
@@ -75,7 +69,7 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h
  }
  
  static inline int soc_is_rt305x(void)
-@@ -41,17 +32,17 @@
+@@ -41,17 +32,17 @@ static inline int soc_is_rt305x(void)
  
  static inline int soc_is_rt3350(void)
  {
@@ -96,10 +90,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/rt305x.h
  }
  
  #define RT305X_SYSC_BASE		0x10000000
-Index: linux-3.14.18/arch/mips/ralink/mt7620.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/mt7620.c	2014-11-17 19:54:59.663127421 +0100
-+++ linux-3.14.18/arch/mips/ralink/mt7620.c	2014-11-17 19:54:59.975139185 +0100
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
 @@ -43,8 +43,6 @@
  #define CLKCFG_FFRAC_MASK	0x001f
  #define CLKCFG_FFRAC_USB_VAL	0x0003
@@ -109,7 +101,7 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  /* does the board have sdram or ddram */
  static int dram_type;
  
-@@ -375,7 +373,7 @@
+@@ -375,7 +373,7 @@ void __init ralink_clk_init(void)
  #define RINT(x)		((x) / 1000000)
  #define RFRAC(x)	(((x) / 1000) % 1000)
  
@@ -118,7 +110,7 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  		if (xtal_rate == MHZ(40))
  			cpu_rate = MHZ(580);
  		else
-@@ -418,7 +416,7 @@
+@@ -418,7 +416,7 @@ void __init ralink_clk_init(void)
  	ralink_clk_add("10000c00.uartlite", periph_rate);
  	ralink_clk_add("10180000.wmac", xtal_rate);
  
@@ -127,7 +119,7 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  		/*
  		 * When the CPU goes into sleep mode, the BUS clock will be too low for
  		 * USB to function properly
-@@ -506,11 +504,11 @@
+@@ -506,11 +504,11 @@ void prom_soc_init(struct ralink_soc_inf
  
  	if (n0 == MT7620_CHIP_NAME0 && n1 == MT7620_CHIP_NAME1) {
  		if (bga) {
@@ -141,7 +133,7 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  			name = "MT7620N";
  			soc_info->compatible = "ralink,mt7620n-soc";
  #ifdef CONFIG_PCI
-@@ -518,7 +516,7 @@
+@@ -518,7 +516,7 @@ void prom_soc_init(struct ralink_soc_inf
  #endif
  		}
  	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
@@ -150,7 +142,7 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  		name = "MT7628AN";
  		soc_info->compatible = "ralink,mt7628an-soc";
  	} else {
-@@ -535,7 +533,7 @@
+@@ -535,7 +533,7 @@ void prom_soc_init(struct ralink_soc_inf
  	dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
  
  	soc_info->mem_base = MT7620_DRAM_BASE;
@@ -159,7 +151,7 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  		mt7628_dram_init(soc_info);
  	else
  		mt7620_dram_init(soc_info);
-@@ -548,7 +546,7 @@
+@@ -548,7 +546,7 @@ void prom_soc_init(struct ralink_soc_inf
  	pr_info("Digital PMU set to %s control\n",
  		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
  
@@ -168,10 +160,8 @@ Index: linux-3.14.18/arch/mips/ralink/mt7620.c
  		rt2880_pinmux_data = mt7628an_pinmux_data;
  	else
  		rt2880_pinmux_data = mt7620a_pinmux_data;
-Index: linux-3.14.18/arch/mips/ralink/rt305x.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/rt305x.c	2014-11-17 19:54:59.715129381 +0100
-+++ linux-3.14.18/arch/mips/ralink/rt305x.c	2014-11-17 19:54:59.975139185 +0100
+--- a/arch/mips/ralink/rt305x.c
++++ b/arch/mips/ralink/rt305x.c
 @@ -21,8 +21,6 @@
  
  #include "common.h"
@@ -181,7 +171,7 @@ Index: linux-3.14.18/arch/mips/ralink/rt305x.c
  static struct rt2880_pmx_func i2c_func[] =  { FUNC("i2c", 0, 1, 2) };
  static struct rt2880_pmx_func spi_func[] = { FUNC("spi", 0, 3, 4) };
  static struct rt2880_pmx_func uartf_func[] = {
-@@ -234,24 +232,24 @@
+@@ -234,24 +232,24 @@ void prom_soc_init(struct ralink_soc_inf
  
  		icache_sets = (read_c0_config1() >> 22) & 7;
  		if (icache_sets == 1) {
@@ -211,10 +201,8 @@ Index: linux-3.14.18/arch/mips/ralink/rt305x.c
  		name = "RT5350";
  		soc_info->compatible = "ralink,rt5350-soc";
  	} else {
-Index: linux-3.14.18/arch/mips/ralink/prom.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/prom.c	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/arch/mips/ralink/prom.c	2014-11-17 19:54:59.975139185 +0100
+--- a/arch/mips/ralink/prom.c
++++ b/arch/mips/ralink/prom.c
 @@ -15,9 +15,13 @@
  #include <asm/bootinfo.h>
  #include <asm/addrspace.h>
@@ -229,11 +217,9 @@ Index: linux-3.14.18/arch/mips/ralink/prom.c
  
  const char *get_system_type(void)
  {
-Index: linux-3.14.18/arch/mips/ralink/mt7621.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/mt7621.c	2014-11-17 19:54:59.471120181 +0100
-+++ linux-3.14.18/arch/mips/ralink/mt7621.c	2014-11-17 19:58:52.667916008 +0100
-@@ -175,6 +175,7 @@
+--- a/arch/mips/ralink/mt7621.c
++++ b/arch/mips/ralink/mt7621.c
+@@ -175,6 +175,7 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_size_min = MT7621_DDR2_SIZE_MIN;
  	soc_info->mem_size_max = MT7621_DDR2_SIZE_MAX;
  	soc_info->mem_base = MT7621_DRAM_BASE;

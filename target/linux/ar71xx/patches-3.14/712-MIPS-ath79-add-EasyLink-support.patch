@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -50,6 +50,8 @@ enum ath79_mach_type {
+@@ -51,6 +51,8 @@ enum ath79_mach_type {
  	ATH79_MACH_EW_DORIN,		/* embedded wireless Dorin Platform */
  	ATH79_MACH_EW_DORIN_ROUTER,	/* embedded wireless Dorin Router Platform */
  	ATH79_MACH_EAP7660D,		/* Senao EAP7660D */
@@ -40,7 +40,7 @@
         select SOC_AR933X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -62,6 +62,8 @@ obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= m
+@@ -63,6 +63,8 @@ obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= m
  obj-$(CONFIG_ATH79_MACH_DRAGINO2)	+= mach-dragino2.o
  obj-$(CONFIG_ATH79_MACH_EW_DORIN)	+= mach-ew-dorin.o
  obj-$(CONFIG_ATH79_MACH_EAP7660D)	+= mach-eap7660d.o

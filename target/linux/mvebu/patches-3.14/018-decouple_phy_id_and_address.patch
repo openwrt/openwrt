@@ -32,7 +32,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u16 regs[MII_REGS_NUM];
  	struct phy_device *phydev;
  	struct fixed_phy_status status;
-@@ -104,8 +104,8 @@ static int fixed_phy_update_regs(struct
+@@ -104,8 +104,8 @@ static int fixed_phy_update_regs(struct 
  	if (fp->status.asym_pause)
  		lpa |= LPA_PAUSE_ASYM;
  
@@ -43,7 +43,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	fp->regs[MII_BMSR] = bmsr;
  	fp->regs[MII_BMCR] = bmcr;
-@@ -115,7 +115,7 @@ static int fixed_phy_update_regs(struct
+@@ -115,7 +115,7 @@ static int fixed_phy_update_regs(struct 
  	return 0;
  }
  
@@ -88,7 +88,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		  struct fixed_phy_status *status)
  {
  	int ret;
-@@ -184,9 +184,9 @@ int fixed_phy_add(unsigned int irq, int
+@@ -184,9 +184,9 @@ int fixed_phy_add(unsigned int irq, int 
  
  	memset(fp->regs, 0xFF,  sizeof(fp->regs[0]) * MII_REGS_NUM);
  

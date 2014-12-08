@@ -9,11 +9,9 @@ Subject: [PATCH 48/54] ASoc: Don't report S24_LE support, it produces white
  sound/soc/codecs/pcm5102a.c | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/sound/soc/bcm/bcm2708-i2s.c b/sound/soc/bcm/bcm2708-i2s.c
-index a179216..b25e158 100644
 --- a/sound/soc/bcm/bcm2708-i2s.c
 +++ b/sound/soc/bcm/bcm2708-i2s.c
-@@ -718,7 +718,7 @@ static struct snd_soc_dai_driver bcm2708_i2s_dai = {
+@@ -718,7 +718,7 @@ static struct snd_soc_dai_driver bcm2708
  		.channels_max = 2,
  		.rates =	SNDRV_PCM_RATE_8000_192000,
  		.formats =	SNDRV_PCM_FMTBIT_S16_LE
@@ -22,11 +20,9 @@ index a179216..b25e158 100644
  				| SNDRV_PCM_FMTBIT_S32_LE
  		},
  	.capture = {
-diff --git a/sound/soc/codecs/pcm5102a.c b/sound/soc/codecs/pcm5102a.c
-index 126f1e9..7812d34 100644
 --- a/sound/soc/codecs/pcm5102a.c
 +++ b/sound/soc/codecs/pcm5102a.c
-@@ -28,7 +28,7 @@ static struct snd_soc_dai_driver pcm5102a_dai = {
+@@ -28,7 +28,7 @@ static struct snd_soc_dai_driver pcm5102
  		.channels_max = 2,
  		.rates = SNDRV_PCM_RATE_8000_192000,
  		.formats = SNDRV_PCM_FMTBIT_S16_LE |
@@ -35,6 +31,3 @@ index 126f1e9..7812d34 100644
  			   SNDRV_PCM_FMTBIT_S32_LE
  	},
  };
--- 
-1.9.1
-

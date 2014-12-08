@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 365 insertions(+)
  create mode 100644 arch/mips/pci/pci-mt7620.c
 
-Index: linux-3.14.18/arch/mips/pci/Makefile
-===================================================================
---- linux-3.14.18.orig/arch/mips/pci/Makefile	2014-11-17 16:02:34.009553392 +0100
-+++ linux-3.14.18/arch/mips/pci/Makefile	2014-11-17 16:02:34.017553694 +0100
-@@ -42,6 +42,7 @@
+--- a/arch/mips/pci/Makefile
++++ b/arch/mips/pci/Makefile
+@@ -42,6 +42,7 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
  obj-$(CONFIG_SOC_MT7621)	+= pci-mt7621.o
@@ -23,10 +21,8 @@ Index: linux-3.14.18/arch/mips/pci/Makefile
  obj-$(CONFIG_SOC_RT2880)	+= pci-rt2880.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
-Index: linux-3.14.18/arch/mips/pci/pci-mt7620.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/pci/pci-mt7620.c	2014-11-17 16:09:52.814075085 +0100
+--- /dev/null
++++ b/arch/mips/pci/pci-mt7620.c
 @@ -0,0 +1,396 @@
 +/*
 + *  Ralink MT7620A SoC PCI support
@@ -424,11 +420,9 @@ Index: linux-3.14.18/arch/mips/pci/pci-mt7620.c
 +}
 +
 +arch_initcall(mt7620_pci_init);
-Index: linux-3.14.18/arch/mips/ralink/Kconfig
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/Kconfig	2014-11-17 16:02:34.009553392 +0100
-+++ linux-3.14.18/arch/mips/ralink/Kconfig	2014-11-17 16:02:34.021553845 +0100
-@@ -39,6 +39,7 @@
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -39,6 +39,7 @@ choice
  		bool "MT7620/8"
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
@@ -436,11 +430,9 @@ Index: linux-3.14.18/arch/mips/ralink/Kconfig
  
  	config SOC_MT7621
  		bool "MT7621"
-Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h
-===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-17 16:02:33.993552790 +0100
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7620.h	2014-11-17 16:10:00.002345398 +0100
-@@ -19,6 +19,7 @@
+--- a/arch/mips/include/asm/mach-ralink/mt7620.h
++++ b/arch/mips/include/asm/mach-ralink/mt7620.h
+@@ -19,6 +19,7 @@ enum mt762x_soc_type {
  	MT762X_SOC_MT7620N,
  	MT762X_SOC_MT7628AN,
  };

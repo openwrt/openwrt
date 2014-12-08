@@ -24,7 +24,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
  int cp0_timer_irq_installed;
  
-@@ -90,9 +84,38 @@ struct irqaction c0_compare_irqaction =
+@@ -90,9 +84,38 @@ struct irqaction c0_compare_irqaction = 
  	.name = "timer",
  };
  

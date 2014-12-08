@@ -1,7 +1,5 @@
-Index: linux-3.14.18/drivers/pinctrl/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/pinctrl/Kconfig
-+++ linux-3.14.18/drivers/pinctrl/Kconfig
+--- a/drivers/pinctrl/Kconfig
++++ b/drivers/pinctrl/Kconfig
 @@ -87,6 +87,15 @@ config PINCTRL_AT91
  	help
  	  Say Y here to enable the at91 pinctrl driver
@@ -18,10 +16,8 @@ Index: linux-3.14.18/drivers/pinctrl/Kconfig
  config PINCTRL_BAYTRAIL
  	bool "Intel Baytrail GPIO pin control"
  	depends on GPIOLIB && ACPI && X86
-Index: linux-3.14.18/drivers/pinctrl/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/pinctrl/Makefile
-+++ linux-3.14.18/drivers/pinctrl/Makefile
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
 @@ -67,6 +67,7 @@ obj-$(CONFIG_PINCTRL_LANTIQ)	+= pinctrl-
  obj-$(CONFIG_PINCTRL_TB10X)	+= pinctrl-tb10x.o
  obj-$(CONFIG_PINCTRL_ST) 	+= pinctrl-st.o

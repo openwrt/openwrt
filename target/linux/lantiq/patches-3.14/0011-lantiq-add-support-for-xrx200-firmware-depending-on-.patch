@@ -12,11 +12,9 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  arch/mips/lantiq/xway/xrx200_phy_fw.c |   18 +++++++++++++++++-
  1 file changed, 17 insertions(+), 1 deletion(-)
 
-diff --git a/arch/mips/lantiq/xway/xrx200_phy_fw.c b/arch/mips/lantiq/xway/xrx200_phy_fw.c
-index d4d9d31..3479b77 100644
 --- a/arch/mips/lantiq/xway/xrx200_phy_fw.c
 +++ b/arch/mips/lantiq/xway/xrx200_phy_fw.c
-@@ -24,7 +24,23 @@ static dma_addr_t xway_gphy_load(struct platform_device *pdev)
+@@ -24,7 +24,23 @@ static dma_addr_t xway_gphy_load(struct 
  	void *fw_addr;
  	size_t size;
  
@@ -41,6 +39,3 @@ index d4d9d31..3479b77 100644
  		dev_err(&pdev->dev, "failed to load firmware filename\n");
  		return 0;
  	}
--- 
-1.7.10.4
-

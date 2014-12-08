@@ -76,7 +76,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  #include <linux/of.h>
  #include <linux/of_irq.h>
  #include <linux/of_mdio.h>
-@@ -280,3 +281,69 @@ struct phy_device *of_phy_attach(struct
+@@ -280,3 +281,69 @@ struct phy_device *of_phy_attach(struct 
  	return phy_attach_direct(dev, phy, flags, iface) ? NULL : phy;
  }
  EXPORT_SYMBOL(of_phy_attach);

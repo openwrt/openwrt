@@ -1,8 +1,6 @@
-Index: linux-3.14.18/arch/mips/ralink/mt7620.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/mt7620.c	2014-11-18 20:57:21.506801623 +0100
-+++ linux-3.14.18/arch/mips/ralink/mt7620.c	2014-11-18 22:12:05.133116492 +0100
-@@ -511,9 +511,6 @@
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -511,9 +511,6 @@ void prom_soc_init(struct ralink_soc_inf
  			ralink_soc = MT762X_SOC_MT7620N;
  			name = "MT7620N";
  			soc_info->compatible = "ralink,mt7620n-soc";

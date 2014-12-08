@@ -25,7 +25,7 @@
  	  Ethernet bridge, which means that the different Ethernet segments it
 --- a/net/ipv6/Makefile
 +++ b/net/ipv6/Makefile
-@@ -45,3 +45,4 @@ obj-y += addrconf_core.o exthdrs_core.o
+@@ -45,3 +45,4 @@ obj-y += addrconf_core.o exthdrs_core.o 
  obj-$(CONFIG_INET) += output_core.o protocol.o $(ipv6-offload)
  
  obj-$(subst m,y,$(CONFIG_IPV6)) += inet6_hashtables.o

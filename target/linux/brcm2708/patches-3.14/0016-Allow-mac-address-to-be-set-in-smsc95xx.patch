@@ -8,8 +8,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  drivers/net/usb/smsc95xx.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 56 insertions(+)
 
-diff --git a/drivers/net/usb/smsc95xx.c b/drivers/net/usb/smsc95xx.c
-index 424db65e..fc1ef4e 100644
 --- a/drivers/net/usb/smsc95xx.c
 +++ b/drivers/net/usb/smsc95xx.c
 @@ -59,6 +59,7 @@
@@ -31,7 +29,7 @@ index 424db65e..fc1ef4e 100644
  static int __must_check __smsc95xx_read_reg(struct usbnet *dev, u32 index,
  					    u32 *data, int in_pm)
  {
-@@ -763,8 +768,59 @@ static int smsc95xx_ioctl(struct net_device *netdev, struct ifreq *rq, int cmd)
+@@ -763,8 +768,59 @@ static int smsc95xx_ioctl(struct net_dev
  	return generic_mii_ioctl(&dev->mii, if_mii(rq), cmd, NULL);
  }
  
@@ -91,6 +89,3 @@ index 424db65e..fc1ef4e 100644
  	/* try reading mac address from EEPROM */
  	if (smsc95xx_read_eeprom(dev, EEPROM_MAC_OFFSET, ETH_ALEN,
  			dev->net->dev_addr) == 0) {
--- 
-1.9.1
-

@@ -44,7 +44,7 @@
  		UASM_i_LA_mostly(p, ptr, pgdc);
  #endif
  		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
-@@ -1277,12 +1280,12 @@ static void build_r4000_tlb_refill_handl
+@@ -1280,12 +1283,12 @@ static void build_r4000_tlb_refill_handl
  			/* No need for uasm_i_nop */
  		}
  
@@ -60,7 +60,7 @@
  		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
  #endif
  
-@@ -1294,6 +1297,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1297,6 +1300,9 @@ static void build_r4000_tlb_refill_handl
  		build_update_entries(&p, K0, K1);
  		build_tlb_write_entry(&p, &l, &r, tlb_random);
  		uasm_l_leave(&l, p);
@@ -70,7 +70,7 @@
  		uasm_i_eret(&p); /* return from trap */
  	}
  #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
-@@ -1838,12 +1844,12 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1843,12 +1849,12 @@ build_r4000_tlbchange_handler_head(u32 *
  {
  	struct work_registers wr = build_get_work_registers(p);
  
@@ -86,7 +86,7 @@
  	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
  #endif
  
-@@ -1882,6 +1888,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -1887,6 +1893,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
  	build_restore_work_registers(p);

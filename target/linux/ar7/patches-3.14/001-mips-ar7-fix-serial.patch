@@ -11,11 +11,9 @@ Signed-off-by: Oswald Buddenhagen <oswald.buddenhagen@gmx.de>
  arch/mips/ar7/platform.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/arch/mips/ar7/platform.c b/arch/mips/ar7/platform.c
-index 7e2356f..e4f47d3 100644
 --- a/arch/mips/ar7/platform.c
 +++ b/arch/mips/ar7/platform.c
-@@ -581,6 +581,7 @@ static int __init ar7_register_uarts(void)
+@@ -581,6 +581,7 @@ static int __init ar7_register_uarts(voi
  	uart_port.type		= PORT_AR7;
  	uart_port.uartclk	= clk_get_rate(bus_clk) / 2;
  	uart_port.iotype	= UPIO_MEM32;
@@ -23,6 +21,3 @@ index 7e2356f..e4f47d3 100644
  	uart_port.regshift	= 2;
  
  	uart_port.line		= 0;
--- 
-1.8.5.3.2.g3dbf181
-

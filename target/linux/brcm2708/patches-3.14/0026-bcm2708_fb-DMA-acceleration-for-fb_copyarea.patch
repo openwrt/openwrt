@@ -43,11 +43,9 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  drivers/video/bcm2708_fb.c               | 273 ++++++++++++++++++++++++++++++-
  3 files changed, 278 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-bcm2708/dma.c b/arch/arm/mach-bcm2708/dma.c
-index 51d147a..1da2413 100644
 --- a/arch/arm/mach-bcm2708/dma.c
 +++ b/arch/arm/mach-bcm2708/dma.c
-@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iomem *dma_chan_base)
+@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iom
  
  EXPORT_SYMBOL_GPL(bcm_dma_start);
  
@@ -62,8 +60,6 @@ index 51d147a..1da2413 100644
  /* Complete an ongoing DMA (assuming its results are to be ignored)
     Does nothing if there is no DMA in progress.
     This routine waits for the current AXI transfer to complete before
-diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
-index ac7a4a0..6d2f9a0 100644
 --- a/arch/arm/mach-bcm2708/include/mach/dma.h
 +++ b/arch/arm/mach-bcm2708/include/mach/dma.h
 @@ -62,11 +62,13 @@ struct bcm2708_dma_cb {
@@ -80,8 +76,6 @@ index ac7a4a0..6d2f9a0 100644
  extern int /*rc*/ bcm_dma_abort(void __iomem *dma_chan_base);
  
  /* When listing features we can ask for when allocating DMA channels give
-diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
-index 54cd760..798eb52 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
 @@ -21,13 +21,16 @@
@@ -101,7 +95,7 @@ index 54cd760..798eb52 100644
  #include <mach/platform.h>
  #include <mach/vcio.h>
  
-@@ -51,6 +54,10 @@ static int fbheight = 480; /* module parameter */
+@@ -51,6 +54,10 @@ static int fbheight = 480; /* module par
  static int fbdepth = 16;   /* module parameter */
  static int fbswap = 0;     /* module parameter */
  
@@ -186,7 +180,7 @@ index 54cd760..798eb52 100644
  static int bcm2708_fb_set_bitfields(struct fb_var_screeninfo *var)
  {
  	int ret = 0;
-@@ -322,11 +386,148 @@ static void bcm2708_fb_fillrect(struct fb_info *info,
+@@ -322,11 +386,148 @@ static void bcm2708_fb_fillrect(struct f
  	cfb_fillrect(info, rect);
  }
  
@@ -337,7 +331,7 @@ index 54cd760..798eb52 100644
  }
  
  static void bcm2708_fb_imageblit(struct fb_info *info,
-@@ -336,6 +537,24 @@ static void bcm2708_fb_imageblit(struct fb_info *info,
+@@ -336,6 +537,24 @@ static void bcm2708_fb_imageblit(struct 
  	cfb_imageblit(info, image);
  }
  
@@ -362,7 +356,7 @@ index 54cd760..798eb52 100644
  static struct fb_ops bcm2708_fb_ops = {
  	.owner = THIS_MODULE,
  	.fb_check_var = bcm2708_fb_check_var,
-@@ -365,7 +584,7 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
+@@ -365,7 +584,7 @@ static int bcm2708_fb_register(struct bc
  		fb->dma = dma;
  	}
  	fb->fb.fbops = &bcm2708_fb_ops;
@@ -371,7 +365,7 @@ index 54cd760..798eb52 100644
  	fb->fb.pseudo_palette = fb->cmap;
  
  	strncpy(fb->fb.fix.id, bcm2708_name, sizeof(fb->fb.fix.id));
-@@ -396,6 +615,7 @@ static int bcm2708_fb_register(struct bcm2708_fb *fb)
+@@ -396,6 +615,7 @@ static int bcm2708_fb_register(struct bc
  	fb->fb.monspecs.dclkmax = 100000000;
  
  	bcm2708_fb_set_bitfields(&fb->fb.var);
@@ -379,7 +373,7 @@ index 54cd760..798eb52 100644
  
  	/*
  	 * Allocate colourmap.
-@@ -421,14 +641,45 @@ static int bcm2708_fb_probe(struct platform_device *dev)
+@@ -421,14 +641,45 @@ static int bcm2708_fb_probe(struct platf
  	struct bcm2708_fb *fb;
  	int ret;
  
@@ -427,7 +421,7 @@ index 54cd760..798eb52 100644
  
  	fb->dev = dev;
  
-@@ -438,6 +689,11 @@ static int bcm2708_fb_probe(struct platform_device *dev)
+@@ -438,6 +689,11 @@ static int bcm2708_fb_probe(struct platf
  		goto out;
  	}
  
@@ -439,7 +433,7 @@ index 54cd760..798eb52 100644
  	kfree(fb);
  free_region:
  	dev_err(&dev->dev, "probe failed, err %d\n", ret);
-@@ -455,8 +711,15 @@ static int bcm2708_fb_remove(struct platform_device *dev)
+@@ -455,8 +711,15 @@ static int bcm2708_fb_remove(struct plat
  		iounmap(fb->fb.screen_base);
  	unregister_framebuffer(&fb->fb);
  
@@ -455,6 +449,3 @@ index 54cd760..798eb52 100644
  	kfree(fb);
  
  	return 0;
--- 
-1.9.1
-

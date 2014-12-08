@@ -8,13 +8,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/kernel/head.S |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/arch/mips/kernel/head.S b/arch/mips/kernel/head.S
-index 7b6a5b3..78518b8 100644
 --- a/arch/mips/kernel/head.S
 +++ b/arch/mips/kernel/head.S
-@@ -101,6 +101,9 @@ FEXPORT(__kernel_entry)
- 	j	kernel_entry
- #endif
+@@ -107,6 +107,9 @@ EXPORT(__image_cmdline)
+ 	.fill	0x400
+ #endif /* CONFIG_IMAGE_CMDLINE_HACK */
  
 +	.ascii  "OWRTDTB:"
 +	EXPORT(__image_dtb)
@@ -22,6 +20,3 @@ index 7b6a5b3..78518b8 100644
  	__REF
  
  NESTED(kernel_entry, 16, sp)			# kernel entry point
--- 
-1.7.10.4
-

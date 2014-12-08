@@ -23,20 +23,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/mmc/host/mtk-mmc/mt6575_sd.h
  create mode 100644 drivers/mmc/host/mtk-mmc/sd.c
 
-Index: linux-3.14.18/drivers/mmc/host/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/mmc/host/Kconfig	2014-11-15 14:13:20.210278242 +0100
-+++ linux-3.14.18/drivers/mmc/host/Kconfig	2014-11-15 14:13:20.998305852 +0100
-@@ -714,3 +714,5 @@
+--- a/drivers/mmc/host/Kconfig
++++ b/drivers/mmc/host/Kconfig
+@@ -714,3 +714,5 @@ config MMC_REALTEK_PCI
  	help
  	  Say Y here to include driver code to support SD/MMC card interface
  	  of Realtek PCI-E card reader
 +
 +source "drivers/mmc/host/mtk-mmc/Kconfig"
-Index: linux-3.14.18/drivers/mmc/host/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/mmc/host/Makefile	2014-11-15 14:13:20.210278242 +0100
-+++ linux-3.14.18/drivers/mmc/host/Makefile	2014-11-15 14:13:20.998305852 +0100
+--- a/drivers/mmc/host/Makefile
++++ b/drivers/mmc/host/Makefile
 @@ -2,6 +2,7 @@
  # Makefile for MMC/SD host controller drivers
  #
@@ -45,10 +41,8 @@ Index: linux-3.14.18/drivers/mmc/host/Makefile
  obj-$(CONFIG_MMC_ARMMMCI)	+= mmci.o
  obj-$(CONFIG_MMC_PXA)		+= pxamci.o
  obj-$(CONFIG_MMC_MXC)		+= mxcmmc.o
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/Kconfig
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/Kconfig	2014-11-15 14:13:20.998305852 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/Kconfig
 @@ -0,0 +1,16 @@
 +config MTK_MMC
 +	tristate "MTK SD/MMC"
@@ -66,10 +60,8 @@ Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/Kconfig
 +	bool "eMMC 8-bit support"
 +	depends on MTK_MMC && RALINK_MT7628
 +
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/Makefile	2014-11-15 14:13:20.998305852 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/Makefile
 @@ -0,0 +1,42 @@
 +# Copyright Statement:
 +#
@@ -113,10 +105,8 @@ Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/Makefile
 +
 +clean:
 +	@rm -f *.o modules.order .*.cmd
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/board.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/board.h	2014-11-15 14:13:20.998305852 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/board.h
 @@ -0,0 +1,137 @@
 +/* Copyright Statement:
 + *
@@ -255,10 +245,8 @@ Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/board.h
 +
 +#endif /* __ARCH_ARM_MACH_BOARD_H */
 +
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.c	2014-11-15 14:13:20.998305852 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/dbg.c
 @@ -0,0 +1,347 @@
 +/* Copyright Statement:
 + *
@@ -607,10 +595,8 @@ Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.c
 +}
 +EXPORT_SYMBOL_GPL(msdc_debug_proc_init);
 +#endif
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.h	2014-11-15 14:13:20.998305852 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/dbg.h
 @@ -0,0 +1,156 @@
 +/* Copyright Statement:
 + *
@@ -768,10 +754,8 @@ Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/dbg.h
 +void msdc_performance(u32 opcode, u32 sizes, u32 bRx, u32 ticks);   
 +
 +#endif
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/mt6575_sd.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/mt6575_sd.h	2014-11-15 14:13:20.998305852 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/mt6575_sd.h
 @@ -0,0 +1,1001 @@
 +/* Copyright Statement:
 + *
@@ -1774,10 +1758,8 @@ Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/mt6575_sd.h
 +
 +#endif
 +
-Index: linux-3.14.18/drivers/mmc/host/mtk-mmc/sd.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/drivers/mmc/host/mtk-mmc/sd.c	2014-11-15 14:41:50.334227875 +0100
+--- /dev/null
++++ b/drivers/mmc/host/mtk-mmc/sd.c
 @@ -0,0 +1,3047 @@
 +/* Copyright Statement:
 + *

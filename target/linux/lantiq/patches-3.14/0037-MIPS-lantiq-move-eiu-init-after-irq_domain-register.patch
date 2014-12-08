@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/lantiq/irq.c |   48 ++++++++++++++++++++++++------------------------
  1 file changed, 24 insertions(+), 24 deletions(-)
 
-diff --git a/arch/mips/lantiq/irq.c b/arch/mips/lantiq/irq.c
-index 6b94cc7..3bbedf6 100644
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -380,30 +380,6 @@ int __init icu_of_init(struct device_node *node, struct device_node *parent)
+@@ -380,30 +380,6 @@ int __init icu_of_init(struct device_nod
  			panic("Failed to remap icu memory");
  	}
  
@@ -43,7 +41,7 @@ index 6b94cc7..3bbedf6 100644
  	/* turn off all irqs by default */
  	for (i = 0; i < MAX_IM; i++) {
  		/* make sure all irqs are turned off by default */
-@@ -460,6 +436,30 @@ int __init icu_of_init(struct device_node *node, struct device_node *parent)
+@@ -460,6 +436,30 @@ int __init icu_of_init(struct device_nod
  	if (MIPS_CPU_TIMER_IRQ != 7)
  		irq_create_mapping(ltq_domain, MIPS_CPU_TIMER_IRQ);
  
@@ -74,6 +72,3 @@ index 6b94cc7..3bbedf6 100644
  	return 0;
  }
  
--- 
-1.7.10.4
-

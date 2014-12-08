@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -57,6 +57,7 @@ enum ath79_mach_type {
+@@ -58,6 +58,7 @@ enum ath79_mach_type {
  	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
  	ATH79_MACH_MR600,		/* OpenMesh MR600 */
  	ATH79_MACH_MYNET_N600,		/* WD My Net N600 */
@@ -10,7 +10,7 @@
  	ATH79_MACH_MZK_W300NH,		/* Planex MZK-W300NH */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -830,6 +830,16 @@ config ATH79_MACH_MYNET_N600
+@@ -839,6 +839,16 @@ config ATH79_MACH_MYNET_N600
  	select ATH79_DEV_WMAC
  	select ATH79_NVRAM
  
@@ -29,7 +29,7 @@
  	select SOC_AR934X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -67,6 +67,7 @@ obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach
+@@ -68,6 +68,7 @@ obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach
  obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
  obj-$(CONFIG_ATH79_MACH_MR600)		+= mach-mr600.o
  obj-$(CONFIG_ATH79_MACH_MYNET_N600)	+= mach-mynet-n600.o

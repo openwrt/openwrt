@@ -16,11 +16,9 @@ Signed-off-by: Alexsey Shestacov <wingrime@linux-sunxi.org>
  3 files changed, 329 insertions(+)
  create mode 100644 drivers/media/rc/sunxi-cir.c
 
-diff --git a/drivers/media/rc/Kconfig b/drivers/media/rc/Kconfig
-index 8fbd377..9427fad 100644
 --- a/drivers/media/rc/Kconfig
 +++ b/drivers/media/rc/Kconfig
-@@ -343,4 +343,14 @@ config RC_ST
+@@ -332,4 +332,14 @@ config RC_ST
  
  	 If you're not sure, select N here.
  
@@ -35,18 +33,13 @@ index 8fbd377..9427fad 100644
 +      be called sunxi-ir.
 +
  endif #RC_DEVICES
-diff --git a/drivers/media/rc/Makefile b/drivers/media/rc/Makefile
-index f8b54ff..9ee9ee7 100644
 --- a/drivers/media/rc/Makefile
 +++ b/drivers/media/rc/Makefile
-@@ -32,3 +32,4 @@ obj-$(CONFIG_IR_GPIO_CIR) += gpio-ir-recv.o
+@@ -31,3 +31,4 @@ obj-$(CONFIG_IR_GPIO_CIR) += gpio-ir-rec
  obj-$(CONFIG_IR_IGUANA) += iguanair.o
  obj-$(CONFIG_IR_TTUSBIR) += ttusbir.o
  obj-$(CONFIG_RC_ST) += st_rc.o
 +obj-$(CONFIG_IR_SUNXI) += sunxi-cir.o
-diff --git a/drivers/media/rc/sunxi-cir.c b/drivers/media/rc/sunxi-cir.c
-new file mode 100644
-index 0000000..5971b69
 --- /dev/null
 +++ b/drivers/media/rc/sunxi-cir.c
 @@ -0,0 +1,318 @@

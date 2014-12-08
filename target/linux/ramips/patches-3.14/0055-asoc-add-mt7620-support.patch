@@ -19,10 +19,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 sound/soc/ralink/mt7620-i2s.c
  create mode 100644 sound/soc/ralink/mt7620-wm8960.c
 
-Index: linux-3.14.18/arch/mips/ralink/of.c
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/of.c	2014-11-18 10:45:55.010989756 +0100
-+++ linux-3.14.18/arch/mips/ralink/of.c	2014-11-18 13:54:21.586438562 +0100
+--- a/arch/mips/ralink/of.c
++++ b/arch/mips/ralink/of.c
 @@ -15,6 +15,7 @@
  #include <linux/of_fdt.h>
  #include <linux/kernel.h>
@@ -39,11 +37,9 @@ Index: linux-3.14.18/arch/mips/ralink/of.c
  __iomem void *rt_memc_membase;
  
  extern struct boot_param_header __dtb_start;
-Index: linux-3.14.18/sound/soc/Kconfig
-===================================================================
---- linux-3.14.18.orig/sound/soc/Kconfig	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/sound/soc/Kconfig	2014-11-18 10:45:55.351159766 +0100
-@@ -47,6 +47,7 @@
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -47,6 +47,7 @@ source "sound/soc/kirkwood/Kconfig"
  source "sound/soc/intel/Kconfig"
  source "sound/soc/mxs/Kconfig"
  source "sound/soc/pxa/Kconfig"
@@ -51,11 +47,9 @@ Index: linux-3.14.18/sound/soc/Kconfig
  source "sound/soc/samsung/Kconfig"
  source "sound/soc/s6000/Kconfig"
  source "sound/soc/sh/Kconfig"
-Index: linux-3.14.18/sound/soc/Makefile
-===================================================================
---- linux-3.14.18.orig/sound/soc/Makefile	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/sound/soc/Makefile	2014-11-18 10:45:55.351159766 +0100
-@@ -24,6 +24,7 @@
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -24,6 +24,7 @@ obj-$(CONFIG_SND_SOC)	+= nuc900/
  obj-$(CONFIG_SND_SOC)	+= omap/
  obj-$(CONFIG_SND_SOC)	+= kirkwood/
  obj-$(CONFIG_SND_SOC)	+= pxa/
@@ -63,10 +57,8 @@ Index: linux-3.14.18/sound/soc/Makefile
  obj-$(CONFIG_SND_SOC)	+= samsung/
  obj-$(CONFIG_SND_SOC)	+= s6000/
  obj-$(CONFIG_SND_SOC)	+= sh/
-Index: linux-3.14.18/sound/soc/ralink/Kconfig
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/sound/soc/ralink/Kconfig	2014-11-18 10:45:55.351159766 +0100
+--- /dev/null
++++ b/sound/soc/ralink/Kconfig
 @@ -0,0 +1,15 @@
 +config SND_MT7620_SOC_I2S
 +	depends on SOC_MT7620 && SND_SOC
@@ -83,10 +75,8 @@ Index: linux-3.14.18/sound/soc/ralink/Kconfig
 +	help
 +	  Say Y if you want to add support for ASoC audio on the Qi LB60 board
 +	  a.k.a Qi Ben NanoNote.
-Index: linux-3.14.18/sound/soc/ralink/Makefile
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/sound/soc/ralink/Makefile	2014-11-18 10:45:55.351159766 +0100
+--- /dev/null
++++ b/sound/soc/ralink/Makefile
 @@ -0,0 +1,11 @@
 +#
 +# Jz4740 Platform Support
@@ -99,10 +89,8 @@ Index: linux-3.14.18/sound/soc/ralink/Makefile
 +snd-soc-mt7620-wm8960-objs := mt7620-wm8960.o
 +
 +obj-$(CONFIG_SND_MT7620_SOC_WM8960) += snd-soc-mt7620-wm8960.o
-Index: linux-3.14.18/sound/soc/ralink/mt7620-i2s.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/sound/soc/ralink/mt7620-i2s.c	2014-11-18 10:45:55.351159766 +0100
+--- /dev/null
++++ b/sound/soc/ralink/mt7620-i2s.c
 @@ -0,0 +1,436 @@
 +/*
 + *  Copyright (C) 2010, Lars-Peter Clausen <lars@metafoo.de>
@@ -540,10 +528,8 @@ Index: linux-3.14.18/sound/soc/ralink/mt7620-i2s.c
 +MODULE_DESCRIPTION("Ingenic JZ4740 SoC I2S driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mt7620-i2s");
-Index: linux-3.14.18/sound/soc/ralink/mt7620-wm8960.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/sound/soc/ralink/mt7620-wm8960.c	2014-11-18 11:56:57.570299500 +0100
+--- /dev/null
++++ b/sound/soc/ralink/mt7620-wm8960.c
 @@ -0,0 +1,233 @@
 +/*
 + * Copyright 2013 Freescale Semiconductor, Inc.
@@ -778,10 +764,8 @@ Index: linux-3.14.18/sound/soc/ralink/mt7620-wm8960.c
 +MODULE_DESCRIPTION("Freescale i.MX WM8962 ASoC machine driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:mt7620-wm8962");
-Index: linux-3.14.18/sound/soc/soc-io.c
-===================================================================
---- linux-3.14.18.orig/sound/soc/soc-io.c	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/sound/soc/soc-io.c	2014-11-18 10:45:55.355161766 +0100
+--- a/sound/soc/soc-io.c
++++ b/sound/soc/soc-io.c
 @@ -19,7 +19,6 @@
  
  #include <trace/events/asoc.h>
@@ -790,7 +774,7 @@ Index: linux-3.14.18/sound/soc/soc-io.c
  static int hw_write(struct snd_soc_codec *codec, unsigned int reg,
  		    unsigned int value)
  {
-@@ -135,12 +134,3 @@
+@@ -135,12 +134,3 @@ int snd_soc_codec_set_cache_io(struct sn
  	return PTR_ERR_OR_ZERO(codec->control_data);
  }
  EXPORT_SYMBOL_GPL(snd_soc_codec_set_cache_io);

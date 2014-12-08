@@ -122,7 +122,7 @@
  }
  
  
-@@ -916,6 +951,9 @@ static int tulip_ethtool_set_wol(struct
+@@ -916,6 +951,9 @@ static int tulip_ethtool_set_wol(struct 
  #ifdef CONFIG_TULIP_PCI
  	device_set_wakeup_enable(tp->kdev, tp->wolinfo.wolopts);
  #endif

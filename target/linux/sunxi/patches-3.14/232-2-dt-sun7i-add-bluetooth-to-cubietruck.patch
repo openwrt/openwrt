@@ -16,7 +16,7 @@ GPIO, but this is not supported in this patch.
 
 --- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 +++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-@@ -119,6 +119,20 @@
+@@ -135,6 +135,20 @@
  				allwinner,drive = <0>;
  				allwinner,pull = <0>;
  			};
@@ -36,8 +36,8 @@ GPIO, but this is not supported in this patch.
 +			};
  		};
  
- 		uart0: serial@01c28000 {
-@@ -149,6 +163,12 @@
+ 		i2c0: i2c@01c2ac00 {
+@@ -167,6 +181,12 @@
  			};
  		};
  
@@ -50,7 +50,7 @@ GPIO, but this is not supported in this patch.
  		i2c0: i2c@01c2ac00 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&i2c0_pins_a>;
-@@ -218,4 +238,20 @@
+@@ -236,4 +256,20 @@
  		enable-active-high;
  		gpio = <&pio 7 9 0>;
  	};
