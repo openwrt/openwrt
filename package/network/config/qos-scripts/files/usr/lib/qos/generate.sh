@@ -115,7 +115,7 @@ parse_matching_rule() {
 			;;
 			*:connbytes)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
-				add_insmod ipt_connbytes
+				add_insmod xt_connbytes
 				append "$var" "-m connbytes --connbytes $value --connbytes-dir both --connbytes-mode bytes"
 			;;
 			*:comment)
@@ -123,14 +123,14 @@ parse_matching_rule() {
 				append "$var" "-m comment --comment '$value'"
 			;;
 			*:tos)
-                                add_insmod ipt_tos
+                                add_insmod xt_dscp
                                 case "$value" in
                                         !*) append "$var" "-m tos ! --tos $value";;
                                         *) append "$var" "-m tos --tos $value"
                                 esac
                         ;;
 			*:dscp)
-                                add_insmod ipt_dscp
+                                add_insmod xt_dscp
 				dscp_option="--dscp"
                                 [ -z "${value%%[EBCA]*}" ] && dscp_option="--dscp-class"
 				case "$value" in
@@ -148,11 +148,11 @@ parse_matching_rule() {
 			;;
 			1:pktsize)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
-				add_insmod ipt_length
+				add_insmod xt_length
 				append "$var" "-m length --length $value"
 			;;
 			1:limit)
-				add_insmod ipt_limit
+				add_insmod xt_limit
 				append "$var" "-m limit --limit $value"
 			;;
 			1:tcpflags)
@@ -170,12 +170,12 @@ parse_matching_rule() {
 				esac
 			;;
 			1:TOS)
-				add_insmod ipt_TOS
+				add_insmod xt_DSCP
 				config_get TOS "$rule" 'TOS'
 				suffix="-j TOS --set-tos "${TOS:-"Normal-Service"}
 			;;
 			1:DSCP)
-				add_insmod ipt_DSCP
+				add_insmod xt_DSCP
 				config_get DSCP "$rule" 'DSCP'
 				[ -z "${DSCP%%[EBCA]*}" ] && set_value="--set-dscp-class $DSCP" \
 				|| set_value="--set-dscp $DSCP"
@@ -384,7 +384,7 @@ add_rules() {
 		## If we want to override the TOS field, let's clear the DSCP field first.
 		[ ! -z "$(echo $options | grep 'TOS')" ] && {
 			s_options=${options%%TOS}
-			add_insmod ipt_DSCP
+			add_insmod xt_DSCP
 			parse_matching_rule iptrule "$rule" "$s_options" "$prefix" "-j DSCP --set-dscp 0"
 			append "$var" "$iptrule" "$N"
 			unset iptrule
@@ -408,7 +408,7 @@ start_cg() {
 		config_get mark "$class" classnr
 		config_get maxsize "$class" maxsize
 		[ -z "$maxsize" -o -z "$mark" ] || {
-			add_insmod ipt_length
+			add_insmod xt_length
 			append pktrules "iptables -t mangle -A qos_${cg} -m mark --mark $mark/0x0f -m length --length $maxsize: -j MARK --set-mark 0/0xff" "$N"
 		}
 	done
@@ -439,8 +439,8 @@ EOF
 }
 
 start_firewall() {
-	add_insmod ipt_multiport
-	add_insmod ipt_CONNMARK
+	add_insmod xt_multiport
+	add_insmod xt_CONNMARK
 	stop_firewall
 	for group in $CG; do
 		start_cg $group
