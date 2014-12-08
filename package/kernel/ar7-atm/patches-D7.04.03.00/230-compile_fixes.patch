@@ -1,0 +1,52 @@
+Index: sangam_atm-D7.04.03.00/cp_sar_reg.h
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/cp_sar_reg.h	2004-04-20 08:23:30.000000000 +0200
++++ sangam_atm-D7.04.03.00/cp_sar_reg.h	2014-12-01 14:28:58.586447237 +0100
+@@ -214,4 +214,4 @@
+ 
+ /* END OF FILE */
+ 
+-#endif _INC_SAR_REG
++#endif
+Index: sangam_atm-D7.04.03.00/tn7api.h
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/tn7api.h	2014-12-01 14:28:58.574446794 +0100
++++ sangam_atm-D7.04.03.00/tn7api.h	2014-12-01 14:28:58.586447237 +0100
+@@ -172,4 +172,4 @@
+ extern struct file_operations tn7sar_proc_oam_ping_fops;
+ extern struct file_operations tn7sar_proc_pvc_table_fops;
+ int tn7sar_tx_flush(void *privContext, int chan, int queue, int skip);
+-#endif __SGAPI_H
++#endif
+Index: sangam_atm-D7.04.03.00/tn7atm.h
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/tn7atm.h	2014-12-01 14:28:58.442441921 +0100
++++ sangam_atm-D7.04.03.00/tn7atm.h	2014-12-01 14:28:58.586447237 +0100
+@@ -276,4 +276,4 @@
+ #define PHYS_TO_K1(X)                             (PHYS_ADDR(X)|K1BASE)
+ #endif
+ 
+-#endif __TN7ATM_H
++#endif
+Index: sangam_atm-D7.04.03.00/dsl_hal_api.h
+===================================================================
+--- sangam_atm-D7.04.03.00.orig/dsl_hal_api.h	2007-03-07 14:40:26.000000000 +0100
++++ sangam_atm-D7.04.03.00/dsl_hal_api.h	2014-12-01 14:30:10.509102453 +0100
+@@ -2448,7 +2448,7 @@
+ *
+ ********************************************************************************************/
+ 
+-unsigned int dslhal_api_getHighPrecision();
++unsigned int dslhal_api_getHighPrecision(void);
+ 
+ /********************************************************************************************
+ * FUNCTION NAME: void dslhal_api_setHighPrecision
+@@ -2459,7 +2459,7 @@
+ * Return: None
+ ********************************************************************************************/
+ 
+-void dslhal_api_setHighPrecision();
++void dslhal_api_setHighPrecision(void);
+ //  UR8_MERGE_END   CQ11054*
+ 
+ #ifdef INTERNAL_BUILD
