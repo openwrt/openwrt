@@ -215,9 +215,6 @@ define Image/Build
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 
-	# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
-	$(call Image/Build/CFE,$(1),CPVA642,6358,CPA-ZNTE60T,,--signature "Telsey Tlc",--signature2 "99.99.999",--second-image-flag "0")
-
 	# Netgear CVG834G
 	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
 
@@ -330,6 +327,8 @@ $(eval $(call ImageDTB,CFEDTB,SPW500V,spw500v,96348GW,6348,SPW500V))
 $(eval $(call ImageDTB,CFEDTB,GW6000,gw6000,96348GW,6348,GW6000))
 # Tecom GW6200
 $(eval $(call ImageDTB,CFEDTB,GW6200,gw6200,96348GW,6348,GW6200,--rsa-signature "$(shell printf '\x99')"))
+# Telsey CPVA642-type (e.g. CPA-ZNTE60T)
+$(eval $(call ImageDTB,CFEDTB,CPVA642,cpva642,CPVA642,6358,CPA-ZNTE60T,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4))
 # SFR Neufbox 4
 $(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,--rsa-signature "OpenWRT-$(REVISION)"))
 $(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,--rsa-signature "OpenWRT-$(REVISION)"))
