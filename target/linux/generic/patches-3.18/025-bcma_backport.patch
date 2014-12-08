@@ -84,7 +84,7 @@
  	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
  
  	readrq = pcie_get_readrq(dev);
-@@ -617,6 +617,6 @@ int bcma_core_pci_pcibios_map_irq(const
+@@ -617,6 +617,6 @@ int bcma_core_pci_pcibios_map_irq(const 
  
  	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
  			       pci_ops);
