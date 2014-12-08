@@ -1,0 +1,133 @@
+commit 5596732fa8c14139018ecda8356eabbfb599d830
+Author: Steffen Klassert <steffen.klassert@secunet.com>
+Date:   Mon Apr 7 08:08:52 2014 +0200
+
+    xfrm: Fix crash with ipv6 IPsec tunnel and NAT.
+    
+    The ipv6 xfrm output path is not aware that packets can be
+    rerouted by NAT to not use IPsec. We crash in this case
+    because we expect to have a xfrm state at the dst_entry.
+    This crash happens if the ipv6 layer does IPsec and NAT
+    or if we have an interfamily IPsec tunnel with ipv4 NAT.
+    
+    We fix this by checking for a NAT rerouted packet in each
+    address family and dst_output() to the new destination
+    in this case.
+    
+    Reported-by: Martin Pelikan <martin.pelikan@gmail.com>
+    Tested-by: Martin Pelikan <martin.pelikan@gmail.com>
+    Signed-off-by: Steffen Klassert <steffen.klassert@secunet.com>
+
+--- a/net/ipv4/xfrm4_output.c
++++ b/net/ipv4/xfrm4_output.c
+@@ -62,10 +62,7 @@ int xfrm4_prepare_output(struct xfrm_sta
+ 	if (err)
+ 		return err;
+ 
+-	memset(IPCB(skb), 0, sizeof(*IPCB(skb)));
+-	IPCB(skb)->flags |= IPSKB_XFRM_TUNNEL_SIZE | IPSKB_XFRM_TRANSFORMED;
+-
+-	skb->protocol = htons(ETH_P_IP);
++	IPCB(skb)->flags |= IPSKB_XFRM_TUNNEL_SIZE;
+ 
+ 	return x->outer_mode->output2(x, skb);
+ }
+@@ -73,27 +70,34 @@ EXPORT_SYMBOL(xfrm4_prepare_output);
+ 
+ int xfrm4_output_finish(struct sk_buff *skb)
+ {
++	memset(IPCB(skb), 0, sizeof(*IPCB(skb)));
++	skb->protocol = htons(ETH_P_IP);
++
++#ifdef CONFIG_NETFILTER
++	IPCB(skb)->flags |= IPSKB_XFRM_TRANSFORMED;
++#endif
++
++	return xfrm_output(skb);
++}
++
++static int __xfrm4_output(struct sk_buff *skb)
++{
++	struct xfrm_state *x = skb_dst(skb)->xfrm;
++
+ #ifdef CONFIG_NETFILTER
+-	if (!skb_dst(skb)->xfrm) {
++	if (!x) {
+ 		IPCB(skb)->flags |= IPSKB_REROUTED;
+ 		return dst_output(skb);
+ 	}
+-
+-	IPCB(skb)->flags |= IPSKB_XFRM_TRANSFORMED;
+ #endif
+ 
+-	skb->protocol = htons(ETH_P_IP);
+-	return xfrm_output(skb);
++	return x->outer_mode->afinfo->output_finish(skb);
+ }
+ 
+ int xfrm4_output(struct sk_buff *skb)
+ {
+-	struct dst_entry *dst = skb_dst(skb);
+-	struct xfrm_state *x = dst->xfrm;
+-
+ 	return NF_HOOK_COND(NFPROTO_IPV4, NF_INET_POST_ROUTING, skb,
+-			    NULL, dst->dev,
+-			    x->outer_mode->afinfo->output_finish,
++			    NULL, skb_dst(skb)->dev, __xfrm4_output,
+ 			    !(IPCB(skb)->flags & IPSKB_REROUTED));
+ }
+ 
+--- a/net/ipv6/xfrm6_output.c
++++ b/net/ipv6/xfrm6_output.c
+@@ -114,12 +114,6 @@ int xfrm6_prepare_output(struct xfrm_sta
+ 	if (err)
+ 		return err;
+ 
+-	memset(IP6CB(skb), 0, sizeof(*IP6CB(skb)));
+-#ifdef CONFIG_NETFILTER
+-	IP6CB(skb)->flags |= IP6SKB_XFRM_TRANSFORMED;
+-#endif
+-
+-	skb->protocol = htons(ETH_P_IPV6);
+ 	skb->local_df = 1;
+ 
+ 	return x->outer_mode->output2(x, skb);
+@@ -128,11 +122,13 @@ EXPORT_SYMBOL(xfrm6_prepare_output);
+ 
+ int xfrm6_output_finish(struct sk_buff *skb)
+ {
++	memset(IP6CB(skb), 0, sizeof(*IP6CB(skb)));
++	skb->protocol = htons(ETH_P_IPV6);
++
+ #ifdef CONFIG_NETFILTER
+ 	IP6CB(skb)->flags |= IP6SKB_XFRM_TRANSFORMED;
+ #endif
+ 
+-	skb->protocol = htons(ETH_P_IPV6);
+ 	return xfrm_output(skb);
+ }
+ 
+@@ -142,6 +138,13 @@ static int __xfrm6_output(struct sk_buff
+ 	struct xfrm_state *x = dst->xfrm;
+ 	int mtu;
+ 
++#ifdef CONFIG_NETFILTER
++	if (!x) {
++		IP6CB(skb)->flags |= IP6SKB_REROUTED;
++		return dst_output(skb);
++	}
++#endif
++
+ 	if (skb->protocol == htons(ETH_P_IPV6))
+ 		mtu = ip6_skb_dst_mtu(skb);
+ 	else
+@@ -165,6 +168,7 @@ static int __xfrm6_output(struct sk_buff
+ 
+ int xfrm6_output(struct sk_buff *skb)
+ {
+-	return NF_HOOK(NFPROTO_IPV6, NF_INET_POST_ROUTING, skb, NULL,
+-		       skb_dst(skb)->dev, __xfrm6_output);
++	return NF_HOOK_COND(NFPROTO_IPV6, NF_INET_POST_ROUTING, skb,
++			    NULL, skb_dst(skb)->dev, __xfrm6_output,
++			    !(IP6CB(skb)->flags & IP6SKB_REROUTED));
+ }
