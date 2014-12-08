@@ -241,7 +241,7 @@ Date:   Thu May 15 12:36:23 2014 -0700
  #ifdef CONFIG_IGB_HWMON
  	igb_sysfs_exit(adapter);
  #endif
-@@ -3038,6 +3170,12 @@ static int __igb_open(struct net_device
+@@ -3038,6 +3170,12 @@ static int __igb_open(struct net_device 
  	if (!resuming)
  		pm_runtime_put(&pdev->dev);
  

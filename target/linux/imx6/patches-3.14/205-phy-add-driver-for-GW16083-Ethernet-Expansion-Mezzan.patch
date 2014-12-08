@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/Kconfig
 +++ b/drivers/net/phy/Kconfig
-@@ -270,6 +270,14 @@ endif # RTL8366_SMI
+@@ -278,6 +278,14 @@ endif # RTL8366_SMI
  
  source "drivers/net/phy/b53/Kconfig"
  
@@ -17,7 +17,7 @@
  config MICREL_KS8995MA
 --- a/drivers/net/phy/Makefile
 +++ b/drivers/net/phy/Makefile
-@@ -39,6 +39,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
+@@ -40,6 +40,7 @@ obj-$(CONFIG_NATIONAL_PHY)	+= national.o
  obj-$(CONFIG_DP83640_PHY)	+= dp83640.o
  obj-$(CONFIG_STE10XP)		+= ste10Xp.o
  obj-$(CONFIG_MICREL_PHY)	+= micrel.o

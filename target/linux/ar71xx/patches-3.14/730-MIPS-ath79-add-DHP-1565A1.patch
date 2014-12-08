@@ -1,7 +1,7 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -39,6 +39,7 @@ enum ath79_mach_type {
- 	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
+@@ -40,6 +40,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_CPE510,		/* TP-LINK CPE510 */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 +	ATH79_MACH_DHP_1565_A1,		/* D-Link DHP-1565 rev. A1 */
@@ -30,9 +30,9 @@
  	select SOC_AR933X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mac
- obj-$(CONFIG_ATH79_MACH_BHU_BXU2000N2_A)+= mach-bhu-bxu2000n2-a.o
+@@ -55,6 +55,7 @@ obj-$(CONFIG_ATH79_MACH_BHU_BXU2000N2_A)
  obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
+ obj-$(CONFIG_ATH79_MACH_CPE510)		+= mach-cpe510.o
  obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 +obj-$(CONFIG_ATH79_MACH_DHP_1565_A1)	+= mach-dhp-1565-a1.o
  obj-$(CONFIG_ATH79_MACH_DIR_505_A1)	+= mach-dir-505-a1.o

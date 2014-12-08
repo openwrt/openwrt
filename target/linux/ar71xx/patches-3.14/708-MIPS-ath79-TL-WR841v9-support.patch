@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -726,6 +726,15 @@ config ATH79_MACH_TL_WR841N_V8
+@@ -735,6 +735,15 @@ config ATH79_MACH_TL_WR841N_V8
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
  
@@ -18,7 +18,7 @@
  	select SOC_AR913X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -100,6 +100,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WR741ND)	+= m
+@@ -101,6 +101,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WR741ND)	+= m
  obj-$(CONFIG_ATH79_MACH_TL_WR741ND_V4)	+= mach-tl-wr741nd-v4.o
  obj-$(CONFIG_ATH79_MACH_TL_WR841N_V1)	+= mach-tl-wr841n.o
  obj-$(CONFIG_ATH79_MACH_TL_WR841N_V8)	+= mach-tl-wr841n-v8.o
@@ -28,7 +28,7 @@
  obj-$(CONFIG_ATH79_MACH_TL_WR1043ND)	+= mach-tl-wr1043nd.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -124,6 +124,7 @@ enum ath79_mach_type {
+@@ -125,6 +125,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WR841N_V1,	/* TP-LINK TL-WR841N v1 */
  	ATH79_MACH_TL_WR841N_V7,	/* TP-LINK TL-WR841N/ND v7 */
  	ATH79_MACH_TL_WR841N_V8,	/* TP-LINK TL-WR841N/ND v8 */

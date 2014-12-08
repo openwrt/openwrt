@@ -1,6 +1,6 @@
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
-@@ -464,6 +464,15 @@ config MWAVE
+@@ -452,6 +452,15 @@ config MWAVE
  	  To compile this driver as a module, choose M here: the
  	  module will be called mwave.
  
@@ -18,7 +18,7 @@
  	depends on SCx200
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_HW_RANDOM)		+= hw_random/
+@@ -42,6 +42,7 @@ obj-$(CONFIG_HW_RANDOM)		+= hw_random/
  obj-$(CONFIG_PPDEV)		+= ppdev.o
  obj-$(CONFIG_NWBUTTON)		+= nwbutton.o
  obj-$(CONFIG_NWFLASH)		+= nwflash.o

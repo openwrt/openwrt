@@ -65,7 +65,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  		break;
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -35,6 +35,15 @@ bcm47xx_leds_asus_rtn12[] __initconst =
+@@ -35,6 +35,15 @@ bcm47xx_leds_asus_rtn12[] __initconst = 
  };
  
  static const struct gpio_led
@@ -81,7 +81,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  bcm47xx_leds_asus_rtn16[] __initconst = {
  	BCM47XX_GPIO_LED(1, "blue", "power", 1, LEDS_GPIO_DEFSTATE_ON),
  	BCM47XX_GPIO_LED(7, "blue", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
-@@ -42,8 +51,8 @@ bcm47xx_leds_asus_rtn16[] __initconst =
+@@ -42,8 +51,8 @@ bcm47xx_leds_asus_rtn16[] __initconst = 
  
  static const struct gpio_led
  bcm47xx_leds_asus_rtn66u[] __initconst = {
@@ -103,7 +103,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	BCM47XX_GPIO_LED(7, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(8, "blue", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
  };
-@@ -319,6 +328,16 @@ bcm47xx_leds_linksys_wrt54g_type_0101[]
+@@ -319,6 +328,16 @@ bcm47xx_leds_linksys_wrt54g_type_0101[] 
  	BCM47XX_GPIO_LED(7, "green", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  };
  

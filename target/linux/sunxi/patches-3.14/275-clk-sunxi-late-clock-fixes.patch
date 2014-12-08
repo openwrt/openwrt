@@ -1,8 +1,6 @@
-diff --git a/drivers/clk/sunxi/clk-sunxi.c b/drivers/clk/sunxi/clk-sunxi.c
-index a393df1..0393f85 100644
 --- a/drivers/clk/sunxi/clk-sunxi.c
 +++ b/drivers/clk/sunxi/clk-sunxi.c
-@@ -326,7 +326,7 @@ static void sun4i_get_apb1_factors(u32 *freq, u32 parent_rate,
+@@ -299,7 +299,7 @@ static void sun4i_get_apb1_factors(u32 *
  	if (parent_rate < *freq)
  		*freq = parent_rate;
  
@@ -11,7 +9,7 @@ index a393df1..0393f85 100644
  
  	/* Invalid rate! */
  	if (parent_rate > 32)
-@@ -371,7 +371,7 @@ static void sun4i_get_mod0_factors(u32 *freq, u32 parent_rate,
+@@ -344,7 +344,7 @@ static void sun4i_get_mod0_factors(u32 *
  	if (*freq > parent_rate)
  		*freq = parent_rate;
  
@@ -20,7 +18,7 @@ index a393df1..0393f85 100644
  
  	if (div < 16)
  		calcp = 0;
-@@ -412,7 +412,7 @@ static void sun7i_a20_get_out_factors(u32 *freq, u32 parent_rate,
+@@ -385,7 +385,7 @@ static void sun7i_a20_get_out_factors(u3
  	if (*freq > parent_rate)
  		*freq = parent_rate;
  

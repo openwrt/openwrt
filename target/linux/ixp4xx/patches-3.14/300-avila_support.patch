@@ -1,7 +1,5 @@
-Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-pci.c
-===================================================================
---- linux-3.14.25.orig/arch/arm/mach-ixp4xx/avila-pci.c	2014-11-30 15:25:58.890640602 +0100
-+++ linux-3.14.25/arch/arm/mach-ixp4xx/avila-pci.c	2014-11-30 15:26:43.548148782 +0100
+--- a/arch/arm/mach-ixp4xx/avila-pci.c
++++ b/arch/arm/mach-ixp4xx/avila-pci.c
 @@ -27,8 +27,8 @@
  #include <mach/hardware.h>
  #include <asm/mach-types.h>
@@ -13,7 +11,7 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-pci.c
  #define IRQ_LINES	4
  
  /* PCI controller GPIO to IRQ pin mappings */
-@@ -55,10 +55,8 @@
+@@ -55,10 +55,8 @@ static int __init avila_map_irq(const st
  		IXP4XX_GPIO_IRQ(INTD)
  	};
  
@@ -26,10 +24,8 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-pci.c
  
  	return -1;
  }
-Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-setup.c
-===================================================================
---- linux-3.14.25.orig/arch/arm/mach-ixp4xx/avila-setup.c	2014-11-30 15:25:58.890640602 +0100
-+++ linux-3.14.25/arch/arm/mach-ixp4xx/avila-setup.c	2014-11-30 16:03:14.803148025 +0100
+--- a/arch/arm/mach-ixp4xx/avila-setup.c
++++ b/arch/arm/mach-ixp4xx/avila-setup.c
 @@ -14,9 +14,16 @@
  #include <linux/kernel.h>
  #include <linux/init.h>
@@ -73,7 +69,7 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-setup.c
  static struct flash_platform_data avila_flash_data = {
  	.map_name	= "cfi_probe",
  	.width		= 2,
-@@ -105,14 +127,69 @@
+@@ -105,14 +127,69 @@ static struct platform_device avila_uart
  	.resource		= avila_uart_resources
  };
  
@@ -147,7 +143,7 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-setup.c
  		.name	= "intrq",
  		.start	= IRQ_IXP4XX_GPIO12,
  		.end	= IRQ_IXP4XX_GPIO12,
-@@ -133,21 +210,237 @@
+@@ -133,21 +210,237 @@ static struct platform_device avila_pata
  	.resource		= avila_pata_resources,
  };
  
@@ -392,7 +388,7 @@ Index: linux-3.14.25/arch/arm/mach-ixp4xx/avila-setup.c
  
  	avila_pata_resources[0].start = IXP4XX_EXP_BUS_BASE(1);
  	avila_pata_resources[0].end = IXP4XX_EXP_BUS_END(1);
-@@ -159,8 +452,335 @@
+@@ -159,8 +452,335 @@ static void __init avila_init(void)
  	avila_pata_data.cs1_cfg = IXP4XX_EXP_CS2;
  
  	platform_device_register(&avila_pata);

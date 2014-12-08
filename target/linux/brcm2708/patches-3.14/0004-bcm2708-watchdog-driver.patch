@@ -11,8 +11,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  3 files changed, 391 insertions(+)
  create mode 100644 drivers/watchdog/bcm2708_wdog.c
 
-diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
-index 79d2589..3641dbd 100644
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
 @@ -402,6 +402,12 @@ config RETU_WATCHDOG
@@ -28,11 +26,9 @@ index 79d2589..3641dbd 100644
  config MOXART_WDT
  	tristate "MOXART watchdog"
  	depends on ARCH_MOXART
-diff --git a/drivers/watchdog/Makefile b/drivers/watchdog/Makefile
-index 985a66c..f68e32c 100644
 --- a/drivers/watchdog/Makefile
 +++ b/drivers/watchdog/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_wdt.o
+@@ -54,6 +54,7 @@ obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_
  obj-$(CONFIG_IMX2_WDT) += imx2_wdt.o
  obj-$(CONFIG_UX500_WATCHDOG) += ux500_wdt.o
  obj-$(CONFIG_RETU_WATCHDOG) += retu_wdt.o
@@ -40,9 +36,6 @@ index 985a66c..f68e32c 100644
  obj-$(CONFIG_BCM2835_WDT) += bcm2835_wdt.o
  obj-$(CONFIG_MOXART_WDT) += moxart_wdt.o
  obj-$(CONFIG_SIRFSOC_WATCHDOG) += sirfsoc_wdt.o
-diff --git a/drivers/watchdog/bcm2708_wdog.c b/drivers/watchdog/bcm2708_wdog.c
-new file mode 100644
-index 0000000..2f19203
 --- /dev/null
 +++ b/drivers/watchdog/bcm2708_wdog.c
 @@ -0,0 +1,384 @@
@@ -430,6 +423,3 @@ index 0000000..2f19203
 +MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);
 +MODULE_ALIAS_MISCDEV(TEMP_MINOR);
 +MODULE_LICENSE("GPL");
--- 
-1.9.1
-

@@ -1,7 +1,5 @@
-Index: linux-3.14.18/drivers/reset/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/reset/Kconfig
-+++ linux-3.14.18/drivers/reset/Kconfig
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
 @@ -11,3 +11,7 @@ menuconfig RESET_CONTROLLER
  	  via GPIOs or SoC-internal reset controller modules.
  
@@ -10,10 +8,8 @@ Index: linux-3.14.18/drivers/reset/Kconfig
 +config RESET_CONTROLLER_OXNAS
 +	bool
 +	select RESET_CONTROLLER
-Index: linux-3.14.18/drivers/reset/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/reset/Makefile
-+++ linux-3.14.18/drivers/reset/Makefile
+--- a/drivers/reset/Makefile
++++ b/drivers/reset/Makefile
 @@ -1,2 +1,3 @@
  obj-$(CONFIG_RESET_CONTROLLER) += core.o
 +obj-$(CONFIG_RESET_CONTROLLER_OXNAS) += reset-ox820.o

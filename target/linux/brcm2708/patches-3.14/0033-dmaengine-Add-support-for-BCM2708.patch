@@ -14,8 +14,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  3 files changed, 595 insertions(+)
  create mode 100644 drivers/dma/bcm2708-dmaengine.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index 605b016..edd5842 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -312,6 +312,12 @@ config DMA_BCM2835
@@ -31,8 +29,6 @@ index 605b016..edd5842 100644
  config TI_CPPI41
  	tristate "AM33xx CPPI41 DMA support"
  	depends on ARCH_OMAP
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index a029d0f4..f4d9516 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -39,6 +39,7 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
@@ -43,9 +39,6 @@ index a029d0f4..f4d9516 100644
  obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
  obj-$(CONFIG_DMA_JZ4740) += dma-jz4740.o
  obj-$(CONFIG_TI_CPPI41) += cppi41.o
-diff --git a/drivers/dma/bcm2708-dmaengine.c b/drivers/dma/bcm2708-dmaengine.c
-new file mode 100644
-index 0000000..b244293
 --- /dev/null
 +++ b/drivers/dma/bcm2708-dmaengine.c
 @@ -0,0 +1,588 @@
@@ -637,6 +630,3 @@ index 0000000..b244293
 +MODULE_DESCRIPTION("BCM2708 DMA engine driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.9.1
-

@@ -11,11 +11,9 @@ hardware for both the normal and invert cases.
  sound/soc/soc-core.c | 22 ++++++++++------------
  1 file changed, 10 insertions(+), 12 deletions(-)
 
-diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
-index fe1df50..c3f41e7 100644
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -3038,8 +3038,8 @@ int snd_soc_info_volsw_range(struct snd_kcontrol *kcontrol,
+@@ -3038,8 +3038,8 @@ int snd_soc_info_volsw_range(struct snd_
  
  	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
  	uinfo->count = snd_soc_volsw_is_stereo(mc) ? 2 : 1;
@@ -26,7 +24,7 @@ index fe1df50..c3f41e7 100644
  
  	return 0;
  }
-@@ -3070,9 +3070,10 @@ int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
+@@ -3070,9 +3070,10 @@ int snd_soc_put_volsw_range(struct snd_k
  	unsigned int val, val_mask;
  	int ret;
  
@@ -39,7 +37,7 @@ index fe1df50..c3f41e7 100644
  	val_mask = mask << shift;
  	val = val << shift;
  
-@@ -3081,9 +3082,10 @@ int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
+@@ -3081,9 +3082,10 @@ int snd_soc_put_volsw_range(struct snd_k
  		return ret;
  
  	if (snd_soc_volsw_is_stereo(mc)) {
@@ -52,7 +50,7 @@ index fe1df50..c3f41e7 100644
  		val_mask = mask << shift;
  		val = val << shift;
  
-@@ -3121,18 +3123,14 @@ int snd_soc_get_volsw_range(struct snd_kcontrol *kcontrol,
+@@ -3121,18 +3123,14 @@ int snd_soc_get_volsw_range(struct snd_k
  		(snd_soc_read(codec, reg) >> shift) & mask;
  	if (invert)
  		ucontrol->value.integer.value[0] =
@@ -73,6 +71,3 @@ index fe1df50..c3f41e7 100644
  	}
  
  	return 0;
--- 
-1.9.1
-

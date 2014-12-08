@@ -11,8 +11,6 @@ Subject: [PATCH 14/54] Add cpufreq driver
  4 files changed, 249 insertions(+)
  create mode 100755 drivers/cpufreq/bcm2835-cpufreq.c
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 9e23417..be8a752 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -389,6 +389,7 @@ config ARCH_BCM2708
@@ -23,8 +21,6 @@ index 9e23417..be8a752 100644
  	select GENERIC_CLOCKEVENTS
  	select ARM_ERRATA_411920
  	select MACH_BCM2708
-diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 3129749..d12c80d 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -235,6 +235,14 @@ config ARM_SPEAR_CPUFREQ
@@ -42,11 +38,9 @@ index 3129749..d12c80d 100644
  config ARM_TEGRA_CPUFREQ
  	bool "TEGRA CPUFreq support"
  	depends on ARCH_TEGRA
-diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
-index dac58f6..d8ded24 100644
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -73,6 +73,7 @@ obj-$(CONFIG_ARM_S5PV210_CPUFREQ)	+= s5pv210-cpufreq.o
+@@ -73,6 +73,7 @@ obj-$(CONFIG_ARM_S5PV210_CPUFREQ)	+= s5p
  obj-$(CONFIG_ARM_SA1100_CPUFREQ)	+= sa1100-cpufreq.o
  obj-$(CONFIG_ARM_SA1110_CPUFREQ)	+= sa1110-cpufreq.o
  obj-$(CONFIG_ARM_SPEAR_CPUFREQ)		+= spear-cpufreq.o
@@ -54,9 +48,6 @@ index dac58f6..d8ded24 100644
  obj-$(CONFIG_ARM_TEGRA_CPUFREQ)		+= tegra-cpufreq.o
  obj-$(CONFIG_ARM_VEXPRESS_SPC_CPUFREQ)	+= vexpress-spc-cpufreq.o
  
-diff --git a/drivers/cpufreq/bcm2835-cpufreq.c b/drivers/cpufreq/bcm2835-cpufreq.c
-new file mode 100755
-index 0000000..7bc55bd
 --- /dev/null
 +++ b/drivers/cpufreq/bcm2835-cpufreq.c
 @@ -0,0 +1,239 @@
@@ -299,6 +290,3 @@ index 0000000..7bc55bd
 +
 +module_init(bcm2835_cpufreq_module_init);
 +module_exit(bcm2835_cpufreq_module_exit);
--- 
-1.9.1
-

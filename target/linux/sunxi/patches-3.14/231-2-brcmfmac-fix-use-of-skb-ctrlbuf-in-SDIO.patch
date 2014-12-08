@@ -30,7 +30,7 @@ Signed-off-by: John W. Linville <linville@tuxdriver.com>
  		skb_trim(pkt, pkt->len - tail_chop);
  		skb_trim(pkt_pad, tail_pad + tail_chop);
  		__skb_queue_after(pktq, pkt, pkt_pad);
-@@ -2003,7 +2003,7 @@ brcmf_sdio_txpkt_prep(struct brcmf_sdio
+@@ -2003,7 +2003,7 @@ brcmf_sdio_txpkt_prep(struct brcmf_sdio 
  		 * already properly aligned and does not
  		 * need an sdpcm header.
  		 */
@@ -53,7 +53,7 @@ Signed-off-by: John W. Linville <linville@tuxdriver.com>
  		if (dummy_flags & ALIGN_SKB_FLAG) {
  			chop_len = dummy_flags & ALIGN_SKB_CHOP_LEN_MASK;
  			if (chop_len) {
-@@ -2554,6 +2554,8 @@ static int brcmf_sdio_bus_txdata(struct
+@@ -2554,6 +2554,8 @@ static int brcmf_sdio_bus_txdata(struct 
  
  	/* Priority based enq */
  	spin_lock_irqsave(&bus->txqlock, flags);

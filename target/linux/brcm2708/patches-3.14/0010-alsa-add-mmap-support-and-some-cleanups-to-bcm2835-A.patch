@@ -11,8 +11,6 @@ Subject: [PATCH 10/54] alsa: add mmap support and some cleanups to bcm2835
  sound/arm/bcm2835.h       |  2 ++
  4 files changed, 124 insertions(+), 70 deletions(-)
 
-diff --git a/sound/arm/bcm2835-pcm.c b/sound/arm/bcm2835-pcm.c
-index 2e7d405..b4084bb 100755
 --- a/sound/arm/bcm2835-pcm.c
 +++ b/sound/arm/bcm2835-pcm.c
 @@ -19,7 +19,8 @@
@@ -25,7 +23,7 @@ index 2e7d405..b4084bb 100755
  	.formats = SNDRV_PCM_FMTBIT_U8 | SNDRV_PCM_FMTBIT_S16_LE,
  	.rates = SNDRV_PCM_RATE_CONTINUOUS | SNDRV_PCM_RATE_8000_48000,
  	.rate_min = 8000,
-@@ -251,6 +252,12 @@ static int snd_bcm2835_pcm_prepare(struct snd_pcm_substream *substream)
+@@ -251,6 +252,12 @@ static int snd_bcm2835_pcm_prepare(struc
  
  	audio_info(" .. IN\n");
  
@@ -38,7 +36,7 @@ index 2e7d405..b4084bb 100755
  	alsa_stream->buffer_size = snd_pcm_lib_buffer_bytes(substream);
  	alsa_stream->period_size = snd_pcm_lib_period_bytes(substream);
  	alsa_stream->pos = 0;
-@@ -263,6 +270,32 @@ static int snd_bcm2835_pcm_prepare(struct snd_pcm_substream *substream)
+@@ -263,6 +270,32 @@ static int snd_bcm2835_pcm_prepare(struc
  	return 0;
  }
  
@@ -71,7 +69,7 @@ index 2e7d405..b4084bb 100755
  /* trigger callback */
  static int snd_bcm2835_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
  {
-@@ -279,6 +312,11 @@ static int snd_bcm2835_pcm_trigger(struct snd_pcm_substream *substream, int cmd)
+@@ -279,6 +312,11 @@ static int snd_bcm2835_pcm_trigger(struc
  		if (!alsa_stream->running) {
  			err = bcm2835_audio_start(alsa_stream);
  			if (err == 0) {
@@ -83,7 +81,7 @@ index 2e7d405..b4084bb 100755
  				alsa_stream->running = 1;
  				alsa_stream->draining = 1;
  			} else {
-@@ -327,30 +365,9 @@ snd_bcm2835_pcm_pointer(struct snd_pcm_substream *substream)
+@@ -327,30 +365,9 @@ snd_bcm2835_pcm_pointer(struct snd_pcm_s
  		      alsa_stream->pos);
  
  	audio_info(" .. OUT\n");
@@ -117,7 +115,7 @@ index 2e7d405..b4084bb 100755
  }
  
  static int snd_bcm2835_pcm_lib_ioctl(struct snd_pcm_substream *substream,
-@@ -372,7 +389,7 @@ static struct snd_pcm_ops snd_bcm2835_playback_ops = {
+@@ -372,7 +389,7 @@ static struct snd_pcm_ops snd_bcm2835_pl
  	.prepare = snd_bcm2835_pcm_prepare,
  	.trigger = snd_bcm2835_pcm_trigger,
  	.pointer = snd_bcm2835_pcm_pointer,
@@ -126,8 +124,6 @@ index 2e7d405..b4084bb 100755
  };
  
  /* create a pcm device */
-diff --git a/sound/arm/bcm2835-vchiq.c b/sound/arm/bcm2835-vchiq.c
-index b9b4fe8..ee09b13 100755
 --- a/sound/arm/bcm2835-vchiq.c
 +++ b/sound/arm/bcm2835-vchiq.c
 @@ -27,6 +27,7 @@
@@ -200,7 +196,7 @@ index b9b4fe8..ee09b13 100755
  		break;
  	}
  	kfree((void *)work);
-@@ -107,7 +120,7 @@ int bcm2835_audio_start(bcm2835_alsa_stream_t * alsa_stream)
+@@ -107,7 +120,7 @@ int bcm2835_audio_start(bcm2835_alsa_str
  		if (work) {
  			INIT_WORK((struct work_struct *)work, my_wq_function);
  			work->alsa_stream = alsa_stream;
@@ -209,7 +205,7 @@ index b9b4fe8..ee09b13 100755
  			if (queue_work
  			    (alsa_stream->my_wq, (struct work_struct *)work))
  				ret = 0;
-@@ -128,7 +141,31 @@ int bcm2835_audio_stop(bcm2835_alsa_stream_t * alsa_stream)
+@@ -128,7 +141,31 @@ int bcm2835_audio_stop(bcm2835_alsa_stre
  		if (work) {
  			INIT_WORK((struct work_struct *)work, my_wq_function);
  			work->alsa_stream = alsa_stream;
@@ -242,7 +238,7 @@ index b9b4fe8..ee09b13 100755
  			if (queue_work
  			    (alsa_stream->my_wq, (struct work_struct *)work))
  				ret = 0;
-@@ -178,7 +215,7 @@ static void audio_vchi_callback(void *param,
+@@ -178,7 +215,7 @@ static void audio_vchi_callback(void *pa
  		    (" .. instance=%p, m.type=VC_AUDIO_MSG_TYPE_RESULT, success=%d\n",
  		     instance, m.u.result.success);
  		instance->result = m.u.result.success;
@@ -251,7 +247,7 @@ index b9b4fe8..ee09b13 100755
  	} else if (m.type == VC_AUDIO_MSG_TYPE_COMPLETE) {
  		irq_handler_t callback = (irq_handler_t) m.u.complete.callback;
  		LOG_DBG
-@@ -435,8 +472,8 @@ static int bcm2835_audio_set_ctls_chan(bcm2835_alsa_stream_t * alsa_stream,
+@@ -435,8 +472,8 @@ static int bcm2835_audio_set_ctls_chan(b
  	m.u.control.dest = chip->dest;
  	m.u.control.volume = chip->volume;
  
@@ -262,7 +258,7 @@ index b9b4fe8..ee09b13 100755
  
  	/* Send the message to the videocore */
  	success = vchi_msg_queue(instance->vchi_handle[0],
-@@ -452,11 +489,10 @@ static int bcm2835_audio_set_ctls_chan(bcm2835_alsa_stream_t * alsa_stream,
+@@ -452,11 +489,10 @@ static int bcm2835_audio_set_ctls_chan(b
  	}
  
  	/* We are expecting a reply from the videocore */
@@ -276,7 +272,7 @@ index b9b4fe8..ee09b13 100755
  		goto unlock;
  	}
  
-@@ -539,8 +575,8 @@ int bcm2835_audio_set_params(bcm2835_alsa_stream_t * alsa_stream,
+@@ -539,8 +575,8 @@ int bcm2835_audio_set_params(bcm2835_als
  	m.u.config.samplerate = samplerate;
  	m.u.config.bps = bps;
  
@@ -287,7 +283,7 @@ index b9b4fe8..ee09b13 100755
  
  	/* Send the message to the videocore */
  	success = vchi_msg_queue(instance->vchi_handle[0],
-@@ -556,11 +592,10 @@ int bcm2835_audio_set_params(bcm2835_alsa_stream_t * alsa_stream,
+@@ -556,11 +592,10 @@ int bcm2835_audio_set_params(bcm2835_als
  	}
  
  	/* We are expecting a reply from the videocore */
@@ -301,7 +297,7 @@ index b9b4fe8..ee09b13 100755
  		goto unlock;
  	}
  
-@@ -688,8 +723,8 @@ int bcm2835_audio_close(bcm2835_alsa_stream_t * alsa_stream)
+@@ -688,8 +723,8 @@ int bcm2835_audio_close(bcm2835_alsa_str
  
  	m.type = VC_AUDIO_MSG_TYPE_CLOSE;
  
@@ -312,7 +308,7 @@ index b9b4fe8..ee09b13 100755
  
  	/* Send the message to the videocore */
  	success = vchi_msg_queue(instance->vchi_handle[0],
-@@ -702,11 +737,11 @@ int bcm2835_audio_close(bcm2835_alsa_stream_t * alsa_stream)
+@@ -702,11 +737,11 @@ int bcm2835_audio_close(bcm2835_alsa_str
  		ret = -1;
  		goto unlock;
  	}
@@ -338,11 +334,9 @@ index b9b4fe8..ee09b13 100755
  {
  	VC_AUDIO_MSG_T m;
  	AUDIO_INSTANCE_T *instance = alsa_stream->instance;
-diff --git a/sound/arm/bcm2835.c b/sound/arm/bcm2835.c
-index 317e7d9..e2047a7 100755
 --- a/sound/arm/bcm2835.c
 +++ b/sound/arm/bcm2835.c
-@@ -110,20 +110,20 @@ static int snd_bcm2835_alsa_probe(struct platform_device *pdev)
+@@ -110,20 +110,20 @@ static int snd_bcm2835_alsa_probe(struct
  
  	err = snd_bcm2835_create(g_card, pdev, &chip);
  	if (err < 0) {
@@ -399,7 +393,7 @@ index 317e7d9..e2047a7 100755
  	return err;
  }
  
-@@ -326,49 +326,49 @@ static int bcm2835_alsa_device_init(void)
+@@ -326,49 +326,49 @@ static int bcm2835_alsa_device_init(void
  	int err;
  	err = platform_driver_register(&bcm2835_alsa0_driver);
  	if (err) {
@@ -457,8 +451,6 @@ index 317e7d9..e2047a7 100755
  		goto unregister_6;
  	}
  
-diff --git a/sound/arm/bcm2835.h b/sound/arm/bcm2835.h
-index 080bd5c..36afee3 100755
 --- a/sound/arm/bcm2835.h
 +++ b/sound/arm/bcm2835.h
 @@ -23,6 +23,7 @@
@@ -477,6 +469,3 @@ index 080bd5c..36afee3 100755
  
  	struct semaphore buffers_update_sem;
  	struct semaphore control_sem;
--- 
-1.9.1
-

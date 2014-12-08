@@ -5143,7 +5143,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 1;
  }
-@@ -2991,6 +2994,7 @@ static int prepare_ring(struct xhci_hcd
+@@ -2990,6 +2993,7 @@ static int prepare_ring(struct xhci_hcd 
  		next = ring->enqueue;
  
  		while (last_trb(xhci, ring, ring->enq_seg, next)) {
@@ -5151,7 +5151,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			/* If we're not dealing with 0.95 hardware or isoc rings
  			 * on AMD 0.96 host, clear the chain bit.
  			 */
-@@ -3000,7 +3004,9 @@ static int prepare_ring(struct xhci_hcd
+@@ -2999,7 +3003,9 @@ static int prepare_ring(struct xhci_hcd 
  				next->link.control &= cpu_to_le32(~TRB_CHAIN);
  			else
  				next->link.control |= cpu_to_le32(TRB_CHAIN);
@@ -5162,7 +5162,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			wmb();
  			next->link.control ^= cpu_to_le32(TRB_CYCLE);
  
-@@ -3130,6 +3136,9 @@ static void giveback_first_trb(struct xh
+@@ -3129,6 +3135,9 @@ static void giveback_first_trb(struct xh
  		start_trb->field[3] |= cpu_to_le32(start_cycle);
  	else
  		start_trb->field[3] &= cpu_to_le32(~TRB_CYCLE);
@@ -5172,7 +5172,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	xhci_ring_ep_doorbell(xhci, slot_id, ep_index, stream_id);
  }
  
-@@ -3185,6 +3194,29 @@ static u32 xhci_td_remainder(unsigned in
+@@ -3184,6 +3193,29 @@ static u32 xhci_td_remainder(unsigned in
  		return (remainder >> 10) << 17;
  }
  
@@ -5202,7 +5202,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  /*
   * For xHCI 1.0 host controllers, TD size is the number of max packet sized
   * packets remaining in the TD (*not* including this TRB).
-@@ -3322,6 +3354,7 @@ static int queue_bulk_sg_tx(struct xhci_
+@@ -3321,6 +3353,7 @@ static int queue_bulk_sg_tx(struct xhci_
  		}
  
  		/* Set the TRB length, TD size, and interrupter fields. */
@@ -5210,7 +5210,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		if (xhci->hci_version < 0x100) {
  			remainder = xhci_td_remainder(
  					urb->transfer_buffer_length -
-@@ -3331,6 +3364,13 @@ static int queue_bulk_sg_tx(struct xhci_
+@@ -3330,6 +3363,13 @@ static int queue_bulk_sg_tx(struct xhci_
  					trb_buff_len, total_packet_count, urb,
  					num_trbs - 1);
  		}
@@ -5224,7 +5224,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		length_field = TRB_LEN(trb_buff_len) |
  			remainder |
  			TRB_INTR_TARGET(0);
-@@ -3393,6 +3433,9 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3392,6 +3432,9 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  	int running_total, trb_buff_len, ret;
  	unsigned int total_packet_count;
  	u64 addr;
@@ -5234,7 +5234,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	if (urb->num_sgs)
  		return queue_bulk_sg_tx(xhci, mem_flags, urb, slot_id, ep_index);
-@@ -3418,6 +3461,25 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3417,6 +3460,25 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  		running_total += TRB_MAX_BUFF_SIZE;
  	}
  	/* FIXME: this doesn't deal with URB_ZERO_PACKET - need one more */
@@ -5260,7 +5260,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	ret = prepare_transfer(xhci, xhci->devs[slot_id],
  			ep_index, urb->stream_id,
-@@ -3477,6 +3539,7 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3476,6 +3538,7 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  			field |= TRB_ISP;
  
  		/* Set the TRB length, TD size, and interrupter fields. */
@@ -5268,7 +5268,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		if (xhci->hci_version < 0x100) {
  			remainder = xhci_td_remainder(
  					urb->transfer_buffer_length -
-@@ -3486,6 +3549,10 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
+@@ -3485,6 +3548,10 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  					trb_buff_len, total_packet_count, urb,
  					num_trbs - 1);
  		}
@@ -5279,7 +5279,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		length_field = TRB_LEN(trb_buff_len) |
  			remainder |
  			TRB_INTR_TARGET(0);
-@@ -3575,7 +3642,11 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+@@ -3574,7 +3641,11 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field |= 0x1;
  
  	/* xHCI 1.0 6.4.1.2.1: Transfer Type field */
@@ -5291,7 +5291,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		if (urb->transfer_buffer_length > 0) {
  			if (setup->bRequestType & USB_DIR_IN)
  				field |= TRB_TX_TYPE(TRB_DATA_IN);
-@@ -3599,7 +3670,12 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+@@ -3598,7 +3669,12 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field = TRB_TYPE(TRB_DATA);
  
  	length_field = TRB_LEN(urb->transfer_buffer_length) |
@@ -5304,7 +5304,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		TRB_INTR_TARGET(0);
  	if (urb->transfer_buffer_length > 0) {
  		if (setup->bRequestType & USB_DIR_IN)
-@@ -3610,7 +3686,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
+@@ -3609,7 +3685,7 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  				length_field,
  				field | ep_ring->cycle_state);
  	}
@@ -5313,7 +5313,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Save the DMA address of the last TRB in the TD */
  	td->last_trb = ep_ring->enqueue;
  
-@@ -3722,6 +3798,9 @@ static int xhci_queue_isoc_tx(struct xhc
+@@ -3721,6 +3797,9 @@ static int xhci_queue_isoc_tx(struct xhc
  	u64 start_addr, addr;
  	int i, j;
  	bool more_trbs_coming;
@@ -5323,7 +5323,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	ep_ring = xhci->devs[slot_id]->eps[ep_index].ring;
  
-@@ -3735,6 +3814,21 @@ static int xhci_queue_isoc_tx(struct xhc
+@@ -3734,6 +3813,21 @@ static int xhci_queue_isoc_tx(struct xhc
  	start_trb = &ep_ring->enqueue->generic;
  	start_cycle = ep_ring->cycle_state;
  
@@ -5345,7 +5345,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	urb_priv = urb->hcpriv;
  	/* Queue the first TRB, even if it's zero-length */
  	for (i = 0; i < num_tds; i++) {
-@@ -3806,9 +3900,13 @@ static int xhci_queue_isoc_tx(struct xhc
+@@ -3805,9 +3899,13 @@ static int xhci_queue_isoc_tx(struct xhc
  			} else {
  				td->last_trb = ep_ring->enqueue;
  				field |= TRB_IOC;
@@ -5359,7 +5359,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  					/* Set BEI bit except for the last td */
  					if (i < num_tds - 1)
  						field |= TRB_BEI;
-@@ -3823,6 +3921,7 @@ static int xhci_queue_isoc_tx(struct xhc
+@@ -3822,6 +3920,7 @@ static int xhci_queue_isoc_tx(struct xhc
  				trb_buff_len = td_remain_len;
  
  			/* Set the TRB length, TD size, & interrupter fields. */
@@ -5367,7 +5367,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			if (xhci->hci_version < 0x100) {
  				remainder = xhci_td_remainder(
  						td_len - running_total);
-@@ -3832,6 +3931,10 @@ static int xhci_queue_isoc_tx(struct xhc
+@@ -3831,6 +3930,10 @@ static int xhci_queue_isoc_tx(struct xhc
  						total_packet_count, urb,
  						(trbs_per_td - j - 1));
  			}
@@ -5397,7 +5397,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #define DRIVER_AUTHOR "Sarah Sharp"
  #define DRIVER_DESC "'eXtensible' Host Controller (xHC) Driver"
  
-@@ -44,6 +54,18 @@ static unsigned int quirks;
+@@ -46,6 +56,18 @@ static unsigned int quirks;
  module_param(quirks, uint, S_IRUGO);
  MODULE_PARM_DESC(quirks, "Bit flags for quirks to be enabled as default");
  
@@ -5416,7 +5416,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  /* TODO: copied from ehci-hcd.c - can this be refactored? */
  /*
   * xhci_handshake - spin reading hc until handshake completes or fails
-@@ -196,7 +218,7 @@ int xhci_reset(struct xhci_hcd *xhci)
+@@ -198,7 +220,7 @@ int xhci_reset(struct xhci_hcd *xhci)
  	return ret;
  }
  
@@ -5425,7 +5425,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int xhci_free_msi(struct xhci_hcd *xhci)
  {
  	int i;
-@@ -399,6 +421,7 @@ static int xhci_try_enable_msi(struct us
+@@ -401,6 +423,7 @@ static int xhci_try_enable_msi(struct us
  		return ret;
  	}
  	hcd->irq = pdev->irq;
@@ -5433,7 +5433,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	return 0;
  }
  
-@@ -442,6 +465,11 @@ static void compliance_mode_recovery(uns
+@@ -444,6 +467,11 @@ static void compliance_mode_recovery(uns
  					"Attempting compliance mode recovery");
  			hcd = xhci->shared_hcd;
  
@@ -5445,7 +5445,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			if (hcd->state == HC_STATE_SUSPENDED)
  				usb_hcd_resume_root_hub(hcd);
  
-@@ -491,6 +519,9 @@ bool xhci_compliance_mode_recovery_timer
+@@ -493,6 +521,9 @@ bool xhci_compliance_mode_recovery_timer
  {
  	const char *dmi_product_name, *dmi_sys_vendor;
  
@@ -5455,7 +5455,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	dmi_product_name = dmi_get_system_info(DMI_PRODUCT_NAME);
  	dmi_sys_vendor = dmi_get_system_info(DMI_SYS_VENDOR);
  	if (!dmi_product_name || !dmi_sys_vendor)
-@@ -536,6 +567,10 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -538,6 +569,10 @@ int xhci_init(struct usb_hcd *hcd)
  		xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  				"xHCI doesn't need link TRB QUIRK");
  	}
@@ -5466,7 +5466,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	retval = xhci_mem_init(xhci, GFP_KERNEL);
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init, "Finished xhci_init");
  
-@@ -620,7 +655,11 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -622,7 +657,11 @@ int xhci_run(struct usb_hcd *hcd)
  			"// Set the interrupt modulation register");
  	temp = readl(&xhci->ir_set->irq_control);
  	temp &= ~ER_IRQ_INTERVAL_MASK;
@@ -5478,7 +5478,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -641,6 +680,9 @@ int xhci_run(struct usb_hcd *hcd)
+@@ -643,6 +682,9 @@ int xhci_run(struct usb_hcd *hcd)
  		xhci_queue_vendor_command(xhci, 0, 0, 0,
  				TRB_TYPE(TRB_NEC_GET_FW));
  
@@ -5488,7 +5488,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB2 roothub");
  	return 0;
-@@ -970,7 +1012,6 @@ int xhci_resume(struct xhci_hcd *xhci, b
+@@ -1010,7 +1052,6 @@ int xhci_resume(struct xhci_hcd *xhci, b
  
  	/* If restore operation fails, re-initialize the HC during resume */
  	if ((temp & STS_SRE) || hibernated) {
@@ -5496,7 +5496,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		if ((xhci->quirks & XHCI_COMP_MODE_QUIRK) &&
  				!(xhci_all_ports_seen_u0(xhci))) {
  			del_timer_sync(&xhci->comp_mode_recovery_timer);
-@@ -1573,6 +1614,13 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1613,6 +1654,13 @@ int xhci_drop_endpoint(struct usb_hcd *h
  	u32 drop_flag;
  	u32 new_add_flags, new_drop_flags, new_slot_info;
  	int ret;
@@ -5510,7 +5510,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
  	if (ret <= 0)
-@@ -1630,6 +1678,40 @@ int xhci_drop_endpoint(struct usb_hcd *h
+@@ -1670,6 +1718,40 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -5551,7 +5551,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x, new slot info = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1665,6 +1747,18 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1705,6 +1787,18 @@ int xhci_add_endpoint(struct usb_hcd *hc
  	u32 new_add_flags, new_drop_flags, new_slot_info;
  	struct xhci_virt_device *virt_dev;
  	int ret = 0;
@@ -5570,7 +5570,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	ret = xhci_check_args(hcd, udev, ep, 1, true, __func__);
  	if (ret <= 0) {
-@@ -1732,6 +1826,56 @@ int xhci_add_endpoint(struct usb_hcd *hc
+@@ -1772,6 +1866,56 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -5627,7 +5627,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
  	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
  
-@@ -2726,7 +2870,7 @@ int xhci_check_bandwidth(struct usb_hcd
+@@ -2766,7 +2910,7 @@ int xhci_check_bandwidth(struct usb_hcd 
  	if (ctrl_ctx->add_flags == cpu_to_le32(SLOT_FLAG) &&
  			ctrl_ctx->drop_flags == 0)
  		return 0;
@@ -5636,7 +5636,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	xhci_dbg(xhci, "New Input Control Context:\n");
  	slot_ctx = xhci_get_slot_ctx(xhci, virt_dev->in_ctx);
  	xhci_dbg_ctx(xhci, virt_dev->in_ctx,
-@@ -4352,10 +4496,14 @@ static u16 xhci_call_host_update_timeout
+@@ -4400,10 +4544,14 @@ static u16 xhci_call_host_update_timeout
  		u16 *timeout)
  {
  	if (state == USB3_LPM_U1) {
@@ -5651,7 +5651,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			return xhci_calculate_intel_u2_timeout(udev, desc);
  	}
  
-@@ -4740,7 +4888,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4788,7 +4936,9 @@ int xhci_gen_setup(struct usb_hcd *hcd, 
  	hcd->self.no_sg_constraint = 1;
  
  	/* XHCI controllers don't stop the ep queue on short packets :| */
@@ -5661,7 +5661,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	if (usb_hcd_is_primary_hcd(hcd)) {
  		xhci = kzalloc(sizeof(struct xhci_hcd), GFP_KERNEL);
-@@ -4803,6 +4953,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4851,6 +5001,10 @@ int xhci_gen_setup(struct usb_hcd *hcd, 
  		goto error;
  	xhci_dbg(xhci, "Reset complete\n");
  
@@ -5672,7 +5672,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/* Set dma_mask and coherent_dma_mask to 64-bits,
  	 * if xHC supports 64-bit addressing */
  	if (HCC_64BIT_ADDR(xhci->hcc_params) &&
-@@ -4827,8 +4981,21 @@ MODULE_DESCRIPTION(DRIVER_DESC);
+@@ -4875,8 +5029,21 @@ MODULE_DESCRIPTION(DRIVER_DESC);
  MODULE_AUTHOR(DRIVER_AUTHOR);
  MODULE_LICENSE("GPL");
  
@@ -5694,7 +5694,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int retval;
  
  	retval = xhci_register_pci();
-@@ -4841,6 +5008,33 @@ static int __init xhci_hcd_init(void)
+@@ -4889,6 +5056,33 @@ static int __init xhci_hcd_init(void)
  		pr_debug("Problem registering platform driver.\n");
  		goto unreg_pci;
  	}
@@ -5728,7 +5728,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	/*
  	 * Check the compiler generated sizes of structures that must be laid
  	 * out in specific ways for hardware access.
-@@ -4858,6 +5052,7 @@ static int __init xhci_hcd_init(void)
+@@ -4906,6 +5100,7 @@ static int __init xhci_hcd_init(void)
  	BUILD_BUG_ON(sizeof(struct xhci_intr_reg) != 8*32/8);
  	/* xhci_run_regs has eight fields and embeds 128 xhci_intr_regs */
  	BUILD_BUG_ON(sizeof(struct xhci_run_regs) != (8+8*128)*32/8);
@@ -5777,7 +5777,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  /* convert between an HCD pointer and the corresponding EHCI_HCD */
-@@ -1726,7 +1745,7 @@ void xhci_urb_free_priv(struct xhci_hcd
+@@ -1726,7 +1745,7 @@ void xhci_urb_free_priv(struct xhci_hcd 
  void xhci_free_command(struct xhci_hcd *xhci,
  		struct xhci_command *command);
  

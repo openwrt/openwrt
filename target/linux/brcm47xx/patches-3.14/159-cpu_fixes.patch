@@ -351,7 +351,7 @@
  }
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -1277,6 +1277,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1280,6 +1280,9 @@ static void build_r4000_tlb_refill_handl
  			/* No need for uasm_i_nop */
  		}
  
@@ -361,7 +361,7 @@
  #ifdef CONFIG_64BIT
  		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
-@@ -1835,6 +1838,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1840,6 +1843,9 @@ build_r4000_tlbchange_handler_head(u32 *
  {
  	struct work_registers wr = build_get_work_registers(p);
  

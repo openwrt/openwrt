@@ -7,8 +7,6 @@ Subject: [PATCH 54/54] fb: distinguish physical and bus addresses
  drivers/video/bcm2708_fb.c | 15 +++++++++------
  1 file changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/video/bcm2708_fb.c b/drivers/video/bcm2708_fb.c
-index 798eb52..b3b1e04 100644
 --- a/drivers/video/bcm2708_fb.c
 +++ b/drivers/video/bcm2708_fb.c
 @@ -89,6 +89,7 @@ struct bcm2708_fb {
@@ -19,7 +17,7 @@ index 798eb52..b3b1e04 100644
  };
  
  #define to_bcm2708(info)	container_of(info, struct bcm2708_fb, fb)
-@@ -314,13 +315,15 @@ static int bcm2708_fb_set_par(struct fb_info *info)
+@@ -314,13 +315,15 @@ static int bcm2708_fb_set_par(struct fb_
  		else
  			fb->fb.fix.visual = FB_VISUAL_TRUECOLOR;
  
@@ -36,7 +34,7 @@ index 798eb52..b3b1e04 100644
  		if (!fb->fb.screen_base) {
  			/* the console may currently be locked */
  			console_trylock();
-@@ -331,7 +334,7 @@ static int bcm2708_fb_set_par(struct fb_info *info)
+@@ -331,7 +334,7 @@ static int bcm2708_fb_set_par(struct fb_
  	}
  	print_debug
  	    ("BCM2708FB: start = %p,%p width=%d, height=%d, bpp=%d, pitch=%d size=%d success=%d\n",
@@ -45,7 +43,7 @@ index 798eb52..b3b1e04 100644
  	     fbinfo->xres, fbinfo->yres, fbinfo->bpp,
  	     fbinfo->pitch, (int)fb->fb.screen_size, val);
  
-@@ -457,11 +460,11 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
+@@ -457,11 +460,11 @@ static void bcm2708_fb_copyarea(struct f
  
  		for (y = 0; y < region->height; y += scanlines_per_cb) {
  			dma_addr_t src =
@@ -59,7 +57,7 @@ index 798eb52..b3b1e04 100644
  				bytes_per_pixel * region->dx +
  				(region->dy + y) * fb->fb.fix.line_length;
  
-@@ -499,10 +502,10 @@ static void bcm2708_fb_copyarea(struct fb_info *info,
+@@ -499,10 +502,10 @@ static void bcm2708_fb_copyarea(struct f
  			stride = -fb->fb.fix.line_length;
  		}
  		set_dma_cb(cb, burst_size,
@@ -72,6 +70,3 @@ index 798eb52..b3b1e04 100644
  						   bytes_per_pixel * region->sx,
  			   stride,
  			   region->width * bytes_per_pixel,
--- 
-1.9.1
-

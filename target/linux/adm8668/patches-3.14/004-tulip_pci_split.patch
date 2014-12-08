@@ -197,7 +197,7 @@
  }
  
  
-@@ -887,7 +913,9 @@ static int tulip_ethtool_set_wol(struct
+@@ -887,7 +913,9 @@ static int tulip_ethtool_set_wol(struct 
  		   return -EOPNOTSUPP;
  
  	tp->wolinfo.wolopts = wolinfo->wolopts;
@@ -295,7 +295,7 @@
  	.name		= DRV_NAME,
  	.id_table	= tulip_pci_tbl,
  	.probe		= tulip_init_one,
-@@ -1974,10 +2014,12 @@ static struct pci_driver tulip_driver =
+@@ -1974,10 +2014,12 @@ static struct pci_driver tulip_driver = 
  	.resume		= tulip_resume,
  #endif /* CONFIG_PM */
  };

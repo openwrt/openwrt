@@ -18,8 +18,6 @@ Subject: [PATCH 49/54] Add IQaudIO Sound Card support for Raspberry Pi
  create mode 100644 sound/soc/codecs/pcm512x.c
  create mode 100644 sound/soc/codecs/pcm512x.h
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 3d3c8ab..a024670 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -750,6 +750,7 @@ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
@@ -30,11 +28,9 @@ index 3d3c8ab..a024670 100644
  CONFIG_SOUND_PRIME=m
  CONFIG_HIDRAW=y
  CONFIG_HID_A4TECH=m
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index beb2eca..95a47fa 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -680,6 +680,22 @@ static struct platform_device snd_pcm1794a_codec_device = {
+@@ -680,6 +680,22 @@ static struct platform_device snd_pcm179
  };
  #endif
  
@@ -70,8 +66,6 @@ index beb2eca..95a47fa 100644
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index e563dbc..84e4f27 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -39,3 +39,10 @@ config SND_BCM2708_SOC_RPI_DAC
@@ -85,11 +79,9 @@ index e563dbc..84e4f27 100644
 +	select SND_SOC_PCM512x
 +	help
 +	  Say Y or M if you want to add support for IQaudIO-DAC.
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index 826df7d..d597fb0 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -12,7 +12,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+@@ -12,7 +12,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
  snd-soc-hifiberry-digi-objs := hifiberry_digi.o
  snd-soc-rpi-dac-objs := rpi-dac.o
@@ -99,9 +91,6 @@ index 826df7d..d597fb0 100644
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
 +obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
-diff --git a/sound/soc/bcm/iqaudio-dac.c b/sound/soc/bcm/iqaudio-dac.c
-new file mode 100644
-index 0000000..515f044
 --- /dev/null
 +++ b/sound/soc/bcm/iqaudio-dac.c
 @@ -0,0 +1,111 @@
@@ -216,8 +205,6 @@ index 0000000..515f044
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_DESCRIPTION("ASoC Driver for IQAudio DAC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 4d2569e..ac28805 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -61,6 +61,7 @@ config SND_SOC_ALL_CODECS
@@ -238,11 +225,9 @@ index 4d2569e..ac28805 100644
  config SND_SOC_RT5631
  	tristate
  
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index 9b806a2..61461c1 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -48,6 +48,7 @@ snd-soc-pcm1792a-codec-objs := pcm1792a.o
+@@ -48,6 +48,7 @@ snd-soc-pcm1792a-codec-objs := pcm1792a.
  snd-soc-pcm3008-objs := pcm3008.o
  snd-soc-pcm1794a-objs := pcm1794a.o
  snd-soc-pcm5102a-objs := pcm5102a.o
@@ -250,7 +235,7 @@ index 9b806a2..61461c1 100644
  snd-soc-rt5631-objs := rt5631.o
  snd-soc-rt5640-objs := rt5640.o
  snd-soc-sgtl5000-objs := sgtl5000.o
-@@ -183,6 +184,7 @@ obj-$(CONFIG_SND_SOC_PCM1792A)	+= snd-soc-pcm1792a-codec.o
+@@ -183,6 +184,7 @@ obj-$(CONFIG_SND_SOC_PCM1792A)	+= snd-so
  obj-$(CONFIG_SND_SOC_PCM3008)	+= snd-soc-pcm3008.o
  obj-$(CONFIG_SND_SOC_PCM1794A)	+= snd-soc-pcm1794a.o
  obj-$(CONFIG_SND_SOC_PCM5102A)	+= snd-soc-pcm5102a.o
@@ -258,9 +243,6 @@ index 9b806a2..61461c1 100644
  obj-$(CONFIG_SND_SOC_RT5631)	+= snd-soc-rt5631.o
  obj-$(CONFIG_SND_SOC_RT5640)	+= snd-soc-rt5640.o
  obj-$(CONFIG_SND_SOC_SGTL5000)  += snd-soc-sgtl5000.o
-diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
-new file mode 100644
-index 0000000..55b6200
 --- /dev/null
 +++ b/sound/soc/codecs/pcm512x.c
 @@ -0,0 +1,677 @@
@@ -941,9 +923,6 @@ index 0000000..55b6200
 +MODULE_DESCRIPTION("ASoC PCM512x codec driver");
 +MODULE_AUTHOR("Mark Brown <broonie@linaro.org>");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/pcm512x.h b/sound/soc/codecs/pcm512x.h
-new file mode 100644
-index 0000000..b2f518e
 --- /dev/null
 +++ b/sound/soc/codecs/pcm512x.h
 @@ -0,0 +1,142 @@
@@ -1089,6 +1068,3 @@ index 0000000..b2f518e
 +#define PCM512x_AMLR_SHIFT 0
 +
 +#endif
--- 
-1.9.1
-

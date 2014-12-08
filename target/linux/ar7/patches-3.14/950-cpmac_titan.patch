@@ -1,6 +1,6 @@
 --- a/drivers/net/ethernet/ti/cpmac.c
 +++ b/drivers/net/ethernet/ti/cpmac.c
-@@ -1155,6 +1155,8 @@ static int cpmac_probe(struct platform_d
+@@ -1154,6 +1154,8 @@ static int cpmac_probe(struct platform_d
  		goto fail;
  	}
  
@@ -9,7 +9,7 @@
  	dev->irq = platform_get_irq_byname(pdev, "irq");
  
  	dev->netdev_ops = &cpmac_netdev_ops;
-@@ -1233,7 +1235,7 @@ int cpmac_init(void)
+@@ -1232,7 +1234,7 @@ int cpmac_init(void)
  	cpmac_mii->reset = cpmac_mdio_reset;
  	cpmac_mii->irq = mii_irqs;
  
@@ -18,7 +18,7 @@
  
  	if (!cpmac_mii->priv) {
  		printk(KERN_ERR "Can't ioremap mdio registers\n");
-@@ -1244,10 +1246,16 @@ int cpmac_init(void)
+@@ -1243,10 +1245,16 @@ int cpmac_init(void)
  #warning FIXME: unhardcode gpio&reset bits
  	ar7_gpio_disable(26);
  	ar7_gpio_disable(27);
@@ -37,7 +37,7 @@
  	cpmac_mii->reset(cpmac_mii);
  
  	for (i = 0; i < 300; i++) {
-@@ -1264,7 +1272,11 @@ int cpmac_init(void)
+@@ -1263,7 +1271,11 @@ int cpmac_init(void)
  		mask = 0;
  	}
  

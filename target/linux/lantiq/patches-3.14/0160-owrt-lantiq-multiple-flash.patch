@@ -1,5 +1,5 @@
---- "a/drivers/mtd/maps/lantiq-flash.c"
-+++ "b/drivers/mtd/maps/lantiq-flash.c"
+--- a/drivers/mtd/maps/lantiq-flash.c
++++ b/drivers/mtd/maps/lantiq-flash.c
 @@ -20,6 +20,7 @@
  #include <linux/mtd/cfi.h>
  #include <linux/platform_device.h>
@@ -8,7 +8,7 @@
  #include <linux/of.h>
  
  #include <lantiq_soc.h>
-@@ -39,10 +40,12 @@
+@@ -39,10 +40,12 @@ enum {
  	LTQ_NOR_NORMAL
  };
  
@@ -24,7 +24,7 @@
  };
  
  static const char ltq_map_name[] = "ltq_nor";
-@@ -110,12 +113,39 @@
+@@ -110,12 +113,39 @@ ltq_copy_to(struct map_info *map, unsign
  }
  
  static int
@@ -65,7 +65,7 @@
  
  	static const char *rom_probe_types[] = {
  		"cfi_probe", "jedec_probe", NULL
-@@ -134,79 +164,88 @@
+@@ -134,79 +164,88 @@ ltq_mtd_probe(struct platform_device *pd
  
  	platform_set_drvdata(pdev, ltq_mtd);
  

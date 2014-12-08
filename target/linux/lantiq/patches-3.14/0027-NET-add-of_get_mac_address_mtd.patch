@@ -14,8 +14,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  include/linux/of_net.h |    1 +
  2 files changed, 38 insertions(+)
 
-diff --git a/drivers/of/of_net.c b/drivers/of/of_net.c
-index a208a45..de93111 100644
 --- a/drivers/of/of_net.c
 +++ b/drivers/of/of_net.c
 @@ -10,6 +10,7 @@
@@ -26,7 +24,7 @@ index a208a45..de93111 100644
  
  /**
   * It maps 'enum phy_interface_t' found in include/linux/phy.h
-@@ -94,3 +95,39 @@ const void *of_get_mac_address(struct device_node *np)
+@@ -94,3 +95,39 @@ const void *of_get_mac_address(struct de
  	return NULL;
  }
  EXPORT_SYMBOL(of_get_mac_address);
@@ -66,8 +64,6 @@ index a208a45..de93111 100644
 +	return ret;
 +}
 +EXPORT_SYMBOL_GPL(of_get_mac_address_mtd);
-diff --git a/include/linux/of_net.h b/include/linux/of_net.h
-index 34597c8..cdfbc60 100644
 --- a/include/linux/of_net.h
 +++ b/include/linux/of_net.h
 @@ -11,6 +11,7 @@
@@ -78,6 +74,3 @@ index 34597c8..cdfbc60 100644
  #else
  static inline int of_get_phy_mode(struct device_node *np)
  {
--- 
-1.7.10.4
-

@@ -12,8 +12,6 @@ Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
  arch/mips/lantiq/prom.c                    |    5 +++++
  2 files changed, 7 insertions(+)
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq.h b/arch/mips/include/asm/mach-lantiq/lantiq.h
-index f196cce..4e5ae65 100644
 --- a/arch/mips/include/asm/mach-lantiq/lantiq.h
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
 @@ -48,6 +48,8 @@ extern struct clk *clk_get_ppe(void);
@@ -25,8 +23,6 @@ index f196cce..4e5ae65 100644
  
  #define IOPORT_RESOURCE_START	0x10000000
  #define IOPORT_RESOURCE_END	0xffffffff
-diff --git a/arch/mips/lantiq/prom.c b/arch/mips/lantiq/prom.c
-index 227feed..4c652c6 100644
 --- a/arch/mips/lantiq/prom.c
 +++ b/arch/mips/lantiq/prom.c
 @@ -36,6 +36,11 @@ const char *get_system_type(void)
@@ -41,6 +37,3 @@ index 227feed..4c652c6 100644
  void prom_free_prom_memory(void)
  {
  }
--- 
-1.7.10.4
-

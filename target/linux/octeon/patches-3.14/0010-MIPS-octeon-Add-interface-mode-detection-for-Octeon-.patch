@@ -20,8 +20,8 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/arch/mips/cavium-octeon/executive/cvmx-helper.c
 +++ b/arch/mips/cavium-octeon/executive/cvmx-helper.c
-@@ -104,6 +104,158 @@ int cvmx_helper_ports_on_interface(int i
- }
+@@ -106,6 +106,158 @@ int cvmx_helper_ports_on_interface(int i
+ EXPORT_SYMBOL_GPL(cvmx_helper_ports_on_interface);
  
  /**
 + * @INTERNAL
@@ -179,7 +179,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
   * Get the operating mode of an interface. Depending on the Octeon
   * chip and configuration, this function returns an enumeration
   * of the type of packet I/O supported by an interface.
-@@ -116,6 +268,20 @@ int cvmx_helper_ports_on_interface(int i
+@@ -118,6 +270,20 @@ EXPORT_SYMBOL_GPL(cvmx_helper_ports_on_i
  cvmx_helper_interface_mode_t cvmx_helper_interface_get_mode(int interface)
  {
  	union cvmx_gmxx_inf_mode mode;

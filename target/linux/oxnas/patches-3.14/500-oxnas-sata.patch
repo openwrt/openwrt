@@ -1,7 +1,5 @@
-Index: linux-3.14.18/drivers/ata/Kconfig
-===================================================================
---- linux-3.14.18.orig/drivers/ata/Kconfig
-+++ linux-3.14.18/drivers/ata/Kconfig
+--- a/drivers/ata/Kconfig
++++ b/drivers/ata/Kconfig
 @@ -330,6 +330,13 @@ config SATA_VITESSE
  
  	  If unsure, say N.
@@ -16,10 +14,8 @@ Index: linux-3.14.18/drivers/ata/Kconfig
  comment "PATA SFF controllers with BMDMA"
  
  config PATA_ALI
-Index: linux-3.14.18/drivers/ata/Makefile
-===================================================================
---- linux-3.14.18.orig/drivers/ata/Makefile
-+++ linux-3.14.18/drivers/ata/Makefile
+--- a/drivers/ata/Makefile
++++ b/drivers/ata/Makefile
 @@ -31,6 +31,7 @@ obj-$(CONFIG_SATA_SVW)		+= sata_svw.o
  obj-$(CONFIG_SATA_ULI)		+= sata_uli.o
  obj-$(CONFIG_SATA_VIA)		+= sata_via.o

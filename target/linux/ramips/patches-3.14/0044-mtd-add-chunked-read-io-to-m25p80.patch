@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  /*
   * Write an address range to the flash chip.  Data must be written in
   * FLASH_PAGESIZE chunks.  The address range may be any size provided
-@@ -649,6 +701,76 @@ static int m25p80_write(struct mtd_info
+@@ -649,6 +701,76 @@ static int m25p80_write(struct mtd_info 
  	return 0;
  }
  
@@ -146,7 +146,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
  		size_t *retlen, const u_char *buf)
  {
-@@ -1260,6 +1382,12 @@ static int m25p_probe(struct spi_device
+@@ -1260,6 +1382,12 @@ static int m25p_probe(struct spi_device 
  		return -EINVAL;
  	}
  

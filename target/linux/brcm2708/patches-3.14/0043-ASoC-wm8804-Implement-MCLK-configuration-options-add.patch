@@ -20,8 +20,6 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  sound/soc/codecs/wm8804.h |  4 ++++
  2 files changed, 19 insertions(+), 4 deletions(-)
 
-diff --git a/sound/soc/codecs/wm8804.c b/sound/soc/codecs/wm8804.c
-index 9bc8206..c35b4f3 100644
 --- a/sound/soc/codecs/wm8804.c
 +++ b/sound/soc/codecs/wm8804.c
 @@ -63,6 +63,7 @@ struct wm8804_priv {
@@ -32,7 +30,7 @@ index 9bc8206..c35b4f3 100644
  };
  
  static int txsrc_get(struct snd_kcontrol *kcontrol,
-@@ -277,6 +278,7 @@ static int wm8804_hw_params(struct snd_pcm_substream *substream,
+@@ -277,6 +278,7 @@ static int wm8804_hw_params(struct snd_p
  		blen = 0x1;
  		break;
  	case SNDRV_PCM_FORMAT_S24_LE:
@@ -49,7 +47,7 @@ index 9bc8206..c35b4f3 100644
  {
  	u64 Kpart;
  	unsigned long int K, Ndiv, Nmod, tmp;
-@@ -330,7 +332,8 @@ static int pll_factors(struct pll_div *pll_div, unsigned int target,
+@@ -330,7 +332,8 @@ static int pll_factors(struct pll_div *p
  	 */
  	for (i = 0; i < ARRAY_SIZE(post_table); i++) {
  		tmp = target * post_table[i].div;
@@ -59,7 +57,7 @@ index 9bc8206..c35b4f3 100644
  			pll_div->freqmode = post_table[i].freqmode;
  			pll_div->mclkdiv = post_table[i].mclkdiv;
  			target *= post_table[i].div;
-@@ -387,8 +390,11 @@ static int wm8804_set_pll(struct snd_soc_dai *dai, int pll_id,
+@@ -387,8 +390,11 @@ static int wm8804_set_pll(struct snd_soc
  	} else {
  		int ret;
  		struct pll_div pll_div;
@@ -72,7 +70,7 @@ index 9bc8206..c35b4f3 100644
  		if (ret)
  			return ret;
  
-@@ -452,6 +458,7 @@ static int wm8804_set_clkdiv(struct snd_soc_dai *dai,
+@@ -452,6 +458,7 @@ static int wm8804_set_clkdiv(struct snd_
  			     int div_id, int div)
  {
  	struct snd_soc_codec *codec;
@@ -80,7 +78,7 @@ index 9bc8206..c35b4f3 100644
  
  	codec = dai->codec;
  	switch (div_id) {
-@@ -459,6 +466,10 @@ static int wm8804_set_clkdiv(struct snd_soc_dai *dai,
+@@ -459,6 +466,10 @@ static int wm8804_set_clkdiv(struct snd_
  		snd_soc_update_bits(codec, WM8804_PLL5, 0x30,
  				    (div & 0x3) << 4);
  		break;
@@ -91,7 +89,7 @@ index 9bc8206..c35b4f3 100644
  	default:
  		dev_err(dai->dev, "Unknown clock divider: %d\n", div_id);
  		return -EINVAL;
-@@ -641,7 +652,7 @@ static const struct snd_soc_dai_ops wm8804_dai_ops = {
+@@ -641,7 +652,7 @@ static const struct snd_soc_dai_ops wm88
  };
  
  #define WM8804_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
@@ -100,8 +98,6 @@ index 9bc8206..c35b4f3 100644
  
  #define WM8804_RATES (SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100 | \
  		      SNDRV_PCM_RATE_48000 | SNDRV_PCM_RATE_64000 | \
-diff --git a/sound/soc/codecs/wm8804.h b/sound/soc/codecs/wm8804.h
-index 8ec14f5..e72d4f4 100644
 --- a/sound/soc/codecs/wm8804.h
 +++ b/sound/soc/codecs/wm8804.h
 @@ -57,5 +57,9 @@
@@ -114,6 +110,3 @@ index 8ec14f5..e72d4f4 100644
 +#define WM8804_MCLKDIV_128FS			1
  
  #endif  /* _WM8804_H */
--- 
-1.9.1
-

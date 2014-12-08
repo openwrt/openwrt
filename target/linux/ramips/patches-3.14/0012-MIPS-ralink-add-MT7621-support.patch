@@ -22,10 +22,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/ralink/malta-amon.c
  create mode 100644 arch/mips/ralink/mt7621.c
 
-Index: linux-3.14.18/arch/mips/include/asm/gic.h
-===================================================================
---- linux-3.14.18.orig/arch/mips/include/asm/gic.h	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/arch/mips/include/asm/gic.h	2014-11-12 18:15:37.293244085 +0100
+--- a/arch/mips/include/asm/gic.h
++++ b/arch/mips/include/asm/gic.h
 @@ -19,7 +19,11 @@
  #define GIC_TRIG_EDGE			1
  #define GIC_TRIG_LEVEL			0
@@ -38,10 +36,8 @@ Index: linux-3.14.18/arch/mips/include/asm/gic.h
  
  #define MSK(n) ((1 << (n)) - 1)
  #define REG32(addr)		(*(volatile unsigned int *) (addr))
-Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/irq.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/irq.h	2014-11-12 18:15:37.297244234 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ralink/irq.h
 @@ -0,0 +1,9 @@
 +#ifndef __ASM_MACH_RALINK_IRQ_H
 +#define __ASM_MACH_RALINK_IRQ_H
@@ -52,10 +48,8 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/irq.h
 +#include_next <irq.h>
 +
 +#endif
-Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7621.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7621.h	2014-11-12 18:15:37.297244234 +0100
+--- /dev/null
++++ b/arch/mips/include/asm/mach-ralink/mt7621.h
 @@ -0,0 +1,39 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
@@ -96,11 +90,9 @@ Index: linux-3.14.18/arch/mips/include/asm/mach-ralink/mt7621.h
 +#define MIPS_GIC_IRQ_BASE           (MIPS_CPU_IRQ_BASE + 8)
 +
 +#endif
-Index: linux-3.14.18/arch/mips/kernel/vmlinux.lds.S
-===================================================================
---- linux-3.14.18.orig/arch/mips/kernel/vmlinux.lds.S	2014-11-12 18:15:35.441175040 +0100
-+++ linux-3.14.18/arch/mips/kernel/vmlinux.lds.S	2014-11-12 18:15:37.297244234 +0100
-@@ -51,6 +51,7 @@
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -51,6 +51,7 @@ SECTIONS
  	/* read-only */
  	_text = .;	/* Text and read-only data */
  	.text : {
@@ -108,11 +100,9 @@ Index: linux-3.14.18/arch/mips/kernel/vmlinux.lds.S
  		TEXT_TEXT
  		SCHED_TEXT
  		LOCK_TEXT
-Index: linux-3.14.18/arch/mips/ralink/Kconfig
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/Kconfig	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/arch/mips/ralink/Kconfig	2014-11-13 10:37:45.371792998 +0100
-@@ -7,6 +7,11 @@
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -7,6 +7,11 @@ config CLKEVT_RT3352
  	select CLKSRC_OF
  	select CLKSRC_MMIO
  
@@ -124,7 +114,7 @@ Index: linux-3.14.18/arch/mips/ralink/Kconfig
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
-@@ -34,6 +39,15 @@
+@@ -34,6 +39,15 @@ choice
  		select USB_ARCH_HAS_OHCI
  		select USB_ARCH_HAS_EHCI
  
@@ -140,7 +130,7 @@ Index: linux-3.14.18/arch/mips/ralink/Kconfig
  endchoice
  
  choice
-@@ -61,6 +75,10 @@
+@@ -61,6 +75,10 @@ choice
  		bool "MT7620A eval kit"
  		depends on SOC_MT7620
  
@@ -151,10 +141,8 @@ Index: linux-3.14.18/arch/mips/ralink/Kconfig
  endchoice
  
  endif
-Index: linux-3.14.18/arch/mips/ralink/Makefile
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/Makefile	2014-11-12 18:15:37.225241550 +0100
-+++ linux-3.14.18/arch/mips/ralink/Makefile	2014-11-13 10:37:43.947738138 +0100
+--- a/arch/mips/ralink/Makefile
++++ b/arch/mips/ralink/Makefile
 @@ -6,16 +6,21 @@
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
@@ -178,11 +166,9 @@ Index: linux-3.14.18/arch/mips/ralink/Makefile
  
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
-Index: linux-3.14.18/arch/mips/ralink/Platform
-===================================================================
---- linux-3.14.18.orig/arch/mips/ralink/Platform	2014-09-06 01:34:59.000000000 +0200
-+++ linux-3.14.18/arch/mips/ralink/Platform	2014-11-12 18:15:37.297244234 +0100
-@@ -27,3 +27,8 @@
+--- a/arch/mips/ralink/Platform
++++ b/arch/mips/ralink/Platform
+@@ -27,3 +27,8 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctr
  #
  load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
  cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7620
@@ -191,10 +177,8 @@ Index: linux-3.14.18/arch/mips/ralink/Platform
 +#
 +load-$(CONFIG_SOC_MT7621)	+= 0xffffffff80001000
 +cflags-$(CONFIG_SOC_MT7621)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
-Index: linux-3.14.18/arch/mips/ralink/irq-gic.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/ralink/irq-gic.c	2014-11-12 18:15:37.297244234 +0100
+--- /dev/null
++++ b/arch/mips/ralink/irq-gic.c
 @@ -0,0 +1,271 @@
 +#include <linux/init.h>
 +#include <linux/sched.h>
@@ -467,10 +451,8 @@ Index: linux-3.14.18/arch/mips/ralink/irq-gic.c
 +{
 +	of_irq_init(of_irq_ids);
 +}
-Index: linux-3.14.18/arch/mips/ralink/malta-amon.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/ralink/malta-amon.c	2014-11-12 18:15:37.297244234 +0100
+--- /dev/null
++++ b/arch/mips/ralink/malta-amon.c
 @@ -0,0 +1,81 @@
 +/*
 + * Copyright (C) 2007  MIPS Technologies, Inc.
@@ -553,10 +535,8 @@ Index: linux-3.14.18/arch/mips/ralink/malta-amon.c
 +	smp_rmb();	/* Target will be updating flags soon */
 +	pr_debug("launch: cpu%d gone!\n", cpu);
 +}
-Index: linux-3.14.18/arch/mips/ralink/mt7621.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.14.18/arch/mips/ralink/mt7621.c	2014-11-13 10:32:56.960683223 +0100
+--- /dev/null
++++ b/arch/mips/ralink/mt7621.c
 @@ -0,0 +1,183 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it

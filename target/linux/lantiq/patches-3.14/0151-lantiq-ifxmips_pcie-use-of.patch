@@ -1,5 +1,5 @@
---- linux-3.14.18.orig/arch/mips/pci/ifxmips_pcie.c	2014-09-27 14:55:19.000000000 +0200
-+++ linux-3.14.18/arch/mips/pci/ifxmips_pcie.c	2014-10-09 13:45:12.000000000 +0200
+--- a/arch/mips/pci/ifxmips_pcie.c
++++ b/arch/mips/pci/ifxmips_pcie.c
 @@ -18,6 +18,8 @@
  #include <linux/pci_regs.h>
  #include <linux/module.h>
@@ -9,7 +9,7 @@
  #include "ifxmips_pcie.h"
  #include "ifxmips_pcie_reg.h"
  
-@@ -1048,7 +1050,7 @@
+@@ -1048,7 +1050,7 @@ pcie_rc_initialize(int pcie_port)
  extern int (*ltq_pci_plat_arch_init)(struct pci_dev *dev);
  extern int (*ltq_pci_map_irq)(const struct pci_dev *dev, u8 slot, u8 pin);
  
@@ -18,7 +18,7 @@
  {
      void __iomem *io_map_base;
      int pcie_port;
-@@ -1090,6 +1092,30 @@
+@@ -1090,6 +1092,30 @@ static int __init ifx_pcie_bios_init(voi
  
      return 0;
  }

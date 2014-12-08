@@ -9,11 +9,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/mtd/nand/xway_nand.c |   28 ++++++++++++++++++++++++++++
  1 file changed, 28 insertions(+)
 
-diff --git a/drivers/mtd/nand/xway_nand.c b/drivers/mtd/nand/xway_nand.c
-index 8d14f1b..f813a55 100644
 --- a/drivers/mtd/nand/xway_nand.c
 +++ b/drivers/mtd/nand/xway_nand.c
-@@ -136,6 +136,32 @@ static unsigned char xway_read_byte(struct mtd_info *mtd)
+@@ -136,6 +136,32 @@ static unsigned char xway_read_byte(stru
  	return ret;
  }
  
@@ -46,7 +44,7 @@ index 8d14f1b..f813a55 100644
  static int xway_nand_probe(struct platform_device *pdev)
  {
  	struct nand_chip *this = platform_get_drvdata(pdev);
-@@ -181,6 +207,8 @@ static struct platform_nand_data xway_nand_data = {
+@@ -181,6 +207,8 @@ static struct platform_nand_data xway_na
  		.dev_ready	= xway_dev_ready,
  		.select_chip	= xway_select_chip,
  		.read_byte	= xway_read_byte,
@@ -55,6 +53,3 @@ index 8d14f1b..f813a55 100644
  	}
  };
  
--- 
-1.7.10.4
-

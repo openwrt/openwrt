@@ -12,9 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/include/asm/mach-lantiq/lantiq_timer.h
  create mode 100644 arch/mips/lantiq/xway/timer.c
 
-diff --git a/arch/mips/include/asm/mach-lantiq/lantiq_timer.h b/arch/mips/include/asm/mach-lantiq/lantiq_timer.h
-new file mode 100644
-index 0000000..ef564ab
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-lantiq/lantiq_timer.h
 @@ -0,0 +1,155 @@
@@ -173,8 +170,6 @@ index 0000000..ef564ab
 +	u32 reload, unsigned long arg1, unsigned long arg2);
 +
 +#endif /* __DANUBE_GPTU_DEV_H__2005_07_26__10_19__ */
-diff --git a/arch/mips/lantiq/xway/Makefile b/arch/mips/lantiq/xway/Makefile
-index c73d3f2..2dd442c 100644
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
 @@ -1,4 +1,4 @@
@@ -183,9 +178,6 @@ index c73d3f2..2dd442c 100644
  
  obj-y += vmmc.o tffs.o
  
-diff --git a/arch/mips/lantiq/xway/timer.c b/arch/mips/lantiq/xway/timer.c
-new file mode 100644
-index 0000000..1c0fdb8
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/timer.c
 @@ -0,0 +1,845 @@
@@ -1034,6 +1026,3 @@ index 0000000..1c0fdb8
 +module_exit(lq_gptu_exit);
 +
 +#endif
--- 
-1.7.10.4
-

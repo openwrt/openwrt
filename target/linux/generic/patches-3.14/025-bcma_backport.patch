@@ -106,7 +106,7 @@
  	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
  
  	readrq = pcie_get_readrq(dev);
-@@ -617,6 +617,6 @@ int bcma_core_pci_pcibios_map_irq(const
+@@ -617,6 +617,6 @@ int bcma_core_pci_pcibios_map_irq(const 
  
  	pc_host = container_of(dev->bus->ops, struct bcma_drv_pci_host,
  			       pci_ops);
@@ -983,7 +983,7 @@
 +#endif /* LINUX_BCMA_DRIVER_PCIE2_H_ */
 --- a/drivers/bcma/scan.c
 +++ b/drivers/bcma/scan.c
-@@ -32,17 +32,17 @@ static const struct bcma_device_id_name
+@@ -32,17 +32,17 @@ static const struct bcma_device_id_name 
  	{ BCMA_CORE_4706_CHIPCOMMON, "BCM4706 ChipCommon" },
  	{ BCMA_CORE_4706_SOC_RAM, "BCM4706 SOC RAM" },
  	{ BCMA_CORE_4706_MAC_GBIT, "BCM4706 GBit MAC" },
@@ -1290,7 +1290,7 @@
  static void bcma_core_mips_set_irq(struct bcma_device *dev, unsigned int irq)
  {
  	unsigned int oldirq = bcma_core_mips_irq(dev);
-@@ -229,11 +230,51 @@ u32 bcma_cpu_clock(struct bcma_drv_mips
+@@ -229,11 +230,51 @@ u32 bcma_cpu_clock(struct bcma_drv_mips 
  }
  EXPORT_SYMBOL(bcma_cpu_clock);
  

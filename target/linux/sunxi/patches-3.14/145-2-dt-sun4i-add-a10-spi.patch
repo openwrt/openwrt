@@ -41,12 +41,10 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  		emac: ethernet@01c0b000 {
  			compatible = "allwinner,sun4i-a10-emac";
  			reg = <0x01c0b000 0x1000>;
-@@ -353,6 +375,28 @@
- 			status = "disabled";
- 			#address-cells = <1>;
+@@ -355,6 +377,28 @@
  			#size-cells = <0>;
-+		};
-+
+ 		};
+ 
 +		spi2: spi@01c17000 {
 +			compatible = "allwinner,sun4i-a10-spi";
 +			reg = <0x01c17000 0x1000>;
@@ -67,6 +65,8 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
 +			status = "disabled";
 +			#address-cells = <1>;
 +			#size-cells = <0>;
- 		};
- 
++		};
++
  		intc: interrupt-controller@01c20400 {
+ 			compatible = "allwinner,sun4i-ic";
+ 			reg = <0x01c20400 0x400>;

@@ -11,8 +11,6 @@ Subject: [PATCH 11/54] Add hwrng (hardware random number generator) driver
  4 files changed, 130 insertions(+)
  create mode 100755 drivers/char/hw_random/bcm2708-rng.c
 
-diff --git a/arch/arm/mach-bcm2708/include/mach/platform.h b/arch/arm/mach-bcm2708/include/mach/platform.h
-index 110ce07..ecd854e 100644
 --- a/arch/arm/mach-bcm2708/include/mach/platform.h
 +++ b/arch/arm/mach-bcm2708/include/mach/platform.h
 @@ -60,6 +60,7 @@
@@ -23,8 +21,6 @@ index 110ce07..ecd854e 100644
  #define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO */
  #define UART0_BASE               (BCM2708_PERI_BASE + 0x201000)	/* Uart 0 */
  #define MMCI0_BASE               (BCM2708_PERI_BASE + 0x202000) /* MMC interface */
-diff --git a/drivers/char/hw_random/Kconfig b/drivers/char/hw_random/Kconfig
-index 2f2b084..cfca8e9 100644
 --- a/drivers/char/hw_random/Kconfig
 +++ b/drivers/char/hw_random/Kconfig
 @@ -341,6 +341,17 @@ config HW_RANDOM_TPM
@@ -45,19 +41,14 @@ index 2f2b084..cfca8e9 100644
  config HW_RANDOM_MSM
  	tristate "Qualcomm MSM Random Number Generator support"
  	depends on HW_RANDOM && ARCH_MSM
-diff --git a/drivers/char/hw_random/Makefile b/drivers/char/hw_random/Makefile
-index 3ae7755..a7bfb80 100644
 --- a/drivers/char/hw_random/Makefile
 +++ b/drivers/char/hw_random/Makefile
-@@ -29,4 +29,5 @@ obj-$(CONFIG_HW_RANDOM_POWERNV) += powernv-rng.o
+@@ -29,4 +29,5 @@ obj-$(CONFIG_HW_RANDOM_POWERNV) += power
  obj-$(CONFIG_HW_RANDOM_EXYNOS)	+= exynos-rng.o
  obj-$(CONFIG_HW_RANDOM_TPM) += tpm-rng.o
  obj-$(CONFIG_HW_RANDOM_BCM2835) += bcm2835-rng.o
 +obj-$(CONFIG_HW_RANDOM_BCM2708) += bcm2708-rng.o
  obj-$(CONFIG_HW_RANDOM_MSM) += msm-rng.o
-diff --git a/drivers/char/hw_random/bcm2708-rng.c b/drivers/char/hw_random/bcm2708-rng.c
-new file mode 100755
-index 0000000..1ffa7d7
 --- /dev/null
 +++ b/drivers/char/hw_random/bcm2708-rng.c
 @@ -0,0 +1,117 @@
@@ -178,6 +169,3 @@ index 0000000..1ffa7d7
 +
 +MODULE_DESCRIPTION("BCM2708 H/W Random Number Generator (RNG) driver");
 +MODULE_LICENSE("GPL and additional rights");
--- 
-1.9.1
-

@@ -9,11 +9,9 @@ Subject: [PATCH 52/54] fix soc-core's inverse range and let IQaudIO DAC use
  sound/soc/soc-core.c       | 8 ++++----
  2 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
-index 2653311..b669e15 100644
 --- a/sound/soc/codecs/pcm512x.c
 +++ b/sound/soc/codecs/pcm512x.c
-@@ -239,9 +239,10 @@ static const struct soc_enum pcm512x_veds =
+@@ -239,9 +239,10 @@ static const struct soc_enum pcm512x_ved
  	SOC_ENUM_SINGLE(PCM512x_DIGITAL_MUTE_2, PCM512x_VEDS_SHIFT, 4,
  			pcm512x_ramp_step_text);
  
@@ -25,11 +23,9 @@ index 2653311..b669e15 100644
  SOC_DOUBLE("Playback Digital Switch", PCM512x_MUTE, PCM512x_RQML_SHIFT,
  	   PCM512x_RQMR_SHIFT, 1, 1),
  
-diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
-index c3f41e7..a8a753f 100644
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -3072,8 +3072,8 @@ int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
+@@ -3072,8 +3072,8 @@ int snd_soc_put_volsw_range(struct snd_k
  
  	if (invert)
  		val = ((max - ucontrol->value.integer.value[0] + min) & mask);
@@ -40,7 +36,7 @@ index c3f41e7..a8a753f 100644
  	val_mask = mask << shift;
  	val = val << shift;
  
-@@ -3084,8 +3084,8 @@ int snd_soc_put_volsw_range(struct snd_kcontrol *kcontrol,
+@@ -3084,8 +3084,8 @@ int snd_soc_put_volsw_range(struct snd_k
  	if (snd_soc_volsw_is_stereo(mc)) {
  		if (invert)
  			val = ((max - ucontrol->value.integer.value[1] + min) & mask);
@@ -51,6 +47,3 @@ index c3f41e7..a8a753f 100644
  		val_mask = mask << shift;
  		val = val << shift;
  
--- 
-1.9.1
-

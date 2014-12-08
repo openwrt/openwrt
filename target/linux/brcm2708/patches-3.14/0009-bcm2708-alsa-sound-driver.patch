@@ -24,8 +24,6 @@ Subject: [PATCH 09/54] bcm2708: alsa sound driver
  create mode 100755 sound/arm/bcm2835.h
  create mode 100644 sound/arm/vc_vchi_audioserv_defs.h
 
-diff --git a/arch/arm/configs/bcmrpi_cutdown_defconfig b/arch/arm/configs/bcmrpi_cutdown_defconfig
-index 74f2dc9..e519412 100644
 --- a/arch/arm/configs/bcmrpi_cutdown_defconfig
 +++ b/arch/arm/configs/bcmrpi_cutdown_defconfig
 @@ -208,6 +208,26 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
@@ -55,8 +53,6 @@ index 74f2dc9..e519412 100644
  CONFIG_HID_PID=y
  CONFIG_USB_HIDDEV=y
  CONFIG_HID_A4TECH=m
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 339aabf..df947e5 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -225,6 +225,26 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
@@ -86,11 +82,9 @@ index 339aabf..df947e5 100644
  CONFIG_HID_PID=y
  CONFIG_USB_HIDDEV=y
  CONFIG_HID_A4TECH=m
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index a5af6ec..1904066 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -431,6 +431,58 @@ struct platform_device bcm2708_powerman_device = {
+@@ -431,6 +431,58 @@ struct platform_device bcm2708_powerman_
  		.coherent_dma_mask = 0xffffffffUL},
  };
  
@@ -158,8 +152,6 @@ index a5af6ec..1904066 100644
  
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
-diff --git a/sound/arm/Kconfig b/sound/arm/Kconfig
-index 885683a..f7ceafd 100644
 --- a/sound/arm/Kconfig
 +++ b/sound/arm/Kconfig
 @@ -39,5 +39,12 @@ config SND_PXA2XX_AC97
@@ -175,11 +167,9 @@ index 885683a..f7ceafd 100644
 +
  endif	# SND_ARM
  
-diff --git a/sound/arm/Makefile b/sound/arm/Makefile
-index 8c0c851..6796d7f 100644
 --- a/sound/arm/Makefile
 +++ b/sound/arm/Makefile
-@@ -14,3 +14,8 @@ snd-pxa2xx-lib-$(CONFIG_SND_PXA2XX_LIB_AC97)	+= pxa2xx-ac97-lib.o
+@@ -14,3 +14,8 @@ snd-pxa2xx-lib-$(CONFIG_SND_PXA2XX_LIB_A
  
  obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
  snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
@@ -188,9 +178,6 @@ index 8c0c851..6796d7f 100644
 +snd-bcm2835-objs		:= bcm2835.o bcm2835-ctl.o bcm2835-pcm.o bcm2835-vchiq.o
 +
 +ccflags-y += -Idrivers/misc/vc04_services -Idrivers/misc/vc04_services/interface/vcos/linuxkernel -D__VCCOREVER__=0x04000000
-diff --git a/sound/arm/bcm2835-ctl.c b/sound/arm/bcm2835-ctl.c
-new file mode 100755
-index 0000000..8c5334a
 --- /dev/null
 +++ b/sound/arm/bcm2835-ctl.c
 @@ -0,0 +1,200 @@
@@ -394,9 +381,6 @@ index 0000000..8c5334a
 +	}
 +	return 0;
 +}
-diff --git a/sound/arm/bcm2835-pcm.c b/sound/arm/bcm2835-pcm.c
-new file mode 100755
-index 0000000..2e7d405
 --- /dev/null
 +++ b/sound/arm/bcm2835-pcm.c
 @@ -0,0 +1,409 @@
@@ -809,9 +793,6 @@ index 0000000..2e7d405
 +
 +	return 0;
 +}
-diff --git a/sound/arm/bcm2835-vchiq.c b/sound/arm/bcm2835-vchiq.c
-new file mode 100755
-index 0000000..b9b4fe8
 --- /dev/null
 +++ b/sound/arm/bcm2835-vchiq.c
 @@ -0,0 +1,844 @@
@@ -1659,9 +1640,6 @@ index 0000000..b9b4fe8
 +
 +module_param(force_bulk, bool, 0444);
 +MODULE_PARM_DESC(force_bulk, "Force use of vchiq bulk for audio");
-diff --git a/sound/arm/bcm2835.c b/sound/arm/bcm2835.c
-new file mode 100755
-index 0000000..317e7d9
 --- /dev/null
 +++ b/sound/arm/bcm2835.c
 @@ -0,0 +1,413 @@
@@ -2078,9 +2056,6 @@ index 0000000..317e7d9
 +MODULE_DESCRIPTION("Alsa driver for BCM2835 chip");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:bcm2835_alsa");
-diff --git a/sound/arm/bcm2835.h b/sound/arm/bcm2835.h
-new file mode 100755
-index 0000000..080bd5c
 --- /dev/null
 +++ b/sound/arm/bcm2835.h
 @@ -0,0 +1,155 @@
@@ -2239,9 +2214,6 @@ index 0000000..080bd5c
 +void bcm2835_audio_flush_playback_buffers(bcm2835_alsa_stream_t * alsa_stream);
 +
 +#endif /* __SOUND_ARM_BCM2835_H */
-diff --git a/sound/arm/vc_vchi_audioserv_defs.h b/sound/arm/vc_vchi_audioserv_defs.h
-new file mode 100644
-index 0000000..af3e6eb
 --- /dev/null
 +++ b/sound/arm/vc_vchi_audioserv_defs.h
 @@ -0,0 +1,116 @@
@@ -2361,6 +2333,3 @@ index 0000000..af3e6eb
 +} VC_AUDIO_MSG_T;
 +
 +#endif // _VC_AUDIO_DEFS_H_
--- 
-1.9.1
-

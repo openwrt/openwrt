@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -47,6 +47,7 @@ enum ath79_mach_type {
+@@ -48,6 +48,7 @@ enum ath79_mach_type {
  	ATH79_MACH_DIR_825_C1,		/* D-Link DIR-825 rev. C1 */
  	ATH79_MACH_DIR_835_A1,		/* D-Link DIR-835 rev. A1 */
  	ATH79_MACH_DRAGINO2,		/* Dragino Version 2 */
@@ -29,7 +29,7 @@
  	select SOC_AR933X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= m
+@@ -61,6 +61,7 @@ obj-$(CONFIG_ATH79_MACH_DIR_615_C1)	+= m
  obj-$(CONFIG_ATH79_MACH_DIR_825_B1)	+= mach-dir-825-b1.o
  obj-$(CONFIG_ATH79_MACH_DIR_825_C1)	+= mach-dir-825-c1.o
  obj-$(CONFIG_ATH79_MACH_DRAGINO2)	+= mach-dragino2.o

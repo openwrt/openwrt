@@ -59,9 +59,9 @@ but this is not supported in this patch.
  			ahci_pwr_pin_cubietruck: ahci_pwr_pin@1 {
  				allwinner,pins = "PH12";
  				allwinner,function = "gpio_out";
-@@ -83,6 +112,13 @@
- 					allwinner,drive = <0>;
- 					allwinner,pull = <2>;
+@@ -99,6 +128,13 @@
+ 
+ 				/include/ "x-powers-axp209.dtsi"
  			};
 +
 +			wifi_host_wake_pin: wifi_host_wake_pin@0 {
@@ -72,8 +72,8 @@ but this is not supported in this patch.
 +			};
  		};
  
- 		uart0: serial@01c28000 {
-@@ -171,4 +207,15 @@
+ 		i2c0: i2c@01c2ac00 {
+@@ -189,4 +225,15 @@
  	reg_usb2_vbus: usb2-vbus {
  		status = "okay";
  	};

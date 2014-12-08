@@ -510,7 +510,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  
  void dma_free_noncoherent(struct device *dev, size_t size, void *vaddr,
-@@ -159,8 +137,8 @@ void dma_free_noncoherent(struct device
+@@ -159,8 +137,8 @@ void dma_free_noncoherent(struct device 
  }
  EXPORT_SYMBOL(dma_free_noncoherent);
  
@@ -650,7 +650,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  void dma_cache_sync(struct device *dev, void *vaddr, size_t size,
  			 enum dma_data_direction direction)
-@@ -347,23 +225,10 @@ void dma_cache_sync(struct device *dev,
+@@ -347,23 +225,10 @@ void dma_cache_sync(struct device *dev, 
  
  EXPORT_SYMBOL(dma_cache_sync);
  

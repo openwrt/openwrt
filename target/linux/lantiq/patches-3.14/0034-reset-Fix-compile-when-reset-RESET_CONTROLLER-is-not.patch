@@ -17,8 +17,6 @@ Cc: Gabor Juhos <juhosg@openwrt.org>
  include/linux/reset.h            |   43 ++++++++++++++++++++++++++++++++++++++
  2 files changed, 59 insertions(+)
 
-diff --git a/include/linux/reset-controller.h b/include/linux/reset-controller.h
-index 41a4695..f38f530 100644
 --- a/include/linux/reset-controller.h
 +++ b/include/linux/reset-controller.h
 @@ -46,7 +46,23 @@ struct reset_controller_dev {
@@ -45,8 +43,6 @@ index 41a4695..f38f530 100644
 +#endif
 +
  #endif
-diff --git a/include/linux/reset.h b/include/linux/reset.h
-index 6082247..1b36c9e 100644
 --- a/include/linux/reset.h
 +++ b/include/linux/reset.h
 @@ -1,9 +1,13 @@
@@ -63,7 +59,7 @@ index 6082247..1b36c9e 100644
  int reset_control_reset(struct reset_control *rstc);
  int reset_control_assert(struct reset_control *rstc);
  int reset_control_deassert(struct reset_control *rstc);
-@@ -14,4 +18,43 @@ struct reset_control *devm_reset_control_get(struct device *dev, const char *id)
+@@ -14,4 +18,43 @@ struct reset_control *devm_reset_control
  
  int device_reset(struct device *dev);
  
@@ -107,6 +103,3 @@ index 6082247..1b36c9e 100644
 +#endif
 +
  #endif
--- 
-1.7.10.4
-

@@ -10,8 +10,6 @@ Subject: [PATCH 27/54] config: Enable CONFIG_MEMCG, but leave it disabled (due
  mm/memcontrol.c                   |  1 +
  3 files changed, 29 insertions(+)
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 78d789c..e89e430 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -18,6 +18,7 @@ CONFIG_CGROUP_FREEZER=y
@@ -22,11 +20,9 @@ index 78d789c..e89e430 100644
  CONFIG_BLK_CGROUP=y
  CONFIG_NAMESPACES=y
  CONFIG_SCHED_AUTOGROUP=y
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 0c753dd..a18b46e 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -5252,6 +5252,33 @@ static int __init cgroup_disable(char *str)
+@@ -5251,6 +5251,33 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  
@@ -60,11 +56,9 @@ index 0c753dd..a18b46e 100644
  /**
   * css_from_dir - get corresponding css from the dentry of a cgroup dir
   * @dentry: directory dentry of interest
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 9b35da2..a9891cc 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -7289,6 +7289,7 @@ struct cgroup_subsys mem_cgroup_subsys = {
+@@ -7316,6 +7316,7 @@ struct cgroup_subsys mem_cgroup_subsys =
  	.bind = mem_cgroup_bind,
  	.base_cftypes = mem_cgroup_files,
  	.early_init = 0,
@@ -72,6 +66,3 @@ index 9b35da2..a9891cc 100644
  };
  
  #ifdef CONFIG_MEMCG_SWAP
--- 
-1.9.1
-

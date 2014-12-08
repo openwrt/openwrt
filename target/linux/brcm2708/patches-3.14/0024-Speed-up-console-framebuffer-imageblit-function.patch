@@ -32,8 +32,6 @@ Signed-off-by: Harm Hanemaaijer <fgenfb@yahoo.com>
  drivers/video/cfbimgblt.c | 152 ++++++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 147 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/video/cfbimgblt.c b/drivers/video/cfbimgblt.c
-index a2bb276..436494f 100644
 --- a/drivers/video/cfbimgblt.c
 +++ b/drivers/video/cfbimgblt.c
 @@ -28,6 +28,11 @@
@@ -48,7 +46,7 @@ index a2bb276..436494f 100644
   */
  #include <linux/module.h>
  #include <linux/string.h>
-@@ -262,6 +267,133 @@ static inline void fast_imageblit(const struct fb_image *image, struct fb_info *
+@@ -262,6 +267,133 @@ static inline void fast_imageblit(const 
  	}
  }	
  	
@@ -182,7 +180,7 @@ index a2bb276..436494f 100644
  void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
  {
  	u32 fgcolor, bgcolor, start_index, bitstart, pitch_index = 0;
-@@ -294,11 +426,21 @@ void cfb_imageblit(struct fb_info *p, const struct fb_image *image)
+@@ -294,11 +426,21 @@ void cfb_imageblit(struct fb_info *p, co
  			bgcolor = image->bg_color;
  		}	
  		
@@ -209,6 +207,3 @@ index a2bb276..436494f 100644
  			slow_imageblit(image, p, dst1, fgcolor, bgcolor,
  					start_index, pitch_index);
  	} else
--- 
-1.9.1
-

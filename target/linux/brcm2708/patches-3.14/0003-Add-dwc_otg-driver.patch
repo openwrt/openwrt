@@ -129,8 +129,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  create mode 100644 drivers/usb/host/dwc_otg/test/test_mod_param.pl
  create mode 100644 drivers/usb/host/dwc_otg/test/test_sysfs.pl
 
-diff --git a/drivers/usb/Makefile b/drivers/usb/Makefile
-index 1ae2bf3..c4a45aa 100644
 --- a/drivers/usb/Makefile
 +++ b/drivers/usb/Makefile
 @@ -24,6 +24,7 @@ obj-$(CONFIG_USB_U132_HCD)	+= host/
@@ -141,11 +139,9 @@ index 1ae2bf3..c4a45aa 100644
  obj-$(CONFIG_USB_IMX21_HCD)	+= host/
  obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= host/
  obj-$(CONFIG_USB_FUSBH200_HCD)	+= host/
-diff --git a/drivers/usb/core/generic.c b/drivers/usb/core/generic.c
-index acbfeb0..7d675c8 100644
 --- a/drivers/usb/core/generic.c
 +++ b/drivers/usb/core/generic.c
-@@ -152,6 +152,7 @@ int usb_choose_configuration(struct usb_device *udev)
+@@ -152,6 +152,7 @@ int usb_choose_configuration(struct usb_
  		dev_warn(&udev->dev,
  			"no configuration chosen from %d choice%s\n",
  			num_configs, plural(num_configs));
@@ -153,8 +149,6 @@ index acbfeb0..7d675c8 100644
  	}
  	return i;
  }
-diff --git a/drivers/usb/core/message.c b/drivers/usb/core/message.c
-index f829a1a..4a44ae7 100644
 --- a/drivers/usb/core/message.c
 +++ b/drivers/usb/core/message.c
 @@ -1888,6 +1888,85 @@ free_interfaces:
@@ -243,8 +237,6 @@ index f829a1a..4a44ae7 100644
  
  	/* Now that the interfaces are installed, re-enable LPM. */
  	usb_unlocked_enable_lpm(dev);
-diff --git a/drivers/usb/core/otg_whitelist.h b/drivers/usb/core/otg_whitelist.h
-index e8cdce5..ca0ac47 100644
 --- a/drivers/usb/core/otg_whitelist.h
 +++ b/drivers/usb/core/otg_whitelist.h
 @@ -19,33 +19,82 @@
@@ -336,7 +328,7 @@ index e8cdce5..ca0ac47 100644
  static int is_targeted(struct usb_device *dev)
  {
  	struct usb_device_id	*id = whitelist_table;
-@@ -55,58 +104,83 @@ static int is_targeted(struct usb_device *dev)
+@@ -55,58 +104,83 @@ static int is_targeted(struct usb_device
  		return 1;
  
  	/* HNP test device is _never_ targeted (see OTG spec 6.6.6) */
@@ -349,7 +341,40 @@ index e8cdce5..ca0ac47 100644
 +	} else if (!enable_whitelist) {
 +		return 1;
 +        } else {
-+
+ 
+-	/* NOTE: can't use usb_match_id() since interface caches
+-	 * aren't set up yet. this is cut/paste from that code.
+-	 */
+-	for (id = whitelist_table; id->match_flags; id++) {
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_VENDOR) &&
+-		    id->idVendor != le16_to_cpu(dev->descriptor.idVendor))
+-			continue;
+-
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_PRODUCT) &&
+-		    id->idProduct != le16_to_cpu(dev->descriptor.idProduct))
+-			continue;
+-
+-		/* No need to test id->bcdDevice_lo != 0, since 0 is never
+-		   greater than any unsigned number. */
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_LO) &&
+-		    (id->bcdDevice_lo > le16_to_cpu(dev->descriptor.bcdDevice)))
+-			continue;
+-
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_HI) &&
+-		    (id->bcdDevice_hi < le16_to_cpu(dev->descriptor.bcdDevice)))
+-			continue;
+-
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_CLASS) &&
+-		    (id->bDeviceClass != dev->descriptor.bDeviceClass))
+-			continue;
+-
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_SUBCLASS) &&
+-		    (id->bDeviceSubClass != dev->descriptor.bDeviceSubClass))
+-			continue;
+-
+-		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_PROTOCOL) &&
+-		    (id->bDeviceProtocol != dev->descriptor.bDeviceProtocol))
+-			continue;
 +#ifdef DEBUG
 +                dev_dbg(&dev->dev, "device V:%04x P:%04x DC:%04x SC:%04x PR:%04x \n",
 +                        dev->descriptor.idVendor,
@@ -359,14 +384,7 @@ index e8cdce5..ca0ac47 100644
 +                        dev->descriptor.bDeviceProtocol);
 +#endif
  
--	/* NOTE: can't use usb_match_id() since interface caches
--	 * aren't set up yet. this is cut/paste from that code.
--	 */
--	for (id = whitelist_table; id->match_flags; id++) {
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_VENDOR) &&
--		    id->idVendor != le16_to_cpu(dev->descriptor.idVendor))
--			continue;
-+		return 1;
+ 		return 1;
 +		/* NOTE: can't use usb_match_id() since interface caches
 +		 * aren't set up yet. this is cut/paste from that code.
 +		 */
@@ -380,54 +398,33 @@ index e8cdce5..ca0ac47 100644
 +				id->bDeviceSubClass,
 +				id->bDeviceProtocol);
 +#endif
- 
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_PRODUCT) &&
--		    id->idProduct != le16_to_cpu(dev->descriptor.idProduct))
--			continue;
++
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_VENDOR) &&
 +			    id->idVendor != le16_to_cpu(dev->descriptor.idVendor))
 +				continue;
- 
--		/* No need to test id->bcdDevice_lo != 0, since 0 is never
--		   greater than any unsigned number. */
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_LO) &&
--		    (id->bcdDevice_lo > le16_to_cpu(dev->descriptor.bcdDevice)))
--			continue;
++
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_PRODUCT) &&
 +			    id->idProduct != le16_to_cpu(dev->descriptor.idProduct))
 +				continue;
- 
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_HI) &&
--		    (id->bcdDevice_hi < le16_to_cpu(dev->descriptor.bcdDevice)))
--			continue;
++
 +			/* No need to test id->bcdDevice_lo != 0, since 0 is never
 +			   greater than any unsigned number. */
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_LO) &&
 +			    (id->bcdDevice_lo > le16_to_cpu(dev->descriptor.bcdDevice)))
 +				continue;
- 
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_CLASS) &&
--		    (id->bDeviceClass != dev->descriptor.bDeviceClass))
--			continue;
++
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_HI) &&
 +			    (id->bcdDevice_hi < le16_to_cpu(dev->descriptor.bcdDevice)))
 +				continue;
- 
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_SUBCLASS) &&
--		    (id->bDeviceSubClass != dev->descriptor.bDeviceSubClass))
--			continue;
++
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_CLASS) &&
 +			    (id->bDeviceClass != dev->descriptor.bDeviceClass))
 +				continue;
- 
--		if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_PROTOCOL) &&
--		    (id->bDeviceProtocol != dev->descriptor.bDeviceProtocol))
--			continue;
++
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_SUBCLASS) &&
 +			    (id->bDeviceSubClass != dev->descriptor.bDeviceSubClass))
 +				continue;
- 
--		return 1;
++
 +			if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_PROTOCOL) &&
 +			    (id->bDeviceProtocol != dev->descriptor.bDeviceProtocol))
 +				continue;
@@ -457,9 +454,6 @@ index e8cdce5..ca0ac47 100644
  #endif
  }
  
-diff --git a/drivers/usb/gadget/file_storage.c b/drivers/usb/gadget/file_storage.c
-new file mode 100644
-index 0000000..a896d73
 --- /dev/null
 +++ b/drivers/usb/gadget/file_storage.c
 @@ -0,0 +1,3676 @@
@@ -4139,8 +4133,6 @@ index 0000000..a896d73
 +	kref_put(&fsg->ref, fsg_release);
 +}
 +module_exit(fsg_cleanup);
-diff --git a/drivers/usb/host/Kconfig b/drivers/usb/host/Kconfig
-index a9707da..e252b95 100644
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
 @@ -689,6 +689,19 @@ config USB_HWA_HCD
@@ -4163,8 +4155,6 @@ index a9707da..e252b95 100644
  config USB_IMX21_HCD
         tristate "i.MX21 HCD support"
         depends on ARM && ARCH_MXC
-diff --git a/drivers/usb/host/Makefile b/drivers/usb/host/Makefile
-index 7530468..876f024 100644
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
 @@ -63,6 +63,8 @@ obj-$(CONFIG_USB_U132_HCD)	+= u132-hcd.o
@@ -4176,9 +4166,6 @@ index 7530468..876f024 100644
  obj-$(CONFIG_USB_IMX21_HCD)	+= imx21-hcd.o
  obj-$(CONFIG_USB_FSL_MPH_DR_OF)	+= fsl-mph-dr-of.o
  obj-$(CONFIG_USB_OCTEON2_COMMON) += octeon2-common.o
-diff --git a/drivers/usb/host/dwc_common_port/Makefile b/drivers/usb/host/dwc_common_port/Makefile
-new file mode 100644
-index 0000000..f10d466
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/Makefile
 @@ -0,0 +1,58 @@
@@ -4240,9 +4227,6 @@ index 0000000..f10d466
 +
 +clean:
 +	rm -rf *.o *.ko .*.cmd *.mod.c .*.o.d .*.o.tmp modules.order Module.markers Module.symvers .tmp_versions/
-diff --git a/drivers/usb/host/dwc_common_port/Makefile.fbsd b/drivers/usb/host/dwc_common_port/Makefile.fbsd
-new file mode 100644
-index 0000000..45db991
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/Makefile.fbsd
 @@ -0,0 +1,17 @@
@@ -4263,9 +4247,6 @@ index 0000000..45db991
 +       dwc_common_fbsd.c dwc_mem.c
 +
 +.include <bsd.kmod.mk>
-diff --git a/drivers/usb/host/dwc_common_port/Makefile.linux b/drivers/usb/host/dwc_common_port/Makefile.linux
-new file mode 100644
-index 0000000..0cef7b4
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/Makefile.linux
 @@ -0,0 +1,49 @@
@@ -4318,9 +4299,6 @@ index 0000000..0cef7b4
 +
 +clean:
 +	rm -rf *.o *.ko .*.cmd *.mod.c .*.o.d .*.o.tmp modules.order Module.markers Module.symvers .tmp_versions/
-diff --git a/drivers/usb/host/dwc_common_port/changes.txt b/drivers/usb/host/dwc_common_port/changes.txt
-new file mode 100644
-index 0000000..f6839f9
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/changes.txt
 @@ -0,0 +1,174 @@
@@ -4498,9 +4476,6 @@ index 0000000..f6839f9
 +A DWC_LIBMODULE #define has also been added. If this is not defined, then the
 +module code in dwc_common_linux.c is not compiled in. This allows linking the
 +library code directly into a driver module, instead of as a standalone module.
-diff --git a/drivers/usb/host/dwc_common_port/doc/doxygen.cfg b/drivers/usb/host/dwc_common_port/doc/doxygen.cfg
-new file mode 100644
-index 0000000..89aa887
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/doc/doxygen.cfg
 @@ -0,0 +1,270 @@
@@ -4774,9 +4749,6 @@ index 0000000..89aa887
 +# Configuration::additions related to the search engine
 +#---------------------------------------------------------------------------
 +SEARCHENGINE           = NO
-diff --git a/drivers/usb/host/dwc_common_port/dwc_cc.c b/drivers/usb/host/dwc_common_port/dwc_cc.c
-new file mode 100644
-index 0000000..5ec2ae2
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_cc.c
 @@ -0,0 +1,532 @@
@@ -5312,9 +5284,6 @@ index 0000000..5ec2ae2
 +}
 +
 +#endif	/* DWC_CCLIB */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_cc.h b/drivers/usb/host/dwc_common_port/dwc_cc.h
-new file mode 100644
-index 0000000..f86e6f2
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_cc.h
 @@ -0,0 +1,224 @@
@@ -5542,9 +5511,6 @@ index 0000000..f86e6f2
 +#endif
 +
 +#endif /* _DWC_CC_H_ */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c b/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c
-new file mode 100644
-index 0000000..6dd04b5
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_fbsd.c
 @@ -0,0 +1,1308 @@
@@ -6856,9 +6822,6 @@ index 0000000..6dd04b5
 +{
 +	return wq->pending;
 +}
-diff --git a/drivers/usb/host/dwc_common_port/dwc_common_linux.c b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
-new file mode 100644
-index 0000000..440bcfc
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
 @@ -0,0 +1,1421 @@
@@ -8283,9 +8246,6 @@ index 0000000..440bcfc
 +MODULE_LICENSE ("GPL");
 +
 +#endif	/* DWC_LIBMODULE */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c b/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c
-new file mode 100644
-index 0000000..49b07e1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_nbsd.c
 @@ -0,0 +1,1275 @@
@@ -9564,9 +9524,6 @@ index 0000000..49b07e1
 +{
 +	return wq->pending;
 +}
-diff --git a/drivers/usb/host/dwc_common_port/dwc_crypto.c b/drivers/usb/host/dwc_common_port/dwc_crypto.c
-new file mode 100644
-index 0000000..3b03532
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_crypto.c
 @@ -0,0 +1,308 @@
@@ -9878,9 +9835,6 @@ index 0000000..3b03532
 +}
 +
 +#endif	/* DWC_CRYPTOLIB */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_crypto.h b/drivers/usb/host/dwc_common_port/dwc_crypto.h
-new file mode 100644
-index 0000000..26fcddc
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_crypto.h
 @@ -0,0 +1,111 @@
@@ -9995,9 +9949,6 @@ index 0000000..26fcddc
 +#endif
 +
 +#endif /* _DWC_CRYPTO_H_ */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_dh.c b/drivers/usb/host/dwc_common_port/dwc_dh.c
-new file mode 100644
-index 0000000..2b429a3
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_dh.c
 @@ -0,0 +1,291 @@
@@ -10292,9 +10243,6 @@ index 0000000..2b429a3
 +#endif /* !CONFIG_MACH_IPMATE */
 +
 +#endif /* DWC_CRYPTOLIB */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_dh.h b/drivers/usb/host/dwc_common_port/dwc_dh.h
-new file mode 100644
-index 0000000..25c1cc0
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_dh.h
 @@ -0,0 +1,106 @@
@@ -10404,9 +10352,6 @@ index 0000000..25c1cc0
 +#endif
 +
 +#endif /* _DWC_DH_H_ */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_list.h b/drivers/usb/host/dwc_common_port/dwc_list.h
-new file mode 100644
-index 0000000..89cc325
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_list.h
 @@ -0,0 +1,594 @@
@@ -11004,9 +10949,6 @@ index 0000000..89cc325
 +#endif
 +
 +#endif /* _DWC_LIST_H_ */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_mem.c b/drivers/usb/host/dwc_common_port/dwc_mem.c
-new file mode 100644
-index 0000000..ad645ff
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_mem.c
 @@ -0,0 +1,245 @@
@@ -11255,9 +11197,6 @@ index 0000000..ad645ff
 +}
 +
 +#endif /* DWC_DEBUG_MEMORY */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_modpow.c b/drivers/usb/host/dwc_common_port/dwc_modpow.c
-new file mode 100644
-index 0000000..2004538
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_modpow.c
 @@ -0,0 +1,636 @@
@@ -11897,9 +11836,6 @@ index 0000000..2004538
 +#endif /* CONFIG_MACH_IPMATE */
 +
 +#endif /*DWC_CRYPTOLIB */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_modpow.h b/drivers/usb/host/dwc_common_port/dwc_modpow.h
-new file mode 100644
-index 0000000..64f00c2
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_modpow.h
 @@ -0,0 +1,34 @@
@@ -11937,9 +11873,6 @@ index 0000000..64f00c2
 +#endif
 +
 +#endif /* _LINUX_BIGNUM_H */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_notifier.c b/drivers/usb/host/dwc_common_port/dwc_notifier.c
-new file mode 100644
-index 0000000..8b3772a
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_notifier.c
 @@ -0,0 +1,319 @@
@@ -12262,9 +12195,6 @@ index 0000000..8b3772a
 +}
 +
 +#endif	/* DWC_NOTIFYLIB */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_notifier.h b/drivers/usb/host/dwc_common_port/dwc_notifier.h
-new file mode 100644
-index 0000000..4a8cdfe
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_notifier.h
 @@ -0,0 +1,122 @@
@@ -12390,9 +12320,6 @@ index 0000000..4a8cdfe
 +#endif
 +
 +#endif /* __DWC_NOTIFIER_H__ */
-diff --git a/drivers/usb/host/dwc_common_port/dwc_os.h b/drivers/usb/host/dwc_common_port/dwc_os.h
-new file mode 100644
-index 0000000..9ffe929
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/dwc_os.h
 @@ -0,0 +1,1260 @@
@@ -13656,9 +13583,6 @@ index 0000000..9ffe929
 +#endif
 +
 +#endif /* _DWC_OS_H_ */
-diff --git a/drivers/usb/host/dwc_common_port/usb.h b/drivers/usb/host/dwc_common_port/usb.h
-new file mode 100644
-index 0000000..27bda82
 --- /dev/null
 +++ b/drivers/usb/host/dwc_common_port/usb.h
 @@ -0,0 +1,946 @@
@@ -14608,9 +14532,6 @@ index 0000000..27bda82
 +#endif
 +
 +#endif /* _USB_H_ */
-diff --git a/drivers/usb/host/dwc_otg/Makefile b/drivers/usb/host/dwc_otg/Makefile
-new file mode 100644
-index 0000000..236c47c
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/Makefile
 @@ -0,0 +1,80 @@
@@ -14694,9 +14615,6 @@ index 0000000..236c47c
 +	rm -rf   *.o *.ko .*cmd *.mod.c .tmp_versions Module.symvers
 +
 +endif
-diff --git a/drivers/usb/host/dwc_otg/doc/doxygen.cfg b/drivers/usb/host/dwc_otg/doc/doxygen.cfg
-new file mode 100644
-index 0000000..712b057
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/doc/doxygen.cfg
 @@ -0,0 +1,224 @@
@@ -14924,9 +14842,6 @@ index 0000000..712b057
 +# Configuration::additions related to the search engine
 +#---------------------------------------------------------------------------
 +SEARCHENGINE           = NO
-diff --git a/drivers/usb/host/dwc_otg/dummy_audio.c b/drivers/usb/host/dwc_otg/dummy_audio.c
-new file mode 100644
-index 0000000..225decf
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dummy_audio.c
 @@ -0,0 +1,1575 @@
@@ -16505,9 +16420,6 @@ index 0000000..225decf
 +	remove_proc_entry("isoc_test", NULL);
 +}
 +module_exit (cleanup);
-diff --git a/drivers/usb/host/dwc_otg/dwc_cfi_common.h b/drivers/usb/host/dwc_otg/dwc_cfi_common.h
-new file mode 100644
-index 0000000..7770e20
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_cfi_common.h
 @@ -0,0 +1,142 @@
@@ -16653,9 +16565,6 @@ index 0000000..7770e20
 +typedef struct cfi_string cfi_string_t;
 +
 +#endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_adp.c b/drivers/usb/host/dwc_otg/dwc_otg_adp.c
-new file mode 100644
-index 0000000..ce0618d
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_adp.c
 @@ -0,0 +1,854 @@
@@ -17513,9 +17422,6 @@ index 0000000..ce0618d
 +#endif
 +	return 1;
 +}
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_adp.h b/drivers/usb/host/dwc_otg/dwc_otg_adp.h
-new file mode 100644
-index 0000000..4110b25
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_adp.h
 @@ -0,0 +1,80 @@
@@ -17599,9 +17505,6 @@ index 0000000..4110b25
 +extern int32_t dwc_otg_adp_handle_srp_intr(dwc_otg_core_if_t * core_if);
 +
 +#endif //__DWC_OTG_ADP_H__
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.c b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
-new file mode 100644
-index 0000000..fab2961
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.c
 @@ -0,0 +1,1210 @@
@@ -18815,9 +18718,6 @@ index 0000000..fab2961
 +	device_remove_file(&dev->dev, &dev_attr_sleep_status);
 +#endif
 +}
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_attr.h b/drivers/usb/host/dwc_otg/dwc_otg_attr.h
-new file mode 100644
-index 0000000..e10b67f
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_attr.h
 @@ -0,0 +1,89 @@
@@ -18910,9 +18810,6 @@ index 0000000..e10b67f
 +#endif
 +    );
 +#endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cfi.c b/drivers/usb/host/dwc_otg/dwc_otg_cfi.c
-new file mode 100644
-index 0000000..bbb3d32
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cfi.c
 @@ -0,0 +1,1876 @@
@@ -20792,9 +20689,6 @@ index 0000000..bbb3d32
 +}
 +
 +#endif //DWC_UTE_CFI
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cfi.h b/drivers/usb/host/dwc_otg/dwc_otg_cfi.h
-new file mode 100644
-index 0000000..55fd337
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cfi.h
 @@ -0,0 +1,320 @@
@@ -21118,9 +21012,6 @@ index 0000000..55fd337
 +int cfi_setup(struct dwc_otg_pcd *pcd, struct cfi_usb_ctrlrequest *ctrl);
 +
 +#endif /* (__DWC_OTG_CFI_H__) */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil.c b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
-new file mode 100644
-index 0000000..6a32c5c
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
 @@ -0,0 +1,7151 @@
@@ -28275,9 +28166,6 @@ index 0000000..6a32c5c
 +	dwc_otg_pcd_start_srp_timer(core_if);
 +	return;
 +}
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil.h b/drivers/usb/host/dwc_otg/dwc_otg_cil.h
-new file mode 100644
-index 0000000..79dbf83
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.h
 @@ -0,0 +1,1464 @@
@@ -29745,9 +29633,6 @@ index 0000000..79dbf83
 +//////////////////////////////////////////////////////////////////////
 +
 +#endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
-new file mode 100644
-index 0000000..59fc862
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 @@ -0,0 +1,1563 @@
@@ -31314,9 +31199,6 @@ index 0000000..59fc862
 +
 +	return retval;
 +}
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_core_if.h b/drivers/usb/host/dwc_otg/dwc_otg_core_if.h
-new file mode 100644
-index 0000000..4138fd1
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_core_if.h
 @@ -0,0 +1,705 @@
@@ -32025,9 +31907,6 @@ index 0000000..4138fd1
 +/** @} */
 +
 +#endif				/* __DWC_CORE_IF_H__ */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_dbg.h b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
-new file mode 100644
-index 0000000..8900318
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_dbg.h
 @@ -0,0 +1,116 @@
@@ -32147,9 +32026,6 @@ index 0000000..8900318
 +
 +#endif /*DEBUG*/
 +#endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
-new file mode 100644
-index 0000000..ac2c846
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 @@ -0,0 +1,1700 @@
@@ -33853,9 +33729,6 @@ index 0000000..ac2c846
 + </td></tr>
 +
 +*/
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.h b/drivers/usb/host/dwc_otg/dwc_otg_driver.h
-new file mode 100644
-index 0000000..6a8be63
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.h
 @@ -0,0 +1,86 @@
@@ -33945,9 +33818,6 @@ index 0000000..6a8be63
 +#endif
 +
 +#endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-new file mode 100644
-index 0000000..ab935c0
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 @@ -0,0 +1,3473 @@
@@ -37424,9 +37294,6 @@ index 0000000..ab935c0
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
-new file mode 100644
-index 0000000..bb4f67a
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -0,0 +1,824 @@
@@ -38254,9 +38121,6 @@ index 0000000..bb4f67a
 +#endif
 +#endif
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
-new file mode 100644
-index 0000000..274967b
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_ddma.c
 @@ -0,0 +1,1133 @@
@@ -39393,9 +39257,6 @@ index 0000000..274967b
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
-new file mode 100644
-index 0000000..4823167
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_if.h
 @@ -0,0 +1,412 @@
@@ -39811,9 +39672,6 @@ index 0000000..4823167
 +
 +#endif /* __DWC_HCD_IF_H__ */
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-new file mode 100644
-index 0000000..b41e164
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -0,0 +1,2106 @@
@@ -41923,9 +41781,6 @@ index 0000000..b41e164
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-new file mode 100644
-index 0000000..e4787f5
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -0,0 +1,893 @@
@@ -42822,9 +42677,6 @@ index 0000000..e4787f5
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-new file mode 100644
-index 0000000..9761566
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 @@ -0,0 +1,922 @@
@@ -43750,9 +43602,6 @@ index 0000000..9761566
 +}
 +
 +#endif /* DWC_DEVICE_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
-new file mode 100644
-index 0000000..e46d9bb
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_os_dep.h
 @@ -0,0 +1,185 @@
@@ -43941,9 +43790,6 @@ index 0000000..e46d9bb
 +
 +
 +#endif /* _DWC_OS_DEP_H_ */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd.c
-new file mode 100644
-index 0000000..40fb25c
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd.c
 @@ -0,0 +1,2708 @@
@@ -46655,9 +46501,6 @@ index 0000000..40fb25c
 +}
 +
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd.h b/drivers/usb/host/dwc_otg/dwc_otg_pcd.h
-new file mode 100644
-index 0000000..8ef7ba6
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd.h
 @@ -0,0 +1,266 @@
@@ -46927,9 +46770,6 @@ index 0000000..8ef7ba6
 +extern void do_test_mode(void *data);
 +#endif
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h b/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h
-new file mode 100644
-index 0000000..c8d2e0e
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_if.h
 @@ -0,0 +1,360 @@
@@ -47293,9 +47133,6 @@ index 0000000..c8d2e0e
 +#endif				/* __DWC_PCD_IF_H__ */
 +
 +#endif				/* DWC_HOST_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
-new file mode 100644
-index 0000000..1b1f83c
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_intr.c
 @@ -0,0 +1,5147 @@
@@ -52446,9 +52283,6 @@ index 0000000..1b1f83c
 +}
 +
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
-new file mode 100644
-index 0000000..5d310df
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
 @@ -0,0 +1,1358 @@
@@ -53810,9 +53644,6 @@ index 0000000..5d310df
 +EXPORT_SYMBOL(usb_gadget_unregister_driver);
 +
 +#endif /* DWC_HOST_ONLY */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_regs.h b/drivers/usb/host/dwc_otg/dwc_otg_regs.h
-new file mode 100644
-index 0000000..8e0e7b5
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_regs.h
 @@ -0,0 +1,2550 @@
@@ -56366,9 +56197,6 @@ index 0000000..8e0e7b5
 +} gpwrdn_data_t;
 +
 +#endif
-diff --git a/drivers/usb/host/dwc_otg/test/Makefile b/drivers/usb/host/dwc_otg/test/Makefile
-new file mode 100644
-index 0000000..fc45375
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/Makefile
 @@ -0,0 +1,16 @@
@@ -56388,9 +56216,6 @@ index 0000000..fc45375
 +	  else echo "=======> $$test, FAILED" ; \
 +	  fi \
 +	done
-diff --git a/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm b/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm
-new file mode 100644
-index 0000000..85e55fd
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/dwc_otg_test.pm
 @@ -0,0 +1,337 @@
@@ -56731,9 +56556,6 @@ index 0000000..85e55fd
 +);
 +
 +1;
-diff --git a/drivers/usb/host/dwc_otg/test/test_mod_param.pl b/drivers/usb/host/dwc_otg/test/test_mod_param.pl
-new file mode 100644
-index 0000000..dc3820d
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/test_mod_param.pl
 @@ -0,0 +1,133 @@
@@ -56870,9 +56692,6 @@ index 0000000..dc3820d
 +
 +test_main();
 +0;
-diff --git a/drivers/usb/host/dwc_otg/test/test_sysfs.pl b/drivers/usb/host/dwc_otg/test/test_sysfs.pl
-new file mode 100644
-index 0000000..cdc9963
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/test/test_sysfs.pl
 @@ -0,0 +1,193 @@
@@ -57069,6 +56888,3 @@ index 0000000..cdc9963
 +
 +test_main();
 +0;
--- 
-1.9.1
-

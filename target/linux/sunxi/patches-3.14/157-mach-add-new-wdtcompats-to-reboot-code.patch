@@ -12,11 +12,9 @@ Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
  arch/arm/mach-sunxi/sunxi.c | 2 ++
  1 file changed, 2 insertions(+)
 
-diff --git a/arch/arm/mach-sunxi/sunxi.c b/arch/arm/mach-sunxi/sunxi.c
-index aeea6ce..c310df6 100644
 --- a/arch/arm/mach-sunxi/sunxi.c
 +++ b/arch/arm/mach-sunxi/sunxi.c
-@@ -95,7 +95,9 @@ static void sun6i_restart(enum reboot_mode mode, const char *cmd)
+@@ -95,7 +95,9 @@ static void sun6i_restart(enum reboot_mo
  
  static struct of_device_id sunxi_restart_ids[] = {
  	{ .compatible = "allwinner,sun4i-wdt" },

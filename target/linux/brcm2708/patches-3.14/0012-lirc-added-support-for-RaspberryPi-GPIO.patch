@@ -12,8 +12,6 @@ See: https://github.com/raspberrypi/linux/issues/525
  3 files changed, 702 insertions(+)
  create mode 100644 drivers/staging/media/lirc/lirc_rpi.c
 
-diff --git a/drivers/staging/media/lirc/Kconfig b/drivers/staging/media/lirc/Kconfig
-index e60a59f..6b7ff70 100644
 --- a/drivers/staging/media/lirc/Kconfig
 +++ b/drivers/staging/media/lirc/Kconfig
 @@ -38,6 +38,12 @@ config LIRC_PARALLEL
@@ -29,8 +27,6 @@ index e60a59f..6b7ff70 100644
  config LIRC_SASEM
  	tristate "Sasem USB IR Remote"
  	depends on LIRC && USB
-diff --git a/drivers/staging/media/lirc/Makefile b/drivers/staging/media/lirc/Makefile
-index b90fcab..2b227fd 100644
 --- a/drivers/staging/media/lirc/Makefile
 +++ b/drivers/staging/media/lirc/Makefile
 @@ -7,6 +7,7 @@ obj-$(CONFIG_LIRC_BT829)	+= lirc_bt829.o
@@ -41,9 +37,6 @@ index b90fcab..2b227fd 100644
  obj-$(CONFIG_LIRC_SASEM)	+= lirc_sasem.o
  obj-$(CONFIG_LIRC_SERIAL)	+= lirc_serial.o
  obj-$(CONFIG_LIRC_SIR)		+= lirc_sir.o
-diff --git a/drivers/staging/media/lirc/lirc_rpi.c b/drivers/staging/media/lirc/lirc_rpi.c
-new file mode 100644
-index 0000000..57ffacf
 --- /dev/null
 +++ b/drivers/staging/media/lirc/lirc_rpi.c
 @@ -0,0 +1,695 @@
@@ -742,6 +735,3 @@ index 0000000..57ffacf
 +
 +module_param(debug, bool, S_IRUGO | S_IWUSR);
 +MODULE_PARM_DESC(debug, "Enable debugging messages");
--- 
-1.9.1
-

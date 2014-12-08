@@ -1,6 +1,6 @@
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2429,6 +2429,8 @@ static const struct file_operations proc
+@@ -2441,6 +2441,8 @@ static const struct file_operations proc
  
  static int __init proc_locks_init(void)
  {
@@ -199,7 +199,7 @@
  			 &fib_triestat_fops))
  		goto out2;
  
-@@ -2594,17 +2596,21 @@ int __net_init fib_proc_init(struct net
+@@ -2594,17 +2596,21 @@ int __net_init fib_proc_init(struct net 
  	return 0;
  
  out3:

@@ -113,11 +113,9 @@ A typo also fixed in comments.
  include/linux/mmc/sdhci.h        |   1 +
  7 files changed, 365 insertions(+), 191 deletions(-)
 
-diff --git a/drivers/mmc/card/block.c b/drivers/mmc/card/block.c
-index 7b5424f..687cccb 100644
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -1361,7 +1361,7 @@ static void mmc_blk_rw_rq_prep(struct mmc_queue_req *mqrq,
+@@ -1361,7 +1361,7 @@ static void mmc_blk_rw_rq_prep(struct mm
  			brq->data.blocks = 1;
  	}
  
@@ -126,8 +124,6 @@ index 7b5424f..687cccb 100644
  		/* SPI multiblock writes terminate using a special
  		 * token, not a STOP_TRANSMISSION request.
  		 */
-diff --git a/drivers/mmc/core/sd.c b/drivers/mmc/core/sd.c
-index 692fdb1..ea11f9c 100644
 --- a/drivers/mmc/core/sd.c
 +++ b/drivers/mmc/core/sd.c
 @@ -15,6 +15,8 @@
@@ -139,7 +135,7 @@ index 692fdb1..ea11f9c 100644
  
  #include <linux/mmc/host.h>
  #include <linux/mmc/card.h>
-@@ -67,6 +69,15 @@ static const unsigned int sd_au_size[] = {
+@@ -67,6 +69,15 @@ static const unsigned int sd_au_size[] =
  		__res & __mask;						\
  	})
  
@@ -155,7 +151,7 @@ index 692fdb1..ea11f9c 100644
  /*
   * Given the decoded CSD structure, decode the raw CID to our CID structure.
   */
-@@ -219,12 +230,63 @@ static int mmc_decode_scr(struct mmc_card *card)
+@@ -219,12 +230,63 @@ static int mmc_decode_scr(struct mmc_car
  }
  
  /*
@@ -220,7 +216,7 @@ index 692fdb1..ea11f9c 100644
  	u32 *ssr;
  
  	if (!(card->csd.cmdclass & CCC_APP_SPEC)) {
-@@ -237,14 +299,40 @@ static int mmc_read_ssr(struct mmc_card *card)
+@@ -237,14 +299,40 @@ static int mmc_read_ssr(struct mmc_card 
  	if (!ssr)
  		return -ENOMEM;
  
@@ -266,7 +262,7 @@ index 692fdb1..ea11f9c 100644
  	for (i = 0; i < 16; i++)
  		ssr[i] = be32_to_cpu(ssr[i]);
  
-@@ -826,14 +914,10 @@ int mmc_sd_setup_card(struct mmc_host *host, struct mmc_card *card,
+@@ -826,14 +914,10 @@ int mmc_sd_setup_card(struct mmc_host *h
  
  	if (!reinit) {
  		/*
@@ -284,8 +280,6 @@ index 692fdb1..ea11f9c 100644
  			return err;
  
  		/*
-diff --git a/drivers/mmc/host/sdhci-bcm2708.c b/drivers/mmc/host/sdhci-bcm2708.c
-index d8ef77c..3173c18 100644
 --- a/drivers/mmc/host/sdhci-bcm2708.c
 +++ b/drivers/mmc/host/sdhci-bcm2708.c
 @@ -51,7 +51,6 @@
@@ -310,7 +304,7 @@ index d8ef77c..3173c18 100644
  
  /*****************************************************************************\
   *									     *
-@@ -129,6 +133,14 @@ static inline unsigned long int since_ns(hptime_t t)
+@@ -129,6 +133,14 @@ static inline unsigned long int since_ns
  	return (unsigned long)((hptime() - t) * HPTIME_CLK_NS);
  }
  
@@ -325,7 +319,7 @@ index d8ef77c..3173c18 100644
  #if 0
  static void hptime_test(void)
  {
-@@ -241,19 +253,19 @@ static void sdhci_bcm2708_raw_writel(struct sdhci_host *host, u32 val, int reg)
+@@ -241,19 +253,19 @@ static void sdhci_bcm2708_raw_writel(str
  		/* host->clock is the clock freq in Hz */
  		static hptime_t last_write_hpt;
  		hptime_t now = hptime();
@@ -349,7 +343,7 @@ index d8ef77c..3173c18 100644
  		}
  		last_write_hpt = now;
  	}
-@@ -269,13 +281,13 @@ static void sdhci_bcm2708_raw_writel(struct sdhci_host *host, u32 val, int reg)
+@@ -269,13 +281,13 @@ static void sdhci_bcm2708_raw_writel(str
  		ier &= ~SDHCI_INT_DATA_TIMEOUT;
  		writel(ier, host->ioaddr + SDHCI_SIGNAL_ENABLE);
  		timeout_disabled = true;
@@ -365,7 +359,7 @@ index d8ef77c..3173c18 100644
  	}
  #endif
  	writel(val, host->ioaddr + reg);
-@@ -353,68 +365,9 @@ void sdhci_bcm2708_writeb(struct sdhci_host *host, u8 val, int reg)
+@@ -353,68 +365,9 @@ void sdhci_bcm2708_writeb(struct sdhci_h
  
  static unsigned int sdhci_bcm2708_get_max_clock(struct sdhci_host *host)
  {
@@ -449,7 +443,7 @@ index d8ef77c..3173c18 100644
  
  	if (host_priv->dma_wanted) {
  		if (NULL == data) {
-@@ -720,13 +673,16 @@ sdhci_bcm2708_platdma_reset(struct sdhci_host *host, struct mmc_data *data)
+@@ -720,13 +673,16 @@ sdhci_bcm2708_platdma_reset(struct sdhci
  			cs = readl(host_priv->dma_chan_base + BCM2708_DMA_CS);
  
  			if (!(BCM2708_DMA_ACTIVE & cs))
@@ -467,7 +461,7 @@ index d8ef77c..3173c18 100644
  			else
  				printk(KERN_INFO "%s: resetting ongoing cmd %d"
  				       "DMA before %d/%d [%d]/[%d] complete\n",
-@@ -779,7 +735,7 @@ sdhci_bcm2708_platdma_reset(struct sdhci_host *host, struct mmc_data *data)
+@@ -779,7 +735,7 @@ sdhci_bcm2708_platdma_reset(struct sdhci
  #endif
  	}
  
@@ -476,7 +470,7 @@ index d8ef77c..3173c18 100644
  }
  
  
-@@ -792,11 +748,11 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
+@@ -792,11 +748,11 @@ static void sdhci_bcm2708_dma_complete_i
  	int sg_len;
  	int sg_ix;
  	int sg_todo;
@@ -490,7 +484,7 @@ index d8ef77c..3173c18 100644
  	data = host->data;
  
  #ifdef CHECK_DMA_USE
-@@ -821,7 +777,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
+@@ -821,7 +777,7 @@ static void sdhci_bcm2708_dma_complete_i
  
  	if (NULL == data) {
  		DBG("PDMA unused completion - status 0x%X\n", dma_cs);
@@ -499,7 +493,7 @@ index d8ef77c..3173c18 100644
  		return;
  	}
  	sg = data->sg;
-@@ -878,40 +834,34 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
+@@ -878,40 +834,34 @@ static void sdhci_bcm2708_dma_complete_i
  						SDHCI_INT_SPACE_AVAIL);
  		}
  	} else {
@@ -513,17 +507,6 @@ index d8ef77c..3173c18 100644
 -		u32 state_mask;
 -		int timeout=1000000;
 -		hptime_t now = hptime();
--
--		DBG("PDMA over - sync card\n");
--		if (data->flags & MMC_DATA_READ)
--			state_mask = SDHCI_DOING_READ;
--		else
--			state_mask = SDHCI_DOING_WRITE;
--
--		while (0 != (sdhci_bcm2708_raw_readl(host,
--						     SDHCI_PRESENT_STATE) &
--			     state_mask) && --timeout > 0)
--			continue;
 +		if (sync_after_dma) {
 +			/* On the Arasan controller the stop command (which will be
 +			   scheduled after this completes) does not seem to work
@@ -533,13 +516,23 @@ index d8ef77c..3173c18 100644
 +			   the SD controller to finish reading/writing to the card. */
 +			u32 state_mask;
 +			int timeout=3*1000*1000;
-+
+ 
+-		DBG("PDMA over - sync card\n");
+-		if (data->flags & MMC_DATA_READ)
+-			state_mask = SDHCI_DOING_READ;
+-		else
+-			state_mask = SDHCI_DOING_WRITE;
 +			DBG("PDMA over - sync card\n");
 +			if (data->flags & MMC_DATA_READ)
 +				state_mask = SDHCI_DOING_READ;
 +			else
 +				state_mask = SDHCI_DOING_WRITE;
  
+-		while (0 != (sdhci_bcm2708_raw_readl(host,
+-						     SDHCI_PRESENT_STATE) &
+-			     state_mask) && --timeout > 0)
+-			continue;
+-
 -		if (1000000-timeout > 4000) /*ave. is about 3250*/
 -			DBG("%s: note - long %s sync %luns - "
 -			       "%d its.\n",
@@ -567,7 +560,7 @@ index d8ef77c..3173c18 100644
  		if (host_priv->complete) {
  			(*host_priv->complete)(host);
  			DBG("PDMA %s complete\n",
-@@ -920,7 +870,7 @@ static void sdhci_bcm2708_dma_complete_irq(struct sdhci_host *host,
+@@ -920,7 +870,7 @@ static void sdhci_bcm2708_dma_complete_i
  						SDHCI_INT_SPACE_AVAIL);
  		}
  	}
@@ -576,7 +569,7 @@ index d8ef77c..3173c18 100644
  }
  
  static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
-@@ -929,12 +879,11 @@ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
+@@ -929,12 +879,11 @@ static irqreturn_t sdhci_bcm2708_dma_irq
  	struct sdhci_host *host = dev_id;
  	struct sdhci_bcm2708_priv *host_priv = SDHCI_HOST_PRIV(host);
  	u32 dma_cs; /* control and status register */
@@ -590,7 +583,7 @@ index d8ef77c..3173c18 100644
  
  	dma_cs = readl(host_priv->dma_chan_base + BCM2708_DMA_CS);
  
-@@ -958,7 +907,8 @@ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
+@@ -958,7 +907,8 @@ static irqreturn_t sdhci_bcm2708_dma_irq
  
  		if (!host_priv->dma_wanted) {
  			/* ignore this interrupt - it was reset */
@@ -600,7 +593,7 @@ index d8ef77c..3173c18 100644
  			       "results were reset\n",
  			       mmc_hostname(host->mmc), dma_cs);
  #ifdef CHECK_DMA_USE
-@@ -975,8 +925,7 @@ static irqreturn_t sdhci_bcm2708_dma_irq(int irq, void *dev_id)
+@@ -975,8 +925,7 @@ static irqreturn_t sdhci_bcm2708_dma_irq
  
  		result = IRQ_HANDLED;
  	}
@@ -610,7 +603,7 @@ index d8ef77c..3173c18 100644
  
  	return result;
  }
-@@ -1019,10 +968,12 @@ static ssize_t attr_dma_store(struct device *_dev,
+@@ -1019,10 +968,12 @@ static ssize_t attr_dma_store(struct dev
  		int on = simple_strtol(buf, NULL, 0);
  		if (on) {
  			host->flags |= SDHCI_USE_PLATDMA;
@@ -623,7 +616,7 @@ index d8ef77c..3173c18 100644
  			printk(KERN_INFO "%s: DMA disabled\n",
  			       mmc_hostname(host->mmc));
  		}
-@@ -1126,7 +1077,7 @@ static int sdhci_bcm2708_suspend(struct platform_device *dev, pm_message_t state
+@@ -1126,7 +1077,7 @@ static int sdhci_bcm2708_suspend(struct 
  	int ret = 0;
  
  	if (host->mmc) {
@@ -632,7 +625,7 @@ index d8ef77c..3173c18 100644
  	}
  
  	return ret;
-@@ -1139,7 +1090,7 @@ static int sdhci_bcm2708_resume(struct platform_device *dev)
+@@ -1139,7 +1090,7 @@ static int sdhci_bcm2708_resume(struct p
  	int ret = 0;
  
  	if (host->mmc) {
@@ -641,7 +634,7 @@ index d8ef77c..3173c18 100644
  	}
  
  	return ret;
-@@ -1158,19 +1109,14 @@ static unsigned int sdhci_bcm2708_quirk_extra_ints(struct sdhci_host *host)
+@@ -1158,19 +1109,14 @@ static unsigned int sdhci_bcm2708_quirk_
          return 1;
  }
  
@@ -664,7 +657,7 @@ index d8ef77c..3173c18 100644
  }
  
  /***************************************************************************** \
-@@ -1190,11 +1136,7 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
+@@ -1190,11 +1136,7 @@ static struct sdhci_ops sdhci_bcm2708_op
  #else
  #error The BCM2708 SDHCI driver needs CONFIG_MMC_SDHCI_IO_ACCESSORS to be set
  #endif
@@ -676,7 +669,7 @@ index d8ef77c..3173c18 100644
  
  #ifdef CONFIG_MMC_SDHCI_BCM2708_DMA
  	// Platform DMA operations
-@@ -1203,9 +1145,6 @@ static struct sdhci_ops sdhci_bcm2708_ops = {
+@@ -1203,9 +1145,6 @@ static struct sdhci_ops sdhci_bcm2708_op
  	.pdma_reset = sdhci_bcm2708_platdma_reset,
  #endif
  	.extra_ints = sdhci_bcm2708_quirk_extra_ints,
@@ -686,7 +679,7 @@ index d8ef77c..3173c18 100644
  };
  
  /*****************************************************************************\
-@@ -1244,15 +1183,30 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
+@@ -1244,15 +1183,30 @@ static int sdhci_bcm2708_probe(struct pl
  		ret = PTR_ERR(host);
  		goto err;
  	}
@@ -718,7 +711,7 @@ index d8ef77c..3173c18 100644
  #ifdef CONFIG_MMC_SDHCI_BCM2708_DMA
  	host->flags = SDHCI_USE_PLATDMA;
  #endif
-@@ -1305,17 +1259,24 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
+@@ -1305,17 +1259,24 @@ static int sdhci_bcm2708_probe(struct pl
  	host_priv->dma_chan = ret;
  
  	ret = request_irq(host_priv->dma_irq, sdhci_bcm2708_dma_irq,
@@ -745,7 +738,7 @@ index d8ef77c..3173c18 100644
  #endif
  
  	ret = sdhci_add_host(host);
-@@ -1327,6 +1288,12 @@ static int sdhci_bcm2708_probe(struct platform_device *pdev)
+@@ -1327,6 +1288,12 @@ static int sdhci_bcm2708_probe(struct pl
  	ret = device_create_file(&pdev->dev, &dev_attr_dma_wait);
  	ret = device_create_file(&pdev->dev, &dev_attr_status);
  
@@ -785,11 +778,9 @@ index d8ef77c..3173c18 100644
 +MODULE_PARM_DESC(extra_messages, "Enable more sdcard warning messages");
 +
 +
-diff --git a/drivers/mmc/host/sdhci.c b/drivers/mmc/host/sdhci.c
-index b78afa2..db67be8 100644
 --- a/drivers/mmc/host/sdhci.c
 +++ b/drivers/mmc/host/sdhci.c
-@@ -131,6 +131,99 @@ static void sdhci_dumpregs(struct sdhci_host *host)
+@@ -131,6 +131,99 @@ static void sdhci_dumpregs(struct sdhci_
   * Low level functions                                                       *
   *                                                                           *
  \*****************************************************************************/
@@ -889,7 +880,7 @@ index b78afa2..db67be8 100644
  
  static void sdhci_clear_set_irqs(struct sdhci_host *host, u32 clear, u32 set)
  {
-@@ -300,7 +393,7 @@ static void sdhci_led_control(struct led_classdev *led,
+@@ -300,7 +393,7 @@ static void sdhci_led_control(struct led
  	struct sdhci_host *host = container_of(led, struct sdhci_host, led);
  	unsigned long flags;
  
@@ -898,7 +889,7 @@ index b78afa2..db67be8 100644
  
  	if (host->runtime_suspended)
  		goto out;
-@@ -310,7 +403,7 @@ static void sdhci_led_control(struct led_classdev *led,
+@@ -310,7 +403,7 @@ static void sdhci_led_control(struct led
  	else
  		sdhci_activate_led(host);
  out:
@@ -907,7 +898,7 @@ index b78afa2..db67be8 100644
  }
  #endif
  
-@@ -457,6 +550,7 @@ static void sdhci_transfer_pio(struct sdhci_host *host, u32 intstate)
+@@ -457,6 +550,7 @@ static void sdhci_transfer_pio(struct sd
  			break;
  		state = sdhci_readl(host, SDHCI_PRESENT_STATE);
  		available = state & mask;
@@ -915,7 +906,7 @@ index b78afa2..db67be8 100644
  	}
  
  	DBG("PIO transfer complete - %d blocks left.\n", host->blocks);
-@@ -1023,7 +1117,9 @@ void sdhci_send_command(struct sdhci_host *host, struct mmc_command *cmd)
+@@ -1023,7 +1117,9 @@ void sdhci_send_command(struct sdhci_hos
  			return;
  		}
  		timeout--;
@@ -935,7 +926,7 @@ index b78afa2..db67be8 100644
  	}
  
  	clk |= SDHCI_CLOCK_CARD_EN;
-@@ -1357,7 +1455,7 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1357,7 +1455,7 @@ static void sdhci_request(struct mmc_hos
  
  	sdhci_runtime_pm_get(host);
  
@@ -944,7 +935,7 @@ index b78afa2..db67be8 100644
  
  	WARN_ON(host->mrq != NULL);
  
-@@ -1422,9 +1520,9 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1422,9 +1520,9 @@ static void sdhci_request(struct mmc_hos
  				 */
  				host->mrq = NULL;
  
@@ -956,7 +947,7 @@ index b78afa2..db67be8 100644
  
  				/* Restore original mmc_request structure */
  				host->mrq = mrq;
-@@ -1438,7 +1536,7 @@ static void sdhci_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -1438,7 +1536,7 @@ static void sdhci_request(struct mmc_hos
  	}
  
  	mmiowb();
@@ -965,7 +956,7 @@ index b78afa2..db67be8 100644
  }
  
  static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
-@@ -1447,10 +1545,10 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
+@@ -1447,10 +1545,10 @@ static void sdhci_do_set_ios(struct sdhc
  	int vdd_bit = -1;
  	u8 ctrl;
  
@@ -978,7 +969,7 @@ index b78afa2..db67be8 100644
  		if (host->vmmc && ios->power_mode == MMC_POWER_OFF)
  			mmc_regulator_set_ocr(host->mmc, host->vmmc, 0);
  		return;
-@@ -1478,9 +1576,9 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
+@@ -1478,9 +1576,9 @@ static void sdhci_do_set_ios(struct sdhc
  		vdd_bit = sdhci_set_power(host, ios->vdd);
  
  	if (host->vmmc && vdd_bit != -1) {
@@ -990,7 +981,7 @@ index b78afa2..db67be8 100644
  	}
  
  	if (host->ops->platform_send_init_74_clocks)
-@@ -1519,7 +1617,7 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
+@@ -1519,7 +1617,7 @@ static void sdhci_do_set_ios(struct sdhc
  	else
  		ctrl &= ~SDHCI_CTRL_HISPD;
  
@@ -999,7 +990,7 @@ index b78afa2..db67be8 100644
  		u16 clk, ctrl_2;
  
  		/* In case of UHS-I modes, set High Speed Enable */
-@@ -1617,7 +1715,7 @@ static void sdhci_do_set_ios(struct sdhci_host *host, struct mmc_ios *ios)
+@@ -1617,7 +1715,7 @@ static void sdhci_do_set_ios(struct sdhc
  		sdhci_reset(host, SDHCI_RESET_CMD | SDHCI_RESET_DATA);
  
  	mmiowb();
@@ -1008,7 +999,7 @@ index b78afa2..db67be8 100644
  }
  
  static void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
-@@ -1665,7 +1763,7 @@ static int sdhci_check_ro(struct sdhci_host *host)
+@@ -1665,7 +1763,7 @@ static int sdhci_check_ro(struct sdhci_h
  	unsigned long flags;
  	int is_readonly;
  
@@ -1017,7 +1008,7 @@ index b78afa2..db67be8 100644
  
  	if (host->flags & SDHCI_DEVICE_DEAD)
  		is_readonly = 0;
-@@ -1675,7 +1773,7 @@ static int sdhci_check_ro(struct sdhci_host *host)
+@@ -1675,7 +1773,7 @@ static int sdhci_check_ro(struct sdhci_h
  		is_readonly = !(sdhci_readl(host, SDHCI_PRESENT_STATE)
  				& SDHCI_WRITE_PROTECT);
  
@@ -1026,7 +1017,7 @@ index b78afa2..db67be8 100644
  
  	/* This quirk needs to be replaced by a callback-function later */
  	return host->quirks & SDHCI_QUIRK_INVERTED_WRITE_PROTECT ?
-@@ -1748,9 +1846,9 @@ static void sdhci_enable_sdio_irq(struct mmc_host *mmc, int enable)
+@@ -1748,9 +1846,9 @@ static void sdhci_enable_sdio_irq(struct
  	struct sdhci_host *host = mmc_priv(mmc);
  	unsigned long flags;
  
@@ -1038,7 +1029,7 @@ index b78afa2..db67be8 100644
  }
  
  static int sdhci_do_start_signal_voltage_switch(struct sdhci_host *host,
-@@ -2101,7 +2199,7 @@ static void sdhci_card_event(struct mmc_host *mmc)
+@@ -2101,7 +2199,7 @@ static void sdhci_card_event(struct mmc_
  	if (host->ops->card_event)
  		host->ops->card_event(host);
  
@@ -1047,7 +1038,7 @@ index b78afa2..db67be8 100644
  
  	/* Check host->mrq first in case we are runtime suspended */
  	if (host->mrq && !sdhci_do_get_cd(host)) {
-@@ -2117,7 +2215,7 @@ static void sdhci_card_event(struct mmc_host *mmc)
+@@ -2117,7 +2215,7 @@ static void sdhci_card_event(struct mmc_
  		tasklet_schedule(&host->finish_tasklet);
  	}
  
@@ -1056,7 +1047,7 @@ index b78afa2..db67be8 100644
  }
  
  static const struct mmc_host_ops sdhci_ops = {
-@@ -2156,14 +2254,14 @@ static void sdhci_tasklet_finish(unsigned long param)
+@@ -2156,14 +2254,14 @@ static void sdhci_tasklet_finish(unsigne
  
  	host = (struct sdhci_host*)param;
  
@@ -1073,7 +1064,7 @@ index b78afa2..db67be8 100644
  		return;
  	}
  
-@@ -2201,7 +2299,7 @@ static void sdhci_tasklet_finish(unsigned long param)
+@@ -2201,7 +2299,7 @@ static void sdhci_tasklet_finish(unsigne
  #endif
  
  	mmiowb();
@@ -1082,7 +1073,7 @@ index b78afa2..db67be8 100644
  
  	mmc_request_done(host->mmc, mrq);
  	sdhci_runtime_pm_put(host);
-@@ -2214,7 +2312,7 @@ static void sdhci_timeout_timer(unsigned long data)
+@@ -2214,7 +2312,7 @@ static void sdhci_timeout_timer(unsigned
  
  	host = (struct sdhci_host*)data;
  
@@ -1091,7 +1082,7 @@ index b78afa2..db67be8 100644
  
  	if (host->mrq) {
  		pr_err("%s: Timeout waiting for hardware "
-@@ -2235,7 +2333,7 @@ static void sdhci_timeout_timer(unsigned long data)
+@@ -2235,7 +2333,7 @@ static void sdhci_timeout_timer(unsigned
  	}
  
  	mmiowb();
@@ -1100,7 +1091,7 @@ index b78afa2..db67be8 100644
  }
  
  static void sdhci_tuning_timer(unsigned long data)
-@@ -2245,11 +2343,11 @@ static void sdhci_tuning_timer(unsigned long data)
+@@ -2245,11 +2343,11 @@ static void sdhci_tuning_timer(unsigned 
  
  	host = (struct sdhci_host *)data;
  
@@ -1114,7 +1105,7 @@ index b78afa2..db67be8 100644
  }
  
  /*****************************************************************************\
-@@ -2473,10 +2571,10 @@ static irqreturn_t sdhci_irq(int irq, void *dev_id)
+@@ -2473,10 +2571,10 @@ static irqreturn_t sdhci_irq(int irq, vo
  	u32 intmask, unexpected = 0;
  	int cardint = 0, max_loops = 16;
  
@@ -1136,7 +1127,7 @@ index b78afa2..db67be8 100644
  
  	if (unexpected) {
  		pr_err("%s: Unexpected interrupt 0x%08x.\n",
-@@ -2674,7 +2772,7 @@ int sdhci_resume_host(struct sdhci_host *host)
+@@ -2674,7 +2772,7 @@ int sdhci_resume_host(struct sdhci_host 
  	}
  
  	if (!device_may_wakeup(mmc_dev(host->mmc))) {
@@ -1145,7 +1136,7 @@ index b78afa2..db67be8 100644
  				  mmc_hostname(host->mmc), host);
  		if (ret)
  			return ret;
-@@ -2750,15 +2848,15 @@ int sdhci_runtime_suspend_host(struct sdhci_host *host)
+@@ -2750,15 +2848,15 @@ int sdhci_runtime_suspend_host(struct sd
  		host->flags &= ~SDHCI_NEEDS_RETUNING;
  	}
  
@@ -1165,7 +1156,7 @@ index b78afa2..db67be8 100644
  
  	return ret;
  }
-@@ -2784,16 +2882,16 @@ int sdhci_runtime_resume_host(struct sdhci_host *host)
+@@ -2784,16 +2882,16 @@ int sdhci_runtime_resume_host(struct sdh
  	sdhci_do_start_signal_voltage_switch(host, &host->mmc->ios);
  	if ((host_flags & SDHCI_PV_ENABLED) &&
  		!(host->quirks2 & SDHCI_QUIRK2_PRESET_VALUE_BROKEN)) {
@@ -1185,7 +1176,7 @@ index b78afa2..db67be8 100644
  
  	host->runtime_suspended = false;
  
-@@ -2804,7 +2902,7 @@ int sdhci_runtime_resume_host(struct sdhci_host *host)
+@@ -2804,7 +2902,7 @@ int sdhci_runtime_resume_host(struct sdh
  	/* Enable Card Detection */
  	sdhci_enable_card_detection(host);
  
@@ -1194,7 +1185,7 @@ index b78afa2..db67be8 100644
  
  	return ret;
  }
-@@ -3300,8 +3398,8 @@ int sdhci_add_host(struct sdhci_host *host)
+@@ -3300,8 +3398,8 @@ int sdhci_add_host(struct sdhci_host *ho
  
  	sdhci_init(host, 0);
  
@@ -1205,7 +1196,7 @@ index b78afa2..db67be8 100644
  	if (ret) {
  		pr_err("%s: Failed to request IRQ %d: %d\n",
  		       mmc_hostname(mmc), host->irq, ret);
-@@ -3362,7 +3460,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
+@@ -3362,7 +3460,7 @@ void sdhci_remove_host(struct sdhci_host
  	unsigned long flags;
  
  	if (dead) {
@@ -1214,7 +1205,7 @@ index b78afa2..db67be8 100644
  
  		host->flags |= SDHCI_DEVICE_DEAD;
  
-@@ -3374,7 +3472,7 @@ void sdhci_remove_host(struct sdhci_host *host, int dead)
+@@ -3374,7 +3472,7 @@ void sdhci_remove_host(struct sdhci_host
  			tasklet_schedule(&host->finish_tasklet);
  		}
  
@@ -1223,8 +1214,6 @@ index b78afa2..db67be8 100644
  	}
  
  	sdhci_disable_card_detection(host);
-diff --git a/drivers/mmc/host/sdhci.h b/drivers/mmc/host/sdhci.h
-index 6857875..649f3cf 100644
 --- a/drivers/mmc/host/sdhci.h
 +++ b/drivers/mmc/host/sdhci.h
 @@ -300,8 +300,6 @@ struct sdhci_ops {
@@ -1236,7 +1225,7 @@ index 6857875..649f3cf 100644
  	unsigned int	(*missing_status)(struct sdhci_host *host);
  
  	void	(*hw_reset)(struct sdhci_host *host);
-@@ -445,4 +443,10 @@ extern int sdhci_runtime_suspend_host(struct sdhci_host *host);
+@@ -445,4 +443,10 @@ extern int sdhci_runtime_suspend_host(st
  extern int sdhci_runtime_resume_host(struct sdhci_host *host);
  #endif
  
@@ -1247,8 +1236,6 @@ index 6857875..649f3cf 100644
 +
 +
  #endif /* __SDHCI_HW_H */
-diff --git a/include/linux/mmc/host.h b/include/linux/mmc/host.h
-index 99f5709..cd6f996 100644
 --- a/include/linux/mmc/host.h
 +++ b/include/linux/mmc/host.h
 @@ -282,6 +282,7 @@ struct mmc_host {
@@ -1259,8 +1246,6 @@ index 99f5709..cd6f996 100644
  
  	mmc_pm_flag_t		pm_caps;	/* supported pm features */
  
-diff --git a/include/linux/mmc/sdhci.h b/include/linux/mmc/sdhci.h
-index e23fffb..b1b6537 100644
 --- a/include/linux/mmc/sdhci.h
 +++ b/include/linux/mmc/sdhci.h
 @@ -102,6 +102,7 @@ struct sdhci_host {
@@ -1271,6 +1256,3 @@ index e23fffb..b1b6537 100644
  	void __iomem *ioaddr;	/* Mapped address */
  
  	const struct sdhci_ops *ops;	/* Low level hw interface */
--- 
-1.9.1
-

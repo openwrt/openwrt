@@ -15,11 +15,9 @@ Signed-off-by: Siarhei Siamashka <siarhei.siamashka@gmail.com>
  include/uapi/linux/fb.h |  5 +++++
  2 files changed, 35 insertions(+)
 
-diff --git a/drivers/video/fbmem.c b/drivers/video/fbmem.c
-index 7309ac7..46984cc 100644
 --- a/drivers/video/fbmem.c
 +++ b/drivers/video/fbmem.c
-@@ -1083,6 +1083,25 @@ fb_blank(struct fb_info *info, int blank)
+@@ -1083,6 +1083,25 @@ fb_blank(struct fb_info *info, int blank
  }
  EXPORT_SYMBOL(fb_blank);
  
@@ -45,7 +43,7 @@ index 7309ac7..46984cc 100644
  static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
  			unsigned long arg)
  {
-@@ -1093,6 +1112,7 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
+@@ -1093,6 +1112,7 @@ static long do_fb_ioctl(struct fb_info *
  	struct fb_cmap cmap_from;
  	struct fb_cmap_user cmap;
  	struct fb_event event;
@@ -53,7 +51,7 @@ index 7309ac7..46984cc 100644
  	void __user *argp = (void __user *)arg;
  	long ret = 0;
  
-@@ -1210,6 +1230,15 @@ static long do_fb_ioctl(struct fb_info *info, unsigned int cmd,
+@@ -1210,6 +1230,15 @@ static long do_fb_ioctl(struct fb_info *
  		unlock_fb_info(info);
  		console_unlock();
  		break;
@@ -69,7 +67,7 @@ index 7309ac7..46984cc 100644
  	default:
  		if (!lock_fb_info(info))
  			return -ENODEV;
-@@ -1364,6 +1393,7 @@ static long fb_compat_ioctl(struct file *file, unsigned int cmd,
+@@ -1364,6 +1393,7 @@ static long fb_compat_ioctl(struct file 
  	case FBIOPAN_DISPLAY:
  	case FBIOGET_CON2FBMAP:
  	case FBIOPUT_CON2FBMAP:
@@ -77,8 +75,6 @@ index 7309ac7..46984cc 100644
  		arg = (unsigned long) compat_ptr(arg);
  	case FBIOBLANK:
  		ret = do_fb_ioctl(info, cmd, arg);
-diff --git a/include/uapi/linux/fb.h b/include/uapi/linux/fb.h
-index fb795c3..fa72af0 100644
 --- a/include/uapi/linux/fb.h
 +++ b/include/uapi/linux/fb.h
 @@ -34,6 +34,11 @@
@@ -93,6 +89,3 @@ index fb795c3..fa72af0 100644
  
  #define FB_TYPE_PACKED_PIXELS		0	/* Packed Pixels	*/
  #define FB_TYPE_PLANES			1	/* Non interleaved planes */
--- 
-1.9.1
-

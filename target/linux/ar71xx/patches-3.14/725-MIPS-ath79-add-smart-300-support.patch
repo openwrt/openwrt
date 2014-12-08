@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -103,6 +103,7 @@ enum ath79_mach_type {
+@@ -104,6 +104,7 @@ enum ath79_mach_type {
  	ATH79_MACH_RB_SXTLITE2ND,	/* Mikrotik RouterBOARD SXT Lite 2nD */
  	ATH79_MACH_RB_SXTLITE5ND,	/* Mikrotik RouterBOARD SXT Lite 5nD */
  	ATH79_MACH_RW2458N,		/* Redwave RW2458N */
@@ -28,7 +28,7 @@
  	select SOC_AR71XX
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -92,6 +92,7 @@ obj-$(CONFIG_ATH79_MACH_RB95X)		+= mach-
+@@ -93,6 +93,7 @@ obj-$(CONFIG_ATH79_MACH_RB95X)		+= mach-
  obj-$(CONFIG_ATH79_MACH_RB2011)		+= mach-rb2011.o
  obj-$(CONFIG_ATH79_MACH_RBSXTLITE)	+= mach-rbsxtlite.o
  obj-$(CONFIG_ATH79_MACH_RW2458N)	+= mach-rw2458n.o

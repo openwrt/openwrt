@@ -14,8 +14,6 @@ support the AES parameters for this device.
  sound/arm/bcm2835.h     |   9 ++++
  4 files changed, 250 insertions(+), 19 deletions(-)
 
-diff --git a/sound/arm/bcm2835-ctl.c b/sound/arm/bcm2835-ctl.c
-index 8c5334a..aad905f 100755
 --- a/sound/arm/bcm2835-ctl.c
 +++ b/sound/arm/bcm2835-ctl.c
 @@ -30,6 +30,7 @@
@@ -26,7 +24,7 @@ index 8c5334a..aad905f 100755
  
  #include "bcm2835.h"
  
-@@ -183,6 +184,122 @@ static struct snd_kcontrol_new snd_bcm2835_ctl[] = {
+@@ -183,6 +184,122 @@ static struct snd_kcontrol_new snd_bcm28
  	},
  };
  
@@ -149,7 +147,7 @@ index 8c5334a..aad905f 100755
  int snd_bcm2835_new_ctl(bcm2835_chip_t * chip)
  {
  	int err;
-@@ -196,5 +313,11 @@ int snd_bcm2835_new_ctl(bcm2835_chip_t * chip)
+@@ -196,5 +313,11 @@ int snd_bcm2835_new_ctl(bcm2835_chip_t *
  		if (err < 0)
  			return err;
  	}
@@ -161,8 +159,6 @@ index 8c5334a..aad905f 100755
 +	}
  	return 0;
  }
-diff --git a/sound/arm/bcm2835-pcm.c b/sound/arm/bcm2835-pcm.c
-index b4084bb..ebd3f62 100755
 --- a/sound/arm/bcm2835-pcm.c
 +++ b/sound/arm/bcm2835-pcm.c
 @@ -15,6 +15,8 @@
@@ -174,7 +170,7 @@ index b4084bb..ebd3f62 100755
  #include "bcm2835.h"
  
  /* hardware definition */
-@@ -34,6 +36,23 @@ static struct snd_pcm_hardware snd_bcm2835_playback_hw = {
+@@ -34,6 +36,23 @@ static struct snd_pcm_hardware snd_bcm28
  	.periods_max = 128,
  };
  
@@ -198,7 +194,7 @@ index b4084bb..ebd3f62 100755
  static void snd_bcm2835_playback_free(struct snd_pcm_runtime *runtime)
  {
  	audio_info("Freeing up alsa stream here ..\n");
-@@ -89,7 +108,8 @@ static irqreturn_t bcm2835_playback_fifo_irq(int irq, void *dev_id)
+@@ -89,7 +108,8 @@ static irqreturn_t bcm2835_playback_fifo
  }
  
  /* open callback */
@@ -208,7 +204,7 @@ index b4084bb..ebd3f62 100755
  {
  	bcm2835_chip_t *chip = snd_pcm_substream_chip(substream);
  	struct snd_pcm_runtime *runtime = substream->runtime;
-@@ -102,6 +122,11 @@ static int snd_bcm2835_playback_open(struct snd_pcm_substream *substream)
+@@ -102,6 +122,11 @@ static int snd_bcm2835_playback_open(str
  	audio_info("Alsa open (%d)\n", substream->number);
  	idx = substream->number;
  
@@ -220,7 +216,7 @@ index b4084bb..ebd3f62 100755
  	if (idx > MAX_SUBSTREAMS) {
  		audio_error
  		    ("substream(%d) device doesn't exist max(%d) substreams allowed\n",
-@@ -143,13 +168,20 @@ static int snd_bcm2835_playback_open(struct snd_pcm_substream *substream)
+@@ -143,13 +168,20 @@ static int snd_bcm2835_playback_open(str
  	}
  	runtime->private_data = alsa_stream;
  	runtime->private_free = snd_bcm2835_playback_free;
@@ -259,7 +255,7 @@ index b4084bb..ebd3f62 100755
  /* close callback */
  static int snd_bcm2835_playback_close(struct snd_pcm_substream *substream)
  {
-@@ -166,6 +208,7 @@ static int snd_bcm2835_playback_close(struct snd_pcm_substream *substream)
+@@ -166,6 +208,7 @@ static int snd_bcm2835_playback_close(st
  
  	struct snd_pcm_runtime *runtime = substream->runtime;
  	bcm2835_alsa_stream_t *alsa_stream = runtime->private_data;
@@ -267,7 +263,7 @@ index b4084bb..ebd3f62 100755
  
  	audio_info(" .. IN\n");
  	audio_info("Alsa close\n");
-@@ -196,6 +239,8 @@ static int snd_bcm2835_playback_close(struct snd_pcm_substream *substream)
+@@ -196,6 +239,8 @@ static int snd_bcm2835_playback_close(st
  	 * runtime->private_free callback we registered in *_open above
  	 */
  
@@ -276,7 +272,7 @@ index b4084bb..ebd3f62 100755
  	audio_info(" .. OUT\n");
  
  	return 0;
-@@ -205,10 +250,9 @@ static int snd_bcm2835_playback_close(struct snd_pcm_substream *substream)
+@@ -205,10 +250,9 @@ static int snd_bcm2835_playback_close(st
  static int snd_bcm2835_pcm_hw_params(struct snd_pcm_substream *substream,
  				     struct snd_pcm_hw_params *params)
  {
@@ -289,7 +285,7 @@ index b4084bb..ebd3f62 100755
  
  	audio_info(" .. IN\n");
  
-@@ -219,19 +263,9 @@ static int snd_bcm2835_pcm_hw_params(struct snd_pcm_substream *substream,
+@@ -219,19 +263,9 @@ static int snd_bcm2835_pcm_hw_params(str
  		return err;
  	}
  
@@ -312,7 +308,7 @@ index b4084bb..ebd3f62 100755
  	audio_info(" .. OUT\n");
  
  	return err;
-@@ -247,11 +281,35 @@ static int snd_bcm2835_pcm_hw_free(struct snd_pcm_substream *substream)
+@@ -247,11 +281,35 @@ static int snd_bcm2835_pcm_hw_free(struc
  /* prepare callback */
  static int snd_bcm2835_pcm_prepare(struct snd_pcm_substream *substream)
  {
@@ -348,7 +344,7 @@ index b4084bb..ebd3f62 100755
  	memset(&alsa_stream->pcm_indirect, 0, sizeof(alsa_stream->pcm_indirect));
  
  	alsa_stream->pcm_indirect.hw_buffer_size =
-@@ -392,6 +450,18 @@ static struct snd_pcm_ops snd_bcm2835_playback_ops = {
+@@ -392,6 +450,18 @@ static struct snd_pcm_ops snd_bcm2835_pl
  	.ack = snd_bcm2835_pcm_ack,
  };
  
@@ -367,7 +363,7 @@ index b4084bb..ebd3f62 100755
  /* create a pcm device */
  int snd_bcm2835_new_pcm(bcm2835_chip_t * chip)
  {
-@@ -424,3 +494,25 @@ int snd_bcm2835_new_pcm(bcm2835_chip_t * chip)
+@@ -424,3 +494,25 @@ int snd_bcm2835_new_pcm(bcm2835_chip_t *
  
  	return 0;
  }
@@ -393,11 +389,9 @@ index b4084bb..ebd3f62 100755
 +
 +	return 0;
 +}
-diff --git a/sound/arm/bcm2835.c b/sound/arm/bcm2835.c
-index e2047a7..4136760 100755
 --- a/sound/arm/bcm2835.c
 +++ b/sound/arm/bcm2835.c
-@@ -104,7 +104,7 @@ static int snd_bcm2835_alsa_probe(struct platform_device *pdev)
+@@ -104,7 +104,7 @@ static int snd_bcm2835_alsa_probe(struct
  		goto out;
  
  	snd_card_set_dev(g_card, &pdev->dev);
@@ -406,7 +400,7 @@ index e2047a7..4136760 100755
  	strcpy(g_card->shortname, "bcm2835 ALSA");
  	sprintf(g_card->longname, "%s", g_card->shortname);
  
-@@ -121,6 +121,12 @@ static int snd_bcm2835_alsa_probe(struct platform_device *pdev)
+@@ -121,6 +121,12 @@ static int snd_bcm2835_alsa_probe(struct
  		goto out_bcm2835_new_pcm;
  	}
  
@@ -427,8 +421,6 @@ index e2047a7..4136760 100755
  out_bcm2835_new_pcm:
  out_bcm2835_create:
  	BUG_ON(!g_card);
-diff --git a/sound/arm/bcm2835.h b/sound/arm/bcm2835.h
-index 36afee3..8c2fe26 100755
 --- a/sound/arm/bcm2835.h
 +++ b/sound/arm/bcm2835.h
 @@ -97,6 +97,7 @@ typedef enum {
@@ -468,6 +460,3 @@ index 36afee3..8c2fe26 100755
  
  int bcm2835_audio_open(bcm2835_alsa_stream_t * alsa_stream);
  int bcm2835_audio_close(bcm2835_alsa_stream_t * alsa_stream);
--- 
-1.9.1
-

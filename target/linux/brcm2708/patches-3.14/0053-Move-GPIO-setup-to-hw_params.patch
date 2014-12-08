@@ -9,11 +9,9 @@ the GPIO setup for other uses of the PCM interface
  sound/soc/bcm/bcm2708-i2s.c | 55 +++++++++++++++++++++++----------------------
  1 file changed, 28 insertions(+), 27 deletions(-)
 
-diff --git a/sound/soc/bcm/bcm2708-i2s.c b/sound/soc/bcm/bcm2708-i2s.c
-index b25e158..9976571 100644
 --- a/sound/soc/bcm/bcm2708-i2s.c
 +++ b/sound/soc/bcm/bcm2708-i2s.c
-@@ -305,6 +305,31 @@ static int bcm2708_i2s_set_dai_bclk_ratio(struct snd_soc_dai *dai,
+@@ -305,6 +305,31 @@ static int bcm2708_i2s_set_dai_bclk_rati
  	return 0;
  }
  
@@ -45,7 +43,7 @@ index b25e158..9976571 100644
  static int bcm2708_i2s_hw_params(struct snd_pcm_substream *substream,
  				 struct snd_pcm_hw_params *params,
  				 struct snd_soc_dai *dai)
-@@ -334,6 +359,9 @@ static int bcm2708_i2s_hw_params(struct snd_pcm_substream *substream,
+@@ -334,6 +359,9 @@ static int bcm2708_i2s_hw_params(struct 
  	if (csreg & (BCM2708_I2S_TXON | BCM2708_I2S_RXON))
  		return 0;
  
@@ -55,7 +53,7 @@ index b25e158..9976571 100644
  	/*
  	 * Adjust the data length according to the format.
  	 * We prefill the half frame length with an integer
-@@ -790,31 +818,6 @@ static const struct snd_soc_component_driver bcm2708_i2s_component = {
+@@ -790,31 +818,6 @@ static const struct snd_soc_component_dr
  	.name		= "bcm2708-i2s-comp",
  };
  
@@ -87,7 +85,7 @@ index b25e158..9976571 100644
  static const struct snd_pcm_hardware bcm2708_pcm_hardware = {
  	.info			= SNDRV_PCM_INFO_INTERLEAVED |
  				  SNDRV_PCM_INFO_JOINT_DUPLEX,
-@@ -865,8 +868,6 @@ static int bcm2708_i2s_probe(struct platform_device *pdev)
+@@ -865,8 +868,6 @@ static int bcm2708_i2s_probe(struct plat
  	if (IS_ERR(dev))
  		return PTR_ERR(dev);
  
@@ -96,6 +94,3 @@ index b25e158..9976571 100644
  	dev->i2s_regmap = regmap[0];
  	dev->clk_regmap = regmap[1];
  
--- 
-1.9.1
-
