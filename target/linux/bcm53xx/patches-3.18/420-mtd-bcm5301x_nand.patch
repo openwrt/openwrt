@@ -1561,7 +1561,7 @@
 +	if (res)
 +		return res;
 +
-+	parser_data.of_node = np;
++	parser_data.of_node = dev->of_node;
 +	res = mtd_device_parse_register(&ctrl->mtd, part_probes, &parser_data, NULL, 0);
 +	if (res) {
 +		dev_err(dev, "Failed to register MTD device: %d\n", res);
