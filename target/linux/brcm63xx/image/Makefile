@@ -200,9 +200,6 @@ define Image/Build
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
 
-	# USR 9108
-	$(call Image/Build/CFE,$(1),96348GW-A,6348,USR9108)
-
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
 
@@ -333,6 +330,8 @@ $(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,--rs
 $(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,--rsa-signature "OpenWRT-$(REVISION)"))
 # SFR neufbox 6
 $(eval $(call ImageDTB,CFEDTB,Neufbox6,nb6-ser-r0,NB6-SER-r0,6362,NEUFBOX6,--rsa-signature "OpenWRT-$(REVISION)"))
+# USRobotics 9108
+$(eval $(call ImageDTB,CFEDTB,USR9108,usr9108,96348GW-A,6348,USR9108))
 # ZyXEL P870HW-51a v2
 $(eval $(call ImageDTB,ZYXCFEDTB,P870HW_51a_v2,p870hw-51a-v2,96368VVW,6368,P870HW-51a_v2,--rsa-signature "ZyXEL" --signature "ZyXEL_0001"))
 

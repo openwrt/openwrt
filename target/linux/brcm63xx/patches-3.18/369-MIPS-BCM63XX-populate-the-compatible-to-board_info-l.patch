@@ -14,7 +14,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -736,6 +736,48 @@ static const struct board_info __initcon
+@@ -736,6 +736,49 @@ static const struct board_info __initcon
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
@@ -43,6 +43,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	{ .compatible = "netgear,dg834gtpn", .data = &board_96348gw_10, },
 +	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },
 +	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
++	{ .compatible = "usr,9108", .data = &board_96348gw_a, },
 +#endif
 +#ifdef CONFIG_BCM63XX_CPU_6358
 +	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
