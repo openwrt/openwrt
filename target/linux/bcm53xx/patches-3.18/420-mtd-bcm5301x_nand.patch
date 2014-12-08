@@ -22,7 +22,7 @@
  nand-objs := nand_base.o nand_bbt.o nand_timings.o
 --- /dev/null
 +++ b/drivers/mtd/nand/bcm_nand.c
-@@ -0,0 +1,1580 @@
+@@ -0,0 +1,1583 @@
 +/*
 + * Nortstar NAND controller driver
 + *
@@ -64,6 +64,7 @@
 +
 +#include <linux/mtd/mtd.h>
 +#include <linux/mtd/nand.h>
++#include <linux/mtd/partitions.h>
 +
 +#define NANDC_MAX_CHIPS		2	/* Only 2 CSn supported in NorthStar */
 +
@@ -1515,13 +1516,14 @@
 +	return 0;
 +}
 +
-+static const char * const part_probes[] = { "bcm47xxpart", "cmdlinepart", NULL };
++static const char * const part_probes[] = { "ofpart", "bcm47xxpart", NULL };
 +
 +/*
 + * Top-level init function
 + */
 +static int bcmnand_probe(struct bcma_device *core)
 +{
++	struct mtd_part_parser_data parser_data;
 +	struct device *dev = &core->dev;
 +	struct bcmnand_ctrl *ctrl;
 +	int res, i, irq;
@@ -1559,7 +1561,8 @@
 +	if (res)
 +		return res;
 +
-+	res = mtd_device_parse_register(&ctrl->mtd, part_probes, NULL, NULL, 0);
++	parser_data.of_node = np;
++	res = mtd_device_parse_register(&ctrl->mtd, part_probes, &parser_data, NULL, 0);
 +	if (res) {
 +		dev_err(dev, "Failed to register MTD device: %d\n", res);
 +		return res;
