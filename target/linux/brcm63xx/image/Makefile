@@ -202,8 +202,6 @@ define Image/Build
 
 	# USR 9108
 	$(call Image/Build/CFE,$(1),96348GW-A,6348,USR9108)
-	# Belkin f5d7633
-	$(call Image/Build/CFE,$(1),96348GW-10,6348,F5D7633)
 
 	# Inventel Livebox
 	$(call Image/Build/RedBoot,livebox)
@@ -260,6 +258,8 @@ $(eval $(call ImageDTB,CFEDTB,A4001N1,a4001n1,963281T_TEF,6328,A4001N1,--pad 8))
 $(eval $(call ImageDTB,CFEDTB,RG100A,rg100a,96358VW2,6358,RG100A,--block-size 0x20000 --image-offset 0x20000))
 # Asmax AR 1004g
 $(eval $(call ImageDTB,CFEDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
+# Belkin F5D7633
+$(eval $(call ImageDTB,CFEDTB,F5D7633,f5d7633,96348GW-10,6348,F5D7633,--block-size 0x20000 --image-offset 0x20000))
 # Comtrend AR-5381u
 $(eval $(call ImageDTB,CFEDTB,AR5381u,ar-5381u,96328A-1241N,6328,AR-5381u,--pad 8))
 # Comtrend AR-5387un
