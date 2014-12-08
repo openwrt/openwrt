@@ -124,7 +124,7 @@
  /* LzmaDecode
 --- a/lib/lzma/LzmaDec.c
 +++ b/lib/lzma/LzmaDec.c
-@@ -682,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p,
+@@ -682,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p, 
    p->needFlush = 0;
  }
  
@@ -219,26 +219,26 @@
  {
    UInt32 dicSize;
    Byte d;
-@@ -935,7 +883,7 @@ static SRes LzmaDec_AllocateProbs2(CLzma
+@@ -935,33 +883,11 @@ static SRes LzmaDec_AllocateProbs2(CLzma
    return SZ_OK;
  }
  
 -SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
+-{
+-  CLzmaProps propNew;
+-  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
+-  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
+-  p->prop = propNew;
+-  return SZ_OK;
+-}
+-
+-SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
 +static SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
  {
    CLzmaProps propNew;
-   RINOK(LzmaProps_Decode(&propNew, props, propsSize));
-@@ -943,28 +891,6 @@ SRes LzmaDec_AllocateProbs(CLzmaDec *p,
-   p->prop = propNew;
-   return SZ_OK;
- }
--
--SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
--{
--  CLzmaProps propNew;
 -  SizeT dicBufSize;
--  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
--  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
+   RINOK(LzmaProps_Decode(&propNew, props, propsSize));
+   RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
 -  dicBufSize = propNew.dicSize;
 -  if (p->dic == 0 || dicBufSize != p->dicBufSize)
 -  {
@@ -251,12 +251,9 @@
 -    }
 -  }
 -  p->dicBufSize = dicBufSize;
--  p->prop = propNew;
--  return SZ_OK;
--}
- 
- SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
-     const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode,
+   p->prop = propNew;
+   return SZ_OK;
+ }
 --- a/include/linux/lzma/LzmaEnc.h
 +++ b/include/linux/lzma/LzmaEnc.h
 @@ -31,9 +31,6 @@ typedef struct _CLzmaEncProps
@@ -600,7 +597,7 @@
  void MatchFinder_Construct(CMatchFinder *p);
  
  /* Conditions:
-@@ -70,12 +65,6 @@ int MatchFinder_Create(CMatchFinder *p,
+@@ -70,12 +65,6 @@ int MatchFinder_Create(CMatchFinder *p, 
      UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
      ISzAlloc *alloc);
  void MatchFinder_Free(CMatchFinder *p, ISzAlloc *alloc);
@@ -689,7 +686,7 @@
  {
    memmove(p->bufferBase,
      p->buffer - p->keepSizeBefore,
-@@ -97,22 +103,14 @@ void MatchFinder_MoveBlock(CMatchFinder
+@@ -97,22 +103,14 @@ void MatchFinder_MoveBlock(CMatchFinder 
    p->buffer = p->bufferBase + p->keepSizeBefore;
  }
  
