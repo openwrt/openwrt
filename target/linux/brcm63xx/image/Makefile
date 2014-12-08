@@ -202,8 +202,6 @@ define Image/Build
 
 	# USR 9108
 	$(call Image/Build/CFE,$(1),96348GW-A,6348,USR9108)
-	# NetGear DG834GT, DG834PN
-	$(call Image/Build/CFE,$(1),96348GW-10,6348,DG834GT_DG834PN)
 	# Belkin f5d7633
 	$(call Image/Build/CFE,$(1),96348GW-10,6348,F5D7633)
 
@@ -301,6 +299,8 @@ $(eval $(call ImageDTB,CFEDTB,HG553,hg553,HW553,6358,HG553,--rsa-signature "Echo
 $(eval $(call ImageDTB,CFEDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,HG556a_C,hg556a-c,HW556,6358,HG556a_C,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+# Netgear DG834GT/PN
+$(eval $(call ImageDTB,CFEDTB,DG834GTPN,dg834gtpn,96348GW-10,6348,DG834GT_PN))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
 $(eval $(call ImageDTB,CFEDTB,AGPF_S0,agpf-s0,AGPF-S0,6358,AGV2+W,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # Pirelli A226G
