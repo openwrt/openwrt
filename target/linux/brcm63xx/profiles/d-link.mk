@@ -5,6 +5,15 @@
 # See /LICENSE for more information.
 #
 
+define Profile/DSL2640B_B
+  NAME:=D-Link DSL-2640B rev B2
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/DSL2640B_B/Description
+  Package set optimized for DSL-2640B rev B2.
+endef
+$(eval $(call Profile,DSL2640B_B))
+
 define Profile/DSL2650U
   NAME:=D-Link DSL-2650U
   PACKAGES:=kmod-b43 wpad-mini\
