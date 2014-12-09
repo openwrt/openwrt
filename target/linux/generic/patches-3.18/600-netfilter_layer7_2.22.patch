@@ -1,6 +1,6 @@
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -1369,6 +1369,27 @@ config NETFILTER_XT_MATCH_STATE
+@@ -1381,6 +1381,27 @@ config NETFILTER_XT_MATCH_STATE
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -30,7 +30,7 @@
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -162,6 +162,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RECENT)
+@@ -165,6 +165,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_RECENT) 
  obj-$(CONFIG_NETFILTER_XT_MATCH_SCTP) += xt_sctp.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_SOCKET) += xt_socket.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_STATE) += xt_state.o

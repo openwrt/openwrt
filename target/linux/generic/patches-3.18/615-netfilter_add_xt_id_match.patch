@@ -21,7 +21,7 @@
 +#endif /* XT_ID_H */
 --- a/net/netfilter/Kconfig
 +++ b/net/netfilter/Kconfig
-@@ -1145,6 +1145,13 @@ config NETFILTER_XT_MATCH_IPCOMP
+@@ -1157,6 +1157,13 @@ config NETFILTER_XT_MATCH_IPCOMP
  
  	  To compile it as a module, choose M here.  If unsure, say N.
  
@@ -37,7 +37,7 @@
  	depends on NETFILTER_ADVANCED
 --- a/net/netfilter/Makefile
 +++ b/net/netfilter/Makefile
-@@ -140,6 +140,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_ESP) +=
+@@ -143,6 +143,7 @@ obj-$(CONFIG_NETFILTER_XT_MATCH_ESP) += 
  obj-$(CONFIG_NETFILTER_XT_MATCH_HASHLIMIT) += xt_hashlimit.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_HELPER) += xt_helper.o
  obj-$(CONFIG_NETFILTER_XT_MATCH_HL) += xt_hl.o
