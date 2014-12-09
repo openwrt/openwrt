@@ -66,6 +66,7 @@ $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MARK, $(P_XT)
 
 # kernel only
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_CONNTRACK, $(P_XT)nf_conntrack),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_CONNTRACK_RTCACHE, $(P_XT)nf_conntrack_rtcache),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_DEFRAG_IPV4, $(P_V4)nf_defrag_ipv4),))
 $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_CONNTRACK_IPV4, $(P_V4)nf_conntrack_ipv4),))
 
