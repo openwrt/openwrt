@@ -78,7 +78,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #ifdef MODULE
  #define __MODULE_INFO(tag, name, info)					  \
  static const char __UNIQUE_ID(name)[]					  \
-@@ -23,8 +33,7 @@ static const char __UNIQUE_ID(name)[]			
+@@ -23,8 +33,7 @@ static const char __UNIQUE_ID(name)[]
    = __stringify(tag) "=" info
  #else  /* !MODULE */
  /* This struct is here for syntactic coherency, it is not used */
@@ -88,7 +88,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #endif
  #define __MODULE_PARM_TYPE(name, _type)					  \
    __MODULE_INFO(parmtype, name##type, #name ":" _type)
-@@ -32,7 +41,7 @@ static const char __UNIQUE_ID(name)[]			
+@@ -32,7 +41,7 @@ static const char __UNIQUE_ID(name)[]
  /* One for each parameter, describing how to use it.  Some files do
     multiple of these per line, so can't just use MODULE_INFO. */
  #define MODULE_PARM_DESC(_parm, desc) \
