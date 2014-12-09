@@ -90,7 +90,6 @@ struct ag71xx_buf {
 		struct sk_buff	*skb;
 		void		*rx_buf;
 	};
-	struct ag71xx_desc	*desc;
 	union {
 		dma_addr_t	dma_addr;
 		unsigned long	timestamp;
@@ -201,6 +200,12 @@ static inline struct ag71xx_platform_data *ag71xx_get_pdata(struct ag71xx *ag)
 static inline int ag71xx_desc_empty(struct ag71xx_desc *desc)
 {
 	return (desc->ctrl & DESC_EMPTY) != 0;
+}
+
+static inline struct ag71xx_desc *
+ag71xx_ring_desc(struct ag71xx_ring *ring, int idx)
+{
+	return (struct ag71xx_desc *) &ring->descs_cpu[idx * ring->desc_size];
 }
 
 /* Register offsets */
