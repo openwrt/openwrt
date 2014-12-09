@@ -308,7 +308,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  	err = ip6_tnl_xmit2(skb, dev, dsfield, &fl6, encap_limit, &mtu);
  	if (err != 0) {
  		/* XXX: send ICMP error even if DF is not set. */
-@@ -1257,6 +1407,14 @@ ip6_tnl_change(struct ip6_tnl *t, const 
+@@ -1257,6 +1407,14 @@ ip6_tnl_change(struct ip6_tnl *t, const
  	t->parms.flowinfo = p->flowinfo;
  	t->parms.link = p->link;
  	t->parms.proto = p->proto;
