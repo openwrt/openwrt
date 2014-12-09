@@ -100,7 +100,6 @@ static void ag71xx_ring_free(struct ag71xx_ring *ring)
 static int ag71xx_ring_alloc(struct ag71xx_ring *ring)
 {
 	int err;
-	int i;
 
 	ring->desc_size = sizeof(struct ag71xx_desc);
 	if (ring->desc_size % cache_line_size()) {
@@ -124,13 +123,6 @@ static int ag71xx_ring_alloc(struct ag71xx_ring *ring)
 		goto err;
 	}
 
-	for (i = 0; i < ring->size; i++) {
-		int idx = i * ring->desc_size;
-		ring->buf[i].desc = (struct ag71xx_desc *)&ring->descs_cpu[idx];
-		DBG("ag71xx: ring %p, desc %d at %p\n",
-			ring, i, ring->buf[i].desc);
-	}
-
 	return 0;
 
 err:
@@ -144,10 +136,12 @@ static void ag71xx_ring_tx_clean(struct ag71xx *ag)
 	u32 bytes_compl = 0, pkts_compl = 0;
 
 	while (ring->curr != ring->dirty) {
+		struct ag71xx_desc *desc;
 		u32 i = ring->dirty % ring->size;
 
-		if (!ag71xx_desc_empty(ring->buf[i].desc)) {
-			ring->buf[i].desc->ctrl = 0;
+		desc = ag71xx_ring_desc(ring, i);
+		if (!ag71xx_desc_empty(desc)) {
+			desc->ctrl = 0;
 			dev->stats.tx_errors++;
 		}
 
@@ -172,10 +166,12 @@ static void ag71xx_ring_tx_init(struct ag71xx *ag)
 	int i;
 
 	for (i = 0; i < ring->size; i++) {
-		ring->buf[i].desc->next = (u32) (ring->descs_dma +
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+
+		desc->next = (u32) (ring->descs_dma +
 			ring->desc_size * ((i + 1) % ring->size));
 
-		ring->buf[i].desc->ctrl = DESC_EMPTY;
+		desc->ctrl = DESC_EMPTY;
 		ring->buf[i].skb = NULL;
 	}
 
@@ -222,6 +218,8 @@ static int ag71xx_buffer_offset(struct ag71xx *ag)
 static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
 			       int offset)
 {
+	struct ag71xx_ring *ring = &ag->rx_ring;
+	struct ag71xx_desc *desc = ag71xx_ring_desc(ring, buf - &ring->buf[0]);
 	void *data;
 
 	data = kmalloc(ag->rx_buf_size +
@@ -233,7 +231,7 @@ static bool ag71xx_fill_rx_buf(struct ag71xx *ag, struct ag71xx_buf *buf,
 	buf->rx_buf = data;
 	buf->dma_addr = dma_map_single(&ag->dev->dev, data, ag->rx_buf_size,
 				       DMA_FROM_DEVICE);
-	buf->desc->data = (u32) buf->dma_addr + offset;
+	desc->data = (u32) buf->dma_addr + offset;
 	return true;
 }
 
@@ -246,21 +244,24 @@ static int ag71xx_ring_rx_init(struct ag71xx *ag)
 
 	ret = 0;
 	for (i = 0; i < ring->size; i++) {
-		ring->buf[i].desc->next = (u32) (ring->descs_dma +
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+
+		desc->next = (u32) (ring->descs_dma +
 			ring->desc_size * ((i + 1) % ring->size));
 
 		DBG("ag71xx: RX desc at %p, next is %08x\n",
-			ring->buf[i].desc,
-			ring->buf[i].desc->next);
+			desc, desc->next);
 	}
 
 	for (i = 0; i < ring->size; i++) {
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
+
 		if (!ag71xx_fill_rx_buf(ag, &ring->buf[i], offset)) {
 			ret = -ENOMEM;
 			break;
 		}
 
-		ring->buf[i].desc->ctrl = DESC_EMPTY;
+		desc->ctrl = DESC_EMPTY;
 	}
 
 	/* flush descriptors */
@@ -280,15 +281,17 @@ static int ag71xx_ring_rx_refill(struct ag71xx *ag)
 
 	count = 0;
 	for (; ring->curr - ring->dirty > 0; ring->dirty++) {
+		struct ag71xx_desc *desc;
 		unsigned int i;
 
 		i = ring->dirty % ring->size;
+		desc = ag71xx_ring_desc(ring, i);
 
 		if (!ring->buf[i].rx_buf &&
 		    !ag71xx_fill_rx_buf(ag, &ring->buf[i], offset))
 			break;
 
-		ring->buf[i].desc->ctrl = DESC_EMPTY;
+		desc->ctrl = DESC_EMPTY;
 		count++;
 	}
 
@@ -697,7 +700,7 @@ static int ag71xx_fill_dma_desc(struct ag71xx_ring *ring, u32 addr, int len)
 		unsigned int cur_len = len;
 
 		i = (ring->curr + ndesc) % ring->size;
-		desc = ring->buf[i].desc;
+		desc = ag71xx_ring_desc(ring, i);
 
 		if (!ag71xx_desc_empty(desc))
 			return -1;
@@ -752,7 +755,7 @@ static netdev_tx_t ag71xx_hard_start_xmit(struct sk_buff *skb,
 				  DMA_TO_DEVICE);
 
 	i = ring->curr % ring->size;
-	desc = ring->buf[i].desc;
+	desc = ag71xx_ring_desc(ring, i);
 
 	/* setup descriptor fields */
 	n = ag71xx_fill_dma_desc(ring, (u32) dma_addr, skb->len & ag->desc_pktlen_mask);
@@ -907,7 +910,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 
 	while (ring->dirty + n != ring->curr) {
 		unsigned int i = (ring->dirty + n) % ring->size;
-		struct ag71xx_desc *desc = ring->buf[i].desc;
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
 		struct sk_buff *skb = ring->buf[i].skb;
 
 		if (!ag71xx_desc_empty(desc)) {
@@ -963,7 +966,7 @@ static int ag71xx_rx_packets(struct ag71xx *ag, int limit)
 
 	while (done < limit) {
 		unsigned int i = ring->curr % ring->size;
-		struct ag71xx_desc *desc = ring->buf[i].desc;
+		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
 		struct sk_buff *skb;
 		int pktlen;
 		int err = 0;
