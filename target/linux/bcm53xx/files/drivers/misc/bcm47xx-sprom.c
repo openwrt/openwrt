@@ -637,9 +637,7 @@ static void bcm47xx_sprom_fill(struct ssb_sprom *sprom,
 static int bcm47xx_sprom_getenv(const struct bcm47xx_sprom_fill *fill,
 				const char *name, char *val, size_t val_len)
 {
-	const struct platform_device *nvram_dev = fill->priv;
-
-	return bcm47xx_nvram_getenv(&nvram_dev->dev, name, val, val_len);
+	return bcm47xx_nvram_getenv(name, val, val_len);
 };
 
 static int bcm47xx_sprom_probe(struct platform_device *pdev)

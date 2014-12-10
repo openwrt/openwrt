@@ -39,6 +39,8 @@ struct bcm47xx_nvram {
 	char *nvram_buf;
 };
 
+static struct bcm47xx_nvram *nvram = NULL;
+
 static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
 
 static u32 find_nvram_size(void __iomem *end)
@@ -117,16 +119,9 @@ found:
 	return 0;
 }
 
-int bcm47xx_nvram_getenv(const struct device *dev, const char *name, char *val,
-			 size_t val_len)
+int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
 {
 	char *var, *value, *end, *eq;
-	struct bcm47xx_nvram *nvram;
-
-	if (!dev)
-		return -ENODEV;
-
-	nvram = dev_get_drvdata(dev);
 
 	if (!name || !nvram || !nvram->nvram_len)
 		return -EINVAL;
@@ -149,20 +144,17 @@ int bcm47xx_nvram_getenv(const struct device *dev, const char *name, char *val,
 }
 EXPORT_SYMBOL(bcm47xx_nvram_getenv);
 
-int bcm47xx_nvram_gpio_pin(const struct device *dev, const char *name)
+int bcm47xx_nvram_gpio_pin(const char *name)
 {
 	int i, err;
 	char nvram_var[10];
 	char buf[30];
 
-	if (!dev)
-		return -ENODEV;
-
 	for (i = 0; i < 32; i++) {
 		err = snprintf(nvram_var, sizeof(nvram_var), "gpio%i", i);
 		if (err <= 0)
 			continue;
-		err = bcm47xx_nvram_getenv(dev, nvram_var, buf, sizeof(buf));
+		err = bcm47xx_nvram_getenv(nvram_var, buf, sizeof(buf));
 		if (err <= 0)
 			continue;
 		if (!strcmp(name, buf))
@@ -176,7 +168,6 @@ static int bcm47xx_nvram_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
-	struct bcm47xx_nvram *nvram;
 	int err;
 	struct resource flash_mem;
 	void __iomem *mmio;
@@ -198,8 +189,6 @@ static int bcm47xx_nvram_probe(struct platform_device *pdev)
 				  &nvram->nvram_buf, &nvram->nvram_len);
 	if (err)
 		goto err_unmap_mmio;
-
-	platform_set_drvdata(pdev, nvram);
 
 err_unmap_mmio:
 	iounmap(mmio);
