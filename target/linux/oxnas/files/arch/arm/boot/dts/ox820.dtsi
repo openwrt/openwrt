@@ -286,14 +286,15 @@
 
 	sata@45900000 {
 		compatible = "plxtech,nas782x-sata";
-			/*	port		sgdma		core	*/
-		reg = <0x45900000 0x100>, <0x459B0000 0x10>, <0x459E0000 0x2000>,
-			/*	phy		descriptors (optional)	*/
-			<0x44900000 0x0C>, <0x50000000 0x1000>;
+			/*	ports		dmactl		sgdma	*/
+		reg = <0x45900000 0x20000>, <0x459A0000 0x40>, <0x459B0000 0x20>,
+			/*	core		phy		descriptors (optional)	*/
+			<0x459E0000 0x2000>, <0x44900000 0x0C>, <0x50000000 0x1000>;
 		interrupts = <0 18 0x304>;
 		clocks = <&stdclk 4>;
 		resets = <&rst 11>, <&rst 12>, <&rst 13>;
 		reset-names = "sata", "link", "phy";
+		nr-ports = <1>;
 		status = "disabled";
 	};
 
