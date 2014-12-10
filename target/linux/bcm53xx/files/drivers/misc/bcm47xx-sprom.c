@@ -141,6 +141,20 @@ static void nvram_read_leddc(const struct bcm47xx_sprom_fill *fill,
 	*leddc_off_time = (val >> 16) & 0xff;
 }
 
+static void bcm47xx_nvram_parse_macaddr(char *buf, u8 macaddr[6])
+{
+	if (strchr(buf, ':'))
+		sscanf(buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx", &macaddr[0],
+			&macaddr[1], &macaddr[2], &macaddr[3], &macaddr[4],
+			&macaddr[5]);
+	else if (strchr(buf, '-'))
+		sscanf(buf, "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx", &macaddr[0],
+			&macaddr[1], &macaddr[2], &macaddr[3], &macaddr[4],
+			&macaddr[5]);
+	else
+		pr_warn("Can not parse mac address: %s\n", buf);
+}
+
 static void nvram_read_macaddr(const struct bcm47xx_sprom_fill *fill,
 			       const char *name, u8 val[6])
 {
