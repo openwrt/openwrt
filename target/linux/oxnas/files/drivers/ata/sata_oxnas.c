@@ -1,3 +1,22 @@
+/*
+ * sata_oxnas
+ *      A driver to interface the 934 based sata core present in the ox820
+ *      with libata and scsi
+ * based on sata_oxnas driver by Ma Haijun <mahaijuns@gmail.com>
+ * based on ox820 sata code by:
+ *  Copyright (c) 2007 Oxford Semiconductor Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
 #include <linux/ata.h>
 #include <linux/libata.h>
 #include <linux/of_platform.h>
