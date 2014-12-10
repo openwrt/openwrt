@@ -109,13 +109,10 @@ out:
 
 int unl_genl_request(struct unl *unl, struct nl_msg *msg, unl_cb handler, void *arg)
 {
-	struct nlmsghdr *nlh;
 	struct nl_cb *cb;
 	int err;
 
 	cb = nl_cb_alloc(NL_CB_CUSTOM);
-	nlh = nlmsg_hdr(msg);
-
 	err = nl_send_auto_complete(unl->sock, msg);
 	if (err < 0)
 		goto out;
