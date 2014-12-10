@@ -1,0 +1,119 @@
+From 0509f6dcc46d10ea4bb8c70494dc7ae11bcb3f01 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 10 Dec 2014 21:14:10 +0100
+Subject: [PATCH] firmware: backport NVRAM driver
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/Kconfig                          | 2 ++
+ drivers/firmware/Kconfig                  | 1 +
+ drivers/firmware/Makefile                 | 1 +
+ drivers/firmware/broadcom/bcm47xx_nvram.c | 3 ++-
+ drivers/net/ethernet/broadcom/b44.c       | 2 +-
+ drivers/net/ethernet/broadcom/bgmac.c     | 2 +-
+ drivers/ssb/driver_chipcommon_pmu.c       | 2 +-
+ 7 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 4733d32..ab18030 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -2286,6 +2286,8 @@ source "net/Kconfig"
+ 
+ source "drivers/Kconfig"
+ 
++source "drivers/firmware/Kconfig"
++
+ source "fs/Kconfig"
+ 
+ source "arch/arm/Kconfig.debug"
+diff --git a/drivers/firmware/Kconfig b/drivers/firmware/Kconfig
+index 4198388..ffbc9e4 100644
+--- a/drivers/firmware/Kconfig
++++ b/drivers/firmware/Kconfig
+@@ -132,6 +132,7 @@ config ISCSI_IBFT
+ 	  detect iSCSI boot parameters dynamically during system boot, say Y.
+ 	  Otherwise, say N.
+ 
++source "drivers/firmware/broadcom/Kconfig"
+ source "drivers/firmware/google/Kconfig"
+ source "drivers/firmware/efi/Kconfig"
+ 
+diff --git a/drivers/firmware/Makefile b/drivers/firmware/Makefile
+index 5373dc5..e251f2b 100644
+--- a/drivers/firmware/Makefile
++++ b/drivers/firmware/Makefile
+@@ -12,6 +12,7 @@ obj-$(CONFIG_ISCSI_IBFT_FIND)	+= iscsi_ibft_find.o
+ obj-$(CONFIG_ISCSI_IBFT)	+= iscsi_ibft.o
+ obj-$(CONFIG_FIRMWARE_MEMMAP)	+= memmap.o
+ 
++obj-y				+= broadcom/
+ obj-$(CONFIG_GOOGLE_FIRMWARE)	+= google/
+ obj-$(CONFIG_EFI)		+= efi/
+ obj-$(CONFIG_UEFI_CPER)		+= efi/
+diff --git a/drivers/firmware/broadcom/bcm47xx_nvram.c b/drivers/firmware/broadcom/bcm47xx_nvram.c
+index b6e1cc7..8ca7358 100644
+--- a/drivers/firmware/broadcom/bcm47xx_nvram.c
++++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
+@@ -11,6 +11,7 @@
+  * option) any later version.
+  */
+ 
++#include <linux/io.h>
+ #include <linux/types.h>
+ #include <linux/module.h>
+ #include <linux/kernel.h>
+@@ -34,7 +35,7 @@ struct nvram_header {
+ };
+ 
+ static char nvram_buf[NVRAM_SPACE];
+-static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
++static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000, 0x160000};
+ 
+ static u32 find_nvram_size(void __iomem *end)
+ {
+diff --git a/drivers/net/ethernet/broadcom/b44.c b/drivers/net/ethernet/broadcom/b44.c
+index 8a7bf7d..bf3bcd6 100644
+--- a/drivers/net/ethernet/broadcom/b44.c
++++ b/drivers/net/ethernet/broadcom/b44.c
+@@ -400,7 +400,7 @@ static void b44_set_flow_ctrl(struct b44 *bp, u32 local, u32 remote)
+ }
+ 
+ #ifdef CONFIG_BCM47XX
+-#include <bcm47xx_nvram.h>
++#include <linux/bcm47xx_nvram.h>
+ static void b44_wap54g10_workaround(struct b44 *bp)
+ {
+ 	char buf[20];
+diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
+index 34c7bc8..943707f 100644
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -17,7 +17,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/platform_data/b53.h>
+-#include <bcm47xx_nvram.h>
++#include <linux/bcm47xx_nvram.h>
+ 
+ static const struct bcma_device_id bgmac_bcma_tbl[] = {
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_4706_MAC_GBIT, BCMA_ANY_REV, BCMA_ANY_CLASS),
+diff --git a/drivers/ssb/driver_chipcommon_pmu.c b/drivers/ssb/driver_chipcommon_pmu.c
+index 1173a09..0942841 100644
+--- a/drivers/ssb/driver_chipcommon_pmu.c
++++ b/drivers/ssb/driver_chipcommon_pmu.c
+@@ -14,7 +14,7 @@
+ #include <linux/delay.h>
+ #include <linux/export.h>
+ #ifdef CONFIG_BCM47XX
+-#include <bcm47xx_nvram.h>
++#include <linux/bcm47xx_nvram.h>
+ #endif
+ 
+ #include "ssb_private.h"
+-- 
+1.8.4.5
+

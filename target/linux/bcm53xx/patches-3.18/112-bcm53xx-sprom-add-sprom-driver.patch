@@ -42,9 +42,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +};
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
-@@ -520,6 +520,17 @@ config BCM47XX_NVRAM
- 	help
- 		This adds support for the brcm47xx nvram driver.
+@@ -515,6 +515,17 @@ config VEXPRESS_SYSCFG
+ 	  bus. System Configuration interface is one of the possible means
+ 	  of generating transactions on this bus.
  
 +config BCM47XX_SPROM
 +	tristate "BCM47XX sprom driver"
@@ -62,8 +62,8 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  source "drivers/misc/cb710/Kconfig"
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
-@@ -57,3 +57,4 @@ obj-$(CONFIG_ECHO)		+= echo/
+@@ -56,3 +56,4 @@ obj-$(CONFIG_GENWQE)		+= genwqe/
+ obj-$(CONFIG_ECHO)		+= echo/
  obj-$(CONFIG_VEXPRESS_SYSCFG)	+= vexpress-syscfg.o
  obj-$(CONFIG_CXL_BASE)		+= cxl/
- obj-$(CONFIG_BCM47XX_NVRAM)	+= bcm47xx-nvram.o
 +obj-$(CONFIG_BCM47XX_SPROM)	+= bcm47xx-sprom.o
