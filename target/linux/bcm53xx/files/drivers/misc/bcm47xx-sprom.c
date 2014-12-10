@@ -24,6 +24,7 @@
 #include <linux/of_platform.h>
 #include <linux/io.h>
 #include <linux/ssb/ssb.h>
+#include <linux/bcma/bcma.h>
 #include <linux/bcm47xx_nvram.h>
 #include <linux/if_ether.h>
 #include <linux/etherdevice.h>
@@ -640,20 +641,25 @@ static int bcm47xx_sprom_getenv(const struct bcm47xx_sprom_fill *fill,
 	return bcm47xx_nvram_getenv(name, val, val_len);
 };
 
-static int bcm47xx_sprom_probe(struct platform_device *pdev)
+/* FIXME: This should not be static, but some callback argument */
+static struct platform_device *sprom_pdev = NULL;
+
+/*
+ * This function has to be called in a very precise moment. It has to be done:
+ * 1) After bcma registers flash cores, so we can read NVRAM.
+ * 2) Before any code needs SPROM content.
+ *
+ * This can be achieved only by using bcma callback.
+ */
+static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 {
+	struct platform_device *pdev = sprom_pdev;
 	struct device *dev = &pdev->dev;
 	struct device_node *np = dev->of_node;
-	struct ssb_sprom *sprom;
 	const __be32 *handle;
 	struct device_node *nvram_node;
 	struct platform_device *nvram_dev;
 	struct bcm47xx_sprom_fill fill;
-
-	/* Alloc */
-	sprom = devm_kzalloc(dev, sizeof(*sprom), GFP_KERNEL);
-	if (!sprom)
-		return -ENOMEM;
 
 	handle = of_get_property(np, "nvram", NULL);
 	if (!handle)
@@ -673,11 +679,17 @@ static int bcm47xx_sprom_probe(struct platform_device *pdev)
 	fill.getenv = bcm47xx_sprom_getenv;
 	fill.priv = nvram_dev;
 
-	bcm47xx_sprom_fill(sprom, &fill);
-
-	platform_set_drvdata(pdev, sprom);
+	bcm47xx_sprom_fill(out, &fill);
 
 	return 0;
+};
+
+static int bcm47xx_sprom_probe(struct platform_device *pdev)
+{
+	/* This is the only way to make pdev accessible to the callback */
+	sprom_pdev = pdev;
+
+	return bcma_arch_register_fallback_sprom(&bcm47xx_sprom_init);
 }
 
 static const struct of_device_id bcm47xx_sprom_of_match_table[] = {
