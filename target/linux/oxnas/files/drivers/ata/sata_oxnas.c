@@ -23,6 +23,7 @@
 #include <linux/delay.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/spinlock.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
 #include <linux/clk.h>
@@ -45,7 +46,7 @@ enum {
 	SATA_OXNAS_DMA_SIZE = SATA_OXNAS_MAX_PRD *
 				sizeof(struct ata_bmdma_prd) +
 				sizeof(struct sgdma_request),
-	SATA_OXNAS_MAX_PORTS	= 1,
+	SATA_OXNAS_MAX_PORTS	= 2,
 	/** The different Oxsemi SATA core version numbers */
 	SATA_OXNAS_CORE_VERSION = 0x1f3,
 	SATA_OXNAS_IRQ_FLAG	= IRQF_SHARED,
@@ -92,7 +93,6 @@ enum {
 	WIN2LO = 0x88,
 	WIN2HI = 0x8C,
 	WIN0_CONTROL = 0x90,
-
 };
 
 /** sata port register bits */
@@ -160,6 +160,14 @@ enum {
 	SGDMA_CORESIZE = 0x10,
 };
 
+/* DMA controller register offsets */
+enum {
+	DMA_CONTROL = 0x0,
+	DMA_CORESIZE = 0x20,
+
+	DMA_CONTROL_RESET = (1 << 12),
+};
+
 enum {
 	/* see DMA core docs for the values. Out means from memory (bus A) out
 	 * to disk (bus B) */
@@ -218,6 +226,7 @@ enum {
 	RAID_WP_TOP_HIGH = 0x1FFC,
 	DATA_MUX_RAM0 = 0x8000,
 	DATA_MUX_RAM1 = 0xA000,
+	PORT_SIZE = 0x10000,
 };
 
 enum {
@@ -271,6 +280,8 @@ enum {
 	/** OX820 specific HW-RAID register values */
 	RAID_TWODISKS = 3,
 	UNKNOWN_MODE = ~0,
+
+	CONFIG_IN_RESUME = 2,
 };
 
 /* SATA PHY Registers */
@@ -309,21 +320,34 @@ enum {
 };
 
 enum {
-		OXNAS_SATA_UCODE_RAID0,
-		OXNAS_SATA_UCODE_RAID1,
-		OXNAS_SATA_UCODE_JBOD,
-		OXNAS_SATA_UCODE_NONE,
+	OXNAS_SATA_UCODE_RAID0,
+	OXNAS_SATA_UCODE_RAID1,
+	OXNAS_SATA_UCODE_JBOD,
+	OXNAS_SATA_UCODE_NONE,
+};
+
+enum {
+	SATA_UNLOCKED,
+	SATA_WRITER,
+	SATA_READER,
+	SATA_REBUILD,
+	SATA_HWRAID,
+	SATA_SCSI_STACK
 };
 
 struct sata_oxnas_host_priv {
-	void __iomem *port_base[SATA_OXNAS_MAX_PORTS];
-	void __iomem *sgdma_base[SATA_OXNAS_MAX_PORTS];
+	void __iomem *port_base;
+	void __iomem *dmactl_base;
+	void __iomem *sgdma_base;
 	void __iomem *core_base;
 	void __iomem *phy_base;
 	dma_addr_t dma_base;
 	void __iomem *dma_base_va;
 	size_t dma_size;
 	int irq;
+	int n_ports;
+	int current_ucode;
+	u32 port_frozen;
 	u32 port_in_eh;
 	struct clk *clk;
 	struct reset_control *rst_sata;
@@ -331,9 +355,13 @@ struct sata_oxnas_host_priv {
 	struct reset_control *rst_phy;
 };
 
+typedef irqreturn_t (*ox820sata_isr_callback_t)(int, unsigned long, int);
 
+static DEFINE_SPINLOCK(oxsphy_lock);
+static DEFINE_SPINLOCK(oxsacs_lock);
 struct sata_oxnas_port_priv {
 	void __iomem *port_base;
+	void __iomem *dmactl_base;
 	void __iomem *sgdma_base;
 	void __iomem *core_base;
 	struct sgdma_request *sgdma_request;
@@ -347,7 +375,26 @@ static void sata_oxnas_tf_load(struct ata_port *ap,
 static void sata_oxnas_irq_on(struct ata_port *ap);
 static void sata_oxnas_post_reset_init(struct ata_port *ap);
 
-/* ??????????????????????????????????? */
+static int sata_oxnas_acquire_hw(int port_no, int may_sleep,
+				int timeout_jiffies);
+static void sata_oxnas_release_hw(unsigned int port_no);
+
+static int core_locked = 0;
+static int reentrant_port_no = -1;
+static int hw_lock_count = 0;
+static int direct_lock_count = 0;
+static void *locker_uid = 0;
+static int current_locker_type = SATA_UNLOCKED;
+static const void *HW_LOCKER_UID = (void*)0xdeadbeef;
+static DECLARE_WAIT_QUEUE_HEAD(fast_wait_queue);
+static DECLARE_WAIT_QUEUE_HEAD(scsi_wait_queue);
+static ox820sata_isr_callback_t ox820sata_isr_callback = NULL;
+static unsigned long ox820sata_isr_arg = 0;
+static int scsi_nonblocking_attempts = 0;
+
+/***************************************************************************
+* ASIC access
+***************************************************************************/
 static void wait_cr_ack(void __iomem *phy_base)
 {
 	while ((ioread32(phy_base + PHY_STAT) >> 16) & 0x1f)
@@ -407,9 +454,11 @@ void sata_oxnas_link_write(struct ata_port *ap, unsigned int link_reg, u32 val)
 	struct sata_oxnas_port_priv *port_priv = ap->private_data;
 	void __iomem *port_base = port_priv->port_base;
 	u32 patience;
+	unsigned long flags;
 
-	DPRINTK("[0x%02x]->0x%08x\n", link_reg, val);
+	DPRINTK("P%d [0x%02x]->0x%08x\n", ap->port_no, link_reg, val);
 
+	spin_lock_irqsave(&oxsphy_lock, flags);
 	iowrite32(val, port_base + LINK_DATA);
 
 	/* accessed twice as a work around for a bug in the SATA abp bridge
@@ -421,6 +470,7 @@ void sata_oxnas_link_write(struct ata_port *ap, unsigned int link_reg, u32 val)
 		if (ioread32(port_base + LINK_CONTROL) & 0x00000001)
 			break;
 	}
+	spin_unlock_irqrestore(&oxsphy_lock, flags);
 }
 
 static int sata_oxnas_scr_write_port(struct ata_port *ap, unsigned int sc_reg,
@@ -436,14 +486,15 @@ static int sata_oxnas_scr_write(struct ata_link *link, unsigned int sc_reg,
 	return sata_oxnas_scr_write_port(link->ap, sc_reg, val);
 }
 
-/* FIXME lock */
 u32 sata_oxnas_link_read(struct ata_port *ap, unsigned int link_reg)
 {
 	struct sata_oxnas_port_priv *pd = ap->private_data;
 	void __iomem *port_base = pd->port_base;
 	u32 result;
 	u32 patience;
+	unsigned long flags;
 
+	spin_lock_irqsave(&oxsphy_lock, flags);
 	/* accessed twice as a work around for a bug in the SATA abp bridge
 	 * hardware (bug 6828) */
 	iowrite32(link_reg, port_base + LINK_RD_ADDR);
@@ -454,9 +505,10 @@ u32 sata_oxnas_link_read(struct ata_port *ap, unsigned int link_reg)
 			break;
 	}
 	if (patience == 0)
-		DPRINTK("link read timed out\n");
+		DPRINTK("link read timed out for port %d\n", ap->port_no);
 
-	result = readl(port_base + LINK_DATA);
+	result = ioread32(port_base + LINK_DATA);
+	spin_unlock_irqrestore(&oxsphy_lock, flags);
 
 	return result;
 }
@@ -471,7 +523,6 @@ static int sata_oxnas_scr_read_port(struct ata_port *ap, unsigned int sc_reg,
 static int sata_oxnas_scr_read(struct ata_link *link,
 			     unsigned int sc_reg, u32 *val)
 {
-
 	return sata_oxnas_scr_read_port(link->ap, sc_reg, val);
 }
 
@@ -502,9 +553,12 @@ static void sata_oxnas_irq_clear(struct ata_port *ap)
 static unsigned int sata_oxnas_qc_issue(struct ata_queued_cmd *qc)
 {
 	struct sata_oxnas_port_priv *pd = qc->ap->private_data;
+	struct sata_oxnas_host_priv *hd = qc->ap->host->private_data;
+
 	void __iomem *port_base = pd->port_base;
 	void __iomem *core_base = pd->core_base;
 	int port_no = qc->ap->port_no;
+	int no_microcode = ( hd->current_ucode == UNKNOWN_MODE );
 	u32 reg;
 
 	/* check the core is idle */
@@ -525,8 +579,10 @@ static unsigned int sata_oxnas_qc_issue(struct ata_queued_cmd *qc)
 	}
 
 	/* enable passing of error signals to DMA sub-core by clearing the
-	 * appropriate bit (all transfers are on dma channel 0) */
+	 * appropriate bit */
 	reg = ioread32(core_base + DATA_PLANE_CTRL);
+	if(no_microcode)
+		reg |= (DPC_ERROR_MASK_BIT | (DPC_ERROR_MASK_BIT << 1));
 	reg &= ~(DPC_ERROR_MASK_BIT << port_no);
 	iowrite32(reg, core_base + DATA_PLANE_CTRL);
 
@@ -575,19 +631,295 @@ void sata_oxnas_checkforhotplug(struct ata_port *ap)
 }
 
 
+/**************************************************************************/
+/* Locking                                                                */
+/**************************************************************************/
+/**
+ * The underlying function that controls access to the sata core
+ *
+ * @return non-zero indicates that you have acquired exclusive access to the
+ *         sata core.
+ */
+static int __acquire_sata_core(
+	int port_no,
+	ox820sata_isr_callback_t callback,
+	unsigned long            arg,
+	int                      may_sleep,
+	int                      timeout_jiffies,
+	int                      hw_access,
+	void                    *uid,
+	int                      locker_type)
+{
+	unsigned long end = jiffies + timeout_jiffies;
+	int           acquired = 0;
+	unsigned long flags;
+	int           timed_out = 0;
+	DEFINE_WAIT(wait);
+
+	spin_lock_irqsave(&oxsacs_lock, flags);
+
+	DPRINTK("Entered uid %p, port %d, h/w count %d, d count %d, callback %p, "
+		    "hw_access %d, core_locked %d, reentrant_port_no %d, ox820sata_isr_callback %p\n",
+		uid, port_no, hw_lock_count, direct_lock_count, callback, hw_access,
+		core_locked, reentrant_port_no, ox820sata_isr_callback);
+
+	while (!timed_out) {
+		if (core_locked || (!hw_access && scsi_nonblocking_attempts)) {
+			/* Can only allow access if from SCSI/SATA stack and if
+			   reentrant access is allowed and this access is to the same
+			   port for which the lock is current held */
+			if (hw_access && (port_no == reentrant_port_no)) {
+				BUG_ON(!hw_lock_count);
+				++hw_lock_count;
+
+				DPRINTK("Allow SCSI/SATA re-entrant access to uid %p port %d\n", uid, port_no);
+				acquired = 1;
+				break;
+			} else if (!hw_access) {
+				if ((locker_type == SATA_READER) && (current_locker_type == SATA_READER)) {
+					WARN(1,
+						"Already locked by reader, uid %p, locker_uid %p, port %d, "
+						"h/w count %d, d count %d, hw_access %d\n", uid, locker_uid,
+						port_no, hw_lock_count, direct_lock_count, hw_access);
+					goto check_uid;
+				}
+
+				if ((locker_type != SATA_READER) && (locker_type != SATA_WRITER)) {
+					goto wait_for_lock;
+				}
+
+check_uid:
+				WARN(uid == locker_uid, "Attempt to lock by locker type %d "
+					"uid %p, already locked by locker type %d with "
+					"locker_uid %p, port %d, h/w count %d, d count %d, "
+					"hw_access %d\n", locker_type, uid, current_locker_type,
+					locker_uid, port_no, hw_lock_count, direct_lock_count, hw_access);
+			}
+		} else {
+			WARN(hw_lock_count || direct_lock_count, "Core unlocked but counts "
+				"non-zero: uid %p, locker_uid %p, port %d, h/w count %d, "
+				"d count %d, hw_access %d\n", uid, locker_uid, port_no,
+				hw_lock_count, direct_lock_count, hw_access);
+
+			BUG_ON(current_locker_type != SATA_UNLOCKED);
+
+			WARN(locker_uid, "Attempt to lock uid %p when locker_uid %p is "
+				"non-zero,  port %d, h/w count %d, d count %d, hw_access %d\n",
+				uid, locker_uid, port_no, hw_lock_count, direct_lock_count,
+				hw_access);
+
+			if (!hw_access) {
+				/* Direct access attempting to acquire non-contented lock */
+				BUG_ON(!callback);	// Must have callback for direct access
+				BUG_ON(reentrant_port_no != -1); // Sanity check lock state
+
+				ox820sata_isr_callback = callback;
+				ox820sata_isr_arg = arg;
+				++direct_lock_count;
+
+				current_locker_type = locker_type;
+			} else {
+				/* SCSI/SATA attempting to acquire non-contented lock */
+				BUG_ON(callback);	// No callbacks for SCSI/SATA access
+				BUG_ON(arg);		// No callback args for SCSI/SATA access
+
+				BUG_ON(ox820sata_isr_callback);	// Sanity check lock state
+				BUG_ON(ox820sata_isr_arg);		// Sanity check lock state
+
+				++hw_lock_count;
+				reentrant_port_no = port_no;
+
+				current_locker_type = SATA_SCSI_STACK;
+			}
+
+			core_locked = 1;
+			acquired = 1;
+			locker_uid = uid;
+			break;
+		}
+
+wait_for_lock:
+		if (!may_sleep) {
+			DPRINTK("Denying for uid %p locker_type %d, hw_access %d, port %d, "
+			"current_locker_type %d as cannot sleep\n", uid, locker_type,
+			hw_access, port_no, current_locker_type);
+
+			if (hw_access) {
+				++scsi_nonblocking_attempts;
+			}
+			break;
+		}
+
+		// Core is locked and we're allowed to sleep, so wait to be awoken when
+		// the core is unlocked
+		for (;;) {
+			prepare_to_wait(hw_access ? &scsi_wait_queue : &fast_wait_queue,
+				&wait, TASK_UNINTERRUPTIBLE);
+			if (!core_locked && !(!hw_access && scsi_nonblocking_attempts)) {
+				// We're going to use variables that will have been changed by
+				// the waker prior to clearing core_locked so we need to ensure
+				// we see changes to all those variables
+				smp_rmb();
+				break;
+			}
+			if (time_after(jiffies, end)) {
+				printk("__acquire_sata_core() uid %p failing for port %d timed out, "
+					   "locker_uid %p, h/w count %d, d count %d, callback %p, hw_access %d, "
+					   "core_locked %d, reentrant_port_no %d, ox820sata_isr_callback %p, "
+					   "ox820sata_isr_arg %p\n", uid, port_no, locker_uid,
+					   hw_lock_count, direct_lock_count, callback, hw_access,
+					   core_locked, reentrant_port_no, ox820sata_isr_callback,
+					   (void*)ox820sata_isr_arg);
+				timed_out = 1;
+				break;
+			}
+			spin_unlock_irqrestore(&oxsacs_lock, flags);
+			if (!schedule_timeout(4*HZ)) {
+				printk(KERN_INFO "__acquire_sata_core() uid %p, locker_uid %p, "
+					"timed-out of schedule(), checking overall timeout\n",
+					uid, locker_uid);
+			}
+			spin_lock_irqsave(&oxsacs_lock, flags);
+		}
+		finish_wait(hw_access ? &scsi_wait_queue : &fast_wait_queue, &wait);
+	}
+
+	if (hw_access && acquired) {
+		if (scsi_nonblocking_attempts) {
+			scsi_nonblocking_attempts = 0;
+		}
+
+		// Wake any other SCSI/SATA waiters so they can get reentrant access to
+		// the same port if appropriate. This is because if the SATA core is
+		// locked by fast access, or SCSI/SATA access to other port, then can
+		// have >1 SCSI/SATA waiters on the wait list so want to give reentrant
+		// accessors a chance to get access ASAP
+		if (!list_empty(&scsi_wait_queue.task_list)) {
+			wake_up(&scsi_wait_queue);
+		}
+	}
+
+	DPRINTK("Leaving uid %p with acquired = %d, port %d, callback %p\n", uid, acquired, port_no, callback);
+
+	spin_unlock_irqrestore(&oxsacs_lock, flags);
+
+	return acquired;
+}
+
+int sata_core_has_fast_waiters(void)
+{
+	int has_waiters;
+	unsigned long flags;
+
+	spin_lock_irqsave(&oxsacs_lock, flags);
+	has_waiters = !list_empty(&fast_wait_queue.task_list);
+	spin_unlock_irqrestore(&oxsacs_lock, flags);
+
+	return has_waiters;
+}
+EXPORT_SYMBOL(sata_core_has_fast_waiters);
+
+int sata_core_has_scsi_waiters(void)
+{
+	int has_waiters;
+	unsigned long flags;
+
+	spin_lock_irqsave(&oxsacs_lock, flags);
+	has_waiters = scsi_nonblocking_attempts || !list_empty(&scsi_wait_queue.task_list);
+	spin_unlock_irqrestore(&oxsacs_lock, flags);
+
+	return has_waiters;
+}
+EXPORT_SYMBOL(sata_core_has_scsi_waiters);
+
+/*
+ * ata_port operation to gain ownership of the SATA hardware prior to issuing
+ * a command against a SATA host. Allows any number of users of the port against
+ * which the lock was first acquired, thus enforcing that only one SATA core
+ * port may be operated on at once.
+ */
+static int sata_oxnas_acquire_hw(
+	int port_no,
+	int may_sleep,
+	int timeout_jiffies)
+{
+	return __acquire_sata_core(port_no, NULL, 0, may_sleep, timeout_jiffies, 1, (void*)HW_LOCKER_UID, SATA_SCSI_STACK);
+}
+
+/*
+ * operation to release ownership of the SATA hardware
+ */
+static void sata_oxnas_release_hw(unsigned int port_no)
+{
+	unsigned long flags;
+	int released = 0;
+
+	spin_lock_irqsave(&oxsacs_lock, flags);
+
+	DPRINTK("Entered port_no = %d, h/w count %d, d count %d, core locked = %d, "
+		"reentrant_port_no = %d, ox820sata_isr_callback %p\n", port_no,
+		hw_lock_count, direct_lock_count, core_locked, reentrant_port_no, ox820sata_isr_callback);
+
+	if (!core_locked) {
+		/* Nobody holds the SATA lock */
+		printk(KERN_WARNING "Nobody holds SATA lock, port_no %d\n", port_no);
+		released = 1;
+	} else if (!hw_lock_count) {
+		/* SCSI/SATA has released without holding the lock */
+		printk(KERN_WARNING "SCSI/SATA does not hold SATA lock, port_no %d\n", port_no);
+	} else {
+		/* Trap incorrect usage */
+		BUG_ON(reentrant_port_no == -1);
+		BUG_ON(port_no != reentrant_port_no);
+		BUG_ON(direct_lock_count);
+		BUG_ON(current_locker_type != SATA_SCSI_STACK);
+
+		WARN(!locker_uid || (locker_uid != HW_LOCKER_UID), "Invalid locker "
+			"uid %p, h/w count %d, d count %d, reentrant_port_no %d, "
+			"core_locked %d, ox820sata_isr_callback %p\n", locker_uid,
+			hw_lock_count, direct_lock_count, reentrant_port_no, core_locked,
+			ox820sata_isr_callback);
+
+		if (--hw_lock_count) {
+			DPRINTK("Still nested port_no %d\n", port_no);
+		} else {
+			DPRINTK("Release port_no %d\n", port_no);
+			reentrant_port_no = -1;
+			ox820sata_isr_callback = NULL;
+			current_locker_type = SATA_UNLOCKED;
+			locker_uid = 0;
+			core_locked = 0;
+			released = 1;
+			wake_up(!list_empty(&scsi_wait_queue.task_list) ? &scsi_wait_queue : &fast_wait_queue);
+		}
+	}
+
+	DPRINTK("Leaving, port_no %d, count %d\n", port_no, hw_lock_count);
+
+	spin_unlock_irqrestore(&oxsacs_lock, flags);
+
+	/* CONFIG_SATA_OX820_DIRECT_HWRAID */
+	/*    if (released)
+	     ox820hwraid_restart_queue();
+	} */
+}
+
 static inline int sata_oxnas_is_host_frozen(struct ata_host *ah)
 {
 	struct sata_oxnas_host_priv *hd = ah->private_data;
 
 	smp_rmb();
-	return hd->port_in_eh;
+	return hd->port_in_eh || hd->port_frozen;
 }
+
 
 static inline u32 sata_oxnas_hostportbusy(struct ata_port *ap)
 {
-	struct sata_oxnas_port_priv *pd = ap->private_data;
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
 
-	return ioread32(pd->port_base + SATA_COMMAND) & CMD_CORE_BUSY;
+	return (ioread32(hd->port_base + SATA_COMMAND) & CMD_CORE_BUSY) ||
+	       (hd->n_ports > 1 &&
+		(ioread32(hd->port_base + PORT_SIZE + SATA_COMMAND) & CMD_CORE_BUSY));
 }
 
 static inline u32 sata_oxnas_hostdmabusy(struct ata_port *ap)
@@ -604,6 +936,7 @@ static inline u32 sata_oxnas_hostdmabusy(struct ata_port *ap)
 static void sata_oxnas_reset_core(struct ata_host *ah)
 {
 	struct sata_oxnas_host_priv *host_priv = ah->private_data;
+	int n;
 
 	DPRINTK("ENTER\n");
 	clk_prepare_enable(host_priv->clk);
@@ -626,8 +959,10 @@ static void sata_oxnas_reset_core(struct ata_host *ah)
 	/* tune for sata compatability */
 	sata_oxnas_link_write(ah->ports[0], 0x60, 0x2988);
 
-	/* each port in turn */
-	sata_oxnas_link_write(ah->ports[0], 0x70, 0x55629);
+	for (n=0; n < host_priv->n_ports; n++) {
+		/* each port in turn */
+		sata_oxnas_link_write(ah->ports[n], 0x70, 0x55629);
+	}
 	udelay(50);
 }
 
@@ -739,16 +1074,17 @@ static void sata_oxnas_tf_load(struct ata_port *ap,
 }
 
 
-void sata_oxnas_set_mode(struct ata_port *ap, u32 mode, u32 force)
+void sata_oxnas_set_mode(struct ata_host *ah, u32 mode, u32 force)
 {
-	struct sata_oxnas_port_priv *port_priv = ap->private_data;
-	void __iomem *core_base = port_priv->core_base;
+	struct sata_oxnas_host_priv *host_priv = ah->private_data;
+	void __iomem *core_base = host_priv->core_base;
 
 	unsigned int *src;
 	void __iomem *dst;
 	unsigned int progmicrocode = 0;
 	unsigned int changeparameters = 0;
-	static u32 previous_mode = UNKNOWN_MODE;
+
+	u32 previous_mode;
 
 	/* these micro-code programs _should_ include the version word */
 
@@ -861,11 +1197,17 @@ void sata_oxnas_set_mode(struct ata_port *ap, u32 mode, u32 force)
 		0x02400000, ~0
 	};
 
+	DPRINTK("ENTER: mode:%d, force:%d\n", mode, force);
+
 	if (force)
 		previous_mode = UNKNOWN_MODE;
+	else
+		previous_mode = host_priv->current_ucode;
 
 	if (mode == previous_mode)
 		return;
+
+	host_priv->current_ucode = mode;
 
 	/* decide what needs to be done using the STD in my logbook */
 	switch (previous_mode) {
@@ -892,6 +1234,14 @@ void sata_oxnas_set_mode(struct ata_port *ap, u32 mode, u32 force)
 		}
 		break;
 	case OXNASSATA_NOTRAID:
+		switch (mode) {
+		case OXNASSATA_RAID0:
+		case OXNASSATA_RAID1:
+			changeparameters = 1;
+			progmicrocode = 1;
+			break;
+		}
+		break;
 	case UNKNOWN_MODE:
 		changeparameters = 1;
 		progmicrocode = 1;
@@ -972,7 +1322,7 @@ void sata_oxnas_set_mode(struct ata_port *ap, u32 mode, u32 force)
 			/* enable jbod mode */
 			reg = ioread32(core_base + DATA_PLANE_CTRL);
 			reg &= ~DPC_JBOD_UCODE;
-			reg |= DPC_FIS_SWCH;
+			reg &= ~DPC_FIS_SWCH;
 			iowrite32(reg, core_base + DATA_PLANE_CTRL);
 			wmb();
 
@@ -980,11 +1330,14 @@ void sata_oxnas_set_mode(struct ata_port *ap, u32 mode, u32 force)
 			iowrite32(1, core_base + PROC_START);
 			break;
 		default:
+			reg = ioread32(core_base + DATA_PLANE_CTRL);
+			reg |= DPC_JBOD_UCODE;
+			reg &= ~DPC_FIS_SWCH;
+			iowrite32(reg, core_base + DATA_PLANE_CTRL);
+			wmb();
 			break;
 		}
 	}
-
-	previous_mode = mode;
 }
 
 /**
@@ -1006,8 +1359,10 @@ static inline void sata_oxnas_send_sync_escape(struct ata_port *ap)
 }
 
 /* clears errors */
-static inline void sata_oxnas_clear_CS_error(u32 *base)
+static inline void sata_oxnas_clear_CS_error(struct ata_port *ap)
 {
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	u32 *base = pd->port_base;
 	u32 reg;
 
 	reg = ioread32(base + SATA_CONTROL);
@@ -1015,24 +1370,63 @@ static inline void sata_oxnas_clear_CS_error(u32 *base)
 	iowrite32(reg, base + SATA_CONTROL);
 }
 
+static inline void sata_oxnas_reset_sgdma(struct ata_port *ap)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	iowrite32(SGDMA_RESETS_CTRL, pd->sgdma_base + SGDMA_RESETS);
+}
+
+static inline void sata_oxnas_reset_dma(struct ata_port *ap, int assert)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	u32 reg;
+
+	reg = ioread32(pd->dmactl_base + DMA_CONTROL);
+	if (assert)
+		reg |= DMA_CONTROL_RESET;
+	else
+		reg &= ~DMA_CONTROL_RESET;
+
+	iowrite32(reg, pd->dmactl_base + DMA_CONTROL);
+};
+
 /**
  * Clears the error caused by the core's registers being accessed when the
  * core is busy.
  */
-static inline void sata_oxnas_clear_reg_access_error(u32 *base)
+static inline void sata_oxnas_clear_reg_access_error(struct ata_port *ap)
 {
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	u32 *base = pd->port_base;
 	u32 reg;
 
 	reg = ioread32(base + INT_STATUS);
 
 	DPRINTK("ENTER\n");
 	if (reg & INT_REG_ACCESS_ERR) {
-		printk(KERN_INFO "clearing register access error\n");
+		printk(KERN_INFO "clearing register access error on port %d\n", ap->port_no);
 		iowrite32(INT_REG_ACCESS_ERR, base + INT_STATUS);
 	}
+	reg = ioread32(base + INT_STATUS);
 	if (reg & INT_REG_ACCESS_ERR)
 		printk(KERN_INFO "register access error didn't clear\n");
 }
+
+static inline void sata_oxnas_clear_sctl_error(struct ata_port *ap)
+{
+	struct sata_oxnas_port_priv *pd = ap->private_data;
+	u32 *base = pd->port_base;
+	u32 reg;
+
+	reg = ioread32(base + SATA_CONTROL);
+	reg |= SCTL_CLR_ERR;
+	iowrite32(reg, base + SATA_CONTROL);
+}
+
+static inline void sata_oxnas_clear_raid_error(struct ata_host *ah)
+{
+	return;
+};
 
 /**
  * Clean up all the state machines in the sata core.
@@ -1040,10 +1434,10 @@ static inline void sata_oxnas_clear_reg_access_error(u32 *base)
  */
 static int sata_oxnas_cleanup(struct ata_host *ah)
 {
+	struct sata_oxnas_host_priv *hd = ah->private_data;
 	int actions_required = 0;
-
-	printk(KERN_INFO "ox820sata: reseting SATA core\n");
-
+	int n;
+	printk(KERN_INFO "sata_oxnas: reseting SATA core\n");
 	/* core not recovering, reset it */
 	mdelay(5);
 	sata_oxnas_reset_core(ah);
@@ -1052,10 +1446,54 @@ static int sata_oxnas_cleanup(struct ata_host *ah)
 	/* Perform any SATA core re-initialisation after reset post reset init
 	 * needs to be called for both ports as there's one reset for both
 	 * ports */
+	for (n=0; n < hd->n_ports; n++)
+		sata_oxnas_post_reset_init(ah->ports[n]);
 
-	sata_oxnas_post_reset_init(ah->ports[0]);
 
 	return actions_required;
+}
+
+/**
+ *  ata_qc_new - Request an available ATA command, for queueing
+ *  @ap: Port associated with device @dev
+ *  @return non zero will refuse a new command, zero will may grant on subject
+ *          to conditions elsewhere.
+ *
+ */
+static int sata_oxnas_qc_new(struct ata_port *ap)
+{
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+	DPRINTK("port %d\n", ap->port_no);
+	smp_rmb();
+	if (hd->port_frozen || hd->port_in_eh)
+		return 1;
+	else
+		return !sata_oxnas_acquire_hw(ap->port_no, 0, 0);
+}
+
+/**
+ * releases the lock on the port the command used
+ */
+static void sata_oxnas_qc_free(struct ata_queued_cmd *qc)
+{
+	DPRINTK("\n");
+	sata_oxnas_release_hw(qc->ap->port_no);
+}
+
+static void sata_oxnas_freeze(struct ata_port* ap)
+{
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+	DPRINTK("\n");
+	hd->port_frozen |= BIT(ap->port_no);
+	smp_wmb();
+}
+
+static void sata_oxnas_thaw(struct ata_port* ap)
+{
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+	DPRINTK("\n");
+	hd->port_frozen &= ~BIT(ap->port_no);
+	smp_wmb();
 }
 
 void sata_oxnas_freeze_host(struct ata_port *ap)
@@ -1131,6 +1569,7 @@ int sata_oxnas_check_link(struct ata_port *ap)
 static void sata_oxnas_postreset(struct ata_link *link, unsigned int *classes)
 {
 	struct ata_port *ap = link->ap;
+	struct sata_oxnas_host_priv *hd = ap->host->private_data;
 
 	unsigned int dev;
 
@@ -1138,7 +1577,9 @@ static void sata_oxnas_postreset(struct ata_link *link, unsigned int *classes)
 	ata_std_postreset(link, classes);
 
 	/* turn on phy error detection by removing the masks */
-	sata_oxnas_link_write(ap , 0x0c, 0x30003);
+	sata_oxnas_link_write(ap->host->ports[0], 0x0c, 0x30003);
+	if (hd->n_ports > 1)
+		sata_oxnas_link_write(ap->host->ports[1], 0x0c, 0x30003);
 
 	/* bail out if no device is present */
 	if (classes[0] == ATA_DEV_NONE && classes[1] == ATA_DEV_NONE) {
@@ -1233,6 +1674,26 @@ static u8 sata_oxnas_check_status(struct ata_port *ap)
 	return status;
 }
 
+static inline void sata_oxnas_reset_ucode(struct ata_host *ah, int force, int no_microcode)
+{
+	struct sata_oxnas_host_priv *hd = ah->private_data;
+
+	DPRINTK("ENTER\n");
+	if (no_microcode) {
+		u32 reg;
+		sata_oxnas_set_mode(ah, UNKNOWN_MODE, force);
+		reg = ioread32(hd->core_base + DEVICE_CONTROL);
+		reg |= DEVICE_CONTROL_ATA_ERR_OVERRIDE;
+		iowrite32(reg, hd->core_base + DEVICE_CONTROL);
+	} else {
+		/* JBOD uCode */
+		sata_oxnas_set_mode(ah, OXNASSATA_NOTRAID, force);
+		/* Turn the work around off as it may have been left on by any
+		 * HW-RAID code that we've been working with */
+		iowrite32(0x0, hd->core_base + PORT_ERROR_MASK);
+	}
+}
+
 /**
  * Prepare as much as possible for a command without involving anything that is
  * shared between ports.
@@ -1243,16 +1704,18 @@ static void sata_oxnas_qc_prep(struct ata_queued_cmd *qc)
 	int port_no = qc->ap->port_no;
 
 	/* if the port's not connected, complete now with an error */
-	/*
 	if (!sata_oxnas_check_link(qc->ap)) {
 		printk(KERN_ERR "port %d not connected completing with error\n",
-			qc->ap->port_no);
+			port_no);
 		qc->err_mask |= AC_ERR_ATA_BUS;
 		ata_qc_complete(qc);
 	}
-	*/
+
+	sata_oxnas_reset_ucode(qc->ap->host, 0, 0);
+
 	/* both pio and dma commands use dma */
 	if (ata_is_dma(qc->tf.protocol) || ata_is_pio(qc->tf.protocol)) {
+
 		/* program the scatterlist into the prd table */
 		ata_bmdma_qc_prep(qc);
 
@@ -1296,16 +1759,20 @@ static int sata_oxnas_port_start(struct ata_port *ap)
 	if (!pp)
 		return -ENOMEM;
 
-	pp->port_base = host_priv->port_base[ap->port_no];
-	pp->sgdma_base = host_priv->sgdma_base[ap->port_no];
+	pp->port_base = host_priv->port_base +
+			(ap->port_no ? PORT_SIZE : 0);
+	pp->dmactl_base = host_priv->dmactl_base +
+			 (ap->port_no ? DMA_CORESIZE : 0);
+	pp->sgdma_base = host_priv->sgdma_base +
+			 (ap->port_no ? SGDMA_CORESIZE : 0);
 	pp->core_base = host_priv->core_base;
 
 	/* preallocated */
-	if (host_priv->dma_size >= SATA_OXNAS_DMA_SIZE * SATA_OXNAS_MAX_PORTS) {
+	if (host_priv->dma_size >= SATA_OXNAS_DMA_SIZE * host_priv->n_ports) {
+		DPRINTK("using preallocated DMA\n");
 		mem_dma = host_priv->dma_base +
-				ap->port_no * SATA_OXNAS_DMA_SIZE;
+				(ap->port_no ? SATA_OXNAS_DMA_SIZE : 0);
 		mem = ioremap(mem_dma, SATA_OXNAS_DMA_SIZE);
-
 	} else {
 		mem = dma_alloc_coherent(dev, SATA_OXNAS_DMA_SIZE, &mem_dma,
 					 GFP_KERNEL);
@@ -1315,8 +1782,9 @@ static int sata_oxnas_port_start(struct ata_port *ap)
 
 	pp->sgdma_request_pa = mem_dma;
 	pp->sgdma_request = mem;
+
 	ap->bmdma_prd_dma = mem_dma + sizeof(struct sgdma_request);
-	ap->bmdma_prd = mem +  sizeof(struct sgdma_request);
+	ap->bmdma_prd = mem + sizeof(struct sgdma_request);
 
 	ap->private_data = pp;
 
@@ -1348,26 +1816,14 @@ static void sata_oxnas_port_stop(struct ata_port *ap)
 	kfree(pp);
 }
 
+
 static void sata_oxnas_post_reset_init(struct ata_port *ap)
 {
-	struct sata_oxnas_port_priv *pd = ap->private_data;
 	uint dev;
-	int no_microcode = 0;
 
-	DPRINTK("ENTER\n");
-	if (no_microcode) {
-		u32 reg;
-		sata_oxnas_set_mode(ap, UNKNOWN_MODE, 1);
-		reg = readl(pd->core_base + DEVICE_CONTROL);
-		reg |= DEVICE_CONTROL_ATA_ERR_OVERRIDE;
-		writel(reg, pd->core_base + DEVICE_CONTROL);
-	} else {
-		/* JBOD uCode */
-		sata_oxnas_set_mode(ap, OXNASSATA_NOTRAID, 1);
-		/* Turn the work around off as it may have been left on by any
-		 * HW-RAID code that we've been working with */
-		writel(0x0, pd->core_base + PORT_ERROR_MASK);
-	}
+	/* force to load u-code only once after reset */
+	sata_oxnas_reset_ucode(ap->host, !ap->port_no, 0);
+
 	/* turn on phy error detection by removing the masks */
 	sata_oxnas_link_write(ap, 0x0C, 0x30003);
 
@@ -1440,6 +1896,9 @@ static int sata_oxnas_softreset(struct ata_link *link, unsigned int *class,
 	}
 
 	/* write value to register */
+	iowrite32(0, port_base + ORB1);
+	iowrite32(0, port_base + ORB2);
+	iowrite32(0, port_base + ORB3);
 	iowrite32((ap->ctl) << 24, port_base + ORB4);
 
 	/* command the core to send a control FIS */
@@ -1505,7 +1964,7 @@ int	sata_oxnas_init_controller(struct ata_host *host)
  *
  * @param port SATA port to check and if necessary, correct.
  */
-static int ox820sata_bug_6320_workaround(struct ata_port *ap)
+static int sata_oxnas_bug_6320_workaround(struct ata_port *ap)
 {
 	struct sata_oxnas_port_priv *pd = ap->private_data;
 	void __iomem *core_base = pd->core_base;
@@ -1516,14 +1975,14 @@ static int ox820sata_bug_6320_workaround(struct ata_port *ap)
 	int bug_present = 0;
 
 	/* Only want to apply fix to reads */
-	is_read = !(readl(core_base + DM_DBG1) & (ap->port_no ?
+	is_read = !(ioread32(core_base + DM_DBG1) & (ap->port_no ?
 			BIT(CORE_PORT1_DATA_DIR_BIT) :
 				BIT(CORE_PORT0_DATA_DIR_BIT)));
 
 	/* Check for an incomplete transfer, i.e. not a multiple of 512 bytes
 	   transferred (datacount_port register counts quads transferred) */
 	quads_transferred =
-		readl(core_base + (ap->port_no ?
+		ioread32(core_base + (ap->port_no ?
 					DATACOUNT_PORT1 : DATACOUNT_PORT0));
 
 	remainder = quads_transferred & 0x7f;
@@ -1556,8 +2015,8 @@ static void sata_oxnas_port_irq(struct ata_port *ap, int force_error)
 	u32 int_status;
 	unsigned long flags = 0;
 
-	/* DPRINTK("ENTER irqstatus %x\n", ioread32(port_base + INT_STATUS)); */
-/*
+	DPRINTK("ENTER port %d irqstatus %x\n", ap->port_no, ioread32(port_base + INT_STATUS));
+
 	if (ap->qc_active & (1 << ATA_TAG_INTERNAL)) {
 			qc = ata_qc_from_tag(ap, ATA_TAG_INTERNAL);
 			DPRINTK("completing non-ncq cmd\n");
@@ -1567,7 +2026,6 @@ static void sata_oxnas_port_irq(struct ata_port *ap, int force_error)
 			}
 			return;
 	}
-*/
 
 	qc = ata_qc_from_tag(ap, ap->link.active_tag);
 
@@ -1625,26 +2083,26 @@ static irqreturn_t sata_oxnas_interrupt(int irq, void *dev_instance)
 	int bug_present;
 
 	/* loop until there are no more interrupts */
-	while ((int_status = ioread32(core_base + CORE_INT_STATUS)) &
-		COREINT_END) {
+	while ((int_status = (ioread32(core_base + CORE_INT_STATUS)) &
+		(COREINT_END | (COREINT_END << 1)) )) {
 
 		/* clear any interrupt */
 		iowrite32(int_status, core_base + CORE_INT_CLEAR);
 
-		/* Only need this workaround for single disk systems as dual
+		/* Only need workaround_bug_6320 for single disk systems as dual
 		 * disk will use uCode which prevents this read underrun problem
 		 * from occuring.
 		 * All single disk systems will use port 0 */
-
-		for (port_no = 0; port_no < SATA_OXNAS_MAX_PORTS; ++port_no) {
+		for (port_no = 0; port_no < hd->n_ports; ++port_no) {
 			/* check the raw end of command interrupt to see if the
 			 * port is done */
-			mask = (CORERAW_HOST << port_no);
+			mask = (COREINT_END << port_no);
 			if (int_status & mask) {
 				/* this port had an interrupt, clear it */
 				iowrite32(mask, core_base + CORE_INT_CLEAR);
-				bug_present = ox820sata_bug_6320_workaround(
-						ah->ports[port_no]);
+				bug_present = ( hd->current_ucode == UNKNOWN_MODE ) ?
+						sata_oxnas_bug_6320_workaround(
+						ah->ports[port_no]) : 0;
 				sata_oxnas_port_irq(ah->ports[port_no],
 							bug_present);
 				ret = IRQ_HANDLED;
@@ -1672,12 +2130,14 @@ static struct ata_port_operations sata_oxnas_ops = {
 	.qc_prep = sata_oxnas_qc_prep,
 	.qc_issue = sata_oxnas_qc_issue,
 	.qc_fill_rtf = sata_oxnas_qc_fill_rtf,
+	.qc_new = sata_oxnas_qc_new,
+	.qc_free = sata_oxnas_qc_free,
 
 	.scr_read = sata_oxnas_scr_read,
 	.scr_write = sata_oxnas_scr_write,
 
-	/* .freeze = sata_oxnas_freeze, */
-	/* .thaw = sata_oxnas_thaw, */
+	.freeze = sata_oxnas_freeze,
+	.thaw = sata_oxnas_thaw,
 	.softreset = sata_oxnas_softreset,
 	/* .hardreset = sata_oxnas_hardreset, */
 	.postreset = sata_oxnas_postreset,
@@ -1691,6 +2151,7 @@ static struct ata_port_operations sata_oxnas_ops = {
 	/* .pmp_attach = sata_oxnas_pmp_attach, */
 	/* .pmp_detach = sata_oxnas_pmp_detach, */
 	.sff_check_status = sata_oxnas_check_status,
+	.acquire_hw = sata_oxnas_acquire_hw,
 };
 
 static const struct ata_port_info sata_oxnas_port_info = {
@@ -1703,7 +2164,9 @@ static const struct ata_port_info sata_oxnas_port_info = {
 static int sata_oxnas_probe(struct platform_device *ofdev)
 {
 	int retval = -ENXIO;
+	int n_ports = 0;
 	void __iomem *port_base = NULL;
+	void __iomem *dmactl_base = NULL;
 	void __iomem *sgdma_base = NULL;
 	void __iomem *core_base = NULL;
 	void __iomem *phy_base = NULL;
@@ -1716,20 +2179,29 @@ static int sata_oxnas_probe(struct platform_device *ofdev)
 	struct clk *clk = NULL;
 
 	const struct ata_port_info *ppi[] = { &sata_oxnas_port_info, NULL };
+	const struct ata_port_info *dppi[] = { &sata_oxnas_port_info, &sata_oxnas_port_info, NULL };
+
+	of_property_read_u32(ofdev->dev.of_node, "nr-ports", &n_ports);
+	if (n_ports < 1 || n_ports > SATA_OXNAS_MAX_PORTS)
+		goto error_exit_with_cleanup;
 
 	port_base = of_iomap(ofdev->dev.of_node, 0);
 	if (!port_base)
 		goto error_exit_with_cleanup;
 
-	sgdma_base = of_iomap(ofdev->dev.of_node, 1);
+	dmactl_base = of_iomap(ofdev->dev.of_node, 1);
+	if (!dmactl_base)
+		goto error_exit_with_cleanup;
+
+	sgdma_base = of_iomap(ofdev->dev.of_node, 2);
 	if (!sgdma_base)
 		goto error_exit_with_cleanup;
 
-	core_base = of_iomap(ofdev->dev.of_node, 2);
+	core_base = of_iomap(ofdev->dev.of_node, 3);
 	if (!core_base)
 		goto error_exit_with_cleanup;
 
-	phy_base = of_iomap(ofdev->dev.of_node, 3);
+	phy_base = of_iomap(ofdev->dev.of_node, 4);
 	if (!phy_base)
 		goto error_exit_with_cleanup;
 
@@ -1739,12 +2211,15 @@ static int sata_oxnas_probe(struct platform_device *ofdev)
 	if (!host_priv)
 		goto error_exit_with_cleanup;
 
-	host_priv->port_base[0] = port_base;
-	host_priv->sgdma_base[0] = sgdma_base;
+	host_priv->port_base = port_base;
+	host_priv->dmactl_base = dmactl_base;
+	host_priv->sgdma_base = sgdma_base;
 	host_priv->core_base = core_base;
 	host_priv->phy_base = phy_base;
+	host_priv->n_ports = n_ports;
+	host_priv->current_ucode = UNKNOWN_MODE;
 
-	if (!of_address_to_resource(ofdev->dev.of_node, 4, &res)) {
+	if (!of_address_to_resource(ofdev->dev.of_node, 5, &res)) {
 		host_priv->dma_base = res.start;
 		host_priv->dma_size = resource_size(&res);
 	}
@@ -1786,7 +2261,9 @@ static int sata_oxnas_probe(struct platform_device *ofdev)
 	host_priv->rst_phy = rstc;
 
 	/* allocate host structure */
-	host = ata_host_alloc_pinfo(&ofdev->dev, ppi, SATA_OXNAS_MAX_PORTS);
+	host = ata_host_alloc_pinfo(&ofdev->dev, n_ports>1 ? dppi : ppi,
+				    n_ports);
+
 	if (!host) {
 		retval = -ENOMEM;
 		goto error_exit_with_cleanup;
