@@ -136,31 +136,6 @@ errout:
 
 }
 
-#ifdef disabled
-char *genl_op2name(int family, int op, char *buf, size_t len)
-{
-	struct genl_ops *ops;
-	int i;
-
-	nl_list_for_each_entry(ops, &genl_ops_list, o_list) {
-		if (ops->o_family == family) {
-			for (i = 0; i < ops->o_ncmds; i++) {
-				struct genl_cmd *cmd;
-				cmd = &ops->o_cmds[i];
-
-				if (cmd->c_id == op) {
-					strncpy(buf, cmd->c_name, len - 1);
-					return buf;
-				}
-			}
-		}
-	}
-
-	strncpy(buf, "unknown", len - 1);
-	return NULL;
-}
-#endif
-
 /**
  * @name Register/Unregister
  * @{
@@ -214,61 +189,5 @@ void genl_unregister(struct nl_cache_ops *ops)
 }
 
 /** @} */
-
-/**
- * @name Resolving ID/Name
- * @{
- */
-#ifdef disabled
-static int __genl_ops_resolve(struct nl_cache *ctrl, struct genl_ops *ops)
-{
-	struct genl_family *family;
-
-	family = genl_ctrl_search_by_name(ctrl, ops->o_name);
-	if (family != NULL) {
-		ops->o_id = genl_family_get_id(family);
-		genl_family_put(family);
-
-		return 0;
-	}
-
-	return -NLE_OBJ_NOTFOUND;
-}
-
-int genl_ops_resolve(struct nl_sock *sk, struct genl_ops *ops)
-{
-	struct nl_cache *ctrl;
-	int err;
-
-	if ((err = genl_ctrl_alloc_cache(sk, &ctrl)) < 0)
-		goto errout;
-
-	err = __genl_ops_resolve(ctrl, ops);
-
-	nl_cache_free(ctrl);
-errout:
-	return err;
-}
-
-int genl_mngt_resolve(struct nl_sock *sk)
-{
-	struct nl_cache *ctrl;
-	struct genl_ops *ops;
-	int err = 0;
-
-	if ((err = genl_ctrl_alloc_cache(sk, &ctrl)) < 0)
-		goto errout;
-
-	nl_list_for_each_entry(ops, &genl_ops_list, o_list) {
-		err = __genl_ops_resolve(ctrl, ops);
-	}
-
-	nl_cache_free(ctrl);
-errout:
-	return err;
-}
-#endif
-/** @} */
-
 
 /** @} */
