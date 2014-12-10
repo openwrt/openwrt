@@ -61,7 +61,7 @@ if( opendir SD, "$Bin/../staging_dir" )
 		my ($sysroot) = glob("$Bin/../staging_dir/target-${arch}_${libc}/root-*/");
 
 		print $fh "set sysroot $sysroot\n" if $sysroot;
-		my $cmd = "target remote";
+		my $cmd = "target extended-remote";
 		-f $ARGV[0] and $cmd = "core-file";
 		print $fh "$cmd $ARGV[0]\n";
 
