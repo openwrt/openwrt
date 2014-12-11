@@ -1401,9 +1401,9 @@ endef
 $(eval $(call KernelPackage,usbip-server))
 
 
-define KernelPackage/usb-chipidea
+define KernelPackage/usb-chipidea-imx
   TITLE:=Support for ChipIdea controllers
-  DEPENDS:=+kmod-usb2 +USB_GADGET_SUPPORT:kmod-usb-gadget
+  DEPENDS:=@TARGET_imx6||TARGET_mxs +kmod-usb2 +USB_GADGET_SUPPORT:kmod-usb-gadget
   KCONFIG:=\
 	CONFIG_USB_CHIPIDEA \
 	CONFIG_USB_CHIPIDEA_HOST=y \
@@ -1424,12 +1424,12 @@ else
 endif
   $(call AddDepends/usb)
 endef
-  
-define KernelPackage/usb-chipidea/description
+
+define KernelPackage/usb-chipidea-imx/description
  Kernel support for USB ChipIdea controllers
 endef
 
-$(eval $(call KernelPackage,usb-chipidea,1))
+$(eval $(call KernelPackage,usb-chipidea-imx,1))
 
 
 define KernelPackage/usb-mxs-phy

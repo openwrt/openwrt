@@ -33,22 +33,6 @@ endef
 
 $(eval $(call KernelPackage,wdt-stmp3xxx))
 
-define KernelPackage/usb-chipidea-imx
-    TITLE:=Support for ChipIdea controllers on Freescale i.MX SoCs
-    DEPENDS:=+kmod-usb-chipidea @TARGET_mxs
-    FILES:= \
-	$(LINUX_DIR)/drivers/usb/chipidea/ci_hdrc_imx.ko \
-	$(LINUX_DIR)/drivers/usb/chipidea/usbmisc_imx.ko
-    AUTOLOAD:=$(call AutoLoad,52,usbmisc_imx ci_hdrc_imx,1)
-    $(call AddDepends/usb)
-endef
-
-define KernelPackage/usb-chipidea-imx/description
-    Kernel support for USB ChipIdea controllers on Freescale i.MX SoCs
-endef
-
-$(eval $(call KernelPackage,usb-chipidea-imx,1))
-
 define KernelPackage/sound-soc-mxs
     TITLE:=Freescale i.MX23/i.MX28 built-in SoC sound support
     KCONFIG:= \
@@ -63,7 +47,7 @@ define KernelPackage/sound-soc-mxs
     DEPENDS:=@TARGET_mxs +kmod-sound-soc-core
     $(call AddDepends/sound)
 endef
-  
+
 define KernelPackage/sound-soc-mxs/description
     Kernel support for Freescale i.MX23/i.MX28 built-in SoC audio
 endef
