@@ -50,6 +50,7 @@ KERNEL_FILES_ARCH = \
 	Kbuild.platforms \
 	*/Platform \
 	include \
+	*/include \
 	scripts \
 	kernel/asm-offsets.s
 
