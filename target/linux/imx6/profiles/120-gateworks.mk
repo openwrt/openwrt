@@ -8,7 +8,7 @@
 define Profile/VENTANA
   NAME:=Gateworks Ventana family
   PACKAGES:= \
-	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea kmod-usb-mxs-phy \
+	kmod-thermal-imx kmod-sky2 kmod-usb-chipidea-imx kmod-usb-mxs-phy \
 	kmod-sound-core kmod-sound-soc-imx kmod-sound-soc-imx-sgtl5000 \
 	kmod-can kmod-can-flexcan kmod-can-raw \
 	kmod-rtc-ds1672 kmod-gpio-pca953x kmod-hwmon-gsc kmod-eeprom-at24 \

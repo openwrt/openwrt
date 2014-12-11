@@ -8,7 +8,7 @@
 define Profile/IMX6DL_WANDBOARD
   NAME:=Wandboard Dual
   PACKAGES:= \
-	kmod-thermal-imx kmod-usb-chipidea kmod-usb-mxs-phy \
+	kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy \
 	uboot-envtools
 endef
 
