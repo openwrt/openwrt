@@ -1,0 +1,30 @@
+--- a/arch/powerpc/boot/dts/fsl/pq3-etsec2-0.dtsi
++++ b/arch/powerpc/boot/dts/fsl/pq3-etsec2-0.dtsi
+@@ -50,6 +50,7 @@ ethernet@b0000 {
+ 	fsl,num_tx_queues = <0x8>;
+ 	fsl,magic-packet;
+ 	local-mac-address = [ 00 00 00 00 00 00 ];
++	ranges;
+ 
+ 	queue-group@b0000 {
+ 		#address-cells = <1>;
+--- a/arch/powerpc/boot/dts/fsl/pq3-etsec2-1.dtsi
++++ b/arch/powerpc/boot/dts/fsl/pq3-etsec2-1.dtsi
+@@ -50,6 +50,7 @@ ethernet@b1000 {
+ 	fsl,num_tx_queues = <0x8>;
+ 	fsl,magic-packet;
+ 	local-mac-address = [ 00 00 00 00 00 00 ];
++	ranges;
+ 
+ 	queue-group@b1000 {
+ 		#address-cells = <1>;
+--- a/arch/powerpc/boot/dts/fsl/pq3-etsec2-2.dtsi
++++ b/arch/powerpc/boot/dts/fsl/pq3-etsec2-2.dtsi
+@@ -49,6 +49,7 @@ ethernet@b2000 {
+ 	fsl,num_tx_queues = <0x8>;
+ 	fsl,magic-packet;
+ 	local-mac-address = [ 00 00 00 00 00 00 ];
++	ranges;
+ 
+ 	queue-group@b2000 {
+ 		#address-cells = <1>;
