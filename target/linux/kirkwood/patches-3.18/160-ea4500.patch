@@ -1,0 +1,169 @@
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -120,6 +120,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += kirkwood-
+ 	kirkwood-ds411.dtb \
+ 	kirkwood-ds411j.dtb \
+ 	kirkwood-ds411slim.dtb \
++	kirkwood-ea4500.dtb \
+ 	kirkwood-goflexnet.dtb \
+ 	kirkwood-guruplug-server-plus.dtb \
+ 	kirkwood-ib62x0.dtb \
+--- /dev/null
++++ b/arch/arm/boot/dts/kirkwood-ea4500.dts
+@@ -0,0 +1,156 @@
++/*
++ * kirkwood-ea4500.dts - Device Tree file for Linksys EA4500
++ *
++ * (c) 2013 Jonas Gorski <jogo@openwrt.org>
++ * (c) 2013 Deutsche Telekom Innovation Laboratories
++ * (c) 2014 Luka Perkov <luka@openwrt.org>
++ *
++ * This file is licensed under the terms of the GNU General Public
++ * License version 2.  This program is licensed "as is" without any
++ * warranty of any kind, whether express or implied.
++ */
++
++/dts-v1/;
++
++#include "kirkwood.dtsi"
++#include "kirkwood-6282.dtsi"
++
++/ {
++	model = "Linksys EA4500";
++	compatible = "linksys,ea4500", "marvell,kirkwood-88f6282", "marvell,kirkwood";
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x8000000>;
++	};
++
++	chosen {
++		bootargs = "console=ttyS0,115200n8 earlyprintk";
++	};
++
++	mbus {
++		pcie-controller {
++			status = "okay";
++
++			pcie@1,0 {
++				status = "okay";
++			};
++
++			pcie@2,0 {
++				status = "okay";
++			};
++		};
++	};
++
++	ocp@f1000000 {
++		pinctrl: pin-controller@10000 {
++			pmx_led_white_health: pmx-led-white-health {
++				marvell,pins = "mpp7";
++				marvell,function = "gpo";
++			};
++			pmx_led_white_pulse: pmx-led-white-pulse {
++				marvell,pins = "mpp14";
++				marvell,function = "gpio";
++			};
++			pmx_btn_wps: pmx-btn-wps {
++				marvell,pins = "mpp47";
++				marvell,function = "gpio";
++			};
++			pmx_btn_reset: pmx-btn-reset {
++				marvell,pins = "mpp48";
++				marvell,function = "gpio";
++			};
++		};
++
++		rtc@10300 {
++			status = "disabled";
++		};
++
++		serial@12000 {
++			status = "okay";
++		};
++
++	};
++
++	gpio_keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++		pinctrl-0 = < &pmx_btn_wps &pmx_btn_reset >;
++		pinctrl-names = "default";
++
++		button@15 {
++			label = "WPS Button";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
++		};
++
++		button@16 {
++			label = "Reset Button";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	gpio-leds {
++		compatible = "gpio-leds";
++		pinctrl-0 = < &pmx_led_white_health &pmx_led_white_pulse >;
++		pinctrl-names = "default";
++
++		white-health {
++			label = "ea4500:white:health";
++			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
++		};
++
++		white-pulse {
++			label = "ea4500:white:pulse";
++			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
++		};
++	};
++};
++
++&nand {
++	status = "okay";
++	pinctrl-0 = <&pmx_nand>;
++	pinctrl-names = "default";
++
++	partition@0 {
++		label = "u-boot";
++		reg = <0x0000000 0x80000>;
++	};
++
++	partition@80000 {
++		label = "u-boot environment";
++		reg = <0x80000 0x20000>;
++	};
++
++	partition@200000 {
++		label = "kernel";
++		reg = <0x200000 0x200000>;
++	};
++
++	partition@400000 {
++		label = "root";
++		reg = <0x400000 0x1c00000>;
++	};
++};
++
++&mdio {
++	status = "okay";
++};
++
++&eth0 {
++	status = "okay";
++	ethernet0-port@0 {
++		speed = <1000>;
++		duplex = <1>;
++	};
++};
++
++&eth1 {
++	status = "okay";
++	ethernet1-port@0 {
++		speed = <1000>;
++		duplex = <1>;
++	};
++};
