@@ -16,6 +16,8 @@ SUBTARGETS=generic p1020
 
 KERNEL_PATCHVER:=3.14
 
+KERNEL_IMAGES := zImage cuImage.tl-wdr4900-v1
+
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
