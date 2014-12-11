@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libnl-tiny
 PKG_VERSION:=0.1
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_LICENSE:=LGPL-2.1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
