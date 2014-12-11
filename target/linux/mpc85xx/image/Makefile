@@ -30,7 +30,7 @@ define Image/BuildKernel
 	)
 endef
 
-define Image/BuildKernel
+define Image/BuildKernel/Initramfs
 	cp $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-initramfs-zImage
 	cp $(KDIR)/cuImage.tl-wdr4900-v1-initramfs $(BIN_DIR)/$(IMG_PREFIX)-tl-wdr4900-v1-initramfs.uImage
 endef
