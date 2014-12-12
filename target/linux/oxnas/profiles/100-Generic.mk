@@ -7,8 +7,6 @@
 
 define Profile/POGOPLUG_PRO
   NAME:=PogoPlug Pro
-  PACKAGES:= \
-	uboot-envtools kmod-usb2-oxnas
 endef
 
 define Profile/POGOPLUG_PRO/Description
@@ -18,8 +16,6 @@ endef
 
 define Profile/POGOPLUG_V3
   NAME:=PogoPlug V3
-  PACKAGES:= \
-	uboot-envtools kmod-usb2-oxnas
 endef
 
 define Profile/POGOPLUG_V3/Description
@@ -29,8 +25,6 @@ endef
 
 define Profile/STG212
   NAME:=MitraStar STG-212
-  PACKAGES:= \
-	uboot-envtools kmod-usb2-oxnas
 endef
 
 define Profile/STG212/Description
@@ -40,8 +34,8 @@ endef
 define Profile/KD20
   NAME:=Shuttle KD20
   PACKAGES:= \
-	uboot-envtools kmod-usb2-oxnas kmod-usb3 kmod-usb-storage \
-	kmod-rtc-pcf8563 kmod-gpio-beeper
+	kmod-usb3 kmod-usb-storage kmod-i2c-gpio kmod-rtc-pcf8563 \
+	kmod-gpio-beeper
 endef
 
 define Profile/KD20/Description
