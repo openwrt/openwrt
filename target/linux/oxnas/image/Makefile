@@ -36,8 +36,8 @@ define Image/BuildKernel/Template
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage-initramfs,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x60008000,0x60008000,-initramfs)
 	$(CP) $(KDIR)/fit-$(1)-initramfs.itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage-initramfs.itb
-	if [ -e "$(BIN_DIR)/$(IMG_PREFIX)-ox820-u-boot.bin" ]; then \
-	( dd if=$(BIN_DIR)/$(IMG_PREFIX)-ox820-u-boot.bin bs=128k conv=sync ; dd if=$(KDIR)/fit-$(1)-initramfs.itb bs=128k conv=sync ) \
+	if [ -e "$(KDIR)/u-boot.bin" ]; then \
+	( dd if=$(KDIR)/u-boot.bin bs=128k conv=sync ; dd if=$(KDIR)/fit-$(1)-initramfs.itb bs=128k conv=sync ) \
 		> $(BIN_DIR)/$(IMG_PREFIX)-$(1)-u-boot-initramfs.itb; \
 	fi
  endif
