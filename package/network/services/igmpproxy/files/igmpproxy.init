@@ -33,11 +33,11 @@ igmp_header() {
 }
 
 igmp_add_phyint() {
-        local network direction altnets device up
+	local network direction altnets device up
 
-        config_get network $1 network
-        config_get direction $1 direction
-        config_get altnets $1 altnet
+	config_get network $1 network
+	config_get direction $1 direction
+	config_get altnets $1 altnet
 
 	json_load "$(ifstatus $network)"
 	json_get_var device l3_device
