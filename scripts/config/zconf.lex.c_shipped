@@ -2413,7 +2413,6 @@ void zconf_nextfile(const char *name)
 		p = strdup(current_file->name);
 		if (p) {
 			snprintf(path, sizeof(path), "%s/%s", dirname(p), name);
-			fprintf(stderr, "TRY:%s\n", path);
 			err = glob(path, GLOB_ERR | GLOB_MARK, NULL, &gl);
 			free(p);
 		}
