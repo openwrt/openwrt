@@ -947,6 +947,15 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
 		   AR8316_GCTRL_MTU, 9018 + 8 + 2);
 
+	/* enable cpu port to receive arp frames */
+	ar8xxx_rmw(priv, AR8216_REG_ATU_CTRL,
+		   AR8236_ATU_CTRL_RES, AR8236_ATU_CTRL_RES);
+
+	/* enable cpu port to receive multicast and broadcast frames */
+	ar8xxx_rmw(priv, AR8216_REG_FLOOD_MASK,
+		   AR8236_FM_CPU_BROADCAST_EN | AR8236_FM_CPU_BCAST_FWD_EN,
+		   AR8236_FM_CPU_BROADCAST_EN | AR8236_FM_CPU_BCAST_FWD_EN);
+
 	/* Enable MIB counters */
 	ar8xxx_rmw(priv, AR8216_REG_MIB_FUNC, AR8216_MIB_FUNC | AR8236_MIB_EN,
 		   (AR8216_MIB_FUNC_NO_OP << AR8216_MIB_FUNC_S) |
