@@ -84,3 +84,18 @@ define KernelPackage/crypto-hw-dcp/description
 endef
 
 $(eval $(call KernelPackage,crypto-hw-dcp))
+
+define KernelPackage/spi-mxs
+  SUBMENU:=$(SPI_MENU)
+  TITLE:=Freescale i.MX23/28 SPI driver
+  DEPENDS:=@TARGET_mxs
+  KCONFIG:=CONFIG_SPI_MXS
+  FILES:=$(LINUX_DIR)/drivers/spi/spi-mxs.ko
+  AUTOLOAD:=$(call AutoProbe,spi-mxs)
+endef
+
+define KernelPackage/spi-mxs/description
+  Kernel module for Freescale i.MX23/28 SPI controller
+endef
+
+$(eval $(call KernelPackage,spi-mxs))
