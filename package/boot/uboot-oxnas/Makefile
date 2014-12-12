@@ -82,6 +82,8 @@ define Package/uboot/install/default
 	$(INSTALL_DIR) $(BIN_DIR)
 	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
 		$(BIN_DIR)/openwrt-$(BOARD)-$(1)-u-boot.bin
+	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
+		$(KERNEL_BUILD_DIR)/u-boot.bin
 endef
 
 define Package/uboot/install/template
