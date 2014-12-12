@@ -99,3 +99,18 @@ define KernelPackage/spi-mxs/description
 endef
 
 $(eval $(call KernelPackage,spi-mxs))
+
+I2C_MXS_MODULES:= \
+  CONFIG_I2C_MXS:drivers/i2c/busses/i2c-mxs
+
+define KernelPackage/i2c-mxs
+  $(call i2c_defaults,$(I2C_MXS_MODULES),55)
+  TITLE:=Freescale i.MX23/28 I2C driver
+  DEPENDS:=@TARGET_mxs +kmod-i2c-core
+endef
+
+define KernelPackage/i2c-mxs/description
+    Kernel module for Freescale i.MX23/28 I2C controller
+endef
+
+$(eval $(call KernelPackage,i2c-mxs))
