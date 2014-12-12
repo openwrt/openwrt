@@ -39,7 +39,10 @@ igmp_add_phyint() {
 	config_get direction $1 direction
 	config_get altnets $1 altnet
 
-	json_load "$(ifstatus $network)"
+	local status="$(ubus -S call "network.interface.$network" status)"
+	[ -n "$status" ] || return
+
+	json_load "$status"
 	json_get_var device l3_device
 	json_get_var up up
 
