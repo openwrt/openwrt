@@ -57,11 +57,10 @@ $(eval $(call KernelPackage,sound-soc-mxs))
 define KernelPackage/iio-mxs-lradc
     SUBMENU:=$(OTHER_MENU)
     TITLE:=LRADC driver for i.MX23/28
-    DEPENDS:=@TARGET_mxs
+    DEPENDS:=@TARGET_mxs +kmod-iio-core
     KCONFIG:=CONFIG_MXS_LRADC
-    FILES:=$(LINUX_DIR)/drivers/staging/iio/adc/mxs-lradc.ko \
-	$(LINUX_DIR)/drivers/iio/industrialio-triggered-buffer.ko
-    AUTOLOAD:=$(call AutoLoad,70,industrialio-triggered-buffer mxs-lradc)
+    FILES:=$(LINUX_DIR)/drivers/staging/iio/adc/mxs-lradc.ko 
+    AUTOLOAD:=$(call AutoLoad,70,mxs-lradc)
 endef
 
 define KernelPackage/iio-mxs-lradc/description
