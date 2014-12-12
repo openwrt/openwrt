@@ -6,9 +6,8 @@
 
 set_classless_routes() {
 	local max=128
-	local type
 	while [ -n "$1" -a -n "$2" -a $max -gt 0 ]; do
-		proto_add_ipv4_route "${1%%/*}" "${1##*/}" "$2"
+		proto_add_ipv4_route "${1%%/*}" "${1##*/}" "$2" "$ip"
 		max=$(($max-1))
 		shift 2
 	done
