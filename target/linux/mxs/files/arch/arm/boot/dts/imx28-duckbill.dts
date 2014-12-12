@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Michael Heimpold <mhei@heimpold.de>
+ * Copyright (C) 2013-2014 Michael Heimpold <mhei@heimpold.de>
  *
  * The code contained herein is licensed under the GNU General Public
  * License. You may obtain a copy of the GNU General Public License
@@ -25,11 +25,26 @@
 			ssp0: ssp@80010000 {
 				compatible = "fsl,imx28-mmc";
 				pinctrl-names = "default";
-				pinctrl-0 = <&mmc0_8bit_pins_a
+				pinctrl-0 = <&mmc0_4bit_pins_a
 					&mmc0_cd_cfg &mmc0_sck_cfg>;
-				bus-width = <8>;
+				bus-width = <4>;
 				vmmc-supply = <&reg_3p3v>;
 				status = "okay";
+			};
+
+			ssp2: ssp@80014000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "fsl,imx28-spi";
+				pinctrl-names = "default";
+				pinctrl-0 = <&spi2_pins_a>;
+				status = "okay";
+
+				spidev: spidev@0 {
+					compatible = "spidev";
+					reg = <0>;
+					spi-max-frequency = <1000000>;
+				};
 			};
 
 			pinctrl@80018000 {
@@ -39,27 +54,33 @@
 				hog_pins_a: hog@0 {
 					reg = <0>;
 					fsl,pinmux-ids = <
-						0x40d3 /* MX28_PAD_ENET0_RX_CLK__GPIO_4_13, PHY Reset */
+						MX28_PAD_SSP0_DATA7__GPIO_2_7 /* PHY Reset */
 					>;
-					fsl,drive-strength = <0>;
-					fsl,voltage = <1>;
-					fsl,pull-up = <0>;
+					fsl,drive-strength = <MXS_DRIVE_4mA>;
+					fsl,voltage = <MXS_VOLTAGE_HIGH>;
+					fsl,pull-up = <MXS_PULL_DISABLE>;
 				};
 
 				led_pins_a: led_gpio@0 {
 					reg = <0>;
 					fsl,pinmux-ids = <
-						0x3043 /* MX28_PAD_AUART1_RX__GPIO_3_4 */
-						0x3053 /* MX28_PAD_AUART1_TX__GPIO_3_5 */
+						MX28_PAD_AUART1_RX__GPIO_3_4
+						MX28_PAD_AUART1_TX__GPIO_3_5
 					>;
-					fsl,drive-strength = <0>;
-					fsl,voltage = <1>;
-					fsl,pull-up = <0>;
+					fsl,drive-strength = <MXS_DRIVE_4mA>;
+					fsl,voltage = <MXS_VOLTAGE_HIGH>;
+					fsl,pull-up = <MXS_PULL_DISABLE>;
 				};
 			};
 		};
 
 		apbx@80040000 {
+			i2c0: i2c@80058000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&i2c0_pins_a>;
+				status = "okay";
+			};
+
 			duart: serial@80074000 {
 				pinctrl-names = "default";
 				pinctrl-0 = <&duart_pins_a>;
@@ -82,7 +103,7 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&mac0_pins_a>;
 			phy-supply = <&reg_3p3v>;
-			phy-reset-gpios = <&gpio4 13 0>;
+			phy-reset-gpios = <&gpio2 7 1>;
 			phy-reset-duration = <100>;
 			status = "okay";
 		};
