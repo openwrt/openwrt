@@ -48,6 +48,8 @@ igmp_add_phyint() {
 		return;
 	}
 
+	[[ "$direction" = "upstream" ]] && has_upstream=1
+
 	echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
 
 	if [ -n "$altnets" ]; then
@@ -104,11 +106,14 @@ service_triggers() {
 }
 
 start_service() {
+	has_upstream=
 	config_load igmpproxy
 
-	procd_open_instance
 	config_foreach igmp_header igmpproxy
 	config_foreach igmp_add_phyint phyint
+	[ -n "$has_upstream" ] || return
+
+	procd_open_instance
 	procd_set_param command $PROG
 	[ -n "$OPTIONS" ] && procd_append_param $OPTIONS
 	procd_append_param command $CONFIGFILE
