@@ -20,8 +20,9 @@ KERNEL_PATCHVER:=3.14
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += \
-	kmod-button-hotplug kmod-input-gpio-keys-polled kmod-leds-gpio		\
-	kmod-i2c-gpio uboot-envtools uboot-oxnas-ox820
+	kmod-ata-core kmod-ata-oxnas-sata kmod-button-hotplug \
+	kmod-input-gpio-keys-polled kmod-leds-gpio kmod-usb2-oxnas \
+	uboot-envtools uboot-oxnas-ox820
 
 KERNELNAME:=zImage dtbs
 

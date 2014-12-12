@@ -116,6 +116,22 @@ endef
 $(eval $(call KernelPackage,ata-nvidia-sata))
 
 
+define KernelPackage/ata-oxnas-sata
+  TITLE:=oxnas Serial ATA support
+  KCONFIG:=CONFIG_SATA_OXNAS
+  DEPENDS:=@TARGET_oxnas
+  FILES:=$(LINUX_DIR)/drivers/ata/sata_oxnas.ko
+  AUTOLOAD:=$(call AutoLoad,41,sata_oxnas,1)
+  $(call AddDepends/ata)
+endef
+
+define KernelPackage/ata-oxnas-sata/description
+ SATA support for OX934 core found in the OX82x/PLX782x SoCs
+endef
+
+$(eval $(call KernelPackage,ata-oxnas-sata))
+
+
 define KernelPackage/ata-pdc202xx-old
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Older Promise PATA controller support
