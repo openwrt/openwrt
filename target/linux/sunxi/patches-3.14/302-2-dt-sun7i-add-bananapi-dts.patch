@@ -78,9 +78,9 @@
 +
 +		pinctrl@01c20800 {
 +			led_pins_bananapi: led_pins@0 {
-+				allwinner,pins = "PH2";
++				allwinner,pins = "PH24";
 +				allwinner,function = "gpio_out";
-+				allwinner,drive = <1>;
++				allwinner,drive = <0>;
 +				allwinner,pull = <0>;
 +			};
 +
@@ -156,8 +156,8 @@
 +
 +		green {
 +			label = "bananapi:green:usr";
-+			gpios = <&pio 7 2 0>;
-+			default-state = "on";
++			gpios = <&pio 7 24 0>;
++			linux,default-trigger = "heartbeat";
 +		};
 +	};
 +};
