@@ -40,6 +40,9 @@ sub localmirrors {
 		close CONFIG;
 	};
 
+	my $mirror = $ENV{'DOWNLOAD_MIRROR'};
+	$mirror and push @mlist, split(/;/, $mirror);
+
 	return @mlist;
 }
 
