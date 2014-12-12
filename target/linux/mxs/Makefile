@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 ARCH:=arm
 BOARD:=mxs
-BOARDNAME:=Freescale i.MX23/i.MX28 series
+BOARDNAME:=Freescale i.MX23/i.MX28
 FEATURES:=ext4 rtc usb gpio
 CPU_TYPE:=arm926ej-s
 
