@@ -107,6 +107,7 @@
 		hdd1blue {
 			label = "kd20:blue:hdd1";
 			gpios = <&GPIOA 27 0>;
+			linux,default-trigger = "ata1";
 		};
 		hdd1red {
 			label = "kd20:red:hdd1";
@@ -115,6 +116,7 @@
 		hdd2blue {
 			label = "kd20:blue:hdd2";
 			gpios = <&GPIOB 6 0>;
+			linux,default-trigger = "ata2";
 		};
 		hdd2red {
 			label = "kd20:red:hdd2";
