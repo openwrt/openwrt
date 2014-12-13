@@ -35,7 +35,7 @@ define Profile/KD20
   NAME:=Shuttle KD20
   PACKAGES:= \
 	kmod-usb3 kmod-usb-storage kmod-i2c-gpio kmod-rtc-pcf8563 \
-	kmod-gpio-beeper
+	kmod-gpio-beeper kmod-hwmon-core kmod-hwmon-gpiofan
 endef
 
 define Profile/KD20/Description

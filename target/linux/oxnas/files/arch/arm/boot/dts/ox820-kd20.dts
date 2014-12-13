@@ -136,6 +136,8 @@
 	gpio-fan {
 		compatible = "gpio-fan";
 		gpios = <&GPIOA 2 1>;
+		gpio-fan,speed-map = <0    0
+				      3000 1>;
 	};
 
 	gpio-poweroff {
