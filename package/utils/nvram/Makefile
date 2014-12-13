@@ -42,19 +42,11 @@ define Build/Compile
 		LDFLAGS="$(TARGET_LDFLAGS)"
 endef
 
-define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libnvram.so.0.1 $(1)/usr/lib/
-	ln -s libnvram.so.0.1 $(1)/usr/lib/libnvram.so
-endef
-
 define Package/nvram/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/nvram.init $(1)/etc/init.d/nvram
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/nvram $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/usr/lib
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libnvram.so.0.1 $(1)/usr/lib/
 endef
 
 $(eval $(call BuildPackage,nvram))
