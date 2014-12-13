@@ -14,6 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <glob.h>
+#include <libgen.h>
 
 #include "lkc.h"
 
