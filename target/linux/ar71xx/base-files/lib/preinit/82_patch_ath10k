@@ -3,13 +3,13 @@
 . /lib/functions/system.sh
 . /lib/ar71xx.sh
 
-firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-3.bin"
-firmware_md5_orig="5163aa8de591f80b06c77f22e9777473"
-firmware_md5_current="$(md5sum $firmware_file)"
-firmware_md5_current="${firmware_md5_current%% *}"
-
 
 do_patch_ath10k_firmware() {
+	local firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-3.bin"
+	local firmware_md5_orig="5163aa8de591f80b06c77f22e9777473"
+	local firmware_md5_current="$(md5sum $firmware_file)"
+	local firmware_md5_current="${firmware_md5_current%% *}"
+
 	# verify md5sum before patching
 	[ "firmware_md5_orig" != "firmware_md5_current" ] || {
 		return
@@ -34,4 +34,12 @@ do_patch_ath10k_firmware() {
 	rm /tmp/ath10k-firmware.bin
 }
 
-boot_hook_add preinit_main do_patch_ath10k_firmware
+check_patch_ath10k_firmware() {
+	case $(ar71xx_board_name) in
+		dgl-5500-a1)
+			do_patch_ath10k_firmware
+		;;
+	esac
+}
+
+boot_hook_add preinit_main check_patch_ath10k_firmware
