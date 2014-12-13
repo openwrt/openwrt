@@ -1,8 +1,8 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -32,6 +32,11 @@ config MTD_UIMAGE_SPLIT
+@@ -27,6 +27,11 @@ config MTD_SPLIT_FIRMWARE_NAME
  	depends on MTD_SPLIT_FIRMWARE
- 	default y
+ 	default "firmware"
  
 +config MTD_SPLIT
 +	def_bool n

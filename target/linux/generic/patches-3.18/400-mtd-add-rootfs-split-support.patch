@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -12,6 +12,28 @@ menuconfig MTD
+@@ -12,6 +12,23 @@ menuconfig MTD
  
  if MTD
  
@@ -18,11 +18,6 @@
 +	string "Firmware partition name"
 +	depends on MTD_SPLIT_FIRMWARE
 +	default "firmware"
-+
-+config MTD_UIMAGE_SPLIT
-+	bool "Enable split support for firmware partitions containing a uImage"
-+	depends on MTD_SPLIT_FIRMWARE
-+	default y
 +
 +endmenu
 +
@@ -120,47 +115,10 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -627,6 +641,74 @@ int mtd_del_partition(struct mtd_info *m
+@@ -627,6 +641,35 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
-+static inline unsigned long
-+mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
-+{
-+	unsigned long mask = mtd->erasesize - 1;
-+
-+	len += offset & mask;
-+	len = (len + mask) & ~mask;
-+	len -= offset & mask;
-+	return len;
-+}
-+
-+#define UBOOT_MAGIC	0x27051956
-+
-+static void split_uimage(struct mtd_info *master, struct mtd_part *part)
-+{
-+	struct {
-+		__be32 magic;
-+		__be32 pad[2];
-+		__be32 size;
-+	} hdr;
-+	size_t len;
-+
-+	if (mtd_read(master, part->offset, sizeof(hdr), &len, (void *) &hdr))
-+		return;
-+
-+	if (len != sizeof(hdr) || hdr.magic != cpu_to_be32(UBOOT_MAGIC))
-+		return;
-+
-+	len = be32_to_cpu(hdr.size) + 0x40;
-+	len = mtd_pad_erasesize(master, part->offset, len);
-+	if (len + master->erasesize > part->mtd.size)
-+		return;
-+
-+	__mtd_add_partition(master, "rootfs", part->offset + len,
-+			    part->mtd.size - len, false);
-+}
-+
 +#ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
 +#define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
 +#else
@@ -169,8 +127,6 @@
 +
 +static void split_firmware(struct mtd_info *master, struct mtd_part *part)
 +{
-+	if (config_enabled(CONFIG_MTD_UIMAGE_SPLIT))
-+		split_uimage(master, part);
 +}
 +
 +void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
@@ -195,7 +151,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -656,6 +738,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -656,6 +699,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
