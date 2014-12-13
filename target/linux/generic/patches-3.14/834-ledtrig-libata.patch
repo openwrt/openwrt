@@ -138,7 +138,7 @@ index 2d18241..4428e2b 100644
  #include <linux/acpi.h>
  #include <linux/cdrom.h>
  #include <linux/sched.h>
-+#if IS_ENABLED(CONFIG_ATA_LEDS)
++#ifdef CONFIG_ATA_LEDS
 +#include <linux/leds.h>
 +#endif
  
