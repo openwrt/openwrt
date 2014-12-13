@@ -27,6 +27,10 @@ case $board in
 	3g300m)
 		set_usb_led "tenda:blue:3g"
 		;;
+	ai-br100)
+		ucidef_set_led_netdev "wan" "wan" "aigale:blue:wan" "eth0.2"
+		set_wifi_led "aigale:blue:wlan"
+		;;
 	a5-v11)
 		ucidef_set_led_default "power" "POWER" "a5-v11:red:power" "1"
 		;;

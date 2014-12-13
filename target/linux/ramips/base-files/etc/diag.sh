@@ -12,6 +12,9 @@ get_status_led() {
 	3g300m | w150m)
 		status_led="tenda:blue:ap"
 		;;
+	ai-br100)
+		status_led="aigale:blue:wlan"
+		;;
 	ar670w)
 		status_led="ar670w:green:power"
 		;;
