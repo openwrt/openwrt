@@ -35,23 +35,18 @@
 +	return nr_parts;
 +}
 +
- static inline unsigned long
- mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
- {
-@@ -673,6 +704,12 @@ static void split_uimage(struct mtd_info
+ #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
+ #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
+ #else
+@@ -636,6 +667,7 @@ EXPORT_SYMBOL_GPL(mtd_del_partition);
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
-+	int ret;
-+
-+	ret = run_parsers_by_type(part, MTD_PARSER_TYPE_FIRMWARE);
-+	if (ret > 0)
-+		return;
-+
- 	if (config_enabled(CONFIG_MTD_UIMAGE_SPLIT))
- 		split_uimage(master, part);
++	run_parsers_by_type(part, MTD_PARSER_TYPE_FIRMWARE);
  }
-@@ -689,6 +726,12 @@ static void mtd_partition_split(struct m
+ 
+ void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
+@@ -650,6 +682,12 @@ static void mtd_partition_split(struct m
  	if (rootfs_found)
  		return;
  

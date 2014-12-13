@@ -11,7 +11,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -755,6 +755,30 @@ static struct mtd_part_parser *get_parti
+@@ -716,6 +716,30 @@ static struct mtd_part_parser *get_parti
  
  #define put_partition_parser(p) do { module_put((p)->owner); } while (0)
  
@@ -42,7 +42,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  void register_mtd_parser(struct mtd_part_parser *p)
  {
  	spin_lock(&part_parser_lock);
-@@ -828,6 +852,38 @@ int parse_mtd_partitions(struct mtd_info
+@@ -789,6 +813,38 @@ int parse_mtd_partitions(struct mtd_info
  	return ret;
  }
  
