@@ -19,6 +19,7 @@ platform_check_image() {
 	3g300m | \
 	a5-v11 | \
 	air3gii | \
+	ai-br100 |\
 	all0239-3g | \
 	all0256n | \
 	all5002 | \
