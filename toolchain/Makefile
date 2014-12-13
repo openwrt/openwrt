@@ -74,7 +74,7 @@ endif
 
 # prerequisites for the individual targets
 $(curdir)/ := .config prereq
-$(curdir)//prepare = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk
+$(curdir)//prepare = $(STAGING_DIR)/.prepared $(TOOLCHAIN_DIR)/info.mk $(tools/stamp-install)
 $(curdir)//compile = $(1)/prepare
 $(curdir)//install = $(1)/compile
 
