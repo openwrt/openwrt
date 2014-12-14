@@ -6,12 +6,6 @@
 	};
 	
 	palmbus@10000000 {
-		sysc@0 {
-			ralink,gpiomux = "i2c", "jtag";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
 		gpio0: gpio@600 {
 			status = "okay";
 		};
@@ -23,7 +17,6 @@
 		gpio3: gpio@688 {
 			status = "okay";
 		};
-
 
 		spi@b00 {
 			status = "okay";

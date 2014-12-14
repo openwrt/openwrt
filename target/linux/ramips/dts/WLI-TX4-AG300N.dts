@@ -9,12 +9,6 @@
 	model = "Buffalo WLI-TX4-AG300N";
 
 	palmbus@300000 {
-		sysc@0 {
-			ralink,pinmux = "uartlite";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
 		gpio0: gpio@600 {
 			status = "okay";
 		};
