@@ -62,7 +62,7 @@
  #define UBOOT_MAGIC	0x27051956
  
  static void split_uimage(struct mtd_info *master, struct mtd_part *part)
-@@ -738,7 +779,10 @@ static void mtd_partition_split(struct m
+@@ -743,7 +784,10 @@ static void mtd_partition_split(struct m
  		return;
  
  	if (!strcmp(part->mtd.name, "rootfs")) {
