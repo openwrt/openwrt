@@ -7,12 +7,6 @@
 	model = "Ralink MT7620A evaluation board";
 
 	palmbus@10000000 {
-		sysc@0 {
-			ralink,gpiomux = "i2c", "jtag";
-			ralink,uartmux = "gpio";
-			ralink,wdtmux = <1>;
-		};
-
 		gpio0: gpio@600 {
 			status = "okay";
 		};

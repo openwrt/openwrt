@@ -7,14 +7,6 @@
 	model = "Ralink V11ST-FE";
 
 	palmbus@300000 {
-		sysc@0 {
-			ralink,pinmux = "uartlite";
-			ralink,gpiomux = "i2c", "jtag";
-			ralink,uartmux = "gpio";
-			ralink,pcimux = "pci-fnc";
-			ralink,wdtmux = <0>;
-		};
-
 		gpio0: gpio@600 {
 			status = "okay";
 		};
