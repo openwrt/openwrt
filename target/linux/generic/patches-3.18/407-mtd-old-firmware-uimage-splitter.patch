@@ -14,7 +14,7 @@
  config MTD_SPLIT
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -681,6 +681,32 @@ mtd_pad_erasesize(struct mtd_info *mtd,
+@@ -681,6 +681,37 @@ mtd_pad_erasesize(struct mtd_info *mtd,
  	return len;
  }
  
@@ -40,6 +40,11 @@
 +	if (len + master->erasesize > part->mtd.size)
 +		return;
 +
++	if (config_enabled(CONFIG_MTD_SPLIT_UIMAGE_FW))
++		pr_err("Dedicated partitioner didn't split firmware partition, please fill a bug report!\n");
++	else
++		pr_warn("Support for built-in firmware splitter will be removed, please use CONFIG_MTD_SPLIT_UIMAGE_FW\n");
++
 +	__mtd_add_partition(master, "rootfs", part->offset + len,
 +			    part->mtd.size - len, false);
 +}
@@ -47,7 +52,7 @@
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -689,7 +715,14 @@ mtd_pad_erasesize(struct mtd_info *mtd,
+@@ -689,7 +720,14 @@ mtd_pad_erasesize(struct mtd_info *mtd,
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
