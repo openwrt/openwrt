@@ -33,9 +33,9 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -68,8 +68,18 @@ AC_CHECK_LIB([mnl], [mnl_socket_open], ,
- AC_CHECK_LIB([nftnl], [nft_rule_alloc], ,
- 	     AC_MSG_ERROR([No suitable version of libnftnl found]))
+@@ -72,8 +72,19 @@ AM_CONDITIONAL([BUILD_PDF], [test "$DBLA
+ PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
+ PKG_CHECK_MODULES([LIBNFTNL], [libnftnl >= 1.0.2])
  
 -AC_CHECK_LIB([gmp], [__gmpz_init], ,
 -	     AC_MSG_ERROR([No suitable version of libgmp found]))
@@ -44,8 +44,9 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +            [with_libgmp=yes])
 +AS_IF([test "x$with_libgmp" != xno], [
 +AC_CHECK_LIB([gmp],[__gmpz_init], , AC_MSG_ERROR([No suitable version of libgmp found]))
++AC_DEFINE([HAVE_LIBGMP], [1], [])
 +])
-+AC_SUBST(with_libgmp)
++AM_CONDITIONAL([BUILD_MINIGMP], [test "x$with_libgmp" == xno])
 +
 +
 +AS_IF([test "x$with_libgmp" != xyes -a "x$CONFIG_DEBUG" = xy], [
@@ -412,20 +413,9 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  #endif
  
  #define __fmtstring(x, y)	__attribute__((format(printf, x, y)))
---- a/src/Makefile.in
-+++ b/src/Makefile.in
-@@ -31,3 +31,8 @@ nft-extra-clean-files	+= parser.c parser
- 
- nft-obj			+= scanner.o
- nft-extra-clean-files	+= scanner.c scanner.h
-+
-+ifneq (@with_libgmp@,yes)
-+nft-obj			+= mini-gmp.o
-+nft-obj			+= mini-gmp-printf.o
-+endif
 --- a/src/datatype.c
 +++ b/src/datatype.c
-@@ -267,11 +267,9 @@ static struct error_record *integer_type
+@@ -275,11 +275,9 @@ static struct error_record *integer_type
  					       struct expr **res)
  {
  	mpz_t v;
@@ -436,11 +426,11 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 -	    (int)strlen(sym->identifier) != len) {
 +	if (mpz_set_str(v, sym->identifier, 0)) {
  		mpz_clear(v);
- 		if (sym->dtype != &integer_type)
- 			return NULL;
+ 		return error(&sym->location, "Could not parse %s",
+ 			     sym->dtype->desc);
 --- a/src/erec.c
 +++ b/src/erec.c
-@@ -43,6 +43,7 @@ static void erec_destroy(struct error_re
+@@ -44,6 +44,7 @@ static void erec_destroy(struct error_re
  	xfree(erec);
  }
  
@@ -448,7 +438,7 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  struct error_record *erec_vcreate(enum error_record_types type,
  				  const struct location *loc,
  				  const char *fmt, va_list ap)
-@@ -54,10 +55,11 @@ struct error_record *erec_vcreate(enum e
+@@ -55,10 +56,11 @@ struct error_record *erec_vcreate(enum e
  	erec->num_locations	= 0;
  	erec_add_location(erec, loc);
  
@@ -4944,3 +4934,14 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +
 +  return r;
 +}
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -48,4 +48,8 @@ if BUILD_CLI
+ nft_SOURCES +=	cli.c
+ endif
+ 
++if BUILD_MINIGMP
++nft_SOURCES +=	mini-gmp.c mini-gmp-printf.c
++endif
++
+ nft_LDADD	= ${LIBMNL_LIBS} ${LIBNFTNL_LIBS}
