@@ -1,5 +1,11 @@
 PART_NAME=firmware
 
+# $(1): file to read magic from
+# $(2): offset in bytes
+get_magic_long_at() {
+	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
+}
+
 brcm47xx_identify() {
 	local magic
 
@@ -14,6 +20,12 @@ brcm47xx_identify() {
 			return
 			;;
 	esac
+
+	magic=$(get_magic_long_at "$1" 14)
+	[ "$magic" = "55324e44" ] && {
+		echo "cybertan"
+		return
+	}
 
 	echo "unknown"
 }
