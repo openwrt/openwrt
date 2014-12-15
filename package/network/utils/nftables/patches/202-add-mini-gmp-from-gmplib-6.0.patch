@@ -1,102 +1,19 @@
-From da4e4f5db6561923ad239aa653660250aaeb5873 Mon Sep 17 00:00:00 2001
-From: Steven Barth <cyrus@openwrt.org>
-Date: Mon, 6 Oct 2014 07:26:13 +0200
-Subject: [PATCH 2/2] build: allow building with mini-gmp instead of gmp
-
-This introduces --without-libgmp which includes mini-gmp into nft
-(adding ~30k) but avoids linking libgmp which is >400k.
-
-This is useful for embedded distributions not using gmp otherwise.
-
-Note: currently --without-libgmp must be used with --disable-debug.
+From b1417739f91682442a254cbd732aed6e9a5c5b69 Mon Sep 17 00:00:00 2001
+From: Steven Barth <steven@midlink.org>
+Date: Mon, 15 Dec 2014 10:36:04 +0100
+Subject: [PATCH 3/3] build: add mini-gmp from gmplib 6.0
 
 Signed-off-by: Steven Barth <cyrus@openwrt.org>
 ---
- configure.ac          |   14 +-
- include/bignum.h      |   17 +
- include/expression.h  |    2 +-
- include/gmputil.h     |    2 +-
- include/mini-gmp.h    |  294 ++++
- include/utils.h       |    4 +-
- src/Makefile.in       |    5 +
- src/datatype.c        |    4 +-
- src/erec.c            |    4 +-
- src/evaluate.c        |    8 +-
- src/gmputil.c         |    1 -
- src/mini-gmp-printf.c |   62 +
- src/mini-gmp.c        | 4386 +++++++++++++++++++++++++++++++++++++++++++++++++
- 13 files changed, 4790 insertions(+), 13 deletions(-)
- create mode 100644 include/bignum.h
+ include/mini-gmp.h |  294 ++++
+ src/mini-gmp.c     | 4386 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 4680 insertions(+)
  create mode 100644 include/mini-gmp.h
- create mode 100644 src/mini-gmp-printf.c
  create mode 100644 src/mini-gmp.c
 
---- a/configure.ac
-+++ b/configure.ac
-@@ -72,8 +72,19 @@ AM_CONDITIONAL([BUILD_PDF], [test "$DBLA
- PKG_CHECK_MODULES([LIBMNL], [libmnl >= 1.0.3])
- PKG_CHECK_MODULES([LIBNFTNL], [libnftnl >= 1.0.2])
- 
--AC_CHECK_LIB([gmp], [__gmpz_init], ,
--	     AC_MSG_ERROR([No suitable version of libgmp found]))
-+AC_ARG_WITH([libgmp], [AS_HELP_STRING([--without-libgmp],
-+            [Disable libgmp support (use builtin mini-gmp)])], [],
-+            [with_libgmp=yes])
-+AS_IF([test "x$with_libgmp" != xno], [
-+AC_CHECK_LIB([gmp],[__gmpz_init], , AC_MSG_ERROR([No suitable version of libgmp found]))
-+AC_DEFINE([HAVE_LIBGMP], [1], [])
-+])
-+AM_CONDITIONAL([BUILD_MINIGMP], [test "x$with_libgmp" == xno])
-+
-+
-+AS_IF([test "x$with_libgmp" != xyes -a "x$CONFIG_DEBUG" = xy], [
-+AC_MSG_ERROR([--without-libgmp MUST be used with --disable-debug])
-+])
- 
- AC_ARG_WITH([cli], [AS_HELP_STRING([--without-cli],
-             [disable interactive CLI (libreadline support)])],
---- /dev/null
-+++ b/include/bignum.h
-@@ -0,0 +1,17 @@
-+#ifndef NFTABLES_BIGNUM_H
-+#define NFTABLES_BIGNUM_H
-+
-+#ifdef HAVE_LIBGMP
-+#include <gmp.h>
-+
-+#else
-+
-+#include <mini-gmp.h>
-+#include <stdio.h>
-+#include <stdarg.h>
-+
-+int gmp_printf(const char *format, const mpz_t value);
-+
-+#endif
-+
-+#endif /* NFTABLES_BIGNUM_H */
---- a/include/expression.h
-+++ b/include/expression.h
-@@ -2,7 +2,7 @@
- #define NFTABLES_EXPRESSION_H
- 
- #include <stdbool.h>
--#include <gmp.h>
-+#include <bignum.h>
- #include <linux/netfilter/nf_tables.h>
- 
- #include <nftables.h>
---- a/include/gmputil.h
-+++ b/include/gmputil.h
-@@ -1,7 +1,7 @@
- #ifndef NFTABLES_GMPUTIL_H
- #define NFTABLES_GMPUTIL_H
- 
--#include <gmp.h>
-+#include <bignum.h>
- #include <asm/byteorder.h>
- 
- enum mpz_word_order {
+diff --git a/include/mini-gmp.h b/include/mini-gmp.h
+new file mode 100644
+index 0000000..c043ca7
 --- /dev/null
 +++ b/include/mini-gmp.h
 @@ -0,0 +1,294 @@
@@ -394,157 +311,9 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +}
 +#endif
 +#endif /* __MINI_GMP_H__ */
---- a/include/utils.h
-+++ b/include/utils.h
-@@ -9,14 +9,14 @@
- #include <unistd.h>
- #include <assert.h>
- #include <list.h>
--#include <gmp.h>
-+#include <bignum.h>
- 
- #define BITS_PER_BYTE	8
- 
- #ifdef DEBUG
- #define pr_debug(fmt, arg...) gmp_printf(fmt, ##arg)
- #else
--#define pr_debug(fmt, arg...) ({ if (false) gmp_printf(fmt, ##arg); 0; })
-+#define pr_debug(fmt, arg...)
- #endif
- 
- #define __fmtstring(x, y)	__attribute__((format(printf, x, y)))
---- a/src/datatype.c
-+++ b/src/datatype.c
-@@ -275,11 +275,9 @@ static struct error_record *integer_type
- 					       struct expr **res)
- {
- 	mpz_t v;
--	int len;
- 
- 	mpz_init(v);
--	if (gmp_sscanf(sym->identifier, "%Zu%n", v, &len) != 1 ||
--	    (int)strlen(sym->identifier) != len) {
-+	if (mpz_set_str(v, sym->identifier, 0)) {
- 		mpz_clear(v);
- 		return error(&sym->location, "Could not parse %s",
- 			     sym->dtype->desc);
---- a/src/erec.c
-+++ b/src/erec.c
-@@ -44,6 +44,7 @@ static void erec_destroy(struct error_re
- 	xfree(erec);
- }
- 
-+__attribute__((format(printf, 3, 0)))
- struct error_record *erec_vcreate(enum error_record_types type,
- 				  const struct location *loc,
- 				  const char *fmt, va_list ap)
-@@ -55,10 +56,11 @@ struct error_record *erec_vcreate(enum e
- 	erec->num_locations	= 0;
- 	erec_add_location(erec, loc);
- 
--	gmp_vasprintf(&erec->msg, fmt, ap);
-+	if (vasprintf(&erec->msg, fmt, ap)) {}
- 	return erec;
- }
- 
-+__attribute__((format(printf, 3, 4)))
- struct error_record *erec_create(enum error_record_types type,
- 				 const struct location *loc,
- 				 const char *fmt, ...)
---- a/src/evaluate.c
-+++ b/src/evaluate.c
-@@ -232,9 +232,13 @@ static int expr_evaluate_value(struct ev
- 	case TYPE_INTEGER:
- 		mpz_init_bitmask(mask, ctx->ectx.len);
- 		if (mpz_cmp((*expr)->value, mask) > 0) {
-+			char *valstr = mpz_get_str(NULL, 10, (*expr)->value);
-+			char *rangestr = mpz_get_str(NULL, 10, mask);
- 			expr_error(ctx->msgs, *expr,
--				   "Value %Zu exceeds valid range 0-%Zu",
--				   (*expr)->value, mask);
-+				   "Value %s exceeds valid range 0-%s",
-+				   valstr, rangestr);
-+			free(valstr);
-+			free(rangestr);
- 			mpz_clear(mask);
- 			return -1;
- 		}
---- a/src/gmputil.c
-+++ b/src/gmputil.c
-@@ -14,7 +14,6 @@
- #include <stdio.h>
- #include <unistd.h>
- #include <string.h>
--#include <gmp.h>
- 
- #include <nftables.h>
- #include <datatype.h>
---- /dev/null
-+++ b/src/mini-gmp-printf.c
-@@ -0,0 +1,63 @@
-+#include <stdarg.h>
-+#include <stdbool.h>
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <bignum.h>
-+
-+// nftables mostly uses gmp_printf as below so we build a minimalistic
-+// version to avoid the awkwardness of wrapping printf.
-+// This requires rewriting other occurences of gmp_printf or
-+// variants which are rare (only 1 so far).
-+// Also we exclude pr_debug here since this is a rathole
-+// and if debugging is desired then libgmp can be used.
-+
-+int gmp_printf(const char *f, const mpz_t value)
-+{
-+	int n = 0;
-+	while (*f) {
-+		if (*f != '%') {
-+			if (fputc(*f, stdout) != *f)
-+				return -1;
-+
-+			++n;
-+		} else {
-+			unsigned long prec = 0;
-+			int base;
-+			size_t len;
-+			char *str;
-+			bool ok;
-+
-+			if (*++f == '.')
-+				prec = strtoul(++f, (char**)&f, 10);
-+
-+			if (*f++ != 'Z')
-+				return -1;
-+
-+			if (*f == 'u')
-+				base = 10;
-+			else if (*f == 'x')
-+				base = 16;
-+			else
-+				return -1;
-+
-+			len = mpz_sizeinbase(value, base);
-+			while (prec-- > len) {
-+				if (fputc('0', stdout) != '0')
-+					return -1;
-+
-+				++n;
-+			}
-+
-+			str = mpz_get_str(NULL, base, value);
-+			ok = str && fwrite(str, 1, len, stdout) == len;
-+			free(str);
-+
-+			if (!ok)
-+				return -1;
-+
-+			n += len;
-+		}
-+		++f;
-+	}
-+	return n;
-+}
+diff --git a/src/mini-gmp.c b/src/mini-gmp.c
+new file mode 100644
+index 0000000..acbe1be
 --- /dev/null
 +++ b/src/mini-gmp.c
 @@ -0,0 +1,4386 @@
@@ -4934,14 +4703,6 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
 +
 +  return r;
 +}
---- a/src/Makefile.am
-+++ b/src/Makefile.am
-@@ -48,4 +48,8 @@ if BUILD_CLI
- nft_SOURCES +=	cli.c
- endif
- 
-+if BUILD_MINIGMP
-+nft_SOURCES +=	mini-gmp.c mini-gmp-printf.c
-+endif
-+
- nft_LDADD	= ${LIBMNL_LIBS} ${LIBNFTNL_LIBS}
+-- 
+2.1.3
+
