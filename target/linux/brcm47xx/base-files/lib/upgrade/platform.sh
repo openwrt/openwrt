@@ -1,11 +1,30 @@
 PART_NAME=firmware
 
+brcm47xx_identify() {
+	local magic
+
+	magic=$(get_magic_long "$1")
+	case "$magic" in
+		"48445230")
+			echo "trx"
+			return
+			;;
+		"2a23245e")
+			echo "chk"
+			return
+			;;
+	esac
+
+	echo "unknown"
+}
+
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
-	case "$(get_magic_word "$1")" in
-		# .trx files
-		4844) return 0;;
+	local file_type=$(brcm47xx_identify "$1")
+
+	case "$file_type" in
+		"trx") return 0;;
 		*)
 			echo "Invalid image type. Please use only .trx files"
 			return 1
