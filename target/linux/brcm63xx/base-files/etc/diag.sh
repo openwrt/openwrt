@@ -12,6 +12,9 @@ set_state() {
 	failsafe)
 		status_led_set_timer 50 50
 		;;
+	preinit_regular)
+		status_led_set_timer 500 500
+		;;
 	done)
 		if [ "${status_led/power}" != "$status_led" ]; then
 			status_led_on

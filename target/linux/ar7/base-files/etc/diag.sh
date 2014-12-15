@@ -29,6 +29,9 @@ set_state() {
 	failsafe)
 		status_led_set_timer 50 50
 		;;
+	preinit_regular)
+		status_led_blink_preinit_regular
+		;;
 	done)
 		[ "$status_led" = "status" ] && {
 			status_led_set_heartbeat

@@ -66,3 +66,7 @@ status_led_blink_preinit() {
 status_led_blink_failsafe() {
 	led_timer $status_led 50 50
 }
+
+status_led_blink_preinit_regular() {
+	led_timer $status_led 500 500
+}
