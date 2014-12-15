@@ -13,7 +13,7 @@
  	} hdr;
  	size_t len;
  
-@@ -807,7 +810,11 @@ static void split_uimage(struct mtd_info
+@@ -807,7 +810,10 @@ static void split_uimage(struct mtd_info
  	if (len != sizeof(hdr) || hdr.magic != cpu_to_be32(UBOOT_MAGIC))
  		return;
  
@@ -22,7 +22,6 @@
 +		len = be32_to_cpu(hdr.kern_size);
 +	else
 +		len = be32_to_cpu(hdr.size) + 0x40;
-+
- 	__mtd_add_partition(master, "rootfs", part->offset + len,
- 			    part->mtd.size - len, false);
- }
+ 
+ 	if (config_enabled(CONFIG_MTD_SPLIT_UIMAGE_FW))
+ 		pr_err("Dedicated partitioner didn't split firmware partition, please fill a bug report!\n");
