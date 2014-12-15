@@ -174,6 +174,7 @@ ifndef DUMP
 		$(call Host/Install)
 		$(foreach hook,$(Hooks/HostInstall/Post),$(call $(hook))$(sep))
 		mkdir -p $$(shell dirname $$@)
+		touch $(HOST_STAMP_BUILT)
 		touch $$@
 
   ifndef STAMP_BUILT
