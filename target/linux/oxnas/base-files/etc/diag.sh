@@ -28,6 +28,9 @@ set_state() {
 	failsafe)
 		status_led_blink_failsafe
 		;;
+	preinit_regular)
+		status_led_blink_preinit_regular
+		;;
 	done)
 		status_led_on
 		;;

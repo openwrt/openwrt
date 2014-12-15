@@ -36,13 +36,9 @@ preinit_echo() {
 	echo $1
 }
 
-pi_indicate_led() {
-	set_state preinit
-}
-
 pi_indicate_preinit() {
 	preinit_net_echo "Doing OpenWrt Preinit\n"
-	pi_indicate_led
+	set_state preinit
 }
 
 boot_hook_add preinit_main preinit_ip
