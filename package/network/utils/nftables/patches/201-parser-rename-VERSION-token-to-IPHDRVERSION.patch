@@ -1,0 +1,55 @@
+From 20417d50a2f2c6d9ed1b22ca1195214d0c2c402d Mon Sep 17 00:00:00 2001
+From: Steven Barth <cyrus@openwrt.org>
+Date: Mon, 15 Dec 2014 13:58:55 +0100
+Subject: [PATCH 1/5] parser: rename VERSION token to IPHDRVERSION
+
+A token name of VERSION results in a macro being defined
+with the same name. This prevents inclusion of config.h
+in commonly used headers.
+
+Signed-off-by: Steven Barth <cyrus@openwrt.org>
+---
+ src/parser_bison.y | 6 +++---
+ src/scanner.l      | 2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/src/parser_bison.y
++++ b/src/parser_bison.y
+@@ -237,7 +237,7 @@ static void location_update(struct locat
+ %token OPERATION		"operation"
+ 
+ %token IP			"ip"
+-%token VERSION			"version"
++%token IPHDRVERSION		"version"
+ %token HDRLENGTH		"hdrlength"
+ %token TOS			"tos"
+ %token LENGTH			"length"
+@@ -1947,7 +1947,7 @@ ip_hdr_expr		:	IP	ip_hdr_field
+ 			}
+ 			;
+ 
+-ip_hdr_field		:	VERSION		{ $$ = IPHDR_VERSION; }
++ip_hdr_field		:	IPHDRVERSION	{ $$ = IPHDR_VERSION; }
+ 			|	HDRLENGTH	{ $$ = IPHDR_HDRLENGTH; }
+ 			|	TOS		{ $$ = IPHDR_TOS; }
+ 			|	LENGTH		{ $$ = IPHDR_LENGTH; }
+@@ -1994,7 +1994,7 @@ ip6_hdr_expr		:	IP6	ip6_hdr_field
+ 			}
+ 			;
+ 
+-ip6_hdr_field		:	VERSION		{ $$ = IP6HDR_VERSION; }
++ip6_hdr_field		:	IPHDRVERSION	{ $$ = IP6HDR_VERSION; }
+ 			|	PRIORITY	{ $$ = IP6HDR_PRIORITY; }
+ 			|	FLOWLABEL	{ $$ = IP6HDR_FLOWLABEL; }
+ 			|	LENGTH		{ $$ = IP6HDR_LENGTH; }
+--- a/src/scanner.l
++++ b/src/scanner.l
+@@ -349,7 +349,7 @@ addrstring	({macaddr}|{ip4addr}|{ip6addr
+ "operation"		{ return OPERATION; }
+ 
+ "ip"			{ return IP; }
+-"version"		{ return VERSION; }
++"version"		{ return IPHDRVERSION; }
+ "hdrlength"		{ return HDRLENGTH; }
+ "tos"			{ return TOS; }
+ "length"		{ return LENGTH; }
