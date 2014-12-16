@@ -1,7 +1,7 @@
-From b1417739f91682442a254cbd732aed6e9a5c5b69 Mon Sep 17 00:00:00 2001
-From: Steven Barth <steven@midlink.org>
-Date: Mon, 15 Dec 2014 10:36:04 +0100
-Subject: [PATCH 3/3] build: add mini-gmp from gmplib 6.0
+From fd1f58387c4dc1d90c8943167ef2aa9b23367890 Mon Sep 17 00:00:00 2001
+From: Steven Barth <cyrus@openwrt.org>
+Date: Mon, 15 Dec 2014 14:25:59 +0100
+Subject: [PATCH 4/5] mini-gmp: add mini-gmp source and headers from gmplib 6.0
 
 Signed-off-by: Steven Barth <cyrus@openwrt.org>
 ---
@@ -11,9 +11,6 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  create mode 100644 include/mini-gmp.h
  create mode 100644 src/mini-gmp.c
 
-diff --git a/include/mini-gmp.h b/include/mini-gmp.h
-new file mode 100644
-index 0000000..c043ca7
 --- /dev/null
 +++ b/include/mini-gmp.h
 @@ -0,0 +1,294 @@
@@ -311,9 +308,6 @@ index 0000000..c043ca7
 +}
 +#endif
 +#endif /* __MINI_GMP_H__ */
-diff --git a/src/mini-gmp.c b/src/mini-gmp.c
-new file mode 100644
-index 0000000..acbe1be
 --- /dev/null
 +++ b/src/mini-gmp.c
 @@ -0,0 +1,4386 @@
@@ -4703,6 +4697,3 @@ index 0000000..acbe1be
 +
 +  return r;
 +}
--- 
-2.1.3
-
