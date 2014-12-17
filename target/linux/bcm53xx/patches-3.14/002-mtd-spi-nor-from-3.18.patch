@@ -1,6 +1,24 @@
 --- a/drivers/mtd/spi-nor/spi-nor.c
 +++ b/drivers/mtd/spi-nor/spi-nor.c
-@@ -611,6 +611,7 @@ const struct spi_device_id spi_nor_ids[]
+@@ -28,6 +28,8 @@
+ 
+ #define JEDEC_MFR(_jedec_id)	((_jedec_id) >> 16)
+ 
++static const struct spi_device_id *spi_nor_match_id(const char *name);
++
+ /*
+  * Read the status register, returning its value in the location
+  * Return the status register value.
+@@ -473,7 +475,7 @@ struct flash_info {
+  * more nor chips.  This current list focusses on newer chips, which
+  * have been converging on command sets which including JEDEC ID.
+  */
+-const struct spi_device_id spi_nor_ids[] = {
++static const struct spi_device_id spi_nor_ids[] = {
+ 	/* Atmel -- some are (confusingly) marketed as "DataFlash" */
+ 	{ "at25fs010",  INFO(0x1f6601, 0, 32 * 1024,   4, SECT_4K) },
+ 	{ "at25fs040",  INFO(0x1f6604, 0, 64 * 1024,   8, SECT_4K) },
+@@ -611,6 +613,7 @@ const struct spi_device_id spi_nor_ids[]
  	{ "m25px32-s0", INFO(0x207316,  0, 64 * 1024, 64, SECT_4K) },
  	{ "m25px32-s1", INFO(0x206316,  0, 64 * 1024, 64, SECT_4K) },
  	{ "m25px64",    INFO(0x207117,  0, 64 * 1024, 128, 0) },
@@ -8,7 +26,7 @@
  
  	/* Winbond -- w25x "blocks" are 64K, "sectors" are 4KiB */
  	{ "w25x10", INFO(0xef3011, 0, 64 * 1024,  2,  SECT_4K) },
-@@ -623,7 +624,6 @@ const struct spi_device_id spi_nor_ids[]
+@@ -623,7 +626,6 @@ const struct spi_device_id spi_nor_ids[]
  	{ "w25q32dw", INFO(0xef6016, 0, 64 * 1024,  64, SECT_4K) },
  	{ "w25x64", INFO(0xef3017, 0, 64 * 1024, 128, SECT_4K) },
  	{ "w25q64", INFO(0xef4017, 0, 64 * 1024, 128, SECT_4K) },
@@ -16,7 +34,15 @@
  	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
  	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
-@@ -671,11 +671,6 @@ static const struct spi_device_id *spi_n
+@@ -637,7 +639,6 @@ const struct spi_device_id spi_nor_ids[]
+ 	{ "cat25128", CAT25_INFO(2048, 8, 64, 2, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+ 	{ },
+ };
+-EXPORT_SYMBOL_GPL(spi_nor_ids);
+ 
+ static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
+ {
+@@ -671,11 +672,6 @@ static const struct spi_device_id *spi_n
  	return ERR_PTR(-ENODEV);
  }
  
@@ -28,15 +54,21 @@
  static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
  			size_t *retlen, u_char *buf)
  {
-@@ -920,7 +915,6 @@ int spi_nor_scan(struct spi_nor *nor, co
- 			enum read_mode mode)
+@@ -916,11 +912,10 @@ static int spi_nor_check(struct spi_nor
+ 	return 0;
+ }
+ 
+-int spi_nor_scan(struct spi_nor *nor, const struct spi_device_id *id,
+-			enum read_mode mode)
++int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode)
  {
++	const struct spi_device_id	*id = NULL;
  	struct flash_info		*info;
 -	struct flash_platform_data	*data;
  	struct device *dev = nor->dev;
  	struct mtd_info *mtd = nor->mtd;
  	struct device_node *np = dev->of_node;
-@@ -931,34 +925,12 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -931,34 +926,16 @@ int spi_nor_scan(struct spi_nor *nor, co
  	if (ret)
  		return ret;
  
@@ -61,7 +93,10 @@
 -		else
 -			dev_warn(dev, "unrecognized id %s\n", data->type);
 -	}
--
++	id = spi_nor_match_id(name);
++	if (!id)
++		return -ENOENT;
+ 
  	info = (void *)id->driver_data;
  
  	if (info->jedec_id) {
@@ -72,7 +107,7 @@
  		if (IS_ERR(jid)) {
  			return PTR_ERR(jid);
  		} else if (jid != id) {
-@@ -990,11 +962,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -990,11 +967,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  		write_sr(nor, 0);
  	}
  
@@ -85,7 +120,7 @@
  	mtd->type = MTD_NORFLASH;
  	mtd->writesize = 1;
  	mtd->flags = MTD_CAP_NORFLASH;
-@@ -1018,6 +987,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1018,6 +992,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	    nor->wait_till_ready == spi_nor_wait_till_ready)
  		nor->wait_till_ready = spi_nor_wait_till_fsr_ready;
  
@@ -93,7 +128,7 @@
  	/* prefer "small sector" erase if possible */
  	if (info->flags & SECT_4K) {
  		nor->erase_opcode = SPINOR_OP_BE_4K;
-@@ -1025,7 +995,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1025,7 +1000,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  	} else if (info->flags & SECT_4K_PMC) {
  		nor->erase_opcode = SPINOR_OP_BE_4K_PMC;
  		mtd->erasesize = 4096;
@@ -104,6 +139,23 @@
  		nor->erase_opcode = SPINOR_OP_SE;
  		mtd->erasesize = info->sector_size;
  	}
+@@ -1141,7 +1118,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+ }
+ EXPORT_SYMBOL_GPL(spi_nor_scan);
+ 
+-const struct spi_device_id *spi_nor_match_id(char *name)
++static const struct spi_device_id *spi_nor_match_id(const char *name)
+ {
+ 	const struct spi_device_id *id = spi_nor_ids;
+ 
+@@ -1152,7 +1129,6 @@ const struct spi_device_id *spi_nor_matc
+ 	}
+ 	return NULL;
+ }
+-EXPORT_SYMBOL_GPL(spi_nor_match_id);
+ 
+ MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Huang Shijie <shijie8@gmail.com>");
 --- a/drivers/mtd/spi-nor/Kconfig
 +++ b/drivers/mtd/spi-nor/Kconfig
 @@ -7,6 +7,20 @@ menuconfig MTD_SPI_NOR
@@ -127,3 +179,41 @@
  config SPI_FSL_QUADSPI
  	tristate "Freescale Quad SPI controller"
  	depends on ARCH_MXC
+--- a/include/linux/mtd/spi-nor.h
++++ b/include/linux/mtd/spi-nor.h
+@@ -187,32 +187,17 @@ struct spi_nor {
+ /**
+  * spi_nor_scan() - scan the SPI NOR
+  * @nor:	the spi_nor structure
+- * @id:		the spi_device_id provided by the driver
++ * @name:	the chip type name
+  * @mode:	the read mode supported by the driver
+  *
+  * The drivers can use this fuction to scan the SPI NOR.
+  * In the scanning, it will try to get all the necessary information to
+  * fill the mtd_info{} and the spi_nor{}.
+  *
+- * The board may assigns a spi_device_id with @id which be used to compared with
+- * the spi_device_id detected by the scanning.
++ * The chip type name can be provided through the @name parameter.
+  *
+  * Return: 0 for success, others for failure.
+  */
+-int spi_nor_scan(struct spi_nor *nor, const struct spi_device_id *id,
+-			enum read_mode mode);
+-extern const struct spi_device_id spi_nor_ids[];
+-
+-/**
+- * spi_nor_match_id() - find the spi_device_id by the name
+- * @name:	the name of the spi_device_id
+- *
+- * The drivers use this function to find the spi_device_id
+- * specified by the @name.
+- *
+- * Return: returns the right spi_device_id pointer on success,
+- *         and returns NULL on failure.
+- */
+-const struct spi_device_id *spi_nor_match_id(char *name);
++int spi_nor_scan(struct spi_nor *nor, const char *name, enum read_mode mode);
+ 
+ #endif
