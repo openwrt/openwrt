@@ -138,6 +138,18 @@ Image/InstallKernel/Template/IOMEGA_IX2_200=$(call Image/InstallKernel/Template,
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
 
+Image/BuildKernel/Template/SHEEVAPLUG=$(call Image/BuildKernel/Template,sheevaplug)
+Image/InstallKernel/Template/SHEEVAPLUG=$(call Image/InstallKernel/Template,sheevaplug)
+
+Image/BuildKernel/Template/SHEEVAPLUGSATA=$(call Image/BuildKernel/Template,sheevaplug-esata)
+Image/InstallKernel/Template/SHEEVAPLUGSATA=$(call Image/InstallKernel/Template,sheevaplug-esata)
+
+Image/BuildKernel/Template/GuruplugServerPlus=$(call Image/BuildKernel/Template,guruplug-server-plus)
+Image/InstallKernel/Template/GuruplugServerPlus=$(call Image/InstallKernel/Template,guruplug-server-plus)
+
+Image/BuildKernel/Template/Topkick1281P2=$(call Image/BuildKernel/Template,topkick)
+Image/InstallKernel/Template/Topkick1281P2=$(call Image/InstallKernel/Template,topkick)
+
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template/$(PROFILE))
 endef
