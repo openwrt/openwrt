@@ -87,16 +87,19 @@
  {
  	struct br_ip br_group;
  
-@@ -735,7 +757,7 @@ static int br_ip6_multicast_add_group(st
+@@ -735,7 +757,10 @@ static int br_ip6_multicast_add_group(st
  	br_group.proto = htons(ETH_P_IPV6);
  	br_group.vid = vid;
  
 -	return br_multicast_add_group(br, port, &br_group);
++	if (ipv6_addr_is_solict_mult(group))
++		src = NULL;
++
 +	return br_multicast_add_group(br, port, &br_group, src);
  }
  #endif
  
-@@ -950,6 +972,7 @@ static int br_ip4_multicast_igmp3_report
+@@ -950,6 +975,7 @@ static int br_ip4_multicast_igmp3_report
  					 struct sk_buff *skb,
  					 u16 vid)
  {
@@ -104,7 +107,7 @@
  	struct igmpv3_report *ih;
  	struct igmpv3_grec *grec;
  	int i;
-@@ -993,7 +1016,7 @@ static int br_ip4_multicast_igmp3_report
+@@ -993,7 +1019,7 @@ static int br_ip4_multicast_igmp3_report
  			continue;
  		}
  
@@ -113,7 +116,7 @@
  		if (err)
  			break;
  	}
-@@ -1007,6 +1030,7 @@ static int br_ip6_multicast_mld2_report(
+@@ -1007,6 +1033,7 @@ static int br_ip6_multicast_mld2_report(
  					struct sk_buff *skb,
  					u16 vid)
  {
@@ -121,7 +124,7 @@
  	struct icmp6hdr *icmp6h;
  	struct mld2_grec *grec;
  	int i;
-@@ -1055,7 +1079,7 @@ static int br_ip6_multicast_mld2_report(
+@@ -1055,7 +1082,7 @@ static int br_ip6_multicast_mld2_report(
  		}
  
  		err = br_ip6_multicast_add_group(br, port, &grec->grec_mca,
@@ -130,7 +133,7 @@
  		if (!err)
  			break;
  	}
-@@ -1319,7 +1343,8 @@ static void br_multicast_leave_group(str
+@@ -1319,7 +1346,8 @@ static void br_multicast_leave_group(str
  				     struct net_bridge_port *port,
  				     struct br_ip *group,
  				     struct bridge_mcast_querier *querier,
@@ -140,7 +143,7 @@
  {
  	struct net_bridge_mdb_htable *mdb;
  	struct net_bridge_mdb_entry *mp;
-@@ -1369,7 +1394,7 @@ static void br_multicast_leave_group(str
+@@ -1369,7 +1397,7 @@ static void br_multicast_leave_group(str
  		for (pp = &mp->ports;
  		     (p = mlock_dereference(*pp, br)) != NULL;
  		     pp = &p->next) {
@@ -149,7 +152,7 @@
  				continue;
  
  			rcu_assign_pointer(*pp, p->next);
-@@ -1403,7 +1428,7 @@ static void br_multicast_leave_group(str
+@@ -1403,7 +1431,7 @@ static void br_multicast_leave_group(str
  	for (p = mlock_dereference(mp->ports, br);
  	     p != NULL;
  	     p = mlock_dereference(p->next, br)) {
@@ -158,7 +161,7 @@
  			continue;
  
  		if (!hlist_unhashed(&p->mglist) &&
-@@ -1421,8 +1446,8 @@ out:
+@@ -1421,8 +1449,8 @@ out:
  
  static void br_ip4_multicast_leave_group(struct net_bridge *br,
  					 struct net_bridge_port *port,
@@ -169,7 +172,7 @@
  {
  	struct br_ip br_group;
  	struct bridge_mcast_query *query = port ? &port->ip4_query :
-@@ -1435,14 +1460,15 @@ static void br_ip4_multicast_leave_group
+@@ -1435,14 +1463,15 @@ static void br_ip4_multicast_leave_group
  	br_group.proto = htons(ETH_P_IP);
  	br_group.vid = vid;
  
@@ -187,7 +190,7 @@
  {
  	struct br_ip br_group;
  	struct bridge_mcast_query *query = port ? &port->ip6_query :
-@@ -1456,7 +1482,8 @@ static void br_ip6_multicast_leave_group
+@@ -1456,7 +1485,8 @@ static void br_ip6_multicast_leave_group
  	br_group.proto = htons(ETH_P_IPV6);
  	br_group.vid = vid;
  
@@ -197,7 +200,7 @@
  }
  #endif
  
-@@ -1465,6 +1492,7 @@ static int br_multicast_ipv4_rcv(struct
+@@ -1465,6 +1495,7 @@ static int br_multicast_ipv4_rcv(struct 
  				 struct sk_buff *skb,
  				 u16 vid)
  {
@@ -205,7 +208,7 @@
  	struct sk_buff *skb2 = skb;
  	const struct iphdr *iph;
  	struct igmphdr *ih;
-@@ -1538,7 +1566,7 @@ static int br_multicast_ipv4_rcv(struct
+@@ -1538,7 +1569,7 @@ static int br_multicast_ipv4_rcv(struct 
  	case IGMP_HOST_MEMBERSHIP_REPORT:
  	case IGMPV2_HOST_MEMBERSHIP_REPORT:
  		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
@@ -214,7 +217,7 @@
  		break;
  	case IGMPV3_HOST_MEMBERSHIP_REPORT:
  		err = br_ip4_multicast_igmp3_report(br, port, skb2, vid);
-@@ -1547,7 +1575,7 @@ static int br_multicast_ipv4_rcv(struct
+@@ -1547,7 +1578,7 @@ static int br_multicast_ipv4_rcv(struct 
  		err = br_ip4_multicast_query(br, port, skb2, vid);
  		break;
  	case IGMP_HOST_LEAVE_MESSAGE:
@@ -223,7 +226,7 @@
  		break;
  	}
  
-@@ -1565,6 +1593,7 @@ static int br_multicast_ipv6_rcv(struct
+@@ -1565,6 +1596,7 @@ static int br_multicast_ipv6_rcv(struct 
  				 struct sk_buff *skb,
  				 u16 vid)
  {
@@ -231,7 +234,7 @@
  	struct sk_buff *skb2;
  	const struct ipv6hdr *ip6h;
  	u8 icmp6_type;
-@@ -1674,7 +1703,8 @@ static int br_multicast_ipv6_rcv(struct
+@@ -1674,7 +1706,8 @@ static int br_multicast_ipv6_rcv(struct 
  		}
  		mld = (struct mld_msg *)skb_transport_header(skb2);
  		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
@@ -241,7 +244,7 @@
  		break;
  	    }
  	case ICMPV6_MLD2_REPORT:
-@@ -1691,7 +1721,7 @@ static int br_multicast_ipv6_rcv(struct
+@@ -1691,7 +1724,7 @@ static int br_multicast_ipv6_rcv(struct 
  			goto out;
  		}
  		mld = (struct mld_msg *)skb_transport_header(skb2);
