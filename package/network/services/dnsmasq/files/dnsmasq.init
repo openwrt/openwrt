@@ -85,6 +85,10 @@ append_address() {
 	xappend "--address=$1"
 }
 
+append_ipset() {
+	xappend "--ipset=$1"
+}
+
 append_interface() {
 	local ifname=$(uci_get_state network "$1" ifname "$1")
 	xappend "--interface=$ifname"
@@ -135,6 +139,7 @@ dnsmasq() {
 	append_parm "$cfg" "local" "--server"
 	config_list_foreach "$cfg" "server" append_server
 	config_list_foreach "$cfg" "address" append_address
+	config_list_foreach "$cfg" "ipset" append_ipset
 	config_list_foreach "$cfg" "interface" append_interface
 	config_list_foreach "$cfg" "notinterface" append_notinterface
 	config_list_foreach "$cfg" "addnhosts" append_addnhosts
