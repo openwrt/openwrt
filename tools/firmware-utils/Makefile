@@ -71,6 +71,7 @@ define Host/Compile
 	$(call cc,mkheader_gemtek,-lz)
 	$(call cc,mkrtn56uimg, -lz)
 	$(call cc,dgn3500sum)
+	$(call cc,edimax_fw_header, -Wall)
 endef
 
 define Host/Install

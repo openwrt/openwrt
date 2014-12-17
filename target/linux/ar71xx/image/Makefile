@@ -286,6 +286,7 @@ esr900_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),
 esr1750_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),13248k(rootfs),1024k(manufacture)ro,64k(backup)ro,320k(storage)ro,64k(caldata)ro,14656k@0x40000(firmware)
 ew-dorin_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),3712k(firmware),64k(art)
 ew-dorin_mtdlayout_16M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),16000k(firmware),64k(art)
+f9k1115v2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env),14464k(rootfs),1408k(kernel),64k(nvram)ro,64k(envram)ro,64k(art)ro,15872k@0x50000(firmware)
 dlrtdev_mtdlayout=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,6208k(firmware),64k(caldata)ro,640k(certs),960k(unknown)ro,64k@0x7f0000(caldata_copy)
 dlrtdev_mtdlayout_fat=mtdparts=spi0.0:256k(uboot)ro,64k(config)ro,7168k(firmware),640k(certs),64k(caldata)ro,64k@0x660000(caldata_orig),6208k@0x50000(firmware_orig)
 dragino2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,16000k(firmware),64k(config)ro,64k(art)ro
@@ -507,6 +508,30 @@ Image/Build/AthLzma/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
 Image/Build/AthLzma=$(call Image/Build/Ath,$(1),$(2),$(3),$(4),$(5),$(6),$(7))
 Image/Build/AthLzma/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
 
+
+Image/Build/Belkin/buildkernel=$(call MkuImageLzma,$(2),$(3) $(4))
+Image/Build/Belkin/initramfs=$(call MkuImageLzma/initramfs,$(2),$(3) $(4))
+
+define Image/Build/Belkin
+	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
+	$(eval kernsize=$(call mtdpartsize,kernel,$(4)))
+	$(eval rootsize=$(call mtdpartsize,rootfs,$(4)))
+	$(call Sysupgrade/RKuImage,$(1),$(2),$(kernsize),$(rootsize))
+	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
+		edimax_fw_header -m $(5) -v "OpenWrt$(REVISION)" \
+			-n "uImage" \
+			-i $(KDIR_TMP)/vmlinux-$(2).uImage \
+			-o $(KDIR_TMP)/$(2)-uImage; \
+		edimax_fw_header -m $(5) -v "OpenWrt$(REVISION)" \
+			-n "rootfs" \
+			-i $(KDIR)/root.$(1) \
+			-o $(KDIR_TMP)/$(2)-rootfs; \
+		( \
+			dd if=$(KDIR_TMP)/$(2)-rootfs; \
+			dd if=$(KDIR_TMP)/$(2)-uImage; \
+		) > "$(call factoryname,$(1),$(2))"; \
+	fi
+endef
 
 define Image/Build/EnGenius
 	$(eval fwsize=$(call mtdpartsize,firmware,$(4)))
@@ -1147,6 +1172,8 @@ $(eval $(call SingleProfile,AthLzma,64k,HORNETUBx2,hornet-ub-x2,HORNET-UB,ttyATH
 $(eval $(call SingleProfile,AthLzma,64k,PB92,pb92,PB92,ttyS0,115200,$$(pb92_mtdlayout),KRuImage))
 $(eval $(call SingleProfile,AthLzma,64k,TUBE2H16M,tube2h-16M,TUBE2H,ttyATH0,115200,$$(alfa_mtdlayout_16M),KRuImage,65536))
 $(eval $(call SingleProfile,AthLzma,64k,WLR8100,wlr8100,WLR8100,ttyS0,115200,$$(wlr8100_mtdlayout),KRuImage))
+
+$(eval $(call SingleProfile,Belkin,64k,F9K1115V2,f9k1115v2,F9K1115V2,ttyS0,115200,$$(f9k1115v2_mtdlayout),BR-6679BAC))
 
 $(eval $(call SingleProfile,CameoAP91,64kraw,DIR600A1,dir-600-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-00"))
 $(eval $(call SingleProfile,CameoAP91,64kraw,DIR601A1,dir-601-a1,DIR-600-A1,ttyS0,115200,"AP91-AR7240-RT-090223-02"))

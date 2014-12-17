@@ -98,6 +98,13 @@ tew-673gru)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	;;
 
+f9k1115v2)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "2 3 4 5 6"
+	ucidef_add_switch_vlan "switch0" "2" "0 1"
+	;;
+
 nbg460n_550n_550nh)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" "1" "1"
