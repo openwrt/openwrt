@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dnsmasq
 PKG_VERSION:=2.72
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://thekelleys.org.uk/dnsmasq
@@ -72,6 +72,26 @@ define Package/dnsmasq/conffiles
 /etc/dnsmasq.conf
 endef
 
+define Package/dnsmasq/config/Default
+  if PACKAGE_$(1)-$(2)
+  config PACKAGE_dnsmasq_$(2)_dhcpv6
+    bool "Build with DHCPv6 support."
+    default y
+  config PACKAGE_dnsmasq_$(2)_dnssec
+    bool "Build with DNSSEC support."
+    default y
+  config PACKAGE_dnsmasq_$(2)_auth
+    bool "Build with the facility to act as an authoritative DNS server."
+    default y
+  config PACKAGE_dnsmasq_$(2)_ipset
+    bool "Build with ipset support."
+    select PACKAGE_kmod-ipt-ipset
+    default y
+  endif
+endef
+
+Package/dnsmasq-full/config=$(call Package/dnsmasq/config/Default,dnsmasq,full)
+
 Package/dnsmasq-dhcpv6/conffiles = $(Package/dnsmasq/conffiles)
 Package/dnsmasq-full/conffiles = $(Package/dnsmasq/conffiles)
 
@@ -85,7 +105,10 @@ ifeq ($(BUILD_VARIANT),nodhcpv6)
 endif
 
 ifeq ($(BUILD_VARIANT),full)
-	COPTS += -DHAVE_DNSSEC
+	COPTS += $(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dhcpv6),,-DNO_DHCP6) \
+		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dnssec),-DHAVE_DNSSEC) \
+		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_auth),,-DNO_AUTH) \
+		$(if $(CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_ipset),,-DNO_IPSET)
 	COPTS += $(if $(CONFIG_LIBNETTLE_MINI),-DNO_GMP,)
 else
 	COPTS += -DNO_AUTH -DNO_IPSET
