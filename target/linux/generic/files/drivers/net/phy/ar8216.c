@@ -141,10 +141,6 @@ struct ar8xxx_priv {
 	struct mii_bus *mii_bus;
 	struct phy_device *phy;
 
-	u32 (*read)(struct ar8xxx_priv *priv, int reg);
-	void (*write)(struct ar8xxx_priv *priv, int reg, u32 val);
-	u32 (*rmw)(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
-
 	int (*get_port_link)(unsigned port);
 
 	const struct net_device_ops *ndo_old;
@@ -430,7 +426,7 @@ mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val)
 }
 
 static u32
-ar8xxx_mii_read(struct ar8xxx_priv *priv, int reg)
+ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
@@ -450,7 +446,7 @@ ar8xxx_mii_read(struct ar8xxx_priv *priv, int reg)
 }
 
 static void
-ar8xxx_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
+ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
@@ -467,7 +463,7 @@ ar8xxx_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
 }
 
 static u32
-ar8xxx_mii_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
+ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r1, r2, page;
@@ -513,16 +509,10 @@ ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data)
 	mutex_unlock(&bus->mdio_lock);
 }
 
-static inline u32
-ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
-{
-	return priv->rmw(priv, reg, mask, val);
-}
-
 static inline void
 ar8xxx_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 {
-	priv->rmw(priv, reg, 0, val);
+	ar8xxx_rmw(priv, reg, 0, val);
 }
 
 static int
@@ -534,7 +524,7 @@ ar8xxx_reg_wait(struct ar8xxx_priv *priv, u32 reg, u32 mask, u32 val,
 	for (i = 0; i < timeout; i++) {
 		u32 t;
 
-		t = priv->read(priv, reg);
+		t = ar8xxx_read(priv, reg);
 		if ((t & mask) == val)
 			return 0;
 
@@ -598,11 +588,11 @@ ar8xxx_mib_fetch_port_stat(struct ar8xxx_priv *priv, int port, bool flush)
 		u64 t;
 
 		mib = &priv->chip->mib_decs[i];
-		t = priv->read(priv, base + mib->offset);
+		t = ar8xxx_read(priv, base + mib->offset);
 		if (mib->size == 2) {
 			u64 hi;
 
-			hi = priv->read(priv, base + mib->offset + 4);
+			hi = ar8xxx_read(priv, base + mib->offset + 4);
 			t |= hi << 32;
 		}
 
@@ -738,7 +728,7 @@ ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 	u32 t = 0;
 
 	while (1) {
-		t = priv->read(priv, reg);
+		t = ar8xxx_read(priv, reg);
 		if ((t & mask) == val)
 			return 0;
 
@@ -761,10 +751,10 @@ ar8216_vtu_op(struct ar8xxx_priv *priv, u32 op, u32 val)
 	if ((op & AR8216_VTU_OP) == AR8216_VTU_OP_LOAD) {
 		val &= AR8216_VTUDATA_MEMBER;
 		val |= AR8216_VTUDATA_VALID;
-		priv->write(priv, AR8216_REG_VTU_DATA, val);
+		ar8xxx_write(priv, AR8216_REG_VTU_DATA, val);
 	}
 	op |= AR8216_VTU_ACTIVE;
-	priv->write(priv, AR8216_REG_VTU, op);
+	ar8xxx_write(priv, AR8216_REG_VTU, op);
 }
 
 static void
@@ -789,7 +779,7 @@ ar8216_atu_flush(struct ar8xxx_priv *priv)
 
 	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
 	if (!ret)
-		priv->write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
+		ar8xxx_write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
 
 	return ret;
 }
@@ -797,7 +787,7 @@ ar8216_atu_flush(struct ar8xxx_priv *priv)
 static u32
 ar8216_read_port_status(struct ar8xxx_priv *priv, int port)
 {
-	return priv->read(priv, AR8216_REG_PORT_STATUS(port));
+	return ar8xxx_read(priv, AR8216_REG_PORT_STATUS(port));
 }
 
 static void
@@ -857,7 +847,7 @@ static void
 ar8216_init_globals(struct ar8xxx_priv *priv)
 {
 	/* standard atheros magic */
-	priv->write(priv, 0x38, 0xc000050e);
+	ar8xxx_write(priv, 0x38, 0xc000050e);
 
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
 		   AR8216_GCTRL_MTU, 1518 + 8 + 2);
@@ -867,14 +857,14 @@ static void
 ar8216_init_port(struct ar8xxx_priv *priv, int port)
 {
 	/* Enable port learning and tx */
-	priv->write(priv, AR8216_REG_PORT_CTRL(port),
+	ar8xxx_write(priv, AR8216_REG_PORT_CTRL(port),
 		AR8216_PORT_CTRL_LEARN |
 		(4 << AR8216_PORT_CTRL_STATE_S));
 
-	priv->write(priv, AR8216_REG_PORT_VLAN(port), 0);
+	ar8xxx_write(priv, AR8216_REG_PORT_VLAN(port), 0);
 
 	if (port == AR8216_PORT_CPU) {
-		priv->write(priv, AR8216_REG_PORT_STATUS(port),
+		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_UP |
 			(ar8xxx_has_gige(priv) ?
                                 AR8216_PORT_SPEED_1000M : AR8216_PORT_SPEED_100M) |
@@ -884,7 +874,7 @@ ar8216_init_port(struct ar8xxx_priv *priv, int port)
 			(chip_is_ar8316(priv) ? AR8216_PORT_STATUS_TXFLOW : 0) |
 			AR8216_PORT_STATUS_DUPLEX);
 	} else {
-		priv->write(priv, AR8216_REG_PORT_STATUS(port),
+		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_AUTO);
 	}
 }
@@ -954,7 +944,7 @@ ar8316_hw_init(struct ar8xxx_priv *priv)
 {
 	u32 val, newval;
 
-	val = priv->read(priv, AR8316_REG_POSTRIP);
+	val = ar8xxx_read(priv, AR8316_REG_POSTRIP);
 
 	if (priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
 		if (priv->port4_phy) {
@@ -978,7 +968,7 @@ ar8316_hw_init(struct ar8xxx_priv *priv)
 	if (val == newval)
 		goto out;
 
-	priv->write(priv, AR8316_REG_POSTRIP, newval);
+	ar8xxx_write(priv, AR8316_REG_POSTRIP, newval);
 
 	if (priv->port4_phy &&
 	    priv->phy->interface == PHY_INTERFACE_MODE_RGMII) {
@@ -1002,10 +992,10 @@ static void
 ar8316_init_globals(struct ar8xxx_priv *priv)
 {
 	/* standard atheros magic */
-	priv->write(priv, 0x38, 0xc000050e);
+	ar8xxx_write(priv, 0x38, 0xc000050e);
 
 	/* enable cpu port to receive multicast and broadcast frames */
-	priv->write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
+	ar8xxx_write(priv, AR8216_REG_FLOOD_MASK, 0x003f003f);
 
 	/* enable jumbo frames */
 	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CTRL,
@@ -1495,13 +1485,13 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	if (chip_is_ar8337(priv))
 		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
 
-	priv->write(priv, AR8327_REG_PAD0_MODE, t);
+	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
-	priv->write(priv, AR8327_REG_PAD5_MODE, t);
+	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
-	priv->write(priv, AR8327_REG_PAD6_MODE, t);
+	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
 
-	pos = priv->read(priv, AR8327_REG_POWER_ON_STRIP);
+	pos = ar8xxx_read(priv, AR8327_REG_POWER_ON_STRIP);
 	new_pos = pos;
 
 	led_cfg = pdata->led_cfg;
@@ -1511,10 +1501,10 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		else
 			new_pos &= ~AR8327_POWER_ON_STRIP_LED_OPEN_EN;
 
-		priv->write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
-		priv->write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
-		priv->write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
-		priv->write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL0, led_cfg->led_ctrl0);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
+		ar8xxx_write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
 
 		if (new_pos != pos)
 			new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
@@ -1531,7 +1521,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 			       AR8327_SGMII_CTRL_EN_RX |
 			       AR8327_SGMII_CTRL_EN_TX);
 
-		priv->write(priv, AR8327_REG_SGMII_CTRL, t);
+		ar8xxx_write(priv, AR8327_REG_SGMII_CTRL, t);
 
 		if (pdata->sgmii_cfg->serdes_aen)
 			new_pos &= ~AR8327_POWER_ON_STRIP_SERDES_AEN;
@@ -1539,7 +1529,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 			new_pos |= AR8327_POWER_ON_STRIP_SERDES_AEN;
 	}
 
-	priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+	ar8xxx_write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 
 	if (pdata->leds && pdata->num_leds) {
 		int i;
@@ -1586,7 +1576,7 @@ ar8327_hw_config_of(struct ar8xxx_priv *priv, struct device_node *np)
 			data->port6_status = val;
 			break;
 		default:
-			priv->write(priv, reg, val);
+			ar8xxx_write(priv, reg, val);
 			break;
 		}
 	}
@@ -1640,13 +1630,13 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* enable CPU port and disable mirror port */
 	t = AR8327_FWD_CTRL0_CPU_PORT_EN |
 	    AR8327_FWD_CTRL0_MIRROR_PORT;
-	priv->write(priv, AR8327_REG_FWD_CTRL0, t);
+	ar8xxx_write(priv, AR8327_REG_FWD_CTRL0, t);
 
 	/* forward multicast and broadcast frames to CPU */
 	t = (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_UC_FLOOD_S) |
 	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_MC_FLOOD_S) |
 	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_BC_FLOOD_S);
-	priv->write(priv, AR8327_REG_FWD_CTRL1, t);
+	ar8xxx_write(priv, AR8327_REG_FWD_CTRL1, t);
 
 	/* enable jumbo frames */
 	ar8xxx_rmw(priv, AR8327_REG_MAX_FRAME_SIZE,
@@ -1657,13 +1647,13 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 		       AR8327_MODULE_EN_MIB);
 
 	/* Disable EEE on all ports due to stability issues */
-	t = priv->read(priv, AR8327_REG_EEE_CTRL);
+	t = ar8xxx_read(priv, AR8327_REG_EEE_CTRL);
 	t |= AR8327_EEE_CTRL_DISABLE_PHY(0) |
 	     AR8327_EEE_CTRL_DISABLE_PHY(1) |
 	     AR8327_EEE_CTRL_DISABLE_PHY(2) |
 	     AR8327_EEE_CTRL_DISABLE_PHY(3) |
 	     AR8327_EEE_CTRL_DISABLE_PHY(4);
-	priv->write(priv, AR8327_REG_EEE_CTRL, t);
+	ar8xxx_write(priv, AR8327_REG_EEE_CTRL, t);
 }
 
 static void
@@ -1679,25 +1669,25 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-	priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
-	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
+	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
 	t |= 1 << AR8327_PORT_VLAN0_DEF_CVID_S;
-	priv->write(priv, AR8327_REG_PORT_VLAN0(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), t);
 
 	t = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH << AR8327_PORT_VLAN1_OUT_MODE_S;
-	priv->write(priv, AR8327_REG_PORT_VLAN1(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_VLAN1(port), t);
 
 	t = AR8327_PORT_LOOKUP_LEARN;
 	t |= AR8216_PORT_STATE_FORWARD << AR8327_PORT_LOOKUP_STATE_S;
-	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_LOOKUP(port), t);
 }
 
 static u32
 ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 {
-	return priv->read(priv, AR8327_REG_PORT_STATUS(port));
+	return ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
 }
 
 static int
@@ -1708,7 +1698,7 @@ ar8327_atu_flush(struct ar8xxx_priv *priv)
 	ret = ar8216_wait_bit(priv, AR8327_REG_ATU_FUNC,
 			      AR8327_ATU_FUNC_BUSY, 0);
 	if (!ret)
-		priv->write(priv, AR8327_REG_ATU_FUNC,
+		ar8xxx_write(priv, AR8327_REG_ATU_FUNC,
 			    AR8327_ATU_FUNC_OP_FLUSH);
 
 	return ret;
@@ -1722,10 +1712,10 @@ ar8327_vtu_op(struct ar8xxx_priv *priv, u32 op, u32 val)
 		return;
 
 	if ((op & AR8327_VTU_FUNC1_OP) == AR8327_VTU_FUNC1_OP_LOAD)
-		priv->write(priv, AR8327_REG_VTU_FUNC0, val);
+		ar8xxx_write(priv, AR8327_REG_VTU_FUNC0, val);
 
 	op |= AR8327_VTU_FUNC1_BUSY;
-	priv->write(priv, AR8327_REG_VTU_FUNC1, op);
+	ar8xxx_write(priv, AR8327_REG_VTU_FUNC1, op);
 }
 
 static void
@@ -1777,17 +1767,17 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 	t = pvid << AR8327_PORT_VLAN0_DEF_SVID_S;
 	t |= pvid << AR8327_PORT_VLAN0_DEF_CVID_S;
-	priv->write(priv, AR8327_REG_PORT_VLAN0(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), t);
 
 	t = AR8327_PORT_VLAN1_PORT_VLAN_PROP;
 	t |= egress << AR8327_PORT_VLAN1_OUT_MODE_S;
-	priv->write(priv, AR8327_REG_PORT_VLAN1(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_VLAN1(port), t);
 
 	t = members;
 	t |= AR8327_PORT_LOOKUP_LEARN;
 	t |= ingress << AR8327_PORT_LOOKUP_IN_MODE_S;
 	t |= AR8216_PORT_STATE_FORWARD << AR8327_PORT_LOOKUP_STATE_S;
-	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_LOOKUP(port), t);
 }
 
 static int
@@ -2647,7 +2637,7 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 	u16 id;
 	int i;
 
-	val = priv->read(priv, AR8216_REG_CTRL);
+	val = ar8xxx_read(priv, AR8216_REG_CTRL);
 	if (val == ~0)
 		return -ENODEV;
 
@@ -2655,7 +2645,7 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 	for (i = 0; i < AR8X16_PROBE_RETRIES; i++) {
 		u16 t;
 
-		val = priv->read(priv, AR8216_REG_CTRL);
+		val = ar8xxx_read(priv, AR8216_REG_CTRL);
 		if (val == ~0)
 			return -ENODEV;
 
@@ -2791,12 +2781,8 @@ ar8xxx_create_mii(struct mii_bus *bus)
 	struct ar8xxx_priv *priv;
 
 	priv = ar8xxx_create();
-	if (priv) {
+	if (priv)
 		priv->mii_bus = bus;
-		priv->read = ar8xxx_mii_read;
-		priv->write = ar8xxx_mii_write;
-		priv->rmw = ar8xxx_mii_rmw;
-	}
 
 	return priv;
 }
