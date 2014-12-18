@@ -16,8 +16,11 @@ board=$(kirkwood_board_name)
 case "$board" in
 "ea3500" | \
 "ea4500" | \
+"guruplug-server-plus" | \
 "ib62x0" | \
-"pogo_e02")
+"pogo_e02" | \
+"sheevaplug" | \
+"sheevaplug-esata" )
 	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x20000" "0x20000"
 	;;
 esac
