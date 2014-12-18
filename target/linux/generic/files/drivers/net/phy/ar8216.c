@@ -2775,18 +2775,6 @@ ar8xxx_free(struct ar8xxx_priv *priv)
 	kfree(priv);
 }
 
-static struct ar8xxx_priv *
-ar8xxx_create_mii(struct mii_bus *bus)
-{
-	struct ar8xxx_priv *priv;
-
-	priv = ar8xxx_create();
-	if (priv)
-		priv->mii_bus = bus;
-
-	return priv;
-}
-
 static int
 ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 {
@@ -2990,11 +2978,13 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 		if (priv->mii_bus == phydev->bus)
 			goto found;
 
-	priv = ar8xxx_create_mii(phydev->bus);
+	priv = ar8xxx_create();
 	if (priv == NULL) {
 		ret = -ENOMEM;
 		goto unlock;
 	}
+
+	priv->mii_bus = phydev->bus;
 
 	ret = ar8xxx_probe_switch(priv);
 	if (ret)
