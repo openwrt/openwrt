@@ -72,7 +72,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +obj-$(CONFIG_PCI_BCM5301X) += pci-host-bcm5301x.o
 --- /dev/null
 +++ b/drivers/pci/host/pci-host-bcm5301x.c
-@@ -0,0 +1,428 @@
+@@ -0,0 +1,459 @@
 +/*
 + * Northstar PCI-Express driver
 + * Only supports Root-Complex (RC) mode
@@ -94,12 +94,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +#include <linux/pci.h>
 +#include <linux/io.h>
 +#include <linux/ioport.h>
-+#include <linux/interrupt.h>
 +#include <linux/bcma/bcma.h>
 +#include <linux/bcma/bcma_driver_pcie2.h>
-+#include <linux/of_irq.h>
 +
 +#define	SOC_PCIE_HDR_OFF	0x400	/* 256 bytes per function */
++
++#define PCI_LINK_STATUS_CTRL_2_OFFSET 0xDC
++#define PCI_TARGET_LINK_SPEED_MASK    0xF
++#define PCI_TARGET_LINK_SPEED_GEN2    0x2
++#define PCI_TARGET_LINK_SPEED_GEN1    0x1
 +
 +static int bcma_pcie2_map_irq(const struct pci_dev *pdev, u8 slot, u8 pin)
 +{
@@ -222,31 +225,59 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 + * Check link status, return 0 if link is up in RC mode,
 + * otherwise return non-zero
 + */
-+static int bcma_pcie2_check_link(struct bcma_device *bdev, bool allow_gen2)
++static int bcma_pcie2_check_link(struct bcma_device *bdev, struct pci_sys_data *sys)
 +{
-+	u32 devfn = 0;
 +	u32 tmp32;
-+	u8 tmp8;
++	u16 tmp16;
++	u16 pos;
++	u8 nlw;
++	/*
++	 * Setup callback (bcma_pcie2_setup) is called in pcibios_init_hw before
++	 * creating bus root, so we don't have it here yet. On the other hand
++	 * we really want to use pci_bus_find_capability helper to check NLW.
++	 * Let's fake simple pci_bus just to query for capabilities.
++	 */
++	struct pci_bus bus = {
++		.number = 0,
++		.ops = &bcma_pcie2_ops,
++		.sysdata = sys,
++	};
 +
-+	tmp32 = bcma_pcie2_read_config(bdev, 0, devfn, 0xdc, 4);
-+	tmp32 &= ~0xf;
-+	if (allow_gen2)
-+		tmp32 |= 2;
-+	else {
-+		/* force PCIE GEN1 */
-+		tmp32 |= 1;
++	tmp32 = bcma_read32(bdev, BCMA_CORE_PCIE2_LINK_STATUS);
++	dev_dbg(&bdev->dev, "link status: 0x%08x\n", tmp32);
++
++	tmp32 = bcma_read32(bdev, BCMA_CORE_PCIE2_STRAP_STATUS);
++	dev_dbg(&bdev->dev, "strap status: 0x%08x\n", tmp32);
++
++	/* check link status to see if link is active */
++	pos = pci_bus_find_capability(&bus, 0, PCI_CAP_ID_EXP);
++	pci_bus_read_config_word(&bus, 0, pos + PCI_EXP_LNKSTA, &tmp16);
++	nlw = (tmp16 & PCI_EXP_LNKSTA_NLW) >> PCI_EXP_LNKSTA_NLW_SHIFT;
++
++	if (nlw == 0) {
++		/* try GEN 1 link speed */
++		tmp32 = bcma_pcie2_read_config(bdev, 0, 0,
++					PCI_LINK_STATUS_CTRL_2_OFFSET, 4);
++		if ((tmp32 & PCI_TARGET_LINK_SPEED_MASK) ==
++				PCI_TARGET_LINK_SPEED_GEN2) {
++			tmp32 &= ~PCI_TARGET_LINK_SPEED_MASK;
++			tmp32 |= PCI_TARGET_LINK_SPEED_GEN1;
++			bcma_pcie2_write_config(bdev, 0, 0,
++					PCI_LINK_STATUS_CTRL_2_OFFSET, 4, tmp32);
++			tmp32 = bcma_pcie2_read_config(bdev, 0, 0,
++					PCI_LINK_STATUS_CTRL_2_OFFSET, 4);
++			msleep(100);
++
++			pos = pci_bus_find_capability(&bus, 0, PCI_CAP_ID_EXP);
++			pci_bus_read_config_word(&bus, 0, pos + PCI_EXP_LNKSTA,
++					&tmp16);
++			nlw = (tmp16 & PCI_EXP_LNKSTA_NLW) >>
++				PCI_EXP_LNKSTA_NLW_SHIFT;
++		}
 +	}
-+	bcma_pcie2_write_config(bdev, 0, devfn, 0xdc, 4, tmp32);
 +
-+	/* See if the port is in EP mode, indicated by header type 00 */
-+	tmp8 = bcma_pcie2_read_config(bdev, 0, devfn, PCI_HEADER_TYPE, 1);
-+	if (tmp8 != PCI_HEADER_TYPE_BRIDGE) {
-+		dev_info(&bdev->dev, "Port %d in End-Point mode - ignored\n",
-+			 bdev->core_unit);
-+		return -ENODEV;
-+	}
-+
-+	return 0;
++	dev_info(&bdev->dev, "link: %s\n", nlw ? "UP" : "DOWN");
++	return nlw ? 0 : -ENODEV;
 +}
 +
 +/*
@@ -438,7 +469,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +	 * Skip inactive ports -
 +	 * will need to change this for hot-plugging
 +	 */
-+	ret = bcma_pcie2_check_link(bdev, true);
++	ret = bcma_pcie2_check_link(bdev, sys);
 +	if (ret)
 +		return ret;
 +
