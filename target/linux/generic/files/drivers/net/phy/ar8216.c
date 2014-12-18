@@ -54,9 +54,6 @@ struct ar8xxx_priv;
 
 #define AR8XXX_NUM_PHYS 	5
 
-static void ar8216_set_mirror_regs(struct ar8xxx_priv *priv);
-static void ar8327_set_mirror_regs(struct ar8xxx_priv *priv);
-
 enum {
 	AR8XXX_VER_AR8216 = 0x01,
 	AR8XXX_VER_AR8236 = 0x03,
@@ -82,6 +79,11 @@ struct ar8xxx_chip {
 
 	int (*hw_init)(struct ar8xxx_priv *priv);
 	void (*cleanup)(struct ar8xxx_priv *priv);
+
+	const char *name;
+	int vlans;
+	int ports;
+	const struct switch_dev_ops *swops;
 
 	void (*init_globals)(struct ar8xxx_priv *priv);
 	void (*init_port)(struct ar8xxx_priv *priv, int port);
@@ -881,27 +883,6 @@ ar8216_init_port(struct ar8xxx_priv *priv, int port)
 	}
 }
 
-static const struct ar8xxx_chip ar8216_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
-
-	.reg_port_stats_start = 0x19000,
-	.reg_port_stats_length = 0xa0,
-
-	.hw_init = ar8216_hw_init,
-	.init_globals = ar8216_init_globals,
-	.init_port = ar8216_init_port,
-	.setup_port = ar8216_setup_port,
-	.read_port_status = ar8216_read_port_status,
-	.atu_flush = ar8216_atu_flush,
-	.vtu_flush = ar8216_vtu_flush,
-	.vtu_load_vlan = ar8216_vtu_load_vlan,
-	.set_mirror_regs = ar8216_set_mirror_regs,
-
-	.num_mibs = ARRAY_SIZE(ar8216_mibs),
-	.mib_decs = ar8216_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
-};
-
 static void
 ar8236_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 {
@@ -961,27 +942,6 @@ ar8236_init_globals(struct ar8xxx_priv *priv)
 		   (AR8216_MIB_FUNC_NO_OP << AR8216_MIB_FUNC_S) |
 		   AR8236_MIB_EN);
 }
-
-static const struct ar8xxx_chip ar8236_chip = {
-	.caps = AR8XXX_CAP_MIB_COUNTERS,
-
-	.reg_port_stats_start = 0x20000,
-	.reg_port_stats_length = 0x100,
-
-	.hw_init = ar8216_hw_init,
-	.init_globals = ar8236_init_globals,
-	.init_port = ar8216_init_port,
-	.setup_port = ar8236_setup_port,
-	.read_port_status = ar8216_read_port_status,
-	.atu_flush = ar8216_atu_flush,
-	.vtu_flush = ar8216_vtu_flush,
-	.vtu_load_vlan = ar8216_vtu_load_vlan,
-	.set_mirror_regs = ar8216_set_mirror_regs,
-
-	.num_mibs = ARRAY_SIZE(ar8236_mibs),
-	.mib_decs = ar8236_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
-};
 
 static int
 ar8316_hw_init(struct ar8xxx_priv *priv)
@@ -1050,27 +1010,6 @@ ar8316_init_globals(struct ar8xxx_priv *priv)
 		   (AR8216_MIB_FUNC_NO_OP << AR8216_MIB_FUNC_S) |
 		   AR8236_MIB_EN);
 }
-
-static const struct ar8xxx_chip ar8316_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
-
-	.reg_port_stats_start = 0x20000,
-	.reg_port_stats_length = 0x100,
-
-	.hw_init = ar8316_hw_init,
-	.init_globals = ar8316_init_globals,
-	.init_port = ar8216_init_port,
-	.setup_port = ar8216_setup_port,
-	.read_port_status = ar8216_read_port_status,
-	.atu_flush = ar8216_atu_flush,
-	.vtu_flush = ar8216_vtu_flush,
-	.vtu_load_vlan = ar8216_vtu_load_vlan,
-	.set_mirror_regs = ar8216_set_mirror_regs,
-
-	.num_mibs = ARRAY_SIZE(ar8236_mibs),
-	.mib_decs = ar8236_mibs,
-	.mib_func = AR8216_REG_MIB_FUNC
-};
 
 static u32
 ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
@@ -1845,31 +1784,6 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 	priv->write(priv, AR8327_REG_PORT_LOOKUP(port), t);
 }
 
-static const struct ar8xxx_chip ar8327_chip = {
-	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
-	.config_at_probe = true,
-	.mii_lo_first = true,
-
-	.reg_port_stats_start = 0x1000,
-	.reg_port_stats_length = 0x100,
-
-	.hw_init = ar8327_hw_init,
-	.cleanup = ar8327_cleanup,
-	.init_globals = ar8327_init_globals,
-	.init_port = ar8327_init_port,
-	.setup_port = ar8327_setup_port,
-	.read_port_status = ar8327_read_port_status,
-	.atu_flush = ar8327_atu_flush,
-	.vtu_flush = ar8327_vtu_flush,
-	.vtu_load_vlan = ar8327_vtu_load_vlan,
-	.phy_fixup = ar8327_phy_fixup,
-	.set_mirror_regs = ar8327_set_mirror_regs,
-
-	.num_mibs = ARRAY_SIZE(ar8236_mibs),
-	.mib_decs = ar8236_mibs,
-	.mib_func = AR8327_REG_MIB_FUNC
-};
-
 static int
 ar8xxx_sw_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
 		   struct switch_val *val)
@@ -2582,6 +2496,144 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.get_port_link = ar8xxx_sw_get_port_link,
 };
 
+static const struct ar8xxx_chip ar8216_chip = {
+	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x19000,
+	.reg_port_stats_length = 0xa0,
+
+	.name = "Atheros AR8216",
+	.ports = AR8216_NUM_PORTS,
+	.vlans = AR8216_NUM_VLANS,
+	.swops = &ar8xxx_sw_ops,
+
+	.hw_init = ar8216_hw_init,
+	.init_globals = ar8216_init_globals,
+	.init_port = ar8216_init_port,
+	.setup_port = ar8216_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
+
+	.num_mibs = ARRAY_SIZE(ar8216_mibs),
+	.mib_decs = ar8216_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
+};
+
+static const struct ar8xxx_chip ar8236_chip = {
+	.caps = AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+
+	.name = "Atheros AR8236",
+	.ports = AR8216_NUM_PORTS,
+	.vlans = AR8216_NUM_VLANS,
+	.swops = &ar8xxx_sw_ops,
+
+	.hw_init = ar8216_hw_init,
+	.init_globals = ar8236_init_globals,
+	.init_port = ar8216_init_port,
+	.setup_port = ar8236_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
+};
+
+static const struct ar8xxx_chip ar8316_chip = {
+	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+
+	.reg_port_stats_start = 0x20000,
+	.reg_port_stats_length = 0x100,
+
+	.name = "Atheros AR8316",
+	.ports = AR8216_NUM_PORTS,
+	.vlans = AR8X16_MAX_VLANS,
+	.swops = &ar8xxx_sw_ops,
+
+	.hw_init = ar8316_hw_init,
+	.init_globals = ar8316_init_globals,
+	.init_port = ar8216_init_port,
+	.setup_port = ar8216_setup_port,
+	.read_port_status = ar8216_read_port_status,
+	.atu_flush = ar8216_atu_flush,
+	.vtu_flush = ar8216_vtu_flush,
+	.vtu_load_vlan = ar8216_vtu_load_vlan,
+	.set_mirror_regs = ar8216_set_mirror_regs,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8216_REG_MIB_FUNC
+};
+
+static const struct ar8xxx_chip ar8327_chip = {
+	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.config_at_probe = true,
+	.mii_lo_first = true,
+
+	.name = "Atheros AR8327",
+	.ports = AR8327_NUM_PORTS,
+	.vlans = AR8X16_MAX_VLANS,
+	.swops = &ar8327_sw_ops,
+
+	.reg_port_stats_start = 0x1000,
+	.reg_port_stats_length = 0x100,
+
+	.hw_init = ar8327_hw_init,
+	.cleanup = ar8327_cleanup,
+	.init_globals = ar8327_init_globals,
+	.init_port = ar8327_init_port,
+	.setup_port = ar8327_setup_port,
+	.read_port_status = ar8327_read_port_status,
+	.atu_flush = ar8327_atu_flush,
+	.vtu_flush = ar8327_vtu_flush,
+	.vtu_load_vlan = ar8327_vtu_load_vlan,
+	.phy_fixup = ar8327_phy_fixup,
+	.set_mirror_regs = ar8327_set_mirror_regs,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8327_REG_MIB_FUNC
+};
+
+static const struct ar8xxx_chip ar8337_chip = {
+	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
+	.config_at_probe = true,
+	.mii_lo_first = true,
+
+	.name = "Atheros AR8337",
+	.ports = AR8327_NUM_PORTS,
+	.vlans = AR8X16_MAX_VLANS,
+	.swops = &ar8327_sw_ops,
+
+	.reg_port_stats_start = 0x1000,
+	.reg_port_stats_length = 0x100,
+
+	.hw_init = ar8327_hw_init,
+	.cleanup = ar8327_cleanup,
+	.init_globals = ar8327_init_globals,
+	.init_port = ar8327_init_port,
+	.setup_port = ar8327_setup_port,
+	.read_port_status = ar8327_read_port_status,
+	.atu_flush = ar8327_atu_flush,
+	.vtu_flush = ar8327_vtu_flush,
+	.vtu_load_vlan = ar8327_vtu_load_vlan,
+	.phy_fixup = ar8327_phy_fixup,
+	.set_mirror_regs = ar8327_set_mirror_regs,
+
+	.num_mibs = ARRAY_SIZE(ar8236_mibs),
+	.mib_decs = ar8236_mibs,
+	.mib_func = AR8327_REG_MIB_FUNC
+};
+
 static int
 ar8xxx_id_chip(struct ar8xxx_priv *priv)
 {
@@ -2623,7 +2675,7 @@ ar8xxx_id_chip(struct ar8xxx_priv *priv)
 		priv->chip = &ar8327_chip;
 		break;
 	case AR8XXX_VER_AR8337:
-		priv->chip = &ar8327_chip;
+		priv->chip = &ar8337_chip;
 		break;
 	default:
 		pr_err("ar8216: Unknown Atheros device [ver=%d, rev=%d]\n",
@@ -2746,6 +2798,7 @@ ar8xxx_create_mii(struct mii_bus *bus)
 static int
 ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 {
+	const struct ar8xxx_chip *chip;
 	struct switch_dev *swdev;
 	int ret;
 
@@ -2753,33 +2806,14 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 	if (ret)
 		return ret;
 
+	chip = priv->chip;
+
 	swdev = &priv->dev;
 	swdev->cpu_port = AR8216_PORT_CPU;
-	swdev->ops = &ar8xxx_sw_ops;
-
-	if (chip_is_ar8316(priv)) {
-		swdev->name = "Atheros AR8316";
-		swdev->vlans = AR8X16_MAX_VLANS;
-		swdev->ports = AR8216_NUM_PORTS;
-	} else if (chip_is_ar8236(priv)) {
-		swdev->name = "Atheros AR8236";
-		swdev->vlans = AR8216_NUM_VLANS;
-		swdev->ports = AR8216_NUM_PORTS;
-	} else if (chip_is_ar8327(priv)) {
-		swdev->name = "Atheros AR8327";
-		swdev->vlans = AR8X16_MAX_VLANS;
-		swdev->ports = AR8327_NUM_PORTS;
-		swdev->ops = &ar8327_sw_ops;
-	} else if (chip_is_ar8337(priv)) {
-		swdev->name = "Atheros AR8337";
-		swdev->vlans = AR8X16_MAX_VLANS;
-		swdev->ports = AR8327_NUM_PORTS;
-		swdev->ops = &ar8327_sw_ops;
-	} else {
-		swdev->name = "Atheros AR8216";
-		swdev->vlans = AR8216_NUM_VLANS;
-		swdev->ports = AR8216_NUM_PORTS;
-	}
+	swdev->name = chip->name;
+	swdev->vlans = chip->vlans;
+	swdev->ports = chip->ports;
+	swdev->ops = chip->swops;
 
 	ret = ar8xxx_mib_init(priv);
 	if (ret)
