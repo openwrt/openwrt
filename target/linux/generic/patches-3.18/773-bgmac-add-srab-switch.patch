@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /**************************************************
   * BCMA bus ops
   **************************************************/
-@@ -1521,6 +1533,16 @@ static int bgmac_probe(struct bcma_devic
+@@ -1523,6 +1535,16 @@ static int bgmac_probe(struct bcma_devic
  		goto err_dma_free;
  	}
  
@@ -55,9 +55,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		platform_device_unregister(&bgmac_b53_dev);
 +	bgmac->b53_device = NULL;
 +
- 	netif_napi_del(&bgmac->napi);
  	unregister_netdev(bgmac->net_dev);
  	bgmac_mii_unregister(bgmac);
+ 	netif_napi_del(&bgmac->napi);
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
 @@ -457,6 +457,9 @@ struct bgmac {
