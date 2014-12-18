@@ -37,6 +37,18 @@ kirkwood_board_detect() {
 		name="ea4500"
 		;;
 
+	"Globalscale Technologies Guruplug Server Plus")
+		name="guruplug-server-plus"
+		;;
+
+	"Globalscale Technologies SheevaPlug")
+		name="sheevaplug"
+		;;
+
+	"Globalscale Technologies eSATA SheevaPlug")
+		name="sheevaplug-esata"
+		;;
+
 	*)
 		name="generic"
 		;;
