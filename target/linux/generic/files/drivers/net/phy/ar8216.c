@@ -1393,7 +1393,7 @@ static DEVICE_ATTR(enable_hw_mode,  S_IRUGO | S_IWUSR,
 		   ar8327_led_enable_hw_mode_store);
 
 static int
-ar8327_led_register(struct ar8xxx_priv *priv, struct ar8327_led *aled)
+ar8327_led_register(struct ar8327_led *aled)
 {
 	int ret;
 
@@ -1467,7 +1467,7 @@ ar8327_led_create(struct ar8xxx_priv *priv,
 	mutex_init(&aled->mutex);
 	INIT_WORK(&aled->led_work, ar8327_led_work_func);
 
-	ret = ar8327_led_register(priv, aled);
+	ret = ar8327_led_register(aled);
 	if (ret)
 		goto err_free;
 
