@@ -62,6 +62,13 @@ case "$board" in
 	add_port_based_vlan "switch0" "1" "0 1 2 3 5"
 	add_port_based_vlan "switch0" "2" "4 6"
 	;;
+"guruplug-server-plus")
+	set_lan_dhcp "eth0" "eth1"
+	;;
+"sheevaplug" | \
+"sheevaplug-esata")
+	set_lan_dhcp "eth0"
+	;;
 *)
 	ucidef_set_interface_lan "eth0"
 	;;

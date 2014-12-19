@@ -28,6 +28,13 @@ case "$board" in
 	ucidef_set_led_default "health" "status:green:health" "1"
 	ucidef_set_led_default "fault" "status:orange:fault" "1"
 	;;
+"guruplug-server-plus")
+	ucidef_set_led_timer "health" "guruplug:red:health" "200" "800"
+	;;
+"sheevaplug" | \
+"sheevaplug-esata")
+	ucidef_set_led_timer "health" "sheevaplug:blue:health" "200" "800"
+	;;
 *)
 	;;
 esac
