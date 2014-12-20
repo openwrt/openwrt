@@ -13,8 +13,17 @@ ucidef_set_interface_loopback
 
 ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 ucidef_add_switch "switch0" "1" "1"
-ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
-ucidef_add_switch_vlan "switch0" "2" "4 5t"
+
+vlan1ports="$(nvram get vlan1ports)"
+vlan2ports="$(nvram get vlan2ports)"
+if echo "$vlan1ports" | egrep -q "^1 2 3 4 5" && \
+   echo "$vlan2ports" | egrep -q "^0 5"; then
+	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+	ucidef_add_switch_vlan "switch0" "2" "0 5t"
+else
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+	ucidef_add_switch_vlan "switch0" "2" "4 5t"
+fi
 
 uci commit network
 
