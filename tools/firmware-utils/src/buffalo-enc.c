@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "adi:m:o:hp:v:k:r:s:");
+		c = getopt(argc, argv, "adi:m:o:hlp:v:k:r:s:");
 		if (c == -1)
 			break;
 
