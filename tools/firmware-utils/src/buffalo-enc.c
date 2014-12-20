@@ -85,6 +85,7 @@ static int decrypt_file(void)
 
 	memset(&ep, '\0', sizeof(ep));
 	ep.key = (unsigned char *) crypt_key;
+	ep.longstate = longstate;
 
 	err = decrypt_buf(&ep, buf, src_len);
 	if (err) {
