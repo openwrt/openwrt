@@ -1,0 +1,29 @@
+--- a/drivers/net/phy/phy_device.c
++++ b/drivers/net/phy/phy_device.c
+@@ -1102,7 +1102,7 @@ static int genphy_config_init(struct phy
+ 	return 0;
+ }
+ 
+-static int gen10g_soft_reset(struct phy_device *phydev)
++static int no_soft_reset(struct phy_device *phydev)
+ {
+ 	/* Do nothing for now */
+ 	return 0;
+@@ -1282,7 +1282,7 @@ static struct phy_driver genphy_driver[]
+ 	.phy_id		= 0xffffffff,
+ 	.phy_id_mask	= 0xffffffff,
+ 	.name		= "Generic PHY",
+-	.soft_reset	= genphy_soft_reset,
++	.soft_reset	= no_soft_reset,
+ 	.config_init	= genphy_config_init,
+ 	.features	= 0,
+ 	.config_aneg	= genphy_config_aneg,
+@@ -1294,7 +1294,7 @@ static struct phy_driver genphy_driver[]
+ 	.phy_id         = 0xffffffff,
+ 	.phy_id_mask    = 0xffffffff,
+ 	.name           = "Generic 10G PHY",
+-	.soft_reset	= gen10g_soft_reset,
++	.soft_reset	= no_soft_reset,
+ 	.config_init    = gen10g_config_init,
+ 	.features       = 0,
+ 	.config_aneg    = gen10g_config_aneg,
