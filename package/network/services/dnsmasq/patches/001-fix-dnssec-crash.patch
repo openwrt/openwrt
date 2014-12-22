@@ -1,0 +1,83 @@
+From 094b5c3d904bae9aeb3206d9f3b8348926b84975 Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 21 Dec 2014 16:11:52 +0000
+Subject: [PATCH] Fix crash in DNSSEC code when attempting to verify large RRs.
+
+---
+ src/dnssec.c | 27 +++++++++++++++++++--------
+
+diff --git a/src/dnssec.c b/src/dnssec.c
+index 69bfc29..3208ac7 100644
+--- a/src/dnssec.c
++++ b/src/dnssec.c
+@@ -456,16 +456,27 @@ static u16 *get_desc(int type)
+ 
+ /* Return bytes of canonicalised rdata, when the return value is zero, the remaining 
+    data, pointed to by *p, should be used raw. */
+-static int get_rdata(struct dns_header *header, size_t plen, unsigned char *end, char *buff, 
++static int get_rdata(struct dns_header *header, size_t plen, unsigned char *end, char *buff, int bufflen,
+ 		     unsigned char **p, u16 **desc)
+ {
+   int d = **desc;
+   
+-  (*desc)++;
+-  
+   /* No more data needs mangling */
+   if (d == (u16)-1)
+-    return 0;
++    {
++      /* If there's more data than we have space for, just return what fits,
++	 we'll get called again for more chunks */
++      if (end - *p > bufflen)
++	{
++	  memcpy(buff, *p, bufflen);
++	  *p += bufflen;
++	  return bufflen;
++	}
++      
++      return 0;
++    }
++ 
++  (*desc)++;
+   
+   if (d == 0 && extract_name(header, plen, p, buff, 1, 0))
+     /* domain-name, canonicalise */
+@@ -560,7 +571,7 @@ static void sort_rrset(struct dns_header *header, size_t plen, u16 *rr_desc, int
+ 	      if (left1 != 0)
+ 		memmove(buff1, buff1 + len1 - left1, left1);
+ 	      
+-	      if ((len1 = get_rdata(header, plen, end1, buff1 + left1, &p1, &dp1)) == 0)
++	      if ((len1 = get_rdata(header, plen, end1, buff1 + left1, MAXDNAME - left1, &p1, &dp1)) == 0)
+ 		{
+ 		  quit = 1;
+ 		  len1 = end1 - p1;
+@@ -571,7 +582,7 @@ static void sort_rrset(struct dns_header *header, size_t plen, u16 *rr_desc, int
+ 	      if (left2 != 0)
+ 		memmove(buff2, buff2 + len2 - left2, left2);
+ 	      
+-	      if ((len2 = get_rdata(header, plen, end2, buff2 + left2, &p2, &dp2)) == 0)
++	      if ((len2 = get_rdata(header, plen, end2, buff2 + left2, MAXDNAME - left2, &p2, &dp2)) == 0)
+ 		{
+ 		  quit = 1;
+ 		  len2 = end2 - p2;
+@@ -808,7 +819,7 @@ static int validate_rrset(time_t now, struct dns_header *header, size_t plen, in
+ 	  /* canonicalise rdata and calculate length of same, use name buffer as workspace */
+ 	  cp = p;
+ 	  dp = rr_desc;
+-	  for (len = 0; (seg = get_rdata(header, plen, end, name, &cp, &dp)) != 0; len += seg);
++	  for (len = 0; (seg = get_rdata(header, plen, end, name, MAXDNAME, &cp, &dp)) != 0; len += seg);
+ 	  len += end - cp;
+ 	  len = htons(len);
+ 	  hash->update(ctx, 2, (unsigned char *)&len); 
+@@ -816,7 +827,7 @@ static int validate_rrset(time_t now, struct dns_header *header, size_t plen, in
+ 	  /* Now canonicalise again and digest. */
+ 	  cp = p;
+ 	  dp = rr_desc;
+-	  while ((seg = get_rdata(header, plen, end, name, &cp, &dp)))
++	  while ((seg = get_rdata(header, plen, end, name, MAXDNAME, &cp, &dp)))
+ 	    hash->update(ctx, seg, (unsigned char *)name);
+ 	  if (cp != end)
+ 	    hash->update(ctx, end - cp, cp);
+-- 
+2.1.3
+
