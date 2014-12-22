@@ -1,0 +1,27 @@
+From 800c5cc1e7438818fd80f08c2d472df249a6942d Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Mon, 15 Dec 2014 17:50:15 +0000
+Subject: [PATCH] Remove floor on EDNS0 packet size with DNSSEC.
+
+---
+ src/dnsmasq.c | 5 -----
+
+diff --git a/src/dnsmasq.c b/src/dnsmasq.c
+index bf2e25a..5c7750d 100644
+--- a/src/dnsmasq.c
++++ b/src/dnsmasq.c
+@@ -87,11 +87,6 @@ int main (int argc, char **argv)
+  
+   if (daemon->edns_pktsz < PACKETSZ)
+     daemon->edns_pktsz = PACKETSZ;
+-#ifdef HAVE_DNSSEC
+-  /* Enforce min packet big enough for DNSSEC */
+-  if (option_bool(OPT_DNSSEC_VALID) && daemon->edns_pktsz < EDNS_PKTSZ)
+-    daemon->edns_pktsz = EDNS_PKTSZ;
+-#endif
+ 
+   daemon->packet_buff_sz = daemon->edns_pktsz > DNSMASQ_PACKETSZ ? 
+     daemon->edns_pktsz : DNSMASQ_PACKETSZ;
+-- 
+2.1.3
+
