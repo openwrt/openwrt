@@ -391,7 +391,7 @@ static int sata_oxnas_acquire_hw(struct ata_port *ap, int may_sleep,
 				 int timeout_jiffies);
 static void sata_oxnas_release_hw(struct ata_port *ap);
 
-static const void *HW_LOCKER_UID = (void*)0xdeadbeef;
+static const void *HW_LOCKER_UID = (void *)0xdeadbeef;
 
 /***************************************************************************
 * ASIC access
@@ -561,7 +561,7 @@ static unsigned int sata_oxnas_qc_issue(struct ata_queued_cmd *qc)
 	void __iomem *port_base = pd->port_base;
 	void __iomem *core_base = pd->core_base;
 	int port_no = qc->ap->port_no;
-	int no_microcode = ( hd->current_ucode == UNKNOWN_MODE );
+	int no_microcode = (hd->current_ucode == UNKNOWN_MODE);
 	u32 reg;
 
 	/* check the core is idle */
@@ -584,7 +584,7 @@ static unsigned int sata_oxnas_qc_issue(struct ata_queued_cmd *qc)
 	/* enable passing of error signals to DMA sub-core by clearing the
 	 * appropriate bit */
 	reg = ioread32(core_base + DATA_PLANE_CTRL);
-	if(no_microcode)
+	if (no_microcode)
 		reg |= (DPC_ERROR_MASK_BIT | (DPC_ERROR_MASK_BIT << 1));
 	reg &= ~(DPC_ERROR_MASK_BIT << port_no);
 	iowrite32(reg, core_base + DATA_PLANE_CTRL);
@@ -669,60 +669,84 @@ static int __acquire_sata_core(
 
 	spin_lock_irqsave(&hd->core_lock, flags);
 
-	DPRINTK("Entered uid %p, port %d, h/w count %d, d count %d, callback %p, "
-		    "hw_access %d, core_locked %d, reentrant_port_no %d, isr_callback %p\n",
-		uid, port_no, hd->hw_lock_count, hd->direct_lock_count, callback, hw_access,
-		hd->core_locked, hd->reentrant_port_no, hd->isr_callback);
+	DPRINTK("Entered uid %p, port %d, h/w count %d, d count %d, "
+		    "callback %p, hw_access %d, core_locked %d, "
+		    "reentrant_port_no %d, isr_callback %p\n",
+		uid, port_no, hd->hw_lock_count, hd->direct_lock_count,
+		callback, hw_access, hd->core_locked, hd->reentrant_port_no,
+		hd->isr_callback);
 
 	while (!timed_out) {
-		if (hd->core_locked || (!hw_access && hd->scsi_nonblocking_attempts)) {
+		if (hd->core_locked ||
+		    (!hw_access && hd->scsi_nonblocking_attempts)) {
 			/* Can only allow access if from SCSI/SATA stack and if
-			   reentrant access is allowed and this access is to the same
-			   port for which the lock is current held */
+			 * reentrant access is allowed and this access is to the
+			 * same port for which the lock is current held
+			 */
 			if (hw_access && (port_no == hd->reentrant_port_no)) {
 				BUG_ON(!hd->hw_lock_count);
 				++(hd->hw_lock_count);
 
-				DPRINTK("Allow SCSI/SATA re-entrant access to uid %p port %d\n", uid, port_no);
+				DPRINTK("Allow SCSI/SATA re-entrant access to "
+					"uid %p port %d\n", uid, port_no);
 				acquired = 1;
 				break;
 			} else if (!hw_access) {
-				if ((locker_type == SATA_READER) && (hd->current_locker_type == SATA_READER)) {
+				if ((locker_type == SATA_READER) &&
+				    (hd->current_locker_type == SATA_READER)) {
 					WARN(1,
-						"Already locked by reader, uid %p, locker_uid %p, port %d, "
-						"h/w count %d, d count %d, hw_access %d\n", uid, hd->locker_uid,
-						port_no, hd->hw_lock_count, hd->direct_lock_count, hw_access);
+						"Already locked by reader, "
+						"uid %p, locker_uid %p, "
+						"port %d, h/w count %d, "
+						"d count %d, hw_access %d\n",
+						uid, hd->locker_uid, port_no,
+						hd->hw_lock_count,
+						hd->direct_lock_count,
+						hw_access);
 					goto check_uid;
 				}
 
-				if ((locker_type != SATA_READER) && (locker_type != SATA_WRITER)) {
+				if ((locker_type != SATA_READER) &&
+				    (locker_type != SATA_WRITER)) {
 					goto wait_for_lock;
 				}
 
 check_uid:
-				WARN(uid == hd->locker_uid, "Attempt to lock by locker type %d "
-					"uid %p, already locked by locker type %d with "
-					"locker_uid %p, port %d, h/w count %d, d count %d, "
-					"hw_access %d\n", locker_type, uid, hd->current_locker_type,
-					hd->locker_uid, port_no, hd->hw_lock_count, hd->direct_lock_count, hw_access);
+				WARN(uid == hd->locker_uid, "Attempt to lock "
+					"by locker type %d uid %p, already "
+					"locked by locker type %d with "
+					"locker_uid %p, port %d, "
+					"h/w count %d, d count %d, "
+					"hw_access %d\n", locker_type, uid,
+					hd->current_locker_type,
+					hd->locker_uid, port_no,
+					hd->hw_lock_count,
+					hd->direct_lock_count, hw_access);
 			}
 		} else {
-			WARN(hd->hw_lock_count || hd->direct_lock_count, "Core unlocked but counts "
-				"non-zero: uid %p, locker_uid %p, port %d, h/w count %d, "
-				"d count %d, hw_access %d\n", uid, hd->locker_uid, port_no,
-				hd->hw_lock_count, hd->direct_lock_count, hw_access);
+			WARN(hd->hw_lock_count || hd->direct_lock_count,
+				"Core unlocked but counts non-zero: uid %p, "
+				"locker_uid %p, port %d, h/w count %d, "
+				"d count %d, hw_access %d\n", uid,
+				hd->locker_uid, port_no, hd->hw_lock_count,
+				hd->direct_lock_count, hw_access);
 
 			BUG_ON(hd->current_locker_type != SATA_UNLOCKED);
 
-			WARN(hd->locker_uid, "Attempt to lock uid %p when locker_uid %p is "
-				"non-zero,  port %d, h/w count %d, d count %d, hw_access %d\n",
-				uid, hd->locker_uid, port_no, hd->hw_lock_count, hd->direct_lock_count,
-				hw_access);
+			WARN(hd->locker_uid, "Attempt to lock uid %p when "
+				"locker_uid %p is non-zero,  port %d, "
+				"h/w count %d, d count %d, hw_access %d\n",
+				uid, hd->locker_uid, port_no, hd->hw_lock_count,
+				hd->direct_lock_count, hw_access);
 
 			if (!hw_access) {
-				/* Direct access attempting to acquire non-contented lock */
-				BUG_ON(!callback);	// Must have callback for direct access
-				BUG_ON(hd->reentrant_port_no != -1); // Sanity check lock state
+				/* Direct access attempting to acquire
+				 * non-contented lock
+				 */
+				/* Must have callback for direct access */
+				BUG_ON(!callback);
+				/* Sanity check lock state */
+				BUG_ON(hd->reentrant_port_no != -1);
 
 				hd->isr_callback = callback;
 				hd->isr_arg = arg;
@@ -730,12 +754,17 @@ check_uid:
 
 				hd->current_locker_type = locker_type;
 			} else {
-				/* SCSI/SATA attempting to acquire non-contented lock */
-				BUG_ON(callback);	// No callbacks for SCSI/SATA access
-				BUG_ON(arg);		// No callback args for SCSI/SATA access
+				/* SCSI/SATA attempting to acquire
+				 * non-contented lock
+				 */
+				/* No callbacks for SCSI/SATA access */
+				BUG_ON(callback);
+				/* No callback args for SCSI/SATA access */
+				BUG_ON(arg);
 
-				BUG_ON(hd->isr_callback);	// Sanity check lock state
-				BUG_ON(hd->isr_arg);		// Sanity check lock state
+				/* Sanity check lock state */
+				BUG_ON(hd->isr_callback);
+				BUG_ON(hd->isr_arg);
 
 				++(hd->hw_lock_count);
 				hd->reentrant_port_no = port_no;
@@ -751,66 +780,80 @@ check_uid:
 
 wait_for_lock:
 		if (!may_sleep) {
-			DPRINTK("Denying for uid %p locker_type %d, hw_access %d, port %d, "
-			"current_locker_type %d as cannot sleep\n", uid, locker_type,
-			hw_access, port_no, hd->current_locker_type);
+			DPRINTK("Denying for uid %p locker_type %d, "
+			"hw_access %d, port %d, current_locker_type %d as "
+			"cannot sleep\n", uid, locker_type, hw_access, port_no,
+			hd->current_locker_type);
 
-			if (hw_access) {
+			if (hw_access)
 				++(hd->scsi_nonblocking_attempts);
-			}
+
 			break;
 		}
 
-		// Core is locked and we're allowed to sleep, so wait to be awoken when
-		// the core is unlocked
+		/* Core is locked and we're allowed to sleep, so wait to be
+		 * awoken when the core is unlocked
+		 */
 		for (;;) {
-			prepare_to_wait(hw_access ? &hd->scsi_wait_queue : &hd->fast_wait_queue,
-				&wait, TASK_UNINTERRUPTIBLE);
-			if (!hd->core_locked && !(!hw_access && hd->scsi_nonblocking_attempts)) {
-				// We're going to use variables that will have been changed by
-				// the waker prior to clearing core_locked so we need to ensure
-				// we see changes to all those variables
+			prepare_to_wait(hw_access ? &hd->scsi_wait_queue :
+						    &hd->fast_wait_queue,
+					&wait, TASK_UNINTERRUPTIBLE);
+			if (!hd->core_locked &&
+			    !(!hw_access && hd->scsi_nonblocking_attempts)) {
+				/* We're going to use variables that will have
+				 * been changed by the waker prior to clearing
+				 * core_locked so we need to ensure we see
+				 * changes to all those variables
+				 */
 				smp_rmb();
 				break;
 			}
 			if (time_after(jiffies, end)) {
-				printk("__acquire_sata_core() uid %p failing for port %d timed out, "
-					   "locker_uid %p, h/w count %d, d count %d, callback %p, hw_access %d, "
-					   "core_locked %d, reentrant_port_no %d, isr_callback %p, "
-					   "isr_arg %p\n", uid, port_no, hd->locker_uid,
-					   hd->hw_lock_count, hd->direct_lock_count, callback, hw_access,
-					   hd->core_locked, hd->reentrant_port_no, hd->isr_callback,
-					   hd->isr_arg);
+				printk(KERN_WARNING "__acquire_sata_core() "
+					"uid %p failing for port %d timed out, "
+					"locker_uid %p, h/w count %d, "
+					"d count %d, callback %p, hw_access %d, "
+					"core_locked %d, reentrant_port_no %d, "
+					"isr_callback %p, isr_arg %p\n", uid,
+					port_no, hd->locker_uid,
+					hd->hw_lock_count,
+					hd->direct_lock_count, callback,
+					hw_access, hd->core_locked,
+					hd->reentrant_port_no, hd->isr_callback,
+					hd->isr_arg);
 				timed_out = 1;
 				break;
 			}
 			spin_unlock_irqrestore(&hd->core_lock, flags);
 			if (!schedule_timeout(4*HZ)) {
-				printk(KERN_INFO "__acquire_sata_core() uid %p, locker_uid %p, "
-					"timed-out of schedule(), checking overall timeout\n",
+				printk(KERN_INFO "__acquire_sata_core() uid %p, "
+					"locker_uid %p, timed-out of "
+					"schedule(), checking overall timeout\n",
 					uid, hd->locker_uid);
 			}
 			spin_lock_irqsave(&hd->core_lock, flags);
 		}
-		finish_wait(hw_access ? &hd->scsi_wait_queue : &hd->fast_wait_queue, &wait);
+		finish_wait(hw_access ? &hd->scsi_wait_queue :
+					&hd->fast_wait_queue, &wait);
 	}
 
 	if (hw_access && acquired) {
-		if (hd->scsi_nonblocking_attempts) {
+		if (hd->scsi_nonblocking_attempts)
 			hd->scsi_nonblocking_attempts = 0;
-		}
 
-		// Wake any other SCSI/SATA waiters so they can get reentrant access to
-		// the same port if appropriate. This is because if the SATA core is
-		// locked by fast access, or SCSI/SATA access to other port, then can
-		// have >1 SCSI/SATA waiters on the wait list so want to give reentrant
-		// accessors a chance to get access ASAP
-		if (!list_empty(&hd->scsi_wait_queue.task_list)) {
+		/* Wake any other SCSI/SATA waiters so they can get reentrant
+		 * access to the same port if appropriate. This is because if
+		 * the SATA core is locked by fast access, or SCSI/SATA access
+		 * to other port, then can have >1 SCSI/SATA waiters on the wait
+		 * list so want to give reentrant accessors a chance to get
+		 * access ASAP
+		 */
+		if (!list_empty(&hd->scsi_wait_queue.task_list))
 			wake_up(&hd->scsi_wait_queue);
-		}
 	}
 
-	DPRINTK("Leaving uid %p with acquired = %d, port %d, callback %p\n", uid, acquired, port_no, callback);
+	DPRINTK("Leaving uid %p with acquired = %d, port %d, callback %p\n",
+		uid, acquired, port_no, callback);
 
 	spin_unlock_irqrestore(&hd->core_lock, flags);
 
@@ -838,7 +881,8 @@ int sata_core_has_scsi_waiters(struct ata_host *ah)
 	struct sata_oxnas_host_priv *hd = ah->private_data;
 
 	spin_lock_irqsave(&hd->core_lock, flags);
-	has_waiters = hd->scsi_nonblocking_attempts || !list_empty(&hd->scsi_wait_queue.task_list);
+	has_waiters = hd->scsi_nonblocking_attempts ||
+		      !list_empty(&hd->scsi_wait_queue.task_list);
 	spin_unlock_irqrestore(&hd->core_lock, flags);
 
 	return has_waiters;
@@ -856,7 +900,9 @@ static int sata_oxnas_acquire_hw(
 	int may_sleep,
 	int timeout_jiffies)
 {
-	return __acquire_sata_core(ap->host, ap->port_no, NULL, 0, may_sleep, timeout_jiffies, 1, (void*)HW_LOCKER_UID, SATA_SCSI_STACK);
+	return __acquire_sata_core(ap->host, ap->port_no, NULL, 0, may_sleep,
+				   timeout_jiffies, 1, (void *)HW_LOCKER_UID,
+				   SATA_SCSI_STACK);
 }
 
 /*
@@ -870,17 +916,20 @@ static void sata_oxnas_release_hw(struct ata_port *ap)
 
 	spin_lock_irqsave(&hd->core_lock, flags);
 
-	DPRINTK("Entered port_no = %d, h/w count %d, d count %d, core locked = %d, "
-		"reentrant_port_no = %d, isr_callback %p\n", ap->port_no,
-		hd->hw_lock_count, hd->direct_lock_count, hd->core_locked, hd->reentrant_port_no, hd->isr_callback);
+	DPRINTK("Entered port_no = %d, h/w count %d, d count %d, "
+		"core locked = %d, reentrant_port_no = %d, isr_callback %p\n",
+		ap->port_no, hd->hw_lock_count, hd->direct_lock_count,
+		hd->core_locked, hd->reentrant_port_no, hd->isr_callback);
 
 	if (!hd->core_locked) {
 		/* Nobody holds the SATA lock */
-		printk(KERN_WARNING "Nobody holds SATA lock, port_no %d\n", ap->port_no);
+		printk(KERN_WARNING "Nobody holds SATA lock, port_no %d\n",
+		       ap->port_no);
 		released = 1;
 	} else if (!hd->hw_lock_count) {
 		/* SCSI/SATA has released without holding the lock */
-		printk(KERN_WARNING "SCSI/SATA does not hold SATA lock, port_no %d\n", ap->port_no);
+		printk(KERN_WARNING "SCSI/SATA does not hold SATA lock, "
+		       "port_no %d\n", ap->port_no);
 	} else {
 		/* Trap incorrect usage */
 		BUG_ON(hd->reentrant_port_no == -1);
@@ -888,10 +937,11 @@ static void sata_oxnas_release_hw(struct ata_port *ap)
 		BUG_ON(hd->direct_lock_count);
 		BUG_ON(hd->current_locker_type != SATA_SCSI_STACK);
 
-		WARN(!hd->locker_uid || (hd->locker_uid != HW_LOCKER_UID), "Invalid locker "
-			"uid %p, h/w count %d, d count %d, reentrant_port_no %d, "
-			"core_locked %d, isr_callback %p\n", hd->locker_uid,
-			hd->hw_lock_count, hd->direct_lock_count, hd->reentrant_port_no,
+		WARN(!hd->locker_uid || (hd->locker_uid != HW_LOCKER_UID),
+			"Invalid locker uid %p, h/w count %d, d count %d, "
+			"reentrant_port_no %d, core_locked %d, "
+			"isr_callback %p\n", hd->locker_uid, hd->hw_lock_count,
+			hd->direct_lock_count, hd->reentrant_port_no,
 			hd->core_locked, hd->isr_callback);
 
 		if (--(hd->hw_lock_count)) {
@@ -904,11 +954,14 @@ static void sata_oxnas_release_hw(struct ata_port *ap)
 			hd->locker_uid = 0;
 			hd->core_locked = 0;
 			released = 1;
-			wake_up(!list_empty(&hd->scsi_wait_queue.task_list) ? &hd->scsi_wait_queue : &hd->fast_wait_queue);
+			wake_up(!list_empty(&hd->scsi_wait_queue.task_list) ?
+						&hd->scsi_wait_queue :
+						&hd->fast_wait_queue);
 		}
 	}
 
-	DPRINTK("Leaving, port_no %d, count %d\n", ap->port_no, hd->hw_lock_count);
+	DPRINTK("Leaving, port_no %d, count %d\n", ap->port_no,
+		hd->hw_lock_count);
 
 	spin_unlock_irqrestore(&hd->core_lock, flags);
 
@@ -933,7 +986,8 @@ static inline u32 sata_oxnas_hostportbusy(struct ata_port *ap)
 
 	return (ioread32(hd->port_base + SATA_COMMAND) & CMD_CORE_BUSY) ||
 	       (hd->n_ports > 1 &&
-		(ioread32(hd->port_base + PORT_SIZE + SATA_COMMAND) & CMD_CORE_BUSY));
+		(ioread32(hd->port_base + PORT_SIZE + SATA_COMMAND) &
+		 CMD_CORE_BUSY));
 }
 
 static inline u32 sata_oxnas_hostdmabusy(struct ata_port *ap)
@@ -970,10 +1024,10 @@ static void sata_oxnas_reset_core(struct ata_host *ah)
 	udelay(50);
 
 	workaround5458(ah);
-	/* tune for sata compatability */
+	/* tune for sata compatibility */
 	sata_oxnas_link_write(ah->ports[0], 0x60, 0x2988);
 
-	for (n=0; n < host_priv->n_ports; n++) {
+	for (n = 0; n < host_priv->n_ports; n++) {
 		/* each port in turn */
 		sata_oxnas_link_write(ah->ports[n], 0x70, 0x55629);
 	}
@@ -1387,6 +1441,7 @@ static inline void sata_oxnas_clear_CS_error(struct ata_port *ap)
 static inline void sata_oxnas_reset_sgdma(struct ata_port *ap)
 {
 	struct sata_oxnas_port_priv *pd = ap->private_data;
+
 	iowrite32(SGDMA_RESETS_CTRL, pd->sgdma_base + SGDMA_RESETS);
 }
 
@@ -1418,12 +1473,13 @@ static inline void sata_oxnas_clear_reg_access_error(struct ata_port *ap)
 
 	DPRINTK("ENTER\n");
 	if (reg & INT_REG_ACCESS_ERR) {
-		printk(KERN_INFO "clearing register access error on port %d\n", ap->port_no);
+		DPRINTK("clearing register access error on port %d\n",
+			ap->port_no);
 		iowrite32(INT_REG_ACCESS_ERR, base + INT_STATUS);
 	}
 	reg = ioread32(base + INT_STATUS);
 	if (reg & INT_REG_ACCESS_ERR)
-		printk(KERN_INFO "register access error didn't clear\n");
+		DPRINTK("register access error didn't clear\n");
 }
 
 static inline void sata_oxnas_clear_sctl_error(struct ata_port *ap)
@@ -1451,7 +1507,8 @@ static int sata_oxnas_cleanup(struct ata_host *ah)
 	struct sata_oxnas_host_priv *hd = ah->private_data;
 	int actions_required = 0;
 	int n;
-	printk(KERN_INFO "sata_oxnas: reseting SATA core\n");
+
+	printk(KERN_INFO "sata_oxnas: resetting SATA core\n");
 	/* core not recovering, reset it */
 	mdelay(5);
 	sata_oxnas_reset_core(ah);
@@ -1460,7 +1517,7 @@ static int sata_oxnas_cleanup(struct ata_host *ah)
 	/* Perform any SATA core re-initialisation after reset post reset init
 	 * needs to be called for both ports as there's one reset for both
 	 * ports */
-	for (n=0; n < hd->n_ports; n++)
+	for (n = 0; n < hd->n_ports; n++)
 		sata_oxnas_post_reset_init(ah->ports[n]);
 
 
@@ -1477,6 +1534,7 @@ static int sata_oxnas_cleanup(struct ata_host *ah)
 static int sata_oxnas_qc_new(struct ata_port *ap)
 {
 	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
 	DPRINTK("port %d\n", ap->port_no);
 	smp_rmb();
 	if (hd->port_frozen || hd->port_in_eh)
@@ -1494,17 +1552,19 @@ static void sata_oxnas_qc_free(struct ata_queued_cmd *qc)
 	sata_oxnas_release_hw(qc->ap);
 }
 
-static void sata_oxnas_freeze(struct ata_port* ap)
+static void sata_oxnas_freeze(struct ata_port *ap)
 {
 	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
 	DPRINTK("\n");
 	hd->port_frozen |= BIT(ap->port_no);
 	smp_wmb();
 }
 
-static void sata_oxnas_thaw(struct ata_port* ap)
+static void sata_oxnas_thaw(struct ata_port *ap)
 {
 	struct sata_oxnas_host_priv *hd = ap->host->private_data;
+
 	DPRINTK("\n");
 	hd->port_frozen &= ~BIT(ap->port_no);
 	smp_wmb();
@@ -1688,13 +1748,15 @@ static u8 sata_oxnas_check_status(struct ata_port *ap)
 	return status;
 }
 
-static inline void sata_oxnas_reset_ucode(struct ata_host *ah, int force, int no_microcode)
+static inline void sata_oxnas_reset_ucode(struct ata_host *ah, int force,
+					  int no_microcode)
 {
 	struct sata_oxnas_host_priv *hd = ah->private_data;
 
 	DPRINTK("ENTER\n");
 	if (no_microcode) {
 		u32 reg;
+
 		sata_oxnas_set_mode(ah, UNKNOWN_MODE, force);
 		reg = ioread32(hd->core_base + DEVICE_CONTROL);
 		reg |= DEVICE_CONTROL_ATA_ERR_OVERRIDE;
@@ -1719,7 +1781,8 @@ static void sata_oxnas_qc_prep(struct ata_queued_cmd *qc)
 
 	/* if the port's not connected, complete now with an error */
 	if (!sata_oxnas_check_link(qc->ap)) {
-		printk(KERN_ERR "port %d not connected completing with error\n",
+		ata_port_err(qc->ap,
+			"port %d not connected completing with error\n",
 			port_no);
 		qc->err_mask |= AC_ERR_ATA_BUS;
 		ata_qc_complete(qc);
@@ -2006,12 +2069,12 @@ static int sata_oxnas_bug_6320_workaround(struct ata_port *ap)
 		bug_present = 1;
 	} else if (sector_quads_remaining) {
 		if (is_read) {
-			printk(KERN_WARNING "SATA read fixup cannot deal with" \
-				" %d quads remaining\n",
+			ata_port_warn(ap, "SATA read fixup cannot deal with "
+				"%d quads remaining\n",
 				sector_quads_remaining);
 		} else {
-			printk(KERN_WARNING "SATA write fixup of %d quads" \
-				" remaining not supported\n",
+			ata_port_warn(ap, "SATA write fixup of %d quads "
+				"remaining not supported\n",
 				sector_quads_remaining);
 		}
 	}
@@ -2029,15 +2092,16 @@ static void sata_oxnas_port_irq(struct ata_port *ap, int force_error)
 	u32 int_status;
 	unsigned long flags = 0;
 
-	DPRINTK("ENTER port %d irqstatus %x\n", ap->port_no, ioread32(port_base + INT_STATUS));
+	DPRINTK("ENTER port %d irqstatus %x\n", ap->port_no,
+		ioread32(port_base + INT_STATUS));
 
 	if (ap->qc_active & (1 << ATA_TAG_INTERNAL)) {
 			qc = ata_qc_from_tag(ap, ATA_TAG_INTERNAL);
 			DPRINTK("completing non-ncq cmd\n");
 
-			if (qc) {
+			if (qc)
 				ata_qc_complete(qc);
-			}
+
 			return;
 	}
 
@@ -2064,7 +2128,7 @@ static void sata_oxnas_port_irq(struct ata_port *ap, int force_error)
 		local_irq_restore(flags);
 		ata_qc_complete(qc);
 	} else {
-		VPRINTK("Ignoring interrupt, can't find the command tag=" \
+		VPRINTK("Ignoring interrupt, can't find the command tag="
 			"%d %08x\n", ap->link.active_tag, ap->qc_active);
 	}
 
@@ -2098,14 +2162,14 @@ static irqreturn_t sata_oxnas_interrupt(int irq, void *dev_instance)
 
 	/* loop until there are no more interrupts */
 	while ((int_status = (ioread32(core_base + CORE_INT_STATUS)) &
-		(COREINT_END | (COREINT_END << 1)) )) {
+		(COREINT_END | (COREINT_END << 1)))) {
 
 		/* clear any interrupt */
 		iowrite32(int_status, core_base + CORE_INT_CLEAR);
 
 		/* Only need workaround_bug_6320 for single disk systems as dual
 		 * disk will use uCode which prevents this read underrun problem
-		 * from occuring.
+		 * from occurring.
 		 * All single disk systems will use port 0 */
 		for (port_no = 0; port_no < hd->n_ports; ++port_no) {
 			/* check the raw end of command interrupt to see if the
@@ -2114,9 +2178,10 @@ static irqreturn_t sata_oxnas_interrupt(int irq, void *dev_instance)
 			if (int_status & mask) {
 				/* this port had an interrupt, clear it */
 				iowrite32(mask, core_base + CORE_INT_CLEAR);
-				bug_present = ( hd->current_ucode == UNKNOWN_MODE ) ?
-						sata_oxnas_bug_6320_workaround(
-						ah->ports[port_no]) : 0;
+				bug_present =
+					(hd->current_ucode == UNKNOWN_MODE) ?
+					sata_oxnas_bug_6320_workaround(
+						ah->ports[port_no]):0;
 				sata_oxnas_port_irq(ah->ports[port_no],
 							bug_present);
 				ret = IRQ_HANDLED;
@@ -2193,7 +2258,6 @@ static int sata_oxnas_probe(struct platform_device *ofdev)
 	struct clk *clk = NULL;
 
 	const struct ata_port_info *ppi[] = { &sata_oxnas_port_info, NULL };
-	const struct ata_port_info *dppi[] = { &sata_oxnas_port_info, &sata_oxnas_port_info, NULL };
 
 	of_property_read_u32(ofdev->dev.of_node, "nr-ports", &n_ports);
 	if (n_ports < 1 || n_ports > SATA_OXNAS_MAX_PORTS)
@@ -2275,8 +2339,7 @@ static int sata_oxnas_probe(struct platform_device *ofdev)
 	host_priv->rst_phy = rstc;
 
 	/* allocate host structure */
-	host = ata_host_alloc_pinfo(&ofdev->dev, n_ports>1 ? dppi : ppi,
-				    n_ports);
+	host = ata_host_alloc_pinfo(&ofdev->dev, ppi, n_ports);
 
 	if (!host) {
 		retval = -ENOMEM;
@@ -2410,4 +2473,4 @@ module_platform_driver(oxnas_sata_driver);
 MODULE_LICENSE("GPL");
 MODULE_VERSION("1.0");
 MODULE_AUTHOR("Oxford Semiconductor Ltd.");
-MODULE_DESCRIPTION("934 SATA core controler");
+MODULE_DESCRIPTION("low-level driver for Oxford 934 SATA core");
