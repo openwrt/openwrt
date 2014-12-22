@@ -2041,7 +2041,7 @@ int	sata_oxnas_init_controller(struct ata_host *host)
  *
  * @param port SATA port to check and if necessary, correct.
  */
-static int sata_oxnas_bug_6320_workaround(struct ata_port *ap)
+static int sata_oxnas_bug_6320_detect(struct ata_port *ap)
 {
 	struct sata_oxnas_port_priv *pd = ap->private_data;
 	void __iomem *core_base = pd->core_base;
@@ -2175,17 +2175,18 @@ static irqreturn_t sata_oxnas_interrupt(int irq, void *dev_instance)
 			/* check the raw end of command interrupt to see if the
 			 * port is done */
 			mask = (COREINT_END << port_no);
-			if (int_status & mask) {
-				/* this port had an interrupt, clear it */
-				iowrite32(mask, core_base + CORE_INT_CLEAR);
-				bug_present =
-					(hd->current_ucode == UNKNOWN_MODE) ?
-					sata_oxnas_bug_6320_workaround(
-						ah->ports[port_no]):0;
-				sata_oxnas_port_irq(ah->ports[port_no],
-							bug_present);
-				ret = IRQ_HANDLED;
-			}
+			if (!(int_status & mask))
+				continue;
+
+			/* this port had an interrupt, clear it */
+			iowrite32(mask, core_base + CORE_INT_CLEAR);
+			/* check for bug 6320 only if no microcode was loaded */
+			bug_present = (hd->current_ucode == UNKNOWN_MODE) &&
+				sata_oxnas_bug_6320_detect(ah->ports[port_no]);
+
+			sata_oxnas_port_irq(ah->ports[port_no],
+						bug_present);
+			ret = IRQ_HANDLED;
 		}
 	}
 
