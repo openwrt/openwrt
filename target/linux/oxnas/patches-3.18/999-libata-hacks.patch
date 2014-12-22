@@ -6,9 +6,9 @@ Index: linux-3.18-rc7/drivers/ata/libata-core.c
  		return AC_ERR_SYSTEM;
  	}
  
-+	if (ap->ops->acquire_hw && !ap->ops->acquire_hw(ap->port_no, 0, 0)) {
++	if (ap->ops->acquire_hw && !ap->ops->acquire_hw(ap, 0, 0)) {
 +		spin_unlock_irqrestore(ap->lock, flags);
-+		if (!ap->ops->acquire_hw(ap->port_no, 1, (2*HZ))) {
++		if (!ap->ops->acquire_hw(ap, 1, (2*HZ))) {
 +			return AC_ERR_TIMEOUT;
 +		}
 +		spin_lock_irqsave(ap->lock, flags);
@@ -49,11 +49,12 @@ Index: linux-3.18-rc7/include/linux/libata.h
  
  	/*
  	 * Configuration and exception handling
-@@ -974,6 +976,8 @@ struct ata_port_operations {
+@@ -974,6 +976,9 @@ struct ata_port_operations {
  	void (*phy_reset)(struct ata_port *ap);
  	void (*eng_timeout)(struct ata_port *ap);
  
-+	int (*acquire_hw)(int port_no, int may_sleep, int timeout_jiffies);
++	int (*acquire_hw)(struct ata_port *ap, int may_sleep,
++			  int timeout_jiffies);
 +
  	/*
  	 * ->inherits must be the last field and all the preceding
