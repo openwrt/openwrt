@@ -11,7 +11,7 @@ BOARD:=kirkwood
 BOARDNAME:=Marvell Kirkwood
 FEATURES:=targz usb jffs2_nand nand ubifs
 CPU_TYPE:=xscale
-MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
+MAINTAINER:=Luka Perkov <luka@openwrt.org>
 
 KERNEL_PATCHVER:=3.14
 
