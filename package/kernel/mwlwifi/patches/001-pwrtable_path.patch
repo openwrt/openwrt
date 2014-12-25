@@ -1,0 +1,11 @@
+--- a/mwl_main.c
++++ b/mwl_main.c
+@@ -72,7 +72,7 @@ static long atohex2(const char *number);
+ */
+ 
+ static char fw_image_path[FILE_PATH_LEN] = "88W8864.bin";
+-static char pwr_tbl_path[FILE_PATH_LEN] = "PWR_TABLE.ini";
++static char pwr_tbl_path[FILE_PATH_LEN] = "/lib/firmware/Mamba_FCC_v1.2_5G4TX.ini";
+ 
+ static struct pci_device_id mwl_pci_id_tbl[SYSADPT_MAX_CARDS_SUPPORT + 1] = {
+ 
