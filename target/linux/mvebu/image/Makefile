@@ -10,6 +10,8 @@ include $(INCLUDE_DIR)/image.mk
 TARGET_DTBS := armada-xp-db armada-370-db armada-xp-openblocks-ax3-4 armada-370-mirabox \
 		armada-370-rd armada-xp-gp armada-xp-mamba
 
+NANDBOARDS := armada-xp-mamba
+
 LOADADDR:=0x00008000
 
 JFFS2_BLOCKSIZE = 128k
@@ -43,7 +45,7 @@ endef
 
 define Image/Build/squashfs
 	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs 128
-	$(foreach dtb,$(TARGET_DTBS),$(call Image/Build/UbinizeImage,$(dtb),,squashfs,$(UBI_OPTS));)
+	$(foreach nandboard,$(NANDBOARDS),$(call Image/Build/UbinizeImage,$(nandboard),,squashfs,$(UBI_OPTS));)
 	( \
 		dd if=$(KDIR)/uImage-armada-xp-mamba bs=3072k conv=sync; \
 		dd if=$(KDIR)/$(IMG_PREFIX)-armada-xp-mamba-squashfs-ubinized.bin \
@@ -62,7 +64,7 @@ endef
 define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
-	$(foreach dtb,$(TARGET_DTBS),$(call BuildSysupgrade,$(1),$(dtb));)
+	$(foreach nandboard,$(NANDBOARDS),$(call BuildSysupgrade,$(1),$(nandboard));)
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/Build/Initramfs)
 endif
