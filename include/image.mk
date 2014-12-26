@@ -89,7 +89,6 @@ define prepare_generic_squashfs
 endef
 
 define Image/BuildKernel/Initramfs
-	cp $(KDIR)/vmlinux-initramfs.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux-initramfs.elf
 	$(call Image/Build/Initramfs)
 endef
 
