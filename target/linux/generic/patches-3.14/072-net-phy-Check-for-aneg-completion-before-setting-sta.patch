@@ -1,0 +1,35 @@
+From: Balakumaran Kannan <kumaran.4353@gmail.com>
+Date: Thu, 24 Apr 2014 08:22:47 +0530
+Subject: [PATCH] net phy: Check for aneg completion before setting state to
+ PHY_RUNNING
+
+phy_state_machine should check whether auto-negotiatin is completed
+before changing phydev->state from PHY_NOLINK to PHY_RUNNING. If
+auto-negotiation is not completed phydev->state should be set to
+PHY_AN.
+
+Signed-off-by: Balakumaran Kannan <kumaran.4353@gmail.com>
+Reviewed-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/drivers/net/phy/phy.c
++++ b/drivers/net/phy/phy.c
+@@ -744,6 +744,17 @@ void phy_state_machine(struct work_struc
+ 			break;
+ 
+ 		if (phydev->link) {
++			if (AUTONEG_ENABLE == phydev->autoneg) {
++				err = phy_aneg_done(phydev);
++				if (err < 0)
++					break;
++
++				if (!err) {
++					phydev->state = PHY_AN;
++					phydev->link_timeout = PHY_AN_TIMEOUT;
++					break;
++				}
++			}
+ 			phydev->state = PHY_RUNNING;
+ 			netif_carrier_on(phydev->attached_dev);
+ 			phydev->adjust_link(phydev->attached_dev);
