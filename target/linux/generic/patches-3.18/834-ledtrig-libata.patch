@@ -57,7 +57,7 @@ index 5c84fb5..eb49e02 100644
  	return block;
  }
  
-+#if CONFIG_ATA_LEDS
++#ifdef CONFIG_ATA_LEDS
 +#define LIBATA_BLINK_DELAY 20 /* ms */
 +static inline void ata_led_act(struct ata_port *ap)
 +{
@@ -77,7 +77,7 @@ index 5c84fb5..eb49e02 100644
  			break;
  		}
  	}
-+#if CONFIG_ATA_LEDS
++#ifdef CONFIG_ATA_LEDS
 +	ata_led_act(ap);
 +#endif
  
@@ -87,7 +87,7 @@ index 5c84fb5..eb49e02 100644
  	ap->stats.unhandled_irq = 1;
  	ap->stats.idle_irq = 1;
  #endif
-+#if CONFIG_ATA_LEDS
++#ifdef CONFIG_ATA_LEDS
 +	ap->ledtrig = kzalloc(sizeof(struct led_trigger), GFP_KERNEL);
 +#endif
  	ata_sff_port_init(ap);
@@ -97,7 +97,7 @@ index 5c84fb5..eb49e02 100644
  
  		kfree(ap->pmp_link);
  		kfree(ap->slave_link);
-+#if CONFIG_ATA_LEDS
++#ifdef CONFIG_ATA_LEDS
 +		if (ap->ledtrig) {
 +			led_trigger_unregister(ap->ledtrig);
 +			kfree(ap->ledtrig);
@@ -110,7 +110,7 @@ index 5c84fb5..eb49e02 100644
  		host->ports[i]->print_id = atomic_inc_return(&ata_print_id);
  		host->ports[i]->local_port_no = i + 1;
  	}
-+#if CONFIG_ATA_LEDS
++#ifdef CONFIG_ATA_LEDS
 +	for (i = 0; i < host->n_ports; i++) {
 +		if (unlikely(!host->ports[i]->ledtrig))
 +			continue;
