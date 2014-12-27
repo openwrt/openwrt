@@ -146,6 +146,7 @@ ifneq ($(CONFIG_NAND_SUPPORT),)
 	(cd "$(KDIR_TMP)"; $(TAR) cvf \
 		"$(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(2)-sysupgrade.tar" sysupgrade-$(1))
    endef
+
 # $(1) board name
 # $(2) ubinize-image options (e.g. --uboot-env and/or --kernel kernelimage)
 # $(3) rootfstype (e.g. squashfs or ubifs)
@@ -193,10 +194,10 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 	$(call Image/Build,ubifs)
 
         ifneq ($($(PROFILE)_UBI_OPTS)$(UBI_OPTS),)
-		$(call Image/mkfs/ubifs/generate,)
+		$(if $(wildcard ./ubinize.cfg),$(call Image/mkfs/ubifs/generate,))
 		$(if $(wildcard ./ubinize-overlay.cfg),$(call Image/mkfs/ubifs/generate,-overlay))
         endif
-	$(call Image/Build,ubi)
+	$(if $(wildcard ./ubinize.cfg),$(call Image/Build,ubi))
     endef
 endif
 
