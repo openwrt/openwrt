@@ -28,6 +28,14 @@
 
 #define MHZ (1000 * 1000)
 
+struct clk_oxnas_pllb {
+	struct clk_hw hw;
+	struct device_node *devnode;
+	struct reset_control *rstc;
+};
+
+#define to_clk_oxnas_pllb(_hw) container_of(_hw, struct clk_oxnas_pllb, hw)
+
 static unsigned long plla_clk_recalc_rate(struct clk_hw *hw,
 	unsigned long parent_rate)
 {
@@ -67,48 +75,72 @@ static struct clk_hw plla_hw = {
 	.init = &clk_plla_init,
 };
 
-static struct device_node *node_pllb;
-
-int pllb_clk_enable(struct clk_hw *hw)
+static int pllb_clk_is_prepared(struct clk_hw *hw)
 {
-	struct reset_control *rstc;
+	struct clk_oxnas_pllb *pllb = to_clk_oxnas_pllb(hw);
 
-	rstc = of_reset_control_get(node_pllb, NULL);
-	if (IS_ERR(rstc))
-		return PTR_ERR(rstc);
+	return !!pllb->rstc;
+}
+
+static int pllb_clk_prepare(struct clk_hw *hw)
+{
+	struct clk_oxnas_pllb *pllb = to_clk_oxnas_pllb(hw);
+
+	pllb->rstc = of_reset_control_get(pllb->devnode, NULL);
+
+	return IS_ERR(pllb->rstc) ? PTR_ERR(pllb->rstc) : 0;
+}
+
+static void pllb_clk_unprepare(struct clk_hw *hw)
+{
+	struct clk_oxnas_pllb *pllb = to_clk_oxnas_pllb(hw);
+
+	BUG_ON(IS_ERR(pllb->rstc));
+
+	reset_control_put(pllb->rstc);
+	pllb->rstc = NULL;
+}
+
+static int pllb_clk_enable(struct clk_hw *hw)
+{
+	struct clk_oxnas_pllb *pllb = to_clk_oxnas_pllb(hw);
+
+	BUG_ON(IS_ERR(pllb->rstc));
 
 	/* put PLL into bypass */
 	oxnas_register_set_mask(SEC_CTRL_PLLB_CTRL0, BIT(PLLB_BYPASS));
 	wmb();
 	udelay(10);
-	reset_control_assert(rstc);
+	reset_control_assert(pllb->rstc);
 	udelay(10);
 	/* set PLL B control information */
 	writel((1 << PLLB_ENSAT) | (1 << PLLB_OUTDIV) | (2 << PLLB_REFDIV),
 				SEC_CTRL_PLLB_CTRL0);
-	reset_control_deassert(rstc);
-	reset_control_put(rstc);
+	reset_control_deassert(pllb->rstc);
 	udelay(100);
 	oxnas_register_clear_mask(SEC_CTRL_PLLB_CTRL0, BIT(PLLB_BYPASS));
 
 	return 0;
 }
 
-void pllb_clk_disable(struct clk_hw *hw)
+static void pllb_clk_disable(struct clk_hw *hw)
 {
-	struct reset_control *rstc;
+	struct clk_oxnas_pllb *pllb = to_clk_oxnas_pllb(hw);
+
+	BUG_ON(IS_ERR(pllb->rstc));
 
 	/* put PLL into bypass */
 	oxnas_register_set_mask(SEC_CTRL_PLLB_CTRL0, BIT(PLLB_BYPASS));
 	wmb();
 	udelay(10);
 
-	rstc = of_reset_control_get(node_pllb, NULL);
-	if (!IS_ERR(rstc))
-		reset_control_assert(rstc);
+	reset_control_assert(pllb->rstc);
 }
 
 static struct clk_ops pllb_ops = {
+	.prepare = pllb_clk_prepare,
+	.unprepare = pllb_clk_unprepare,
+	.is_prepared = pllb_clk_is_prepared,
 	.enable = pllb_clk_enable,
 	.disable = pllb_clk_disable,
 };
@@ -120,9 +152,6 @@ static struct clk_init_data clk_pllb_init = {
 	.num_parents = ARRAY_SIZE(pll_clk_parents),
 };
 
-static struct clk_hw pllb_hw = {
-	.init = &clk_pllb_init,
-};
 
 /* standard gate clock */
 struct clk_std {
@@ -252,10 +281,16 @@ CLK_OF_DECLARE(oxnas_plla, "plxtech,nas782x-plla", oxnas_init_plla);
 void __init oxnas_init_pllb(struct device_node *np)
 {
 	struct clk *clk;
+	struct clk_oxnas_pllb *pllb;
 
-	node_pllb = np;
+	pllb = kmalloc(sizeof(*pllb), GFP_KERNEL);
+	BUG_ON(!pllb);
 
-	clk = clk_register(NULL, &pllb_hw);
+	pllb->hw.init = &clk_pllb_init;
+	pllb->devnode = np;
+	pllb->rstc = NULL;
+
+	clk = clk_register(NULL, &pllb->hw);
 	BUG_ON(IS_ERR(clk));
 	of_clk_add_provider(np, of_clk_src_simple_get, clk);
 }
