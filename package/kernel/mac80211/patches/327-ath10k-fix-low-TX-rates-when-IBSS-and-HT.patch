@@ -1,0 +1,30 @@
+From: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+Date: Tue, 16 Dec 2014 09:52:59 +0100
+Subject: [PATCH] ath10k: fix low TX rates when IBSS and HT
+
+This fix TX problem when IBSS used in HT mode.
+Before we used 6Mbps all the time for TX direction.
+
+Reported-by: Yeoh Chun-Yeow <yeohchunyeow@gmail.com>
+Signed-off-by: Janusz Dziedzic <janusz.dziedzic@tieto.com>
+---
+
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -1375,9 +1375,16 @@ static void ath10k_peer_assoc_h_qos(stru
+ 		if (vif->bss_conf.qos)
+ 			arg->peer_flags |= WMI_PEER_QOS;
+ 		break;
++	case WMI_VDEV_TYPE_IBSS:
++		if (sta->wme)
++			arg->peer_flags |= WMI_PEER_QOS;
++		break;
+ 	default:
+ 		break;
+ 	}
++
++	ath10k_dbg(ar, ATH10K_DBG_MAC, "mac peer %pM qos %d\n",
++		   sta->addr, !!(arg->peer_flags & WMI_PEER_QOS));
+ }
+ 
+ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
