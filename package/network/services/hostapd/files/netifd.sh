@@ -1,4 +1,4 @@
-hostapd_add_rate() {
+wpa_supplicant_add_rate() {
 	local var="$1"
 	local val="$(($2 / 1000))"
 	local sub="$((($2 / 100) % 10))"
@@ -6,7 +6,7 @@ hostapd_add_rate() {
 	[ $sub -gt 0 ] && append $var "."
 }
 
-hostapd_add_basic_rate() {
+hostapd_add_rate() {
 	local var="$1"
 	local val="$(($2 / 100))"
 	append $var "$val" " "
@@ -49,6 +49,7 @@ hostapd_add_log_config() {
 
 hostapd_common_add_device_config() {
 	config_add_array basic_rate
+	config_add_array supported_rates
 
 	config_add_string country
 	config_add_boolean country_ie doth
@@ -82,13 +83,21 @@ hostapd_prepare_device_config() {
 	local brlist= br
 	json_get_values basic_rate_list basic_rate
 	for br in $basic_rate_list; do
-		hostapd_add_basic_rate brlist "$br"
+		hostapd_add_rate brlist "$br"
 	done
 	case "$require_mode" in
 		g) brlist="60 120 240" ;;
 		n) append base_cfg "require_ht=1" "$N";;
 		ac) append base_cfg "require_vht=1" "$N";;
 	esac
+
+	local rlist= r
+	json_get_values rate_list supported_rates
+	for r in $rate_list; do
+		hostapd_add_rate rlist "$r"
+	done
+
+	[ -n "$rlist" ] && append base_cfg "supported_rates=$rlist" "$N"
 	[ -n "$brlist" ] && append base_cfg "basic_rates=$brlist" "$N"
 	[ -n "$beacon_int" ] && append base_cfg "beacon_int=$beacon_int" "$N"
 
@@ -146,6 +155,7 @@ hostapd_common_add_bss_config() {
 
 	config_add_int mcast_rate
 	config_add_array basic_rate
+	config_add_array supported_rates
 }
 
 hostapd_set_bss_options() {
@@ -572,14 +582,14 @@ wpa_supplicant_add_network() {
 	[ -n "$basic_rate" ] && {
 		local br rate_list=
 		for br in $basic_rate; do
-			hostapd_add_rate rate_list "$br"
+			wpa_supplicant_add_rate rate_list "$br"
 		done
 		[ -n "$rate_list" ] && append network_data "rates=$rate_list" "$N$T"
 	}
 
 	[ -n "$mcast_rate" ] && {
 		local mc_rate=
-		hostapd_add_rate mc_rate "$mcast_rate"
+		wpa_supplicant_add_rate mc_rate "$mcast_rate"
 		append network_data "mcast_rate=$mc_rate" "$N$T"
 	}
 
