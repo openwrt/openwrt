@@ -27,8 +27,9 @@ else
   CMAKE_CXX_COMPILER:=$(CCACHE)
   CMAKE_CXX_COMPILER_ARG1:=$(TARGET_CXX_NOCACHE)
 endif
-CMAKE_AR:=$(call cmake_tool,$(TARGET_CROSS)ar)
-CMAKE_RANLIB:=$(call cmake_tool,$(TARGET_CROSS)ranlib)
+CMAKE_AR:=$(call cmake_tool,$(TARGET_AR))
+CMAKE_NM:=$(call cmake_tool,$(TARGET_NM))
+CMAKE_RANLIB:=$(call cmake_tool,$(TARGET_RANLIB))
 
 define Build/Configure/Default
 	(cd $(PKG_BUILD_DIR); \
@@ -50,6 +51,7 @@ define Build/Configure/Default
 			-DCMAKE_MODULE_LINKER_FLAGS:STRING="$(TARGET_LDFLAGS)" \
 			-DCMAKE_SHARED_LINKER_FLAGS:STRING="$(TARGET_LDFLAGS)" \
 			-DCMAKE_AR="$(CMAKE_AR)" \
+			-DCMAKE_NM="$(CMAKE_NM)" \
 			-DCMAKE_RANLIB="$(CMAKE_RANLIB)" \
 			-DCMAKE_FIND_ROOT_PATH="$(STAGING_DIR);$(TOOLCHAIN_DIR)" \
 			-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=BOTH \
