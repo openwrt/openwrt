@@ -23,7 +23,7 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
 
 --- a/drivers/ata/ahci.c
 +++ b/drivers/ata/ahci.c
-@@ -583,6 +583,7 @@ static int ahci_vt8251_hardreset(struct
+@@ -606,6 +606,7 @@ static int ahci_vt8251_hardreset(struct
  				 unsigned long deadline)
  {
  	struct ata_port *ap = link->ap;
@@ -31,7 +31,7 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  	bool online;
  	int rc;
  
-@@ -593,7 +594,7 @@ static int ahci_vt8251_hardreset(struct
+@@ -616,7 +617,7 @@ static int ahci_vt8251_hardreset(struct
  	rc = sata_link_hardreset(link, sata_ehc_deb_timing(&link->eh_context),
  				 deadline, &online, NULL);
  
@@ -40,7 +40,7 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  
  	DPRINTK("EXIT, rc=%d, class=%u\n", rc, *class);
  
-@@ -608,6 +609,7 @@ static int ahci_p5wdh_hardreset(struct a
+@@ -631,6 +632,7 @@ static int ahci_p5wdh_hardreset(struct a
  {
  	struct ata_port *ap = link->ap;
  	struct ahci_port_priv *pp = ap->private_data;
@@ -48,7 +48,7 @@ Signed-off-by: Tejun Heo <tj@kernel.org>
  	u8 *d2h_fis = pp->rx_fis + RX_FIS_D2H_REG;
  	struct ata_taskfile tf;
  	bool online;
-@@ -623,7 +625,7 @@ static int ahci_p5wdh_hardreset(struct a
+@@ -646,7 +648,7 @@ static int ahci_p5wdh_hardreset(struct a
  	rc = sata_link_hardreset(link, sata_ehc_deb_timing(&link->eh_context),
  				 deadline, &online, NULL);
  

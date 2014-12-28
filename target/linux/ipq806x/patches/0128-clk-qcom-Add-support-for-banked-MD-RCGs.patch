@@ -230,7 +230,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
 --- a/drivers/clk/qcom/mmcc-msm8960.c
 +++ b/drivers/clk/qcom/mmcc-msm8960.c
-@@ -726,9 +726,11 @@ static struct freq_tbl clk_tbl_gfx2d[] =
+@@ -728,9 +728,11 @@ static struct freq_tbl clk_tbl_gfx2d[] =
  };
  
  static struct clk_dyn_rcg gfx2d0_src = {
@@ -243,7 +243,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	.mn[0] = {
  		.mnctr_en_bit = 8,
  		.mnctr_reset_bit = 25,
-@@ -784,9 +786,11 @@ static struct clk_branch gfx2d0_clk = {
+@@ -786,9 +788,11 @@ static struct clk_branch gfx2d0_clk = {
  };
  
  static struct clk_dyn_rcg gfx2d1_src = {
@@ -256,7 +256,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	.mn[0] = {
  		.mnctr_en_bit = 8,
  		.mnctr_reset_bit = 25,
-@@ -862,9 +866,11 @@ static struct freq_tbl clk_tbl_gfx3d[] =
+@@ -864,9 +868,11 @@ static struct freq_tbl clk_tbl_gfx3d[] =
  };
  
  static struct clk_dyn_rcg gfx3d_src = {
@@ -269,7 +269,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	.mn[0] = {
  		.mnctr_en_bit = 8,
  		.mnctr_reset_bit = 25,
-@@ -1051,9 +1057,11 @@ static struct freq_tbl clk_tbl_mdp[] = {
+@@ -1053,9 +1059,11 @@ static struct freq_tbl clk_tbl_mdp[] = {
  };
  
  static struct clk_dyn_rcg mdp_src = {
@@ -282,7 +282,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	.mn[0] = {
  		.mnctr_en_bit = 8,
  		.mnctr_reset_bit = 31,
-@@ -1158,7 +1166,9 @@ static struct freq_tbl clk_tbl_rot[] = {
+@@ -1160,7 +1168,9 @@ static struct freq_tbl clk_tbl_rot[] = {
  };
  
  static struct clk_dyn_rcg rot_src = {
@@ -293,7 +293,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	.p[0] = {
  		.pre_div_shift = 22,
  		.pre_div_width = 4,
-@@ -1355,9 +1365,11 @@ static struct freq_tbl clk_tbl_vcodec[]
+@@ -1357,9 +1367,11 @@ static struct freq_tbl clk_tbl_vcodec[]
  };
  
  static struct clk_dyn_rcg vcodec_src = {
