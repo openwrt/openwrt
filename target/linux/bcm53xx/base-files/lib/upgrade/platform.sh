@@ -56,14 +56,26 @@ platform_check_image() {
 			local board_id_len=$(($header_len - 40))
 			local board_id=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
 			echo "Found CHK image with device board_id $board_id"
-			echo "Flashing CHK images in unsupported. Please use only .trx files."
-			return 1
+
+			magic=$(get_magic_long_at "$1" "$header_len")
+			[ "$magic" != "48445230" ] && {
+				echo "No valid TRX firmware in the CHK image"
+				return 1
+			}
+
+			return 0
 		;;
 		"cybertan")
 			local magic=$(dd if="$1" bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%c"')
 			echo "Found CyberTAN image with device magic: $magic"
-			echo "Flashing CyberTAN images in unsupported. Please use only .trx files."
-			return 1
+
+			magic=$(get_magic_long_at "$1" 32)
+			[ "$magic" != "48445230" ] && {
+				echo "No valid TRX firmware in the CyberTAN image"
+				return 1
+			}
+
+			return 0
 		;;
 		"trx")
 			return 0
