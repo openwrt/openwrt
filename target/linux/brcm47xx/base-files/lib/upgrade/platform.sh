@@ -49,8 +49,7 @@ platform_check_image() {
 				return 1
 			}
 
-			echo "Flashing CHK images in unsupported. Please use only .trx files."
-			return 1
+			return 0
 		;;
 		"cybertan")
 			magic=$(dd if="$1" bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%c"')
@@ -62,8 +61,7 @@ platform_check_image() {
 				return 1
 			}
 
-			echo "Flashing CyberTAN images in unsupported. Please use only .trx files."
-			return 1
+			return 0
 		;;
 		"trx")
 			return 0
@@ -75,4 +73,29 @@ platform_check_image() {
 	esac
 }
 
-# use default for platform_do_upgrade()
+platform_do_upgrade_chk() {
+	local header_len=$((0x$(get_magic_long_at "$1" 4)))
+	local trx="/tmp/$1.trx"
+
+	dd if="$1" of="$trx" bs=$header_len skip=1
+	shift
+	default_do_upgrade "$trx" "$@"
+}
+
+platform_do_upgrade_cybertan() {
+	local trx="/tmp/$1.trx"
+
+	dd if="$1" of="$trx" bs=32 skip=1
+	shift
+	default_do_upgrade "$trx" "$@"
+}
+
+platform_do_upgrade() {
+	local file_type=$(brcm47xx_identify "$1")
+
+	case "$file_type" in
+		"chk")		platform_do_upgrade_chk "$ARGV";;
+		"cybertan")	platform_do_upgrade_cybertan "$ARGV";;
+		*)		default_do_upgrade "$ARGV";;
+	esac
+}
