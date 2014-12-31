@@ -14,7 +14,7 @@ define Profile/Generic
 	kmod-rtc-marvell kmod-thermal-armada \
 	kmod-gpio-button-hotplug kmod-hwmon-tmp421 \
 	kmod-hwmon-gpiofan kmod-leds-tlc59116 \
-	kmod-ledtrig-usbdev kmod-mwlwifi
+	kmod-ledtrig-usbdev kmod-mwlwifi wpad-mini
 endef
 
 define Profile/Generic/Description
