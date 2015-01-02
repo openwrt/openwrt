@@ -764,7 +764,10 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		stats->rx_packets++;
 		stats->rx_bytes += pktlen;
 
-		napi_gro_receive(napi, skb);
+		if (skb->ip_summed == CHECKSUM_NONE)
+			netif_receive_skb(skb);
+		else
+			napi_gro_receive(napi, skb);
 
 		priv->rx_data[idx] = new_data;
 		rxd->rxd1 = (unsigned int) dma_addr;
