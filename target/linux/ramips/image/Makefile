@@ -79,6 +79,17 @@ define MkImageSysupgrade/squashfs
 	fi
 endef
 
+define MkImageTrx/squashfs
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-$(if $(4),$(4),sysupgrade).bin)
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $(KDIR)/$(output_name) \
+		-m $(3) \
+		-f $(KDIR)/vmlinux-$(2).uImage \
+		-a 4 -f $(KDIR)/root.$(1)
+	$(call prepare_generic_squashfs,$(KDIR)/$(output_name))
+	$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name)
+endef
+
 # $(1), lowercase board name like "mt7620a_v22sg"
 # $(2), DTS filename without .dts extension
 # $(3), optional filename suffix, e.g. "-initramfs"
@@ -106,6 +117,11 @@ endef
 define BuildFirmware/OF
 	$(call MkImageLzmaDtb,$(2),$(3),$(5))
 	$(call MkImageSysupgrade/$(1),$(1),$(2),$(4),$(6))
+endef
+
+define BuildFirmware/OF/trx
+	$(call MkImageLzmaDtb,$(2),$(3),$(5))
+	$(call MkImageTrx/$(1),$(1),$(2),$(4),$(6))
 endef
 
 # $(1), squashfs/initramfs
@@ -136,6 +152,8 @@ BuildFirmware/Default4M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(
 ralink_default_fw_size_8M=8060928
 BuildFirmware/Default8M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_8M),$(4))
 BuildFirmware/Default8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
+BuildFirmware/Trx8M/squashfs=$(call BuildFirmware/OF/trx,$(1),$(2),$(3),$(ralink_default_fw_size_8M),$(4))
+BuildFirmware/Trx8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
 
 ralink_default_fw_size_16M=16121856
 BuildFirmware/Default16M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_16M),$(4))
@@ -827,7 +845,7 @@ endif
 
 Image/Build/Profile/MT7621=$(call BuildFirmware/Default4M/$(1),$(1),mt7621,MT7621)
 Image/Build/Profile/WSR-600=$(call BuildFirmware/Default4M/$(1),$(1),wsr-600,WSR-600)
-Image/Build/Profile/WSR-1166=$(call BuildFirmware/Default4M/$(1),$(1),wsr-1166,WSR-1166)
+Image/Build/Profile/WSR-1166=$(call BuildFirmware/Trx8M/$(1),$(1),wsr-1166,WSR-1166)
 
 ifeq ($(SUBTARGET),mt7621)
 define Image/Build/Profile/Default
