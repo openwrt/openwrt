@@ -844,7 +844,7 @@ endif
 #
 
 Image/Build/Profile/MT7621=$(call BuildFirmware/Default4M/$(1),$(1),mt7621,MT7621)
-Image/Build/Profile/WSR-600=$(call BuildFirmware/Default4M/$(1),$(1),wsr-600,WSR-600)
+Image/Build/Profile/WSR-600=$(call BuildFirmware/Default8M/$(1),$(1),wsr-600,WSR-600)
 Image/Build/Profile/WSR-1166=$(call BuildFirmware/Trx8M/$(1),$(1),wsr-1166,WSR-1166)
 
 ifeq ($(SUBTARGET),mt7621)
