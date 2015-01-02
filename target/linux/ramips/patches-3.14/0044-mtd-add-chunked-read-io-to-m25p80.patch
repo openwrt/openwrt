@@ -4,13 +4,22 @@ Date: Sun, 27 Jul 2014 09:58:09 +0100
 Subject: [PATCH 44/57] mtd: add chunked read io to m25p80
 
 Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
  drivers/mtd/devices/m25p80.c |  128 ++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 128 insertions(+)
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -562,6 +562,58 @@ static int m25p80_read(struct mtd_info *
+@@ -110,6 +110,7 @@ struct m25p {
+ 	struct mtd_info		mtd;
+ 	u16			page_size;
+ 	u16			addr_width;
++	u16			chunk_size;
+ 	u8			erase_opcode;
+ 	u8			read_opcode;
+ 	u8			program_opcode;
+@@ -562,6 +563,89 @@ static int m25p80_read(struct mtd_info *
  	return 0;
  }
  
@@ -21,10 +30,18 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	struct spi_transfer t[2];
 +	struct spi_message m;
 +	uint8_t opcode;
-+	int idx = 0;
++	int idx, rlen;
 +
 +	pr_debug("%s: %s from 0x%08x, len %zd\n", dev_name(&flash->spi->dev),
 +			__func__, (u32)from, len);
++
++	mutex_lock(&flash->lock);
++	/* Wait till previous write/erase is done. */
++	if (wait_till_ready(flash)) {
++		/* REVISIT status return?? */
++		mutex_unlock(&flash->lock);
++		return 1;
++	}
 +
 +	spi_message_init(&m);
 +	memset(t, 0, (sizeof t));
@@ -36,102 +53,19 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	*retlen = 0;
 +
-+	while (idx < len) {
-+		int rlen = (len - idx > 4) ? (4) : (len - idx);
++	for (idx = 0; idx < len; idx += rlen) {
++		rlen = min_t(int, flash->chunk_size, len - idx);
++
++		if (idx)
++			wait_till_ready(flash);
 +
 +		t[1].rx_buf = &buf[idx];
 +		t[1].len = rlen;
-+
-+		mutex_lock(&flash->lock);
-+
-+		/* Wait till previous write/erase is done. */
-+		if (wait_till_ready(flash)) {
-+			/* REVISIT status return?? */
-+			mutex_unlock(&flash->lock);
-+			return 1;
-+		}
 +
 +		/* Set up the write data buffer. */
 +		opcode = OPCODE_NORM_READ;
 +		flash->command[0] = opcode;
 +		m25p_addr2cmd(flash, from + idx, flash->command);
-+
-+		spi_sync(flash->spi, &m);
-+
-+		*retlen += m.actual_length - m25p_cmdsz(flash);
-+
-+		mutex_unlock(&flash->lock);
-+		idx += rlen;
-+	}
-+	return 0;
-+}
-+
- /*
-  * Write an address range to the flash chip.  Data must be written in
-  * FLASH_PAGESIZE chunks.  The address range may be any size provided
-@@ -649,6 +701,76 @@ static int m25p80_write(struct mtd_info 
- 	return 0;
- }
- 
-+static int m25p80_write_chunked(struct mtd_info *mtd, loff_t to, size_t len,
-+	size_t *retlen, const u_char *buf)
-+{
-+	struct m25p *flash = mtd_to_m25p(mtd);
-+	struct spi_transfer t;
-+	struct spi_message m;
-+	u32 i, page_size;
-+	u8 tmp[8];
-+
-+	pr_debug("%s: %s to 0x%08x, len %zd\n", dev_name(&flash->spi->dev),
-+			__func__, (u32)to, len);
-+
-+	spi_message_init(&m);
-+	memset(&t, 0, (sizeof t));
-+
-+	t.tx_buf = tmp;
-+	t.len = 8;
-+	spi_message_add_tail(&t, &m);
-+
-+	mutex_lock(&flash->lock);
-+
-+	/* Wait until finished previous write command. */
-+	if (wait_till_ready(flash)) {
-+		mutex_unlock(&flash->lock);
-+		return 1;
-+	}
-+
-+	write_enable(flash);
-+
-+	/* Set up the opcode in the write buffer. */
-+	flash->command[0] = OPCODE_PP;
-+	m25p_addr2cmd(flash, to, flash->command);
-+
-+	t.len = 4 + (to & 0x3);
-+	if (t.len == 4)
-+		t.len = 8;
-+	memcpy(tmp, flash->command, 4);
-+	memcpy(&tmp[4], buf, t.len - 4);
-+	spi_sync(flash->spi, &m);
-+	page_size = t.len - 4;
-+
-+	*retlen = m.actual_length - m25p_cmdsz(flash);
-+
-+	/* write everything in flash->page_size chunks */
-+	for (i = page_size; i < len; i += page_size) {
-+		page_size = len - i;
-+		if (page_size > 4)
-+			page_size = 4;
-+
-+		/* write the next page to flash */
-+		m25p_addr2cmd(flash, to + i, flash->command);
-+
-+		memcpy(tmp, flash->command, 4);
-+		memcpy(&tmp[4], buf + i, page_size);
-+		t.len = 4 + page_size;
-+
-+		wait_till_ready(flash);
-+
-+		write_enable(flash);
 +
 +		spi_sync(flash->spi, &m);
 +
@@ -143,19 +77,111 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
- static int sst_write(struct mtd_info *mtd, loff_t to, size_t len,
- 		size_t *retlen, const u_char *buf)
- {
-@@ -1260,6 +1382,12 @@ static int m25p_probe(struct spi_device 
- 		return -EINVAL;
- 	}
- 
-+	if (np && of_property_read_bool(np, "m25p,chunked-io")) {
-+		dev_warn(&spi->dev, "using chunked io\n");
-+		flash->mtd._read = m25p80_read_chunked;
-+		flash->mtd._write = m25p80_write_chunked;
++static int m25p80_write_data(struct m25p *flash, struct spi_message *m,
++			     struct spi_transfer *t, int to)
++{
++	const void *buf = t->tx_buf;
++	int len = t->len;
++	int retlen = 0;
++	int chunk_size;
++
++	chunk_size = flash->chunk_size;
++	if (!chunk_size)
++		chunk_size = len;
++
++	while (retlen < len) {
++		t->tx_buf = buf + retlen;
++		t->len = min_t(int, chunk_size, len - retlen);
++
++		if (retlen)
++			wait_till_ready(flash);
++
++		write_enable(flash);
++		m25p_addr2cmd(flash, to + retlen, flash->command);
++		spi_sync(flash->spi, m);
++
++		retlen += m->actual_length - m25p_cmdsz(flash);
 +	}
 +
- 	flash->program_opcode = OPCODE_PP;
++	return retlen;
++}
++
+ /*
+  * Write an address range to the flash chip.  Data must be written in
+  * FLASH_PAGESIZE chunks.  The address range may be any size provided
+@@ -596,11 +680,8 @@ static int m25p80_write(struct mtd_info 
+ 		return 1;
+ 	}
  
- 	if (info->addr_width)
+-	write_enable(flash);
+-
+ 	/* Set up the opcode in the write buffer. */
+ 	flash->command[0] = flash->program_opcode;
+-	m25p_addr2cmd(flash, to, flash->command);
+ 
+ 	page_offset = to & (flash->page_size - 1);
+ 
+@@ -608,9 +689,7 @@ static int m25p80_write(struct mtd_info 
+ 	if (page_offset + len <= flash->page_size) {
+ 		t[1].len = len;
+ 
+-		spi_sync(flash->spi, &m);
+-
+-		*retlen = m.actual_length - m25p_cmdsz(flash);
++		*retlen = m25p80_write_data(flash, &m, &t[1], to);
+ 	} else {
+ 		u32 i;
+ 
+@@ -618,9 +697,7 @@ static int m25p80_write(struct mtd_info 
+ 		page_size = flash->page_size - page_offset;
+ 
+ 		t[1].len = page_size;
+-		spi_sync(flash->spi, &m);
+-
+-		*retlen = m.actual_length - m25p_cmdsz(flash);
++		*retlen = m25p80_write_data(flash, &m, &t[1], to);
+ 
+ 		/* write everything in flash->page_size chunks */
+ 		for (i = page_size; i < len; i += page_size) {
+@@ -628,19 +705,12 @@ static int m25p80_write(struct mtd_info 
+ 			if (page_size > flash->page_size)
+ 				page_size = flash->page_size;
+ 
+-			/* write the next page to flash */
+-			m25p_addr2cmd(flash, to + i, flash->command);
+-
+ 			t[1].tx_buf = buf + i;
+ 			t[1].len = page_size;
+ 
+ 			wait_till_ready(flash);
+ 
+-			write_enable(flash);
+-
+-			spi_sync(flash->spi, &m);
+-
+-			*retlen += m.actual_length - m25p_cmdsz(flash);
++			*retlen += m25p80_write_data(flash, &m, &t[1], to + i);
+ 		}
+ 	}
+ 
+@@ -1105,6 +1175,7 @@ static int m25p_probe(struct spi_device 
+ 	struct mtd_part_parser_data	ppdata;
+ 	struct device_node *np = spi->dev.of_node;
+ 	int ret;
++	u32 val;
+ 
+ 	/* Platform data helps sort out which chip type we have, as
+ 	 * well as how this board partitions it.  If we don't have
+@@ -1187,6 +1258,12 @@ static int m25p_probe(struct spi_device 
+ 	flash->mtd._erase = m25p80_erase;
+ 	flash->mtd._read = m25p80_read;
+ 
++	if (np && !of_property_read_u32(np, "m25p,chunked-io", &val)) {
++		dev_warn(&spi->dev, "using chunked io\n");
++		flash->mtd._read = m25p80_read_chunked;
++		flash->chunk_size = val;
++	}
++
+ 	/* flash protection support for STmicro chips */
+ 	if (JEDEC_MFR(info->jedec_id) == CFI_MFR_ST) {
+ 		flash->mtd._lock = m25p80_lock;
