@@ -2,7 +2,7 @@
 +++ b/drivers/mtd/mtdpart.c
 @@ -35,6 +35,8 @@
  #include "mtdcore.h"
- #include "mtdsplit.h"
+ #include "mtdsplit/mtdsplit.h"
  
 +#define MTD_ERASE_PARTIAL	0x8000 /* partition only covers parts of an erase block */
 +
