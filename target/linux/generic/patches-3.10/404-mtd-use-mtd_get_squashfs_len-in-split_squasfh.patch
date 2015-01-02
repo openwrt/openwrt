@@ -1,14 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -33,6 +33,7 @@
- #include <linux/err.h>
- 
- #include "mtdcore.h"
-+#include "mtdsplit.h"
- 
- /* Our partition linked list */
- static LIST_HEAD(mtd_partitions);
-@@ -668,43 +669,16 @@ mtd_pad_erasesize(struct mtd_info *mtd, 
+@@ -669,43 +669,16 @@ mtd_pad_erasesize(struct mtd_info *mtd, 
  	return len;
  }
  
