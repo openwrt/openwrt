@@ -46,12 +46,22 @@
 
 				partition@50000 {
 					label = "firmware";
-					reg = <0x50000 0x6b0000>;
+					reg = <0x50000 0x7c0000>;
 				};
 
-				partition@f700000 {
+				partition@810000 {
+					label = "firmware2";
+					reg = <0x810000 0x7c0000>;
+				};
+
+				partition@fd00000 {
 					label = "usercfg";
-					reg = <0x700000 0x100000>;
+					reg = <0xfd0000 0x10000>;
+				};
+
+				partition@fe00000 {
+					label = "board_data";
+					reg = <0xfe0000 0x10000>;
 				};
 			};
 		};
