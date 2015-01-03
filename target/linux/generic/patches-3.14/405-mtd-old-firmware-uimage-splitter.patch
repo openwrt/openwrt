@@ -14,7 +14,7 @@
  endmenu
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -668,6 +668,37 @@ mtd_pad_erasesize(struct mtd_info *mtd, 
+@@ -668,6 +668,37 @@ mtd_pad_erasesize(struct mtd_info *mtd,
  	return len;
  }
  
@@ -52,7 +52,7 @@
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -676,7 +707,14 @@ mtd_pad_erasesize(struct mtd_info *mtd, 
+@@ -676,7 +707,14 @@ mtd_pad_erasesize(struct mtd_info *mtd,
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
