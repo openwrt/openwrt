@@ -8,7 +8,7 @@
  static struct proc_dir_entry *my_proc_entry;
  
  static char *yaffs_dump_dev_part0(char *buf, struct yaffs_dev *dev)
-@@ -3398,6 +3399,7 @@ static int yaffs_proc_write(struct file 
+@@ -3398,6 +3399,7 @@ static int yaffs_proc_write(struct file
  		return yaffs_proc_debug_write(file, buf, count, data);
  	return yaffs_proc_write_trace_options(file, buf, count, data);
  }
