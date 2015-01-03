@@ -91,7 +91,6 @@ platform_check_image() {
 	whr-600d |\
 	whr-1166d |\
 	wsr-600 |\
-	wsr-1166 |\
 	wl-330n | \
 	wl-330n3g | \
 	wl-351 | \
@@ -111,6 +110,13 @@ platform_check_image() {
 	y1s |\
 	zbt-wa05)
 		[ "$magic" != "27051956" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+	wsr-1166)
+		[ "$magic" != "48445230" ] && {
 			echo "Invalid image type."
 			return 1
 		}
