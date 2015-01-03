@@ -200,7 +200,7 @@
  }
  #endif
  
-@@ -1465,6 +1495,7 @@ static int br_multicast_ipv4_rcv(struct 
+@@ -1465,6 +1495,7 @@ static int br_multicast_ipv4_rcv(struct
  				 struct sk_buff *skb,
  				 u16 vid)
  {
@@ -208,7 +208,7 @@
  	struct sk_buff *skb2 = skb;
  	const struct iphdr *iph;
  	struct igmphdr *ih;
-@@ -1538,7 +1569,7 @@ static int br_multicast_ipv4_rcv(struct 
+@@ -1538,7 +1569,7 @@ static int br_multicast_ipv4_rcv(struct
  	case IGMP_HOST_MEMBERSHIP_REPORT:
  	case IGMPV2_HOST_MEMBERSHIP_REPORT:
  		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
@@ -217,7 +217,7 @@
  		break;
  	case IGMPV3_HOST_MEMBERSHIP_REPORT:
  		err = br_ip4_multicast_igmp3_report(br, port, skb2, vid);
-@@ -1547,7 +1578,7 @@ static int br_multicast_ipv4_rcv(struct 
+@@ -1547,7 +1578,7 @@ static int br_multicast_ipv4_rcv(struct
  		err = br_ip4_multicast_query(br, port, skb2, vid);
  		break;
  	case IGMP_HOST_LEAVE_MESSAGE:
@@ -226,7 +226,7 @@
  		break;
  	}
  
-@@ -1565,6 +1596,7 @@ static int br_multicast_ipv6_rcv(struct 
+@@ -1565,6 +1596,7 @@ static int br_multicast_ipv6_rcv(struct
  				 struct sk_buff *skb,
  				 u16 vid)
  {
@@ -234,7 +234,7 @@
  	struct sk_buff *skb2;
  	const struct ipv6hdr *ip6h;
  	u8 icmp6_type;
-@@ -1674,7 +1706,8 @@ static int br_multicast_ipv6_rcv(struct 
+@@ -1674,7 +1706,8 @@ static int br_multicast_ipv6_rcv(struct
  		}
  		mld = (struct mld_msg *)skb_transport_header(skb2);
  		BR_INPUT_SKB_CB(skb)->mrouters_only = 1;
@@ -244,7 +244,7 @@
  		break;
  	    }
  	case ICMPV6_MLD2_REPORT:
-@@ -1691,7 +1724,7 @@ static int br_multicast_ipv6_rcv(struct 
+@@ -1691,7 +1724,7 @@ static int br_multicast_ipv6_rcv(struct
  			goto out;
  		}
  		mld = (struct mld_msg *)skb_transport_header(skb2);

@@ -22,11 +22,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  include/linux/libata.h    |  9 +++++++++
  3 files changed, 66 insertions(+)
 
-diff --git a/drivers/ata/Kconfig b/drivers/ata/Kconfig
-index cd4cccb..7a085ec 100644
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
-@@ -46,6 +46,22 @@ config ATA_VERBOSE_ERROR
+@@ -45,6 +45,22 @@ config ATA_VERBOSE_ERROR
  
  	  If unsure, say Y.
  
@@ -49,11 +47,9 @@ index cd4cccb..7a085ec 100644
  config ATA_ACPI
  	bool "ATA ACPI Support"
  	depends on ACPI && PCI
-diff --git a/drivers/ata/libata-core.c b/drivers/ata/libata-core.c
-index 5c84fb5..eb49e02 100644
 --- a/drivers/ata/libata-core.c
 +++ b/drivers/ata/libata-core.c
-@@ -725,6 +725,19 @@ u64 ata_tf_read_block(struct ata_taskfile *tf, struct ata_device *dev)
+@@ -724,6 +724,19 @@ u64 ata_tf_read_block(struct ata_taskfil
  	return block;
  }
  
@@ -73,7 +69,7 @@ index 5c84fb5..eb49e02 100644
  /**
   *	ata_build_rw_tf - Build ATA taskfile for given read/write request
   *	@tf: Target ATA taskfile
-@@ -4761,6 +4774,9 @@ static struct ata_queued_cmd *ata_qc_new(struct ata_port *ap)
+@@ -4819,6 +4832,9 @@ static struct ata_queued_cmd *ata_qc_new
  			break;
  		}
  	}
@@ -83,7 +79,7 @@ index 5c84fb5..eb49e02 100644
  
  	return qc;
  }
-@@ -5671,6 +5687,9 @@ struct ata_port *ata_port_alloc(struct ata_host *host)
+@@ -5744,6 +5760,9 @@ struct ata_port *ata_port_alloc(struct a
  	ap->stats.unhandled_irq = 1;
  	ap->stats.idle_irq = 1;
  #endif
@@ -93,7 +89,7 @@ index 5c84fb5..eb49e02 100644
  	ata_sff_port_init(ap);
  
  	return ap;
-@@ -5692,6 +5711,12 @@ static void ata_host_release(struct device *gendev, void *res)
+@@ -5765,6 +5784,12 @@ static void ata_host_release(struct devi
  
  		kfree(ap->pmp_link);
  		kfree(ap->slave_link);
@@ -106,7 +102,7 @@ index 5c84fb5..eb49e02 100644
  		kfree(ap);
  		host->ports[i] = NULL;
  	}
-@@ -6138,7 +6163,23 @@ int ata_host_register(struct ata_host *host, struct scsi_host_template *sht)
+@@ -6211,7 +6236,23 @@ int ata_host_register(struct ata_host *h
  		host->ports[i]->print_id = atomic_inc_return(&ata_print_id);
  		host->ports[i]->local_port_no = i + 1;
  	}
@@ -114,11 +110,11 @@ index 5c84fb5..eb49e02 100644
 +	for (i = 0; i < host->n_ports; i++) {
 +		if (unlikely(!host->ports[i]->ledtrig))
 +			continue;
-+
+ 
 +		snprintf(host->ports[i]->ledtrig_name,
 +			sizeof(host->ports[i]->ledtrig_name), "ata%u",
 +			host->ports[i]->print_id);
- 
++
 +		host->ports[i]->ledtrig->name = host->ports[i]->ledtrig_name;
 +
 +		if (led_trigger_register(host->ports[i]->ledtrig)) {
@@ -130,8 +126,6 @@ index 5c84fb5..eb49e02 100644
  	/* Create associated sysfs transport objects  */
  	for (i = 0; i < host->n_ports; i++) {
  		rc = ata_tport_add(host->dev,host->ports[i]);
-diff --git a/include/linux/libata.h b/include/linux/libata.h
-index 2d18241..4428e2b 100644
 --- a/include/linux/libata.h
 +++ b/include/linux/libata.h
 @@ -38,6 +38,9 @@
@@ -157,6 +151,3 @@ index 2d18241..4428e2b 100644
  	/* owned by EH */
  	u8			sector_buf[ATA_SECT_SIZE] ____cacheline_aligned;
  };
--- 
-2.1.3
-
