@@ -151,6 +151,11 @@
 				status = "okay";
 				clock-frequency = <100000>;
 
+				tmp421@4c {
+					compatible = "ti,tmp421";
+					reg = <0x4c>;
+				};
+
 				tlc59116@68 {
 					#gpio-cells = <2>;
 					compatible = "gpio,tlc59116";
