@@ -1,0 +1,42 @@
+Index: dnsmasq-2.72/Makefile
+===================================================================
+--- dnsmasq-2.72.orig/Makefile	2014-12-30 19:46:10.484921940 +0800
++++ dnsmasq-2.72/Makefile	2014-12-30 19:56:39.712926794 +0800
+@@ -74,6 +74,10 @@
+ hdrs = dnsmasq.h config.h dhcp-protocol.h dhcp6-protocol.h \
+        dns-protocol.h radv-protocol.h ip6addr.h
+ 
++COPT_CONF = $(top)/.copt_$(shell $(CC) -DDNSMASQ_COMPILE_OPTS $(COPTS) -E $(top)/$(SRC)/config.h | \
++			( md5sum 2>/dev/null || md5 ) | cut -f 1 -d ' ')
++COPT_CONF_WILD = $(top)/.copt_*
++
+ all : $(BUILDDIR)
+ 	@cd $(BUILDDIR) && $(MAKE) \
+  top="$(top)" \
+@@ -83,7 +87,7 @@
+ 
+ mostly_clean :
+ 	rm -f $(BUILDDIR)/*.mo $(BUILDDIR)/*.pot 
+-	rm -f $(BUILDDIR)/.configured $(BUILDDIR)/*.o $(BUILDDIR)/dnsmasq.a $(BUILDDIR)/dnsmasq 
++	rm -f $(BUILDDIR)/$(COPT_CONF_WILD) $(BUILDDIR)/*.o $(BUILDDIR)/dnsmasq.a $(BUILDDIR)/dnsmasq
+ 
+ clean : mostly_clean
+ 	rm -f $(BUILDDIR)/dnsmasq_baseline
+@@ -139,7 +143,7 @@
+ 
+ # rules below are targets in recusive makes with cwd=$(BUILDDIR)
+ 
+-.configured: $(hdrs)
++$(COPT_CONF): $(hdrs)
+ 	@rm -f *.o
+ 	@touch $@
+ 
+@@ -149,7 +153,7 @@
+ .c.o:
+ 	$(CC) $(CFLAGS) $(COPTS) $(i18n) $(build_cflags) $(RPM_OPT_FLAGS) -c $<	
+ 
+-dnsmasq : .configured $(hdrs) $(objs)
++dnsmasq : $(COPT_CONF) $(hdrs) $(objs)
+ 	$(CC) $(LDFLAGS) -o $@ $(objs) $(build_libs) $(LIBS) 
+ 
+ dnsmasq.pot : $(objs:.o=.c) $(hdrs)
