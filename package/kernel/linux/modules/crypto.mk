@@ -138,6 +138,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-iv))
 
+define KernelPackage/crypto-seqiv
+  TITLE:=CryptoAPI Sequence Number IV Generator
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-rng
+  KCONFIG:=CONFIG_CRYPTO_SEQIV
+  FILES:=$(LINUX_DIR)/crypto/seqiv.ko
+  AUTOLOAD:=$(call AutoLoad,09,seqiv)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-seqiv))
+
 
 define KernelPackage/crypto-hw-talitos
   TITLE:=Freescale integrated security engine (SEC) driver
