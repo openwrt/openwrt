@@ -12,7 +12,6 @@ CRYPTO_MODULES = \
 	BLKCIPHER2=crypto_blkcipher
 
 CRYPTOMGR_MODULES = \
-	AEAD2=aead \
 	MANAGER2=cryptomgr
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
@@ -65,9 +64,8 @@ $(eval $(call KernelPackage,crypto-hash))
 
 define KernelPackage/crypto-manager
   TITLE:=CryptoAPI algorithm manager
-  DEPENDS:=+kmod-crypto-hash +kmod-crypto-pcompress
+  DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash +kmod-crypto-pcompress
   KCONFIG:= \
-	CONFIG_CRYPTO_AEAD \
 	CONFIG_CRYPTO_MANAGER \
 	$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_confvar,$(mod)))
   FILES:=$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_file,$(mod)))
