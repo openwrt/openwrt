@@ -594,17 +594,10 @@ $(eval $(call KernelPackage,crypto-test))
 
 define KernelPackage/crypto-xts
   TITLE:=XTS cipher CryptoAPI module
-  DEPENDS:=+kmod-crypto-manager
-  KCONFIG:= \
-	CONFIG_CRYPTO_GF128MUL \
-	CONFIG_CRYPTO_XTS
-  FILES:= \
-	$(LINUX_DIR)/crypto/xts.ko \
-	$(LINUX_DIR)/crypto/gf128mul.ko
-  AUTOLOAD:=$(call AutoLoad,09, \
-	gf128mul \
-	xts \
-  )
+  DEPENDS:=+kmod-crypto-gf128 +kmod-crypto-manager
+  KCONFIG:=CONFIG_CRYPTO_XTS
+  FILES:=$(LINUX_DIR)/crypto/xts.ko
+  AUTOLOAD:=$(call AutoLoad,09,xts)
   $(call AddDepends/crypto)
 endef
 
