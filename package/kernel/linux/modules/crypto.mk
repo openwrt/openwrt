@@ -13,7 +13,7 @@ CRYPTO_MODULES = \
 
 CRYPTOMGR_MODULES = \
 	AEAD2=aead \
-	MANAGER2=cryptomgr \
+	MANAGER2=cryptomgr
 
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko
