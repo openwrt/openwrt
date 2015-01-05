@@ -419,6 +419,76 @@ struct ar8xxx_priv {
 	int monitor_port;
 };
 
+u32
+ar8xxx_read(struct ar8xxx_priv *priv, int reg);
+void
+ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val);
+u32
+ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
+
+void
+ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
+		     u16 dbg_addr, u16 dbg_data);
+void
+ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data);
+void
+ar8xxx_phy_init(struct ar8xxx_priv *priv);
+int
+ar8xxx_sw_set_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val);
+int
+ar8xxx_sw_get_vlan(struct switch_dev *dev, const struct switch_attr *attr,
+		   struct switch_val *val);
+int
+ar8xxx_sw_set_reset_mibs(struct switch_dev *dev,
+			 const struct switch_attr *attr,
+			 struct switch_val *val);
+int
+ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int
+ar8xxx_sw_get_mirror_rx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int
+ar8xxx_sw_set_mirror_tx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int
+ar8xxx_sw_get_mirror_tx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val);
+int
+ar8xxx_sw_set_mirror_monitor_port(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val);
+int
+ar8xxx_sw_get_mirror_monitor_port(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val);
+int
+ar8xxx_sw_set_mirror_source_port(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val);
+int
+ar8xxx_sw_get_mirror_source_port(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val);
+int
+ar8xxx_sw_set_pvid(struct switch_dev *dev, int port, int vlan);
+int
+ar8xxx_sw_get_pvid(struct switch_dev *dev, int port, int *vlan);
+int
+ar8xxx_sw_hw_apply(struct switch_dev *dev);
+int
+ar8xxx_sw_reset_switch(struct switch_dev *dev);
+int
+ar8xxx_sw_get_port_link(struct switch_dev *dev, int port,
+			struct switch_port_link *link);
+int
+ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
+
 static inline struct ar8xxx_priv *
 swdev_to_ar8xxx(struct switch_dev *swdev)
 {
@@ -458,6 +528,12 @@ static inline bool chip_is_ar8327(struct ar8xxx_priv *priv)
 static inline bool chip_is_ar8337(struct ar8xxx_priv *priv)
 {
 	return priv->chip_ver == AR8XXX_VER_AR8337;
+}
+
+static inline void
+ar8xxx_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
+{
+	ar8xxx_rmw(priv, reg, 0, val);
 }
 
 #endif
