@@ -411,6 +411,18 @@ endef
 $(eval $(call KernelPackage,crypto-gf128))
 
 
+define KernelPackage/crypto-ghash
+  TITLE:=GHASH digest CryptoAPI module
+  DEPENDS:=+kmod-crypto-gf128
+  KCONFIG:=CONFIG_CRYPTO_GHASH
+  FILES:=$(LINUX_DIR)/crypto/ghash-generic.ko
+  AUTOLOAD:=$(call AutoLoad,09,ghash-generic)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-ghash))
+
+
 define KernelPackage/crypto-md4
   TITLE:=MD4 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
