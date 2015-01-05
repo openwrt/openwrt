@@ -124,6 +124,9 @@ define Package/e2fsprogs/install
 	$(LN) mke2fs $(1)/usr/sbin/mkfs.ext2
 	$(LN) mke2fs $(1)/usr/sbin/mkfs.ext3
 	$(LN) mke2fs $(1)/usr/sbin/mkfs.ext4
+	$(LN) e2fsck $(1)/usr/sbin/fsck.ext2
+	$(LN) e2fsck $(1)/usr/sbin/fsck.ext3
+	$(LN) e2fsck $(1)/usr/sbin/fsck.ext4
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libe2p.so.* $(1)/usr/lib/
 	$(INSTALL_DIR) $(1)/etc/init.d
@@ -151,6 +154,7 @@ endef
 define Package/tune2fs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/tune2fs $(1)/usr/sbin/
+	$(LN) tune2fs $(1)/usr/sbin/findfs
 endef
 
 define Package/resize2fs/install
