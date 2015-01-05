@@ -11,9 +11,6 @@ CRYPTO_MODULES = \
 	ALGAPI2=crypto_algapi \
 	BLKCIPHER2=crypto_blkcipher
 
-CRYPTOMGR_MODULES = \
-	MANAGER2=cryptomgr
-
 crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko
 crypto_name=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(word 2,$(subst =,$(space),$(1))))
@@ -67,8 +64,8 @@ define KernelPackage/crypto-manager
   DEPENDS:=+kmod-crypto-aead +kmod-crypto-hash +kmod-crypto-pcompress
   KCONFIG:= \
 	CONFIG_CRYPTO_MANAGER \
-	$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_confvar,$(mod)))
-  FILES:=$(foreach mod,$(CRYPTOMGR_MODULES),$(call crypto_file,$(mod)))
+	CONFIG_CRYPTO_MANAGER2
+  FILES:=$(LINUX_DIR)/crypto/cryptomgr.ko
   $(call AddDepends/crypto)
 endef
 
