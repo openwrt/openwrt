@@ -22,6 +22,10 @@ PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSI
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
+PKG_CONFIG_DEPENDS:=CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dhcpv6 \
+	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_dnssec \
+	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_auth \
+	CONFIG_PACKAGE_dnsmasq_$(BUILD_VARIANT)_ipset
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -46,8 +50,10 @@ endef
 
 define Package/dnsmasq-full
 $(call Package/dnsmasq/Default)
-  TITLE += (with DNSSEC, DHCPv6, Auth DNS, IPSET)
-  DEPENDS:=@IPV6 +kmod-ipv6 +libnettle
+  TITLE += (with DNSSEC, DHCPv6, Auth DNS, IPset enabled by default)
+  DEPENDS:=+PACKAGE_dnsmasq_full_dnssec:libnettle \
+	+PACKAGE_dnsmasq_full_dhcpv6:kmod-ipv6 \
+	+PACKAGE_dnsmasq_full_ipset:kmod-ipt-ipset
   VARIANT:=full
 endef
 
@@ -64,7 +70,8 @@ endef
 define Package/dnsmasq-full/description
 $(call Package/dnsmasq/description)
 
-This is a variant with DHCPv6, DNSSEC, Authroitative DNS and IPSET support
+This is a fully configurable variant with DHCPv6, DNSSEC, Authroitative DNS and
+IPset support enabled by default.
 endef
 
 define Package/dnsmasq/conffiles
@@ -72,25 +79,23 @@ define Package/dnsmasq/conffiles
 /etc/dnsmasq.conf
 endef
 
-define Package/dnsmasq/config/Default
-  if PACKAGE_$(1)-$(2)
-  config PACKAGE_dnsmasq_$(2)_dhcpv6
-    bool "Build with DHCPv6 support."
-    default y
-  config PACKAGE_dnsmasq_$(2)_dnssec
-    bool "Build with DNSSEC support."
-    default y
-  config PACKAGE_dnsmasq_$(2)_auth
-    bool "Build with the facility to act as an authoritative DNS server."
-    default y
-  config PACKAGE_dnsmasq_$(2)_ipset
-    bool "Build with ipset support."
-    select PACKAGE_kmod-ipt-ipset
-    default y
-  endif
+define Package/dnsmasq-full/config
+	if PACKAGE_dnsmasq-full
+	config PACKAGE_dnsmasq_full_dhcpv6
+		bool "Build with DHCPv6 support."
+		depends on IPV6
+		default y
+	config PACKAGE_dnsmasq_full_dnssec
+		bool "Build with DNSSEC support."
+		default y
+	config PACKAGE_dnsmasq_full_auth
+		bool "Build with the facility to act as an authoritative DNS server."
+		default y
+	config PACKAGE_dnsmasq_full_ipset
+		bool "Build with IPset support."
+		default y
+	endif
 endef
-
-Package/dnsmasq-full/config=$(call Package/dnsmasq/config/Default,dnsmasq,full)
 
 Package/dnsmasq-dhcpv6/conffiles = $(Package/dnsmasq/conffiles)
 Package/dnsmasq-full/conffiles = $(Package/dnsmasq/conffiles)
@@ -137,8 +142,10 @@ Package/dnsmasq-dhcpv6/install = $(Package/dnsmasq/install)
 
 define Package/dnsmasq-full/install
 $(call Package/dnsmasq/install,$(1))
+ifneq ($(CONFIG_PACKAGE_dnsmasq_full_dnssec),)
 	$(INSTALL_DIR) $(1)/usr/share/dnsmasq
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/trust-anchors.conf $(1)/usr/share/dnsmasq
+endif
 endef
 
 $(eval $(call BuildPackage,dnsmasq))
