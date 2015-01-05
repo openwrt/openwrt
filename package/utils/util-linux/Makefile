@@ -248,6 +248,7 @@ endef
 define Package/losetup
 $(call Package/util-linux/Default)
   TITLE:=set up and control loop devices
+  DEPENDS:= +libsmartcols
 endef
 
 define Package/losetup/description
@@ -422,22 +423,22 @@ endef
 
 define Package/libblkid/install
         $(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/.libs/libblkid.so.* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/.libs/libblkid.so* $(1)/usr/lib/
 endef
 
 define Package/libmount/install
         $(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/.libs/libmount.so.* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/.libs/libmount.so* $(1)/usr/lib/
 endef
 
 define Package/libsmartcols/install
         $(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/.libs/libsmartcols.so.* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/.libs/libsmartcols.so* $(1)/usr/lib/
 endef
 
 define Package/libuuid/install
         $(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_BUILD_DIR)/.libs/libuuid.so.* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/.libs/libuuid.so* $(1)/usr/lib/
 endef
 
 define Package/agetty/install
@@ -502,7 +503,7 @@ endef
 
 define Package/losetup/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/losetup $(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.libs/losetup $(1)/usr/sbin/
 endef
 
 define Package/lsblk/install
