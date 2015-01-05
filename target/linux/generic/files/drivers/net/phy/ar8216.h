@@ -19,10 +19,19 @@
 
 #define BITS(_s, _n)	(((1UL << (_n)) - 1) << _s)
 
+#define AR8XXX_CAP_GIGE			BIT(0)
+#define AR8XXX_CAP_MIB_COUNTERS		BIT(1)
+
+#define AR8XXX_NUM_PHYS 	5
 #define AR8216_PORT_CPU	0
 #define AR8216_NUM_PORTS	6
 #define AR8216_NUM_VLANS	16
 #define AR8316_NUM_VLANS	4096
+
+/* size of the vlan table */
+#define AR8X16_MAX_VLANS	128
+#define AR8X16_PROBE_RETRIES	10
+#define AR8X16_MAX_PORTS	8
 
 /* Atheros specific MII registers */
 #define MII_ATH_MMD_ADDR		0x0d
@@ -288,174 +297,6 @@
 #define   AR8316_POSTRIP_RXDELAY_S1		BIT(26)
 #define   AR8316_POSTRIP_POWER_ON_SEL		BIT(31)
 
-#define AR8327_NUM_PORTS	7
-#define AR8327_NUM_LEDS		15
-#define AR8327_PORTS_ALL	0x7f
-#define AR8327_NUM_LED_CTRL_REGS	4
-
-#define AR8327_REG_MASK				0x000
-
-#define AR8327_REG_PAD0_MODE			0x004
-#define AR8327_REG_PAD5_MODE			0x008
-#define AR8327_REG_PAD6_MODE			0x00c
-#define   AR8327_PAD_MAC_MII_RXCLK_SEL		BIT(0)
-#define   AR8327_PAD_MAC_MII_TXCLK_SEL		BIT(1)
-#define   AR8327_PAD_MAC_MII_EN			BIT(2)
-#define   AR8327_PAD_MAC_GMII_RXCLK_SEL		BIT(4)
-#define   AR8327_PAD_MAC_GMII_TXCLK_SEL		BIT(5)
-#define   AR8327_PAD_MAC_GMII_EN		BIT(6)
-#define   AR8327_PAD_SGMII_EN			BIT(7)
-#define   AR8327_PAD_PHY_MII_RXCLK_SEL		BIT(8)
-#define   AR8327_PAD_PHY_MII_TXCLK_SEL		BIT(9)
-#define   AR8327_PAD_PHY_MII_EN			BIT(10)
-#define   AR8327_PAD_PHY_GMII_PIPE_RXCLK_SEL	BIT(11)
-#define   AR8327_PAD_PHY_GMII_RXCLK_SEL		BIT(12)
-#define   AR8327_PAD_PHY_GMII_TXCLK_SEL		BIT(13)
-#define   AR8327_PAD_PHY_GMII_EN		BIT(14)
-#define   AR8327_PAD_PHYX_GMII_EN		BIT(16)
-#define   AR8327_PAD_PHYX_RGMII_EN		BIT(17)
-#define   AR8327_PAD_PHYX_MII_EN		BIT(18)
-#define   AR8327_PAD_SGMII_DELAY_EN		BIT(19)
-#define   AR8327_PAD_RGMII_RXCLK_DELAY_SEL	BITS(20, 2)
-#define   AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S	20
-#define   AR8327_PAD_RGMII_TXCLK_DELAY_SEL	BITS(22, 2)
-#define   AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S	22
-#define   AR8327_PAD_RGMII_RXCLK_DELAY_EN	BIT(24)
-#define   AR8327_PAD_RGMII_TXCLK_DELAY_EN	BIT(25)
-#define   AR8327_PAD_RGMII_EN			BIT(26)
-
-#define AR8327_REG_POWER_ON_STRIP		0x010
-#define   AR8327_POWER_ON_STRIP_POWER_ON_SEL	BIT(31)
-#define   AR8327_POWER_ON_STRIP_LED_OPEN_EN	BIT(24)
-#define   AR8327_POWER_ON_STRIP_SERDES_AEN	BIT(7)
-
-#define AR8327_REG_INT_STATUS0			0x020
-#define   AR8327_INT0_VT_DONE			BIT(20)
-
-#define AR8327_REG_INT_STATUS1			0x024
-#define AR8327_REG_INT_MASK0			0x028
-#define AR8327_REG_INT_MASK1			0x02c
-
-#define AR8327_REG_MODULE_EN			0x030
-#define   AR8327_MODULE_EN_MIB			BIT(0)
-
-#define AR8327_REG_MIB_FUNC			0x034
-#define   AR8327_MIB_CPU_KEEP			BIT(20)
-
-#define AR8327_REG_SERVICE_TAG			0x048
-#define AR8327_REG_LED_CTRL(_i)			(0x050 + (_i) * 4)
-#define AR8327_REG_LED_CTRL0			0x050
-#define AR8327_REG_LED_CTRL1			0x054
-#define AR8327_REG_LED_CTRL2			0x058
-#define AR8327_REG_LED_CTRL3			0x05c
-#define AR8327_REG_MAC_ADDR0			0x060
-#define AR8327_REG_MAC_ADDR1			0x064
-
-#define AR8327_REG_MAX_FRAME_SIZE		0x078
-#define   AR8327_MAX_FRAME_SIZE_MTU		BITS(0, 14)
-
-#define AR8327_REG_PORT_STATUS(_i)		(0x07c + (_i) * 4)
-
-#define AR8327_REG_HEADER_CTRL			0x098
-#define AR8327_REG_PORT_HEADER(_i)		(0x09c + (_i) * 4)
-
-#define AR8327_REG_SGMII_CTRL			0x0e0
-#define   AR8327_SGMII_CTRL_EN_PLL		BIT(1)
-#define   AR8327_SGMII_CTRL_EN_RX		BIT(2)
-#define   AR8327_SGMII_CTRL_EN_TX		BIT(3)
-
-#define AR8327_REG_EEE_CTRL			0x100
-#define   AR8327_EEE_CTRL_DISABLE_PHY(_i)	BIT(4 + (_i) * 2)
-
-#define AR8327_REG_PORT_VLAN0(_i)		(0x420 + (_i) * 0x8)
-#define   AR8327_PORT_VLAN0_DEF_SVID		BITS(0, 12)
-#define   AR8327_PORT_VLAN0_DEF_SVID_S		0
-#define   AR8327_PORT_VLAN0_DEF_CVID		BITS(16, 12)
-#define   AR8327_PORT_VLAN0_DEF_CVID_S		16
-
-#define AR8327_REG_PORT_VLAN1(_i)		(0x424 + (_i) * 0x8)
-#define   AR8327_PORT_VLAN1_PORT_VLAN_PROP	BIT(6)
-#define   AR8327_PORT_VLAN1_OUT_MODE		BITS(12, 2)
-#define   AR8327_PORT_VLAN1_OUT_MODE_S		12
-#define   AR8327_PORT_VLAN1_OUT_MODE_UNMOD	0
-#define   AR8327_PORT_VLAN1_OUT_MODE_UNTAG	1
-#define   AR8327_PORT_VLAN1_OUT_MODE_TAG	2
-#define   AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH	3
-
-#define AR8327_REG_ATU_DATA0			0x600
-#define AR8327_REG_ATU_DATA1			0x604
-#define AR8327_REG_ATU_DATA2			0x608
-
-#define AR8327_REG_ATU_FUNC			0x60c
-#define   AR8327_ATU_FUNC_OP			BITS(0, 4)
-#define   AR8327_ATU_FUNC_OP_NOOP		0x0
-#define   AR8327_ATU_FUNC_OP_FLUSH		0x1
-#define   AR8327_ATU_FUNC_OP_LOAD		0x2
-#define   AR8327_ATU_FUNC_OP_PURGE		0x3
-#define   AR8327_ATU_FUNC_OP_FLUSH_LOCKED	0x4
-#define   AR8327_ATU_FUNC_OP_FLUSH_UNICAST	0x5
-#define   AR8327_ATU_FUNC_OP_GET_NEXT		0x6
-#define   AR8327_ATU_FUNC_OP_SEARCH_MAC		0x7
-#define   AR8327_ATU_FUNC_OP_CHANGE_TRUNK	0x8
-#define   AR8327_ATU_FUNC_BUSY			BIT(31)
-
-#define AR8327_REG_VTU_FUNC0			0x0610
-#define   AR8327_VTU_FUNC0_EG_MODE		BITS(4, 14)
-#define   AR8327_VTU_FUNC0_EG_MODE_S(_i)	(4 + (_i) * 2)
-#define   AR8327_VTU_FUNC0_EG_MODE_KEEP		0
-#define   AR8327_VTU_FUNC0_EG_MODE_UNTAG	1
-#define   AR8327_VTU_FUNC0_EG_MODE_TAG		2
-#define   AR8327_VTU_FUNC0_EG_MODE_NOT		3
-#define   AR8327_VTU_FUNC0_IVL			BIT(19)
-#define   AR8327_VTU_FUNC0_VALID		BIT(20)
-
-#define AR8327_REG_VTU_FUNC1			0x0614
-#define   AR8327_VTU_FUNC1_OP			BITS(0, 3)
-#define   AR8327_VTU_FUNC1_OP_NOOP		0
-#define   AR8327_VTU_FUNC1_OP_FLUSH		1
-#define   AR8327_VTU_FUNC1_OP_LOAD		2
-#define   AR8327_VTU_FUNC1_OP_PURGE		3
-#define   AR8327_VTU_FUNC1_OP_REMOVE_PORT	4
-#define   AR8327_VTU_FUNC1_OP_GET_NEXT		5
-#define   AR8327_VTU_FUNC1_OP_GET_ONE		6
-#define   AR8327_VTU_FUNC1_FULL			BIT(4)
-#define   AR8327_VTU_FUNC1_PORT			BIT(8, 4)
-#define   AR8327_VTU_FUNC1_PORT_S		8
-#define   AR8327_VTU_FUNC1_VID			BIT(16, 12)
-#define   AR8327_VTU_FUNC1_VID_S		16
-#define   AR8327_VTU_FUNC1_BUSY			BIT(31)
-
-#define AR8327_REG_FWD_CTRL0			0x620
-#define   AR8327_FWD_CTRL0_CPU_PORT_EN		BIT(10)
-#define   AR8327_FWD_CTRL0_MIRROR_PORT		BITS(4, 4)
-#define   AR8327_FWD_CTRL0_MIRROR_PORT_S	4
-
-#define AR8327_REG_FWD_CTRL1			0x624
-#define   AR8327_FWD_CTRL1_UC_FLOOD		BITS(0, 7)
-#define   AR8327_FWD_CTRL1_UC_FLOOD_S		0
-#define   AR8327_FWD_CTRL1_MC_FLOOD		BITS(8, 7)
-#define   AR8327_FWD_CTRL1_MC_FLOOD_S		8
-#define   AR8327_FWD_CTRL1_BC_FLOOD		BITS(16, 7)
-#define   AR8327_FWD_CTRL1_BC_FLOOD_S		16
-#define   AR8327_FWD_CTRL1_IGMP			BITS(24, 7)
-#define   AR8327_FWD_CTRL1_IGMP_S		24
-
-#define AR8327_REG_PORT_LOOKUP(_i)		(0x660 + (_i) * 0xc)
-#define   AR8327_PORT_LOOKUP_MEMBER		BITS(0, 7)
-#define   AR8327_PORT_LOOKUP_IN_MODE		BITS(8, 2)
-#define   AR8327_PORT_LOOKUP_IN_MODE_S		8
-#define   AR8327_PORT_LOOKUP_STATE		BITS(16, 3)
-#define   AR8327_PORT_LOOKUP_STATE_S		16
-#define   AR8327_PORT_LOOKUP_LEARN		BIT(20)
-#define   AR8327_PORT_LOOKUP_ING_MIRROR_EN	BIT(25)
-
-#define AR8327_REG_PORT_PRIO(_i)		(0x664 + (_i) * 0xc)
-
-#define AR8327_REG_PORT_HOL_CTRL1(_i)		(0x974 + (_i) * 0x8)
-#define   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN	BIT(16)
-
-#define AR8337_PAD_MAC06_EXCHANGE_EN		BIT(31)
-
 /* port speed */
 enum {
         AR8216_PORT_SPEED_10M = 0,
@@ -487,5 +328,136 @@ enum {
 	AR8216_PORT_STATE_LEARN = 3,
 	AR8216_PORT_STATE_FORWARD = 4
 };
+
+enum {
+	AR8XXX_VER_AR8216 = 0x01,
+	AR8XXX_VER_AR8236 = 0x03,
+	AR8XXX_VER_AR8316 = 0x10,
+	AR8XXX_VER_AR8327 = 0x12,
+	AR8XXX_VER_AR8337 = 0x13,
+};
+
+struct ar8xxx_priv;
+
+struct ar8xxx_mib_desc {
+	unsigned int size;
+	unsigned int offset;
+	const char *name;
+};
+
+struct ar8xxx_chip {
+	unsigned long caps;
+	bool config_at_probe;
+	bool mii_lo_first;
+
+	/* parameters to calculate REG_PORT_STATS_BASE */
+	unsigned reg_port_stats_start;
+	unsigned reg_port_stats_length;
+
+	int (*hw_init)(struct ar8xxx_priv *priv);
+	void (*cleanup)(struct ar8xxx_priv *priv);
+
+	const char *name;
+	int vlans;
+	int ports;
+	const struct switch_dev_ops *swops;
+
+	void (*init_globals)(struct ar8xxx_priv *priv);
+	void (*init_port)(struct ar8xxx_priv *priv, int port);
+	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 members);
+	u32 (*read_port_status)(struct ar8xxx_priv *priv, int port);
+	int (*atu_flush)(struct ar8xxx_priv *priv);
+	void (*vtu_flush)(struct ar8xxx_priv *priv);
+	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
+	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
+	void (*set_mirror_regs)(struct ar8xxx_priv *priv);
+
+	const struct ar8xxx_mib_desc *mib_decs;
+	unsigned num_mibs;
+	unsigned mib_func;
+};
+
+struct ar8xxx_priv {
+	struct switch_dev dev;
+	struct mii_bus *mii_bus;
+	struct phy_device *phy;
+
+	int (*get_port_link)(unsigned port);
+
+	const struct net_device_ops *ndo_old;
+	struct net_device_ops ndo;
+	struct mutex reg_mutex;
+	u8 chip_ver;
+	u8 chip_rev;
+	const struct ar8xxx_chip *chip;
+	void *chip_data;
+	bool initialized;
+	bool port4_phy;
+	char buf[2048];
+
+	bool init;
+
+	struct mutex mib_lock;
+	struct delayed_work mib_work;
+	int mib_next_port;
+	u64 *mib_stats;
+
+	struct list_head list;
+	unsigned int use_count;
+
+	/* all fields below are cleared on reset */
+	bool vlan;
+	u16 vlan_id[AR8X16_MAX_VLANS];
+	u8 vlan_table[AR8X16_MAX_VLANS];
+	u8 vlan_tagged;
+	u16 pvid[AR8X16_MAX_PORTS];
+
+	/* mirroring */
+	bool mirror_rx;
+	bool mirror_tx;
+	int source_port;
+	int monitor_port;
+};
+
+static inline struct ar8xxx_priv *
+swdev_to_ar8xxx(struct switch_dev *swdev)
+{
+	return container_of(swdev, struct ar8xxx_priv, dev);
+}
+
+static inline bool ar8xxx_has_gige(struct ar8xxx_priv *priv)
+{
+	return priv->chip->caps & AR8XXX_CAP_GIGE;
+}
+
+static inline bool ar8xxx_has_mib_counters(struct ar8xxx_priv *priv)
+{
+	return priv->chip->caps & AR8XXX_CAP_MIB_COUNTERS;
+}
+
+static inline bool chip_is_ar8216(struct ar8xxx_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8216;
+}
+
+static inline bool chip_is_ar8236(struct ar8xxx_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8236;
+}
+
+static inline bool chip_is_ar8316(struct ar8xxx_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8316;
+}
+
+static inline bool chip_is_ar8327(struct ar8xxx_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8327;
+}
+
+static inline bool chip_is_ar8337(struct ar8xxx_priv *priv)
+{
+	return priv->chip_ver == AR8XXX_VER_AR8337;
+}
 
 #endif
