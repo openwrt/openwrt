@@ -400,6 +400,17 @@ endef
 $(eval $(call KernelPackage,crypto-hmac))
 
 
+define KernelPackage/crypto-gf128
+  TITLE:=GF(2^128) multiplication functions CryptoAPI module
+  KCONFIG:=CONFIG_CRYPTO_GF128MUL
+  FILES:=$(LINUX_DIR)/crypto/gf128mul.ko
+  AUTOLOAD:=$(call AutoLoad,09,gf128mul)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-gf128))
+
+
 define KernelPackage/crypto-md4
   TITLE:=MD4 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
