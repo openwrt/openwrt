@@ -1,3 +1,88 @@
+commit f0b4eeced518c632210ef2aea44fc92cc9e86cce
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Mon Nov 17 12:20:28 2014 +0100
+
+    bridge: fix netfilter/NF_BR_LOCAL_OUT for own, locally generated queries
+
+    Ebtables on the OUTPUT chain (NF_BR_LOCAL_OUT) would not work as expected
+    for both locally generated IGMP and MLD queries. The IP header specific
+    filter options are off by 14 Bytes for netfilter (actual output on
+    interfaces is fine).
+
+    NF_HOOK() expects the skb->data to point to the IP header, not the
+    ethernet one (while dev_queue_xmit() does not). Luckily there is an
+    br_dev_queue_push_xmit() helper function already - let's just use that.
+
+    Introduced by eb1d16414339a6e113d89e2cca2556005d7ce919
+    ("bridge: Add core IGMP snooping support")
+
+    Ebtables example:
+
+    $ ebtables -I OUTPUT -p IPv6 -o eth1 --logical-out br0 \
+        --log --log-level 6 --log-ip6 --log-prefix="~EBT: " -j DROP
+
+    before (broken):
+
+    ~EBT:  IN= OUT=eth1 MAC source = 02:04:64:a4:39:c2 \
+        MAC dest = 33:33:00:00:00:01 proto = 0x86dd IPv6 \
+        SRC=64a4:39c2:86dd:6000:0000:0020:0001:fe80 IPv6 \
+        DST=0000:0000:0000:0004:64ff:fea4:39c2:ff02, \
+        IPv6 priority=0x3, Next Header=2
+
+    after (working):
+
+    ~EBT:  IN= OUT=eth1 MAC source = 02:04:64:a4:39:c2 \
+       MAC dest = 33:33:00:00:00:01 proto = 0x86dd IPv6 \
+        SRC=fe80:0000:0000:0000:0004:64ff:fea4:39c2 IPv6 \
+        DST=ff02:0000:0000:0000:0000:0000:0000:0001, \
+        IPv6 priority=0x0, Next Header=0
+
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Acked-by: Herbert Xu <herbert@gondor.apana.org.au>
+    Signed-off-by: Pablo Neira Ayuso <pablo@netfilter.org>
+
+commit 20a599bec95a52fa72432b2376a2ce47c5bb68fb
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Mon Mar 10 22:25:25 2014 +0100
+
+    bridge: multicast: enable snooping on general queries only
+
+    Without this check someone could easily create a denial of service
+    by injecting multicast-specific queries to enable the bridge
+    snooping part if no real querier issuing periodic general queries
+    is present on the link which would result in the bridge wrongly
+    shutting down ports for multicast traffic as the bridge did not learn
+    about these listeners.
+
+    With this patch the snooping code is enabled upon receiving valid,
+    general queries only.
+
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+commit 9ed973cc40c588abeaa58aea0683ea665132d11d
+Author: Linus Lüssing <linus.luessing@web.de>
+Date:   Mon Mar 10 22:25:24 2014 +0100
+
+    bridge: multicast: add sanity check for general query destination
+
+    General IGMP and MLD queries are supposed to have the multicast
+    link-local all-nodes address as their destination according to RFC2236
+    section 9, RFC3376 section 4.1.12/9.1, RFC2710 section 8 and RFC3810
+    section 5.1.15.
+
+    Without this check, such malformed IGMP/MLD queries can result in a
+    denial of service: The queries are ignored by most IGMP/MLD listeners
+    therefore they will not respond with an IGMP/MLD report. However,
+    without this patch these malformed MLD queries would enable the
+    snooping part in the bridge code, potentially shutting down the
+    according ports towards these hosts for multicast traffic as the
+    bridge did not learn about these listeners.
+
+    Reported-by: Jan Stancek <jstancek@redhat.com>
+    Signed-off-by: Linus Lüssing <linus.luessing@web.de>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
 commit 3c3769e63301fd92fcaf51870c371583dd0282ce
 Author: Linus Lüssing <linus.luessing@web.de>
 Date:   Wed Sep 4 02:13:39 2013 +0200
@@ -229,7 +314,17 @@ Date:   Tue May 21 21:52:54 2013 +0000
  static void __br_multicast_send_query(struct net_bridge *br,
  				      struct net_bridge_port *port,
  				      struct br_ip *ip)
-@@ -790,37 +809,45 @@ static void __br_multicast_send_query(st
+@@ -781,46 +800,53 @@ static void __br_multicast_send_query(st
+ 		return;
+ 
+ 	if (port) {
+-		__skb_push(skb, sizeof(struct ethhdr));
+ 		skb->dev = port->dev;
+ 		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, skb, NULL, skb->dev,
+-			dev_queue_xmit);
++			br_dev_queue_push_xmit);
+ 	} else
+ 		netif_rx(skb);
  }
  
  static void br_multicast_send_query(struct net_bridge *br,
@@ -288,7 +383,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	struct net_bridge *br = port->br;
  
  	spin_lock(&br->multicast_lock);
-@@ -828,25 +855,43 @@ static void br_multicast_port_query_expi
+@@ -828,25 +854,43 @@ static void br_multicast_port_query_expi
  	    port->state == BR_STATE_BLOCKING)
  		goto out;
  
@@ -339,7 +434,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  }
  
  void br_multicast_del_port(struct net_bridge_port *port)
-@@ -854,13 +899,13 @@ void br_multicast_del_port(struct net_br
+@@ -854,13 +898,13 @@ void br_multicast_del_port(struct net_br
  	del_timer_sync(&port->multicast_router_timer);
  }
  
@@ -358,7 +453,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  }
  
  void br_multicast_enable_port(struct net_bridge_port *port)
-@@ -871,7 +916,10 @@ void br_multicast_enable_port(struct net
+@@ -871,7 +915,10 @@ void br_multicast_enable_port(struct net
  	if (br->multicast_disabled || !netif_running(br->dev))
  		goto out;
  
@@ -370,7 +465,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  
  out:
  	spin_unlock(&br->multicast_lock);
-@@ -890,7 +938,10 @@ void br_multicast_disable_port(struct ne
+@@ -890,7 +937,10 @@ void br_multicast_disable_port(struct ne
  	if (!hlist_unhashed(&port->rlist))
  		hlist_del_init_rcu(&port->rlist);
  	del_timer(&port->multicast_router_timer);
@@ -382,7 +477,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	spin_unlock(&br->multicast_lock);
  }
  
-@@ -1015,6 +1066,17 @@ static int br_ip6_multicast_mld2_report(
+@@ -1015,6 +1065,17 @@ static int br_ip6_multicast_mld2_report(
  }
  #endif
  
@@ -400,19 +495,22 @@ Date:   Tue May 21 21:52:54 2013 +0000
  /*
   * Add port to rotuer_list
   *  list is maintained ordered by pointer value
-@@ -1065,12 +1127,13 @@ timer:
+@@ -1065,12 +1126,14 @@ timer:
  
  static void br_multicast_query_received(struct net_bridge *br,
  					struct net_bridge_port *port,
 -					int saddr)
-+					struct bridge_mcast_querier *querier,
-+					int saddr,
-+					unsigned long max_delay)
- {
- 	if (saddr)
+-{
+-	if (saddr)
 -		mod_timer(&br->multicast_querier_timer,
 -			  jiffies + br->multicast_querier_interval);
 -	else if (timer_pending(&br->multicast_querier_timer))
++					struct bridge_mcast_querier *querier,
++					int saddr,
++					bool is_general_query,
++					unsigned long max_delay)
++{
++	if (saddr && is_general_query)
 +		br_multicast_update_querier_timer(br, querier, max_delay);
 +	else if (timer_pending(&querier->timer))
  		return;
@@ -427,17 +525,33 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	group = ih->group;
  
  	if (skb->len == sizeof(*ih)) {
-@@ -1122,6 +1183,9 @@ static int br_ip4_multicast_query(struct
+@@ -1122,6 +1183,17 @@ static int br_ip4_multicast_query(struct
  			    IGMPV3_MRC(ih3->code) * (HZ / IGMP_TIMER_SCALE) : 1;
  	}
  
++	/* RFC2236+RFC3376 (IGMPv2+IGMPv3) require the multicast link layer
++	 * all-systems destination addresses (224.0.0.1) for general queries
++	 */
++	if (!group && iph->daddr != htonl(INADDR_ALLHOSTS_GROUP)) {
++		err = -EINVAL;
++		goto out;
++	}
++
 +	br_multicast_query_received(br, port, &br->ip4_querier, !!iph->saddr,
-+				    max_delay);
++				    !group, max_delay);
 +
  	if (!group)
  		goto out;
  
-@@ -1174,8 +1238,6 @@ static int br_ip6_multicast_query(struct
+@@ -1166,6 +1238,7 @@ static int br_ip6_multicast_query(struct
+ 	unsigned long max_delay;
+ 	unsigned long now = jiffies;
+ 	const struct in6_addr *group = NULL;
++	bool is_general_query;
+ 	int err = 0;
+ 	u16 vid = 0;
+ 
+@@ -1174,8 +1247,6 @@ static int br_ip6_multicast_query(struct
  	    (port && port->state == BR_STATE_DISABLED))
  		goto out;
  
@@ -446,17 +560,28 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	/* RFC2710+RFC3810 (MLDv1+MLDv2) require link-local source addresses */
  	if (!(ipv6_addr_type(&ip6h->saddr) & IPV6_ADDR_LINKLOCAL)) {
  		err = -EINVAL;
-@@ -1203,6 +1265,9 @@ static int br_ip6_multicast_query(struct
+@@ -1203,6 +1274,20 @@ static int br_ip6_multicast_query(struct
  		max_delay = max(msecs_to_jiffies(MLDV2_MRC(ntohs(mld2q->mld2q_mrc))), 1UL);
  	}
  
++	is_general_query = group && ipv6_addr_any(group);
++
++	/* RFC2710+RFC3810 (MLDv1+MLDv2) require the multicast link layer
++	 * all-nodes destination address (ff02::1) for general queries
++	 */
++	if (is_general_query && !ipv6_addr_is_ll_all_nodes(&ip6h->daddr)) {
++		err = -EINVAL;
++		goto out;
++	}
++
 +	br_multicast_query_received(br, port, &br->ip6_querier,
-+				    !ipv6_addr_any(&ip6h->saddr), max_delay);
++				    !ipv6_addr_any(&ip6h->saddr),
++				    is_general_query, max_delay);
 +
  	if (!group)
  		goto out;
  
-@@ -1235,7 +1300,9 @@ out:
+@@ -1235,7 +1320,9 @@ out:
  
  static void br_multicast_leave_group(struct net_bridge *br,
  				     struct net_bridge_port *port,
@@ -467,7 +592,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  {
  	struct net_bridge_mdb_htable *mdb;
  	struct net_bridge_mdb_entry *mp;
-@@ -1246,7 +1313,7 @@ static void br_multicast_leave_group(str
+@@ -1246,7 +1333,7 @@ static void br_multicast_leave_group(str
  	spin_lock(&br->multicast_lock);
  	if (!netif_running(br->dev) ||
  	    (port && port->state == BR_STATE_DISABLED) ||
@@ -476,7 +601,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  		goto out;
  
  	mdb = mlock_dereference(br->mdb, br);
-@@ -1254,6 +1321,31 @@ static void br_multicast_leave_group(str
+@@ -1254,6 +1341,31 @@ static void br_multicast_leave_group(str
  	if (!mp)
  		goto out;
  
@@ -508,7 +633,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	if (port && (port->flags & BR_MULTICAST_FAST_LEAVE)) {
  		struct net_bridge_port_group __rcu **pp;
  
-@@ -1306,7 +1398,6 @@ static void br_multicast_leave_group(str
+@@ -1306,7 +1418,6 @@ static void br_multicast_leave_group(str
  
  		break;
  	}
@@ -516,7 +641,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  out:
  	spin_unlock(&br->multicast_lock);
  }
-@@ -1317,6 +1408,8 @@ static void br_ip4_multicast_leave_group
+@@ -1317,6 +1428,8 @@ static void br_ip4_multicast_leave_group
  					 __u16 vid)
  {
  	struct br_ip br_group;
@@ -525,7 +650,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  
  	if (ipv4_is_local_multicast(group))
  		return;
-@@ -1325,7 +1418,7 @@ static void br_ip4_multicast_leave_group
+@@ -1325,7 +1438,7 @@ static void br_ip4_multicast_leave_group
  	br_group.proto = htons(ETH_P_IP);
  	br_group.vid = vid;
  
@@ -534,7 +659,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  }
  
  #if IS_ENABLED(CONFIG_IPV6)
-@@ -1335,15 +1428,18 @@ static void br_ip6_multicast_leave_group
+@@ -1335,15 +1448,18 @@ static void br_ip6_multicast_leave_group
  					 __u16 vid)
  {
  	struct br_ip br_group;
@@ -555,7 +680,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  }
  #endif
  
-@@ -1473,8 +1569,14 @@ static int br_multicast_ipv6_rcv(struct 
+@@ -1473,8 +1589,14 @@ static int br_multicast_ipv6_rcv(struct
  	 *  - MLD has always Router Alert hop-by-hop option
  	 *  - But we do not support jumbrograms.
  	 */
@@ -572,7 +697,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	    ip6h->payload_len == 0)
  		return 0;
  
-@@ -1605,19 +1707,32 @@ int br_multicast_rcv(struct net_bridge *
+@@ -1605,19 +1727,32 @@ int br_multicast_rcv(struct net_bridge *
  	return 0;
  }
  
@@ -612,7 +737,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  
  void br_multicast_init(struct net_bridge *br)
  {
-@@ -1626,6 +1741,7 @@ void br_multicast_init(struct net_bridge
+@@ -1626,6 +1761,7 @@ void br_multicast_init(struct net_bridge
  
  	br->multicast_router = 1;
  	br->multicast_querier = 0;
@@ -620,7 +745,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	br->multicast_last_member_count = 2;
  	br->multicast_startup_query_count = 2;
  
-@@ -1636,23 +1752,43 @@ void br_multicast_init(struct net_bridge
+@@ -1636,23 +1772,43 @@ void br_multicast_init(struct net_bridge
  	br->multicast_querier_interval = 255 * HZ;
  	br->multicast_membership_interval = 260 * HZ;
  
@@ -670,7 +795,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  }
  
  void br_multicast_stop(struct net_bridge *br)
-@@ -1664,8 +1800,12 @@ void br_multicast_stop(struct net_bridge
+@@ -1664,8 +1820,12 @@ void br_multicast_stop(struct net_bridge
  	int i;
  
  	del_timer_sync(&br->multicast_router_timer);
@@ -685,7 +810,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  
  	spin_lock_bh(&br->multicast_lock);
  	mdb = mlock_dereference(br->mdb, br);
-@@ -1767,18 +1907,24 @@ unlock:
+@@ -1767,18 +1927,24 @@ unlock:
  	return err;
  }
  
@@ -713,7 +838,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	}
  }
  
-@@ -1813,7 +1959,10 @@ rollback:
+@@ -1813,7 +1979,10 @@ rollback:
  			goto rollback;
  	}
  
@@ -725,7 +850,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  
  unlock:
  	spin_unlock_bh(&br->multicast_lock);
-@@ -1823,6 +1972,8 @@ unlock:
+@@ -1823,6 +1992,8 @@ unlock:
  
  int br_multicast_set_querier(struct net_bridge *br, unsigned long val)
  {
@@ -734,7 +859,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  	val = !!val;
  
  	spin_lock_bh(&br->multicast_lock);
-@@ -1830,8 +1981,22 @@ int br_multicast_set_querier(struct net_
+@@ -1830,8 +2001,22 @@ int br_multicast_set_querier(struct net_
  		goto unlock;
  
  	br->multicast_querier = val;
@@ -918,7 +1043,7 @@ Date:   Tue May 21 21:52:54 2013 +0000
  static ssize_t show_multicast_querier(struct device *d,
  				      struct device_attribute *attr,
  				      char *buf)
-@@ -734,6 +759,7 @@ static struct attribute *bridge_attrs[] 
+@@ -734,6 +759,7 @@ static struct attribute *bridge_attrs[]
  	&dev_attr_multicast_router.attr,
  	&dev_attr_multicast_snooping.attr,
  	&dev_attr_multicast_querier.attr,
