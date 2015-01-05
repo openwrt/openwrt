@@ -303,6 +303,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-cbc))
 
+define KernelPackage/crypto-ctr
+  TITLE:=Counter Mode CryptoAPI module
+  DEPENDS:=+kmod-crypto-manager +kmod-crypto-seqiv
+  KCONFIG:=CONFIG_CRYPTO_CTR
+  FILES:=$(LINUX_DIR)/crypto/ctr.ko
+  AUTOLOAD:=$(call AutoLoad,09,ctr)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-ctr))
+
 define KernelPackage/crypto-pcbc
   TITLE:=Propagating Cipher Block Chaining CryptoAPI module
   DEPENDS:=+kmod-crypto-manager
