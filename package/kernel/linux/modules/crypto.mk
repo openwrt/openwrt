@@ -39,6 +39,19 @@ define AddDepends/crypto
   DEPENDS+=+kmod-crypto-core $(1)
 endef
 
+define KernelPackage/crypto-aead
+  TITLE:=CryptoAPI AEAD support
+  KCONFIG:= \
+	CONFIG_CRYPTO_AEAD \
+	CONFIG_CRYPTO_AEAD2
+  FILES:=$(LINUX_DIR)/crypto/aead.ko
+  AUTOLOAD:=$(call AutoLoad,09,crypto_aead,1)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-aead))
+
+
 define KernelPackage/crypto-hash
   TITLE:=CryptoAPI hash support
   KCONFIG:=CONFIG_CRYPTO_HASH
