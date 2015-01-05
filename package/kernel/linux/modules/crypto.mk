@@ -400,6 +400,18 @@ endef
 $(eval $(call KernelPackage,crypto-hmac))
 
 
+define KernelPackage/crypto-gcm
+  TITLE:=GCM/GMAC CryptoAPI module
+  DEPENDS:=+kmod-crypto-ctr +kmod-crypto-ghash +kmod-crypto-null
+  KCONFIG:=CONFIG_CRYPTO_GCM
+  FILES:=$(LINUX_DIR)/crypto/gcm.ko
+  AUTOLOAD:=$(call AutoLoad,09,gcm)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-gcm))
+
+
 define KernelPackage/crypto-gf128
   TITLE:=GF(2^128) multiplication functions CryptoAPI module
   KCONFIG:=CONFIG_CRYPTO_GF128MUL
