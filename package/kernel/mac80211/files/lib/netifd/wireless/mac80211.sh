@@ -517,11 +517,11 @@ mac80211_setup_adhoc() {
 
 	brstr=
 	for br in $basic_rate_list; do
-		hostapd_add_rate brstr "$br"
+		wpa_supplicant_add_rate brstr "$br"
 	done
 
 	mcval=
-	[ -n "$mcast_rate" ] && hostapd_add_rate mcval "$mcast_rate"
+	[ -n "$mcast_rate" ] && wpa_supplicant_add_rate mcval "$mcast_rate"
 
 	case "$htmode" in
 		VHT20|HT20) ibss_htmode=HT20;;
