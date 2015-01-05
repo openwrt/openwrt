@@ -116,10 +116,6 @@
 				status = "okay";
 			};
 
-			mdio {
-				status = "disabled";
-			};
-
 			ethernet@70000 {
 				pinctrl-0 = <&pmx_ge0>;
 				pinctrl-names = "default";
@@ -279,4 +275,15 @@
 		gpio-fan,speed-map = <0    0
 				      4500 1>;
 	};
+
+	mvsw6172 {
+		compatible = "marvell,88e6171";
+		status = "okay";
+		reg = <0x10>;
+
+		mii-bus = <&mdio>;
+		cpu-port-0 = <5>;
+		cpu-port-1 = <6>;
+	};
+
 };
