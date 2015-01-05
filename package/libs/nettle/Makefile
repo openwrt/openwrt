@@ -23,6 +23,8 @@ PKG_LICENSE_FILES:=COPYING
 PKG_FIXUP:=autoreconf
 PKG_BUILD_PARALLEL:=0
 
+PKG_CONFIG_DEPENDS := CONFIG_LIBNETTLE_MINI
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/libnettle
