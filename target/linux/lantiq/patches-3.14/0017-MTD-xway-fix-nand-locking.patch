@@ -82,7 +82,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 -	spin_lock_irqsave(&ebu_lock, flags);
  	for (i = 0; i < len; i++)
- 		ltq_w8(buf[i], (void __iomem *)nandaddr);
+ 		ltq_w8(buf[i], (void __iomem *)(nandaddr | NAND_WRITE_DATA));
 -	spin_unlock_irqrestore(&ebu_lock, flags);
  }
  
