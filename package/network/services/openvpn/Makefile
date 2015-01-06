@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2013 OpenWrt.org
+# Copyright (C) 2010-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -10,7 +10,7 @@ include $(TOPDIR)/rules.mk
 PKG_NAME:=openvpn
 
 PKG_VERSION:=2.3.6
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE_URL:=http://swupdate.openvpn.net/community/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
