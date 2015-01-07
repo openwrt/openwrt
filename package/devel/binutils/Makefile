@@ -69,6 +69,8 @@ endef
 TARGET_CFLAGS += $(FPIC) -Wno-unused-value
 
 CONFIGURE_ARGS += \
+	--host=$(REAL_GNU_TARGET_NAME) \
+	--target=$(REAL_GNU_TARGET_NAME) \
 	--enable-shared \
 	--enable-install-libiberty \
 	--enable-install-libbfd
