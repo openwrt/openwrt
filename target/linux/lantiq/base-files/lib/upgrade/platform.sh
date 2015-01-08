@@ -7,7 +7,7 @@ platform_check_image() {
 	local board=$(lantiq_board_name)
 
 	case "$board" in
-		BTHOMEHUBV2B )
+		BTHOMEHUBV2B|BTHOMEHUBV3A )
 			nand_do_platform_check $board $1
 			return $?;
 			;;
