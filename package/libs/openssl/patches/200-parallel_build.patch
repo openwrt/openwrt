@@ -97,7 +97,7 @@
  		fi; \
 --- a/crypto/Makefile
 +++ b/crypto/Makefile
-@@ -90,11 +90,11 @@ testapps:
+@@ -85,11 +85,11 @@ testapps:
  	@if [ -z "$(THIS)" ]; then $(MAKE) -f $(TOP)/Makefile reflect THIS=$@; fi
  
  subdirs:
@@ -111,7 +111,7 @@
  
  links:
  	@$(PERL) $(TOP)/util/mklink.pl ../include/openssl $(EXHEADER)
-@@ -105,7 +105,7 @@ links:
+@@ -100,7 +100,7 @@ links:
  # lib: $(LIB): are splitted to avoid end-less loop
  lib:	$(LIB)
  	@touch lib
@@ -120,7 +120,7 @@
  	$(AR) $(LIB) $(LIBOBJ)
  	[ -z "$(FIPSLIBDIR)" ] || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
  	$(RANLIB) $(LIB) || echo Never mind.
-@@ -116,7 +116,7 @@ shared: buildinf.h lib subdirs
+@@ -111,7 +111,7 @@ shared: buildinf.h lib subdirs
  	fi
  
  libs:
@@ -129,7 +129,7 @@
  
  install:
  	@[ -n "$(INSTALLTOP)" ] # should be set by top Makefile...
-@@ -125,7 +125,7 @@ install:
+@@ -120,7 +120,7 @@ install:
  	(cp $$i $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i; \
  	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
  	done;
