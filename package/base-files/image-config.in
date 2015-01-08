@@ -170,7 +170,7 @@ if VERSIONOPT
 	config VERSION_REPO
 		string
 		prompt "Release repository"
-		default "http://downloads.openwrt.org/snapshots/trunk/%T/packages"
+		default "http://downloads.openwrt.org/snapshots/trunk/%s/packages"
 		help
 			This is the repository address embedded in the image, it defaults
 			to the trunk snapshot repo; the url may contain the following placeholders:
@@ -185,6 +185,11 @@ if VERSIONOPT
 			 %d .. Distribution name or "openwrt", lowercase
 			 %T .. Target name
 			 %S .. Target/Subtarget name
+			 %s .. Target/Subtarget name in dotted notation, e.g. "ar71xx" or "ar71xx.nand"
+			 %t .. Build taint flags, e.g. "no-all busybox"
+			 %M .. Manufacturer name or "OpenWrt"
+			 %P .. Product name or "Generic"
+			 %h .. Hardware revision or "v0"
 
 	config VERSION_MANUFACTURER
 		string
