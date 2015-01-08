@@ -164,7 +164,7 @@ ARV7519RW22)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	;;
 
-BTHOMEHUBV2B)
+BTHOMEHUBV2B|BTHOMEHUBV3A)
 	lan_mac=$(mtd_get_mac_ascii uboot_env ethaddr)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
 	;;
