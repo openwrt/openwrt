@@ -15,7 +15,7 @@ override MAKEFLAGS=
 PKG_OS:=$(word 2,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
 
-IB_NAME:=OpenWrt-ImageBuilder-$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))-for-$(PKG_OS)-$(PKG_CPU)
+IB_NAME:=OpenWrt-ImageBuilder-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),_$(SUBTARGET))-for-$(PKG_OS)-$(PKG_CPU)
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(IB_NAME)
 IB_KDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(KERNEL_BUILD_DIR))
 IB_LDIR:=$(patsubst $(TOPDIR)/%,$(PKG_BUILD_DIR)/%,$(LINUX_DIR))
