@@ -465,3 +465,17 @@ if KERNEL_LXC_MISC
 		  operations on message queues.
 
 endif
+
+config KERNEL_SECCOMP
+	bool "Enable seccomp support"
+		depends on !(TARGET_uml || TARGET_avr32)
+		default n
+		help
+		  Build kernel with support for seccomp.
+
+config KERNEL_SECCOMP_FILTER
+	bool "Enable seccomp filter support"
+		depends on KERNEL_SECCOMP
+		default n
+		help
+		  Build kernel with support for seccomp BPF programs.
