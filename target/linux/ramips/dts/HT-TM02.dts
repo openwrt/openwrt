@@ -4,14 +4,12 @@
 
 / {
 	compatible = "HT-TM02", "ralink,rt5350-soc";
-	model = "HOOTOO HT-TM02";
+	model = "HooToo HT-TM02";
 
 	palmbus@10000000 {
-
-               gpio0: gpio@600 {
+		gpio0: gpio@600 {
 			status = "okay";
-               };
-               
+		};
 		spi@b00 {
 			status = "okay";
 			m25p80@0 {
@@ -21,25 +19,21 @@
 				reg = <0 0>;
 				linux,modalias = "m25p80", "mx25l6405d";
 				spi-max-frequency = <10000000>;
-
 				partition@0 {
 					label = "u-boot";
 					reg = <0x0 0x30000>;
 					read-only;
 				};
-
 				partition@30000 {
 					label = "u-boot-env";
 					reg = <0x30000 0x10000>;
 					read-only;
 				};
-
 				factory: partition@40000 {
 					label = "factory";
 					reg = <0x40000 0x10000>;
 					read-only;
 				};
-
 				partition@50000 {
 					label = "firmware";
 					reg = <0x50000 0x7b0000>;
@@ -58,11 +52,11 @@
 	};
 
 	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x4>;
+		mtd-mac-address = <&factory 0x28>;
 	};
 
 	esw@10110000 {
-		ralink,portmap = <0x3f>;
+		ralink,portmap = <0x10>;
 	};
 
 	wmac@10180000 {
@@ -79,12 +73,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		wifi  {
-			label = "ht-tm02:blue:wifi";
+		wlan {
+			label = "ht-tm02:blue:wlan";
 			gpios = <&gpio0 7 1>;
 		};
-		status  {
-			label = "ht-tm02:yellow:status";
+		lan {
+			label = "ht-tm02:green:lan";
 			gpios = <&gpio0 12 1>;
 		};
 
@@ -95,10 +89,16 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
-		wps {
+		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
+		};
+		modeswitch {
+			label = "modeswitch";
+			gpios = <&gpio0 14 1>;
+			linux,code = <0x100>;
+			linux,input-type = <5>;
 		};
 	};
 };

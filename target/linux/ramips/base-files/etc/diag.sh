@@ -73,7 +73,7 @@ get_status_led() {
 		status_led="hlk-rm04:red:power"
 		;;
 	ht-tm02)
-		status_led="ht-tm02:white:status"
+		status_led="ht-tm02:blue:wlan"
 		;;
 	all0239-3g|\
 	hw550-3g)

@@ -50,6 +50,7 @@ ramips_setup_interfaces()
 	all5003 | \
 	broadway | \
 	dcs-930| \
+	ht-tm02| \
 	ncs601w | \
 	wnce2001)
 		ucidef_add_switch "switch0" "1" "0"
@@ -101,12 +102,6 @@ ramips_setup_interfaces()
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 9t"
 		ucidef_add_switch_vlan "switch0" "2" "4 9t"
-		;;
-
-	ht-tm02)
-		ucidef_set_interface_lan "eth0.1"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "4 6t"
 		;;
 
 	3g-6200n | \
@@ -291,7 +286,6 @@ ramips_setup_macs()
 	hlk-rm04 | \
 	mpr-a1 | \
 	mpr-a2 | \
-        ht-tm02 | \
 	dir-300-b7 | \
 	dir-320-b1 | \
 	psr-680w |\
@@ -301,6 +295,10 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
+		;;
+
+	ht-tm02)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
 
 	cy-swr1100 | \

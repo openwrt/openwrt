@@ -172,7 +172,7 @@ ramips_board_detect() {
 	*"HILINK HLK-RM04")
 		name="hlk-rm04"
 		;;
-	*"HOOTOO HT-TM02")
+	*"HooToo HT-TM02")
 		name="ht-tm02"
 		;;
 	*"HAME MPR-A1")
