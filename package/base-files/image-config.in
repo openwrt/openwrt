@@ -206,6 +206,14 @@ if VERSIONOPT
 		help
 			This is the hardware revision string embedded in /etc/device_info
 			Useful for OEMs building OpenWrt based firmware
+
+	config VERSION_FILENAMES
+		bool
+		prompt "Version number in filenames"
+		default y
+		help
+			Enable this to include the version number in firmware image, SDK-
+			and Image Builder archive file names
 endif
 
 

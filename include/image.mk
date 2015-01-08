@@ -9,6 +9,7 @@ override TARGET_BUILD=
 include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
+include $(INCLUDE_DIR)/version.mk
 
 override MAKE:=$(_SINGLE)$(SUBMAKE)
 override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
@@ -16,7 +17,7 @@ override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
 KDIR=$(KERNEL_BUILD_DIR)
 DTS_DIR:=$(LINUX_DIR)/arch/$(ARCH)/boot/dts/
 
-IMG_PREFIX:=openwrt-$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
+IMG_PREFIX:=openwrt-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
 MKFS_DEVTABLE_OPT := -D $(INCLUDE_DIR)/device_table.txt
 
