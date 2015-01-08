@@ -62,6 +62,7 @@ openvpn_add_instance() {
 		--cd "$dir" \
 		--config "$conf"
 	procd_set_param file "$dir/$conf"
+	procd_set_param respawn
 	procd_close_instance
 }
 
