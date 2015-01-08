@@ -58,8 +58,8 @@ ramips_setup_interfaces()
 
 	3g-6200nl | \
 	mlw221)
-                ucidef_set_interface_lan "eth0.2"
-                ;;
+		ucidef_set_interface_lan "eth0.2"
+		;;
 
 	wizard8800 | \
 	wl-330n | \
@@ -314,7 +314,7 @@ ramips_setup_macs()
 		;;
 
 	wcr-150gn)
-                wan_mac=$(mtd_get_mac_binary factory 40)
+		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 
 	rt-n56u)
