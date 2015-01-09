@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/pcDuino
-	NAME:=pcDuino
+define Profile/Linksprite_pcDuino
+	NAME:=Linksprite_pcDuino
 	PACKAGES:=\
-		uboot-sunxi-pcDuino kmod-sun4i-emac kmod-rtc-sunxi kmod-rtl8192cu
+		uboot-sunxi-Linksprite_pcDuino kmod-sun4i-emac kmod-rtc-sunxi kmod-rtl8192cu
 endef
 
-define Profile/pcDuino/Description
-	Package set optimized for the pcDuino
+define Profile/Linksprite_pcDuino/Description
+	Package set optimized for the Linksprite pcDuino
 endef
 
-$(eval $(call Profile,pcDuino))
+$(eval $(call Profile,Linksprite_pcDuino))
