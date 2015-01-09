@@ -58,6 +58,9 @@ ramips_board_detect() {
 	*"ARC FreeStation5")
 		name="freestation5"
 		;;
+	*"Archer C20i")
+		name="c20i"
+		;;
 	*"Argus ATP-52B")
 		name="argus-atp52b"
 		;;
