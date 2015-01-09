@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2014.04
+PKG_VERSION:=2015.01-rc3
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_SOURCE_VERSION:=6d2116d1385a66e9a59742caa9d62a54
+PKG_SOURCE_VERSION:=e680848838ca20a60d43b66a218d865b
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
@@ -35,7 +35,7 @@ define uboot/A13-OLinuXino
   TITLE:=U-Boot for the A13 OlinuXino
 endef
 
-define uboot/A20-OLinuXino_Lime
+define uboot/A20-OLinuXino-Lime
   TITLE:=U-Boot for the A20 OLinuXino LIME
 endef
 
@@ -45,6 +45,10 @@ endef
 
 define uboot/Bananapi
   TITLE:=U-Boot for Bananapi
+endef
+
+define uboot/Bananapro
+  TITLE:=U-Boot for Bananapro
 endef
 
 define uboot/Cubieboard
@@ -63,12 +67,16 @@ define uboot/Hackberry
   TITLE:=U-Boot for the Hackbeery
 endef
 
+define uboot/Mele_M9
+  TITLE:=U-Boot for the Mele M9 (A31)
+endef
+
 define uboot/OLIMEX-A13-SOM
   TITLE:=U-Boot for the Olimex A13 SOM
 endef
 
-define uboot/pcDuino
-  TITLE:=U-Boot for pcDuino
+define uboot/Linksprite_pcDuino
+  TITLE:=U-Boot for Linksprite pcDuino
 endef  
 
 define uboot/Linksprite_pcDuino3
@@ -78,15 +86,17 @@ endef
 UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
-	A20-OLinuXino_Lime \
+	A20-OLinuXino-Lime \
 	A20-OLinuXino_MICRO \
 	Bananapi \
+	Bananapro \
 	Cubieboard \
 	Cubieboard2 \
 	Cubietruck \
 	Hackberry \
+	Mele_M9 \
 	OLIMEX-A13-SOM \
-	pcDuino \
+	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 
 define Package/uboot/template
@@ -115,7 +125,7 @@ endif
 
 define Build/Configure
 	$(MAKE) -C $(PKG_BUILD_DIR) \
-		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_config
+		USE_PRIVATE_LIBGCC=yes $(UBOOT_CONFIG)_defconfig
 endef
 
 define Build/Compile
@@ -133,6 +143,7 @@ define Package/uboot/install/default
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot-with-spl.bin
 	$(CP) uEnv.txt \
 		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-uEnv.txt
+	mkimage -C none -A arm -T script -d $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-uEnv.txt $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-boot.scr
 endef
 
 define Package/uboot/install/template
