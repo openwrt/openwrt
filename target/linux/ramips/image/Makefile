@@ -90,6 +90,23 @@ define MkImageTrx/squashfs
 	$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name)
 endef
 
+define MkImageTpl/squashfs
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1)-$(if $(4),$(4),sysupgrade).bin)
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -V "ver. 2.0" -B "$(2)" -j \
+		-o $(KDIR)/$(output_name) \
+		-k $(KDIR)/vmlinux-$(1)$(4).bin.lzma \
+		-r $(KDIR)/root.$(1)
+	$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name)
+endef
+
+define MkImageTpl/initramfs
+	$(eval output_name=$(IMG_PREFIX)-$(2)-$(1).bin)
+	$(STAGING_DIR_HOST)/bin/mktplinkfw2 -V "ver. 2.0" -B "$(2)" -c \
+		-o $(KDIR)/$(output_name) \
+		-k $(KDIR)/vmlinux-$(1).bin.lzma
+	$(CP) $(KDIR)/$(output_name) $(BIN_DIR)/$(output_name)
+endef
+
 # $(1), lowercase board name like "mt7620a_v22sg"
 # $(2), DTS filename without .dts extension
 # $(3), optional filename suffix, e.g. "-initramfs"
@@ -124,6 +141,16 @@ define BuildFirmware/OF/trx
 	$(call MkImageTrx/$(1),$(1),$(2),$(4),$(6))
 endef
 
+define BuildFirmware/OF/tplink
+	$(call PatchKernelLzmaDtb,$(1),$(2),$(4))
+	$(call MkImageTpl/$(1),$(1),$(2),$(4),$(5))
+endef
+
+define BuildFirmware/OF/tplink/initramfs
+	$(call PatchKernelLzmaDtb,$(2),$(3),-initramfs)
+	$(call MkImageTpl/$(1),$(1),$(2),$(4),$(5))
+endef
+
 # $(1), squashfs/initramfs
 # $(2), lowercase board name
 # $(3), DTS filename without .dts extension
@@ -154,6 +181,8 @@ BuildFirmware/Default8M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink
 BuildFirmware/Default8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
 BuildFirmware/Trx8M/squashfs=$(call BuildFirmware/OF/trx,$(1),$(2),$(3),$(ralink_default_fw_size_8M),$(4))
 BuildFirmware/Trx8M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
+BuildFirmware/Tplink/squashfs=$(call BuildFirmware/OF/tplink,$(1),$(2),$(3),$(4))
+BuildFirmware/Tplink/initramfs=$(call BuildFirmware/OF/tplink/initramfs,$(1),$(2),$(3),$(4))
 
 ralink_default_fw_size_16M=16121856
 BuildFirmware/Default16M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_16M),$(4))
@@ -810,6 +839,7 @@ Image/Build/Profile/WR8305RT=$(call BuildFirmware/Default8M/$(1),$(1),wr8305rt,W
 Image/Build/Profile/WRTNODE=$(call BuildFirmware/Default16M/$(1),$(1),wrtnode,WRTNODE)
 Image/Build/Profile/WT3020=$(call BuildFirmware/PorayDualSize/$(1),$(1),wt3020,WT3020)
 Image/Build/Profile/ZBT-WA05=$(call BuildFirmware/Default8M/$(1),$(1),zbt-wa05,ZBT-WA05)
+Image/Build/Profile/ArcherC20i=$(call BuildFirmware/Tplink/$(1),$(1),ArcherC20i,ArcherC20i)
 
 
 ifeq ($(SUBTARGET),mt7620)
@@ -836,6 +866,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WRTNODE,$(1))
 	$(call Image/Build/Profile/WT3020,$(1))
 	$(call Image/Build/Profile/ZBT-WA05,$(1))
+	$(call Image/Build/Profile/ArcherC20i,$(1))
 endef
 endif
 
