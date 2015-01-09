@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2012 OpenWrt.org
+# Copyright (C) 2009-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=thc-ipv6
-PKG_VERSION:=2.0
+PKG_VERSION:=2.7
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-3.0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://freeworld.thc.org/releases/
-PKG_MD5SUM:=5c9be9ad38ac15c368bb5140d031c051
+PKG_MD5SUM:=2975dd54be35b68c140eb2a6b8ef5e59
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 
@@ -27,10 +27,11 @@ THC_APPLETS := \
 	fake_dnsupdate6 fake_mipv6 fake_mld26 fake_mld6 fake_mldrouter6       \
 	fake_router26 fake_router6 fake_solicitate6 flood_advertise6          \
 	flood_dhcpc6 flood_mld26 flood_mld6 flood_mldrouter6 flood_router26   \
-	flood_router6 flood_solicitate6 fragmentation6 fuzz_ip6               \
-	implementation6 implementation6d inverse_lookup6 kill_router6         \
-	ndpexhaust6 node_query6 parasite6 passive_discovery6 randicmp6        \
-	redir6 rsmurf6 sendpees6 sendpeesmp6 smurf6 thcping6 toobig6 trace6
+	flood_router6 flood_solicitate6 fragmentation6 fuzz_ip6 fuzz_dhcpc6   \
+	fuzz_dhcps6 implementation6 implementation6d inverse_lookup6          \
+	kill_router6 ndpexhaust6 node_query6 parasite6 passive_discovery6     \
+	randicmp6 redir6 rsmurf6 sendpees6 sendpeesmp6 smurf6 thcping6        \
+	toobig6 trace6
 
 THC_DEPENDS_dnsdict6 := +libpthread
 THC_DEPENDS_thcping6 := +librt
