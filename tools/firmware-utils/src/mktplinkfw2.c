@@ -20,6 +20,8 @@
 #include <getopt.h>     /* for getopt() */
 #include <stdarg.h>
 #include <errno.h>
+#include <stdbool.h>
+#include <endian.h>
 #include <sys/stat.h>
 
 #include <arpa/inet.h>
@@ -28,10 +30,6 @@
 #include "md5.h"
 
 #define ALIGN(x,a) ({ typeof(a) __a = (a); (((x) + __a - 1) & ~(__a - 1)); })
-
-#define HEADER_VERSION_V2	0x02000000
-
-#define HWID_TD_W8970_V1		0x89700001
 
 #define MD5SUM_LEN	16
 
@@ -83,6 +81,8 @@ struct board_info {
 	uint32_t	hw_id;
 	uint32_t	hw_rev;
 	char		*layout_id;
+	uint32_t	hdr_ver;
+	bool		endian_swap;
 };
 
 /*
@@ -94,6 +94,7 @@ static char *vendor = "TP-LINK Technologies";
 static char *version = "ver. 1.0";
 static char *fw_ver = "0.0.0";
 static char *sver = "1.0";
+static uint32_t hdr_ver = 2;
 
 static char *board_id;
 static struct board_info *board;
@@ -123,6 +124,7 @@ static unsigned char jffs2_eof_mark[4] = {0xde, 0xad, 0xc0, 0xde};
 
 static struct file_info inspect_info;
 static int extract = 0;
+static bool endian_swap = false;
 
 char md5salt_normal[MD5SUM_LEN] = {
 	0xdc, 0xd7, 0x3a, 0xa5, 0xc3, 0x95, 0x98, 0xfb,
@@ -142,6 +144,12 @@ static struct flash_layout layouts[] = {
 		.kernel_ep	= 0x80002000,
 		.rootfs_ofs	= 0x140000,
 	}, {
+		.id		= "8Mmtk",
+		.fw_max_len	= 0x7a0000,
+		.kernel_la	= 0x80000000,
+		.kernel_ep	= 0x80000000,
+		.rootfs_ofs	= 0x140000,
+	}, {
 		/* terminating entry */
 	}
 };
@@ -149,9 +157,16 @@ static struct flash_layout layouts[] = {
 static struct board_info boards[] = {
 	{
 		.id		= "TD-W8970v1",
-		.hw_id		= HWID_TD_W8970_V1,
+		.hw_id		= 0x89700001,
 		.hw_rev		= 1,
 		.layout_id	= "8Mltq",
+	}, {
+		.id		= "ArcherC20i",
+		.hw_id		= 0xc2000001,
+		.hw_rev		= 58,
+		.layout_id	= "8Mmtk",
+		.hdr_ver	= 3,
+		.endian_swap	= true,
 	}, {
 		/* terminating entry */
 	}
@@ -339,6 +354,9 @@ static int check_options(void)
 
 		hw_id = board->hw_id;
 		hw_rev = board->hw_rev;
+		if (board->hdr_ver)
+			hdr_ver = board->hdr_ver;
+		endian_swap = board->endian_swap;
 	} else {
 		if (layout_id == NULL) {
 			ERR("flash layout is not specified");
@@ -446,7 +464,7 @@ static void fill_header(char *buf, int len)
 
 	memset(hdr, '\xff', sizeof(struct fw_header));
 
-	hdr->version = htonl(HEADER_VERSION_V2);
+	hdr->version = htonl(bswap_32(hdr_ver));
 	ver_len = strlen(version);
 	if (ver_len > (sizeof(hdr->fw_version) - 1))
 		ver_len = sizeof(hdr->fw_version) - 1;
@@ -492,6 +510,11 @@ static void fill_header(char *buf, int len)
 	hdr->ver_hi = fw_ver_hi;
 	hdr->ver_mid = fw_ver_mid;
 	hdr->ver_lo = fw_ver_lo;
+
+	if (endian_swap) {
+		hdr->kernel_la = bswap_32(hdr->kernel_la);
+		hdr->kernel_ep = bswap_32(hdr->kernel_ep);
+	}
 
 	get_md5(buf, len, hdr->md5sum1);
 }
@@ -708,8 +731,12 @@ static int inspect_fw(void)
 	inspect_fw_pstr("File name", inspect_info.file_name);
 	inspect_fw_phexdec("File size", inspect_info.file_size);
 
-	if (ntohl(hdr->version) != HEADER_VERSION_V2) {
-		ERR("file does not seem to have V2 header!\n");
+	switch(bswap_32(ntohl(hdr->version))) {
+	case 2:
+	case 3:
+		break;
+	default:
+		ERR("file does not seem to have V2/V3 header!\n");
 		goto out_free_buf;
 	}
 
@@ -855,7 +882,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsjv:y:");
+		c = getopt(argc, argv, "a:B:H:E:F:L:V:N:W:ci:k:r:R:o:xhsjv:y:T:e");
 		if (c == -1)
 			break;
 
@@ -919,6 +946,12 @@ int main(int argc, char *argv[])
 			break;
 		case 'x':
 			extract = 1;
+			break;
+		case 'T':
+			hdr_ver = atoi(optarg);
+			break;
+		case 'e':
+			endian_swap = true;
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
