@@ -1,15 +1,15 @@
---- a/aclocal.in
-+++ b/aclocal.in
-@@ -327,6 +327,12 @@
+--- a/bin/aclocal.in
++++ b/bin/aclocal.in
+@@ -354,6 +354,12 @@ sub scan_m4_dirs ($$@)
  
    foreach my $m4dir (@dirlist)
      {
 +      if (! -d $m4dir)
-+      {
-+        msg ('override', "warning: skipping not existing directory `$m4dir'");
-+        next;
-+      }
++        {
++          msg ('override', "warning: skipping not existing directory `$m4dir'");
++          next;
++        }
 +
        if (! opendir (DIR, $m4dir))
  	{
- 	  if ($install && $type == FT_USER && $first_user_m4dir)
+ 	  # TODO: maybe avoid complaining only if errno == ENONENT?
