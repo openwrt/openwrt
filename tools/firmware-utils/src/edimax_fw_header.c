@@ -281,7 +281,7 @@ static int build_fw(void)
 
 	/* fill firmware header */
 	hdr = (struct edimax_header *)buf;
-	memset(hdr, 0, sizeof(struct edimax_header *));
+	memset(hdr, 0, sizeof(struct edimax_header));
 
 	strncpy(hdr->model, model, sizeof(hdr->model));
 	strncpy(hdr->magic, magic, sizeof(hdr->magic));
