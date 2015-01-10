@@ -76,12 +76,33 @@ fs-subtypes-$(CONFIG_TARGET_ROOTFS_TARGZ) += targz
 
 TARGET_FILESYSTEMS := $(fs-types-y)
 
+FS_64K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-64k
+FS_128K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-128k
+FS_256K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-256k
+
 define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
 endef
 
 define toupper
 $(shell echo $(1) | tr '[:lower:]' '[:upper:]')
+endef
+
+define split_args
+$(foreach data, \
+	$(subst |,$(space),\
+		$(subst $(space),^,$(1))), \
+	$(call $(2),$(strip $(subst ^,$(space),$(data)))))
+endef
+
+define build_cmd
+$(if $(Build/$(word 1,$(1))),,$(error Missing Build/$(word 1,$(1))))
+$(call Build/$(word 1,$(1)),$(wordlist 2,$(words $(1)),$(1)))
+
+endef
+
+define concat_cmd
+$(call split_args,$(1),build_cmd)
 endef
 
 # pad to 4k, 8k, 16k, 64k, 128k, 256k and add jffs2 end-of-filesystem mark
@@ -247,6 +268,130 @@ define BuildImage/mkfs
   .PHONY: mkfs-$(1)
   mkfs-$(1): mkfs_prepare
 	$(Image/mkfs/$(1))
+  $(KDIR)/root.$(1): mkfs-$(1)
+
+endef
+
+# Build commands that can be called from Device/* templates
+define Build/uImage
+	mkimage -A $(LINUX_KARCH) \
+		-O linux -T kernel \
+		-C $(1) -a $(KERNEL_LOADADDR) -e $(if $(KERNEL_ENTRY),$(KERNEL_ENTRY),$(KERNEL_LOADADDR)) \
+		-n '$(call toupper,$(LINUX_KARCH)) OpenWrt Linux-$(LINUX_VERSION)' -d $@ $@.new
+	@mv $@.new $@
+endef
+
+define Build/lzma
+	$(STAGING_DIR_HOST)/bin/lzma e $@ -lc1 -lp2 -pb2 $(1) $@.new
+	@mv $@.new $@
+endef
+
+define Build/kernel-bin
+	rm -f $@
+	cp $^ $@
+endef
+
+define Build/patch-cmdline
+	$(STAGING_DIR_HOST)/bin/patch-cmdline $@ '$(CMDLINE)'
+endef
+
+define Build/append-kernel
+	dd if=$(word 1,$^) $(if $(1),bs=$(1) conv=sync) >> $@
+endef
+
+define Build/append-rootfs
+	dd if=$(word 2,$^) $(if $(1),bs=$(1) conv=sync) >> $@
+endef
+
+define Build/pad-rootfs
+	$(call prepare_generic_squashfs,$@)
+endef
+
+define Build/check-size
+	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -gt "$$(stat -c%s $@)" ] || { \
+		echo "WARNING: Image file $@ is too big"; \
+		rm -f $@; \
+	}
+endef
+
+
+define Device/Init
+  PROFILES := $(PROFILE)
+  KERNEL:=
+  KERNEL_INITRAMFS = $$(KERNEL)
+  KERNEL_SIZE:=
+  CMDLINE:=
+
+  IMAGE_PREFIX := $(BIN_DIR)/$(IMG_PREFIX)-$(1)
+  IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1)-$$(2)
+  KERNEL_PREFIX = $$(if $$(KERNEL_INSTALL),$$(IMAGE_PREFIX),$(KDIR)/$(1))
+  KERNEL_INITRAMFS_PREFIX = $$(IMAGE_PREFIX)-initramfs
+  KERNEL_SUFFIX := -kernel.bin
+  KERNEL_IMAGE = $$(KERNEL_PREFIX)$$(KERNEL_SUFFIX)
+  KERNEL_INSTALL :=
+  KERNEL_SIZE :=
+
+  FILESYSTEMS := $(TARGET_FILESYSTEMS)
+
+  BIN_KERNEL_IMAGE = $$(patsubst $$(KERNEL_PREFIX)%,$$(IMAGE_PREFIX)%,$$(KERNEL_IMAGE))
+endef
+
+define Device/Check
+  _TARGET = $$(if $$(filter $(PROFILE),$$(PROFILES)),install,install-disabled)
+endef
+
+define Device/Build/initramfs
+  $$(_TARGET): $$(KERNEL_INITRAMFS_PREFIX)$$(KERNEL_SUFFIX)
+
+  $$(KERNEL_INITRAMFS_PREFIX)$$(KERNEL_SUFFIX): $$(KERNEL_PREFIX)-initramfs$$(KERNEL_SUFFIX)
+	cp $$^ $$@
+
+  $$(KERNEL_PREFIX)-initramfs$$(KERNEL_SUFFIX): $(KDIR)/vmlinux-initramfs
+	@rm -f $$@
+	$$(call concat_cmd,$$(KERNEL_INITRAMFS))
+endef
+
+define Device/Build/check_size
+	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -gt "$$(stat -c%s $@)" ] || { \
+		echo "WARNING: Image file $@ is too big"; \
+		rm -f $@; \
+	}
+endef
+
+define Device/Build/kernel
+  $$(_TARGET): $$(if $$(KERNEL_INSTALL),$$(BIN_KERNEL_IMAGE))
+  $$(BIN_KERNEL_IMAGE): $$(KERNEL_IMAGE)
+	cp $$^ $$@
+  $$(KERNEL_IMAGE): $(KDIR)/vmlinux
+	@rm -f $$@
+	$$(call concat_cmd,$$(KERNEL))
+	$$(if $$(KERNEL_SIZE),$$(call Device/Build/check_size,$$(KERNEL_SIZE)))
+endef
+
+define Device/Build/image
+  $$(_TARGET): $(call IMAGE_NAME,$(1),$(2))
+  $(call IMAGE_NAME,$(1),$(2)): $$(KERNEL_IMAGE) $(KDIR)/root.$(1)
+	@rm -f $$@
+	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
+	$$(call concat_cmd,$(if $(IMAGE/$(2)/$(1)),$(IMAGE/$(2)/$(1)),$(IMAGE/$(2))))
+
+endef
+
+define Device/Build
+  $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Device/Build/initramfs,$(1)))
+  $(call Device/Build/kernel,$(1))
+
+  $$(eval $$(foreach image,$$(IMAGES), \
+    $$(foreach fs,$$(filter $(TARGET_FILESYSTEMS),$$(FILESYSTEMS)), \
+      $$(call Device/Build/image,$$(fs),$$(image)))))
+endef
+
+define Device
+  $(call Device/Init,$(1))
+  $(call Device/Default,$(1))
+  $(call Device/Check,$(1))
+  $(call Device/$(1),$(1))
+  $(call Device/Build,$(1))
 
 endef
 
@@ -278,6 +423,7 @@ define BuildImage
 	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
 	$(call Image/InstallKernel)
 
+  $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
   $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
 
   install: kernel_prepare
