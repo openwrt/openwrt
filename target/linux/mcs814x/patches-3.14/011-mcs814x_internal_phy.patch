@@ -1,0 +1,20 @@
+--- a/drivers/net/phy/Kconfig
++++ b/drivers/net/phy/Kconfig
+@@ -157,6 +157,10 @@ config MICREL_PHY
+ 	---help---
+ 	  Currently has a driver for the KSZ8041
+ 
++config MCS814X_PHY
++	tristate "Driver for the Moschip MCS814x internal PHY"
++	depends on ARCH_MCS814X
++
+ config FIXED_PHY
+ 	bool "Driver for MDIO Bus/PHY emulation with fixed speed/link PHYs"
+ 	depends on PHYLIB=y
+--- a/drivers/net/phy/Makefile
++++ b/drivers/net/phy/Makefile
+@@ -49,3 +49,4 @@ obj-$(CONFIG_MDIO_BUS_MUX_GPIO)	+= mdio-
+ obj-$(CONFIG_MDIO_BUS_MUX_MMIOREG) += mdio-mux-mmioreg.o
+ obj-$(CONFIG_MDIO_SUN4I)	+= mdio-sun4i.o
+ obj-$(CONFIG_MDIO_MOXART)	+= mdio-moxart.o
++obj-$(CONFIG_MCS814X_PHY)	+= mcs814x.o

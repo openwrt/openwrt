@@ -1,0 +1,61 @@
+Index: linux-3.14.25/arch/arm/Kconfig
+===================================================================
+--- linux-3.14.25.orig/arch/arm/Kconfig
++++ linux-3.14.25/arch/arm/Kconfig
+@@ -880,6 +880,22 @@ config ARCH_OMAP1
+ 	help
+ 	  Support for older TI OMAP1 (omap7xx, omap15xx or omap16xx)
+ 
++config ARCH_MCS814X
++	bool "Moschip MCS814x"
++	select FIQ
++	select GENERIC_IRQ_CHIP
++	select GENERIC_GPIO
++	select ARCH_REQUIRE_GPIOLIB
++	select CLKDEV_LOOKUP
++	select ARCH_USES_GETTIMEOFFSET
++	select NEED_MACH_MEMORY_H
++	select USB_ARCH_HAS_OHCI
++	select USB_ARCH_HAS_EHCI
++	select MULTI_IRQ_HANDLER
++	help
++	  Support for Moschip MCS814x SoCs (MCS8140).
++
++
+ endchoice
+ 
+ menu "Multiple platform selection"
+@@ -1004,6 +1020,8 @@ source "arch/arm/mach-picoxcell/Kconfig"
+ source "arch/arm/mach-pxa/Kconfig"
+ source "arch/arm/plat-pxa/Kconfig"
+ 
++source "arch/arm/mach-mcs814x/Kconfig"
++
+ source "arch/arm/mach-mmp/Kconfig"
+ 
+ source "arch/arm/mach-realview/Kconfig"
+Index: linux-3.14.25/arch/arm/Makefile
+===================================================================
+--- linux-3.14.25.orig/arch/arm/Makefile
++++ linux-3.14.25/arch/arm/Makefile
+@@ -170,6 +170,7 @@ machine-$(CONFIG_ARCH_KEYSTONE)		+= keys
+ machine-$(CONFIG_ARCH_KIRKWOOD)		+= kirkwood
+ machine-$(CONFIG_ARCH_KS8695)		+= ks8695
+ machine-$(CONFIG_ARCH_LPC32XX)		+= lpc32xx
++machine-$(CONFIG_ARCH_MCS814X)		+= mcs814x
+ machine-$(CONFIG_ARCH_MMP)		+= mmp
+ machine-$(CONFIG_ARCH_MOXART)		+= moxart
+ machine-$(CONFIG_ARCH_MSM)		+= msm
+Index: linux-3.14.25/arch/arm/boot/dts/Makefile
+===================================================================
+--- linux-3.14.25.orig/arch/arm/boot/dts/Makefile
++++ linux-3.14.25/arch/arm/boot/dts/Makefile
+@@ -118,6 +118,8 @@ dtb-$(CONFIG_ARCH_KIRKWOOD) += kirkwood-
+ 	kirkwood-ts219-6281.dtb \
+ 	kirkwood-ts219-6282.dtb
+ dtb-$(CONFIG_ARCH_MARCO) += marco-evb.dtb
++dtb-$(CONFIG_ARCH_MCS814X) += dlan-usb-extender.dtb \
++	rbt-832.dtb
+ dtb-$(CONFIG_ARCH_MOXART) += moxart-uc7112lx.dtb
+ dtb-$(CONFIG_ARCH_MSM) += qcom-msm8660-surf.dtb \
+ 	qcom-msm8960-cdp.dtb \
