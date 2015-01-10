@@ -14,6 +14,16 @@ export TOPDIR LC_ALL LANG SDK
 
 world:
 
+# Initialize SDK snapshot
+.git/config:
+	@( \
+		echo -n "Initializing SDK ... "; \
+		git init -q .; \
+		find . -mindepth 1 -maxdepth 1 -not -name feeds | xargs git add; \
+		git commit -q -m "Initial state"; \
+		echo "ok."; \
+	)
+
 include $(TOPDIR)/include/host.mk
 
 ifneq ($(OPENWRT_BUILD),1)
@@ -36,14 +46,17 @@ else
 $(package/stamp-compile): $(BUILD_DIR)/.prepared
 $(BUILD_DIR)/.prepared: Makefile
 	@mkdir -p $$(dirname $@)
-	@mkdir -p bin/packages
 	@touch $@
 
 clean: FORCE
-	rm -rf $(BUILD_DIR) $(BIN_DIR)
+	git clean -f -d $(STAGING_DIR); true
+	git clean -f -d $(BUILD_DIR); true
+	git clean -f -d $(BIN_DIR); true
 
 dirclean: clean
-	rm -rf $(TMP_DIR)
+	git reset --hard HEAD
+	git clean -f -d
+	rm -rf feeds/
 
 # check prerequisites before starting to build
 prereq: $(package/stamp-prereq) ;

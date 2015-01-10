@@ -135,7 +135,7 @@ kernel_menuconfig: prepare_kernel_conf
 kernel_nconfig: prepare_kernel_conf
 	$(_SINGLE)$(NO_TRACE_MAKE) -C target/linux nconfig
 
-tmp/.prereq-build: include/prereq-build.mk
+tmp/.prereq-build: $(if $(SDK),.git/config) include/prereq-build.mk
 	mkdir -p tmp
 	rm -f tmp/.host.mk
 	@$(_SINGLE)$(NO_TRACE_MAKE) -j1 -r -s -f $(TOPDIR)/include/prereq-build.mk prereq 2>/dev/null || { \
