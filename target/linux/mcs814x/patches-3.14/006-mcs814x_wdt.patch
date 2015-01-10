@@ -1,0 +1,25 @@
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -421,6 +421,12 @@ config SIRFSOC_WATCHDOG
+ 	  Support for CSR SiRFprimaII and SiRFatlasVI watchdog. When
+ 	  the watchdog triggers the system will be reset.
+ 
++config MCS814X_WATCHDOG
++	tristate "Moschip MCS814x watchdog"
++	depends on WATCHDOG_CORE && ARCH_MCS814X
++	help
++	  Support for the Moschip MCS814x SoCs on-chip watchdog timer.
++
+ # AVR32 Architecture
+ 
+ config AT32AP700X_WDT
+--- a/drivers/watchdog/Makefile
++++ b/drivers/watchdog/Makefile
+@@ -58,6 +58,7 @@ obj-$(CONFIG_BCM2835_WDT) += bcm2835_wdt
+ obj-$(CONFIG_MOXART_WDT) += moxart_wdt.o
+ obj-$(CONFIG_SIRFSOC_WATCHDOG) += sirfsoc_wdt.o
+ obj-$(CONFIG_BCM_KONA_WDT) += bcm_kona_wdt.o
++obj-$(CONFIG_MCS814X_WATCHDOG) += mcs814x_wdt.o
+ 
+ # AVR32 Architecture
+ obj-$(CONFIG_AT32AP700X_WDT) += at32ap700x_wdt.o
