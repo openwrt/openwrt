@@ -11,6 +11,30 @@ IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
 
 JFFS2_BLOCKSIZE = 64k 128k 256k
 
+KERNEL_LOADADDR = 0x80060000
+
+define Device/Default
+  BOARDNAME :=
+  DEVICE_PROFILE = $$(BOARDNAME)
+  PROFILES = Default Minimal $$(DEVICE_PROFILE)
+  MTDPARTS :=
+  IMAGES := sysupgrade.bin
+  BLOCKSIZE := 64k
+  FILESYSTEMS = $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-$$(BLOCKSIZE)
+  CMDLINE = $$(if $$(BOARDNAME),board=$$(BOARDNAME)) $$(if $$(MTDPARTS),mtdparts=$$(MTDPARTS))
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  IMAGES := sysupgrade.bin
+  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/carambola2
+  BOARDNAME = CARAMBOLA2
+  IMAGE_SIZE = 16000k
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+
+TARGET_DEVICES += carambola2
+
 rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 
 # $(1): rootfs type.
@@ -263,7 +287,6 @@ ap96_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),17
 ap113_mtd_layout=mtdparts=spi0.0:64k(u-boot),3008k(rootfs),896k(uImage),64k(NVRAM),64k(ART),3904k@0x10000(firmware)
 ap121_mtdlayout_2M=mtdparts=spi0.0:64k(u-boot)ro,1216k(rootfs),704k(kernel),64k(art)ro,1920k@0x10000(firmware)
 ap121_mtdlayout_4M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,2752k(rootfs),896k(kernel),64k(nvram),64k(art)ro,3648k@0x50000(firmware)
-carambola2_mtdlayout_16M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 ap132_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),6400k(rootfs),64k(art),7808k@0x50000(firmware)
 ap135_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(rootfs),1472k(kernel),64k(art)ro,16000k@0x50000(firmware)
 ap136_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6336k(rootfs),1408k(kernel),64k(mib0),64k(art)ro,7744k@0x50000(firmware)
@@ -1155,7 +1178,6 @@ $(eval $(call SingleProfile,AthLzma,256k,ALL0315N,all0315n,ALL0315N,ttyS0,115200
 $(eval $(call SingleProfile,AthLzma,64k,AP113,ap113,AP113,ttyS0,115200,$$(ap113_mtd_layout),RK))
 $(eval $(call SingleProfile,AthLzma,64k,AP121_2M,ap121-2M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_2M),RKuImage))
 $(eval $(call SingleProfile,AthLzma,64k,AP121_4M,ap121-4M,AP121,ttyATH0,115200,$$(ap121_mtdlayout_4M),RKuImage))
-$(eval $(call SingleProfile,AthLzma,64k,CARAMBOLA2,carambola2,CARAMBOLA2,ttyATH0,115200,$$(carambola2_mtdlayout_16M),KRuImage,65536))
 $(eval $(call SingleProfile,AthLzma,64k,AP121MINI,ap121-mini,AP121-MINI,ttyATH0,115200,$$(ap121_mtdlayout_4M),RKuImage))
 $(eval $(call SingleProfile,AthLzma,64k,AP132,ap132,AP132,ttyS0,115200,$$(ap132_mtdlayout),KRuImage))
 $(eval $(call SingleProfile,AthLzma,64k,AP135,ap135-020,AP135-020,ttyS0,115200,$$(ap135_mtdlayout),RKuImage))
