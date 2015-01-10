@@ -13,6 +13,38 @@ JFFS2_BLOCKSIZE = 64k 128k 256k
 
 KERNEL_LOADADDR = 0x80060000
 
+DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD NETGEAR_ID
+
+define Build/netgear-squashfs
+	rm -rf $@.fs $@.squashfs
+	mkdir -p $@.fs/image
+	cp $@ $@.fs/image/uImage
+	$(STAGING_DIR_HOST)/bin/mksquashfs-lzma \
+		$@.fs $@.squashfs \
+		-noappend -root-owned -be -b 65536
+	dd if=/dev/zero bs=1k count=1 >> $@.squashfs
+	mkimage \
+		-A mips -O linux -T filesystem -C none \
+		-M $(NETGEAR_KERNEL_MAGIC) \
+		-a 0xbf070000 -e 0xbf070000 \
+		-n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
+		-d $@.squashfs $@
+	rm -rf $@.squashfs $@.fs
+endef
+
+define Build/netgear-uImage
+	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
+endef
+
+define Build/netgear-image
+	$(STAGING_DIR_HOST)/bin/mkdniimg \
+		-B $(NETGEAR_BOARD) -v OpenWrt.$(REVISION) \
+		$(if $(NETGEAR_ID),-H $(NETGEAR_ID)) \
+		-r "$(1)" \
+		-i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Device/Default
   BOARDNAME :=
   DEVICE_PROFILE = $$(BOARDNAME)
@@ -32,8 +64,51 @@ define Device/carambola2
   IMAGE_SIZE = 16000k
   MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
 endef
-
 TARGET_DEVICES += carambola2
+
+define Device/wndr3700
+  BOARDNAME = WNDR3700
+  NETGEAR_KERNEL_MAGIC = 0x33373030
+  NETGEAR_BOARD = WNDR3700
+  MTDPARTS = spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,7680k(firmware),64k(art)ro
+  IMAGES := sysupgrade.bin factory.img factory-NA.img
+  KERNEL := kernel-bin | patch-cmdline | lzma -d20 | netgear-uImage lzma
+  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img = $$(IMAGE/sysupgrade.bin) | netgear-image
+  IMAGE/factory-NA.img = $$(IMAGE/sysupgrade.bin) | netgear-image NA
+endef
+
+define Device/wndr3700v2
+$(Device/wndr3700)
+  NETGEAR_BOARD = WNDR3700v2
+  NETGEAR_KERNEL_MAGIC = 0x33373031
+  NETGEAR_ID = 29763654+16+64
+  MTDPARTS = spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,15872k(firmware),64k(art)ro
+  IMAGES := sysupgrade.bin factory.img
+endef
+
+define Device/wndr3800
+$(Device/wndr3700v2)
+  NETGEAR_BOARD = WNDR3800
+  NETGEAR_ID = 29763654+16+128
+endef
+
+define Device/wndr3800ch
+$(Device/wndr3800)
+  NETGEAR_BOARD = WNDR3800CH
+endef
+
+define Device/wndrmac
+$(Device/wndr3700v2)
+  NETGEAR_BOARD = WNDRMAC
+endef
+
+define Device/wndrmacv2
+$(Device/wndr3800)
+  NETGEAR_BOARD = WNDRMACv2
+endef
+
+TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 
 rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 
@@ -325,8 +400,6 @@ wndap360_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1728k(kernel
 wnr2200_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmware),64k(art)ro
 wnr2000v3_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,3712k(firmware),64k(art)ro
 wnr2000v4_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,3776k(firmware),64k(art)ro
-wndr3700_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,7680k(firmware),64k(art)ro
-wndr3700v2_mtdlayout=mtdparts=spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,15872k(firmware),64k(art)ro
 r6100_mtdlayout=mtdparts=ar934x-nfc:128k(u-boot)ro,256k(caldata),256k(caldata-backup),512k(config),512k(pot),2048k(kernel),122240k(ubi),25600k@0x1a0000(firmware),2048k(language),3072k(traffic_meter)
 wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),2048k(kernel),23552k(ubi),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved)
 zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
@@ -1248,12 +1321,6 @@ $(eval $(call SingleProfile,NetgearLzma,64kraw,WNR2000V4,wnr2000v4,WNR2000V4,tty
 $(eval $(call SingleProfile,Netgear,64kraw,WNR2200,wnr2200,WNR2200,ttyS0,115200,$$(wnr2200_mtdlayout),0x32323030,WNR2200,"" NA,))
 $(eval $(call SingleProfile,Netgear,64kraw,REALWNR612V2,wnr612v2,WNR612V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x32303631,WNR612V2,"",))
 $(eval $(call SingleProfile,Netgear,64kraw,N150R,n150r,WNR612V2,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x32303631,N150R,"",))
-$(eval $(call SingleProfile,Netgear,64kraw,WNDR3700V1,wndr3700,WNDR3700,ttyS0,115200,$$(wndr3700_mtdlayout),0x33373030,WNDR3700,"" NA,,7 864 320))
-$(eval $(call SingleProfile,Netgear,64kraw,WNDR3700V2,wndr3700v2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),0x33373031,WNDR3700v2,"",-H 29763654+16+64))
-$(eval $(call SingleProfile,Netgear,64kraw,WNDR3800,wndr3800,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),0x33373031,WNDR3800,"",-H 29763654+16+128))
-$(eval $(call SingleProfile,Netgear,64kraw,WNDR3800CH,wndr3800ch,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),0x33373031,WNDR3800CH,"",-H 29763654+16+128))
-$(eval $(call SingleProfile,Netgear,64kraw,WNDRMAC,wndrmac,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),0x33373031,WNDRMAC,"",-H 29763654+16+64))
-$(eval $(call SingleProfile,Netgear,64kraw,WNDRMACV2,wndrmacv2,WNDR3700,ttyS0,115200,$$(wndr3700v2_mtdlayout),0x33373031,WNDRMACv2,"",-H 29763654+16+128))
 
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,OM2P,om2p,,,,OM2P))
 $(eval $(call SingleProfile,OpenMesh,squashfs-only,OM5P,om5p,,,,OM5P))
@@ -1419,7 +1486,6 @@ $(eval $(call MultiProfile,TLWR1043,TLWR1043V1 TLWR1043V2))
 $(eval $(call MultiProfile,TLWDR4300,TLWDR3500V1 TLWDR3600V1 TLWDR4300V1 TLWDR4300V1IL TLWDR4310V1 MW4530RV1))
 $(eval $(call MultiProfile,TUBE2H,TUBE2H8M TUBE2H16M))
 $(eval $(call MultiProfile,UBNT,UBNTAIRROUTER UBNTRS UBNTRSPRO UBNTLSSR71 UBNTBULLETM UBNTROCKETM UBNTNANOM UBNTNANOMXW UBNTLOCOXW UBNTUNIFI UBNTUNIFIOUTDOOR UAPPRO UBNTAIRGW))
-$(eval $(call MultiProfile,WNDR3700,WNDR3700V1 WNDR3700V2 WNDR3800 WNDR3800CH WNDRMAC WNDRMACV2))
 $(eval $(call MultiProfile,WNR612V2,REALWNR612V2 N150R))
 $(eval $(call MultiProfile,WP543,WP543_2M WP543_4M WP543_8M WP543_16M))
 $(eval $(call MultiProfile,WPE72,WPE72_4M WPE72_8M WPE72_16M))
