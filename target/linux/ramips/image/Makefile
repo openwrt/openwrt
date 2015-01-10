@@ -22,21 +22,9 @@ define Image/Build/Initramfs
 	$(call Image/Build/Profile/$(PROFILE),initramfs)
 endef
 
-ifeq ($(CONFIG_SOC_RT288X),y)
-define kernel_entry
--a 0x88000000 -e 0x88000000
-endef
-else
-ifeq ($(CONFIG_SOC_MT7621),y)
-define kernel_entry
--a 0x80001000 -e 0x80001000
-endef
-else
-define kernel_entry
--a 0x80000000 -e 0x80000000
-endef
-endif
-endif
+loadaddr-y := 0x80000000
+loadaddr-$(CONFIG_TARGET_ramips_rt288x) := 0x88000000
+loadaddr-$(CONFIG_TARGET_ramips_mt7621) := 0x80001000
 
 define MkCombineduImage
 	$(call PatchKernelLzma,$(2),$(3))
@@ -59,7 +47,7 @@ endef
 # $(3), output filename
 define MkImage
 	$(eval imagename=$(if $(4),$(4),MIPS OpenWrt Linux-$(LINUX_VERSION)))
-	-mkimage -A mips -O linux -T kernel -C $(1) $(call kernel_entry)\
+	-mkimage -A mips -O linux -T kernel -C $(1) -a $(loadaddr-y) -e $(loadaddr-y) \
 		-n "$(imagename)" \
 		-d $(2) $(3)
 endef
