@@ -1,38 +1,58 @@
-diff -ruN old/arch/arm/boot/dts/Makefile new/arch/arm/boot/dts/Makefile
---- old/arch/arm/boot/dts/Makefile	2015-01-06 09:29:23.612462619 +0100
-+++ new/arch/arm/boot/dts/Makefile	2015-01-06 09:29:36.316254352 +0100
-@@ -436,6 +436,7 @@
- 	sun6i-a31-m9.dtb
+From 3613d535a77270eaf15a5f988a48434c7d1530f2 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Wed, 7 Jan 2015 20:44:52 +0100
+Subject: [PATCH] ARM: dts: sun7i: Add dts file for Bananapro board
+
+Add support for the new Bananapro A20 development board from lemaker.org.
+This board features 1G RAM, 2 USB A receptacles, 1 micro USB receptacle for
+OTG, 1 micro USB receptacle for power, HDMI, sata, Gbit ethernet, ir receiver,
+3.5 mm jack for a/v out, on board microphone, 40 gpio pins and sdio wifi.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/Makefile                |   1 +
+ arch/arm/boot/dts/sun7i-a20-bananapro.dts | 261 ++++++++++++++++++++++++++++++
+ 2 files changed, 262 insertions(+)
+ create mode 100644 arch/arm/boot/dts/sun7i-a20-bananapro.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 40d2901..b3dcf3f 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -466,6 +466,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
+ 	sun6i-a31s-cs908.dtb
  dtb-$(CONFIG_MACH_SUN7I) += \
  	sun7i-a20-bananapi.dtb \
 +	sun7i-a20-bananapro.dtb \
  	sun7i-a20-cubieboard2.dtb \
  	sun7i-a20-cubietruck.dtb \
  	sun7i-a20-hummingbird.dtb \
-diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapro.dts new/arch/arm/boot/dts/sun7i-a20-bananapro.dts
---- old/arch/arm/boot/dts/sun7i-a20-bananapro.dts	1970-01-01 01:00:00.000000000 +0100
-+++ new/arch/arm/boot/dts/sun7i-a20-bananapro.dts	2015-01-06 09:31:18.290582574 +0100
-@@ -0,0 +1,232 @@
+diff --git a/arch/arm/boot/dts/sun7i-a20-bananapro.dts b/arch/arm/boot/dts/sun7i-a20-bananapro.dts
+new file mode 100644
+index 0000000..3b4764d
+--- /dev/null
++++ b/arch/arm/boot/dts/sun7i-a20-bananapro.dts
+@@ -0,0 +1,261 @@
 +/*
-+ * Copyright 2014 Zoltan HERPAI <wigyori@uid0.hu>
++ * Copyright 2015 Hans de Goede <hdegoede@redhat.com>
 + *
 + * This file is dual-licensed: you can use it either under the terms
 + * of the GPL or the X11 license, at your option. Note that this dual
 + * licensing only applies to this file, and not this project as a
 + * whole.
 + *
-+ *  a) This library is free software; you can redistribute it and/or
++ *  a) This file is free software; you can redistribute it and/or
 + *     modify it under the terms of the GNU General Public License as
 + *     published by the Free Software Foundation; either version 2 of the
 + *     License, or (at your option) any later version.
 + *
-+ *     This library is distributed in the hope that it will be useful,
++ *     This file is distributed in the hope that it will be useful,
 + *     but WITHOUT ANY WARRANTY; without even the implied warranty of
 + *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 + *     GNU General Public License for more details.
 + *
 + *     You should have received a copy of the GNU General Public
-+ *     License along with this library; if not, write to the Free
++ *     License along with this file; if not, write to the Free
 + *     Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
 + *     MA 02110-1301 USA
 + *
@@ -77,7 +97,7 @@ diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapro.dts new/arch/arm/boot/dts/su
 +
 +		mmc0: mmc@01c0f000 {
 +			pinctrl-names = "default";
-+			pinctrl-0 = <&mmc0_pins_a>, <&mmc0_cd_pin_bananapro>;
++			pinctrl-0 = <&mmc0_pins_a>, <&mmc0_cd_pin_bananapi>;
 +			vmmc-supply = <&reg_vcc3v3>;
 +			bus-width = <4>;
 +			cd-gpios = <&pio 7 10 0>; /* PH10 */
@@ -86,23 +106,12 @@ diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapro.dts new/arch/arm/boot/dts/su
 +		};
 +
 +		mmc3: mmc@01c12000 {
-+			#address-cells = <1>;
-+			#size-cells = <0>;
-+
 +			pinctrl-names = "default";
-+			pinctrl-0 = <&mmc3_pins_a>
++			pinctrl-0 = <&mmc3_pins_a>;
 +			vmmc-supply = <&reg_vmmc3>;
 +			bus-width = <4>;
 +			non-removable;
 +			status = "okay";
-+
-+			brcmf: bcrmf@1 {
-+				reg = <1>;
-+				ccompatible = "brcm,bcm4329-fmac";
-+				interrupt-parent = <&pio>;
-+				interrupts = <10 8>; /* PH10 / EINT10 * taken from https://github.com/Bananian/fex/blob/master/BananaPro/BananaPro.fex.otg-off */
-+				interrupt-names = "host-wake";
-+			};
 +		};
 +
 +		usbphy: phy@01c13400 {
@@ -132,22 +141,43 @@ diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapro.dts new/arch/arm/boot/dts/su
 +		};
 +
 +		pinctrl@01c20800 {
-+			mmc0_cd_pin_bananapro: mmc0_cd_pin@0 {
++			usb1_vbus_pin_bananapro: usb1_vbus_pin@0 {
++				allwinner,pins = "PH0";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			usb2_vbus_pin_bananapro: usb2_vbus_pin@0 {
++				allwinner,pins = "PH1";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			mmc0_cd_pin_bananapi: mmc0_cd_pin@0 {
 +				allwinner,pins = "PH10";
 +				allwinner,function = "gpio_in";
 +				allwinner,drive = <0>;
 +				allwinner,pull = <1>;
 +			};
 +
-+			gmac_power_pin_bananapro: gmac_power_pin@0 {
++			vmmc3_pin_bananapro: vmmc3_pin@0 {
++				allwinner,pins = "PH22";
++				allwinner,function = "gpio_out";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			gmac_power_pin_bananapi: gmac_power_pin@0 {
 +				allwinner,pins = "PH23";
 +				allwinner,function = "gpio_out";
 +				allwinner,drive = <0>;
 +				allwinner,pull = <0>;
 +			};
 +
-+			led_pins_bananapro: led_pins@0 {
-+				allwinner,pins = "PH24";
++			led_pins_bananapi: led_pins@0 {
++				allwinner,pins = "PH24", "PG2";
 +				allwinner,function = "gpio_out";
 +				allwinner,drive = <0>;
 +				allwinner,pull = <0>;
@@ -166,9 +196,9 @@ diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapro.dts new/arch/arm/boot/dts/su
 +			status = "okay";
 +		};
 +
-+		uart3: serial@01c28c00 {
++		uart2: serial@01c28800 {
 +			pinctrl-names = "default";
-+			pinctrl-0 = <&uart3_pins_b>;
++			pinctrl-0 = <&uart2_pins_a>;
 +			status = "okay";
 +		};
 +
@@ -217,31 +247,50 @@ diff -ruN old/arch/arm/boot/dts/sun7i-a20-bananapro.dts new/arch/arm/boot/dts/su
 +	leds {
 +		compatible = "gpio-leds";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&led_pins_bananapro>;
++		pinctrl-0 = <&led_pins_bananapi>;
 +
 +		green {
-+			label = "bananapro:green:usr";
++			label = "bananapi:green:usr";
 +			gpios = <&pio 7 24 0>;
++		};
++		blue {
++			label = "bananapi:blue:usr";
++			gpios = <&pio 6 2 0>;
 +		};
 +	};
 +
 +	reg_usb1_vbus: usb1-vbus {
++		pinctrl-0 = <&usb1_vbus_pin_bananapro>;
++		gpio = <&pio 7 0 0>; /* PH0 */
 +		status = "okay";
 +	};
 +
 +	reg_usb2_vbus: usb2-vbus {
++		pinctrl-0 = <&usb2_vbus_pin_bananapro>;
++		gpio = <&pio 7 1 0>; /* PH1 */
 +		status = "okay";
 +	};
 +
 +	reg_gmac_3v3: gmac-3v3 {
 +		compatible = "regulator-fixed";
 +		pinctrl-names = "default";
-+		pinctrl-0 = <&gmac_power_pin_bananapro>;
++		pinctrl-0 = <&gmac_power_pin_bananapi>;
 +		regulator-name = "gmac-3v3";
 +		regulator-min-microvolt = <3300000>;
 +		regulator-max-microvolt = <3300000>;
-+		startup-delay-us = <50000>;
++		startup-delay-us = <100000>;
 +		enable-active-high;
 +		gpio = <&pio 7 23 0>;
++	};
++
++	reg_vmmc3: vmmc3 {
++		compatible = "regulator-fixed";
++		pinctrl-names = "default";
++		pinctrl-0 = <&vmmc3_pin_bananapro>;
++		regulator-name = "vmmc3";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		enable-active-high;
++		gpio = <&pio 7 22 0>;
 +	};
 +};
