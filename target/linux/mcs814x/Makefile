@@ -13,7 +13,7 @@ FEATURES:=usb squashfs low_mem
 CPU_TYPE:=arm926ej-s
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
-KERNEL_PATCHVER:=3.3
+KERNEL_PATCHVER:=3.14
 
 DEVICE_TYPE:=other
 
