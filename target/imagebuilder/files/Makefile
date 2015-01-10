@@ -78,6 +78,7 @@ define Profile
   endif
   $(1)_NAME:=$(NAME)
   $(1)_PACKAGES:=$(PACKAGES)
+  PROFILE_NAMES += $(1)
   PROFILE_LIST += \
   	echo '$(1):'; [ -z '$(NAME)' ] || echo '	$(NAME)'; echo '	Packages: $(PACKAGES)';
 endef
@@ -167,6 +168,13 @@ info:
 	(unset PROFILE FILES PACKAGES MAKEFLAGS; $(MAKE) -s _call_info)
 
 image:
+ifneq ($(PROFILE),)
+  ifeq ($(filter $(PROFILE),$(PROFILE_NAMES)),)
+	@echo 'Profile "$(PROFILE)" does not exist!'
+	@echo 'Use "make info" to get a list of available profile names.'
+	@exit 1
+  endif
+endif
 	(unset PROFILE FILES PACKAGES MAKEFLAGS; \
 	$(MAKE) _call_image \
 		$(if $(PROFILE),USER_PROFILE="$(PROFILE)") \
