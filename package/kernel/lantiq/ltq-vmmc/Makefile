@@ -19,6 +19,7 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_USE_MIPS16:=0
 PKG_CHECK_FORMAT_SECURITY:=0
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -145,7 +146,6 @@ define Build/Configure
 		$(PKG_BUILD_DIR)/firmware
 	$(TAR) -C $(PKG_BUILD_DIR)/firmware -xvzf $(DL_DIR)/$(FW_FILE)
 	$(TAR) -C $(PKG_BUILD_DIR)/coef -xvzf $(DL_DIR)/$(COEF_FILE)
-	(cd $(PKG_BUILD_DIR); aclocal && autoconf && automake)
 	$(call Build/Configure/Default)
 endef
 
