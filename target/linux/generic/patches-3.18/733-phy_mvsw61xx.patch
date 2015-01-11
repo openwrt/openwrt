@@ -4,7 +4,7 @@
  	tristate "Driver for Marvell 88E6060 switches"
  	select ETHERNET_PACKET_MANGLE
  
-+config MVSW6171_PHY
++config MVSW61XX_PHY
 +	tristate "Driver for Marvell 88E6171/6172 switches"
 +	select SWCONFIG
 +
@@ -17,7 +17,7 @@
  obj-$(CONFIG_ICPLUS_PHY)	+= icplus.o
  obj-$(CONFIG_ADM6996_PHY)	+= adm6996.o
  obj-$(CONFIG_MVSWITCH_PHY)	+= mvswitch.o
-+obj-$(CONFIG_MVSW6171_PHY)	+= mvsw6171.o
++obj-$(CONFIG_MVSW61XX_PHY)	+= mvsw61xx.o
  obj-$(CONFIG_IP17XX_PHY)	+= ip17xx.o
  obj-$(CONFIG_REALTEK_PHY)	+= realtek.o
  obj-$(CONFIG_AR8216_PHY)	+= ar8216.o ar8327.o

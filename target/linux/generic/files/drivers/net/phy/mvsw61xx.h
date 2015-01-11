@@ -1,5 +1,5 @@
 /*
- * Marvell 88E6171 switch driver
+ * Marvell 88E61xx switch driver
  *
  * Copyright (c) 2014 Claudio Leite <leitec@staticky.com>
  *
@@ -10,8 +10,8 @@
  * Free Software Foundation
  */
 
-#ifndef __MVSW6171_H
-#define __MVSW6171_H
+#ifndef __MVSW61XX_H
+#define __MVSW61XX_H
 
 #define MV_PORTS			7
 #define MV_PORTS_MASK			((1 << MV_PORTS) - 1)
@@ -196,7 +196,7 @@ enum {
 
 #define MV_PVID_MASK			0x0fff
 
-struct mvsw6171_state {
+struct mvsw61xx_state {
 	struct switch_dev dev;
 	struct mii_bus *bus;
 	int base_addr;
@@ -225,6 +225,6 @@ struct mvsw6171_state {
 	char buf[128];
 };
 
-#define get_state(_dev) container_of((_dev), struct mvsw6171_state, dev)
+#define get_state(_dev) container_of((_dev), struct mvsw61xx_state, dev)
 
 #endif
