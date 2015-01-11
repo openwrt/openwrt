@@ -1,11 +1,11 @@
 --- a/util/Makefile.in
 +++ b/util/Makefile.in
-@@ -641,7 +641,7 @@ mount_util.c: $(top_srcdir)/lib/mount_ut
+@@ -676,7 +676,7 @@ mount_util.c: $(top_srcdir)/lib/mount_ut
  
  install-exec-hook:
  	-chmod u+s $(DESTDIR)$(bindir)/fusermount
 -	@if test ! -e $(DESTDIR)/dev/fuse; then \
 +	-@if test ! -e $(DESTDIR)/dev/fuse; then \
- 		$(mkdir_p) $(DESTDIR)/dev; \
+ 		$(MKDIR_P) $(DESTDIR)/dev; \
  		echo "mknod $(DESTDIR)/dev/fuse -m 0666 c 10 229 || true"; \
  		mknod $(DESTDIR)/dev/fuse -m 0666 c 10 229 || true; \
