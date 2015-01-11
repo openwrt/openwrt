@@ -15,6 +15,7 @@ PKG_MD5SUM:=bc107f9d8ff6bed4c2760a2817bbb029
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_USE_MIPS16:=0
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -35,11 +36,6 @@ CONFIGURE_ARGS += \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
 	--enable-add_drv_cflags="-fno-pic -mno-abicalls -mlong-calls -G 0"
-
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); aclocal && autoconf && automake)
-	$(call Build/Configure/Default)
-endef
 
 ifdef CONFIG_TARGET_lantiq
   define Build/InstallDev
