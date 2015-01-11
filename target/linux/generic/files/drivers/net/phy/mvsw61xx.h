@@ -249,6 +249,7 @@ struct mvsw61xx_state {
 		u16 mask;
 		u16 vid;
 		u32 port_mode;
+		u32 port_sstate;
 	} vlans[MV_VLANS];
 
 	char buf[128];
