@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2012 OpenWrt.org
+# Copyright (C) 2012-2014 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dosfstools
-PKG_VERSION:=3.0.7
-PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).orig.tar.gz
-PKG_SOURCE_URL:=http://dosfstools.sourcearchive.com/downloads/3.0.7/
-PKG_MD5SUM:=5d4d97c79e8dae60bb08c2fba36c94d6
-PKG_CAT:=zcat
+PKG_VERSION:=3.0.26
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
+PKG_SOURCE_URL:=http://daniel-baumann.ch/files/software/dosfstools/
+PKG_MD5SUM:=45012f5f56f2aae3afcd62120b9e5a08
 
 include $(INCLUDE_DIR)/host-build.mk
 
@@ -20,11 +20,12 @@ define Host/Compile
 endef
 
 define Host/Install
-	$(INSTALL_BIN) $(HOST_BUILD_DIR)/mkdosfs $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/mkfs.fat $(STAGING_DIR_HOST)/bin/
+	$(LN) mkfs.fat $(STAGING_DIR_HOST)/bin/mkdosfs
 endef
 
 define Host/Clean
-	rm -f $(STAGING_DIR_HOST)/bin/mkdosfs
+	rm -f $(STAGING_DIR_HOST)/bin/mk{dosfs,fs.fat}
 endef
 
 $(eval $(call HostBuild))
