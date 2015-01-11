@@ -2,6 +2,7 @@
  * Marvell 88E61xx switch driver
  *
  * Copyright (c) 2014 Claudio Leite <leitec@staticky.com>
+ * Copyright (c) 2014 Nikita Nazarenko <nnazarenko@radiofid.com>
  *
  * Based on code (c) 2008 Felix Fietkau <nbd@openwrt.org>
  *
@@ -27,6 +28,7 @@
 
 MODULE_DESCRIPTION("Marvell 88E61xx Switch driver");
 MODULE_AUTHOR("Claudio Leite <leitec@staticky.com>");
+MODULE_AUTHOR("Nikita Nazarenko <nnazarenko@radiofid.com>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:mvsw61xx");
 
@@ -333,6 +335,7 @@ static int mvsw61xx_set_vlan_ports(struct switch_dev *dev,
 
 	state->vlans[vno].mask = 0;
 	state->vlans[vno].port_mode = 0;
+	state->vlans[vno].port_sstate = 0;
 
 	if(state->vlans[vno].vid == 0)
 		state->vlans[vno].vid = vno;
@@ -348,6 +351,8 @@ static int mvsw61xx_set_vlan_ports(struct switch_dev *dev,
 			mode = MV_VTUCTL_EGRESS_UNTAGGED;
 
 		state->vlans[vno].port_mode |= mode << (pno * 4);
+		state->vlans[vno].port_sstate |=
+			MV_STUCTL_STATE_FORWARDING << (pno * 4 + 2);
 	}
 
 	/*
@@ -447,7 +452,7 @@ static int mvsw61xx_set_enable_vlan(struct switch_dev *dev,
 static int mvsw61xx_vtu_program(struct switch_dev *dev)
 {
 	struct mvsw61xx_state *state = get_state(dev);
-	u16 v1, v2;
+	u16 v1, v2, s1, s2;
 	int i;
 
 	/* Flush */
@@ -466,14 +471,32 @@ static int mvsw61xx_vtu_program(struct switch_dev *dev)
 		mvsw61xx_wait_mask_s(dev, MV_GLOBALREG(VTU_OP),
 				MV_VTUOP_INPROGRESS, 0);
 
+		/* Write per-VLAN port state into STU */
+		s1 = (u16) (state->vlans[i].port_sstate & 0xffff);
+		s2 = (u16) ((state->vlans[i].port_sstate >> 16) & 0xffff);
+
+		sw16(dev, MV_GLOBALREG(VTU_VID), MV_VTU_VID_VALID);
+		sw16(dev, MV_GLOBALREG(VTU_SID), i);
+		sw16(dev, MV_GLOBALREG(VTU_DATA1), s1);
+		sw16(dev, MV_GLOBALREG(VTU_DATA2), s2);
+		sw16(dev, MV_GLOBALREG(VTU_DATA3), 0);
+
+		sw16(dev, MV_GLOBALREG(VTU_OP),
+				MV_VTUOP_INPROGRESS | MV_VTUOP_STULOAD);
+		mvsw61xx_wait_mask_s(dev, MV_GLOBALREG(VTU_OP),
+				MV_VTUOP_INPROGRESS, 0);
+
+		/* Write VLAN information into VTU */
+		v1 = (u16) (state->vlans[i].port_mode & 0xffff);
+		v2 = (u16) ((state->vlans[i].port_mode >> 16) & 0xffff);
+
 		sw16(dev, MV_GLOBALREG(VTU_VID),
 				MV_VTU_VID_VALID | state->vlans[i].vid);
-
-		v1 = (u16)(state->vlans[i].port_mode & 0xffff);
-		v2 = (u16)((state->vlans[i].port_mode >> 16) & 0xffff);
-
+		sw16(dev, MV_GLOBALREG(VTU_SID), i);
+		sw16(dev, MV_GLOBALREG(VTU_FID), 0);
 		sw16(dev, MV_GLOBALREG(VTU_DATA1), v1);
 		sw16(dev, MV_GLOBALREG(VTU_DATA2), v2);
+		sw16(dev, MV_GLOBALREG(VTU_DATA3), 0);
 
 		sw16(dev, MV_GLOBALREG(VTU_OP),
 				MV_VTUOP_INPROGRESS | MV_VTUOP_LOAD);
@@ -513,8 +536,6 @@ static int mvsw61xx_update_state(struct switch_dev *dev)
 
 	if (!state->registered)
 		return -EINVAL;
-
-	mvsw61xx_vtu_program(dev);
 
 	/*
 	 * Set 802.1q-only mode if vlan_enabled is true.
@@ -568,6 +589,8 @@ static int mvsw61xx_update_state(struct switch_dev *dev)
 		sw16(dev, MV_PORTREG(CONTROL2, i), reg);
 	}
 
+	mvsw61xx_vtu_program(dev);
+
 	return 0;
 }
 
@@ -615,6 +638,7 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 		state->vlans[i].mask = 0;
 		state->vlans[i].vid = 0;
 		state->vlans[i].port_mode = 0;
+		state->vlans[i].port_sstate = 0;
 	}
 
 	state->vlan_enabled = 0;
