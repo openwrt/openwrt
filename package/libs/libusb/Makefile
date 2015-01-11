@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libusb
-PKG_VERSION:=1.0.9
+PKG_VERSION:=1.0.19
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=@SF/$(PKG_NAME)
-PKG_MD5SUM:=7f5a02375ad960d4e33a6dae7d63cfcb
+PKG_MD5SUM:=f9e2bb5879968467e5ca756cb4e1fa7e
 
 PKG_INSTALL:=1
 PKG_BUILD_PARALLEL:=1
@@ -37,6 +37,9 @@ define Package/libusb-1.0/description
 endef
 
 TARGET_CFLAGS += $(FPIC)
+CONFIGURE_ARGS += \
+	--disable-udev \
+	--disable-log
 
 define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/* $(1)/

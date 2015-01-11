@@ -14,15 +14,15 @@ Date:   Thu Jan 27 06:39:16 2011 +0300
 
 --- a/libusb/io.c
 +++ b/libusb/io.c
-@@ -20,6 +20,7 @@
- 
- #include <config.h>
- #include <errno.h>
+@@ -32,6 +32,7 @@
+ #include <sys/time.h>
+ #endif
+ #ifdef USBI_TIMERFD_AVAILABLE
 +#include <fcntl.h>
- #include <signal.h>
- #include <stdint.h>
- #include <stdlib.h>
-@@ -1072,7 +1073,7 @@ int usbi_io_init(struct libusb_context *
+ #include <sys/timerfd.h>
+ #endif
+ 
+@@ -1141,7 +1142,7 @@ int usbi_io_init(struct libusb_context *
  
  #ifdef USBI_TIMERFD_AVAILABLE
  	ctx->timerfd = timerfd_create(usbi_backend->get_timerfd_clockid(),
