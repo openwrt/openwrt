@@ -19,6 +19,7 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_USE_MIPS16:=0
 PKG_CHECK_FORMAT_SECURITY:=0
+PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -57,11 +58,6 @@ CONFIGURE_ARGS += \
 	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_HDLC,hdlc) \
 	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_TRACES,trace) \
 	$(call autoconf_bool,CONFIG_VOICE_CPE_TAPI_LINUX_HOTPLUG,hotplug)
-
-define Build/Configure
-	(cd $(PKG_BUILD_DIR); aclocal && autoconf && automake)
-	$(call Build/Configure/Default)
-endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include/drv_tapi
