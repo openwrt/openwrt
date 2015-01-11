@@ -2,6 +2,7 @@
  * Marvell 88E61xx switch driver
  *
  * Copyright (c) 2014 Claudio Leite <leitec@staticky.com>
+ * Copyright (c) 2014 Nikita Nazarenko <nnazarenko@radiofid.com>
  *
  * Based on code (c) 2008 Felix Fietkau <nbd@openwrt.org>
  *
@@ -16,8 +17,6 @@
 #define MV_PORTS			7
 #define MV_PORTS_MASK			((1 << MV_PORTS) - 1)
 
-#define MV_CPUPORT			6
-
 #define MV_BASE				0x10
 
 #define MV_SWITCHPORT_BASE		0x10
@@ -28,8 +27,8 @@
 
 enum {
 	MV_PORT_STATUS			= 0x00,
-	MV_PORT_FORCE			= 0x01,
-	MV_PORT_PAUSE			= 0x02,
+	MV_PORT_PHYCTL			= 0x01,
+	MV_PORT_JAMCTL			= 0x02,
 	MV_PORT_IDENT			= 0x03,
 	MV_PORT_CONTROL			= 0x04,
 	MV_PORT_CONTROL1		= 0x05,
@@ -37,8 +36,10 @@ enum {
 	MV_PORT_VLANID			= 0x07,
 	MV_PORT_CONTROL2		= 0x08,
 	MV_PORT_ASSOC			= 0x0b,
-	MV_PORT_RXCOUNT			= 0x10,
-	MV_PORT_TXCOUNT			= 0x11,
+	MV_PORT_RX_DISCARD_LOW		= 0x10,
+	MV_PORT_RX_DISCARD_HIGH		= 0x11,
+	MV_PORT_IN_FILTERED		= 0x12,
+	MV_PORT_OUT_ACCEPTED		= 0x13,
 };
 #define MV_PORTREG(_type, _port) MV_SWITCHPORT(_port), MV_PORT_##_type
 
@@ -56,18 +57,19 @@ enum {
 #define MV_PORT_STATUS_SPEED_MASK	(3 << 8)
 
 enum {
-	MV_PORTCTRL_BLOCK		= (1 << 0),
-	MV_PORTCTRL_LEARN		= (2 << 0),
-	MV_PORTCTRL_ENABLED		= (3 << 0),
+	MV_PORTCTRL_DISABLED		= (0 << 0),
+	MV_PORTCTRL_BLOCKING		= (1 << 0),
+	MV_PORTCTRL_LEARNING		= (2 << 0),
+	MV_PORTCTRL_FORWARDING		= (3 << 0),
 	MV_PORTCTRL_VLANTUN		= (1 << 7),
 	MV_PORTCTRL_EGRESS		= (1 << 12),
 };
 
-#define MV_FORCE_FC_MASK		(3 << 6)
+#define MV_PHYCTL_FC_MASK		(3 << 6)
 
 enum {
-	MV_FORCE_FC_ENABLE		= (3 << 6),
-	MV_FORCE_FC_DISABLE		= (1 << 6),
+	MV_PHYCTL_FC_ENABLE		= (3 << 6),
+	MV_PHYCTL_FC_DISABLE		= (1 << 6),
 };
 
 enum {
@@ -87,12 +89,16 @@ enum {
 	MV_8021Q_MODE_SECURE		= 0x03,
 };
 
+enum {
+	MV_8021Q_VLAN_ONLY		= (1 << 15),
+};
+
 #define MV_PORTASSOC_MONITOR		(1 << 15)
 
 enum {
-	MV_SWITCH_MAC0			= 0x01,
-	MV_SWITCH_MAC1			= 0x02,
-	MV_SWITCH_MAC2			= 0x03,
+	MV_SWITCH_ATU_FID0		= 0x01,
+	MV_SWITCH_ATU_FID1		= 0x02,
+	MV_SWITCH_ATU_SID		= 0x03,
 	MV_SWITCH_CTRL			= 0x04,
 	MV_SWITCH_ATU_CTRL		= 0x0a,
 	MV_SWITCH_ATU_OP		= 0x0b,
@@ -142,24 +148,36 @@ enum {
 
 enum {
 	MV_GLOBAL_STATUS		= 0x00,
+	MV_GLOBAL_ATU_FID		= 0x01,
+	MV_GLOBAL_VTU_FID		= 0x02,
+	MV_GLOBAL_VTU_SID		= 0x03,
 	MV_GLOBAL_CONTROL		= 0x04,
 	MV_GLOBAL_VTU_OP		= 0x05,
 	MV_GLOBAL_VTU_VID		= 0x06,
 	MV_GLOBAL_VTU_DATA1		= 0x07,
 	MV_GLOBAL_VTU_DATA2		= 0x08,
 	MV_GLOBAL_VTU_DATA3		= 0x09,
+	MV_GLOBAL_CONTROL2		= 0x1c,
 };
 #define MV_GLOBALREG(_type) MV_SWITCH_GLOBAL, MV_GLOBAL_##_type
 
 enum {
-	MV_GLOBAL2_SDET_POLARITY	= 0x1D,
+	MV_GLOBAL2_SDET_POLARITY	= 0x1d,
 };
 #define MV_GLOBAL2REG(_type) MV_SWITCH_GLOBAL2, MV_GLOBAL2_##_type
 
 enum {
-	MV_VTUOP_VALID			= (1 << 12),
+	MV_VTU_VID_VALID		= (1 << 12),
+};
+
+enum {
+	MV_VTUOP_PURGE			= (1 << 12),
 	MV_VTUOP_LOAD			= (3 << 12),
 	MV_VTUOP_INPROGRESS		= (1 << 15),
+	MV_VTUOP_STULOAD		= (5 << 12),
+	MV_VTUOP_VTU_GET_NEXT		= (4 << 12),
+	MV_VTUOP_STU_GET_NEXT		= (6 << 12),
+	MV_VTUOP_GET_VIOLATION		= (7 << 12),
 };
 
 enum {
@@ -168,14 +186,17 @@ enum {
 };
 
 enum {
-	MV_VTUCTL_EGRESS_UNMODIFIED	= 0x00,
-	MV_VTUCTL_EGRESS_UNTAGGED	= 0x01,
-	MV_VTUCTL_EGRESS_TAGGED		= 0x02,
-	MV_VTUCTL_DISCARD		= 0x03,
+	MV_VTUCTL_EGRESS_UNMODIFIED	= (0 << 0),
+	MV_VTUCTL_EGRESS_UNTAGGED	= (1 << 0),
+	MV_VTUCTL_EGRESS_TAGGED		= (2 << 0),
+	MV_VTUCTL_DISCARD		= (3 << 0),
 };
 
 enum {
-	MV_8021Q_VLAN_ONLY		= (1 << 15),
+	MV_STUCTL_STATE_DISABLED	= (0 << 0),
+	MV_STUCTL_STATE_BLOCKING	= (1 << 0),
+	MV_STUCTL_STATE_LEARNING	= (2 << 0),
+	MV_STUCTL_STATE_FORWARDING	= (3 << 0),
 };
 
 enum {

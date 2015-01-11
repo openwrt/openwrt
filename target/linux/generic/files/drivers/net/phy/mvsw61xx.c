@@ -454,7 +454,7 @@ static int mvsw61xx_vtu_program(struct switch_dev *dev)
 	mvsw61xx_wait_mask_s(dev, MV_GLOBALREG(VTU_OP),
 			MV_VTUOP_INPROGRESS, 0);
 	sw16(dev, MV_GLOBALREG(VTU_OP),
-			MV_VTUOP_INPROGRESS | MV_VTUOP_VALID);
+			MV_VTUOP_INPROGRESS | MV_VTUOP_PURGE);
 
 	/* Write VLAN table */
 	for (i = 1; i < dev->vlans; i++) {
@@ -467,7 +467,7 @@ static int mvsw61xx_vtu_program(struct switch_dev *dev)
 				MV_VTUOP_INPROGRESS, 0);
 
 		sw16(dev, MV_GLOBALREG(VTU_VID),
-				MV_VTUOP_VALID | state->vlans[i].vid);
+				MV_VTU_VID_VALID | state->vlans[i].vid);
 
 		v1 = (u16)(state->vlans[i].port_mode & 0xffff);
 		v2 = (u16)((state->vlans[i].port_mode >> 16) & 0xffff);
@@ -585,7 +585,7 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 	/* Disable all ports before reset */
 	for (i = 0; i < dev->ports; i++) {
 		reg = sr16(dev, MV_PORTREG(CONTROL, i)) &
-			~MV_PORTCTRL_ENABLED;
+			~MV_PORTCTRL_FORWARDING;
 		sw16(dev, MV_PORTREG(CONTROL, i), reg);
 	}
 
@@ -602,9 +602,9 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 		state->ports[i].pvid = 0;
 
 		/* Force flow control off */
-		reg = sr16(dev, MV_PORTREG(FORCE, i)) & ~MV_FORCE_FC_MASK;
-		reg |= MV_FORCE_FC_DISABLE;
-		sw16(dev, MV_PORTREG(FORCE, i), reg);
+		reg = sr16(dev, MV_PORTREG(PHYCTL, i)) & ~MV_PHYCTL_FC_MASK;
+		reg |= MV_PHYCTL_FC_DISABLE;
+		sw16(dev, MV_PORTREG(PHYCTL, i), reg);
 
 		/* Set port association vector */
 		sw16(dev, MV_PORTREG(ASSOC, i), (1 << i));
@@ -624,7 +624,7 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 	/* Re-enable ports */
 	for (i = 0; i < dev->ports; i++) {
 		reg = sr16(dev, MV_PORTREG(CONTROL, i)) |
-			MV_PORTCTRL_ENABLED;
+			MV_PORTCTRL_FORWARDING;
 		sw16(dev, MV_PORTREG(CONTROL, i), reg);
 	}
 
