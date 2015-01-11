@@ -190,9 +190,16 @@ enum {
 };
 #define MV_INDIRECT_ADDR_S		5
 
-#define MV_IDENT_MASK			0xffc0
-#define MV_IDENT_VALUE			0x1700
-#define MV_IDENT_STR			"MV88E617x"
+#define MV_IDENT_MASK			0xfff0
+
+#define MV_IDENT_VALUE_6171		0x1710
+#define MV_IDENT_STR_6171		"MV88E6171"
+
+#define MV_IDENT_VALUE_6172		0x1720
+#define MV_IDENT_STR_6172		"MV88E6172"
+
+#define MV_IDENT_VALUE_6176		0x1760
+#define MV_IDENT_STR_6176		"MV88E6176"
 
 #define MV_PVID_MASK			0x0fff
 
@@ -200,6 +207,7 @@ struct mvsw61xx_state {
 	struct switch_dev dev;
 	struct mii_bus *bus;
 	int base_addr;
+	u16 model;
 
 	bool registered;
 	bool is_indirect;

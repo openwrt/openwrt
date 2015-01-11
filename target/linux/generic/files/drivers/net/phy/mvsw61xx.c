@@ -740,8 +740,8 @@ static int mvsw61xx_probe(struct platform_device *pdev)
 	struct mvsw61xx_state *state;
 	struct device_node *np = pdev->dev.of_node;
 	struct device_node *mdio;
+	char *model_str;
 	u32 val;
-	u16 reg;
 	int err;
 
 	state = kzalloc(sizeof(*state), GFP_KERNEL);
@@ -776,17 +776,28 @@ static int mvsw61xx_probe(struct platform_device *pdev)
 		state->base_addr = MV_BASE;
 	}
 
-	reg = r16(state->bus, state->is_indirect, state->base_addr,
-			MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
-	if (reg != MV_IDENT_VALUE) {
-		dev_err(&pdev->dev, "No switch found at 0x%02x\n",
+	state->model = r16(state->bus, state->is_indirect, state->base_addr,
+				MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
+
+	switch(state->model) {
+	case MV_IDENT_VALUE_6171:
+		model_str = MV_IDENT_STR_6171;
+		break;
+	case MV_IDENT_VALUE_6172:
+		model_str = MV_IDENT_STR_6172;
+		break;
+	case MV_IDENT_VALUE_6176:
+		model_str = MV_IDENT_STR_6176;
+		break;
+	default:
+		dev_err(&pdev->dev, "No compatible switch found at 0x%02x\n",
 				state->base_addr);
 		err = -ENODEV;
 		goto out_err;
 	}
 
 	platform_set_drvdata(pdev, state);
-	dev_info(&pdev->dev, "Found %s at %s:%02x\n", MV_IDENT_STR,
+	dev_info(&pdev->dev, "Found %s at %s:%02x\n", model_str,
 			state->bus->id, state->base_addr);
 
 	dev_info(&pdev->dev, "Using %sdirect addressing\n",
@@ -808,7 +819,7 @@ static int mvsw61xx_probe(struct platform_device *pdev)
 	state->dev.vlans = MV_VLANS;
 	state->dev.cpu_port = state->cpu_port0;
 	state->dev.ports = MV_PORTS;
-	state->dev.name = MV_IDENT_STR;
+	state->dev.name = model_str;
 	state->dev.ops = &mvsw61xx_ops;
 	state->dev.alias = dev_name(&pdev->dev);
 
@@ -839,6 +850,8 @@ mvsw61xx_remove(struct platform_device *pdev)
 
 static const struct of_device_id mvsw61xx_match[] = {
 	{ .compatible = "marvell,88e6171" },
+	{ .compatible = "marvell,88e6172" },
+	{ .compatible = "marvell,88e6176" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, mvsw61xx_match);
