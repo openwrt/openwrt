@@ -7,14 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=nftables
-PKG_VERSION:=0.4+2015-01-08
+PKG_VERSION:=0.4+2015-01-12
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://git.netfilter.org/nftables
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=b3529cf43bba5c3c4cddefa7f5d0143d510fd3ec
+PKG_SOURCE_VERSION:=b17e27f472adc2e82582d90df0111d5b95c8afe0
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 PKG_LICENSE:=GPL-2.0
 
@@ -23,7 +23,6 @@ PKG_FIXUP:=autoreconf
 include $(INCLUDE_DIR)/package.mk
 
 CONFIGURE_ARGS += \
-        --disable-debug \
         --with-mini-gmp \
         --without-cli \
 
