@@ -495,20 +495,6 @@ endef
 $(eval $(call KernelPackage,booke-wdt))
 
 
-define KernelPackage/pwm
-  SUBMENU:=$(OTHER_MENU)
-  TITLE:=PWM generic API
-  KCONFIG:=CONFIG_GENERIC_PWM
-  FILES:=$(LINUX_DIR)/drivers/pwm/pwm.ko
-endef
-
-define KernelPackage/pwm/description
- Kernel module that implement a generic PWM API
-endef
-
-$(eval $(call KernelPackage,pwm))
-
-
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
