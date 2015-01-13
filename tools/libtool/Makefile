@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2008 OpenWrt.org
+# Copyright (C) 2008-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -19,6 +19,12 @@ include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_VARS += \
 	lt_cv_sys_dlsearch_path=""
+
+define Host/Prepare
+	$(call Host/Prepare/Default)
+	(cd $(STAGING_DIR_HOST)/share/aclocal/ && rm -f libtool.m4 ltdl.m4 lt~obsolete.m4 ltoptions.m4 ltsugar.m4 ltversion.m4)
+	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) ./bootstrap)
+endef
 
 define Host/Install
 	$(MAKE) -C $(HOST_BUILD_DIR) install

@@ -1,11 +1,15 @@
 --- a/libltdl/config/general.m4sh
 +++ b/libltdl/config/general.m4sh
-@@ -53,7 +53,7 @@ test "${ECHO+set}" = set || ECHO=${as_ec
+@@ -53,7 +53,11 @@ test "${ECHO+set}" = set || ECHO=${as_ec
  : ${MKDIR="mkdir"}
  : ${MV="mv -f"}
  : ${RM="rm -f"}
 -: ${SED="@SED@"}
-+test "${STAGING_DIR+set}" = set && ${SED="$STAGING_DIR/../host/bin/sed"} || ${SED="@SED@"}
++if test -n "$STAGING_DIR"; then
++       : ${SED="$STAGING_DIR/../host/bin/sed"}
++else
++       : ${SED="@SED@"}
++fi
  : ${SHELL="${CONFIG_SHELL-/bin/sh}"}
  : ${Xsed="$SED -e 1s/^X//"}
  
