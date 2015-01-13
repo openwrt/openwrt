@@ -47,7 +47,11 @@ enum fe_reg {
 #define FE_DRV_VERSION		"0.1.0"
 
 /* power of 2 to let NEXT_TX_DESP_IDX work */
+#ifdef CONFIG_SOC_MT7621
+#define NUM_DMA_DESC		(1 << 9)
+#else
 #define NUM_DMA_DESC		(1 << 7)
+#endif
 #define MAX_DMA_DESC		0xfff
 
 #define FE_DELAY_EN_INT		0x80
