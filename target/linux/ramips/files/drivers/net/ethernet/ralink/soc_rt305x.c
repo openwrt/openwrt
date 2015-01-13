@@ -133,8 +133,8 @@ static struct fe_soc_data rt3050_data = {
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,
 	.tx_udf_bit = TX_DMA_UDF,
-	.rx_dly_int = FE_RX_DLY_INT,
-	.tx_dly_int = FE_TX_DLY_INT,
+	.rx_int = FE_RX_DONE_INT,
+	.tx_int = FE_TX_DONE_INT,
 };
 
 static struct fe_soc_data rt5350_data = {
@@ -148,8 +148,8 @@ static struct fe_soc_data rt5350_data = {
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,
 	.tx_udf_bit = TX_DMA_UDF,
-	.rx_dly_int = RT5350_RX_DLY_INT,
-	.tx_dly_int = RT5350_TX_DLY_INT,
+	.rx_int = RT5350_RX_DONE_INT,
+	.tx_int = RT5350_TX_DONE_INT,
 };
 
 const struct of_device_id of_fe_match[] = {

@@ -79,8 +79,22 @@ enum fe_reg {
 #define FE_TX_DLY_INT		BIT(1)
 #define FE_RX_DLY_INT		BIT(0)
 
+#define FE_RX_DONE_INT		FE_RX_DONE_INT0
+#define FE_TX_DONE_INT		(FE_TX_DONE_INT0 | FE_TX_DONE_INT1 | \
+				 FE_TX_DONE_INT2 | FE_TX_DONE_INT3)
+
 #define RT5350_RX_DLY_INT	BIT(30)
 #define RT5350_TX_DLY_INT	BIT(28)
+#define RT5350_RX_DONE_INT1	BIT(17)
+#define RT5350_RX_DONE_INT0	BIT(16)
+#define RT5350_TX_DONE_INT3	BIT(3)
+#define RT5350_TX_DONE_INT2	BIT(2)
+#define RT5350_TX_DONE_INT1	BIT(1)
+#define RT5350_TX_DONE_INT0	BIT(0)
+
+#define RT5350_RX_DONE_INT	(RT5350_RX_DONE_INT0 | RT5350_RX_DONE_INT1)
+#define RT5350_TX_DONE_INT	(RT5350_TX_DONE_INT0 | RT5350_TX_DONE_INT1 | \
+				 RT5350_TX_DONE_INT2 | RT5350_TX_DONE_INT3)
 
 /* registers */
 #define FE_FE_OFFSET		0x0000
@@ -367,8 +381,8 @@ struct fe_soc_data
 
 	void *swpriv;
 	u32 pdma_glo_cfg;
-	u32 rx_dly_int;
-	u32 tx_dly_int;
+	u32 rx_int;
+	u32 tx_int;
 	u32 checksum_bit;
 	u32 tx_udf_bit;
 };

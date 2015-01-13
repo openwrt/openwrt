@@ -140,54 +140,6 @@ static void fe_get_ringparam(struct net_device *dev,
 	ring->tx_pending = NUM_DMA_DESC;
 }
 
-static int fe_get_coalesce(struct net_device *dev,
-		struct ethtool_coalesce *coal)
-{
-        u32 delay_cfg = fe_reg_r32(FE_REG_DLY_INT_CFG);
-
-        coal->rx_coalesce_usecs = (delay_cfg & 0xff) * FE_DELAY_TIME;
-        coal->rx_max_coalesced_frames = ((delay_cfg >> 8) & 0x7f);
-        coal->use_adaptive_rx_coalesce = (delay_cfg >> 15) & 0x1;
-
-        coal->tx_coalesce_usecs = ((delay_cfg >> 16 )& 0xff) * FE_DELAY_TIME;
-        coal->tx_max_coalesced_frames = ((delay_cfg >> 24) & 0x7f);
-        coal->use_adaptive_tx_coalesce = (delay_cfg >> 31) & 0x1;
-
-        return 0;
-}
-
-static int fe_set_coalesce(struct net_device *dev,
-		struct ethtool_coalesce *coal)
-{
-	u32 delay_cfg;
-	u32 rx_usecs, tx_usecs;
-	u32 rx_frames, tx_frames;
-
-	if (!coal->use_adaptive_rx_coalesce || !coal->use_adaptive_tx_coalesce)
-		return -EINVAL;
-
-	rx_usecs = DIV_ROUND_UP(coal->rx_coalesce_usecs, FE_DELAY_TIME);
-	rx_frames = coal->rx_max_coalesced_frames;
-	tx_usecs = DIV_ROUND_UP(coal->tx_coalesce_usecs, FE_DELAY_TIME);
-	tx_frames = coal->tx_max_coalesced_frames;
-
-	if (((tx_usecs == 0) && (tx_frames ==0)) ||
-			((rx_usecs == 0) && (rx_frames ==0)))
-		return -EINVAL;
-
-	if (rx_usecs > 0xff) rx_usecs = 0xff;
-	if (rx_frames > 0x7f) rx_frames = 0x7f;
-	if (tx_usecs > 0xff) tx_usecs = 0xff;
-	if (tx_frames > 0x7f) tx_frames = 0x7f;
-
-	delay_cfg = ((((FE_DELAY_EN_INT | tx_frames) << 8) | tx_usecs) << 16) |
-		(((FE_DELAY_EN_INT | rx_frames) << 8) | rx_usecs);
-
-	fe_reg_w32(delay_cfg, FE_REG_DLY_INT_CFG);
-
-	return 0;
-}
-
 static void fe_get_strings(struct net_device *dev, u32 stringset, u8 *data)
 {
 	switch (stringset) {
@@ -243,8 +195,6 @@ static struct ethtool_ops fe_ethtool_ops = {
 	.nway_reset		= fe_nway_reset,
 	.get_link		= fe_get_link,
 	.get_ringparam		= fe_get_ringparam,
-	.get_coalesce		= fe_get_coalesce,
-	.set_coalesce		= fe_set_coalesce,
 };
 
 void fe_set_ethtool_ops(struct net_device *netdev)
