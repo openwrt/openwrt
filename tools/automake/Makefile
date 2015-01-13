@@ -18,6 +18,11 @@ include $(INCLUDE_DIR)/host-build.mk
 HOST_CONFIGURE_ARGS += --datarootdir=$(STAGING_DIR_HOST)/share
 HOST_CONFIGURE_VARS += am_cv_prog_PERL_ithreads=no
 
+define Host/Configure
+	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) STAGING_DIR="" ./bootstrap.sh)
+	$(call Host/Configure/Default)
+endef
+
 define Host/Install
 	# remove old automake resources to avoid version conflicts
 	rm -rf $(STAGING_DIR_HOST)/share/aclocal-[0-9]*
