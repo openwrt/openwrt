@@ -52,6 +52,7 @@ proto_map_setup() {
 		fi
 	fi
 
+	echo "rule=$rule" > /tmp/map-$cfg.rules
 	RULE_DATA=$(mapcalc ${tunlink:-\*} $rule)
 	if [ "$?" != 0 ]; then
 		proto_notify_error "$cfg" "INVALID_MAP_RULE"
@@ -59,6 +60,7 @@ proto_map_setup() {
 		return
 	fi
 
+	echo "$RULE_DATA" >> /tmp/map-$cfg.rules
 	eval $RULE_DATA
 	
 	if [ -z "$RULE_BMR" ]; then
@@ -188,6 +190,7 @@ proto_map_setup() {
 proto_map_teardown() {
 	local cfg="$1"
 	ifdown "${cfg}_local"
+	rm -f /tmp/map-$cfg.rules
 }
 
 proto_map_init_config() {
