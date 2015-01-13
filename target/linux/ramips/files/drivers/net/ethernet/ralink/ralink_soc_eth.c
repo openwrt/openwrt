@@ -842,8 +842,8 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	u32 tx_intr, rx_intr;
 
 	status = fe_reg_r32(FE_REG_FE_INT_STATUS);
-	tx_intr = priv->soc->tx_dly_int;
-	rx_intr = priv->soc->rx_dly_int;
+	tx_intr = priv->soc->tx_int;
+	rx_intr = priv->soc->rx_int;
 	tx_done = rx_done = 0;
 
 poll_again:
@@ -907,16 +907,16 @@ static void fe_tx_timeout(struct net_device *dev)
 static irqreturn_t fe_handle_irq(int irq, void *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	u32 status, dly_int;
+	u32 status, int_mask;
 
 	status = fe_reg_r32(FE_REG_FE_INT_STATUS);
 
 	if (unlikely(!status))
 		return IRQ_NONE;
 
-	dly_int = (priv->soc->rx_dly_int | priv->soc->tx_dly_int);
-	if (likely(status & dly_int)) {
-		fe_int_disable(dly_int);
+	int_mask = (priv->soc->rx_int | priv->soc->tx_int);
+	if (likely(status & int_mask)) {
+		fe_int_disable(int_mask);
 		napi_schedule(&priv->rx_napi);
 	} else {
 		fe_reg_w32(status, FE_REG_FE_INT_STATUS);
@@ -929,11 +929,11 @@ static irqreturn_t fe_handle_irq(int irq, void *dev)
 static void fe_poll_controller(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
-	u32 dly_int = priv->soc->tx_dly_int | priv->soc->rx_dly_int;
+	u32 int_mask = priv->soc->tx_int | priv->soc->rx_int;
 
-	fe_int_disable(dly_int);
+	fe_int_disable(int_mask);
 	fe_handle_irq(dev->irq, dev);
-	fe_int_enable(dly_int);
+	fe_int_enable(int_mask);
 }
 #endif
 
@@ -1018,9 +1018,7 @@ static int fe_hw_init(struct net_device *dev)
 	else
 		fe_hw_set_macaddr(priv, dev->dev_addr);
 
-	fe_reg_w32(FE_DELAY_INIT, FE_REG_DLY_INT_CFG);
-
-	fe_int_disable(priv->soc->tx_dly_int | priv->soc->rx_dly_int);
+	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
 
         /* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
 	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
@@ -1068,7 +1066,7 @@ static int fe_open(struct net_device *dev)
 		netif_carrier_on(dev);
 
 	netif_start_queue(dev);
-	fe_int_enable(priv->soc->tx_dly_int | priv->soc->rx_dly_int);
+	fe_int_enable(priv->soc->tx_int | priv->soc->rx_int);
 
 	return 0;
 
@@ -1083,7 +1081,7 @@ static int fe_stop(struct net_device *dev)
 	unsigned long flags;
 	int i;
 
-	fe_int_disable(priv->soc->tx_dly_int | priv->soc->rx_dly_int);
+	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
 
 	netif_tx_disable(dev);
 
