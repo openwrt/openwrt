@@ -36,7 +36,7 @@ define Package/mdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mdns $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/mdns.init $(1)/etc/init.d/mdns
-	$(INSTALL_BIN) ./files/mdns.config $(1)/etc/config/mdns
+	$(INSTALL_CONF) ./files/mdns.config $(1)/etc/config/mdns
 endef
 
 $(eval $(call BuildPackage,mdns))
