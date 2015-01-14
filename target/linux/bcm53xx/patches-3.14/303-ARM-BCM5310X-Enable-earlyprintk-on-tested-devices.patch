@@ -1,0 +1,71 @@
+From eb1075cc48d3c315c7403822c33da9588ab76492 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 14 Jan 2015 08:33:25 +0100
+Subject: [PATCH] ARM: BCM5310X: Enable earlyprintk on tested devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  | 2 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts        | 2 +-
+ arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts        | 2 +-
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+index 5fc0fae..fcb17c6 100644
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -16,7 +16,7 @@
+ 	model = "Buffalo WZR-1750DHP (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+index 4ed7de1..05e80b1 100644
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -16,7 +16,7 @@
+ 	model = "Netgear R6250 V1 (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+index fb76378..5dc50e1 100644
+--- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+@@ -16,7 +16,7 @@
+ 	model = "Asus RT-N18U (BCM47081)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+index bbb414f..20903a5 100644
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -16,7 +16,7 @@
+ 	model = "Buffalo WZR-600DHP2 (BCM47081)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+-- 
+1.8.4.5
+
