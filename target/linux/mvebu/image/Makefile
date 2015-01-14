@@ -44,7 +44,7 @@ define Image/BuildKernel
 endef
 
 define Image/Build/squashfs
-	$(STAGING_DIR_HOST)/bin/padjffs2 $(KDIR)/root.squashfs 128
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$(foreach nandboard,$(NANDBOARDS),$(call Image/Build/UbinizeImage,$(nandboard),,squashfs,$(UBI_OPTS));)
 	( \
 		dd if=$(KDIR)/uImage-armada-xp-mamba bs=3072k conv=sync; \
