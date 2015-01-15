@@ -153,10 +153,61 @@
 				};
 
 				tlc59116@68 {
+					#address-cells = <1>;
+					#size-cells = <0>;
 					#gpio-cells = <2>;
-					compatible = "gpio,tlc59116";
+					compatible = "ti,tlc59116";
 					reg = <0x68>;
-					gpio-controller;
+
+					wan_amber@0 {
+						label = "mamba:amber:wan";
+							reg = <0x0>;
+					};
+
+					wan_white@1 {
+						label = "mamba:white:wan";
+							reg = <0x1>;
+					};
+
+					wlan_2g@2 {
+						label = "mamba:white:wlan_2g";
+							reg = <0x2>;
+					};
+
+					wlan_5g@3 {
+						label = "mamba:white:wlan_5g";
+							reg = <0x3>;
+					};
+
+					esata@4 {
+						label = "mamba:white:esata";
+							reg = <0x4>;
+					};
+
+					usb2@5 {
+						label = "mamba:white:usb2";
+							reg = <0x5>;
+					};
+
+					usb3_1@6 {
+						label = "mamba:white:usb3_1";
+							reg = <0x6>;
+					};
+
+					usb3_2@7 {
+						label = "mamba:white:usb3_2";
+							reg = <0x7>;
+					};
+
+					wps_white@8 {
+						label = "mamba:white:wps";
+							reg = <0x8>;
+					};
+
+					wps_amber@9 {
+						label = "mamba:amber:wps";
+							reg = <0x9>;
+					};
 				};
 			};
 
