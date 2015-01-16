@@ -10,9 +10,9 @@ board=$(mvebu_board_name)
 
 case "$board" in
 armada-xp-mamba)
-	ucidef_set_led_netdev "wan" "WAN" "tlc59116:1" "eth1"
-	ucidef_set_led_usbdev "usb1" "USB1" "tlc59116:5" "1-1"
-	ucidef_set_led_usbdev "usb2" "USB2" "tlc59116:6" "2-2"
+	ucidef_set_led_netdev "wan" "WAN" "mamba:white:wan" "eth1"
+	ucidef_set_led_usbdev "usb2" "USB2" "mamba:white:usb2" "1-1"
+	ucidef_set_led_usbdev "usb3" "USB3" "mamba:white:usb3_1" "2-2"
 	;;
 
 esac
