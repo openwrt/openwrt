@@ -1,0 +1,132 @@
+From 8d602dd0f984e8488ab891344ebdb6e1f3128c4a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 3 Sep 2014 22:51:06 +0200
+Subject: [PATCH 154/158] MIPS: BCM47XX: Get rid of calls to KSEG1ADDR
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We should be using ioremap_nocache helper which handles remaps in a
+smarter way.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Cc: linux-mips@linux-mips.org
+Cc: Hauke Mehrtens <hauke@hauke-m.de>
+Patchwork: http://patchwork.linux-mips.org/patch/7611/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/bcm47xx/nvram.c | 44 ++++++++++++++++++++++++++++++++------------
+ 1 file changed, 32 insertions(+), 12 deletions(-)
+
+diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
+index 2bed73a..e07976b 100644
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -23,13 +23,13 @@
+ static char nvram_buf[NVRAM_SPACE];
+ static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
+ 
+-static u32 find_nvram_size(u32 end)
++static u32 find_nvram_size(void __iomem *end)
+ {
+-	struct nvram_header *header;
++	struct nvram_header __iomem *header;
+ 	int i;
+ 
+ 	for (i = 0; i < ARRAY_SIZE(nvram_sizes); i++) {
+-		header = (struct nvram_header *)KSEG1ADDR(end - nvram_sizes[i]);
++		header = (struct nvram_header *)(end - nvram_sizes[i]);
+ 		if (header->magic == NVRAM_HEADER)
+ 			return nvram_sizes[i];
+ 	}
+@@ -38,35 +38,39 @@ static u32 find_nvram_size(u32 end)
+ }
+ 
+ /* Probe for NVRAM header */
+-static int nvram_find_and_copy(u32 base, u32 lim)
++static int nvram_find_and_copy(void __iomem *iobase, u32 lim)
+ {
+-	struct nvram_header *header;
++	struct nvram_header __iomem *header;
+ 	int i;
+ 	u32 off;
+ 	u32 *src, *dst;
+ 	u32 size;
+ 
++	if (nvram_buf[0]) {
++		pr_warn("nvram already initialized\n");
++		return -EEXIST;
++	}
++
+ 	/* TODO: when nvram is on nand flash check for bad blocks first. */
+ 	off = FLASH_MIN;
+ 	while (off <= lim) {
+ 		/* Windowed flash access */
+-		size = find_nvram_size(base + off);
++		size = find_nvram_size(iobase + off);
+ 		if (size) {
+-			header = (struct nvram_header *)KSEG1ADDR(base + off -
+-								  size);
++			header = (struct nvram_header *)(iobase + off - size);
+ 			goto found;
+ 		}
+ 		off <<= 1;
+ 	}
+ 
+ 	/* Try embedded NVRAM at 4 KB and 1 KB as last resorts */
+-	header = (struct nvram_header *) KSEG1ADDR(base + 4096);
++	header = (struct nvram_header *)(iobase + 4096);
+ 	if (header->magic == NVRAM_HEADER) {
+ 		size = NVRAM_SPACE;
+ 		goto found;
+ 	}
+ 
+-	header = (struct nvram_header *) KSEG1ADDR(base + 1024);
++	header = (struct nvram_header *)(iobase + 1024);
+ 	if (header->magic == NVRAM_HEADER) {
+ 		size = NVRAM_SPACE;
+ 		goto found;
+@@ -94,6 +98,22 @@ found:
+ 	return 0;
+ }
+ 
++static int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
++{
++	void __iomem *iobase;
++	int err;
++
++	iobase = ioremap_nocache(base, lim);
++	if (!iobase)
++		return -ENOMEM;
++
++	err = nvram_find_and_copy(iobase, lim);
++
++	iounmap(iobase);
++
++	return err;
++}
++
+ #ifdef CONFIG_BCM47XX_SSB
+ static int nvram_init_ssb(void)
+ {
+@@ -109,7 +129,7 @@ static int nvram_init_ssb(void)
+ 		return -ENXIO;
+ 	}
+ 
+-	return nvram_find_and_copy(base, lim);
++	return bcm47xx_nvram_init_from_mem(base, lim);
+ }
+ #endif
+ 
+@@ -139,7 +159,7 @@ static int nvram_init_bcma(void)
+ 		return -ENXIO;
+ 	}
+ 
+-	return nvram_find_and_copy(base, lim);
++	return bcm47xx_nvram_init_from_mem(base, lim);
+ }
+ #endif
+ 
+-- 
+1.8.4.5
+

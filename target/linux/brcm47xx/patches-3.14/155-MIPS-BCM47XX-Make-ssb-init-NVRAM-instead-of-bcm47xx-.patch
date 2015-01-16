@@ -1,0 +1,133 @@
+From 21400f252a97755579b43a4dc95dd02cd7f0ca75 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 3 Sep 2014 22:59:45 +0200
+Subject: [PATCH 155/158] MIPS: BCM47XX: Make ssb init NVRAM instead of bcm47xx
+ polling it
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This makes NVRAM code less bcm47xx/ssb specific allowing it to become a
+standalone driver in the future. A similar patch for bcma will follow
+when it's ready.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: linux-mips@linux-mips.org
+Patchwork: https://patchwork.linux-mips.org/patch/7612/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/bcm47xx/nvram.c                          | 30 +++++++---------------
+ arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h |  1 +
+ drivers/ssb/driver_mipscore.c                      | 14 +++++++++-
+ 3 files changed, 23 insertions(+), 22 deletions(-)
+
+diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
+index e07976b..fecc5ae 100644
+--- a/arch/mips/bcm47xx/nvram.c
++++ b/arch/mips/bcm47xx/nvram.c
+@@ -98,7 +98,14 @@ found:
+ 	return 0;
+ }
+ 
+-static int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
++/*
++ * On bcm47xx we need access to the NVRAM very early, so we can't use mtd
++ * subsystem to access flash. We can't even use platform device / driver to
++ * store memory offset.
++ * To handle this we provide following symbol. It's supposed to be called as
++ * soon as we get info about flash device, before any NVRAM entry is needed.
++ */
++int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
+ {
+ 	void __iomem *iobase;
+ 	int err;
+@@ -114,25 +121,6 @@ static int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
+ 	return err;
+ }
+ 
+-#ifdef CONFIG_BCM47XX_SSB
+-static int nvram_init_ssb(void)
+-{
+-	struct ssb_mipscore *mcore = &bcm47xx_bus.ssb.mipscore;
+-	u32 base;
+-	u32 lim;
+-
+-	if (mcore->pflash.present) {
+-		base = mcore->pflash.window;
+-		lim = mcore->pflash.window_size;
+-	} else {
+-		pr_err("Couldn't find supported flash memory\n");
+-		return -ENXIO;
+-	}
+-
+-	return bcm47xx_nvram_init_from_mem(base, lim);
+-}
+-#endif
+-
+ #ifdef CONFIG_BCM47XX_BCMA
+ static int nvram_init_bcma(void)
+ {
+@@ -168,7 +156,7 @@ static int nvram_init(void)
+ 	switch (bcm47xx_bus_type) {
+ #ifdef CONFIG_BCM47XX_SSB
+ 	case BCM47XX_BUS_TYPE_SSB:
+-		return nvram_init_ssb();
++		break;
+ #endif
+ #ifdef CONFIG_BCM47XX_BCMA
+ 	case BCM47XX_BUS_TYPE_BCMA:
+diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
+index 36a3fc1..676be22 100644
+--- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
++++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
+@@ -32,6 +32,7 @@ struct nvram_header {
+ #define NVRAM_MAX_VALUE_LEN 255
+ #define NVRAM_MAX_PARAM_LEN 64
+ 
++int bcm47xx_nvram_init_from_mem(u32 base, u32 lim);
+ extern int bcm47xx_nvram_getenv(char *name, char *val, size_t val_len);
+ 
+ static inline void bcm47xx_nvram_parse_macaddr(char *buf, u8 macaddr[6])
+diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
+index 0907706..7b986f9 100644
+--- a/drivers/ssb/driver_mipscore.c
++++ b/drivers/ssb/driver_mipscore.c
+@@ -15,6 +15,9 @@
+ #include <linux/serial_core.h>
+ #include <linux/serial_reg.h>
+ #include <linux/time.h>
++#ifdef CONFIG_BCM47XX
++#include <bcm47xx_nvram.h>
++#endif
+ 
+ #include "ssb_private.h"
+ 
+@@ -210,6 +213,7 @@ static void ssb_mips_serial_init(struct ssb_mipscore *mcore)
+ static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
+ {
+ 	struct ssb_bus *bus = mcore->dev->bus;
++	struct ssb_sflash *sflash = &mcore->sflash;
+ 	struct ssb_pflash *pflash = &mcore->pflash;
+ 
+ 	/* When there is no chipcommon on the bus there is 4MB flash */
+@@ -242,7 +246,15 @@ static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
+ 	}
+ 
+ ssb_pflash:
+-	if (pflash->present) {
++	if (sflash->present) {
++#ifdef CONFIG_BCM47XX
++		bcm47xx_nvram_init_from_mem(sflash->window, sflash->size);
++#endif
++	} else if (pflash->present) {
++#ifdef CONFIG_BCM47XX
++		bcm47xx_nvram_init_from_mem(pflash->window, pflash->window_size);
++#endif
++
+ 		ssb_pflash_data.width = pflash->buswidth;
+ 		ssb_pflash_resource.start = pflash->window;
+ 		ssb_pflash_resource.end = pflash->window + pflash->window_size;
+-- 
+1.8.4.5
+
