@@ -127,6 +127,7 @@ dnsmasq() {
 	append_bool "$cfg" nonwildcard "--bind-interfaces"
 	append_bool "$cfg" fqdn "--dhcp-fqdn"
 	append_bool "$cfg" proxydnssec "--proxy-dnssec"
+	append_bool "$cfg" localservice "--local-service"
 
 	append_parm "$cfg" dhcpscript "--dhcp-script"
 	append_parm "$cfg" cachesize "--cache-size"
