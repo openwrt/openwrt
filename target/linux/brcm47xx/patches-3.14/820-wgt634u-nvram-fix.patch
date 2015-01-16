@@ -251,17 +251,17 @@ out the configuration than the in kernel cfe config reader.
 +static int cfe_env;
 +extern char *cfe_env_get(char *nv_buf, const char *name);
  
- static u32 find_nvram_size(u32 end)
+ static u32 find_nvram_size(void __iomem *end)
  {
-@@ -46,6 +48,26 @@ static int nvram_find_and_copy(u32 base,
- 	u32 *src, *dst;
- 	u32 size;
+@@ -51,6 +53,26 @@ static int nvram_find_and_copy(void __io
+ 		return -EEXIST;
+ 	}
  
 +	cfe_env = 0;
 +
 +	/* XXX: hack for supporting the CFE environment stuff on WGT634U */
 +	if (lim >= 8 * 1024 * 1024) {
-+		src = (u32 *) KSEG1ADDR(base + 8 * 1024 * 1024 - 0x2000);
++		src = (u32 *) iobase + 8 * 1024 * 1024 - 0x2000;
 +		dst = (u32 *) nvram_buf;
 +
 +		if ((*src & 0xff00ff) == 0x000001) {
@@ -280,7 +280,7 @@ out the configuration than the in kernel cfe config reader.
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -172,6 +194,13 @@ int bcm47xx_nvram_getenv(char *name, cha
+@@ -142,6 +164,13 @@ int bcm47xx_nvram_getenv(char *name, cha
  			return err;
  	}
  
