@@ -37,6 +37,7 @@ PKG_CONFIG_DEPENDS := \
   LIBCURL_GNUTLS \
   LIBCURL_GOPHER \
   LIBCURL_HTTP \
+  LIBCURL_HTTPS \
   LIBCURL_IMAP \
   LIBCURL_LDAP \
   LIBCURL_LDAPS \
@@ -113,6 +114,7 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LIBCURL_GOPHER),--enable,--disable)-gopher \
 	$(if $(CONFIG_LIBCURL_GNUTLS),--with-gnutls="$(STAGING_DIR)/usr",--without-gnutls) \
 	$(if $(CONFIG_LIBCURL_HTTP),--enable,--disable)-http \
+	$(if $(CONFIG_LIBCURL_HTTPS),--enable,--disable)-https \
 	$(if $(CONFIG_LIBCURL_IMAP),--enable,--disable)-imap \
 	$(if $(CONFIG_LIBCURL_LDAP),--enable,--disable)-ldap \
 	$(if $(CONFIG_LIBCURL_LDAPS),--enable,--disable)-ldaps \
