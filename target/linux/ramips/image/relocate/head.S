@@ -1,4 +1,10 @@
 /*
+ * Kernel relocation stub for MIPS devices
+ *
+ * Copyright (C) 2015 Felix Fietkau <nbd@openwrt.org>
+ *
+ * Based on:
+ *
  * LZMA compressed kernel loader for Atheros AR7XXX/AR9XXX based boards
  *
  * Copyright (C) 2011 Gabor Juhos <juhosg@openwrt.org>
