@@ -10,30 +10,30 @@ board=$(kirkwood_board_name)
 
 case "$board" in
 "dockstar")
-	ucidef_set_led_default "health" "status:green:health" "1"
-	ucidef_set_led_default "fault" "status:orange:fault" "1"
+	ucidef_set_led_default "health" "health" "status:green:health" "1"
+	ucidef_set_led_default "fault" "fault" "status:orange:fault" "1"
 	;;
 "ea3500")
-	ucidef_set_led_default "power" "ea3500:green:power" "1"
+	ucidef_set_led_default "power" "power" "ea3500:green:power" "1"
 	;;
 "ea4500")
-	ucidef_set_led_default "health" "ea4500:white:health" "1"
-	ucidef_set_led_default "pulse" "ea4500:white:pulse" "1"
+	ucidef_set_led_default "health" "health" "ea4500:white:health" "1"
+	ucidef_set_led_default "pulse" "pulse" "ea4500:white:pulse" "1"
 	;;
 "ib62x0")
-	ucidef_set_led_default "health" "ib62x0:green:os" "1"
-	ucidef_set_led_default "fault" "ib62x0:red:os" "1"
+	ucidef_set_led_default "health" "health" "ib62x0:green:os" "1"
+	ucidef_set_led_default "fault" "fault" "ib62x0:red:os" "1"
 	;;
 "pogo_e02")
-	ucidef_set_led_default "health" "status:green:health" "1"
-	ucidef_set_led_default "fault" "status:orange:fault" "1"
+	ucidef_set_led_default "health" "health" "status:green:health" "1"
+	ucidef_set_led_default "fault" "fault" "status:orange:fault" "1"
 	;;
 "guruplug-server-plus")
-	ucidef_set_led_timer "health" "guruplug:red:health" "200" "800"
+	ucidef_set_led_timer "health" "health" "guruplug:red:health" "200" "800"
 	;;
 "sheevaplug" | \
 "sheevaplug-esata")
-	ucidef_set_led_timer "health" "sheevaplug:blue:health" "200" "800"
+	ucidef_set_led_timer "health" "health" "sheevaplug:blue:health" "200" "800"
 	;;
 *)
 	;;
