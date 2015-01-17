@@ -1,6 +1,6 @@
 --- a/ip/Makefile
 +++ b/ip/Makefile
-@@ -15,6 +15,13 @@ ifeq ($(IP_CONFIG_SETNS),y)
+@@ -16,6 +16,13 @@ ifeq ($(IP_CONFIG_SETNS),y)
  	CFLAGS += -DHAVE_SETNS
  endif
  
@@ -14,7 +14,7 @@
  ALLOBJ=$(IPOBJ) $(RTMONOBJ)
  SCRIPTS=ifcfg rtpr routel routef
  TARGETS=ip rtmon
-@@ -42,7 +49,7 @@ else
+@@ -43,7 +50,7 @@ else
  
  ip: static-syms.o
  static-syms.o: static-syms.h
@@ -25,7 +25,7 @@
  		sed -n '/'$$s'[^ ]* =/{s:.* \([^ ]*'$$s'[^ ]*\) .*:extern char \1[] __attribute__((weak)); if (!strcmp(sym, "\1")) return \1;:;p}' $$files ; \
 --- a/ip/ip.c
 +++ b/ip/ip.c
-@@ -66,29 +66,41 @@ static const struct cmd {
+@@ -69,30 +69,42 @@ static const struct cmd {
  	int (*func)(int argc, char **argv);
  } cmds[] = {
  	{ "address",	do_ipaddr },
@@ -44,6 +44,7 @@
  	{ "link",	do_iplink },
 +#ifndef IPROUTE2_TINY
  	{ "l2tp",	do_ipl2tp },
+	{ "fou",	do_ipfou },
 +#endif
  	{ "tunnel",	do_iptunnel },
  	{ "tunl",	do_iptunnel },
@@ -69,7 +70,7 @@
  };
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -627,6 +627,7 @@ const char *rt_addr_n2a(int af, int len,
+@@ -629,6 +629,7 @@ const char *rt_addr_n2a(int af, const vo
  	case AF_INET:
  	case AF_INET6:
  		return inet_ntop(af, addr, buf, buflen);
@@ -77,7 +78,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -635,6 +636,7 @@ const char *rt_addr_n2a(int af, int len,
+@@ -637,6 +638,7 @@ const char *rt_addr_n2a(int af, const vo
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
@@ -85,7 +86,7 @@
  	default:
  		return "???";
  	}
-@@ -710,6 +712,7 @@ const char *format_host(int af, int len,
+@@ -712,6 +714,7 @@ const char *format_host(int af, int len,
  			case AF_INET6:
  				len = 16;
  				break;
@@ -93,7 +94,7 @@
  			case AF_IPX:
  				len = 10;
  				break;
-@@ -720,6 +723,7 @@ const char *format_host(int af, int len,
+@@ -722,6 +725,7 @@ const char *format_host(int af, int len,
  				len = 2;
  				break;
  #endif
