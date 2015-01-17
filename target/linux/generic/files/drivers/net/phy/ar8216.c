@@ -1277,7 +1277,7 @@ unlock:
 	return ret;
 }
 
-static struct switch_attr ar8xxx_sw_attr_globals[] = {
+static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
@@ -1326,7 +1326,7 @@ static struct switch_attr ar8xxx_sw_attr_globals[] = {
  	},
 };
 
-struct switch_attr ar8xxx_sw_attr_port[2] = {
+const struct switch_attr ar8xxx_sw_attr_port[2] = {
 	{
 		.type = SWITCH_TYPE_NOVAL,
 		.name = "reset_mib",
@@ -1342,7 +1342,7 @@ struct switch_attr ar8xxx_sw_attr_port[2] = {
 	},
 };
 
-struct switch_attr ar8xxx_sw_attr_vlan[1] = {
+const struct switch_attr ar8xxx_sw_attr_vlan[1] = {
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "vid",
