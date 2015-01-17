@@ -37,6 +37,13 @@ VGV7519)
 	ucidef_set_led_netdev "internet_yellow" "internet_yellow" "internet_yellow" "nas0"
 	ucidef_set_led_netdev "broadband_yellow" "broadband_yellow" "broadband_yellow" "pppoe-wan"
 	;;
+P2812HNUF*)
+	ucidef_set_led_default "power" "power" "power" "0"
+	ucidef_set_led_default "power2" "power2" "power2" "1"
+	ucidef_set_led_wlan "wireless_green" "wireless_green" "wireless_green" "phy0radio"
+	ucidef_set_led_netdev "dsl" "dsl" "dsl" "nas0"
+	ucidef_set_led_netdev "internet_green" "internet_green" "internet_green" "pppoe-wan"
+	;;
 *)
 	;;
 esac
