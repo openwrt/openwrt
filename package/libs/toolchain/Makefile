@@ -604,6 +604,15 @@ else
 	exit 0
   endef
 
+  define Package/libatomic/install
+	for file in $(call qstrip,$(CONFIG_LIBATOMIC_FILE_SPEC)); do \
+		dir=`dirname $$$$file` ; \
+		$(INSTALL_DIR) $(1)/$$$$dir ; \
+		$(CP) $(call qstrip,$(CONFIG_LIBATOMIC_ROOT_DIR))/$$$$file $(1)/$$$$dir/ ; \
+	done ; \
+	exit 0
+  endef
+
   define Package/ldd/install
 	for file in $(call qstrip,$(CONFIG_LDD_FILE_SPEC)); do \
 		dir=`dirname $$$$file` ; \
