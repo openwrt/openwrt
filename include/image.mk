@@ -307,6 +307,17 @@ define Build/pad-rootfs
 	$(call prepare_generic_squashfs,$@)
 endef
 
+define Build/pad-offset
+	let \
+		size="$$(stat -c%s $@)" \
+		pad="$(word 1, $(1))" \
+		offset="$(word 2, $(1))" \
+		pad="(pad - ((size + offset) % pad)) % pad" \
+		newsize='size + pad'; \
+		dd if=$@ of=$@.new bs=$$newsize count=1 conv=sync
+	mv $@.new $@
+endef
+
 define Build/check-size
 	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -gt "$$(stat -c%s $@)" ] || { \
 		echo "WARNING: Image file $@ is too big"; \
