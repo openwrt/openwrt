@@ -568,6 +568,9 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	/* store skb to cleanup */
 	priv->tx_skb[j] = skb;
 
+	netdev_sent_queue(dev, skb->len);
+	skb_tx_timestamp(skb);
+
 	wmb();
 	j = NEXT_TX_DESP_IDX(j);
 	fe_reg_w32(j, FE_REG_TX_CTX_IDX0);
@@ -646,6 +649,7 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct net_device_stats *stats = &dev->stats;
 	u32 tx;
 	int tx_num;
+	int len = skb->len;
 
 	if (fe_skb_padto(skb, priv)) {
 		netif_warn(priv, tx_err, dev, "tx padding failed!\n");
@@ -669,11 +673,8 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 		stats->tx_dropped++;
 	} else {
-		netdev_sent_queue(dev, skb->len);
-		skb_tx_timestamp(skb);
-
 		stats->tx_packets++;
-		stats->tx_bytes += skb->len;
+		stats->tx_bytes += len;
 	}
 
 	spin_unlock(&priv->page_lock);
