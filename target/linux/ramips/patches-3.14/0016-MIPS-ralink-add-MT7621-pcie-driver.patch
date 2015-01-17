@@ -12,7 +12,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -41,6 +41,7 @@
+@@ -41,6 +41,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-mt7621.c
-@@ -0,0 +1,791 @@
+@@ -0,0 +1,813 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -71,11 +71,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/version.h>
 +#include <asm/pci.h>
 +#include <asm/io.h>
-+//#include <asm/mach-ralink/eureka_ep430.h>
 +#include <linux/init.h>
-+#include <linux/mod_devicetable.h>
++#include <linux/module.h>
 +#include <linux/delay.h>
-+//#include <asm/rt2880/surfboardint.h>
++#include <linux/of.h>
++#include <linux/of_pci.h>
++#include <linux/platform_device.h>
 +
 +#include <ralink_regs.h>
 +
@@ -210,10 +211,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define LC_CKDRVPD_			(1<<19)
 +
 +#define MEMORY_BASE 0x0
-+int pcie_link_status = 0;
-+
-+void __inline__ read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long *val);
-+void __inline__ write_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long val);
++static int pcie_link_status = 0;
 +
 +#define PCI_ACCESS_READ_1  0
 +#define PCI_ACCESS_READ_2  1
@@ -334,34 +332,34 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +}
 +
-+struct pci_ops rt2880_pci_ops= {
++struct pci_ops mt7621_pci_ops= {
 +	.read		=  pci_config_read,
 +	.write		= pci_config_write,
 +};
 +
-+static struct resource rt2880_res_pci_mem1 = {
++static struct resource mt7621_res_pci_mem1 = {
 +	.name		= "PCI MEM1",
 +	.start		= RALINK_PCI_MM_MAP_BASE,
 +	.end		= (u32)((RALINK_PCI_MM_MAP_BASE + (unsigned char *)0x0fffffff)),
 +	.flags		= IORESOURCE_MEM,
 +};
-+static struct resource rt2880_res_pci_io1 = {
++static struct resource mt7621_res_pci_io1 = {
 +	.name		= "PCI I/O1",
 +	.start		= RALINK_PCI_IO_MAP_BASE,
 +	.end		= (u32)((RALINK_PCI_IO_MAP_BASE + (unsigned char *)0x0ffff)),
 +	.flags		= IORESOURCE_IO,
 +};
 +
-+struct pci_controller rt2880_controller = {
-+	.pci_ops	= &rt2880_pci_ops,
-+	.mem_resource	= &rt2880_res_pci_mem1,
-+	.io_resource	= &rt2880_res_pci_io1,
++static struct pci_controller mt7621_controller = {
++	.pci_ops	= &mt7621_pci_ops,
++	.mem_resource	= &mt7621_res_pci_mem1,
++	.io_resource	= &mt7621_res_pci_io1,
 +	.mem_offset	= 0x00000000UL,
 +	.io_offset	= 0x00000000UL,
 +	.io_map_base	= 0xa0000000,
 +};
 +
-+void __inline__
++static void
 +read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long *val)
 +{
 +	unsigned int address_reg, data_reg, address;
@@ -374,7 +372,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return;
 +}
 +
-+void __inline__
++static void
 +write_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long val)
 +{
 +	unsigned int address_reg, data_reg, address;
@@ -580,13 +578,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 +}
 +
-+int init_rt2880pci(void)
++static int mt7621_pci_probe(struct platform_device *pdev)
 +{
 +	unsigned long val = 0;
-+       iomem_resource.start = 0;
-+       iomem_resource.end= ~0;
-+       ioport_resource.start= 0;
-+       ioport_resource.end = ~0;
++
++	iomem_resource.start = 0;
++	iomem_resource.end= ~0;
++	ioport_resource.start= 0;
++	ioport_resource.end = ~0;
 +
 +#if defined (CONFIG_PCIE_PORT0)
 +	val = RALINK_PCIE0_RST;
@@ -740,8 +739,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	//printk(" RALINK_PCI_ARBCTL = %x\n", RALINK_PCI_ARBCTL);
 +
 +/*
-+	ioport_resource.start = rt2880_res_pci_io1.start;
-+  	ioport_resource.end = rt2880_res_pci_io1.end;
++	ioport_resource.start = mt7621_res_pci_io1.start;
++  	ioport_resource.end = mt7621_res_pci_io1.end;
 +*/
 +
 +	RALINK_PCI_MEMBASE = 0xffffffff; //RALINK_PCI_MM_MAP_BASE;
@@ -804,13 +803,36 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		val |= 0x50<<8;
 +		write_config(0, 0, 0, 0x70c, val);
 +	}
-+	register_pci_controller(&rt2880_controller);
++
++	pci_load_of_ranges(&mt7621_controller, pdev->dev.of_node);
++	register_pci_controller(&mt7621_controller);
 +	return 0;
 +
 +}
-+arch_initcall(init_rt2880pci);
 +
 +int pcibios_plat_dev_init(struct pci_dev *dev)
 +{
 +	return 0;
 +}
++
++static const struct of_device_id mt7621_pci_ids[] = {
++	{ .compatible = "mediatek,mt7621-pci" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, mt7621_pci_ids);
++
++static struct platform_driver mt7621_pci_driver = {
++	.probe = mt7621_pci_probe,
++	.driver = {
++		.name = "mt7621-pci",
++		.owner = THIS_MODULE,
++		.of_match_table = of_match_ptr(mt7621_pci_ids),
++	},
++};
++
++static int __init mt7621_pci_init(void)
++{
++	return platform_driver_register(&mt7621_pci_driver);
++}
++
++arch_initcall(mt7621_pci_init);
