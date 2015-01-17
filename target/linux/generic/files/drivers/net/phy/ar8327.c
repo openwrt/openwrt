@@ -865,13 +865,11 @@ ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
 		   AR8327_FWD_CTRL0_MIRROR_PORT,
 		   (0xF << AR8327_FWD_CTRL0_MIRROR_PORT_S));
 	for (port = 0; port < AR8327_NUM_PORTS; port++) {
-		ar8xxx_rmw(priv, AR8327_REG_PORT_LOOKUP(port),
-			   AR8327_PORT_LOOKUP_ING_MIRROR_EN,
-			   0);
+		ar8xxx_reg_clear(priv, AR8327_REG_PORT_LOOKUP(port),
+			   AR8327_PORT_LOOKUP_ING_MIRROR_EN);
 
-		ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(port),
-			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN,
-			   0);
+		ar8xxx_reg_clear(priv, AR8327_REG_PORT_HOL_CTRL1(port),
+			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
 	}
 
 	/* now enable mirroring if necessary */
