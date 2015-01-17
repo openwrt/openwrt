@@ -65,6 +65,11 @@ ramips_setup_interfaces()
 		ucidef_set_interface_lan "eth0.1"
 		;;
 
+	m2m)
+		ucidef_add_switch "switch0" "4"
+		ucidef_set_interface_lan "eth0"
+		;;
+
 	wizard8800 | \
 	wl-330n | \
 	wmr300)
