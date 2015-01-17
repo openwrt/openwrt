@@ -79,6 +79,9 @@ get_status_led() {
 	hw550-3g)
 		status_led="hw550-3g:green:status"
 		;;
+	m2m)
+		status_led="m2m:blue:wifi"
+		;;
 	m3)
 		status_led="m3:blue:status"
 		;;

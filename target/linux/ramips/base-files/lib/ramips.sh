@@ -214,6 +214,9 @@ ramips_board_detect() {
 	*"NW718")
 		name="nw718"
 		;;
+	*"Intenso Memory 2 Move")
+		name="m2m"
+		;;
 	*"Omnima EMB HPM")
 		name="omni-emb-hpm"
 		;;

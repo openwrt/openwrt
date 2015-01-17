@@ -152,6 +152,10 @@ case $board in
 	nw718)
 		set_usb_led "nw718:amber:usb"
 		;;
+	m2m)
+		set_wifi_led "m2m:blue:wifi"
+		ucidef_set_led_netdev "eth" "Ethernet" "m2m:green:wan" "eth0"
+		;;
 	omni-emb-hpm)
 		ucidef_set_led_default "power" "POWER" "emb:orange:power" "1"
 		ucidef_set_led_netdev "eth" "ETH" "emb:green:eth" "eth0"
