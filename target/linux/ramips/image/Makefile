@@ -51,6 +51,24 @@ define Build/trx
 		-a 4 -f $(word 2,$^)
 endef
 
+define Build/seama
+	$(STAGING_DIR_HOST)/bin/seama -i $@ $(1)
+	mv $@.seama $@
+endef
+
+define Build/seama-seal
+	$(call Build/seama,-s $@.seama $(1))
+endef
+
+define Build/relocate-kernel
+	( \
+		dd if=$(KDIR)/relocate/loader.bin bs=32 conv=sync && \
+		perl -e '@s = stat("$@"); print pack("V", @s[7])' && \
+		cat $@ \
+	) > $@.new
+	mv $@.new $@
+endef
+
 define MkCombineduImage
 	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt `expr $(4) - 64` ]; then \
@@ -875,7 +893,7 @@ endif
 #
 
 ifeq ($(SUBTARGET),mt7621)
-  TARGET_DEVICES += mt7621 wsr-600 wsr-1166
+  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1
 endif
 
 define Device/mt7621
@@ -890,6 +908,21 @@ endef
 define Device/wsr-1166
   DTS := WSR-1166
   IMAGE/sysupgrade.bin := trx | pad-rootfs
+endef
+
+define Device/dir-860l-b1
+  DTS := DIR-860L-B1
+  IMAGES += factory.bin
+  KERNEL := kernel-bin | patch-dtb | relocate-kernel | lzma | uImage lzma
+  IMAGE/sysupgrade.bin := \
+	append-kernel | pad-offset 65536 64 | append-rootfs | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin := \
+	append-kernel | pad-offset 65536 64 | append-rootfs | pad-rootfs -x 64 | \
+	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
+	check-size $$$$(IMAGE_SIZE) | \
+	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb"
 endef
 
 #
@@ -929,6 +962,14 @@ define Image/Build
 	$(call Image/Build/$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	$(call Image/Build/Profile/$(PROFILE),$(1))
+endef
+endif
+
+ifeq ($(SUBTARGET),mt7621)
+define Build/Compile
+	rm -rf $(KDIR)/relocate
+	$(CP) ./relocate $(KDIR)
+	$(MAKE) -C $(KDIR)/relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
 endef
 endif
 
