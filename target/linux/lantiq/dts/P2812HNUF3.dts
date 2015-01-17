@@ -1,0 +1,109 @@
+/dts-v1/;
+
+/include/ "P2812HNUFX.dtsi"
+
+/ {
+	model = "P2812HNUF3 - ZyXEL P-2812HNU-F3";
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x800000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x0 0x50000>;
+					read-only;
+				};
+				partition@50000 {
+					label = "uboot-env";
+					reg = <0x50000 0x10000>;
+				};
+				partition@60000 {
+					label = "unused";
+					reg = <0x60000 0x7a0000>;
+				};
+			};
+
+			nand-parts@0 {
+				compatible = "gen_nand", "lantiq,nand-xway";
+				lantiq,cs = <1>;
+				bank-width = <2>;
+				reg = <1 0x0 0x2000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@0 {
+					label = "kernel";
+					reg = <0x0 0x200000>;
+				};
+				partition@200000 {
+					label = "ubi";
+					reg = <0x200000 0x7e00000>;
+				};
+			};
+		};
+	};
+
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT3092.eeprom";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		internet2 {
+			label = "internet2";
+			gpios = <&stp 16 1>;
+		};
+		internet {
+			label = "internet";
+			gpios = <&stp 17 1>;
+		};
+		dsl {
+			label = "dsl";
+			gpios = <&stp 18 1>;
+		};
+		dsl2 {
+			label = "dsl2";
+			gpios = <&stp 19 1>;
+		};
+		wireless_red {
+			label = "wireless_red";
+			gpios = <&stp 20 1>;
+		};
+		wireless_green {
+			label = "wireless_green";
+			gpios = <&stp 21 1>;
+		};
+		power2 {
+			label = "power2";
+			gpios = <&stp 22 1>;
+		};
+		power {
+			label = "power";
+			gpios = <&stp 23 1>;
+		};
+		phone1 {
+			label = "phone1";
+			gpios = <&gpio 11 1>;
+		};
+		phone1warn {
+			label = "phone1warn";
+			gpios = <&gpio 12 1>;
+		};
+		phone2 {
+			label = "phone2";
+			gpios = <&gpio 28 1>;
+		};
+		phone2warn {
+			label = "phone2warn";
+			gpios = <&gpio 26 1>;
+		};
+	};
+};
