@@ -274,4 +274,53 @@
 		interrupt-parent = <&gic>;
 		interrupts = <23>; 
 	};
+
+	pcie@1e140000 {
+		compatible = "mediatek,mt7621-pci";
+		reg = <0x1e140000 0x100
+			0x1e142000 0x100>;
+
+		#address-cells = <3>;
+		#size-cells = <2>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&pcie_pins>;
+
+		device_type = "pci";
+
+		bus-range = <0 255>;
+		ranges = <
+			0x02000000 0 0x00000000 0x60000000 0 0x10000000 /* pci memory */
+			0x01000000 0 0x00000000 0x1e160000 0 0x00010000 /* io space */
+		>;
+
+		status = "okay";
+
+		pcie0 {
+			reg = <0x0000 0 0 0 0>;
+
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+		};
+
+		pcie1 {
+			reg = <0x0800 0 0 0 0>;
+
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+		};
+
+		pcie2 {
+			reg = <0x1000 0 0 0 0>;
+
+			#address-cells = <3>;
+			#size-cells = <2>;
+
+			device_type = "pci";
+		};
+	};
 };
