@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2014 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=3.17.0
+PKG_VERSION:=3.18.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
-PKG_MD5SUM:=b741a02c6dda5818d18011d572874493
+PKG_MD5SUM:=6f6ad51a00007880460e103367b16057
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0
 
