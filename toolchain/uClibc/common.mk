@@ -80,6 +80,7 @@ define Host/Configure
 		-e 's,^.*UCLIBC_HAS_SHADOW.*,UCLIBC_HAS_SHADOW=$(if $(CONFIG_SHADOW_PASSWORDS),y,n),g' \
 		-e 's,^.*UCLIBC_HAS_LOCALE.*,UCLIBC_HAS_LOCALE=$(if $(CONFIG_BUILD_NLS),y,n),g' \
 		-e 's,^.*UCLIBC_BUILD_ALL_LOCALE.*,UCLIBC_BUILD_ALL_LOCALE=$(if $(CONFIG_BUILD_NLS),y,n),g' \
+		-e 's,^.*UCLIBC_HAS_SSP.*,UCLIBC_HAS_SSP=$(if $(or $(CONFIG_PKG_CC_STACKPROTECTOR_REGULAR),$(CONFIG_PKG_CC_STACKPROTECTOR_STRONG)),y,n),g' \
 		$(HOST_BUILD_DIR)/.config.new
 	cmp -s $(HOST_BUILD_DIR)/.config.new $(HOST_BUILD_DIR)/.config.last || { \
 		cp $(HOST_BUILD_DIR)/.config.new $(HOST_BUILD_DIR)/.config && \

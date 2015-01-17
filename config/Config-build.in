@@ -97,15 +97,6 @@ menu "Global build settings"
 
 		  If you are unsure, select N.
 
-	config PKG_CHECK_FORMAT_SECURITY
-		bool
-		prompt "Enable gcc format-security"
-		default n
-		help
-		  Add -Wformat -Werror=format-security to the CFLAGS.  You can disable
-		  this per package by adding PKG_CHECK_FORMAT_SECURITY:=0 in the package
-		  Makefile.
-
 	config PKG_BUILD_USE_JOBSERVER
 		bool
 		prompt "Use top-level make jobserver for packages"
@@ -214,6 +205,85 @@ menu "Global build settings"
 
 		config USE_LIBSTDCXX
 			bool "libstdc++"
+	endchoice
+
+	comment "Hardening build options"
+
+	config PKG_CHECK_FORMAT_SECURITY
+		bool
+		prompt "Enable gcc format-security"
+		default n
+		help
+		  Add -Wformat -Werror=format-security to the CFLAGS.  You can disable
+		  this per package by adding PKG_CHECK_FORMAT_SECURITY:=0 in the package
+		  Makefile.
+
+	choice
+		prompt "User space Stack-Smashing Protection"
+		default PKG_CC_STACKPROTECTOR_NONE
+		help
+		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
+		config PKG_CC_STACKPROTECTOR_NONE
+			bool "None"
+		config PKG_CC_STACKPROTECTOR_REGULAR
+			bool "Regular"
+			select SSP_SUPPORT
+			depends on KERNEL_CC_STACKPROTECTOR_REGULAR
+		config PKG_CC_STACKPROTECTOR_STRONG
+			bool "Strong"
+			select SSP_SUPPORT
+			depends on GCC_VERSION_4_9_LINARO
+			depends on KERNEL_CC_STACKPROTECTOR_STRONG
+	endchoice
+
+	choice
+		prompt "Kernel space Stack-Smashing Protection"
+		default KERNEL_CC_STACKPROTECTOR_NONE
+		help
+		  Enable GCC Stack-Smashing Protection (SSP) for the kernel
+		config KERNEL_CC_STACKPROTECTOR_NONE
+			bool "None"
+		config KERNEL_CC_STACKPROTECTOR_REGULAR
+			bool "Regular"
+		config KERNEL_CC_STACKPROTECTOR_STRONG
+			depends on GCC_VERSION_4_9_LINARO
+			bool "Strong"
+	endchoice
+
+	choice
+		prompt "Enable buffer-overflows detction (FORTIFY_SOURCE)"
+		help
+		  Enable the _FORTIFY_SOURCE macro which introduces additional
+		  checks to detect buffer-overflows in the following standard library
+		  functions: memcpy, mempcpy, memmove, memset, strcpy, stpcpy,
+		  strncpy, strcat, strncat, sprintf, vsprintf, snprintf, vsnprintf,
+		  gets.  "Conservative" (_FORTIFY_SOURCE set to 1) only introduces
+		  checks that sholdn't change the behavior of conforming programs,
+		  while "aggressive" (_FORTIFY_SOURCES set to 2) some more checking is
+		  added, but some conforming programs might fail.
+		config PKG_FORTIFY_SOURCE_NONE
+			bool "None"
+		config PKG_FORTIFY_SOURCE_1
+			bool "Conservative"
+		config PKG_FORTIFY_SOURCE_2
+			bool "Aggressive"
+	endchoice
+
+	choice
+		prompt "Enable RELRO protection"
+		help
+		  Enable a link-time protection know as RELRO (Relocation Read Only)
+		  which helps to protect from certain type of exploitation techniques
+		  altering the content of some ELF sections. "Partial" RELRO makes the
+		  .dynamic section not writeable after initialization, introducing
+		  almost no performance penalty, while "full" RELRO also marks the GOT
+		  as read-only at the cost of initializing all of it at startup.
+		config PKG_RELRO_NONE
+			bool "None"
+		config PKG_RELRO_PARTIAL
+			bool "Partial"
+		config PKG_RELRO_FULL
+			bool "Full"
 	endchoice
 
 endmenu
