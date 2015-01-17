@@ -304,7 +304,7 @@ define Build/append-rootfs
 endef
 
 define Build/pad-rootfs
-	$(call prepare_generic_squashfs,$@)
+	$(call prepare_generic_squashfs,$@ $(1))
 endef
 
 define Build/pad-offset
