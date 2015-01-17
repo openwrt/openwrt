@@ -58,6 +58,11 @@ $(call Package/iproute2/Default)
   TITLE:=General netlink utility frontend
 endef
 
+define Package/ip-bridge
+$(call Package/iproute2/Default)
+  TITLE:=Bridge configuration utility from iproute2
+endef
+
 define Package/ss
 $(call Package/iproute2/Default)
   TITLE:=Socket statistics utility
@@ -130,6 +135,11 @@ define Package/genl/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/genl/genl $(1)/usr/sbin/
 endef
 
+define Package/ip-bridge/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bridge/bridge $(1)/usr/sbin/
+endef
+
 define Package/ss/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/misc/ss $(1)/usr/sbin/
@@ -139,4 +149,5 @@ $(eval $(call BuildPackage,ip))
 $(eval $(call BuildPackage,ip-full))
 $(eval $(call BuildPackage,tc))
 $(eval $(call BuildPackage,genl))
+$(eval $(call BuildPackage,ip-bridge))
 $(eval $(call BuildPackage,ss))
