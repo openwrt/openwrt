@@ -15,6 +15,12 @@ PKG_MD5SUM ?= unknown
 PKG_BUILD_PARALLEL ?=
 PKG_USE_MIPS16 ?= 1
 PKG_CHECK_FORMAT_SECURITY ?= 1
+PKG_CC_STACKPROTECTOR_REGULAR ?= 1
+PKG_CC_STACKPROTECTOR_STRONG ?= 1
+PKG_FORTIFY_SOURCE_1 ?= 1
+PKG_FORTIFY_SOURCE_2 ?= 1
+PKG_RELRO_PARTIAL ?= 1
+PKG_RELRO_FULL ?= 1
 
 ifneq ($(CONFIG_PKG_BUILD_USE_JOBSERVER),)
   MAKE_J:=$(if $(MAKE_JOBSERVER),$(MAKE_JOBSERVER) -j)
@@ -37,6 +43,36 @@ endif
 ifdef CONFIG_PKG_CHECK_FORMAT_SECURITY
   ifeq ($(strip $(PKG_CHECK_FORMAT_SECURITY)),1)
     TARGET_CFLAGS += -Wformat -Werror=format-security
+  endif
+endif
+ifdef CONFIG_PKG_CC_STACKPROTECTOR_REGULAR
+  ifeq ($(strip $(PKG_CC_STACKPROTECTOR_REGULAR)),1)
+    TARGET_CFLAGS += -fstack-protector
+  endif
+endif
+ifdef CONFIG_PKG_CC_STACKPROTECTOR_STRONG
+  ifeq ($(strip $(PKG_CC_STACKPROTECTOR_STRONG)),1)
+    TARGET_CFLAGS += -fstack-protector-strong
+  endif
+endif
+ifdef CONFIG_PKG_FORTIFY_SOURCE_1
+  ifeq ($(strip $(PKG_FORTIFY_SOURCE_1)),1)
+    TARGET_CFLAGS += -D_FORTIFY_SOURCE=1
+  endif
+endif
+ifdef CONFIG_PKG_FORTIFY_SOURCE_2
+  ifeq ($(strip $(PKG_FORTIFY_SOURCE_2)),1)
+    TARGET_CFLAGS += -D_FORTIFY_SOURCE=2
+  endif
+endif
+ifdef CONFIG_PKG_RELRO_PARTIAL
+  ifeq ($(strip $(PKG_RELRO_PARTIAL)),1)
+    TARGET_CFLAGS += -Wl,-z,relro
+  endif
+endif
+ifdef CONFIG_PKG_RELRO_FULL
+  ifeq ($(strip $(PKG_RELRO_FULL)),1)
+    TARGET_CFLAGS += -Wl,-z,now -Wl,-z,relro
   endif
 endif
 
