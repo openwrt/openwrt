@@ -82,6 +82,9 @@ endef
 define KernelPackage/input-gpio-keys/description
  This driver implements support for buttons connected
  to GPIO pins of various CPUs (and some other chips).
+
+ See also gpio-button-hotplug which is an alternative, lower overhead
+ implementation that generates uevents instead of kernel input events.
 endef
 
 $(eval $(call KernelPackage,input-gpio-keys))
@@ -101,6 +104,9 @@ endef
 
 define KernelPackage/input-gpio-keys-polled/description
  Kernel module for support polled GPIO keys input device
+
+ See also gpio-button-hotplug which is an alternative, lower overhead
+ implementation that generates uevents instead of kernel input events.
 endef
 
 $(eval $(call KernelPackage,input-gpio-keys-polled))
