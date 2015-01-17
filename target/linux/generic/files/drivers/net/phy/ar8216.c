@@ -957,13 +957,11 @@ ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
 		   AR8216_GLOBAL_CPUPORT_MIRROR_PORT,
 		   (0xF << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
 	for (port = 0; port < AR8216_NUM_PORTS; port++) {
-		ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
-			   AR8216_PORT_CTRL_MIRROR_RX,
-			   0);
+		ar8xxx_reg_clear(priv, AR8216_REG_PORT_CTRL(port),
+			   AR8216_PORT_CTRL_MIRROR_RX);
 
-		ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
-			   AR8216_PORT_CTRL_MIRROR_TX,
-			   0);
+		ar8xxx_reg_clear(priv, AR8216_REG_PORT_CTRL(port),
+			   AR8216_PORT_CTRL_MIRROR_TX);
 	}
 
 	/* now enable mirroring if necessary */

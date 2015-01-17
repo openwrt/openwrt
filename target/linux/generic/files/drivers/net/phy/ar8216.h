@@ -536,4 +536,10 @@ ar8xxx_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 	ar8xxx_rmw(priv, reg, 0, val);
 }
 
+static inline void
+ar8xxx_reg_clear(struct ar8xxx_priv *priv, int reg, u32 val)
+{
+	ar8xxx_rmw(priv, reg, val, 0);
+}
+
 #endif
