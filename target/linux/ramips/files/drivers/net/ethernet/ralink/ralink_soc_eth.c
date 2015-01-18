@@ -1286,7 +1286,7 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 
 	if (new_mtu <= ETH_DATA_LEN) {
 		priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
-		priv->rx_buf_size = fe_max_buf_size(ETH_DATA_LEN);
+		priv->rx_buf_size = MAX_RX_LENGTH;
 	} else {
 		priv->frag_size = PAGE_SIZE;
 		priv->rx_buf_size = fe_max_buf_size(PAGE_SIZE);
@@ -1443,7 +1443,7 @@ static int fe_probe(struct platform_device *pdev)
 	priv->soc = soc;
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
 	priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
-	priv->rx_buf_size = fe_max_buf_size(ETH_DATA_LEN);
+	priv->rx_buf_size = MAX_RX_LENGTH;
 	if (priv->frag_size > PAGE_SIZE) {
 		dev_err(&pdev->dev, "error frag size.\n");
 		err = -EINVAL;
