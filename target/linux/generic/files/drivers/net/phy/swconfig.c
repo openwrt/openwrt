@@ -167,12 +167,14 @@ swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
 
 	if (link.link)
 		len = snprintf(dev->buf, sizeof(dev->buf),
-			       "port:%d link:up speed:%s %s-duplex %s%s%s",
+			       "port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
 			       val->port_vlan,
 			       swconfig_speed_str(link.speed),
 			       link.duplex ? "full" : "half",
 			       link.tx_flow ? "txflow " : "",
 			       link.rx_flow ?	"rxflow " : "",
+			       link.eee & ADVERTISED_100baseT_Full ? "eee100 " : "",
+			       link.eee & ADVERTISED_1000baseT_Full ? "eee1000 " : "",
 			       link.aneg ? "auto" : "");
 	else
 		len = snprintf(dev->buf, sizeof(dev->buf), "port:%d link:down",
