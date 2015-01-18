@@ -366,6 +366,7 @@ struct ar8xxx_chip {
 	void (*init_port)(struct ar8xxx_priv *priv, int port);
 	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 members);
 	u32 (*read_port_status)(struct ar8xxx_priv *priv, int port);
+	u32 (*read_port_eee_status)(struct ar8xxx_priv *priv, int port);
 	int (*atu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
@@ -432,6 +433,8 @@ ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data);
 void
 ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data);
+u16
+ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr);
 void
 ar8xxx_phy_init(struct ar8xxx_priv *priv);
 int

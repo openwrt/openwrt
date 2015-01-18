@@ -54,6 +54,8 @@ struct switch_port_link {
 	bool tx_flow;
 	bool rx_flow;
 	enum switch_port_speed speed;
+	/* in ethtool adv_t format */
+	u32 eee;
 };
 
 struct switch_port_stats {

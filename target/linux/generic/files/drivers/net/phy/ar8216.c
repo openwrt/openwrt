@@ -332,6 +332,20 @@ ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data)
 	mutex_unlock(&bus->mdio_lock);
 }
 
+u16
+ar8xxx_phy_mmd_read(struct ar8xxx_priv *priv, int phy_addr, u16 addr)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 data;
+
+	mutex_lock(&bus->mdio_lock);
+	bus->write(bus, phy_addr, MII_ATH_MMD_ADDR, addr);
+	data = bus->read(bus, phy_addr, MII_ATH_MMD_DATA);
+	mutex_unlock(&bus->mdio_lock);
+
+	return data;
+}
+
 static int
 ar8xxx_reg_wait(struct ar8xxx_priv *priv, u32 reg, u32 mask, u32 val,
 		unsigned timeout)
@@ -452,6 +466,9 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 	link->duplex = !!(status & AR8216_PORT_STATUS_DUPLEX);
 	link->tx_flow = !!(status & AR8216_PORT_STATUS_TXFLOW);
 	link->rx_flow = !!(status & AR8216_PORT_STATUS_RXFLOW);
+
+	if (link->aneg && link->duplex && priv->chip->read_port_eee_status)
+		link->eee = priv->chip->read_port_eee_status(priv, port);
 
 	speed = (status & AR8216_PORT_STATUS_SPEED) >>
 		 AR8216_PORT_STATUS_SPEED_S;

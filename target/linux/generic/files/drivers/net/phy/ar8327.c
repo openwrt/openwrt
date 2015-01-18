@@ -25,6 +25,7 @@
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
 #include <linux/leds.h>
+#include <linux/mdio.h>
 
 #include "ar8216.h"
 #include "ar8327.h"
@@ -712,6 +713,27 @@ ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 	return ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
 }
 
+static u32
+ar8327_read_port_eee_status(struct ar8xxx_priv *priv, int port)
+{
+	int phy;
+	u16 t;
+
+	if (port >= priv->dev.ports)
+		return 0;
+
+	if (port == 0 || port == 6)
+		return 0;
+
+	phy = port - 1;
+
+	/* EEE Ability Auto-negotiation Result */
+	ar8xxx_phy_mmd_write(priv, phy, 0x7, 0x8000);
+	t = ar8xxx_phy_mmd_read(priv, phy, 0x4007);
+
+	return mmd_eee_adv_to_ethtool_adv_t(t);
+}
+
 static int
 ar8327_atu_flush(struct ar8xxx_priv *priv)
 {
@@ -1069,6 +1091,7 @@ const struct ar8xxx_chip ar8327_chip = {
 	.init_port = ar8327_init_port,
 	.setup_port = ar8327_setup_port,
 	.read_port_status = ar8327_read_port_status,
+	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
@@ -1100,6 +1123,7 @@ const struct ar8xxx_chip ar8337_chip = {
 	.init_port = ar8327_init_port,
 	.setup_port = ar8327_setup_port,
 	.read_port_status = ar8327_read_port_status,
+	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
