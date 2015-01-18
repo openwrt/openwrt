@@ -149,12 +149,20 @@
 		};
 	};
 
+	rstctrl: rstctrl {
+		compatible = "ralink,rt2880-reset";
+		#reset-cells = <1>;
+	};
+
 	ethernet@400000 {
 		compatible = "ralink,rt2880-eth";
 		reg = <0x00400000 10000>;
 
 		#address-cells = <1>;
 		#size-cells = <0>;
+
+		resets = <&rstctrl 18>;
+		reset-names = "fe";
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;

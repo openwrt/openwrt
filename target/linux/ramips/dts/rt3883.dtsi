@@ -223,6 +223,9 @@
 		compatible = "ralink,rt3883-eth";
 		reg = <0x10100000 10000>;
 
+		resets = <&rstctrl 21>;
+		reset-names = "fe";
+
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 
