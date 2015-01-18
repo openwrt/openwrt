@@ -14,7 +14,9 @@ touch /etc/config/ubootenv
 board=$(kirkwood_board_name)
 
 case "$board" in
-"ea3500" | \
+"ea3500")
+	ubootenv_add_uci_config "/dev/mtd1" "0x0" "0x4000" "0x20000"
+	;;
 "ea4500" | \
 "guruplug-server-plus" | \
 "ib62x0" | \
