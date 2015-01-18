@@ -41,9 +41,8 @@
 #include "ralink_ethtool.h"
 
 #define	MAX_RX_LENGTH		1536
-#define FE_RX_OFFSET		(NET_SKB_PAD + NET_IP_ALIGN)
-#define FE_RX_HLEN		(FE_RX_OFFSET + VLAN_ETH_HLEN + VLAN_HLEN + \
-		ETH_FCS_LEN)
+#define FE_RX_HLEN		(NET_SKB_PAD + VLAN_ETH_HLEN + VLAN_HLEN + \
+		+ NET_IP_ALIGN + ETH_FCS_LEN)
 #define DMA_DUMMY_DESC		0xffffffff
 #define FE_DEFAULT_MSG_ENABLE    \
         (NETIF_MSG_DRV      | \
@@ -239,7 +238,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 static int fe_alloc_rx(struct fe_priv *priv)
 {
 	struct net_device *netdev = priv->netdev;
-	int i;
+	int i, pad;
 
 	priv->rx_data = kcalloc(NUM_DMA_DESC, sizeof(*priv->rx_data),
 			GFP_KERNEL);
@@ -259,9 +258,13 @@ static int fe_alloc_rx(struct fe_priv *priv)
 	if (!priv->rx_dma)
 		goto no_rx_mem;
 
+	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
+		pad = 0;
+	else
+		pad = NET_IP_ALIGN;
 	for (i = 0; i < NUM_DMA_DESC; i++) {
 		dma_addr_t dma_addr = dma_map_single(&netdev->dev,
-				priv->rx_data[i] + FE_RX_OFFSET,
+				priv->rx_data[i] + NET_SKB_PAD + pad,
 				priv->rx_buf_size,
 				DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr)))
@@ -752,7 +755,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 	struct sk_buff *skb;
 	u8 *data, *new_data;
 	struct fe_rx_dma *rxd, trxd;
-	int done = 0;
+	int done = 0, pad;
 	bool rx_vlan = netdev->features & NETIF_F_HW_VLAN_CTAG_RX;
 
 	if (netdev->features & NETIF_F_RXCSUM)
@@ -760,6 +763,10 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 	else
 		checksum_bit = 0;
 
+	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
+		pad = 0;
+	else
+		pad = NET_IP_ALIGN;
 	while (done < budget) {
 		unsigned int pktlen;
 		dma_addr_t dma_addr;
@@ -778,7 +785,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			goto release_desc;
 		}
 		dma_addr = dma_map_single(&netdev->dev,
-				new_data + FE_RX_OFFSET,
+				new_data + NET_SKB_PAD + pad,
 				priv->rx_buf_size,
 				DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
@@ -792,7 +799,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 			put_page(virt_to_head_page(new_data));
 			goto release_desc;
 		}
-		skb_reserve(skb, FE_RX_OFFSET);
+		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
 
 		dma_unmap_single(&netdev->dev, trxd.rxd1,
 				priv->rx_buf_size, DMA_FROM_DEVICE);
@@ -1115,6 +1122,8 @@ static int fe_open(struct net_device *dev)
 	napi_enable(&priv->rx_napi);
 
 	val = FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN;
+	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
+		val |= FE_RX_2B_OFFSET;
 	val |= priv->soc->pdma_glo_cfg;
 	fe_reg_w32(val, FE_REG_PDMA_GLO_CFG);
 
