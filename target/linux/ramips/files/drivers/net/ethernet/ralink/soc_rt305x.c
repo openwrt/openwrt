@@ -114,9 +114,9 @@ static int rt5350_fwd_config(struct fe_priv *priv)
 	return 0;
 }
 
-static void rt5350_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
+static void rt5350_tx_dma(struct fe_tx_dma *txd)
 {
-	priv->tx_dma[idx].txd4 = 0;
+	txd->txd4 = 0;
 }
 
 static void rt5350_fe_reset(void)
