@@ -1,6 +1,6 @@
 --- a/drivers/gpio/gpio-ralink.c
 +++ b/drivers/gpio/gpio-ralink.c
-@@ -148,14 +148,15 @@
+@@ -148,14 +148,15 @@ static void ralink_gpio_irq_unmask(struc
  {
  	struct ralink_gpio_chip *rg;
  	unsigned long flags;
@@ -20,7 +20,7 @@
  	spin_unlock_irqrestore(&rg->lock, flags);
  }
  
-@@ -163,14 +164,15 @@
+@@ -163,14 +164,15 @@ static void ralink_gpio_irq_mask(struct 
  {
  	struct ralink_gpio_chip *rg;
  	unsigned long flags;
