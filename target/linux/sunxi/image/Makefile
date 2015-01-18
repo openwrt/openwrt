@@ -100,7 +100,7 @@ define Image/Build/Profile/Cubietruck
 	$(call Image/Build/SDCard,$(1),sun7i-a20-cubietruck)
 endef
 
-define Image/Build/Profile/OLIMEX-A13-SOM
+define Image/Build/Profile/OLIMEX_A13_SOM
 	$(call Image/Build/SDCard,$(1),sun5i-a13-olinuxino)
 endef
 

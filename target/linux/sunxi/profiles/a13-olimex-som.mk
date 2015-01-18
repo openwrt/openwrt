@@ -5,14 +5,14 @@
 # See /LICENSE for more information.
 #
 
-define Profile/OLIMEX-A13-SOM
+define Profile/OLIMEX_A13_SOM
 	NAME:=Olimex A13 SOM
 	PACKAGES:=\
-		uboot-sunxi-OLIMEX-A13-SOM kmod-rtl8192cu
+		uboot-sunxi-OLIMEX_A13_SOM kmod-rtl8192cu
 endef
 
-define Profile/OLIMEX-A13-SOM/Description
+define Profile/OLIMEX_A13_SOM/Description
 	Package set optimized for the Olimex A13 SOM
 endef
 
-$(eval $(call Profile,OLIMEX-A13-SOM))
+$(eval $(call Profile,OLIMEX_A13_SOM))
