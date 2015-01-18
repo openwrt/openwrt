@@ -371,6 +371,7 @@ struct ar8xxx_chip {
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
 	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
 	void (*set_mirror_regs)(struct ar8xxx_priv *priv);
+	int (*sw_hw_apply)(struct switch_dev *dev);
 
 	const struct ar8xxx_mib_desc *mib_decs;
 	unsigned num_mibs;
@@ -486,6 +487,14 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev);
 int
 ar8xxx_sw_get_port_link(struct switch_dev *dev, int port,
 			struct switch_port_link *link);
+int
+ar8xxx_sw_set_port_reset_mib(struct switch_dev *dev,
+                             const struct switch_attr *attr,
+                             struct switch_val *val);
+int
+ar8xxx_sw_get_port_mib(struct switch_dev *dev,
+                       const struct switch_attr *attr,
+                       struct switch_val *val);
 int
 ar8216_wait_bit(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
 

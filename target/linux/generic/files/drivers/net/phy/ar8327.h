@@ -219,6 +219,9 @@ struct ar8327_data {
 
 	struct ar8327_led **leds;
 	unsigned int num_leds;
+
+	/* all fields below are cleared on reset */
+	bool eee[AR8XXX_NUM_PHYS];
 };
 
 #endif
