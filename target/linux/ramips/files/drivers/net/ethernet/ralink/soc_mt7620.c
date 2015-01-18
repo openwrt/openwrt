@@ -168,17 +168,13 @@ static void mt7621_tx_dma(struct fe_tx_dma *txd)
 	txd->txd4 = BIT(25);
 }
 
-static void mt7620_rx_dma(struct fe_rx_dma *rxd, u16 len)
-{
-	rxd->rxd2 = RX_DMA_PLEN0(len);
-}
-
 static void mt7620_init_data(struct fe_soc_data *data,
 		struct net_device *netdev)
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
+		FE_FLAG_RX_SG_DMA;
 	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 		NETIF_F_HW_VLAN_CTAG_TX;
 
@@ -192,7 +188,8 @@ static void mt7621_init_data(struct fe_soc_data *data,
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET |
+		FE_FLAG_RX_SG_DMA;
 	netdev->hw_features = NETIF_F_HW_VLAN_CTAG_TX;
 }
 
@@ -214,7 +211,6 @@ static struct fe_soc_data mt7620_data = {
 	.set_mac = mt7620_set_mac,
 	.fwd_config = mt7620_fwd_config,
 	.tx_dma = mt7620_tx_dma,
-	.rx_dma = mt7620_rx_dma,
 	.switch_init = mt7620_gsw_probe,
 	.switch_config = mt7620_gsw_config,
 	.port_init = mt7620_port_init,
@@ -237,7 +233,6 @@ static struct fe_soc_data mt7621_data = {
 	.set_mac = mt7621_set_mac,
 	.fwd_config = mt7621_fwd_config,
 	.tx_dma = mt7621_tx_dma,
-	.rx_dma = mt7620_rx_dma,
 	.switch_init = mt7620_gsw_probe,
 	.switch_config = mt7621_gsw_config,
 	.reg_table = mt7621_reg_table,
