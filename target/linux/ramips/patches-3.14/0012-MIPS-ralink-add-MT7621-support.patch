@@ -311,7 +311,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (likely(irq < GIC_NUM_INTRS))
 +		do_IRQ(MIPS_GIC_IRQ_BASE + irq);
 +	else {
-+		pr_err("Spurious GIC Interrupt!\n");
++		pr_debug("Spurious GIC Interrupt!\n");
 +		spurious_interrupt();
 +	}
 +
