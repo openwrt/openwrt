@@ -163,19 +163,19 @@ static int mt7621_fwd_config(struct fe_priv *priv)
 	return 0;
 }
 
-static void mt7620_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
+static void mt7620_tx_dma(struct fe_tx_dma *txd)
 {
-	priv->tx_dma[idx].txd4 = 0;
+	txd->txd4 = 0;
 }
 
-static void mt7621_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
+static void mt7621_tx_dma(struct fe_tx_dma *txd)
 {
-	priv->tx_dma[idx].txd4 = BIT(25);
+	txd->txd4 = BIT(25);
 }
 
-static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
+static void mt7620_rx_dma(struct fe_rx_dma *rxd, u16 len)
 {
-	priv->rx_dma[idx].rxd2 = RX_DMA_PLEN0(len);
+	rxd->rxd2 = RX_DMA_PLEN0(len);
 }
 
 static void mt7620_init_data(struct fe_soc_data *data,
