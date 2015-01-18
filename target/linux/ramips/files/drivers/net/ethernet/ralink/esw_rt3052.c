@@ -192,7 +192,6 @@
 #define RT5350_ESW_REG_PXTPC(_x)	(0x150 + (4 * _x))
 #define RT5350_EWS_REG_LED_POLARITY	0x168
 #define RT5350_RESET_EPHY		BIT(24)
-#define SYSC_REG_RESET_CTRL		0x34
 
 enum {
 	/* Global attributes. */
@@ -512,9 +511,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 
 	if (ralink_soc == RT305X_SOC_RT3352) {
 		/* reset EPHY */
-		u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
-		rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+		fe_reset(RT5350_RESET_EPHY);
 
 		rt305x_mii_write(esw, 0, 31, 0x8000);
 		for (i = 0; i < 5; i++) {
@@ -563,9 +560,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		rt305x_mii_write(esw, 0, 31, 0x8000);
 	} else if (ralink_soc == RT305X_SOC_RT5350) {
 		/* reset EPHY */
-		u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
-		rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+		fe_reset(RT5350_RESET_EPHY);
 
 		/* set the led polarity */
 		esw_w32(esw, esw->reg_led_polarity & 0x1F, RT5350_EWS_REG_LED_POLARITY);
@@ -622,9 +617,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		u32 val;
 
 		/* reset EPHY */
-		val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-		rt_sysc_w32(val | RT5350_RESET_EPHY, SYSC_REG_RESET_CTRL);
-		rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+		fe_reset(RT5350_RESET_EPHY);
 
 		rt305x_mii_write(esw, 0, 31, 0x2000); /* change G2 page */
 		rt305x_mii_write(esw, 0, 26, 0x0020);

@@ -22,19 +22,11 @@
 #include "ralink_soc_eth.h"
 #include "mdio_rt2880.h"
 
-#define RT3883_SYSC_REG_RSTCTRL		0x34
 #define RT3883_RSTCTRL_FE		BIT(21)
 
 static void rt3883_fe_reset(void)
 {
-	u32 t;
-
-	t = rt_sysc_r32(RT3883_SYSC_REG_RSTCTRL);
-	t |= RT3883_RSTCTRL_FE;
-	rt_sysc_w32(t , RT3883_SYSC_REG_RSTCTRL);
-
-	t &= ~RT3883_RSTCTRL_FE;
-	rt_sysc_w32(t, RT3883_SYSC_REG_RSTCTRL);
+	fe_reset(RT3883_RSTCTRL_FE);
 }
 
 static int rt3883_fwd_config(struct fe_priv *priv)

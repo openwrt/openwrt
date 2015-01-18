@@ -60,6 +60,8 @@
 #define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (NUM_DMA_DESC - 1))
 #define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (NUM_DMA_DESC - 1))
 
+#define SYSC_REG_RSTCTRL	0x34
+
 static int fe_msg_level = -1;
 module_param_named(msg_level, fe_msg_level, int, 0);
 MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
@@ -110,6 +112,20 @@ void fe_reg_w32(u32 val, enum fe_reg reg)
 u32 fe_reg_r32(enum fe_reg reg)
 {
 	return fe_r32(fe_reg_table[reg]);
+}
+
+void fe_reset(u32 reset_bits)
+{
+	u32 t;
+
+	t = rt_sysc_r32(SYSC_REG_RSTCTRL);
+	t |= reset_bits;
+	rt_sysc_w32(t , SYSC_REG_RSTCTRL);
+	udelay(10);
+
+	t &= ~reset_bits;
+	rt_sysc_w32(t, SYSC_REG_RSTCTRL);
+	udelay(10);
 }
 
 static inline void fe_int_disable(u32 mask)
