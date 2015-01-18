@@ -40,7 +40,6 @@
 #include "mdio.h"
 #include "ralink_ethtool.h"
 
-#define TX_TIMEOUT		(2 * HZ)
 #define	MAX_RX_LENGTH		1536
 #define FE_RX_OFFSET		(NET_SKB_PAD + NET_IP_ALIGN)
 #define FE_RX_HLEN		(FE_RX_OFFSET + VLAN_ETH_HLEN + VLAN_HLEN + \
@@ -72,9 +71,11 @@ static const u32 fe_reg_table_default[FE_REG_COUNT] = {
 	[FE_REG_TX_BASE_PTR0] = FE_TX_BASE_PTR0,
 	[FE_REG_TX_MAX_CNT0] = FE_TX_MAX_CNT0,
 	[FE_REG_TX_CTX_IDX0] = FE_TX_CTX_IDX0,
+	[FE_REG_TX_DTX_IDX0] = FE_TX_DTX_IDX0,
 	[FE_REG_RX_BASE_PTR0] = FE_RX_BASE_PTR0,
 	[FE_REG_RX_MAX_CNT0] = FE_RX_MAX_CNT0,
 	[FE_REG_RX_CALC_IDX0] = FE_RX_CALC_IDX0,
+	[FE_REG_RX_DRX_IDX0] = FE_RX_DRX_IDX0,
 	[FE_REG_FE_INT_ENABLE] = FE_FE_INT_ENABLE,
 	[FE_REG_FE_INT_STATUS] = FE_FE_INT_STATUS,
 	[FE_REG_FE_DMA_VID_BASE] = FE_DMA_VID0,
@@ -83,6 +84,11 @@ static const u32 fe_reg_table_default[FE_REG_COUNT] = {
 };
 
 static const u32 *fe_reg_table = fe_reg_table_default;
+
+struct fe_work_t {
+	int bitnr;
+	void (*action)(struct fe_priv *);
+};
 
 static void __iomem *fe_base = 0;
 
@@ -683,13 +689,11 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
-	spin_lock(&priv->page_lock);
 	tx_num = 1 + (skb_shinfo(skb)->nr_frags >> 1);
 	tx = fe_reg_r32(FE_REG_TX_CTX_IDX0);
 	if (unlikely(fe_empty_txd(priv, tx) <= tx_num))
 	{
 		netif_stop_queue(dev);
-		spin_unlock(&priv->page_lock);
 		netif_err(priv, tx_queued,dev,
 				"Tx Ring full when queue awake!\n");
 		return NETDEV_TX_BUSY;
@@ -703,8 +707,6 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		stats->tx_packets++;
 		stats->tx_bytes += len;
 	}
-
-	spin_unlock(&priv->page_lock);
 
 	return NETDEV_TX_OK;
 }
@@ -779,8 +781,8 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		dma_unmap_single(&netdev->dev, trxd.rxd1,
 				priv->rx_buf_size, DMA_FROM_DEVICE);
 		pktlen = RX_DMA_PLEN0(trxd.rxd2);
-		skb_put(skb, pktlen);
 		skb->dev = netdev;
+		skb_put(skb, pktlen);
 		if (trxd.rxd4 & checksum_bit) {
 			skb->ip_summed = CHECKSUM_UNNECESSARY;
 		} else {
@@ -902,7 +904,7 @@ poll_again:
 	if (unlikely(netif_msg_intr(priv))) {
 		mask = fe_reg_r32(FE_REG_FE_INT_ENABLE);
 		netdev_info(priv->netdev,
-				"done tx %d, rx %d, intr 0x%x/0x%x\n",
+				"done tx %d, rx %d, intr 0x%08x/0x%x\n",
 				tx_done, rx_done, status, mask);
 	}
 
@@ -924,13 +926,27 @@ static void fe_tx_timeout(struct net_device *dev)
 
 	priv->netdev->stats.tx_errors++;
 	netif_err(priv, tx_err, dev,
-			"transmit timed out, waking up the queue\n");
-	netif_info(priv, drv, dev, ": dma_cfg:%08x, free_idx:%d, " \
-			"dma_ctx_idx=%u, dma_crx_idx=%u\n",
-			fe_reg_r32(FE_REG_PDMA_GLO_CFG), priv->tx_free_idx,
+			"transmit timed out\n");
+	netif_info(priv, drv, dev, "dma_cfg:%08x\n",
+			fe_reg_r32(FE_REG_PDMA_GLO_CFG));
+	netif_info(priv, drv, dev, "tx_ring=%d, " \
+			"base=%08x, max=%u, ctx=%u, dtx=%u, fdx=%d\n", 0,
+			fe_reg_r32(FE_REG_TX_BASE_PTR0),
+			fe_reg_r32(FE_REG_TX_MAX_CNT0),
 			fe_reg_r32(FE_REG_TX_CTX_IDX0),
-			fe_reg_r32(FE_REG_RX_CALC_IDX0));
-	netif_wake_queue(dev);
+			fe_reg_r32(FE_REG_TX_DTX_IDX0),
+			priv->tx_free_idx
+		  );
+	netif_info(priv, drv, dev, "rx_ring=%d, " \
+			"base=%08x, max=%u, calc=%u, drx=%u\n", 0,
+			fe_reg_r32(FE_REG_RX_BASE_PTR0),
+			fe_reg_r32(FE_REG_RX_MAX_CNT0),
+			fe_reg_r32(FE_REG_RX_CALC_IDX0),
+			fe_reg_r32(FE_REG_RX_DRX_IDX0)
+		  );
+
+	if (!test_and_set_bit(FE_FLAG_RESET_PENDING, priv->pending_flags))
+		schedule_work(&priv->pending_work);
 }
 
 static irqreturn_t fe_handle_irq(int irq, void *dev)
@@ -1287,6 +1303,45 @@ static const struct net_device_ops fe_netdev_ops = {
 #endif
 };
 
+static void fe_reset_pending(struct fe_priv *priv)
+{
+	struct net_device *dev = priv->netdev;
+	int err;
+
+	rtnl_lock();
+	fe_stop(dev);
+
+	err = fe_open(dev);
+	if (err)
+		goto error;
+	rtnl_unlock();
+
+	return;
+error:
+	netif_alert(priv, ifup, dev,
+			"Driver up/down cycle failed, closing device.\n");
+	dev_close(dev);
+	rtnl_unlock();
+}
+
+static const struct fe_work_t fe_work[] = {
+	{FE_FLAG_RESET_PENDING, fe_reset_pending},
+};
+
+static void fe_pending_work(struct work_struct *work)
+{
+	struct fe_priv *priv = container_of(work, struct fe_priv, pending_work);
+	int i;
+	bool pending;
+
+	for (i = 0; i < ARRAY_SIZE(fe_work); i++) {
+		pending = test_and_clear_bit(fe_work[i].bitnr,
+				priv->pending_flags);
+		if (pending)
+			fe_work[i].action(priv);
+	}
+}
+
 static int fe_probe(struct platform_device *pdev)
 {
 	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -1323,7 +1378,6 @@ static int fe_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(netdev, &pdev->dev);
 	netdev->netdev_ops = &fe_netdev_ops;
 	netdev->base_addr = (unsigned long) fe_base;
-	netdev->watchdog_timeo = TX_TIMEOUT;
 
 	netdev->irq = platform_get_irq(pdev, 0);
 	if (netdev->irq < 0) {
@@ -1370,6 +1424,7 @@ static int fe_probe(struct platform_device *pdev)
 		err = -EINVAL;
 		goto err_free_dev;
 	}
+	INIT_WORK(&priv->pending_work, fe_pending_work);
 
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll, 32);
 	fe_set_ethtool_ops(netdev);
@@ -1403,6 +1458,8 @@ static int fe_remove(struct platform_device *pdev)
 	netif_napi_del(&priv->rx_napi);
 	if (priv->hw_stats)
 		kfree(priv->hw_stats);
+
+	cancel_work_sync(&priv->pending_work);
 
 	unregister_netdev(dev);
 	free_netdev(dev);

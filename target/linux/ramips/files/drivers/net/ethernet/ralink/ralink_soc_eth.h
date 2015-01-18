@@ -33,9 +33,11 @@ enum fe_reg {
 	FE_REG_TX_BASE_PTR0,
 	FE_REG_TX_MAX_CNT0,
 	FE_REG_TX_CTX_IDX0,
+	FE_REG_TX_DTX_IDX0,
 	FE_REG_RX_BASE_PTR0,
 	FE_REG_RX_MAX_CNT0,
 	FE_REG_RX_CALC_IDX0,
+	FE_REG_RX_DRX_IDX0,
 	FE_REG_FE_INT_ENABLE,
 	FE_REG_FE_INT_STATUS,
 	FE_REG_FE_DMA_VID_BASE,
@@ -44,7 +46,12 @@ enum fe_reg {
 	FE_REG_COUNT
 };
 
-#define FE_DRV_VERSION		"0.1.0"
+enum fe_work_flag {
+        FE_FLAG_RESET_PENDING,
+        FE_FLAG_MAX
+};
+
+#define FE_DRV_VERSION		"0.1.1"
 
 /* power of 2 to let NEXT_TX_DESP_IDX work */
 #ifdef CONFIG_SOC_MT7621
@@ -451,6 +458,8 @@ struct fe_priv
 
 	struct fe_hw_stats		*hw_stats;
 	unsigned long			vlan_map;
+	struct work_struct		pending_work;
+	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
 };
 
 extern const struct of_device_id of_fe_match[];
