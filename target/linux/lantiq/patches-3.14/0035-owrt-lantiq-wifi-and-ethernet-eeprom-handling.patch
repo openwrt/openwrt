@@ -19,8 +19,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 arch/mips/lantiq/xway/pci-ath-fixup.c
  create mode 100644 arch/mips/lantiq/xway/rt_eep.c
 
---- /dev/null
-+++ b/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+Index: linux-3.14.28/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.28/arch/mips/include/asm/mach-lantiq/pci-ath-fixup.h	2015-01-17 10:55:03.329443942 -0800
 @@ -0,0 +1,6 @@
 +#ifndef _PCI_ATH_FIXUP
 +#define _PCI_ATH_FIXUP
@@ -28,9 +30,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +void ltq_pci_ath_fixup(unsigned slot, u16 *cal_data) __init;
 +
 +#endif /* _PCI_ATH_FIXUP */
---- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-+++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev,
+Index: linux-3.14.28/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
+===================================================================
+--- linux-3.14.28.orig/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2015-01-17 10:55:03.337443971 -0800
++++ linux-3.14.28/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h	2015-01-17 10:55:03.329443942 -0800
+@@ -90,5 +90,8 @@
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  
@@ -39,9 +43,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
  #endif /* CONFIG_SOC_TYPE_XWAY */
  #endif /* _LTQ_XWAY_H__ */
---- a/arch/mips/lantiq/xway/Makefile
-+++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,4 +2,7 @@ obj-y := prom.o sysctrl.o clk.o reset.o 
+Index: linux-3.14.28/arch/mips/lantiq/xway/Makefile
+===================================================================
+--- linux-3.14.28.orig/arch/mips/lantiq/xway/Makefile	2015-01-17 10:55:03.337443971 -0800
++++ linux-3.14.28/arch/mips/lantiq/xway/Makefile	2015-01-17 11:58:16.000000000 -0800
+@@ -2,4 +2,7 @@
  
  obj-y += vmmc.o tffs.o
  
@@ -49,8 +55,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_PCI) += ath_eep.o rt_eep.o pci-ath-fixup.o
 +
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
---- /dev/null
-+++ b/arch/mips/lantiq/xway/ath_eep.c
+Index: linux-3.14.28/arch/mips/lantiq/xway/ath_eep.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.28/arch/mips/lantiq/xway/ath_eep.c	2015-01-17 10:55:03.329443942 -0800
 @@ -0,0 +1,282 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
@@ -334,8 +342,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return platform_driver_probe(&ath5k_eeprom_driver, of_ath5k_eeprom_probe);
 +}
 +device_initcall(of_ath5k_eeprom_init);
---- /dev/null
-+++ b/arch/mips/lantiq/xway/eth_mac.c
+Index: linux-3.14.28/arch/mips/lantiq/xway/eth_mac.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.28/arch/mips/lantiq/xway/eth_mac.c	2015-01-17 11:14:42.823292726 -0800
 @@ -0,0 +1,76 @@
 +/*
 + *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
@@ -413,8 +423,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return platform_driver_probe(&eth_mac_driver, of_eth_mac_probe);
 +}
 +device_initcall(of_eth_mac_init);
---- /dev/null
-+++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
+Index: linux-3.14.28/arch/mips/lantiq/xway/pci-ath-fixup.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.28/arch/mips/lantiq/xway/pci-ath-fixup.c	2015-01-17 10:55:03.329443942 -0800
 @@ -0,0 +1,109 @@
 +/*
 + *  Atheros AP94 reference board PCI initialization
@@ -525,8 +537,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	ath_fixups[ath_num_fixups].cal_data = cal_data;
 +	ath_num_fixups++;
 +}
---- /dev/null
-+++ b/arch/mips/lantiq/xway/rt_eep.c
+Index: linux-3.14.28/arch/mips/lantiq/xway/rt_eep.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.14.28/arch/mips/lantiq/xway/rt_eep.c	2015-01-17 10:55:03.329443942 -0800
 @@ -0,0 +1,60 @@
 +/*
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
@@ -588,3 +602,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return platform_driver_probe(&ralink_eeprom_driver, of_ralink_eeprom_probe);
 +}
 +device_initcall(of_ralink_eeprom_init);
+Index: linux-3.14.28/drivers/net/ethernet/lantiq_etop.c
+===================================================================
+--- linux-3.14.28.orig/drivers/net/ethernet/lantiq_etop.c	2015-01-17 11:52:03.818405214 -0800
++++ linux-3.14.28/drivers/net/ethernet/lantiq_etop.c	2015-01-17 12:02:20.905465188 -0800
+@@ -843,6 +843,9 @@
+ 
+ 	if (priv->mac)
+ 		memcpy(&mac.sa_data, priv->mac, ETH_ALEN);
++	else
++		memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
++
+ 	if (!is_valid_ether_addr(mac.sa_data)) {
+ 		pr_warn("etop: invalid MAC, using random\n");
+ 		random_ether_addr(mac.sa_data);
