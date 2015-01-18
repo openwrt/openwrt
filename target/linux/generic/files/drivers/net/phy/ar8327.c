@@ -710,7 +710,23 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 static u32
 ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 {
-	return ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	u32 t;
+
+	t = ar8xxx_read(priv, AR8327_REG_PORT_STATUS(port));
+	/* map the flow control autoneg result bits to the flow control bits
+	 * used in forced mode to allow ar8216_read_port_link detect
+	 * flow control properly if autoneg is used
+	 */
+	if (t & AR8216_PORT_STATUS_LINK_UP &&
+	    t & AR8216_PORT_STATUS_LINK_AUTO) {
+		t &= ~(AR8216_PORT_STATUS_TXFLOW | AR8216_PORT_STATUS_RXFLOW);
+		if (t & AR8327_PORT_STATUS_TXFLOW_AUTO)
+			t |= AR8216_PORT_STATUS_TXFLOW;
+		if (t & AR8327_PORT_STATUS_RXFLOW_AUTO)
+			t |= AR8216_PORT_STATUS_RXFLOW;
+	}
+
+	return t;
 }
 
 static u32
