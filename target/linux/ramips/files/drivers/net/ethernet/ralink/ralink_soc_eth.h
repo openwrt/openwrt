@@ -289,6 +289,7 @@ enum fe_work_flag {
 #define FE_PST_DTX_IDX1		BIT(1)
 #define FE_PST_DTX_IDX0		BIT(0)
 
+#define FE_RX_2B_OFFSET		BIT(31)
 #define FE_TX_WB_DDONE		BIT(6)
 #define FE_RX_DMA_BUSY		BIT(3)
 #define FE_TX_DMA_BUSY		BIT(1)
@@ -401,6 +402,9 @@ struct fe_soc_data
 #define FE_FLAG_PADDING_64B		BIT(0)
 #define FE_FLAG_PADDING_BUG		BIT(1)
 #define FE_FLAG_JUMBO_FRAME		BIT(2)
+#define FE_FLAG_RX_2B_OFFSET		BIT(3)
+#define FE_FLAG_RX_SG_DMA		BIT(4)
+#define FE_FLAG_RX_VLAN_CTAG		BIT(5)
 
 #define FE_STAT_REG_DECLARE		\
 	_FE(tx_bytes)			\

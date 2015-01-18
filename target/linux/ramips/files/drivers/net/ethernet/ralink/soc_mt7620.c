@@ -28,7 +28,6 @@
 #define MT7620A_CDMA_CSG_CFG	0x400
 #define MT7620_DMA_VID		(MT7620A_CDMA_CSG_CFG | 0x30)
 #define MT7621_DMA_VID		0xa8
-#define MT7620A_DMA_2B_OFFSET	BIT(31)
 #define MT7620A_RESET_FE	BIT(21)
 #define MT7621_RESET_FE		BIT(6)
 #define MT7620A_RESET_ESW	BIT(23)
@@ -179,7 +178,7 @@ static void mt7620_init_data(struct fe_soc_data *data,
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET;
 	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
 		NETIF_F_HW_VLAN_CTAG_TX;
 
@@ -193,7 +192,7 @@ static void mt7621_init_data(struct fe_soc_data *data,
 {
 	struct fe_priv *priv = netdev_priv(netdev);
 
-	priv->flags = FE_FLAG_PADDING_64B;
+	priv->flags = FE_FLAG_PADDING_64B | FE_FLAG_RX_2B_OFFSET;
 	netdev->hw_features = NETIF_F_HW_VLAN_CTAG_TX;
 }
 
@@ -220,7 +219,7 @@ static struct fe_soc_data mt7620_data = {
 	.switch_config = mt7620_gsw_config,
 	.port_init = mt7620_port_init,
 	.reg_table = mt7620_reg_table,
-	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS | MT7620A_DMA_2B_OFFSET,
+	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS,
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
 	.checksum_bit = MT7620_L4_VALID,
@@ -242,7 +241,7 @@ static struct fe_soc_data mt7621_data = {
 	.switch_init = mt7620_gsw_probe,
 	.switch_config = mt7621_gsw_config,
 	.reg_table = mt7621_reg_table,
-	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS | MT7620A_DMA_2B_OFFSET,
+	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS,
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
 	.checksum_bit = MT7621_L4_VALID,
