@@ -271,8 +271,8 @@ static int fe_alloc_rx(struct fe_priv *priv)
 			goto no_rx_mem;
 		priv->rx_dma[i].rxd1 = (unsigned int) dma_addr;
 
-		if (priv->soc->rx_dma)
-			priv->soc->rx_dma(&priv->rx_dma[i], priv->rx_buf_size);
+		if (priv->flags & FE_FLAG_RX_SG_DMA)
+			priv->rx_dma[i].rxd2 = RX_DMA_PLEN0(priv->rx_buf_size);
 		else
 			priv->rx_dma[i].rxd2 = RX_DMA_LSO;
 	}
@@ -827,8 +827,8 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		rxd->rxd1 = (unsigned int) dma_addr;
 
 release_desc:
-		if (soc->rx_dma)
-			soc->rx_dma(rxd, priv->rx_buf_size);
+		if (priv->flags & FE_FLAG_RX_SG_DMA)
+			rxd->rxd2 = RX_DMA_PLEN0(priv->rx_buf_size);
 		else
 			rxd->rxd2 = RX_DMA_LSO;
 

@@ -380,7 +380,6 @@ struct fe_soc_data
 	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
 	int (*fwd_config)(struct fe_priv *priv);
 	void (*tx_dma)(struct fe_tx_dma *txd);
-	void (*rx_dma)(struct fe_rx_dma *rxd, u16 len);
 	int (*switch_init)(struct fe_priv *priv);
 	int (*switch_config)(struct fe_priv *priv);
 	void (*port_init)(struct fe_priv *priv, struct device_node *port);
