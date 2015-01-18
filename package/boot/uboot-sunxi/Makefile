@@ -65,10 +65,6 @@ define uboot/Cubietruck
   TITLE:=U-Boot for Cubietruck
 endef
 
-define uboot/Hackberry
-  TITLE:=U-Boot for the Hackbeery
-endef
-
 define uboot/Mele_M9
   TITLE:=U-Boot for the Mele M9 (A31)
 endef
@@ -95,7 +91,6 @@ UBOOTS:= \
 	Cubieboard \
 	Cubieboard2 \
 	Cubietruck \
-	Hackberry \
 	Mele_M9 \
 	OLIMEX-A13-SOM \
 	Linksprite_pcDuino \
