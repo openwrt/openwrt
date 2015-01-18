@@ -3,5 +3,5 @@
 
 START=19
 start() {
-	esi $(printf '%X' $((1+0x$(tr -d : </sys/class/net/eth0/address)))) 2>/dev/null || :
+	esi $(printf '%012X' $((1+0x$(tr -d : </sys/class/net/eth0/address)))) 2>/dev/console || :
 }
