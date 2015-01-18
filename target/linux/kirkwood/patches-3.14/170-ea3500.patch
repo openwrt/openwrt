@@ -10,7 +10,7 @@
  	kirkwood-guruplug-server-plus.dtb \
 --- /dev/null
 +++ b/arch/arm/boot/dts/kirkwood-ea3500.dts
-@@ -0,0 +1,149 @@
+@@ -0,0 +1,160 @@
 +/*
 + * kirkwood-ea3500.dts - Device Tree file for Linksys EA3500
 + *
@@ -111,6 +111,17 @@
 +			label = "ea3500:green:power";
 +			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 +		};
++	};
++
++	mvsw61xx {
++		compatible = "marvell,88e6171";
++		status = "okay";
++		reg = <0x10>;
++
++		mii-bus = <&mdio>;
++		cpu-port-0 = <5>;
++		cpu-port-1 = <6>;
++		is-indirect;
 +	};
 +};
 +
