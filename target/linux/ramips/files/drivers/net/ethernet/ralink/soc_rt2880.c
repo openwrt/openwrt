@@ -22,7 +22,6 @@
 #include "ralink_soc_eth.h"
 #include "mdio_rt2880.h"
 
-#define SYSC_REG_RESET_CTRL		0x034
 #define RT2880_RESET_FE			BIT(18)
 
 static void rt2880_init_data(struct fe_soc_data *data,
@@ -39,7 +38,7 @@ static void rt2880_init_data(struct fe_soc_data *data,
 
 void rt2880_fe_reset(void)
 {
-	rt_sysc_w32(RT2880_RESET_FE, SYSC_REG_RESET_CTRL);
+	fe_reset(RT2880_RESET_FE);
 }
 
 static int rt2880_fwd_config(struct fe_priv *priv)

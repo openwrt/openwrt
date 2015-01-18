@@ -39,8 +39,6 @@
 #define MT7621_TX_DMA_UDF	BIT(19)
 #define TX_DMA_FP_BMAP		((0xff) << 19)
 
-#define SYSC_REG_RESET_CTRL     0x34
-
 #define CDMA_ICS_EN		BIT(2)
 #define CDMA_UCS_EN		BIT(1)
 #define CDMA_TCS_EN		BIT(0)
@@ -105,18 +103,12 @@ static const u32 mt7621_reg_table[FE_REG_COUNT] = {
 
 static void mt7620_fe_reset(void)
 {
-	u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-
-	rt_sysc_w32(val | MT7620A_RESET_FE | MT7620A_RESET_ESW, SYSC_REG_RESET_CTRL);
-	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+	fe_reset(MT7620A_RESET_FE | MT7620A_RESET_ESW);
 }
 
 static void mt7621_fe_reset(void)
 {
-	u32 val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-
-	rt_sysc_w32(val | MT7621_RESET_FE, SYSC_REG_RESET_CTRL);
-	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+	fe_reset(MT7621_RESET_FE);
 }
 
 static void mt7620_rxcsum_config(bool enable)

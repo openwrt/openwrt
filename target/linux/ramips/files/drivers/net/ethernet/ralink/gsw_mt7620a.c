@@ -80,7 +80,6 @@
 
 #define SYSC_REG_CHIP_REV_ID	0x0c
 #define SYSC_REG_CFG1		0x14
-#define SYSC_REG_RESET_CTRL     0x34
 #define RST_CTRL_MCM		BIT(2)
 #define SYSC_PAD_RGMII2_MDIO	0x58
 #define SYSC_GPIO_MODE		0x60
@@ -576,10 +575,7 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 	u32	val;
 
 	/* Hardware reset Switch */
-	val = rt_sysc_r32(SYSC_REG_RESET_CTRL);
-	rt_sysc_w32(val | RST_CTRL_MCM, SYSC_REG_RESET_CTRL);
-        udelay(1000);
-	rt_sysc_w32(val, SYSC_REG_RESET_CTRL);
+	fe_reset(RST_CTRL_MCM);
         udelay(10000);
 
 	/* reduce RGMII2 PAD driving strength */
