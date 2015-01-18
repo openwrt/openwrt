@@ -1,0 +1,42 @@
+From a7ef1eaddbf4bd50bfee92d9dfbecadc61467bbf Mon Sep 17 00:00:00 2001
+From: Kevin Cernekee <cernekee@gmail.com>
+Date: Mon, 20 Oct 2014 21:27:57 -0700
+Subject: [PATCH] MIPS: Allow MIPS_CPU_SCACHE to be used with different line
+ sizes
+
+CONFIG_MIPS_CPU_SCACHE determines whether to build sc-mips.c.  However,
+it is currently hardwired to use an L1_SHIFT of 6 (64 bytes).  Move the
+L1_SHIFT selection into the CPU or SoC section so that other SoCs can
+select different values.
+
+Signed-off-by: Kevin Cernekee <cernekee@gmail.com>
+Cc: f.fainelli@gmail.com
+Cc: mbizon@freebox.fr
+Cc: jogo@openwrt.org
+Cc: jfraser@broadcom.com
+Cc: linux-mips@linux-mips.org
+Cc: devicetree@vger.kernel.org
+Patchwork: https://patchwork.linux-mips.org/patch/8162/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -315,6 +315,7 @@ config MIPS_MALTA
+ 	select I8259
+ 	select MIPS_BONITO64
+ 	select MIPS_CPU_SCACHE
++	select MIPS_L1_CACHE_SHIFT_6
+ 	select PCI_GT64XXX_PCI0
+ 	select MIPS_MSC
+ 	select SWAP_IO_SPACE
+@@ -1820,7 +1821,6 @@ config IP22_CPU_SCACHE
+ config MIPS_CPU_SCACHE
+ 	bool
+ 	select BOARD_SCACHE
+-	select MIPS_L1_CACHE_SHIFT_6
+ 
+ config R5000_CPU_SCACHE
+ 	bool
