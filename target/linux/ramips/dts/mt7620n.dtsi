@@ -255,6 +255,9 @@
 		compatible = "ralink,mt7620a-gsw";
 		reg = <0x10110000 8000>;
 
+		resets = <&rstctrl 23>;
+		reset-names = "esw";
+
 		interrupt-parent = <&intc>;
 		interrupts = <17>;
 		ralink,port4 = "gmac";

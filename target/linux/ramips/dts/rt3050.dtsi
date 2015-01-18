@@ -214,6 +214,9 @@
 		compatible = "ralink,rt3050-eth";
 		reg = <0x10100000 10000>;
 
+		resets = <&rstctrl 21>;
+		reset-names = "fe";
+
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
 	};
@@ -221,6 +224,9 @@
 	esw@10110000 {
 		compatible = "ralink,rt3050-esw";
 		reg = <0x10110000 8000>;
+
+		resets = <&rstctrl 23>;
+		reset-names = "esw";
 
 		interrupt-parent = <&intc>;
 		interrupts = <17>;

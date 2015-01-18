@@ -254,6 +254,9 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		resets = <&rstctrl 6 &rstctrl 23>;
+		reset-names = "fe", "eth";
+
 		interrupt-parent = <&gic>;
 		interrupts = <3>;
 
