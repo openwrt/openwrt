@@ -69,7 +69,7 @@ define uboot/Mele_M9
   TITLE:=U-Boot for the Mele M9 (A31)
 endef
 
-define uboot/OLIMEX-A13-SOM
+define uboot/OLIMEX_A13_SOM
   TITLE:=U-Boot for the Olimex A13 SOM
 endef
 
@@ -92,7 +92,7 @@ UBOOTS:= \
 	Cubieboard2 \
 	Cubietruck \
 	Mele_M9 \
-	OLIMEX-A13-SOM \
+	OLIMEX_A13_SOM \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
 
