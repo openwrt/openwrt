@@ -1,0 +1,74 @@
+From 0cc8daf2488539f734150e64c799e3a4dd014cd8 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 19 Jan 2015 11:34:45 +0100
+Subject: [PATCH] ARM: BCM5301X: Add DT for Asus RT-AC87U
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/Makefile                  |  3 +-
+ arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts | 44 +++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
+
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
+@@ -0,0 +1,44 @@
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ * DTS for Asus RT-AC87U
++ *
++ * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++/dts-v1/;
++
++#include "bcm4708.dtsi"
++
++/ {
++	compatible = "asus,rt-ac87u", "brcm,bcm4709", "brcm,bcm4708";
++	model = "Asus RT-AC87U (BCM4709)";
++
++	chosen {
++		bootargs = "console=ttyS0,115200 earlyprintk";
++	};
++
++	memory {
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 2 GPIO_ACTIVE_LOW>;
++		};
++
++		restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -56,7 +56,8 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
+ 	bcm4708-netgear-r6300-v2.dtb \
+ 	bcm47081-asus-rt-n18u.dtb \
+ 	bcm47081-buffalo-wzr-600dhp2.dtb \
+-	bcm47081-buffalo-wzr-900dhp.dtb
++	bcm47081-buffalo-wzr-900dhp.dtb \
++	bcm4709-asus-rt-ac87u.dtb
+ dtb-$(CONFIG_ARCH_BERLIN) += \
+ 	berlin2-sony-nsz-gs7.dtb	\
+ 	berlin2cd-google-chromecast.dtb
