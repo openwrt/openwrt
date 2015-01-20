@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2011-2013 OpenWrt.org
+# Copyright (C) 2011-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,15 +8,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=polarssl
-PKG_VERSION:=1.3.8
+PKG_VERSION:=1.3.9
 PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://polarssl.org/code/releases
-PKG_MD5SUM:=d1a2b4f21727e888f143414d2e3144e6
+PKG_MD5SUM:=48af7d1f0d5de512cbd6dacf5407884c
 
 PKG_BUILD_PARALLEL:=1
+PKG_LICENSE:=GPL-2.0+
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
