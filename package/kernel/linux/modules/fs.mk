@@ -321,10 +321,18 @@ define KernelPackage/fs-nfs-common
   KCONFIG:= \
 	CONFIG_LOCKD \
 	CONFIG_SUNRPC
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.18.0)),1)
+  FILES:= \
+	$(LINUX_DIR)/fs/nfs_common/grace.ko \
+	$(LINUX_DIR)/fs/lockd/lockd.ko \
+	$(LINUX_DIR)/net/sunrpc/sunrpc.ko
+  AUTOLOAD:=$(call AutoLoad,30,grace sunrpc lockd)
+else
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
 	$(LINUX_DIR)/net/sunrpc/sunrpc.ko
   AUTOLOAD:=$(call AutoLoad,30,sunrpc lockd)
+endif
 endef
 
 $(eval $(call KernelPackage,fs-nfs-common))
