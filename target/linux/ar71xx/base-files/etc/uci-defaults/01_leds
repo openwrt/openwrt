@@ -310,6 +310,11 @@ tl-wa850re)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:blue:signal5" "wlan0" "80" "100" "-79" "13"
 	;;
 
+tl-wa701nd-v2)
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
+	;;
+
 tl-wa860re)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:green:wlan" "phy0tpt"
