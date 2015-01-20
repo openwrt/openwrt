@@ -81,6 +81,10 @@ define uboot/Linksprite_pcDuino3
   TITLE:=U-Boot for Linksprite pcDuino3
 endef  
 
+define uboot/Lamobo_R1
+  TITLE:=U-Boot for Lamobo R1
+endef
+
 UBOOTS:= \
 	A10-OLinuXino-Lime \
 	A13-OLinuXino \
@@ -95,6 +99,7 @@ UBOOTS:= \
 	OLIMEX_A13_SOM \
 	Linksprite_pcDuino \
 	Linksprite_pcDuino3 \
+	Lamobo_R1 \
 
 define Package/uboot/template
 define Package/uboot-sunxi-$(1)
