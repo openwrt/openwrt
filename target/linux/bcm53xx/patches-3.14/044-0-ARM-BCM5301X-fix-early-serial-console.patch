@@ -1,19 +1,22 @@
-From 310a267714f7565dba8934dd51cdead6adc3b630 Mon Sep 17 00:00:00 2001
+From 140bd60383309e82b5cae3294a907c11a0a12b90 Mon Sep 17 00:00:00 2001
 From: Hauke Mehrtens <hauke@hauke-m.de>
-Date: Sun, 14 Sep 2014 21:02:35 +0200
-Subject: [PATCH 4/4] ARM: BCM5301X: fix early serial console
+Date: Sun, 14 Sep 2014 21:43:40 +0200
+Subject: [PATCH] ARM: BCM5301X: fix early serial console
 
 This device actually has a 8250 serial with a shift of 0.
 Tested this on a BCM4708.
 
 Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 ---
  arch/arm/Kconfig.debug | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/arch/arm/Kconfig.debug b/arch/arm/Kconfig.debug
+index 1c4889d..a528843 100644
 --- a/arch/arm/Kconfig.debug
 +++ b/arch/arm/Kconfig.debug
-@@ -113,7 +113,7 @@ choice
+@@ -109,7 +109,7 @@ choice
  	config DEBUG_BCM_5301X
  		bool "Kernel low-level debugging on BCM5301X UART1"
  		depends on ARCH_BCM_5301X
@@ -22,7 +25,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  
  	config DEBUG_BCM_KONA_UART
  		bool "Kernel low-level debugging messages via BCM KONA UART"
-@@ -1249,7 +1249,7 @@ config DEBUG_UART_VIRT
+@@ -1132,7 +1132,7 @@ config DEBUG_UART_VIRT
  config DEBUG_UART_8250_SHIFT
  	int "Register offset shift for the 8250 debug UART"
  	depends on DEBUG_LL_UART_8250 || DEBUG_UART_8250
@@ -31,3 +34,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	default 2
  
  config DEBUG_UART_8250_WORD
+-- 
+1.8.4.5
+

@@ -3,7 +3,7 @@ This patch does not contain any further code not in this mainline kernel.
 
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -371,6 +371,8 @@ source "drivers/mtd/onenand/Kconfig"
+@@ -366,6 +366,8 @@ source "drivers/mtd/onenand/Kconfig"
  
  source "drivers/mtd/lpddr/Kconfig"
  
@@ -14,7 +14,7 @@ This patch does not contain any further code not in this mainline kernel.
  endif # MTD
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -39,4 +39,5 @@ inftl-objs		:= inftlcore.o inftlmount.o
+@@ -35,4 +35,5 @@ inftl-objs		:= inftlcore.o inftlmount.o
  
  obj-y		+= chips/ lpddr/ maps/ devices/ nand/ onenand/ tests/
  
