@@ -15,8 +15,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 3 ++-
  5 files changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-index 52f1752..d772f54 100644
 --- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 @@ -20,7 +20,8 @@
@@ -28,9 +26,7 @@ index 52f1752..d772f54 100644
 +		       0x88000000 0x18000000>;
  	};
  
- 	chipcommonA {
-diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
-index 70a1093..aaafa4a 100644
+ 	gpio-keys {
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 @@ -20,7 +20,8 @@
@@ -43,8 +39,6 @@ index 70a1093..aaafa4a 100644
  	};
  
  	chipcommonA {
-diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
-index 257d6da..d52dce9 100644
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 @@ -20,7 +20,8 @@
@@ -56,9 +50,7 @@ index 257d6da..d52dce9 100644
 +		       0x88000000 0x08000000>;
  	};
  
- 	chipcommonA {
-diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
-index a010fec..819e2c4 100644
+ 	leds {
 --- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 +++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 @@ -20,7 +20,8 @@
@@ -70,9 +62,7 @@ index a010fec..819e2c4 100644
 +		       0x88000000 0x08000000>;
  	};
  
- 	chipcommonA {
-diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
-index 0b4bf00..aa2a5e9 100644
+ 	leds {
 --- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 @@ -20,7 +20,8 @@
@@ -84,7 +74,4 @@ index 0b4bf00..aa2a5e9 100644
 +		       0x88000000 0x08000000>;
  	};
  
- 	chipcommonA {
--- 
-1.8.4.5
-
+ 	gpio-keys {
