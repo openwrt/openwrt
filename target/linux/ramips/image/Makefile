@@ -893,7 +893,7 @@ endif
 #
 
 ifeq ($(SUBTARGET),mt7621)
-  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1
+  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1 firewrt
 endif
 
 define Device/mt7621
@@ -923,6 +923,11 @@ define Device/dir-860l-b1
 	seama -m "dev=/dev/mtdblock/2" -m "type=firmware" | \
 	check-size $$$$(IMAGE_SIZE) | \
 	seama-seal -m "signature=wrgac13_dlink.2013gui_dir860lb"
+endef
+
+define Device/firewrt
+  DTS := FIREWRT
+  IMAGE_SIZE := $(ralink_default_fw_size_8M)
 endef
 
 #

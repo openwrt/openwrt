@@ -50,6 +50,7 @@ platform_check_image() {
 	f7c027 | \
 	fonera20n | \
 	freestation5 | \
+	firewrt |\
 	hg255d | \
 	hlk-rm04 | \
 	ht-tm02 | \
