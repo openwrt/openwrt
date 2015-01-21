@@ -75,3 +75,15 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	spi {
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+@@ -20,7 +20,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	gpio-keys {
