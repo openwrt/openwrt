@@ -1,18 +1,21 @@
-From 840327b33202a791d4aae36c5deca56d283c209f Mon Sep 17 00:00:00 2001
+From 5b1864b899d2b591402704dd0f6528c8661f1817 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Sun, 7 Dec 2014 11:44:53 +0100
+Date: Tue, 20 Jan 2015 22:42:16 +0100
 Subject: [PATCH] ARM: BCM5301X: Add DT for Buffalo WZR-900DHP
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  arch/arm/boot/dts/Makefile                        |  3 +-
- arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts | 35 +++++++++++++++++++++++
- 2 files changed, 37 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts | 37 +++++++++++++++++++++++
+ 2 files changed, 39 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index ff4a5ae..0de664e 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -60,7 +60,8 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
@@ -25,14 +28,17 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
  dtb-$(CONFIG_ARCH_BCM_MOBILE) += bcm28155-ap.dtb \
  	bcm21664-garnet.dtb
+diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+new file mode 100644
+index 0000000..7d6868a
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,37 @@
 +/*
 + * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Buffalo WZR-900DHP
 + *
-+ * Copyright (C) 2014 Rafał Miłecki <zajec5@gmail.com>
++ * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
 + *
 + * Licensed under the GNU/GPL. See COPYING for details.
 + */
@@ -46,21 +52,25 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	model = "Buffalo WZR-900DHP (BCM47081)";
 +
 +	chosen {
-+		bootargs = "console=ttyS0,115200 earlyprintk";
++		bootargs = "console=ttyS0,115200";
 +	};
 +
 +	memory {
-+		reg = <0x00000000 0x08000000
-+		       0x88000000 0x08000000>;
++		reg = <0x00000000 0x08000000>;
 +	};
 +
-+	chipcommonA {
-+		uart0: serial@0300 {
-+			status = "okay";
-+		};
++	gpio-keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
 +
-+		uart1: serial@0400 {
-+			status = "okay";
++		restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
+-- 
+1.8.4.5
+

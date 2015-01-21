@@ -66,6 +66,17 @@ index bbb414f..20903a5 100644
  	};
  
  	memory {
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+@@ -16,7 +16,7 @@
+ 	model = "Buffalo WZR-900DHP (BCM47081)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
 -- 
 1.8.4.5
 
