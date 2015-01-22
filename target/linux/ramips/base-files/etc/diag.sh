@@ -9,7 +9,7 @@ get_status_led() {
 	3g-6200n)
 		status_led="edimax:green:power"
 		;;
-	3g300m | w150m)
+	3g150b | 3g300m | w150m)
 		status_led="tenda:blue:ap"
 		;;
 	ai-br100)
