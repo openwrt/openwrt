@@ -369,6 +369,7 @@ platform_check_image() {
 		return 1
 		;;
 
+	unifi-outdoor-plus | \
 	uap-pro)
 		[ "$magic_long" != "19852003" ] && {
 			echo "Invalid image type."
@@ -484,6 +485,7 @@ platform_do_upgrade() {
 	om5p)
 		platform_do_upgrade_openmesh "$ARGV"
 		;;
+	unifi-outdoor-plus | \
 	uap-pro)
 		MTD_CONFIG_ARGS="-s 0x180000"
 		default_do_upgrade "$ARGV"

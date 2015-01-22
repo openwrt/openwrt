@@ -738,6 +738,9 @@ ar71xx_board_detect() {
 	*"UniFiAP Outdoor")
 		name="unifi-outdoor"
 		;;
+	*"UniFiAP Outdoor+")
+		name="unifi-outdoor-plus"
+		;;
 	*WP543)
 		name="wp543"
 		;;

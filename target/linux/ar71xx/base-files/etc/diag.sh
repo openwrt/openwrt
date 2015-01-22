@@ -255,6 +255,9 @@ get_status_led() {
 	uap-pro)
 		status_led="ubnt:white:dome"
 		;;
+	unifi-outdoor-plus)
+		status_led="ubnt:white:front"
+		;;
 	airgateway)
 		status_led="ubnt:white:status"
 		;;
