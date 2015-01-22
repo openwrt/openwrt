@@ -7,14 +7,10 @@
 	model = "Intenso Memory 2 Move";
 
 	chosen {
-		bootargs = "console=ttyS1,57600n8 root=/dev/mtdblock5";
+		bootargs = "console=ttyS0,57600n8 root=/dev/mtdblock5";
 	};
 
 	palmbus@10000000 {
-		uart@500 {
-			status = "okay";
-		};
-
 		spi@b00 {
 			status = "okay";
 			m25p80@0 {
@@ -54,7 +50,7 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "i2c", "jtag", "uartf";
+				ralink,group = "i2c", "uartf";
 				ralink,function = "gpio";
 			};
 		};
@@ -73,21 +69,19 @@
 	};
 
 	gpio-keys-polled {
-		gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
-			power {
-				label = "power";
-				gpios = <&gpio0 1 1>;
-				linux,code = <0x116>;
-			};
-			reset {
-				label = "reset";
-				gpios = <&gpio0 10 1>;
-				linux,code = <0x198>;
-			};
+		power {
+			label = "power";
+			gpios = <&gpio0 1 1>;
+			linux,code = <0x116>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
 		};
 	};
 
