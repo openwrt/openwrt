@@ -8,7 +8,7 @@
 define Profile/M2M
 	NAME:=Intenso Memory 2 Move
 	PACKAGES:=\
-		kmod-ledtrig-netdev kmod-ledtrig-timer kmod-leds-gpio \
+		kmod-ledtrig-netdev kmod-ledtrig-timer \
 		kmod-usb-core kmod-usb2 kmod-usb-storage kmod-scsi-core \
 		kmod-fs-ext4 kmod-fs-vfat block-mount
 endef
