@@ -16,6 +16,7 @@ platform_check_image() {
 	case "$board" in
 	3g-6200n | \
 	3g-6200nl | \
+	3g150b | \
 	3g300m | \
 	a5-v11 | \
 	air3gii | \
