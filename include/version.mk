@@ -30,7 +30,7 @@ VERSION_NICK:=$(call qstrip_escape,$(CONFIG_VERSION_NICK))
 VERSION_NICK:=$(if $(VERSION_NICK),$(VERSION_NICK),$(RELEASE))
 
 VERSION_REPO:=$(call qstrip_escape,$(CONFIG_VERSION_REPO))
-VERSION_REPO:=$(if $(VERSION_REPO),$(VERSION_REPO),http://downloads.openwrt.org/snapshots/trunk/%s/packages)
+VERSION_REPO:=$(if $(VERSION_REPO),$(VERSION_REPO),http://downloads.openwrt.org/snapshots/trunk/%T/packages)
 
 VERSION_DIST:=$(call qstrip_escape,$(CONFIG_VERSION_DIST))
 VERSION_DIST:=$(if $(VERSION_DIST),$(VERSION_DIST),OpenWrt)
@@ -79,7 +79,6 @@ VERSION_SED:=$(SED) 's,%U,$(VERSION_REPO),g' \
 	-e 's,%R,$(REVISION),g' \
 	-e 's,%T,$(BOARD),g' \
 	-e 's,%S,$(BOARD)/$(if $(SUBTARGET),$(SUBTARGET),generic),g' \
-	-e 's,%s,$(BOARD)$(if $(SUBTARGET),.$(SUBTARGET)),g' \
 	-e 's,%t,$(VERSION_TAINTS),g' \
 	-e 's,%M,$(VERSION_MANUFACTURER),g' \
 	-e 's,%P,$(VERSION_PRODUCT),g' \
