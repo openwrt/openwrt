@@ -40,7 +40,11 @@ load_led() {
 			[ $default -eq 1 ] ||
 				echo 0 >/sys/class/leds/${sysfs}/brightness
 		}
-		echo $trigger > /sys/class/leds/${sysfs}/trigger
+		echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
+		[ $? = 0 ] || {
+			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
+			return 1
+		}
 		case "$trigger" in
 		"netdev")
 			[ -n "$dev" ] && {
