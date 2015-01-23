@@ -34,7 +34,13 @@ setup_interface () {
 	done
 
 	proto_add_data
-	[ -n "$ZONE" ] && json_add_string zone "$ZONE"
+	[ -n "$ZONE" ]     && json_add_string zone "$ZONE"
+	[ -n "$ntpsrv" ]   && json_add_string ntpserver "$ntpsrv"
+	[ -n "$timesvr" ]  && json_add_string timeserver "$timesvr"
+	[ -n "$hostname" ] && json_add_string hostname "$hostname"
+	[ -n "$message" ]  && json_add_string message "$message"
+	[ -n "$timezone" ] && json_add_int timezone "$timezone"
+	[ -n "$lease" ]    && json_add_int leasetime "$lease"
 	proto_close_data
 
 	proto_send_update "$INTERFACE"
@@ -69,12 +75,6 @@ setup_interface () {
 
 		ubus call network add_dynamic "$(json_dump)"
 	fi
-
-	# TODO
-	# [ -n "$ntpsrv" ] && 	change_state network "$ifc" lease_ntpsrv "$ntpsrv"
-	# [ -n "$timesvr" ] && 	change_state network "$ifc" lease_timesrv "$timesvr"
-	# [ -n "$hostname" ] &&	change_state network "$ifc" lease_hostname "$hostname"
-	# [ -n "$timezone" ] && 	change_state network "$ifc" lease_timezone "$timezone"
 }
 
 deconfig_interface() {
