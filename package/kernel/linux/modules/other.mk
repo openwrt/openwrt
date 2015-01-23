@@ -70,6 +70,26 @@ endef
 $(eval $(call KernelPackage,bluetooth))
 
 
+define KernelPackage/bluetooth_6lowpan
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Bluetooth 6LoWPAN support
+  DEPENDS:=+kmod-bluetooth @!(LINUX_3_3||LINUX_3_8||LINUX_3_10||LINUX_3_13||LINUX_3_14)
+  KCONFIG:= \
+  CONFIG_6LOWPAN=m \
+  CONFIG_BT_6LOWPAN=m
+  FILES:= \
+       $(LINUX_DIR)/net/bluetooth/bluetooth_6lowpan.ko \
+       $(LINUX_DIR)/net/6lowpan/6lowpan.ko
+       AUTOLOAD:=$(call AutoProbe,bluetooth)
+endef
+
+define KernelPackage/bluetooth_6lowpan/description
+ Kernel support for 6LoWPAN over Bluetooth Low Energy devices
+endef
+
+$(eval $(call KernelPackage,bluetooth_6lowpan))
+
+
 define KernelPackage/bluetooth-hci-h4p
   SUBMENU:=$(OTHER_MENU)
   TITLE:=HCI driver with H4 Nokia extensions
