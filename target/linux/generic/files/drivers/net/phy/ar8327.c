@@ -759,7 +759,8 @@ ar8327_atu_flush(struct ar8xxx_priv *priv)
 			      AR8327_ATU_FUNC_BUSY, 0);
 	if (!ret)
 		ar8xxx_write(priv, AR8327_REG_ATU_FUNC,
-			    AR8327_ATU_FUNC_OP_FLUSH);
+			     AR8327_ATU_FUNC_OP_FLUSH |
+			     AR8327_ATU_FUNC_BUSY);
 
 	return ret;
 }

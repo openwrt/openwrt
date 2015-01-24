@@ -613,7 +613,8 @@ ar8216_atu_flush(struct ar8xxx_priv *priv)
 
 	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
 	if (!ret)
-		ar8xxx_write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH);
+		ar8xxx_write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH |
+						   AR8216_ATU_ACTIVE);
 
 	return ret;
 }
@@ -1711,7 +1712,6 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 {
 	struct ar8xxx_priv *priv = phydev->priv;
 	struct switch_port_link link;
-	int ret;
 
 	if (phydev->addr != 0)
 		return genphy_read_status(phydev);
@@ -1736,16 +1736,11 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	}
 	phydev->duplex = link.duplex ? DUPLEX_FULL : DUPLEX_HALF;
 
-	/* flush the address translation unit */
-	mutex_lock(&priv->reg_mutex);
-	ret = priv->chip->atu_flush(priv);
-	mutex_unlock(&priv->reg_mutex);
-
 	phydev->state = PHY_RUNNING;
 	netif_carrier_on(phydev->attached_dev);
 	phydev->adjust_link(phydev->attached_dev);
 
-	return ret;
+	return 0;
 }
 
 static int
