@@ -178,7 +178,7 @@ static inline int fe_max_frag_size(int mtu)
 
 static inline int fe_max_buf_size(int frag_size)
 {
-	return frag_size - FE_RX_HLEN -
+	return frag_size - NET_SKB_PAD - NET_IP_ALIGN -
 		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
@@ -1284,13 +1284,11 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 	if (old_mtu > ETH_DATA_LEN && new_mtu > ETH_DATA_LEN)
 		return 0;
 
-	if (new_mtu <= ETH_DATA_LEN) {
+	if (new_mtu <= ETH_DATA_LEN)
 		priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
-		priv->rx_buf_size = MAX_RX_LENGTH;
-	} else {
+	else
 		priv->frag_size = PAGE_SIZE;
-		priv->rx_buf_size = fe_max_buf_size(PAGE_SIZE);
-	}
+	priv->rx_buf_size = fe_max_buf_size(priv->frag_size);
 
 	if (!netif_running(dev))
 		return 0;
@@ -1443,7 +1441,7 @@ static int fe_probe(struct platform_device *pdev)
 	priv->soc = soc;
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
 	priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
-	priv->rx_buf_size = MAX_RX_LENGTH;
+	priv->rx_buf_size = fe_max_buf_size(priv->frag_size);
 	if (priv->frag_size > PAGE_SIZE) {
 		dev_err(&pdev->dev, "error frag size.\n");
 		err = -EINVAL;
