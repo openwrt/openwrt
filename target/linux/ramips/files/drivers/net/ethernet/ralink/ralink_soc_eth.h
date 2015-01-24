@@ -304,9 +304,15 @@ enum fe_work_flag {
 #define FE_US_CYC_CNT_SHIFT	0x8
 #define FE_US_CYC_CNT_DIVISOR	1000000
 
-#define RX_DMA_PLEN0(_x)	(((_x) >> 16) & 0x3fff)
-#define RX_DMA_LSO		BIT(30)
+/* rxd2 */
 #define RX_DMA_DONE		BIT(31)
+#define RX_DMA_LSO		BIT(30)
+#define RX_DMA_PLEN0(_x)	(((_x) >> 16) & 0x3fff)
+#define RX_DMA_TAG		BIT(15)
+/* rxd3 */
+#define RX_DMA_TPID(_x)		(((_x) >> 16) & 0xffff)
+#define RX_DMA_VID(_x)		((_x) & 0xffff)
+/* rxd4 */
 #define RX_DMA_L4VALID		BIT(30)
 
 struct fe_rx_dma {
