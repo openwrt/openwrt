@@ -596,7 +596,8 @@ wpa_supplicant_add_network() {
 	}
 
 	local ht_str
-	[ -n "$ht" ] && append network_data "htmode=$ht" "$N$T"
+	[[ "$_w_mode" = adhoc ]] || ibss_htmode=
+	[ -n "$ibss_htmode" ] && append network_data "htmode=$ibss_htmode" "$N$T"
 
 	cat >> "$_config" <<EOF
 network={
