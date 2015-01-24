@@ -39,18 +39,12 @@ endef
 
 $(eval $(call KernelPackage,input-keyboard-ep93xx))
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.8.0)),1)
-SND_EP93XX_SOC_DIR:=cirrus
-else
-SND_EP93XX_SOC_DIR:=ep93xx
-endif
-
 define KernelPackage/sound-soc-ep93xx
   SUBMENU:=$(SOUND_MENU)
   TITLE:=EP93xx SoC sound support
   DEPENDS:=@TARGET_ep93xx +kmod-sound-core +kmod-sound-soc-core
   KCONFIG:=CONFIG_SND_EP93XX_SOC
-  FILES:=$(LINUX_DIR)/sound/soc/$(SND_EP93XX_SOC_DIR)/snd-soc-ep93xx.ko
+  FILES:=$(LINUX_DIR)/sound/soc/cirrus/snd-soc-ep93xx.ko
   AUTOLOAD:=$(call AutoLoad,57,snd-soc-ep93xx)
 endef
 
