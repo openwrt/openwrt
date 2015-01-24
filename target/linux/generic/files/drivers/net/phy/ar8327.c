@@ -976,7 +976,7 @@ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 {
 	int timeout = 20;
 
-	while (mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout)
+	while (ar8xxx_mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout)
                 udelay(10);
 
 	if (!timeout)
@@ -1009,19 +1009,19 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 
 		ar8327_wait_atu_ready(priv, r2, r1_func);
 
-		mii_write32(priv, r2, r1_data0, 0);
-		mii_write32(priv, r2, r1_data1, 0);
-		mii_write32(priv, r2, r1_data2, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data0, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data1, 0);
+		ar8xxx_mii_write32(priv, r2, r1_data2, 0);
 		break;
 	case AR8XXX_ARL_GET_NEXT:
-		mii_write32(priv, r2, r1_func,
-			    AR8327_ATU_FUNC_OP_GET_NEXT |
-			    AR8327_ATU_FUNC_BUSY);
+		ar8xxx_mii_write32(priv, r2, r1_func,
+				   AR8327_ATU_FUNC_OP_GET_NEXT |
+				   AR8327_ATU_FUNC_BUSY);
 		ar8327_wait_atu_ready(priv, r2, r1_func);
 
-		val0 = mii_read32(priv, r2, r1_data0);
-		val1 = mii_read32(priv, r2, r1_data1);
-		val2 = mii_read32(priv, r2, r1_data2);
+		val0 = ar8xxx_mii_read32(priv, r2, r1_data0);
+		val1 = ar8xxx_mii_read32(priv, r2, r1_data1);
+		val2 = ar8xxx_mii_read32(priv, r2, r1_data2);
 
 		*status = val2 & AR8327_ATU_STATUS;
 		if (!*status)
