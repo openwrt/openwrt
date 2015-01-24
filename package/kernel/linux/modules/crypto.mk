@@ -495,13 +495,6 @@ endef
 $(eval $(call KernelPackage,crypto-sha256))
 
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.6.0)),1)
-camellia_mod_suffix=_generic
-endif
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.7.0)),1)
-cast56_mod_suffix=_generic
-endif
-
 define KernelPackage/crypto-misc
   TITLE:=Other CryptoAPI modules
   DEPENDS:=+kmod-crypto-manager
@@ -523,10 +516,10 @@ define KernelPackage/crypto-misc
 	CONFIG_CRYPTO_WP512
   FILES:= \
 	$(LINUX_DIR)/crypto/anubis.ko \
-	$(LINUX_DIR)/crypto/camellia$(camellia_mod_suffix).ko \
-	$(if $(call kernel_patchver_ge,3.7),$(LINUX_DIR)/crypto/cast_common.ko) \
-	$(LINUX_DIR)/crypto/cast5$(cast56_mod_suffix).ko \
-	$(LINUX_DIR)/crypto/cast6$(cast56_mod_suffix).ko \
+	$(LINUX_DIR)/crypto/camellia_generic.ko \
+	$(LINUX_DIR)/crypto/cast_common.ko \
+	$(LINUX_DIR)/crypto/cast5_generic.ko \
+	$(LINUX_DIR)/crypto/cast6_generic.ko \
 	$(LINUX_DIR)/crypto/khazad.ko \
 	$(LINUX_DIR)/crypto/sha512_generic.ko \
 	$(LINUX_DIR)/crypto/tea.ko \

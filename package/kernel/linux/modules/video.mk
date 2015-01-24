@@ -8,14 +8,8 @@
 
 VIDEO_MENU:=Video Support
 
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.7.0)),1)
 V4L2_DIR=v4l2-core
 V4L2_USB_DIR=usb
-else
-V4L2_DIR=video
-V4L2_USB_DIR=video
-endif
-
 
 define KernelPackage/fb
   SUBMENU:=$(VIDEO_MENU)
@@ -99,18 +93,10 @@ define KernelPackage/video-core
 	CONFIG_V4L_PCI_DRIVERS=y \
 	CONFIG_V4L_PLATFORM_DRIVERS=y \
 	CONFIG_V4L_ISA_PARPORT_DRIVERS=y
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.6.0)),1)
   FILES:= \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-common.ko \
 	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videodev.ko
   AUTOLOAD:=$(call AutoLoad,60, videodev v4l2-common)
-else
-  FILES:= \
-	$(if $(CONFIG_COMPAT),$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-compat-ioctl32.ko) \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/v4l2-common.ko \
-	$(LINUX_DIR)/drivers/media/$(V4L2_DIR)/videodev.ko
-  AUTOLOAD:=$(call AutoLoad,60, $(if $(CONFIG_COMPAT),v4l2-compat-ioctl32) videodev v4l2-common)
-endif
 endef
 
 define KernelPackage/video-core/description
