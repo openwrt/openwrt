@@ -205,7 +205,7 @@ ar8xxx_phy_init(struct ar8xxx_priv *priv)
 }
 
 u32
-mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum)
+ar8xxx_mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 lo, hi;
@@ -217,7 +217,7 @@ mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum)
 }
 
 void
-mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val)
+ar8xxx_mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 lo, hi;
@@ -248,7 +248,7 @@ ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
-	val = mii_read32(priv, 0x10 | r2, r1);
+	val = ar8xxx_mii_read32(priv, 0x10 | r2, r1);
 
 	mutex_unlock(&bus->mdio_lock);
 
@@ -267,7 +267,7 @@ ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val)
 
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
-	mii_write32(priv, 0x10 | r2, r1, val);
+	ar8xxx_mii_write32(priv, 0x10 | r2, r1, val);
 
 	mutex_unlock(&bus->mdio_lock);
 }
@@ -286,10 +286,10 @@ ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 	bus->write(bus, 0x18, 0, page);
 	wait_for_page_switch();
 
-	ret = mii_read32(priv, 0x10 | r2, r1);
+	ret = ar8xxx_mii_read32(priv, 0x10 | r2, r1);
 	ret &= ~mask;
 	ret |= val;
-	mii_write32(priv, 0x10 | r2, r1, ret);
+	ar8xxx_mii_write32(priv, 0x10 | r2, r1, ret);
 
 	mutex_unlock(&bus->mdio_lock);
 

@@ -439,9 +439,9 @@ struct ar8xxx_priv {
 };
 
 u32
-mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum);
+ar8xxx_mii_read32(struct ar8xxx_priv *priv, int phy_id, int regnum);
 void
-mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val);
+ar8xxx_mii_write32(struct ar8xxx_priv *priv, int phy_id, int regnum, u32 val);
 u32
 ar8xxx_read(struct ar8xxx_priv *priv, int reg);
 void
