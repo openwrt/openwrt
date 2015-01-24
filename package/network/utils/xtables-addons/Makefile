@@ -31,7 +31,6 @@ define Package/xtables-addons
   SECTION:=net
   CATEGORY:=Network
   SUBMENU:=Firewall
-  DEPENDS:=@!LINUX_3_3
   TITLE:=Extensions not distributed in the main Xtables
   URL:=http://xtables-addons.sourceforge.net/
 endef

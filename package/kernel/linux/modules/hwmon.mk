@@ -59,7 +59,7 @@ else
   FILES:=$(LINUX_DIR)/drivers/hwmon/adt7410.ko
   AUTOLOAD:=$(call AutoLoad,60,adt7410)
 endif
-  $(call AddDepends/hwmon,+kmod-i2c-core @!(LINUX_3_3||LINUX_3_6))
+  $(call AddDepends/hwmon,+kmod-i2c-core)
 endef
 
 define KernelPackage/hwmon-adt7410/description
@@ -296,7 +296,7 @@ define KernelPackage/hwmon-pwmfan
   FILES:=$(LINUX_DIR)/drivers/hwmon/pwm-fan.ko
   AUTOLOAD:=$(call AutoLoad,60,pwm-fan)
   $(call AddDepends/hwmon,)
-  DEPENDS+=@!LINUX_3_3 @!LINUX_3_8 @!LINUX_3_10 @!LINUX_3_14
+  DEPENDS+=@!LINUX_3_8 @!LINUX_3_10 @!LINUX_3_14
 endef
 
 define KernelPackage/hwmon-pwmfan/description

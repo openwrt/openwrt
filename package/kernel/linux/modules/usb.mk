@@ -237,7 +237,7 @@ $(eval $(call KernelPackage,usb-gadget))
 define KernelPackage/usb-lib-composite
   TITLE:=USB lib composite
   KCONFIG:=CONFIG_USB_LIBCOMPOSITE
-  DEPENDS:=+kmod-usb-gadget +kmod-fs-configfs @!LINUX_3_3 @!LINUX_3_6
+  DEPENDS:=+kmod-usb-gadget +kmod-fs-configfs
   FILES:=$(LINUX_DIR)/drivers/usb/gadget/libcomposite.ko
   AUTOLOAD:=$(call AutoLoad,50,libcomposite)
   $(call AddDepends/usb)
@@ -256,7 +256,7 @@ define KernelPackage/usb-eth-gadget
 	CONFIG_USB_ETH \
 	CONFIG_USB_ETH_RNDIS=y \
 	CONFIG_USB_ETH_EEM=n
-  DEPENDS:=+kmod-usb-gadget +(!LINUX_3_3&&!LINUX_3_6):kmod-usb-lib-composite
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
 ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/u_ether.ko),)
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/u_ether.ko \
@@ -285,7 +285,7 @@ $(eval $(call KernelPackage,usb-eth-gadget))
 define KernelPackage/usb-serial-gadget
   TITLE:=USB Serial Gadget support
   KCONFIG:=CONFIG_USB_G_SERIAL
-  DEPENDS:=+kmod-usb-gadget +(!LINUX_3_3&&!LINUX_3_6):kmod-usb-lib-composite
+  DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
 ifneq ($(wildcard $(LINUX_DIR)/drivers/usb/gadget/u_serial.ko),)
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/u_serial.ko \
@@ -424,7 +424,7 @@ $(eval $(call KernelPackage,usb2))
 
 define KernelPackage/usb2-pci
   TITLE:=Support for PCI USB2 controllers
-  DEPENDS:=@PCI_SUPPORT @(!LINUX_3_3&&!LINUX_3_6) +kmod-usb2
+  DEPENDS:=@PCI_SUPPORT +kmod-usb2
   KCONFIG:=CONFIG_USB_EHCI_PCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/ehci-pci.ko
   AUTOLOAD:=$(call AutoLoad,42,ehci-pci,1)
@@ -440,7 +440,7 @@ $(eval $(call KernelPackage,usb2-pci))
 
 define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
-  DEPENDS:=@(!LINUX_3_3&&!LINUX_3_6&&!LINUX_3_8&&!LINUX_3_9)
+  DEPENDS:=@!LINUX_3_8
   KCONFIG:= \
 	CONFIG_USB_DWC2 \
 	CONFIG_USB_DWC2_DEBUG=n \
@@ -1025,7 +1025,7 @@ endef
 
 define KernelPackage/usb-net-asix
   TITLE:=Kernel module for USB-to-Ethernet Asix convertors
-  DEPENDS:=+!LINUX_3_3:kmod-libphy
+  DEPENDS:=+kmod-libphy
   KCONFIG:=CONFIG_USB_NET_AX8817X
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/asix.ko
   AUTOLOAD:=$(call AutoProbe,asix)
@@ -1106,7 +1106,7 @@ define KernelPackage/usb-net-smsc95xx
   KCONFIG:=CONFIG_USB_NET_SMSC95XX
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/smsc95xx.ko
   AUTOLOAD:=$(call AutoProbe,smsc95xx)
-  $(call AddDepends/usb-net, +(!LINUX_3_3&&!LINUX_3_6):kmod-lib-crc16)
+  $(call AddDepends/usb-net, +kmod-lib-crc16)
 endef
 
 define KernelPackage/usb-net-smsc95xx/description
@@ -1244,7 +1244,7 @@ define KernelPackage/usb-net-huawei-cdc-ncm
   KCONFIG:=CONFIG_USB_NET_HUAWEI_CDC_NCM
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/huawei_cdc_ncm.ko
   AUTOLOAD:=$(call AutoProbe,huawei_cdc_ncm)
-  $(call AddDepends/usb-net,+kmod-usb-wdm @!LINUX_3_3 @!LINUX_3_8 @!LINUX_3_10)
+  $(call AddDepends/usb-net,+kmod-usb-wdm @!LINUX_3_8 @!LINUX_3_10)
 endef
 
 define KernelPackage/usb-net-huawei-cdc-ncm/description

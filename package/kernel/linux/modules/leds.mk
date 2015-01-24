@@ -169,7 +169,6 @@ $(eval $(call KernelPackage,ledtrig-transient))
 define KernelPackage/ledtrig-oneshot
   SUBMENU:=$(LEDS_MENU)
   TITLE:=LED One-Shot Trigger
-  DEPENDS:=@!LINUX_3_3
   KCONFIG:=CONFIG_LEDS_TRIGGER_ONESHOT
   FILES:=$(LINUX_DIR)/drivers/leds/$(if $(call kernel_patchver_ge,3.10),trigger/)ledtrig-oneshot.ko
   AUTOLOAD:=$(call AutoLoad,50,ledtrig-oneshot)
