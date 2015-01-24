@@ -971,6 +971,78 @@ ar8327_sw_get_eee(struct switch_dev *dev,
 	return 0;
 }
 
+static void
+ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
+{
+	int timeout = 20;
+
+	while (mii_read32(priv, r2, r1) & AR8327_ATU_FUNC_BUSY && --timeout)
+                udelay(10);
+
+	if (!timeout)
+		pr_err("ar8327: timeout waiting for atu to become ready\n");
+}
+
+static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
+				 struct arl_entry *a, u32 *status, enum arl_op op)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 r2, page;
+	u16 r1_data0, r1_data1, r1_data2, r1_func;
+	u32 t, val0, val1, val2;
+	int i;
+
+	split_addr(AR8327_REG_ATU_DATA0, &r1_data0, &r2, &page);
+	r2 |= 0x10;
+
+	r1_data1 = (AR8327_REG_ATU_DATA1 >> 1) & 0x1e;
+	r1_data2 = (AR8327_REG_ATU_DATA2 >> 1) & 0x1e;
+	r1_func  = (AR8327_REG_ATU_FUNC >> 1) & 0x1e;
+
+	switch (op) {
+	case AR8XXX_ARL_INITIALIZE:
+		/* all ATU registers are on the same page
+		* therefore set page only once
+		*/
+		bus->write(bus, 0x18, 0, page);
+		wait_for_page_switch();
+
+		ar8327_wait_atu_ready(priv, r2, r1_func);
+
+		mii_write32(priv, r2, r1_data0, 0);
+		mii_write32(priv, r2, r1_data1, 0);
+		mii_write32(priv, r2, r1_data2, 0);
+		break;
+	case AR8XXX_ARL_GET_NEXT:
+		mii_write32(priv, r2, r1_func,
+			    AR8327_ATU_FUNC_OP_GET_NEXT |
+			    AR8327_ATU_FUNC_BUSY);
+		ar8327_wait_atu_ready(priv, r2, r1_func);
+
+		val0 = mii_read32(priv, r2, r1_data0);
+		val1 = mii_read32(priv, r2, r1_data1);
+		val2 = mii_read32(priv, r2, r1_data2);
+
+		*status = val2 & AR8327_ATU_STATUS;
+		if (!*status)
+			break;
+
+		i = 0;
+		t = AR8327_ATU_PORT0;
+		while (!(val1 & t) && ++i < AR8327_NUM_PORTS)
+			t <<= 1;
+
+		a->port = i;
+		a->mac[0] = (val0 & AR8327_ATU_ADDR0) >> AR8327_ATU_ADDR0_S;
+		a->mac[1] = (val0 & AR8327_ATU_ADDR1) >> AR8327_ATU_ADDR1_S;
+		a->mac[2] = (val0 & AR8327_ATU_ADDR2) >> AR8327_ATU_ADDR2_S;
+		a->mac[3] = (val0 & AR8327_ATU_ADDR3) >> AR8327_ATU_ADDR3_S;
+		a->mac[4] = (val1 & AR8327_ATU_ADDR4) >> AR8327_ATU_ADDR4_S;
+		a->mac[5] = (val1 & AR8327_ATU_ADDR5) >> AR8327_ATU_ADDR5_S;
+		break;
+	}
+}
+
 static int
 ar8327_sw_hw_apply(struct switch_dev *dev)
 {
@@ -1041,6 +1113,13 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.get = ar8xxx_sw_get_mirror_source_port,
 		.max = AR8327_NUM_PORTS - 1
  	},
+	{
+		.type = SWITCH_TYPE_STRING,
+		.name = "arl_table",
+		.description = "Get ARL table",
+		.set = NULL,
+		.get = ar8xxx_sw_get_arl_table,
+	},
 };
 
 static const struct switch_attr ar8327_sw_attr_port[] = {
@@ -1114,6 +1193,7 @@ const struct ar8xxx_chip ar8327_chip = {
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
+	.get_arl_entry = ar8327_get_arl_entry,
 	.sw_hw_apply = ar8327_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
@@ -1146,6 +1226,7 @@ const struct ar8xxx_chip ar8337_chip = {
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
+	.get_arl_entry = ar8327_get_arl_entry,
 	.sw_hw_apply = ar8327_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
