@@ -260,7 +260,7 @@ ar8xxx_read(struct ar8xxx_priv *priv, int reg)
 	mutex_lock(&bus->mdio_lock);
 
 	bus->write(bus, 0x18, 0, page);
-	usleep_range(1000, 2000); /* wait for the page switch to propagate */
+	wait_for_page_switch();
 	val = mii_read32(priv, 0x10 | r2, r1);
 
 	mutex_unlock(&bus->mdio_lock);
@@ -279,7 +279,7 @@ ar8xxx_write(struct ar8xxx_priv *priv, int reg, u32 val)
 	mutex_lock(&bus->mdio_lock);
 
 	bus->write(bus, 0x18, 0, page);
-	usleep_range(1000, 2000); /* wait for the page switch to propagate */
+	wait_for_page_switch();
 	mii_write32(priv, 0x10 | r2, r1, val);
 
 	mutex_unlock(&bus->mdio_lock);
@@ -297,7 +297,7 @@ ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 	mutex_lock(&bus->mdio_lock);
 
 	bus->write(bus, 0x18, 0, page);
-	usleep_range(1000, 2000); /* wait for the page switch to propagate */
+	wait_for_page_switch();
 
 	ret = mii_read32(priv, 0x10 | r2, r1);
 	ret &= ~mask;
