@@ -9,11 +9,7 @@ include $(INCLUDE_DIR)/image.mk
 
 TARGET_DTBS := rbt-832 dlan-usb-extender
 
-ifeq ($(KERNEL_PATCHVER),3.3)
-DTBS_DIR:=
-else
 DTBS_DIR:=dts/
-endif
 
 LOADADDR:=0x00008000
 
