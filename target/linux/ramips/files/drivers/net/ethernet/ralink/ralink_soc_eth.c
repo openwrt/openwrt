@@ -484,7 +484,7 @@ static int fe_vlan_rx_add_vid(struct net_device *dev,
 	u32 vlan_cfg;
 
 	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
-			(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+			(dev->features & NETIF_F_HW_VLAN_CTAG_TX)))
 		return 0;
 
 	if (test_bit(idx, &priv->vlan_map)) {
