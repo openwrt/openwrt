@@ -396,6 +396,7 @@ struct ar8xxx_priv {
 	bool initialized;
 	bool port4_phy;
 	char buf[2048];
+	bool link_up[AR8X16_MAX_PORTS];
 
 	bool init;
 

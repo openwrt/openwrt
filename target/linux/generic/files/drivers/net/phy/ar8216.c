@@ -1707,11 +1707,46 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 	return 0;
 }
 
+static bool
+ar8xxx_check_link_states(struct ar8xxx_priv *priv)
+{
+	bool link_new, changed = false;
+	u32 status;
+	int i;
+
+	mutex_lock(&priv->reg_mutex);
+
+	for (i = 0; i < priv->dev.ports; i++) {
+		status = priv->chip->read_port_status(priv, i);
+		link_new = !!(status & AR8216_PORT_STATUS_LINK_UP);
+		if (link_new == priv->link_up[i])
+			continue;
+
+		priv->link_up[i] = link_new;
+		changed = true;
+		dev_info(&priv->phy->dev, "Port %d is %s\n",
+			 i, link_new ? "up" : "down");
+	}
+
+	if (changed)
+		priv->chip->atu_flush(priv);
+
+	mutex_unlock(&priv->reg_mutex);
+
+	return changed;
+}
+
 static int
 ar8xxx_phy_read_status(struct phy_device *phydev)
 {
 	struct ar8xxx_priv *priv = phydev->priv;
 	struct switch_port_link link;
+
+	/* check for link changes and flush ATU
+	 * if a change was detected
+	 */
+	if (phydev->state == PHY_CHANGELINK)
+		ar8xxx_check_link_states(priv);
 
 	if (phydev->addr != 0)
 		return genphy_read_status(phydev);
