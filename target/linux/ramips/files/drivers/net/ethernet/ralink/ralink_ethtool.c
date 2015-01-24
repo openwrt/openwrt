@@ -208,5 +208,5 @@ void fe_set_ethtool_ops(struct net_device *netdev)
 		fe_ethtool_ops.get_ethtool_stats = fe_get_ethtool_stats;
 	}
 
-	SET_ETHTOOL_OPS(netdev, &fe_ethtool_ops);
+	netdev->ethtool_ops = &fe_ethtool_ops;
 }

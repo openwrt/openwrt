@@ -131,7 +131,6 @@ static struct fe_soc_data rt3050_data = {
 	.fwd_config = rt3050_fwd_config,
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,
-	.tx_udf_bit = TX_DMA_UDF,
 	.rx_int = FE_RX_DONE_INT,
 	.tx_int = FE_TX_DONE_INT,
 };
@@ -146,7 +145,6 @@ static struct fe_soc_data rt5350_data = {
 	.tx_dma = rt5350_tx_dma,
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,
-	.tx_udf_bit = TX_DMA_UDF,
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
 };

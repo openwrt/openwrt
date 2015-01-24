@@ -63,7 +63,6 @@ struct fe_soc_data rt2880_data = {
 	.fwd_config = rt2880_fwd_config,
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.checksum_bit = RX_DMA_L4VALID,
-	.tx_udf_bit = TX_DMA_UDF,
 	.rx_int = FE_RX_DONE_INT,
 	.tx_int = FE_TX_DONE_INT,
 	.mdio_read = rt2880_mdio_read,

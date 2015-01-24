@@ -64,7 +64,6 @@ static struct fe_soc_data rt3883_data = {
 	.rx_int = FE_RX_DONE_INT,
 	.tx_int = FE_TX_DONE_INT,
 	.checksum_bit = RX_DMA_L4VALID,
-	.tx_udf_bit = TX_DMA_UDF,
 	.mdio_read = rt2880_mdio_read,
 	.mdio_write = rt2880_mdio_write,
 	.mdio_adjust_link = rt2880_mdio_link_adjust,
