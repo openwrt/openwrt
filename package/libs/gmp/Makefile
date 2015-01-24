@@ -13,7 +13,7 @@ PKG_REVISION:=a
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)$(PKG_REVISION).tar.xz
-PKG_SOURCE_URL:=ftp://ftp.gmplib.org/pub/$(PKG_NAME)/
+PKG_SOURCE_URL:=http://gmplib.org/download/gmp/
 PKG_MD5SUM:=1e6da4e434553d2811437aa42c7f7c76
 
 PKG_BUILD_PARALLEL:=1
