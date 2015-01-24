@@ -251,7 +251,7 @@ $(eval $(call KernelPackage,ipip))
 
 
 IPSEC-m:= \
-	$(if $(CONFIG_LINUX_3_3),,xfrm/xfrm_algo) \
+	xfrm/xfrm_algo \
 	xfrm/xfrm_ipcomp \
 	xfrm/xfrm_user \
 	key/af_key \
@@ -484,7 +484,7 @@ $(eval $(call KernelPackage,gre))
 define KernelPackage/gre6
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=GRE support over IPV6
-  DEPENDS:=+kmod-ipv6 +kmod-iptunnel +kmod-ip6-tunnel @!LINUX_3_3 @!LINUX_3_6
+  DEPENDS:=+kmod-ipv6 +kmod-iptunnel +kmod-ip6-tunnel
   KCONFIG:=CONFIG_IPV6_GRE
   FILES:=$(LINUX_DIR)/net/ipv6/ip6_gre.ko
   AUTOLOAD:=$(call AutoLoad,39,ip6_gre)

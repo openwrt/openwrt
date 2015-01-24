@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/ifenslave
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-bonding @(LINUX_3_3||LINUX_3_6||LINUX_3_7||LINUX_3_8||LINUX_3_9||LINUX_3_10)
+  DEPENDS:=+kmod-bonding @(LINUX_3_8||LINUX_3_9||LINUX_3_10)
   TITLE:=A utility to manipulate kernel ethernet bonding devices
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org

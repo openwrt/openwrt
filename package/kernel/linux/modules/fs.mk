@@ -62,7 +62,7 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
-  DEPENDS:=+kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib +(!LINUX_3_3&&!LINUX_3_6&&!LINUX_3_8):kmod-lib-raid6 +(!LINUX_3_3&&!LINUX_3_6&&!LINUX_3_8):kmod-lib-xor
+  DEPENDS:=+kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib +!LINUX_3_8:kmod-lib-raid6 +!LINUX_3_8:kmod-lib-xor
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
 	CONFIG_BTRFS_FS_POSIX_ACL=n \
@@ -96,7 +96,7 @@ define KernelPackage/fs-cifs
     +kmod-crypto-md4 \
     +kmod-crypto-des \
     +kmod-crypto-ecb \
-    +!LINUX_3_3&&!LINUX_3_6:kmod-crypto-sha256
+    +kmod-crypto-sha256
 endef
 
 define KernelPackage/fs-cifs/description
@@ -163,7 +163,7 @@ define KernelPackage/fs-ext4
 	$(LINUX_DIR)/fs/jbd2/jbd2.ko \
 	$(LINUX_DIR)/fs/mbcache.ko
   AUTOLOAD:=$(call AutoLoad,30,mbcache jbd2 ext4,1)
-  $(call AddDepends/crc16, +!LINUX_3_3:kmod-crypto-hash)
+  $(call AddDepends/crc16, +kmod-crypto-hash)
 endef
 
 define KernelPackage/fs-ext4/description
@@ -176,7 +176,6 @@ $(eval $(call KernelPackage,fs-ext4))
 define KernelPackage/fs-f2fs
   SUBMENU:=$(FS_MENU)
   TITLE:=F2FS filesystem support
-  DEPENDS:=@!LINUX_3_3
   KCONFIG:= \
 	CONFIG_F2FS_FS \
 	CONFIG_F2FS_STAT_FS=y \
