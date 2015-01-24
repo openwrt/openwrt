@@ -51,7 +51,7 @@ enum fe_work_flag {
         FE_FLAG_MAX
 };
 
-#define FE_DRV_VERSION		"0.1.1"
+#define FE_DRV_VERSION		"0.1.2"
 
 /* power of 2 to let NEXT_TX_DESP_IDX work */
 #ifdef CONFIG_SOC_MT7621
@@ -322,11 +322,12 @@ struct fe_rx_dma {
 	unsigned int rxd4;
 } __packed __aligned(4);
 
-#define TX_DMA_PLEN0_MASK	((0x3fff) << 16)
-#define TX_DMA_PLEN0(_x)	(((_x) & 0x3fff) << 16)
-#define TX_DMA_PLEN1(_x)	((_x) & 0x3fff)
-#define TX_DMA_GET_PLEN0(_x)    (((_x) >> 16 ) & 0x3fff)
-#define TX_DMA_GET_PLEN1(_x)    ((_x) & 0x3fff)
+#define TX_DMA_BUF_LEN		0x3fff
+#define TX_DMA_PLEN0_MASK	(TX_DMA_BUF_LEN << 16)
+#define TX_DMA_PLEN0(_x)	(((_x) & TX_DMA_BUF_LEN) << 16)
+#define TX_DMA_PLEN1(_x)	((_x) & TX_DMA_BUF_LEN)
+#define TX_DMA_GET_PLEN0(_x)    (((_x) >> 16 ) & TX_DMA_BUF_LEN)
+#define TX_DMA_GET_PLEN1(_x)    ((_x) & TX_DMA_BUF_LEN)
 #define TX_DMA_LS1		BIT(14)
 #define TX_DMA_LS0		BIT(30)
 #define TX_DMA_DONE		BIT(31)
@@ -401,7 +402,6 @@ struct fe_soc_data
 	u32 rx_int;
 	u32 tx_int;
 	u32 checksum_bit;
-	u32 tx_udf_bit;
 };
 
 #define FE_FLAG_PADDING_64B		BIT(0)
@@ -410,6 +410,7 @@ struct fe_soc_data
 #define FE_FLAG_RX_2B_OFFSET		BIT(3)
 #define FE_FLAG_RX_SG_DMA		BIT(4)
 #define FE_FLAG_RX_VLAN_CTAG		BIT(5)
+#define FE_FLAG_NAPI_WEIGHT		BIT(6)
 
 #define FE_STAT_REG_DECLARE		\
 	_FE(tx_bytes)			\
@@ -434,6 +435,22 @@ FE_STAT_REG_DECLARE
 #undef _FE
 };
 
+enum fe_tx_flags {
+	FE_TX_FLAGS_SINGLE0	= 0x01,
+	FE_TX_FLAGS_PAGE0	= 0x02,
+	FE_TX_FLAGS_PAGE1	= 0x04,
+};
+
+struct fe_tx_buf
+{
+	struct sk_buff *skb;
+	u32 flags;
+	DEFINE_DMA_UNMAP_ADDR(dma_addr0);
+	DEFINE_DMA_UNMAP_LEN(dma_len0);
+	DEFINE_DMA_UNMAP_ADDR(dma_addr1);
+	DEFINE_DMA_UNMAP_LEN(dma_len1);
+};
+
 struct fe_priv
 {
 	spinlock_t			page_lock;
@@ -454,7 +471,7 @@ struct fe_priv
 	struct napi_struct		rx_napi;
 
 	struct fe_tx_dma		*tx_dma;
-	struct sk_buff			**tx_skb;
+	struct fe_tx_buf		*tx_buf;
 	dma_addr_t			tx_phys;
 	unsigned int			tx_free_idx;
 
