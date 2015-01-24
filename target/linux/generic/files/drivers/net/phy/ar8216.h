@@ -555,4 +555,10 @@ ar8xxx_reg_clear(struct ar8xxx_priv *priv, int reg, u32 val)
 	ar8xxx_rmw(priv, reg, val, 0);
 }
 
+static inline void
+wait_for_page_switch(void)
+{
+	udelay(5);
+}
+
 #endif
