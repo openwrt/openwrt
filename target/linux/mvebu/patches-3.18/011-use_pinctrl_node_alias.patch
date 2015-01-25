@@ -1,0 +1,258 @@
+From 01c434225ee67388711e78166cfe9b159e34fc9d Mon Sep 17 00:00:00 2001
+From: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Date: Fri, 19 Sep 2014 21:20:09 +0200
+Subject: ARM: mvebu: armada-xp: Use pinctrl node alias
+
+Armada XP pinctrl node gained an alias, make use of it.
+
+Signed-off-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Acked-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Tested-By: Benoit Masson <yahoo@perenite.com>
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+
+--- a/arch/arm/boot/dts/armada-xp-axpwifiap.dts
++++ b/arch/arm/boot/dts/armada-xp-axpwifiap.dts
+@@ -60,40 +60,6 @@
+ 		};
+ 
+ 		internal-regs {
+-			pinctrl: pin-ctrl@18000 {
+-				pinctrl-0 = <&pmx_phy_int>;
+-				pinctrl-names = "default";
+-
+-				pmx_ge0: pmx-ge0 {
+-					marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
+-						       "mpp4", "mpp5", "mpp6", "mpp7",
+-						       "mpp8", "mpp9", "mpp10", "mpp11";
+-					marvell,function = "ge0";
+-				};
+-
+-				pmx_ge1: pmx-ge1 {
+-					marvell,pins = "mpp12", "mpp13", "mpp14", "mpp15",
+-						       "mpp16", "mpp17", "mpp18", "mpp19",
+-						       "mpp20", "mpp21", "mpp22", "mpp23";
+-					marvell,function = "ge1";
+-				};
+-
+-				pmx_keys: pmx-keys {
+-					marvell,pins = "mpp33";
+-					marvell,function = "gpio";
+-				};
+-
+-				pmx_spi: pmx-spi {
+-					marvell,pins = "mpp36", "mpp37", "mpp38", "mpp39";
+-					marvell,function = "spi";
+-				};
+-
+-				pmx_phy_int: pmx-phy-int {
+-					marvell,pins = "mpp32";
+-					marvell,function = "gpio";
+-				};
+-			};
+-
+ 			serial@12000 {
+ 				status = "okay";
+ 			};
+@@ -162,3 +128,37 @@
+ 		};
+ 	};
+ };
++
++&pinctrl {
++	pinctrl-0 = <&pmx_phy_int>;
++	pinctrl-names = "default";
++
++	pmx_ge0: pmx-ge0 {
++		marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
++			       "mpp4", "mpp5", "mpp6", "mpp7",
++			       "mpp8", "mpp9", "mpp10", "mpp11";
++		marvell,function = "ge0";
++	};
++
++	pmx_ge1: pmx-ge1 {
++		marvell,pins = "mpp12", "mpp13", "mpp14", "mpp15",
++			       "mpp16", "mpp17", "mpp18", "mpp19",
++			       "mpp20", "mpp21", "mpp22", "mpp23";
++		marvell,function = "ge1";
++	};
++
++	pmx_keys: pmx-keys {
++		marvell,pins = "mpp33";
++		marvell,function = "gpio";
++	};
++
++	pmx_spi: pmx-spi {
++		marvell,pins = "mpp36", "mpp37", "mpp38", "mpp39";
++		marvell,function = "spi";
++	};
++
++	pmx_phy_int: pmx-phy-int {
++		marvell,pins = "mpp32";
++		marvell,function = "gpio";
++	};
++};
+--- a/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
++++ b/arch/arm/boot/dts/armada-xp-lenovo-ix4-300d.dts
+@@ -51,37 +51,6 @@
+ 		};
+ 
+ 		internal-regs {
+-			pinctrl: pin-ctrl@18000 {
+-				poweroff_pin: poweroff-pin {
+-					marvell,pins = "mpp24";
+-					marvell,function = "gpio";
+-				};
+-
+-				power_button_pin: power-button-pin {
+-					marvell,pins = "mpp44";
+-					marvell,function = "gpio";
+-				};
+-
+-				reset_button_pin: reset-button-pin {
+-					marvell,pins = "mpp45";
+-					marvell,function = "gpio";
+-				};
+-				select_button_pin: select-button-pin {
+-					marvell,pins = "mpp41";
+-					marvell,function = "gpio";
+-				};
+-
+-				scroll_button_pin: scroll-button-pin {
+-					marvell,pins = "mpp42";
+-					marvell,function = "gpio";
+-				};
+-
+-				hdd_led_pin: hdd-led-pin {
+-					marvell,pins = "mpp26";
+-					marvell,function = "gpio";
+-				};
+-			};
+-
+ 			serial@12000 {
+ 				status = "okay";
+ 			};
+@@ -282,3 +251,34 @@
+ 		gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+ 	};
+ };
++
++&pinctrl {
++	poweroff_pin: poweroff-pin {
++		marvell,pins = "mpp24";
++		marvell,function = "gpio";
++	};
++
++	power_button_pin: power-button-pin {
++		marvell,pins = "mpp44";
++		marvell,function = "gpio";
++	};
++
++	reset_button_pin: reset-button-pin {
++		marvell,pins = "mpp45";
++		marvell,function = "gpio";
++	};
++	select_button_pin: select-button-pin {
++		marvell,pins = "mpp41";
++		marvell,function = "gpio";
++	};
++
++	scroll_button_pin: scroll-button-pin {
++		marvell,pins = "mpp42";
++		marvell,function = "gpio";
++	};
++
++	hdd_led_pin: hdd-led-pin {
++		marvell,pins = "mpp26";
++		marvell,function = "gpio";
++	};
++};
+--- a/arch/arm/boot/dts/armada-xp-mv78230.dtsi
++++ b/arch/arm/boot/dts/armada-xp-mv78230.dtsi
+@@ -167,10 +167,6 @@
+ 		};
+ 
+ 		internal-regs {
+-			pinctrl: pin-ctrl@18000 {
+-				compatible = "marvell,mv78230-pinctrl";
+-			};
+-
+ 			gpio0: gpio@18100 {
+ 				compatible = "marvell,orion-gpio";
+ 				reg = <0x18100 0x40>;
+@@ -195,3 +191,7 @@
+ 		};
+ 	};
+ };
++
++&pinctrl {
++	compatible = "marvell,mv78230-pinctrl";
++};
+--- a/arch/arm/boot/dts/armada-xp-mv78260.dtsi
++++ b/arch/arm/boot/dts/armada-xp-mv78260.dtsi
+@@ -251,10 +251,6 @@
+ 		};
+ 
+ 		internal-regs {
+-			pinctrl: pin-ctrl@18000 {
+-				compatible = "marvell,mv78260-pinctrl";
+-			};
+-
+ 			gpio0: gpio@18100 {
+ 				compatible = "marvell,orion-gpio";
+ 				reg = <0x18100 0x40>;
+@@ -298,3 +294,7 @@
+ 		};
+ 	};
+ };
++
++&pinctrl {
++	compatible = "marvell,mv78260-pinctrl";
++};
+--- a/arch/arm/boot/dts/armada-xp-mv78460.dtsi
++++ b/arch/arm/boot/dts/armada-xp-mv78460.dtsi
+@@ -289,10 +289,6 @@
+ 		};
+ 
+ 		internal-regs {
+-			pinctrl: pin-ctrl@18000 {
+-				compatible = "marvell,mv78460-pinctrl";
+-			};
+-
+ 			gpio0: gpio@18100 {
+ 				compatible = "marvell,orion-gpio";
+ 				reg = <0x18100 0x40>;
+@@ -336,3 +332,7 @@
+ 		};
+ 	};
+ };
++
++&pinctrl {
++	compatible = "marvell,mv78460-pinctrl";
++};
+--- a/arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts
++++ b/arch/arm/boot/dts/armada-xp-openblocks-ax3-4.dts
+@@ -77,12 +77,7 @@
+ 			serial@12100 {
+ 				status = "okay";
+ 			};
+-			pinctrl: pin-ctrl@18000 {
+-				led_pins: led-pins-0 {
+-					marvell,pins = "mpp49", "mpp51", "mpp53";
+-					marvell,function = "gpio";
+-				};
+-			};
++
+ 			leds {
+ 				compatible = "gpio-leds";
+ 				pinctrl-names = "default";
+@@ -187,3 +182,10 @@
+ 		};
+ 	};
+ };
++
++&pinctrl {
++	led_pins: led-pins-0 {
++		marvell,pins = "mpp49", "mpp51", "mpp53";
++		marvell,function = "gpio";
++	};
++};
