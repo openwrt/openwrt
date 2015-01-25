@@ -46,7 +46,7 @@ $(eval $(call KernelPackage,hwmon-vid))
 
 define KernelPackage/hwmon-adt7410
   TITLE:=ADT7410 monitoring support
-ifeq ($(CONFIG_LINUX_3_8)),)
+ifeq ($(CONFIG_LINUX_3_8),)
   KCONFIG:= \
 	CONFIG_SENSORS_ADT7X10 \
 	CONFIG_SENSORS_ADT7410
