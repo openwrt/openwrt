@@ -188,7 +188,7 @@ int selfsigned(char **arg)
 				}
 				memcpy(newc, oldc, delim - oldc);
 				newc += delim - oldc;
-				*newc++ = ';';
+				*newc++ = ',';
 				oldc = delim + 1;
 			} while(*delim);
 			arg++;
