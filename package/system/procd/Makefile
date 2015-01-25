@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2015-01-09
+PKG_VERSION:=2015-01-25
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/procd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=e10fca6b88a8b57fe5a9e80dfd941ae6d98cb970
+PKG_SOURCE_VERSION:=7e6045fe4558e442e97e4a8967f08689d53f2cc4
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -67,6 +67,10 @@ endmenu
 endef
 
 PKG_CONFIG_DEPENDS:= PROCD_SHOW_BOOT PROCD_ZRAM_TMPFS
+
+ifeq ($(CONFIG_NAND_SUPPORT),y)
+  CMAKE_OPTIONS += -DBUILD_UPGRADED=1
+endif
 
 ifeq ($(CONFIG_PROCD_SHOW_BOOT),y)
   CMAKE_OPTIONS += -DSHOW_BOOT_ON_CONSOLE=1
