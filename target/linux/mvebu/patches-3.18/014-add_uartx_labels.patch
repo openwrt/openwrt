@@ -1,0 +1,58 @@
+From 181d9b28cbc9ae10e1467e2d013033b672d91d4b Mon Sep 17 00:00:00 2001
+From: Arnaud Ebalard <arno@natisbad.org>
+Date: Sat, 22 Nov 2014 00:45:35 +0100
+Subject: arm: mvebu: add uartX labels for Armada SoC serial nodes
+
+This patch adds uartX labels for Armada SoC serial nodes. This is
+a preliminary work to be able to easily reference the serial lines
+in Device Tree files. One expected use is when providing stdout-path
+property for barebox.
+
+Reviewed-by: Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+Acked-by: Andrew Lunn <andrew@lunn.ch>
+Signed-off-by: Arnaud Ebalard <arno@natisbad.org>
+Link: https://lkml.kernel.org/r/0683d1a823fe9b75849f3dafcf1cf6ee291cdca6.1416613429.git.arno@natisbad.org
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+
+--- a/arch/arm/boot/dts/armada-370-xp.dtsi
++++ b/arch/arm/boot/dts/armada-370-xp.dtsi
+@@ -151,7 +151,7 @@
+ 				status = "disabled";
+ 			};
+ 
+-			serial@12000 {
++			uart0: serial@12000 {
+ 				compatible = "snps,dw-apb-uart";
+ 				reg = <0x12000 0x100>;
+ 				reg-shift = <2>;
+@@ -160,7 +160,8 @@
+ 				clocks = <&coreclk 0>;
+ 				status = "disabled";
+ 			};
+-			serial@12100 {
++
++			uart1: serial@12100 {
+ 				compatible = "snps,dw-apb-uart";
+ 				reg = <0x12100 0x100>;
+ 				reg-shift = <2>;
+--- a/arch/arm/boot/dts/armada-xp.dtsi
++++ b/arch/arm/boot/dts/armada-xp.dtsi
+@@ -53,7 +53,7 @@
+ 				reg = <0x11100 0x100>;
+ 			};
+ 
+-			serial@12200 {
++			uart2: serial@12200 {
+ 				compatible = "snps,dw-apb-uart";
+ 				reg = <0x12200 0x100>;
+ 				reg-shift = <2>;
+@@ -62,7 +62,8 @@
+ 				clocks = <&coreclk 0>;
+ 				status = "disabled";
+ 			};
+-			serial@12300 {
++
++			uart3: serial@12300 {
+ 				compatible = "snps,dw-apb-uart";
+ 				reg = <0x12300 0x100>;
+ 				reg-shift = <2>;

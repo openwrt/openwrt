@@ -1,0 +1,40 @@
+From a9ce1afb35317d2a0646c7530f0ae9822c93cd69 Mon Sep 17 00:00:00 2001
+From: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Date: Mon, 6 Oct 2014 11:37:56 +0200
+Subject: ARM: mvebu: Fix the Aurora L2 cache node with the required
+ cache-unified property
+
+The L2 cache controller on the Armada 370 and Armada XP SoCs is a
+unified cache. Moreover, the Aurora cache controller is compatible
+with the L2x0 cache controller: the "cache-unified" property is
+required by its binding.
+
+This patch fixes the Aurora L2 cache node for the Armada 370 and
+Armada XP SoCs by adding this property.
+
+Reported-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Signed-off-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Acked-by: Sebastian Hesselbarth <sebastian.hesselbarth@gmail.com>
+Link: https://lkml.kernel.org/r/1412588276-4514-1-git-send-email-gregory.clement@free-electrons.com
+Signed-off-by: Jason Cooper <jason@lakedaemon.net>
+
+--- a/arch/arm/boot/dts/armada-370.dtsi
++++ b/arch/arm/boot/dts/armada-370.dtsi
+@@ -95,6 +95,7 @@
+ 				compatible = "marvell,aurora-outer-cache";
+ 				reg = <0x08000 0x1000>;
+ 				cache-id-part = <0x100>;
++				cache-unified;
+ 				wt-override;
+ 			};
+ 
+--- a/arch/arm/boot/dts/armada-xp.dtsi
++++ b/arch/arm/boot/dts/armada-xp.dtsi
+@@ -39,6 +39,7 @@
+ 				compatible = "marvell,aurora-system-cache";
+ 				reg = <0x08000 0x1000>;
+ 				cache-id-part = <0x100>;
++				cache-unified;
+ 				wt-override;
+ 			};
+ 
