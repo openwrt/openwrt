@@ -1,8 +1,6 @@
-Index: linux-3.14.28/drivers/of/fdt.c
-===================================================================
---- linux-3.14.28.orig/drivers/of/fdt.c	2015-01-08 10:01:03.000000000 -0800
-+++ linux-3.14.28/drivers/of/fdt.c	2015-01-17 20:29:51.674740290 -0800
-@@ -817,6 +817,9 @@
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -817,6 +817,9 @@ int __init early_init_dt_scan_chosen(uns
  	p = of_get_flat_dt_prop(node, "bootargs", &l);
  	if (p != NULL && l > 0)
  		strlcpy(data, p, min((int)l, COMMAND_LINE_SIZE));
@@ -12,11 +10,9 @@ Index: linux-3.14.28/drivers/of/fdt.c
  
  	/*
  	 * CONFIG_CMDLINE is meant to be a default in case nothing else
-Index: linux-3.14.28/arch/mips/kernel/prom.c
-===================================================================
---- linux-3.14.28.orig/arch/mips/kernel/prom.c	2015-01-17 20:30:09.922830766 -0800
-+++ linux-3.14.28/arch/mips/kernel/prom.c	2015-01-17 20:30:54.095049815 -0800
-@@ -49,6 +49,9 @@
+--- a/arch/mips/kernel/prom.c
++++ b/arch/mips/kernel/prom.c
+@@ -49,6 +49,9 @@ void * __init early_init_dt_alloc_memory
  
  void __init __dt_setup_arch(struct boot_param_header *bph)
  {
