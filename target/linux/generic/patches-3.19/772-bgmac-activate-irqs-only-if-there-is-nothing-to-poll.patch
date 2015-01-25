@@ -1,0 +1,29 @@
+From fbd3b188fbaa861165a074c454d8f8dcf15343a0 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Mon, 8 Dec 2014 08:47:10 +0100
+Subject: [PATCH 3/4] bgmac: activate irqs only if there is nothing to poll
+
+IRQs should only get activated when there is nothing to poll in the
+queue any more and to after every poll.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1167,10 +1167,10 @@ static int bgmac_poll(struct napi_struct
+ 		bgmac->int_status = 0;
+ 	}
+ 
+-	if (handled < weight)
++	if (handled < weight) {
+ 		napi_complete(napi);
+-
+-	bgmac_chip_intrs_on(bgmac);
++		bgmac_chip_intrs_on(bgmac);
++	}
+ 
+ 	return handled;
+ }
