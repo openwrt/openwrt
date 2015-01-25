@@ -13,7 +13,7 @@ define Profile/Generic
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-thermal-armada \
 	kmod-gpio-button-hotplug kmod-hwmon-tmp421 \
-	kmod-hwmon-gpiofan kmod-leds-tlc59116 \
+	kmod-hwmon-pwmfan kmod-leds-tlc59116 \
 	kmod-ledtrig-usbdev kmod-mwlwifi wpad-mini \
 	swconfig
 endef
