@@ -20,19 +20,6 @@ set network.lan6.reqprefix='no'
 EOF
 }
 
-add_port_based_vlan() {
-	local device=$1
-	local vlan=$2
-	local ports=$3
-	uci batch <<EOF
-add network switch_vlan
-set network.@switch_vlan[-1].device='$device'
-set network.@switch_vlan[-1].vlan='$vlan'
-set network.@switch_vlan[-1].ports='$ports'
-set network.@switch_vlan[-1].port_based='1'
-EOF
-}
-
 . /lib/functions/uci-defaults.sh
 . /lib/kirkwood.sh
 
@@ -55,15 +42,15 @@ case "$board" in
 	;;
 "ea3500")
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "switch0" "1" "0"
-	add_port_based_vlan "switch0" "1" "0 1 2 3 5"
-	add_port_based_vlan "switch0" "2" "4 6"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
+	ucidef_add_switch_vlan "switch0" "2" "4 6"
 	;;
 "ea4500")
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "switch0" "1" "0"
-	add_port_based_vlan "switch0" "1" "0 1 2 3 5"
-	add_port_based_vlan "switch0" "2" "4 6"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
+	ucidef_add_switch_vlan "switch0" "2" "4 6"
 	;;
 "guruplug-server-plus")
 	set_lan_dhcp "eth0" "eth1"
