@@ -238,7 +238,7 @@ $(eval $(call KernelPackage,i2c-mux-pca954x))
 
 
 I2C_MUX_PCA9541_MODULES:= \
-  CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/$(I2C_MUX_PREFIX)pca9541
+  CONFIG_I2C_MUX_PCA9541:drivers/i2c/muxes/i2c-mux-pca9541
 
 define KernelPackage/i2c-mux-pca9541
   $(call i2c_defaults,$(I2C_MUX_PCA9541_MODULES),51)
