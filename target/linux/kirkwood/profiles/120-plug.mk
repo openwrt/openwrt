@@ -47,7 +47,7 @@ define Profile/GuruplugServerPlus
 	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-btmrvl kmod-btmrvl-sdio kmod-libertas kmod-libertas-sdio \
-	uboot-envtools
+	uboot-envtools wpad-mini
 endef
 
 define Profile/GuruplugServerPlus/Description
