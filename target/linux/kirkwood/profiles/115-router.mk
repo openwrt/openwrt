@@ -9,7 +9,7 @@ define Profile/EA3500
   NAME:=Linksys EA3500
   PACKAGES:= \
 	kmod-mwl8k kmod-usb2 kmod-usb-storage \
-	uboot-envtools
+	swconfig uboot-envtools
 endef
 
 define Profile/EA3500/Description
