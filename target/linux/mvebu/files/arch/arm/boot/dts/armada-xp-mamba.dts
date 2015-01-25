@@ -10,13 +10,41 @@
  *
  * Based on armada-xp-axpwifiap.dts:
  *
- *       Copyright (C) 2013 Marvell
+ *     Copyright (C) 2013 Marvell
  *
- *       Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
+ *     Thomas Petazzoni <thomas.petazzoni@free-electrons.com>
  *
- * This file is licensed under the terms of the GNU General Public
- * License version 2.  This program is licensed "as is" without any
- * warranty of any kind, whether express or implied.
+ * This file is dual-licensed: you can use it either under the terms
+ * of the GPL or the X11 license, at your option. Note that this dual
+ * licensing only applies to this file, and not this project as a
+ * whole.
+ *
+ *  a) This file is licensed under the terms of the GNU General Public
+ *     License version 2.  This program is licensed "as is" without
+ *     any warranty of any kind, whether express or implied.
+ *
+ * Or, alternatively,
+ *
+ *  b) Permission is hereby granted, free of charge, to any person
+ *     obtaining a copy of this software and associated documentation
+ *     files (the "Software"), to deal in the Software without
+ *     restriction, including without limitation the rights to use,
+ *     copy, modify, merge, publish, distribute, sublicense, and/or
+ *     sell copies of the Software, and to permit persons to whom the
+ *     Software is furnished to do so, subject to the following
+ *     conditions:
+ *
+ *     The above copyright notice and this permission notice shall be
+ *     included in all copies or substantial portions of the Software.
+ *
+ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *     OTHER DEALINGS IN THE SOFTWARE.
  */
 
 /dts-v1/;
@@ -26,10 +54,12 @@
 
 / {
 	model = "Linksys WRT1900AC (Mamba)";
-	compatible = "linksys,mamba", "marvell,armadaxp-mv78230", "marvell,armadaxp", "marvell,armada-370-xp";
+	compatible = "linksys,mamba", "marvell,armadaxp-mv78230",
+		     "marvell,armadaxp", "marvell,armada-370-xp";
 
 	chosen {
-		bootargs = "console=ttyS0,115200 earlyprintk";
+		bootargs = "console=ttyS0,115200";
+		stdout-path = &uart0;
 	};
 
 	memory {
@@ -64,50 +94,7 @@
 		};
 
 		internal-regs {
-			pinctrl {
-				pmx_ge0: pmx-ge0 {
-					marvell,pins = "mpp0", "mpp1", "mpp2", "mpp3",
-						       "mpp4", "mpp5", "mpp6", "mpp7",
-						       "mpp8", "mpp9", "mpp10", "mpp11";
-					marvell,function = "ge0";
-				};
-
-				pmx_ge1: pmx-ge1 {
-					marvell,pins = "mpp12", "mpp13", "mpp14", "mpp15",
-						       "mpp16", "mpp17", "mpp18", "mpp19",
-						       "mpp20", "mpp21", "mpp22", "mpp23";
-					marvell,function = "ge1";
-				};
-
-				pmx_keys: pmx-keys {
-					marvell,pins = "mpp32", "mpp33";
-					marvell,function = "gpio";
-				};
-
-				pmx_spi: pmx-spi {
-					marvell,pins = "mpp36", "mpp37", "mpp38", "mpp39";
-					marvell,function = "spi";
-				};
-
-				power_led_pin: power-led-pin {
-					marvell,pins = "mpp40";
-					marvell,function = "gpio";
-				};
-
-				gpio_fan_pin: gpio-fan-pin {
-					marvell,pins = "mpp24";
-					marvell,function = "gpio";
-				};
-
-			};
-
 			serial@12000 {
-				clock-frequency = <250000000>;
-				status = "okay";
-			};
-
-			serial@12100 {
-				clock-frequency = <250000000>;
 				status = "okay";
 			};
 
@@ -117,7 +104,7 @@
 			};
 
 			ethernet@70000 {
-				pinctrl-0 = <&pmx_ge0>;
+				pinctrl-0 = <&ge0_rgmii_pins>;
 				pinctrl-names = "default";
 				status = "okay";
 				phy-mode = "rgmii-id";
@@ -128,7 +115,7 @@
 			};
 
 			ethernet@74000 {
-				pinctrl-0 = <&pmx_ge1>;
+				pinctrl-0 = <&ge1_rgmii_pins>;
 				pinctrl-names = "default";
 				status = "okay";
 				phy-mode = "rgmii-id";
@@ -161,52 +148,52 @@
 
 					wan_amber@0 {
 						label = "mamba:amber:wan";
-							reg = <0x0>;
+						reg = <0x0>;
 					};
 
 					wan_white@1 {
 						label = "mamba:white:wan";
-							reg = <0x1>;
+						reg = <0x1>;
 					};
 
 					wlan_2g@2 {
 						label = "mamba:white:wlan_2g";
-							reg = <0x2>;
+						reg = <0x2>;
 					};
 
 					wlan_5g@3 {
 						label = "mamba:white:wlan_5g";
-							reg = <0x3>;
+						reg = <0x3>;
 					};
 
 					esata@4 {
 						label = "mamba:white:esata";
-							reg = <0x4>;
+						reg = <0x4>;
 					};
 
 					usb2@5 {
 						label = "mamba:white:usb2";
-							reg = <0x5>;
+						reg = <0x5>;
 					};
 
 					usb3_1@6 {
 						label = "mamba:white:usb3_1";
-							reg = <0x6>;
+						reg = <0x6>;
 					};
 
 					usb3_2@7 {
 						label = "mamba:white:usb3_2";
-							reg = <0x7>;
+						reg = <0x7>;
 					};
 
 					wps_white@8 {
 						label = "mamba:white:wps";
-							reg = <0x8>;
+						reg = <0x8>;
 					};
 
 					wps_amber@9 {
 						label = "mamba:amber:wps";
-							reg = <0x9>;
+						reg = <0x9>;
 					};
 				};
 			};
@@ -219,7 +206,6 @@
 				nand-on-flash-bbt;
 				nand-ecc-strength = <4>;
 				nand-ecc-step-size = <512>;
-
 
 				partition@0 {
 					label = "u-boot";
@@ -245,7 +231,7 @@
 
 				partition@a00000 {
 					label = "kernel1";
-					reg = <0xa00000 0x2800000>;    /* 3MB */
+					reg = <0xa00000 0x2800000>;    /* 3MB + rootfs1 */
 				};
 
 				partition@d00000 {
@@ -255,7 +241,7 @@
 
 				partition@3200000 {
 					label = "kernel2";
-					reg = <0x3200000 0x2800000>;    /* 3MB */
+					reg = <0x3200000 0x2800000>;    /* 3MB + rootfs2 */
 				};
 
 				partition@3500000 {
@@ -272,15 +258,13 @@
 
 			spi0: spi@10600 {
 				status = "okay";
-				pinctrl-0 = <&pmx_spi>;
-				pinctrl-names = "default";
 
 				spi-flash@0 {
 					#address-cells = <1>;
 					#size-cells = <1>;
-					compatible = "mr25h256";
+					compatible = "everspin,mr25h256";
 					reg = <0>; /* Chip select 0 */
-					spi-max-frequency = <108000000>;
+					spi-max-frequency = <40000000>;
 				};
 			};
 		};
@@ -290,7 +274,7 @@
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		pinctrl-0 = <&pmx_keys>;
+		pinctrl-0 = <&keys_pin>;
 		pinctrl-names = "default";
 
 		button@1 {
@@ -336,5 +320,22 @@
 		cpu-port-0 = <5>;
 		cpu-port-1 = <6>;
 	};
+};
 
+&pinctrl {
+
+	keys_pin: keys-pin {
+		marvell,pins = "mpp32", "mpp33";
+		marvell,function = "gpio";
+	};
+
+	power_led_pin: power-led-pin {
+		marvell,pins = "mpp40";
+		marvell,function = "gpio";
+	};
+
+	gpio_fan_pin: gpio-fan-pin {
+		marvell,pins = "mpp24";
+		marvell,function = "gpio";
+	};
 };
