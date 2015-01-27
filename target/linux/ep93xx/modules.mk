@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2011-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -61,7 +61,7 @@ define KernelPackage/sound-soc-ep93xx-ac97
   TITLE:=EP93xx SoC AC97 support
   DEPENDS:=@TARGET_ep93xx +kmod-sound-soc-core
   KCONFIG:=CONFIG_SND_EP93XX_SOC_AC97
-  FILES:=$(LINUX_DIR)/sound/soc/$(SND_EP93XX_SOC_DIR)/snd-soc-ep93xx-ac97.ko
+  FILES:=$(LINUX_DIR)/sound/soc/cirrus/snd-soc-ep93xx-ac97.ko
   AUTOLOAD:=$(call AutoLoad,56,snd-soc-ep93xx-ac97)
 endef
 
@@ -76,7 +76,7 @@ define KernelPackage/sound-soc-ep93xx-simone
   TITLE:=Sim.One EP93xx Soc sound support
   DEPENDS:=@TARGET_ep93xx +kmod-sound-soc-core
   KCONFIG:=CONFIG_SND_EP93XX_SOC_SIMONE
-  FILES:=$(LINUX_DIR)/sound/soc/$(SND_EP93XX_SOC_DIR)/snd-soc-simone.ko
+  FILES:=$(LINUX_DIR)/sound/soc/cirrus/snd-soc-simone.ko
   AUTOLOAD:=$(call AutoLoad,59,snd-soc-ep93xx)
 endef
 
