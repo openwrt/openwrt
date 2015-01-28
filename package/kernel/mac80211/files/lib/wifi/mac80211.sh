@@ -94,8 +94,12 @@ detect_mac80211() {
 
 		[ -n $htmode ] && append ht_capab "	option htmode	$htmode" "$N"
 
-		if [ -x /usr/bin/readlink ]; then
+		if [ -x /usr/bin/readlink -a -h /sys/class/ieee80211/${dev} ]; then
 			path="$(readlink -f /sys/class/ieee80211/${dev}/device)"
+		else
+			path=""
+		fi
+		if [ -n "$path" ]; then
 			path="${path##/sys/devices/}"
 			dev_id="	option path	'$path'"
 		else
