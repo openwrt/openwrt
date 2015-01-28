@@ -247,14 +247,14 @@ define uboot/p2812hnufx_ram
   TITLE:=U-Boot for ZyXEL P-2812HNU-Fx (RAM)
   SOC:=vr9
   DDR_SETTINGS:=board/zyxel/p2812hnufx/ddr_settings.h
-  DEPS:=@TARGET_lantiq_xrx200_P2812HNUFX
+  DEPS:=@TARGET_lantiq_xrx200_P2812HNUF1||@TARGET_lantiq_xrx200_P2812HNUF3
 endef
 
 define uboot/p2812hnufx_nandspl
   TITLE:=U-Boot for ZyXEL P-2812HNU-Fx (NAND SPL)
   SOC:=vr9
   IMAGE:=u-boot.ltq.lzo.nandspl
-  DEPS:=@TARGET_lantiq_xrx200_P2812HNUFX
+  DEPS:=@TARGET_lantiq_xrx200_P2812HNUF1||@TARGET_lantiq_xrx200_P2812HNUF3
 endef
 
 
