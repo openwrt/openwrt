@@ -19,7 +19,7 @@ DEFAULT_PACKAGES:=\
 	kmod-usb-ohci \
 	kmod-usb-hid \
 	kmod-usb-storage \
-	kmod-usb2 \
+	kmod-usb2-pci \
 	kmod-sound-core \
 	kmod-sound-cs5535audio \
 	kmod-crypto-core \
