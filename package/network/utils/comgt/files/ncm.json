@@ -19,7 +19,7 @@
 		"connect": "AT^NDISDUP=1,1,\\\"${apn}\\\"${username:+,\\\"$username\\\"}${password:+,\\\"$password\\\"}${auth:+,$auth}",
 		"disconnect": "AT^NDISDUP=1,0"
 	},
-	"SAMSUNG": {
+	"samsung": {
 		"initialize": [
 			"AT",
 			"AT+CGREG=2",
@@ -33,7 +33,7 @@
 		"connect": "AT+CGATT=1",
 		"disconnect": "AT+CGATT=0"
 	},
-	"Sony": {
+	"sony": {
 		"initialize": [
 			"AT+CFUN=1",
 			"AT+CGDCONT=1,\\\"IP\\\",\\\"${apn}\\\"",
