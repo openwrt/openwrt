@@ -1,5 +1,4 @@
-menu "Configuration"
-	depends on PACKAGE_libcurl
+if PACKAGE_libcurl
 
 choice
 	prompt "SSL library"
@@ -53,10 +52,6 @@ config LIBCURL_HTTP
 	bool "Enable HTTP support"
 	default y
 
-config LIBCURL_HTTPS
-	bool "Enable HTTPS support"
-	default n
-
 config LIBCURL_IMAP
 	bool "Enable IMAP support"
 	default n
@@ -79,7 +74,7 @@ config LIBCURL_POP3
 
 config LIBCURL_PROXY
 	bool "Enable proxy support"
-	default n
+	default y
 
 config LIBCURL_RTSP
 	bool "Enable RTSP support"
@@ -113,4 +108,4 @@ config LIBCURL_ZLIB
 	bool "Use zlib"
 	default n
 
-endmenu
+endif

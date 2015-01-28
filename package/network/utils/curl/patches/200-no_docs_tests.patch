@@ -1,6 +1,6 @@
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -128,7 +128,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
+@@ -129,7 +129,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP) $(VC7_LIBVCPROJ) $(VC7_SRCVCPROJ)	\
  bin_SCRIPTS = curl-config
  
  SUBDIRS = lib src include
@@ -11,7 +11,7 @@
  pkgconfig_DATA = libcurl.pc
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -574,7 +574,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP)
+@@ -577,7 +577,7 @@ CLEANFILES = $(VC6_LIBDSP) $(VC6_SRCDSP) $(VC7_LIBVCPROJ) $(VC7_SRCVCPROJ)	\
  
  bin_SCRIPTS = curl-config
  SUBDIRS = lib src include
@@ -19,4 +19,4 @@
 +DIST_SUBDIRS = $(SUBDIRS) packages
  pkgconfigdir = $(libdir)/pkgconfig
  pkgconfig_DATA = libcurl.pc
- LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c	\
+ LIB_VTLS_CFILES = vtls/openssl.c vtls/gtls.c vtls/vtls.c vtls/nss.c     \
