@@ -163,6 +163,9 @@ ramips_board_detect() {
 	*"Kingston MLW221")
 		name="mlw221"
 		;;
+	*"Kingston MLWG2")
+		name="mlwg2"
+		;;
 	*"Planex MZK-750DHP")
 		name="mzk-750dhp"
 		;;
