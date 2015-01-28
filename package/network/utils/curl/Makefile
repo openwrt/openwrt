@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
-PKG_VERSION:=7.38.0
+PKG_VERSION:=7.40.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -18,7 +18,7 @@ PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
 	ftp://ftp.planetmirror.com/pub/curl/ \
 	http://www.mirrormonster.com/curl/download/ \
 	http://curl.mirrors.cyberservers.net/download/
-PKG_MD5SUM:=af6b3c299bd891f43cb5f76c4091b7b4
+PKG_MD5SUM:=8d30594212e65657a5c32030f0998fa9
 
 PKG_LICENSE:=MIT
 PKG_LICENSE_FILES:=COPYING
@@ -37,7 +37,6 @@ PKG_CONFIG_DEPENDS := \
   LIBCURL_GNUTLS \
   LIBCURL_GOPHER \
   LIBCURL_HTTP \
-  LIBCURL_HTTPS \
   LIBCURL_IMAP \
   LIBCURL_LDAP \
   LIBCURL_LDAPS \
@@ -98,7 +97,7 @@ CONFIGURE_ARGS += \
 	--disable-manual \
 	--disable-verbose \
 	--without-ca-bundle \
-	$(if $(CONFIG_LIBCURL_OPENSSL),--with-ca-path=/etc/ssl/certs/) \
+	$(if $(CONFIG_LIBCURL_NOSSL),,--with-ca-path=/etc/ssl/certs/) \
 	--without-krb4 \
 	--without-libidn \
 	--without-nss \
@@ -114,7 +113,6 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LIBCURL_GOPHER),--enable,--disable)-gopher \
 	$(if $(CONFIG_LIBCURL_GNUTLS),--with-gnutls="$(STAGING_DIR)/usr",--without-gnutls) \
 	$(if $(CONFIG_LIBCURL_HTTP),--enable,--disable)-http \
-	$(if $(CONFIG_LIBCURL_HTTPS),--enable,--disable)-https \
 	$(if $(CONFIG_LIBCURL_IMAP),--enable,--disable)-imap \
 	$(if $(CONFIG_LIBCURL_LDAP),--enable,--disable)-ldap \
 	$(if $(CONFIG_LIBCURL_LDAPS),--enable,--disable)-ldaps \
