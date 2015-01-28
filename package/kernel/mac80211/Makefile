@@ -23,7 +23,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_DRIVERS = \
-	adm8211 ath5k libertas-usb libertas-sd p54-common p54-pci p54-usb p54-spi \
+	adm8211 ath5k libertas-usb libertas-sdio p54-common p54-pci p54-usb p54-spi \
 	rt2x00-lib rt2x00-pci rt2x00-usb rt2800-lib rt2400-pci rt2500-pci \
 	rt2500-usb rt61-pci rt73-usb rt2800-mmio rt2800-pci rt2800-usb rt2800-soc \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
@@ -679,7 +679,7 @@ define KernelPackage/libertas-usb
   AUTOLOAD:=$(call AutoProbe,libertas usb8xxx)
 endef
 
-define KernelPackage/libertas-sd
+define KernelPackage/libertas-sdio
   $(call KernelPackage/mac80211/Default)
   DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT @!TARGET_uml
   TITLE:=Marvell 88W8686 Wireless Driver
@@ -1606,7 +1606,7 @@ config-$(call config_package,net-hermes-pcmcia) += PCMCIA_HERMES
 config-y += HERMES_PRISM
 
 config-$(call config_package,adm8211) += ADM8211
-config-$(call config_package,libertas-sd) += LIBERTAS LIBERTAS_SDIO
+config-$(call config_package,libertas-sdio) += LIBERTAS LIBERTAS_SDIO
 config-$(call config_package,libertas-usb) += LIBERTAS LIBERTAS_USB
 config-$(call config_package,mwl8k) += MWL8K
 config-$(call config_package,mwifiex-pcie) += MWIFIEX MWIFIEX_PCIE
@@ -1721,7 +1721,7 @@ define KernelPackage/libertas-usb/install
 		$(1)/lib/firmware/libertas/
 endef
 
-define KernelPackage/libertas-sd/install
+define KernelPackage/libertas-sdio/install
 	$(INSTALL_DIR) $(1)/lib/firmware/libertas
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385_helper.bin \
@@ -1981,7 +1981,7 @@ $(eval $(call KernelPackage,adm8211))
 $(eval $(call KernelPackage,ath5k))
 $(eval $(call KernelPackage,lib80211))
 $(eval $(call KernelPackage,libertas-usb))
-$(eval $(call KernelPackage,libertas-sd))
+$(eval $(call KernelPackage,libertas-sdio))
 $(eval $(call KernelPackage,cfg80211))
 $(eval $(call KernelPackage,mac80211))
 $(eval $(call KernelPackage,p54-common))
