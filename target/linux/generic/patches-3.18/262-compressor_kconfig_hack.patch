@@ -1,6 +1,6 @@
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -205,16 +205,16 @@ config RANDOM32_SELFTEST
+@@ -205,25 +205,25 @@ config RANDOM32_SELFTEST
  # compression support is select'ed if needed
  #
  config ZLIB_INFLATE
@@ -20,4 +20,16 @@
 +	tristate "LZO decompress support"
  
  config LZ4_COMPRESS
- 	tristate
+-	tristate
++	tristate "LZ4 compress support"
+ 
+ config LZ4HC_COMPRESS
+-	tristate
++	tristate "LZ4HC compress support"
+ 
+ config LZ4_DECOMPRESS
+-	tristate
++	tristate "LZ4 decompress support"
+ 
+ source "lib/xz/Kconfig"
+ 
