@@ -38,6 +38,8 @@
 #define DIR_615C1_CONFIG_ADDR		0x1f020000
 #define DIR_615C1_CONFIG_SIZE		0x10000
 
+#define DIR_615C1_WLAN_MAC_ADDR		0x1f3fffb4
+
 static struct gpio_led dir_615c1_leds_gpio[] __initdata = {
 	{
 		.name		= "d-link:orange:status",
@@ -96,15 +98,15 @@ static void __init dir_615c1_setup(void)
 {
 	const char *config = (char *) KSEG1ADDR(DIR_615C1_CONFIG_ADDR);
 	u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
-	u8 mac[6];
-	u8 *wlan_mac = NULL;
+	u8 mac[ETH_ALEN], wlan_mac[ETH_ALEN];
 
 	if (ath79_nvram_parse_mac_addr(config, DIR_615C1_CONFIG_SIZE,
 				       "lan_mac=", mac) == 0) {
 		ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
 		ath79_init_mac(ath79_eth1_data.mac_addr, mac, 1);
-		wlan_mac = mac;
 	}
+
+	ath79_parse_ascii_mac((char *) KSEG1ADDR(DIR_615C1_WLAN_MAC_ADDR), wlan_mac);
 
 	ath79_register_mdio(0, DIR_615C1_MDIO_MASK);
 
