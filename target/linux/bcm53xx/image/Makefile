@@ -86,6 +86,7 @@ define Image/Build
 
 	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6250,nand-0x20000-0x800,U12H245T00_NETGEAR,1)
 	$(call Image/Build/Chk,$(1),bcm4708-netgear-r6300-v2,nand-0x20000-0x800,U12H240T00_NETGEAR,1)
+	$(call Image/Build/Chk,$(1),bcm4709-netgear-r8000,nand-0x20000-0x800,U12H315T00_NETGEAR,1)
  
 	$(call Image/Build/Trx,$(1),bcm4708-buffalo-wzr-1750dhp,nand-0x20000-0x800)
 	$(call Image/Build/Trx,$(1),bcm47081-buffalo-wzr-600dhp2,nand-0x20000-0x800)
