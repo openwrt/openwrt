@@ -1220,8 +1220,10 @@ static int __init fe_init(struct net_device *dev)
 	if (priv->soc->switch_init)
 		priv->soc->switch_init(priv);
 
-	memcpy(dev->dev_addr, priv->soc->mac, ETH_ALEN);
 	of_get_mac_address_mtd(priv->device->of_node, dev->dev_addr);
+	/*If the mac address is invalid, use default mac address  */
+	if (!is_valid_ether_addr(dev->dev_addr))
+		memcpy(dev->dev_addr, priv->soc->mac, ETH_ALEN);
 
 	err = fe_mdio_init(priv);
 	if (err)
