@@ -126,3 +126,35 @@ endef
 
 $(eval $(call KernelPackage,net-rtl8188eu))
 
+define KernelPackage/net-rtl8192su
+  SUBMENU:=$(WIRELESS_MENU)
+  TITLE:=RTL8192SU support (staging)
+  DEPENDS:=@USB_SUPPORT +@DRIVER_WEXT_SUPPORT +kmod-usb-core
+  KCONFIG:=\
+	CONFIG_STAGING=y \
+	CONFIG_R8712U
+  FILES:=$(LINUX_DIR)/drivers/staging/rtl8712/r8712u.ko
+  AUTOLOAD:=$(call AutoProbe,r8712u)
+endef
+
+define KernelPackage/net-rtl8192su/description
+ Kernel modules for RealTek RTL8712 and RTL81XXSU fullmac support.
+endef
+
+# R8712 FullMAC firmware
+R8712_FW:=rtl8712u.bin
+
+define Download/net-rtl8192su
+  FILE:=$(R8712_FW)
+
+  URL:=http://mirrors.arizona.edu/raspbmc/downloads/bin/lib/wifi/rtlwifi/
+  MD5SUM:=8e6396b5844a3e279ae8679555dec3f0
+endef
+
+define KernelPackage/net-rtl8192su/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(DL_DIR)/$(R8712_FW) $(1)/lib/firmware/rtlwifi/
+endef
+
+$(eval $(call Download,net-rtl8192su))
+$(eval $(call KernelPackage,net-rtl8192su))
