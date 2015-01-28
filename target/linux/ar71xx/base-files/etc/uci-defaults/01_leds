@@ -130,6 +130,11 @@ dir-615-e4)
 	ucidef_set_led_switch "lan4" "LAN4" "d-link:green:lan4" "switch0" "0x10"
 	;;
 
+dir-615-c1)
+	ucidef_set_led_netdev "wan" "WAN" "d-link:green:wan" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "d-link:green:wlan" "phy0tpt"
+	;;
+
 dir-825-b1)
 	ucidef_set_led_usbdev "usb" "USB" "d-link:blue:usb" "1-1"
 	;;
