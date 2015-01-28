@@ -10,7 +10,7 @@ DEFAULT_PACKAGES += \
             kmod-i2c-core kmod-i2c-gpio \
             kmod-i2c-algo-bit kmod-i2c-algo-pca kmod-i2c-algo-pcf \
             kmod-i2c-scx200-acb \
-            kmod-usb-core kmod-usb2 kmod-usb-ohci \
+            kmod-usb-core kmod-usb2-pci kmod-usb-ohci \
             kmod-cfg80211 kmod-mac80211 \
             kmod-mppe kmod-pppoa kmod-pppol2tp \
             kmod-ath5k kmod-ath9k \
