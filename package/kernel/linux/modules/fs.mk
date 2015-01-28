@@ -292,12 +292,24 @@ define KernelPackage/fs-nfs/description
  Kernel module for NFS support
 endef
 
+define KernelPackage/fs-nfs/config
+  if PACKAGE_kmod-fs-nfs
+       config KERNEL_NFS_V4
+               bool "Support NFSv4 in NFS client"
+               depends on PACKAGE_kmod-fs-sunrpc-auth-rpcgss
+               default n
+               help
+                 Select this option to support NFSv4 in the NFS server
+  endif
+endef
+
 $(eval $(call KernelPackage,fs-nfs))
 
 
 define KernelPackage/fs-nfs-common
   SUBMENU:=$(FS_MENU)
   TITLE:=Common NFS filesystem modules
+  DEPENDS:=+kmod-lib-oid-registry
   KCONFIG:= \
 	CONFIG_LOCKD \
 	CONFIG_SUNRPC
@@ -310,34 +322,38 @@ endef
 $(eval $(call KernelPackage,fs-nfs-common))
 
 
-define KernelPackage/fs-nfs-common-v4
+define KernelPackage/fs-sunrpc-auth-rpcgss
   SUBMENU:=$(FS_MENU)
-  TITLE:=Common NFS V4 filesystem modules
-  KCONFIG+=\
-	CONFIG_SUNRPC_GSS\
-	CONFIG_NFS_V4=y\
-	CONFIG_NFSD_V4=y
-  DEPENDS:= @BROKEN
-  FILES+=$(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.ko
-  AUTOLOAD=$(call AutoLoad,30,auth_rpcgss)
+  TITLE:=GSS authentication for SUN RPC
+  DEPENDS:=+kmod-fs-nfs-common
+  KCONFIG:=CONFIG_SUNRPC_GSS
+  FILES:= \
+       $(LINUX_DIR)/net/sunrpc/auth_gss/auth_rpcgss.ko
+  AUTOLOAD:=$(call AutoLoad,30,auth_rpcgss)
 endef
 
-define KernelPackage/fs-nfs-common-v4/description
- Kernel modules for NFS V4 & NFSD V4 kernel support
-endef
-
-$(eval $(call KernelPackage,fs-nfs-common-v4))
-
+$(eval $(call KernelPackage,fs-sunrpc-auth-rpcgss))
 
 define KernelPackage/fs-nfsd
   SUBMENU:=$(FS_MENU)
   TITLE:=NFS kernel server support
-  DEPENDS:=+kmod-fs-nfs-common +kmod-fs-exportfs
-  KCONFIG:= \
+  DEPENDS:=+kmod-fs-nfs-common +kmod-fs-exportfs +kmod-fs-sunrpc-auth-rpcgss
+  KCONFIG= \
 	CONFIG_NFSD \
 	CONFIG_NFSD_FAULT_INJECTION=n
   FILES:=$(LINUX_DIR)/fs/nfsd/nfsd.ko
   AUTOLOAD:=$(call AutoLoad,40,nfsd)
+endef
+
+define KernelPackage/fs-nfsd/config
+  if PACKAGE_kmod-fs-nfsd
+       config KERNEL_NFSD_V4
+               bool "Support NFSv4 in NFS server"
+               depends on PACKAGE_kmod-fs-sunrpc-auth-rpcgss
+               default n
+               help
+                 Select this option to support NFSv4 in the NFS server
+  endif
 endef
 
 define KernelPackage/fs-nfsd/description

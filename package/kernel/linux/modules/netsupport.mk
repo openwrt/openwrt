@@ -967,3 +967,17 @@ define KernelPackage/rxrpc/description
 endef
 
 $(eval $(call KernelPackage,rxrpc))
+
+define KernelPackage/dns-resolver
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=DNS-resolver modules
+  KCONFIG:=CONFIG_DNS_RESOLVER
+  FILES:= \
+       $(LINUX_DIR)/net/dns_resolver/dns_resolver.ko
+endef
+
+define KernelPackage/dns-resolver/description
+ Kernel modules for DNS-RESOLVER support
+endef
+
+$(eval $(call KernelPackage,dns-resolver))
