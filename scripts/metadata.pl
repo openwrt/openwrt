@@ -12,6 +12,47 @@ sub confstr($) {
 	return $conf;
 }
 
+sub version_to_num($) {
+	my $str = shift;
+	my $num = 0;
+
+	if (defined($str) && $str =~ /^\d+(?:\.\d+)+$/)
+	{
+		my @n = (split(/\./, $str), 0, 0, 0, 0);
+		$num = ($n[0] << 24) | ($n[1] << 16) | ($n[2] << 8) | $n[3];
+	}
+
+	return $num;
+}
+
+sub version_filter_list(@) {
+	my $cmpver = version_to_num(shift @_);
+	my @items;
+
+	foreach my $item (@_)
+	{
+		if ($item =~ s/@(lt|le|gt|ge|eq|ne)(\d+(?:\.\d+)+)\b//)
+		{
+			my $op = $1;
+			my $symver = version_to_num($2);
+
+			if ($symver > 0 && $cmpver > 0)
+			{
+				next unless (($op eq 'lt' && $cmpver <  $symver) ||
+				             ($op eq 'le' && $cmpver <= $symver) ||
+				             ($op eq 'gt' && $cmpver >  $symver) ||
+				             ($op eq 'ge' && $cmpver >= $symver) ||
+				             ($op eq 'eq' && $cmpver == $symver) ||
+				             ($op eq 'ne' && $cmpver != $symver));
+			}
+		}
+
+		push @items, $item;
+	}
+
+	return @items;
+}
+
 sub parse_target_metadata() {
 	my $file = shift @ARGV;
 	my ($target, @target, $profile);
@@ -96,6 +137,7 @@ sub gen_kconfig_overrides() {
 	my $package;
 	my $pkginfo = shift @ARGV;
 	my $cfgfile = shift @ARGV;
+	my $patchver = shift @ARGV;
 
 	# parameter 2: build system config
 	open FILE, "<$cfgfile" or return;
@@ -110,7 +152,7 @@ sub gen_kconfig_overrides() {
 		/^Package:\s*(.+?)\s*$/ and $package = $1;
 		/^Kernel-Config:\s*(.+?)\s*$/ and do {
 			my @config = split /\s+/, $1;
-			foreach my $config (@config) {
+			foreach my $config (version_filter_list($patchver, @config)) {
 				my $val = 'm';
 				my $override;
 				if ($config =~ /^(.+?)=(.+)$/) {
@@ -893,6 +935,12 @@ sub gen_package_license($) {
 	}
 }
 
+sub gen_version_filtered_list() {
+	foreach my $item (version_filter_list(@ARGV)) {
+		print "$item\n";
+	}
+}
+
 sub parse_command() {
 	my $cmd = shift @ARGV;
 	for ($cmd) {
@@ -904,17 +952,19 @@ sub parse_command() {
 		/^package_feeds$/ and return gen_package_feeds();
 		/^package_license$/ and return gen_package_license(0);
 		/^package_licensefull$/ and return gen_package_license(1);
+		/^version_filter$/ and return gen_version_filtered_list();
 	}
 	print <<EOF
 Available Commands:
-	$0 target_config [file] 	Target metadata in Kconfig format
-	$0 package_mk [file]		Package metadata in makefile format
-	$0 package_config [file] 	Package metadata in Kconfig format
-	$0 kconfig [file] [config]	Kernel config overrides
-	$0 package_source [file] 	Package source file information
-	$0 package_feeds [file]		Package feed information in makefile format
-	$0 package_license [file] 	Package license information
-	$0 package_licensefull [file] 	Package license information (full list)
+	$0 target_config [file] 		Target metadata in Kconfig format
+	$0 package_mk [file]			Package metadata in makefile format
+	$0 package_config [file] 		Package metadata in Kconfig format
+	$0 kconfig [file] [config] [patchver]	Kernel config overrides
+	$0 package_source [file] 		Package source file information
+	$0 package_feeds [file]			Package feed information in makefile format
+	$0 package_license [file] 		Package license information
+	$0 package_licensefull [file] 		Package license information (full list)
+	$0 version_filter [patchver] [list...]	Filter list of version tagged strings
 
 EOF
 }
