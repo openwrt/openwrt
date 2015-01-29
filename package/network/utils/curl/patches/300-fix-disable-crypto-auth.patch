@@ -1,0 +1,25 @@
+--- a/lib/curl_ntlm_msgs.c
++++ b/lib/curl_ntlm_msgs.c
+@@ -571,7 +571,7 @@ CURLcode Curl_sasl_create_ntlm_type3_mes
+   else
+ #endif
+ 
+-#if USE_NTRESPONSES && USE_NTLM2SESSION
++#if USE_NTRESPONSES && USE_NTLM2SESSION && !defined(CURL_DISABLE_CRYPTO_AUTH)
+   /* We don't support NTLM2 if we don't have USE_NTRESPONSES */
+   if(ntlm->flags & NTLMFLAG_NEGOTIATE_NTLM2_KEY) {
+     unsigned char ntbuffer[0x18];
+--- a/lib/vtls/vtls.c
++++ b/lib/vtls/vtls.c
+@@ -835,9 +835,9 @@ void Curl_ssl_md5sum(unsigned char *tmp,
+                      unsigned char *md5sum, /* output */
+                      size_t md5len)
+ {
+-#ifdef curlssl_md5sum
++#if defined(curlssl_md5sum)
+   curlssl_md5sum(tmp, tmplen, md5sum, md5len);
+-#else
++#elif !defined(CURL_DISABLE_CRYPTO_AUTH)
+   MD5_context *MD5pw;
+ 
+   (void) md5len;
