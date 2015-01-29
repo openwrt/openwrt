@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2014 OpenWrt.org
+# Copyright (C) 2007-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=curl
 PKG_VERSION:=7.40.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://curl.haxx.se/download/ \
@@ -105,7 +105,7 @@ CONFIGURE_ARGS += \
 	$(call autoconf_bool,CONFIG_IPV6,ipv6) \
 	$(if $(CONFIG_LIBCURL_AXTLS),--with-axtls="$(STAGING_DIR)/usr",--without-axtls) \
 	$(if $(CONFIG_LIBCURL_COOKIES),--enable,--disable)-cookies \
-	$(if $(CONFIG_LIBCURL_CRYPTO-AUTH),--enable,--disable)-crypto-auth \
+	$(if $(CONFIG_LIBCURL_CRYPTO_AUTH),--enable,--disable)-crypto-auth \
 	$(if $(CONFIG_LIBCURL_CYASSL),--with-cyassl="$(STAGING_DIR)/usr",--without-cyassl) \
 	$(if $(CONFIG_LIBCURL_DICT),--enable,--disable)-dict \
 	$(if $(CONFIG_LIBCURL_FILE),--enable,--disable)-file \
@@ -116,7 +116,7 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LIBCURL_IMAP),--enable,--disable)-imap \
 	$(if $(CONFIG_LIBCURL_LDAP),--enable,--disable)-ldap \
 	$(if $(CONFIG_LIBCURL_LDAPS),--enable,--disable)-ldaps \
-	$(if $(CONFIG_LIBCURL_LIBCURL-OPTION),--enable,--disable)-libcurl-option \
+	$(if $(CONFIG_LIBCURL_LIBCURL_OPTION),--enable,--disable)-libcurl-option \
 	$(if $(CONFIG_LIBCURL_OPENSSL),--with-ssl="$(STAGING_DIR)/usr",--without-ssl) \
 	$(if $(CONFIG_LIBCURL_POLARSSL),--with-polarssl="$(STAGING_DIR)/usr",--without-polarssl) \
 	$(if $(CONFIG_LIBCURL_POP3),--enable,--disable)-pop3 \
