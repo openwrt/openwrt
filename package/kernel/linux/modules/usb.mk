@@ -1359,7 +1359,9 @@ define KernelPackage/usbip
   KCONFIG:= \
 	CONFIG_USBIP_CORE \
 	CONFIG_USBIP_DEBUG=n
-  FILES:=$(LINUX_DIR)/drivers/staging/usbip/usbip-core.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/staging/usbip/usbip-core.ko@lt3.17 \
+	$(LINUX_DIR)/drivers/usb/usbip/usbip-core.ko@ge3.17
   AUTOLOAD:=$(call AutoProbe,usbip-core)
   $(call AddDepends/usb)
 endef
@@ -1371,7 +1373,9 @@ define KernelPackage/usbip-client
   TITLE := USB-over-IP client driver
   DEPENDS := +kmod-usbip
   KCONFIG := CONFIG_USBIP_VHCI_HCD
-  FILES := $(LINUX_DIR)/drivers/staging/usbip/vhci-hcd.$(LINUX_KMOD_SUFFIX)
+  FILES := \
+	$(LINUX_DIR)/drivers/staging/usbip/vhci-hcd.ko@lt3.17 \
+	$(LINUX_DIR)/drivers/usb/usbip/vhci-hcd.ko@ge3.17
   AUTOLOAD := $(call AutoProbe,vhci-hcd)
   $(call AddDepends/usb)
 endef
@@ -1384,7 +1388,9 @@ $(call KernelPackage/usbip/Default)
   TITLE := USB-over-IP host driver
   DEPENDS := +kmod-usbip
   KCONFIG := CONFIG_USBIP_HOST
-  FILES := $(LINUX_DIR)/drivers/staging/usbip/usbip-host.ko
+  FILES := \
+	$(LINUX_DIR)/drivers/staging/usbip/usbip-host.ko@lt3.17 \
+	$(LINUX_DIR)/drivers/usb/usbip/usbip-host.ko@ge3.17
   AUTOLOAD := $(call AutoProbe,usbip-host)
   $(call AddDepends/usb)
 endef
