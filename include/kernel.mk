@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2011 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -174,7 +174,7 @@ $(call KernelPackage/$(1)/config)
   ifneq ($(if $(filter-out %=y %=n %=m,$(KCONFIG)),$(filter m y,$(foreach c,$(filter-out %=y %=n %=m,$(KCONFIG)),$($(c)))),.),)
     ifneq ($(if $(SDK),$(filter-out $(LINUX_DIR)/%.ko,$(FILES)),$(strip $(FILES))),)
       define Package/kmod-$(1)/install
-		  @for mod in $$(FILES); do \
+		  @for mod in $$$$$$$$($(SCRIPT_DIR)/metadata.pl version_filter $(KERNEL_PATCHVER) $$(FILES)); do \
 			if [ -e $$$$$$$$mod ]; then \
 				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
 				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
