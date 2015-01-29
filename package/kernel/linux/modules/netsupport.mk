@@ -144,24 +144,13 @@ endef
 
 $(eval $(call KernelPackage,8021q))
 
-define KernelPackage/udptunnel6
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=UDP tunneling support
-  DEPENDS:=@!(LINUX_3_8||LINUX_3_10||LINUX_3_13||LINUX_3_14) +kmod-ipv6
-  KCONFIG:=CONFIG_NET_UDP_TUNNEL
-  FILES:=$(LINUX_DIR)/net/ipv6/ip6_udp_tunnel.ko
-  AUTOLOAD:=$(call AutoLoad,32,ip6_udp_tunnel)
-endef
-
-$(eval $(call KernelPackage,udptunnel6))
-
 define KernelPackage/vxlan
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=Native VXLAN Kernel support
-  DEPENDS:=+kmod-iptunnel +IPV6:kmod-udptunnel6
+  DEPENDS:=+kmod-iptunnel
   KCONFIG:=CONFIG_VXLAN
   FILES:=$(LINUX_DIR)/drivers/net/vxlan.ko
-  AUTOLOAD:=$(call AutoLoad,33,vxlan)
+  AUTOLOAD:=$(call AutoLoad,13,vxlan)
 endef
 
 define KernelPackage/vxlan/description
