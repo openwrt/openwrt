@@ -28,8 +28,6 @@ tmp=`mktemp $TMP_DIR/dep.XXXXXXXX`
 for kmod in `find $TARGETS -type f -name \*.ko`; do
 	$OBJCOPY -O binary -j .modinfo $kmod $tmp
 	sed -e 's,\x00,\n,g' $tmp | \
-		egrep -a '^depends=' | \
-		sed -e 's,^depends=,,' -e 's/,/\n/g' | \
-		awk '{ print $1 ".ko" }'
+		sed -ne '/^depends=.\+/ { s/^depends=//; s/\(,\|$\)/.ko\n/gp; q }'
 done | sort -u
 rm -f $tmp
