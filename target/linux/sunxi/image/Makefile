@@ -24,7 +24,8 @@ BOARDS:= \
 	sun7i-a20-cubietruck \
 	sun7i-a20-olinuxino-lime \
 	sun7i-a20-olinuxino-micro \
-	sun7i-a20-pcduino3
+	sun7i-a20-pcduino3 \
+	sun7i-a20-lamobo-r1
 
 define Image/BuildKernel
 	mkimage -A arm -O linux -T kernel -C none \
@@ -86,6 +87,10 @@ endef
 
 define Image/Build/Profile/Bananapro
 	$(call Image/Build/SDCard,$(1),sun7i-a20-bananapro)
+endef
+
+define Image/Build/Profile/Lamobo_R1
+	$(call Image/Build/SDCard,$(1),sun7i-a20-lamobo-r1)
 endef
 
 define Image/Build/Profile/Cubieboard
