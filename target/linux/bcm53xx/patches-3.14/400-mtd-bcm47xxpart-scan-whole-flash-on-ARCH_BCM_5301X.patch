@@ -1,0 +1,36 @@
+From d658c21d6697293a928434fd6ac19264b5a8948d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Fri, 30 Jan 2015 08:25:54 +0100
+Subject: [PATCH] mtd: bcm47xxpart: scan whole flash on ARCH_BCM_5301X
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/mtd/bcm47xxpart.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
+index ee3e010..f13c824 100644
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -120,9 +120,15 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+ 	/* Parse block by block looking for magics */
+ 	for (offset = 0; offset <= master->size - blocksize;
+ 	     offset += blocksize) {
++#ifndef CONFIG_ARCH_BCM_5301X
++		/*
++		 * ARM routers may have partitions in higher memory. E.g.
++		 * Netgear R8000 has board_data at 0x2600000.
++		 */
+ 		/* Nothing more in higher memory */
+ 		if (offset >= 0x2000000)
+ 			break;
++#endif
+ 
+ 		if (curr_part >= BCM47XXPART_MAX_PARTS) {
+ 			pr_warn("Reached maximum number of partitions, scanning stopped!\n");
+-- 
+1.8.4.5
+
