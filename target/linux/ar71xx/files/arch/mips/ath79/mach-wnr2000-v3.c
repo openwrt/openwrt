@@ -1,5 +1,5 @@
 /*
- *  NETGEAR WNR2000v3 board support
+ *  NETGEAR WNR2000v3/WNR612v2/WNR1000v2 board support
  *
  *  Copytight (C) 2013 Mathieu Olivari <mathieu.olivari@gmail.com>
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
@@ -31,6 +31,9 @@
 
 #define WNR612V2_GPIO_LED_PWR_GREEN	11
 
+#define WNR1000V2_GPIO_LED_PWR_AMBER	1
+#define WNR1000V2_GPIO_LED_PWR_GREEN	11
+
 #define WNR2000V3_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WNR2000V3_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000V3_KEYS_POLL_INTERVAL)
 
@@ -54,6 +57,18 @@ static struct gpio_led wnr612v2_leds_gpio[] __initdata = {
 	{
 		.name		= "netgear:green:power",
 		.gpio		= WNR612V2_GPIO_LED_PWR_GREEN,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_led wnr1000v2_leds_gpio[] __initdata = {
+	{
+		.name		= "netgear:green:power",
+		.gpio		= WNR1000V2_GPIO_LED_PWR_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:amber:power",
+		.gpio		= WNR1000V2_GPIO_LED_PWR_AMBER,
 		.active_low	= 1,
 	}
 };
@@ -113,3 +128,13 @@ static void __init wnr612v2_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_WNR612_V2, "WNR612V2", "NETGEAR WNR612 V2", wnr612v2_setup);
+
+static void __init wnr1000v2_setup(void)
+{
+	wnr_common_setup();
+
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr1000v2_leds_gpio),
+				 wnr1000v2_leds_gpio);
+}
+
+MIPS_MACHINE(ATH79_MACH_WNR1000_V2, "WNR1000V2", "NETGEAR WNR1000 V2", wnr1000v2_setup);
