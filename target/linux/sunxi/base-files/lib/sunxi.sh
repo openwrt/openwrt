@@ -135,3 +135,12 @@ sunxi_board_detect() {
 	echo "$SUNXI_BOARD_MODEL" > /tmp/sysinfo/model
 	echo "Detected $SUNXI_BOARD_NAME // $SUNXI_BOARD_MODEL"
 }
+
+sunxi_board_name() {
+	local name
+
+	[ -f /tmp/sysinfo/board_name ] && name="$(cat /tmp/sysinfo/board_name)"
+	[ -z "$name" ] && name="unknown"
+
+	echo "$name"
+}
