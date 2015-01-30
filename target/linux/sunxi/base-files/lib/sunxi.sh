@@ -105,6 +105,10 @@ sunxi_board_detect() {
 			board="i12-tvbox"
 			;;
 
+		"Lamobo R1")
+			board="lamobo-r1"
+			;;
+
 		"Olimex A20-OLinuXino-LIME")
 			board="olinuxino-lime"
 			;;
