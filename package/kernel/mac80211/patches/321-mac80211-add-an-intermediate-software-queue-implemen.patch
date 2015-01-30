@@ -384,7 +384,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (pubsta) {
 +		u8 tid = skb->priority & IEEE80211_QOS_CTL_TID_MASK;
 +		pubtxq = pubsta->txq[tid];
-+	} else {
++	} else if (vif) {
 +		pubtxq = vif->txq;
 +	}
 +
