@@ -7,26 +7,17 @@
 
 touch /etc/config/network
 
+. /lib/sunxi.sh
 . /lib/functions/uci-defaults.sh
 
 ucidef_set_interface_loopback
 
-case "`cat /proc/device-tree/model`" in
-"Cubietech Cubieboard" |\
-"Cubietech Cubieboard2" |\
-"Lemaker bananaPi" |\
-"LeMaker Banana Pi" |\
-"LeMaker Banana Pro" |\
-"LinkSprite pcDuino" |\
-"LinkSprite pcDuino V3" |\
-"LinkSprite pcDuino3" |\
-"Olimex A10-OLinuXino-LIME" |\
-"Olimex A20-OLinuXino-LIME" |\
-"Olimex A20-Olinuxino Micro")
-	ucidef_set_interface_lan 'eth0'
-	;;
-"Olimex A13-Olinuxino")
+case "$( sunxi_board_name )" in
+"olinuxino-micro"*)
 	ucidef_set_interface_lan 'wlan0'
+	;;
+*)
+	ucidef_set_interface_lan 'eth0'
 	;;
 esac
 
