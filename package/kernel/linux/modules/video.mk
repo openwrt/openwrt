@@ -16,7 +16,9 @@ define KernelPackage/fb
   TITLE:=Framebuffer support
   DEPENDS:=@DISPLAY_SUPPORT
   KCONFIG:=CONFIG_FB
-  FILES:=$(LINUX_DIR)/drivers/video/fb.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/fb.ko@lt3.15 \
+	$(LINUX_DIR)/drivers/video/fbdev/core/fb.ko@ge3.15
   AUTOLOAD:=$(call AutoLoad,06,fb)
 endef
 
@@ -36,7 +38,9 @@ define KernelPackage/fb-cfb-fillrect
   TITLE:=Framebuffer software rectangle filling support
   DEPENDS:=+kmod-fb
   KCONFIG:=CONFIG_FB_CFB_FILLRECT
-  FILES:=$(LINUX_DIR)/drivers/video/cfbfillrect.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/cfbfillrect.ko@lt3.15 \
+	$(LINUX_DIR)/drivers/video/fbdev/core/cfbfillrect.ko@ge3.15
   AUTOLOAD:=$(call AutoLoad,07,cfbfillrect)
 endef
 
@@ -52,7 +56,9 @@ define KernelPackage/fb-cfb-copyarea
   TITLE:=Framebuffer software copy area support
   DEPENDS:=+kmod-fb
   KCONFIG:=CONFIG_FB_CFB_COPYAREA
-  FILES:=$(LINUX_DIR)/drivers/video/cfbcopyarea.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/cfbcopyarea.ko@lt3.15 \
+	$(LINUX_DIR)/drivers/video/fbdev/core/cfbcopyarea.ko@ge3.15
   AUTOLOAD:=$(call AutoLoad,07,cfbcopyarea)
 endef
 
@@ -67,7 +73,9 @@ define KernelPackage/fb-cfb-imgblt
   TITLE:=Framebuffer software image blit support
   DEPENDS:=+kmod-fb
   KCONFIG:=CONFIG_FB_CFB_IMAGEBLIT
-  FILES:=$(LINUX_DIR)/drivers/video/cfbimgblt.ko
+  FILES:= \
+	$(LINUX_DIR)/drivers/video/cfbimgblt.ko@lt3.15 \
+	$(LINUX_DIR)/drivers/video/fbdev/core/cfbimgblt.ko@ge3.15
   AUTOLOAD:=$(call AutoLoad,07,cfbimgblt)
 endef
 
