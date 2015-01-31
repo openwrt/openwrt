@@ -66,7 +66,7 @@ ifneq ($(PKG_NAME),toolchain)
 				XARGS="$(XARGS)"; \
 			$(SCRIPT_DIR)/gen-dependencies.sh "$$(IDIR_$(1))"; \
 		) | while read FILE; do \
-			grep -qE "^$$$$FILE$$$$" $(PKG_INFO_DIR)/$(1).provides || \
+			grep -q "^$$$$FILE$$$$" $(PKG_INFO_DIR)/$(1).provides || \
 				echo "$$$$FILE" >> $(PKG_INFO_DIR)/$(1).missing; \
 		done; \
 		if [ -f "$(PKG_INFO_DIR)/$(1).missing" ]; then \
