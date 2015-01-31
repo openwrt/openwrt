@@ -114,11 +114,9 @@ define KernelPackage/et131x
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Agere ET131x Gigabit Ethernet driver
   URL:=http://sourceforge.net/projects/et131x
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.18.0)),1)
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/agere/et131x.$(LINUX_KMOD_SUFFIX)
-else
-  FILES:=$(LINUX_DIR)/drivers/staging/et131x/et131x.$(LINUX_KMOD_SUFFIX)
-endif
+  FILES:= \
+	$(LINUX_DIR)/drivers/staging/et131x/et131x.ko@lt3.18 \
+	$(LINUX_DIR)/drivers/net/ethernet/agere/et131x.ko@ge3.18
   KCONFIG:= \
 	CONFIG_ET131X \
 	CONFIG_ET131X_DEBUG=n
