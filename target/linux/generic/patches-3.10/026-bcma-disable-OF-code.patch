@@ -1,0 +1,30 @@
+From 527608f06505b2a014982dd8ac7c85d97af51510 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 31 Jan 2015 17:40:58 +0100
+Subject: [PATCH] bcma: disable OF code
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/bcma/main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/bcma/main.c b/drivers/bcma/main.c
+index c44b8d6..e64900f 100644
+--- a/drivers/bcma/main.c
++++ b/drivers/bcma/main.c
+@@ -124,7 +124,8 @@ static bool bcma_is_core_needed_early(u16 core_id)
+ 	return false;
+ }
+ 
+-#if defined(CONFIG_OF) && defined(CONFIG_OF_ADDRESS)
++/* Backported code requires OF API from kernel 3.13 at least. */
++#if 0
+ static struct device_node *bcma_of_find_child_device(struct platform_device *parent,
+ 						     struct bcma_device *core)
+ {
+-- 
+1.8.4.5
+
