@@ -261,11 +261,9 @@ define KernelPackage/iio-ad799x
   KCONFIG:= \
 	CONFIG_AD799X_RING_BUFFER=y \
 	CONFIG_AD799X
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.16.0)),1)
-  FILES:=$(LINUX_DIR)/drivers/iio/adc/ad799x.ko
-else
-  FILES:=$(LINUX_DIR)/drivers/staging/iio/adc/ad799x.ko
-endif
+  FILES:= \
+	$(LINUX_DIR)/drivers/staging/iio/adc/ad799x.ko@lt3.16 \
+	$(LINUX_DIR)/drivers/iio/adc/ad799x.ko@ge3.16
   AUTOLOAD:=$(call AutoLoad,56,ad799x)
 endef
 
@@ -755,15 +753,11 @@ define KernelPackage/zram
 	CONFIG_ZRAM_DEBUG=n \
 	CONFIG_PGTABLE_MAPPING=n \
 	CONFIG_ZRAM_LZ4_COMPRESS=y
-ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,3.14.0)),1)
-  FILES:=\
-	$(LINUX_DIR)/mm/zsmalloc.ko \
-	$(LINUX_DIR)/drivers/block/zram/zram.ko
-else
   FILES:= \
-	$(LINUX_DIR)/drivers/staging/zsmalloc/zsmalloc.ko \
-	$(LINUX_DIR)/drivers/staging/zram/zram.ko
-endif
+	$(LINUX_DIR)/drivers/staging/zsmalloc/zsmalloc.ko@lt3.14 \
+	$(LINUX_DIR)/drivers/staging/zram/zram.ko@lt3.14 \
+	$(LINUX_DIR)/mm/zsmalloc.ko@ge3.14 \
+	$(LINUX_DIR)/drivers/block/zram/zram.ko@ge3.14
   AUTOLOAD:=$(call AutoLoad,20,zsmalloc zram)
 endef
 
