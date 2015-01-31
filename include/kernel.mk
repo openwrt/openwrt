@@ -88,7 +88,7 @@ define ModuleAutoLoad
 		mods="$$$$$$$$1"; \
 		boot="$$$$$$$$2"; \
 		shift 2; \
-		for mod in $$$$$$$$mods; do \
+		for mod in $$$$$$$$($(SCRIPT_DIR)/metadata.pl version_filter $(KERNEL_PATCHVER) $$$$$$$$mods); do \
 			mkdir -p $(2)/etc/modules.d; \
 			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$(1); \
 		done; \
@@ -105,7 +105,7 @@ define ModuleAutoLoad
 		mods="$$$$$$$$2"; \
 		boot="$$$$$$$$3"; \
 		shift 3; \
-		for mod in $$$$$$$$mods; do \
+		for mod in $$$$$$$$($(SCRIPT_DIR)/metadata.pl version_filter $(KERNEL_PATCHVER) $$$$$$$$mods); do \
 			mkdir -p $(2)/etc/modules.d; \
 			echo "$$$$$$$$mod" >> $(2)/etc/modules.d/$$$$$$$$priority-$(1); \
 		done; \
