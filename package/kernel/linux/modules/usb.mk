@@ -217,7 +217,9 @@ $(eval $(call KernelPackage,usb-phy-twl6030))
 define KernelPackage/usb-gadget
   TITLE:=USB Gadget support
   KCONFIG:=CONFIG_USB_GADGET
-  FILES:=$(LINUX_DIR)/drivers/usb/gadget/udc-core.ko
+  FILES:=\
+	$(LINUX_DIR)/drivers/usb/gadget/udc-core.ko@lt3.18 \
+	$(LINUX_DIR)/drivers/usb/gadget/udc/udc-core.ko@ge3.18
   AUTOLOAD:=$(call AutoLoad,45,udc-core)
   DEPENDS:=@USB_GADGET_SUPPORT
   $(call AddDepends/usb)
