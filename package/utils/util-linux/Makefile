@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2014 OpenWrt.org
+# Copyright (C) 2007-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.25.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.25
@@ -19,7 +19,12 @@ PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING getopt/COPYING libblkid/COPYING libmount/COPYING Documentation/licenses/COPYING.GPLv2 Documentation/licenses/COPYING.LGPLv2.1 libuuid/COPYING Documentation/licenses/COPYING.BSD-3
 
 PKG_BUILD_PARALLEL:=1
-PKG_BUILD_DEPENDS:=libncurses
+
+PKG_CONFIG_DEPENDS:= \
+	CONFIG_PACKAGE_cal \
+	CONFIG_PACKAGE_cfdisk \
+	CONFIG_PACKAGE_setterm
+
 PKG_FIXUP:=autoreconf
 
 include $(INCLUDE_DIR)/package.mk
@@ -32,11 +37,11 @@ endef
 
 CONFIGURE_ARGS += \
 	--enable-new-mount	\
-	--with-ncurses		\
 	--disable-tls		\
 	--disable-sulogin	\
 	--without-python	\
-	--without-udev
+	--without-udev		\
+	$(if $(CONFIG_PACKAGE_cal)$(CONFIG_PACKAGE_cfdisk)$(CONFIG_PACKAGE_setterm),--with-ncurses,--without-ncurses)
 
 TARGET_CFLAGS += $(FPIC) -std=gnu99
 
