@@ -8,14 +8,8 @@
 define Profile/Firefly
 	NAME:=Firefly Device
 	PACKAGES:=\
-		kmod-usb-core kmod-usb3 kmod-usb-hid  kmod-usb-storage mount-utils usbutils \
-        kmod-sdhci-mt7620 \
-		kmod-fs-ext3 kmod-fs-vfat kmod-fs-ntfs \
-		kmod-nls-cp437 kmod-nls-iso8859-1 kmod-nls-utf8 \
-		kmod-ledtrig-usbdev \
-		kmod-ata-core \
-		luci \
-		kmod-mt76
+		kmod-usb-core kmod-usb3 kmod-usb-hid kmod-sdhci-mt7620 \
+		kmod-ledtrig-usbdev kmod-mt76
 endef
 
 define Profile/Firefly/Description
