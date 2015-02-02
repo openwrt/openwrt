@@ -231,6 +231,9 @@ case $board in
 	wt3020)
 		ucidef_set_led_default "power" "power" "nexx:blue:power" "0"
 		;;
+	xiaomi-miwifi-mini)
+		ucidef_set_led_default "power" "power" "xiaomi:red:status" "1"
+		;;
 	y1 |\
 	y1s)
 		ucidef_set_led_default "power" "power" "lenovo:blue:power" "1"

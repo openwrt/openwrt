@@ -210,6 +210,9 @@ get_status_led() {
 	xdxrn502j)
 		status_led="xdxrn502j:green:power"
 		;;
+	xiaomi-mini)
+		status_led="xiaomi:red:status"
+		;;
 	f7c027)
 		status_led="belkin:orange:status"
 		;;
