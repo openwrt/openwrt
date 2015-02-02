@@ -83,4 +83,13 @@
 		mtd-mac-address = <&factory 0xe000>;
 	};
 
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power {
+			label = "firewrt:green:power";
+			gpios = <&gpio0 22 1>;
+		};
+	};
+
 };
