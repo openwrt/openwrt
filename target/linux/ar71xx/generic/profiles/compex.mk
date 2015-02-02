@@ -26,3 +26,16 @@ define Profile/WPE72/Description
 endef
 
 $(eval $(call Profile,WPE72))
+
+
+define Profile/WPJ558
+	NAME:=Compex WPJ558
+	PACKAGES:=kmod-ath10k pciutils
+endef
+
+define Profile/WPJ558/Description
+	Package set optimized for the Compex WPJ558 board.
+endef
+
+$(eval $(call Profile,WPJ558))
+

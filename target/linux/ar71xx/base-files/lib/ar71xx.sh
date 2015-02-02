@@ -747,6 +747,9 @@ ar71xx_board_detect() {
 	*WP543)
 		name="wp543"
 		;;
+	*WPJ558)
+		name="wpj558"
+		;;
 	*WPE72)
 		name="wpe72"
 		;;

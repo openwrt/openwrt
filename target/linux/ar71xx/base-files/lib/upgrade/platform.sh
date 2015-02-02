@@ -408,6 +408,7 @@ platform_check_image() {
 	ja76pf | \
 	ja76pf2 | \
 	jwap003 | \
+	wpj558 | \
 	wp543 | \
 	wpe72)
 		[ "$magic" != "4349" ] && {
@@ -456,6 +457,7 @@ platform_do_upgrade() {
 	jwap003)
 		platform_do_upgrade_combined "$ARGV"
 		;;
+	wpj558|\
 	wp543|\
 	wpe72)
 		platform_do_upgrade_compex "$ARGV"

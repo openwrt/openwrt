@@ -8,7 +8,7 @@
  
  #include "common.h"
  
-@@ -69,6 +70,37 @@ static const char * __init ath79_prom_fi
+@@ -69,6 +70,40 @@ static const char * __init ath79_prom_fi
  	return ret;
  }
  
@@ -28,6 +28,9 @@
 +		break;
 +	case DEVID_COMPEX_WPE72:
 +		ath79_prom_append_cmdline("board", "WPE72");
++		break;
++	case DEVID_COMPEX_WPJ558:
++		ath79_prom_append_cmdline("board", "WPJ558");
 +		break;
 +	default:
 +		pr_warn("prom: unknown device id: %x\n", mylo->did);

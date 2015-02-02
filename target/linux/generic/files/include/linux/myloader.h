@@ -37,6 +37,7 @@
 /* Devices based on the Atheros AR71xx */
 #define DEVID_COMPEX_WP543	0x0640
 #define DEVID_COMPEX_WPE72	0x0672
+#define DEVID_COMPEX_WPJ558 0x0688
 
 /* Devices based on the IXP422 */
 #define DEVID_COMPEX_WP18	0x047E
