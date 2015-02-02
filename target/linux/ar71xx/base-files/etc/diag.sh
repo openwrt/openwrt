@@ -288,9 +288,6 @@ get_status_led() {
 	wp543)
 		status_led="wp543:green:diag"
 		;;
-	wpj558)
-		status_led="wpj558:green:sig3"
-		;;
 	wrt400n)
 		status_led="wrt400n:blue:wps"
 		;;

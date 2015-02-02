@@ -687,13 +687,10 @@ Image/Build/MyLoader/initramfs=$(call PatchKernel/initramfs,$(2),$(3))
 define Image/Build/MyLoader
 	$(eval fwsize=$(shell echo $$(($(4)-0x30000-4*64*1024))))
 	$(eval fwimage=$(KDIR_TMP)/$(2)-$(5)-firmware.bin)
-	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).uImage,65536,$(KDIR)/root.$(1),$(fwsize),$(fwimage))
+	$(call CatFiles,$(KDIR_TMP)/vmlinux-$(2).bin.lzma,65536,$(KDIR)/root.$(1),$(fwsize),$(fwimage))
 	if [ -e "$(fwimage)" ]; then \
 		$(STAGING_DIR_HOST)/bin/mkmylofw -B $(2) -s $(4) -v \
-			-p0x680000:0x160000:al:0x80060000:firmware:$(KDIR_TMP)/vmlinux-$(2).uImage \
-			-p0x050000:0x630000:::rootfs:$(KDIR)/root.$(1) \
-			-p0x7e0000:0x010000 \
-			-p0x7f0000:0x010000 \
+			-p0x00030000:0:al:0x80060000:firmware:$(fwimage) \
 			$(call imgname,$(1),$(2))-$(5)-factory.img; \
 		echo -n "" > $(KDIR_TMP)/empty.bin; \
 		sh $(TOPDIR)/scripts/combined-image.sh \
@@ -1321,9 +1318,6 @@ $(eval $(call SingleProfile,MyLoader,64k,WPE72_4M,wpe72,,ttyS0,115200,0x400000,4
 $(eval $(call SingleProfile,MyLoader,64k,WPE72_8M,wpe72,,ttyS0,115200,0x800000,8M))
 $(eval $(call SingleProfile,MyLoader,64k,WPE72_16M,wpe72,,ttyS0,115200,0x1000000,16M))
 
-$(eval $(call SingleProfile,MyLoader,64k,WPJ558_8M,wpj558,WPJ558,ttyS0,115200,0x800000,8M))
-$(eval $(call SingleProfile,MyLoader,64k,WPJ558_16M,wpj558,WPJ558,ttyS0,115200,0x1000000,16M))
-
 $(eval $(call SingleProfile,Netgear,64kraw,WNR2000V3,wnr2000v3,WNR2000V3,ttyS0,115200,$$(wnr2000v3_mtdlayout),0x32303033,WNR2000V3,"" NA,))
 $(eval $(call SingleProfile,NetgearLzma,64kraw,WNR2000V4,wnr2000v4,WNR2000V4,ttyS0,115200,$$(wnr2000v4_mtdlayout),0x32303034,WNR2000V4,"" NA,))
 $(eval $(call SingleProfile,Netgear,64kraw,WNR2200,wnr2200,WNR2200,ttyS0,115200,$$(wnr2200_mtdlayout),0x32323030,WNR2200,"" NA,))
@@ -1505,7 +1499,6 @@ $(eval $(call MultiProfile,WNR612V2,REALWNR612V2 N150R))
 $(eval $(call MultiProfile,WNR1000V2,REALWNR1000V2 WNR1000V2_VC))
 $(eval $(call MultiProfile,WP543,WP543_2M WP543_4M WP543_8M WP543_16M))
 $(eval $(call MultiProfile,WPE72,WPE72_4M WPE72_8M WPE72_16M))
-$(eval $(call MultiProfile,WPJ558,WPJ558_8M WPJ558_16M))
 
 $(eval $(call MultiProfile,Minimal,$(SINGLE_PROFILES)))
 $(eval $(call MultiProfile,Madwifi,EAP7660D UBNTRS UBNTRSPRO UBNTLSSR71 WP543))
