@@ -1,0 +1,148 @@
+/dts-v1/;
+
+/include/ "mt7620a.dtsi"
+
+/ {
+	compatible = "XIAOMI MIWIFI MINI", "ralink,mt7620a-soc";
+	model = "Xiaomi MiWiFi Mini";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	palmbus@10000000 {
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		gpio1: gpio@638 {
+			status = "okay";
+		};
+
+		gpio2: gpio@660 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "w25q128";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "w25q128";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0xf80000>;
+				};
+
+				partition@fd0000 {
+					label = "crash";
+					reg = <0xfd0000 0x10000>;
+				};
+
+				partition@fe0000 {
+					label = "reserved";
+					reg = <0xfe0000 0x10000>;
+					read-only;
+				};
+
+				partition@ff0000 {
+					label = "Bdata";
+					reg = <0xff0000 0x10000>;
+				};
+			};
+		};
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	ethernet@10100000 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&ephy_pins>;
+		mtd-mac-address = <&factory 0x4>;
+		ralink,port-map = "llllw";
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
+	pcie@10140000 {
+		status = "okay";
+
+		pcie0 {
+			mt76@0,0 {
+				reg = <0x0000 0 0 0 0>;
+				device_type = "pci";
+				mediatek,mtd-eeprom = <&factory 0x8000>;
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "rgmii1";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		blue {
+			label = "xiaomi:blue:status";
+			gpios = <&gpio1 0 1>;
+		};
+
+		yellow {
+			label = "xiaomi:yellow:status";
+			gpios = <&gpio1 2 1>;
+		};
+
+		red {
+			label = "xiaomi:red:status";
+			gpios = <&gpio1 5 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio1 6 0>;
+			linux,code = <0x198>;
+		};
+	};
+};

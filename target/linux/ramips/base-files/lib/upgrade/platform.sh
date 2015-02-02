@@ -110,6 +110,7 @@ platform_check_image() {
 	wt3020 |\
 	x5 |\
 	x8 |\
+	xiaomi-miwifi-mini |\
 	y1 |\
 	y1s |\
 	zbt-wa05)

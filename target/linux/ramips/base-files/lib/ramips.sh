@@ -367,6 +367,9 @@ ramips_board_detect() {
 	*"Wansview NCS601W")
 		name="ncs601w"
 		;;
+	*"Xiaomi MiWiFi Mini")
+		name="xiaomi-miwifi-mini"
+		;;
 	*"Sercomm NA930")
 		name="na930"
 		;;
