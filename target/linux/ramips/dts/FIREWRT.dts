@@ -92,4 +92,16 @@
 		};
 	};
 
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		wps {
+			label = "wps";
+			gpios = <&gpio0 18 1>;
+			linux,code = <0x211>;
+		};
+	};
+
 };
