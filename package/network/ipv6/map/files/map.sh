@@ -62,7 +62,7 @@ proto_map_setup() {
 
 	echo "$RULE_DATA" >> /tmp/map-$cfg.rules
 	eval $RULE_DATA
-	
+
 	if [ -z "$RULE_BMR" ]; then
 		proto_notify_error "$cfg" "NO_MATCHING_PD"
 		proto_block_restart "$cfg"
@@ -73,7 +73,7 @@ proto_map_setup() {
 	if [ "$type" = "lw4o6" -o "$type" = "map-e" ]; then
 		proto_init_update "$link" 1
 		proto_add_ipv4_address $(eval "echo \$RULE_${k}_IPV4ADDR") "" "" ""
-	
+
 		proto_add_tunnel
 		json_add_string mode ipip6
 		json_add_int mtu "${mtu:-1280}"
@@ -194,7 +194,7 @@ proto_map_teardown() {
 }
 
 proto_map_init_config() {
-	no_device=1             
+	no_device=1
 	available=1
 
 	proto_config_add_string "rule"
