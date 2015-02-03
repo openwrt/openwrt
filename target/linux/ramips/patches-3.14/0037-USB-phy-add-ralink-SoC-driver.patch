@@ -37,7 +37,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_RALINK_USBPHY)		+= ralink-phy.o
 --- /dev/null
 +++ b/drivers/usb/phy/ralink-phy.c
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,193 @@
 +/*
 + * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
 + *
@@ -103,6 +103,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +			rt_sysc_m32(0, RT_SYSCFG1_USB0_HOST_MODE, RT_SYSC_REG_SYSCFG1);
 +			if (!IS_ERR(rsthost))
 +				reset_control_deassert(rsthost);
++			if (!IS_ERR(rstdev))
++				reset_control_deassert(rstdev);
 +		} else {
 +			rt_sysc_m32(RT_SYSCFG1_USB0_HOST_MODE, 0, RT_SYSC_REG_SYSCFG1);
 +			if (!IS_ERR(rstdev))
