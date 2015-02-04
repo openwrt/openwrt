@@ -1,0 +1,46 @@
+--- a/init.c
++++ b/init.c
+@@ -682,24 +682,27 @@ mt76_init_sband(struct mt76_dev *dev, st
+ 	ht_cap->ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+ 	ht_cap->ampdu_density = IEEE80211_HT_MPDU_DENSITY_4;
+ 
+-	vht_cap = &sband->vht_cap;
+-	vht_cap->vht_supported = true;
++	if (dev->cap.has_5ghz)
++	{
++		vht_cap = &sband->vht_cap;
++		vht_cap->vht_supported = true;
+ 
+-	mcs_map = (IEEE80211_VHT_MCS_SUPPORT_0_9 << (0 * 2)) |
+-		  (IEEE80211_VHT_MCS_SUPPORT_0_9 << (1 * 2)) |
+-		  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (2 * 2)) |
+-		  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (3 * 2)) |
+-		  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (4 * 2)) |
+-		  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (5 * 2)) |
+-		  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (6 * 2)) |
+-		  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (7 * 2));
++		mcs_map = (IEEE80211_VHT_MCS_SUPPORT_0_9 << (0 * 2)) |
++			  (IEEE80211_VHT_MCS_SUPPORT_0_9 << (1 * 2)) |
++			  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (2 * 2)) |
++			  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (3 * 2)) |
++			  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (4 * 2)) |
++			  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (5 * 2)) |
++			  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (6 * 2)) |
++			  (IEEE80211_VHT_MCS_NOT_SUPPORTED << (7 * 2));
+ 
+-	vht_cap->vht_mcs.rx_mcs_map = cpu_to_le16(mcs_map);
+-	vht_cap->vht_mcs.tx_mcs_map = cpu_to_le16(mcs_map);
+-	vht_cap->cap = IEEE80211_VHT_CAP_RXLDPC |
+-		       IEEE80211_VHT_CAP_TXSTBC |
+-		       IEEE80211_VHT_CAP_RXSTBC_1 |
+-			   IEEE80211_VHT_CAP_SHORT_GI_80;
++		vht_cap->vht_mcs.rx_mcs_map = cpu_to_le16(mcs_map);
++		vht_cap->vht_mcs.tx_mcs_map = cpu_to_le16(mcs_map);
++		vht_cap->cap = IEEE80211_VHT_CAP_RXLDPC |
++			       IEEE80211_VHT_CAP_TXSTBC |
++			       IEEE80211_VHT_CAP_RXSTBC_1 |
++			       IEEE80211_VHT_CAP_SHORT_GI_80;
++	}
+ 
+ 	dev->chandef.chan = &sband->channels[0];
+ 
