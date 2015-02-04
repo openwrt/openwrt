@@ -1,9 +1,9 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -142,6 +142,7 @@ enum ath79_mach_type {
- 	ATH79_MACH_TL_WR841N_V9,	/* TP-LINK TL-WR841N/ND v9 */
+@@ -143,6 +143,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
  	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
+ 	ATH79_MACH_TL_WR941ND_V5,	/* TP-LINK TL-WR941ND v5 */
 +	ATH79_MACH_TUBE2H,		/* Alfa Network Tube2H */
  	ATH79_MACH_UBNT_AIRROUTER,	/* Ubiquiti AirRouter */
  	ATH79_MACH_UBNT_BULLET_M,	/* Ubiquiti Bullet M */
@@ -28,7 +28,7 @@
  	select SOC_AR724X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -117,6 +117,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V2)	
+@@ -117,6 +117,7 @@ obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V2)
  obj-$(CONFIG_ATH79_MACH_TL_WR2543N)	+= mach-tl-wr2543n.o
  obj-$(CONFIG_ATH79_MACH_TL_WR703N)	+= mach-tl-wr703n.o
  obj-$(CONFIG_ATH79_MACH_TL_WR720N_V3)	+= mach-tl-wr720n-v3.o
