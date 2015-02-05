@@ -210,6 +210,12 @@ CP:=cp -fpR
 LN:=ln -sf
 XARGS:=xargs -r
 
+BASH:=$(STAGING_DIR_HOST)/bin/bash
+TAR:=$(STAGING_DIR_HOST)/bin/tar
+FIND:=$(STAGING_DIR_HOST)/bin/find
+PATCH:=$(STAGING_DIR_HOST)/bin/patch
+PYTHON:=$(STAGING_DIR_HOST)/bin/python
+
 INSTALL_BIN:=install -m0755
 INSTALL_DIR:=install -d -m0755
 INSTALL_DATA:=install -m0644
