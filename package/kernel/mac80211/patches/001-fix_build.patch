@@ -1,5 +1,14 @@
 --- a/Makefile
 +++ b/Makefile
+@@ -5,7 +5,7 @@
+ ifeq ($(KERNELRELEASE),)
+ 
+ MAKEFLAGS += --no-print-directory
+-SHELL := /bin/bash
++SHELL := /usr/bin/env bash
+ BACKPORT_PWD := $(shell pwd)
+ 
+ KMODDIR ?= updates
 @@ -19,6 +19,7 @@ KLIB_BUILD ?= $(KLIB)/build/
  KERNEL_CONFIG := $(KLIB_BUILD)/.config
  KERNEL_MAKEFILE := $(KLIB_BUILD)/Makefile
