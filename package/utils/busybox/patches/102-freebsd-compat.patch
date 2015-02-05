@@ -1,0 +1,26 @@
+--- a/scripts/basic/docproc.c
++++ b/scripts/basic/docproc.c
+@@ -39,7 +39,10 @@
+ #include <limits.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
++
++#ifndef __FreeBSD__
+ #include <alloca.h>
++#endif
+ 
+ /* exitstatus is used to keep track of any failing calls to kernel-doc,
+  * but execution continues. */
+--- a/scripts/basic/fixdep.c
++++ b/scripts/basic/fixdep.c
+@@ -113,7 +113,10 @@
+ #include <limits.h>
+ #include <ctype.h>
+ #include <arpa/inet.h>
++
++#ifndef __FreeBSD__
+ #include <alloca.h>
++#endif
+ 
+ /* bbox: not needed
+ #define INT_CONF ntohl(0x434f4e46)
