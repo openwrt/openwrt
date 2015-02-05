@@ -125,14 +125,18 @@ define MultiProfile
   endef
 endef
 
+# Boards with NAND, without subpages
+$(eval $(call NANDProfile,370-DB,armada-370-db,512KiB,4096))
+$(eval $(call NANDProfile,370-RD,armada-370-rd,512KiB,4096))
+$(eval $(call NANDProfile,Mirabox,armada-370-mirabox,512KiB,4096))
+$(eval $(call NANDProfile,XP-DB,armada-xp-db,512KiB,4096))
+$(eval $(call NANDProfile,XP-GP,armada-xp-gp,512KiB,4096))
+
 # Boards with NAND, with subpages
-$(eval $(call NANDProfile,370-DB,armada-370-db,128KiB,2048,512))
-$(eval $(call NANDProfile,370-RD,armada-370-rd,128KiB,2048,512))
 $(eval $(call NANDProfile,Mamba,armada-xp-mamba,128KiB,2048,512))
-$(eval $(call NANDProfile,Mirabox,armada-370-mirabox,128KiB,2048,512))
-$(eval $(call NANDProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB,2048,512))
-$(eval $(call NANDProfile,XP-DB,armada-xp-db,128KiB,2048,512))
-$(eval $(call NANDProfile,XP-GP,armada-xp-gp,128KiB,2048,512))
+
+# Boards with large NOR, where we want to use UBI
+$(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
 
 define Image/Build/Profile/Mamba/squashfs
 	$(call Image/Build/UbinizeImage,armada-xp-mamba,,squashfs, -p 128KiB -m 2048 -s 512)
