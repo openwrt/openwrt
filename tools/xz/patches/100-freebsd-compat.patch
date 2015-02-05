@@ -1,0 +1,11 @@
+--- a/src/common/tuklib_integer.h
++++ b/src/common/tuklib_integer.h
+@@ -48,7 +48,7 @@
+ // Operating system specific features //
+ ////////////////////////////////////////
+ 
+-#if defined(HAVE_BYTESWAP_H)
++#if defined(HAVE_BYTESWAP_H) && !defined(__FreeBSD__)
+ 	// glibc, uClibc, dietlibc
+ #	include <byteswap.h>
+ #	ifdef HAVE_BSWAP_16
