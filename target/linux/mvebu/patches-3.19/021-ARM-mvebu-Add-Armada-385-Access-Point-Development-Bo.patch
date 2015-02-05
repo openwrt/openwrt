@@ -1,0 +1,220 @@
+From e5ee12817e9eac891c6b2a340f64d94d9abd355f Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 8 Jan 2015 18:38:09 +0100
+Subject: [PATCH 4/4] ARM: mvebu: Add Armada 385 Access Point Development Board
+ support
+
+The A385-AP is a board produced by Marvell that holds 3 mPCIe slot, a 16MB
+SPI-NOR, 3 Gigabit Ethernet ports, USB3 and NAND flash storage.
+
+[gregory.clement@free-electrons.com: switch the license to the dual
+X11/GPL with the agreement of the author]
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Signed-off-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+---
+ arch/arm/boot/dts/Makefile             |   1 +
+ arch/arm/boot/dts/armada-385-db-ap.dts | 178 +++++++++++++++++++++++++++++++++
+ 2 files changed, 179 insertions(+)
+ create mode 100644 arch/arm/boot/dts/armada-385-db-ap.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 6dc9c17f9ff5..d34837104949 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -536,6 +536,7 @@ dtb-$(CONFIG_MACH_ARMADA_375) += \
+ 	armada-375-db.dtb
+ dtb-$(CONFIG_MACH_ARMADA_38X) += \
+ 	armada-385-db.dtb \
++	armada-385-db-ap.dtb \
+ 	armada-385-rd.dtb
+ dtb-$(CONFIG_MACH_ARMADA_XP) += \
+ 	armada-xp-axpwifiap.dtb \
+diff --git a/arch/arm/boot/dts/armada-385-db-ap.dts b/arch/arm/boot/dts/armada-385-db-ap.dts
+new file mode 100644
+index 000000000000..57b9119fb3e0
+--- /dev/null
++++ b/arch/arm/boot/dts/armada-385-db-ap.dts
+@@ -0,0 +1,178 @@
++/*
++ * Device Tree file for Marvell Armada 385 Access Point Development board
++ * (DB-88F6820-AP)
++ *
++ *  Copyright (C) 2014 Marvell
++ *
++ * Nadav Haklai <nadavh@marvell.com>
++ *
++ * This file is dual-licensed: you can use it either under the terms
++ * of the GPL or the X11 license, at your option. Note that this dual
++ * licensing only applies to this file, and not this project as a
++ * whole.
++ *
++ *  a) This file is licensed under the terms of the GNU General Public
++ *     License version 2.  This program is licensed "as is" without
++ *     any warranty of any kind, whether express or implied.
++ *
++ * Or, alternatively,
++ *
++ *  b) Permission is hereby granted, free of charge, to any person
++ *     obtaining a copy of this software and associated documentation
++ *     files (the "Software"), to deal in the Software without
++ *     restriction, including without limitation the rights to use,
++ *     copy, modify, merge, publish, distribute, sublicense, and/or
++ *     sell copies of the Software, and to permit persons to whom the
++ *     Software is furnished to do so, subject to the following
++ *     conditions:
++ *
++ *     The above copyright notice and this permission notice shall be
++ *     included in all copies or substantial portions of the Software.
++ *
++ *     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ *     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
++ *     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ *     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
++ *     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
++ *     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
++ *     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
++ *     OTHER DEALINGS IN THE SOFTWARE.
++ */
++
++/dts-v1/;
++#include "armada-385.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++
++/ {
++	model = "Marvell Armada 385 Access Point Development Board";
++	compatible = "marvell,a385-db-ap", "marvell,armada385", "marvell,armada38x";
++
++	chosen {
++		bootargs = "console=ttyS0,115200";
++		stdout-path = &uart1;
++	};
++
++	memory {
++		device_type = "memory";
++		reg = <0x00000000 0x80000000>; /* 2GB */
++	};
++
++	soc {
++		ranges = <MBUS_ID(0xf0, 0x01) 0 0xf1000000 0x100000
++			  MBUS_ID(0x01, 0x1d) 0 0xfff00000 0x100000>;
++
++		internal-regs {
++			spi1: spi@10680 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&spi1_pins>;
++				status = "okay";
++
++				spi-flash@0 {
++					#address-cells = <1>;
++					#size-cells = <1>;
++					compatible = "st,m25p128";
++					reg = <0>; /* Chip select 0 */
++					spi-max-frequency = <54000000>;
++				};
++			};
++
++			i2c0: i2c@11000 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&i2c0_pins>;
++				status = "okay";
++
++				/*
++				 * This bus is wired to two EEPROM
++				 * sockets, one of which holding the
++				 * board ID used by the	bootloader.
++				 * Erasing this EEPROM's content will
++				 * brick the board.
++				 * Use this bus with caution.
++				 */
++			};
++
++			mdio@72004 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&mdio_pins>;
++
++				phy0: ethernet-phy@1 {
++					reg = <1>;
++				};
++
++				phy1: ethernet-phy@4 {
++					reg = <4>;
++				};
++
++				phy2: ethernet-phy@6 {
++					reg = <6>;
++				};
++			};
++
++			/* UART0 is exposed through the JP8 connector */
++			uart0: serial@12000 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&uart0_pins>;
++				status = "okay";
++			};
++
++			/*
++			 * UART1 is exposed through a FTDI chip
++			 * wired to the mini-USB connector
++			 */
++			uart1: serial@12100 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&uart1_pins>;
++				status = "okay";
++			};
++
++			ethernet@30000 {
++				status = "okay";
++				phy = <&phy2>;
++				phy-mode = "sgmii";
++			};
++
++			ethernet@34000 {
++				status = "okay";
++				phy = <&phy1>;
++				phy-mode = "sgmii";
++			};
++
++			ethernet@70000 {
++				pinctrl-names = "default";
++
++				/*
++				 * The Reference Clock 0 is used to
++				 * provide a clock to the PHY
++				 */
++				pinctrl-0 = <&ge0_rgmii_pins>, <&ref_clk0_pins>;
++				status = "okay";
++				phy = <&phy0>;
++				phy-mode = "rgmii-id";
++			};
++		};
++
++		pcie-controller {
++			status = "okay";
++
++			/*
++			 * The three PCIe units are accessible through
++			 * standard mini-PCIe slots on the board.
++			 */
++			pcie@1,0 {
++				/* Port 0, Lane 0 */
++				status = "okay";
++			};
++
++			pcie@2,0 {
++				/* Port 1, Lane 0 */
++				status = "okay";
++			};
++
++			pcie@3,0 {
++				/* Port 2, Lane 0 */
++				status = "okay";
++			};
++		};
++	};
++};
+-- 
+2.2.1
+
