@@ -1,0 +1,70 @@
+From 91b4c91f919abffa72cbf7545a944252f8e4f775 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Thu, 8 Jan 2015 18:38:08 +0100
+Subject: [PATCH 3/4] ARM: mvebu: Add a number of pinctrl functions
+
+Some pinctrl functions can be shared with all DTS out there, since they are
+generic, SoC-wide muxing options. Add a number of these to the DTSI to avoid
+duplication.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Gregory CLEMENT <gregory.clement@free-electrons.com>
+Signed-off-by: Andrew Lunn <andrew@lunn.ch>
+---
+ arch/arm/boot/dts/armada-38x.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/arch/arm/boot/dts/armada-38x.dtsi b/arch/arm/boot/dts/armada-38x.dtsi
+index 40200084c6c8..98885c58be29 100644
+--- a/arch/arm/boot/dts/armada-38x.dtsi
++++ b/arch/arm/boot/dts/armada-38x.dtsi
+@@ -195,6 +195,45 @@
+ 
+ 			pinctrl@18000 {
+ 				reg = <0x18000 0x20>;
++
++				ge0_rgmii_pins: ge-rgmii-pins-0 {
++					marvell,pins = "mpp6", "mpp7", "mpp8",
++						       "mpp9", "mpp10", "mpp11",
++						       "mpp12", "mpp13", "mpp14",
++						       "mpp15", "mpp16", "mpp17";
++					marvell,function = "ge0";
++				};
++
++				i2c0_pins: i2c-pins-0 {
++					marvell,pins = "mpp2", "mpp3";
++					marvell,function = "i2c0";
++				};
++
++				mdio_pins: mdio-pins {
++					marvell,pins = "mpp4", "mpp5";
++					marvell,function = "ge";
++				};
++
++				ref_clk0_pins: ref-clk-pins-0 {
++					marvell,pins = "mpp45";
++					marvell,function = "ref";
++				};
++
++				spi1_pins: spi-pins-1 {
++					marvell,pins = "mpp56", "mpp57", "mpp58",
++						       "mpp59";
++					marvell,function = "spi1";
++				};
++
++				uart0_pins: uart-pins-0 {
++					marvell,pins = "mpp0", "mpp1";
++					marvell,function = "ua0";
++				};
++
++				uart1_pins: uart-pins-1 {
++					marvell,pins = "mpp19", "mpp20";
++					marvell,function = "ua1";
++				};
+ 			};
+ 
+ 			gpio0: gpio@18100 {
+-- 
+2.2.1
+

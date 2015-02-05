@@ -128,6 +128,7 @@ endef
 # Boards with NAND, without subpages
 $(eval $(call NANDProfile,370-DB,armada-370-db,512KiB,4096))
 $(eval $(call NANDProfile,370-RD,armada-370-rd,512KiB,4096))
+$(eval $(call NANDProfile,385-DB-AP,armada-385-db-ap,256KiB,4096))
 $(eval $(call NANDProfile,Mirabox,armada-370-mirabox,512KiB,4096))
 $(eval $(call NANDProfile,XP-DB,armada-xp-db,512KiB,4096))
 $(eval $(call NANDProfile,XP-GP,armada-xp-gp,512KiB,4096))
