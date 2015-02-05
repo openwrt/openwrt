@@ -77,6 +77,31 @@ define UBINORProfile
 endef
 
 # $(1): Profile Name
+# $(2): DTB Name
+# $(3): Erase Block Size
+define NORProfile
+  define Image/BuildKernel/Profile/$(1)
+	$(call Image/Build/DTB,$(2))
+    ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
+	$(call Image/Build/Profile,$(1)/Initramfs)
+    endif
+  endef
+
+  define Image/Build/Profile/$(1)/Initramfs
+	$(call Image/Build/DTB,$(2),-initramfs)
+  endef
+
+  define Image/Build/Profile/$(1)/squashfs
+	( \
+		dd if=$(KDIR)/uImage-$(2) bs=$(3) conv=sync; \
+		dd if=$(KDIR)/root.squashfs bs=$(3) conv=sync; \
+	) > $$(BIN_DIR)/$$(IMG_PREFIX)-$(2)-squashfs-firmware.bin
+  endef
+
+  PROFILES_LIST += $(1)
+endef
+
+# $(1): Profile Name
 # $(2): Sub Profiles list
 define MultiProfile
   define Image/BuildKernel/Profile/$(1)
