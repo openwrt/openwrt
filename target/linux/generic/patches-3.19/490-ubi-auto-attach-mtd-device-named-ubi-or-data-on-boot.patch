@@ -11,7 +11,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/build.c
 +++ b/drivers/mtd/ubi/build.c
-@@ -1213,6 +1213,48 @@ static struct mtd_info * __init open_mtd
+@@ -1213,6 +1213,49 @@ static struct mtd_info * __init open_mtd
  	return mtd;
  }
  
@@ -43,6 +43,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +		/* auto-add only media types where UBI makes sense */
 +		if (mtd->type == MTD_NANDFLASH ||
++		    mtd->type == MTD_NORFLASH ||
 +		    mtd->type == MTD_DATAFLASH ||
 +		    mtd->type == MTD_MLCNANDFLASH) {
 +			mutex_lock(&ubi_devices_mutex);
@@ -60,7 +61,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  static int __init ubi_init(void)
  {
  	int err, i, k;
-@@ -1305,6 +1347,12 @@ static int __init ubi_init(void)
+@@ -1305,6 +1348,12 @@ static int __init ubi_init(void)
  		}
  	}
  
