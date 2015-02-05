@@ -138,6 +138,9 @@ $(eval $(call NANDProfile,Mamba,armada-xp-mamba,128KiB,2048,512))
 # Boards with large NOR, where we want to use UBI
 $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
 
+# Boards with small NOR, where UBI doesn't make sense
+$(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
+
 define Image/Build/Profile/Mamba/squashfs
 	$(call Image/Build/UbinizeImage,armada-xp-mamba,,squashfs, -p 128KiB -m 2048 -s 512)
 	( \
