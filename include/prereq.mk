@@ -35,7 +35,7 @@ define Require
 			echo 'ok.'; \
 		else \
 			echo 'failed.'; \
-			echo -e "$(PKG_NAME): $(strip $(2))" | perl -ne 's/\\\s*/\n/g,print' >> $(TMP_DIR)/.prereq-error; \
+			echo -e "$(PKG_NAME): $(strip $(2))" >> $(TMP_DIR)/.prereq-error; \
 		fi
 
     check-$(1): FORCE
