@@ -258,7 +258,7 @@ menu "Global build settings"
 		  functions: memcpy, mempcpy, memmove, memset, strcpy, stpcpy,
 		  strncpy, strcat, strncat, sprintf, vsprintf, snprintf, vsnprintf,
 		  gets.  "Conservative" (_FORTIFY_SOURCE set to 1) only introduces
-		  checks that sholdn't change the behavior of conforming programs,
+		  checks that shouldn't change the behavior of conforming programs,
 		  while "aggressive" (_FORTIFY_SOURCES set to 2) some more checking is
 		  added, but some conforming programs might fail.
 		config PKG_FORTIFY_SOURCE_NONE
@@ -272,7 +272,7 @@ menu "Global build settings"
 	choice
 		prompt "Enable RELRO protection"
 		help
-		  Enable a link-time protection know as RELRO (Relocation Read Only)
+		  Enable a link-time protection known as RELRO (Relocation Read Only)
 		  which helps to protect from certain type of exploitation techniques
 		  altering the content of some ELF sections. "Partial" RELRO makes the
 		  .dynamic section not writeable after initialization, introducing
