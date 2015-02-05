@@ -10,6 +10,7 @@ include $(INCLUDE_DIR)/prereq.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/host-build.mk
 
+SHELL:=sh
 PKG_NAME:=Build dependency
 
 
