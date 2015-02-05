@@ -19,7 +19,7 @@ else
   REVISION:=$(shell $(TOPDIR)/scripts/getver.sh)
 endif
 
-HOSTCC ?= gcc
+HOSTCC ?= $(CC)
 OPENWRTVERSION:=$(RELEASE)$(if $(REVISION), ($(REVISION)))
 export RELEASE
 export REVISION
