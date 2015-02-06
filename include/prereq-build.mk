@@ -68,24 +68,6 @@ $(eval $(call TestHostCommand,libssl, \
 	echo 'int main(int argc, char **argv) { SSL_library_init(); return 0; }' | \
 		gcc -include openssl/ssl.h -x c -o $(TMP_DIR)/a.out - -lcrypto -lssl))
 
-ifneq ($(HOST_STATIC_LINKING),)
-  $(eval $(call TestHostCommand,working-gcc-static, \
-	Please install the static libc development package (glibc-static on CentOS/Fedora/RHEL)., \
-	echo 'int main(int argc, char **argv) { return 0; }' | \
-		gcc -x c $(HOST_STATIC_LINKING) -o $(TMP_DIR)/a.out -))
-
-  $(eval $(call TestHostCommand,working-g++-static, \
-	Please install the static libstdc++ development package (libstdc++-static on CentOS/Fedora/RHEL)., \
-	echo 'int main(int argc, char **argv) { return 0; }' | \
-		g++ -x c++ $(HOST_STATIC_LINKING) -o $(TMP_DIR)/a.out - -lstdc++ && \
-		$(TMP_DIR)/a.out))
-
-  $(eval $(call TestHostCommand,zlib-static, \
-	Please install a static zlib. (zlib-static on CentOS/Fedora/RHEL)., \
-	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
-		gcc -include zlib.h -x c $(HOST_STATIC_LINKING) -o $(TMP_DIR)/a.out - -lz))
-endif
-
 
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
