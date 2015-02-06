@@ -32,14 +32,6 @@ menu "Global build settings"
 		  iconv and GNU gettext instead of the default OpenWrt stubs. If uClibc is
 		  used, it is also built with locale support.
 
-	config BUILD_STATIC_TOOLS
-		default n
-		bool "Attempt to link host utilities statically"
-		help
-		  Linking host utilities like sed or firmware-utils statically increases the
-		  portability of the generated ImageBuilder and SDK tarballs; however, it may
-		  fail on some Linux distributions.
-
 	config SHADOW_PASSWORDS
 		bool
 		prompt "Enable shadow password support"
