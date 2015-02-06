@@ -58,7 +58,7 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	find $(STAGING_DIR_HOST)/bin -maxdepth 1 -type f -perm -u=x \
 	  | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host/bin
 	$(MAKE) -C $(PKG_BUILD_DIR) package_index
-	$(TAR) c -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
+	$(TAR) -cf - -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
 
 download:
 prepare:
