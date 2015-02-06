@@ -17,14 +17,12 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
-HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 unexport PKG_CONFIG
 
 HOST_CONFIGURE_ARGS += --with-internal-glib
 
 define Host/Install
-	$(MAKE) -C $(HOST_BUILD_DIR) install \
-		AM_LDFLAGS="$(if $(HOST_STATIC_LINKING),-all-static)"
+	$(MAKE) -C $(HOST_BUILD_DIR) install
 	mv $(STAGING_DIR_HOST)/bin/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config.real
 	$(INSTALL_BIN) ./files/pkg-config $(STAGING_DIR_HOST)/bin/pkg-config
 endef

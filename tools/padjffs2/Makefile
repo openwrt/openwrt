@@ -19,7 +19,7 @@ define Host/Prepare
 endef
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) LDFLAGS="$(HOST_STATIC_LINKING)"
+	$(MAKE) -C $(HOST_BUILD_DIR)
 endef
 
 define Host/Configure

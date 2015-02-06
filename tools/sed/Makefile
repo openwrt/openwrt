@@ -29,7 +29,7 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_header_selinux_selinux_h=no \
 
 define Host/Compile
-	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="$(HOST_STATIC_LINKING)"
+	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) SHELL="$(BASH)"
 endef
 
 define Host/Install

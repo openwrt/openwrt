@@ -19,7 +19,7 @@ define Host/Compile
 	$(HOSTCC) $(HOST_CFLAGS) -c src/md5.c -o $(HOST_BUILD_DIR)/md5.o
 	$(HOSTCC) $(HOST_CFLAGS) -c src/ioapi.c -o $(HOST_BUILD_DIR)/ioapi.o
 	$(HOSTCC) $(HOST_CFLAGS) -c src/wrt350nv2-builder.c -o $(HOST_BUILD_DIR)/wrt350nv2-builder.o
-	$(HOSTCC) $(HOST_CFLAGS) $(HOST_LDFLAGS) $(HOST_STATIC_LINKING) -o $(HOST_BUILD_DIR)/wrt350nv2-builder \
+	$(HOSTCC) $(HOST_CFLAGS) $(HOST_LDFLAGS) -o $(HOST_BUILD_DIR)/wrt350nv2-builder \
 		$(HOST_BUILD_DIR)/wrt350nv2-builder.o $(HOST_BUILD_DIR)/md5.o $(HOST_BUILD_DIR)/ioapi.o
 endef
 

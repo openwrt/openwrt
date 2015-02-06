@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
 	mkdir -p $(HOST_BUILD_DIR)
-	$(HOSTCC) $(HOST_CFLAGS) $(HOST_STATIC_LINKING) -o $(HOST_BUILD_DIR)/flock src/flock.c
+	$(HOSTCC) $(HOST_CFLAGS) -o $(HOST_BUILD_DIR)/flock src/flock.c
 endef
 
 define Host/Install

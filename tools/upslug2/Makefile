@@ -18,7 +18,6 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 include $(INCLUDE_DIR)/host-build.mk
 
 unexport CFLAGS
-HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); \

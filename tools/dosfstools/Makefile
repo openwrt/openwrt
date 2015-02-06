@@ -16,7 +16,7 @@ PKG_MD5SUM:=45012f5f56f2aae3afcd62120b9e5a08
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="$(HOST_LDFLAGS) $(HOST_STATIC_LINKING)"
+	$(MAKE) -C $(HOST_BUILD_DIR) SHELL="$(BASH)" LDFLAGS="$(HOST_LDFLAGS)"
 endef
 
 define Host/Install
