@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2012-2014 OpenWrt.org
+# Copyright (C) 2012-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -151,8 +151,8 @@ define Image/Build/Profile/Mamba/squashfs
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-xp-mamba-squashfs-factory.img
 endef
 
-$(eval $(call MultiProfile,Generic,$(PROFILES_LIST)))
-$(eval $(call MultiProfile,Evalboards,$(PROFILES_LIST)))
+# The Default profile should build everything
+$(eval $(call MultiProfile,Default,$(PROFILES_LIST)))
 
 define Image/BuildKernel
 	$(call Image/BuildKernel/Profile/$(PROFILE))
