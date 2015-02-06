@@ -11,8 +11,8 @@ PKG_NAME:=patch-image
 include $(INCLUDE_DIR)/host-build.mk
 
 define Host/Compile
-	$(HOSTCC) $(HOST_CFLAGS) -include endian.h $(HOST_STATIC_LINKING) -o $(HOST_BUILD_DIR)/patch-cmdline src/patch-cmdline.c
-	$(HOSTCC) $(HOST_CFLAGS) -include endian.h $(HOST_STATIC_LINKING) -o $(HOST_BUILD_DIR)/patch-dtb src/patch-dtb.c
+	$(HOSTCC) $(HOST_CFLAGS) -include endian.h -o $(HOST_BUILD_DIR)/patch-cmdline src/patch-cmdline.c
+	$(HOSTCC) $(HOST_CFLAGS) -include endian.h -o $(HOST_BUILD_DIR)/patch-dtb src/patch-dtb.c
 endef
 
 define Host/Install

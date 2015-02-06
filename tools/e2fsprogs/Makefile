@@ -20,7 +20,6 @@ HOST_BUILD_PARALLEL:=1
 include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CFLAGS += $(FPIC)
-HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 
 HOST_CONFIGURE_ARGS += \
 	--disable-shared \

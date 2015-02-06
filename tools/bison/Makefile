@@ -18,8 +18,6 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
-HOST_LDFLAGS += $(HOST_STATIC_LINKING)
-
 define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)

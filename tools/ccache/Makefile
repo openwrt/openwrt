@@ -16,7 +16,6 @@ PKG_MD5SUM:=522a6016bda56892653612bbdefff3e0
 
 include $(INCLUDE_DIR)/host-build.mk
 
-HOST_LDFLAGS += $(HOST_STATIC_LINKING)
 HOST_CONFIGURE_VARS += CC="$(HOSTCC_NOCACHE)"
 
 define Host/Install/ccache

@@ -26,7 +26,6 @@ define Host/Compile
 		XATTR_SUPPORT= \
 		LZMA_LIB="$(STAGING_DIR_HOST)/lib/liblzma.a" \
 		EXTRA_CFLAGS="-I$(STAGING_DIR_HOST)/include" \
-		EXTRA_LDFLAGS="$(HOST_STATIC_LINKING)" \
 		mksquashfs unsquashfs
 endef
 

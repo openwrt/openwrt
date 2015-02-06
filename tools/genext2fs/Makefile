@@ -36,7 +36,7 @@ HOST_CONFIGURE_ARGS = \
 define Host/Compile
 	$(MAKE) -C $(HOST_BUILD_DIR) \
 		CFLAGS="$(HOST_CFLAGS)" \
-		LDFLAGS="$(HOST_LDFLAGS) $(HOST_STATIC_LINKING)" \
+		LDFLAGS="$(HOST_LDFLAGS)" \
 		all
 endef
 

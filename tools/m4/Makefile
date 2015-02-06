@@ -20,8 +20,6 @@ include $(INCLUDE_DIR)/host-build.mk
 
 HOST_CONFIGURE_VARS += gl_cv_func_strstr_linear=no
 
-HOST_LDFLAGS += $(HOST_STATIC_LINKING)
-
 define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)
