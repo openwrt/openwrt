@@ -5,8 +5,8 @@
 # See /LICENSE for more information.
 #
 
-define Profile/Generic
-  NAME:=Generic (default)
+define Profile/Mamba
+  NAME:=Linksys WRT1900AC (Mamba)
   PACKAGES:= \
 	kmod-usb2 kmod-usb3 kmod-usb-storage \
 	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
@@ -18,8 +18,8 @@ define Profile/Generic
 	swconfig
 endef
 
-define Profile/Generic/Description
- Package set compatible with most supported Marvell Armada 370/XP based boards.
+define Profile/Mamba/Description
+ Package set compatible with the Linksys WRT1900AC (Mamba).
 endef
 
-$(eval $(call Profile,Generic))
+$(eval $(call Profile,Mamba))
