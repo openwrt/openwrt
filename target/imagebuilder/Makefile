@@ -56,8 +56,8 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 	find $(PKG_BUILD_DIR) -name CVS -o -name .git -o -name .svn \
 	  | $(XARGS) rm -rf
 	find $(STAGING_DIR_HOST)/bin -maxdepth 1 -type f -perm -u=x \
-	  | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host/bin
-	$(MAKE) -C $(PKG_BUILD_DIR) package_index
+	  | $(XARGS) $(SCRIPT_DIR)/bundle-libraries.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
+	STRIP=sstrip $(SCRIPT_DIR)/rstrip.sh $(PKG_BUILD_DIR)/staging_dir/host/bin/
 	$(TAR) -cf - -C $(BUILD_DIR) $(IB_NAME) | bzip2 -c > $@
 
 download:
