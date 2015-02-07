@@ -1,6 +1,6 @@
 #!/bin/sh
 # 6in4.sh - IPv6-in-IPv4 tunnel backend
-# Copyright (c) 2010-2014 OpenWrt.org
+# Copyright (c) 2010-2015 OpenWrt.org
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
@@ -68,7 +68,7 @@ proto_6in4_setup() {
 
 		local http="http"
 		local urlget="wget"
-		local urlget_opts="-qO/dev/stdout"
+		local urlget_opts="-qO-"
 		local ca_path="${SSL_CERT_DIR-/etc/ssl/certs}"
 
 		if [ -n "$(which curl)" ]; then
@@ -82,7 +82,7 @@ proto_6in4_setup() {
 		if [ "$http" = "http" ] &&
 			wget --version 2>&1 | grep -qF "+https"; then
 			urlget="wget"
-			urlget_opts="-qO/dev/stdout --ca-directory=$ca_path"
+			urlget_opts="-qO- --ca-directory=$ca_path"
 			http="https"
 		fi
 		[ "$http" = "https" -a -z "$(find $ca_path -name "*.0" 2>/dev/null)" ] && {
