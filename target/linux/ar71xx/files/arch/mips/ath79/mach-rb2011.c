@@ -321,6 +321,13 @@ static void __init rb2011us_setup(void)
 
 MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011US, "2011US", rb2011us_setup);
 
+static void __init rb2011r5_setup(void)
+{
+	rb2011_setup(RB2011_FLAG_SFP | RB2011_FLAG_USB | RB2011_FLAG_WLAN);
+}
+
+MIPS_MACHINE_NONAME(ATH79_MACH_RB_2011R5, "2011r5", rb2011r5_setup);
+
 static void __init rb2011g_setup(void)
 {
 	rb2011_setup(RB2011_FLAG_SFP |
