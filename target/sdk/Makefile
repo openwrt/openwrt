@@ -12,10 +12,7 @@ include $(INCLUDE_DIR)/version.mk
 
 override MAKEFLAGS=
 
-PKG_OS:=$(word 2,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
-PKG_CPU:=$(word 1,$(subst -, ,$(shell $(HOSTCC) -dumpmachine)))
-
-SDK_NAME:=OpenWrt-SDK-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)-for-$(PKG_OS)-$(PKG_CPU)-gcc-$(GCCV)_$(LIBC)-$(LIBCV)
+SDK_NAME:=OpenWrt-SDK-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))_gcc-$(GCCV)$(DIR_SUFFIX).$(HOST_OS)-$(HOST_ARCH)
 SDK_BUILD_DIR:=$(BUILD_DIR)/$(SDK_NAME)
 
 STAGING_SUBDIR_HOST := staging_dir/host
