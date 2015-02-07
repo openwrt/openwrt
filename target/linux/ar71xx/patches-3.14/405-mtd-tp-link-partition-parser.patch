@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -191,7 +191,7 @@ config MTD_BCM47XX_PARTS
+@@ -186,7 +186,7 @@ config MTD_BCM47XX_PARTS
  
  config MTD_WRT160NL_PARTS
  	tristate "Linksys WRT160NL partitioning support"
@@ -9,7 +9,7 @@
  	---help---
  	   Linksys WRT160NL partitioning support
  
-@@ -211,6 +211,12 @@ config MTD_MYLOADER_PARTS
+@@ -206,6 +206,12 @@ config MTD_MYLOADER_PARTS
  	  You will still need the parsing functions to be called by the driver
  	  for your particular device. It won't happen automatically.
  
@@ -24,7 +24,7 @@
  #
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
+@@ -16,6 +16,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o
  obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
  obj-$(CONFIG_MTD_BCM47XX_PARTS)	+= bcm47xxpart.o
  obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o

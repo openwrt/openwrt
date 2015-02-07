@@ -189,7 +189,7 @@
  			pdata->phy_if_mode = PHY_INTERFACE_MODE_GMII;
  			break;
  
-@@ -992,6 +1002,8 @@ void __init ath79_register_eth(unsigned 
+@@ -992,6 +1002,8 @@ void __init ath79_register_eth(unsigned
  		break;
  
  	case ATH79_SOC_QCA9533:
@@ -198,7 +198,7 @@
  		if (id == 0) {
  			pdata->reset_bit = AR933X_RESET_GE0_MAC |
  					   AR933X_RESET_GE0_MDIO;
-@@ -1097,6 +1109,8 @@ void __init ath79_register_eth(unsigned 
+@@ -1097,6 +1109,8 @@ void __init ath79_register_eth(unsigned
  		case ATH79_SOC_AR9330:
  		case ATH79_SOC_AR9331:
  		case ATH79_SOC_QCA9533:
@@ -491,7 +491,7 @@
  int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
  {
  	int irq = -1;
-@@ -86,6 +101,9 @@ int __init pcibios_map_irq(const struct 
+@@ -86,6 +101,9 @@ int __init pcibios_map_irq(const struct
  		} else if (soc_is_qca955x()) {
  			ath79_pci_irq_map = qca955x_pci_irq_map;
  			ath79_pci_nr_irqs = ARRAY_SIZE(qca955x_pci_irq_map);
