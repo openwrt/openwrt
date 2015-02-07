@@ -1,7 +1,5 @@
-Index: linux-3.14.28/arch/mips/ath79/Kconfig
-===================================================================
---- linux-3.14.28.orig/arch/mips/ath79/Kconfig
-+++ linux-3.14.28/arch/mips/ath79/Kconfig
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
 @@ -803,6 +803,16 @@ config ATH79_MACH_TL_WAX50RE
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_WMAC
@@ -19,10 +17,8 @@ Index: linux-3.14.28/arch/mips/ath79/Kconfig
  config ATH79_MACH_TL_WA830RE_V2
  	bool "TP-LINK TL-WA830RE v2 support"
  	select SOC_AR934X
-Index: linux-3.14.28/arch/mips/ath79/Makefile
-===================================================================
---- linux-3.14.28.orig/arch/mips/ath79/Makefile
-+++ linux-3.14.28/arch/mips/ath79/Makefile
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
 @@ -109,6 +109,7 @@ obj-$(CONFIG_ATH79_MACH_TL_MR13U)	+= mac
  obj-$(CONFIG_ATH79_MACH_TL_MR3020)	+= mach-tl-mr3020.o
  obj-$(CONFIG_ATH79_MACH_TL_MR3X20)	+= mach-tl-mr3x20.o
@@ -31,10 +27,8 @@ Index: linux-3.14.28/arch/mips/ath79/Makefile
  obj-$(CONFIG_ATH79_MACH_TL_WA830RE_V2)	+= mach-tl-wa830re-v2.o
  obj-$(CONFIG_ATH79_MACH_TL_WA901ND)	+= mach-tl-wa901nd.o
  obj-$(CONFIG_ATH79_MACH_TL_WA901ND_V2)	+= mach-tl-wa901nd-v2.o
-Index: linux-3.14.28/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.14.28.orig/arch/mips/ath79/machtypes.h
-+++ linux-3.14.28/arch/mips/ath79/machtypes.h
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
 @@ -126,6 +126,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_MR3220_V2,	/* TP-LINK TL-MR3220 v2 */
  	ATH79_MACH_TL_MR3420,		/* TP-LINK TL-MR3420 */

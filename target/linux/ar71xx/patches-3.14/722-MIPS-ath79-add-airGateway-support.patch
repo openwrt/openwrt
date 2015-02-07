@@ -12,7 +12,7 @@
  #include "dev-ap9x-pci.h"
  #include "dev-eth.h"
  #include "dev-gpio-buttons.h"
-@@ -407,3 +409,65 @@ MIPS_MACHINE(ATH79_MACH_UBNT_NANO_M_XW, 
+@@ -452,3 +454,65 @@ MIPS_MACHINE(ATH79_MACH_UBNT_NANO_M_XW,
  
  MIPS_MACHINE(ATH79_MACH_UBNT_LOCO_M_XW, "UBNT-LOCO-XW", "Ubiquiti Loco M XW",
  	     ubnt_loco_m_xw_setup);
@@ -80,9 +80,9 @@
 +
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -144,6 +144,7 @@ enum ath79_mach_type {
- 	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
+@@ -145,6 +145,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
+ 	ATH79_MACH_TL_WR941ND_V5,	/* TP-LINK TL-WR941ND v5 */
  	ATH79_MACH_TUBE2H,		/* Alfa Network Tube2H */
 +	ATH79_MACH_UBNT_AIRGW,		/* Ubiquiti AirGateway */
  	ATH79_MACH_UBNT_AIRROUTER,	/* Ubiquiti AirRouter */
