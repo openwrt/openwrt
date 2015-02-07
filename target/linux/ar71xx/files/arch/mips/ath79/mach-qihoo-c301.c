@@ -79,7 +79,7 @@ static struct gpio_keys_button qihoo_c301_gpio_keys[] __initdata = {
 	},
 };
 
-struct flash_platform_data flash __initdata = {NULL, NULL, 0};
+static struct flash_platform_data flash __initdata = {NULL, NULL, 0};
 
 static void qihoo_c301_get_mac(const char *name, char *mac)
 {
