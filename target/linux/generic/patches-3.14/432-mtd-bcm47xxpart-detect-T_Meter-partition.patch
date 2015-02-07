@@ -14,8 +14,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/mtd/bcm47xxpart.c | 10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
-index f14ec0f..40dd0db 100644
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
 @@ -39,6 +39,7 @@
@@ -26,10 +24,11 @@ index f14ec0f..40dd0db 100644
  #define ML_MAGIC1			0x39685a42
  #define ML_MAGIC2			0x26594131
  #define TRX_MAGIC			0x30524448
-@@ -177,6 +178,15 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -176,6 +177,15 @@ static int bcm47xxpart_parse(struct mtd_
+ 					     MTD_WRITEABLE);
  			continue;
  		}
- 
++
 +		/* T_Meter */
 +		if ((le32_to_cpu(buf[0x000 / 4]) & 0xFFFF0000) == T_METER_MAGIC &&
 +		    (le32_to_cpu(buf[0x030 / 4]) & 0xFFFF0000) == T_METER_MAGIC &&
@@ -38,10 +37,6 @@ index f14ec0f..40dd0db 100644
 +					     MTD_WRITEABLE);
 +			continue;
 +		}
-+
+ 
  		/* TRX */
  		if (buf[0x000 / 4] == TRX_MAGIC) {
- 			if (BCM47XXPART_MAX_PARTS - curr_part < 4) {
--- 
-1.8.4.5
-
