@@ -31,7 +31,8 @@ $(eval $(call SetupHostCommand,gcc, \
 	gcc49 --version | grep gcc, \
 	gcc48 --version | grep gcc, \
 	gcc47 --version | grep gcc, \
-	gcc46 --version | grep gcc))
+	gcc46 --version | grep gcc, \
+	gcc --version | grep Apple.LLVM ))
 
 $(eval $(call TestHostCommand,working-gcc, \
 	Please reinstall the GNU C Compiler - it appears to be broken, \
@@ -45,7 +46,8 @@ $(eval $(call SetupHostCommand,g++, \
 	g++49 --version | grep g++, \
 	g++48 --version | grep g++, \
 	g++47 --version | grep g++, \
-	g++46 --version | grep g++))
+	g++46 --version | grep g++, \
+	g++ --version | grep Apple.LLVM ))
 
 $(eval $(call TestHostCommand,working-g++, \
 	Please reinstall the GNU C++ Compiler - it appears to be broken, \
