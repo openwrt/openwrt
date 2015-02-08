@@ -98,6 +98,7 @@ $(BIN_DIR)/$(SDK_NAME).tar.bz2: clean
 		$(TOPDIR)/.config \
 		./files/Config.in \
 		./files/Makefile \
+		./files/include/prepare.mk \
 		./files/README.SDK \
 		$(SDK_BUILD_DIR)/
 	$(CP) \
