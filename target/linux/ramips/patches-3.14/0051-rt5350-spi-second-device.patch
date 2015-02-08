@@ -189,7 +189,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	unsigned count = 0;
  	u8 *rx = xfer->rx_buf;
  	const u8 *tx = xfer->tx_buf;
-@@ -213,9 +280,9 @@ rt2880_spi_write_read(struct spi_device 
+@@ -213,9 +280,9 @@ rt2880_spi_write_read(struct spi_device
  
  	if (tx) {
  		for (count = 0; count < xfer->len; count++) {
@@ -202,7 +202,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			if (err) {
  				dev_err(&spi->dev, "TX failed, err=%d\n", err);
  				goto out;
-@@ -225,13 +292,13 @@ rt2880_spi_write_read(struct spi_device 
+@@ -225,13 +292,13 @@ rt2880_spi_write_read(struct spi_device
  
  	if (rx) {
  		for (count = 0; count < xfer->len; count++) {

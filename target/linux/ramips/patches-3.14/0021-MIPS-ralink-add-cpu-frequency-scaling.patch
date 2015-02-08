@@ -55,7 +55,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static void systick_set_clock_mode(enum clock_event_mode mode,
  				struct clock_event_device *evt)
  {
-@@ -101,9 +122,13 @@ static void systick_set_clock_mode(enum 
+@@ -101,9 +122,13 @@ static void systick_set_clock_mode(enum
  		sdev->irq_requested = 1;
  		iowrite32(CFG_EXT_STK_EN | CFG_CNT_EN,
  				systick.membase + SYSTICK_CONFIG);
@@ -69,7 +69,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		if (sdev->irq_requested)
  			free_irq(systick.dev.irq, &systick_irqaction);
  		sdev->irq_requested = 0;
-@@ -116,12 +141,23 @@ static void systick_set_clock_mode(enum 
+@@ -116,12 +141,23 @@ static void systick_set_clock_mode(enum
  	}
  }
  
