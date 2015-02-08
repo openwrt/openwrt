@@ -109,7 +109,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  /*
   * Write an address range to the flash chip.  Data must be written in
   * FLASH_PAGESIZE chunks.  The address range may be any size provided
-@@ -596,11 +680,8 @@ static int m25p80_write(struct mtd_info 
+@@ -596,11 +680,8 @@ static int m25p80_write(struct mtd_info
  		return 1;
  	}
  
@@ -121,7 +121,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	page_offset = to & (flash->page_size - 1);
  
-@@ -608,9 +689,7 @@ static int m25p80_write(struct mtd_info 
+@@ -608,9 +689,7 @@ static int m25p80_write(struct mtd_info
  	if (page_offset + len <= flash->page_size) {
  		t[1].len = len;
  
@@ -132,7 +132,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	} else {
  		u32 i;
  
-@@ -618,9 +697,7 @@ static int m25p80_write(struct mtd_info 
+@@ -618,9 +697,7 @@ static int m25p80_write(struct mtd_info
  		page_size = flash->page_size - page_offset;
  
  		t[1].len = page_size;
@@ -143,7 +143,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  		/* write everything in flash->page_size chunks */
  		for (i = page_size; i < len; i += page_size) {
-@@ -628,19 +705,12 @@ static int m25p80_write(struct mtd_info 
+@@ -628,19 +705,12 @@ static int m25p80_write(struct mtd_info
  			if (page_size > flash->page_size)
  				page_size = flash->page_size;
  
@@ -164,7 +164,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		}
  	}
  
-@@ -1105,6 +1175,7 @@ static int m25p_probe(struct spi_device 
+@@ -1105,6 +1175,7 @@ static int m25p_probe(struct spi_device
  	struct mtd_part_parser_data	ppdata;
  	struct device_node *np = spi->dev.of_node;
  	int ret;
@@ -172,7 +172,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	/* Platform data helps sort out which chip type we have, as
  	 * well as how this board partitions it.  If we don't have
-@@ -1187,6 +1258,12 @@ static int m25p_probe(struct spi_device 
+@@ -1187,6 +1258,12 @@ static int m25p_probe(struct spi_device
  	flash->mtd._erase = m25p80_erase;
  	flash->mtd._read = m25p80_read;
  

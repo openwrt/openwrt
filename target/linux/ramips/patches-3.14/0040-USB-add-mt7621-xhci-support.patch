@@ -5143,7 +5143,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 1;
  }
-@@ -2970,6 +2973,7 @@ static int prepare_ring(struct xhci_hcd 
+@@ -2970,6 +2973,7 @@ static int prepare_ring(struct xhci_hcd
  		next = ring->enqueue;
  
  		while (last_trb(xhci, ring, ring->enq_seg, next)) {
@@ -5151,7 +5151,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			/* If we're not dealing with 0.95 hardware or isoc rings
  			 * on AMD 0.96 host, clear the chain bit.
  			 */
-@@ -2979,7 +2983,9 @@ static int prepare_ring(struct xhci_hcd 
+@@ -2979,7 +2983,9 @@ static int prepare_ring(struct xhci_hcd
  				next->link.control &= cpu_to_le32(~TRB_CHAIN);
  			else
  				next->link.control |= cpu_to_le32(TRB_CHAIN);
@@ -5627,7 +5627,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
  	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
  
-@@ -2766,7 +2910,7 @@ int xhci_check_bandwidth(struct usb_hcd 
+@@ -2766,7 +2910,7 @@ int xhci_check_bandwidth(struct usb_hcd
  	if (ctrl_ctx->add_flags == cpu_to_le32(SLOT_FLAG) &&
  			ctrl_ctx->drop_flags == 0)
  		return 0;
@@ -5651,7 +5651,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  			return xhci_calculate_intel_u2_timeout(udev, desc);
  	}
  
-@@ -4758,7 +4906,9 @@ int xhci_gen_setup(struct usb_hcd *hcd, 
+@@ -4758,7 +4906,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  	hcd->self.no_sg_constraint = 1;
  
  	/* XHCI controllers don't stop the ep queue on short packets :| */
@@ -5661,7 +5661,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	if (usb_hcd_is_primary_hcd(hcd)) {
  		xhci = kzalloc(sizeof(struct xhci_hcd), GFP_KERNEL);
-@@ -4821,6 +4971,10 @@ int xhci_gen_setup(struct usb_hcd *hcd, 
+@@ -4821,6 +4971,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  		goto error;
  	xhci_dbg(xhci, "Reset complete\n");
  
@@ -5777,7 +5777,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  /* convert between an HCD pointer and the corresponding EHCI_HCD */
-@@ -1726,7 +1745,7 @@ void xhci_urb_free_priv(struct xhci_hcd 
+@@ -1726,7 +1745,7 @@ void xhci_urb_free_priv(struct xhci_hcd
  void xhci_free_command(struct xhci_hcd *xhci,
  		struct xhci_command *command);
  
