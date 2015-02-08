@@ -5,9 +5,9 @@ Signed-off-by: Ben Mulvihill <ben.mulvihill@gmail.com>
  arch/mips/lantiq/xway/clk.c |    5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
---- a/arch/mips/lantiq/xway/clk.c	2015-01-21 10:15:44.000000000 +0100
-+++ b/arch/mips/lantiq/xway/clk.c	2015-01-21 10:17:29.000000000 +0100
-@@ -104,8 +104,9 @@ unsigned long ltq_ar9_fpi_hz(void)
+--- a/arch/mips/lantiq/xway/clk.c
++++ b/arch/mips/lantiq/xway/clk.c
+@@ -87,8 +87,9 @@ unsigned long ltq_ar9_fpi_hz(void)
  	unsigned long sys = ltq_ar9_sys_hz();
  
  	if (ltq_cgu_r32(CGU_SYS) & BIT(0))
