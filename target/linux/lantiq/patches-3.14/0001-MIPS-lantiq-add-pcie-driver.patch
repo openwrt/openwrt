@@ -5516,7 +5516,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (AER) driver support. Error reporting messages sent to Root
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1121,6 +1121,8 @@ void pci_walk_bus(struct pci_bus *top, i
+@@ -1123,6 +1123,8 @@ void pci_walk_bus(struct pci_bus *top, i
  		  void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);

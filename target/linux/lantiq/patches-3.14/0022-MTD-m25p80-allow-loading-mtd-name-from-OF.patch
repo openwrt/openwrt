@@ -14,7 +14,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -1105,6 +1105,10 @@ static int m25p_probe(struct spi_device 
+@@ -1105,6 +1105,10 @@ static int m25p_probe(struct spi_device
  	struct mtd_part_parser_data	ppdata;
  	struct device_node *np = spi->dev.of_node;
  	int ret;
@@ -25,7 +25,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	/* Platform data helps sort out which chip type we have, as
  	 * well as how this board partitions it.  If we don't have
-@@ -1177,6 +1181,8 @@ static int m25p_probe(struct spi_device 
+@@ -1177,6 +1181,8 @@ static int m25p_probe(struct spi_device
  
  	if (data && data->name)
  		flash->mtd.name = data->name;

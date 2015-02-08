@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  struct gpio_desc;
  
-@@ -296,3 +298,69 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -302,3 +304,69 @@ void of_gpiochip_remove(struct gpio_chip
  	if (chip->of_node)
  		of_node_put(chip->of_node);
  }
@@ -94,7 +94,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +device_initcall(of_gpio_export_init);
 --- a/drivers/gpio/gpiolib.c
 +++ b/drivers/gpio/gpiolib.c
-@@ -803,7 +803,7 @@ static struct class gpio_class = {
+@@ -798,7 +798,7 @@ static struct class gpio_class = {
   *
   * Returns zero on success, else an error.
   */
@@ -103,17 +103,17 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  {
  	unsigned long		flags;
  	int			status;
-@@ -843,7 +843,8 @@ int gpiod_export(struct gpio_desc *desc,
- 	offset = gpio_chip_hwgpio(desc);
+@@ -839,6 +839,9 @@ int gpiod_export(struct gpio_desc *desc,
  	if (desc->chip->names && desc->chip->names[offset])
  		ioname = desc->chip->names[offset];
--
+ 
 +	if (name)
 +		ioname = name;
- 	dev = device_create(&gpio_class, desc->chip->dev, MKDEV(0, 0),
- 			    desc, ioname ? ioname : "gpio%u",
- 			    desc_to_gpio(desc));
-@@ -880,6 +881,12 @@ fail_unlock:
++
+ 	dev = device_create_with_groups(&gpio_class, desc->chip->dev,
+ 					MKDEV(0, 0), desc, gpio_groups,
+ 					ioname ? ioname : "gpio%u",
+@@ -874,6 +877,12 @@ fail_unlock:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }
