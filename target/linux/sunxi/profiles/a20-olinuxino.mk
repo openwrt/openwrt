@@ -5,17 +5,17 @@
 # See /LICENSE for more information.
 #
 
-define Profile/A20-OLinuXino_Lime
+define Profile/A20-OLinuXino-Lime
 	NAME:=A20 OLinuXino Lime
 	PACKAGES:=\
-		uboot-sunxi-A20-OLinuXino_Lime kmod-ata-sunxi kmod-rtc-sunxi
+		uboot-sunxi-A20-OLinuXino-Lime kmod-ata-sunxi kmod-rtc-sunxi
 endef
 
-define Profile/A20-OLinuXino_Lime/Description
+define Profile/A20-OLinuXino-Lime/Description
 	Package set optimized for the Olimex A20 OLinuXino Lime
 endef
 
-$(eval $(call Profile,A20-OLinuXino_Lime))
+$(eval $(call Profile,A20-OLinuXino-Lime))
 
 
 define Profile/A20-OLinuXino_MICRO
