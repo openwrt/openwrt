@@ -1,6 +1,6 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2007 OpenWrt.org
+# Copyright (C) 2007-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -13,16 +13,6 @@ SDK:=1
 export TOPDIR LC_ALL LANG SDK
 
 world:
-
-# Initialize SDK snapshot
-.git/config:
-	@( \
-		echo -n "Initializing SDK ... "; \
-		git init -q .; \
-		find . -mindepth 1 -maxdepth 1 -not -name feeds | xargs git add; \
-		git commit -q -m "Initial state"; \
-		echo "ok."; \
-	)
 
 include $(TOPDIR)/include/host.mk
 
