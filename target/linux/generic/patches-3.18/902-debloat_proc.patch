@@ -79,7 +79,7 @@
  }
 --- a/kernel/irq/proc.c
 +++ b/kernel/irq/proc.c
-@@ -311,6 +311,9 @@ void register_irq_proc(unsigned int irq,
+@@ -328,6 +328,9 @@ void register_irq_proc(unsigned int irq,
  {
  	char name [MAX_NAMELEN];
  
@@ -89,7 +89,7 @@
  	if (!root_irq_dir || (desc->irq_data.chip == &no_irq_chip) || desc->dir)
  		return;
  
-@@ -347,6 +350,9 @@ void unregister_irq_proc(unsigned int ir
+@@ -364,6 +367,9 @@ void unregister_irq_proc(unsigned int ir
  {
  	char name [MAX_NAMELEN];
  
@@ -99,7 +99,7 @@
  	if (!root_irq_dir || !desc->dir)
  		return;
  #ifdef CONFIG_SMP
-@@ -382,6 +388,9 @@ void init_irq_proc(void)
+@@ -399,6 +405,9 @@ void init_irq_proc(void)
  	unsigned int irq;
  	struct irq_desc *desc;
  

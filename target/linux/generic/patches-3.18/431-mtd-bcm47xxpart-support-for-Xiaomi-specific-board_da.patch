@@ -12,8 +12,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/mtd/bcm47xxpart.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
-index c0720c1..f14ec0f 100644
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
 @@ -33,6 +33,7 @@
@@ -24,7 +22,7 @@ index c0720c1..f14ec0f 100644
  #define CFE_MAGIC			0x43464531	/* 1EFC */
  #define FACTORY_MAGIC			0x59544346	/* FCTY */
  #define NVRAM_HEADER			0x48534C46	/* FLSH */
-@@ -262,7 +263,8 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -262,7 +263,8 @@ static int bcm47xxpart_parse(struct mtd_
  		}
  
  		/* Some devices (ex. WNDR3700v3) don't have a standard 'MPFR' */
@@ -34,6 +32,3 @@ index c0720c1..f14ec0f 100644
  			bcm47xxpart_add_part(&parts[curr_part++], "board_data",
  					     offset, MTD_WRITEABLE);
  			continue;
--- 
-1.8.4.5
-
