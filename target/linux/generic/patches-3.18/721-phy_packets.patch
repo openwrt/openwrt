@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1216,6 +1216,7 @@ enum netdev_priv_flags {
+@@ -1220,6 +1220,7 @@ enum netdev_priv_flags {
  	IFF_LIVE_ADDR_CHANGE		= 1<<20,
  	IFF_MACVLAN			= 1<<21,
  	IFF_XMIT_DST_RELEASE_PERM	= 1<<22,
@@ -8,7 +8,7 @@
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
-@@ -1241,6 +1242,7 @@ enum netdev_priv_flags {
+@@ -1245,6 +1246,7 @@ enum netdev_priv_flags {
  #define IFF_LIVE_ADDR_CHANGE		IFF_LIVE_ADDR_CHANGE
  #define IFF_MACVLAN			IFF_MACVLAN
  #define IFF_XMIT_DST_RELEASE_PERM	IFF_XMIT_DST_RELEASE_PERM
@@ -16,7 +16,7 @@
  
  /**
   *	struct net_device - The DEVICE structure.
-@@ -1511,6 +1513,11 @@ struct net_device {
+@@ -1515,6 +1517,11 @@ struct net_device {
  	const struct ethtool_ops *ethtool_ops;
  	const struct forwarding_accel_ops *fwd_ops;
  
@@ -28,7 +28,7 @@
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1573,6 +1580,10 @@ struct net_device {
+@@ -1577,6 +1584,10 @@ struct net_device {
  	void			*ax25_ptr;
  	struct wireless_dev	*ieee80211_ptr;
  
@@ -86,7 +86,7 @@
  	help
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -2607,10 +2607,20 @@ static int xmit_one(struct sk_buff *skb,
+@@ -2623,10 +2623,20 @@ static int xmit_one(struct sk_buff *skb,
  	if (!list_empty(&ptype_all))
  		dev_queue_xmit_nit(skb, dev);
  
