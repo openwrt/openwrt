@@ -297,6 +297,7 @@ platform_check_image() {
 	el-m150 | \
 	el-mini | \
 	gl-inet | \
+	mc-mac1200r | \
 	oolite | \
 	smart-300 | \
 	tl-mr10u | \
