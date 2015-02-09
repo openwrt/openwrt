@@ -1,6 +1,6 @@
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -273,17 +273,17 @@ build_all: build_libs build_apps build_t
+@@ -274,17 +274,17 @@ build_all: build_libs build_apps build_t
  build_libs: build_crypto build_ssl build_engines
  
  build_crypto:
@@ -29,7 +29,7 @@
  
  all_testapps: build_libs build_testapps
  build_testapps:
-@@ -455,7 +455,7 @@ report:
+@@ -453,7 +453,7 @@ report:
  	@$(PERL) util/selftest.pl
  
  depend:
@@ -38,7 +38,7 @@
  
  lint:
  	@set -e; target=lint; $(RECURSIVE_BUILD_CMD)
-@@ -533,9 +533,9 @@ dist:
+@@ -531,9 +531,9 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -50,7 +50,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
-@@ -544,12 +544,19 @@ install_sw:
+@@ -542,12 +542,19 @@ install_sw:
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
@@ -71,7 +71,7 @@
  	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
  	do \
  		if [ -f "$$i" ]; then \
-@@ -629,12 +636,7 @@ install_html_docs:
+@@ -631,12 +638,7 @@ install_html_docs:
  		done; \
  	done
  
@@ -105,7 +105,7 @@
 +	+@target=all; $(RECURSIVE_MAKE)
  
  files:
- 	$(PERL) $(TOP)/util/files.pl Makefile >> $(TOP)/MINFO
+ 	$(PERL) $(TOP)/util/files.pl "CPUID_OBJ=$(CPUID_OBJ)" Makefile >> $(TOP)/MINFO
 -	@target=files; $(RECURSIVE_MAKE)
 +	+@target=files; $(RECURSIVE_MAKE)
  
@@ -118,7 +118,7 @@
 -$(LIB):	$(LIBOBJ)
 +$(LIB):	$(LIBOBJ) | subdirs
  	$(AR) $(LIB) $(LIBOBJ)
- 	[ -z "$(FIPSLIBDIR)" ] || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
+ 	test -z "$(FIPSLIBDIR)" || $(AR) $(LIB) $(FIPSLIBDIR)fipscanister.o
  	$(RANLIB) $(LIB) || echo Never mind.
 @@ -111,7 +111,7 @@ shared: buildinf.h lib subdirs
  	fi
@@ -169,7 +169,7 @@
  	ctags $(SRC)
 --- a/test/Makefile
 +++ b/test/Makefile
-@@ -129,7 +129,7 @@ install:
+@@ -132,7 +132,7 @@ install:
  tags:
  	ctags $(SRC)
  
@@ -178,7 +178,7 @@
  
  apps:
  	@(cd ..; $(MAKE) DIRS=apps all)
-@@ -384,109 +384,109 @@ BUILD_CMD_STATIC=shlib_target=; \
+@@ -398,109 +398,109 @@ BUILD_CMD_STATIC=shlib_target=; \
  		link_app.$${shlib_target}
  
  $(RSATEST)$(EXE_EXT): $(RSATEST).o $(DLIBCRYPTO)
@@ -321,9 +321,9 @@
 -	@target=$(SRPTEST); $(BUILD_CMD)
 +	+@target=$(SRPTEST); $(BUILD_CMD)
  
- $(HEARTBEATTEST)$(EXE_EXT): $(HEARTBEATTEST).o $(DLIBCRYPTO)
- 	@target=$(HEARTBEATTEST); $(BUILD_CMD_STATIC)
-@@ -505,7 +505,7 @@ $(CONSTTIMETEST)$(EXE_EXT): $(CONSTTIMET
+ $(V3NAMETEST)$(EXE_EXT): $(V3NAMETEST).o $(DLIBCRYPTO)
+ 	@target=$(V3NAMETEST); $(BUILD_CMD)
+@@ -522,7 +522,7 @@ $(CONSTTIMETEST)$(EXE_EXT): $(CONSTTIMET
  #	fi
  
  dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
