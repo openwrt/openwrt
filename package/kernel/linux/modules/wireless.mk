@@ -114,6 +114,7 @@ define KernelPackage/net-rtl8188eu
   KCONFIG:=\
 	CONFIG_STAGING=y \
 	CONFIG_R8188EU \
+	CONFIG_R8723AU \
 	CONFIG_88EU_AP_MODE=y \
 	CONFIG_88EU_P2P=n
   FILES:=$(LINUX_DIR)/drivers/staging/rtl8188eu/r8188eu.ko
