@@ -133,6 +133,7 @@ static struct fe_soc_data rt3050_data = {
 	.checksum_bit = RX_DMA_L4VALID,
 	.rx_int = FE_RX_DONE_INT,
 	.tx_int = FE_TX_DONE_INT,
+	.status_int = FE_CNT_GDM_AF,
 };
 
 static struct fe_soc_data rt5350_data = {
