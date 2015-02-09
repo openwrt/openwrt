@@ -679,6 +679,13 @@ EOF
 	print "endmenu\n\n";
 }
 
+sub print_package_overrides() {
+	keys %overrides > 0 or return;
+	print "\tconfig OVERRIDE_PKGS\n";
+	print "\t\tstring\n";
+	print "\t\tdefault \"".join(" ", keys %overrides)."\"\n\n";
+}
+
 sub gen_package_config() {
 	parse_package_metadata($ARGV[0]) or exit 1;
 	print "menuconfig IMAGEOPT\n\tbool \"Image configuration\"\n\tdefault n\n";
@@ -704,6 +711,7 @@ EOF
 	foreach my $cat (sort {uc($a) cmp uc($b)} keys %category) {
 		print_package_config_category $cat;
 	}
+	print_package_overrides();
 }
 
 sub get_conditional_dep($$) {
