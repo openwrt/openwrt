@@ -358,6 +358,7 @@ sub is_core_package($) {
 sub install_package {
 	my $feed = shift;
 	my $name = shift;
+	my $force = shift;
 	my $ret = 0;
 
 	$feed = lookup_package($feed, $name);
@@ -382,14 +383,26 @@ sub install_package {
 	my $type = $feed->[0];
 	$src or $src = $name;
 
+	# If it's a core package and we don't want to override, just return
+	!$force and is_core_package($src) and return 0;
+
 	# previously installed packages set the runtime package
-	# newly installed packages set the source package
-	$installed{$src} and return 0;
+	# newly installed packages set the source package to 1
+	$installed{$src} and $installed{$src} == 1 and return 0;
+
+	# we'll trigger the override only with the 3 conditions below:
+	# - override is allowed by command line (-f)
+	# - a package with the same src exists in the core packages list
+	# - the package previously installed is not from a feed
+	my $override = 1 if ($force and is_core_package($src) and !$installed{$name}->{feed});
 
 	# check previously installed packages
-	$installed{$name} and return 0;
+	$installed{$name} and !$override and return 0;
 	$installed{$src} = 1;
-	warn "Installing package '$src'\n";
+
+	defined($override) and $override == 1
+		and warn "Overriding package '$src'\n"
+		or warn "Installing package '$src'\n";
 
 	$install_method{$type} or do {
 		warn "Unknown installation method: '$type'\n";
@@ -409,7 +422,7 @@ sub install_package {
 			$dep =~ s/^.+://;
 			$dep =~ s/\/.+$//;
 			next unless $dep;
-			install_package($feed, $dep) == 0 or $ret = 1;
+			install_package($feed, $dep, 0) == 0 or $ret = 1;
 		}
 	}
 
@@ -436,7 +449,7 @@ sub install {
 	my $feed;
 	my $ret = 0;
 
-	getopts('ap:d:h', \%opts);
+	getopts('ap:d:fh', \%opts);
 
 	if ($opts{h}) {
 		usage();
@@ -462,7 +475,7 @@ sub install {
 					my $p = $feed_package->{$name};
 					next if $p->{vdepends};
 					if( $p->{name} ) {
-						install_package($feed, $p->{name}) == 0 or $ret = 1;
+						install_package($feed, $p->{name}, exists($opts{f})) == 0 or $ret = 1;
 						get_feed($f->[1]);
 					}
 				}
@@ -470,7 +483,7 @@ sub install {
 		}
 	} else {
 		while ($name = shift @ARGV) {
-			install_package($feed, $name) == 0 or $ret = 1;
+			install_package($feed, $name, exists($opts{f})) == 0 or $ret = 1;
 		}
 	}
 
@@ -638,6 +651,7 @@ Commands:
 	    -a :           Install all packages from all feeds or from the specified feed using the -p option.
 	    -p <feedname>: Prefer this feed when installing packages.
 	    -d <y|m|n>:    Set default for newly installed packages.
+	    -f :           Install will be forced even if the package exists in core OpenWrt (override)
 
 	search [options] <substring>: Search for a package
 	Options:
