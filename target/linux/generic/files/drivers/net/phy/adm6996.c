@@ -876,7 +876,7 @@ adm6996_sw_get_port_mib(struct switch_dev *dev,
 		reg = r16(priv, adm6996_mibs[i].offset + ADM_OFFSET_PORT(port));
 		reg += r16(priv, adm6996_mibs[i].offset + ADM_OFFSET_PORT(port) + 1) << 16;
 		len += snprintf(buf + len, sizeof(priv->buf) - len,
-				"%-12s: %lu\n",
+				"%-12s: %u\n",
 				adm6996_mibs[i].name,
 				reg);
 	}
