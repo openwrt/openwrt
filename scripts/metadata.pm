@@ -2,7 +2,7 @@ package metadata;
 use base 'Exporter';
 use strict;
 use warnings;
-our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features clear_packages parse_package_metadata get_multiline);
+our @EXPORT = qw(%package %srcpackage %category %subdir %preconfig %features %overrides clear_packages parse_package_metadata get_multiline);
 
 our %package;
 our %preconfig;
@@ -10,6 +10,7 @@ our %srcpackage;
 our %category;
 our %subdir;
 our %features;
+our %overrides;
 
 sub get_multiline {
 	my $fh = shift;
@@ -30,6 +31,7 @@ sub clear_packages() {
 	%srcpackage = ();
 	%category = ();
 	%features = ();
+	%overrides = ();
 }
 
 sub parse_package_metadata($) {
@@ -40,6 +42,7 @@ sub parse_package_metadata($) {
 	my $preconfig;
 	my $subdir;
 	my $src;
+	my $override;
 
 	open FILE, "<$file" or do {
 		warn "Cannot open '$file': $!\n";
@@ -54,7 +57,12 @@ sub parse_package_metadata($) {
 			$subdir =~ s/^package\///;
 			$subdir{$src} = $subdir;
 			$srcpackage{$src} = [];
+			$override = "";
 			undef $pkg;
+		};
+		/^Override: \s*(.+?)\s*$/ and do {
+			$override = $1;
+			$overrides{$src} = 1;
 		};
 		next unless $src;
 		/^Package:\s*(.+?)\s*$/ and do {
@@ -70,6 +78,7 @@ sub parse_package_metadata($) {
 			$pkg->{buildtypes} = [];
 			$pkg->{subdir} = $subdir;
 			$pkg->{tristate} = 1;
+			$pkg->{override} = $override;
 			$package{$1} = $pkg;
 			push @{$srcpackage{$src}}, $pkg;
 		};
