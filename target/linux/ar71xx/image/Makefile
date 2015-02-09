@@ -1382,6 +1382,7 @@ $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ELM150,el-m150,EL-M150,ttyATH0,11
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ELMINI,el-mini,EL-MINI,ttyATH0,115200,0x01530001,1,8Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,GLINET6408A,gl-inet-6408A-v1,GL-INET,ttyATH0,115200,0x08000001,1,8Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,GLINET6416A,gl-inet-6416A-v1,GL-INET,ttyATH0,115200,0x08000001,1,16Mlzma))
+$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,MAC1200R,mc-mac1200r,MC-MAC1200R,ttyS0,115200,0x12000001,1,8Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR10U,tl-mr10u-v1,TL-MR10U,ttyATH0,115200,0x00100101,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR11UV1,tl-mr11u-v1,TL-MR11U,ttyATH0,115200,0x00110101,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR11UV2,tl-mr11u-v2,TL-MR11U,ttyATH0,115200,0x00110102,1,4Mlzma))

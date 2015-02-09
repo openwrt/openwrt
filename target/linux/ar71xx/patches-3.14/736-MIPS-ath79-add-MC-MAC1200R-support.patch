@@ -1,0 +1,39 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -374,6 +374,16 @@
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+
++config ATH79_MACH_MC_MAC1200R
++	bool "MERCURY MAC1200R board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_RB4XX
+	bool "MikroTik RouterBOARD 4xx series support"
+	select SOC_AR71XX
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -66,6 +66,7 @@
+ obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
+ obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
+ obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
++obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)     += mach-mc-mac1200r.o
+ obj-$(CONFIG_ATH79_MACH_MR600)		+= mach-mr600.o
+ obj-$(CONFIG_ATH79_MACH_MYNET_N600)	+= mach-mynet-n600.o
+ obj-$(CONFIG_ATH79_MACH_MYNET_REXT)	+= mach-mynet-rext.o
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -89,6 +89,7 @@
+	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
+	ATH79_MACH_TEW_712BR,		/* TRENDnet TEW-712BR */
+	ATH79_MACH_TEW_732BR,		/* TRENDnet TEW-732BR */
++	ATH79_MACH_MC_MAC1200R,		/* MERCURY MAC1200R*/
+	ATH79_MACH_TL_MR10U,		/* TP-LINK TL-MR10U */
+	ATH79_MACH_TL_MR11U,		/* TP-LINK TL-MR11U */
+	ATH79_MACH_TL_MR13U,		/* TP-LINK TL-MR13U */
