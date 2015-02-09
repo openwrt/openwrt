@@ -88,9 +88,7 @@ get_status_led() {
 	m4)
 		status_led="m4:blue:status"
 		;;
-	mlw221)
-		status_led="kingston:blue:status"
-		;;
+	mlw221|\
 	mlwg2)
 		status_led="kingston:blue:system"
 		;;

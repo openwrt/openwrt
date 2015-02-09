@@ -127,10 +127,7 @@ case $board in
 	hw550-3g)
 		set_usb_led "hw550-3g:green:usb"
 		;;
-	mlw221)
-		set_wifi_led "kingston:blue:wifi"
-		ucidef_set_led_default "system" "system" "kingston:blue:system" "1"
-		;;
+	mlw221|\
 	mlwg2)
 		set_wifi_led "kingston:blue:wifi"
 		ucidef_set_led_default "system" "system" "kingston:blue:system" "1"
