@@ -66,7 +66,7 @@ unsigned long cgu_get_pp32_clock(void)
 	return rate;
 }
 
-static void ptm_setup(struct net_device *, int);
+static void ptm_setup(struct net_device *);
 static struct net_device_stats *ptm_get_stats(struct net_device *);
 static int ptm_open(struct net_device *);
 static int ptm_stop(struct net_device *);
@@ -134,8 +134,9 @@ unsigned int ifx_ptm_dbg_enable = DBG_ENABLE_MASK_ERR;
  * ####################################
  */
 
-static void ptm_setup(struct net_device *dev, int ndev)
+static void ptm_setup(struct net_device *dev)
 {
+    int ndev = 0;
     dev->netdev_ops      = &g_ptm_netdev_ops;
     netif_napi_add(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 16);
     dev->watchdog_timeo  = ETH_WATCHDOG_TIMEOUT;
@@ -951,10 +952,9 @@ static int ifx_ptm_init(void)
     }
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
-        g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], ether_setup);
+        g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], ether_setup, ptm_setup);
         if ( g_net_dev[i] == NULL )
             goto ALLOC_NETDEV_FAIL;
-        ptm_setup(g_net_dev[i], i);
     }
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {

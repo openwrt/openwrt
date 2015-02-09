@@ -109,7 +109,7 @@ typedef enum {
 
 /* wait for an event, timeout is measured in ms */
 #define MEI_WAIT_EVENT_TIMEOUT(ev,timeout)\
-        interruptible_sleep_on_timeout(&ev,timeout * HZ / 1000)
+        wait_event_interruptible_timeout(ev,0 == 1, timeout * HZ / 1000)
 #define MEI_WAKEUP_EVENT(ev)\
         wake_up_interruptible(&ev)
 #endif /* IFX_MEI_BSP */
