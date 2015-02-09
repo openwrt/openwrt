@@ -9,7 +9,7 @@ MD5_FW="4d812f2c3476dadd738b022c4767c491"
 MD5_TAPI="06b6ab3481b8d3eb7e8bf6131f7f6b7f"
 MD5_DSL="59dd9dc81195c6854433c691b163f757"
 
-[ -f /lib/firmware/vdsl.bin] && exit 0
+[ -f /lib/firmware/vdsl.bin ] && exit 0
 
 [ -z "$1" ] || URL=$1
 
