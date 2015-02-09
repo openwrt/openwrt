@@ -58,6 +58,7 @@ VERSION_TAINT_SPECS := \
 	+USE_EGLIBC:eglibc \
 	+USE_MKLIBS:mklibs \
 	+BUSYBOX_CUSTOM:busybox \
+	+OVERRIDE_PKGS:override \
 
 VERSION_TAINTS := $(strip $(foreach taint,$(VERSION_TAINT_SPECS), \
 	$(if $(findstring +,$(taint)), \
