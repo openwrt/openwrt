@@ -1,0 +1,45 @@
+From b1b9fca8c317afc3f2b78bb54f877e8a830a819d Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 9 Aug 2013 18:47:27 +0200
+Subject: [PATCH 34/36] reset: Fix compile when reset RESET_CONTROLLER is not
+ selected
+
+Drivers need to protect their reset api calls with #ifdef to avoid compile
+errors.
+
+This patch adds dummy wrappers in the same way that linux/of.h does it.
+
+Cc: linux-kernel@vger.kernel.org
+Cc: Philipp Zabel <p.zabel@pengutronix.de>
+Cc: Gabor Juhos <juhosg@openwrt.org>
+---
+ include/linux/reset-controller.h |   16 ++++++++++++++
+ include/linux/reset.h            |   43 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 59 insertions(+)
+
+--- a/include/linux/reset-controller.h
++++ b/include/linux/reset-controller.h
+@@ -46,7 +46,23 @@ struct reset_controller_dev {
+ 	unsigned int nr_resets;
+ };
+ 
++#if defined(CONFIG_RESET_CONTROLLER)
++
+ int reset_controller_register(struct reset_controller_dev *rcdev);
+ void reset_controller_unregister(struct reset_controller_dev *rcdev);
+ 
++#else
++
++static inline int reset_controller_register(struct reset_controller_dev *rcdev)
++{
++	return -ENOSYS;
++}
++
++void reset_controller_unregister(struct reset_controller_dev *rcdev)
++{
++
++}
++
++#endif
++
+ #endif

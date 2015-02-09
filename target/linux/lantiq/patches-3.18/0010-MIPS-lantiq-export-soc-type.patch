@@ -1,0 +1,39 @@
+From 6804142b47f2634b0657e4dfcec7a34e982b6ddb Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 10 Sep 2014 22:29:21 +0200
+Subject: [PATCH 10/36] MIPS: lantiq: export soc type
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ arch/mips/include/asm/mach-lantiq/lantiq.h |    2 ++
+ arch/mips/lantiq/prom.c                    |    5 +++++
+ 2 files changed, 7 insertions(+)
+
+--- a/arch/mips/include/asm/mach-lantiq/lantiq.h
++++ b/arch/mips/include/asm/mach-lantiq/lantiq.h
+@@ -48,6 +48,8 @@ extern struct clk *clk_get_ppe(void);
+ extern unsigned char ltq_boot_select(void);
+ /* find out what caused the last cpu reset */
+ extern int ltq_reset_cause(void);
++/* find out the soc type */
++extern int ltq_soc_type(void);
+ 
+ #define IOPORT_RESOURCE_START	0x10000000
+ #define IOPORT_RESOURCE_END	0xffffffff
+--- a/arch/mips/lantiq/prom.c
++++ b/arch/mips/lantiq/prom.c
+@@ -36,6 +36,11 @@ const char *get_system_type(void)
+ 	return soc_info.sys_type;
+ }
+ 
++int ltq_soc_type(void)
++{
++	return soc_info.type;
++}
++
+ void prom_free_prom_memory(void)
+ {
+ }
