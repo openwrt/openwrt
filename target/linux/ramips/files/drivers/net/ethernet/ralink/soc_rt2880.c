@@ -65,6 +65,7 @@ struct fe_soc_data rt2880_data = {
 	.checksum_bit = RX_DMA_L4VALID,
 	.rx_int = FE_RX_DONE_INT,
 	.tx_int = FE_TX_DONE_INT,
+	.status_int = FE_CNT_GDM_AF,
 	.mdio_read = rt2880_mdio_read,
 	.mdio_write = rt2880_mdio_write,
 	.mdio_adjust_link = rt2880_mdio_link_adjust,

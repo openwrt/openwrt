@@ -49,6 +49,7 @@ enum fe_reg {
 	FE_REG_FE_DMA_VID_BASE,
 	FE_REG_FE_COUNTER_BASE,
 	FE_REG_FE_RST_GL,
+	FE_REG_FE_INT_STATUS2,
 	FE_REG_COUNT
 };
 
@@ -407,6 +408,7 @@ struct fe_soc_data
 	u32 pdma_glo_cfg;
 	u32 rx_int;
 	u32 tx_int;
+	u32 status_int;
 	u32 checksum_bit;
 };
 

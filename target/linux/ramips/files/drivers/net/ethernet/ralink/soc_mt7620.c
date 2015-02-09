@@ -62,6 +62,15 @@
 #define GSW_REG_GDMA1_MAC_ADRH	0x50C
 
 #define MT7621_FE_RST_GL	(FE_FE_OFFSET + 0x04)
+#define MT7620_FE_INT_STATUS2	(FE_FE_OFFSET + 0x08)
+
+/*
+ * FE_INT_STATUS reg on mt7620 define CNT_GDM1_AF at BIT(29)
+ * but after test it should be BIT(13).
+ */
+#define MT7620_FE_GDM1_AF	BIT(13)
+#define MT7621_FE_GDM1_AF	BIT(28)
+#define MT7621_FE_GDM2_AF	BIT(29)
 
 static const u32 mt7620_reg_table[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
@@ -80,6 +89,7 @@ static const u32 mt7620_reg_table[FE_REG_COUNT] = {
 	[FE_REG_FE_DMA_VID_BASE] = MT7620_DMA_VID,
 	[FE_REG_FE_COUNTER_BASE] = MT7620_GDM1_TX_GBCNT,
 	[FE_REG_FE_RST_GL] = MT7621_FE_RST_GL,
+	[FE_REG_FE_INT_STATUS2] = MT7620_FE_INT_STATUS2,
 };
 
 static const u32 mt7621_reg_table[FE_REG_COUNT] = {
@@ -99,6 +109,7 @@ static const u32 mt7621_reg_table[FE_REG_COUNT] = {
 	[FE_REG_FE_DMA_VID_BASE] = 0,
 	[FE_REG_FE_COUNTER_BASE] = MT7621_GDM1_TX_GBCNT,
 	[FE_REG_FE_RST_GL] = MT7621_FE_RST_GL,
+	[FE_REG_FE_INT_STATUS2] = MT7620_FE_INT_STATUS2,
 };
 
 static void mt7620_fe_reset(void)
@@ -231,6 +242,7 @@ static struct fe_soc_data mt7620_data = {
 	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS,
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
+	.status_int = MT7620_FE_GDM1_AF,
 	.checksum_bit = MT7620_L4_VALID,
 	.has_carrier = mt7620a_has_carrier,
 	.mdio_read = mt7620_mdio_read,
@@ -251,6 +263,7 @@ static struct fe_soc_data mt7621_data = {
 	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS,
 	.rx_int = RT5350_RX_DONE_INT,
 	.tx_int = RT5350_TX_DONE_INT,
+	.status_int = (MT7621_FE_GDM1_AF | MT7621_FE_GDM2_AF),
 	.checksum_bit = MT7621_L4_VALID,
 	.has_carrier = mt7620a_has_carrier,
 	.mdio_read = mt7620_mdio_read,

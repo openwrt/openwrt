@@ -63,6 +63,7 @@ static struct fe_soc_data rt3883_data = {
 	.pdma_glo_cfg = FE_PDMA_SIZE_8DWORDS,
 	.rx_int = FE_RX_DONE_INT,
 	.tx_int = FE_TX_DONE_INT,
+	.status_int = FE_CNT_GDM_AF,
 	.checksum_bit = RX_DMA_L4VALID,
 	.mdio_read = rt2880_mdio_read,
 	.mdio_write = rt2880_mdio_write,
