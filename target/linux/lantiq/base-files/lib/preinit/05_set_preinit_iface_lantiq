@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. /lib/functions/lantiq.sh
+
+set_preinit_iface() {
+
+	board=$(lantiq_board_name)
+
+	case "$board" in
+	TDW8970)
+		ifname=eth0
+		;;
+	esac
+
+}
+
+boot_hook_add preinit_main set_preinit_iface
+
