@@ -65,6 +65,15 @@
 
 	pcie@10140000 {
 		status = "okay";
+
+		pcie-bridge {
+			mt76@0,0 {
+				reg = <0x0000 0 0 0 0>;
+				device_type = "pci";
+				mediatek,mtd-eeprom = <&factory 0x8000>;
+				mediatek,2ghz = <0>;
+			};
+		};
 	};
 	
 	wmac@10180000 {
