@@ -158,8 +158,9 @@
 		#reset-cells = <1>;
 	};
 
-	usbphy {
+	usbphy: usbphy {
 		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
+		#phy-cells = <1>;
 
 		resets = <&rstctrl 22>;
 		reset-names = "host";
@@ -179,6 +180,9 @@
 		compatible = "ralink,rt3xxx-ehci";
 		reg = <0x101c0000 0x1000>;
 
+		phys = <&usbphy 1>;
+		phy-names = "usb";
+
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
 	};
@@ -186,6 +190,9 @@
 	ohci@101c1000 {
 		compatible = "ralink,rt3xxx-ohci";
 		reg = <0x101c1000 0x1000>;
+
+		phys = <&usbphy 1>;
+		phy-names = "usb";
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;

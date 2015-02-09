@@ -355,8 +355,9 @@
 		#reset-cells = <1>;
 	};
 
-	usbphy {
+	usbphy: usbphy {
 		compatible = "ralink,mt7620a-usbphy";
+		#phy-cells = <1>;
 
 		resets = <&rstctrl 22 &rstctrl 25>;
 		reset-names = "host", "device";
@@ -425,6 +426,9 @@
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
 
+		phys = <&usbphy 1>;
+		phy-names = "usb";
+
 		status = "disabled";
 	};
 
@@ -434,6 +438,9 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <18>;
+
+		phys = <&usbphy 1>;
+		phy-names = "usb";
 
 		status = "disabled";
 	};

@@ -1,0 +1,27 @@
+From 979ad9f0324ad8fa5eb4a00b57d9feb061aa3200 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 16 Mar 2014 04:38:07 +0000
+Subject: [PATCH 06/57] MIPS: ralink: add missing clk_set_rate() to clk.c
+
+This function was missing causing allmod to fail.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/clk.c |    6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/mips/ralink/clk.c
++++ b/arch/mips/ralink/clk.c
+@@ -56,6 +56,12 @@ unsigned long clk_get_rate(struct clk *c
+ }
+ EXPORT_SYMBOL_GPL(clk_get_rate);
+ 
++int clk_set_rate(struct clk *clk, unsigned long rate)
++{
++	return -1;
++}
++EXPORT_SYMBOL_GPL(clk_set_rate);
++
+ void __init plat_time_init(void)
+ {
+ 	struct clk *clk;
