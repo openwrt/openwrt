@@ -204,10 +204,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
-		power {
+		reset {
 			label = "reset";
 			gpios = <&gpio 0 1>;
-			linux,code = <0x100>;
+			linux,code = <0x198>;
 		};
 
 		wifi {
