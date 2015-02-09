@@ -25,6 +25,12 @@
 #include <linux/dma-mapping.h>
 #include <linux/phy.h>
 #include <linux/ethtool.h>
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
+#define u64_stats_fetch_retry_irq u64_stats_fetch_retry_bh
+#define u64_stats_fetch_begin_irq u64_stats_fetch_begin_bh
+#endif
 
 enum fe_reg {
 	FE_REG_PDMA_GLO_CFG = 0,

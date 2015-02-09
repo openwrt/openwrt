@@ -1,0 +1,39 @@
+From c55d6cf3e2c593bf7d228c6532ec9bd8da82e09d Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 22 Apr 2013 23:20:03 +0200
+Subject: [PATCH 35/57] NET: MIPS: add ralink SoC ethernet driver
+
+Add support for Ralink FE and ESW.
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+--- a/arch/mips/ralink/rt305x.c
++++ b/arch/mips/ralink/rt305x.c
+@@ -199,6 +199,7 @@ void __init ralink_clk_init(void)
+ 	}
+ 
+ 	ralink_clk_add("cpu", cpu_rate);
++	ralink_clk_add("sys", sys_rate);
+ 	ralink_clk_add("10000b00.spi", sys_rate);
+ 	ralink_clk_add("10000100.timer", wdt_rate);
+ 	ralink_clk_add("10000120.watchdog", wdt_rate);
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -152,6 +152,7 @@ source "drivers/net/ethernet/packetengin
+ source "drivers/net/ethernet/pasemi/Kconfig"
+ source "drivers/net/ethernet/qlogic/Kconfig"
+ source "drivers/net/ethernet/qualcomm/Kconfig"
++source "drivers/net/ethernet/ralink/Kconfig"
+ source "drivers/net/ethernet/realtek/Kconfig"
+ source "drivers/net/ethernet/renesas/Kconfig"
+ source "drivers/net/ethernet/rdc/Kconfig"
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -62,6 +62,7 @@ obj-$(CONFIG_NET_PACKET_ENGINE) += packe
+ obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
+ obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
+ obj-$(CONFIG_NET_VENDOR_QUALCOMM) += qualcomm/
++obj-$(CONFIG_NET_RALINK) += ralink/
+ obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
+ obj-$(CONFIG_SH_ETH) += renesas/
+ obj-$(CONFIG_NET_VENDOR_RDC) += rdc/

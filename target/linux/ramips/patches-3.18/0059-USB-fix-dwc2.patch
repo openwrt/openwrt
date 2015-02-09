@@ -1,0 +1,19 @@
+--- a/drivers/usb/dwc2/hcd.c
++++ b/drivers/usb/dwc2/hcd.c
+@@ -47,6 +47,7 @@
+ #include <linux/io.h>
+ #include <linux/slab.h>
+ #include <linux/usb.h>
++#include <linux/reset.h>
+ 
+ #include <linux/usb/hcd.h>
+ #include <linux/usb/ch11.h>
+@@ -2780,6 +2781,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hso
+ 
+ 	dev_dbg(hsotg->dev, "DWC OTG HCD INIT\n");
+ 
++	device_reset(hsotg->dev);
++
+ 	/* Detect config values from hardware */
+ 	retval = dwc2_get_hwparams(hsotg);
+ 

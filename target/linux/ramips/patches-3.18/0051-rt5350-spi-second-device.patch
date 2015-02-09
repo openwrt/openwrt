@@ -1,0 +1,368 @@
+From 27b11d4f1888e1a3d6d75b46d4d5a4d86fc03891 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 6 Aug 2014 10:53:40 +0200
+Subject: [PATCH 51/57] SPI: MIPS: ralink: add rt5350 dual SPI support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+ drivers/spi/spi-rt2880.c |  218 +++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 205 insertions(+), 13 deletions(-)
+
+--- a/drivers/spi/spi-rt2880.c
++++ b/drivers/spi/spi-rt2880.c
+@@ -21,19 +21,25 @@
+ #include <linux/io.h>
+ #include <linux/reset.h>
+ #include <linux/spi/spi.h>
++#include <linux/of_device.h>
+ #include <linux/platform_device.h>
+ 
++#include <ralink_regs.h>
++
++#define SPI_BPW_MASK(bits) BIT((bits) - 1)
++
+ #define DRIVER_NAME			"spi-rt2880"
+-/* only one slave is supported*/
+-#define RALINK_NUM_CHIPSELECTS		1
+ /* in usec */
+ #define RALINK_SPI_WAIT_MAX_LOOP	2000
+ 
+-#define RAMIPS_SPI_STAT			0x00
+-#define RAMIPS_SPI_CFG			0x10
+-#define RAMIPS_SPI_CTL			0x14
+-#define RAMIPS_SPI_DATA			0x20
+-#define RAMIPS_SPI_FIFO_STAT		0x38
++#define RAMIPS_SPI_DEV_OFFSET		0x40
++
++#define RAMIPS_SPI_STAT(cs)		(0x00 + (cs * RAMIPS_SPI_DEV_OFFSET))
++#define RAMIPS_SPI_CFG(cs)		(0x10 + (cs * RAMIPS_SPI_DEV_OFFSET))
++#define RAMIPS_SPI_CTL(cs)		(0x14 + (cs * RAMIPS_SPI_DEV_OFFSET))
++#define RAMIPS_SPI_DATA(cs)		(0x20 + (cs * RAMIPS_SPI_DEV_OFFSET))
++#define RAMIPS_SPI_FIFO_STAT(cs)	(0x38 + (cs * RAMIPS_SPI_DEV_OFFSET))
++#define RAMIPS_SPI_ARBITER		0xF0
+ 
+ /* SPISTAT register bit field */
+ #define SPISTAT_BUSY			BIT(0)
+@@ -63,6 +69,19 @@
+ /* SPIFIFOSTAT register bit field */
+ #define SPIFIFOSTAT_TXFULL		BIT(17)
+ 
++#define SPICTL_ARB_EN			BIT(31)
++#define SPI1_POR			BIT(1)
++#define SPI0_POR			BIT(0)
++
++#define RT2880_SPI_MODE_BITS	(SPI_CPOL | SPI_CPHA | SPI_LSB_FIRST | SPI_CS_HIGH)
++
++struct rt2880_spi;
++
++struct rt2880_spi_ops {
++	void (*init_hw)(struct rt2880_spi *rs);
++	int num_cs;
++};
++
+ struct rt2880_spi {
+ 	struct spi_master	*master;
+ 	void __iomem		*base;
+@@ -70,6 +89,8 @@ struct rt2880_spi {
+ 	unsigned int		speed;
+ 	struct clk		*clk;
+ 	spinlock_t		lock;
++
++	struct rt2880_spi_ops	*ops;
+ };
+ 
+ static inline struct rt2880_spi *spidev_to_rt2880_spi(struct spi_device *spi)
+@@ -115,6 +136,7 @@ static inline void rt2880_spi_clrbits(st
+ 
+ static int rt2880_spi_baudrate_set(struct spi_device *spi, unsigned int speed)
+ {
++	int cs = spi->chip_select;
+ 	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
+ 	u32 rate;
+ 	u32 prescale;
+@@ -142,9 +164,9 @@ static int rt2880_spi_baudrate_set(struc
+ 	prescale = ilog2(rate / 2);
+ 	dev_dbg(&spi->dev, "prescale:%u\n", prescale);
+ 
+-	reg = rt2880_spi_read(rs, RAMIPS_SPI_CFG);
++	reg = rt2880_spi_read(rs, RAMIPS_SPI_CFG(cs));
+ 	reg = ((reg & ~SPICFG_SPICLK_PRESCALE_MASK) | prescale);
+-	rt2880_spi_write(rs, RAMIPS_SPI_CFG, reg);
++	rt2880_spi_write(rs, RAMIPS_SPI_CFG(cs), reg);
+ 	rs->speed = speed;
+ 	return 0;
+ }
+@@ -157,7 +179,8 @@ rt2880_spi_setup_transfer(struct spi_dev
+ {
+ 	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
+ 	unsigned int speed = spi->max_speed_hz;
+-	int rc;
++	int rc, cs = spi->chip_select;
++	u32 reg;
+ 
+ 	if ((t != NULL) && t->speed_hz)
+ 		speed = t->speed_hz;
+@@ -169,25 +192,68 @@ rt2880_spi_setup_transfer(struct spi_dev
+ 			return rc;
+ 	}
+ 
++	reg = rt2880_spi_read(rs, RAMIPS_SPI_CFG(cs));
++
++	reg = (reg & ~SPICFG_MSBFIRST);
++	if (!(spi->mode & SPI_LSB_FIRST))
++		reg |= SPICFG_MSBFIRST;
++
++	reg = (reg & ~(SPICFG_SPICLKPOL | SPICFG_RXCLKEDGE_FALLING |SPICFG_TXCLKEDGE_FALLING));
++	switch(spi->mode & (SPI_CPOL | SPI_CPHA)) {
++		case SPI_MODE_0:
++			reg |= SPICFG_SPICLKPOL | SPICFG_TXCLKEDGE_FALLING;
++			break;
++		case SPI_MODE_1:
++			reg |= SPICFG_SPICLKPOL | SPICFG_RXCLKEDGE_FALLING;
++			break;
++		case SPI_MODE_2:
++			reg |= SPICFG_RXCLKEDGE_FALLING;
++			break;
++		case SPI_MODE_3:
++			reg |= SPICFG_TXCLKEDGE_FALLING;
++			break;
++	}
++
++	rt2880_spi_write(rs, RAMIPS_SPI_CFG(cs), reg);
++
++	reg = SPICTL_ARB_EN;
++	if (spi->mode & SPI_CS_HIGH) {
++		switch(cs) {
++			case 0:
++				reg |= SPI0_POR;
++				break;
++			case 1:
++				reg |= SPI1_POR;
++				break;
++		}
++	}
++
++	rt2880_spi_write(rs, RAMIPS_SPI_ARBITER, reg);
++
+ 	return 0;
+ }
+ 
+-static void rt2880_spi_set_cs(struct rt2880_spi *rs, int enable)
++static void rt2880_spi_set_cs(struct spi_device *spi, int enable)
+ {
++	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
++	int cs = spi->chip_select;
++
+ 	if (enable)
+-		rt2880_spi_clrbits(rs, RAMIPS_SPI_CTL, SPICTL_SPIENA);
++		rt2880_spi_clrbits(rs, RAMIPS_SPI_CTL(cs), SPICTL_SPIENA);
+ 	else
+-		rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_SPIENA);
++		rt2880_spi_setbits(rs, RAMIPS_SPI_CTL(cs), SPICTL_SPIENA);
+ }
+ 
+-static inline int rt2880_spi_wait_till_ready(struct rt2880_spi *rs)
++static inline int rt2880_spi_wait_till_ready(struct spi_device *spi)
+ {
++	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
++	int cs = spi->chip_select;
+ 	int i;
+ 
+ 	for (i = 0; i < RALINK_SPI_WAIT_MAX_LOOP; i++) {
+ 		u32 status;
+ 
+-		status = rt2880_spi_read(rs, RAMIPS_SPI_STAT);
++		status = rt2880_spi_read(rs, RAMIPS_SPI_STAT(cs));
+ 		if ((status & SPISTAT_BUSY) == 0)
+ 			return 0;
+ 
+@@ -199,9 +265,10 @@ static inline int rt2880_spi_wait_till_r
+ }
+ 
+ static unsigned int
+-rt2880_spi_write_read(struct spi_device *spi, struct spi_transfer *xfer)
++rt2880_spi_write_read(struct spi_device *spi, struct list_head *list, struct spi_transfer *xfer)
+ {
+ 	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
++	int cs = spi->chip_select;
+ 	unsigned count = 0;
+ 	u8 *rx = xfer->rx_buf;
+ 	const u8 *tx = xfer->tx_buf;
+@@ -213,9 +280,9 @@ rt2880_spi_write_read(struct spi_device
+ 
+ 	if (tx) {
+ 		for (count = 0; count < xfer->len; count++) {
+-			rt2880_spi_write(rs, RAMIPS_SPI_DATA, tx[count]);
+-			rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_STARTWR);
+-			err = rt2880_spi_wait_till_ready(rs);
++			rt2880_spi_write(rs, RAMIPS_SPI_DATA(cs), tx[count]);
++			rt2880_spi_setbits(rs, RAMIPS_SPI_CTL(cs), SPICTL_STARTWR);
++			err = rt2880_spi_wait_till_ready(spi);
+ 			if (err) {
+ 				dev_err(&spi->dev, "TX failed, err=%d\n", err);
+ 				goto out;
+@@ -225,13 +292,13 @@ rt2880_spi_write_read(struct spi_device
+ 
+ 	if (rx) {
+ 		for (count = 0; count < xfer->len; count++) {
+-			rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_STARTRD);
+-			err = rt2880_spi_wait_till_ready(rs);
++			rt2880_spi_setbits(rs, RAMIPS_SPI_CTL(cs), SPICTL_STARTRD);
++			err = rt2880_spi_wait_till_ready(spi);
+ 			if (err) {
+ 				dev_err(&spi->dev, "RX failed, err=%d\n", err);
+ 				goto out;
+ 			}
+-			rx[count] = (u8) rt2880_spi_read(rs, RAMIPS_SPI_DATA);
++			rx[count] = (u8) rt2880_spi_read(rs, RAMIPS_SPI_DATA(cs));
+ 		}
+ 	}
+ 
+@@ -280,25 +347,25 @@ static int rt2880_spi_transfer_one_messa
+ 		}
+ 
+ 		if (!cs_active) {
+-			rt2880_spi_set_cs(rs, 1);
++			rt2880_spi_set_cs(spi, 1);
+ 			cs_active = 1;
+ 		}
+ 
+ 		if (t->len)
+-			m->actual_length += rt2880_spi_write_read(spi, t);
++			m->actual_length += rt2880_spi_write_read(spi, &m->transfers, t);
+ 
+ 		if (t->delay_usecs)
+ 			udelay(t->delay_usecs);
+ 
+ 		if (t->cs_change) {
+-			rt2880_spi_set_cs(rs, 0);
++			rt2880_spi_set_cs(spi, 0);
+ 			cs_active = 0;
+ 		}
+ 	}
+ 
+ msg_done:
+ 	if (cs_active)
+-		rt2880_spi_set_cs(rs, 0);
++		rt2880_spi_set_cs(spi, 0);
+ 
+ 	m->status = status;
+ 	spi_finalize_current_message(master);
+@@ -311,7 +378,7 @@ static int rt2880_spi_setup(struct spi_d
+ 	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
+ 
+ 	if ((spi->max_speed_hz == 0) ||
+-	    (spi->max_speed_hz > (rs->sys_freq / 2)))
++		(spi->max_speed_hz > (rs->sys_freq / 2)))
+ 		spi->max_speed_hz = (rs->sys_freq / 2);
+ 
+ 	if (spi->max_speed_hz < (rs->sys_freq / 128)) {
+@@ -328,14 +395,47 @@ static int rt2880_spi_setup(struct spi_d
+ 
+ static void rt2880_spi_reset(struct rt2880_spi *rs)
+ {
+-	rt2880_spi_write(rs, RAMIPS_SPI_CFG,
++	rt2880_spi_write(rs, RAMIPS_SPI_CFG(0),
+ 			 SPICFG_MSBFIRST | SPICFG_TXCLKEDGE_FALLING |
+ 			 SPICFG_SPICLK_DIV16 | SPICFG_SPICLKPOL);
+-	rt2880_spi_write(rs, RAMIPS_SPI_CTL, SPICTL_HIZSDO | SPICTL_SPIENA);
++	rt2880_spi_write(rs, RAMIPS_SPI_CTL(0), SPICTL_HIZSDO | SPICTL_SPIENA);
+ }
+ 
++static void rt5350_spi_reset(struct rt2880_spi *rs)
++{
++	int cs;
++
++	rt2880_spi_write(rs, RAMIPS_SPI_ARBITER,
++			 SPICTL_ARB_EN);
++
++	for (cs = 0; cs < rs->ops->num_cs; cs++) {
++		rt2880_spi_write(rs, RAMIPS_SPI_CFG(cs),
++				 SPICFG_MSBFIRST | SPICFG_TXCLKEDGE_FALLING |
++				 SPICFG_SPICLK_DIV16 | SPICFG_SPICLKPOL);
++		rt2880_spi_write(rs, RAMIPS_SPI_CTL(cs), SPICTL_HIZSDO | SPICTL_SPIENA);
++	}
++}
++
++static struct rt2880_spi_ops spi_ops[] = {
++	{
++		.init_hw = rt2880_spi_reset,
++		.num_cs = 1,
++	}, {
++		.init_hw = rt5350_spi_reset,
++		.num_cs = 2,
++	},
++};
++
++static const struct of_device_id rt2880_spi_match[] = {
++	{ .compatible = "ralink,rt2880-spi", .data = &spi_ops[0]},
++	{ .compatible = "ralink,rt5350-spi", .data = &spi_ops[1]},
++	{},
++};
++MODULE_DEVICE_TABLE(of, rt2880_spi_match);
++
+ static int rt2880_spi_probe(struct platform_device *pdev)
+ {
++	const struct of_device_id *match;
+ 	struct spi_master *master;
+ 	struct rt2880_spi *rs;
+ 	unsigned long flags;
+@@ -343,6 +443,12 @@ static int rt2880_spi_probe(struct platf
+ 	struct resource *r;
+ 	int status = 0;
+ 	struct clk *clk;
++	struct rt2880_spi_ops *ops;
++
++	match = of_match_device(rt2880_spi_match, &pdev->dev);
++	if (!match)
++		return -EINVAL;
++	ops = (struct rt2880_spi_ops *)match->data;
+ 
+ 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	base = devm_ioremap_resource(&pdev->dev, r);
+@@ -366,14 +472,13 @@ static int rt2880_spi_probe(struct platf
+ 		return -ENOMEM;
+ 	}
+ 
+-	/* we support only mode 0, and no options */
+-	master->mode_bits = 0;
++	master->mode_bits = RT2880_SPI_MODE_BITS;
+ 
+ 	master->setup = rt2880_spi_setup;
+ 	master->transfer_one_message = rt2880_spi_transfer_one_message;
+-	master->num_chipselect = RALINK_NUM_CHIPSELECTS;
+ 	master->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	master->dev.of_node = pdev->dev.of_node;
++	master->num_chipselect = ops->num_cs;
+ 
+ 	dev_set_drvdata(&pdev->dev, master);
+ 
+@@ -382,12 +487,13 @@ static int rt2880_spi_probe(struct platf
+ 	rs->clk = clk;
+ 	rs->master = master;
+ 	rs->sys_freq = clk_get_rate(rs->clk);
++	rs->ops = ops;
+ 	dev_dbg(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
+ 	spin_lock_irqsave(&rs->lock, flags);
+ 
+ 	device_reset(&pdev->dev);
+ 
+-	rt2880_spi_reset(rs);
++	rs->ops->init_hw(rs);
+ 
+ 	return spi_register_master(master);
+ }
+@@ -408,12 +514,6 @@ static int rt2880_spi_remove(struct plat
+ 
+ MODULE_ALIAS("platform:" DRIVER_NAME);
+ 
+-static const struct of_device_id rt2880_spi_match[] = {
+-	{ .compatible = "ralink,rt2880-spi" },
+-	{},
+-};
+-MODULE_DEVICE_TABLE(of, rt2880_spi_match);
+-
+ static struct platform_driver rt2880_spi_driver = {
+ 	.driver = {
+ 		.name = DRIVER_NAME,

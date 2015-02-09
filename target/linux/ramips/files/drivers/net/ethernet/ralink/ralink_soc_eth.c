@@ -453,7 +453,7 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 	}
 
 	do {
-		start = u64_stats_fetch_begin_bh(&hwstats->syncp);
+		start = u64_stats_fetch_begin_irq(&hwstats->syncp);
 		storage->rx_packets = hwstats->rx_packets;
 		storage->tx_packets = hwstats->tx_packets;
 		storage->rx_bytes = hwstats->rx_bytes;
@@ -465,7 +465,7 @@ static struct rtnl_link_stats64 *fe_get_stats64(struct net_device *dev,
 		storage->rx_crc_errors = hwstats->rx_fcs_errors;
 		storage->rx_errors = hwstats->rx_checksum_errors;
 		storage->tx_aborted_errors = hwstats->tx_skip;
-	} while (u64_stats_fetch_retry_bh(&hwstats->syncp, start));
+	} while (u64_stats_fetch_retry_irq(&hwstats->syncp, start));
 
 	storage->tx_errors = priv->netdev->stats.tx_errors;
 	storage->rx_dropped = priv->netdev->stats.rx_dropped;
@@ -1414,7 +1414,7 @@ static int fe_probe(struct platform_device *pdev)
 	else
 		soc->reg_table = fe_reg_table;
 
-	fe_base = devm_request_and_ioremap(&pdev->dev, res);
+	fe_base = devm_ioremap_resource(&pdev->dev, res);
 	if (!fe_base) {
 		err = -EADDRNOTAVAIL;
 		goto err_out;

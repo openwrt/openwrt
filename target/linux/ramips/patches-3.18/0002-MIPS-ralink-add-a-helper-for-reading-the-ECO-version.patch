@@ -1,0 +1,22 @@
+From 1751f28d4779df83cc793c9d7ff75485c0ceaa23 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 16 Mar 2014 04:53:02 +0000
+Subject: [PATCH 02/57] MIPS: ralink: add a helper for reading the ECO version
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/include/asm/mach-ralink/mt7620.h |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/arch/mips/include/asm/mach-ralink/mt7620.h
++++ b/arch/mips/include/asm/mach-ralink/mt7620.h
+@@ -105,4 +105,9 @@
+ #define MT7620_GPIO_MODE_EPHY		BIT(15)
+ #define MT7620_GPIO_MODE_WDT		BIT(22)
+ 
++static inline int mt7620_get_eco(void)
++{
++	return rt_sysc_r32(SYSC_REG_CHIP_REV) & CHIP_REV_ECO_MASK;
++}
++
+ #endif
