@@ -13,6 +13,8 @@ endif
 ifneq ($(__host_inc),1)
 __host_inc:=1
 
+export PATH:=$(TOPDIR)/staging_dir/host/bin:$(PATH)
+
 try-run = $(shell set -e; \
 	TMP_F="$(TMP_DIR)/try-run.$$$$.tmp"; \
 	if ($(1)) >/dev/null 2>&1; then echo "$(2)"; else echo "$(3)"; fi; \
