@@ -1,29 +1,3 @@
-From:   Manuel Lauss <manuel.lauss@gmail.com>
-Subject: [RFC PATCH v4 2/2] MIPS: make FPU emulator optional
-Date:   Mon,  7 Apr 2014 12:57:04 +0200
-Message-Id: <1396868224-252888-2-git-send-email-manuel.lauss@gmail.com>
-
-This small patch makes the MIPS FPU emulator optional. The kernel
-kills float-users on systems without a hardware FPU by sending a SIGILL.
-
-Disabling the emulator shrinks vmlinux by about 54kBytes (32bit,
-optimizing for size).
-
-Signed-off-by: Manuel Lauss <manuel.lauss@gmail.com>
----
-v4: rediffed because of patch 1/2, should now work with micromips as well
-v3: updated patch description with size savings.
-v2: incorporated changes suggested by Jonas Gorski
-    force the fpu emulator on for micromips: relocating the parts
-    of the mmips code in the emulator to other areas would be a
-    much larger change; I went the cheap route instead with this.
-
- arch/mips/Kbuild                     |  2 +-
- arch/mips/Kconfig                    | 14 ++++++++++++++
- arch/mips/include/asm/fpu.h          |  5 +++--
- arch/mips/include/asm/fpu_emulator.h | 15 +++++++++++++++
- 4 files changed, 33 insertions(+), 3 deletions(-)
-
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -2521,6 +2521,20 @@ config MIPS_O32_FP64_SUPPORT
@@ -60,12 +34,12 @@ v2: incorporated changes suggested by Jonas Gorski
  core-y += arch/mips/
 --- a/arch/mips/include/asm/fpu.h
 +++ b/arch/mips/include/asm/fpu.h
-@@ -201,8 +201,10 @@ static inline int init_fpu(void)
- 			write_c0_config5(config5);
- 			enable_fpu_hazard();
- 		}
+@@ -210,8 +210,10 @@ static inline int init_fpu(void)
+ 		/* Restore FRE */
+ 		write_c0_config5(config5);
+ 		enable_fpu_hazard();
 -	} else
-+	} else if (IS_ENABLED(CONFIG_MIPS_FPU_EMULATOR))
++	} else (IS_ENABLED(CONFIG_MIPS_FPU_EMULATOR))
  		fpu_emulator_init_fpu();
 +	else
 +		ret = SIGILL;
