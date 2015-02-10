@@ -25,11 +25,21 @@ find $TARGETS -type f -a -exec file {} \; | \
 (
   IFS=":"
   while read F S; do
-    echo "$SELF: $F:$S"
+    echo "$SELF: $F: $S"
 	[ "${S}" = "relocatable" ] && {
 		eval "$STRIP_KMOD $F"
 	} || {
 		b=$(stat -c '%a' $F)
+		[ -z "$PATCHELF" ] || [ -z "$TOPDIR" ] || {
+			old_rpath="$($PATCHELF --print-rpath $F)"; new_rpath=""
+			for path in $old_rpath; do
+				case "$path" in
+					/lib/[^/]*|/usr/lib/[^/]*|\$ORIGIN/*) new_rpath="${new_rpath:+$new_rpath:}$path" ;;
+					*) echo "$SELF: $F: removing rpath $path" ;;
+				esac
+			done
+			[ "$new_rpath" = "$old_rpath" ] || $PATCHELF --set-rpath "$new_rpath" $F
+		}
 		eval "$STRIP $F"
 		a=$(stat -c '%a' $F)
 		[ "$a" = "$b" ] || chmod $b $F
