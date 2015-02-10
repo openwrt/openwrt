@@ -23,6 +23,17 @@ do_load_ath10k_board_bin() {
 			dd if=/dev/mtdblock4 \
 				bs=1 skip=20492 count=2104 >> /tmp/ath10k-board.bin
 		;;
+		mc-mac1200r)
+			local mac
+			mac=$(macaddr_add $(cat /sys/class/net/eth1/address) -1)
+
+			dd if=/dev/mtdblock4 \
+				bs=1 skip=20480 count=6 \
+				of=/tmp/ath10k-board.bin
+			macaddr_2bin $mac >> /tmp/ath10k-board.bin
+			dd if=/dev/mtdblock4 \
+				bs=1 skip=20492 count=2104 >> /tmp/ath10k-board.bin
+		;;
 		r6100)
 			local mac
 			mac=$(macaddr_add $(cat /sys/class/net/eth1/address) +2)
