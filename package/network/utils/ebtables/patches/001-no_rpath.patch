@@ -1,0 +1,30 @@
+--- a/Makefile
++++ b/Makefile
+@@ -90,8 +90,7 @@ libebtc.so: $(OBJECTS2)
+ 	$(CC) -shared $(LDFLAGS) -Wl,-soname,libebtc.so -o libebtc.so -lc $(OBJECTS2)
+ 
+ ebtables: $(OBJECTS) ebtables-standalone.o libebtc.so
+-	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(LDFLAGS) -o $@ ebtables-standalone.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
+-	-Wl,-rpath,$(LIBDIR)
++	$(CC) $(CFLAGS) $(CFLAGS_SH_LIB) $(LDFLAGS) -o $@ ebtables-standalone.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI)
+ 
+ ebtablesu: ebtablesu.c
+ 	$(CC) $(CFLAGS) $(PROGSPECSD) $< -o $@
+@@ -100,15 +99,13 @@ ebtablesd.o: ebtablesd.c include/ebtable
+ 	$(CC) $(CFLAGS) $(PROGSPECSD) -c $< -o $@  -I$(KERNEL_INCLUDES)
+ 
+ ebtablesd: $(OBJECTS) ebtablesd.o libebtc.so
+-	$(CC) $(CFLAGS) -o $@ ebtablesd.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
+-	-Wl,-rpath,$(LIBDIR)
++	$(CC) $(CFLAGS) -o $@ ebtablesd.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI)
+ 
+ ebtables-restore.o: ebtables-restore.c include/ebtables_u.h
+ 	$(CC) $(CFLAGS) $(PROGSPECS) -c $< -o $@  -I$(KERNEL_INCLUDES)
+ 
+ ebtables-restore: $(OBJECTS) ebtables-restore.o libebtc.so
+-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ebtables-restore.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI) \
+-	-Wl,-rpath,$(LIBDIR)
++	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ ebtables-restore.o -I$(KERNEL_INCLUDES) -L. -Lextensions -lebtc $(EXT_LIBSI)
+ 
+ .PHONY: daemon
+ daemon: ebtablesd ebtablesu
