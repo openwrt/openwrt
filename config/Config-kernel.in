@@ -46,6 +46,7 @@ config KERNEL_KALLSYMS
 
 config KERNEL_FTRACE
 	bool "Compile the kernel with tracing support"
+	depends on !TARGET_uml
 	default n
 
 config KERNEL_FTRACE_SYSCALLS
