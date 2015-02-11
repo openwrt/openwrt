@@ -1,0 +1,72 @@
+From 2a72cdffabd2dd290d126c9a4e544bb65b537993 Mon Sep 17 00:00:00 2001
+From: Daniel Matuschek <daniel@hifiberry.com>
+Date: Fri, 23 Jan 2015 16:41:17 +0100
+Subject: [PATCH 074/114] TAS5713: return error if initialisation fails
+
+Existing TAS5713 driver logs errors during initialisation, but does not return
+an error code. Therefore even if initialisation fails, the driver will still be
+loaded, but won't work. This patch fixes this. I2C communication error will now
+reported correctly by a non-zero return code.
+---
+ sound/soc/codecs/tas5713.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/sound/soc/codecs/tas5713.c b/sound/soc/codecs/tas5713.c
+index a24c1da..9b27138 100644
+--- a/sound/soc/codecs/tas5713.c
++++ b/sound/soc/codecs/tas5713.c
+@@ -182,33 +182,40 @@ static int tas5713_probe(struct snd_soc_codec *codec)
+ 
+ 	// Reset error
+ 	ret = snd_soc_write(codec, TAS5713_ERROR_STATUS, 0x00);
++	if (ret < 0) return ret;
+ 
+ 	// Trim oscillator
+-    ret = snd_soc_write(codec, TAS5713_OSC_TRIM, 0x00);
++	ret = snd_soc_write(codec, TAS5713_OSC_TRIM, 0x00);
++	if (ret < 0) return ret;
+ 	msleep(1000);
+ 
+ 	// Reset error
+ 	ret = snd_soc_write(codec, TAS5713_ERROR_STATUS, 0x00);
++	if (ret < 0) return ret;
+ 
+ 	// Clock mode: 44/48kHz, MCLK=64xfs
+ 	ret = snd_soc_write(codec, TAS5713_CLOCK_CTRL, 0x60);
++	if (ret < 0) return ret;
+ 
+ 	// I2S 24bit
+ 	ret = snd_soc_write(codec, TAS5713_SERIAL_DATA_INTERFACE, 0x05);
++	if (ret < 0) return ret;
+ 
+ 	// Unmute
+ 	ret = snd_soc_write(codec, TAS5713_SYSTEM_CTRL2, 0x00);
++	if (ret < 0) return ret;
+ 	ret = snd_soc_write(codec, TAS5713_SOFT_MUTE, 0x00);
++	if (ret < 0) return ret;
+ 
+ 	// Set volume to 0db
+ 	ret = snd_soc_write(codec, TAS5713_VOL_MASTER, 0x00);
++	if (ret < 0) return ret;
+ 
+ 	// Now start programming the default initialization sequence
+ 	for (i = 0; i < ARRAY_SIZE(tas5713_init_sequence); ++i) {
+ 		ret = i2c_master_send(i2c,
+ 				     tas5713_init_sequence[i].data,
+ 				     tas5713_init_sequence[i].size);
+-
+ 		if (ret < 0) {
+ 			printk(KERN_INFO "TAS5713 CODEC PROBE: InitSeq returns: %d\n", ret);
+ 		}
+@@ -216,7 +223,7 @@ static int tas5713_probe(struct snd_soc_codec *codec)
+ 
+ 	// Unmute
+ 	ret = snd_soc_write(codec, TAS5713_SYSTEM_CTRL2, 0x00);
+-
++	if (ret < 0) return ret;
+ 
+ 	return 0;
+ }
+-- 
+1.8.3.2
+

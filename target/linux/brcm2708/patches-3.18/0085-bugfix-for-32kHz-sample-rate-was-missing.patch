@@ -1,0 +1,24 @@
+From c12aab11b88318b9dde0960f5309cf4c0b2af579 Mon Sep 17 00:00:00 2001
+From: Joerg Hohensohn <joerg.hohensohn@dreamchip.de>
+Date: Sun, 1 Feb 2015 22:08:03 +0100
+Subject: [PATCH 085/114] bugfix for 32kHz sample rate, was missing
+
+---
+ sound/soc/bcm/hifiberry_digi.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/sound/soc/bcm/hifiberry_digi.c b/sound/soc/bcm/hifiberry_digi.c
+index b0e3d28..133d51b 100644
+--- a/sound/soc/bcm/hifiberry_digi.c
++++ b/sound/soc/bcm/hifiberry_digi.c
+@@ -80,6 +80,7 @@ static int snd_rpi_hifiberry_digi_hw_params(struct snd_pcm_substream *substream,
+ 	samplerate = params_rate(params);
+ 
+ 	switch (samplerate) {
++		case 32000:
+ 		case 44100:
+ 		case 48000:
+ 		case 88200:
+-- 
+1.8.3.2
+

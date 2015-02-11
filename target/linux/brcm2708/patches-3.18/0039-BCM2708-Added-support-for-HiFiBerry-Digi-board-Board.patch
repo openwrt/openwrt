@@ -1,0 +1,52 @@
+From 2a04dad39006e26f9ee4c56e78255d5e4dc20075 Mon Sep 17 00:00:00 2001
+From: Daniel Matuschek <info@crazy-audio.com>
+Date: Thu, 16 Jan 2014 07:26:08 +0100
+Subject: [PATCH 039/114] BCM2708: Added support for HiFiBerry Digi board Board
+ initalization by I2C
+
+Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
+---
+ arch/arm/mach-bcm2708/bcm2708.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 100c223..a57cb85 100644
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -623,6 +623,21 @@ static struct platform_device snd_pcm5102a_codec_device = {
+ };
+ #endif
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI_MODULE)
++static struct platform_device snd_hifiberry_digi_device = {
++        .name = "snd-hifiberry-digi",
++        .id = 0,
++        .num_resources = 0,
++};
++
++static struct i2c_board_info __initdata snd_wm8804_i2c_devices[] = {
++        {
++                I2C_BOARD_INFO("wm8804", 0x3b)
++        },
++};
++
++#endif
++
+ #if defined(CONFIG_SND_BCM2708_SOC_RPI_DAC) || defined(CONFIG_SND_BCM2708_SOC_RPI_DAC_MODULE)
+ static struct platform_device snd_rpi_dac_device = {
+         .name = "snd-rpi-dac",
+@@ -766,6 +781,11 @@ void __init bcm2708_init(void)
+         bcm_register_device(&snd_pcm5102a_codec_device);
+ #endif
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI_MODULE)
++        bcm_register_device(&snd_hifiberry_digi_device);
++        i2c_register_board_info(1, snd_wm8804_i2c_devices, ARRAY_SIZE(snd_wm8804_i2c_devices));
++#endif
++
+ #if defined(CONFIG_SND_BCM2708_SOC_RPI_DAC) || defined(CONFIG_SND_BCM2708_SOC_RPI_DAC_MODULE)
+         bcm_register_device(&snd_rpi_dac_device);
+         bcm_register_device(&snd_pcm1794a_codec_device);
+-- 
+1.8.3.2
+

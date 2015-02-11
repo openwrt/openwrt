@@ -1,0 +1,43 @@
+From 672e48427ca17fadd59d294eec56476dd6a75398 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 23 Jan 2015 15:18:03 +0000
+Subject: [PATCH 076/114] BCM2708_DT: Build the overlays as well
+
+---
+ arch/arm/boot/dts/Makefile | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index adaebbb..3c7f539 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -55,6 +55,14 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
+ dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
+ dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b.dtb
+ dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b-plus.dtb
++dtb-$(CONFIG_BCM2708_DT) += hifiberry-dac-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += hifiberry-dacplus-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += hifiberry-digi-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += iqaudio-dac-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += iqaudio-dacplus-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += lirc-rpi-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += w1-gpio-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += w1-gpio-pullup-overlay.dtb
+ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
+ dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
+ dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
+@@ -524,6 +532,11 @@ targets += $(dtb-y)
+ 
+ endif
+ 
++# Enable fixups to support overlays on BCM2708 platforms
++ifeq ($(CONFIG_BCM2708_DT),y)
++	DTC_FLAGS ?= -@
++endif
++
+ # *.dtb used to be generated in the directory above. Clean out the
+ # old build results so people don't accidentally use them.
+ dtbs: $(addprefix $(obj)/, $(dtb-y))
+-- 
+1.8.3.2
+

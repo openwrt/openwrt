@@ -1,0 +1,229 @@
+From fb7a1cc51aee2d66232d3a170e1343dfbb7b3485 Mon Sep 17 00:00:00 2001
+From: Daniel Matuschek <info@crazy-audio.com>
+Date: Mon, 4 Aug 2014 10:06:56 +0200
+Subject: [PATCH 060/114] Added support for HiFiBerry DAC+
+
+The driver is based on the HiFiBerry DAC driver. However HiFiBerry DAC+ uses
+a different codec chip (PCM5122), therefore a new driver is necessary.
+---
+ arch/arm/configs/bcmrpi_defconfig |   1 +
+ arch/arm/mach-bcm2708/bcm2708.c   |  19 ++++++
+ sound/soc/bcm/Kconfig             |   7 +++
+ sound/soc/bcm/Makefile            |   2 +
+ sound/soc/bcm/hifiberry_dacplus.c | 119 ++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 148 insertions(+)
+ create mode 100644 sound/soc/bcm/hifiberry_dacplus.c
+
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index c363a10..28547eb 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -756,6 +756,7 @@ CONFIG_SND_USB_6FIRE=m
+ CONFIG_SND_SOC=m
+ CONFIG_SND_BCM2708_SOC_I2S=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC=m
++CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS=m
+ CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
+ CONFIG_SND_BCM2708_SOC_RPI_DAC=m
+ CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC=m
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 5ff1299..aa62e55 100644
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -645,6 +645,20 @@ static struct platform_device snd_pcm5102a_codec_device = {
+ };
+ #endif
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS_MODULE)
++static struct platform_device snd_rpi_hifiberry_dacplus_device = {
++        .name = "snd-rpi-hifiberry-dacplus",
++        .id = 0,
++        .num_resources = 0,
++};
++
++static struct i2c_board_info __initdata snd_pcm512x_hbdacplus_i2c_devices[] = {
++        {
++                I2C_BOARD_INFO("pcm5122", 0x4d)
++        },
++};
++#endif
++
+ #if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI_MODULE)
+ static struct platform_device snd_hifiberry_digi_device = {
+         .name = "snd-hifiberry-digi",
+@@ -845,6 +859,11 @@ void __init bcm2708_init(void)
+         bcm_register_device(&snd_pcm5102a_codec_device);
+ #endif
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS_MODULE)
++        bcm_register_device(&snd_rpi_hifiberry_dacplus_device);
++        i2c_register_board_info(1, snd_pcm512x_hbdacplus_i2c_devices, ARRAY_SIZE(snd_pcm512x_hbdacplus_i2c_devices));
++#endif
++
+ #if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI_MODULE)
+         bcm_register_device(&snd_hifiberry_digi_device);
+         i2c_register_board_info(1, snd_wm8804_i2c_devices, ARRAY_SIZE(snd_wm8804_i2c_devices));
+diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
+index c621a5e..926a82b 100644
+--- a/sound/soc/bcm/Kconfig
++++ b/sound/soc/bcm/Kconfig
+@@ -26,6 +26,13 @@ config SND_BCM2708_SOC_HIFIBERRY_DAC
+         help
+          Say Y or M if you want to add support for HifiBerry DAC.
+ 
++config SND_BCM2708_SOC_HIFIBERRY_DACPLUS
++        tristate "Support for HifiBerry DAC+"
++        depends on SND_BCM2708_SOC_I2S
++        select SND_SOC_PCM512x
++        help
++         Say Y or M if you want to add support for HifiBerry DAC+.
++
+ config SND_BCM2708_SOC_HIFIBERRY_DIGI
+         tristate "Support for HifiBerry Digi"
+         depends on SND_BCM2708_SOC_I2S
+diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
+index d597fb0..c02e3a2 100644
+--- a/sound/soc/bcm/Makefile
++++ b/sound/soc/bcm/Makefile
+@@ -10,11 +10,13 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+ 
+ # BCM2708 Machine Support
+ snd-soc-hifiberry-dac-objs := hifiberry_dac.o
++snd-soc-hifiberry-dacplus-objs := hifiberry_dacplus.o
+ snd-soc-hifiberry-digi-objs := hifiberry_digi.o
+ snd-soc-rpi-dac-objs := rpi-dac.o
+ snd-soc-iqaudio-dac-objs := iqaudio-dac.o
+ 
+ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
++obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS) += snd-soc-hifiberry-dacplus.o
+ obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
+ obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
+ obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
+diff --git a/sound/soc/bcm/hifiberry_dacplus.c b/sound/soc/bcm/hifiberry_dacplus.c
+new file mode 100644
+index 0000000..c63387b
+--- /dev/null
++++ b/sound/soc/bcm/hifiberry_dacplus.c
+@@ -0,0 +1,119 @@
++/*
++ * ASoC Driver for HiFiBerry DAC+
++ *
++ * Author:	Daniel Matuschek
++ *		Copyright 2014
++ *		based on code by Florian Meier <florian.meier@koalo.de>
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/jack.h>
++
++#include "../codecs/pcm512x.h"
++
++static int snd_rpi_hifiberry_dacplus_init(struct snd_soc_pcm_runtime *rtd)
++{
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, PCM512x_GPIO_EN, 0x08, 0x08);
++	snd_soc_update_bits(codec, PCM512x_GPIO_OUTPUT_4, 0xf, 0x02);
++	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x08);
++	return 0;
++}
++
++static int snd_rpi_hifiberry_dacplus_hw_params(struct snd_pcm_substream *substream,
++				       struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
++	return snd_soc_dai_set_bclk_ratio(cpu_dai, 64);
++}
++
++static int snd_rpi_hifiberry_dacplus_startup(struct snd_pcm_substream *substream) {
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x08);
++	return 0;
++}
++
++static void snd_rpi_hifiberry_dacplus_shutdown(struct snd_pcm_substream *substream) {
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct snd_soc_codec *codec = rtd->codec;
++	snd_soc_update_bits(codec, PCM512x_GPIO_CONTROL_1, 0x08,0x00);
++}
++
++/* machine stream operations */
++static struct snd_soc_ops snd_rpi_hifiberry_dacplus_ops = {
++	.hw_params = snd_rpi_hifiberry_dacplus_hw_params,
++	.startup = snd_rpi_hifiberry_dacplus_startup,
++	.shutdown = snd_rpi_hifiberry_dacplus_shutdown,
++};
++
++static struct snd_soc_dai_link snd_rpi_hifiberry_dacplus_dai[] = {
++{
++	.name		= "HiFiBerry DAC+",
++	.stream_name	= "HiFiBerry DAC+ HiFi",
++	.cpu_dai_name	= "bcm2708-i2s.0",
++	.codec_dai_name	= "pcm512x-hifi",
++	.platform_name	= "bcm2708-i2s.0",
++	.codec_name	= "pcm512x.1-004d",
++	.dai_fmt	= SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++				SND_SOC_DAIFMT_CBS_CFS,
++	.ops		= &snd_rpi_hifiberry_dacplus_ops,
++	.init		= snd_rpi_hifiberry_dacplus_init,
++},
++};
++
++/* audio machine driver */
++static struct snd_soc_card snd_rpi_hifiberry_dacplus = {
++	.name         = "snd_rpi_hifiberry_dacplus",
++	.dai_link     = snd_rpi_hifiberry_dacplus_dai,
++	.num_links    = ARRAY_SIZE(snd_rpi_hifiberry_dacplus_dai),
++};
++
++static int snd_rpi_hifiberry_dacplus_probe(struct platform_device *pdev)
++{
++	int ret = 0;
++
++	snd_rpi_hifiberry_dacplus.dev = &pdev->dev;
++	ret = snd_soc_register_card(&snd_rpi_hifiberry_dacplus);
++	if (ret)
++		dev_err(&pdev->dev,
++			"snd_soc_register_card() failed: %d\n", ret);
++
++	return ret;
++}
++
++static int snd_rpi_hifiberry_dacplus_remove(struct platform_device *pdev)
++{
++	return snd_soc_unregister_card(&snd_rpi_hifiberry_dacplus);
++}
++
++static struct platform_driver snd_rpi_hifiberry_dacplus_driver = {
++	.driver = {
++		.name   = "snd-rpi-hifiberry-dacplus",
++		.owner  = THIS_MODULE,
++	},
++	.probe          = snd_rpi_hifiberry_dacplus_probe,
++	.remove         = snd_rpi_hifiberry_dacplus_remove,
++};
++
++module_platform_driver(snd_rpi_hifiberry_dacplus_driver);
++
++MODULE_AUTHOR("Daniel Matuschek <daniel@hifiberry.com>");
++MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+");
++MODULE_LICENSE("GPL v2");
+-- 
+1.8.3.2
+

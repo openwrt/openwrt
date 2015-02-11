@@ -1,0 +1,229 @@
+From 772f3f8c0c321b2817d35f48d553db023ead2d90 Mon Sep 17 00:00:00 2001
+From: notro <notro@tronnes.org>
+Date: Tue, 29 Jul 2014 11:04:49 +0200
+Subject: [PATCH 053/114] i2c: bcm2708: add device tree support
+
+Add DT support to driver and add to .dtsi file.
+Setup pins in .dts file.
+i2c is disabled by default.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+
+bcm2708: don't register i2c controllers when using DT
+
+The devices for the i2c controllers are in the Device Tree.
+Only register devices when not using DT.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+
+i2c: bcm2835: make driver available on ARCH_BCM2708
+
+Make this driver available on ARCH_BCM2708
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2708-rpi-b.dts | 24 ++++++++++++++++++++++++
+ arch/arm/boot/dts/bcm2708.dtsi      | 27 +++++++++++++++++++++++++++
+ arch/arm/mach-bcm2708/bcm2708.c     |  6 ++++--
+ drivers/i2c/busses/Kconfig          |  2 +-
+ drivers/i2c/busses/i2c-bcm2708.c    | 24 ++++++++++++++++++++++++
+ 5 files changed, 80 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+index 30107fb..5893122 100644
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -8,6 +8,8 @@
+ 
+ 	aliases {
+ 		spi0 = &spi0;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
+ 	};
+ };
+ 
+@@ -16,6 +18,16 @@
+ 		brcm,pins = <7 8 9 10 11>;
+ 		brcm,function = <4>; /* alt0 */
+ 	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
++
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
+ };
+ 
+ &spi0 {
+@@ -38,3 +50,15 @@
+ 		spi-max-frequency = <500000>;
+ 	};
+ };
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
+diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
+index e90bf4c..2ca6d63 100644
+--- a/arch/arm/boot/dts/bcm2708.dtsi
++++ b/arch/arm/boot/dts/bcm2708.dtsi
+@@ -48,6 +48,26 @@
+ 			#size-cells = <0>;
+ 			status = "disabled";
+ 		};
++
++		i2c0: i2c@7e205000 {
++			compatible = "brcm,bcm2708-i2c";
++			reg = <0x7e205000 0x1000>;
++			interrupts = <2 21>;
++			clocks = <&clk_i2c>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c1: i2c@7e804000 {
++			compatible = "brcm,bcm2708-i2c";
++			reg = <0x7e804000 0x1000>;
++			interrupts = <2 21>;
++			clocks = <&clk_i2c>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
+ 	};
+ 
+ 	clocks {
+@@ -55,6 +75,13 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
++		clk_i2c: i2c {
++			compatible = "fixed-clock";
++			reg = <1>;
++			#clock-cells = <0>;
++			clock-frequency = <250000000>;
++		};
++
+ 		clk_spi: clock@2 {
+ 			compatible = "fixed-clock";
+ 			reg = <2>;
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index a2069f8..b45f327 100644
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -532,6 +532,7 @@ static struct spi_board_info bcm2708_spi_devices[] = {
+ };
+ #endif
+ 
++#ifndef CONFIG_OF
+ static struct resource bcm2708_bsc0_resources[] = {
+ 	{
+ 		.start = BSC0_BASE,
+@@ -570,6 +571,7 @@ static struct platform_device bcm2708_bsc1_device = {
+ 	.num_resources = ARRAY_SIZE(bcm2708_bsc1_resources),
+ 	.resource = bcm2708_bsc1_resources,
+ };
++#endif
+ 
+ static struct platform_device bcm2835_hwmon_device = {
+ 	.name = "bcm2835_hwmon",
+@@ -797,8 +799,8 @@ void __init bcm2708_init(void)
+ 		bcm_register_device(&bcm2708_alsa_devices[i]);
+ 
+ 	bcm_register_device_dt(&bcm2708_spi_device);
+-	bcm_register_device(&bcm2708_bsc0_device);
+-	bcm_register_device(&bcm2708_bsc1_device);
++	bcm_register_device_dt(&bcm2708_bsc0_device);
++	bcm_register_device_dt(&bcm2708_bsc1_device);
+ 
+ 	bcm_register_device(&bcm2835_hwmon_device);
+ 	bcm_register_device(&bcm2835_thermal_device);
+diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
+index 3d3db41..d30a986 100644
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -361,7 +361,7 @@ config I2C_AXXIA
+ 
+ config I2C_BCM2835
+ 	tristate "Broadcom BCM2835 I2C controller"
+-	depends on ARCH_BCM2835
++	depends on ARCH_BCM2835 || ARCH_BCM2708
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  BCM2835 I2C controller.
+diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
+index 7d385a3..526129b 100644
+--- a/drivers/i2c/busses/i2c-bcm2708.c
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -26,6 +26,7 @@
+ #include <linux/spinlock.h>
+ #include <linux/clk.h>
+ #include <linux/err.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
+ #include <linux/io.h>
+ #include <linux/slab.h>
+@@ -303,6 +304,21 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+ 	unsigned long bus_hz;
+ 	u32 cdiv;
+ 
++	if (pdev->dev.of_node) {
++		u32 bus_clk_rate;
++		pdev->id = of_alias_get_id(pdev->dev.of_node, "i2c");
++		if (pdev->id < 0) {
++			dev_err(&pdev->dev, "alias is missing\n");
++			return -EINVAL;
++		}
++		if (!of_property_read_u32(pdev->dev.of_node,
++					"clock-frequency", &bus_clk_rate))
++			baudrate = bus_clk_rate;
++		else
++			dev_warn(&pdev->dev,
++				"Could not read clock-frequency property\n");
++	}
++
+ 	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!regs) {
+ 		dev_err(&pdev->dev, "could not get IO memory\n");
+@@ -336,6 +352,7 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+ 	adap->dev.parent = &pdev->dev;
+ 	adap->nr = pdev->id;
+ 	strlcpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
++	adap->dev.of_node = pdev->dev.of_node;
+ 
+ 	switch (pdev->id) {
+ 	case 0:
+@@ -416,10 +433,17 @@ static int bcm2708_i2c_remove(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
++static const struct of_device_id bcm2708_i2c_of_match[] = {
++        { .compatible = "brcm,bcm2708-i2c" },
++        {},
++};
++MODULE_DEVICE_TABLE(of, bcm2708_i2c_of_match);
++
+ static struct platform_driver bcm2708_i2c_driver = {
+ 	.driver		= {
+ 		.name	= DRV_NAME,
+ 		.owner	= THIS_MODULE,
++		.of_match_table = bcm2708_i2c_of_match,
+ 	},
+ 	.probe		= bcm2708_i2c_probe,
+ 	.remove		= bcm2708_i2c_remove,
+-- 
+1.8.3.2
+

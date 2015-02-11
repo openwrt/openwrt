@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2012-2014 OpenWrt.org
+# Copyright (C) 2012-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,16 +7,15 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=brcm2708-gpu-fw
-PKG_REV:=e25efc4545d0cef7c49c82e770b3e4ccfc8aba4c
-PKG_VERSION:=20140226
-PKG_RELEASE:=1
+PKG_NAME:=brcm2708-gpu-fw-boot
+PKG_VERSION:=2015-02-07
+PKG_RELEASE:=$(PKG_SOURCE_VERSION)
+PKG_MD5SUM:=f198d5466ec412424f3ca77703f29d15
 
-PKG_SOURCE:=$(PKG_REV).tar.gz
-PKG_SOURCE_URL:=https://github.com/Hexxeh/rpi-firmware/archive/
-PKG_MD5SUM:=b1bb6b1063c4f920314274edd39c35e6
-
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
+# PKG_SOURCE_SUBDIR:=$(PKG_NAME)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -33,11 +32,6 @@ define Package/brcm2708-gpu-fw/description
 endef
 
 define Build/Compile
-endef
-
-define Build/InstallDev
-	$(INSTALL_DIR) $(BUILD_DIR)/brcm2708-gpu-fw-boot
-	$(CP) $(PKG_BUILD_DIR)/* $(BUILD_DIR)/brcm2708-gpu-fw-boot
 endef
 
 $(eval $(call BuildPackage,brcm2708-gpu-fw))

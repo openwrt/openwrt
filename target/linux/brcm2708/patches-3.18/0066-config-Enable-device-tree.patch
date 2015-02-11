@@ -1,0 +1,24 @@
+From 42fd2d3e952c0a2c1455190eb208e5544b73da67 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 25 Nov 2014 13:39:03 +0000
+Subject: [PATCH 066/114] config: Enable device tree
+
+---
+ arch/arm/configs/bcmrpi_defconfig | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 997e1f3..2cd8227 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -39,6 +39,7 @@ CONFIG_PARTITION_ADVANCED=y
+ CONFIG_MAC_PARTITION=y
+ CONFIG_CFQ_GROUP_IOSCHED=y
+ CONFIG_ARCH_BCM2708=y
++CONFIG_BCM2708_DT=y
+ CONFIG_PREEMPT=y
+ CONFIG_AEABI=y
+ CONFIG_CLEANCACHE=y
+-- 
+1.8.3.2
+

@@ -1,0 +1,96 @@
+From aca6741a1d26736f6000d18b3c60a18a313be6ea Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 26 Jan 2015 17:40:22 +0000
+Subject: [PATCH 097/114] bcm2709: Port pps-gpio and i2c patches
+
+---
+ arch/arm/mach-bcm2709/bcm2709.c | 41 +++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 39 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/mach-bcm2709/bcm2709.c b/arch/arm/mach-bcm2709/bcm2709.c
+index 5d73b73..f009aeb 100644
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -37,6 +37,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/gpio/machine.h>
+ #include <linux/w1-gpio.h>
++#include <linux/pps-gpio.h>
+ 
+ #include <linux/version.h>
+ #include <linux/clkdev.h>
+@@ -95,6 +96,8 @@ static unsigned disk_led_active_low = 1;
+ static unsigned reboot_part = 0;
+ static unsigned w1_gpio_pin = W1_GPIO;
+ static unsigned w1_gpio_pullup = W1_PULLUP;
++static int pps_gpio_pin = -1;
++static bool vc_i2c_override = false;
+ 
+ static unsigned use_dt = 0;
+ 
+@@ -283,6 +286,19 @@ static struct platform_device w1_device = {
+ };
+ #endif
+ 
++static struct pps_gpio_platform_data pps_gpio_info = {
++	.assert_falling_edge = false,
++	.capture_clear = false,
++	.gpio_pin = -1,
++	.gpio_label = "PPS",
++};
++
++static struct platform_device pps_gpio_device = {
++	.name = "pps-gpio",
++	.id = PLATFORM_DEVID_NONE,
++	.dev.platform_data = &pps_gpio_info,
++};
++
+ static u64 fb_dmamask = DMA_BIT_MASK(DMA_MASK_BITS_COMMON);
+ 
+ static struct platform_device bcm2708_fb_device = {
+@@ -860,6 +876,16 @@ void __init bcm2709_init(void)
+ #ifdef CONFIG_BCM2708_GPIO
+ 	bcm_register_device_dt(&bcm2708_gpio_device);
+ #endif
++
++#if defined(CONFIG_PPS_CLIENT_GPIO) || defined(CONFIG_PPS_CLIENT_GPIO_MODULE)
++	if (!use_dt && (pps_gpio_pin >= 0)) {
++		pr_info("bcm2709: GPIO %d setup as pps-gpio device\n", pps_gpio_pin);
++		pps_gpio_info.gpio_pin = pps_gpio_pin;
++		pps_gpio_device.id = pps_gpio_pin;
++		bcm_register_device(&pps_gpio_device);
++	}
++#endif
++
+ #if defined(CONFIG_W1_MASTER_GPIO) || defined(CONFIG_W1_MASTER_GPIO_MODULE)
+ 	w1_gpio_pdata.pin = w1_gpio_pin;
+ 	w1_gpio_pdata.ext_pullup_enable_pin = w1_gpio_pullup;
+@@ -884,8 +910,15 @@ void __init bcm2709_init(void)
+ 	bcm_register_device(&bcm2835_thermal_device);
+ 
+ 	bcm_register_device_dt(&bcm2708_spi_device);
+-	bcm_register_device_dt(&bcm2708_bsc0_device);
+-	bcm_register_device_dt(&bcm2708_bsc1_device);
++
++	if (vc_i2c_override) {
++		bcm_register_device_dt(&bcm2708_bsc0_device);
++		bcm_register_device_dt(&bcm2708_bsc1_device);
++	} else if ((boardrev & 0xffffff) == 0x2 || (boardrev & 0xffffff) == 0x3) {
++		bcm_register_device_dt(&bcm2708_bsc0_device);
++	} else {
++		bcm_register_device_dt(&bcm2708_bsc1_device);
++	}
+ 
+ #if defined(CONFIG_SND_BCM2708_SOC_I2S) || defined(CONFIG_SND_BCM2708_SOC_I2S_MODULE)
+ 	bcm_register_device_dt(&bcm2708_i2s_device);
+@@ -1245,3 +1278,7 @@ module_param(disk_led_active_low, uint, 0644);
+ module_param(reboot_part, uint, 0644);
+ module_param(w1_gpio_pin, uint, 0644);
+ module_param(w1_gpio_pullup, uint, 0644);
++module_param(pps_gpio_pin, int, 0644);
++MODULE_PARM_DESC(pps_gpio_pin, "Set GPIO pin to reserve for PPS");
++module_param(vc_i2c_override, bool, 0644);
++MODULE_PARM_DESC(vc_i2c_override, "Allow the use of VC's I2C peripheral.");
+-- 
+1.8.3.2
+

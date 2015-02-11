@@ -1,0 +1,24 @@
+From 2661fe9121d21ae3ba756b98b545a509b63a71d7 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Mon, 26 Jan 2015 14:32:18 +0000
+Subject: [PATCH 079/114] config: Remove STRICT_DEVMEM
+
+---
+ arch/arm/configs/bcmrpi_defconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 41b90b4..fd7c022 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1124,7 +1124,6 @@ CONFIG_FUNCTION_PROFILER=y
+ CONFIG_KGDB=y
+ CONFIG_KGDB_KDB=y
+ CONFIG_KDB_KEYBOARD=y
+-CONFIG_STRICT_DEVMEM=y
+ CONFIG_CRYPTO_USER=m
+ CONFIG_CRYPTO_NULL=m
+ CONFIG_CRYPTO_CRYPTD=m
+-- 
+1.8.3.2
+

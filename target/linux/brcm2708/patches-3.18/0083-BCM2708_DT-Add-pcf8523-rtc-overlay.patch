@@ -1,0 +1,54 @@
+From 82fe3c57ba4c661c119a08567b9aaa5b63de07e1 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 28 Jan 2015 16:22:04 +0000
+Subject: [PATCH 083/114] BCM2708_DT: Add pcf8523-rtc overlay
+
+---
+ arch/arm/boot/dts/Makefile                |  1 +
+ arch/arm/boot/dts/pcf8523-rtc-overlay.dts | 22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+ create mode 100644 arch/arm/boot/dts/pcf8523-rtc-overlay.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 4d1224b..86c6190 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -62,6 +62,7 @@ dtb-$(CONFIG_BCM2708_DT) += hifiberry-amp-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += iqaudio-dac-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += iqaudio-dacplus-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += lirc-rpi-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += pcf8523-rtc-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += pps-gpio-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += w1-gpio-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += w1-gpio-pullup-overlay.dtb
+diff --git a/arch/arm/boot/dts/pcf8523-rtc-overlay.dts b/arch/arm/boot/dts/pcf8523-rtc-overlay.dts
+new file mode 100644
+index 0000000..0071f62
+--- /dev/null
++++ b/arch/arm/boot/dts/pcf8523-rtc-overlay.dts
+@@ -0,0 +1,22 @@
++// Definitions for PCF8523 Real Time Clock
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pcf8523@68 {
++				compatible = "nxp,pcf8523";
++				reg = <0x68>;
++				status = "okay";
++			};
++		};
++	};
++};
+-- 
+1.8.3.2
+

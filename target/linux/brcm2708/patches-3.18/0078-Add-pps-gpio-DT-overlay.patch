@@ -1,0 +1,68 @@
+From 4cd9d10a9cd482e993dcfe3bd1d576ad0d11c3c3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 26 Jan 2015 09:18:24 +0000
+Subject: [PATCH 078/114] Add pps-gpio DT overlay
+
+Parameters:
+    gpiopin=<input pin>    // Default 18
+---
+ arch/arm/boot/dts/Makefile             |  1 +
+ arch/arm/boot/dts/pps-gpio-overlay.dts | 34 ++++++++++++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+)
+ create mode 100644 arch/arm/boot/dts/pps-gpio-overlay.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 4e1ec2d..4d1224b 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -62,6 +62,7 @@ dtb-$(CONFIG_BCM2708_DT) += hifiberry-amp-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += iqaudio-dac-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += iqaudio-dacplus-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += lirc-rpi-overlay.dtb
++dtb-$(CONFIG_BCM2708_DT) += pps-gpio-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += w1-gpio-overlay.dtb
+ dtb-$(CONFIG_BCM2708_DT) += w1-gpio-pullup-overlay.dtb
+ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
+diff --git a/arch/arm/boot/dts/pps-gpio-overlay.dts b/arch/arm/boot/dts/pps-gpio-overlay.dts
+new file mode 100644
+index 0000000..40bf0e1
+--- /dev/null
++++ b/arch/arm/boot/dts/pps-gpio-overlay.dts
+@@ -0,0 +1,34 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			pps: pps {
++				compatible = "pps-gpio";
++				pinctrl-names = "default";
++				pinctrl-0 = <&pps_pins>;
++				gpios = <&gpio 18 0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			pps_pins: pps_pins {
++				brcm,pins =     <18>;
++				brcm,function = <0>;    // in
++				brcm,pull =     <0>;    // off
++			};
++		};
++	};
++
++	__overrides__ {
++		gpiopin = <&pps>,"gpios:4",
++			  <&pps_pins>,"brcm,pins:0";
++	};
++};
+-- 
+1.8.3.2
+

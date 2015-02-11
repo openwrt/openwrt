@@ -1,0 +1,53 @@
+From cf1b789e1a6873d9680156fac9f675a0f1cdd17b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 5 Feb 2015 16:01:44 +0000
+Subject: [PATCH 107/114] i2c_bcm2708: Fix clock reference counting
+
+---
+ drivers/i2c/busses/i2c-bcm2708.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
+index 526129b..fda59ba 100644
+--- a/drivers/i2c/busses/i2c-bcm2708.c
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -337,11 +337,17 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+ 		return PTR_ERR(clk);
+ 	}
+ 
++	err = clk_prepare_enable(clk);
++	if (err) {
++		dev_err(&pdev->dev, "could not enable clk: %d\n", err);
++		goto out_clk_put;
++	}
++
+ 	bcm2708_i2c_init_pinmode(pdev->id);
+ 
+ 	bi = kzalloc(sizeof(*bi), GFP_KERNEL);
+ 	if (!bi)
+-		goto out_clk_put;
++		goto out_clk_disable;
+ 
+ 	platform_set_drvdata(pdev, bi);
+ 
+@@ -412,6 +418,8 @@ out_iounmap:
+ 	iounmap(bi->base);
+ out_free_bi:
+ 	kfree(bi);
++out_clk_disable:
++	clk_disable_unprepare(clk);
+ out_clk_put:
+ 	clk_put(clk);
+ 	return err;
+@@ -426,7 +434,7 @@ static int bcm2708_i2c_remove(struct platform_device *pdev)
+ 	i2c_del_adapter(&bi->adapter);
+ 	free_irq(bi->irq, bi);
+ 	iounmap(bi->base);
+-	clk_disable(bi->clk);
++	clk_disable_unprepare(bi->clk);
+ 	clk_put(bi->clk);
+ 	kfree(bi);
+ 
+-- 
+1.8.3.2
+

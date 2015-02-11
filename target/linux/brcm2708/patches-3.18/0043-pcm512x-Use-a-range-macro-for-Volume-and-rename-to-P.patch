@@ -1,0 +1,30 @@
+From 197803c176d753bc23fdf705306596cbd1e8b658 Mon Sep 17 00:00:00 2001
+From: Howard Mitchell <hm@hmbedded.co.uk>
+Date: Fri, 28 Mar 2014 16:40:31 +0000
+Subject: [PATCH 043/114] pcm512x: Use a range macro for Volume and rename to
+ PCM.
+
+This allows limiting the output gain to avoid clipping in the
+DAC ouput stages.
+---
+ sound/soc/codecs/pcm512x.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
+index 640c991..b405719 100644
+--- a/sound/soc/codecs/pcm512x.c
++++ b/sound/soc/codecs/pcm512x.c
+@@ -259,8 +259,8 @@ static const struct soc_enum pcm512x_veds =
+ 			pcm512x_ramp_step_text);
+ 
+ static const struct snd_kcontrol_new pcm512x_controls[] = {
+-SOC_DOUBLE_R_TLV("Digital Playback Volume", PCM512x_DIGITAL_VOLUME_2,
+-		 PCM512x_DIGITAL_VOLUME_3, 0, 255, 1, digital_tlv),
++SOC_DOUBLE_R_RANGE_TLV("PCM", PCM512x_DIGITAL_VOLUME_2,
++		 PCM512x_DIGITAL_VOLUME_3, 0, 40, 255, 1, digital_tlv),
+ SOC_DOUBLE_TLV("Playback Volume", PCM512x_ANALOG_GAIN_CTRL,
+ 	       PCM512x_LAGN_SHIFT, PCM512x_RAGN_SHIFT, 1, 1, analog_tlv),
+ SOC_DOUBLE_TLV("Playback Boost Volume", PCM512x_ANALOG_GAIN_BOOST,
+-- 
+1.8.3.2
+

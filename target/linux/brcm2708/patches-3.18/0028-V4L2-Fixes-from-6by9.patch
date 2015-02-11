@@ -1,0 +1,2417 @@
+From c8fb291144efa1ab7f0628119894a1e72f08bce4 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <dsteve@broadcom.com>
+Date: Mon, 9 Dec 2013 10:58:01 +0000
+Subject: [PATCH 028/114] V4L2: Fixes from 6by9
+
+V4L2: Fix EV values. Add manual shutter speed control
+
+V4L2 EV values should be in units of 1/1000. Corrected.
+Add support for V4L2_CID_EXPOSURE_ABSOLUTE which should
+give manual shutter control. Requires manual exposure mode
+to be selected first.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Correct JPEG Q-factor range
+
+Should be 1-100, not 0-100
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Fix issue of driver jamming if STREAMON failed.
+
+Fix issue where the driver was left in a partially enabled
+state if STREAMON failed, and would then reject many IOCTLs
+as it thought it was streaming.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Fix ISO controls.
+
+Driver was passing the index to the GPU, and not the desired
+ISO value.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add flicker avoidance controls
+
+Add support for V4L2_CID_POWER_LINE_FREQUENCY to set flicker
+avoidance frequencies.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add support for frame rate control.
+
+Add support for frame rate (or time per frame as V4L2
+inverts it) control via s_parm.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Improve G_FBUF handling so we pass conformance
+
+Return some sane numbers for get framebuffer so that
+we pass conformance.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Fix information advertised through g_vidfmt
+
+Width and height were being stored based on incorrect
+values.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add support for inline H264 headers
+
+Add support for V4L2_CID_MPEG_VIDEO_REPEAT_SEQ_HEADER
+to control H264 inline headers.
+Requires firmware fix to work correctly, otherwise format
+has to be set to H264 before this parameter is set.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Fix JPEG timestamp issue
+
+JPEG images were coming through from the GPU with timestamp
+of 0. Detect this and give current system time instead
+of some invalid value.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Fix issue when switching down JPEG resolution.
+
+JPEG buffer size calculation is based on input resolution.
+Input resolution was being configured after output port
+format. Caused failures if switching from one JPEG resolution
+to a smaller one.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Enable MJPEG encoding
+
+Requires GPU firmware update to support MJPEG encoder.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Correct flag settings for compressed formats
+
+Set flags field correctly on enum_fmt_vid_cap for compressed
+image formats.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: H264 profile & level ctrls, FPS control and auto exp pri
+
+Several control handling updates.
+H264 profile and level controls.
+Timeperframe/FPS reworked to add V4L2_CID_EXPOSURE_AUTO_PRIORITY to
+select whether AE is allowed to override the framerate specified.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Correct BGR24 to RGB24 in format table
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add additional pixel formats. Correct colourspace
+
+Adds the other flavours of YUYV, and NV12.
+Corrects the overlay advertised colourspace.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Drop logging msg from info to debug
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Initial pass at scene modes.
+
+Only supports exposure mode and metering modes.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add manual white balance control.
+
+Adds support for V4L2_CID_RED_BALANCE and
+V4L2_CID_BLUE_BALANCE. Only has an effect if
+V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE has
+V4L2_WHITE_BALANCE_MANUAL selected.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+config: Enable V4L / MMAL driver
+
+V4L2: Increase the MMAL timeout to 3sec
+
+MJPEG codec flush is now taking longer and results
+in a kernel panic if the driver has stopped waiting for
+the result when it finally completes.
+Increase the timeout value from 1 to 3secs.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add support for setting H264_I_PERIOD
+
+Adds support for the parameter V4L2_CID_MPEG_VIDEO_H264_I_PERIOD
+to set the frequency with which I frames are produced.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Enable GPU function for removing padding from images.
+
+GPU can now support arbitrary strides, although may require
+additional processing to achieve it. Enable this feature
+so that the images delivered are the size requested.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add support for V4L2_PIX_FMT_BGR32
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Set the colourspace to avoid odd YUV-RGB conversions
+
+Removes the amiguity from the conversion routines and stops
+them dropping back to the SD vs HD choice of coeffs.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Make video/still threshold a run-time param
+
+Move the define for at what resolution the driver
+switches from a video mode capture to a stills mode
+capture to module parameters.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Fix incorrect pool sizing
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add option to disable enum_framesizes.
+
+Gstreamer's handling of a driver that advertises
+V4L2_FRMSIZE_TYPE_STEPWISE to define the supported
+resolutions is broken. See bug
+https://bugzilla.gnome.org/show_bug.cgi?id=726521
+
+Optional parameter of gst_v4l2src_is_broken added.
+If non-zero, the driver claims not to support that
+ioctl, and gstreamer should be happy again (it
+guesses a set of defaults for itself).
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Add support for more image formats
+
+Adds YVU420 (YV12), YVU420SP (NV21), and BGR888.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+V4L2: Extend range for V4L2_CID_MPEG_VIDEO_H264_I_PERIOD
+
+Request to extend the range from the fairly arbitrary
+1000 frames (33 seconds at 30fps). Extend out to the
+max range supported (int32 value).
+Also allow 0, which is handled by the codec as only
+send an I-frame on the first frame and never again.
+There may be an exception if it detects a significant
+scene change, but there's no easy way around that.
+
+Signed-off-by: Dave Stevenson <dsteve@broadcom.com>
+
+bcm2835-camera: stop_streaming now has a void return
+---
+ arch/arm/configs/bcmrpi_defconfig                |   3 +
+ drivers/media/platform/bcm2835/bcm2835-camera.c  | 578 ++++++++++++++----
+ drivers/media/platform/bcm2835/bcm2835-camera.h  |  23 +-
+ drivers/media/platform/bcm2835/controls.c        | 723 +++++++++++++++++++++--
+ drivers/media/platform/bcm2835/mmal-common.h     |   1 +
+ drivers/media/platform/bcm2835/mmal-encodings.h  |  34 ++
+ drivers/media/platform/bcm2835/mmal-parameters.h | 121 +++-
+ drivers/media/platform/bcm2835/mmal-vchiq.c      |   4 +-
+ 8 files changed, 1300 insertions(+), 187 deletions(-)
+
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 897616c..3f99687 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -708,6 +708,9 @@ CONFIG_DVB_AS102=m
+ CONFIG_VIDEO_EM28XX=m
+ CONFIG_VIDEO_EM28XX_ALSA=m
+ CONFIG_VIDEO_EM28XX_DVB=m
++CONFIG_V4L_PLATFORM_DRIVERS=y
++CONFIG_VIDEO_BCM2835=y
++CONFIG_VIDEO_BCM2835_MMAL=m
+ CONFIG_RADIO_SI470X=y
+ CONFIG_USB_SI470X=m
+ CONFIG_I2C_SI470X=m
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.c b/drivers/media/platform/bcm2835/bcm2835-camera.c
+index 1c9d9d5..e5a0010 100644
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -36,7 +36,8 @@
+ 
+ #define BM2835_MMAL_VERSION "0.0.2"
+ #define BM2835_MMAL_MODULE_NAME "bcm2835-v4l2"
+-
++#define MIN_WIDTH 16
++#define MIN_HEIGHT 16
+ #define MAX_WIDTH 2592
+ #define MAX_HEIGHT 1944
+ #define MIN_BUFFER_SIZE (80*1024)
+@@ -53,13 +54,43 @@ int bcm2835_v4l2_debug;
+ module_param_named(debug, bcm2835_v4l2_debug, int, 0644);
+ MODULE_PARM_DESC(bcm2835_v4l2_debug, "Debug level 0-2");
+ 
++int max_video_width = MAX_VIDEO_MODE_WIDTH;
++int max_video_height = MAX_VIDEO_MODE_HEIGHT;
++module_param(max_video_width, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
++MODULE_PARM_DESC(max_video_width, "Threshold for video mode");
++module_param(max_video_height, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
++MODULE_PARM_DESC(max_video_height, "Threshold for video mode");
++
++/* Gstreamer bug https://bugzilla.gnome.org/show_bug.cgi?id=726521
++ * v4l2src does bad (and actually wrong) things when the vidioc_enum_framesizes
++ * function says type V4L2_FRMSIZE_TYPE_STEPWISE, which we do by default.
++ * It's happier if we just don't say anything at all, when it then
++ * sets up a load of defaults that it thinks might work.
++ * If gst_v4l2src_is_broken is non-zero, then we remove the function from
++ * our function table list (actually switch to an alternate set, but same
++ * result).
++ */
++int gst_v4l2src_is_broken = 0;
++module_param(gst_v4l2src_is_broken, int, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
++MODULE_PARM_DESC(gst_v4l2src_is_broken, "If non-zero, enable workaround for Gstreamer");
++
+ static struct bm2835_mmal_dev *gdev;	/* global device data */
+ 
++#define FPS_MIN 1
++#define FPS_MAX 90
++
++/* timeperframe: min/max and default */
++static const struct v4l2_fract
++	tpf_min     = {.numerator = 1,		.denominator = FPS_MAX},
++	tpf_max     = {.numerator = 1,	        .denominator = FPS_MIN},
++	tpf_default = {.numerator = 1000,	.denominator = 30000};
++
+ /* video formats */
+ static struct mmal_fmt formats[] = {
+ 	{
+ 	 .name = "4:2:0, packed YUV",
+ 	 .fourcc = V4L2_PIX_FMT_YUV420,
++	 .flags = 0,
+ 	 .mmal = MMAL_ENCODING_I420,
+ 	 .depth = 12,
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+@@ -67,13 +98,15 @@ static struct mmal_fmt formats[] = {
+ 	{
+ 	 .name = "4:2:2, packed, YUYV",
+ 	 .fourcc = V4L2_PIX_FMT_YUYV,
++	 .flags = 0,
+ 	 .mmal = MMAL_ENCODING_YUYV,
+ 	 .depth = 16,
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+ 	 },
+ 	{
+-	 .name = "RGB24 (BE)",
+-	 .fourcc = V4L2_PIX_FMT_BGR24,
++	 .name = "RGB24 (LE)",
++	 .fourcc = V4L2_PIX_FMT_RGB24,
++	 .flags = 0,
+ 	 .mmal = MMAL_ENCODING_BGR24,
+ 	 .depth = 24,
+ 	 .mmal_component = MMAL_COMPONENT_CAMERA,
+@@ -81,6 +114,7 @@ static struct mmal_fmt formats[] = {
+ 	{
+ 	 .name = "JPEG",
+ 	 .fourcc = V4L2_PIX_FMT_JPEG,
++	 .flags = V4L2_FMT_FLAG_COMPRESSED,
+ 	 .mmal = MMAL_ENCODING_JPEG,
+ 	 .depth = 8,
+ 	 .mmal_component = MMAL_COMPONENT_IMAGE_ENCODE,
+@@ -88,10 +122,83 @@ static struct mmal_fmt formats[] = {
+ 	{
+ 	 .name = "H264",
+ 	 .fourcc = V4L2_PIX_FMT_H264,
++	 .flags = V4L2_FMT_FLAG_COMPRESSED,
+ 	 .mmal = MMAL_ENCODING_H264,
+ 	 .depth = 8,
+ 	 .mmal_component = MMAL_COMPONENT_VIDEO_ENCODE,
+-	 }
++	 },
++	{
++	 .name = "MJPEG",
++	 .fourcc = V4L2_PIX_FMT_MJPEG,
++	 .flags = V4L2_FMT_FLAG_COMPRESSED,
++	 .mmal = MMAL_ENCODING_MJPEG,
++	 .depth = 8,
++	 .mmal_component = MMAL_COMPONENT_VIDEO_ENCODE,
++	 },
++	{
++	 .name = "4:2:2, packed, YVYU",
++	 .fourcc = V4L2_PIX_FMT_YVYU,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_YVYU,
++	 .depth = 16,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:2, packed, VYUY",
++	 .fourcc = V4L2_PIX_FMT_VYUY,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_VYUY,
++	 .depth = 16,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:2, packed, UYVY",
++	 .fourcc = V4L2_PIX_FMT_UYVY,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_UYVY,
++	 .depth = 16,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:0, packed, NV12",
++	 .fourcc = V4L2_PIX_FMT_NV12,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_NV12,
++	 .depth = 12,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "RGB24 (BE)",
++	 .fourcc = V4L2_PIX_FMT_BGR24,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_RGB24,
++	 .depth = 24,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:0, packed YVU",
++	 .fourcc = V4L2_PIX_FMT_YVU420,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_YV12,
++	 .depth = 12,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "4:2:0, packed, NV21",
++	 .fourcc = V4L2_PIX_FMT_NV21,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_NV21,
++	 .depth = 12,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
++	{
++	 .name = "RGB32 (BE)",
++	 .fourcc = V4L2_PIX_FMT_BGR32,
++	 .flags = 0,
++	 .mmal = MMAL_ENCODING_BGRA,
++	 .depth = 32,
++	 .mmal_component = MMAL_COMPONENT_CAMERA,
++	 },
+ };
+ 
+ static struct mmal_fmt *get_format(struct v4l2_format *f)
+@@ -229,7 +336,8 @@ static void buffer_cb(struct vchiq_mmal_instance *instance,
+ 		}
+ 	} else {
+ 		if (dev->capture.frame_count) {
+-			if (dev->capture.vc_start_timestamp != -1) {
++			if (dev->capture.vc_start_timestamp != -1 &&
++			    pts != 0) {
+ 				s64 runtime_us = pts -
+ 				    dev->capture.vc_start_timestamp;
+ 				u32 div = 0;
+@@ -250,7 +358,7 @@ static void buffer_cb(struct vchiq_mmal_instance *instance,
+ 					    USEC_PER_SEC;
+ 				}
+ 				v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
+-					 "Convert start time %d.%06d and %llu"
++					 "Convert start time %d.%06d and %llu "
+ 					 "with offset %llu to %d.%06d\n",
+ 					 (int)dev->capture.kernel_start_ts.
+ 					 tv_sec,
+@@ -425,7 +533,15 @@ static int start_streaming(struct vb2_queue *vq, unsigned int count)
+ 	    vchiq_mmal_port_enable(dev->instance, dev->capture.port, buffer_cb);
+ 	if (ret) {
+ 		v4l2_err(&dev->v4l2_dev,
+-			 "Failed to enable capture port - error %d\n", ret);
++			"Failed to enable capture port - error %d. "
++			"Disabling camera port again\n", ret);
++
++		vchiq_mmal_port_disable(dev->instance,
++					dev->capture.camera_port);
++		if (disable_camera(dev) < 0) {
++			v4l2_err(&dev->v4l2_dev, "Failed to disable camera\n");
++			return -EINVAL;
++		}
+ 		return -1;
+ 	}
+ 
+@@ -439,7 +555,7 @@ static int start_streaming(struct vb2_queue *vq, unsigned int count)
+ }
+ 
+ /* abort streaming and wait for last buffer */
+-static int stop_streaming(struct vb2_queue *vq)
++static void stop_streaming(struct vb2_queue *vq)
+ {
+ 	int ret;
+ 	struct bm2835_mmal_dev *dev = vb2_get_drv_priv(vq);
+@@ -451,8 +567,11 @@ static int stop_streaming(struct vb2_queue *vq)
+ 	dev->capture.frame_count = 0;
+ 
+ 	/* ensure a format has actually been set */
+-	if (dev->capture.port == NULL)
+-		return -EINVAL;
++	if (dev->capture.port == NULL) {
++		v4l2_err(&dev->v4l2_dev,
++			 "no capture port - stream not started?\n");
++		return;
++	}
+ 
+ 	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev, "stopping capturing\n");
+ 
+@@ -483,12 +602,8 @@ static int stop_streaming(struct vb2_queue *vq)
+ 			 ret);
+ 	}
+ 
+-	if (disable_camera(dev) < 0) {
+-		v4l2_err(&dev->v4l2_dev, "Failed to disable camera");
+-		return -EINVAL;
+-	}
+-
+-	return ret;
++	if (disable_camera(dev) < 0)
++		v4l2_err(&dev->v4l2_dev, "Failed to disable camera\n");
+ }
+ 
+ static void bm2835_mmal_lock(struct vb2_queue *vq)
+@@ -530,6 +645,7 @@ static int vidioc_enum_fmt_vid_overlay(struct file *file, void *priv,
+ 
+ 	strlcpy(f->description, fmt->name, sizeof(f->description));
+ 	f->pixelformat = fmt->fourcc;
++	f->flags = fmt->flags;
+ 
+ 	return 0;
+ }
+@@ -647,10 +763,18 @@ static int vidioc_g_fbuf(struct file *file, void *fh,
+ {
+ 	/* The video overlay must stay within the framebuffer and can't be
+ 	   positioned independently. */
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
++	struct vchiq_mmal_port *preview_port =
++		    &dev->component[MMAL_COMPONENT_CAMERA]->
++		    output[MMAL_CAMERA_PORT_PREVIEW];
+ 	a->flags = V4L2_FBUF_FLAG_OVERLAY;
+-
+-	/* todo: v4l2_framebuffer still needs more info filling in
+-	 *       in order to pass the v4l2-compliance test. */
++	a->fmt.width = preview_port->es.video.width;
++	a->fmt.height = preview_port->es.video.height;
++	a->fmt.pixelformat = V4L2_PIX_FMT_YUV420;
++	a->fmt.bytesperline = (preview_port->es.video.width * 3)>>1;
++	a->fmt.sizeimage = (preview_port->es.video.width *
++			       preview_port->es.video.height * 3)>>1;
++	a->fmt.colorspace = V4L2_COLORSPACE_JPEG;
+ 
+ 	return 0;
+ }
+@@ -717,6 +841,8 @@ static int vidioc_enum_fmt_vid_cap(struct file *file, void *priv,
+ 
+ 	strlcpy(f->description, fmt->name, sizeof(f->description));
+ 	f->pixelformat = fmt->fourcc;
++	f->flags = fmt->flags;
++
+ 	return 0;
+ }
+ 
+@@ -729,20 +855,13 @@ static int vidioc_g_fmt_vid_cap(struct file *file, void *priv,
+ 	f->fmt.pix.height = dev->capture.height;
+ 	f->fmt.pix.field = V4L2_FIELD_NONE;
+ 	f->fmt.pix.pixelformat = dev->capture.fmt->fourcc;
+-	f->fmt.pix.bytesperline =
+-	    (f->fmt.pix.width * dev->capture.fmt->depth) >> 3;
+-	f->fmt.pix.sizeimage = f->fmt.pix.height * f->fmt.pix.bytesperline;
+-	if (dev->capture.fmt->fourcc == V4L2_PIX_FMT_JPEG
+-	    && f->fmt.pix.sizeimage < (100 << 10)) {
+-		/* Need a minimum size for JPEG to account for EXIF. */
+-		f->fmt.pix.sizeimage = (100 << 10);
+-	}
++	f->fmt.pix.bytesperline = dev->capture.stride;
++	f->fmt.pix.sizeimage = dev->capture.buffersize;
+ 
+-	if (dev->capture.fmt->fourcc == V4L2_PIX_FMT_YUYV ||
+-	    dev->capture.fmt->fourcc == V4L2_PIX_FMT_UYVY)
+-		f->fmt.pix.colorspace = V4L2_COLORSPACE_SMPTE170M;
+-	else
++	if (dev->capture.fmt->fourcc == V4L2_PIX_FMT_RGB24)
+ 		f->fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
++	else
++		f->fmt.pix.colorspace = V4L2_COLORSPACE_JPEG;
+ 	f->fmt.pix.priv = 0;
+ 
+ 	v4l2_dump_pix_format(1, bcm2835_v4l2_debug, &dev->v4l2_dev, &f->fmt.pix,
+@@ -766,21 +885,35 @@ static int vidioc_try_fmt_vid_cap(struct file *file, void *priv,
+ 	}
+ 
+ 	f->fmt.pix.field = V4L2_FIELD_NONE;
+-	/* image must be a multiple of 32 pixels wide and 16 lines high */
+-	v4l_bound_align_image(&f->fmt.pix.width, 48, MAX_WIDTH, 5,
+-			      &f->fmt.pix.height, 32, MAX_HEIGHT, 4, 0);
+-	f->fmt.pix.bytesperline = (f->fmt.pix.width * mfmt->depth) >> 3;
+-	f->fmt.pix.sizeimage = f->fmt.pix.height * f->fmt.pix.bytesperline;
+-	if (f->fmt.pix.sizeimage < MIN_BUFFER_SIZE)
++
++	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
++		"Clipping/aligning %dx%d format %08X\n",
++		f->fmt.pix.width, f->fmt.pix.height, f->fmt.pix.pixelformat);
++
++	v4l_bound_align_image(&f->fmt.pix.width, MIN_WIDTH, MAX_WIDTH, 1,
++			      &f->fmt.pix.height, MIN_HEIGHT, MAX_HEIGHT, 1, 0);
++	f->fmt.pix.bytesperline = (f->fmt.pix.width * mfmt->depth)>>3;
++
++	/* Image buffer has to be padded to allow for alignment, even though
++	 * we then remove that padding before delivering the buffer.
++	 */
++	f->fmt.pix.sizeimage = ((f->fmt.pix.height+15)&~15) *
++			(((f->fmt.pix.width+31)&~31) * mfmt->depth) >> 3;
++
++	if ((mfmt->flags & V4L2_FMT_FLAG_COMPRESSED) &&
++	    f->fmt.pix.sizeimage < MIN_BUFFER_SIZE)
+ 		f->fmt.pix.sizeimage = MIN_BUFFER_SIZE;
+ 
+-	if (mfmt->fourcc == V4L2_PIX_FMT_YUYV ||
+-	    mfmt->fourcc == V4L2_PIX_FMT_UYVY)
+-		f->fmt.pix.colorspace = V4L2_COLORSPACE_SMPTE170M;
+-	else
++	if (dev->capture.fmt->fourcc == V4L2_PIX_FMT_RGB24)
+ 		f->fmt.pix.colorspace = V4L2_COLORSPACE_SRGB;
++	else
++		f->fmt.pix.colorspace = V4L2_COLORSPACE_JPEG;
+ 	f->fmt.pix.priv = 0;
+ 
++	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
++		"Now %dx%d format %08X\n",
++		f->fmt.pix.width, f->fmt.pix.height, f->fmt.pix.pixelformat);
++
+ 	v4l2_dump_pix_format(1, bcm2835_v4l2_debug, &dev->v4l2_dev, &f->fmt.pix,
+ 			     __func__);
+ 	return 0;
+@@ -818,8 +951,8 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
+ 	switch (mfmt->mmal_component) {
+ 	case MMAL_COMPONENT_CAMERA:
+ 		/* Make a further decision on port based on resolution */
+-		if (f->fmt.pix.width <= MAX_VIDEO_MODE_WIDTH
+-		    && f->fmt.pix.height <= MAX_VIDEO_MODE_HEIGHT)
++		if (f->fmt.pix.width <= max_video_width
++		    && f->fmt.pix.height <= max_video_height)
+ 			camera_port = port =
+ 			    &dev->component[MMAL_COMPONENT_CAMERA]->
+ 			    output[MMAL_CAMERA_PORT_VIDEO];
+@@ -861,8 +994,9 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
+ 	camera_port->es.video.crop.y = 0;
+ 	camera_port->es.video.crop.width = f->fmt.pix.width;
+ 	camera_port->es.video.crop.height = f->fmt.pix.height;
+-	camera_port->es.video.frame_rate.num = 30;
++	camera_port->es.video.frame_rate.num = 0;
+ 	camera_port->es.video.frame_rate.den = 1;
++	camera_port->es.video.color_space = MMAL_COLOR_SPACE_JPEG_JFIF;
+ 
+ 	ret = vchiq_mmal_port_set_format(dev->instance, camera_port);
+ 
+@@ -896,8 +1030,10 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
+ 		preview_port->es.video.crop.y = 0;
+ 		preview_port->es.video.crop.width = f->fmt.pix.width;
+ 		preview_port->es.video.crop.height = f->fmt.pix.height;
+-		preview_port->es.video.frame_rate.num = 30;
+-		preview_port->es.video.frame_rate.den = 1;
++		preview_port->es.video.frame_rate.num =
++					  dev->capture.timeperframe.denominator;
++		preview_port->es.video.frame_rate.den =
++					  dev->capture.timeperframe.numerator;
+ 		ret = vchiq_mmal_port_set_format(dev->instance, preview_port);
+ 		if (overlay_enabled) {
+ 			ret = vchiq_mmal_port_connect_tunnel(
+@@ -913,7 +1049,9 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
+ 
+ 	if (ret) {
+ 		v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
+-			 "%s failed to set format\n", __func__);
++			 "%s failed to set format %dx%d %08X\n", __func__,
++			 f->fmt.pix.width, f->fmt.pix.height,
++			 f->fmt.pix.pixelformat);
+ 		/* ensure capture is not going to be tried */
+ 		dev->capture.port = NULL;
+ 	} else {
+@@ -927,69 +1065,91 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
+ 			camera_port->current_buffer.num =
+ 			    camera_port->recommended_buffer.num;
+ 
+-			port->format.encoding = mfmt->mmal;
+-			port->format.encoding_variant = 0;
+-			/* Set any encoding specific parameters */
+-			switch (mfmt->mmal_component) {
+-			case MMAL_COMPONENT_VIDEO_ENCODE:
+-				port->format.bitrate =
+-				    dev->capture.encode_bitrate;
+-				break;
+-			case MMAL_COMPONENT_IMAGE_ENCODE:
+-				/* Could set EXIF parameters here */
+-				break;
+-			default:
+-				break;
+-			}
+-			ret = vchiq_mmal_port_set_format(dev->instance, port);
+-
++			ret =
++			    vchiq_mmal_port_connect_tunnel(
++					dev->instance,
++					camera_port,
++					&encode_component->input[0]);
+ 			if (ret) {
+-				v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
+-					 "%s failed to set format\n", __func__);
++				v4l2_dbg(1, bcm2835_v4l2_debug,
++					 &dev->v4l2_dev,
++					 "%s failed to create connection\n",
++					 __func__);
++				/* ensure capture is not going to be tried */
++				dev->capture.port = NULL;
+ 			} else {
++				port->es.video.width = f->fmt.pix.width;
++				port->es.video.height = f->fmt.pix.height;
++				port->es.video.crop.x = 0;
++				port->es.video.crop.y = 0;
++				port->es.video.crop.width = f->fmt.pix.width;
++				port->es.video.crop.height = f->fmt.pix.height;
++				port->es.video.frame_rate.num =
++					  dev->capture.timeperframe.denominator;
++				port->es.video.frame_rate.den =
++					  dev->capture.timeperframe.numerator;
++
++				port->format.encoding = mfmt->mmal;
++				port->format.encoding_variant = 0;
++				/* Set any encoding specific parameters */
++				switch (mfmt->mmal_component) {
++				case MMAL_COMPONENT_VIDEO_ENCODE:
++					port->format.bitrate =
++					    dev->capture.encode_bitrate;
++					break;
++				case MMAL_COMPONENT_IMAGE_ENCODE:
++					/* Could set EXIF parameters here */
++					break;
++				default:
++					break;
++				}
++				ret = vchiq_mmal_port_set_format(dev->instance,
++								 port);
++				if (ret)
++					v4l2_dbg(1, bcm2835_v4l2_debug,
++						 &dev->v4l2_dev,
++						 "%s failed to set format %dx%d fmt %08X\n",
++						 __func__,
++						 f->fmt.pix.width,
++						 f->fmt.pix.height,
++						 f->fmt.pix.pixelformat
++						 );
++			}
++
++			if (!ret) {
+ 				ret = vchiq_mmal_component_enable(
+ 						dev->instance,
+ 						encode_component);
+ 				if (ret) {
+ 					v4l2_dbg(1, bcm2835_v4l2_debug,
+-						 &dev->v4l2_dev,
+-						 "%s Failed to enable encode components\n",
+-						 __func__);
+-				} else {
+-					/* configure buffering */
+-					port->current_buffer.num = 1;
+-					port->current_buffer.size =
+-					    f->fmt.pix.sizeimage;
+-					if (port->format.encoding ==
+-					    MMAL_ENCODING_JPEG) {
+-						v4l2_dbg(1, bcm2835_v4l2_debug,
+-							 &dev->v4l2_dev,
+-							 "JPEG - fiddle buffer size\n");
+-						port->current_buffer.size =
+-						    (f->fmt.pix.sizeimage <
+-						     (100 << 10))
+-						    ? (100 << 10) : f->fmt.pix.
+-						    sizeimage;
+-					}
++					   &dev->v4l2_dev,
++					   "%s Failed to enable encode components\n",
++					   __func__);
++				}
++			}
++			if (!ret) {
++				/* configure buffering */
++				port->current_buffer.num = 1;
++				port->current_buffer.size =
++				    f->fmt.pix.sizeimage;
++				if (port->format.encoding ==
++				    MMAL_ENCODING_JPEG) {
+ 					v4l2_dbg(1, bcm2835_v4l2_debug,
+-						 &dev->v4l2_dev,
+-						 "vid_cap - current_buffer.size being set to %d\n",
+-						 f->fmt.pix.sizeimage);
+-					port->current_buffer.alignment = 0;
+-					ret =
+-					    vchiq_mmal_port_connect_tunnel(
+-							dev->instance,
+-							camera_port,
+-							&encode_component->input[0]);
+-					if (ret) {
+-						v4l2_dbg(1, bcm2835_v4l2_debug,
+-							 &dev->v4l2_dev,
+-							 "%s failed to create connection\n",
+-							 __func__);
+-						/* ensure capture is not going to be tried */
+-						dev->capture.port = NULL;
+-					}
++					    &dev->v4l2_dev,
++					    "JPG - buf size now %d was %d\n",
++					    f->fmt.pix.sizeimage,
++					    port->current_buffer.size);
++					port->current_buffer.size =
++					    (f->fmt.pix.sizeimage <
++					     (100 << 10))
++					    ? (100 << 10) : f->fmt.pix.
++					    sizeimage;
+ 				}
++				v4l2_dbg(1, bcm2835_v4l2_debug,
++					 &dev->v4l2_dev,
++					 "vid_cap - cur_buf.size set to %d\n",
++					 f->fmt.pix.sizeimage);
++				port->current_buffer.alignment = 0;
+ 			}
+ 		} else {
+ 			/* configure buffering */
+@@ -1001,13 +1161,20 @@ static int mmal_setup_components(struct bm2835_mmal_dev *dev,
+ 		if (!ret) {
+ 			dev->capture.fmt = mfmt;
+ 			dev->capture.stride = f->fmt.pix.bytesperline;
+-			dev->capture.width = port->es.video.crop.width;
+-			dev->capture.height = port->es.video.crop.height;
++			dev->capture.width = camera_port->es.video.crop.width;
++			dev->capture.height = camera_port->es.video.crop.height;
++			dev->capture.buffersize = port->current_buffer.size;
+ 
+ 			/* select port for capture */
+ 			dev->capture.port = port;
+ 			dev->capture.camera_port = camera_port;
+ 			dev->capture.encode_component = encode_component;
++			v4l2_dbg(1, bcm2835_v4l2_debug,
++				 &dev->v4l2_dev,
++				"Set dev->capture.fmt %08X, %dx%d, stride %d, size %d",
++				port->format.encoding,
++				dev->capture.width, dev->capture.height,
++				dev->capture.stride, dev->capture.buffersize);
+ 		}
+ 	}
+ 
+@@ -1048,14 +1215,115 @@ static int vidioc_s_fmt_vid_cap(struct file *file, void *priv,
+ 	}
+ 
+ 	ret = mmal_setup_components(dev, f);
+-	if (ret != 0)
++	if (ret != 0) {
+ 		v4l2_err(&dev->v4l2_dev,
+ 			 "%s: failed to setup mmal components: %d\n",
+ 			 __func__, ret);
++		ret = -EINVAL;
++	}
+ 
+ 	return ret;
+ }
+ 
++int vidioc_enum_framesizes(struct file *file, void *fh,
++			   struct v4l2_frmsizeenum *fsize)
++{
++	static const struct v4l2_frmsize_stepwise sizes = {
++		MIN_WIDTH, MAX_WIDTH, 2,
++		MIN_HEIGHT, MAX_HEIGHT, 2
++	};
++	int i;
++
++	if (fsize->index)
++		return -EINVAL;
++	for (i = 0; i < ARRAY_SIZE(formats); i++)
++		if (formats[i].fourcc == fsize->pixel_format)
++			break;
++	if (i == ARRAY_SIZE(formats))
++		return -EINVAL;
++	fsize->type = V4L2_FRMSIZE_TYPE_STEPWISE;
++	fsize->stepwise = sizes;
++	return 0;
++}
++
++/* timeperframe is arbitrary and continous */
++static int vidioc_enum_frameintervals(struct file *file, void *priv,
++					     struct v4l2_frmivalenum *fival)
++{
++	int i;
++
++	if (fival->index)
++		return -EINVAL;
++
++	for (i = 0; i < ARRAY_SIZE(formats); i++)
++		if (formats[i].fourcc == fival->pixel_format)
++			break;
++	if (i == ARRAY_SIZE(formats))
++		return -EINVAL;
++
++	/* regarding width & height - we support any within range */
++	if (fival->width < MIN_WIDTH || fival->width > MAX_WIDTH ||
++	    fival->height < MIN_HEIGHT || fival->height > MAX_HEIGHT)
++		return -EINVAL;
++
++	fival->type = V4L2_FRMIVAL_TYPE_CONTINUOUS;
++
++	/* fill in stepwise (step=1.0 is requred by V4L2 spec) */
++	fival->stepwise.min  = tpf_min;
++	fival->stepwise.max  = tpf_max;
++	fival->stepwise.step = (struct v4l2_fract) {1, 1};
++
++	return 0;
++}
++
++static int vidioc_g_parm(struct file *file, void *priv,
++			  struct v4l2_streamparm *parm)
++{
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
++
++	if (parm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
++		return -EINVAL;
++
++	parm->parm.capture.capability   = V4L2_CAP_TIMEPERFRAME;
++	parm->parm.capture.timeperframe = dev->capture.timeperframe;
++	parm->parm.capture.readbuffers  = 1;
++	return 0;
++}
++
++#define FRACT_CMP(a, OP, b)	\
++	((u64)(a).numerator * (b).denominator  OP  \
++	 (u64)(b).numerator * (a).denominator)
++
++static int vidioc_s_parm(struct file *file, void *priv,
++			  struct v4l2_streamparm *parm)
++{
++	struct bm2835_mmal_dev *dev = video_drvdata(file);
++	struct v4l2_fract tpf;
++	struct mmal_parameter_rational fps_param;
++
++	if (parm->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
++		return -EINVAL;
++
++	tpf = parm->parm.capture.timeperframe;
++
++	/* tpf: {*, 0} resets timing; clip to [min, max]*/
++	tpf = tpf.denominator ? tpf : tpf_default;
++	tpf = FRACT_CMP(tpf, <, tpf_min) ? tpf_min : tpf;
++	tpf = FRACT_CMP(tpf, >, tpf_max) ? tpf_max : tpf;
++
++	dev->capture.timeperframe = tpf;
++	parm->parm.capture.timeperframe = tpf;
++	parm->parm.capture.readbuffers  = 1;
++
++	fps_param.num = 0;	/* Select variable fps, and then use
++				 * FPS_RANGE to select the actual limits.
++				 */
++	fps_param.den = 1;
++	set_framerate_params(dev);
++
++	return 0;
++}
++
+ static const struct v4l2_ioctl_ops camera0_ioctl_ops = {
+ 	/* overlay */
+ 	.vidioc_enum_fmt_vid_overlay = vidioc_enum_fmt_vid_overlay,
+@@ -1084,6 +1352,51 @@ static const struct v4l2_ioctl_ops camera0_ioctl_ops = {
+ 	.vidioc_querybuf = vb2_ioctl_querybuf,
+ 	.vidioc_qbuf = vb2_ioctl_qbuf,
+ 	.vidioc_dqbuf = vb2_ioctl_dqbuf,
++	.vidioc_enum_framesizes = vidioc_enum_framesizes,
++	.vidioc_enum_frameintervals = vidioc_enum_frameintervals,
++	.vidioc_g_parm        = vidioc_g_parm,
++	.vidioc_s_parm        = vidioc_s_parm,
++	.vidioc_streamon = vb2_ioctl_streamon,
++	.vidioc_streamoff = vb2_ioctl_streamoff,
++
++	.vidioc_log_status = v4l2_ctrl_log_status,
++	.vidioc_subscribe_event = v4l2_ctrl_subscribe_event,
++	.vidioc_unsubscribe_event = v4l2_event_unsubscribe,
++};
++
++static const struct v4l2_ioctl_ops camera0_ioctl_ops_gstreamer = {
++	/* overlay */
++	.vidioc_enum_fmt_vid_overlay = vidioc_enum_fmt_vid_overlay,
++	.vidioc_g_fmt_vid_overlay = vidioc_g_fmt_vid_overlay,
++	.vidioc_try_fmt_vid_overlay = vidioc_try_fmt_vid_overlay,
++	.vidioc_s_fmt_vid_overlay = vidioc_s_fmt_vid_overlay,
++	.vidioc_overlay = vidioc_overlay,
++	.vidioc_g_fbuf = vidioc_g_fbuf,
++
++	/* inputs */
++	.vidioc_enum_input = vidioc_enum_input,
++	.vidioc_g_input = vidioc_g_input,
++	.vidioc_s_input = vidioc_s_input,
++
++	/* capture */
++	.vidioc_querycap = vidioc_querycap,
++	.vidioc_enum_fmt_vid_cap = vidioc_enum_fmt_vid_cap,
++	.vidioc_g_fmt_vid_cap = vidioc_g_fmt_vid_cap,
++	.vidioc_try_fmt_vid_cap = vidioc_try_fmt_vid_cap,
++	.vidioc_s_fmt_vid_cap = vidioc_s_fmt_vid_cap,
++
++	/* buffer management */
++	.vidioc_reqbufs = vb2_ioctl_reqbufs,
++	.vidioc_create_bufs = vb2_ioctl_create_bufs,
++	.vidioc_prepare_buf = vb2_ioctl_prepare_buf,
++	.vidioc_querybuf = vb2_ioctl_querybuf,
++	.vidioc_qbuf = vb2_ioctl_qbuf,
++	.vidioc_dqbuf = vb2_ioctl_dqbuf,
++	/* Remove this function ptr to fix gstreamer bug
++	.vidioc_enum_framesizes = vidioc_enum_framesizes, */
++	.vidioc_enum_frameintervals = vidioc_enum_frameintervals,
++	.vidioc_g_parm        = vidioc_g_parm,
++	.vidioc_s_parm        = vidioc_s_parm,
+ 	.vidioc_streamon = vb2_ioctl_streamon,
+ 	.vidioc_streamoff = vb2_ioctl_streamoff,
+ 
+@@ -1122,8 +1435,10 @@ static int set_camera_parameters(struct vchiq_mmal_instance *instance,
+ 		.max_stills_h = MAX_HEIGHT,
+ 		.stills_yuv422 = 1,
+ 		.one_shot_stills = 1,
+-		.max_preview_video_w = 1920,
+-		.max_preview_video_h = 1088,
++		.max_preview_video_w = (max_video_width > 1920) ?
++						max_video_width : 1920,
++		.max_preview_video_h = (max_video_height > 1088) ?
++						max_video_height : 1088,
+ 		.num_preview_video_frames = 3,
+ 		.stills_capture_circular_buffer_height = 0,
+ 		.fast_preview_resume = 0,
+@@ -1141,6 +1456,7 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
+ {
+ 	int ret;
+ 	struct mmal_es_format *format;
++	u32 bool_true = 1;
+ 
+ 	ret = vchiq_mmal_init(&dev->instance);
+ 	if (ret < 0)
+@@ -1176,8 +1492,8 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
+ 	format->es->video.crop.y = 0;
+ 	format->es->video.crop.width = 1024;
+ 	format->es->video.crop.height = 768;
+-	format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
+-	format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
++	format->es->video.frame_rate.num = 0; /* Rely on fps_range */
++	format->es->video.frame_rate.den = 1;
+ 
+ 	format =
+ 	    &dev->component[MMAL_COMPONENT_CAMERA]->
+@@ -1192,8 +1508,14 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
+ 	format->es->video.crop.y = 0;
+ 	format->es->video.crop.width = 1024;
+ 	format->es->video.crop.height = 768;
+-	format->es->video.frame_rate.num = PREVIEW_FRAME_RATE_NUM;
+-	format->es->video.frame_rate.den = PREVIEW_FRAME_RATE_DEN;
++	format->es->video.frame_rate.num = 0; /* Rely on fps_range */
++	format->es->video.frame_rate.den = 1;
++
++	vchiq_mmal_port_parameter_set(dev->instance,
++		&dev->component[MMAL_COMPONENT_CAMERA]->
++				output[MMAL_CAMERA_PORT_VIDEO],
++		MMAL_PARAMETER_NO_IMAGE_PADDING,
++		&bool_true, sizeof(bool_true));
+ 
+ 	format =
+ 	    &dev->component[MMAL_COMPONENT_CAMERA]->
+@@ -1207,13 +1529,22 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
+ 	format->es->video.crop.y = 0;
+ 	format->es->video.crop.width = 2592;
+ 	format->es->video.crop.height = 1944;
+-	format->es->video.frame_rate.num = 30;
++	format->es->video.frame_rate.num = 0; /* Rely on fps_range */
+ 	format->es->video.frame_rate.den = 1;
+ 
+ 	dev->capture.width = format->es->video.width;
+ 	dev->capture.height = format->es->video.height;
+ 	dev->capture.fmt = &formats[0];
+ 	dev->capture.encode_component = NULL;
++	dev->capture.timeperframe = tpf_default;
++	dev->capture.enc_profile = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
++	dev->capture.enc_level = V4L2_MPEG_VIDEO_H264_LEVEL_4_0;
++
++	vchiq_mmal_port_parameter_set(dev->instance,
++		&dev->component[MMAL_COMPONENT_CAMERA]->
++			output[MMAL_CAMERA_PORT_CAPTURE],
++		MMAL_PARAMETER_NO_IMAGE_PADDING,
++		&bool_true, sizeof(bool_true));
+ 
+ 	/* get the preview component ready */
+ 	ret = vchiq_mmal_component_init(
+@@ -1260,6 +1591,14 @@ static int __init mmal_init(struct bm2835_mmal_dev *dev)
+ 	}
+ 
+ 	{
++		struct vchiq_mmal_port *encoder_port =
++			&dev->component[MMAL_COMPONENT_VIDEO_ENCODE]->output[0];
++		encoder_port->format.encoding = MMAL_ENCODING_H264;
++		ret = vchiq_mmal_port_set_format(dev->instance,
++			encoder_port);
++	}
++
++	{
+ 		unsigned int enable = 1;
+ 		vchiq_mmal_port_parameter_set(
+ 			dev->instance,
+@@ -1312,6 +1651,11 @@ static int __init bm2835_mmal_init_device(struct bm2835_mmal_dev *dev,
+ 	int ret;
+ 
+ 	*vfd = vdev_template;
++	if (gst_v4l2src_is_broken) {
++		v4l2_info(&dev->v4l2_dev,
++		  "Work-around for gstreamer issue is active.\n");
++		vfd->ioctl_ops = &camera0_ioctl_ops_gstreamer;
++	}
+ 
+ 	vfd->v4l2_dev = &dev->v4l2_dev;
+ 
+@@ -1326,8 +1670,9 @@ static int __init bm2835_mmal_init_device(struct bm2835_mmal_dev *dev,
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	v4l2_info(vfd->v4l2_dev, "V4L2 device registered as %s\n",
+-		  video_device_node_name(vfd));
++	v4l2_info(vfd->v4l2_dev,
++		"V4L2 device registered as %s - stills mode > %dx%d\n",
++		video_device_node_name(vfd), max_video_width, max_video_height);
+ 
+ 	return 0;
+ }
+@@ -1335,9 +1680,9 @@ static int __init bm2835_mmal_init_device(struct bm2835_mmal_dev *dev,
+ static struct v4l2_format default_v4l2_format = {
+ 	.fmt.pix.pixelformat = V4L2_PIX_FMT_JPEG,
+ 	.fmt.pix.width = 1024,
+-	.fmt.pix.bytesperline = 1024 * 3 / 2,
++	.fmt.pix.bytesperline = 1024,
+ 	.fmt.pix.height = 768,
+-	.fmt.pix.sizeimage = 1<<18,
++	.fmt.pix.sizeimage = 1024*768,
+ };
+ 
+ static int __init bm2835_mmal_init(void)
+@@ -1400,6 +1745,9 @@ static int __init bm2835_mmal_init(void)
+ 	if (ret < 0)
+ 		goto unreg_dev;
+ 
++	/* Really want to call vidioc_s_fmt_vid_cap with the default
++	 * format, but currently the APIs don't join up.
++	 */
+ 	ret = mmal_setup_components(dev, &default_v4l2_format);
+ 	if (ret < 0) {
+ 		v4l2_err(&dev->v4l2_dev,
+diff --git a/drivers/media/platform/bcm2835/bcm2835-camera.h b/drivers/media/platform/bcm2835/bcm2835-camera.h
+index 883eab7..7fe9f65 100644
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.h
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.h
+@@ -15,7 +15,7 @@
+  * core driver device
+  */
+ 
+-#define V4L2_CTRL_COUNT 18 /* number of v4l controls */
++#define V4L2_CTRL_COUNT 28 /* number of v4l controls */
+ 
+ enum {
+ 	MMAL_COMPONENT_CAMERA = 0,
+@@ -32,9 +32,6 @@ enum {
+ 	MMAL_CAMERA_PORT_COUNT
+ };
+ 
+-#define PREVIEW_FRAME_RATE_NUM 30
+-#define PREVIEW_FRAME_RATE_DEN 1
+-
+ #define PREVIEW_LAYER      2
+ 
+ extern int bcm2835_v4l2_debug;
+@@ -48,9 +45,19 @@ struct bm2835_mmal_dev {
+ 	/* controls */
+ 	struct v4l2_ctrl_handler  ctrl_handler;
+ 	struct v4l2_ctrl          *ctrls[V4L2_CTRL_COUNT];
++	enum v4l2_scene_mode	  scene_mode;
+ 	struct mmal_colourfx      colourfx;
+ 	int                       hflip;
+ 	int                       vflip;
++	int			  red_gain;
++	int			  blue_gain;
++	enum mmal_parameter_exposuremode exposure_mode_user;
++	enum v4l2_exposure_auto_type exposure_mode_v4l2_user;
++	/* active exposure mode may differ if selected via a scene mode */
++	enum mmal_parameter_exposuremode exposure_mode_active;
++	enum mmal_parameter_exposuremeteringmode metering_mode;
++	unsigned int		  manual_shutter_speed;
++	bool			  exp_auto_priority;
+ 
+ 	/* allocated mmal instance and components */
+ 	struct vchiq_mmal_instance   *instance;
+@@ -63,12 +70,18 @@ struct bm2835_mmal_dev {
+ 		unsigned int     width;  /* width */
+ 		unsigned int     height;  /* height */
+ 		unsigned int     stride;  /* stride */
++		unsigned int     buffersize; /* buffer size with padding */
+ 		struct mmal_fmt  *fmt;
++		struct v4l2_fract timeperframe;
+ 
+ 		/* H264 encode bitrate */
+ 		int         encode_bitrate;
+ 		/* H264 bitrate mode. CBR/VBR */
+ 		int         encode_bitrate_mode;
++		/* H264 profile */
++		enum v4l2_mpeg_video_h264_profile enc_profile;
++		/* H264 level */
++		enum v4l2_mpeg_video_h264_level enc_level;
+ 		/* JPEG Q-factor */
+ 		int         q_factor;
+ 
+@@ -98,7 +111,7 @@ int bm2835_mmal_init_controls(
+ 			struct v4l2_ctrl_handler *hdl);
+ 
+ int bm2835_mmal_set_all_camera_controls(struct bm2835_mmal_dev *dev);
+-
++int set_framerate_params(struct bm2835_mmal_dev *dev);
+ 
+ /* Debug helpers */
+ 
+diff --git a/drivers/media/platform/bcm2835/controls.c b/drivers/media/platform/bcm2835/controls.c
+index d1408e5..3017b94 100644
+--- a/drivers/media/platform/bcm2835/controls.c
++++ b/drivers/media/platform/bcm2835/controls.c
+@@ -30,11 +30,23 @@
+ #include "mmal-parameters.h"
+ #include "bcm2835-camera.h"
+ 
+-/* The supported V4L2_CID_AUTO_EXPOSURE_BIAS values are from -24 to +24.
+- * These are in 1/6th increments so the effective range is -4.0EV to +4.0EV.
++/* The supported V4L2_CID_AUTO_EXPOSURE_BIAS values are from -4.0 to +4.0.
++ * MMAL values are in 1/6th increments so the MMAL range is -24 to +24.
++ * V4L2 docs say value "is expressed in terms of EV, drivers should interpret
++ * the values as 0.001 EV units, where the value 1000 stands for +1 EV."
++ * V4L2 is limited to a max of 32 values in a menu, so count in 1/3rds from
++ * -4 to +4
+  */
+ static const s64 ev_bias_qmenu[] = {
+-	-24, -21, -18, -15, -12, -9, -6, -3, 0, 3, 6, 9, 12, 15, 18, 21, 24
++	-4000, -3667, -3333,
++	-3000, -2667, -2333,
++	-2000, -1667, -1333,
++	-1000,  -667,  -333,
++	    0,   333,   667,
++	 1000,  1333,  1667,
++	 2000,  2333,  2667,
++	 3000,  3333,  3667,
++	 4000
+ };
+ 
+ /* Supported ISO values
+@@ -44,13 +56,19 @@ static const s64 iso_qmenu[] = {
+ 	0, 100, 200, 400, 800,
+ };
+ 
++static const s64 mains_freq_qmenu[] = {
++	V4L2_CID_POWER_LINE_FREQUENCY_DISABLED,
++	V4L2_CID_POWER_LINE_FREQUENCY_50HZ,
++	V4L2_CID_POWER_LINE_FREQUENCY_60HZ,
++	V4L2_CID_POWER_LINE_FREQUENCY_AUTO
++};
++
+ /* Supported video encode modes */
+ static const s64 bitrate_mode_qmenu[] = {
+ 	(s64)V4L2_MPEG_VIDEO_BITRATE_MODE_VBR,
+ 	(s64)V4L2_MPEG_VIDEO_BITRATE_MODE_CBR,
+ };
+ 
+-
+ enum bm2835_mmal_ctrl_type {
+ 	MMAL_CONTROL_TYPE_STD,
+ 	MMAL_CONTROL_TYPE_STD_MENU,
+@@ -77,6 +95,7 @@ struct bm2835_mmal_v4l2_ctrl {
+ 	const s64 *imenu; /* integer menu array */
+ 	u32 mmal_id; /* mmal parameter id */
+ 	bm2835_mmal_v4l2_ctrl_cb *setter;
++	bool ignore_errors;
+ };
+ 
+ struct v4l2_to_mmal_effects_setting {
+@@ -126,6 +145,25 @@ static const struct v4l2_to_mmal_effects_setting
+ 		1,   1,    0,    0,   0, {0, 0, 0, 0, 0} }
+ };
+ 
++struct v4l2_mmal_scene_config {
++	enum v4l2_scene_mode			v4l2_scene;
++	enum mmal_parameter_exposuremode	exposure_mode;
++	enum mmal_parameter_exposuremeteringmode metering_mode;
++};
++
++static const struct v4l2_mmal_scene_config scene_configs[] = {
++	/* V4L2_SCENE_MODE_NONE automatically added */
++	{
++		V4L2_SCENE_MODE_NIGHT,
++		MMAL_PARAM_EXPOSUREMODE_NIGHT,
++		MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE
++	},
++	{
++		V4L2_SCENE_MODE_SPORTS,
++		MMAL_PARAM_EXPOSUREMODE_SPORTS,
++		MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE
++	},
++};
+ 
+ /* control handlers*/
+ 
+@@ -133,10 +171,7 @@ static int ctrl_set_rational(struct bm2835_mmal_dev *dev,
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+-	struct  {
+-		s32 num;    /**< Numerator */
+-		s32 den;    /**< Denominator */
+-	} rational_value;
++	struct mmal_parameter_rational rational_value;
+ 	struct vchiq_mmal_port *control;
+ 
+ 	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
+@@ -166,6 +201,41 @@ static int ctrl_set_value(struct bm2835_mmal_dev *dev,
+ 					     &u32_value, sizeof(u32_value));
+ }
+ 
++static int ctrl_set_value_menu(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	u32 u32_value;
++	struct vchiq_mmal_port *control;
++
++	if (ctrl->val > mmal_ctrl->max || ctrl->val < mmal_ctrl->min)
++		return 1;
++
++	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
++
++	u32_value = mmal_ctrl->imenu[ctrl->val];
++
++	return vchiq_mmal_port_parameter_set(dev->instance, control,
++					     mmal_ctrl->mmal_id,
++					     &u32_value, sizeof(u32_value));
++}
++
++static int ctrl_set_value_ev(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	s32 s32_value;
++	struct vchiq_mmal_port *control;
++
++	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
++
++	s32_value = (ctrl->val-12)*2;	/* Convert from index to 1/6ths */
++
++	return vchiq_mmal_port_parameter_set(dev->instance, control,
++					     mmal_ctrl->mmal_id,
++					     &s32_value, sizeof(s32_value));
++}
++
+ static int ctrl_set_rotate(struct bm2835_mmal_dev *dev,
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+@@ -245,37 +315,97 @@ static int ctrl_set_exposure(struct bm2835_mmal_dev *dev,
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+-	u32 u32_value;
++	enum mmal_parameter_exposuremode exp_mode = dev->exposure_mode_user;
++	u32 shutter_speed = 0;
+ 	struct vchiq_mmal_port *control;
++	int ret = 0;
+ 
+ 	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
+ 
++	if (mmal_ctrl->mmal_id == MMAL_PARAMETER_SHUTTER_SPEED)	{
++		/* V4L2 is in 100usec increments.
++		 * MMAL is 1usec.
++		 */
++		dev->manual_shutter_speed = ctrl->val * 100;
++	} else if (mmal_ctrl->mmal_id == MMAL_PARAMETER_EXPOSURE_MODE) {
++		switch (ctrl->val) {
++		case V4L2_EXPOSURE_AUTO:
++			exp_mode = MMAL_PARAM_EXPOSUREMODE_AUTO;
++			break;
++
++		case V4L2_EXPOSURE_MANUAL:
++			exp_mode = MMAL_PARAM_EXPOSUREMODE_OFF;
++			break;
++		}
++		dev->exposure_mode_user = exp_mode;
++		dev->exposure_mode_v4l2_user = ctrl->val;
++	} else if (mmal_ctrl->id == V4L2_CID_EXPOSURE_AUTO_PRIORITY) {
++		dev->exp_auto_priority = ctrl->val;
++	}
++
++	if (dev->scene_mode == V4L2_SCENE_MODE_NONE) {
++		if (exp_mode == MMAL_PARAM_EXPOSUREMODE_OFF)
++			shutter_speed = dev->manual_shutter_speed;
++
++		ret = vchiq_mmal_port_parameter_set(dev->instance,
++					control,
++					MMAL_PARAMETER_SHUTTER_SPEED,
++					&shutter_speed,
++					sizeof(shutter_speed));
++		ret += vchiq_mmal_port_parameter_set(dev->instance,
++					control,
++					MMAL_PARAMETER_EXPOSURE_MODE,
++					&exp_mode,
++					sizeof(u32));
++		dev->exposure_mode_active = exp_mode;
++	}
++	/* exposure_dynamic_framerate (V4L2_CID_EXPOSURE_AUTO_PRIORITY) should
++	 * always apply irrespective of scene mode.
++	 */
++	ret += set_framerate_params(dev);
++
++	return ret;
++}
++
++static int ctrl_set_metering_mode(struct bm2835_mmal_dev *dev,
++			   struct v4l2_ctrl *ctrl,
++			   const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
+ 	switch (ctrl->val) {
+-	case V4L2_EXPOSURE_AUTO:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_AUTO;
++	case V4L2_EXPOSURE_METERING_AVERAGE:
++		dev->metering_mode = MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE;
+ 		break;
+ 
+-	case V4L2_EXPOSURE_MANUAL:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_OFF;
++	case V4L2_EXPOSURE_METERING_CENTER_WEIGHTED:
++		dev->metering_mode = MMAL_PARAM_EXPOSUREMETERINGMODE_BACKLIT;
+ 		break;
+ 
+-	case V4L2_EXPOSURE_SHUTTER_PRIORITY:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_SPORTS;
++	case V4L2_EXPOSURE_METERING_SPOT:
++		dev->metering_mode = MMAL_PARAM_EXPOSUREMETERINGMODE_SPOT;
+ 		break;
+ 
+-	case V4L2_EXPOSURE_APERTURE_PRIORITY:
+-		u32_value = MMAL_PARAM_EXPOSUREMODE_NIGHT;
++	/* todo matrix weighting not added to Linux API till 3.9
++	case V4L2_EXPOSURE_METERING_MATRIX:
++		dev->metering_mode = MMAL_PARAM_EXPOSUREMETERINGMODE_MATRIX;
+ 		break;
++	*/
+ 
+ 	}
+ 
+-	/* todo: what about the other ten modes there are MMAL parameters for */
+-	return vchiq_mmal_port_parameter_set(dev->instance, control,
++	if (dev->scene_mode == V4L2_SCENE_MODE_NONE) {
++		struct vchiq_mmal_port *control;
++		u32 u32_value = dev->metering_mode;
++
++		control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
++
++		return vchiq_mmal_port_parameter_set(dev->instance, control,
+ 					     mmal_ctrl->mmal_id,
+ 					     &u32_value, sizeof(u32_value));
++	} else
++		return 0;
+ }
+ 
+-static int ctrl_set_metering_mode(struct bm2835_mmal_dev *dev,
++static int ctrl_set_flicker_avoidance(struct bm2835_mmal_dev *dev,
+ 			   struct v4l2_ctrl *ctrl,
+ 			   const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+@@ -285,24 +415,18 @@ static int ctrl_set_metering_mode(struct bm2835_mmal_dev *dev,
+ 	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
+ 
+ 	switch (ctrl->val) {
+-	case V4L2_EXPOSURE_METERING_AVERAGE:
+-		u32_value = MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE;
++	case V4L2_CID_POWER_LINE_FREQUENCY_DISABLED:
++		u32_value = MMAL_PARAM_FLICKERAVOID_OFF;
+ 		break;
+-
+-	case V4L2_EXPOSURE_METERING_CENTER_WEIGHTED:
+-		u32_value = MMAL_PARAM_EXPOSUREMETERINGMODE_BACKLIT;
++	case V4L2_CID_POWER_LINE_FREQUENCY_50HZ:
++		u32_value = MMAL_PARAM_FLICKERAVOID_50HZ;
+ 		break;
+-
+-	case V4L2_EXPOSURE_METERING_SPOT:
+-		u32_value = MMAL_PARAM_EXPOSUREMETERINGMODE_SPOT;
++	case V4L2_CID_POWER_LINE_FREQUENCY_60HZ:
++		u32_value = MMAL_PARAM_FLICKERAVOID_60HZ;
+ 		break;
+-
+-	/* todo matrix weighting not added to Linux API till 3.9
+-	case V4L2_EXPOSURE_METERING_MATRIX:
+-		u32_value = MMAL_PARAM_EXPOSUREMETERINGMODE_MATRIX;
++	case V4L2_CID_POWER_LINE_FREQUENCY_AUTO:
++		u32_value = MMAL_PARAM_FLICKERAVOID_AUTO;
+ 		break;
+-	*/
+-
+ 	}
+ 
+ 	return vchiq_mmal_port_parameter_set(dev->instance, control,
+@@ -367,6 +491,29 @@ static int ctrl_set_awb_mode(struct bm2835_mmal_dev *dev,
+ 					     &u32_value, sizeof(u32_value));
+ }
+ 
++static int ctrl_set_awb_gains(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	struct vchiq_mmal_port *control;
++	struct mmal_parameter_awbgains gains;
++
++	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
++
++	if (ctrl->id == V4L2_CID_RED_BALANCE)
++		dev->red_gain = ctrl->val;
++	else if (ctrl->id == V4L2_CID_BLUE_BALANCE)
++		dev->blue_gain = ctrl->val;
++
++	gains.r_gain.num = dev->red_gain;
++	gains.b_gain.num = dev->blue_gain;
++	gains.r_gain.den = gains.b_gain.den = 1000;
++
++	return vchiq_mmal_port_parameter_set(dev->instance, control,
++					     mmal_ctrl->mmal_id,
++					     &gains, sizeof(gains));
++}
++
+ static int ctrl_set_image_effect(struct bm2835_mmal_dev *dev,
+ 		   struct v4l2_ctrl *ctrl,
+ 		   const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+@@ -443,8 +590,8 @@ static int ctrl_set_colfx(struct bm2835_mmal_dev *dev,
+ 					&dev->colourfx, sizeof(dev->colourfx));
+ 
+ 	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
+-		 "After: mmal_ctrl:%p ctrl id:0x%x ctrl val:%d ret %d(%d)\n",
+-			mmal_ctrl, ctrl->id, ctrl->val, ret,
++		 "%s: After: mmal_ctrl:%p ctrl id:0x%x ctrl val:%d ret %d(%d)\n",
++			__func__, mmal_ctrl, ctrl->id, ctrl->val, ret,
+ 			(ret == 0 ? 0 : -EINVAL));
+ 	return (ret == 0 ? 0 : EINVAL);
+ }
+@@ -494,7 +641,7 @@ static int ctrl_set_bitrate_mode(struct bm2835_mmal_dev *dev,
+ 	return 0;
+ }
+ 
+-static int ctrl_set_q_factor(struct bm2835_mmal_dev *dev,
++static int ctrl_set_image_encode_output(struct bm2835_mmal_dev *dev,
+ 		      struct v4l2_ctrl *ctrl,
+ 		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
+ {
+@@ -510,12 +657,247 @@ static int ctrl_set_q_factor(struct bm2835_mmal_dev *dev,
+ 					     &u32_value, sizeof(u32_value));
+ }
+ 
++static int ctrl_set_video_encode_param_output(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	u32 u32_value;
++	struct vchiq_mmal_port *vid_enc_ctl;
++
++	vid_enc_ctl = &dev->component[MMAL_COMPONENT_VIDEO_ENCODE]->output[0];
++
++	u32_value = ctrl->val;
++
++	return vchiq_mmal_port_parameter_set(dev->instance, vid_enc_ctl,
++					     mmal_ctrl->mmal_id,
++					     &u32_value, sizeof(u32_value));
++}
++
++static int ctrl_set_video_encode_profile_level(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	struct mmal_parameter_video_profile param;
++	int ret = 0;
++
++	if (ctrl->id == V4L2_CID_MPEG_VIDEO_H264_PROFILE) {
++		switch (ctrl->val) {
++		case V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE:
++		case V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_BASELINE:
++		case V4L2_MPEG_VIDEO_H264_PROFILE_MAIN:
++		case V4L2_MPEG_VIDEO_H264_PROFILE_HIGH:
++			dev->capture.enc_profile = ctrl->val;
++			break;
++		default:
++			ret = -EINVAL;
++			break;
++		}
++	} else if (ctrl->id == V4L2_CID_MPEG_VIDEO_H264_LEVEL) {
++		switch (ctrl->val) {
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_0:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1B:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_1:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_2:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_3:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_2_0:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_2_1:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_2_2:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_3_0:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_3_1:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_3_2:
++		case V4L2_MPEG_VIDEO_H264_LEVEL_4_0:
++			dev->capture.enc_level = ctrl->val;
++			break;
++		default:
++			ret = -EINVAL;
++			break;
++		}
++	}
++
++	if (!ret) {
++		switch (dev->capture.enc_profile) {
++		case V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE:
++			param.profile = MMAL_VIDEO_PROFILE_H264_BASELINE;
++			break;
++		case V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_BASELINE:
++			param.profile =
++				MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE;
++			break;
++		case V4L2_MPEG_VIDEO_H264_PROFILE_MAIN:
++			param.profile = MMAL_VIDEO_PROFILE_H264_MAIN;
++			break;
++		case V4L2_MPEG_VIDEO_H264_PROFILE_HIGH:
++			param.profile = MMAL_VIDEO_PROFILE_H264_HIGH;
++			break;
++		default:
++			/* Should never get here */
++			break;
++		}
++
++		switch (dev->capture.enc_level) {
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_0:
++			param.level = MMAL_VIDEO_LEVEL_H264_1;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1B:
++			param.level = MMAL_VIDEO_LEVEL_H264_1b;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_1:
++			param.level = MMAL_VIDEO_LEVEL_H264_11;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_2:
++			param.level = MMAL_VIDEO_LEVEL_H264_12;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_1_3:
++			param.level = MMAL_VIDEO_LEVEL_H264_13;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_2_0:
++			param.level = MMAL_VIDEO_LEVEL_H264_2;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_2_1:
++			param.level = MMAL_VIDEO_LEVEL_H264_21;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_2_2:
++			param.level = MMAL_VIDEO_LEVEL_H264_22;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_3_0:
++			param.level = MMAL_VIDEO_LEVEL_H264_3;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_3_1:
++			param.level = MMAL_VIDEO_LEVEL_H264_31;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_3_2:
++			param.level = MMAL_VIDEO_LEVEL_H264_32;
++			break;
++		case V4L2_MPEG_VIDEO_H264_LEVEL_4_0:
++			param.level = MMAL_VIDEO_LEVEL_H264_4;
++			break;
++		default:
++			/* Should never get here */
++			break;
++		}
++
++		ret = vchiq_mmal_port_parameter_set(dev->instance,
++			&dev->component[MMAL_COMPONENT_VIDEO_ENCODE]->output[0],
++			mmal_ctrl->mmal_id,
++			&param, sizeof(param));
++	}
++	return ret;
++}
++
++static int ctrl_set_scene_mode(struct bm2835_mmal_dev *dev,
++		      struct v4l2_ctrl *ctrl,
++		      const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl)
++{
++	int ret = 0;
++	int shutter_speed;
++	struct vchiq_mmal_port *control;
++
++	v4l2_dbg(0, bcm2835_v4l2_debug, &dev->v4l2_dev,
++		"scene mode selected %d, was %d\n", ctrl->val,
++		dev->scene_mode);
++	control = &dev->component[MMAL_COMPONENT_CAMERA]->control;
++
++	if (ctrl->val == dev->scene_mode)
++		return 0;
++
++	if (ctrl->val == V4L2_SCENE_MODE_NONE) {
++		/* Restore all user selections */
++		dev->scene_mode = V4L2_SCENE_MODE_NONE;
++
++		if (dev->exposure_mode_user == MMAL_PARAM_EXPOSUREMODE_OFF)
++			shutter_speed = dev->manual_shutter_speed;
++		else
++			shutter_speed = 0;
++
++		v4l2_dbg(0, bcm2835_v4l2_debug, &dev->v4l2_dev,
++			"%s: scene mode none: shut_speed %d, exp_mode %d, metering %d\n",
++			__func__, shutter_speed, dev->exposure_mode_user,
++			dev->metering_mode);
++		ret = vchiq_mmal_port_parameter_set(dev->instance,
++					control,
++					MMAL_PARAMETER_SHUTTER_SPEED,
++					&shutter_speed,
++					sizeof(shutter_speed));
++		ret += vchiq_mmal_port_parameter_set(dev->instance,
++					control,
++					MMAL_PARAMETER_EXPOSURE_MODE,
++					&dev->exposure_mode_user,
++					sizeof(u32));
++		dev->exposure_mode_active = dev->exposure_mode_user;
++		ret += vchiq_mmal_port_parameter_set(dev->instance,
++					control,
++					MMAL_PARAMETER_EXP_METERING_MODE,
++					&dev->metering_mode,
++					sizeof(u32));
++		ret += set_framerate_params(dev);
++	} else {
++		/* Set up scene mode */
++		int i;
++		const struct v4l2_mmal_scene_config *scene = NULL;
++		int shutter_speed;
++		enum mmal_parameter_exposuremode exposure_mode;
++		enum mmal_parameter_exposuremeteringmode metering_mode;
++
++		for (i = 0; i < ARRAY_SIZE(scene_configs); i++) {
++			if (scene_configs[i].v4l2_scene ==
++				ctrl->val) {
++				scene = &scene_configs[i];
++				break;
++			}
++		}
++		if (i >= ARRAY_SIZE(scene_configs))
++			return -EINVAL;
++
++		/* Set all the values */
++		dev->scene_mode = ctrl->val;
++
++		if (scene->exposure_mode == MMAL_PARAM_EXPOSUREMODE_OFF)
++			shutter_speed = dev->manual_shutter_speed;
++		else
++			shutter_speed = 0;
++		exposure_mode = scene->exposure_mode;
++		metering_mode = scene->metering_mode;
++
++		v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
++			"%s: scene mode none: shut_speed %d, exp_mode %d, metering %d\n",
++			__func__, shutter_speed, exposure_mode, metering_mode);
++
++		ret = vchiq_mmal_port_parameter_set(dev->instance, control,
++					MMAL_PARAMETER_SHUTTER_SPEED,
++					&shutter_speed,
++					sizeof(shutter_speed));
++		ret += vchiq_mmal_port_parameter_set(dev->instance,
++					control,
++					MMAL_PARAMETER_EXPOSURE_MODE,
++					&exposure_mode,
++					sizeof(u32));
++		dev->exposure_mode_active = exposure_mode;
++		ret += vchiq_mmal_port_parameter_set(dev->instance, control,
++					MMAL_PARAMETER_EXPOSURE_MODE,
++					&exposure_mode,
++					sizeof(u32));
++		ret += vchiq_mmal_port_parameter_set(dev->instance, control,
++					MMAL_PARAMETER_EXP_METERING_MODE,
++					&metering_mode,
++					sizeof(u32));
++		ret += set_framerate_params(dev);
++	}
++	if (ret) {
++		v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
++			"%s: Setting scene to %d, ret=%d\n",
++			__func__, ctrl->val, ret);
++		ret = -EINVAL;
++	}
++	return 0;
++}
++
+ static int bm2835_mmal_s_ctrl(struct v4l2_ctrl *ctrl)
+ {
+ 	struct bm2835_mmal_dev *dev =
+ 		container_of(ctrl->handler, struct bm2835_mmal_dev,
+ 			     ctrl_handler);
+ 	const struct bm2835_mmal_v4l2_ctrl *mmal_ctrl = ctrl->priv;
++	int ret;
+ 
+ 	if ((mmal_ctrl == NULL) ||
+ 	    (mmal_ctrl->id != ctrl->id) ||
+@@ -524,7 +906,13 @@ static int bm2835_mmal_s_ctrl(struct v4l2_ctrl *ctrl)
+ 		return -EINVAL;
+ 	}
+ 
+-	return mmal_ctrl->setter(dev, ctrl, mmal_ctrl);
++	ret = mmal_ctrl->setter(dev, ctrl, mmal_ctrl);
++	if (ret)
++		pr_warn("ctrl id:%d/MMAL param %08X- returned ret %d\n",
++				ctrl->id, mmal_ctrl->mmal_id, ret);
++	if (mmal_ctrl->ignore_errors)
++		ret = 0;
++	return ret;
+ }
+ 
+ static const struct v4l2_ctrl_ops bm2835_mmal_ctrl_ops = {
+@@ -537,40 +925,54 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
+ 	{
+ 		V4L2_CID_SATURATION, MMAL_CONTROL_TYPE_STD,
+ 		-100, 100, 0, 1, NULL,
+-		MMAL_PARAMETER_SATURATION, &ctrl_set_rational
++		MMAL_PARAMETER_SATURATION,
++		&ctrl_set_rational,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_SHARPNESS, MMAL_CONTROL_TYPE_STD,
+ 		-100, 100, 0, 1, NULL,
+-		MMAL_PARAMETER_SHARPNESS, &ctrl_set_rational
++		MMAL_PARAMETER_SHARPNESS,
++		&ctrl_set_rational,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_CONTRAST, MMAL_CONTROL_TYPE_STD,
+ 		-100, 100, 0, 1, NULL,
+-		MMAL_PARAMETER_CONTRAST, &ctrl_set_rational
++		MMAL_PARAMETER_CONTRAST,
++		&ctrl_set_rational,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_BRIGHTNESS, MMAL_CONTROL_TYPE_STD,
+ 		0, 100, 50, 1, NULL,
+-		MMAL_PARAMETER_BRIGHTNESS, &ctrl_set_rational
++		MMAL_PARAMETER_BRIGHTNESS,
++		&ctrl_set_rational,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_ISO_SENSITIVITY, MMAL_CONTROL_TYPE_INT_MENU,
+ 		0, ARRAY_SIZE(iso_qmenu) - 1, 0, 1, iso_qmenu,
+-		MMAL_PARAMETER_ISO, &ctrl_set_value
++		MMAL_PARAMETER_ISO,
++		&ctrl_set_value_menu,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_IMAGE_STABILIZATION, MMAL_CONTROL_TYPE_STD,
+ 		0, 1, 0, 1, NULL,
+-		MMAL_PARAMETER_VIDEO_STABILISATION, &ctrl_set_value
++		MMAL_PARAMETER_VIDEO_STABILISATION,
++		&ctrl_set_value,
++		false
+ 	},
+ /*	{
+ 		0, MMAL_CONTROL_TYPE_CLUSTER, 3, 1, 0, NULL, 0, NULL
+-	},
+-*/	{
++	}, */
++	{
+ 		V4L2_CID_EXPOSURE_AUTO, MMAL_CONTROL_TYPE_STD_MENU,
+ 		~0x03, 3, V4L2_EXPOSURE_AUTO, 0, NULL,
+-		MMAL_PARAMETER_EXPOSURE_MODE, &ctrl_set_exposure
++		MMAL_PARAMETER_EXPOSURE_MODE,
++		&ctrl_set_exposure,
++		false
+ 	},
+ /* todo this needs mixing in with set exposure
+ 	{
+@@ -578,83 +980,258 @@ static const struct bm2835_mmal_v4l2_ctrl v4l2_ctrls[V4L2_CTRL_COUNT] = {
+ 	},
+  */
+ 	{
++		V4L2_CID_EXPOSURE_ABSOLUTE, MMAL_CONTROL_TYPE_STD,
++		/* Units of 100usecs */
++		1, 1*1000*10, 100*10, 1, NULL,
++		MMAL_PARAMETER_SHUTTER_SPEED,
++		&ctrl_set_exposure,
++		false
++	},
++	{
+ 		V4L2_CID_AUTO_EXPOSURE_BIAS, MMAL_CONTROL_TYPE_INT_MENU,
+ 		0, ARRAY_SIZE(ev_bias_qmenu) - 1,
+ 		(ARRAY_SIZE(ev_bias_qmenu)+1)/2 - 1, 0, ev_bias_qmenu,
+-		MMAL_PARAMETER_EXPOSURE_COMP, &ctrl_set_value
++		MMAL_PARAMETER_EXPOSURE_COMP,
++		&ctrl_set_value_ev,
++		false
++	},
++	{
++		V4L2_CID_EXPOSURE_AUTO_PRIORITY, MMAL_CONTROL_TYPE_STD,
++		0, 1,
++		0, 1, NULL,
++		0,	/* Dummy MMAL ID as it gets mapped into FPS range*/
++		&ctrl_set_exposure,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_EXPOSURE_METERING,
+ 		MMAL_CONTROL_TYPE_STD_MENU,
+ 		~0x7, 2, V4L2_EXPOSURE_METERING_AVERAGE, 0, NULL,
+-		MMAL_PARAMETER_EXP_METERING_MODE, &ctrl_set_metering_mode
++		MMAL_PARAMETER_EXP_METERING_MODE,
++		&ctrl_set_metering_mode,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_AUTO_N_PRESET_WHITE_BALANCE,
+ 		MMAL_CONTROL_TYPE_STD_MENU,
+-		~0x3fe, 9, V4L2_WHITE_BALANCE_AUTO, 0, NULL,
+-		MMAL_PARAMETER_AWB_MODE, &ctrl_set_awb_mode
++		~0x3ff, 9, V4L2_WHITE_BALANCE_AUTO, 0, NULL,
++		MMAL_PARAMETER_AWB_MODE,
++		&ctrl_set_awb_mode,
++		false
++	},
++	{
++		V4L2_CID_RED_BALANCE, MMAL_CONTROL_TYPE_STD,
++		1, 7999, 1000, 1, NULL,
++		MMAL_PARAMETER_CUSTOM_AWB_GAINS,
++		&ctrl_set_awb_gains,
++		false
++	},
++	{
++		V4L2_CID_BLUE_BALANCE, MMAL_CONTROL_TYPE_STD,
++		1, 7999, 1000, 1, NULL,
++		MMAL_PARAMETER_CUSTOM_AWB_GAINS,
++		&ctrl_set_awb_gains,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_COLORFX, MMAL_CONTROL_TYPE_STD_MENU,
+ 		0, 15, V4L2_COLORFX_NONE, 0, NULL,
+-		MMAL_PARAMETER_IMAGE_EFFECT, &ctrl_set_image_effect
++		MMAL_PARAMETER_IMAGE_EFFECT,
++		&ctrl_set_image_effect,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_COLORFX_CBCR, MMAL_CONTROL_TYPE_STD,
+ 		0, 0xffff, 0x8080, 1, NULL,
+-		MMAL_PARAMETER_COLOUR_EFFECT, &ctrl_set_colfx
++		MMAL_PARAMETER_COLOUR_EFFECT,
++		&ctrl_set_colfx,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_ROTATE, MMAL_CONTROL_TYPE_STD,
+ 		0, 360, 0, 90, NULL,
+-		MMAL_PARAMETER_ROTATION, &ctrl_set_rotate
++		MMAL_PARAMETER_ROTATION,
++		&ctrl_set_rotate,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_HFLIP, MMAL_CONTROL_TYPE_STD,
+ 		0, 1, 0, 1, NULL,
+-		MMAL_PARAMETER_MIRROR, &ctrl_set_flip
++		MMAL_PARAMETER_MIRROR,
++		&ctrl_set_flip,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_VFLIP, MMAL_CONTROL_TYPE_STD,
+ 		0, 1, 0, 1, NULL,
+-		MMAL_PARAMETER_MIRROR, &ctrl_set_flip
++		MMAL_PARAMETER_MIRROR,
++		&ctrl_set_flip,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_MPEG_VIDEO_BITRATE_MODE, MMAL_CONTROL_TYPE_STD_MENU,
+ 		0, ARRAY_SIZE(bitrate_mode_qmenu) - 1,
+ 		0, 0, bitrate_mode_qmenu,
+-		MMAL_PARAMETER_RATECONTROL, &ctrl_set_bitrate_mode
++		MMAL_PARAMETER_RATECONTROL,
++		&ctrl_set_bitrate_mode,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_MPEG_VIDEO_BITRATE, MMAL_CONTROL_TYPE_STD,
+ 		25*1000, 25*1000*1000, 10*1000*1000, 25*1000, NULL,
+-		MMAL_PARAMETER_VIDEO_BIT_RATE, &ctrl_set_bitrate
++		MMAL_PARAMETER_VIDEO_BIT_RATE,
++		&ctrl_set_bitrate,
++		false
+ 	},
+ 	{
+ 		V4L2_CID_JPEG_COMPRESSION_QUALITY, MMAL_CONTROL_TYPE_STD,
+-		0, 100,
++		1, 100,
+ 		30, 1, NULL,
+-		MMAL_PARAMETER_JPEG_Q_FACTOR, &ctrl_set_q_factor
++		MMAL_PARAMETER_JPEG_Q_FACTOR,
++		&ctrl_set_image_encode_output,
++		false
++	},
++	{
++		V4L2_CID_POWER_LINE_FREQUENCY, MMAL_CONTROL_TYPE_STD_MENU,
++		0, ARRAY_SIZE(mains_freq_qmenu) - 1,
++		1, 1, NULL,
++		MMAL_PARAMETER_FLICKER_AVOID,
++		&ctrl_set_flicker_avoidance,
++		false
++	},
++	{
++		V4L2_CID_MPEG_VIDEO_REPEAT_SEQ_HEADER, MMAL_CONTROL_TYPE_STD,
++		0, 1,
++		0, 1, NULL,
++		MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER,
++		&ctrl_set_video_encode_param_output,
++		true	/* Errors ignored as requires latest firmware to work */
++	},
++	{
++		V4L2_CID_MPEG_VIDEO_H264_PROFILE,
++		MMAL_CONTROL_TYPE_STD_MENU,
++		~((1<<V4L2_MPEG_VIDEO_H264_PROFILE_BASELINE) |
++			(1<<V4L2_MPEG_VIDEO_H264_PROFILE_CONSTRAINED_BASELINE) |
++			(1<<V4L2_MPEG_VIDEO_H264_PROFILE_MAIN) |
++			(1<<V4L2_MPEG_VIDEO_H264_PROFILE_HIGH)),
++		V4L2_MPEG_VIDEO_H264_PROFILE_HIGH,
++		V4L2_MPEG_VIDEO_H264_PROFILE_HIGH, 1, NULL,
++		MMAL_PARAMETER_PROFILE,
++		&ctrl_set_video_encode_profile_level,
++		false
++	},
++	{
++		V4L2_CID_MPEG_VIDEO_H264_LEVEL, MMAL_CONTROL_TYPE_STD_MENU,
++		~((1<<V4L2_MPEG_VIDEO_H264_LEVEL_1_0) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_1B) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_1_1) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_1_2) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_1_3) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_2_0) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_2_1) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_2_2) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_3_0) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_3_1) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_3_2) |
++			(1<<V4L2_MPEG_VIDEO_H264_LEVEL_4_0)),
++		V4L2_MPEG_VIDEO_H264_LEVEL_4_0,
++		V4L2_MPEG_VIDEO_H264_LEVEL_4_0, 1, NULL,
++		MMAL_PARAMETER_PROFILE,
++		&ctrl_set_video_encode_profile_level,
++		false
++	},
++	{
++		V4L2_CID_SCENE_MODE, MMAL_CONTROL_TYPE_STD_MENU,
++		-1,	/* Min is computed at runtime */
++		V4L2_SCENE_MODE_TEXT,
++		V4L2_SCENE_MODE_NONE, 1, NULL,
++		MMAL_PARAMETER_PROFILE,
++		&ctrl_set_scene_mode,
++		false
++	},
++	{
++		V4L2_CID_MPEG_VIDEO_H264_I_PERIOD, MMAL_CONTROL_TYPE_STD,
++		0, 0x7FFFFFFF, 60, 1, NULL,
++		MMAL_PARAMETER_INTRAPERIOD,
++		&ctrl_set_video_encode_param_output,
++		false
+ 	},
+ };
+ 
+ int bm2835_mmal_set_all_camera_controls(struct bm2835_mmal_dev *dev)
+ {
+ 	int c;
+-	int ret;
++	int ret = 0;
+ 
+ 	for (c = 0; c < V4L2_CTRL_COUNT; c++) {
+ 		if ((dev->ctrls[c]) && (v4l2_ctrls[c].setter)) {
+ 			ret = v4l2_ctrls[c].setter(dev, dev->ctrls[c],
+ 						   &v4l2_ctrls[c]);
+-			if (ret)
++			if (!v4l2_ctrls[c].ignore_errors && ret) {
++				v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
++					"Failed when setting default values for ctrl %d\n",
++					c);
+ 				break;
++			}
+ 		}
+ 	}
+ 	return ret;
+ }
+ 
++int set_framerate_params(struct bm2835_mmal_dev *dev)
++{
++	struct mmal_parameter_fps_range fps_range;
++	int ret;
++
++	if ((dev->exposure_mode_active != MMAL_PARAM_EXPOSUREMODE_OFF) &&
++	     (dev->exp_auto_priority)) {
++		/* Variable FPS. Define min FPS as 1fps.
++		 * Max as max defined FPS.
++		 */
++		fps_range.fps_low.num = 1;
++		fps_range.fps_low.den = 1;
++		fps_range.fps_high.num = dev->capture.timeperframe.denominator;
++		fps_range.fps_high.den = dev->capture.timeperframe.numerator;
++	} else {
++		/* Fixed FPS - set min and max to be the same */
++		fps_range.fps_low.num = fps_range.fps_high.num =
++			dev->capture.timeperframe.denominator;
++		fps_range.fps_low.den = fps_range.fps_high.den =
++			dev->capture.timeperframe.numerator;
++	}
++
++	v4l2_dbg(1, bcm2835_v4l2_debug, &dev->v4l2_dev,
++			 "Set fps range to %d/%d to %d/%d\n",
++			 fps_range.fps_low.num,
++			 fps_range.fps_low.den,
++			 fps_range.fps_high.num,
++			 fps_range.fps_high.den
++		 );
++
++	ret = vchiq_mmal_port_parameter_set(dev->instance,
++				      &dev->component[MMAL_COMPONENT_CAMERA]->
++					output[MMAL_CAMERA_PORT_PREVIEW],
++				      MMAL_PARAMETER_FPS_RANGE,
++				      &fps_range, sizeof(fps_range));
++	ret += vchiq_mmal_port_parameter_set(dev->instance,
++				      &dev->component[MMAL_COMPONENT_CAMERA]->
++					output[MMAL_CAMERA_PORT_VIDEO],
++				      MMAL_PARAMETER_FPS_RANGE,
++				      &fps_range, sizeof(fps_range));
++	ret += vchiq_mmal_port_parameter_set(dev->instance,
++				      &dev->component[MMAL_COMPONENT_CAMERA]->
++					output[MMAL_CAMERA_PORT_CAPTURE],
++				      MMAL_PARAMETER_FPS_RANGE,
++				      &fps_range, sizeof(fps_range));
++	if (ret)
++		v4l2_dbg(0, bcm2835_v4l2_debug, &dev->v4l2_dev,
++		 "Failed to set fps ret %d\n",
++		 ret);
++
++	return ret;
++
++}
++
+ int bm2835_mmal_init_controls(struct bm2835_mmal_dev *dev,
+ 			      struct v4l2_ctrl_handler *hdl)
+ {
+@@ -674,10 +1251,30 @@ int bm2835_mmal_init_controls(struct bm2835_mmal_dev *dev,
+ 			break;
+ 
+ 		case MMAL_CONTROL_TYPE_STD_MENU:
++		{
++			int mask = ctrl->min;
++
++			if (ctrl->id == V4L2_CID_SCENE_MODE) {
++				/* Special handling to work out the mask
++				 * value based on the scene_configs array
++				 * at runtime. Reduces the chance of
++				 * mismatches.
++				 */
++				int i;
++				mask = 1<<V4L2_SCENE_MODE_NONE;
++				for (i = 0;
++				     i < ARRAY_SIZE(scene_configs);
++				     i++) {
++					mask |= 1<<scene_configs[i].v4l2_scene;
++				}
++				mask = ~mask;
++			}
++
+ 			dev->ctrls[c] = v4l2_ctrl_new_std_menu(hdl,
+ 			&bm2835_mmal_ctrl_ops, ctrl->id,
+-			ctrl->max, ctrl->min, ctrl->def);
++			ctrl->max, mask, ctrl->def);
+ 			break;
++		}
+ 
+ 		case MMAL_CONTROL_TYPE_INT_MENU:
+ 			dev->ctrls[c] = v4l2_ctrl_new_int_menu(hdl,
+diff --git a/drivers/media/platform/bcm2835/mmal-common.h b/drivers/media/platform/bcm2835/mmal-common.h
+index 84abbb3..35698c8 100644
+--- a/drivers/media/platform/bcm2835/mmal-common.h
++++ b/drivers/media/platform/bcm2835/mmal-common.h
+@@ -26,6 +26,7 @@
+ struct mmal_fmt {
+ 	char  *name;
+ 	u32   fourcc;          /* v4l2 format id */
++	int   flags;           /* v4l2 flags field */
+ 	u32   mmal;
+ 	int   depth;
+ 	u32   mmal_component;  /* MMAL component index to be used to encode */
+diff --git a/drivers/media/platform/bcm2835/mmal-encodings.h b/drivers/media/platform/bcm2835/mmal-encodings.h
+index 856e80e..024d620 100644
+--- a/drivers/media/platform/bcm2835/mmal-encodings.h
++++ b/drivers/media/platform/bcm2835/mmal-encodings.h
+@@ -12,6 +12,8 @@
+  *          Simon Mellor <simellor@broadcom.com>
+  *          Luke Diamand <luked@broadcom.com>
+  */
++#ifndef MMAL_ENCODINGS_H
++#define MMAL_ENCODINGS_H
+ 
+ #define MMAL_ENCODING_H264             MMAL_FOURCC('H', '2', '6', '4')
+ #define MMAL_ENCODING_H263             MMAL_FOURCC('H', '2', '6', '3')
+@@ -27,6 +29,7 @@
+ #define MMAL_ENCODING_VP6              MMAL_FOURCC('V', 'P', '6', ' ')
+ #define MMAL_ENCODING_THEORA           MMAL_FOURCC('T', 'H', 'E', 'O')
+ #define MMAL_ENCODING_SPARK            MMAL_FOURCC('S', 'P', 'R', 'K')
++#define MMAL_ENCODING_MJPEG            MMAL_FOURCC('M', 'J', 'P', 'G')
+ 
+ #define MMAL_ENCODING_JPEG             MMAL_FOURCC('J', 'P', 'E', 'G')
+ #define MMAL_ENCODING_GIF              MMAL_FOURCC('G', 'I', 'F', ' ')
+@@ -91,3 +94,34 @@
+ #define MMAL_ENCODING_VARIANT_H264_AVC1      MMAL_FOURCC('A', 'V', 'C', '1')
+ /** Implicitly delineated NAL units without emulation prevention */
+ #define MMAL_ENCODING_VARIANT_H264_RAW       MMAL_FOURCC('R', 'A', 'W', ' ')
++
++
++/** \defgroup MmalColorSpace List of pre-defined video color spaces
++ * This defines a list of common color spaces. This list isn't exhaustive and
++ * is only provided as a convenience to avoid clients having to use FourCC
++ * codes directly. However components are allowed to define and use their own
++ * FourCC codes.
++ */
++/* @{ */
++
++/** Unknown color space */
++#define MMAL_COLOR_SPACE_UNKNOWN       0
++/** ITU-R BT.601-5 [SDTV] */
++#define MMAL_COLOR_SPACE_ITUR_BT601    MMAL_FOURCC('Y', '6', '0', '1')
++/** ITU-R BT.709-3 [HDTV] */
++#define MMAL_COLOR_SPACE_ITUR_BT709    MMAL_FOURCC('Y', '7', '0', '9')
++/** JPEG JFIF */
++#define MMAL_COLOR_SPACE_JPEG_JFIF     MMAL_FOURCC('Y', 'J', 'F', 'I')
++/** Title 47 Code of Federal Regulations (2003) 73.682 (a) (20) */
++#define MMAL_COLOR_SPACE_FCC           MMAL_FOURCC('Y', 'F', 'C', 'C')
++/** Society of Motion Picture and Television Engineers 240M (1999) */
++#define MMAL_COLOR_SPACE_SMPTE240M     MMAL_FOURCC('Y', '2', '4', '0')
++/** ITU-R BT.470-2 System M */
++#define MMAL_COLOR_SPACE_BT470_2_M     MMAL_FOURCC('Y', '_', '_', 'M')
++/** ITU-R BT.470-2 System BG */
++#define MMAL_COLOR_SPACE_BT470_2_BG    MMAL_FOURCC('Y', '_', 'B', 'G')
++/** JPEG JFIF, but with 16..255 luma */
++#define MMAL_COLOR_SPACE_JFIF_Y16_255  MMAL_FOURCC('Y', 'Y', '1', '6')
++/* @} MmalColorSpace List */
++
++#endif /* MMAL_ENCODINGS_H */
+diff --git a/drivers/media/platform/bcm2835/mmal-parameters.h b/drivers/media/platform/bcm2835/mmal-parameters.h
+index c611b58..aa0fd18 100644
+--- a/drivers/media/platform/bcm2835/mmal-parameters.h
++++ b/drivers/media/platform/bcm2835/mmal-parameters.h
+@@ -57,7 +57,8 @@ enum mmal_parameter_common_type {
+ 	MMAL_PARAMETER_SEEK, /**< MMAL_PARAMETER_SEEK_T */
+ 	MMAL_PARAMETER_POWERMON_ENABLE, /**< MMAL_PARAMETER_BOOLEAN_T */
+ 	MMAL_PARAMETER_LOGGING, /**< MMAL_PARAMETER_LOGGING_T */
+-	MMAL_PARAMETER_SYSTEM_TIME /**< MMAL_PARAMETER_UINT64_T */
++	MMAL_PARAMETER_SYSTEM_TIME, /**< MMAL_PARAMETER_UINT64_T */
++	MMAL_PARAMETER_NO_IMAGE_PADDING  /**< MMAL_PARAMETER_BOOLEAN_T */
+ };
+ 
+ /* camera parameters */
+@@ -161,6 +162,13 @@ enum mmal_parameter_camera_type {
+ 	MMAL_PARAMETER_SW_SHARPEN_DISABLE, /**< @ref MMAL_PARAMETER_BOOLEAN_T */
+ 	MMAL_PARAMETER_FLASH_REQUIRED, /**< @ref MMAL_PARAMETER_BOOLEAN_T */
+ 	MMAL_PARAMETER_SW_SATURATION_DISABLE, /**< @ref MMAL_PARAMETER_BOOLEAN_T */
++	MMAL_PARAMETER_SHUTTER_SPEED,             /**< Takes a @ref MMAL_PARAMETER_UINT32_T */
++	MMAL_PARAMETER_CUSTOM_AWB_GAINS,          /**< Takes a @ref MMAL_PARAMETER_AWB_GAINS_T */
++};
++
++struct mmal_parameter_rational {
++	s32 num;    /**< Numerator */
++	s32 den;    /**< Denominator */
+ };
+ 
+ enum mmal_parameter_camera_config_timestamp_mode {
+@@ -176,6 +184,14 @@ enum mmal_parameter_camera_config_timestamp_mode {
+ 					      */
+ };
+ 
++struct mmal_parameter_fps_range {
++	/**< Low end of the permitted framerate range */
++	struct mmal_parameter_rational	fps_low;
++	/**< High end of the permitted framerate range */
++	struct mmal_parameter_rational	fps_high;
++};
++
++
+ /* camera configuration parameter */
+ struct mmal_parameter_camera_config {
+ 	/* Parameters for setting up the image pools */
+@@ -270,6 +286,19 @@ enum mmal_parameter_imagefx {
+ 	MMAL_PARAM_IMAGEFX_CARTOON,
+ };
+ 
++enum MMAL_PARAM_FLICKERAVOID_T {
++	MMAL_PARAM_FLICKERAVOID_OFF,
++	MMAL_PARAM_FLICKERAVOID_AUTO,
++	MMAL_PARAM_FLICKERAVOID_50HZ,
++	MMAL_PARAM_FLICKERAVOID_60HZ,
++	MMAL_PARAM_FLICKERAVOID_MAX = 0x7FFFFFFF
++};
++
++struct mmal_parameter_awbgains {
++	struct mmal_parameter_rational r_gain;	/**< Red gain */
++	struct mmal_parameter_rational b_gain;	/**< Blue gain */
++};
++
+ /** Manner of video rate control */
+ enum mmal_parameter_rate_control_mode {
+ 	MMAL_VIDEO_RATECONTROL_DEFAULT,
+@@ -279,6 +308,85 @@ enum mmal_parameter_rate_control_mode {
+ 	MMAL_VIDEO_RATECONTROL_CONSTANT_SKIP_FRAMES
+ };
+ 
++enum mmal_video_profile {
++	MMAL_VIDEO_PROFILE_H263_BASELINE,
++	MMAL_VIDEO_PROFILE_H263_H320CODING,
++	MMAL_VIDEO_PROFILE_H263_BACKWARDCOMPATIBLE,
++	MMAL_VIDEO_PROFILE_H263_ISWV2,
++	MMAL_VIDEO_PROFILE_H263_ISWV3,
++	MMAL_VIDEO_PROFILE_H263_HIGHCOMPRESSION,
++	MMAL_VIDEO_PROFILE_H263_INTERNET,
++	MMAL_VIDEO_PROFILE_H263_INTERLACE,
++	MMAL_VIDEO_PROFILE_H263_HIGHLATENCY,
++	MMAL_VIDEO_PROFILE_MP4V_SIMPLE,
++	MMAL_VIDEO_PROFILE_MP4V_SIMPLESCALABLE,
++	MMAL_VIDEO_PROFILE_MP4V_CORE,
++	MMAL_VIDEO_PROFILE_MP4V_MAIN,
++	MMAL_VIDEO_PROFILE_MP4V_NBIT,
++	MMAL_VIDEO_PROFILE_MP4V_SCALABLETEXTURE,
++	MMAL_VIDEO_PROFILE_MP4V_SIMPLEFACE,
++	MMAL_VIDEO_PROFILE_MP4V_SIMPLEFBA,
++	MMAL_VIDEO_PROFILE_MP4V_BASICANIMATED,
++	MMAL_VIDEO_PROFILE_MP4V_HYBRID,
++	MMAL_VIDEO_PROFILE_MP4V_ADVANCEDREALTIME,
++	MMAL_VIDEO_PROFILE_MP4V_CORESCALABLE,
++	MMAL_VIDEO_PROFILE_MP4V_ADVANCEDCODING,
++	MMAL_VIDEO_PROFILE_MP4V_ADVANCEDCORE,
++	MMAL_VIDEO_PROFILE_MP4V_ADVANCEDSCALABLE,
++	MMAL_VIDEO_PROFILE_MP4V_ADVANCEDSIMPLE,
++	MMAL_VIDEO_PROFILE_H264_BASELINE,
++	MMAL_VIDEO_PROFILE_H264_MAIN,
++	MMAL_VIDEO_PROFILE_H264_EXTENDED,
++	MMAL_VIDEO_PROFILE_H264_HIGH,
++	MMAL_VIDEO_PROFILE_H264_HIGH10,
++	MMAL_VIDEO_PROFILE_H264_HIGH422,
++	MMAL_VIDEO_PROFILE_H264_HIGH444,
++	MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE,
++	MMAL_VIDEO_PROFILE_DUMMY = 0x7FFFFFFF
++};
++
++enum mmal_video_level {
++	MMAL_VIDEO_LEVEL_H263_10,
++	MMAL_VIDEO_LEVEL_H263_20,
++	MMAL_VIDEO_LEVEL_H263_30,
++	MMAL_VIDEO_LEVEL_H263_40,
++	MMAL_VIDEO_LEVEL_H263_45,
++	MMAL_VIDEO_LEVEL_H263_50,
++	MMAL_VIDEO_LEVEL_H263_60,
++	MMAL_VIDEO_LEVEL_H263_70,
++	MMAL_VIDEO_LEVEL_MP4V_0,
++	MMAL_VIDEO_LEVEL_MP4V_0b,
++	MMAL_VIDEO_LEVEL_MP4V_1,
++	MMAL_VIDEO_LEVEL_MP4V_2,
++	MMAL_VIDEO_LEVEL_MP4V_3,
++	MMAL_VIDEO_LEVEL_MP4V_4,
++	MMAL_VIDEO_LEVEL_MP4V_4a,
++	MMAL_VIDEO_LEVEL_MP4V_5,
++	MMAL_VIDEO_LEVEL_MP4V_6,
++	MMAL_VIDEO_LEVEL_H264_1,
++	MMAL_VIDEO_LEVEL_H264_1b,
++	MMAL_VIDEO_LEVEL_H264_11,
++	MMAL_VIDEO_LEVEL_H264_12,
++	MMAL_VIDEO_LEVEL_H264_13,
++	MMAL_VIDEO_LEVEL_H264_2,
++	MMAL_VIDEO_LEVEL_H264_21,
++	MMAL_VIDEO_LEVEL_H264_22,
++	MMAL_VIDEO_LEVEL_H264_3,
++	MMAL_VIDEO_LEVEL_H264_31,
++	MMAL_VIDEO_LEVEL_H264_32,
++	MMAL_VIDEO_LEVEL_H264_4,
++	MMAL_VIDEO_LEVEL_H264_41,
++	MMAL_VIDEO_LEVEL_H264_42,
++	MMAL_VIDEO_LEVEL_H264_5,
++	MMAL_VIDEO_LEVEL_H264_51,
++	MMAL_VIDEO_LEVEL_DUMMY = 0x7FFFFFFF
++};
++
++struct mmal_parameter_video_profile {
++	enum mmal_video_profile profile;
++	enum mmal_video_level level;
++};
++
+ /* video parameters */
+ 
+ enum mmal_parameter_video_type {
+@@ -407,7 +515,16 @@ enum mmal_parameter_video_type {
+ 	MMAL_PARAMETER_VIDEO_DRM_PROTECT_BUFFER,
+ 
+ 	/** @ref MMAL_PARAMETER_BYTES_T */
+-	MMAL_PARAMETER_VIDEO_DECODE_CONFIG_VD3
++	MMAL_PARAMETER_VIDEO_DECODE_CONFIG_VD3,
++
++	/**< @ref MMAL_PARAMETER_BOOLEAN_T */
++	MMAL_PARAMETER_VIDEO_ENCODE_H264_VCL_HRD_PARAMETERS,
++
++	/**< @ref MMAL_PARAMETER_BOOLEAN_T */
++	MMAL_PARAMETER_VIDEO_ENCODE_H264_LOW_DELAY_HRD_FLAG,
++
++	/**< @ref MMAL_PARAMETER_BOOLEAN_T */
++	MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER
+ };
+ 
+ /** Valid mirror modes */
+diff --git a/drivers/media/platform/bcm2835/mmal-vchiq.c b/drivers/media/platform/bcm2835/mmal-vchiq.c
+index a06fb44..76f249e 100644
+--- a/drivers/media/platform/bcm2835/mmal-vchiq.c
++++ b/drivers/media/platform/bcm2835/mmal-vchiq.c
+@@ -742,7 +742,7 @@ static int send_synchronous_mmal_msg(struct vchiq_mmal_instance *instance,
+ 		return ret;
+ 	}
+ 
+-	ret = wait_for_completion_timeout(&msg_context.u.sync.cmplt, HZ);
++	ret = wait_for_completion_timeout(&msg_context.u.sync.cmplt, 3*HZ);
+ 	if (ret <= 0) {
+ 		pr_err("error %d waiting for sync completion\n", ret);
+ 		if (ret == 0)
+@@ -1326,7 +1326,7 @@ static int port_parameter_get(struct vchiq_mmal_instance *instance,
+ 		memcpy(value, &rmsg->u.port_parameter_get_reply.value,
+ 		       rmsg->u.port_parameter_get_reply.size);
+ 
+-	pr_info("%s:result:%d component:0x%x port:%d parameter:%d\n", __func__,
++	pr_debug("%s:result:%d component:0x%x port:%d parameter:%d\n", __func__,
+ 	        ret, port->component->handle, port->handle, parameter_id);
+ 
+ release_msg:
+-- 
+1.8.3.2
+

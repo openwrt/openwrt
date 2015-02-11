@@ -1,0 +1,57 @@
+From 48c48c4437603bad79eb848ac03b21a86cc3bb90 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Thu, 7 Aug 2014 02:03:50 +0100
+Subject: [PATCH 057/114] Revert "ARM: dma: Use dma_pfn_offset for dma address
+ translation"
+
+This reverts commit 6ce0d20016925d031f1e24d64302e4c976d7cec6.
+---
+ arch/arm/include/asm/dma-mapping.h | 18 +-----------------
+ 1 file changed, 1 insertion(+), 17 deletions(-)
+
+diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
+index 85738b2..9477f09 100644
+--- a/arch/arm/include/asm/dma-mapping.h
++++ b/arch/arm/include/asm/dma-mapping.h
+@@ -58,37 +58,21 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+ #ifndef __arch_pfn_to_dma
+ static inline dma_addr_t pfn_to_dma(struct device *dev, unsigned long pfn)
+ {
+-	if (dev)
+-		pfn -= dev->dma_pfn_offset;
+ 	return (dma_addr_t)__pfn_to_bus(pfn);
+ }
+ 
+ static inline unsigned long dma_to_pfn(struct device *dev, dma_addr_t addr)
+ {
+-	unsigned long pfn = __bus_to_pfn(addr);
+-
+-	if (dev)
+-		pfn += dev->dma_pfn_offset;
+-
+-	return pfn;
++	return __bus_to_pfn(addr);
+ }
+ 
+ static inline void *dma_to_virt(struct device *dev, dma_addr_t addr)
+ {
+-	if (dev) {
+-		unsigned long pfn = dma_to_pfn(dev, addr);
+-
+-		return phys_to_virt(__pfn_to_phys(pfn));
+-	}
+-
+ 	return (void *)__bus_to_virt((unsigned long)addr);
+ }
+ 
+ static inline dma_addr_t virt_to_dma(struct device *dev, void *addr)
+ {
+-	if (dev)
+-		return pfn_to_dma(dev, virt_to_pfn(addr));
+-
+ 	return (dma_addr_t)__virt_to_bus((unsigned long)(addr));
+ }
+ 
+-- 
+1.8.3.2
+

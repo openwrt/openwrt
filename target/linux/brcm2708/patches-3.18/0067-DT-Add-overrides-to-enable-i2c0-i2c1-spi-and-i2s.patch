@@ -1,0 +1,49 @@
+From 95560180ed73193d916519d0c949cd4816138be3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 16 Dec 2014 10:23:48 +0000
+Subject: [PATCH 067/114] DT: Add overrides to enable i2c0, i2c1, spi and i2s
+
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 10 ++++++++++
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      | 10 ++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+index 983c23f..d9886c3 100644
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -79,3 +79,13 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2s_pins>;
+ };
++
++
++/ {
++	__overrides__ {
++		    i2s = <&i2s>,"status";
++		    spi = <&spi0>,"status";
++		    i2c0 = <&i2c0>,"status";
++		    i2c1 = <&i2c1>,"status";
++	};
++};
+diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+index d8c6d15..167b22b 100644
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -79,3 +79,13 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2s_pins>;
+ };
++
++
++/ {
++	__overrides__ {
++		    i2s = <&i2s>,"status";
++		    spi = <&spi0>,"status";
++		    i2c0 = <&i2c0>,"status";
++		    i2c1 = <&i2c1>,"status";
++	};
++};
+-- 
+1.8.3.2
+

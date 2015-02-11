@@ -1,0 +1,31 @@
+From 06c752756a452a0c59447836edce57ef7393be5c Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Tue, 13 Jan 2015 17:12:18 +0000
+Subject: [PATCH 059/114] mmc: Disable CMD23 transfers on all cards
+
+Pending wire-level investigation of these types of transfers
+and associated errors on bcm2835-mmc, disable for now. Fallback of
+CMD18/CMD25 transfers will be used automatically by the MMC layer.
+
+Reported/Tested-by: Gellert Weisz <gellert@raspberrypi.org>
+---
+ drivers/mmc/core/quirks.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/drivers/mmc/core/quirks.c b/drivers/mmc/core/quirks.c
+index dd1d1e0..f472082 100644
+--- a/drivers/mmc/core/quirks.c
++++ b/drivers/mmc/core/quirks.c
+@@ -95,5 +95,9 @@ void mmc_fixup_device(struct mmc_card *card, const struct mmc_fixup *table)
+ 			f->vendor_fixup(card, f->data);
+ 		}
+ 	}
++	/* SDHCI on BCM2708 - bug causes a certain sequence of CMD23 operations to fail.
++	 * Disable this flag for all cards (fall-back to CMD25/CMD18 multi-block transfers).
++	 */
++	card->quirks |= MMC_QUIRK_BLK_NO_CMD23;
+ }
+ EXPORT_SYMBOL(mmc_fixup_device);
+-- 
+1.8.3.2
+

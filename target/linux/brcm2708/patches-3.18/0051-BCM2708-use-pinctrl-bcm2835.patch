@@ -1,0 +1,82 @@
+From fff70fcc73e09e86d46f87dd44459870f15423b2 Mon Sep 17 00:00:00 2001
+From: notro <notro@tronnes.org>
+Date: Thu, 10 Jul 2014 13:59:47 +0200
+Subject: [PATCH 051/114] BCM2708: use pinctrl-bcm2835
+
+Use pinctrl-bcm2835 instead of the pinctrl-bcm2708 and bcm2708_gpio
+combination.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2708.dtsi    | 12 ++++++++++++
+ arch/arm/mach-bcm2708/Kconfig     |  3 +++
+ arch/arm/mach-bcm2708/bcm2708.c   |  2 +-
+ drivers/pinctrl/pinctrl-bcm2835.c |  2 +-
+ 4 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
+index a06f5b8..b2920c8 100644
+--- a/arch/arm/boot/dts/bcm2708.dtsi
++++ b/arch/arm/boot/dts/bcm2708.dtsi
+@@ -26,6 +26,18 @@
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 		};
++
++		gpio: gpio {
++			compatible = "brcm,bcm2835-gpio";
++			reg = <0x7e200000 0xb4>;
++			interrupts = <2 17>, <2 18>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
+ 	};
+ 
+ 	clocks {
+diff --git a/arch/arm/mach-bcm2708/Kconfig b/arch/arm/mach-bcm2708/Kconfig
+index 182e7ba..4cfae55 100644
+--- a/arch/arm/mach-bcm2708/Kconfig
++++ b/arch/arm/mach-bcm2708/Kconfig
+@@ -14,6 +14,9 @@ config BCM2708_DT
+ 	depends on MACH_BCM2708
+ 	default n
+ 	select USE_OF
++	select ARCH_REQUIRE_GPIOLIB
++	select PINCTRL
++	select PINCTRL_BCM2835
+ 	help
+ 	  Enable Device Tree support for BCM2708
+ 
+diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
+index 747e27a..0e5bd43 100644
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -767,7 +767,7 @@ void __init bcm2708_init(void)
+ 	bcm_register_device(&bcm2708_dmaman_device);
+ 	bcm_register_device(&bcm2708_vcio_device);
+ #ifdef CONFIG_BCM2708_GPIO
+-	bcm_register_device(&bcm2708_gpio_device);
++	bcm_register_device_dt(&bcm2708_gpio_device);
+ #endif
+ #if defined(CONFIG_W1_MASTER_GPIO) || defined(CONFIG_W1_MASTER_GPIO_MODULE)
+ 	w1_gpio_pdata.pin = w1_gpio_pin;
+diff --git a/drivers/pinctrl/pinctrl-bcm2835.c b/drivers/pinctrl/pinctrl-bcm2835.c
+index eabba02..962e180 100644
+--- a/drivers/pinctrl/pinctrl-bcm2835.c
++++ b/drivers/pinctrl/pinctrl-bcm2835.c
+@@ -382,7 +382,7 @@ static struct gpio_chip bcm2835_gpio_chip = {
+ 	.get = bcm2835_gpio_get,
+ 	.set = bcm2835_gpio_set,
+ 	.to_irq = bcm2835_gpio_to_irq,
+-	.base = -1,
++	.base = 0,
+ 	.ngpio = BCM2835_NUM_GPIOS,
+ 	.can_sleep = false,
+ };
+-- 
+1.8.3.2
+
