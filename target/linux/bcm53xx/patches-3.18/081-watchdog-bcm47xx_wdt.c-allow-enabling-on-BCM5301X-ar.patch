@@ -1,0 +1,34 @@
+From b08c144e3a1089cdb725e393fa4f68f83a73e31b Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 7 Feb 2015 18:04:10 +0100
+Subject: [PATCH] watchdog: bcm47xx_wdt.c: allow enabling on BCM5301X arch
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+BCM5301X (ARCH_BCM_5301X) is a new Broadcom architecture using the same
+SoC bus driver (bcma) as BCM47XX but based on ARM instead of MIPS.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Reviewed-by: Guenter Roeck <linux@roeck-us.net>
+Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
+---
+ drivers/watchdog/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
+index 2aaef7b..ca6c949 100644
+--- a/drivers/watchdog/Kconfig
++++ b/drivers/watchdog/Kconfig
+@@ -1113,7 +1113,7 @@ config ATH79_WDT
+ 
+ config BCM47XX_WDT
+ 	tristate "Broadcom BCM47xx Watchdog Timer"
+-	depends on BCM47XX
++	depends on BCM47XX || ARCH_BCM_5301X
+ 	select WATCHDOG_CORE
+ 	help
+ 	  Hardware driver for the Broadcom BCM47xx Watchdog Timer.
+-- 
+1.8.4.5
+
