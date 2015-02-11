@@ -1,17 +1,55 @@
-From 8322bafdcee1d7eaf15540ff013415bff1eacb28 Mon Sep 17 00:00:00 2001
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: spi: qup: Add DMA capabilities
 From: Andy Gross <agross@codeaurora.org>
-Date: Thu, 26 Jun 2014 10:50:24 -0500
-Subject: [PATCH 179/182] spi: qup: Add DMA capabilities
+X-Patchwork-Id: 4432401
+Message-Id: <1403816781-31008-1-git-send-email-agross@codeaurora.org>
+To: Mark Brown <broonie@kernel.org>
+Cc: linux-spi@vger.kernel.org, Sagar Dharia <sdharia@codeaurora.org>,
+	Daniel Sneddon <dsneddon@codeaurora.org>,
+	Bjorn Andersson <bjorn.andersson@sonymobile.com>,
+	"Ivan T. Ivanov" <iivanov@mm-sol.com>,
+	linux-kernel@vger.kernel.org, linux-arm-kernel@lists.infradead.org,
+	linux-arm-msm@vger.kernel.org, Andy Gross <agross@codeaurora.org>
+Date: Thu, 26 Jun 2014 16:06:21 -0500
 
 This patch adds DMA capabilities to the spi-qup driver.  If DMA channels are
 present, the QUP will use DMA instead of block mode for transfers to/from SPI
-peripherals for transactions larger greater than the length of a block.
+peripherals for transactions larger than the length of a block.
 
 Signed-off-by: Andy Gross <agross@codeaurora.org>
----
- drivers/spi/spi-qup.c |  361 ++++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 340 insertions(+), 21 deletions(-)
 
+---
+.../devicetree/bindings/spi/qcom,spi-qup.txt       |   10 +
+ drivers/spi/spi-qup.c                              |  361 ++++++++++++++++++--
+ 2 files changed, 350 insertions(+), 21 deletions(-)
+
+--- a/Documentation/devicetree/bindings/spi/qcom,spi-qup.txt
++++ b/Documentation/devicetree/bindings/spi/qcom,spi-qup.txt
+@@ -27,6 +27,11 @@ Optional properties:
+ - spi-max-frequency: Specifies maximum SPI clock frequency,
+                      Units - Hz. Definition as per
+                      Documentation/devicetree/bindings/spi/spi-bus.txt
++- dmas :             Two DMA channel specifiers following the convention outlined
++                     in bindings/dma/dma.txt
++- dma-names:         Names for the dma channels, if present. There must be at
++                     least one channel named "tx" for transmit and named "rx" for
++                     receive.
+ - num-cs:	total number of chipselects
+ - cs-gpios:	should specify GPIOs used for chipselects.
+ 		The gpios will be referred to as reg = <index> in the SPI child
+@@ -51,6 +56,10 @@ Example:
+ 		clocks = <&gcc GCC_BLSP2_QUP2_SPI_APPS_CLK>, <&gcc GCC_BLSP2_AHB_CLK>;
+ 		clock-names = "core", "iface";
+ 
++		dmas = <&blsp2_bam 2>,
++			<&blsp2_bam 3>;
++		dma-names = "rx", "tx";
++
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&spi8_default>;
+ 
 --- a/drivers/spi/spi-qup.c
 +++ b/drivers/spi/spi-qup.c
 @@ -22,6 +22,8 @@
@@ -32,22 +70,25 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  /* high speed mode is when bus rate is greater then 26MHz */
  #define SPI_HS_MIN_RATE			26000000
  #define SPI_MAX_RATE			50000000
-@@ -143,6 +147,14 @@ struct spi_qup {
+@@ -143,6 +147,17 @@ struct spi_qup {
  	int			tx_bytes;
  	int			rx_bytes;
  	int			qup_v1;
++
 +	int			use_dma;
 +
 +	struct dma_chan		*rx_chan;
 +	struct dma_slave_config	rx_conf;
 +	struct dma_chan		*tx_chan;
 +	struct dma_slave_config tx_conf;
-+	void *dummy;
++	dma_addr_t		rx_dma;
++	dma_addr_t		tx_dma;
++	void			*dummy;
 +	atomic_t		dma_outstanding;
  };
  
  
-@@ -266,6 +278,221 @@ static void spi_qup_fifo_write(struct sp
+@@ -266,6 +281,221 @@ static void spi_qup_fifo_write(struct sp
  	}
  }
  
@@ -269,7 +310,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  static irqreturn_t spi_qup_qup_irq(int irq, void *dev_id)
  {
  	struct spi_qup *controller = dev_id;
-@@ -315,11 +542,13 @@ static irqreturn_t spi_qup_qup_irq(int i
+@@ -315,11 +545,13 @@ static irqreturn_t spi_qup_qup_irq(int i
  		error = -EIO;
  	}
  
@@ -287,7 +328,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  
  	spin_lock_irqsave(&controller->lock, flags);
  	controller->error = error;
-@@ -339,6 +568,8 @@ static int spi_qup_io_config(struct spi_
+@@ -339,6 +571,8 @@ static int spi_qup_io_config(struct spi_
  	struct spi_qup *controller = spi_master_get_devdata(spi->master);
  	u32 config, iomode, mode;
  	int ret, n_words, w_size;
@@ -296,21 +337,19 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  
  	if (spi->mode & SPI_LOOP && xfer->len > controller->in_fifo_sz) {
  		dev_err(controller->dev, "too big size for loopback %d > %d\n",
-@@ -367,6 +598,13 @@ static int spi_qup_io_config(struct spi_
+@@ -367,6 +601,11 @@ static int spi_qup_io_config(struct spi_
  	n_words = xfer->len / w_size;
  	controller->w_size = w_size;
  
 +	if (controller->rx_chan &&
 +		IS_ALIGNED((size_t)xfer->tx_buf, dma_align) &&
-+		IS_ALIGNED((size_t)xfer->rx_buf, dma_align) &&
-+		!is_vmalloc_addr(xfer->tx_buf) &&
-+		!is_vmalloc_addr(xfer->rx_buf))
++		IS_ALIGNED((size_t)xfer->rx_buf, dma_align))
 +		dma_available = 1;
 +
  	if (n_words <= (controller->in_fifo_sz / sizeof(u32))) {
  		mode = QUP_IO_M_MODE_FIFO;
  		writel_relaxed(n_words, controller->base + QUP_MX_READ_CNT);
-@@ -374,19 +612,30 @@ static int spi_qup_io_config(struct spi_
+@@ -374,19 +613,31 @@ static int spi_qup_io_config(struct spi_
  		/* must be zero for FIFO */
  		writel_relaxed(0, controller->base + QUP_MX_INPUT_CNT);
  		writel_relaxed(0, controller->base + QUP_MX_OUTPUT_CNT);
@@ -335,6 +374,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	/* Set input and output transfer mode */
  	iomode &= ~(QUP_IO_M_INPUT_MODE_MASK | QUP_IO_M_OUTPUT_MODE_MASK);
 -	iomode &= ~(QUP_IO_M_PACK_EN | QUP_IO_M_UNPACK_EN);
++
 +	if (!controller->use_dma)
 +		iomode &= ~(QUP_IO_M_PACK_EN | QUP_IO_M_UNPACK_EN);
 +	else
@@ -343,7 +383,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	iomode |= (mode << QUP_IO_M_OUTPUT_MODE_MASK_SHIFT);
  	iomode |= (mode << QUP_IO_M_INPUT_MODE_MASK_SHIFT);
  
-@@ -419,11 +668,20 @@ static int spi_qup_io_config(struct spi_
+@@ -419,6 +670,14 @@ static int spi_qup_io_config(struct spi_
  	config &= ~(QUP_CONFIG_NO_INPUT | QUP_CONFIG_NO_OUTPUT | QUP_CONFIG_N);
  	config |= xfer->bits_per_word - 1;
  	config |= QUP_CONFIG_SPI_MODE;
@@ -358,13 +398,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	writel_relaxed(config, controller->base + QUP_CONFIG);
  
  	/* only write to OPERATIONAL_MASK when register is present */
- 	if (!controller->qup_v1)
- 		writel_relaxed(0, controller->base + QUP_OPERATIONAL_MASK);
-+
- 	return 0;
- }
- 
-@@ -452,26 +710,32 @@ static int spi_qup_transfer_one(struct s
+@@ -452,25 +711,29 @@ static int spi_qup_transfer_one(struct s
  	controller->tx_bytes = 0;
  	spin_unlock_irqrestore(&controller->lock, flags);
  
@@ -403,16 +437,13 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  
 -	if (!wait_for_completion_timeout(&controller->done, timeout))
 -		ret = -ETIMEDOUT;
-+		if (!ret && !wait_for_completion_timeout(&controller->done,
-+				timeout))
++		if (!wait_for_completion_timeout(&controller->done, timeout))
 +			ret = -ETIMEDOUT;
 +	}
  exit:
-+
  	spi_qup_set_state(controller, QUP_STATE_RESET);
  	spin_lock_irqsave(&controller->lock, flags);
- 	controller->xfer = NULL;
-@@ -553,6 +817,7 @@ static int spi_qup_probe(struct platform
+@@ -553,6 +816,7 @@ static int spi_qup_probe(struct platform
  	master->transfer_one = spi_qup_transfer_one;
  	master->dev.of_node = pdev->dev.of_node;
  	master->auto_runtime_pm = true;
@@ -420,9 +451,9 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  
  	platform_set_drvdata(pdev, master);
  
-@@ -612,6 +877,55 @@ static int spi_qup_probe(struct platform
- 	writel_relaxed(SPI_ERROR_CLK_UNDER_RUN | SPI_ERROR_CLK_OVER_RUN,
- 		       base + SPI_ERROR_FLAGS_EN);
+@@ -618,6 +882,56 @@ static int spi_qup_probe(struct platform
+ 			QUP_ERROR_INPUT_UNDER_RUN | QUP_ERROR_OUTPUT_UNDER_RUN,
+ 			base + QUP_ERROR_FLAGS_EN);
  
 +	/* allocate dma resources, if available */
 +	controller->rx_chan = dma_request_slave_channel(&pdev->dev, "rx");
@@ -473,9 +504,10 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
 +		}
 +	}
 +
- 	/* if earlier version of the QUP, disable INPUT_OVERRUN */
- 	if (controller->qup_v1)
- 		writel_relaxed(QUP_ERROR_OUTPUT_OVER_RUN |
++
+ 	writel_relaxed(0, base + SPI_CONFIG);
+ 	writel_relaxed(SPI_IO_C_NO_TRI_STATE, base + SPI_IO_CONTROL);
+ 
 @@ -730,6 +1044,11 @@ static int spi_qup_remove(struct platfor
  	if (ret)
  		return ret;
