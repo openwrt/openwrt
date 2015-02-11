@@ -14,6 +14,7 @@ FEATURES:=ext4 audio usb usbgadget display gpio
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 CPU_TYPE:=arm1176jzf-s
 CPU_SUBTYPE:=vfp
+SUBTARGETS:=bcm2708 bcm2709
 
 KERNEL_PATCHVER:=3.18
 
