@@ -1,0 +1,46 @@
+From b053c5ad4d99d8f025efadd5c8b4bd84ea06eb6f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 11 Feb 2015 17:55:32 +0100
+Subject: [PATCH FIX] bgmac: fix device initialization on Northstar SoCs
+ (condition typo)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On Northstar (Broadcom's ARM architecture) we need to manually enable
+all cores. Code for that is already in place, but the condition for it
+was wrong.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+Can we have it for 3.20, please?
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
+index 3007d95..728373b 100644
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1412,6 +1412,7 @@ static void bgmac_mii_unregister(struct bgmac *bgmac)
+ /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipattach */
+ static int bgmac_probe(struct bcma_device *core)
+ {
++	struct bcma_chipinfo *ci = &core->bus->chipinfo;
+ 	struct net_device *net_dev;
+ 	struct bgmac *bgmac;
+ 	struct ssb_sprom *sprom = &core->bus->sprom;
+@@ -1474,8 +1475,8 @@ static int bgmac_probe(struct bcma_device *core)
+ 	bgmac_chip_reset(bgmac);
+ 
+ 	/* For Northstar, we have to take all GMAC core out of reset */
+-	if (core->id.id == BCMA_CHIP_ID_BCM4707 ||
+-	    core->id.id == BCMA_CHIP_ID_BCM53018) {
++	if (ci->id == BCMA_CHIP_ID_BCM4707 ||
++	    ci->id == BCMA_CHIP_ID_BCM53018) {
+ 		struct bcma_device *ns_core;
+ 		int ns_gmac;
+ 
+-- 
+1.8.4.5
+
