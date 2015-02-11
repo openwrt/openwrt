@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=util-linux
 PKG_VERSION:=2.25.2
-PKG_RELEASE:=3
+PKG_RELEASE:=4
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/$(PKG_NAME)/v2.25
@@ -36,6 +36,7 @@ define Package/util-linux/Default
 endef
 
 CONFIGURE_ARGS += \
+	--disable-rpath \
 	--enable-new-mount	\
 	--disable-tls		\
 	--disable-sulogin	\
