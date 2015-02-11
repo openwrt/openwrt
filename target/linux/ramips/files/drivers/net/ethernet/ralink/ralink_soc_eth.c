@@ -899,15 +899,15 @@ txpoll_again:
 	}
 	priv->tx_free_idx = idx;
 
-	if (!done)
-		return 0;
-
 	if (budget) {
 		fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
 		hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
 		if (idx != hwidx)
 			goto txpoll_again;
 	}
+
+	if (!done)
+		return 0;
 
 	netdev_completed_queue(netdev, done, bytes_compl);
 	if (unlikely(netif_queue_stopped(netdev) &&
