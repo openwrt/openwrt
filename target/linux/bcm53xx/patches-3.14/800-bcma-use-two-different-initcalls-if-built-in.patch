@@ -29,7 +29,7 @@ diff --git a/drivers/bcma/main.c b/drivers/bcma/main.c
 index 9635f10..c394207 100644
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -639,13 +639,25 @@ static int bcma_device_uevent(struct device *dev, struct kobj_uevent_env *env)
+@@ -637,13 +637,25 @@ static int bcma_device_uevent(struct device *dev, struct kobj_uevent_env *env)
  			      core->id.rev, core->id.class);
  }
  
@@ -56,7 +56,7 @@ index 9635f10..c394207 100644
  
  	err = bcma_host_soc_register_driver();
  	if (err) {
-@@ -662,7 +674,7 @@ static int __init bcma_modinit(void)
+@@ -660,7 +672,7 @@ static int __init bcma_modinit(void)
  
  	return err;
  }
