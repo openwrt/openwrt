@@ -9,7 +9,7 @@ FEATURES:=squashfs
 CPU_TYPE:=cortex-a7
 MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-KERNEL_PATCHVER:=3.14
+KERNEL_PATCHVER:=3.18
 
 KERNELNAME:=Image dtbs
 
