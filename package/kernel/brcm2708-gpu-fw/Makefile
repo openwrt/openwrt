@@ -7,24 +7,25 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_NAME:=brcm2708-gpu-fw-boot
-PKG_VERSION:=2015-02-07
-PKG_RELEASE:=$(PKG_SOURCE_VERSION)
-PKG_MD5SUM:=f198d5466ec412424f3ca77703f29d15
+PKG_NAME:=brcm2708-gpu-fw
+PKG_REV:=38aa676b044f8de46aedb4bd972538a7ad6a3ce1
+PKG_VERSION:=20150210
+PKG_RELEASE:=1
 
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-# PKG_SOURCE_SUBDIR:=$(PKG_NAME)
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)
+PKG_SOURCE:=$(PKG_REV).tar.gz
+PKG_SOURCE_URL:=https://github.com/Hexxeh/rpi-firmware/archive/
+PKG_MD5SUM:=f5683c1dcb255714942f7c9fd61b3a0a
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)/rpi-firmware-$(PKG_REV)
 
 include $(INCLUDE_DIR)/package.mk
 
 define Package/brcm2708-gpu-fw
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@TARGET_brcm2708
+  DEPENDS:=@(TARGET_brcm2708_bcm2708||TARGET_brcm2708_bcm2709)
   TITLE:=brcm2708-gpu-fw
-  DEFAULT:=y if (TARGET_brcm2708)
+  DEFAULT:=y if (TARGET_brcm2708_bcm2708||TARGET_brcm2708_bcm2709)
 endef
 
 define Package/brcm2708-gpu-fw/description
@@ -32,6 +33,11 @@ define Package/brcm2708-gpu-fw/description
 endef
 
 define Build/Compile
+endef
+
+define Build/InstallDev
+	$(INSTALL_DIR) $(BUILD_DIR)/brcm2708-gpu-fw-boot
+	$(CP) $(PKG_BUILD_DIR)/* $(BUILD_DIR)/brcm2708-gpu-fw-boot
 endef
 
 $(eval $(call BuildPackage,brcm2708-gpu-fw))
