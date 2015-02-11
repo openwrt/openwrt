@@ -1,0 +1,130 @@
+From c3294683a11a781ec75c31d0717bee4f6438c6e6 Mon Sep 17 00:00:00 2001
+From: Florian Meier <florian.meier@koalo.de>
+Date: Fri, 22 Nov 2013 14:59:51 +0100
+Subject: [PATCH 031/114] ASoC: Add support for PCM5102A codec
+
+Some definitions to support the PCM5102A codec
+by Texas Instruments.
+
+Signed-off-by: Florian Meier <florian.meier@koalo.de>
+---
+ sound/soc/codecs/Kconfig    |  4 +++
+ sound/soc/codecs/Makefile   |  2 ++
+ sound/soc/codecs/pcm5102a.c | 63 +++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 69 insertions(+)
+ create mode 100644 sound/soc/codecs/pcm5102a.c
+
+diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
+index a68d173..0ef8bb7 100644
+--- a/sound/soc/codecs/Kconfig
++++ b/sound/soc/codecs/Kconfig
+@@ -80,6 +80,7 @@ config SND_SOC_ALL_CODECS
+ 	select SND_SOC_PCM512x_I2C if I2C
+ 	select SND_SOC_PCM512x_SPI if SPI_MASTER
+ 	select SND_SOC_RT286 if I2C
++	select SND_SOC_PCM5102A if I2C
+ 	select SND_SOC_RT5631 if I2C
+ 	select SND_SOC_RT5640 if I2C
+ 	select SND_SOC_RT5645 if I2C
+@@ -486,6 +487,9 @@ config SND_SOC_RT286
+ 	tristate
+ 	depends on I2C
+ 
++config SND_SOC_PCM5102A
++	tristate
++
+ config SND_SOC_RT5631
+ 	tristate
+ 
+diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
+index 5dce451..7b606e6 100644
+--- a/sound/soc/codecs/Makefile
++++ b/sound/soc/codecs/Makefile
+@@ -74,6 +74,7 @@ snd-soc-pcm512x-i2c-objs := pcm512x-i2c.o
+ snd-soc-pcm512x-spi-objs := pcm512x-spi.o
+ snd-soc-rl6231-objs := rl6231.o
+ snd-soc-rt286-objs := rt286.o
++snd-soc-pcm5102a-objs := pcm5102a.o
+ snd-soc-rt5631-objs := rt5631.o
+ snd-soc-rt5640-objs := rt5640.o
+ snd-soc-rt5645-objs := rt5645.o
+@@ -250,6 +251,7 @@ obj-$(CONFIG_SND_SOC_PCM512x_I2C)	+= snd-soc-pcm512x-i2c.o
+ obj-$(CONFIG_SND_SOC_PCM512x_SPI)	+= snd-soc-pcm512x-spi.o
+ obj-$(CONFIG_SND_SOC_RL6231)	+= snd-soc-rl6231.o
+ obj-$(CONFIG_SND_SOC_RT286)	+= snd-soc-rt286.o
++obj-$(CONFIG_SND_SOC_PCM5102A)	+= snd-soc-pcm5102a.o
+ obj-$(CONFIG_SND_SOC_RT5631)	+= snd-soc-rt5631.o
+ obj-$(CONFIG_SND_SOC_RT5640)	+= snd-soc-rt5640.o
+ obj-$(CONFIG_SND_SOC_RT5645)	+= snd-soc-rt5645.o
+diff --git a/sound/soc/codecs/pcm5102a.c b/sound/soc/codecs/pcm5102a.c
+new file mode 100644
+index 0000000..126f1e9
+--- /dev/null
++++ b/sound/soc/codecs/pcm5102a.c
+@@ -0,0 +1,63 @@
++/*
++ * Driver for the PCM5102A codec
++ *
++ * Author:	Florian Meier <florian.meier@koalo.de>
++ *		Copyright 2013
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public License
++ * version 2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful, but
++ * WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ */
++
++
++#include <linux/init.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++
++#include <sound/soc.h>
++
++static struct snd_soc_dai_driver pcm5102a_dai = {
++	.name = "pcm5102a-hifi",
++	.playback = {
++		.channels_min = 2,
++		.channels_max = 2,
++		.rates = SNDRV_PCM_RATE_8000_192000,
++		.formats = SNDRV_PCM_FMTBIT_S16_LE |
++			   SNDRV_PCM_FMTBIT_S24_LE |
++			   SNDRV_PCM_FMTBIT_S32_LE
++	},
++};
++
++static struct snd_soc_codec_driver soc_codec_dev_pcm5102a;
++
++static int pcm5102a_probe(struct platform_device *pdev)
++{
++	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_pcm5102a,
++			&pcm5102a_dai, 1);
++}
++
++static int pcm5102a_remove(struct platform_device *pdev)
++{
++	snd_soc_unregister_codec(&pdev->dev);
++	return 0;
++}
++
++static struct platform_driver pcm5102a_codec_driver = {
++	.probe 		= pcm5102a_probe,
++	.remove 	= pcm5102a_remove,
++	.driver		= {
++		.name	= "pcm5102a-codec",
++		.owner	= THIS_MODULE,
++	},
++};
++
++module_platform_driver(pcm5102a_codec_driver);
++
++MODULE_DESCRIPTION("ASoC PCM5102A codec driver");
++MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
++MODULE_LICENSE("GPL v2");
+-- 
+1.8.3.2
+

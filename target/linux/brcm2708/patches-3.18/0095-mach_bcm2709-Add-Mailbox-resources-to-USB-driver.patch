@@ -1,0 +1,33 @@
+From 4d5ab4e9eb0ae339e8ae87edb0556435cb0bf4b0 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Thu, 22 Jan 2015 18:02:44 +0000
+Subject: [PATCH 095/114] mach_bcm2709: Add Mailbox resources to USB driver
+
+---
+ arch/arm/mach-bcm2709/bcm2709.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/arch/arm/mach-bcm2709/bcm2709.c b/arch/arm/mach-bcm2709/bcm2709.c
+index a1058ad..5d73b73 100644
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -338,6 +338,16 @@ static struct resource bcm2708_usb_resources[] = {
+ 		.end = IRQ_USB,
+ 		.flags = IORESOURCE_IRQ,
+ 		},
++	[4] = {
++		.start = ARM_LOCAL_BASE,
++		.end = ARM_LOCAL_BASE + SZ_4K - 1,
++		.flags = IORESOURCE_MEM,
++		},
++	[5] = {
++		.start = IRQ_ARM_LOCAL_MAILBOX1,
++		.end = IRQ_ARM_LOCAL_MAILBOX1,
++		.flags = IORESOURCE_IRQ
++	},
+ };
+ 
+ 
+-- 
+1.8.3.2
+

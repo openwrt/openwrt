@@ -1,0 +1,135 @@
+From a05cd269cbf2623efe2499459efdd123ee04ab81 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Wed, 4 Feb 2015 12:16:50 +0000
+Subject: [PATCH 105/114] dwc_otg: fixup read-modify-write in critical paths
+
+Be more careful about read-modify-write on registers that the FIQ
+also touches.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c       | 13 +++++++++---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c  | 30 +++++++++++++++++++++++++---
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c | 22 ++++++++++++++++----
+ 3 files changed, 55 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+index ac70f1d..1782d65 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -2447,9 +2447,16 @@ void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t * hcd,
+ 			 */
+ 			gintmsk_data_t gintmsk = {.d32 = 0 };
+ 			gintmsk.b.nptxfempty = 1;
+-			DWC_MODIFY_REG32(&hcd->core_if->
+-					 core_global_regs->gintmsk, gintmsk.d32,
+-					 0);
++
++			if (fiq_enable) {
++				local_fiq_disable();
++				fiq_fsm_spin_lock(&hcd->fiq_state->lock);
++				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk, gintmsk.d32, 0);
++				fiq_fsm_spin_unlock(&hcd->fiq_state->lock);
++				local_fiq_enable();
++			} else {
++				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk, gintmsk.d32, 0);
++			}
+ 		}
+ 	}
+ }
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+index ee35196..6266661 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -165,7 +165,15 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+ 
+ 			gintmsk_data_t gintmsk = { .b.portintr = 1};
+ 			retval |= dwc_otg_hcd_handle_port_intr(dwc_otg_hcd);
+-			DWC_MODIFY_REG32(&core_if->core_global_regs->gintmsk, 0, gintmsk.d32);
++			if (fiq_enable) {
++				local_fiq_disable();
++				fiq_fsm_spin_lock(&dwc_otg_hcd->fiq_state->lock);
++				DWC_MODIFY_REG32(&dwc_otg_hcd->core_if->core_global_regs->gintmsk, 0, gintmsk.d32);
++				fiq_fsm_spin_unlock(&dwc_otg_hcd->fiq_state->lock);
++				local_fiq_enable();
++			} else {
++				DWC_MODIFY_REG32(&dwc_otg_hcd->core_if->core_global_regs->gintmsk, 0, gintmsk.d32);
++			}
+ 		}
+ 		if (gintsts.b.hcintr) {
+ 			retval |= dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd);
+@@ -1069,7 +1077,15 @@ static void halt_channel(dwc_otg_hcd_t * hcd,
+ 			 * be processed.
+ 			 */
+ 			gintmsk.b.nptxfempty = 1;
+-			DWC_MODIFY_REG32(&global_regs->gintmsk, 0, gintmsk.d32);
++			if (fiq_enable) {
++				local_fiq_disable();
++				fiq_fsm_spin_lock(&hcd->fiq_state->lock);
++				DWC_MODIFY_REG32(&global_regs->gintmsk, 0, gintmsk.d32);
++				fiq_fsm_spin_unlock(&hcd->fiq_state->lock);
++				local_fiq_enable();
++			} else {
++				DWC_MODIFY_REG32(&global_regs->gintmsk, 0, gintmsk.d32);
++			}
+ 		} else {
+ 			/*
+ 			 * Move the QH from the periodic queued schedule to
+@@ -1086,7 +1102,15 @@ static void halt_channel(dwc_otg_hcd_t * hcd,
+ 			 * processed.
+ 			 */
+ 			gintmsk.b.ptxfempty = 1;
+-			DWC_MODIFY_REG32(&global_regs->gintmsk, 0, gintmsk.d32);
++			if (fiq_enable) {
++				local_fiq_disable();
++				fiq_fsm_spin_lock(&hcd->fiq_state->lock);
++				DWC_MODIFY_REG32(&global_regs->gintmsk, 0, gintmsk.d32);
++				fiq_fsm_spin_unlock(&hcd->fiq_state->lock);
++				local_fiq_enable();
++			} else {
++				DWC_MODIFY_REG32(&global_regs->gintmsk, 0, gintmsk.d32);
++			}
+ 		}
+ 	}
+ }
+diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+index 17d3030..acd0dd7 100644
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
+@@ -683,8 +683,15 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 		status = schedule_periodic(hcd, qh);
+ 		if ( !hcd->periodic_qh_count ) {
+ 			intr_mask.b.sofintr = 1;
+-			DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk,
+-								intr_mask.d32, intr_mask.d32);
++			if (fiq_enable) {
++				local_fiq_disable();
++				fiq_fsm_spin_lock(&hcd->fiq_state->lock);
++				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk, intr_mask.d32, intr_mask.d32);
++				fiq_fsm_spin_unlock(&hcd->fiq_state->lock);
++				local_fiq_enable();
++			} else {
++				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk, intr_mask.d32, intr_mask.d32);
++			}
+ 		}
+ 		hcd->periodic_qh_count++;
+ 	}
+@@ -745,8 +752,15 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+ 		hcd->periodic_qh_count--;
+ 		if( !hcd->periodic_qh_count && !fiq_fsm_enable ) {
+ 			intr_mask.b.sofintr = 1;
+-				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk,
+-									intr_mask.d32, 0);
++			if (fiq_enable) {
++				local_fiq_disable();
++				fiq_fsm_spin_lock(&hcd->fiq_state->lock);
++				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk, intr_mask.d32, 0);
++				fiq_fsm_spin_unlock(&hcd->fiq_state->lock);
++				local_fiq_enable();
++			} else {
++				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk, intr_mask.d32, 0);
++			}
+ 		}
+ 	}
+ }
+-- 
+1.8.3.2
+

@@ -1,0 +1,268 @@
+From 5f1c4a04606c2fb2d0203bdbe364a6054b3bb0b7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 6 Feb 2015 13:50:57 +0000
+Subject: [PATCH 110/114] BCM270x_DT: Add pwr_led, and the required "input"
+ trigger
+
+The "input" trigger makes the associated GPIO an input.  This is to support
+the Raspberry Pi PWR LED, which is driven by external hardware in normal use.
+
+N.B. pwr_led is not available on Model A or B boards.
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 18 ++++++++-
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      |  8 +++-
+ arch/arm/boot/dts/bcm2708.dtsi           |  5 ---
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 18 ++++++++-
+ arch/arm/boot/dts/bcm2709.dtsi           |  5 ---
+ arch/arm/configs/bcm2709_defconfig       |  1 +
+ arch/arm/configs/bcmrpi_defconfig        |  1 +
+ drivers/leds/trigger/Kconfig             |  7 ++++
+ drivers/leds/trigger/Makefile            |  1 +
+ drivers/leds/trigger/ledtrig-input.c     | 65 ++++++++++++++++++++++++++++++++
+ 10 files changed, 113 insertions(+), 16 deletions(-)
+ create mode 100644 drivers/leds/trigger/ledtrig-input.c
+
+diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+index 6b9512b..7f84473 100644
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -83,8 +83,18 @@
+ 	pinctrl-0 = <&i2s_pins>;
+ };
+ 
+-&act_led {
+-	gpios = <&gpio 47 0>;
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 47 0>;
++	};
++
++	pwr_led: pwr {
++		label = "led1";
++		linux,default-trigger = "input";
++		gpios = <&gpio 35 0>;
++	};
+ };
+ 
+ / {
+@@ -99,5 +109,9 @@
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+ 		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		pwr_led_gpio = <&pwr_led>,"gpios:4";
++		pwr_led_activelow = <&pwr_led>,"gpios:8";
++		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+index b8520b55..a39562f 100644
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -83,8 +83,12 @@
+ 	pinctrl-0 = <&i2s_pins>;
+ };
+ 
+-&act_led {
+-	gpios = <&gpio 16 1>;
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 16 1>;
++	};
+ };
+ 
+ / {
+diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
+index af6b1d9..aeeabae 100644
+--- a/arch/arm/boot/dts/bcm2708.dtsi
++++ b/arch/arm/boot/dts/bcm2708.dtsi
+@@ -79,11 +79,6 @@
+ 
+ 		leds: leds {
+ 			compatible = "gpio-leds";
+-
+-			act_led: act {
+-				label = "led0";
+-				linux,default-trigger = "mmc0";
+-			};
+ 		};
+ 	};
+ 
+diff --git a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+index 63d3da4..75c222f 100644
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -83,8 +83,18 @@
+ 	pinctrl-0 = <&i2s_pins>;
+ };
+ 
+-&act_led {
+-	gpios = <&gpio 47 0>;
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 47 0>;
++	};
++
++	pwr_led: pwr {
++		label = "led1";
++		linux,default-trigger = "input";
++		gpios = <&gpio 35 0>;
++	};
+ };
+ 
+ / {
+@@ -99,5 +109,9 @@
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+ 		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		pwr_led_gpio = <&pwr_led>,"gpios:4";
++		pwr_led_activelow = <&pwr_led>,"gpios:8";
++		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
+ 	};
+ };
+diff --git a/arch/arm/boot/dts/bcm2709.dtsi b/arch/arm/boot/dts/bcm2709.dtsi
+index fee2053..6986455 100644
+--- a/arch/arm/boot/dts/bcm2709.dtsi
++++ b/arch/arm/boot/dts/bcm2709.dtsi
+@@ -79,11 +79,6 @@
+ 
+ 		leds: leds {
+ 			compatible = "gpio-leds";
+-
+-			act_led: act {
+-				label = "led0";
+-				linux,default-trigger = "mmc0";
+-			};
+ 		};
+ 	};
+ 
+diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
+index b5bf4cb..7bb9de6 100644
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -959,6 +959,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
+ CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
+ CONFIG_LEDS_TRIGGER_TRANSIENT=m
+ CONFIG_LEDS_TRIGGER_CAMERA=m
++CONFIG_LEDS_TRIGGER_INPUT=y
+ CONFIG_RTC_CLASS=y
+ # CONFIG_RTC_HCTOSYS is not set
+ CONFIG_RTC_DRV_DS1307=m
+diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
+index 81c4387..3b09de9 100644
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -952,6 +952,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
+ CONFIG_LEDS_TRIGGER_DEFAULT_ON=y
+ CONFIG_LEDS_TRIGGER_TRANSIENT=m
+ CONFIG_LEDS_TRIGGER_CAMERA=m
++CONFIG_LEDS_TRIGGER_INPUT=y
+ CONFIG_RTC_CLASS=y
+ # CONFIG_RTC_HCTOSYS is not set
+ CONFIG_RTC_DRV_DS1307=m
+diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
+index 49794b4..640756b 100644
+--- a/drivers/leds/trigger/Kconfig
++++ b/drivers/leds/trigger/Kconfig
+@@ -108,4 +108,11 @@ config LEDS_TRIGGER_CAMERA
+ 	  This enables direct flash/torch on/off by the driver, kernel space.
+ 	  If unsure, say Y.
+ 
++config LEDS_TRIGGER_INPUT
++	tristate "LED Input Trigger"
++	depends on LEDS_TRIGGERS
++	help
++	  This allows the GPIOs assigned to be LEDs to be initialised to inputs.
++	  If unsure, say Y.
++
+ endif # LEDS_TRIGGERS
+diff --git a/drivers/leds/trigger/Makefile b/drivers/leds/trigger/Makefile
+index 1abf48d..c03afdc 100644
+--- a/drivers/leds/trigger/Makefile
++++ b/drivers/leds/trigger/Makefile
+@@ -8,3 +8,4 @@ obj-$(CONFIG_LEDS_TRIGGER_CPU)		+= ledtrig-cpu.o
+ obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
+ obj-$(CONFIG_LEDS_TRIGGER_TRANSIENT)	+= ledtrig-transient.o
+ obj-$(CONFIG_LEDS_TRIGGER_CAMERA)	+= ledtrig-camera.o
++obj-$(CONFIG_LEDS_TRIGGER_INPUT)	+= ledtrig-input.o
+diff --git a/drivers/leds/trigger/ledtrig-input.c b/drivers/leds/trigger/ledtrig-input.c
+new file mode 100644
+index 0000000..2ca2b98
+--- /dev/null
++++ b/drivers/leds/trigger/ledtrig-input.c
+@@ -0,0 +1,65 @@
++/*
++ * Set LED GPIO to Input "Trigger"
++ *
++ * Copyright 2015 Phil Elwell <phil@raspberrypi.org>
++ *
++ * Based on Nick Forbes's ledtrig-default-on.c.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/leds.h>
++#include <linux/gpio.h>
++#include "../leds.h"
++
++/* This is a hack to get at the private 'gpio' member */
++
++struct gpio_led_data {
++	struct led_classdev cdev;
++	unsigned gpio;
++};
++
++static void input_trig_activate(struct led_classdev *led_cdev)
++{
++	struct gpio_led_data *led_dat =
++		container_of(led_cdev, struct gpio_led_data, cdev);
++	if (gpio_is_valid(led_dat->gpio))
++		gpio_direction_input(led_dat->gpio);
++}
++
++static void input_trig_deactivate(struct led_classdev *led_cdev)
++{
++	struct gpio_led_data *led_dat =
++		container_of(led_cdev, struct gpio_led_data, cdev);
++	if (gpio_is_valid(led_dat->gpio))
++		gpio_direction_output(led_dat->gpio, 0);
++}
++
++static struct led_trigger input_led_trigger = {
++	.name     = "input",
++	.activate = input_trig_activate,
++	.deactivate = input_trig_deactivate,
++};
++
++static int __init input_trig_init(void)
++{
++	return led_trigger_register(&input_led_trigger);
++}
++
++static void __exit input_trig_exit(void)
++{
++	led_trigger_unregister(&input_led_trigger);
++}
++
++module_init(input_trig_init);
++module_exit(input_trig_exit);
++
++MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.org>");
++MODULE_DESCRIPTION("Set LED GPIO to Input \"trigger\"");
++MODULE_LICENSE("GPL");
+-- 
+1.8.3.2
+

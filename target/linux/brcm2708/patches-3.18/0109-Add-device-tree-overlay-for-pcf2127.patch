@@ -1,0 +1,55 @@
+From 37973590d43217e3f7c4d905578b1b3324ea45c4 Mon Sep 17 00:00:00 2001
+From: Byron Bradley <byronb@afterthoughtsoftware.com>
+Date: Fri, 6 Feb 2015 14:19:41 +0000
+Subject: [PATCH 109/114] Add device-tree overlay for pcf2127
+
+Signed-off-by: Byron Bradley <byronb@afterthoughtsoftware.com>
+---
+ arch/arm/boot/dts/Makefile                |  1 +
+ arch/arm/boot/dts/pcf2127-rtc-overlay.dts | 22 ++++++++++++++++++++++
+ 2 files changed, 23 insertions(+)
+ create mode 100644 arch/arm/boot/dts/pcf2127-rtc-overlay.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 8f76444..56830ef 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -72,6 +72,7 @@ dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += iqaudio-dac-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += iqaudio-dacplus-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += lirc-rpi-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += pcf2127-rtc-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pcf8523-rtc-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
+diff --git a/arch/arm/boot/dts/pcf2127-rtc-overlay.dts b/arch/arm/boot/dts/pcf2127-rtc-overlay.dts
+new file mode 100644
+index 0000000..01fc81d
+--- /dev/null
++++ b/arch/arm/boot/dts/pcf2127-rtc-overlay.dts
+@@ -0,0 +1,22 @@
++// Definitions for PCF2127 Real Time Clock
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pcf2127@51 {
++				compatible = "nxp,pcf2127";
++				reg = <0x51>;
++				status = "okay";
++			};
++		};
++	};
++};
+-- 
+1.8.3.2
+
