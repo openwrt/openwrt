@@ -78,7 +78,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
-@@ -51,6 +51,7 @@ SECTIONS
+@@ -51,6 +51,7 @@
  	/* read-only */
  	_text = .;	/* Text and read-only data */
  	.text : {
@@ -88,7 +88,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		LOCK_TEXT
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -7,6 +7,11 @@ config CLKEVT_RT3352
+@@ -7,6 +7,11 @@
  	select CLKSRC_OF
  	select CLKSRC_MMIO
  
@@ -100,7 +100,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
-@@ -28,6 +33,15 @@ choice
+@@ -28,6 +33,15 @@
  	config SOC_MT7620
  		bool "MT7620"
  
@@ -116,7 +116,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endchoice
  
  choice
-@@ -59,6 +73,10 @@ choice
+@@ -59,6 +73,10 @@
  		depends on SOC_MT7620
  		select BUILTIN_DTB
  
@@ -154,7 +154,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 --- a/arch/mips/ralink/Platform
 +++ b/arch/mips/ralink/Platform
-@@ -27,3 +27,8 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctr
+@@ -27,3 +27,8 @@
  #
  load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
  cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7620
@@ -165,7 +165,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +cflags-$(CONFIG_SOC_MT7621)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
 --- /dev/null
 +++ b/arch/mips/ralink/irq-gic.c
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,268 @@
 +#include <linux/init.h>
 +#include <linux/sched.h>
 +#include <linux/slab.h>
@@ -185,9 +185,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <asm/setup.h>
 +
 +#include <asm/gic.h>
-+#include <asm/gcmpregs.h>
 +
 +#include <asm/mach-ralink/mt7621.h>
++#define GIC_BASE_ADDR			0x1fbc0000
 +
 +unsigned long _gcmp_base;
 +static int gic_resched_int_base = 56;
@@ -241,7 +241,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		gic_intr_map[i].pin = GIC_CPU_INT0;
 +		gic_intr_map[i].polarity = GIC_POL_POS;
 +		gic_intr_map[i].trigtype = GIC_TRIG_LEVEL;
-+		gic_intr_map[i].flags = GIC_FLAG_IPI;
++		gic_intr_map[i].flags = 0;
 +	}
 +
 +#if defined(CONFIG_MIPS_MT_SMP)
@@ -388,11 +388,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (!_gcmp_base)
 +		panic("Failed to remap gcmp memory\n");
 +
-+	if ((GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) != gcmp.start)
-+		panic("Failed to find gcmp core\n");
-+
 +	/* tell the gcmp where to find the gic */
-+	GCMPGCB(GICBA) = gic.start | GCMP_GCB_GICBA_EN_MSK;
++	write_gcr_gic_base(GIC_BASE_ADDR | CM_GCR_GIC_BASE_GICEN_MSK);
 +	gic_present = 1;
 +	if (cpu_has_vint) {
 +		set_vi_handler(2, gic_irqdispatch);
@@ -523,7 +520,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 --- /dev/null
 +++ b/arch/mips/ralink/mt7621.c
-@@ -0,0 +1,183 @@
+@@ -0,0 +1,192 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -539,10 +536,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/module.h>
-+#include <asm/gcmpregs.h>
 +
 +#include <asm/mipsregs.h>
 +#include <asm/smp-ops.h>
++#include <asm/mips-cm.h>
++#include <asm/mips-cpc.h>
 +#include <asm/mach-ralink/ralink_regs.h>
 +#include <asm/mach-ralink/mt7621.h>
 +
@@ -704,6 +702,34 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	rt2880_pinmux_data = mt7621_pinmux_data;
 +
-+	if (register_cmp_smp_ops())
-+		panic("failed to register_vsmp_smp_ops()");
++	/* Early detection of CMP support */
++	mips_cm_probe();
++	mips_cpc_probe();
++
++	if (!register_cps_smp_ops())
++		return;
++	if (!register_cmp_smp_ops())
++		return;
++	if (!register_vsmp_smp_ops())
++		return;
 +}
+--- a/arch/mips/kernel/mips-cm.c
++++ b/arch/mips/kernel/mips-cm.c
+@@ -105,7 +105,7 @@
+ 	write_gcr_base(base_reg);
+ 
+ 	/* disable CM regions */
+-	write_gcr_reg0_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
++/*	write_gcr_reg0_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
+ 	write_gcr_reg0_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
+ 	write_gcr_reg1_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
+ 	write_gcr_reg1_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
+@@ -113,7 +113,7 @@
+ 	write_gcr_reg2_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
+ 	write_gcr_reg3_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
+ 	write_gcr_reg3_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
+-
++*/
+ 	/* probe for an L2-only sync region */
+ 	mips_cm_probe_l2sync();
+ 
