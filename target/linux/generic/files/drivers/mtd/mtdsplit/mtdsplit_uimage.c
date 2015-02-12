@@ -113,11 +113,11 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 		uimage_size = 0;
 
-		ret = read_uimage_header(master, offset, buf, sizeof(*buf));
+		ret = read_uimage_header(master, offset, buf, MAX_HEADER_LEN);
 		if (ret)
 			continue;
 
-		ret = find_header(buf, sizeof(*buf));
+		ret = find_header(buf, MAX_HEADER_LEN);
 		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
