@@ -49,15 +49,15 @@ struct uimage_header {
 
 static int
 read_uimage_header(struct mtd_info *mtd, size_t offset,
-		   struct uimage_header *header)
+		   u_char *buf)
 {
+	struct uimage_header *header;
 	size_t header_len;
 	size_t retlen;
 	int ret;
 
 	header_len = sizeof(*header);
-	ret = mtd_read(mtd, offset, header_len, &retlen,
-		       (unsigned char *) header);
+	ret = mtd_read(mtd, offset, header_len, &retlen, buf);
 	if (ret) {
 		pr_debug("read error in \"%s\"\n", mtd->name);
 		return ret;
@@ -83,6 +83,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 				   ssize_t (*find_header)(u_char *buf, size_t len))
 {
 	struct mtd_partition *parts;
+	u_char *buf;
 	struct uimage_header *header;
 	int nr_parts;
 	size_t offset;
@@ -98,8 +99,8 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	if (!parts)
 		return -ENOMEM;
 
-	header = vmalloc(sizeof(*header));
-	if (!header) {
+	buf = vmalloc(sizeof(*header));
+	if (!buf) {
 		ret = -ENOMEM;
 		goto err_free_parts;
 	}
@@ -108,20 +109,17 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	for (offset = 0; offset < master->size; offset += master->erasesize) {
 		uimage_size = 0;
 
-		ret = read_uimage_header(master, offset, header);
+		ret = read_uimage_header(master, offset, buf);
 		if (ret)
 			continue;
 
-		ret = find_header((u_char *)header, sizeof(*header));
+		ret = find_header(buf, sizeof(*buf));
 		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
 			continue;
 		}
-		if (ret > 0) {
-			pr_warn("extra header offsets are not supported yet\n");
-			continue;
-		}
+		header = (struct uimage_header *)(buf + ret);
 
 		uimage_size = sizeof(*header) + be32_to_cpu(header->ih_size);
 		if ((offset + uimage_size) > master->size) {
@@ -135,7 +133,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	if (uimage_size == 0) {
 		pr_debug("no uImage found in \"%s\"\n", master->name);
 		ret = -ENODEV;
-		goto err_free_header;
+		goto err_free_buf;
 	}
 
 	uimage_offset = offset;
@@ -152,7 +150,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		if (ret) {
 			pr_debug("no rootfs after uImage in \"%s\"\n",
 				 master->name);
-			goto err_free_header;
+			goto err_free_buf;
 		}
 
 		rootfs_size = master->size - rootfs_offset;
@@ -166,7 +164,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		if (ret) {
 			pr_debug("no rootfs before uImage in \"%s\"\n",
 				 master->name);
-			goto err_free_header;
+			goto err_free_buf;
 		}
 
 		rootfs_offset = 0;
@@ -176,7 +174,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	if (rootfs_size == 0) {
 		pr_debug("no rootfs found in \"%s\"\n", master->name);
 		ret = -ENODEV;
-		goto err_free_header;
+		goto err_free_buf;
 	}
 
 	parts[uimage_part].name = KERNEL_PART_NAME;
@@ -187,13 +185,13 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	parts[rf_part].offset = rootfs_offset;
 	parts[rf_part].size = rootfs_size;
 
-	vfree(header);
+	vfree(buf);
 
 	*pparts = parts;
 	return nr_parts;
 
-err_free_header:
-	vfree(header);
+err_free_buf:
+	vfree(buf);
 
 err_free_parts:
 	kfree(parts);
