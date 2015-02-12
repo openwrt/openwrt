@@ -14,7 +14,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -198,6 +198,10 @@ static int m25p_probe(struct spi_device
+@@ -19,6 +19,7 @@
+ #include <linux/errno.h>
+ #include <linux/module.h>
+ #include <linux/device.h>
++#include <linux/of.h>
+ 
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+@@ -198,6 +199,10 @@
  	enum read_mode mode = SPI_NOR_NORMAL;
  	char *flash_name = NULL;
  	int ret;
@@ -25,7 +33,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	data = dev_get_platdata(&spi->dev);
  
-@@ -229,6 +233,8 @@ static int m25p_probe(struct spi_device
+@@ -229,6 +234,8 @@
  
  	if (data && data->name)
  		flash->mtd.name = data->name;
