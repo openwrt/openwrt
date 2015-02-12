@@ -685,12 +685,20 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
-	ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	if (port != AR8216_PORT_CPU && port != 6) {
+		/*hw limitation:if configure mac when there is traffic,
+		port MAC may work abnormal. Need disable lan&wan mac at fisrt*/
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
+		msleep(100);
+		t |= AR8216_PORT_STATUS_FLOW_CONTROL;
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	} else {
+		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
+	}
+
 	ar8xxx_write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
-	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
-	t |= 1 << AR8327_PORT_VLAN0_DEF_CVID_S;
-	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), t);
+	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), 0);
 
 	t = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH << AR8327_PORT_VLAN1_OUT_MODE_S;
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN1(port), t);
