@@ -25,7 +25,7 @@ define Profile/GOFLEXNET
   NAME:=Seagate GoFlexNet
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
+	kmod-usb2 kmod-usb-storage \
 	uboot-envtools
 endef
 

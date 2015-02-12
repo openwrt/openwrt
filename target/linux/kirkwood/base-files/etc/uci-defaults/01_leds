@@ -20,6 +20,10 @@ case "$board" in
 	ucidef_set_led_default "health" "health" "ea4500:white:health" "1"
 	ucidef_set_led_default "pulse" "pulse" "ea4500:white:pulse" "1"
 	;;
+"goflexnet")
+        ucidef_set_led_default "health" "health" "status:green:health" "1"
+        ucidef_set_led_default "fault" "fault" "status:orange:fault" "0"
+	;;
 "ib62x0")
 	ucidef_set_led_default "health" "health" "ib62x0:green:os" "1"
 	ucidef_set_led_default "fault" "fault" "ib62x0:red:os" "1"
