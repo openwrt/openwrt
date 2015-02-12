@@ -71,10 +71,16 @@ read_uimage_header(struct mtd_info *mtd, size_t offset,
 	return 0;
 }
 
+/**
+ * __mtdsplit_parse_uimage - scan partition and create kernel + rootfs parts
+ *
+ * @find_header: function to call for a block of data that will return offset
+ *      of a valid uImage header if found
+ */
 static int __mtdsplit_parse_uimage(struct mtd_info *master,
 				   struct mtd_partition **pparts,
 				   struct mtd_part_parser_data *data,
-				   bool (*verify)(struct uimage_header *hdr))
+				   ssize_t (*find_header)(u_char *buf, size_t len))
 {
 	struct mtd_partition *parts;
 	struct uimage_header *header;
@@ -106,9 +112,14 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 		if (ret)
 			continue;
 
-		if (!verify(header)) {
+		ret = find_header((u_char *)header, sizeof(*header));
+		if (ret < 0) {
 			pr_debug("no valid uImage found in \"%s\" at offset %llx\n",
 				 master->name, (unsigned long long) offset);
+			continue;
+		}
+		if (ret > 0) {
+			pr_warn("extra header offsets are not supported yet\n");
 			continue;
 		}
 
@@ -189,28 +200,30 @@ err_free_parts:
 	return ret;
 }
 
-static bool uimage_verify_default(struct uimage_header *header)
+static ssize_t uimage_verify_default(u_char *buf, size_t len)
 {
+	struct uimage_header *header = (struct uimage_header *)buf;
+
 	/* default sanity checks */
 	if (be32_to_cpu(header->ih_magic) != IH_MAGIC) {
 		pr_debug("invalid uImage magic: %08x\n",
 			 be32_to_cpu(header->ih_magic));
-		return false;
+		return -EINVAL;
 	}
 
 	if (header->ih_os != IH_OS_LINUX) {
 		pr_debug("invalid uImage OS: %08x\n",
 			 be32_to_cpu(header->ih_os));
-		return false;
+		return -EINVAL;
 	}
 
 	if (header->ih_type != IH_TYPE_KERNEL) {
 		pr_debug("invalid uImage type: %08x\n",
 			 be32_to_cpu(header->ih_type));
-		return false;
+		return -EINVAL;
 	}
 
-	return true;
+	return 0;
 }
 
 static int
@@ -238,9 +251,11 @@ static struct mtd_part_parser uimage_generic_parser = {
 #define FW_MAGIC_WNDR3700	0x33373030
 #define FW_MAGIC_WNDR3700V2	0x33373031
 
-static bool uimage_verify_wndr3700(struct uimage_header *header)
+static ssize_t uimage_verify_wndr3700(u_char *buf, size_t len)
 {
+	struct uimage_header *header = (struct uimage_header *)buf;
 	uint8_t expected_type = IH_TYPE_FILESYSTEM;
+
 	switch be32_to_cpu(header->ih_magic) {
 	case FW_MAGIC_WNR612V2:
 	case FW_MAGIC_WNR1000V2:
@@ -254,14 +269,14 @@ static bool uimage_verify_wndr3700(struct uimage_header *header)
 		expected_type = IH_TYPE_KERNEL;
 		break;
 	default:
-		return false;
+		return -EINVAL;
 	}
 
 	if (header->ih_os != IH_OS_LINUX ||
 	    header->ih_type != expected_type)
-		return false;
+		return -EINVAL;
 
-	return true;
+	return 0;
 }
 
 static int
