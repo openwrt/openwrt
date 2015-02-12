@@ -20,6 +20,12 @@
 
 #include "mtdsplit.h"
 
+/*
+ * uimage_header itself is only 64B, but it may be prepended with another data.
+ * Currently the biggest size is for Edimax devices: 20B + 64B
+ */
+#define MAX_HEADER_LEN		84
+
 #define IH_MAGIC	0x27051956	/* Image Magic Number		*/
 #define IH_NMLEN		32	/* Image Name Length		*/
 
@@ -48,15 +54,12 @@ struct uimage_header {
 };
 
 static int
-read_uimage_header(struct mtd_info *mtd, size_t offset,
-		   u_char *buf)
+read_uimage_header(struct mtd_info *mtd, size_t offset, u_char *buf,
+		   size_t header_len)
 {
-	struct uimage_header *header;
-	size_t header_len;
 	size_t retlen;
 	int ret;
 
-	header_len = sizeof(*header);
 	ret = mtd_read(mtd, offset, header_len, &retlen, buf);
 	if (ret) {
 		pr_debug("read error in \"%s\"\n", mtd->name);
@@ -84,7 +87,6 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 {
 	struct mtd_partition *parts;
 	u_char *buf;
-	struct uimage_header *header;
 	int nr_parts;
 	size_t offset;
 	size_t uimage_offset;
@@ -99,7 +101,7 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 	if (!parts)
 		return -ENOMEM;
 
-	buf = vmalloc(sizeof(*header));
+	buf = vmalloc(MAX_HEADER_LEN);
 	if (!buf) {
 		ret = -ENOMEM;
 		goto err_free_parts;
@@ -107,9 +109,11 @@ static int __mtdsplit_parse_uimage(struct mtd_info *master,
 
 	/* find uImage on erase block boundaries */
 	for (offset = 0; offset < master->size; offset += master->erasesize) {
+		struct uimage_header *header;
+
 		uimage_size = 0;
 
-		ret = read_uimage_header(master, offset, buf);
+		ret = read_uimage_header(master, offset, buf, sizeof(*buf));
 		if (ret)
 			continue;
 
