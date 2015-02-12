@@ -39,7 +39,7 @@
  		write_c0_config5(config5);
  		enable_fpu_hazard();
 -	} else
-+	} else (IS_ENABLED(CONFIG_MIPS_FPU_EMULATOR))
++	} else if (IS_ENABLED(CONFIG_MIPS_FPU_EMULATOR))
  		fpu_emulator_init_fpu();
 +	else
 +		ret = SIGILL;
