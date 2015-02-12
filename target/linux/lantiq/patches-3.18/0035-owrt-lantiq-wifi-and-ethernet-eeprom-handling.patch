@@ -30,7 +30,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif /* _PCI_ATH_FIXUP */
 --- a/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
 +++ b/arch/mips/include/asm/mach-lantiq/xway/lantiq_soc.h
-@@ -90,5 +90,8 @@ int xrx200_gphy_boot(struct device *dev,
+@@ -90,5 +90,8 @@
  extern void ltq_pmu_enable(unsigned int module);
  extern void ltq_pmu_disable(unsigned int module);
  
@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #endif /* _LTQ_XWAY_H__ */
 --- a/arch/mips/lantiq/xway/Makefile
 +++ b/arch/mips/lantiq/xway/Makefile
-@@ -2,4 +2,7 @@ obj-y := prom.o sysctrl.o clk.o reset.o
+@@ -2,4 +2,7 @@
  
  obj-y += vmmc.o tffs.o
  
@@ -590,7 +590,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +device_initcall(of_ralink_eeprom_init);
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
-@@ -161,7 +161,7 @@ struct ltq_etop_priv {
+@@ -161,7 +161,7 @@
  	int tx_irq;
  	int rx_irq;
  
@@ -599,15 +599,15 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	int mii_mode;
  
  	spinlock_t lock;
-@@ -840,7 +840,11 @@ ltq_etop_init(struct net_device *dev)
+@@ -840,7 +840,11 @@
  	if (err)
  		goto err_hw;
  
 -	memcpy(&mac, &priv->pldata->mac, sizeof(struct sockaddr));
 +	if (priv->mac)
-+		memcpy(&mac, priv->mac, sizeof(struct sockaddr));
++		memcpy(&mac.sa_data, priv->mac, ETH_ALEN);
 +	else
-+		memcpy(&mac, ltq_get_eth_mac(), sizeof(struct sockaddr));
++		memcpy(&mac.sa_data, ltq_get_eth_mac(), ETH_ALEN);
 +
  	if (!is_valid_ether_addr(mac.sa_data)) {
  		pr_warn("etop: invalid MAC, using random\n");
