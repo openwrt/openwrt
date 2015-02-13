@@ -12,8 +12,6 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  3 files changed, 162 insertions(+)
  create mode 100644 sound/soc/bcm/hifiberry_digi.c
 
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index 714841d..e563dbc 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -26,6 +26,13 @@ config SND_BCM2708_SOC_HIFIBERRY_DAC
@@ -30,11 +28,9 @@ index 714841d..e563dbc 100644
  config SND_BCM2708_SOC_RPI_DAC
          tristate "Support for RPi-DAC"
          depends on SND_BCM2708_SOC_I2S
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index ccc9809..826df7d 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -10,7 +10,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+@@ -10,7 +10,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
  
  # BCM2708 Machine Support
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
@@ -44,9 +40,6 @@ index ccc9809..826df7d 100644
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
 +obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
-diff --git a/sound/soc/bcm/hifiberry_digi.c b/sound/soc/bcm/hifiberry_digi.c
-new file mode 100644
-index 0000000..e4f769d
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_digi.c
 @@ -0,0 +1,153 @@
@@ -203,6 +196,3 @@ index 0000000..e4f769d
 +MODULE_AUTHOR("Daniel Matuschek <info@crazy-audio.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HifiBerry Digi");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

@@ -19,11 +19,9 @@ cores.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c        |  9 ++++-
  6 files changed, 88 insertions(+), 22 deletions(-)
 
-diff --git a/drivers/usb/host/dwc_common_port/dwc_common_linux.c b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
-index 5c50a8b..b802042 100644
 --- a/drivers/usb/host/dwc_common_port/dwc_common_linux.c
 +++ b/drivers/usb/host/dwc_common_port/dwc_common_linux.c
-@@ -580,13 +580,7 @@ void DWC_WRITE_REG64(uint64_t volatile *reg, uint64_t value)
+@@ -580,13 +580,7 @@ void DWC_WRITE_REG64(uint64_t volatile *
  
  void DWC_MODIFY_REG32(uint32_t volatile *reg, uint32_t clear_mask, uint32_t set_mask)
  {
@@ -37,11 +35,9 @@ index 5c50a8b..b802042 100644
  }
  
  #if 0
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil.c b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
-index 6a32c5c..e40060f 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_cil.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil.c
-@@ -2244,9 +2244,7 @@ void dwc_otg_core_host_init(dwc_otg_core_if_t * core_if)
+@@ -2244,9 +2244,7 @@ void dwc_otg_core_host_init(dwc_otg_core
   */
  void dwc_otg_hc_init(dwc_otg_core_if_t * core_if, dwc_hc_t * hc)
  {
@@ -51,7 +47,7 @@ index 6a32c5c..e40060f 100644
  	hcchar_data_t hcchar;
  	hcsplt_data_t hcsplt;
  
-@@ -2348,14 +2346,6 @@ void dwc_otg_hc_init(dwc_otg_core_if_t * core_if, dwc_hc_t * hc)
+@@ -2348,14 +2346,6 @@ void dwc_otg_hc_init(dwc_otg_core_if_t *
  	}
  	DWC_WRITE_REG32(&hc_regs->hcintmsk, hc_intr_mask.d32);
  
@@ -66,11 +62,9 @@ index 6a32c5c..e40060f 100644
  	/*
  	 * Program the HCCHARn register with the endpoint characteristics for
  	 * the current transfer.
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-index 284f902..84618a5 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-@@ -75,6 +75,46 @@ void notrace _fiq_print(enum fiq_debug_level dbg_lvl, volatile struct fiq_state
+@@ -75,6 +75,46 @@ void notrace _fiq_print(enum fiq_debug_l
  }
  
  /**
@@ -117,7 +111,7 @@ index 284f902..84618a5 100644
   * fiq_fsm_restart_channel() - Poke channel enable bit for a split transaction
   * @channel: channel to re-enable
   */
-@@ -1142,6 +1182,7 @@ void notrace dwc_otg_fiq_fsm(struct fiq_state *state, int num_channels)
+@@ -1142,6 +1182,7 @@ void notrace dwc_otg_fiq_fsm(struct fiq_
  	gintsts_handled.d32 = 0;
  	haint_handled.d32 = 0;
  
@@ -125,7 +119,7 @@ index 284f902..84618a5 100644
  	gintsts.d32 = FIQ_READ(state->dwc_regs_base + GINTSTS);
  	gintmsk.d32 = FIQ_READ(state->dwc_regs_base + GINTMSK);
  	gintsts.d32 &= gintmsk.d32;
-@@ -1231,7 +1272,7 @@ void notrace dwc_otg_fiq_fsm(struct fiq_state *state, int num_channels)
+@@ -1231,7 +1272,7 @@ void notrace dwc_otg_fiq_fsm(struct fiq_
  
  	}
  	state->fiq_done++;
@@ -134,7 +128,7 @@ index 284f902..84618a5 100644
  }
  
  
-@@ -1253,6 +1294,7 @@ void notrace dwc_otg_fiq_nop(struct fiq_state *state)
+@@ -1253,6 +1294,7 @@ void notrace dwc_otg_fiq_nop(struct fiq_
  	gintmsk_data_t gintmsk;
  	hfnum_data_t hfnum;
  
@@ -142,15 +136,13 @@ index 284f902..84618a5 100644
  	hfnum.d32 = FIQ_READ(state->dwc_regs_base + HFNUM);
  	gintsts.d32 = FIQ_READ(state->dwc_regs_base + GINTSTS);
  	gintmsk.d32 = FIQ_READ(state->dwc_regs_base + GINTMSK);
-@@ -1290,5 +1332,5 @@ void notrace dwc_otg_fiq_nop(struct fiq_state *state)
+@@ -1290,5 +1332,5 @@ void notrace dwc_otg_fiq_nop(struct fiq_
  
  	}
  	state->fiq_done++;
 -	mb();
 +	fiq_fsm_spin_unlock(&state->lock);
  }
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
-index 5c7707f..8455324 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
 @@ -120,7 +120,6 @@ typedef struct {
@@ -197,11 +189,9 @@ index 5c7707f..8455324 100644
  extern int fiq_fsm_too_late(struct fiq_state *st, int n);
  
  extern int fiq_fsm_tt_in_use(struct fiq_state *st, int num_channels, int n);
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-index 68d4f3b..124ac16 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -1184,6 +1184,9 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -1184,6 +1184,9 @@ static void assign_and_init_hc(dwc_otg_h
  	dwc_otg_qtd_t *qtd;
  	dwc_otg_hcd_urb_t *urb;
  	void* ptr = NULL;
@@ -211,7 +201,7 @@ index 68d4f3b..124ac16 100644
  
  	qtd = DWC_CIRCLEQ_FIRST(&qh->qtd_list);
  
-@@ -1409,6 +1412,20 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -1409,6 +1412,20 @@ static void assign_and_init_hc(dwc_otg_h
  		hc->desc_list_addr = qh->desc_list_dma;
  
  	dwc_otg_hc_init(hcd->core_if, hc);
@@ -232,7 +222,7 @@ index 68d4f3b..124ac16 100644
  	hc->qh = qh;
  }
  
-@@ -1659,6 +1676,7 @@ int fiq_fsm_queue_isoc_transaction(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
+@@ -1659,6 +1676,7 @@ int fiq_fsm_queue_isoc_transaction(dwc_o
  	fiq_print(FIQDBG_INT, hcd->fiq_state, "%08x", st->hcdma_copy.d32);
  	hfnum.d32 = DWC_READ_REG32(&hcd->core_if->host_if->host_global_regs->hfnum);
  	local_fiq_disable();
@@ -240,7 +230,7 @@ index 68d4f3b..124ac16 100644
  	DWC_WRITE_REG32(&hc_regs->hctsiz, st->hctsiz_copy.d32);
  	DWC_WRITE_REG32(&hc_regs->hcsplt, st->hcsplt_copy.d32);
  	DWC_WRITE_REG32(&hc_regs->hcdma, st->hcdma_copy.d32);
-@@ -1676,6 +1694,7 @@ int fiq_fsm_queue_isoc_transaction(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
+@@ -1676,6 +1694,7 @@ int fiq_fsm_queue_isoc_transaction(dwc_o
  	}
  	mb();
  	st->hcchar_copy.b.chen = 0;
@@ -248,7 +238,7 @@ index 68d4f3b..124ac16 100644
  	local_fiq_enable();
  	return 0;
  }
-@@ -1811,7 +1830,7 @@ int fiq_fsm_queue_split_transaction(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
+@@ -1811,7 +1830,7 @@ int fiq_fsm_queue_split_transaction(dwc_
  	DWC_WRITE_REG32(&hc_regs->hcintmsk, st->hcintmsk_copy.d32);
  
  	local_fiq_disable();
@@ -257,7 +247,7 @@ index 68d4f3b..124ac16 100644
  
  	if (hc->ep_type & 0x1) {
  		hfnum.d32 = DWC_READ_REG32(&hcd->core_if->host_if->host_global_regs->hfnum);
-@@ -1909,7 +1928,7 @@ int fiq_fsm_queue_split_transaction(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
+@@ -1909,7 +1928,7 @@ int fiq_fsm_queue_split_transaction(dwc_
  		st->hcchar_copy.b.chen = 1;
  		DWC_WRITE_REG32(&hc_regs->hcchar, st->hcchar_copy.d32);
  	}
@@ -266,11 +256,9 @@ index 68d4f3b..124ac16 100644
  	local_fiq_enable();
  	return 0;
  }
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-index a5566bc..ee35196 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -101,6 +101,7 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -101,6 +101,7 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
  	if (dwc_otg_is_host_mode(core_if)) {
  		if (fiq_enable) {
  			local_fiq_disable();
@@ -278,7 +266,7 @@ index a5566bc..ee35196 100644
  			/* Pull in from the FIQ's disabled mask */
  			gintmsk.d32 = gintmsk.d32 | ~(dwc_otg_hcd->fiq_state->gintmsk_saved.d32);
  			dwc_otg_hcd->fiq_state->gintmsk_saved.d32 = ~0;
-@@ -116,8 +117,10 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -116,8 +117,10 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
  		}
  		gintsts.d32 &= gintmsk.d32;
  
@@ -306,7 +294,7 @@ index a5566bc..ee35196 100644
  		local_fiq_enable();
  
  		if ((jiffies / HZ) > last_time) {
-@@ -633,8 +638,10 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -633,8 +638,10 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_o
  	{
  		/* check the mask? */
  		local_fiq_disable();
@@ -317,6 +305,3 @@ index a5566bc..ee35196 100644
  		local_fiq_enable();
  	}
  
--- 
-1.8.3.2
-

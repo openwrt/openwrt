@@ -8,8 +8,6 @@ Subject: [PATCH 067/114] DT: Add overrides to enable i2c0, i2c1, spi and i2s
  arch/arm/boot/dts/bcm2708-rpi-b.dts      | 10 ++++++++++
  2 files changed, 20 insertions(+)
 
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
-index 983c23f..d9886c3 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 @@ -79,3 +79,13 @@
@@ -26,8 +24,6 @@ index 983c23f..d9886c3 100644
 +		    i2c1 = <&i2c1>,"status";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-index d8c6d15..167b22b 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -79,3 +79,13 @@
@@ -44,6 +40,3 @@ index d8c6d15..167b22b 100644
 +		    i2c1 = <&i2c1>,"status";
 +	};
 +};
--- 
-1.8.3.2
-

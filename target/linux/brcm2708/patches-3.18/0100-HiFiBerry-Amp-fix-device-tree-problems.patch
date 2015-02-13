@@ -8,11 +8,9 @@ Some code to load the driver based on device-tree-overlays was missing. This is 
  sound/soc/bcm/hifiberry_amp.c | 21 +++++++++++++++++++++
  1 file changed, 21 insertions(+)
 
-diff --git a/sound/soc/bcm/hifiberry_amp.c b/sound/soc/bcm/hifiberry_amp.c
-index 1e87ee0..5903915 100644
 --- a/sound/soc/bcm/hifiberry_amp.c
 +++ b/sound/soc/bcm/hifiberry_amp.c
-@@ -65,6 +65,12 @@ static struct snd_soc_card snd_rpi_hifiberry_amp = {
+@@ -65,6 +65,12 @@ static struct snd_soc_card snd_rpi_hifib
  	.num_links    = ARRAY_SIZE(snd_rpi_hifiberry_amp_dai),
  };
  
@@ -25,7 +23,7 @@ index 1e87ee0..5903915 100644
  
  static int snd_rpi_hifiberry_amp_probe(struct platform_device *pdev)
  {
-@@ -72,6 +78,20 @@ static int snd_rpi_hifiberry_amp_probe(struct platform_device *pdev)
+@@ -72,6 +78,20 @@ static int snd_rpi_hifiberry_amp_probe(s
  
  	snd_rpi_hifiberry_amp.dev = &pdev->dev;
  
@@ -46,7 +44,7 @@ index 1e87ee0..5903915 100644
  	ret = snd_soc_register_card(&snd_rpi_hifiberry_amp);
  
  	if (ret != 0) {
-@@ -92,6 +112,7 @@ static struct platform_driver snd_rpi_hifiberry_amp_driver = {
+@@ -92,6 +112,7 @@ static struct platform_driver snd_rpi_hi
          .driver = {
                  .name   = "snd-hifiberry-amp",
                  .owner  = THIS_MODULE,
@@ -54,6 +52,3 @@ index 1e87ee0..5903915 100644
          },
          .probe          = snd_rpi_hifiberry_amp_probe,
          .remove         = snd_rpi_hifiberry_amp_remove,
--- 
-1.8.3.2
-

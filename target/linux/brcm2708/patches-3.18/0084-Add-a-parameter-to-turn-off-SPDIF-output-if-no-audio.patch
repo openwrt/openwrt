@@ -11,8 +11,6 @@ is set to 1, the SPDIF oputput will shutdown if no stream is playing.
  sound/soc/bcm/hifiberry_digi.c | 29 ++++++++++++++++++++++++++++-
  1 file changed, 28 insertions(+), 1 deletion(-)
 
-diff --git a/sound/soc/bcm/hifiberry_digi.c b/sound/soc/bcm/hifiberry_digi.c
-index 76af8a6..b0e3d28 100644
 --- a/sound/soc/bcm/hifiberry_digi.c
 +++ b/sound/soc/bcm/hifiberry_digi.c
 @@ -26,6 +26,11 @@
@@ -27,7 +25,7 @@ index 76af8a6..b0e3d28 100644
  static int samplerate=44100;
  
  static int snd_rpi_hifiberry_digi_init(struct snd_soc_pcm_runtime *rtd)
-@@ -38,6 +43,25 @@ static int snd_rpi_hifiberry_digi_init(struct snd_soc_pcm_runtime *rtd)
+@@ -38,6 +43,25 @@ static int snd_rpi_hifiberry_digi_init(s
  	return 0;
  }
  
@@ -53,7 +51,7 @@ index 76af8a6..b0e3d28 100644
  static int snd_rpi_hifiberry_digi_hw_params(struct snd_pcm_substream *substream,
  				       struct snd_pcm_hw_params *params)
  {
-@@ -70,7 +94,8 @@ static int snd_rpi_hifiberry_digi_hw_params(struct snd_pcm_substream *substream,
+@@ -70,7 +94,8 @@ static int snd_rpi_hifiberry_digi_hw_par
  			break;
  		default:
  			dev_err(substream->pcm->dev,
@@ -63,7 +61,7 @@ index 76af8a6..b0e3d28 100644
  	}
  
  	snd_soc_dai_set_clkdiv(codec_dai, WM8804_MCLK_DIV, mclk_div);
-@@ -96,6 +121,8 @@ static int snd_rpi_hifiberry_digi_hw_params(struct snd_pcm_substream *substream,
+@@ -96,6 +121,8 @@ static int snd_rpi_hifiberry_digi_hw_par
  /* machine stream operations */
  static struct snd_soc_ops snd_rpi_hifiberry_digi_ops = {
  	.hw_params = snd_rpi_hifiberry_digi_hw_params,
@@ -72,6 +70,3 @@ index 76af8a6..b0e3d28 100644
  };
  
  static struct snd_soc_dai_link snd_rpi_hifiberry_digi_dai[] = {
--- 
-1.8.3.2
-

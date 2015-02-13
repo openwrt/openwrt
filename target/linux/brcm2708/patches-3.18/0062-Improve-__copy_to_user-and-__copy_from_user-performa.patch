@@ -28,11 +28,9 @@ optimised memcpy/memmove/memcmp/memset implementations.
  create mode 100644 arch/arm/lib/memmove_rpi.S
  create mode 100644 arch/arm/lib/memset_rpi.S
 
-diff --git a/arch/arm/include/asm/string.h b/arch/arm/include/asm/string.h
-index cf4f3aa..9fe7780 100644
 --- a/arch/arm/include/asm/string.h
 +++ b/arch/arm/include/asm/string.h
-@@ -24,6 +24,11 @@ extern void * memchr(const void *, int, __kernel_size_t);
+@@ -24,6 +24,11 @@ extern void * memchr(const void *, int,
  #define __HAVE_ARCH_MEMSET
  extern void * memset(void *, int, __kernel_size_t);
  
@@ -44,8 +42,6 @@ index cf4f3aa..9fe7780 100644
  extern void __memzero(void *ptr, __kernel_size_t n);
  
  #define memset(p,v,n)							\
-diff --git a/arch/arm/include/asm/uaccess.h b/arch/arm/include/asm/uaccess.h
-index 4767eb9..bcd43de 100644
 --- a/arch/arm/include/asm/uaccess.h
 +++ b/arch/arm/include/asm/uaccess.h
 @@ -475,6 +475,7 @@ do {									\
@@ -56,8 +52,6 @@ index 4767eb9..bcd43de 100644
  extern unsigned long __must_check __copy_to_user(void __user *to, const void *from, unsigned long n);
  extern unsigned long __must_check __copy_to_user_std(void __user *to, const void *from, unsigned long n);
  extern unsigned long __must_check __clear_user(void __user *addr, unsigned long n);
-diff --git a/arch/arm/lib/Makefile b/arch/arm/lib/Makefile
-index 0573faa..498f5dd 100644
 --- a/arch/arm/lib/Makefile
 +++ b/arch/arm/lib/Makefile
 @@ -6,15 +6,24 @@
@@ -88,9 +82,6 @@ index 0573faa..498f5dd 100644
  mmu-y	:= clear_user.o copy_page.o getuser.o putuser.o
  
  # the code in uaccess.S is not preemption safe and
-diff --git a/arch/arm/lib/arm-mem.h b/arch/arm/lib/arm-mem.h
-new file mode 100644
-index 0000000..5d4bda1
 --- /dev/null
 +++ b/arch/arm/lib/arm-mem.h
 @@ -0,0 +1,159 @@
@@ -253,8 +244,6 @@ index 0000000..5d4bda1
 + .endif
 +92:
 +.endm
-diff --git a/arch/arm/lib/copy_from_user.S b/arch/arm/lib/copy_from_user.S
-index 66a477a..3faddf7 100644
 --- a/arch/arm/lib/copy_from_user.S
 +++ b/arch/arm/lib/copy_from_user.S
 @@ -84,11 +84,13 @@
@@ -272,9 +261,6 @@ index 66a477a..3faddf7 100644
  
  	.pushsection .fixup,"ax"
  	.align 0
-diff --git a/arch/arm/lib/exports_rpi.c b/arch/arm/lib/exports_rpi.c
-new file mode 100644
-index 0000000..1f82604
 --- /dev/null
 +++ b/arch/arm/lib/exports_rpi.c
 @@ -0,0 +1,37 @@
@@ -315,9 +301,6 @@ index 0000000..1f82604
 +#include <linux/module.h>
 +
 +EXPORT_SYMBOL(memcmp);
-diff --git a/arch/arm/lib/memcmp_rpi.S b/arch/arm/lib/memcmp_rpi.S
-new file mode 100644
-index 0000000..bf6e4ed
 --- /dev/null
 +++ b/arch/arm/lib/memcmp_rpi.S
 @@ -0,0 +1,285 @@
@@ -606,9 +589,6 @@ index 0000000..bf6e4ed
 +        .unreq  DAT7
 +        .unreq  OFF
 +ENDPROC(memcmp)
-diff --git a/arch/arm/lib/memcpy_rpi.S b/arch/arm/lib/memcpy_rpi.S
-new file mode 100644
-index 0000000..15ff2bd
 --- /dev/null
 +++ b/arch/arm/lib/memcpy_rpi.S
 @@ -0,0 +1,59 @@
@@ -671,9 +651,6 @@ index 0000000..15ff2bd
 +ENTRY(memcpy)
 +        memcpy  0
 +ENDPROC(memcpy)
-diff --git a/arch/arm/lib/memcpymove.h b/arch/arm/lib/memcpymove.h
-new file mode 100644
-index 0000000..d8be584
 --- /dev/null
 +++ b/arch/arm/lib/memcpymove.h
 @@ -0,0 +1,506 @@
@@ -1183,9 +1160,6 @@ index 0000000..d8be584
 +        .unreq  LAST
 +        .unreq  OFF
 +.endm
-diff --git a/arch/arm/lib/memmove_rpi.S b/arch/arm/lib/memmove_rpi.S
-new file mode 100644
-index 0000000..8b0760c
 --- /dev/null
 +++ b/arch/arm/lib/memmove_rpi.S
 @@ -0,0 +1,61 @@
@@ -1250,9 +1224,6 @@ index 0000000..8b0760c
 +        bpl     memcpy  /* pl works even over -1 - 0 and 0x7fffffff - 0x80000000 boundaries */
 +        memcpy  1
 +ENDPROC(memmove)
-diff --git a/arch/arm/lib/memset_rpi.S b/arch/arm/lib/memset_rpi.S
-new file mode 100644
-index 0000000..2cde883
 --- /dev/null
 +++ b/arch/arm/lib/memset_rpi.S
 @@ -0,0 +1,121 @@
@@ -1377,8 +1348,6 @@ index 0000000..2cde883
 +        .unreq  DAT2
 +        .unreq  DAT3
 +ENDPROC(memset)
-diff --git a/arch/arm/lib/uaccess_with_memcpy.c b/arch/arm/lib/uaccess_with_memcpy.c
-index 3e58d71..0622891 100644
 --- a/arch/arm/lib/uaccess_with_memcpy.c
 +++ b/arch/arm/lib/uaccess_with_memcpy.c
 @@ -22,6 +22,14 @@
@@ -1396,7 +1365,7 @@ index 3e58d71..0622891 100644
  static int
  pin_page_for_write(const void __user *_addr, pte_t **ptep, spinlock_t **ptlp)
  {
-@@ -85,7 +93,44 @@ pin_page_for_write(const void __user *_addr, pte_t **ptep, spinlock_t **ptlp)
+@@ -85,7 +93,44 @@ pin_page_for_write(const void __user *_a
  	return 1;
  }
  
@@ -1497,7 +1466,7 @@ index 3e58d71..0622891 100644
  unsigned long
  __copy_to_user(void __user *to, const void *from, unsigned long n)
  {
-@@ -145,10 +238,25 @@ __copy_to_user(void __user *to, const void *from, unsigned long n)
+@@ -145,10 +238,25 @@ __copy_to_user(void __user *to, const vo
  	 * With frame pointer disabled, tail call optimization kicks in
  	 * as well making this test almost invisible.
  	 */
@@ -1524,6 +1493,3 @@ index 3e58d71..0622891 100644
  	
  static unsigned long noinline
  __clear_user_memset(void __user *addr, unsigned long n)
--- 
-1.8.3.2
-

@@ -9,11 +9,9 @@ Subject: [PATCH 096/114] bcm2709/dwc_otg: Setup FIQ on core 1 if >1 core
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 15 +++++++++++----
  2 files changed, 20 insertions(+), 5 deletions(-)
 
-diff --git a/arch/arm/mach-bcm2709/armctrl.c b/arch/arm/mach-bcm2709/armctrl.c
-index 8e69a813..6e3f0f2 100644
 --- a/arch/arm/mach-bcm2709/armctrl.c
 +++ b/arch/arm/mach-bcm2709/armctrl.c
-@@ -89,7 +89,15 @@ static void armctrl_unmask_irq(struct irq_data *d)
+@@ -89,7 +89,15 @@ static void armctrl_unmask_irq(struct ir
  	};
  	int i;
  	if (d->irq >= FIQ_START) {
@@ -30,8 +28,6 @@ index 8e69a813..6e3f0f2 100644
  		writel(0x80 | data, __io_address(ARM_IRQ_FAST));
  	} else if (d->irq >= IRQ_ARM_LOCAL_CNTPSIRQ && d->irq < IRQ_ARM_LOCAL_CNTPSIRQ + 4) {
  #if 1
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-index 4d8dd95..1d28459 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -407,7 +407,9 @@ static void hcd_init_fiq(void *cookie)
@@ -63,6 +59,3 @@ index 4d8dd95..1d28459 100644
  
  	otg_dev->hcd->otg_dev = otg_dev;
  	hcd->self.otg_port = dwc_otg_hcd_otg_port(dwc_otg_hcd);
--- 
-1.8.3.2
-

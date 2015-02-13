@@ -9,11 +9,9 @@ Subject: [PATCH 094/114] dwc_otg: put some barriers back where they should be
  drivers/usb/host/dwc_otg/dwc_otg_hcd.c     | 1 +
  2 files changed, 3 insertions(+)
 
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-index 0d2b04e..276ad0c7 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-@@ -1280,6 +1280,7 @@ void notrace dwc_otg_fiq_fsm(struct fiq_state *state, int num_channels)
+@@ -1280,6 +1280,7 @@ void notrace dwc_otg_fiq_fsm(struct fiq_
  
  	}
  	state->fiq_done++;
@@ -21,18 +19,16 @@ index 0d2b04e..276ad0c7 100644
  	fiq_fsm_spin_unlock(&state->lock);
  }
  
-@@ -1340,5 +1341,6 @@ void notrace dwc_otg_fiq_nop(struct fiq_state *state)
+@@ -1340,5 +1341,6 @@ void notrace dwc_otg_fiq_nop(struct fiq_
  
  	}
  	state->fiq_done++;
 +	mb();
  	fiq_fsm_spin_unlock(&state->lock);
  }
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-index 124ac16..ac70f1d 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -1928,6 +1928,7 @@ int fiq_fsm_queue_split_transaction(dwc_otg_hcd_t *hcd, dwc_otg_qh_t *qh)
+@@ -1928,6 +1928,7 @@ int fiq_fsm_queue_split_transaction(dwc_
  		st->hcchar_copy.b.chen = 1;
  		DWC_WRITE_REG32(&hc_regs->hcchar, st->hcchar_copy.d32);
  	}
@@ -40,6 +36,3 @@ index 124ac16..ac70f1d 100644
  	fiq_fsm_spin_unlock(&hcd->fiq_state->lock);
  	local_fiq_enable();
  	return 0;
--- 
-1.8.3.2
-

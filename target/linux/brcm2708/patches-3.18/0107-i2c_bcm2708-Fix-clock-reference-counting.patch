@@ -7,11 +7,9 @@ Subject: [PATCH 107/114] i2c_bcm2708: Fix clock reference counting
  drivers/i2c/busses/i2c-bcm2708.c | 12 ++++++++++--
  1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-index 526129b..fda59ba 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
-@@ -337,11 +337,17 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+@@ -337,11 +337,17 @@ static int bcm2708_i2c_probe(struct plat
  		return PTR_ERR(clk);
  	}
  
@@ -39,7 +37,7 @@ index 526129b..fda59ba 100644
  out_clk_put:
  	clk_put(clk);
  	return err;
-@@ -426,7 +434,7 @@ static int bcm2708_i2c_remove(struct platform_device *pdev)
+@@ -426,7 +434,7 @@ static int bcm2708_i2c_remove(struct pla
  	i2c_del_adapter(&bi->adapter);
  	free_irq(bi->irq, bi);
  	iounmap(bi->base);
@@ -48,6 +46,3 @@ index 526129b..fda59ba 100644
  	clk_put(bi->clk);
  	kfree(bi);
  
--- 
-1.8.3.2
-

@@ -43,9 +43,6 @@ config: Disable VC_SM for now to fix hang with cutdown kernel
  create mode 100644 drivers/char/broadcom/vc_sm/vc_vchi_sm.c
  create mode 100644 drivers/char/broadcom/vc_sm/vmcs_sm.c
 
-diff --git a/arch/arm/mach-bcm2708/include/mach/vc_sm_defs.h b/arch/arm/mach-bcm2708/include/mach/vc_sm_defs.h
-new file mode 100644
-index 0000000..c4d5ff7
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/include/mach/vc_sm_defs.h
 @@ -0,0 +1,181 @@
@@ -230,9 +227,6 @@ index 0000000..c4d5ff7
 +} VC_SM_MSG_UNION_T;
 +
 +#endif /* __VC_SM_DEFS_H__INCLUDED__ */
-diff --git a/arch/arm/mach-bcm2708/include/mach/vc_sm_knl.h b/arch/arm/mach-bcm2708/include/mach/vc_sm_knl.h
-new file mode 100644
-index 0000000..965f9a2
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/include/mach/vc_sm_knl.h
 @@ -0,0 +1,55 @@
@@ -291,9 +285,6 @@ index 0000000..965f9a2
 +	      long unsigned int *data);
 +
 +#endif /* __VC_SM_KNL_H__INCLUDED__ */
-diff --git a/arch/arm/mach-bcm2708/include/mach/vc_vchi_sm.h b/arch/arm/mach-bcm2708/include/mach/vc_vchi_sm.h
-new file mode 100644
-index 0000000..5e279f5
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/include/mach/vc_vchi_sm.h
 @@ -0,0 +1,82 @@
@@ -379,9 +370,6 @@ index 0000000..5e279f5
 +			VC_SM_ACTION_CLEAN_T *action_clean);
 +
 +#endif /* __VC_VCHI_SM_H__INCLUDED__ */
-diff --git a/arch/arm/mach-bcm2708/include/mach/vmcs_sm_ioctl.h b/arch/arm/mach-bcm2708/include/mach/vmcs_sm_ioctl.h
-new file mode 100644
-index 0000000..42d0eb0
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/include/mach/vmcs_sm_ioctl.h
 @@ -0,0 +1,233 @@
@@ -618,8 +606,6 @@ index 0000000..42d0eb0
 +/* ---- Function Prototypes ---------------------------------------------- */
 +
 +#endif /* __VMCS_SM_IOCTL_H__INCLUDED__ */
-diff --git a/drivers/char/broadcom/Kconfig b/drivers/char/broadcom/Kconfig
-index 2d8bd6e..d4eb46d 100644
 --- a/drivers/char/broadcom/Kconfig
 +++ b/drivers/char/broadcom/Kconfig
 @@ -13,3 +13,10 @@ config BCM_VC_CMA
@@ -633,16 +619,11 @@ index 2d8bd6e..d4eb46d 100644
 +	help
 +	Support for the VC shared memory on the Broadcom reference
 +	design. Uses the VCHIQ stack.
-diff --git a/drivers/char/broadcom/Makefile b/drivers/char/broadcom/Makefile
-index 13c5bca..0bf7fdf 100644
 --- a/drivers/char/broadcom/Makefile
 +++ b/drivers/char/broadcom/Makefile
 @@ -1 +1,2 @@
  obj-$(CONFIG_BCM_VC_CMA)	+= vc_cma/
 +obj-$(CONFIG_BCM_VC_SM)         += vc_sm/
-diff --git a/drivers/char/broadcom/vc_sm/Makefile b/drivers/char/broadcom/vc_sm/Makefile
-new file mode 100644
-index 0000000..924a66b
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_sm/Makefile
 @@ -0,0 +1,21 @@
@@ -667,9 +648,6 @@ index 0000000..924a66b
 +vc-sm-objs := \
 +    vmcs_sm.o \
 +    vc_vchi_sm.o
-diff --git a/drivers/char/broadcom/vc_sm/vc_vchi_sm.c b/drivers/char/broadcom/vc_sm/vc_vchi_sm.c
-new file mode 100644
-index 0000000..7c6ba1a
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_sm/vc_vchi_sm.c
 @@ -0,0 +1,492 @@
@@ -1165,9 +1143,6 @@ index 0000000..7c6ba1a
 +	return vc_vchi_sm_send_msg(handle, VC_SM_MSG_TYPE_ACTION_CLEAN,
 +				   msg, sizeof(*msg), 0, 0, 0, 0);
 +}
-diff --git a/drivers/char/broadcom/vc_sm/vmcs_sm.c b/drivers/char/broadcom/vc_sm/vmcs_sm.c
-new file mode 100644
-index 0000000..da1c523
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_sm/vmcs_sm.c
 @@ -0,0 +1,3163 @@
@@ -4334,6 +4309,3 @@ index 0000000..da1c523
 +MODULE_AUTHOR("Broadcom");
 +MODULE_DESCRIPTION("VideoCore SharedMemory Driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

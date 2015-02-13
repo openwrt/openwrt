@@ -20,11 +20,9 @@ DMA: fix cyclic LITE length overflow bug
  5 files changed, 1066 insertions(+), 1 deletion(-)
  create mode 100644 drivers/dma/bcm2708-dmaengine.c
 
-diff --git a/arch/arm/mach-bcm2708/dma.c b/arch/arm/mach-bcm2708/dma.c
-index 1da2413..a5e58d1 100644
 --- a/arch/arm/mach-bcm2708/dma.c
 +++ b/arch/arm/mach-bcm2708/dma.c
-@@ -156,6 +156,8 @@ static void vc_dmaman_init(struct vc_dmaman *dmaman, void __iomem *dma_base,
+@@ -156,6 +156,8 @@ static void vc_dmaman_init(struct vc_dma
  	dmaman->chan_available = chans_available;
  	dmaman->has_feature[BCM_DMA_FEATURE_FAST_ORD] = 0x0c;  /* chans 2 & 3 */
  	dmaman->has_feature[BCM_DMA_FEATURE_BULK_ORD] = 0x01;  /* chan 0 */
@@ -33,11 +31,9 @@ index 1da2413..a5e58d1 100644
  }
  
  static int vc_dmaman_chan_alloc(struct vc_dmaman *dmaman,
-diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
-index a4aac4c..d03e7b5 100644
 --- a/arch/arm/mach-bcm2708/include/mach/dma.h
 +++ b/arch/arm/mach-bcm2708/include/mach/dma.h
-@@ -77,9 +77,13 @@ extern int /*rc*/ bcm_dma_abort(void __iomem *dma_chan_base);
+@@ -77,9 +77,13 @@ extern int /*rc*/ bcm_dma_abort(void __i
     those with higher priority smaller ordinal numbers */
  #define BCM_DMA_FEATURE_FAST_ORD 0
  #define BCM_DMA_FEATURE_BULK_ORD 1
@@ -52,8 +48,6 @@ index a4aac4c..d03e7b5 100644
  
  /* return channel no or -ve error */
  extern int bcm_dma_chan_alloc(unsigned preferred_feature_set,
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index de46982..c9b8eb5 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -330,6 +330,12 @@ config DMA_BCM2835
@@ -69,8 +63,6 @@ index de46982..c9b8eb5 100644
  config TI_CPPI41
  	tristate "AM33xx CPPI41 DMA support"
  	depends on ARCH_OMAP
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index cb626c1..d3c4a82 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -38,6 +38,7 @@ obj-$(CONFIG_DMA_SA11X0) += sa11x0-dma.o
@@ -81,9 +73,6 @@ index cb626c1..d3c4a82 100644
  obj-$(CONFIG_MMP_PDMA) += mmp_pdma.o
  obj-$(CONFIG_DMA_JZ4740) += dma-jz4740.o
  obj-$(CONFIG_TI_CPPI41) += cppi41.o
-diff --git a/drivers/dma/bcm2708-dmaengine.c b/drivers/dma/bcm2708-dmaengine.c
-new file mode 100644
-index 0000000..10463db
 --- /dev/null
 +++ b/drivers/dma/bcm2708-dmaengine.c
 @@ -0,0 +1,1052 @@
@@ -1139,6 +1128,3 @@ index 0000000..10463db
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_AUTHOR("Gellert Weisz <gellert@raspberrypi.org>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

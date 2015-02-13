@@ -29,8 +29,6 @@ Signed-off-by: Noralf Tronnes <notro@tronnes.org>
  drivers/i2c/busses/i2c-bcm2708.c    | 24 ++++++++++++++++++++++++
  5 files changed, 80 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-index 30107fb..5893122 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -8,6 +8,8 @@
@@ -75,8 +73,6 @@ index 30107fb..5893122 100644
 +	pinctrl-0 = <&i2c1_pins>;
 +	clock-frequency = <100000>;
 +};
-diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
-index e90bf4c..2ca6d63 100644
 --- a/arch/arm/boot/dts/bcm2708.dtsi
 +++ b/arch/arm/boot/dts/bcm2708.dtsi
 @@ -48,6 +48,26 @@
@@ -120,11 +116,9 @@ index e90bf4c..2ca6d63 100644
  		clk_spi: clock@2 {
  			compatible = "fixed-clock";
  			reg = <2>;
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index a2069f8..b45f327 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -532,6 +532,7 @@ static struct spi_board_info bcm2708_spi_devices[] = {
+@@ -532,6 +532,7 @@ static struct spi_board_info bcm2708_spi
  };
  #endif
  
@@ -132,7 +126,7 @@ index a2069f8..b45f327 100644
  static struct resource bcm2708_bsc0_resources[] = {
  	{
  		.start = BSC0_BASE,
-@@ -570,6 +571,7 @@ static struct platform_device bcm2708_bsc1_device = {
+@@ -570,6 +571,7 @@ static struct platform_device bcm2708_bs
  	.num_resources = ARRAY_SIZE(bcm2708_bsc1_resources),
  	.resource = bcm2708_bsc1_resources,
  };
@@ -151,8 +145,6 @@ index a2069f8..b45f327 100644
  
  	bcm_register_device(&bcm2835_hwmon_device);
  	bcm_register_device(&bcm2835_thermal_device);
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 3d3db41..d30a986 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -361,7 +361,7 @@ config I2C_AXXIA
@@ -164,8 +156,6 @@ index 3d3db41..d30a986 100644
  	help
  	  If you say yes to this option, support will be included for the
  	  BCM2835 I2C controller.
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-index 7d385a3..526129b 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -26,6 +26,7 @@
@@ -176,7 +166,7 @@ index 7d385a3..526129b 100644
  #include <linux/platform_device.h>
  #include <linux/io.h>
  #include <linux/slab.h>
-@@ -303,6 +304,21 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+@@ -303,6 +304,21 @@ static int bcm2708_i2c_probe(struct plat
  	unsigned long bus_hz;
  	u32 cdiv;
  
@@ -198,7 +188,7 @@ index 7d385a3..526129b 100644
  	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	if (!regs) {
  		dev_err(&pdev->dev, "could not get IO memory\n");
-@@ -336,6 +352,7 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+@@ -336,6 +352,7 @@ static int bcm2708_i2c_probe(struct plat
  	adap->dev.parent = &pdev->dev;
  	adap->nr = pdev->id;
  	strlcpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
@@ -206,7 +196,7 @@ index 7d385a3..526129b 100644
  
  	switch (pdev->id) {
  	case 0:
-@@ -416,10 +433,17 @@ static int bcm2708_i2c_remove(struct platform_device *pdev)
+@@ -416,10 +433,17 @@ static int bcm2708_i2c_remove(struct pla
  	return 0;
  }
  
@@ -224,6 +214,3 @@ index 7d385a3..526129b 100644
  	},
  	.probe		= bcm2708_i2c_probe,
  	.remove		= bcm2708_i2c_remove,
--- 
-1.8.3.2
-

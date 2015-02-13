@@ -12,8 +12,6 @@ Subject: [PATCH 042/114] Add IQaudIO Sound Card support for Raspberry Pi
  5 files changed, 143 insertions(+)
  create mode 100644 sound/soc/bcm/iqaudio-dac.c
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index c9d3fac..f15a4b9 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -758,6 +758,7 @@ CONFIG_SND_BCM2708_SOC_I2S=m
@@ -24,11 +22,9 @@ index c9d3fac..f15a4b9 100644
  CONFIG_SND_SIMPLE_CARD=m
  CONFIG_SOUND_PRIME=m
  CONFIG_HIDRAW=y
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index a57cb85..633be19 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -652,6 +652,22 @@ static struct platform_device snd_pcm1794a_codec_device = {
+@@ -652,6 +652,22 @@ static struct platform_device snd_pcm179
  };
  #endif
  
@@ -64,8 +60,6 @@ index a57cb85..633be19 100644
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index e563dbc..c621a5e 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -39,3 +39,10 @@ config SND_BCM2708_SOC_RPI_DAC
@@ -79,11 +73,9 @@ index e563dbc..c621a5e 100644
 +	select SND_SOC_PCM512x_I2C
 +	help
 +	  Say Y or M if you want to add support for IQaudIO-DAC.
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index 826df7d..d597fb0 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -12,7 +12,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+@@ -12,7 +12,9 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
  snd-soc-hifiberry-digi-objs := hifiberry_digi.o
  snd-soc-rpi-dac-objs := rpi-dac.o
@@ -93,9 +85,6 @@ index 826df7d..d597fb0 100644
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
 +obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
-diff --git a/sound/soc/bcm/iqaudio-dac.c b/sound/soc/bcm/iqaudio-dac.c
-new file mode 100644
-index 0000000..8d0e2ae
 --- /dev/null
 +++ b/sound/soc/bcm/iqaudio-dac.c
 @@ -0,0 +1,111 @@
@@ -210,6 +199,3 @@ index 0000000..8d0e2ae
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_DESCRIPTION("ASoC Driver for IQAudio DAC");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

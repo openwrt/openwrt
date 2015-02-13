@@ -10,11 +10,9 @@ Signed-off-by: Ryan Coe <bluemrp9@gmail.com>
  2 files changed, 23 insertions(+)
  create mode 100644 arch/arm/boot/dts/ds1307-rtc-overlay.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 86c6190..1b66478 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -64,6 +64,7 @@ dtb-$(CONFIG_BCM2708_DT) += iqaudio-dacplus-overlay.dtb
+@@ -64,6 +64,7 @@ dtb-$(CONFIG_BCM2708_DT) += iqaudio-dacp
  dtb-$(CONFIG_BCM2708_DT) += lirc-rpi-overlay.dtb
  dtb-$(CONFIG_BCM2708_DT) += pcf8523-rtc-overlay.dtb
  dtb-$(CONFIG_BCM2708_DT) += pps-gpio-overlay.dtb
@@ -22,9 +20,6 @@ index 86c6190..1b66478 100644
  dtb-$(CONFIG_BCM2708_DT) += w1-gpio-overlay.dtb
  dtb-$(CONFIG_BCM2708_DT) += w1-gpio-pullup-overlay.dtb
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
-diff --git a/arch/arm/boot/dts/ds1307-rtc-overlay.dts b/arch/arm/boot/dts/ds1307-rtc-overlay.dts
-new file mode 100644
-index 0000000..7d27044
 --- /dev/null
 +++ b/arch/arm/boot/dts/ds1307-rtc-overlay.dts
 @@ -0,0 +1,22 @@
@@ -50,6 +45,3 @@ index 0000000..7d27044
 +		};
 +	};
 +};
--- 
-1.8.3.2
-

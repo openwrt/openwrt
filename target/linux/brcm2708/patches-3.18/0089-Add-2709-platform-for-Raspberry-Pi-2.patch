@@ -118,8 +118,6 @@ Subject: [PATCH 089/114] Add 2709 platform for Raspberry Pi 2
  create mode 100755 arch/arm/mach-bcm2709/vc_support.c
  create mode 100644 arch/arm/mach-bcm2709/vcio.c
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 0f2287f..1faad0d 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -803,6 +803,26 @@ config ARCH_OMAP1
@@ -157,11 +155,9 @@ index 0f2287f..1faad0d 100644
  
  source "arch/arm/mach-zynq/Kconfig"
  
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index fea9213..2f1376e 100644
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -147,6 +147,7 @@ machine-$(CONFIG_ARCH_AT91)		+= at91
+@@ -152,6 +152,7 @@ machine-$(CONFIG_ARCH_AT91)		+= at91
  machine-$(CONFIG_ARCH_AXXIA)		+= axxia
  machine-$(CONFIG_ARCH_BCM)		+= bcm
  machine-$(CONFIG_ARCH_BCM2708)		+= bcm2708
@@ -169,11 +165,9 @@ index fea9213..2f1376e 100644
  machine-$(CONFIG_ARCH_BERLIN)		+= berlin
  machine-$(CONFIG_ARCH_CLPS711X)		+= clps711x
  machine-$(CONFIG_ARCH_CNS3XXX)		+= cns3xxx
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 1b66478..605ed38 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -53,6 +53,14 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4ek.dtb
+@@ -53,6 +53,14 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4e
  
  dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
  dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
@@ -188,7 +182,7 @@ index 1b66478..605ed38 100644
  dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b.dtb
  dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b-plus.dtb
  dtb-$(CONFIG_BCM2708_DT) += hifiberry-dac-overlay.dtb
-@@ -68,6 +76,7 @@ dtb-$(CONFIG_BCM2708_DT) += ds1307-rtc-overlay.dtb
+@@ -68,6 +76,7 @@ dtb-$(CONFIG_BCM2708_DT) += ds1307-rtc-o
  dtb-$(CONFIG_BCM2708_DT) += w1-gpio-overlay.dtb
  dtb-$(CONFIG_BCM2708_DT) += w1-gpio-pullup-overlay.dtb
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
@@ -205,9 +199,6 @@ index 1b66478..605ed38 100644
  	DTC_FLAGS ?= -@
  endif
  
-diff --git a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
-new file mode 100644
-index 0000000..0cdff31
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
 @@ -0,0 +1,101 @@
@@ -312,9 +303,6 @@ index 0000000..0cdff31
 +		act_led_trigger = <&act_led>,"linux,default-trigger";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/bcm2709.dtsi b/arch/arm/boot/dts/bcm2709.dtsi
-new file mode 100644
-index 0000000..c7e975c
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm2709.dtsi
 @@ -0,0 +1,159 @@
@@ -477,9 +465,6 @@ index 0000000..c7e975c
 +		       <&v7_cpu3>, "clock-frequency:0";
 +	};
 +};
-diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
-new file mode 100644
-index 0000000..70b175c
 --- /dev/null
 +++ b/arch/arm/configs/bcm2709_defconfig
 @@ -0,0 +1,1149 @@
@@ -1632,9 +1617,6 @@ index 0000000..70b175c
 +# CONFIG_CRYPTO_HW is not set
 +CONFIG_CRC_ITU_T=y
 +CONFIG_LIBCRC32C=y
-diff --git a/arch/arm/configs/bcm2709_sdcard_defconfig b/arch/arm/configs/bcm2709_sdcard_defconfig
-new file mode 100644
-index 0000000..287b15d
 --- /dev/null
 +++ b/arch/arm/configs/bcm2709_sdcard_defconfig
 @@ -0,0 +1,129 @@
@@ -1767,9 +1749,6 @@ index 0000000..287b15d
 +CONFIG_CRC_ITU_T=y
 +CONFIG_LIBCRC32C=y
 +CONFIG_AVERAGE=y
-diff --git a/arch/arm/configs/bcm2709_small_defconfig b/arch/arm/configs/bcm2709_small_defconfig
-new file mode 100644
-index 0000000..9974a9d
 --- /dev/null
 +++ b/arch/arm/configs/bcm2709_small_defconfig
 @@ -0,0 +1,61 @@
@@ -1834,9 +1813,6 @@ index 0000000..9974a9d
 +CONFIG_EARLY_PRINTK=y
 +CONFIG_CRC16=y
 +CONFIG_CRC_ITU_T=y
-diff --git a/arch/arm/configs/bcm2835_sdcard_defconfig b/arch/arm/configs/bcm2835_sdcard_defconfig
-new file mode 100644
-index 0000000..987471b
 --- /dev/null
 +++ b/arch/arm/configs/bcm2835_sdcard_defconfig
 @@ -0,0 +1,176 @@
@@ -2016,9 +1992,6 @@ index 0000000..987471b
 +# CONFIG_CRYPTO_HW is not set
 +CONFIG_CRC_ITU_T=y
 +CONFIG_LIBCRC32C=y
-diff --git a/arch/arm/configs/bcmrpi_sdcard_defconfig b/arch/arm/configs/bcmrpi_sdcard_defconfig
-new file mode 100644
-index 0000000..fef887a
 --- /dev/null
 +++ b/arch/arm/configs/bcmrpi_sdcard_defconfig
 @@ -0,0 +1,176 @@
@@ -2198,9 +2171,6 @@ index 0000000..fef887a
 +# CONFIG_CRYPTO_HW is not set
 +CONFIG_CRC_ITU_T=y
 +CONFIG_LIBCRC32C=y
-diff --git a/arch/arm/configs/bcmrpi_small_defconfig b/arch/arm/configs/bcmrpi_small_defconfig
-new file mode 100644
-index 0000000..3f6e378
 --- /dev/null
 +++ b/arch/arm/configs/bcmrpi_small_defconfig
 @@ -0,0 +1,103 @@
@@ -2307,8 +2277,6 @@ index 0000000..3f6e378
 +CONFIG_CRC16=y
 +CONFIG_CRC_ITU_T=y
 +CONFIG_LIBCRC32C=y
-diff --git a/arch/arm/kernel/head.S b/arch/arm/kernel/head.S
-index 664eee8..e1885fa 100644
 --- a/arch/arm/kernel/head.S
 +++ b/arch/arm/kernel/head.S
 @@ -673,6 +673,14 @@ ARM_BE8(rev16	ip, ip)
@@ -2326,9 +2294,6 @@ index 664eee8..e1885fa 100644
  #endif
  ENDPROC(__fixup_a_pv_table)
  
-diff --git a/arch/arm/mach-bcm2709/Kconfig b/arch/arm/mach-bcm2709/Kconfig
-new file mode 100644
-index 0000000..4fb6e1b
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/Kconfig
 @@ -0,0 +1,49 @@
@@ -2381,9 +2346,6 @@ index 0000000..4fb6e1b
 +	help
 +	  Binds spidev driver to the SPI0 master
 +endmenu
-diff --git a/arch/arm/mach-bcm2709/Makefile b/arch/arm/mach-bcm2709/Makefile
-new file mode 100644
-index 0000000..2a803bb
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/Makefile
 @@ -0,0 +1,7 @@
@@ -2394,18 +2356,12 @@ index 0000000..2a803bb
 +obj-$(CONFIG_MACH_BCM2709) 	+= bcm2709.o armctrl.o vcio.o power.o dma.o
 +obj-$(CONFIG_BCM2708_GPIO)	+= bcm2708_gpio.o
 +obj-$(CONFIG_BCM2708_VCMEM)	+= vc_mem.o
-diff --git a/arch/arm/mach-bcm2709/Makefile.boot b/arch/arm/mach-bcm2709/Makefile.boot
-new file mode 100644
-index 0000000..67039c3
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/Makefile.boot
 @@ -0,0 +1,3 @@
 +   zreladdr-y	:= 0x00008000
 +params_phys-y	:= 0x00000100
 +initrd_phys-y	:= 0x00800000
-diff --git a/arch/arm/mach-bcm2709/armctrl.c b/arch/arm/mach-bcm2709/armctrl.c
-new file mode 100644
-index 0000000..8e69a813
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/armctrl.c
 @@ -0,0 +1,357 @@
@@ -2766,9 +2722,6 @@ index 0000000..8e69a813
 +	armctrl_dt_init();
 +	return 0;
 +}
-diff --git a/arch/arm/mach-bcm2709/armctrl.h b/arch/arm/mach-bcm2709/armctrl.h
-new file mode 100644
-index 0000000..0aa916e
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/armctrl.h
 @@ -0,0 +1,27 @@
@@ -2799,9 +2752,6 @@ index 0000000..0aa916e
 +			       u32 armctrl_sources, u32 resume_sources);
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/bcm2708_gpio.c b/arch/arm/mach-bcm2709/bcm2708_gpio.c
-new file mode 100644
-index 0000000..c1e9254
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/bcm2708_gpio.c
 @@ -0,0 +1,426 @@
@@ -3231,9 +3181,6 @@ index 0000000..c1e9254
 +
 +MODULE_DESCRIPTION("Broadcom BCM2708 GPIO driver");
 +MODULE_LICENSE("GPL");
-diff --git a/arch/arm/mach-bcm2709/bcm2709.c b/arch/arm/mach-bcm2709/bcm2709.c
-new file mode 100644
-index 0000000..a1058ad
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/bcm2709.c
 @@ -0,0 +1,1237 @@
@@ -4474,9 +4421,6 @@ index 0000000..a1058ad
 +module_param(reboot_part, uint, 0644);
 +module_param(w1_gpio_pin, uint, 0644);
 +module_param(w1_gpio_pullup, uint, 0644);
-diff --git a/arch/arm/mach-bcm2709/bcm2709.h b/arch/arm/mach-bcm2709/bcm2709.h
-new file mode 100644
-index 0000000..e339a93
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/bcm2709.h
 @@ -0,0 +1,49 @@
@@ -4529,9 +4473,6 @@ index 0000000..e339a93
 +}
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/clock.c b/arch/arm/mach-bcm2709/clock.c
-new file mode 100644
-index 0000000..4fc556e
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/clock.c
 @@ -0,0 +1,61 @@
@@ -4596,9 +4537,6 @@ index 0000000..4fc556e
 +	return -EIO;
 +}
 +EXPORT_SYMBOL(clk_set_rate);
-diff --git a/arch/arm/mach-bcm2709/clock.h b/arch/arm/mach-bcm2709/clock.h
-new file mode 100644
-index 0000000..5f9d725
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/clock.h
 @@ -0,0 +1,24 @@
@@ -4626,9 +4564,6 @@ index 0000000..5f9d725
 +struct clk {
 +	unsigned long		rate;
 +};
-diff --git a/arch/arm/mach-bcm2709/delay.S b/arch/arm/mach-bcm2709/delay.S
-new file mode 100644
-index 0000000..06f4780
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/delay.S
 @@ -0,0 +1,21 @@
@@ -4653,9 +4588,6 @@ index 0000000..06f4780
 +		bhi	bcm2708_delay
 +		mov	pc, lr
 +ENDPROC(bcm2708_delay)
-diff --git a/arch/arm/mach-bcm2709/dma.c b/arch/arm/mach-bcm2709/dma.c
-new file mode 100644
-index 0000000..a5e58d1
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/dma.c
 @@ -0,0 +1,409 @@
@@ -5068,9 +5000,6 @@ index 0000000..a5e58d1
 +MODULE_LICENSE("GPL");
 +
 +MODULE_PARM_DESC(dmachans, "Bitmap of DMA channels available to the ARM");
-diff --git a/arch/arm/mach-bcm2709/dmaer.c b/arch/arm/mach-bcm2709/dmaer.c
-new file mode 100755
-index 0000000..5b0f0ff
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/dmaer.c
 @@ -0,0 +1,886 @@
@@ -5960,9 +5889,6 @@ index 0000000..5b0f0ff
 +MODULE_AUTHOR("Simon Hall");
 +module_init(dmaer_init);
 +module_exit(dmaer_exit);
-diff --git a/arch/arm/mach-bcm2709/include/mach/arm_control.h b/arch/arm/mach-bcm2709/include/mach/arm_control.h
-new file mode 100644
-index 0000000..e346caf
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/arm_control.h
 @@ -0,0 +1,493 @@
@@ -6459,9 +6385,6 @@ index 0000000..e346caf
 +#define ARM_LOCAL_MAILBOX3_CLR3		HW_REGISTER_RW(ARM_LOCAL_BASE+0x0FC)
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/arm_power.h b/arch/arm/mach-bcm2709/include/mach/arm_power.h
-new file mode 100644
-index 0000000..d3bf245
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/arm_power.h
 @@ -0,0 +1,62 @@
@@ -6527,18 +6450,12 @@ index 0000000..d3bf245
 +};
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/barriers.h b/arch/arm/mach-bcm2709/include/mach/barriers.h
-new file mode 100644
-index 0000000..723cdad
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/barriers.h
 @@ -0,0 +1,3 @@
 +#define mb()		dsb()
 +#define rmb()		dsb()
 +#define wmb()		mb()
-diff --git a/arch/arm/mach-bcm2709/include/mach/clkdev.h b/arch/arm/mach-bcm2709/include/mach/clkdev.h
-new file mode 100644
-index 0000000..04b37a8
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/clkdev.h
 @@ -0,0 +1,7 @@
@@ -6549,9 +6466,6 @@ index 0000000..04b37a8
 +#define __clk_put(clk) do { } while (0)
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/debug-macro.S b/arch/arm/mach-bcm2709/include/mach/debug-macro.S
-new file mode 100644
-index 0000000..b24304a
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/debug-macro.S
 @@ -0,0 +1,22 @@
@@ -6577,9 +6491,6 @@ index 0000000..b24304a
 +		.endm
 +
 +#include <debug/pl01x.S>
-diff --git a/arch/arm/mach-bcm2709/include/mach/dma.h b/arch/arm/mach-bcm2709/include/mach/dma.h
-new file mode 100644
-index 0000000..d03e7b5
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/dma.h
 @@ -0,0 +1,94 @@
@@ -6677,9 +6588,6 @@ index 0000000..d03e7b5
 +
 +
 +#endif /* _MACH_BCM2708_DMA_H */
-diff --git a/arch/arm/mach-bcm2709/include/mach/entry-macro.S b/arch/arm/mach-bcm2709/include/mach/entry-macro.S
-new file mode 100644
-index 0000000..d08591b
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/entry-macro.S
 @@ -0,0 +1,123 @@
@@ -6806,9 +6714,6 @@ index 0000000..d08591b
 +		dsb
 +1030:	@ EQ will be set if no irqs pending
 +		.endm
-diff --git a/arch/arm/mach-bcm2709/include/mach/frc.h b/arch/arm/mach-bcm2709/include/mach/frc.h
-new file mode 100644
-index 0000000..dd51e07
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/frc.h
 @@ -0,0 +1,38 @@
@@ -6850,9 +6755,6 @@ index 0000000..dd51e07
 +extern unsigned long long frc_clock_ticks63(void);
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/gpio.h b/arch/arm/mach-bcm2709/include/mach/gpio.h
-new file mode 100644
-index 0000000..7965a97
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/gpio.h
 @@ -0,0 +1,17 @@
@@ -6873,9 +6775,6 @@ index 0000000..7965a97
 +#define irq_to_gpio(x)	((x) - GPIO_IRQ_START)
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/hardware.h b/arch/arm/mach-bcm2709/include/mach/hardware.h
-new file mode 100644
-index 0000000..c2954e8
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/hardware.h
 @@ -0,0 +1,28 @@
@@ -6907,9 +6806,6 @@ index 0000000..c2954e8
 +#include <mach/platform.h>
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/io.h b/arch/arm/mach-bcm2709/include/mach/io.h
-new file mode 100644
-index 0000000..e6eb84d
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/io.h
 @@ -0,0 +1,27 @@
@@ -6940,9 +6836,6 @@ index 0000000..e6eb84d
 +#define __io(a)		__typesafe_io(a)
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/irqs.h b/arch/arm/mach-bcm2709/include/mach/irqs.h
-new file mode 100644
-index 0000000..3a883d2
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/irqs.h
 @@ -0,0 +1,225 @@
@@ -7171,9 +7064,6 @@ index 0000000..3a883d2
 +#define NR_IRQS               (BCM2708_ALLOC_IRQS+FREE_IRQS)
 +
 +#endif /* _BCM2708_IRQS_H_ */
-diff --git a/arch/arm/mach-bcm2709/include/mach/memory.h b/arch/arm/mach-bcm2709/include/mach/memory.h
-new file mode 100644
-index 0000000..7548a52
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/memory.h
 @@ -0,0 +1,57 @@
@@ -7234,9 +7124,6 @@ index 0000000..7548a52
 +#define __bus_to_pfn(x)     __phys_to_pfn((x) - (BUS_OFFSET - BCM_PLAT_PHYS_OFFSET))
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/platform.h b/arch/arm/mach-bcm2709/include/mach/platform.h
-new file mode 100644
-index 0000000..7157f38
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/platform.h
 @@ -0,0 +1,225 @@
@@ -7465,9 +7352,6 @@ index 0000000..7157f38
 +#endif
 +
 +/* END */
-diff --git a/arch/arm/mach-bcm2709/include/mach/power.h b/arch/arm/mach-bcm2709/include/mach/power.h
-new file mode 100644
-index 0000000..52b3b02
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/power.h
 @@ -0,0 +1,26 @@
@@ -7497,9 +7381,6 @@ index 0000000..52b3b02
 +extern int bcm_power_close(BCM_POWER_HANDLE_T handle);
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/system.h b/arch/arm/mach-bcm2709/include/mach/system.h
-new file mode 100644
-index 0000000..2d0b821
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/system.h
 @@ -0,0 +1,38 @@
@@ -7541,9 +7422,6 @@ index 0000000..2d0b821
 +}
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/timex.h b/arch/arm/mach-bcm2709/include/mach/timex.h
-new file mode 100644
-index 0000000..64a660c
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/timex.h
 @@ -0,0 +1,23 @@
@@ -7570,9 +7448,6 @@ index 0000000..64a660c
 + */
 +
 +#define CLOCK_TICK_RATE		(1000000)
-diff --git a/arch/arm/mach-bcm2709/include/mach/uncompress.h b/arch/arm/mach-bcm2709/include/mach/uncompress.h
-new file mode 100644
-index 0000000..d634813
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/uncompress.h
 @@ -0,0 +1,84 @@
@@ -7660,9 +7535,6 @@ index 0000000..d634813
 + * nothing to do
 + */
 +#define arch_decomp_wdog()
-diff --git a/arch/arm/mach-bcm2709/include/mach/vc_mem.h b/arch/arm/mach-bcm2709/include/mach/vc_mem.h
-new file mode 100644
-index 0000000..4a4a338
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/vc_mem.h
 @@ -0,0 +1,35 @@
@@ -7701,9 +7573,6 @@ index 0000000..4a4a338
 +#endif
 +
 +#endif  /* VC_MEM_H */
-diff --git a/arch/arm/mach-bcm2709/include/mach/vc_support.h b/arch/arm/mach-bcm2709/include/mach/vc_support.h
-new file mode 100755
-index 0000000..70e809f
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/vc_support.h
 @@ -0,0 +1,69 @@
@@ -7776,9 +7645,6 @@ index 0000000..70e809f
 +		unsigned int r0, unsigned int r1, unsigned int r2, unsigned int r3, unsigned int r4, unsigned int r5);
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/vcio.h b/arch/arm/mach-bcm2709/include/mach/vcio.h
-new file mode 100644
-index 0000000..8e11d67
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/vcio.h
 @@ -0,0 +1,165 @@
@@ -7947,9 +7813,6 @@ index 0000000..8e11d67
 +#define DEVICE_FILE_NAME "vcio"
 +
 +#endif
-diff --git a/arch/arm/mach-bcm2709/include/mach/vmalloc.h b/arch/arm/mach-bcm2709/include/mach/vmalloc.h
-new file mode 100644
-index 0000000..6aa6826
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/include/mach/vmalloc.h
 @@ -0,0 +1,20 @@
@@ -7973,9 +7836,6 @@ index 0000000..6aa6826
 + * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 + */
 +#define VMALLOC_END		(0xff000000)
-diff --git a/arch/arm/mach-bcm2709/power.c b/arch/arm/mach-bcm2709/power.c
-new file mode 100644
-index 0000000..3421057
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/power.c
 @@ -0,0 +1,195 @@
@@ -8174,9 +8034,6 @@ index 0000000..3421057
 +MODULE_AUTHOR("Phil Elwell");
 +MODULE_DESCRIPTION("Interface to BCM2708 power management");
 +MODULE_LICENSE("GPL");
-diff --git a/arch/arm/mach-bcm2709/vc_mem.c b/arch/arm/mach-bcm2709/vc_mem.c
-new file mode 100644
-index 0000000..ac578db
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/vc_mem.c
 @@ -0,0 +1,431 @@
@@ -8611,9 +8468,6 @@ index 0000000..ac578db
 +module_param(phys_addr, uint, 0644);
 +module_param(mem_size, uint, 0644);
 +module_param(mem_base, uint, 0644);
-diff --git a/arch/arm/mach-bcm2709/vc_support.c b/arch/arm/mach-bcm2709/vc_support.c
-new file mode 100755
-index 0000000..0bc41c4
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/vc_support.c
 @@ -0,0 +1,318 @@
@@ -8935,9 +8789,6 @@ index 0000000..0bc41c4
 +		return 1;
 +	}
 +}
-diff --git a/arch/arm/mach-bcm2709/vcio.c b/arch/arm/mach-bcm2709/vcio.c
-new file mode 100644
-index 0000000..5e43e85
 --- /dev/null
 +++ b/arch/arm/mach-bcm2709/vcio.c
 @@ -0,0 +1,474 @@
@@ -9415,8 +9266,6 @@ index 0000000..5e43e85
 +MODULE_DESCRIPTION("ARM I/O to VideoCore processor");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:bcm-mbox");
-diff --git a/arch/arm/mm/proc-v7.S b/arch/arm/mm/proc-v7.S
-index 22ac2a6..eec2825 100644
 --- a/arch/arm/mm/proc-v7.S
 +++ b/arch/arm/mm/proc-v7.S
 @@ -441,6 +441,7 @@ __v7_setup:
@@ -9427,11 +9276,9 @@ index 22ac2a6..eec2825 100644
  ENDPROC(__v7_setup)
  
  	.align	2
-diff --git a/arch/arm/tools/mach-types b/arch/arm/tools/mach-types
-index c9ddd87..bfc397c 100644
 --- a/arch/arm/tools/mach-types
 +++ b/arch/arm/tools/mach-types
-@@ -523,6 +523,7 @@ prima2_evb		MACH_PRIMA2_EVB		PRIMA2_EVB		3103
+@@ -523,6 +523,7 @@ prima2_evb		MACH_PRIMA2_EVB		PRIMA2_EVB
  paz00			MACH_PAZ00		PAZ00			3128
  acmenetusfoxg20		MACH_ACMENETUSFOXG20	ACMENETUSFOXG20		3129
  bcm2708			MACH_BCM2708		BCM2708			3138
@@ -9439,8 +9286,6 @@ index c9ddd87..bfc397c 100644
  ag5evm			MACH_AG5EVM		AG5EVM			3189
  ics_if_voip		MACH_ICS_IF_VOIP	ICS_IF_VOIP		3206
  wlf_cragg_6410		MACH_WLF_CRAGG_6410	WLF_CRAGG_6410		3207
-diff --git a/drivers/char/hw_random/Kconfig b/drivers/char/hw_random/Kconfig
-index 0d2ca0d..77eb7a8 100644
 --- a/drivers/char/hw_random/Kconfig
 +++ b/drivers/char/hw_random/Kconfig
 @@ -322,7 +322,7 @@ config HW_RANDOM_TPM
@@ -9452,11 +9297,9 @@ index 0d2ca0d..77eb7a8 100644
  	---help---
  	 This driver provides the kernel-side support for the BCM2708 hardware.
  
-diff --git a/drivers/clocksource/arm_arch_timer.c b/drivers/clocksource/arm_arch_timer.c
-index 84b4c8b..8253434 100644
 --- a/drivers/clocksource/arm_arch_timer.c
 +++ b/drivers/clocksource/arm_arch_timer.c
-@@ -795,3 +795,39 @@ static void __init arch_timer_mem_init(struct device_node *np)
+@@ -795,3 +795,39 @@ static void __init arch_timer_mem_init(s
  }
  CLOCKSOURCE_OF_DECLARE(armv7_arch_timer_mem, "arm,armv7-timer-mem",
  		       arch_timer_mem_init);
@@ -9496,8 +9339,6 @@ index 84b4c8b..8253434 100644
 +	arch_timer_common_init();
 +	return 0;
 +}
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index c9b8eb5..5965795 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -332,7 +332,7 @@ config DMA_BCM2835
@@ -9509,8 +9350,6 @@ index c9b8eb5..5965795 100644
  	select DMA_ENGINE
  	select DMA_VIRTUAL_CHANNELS
  
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index d30a986..d181d7f 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -361,7 +361,7 @@ config I2C_AXXIA
@@ -9531,8 +9370,6 @@ index d30a986..d181d7f 100644
  	help
  	  Enabling this option will add BSC (Broadcom Serial Controller)
  	  support for the BCM2708. BSC is a Broadcom proprietary bus compatible
-diff --git a/drivers/media/platform/bcm2835/Kconfig b/drivers/media/platform/bcm2835/Kconfig
-index a8fd172..2cb1a68 100644
 --- a/drivers/media/platform/bcm2835/Kconfig
 +++ b/drivers/media/platform/bcm2835/Kconfig
 @@ -2,7 +2,7 @@
@@ -9544,8 +9381,6 @@ index a8fd172..2cb1a68 100644
  	---help---
  	  Say Y here to enable camera host interface devices for
  	  Broadcom BCM2835 SoC. This operates over the VCHIQ interface
-diff --git a/drivers/misc/vc04_services/Kconfig b/drivers/misc/vc04_services/Kconfig
-index 2663933..b94e6cd 100644
 --- a/drivers/misc/vc04_services/Kconfig
 +++ b/drivers/misc/vc04_services/Kconfig
 @@ -1,6 +1,6 @@
@@ -9556,8 +9391,6 @@ index 2663933..b94e6cd 100644
  	default y
  	help
  		Kernel to VideoCore communication interface for the
-diff --git a/drivers/misc/vc04_services/Makefile b/drivers/misc/vc04_services/Makefile
-index 0c82520..8d038fe 100644
 --- a/drivers/misc/vc04_services/Makefile
 +++ b/drivers/misc/vc04_services/Makefile
 @@ -1,5 +1,3 @@
@@ -9571,8 +9404,6 @@ index 0c82520..8d038fe 100644
  ccflags-y += -DVCOS_VERIFY_BKPTS=1 -Idrivers/misc/vc04_services -DUSE_VCHIQ_ARM -D__VCCOREVER__=0x04000000
  
 -endif
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 977aeef..b049c15 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -304,7 +304,7 @@ config MMC_SDHCI_ST
@@ -9584,8 +9415,6 @@ index 977aeef..b049c15 100644
  	help
  	  This selects the MMC Interface on BCM2835.
  
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index a5238ab..ea70ef0 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -77,7 +77,7 @@ config SPI_ATMEL
@@ -9606,8 +9435,6 @@ index a5238ab..ea70ef0 100644
  	help
  	  This selects a driver for the Broadcom BCM2708 SPI master (SPI0). This
  	  driver is not compatible with the "Universal SPI Master" or the SPI slave
-diff --git a/drivers/watchdog/Kconfig b/drivers/watchdog/Kconfig
-index ff56894..4bcc3b2 100644
 --- a/drivers/watchdog/Kconfig
 +++ b/drivers/watchdog/Kconfig
 @@ -454,7 +454,7 @@ config RETU_WATCHDOG
@@ -9619,8 +9446,6 @@ index ff56894..4bcc3b2 100644
  	help
  	  Enables BCM2708 watchdog support.
  
-diff --git a/sound/arm/Kconfig b/sound/arm/Kconfig
-index f7ceafd..ada7ba2 100644
 --- a/sound/arm/Kconfig
 +++ b/sound/arm/Kconfig
 @@ -41,7 +41,7 @@ config SND_PXA2XX_AC97
@@ -9632,8 +9457,6 @@ index f7ceafd..ada7ba2 100644
  	select SND_PCM
  	help
  	  Say Y or M if you want to support BCM2835 Alsa pcm card driver
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index a562ddf..40d27c1 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -10,7 +10,7 @@ config SND_BCM2835_SOC_I2S
@@ -9645,6 +9468,3 @@ index a562ddf..40d27c1 100644
  	select REGMAP_MMIO
  	select SND_SOC_DMAENGINE_PCM
  	select SND_SOC_GENERIC_DMAENGINE_PCM
--- 
-1.8.3.2
-

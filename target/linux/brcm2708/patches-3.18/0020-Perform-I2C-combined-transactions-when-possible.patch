@@ -16,11 +16,9 @@ i2c: Make combined transactions optional and disabled by default
  drivers/i2c/busses/i2c-bcm2708.c | 31 ++++++++++++++++++++++++++++++-
  1 file changed, 30 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-index 09203c0..7d385a3 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
-@@ -74,6 +74,9 @@ static unsigned int baudrate = CONFIG_I2C_BCM2708_BAUDRATE;
+@@ -74,6 +74,9 @@ static unsigned int baudrate = CONFIG_I2
  module_param(baudrate, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
  MODULE_PARM_DESC(baudrate, "The I2C baudrate");
  
@@ -30,7 +28,7 @@ index 09203c0..7d385a3 100644
  
  struct bcm2708_i2c {
  	struct i2c_adapter adapter;
-@@ -150,7 +153,7 @@ static inline void bcm2708_bsc_fifo_fill(struct bcm2708_i2c *bi)
+@@ -150,7 +153,7 @@ static inline void bcm2708_bsc_fifo_fill
  static inline void bcm2708_bsc_setup(struct bcm2708_i2c *bi)
  {
  	unsigned long bus_hz;
@@ -39,7 +37,7 @@ index 09203c0..7d385a3 100644
  	u32 c = BSC_C_I2CEN | BSC_C_INTD | BSC_C_ST | BSC_C_CLEAR_1;
  
  	bus_hz = clk_get_rate(bi->clk);
-@@ -166,6 +169,32 @@ static inline void bcm2708_bsc_setup(struct bcm2708_i2c *bi)
+@@ -166,6 +169,32 @@ static inline void bcm2708_bsc_setup(str
  	bcm2708_wr(bi, BSC_DIV, cdiv);
  	bcm2708_wr(bi, BSC_A, bi->msg->addr);
  	bcm2708_wr(bi, BSC_DLEN, bi->msg->len);
@@ -72,6 +70,3 @@ index 09203c0..7d385a3 100644
  	bcm2708_wr(bi, BSC_C, c);
  }
  
--- 
-1.8.3.2
-

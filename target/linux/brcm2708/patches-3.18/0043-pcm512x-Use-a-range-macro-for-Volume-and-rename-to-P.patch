@@ -10,11 +10,9 @@ DAC ouput stages.
  sound/soc/codecs/pcm512x.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/sound/soc/codecs/pcm512x.c b/sound/soc/codecs/pcm512x.c
-index 640c991..b405719 100644
 --- a/sound/soc/codecs/pcm512x.c
 +++ b/sound/soc/codecs/pcm512x.c
-@@ -259,8 +259,8 @@ static const struct soc_enum pcm512x_veds =
+@@ -259,8 +259,8 @@ static const struct soc_enum pcm512x_ved
  			pcm512x_ramp_step_text);
  
  static const struct snd_kcontrol_new pcm512x_controls[] = {
@@ -25,6 +23,3 @@ index 640c991..b405719 100644
  SOC_DOUBLE_TLV("Playback Volume", PCM512x_ANALOG_GAIN_CTRL,
  	       PCM512x_LAGN_SHIFT, PCM512x_RAGN_SHIFT, 1, 1, analog_tlv),
  SOC_DOUBLE_TLV("Playback Boost Volume", PCM512x_ANALOG_GAIN_BOOST,
--- 
-1.8.3.2
-

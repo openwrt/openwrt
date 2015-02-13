@@ -9,11 +9,9 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  arch/arm/mach-bcm2708/bcm2708.c | 20 ++++++++++++++++++++
  1 file changed, 20 insertions(+)
 
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 100c223..a57cb85 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -623,6 +623,21 @@ static struct platform_device snd_pcm5102a_codec_device = {
+@@ -623,6 +623,21 @@ static struct platform_device snd_pcm510
  };
  #endif
  
@@ -47,6 +45,3 @@ index 100c223..a57cb85 100644
  #if defined(CONFIG_SND_BCM2708_SOC_RPI_DAC) || defined(CONFIG_SND_BCM2708_SOC_RPI_DAC_MODULE)
          bcm_register_device(&snd_rpi_dac_device);
          bcm_register_device(&snd_pcm1794a_codec_device);
--- 
-1.8.3.2
-

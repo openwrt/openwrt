@@ -11,11 +11,9 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  arch/arm/mach-bcm2708/bcm2708.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index dca28ad..50d4991 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -609,6 +609,20 @@ static struct platform_device bcm2708_i2s_device = {
+@@ -609,6 +609,20 @@ static struct platform_device bcm2708_i2
  };
  #endif
  
@@ -48,6 +46,3 @@ index dca28ad..50d4991 100644
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
--- 
-1.8.3.2
-

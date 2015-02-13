@@ -16,11 +16,9 @@ Subject: [PATCH 017/114] Added hwmon/thermal driver for reporting core
  create mode 100644 drivers/hwmon/bcm2835-hwmon.c
  create mode 100644 drivers/thermal/bcm2835-thermal.c
 
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index f3dccae..af57d11 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -455,6 +455,14 @@ static struct platform_device bcm2708_alsa_devices[] = {
+@@ -455,6 +455,14 @@ static struct platform_device bcm2708_al
  	       },
  };
  
@@ -45,11 +43,9 @@ index f3dccae..af57d11 100644
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
-diff --git a/drivers/hwmon/Kconfig b/drivers/hwmon/Kconfig
-index 5286d7c..d52e192 100644
 --- a/drivers/hwmon/Kconfig
 +++ b/drivers/hwmon/Kconfig
-@@ -1680,6 +1680,16 @@ config SENSORS_ULTRA45
+@@ -1689,6 +1689,16 @@ config SENSORS_ULTRA45
  	  This driver provides support for the Ultra45 workstation environmental
  	  sensors.
  
@@ -66,11 +62,9 @@ index 5286d7c..d52e192 100644
  if ACPI
  
  comment "ACPI drivers"
-diff --git a/drivers/hwmon/Makefile b/drivers/hwmon/Makefile
-index c90a761..15aaecf 100644
 --- a/drivers/hwmon/Makefile
 +++ b/drivers/hwmon/Makefile
-@@ -153,6 +153,7 @@ obj-$(CONFIG_SENSORS_W83L785TS)	+= w83l785ts.o
+@@ -154,6 +154,7 @@ obj-$(CONFIG_SENSORS_W83L786NG)	+= w83l7
  obj-$(CONFIG_SENSORS_WM831X)	+= wm831x-hwmon.o
  obj-$(CONFIG_SENSORS_WM8350)	+= wm8350-hwmon.o
  obj-$(CONFIG_SENSORS_GSC)	+= gsc.o
@@ -78,9 +72,6 @@ index c90a761..15aaecf 100644
  
  obj-$(CONFIG_PMBUS)		+= pmbus/
  
-diff --git a/drivers/hwmon/bcm2835-hwmon.c b/drivers/hwmon/bcm2835-hwmon.c
-new file mode 100644
-index 0000000..5bbed45
 --- /dev/null
 +++ b/drivers/hwmon/bcm2835-hwmon.c
 @@ -0,0 +1,219 @@
@@ -303,8 +294,6 @@ index 0000000..5bbed45
 +MODULE_DESCRIPTION("HW Monitor driver for bcm2835 chip");
 +
 +module_platform_driver(bcm2835_hwmon_driver);
-diff --git a/drivers/thermal/Kconfig b/drivers/thermal/Kconfig
-index f554d25..fecc621 100644
 --- a/drivers/thermal/Kconfig
 +++ b/drivers/thermal/Kconfig
 @@ -206,6 +206,12 @@ config INTEL_POWERCLAMP
@@ -320,11 +309,9 @@ index f554d25..fecc621 100644
  config X86_PKG_TEMP_THERMAL
  	tristate "X86 package temperature thermal driver"
  	depends on X86_THERMAL_VECTOR
-diff --git a/drivers/thermal/Makefile b/drivers/thermal/Makefile
-index 39c4fe8..30a4741 100644
 --- a/drivers/thermal/Makefile
 +++ b/drivers/thermal/Makefile
-@@ -29,6 +29,7 @@ obj-$(CONFIG_ARMADA_THERMAL)	+= armada_thermal.o
+@@ -29,6 +29,7 @@ obj-$(CONFIG_ARMADA_THERMAL)	+= armada_t
  obj-$(CONFIG_IMX_THERMAL)	+= imx_thermal.o
  obj-$(CONFIG_DB8500_CPUFREQ_COOLING)	+= db8500_cpufreq_cooling.o
  obj-$(CONFIG_INTEL_POWERCLAMP)	+= intel_powerclamp.o
@@ -332,9 +319,6 @@ index 39c4fe8..30a4741 100644
  obj-$(CONFIG_X86_PKG_TEMP_THERMAL)	+= x86_pkg_temp_thermal.o
  obj-$(CONFIG_INTEL_SOC_DTS_THERMAL)	+= intel_soc_dts_thermal.o
  obj-$(CONFIG_TI_SOC_THERMAL)	+= ti-soc-thermal/
-diff --git a/drivers/thermal/bcm2835-thermal.c b/drivers/thermal/bcm2835-thermal.c
-new file mode 100644
-index 0000000..85fceb5
 --- /dev/null
 +++ b/drivers/thermal/bcm2835-thermal.c
 @@ -0,0 +1,184 @@
@@ -522,6 +506,3 @@ index 0000000..85fceb5
 +MODULE_DESCRIPTION("Thermal driver for bcm2835 chip");
 +
 +module_platform_driver(bcm2835_thermal_driver);
--- 
-1.8.3.2
-

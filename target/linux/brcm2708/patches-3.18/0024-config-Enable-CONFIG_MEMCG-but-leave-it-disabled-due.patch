@@ -10,8 +10,6 @@ Subject: [PATCH 024/114] config: Enable CONFIG_MEMCG, but leave it disabled
  mm/memcontrol.c                   |  1 +
  3 files changed, 25 insertions(+)
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index e2da9da..897616c 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -19,6 +19,7 @@ CONFIG_CGROUP_FREEZER=y
@@ -22,11 +20,9 @@ index e2da9da..897616c 100644
  CONFIG_BLK_CGROUP=y
  CONFIG_NAMESPACES=y
  CONFIG_SCHED_AUTOGROUP=y
-diff --git a/kernel/cgroup.c b/kernel/cgroup.c
-index 136ecea..c909506 100644
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -5322,6 +5322,29 @@ static int __init cgroup_disable(char *str)
+@@ -5322,6 +5322,29 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  
@@ -56,11 +52,9 @@ index 136ecea..c909506 100644
  static int __init cgroup_set_legacy_files_on_dfl(char *str)
  {
  	printk("cgroup: using legacy files on the default hierarchy\n");
-diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 4918b6e..168498c 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -6207,6 +6207,7 @@ struct cgroup_subsys memory_cgrp_subsys = {
+@@ -6207,6 +6207,7 @@ struct cgroup_subsys memory_cgrp_subsys
  	.bind = mem_cgroup_bind,
  	.legacy_cftypes = mem_cgroup_files,
  	.early_init = 0,
@@ -68,6 +62,3 @@ index 4918b6e..168498c 100644
  };
  
  #ifdef CONFIG_MEMCG_SWAP
--- 
-1.8.3.2
-

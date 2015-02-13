@@ -7,11 +7,9 @@ Subject: [PATCH 093/114] fiq_fsm: fix build on bcm2708 and bcm2709 platforms
  drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-index 84618a5..0d2b04e 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-@@ -78,6 +78,7 @@ void notrace _fiq_print(enum fiq_debug_level dbg_lvl, volatile struct fiq_state
+@@ -78,6 +78,7 @@ void notrace _fiq_print(enum fiq_debug_l
   * fiq_fsm_spin_lock() - ARMv6+ bare bones spinlock
   * Must be called with local interrupts and FIQ disabled.
   */
@@ -19,7 +17,7 @@ index 84618a5..0d2b04e 100644
  inline void fiq_fsm_spin_lock(fiq_lock_t *lock)
  {
  	unsigned long tmp;
-@@ -103,16 +104,23 @@ inline void fiq_fsm_spin_lock(fiq_lock_t *lock)
+@@ -103,16 +104,23 @@ inline void fiq_fsm_spin_lock(fiq_lock_t
  	}
  	smp_mb();
  }
@@ -43,6 +41,3 @@ index 84618a5..0d2b04e 100644
  
  /**
   * fiq_fsm_restart_channel() - Poke channel enable bit for a split transaction
--- 
-1.8.3.2
-

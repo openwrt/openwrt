@@ -25,8 +25,6 @@ The correct baudrate is shown in the log after the cdiv > 0xffff correction.
  create mode 100644 drivers/i2c/busses/i2c-bcm2708.c
  create mode 100644 drivers/spi/spi-bcm2708.c
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 63cb6a4..6d2eae1 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -195,6 +195,13 @@ CONFIG_SERIAL_AMBA_PL011=y
@@ -43,8 +41,6 @@ index 63cb6a4..6d2eae1 100644
  # CONFIG_HWMON is not set
  CONFIG_WATCHDOG=y
  CONFIG_FB=y
-diff --git a/arch/arm/mach-bcm2708/Kconfig b/arch/arm/mach-bcm2708/Kconfig
-index 9355841..e151ed4 100644
 --- a/arch/arm/mach-bcm2708/Kconfig
 +++ b/arch/arm/mach-bcm2708/Kconfig
 @@ -31,4 +31,11 @@ config BCM2708_NOL2CACHE
@@ -59,8 +55,6 @@ index 9355841..e151ed4 100644
 +	help
 +	  Binds spidev driver to the SPI0 master
  endmenu
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index af57d11..82f56fb 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -31,6 +31,7 @@
@@ -103,7 +97,7 @@ index af57d11..82f56fb 100644
  	 }
  };
  
-@@ -455,6 +463,89 @@ static struct platform_device bcm2708_alsa_devices[] = {
+@@ -455,6 +463,89 @@ static struct platform_device bcm2708_al
  	       },
  };
  
@@ -216,8 +210,6 @@ index af57d11..82f56fb 100644
  }
  
  static void timer_set_mode(enum clock_event_mode mode,
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 917c358..3d3db41 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -371,6 +371,25 @@ config I2C_BCM2835
@@ -246,8 +238,6 @@ index 917c358..3d3db41 100644
  config I2C_BCM_KONA
  	tristate "BCM Kona I2C adapter"
  	depends on ARCH_BCM_MOBILE
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index 78d56c5..abe642f 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
 @@ -33,6 +33,7 @@ obj-$(CONFIG_I2C_AT91)		+= i2c-at91.o
@@ -258,9 +248,6 @@ index 78d56c5..abe642f 100644
  obj-$(CONFIG_I2C_BLACKFIN_TWI)	+= i2c-bfin-twi.o
  obj-$(CONFIG_I2C_CADENCE)	+= i2c-cadence.o
  obj-$(CONFIG_I2C_CBUS_GPIO)	+= i2c-cbus-gpio.o
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-new file mode 100644
-index 0000000..09203c0
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -0,0 +1,420 @@
@@ -684,8 +671,6 @@ index 0000000..09203c0
 +MODULE_AUTHOR("Chris Boot <bootc@bootc.net>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:" DRV_NAME);
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 84e7c9e..71b4741 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
 @@ -86,6 +86,14 @@ config SPI_BCM2835
@@ -703,11 +688,9 @@ index 84e7c9e..71b4741 100644
  config SPI_BFIN5XX
  	tristate "SPI controller driver for ADI Blackfin5xx"
  	depends on BLACKFIN && !BF60x
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index 78f24ca..fdd29d3 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_SPI_BCM63XX)		+= spi-bcm63xx.o
+@@ -20,6 +20,7 @@ obj-$(CONFIG_SPI_BCM63XX)		+= spi-bcm63x
  obj-$(CONFIG_SPI_BCM63XX_HSSPI)		+= spi-bcm63xx-hsspi.o
  obj-$(CONFIG_SPI_BFIN5XX)		+= spi-bfin5xx.o
  obj-$(CONFIG_SPI_ADI_V3)                += spi-adi-v3.o
@@ -715,9 +698,6 @@ index 78f24ca..fdd29d3 100644
  obj-$(CONFIG_SPI_BFIN_SPORT)		+= spi-bfin-sport.o
  obj-$(CONFIG_SPI_BITBANG)		+= spi-bitbang.o
  obj-$(CONFIG_SPI_BUTTERFLY)		+= spi-butterfly.o
-diff --git a/drivers/spi/spi-bcm2708.c b/drivers/spi/spi-bcm2708.c
-new file mode 100644
-index 0000000..b04a57d
 --- /dev/null
 +++ b/drivers/spi/spi-bcm2708.c
 @@ -0,0 +1,626 @@
@@ -1347,6 +1327,3 @@ index 0000000..b04a57d
 +MODULE_AUTHOR("Chris Boot <bootc@bootc.net>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform:" DRV_NAME);
--- 
-1.8.3.2
-

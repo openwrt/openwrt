@@ -20,8 +20,6 @@ Signed-off-by: popcornmix <popcornmix@gmail.com>
  create mode 100644 drivers/char/broadcom/vc_cma/vc_cma.c
  create mode 100644 include/linux/broadcom/vc_cma.h
 
-diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
-index efefd12..aebd7ca 100644
 --- a/drivers/char/Kconfig
 +++ b/drivers/char/Kconfig
 @@ -581,6 +581,8 @@ config DEVPORT
@@ -33,8 +31,6 @@ index efefd12..aebd7ca 100644
  config MSM_SMD_PKT
  	bool "Enable device interface for some SMD packet ports"
  	default n
-diff --git a/drivers/char/Makefile b/drivers/char/Makefile
-index d06cde26..a9f9daf 100644
 --- a/drivers/char/Makefile
 +++ b/drivers/char/Makefile
 @@ -62,3 +62,4 @@ js-rtc-y = rtc.o
@@ -42,9 +38,6 @@ index d06cde26..a9f9daf 100644
  obj-$(CONFIG_TILE_SROM)		+= tile-srom.o
  obj-$(CONFIG_XILLYBUS)		+= xillybus/
 +obj-$(CONFIG_BRCM_CHAR_DRIVERS) += broadcom/
-diff --git a/drivers/char/broadcom/Kconfig b/drivers/char/broadcom/Kconfig
-new file mode 100644
-index 0000000..2d8bd6e
 --- /dev/null
 +++ b/drivers/char/broadcom/Kconfig
 @@ -0,0 +1,15 @@
@@ -63,16 +56,10 @@ index 0000000..2d8bd6e
 +	default n
 +        help
 +          Helper for videocore CMA access.
-diff --git a/drivers/char/broadcom/Makefile b/drivers/char/broadcom/Makefile
-new file mode 100644
-index 0000000..13c5bca
 --- /dev/null
 +++ b/drivers/char/broadcom/Makefile
 @@ -0,0 +1 @@
 +obj-$(CONFIG_BCM_VC_CMA)	+= vc_cma/
-diff --git a/drivers/char/broadcom/vc_cma/Makefile b/drivers/char/broadcom/vc_cma/Makefile
-new file mode 100644
-index 0000000..6a94de4
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_cma/Makefile
 @@ -0,0 +1,14 @@
@@ -90,9 +77,6 @@ index 0000000..6a94de4
 +obj-$(CONFIG_BCM_VC_CMA) += vc-cma.o
 +
 +vc-cma-objs := vc_cma.o
-diff --git a/drivers/char/broadcom/vc_cma/vc_cma.c b/drivers/char/broadcom/vc_cma/vc_cma.c
-new file mode 100644
-index 0000000..a635f9f
 --- /dev/null
 +++ b/drivers/char/broadcom/vc_cma/vc_cma.c
 @@ -0,0 +1,1143 @@
@@ -1239,8 +1223,6 @@ index 0000000..a635f9f
 +module_exit(vc_cma_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Broadcom Corporation");
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index c085ede..43d2ac9 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -51,7 +51,7 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
@@ -1252,9 +1234,6 @@ index c085ede..43d2ac9 100644
  obj-y				+= mic/
  obj-$(CONFIG_GENWQE)		+= genwqe/
  obj-$(CONFIG_ECHO)		+= echo/
-diff --git a/include/linux/broadcom/vc_cma.h b/include/linux/broadcom/vc_cma.h
-new file mode 100644
-index 0000000..5325832
 --- /dev/null
 +++ b/include/linux/broadcom/vc_cma.h
 @@ -0,0 +1,29 @@
@@ -1287,6 +1266,3 @@ index 0000000..5325832
 +#endif
 +
 +#endif /* VC_CMA_H */
--- 
-1.8.3.2
-

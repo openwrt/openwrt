@@ -15,9 +15,6 @@ lirc-rpi: Also support pinctrl-bcm2835 in non-DT mode
  2 files changed, 183 insertions(+), 28 deletions(-)
  create mode 100644 arch/arm/boot/dts/lirc-rpi-overlay.dts
 
-diff --git a/arch/arm/boot/dts/lirc-rpi-overlay.dts b/arch/arm/boot/dts/lirc-rpi-overlay.dts
-new file mode 100644
-index 0000000..7d5d82b
 --- /dev/null
 +++ b/arch/arm/boot/dts/lirc-rpi-overlay.dts
 @@ -0,0 +1,57 @@
@@ -78,8 +75,6 @@ index 0000000..7d5d82b
 +		debug =         <&lirc_rpi>,"rpi,debug:0";
 +	};
 +};
-diff --git a/drivers/staging/media/lirc/lirc_rpi.c b/drivers/staging/media/lirc/lirc_rpi.c
-index c688364..cd66ca2 100644
 --- a/drivers/staging/media/lirc/lirc_rpi.c
 +++ b/drivers/staging/media/lirc/lirc_rpi.c
 @@ -40,6 +40,7 @@
@@ -90,7 +85,7 @@ index c688364..cd66ca2 100644
  
  #include <linux/platform_data/bcm2708.h>
  
-@@ -295,32 +296,117 @@ static int is_right_chip(struct gpio_chip *chip, void *data)
+@@ -295,32 +296,117 @@ static int is_right_chip(struct gpio_chi
  	return 0;
  }
  
@@ -175,13 +170,8 @@ index c688364..cd66ca2 100644
 +		read_bool_property(node, "rpi,invert", &invert);
 +
 +		read_bool_property(node, "rpi,debug", &debug);
- 
--	if (gpio_request(gpio_out_pin, LIRC_DRIVER_NAME " ir/out")) {
--		printk(KERN_ALERT LIRC_DRIVER_NAME
--		       ": cant claim gpio pin %d\n", gpio_out_pin);
--		ret = -ENODEV;
--		goto exit_init_port;
- 	}
++
++	}
 +	else
 +	{
 +		if (gpio_in_pin >= BCM2708_NR_GPIOS ||
@@ -191,12 +181,7 @@ index c688364..cd66ca2 100644
 +			       ": invalid GPIO pin(s) specified!\n");
 +			goto exit_init_port;
 +		}
- 
--	if (gpio_request(gpio_in_pin, LIRC_DRIVER_NAME " ir/in")) {
--		printk(KERN_ALERT LIRC_DRIVER_NAME
--		       ": cant claim gpio pin %d\n", gpio_in_pin);
--		ret = -ENODEV;
--		goto exit_gpio_free_out_pin;
++
 +		if (gpio_request(gpio_out_pin, LIRC_DRIVER_NAME " ir/out")) {
 +			printk(KERN_ALERT LIRC_DRIVER_NAME
 +			       ": cant claim gpio pin %d\n", gpio_out_pin);
@@ -214,8 +199,22 @@ index c688364..cd66ca2 100644
 +		bcm2708_gpio_setpull(gpiochip, gpio_in_pin, gpio_in_pull);
 +		gpiochip->direction_input(gpiochip, gpio_in_pin);
 +		gpiochip->direction_output(gpiochip, gpio_out_pin, 1);
- 	}
++	}
  
+-	if (gpio_request(gpio_out_pin, LIRC_DRIVER_NAME " ir/out")) {
+-		printk(KERN_ALERT LIRC_DRIVER_NAME
+-		       ": cant claim gpio pin %d\n", gpio_out_pin);
+-		ret = -ENODEV;
+-		goto exit_init_port;
+-	}
+-
+-	if (gpio_request(gpio_in_pin, LIRC_DRIVER_NAME " ir/in")) {
+-		printk(KERN_ALERT LIRC_DRIVER_NAME
+-		       ": cant claim gpio pin %d\n", gpio_in_pin);
+-		ret = -ENODEV;
+-		goto exit_gpio_free_out_pin;
+-	}
+-
 -	bcm2708_gpio_setpull(gpiochip, gpio_in_pin, gpio_in_pull);
 -	gpiochip->direction_input(gpiochip, gpio_in_pin);
 -	gpiochip->direction_output(gpiochip, gpio_out_pin, 1);
@@ -254,25 +253,26 @@ index c688364..cd66ca2 100644
 -	if (!lirc_rpi_dev) {
 -		result = -ENOMEM;
 -		goto exit_driver_unregister;
+-	}
 +	node = of_find_compatible_node(NULL, NULL,
 +				       lirc_rpi_of_match[0].compatible);
-+
+ 
+-	result = platform_device_add(lirc_rpi_dev);
+-	if (result)
+-		goto exit_device_put;
 +	if (node) {
 +		/* DT-enabled */
 +		lirc_rpi_dev = of_find_device_by_node(node);
 +		WARN_ON(lirc_rpi_dev->dev.of_node != node);
 +		of_node_put(node);
- 	}
++	}
 +	else {
 +		lirc_rpi_dev = platform_device_alloc(LIRC_DRIVER_NAME, 0);
 +		if (!lirc_rpi_dev) {
 +			result = -ENOMEM;
 +			goto exit_driver_unregister;
 +		}
- 
--	result = platform_device_add(lirc_rpi_dev);
--	if (result)
--		goto exit_device_put;
++
 +		result = platform_device_add(lirc_rpi_dev);
 +		if (result)
 +			goto exit_device_put;
@@ -280,7 +280,7 @@ index c688364..cd66ca2 100644
  
  	return 0;
  
-@@ -577,13 +682,6 @@ static int __init lirc_rpi_init_module(void)
+@@ -577,13 +682,6 @@ static int __init lirc_rpi_init_module(v
  	if (result)
  		return result;
  
@@ -294,6 +294,3 @@ index c688364..cd66ca2 100644
  	result = init_port();
  	if (result < 0)
  		goto exit_rpi;
--- 
-1.8.3.2
-

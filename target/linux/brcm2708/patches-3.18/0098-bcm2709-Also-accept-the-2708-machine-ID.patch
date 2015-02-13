@@ -7,8 +7,6 @@ Subject: [PATCH 098/114] bcm2709: Also accept the 2708 machine ID
  arch/arm/mach-bcm2709/bcm2709.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/arch/arm/mach-bcm2709/bcm2709.c b/arch/arm/mach-bcm2709/bcm2709.c
-index f009aeb..7e3affd 100644
 --- a/arch/arm/mach-bcm2709/bcm2709.c
 +++ b/arch/arm/mach-bcm2709/bcm2709.c
 @@ -1270,6 +1270,19 @@ MACHINE_START(BCM2709, "BCM2709")
@@ -31,6 +29,3 @@ index f009aeb..7e3affd 100644
  module_param(boardrev, uint, 0644);
  module_param(serial, uint, 0644);
  module_param(uart_clock, uint, 0644);
--- 
-1.8.3.2
-

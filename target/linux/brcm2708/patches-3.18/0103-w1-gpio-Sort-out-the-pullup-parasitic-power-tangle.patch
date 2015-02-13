@@ -10,8 +10,6 @@ Subject: [PATCH 103/114] w1-gpio: Sort out the pullup/parasitic power tangle
  include/linux/w1-gpio.h                      |  1 +
  4 files changed, 32 insertions(+), 15 deletions(-)
 
-diff --git a/arch/arm/boot/dts/w1-gpio-overlay.dts b/arch/arm/boot/dts/w1-gpio-overlay.dts
-index b2c5ee2..29a3b48 100644
 --- a/arch/arm/boot/dts/w1-gpio-overlay.dts
 +++ b/arch/arm/boot/dts/w1-gpio-overlay.dts
 @@ -1,4 +1,4 @@
@@ -35,8 +33,6 @@ index b2c5ee2..29a3b48 100644
 +		pullup =        <&w1>,"rpi,parasitic-power:0";
  	};
  };
-diff --git a/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts b/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts
-index b3e97c2..66a98f6 100644
 --- a/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts
 +++ b/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts
 @@ -1,4 +1,4 @@
@@ -63,8 +59,6 @@ index b3e97c2..66a98f6 100644
 +		pullup =        <&w1>,"rpi,parasitic-power:0";
  	};
  };
-diff --git a/drivers/w1/masters/w1-gpio.c b/drivers/w1/masters/w1-gpio.c
-index 61be2cd..54c0313 100644
 --- a/drivers/w1/masters/w1-gpio.c
 +++ b/drivers/w1/masters/w1-gpio.c
 @@ -23,10 +23,14 @@
@@ -85,7 +79,7 @@ index 61be2cd..54c0313 100644
  static int w1_gpio_pin = -1;
  static int w1_gpio_pin_orig = -1;
  module_param_named(gpiopin, w1_gpio_pin, int, 0);
-@@ -99,6 +103,7 @@ static int w1_gpio_probe_dt(struct platform_device *pdev)
+@@ -99,6 +103,7 @@ static int w1_gpio_probe_dt(struct platf
  	struct w1_gpio_platform_data *pdata = dev_get_platdata(&pdev->dev);
  	struct device_node *np = pdev->dev.of_node;
  	int gpio;
@@ -93,7 +87,7 @@ index 61be2cd..54c0313 100644
  
  	pdata = devm_kzalloc(&pdev->dev, sizeof(*pdata), GFP_KERNEL);
  	if (!pdata)
-@@ -107,6 +112,9 @@ static int w1_gpio_probe_dt(struct platform_device *pdev)
+@@ -107,6 +112,9 @@ static int w1_gpio_probe_dt(struct platf
  	if (of_get_property(np, "linux,open-drain", NULL))
  		pdata->is_open_drain = 1;
  
@@ -103,7 +97,7 @@ index 61be2cd..54c0313 100644
  	gpio = of_get_gpio(np, 0);
  	if (gpio < 0) {
  		if (gpio != -EPROBE_DEFER)
-@@ -122,7 +130,7 @@ static int w1_gpio_probe_dt(struct platform_device *pdev)
+@@ -122,7 +130,7 @@ static int w1_gpio_probe_dt(struct platf
  	if (gpio == -EPROBE_DEFER)
  		return gpio;
  	/* ignore other errors as the pullup gpio is optional */
@@ -112,7 +106,7 @@ index 61be2cd..54c0313 100644
  
  	pdev->dev.platform_data = pdata;
  
-@@ -158,17 +166,20 @@ static int w1_gpio_probe(struct platform_device *pdev)
+@@ -158,17 +166,20 @@ static int w1_gpio_probe(struct platform
  	}
  
  	w1_gpio_pin_orig = pdata->pin;
@@ -137,7 +131,7 @@ index 61be2cd..54c0313 100644
  
  	err = devm_gpio_request(&pdev->dev, pdata->pin, "w1");
  	if (err) {
-@@ -199,10 +210,10 @@ static int w1_gpio_probe(struct platform_device *pdev)
+@@ -199,10 +210,10 @@ static int w1_gpio_probe(struct platform
  		master->set_pullup = w1_gpio_set_pullup;
  	}
  
@@ -151,7 +145,7 @@ index 61be2cd..54c0313 100644
  		else
  			master->bitbang_pullup = w1_gpio_bitbang_pullup;
  	}
-@@ -238,7 +249,8 @@ static int w1_gpio_remove(struct platform_device *pdev)
+@@ -238,7 +249,8 @@ static int w1_gpio_remove(struct platfor
  	w1_remove_master_device(master);
  
  	pdata->pin = w1_gpio_pin_orig;
@@ -161,8 +155,6 @@ index 61be2cd..54c0313 100644
  
  	return 0;
  }
-diff --git a/include/linux/w1-gpio.h b/include/linux/w1-gpio.h
-index d58594a..feae942 100644
 --- a/include/linux/w1-gpio.h
 +++ b/include/linux/w1-gpio.h
 @@ -18,6 +18,7 @@
@@ -173,6 +165,3 @@ index d58594a..feae942 100644
  	void (*enable_external_pullup)(int enable);
  	unsigned int ext_pullup_enable_pin;
  	unsigned int pullup_duration;
--- 
-1.8.3.2
-

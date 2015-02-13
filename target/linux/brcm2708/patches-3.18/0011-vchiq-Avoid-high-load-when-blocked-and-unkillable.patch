@@ -15,8 +15,6 @@ vchiq: Include SIGSTOP and SIGCONT in list of signals not-masked by vchiq to all
  7 files changed, 75 insertions(+)
  create mode 100644 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_killable.h
 
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
-index b3bdaa2..7e7b09f 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
 @@ -56,6 +56,7 @@
@@ -27,8 +25,6 @@ index b3bdaa2..7e7b09f 100644
  
  #define MAX_FRAGMENTS (VCHIQ_NUM_CURRENT_BULKS * 2)
  
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
-index 2596818..3e328ab 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
 @@ -50,6 +50,7 @@
@@ -39,8 +35,6 @@ index 2596818..3e328ab 100644
  
  #define DEVICE_NAME "vchiq"
  
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
-index 65f4b52..5efc62f 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
 @@ -33,6 +33,7 @@
@@ -51,8 +45,6 @@ index 65f4b52..5efc62f 100644
  #include <linux/module.h>
  #include <linux/mutex.h>
  
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
-index f962027..14a4155 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
 @@ -32,6 +32,7 @@
@@ -63,8 +55,6 @@ index f962027..14a4155 100644
  
  #define VCHIQ_SLOT_HANDLER_STACK 8192
  
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
-index be9735f..5a4182e 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 @@ -39,6 +39,7 @@
@@ -75,9 +65,6 @@ index be9735f..5a4182e 100644
  
  /* ---- Public Variables ------------------------------------------------- */
  
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_killable.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_killable.h
-new file mode 100644
-index 0000000..335446e
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_killable.h
 @@ -0,0 +1,69 @@
@@ -150,8 +137,6 @@ index 0000000..335446e
 +#define mutex_lock_interruptible mutex_lock_interruptible_killable
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
-index c2eefef..05e7979 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
 @@ -32,6 +32,7 @@
@@ -162,6 +147,3 @@ index c2eefef..05e7979 100644
  
  static inline int is_pow2(int i)
  {
--- 
-1.8.3.2
-
