@@ -1,0 +1,35 @@
+From 89d455d785190203b1d3a8766c8babb8c1688fc3 Mon Sep 17 00:00:00 2001
+From: Yousong Zhou <yszhou4tech@gmail.com>
+Date: Mon, 9 Feb 2015 19:51:25 +0800
+Subject: [PATCH 3/5] mips: fix compiler warning on printing 64-bit integer.
+
+
+Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
+---
+ kexec/arch/mips/crashdump-mips.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/kexec/arch/mips/crashdump-mips.c b/kexec/arch/mips/crashdump-mips.c
+index e7840e0..98c9f7c 100644
+--- a/kexec/arch/mips/crashdump-mips.c
++++ b/kexec/arch/mips/crashdump-mips.c
+@@ -22,6 +22,7 @@
+ #include <stdlib.h>
+ #include <errno.h>
+ #include <limits.h>
++#include <inttypes.h>
+ #include <elf.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+@@ -52,7 +53,7 @@ static int get_kernel_paddr(struct crash_elf_info *elf_info)
+ 
+ 	if (parse_iomem_single("Kernel code\n", &start, NULL) == 0) {
+ 		elf_info->kern_paddr_start = start;
+-		dbgprintf("kernel load physical addr start = 0x%lx\n", start);
++		dbgprintf("kernel load physical addr start = 0x%" PRIu64 "\n", start);
+ 		return 0;
+ 	}
+ 
+-- 
+1.7.10.4
+
