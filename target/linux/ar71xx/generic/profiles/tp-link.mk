@@ -48,6 +48,16 @@ define Profile/TLMR11U/Description
 endef
 $(eval $(call Profile,TLMR11U))
 
+define Profile/TLMR12U
+	NAME:=TP-LINK TL-MR12U
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev
+endef
+
+define Profile/TLMR12U/Description
+	Package set optimized for the TP-LINK TL-MR12U.
+endef
+
+$(eval $(call Profile,TLMR12U))
 
 define Profile/TLMR13U
 	NAME:=TP-LINK TL-MR13U
