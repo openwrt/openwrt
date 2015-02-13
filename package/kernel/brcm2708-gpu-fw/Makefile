@@ -23,9 +23,9 @@ include $(INCLUDE_DIR)/package.mk
 define Package/brcm2708-gpu-fw
   SECTION:=boot
   CATEGORY:=Boot Loaders
-  DEPENDS:=@(TARGET_brcm2708_bcm2708||TARGET_brcm2708_bcm2709)
+  DEPENDS:=@TARGET_brcm2708
   TITLE:=brcm2708-gpu-fw
-  DEFAULT:=y if (TARGET_brcm2708_bcm2708||TARGET_brcm2708_bcm2709)
+  DEFAULT:=y if TARGET_brcm2708
 endef
 
 define Package/brcm2708-gpu-fw/description
@@ -41,4 +41,3 @@ define Build/InstallDev
 endef
 
 $(eval $(call BuildPackage,brcm2708-gpu-fw))
-
