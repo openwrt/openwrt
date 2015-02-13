@@ -1,4 +1,9 @@
-BOARDNAME:=bcm2709
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+SUBTARGET:=bcm2709
+BOARDNAME:=BCM2709 based boards
 CPU_TYPE:=cortex-a7
 CPU_SUBTYPE:=vfp
 
