@@ -22,6 +22,7 @@
 
 #include <linux/platform_device.h>
 #include <linux/ar8216_platform.h>
+#include <linux/gpio.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/nand.h>
 #include <linux/platform/ar934x_nfc.h>
@@ -54,6 +55,8 @@
 #define NBG6716_GPIO_BTN_USB1		0
 #define NBG6716_GPIO_BTN_USB2		14
 #define NBG6716_GPIO_BTN_WPS		22
+
+#define NBG6716_GPIO_USB_POWER		16
 
 #define NBG6716_KEYS_POLL_INTERVAL	20	/* msecs */
 #define NBG6716_KEYS_DEBOUNCE_INTERVAL	(3 * NBG6716_KEYS_POLL_INTERVAL)
@@ -202,6 +205,10 @@ static void __init nbg6716_common_setup(void)
 
 	ath79_nfc_set_ecc_mode(AR934X_NFC_ECC_HW);
 	ath79_register_nfc();
+
+	gpio_request_one(NBG6716_GPIO_USB_POWER,
+		GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+		"USB power");
 
 	ath79_register_usb();
 
