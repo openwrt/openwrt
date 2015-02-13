@@ -1,0 +1,39 @@
+From 79c7301c922f5023f85805a4ba969ce55f51d0ca Mon Sep 17 00:00:00 2001
+From: Yousong Zhou <yszhou4tech@gmail.com>
+Date: Sat, 31 Jan 2015 15:13:12 +0800
+Subject: [PATCH 330/331] MIPS: Malta: Mark kernel code and kernel data
+ segments as BOOT_MEM_RAM.
+
+Kexec-tools requires those segments listed as "System RAM" in
+/proc/iomem, otherwise, an error message of "Invalid memory segment"
+will be emitted when trying to load the ELF kernel image.
+
+Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
+---
+ arch/mips/mti-malta/malta-memory.c |    9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/arch/mips/mti-malta/malta-memory.c b/arch/mips/mti-malta/malta-memory.c
+index 8fddd2cd..1d562f0 100644
+--- a/arch/mips/mti-malta/malta-memory.c
++++ b/arch/mips/mti-malta/malta-memory.c
+@@ -106,14 +106,9 @@ fw_memblock_t * __init fw_getmdesc(int eva)
+ 	mdesc[2].base = mdesc[0].base + 0x000f0000UL;
+ 	mdesc[2].size = 0x00010000;
+ 
+-	mdesc[3].type = fw_dontuse;
++	mdesc[3].type = fw_free;
+ 	mdesc[3].base = mdesc[0].base + 0x00100000UL;
+-	mdesc[3].size = CPHYSADDR(PFN_ALIGN((unsigned long)&_end)) -
+-		0x00100000UL;
+-
+-	mdesc[4].type = fw_free;
+-	mdesc[4].base = mdesc[0].base + CPHYSADDR(PFN_ALIGN(&_end));
+-	mdesc[4].size = memsize - CPHYSADDR(mdesc[4].base);
++	mdesc[3].size = memsize - CPHYSADDR(mdesc[3].base);
+ 
+ 	return &mdesc[0];
+ }
+-- 
+1.7.10.4
+
