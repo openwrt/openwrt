@@ -1,0 +1,30 @@
+From 904e9ae892b0592c916a013869e3be3d830e0155 Mon Sep 17 00:00:00 2001
+From: Yousong Zhou <yszhou4tech@gmail.com>
+Date: Mon, 9 Feb 2015 20:11:04 +0800
+Subject: [PATCH 4/5] mips: remove unused variable.
+
+Fixes the following compilation warning.
+
+	kexec/arch/mips/crashdump-mips.c:151:6: warning: unused variable 'i' [-Wunused-variable]
+
+Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
+---
+ kexec/arch/mips/crashdump-mips.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kexec/arch/mips/crashdump-mips.c b/kexec/arch/mips/crashdump-mips.c
+index 98c9f7c..dc68cb4 100644
+--- a/kexec/arch/mips/crashdump-mips.c
++++ b/kexec/arch/mips/crashdump-mips.c
+@@ -148,7 +148,7 @@ static int exclude_crash_reserve_region(int *nr_ranges)
+ static int get_crash_memory_ranges(struct memory_range **range, int *ranges)
+ {
+ 	const char iomem[] = "/proc/iomem";
+-	int i, memory_ranges = 0;
++	int memory_ranges = 0;
+ 	char line[MAX_LINE];
+ 	FILE *fp;
+ 	unsigned long long start, end;
+-- 
+1.7.10.4
+
