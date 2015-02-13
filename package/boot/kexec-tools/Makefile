@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/kexec-tools
   SECTION:=utils
   CATEGORY:=Utilities
-  DEPENDS:=@armeb||@arm||@i386||@powerpc64||@mipsel||@mips +KEXEC_ZLIB:zlib
+  DEPENDS:=@KERNEL_KEXEC @armeb||@arm||@i386||@powerpc64||@mipsel||@mips +KEXEC_ZLIB:zlib
   TITLE:=Kernel boots kernel
   URL:=http://kernel.org/pub/linux/kernel/people/horms/kexec-tools/
   MAINTAINER:=Florian Fainelli <florian@openwrt.org>
