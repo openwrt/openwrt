@@ -10,10 +10,12 @@
 FEEDS_AVAILABLE:=$(shell $(SCRIPT_DIR)/feeds list -n)
 FEEDS_INSTALLED:=$(notdir $(wildcard $(TOPDIR)/package/feeds/*))
 FEEDS_ENABLED:=$(foreach feed,$(FEEDS_INSTALLED),$(if $(CONFIG_FEED_$(feed)),$(feed)))
-FEEDS_DISABLED:=$(filter-out $(FEEDS_ENABLED),$(FEEDS_INSTALLED))
+FEEDS_DISABLED:=$(filter-out $(FEEDS_ENABLED),$(FEEDS_AVAILABLE))
 
 PKG_CONFIG_DEPENDS += \
 	CONFIG_PER_FEED_REPO \
+	CONFIG_PER_FEED_REPO_ADD_DISABLED \
+	CONFIG_PER_FEED_REPO_ADD_COMMENTED \
 	$(foreach feed,$(FEEDS_INSTALLED),CONFIG_FEED_$(feed))
 
 # 1: package name
