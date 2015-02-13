@@ -8,11 +8,9 @@ See: https://bugzilla.kernel.org/show_bug.cgi?id=92481
  kernel/time/ntp.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/kernel/time/ntp.c b/kernel/time/ntp.c
-index 28bf91c..242774d 100644
 --- a/kernel/time/ntp.c
 +++ b/kernel/time/ntp.c
-@@ -634,9 +634,9 @@ int ntp_validate_timex(struct timex *txc)
+@@ -634,9 +634,9 @@ int ntp_validate_timex(struct timex *txc
  		return -EPERM;
  
  	if (txc->modes & ADJ_FREQUENCY) {
@@ -24,6 +22,3 @@ index 28bf91c..242774d 100644
  			return -EINVAL;
  	}
  
--- 
-1.8.3.2
-

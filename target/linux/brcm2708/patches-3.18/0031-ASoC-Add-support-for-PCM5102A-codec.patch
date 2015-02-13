@@ -14,8 +14,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  3 files changed, 69 insertions(+)
  create mode 100644 sound/soc/codecs/pcm5102a.c
 
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index a68d173..0ef8bb7 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -80,6 +80,7 @@ config SND_SOC_ALL_CODECS
@@ -36,11 +34,9 @@ index a68d173..0ef8bb7 100644
  config SND_SOC_RT5631
  	tristate
  
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index 5dce451..7b606e6 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -74,6 +74,7 @@ snd-soc-pcm512x-i2c-objs := pcm512x-i2c.o
+@@ -74,6 +74,7 @@ snd-soc-pcm512x-i2c-objs := pcm512x-i2c.
  snd-soc-pcm512x-spi-objs := pcm512x-spi.o
  snd-soc-rl6231-objs := rl6231.o
  snd-soc-rt286-objs := rt286.o
@@ -48,7 +44,7 @@ index 5dce451..7b606e6 100644
  snd-soc-rt5631-objs := rt5631.o
  snd-soc-rt5640-objs := rt5640.o
  snd-soc-rt5645-objs := rt5645.o
-@@ -250,6 +251,7 @@ obj-$(CONFIG_SND_SOC_PCM512x_I2C)	+= snd-soc-pcm512x-i2c.o
+@@ -250,6 +251,7 @@ obj-$(CONFIG_SND_SOC_PCM512x_I2C)	+= snd
  obj-$(CONFIG_SND_SOC_PCM512x_SPI)	+= snd-soc-pcm512x-spi.o
  obj-$(CONFIG_SND_SOC_RL6231)	+= snd-soc-rl6231.o
  obj-$(CONFIG_SND_SOC_RT286)	+= snd-soc-rt286.o
@@ -56,9 +52,6 @@ index 5dce451..7b606e6 100644
  obj-$(CONFIG_SND_SOC_RT5631)	+= snd-soc-rt5631.o
  obj-$(CONFIG_SND_SOC_RT5640)	+= snd-soc-rt5640.o
  obj-$(CONFIG_SND_SOC_RT5645)	+= snd-soc-rt5645.o
-diff --git a/sound/soc/codecs/pcm5102a.c b/sound/soc/codecs/pcm5102a.c
-new file mode 100644
-index 0000000..126f1e9
 --- /dev/null
 +++ b/sound/soc/codecs/pcm5102a.c
 @@ -0,0 +1,63 @@
@@ -125,6 +118,3 @@ index 0000000..126f1e9
 +MODULE_DESCRIPTION("ASoC PCM5102A codec driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

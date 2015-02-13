@@ -8,11 +8,9 @@ Signed-off-by: Ryan Coe <bluemrp9@gmail.com>
  drivers/rtc/rtc-ds1307.c | 8 ++++++++
  1 file changed, 8 insertions(+)
 
-diff --git a/drivers/rtc/rtc-ds1307.c b/drivers/rtc/rtc-ds1307.c
-index bb43cf7..dadd4fb 100644
 --- a/drivers/rtc/rtc-ds1307.c
 +++ b/drivers/rtc/rtc-ds1307.c
-@@ -1241,6 +1241,14 @@ static int ds1307_remove(struct i2c_client *client)
+@@ -1241,6 +1241,14 @@ static int ds1307_remove(struct i2c_clie
  	return 0;
  }
  
@@ -27,6 +25,3 @@ index bb43cf7..dadd4fb 100644
  static struct i2c_driver ds1307_driver = {
  	.driver = {
  		.name	= "rtc-ds1307",
--- 
-1.8.3.2
-

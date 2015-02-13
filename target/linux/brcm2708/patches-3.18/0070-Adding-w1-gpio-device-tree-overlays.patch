@@ -22,9 +22,6 @@ w1-gpio-pullup-overlay:
  create mode 100644 arch/arm/boot/dts/w1-gpio-overlay.dts
  create mode 100644 arch/arm/boot/dts/w1-gpio-pullup-overlay.dts
 
-diff --git a/arch/arm/boot/dts/w1-gpio-overlay.dts b/arch/arm/boot/dts/w1-gpio-overlay.dts
-new file mode 100644
-index 0000000..b2c5ee2
 --- /dev/null
 +++ b/arch/arm/boot/dts/w1-gpio-overlay.dts
 @@ -0,0 +1,37 @@
@@ -65,9 +62,6 @@ index 0000000..b2c5ee2
 +				<&w1_pins>,"brcm,pins:0";
 +	};
 +};
-diff --git a/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts b/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts
-new file mode 100644
-index 0000000..b3e97c2
 --- /dev/null
 +++ b/arch/arm/boot/dts/w1-gpio-pullup-overlay.dts
 @@ -0,0 +1,39 @@
@@ -110,6 +104,3 @@ index 0000000..b3e97c2
 +				<&w1_pins>,"brcm,pins:4";
 +	};
 +};
--- 
-1.8.3.2
-

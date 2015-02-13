@@ -9,8 +9,6 @@ Subject: [PATCH 081/114] Added support to reserve/enable a GPIO pin to be used
  arch/arm/mach-bcm2708/bcm2708.c | 27 +++++++++++++++++++++++++++
  1 file changed, 27 insertions(+)
 
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index b36037b..762e17c 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -37,6 +37,7 @@
@@ -29,7 +27,7 @@ index b36037b..762e17c 100644
  static bool vc_i2c_override = false;
  
  static unsigned use_dt = 0;
-@@ -274,6 +276,19 @@ static struct platform_device w1_device = {
+@@ -274,6 +276,19 @@ static struct platform_device w1_device
  };
  #endif
  
@@ -66,7 +64,7 @@ index b36037b..762e17c 100644
  #if defined(CONFIG_W1_MASTER_GPIO) || defined(CONFIG_W1_MASTER_GPIO_MODULE)
  	w1_gpio_pdata.pin = w1_gpio_pin;
  	w1_gpio_pdata.ext_pullup_enable_pin = w1_gpio_pullup;
-@@ -1101,5 +1126,7 @@ module_param(disk_led_active_low, uint, 0644);
+@@ -1101,5 +1126,7 @@ module_param(disk_led_active_low, uint,
  module_param(reboot_part, uint, 0644);
  module_param(w1_gpio_pin, uint, 0644);
  module_param(w1_gpio_pullup, uint, 0644);
@@ -74,6 +72,3 @@ index b36037b..762e17c 100644
 +MODULE_PARM_DESC(pps_gpio_pin, "Set GPIO pin to reserve for PPS");
  module_param(vc_i2c_override, bool, 0644);
  MODULE_PARM_DESC(vc_i2c_override, "Allow the use of VC's I2C peripheral.");
--- 
-1.8.3.2
-

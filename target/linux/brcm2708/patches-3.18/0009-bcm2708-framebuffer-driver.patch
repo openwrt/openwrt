@@ -55,11 +55,9 @@ Signed-off-by: Luke Diamand <luke@diamand.org>
  6 files changed, 1724 insertions(+), 1602 deletions(-)
  create mode 100644 drivers/video/fbdev/bcm2708_fb.c
 
-diff --git a/arch/arm/mach-bcm2708/dma.c b/arch/arm/mach-bcm2708/dma.c
-index 51d147a..1da2413 100644
 --- a/arch/arm/mach-bcm2708/dma.c
 +++ b/arch/arm/mach-bcm2708/dma.c
-@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iomem *dma_chan_base)
+@@ -83,6 +83,14 @@ extern void bcm_dma_wait_idle(void __iom
  
  EXPORT_SYMBOL_GPL(bcm_dma_start);
  
@@ -74,8 +72,6 @@ index 51d147a..1da2413 100644
  /* Complete an ongoing DMA (assuming its results are to be ignored)
     Does nothing if there is no DMA in progress.
     This routine waits for the current AXI transfer to complete before
-diff --git a/arch/arm/mach-bcm2708/include/mach/dma.h b/arch/arm/mach-bcm2708/include/mach/dma.h
-index f2568d4..a4aac4c 100644
 --- a/arch/arm/mach-bcm2708/include/mach/dma.h
 +++ b/arch/arm/mach-bcm2708/include/mach/dma.h
 @@ -64,11 +64,13 @@ struct bcm2708_dma_cb {
@@ -92,8 +88,6 @@ index f2568d4..a4aac4c 100644
  extern int /*rc*/ bcm_dma_abort(void __iomem *dma_chan_base);
  
  /* When listing features we can ask for when allocating DMA channels give
-diff --git a/drivers/video/fbdev/Kconfig b/drivers/video/fbdev/Kconfig
-index c7bf606..0349473 100644
 --- a/drivers/video/fbdev/Kconfig
 +++ b/drivers/video/fbdev/Kconfig
 @@ -224,6 +224,20 @@ config FB_TILEBLITTING
@@ -117,11 +111,9 @@ index c7bf606..0349473 100644
  config FB_GRVGA
  	tristate "Aeroflex Gaisler framebuffer support"
  	depends on FB && SPARC
-diff --git a/drivers/video/fbdev/Makefile b/drivers/video/fbdev/Makefile
-index 1979aff..57181ad 100644
 --- a/drivers/video/fbdev/Makefile
 +++ b/drivers/video/fbdev/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_FB_MACMODES)      += macmodes.o
+@@ -12,6 +12,7 @@ obj-$(CONFIG_FB_MACMODES)      += macmod
  obj-$(CONFIG_FB_WMT_GE_ROPS)   += wmt_ge_rops.o
  
  # Hardware specific drivers go first
@@ -129,9 +121,6 @@ index 1979aff..57181ad 100644
  obj-$(CONFIG_FB_AMIGA)            += amifb.o c2p_planar.o
  obj-$(CONFIG_FB_ARC)              += arcfb.o
  obj-$(CONFIG_FB_CLPS711X)	  += clps711x-fb.o
-diff --git a/drivers/video/fbdev/bcm2708_fb.c b/drivers/video/fbdev/bcm2708_fb.c
-new file mode 100644
-index 0000000..dcc4de2
 --- /dev/null
 +++ b/drivers/video/fbdev/bcm2708_fb.c
 @@ -0,0 +1,818 @@
@@ -953,8 +942,6 @@ index 0000000..dcc4de2
 +MODULE_PARM_DESC(fbheight, "Height of ARM Framebuffer");
 +MODULE_PARM_DESC(fbdepth, "Bit depth of ARM Framebuffer");
 +MODULE_PARM_DESC(fbswap, "Swap order of red and blue in 24 and 32 bit modes");
-diff --git a/drivers/video/logo/logo_linux_clut224.ppm b/drivers/video/logo/logo_linux_clut224.ppm
-index 3c14e43..7626beb 100644
 --- a/drivers/video/logo/logo_linux_clut224.ppm
 +++ b/drivers/video/logo/logo_linux_clut224.ppm
 @@ -1,1604 +1,883 @@
@@ -3443,6 +3430,3 @@ index 3c14e43..7626beb 100644
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0  0 0 0  0 0 0  0 0 0
 +0 0 0  0 0 0  0 0 0
--- 
-1.8.3.2
-

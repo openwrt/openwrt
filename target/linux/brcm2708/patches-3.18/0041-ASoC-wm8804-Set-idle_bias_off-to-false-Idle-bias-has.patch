@@ -9,11 +9,9 @@ Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
  sound/soc/codecs/wm8804.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/sound/soc/codecs/wm8804.c b/sound/soc/codecs/wm8804.c
-index d060b23..d486a9d 100644
 --- a/sound/soc/codecs/wm8804.c
 +++ b/sound/soc/codecs/wm8804.c
-@@ -656,7 +656,7 @@ static struct snd_soc_codec_driver soc_codec_dev_wm8804 = {
+@@ -656,7 +656,7 @@ static struct snd_soc_codec_driver soc_c
  	.probe = wm8804_probe,
  	.remove = wm8804_remove,
  	.set_bias_level = wm8804_set_bias_level,
@@ -22,6 +20,3 @@ index d060b23..d486a9d 100644
  
  	.controls = wm8804_snd_controls,
  	.num_controls = ARRAY_SIZE(wm8804_snd_controls),
--- 
-1.8.3.2
-

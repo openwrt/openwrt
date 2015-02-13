@@ -10,8 +10,6 @@ Subject: [PATCH 014/114] Add hwrng (hardware random number generator) driver
  3 files changed, 130 insertions(+)
  create mode 100755 drivers/char/hw_random/bcm2708-rng.c
 
-diff --git a/drivers/char/hw_random/Kconfig b/drivers/char/hw_random/Kconfig
-index 91a04ae..0d2ca0d 100644
 --- a/drivers/char/hw_random/Kconfig
 +++ b/drivers/char/hw_random/Kconfig
 @@ -320,6 +320,17 @@ config HW_RANDOM_TPM
@@ -32,20 +30,15 @@ index 91a04ae..0d2ca0d 100644
  config HW_RANDOM_MSM
  	tristate "Qualcomm SoCs Random Number Generator support"
  	depends on HW_RANDOM && ARCH_QCOM
-diff --git a/drivers/char/hw_random/Makefile b/drivers/char/hw_random/Makefile
-index 0b4cd57..78b019c 100644
 --- a/drivers/char/hw_random/Makefile
 +++ b/drivers/char/hw_random/Makefile
-@@ -28,5 +28,6 @@ obj-$(CONFIG_HW_RANDOM_POWERNV) += powernv-rng.o
+@@ -28,5 +28,6 @@ obj-$(CONFIG_HW_RANDOM_POWERNV) += power
  obj-$(CONFIG_HW_RANDOM_EXYNOS)	+= exynos-rng.o
  obj-$(CONFIG_HW_RANDOM_TPM) += tpm-rng.o
  obj-$(CONFIG_HW_RANDOM_BCM2835) += bcm2835-rng.o
 +obj-$(CONFIG_HW_RANDOM_BCM2708) += bcm2708-rng.o
  obj-$(CONFIG_HW_RANDOM_MSM) += msm-rng.o
  obj-$(CONFIG_HW_RANDOM_XGENE) += xgene-rng.o
-diff --git a/drivers/char/hw_random/bcm2708-rng.c b/drivers/char/hw_random/bcm2708-rng.c
-new file mode 100755
-index 0000000..340f004
 --- /dev/null
 +++ b/drivers/char/hw_random/bcm2708-rng.c
 @@ -0,0 +1,118 @@
@@ -167,6 +160,3 @@ index 0000000..340f004
 +
 +MODULE_DESCRIPTION("BCM2708 H/W Random Number Generator (RNG) driver");
 +MODULE_LICENSE("GPL and additional rights");
--- 
-1.8.3.2
-

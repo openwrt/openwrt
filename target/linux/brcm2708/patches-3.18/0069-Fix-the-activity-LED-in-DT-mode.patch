@@ -17,8 +17,6 @@ Issue: linux #757
  arch/arm/boot/dts/bcm2708.dtsi           | 11 ++++++++++-
  3 files changed, 38 insertions(+), 9 deletions(-)
 
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
-index d9886c3..95f03ba 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 @@ -7,11 +7,14 @@
@@ -60,8 +58,6 @@ index d9886c3..95f03ba 100644
 +		act_led_trigger = <&act_led>,"linux,default-trigger";
  	};
  };
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-index 167b22b..0631f45 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -7,11 +7,14 @@
@@ -103,8 +99,6 @@ index 167b22b..0631f45 100644
 +		act_led_trigger = <&act_led>,"linux,default-trigger";
  	};
  };
-diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
-index 6b36128..1b56cb5 100644
 --- a/arch/arm/boot/dts/bcm2708.dtsi
 +++ b/arch/arm/boot/dts/bcm2708.dtsi
 @@ -11,7 +11,7 @@
@@ -132,6 +126,3 @@ index 6b36128..1b56cb5 100644
  	};
  
  	clocks {
--- 
-1.8.3.2
-

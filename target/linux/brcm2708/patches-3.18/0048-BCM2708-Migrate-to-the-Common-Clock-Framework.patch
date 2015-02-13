@@ -21,8 +21,6 @@ Signed-off-by: Noralf Tronnes <notro@tronnes.org>
  delete mode 100644 arch/arm/mach-bcm2708/clock.c
  delete mode 100644 arch/arm/mach-bcm2708/clock.h
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index ba9c18e..0f2287f 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -385,11 +385,10 @@ config ARCH_BCM2708
@@ -38,8 +36,6 @@ index ba9c18e..0f2287f 100644
  	select ARCH_HAS_CPUFREQ
  	select GENERIC_CLOCKEVENTS
  	select ARM_ERRATA_411920
-diff --git a/arch/arm/mach-bcm2708/Makefile b/arch/arm/mach-bcm2708/Makefile
-index a722f3f..21e3521 100644
 --- a/arch/arm/mach-bcm2708/Makefile
 +++ b/arch/arm/mach-bcm2708/Makefile
 @@ -2,6 +2,6 @@
@@ -50,8 +46,6 @@ index a722f3f..21e3521 100644
 +obj-$(CONFIG_MACH_BCM2708) 	+= bcm2708.o armctrl.o vcio.o power.o dma.o
  obj-$(CONFIG_BCM2708_GPIO)	+= bcm2708_gpio.o
  obj-$(CONFIG_BCM2708_VCMEM)	+= vc_mem.o
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 633be19..ef12cb8 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -27,6 +27,8 @@
@@ -80,7 +74,7 @@ index 633be19..ef12cb8 100644
  static unsigned disk_led_gpio = 16;
  static unsigned disk_led_active_low = 1;
  static unsigned reboot_part = 0;
-@@ -196,51 +197,39 @@ static void __init bcm2708_clocksource_init(void)
+@@ -196,51 +197,39 @@ static void __init bcm2708_clocksource_i
  	}
  }
  
@@ -173,9 +167,6 @@ index 633be19..ef12cb8 100644
  
  	bcm_register_device(&bcm2708_dmaman_device);
  	bcm_register_device(&bcm2708_vcio_device);
-diff --git a/arch/arm/mach-bcm2708/clock.c b/arch/arm/mach-bcm2708/clock.c
-deleted file mode 100644
-index 4fc556e..0000000
 --- a/arch/arm/mach-bcm2708/clock.c
 +++ /dev/null
 @@ -1,61 +0,0 @@
@@ -240,9 +231,6 @@ index 4fc556e..0000000
 -	return -EIO;
 -}
 -EXPORT_SYMBOL(clk_set_rate);
-diff --git a/arch/arm/mach-bcm2708/clock.h b/arch/arm/mach-bcm2708/clock.h
-deleted file mode 100644
-index 5f9d725..0000000
 --- a/arch/arm/mach-bcm2708/clock.h
 +++ /dev/null
 @@ -1,24 +0,0 @@
@@ -270,6 +258,3 @@ index 5f9d725..0000000
 -struct clk {
 -	unsigned long		rate;
 -};
--- 
-1.8.3.2
-

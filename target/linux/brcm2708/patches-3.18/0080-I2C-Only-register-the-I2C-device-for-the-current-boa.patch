@@ -8,8 +8,6 @@ Subject: [PATCH 080/114] I2C: Only register the I2C device for the current
  arch/arm/mach-bcm2708/bcm2708.c | 14 ++++++++++++--
  1 file changed, 12 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 2c6a29d..b36037b 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -93,6 +93,7 @@ static unsigned disk_led_active_low = 1;
@@ -38,12 +36,9 @@ index 2c6a29d..b36037b 100644
  
  #if defined(CONFIG_SND_BCM2708_SOC_I2S) || defined(CONFIG_SND_BCM2708_SOC_I2S_MODULE)
  	bcm_register_device_dt(&bcm2708_i2s_device);
-@@ -1093,3 +1101,5 @@ module_param(disk_led_active_low, uint, 0644);
+@@ -1093,3 +1101,5 @@ module_param(disk_led_active_low, uint,
  module_param(reboot_part, uint, 0644);
  module_param(w1_gpio_pin, uint, 0644);
  module_param(w1_gpio_pullup, uint, 0644);
 +module_param(vc_i2c_override, bool, 0644);
 +MODULE_PARM_DESC(vc_i2c_override, "Allow the use of VC's I2C peripheral.");
--- 
-1.8.3.2
-

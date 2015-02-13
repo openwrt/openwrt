@@ -16,8 +16,6 @@ fixed typo in comment
  drivers/i2c/busses/i2c-bcm2708.c | 90 +++++++++++++++++++++++++++++-----------
  1 file changed, 65 insertions(+), 25 deletions(-)
 
-diff --git a/drivers/i2c/busses/i2c-bcm2708.c b/drivers/i2c/busses/i2c-bcm2708.c
-index fda59ba..81e9374 100644
 --- a/drivers/i2c/busses/i2c-bcm2708.c
 +++ b/drivers/i2c/busses/i2c-bcm2708.c
 @@ -68,6 +68,7 @@
@@ -36,7 +34,7 @@ index fda59ba..81e9374 100644
  
  	struct completion done;
  
-@@ -109,10 +111,10 @@ static void bcm2708_i2c_init_pinmode(int id)
+@@ -109,10 +111,10 @@ static void bcm2708_i2c_init_pinmode(int
  	int pin;
  	u32 *gpio = ioremap(GPIO_BASE, SZ_16K);
  
@@ -49,7 +47,7 @@ index fda59ba..81e9374 100644
  		INP_GPIO(pin);		/* set mode to GPIO input first */
  		SET_GPIO_ALT(pin, 0);	/* set mode to ALT 0 */
  	}
-@@ -151,16 +153,16 @@ static inline void bcm2708_bsc_fifo_fill(struct bcm2708_i2c *bi)
+@@ -151,16 +153,16 @@ static inline void bcm2708_bsc_fifo_fill
  		bcm2708_wr(bi, BSC_FIFO, bi->msg->buf[bi->pos++]);
  }
  
@@ -72,7 +70,7 @@ index fda59ba..81e9374 100644
  
  	if (bi->msg->flags & I2C_M_RD)
  		c |= BSC_C_INTR | BSC_C_READ;
-@@ -177,17 +179,25 @@ static inline void bcm2708_bsc_setup(struct bcm2708_i2c *bi)
+@@ -177,17 +179,25 @@ static inline void bcm2708_bsc_setup(str
  		   - Both messages to same slave address
  		   - Write message can fit inside FIFO (16 bytes or less) */
  		if ( (bi->nmsgs > 1) &&
@@ -102,7 +100,7 @@ index fda59ba..81e9374 100644
  			/* Send next read message before the write transfer finishes. */
  			bi->nmsgs--;
  			bi->msg++;
-@@ -197,6 +207,8 @@ static inline void bcm2708_bsc_setup(struct bcm2708_i2c *bi)
+@@ -197,6 +207,8 @@ static inline void bcm2708_bsc_setup(str
  		}
  	}
  	bcm2708_wr(bi, BSC_C, c);
@@ -111,7 +109,7 @@ index fda59ba..81e9374 100644
  }
  
  static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
-@@ -204,13 +216,15 @@ static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
+@@ -204,13 +216,15 @@ static irqreturn_t bcm2708_i2c_interrupt
  	struct bcm2708_i2c *bi = dev_id;
  	bool handled = true;
  	u32 s;
@@ -129,7 +127,7 @@ index fda59ba..81e9374 100644
  
  	s = bcm2708_rd(bi, BSC_S);
  
-@@ -218,13 +232,16 @@ static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
+@@ -218,13 +232,16 @@ static irqreturn_t bcm2708_i2c_interrupt
  		bcm2708_bsc_reset(bi);
  		bi->error = true;
  
@@ -147,7 +145,7 @@ index fda59ba..81e9374 100644
  
  		bcm2708_bsc_reset(bi);
  
-@@ -232,8 +249,19 @@ static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
+@@ -232,8 +249,19 @@ static irqreturn_t bcm2708_i2c_interrupt
  			/* advance to next message */
  			bi->msg++;
  			bi->pos = 0;
@@ -168,7 +166,7 @@ index fda59ba..81e9374 100644
  			/* wake up our bh */
  			complete(&bi->done);
  		}
-@@ -266,22 +294,33 @@ static int bcm2708_i2c_master_xfer(struct i2c_adapter *adap,
+@@ -266,22 +294,33 @@ static int bcm2708_i2c_master_xfer(struc
  	bi->nmsgs = num;
  	bi->error = false;
  
@@ -211,7 +209,7 @@ index fda59ba..81e9374 100644
  }
  
  static u32 bcm2708_i2c_functionality(struct i2c_adapter *adap)
-@@ -406,6 +445,7 @@ static int bcm2708_i2c_probe(struct platform_device *pdev)
+@@ -406,6 +445,7 @@ static int bcm2708_i2c_probe(struct plat
  		cdiv = 0xffff;
  		baudrate = bus_hz / cdiv;
  	}
@@ -219,6 +217,3 @@ index fda59ba..81e9374 100644
  
  	dev_info(&pdev->dev, "BSC%d Controller at 0x%08lx (irq %d) (baudrate %d)\n",
  		pdev->id, (unsigned long)regs->start, irq, baudrate);
--- 
-1.8.3.2
-

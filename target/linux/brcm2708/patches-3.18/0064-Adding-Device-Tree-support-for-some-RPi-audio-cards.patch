@@ -26,11 +26,9 @@ Subject: [PATCH 064/114] Adding Device Tree support for some RPi audio cards
  create mode 100644 arch/arm/boot/dts/iqaudio-dac-overlay.dts
  create mode 100644 arch/arm/boot/dts/iqaudio-dacplus-overlay.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index c727f71..adaebbb 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -54,6 +54,7 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4ek.dtb
+@@ -54,6 +54,7 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4e
  dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
  dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
  dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b.dtb
@@ -38,7 +36,7 @@ index c727f71..adaebbb 100644
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
  dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
  dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
-@@ -520,6 +521,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt6589-aquaris5.dtb
+@@ -520,6 +521,7 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += mt6589-aq
  
  targets += dtbs dtbs_install
  targets += $(dtb-y)
@@ -46,9 +44,6 @@ index c727f71..adaebbb 100644
  endif
  
  # *.dtb used to be generated in the directory above. Clean out the
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
-new file mode 100644
-index 0000000..983c23f
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 @@ -0,0 +1,81 @@
@@ -133,8 +128,6 @@ index 0000000..983c23f
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&i2s_pins>;
 +};
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-index 5893122..d8c6d15 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -4,12 +4,18 @@
@@ -179,8 +172,6 @@ index 5893122..d8c6d15 100644
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&i2s_pins>;
 +};
-diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
-index 2ca6d63..6b36128 100644
 --- a/arch/arm/boot/dts/bcm2708.dtsi
 +++ b/arch/arm/boot/dts/bcm2708.dtsi
 @@ -7,11 +7,8 @@
@@ -215,9 +206,6 @@ index 2ca6d63..6b36128 100644
  		spi0: spi@7e204000 {
  			compatible = "brcm,bcm2708-spi";
  			reg = <0x7e204000 0x1000>;
-diff --git a/arch/arm/boot/dts/hifiberry-dac-overlay.dts b/arch/arm/boot/dts/hifiberry-dac-overlay.dts
-new file mode 100644
-index 0000000..5e7633a
 --- /dev/null
 +++ b/arch/arm/boot/dts/hifiberry-dac-overlay.dts
 @@ -0,0 +1,34 @@
@@ -255,9 +243,6 @@ index 0000000..5e7633a
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/hifiberry-dacplus-overlay.dts b/arch/arm/boot/dts/hifiberry-dacplus-overlay.dts
-new file mode 100644
-index 0000000..deb9c62
 --- /dev/null
 +++ b/arch/arm/boot/dts/hifiberry-dacplus-overlay.dts
 @@ -0,0 +1,39 @@
@@ -300,9 +285,6 @@ index 0000000..deb9c62
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/hifiberry-digi-overlay.dts b/arch/arm/boot/dts/hifiberry-digi-overlay.dts
-new file mode 100644
-index 0000000..d0e0d8a
 --- /dev/null
 +++ b/arch/arm/boot/dts/hifiberry-digi-overlay.dts
 @@ -0,0 +1,39 @@
@@ -345,9 +327,6 @@ index 0000000..d0e0d8a
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/iqaudio-dac-overlay.dts b/arch/arm/boot/dts/iqaudio-dac-overlay.dts
-new file mode 100644
-index 0000000..ea8173e
 --- /dev/null
 +++ b/arch/arm/boot/dts/iqaudio-dac-overlay.dts
 @@ -0,0 +1,39 @@
@@ -390,9 +369,6 @@ index 0000000..ea8173e
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/iqaudio-dacplus-overlay.dts b/arch/arm/boot/dts/iqaudio-dacplus-overlay.dts
-new file mode 100644
-index 0000000..735d8ab
 --- /dev/null
 +++ b/arch/arm/boot/dts/iqaudio-dacplus-overlay.dts
 @@ -0,0 +1,39 @@
@@ -435,11 +411,9 @@ index 0000000..735d8ab
 +		};
 +	};
 +};
-diff --git a/sound/soc/bcm/hifiberry_dac.c b/sound/soc/bcm/hifiberry_dac.c
-index 4b70b45..3ab0f47 100644
 --- a/sound/soc/bcm/hifiberry_dac.c
 +++ b/sound/soc/bcm/hifiberry_dac.c
-@@ -72,6 +72,21 @@ static int snd_rpi_hifiberry_dac_probe(struct platform_device *pdev)
+@@ -72,6 +72,21 @@ static int snd_rpi_hifiberry_dac_probe(s
  	int ret = 0;
  
  	snd_rpi_hifiberry_dac.dev = &pdev->dev;
@@ -461,7 +435,7 @@ index 4b70b45..3ab0f47 100644
  	ret = snd_soc_register_card(&snd_rpi_hifiberry_dac);
  	if (ret)
  		dev_err(&pdev->dev, "snd_soc_register_card() failed: %d\n", ret);
-@@ -84,10 +99,17 @@ static int snd_rpi_hifiberry_dac_remove(struct platform_device *pdev)
+@@ -84,10 +99,17 @@ static int snd_rpi_hifiberry_dac_remove(
  	return snd_soc_unregister_card(&snd_rpi_hifiberry_dac);
  }
  
@@ -479,11 +453,9 @@ index 4b70b45..3ab0f47 100644
          },
          .probe          = snd_rpi_hifiberry_dac_probe,
          .remove         = snd_rpi_hifiberry_dac_remove,
-diff --git a/sound/soc/bcm/hifiberry_dacplus.c b/sound/soc/bcm/hifiberry_dacplus.c
-index c63387b..11e4f39 100644
 --- a/sound/soc/bcm/hifiberry_dacplus.c
 +++ b/sound/soc/bcm/hifiberry_dacplus.c
-@@ -90,6 +90,21 @@ static int snd_rpi_hifiberry_dacplus_probe(struct platform_device *pdev)
+@@ -90,6 +90,21 @@ static int snd_rpi_hifiberry_dacplus_pro
  	int ret = 0;
  
  	snd_rpi_hifiberry_dacplus.dev = &pdev->dev;
@@ -505,7 +477,7 @@ index c63387b..11e4f39 100644
  	ret = snd_soc_register_card(&snd_rpi_hifiberry_dacplus);
  	if (ret)
  		dev_err(&pdev->dev,
-@@ -103,10 +118,17 @@ static int snd_rpi_hifiberry_dacplus_remove(struct platform_device *pdev)
+@@ -103,10 +118,17 @@ static int snd_rpi_hifiberry_dacplus_rem
  	return snd_soc_unregister_card(&snd_rpi_hifiberry_dacplus);
  }
  
@@ -523,11 +495,9 @@ index c63387b..11e4f39 100644
  	},
  	.probe          = snd_rpi_hifiberry_dacplus_probe,
  	.remove         = snd_rpi_hifiberry_dacplus_remove,
-diff --git a/sound/soc/bcm/hifiberry_digi.c b/sound/soc/bcm/hifiberry_digi.c
-index e4f769d..76af8a6 100644
 --- a/sound/soc/bcm/hifiberry_digi.c
 +++ b/sound/soc/bcm/hifiberry_digi.c
-@@ -125,6 +125,21 @@ static int snd_rpi_hifiberry_digi_probe(struct platform_device *pdev)
+@@ -125,6 +125,21 @@ static int snd_rpi_hifiberry_digi_probe(
  	int ret = 0;
  
  	snd_rpi_hifiberry_digi.dev = &pdev->dev;
@@ -549,7 +519,7 @@ index e4f769d..76af8a6 100644
  	ret = snd_soc_register_card(&snd_rpi_hifiberry_digi);
  	if (ret)
  		dev_err(&pdev->dev, "snd_soc_register_card() failed: %d\n", ret);
-@@ -137,10 +152,17 @@ static int snd_rpi_hifiberry_digi_remove(struct platform_device *pdev)
+@@ -137,10 +152,17 @@ static int snd_rpi_hifiberry_digi_remove
  	return snd_soc_unregister_card(&snd_rpi_hifiberry_digi);
  }
  
@@ -567,11 +537,9 @@ index e4f769d..76af8a6 100644
  	},
  	.probe          = snd_rpi_hifiberry_digi_probe,
  	.remove         = snd_rpi_hifiberry_digi_remove,
-diff --git a/sound/soc/bcm/iqaudio-dac.c b/sound/soc/bcm/iqaudio-dac.c
-index 8d0e2ae..ee8cd6e 100644
 --- a/sound/soc/bcm/iqaudio-dac.c
 +++ b/sound/soc/bcm/iqaudio-dac.c
-@@ -76,6 +76,21 @@ static int snd_rpi_iqaudio_dac_probe(struct platform_device *pdev)
+@@ -76,6 +76,21 @@ static int snd_rpi_iqaudio_dac_probe(str
  	int ret = 0;
  
  	snd_rpi_iqaudio_dac.dev = &pdev->dev;
@@ -593,7 +561,7 @@ index 8d0e2ae..ee8cd6e 100644
  	ret = snd_soc_register_card(&snd_rpi_iqaudio_dac);
  	if (ret)
  		dev_err(&pdev->dev,
-@@ -93,6 +108,7 @@ static const struct of_device_id iqaudio_of_match[] = {
+@@ -93,6 +108,7 @@ static const struct of_device_id iqaudio
  	{ .compatible = "iqaudio,iqaudio-dac", },
  	{},
  };
@@ -601,11 +569,9 @@ index 8d0e2ae..ee8cd6e 100644
  
  static struct platform_driver snd_rpi_iqaudio_dac_driver = {
  	.driver = {
-diff --git a/sound/soc/codecs/pcm5102a.c b/sound/soc/codecs/pcm5102a.c
-index 126f1e9..7c6598e 100644
 --- a/sound/soc/codecs/pcm5102a.c
 +++ b/sound/soc/codecs/pcm5102a.c
-@@ -47,12 +47,19 @@ static int pcm5102a_remove(struct platform_device *pdev)
+@@ -47,12 +47,19 @@ static int pcm5102a_remove(struct platfo
  	return 0;
  }
  
@@ -625,6 +591,3 @@ index 126f1e9..7c6598e 100644
  	},
  };
  
--- 
-1.8.3.2
-

@@ -24,11 +24,9 @@ Signed-off-by: Noralf Tronnes notro@tronnes.org
  create mode 100644 arch/arm/boot/dts/bcm2708-rpi-b.dts
  create mode 100644 arch/arm/boot/dts/bcm2708.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 38c89ca..c727f71 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -53,6 +53,7 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4ek.dtb
+@@ -53,6 +53,7 @@ dtb-$(CONFIG_ARCH_AT91)	+= at91-sama5d4e
  
  dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
  dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
@@ -36,9 +34,6 @@ index 38c89ca..c727f71 100644
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
  dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
  dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-new file mode 100644
-index 0000000..e319c8e
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -0,0 +1,8 @@
@@ -50,9 +45,6 @@ index 0000000..e319c8e
 +	compatible = "brcm,bcm2708";
 +	model = "Raspberry Pi";
 +};
-diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
-new file mode 100644
-index 0000000..50da059
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm2708.dtsi
 @@ -0,0 +1,27 @@
@@ -83,8 +75,6 @@ index 0000000..50da059
 +		#size-cells = <0>;
 +	};
 +};
-diff --git a/arch/arm/mach-bcm2708/Kconfig b/arch/arm/mach-bcm2708/Kconfig
-index e151ed4..182e7ba 100644
 --- a/arch/arm/mach-bcm2708/Kconfig
 +++ b/arch/arm/mach-bcm2708/Kconfig
 @@ -9,6 +9,14 @@ config MACH_BCM2708
@@ -102,8 +92,6 @@ index e151ed4..182e7ba 100644
  config BCM2708_GPIO
  	bool "BCM2708 gpio support"
  	depends on MACH_BCM2708
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index ef12cb8..747e27a 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
 @@ -33,6 +33,7 @@
@@ -165,6 +153,3 @@ index ef12cb8..747e27a 100644
  MACHINE_END
  
  module_param(boardrev, uint, 0644);
--- 
-1.8.3.2
-

@@ -45,8 +45,6 @@ Issue: linux #760
  create mode 100644 arch/arm/mach-bcm2708/include/mach/gpio.h
  create mode 100644 include/linux/platform_data/bcm2708.h
 
-diff --git a/arch/arm/mach-bcm2708/Kconfig b/arch/arm/mach-bcm2708/Kconfig
-index 1f11478..9355841 100644
 --- a/arch/arm/mach-bcm2708/Kconfig
 +++ b/arch/arm/mach-bcm2708/Kconfig
 @@ -9,6 +9,14 @@ config MACH_BCM2708
@@ -64,8 +62,6 @@ index 1f11478..9355841 100644
  config BCM2708_VCMEM
  	bool "Videocore Memory"
  	depends on MACH_BCM2708
-diff --git a/arch/arm/mach-bcm2708/Makefile b/arch/arm/mach-bcm2708/Makefile
-index c76f39bc..a722f3f 100644
 --- a/arch/arm/mach-bcm2708/Makefile
 +++ b/arch/arm/mach-bcm2708/Makefile
 @@ -3,4 +3,5 @@
@@ -74,11 +70,9 @@ index c76f39bc..a722f3f 100644
  obj-$(CONFIG_MACH_BCM2708) 	+= clock.o bcm2708.o armctrl.o vcio.o power.o dma.o
 +obj-$(CONFIG_BCM2708_GPIO)	+= bcm2708_gpio.o
  obj-$(CONFIG_BCM2708_VCMEM)	+= vc_mem.o
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 9b4e709..7503649 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -331,6 +331,31 @@ static struct platform_device bcm2708_vcio_device = {
+@@ -331,6 +331,31 @@ static struct platform_device bcm2708_vc
  		},
  };
  
@@ -120,9 +114,6 @@ index 9b4e709..7503649 100644
  	bcm_register_device(&bcm2708_systemtimer_device);
  	bcm_register_device(&bcm2708_fb_device);
  	bcm_register_device(&bcm2708_usb_device);
-diff --git a/arch/arm/mach-bcm2708/bcm2708_gpio.c b/arch/arm/mach-bcm2708/bcm2708_gpio.c
-new file mode 100644
-index 0000000..c1e9254
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/bcm2708_gpio.c
 @@ -0,0 +1,426 @@
@@ -552,9 +543,6 @@ index 0000000..c1e9254
 +
 +MODULE_DESCRIPTION("Broadcom BCM2708 GPIO driver");
 +MODULE_LICENSE("GPL");
-diff --git a/arch/arm/mach-bcm2708/include/mach/gpio.h b/arch/arm/mach-bcm2708/include/mach/gpio.h
-new file mode 100644
-index 0000000..7965a97
 --- /dev/null
 +++ b/arch/arm/mach-bcm2708/include/mach/gpio.h
 @@ -0,0 +1,17 @@
@@ -575,9 +563,6 @@ index 0000000..7965a97
 +#define irq_to_gpio(x)	((x) - GPIO_IRQ_START)
 +
 +#endif
-diff --git a/include/linux/platform_data/bcm2708.h b/include/linux/platform_data/bcm2708.h
-new file mode 100644
-index 0000000..fb69624
 --- /dev/null
 +++ b/include/linux/platform_data/bcm2708.h
 @@ -0,0 +1,23 @@
@@ -604,6 +589,3 @@ index 0000000..fb69624
 +		bcm2708_gpio_pull_t value);
 +
 +#endif
--- 
-1.8.3.2
-

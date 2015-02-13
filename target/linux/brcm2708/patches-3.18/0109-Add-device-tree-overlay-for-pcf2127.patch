@@ -10,11 +10,9 @@ Signed-off-by: Byron Bradley <byronb@afterthoughtsoftware.com>
  2 files changed, 23 insertions(+)
  create mode 100644 arch/arm/boot/dts/pcf2127-rtc-overlay.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 8f76444..56830ef 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -72,6 +72,7 @@ dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-overlay.dtb
+@@ -72,6 +72,7 @@ dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-
  dtb-$(RPI_DT_OVERLAYS) += iqaudio-dac-overlay.dtb
  dtb-$(RPI_DT_OVERLAYS) += iqaudio-dacplus-overlay.dtb
  dtb-$(RPI_DT_OVERLAYS) += lirc-rpi-overlay.dtb
@@ -22,9 +20,6 @@ index 8f76444..56830ef 100644
  dtb-$(RPI_DT_OVERLAYS) += pcf8523-rtc-overlay.dtb
  dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
  dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
-diff --git a/arch/arm/boot/dts/pcf2127-rtc-overlay.dts b/arch/arm/boot/dts/pcf2127-rtc-overlay.dts
-new file mode 100644
-index 0000000..01fc81d
 --- /dev/null
 +++ b/arch/arm/boot/dts/pcf2127-rtc-overlay.dts
 @@ -0,0 +1,22 @@
@@ -50,6 +45,3 @@ index 0000000..01fc81d
 +		};
 +	};
 +};
--- 
-1.8.3.2
-

@@ -8,8 +8,6 @@ Subject: [PATCH 111/114] BCM2708_VCIO : Add automatic creation of device node
  arch/arm/mach-bcm2709/vcio.c | 12 +++++++++++-
  2 files changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/arch/arm/mach-bcm2708/vcio.c b/arch/arm/mach-bcm2708/vcio.c
-index 5e43e85..700bff4 100644
 --- a/arch/arm/mach-bcm2708/vcio.c
 +++ b/arch/arm/mach-bcm2708/vcio.c
 @@ -61,7 +61,7 @@
@@ -21,7 +19,7 @@ index 5e43e85..700bff4 100644
  struct vc_mailbox {
  	struct device *dev;	/* parent device */
  	void __iomem *status;
-@@ -421,6 +421,13 @@ static int bcm_vcio_probe(struct platform_device *pdev)
+@@ -421,6 +421,13 @@ static int bcm_vcio_probe(struct platfor
  			       "Failed registering the character device %d\n", ret);
  			return ret;
  		}
@@ -45,8 +43,6 @@ index 5e43e85..700bff4 100644
  	platform_driver_unregister(&bcm_mbox_driver);
  }
  
-diff --git a/arch/arm/mach-bcm2709/vcio.c b/arch/arm/mach-bcm2709/vcio.c
-index 5e43e85..700bff4 100644
 --- a/arch/arm/mach-bcm2709/vcio.c
 +++ b/arch/arm/mach-bcm2709/vcio.c
 @@ -61,7 +61,7 @@
@@ -58,7 +54,7 @@ index 5e43e85..700bff4 100644
  struct vc_mailbox {
  	struct device *dev;	/* parent device */
  	void __iomem *status;
-@@ -421,6 +421,13 @@ static int bcm_vcio_probe(struct platform_device *pdev)
+@@ -421,6 +421,13 @@ static int bcm_vcio_probe(struct platfor
  			       "Failed registering the character device %d\n", ret);
  			return ret;
  		}
@@ -82,6 +78,3 @@ index 5e43e85..700bff4 100644
  	platform_driver_unregister(&bcm_mbox_driver);
  }
  
--- 
-1.8.3.2
-

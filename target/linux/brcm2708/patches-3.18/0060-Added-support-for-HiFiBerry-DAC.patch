@@ -14,8 +14,6 @@ a different codec chip (PCM5122), therefore a new driver is necessary.
  5 files changed, 148 insertions(+)
  create mode 100644 sound/soc/bcm/hifiberry_dacplus.c
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index c363a10..28547eb 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -756,6 +756,7 @@ CONFIG_SND_USB_6FIRE=m
@@ -26,11 +24,9 @@ index c363a10..28547eb 100644
  CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI=m
  CONFIG_SND_BCM2708_SOC_RPI_DAC=m
  CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC=m
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 5ff1299..aa62e55 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -645,6 +645,20 @@ static struct platform_device snd_pcm5102a_codec_device = {
+@@ -645,6 +645,20 @@ static struct platform_device snd_pcm510
  };
  #endif
  
@@ -63,8 +59,6 @@ index 5ff1299..aa62e55 100644
  #if defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) || defined(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI_MODULE)
          bcm_register_device(&snd_hifiberry_digi_device);
          i2c_register_board_info(1, snd_wm8804_i2c_devices, ARRAY_SIZE(snd_wm8804_i2c_devices));
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index c621a5e..926a82b 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -26,6 +26,13 @@ config SND_BCM2708_SOC_HIFIBERRY_DAC
@@ -81,11 +75,9 @@ index c621a5e..926a82b 100644
  config SND_BCM2708_SOC_HIFIBERRY_DIGI
          tristate "Support for HifiBerry Digi"
          depends on SND_BCM2708_SOC_I2S
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index d597fb0..c02e3a2 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -10,11 +10,13 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+@@ -10,11 +10,13 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
  
  # BCM2708 Machine Support
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
@@ -99,9 +91,6 @@ index d597fb0..c02e3a2 100644
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI) += snd-soc-hifiberry-digi.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
  obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
-diff --git a/sound/soc/bcm/hifiberry_dacplus.c b/sound/soc/bcm/hifiberry_dacplus.c
-new file mode 100644
-index 0000000..c63387b
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_dacplus.c
 @@ -0,0 +1,119 @@
@@ -224,6 +213,3 @@ index 0000000..c63387b
 +MODULE_AUTHOR("Daniel Matuschek <daniel@hifiberry.com>");
 +MODULE_DESCRIPTION("ASoC Driver for HiFiBerry DAC+");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

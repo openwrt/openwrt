@@ -44,8 +44,6 @@ snd-bcm2708: Fix dmesg spam for non-error case
  create mode 100755 sound/arm/bcm2835.h
  create mode 100644 sound/arm/vc_vchi_audioserv_defs.h
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 8950e53..63cb6a4 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -202,6 +202,26 @@ CONFIG_FRAMEBUFFER_CONSOLE=y
@@ -75,11 +73,9 @@ index 8950e53..63cb6a4 100644
  CONFIG_HID_A4TECH=m
  CONFIG_HID_ACRUX=m
  CONFIG_HID_APPLE=m
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 7503649..f3dccae 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -403,6 +403,58 @@ struct platform_device bcm2708_powerman_device = {
+@@ -403,6 +403,58 @@ struct platform_device bcm2708_powerman_
  		.coherent_dma_mask = 0xffffffffUL},
  };
  
@@ -147,8 +143,6 @@ index 7503649..f3dccae 100644
  
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
-index 5a4182e..25e7011 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 @@ -288,11 +288,12 @@ VCHIQ_STATUS_T vchiq_open_service(
@@ -167,11 +161,9 @@ index 5a4182e..25e7011 100644
  	}
  
  failed:
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
-index 72eacdaf..c26eff7 100644
 --- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
-@@ -634,6 +634,9 @@ int32_t vchi_service_open(VCHI_INSTANCE_T instance_handle,
+@@ -634,6 +634,9 @@ int32_t vchi_service_open(VCHI_INSTANCE_
  {
  	VCHIQ_INSTANCE_T instance = (VCHIQ_INSTANCE_T)instance_handle;
  	SHIM_SERVICE_T *service = service_alloc(instance, setup);
@@ -181,7 +173,7 @@ index 72eacdaf..c26eff7 100644
  	if (service) {
  		VCHIQ_SERVICE_PARAMS_T params;
  		VCHIQ_STATUS_T status;
-@@ -650,11 +653,10 @@ int32_t vchi_service_open(VCHI_INSTANCE_T instance_handle,
+@@ -650,11 +653,10 @@ int32_t vchi_service_open(VCHI_INSTANCE_
  		if (status != VCHIQ_SUCCESS) {
  			service_free(service);
  			service = NULL;
@@ -194,7 +186,7 @@ index 72eacdaf..c26eff7 100644
  	return (service != NULL) ? 0 : -1;
  }
  EXPORT_SYMBOL(vchi_service_open);
-@@ -665,6 +667,9 @@ int32_t vchi_service_create(VCHI_INSTANCE_T instance_handle,
+@@ -665,6 +667,9 @@ int32_t vchi_service_create(VCHI_INSTANC
  {
  	VCHIQ_INSTANCE_T instance = (VCHIQ_INSTANCE_T)instance_handle;
  	SHIM_SERVICE_T *service = service_alloc(instance, setup);
@@ -204,7 +196,7 @@ index 72eacdaf..c26eff7 100644
  	if (service) {
  		VCHIQ_SERVICE_PARAMS_T params;
  		VCHIQ_STATUS_T status;
-@@ -680,11 +685,10 @@ int32_t vchi_service_create(VCHI_INSTANCE_T instance_handle,
+@@ -680,11 +685,10 @@ int32_t vchi_service_create(VCHI_INSTANC
  		if (status != VCHIQ_SUCCESS) {
  			service_free(service);
  			service = NULL;
@@ -217,8 +209,6 @@ index 72eacdaf..c26eff7 100644
  	return (service != NULL) ? 0 : -1;
  }
  EXPORT_SYMBOL(vchi_service_create);
-diff --git a/sound/arm/Kconfig b/sound/arm/Kconfig
-index 885683a..f7ceafd 100644
 --- a/sound/arm/Kconfig
 +++ b/sound/arm/Kconfig
 @@ -39,5 +39,12 @@ config SND_PXA2XX_AC97
@@ -234,11 +224,9 @@ index 885683a..f7ceafd 100644
 +
  endif	# SND_ARM
  
-diff --git a/sound/arm/Makefile b/sound/arm/Makefile
-index 8c0c851..6796d7f 100644
 --- a/sound/arm/Makefile
 +++ b/sound/arm/Makefile
-@@ -14,3 +14,8 @@ snd-pxa2xx-lib-$(CONFIG_SND_PXA2XX_LIB_AC97)	+= pxa2xx-ac97-lib.o
+@@ -14,3 +14,8 @@ snd-pxa2xx-lib-$(CONFIG_SND_PXA2XX_LIB_A
  
  obj-$(CONFIG_SND_PXA2XX_AC97)	+= snd-pxa2xx-ac97.o
  snd-pxa2xx-ac97-objs		:= pxa2xx-ac97.o
@@ -247,9 +235,6 @@ index 8c0c851..6796d7f 100644
 +snd-bcm2835-objs		:= bcm2835.o bcm2835-ctl.o bcm2835-pcm.o bcm2835-vchiq.o
 +
 +ccflags-y += -Idrivers/misc/vc04_services -Idrivers/misc/vc04_services/interface/vcos/linuxkernel -D__VCCOREVER__=0x04000000
-diff --git a/sound/arm/bcm2835-ctl.c b/sound/arm/bcm2835-ctl.c
-new file mode 100755
-index 0000000..aad905f
 --- /dev/null
 +++ b/sound/arm/bcm2835-ctl.c
 @@ -0,0 +1,323 @@
@@ -576,9 +561,6 @@ index 0000000..aad905f
 +	}
 +	return 0;
 +}
-diff --git a/sound/arm/bcm2835-pcm.c b/sound/arm/bcm2835-pcm.c
-new file mode 100755
-index 0000000..3a20b34
 --- /dev/null
 +++ b/sound/arm/bcm2835-pcm.c
 @@ -0,0 +1,552 @@
@@ -1134,9 +1116,6 @@ index 0000000..3a20b34
 +
 +	return 0;
 +}
-diff --git a/sound/arm/bcm2835-vchiq.c b/sound/arm/bcm2835-vchiq.c
-new file mode 100755
-index 0000000..3c95381
 --- /dev/null
 +++ b/sound/arm/bcm2835-vchiq.c
 @@ -0,0 +1,902 @@
@@ -2042,9 +2021,6 @@ index 0000000..3c95381
 +
 +module_param(force_bulk, bool, 0444);
 +MODULE_PARM_DESC(force_bulk, "Force use of vchiq bulk for audio");
-diff --git a/sound/arm/bcm2835.c b/sound/arm/bcm2835.c
-new file mode 100755
-index 0000000..7ed5079
 --- /dev/null
 +++ b/sound/arm/bcm2835.c
 @@ -0,0 +1,420 @@
@@ -2468,9 +2444,6 @@ index 0000000..7ed5079
 +MODULE_DESCRIPTION("Alsa driver for BCM2835 chip");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:bcm2835_alsa");
-diff --git a/sound/arm/bcm2835.h b/sound/arm/bcm2835.h
-new file mode 100755
-index 0000000..0f71c5d
 --- /dev/null
 +++ b/sound/arm/bcm2835.h
 @@ -0,0 +1,167 @@
@@ -2641,9 +2614,6 @@ index 0000000..0f71c5d
 +void bcm2835_audio_flush_playback_buffers(bcm2835_alsa_stream_t * alsa_stream);
 +
 +#endif /* __SOUND_ARM_BCM2835_H */
-diff --git a/sound/arm/vc_vchi_audioserv_defs.h b/sound/arm/vc_vchi_audioserv_defs.h
-new file mode 100644
-index 0000000..af3e6eb
 --- /dev/null
 +++ b/sound/arm/vc_vchi_audioserv_defs.h
 @@ -0,0 +1,116 @@
@@ -2763,6 +2733,3 @@ index 0000000..af3e6eb
 +} VC_AUDIO_MSG_T;
 +
 +#endif // _VC_AUDIO_DEFS_H_
--- 
-1.8.3.2
-

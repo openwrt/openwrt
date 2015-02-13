@@ -19,8 +19,6 @@ Signed-off-by: Florian Meier <florian.meier@koalo.de>
  create mode 100644 sound/soc/bcm/rpi-dac.c
  create mode 100644 sound/soc/codecs/pcm1794a.c
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index dfd98df..f688da5 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -756,6 +756,7 @@ CONFIG_SND_USB_6FIRE=m
@@ -31,11 +29,9 @@ index dfd98df..f688da5 100644
  CONFIG_SND_SIMPLE_CARD=m
  CONFIG_SOUND_PRIME=m
  CONFIG_HIDRAW=y
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index 50d4991..100c223 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -623,6 +623,20 @@ static struct platform_device snd_pcm5102a_codec_device = {
+@@ -623,6 +623,20 @@ static struct platform_device snd_pcm510
  };
  #endif
  
@@ -68,8 +64,6 @@ index 50d4991..100c223 100644
  	for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
  		struct amba_device *d = amba_devs[i];
  		amba_device_register(d, &iomem_resource);
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index b36a62f..714841d 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -25,3 +25,10 @@ config SND_BCM2708_SOC_HIFIBERRY_DAC
@@ -83,11 +77,9 @@ index b36a62f..714841d 100644
 +        select SND_SOC_PCM1794A
 +        help
 +         Say Y or M if you want to add support for RPi-DAC.
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index be90a49cb..ccc9809 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -10,5 +10,7 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+@@ -10,5 +10,7 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
  
  # BCM2708 Machine Support
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
@@ -95,9 +87,6 @@ index be90a49cb..ccc9809 100644
  
  obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC) += snd-soc-hifiberry-dac.o
 +obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
-diff --git a/sound/soc/bcm/rpi-dac.c b/sound/soc/bcm/rpi-dac.c
-new file mode 100644
-index 0000000..6d6e0ba
 --- /dev/null
 +++ b/sound/soc/bcm/rpi-dac.c
 @@ -0,0 +1,97 @@
@@ -198,8 +187,6 @@ index 0000000..6d6e0ba
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_DESCRIPTION("ASoC Driver for RPi-DAC");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 0ef8bb7..3c236a6 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -81,6 +81,7 @@ config SND_SOC_ALL_CODECS
@@ -220,11 +207,9 @@ index 0ef8bb7..3c236a6 100644
  config SND_SOC_PCM5102A
  	tristate
  
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index 7b606e6..2a7f823 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -74,6 +74,7 @@ snd-soc-pcm512x-i2c-objs := pcm512x-i2c.o
+@@ -74,6 +74,7 @@ snd-soc-pcm512x-i2c-objs := pcm512x-i2c.
  snd-soc-pcm512x-spi-objs := pcm512x-spi.o
  snd-soc-rl6231-objs := rl6231.o
  snd-soc-rt286-objs := rt286.o
@@ -232,7 +217,7 @@ index 7b606e6..2a7f823 100644
  snd-soc-pcm5102a-objs := pcm5102a.o
  snd-soc-rt5631-objs := rt5631.o
  snd-soc-rt5640-objs := rt5640.o
-@@ -251,6 +252,7 @@ obj-$(CONFIG_SND_SOC_PCM512x_I2C)	+= snd-soc-pcm512x-i2c.o
+@@ -251,6 +252,7 @@ obj-$(CONFIG_SND_SOC_PCM512x_I2C)	+= snd
  obj-$(CONFIG_SND_SOC_PCM512x_SPI)	+= snd-soc-pcm512x-spi.o
  obj-$(CONFIG_SND_SOC_RL6231)	+= snd-soc-rl6231.o
  obj-$(CONFIG_SND_SOC_RT286)	+= snd-soc-rt286.o
@@ -240,9 +225,6 @@ index 7b606e6..2a7f823 100644
  obj-$(CONFIG_SND_SOC_PCM5102A)	+= snd-soc-pcm5102a.o
  obj-$(CONFIG_SND_SOC_RT5631)	+= snd-soc-rt5631.o
  obj-$(CONFIG_SND_SOC_RT5640)	+= snd-soc-rt5640.o
-diff --git a/sound/soc/codecs/pcm1794a.c b/sound/soc/codecs/pcm1794a.c
-new file mode 100644
-index 0000000..b4eaa44
 --- /dev/null
 +++ b/sound/soc/codecs/pcm1794a.c
 @@ -0,0 +1,62 @@
@@ -308,6 +290,3 @@ index 0000000..b4eaa44
 +MODULE_DESCRIPTION("ASoC PCM1794A codec driver");
 +MODULE_AUTHOR("Florian Meier <florian.meier@koalo.de>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.8.3.2
-

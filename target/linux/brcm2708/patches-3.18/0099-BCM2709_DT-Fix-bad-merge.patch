@@ -7,8 +7,6 @@ Subject: [PATCH 099/114] BCM2709_DT: Fix bad merge
  arch/arm/boot/dts/Makefile | 25 +++++++++++++------------
  1 file changed, 13 insertions(+), 12 deletions(-)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 605ed38..8f76444 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -63,18 +63,19 @@ ifeq ($(CONFIG_BCM2709_DT),y)
@@ -43,6 +41,3 @@ index 605ed38..8f76444 100644
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
  
  dtb-$(CONFIG_ARCH_BCM_5301X) += bcm4708-netgear-r6250.dtb
--- 
-1.8.3.2
-

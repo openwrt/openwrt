@@ -15,11 +15,9 @@ Signed-off-by: Noralf Tronnes <notro@tronnes.org>
  drivers/spi/spi-bcm2708.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/spi/spi-bcm2708.c b/drivers/spi/spi-bcm2708.c
-index b04a57d..349d21f 100644
 --- a/drivers/spi/spi-bcm2708.c
 +++ b/drivers/spi/spi-bcm2708.c
-@@ -545,7 +545,7 @@ static int bcm2708_spi_probe(struct platform_device *pdev)
+@@ -545,7 +545,7 @@ static int bcm2708_spi_probe(struct plat
  	}
  
  	/* initialise the hardware */
@@ -28,7 +26,7 @@ index b04a57d..349d21f 100644
  	bcm2708_wr(bs, SPI_CS, SPI_CS_REN | SPI_CS_CLEAR_RX | SPI_CS_CLEAR_TX);
  
  	err = spi_register_master(master);
-@@ -561,6 +561,7 @@ static int bcm2708_spi_probe(struct platform_device *pdev)
+@@ -561,6 +561,7 @@ static int bcm2708_spi_probe(struct plat
  
  out_free_irq:
  	free_irq(bs->irq, master);
@@ -36,7 +34,7 @@ index b04a57d..349d21f 100644
  out_workqueue:
  	destroy_workqueue(bs->workq);
  out_iounmap:
-@@ -585,7 +586,7 @@ static int bcm2708_spi_remove(struct platform_device *pdev)
+@@ -585,7 +586,7 @@ static int bcm2708_spi_remove(struct pla
  
  	flush_work(&bs->work);
  
@@ -45,6 +43,3 @@ index b04a57d..349d21f 100644
  	clk_put(bs->clk);
  	free_irq(bs->irq, master);
  	iounmap(bs->base);
--- 
-1.8.3.2
-

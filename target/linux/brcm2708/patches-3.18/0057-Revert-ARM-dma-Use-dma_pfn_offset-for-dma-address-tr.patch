@@ -9,11 +9,9 @@ This reverts commit 6ce0d20016925d031f1e24d64302e4c976d7cec6.
  arch/arm/include/asm/dma-mapping.h | 18 +-----------------
  1 file changed, 1 insertion(+), 17 deletions(-)
 
-diff --git a/arch/arm/include/asm/dma-mapping.h b/arch/arm/include/asm/dma-mapping.h
-index 85738b2..9477f09 100644
 --- a/arch/arm/include/asm/dma-mapping.h
 +++ b/arch/arm/include/asm/dma-mapping.h
-@@ -58,37 +58,21 @@ static inline int dma_set_mask(struct device *dev, u64 mask)
+@@ -58,37 +58,21 @@ static inline int dma_set_mask(struct de
  #ifndef __arch_pfn_to_dma
  static inline dma_addr_t pfn_to_dma(struct device *dev, unsigned long pfn)
  {
@@ -52,6 +50,3 @@ index 85738b2..9477f09 100644
  	return (dma_addr_t)__virt_to_bus((unsigned long)(addr));
  }
  
--- 
-1.8.3.2
-

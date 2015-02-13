@@ -122,8 +122,6 @@ described above.
  create mode 100644 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
  create mode 100644 drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 
-diff --git a/drivers/misc/Kconfig b/drivers/misc/Kconfig
-index bbeb451..b6109a2 100644
 --- a/drivers/misc/Kconfig
 +++ b/drivers/misc/Kconfig
 @@ -524,6 +524,7 @@ source "drivers/misc/carma/Kconfig"
@@ -134,8 +132,6 @@ index bbeb451..b6109a2 100644
  source "drivers/misc/mic/Kconfig"
  source "drivers/misc/genwqe/Kconfig"
  source "drivers/misc/echo/Kconfig"
-diff --git a/drivers/misc/Makefile b/drivers/misc/Makefile
-index 7d5c4cd..c085ede 100644
 --- a/drivers/misc/Makefile
 +++ b/drivers/misc/Makefile
 @@ -51,6 +51,7 @@ obj-$(CONFIG_INTEL_MEI)		+= mei/
@@ -146,9 +142,6 @@ index 7d5c4cd..c085ede 100644
  obj-y				+= mic/
  obj-$(CONFIG_GENWQE)		+= genwqe/
  obj-$(CONFIG_ECHO)		+= echo/
-diff --git a/drivers/misc/vc04_services/Kconfig b/drivers/misc/vc04_services/Kconfig
-new file mode 100644
-index 0000000..2663933
 --- /dev/null
 +++ b/drivers/misc/vc04_services/Kconfig
 @@ -0,0 +1,9 @@
@@ -161,9 +154,6 @@ index 0000000..2663933
 +		BCM2708 family of products.
 +		Defaults to Y when the Broadcom Videocore services
 +		are included in the build, N otherwise.
-diff --git a/drivers/misc/vc04_services/Makefile b/drivers/misc/vc04_services/Makefile
-new file mode 100644
-index 0000000..0c82520
 --- /dev/null
 +++ b/drivers/misc/vc04_services/Makefile
 @@ -0,0 +1,17 @@
@@ -184,9 +174,6 @@ index 0000000..0c82520
 +ccflags-y += -DVCOS_VERIFY_BKPTS=1 -Idrivers/misc/vc04_services -DUSE_VCHIQ_ARM -D__VCCOREVER__=0x04000000
 +
 +endif
-diff --git a/drivers/misc/vc04_services/interface/vchi/connections/connection.h b/drivers/misc/vc04_services/interface/vchi/connections/connection.h
-new file mode 100644
-index 0000000..fef6ac3
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/connections/connection.h
 @@ -0,0 +1,328 @@
@@ -518,9 +505,6 @@ index 0000000..fef6ac3
 +#endif /* CONNECTION_H_ */
 +
 +/****************************** End of file **********************************/
-diff --git a/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h b/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h
-new file mode 100644
-index 0000000..8b3f767
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/message_drivers/message.h
 @@ -0,0 +1,204 @@
@@ -728,9 +712,6 @@ index 0000000..8b3f767
 +#endif // _VCHI_MESSAGE_H_
 +
 +/****************************** End of file ***********************************/
-diff --git a/drivers/misc/vc04_services/interface/vchi/vchi.h b/drivers/misc/vc04_services/interface/vchi/vchi.h
-new file mode 100644
-index 0000000..1b17e98
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi.h
 @@ -0,0 +1,378 @@
@@ -1112,9 +1093,6 @@ index 0000000..1b17e98
 +#endif /* VCHI_H_ */
 +
 +/****************************** End of file **********************************/
-diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h b/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h
-new file mode 100644
-index 0000000..26bc2d3
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_cfg.h
 @@ -0,0 +1,224 @@
@@ -1342,9 +1320,6 @@ index 0000000..26bc2d3
 +#endif /* VCHI_CFG_H_ */
 +
 +/****************************** End of file **********************************/
-diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h b/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h
-new file mode 100644
-index 0000000..35dcba4
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_cfg_internal.h
 @@ -0,0 +1,71 @@
@@ -1419,9 +1394,6 @@ index 0000000..35dcba4
 +//#define VCHI_RX_NANOLOCKS
 +
 +#endif /*VCHI_CFG_INTERNAL_H_*/
-diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_common.h b/drivers/misc/vc04_services/interface/vchi/vchi_common.h
-new file mode 100644
-index 0000000..d76118c
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_common.h
 @@ -0,0 +1,174 @@
@@ -1599,9 +1571,6 @@ index 0000000..d76118c
 +
 +
 +#endif // VCHI_COMMON_H_
-diff --git a/drivers/misc/vc04_services/interface/vchi/vchi_mh.h b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
-new file mode 100644
-index 0000000..198bd07
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchi/vchi_mh.h
 @@ -0,0 +1,42 @@
@@ -1647,9 +1616,6 @@ index 0000000..198bd07
 +#define VCHI_MEM_HANDLE_INVALID 0
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h
-new file mode 100644
-index 0000000..ad398ba
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq.h
 @@ -0,0 +1,40 @@
@@ -1693,9 +1659,6 @@ index 0000000..ad398ba
 +#include "vchiq_util.h"
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
-new file mode 100644
-index 0000000..7ea5c64
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835.h
 @@ -0,0 +1,42 @@
@@ -1741,9 +1704,6 @@ index 0000000..7ea5c64
 +#define VCHIQ_PLATFORM_FRAGMENTS_COUNT_IDX  1
 +
 +#endif /* VCHIQ_2835_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
-new file mode 100644
-index 0000000..b3bdaa2
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
 @@ -0,0 +1,561 @@
@@ -2308,9 +2268,6 @@ index 0000000..b3bdaa2
 +
 +	kfree(pagelist);
 +}
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
-new file mode 100644
-index 0000000..2596818
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
 @@ -0,0 +1,2883 @@
@@ -5197,9 +5154,6 @@ index 0000000..2596818
 +module_exit(vchiq_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Broadcom Corporation");
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h
-new file mode 100644
-index 0000000..d1e2741
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.h
 @@ -0,0 +1,223 @@
@@ -5426,9 +5380,6 @@ index 0000000..d1e2741
 +
 +
 +#endif /* VCHIQ_ARM_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h
-new file mode 100644
-index 0000000..df64581
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_build_info.h
 @@ -0,0 +1,37 @@
@@ -5469,9 +5420,6 @@ index 0000000..df64581
 +const char *vchiq_get_build_version(void);
 +const char *vchiq_get_build_time(void);
 +const char *vchiq_get_build_date(void);
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h
-new file mode 100644
-index 0000000..c382740
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_cfg.h
 @@ -0,0 +1,66 @@
@@ -5541,9 +5489,6 @@ index 0000000..c382740
 +#endif
 +
 +#endif /* VCHIQ_CFG_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
-new file mode 100644
-index 0000000..65f4b52
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.c
 @@ -0,0 +1,119 @@
@@ -5666,9 +5611,6 @@ index 0000000..65f4b52
 +	mutex_unlock(&g_connected_mutex);
 +}
 +EXPORT_SYMBOL(vchiq_add_connected_callback);
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h
-new file mode 100644
-index 0000000..863b3e3
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_connected.h
 @@ -0,0 +1,50 @@
@@ -5722,9 +5664,6 @@ index 0000000..863b3e3
 +void vchiq_call_connected_callbacks(void);
 +
 +#endif /* VCHIQ_CONNECTED_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
-new file mode 100644
-index 0000000..f962027
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.c
 @@ -0,0 +1,3861 @@
@@ -9589,9 +9528,6 @@ index 0000000..f962027
 +			numBytes = 0;
 +	}
 +}
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
-new file mode 100644
-index 0000000..1b27917
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_core.h
 @@ -0,0 +1,711 @@
@@ -10306,9 +10242,6 @@ index 0000000..1b27917
 +	size_t numBytes);
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_debugfs.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_debugfs.c
-new file mode 100644
-index 0000000..7e03213
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_debugfs.c
 @@ -0,0 +1,383 @@
@@ -10695,9 +10628,6 @@ index 0000000..7e03213
 +}
 +
 +#endif /* CONFIG_DEBUG_FS */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_debugfs.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_debugfs.h
-new file mode 100644
-index 0000000..4d6a378
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_debugfs.h
 @@ -0,0 +1,52 @@
@@ -10753,9 +10683,6 @@ index 0000000..4d6a378
 +void vchiq_debugfs_remove_instance(VCHIQ_INSTANCE_T instance);
 +
 +#endif /* VCHIQ_DEBUGFS_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion
-new file mode 100644
-index 0000000..9f5b634
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_genversion
 @@ -0,0 +1,87 @@
@@ -10846,9 +10773,6 @@ index 0000000..9f5b634
 +   return vchiq_build_time;
 +}
 +EOF
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h
-new file mode 100644
-index 0000000..8067bbe
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_if.h
 @@ -0,0 +1,189 @@
@@ -11041,9 +10965,6 @@ index 0000000..8067bbe
 +      short *peer_version);
 +
 +#endif /* VCHIQ_IF_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h
-new file mode 100644
-index 0000000..6137ae9
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_ioctl.h
 @@ -0,0 +1,131 @@
@@ -11178,9 +11099,6 @@ index 0000000..6137ae9
 +#define VCHIQ_IOC_MAX                  17
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
-new file mode 100644
-index 0000000..be9735f
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_kern_lib.c
 @@ -0,0 +1,456 @@
@@ -11640,9 +11558,6 @@ index 0000000..be9735f
 +
 +	return status;
 +}
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h
-new file mode 100644
-index 0000000..d02e776
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_memdrv.h
 @@ -0,0 +1,71 @@
@@ -11717,9 +11632,6 @@ index 0000000..d02e776
 +	const VCHIQ_PLATFORM_DATA_T * platform_data);
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h
-new file mode 100644
-index 0000000..54a3ece
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_pagelist.h
 @@ -0,0 +1,58 @@
@@ -11781,9 +11693,6 @@ index 0000000..54a3ece
 +} FRAGMENTS_T;
 +
 +#endif /* VCHIQ_PAGELIST_H */
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
-new file mode 100644
-index 0000000..72eacdaf
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_shim.c
 @@ -0,0 +1,853 @@
@@ -12640,9 +12549,6 @@ index 0000000..72eacdaf
 +	return ret;
 +}
 +EXPORT_SYMBOL(vchi_service_release);
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
-new file mode 100644
-index 0000000..c2eefef
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
 @@ -0,0 +1,151 @@
@@ -12797,9 +12703,6 @@ index 0000000..c2eefef
 +
 +	return header;
 +}
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
-new file mode 100644
-index 0000000..f4d0b66
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
 @@ -0,0 +1,81 @@
@@ -12884,9 +12787,6 @@ index 0000000..f4d0b66
 +extern VCHIQ_HEADER_T *vchiu_queue_pop(VCHIU_QUEUE_T *queue);
 +
 +#endif
-diff --git a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
-new file mode 100644
-index 0000000..b6bfa21
 --- /dev/null
 +++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_version.c
 @@ -0,0 +1,59 @@
@@ -12949,6 +12849,3 @@ index 0000000..b6bfa21
 +{
 +   return vchiq_build_time;
 +}
--- 
-1.8.3.2
-

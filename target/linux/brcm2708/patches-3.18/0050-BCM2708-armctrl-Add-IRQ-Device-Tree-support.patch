@@ -23,8 +23,6 @@ Signed-off-by: Noralf Tronnes <notro@tronnes.org>
  arch/arm/mach-bcm2708/armctrl.c | 96 +++++++++++++++++++++++++++++++++++++++++
  2 files changed, 105 insertions(+)
 
-diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
-index 50da059..a06f5b8 100644
 --- a/arch/arm/boot/dts/bcm2708.dtsi
 +++ b/arch/arm/boot/dts/bcm2708.dtsi
 @@ -4,6 +4,8 @@
@@ -50,8 +48,6 @@ index 50da059..a06f5b8 100644
  	};
  
  	clocks {
-diff --git a/arch/arm/mach-bcm2708/armctrl.c b/arch/arm/mach-bcm2708/armctrl.c
-index 96fa9b9..74bacb3 100644
 --- a/arch/arm/mach-bcm2708/armctrl.c
 +++ b/arch/arm/mach-bcm2708/armctrl.c
 @@ -23,6 +23,8 @@
@@ -63,7 +59,7 @@ index 96fa9b9..74bacb3 100644
  
  #include <asm/mach/irq.h>
  #include <mach/hardware.h>
-@@ -79,6 +81,99 @@ static void armctrl_unmask_irq(struct irq_data *d)
+@@ -79,6 +81,99 @@ static void armctrl_unmask_irq(struct ir
  	}
  }
  
@@ -163,13 +159,10 @@ index 96fa9b9..74bacb3 100644
  #if defined(CONFIG_PM)
  
  /* for kernels 3.xx use the new syscore_ops apis but for older kernels use the sys dev class */
-@@ -215,5 +310,6 @@ int __init armctrl_init(void __iomem * base, unsigned int irq_start,
+@@ -215,5 +310,6 @@ int __init armctrl_init(void __iomem * b
  
  	armctrl_pm_register(base, irq_start, resume_sources);
  	init_FIQ(FIQ_START);
 +	armctrl_dt_init();
  	return 0;
  }
--- 
-1.8.3.2
-

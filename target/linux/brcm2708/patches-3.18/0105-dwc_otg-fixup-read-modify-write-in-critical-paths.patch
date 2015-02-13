@@ -11,11 +11,9 @@ also touches.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c | 22 ++++++++++++++++----
  3 files changed, 55 insertions(+), 10 deletions(-)
 
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-index ac70f1d..1782d65 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-@@ -2447,9 +2447,16 @@ void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t * hcd,
+@@ -2447,9 +2447,16 @@ void dwc_otg_hcd_queue_transactions(dwc_
  			 */
  			gintmsk_data_t gintmsk = {.d32 = 0 };
  			gintmsk.b.nptxfempty = 1;
@@ -35,11 +33,9 @@ index ac70f1d..1782d65 100644
  		}
  	}
  }
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-index ee35196..6266661 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -165,7 +165,15 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -165,7 +165,15 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
  
  			gintmsk_data_t gintmsk = { .b.portintr = 1};
  			retval |= dwc_otg_hcd_handle_port_intr(dwc_otg_hcd);
@@ -56,7 +52,7 @@ index ee35196..6266661 100644
  		}
  		if (gintsts.b.hcintr) {
  			retval |= dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd);
-@@ -1069,7 +1077,15 @@ static void halt_channel(dwc_otg_hcd_t * hcd,
+@@ -1069,7 +1077,15 @@ static void halt_channel(dwc_otg_hcd_t *
  			 * be processed.
  			 */
  			gintmsk.b.nptxfempty = 1;
@@ -73,7 +69,7 @@ index ee35196..6266661 100644
  		} else {
  			/*
  			 * Move the QH from the periodic queued schedule to
-@@ -1086,7 +1102,15 @@ static void halt_channel(dwc_otg_hcd_t * hcd,
+@@ -1086,7 +1102,15 @@ static void halt_channel(dwc_otg_hcd_t *
  			 * processed.
  			 */
  			gintmsk.b.ptxfempty = 1;
@@ -90,11 +86,9 @@ index ee35196..6266661 100644
  		}
  	}
  }
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-index 17d3030..acd0dd7 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-@@ -683,8 +683,15 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -683,8 +683,15 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * h
  		status = schedule_periodic(hcd, qh);
  		if ( !hcd->periodic_qh_count ) {
  			intr_mask.b.sofintr = 1;
@@ -112,7 +106,7 @@ index 17d3030..acd0dd7 100644
  		}
  		hcd->periodic_qh_count++;
  	}
-@@ -745,8 +752,15 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -745,8 +752,15 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t
  		hcd->periodic_qh_count--;
  		if( !hcd->periodic_qh_count && !fiq_fsm_enable ) {
  			intr_mask.b.sofintr = 1;
@@ -130,6 +124,3 @@ index 17d3030..acd0dd7 100644
  		}
  	}
  }
--- 
-1.8.3.2
-

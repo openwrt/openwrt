@@ -20,8 +20,6 @@ drivers for the Raspberry Pi I2S subsystem.
  create mode 100644 sound/soc/codecs/tas5713.c
  create mode 100644 sound/soc/codecs/tas5713.h
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 28547eb..997e1f3 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -758,6 +758,7 @@ CONFIG_SND_BCM2708_SOC_I2S=m
@@ -32,11 +30,9 @@ index 28547eb..997e1f3 100644
  CONFIG_SND_BCM2708_SOC_RPI_DAC=m
  CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC=m
  CONFIG_SND_SIMPLE_CARD=m
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index aa62e55..5f6a1fa 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -674,6 +674,20 @@ static struct i2c_board_info __initdata snd_wm8804_i2c_devices[] = {
+@@ -674,6 +674,20 @@ static struct i2c_board_info __initdata
  
  #endif
  
@@ -70,8 +66,6 @@ index aa62e55..5f6a1fa 100644
  #if defined(CONFIG_SND_BCM2708_SOC_RPI_DAC) || defined(CONFIG_SND_BCM2708_SOC_RPI_DAC_MODULE)
          bcm_register_device(&snd_rpi_dac_device);
          bcm_register_device(&snd_pcm1794a_codec_device);
-diff --git a/sound/soc/bcm/Kconfig b/sound/soc/bcm/Kconfig
-index 926a82b..a562ddf 100644
 --- a/sound/soc/bcm/Kconfig
 +++ b/sound/soc/bcm/Kconfig
 @@ -40,6 +40,13 @@ config SND_BCM2708_SOC_HIFIBERRY_DIGI
@@ -88,11 +82,9 @@ index 926a82b..a562ddf 100644
  config SND_BCM2708_SOC_RPI_DAC
          tristate "Support for RPi-DAC"
          depends on SND_BCM2708_SOC_I2S
-diff --git a/sound/soc/bcm/Makefile b/sound/soc/bcm/Makefile
-index c02e3a2..17ea2b0 100644
 --- a/sound/soc/bcm/Makefile
 +++ b/sound/soc/bcm/Makefile
-@@ -12,11 +12,13 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd-soc-bcm2708-i2s.o
+@@ -12,11 +12,13 @@ obj-$(CONFIG_SND_BCM2708_SOC_I2S) += snd
  snd-soc-hifiberry-dac-objs := hifiberry_dac.o
  snd-soc-hifiberry-dacplus-objs := hifiberry_dacplus.o
  snd-soc-hifiberry-digi-objs := hifiberry_digi.o
@@ -106,9 +98,6 @@ index c02e3a2..17ea2b0 100644
 +obj-$(CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP) += snd-soc-hifiberry-amp.o
  obj-$(CONFIG_SND_BCM2708_SOC_RPI_DAC) += snd-soc-rpi-dac.o
  obj-$(CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC) += snd-soc-iqaudio-dac.o
-diff --git a/sound/soc/bcm/hifiberry_amp.c b/sound/soc/bcm/hifiberry_amp.c
-new file mode 100644
-index 0000000..1e87ee0
 --- /dev/null
 +++ b/sound/soc/bcm/hifiberry_amp.c
 @@ -0,0 +1,106 @@
@@ -218,8 +207,6 @@ index 0000000..1e87ee0
 +MODULE_AUTHOR("Sebastian Eickhoff <basti.eickhoff@googlemail.com>");
 +MODULE_DESCRIPTION("ASoC driver for HiFiBerry-AMP");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 3c236a6..83c55f8 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -105,6 +105,7 @@ config SND_SOC_ALL_CODECS
@@ -240,8 +227,6 @@ index 3c236a6..83c55f8 100644
  config SND_SOC_TLV320AIC23
  	tristate
  
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index 2a7f823..ca76a2b 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
 @@ -103,6 +103,7 @@ snd-soc-sta350-objs := sta350.o
@@ -252,7 +237,7 @@ index 2a7f823..ca76a2b 100644
  snd-soc-tlv320aic23-objs := tlv320aic23.o
  snd-soc-tlv320aic23-i2c-objs := tlv320aic23-i2c.o
  snd-soc-tlv320aic23-spi-objs := tlv320aic23-spi.o
-@@ -278,6 +279,7 @@ obj-$(CONFIG_SND_SOC_STA529)   += snd-soc-sta529.o
+@@ -278,6 +279,7 @@ obj-$(CONFIG_SND_SOC_STA529)   += snd-so
  obj-$(CONFIG_SND_SOC_STAC9766)	+= snd-soc-stac9766.o
  obj-$(CONFIG_SND_SOC_TAS2552)	+= snd-soc-tas2552.o
  obj-$(CONFIG_SND_SOC_TAS5086)	+= snd-soc-tas5086.o
@@ -260,9 +245,6 @@ index 2a7f823..ca76a2b 100644
  obj-$(CONFIG_SND_SOC_TLV320AIC23)	+= snd-soc-tlv320aic23.o
  obj-$(CONFIG_SND_SOC_TLV320AIC23_I2C)	+= snd-soc-tlv320aic23-i2c.o
  obj-$(CONFIG_SND_SOC_TLV320AIC23_SPI)	+= snd-soc-tlv320aic23-spi.o
-diff --git a/sound/soc/codecs/tas5713.c b/sound/soc/codecs/tas5713.c
-new file mode 100644
-index 0000000..a24c1da
 --- /dev/null
 +++ b/sound/soc/codecs/tas5713.c
 @@ -0,0 +1,362 @@
@@ -628,9 +610,6 @@ index 0000000..a24c1da
 +MODULE_AUTHOR("Sebastian Eickhoff <basti.eickhoff@googlemail.com>");
 +MODULE_DESCRIPTION("ASoC driver for TAS5713");
 +MODULE_LICENSE("GPL v2");
-diff --git a/sound/soc/codecs/tas5713.h b/sound/soc/codecs/tas5713.h
-new file mode 100644
-index 0000000..8f019e0
 --- /dev/null
 +++ b/sound/soc/codecs/tas5713.h
 @@ -0,0 +1,210 @@
@@ -844,6 +823,3 @@ index 0000000..8f019e0
 +
 +
 +#endif  /* _TAS5713_H */
--- 
-1.8.3.2
-

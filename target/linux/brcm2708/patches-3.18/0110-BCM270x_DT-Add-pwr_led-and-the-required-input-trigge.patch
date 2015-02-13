@@ -22,8 +22,6 @@ N.B. pwr_led is not available on Model A or B boards.
  10 files changed, 113 insertions(+), 16 deletions(-)
  create mode 100644 drivers/leds/trigger/ledtrig-input.c
 
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
-index 6b9512b..7f84473 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 @@ -83,8 +83,18 @@
@@ -57,8 +55,6 @@ index 6b9512b..7f84473 100644
 +		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
  	};
  };
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-index b8520b55..a39562f 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -83,8 +83,12 @@
@@ -76,8 +72,6 @@ index b8520b55..a39562f 100644
  };
  
  / {
-diff --git a/arch/arm/boot/dts/bcm2708.dtsi b/arch/arm/boot/dts/bcm2708.dtsi
-index af6b1d9..aeeabae 100644
 --- a/arch/arm/boot/dts/bcm2708.dtsi
 +++ b/arch/arm/boot/dts/bcm2708.dtsi
 @@ -79,11 +79,6 @@
@@ -92,8 +86,6 @@ index af6b1d9..aeeabae 100644
  		};
  	};
  
-diff --git a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
-index 63d3da4..75c222f 100644
 --- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
 +++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
 @@ -83,8 +83,18 @@
@@ -127,8 +119,6 @@ index 63d3da4..75c222f 100644
 +		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
  	};
  };
-diff --git a/arch/arm/boot/dts/bcm2709.dtsi b/arch/arm/boot/dts/bcm2709.dtsi
-index fee2053..6986455 100644
 --- a/arch/arm/boot/dts/bcm2709.dtsi
 +++ b/arch/arm/boot/dts/bcm2709.dtsi
 @@ -79,11 +79,6 @@
@@ -143,8 +133,6 @@ index fee2053..6986455 100644
  		};
  	};
  
-diff --git a/arch/arm/configs/bcm2709_defconfig b/arch/arm/configs/bcm2709_defconfig
-index b5bf4cb..7bb9de6 100644
 --- a/arch/arm/configs/bcm2709_defconfig
 +++ b/arch/arm/configs/bcm2709_defconfig
 @@ -959,6 +959,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
@@ -155,8 +143,6 @@ index b5bf4cb..7bb9de6 100644
  CONFIG_RTC_CLASS=y
  # CONFIG_RTC_HCTOSYS is not set
  CONFIG_RTC_DRV_DS1307=m
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index 81c4387..3b09de9 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -952,6 +952,7 @@ CONFIG_LEDS_TRIGGER_GPIO=y
@@ -167,13 +153,11 @@ index 81c4387..3b09de9 100644
  CONFIG_RTC_CLASS=y
  # CONFIG_RTC_HCTOSYS is not set
  CONFIG_RTC_DRV_DS1307=m
-diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
-index 49794b4..640756b 100644
 --- a/drivers/leds/trigger/Kconfig
 +++ b/drivers/leds/trigger/Kconfig
-@@ -108,4 +108,11 @@ config LEDS_TRIGGER_CAMERA
- 	  This enables direct flash/torch on/off by the driver, kernel space.
- 	  If unsure, say Y.
+@@ -126,4 +126,11 @@ config LEDS_TRIGGER_USBDEV
+ 	  This allows LEDs to be controlled by the presence/activity of
+ 	  an USB device. If unsure, say N.
  
 +config LEDS_TRIGGER_INPUT
 +	tristate "LED Input Trigger"
@@ -183,18 +167,13 @@ index 49794b4..640756b 100644
 +	  If unsure, say Y.
 +
  endif # LEDS_TRIGGERS
-diff --git a/drivers/leds/trigger/Makefile b/drivers/leds/trigger/Makefile
-index 1abf48d..c03afdc 100644
 --- a/drivers/leds/trigger/Makefile
 +++ b/drivers/leds/trigger/Makefile
-@@ -8,3 +8,4 @@ obj-$(CONFIG_LEDS_TRIGGER_CPU)		+= ledtrig-cpu.o
+@@ -8,3 +8,4 @@ obj-$(CONFIG_LEDS_TRIGGER_CPU)		+= ledtr
  obj-$(CONFIG_LEDS_TRIGGER_DEFAULT_ON)	+= ledtrig-default-on.o
  obj-$(CONFIG_LEDS_TRIGGER_TRANSIENT)	+= ledtrig-transient.o
  obj-$(CONFIG_LEDS_TRIGGER_CAMERA)	+= ledtrig-camera.o
 +obj-$(CONFIG_LEDS_TRIGGER_INPUT)	+= ledtrig-input.o
-diff --git a/drivers/leds/trigger/ledtrig-input.c b/drivers/leds/trigger/ledtrig-input.c
-new file mode 100644
-index 0000000..2ca2b98
 --- /dev/null
 +++ b/drivers/leds/trigger/ledtrig-input.c
 @@ -0,0 +1,65 @@
@@ -263,6 +242,3 @@ index 0000000..2ca2b98
 +MODULE_AUTHOR("Phil Elwell <phil@raspberrypi.org>");
 +MODULE_DESCRIPTION("Set LED GPIO to Input \"trigger\"");
 +MODULE_LICENSE("GPL");
--- 
-1.8.3.2
-

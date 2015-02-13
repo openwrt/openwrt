@@ -12,8 +12,6 @@ Subject: [PATCH 058/114] MMC: added alternative MMC driver
  5 files changed, 1620 insertions(+), 11 deletions(-)
  create mode 100644 drivers/mmc/host/bcm2835-mmc.c
 
-diff --git a/arch/arm/configs/bcmrpi_defconfig b/arch/arm/configs/bcmrpi_defconfig
-index f15a4b9..c363a10 100644
 --- a/arch/arm/configs/bcmrpi_defconfig
 +++ b/arch/arm/configs/bcmrpi_defconfig
 @@ -908,6 +908,8 @@ CONFIG_MMC=y
@@ -25,11 +23,9 @@ index f15a4b9..c363a10 100644
  CONFIG_MMC_SPI=m
  CONFIG_LEDS_CLASS=y
  CONFIG_LEDS_GPIO=y
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index b45f327..5ff1299 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -414,6 +414,34 @@ static struct platform_device bcm2708_systemtimer_device = {
+@@ -414,6 +414,34 @@ static struct platform_device bcm2708_sy
  		},
  };
  
@@ -74,8 +70,6 @@ index b45f327..5ff1299 100644
  	bcm2708_init_led();
  	for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
  		bcm_register_device(&bcm2708_alsa_devices[i]);
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 1386065..977aeef 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
 @@ -281,17 +281,6 @@ config MMC_SDHCI_BCM_KONA
@@ -132,11 +126,9 @@ index 1386065..977aeef 100644
  config MMC_OMAP
  	tristate "TI OMAP Multimedia Card Interface support"
  	depends on ARCH_OMAP
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index b09ecfb..7b17387 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -17,6 +17,7 @@ obj-$(CONFIG_MMC_SDHCI_PXAV2)	+= sdhci-pxav2.o
+@@ -17,6 +17,7 @@ obj-$(CONFIG_MMC_SDHCI_PXAV2)	+= sdhci-p
  obj-$(CONFIG_MMC_SDHCI_S3C)	+= sdhci-s3c.o
  obj-$(CONFIG_MMC_SDHCI_SIRF)   	+= sdhci-sirf.o
  obj-$(CONFIG_MMC_SDHCI_SPEAR)	+= sdhci-spear.o
@@ -144,9 +136,6 @@ index b09ecfb..7b17387 100644
  obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
  obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
-diff --git a/drivers/mmc/host/bcm2835-mmc.c b/drivers/mmc/host/bcm2835-mmc.c
-new file mode 100644
-index 0000000..cefba7c
 --- /dev/null
 +++ b/drivers/mmc/host/bcm2835-mmc.c
 @@ -0,0 +1,1557 @@
@@ -1707,6 +1696,3 @@ index 0000000..cefba7c
 +MODULE_DESCRIPTION("BCM2835 SDHCI driver");
 +MODULE_LICENSE("GPL v2");
 +MODULE_AUTHOR("Gellert Weisz");
--- 
-1.8.3.2
-

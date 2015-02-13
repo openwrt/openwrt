@@ -8,11 +8,9 @@ Subject: [PATCH 102/114] pinctrl-bcm2835: bcm2835_gpio_direction_output must
  drivers/pinctrl/pinctrl-bcm2835.c | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/pinctrl/pinctrl-bcm2835.c b/drivers/pinctrl/pinctrl-bcm2835.c
-index 962e180..42a4fd5 100644
 --- a/drivers/pinctrl/pinctrl-bcm2835.c
 +++ b/drivers/pinctrl/pinctrl-bcm2835.c
-@@ -355,7 +355,14 @@ static int bcm2835_gpio_get(struct gpio_chip *chip, unsigned offset)
+@@ -355,7 +355,14 @@ static int bcm2835_gpio_get(struct gpio_
  static int bcm2835_gpio_direction_output(struct gpio_chip *chip,
  		unsigned offset, int value)
  {
@@ -28,6 +26,3 @@ index 962e180..42a4fd5 100644
  }
  
  static void bcm2835_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
--- 
-1.8.3.2
-

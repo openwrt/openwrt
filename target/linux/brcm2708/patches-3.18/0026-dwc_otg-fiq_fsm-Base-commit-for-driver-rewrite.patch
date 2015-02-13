@@ -121,11 +121,9 @@ fiq_fsm: Enable by default
  delete mode 100755 drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
  delete mode 100755 drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 
-diff --git a/arch/arm/mach-bcm2708/bcm2708.c b/arch/arm/mach-bcm2708/bcm2708.c
-index dc59a6b..a740344 100644
 --- a/arch/arm/mach-bcm2708/bcm2708.c
 +++ b/arch/arm/mach-bcm2708/bcm2708.c
-@@ -330,22 +330,13 @@ static struct resource bcm2708_usb_resources[] = {
+@@ -330,22 +330,13 @@ static struct resource bcm2708_usb_resou
  	       .end = IRQ_HOSTPORT,
  	       .flags = IORESOURCE_IRQ,
  	       },
@@ -165,11 +163,9 @@ index dc59a6b..a740344 100644
  	bcm_register_device(&bcm2708_usb_device);
  	bcm_register_device(&bcm2708_uart1_device);
  	bcm_register_device(&bcm2708_powerman_device);
-diff --git a/drivers/usb/host/dwc_otg/Makefile b/drivers/usb/host/dwc_otg/Makefile
-index a56f193..e7bdd12 100644
 --- a/drivers/usb/host/dwc_otg/Makefile
 +++ b/drivers/usb/host/dwc_otg/Makefile
-@@ -36,7 +36,8 @@ dwc_otg-objs	+= dwc_otg_cil.o dwc_otg_cil_intr.o
+@@ -36,7 +36,8 @@ dwc_otg-objs	+= dwc_otg_cil.o dwc_otg_ci
  dwc_otg-objs	+= dwc_otg_pcd_linux.o dwc_otg_pcd.o dwc_otg_pcd_intr.o
  dwc_otg-objs	+= dwc_otg_hcd.o dwc_otg_hcd_linux.o dwc_otg_hcd_intr.o dwc_otg_hcd_queue.o dwc_otg_hcd_ddma.o
  dwc_otg-objs	+= dwc_otg_adp.o
@@ -179,8 +175,6 @@ index a56f193..e7bdd12 100644
  ifneq ($(CFI),)
  dwc_otg-objs	+= dwc_otg_cfi.o
  endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
-index 2f8b3bd..065807f 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 @@ -45,7 +45,6 @@
@@ -191,7 +185,7 @@ index 2f8b3bd..065807f 100644
  
  #ifdef DEBUG
  inline const char *op_state_str(dwc_otg_core_if_t * core_if)
-@@ -1319,7 +1318,7 @@ static int32_t dwc_otg_handle_lpm_intr(dwc_otg_core_if_t * core_if)
+@@ -1319,7 +1318,7 @@ static int32_t dwc_otg_handle_lpm_intr(d
  /**
   * This function returns the Core Interrupt register.
   */
@@ -200,7 +194,7 @@ index 2f8b3bd..065807f 100644
  {
  	gahbcfg_data_t gahbcfg = {.d32 = 0 };
  	gintsts_data_t gintsts;
-@@ -1345,16 +1344,15 @@ static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if, gin
+@@ -1345,16 +1344,15 @@ static inline uint32_t dwc_otg_read_comm
  	}
  	gintsts.d32 = DWC_READ_REG32(&core_if->core_global_regs->gintsts);
  	gintmsk.d32 = DWC_READ_REG32(&core_if->core_global_regs->gintmsk);
@@ -225,7 +219,7 @@ index 2f8b3bd..065807f 100644
  	}
  
  	gahbcfg.d32 = DWC_READ_REG32(&core_if->core_global_regs->gahbcfg);
-@@ -1366,13 +1364,15 @@ static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if, gin
+@@ -1366,13 +1364,15 @@ static inline uint32_t dwc_otg_read_comm
  			    gintsts.d32, gintmsk.d32);
  	}
  #endif
@@ -244,7 +238,7 @@ index 2f8b3bd..065807f 100644
  		return ((gintsts.d32 & gintmsk.d32) & gintmsk_common.d32);
  	}
  
-@@ -1406,7 +1406,7 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+@@ -1406,7 +1406,7 @@ int32_t dwc_otg_handle_common_intr(void
  {
  	int retval = 0;
  	gintsts_data_t gintsts;
@@ -253,7 +247,7 @@ index 2f8b3bd..065807f 100644
  	gpwrdn_data_t gpwrdn = {.d32 = 0 };
  	dwc_otg_device_t *otg_dev = dev;
  	dwc_otg_core_if_t *core_if = otg_dev->core_if;
-@@ -1428,7 +1428,10 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+@@ -1428,7 +1428,10 @@ int32_t dwc_otg_handle_common_intr(void
  	}
  
  	if (core_if->hibernation_suspend <= 0) {
@@ -265,7 +259,7 @@ index 2f8b3bd..065807f 100644
  
  		if (gintsts.b.modemismatch) {
  			retval |= dwc_otg_handle_mode_mismatch_intr(core_if);
-@@ -1525,11 +1528,16 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+@@ -1525,11 +1528,16 @@ int32_t dwc_otg_handle_common_intr(void
  			gintsts.b.portintr = 1;
  			DWC_WRITE_REG32(&core_if->core_global_regs->gintsts,gintsts.d32);
  			retval |= 1;
@@ -285,15 +279,13 @@ index 2f8b3bd..065807f 100644
  
  	} else {
  		DWC_DEBUGPL(DBG_ANY, "gpwrdn=%08x\n", gpwrdn.d32);
-@@ -1583,6 +1591,5 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+@@ -1583,6 +1591,5 @@ int32_t dwc_otg_handle_common_intr(void
  	}
  	if (core_if->lock)
  		DWC_SPINUNLOCK(core_if->lock);
 -
  	return retval;
  }
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_driver.c b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
-index f06c3d22..dc7cd32 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
 @@ -56,6 +56,7 @@
@@ -312,7 +304,7 @@ index f06c3d22..dc7cd32 100644
  
  extern int pcd_init(
  #ifdef LM_INTERFACE
-@@ -240,13 +240,14 @@ static struct dwc_otg_driver_module_params dwc_otg_module_params = {
+@@ -240,13 +240,14 @@ static struct dwc_otg_driver_module_para
  	.adp_enable = -1,
  };
  
@@ -361,7 +353,7 @@ index f06c3d22..dc7cd32 100644
  #endif
  	DWC_DEBUGPL(DBG_CIL, "registering (common) handler for irq%d\n",
  		    devirq);
-@@ -1071,9 +1071,9 @@ static int __init dwc_otg_driver_init(void)
+@@ -1071,9 +1071,9 @@ static int __init dwc_otg_driver_init(vo
  	int error;
          struct device_driver *drv;
  
@@ -374,7 +366,7 @@ index f06c3d22..dc7cd32 100644
  	}
  
  	printk(KERN_INFO "%s: version %s (%s bus)\n", dwc_driver_name,
-@@ -1095,9 +1095,9 @@ static int __init dwc_otg_driver_init(void)
+@@ -1095,9 +1095,9 @@ static int __init dwc_otg_driver_init(vo
  		printk(KERN_ERR "%s retval=%d\n", __func__, retval);
  		return retval;
  	}
@@ -387,7 +379,7 @@ index f06c3d22..dc7cd32 100644
  
  	error = driver_create_file(drv, &driver_attr_version);
  #ifdef DEBUG
-@@ -1378,12 +1378,19 @@ MODULE_PARM_DESC(otg_ver, "OTG revision supported 0=OTG 1.3 1=OTG 2.0");
+@@ -1378,12 +1378,19 @@ MODULE_PARM_DESC(otg_ver, "OTG revision
  module_param(microframe_schedule, bool, 0444);
  MODULE_PARM_DESC(microframe_schedule, "Enable the microframe scheduler");
  
@@ -413,9 +405,6 @@ index f06c3d22..dc7cd32 100644
  
  /** @page "Module Parameters"
   *
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-new file mode 100644
-index 0000000..1be6e71
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
 @@ -0,0 +1,1290 @@
@@ -1709,9 +1698,6 @@ index 0000000..1be6e71
 +	state->fiq_done++;
 +	mb();
 +}
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
-new file mode 100644
-index 0000000..5c7707f
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
 @@ -0,0 +1,353 @@
@@ -2068,9 +2054,6 @@ index 0000000..5c7707f
 +extern void dwc_otg_fiq_nop(struct fiq_state *state);
 +
 +#endif /* DWC_OTG_FIQ_FSM_H_ */
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_stub.S b/drivers/usb/host/dwc_otg/dwc_otg_fiq_stub.S
-new file mode 100644
-index 0000000..ffa8d21
 --- /dev/null
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_stub.S
 @@ -0,0 +1,80 @@
@@ -2154,8 +2137,6 @@ index 0000000..ffa8d21
 +	subs pc, lr, #4;
 +_dwc_otg_fiq_stub_end:
 +END(_dwc_otg_fiq_stub)
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
-index 986d361..130096b 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
 @@ -45,9 +45,10 @@
@@ -2171,7 +2152,7 @@ index 986d361..130096b 100644
  
  //#define DEBUG_HOST_CHANNELS
  #ifdef DEBUG_HOST_CHANNELS
-@@ -57,12 +58,6 @@ static int last_sel_trans_num_avail_hc_at_start = 0;
+@@ -57,12 +58,6 @@ static int last_sel_trans_num_avail_hc_a
  static int last_sel_trans_num_avail_hc_at_end = 0;
  #endif /* DEBUG_HOST_CHANNELS */
  
@@ -2184,7 +2165,7 @@ index 986d361..130096b 100644
  
  dwc_otg_hcd_t *dwc_otg_hcd_alloc_hcd(void)
  {
-@@ -295,7 +290,7 @@ static int32_t dwc_otg_hcd_disconnect_cb(void *p)
+@@ -295,7 +290,7 @@ static int32_t dwc_otg_hcd_disconnect_cb
  	 */
  	dwc_otg_hcd->flags.b.port_connect_status_change = 1;
  	dwc_otg_hcd->flags.b.port_connect_status = 0;
@@ -2193,7 +2174,7 @@ index 986d361..130096b 100644
  		local_fiq_disable();
  	/*
  	 * Shutdown any transfers in process by clearing the Tx FIFO Empty
-@@ -392,20 +387,15 @@ static int32_t dwc_otg_hcd_disconnect_cb(void *p)
+@@ -392,20 +387,15 @@ static int32_t dwc_otg_hcd_disconnect_cb
  				channel->qh = NULL;
  			}
  		}
@@ -2216,7 +2197,7 @@ index 986d361..130096b 100644
  		local_fiq_enable();
  
  	if (dwc_otg_hcd->fops->disconnect) {
-@@ -542,7 +532,7 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_t * hcd,
+@@ -542,7 +532,7 @@ int dwc_otg_hcd_urb_enqueue(dwc_otg_hcd_
  	}
  #endif
  	intr_mask.d32 = DWC_READ_REG32(&hcd->core_if->core_global_regs->gintmsk);
@@ -2225,7 +2206,7 @@ index 986d361..130096b 100644
  	if((((dwc_otg_qh_t *)ep_handle)->ep_type == UE_BULK) && !(qtd->urb->flags & URB_GIVEBACK_ASAP))
  		/* Do not schedule SG transactions until qtd has URB_GIVEBACK_ASAP set */
  		needs_scheduling = 0;
-@@ -613,6 +603,7 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
+@@ -613,6 +603,7 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
  	if (urb_qtd->in_process && qh->channel) {
  		/* The QTD is in process (it has been assigned to a channel). */
  		if (hcd->flags.b.port_connect_status) {
@@ -2233,7 +2214,7 @@ index 986d361..130096b 100644
  			/*
  			 * If still connected (i.e. in host mode), halt the
  			 * channel so it can be used for other transfers. If
-@@ -620,10 +611,16 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_t * hcd,
+@@ -620,10 +611,16 @@ int dwc_otg_hcd_urb_dequeue(dwc_otg_hcd_
  			 * written to halt the channel since the core is in
  			 * device mode.
  			 */
@@ -2254,7 +2235,7 @@ index 986d361..130096b 100644
  		}
  	}
  
-@@ -759,7 +756,6 @@ static void completion_tasklet_func(void *ptr)
+@@ -759,7 +756,6 @@ static void completion_tasklet_func(void
  
  		usb_hcd_giveback_urb(hcd->priv, urb, urb->status);
  
@@ -2297,7 +2278,7 @@ index 986d361..130096b 100644
  /**
   * Frees secondary storage associated with the dwc_otg_hcd structure contained
   * in the struct usb_hcd field.
-@@ -907,6 +931,7 @@ static void dwc_otg_hcd_free(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -907,6 +931,7 @@ static void dwc_otg_hcd_free(dwc_otg_hcd
  	DWC_TIMER_FREE(dwc_otg_hcd->conn_timer);
  	DWC_TASK_FREE(dwc_otg_hcd->reset_tasklet);
  	DWC_TASK_FREE(dwc_otg_hcd->completion_tasklet);
@@ -2305,7 +2286,7 @@ index 986d361..130096b 100644
  
  #ifdef DWC_DEV_SRPCAP
  	if (dwc_otg_hcd->core_if->power_down == 2 &&
-@@ -984,6 +1009,59 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd, dwc_otg_core_if_t * core_if)
+@@ -984,6 +1009,59 @@ int dwc_otg_hcd_init(dwc_otg_hcd_t * hcd
  			    channel);
  	}
  
@@ -2365,7 +2346,7 @@ index 986d361..130096b 100644
  	/* Initialize the Connection timeout timer. */
  	hcd->conn_timer = DWC_TIMER_ALLOC("Connection timer",
  					  dwc_otg_hcd_connect_timeout, 0);
-@@ -1181,7 +1259,8 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -1181,7 +1259,8 @@ static void assign_and_init_hc(dwc_otg_h
  		hc->do_split = 1;
  		hc->xact_pos = qtd->isoc_split_pos;
  		/* We don't need to do complete splits anymore */
@@ -2375,7 +2356,7 @@ index 986d361..130096b 100644
  			hc->complete_split = qtd->complete_split = 0;
  		else
  			hc->complete_split = qtd->complete_split;
-@@ -1332,62 +1411,487 @@ static void assign_and_init_hc(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -1332,62 +1411,487 @@ static void assign_and_init_hc(dwc_otg_h
  	hc->qh = qh;
  }
  
@@ -2468,7 +2449,8 @@ index 986d361..130096b 100644
 +	dwc_hc_t *hc = qh->channel;
 +	struct fiq_dma_blob *blob;
 +	struct dwc_otg_hcd_iso_packet_desc *frame_desc;
-+
+ 
+-	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
 +	for (i = 0; i < 6; i++) {
 +		st->dma_info.slot_len[i] = 255;
 +	}
@@ -2494,24 +2476,23 @@ index 986d361..130096b 100644
 +	} else {
 +		if (qh->ep_type == UE_ISOCHRONOUS) {
  
--	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
-+			dwc_otg_qtd_t *qtd = DWC_CIRCLEQ_FIRST(&qh->qtd_list);
- 
 -	if(hcd->hub_port[hub_addr] & (1 << port_addr))
 -	{
 -		fiq_print(FIQDBG_PORTHUB, "H%dP%d:S%02d", hub_addr, port_addr, qh->skip_count);
-+			frame_desc = &qtd->urb->iso_descs[qtd->isoc_frame_index];
-+			frame_length = frame_desc->length;
++			dwc_otg_qtd_t *qtd = DWC_CIRCLEQ_FIRST(&qh->qtd_list);
  
 -		qh->skip_count++;
-+			/* Virtual address for bounce buffers */
-+			blob = hcd->fiq_dmab;
++			frame_desc = &qtd->urb->iso_descs[qtd->isoc_frame_index];
++			frame_length = frame_desc->length;
  
 -		if(qh->skip_count > 40000)
 -		{
 -			printk_once(KERN_ERR "Error: Having to skip port allocation");
 -			local_fiq_disable();
 -			BUG();
++			/* Virtual address for bounce buffers */
++			blob = hcd->fiq_dmab;
++
 +			ptr = qtd->urb->buf + frame_desc->offset;
 +			if (frame_length == 0) {
 +				/*
@@ -2706,7 +2687,8 @@ index 986d361..130096b 100644
 +	if (st->fsm != FIQ_PASSTHROUGH)
 +		return 0;
 +	st->nr_errors = 0;
-+
+ 
+-	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
 +	st->hcchar_copy.d32 = 0;
 +	st->hcchar_copy.b.mps = hc->max_packet;
 +	st->hcchar_copy.b.epdir = hc->ep_is_in;
@@ -2725,7 +2707,12 @@ index 986d361..130096b 100644
 +	}
 +	st->hcchar_copy.b.lspddev = (hc->speed == DWC_OTG_EP_SPEED_LOW) ? 1 : 0;
 +	/* Enable the channel later as a final register write. */
-+
+ 
+-	hcd->hub_port[hub_addr] &= ~(1 << port_addr);
+-#ifdef FIQ_DEBUG
+-	hcd->hub_port_alloc[hub_addr * 16 + port_addr] = -1;
+-#endif
+-	fiq_print(FIQDBG_PORTHUB, "H%dP%d:RO%d", hub_addr, port_addr, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->pipe_info.ep_num);
 +	st->hcsplt_copy.d32 = 0;
 +	if(qh->do_split) {
 +		hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
@@ -2747,17 +2734,11 @@ index 986d361..130096b 100644
 +		st->hub_addr = hub_addr;
 +		st->port_addr = port_addr;
 +	}
- 
--	hcd->fops->hub_info(hcd, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->priv, &hub_addr, &port_addr);
++
 +	st->hctsiz_copy.d32 = 0;
 +	st->hctsiz_copy.b.dopng = 0;
 +	st->hctsiz_copy.b.pid = hc->data_pid_start;
- 
--	hcd->hub_port[hub_addr] &= ~(1 << port_addr);
--#ifdef FIQ_DEBUG
--	hcd->hub_port_alloc[hub_addr * 16 + port_addr] = -1;
--#endif
--	fiq_print(FIQDBG_PORTHUB, "H%dP%d:RO%d", hub_addr, port_addr, DWC_CIRCLEQ_FIRST(&qh->qtd_list)->urb->pipe_info.ep_num);
++
 +	if (hc->ep_is_in || (hc->xfer_len > hc->max_packet)) {
 +		hc->xfer_len = hc->max_packet;
 +	} else if (!hc->ep_is_in && (hc->xfer_len > 188)) {
@@ -2902,7 +2883,7 @@ index 986d361..130096b 100644
  }
  
  
-@@ -1404,16 +1908,11 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+@@ -1404,16 +1908,11 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
  {
  	dwc_list_link_t *qh_ptr;
  	dwc_otg_qh_t *qh;
@@ -2919,7 +2900,7 @@ index 986d361..130096b 100644
  #ifdef DEBUG_HOST_CHANNELS
  	last_sel_trans_num_per_scheduled = 0;
  	last_sel_trans_num_nonper_scheduled = 0;
-@@ -1428,26 +1927,11 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+@@ -1428,26 +1927,11 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
  
  		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
  
@@ -2946,7 +2927,7 @@ index 986d361..130096b 100644
  				break;
  			}
  			hcd->available_host_channels--;
-@@ -1483,27 +1967,24 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+@@ -1483,27 +1967,24 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
  	       !DWC_CIRCLEQ_EMPTY(&hcd->free_hc_list)) {
  
  		qh = DWC_LIST_ENTRY(qh_ptr, dwc_otg_qh_t, qh_list_entry);
@@ -2987,7 +2968,7 @@ index 986d361..130096b 100644
  			}
  		}
  
-@@ -1532,12 +2013,31 @@ dwc_otg_transaction_type_e dwc_otg_hcd_select_transactions(dwc_otg_hcd_t * hcd)
+@@ -1532,12 +2013,31 @@ dwc_otg_transaction_type_e dwc_otg_hcd_s
  				   &qh->qh_list_entry);
  		DWC_SPINUNLOCK_IRQRESTORE(channel_lock, flags);
  
@@ -3021,7 +3002,7 @@ index 986d361..130096b 100644
  	if(!DWC_LIST_EMPTY(&hcd->periodic_sched_assigned))
  		ret_val |= DWC_OTG_TRANSACTION_PERIODIC;
  
-@@ -1582,6 +2082,12 @@ static int queue_transaction(dwc_otg_hcd_t * hcd,
+@@ -1582,6 +2082,12 @@ static int queue_transaction(dwc_otg_hcd
  				hc->qh->ping_state = 0;
  			}
  		} else if (!hc->xfer_started) {
@@ -3034,7 +3015,7 @@ index 986d361..130096b 100644
  			dwc_otg_hc_start_transfer(hcd->core_if, hc);
  			hc->qh->ping_state = 0;
  		}
-@@ -1634,7 +2140,7 @@ static void process_periodic_channels(dwc_otg_hcd_t * hcd)
+@@ -1634,7 +2140,7 @@ static void process_periodic_channels(dw
  	hptxsts_data_t tx_status;
  	dwc_list_link_t *qh_ptr;
  	dwc_otg_qh_t *qh;
@@ -3043,7 +3024,7 @@ index 986d361..130096b 100644
  	int no_queue_space = 0;
  	int no_fifo_space = 0;
  
-@@ -1663,27 +2169,34 @@ static void process_periodic_channels(dwc_otg_hcd_t * hcd)
+@@ -1663,27 +2169,34 @@ static void process_periodic_channels(dw
  
  		// Do not send a split start transaction any later than frame .6
  		// Note, we have to schedule a periodic in .5 to make it go in .6
@@ -3094,7 +3075,7 @@ index 986d361..130096b 100644
  		}
  
  		/*
-@@ -1800,25 +2313,19 @@ static void process_non_periodic_channels(dwc_otg_hcd_t * hcd)
+@@ -1800,25 +2313,19 @@ static void process_non_periodic_channel
  		qh = DWC_LIST_ENTRY(hcd->non_periodic_qh_ptr, dwc_otg_qh_t,
  				    qh_list_entry);
  
@@ -3105,16 +3086,16 @@ index 986d361..130096b 100644
 -			g_next_sched_frame = dwc_otg_hcd_get_frame_number(hcd) | 7;
 -			break;
 -		}
--
--		status =
--		    queue_transaction(hcd, qh->channel,
--				      tx_status.b.nptxfspcavail);
 +		if(fiq_fsm_enable && fiq_fsm_transaction_suitable(qh)) {
 +			fiq_fsm_queue_split_transaction(hcd, qh);
 +		} else {
 +			status = queue_transaction(hcd, qh->channel,
 +						tx_status.b.nptxfspcavail);
  
+-		status =
+-		    queue_transaction(hcd, qh->channel,
+-				      tx_status.b.nptxfspcavail);
+-
 -		if (status > 0) {
 -			more_to_do = 1;
 -		} else if (status < 0) {
@@ -3131,8 +3112,6 @@ index 986d361..130096b 100644
  		/* Advance to next QH, skipping start-of-list entry. */
  		hcd->non_periodic_qh_ptr = hcd->non_periodic_qh_ptr->next;
  		if (hcd->non_periodic_qh_ptr == &hcd->non_periodic_sched_active) {
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
-index 0007fa1..43dbed9 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.h
 @@ -40,6 +40,8 @@
@@ -3157,7 +3136,7 @@ index 0007fa1..43dbed9 100644
  #ifdef DEBUG
  	uint32_t frrem_samples;
  	uint64_t frrem_accum;
-@@ -615,6 +623,9 @@ extern void dwc_otg_hcd_queue_transactions(dwc_otg_hcd_t * hcd,
+@@ -615,6 +623,9 @@ extern void dwc_otg_hcd_queue_transactio
  int dwc_otg_hcd_allocate_port(dwc_otg_hcd_t * hcd, dwc_otg_qh_t *qh);
  void dwc_otg_hcd_release_port(dwc_otg_hcd_t * dwc_otg_hcd, dwc_otg_qh_t *qh);
  
@@ -3167,8 +3146,6 @@ index 0007fa1..43dbed9 100644
  
  /** @} */
  
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-index 64d33a5..4195ff2 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 @@ -34,7 +34,6 @@
@@ -3213,7 +3190,7 @@ index 64d33a5..4195ff2 100644
  #ifdef FIQ_DEBUG
  char buffer[1000*16];
  int wptr;
-@@ -83,12 +57,10 @@ void notrace _fiq_print(FIQDBG_T dbg_lvl, char *fmt, ...)
+@@ -83,12 +57,10 @@ void notrace _fiq_print(FIQDBG_T dbg_lvl
  	va_list args;
  	char text[17];
  	hfnum_data_t hfnum = { .d32 = FIQ_READ(dwc_regs_base + 0x408) };
@@ -3227,7 +3204,7 @@ index 64d33a5..4195ff2 100644
  		snprintf(text, 9, "%4d%d:%d ", hfnum.b.frnum/8, hfnum.b.frnum%8, 8 - hfnum.b.frrem/937);
  		va_start(args, fmt);
  		vsnprintf(text+8, 9, fmt, args);
-@@ -96,410 +68,21 @@ void notrace _fiq_print(FIQDBG_T dbg_lvl, char *fmt, ...)
+@@ -96,410 +68,21 @@ void notrace _fiq_print(FIQDBG_T dbg_lvl
  
  		memcpy(buffer + wptr, text, 16);
  		wptr = (wptr + 16) % sizeof(buffer);
@@ -3640,7 +3617,7 @@ index 64d33a5..4195ff2 100644
  
  #ifdef DEBUG
  	dwc_otg_core_global_regs_t *global_regs = core_if->core_global_regs;
-@@ -516,15 +99,29 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -516,15 +99,29 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
  	DWC_SPINLOCK(dwc_otg_hcd->lock);
  	/* Check if HOST Mode */
  	if (dwc_otg_is_host_mode(core_if)) {
@@ -3676,7 +3653,7 @@ index 64d33a5..4195ff2 100644
  
  #ifdef DEBUG
  		// We should be OK doing this because the common interrupts should already have been serviced
-@@ -544,12 +141,7 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -544,12 +141,7 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
  				    gintsts.d32, core_if);
  #endif
  		hfnum.d32 = DWC_READ_REG32(&dwc_otg_hcd->core_if->host_if->host_global_regs->hfnum);
@@ -3690,7 +3667,7 @@ index 64d33a5..4195ff2 100644
  			retval |= dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd);
  		}
  
-@@ -604,37 +196,43 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -604,37 +196,43 @@ int32_t dwc_otg_hcd_handle_intr(dwc_otg_
  	}
  
  exit_handler_routine:
@@ -3715,12 +3692,17 @@ index 64d33a5..4195ff2 100644
 -				mphi_int_count = 0;
 -			}
 -			int_done++;
+-		}
+-
+-		// Unmask handled interrupts
+-		FIQ_WRITE(dwc_regs_base + 0x18, gintmsk.d32);
+-		//DWC_MODIFY_REG32((uint32_t *)IO_ADDRESS(USB_BASE + 0x8), 0 , 1);
 +		gintmsk_new.d32 = *(volatile uint32_t *)&dwc_otg_hcd->fiq_state->gintmsk_saved.d32;
 +		if(fiq_fsm_enable)
 +			haintmsk_new.d32 = *(volatile uint32_t *)&dwc_otg_hcd->fiq_state->haintmsk_saved.d32;
 +		else
 +			haintmsk_new.d32 = 0x0000FFFF;
-+
+ 
 +		/* The FIQ could have sneaked another interrupt in. If so, don't clear MPHI */
 +		if ((gintmsk_new.d32 == ~0) && (haintmsk_new.d32 == 0x0000FFFF)) {
 +				DWC_WRITE_REG32(dwc_otg_hcd->fiq_state->mphi_regs.intstat, (1<<16));
@@ -3733,12 +3715,7 @@ index 64d33a5..4195ff2 100644
 +					dwc_otg_hcd->fiq_state->mphi_int_count = 0;
 +				}
 +				int_done++;
- 		}
--
--		// Unmask handled interrupts
--		FIQ_WRITE(dwc_regs_base + 0x18, gintmsk.d32);
--		//DWC_MODIFY_REG32((uint32_t *)IO_ADDRESS(USB_BASE + 0x8), 0 , 1);
--
++		}
 +		haintmsk.d32 = DWC_READ_REG32(&core_if->host_if->host_global_regs->haintmsk);
 +		/* Re-enable interrupts that the FIQ masked (first time round) */
 +		FIQ_WRITE(dwc_otg_hcd->fiq_state->dwc_regs_base + GINTMSK, gintmsk.d32);
@@ -3759,7 +3736,7 @@ index 64d33a5..4195ff2 100644
  		}
  	}
  
-@@ -686,6 +284,7 @@ static inline void track_missed_sofs(uint16_t curr_frame_number)
+@@ -686,6 +284,7 @@ static inline void track_missed_sofs(uin
  int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd)
  {
  	hfnum_data_t hfnum;
@@ -3767,7 +3744,7 @@ index 64d33a5..4195ff2 100644
  	dwc_list_link_t *qh_entry;
  	dwc_otg_qh_t *qh;
  	dwc_otg_transaction_type_e tr_type;
-@@ -732,8 +331,8 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd)
+@@ -732,8 +331,8 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_
  			}
  		}
  	}
@@ -3778,7 +3755,7 @@ index 64d33a5..4195ff2 100644
  
  	tr_type = dwc_otg_hcd_select_transactions(hcd);
  	if (tr_type != DWC_OTG_TRANSACTION_NONE) {
-@@ -741,10 +340,11 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_otg_hcd_t * hcd)
+@@ -741,10 +340,11 @@ int32_t dwc_otg_hcd_handle_sof_intr(dwc_
  		did_something = 1;
  	}
  
@@ -3794,7 +3771,7 @@ index 64d33a5..4195ff2 100644
  	return 1;
  }
  
-@@ -1020,19 +620,21 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_otg_hcd_t * dwc_otg_hcd)
+@@ -1020,19 +620,21 @@ int32_t dwc_otg_hcd_handle_hc_intr(dwc_o
  {
  	int i;
  	int retval = 0;
@@ -3821,7 +3798,7 @@ index 64d33a5..4195ff2 100644
  		local_fiq_enable();
  	}
  
-@@ -1076,9 +678,7 @@ static uint32_t get_actual_xfer_length(dwc_hc_t * hc,
+@@ -1076,9 +678,7 @@ static uint32_t get_actual_xfer_length(d
  				*short_read = (hctsiz.b.xfersize != 0);
  			}
  		} else if (hc->qh->do_split) {
@@ -3832,7 +3809,7 @@ index 64d33a5..4195ff2 100644
  				length = qtd->ssplit_out_xfer_count;
  		} else {
  			length = hc->xfer_len;
-@@ -1325,19 +925,17 @@ static void release_channel(dwc_otg_hcd_t * hcd,
+@@ -1325,19 +925,17 @@ static void release_channel(dwc_otg_hcd_
  	int free_qtd;
  	dwc_irqflags_t flags;
  	dwc_spinlock_t *channel_lock = hcd->channel_lock;
@@ -3893,7 +3870,7 @@ index 64d33a5..4195ff2 100644
  	/* Try to queue more transfers now that there's a free channel. */
  	tr_type = dwc_otg_hcd_select_transactions(hcd);
  	if (tr_type != DWC_OTG_TRANSACTION_NONE) {
-@@ -1858,7 +1441,7 @@ static int32_t handle_hc_nak_intr(dwc_otg_hcd_t * hcd,
+@@ -1858,7 +1441,7 @@ static int32_t handle_hc_nak_intr(dwc_ot
  	switch(dwc_otg_hcd_get_pipe_type(&qtd->urb->pipe_info)) {
  		case UE_BULK:
  		case UE_CONTROL:
@@ -3902,7 +3879,7 @@ index 64d33a5..4195ff2 100644
  			hc->qh->nak_frame = dwc_otg_hcd_get_frame_number(hcd);
  	}
  
-@@ -2074,7 +1657,7 @@ static int32_t handle_hc_nyet_intr(dwc_otg_hcd_t * hcd,
+@@ -2074,7 +1657,7 @@ static int32_t handle_hc_nyet_intr(dwc_o
  			// With the FIQ running we only ever see the failed NYET
  			if (dwc_full_frame_num(frnum) !=
  			    dwc_full_frame_num(hc->qh->sched_frame) ||
@@ -3911,7 +3888,7 @@ index 64d33a5..4195ff2 100644
  				/*
  				 * No longer in the same full speed frame.
  				 * Treat this as a transaction error.
-@@ -2460,12 +2043,11 @@ static inline int halt_status_ok(dwc_otg_hcd_t * hcd,
+@@ -2460,12 +2043,11 @@ static inline int halt_status_ok(dwc_otg
  static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
  				      dwc_hc_t * hc,
  				      dwc_otg_hc_regs_t * hc_regs,
@@ -3927,7 +3904,7 @@ index 64d33a5..4195ff2 100644
  	/* For core with OUT NAK enhancement, the flow for high-
  	 * speed CONTROL/BULK OUT is handled a little differently.
  	 */
-@@ -2495,11 +2077,9 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+@@ -2495,11 +2077,9 @@ static void handle_hc_chhltd_intr_dma(dw
  	}
  
  	/* Read the HCINTn register to determine the cause for the halt. */
@@ -3942,7 +3919,7 @@ index 64d33a5..4195ff2 100644
  
  	if (hcint.b.xfercomp) {
  		/** @todo This is here because of a possible hardware bug.  Spec
-@@ -2624,15 +2204,13 @@ static void handle_hc_chhltd_intr_dma(dwc_otg_hcd_t * hcd,
+@@ -2624,15 +2204,13 @@ static void handle_hc_chhltd_intr_dma(dw
  static int32_t handle_hc_chhltd_intr(dwc_otg_hcd_t * hcd,
  				     dwc_hc_t * hc,
  				     dwc_otg_hc_regs_t * hc_regs,
@@ -3960,7 +3937,7 @@ index 64d33a5..4195ff2 100644
  	} else {
  #ifdef DEBUG
  		if (!halt_status_ok(hcd, hc, hc_regs, qtd)) {
-@@ -2645,11 +2223,372 @@ static int32_t handle_hc_chhltd_intr(dwc_otg_hcd_t * hcd,
+@@ -2645,11 +2223,372 @@ static int32_t handle_hc_chhltd_intr(dwc
  	return 1;
  }
  
@@ -4334,7 +4311,7 @@ index 64d33a5..4195ff2 100644
  	hcintmsk_data_t hcintmsk;
  	dwc_hc_t *hc;
  	dwc_otg_hc_regs_t *hc_regs;
-@@ -2668,24 +2607,32 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+@@ -2668,24 +2607,32 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
  	}
  	qtd = DWC_CIRCLEQ_FIRST(&hc->qh->qtd_list);
  
@@ -4382,7 +4359,7 @@ index 64d33a5..4195ff2 100644
  	if (!dwc_otg_hcd->core_if->dma_enable) {
  		if (hcint.b.chhltd && hcint.d32 != 0x2) {
  			hcint.b.chhltd = 0;
-@@ -2703,7 +2650,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+@@ -2703,7 +2650,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
  		hcint.b.nyet = 0;
  	}
  	if (hcint.b.chhltd) {
@@ -4391,8 +4368,6 @@ index 64d33a5..4195ff2 100644
  	}
  	if (hcint.b.ahberr) {
  		retval |= handle_hc_ahberr_intr(dwc_otg_hcd, hc, hc_regs, qtd);
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-index ee8eec9..98e1dc5 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -58,6 +58,7 @@
@@ -4422,7 +4397,7 @@ index ee8eec9..98e1dc5 100644
  
  /** @name Linux HC Driver API Functions */
  /** @{ */
-@@ -351,7 +353,6 @@ static int _complete(dwc_otg_hcd_t * hcd, void *urb_handle,
+@@ -351,7 +353,6 @@ static int _complete(dwc_otg_hcd_t * hcd
  					   urb);
  		}
  	}
@@ -4430,7 +4405,7 @@ index ee8eec9..98e1dc5 100644
  	DWC_FREE(dwc_otg_urb);
  	if (!new_entry) {
  		DWC_ERROR("dwc_otg_hcd: complete: cannot allocate URB TQ entry\n");
-@@ -395,13 +396,9 @@ static struct dwc_otg_hcd_function_ops hcd_fops = {
+@@ -395,13 +396,9 @@ static struct dwc_otg_hcd_function_ops h
  static struct fiq_handler fh = {
    .name = "usb_fiq",
  };
@@ -4582,8 +4557,6 @@ index ee8eec9..98e1dc5 100644
  }
  
  #ifdef DEBUG
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
-index 5c22b6c..17d3030 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_queue.c
 @@ -41,7 +41,6 @@
@@ -4594,7 +4567,7 @@ index 5c22b6c..17d3030 100644
  
  extern bool microframe_schedule;
  
-@@ -577,7 +576,6 @@ static int check_max_xfer_size(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -577,7 +576,6 @@ static int check_max_xfer_size(dwc_otg_h
  }
  
  
@@ -4602,7 +4575,7 @@ index 5c22b6c..17d3030 100644
  
  /**
   * Schedules an interrupt or isochronous transfer in the periodic schedule.
-@@ -637,9 +635,9 @@ static int schedule_periodic(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -637,9 +635,9 @@ static int schedule_periodic(dwc_otg_hcd
  		DWC_LIST_INSERT_TAIL(&hcd->periodic_sched_ready, &qh->qh_list_entry);
  	}
  	else {
@@ -4614,7 +4587,7 @@ index 5c22b6c..17d3030 100644
  
  		}
  		/* Always start in the inactive schedule. */
-@@ -680,7 +678,7 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -680,7 +678,7 @@ int dwc_otg_hcd_qh_add(dwc_otg_hcd_t * h
  		/* Always start in the inactive schedule. */
  		DWC_LIST_INSERT_TAIL(&hcd->non_periodic_sched_inactive,
  				     &qh->qh_list_entry);
@@ -4623,7 +4596,7 @@ index 5c22b6c..17d3030 100644
  	} else {
  		status = schedule_periodic(hcd, qh);
  		if ( !hcd->periodic_qh_count ) {
-@@ -740,13 +738,12 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh)
+@@ -740,13 +738,12 @@ void dwc_otg_hcd_qh_remove(dwc_otg_hcd_t
  			    hcd->non_periodic_qh_ptr->next;
  		}
  		DWC_LIST_REMOVE_INIT(&qh->qh_list_entry);
@@ -4640,7 +4613,7 @@ index 5c22b6c..17d3030 100644
  			intr_mask.b.sofintr = 1;
  				DWC_MODIFY_REG32(&hcd->core_if->core_global_regs->gintmsk,
  									intr_mask.d32, 0);
-@@ -771,28 +768,11 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
+@@ -771,28 +768,11 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
  			       int sched_next_periodic_split)
  {
  	if (dwc_qh_is_non_per(qh)) {
@@ -4670,7 +4643,7 @@ index 5c22b6c..17d3030 100644
  		}
  	} else {
  		uint16_t frame_number = dwc_otg_hcd_get_frame_number(hcd);
-@@ -851,9 +831,9 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_hcd_t * hcd, dwc_otg_qh_t * qh,
+@@ -851,9 +831,9 @@ void dwc_otg_hcd_qh_deactivate(dwc_otg_h
  				DWC_LIST_MOVE_HEAD(&hcd->periodic_sched_ready,
  						   &qh->qh_list_entry);
  			} else {
@@ -4682,7 +4655,7 @@ index 5c22b6c..17d3030 100644
  				}
  
  				DWC_LIST_MOVE_HEAD
-@@ -944,6 +924,9 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t * qtd,
+@@ -944,6 +924,9 @@ int dwc_otg_hcd_qtd_add(dwc_otg_qtd_t *
  		if (*qh == NULL) {
  			retval = -DWC_E_NO_MEMORY;
  			goto done;
@@ -4692,9 +4665,6 @@ index 5c22b6c..17d3030 100644
  		}
  	}
  	retval = dwc_otg_hcd_qh_add(hcd, *qh);
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
-deleted file mode 100755
-index 50b94a8..0000000
 --- a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.c
 +++ /dev/null
 @@ -1,113 +0,0 @@
@@ -4811,9 +4781,6 @@ index 50b94a8..0000000
 -
 -	return;
 -}
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h b/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
-deleted file mode 100755
-index ca17379..0000000
 --- a/drivers/usb/host/dwc_otg/dwc_otg_mphi_fix.h
 +++ /dev/null
 @@ -1,48 +0,0 @@
@@ -4865,8 +4832,6 @@ index ca17379..0000000
 -extern bool fiq_fix_enable, nak_holdoff_enable, fiq_split_enable;
 -
 -#endif
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
-index 5d310df..4b32941 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_pcd_linux.c
 @@ -59,6 +59,8 @@
@@ -4895,6 +4860,3 @@ index 5d310df..4b32941 100644
  		free_wrapper(gadget_wrapper);
  		return -EBUSY;
  	}
--- 
-1.8.3.2
-

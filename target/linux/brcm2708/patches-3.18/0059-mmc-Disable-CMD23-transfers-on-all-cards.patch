@@ -12,11 +12,9 @@ Reported/Tested-by: Gellert Weisz <gellert@raspberrypi.org>
  drivers/mmc/core/quirks.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/mmc/core/quirks.c b/drivers/mmc/core/quirks.c
-index dd1d1e0..f472082 100644
 --- a/drivers/mmc/core/quirks.c
 +++ b/drivers/mmc/core/quirks.c
-@@ -95,5 +95,9 @@ void mmc_fixup_device(struct mmc_card *card, const struct mmc_fixup *table)
+@@ -95,5 +95,9 @@ void mmc_fixup_device(struct mmc_card *c
  			f->vendor_fixup(card, f->data);
  		}
  	}
@@ -26,6 +24,3 @@ index dd1d1e0..f472082 100644
 +	card->quirks |= MMC_QUIRK_BLK_NO_CMD23;
  }
  EXPORT_SYMBOL(mmc_fixup_device);
--- 
-1.8.3.2
-

@@ -25,8 +25,6 @@ Subject: [PATCH 075/114] scripts/dtc: Update to upstream version with overlay
  scripts/dtc/version_gen.h            |    2 +-
  18 files changed, 1697 insertions(+), 1479 deletions(-)
 
-diff --git a/scripts/dtc/checks.c b/scripts/dtc/checks.c
-index ee96a25..27f45f1 100644
 --- a/scripts/dtc/checks.c
 +++ b/scripts/dtc/checks.c
 @@ -53,7 +53,7 @@ struct check {
@@ -38,7 +36,7 @@ index ee96a25..27f45f1 100644
  	int num_prereqs;
  	struct check **prereq;
  };
-@@ -113,6 +113,7 @@ static inline void check_msg(struct check *c, const char *fmt, ...)
+@@ -113,6 +113,7 @@ static inline void check_msg(struct chec
  		vfprintf(stderr, fmt, ap);
  		fprintf(stderr, "\n");
  	}
@@ -46,7 +44,7 @@ index ee96a25..27f45f1 100644
  }
  
  #define FAIL(c, ...) \
-@@ -141,9 +142,9 @@ static void check_nodes_props(struct check *c, struct node *dt, struct node *nod
+@@ -141,9 +142,9 @@ static void check_nodes_props(struct che
  		check_nodes_props(c, dt, child);
  }
  
@@ -58,7 +56,7 @@ index ee96a25..27f45f1 100644
  	int i;
  
  	assert(!c->inprogress);
-@@ -151,11 +152,11 @@ static int run_check(struct check *c, struct node *dt)
+@@ -151,11 +152,11 @@ static int run_check(struct check *c, st
  	if (c->status != UNCHECKED)
  		goto out;
  
@@ -72,7 +70,7 @@ index ee96a25..27f45f1 100644
  		if (prq->status != PASSED) {
  			c->status = PREREQ;
  			check_msg(c, "Failed prerequisite '%s'",
-@@ -177,9 +178,9 @@ static int run_check(struct check *c, struct node *dt)
+@@ -177,9 +178,9 @@ static int run_check(struct check *c, st
  	TRACE(c, "\tCompleted, status %d", c->status);
  
  out:
@@ -84,7 +82,7 @@ index ee96a25..27f45f1 100644
  	return error;
  }
  
-@@ -457,22 +458,93 @@ static void fixup_phandle_references(struct check *c, struct node *dt,
+@@ -457,22 +458,93 @@ static void fixup_phandle_references(str
  				     struct node *node, struct property *prop)
  {
  	struct marker *m = prop->val.markers;
@@ -182,7 +180,7 @@ index ee96a25..27f45f1 100644
  }
  ERROR(phandle_references, NULL, NULL, fixup_phandle_references, NULL,
        &duplicate_node_names, &explicit_phandles);
-@@ -624,11 +696,11 @@ static void check_avoid_default_addr_size(struct check *c, struct node *dt,
+@@ -624,11 +696,11 @@ static void check_avoid_default_addr_siz
  	if (!reg && !ranges)
  		return;
  
@@ -196,7 +194,7 @@ index ee96a25..27f45f1 100644
  		FAIL(c, "Relying on default #size-cells value for %s",
  		     node->fullpath);
  }
-@@ -651,6 +723,45 @@ static void check_obsolete_chosen_interrupt_controller(struct check *c,
+@@ -651,6 +723,45 @@ static void check_obsolete_chosen_interr
  }
  TREE_WARNING(obsolete_chosen_interrupt_controller, NULL);
  
@@ -251,7 +249,7 @@ index ee96a25..27f45f1 100644
  	&always_fail,
  };
  
-@@ -706,15 +819,15 @@ static void disable_warning_error(struct check *c, bool warn, bool error)
+@@ -706,15 +819,15 @@ static void disable_warning_error(struct
  	c->error = c->error && !error;
  }
  
@@ -272,7 +270,7 @@ index ee96a25..27f45f1 100644
  		enable = false;
  	}
  
-@@ -733,7 +846,7 @@ void parse_checks_option(bool warn, bool error, const char *optarg)
+@@ -733,7 +846,7 @@ void parse_checks_option(bool warn, bool
  	die("Unrecognized check name \"%s\"\n", name);
  }
  
@@ -281,11 +279,9 @@ index ee96a25..27f45f1 100644
  {
  	struct node *dt = bi->dt;
  	int i;
-diff --git a/scripts/dtc/data.c b/scripts/dtc/data.c
-index 4a40c5b..8cae237 100644
 --- a/scripts/dtc/data.c
 +++ b/scripts/dtc/data.c
-@@ -74,7 +74,7 @@ struct data data_copy_escape_string(const char *s, int len)
+@@ -74,7 +74,7 @@ struct data data_copy_escape_string(cons
  	struct data d;
  	char *q;
  
@@ -294,7 +290,7 @@ index 4a40c5b..8cae237 100644
  
  	q = d.val;
  	while (i < len) {
-@@ -250,20 +250,20 @@ struct data data_add_marker(struct data d, enum markertype type, char *ref)
+@@ -250,20 +250,20 @@ struct data data_add_marker(struct data
  	return data_append_markers(d, m);
  }
  
@@ -320,8 +316,6 @@ index 4a40c5b..8cae237 100644
 -	return 1;
 +	return true;
  }
-diff --git a/scripts/dtc/dtc-lexer.l b/scripts/dtc/dtc-lexer.l
-index 3b41bfc..dd44ba2 100644
 --- a/scripts/dtc/dtc-lexer.l
 +++ b/scripts/dtc/dtc-lexer.l
 @@ -20,7 +20,6 @@
@@ -433,7 +427,7 @@ index 3b41bfc..dd44ba2 100644
  			yytext[yyleng-1] = '\0';
  			DPRINT("Ref: %s\n", yytext+2);
  			yylval.labelref = xstrdup(yytext+2);
-@@ -238,13 +271,24 @@ static void push_input_file(const char *filename)
+@@ -238,13 +271,24 @@ static void push_input_file(const char *
  }
  
  
@@ -461,11 +455,9 @@ index 3b41bfc..dd44ba2 100644
 +
 +	treesource_error = true;
  }
-diff --git a/scripts/dtc/dtc-lexer.lex.c_shipped b/scripts/dtc/dtc-lexer.lex.c_shipped
-index 2d30f41..1518525 100644
 --- a/scripts/dtc/dtc-lexer.lex.c_shipped
 +++ b/scripts/dtc/dtc-lexer.lex.c_shipped
-@@ -372,8 +372,8 @@ static void yy_fatal_error (yyconst char msg[]  );
+@@ -372,8 +372,8 @@ static void yy_fatal_error (yyconst char
  	*yy_cp = '\0'; \
  	(yy_c_buf_p) = yy_cp;
  
@@ -900,7 +892,7 @@ index 2d30f41..1518525 100644
  		yy_cp = (yy_last_accepting_cpos);
  		yy_current_state = (yy_last_accepting_state);
  
-@@ -937,7 +940,7 @@ do_action:	/* This label is used only to access EOF actions. */
+@@ -937,7 +940,7 @@ do_action:	/* This label is used only to
  case 1:
  /* rule 1 can match eol */
  YY_RULE_SETUP
@@ -1290,7 +1282,7 @@ index 2d30f41..1518525 100644
  
  
  
-@@ -2182,14 +2219,25 @@ static void push_input_file(const char *filename)
+@@ -2182,14 +2219,25 @@ static void push_input_file(const char *
  }
  
  
@@ -1319,8 +1311,6 @@ index 2d30f41..1518525 100644
 +	treesource_error = true;
  }
  
-diff --git a/scripts/dtc/dtc-parser.tab.c_shipped b/scripts/dtc/dtc-parser.tab.c_shipped
-index c8769d5..1938d20 100644
 --- a/scripts/dtc/dtc-parser.tab.c_shipped
 +++ b/scripts/dtc/dtc-parser.tab.c_shipped
 @@ -1,19 +1,19 @@
@@ -1414,7 +1404,7 @@ index c8769d5..1938d20 100644
  #  endif
  # endif
  
-@@ -105,7 +103,7 @@ static unsigned char eval_char_literal(const char *s);
+@@ -105,7 +103,7 @@ static unsigned char eval_char_literal(c
     by #include "dtc-parser.tab.h".  */
  #ifndef YY_YY_DTC_PARSER_TAB_H_INCLUDED
  # define YY_YY_DTC_PARSER_TAB_H_INCLUDED
@@ -1423,7 +1413,7 @@ index c8769d5..1938d20 100644
  #ifndef YYDEBUG
  # define YYDEBUG 0
  #endif
-@@ -113,48 +111,45 @@ static unsigned char eval_char_literal(const char *s);
+@@ -113,48 +111,45 @@ static unsigned char eval_char_literal(c
  extern int yydebug;
  #endif
  
@@ -1620,7 +1610,7 @@ index c8769d5..1938d20 100644
  # endif
  #endif
  
-@@ -276,25 +286,26 @@ typedef short int yytype_int16;
+@@ -276,24 +286,25 @@ typedef short int yytype_int16;
  # define YYUSE(E) /* empty */
  #endif
  
@@ -1653,15 +1643,14 @@ index c8769d5..1938d20 100644
 +#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
 +# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
 +# define YY_IGNORE_MAYBE_UNINITIALIZED_END
-+#endif
+ #endif
 +#ifndef YY_INITIAL_VALUE
 +# define YY_INITIAL_VALUE(Value) /* Nothing. */
- #endif
- 
++#endif
 +
+ 
  #if ! defined yyoverflow || YYERROR_VERBOSE
  
- /* The parser invokes alloca or malloc; define the necessary symbols.  */
 @@ -312,8 +323,7 @@ YYID (yyi)
  #    define alloca _alloca
  #   else
@@ -1710,7 +1699,7 @@ index c8769d5..1938d20 100644
  void free (void *); /* INFRINGES ON USER NAME SPACE */
  #   endif
  #  endif
-@@ -368,13 +376,15 @@ void free (void *); /* INFRINGES ON USER NAME SPACE */
+@@ -368,13 +376,15 @@ void free (void *); /* INFRINGES ON USER
  
  #if (! defined yyoverflow \
       && (! defined __cplusplus \
@@ -1810,7 +1799,7 @@ index c8769d5..1938d20 100644
  static const yytype_uint8 yytranslate[] =
  {
         0,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-@@ -481,63 +493,18 @@ static const yytype_uint8 yytranslate[] =
+@@ -481,63 +493,18 @@ static const yytype_uint8 yytranslate[]
  };
  
  #if YYDEBUG
@@ -2245,7 +2234,7 @@ index c8769d5..1938d20 100644
  
  #define YYRECOVERING()  (!!yyerrstatus)
  
-@@ -768,27 +725,41 @@ do                                                              \
+@@ -768,27 +725,41 @@ do
    else                                                          \
      {                                                           \
        yyerror (YY_("syntax error: cannot back up")); \
@@ -2259,15 +2248,13 @@ index c8769d5..1938d20 100644
  /* Error token number */
 -#define YYTERROR	1
 -#define YYERRCODE	256
--
--
++#define YYTERROR        1
++#define YYERRCODE       256
+ 
+ 
 -/* This macro is provided for backward compatibility. */
 -#ifndef YY_LOCATION_PRINT
 -# define YY_LOCATION_PRINT(File, Loc) ((void) 0)
-+#define YYTERROR        1
-+#define YYERRCODE       256
-+
-+
 +/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
 +   If N is 0, then set CURRENT to the empty location which ends
 +   the previous symbol: RHS[0] (always defined).  */
@@ -2312,12 +2299,7 @@ index c8769d5..1938d20 100644
 -  if (yydebug)					\
 -    YYFPRINTF Args;				\
 -} while (YYID (0))
-+# define YYDPRINTF(Args)                        \
-+do {                                            \
-+  if (yydebug)                                  \
-+    YYFPRINTF Args;                             \
-+} while (0)
- 
+-
 -# define YY_SYMBOL_PRINT(Title, Type, Value, Location)			  \
 -do {									  \
 -  if (yydebug)								  \
@@ -2328,16 +2310,19 @@ index c8769d5..1938d20 100644
 -      YYFPRINTF (stderr, "\n");						  \
 -    }									  \
 -} while (YYID (0))
++# define YYDPRINTF(Args)                        \
++do {                                            \
++  if (yydebug)                                  \
++    YYFPRINTF Args;                             \
++} while (0)
  
-+/* YY_LOCATION_PRINT -- Print the location on the stream.
-+   This macro was not mandated originally: define only if we know
-+   we won't break user code: when these are the locations we know.  */
  
 -/*--------------------------------.
 -| Print this symbol on YYOUTPUT.  |
 -`--------------------------------*/
-+#ifndef YY_LOCATION_PRINT
-+# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
++/* YY_LOCATION_PRINT -- Print the location on the stream.
++   This macro was not mandated originally: define only if we know
++   we won't break user code: when these are the locations we know.  */
  
 -/*ARGSUSED*/
 -#if (defined __STDC__ || defined __C99__FUNC__ \
@@ -2350,6 +2335,9 @@ index c8769d5..1938d20 100644
 -    FILE *yyoutput;
 -    int yytype;
 -    YYSTYPE const * const yyvaluep;
++#ifndef YY_LOCATION_PRINT
++# if defined YYLTYPE_IS_TRIVIAL && YYLTYPE_IS_TRIVIAL
++
 +/* Print *YYLOCP on YYO.  Private, do not rely on its existence. */
 +
 +YY_ATTRIBUTE_UNUSED
@@ -2419,7 +2407,7 @@ index c8769d5..1938d20 100644
  # endif
    YYUSE (yytype);
  }
-@@ -851,24 +856,15 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
+@@ -851,24 +856,15 @@ yy_symbol_value_print (yyoutput, yytype,
  | Print this symbol on YYOUTPUT.  |
  `--------------------------------*/
  
@@ -2450,7 +2438,7 @@ index c8769d5..1938d20 100644
    YYFPRINTF (yyoutput, ")");
  }
  
-@@ -877,16 +873,8 @@ yy_symbol_print (yyoutput, yytype, yyvaluep)
+@@ -877,16 +873,8 @@ yy_symbol_print (yyoutput, yytype, yyval
  | TOP (included).                                                   |
  `------------------------------------------------------------------*/
  
@@ -2489,10 +2477,10 @@ index c8769d5..1938d20 100644
  
 -#if (defined __STDC__ || defined __C99__FUNC__ \
 -     || defined __cplusplus || defined _MSC_VER)
- static void
+-static void
 -yy_reduce_print (YYSTYPE *yyvsp, int yyrule)
 -#else
--static void
+ static void
 -yy_reduce_print (yyvsp, yyrule)
 -    YYSTYPE *yyvsp;
 -    int yyrule;
@@ -2576,7 +2564,7 @@ index c8769d5..1938d20 100644
  {
    char *yyd = yydest;
    const char *yys = yysrc;
-@@ -1039,27 +1005,27 @@ yytnamerr (char *yyres, const char *yystr)
+@@ -1039,27 +1005,27 @@ yytnamerr (char *yyres, const char *yyst
        char const *yyp = yystr;
  
        for (;;)
@@ -2639,7 +2627,7 @@ index c8769d5..1938d20 100644
    /* Arguments of yyformat. */
    char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
    /* Number of reported tokens (one for the "unexpected", one per
-@@ -1094,10 +1060,6 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
+@@ -1094,10 +1060,6 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, c
    int yycount = 0;
  
    /* There are many possibilities here to consider:
@@ -2650,7 +2638,7 @@ index c8769d5..1938d20 100644
       - If this state is a consistent state with a default action, then
         the only way this function was invoked is if the default action
         is an error action.  In that case, don't check for expected
-@@ -1147,7 +1109,7 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
+@@ -1147,7 +1109,7 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, c
                    }
                  yyarg[yycount++] = yytname[yyx];
                  {
@@ -2659,17 +2647,17 @@ index c8769d5..1938d20 100644
                    if (! (yysize <= yysize1
                           && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
                      return 2;
-@@ -1214,26 +1176,18 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
+@@ -1214,26 +1176,18 @@ yysyntax_error (YYSIZE_T *yymsg_alloc, c
  | Release the memory associated to this symbol.  |
  `-----------------------------------------------*/
  
 -/*ARGSUSED*/
 -#if (defined __STDC__ || defined __C99__FUNC__ \
 -     || defined __cplusplus || defined _MSC_VER)
- static void
+-static void
 -yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
 -#else
--static void
+ static void
 -yydestruct (yymsg, yytype, yyvaluep)
 -    const char *yymsg;
 -    int yytype;
@@ -3310,7 +3298,8 @@ index c8769d5..1938d20 100644
      {
 -			(yyval.array).data = empty_data;
 -			(yyval.array).bits = eval_literal((yyvsp[(2) - (3)].literal), 0, 7);
--
++			unsigned long long bits;
+ 
 -			if (((yyval.array).bits !=  8) &&
 -			    ((yyval.array).bits != 16) &&
 -			    ((yyval.array).bits != 32) &&
@@ -3319,8 +3308,6 @@ index c8769d5..1938d20 100644
 -				print_error("Only 8, 16, 32 and 64-bit elements"
 -					    " are currently supported");
 -				(yyval.array).bits = 32;
-+			unsigned long long bits;
-+
 +			bits = (yyvsp[-1].integer);
 +
 +			if ((bits !=  8) && (bits != 16) &&
@@ -3754,9 +3741,7 @@ index c8769d5..1938d20 100644
 +		}
 +#line 2010 "dtc-parser.tab.c" /* yacc.c:1646  */
 +    break;
- 
--/* Line 1787 of yacc.c  */
--#line 2073 "dtc-parser.tab.c"
++
 +  case 81:
 +#line 471 "dtc-parser.y" /* yacc.c:1646  */
 +    {
@@ -3765,7 +3750,9 @@ index c8769d5..1938d20 100644
 +		}
 +#line 2019 "dtc-parser.tab.c" /* yacc.c:1646  */
 +    break;
-+
+ 
+-/* Line 1787 of yacc.c  */
+-#line 2073 "dtc-parser.tab.c"
 +
 +#line 2023 "dtc-parser.tab.c" /* yacc.c:1646  */
        default: break;
@@ -3934,7 +3921,8 @@ index c8769d5..1938d20 100644
 -
 -
 -void print_error(char const *fmt, ...)
--{
++void yyerror(char const *s)
+ {
 -	va_list va;
 -
 -	va_start(va, fmt);
@@ -3969,8 +3957,7 @@ index c8769d5..1938d20 100644
 -}
 -
 -static unsigned char eval_char_literal(const char *s)
-+void yyerror(char const *s)
- {
+-{
 -	int i = 1;
 -	char c = s[0];
 -
@@ -3995,8 +3982,6 @@ index c8769d5..1938d20 100644
 -	return c;
 +	ERROR(&yylloc, "%s", s);
  }
-diff --git a/scripts/dtc/dtc-parser.tab.h_shipped b/scripts/dtc/dtc-parser.tab.h_shipped
-index b2e7a86..b497956 100644
 --- a/scripts/dtc/dtc-parser.tab.h_shipped
 +++ b/scripts/dtc/dtc-parser.tab.h_shipped
 @@ -1,19 +1,19 @@
@@ -4170,8 +4155,6 @@ index b2e7a86..b497956 100644
 -#endif /* ! YYPARSE_PARAM */
  
  #endif /* !YY_YY_DTC_PARSER_TAB_H_INCLUDED  */
-diff --git a/scripts/dtc/dtc-parser.y b/scripts/dtc/dtc-parser.y
-index f412460..687ccad 100644
 --- a/scripts/dtc/dtc-parser.y
 +++ b/scripts/dtc/dtc-parser.y
 @@ -17,31 +17,28 @@
@@ -4213,7 +4196,7 @@ index f412460..687ccad 100644
  	uint8_t byte;
  	struct data data;
  
-@@ -56,18 +53,19 @@ static unsigned char eval_char_literal(const char *s);
+@@ -56,18 +53,19 @@ static unsigned char eval_char_literal(c
  	struct node *nodelist;
  	struct reserve_info *re;
  	uint64_t integer;
@@ -4236,7 +4219,7 @@ index f412460..687ccad 100644
  %token <byte> DT_BYTE
  %token <data> DT_STRING
  %token <labelref> DT_LABEL
-@@ -76,6 +74,7 @@ static unsigned char eval_char_literal(const char *s);
+@@ -76,6 +74,7 @@ static unsigned char eval_char_literal(c
  
  %type <data> propdata
  %type <data> propdataprefix
@@ -4244,7 +4227,7 @@ index f412460..687ccad 100644
  %type <re> memreserve
  %type <re> memreserves
  %type <array> arrayprefix
-@@ -106,10 +105,23 @@ static unsigned char eval_char_literal(const char *s);
+@@ -106,10 +105,23 @@ static unsigned char eval_char_literal(c
  %%
  
  sourcefile:
@@ -4314,7 +4297,8 @@ index f412460..687ccad 100644
  		{
 -			$$.data = empty_data;
 -			$$.bits = eval_literal($2, 0, 7);
--
++			unsigned long long bits;
+ 
 -			if (($$.bits !=  8) &&
 -			    ($$.bits != 16) &&
 -			    ($$.bits != 32) &&
@@ -4323,8 +4307,6 @@ index f412460..687ccad 100644
 -				print_error("Only 8, 16, 32 and 64-bit elements"
 -					    " are currently supported");
 -				$$.bits = 32;
-+			unsigned long long bits;
-+
 +			bits = $2;
 +
 +			if ((bits !=  8) && (bits != 16) &&
@@ -4388,7 +4370,8 @@ index f412460..687ccad 100644
  %%
  
 -void print_error(char const *fmt, ...)
--{
++void yyerror(char const *s)
+ {
 -	va_list va;
 -
 -	va_start(va, fmt);
@@ -4423,8 +4406,7 @@ index f412460..687ccad 100644
 -}
 -
 -static unsigned char eval_char_literal(const char *s)
-+void yyerror(char const *s)
- {
+-{
 -	int i = 1;
 -	char c = s[0];
 -
@@ -4449,11 +4431,9 @@ index f412460..687ccad 100644
 -	return c;
 +	ERROR(&yylloc, "%s", s);
  }
-diff --git a/scripts/dtc/dtc.c b/scripts/dtc/dtc.c
-index e3c9653..0cbb14c 100644
 --- a/scripts/dtc/dtc.c
 +++ b/scripts/dtc/dtc.c
-@@ -29,6 +29,7 @@ int reservenum;		/* Number of memory reservation slots */
+@@ -29,6 +29,7 @@ int reservenum;		/* Number of memory res
  int minsize;		/* Minimum blob size */
  int padsize;		/* Additional padding to blob */
  int phandle_format = PHANDLE_BOTH;	/* Use linux,phandle or phandle properties */
@@ -4461,7 +4441,7 @@ index e3c9653..0cbb14c 100644
  
  static void fill_fullpaths(struct node *tree, const char *prefix)
  {
-@@ -48,8 +49,10 @@ static void fill_fullpaths(struct node *tree, const char *prefix)
+@@ -48,8 +49,10 @@ static void fill_fullpaths(struct node *
  }
  
  /* Usage related data. */
@@ -4473,7 +4453,7 @@ index e3c9653..0cbb14c 100644
  static struct option const usage_long_opts[] = {
  	{"quiet",            no_argument, NULL, 'q'},
  	{"in-format",         a_argument, NULL, 'I'},
-@@ -67,6 +70,7 @@ static struct option const usage_long_opts[] = {
+@@ -67,6 +70,7 @@ static struct option const usage_long_op
  	{"phandle",           a_argument, NULL, 'H'},
  	{"warning",           a_argument, NULL, 'W'},
  	{"error",             a_argument, NULL, 'E'},
@@ -4481,7 +4461,7 @@ index e3c9653..0cbb14c 100644
  	{"help",             no_argument, NULL, 'h'},
  	{"version",          no_argument, NULL, 'v'},
  	{NULL,               no_argument, NULL, 0x0},
-@@ -82,9 +86,9 @@ static const char * const usage_opts_help[] = {
+@@ -82,9 +86,9 @@ static const char * const usage_opts_hel
  	 "\t\tdts - device tree source text\n"
  	 "\t\tdtb - device tree blob\n"
  	 "\t\tasm - assembler source",
@@ -4493,7 +4473,7 @@ index e3c9653..0cbb14c 100644
  	"\n\tMake the blob at least <bytes> long (extra space)",
  	"\n\tAdd padding to the blob of <bytes> long (extra space)",
  	"\n\tSet the physical boot cpu",
-@@ -97,6 +101,7 @@ static const char * const usage_opts_help[] = {
+@@ -97,6 +101,7 @@ static const char * const usage_opts_hel
  	 "\t\tboth   - Both \"linux,phandle\" and \"phandle\" properties",
  	"\n\tEnable/disable warnings (prefix with \"no-\")",
  	"\n\tEnable/disable errors (prefix with \"no-\")",
@@ -4548,8 +4528,6 @@ index e3c9653..0cbb14c 100644
  		if (! outf)
  			die("Couldn't open output file %s: %s\n",
  			    outname, strerror(errno));
-diff --git a/scripts/dtc/dtc.h b/scripts/dtc/dtc.h
-index 264a20c..fe45748 100644
 --- a/scripts/dtc/dtc.h
 +++ b/scripts/dtc/dtc.h
 @@ -38,9 +38,9 @@
@@ -4564,7 +4542,7 @@ index 264a20c..fe45748 100644
  #endif
  
  
-@@ -54,6 +54,7 @@ extern int reservenum;		/* Number of memory reservation slots */
+@@ -54,6 +54,7 @@ extern int reservenum;		/* Number of mem
  extern int minsize;		/* Minimum blob size */
  extern int padsize;		/* Additional padding to blob */
  extern int phandle_format;	/* Use linux,phandle or phandle properties */
@@ -4581,7 +4559,7 @@ index 264a20c..fe45748 100644
  
  #define for_each_marker(m) \
  	for (; (m); (m) = (m)->next)
-@@ -118,7 +119,7 @@ struct data data_append_align(struct data d, int align);
+@@ -118,7 +119,7 @@ struct data data_append_align(struct dat
  
  struct data data_add_marker(struct data d, enum markertype type, char *ref);
  
@@ -4677,11 +4655,9 @@ index 264a20c..fe45748 100644
  
  /* Flattened trees */
  
-diff --git a/scripts/dtc/flattree.c b/scripts/dtc/flattree.c
-index 665dad7..f439b40 100644
 --- a/scripts/dtc/flattree.c
 +++ b/scripts/dtc/flattree.c
-@@ -261,7 +261,13 @@ static void flatten_tree(struct node *tree, struct emitter *emit,
+@@ -261,7 +261,13 @@ static void flatten_tree(struct node *tr
  {
  	struct property *prop;
  	struct node *child;
@@ -4696,7 +4672,7 @@ index 665dad7..f439b40 100644
  
  	if (tree->deleted)
  		return;
-@@ -276,10 +282,8 @@ static void flatten_tree(struct node *tree, struct emitter *emit,
+@@ -276,10 +282,8 @@ static void flatten_tree(struct node *tr
  	emit->align(etarget, sizeof(cell_t));
  
  	for_each_property(tree, prop) {
@@ -4708,7 +4684,7 @@ index 665dad7..f439b40 100644
  
  		nameoff = stringtable_insert(strbuf, prop->name);
  
-@@ -310,6 +314,139 @@ static void flatten_tree(struct node *tree, struct emitter *emit,
+@@ -310,6 +314,139 @@ static void flatten_tree(struct node *tr
  		flatten_tree(child, emit, etarget, strbuf, vi);
  	}
  
@@ -4848,11 +4824,9 @@ index 665dad7..f439b40 100644
  	emit->endnode(etarget, tree->labels);
  }
  
-diff --git a/scripts/dtc/fstree.c b/scripts/dtc/fstree.c
-index e464727..6e5878a 100644
 --- a/scripts/dtc/fstree.c
 +++ b/scripts/dtc/fstree.c
-@@ -37,26 +37,26 @@ static struct node *read_fstree(const char *dirname)
+@@ -37,26 +37,26 @@ static struct node *read_fstree(const ch
  	tree = build_node(NULL, NULL);
  
  	while ((de = readdir(d)) != NULL) {
@@ -4885,7 +4859,7 @@ index e464727..6e5878a 100644
  			} else {
  				prop = build_property(xstrdup(de->d_name),
  						      data_copy_file(pfile,
-@@ -67,12 +67,12 @@ static struct node *read_fstree(const char *dirname)
+@@ -67,12 +67,12 @@ static struct node *read_fstree(const ch
  		} else if (S_ISDIR(st.st_mode)) {
  			struct node *newchild;
  
@@ -4900,11 +4874,9 @@ index e464727..6e5878a 100644
  	}
  
  	closedir(d);
-diff --git a/scripts/dtc/livetree.c b/scripts/dtc/livetree.c
-index b61465f..e229b84 100644
 --- a/scripts/dtc/livetree.c
 +++ b/scripts/dtc/livetree.c
-@@ -511,7 +511,9 @@ struct node *get_node_by_phandle(struct node *tree, cell_t phandle)
+@@ -511,7 +511,9 @@ struct node *get_node_by_phandle(struct
  
  struct node *get_node_by_ref(struct node *tree, const char *ref)
  {
@@ -4915,8 +4887,6 @@ index b61465f..e229b84 100644
  		return get_node_by_path(tree, ref);
  	else
  		return get_node_by_label(tree, ref);
-diff --git a/scripts/dtc/srcpos.c b/scripts/dtc/srcpos.c
-index c20bc53..f534c22 100644
 --- a/scripts/dtc/srcpos.c
 +++ b/scripts/dtc/srcpos.c
 @@ -34,7 +34,7 @@ struct search_path {
@@ -4928,7 +4898,7 @@ index c20bc53..f534c22 100644
  {
  	const char *slash = strrchr(path, '/');
  
-@@ -77,7 +77,7 @@ static char *try_open(const char *dirname, const char *fname, FILE **fp)
+@@ -77,7 +77,7 @@ static char *try_open(const char *dirnam
  	else
  		fullname = join_path(dirname, fname);
  
@@ -5019,8 +4989,6 @@ index c20bc53..f534c22 100644
  	va_end(va);
  }
  
-diff --git a/scripts/dtc/srcpos.h b/scripts/dtc/srcpos.h
-index 93a2712..f81827b 100644
 --- a/scripts/dtc/srcpos.h
 +++ b/scripts/dtc/srcpos.h
 @@ -21,6 +21,7 @@
@@ -5031,7 +4999,7 @@ index 93a2712..f81827b 100644
  
  struct srcfile_state {
  	FILE *f;
-@@ -55,7 +56,7 @@ extern struct srcfile_state *current_srcfile; /* = NULL */
+@@ -55,7 +56,7 @@ extern struct srcfile_state *current_src
  FILE *srcfile_relative_open(const char *fname, char **fullnamep);
  
  void srcfile_push(const char *fname);
@@ -5040,7 +5008,7 @@ index 93a2712..f81827b 100644
  
  /**
   * Add a new directory to the search path for input files
-@@ -106,12 +107,12 @@ extern struct srcpos *srcpos_copy(struct srcpos *pos);
+@@ -106,12 +107,12 @@ extern struct srcpos *srcpos_copy(struct
  extern char *srcpos_string(struct srcpos *pos);
  extern void srcpos_dump(struct srcpos *pos);
  
@@ -5059,8 +5027,6 @@ index 93a2712..f81827b 100644
  
  extern void srcpos_set_line(char *f, int l);
  
-diff --git a/scripts/dtc/treesource.c b/scripts/dtc/treesource.c
-index 5740e69..a146f2d 100644
 --- a/scripts/dtc/treesource.c
 +++ b/scripts/dtc/treesource.c
 @@ -26,12 +26,12 @@ extern int yyparse(void);
@@ -5078,7 +5044,7 @@ index 5740e69..a146f2d 100644
  
  	srcfile_push(fname);
  	yyin = current_srcfile->f;
-@@ -54,9 +54,9 @@ static void write_prefix(FILE *f, int level)
+@@ -54,9 +54,9 @@ static void write_prefix(FILE *f, int le
  		fputc('\t', f);
  }
  
@@ -5090,7 +5056,7 @@ index 5740e69..a146f2d 100644
  		|| (c == '\0')
  		|| strchr("\a\b\t\n\v\f\r", c));
  }
-@@ -109,7 +109,7 @@ static void write_propval_string(FILE *f, struct data val)
+@@ -109,7 +109,7 @@ static void write_propval_string(FILE *f
  			break;
  		case '\0':
  			fprintf(f, "\", ");
@@ -5099,7 +5065,7 @@ index 5740e69..a146f2d 100644
  				if (m->type == LABEL) {
  					assert(m->offset == (i+1));
  					fprintf(f, "%s: ", m->ref);
-@@ -119,7 +119,7 @@ static void write_propval_string(FILE *f, struct data val)
+@@ -119,7 +119,7 @@ static void write_propval_string(FILE *f
  			fprintf(f, "\"");
  			break;
  		default:
@@ -5108,7 +5074,7 @@ index 5740e69..a146f2d 100644
  				fprintf(f, "%c", c);
  			else
  				fprintf(f, "\\x%02hhx", c);
-@@ -178,7 +178,7 @@ static void write_propval_bytes(FILE *f, struct data val)
+@@ -178,7 +178,7 @@ static void write_propval_bytes(FILE *f,
  			m = m->next;
  		}
  
@@ -5117,8 +5083,6 @@ index 5740e69..a146f2d 100644
  		if ((const void *)bp >= propend)
  			break;
  		fprintf(f, " ");
-diff --git a/scripts/dtc/util.c b/scripts/dtc/util.c
-index 3055c16..9d65226 100644
 --- a/scripts/dtc/util.c
 +++ b/scripts/dtc/util.c
 @@ -39,11 +39,11 @@
@@ -5136,7 +5100,7 @@ index 3055c16..9d65226 100644
  }
  
  char *join_path(const char *path, const char *name)
-@@ -70,7 +70,7 @@ char *join_path(const char *path, const char *name)
+@@ -70,7 +70,7 @@ char *join_path(const char *path, const
  	return str;
  }
  
@@ -5145,7 +5109,7 @@ index 3055c16..9d65226 100644
  {
  	const char *s = data;
  	const char *ss, *se;
-@@ -87,7 +87,7 @@ int util_is_printable_string(const void *data, int len)
+@@ -87,7 +87,7 @@ int util_is_printable_string(const void
  
  	while (s < se) {
  		ss = s;
@@ -5154,7 +5118,7 @@ index 3055c16..9d65226 100644
  			s++;
  
  		/* not zero, or not done yet */
-@@ -219,10 +219,6 @@ int utilfdt_read_err_len(const char *filename, char **buffp, off_t *len)
+@@ -219,10 +219,6 @@ int utilfdt_read_err_len(const char *fil
  		if (offset == bufsize) {
  			bufsize *= 2;
  			buf = xrealloc(buf, bufsize);
@@ -5165,7 +5129,7 @@ index 3055c16..9d65226 100644
  		}
  
  		ret = read(fd, &buf[offset], bufsize - offset);
-@@ -375,9 +371,9 @@ void utilfdt_print_data(const char *data, int len)
+@@ -375,9 +371,9 @@ void utilfdt_print_data(const char *data
  		const uint32_t *cell = (const uint32_t *)data;
  
  		printf(" = <");
@@ -5177,8 +5141,6 @@ index 3055c16..9d65226 100644
  		printf(">");
  	} else {
  		printf(" = [");
-diff --git a/scripts/dtc/util.h b/scripts/dtc/util.h
-index 8f40b44..f800b60 100644
 --- a/scripts/dtc/util.h
 +++ b/scripts/dtc/util.h
 @@ -2,6 +2,7 @@
@@ -5189,7 +5151,7 @@ index 8f40b44..f800b60 100644
  #include <getopt.h>
  
  /*
-@@ -33,6 +34,7 @@ static inline void __attribute__((noreturn)) die(const char *str, ...)
+@@ -33,6 +34,7 @@ static inline void __attribute__((noretu
  	va_start(ap, str);
  	fprintf(stderr, "FATAL ERROR: ");
  	vfprintf(stderr, str, ap);
@@ -5197,7 +5159,7 @@ index 8f40b44..f800b60 100644
  	exit(1);
  }
  
-@@ -68,7 +70,7 @@ extern char *join_path(const char *path, const char *name);
+@@ -68,7 +70,7 @@ extern char *join_path(const char *path,
   * @param len	The string length including terminator
   * @return 1 if a valid printable string, 0 if not
   */
@@ -5206,13 +5168,8 @@ index 8f40b44..f800b60 100644
  
  /*
   * Parse an escaped character starting at index i in string s.  The resulting
-diff --git a/scripts/dtc/version_gen.h b/scripts/dtc/version_gen.h
-index 54d4e90..d644002 100644
 --- a/scripts/dtc/version_gen.h
 +++ b/scripts/dtc/version_gen.h
 @@ -1 +1 @@
 -#define DTC_VERSION "DTC 1.4.0-dirty"
 +#define DTC_VERSION "DTC 1.4.1-g36c70742"
--- 
-1.8.3.2
-

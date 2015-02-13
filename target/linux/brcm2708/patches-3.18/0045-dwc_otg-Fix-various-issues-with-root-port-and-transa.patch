@@ -14,11 +14,9 @@ Fix a few thinkos with the transaction error passthrough for fiq_fsm.
  drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c | 2 +-
  3 files changed, 9 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
-index 065807f..96c76e3 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_cil_intr.c
-@@ -1348,10 +1348,9 @@ static inline uint32_t dwc_otg_read_common_intr(dwc_otg_core_if_t * core_if, gin
+@@ -1348,10 +1348,9 @@ static inline uint32_t dwc_otg_read_comm
  		local_fiq_disable();
  		/* Pull in the interrupts that the FIQ has masked */
  		gintmsk.d32 |= ~(hcd->fiq_state->gintmsk_saved.d32);
@@ -31,7 +29,7 @@ index 065807f..96c76e3 100644
  		local_fiq_enable();
  	}
  
-@@ -1535,7 +1534,7 @@ int32_t dwc_otg_handle_common_intr(void *dev)
+@@ -1535,7 +1534,7 @@ int32_t dwc_otg_handle_common_intr(void
  //		fiq_print(FIQDBG_INT, otg_dev->hcd->fiq_state, "CILOUT %1d", retval);
  //		fiq_print(FIQDBG_INT, otg_dev->hcd->fiq_state, "%08x", gintsts.d32);
  //		fiq_print(FIQDBG_INT, otg_dev->hcd->fiq_state, "%08x", gintmsk_reenable.d32);
@@ -40,11 +38,9 @@ index 065807f..96c76e3 100644
  			DWC_WRITE_REG32(&core_if->core_global_regs->gintmsk, gintmsk_reenable.d32);
  		}
  
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-index 1be6e71..284f902 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
-@@ -696,7 +696,11 @@ static int notrace noinline fiq_fsm_do_hcintr(struct fiq_state *state, int num_c
+@@ -696,7 +696,11 @@ static int notrace noinline fiq_fsm_do_h
  		fiq_print(FIQDBG_ERR, state, "ERRST %02d", n);
  		if (hcint_probe.b.nak || hcint_probe.b.ack || hcint_probe.b.datatglerr) {
  			fiq_print(FIQDBG_ERR, state, "RESET %02d", n);
@@ -57,11 +53,9 @@ index 1be6e71..284f902 100644
  			hcintmsk.b.nak = 0;
  			hcintmsk.b.ack = 0;
  			hcintmsk.b.datatglerr = 0;
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-index 4195ff2..a5566bc 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
-@@ -2619,7 +2619,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc_otg_hcd_t * dwc_otg_hcd, uint32_t num)
+@@ -2619,7 +2619,7 @@ int32_t dwc_otg_hcd_handle_hc_n_intr(dwc
  			case FIQ_PASSTHROUGH_ERRORSTATE:
  				/* Hook into the error count */
  				fiq_print(FIQDBG_ERR, dwc_otg_hcd->fiq_state, "HCDERR%02d", num);
@@ -70,6 +64,3 @@ index 4195ff2..a5566bc 100644
  					qtd->error_count = 0;
  					fiq_print(FIQDBG_ERR, dwc_otg_hcd->fiq_state, "RESET   ");
  				}
--- 
-1.8.3.2
-

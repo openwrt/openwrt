@@ -10,8 +10,6 @@ Subject: [PATCH 101/114] BCM270x_DT: Add i2c0_baudrate and i2c1_baudrate
  arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 2 ++
  3 files changed, 6 insertions(+)
 
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
-index 95f03ba..6b9512b 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
 @@ -93,6 +93,8 @@
@@ -23,8 +21,6 @@ index 95f03ba..6b9512b 100644
  
  		act_led_gpio = <&act_led>,"gpios:4";
  		act_led_activelow = <&act_led>,"gpios:8";
-diff --git a/arch/arm/boot/dts/bcm2708-rpi-b.dts b/arch/arm/boot/dts/bcm2708-rpi-b.dts
-index 0631f45..b8520b55 100644
 --- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
 +++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
 @@ -93,6 +93,8 @@
@@ -36,8 +32,6 @@ index 0631f45..b8520b55 100644
  
  		act_led_gpio = <&act_led>,"gpios:4";
  		act_led_activelow = <&act_led>,"gpios:8";
-diff --git a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
-index 0cdff31..63d3da4 100644
 --- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
 +++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
 @@ -93,6 +93,8 @@
@@ -49,6 +43,3 @@ index 0cdff31..63d3da4 100644
  
  		act_led_gpio = <&act_led>,"gpios:4";
  		act_led_activelow = <&act_led>,"gpios:8";
--- 
-1.8.3.2
-

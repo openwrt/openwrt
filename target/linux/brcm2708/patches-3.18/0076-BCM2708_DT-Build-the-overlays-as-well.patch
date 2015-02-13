@@ -7,11 +7,9 @@ Subject: [PATCH 076/114] BCM2708_DT: Build the overlays as well
  arch/arm/boot/dts/Makefile | 13 +++++++++++++
  1 file changed, 13 insertions(+)
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index adaebbb..3c7f539 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -55,6 +55,14 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
+@@ -55,6 +55,14 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.
  dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
  dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b.dtb
  dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b-plus.dtb
@@ -38,6 +36,3 @@ index adaebbb..3c7f539 100644
  # *.dtb used to be generated in the directory above. Clean out the
  # old build results so people don't accidentally use them.
  dtbs: $(addprefix $(obj)/, $(dtb-y))
--- 
-1.8.3.2
-

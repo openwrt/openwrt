@@ -8,8 +8,6 @@ Subject: [PATCH 091/114] dwc_otg: FIQ support on SMP. Set up FIQ stack and
  drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 96 ++++++++++++++--------------
  1 file changed, 49 insertions(+), 47 deletions(-)
 
-diff --git a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
-index 98e1dc5..4d8dd95 100644
 --- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 +++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
 @@ -397,7 +397,55 @@ static struct fiq_handler fh = {
@@ -39,12 +37,12 @@ index 98e1dc5..4d8dd95 100644
 +	} else {
 +		regs.ARM_fp = (long) dwc_otg_fiq_nop;
 +	}
- 
++
 +	regs.ARM_sp = (long) dwc_otg_hcd->fiq_stack + (sizeof(struct fiq_stack) - 4);
 +
 +//		__show_regs(&regs);
 +	set_fiq_regs(&regs);
-+
+ 
 +	//Set the mphi periph to  the required registers
 +	dwc_otg_hcd->fiq_state->mphi_regs.base    = otg_dev->os_dep.mphi_base;
 +	dwc_otg_hcd->fiq_state->mphi_regs.ctrl    = otg_dev->os_dep.mphi_base + 0x4c;
@@ -130,6 +128,3 @@ index 98e1dc5..4d8dd95 100644
  
  
  	otg_dev->hcd->otg_dev = otg_dev;
--- 
-1.8.3.2
-
