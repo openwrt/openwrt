@@ -1,0 +1,36 @@
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -559,7 +559,6 @@ static struct platform_device bcm2708_sp
+ 
+ #ifdef CONFIG_BCM2708_SPIDEV
+ static struct spi_board_info bcm2708_spi_devices[] = {
+-#ifdef CONFIG_SPI_SPIDEV
+ 	{
+ 		.modalias = "spidev",
+ 		.max_speed_hz = 500000,
+@@ -573,7 +572,6 @@ static struct spi_board_info bcm2708_spi
+ 		.chip_select = 1,
+ 		.mode = SPI_MODE_0,
+ 	}
+-#endif
+ };
+ #endif
+ 
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -581,7 +581,6 @@ static struct platform_device bcm2708_sp
+ 
+ #ifdef CONFIG_BCM2708_SPIDEV
+ static struct spi_board_info bcm2708_spi_devices[] = {
+-#ifdef CONFIG_SPI_SPIDEV
+ 	{
+ 		.modalias = "spidev",
+ 		.max_speed_hz = 500000,
+@@ -595,7 +594,6 @@ static struct spi_board_info bcm2708_spi
+ 		.chip_select = 1,
+ 		.mode = SPI_MODE_0,
+ 	}
+-#endif
+ };
+ #endif
+ 
