@@ -18,11 +18,9 @@ Can we have it for 3.20, please?
  drivers/net/ethernet/broadcom/bgmac.c | 5 +++--
  1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index 3007d95..728373b 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1412,6 +1412,7 @@ static void bgmac_mii_unregister(struct bgmac *bgmac)
+@@ -1412,6 +1412,7 @@ static void bgmac_mii_unregister(struct
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipattach */
  static int bgmac_probe(struct bcma_device *core)
  {
@@ -30,7 +28,7 @@ index 3007d95..728373b 100644
  	struct net_device *net_dev;
  	struct bgmac *bgmac;
  	struct ssb_sprom *sprom = &core->bus->sprom;
-@@ -1474,8 +1475,8 @@ static int bgmac_probe(struct bcma_device *core)
+@@ -1474,8 +1475,8 @@ static int bgmac_probe(struct bcma_devic
  	bgmac_chip_reset(bgmac);
  
  	/* For Northstar, we have to take all GMAC core out of reset */
@@ -41,6 +39,3 @@ index 3007d95..728373b 100644
  		struct bcma_device *ns_core;
  		int ns_gmac;
  
--- 
-1.8.4.5
-
