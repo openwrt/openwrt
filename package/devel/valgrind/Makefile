@@ -101,7 +101,8 @@ CONFIGURE_ARGS += \
 	--disable-valgrindmi \
 	--disable-tui \
 	--disable-valgrindtk \
-	--without-included-gettext
+	--without-included-gettext \
+	--with-pagesize=4 \
 
 define Package/valgrind/install	
 	$(INSTALL_DIR) $(1)/usr/bin
