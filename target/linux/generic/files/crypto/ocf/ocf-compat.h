@@ -211,6 +211,7 @@ struct ocf_device {
 /* older kernels don't have these */
 
 #include <asm/irq.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,30)
 #if !defined(IRQ_NONE) && !defined(IRQ_RETVAL)
 #define IRQ_NONE
 #define IRQ_HANDLED
@@ -221,6 +222,7 @@ typedef irqreturn_t (*irq_handler_t)(int irq, void *arg, struct pt_regs *regs);
 #endif
 #ifndef IRQF_SHARED
 #define IRQF_SHARED	SA_SHIRQ
+#endif
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
