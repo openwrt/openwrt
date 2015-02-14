@@ -59,6 +59,22 @@ endef
 $(eval $(call KernelPackage,spi-bcm2708))
 
 
+define KernelPackage/hwmon-bcm2835
+  TITLE:=BCM2835 HWMON driver
+  KCONFIG:=CONFIG_SENSORS_BCM2835
+  FILES:=$(LINUX_DIR)/drivers/hwmon/bcm2835-hwmon.ko
+  AUTOLOAD:=$(call AutoLoad,60,bcm2835-hwmon)
+  DEPENDS:=@TARGET_brcm2708
+  $(call AddDepends/hwmon,@TARGET_brcm2708)
+endef
+
+define KernelPackage/hwmon-bcm2835/description
+  Kernel module for BCM2835 thermal monitor chip
+endef
+
+$(eval $(call KernelPackage,hwmon-bcm2835))
+
+
 I2C_BCM2708_MODULES:=\
   CONFIG_I2C_BCM2708:drivers/i2c/busses/i2c-bcm2708
 
