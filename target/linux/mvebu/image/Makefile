@@ -31,6 +31,7 @@ endef
 # $(3): Erase Block Size
 # $(4): Page Size
 # $(5): Sub-Page Size (optional)
+# $(6): VID offset (optional)
 define NANDProfile
   define Image/BuildKernel/Profile/$(1)
 	$(call Image/Build/DTB,$(2))
@@ -48,7 +49,7 @@ define NANDProfile
   endef
 
   define Image/Build/Profile/$(1)/squashfs
-	$(call Image/Build/UbinizeImage,$(2),,squashfs, -p $(3) -m $(4) $(if $(5),-s $(5)))
+	$(call Image/Build/UbinizeImage,$(2),,squashfs, -p $(3) -m $(4) $(if $(5),-s $(5)) $(if $(6),-O $(6)))
 # The next line will be dropped, migrate your board to use a single firmware file
 	cp $(KDIR)/$$(IMG_PREFIX)-$(2)-squashfs-ubinized.bin $(BIN_DIR)
   endef
@@ -136,7 +137,7 @@ $(eval $(call NANDProfile,XP-DB,armada-xp-db,512KiB,4096))
 $(eval $(call NANDProfile,XP-GP,armada-xp-gp,512KiB,4096))
 
 # Boards with NAND, with subpages
-$(eval $(call NANDProfile,Mamba,armada-xp-mamba,128KiB,2048,512))
+$(eval $(call NANDProfile,Mamba,armada-xp-mamba,128KiB,2048,512,2048))
 
 # Boards with large NOR, where we want to use UBI
 $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
@@ -145,7 +146,7 @@ $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB)
 $(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
 
 define Image/Build/Profile/Mamba/squashfs
-	$(call Image/Build/UbinizeImage,armada-xp-mamba,,squashfs, -p 128KiB -m 2048 -s 512)
+	$(call Image/Build/UbinizeImage,armada-xp-mamba,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
 	( \
 		dd if=$(KDIR)/uImage-armada-xp-mamba bs=3072k conv=sync; \
 		dd if=$(KDIR)/$(IMG_PREFIX)-armada-xp-mamba-squashfs-ubinized.bin \
