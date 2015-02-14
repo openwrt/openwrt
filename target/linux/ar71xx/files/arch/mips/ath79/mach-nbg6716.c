@@ -115,11 +115,11 @@ static struct gpio_keys_button nbg6716_gpio_keys[] __initdata = {
 	},
 	{
 		.desc		= "RFKILL button",
-		.type		= EV_KEY,
+		.type		= EV_SW,
 		.code		= KEY_RFKILL,
 		.debounce_interval = NBG6716_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= NBG6716_GPIO_BTN_RFKILL,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 	{
 		.desc		= "USB1 eject button",
