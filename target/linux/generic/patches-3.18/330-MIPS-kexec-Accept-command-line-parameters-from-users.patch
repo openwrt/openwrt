@@ -12,8 +12,6 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  3 files changed, 167 insertions(+), 27 deletions(-)
  create mode 100644 arch/mips/kernel/machine_kexec.h
 
-diff --git a/arch/mips/kernel/machine_kexec.c b/arch/mips/kernel/machine_kexec.c
-index 50980bf3..b9c0f75 100644
 --- a/arch/mips/kernel/machine_kexec.c
 +++ b/arch/mips/kernel/machine_kexec.c
 @@ -10,45 +10,145 @@
@@ -195,7 +193,9 @@ index 50980bf3..b9c0f75 100644
  		kexec_indirection_page = (unsigned long)&image->head;
  	}
 +	pr_info("kexec_indirection_page = %p\n", (void *)kexec_indirection_page);
-+
+ 
+-	memcpy((void*)reboot_code_buffer, relocate_new_kernel,
+-	       relocate_new_kernel_size);
 +	pr_info("Where is memcpy: %p\n", memcpy);
 +	pr_info("kexec_relocate_new_kernel = %p, kexec_relocate_new_kernel_end = %p\n",
 +		(void *)kexec_relocate_new_kernel, &kexec_relocate_new_kernel_end);
@@ -203,9 +203,7 @@ index 50980bf3..b9c0f75 100644
 +		(void *)kexec_relocate_new_kernel, (void *)reboot_code_buffer);
 +	memcpy((void*)reboot_code_buffer, kexec_relocate_new_kernel,
 +	       KEXEC_RELOCATE_NEW_KERNEL_SIZE);
- 
--	memcpy((void*)reboot_code_buffer, relocate_new_kernel,
--	       relocate_new_kernel_size);
++
 +	pr_info("Before _print_args().\n");
 +	machine_kexec_print_args();
 +	pr_info("Before eval loop.\n");
@@ -232,9 +230,6 @@ index 50980bf3..b9c0f75 100644
  	smp_wmb();
  	atomic_set(&kexec_ready_to_reboot, 1);
  #endif
-diff --git a/arch/mips/kernel/machine_kexec.h b/arch/mips/kernel/machine_kexec.h
-new file mode 100644
-index 0000000..ae0961e
 --- /dev/null
 +++ b/arch/mips/kernel/machine_kexec.h
 @@ -0,0 +1,20 @@
@@ -258,8 +253,6 @@ index 0000000..ae0961e
 +#define KEXEC_MAX_ARGC			(KEXEC_ARGV_SIZE / sizeof(long))
 +
 +#endif
-diff --git a/arch/mips/kernel/relocate_kernel.S b/arch/mips/kernel/relocate_kernel.S
-index 74bab9d..2c92c50 100644
 --- a/arch/mips/kernel/relocate_kernel.S
 +++ b/arch/mips/kernel/relocate_kernel.S
 @@ -12,8 +12,9 @@
@@ -291,18 +284,15 @@ index 74bab9d..2c92c50 100644
 +	EXPORT(kexec_argv_buf)
 +	.skip		KEXEC_COMMAND_LINE_SIZE
 +	.size		kexec_argv_buf, KEXEC_COMMAND_LINE_SIZE
++
++kexec_argv:
++	EXPORT(kexec_argv)
++	.skip		KEXEC_ARGV_SIZE
++	.size		kexec_argv, KEXEC_ARGV_SIZE
  
 -relocate_new_kernel_size:
 -	EXPORT(relocate_new_kernel_size)
 -	PTR		relocate_new_kernel_end - relocate_new_kernel
 -	.size		relocate_new_kernel_size, PTRSIZE
-+kexec_argv:
-+	EXPORT(kexec_argv)
-+	.skip		KEXEC_ARGV_SIZE
-+	.size		kexec_argv, KEXEC_ARGV_SIZE
-+
 +kexec_relocate_new_kernel_end:
 +	EXPORT(kexec_relocate_new_kernel_end)
--- 
-1.7.10.4
-
