@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+
+ucidef_set_led_mmc "mmc" "MMC" "led0" "mmc0"
+ucidef_commit_leds
+
+exit 0
