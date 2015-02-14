@@ -98,7 +98,7 @@
 +		else
 +			ltq_mtd->map[i].phys = pdev->resource[i].start;
 +		ltq_mtd->map[i].size = resource_size(&pdev->resource[i]);
-+		ltq_mtd->map[i].virt = devm_ioremap(&pdev->dev, ltq_mtd->map[i].phys,
++		ltq_mtd->map[i].virt = devm_ioremap(&pdev->dev, pdev->resource[i].start,
 +						 ltq_mtd->map[i].size);
 +		if (IS_ERR(ltq_mtd->map[i].virt))
 +			return PTR_ERR(ltq_mtd->map[i].virt);
