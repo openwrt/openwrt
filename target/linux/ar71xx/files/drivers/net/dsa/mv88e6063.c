@@ -66,11 +66,12 @@ static int reg_write(struct dsa_switch *ds, int addr, int reg, u16 val)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
 static char *mv88e6063_probe(struct mii_bus *bus, int sw_addr)
+{
 #else
 static char *mv88e6063_probe(struct device *host_dev, int sw_addr)
-#endif
 {
 	struct mii_bus *bus = dsa_host_dev_to_mii_bus(host_dev);
+#endif
 	int ret;
 
 	ret = mdiobus_read(bus, REG_PORT(0), 0x03);
