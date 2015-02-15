@@ -12,6 +12,7 @@
  * (at your option) any later version.
  */
 
+#include <linux/version.h>
 #include <linux/list.h>
 #include <linux/netdevice.h>
 #include <linux/phy.h>
@@ -25,7 +26,12 @@
 
 static int reg_read(struct dsa_switch *ds, int addr, int reg)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
 	return mdiobus_read(ds->master_mii_bus, addr, reg);
+#else
+	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->master_dev);
+	return mdiobus_read(bus, addr, reg);
+#endif
 }
 
 #define REG_READ(addr, reg)					\
@@ -41,7 +47,12 @@ static int reg_read(struct dsa_switch *ds, int addr, int reg)
 
 static int reg_write(struct dsa_switch *ds, int addr, int reg, u16 val)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
 	return mdiobus_write(ds->master_mii_bus, addr, reg, val);
+#else
+	struct mii_bus *bus = dsa_host_dev_to_mii_bus(ds->master_dev);
+	return mdiobus_write(bus, addr, reg, val);
+#endif
 }
 
 #define REG_WRITE(addr, reg, val)				\
@@ -53,8 +64,13 @@ static int reg_write(struct dsa_switch *ds, int addr, int reg, u16 val)
 			return __ret;				\
 	})
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
 static char *mv88e6063_probe(struct mii_bus *bus, int sw_addr)
+#else
+static char *mv88e6063_probe(struct device *host_dev, int sw_addr)
+#endif
 {
+	struct mii_bus *bus = dsa_host_dev_to_mii_bus(host_dev);
 	int ret;
 
 	ret = mdiobus_read(bus, REG_PORT(0), 0x03);
