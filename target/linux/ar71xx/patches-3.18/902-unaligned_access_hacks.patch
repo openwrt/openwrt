@@ -1,7 +1,5 @@
-Index: linux-3.18.7/arch/mips/include/asm/checksum.h
-===================================================================
---- linux-3.18.7.orig/arch/mips/include/asm/checksum.h	2015-02-11 08:01:12.000000000 +0100
-+++ linux-3.18.7/arch/mips/include/asm/checksum.h	2015-02-15 01:50:55.118444466 +0100
+--- a/arch/mips/include/asm/checksum.h
++++ b/arch/mips/include/asm/checksum.h
 @@ -134,26 +134,30 @@
  	const unsigned int *stop = word + ihl;
  	unsigned int csum;
@@ -114,10 +112,8 @@ Index: linux-3.18.7/arch/mips/include/asm/checksum.h
 -}
 -
  #endif /* _ASM_CHECKSUM_H */
-Index: linux-3.18.7/include/uapi/linux/ip.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/ip.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/ip.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/uapi/linux/ip.h
++++ b/include/uapi/linux/ip.h
 @@ -102,7 +102,7 @@
  	__be32	saddr;
  	__be32	daddr;
@@ -127,10 +123,8 @@ Index: linux-3.18.7/include/uapi/linux/ip.h
  
  
  struct ip_auth_hdr {
-Index: linux-3.18.7/include/uapi/linux/ipv6.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/ipv6.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/ipv6.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/uapi/linux/ipv6.h
++++ b/include/uapi/linux/ipv6.h
 @@ -125,7 +125,7 @@
  
  	struct	in6_addr	saddr;
@@ -140,10 +134,8 @@ Index: linux-3.18.7/include/uapi/linux/ipv6.h
  
  
  /* index values for the variables in ipv6_devconf */
-Index: linux-3.18.7/include/uapi/linux/tcp.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/tcp.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/tcp.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/uapi/linux/tcp.h
++++ b/include/uapi/linux/tcp.h
 @@ -54,7 +54,7 @@
  	__be16	window;
  	__sum16	check;
@@ -162,10 +154,8 @@ Index: linux-3.18.7/include/uapi/linux/tcp.h
  
  #define tcp_flag_word(tp) ( ((union tcp_word_hdr *)(tp))->words [3]) 
  
-Index: linux-3.18.7/include/uapi/linux/udp.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/udp.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/udp.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/uapi/linux/udp.h
++++ b/include/uapi/linux/udp.h
 @@ -24,7 +24,7 @@
  	__be16	dest;
  	__be16	len;
@@ -175,10 +165,8 @@ Index: linux-3.18.7/include/uapi/linux/udp.h
  
  /* UDP socket options */
  #define UDP_CORK	1	/* Never send partially complete segments */
-Index: linux-3.18.7/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
-===================================================================
---- linux-3.18.7.orig/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
++++ b/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
 @@ -41,8 +41,8 @@
  	if (ap == NULL)
  		return false;
@@ -190,10 +178,8 @@ Index: linux-3.18.7/net/ipv4/netfilter/nf_conntrack_l3proto_ipv4.c
  
  	return true;
  }
-Index: linux-3.18.7/include/uapi/linux/icmp.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/icmp.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/icmp.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/uapi/linux/icmp.h
++++ b/include/uapi/linux/icmp.h
 @@ -80,7 +80,7 @@
  		__be16	mtu;
  	} frag;
@@ -203,10 +189,8 @@ Index: linux-3.18.7/include/uapi/linux/icmp.h
  
  
  /*
-Index: linux-3.18.7/include/uapi/linux/in6.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/in6.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/in6.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/uapi/linux/in6.h
++++ b/include/uapi/linux/in6.h
 @@ -42,7 +42,7 @@
  #define s6_addr16		in6_u.u6_addr16
  #define s6_addr32		in6_u.u6_addr32
@@ -216,10 +200,8 @@ Index: linux-3.18.7/include/uapi/linux/in6.h
  #endif /* __UAPI_DEF_IN6_ADDR */
  
  #if __UAPI_DEF_SOCKADDR_IN6
-Index: linux-3.18.7/net/ipv6/tcp_ipv6.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/tcp_ipv6.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/tcp_ipv6.c	2015-02-15 02:12:55.605235801 +0100
+--- a/net/ipv6/tcp_ipv6.c
++++ b/net/ipv6/tcp_ipv6.c
 @@ -39,6 +39,7 @@
  #include <linux/ipsec.h>
  #include <linux/times.h>
@@ -243,10 +225,8 @@ Index: linux-3.18.7/net/ipv6/tcp_ipv6.c
  	}
  
  #ifdef CONFIG_TCP_MD5SIG
-Index: linux-3.18.7/include/linux/ipv6.h
-===================================================================
---- linux-3.18.7.orig/include/linux/ipv6.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/linux/ipv6.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/linux/ipv6.h
++++ b/include/linux/ipv6.h
 @@ -5,6 +5,7 @@
  
  #define ipv6_optlen(p)  (((p)->hdrlen+1) << 3)
@@ -255,10 +235,8 @@ Index: linux-3.18.7/include/linux/ipv6.h
  /*
   * This structure contains configuration options per IPv6 link.
   */
-Index: linux-3.18.7/net/ipv6/datagram.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/datagram.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/datagram.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv6/datagram.c
++++ b/net/ipv6/datagram.c
 @@ -374,7 +374,7 @@
  				ipv6_iface_scope_id(&sin->sin6_addr,
  						    IP6CB(skb)->iif);
@@ -283,10 +261,8 @@ Index: linux-3.18.7/net/ipv6/datagram.c
  			break;
  
  		case IPV6_2292HOPOPTS:
-Index: linux-3.18.7/net/ipv6/ip6_gre.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/ip6_gre.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/ip6_gre.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv6/ip6_gre.c
++++ b/net/ipv6/ip6_gre.c
 @@ -393,7 +393,7 @@
  
  	t = ip6gre_tunnel_lookup(skb->dev, &ipv6h->daddr, &ipv6h->saddr,
@@ -328,10 +304,8 @@ Index: linux-3.18.7/net/ipv6/ip6_gre.c
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FLOWLABEL)
  		fl6.flowlabel |= ip6_flowlabel(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
-Index: linux-3.18.7/net/ipv6/ip6_tunnel.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/ip6_tunnel.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/ip6_tunnel.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv6/ip6_tunnel.c
++++ b/net/ipv6/ip6_tunnel.c
 @@ -1291,7 +1291,7 @@
  
  	dsfield = ipv6_get_dsfield(ipv6h);
@@ -341,10 +315,8 @@ Index: linux-3.18.7/net/ipv6/ip6_tunnel.c
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FLOWLABEL)
  		fl6.flowlabel |= ip6_flowlabel(ipv6h);
  	if (t->parms.flags & IP6_TNL_F_USE_ORIG_FWMARK)
-Index: linux-3.18.7/net/ipv6/exthdrs.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/exthdrs.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/exthdrs.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv6/exthdrs.c
++++ b/net/ipv6/exthdrs.c
 @@ -573,7 +573,7 @@
  		goto drop;
  	}
@@ -354,10 +326,8 @@ Index: linux-3.18.7/net/ipv6/exthdrs.c
  	if (pkt_len <= IPV6_MAXPLEN) {
  		IP6_INC_STATS_BH(net, ipv6_skb_idev(skb),
  				 IPSTATS_MIB_INHDRERRORS);
-Index: linux-3.18.7/include/linux/types.h
-===================================================================
---- linux-3.18.7.orig/include/linux/types.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/linux/types.h	2015-02-15 01:50:55.118444466 +0100
+--- a/include/linux/types.h
++++ b/include/linux/types.h
 @@ -213,5 +213,11 @@
  };
  #define rcu_head callback_head
@@ -370,10 +340,8 @@ Index: linux-3.18.7/include/linux/types.h
 +
  #endif /*  __ASSEMBLY__ */
  #endif /* _LINUX_TYPES_H */
-Index: linux-3.18.7/net/ipv4/af_inet.c
-===================================================================
---- linux-3.18.7.orig/net/ipv4/af_inet.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv4/af_inet.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv4/af_inet.c
++++ b/net/ipv4/af_inet.c
 @@ -1324,8 +1324,8 @@
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
@@ -385,10 +353,8 @@ Index: linux-3.18.7/net/ipv4/af_inet.c
  	id >>= 16;
  
  	for (p = *head; p; p = p->next) {
-Index: linux-3.18.7/net/ipv4/route.c
-===================================================================
---- linux-3.18.7.orig/net/ipv4/route.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv4/route.c	2015-02-15 01:50:55.118444466 +0100
+--- a/net/ipv4/route.c
++++ b/net/ipv4/route.c
 @@ -454,7 +454,7 @@
  	else if (skb)
  		pkey = &ip_hdr(skb)->daddr;
@@ -398,10 +364,8 @@ Index: linux-3.18.7/net/ipv4/route.c
  	if (n)
  		return n;
  	return neigh_create(&arp_tbl, pkey, dev);
-Index: linux-3.18.7/net/ipv4/tcp_output.c
-===================================================================
---- linux-3.18.7.orig/net/ipv4/tcp_output.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv4/tcp_output.c	2015-02-15 01:50:55.122444370 +0100
+--- a/net/ipv4/tcp_output.c
++++ b/net/ipv4/tcp_output.c
 @@ -446,48 +446,53 @@
  	u16 options = opts->options;	/* mungable copy */
  
@@ -517,10 +481,8 @@ Index: linux-3.18.7/net/ipv4/tcp_output.c
  
  		memcpy(ptr, foc->val, foc->len);
  		if ((foc->len & 3) == 2) {
-Index: linux-3.18.7/net/ipv4/igmp.c
-===================================================================
---- linux-3.18.7.orig/net/ipv4/igmp.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv4/igmp.c	2015-02-15 01:50:55.122444370 +0100
+--- a/net/ipv4/igmp.c
++++ b/net/ipv4/igmp.c
 @@ -495,7 +495,7 @@
  		if (!skb)
  			return NULL;
@@ -530,10 +492,8 @@ Index: linux-3.18.7/net/ipv4/igmp.c
  		scount++; stotal++;
  		if ((type == IGMPV3_ALLOW_NEW_SOURCES ||
  		     type == IGMPV3_BLOCK_OLD_SOURCES) && psf->sf_crcount) {
-Index: linux-3.18.7/include/uapi/linux/igmp.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/igmp.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/igmp.h	2015-02-15 01:50:55.122444370 +0100
+--- a/include/uapi/linux/igmp.h
++++ b/include/uapi/linux/igmp.h
 @@ -32,7 +32,7 @@
  	__u8 code;		/* For newer IGMP */
  	__sum16 csum;
@@ -570,10 +530,8 @@ Index: linux-3.18.7/include/uapi/linux/igmp.h
  
  #define IGMP_HOST_MEMBERSHIP_QUERY	0x11	/* From RFC1112 */
  #define IGMP_HOST_MEMBERSHIP_REPORT	0x12	/* Ditto */
-Index: linux-3.18.7/net/core/flow_dissector.c
-===================================================================
---- linux-3.18.7.orig/net/core/flow_dissector.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/core/flow_dissector.c	2015-02-15 01:50:55.122444370 +0100
+--- a/net/core/flow_dissector.c
++++ b/net/core/flow_dissector.c
 @@ -53,7 +53,7 @@
  		ports = __skb_header_pointer(skb, thoff + poff,
  					     sizeof(_ports), data, hlen, &_ports);
@@ -583,10 +541,8 @@ Index: linux-3.18.7/net/core/flow_dissector.c
  	}
  
  	return 0;
-Index: linux-3.18.7/include/uapi/linux/icmpv6.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/icmpv6.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/icmpv6.h	2015-02-15 01:50:55.122444370 +0100
+--- a/include/uapi/linux/icmpv6.h
++++ b/include/uapi/linux/icmpv6.h
 @@ -76,7 +76,7 @@
  #define icmp6_addrconf_other	icmp6_dataun.u_nd_ra.other
  #define icmp6_rt_lifetime	icmp6_dataun.u_nd_ra.rt_lifetime
@@ -596,10 +552,8 @@ Index: linux-3.18.7/include/uapi/linux/icmpv6.h
  
  
  #define ICMPV6_ROUTER_PREF_LOW		0x3
-Index: linux-3.18.7/include/net/ndisc.h
-===================================================================
---- linux-3.18.7.orig/include/net/ndisc.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/net/ndisc.h	2015-02-15 01:50:55.122444370 +0100
+--- a/include/net/ndisc.h
++++ b/include/net/ndisc.h
 @@ -76,7 +76,7 @@
          struct icmp6hdr		icmph;
  	__be32			reachable_time;
@@ -637,19 +591,18 @@ Index: linux-3.18.7/include/net/ndisc.h
  			return n;
  	}
  
-Index: linux-3.18.7/net/sched/cls_u32.c
-===================================================================
---- linux-3.18.7.orig/net/sched/cls_u32.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/sched/cls_u32.c	2015-02-15 02:14:43.685467248 +0100
-@@ -148,6 +148,7 @@
+--- a/net/sched/cls_u32.c
++++ b/net/sched/cls_u32.c
+@@ -148,7 +148,7 @@
  			data = skb_header_pointer(skb, toff, 4, &hdata);
  			if (!data)
  				goto out;
+-			if ((*data ^ key->val) & key->mask) {
 +			if ((net_hdr_word(data) ^ key->val) & key->mask) {
- 			if ((*data ^ key->val) & key->mask) {
  				n = rcu_dereference_bh(n->next);
  				goto next_knode;
-@@ -201,8 +202,8 @@
+ 			}
+@@ -201,8 +201,8 @@
  						  &hdata);
  			if (!data)
  				goto out;
@@ -660,10 +613,8 @@ Index: linux-3.18.7/net/sched/cls_u32.c
  		}
  		if (!(n->sel.flags & (TC_U32_VAROFFSET | TC_U32_OFFSET | TC_U32_EAT)))
  			goto next_ht;
-Index: linux-3.18.7/net/ipv6/ip6_offload.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/ip6_offload.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/ip6_offload.c	2015-02-15 02:14:06.541386363 +0100
+--- a/net/ipv6/ip6_offload.c
++++ b/net/ipv6/ip6_offload.c
 @@ -221,7 +221,7 @@
  			continue;
  
@@ -673,10 +624,8 @@ Index: linux-3.18.7/net/ipv6/ip6_offload.c
  
  		/* All fields must match except length and Traffic Class.
  		 * XXX skbs on the gro_list have all been parsed and pulled
-Index: linux-3.18.7/include/net/addrconf.h
-===================================================================
---- linux-3.18.7.orig/include/net/addrconf.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/net/addrconf.h	2015-02-15 01:50:55.122444370 +0100
+--- a/include/net/addrconf.h
++++ b/include/net/addrconf.h
 @@ -43,7 +43,7 @@
  	__be32			reserved2;
  
@@ -686,10 +635,8 @@ Index: linux-3.18.7/include/net/addrconf.h
  
  
  #include <linux/netdevice.h>
-Index: linux-3.18.7/include/net/inet_ecn.h
-===================================================================
---- linux-3.18.7.orig/include/net/inet_ecn.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/net/inet_ecn.h	2015-02-15 01:50:55.126444189 +0100
+--- a/include/net/inet_ecn.h
++++ b/include/net/inet_ecn.h
 @@ -115,13 +115,13 @@
  {
  	if (INET_ECN_is_not_ect(ipv6_get_dsfield(iph)))
@@ -706,10 +653,8 @@ Index: linux-3.18.7/include/net/inet_ecn.h
  }
  
  static inline void ipv6_copy_dscp(unsigned int dscp, struct ipv6hdr *inner)
-Index: linux-3.18.7/include/net/ipv6.h
-===================================================================
---- linux-3.18.7.orig/include/net/ipv6.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/net/ipv6.h	2015-02-15 01:50:55.126444189 +0100
+--- a/include/net/ipv6.h
++++ b/include/net/ipv6.h
 @@ -109,7 +109,7 @@
  	__u8	reserved;
  	__be16	frag_off;
@@ -788,10 +733,8 @@ Index: linux-3.18.7/include/net/ipv6.h
  }
  
  static inline u8 ip6_tclass(__be32 flowinfo)
-Index: linux-3.18.7/include/net/secure_seq.h
-===================================================================
---- linux-3.18.7.orig/include/net/secure_seq.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/net/secure_seq.h	2015-02-15 01:50:55.126444189 +0100
+--- a/include/net/secure_seq.h
++++ b/include/net/secure_seq.h
 @@ -2,6 +2,7 @@
  #define _NET_SECURE_SEQ
  
@@ -800,10 +743,8 @@ Index: linux-3.18.7/include/net/secure_seq.h
  
  u32 secure_ipv4_port_ephemeral(__be32 saddr, __be32 daddr, __be16 dport);
  u32 secure_ipv6_port_ephemeral(const __be32 *saddr, const __be32 *daddr,
-Index: linux-3.18.7/include/uapi/linux/in.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/in.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/in.h	2015-02-15 01:50:55.126444189 +0100
+--- a/include/uapi/linux/in.h
++++ b/include/uapi/linux/in.h
 @@ -78,7 +78,7 @@
  /* Internet address. */
  struct in_addr {
@@ -813,10 +754,8 @@ Index: linux-3.18.7/include/uapi/linux/in.h
  
  #define IP_TOS		1
  #define IP_TTL		2
-Index: linux-3.18.7/net/core/secure_seq.c
-===================================================================
---- linux-3.18.7.orig/net/core/secure_seq.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/core/secure_seq.c	2015-02-15 01:50:55.126444189 +0100
+--- a/net/core/secure_seq.c
++++ b/net/core/secure_seq.c
 @@ -46,11 +46,12 @@
  	u32 secret[MD5_MESSAGE_BYTES / 4];
  	u32 hash[MD5_DIGEST_WORDS];
@@ -859,10 +798,8 @@ Index: linux-3.18.7/net/core/secure_seq.c
  	secret[4] = net_secret[4] +
  		(((__force u16)sport << 16) + (__force u16)dport);
  	for (i = 5; i < MD5_MESSAGE_BYTES / 4; i++)
-Index: linux-3.18.7/net/ipv6/ip6_fib.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/ip6_fib.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv6/ip6_fib.c	2015-02-15 01:50:55.126444189 +0100
+--- a/net/ipv6/ip6_fib.c
++++ b/net/ipv6/ip6_fib.c
 @@ -137,7 +137,7 @@
  	 * See include/asm-generic/bitops/le.h.
  	 */
@@ -872,10 +809,8 @@ Index: linux-3.18.7/net/ipv6/ip6_fib.c
  }
  
  static struct fib6_node *node_alloc(void)
-Index: linux-3.18.7/net/netfilter/nf_conntrack_proto_tcp.c
-===================================================================
---- linux-3.18.7.orig/net/netfilter/nf_conntrack_proto_tcp.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/netfilter/nf_conntrack_proto_tcp.c	2015-02-15 01:50:55.126444189 +0100
+--- a/net/netfilter/nf_conntrack_proto_tcp.c
++++ b/net/netfilter/nf_conntrack_proto_tcp.c
 @@ -456,7 +456,7 @@
  
  	/* Fast path for timestamp-only option */
@@ -885,10 +820,8 @@ Index: linux-3.18.7/net/netfilter/nf_conntrack_proto_tcp.c
  				       | (TCPOPT_NOP << 16)
  				       | (TCPOPT_TIMESTAMP << 8)
  				       | TCPOLEN_TIMESTAMP))
-Index: linux-3.18.7/net/xfrm/xfrm_input.c
-===================================================================
---- linux-3.18.7.orig/net/xfrm/xfrm_input.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/xfrm/xfrm_input.c	2015-02-15 01:50:55.126444189 +0100
+--- a/net/xfrm/xfrm_input.c
++++ b/net/xfrm/xfrm_input.c
 @@ -152,8 +152,8 @@
  	if (!pskb_may_pull(skb, hlen))
  		return -EINVAL;
@@ -900,10 +833,8 @@ Index: linux-3.18.7/net/xfrm/xfrm_input.c
  	return 0;
  }
  
-Index: linux-3.18.7/net/ipv4/tcp_input.c
-===================================================================
---- linux-3.18.7.orig/net/ipv4/tcp_input.c	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/net/ipv4/tcp_input.c	2015-02-15 01:50:55.126444189 +0100
+--- a/net/ipv4/tcp_input.c
++++ b/net/ipv4/tcp_input.c
 @@ -3677,14 +3677,16 @@
  {
  	const __be32 *ptr = (const __be32 *)(th + 1);
@@ -926,10 +857,8 @@ Index: linux-3.18.7/net/ipv4/tcp_input.c
  		else
  			tp->rx_opt.rcv_tsecr = 0;
  		return true;
-Index: linux-3.18.7/include/uapi/linux/if_pppox.h
-===================================================================
---- linux-3.18.7.orig/include/uapi/linux/if_pppox.h	2015-02-15 01:50:18.000000000 +0100
-+++ linux-3.18.7/include/uapi/linux/if_pppox.h	2015-02-15 01:50:55.126444189 +0100
+--- a/include/uapi/linux/if_pppox.h
++++ b/include/uapi/linux/if_pppox.h
 @@ -47,6 +47,7 @@
   */
  struct pptp_addr {
@@ -938,10 +867,8 @@ Index: linux-3.18.7/include/uapi/linux/if_pppox.h
  	struct in_addr	sin_addr;
  };
  
-Index: linux-3.18.7/net/ipv6/netfilter/nf_log_ipv6.c
-===================================================================
---- linux-3.18.7.orig/net/ipv6/netfilter/nf_log_ipv6.c	2015-02-11 08:01:12.000000000 +0100
-+++ linux-3.18.7/net/ipv6/netfilter/nf_log_ipv6.c	2015-02-15 02:17:44.193854463 +0100
+--- a/net/ipv6/netfilter/nf_log_ipv6.c
++++ b/net/ipv6/netfilter/nf_log_ipv6.c
 @@ -63,9 +63,10 @@
  	/* Max length: 44 "LEN=65535 TC=255 HOPLIMIT=255 FLOWLBL=FFFFF " */
  	nf_log_buf_add(m, "LEN=%Zu TC=%u HOPLIMIT=%u FLOWLBL=%u ",
