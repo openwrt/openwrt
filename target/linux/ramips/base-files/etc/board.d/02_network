@@ -242,6 +242,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch1" "2" "4 6t"
 		;;
 
+	wzr-agl300nh)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
+		ucidef_add_switch_vlan "switch0" "2" "0 5t"
+		;;
 	*)
 		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
 		if [ -n "${RT3X5X}" ]; then
