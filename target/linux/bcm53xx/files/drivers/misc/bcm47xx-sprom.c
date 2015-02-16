@@ -673,7 +673,14 @@ static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 	if (!nvram_dev)
 		return -ENOMEM;
 
-	fill.prefix = of_get_property(np, "prefix", NULL);
+	switch (bus->hosttype) {
+	case BCMA_HOSTTYPE_SOC:
+		fill.prefix = of_get_property(np, "prefix", NULL);
+		break;
+	default:
+		pr_err("Unable to fill SPROM for given hosttype.\n");
+		return -EINVAL;
+	}
 
 	fill.fallback = false;
 	fill.getenv = bcm47xx_sprom_getenv;
