@@ -19,11 +19,9 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  2 files changed, 179 insertions(+)
  create mode 100644 arch/arm/boot/dts/armada-385-db-ap.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 6dc9c17f9ff5..d34837104949 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -536,6 +536,7 @@ dtb-$(CONFIG_MACH_ARMADA_375) += \
+@@ -500,6 +500,7 @@ dtb-$(CONFIG_MACH_ARMADA_375) += \
  	armada-375-db.dtb
  dtb-$(CONFIG_MACH_ARMADA_38X) += \
  	armada-385-db.dtb \
@@ -31,9 +29,6 @@ index 6dc9c17f9ff5..d34837104949 100644
  	armada-385-rd.dtb
  dtb-$(CONFIG_MACH_ARMADA_XP) += \
  	armada-xp-axpwifiap.dtb \
-diff --git a/arch/arm/boot/dts/armada-385-db-ap.dts b/arch/arm/boot/dts/armada-385-db-ap.dts
-new file mode 100644
-index 000000000000..57b9119fb3e0
 --- /dev/null
 +++ b/arch/arm/boot/dts/armada-385-db-ap.dts
 @@ -0,0 +1,178 @@
@@ -215,6 +210,3 @@ index 000000000000..57b9119fb3e0
 +		};
 +	};
 +};
--- 
-2.2.1
-
