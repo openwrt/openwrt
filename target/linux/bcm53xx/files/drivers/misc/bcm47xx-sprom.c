@@ -644,6 +644,30 @@ static int bcm47xx_sprom_getenv(const struct bcm47xx_sprom_fill *fill,
 /* FIXME: This should not be static, but some callback argument */
 static struct platform_device *sprom_pdev = NULL;
 
+static char prefix[20];
+
+static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_len)
+{
+	size_t needle_len = strlen(prefix) - 1;
+	char nvram_var[10];
+	char buf[20];
+	int i;
+
+	if (needle_len <= 0 || prefix[needle_len] != '/')
+		return;
+
+	for (i = 0; i < 3; i++) {
+		if (snprintf(nvram_var, sizeof(nvram_var), "devpath%d", i) <= 0)
+			continue;
+		if (bcm47xx_nvram_getenv(nvram_var, buf, sizeof(buf)) < 0)
+			continue;
+		if (strlen(buf) == needle_len && !strncmp(buf, prefix, needle_len)) {
+			snprintf(prefix, prefix_len, "%d:", i);
+			return;
+		}
+	}
+}
+
 /*
  * This function has to be called in a very precise moment. It has to be done:
  * 1) After bcma registers flash cores, so we can read NVRAM.
@@ -674,6 +698,13 @@ static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 		return -ENOMEM;
 
 	switch (bus->hosttype) {
+	case BCMA_HOSTTYPE_PCI:
+		snprintf(prefix, sizeof(prefix), "pci/%u/%u/",
+			 pci_domain_nr(bus->host_pci->bus) + 1,
+			 bus->host_pci->bus->number);
+		bcm47xx_sprom_apply_prefix_alias(prefix, sizeof(prefix));
+		fill.prefix = prefix;
+		break;
 	case BCMA_HOSTTYPE_SOC:
 		fill.prefix = of_get_property(np, "prefix", NULL);
 		break;
