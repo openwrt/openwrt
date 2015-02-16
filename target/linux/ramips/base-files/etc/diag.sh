@@ -168,6 +168,9 @@ get_status_led() {
 	wli-tx4-ag300n)
 		status_led="buffalo:blue:power"
 		;;
+	wzr-agl300nh)
+		status_led="buffalo:green:router"
+		;;
 	wl-351)
 		status_led="wl-351:amber:power"
 		;;

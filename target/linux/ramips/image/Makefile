@@ -395,6 +395,8 @@ Image/Build/Profile/V11STFE=$(call BuildFirmware/Default4M/$(1),$(1),v11st-fe,V1
 
 Image/Build/Profile/WLITX4AG300N=$(call BuildFirmware/Default4M/$(1),$(1),wli-tx4-ag300n,WLI-TX4-AG300N)
 
+Image/Build/Profile/WZRAGL300NH=$(call BuildFirmware/Default4M/$(1),$(1),wzr-agl300nh,WZR-AGL300NH)
+
 ifeq ($(SUBTARGET),rt288x)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/AR670W,$(1))
@@ -403,6 +405,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/RTN15,$(1))
 	$(call Image/Build/Profile/V11STFE,$(1))
 	$(call Image/Build/Profile/WLITX4AG300N,$(1))
+	$(call Image/Build/Profile/WZRAGL300NH,$(1))
 endef
 endif
 
