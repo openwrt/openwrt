@@ -15,11 +15,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  drivers/pinctrl/mvebu/pinctrl-armada-38x.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/pinctrl/mvebu/pinctrl-armada-38x.c b/drivers/pinctrl/mvebu/pinctrl-armada-38x.c
-index 224c6cff6aa2..7302f66f4f19 100644
 --- a/drivers/pinctrl/mvebu/pinctrl-armada-38x.c
 +++ b/drivers/pinctrl/mvebu/pinctrl-armada-38x.c
-@@ -145,14 +145,16 @@ static struct mvebu_mpp_mode armada_38x_mpp_modes[] = {
+@@ -145,14 +145,16 @@ static struct mvebu_mpp_mode armada_38x_
  		 MPP_VAR_FUNCTION(2, "ptp",   "event_req",  V_88F6810_PLUS),
  		 MPP_VAR_FUNCTION(3, "pcie0", "clkreq",     V_88F6810_PLUS),
  		 MPP_VAR_FUNCTION(4, "sata1", "prsnt",      V_88F6810_PLUS),
@@ -38,6 +36,3 @@ index 224c6cff6aa2..7302f66f4f19 100644
  	MPP_MODE(21,
  		 MPP_VAR_FUNCTION(0, "gpio",  NULL,         V_88F6810_PLUS),
  		 MPP_VAR_FUNCTION(1, "spi0",  "cs1",        V_88F6810_PLUS),
--- 
-2.2.1
-
