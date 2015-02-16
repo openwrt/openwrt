@@ -28,10 +28,10 @@ $(shell echo $(PROFILE) | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
 endef
 
 define Image/BuildKernel/Template
-	$(CP) $(LINUX_DIR)/arch/arm/boot/dts/ox820-$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
+	$(CP) $(DTS_DIR)/ox820-$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
 
 	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x60008000,0x60008000)
-	$(CP) $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.bin
+	$(CP) $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.itb
 
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage-initramfs,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x60008000,0x60008000,-initramfs)
