@@ -6,12 +6,18 @@
 
 do_patch_ath10k_firmware() {
 	local firmware_file="/lib/firmware/ath10k/QCA988X/hw2.0/firmware-3.bin"
+
+	# bail out if firmware does not exist
+	[ -f "$firmware_file" ] || {
+		return
+	}
+
 	local firmware_md5_orig="5163aa8de591f80b06c77f22e9777473"
 	local firmware_md5_current="$(md5sum $firmware_file)"
 	local firmware_md5_current="${firmware_md5_current%% *}"
 
 	# verify md5sum before patching
-	[ "firmware_md5_orig" != "firmware_md5_current" ] || {
+	[ "$firmware_md5_orig" != "$firmware_md5_current" ] || {
 		return
 	}
 
