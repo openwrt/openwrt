@@ -25,7 +25,7 @@
  		sed -n '/'$$s'[^ ]* =/{s:.* \([^ ]*'$$s'[^ ]*\) .*:extern char \1[] __attribute__((weak)); if (!strcmp(sym, "\1")) return \1;:;p}' $$files ; \
 --- a/ip/ip.c
 +++ b/ip/ip.c
-@@ -69,30 +69,42 @@ static const struct cmd {
+@@ -71,30 +71,42 @@ static const struct cmd {
  	int (*func)(int argc, char **argv);
  } cmds[] = {
  	{ "address",	do_ipaddr },
@@ -70,7 +70,7 @@
  };
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -629,6 +629,7 @@ const char *rt_addr_n2a(int af, const vo
+@@ -630,6 +630,7 @@ const char *rt_addr_n2a(int af, const vo
  	case AF_INET:
  	case AF_INET6:
  		return inet_ntop(af, addr, buf, buflen);
@@ -78,7 +78,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -637,6 +638,7 @@ const char *rt_addr_n2a(int af, const vo
+@@ -638,6 +639,7 @@ const char *rt_addr_n2a(int af, const vo
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
@@ -86,7 +86,7 @@
  	default:
  		return "???";
  	}
-@@ -712,6 +714,7 @@ const char *format_host(int af, int len,
+@@ -713,6 +715,7 @@ const char *format_host(int af, int len,
  			case AF_INET6:
  				len = 16;
  				break;
@@ -94,7 +94,7 @@
  			case AF_IPX:
  				len = 10;
  				break;
-@@ -722,6 +725,7 @@ const char *format_host(int af, int len,
+@@ -723,6 +726,7 @@ const char *format_host(int af, int len,
  				len = 2;
  				break;
  #endif
@@ -104,8 +104,9 @@
  		}
 --- a/lib/Makefile
 +++ b/lib/Makefile
-@@ -1,5 +1,9 @@
- include ../Config
+@@ -4,6 +4,10 @@ ifeq ($(IP_CONFIG_SETNS),y)
+	CFLAGS += -DHAVE_SETNS
+ endif
  
 +ifeq ($(IP_CONFIG_TINY),y)
 +  CFLAGS += -DIPROUTE2_TINY
@@ -113,4 +114,4 @@
 +
  CFLAGS += $(FPIC)
  
- UTILOBJ=utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o inet_proto.o
+ UTILOBJ=utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o inet_proto.o namespace.o
