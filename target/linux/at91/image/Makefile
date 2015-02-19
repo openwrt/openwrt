@@ -58,6 +58,9 @@ Image/Build/Kernel/USBA9263=$(call MkuImageDtb,usb_a9263,usb_a9263)
 Image/Build/Kernel/USBA9G20=$(call MkuImageDtb,usb_a9g20,usb_a9g20)
 # Ethernut
 Image/Build/Kernel/ETHERNUT5=$(call MkuImageDtb,ethernut5,ethernut5)
+# Exegin
+Image/Build/Kernel/Q5XR5=$(call MkOftree,q5xr5,at91-q5xr5)
+
 
 define Image/Build/Kernel/Default
 	$(call Image/Build/Kernel/AT91SAM9263EK)
@@ -78,6 +81,7 @@ define Image/Build/Kernel/Default
 	$(call Image/Build/Kernel/USBA9263)
 	$(call Image/Build/Kernel/USBA9G20)
 	$(call Image/Build/Kernel/ETHERNUT5)
+	$(call Image/Build/Kernel/Q5XR5)
 endef
 
 define Image/BuildKernel
