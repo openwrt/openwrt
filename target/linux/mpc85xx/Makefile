@@ -14,7 +14,7 @@ FEATURES:=spe_fpu squashfs
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 SUBTARGETS=generic p1020
 
-KERNEL_PATCHVER:=3.14
+KERNEL_PATCHVER:=3.18
 
 KERNEL_IMAGES := zImage cuImage.tl-wdr4900-v1
 
