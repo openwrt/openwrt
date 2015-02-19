@@ -1,0 +1,100 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -19,6 +19,7 @@
+ #include <linux/errno.h>
+ #include <linux/module.h>
+ #include <linux/device.h>
++#include <linux/of.h>
+ 
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
+@@ -32,6 +33,7 @@
+ 	struct spi_device	*spi;
+ 	struct spi_nor		spi_nor;
+ 	struct mtd_info		mtd;
++	u16			chunk_size;
+ 	u8			command[MAX_CMD_SIZE];
+ };
+ 
+@@ -157,6 +159,58 @@
+ 	return 0;
+ }
+ 
++static void m25p80_chunked_write(struct spi_nor *nor, loff_t _from, size_t _len,
++			size_t *_retlen, const u_char *_buf)
++{
++	struct m25p *flash = nor->priv;
++	int chunk_size;
++	int retlen = 0;
++
++	chunk_size = flash->chunk_size;
++	if (!chunk_size)
++		chunk_size = _len;
++
++	while (retlen < _len) {
++		size_t len = min_t(int, chunk_size, _len - retlen);
++		const u_char *buf = _buf + retlen;
++		loff_t from = _from + retlen;
++
++		nor->wait_till_ready(nor);
++		nor->write_reg(nor, SPINOR_OP_WREN, NULL, 0, 0);
++
++		m25p80_write(nor, from, len, &retlen, buf);
++	}
++	*_retlen += retlen;
++}
++
++static int m25p80_chunked_read(struct spi_nor *nor, loff_t _from, size_t _len,
++			size_t *_retlen, u_char *_buf)
++{
++	struct m25p *flash = nor->priv;
++	int chunk_size;
++
++	chunk_size = flash->chunk_size;
++	if (!chunk_size)
++		chunk_size = _len;
++
++	*_retlen = 0;
++
++	while (*_retlen < _len) {
++		size_t len = min_t(int, chunk_size, _len - *_retlen);
++		u_char *buf = _buf + *_retlen;
++		loff_t from = _from + *_retlen;
++		int retlen = 0;
++		int ret = m25p80_read(nor, from, len, &retlen, buf);
++
++		if (ret)
++			return ret;
++
++		*_retlen += retlen;
++	}
++
++	return 0;
++}
++
+ static int m25p80_erase(struct spi_nor *nor, loff_t offset)
+ {
+ 	struct m25p *flash = nor->priv;
+@@ -197,6 +251,7 @@
+ 	struct spi_nor *nor;
+ 	enum read_mode mode = SPI_NOR_NORMAL;
+ 	char *flash_name = NULL;
++	u32 val;
+ 	int ret;
+ 
+ 	data = dev_get_platdata(&spi->dev);
+@@ -244,6 +299,14 @@
+ 	if (ret)
+ 		return ret;
+ 
++	if (spi->dev.of_node &&
++	    !of_property_read_u32(spi->dev.of_node, "m25p,chunked-io", &val)) {
++		dev_warn(&spi->dev, "using chunked io\n");
++		nor->read = m25p80_chunked_read;
++		nor->write = m25p80_chunked_write;
++		flash->chunk_size = val;
++	}
++
+ 	ppdata.of_node = spi->dev.of_node;
+ 
+ 	return mtd_device_parse_register(&flash->mtd, NULL, &ppdata,

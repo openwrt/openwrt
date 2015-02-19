@@ -13,7 +13,7 @@ SUBTARGETS:=rt305x mt7620 mt7621 mt7628 rt3883 rt288x
 FEATURES:=squashfs gpio
 MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-KERNEL_PATCHVER:=3.14
+KERNEL_PATCHVER:=3.18
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
