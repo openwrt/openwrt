@@ -11,8 +11,13 @@
 		reg = <0x0 0x2000000>;
 	};
 
-	chosen {
-		bootargs = "console=ttyS0,57600 init=/init";
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "jtag";
+				ralink,function = "gpio";
+			};
+		};
 	};
 
 	palmbus@10000000 {
@@ -52,13 +57,5 @@
 				};
 			};
 		};
-	};
-
-	sdhci@10130000 {
-		status = "okay";
-	};
-
-	pcie@10140000 {
-		status = "okay";
 	};
 };
