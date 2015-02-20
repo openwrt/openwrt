@@ -71,7 +71,7 @@ index b6e1cc7..8ca7358 100644
  
  static char nvram_buf[NVRAM_SPACE];
 -static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
-+static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000, 0x160000};
++static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000, 0x160000, 0x180000};
  
  static u32 find_nvram_size(void __iomem *end)
  {
