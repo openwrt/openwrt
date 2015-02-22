@@ -1,0 +1,48 @@
+From 1c20a5420c2602e2438209f34a633eae377eda5e Mon Sep 17 00:00:00 2001
+From: Heiner Kallweit <hkallweit1@gmail.com>
+Date: Thu, 19 Feb 2015 23:43:32 +0100
+Subject: [PATCH] mpc85xx: add mpic timer clock frequency
+
+MPIC timers are enabled in the config, however a devicetree clock setting
+is missing causing the following error:
+/soc@ffe00000/timer@41100: cannot get timer frequency.
+/soc@ffe00000/timer@42100: cannot get timer frequency.
+
+This patch adds the missing clock and avoids the error.
+It's a functional copy of this code
+do_fixup_by_compat_u32(blob, "fsl,mpic",
+	"clock-frequency", get_bus_freq(0), 1);
+in arch/powerpc/cpu/mpc85xx/fdt.c in the u-boot code.
+
+Signed-off-by: Heiner Kallweit <hkallweit1@gmail.com>
+---
+ arch/powerpc/boot/cuboot-tl-wdr4900-v1.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c b/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c
+index 095e777..17459ef 100644
+--- a/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c
++++ b/arch/powerpc/boot/cuboot-tl-wdr4900-v1.c
+@@ -119,7 +119,7 @@ static void process_boot_dtb(void *boot_dtb)
+ 
+ static void platform_fixups(void)
+ {
+-	void *soc;
++	void *soc, *mpic;
+ 
+ 	dt_fixup_memory(0, mem_size);
+ 
+@@ -144,6 +144,10 @@ static void platform_fixups(void)
+ 				sizeof(bus_freq));
+ 		}
+ 	}
++
++	mpic = find_node_by_compatible(NULL, "fsl,mpic");
++	if (mpic)
++		setprop(mpic, "clock-frequency", &bus_freq, sizeof(bus_freq));
+ }
+ 
+ void platform_init(unsigned long r3, unsigned long r4, unsigned long r5,
+-- 
+2.3.0
+
