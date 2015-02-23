@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 
 [ -e /etc/config/network ] && exit 0
@@ -17,6 +17,9 @@ board=$(mvebu_board_name)
 case "$board" in
 armada-xp-mamba)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
+	ucidef_add_switch_vlan "switch0" "2" "4 6"
 	;;
 
 *)
