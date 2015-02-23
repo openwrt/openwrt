@@ -11,8 +11,9 @@ preinit_set_mac_address() {
 	case $(mvebu_board_name) in
 	armada-xp-mamba)
 		mac=$(mtd_get_mac_ascii devinfo hw_mac_addr)
+		mac_wan=$(macaddr_setbit_la "$mac")
 		ifconfig eth0 hw ether $mac 2>/dev/null
-		ifconfig eth1 hw ether $mac 2>/dev/null
+		ifconfig eth1 hw ether $mac_wan 2>/dev/null
 		;;
 	esac
 }
