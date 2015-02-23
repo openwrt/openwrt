@@ -1,0 +1,34 @@
+From 841e59ba3e496d86ca5f069204d5e5c1ad43c01d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 27 Jan 2015 22:29:21 +0100
+Subject: [PATCH] mtd: bcm47xxpart: support for Xiaomi specific board_data
+ partition
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/mtd/bcm47xxpart.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -33,6 +33,7 @@
+ /* Magics */
+ #define BOARD_DATA_MAGIC		0x5246504D	/* MPFR */
+ #define BOARD_DATA_MAGIC2		0xBD0D0BBD
++#define BOARD_DATA_XIAOMI_MAGIC		0x474D4442	/* GMDB */
+ #define CFE_MAGIC			0x43464531	/* 1EFC */
+ #define FACTORY_MAGIC			0x59544346	/* FCTY */
+ #define NVRAM_HEADER			0x48534C46	/* FLSH */
+@@ -262,7 +263,8 @@ static int bcm47xxpart_parse(struct mtd_
+ 		}
+ 
+ 		/* Some devices (ex. WNDR3700v3) don't have a standard 'MPFR' */
+-		if (buf[0x000 / 4] == BOARD_DATA_MAGIC2) {
++		if (buf[0x000 / 4] == BOARD_DATA_MAGIC2 ||
++		    le32_to_cpu(buf[0x000 / 4]) == BOARD_DATA_XIAOMI_MAGIC) {
+ 			bcm47xxpart_add_part(&parts[curr_part++], "board_data",
+ 					     offset, MTD_WRITEABLE);
+ 			continue;
