@@ -1,0 +1,20 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -1537,3 +1537,6 @@ source "drivers/crypto/Kconfig"
+ source crypto/asymmetric_keys/Kconfig
+ 
+ endif	# if CRYPTO
++
++source "crypto/ocf/Kconfig"
++
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -102,6 +102,8 @@ obj-$(CONFIG_CRYPTO_USER_API_HASH) += al
+ obj-$(CONFIG_CRYPTO_USER_API_SKCIPHER) += algif_skcipher.o
+ obj-$(CONFIG_CRYPTO_USER_API_RNG) += algif_rng.o
+ 
++obj-$(CONFIG_OCF_OCF) += ocf/
++
+ #
+ # generic algorithms and the async_tx api
+ #
