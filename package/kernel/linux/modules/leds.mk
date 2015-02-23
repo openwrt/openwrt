@@ -183,6 +183,22 @@ endef
 $(eval $(call KernelPackage,ledtrig-oneshot))
 
 
+define KernelPackage/leds-pca963x
+  SUBMENU:=$(LEDS_MENU)
+  TITLE:=PCA963x LED support
+  DEPENDS:=+kmod-i2c-core
+  KCONFIG:=CONFIG_LEDS_PCA963X
+  FILES:=$(LINUX_DIR)/drivers/leds/leds-pca963x.ko
+  AUTOLOAD:=$(call AutoLoad,60,leds-pca963x,1)
+endef
+
+define KernelPackage/leds-pca963x/description
+ Driver for the NXP PCA963x I2C LED controllers.
+endef
+
+$(eval $(call KernelPackage,leds-pca963x))
+
+
 define KernelPackage/leds-tlc59116
   SUBMENU:=$(LEDS_MENU)
   TITLE:=TLC59116 LED support
