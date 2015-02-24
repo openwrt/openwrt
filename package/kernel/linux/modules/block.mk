@@ -56,6 +56,23 @@ endef
 $(eval $(call KernelPackage,ata-ahci))
 
 
+define KernelPackage/ata-ahci-platform
+  TITLE:=AHCI Serial ATA Platform support
+  KCONFIG:=CONFIG_SATA_AHCI_PLATFORM
+  FILES:= \
+    $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
+    $(LINUX_DIR)/drivers/ata/libahci_platform.ko
+  AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_platform,1)
+  $(call AddDepends/ata,+kmod-ata-ahci)
+endef
+
+define KernelPackage/ata-ahci-platform/description
+ Platform support for AHCI Serial ATA controllers
+endef
+
+$(eval $(call KernelPackage,ata-ahci-platform))
+
+
 define KernelPackage/ata-artop
   TITLE:=ARTOP 6210/6260 PATA support
   KCONFIG:=CONFIG_PATA_ARTOP
