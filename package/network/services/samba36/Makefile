@@ -8,13 +8,13 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=samba
-PKG_VERSION:=3.6.24
+PKG_VERSION:=3.6.25
 PKG_RELEASE:=1
 
 PKG_SOURCE_URL:=http://ftp.samba.org/pub/samba \
 	http://ftp.samba.org/pub/samba/stable
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=d98425c0c2b73e08f048d31ffc727fb0
+PKG_MD5SUM:=76da2fa64edd94a0188531e7ecb27c4e
 
 PKG_LICENSE:=GPLv3
 PKG_LICENSE_FILES:=COPYING
