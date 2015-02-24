@@ -8,7 +8,7 @@
  #include <net/net_namespace.h>
  #ifdef CONFIG_SYSCTL
  #include <linux/sysctl.h>
-@@ -259,10 +260,66 @@ static int ct_open(struct inode *inode,
+@@ -265,10 +266,66 @@ static int ct_open(struct inode *inode,
  			sizeof(struct ct_iter_state));
  }
  
@@ -75,7 +75,7 @@
  	.llseek  = seq_lseek,
  	.release = seq_release_net,
  };
-@@ -364,7 +421,7 @@ static int nf_conntrack_standalone_init_
+@@ -370,7 +427,7 @@ static int nf_conntrack_standalone_init_
  {
  	struct proc_dir_entry *pde;
  

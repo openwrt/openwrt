@@ -273,7 +273,7 @@
  };
  
  struct net_bridge_mdb_entry
-@@ -476,7 +479,8 @@ void br_multicast_free_pg(struct rcu_hea
+@@ -480,7 +483,8 @@ void br_multicast_free_pg(struct rcu_hea
  struct net_bridge_port_group *
  br_multicast_new_port_group(struct net_bridge_port *port, struct br_ip *group,
  			    struct net_bridge_port_group __rcu *next,
@@ -285,7 +285,7 @@
  void br_mdb_notify(struct net_device *dev, struct net_bridge_port *port,
 --- a/net/bridge/br_mdb.c
 +++ b/net/bridge/br_mdb.c
-@@ -342,7 +342,7 @@ static int br_mdb_add_group(struct net_b
+@@ -343,7 +343,7 @@ static int br_mdb_add_group(struct net_b
  			break;
  	}
  
