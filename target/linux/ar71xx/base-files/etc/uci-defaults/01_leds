@@ -298,6 +298,15 @@ tl-mr3420-v2)
 	ucidef_set_led_usbdev "usb" "USB" "tp-link:green:3g" "1-1"
 	;;
 
+tl-wa7210n-v2)
+	ucidef_set_led_netdev "lan" "LAN" "tp-link:green:lan" "eth0"
+	ucidef_set_rssimon "wlan0" "40000" "1"
+	ucidef_set_led_rssi "rssilow" "RSSILOW" "tp-link:green:signal1" "wlan0" "1" "100" "0" "13"
+	ucidef_set_led_rssi "rssimediumlow" "RSSIMEDIUMLOW" "tp-link:green:signal2" "wlan0" "26" "100" "-25" "13"
+	ucidef_set_led_rssi "rssimediumhigh" "RSSIMEDIUMHIGH" "tp-link:green:signal3" "wlan0" "51" "100" "-50" "13"
+	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "tp-link:green:signal4" "wlan0" "76" "100" "-75" "13"
+	;;
+
 tl-wa750re)
 	ucidef_set_led_netdev "lan" "LAN" "tp-link:orange:lan" "eth0"
 	ucidef_set_led_wlan "wlan" "WLAN" "tp-link:orange:wlan" "phy0tpt"

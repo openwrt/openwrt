@@ -160,6 +160,16 @@ define Profile/TLWA701/Description
 endef
 $(eval $(call Profile,TLWA701))
 
+define Profile/TLWA7210
+        NAME:=TP-LINK TL-WA7210N
+        PACKAGES:=rssileds kmod-ledtrig-netdev
+endef
+
+define Profile/TLWA7210/Description
+        Package set optimized for the TP-LINK TL-WA7210N.
+endef
+$(eval $(call Profile,TLWA7210))
+
 define Profile/TLWA730RE
 	NAME:=TP-LINK TL-WA730RE
 	PACKAGES:=
