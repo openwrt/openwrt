@@ -11,8 +11,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/drivers/mtd/ubi/block.c
 +++ b/drivers/mtd/ubi/block.c
-@@ -614,6 +614,44 @@ static void __init ubiblock_create_from_
- 	}
+@@ -614,6 +614,44 @@ static int __init ubiblock_create_from_p
+ 	return ret;
  }
  
 +#define UBIFS_NODE_MAGIC  0x06101831
@@ -46,7 +46,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 +
 +		ret = ubiblock_create(&vi);
 +		if (ret)
-+			ubi_err("block: can't add '%s' volume, err=%d\n",
++			pr_err("UBI error: block: can't add '%s' volume, err=%d\n",
 +				vi.name, ret);
 +		/* always break if we get here */
 +		break;
@@ -57,8 +57,8 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  {
  	struct ubiblock *next;
 @@ -644,6 +682,10 @@ int __init ubiblock_init(void)
- 	 */
- 	ubiblock_create_from_param();
+ 	if (ret)
+ 		goto err_remove;
  
 +	/* auto-attach "rootfs" volume if existing and non-ubifs */
 +	if (config_enabled(CONFIG_MTD_ROOTFS_ROOT_DEV))
