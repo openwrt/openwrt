@@ -63,7 +63,7 @@ define KernelPackage/ata-ahci-platform
     $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
     $(LINUX_DIR)/drivers/ata/libahci_platform.ko
   AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_platform,1)
-  $(call AddDepends/ata,+kmod-ata-ahci)
+  $(call AddDepends/ata,@TARGET_ipq806x +kmod-ata-ahci)
 endef
 
 define KernelPackage/ata-ahci-platform/description
