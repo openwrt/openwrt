@@ -1,0 +1,12 @@
+--- a/kmodloader.c
++++ b/kmodloader.c
+@@ -605,6 +605,9 @@ static int main_insmod(int argc, char **
+ 		cur += sprintf(cur, "%s", argv[i]);
+ 	}
+ 
++	if (init_module_folders())
++		return -1;
++
+ 	if (get_module_path(argv[1])) {
+ 		name = argv[1];
+ 	} else if (!get_module_path(name)) {
