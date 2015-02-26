@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6rd
-PKG_VERSION:=7
+PKG_VERSION:=8
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0
 
@@ -19,7 +19,7 @@ define Package/6rd
   CATEGORY:=Network
   DEPENDS:=+kmod-ipv6 +kmod-sit
   TITLE:=6rd configuration support
-  MAINTAINER:=Stéphan Kochen <stephan@kochen.nl>
+  MAINTAINER:=Steven Barth <cyrus@openwrt.org>
   PKGARCH:=all
 endef
 
