@@ -143,6 +143,9 @@ _procd_set_param() {
 		user)
 			json_add_string "$type" "$1"
 		;;
+		stdout|stderr)
+			json_add_boolean "$type" "$1"
+		;;
 	esac
 }
 
