@@ -83,7 +83,8 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	struct kernelhdr khdr;
 	FILE *kernelfile = NULL, *rootfsfile = NULL, *binfile = NULL, *cfefile = NULL;
 	size_t cfeoff, cfelen, kerneloff, kernellen, rootfsoff, rootfslen, \
-	  read, imagelen, rootfsoffpadlen = 0, kernelfslen, kerneloffpadlen = 0, oldrootfslen;
+	  read, imagelen, rootfsoffpadlen = 0, kernelfslen, kerneloffpadlen = 0, oldrootfslen, \
+	  rootfsend;
 	uint8_t readbuf[1024];
 	uint32_t imagecrc = IMAGETAG_CRC_START;
 	uint32_t kernelcrc = IMAGETAG_CRC_START;
@@ -157,11 +158,17 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 		kernellen += sizeof(khdr);	  
 	  }
 	  
-	  /* Build the rootfs address and length (start and end do need to be aligned on flash erase block boundaries */
+	  /* Build the rootfs address and length */
 	  rootfsoff = kerneloff + kernellen;
-	  rootfsoff = (rootfsoff % block_size) > 0 ? (((rootfsoff / block_size) + 1) * block_size) : rootfsoff;
-	  rootfslen = getlen(rootfsfile);
-	  rootfslen = ( (rootfslen % block_size) > 0 ? (((rootfslen / block_size) + 1) * block_size) : rootfslen );
+	  /* align the start if requested */
+	  if (args->align_rootfs_flag)
+		rootfsoff = (rootfsoff % block_size) > 0 ? (((rootfsoff / block_size) + 1) * block_size) : rootfsoff;
+
+	  /* align the end */
+	  rootfsend = rootfsoff + getlen(rootfsfile);
+	  if ((rootfsend % block_size) > 0)
+		rootfsend = (((rootfsend / block_size) + 1) * block_size);
+	  rootfslen = rootfsend - rootfsoff;
 	  imagelen = rootfsoff + rootfslen - kerneloff + sizeof(deadcode);
 	  rootfsoffpadlen = rootfsoff - (kerneloff + kernellen);
 	  
@@ -390,7 +397,7 @@ int main(int argc, char **argv)
 
 	kernel = rootfs = bin = NULL;
 
-	if (cmdline_parser(argc, argv, &parsed_args)) {
+	if (imagetag_cmdline(argc, argv, &parsed_args)) {
 	  exit(1);
 	}
 

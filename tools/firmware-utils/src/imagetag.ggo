@@ -43,3 +43,4 @@ option "inactive" - "Inactive Flag (2=not-specified)." values="0", "1", "2" defa
 option "reserved2" - "String for second reserved section." string optional
 option "kernel-file-has-header" - "Indicates that the kernel file includes the kernel header with correct load address and entry point, so no changes are needed" flag off
 option "pad" p "Pad the image to this size if smaller (in MiB)" int typestr="size (in MiB)" optional
+option "align-rootfs" - "Align the rootfs start to erase block size" flag off
