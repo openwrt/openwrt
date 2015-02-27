@@ -162,9 +162,6 @@ define Image/Prepare
 	$(call Image/PrepareLoader,-initramfs)
 	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareLoaderDTB,-initramfs,$(board)))
  endif
-	rm -f $(KDIR)/fs_mark
-	touch $(KDIR)/fs_mark
-	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 endef
 
 define Image/Build/Initramfs
