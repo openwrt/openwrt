@@ -1,15 +1,15 @@
-From 7e6b22225e16fbb22dbf7f2113d8c6d65333818c Mon Sep 17 00:00:00 2001
+From e796582b499f0ba6acaa1ac3a10c09cceaab7702 Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Sun, 9 Mar 2014 04:55:52 +0100
-Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
+Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 
 ---
- arch/mips/bcm63xx/boards/Kconfig         |   6 +
- arch/mips/bcm63xx/boards/Makefile        |   1 +
- arch/mips/bcm63xx/boards/board_common.c  |   2 +-
- arch/mips/bcm63xx/boards/board_common.h  |   6 +
- arch/mips/bcm63xx/boards/board_livebox.c | 193 +++++++++++++++++++++++++++++++
- 5 files changed, 207 insertions(+), 1 deletion(-)
+ arch/mips/bcm63xx/boards/Kconfig         |    6 +
+ arch/mips/bcm63xx/boards/Makefile        |    1 +
+ arch/mips/bcm63xx/boards/board_common.c  |    2 +-
+ arch/mips/bcm63xx/boards/board_common.h  |    6 +
+ arch/mips/bcm63xx/boards/board_livebox.c |  215 ++++++++++++++++++++++++++++++
+ 5 files changed, 229 insertions(+), 1 deletion(-)
  create mode 100644 arch/mips/bcm63xx/boards/board_livebox.c
 
 --- a/arch/mips/bcm63xx/boards/Kconfig
@@ -57,7 +57,7 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
  #endif /* __BOARD_COMMON_H */
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,215 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -183,6 +183,11 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 +#endif
 +};
 +
++static struct of_device_id const livebox_boards_dt[] = {
++	{ .compatible = "inventel,livebox-blue-5g", .data = &board_livebox_blue5g, },
++	{ }
++};
++
 +/*
 + * register & return a new board mac address
 + */
@@ -227,23 +232,33 @@ Subject: [PATCH 44/44] MIPS: BCM63XX: add inventel Livebox support
 +	u32 val;
 +	u8 hw_version;
 +	const struct board_info *board;
++	const struct of_device_id *board_match;
 +
-+	/* Get hardware version */
-+	val = bcm_gpio_readl(GPIO_CTL_LO_REG);
-+	val &= ~LIVEBOX_GPIO_DETECT_MASK;
-+	bcm_gpio_writel(val, GPIO_CTL_LO_REG);
++	/* find board by compat */
++	board_match = bcm63xx_match_board(livebox_boards_dt);
++	if (board_match) {
++		board = board_match->data;
++	} else {
++		/* Get hardware version */
++		val = bcm_gpio_readl(GPIO_CTL_LO_REG);
++		val &= ~LIVEBOX_GPIO_DETECT_MASK;
++		bcm_gpio_writel(val, GPIO_CTL_LO_REG);
 +
-+	hw_version = bcm_gpio_readl(GPIO_DATA_LO_REG) & LIVEBOX_GPIO_DETECT_MASK;
-+	switch (hw_version) {
-+	case LIVEBOX_HW_BLUE5G_9:
-+		printk(KERN_INFO PFX "Livebox BLUE5G.9\n");
-+		board = bcm963xx_boards[0];
-+		break;
-+	default:
-+		printk(KERN_INFO PFX "Unknown livebox version: %02x\n", hw_version);
-+		/* use default livebox configuration */
-+		board = bcm963xx_boards[0];
-+		break;
++		hw_version = bcm_gpio_readl(GPIO_DATA_LO_REG);
++		hw_version &= LIVEBOX_GPIO_DETECT_MASK;
++
++		switch (hw_version) {
++		case LIVEBOX_HW_BLUE5G_9:
++			printk(KERN_INFO PFX "Livebox BLUE5G.9\n");
++			board = bcm963xx_boards[0];
++			break;
++		default:
++			printk(KERN_INFO PFX "Unknown livebox version: %02x\n",
++			       hw_version);
++			/* use default livebox configuration */
++			board = bcm963xx_boards[0];
++			break;
++		}
 +	}
 +
 +	/* use default livebox configuration */
