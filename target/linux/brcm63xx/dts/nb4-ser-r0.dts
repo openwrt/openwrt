@@ -5,7 +5,7 @@
 / {
 	model = "SFR Neuf Box 4 (Sercomm)";
 	compatible = "sfr,nb4-ser-r0", "brcm,bcm6358";
-/*
+
 	spi-gpio {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -25,7 +25,7 @@
 			#gpio-cells = <2>;
 		};
 	};
-*/
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
@@ -78,7 +78,6 @@
 			label = "NB4-SER-r0:green:service";
 			gpios = <&gpio0 30 1>;
 		};
-/*
 		alarm_white {
 			label = "NB4-SER-r0:white:alarm";
 			gpios = <&hc595 0 1>;
@@ -95,6 +94,5 @@
 			label = "NB4-SER-r0:white:adsl";
 			gpios = <&hc595 4 1>;
 		};
-*/
 	};
 };
