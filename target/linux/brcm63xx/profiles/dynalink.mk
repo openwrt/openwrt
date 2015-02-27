@@ -13,3 +13,12 @@ define Profile/RTA1025W/Description
   Package set optimized for RTA1025W.
 endef
 $(eval $(call Profile,RTA1025W))
+
+define Profile/RTA1320
+  NAME:=Dynalink RTA1320
+  PACKAGES:=
+endef
+define Profile/RTA1320/Description
+  Package set optimized for RTA1320.
+endef
+$(eval $(call Profile,RTA1320))

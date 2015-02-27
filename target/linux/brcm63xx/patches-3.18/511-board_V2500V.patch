@@ -74,7 +74,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1771,6 +1831,22 @@ void __init board_bcm963xx_init(void)
+@@ -1772,6 +1832,22 @@ void __init board_bcm963xx_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
