@@ -1,0 +1,15 @@
+/dts-v1/;
+
+/include/ "bcm6348.dtsi"
+
+/ {
+	model = "Inventel Livebox 1";
+	compatible = "inventel,livebox-blue-5g", "brcm,bcm6348";
+};
+
+&pflash {
+	reg = <0x1e400000 0x800000>;
+	status = "ok";
+
+	linux,part-probe = "redboot";
+};

@@ -96,12 +96,11 @@ define Image/Build/ZYXCFEDTB
 	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
 endef
 
-define Image/Build/RedBoot
-	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/openwrt-$(1)-vmlinux.elf
-	gzip -9 -c $(KDIR)/vmlinux > $(KDIR)/vmlinux.bin.gz
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux $(KDIR)/vmlinux.bin.l7
-	dd if=$(KDIR)/vmlinux.bin.l7 of=$(BIN_DIR)/openwrt-$(1)-vmlinux.lzma bs=65536 conv=sync
-	dd if=$(KDIR)/vmlinux.bin.gz of=$(BIN_DIR)/openwrt-$(1)-vmlinux.gz bs=65536 conv=sync
+define Image/Build/RedBootDTB
+	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gz
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.l7
+	dd if=$(KDIR)/vmlinux-$(2).bin.l7 of=$(BIN_DIR)/openwrt-$(5)-vmlinux.lzma bs=65536 conv=sync
+	dd if=$(KDIR)/vmlinux-$(2).bin.gz of=$(BIN_DIR)/openwrt-$(5)-vmlinux.gz bs=65536 conv=sync
 endef
 
 define Image/Build/HCS
@@ -201,9 +200,6 @@ define Image/Build
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
 
-	# Inventel Livebox
-	$(call Image/Build/RedBoot,livebox)
-
 	# Netgear CVG834G
 	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
 
@@ -297,6 +293,8 @@ $(eval $(call ImageDTB,CFEDTB,HG553,hg553,HW553,6358,HG553,--rsa-signature "Echo
 $(eval $(call ImageDTB,CFEDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,HG556a_C,hg556a-c,HW556,6358,HG556a_C,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+# Inventel Livebox 1
+$(eval $(call ImageDTB,RedBootDTB,Livebox,livebox-blue-5g,,,livebox))
 # Netgear DG834GT/PN
 $(eval $(call ImageDTB,CFEDTB,DG834GTPN,dg834gtpn,96348GW-10,6348,DG834GT_PN))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
