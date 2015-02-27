@@ -17,14 +17,13 @@ LOADER_MAKEOPTS= \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE)
 
-define trxalign/jffs2-128k
--a 0x20000
+define rootfspad/jffs2-128k
+--align-rootfs
 endef
-define trxalign/jffs2-64k
--a 0x10000
+define rootfspad/jffs2-64k
+--align-rootfs
 endef
-define trxalign/squashfs
--a 1024
+define rootfspad/squashfs
 endef
 
 define Image/LimitName16
@@ -44,6 +43,7 @@ define Image/Build/CFE
 		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
 		--info1 "-$(call Image/LimitName16,$(4))" --info2 $(1) \
+		$(call rootfspad/$(1)) \
 		$(6) $(7) $(8) $(9)
 endef
 
@@ -53,6 +53,7 @@ define Image/Build/CFEDTB
 		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
 		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(5))" \
+		$(call rootfspad/$(1)) \
 		--info2 $(1) $(6)
 endef
 
@@ -69,6 +70,7 @@ define Image/Build/SPW303VCFEDTB
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
 		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
 		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
+		$(call rootfspad/$(1)) \
 		--load-addr $(LOADADDR) $(6)
 	# Fix up header
 	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
@@ -84,6 +86,7 @@ define Image/Build/ZYXCFEDTB
 		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
 		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
 		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(5))" \
+		$(call rootfspad/$(1)) \
 		--info2 $(1) $(6)
 	# Fix up header
 	$(STAGING_DIR_HOST)/bin/zyxbcm -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
