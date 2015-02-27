@@ -97,6 +97,7 @@ define Image/Build/ZYXCFEDTB
 endef
 
 define Image/Build/RedBootDTB
+	# Generate the image
 	gzip -9 -c $(KDIR)/vmlinux-$(3) > $(KDIR)/vmlinux-$(3).bin.gz
 	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(3) $(KDIR)/vmlinux-$(3).bin.l7
 	dd if=$(KDIR)/vmlinux-$(3).bin.l7 of=$(BIN_DIR)/openwrt-$(2)-vmlinux.lzma bs=65536 conv=sync
@@ -104,6 +105,7 @@ define Image/Build/RedBootDTB
 endef
 
 define Image/Build/HCSDTB
+	# Generate the image
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_byte=$(4) \
 		--rev_maj=$(5) --rev_min=$(6) --input_file=$(KDIR)/$(7) \
 		--output_file=$(BIN_DIR)/openwrt-$(2)-$(1).bin
@@ -336,6 +338,6 @@ $(eval $(call ImageDTB,CFEDTB,TDW8900GB,TD-W8900GB,td-w8900gb,96348GW-11,6348,--
 # USRobotics 9108
 $(eval $(call ImageDTB,CFEDTB,USR9108,USR9108,usr9108,96348GW-A,6348))
 # ZyXEL P870HW-51a v2
-$(eval $(call ImageDTB,ZYXCFEDTB,P870HW_51a_v2,96368VVW,p870hw-51a-v2,6368,P870HW-51a_v2,--rsa-signature "ZyXEL" --signature "ZyXEL_0001"))
+$(eval $(call ImageDTB,ZYXCFEDTB,P870HW_51a_v2,P870HW-51a_v2,p870hw-51a-v2,96368VVW,6368,--rsa-signature "ZyXEL" --signature "ZyXEL_0001"))
 
 $(eval $(call BuildImage))
