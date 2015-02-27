@@ -94,7 +94,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_METAG_PERFCOUNTER_IRQS)	+= irq-metag.o
 --- /dev/null
 +++ b/drivers/irqchip/irq-bcm6345-periph.c
-@@ -0,0 +1,340 @@
+@@ -0,0 +1,341 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -246,6 +246,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	irq_hw_number_t hwirq = irqd_to_hwirq(data);
 +	struct intc_data *priv = data->domain->host_data;
 +	unsigned int i, reg, bit;
++	unsigned long flags;
 +	bool enabled;
 +	int cpu;
 +
@@ -265,7 +266,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	if (!priv->block[cpu].parent_irq)
 +		return -EINVAL;
 +
-+	raw_spin_lock(&priv->lock);
++	raw_spin_lock_irqsave(&priv->lock, flags);
 +	enabled = !irqd_irq_masked(data);
 +	for (i = 0; i < MAX_PARENT_IRQS; i++) {
 +		struct intc_block *block = &priv->block[i];
@@ -281,7 +282,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +			__bcm6345_periph_enable(block, reg, bit, false);
 +		}
 +	}
-+	raw_spin_unlock(&priv->lock);
++	raw_spin_unlock_irqrestore(&priv->lock, flags);
 +
 +	return 0;
 +}
@@ -454,33 +455,3 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +			      int num_words);
 +
 +#endif /* __INCLUDE_LINUX_IRQCHIP_IRQ_BCM6345_PERIPH_H */
-diff --git a/drivers/irqchip/irq-bcm6345-periph.c b/drivers/irqchip/irq-bcm6345-periph.c
-index dfab88e..b280164 100644
---- a/drivers/irqchip/irq-bcm6345-periph.c
-+++ b/drivers/irqchip/irq-bcm6345-periph.c
-@@ -149,6 +149,7 @@ static int bcm6345_periph_set_affinity(struct irq_data *data,
- 	irq_hw_number_t hwirq = irqd_to_hwirq(data);
- 	struct intc_data *priv = data->domain->host_data;
- 	unsigned int i, reg, bit;
-+	unsigned long flags;
- 	bool enabled;
- 	int cpu;
- 
-@@ -168,7 +169,7 @@ static int bcm6345_periph_set_affinity(struct irq_data *data,
- 	if (!priv->block[cpu].parent_irq)
- 		return -EINVAL;
- 
--	raw_spin_lock(&priv->lock);
-+	raw_spin_lock_irqsave(&priv->lock, flags);
- 	enabled = !irqd_irq_masked(data);
- 	for (i = 0; i < MAX_PARENT_IRQS; i++) {
- 		struct intc_block *block = &priv->block[i];
-@@ -184,7 +185,7 @@ static int bcm6345_periph_set_affinity(struct irq_data *data,
- 			__bcm6345_periph_enable(block, reg, bit, false);
- 		}
- 	}
--	raw_spin_unlock(&priv->lock);
-+	raw_spin_unlock_irqrestore(&priv->lock, flags);
- 
- 	return 0;
- }

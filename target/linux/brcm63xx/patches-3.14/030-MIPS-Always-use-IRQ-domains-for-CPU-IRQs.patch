@@ -29,7 +29,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -1025,6 +1025,7 @@ config MIPS_HUGE_TLB_SUPPORT
+@@ -1026,6 +1026,7 @@ config MIPS_HUGE_TLB_SUPPORT
  
  config IRQ_CPU
  	bool
@@ -39,8 +39,8 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  	bool
 --- a/arch/mips/kernel/irq_cpu.c
 +++ b/arch/mips/kernel/irq_cpu.c
-@@ -94,28 +94,6 @@ static struct irq_chip mips_mt_cpu_irq_c
- 	.irq_eoi	= unmask_mips_irq,
+@@ -98,28 +98,6 @@ static struct irq_chip mips_mt_cpu_irq_c
+ 	.irq_enable	= unmask_mips_irq,
  };
  
 -void __init mips_cpu_irq_init(void)
@@ -68,7 +68,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  static int mips_cpu_intc_map(struct irq_domain *d, unsigned int irq,
  			     irq_hw_number_t hw)
  {
-@@ -138,8 +116,7 @@ static const struct irq_domain_ops mips_
+@@ -142,8 +120,7 @@ static const struct irq_domain_ops mips_
  	.xlate = irq_domain_xlate_onecell,
  };
  
@@ -78,7 +78,7 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  {
  	struct irq_domain *domain;
  
-@@ -151,7 +128,16 @@ int __init mips_cpu_intc_init(struct dev
+@@ -155,7 +132,16 @@ int __init mips_cpu_intc_init(struct dev
  				       &mips_cpu_intc_irq_domain_ops, NULL);
  	if (!domain)
  		panic("Failed to add irqdomain for MIPS CPU");
