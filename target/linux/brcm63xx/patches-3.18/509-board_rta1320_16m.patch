@@ -54,3 +54,11 @@
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
+@@ -1595,6 +1635,7 @@ static struct of_device_id const bcm963x
+ #ifdef CONFIG_BCM63XX_CPU_6338
+ 	{ .compatible = "brcm,bcm96338gw", .data = &board_96338gw, },
+ 	{ .compatible = "brcm,bcm96338w", .data = &board_96338w, },
++	{ .compatible = "dynalink,rta1320", .data = &board_rta1320_16m, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6345
+ 	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
