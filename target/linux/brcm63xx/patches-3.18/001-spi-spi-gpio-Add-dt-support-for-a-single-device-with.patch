@@ -1,0 +1,91 @@
+From d1d81802522ade84128a2c66c0d500e372474dca Mon Sep 17 00:00:00 2001
+From: Torsten Fleischer <torfl6749@gmail.com>
+Date: Mon, 3 Nov 2014 17:17:55 +0100
+Subject: [PATCH] spi: spi-gpio: Add dt support for a single device with no
+ chip select
+
+In order to describe a single slave device that has no chip select line
+the 'num-chipselects' property has to be <0> and the 'cs-gpios' property
+doesn't need to be set.
+
+Signed-off-by: Torsten Fleischer <torfl6749@gmail.com>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+---
+ Documentation/devicetree/bindings/spi/spi-gpio.txt |  6 ++++--
+ drivers/spi/spi-gpio.c                             | 21 +++++++++++++++------
+ 2 files changed, 19 insertions(+), 8 deletions(-)
+
+--- a/Documentation/devicetree/bindings/spi/spi-gpio.txt
++++ b/Documentation/devicetree/bindings/spi/spi-gpio.txt
+@@ -8,8 +8,10 @@ Required properties:
+  - gpio-sck: GPIO spec for the SCK line to use
+  - gpio-miso: GPIO spec for the MISO line to use
+  - gpio-mosi: GPIO spec for the MOSI line to use
+- - cs-gpios: GPIOs to use for chipselect lines
+- - num-chipselects: number of chipselect lines
++ - cs-gpios: GPIOs to use for chipselect lines.
++             Not needed if num-chipselects = <0>.
++ - num-chipselects: Number of chipselect lines. Should be <0> if a single device
++                    with no chip select is connected.
+ 
+ Example:
+ 
+--- a/drivers/spi/spi-gpio.c
++++ b/drivers/spi/spi-gpio.c
+@@ -424,6 +424,7 @@ static int spi_gpio_probe(struct platfor
+ 	struct spi_gpio_platform_data	*pdata;
+ 	u16 master_flags = 0;
+ 	bool use_of = 0;
++	int num_devices;
+ 
+ 	status = spi_gpio_probe_dt(pdev);
+ 	if (status < 0)
+@@ -433,16 +434,21 @@ static int spi_gpio_probe(struct platfor
+ 
+ 	pdata = dev_get_platdata(&pdev->dev);
+ #ifdef GENERIC_BITBANG
+-	if (!pdata || !pdata->num_chipselect)
++	if (!pdata || (!use_of && !pdata->num_chipselect))
+ 		return -ENODEV;
+ #endif
+ 
++	if (use_of && !SPI_N_CHIPSEL)
++		num_devices = 1;
++	else
++		num_devices = SPI_N_CHIPSEL;
++
+ 	status = spi_gpio_request(pdata, dev_name(&pdev->dev), &master_flags);
+ 	if (status < 0)
+ 		return status;
+ 
+ 	master = spi_alloc_master(&pdev->dev, sizeof(*spi_gpio) +
+-					(sizeof(int) * SPI_N_CHIPSEL));
++					(sizeof(int) * num_devices));
+ 	if (!master) {
+ 		status = -ENOMEM;
+ 		goto gpio_free;
+@@ -457,7 +463,7 @@ static int spi_gpio_probe(struct platfor
+ 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(1, 32);
+ 	master->flags = master_flags;
+ 	master->bus_num = pdev->id;
+-	master->num_chipselect = SPI_N_CHIPSEL;
++	master->num_chipselect = num_devices;
+ 	master->setup = spi_gpio_setup;
+ 	master->cleanup = spi_gpio_cleanup;
+ #ifdef CONFIG_OF
+@@ -472,9 +478,12 @@ static int spi_gpio_probe(struct platfor
+ 		 * property of the node.
+ 		 */
+ 
+-		for (i = 0; i < SPI_N_CHIPSEL; i++)
+-			spi_gpio->cs_gpios[i] =
+-				of_get_named_gpio(np, "cs-gpios", i);
++		if (!SPI_N_CHIPSEL)
++			spi_gpio->cs_gpios[0] = SPI_GPIO_NO_CHIPSELECT;
++		else
++			for (i = 0; i < SPI_N_CHIPSEL; i++)
++				spi_gpio->cs_gpios[i] =
++					of_get_named_gpio(np, "cs-gpios", i);
+ 	}
+ #endif
+ 
