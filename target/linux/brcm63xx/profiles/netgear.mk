@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/CVG834G
+  NAME:=Netgear CVG834G
+  PACKAGES:=
+endef
+define Profile/CVG834G/Description
+  Package set optimized for CVG834G.
+endef
+
+$(eval $(call Profile,CVG834G))
+
 define Profile/DG834GTPN
   NAME:=Netgear DG834GT/PN
   PACKAGES:=kmod-ath5k wpad-mini

@@ -103,9 +103,9 @@ define Image/Build/RedBootDTB
 	dd if=$(KDIR)/vmlinux-$(3).bin.gz of=$(BIN_DIR)/openwrt-$(2)-vmlinux.gz bs=65536 conv=sync
 endef
 
-define Image/Build/HCS
-	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_byte=$(3) \
-		--rev_maj=$(4) --rev_min=$(5) --input_file=$(6) \
+define Image/Build/HCSDTB
+	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_byte=$(4) \
+		--rev_maj=$(5) --rev_min=$(6) --input_file=$(KDIR)/$(7) \
 		--output_file=$(BIN_DIR)/openwrt-$(2)-$(1).bin
 endef
 
@@ -122,10 +122,10 @@ define Image/PrepareLoader
 	$(MAKE) -C lzma-loader \
 		$(LOADER_MAKEOPTS) \
 		BUILD_DIR="$(KDIR)" \
-		TARGET_DIR="$(BIN_DIR)" \
+		TARGET_DIR="$(2)" \
 		LOADER_DATA="$(KDIR)/vmlinux$(1).lzma" \
-		LOADER=$(IMG_PREFIX)-loader$(1).elf \
-		compile loader.elf
+		LOADER=$(IMG_PREFIX)-loader$(1) \
+		compile $(3)
 
 	rm -f $(KDIR)/vmlinux$(1).lzma
 endef
@@ -133,7 +133,7 @@ endef
 define Image/PrepareLoaderDTB
 	# append dtb to vmlinux, then build a standard LZMA loader
 	cat $(KDIR)/vmlinux$(1) $(DTS_DIR)/$(2).dtb > $(KDIR)/vmlinux$(1)-$(2)
-	$(call Image/PrepareLoader,$(1)-$(2))
+	$(call Image/PrepareLoader,$(1)-$(2),$(3),$(4))
 endef
 
 define Image/PrepareCFELzmaKernel
@@ -162,14 +162,20 @@ define Image/Prepare
 	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareCFELzmaKernelDTB,$(board)))
 
  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	$(call Image/PrepareLoader,-initramfs)
-	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareLoaderDTB,-initramfs,$(board)))
+	$(call Image/PrepareLoader,-initramfs,$(BIN_DIR),loader.elf)
+	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), \
+		$(call Image/PrepareLoaderDTB,-initramfs,$(board),$(BIN_DIR),loader.elf))
+ ifneq (,$(findstring cvg834g,$(TARGET_$(PROFILE)_DTBS)))
+	$(call Image/PrepareLoaderDTB,-initramfs,cvg834g,$(KDIR),loader.bin)
+ endif
  endif
 endef
 
 define Image/Build/Initramfs
 	# Netgear CVG834G
-	$(call Image/Build/HCS,initramfs,cvg834g,a020,0001,0022,$(KDIR)/vmlinux-initramfs)
+ ifneq (,$(findstring cvg834g,$(TARGET_$(PROFILE)_DTBS)))
+	$(call Image/Build/HCSDTB,initramfs,cvg834g,cvg834g,a020,0001,0022,$(IMG_PREFIX)-loader-initramfs-cvg834g.bin)
+ endif
 endef
 
 # $(1) = Image build
@@ -181,7 +187,7 @@ endef
 # $(7) = additional options
 define ImageDTB
   define Image/Build/$(3)
-        $$(call Image/Build/$(1),$$(1),$(3),$(4),$(5),$(6),$(7))
+        $$(call Image/Build/$(1),$$(1),$(3),$(4),$(5),$(6),$(7),$(8))
   endef
 
   TARGET_Default_DTBS += $(4)
@@ -199,9 +205,6 @@ define Image/Build
 	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
-
-	# Netgear CVG834G
-	$(call Image/Build/HCS,$(1),cvg834g,a020,0001,0022,$(KDIR)/vmlinux)
 
 	# build dtb image list
 	$(foreach image,$(TARGET_$(PROFILE)_IMAGES),$(call Image/Build/$(image),$(1)))
@@ -295,6 +298,8 @@ $(eval $(call ImageDTB,CFEDTB,HG556a_AB,HG556a_B,hg556a-b,HW556,6358,--rsa-signa
 $(eval $(call ImageDTB,CFEDTB,HG556a_C,HG556a_C,hg556a-c,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 # Inventel Livebox 1
 $(eval $(call ImageDTB,RedBootDTB,Livebox,livebox,livebox-blue-5g))
+# Netgear CVG834G
+$(eval $(call ImageDTB,HCSDTB,CVG834G,,cvg834g,a020,0001,0022,vmlinux-cvg834g))
 # Netgear DG834GT/PN
 $(eval $(call ImageDTB,CFEDTB,DG834GTPN,DG834GT_PN,dg834gtpn,96348GW-10,6348))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
