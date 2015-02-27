@@ -51,10 +51,10 @@ endef
 
 define Image/Build/CFEDTB
 	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin \
-		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(5))" \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
+		--boardid $(4) --chipid $(5) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(2))" \
 		$(call rootfspad/$(1)) \
 		--info2 $(1) $(6)
 endef
@@ -62,45 +62,45 @@ endef
 define Image/Build/OLDCFEDTB
 	# Generate the tagged image
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
-		-b $(3) -c $(4)	-e $(KERNEL_ENTRY) -a $(LOADADDR) \
-		-k $(KDIR)/vmlinux-$(2).lzma.cfe -r $(KDIR)/root.$(1) \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe.bin $(6)
+		-b $(4) -c $(5)	-e $(KERNEL_ENTRY) -a $(LOADADDR) \
+		-k $(KDIR)/vmlinux-$(3).lzma.cfe -r $(KDIR)/root.$(1) \
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin $(6)
 endef
 
 define Image/Build/SPW303VCFEDTB
 	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
-		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
+		--boardid $(4) --chipid $(5) --entry $(KERNEL_ENTRY) \
 		$(call rootfspad/$(1)) \
 		--load-addr $(LOADADDR) $(6)
 	# Fix up header
-	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe-sysupgrade.bin
-	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(5)-$(1)-cfe-sysupgrade.bin \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-cfe-factory.bin
-	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
+	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe-sysupgrade.bin
+	$(STAGING_DIR_HOST)/bin/xorimage -i $(BIN_DIR)/openwrt-$(2)-$(1)-cfe-sysupgrade.bin \
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe-factory.bin
+	rm -f $(BIN_DIR)/openwrt-$(2)-$(1).tmp
 endef
 
 define Image/Build/ZYXCFEDTB
 	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(2).lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
-		--boardid $(3) --chipid $(4) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(5))" \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
+		--output $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
+		--boardid $(4) --chipid $(5) --entry $(KERNEL_ENTRY) \
+		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(2))" \
 		$(call rootfspad/$(1)) \
 		--info2 $(1) $(6)
 	# Fix up header
-	$(STAGING_DIR_HOST)/bin/zyxbcm -i $(BIN_DIR)/openwrt-$(5)-$(1).tmp \
-		-o $(BIN_DIR)/openwrt-$(5)-$(1)-zyxcfe.bin
-	rm -f $(BIN_DIR)/openwrt-$(5)-$(1).tmp
+	$(STAGING_DIR_HOST)/bin/zyxbcm -i $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
+		-o $(BIN_DIR)/openwrt-$(2)-$(1)-zyxcfe.bin
+	rm -f $(BIN_DIR)/openwrt-$(2)-$(1).tmp
 endef
 
 define Image/Build/RedBootDTB
-	gzip -9 -c $(KDIR)/vmlinux-$(2) > $(KDIR)/vmlinux-$(2).bin.gz
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(2) $(KDIR)/vmlinux-$(2).bin.l7
-	dd if=$(KDIR)/vmlinux-$(2).bin.l7 of=$(BIN_DIR)/openwrt-$(5)-vmlinux.lzma bs=65536 conv=sync
-	dd if=$(KDIR)/vmlinux-$(2).bin.gz of=$(BIN_DIR)/openwrt-$(5)-vmlinux.gz bs=65536 conv=sync
+	gzip -9 -c $(KDIR)/vmlinux-$(3) > $(KDIR)/vmlinux-$(3).bin.gz
+	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(3) $(KDIR)/vmlinux-$(3).bin.l7
+	dd if=$(KDIR)/vmlinux-$(3).bin.l7 of=$(BIN_DIR)/openwrt-$(2)-vmlinux.lzma bs=65536 conv=sync
+	dd if=$(KDIR)/vmlinux-$(3).bin.gz of=$(BIN_DIR)/openwrt-$(2)-vmlinux.gz bs=65536 conv=sync
 endef
 
 define Image/Build/HCS
@@ -174,20 +174,20 @@ endef
 
 # $(1) = Image build
 # $(2) = Profile
-# $(3) = dtb
-# $(4) = boardname
-# $(5) = chipid
-# $(6) = imagename
+# $(3) = imagename
+# $(4) = dtb
+# $(5) = boardname
+# $(6) = chipid
 # $(7) = additional options
 define ImageDTB
-  define Image/Build/$(6)
+  define Image/Build/$(3)
         $$(call Image/Build/$(1),$$(1),$(3),$(4),$(5),$(6),$(7))
   endef
 
-  TARGET_Default_DTBS += $(3)
-  TARGET_Default_IMAGES += $(6)
-  TARGET_$(2)_DTBS += $(3)
-  TARGET_$(2)_IMAGES += $(6)
+  TARGET_Default_DTBS += $(4)
+  TARGET_Default_IMAGES += $(3)
+  TARGET_$(2)_DTBS += $(4)
+  TARGET_$(2)_IMAGES += $(3)
 endef
 
 define Image/Build
@@ -212,126 +212,126 @@ define Image/Build
 endef
 
 # Generic 963281TAN
-$(eval $(call ImageDTB,CFEDTB,963281TAN,bcm963281TAN,963281TAN,6328,963281TAN-4M-flash-generic,--pad 2))
-$(eval $(call ImageDTB,CFEDTB,963281TAN,bcm963281TAN,963281TAN,6328,963281TAN-8M-flash-generic,--pad 4))
-$(eval $(call ImageDTB,CFEDTB,963281TAN,bcm963281TAN,963281TAN,6328,963281TAN-16M-flash-generic,--pad 8))
+$(eval $(call ImageDTB,CFEDTB,963281TAN,963281TAN-4M-flash-generic,bcm963281TAN,963281TAN,6328,--pad 2))
+$(eval $(call ImageDTB,CFEDTB,963281TAN,963281TAN-8M-flash-generic,bcm963281TAN,963281TAN,6328,--pad 4))
+$(eval $(call ImageDTB,CFEDTB,963281TAN,963281TAN-16M-flash-generic,bcm963281TAN,963281TAN,6328,--pad 8))
 # Generic 96328avng
-$(eval $(call ImageDTB,CFEDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-4M-flash-generic,--pad 2))
-$(eval $(call ImageDTB,CFEDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-8M-flash-generic,--pad 4))
-$(eval $(call ImageDTB,CFEDTB,96328avng,bcm96328avng,96328avng,6328,96328avng-16M-flash-generic,--pad 8))
+$(eval $(call ImageDTB,CFEDTB,96328avng,96328avng-4M-flash-generic,bcm96328avng,96328avng,6328,--pad 2))
+$(eval $(call ImageDTB,CFEDTB,96328avng,96328avng-8M-flash-generic,bcm96328avng,96328avng,6328,--pad 4))
+$(eval $(call ImageDTB,CFEDTB,96328avng,96328avng-16M-flash-generic,bcm96328avng,96328avng,6328,--pad 8))
 # Generic 96338GW
-$(eval $(call ImageDTB,CFEDTB,96338GW,bcm96338GW,6338GW,6338,96338GW-generic))
+$(eval $(call ImageDTB,CFEDTB,96338GW,96338GW-generic,bcm96338GW,6338GW,6338))
 # Generic 96338W
-$(eval $(call ImageDTB,CFEDTB,96338W,bcm96338W,6338W,6338,96338W-generic))
+$(eval $(call ImageDTB,CFEDTB,96338W,96338W-generic,bcm96338W,6338W,6338))
 # Generic 96345GW2
-$(eval $(call ImageDTB,CFEDTB,96345GW2,bcm96345GW2,96345GW2,6345,96345GW2-generic))
-$(eval $(call ImageDTB,CFEDTB,96345GW2,bcm96345GW2,96345GW2,6345,96345GW2-bc221,--layoutver 5))
+$(eval $(call ImageDTB,CFEDTB,96345GW2,96345GW2-generic,bcm96345GW2,96345GW2,6345))
+$(eval $(call ImageDTB,CFEDTB,96345GW2,96345GW2-bc221,bcm96345GW2,96345GW2,6345,--layoutver 5))
 # Generic 96348GW
-$(eval $(call ImageDTB,CFEDTB,96348GW,bcm96348GW,96348GW,6348,96348GW-generic))
-$(eval $(call ImageDTB,CFEDTB,96348GW,bcm96348GW,96348GW,6348,96348GW-bc221,--layoutver 5))
+$(eval $(call ImageDTB,CFEDTB,96348GW,96348GW-generic,bcm96348GW,96348GW,6348))
+$(eval $(call ImageDTB,CFEDTB,96348GW,96348GW-bc221,bcm96348GW,96348GW,6348,--layoutver 5))
 # Generic 96348GW-10
-$(eval $(call ImageDTB,CFEDTB,96348GW_10,bcm96348GW-10,96348GW-10,6348,96348GW-10-generic))
+$(eval $(call ImageDTB,CFEDTB,96348GW_10,96348GW-10-generic,bcm96348GW-10,96348GW-10,6348))
 # Generic 96348GW-11
-$(eval $(call ImageDTB,CFEDTB,96348GW_11,bcm96348GW-11,96348GW-11,6348,96348GW-11-generic))
+$(eval $(call ImageDTB,CFEDTB,96348GW_11,96348GW-11-generic,bcm96348GW-11,96348GW-11,6348))
 # Generic 96348R
-$(eval $(call ImageDTB,CFEDTB,96348R,bcm96348R,96348R,6348,96348R-generic))
+$(eval $(call ImageDTB,CFEDTB,96348R,96348R-generic,bcm96348R,96348R,6348))
 # Generic 96358VW
-$(eval $(call ImageDTB,CFEDTB,96358VW,bcm96358VW,96358VW,6358,96358VW-generic))
+$(eval $(call ImageDTB,CFEDTB,96358VW,96358VW-generic,bcm96358VW,96358VW,6358))
 # Generic 96358VW2
-$(eval $(call ImageDTB,CFEDTB,96358VW2,bcm96358VW2,96358VW2,6358,96358VW2-generic))
+$(eval $(call ImageDTB,CFEDTB,96358VW2,96358VW2-generic,bcm96358VW2,96358VW2,6358))
 # Generic 96368MVNgr
-$(eval $(call ImageDTB,CFEDTB,96368MVNgr,bcm96368MVNgr,96368MVNgr,6368,96368MVNgr-generic))
+$(eval $(call ImageDTB,CFEDTB,96368MVNgr,96368MVNgr-generic,bcm96368MVNgr,96368MVNgr,6368))
 # Generic 96368MVWG
-$(eval $(call ImageDTB,CFEDTB,96368MVWG,bcm96368MVWG,96368MVWG,6368,96368MVWG-generic))
+$(eval $(call ImageDTB,CFEDTB,96368MVWG,96368MVWG-generic,bcm96368MVWG,96368MVWG,6368))
 
 # ADB P.DG A4001N
-$(eval $(call ImageDTB,CFEDTB,A4001N,a4001n,96328dg2x2,6328,A4001N,--pad 8))
+$(eval $(call ImageDTB,CFEDTB,A4001N,A4001N,a4001n,96328dg2x2,6328,--pad 8))
 # ADB P.DG A4001N1
-$(eval $(call ImageDTB,CFEDTB,A4001N1,a4001n1,963281T_TEF,6328,A4001N1,--pad 8))
+$(eval $(call ImageDTB,CFEDTB,A4001N1,A4001N1,a4001n1,963281T_TEF,6328,--pad 8))
 # Alcatel RG100A
-$(eval $(call ImageDTB,CFEDTB,RG100A,rg100a,96358VW2,6358,RG100A,--block-size 0x20000 --image-offset 0x20000))
+$(eval $(call ImageDTB,CFEDTB,RG100A,RG100A,rg100a,96358VW2,6358,--block-size 0x20000 --image-offset 0x20000))
 # Asmax AR 1004g
-$(eval $(call ImageDTB,CFEDTB,AR1004G,ar1004g,96348GW-10,6348,AR1004G))
+$(eval $(call ImageDTB,CFEDTB,AR1004G,AR1004G,ar1004g,96348GW-10,6348))
 # Belkin F5D7633
-$(eval $(call ImageDTB,CFEDTB,F5D7633,f5d7633,96348GW-10,6348,F5D7633,--block-size 0x20000 --image-offset 0x20000))
+$(eval $(call ImageDTB,CFEDTB,F5D7633,F5D7633,f5d7633,96348GW-10,6348,--block-size 0x20000 --image-offset 0x20000))
 # Comtrend AR-5381u
-$(eval $(call ImageDTB,CFEDTB,AR5381u,ar-5381u,96328A-1241N,6328,AR-5381u,--pad 8))
+$(eval $(call ImageDTB,CFEDTB,AR5381u,AR-5381u,ar-5381u,96328A-1241N,6328,--pad 8))
 # Comtrend AR-5387un
-$(eval $(call ImageDTB,CFEDTB,AR5387un,ar-5387un,96328A-1441N1,6328,AR-5387un,--pad 8))
+$(eval $(call ImageDTB,CFEDTB,AR5387un,AR-5387un,ar-5387un,96328A-1441N1,6328,--pad 8))
 # Comtrend 536, 5621
-$(eval $(call ImageDTB,CFEDTB,CT536_CT5621,ct536plus,96348GW-11,6348,CT536_CT5621))
+$(eval $(call ImageDTB,CFEDTB,CT536_CT5621,CT536_CT5621,ct536plus,96348GW-11,6348))
 # Comtrend CT-5365
-$(eval $(call ImageDTB,CFEDTB,CT5365,ct-5365,96348A-122,6348,CT-5365))
+$(eval $(call ImageDTB,CFEDTB,CT5365,CT-5365,ct-5365,96348A-122,6348))
 # Comtrend CT-6373
-$(eval $(call ImageDTB,CFEDTB,CT6373,ct-6373,CT6373-1,6358,CT-6373))
+$(eval $(call ImageDTB,CFEDTB,CT6373,CT-6373,ct-6373,CT6373-1,6358))
 # Comtrend VR-3025u
-$(eval $(call ImageDTB,CFEDTB,VR3025u,vr-3025u,96368M-1541N,6368,VR-3025u,--pad 16 --image-offset 0x20000 --block-size 0x20000))
+$(eval $(call ImageDTB,CFEDTB,VR3025u,VR-3025u,vr-3025u,96368M-1541N,6368,--pad 16 --image-offset 0x20000 --block-size 0x20000))
 # Comtrend VR-3025un
-$(eval $(call ImageDTB,CFEDTB,VR3025un,vr-3025un,96368M-1341N,6368,VR-3025un,--pad 4))
+$(eval $(call ImageDTB,CFEDTB,VR3025un,VR-3025un,vr-3025un,96368M-1341N,6368,--pad 4))
 # Comtrend WAP-5813n
-$(eval $(call ImageDTB,CFEDTB,WAP5813n,wap-5813n,96369R-1231N,6368,WAP-5813n,--pad 4))
+$(eval $(call ImageDTB,CFEDTB,WAP5813n,WAP-5813n,wap-5813n,96369R-1231N,6368,--pad 4))
 # D-Link DSL-2640B, rev B2
-$(eval $(call ImageDTB,CFEDTB,DSL2640B_B,dsl-2640b-b,D-4P-W,6348,DSL2640B-B2))
+$(eval $(call ImageDTB,CFEDTB,DSL2640B-B2,DSL2640B_B,dsl-2640b-b,D-4P-W,6348))
 # D-Link DSL-2650U
-$(eval $(call ImageDTB,CFEDTB,DSL2650U,dsl-2650u,96358VW2,6358,DSL2650U))
+$(eval $(call ImageDTB,CFEDTB,DSL2650U,DSL2650U,dsl-2650u,96358VW2,6358))
 # D-Link DSL-2740B/DSL-2741B, rev C2
-$(eval $(call ImageDTB,CFEDTB,DSL274XB_C,dsl-274xb-c,96358GW,6358,DSL274XB-C2))
+$(eval $(call ImageDTB,CFEDTB,DSL274XB_C,DSL274XB-C2,dsl-274xb-c,96358GW,6358))
 # D-Link DSL-2740B/DSL-2741B, rev C3
-$(eval $(call ImageDTB,CFEDTB,DSL274XB_C,dsl-274xb-c,AW4139,6358,DSL274XB-C3))
+$(eval $(call ImageDTB,CFEDTB,DSL274XB_C,DSL274XB-C3,dsl-274xb-c,AW4139,6358))
 # D-Link DSL-2740B/DSL-2741B, rev F1
-$(eval $(call ImageDTB,CFEDTB,DSL274XB_F,dsl-274xb-f,AW4339U,6328,DSL274XB-F1-EU,--signature2 "4.06.01.EUF1" --pad 4))
-$(eval $(call ImageDTB,CFEDTB,DSL274XB_F,dsl-274xb-f,AW4339U,6328,DSL274XB-F1-AU,--signature2 "4.06.01.AUF1" --pad 4))
+$(eval $(call ImageDTB,CFEDTB,DSL274XB_F,DSL274XB-F1-EU,dsl-274xb-f,AW4339U,6328,--signature2 "4.06.01.EUF1" --pad 4))
+$(eval $(call ImageDTB,CFEDTB,DSL274XB_F,DSL274XB-F1-AU,dsl-274xb-f,AW4339U,6328,--signature2 "4.06.01.AUF1" --pad 4))
 # D-Link DVA-G3810BN/TL
-$(eval $(call ImageDTB,CFEDTB,DVAG3810BN,dva-g3810bn_tl,96358VW,6358,DVAG3810BN))
+$(eval $(call ImageDTB,CFEDTB,DVAG3810BN,DVAG3810BN,dva-g3810bn_tl,96358VW,6358))
 # Davolink DV-201AMR
-$(eval $(call ImageDTB,OLDCFEDTB,DV201AMR,dv-201amr,DV201AMR,6348,DV-201AMR))
+$(eval $(call ImageDTB,OLDCFEDTB,DV201AMR,DV-201AMR,dv-201amr,DV201AMR,6348))
 # Huawei HG520v
-$(eval $(call ImageDTB,CFEDTB,HG520v,hg520v,HW6358GW_B,6358,HG520v,--rsa-signature "EchoLife_HG520v"))
+$(eval $(call ImageDTB,CFEDTB,HG520v,HG520v,hg520v,HW6358GW_B,6358,--rsa-signature "EchoLife_HG520v"))
 # Huawei HG553
-$(eval $(call ImageDTB,CFEDTB,HG553,hg553,HW553,6358,HG553,--rsa-signature "EchoLife_HG553" --image-offset 0x20000 --block-size 0x20000 --tag-version 7))
+$(eval $(call ImageDTB,CFEDTB,HG553,HG553,hg553,HW553,6358,--rsa-signature "EchoLife_HG553" --image-offset 0x20000 --block-size 0x20000 --tag-version 7))
 # Huawei HG556a
-$(eval $(call ImageDTB,CFEDTB,HG556a_AB,hg556a-a,HW556,6358,HG556a_A,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x10000 --tag-version 8))
-$(eval $(call ImageDTB,CFEDTB,HG556a_AB,hg556a-b,HW556,6358,HG556a_B,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
-$(eval $(call ImageDTB,CFEDTB,HG556a_C,hg556a-c,HW556,6358,HG556a_C,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,HG556a_AB,HG556a_A,hg556a-a,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x10000 --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,HG556a_AB,HG556a_B,hg556a-b,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,HG556a_C,HG556a_C,hg556a-c,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 # Inventel Livebox 1
-$(eval $(call ImageDTB,RedBootDTB,Livebox,livebox-blue-5g,,,livebox))
+$(eval $(call ImageDTB,RedBootDTB,Livebox,livebox,livebox-blue-5g))
 # Netgear DG834GT/PN
-$(eval $(call ImageDTB,CFEDTB,DG834GTPN,dg834gtpn,96348GW-10,6348,DG834GT_PN))
+$(eval $(call ImageDTB,CFEDTB,DG834GTPN,DG834GT_PN,dg834gtpn,96348GW-10,6348))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
-$(eval $(call ImageDTB,CFEDTB,AGPF_S0,agpf-s0,AGPF-S0,6358,AGV2+W,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,AGPF_S0,AGV2+W,agpf-s0,AGPF-S0,6358,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # Pirelli A226G
-$(eval $(call ImageDTB,CFEDTB,A226G,a226g,DWV-S0,6358,A226G,--signature2 IMAGE --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,A226G,A226G,a226g,DWV-S0,6358,--signature2 IMAGE --tag-version 8))
 # Pirelli A226M/A226M-FWB
-$(eval $(call ImageDTB,CFEDTB,A226M,a226m,DWV-S0,6358,A226M,--signature2 IMAGE --tag-version 8))
-$(eval $(call ImageDTB,CFEDTB,A226M,a226m-fwb,DWV-S0,6358,A226M-FWB,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,A226M,A226M,a226m,DWV-S0,6358,--signature2 IMAGE --tag-version 8))
+$(eval $(call ImageDTB,CFEDTB,A226M,A226M-FWB,a226m-fwb,DWV-S0,6358,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # Sagem F@ST2404
-$(eval $(call ImageDTB,CFEDTB,FAST2404,fast2404,F@ST2404,6348,F@ST2404))
+$(eval $(call ImageDTB,CFEDTB,FAST2404,F@ST2404,fast2404,F@ST2404,6348))
 # Sagem F@ST2504n
-$(eval $(call ImageDTB,CFEDTB,FAST2504n,fast2504n,F@ST2504n,6362,F@ST2504n))
+$(eval $(call ImageDTB,CFEDTB,FAST2504n,F@ST2504n,fast2504n,F@ST2504n,6362))
 # Sagem F@ST2604
-$(eval $(call ImageDTB,CFEDTB,FAST2604,fast2604,F@ST2604,6348,F@ST2604))
+$(eval $(call ImageDTB,CFEDTB,FAST2604,F@ST2604,fast2604,F@ST2604,6348))
 # Sagem F@ST2704V2
-$(eval $(call ImageDTB,CFEDTB,FAST2704V2,fast2704v2,F@ST2704V2,6328,F@ST2704V2))
+$(eval $(call ImageDTB,CFEDTB,FAST2704V2,F@ST2704V2,fast2704v2,F@ST2704V2,6328))
 # SFR Neufbox 4
-$(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-ser-r0,96358VW,6358,NEUFBOX4-SER,--rsa-signature "OpenWRT-$(REVISION)"))
-$(eval $(call ImageDTB,CFEDTB,Neufbox4,nb4-fxc-r1,96358VW,6358,NEUFBOX4-FXC,--rsa-signature "OpenWRT-$(REVISION)"))
+$(eval $(call ImageDTB,CFEDTB,Neufbox4,NEUFBOX4-SER,nb4-ser-r0,96358VW,6358,--rsa-signature "OpenWRT-$(REVISION)"))
+$(eval $(call ImageDTB,CFEDTB,Neufbox4,NEUFBOX4-FXC,nb4-fxc-r1,96358VW,6358,--rsa-signature "OpenWRT-$(REVISION)"))
 # SFR Neufbox 6
-$(eval $(call ImageDTB,CFEDTB,Neufbox6,nb6-ser-r0,NB6-SER-r0,6362,NEUFBOX6,--rsa-signature "OpenWRT-$(REVISION)"))
+$(eval $(call ImageDTB,CFEDTB,Neufbox6,NEUFBOX6,nb6-ser-r0,NB6-SER-r0,6362,--rsa-signature "OpenWRT-$(REVISION)"))
 # T-Com Speedport W 303V Typ B
-$(eval $(call ImageDTB,SPW303VCFEDTB,SPW303V,spw303v,96358-502V,6358,SPW303V,--pad 4))
+$(eval $(call ImageDTB,SPW303VCFEDTB,SPW303V,SPW303V,spw303v,96358-502V,6358,--pad 4))
 # T-Com Speedport W 500V
-$(eval $(call ImageDTB,CFEDTB,SPW500V,spw500v,96348GW,6348,SPW500V))
+$(eval $(call ImageDTB,CFEDTB,SPW500V,SPW500V,spw500v,96348GW,6348))
 # Tecom GW6000
-$(eval $(call ImageDTB,CFEDTB,GW6000,gw6000,96348GW,6348,GW6000))
+$(eval $(call ImageDTB,CFEDTB,GW6000,GW6000,gw6000,96348GW,6348))
 # Tecom GW6200
-$(eval $(call ImageDTB,CFEDTB,GW6200,gw6200,96348GW,6348,GW6200,--rsa-signature "$(shell printf '\x99')"))
+$(eval $(call ImageDTB,CFEDTB,GW6200,GW6200,gw6200,96348GW,6348,--rsa-signature "$(shell printf '\x99')"))
 # Telsey CPVA642-type (e.g. CPA-ZNTE60T)
-$(eval $(call ImageDTB,CFEDTB,CPVA642,cpva642,CPVA642,6358,CPA-ZNTE60T,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4))
+$(eval $(call ImageDTB,CFEDTB,CPVA642,CPA-ZNTE60T,cpva642,CPVA642,6358,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4))
 # TP-Link TD-W8900GB
-$(eval $(call ImageDTB,CFEDTB,TDW8900GB,td-w8900gb,96348GW-11,6348,TD-W8900GB,--rsa-signature "$(shell printf 'PRID\x89\x10\x00\x02')" --image-offset 0x20000))
+$(eval $(call ImageDTB,CFEDTB,TDW8900GB,TD-W8900GB,td-w8900gb,96348GW-11,6348,--rsa-signature "$(shell printf 'PRID\x89\x10\x00\x02')" --image-offset 0x20000))
 # USRobotics 9108
-$(eval $(call ImageDTB,CFEDTB,USR9108,usr9108,96348GW-A,6348,USR9108))
+$(eval $(call ImageDTB,CFEDTB,USR9108,USR9108,usr9108,96348GW-A,6348))
 # ZyXEL P870HW-51a v2
-$(eval $(call ImageDTB,ZYXCFEDTB,P870HW_51a_v2,p870hw-51a-v2,96368VVW,6368,P870HW-51a_v2,--rsa-signature "ZyXEL" --signature "ZyXEL_0001"))
+$(eval $(call ImageDTB,ZYXCFEDTB,P870HW_51a_v2,96368VVW,p870hw-51a-v2,6368,P870HW-51a_v2,--rsa-signature "ZyXEL" --signature "ZyXEL_0001"))
 
 $(eval $(call BuildImage))
