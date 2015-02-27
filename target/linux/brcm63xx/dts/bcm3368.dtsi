@@ -5,6 +5,8 @@
 
 	aliases {
 		pflash = &pflash;
+		gpio0 = &gpio0;
+		gpio1 = &gpio1;
 	};
 
 	cpus {
@@ -70,6 +72,24 @@
 
 			interrupt-parent = <&periph_intc>;
 			interrupts = <24>, <25>, <26>, <27>;
+		};
+
+		gpio1: gpio-controller@fff8c080 {
+			compatible = "brcm,6345-gpio";
+			reg = <0xfff8c080 4>, <0xfff8c088 4>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			ngpios = <8>;
+		};
+
+		gpio0: gpio-controller@fff8c084 {
+			compatible = "brcm,6345-gpio";
+			reg = <0xfff8c084 4>, <0xfff8c08c 4>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };

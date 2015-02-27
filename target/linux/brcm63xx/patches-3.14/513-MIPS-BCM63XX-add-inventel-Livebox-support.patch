@@ -57,7 +57,7 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
  #endif /* __BOARD_COMMON_H */
 --- /dev/null
 +++ b/arch/mips/bcm63xx/boards/board_livebox.c
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,212 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -111,7 +111,7 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 +	},
 +
 +	.ephy_reset_gpio		= 6,
-+	.ephy_reset_gpio_flags		= GPIOF_INIT_HIGH,
++	.ephy_reset_gpio_flags		= GPIO_ACTIVE_LOW,
 +
 +	.has_ohci0			= 1,
 +	.has_pccard			= 1,
@@ -168,9 +168,6 @@ Subject: [PATCH] MIPS: BCM63XX: add inventel Livebox support
 +		},
 +
 +	},
-+
-+	.ephy_reset_gpio		= 6,
-+	.ephy_reset_gpio_flags		= GPIOF_INIT_HIGH,
 +};
 +#endif
 +
