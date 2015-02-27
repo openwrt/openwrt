@@ -64,19 +64,25 @@ static int b53_mmap_read32(struct b53_device *dev, u8 page, u8 reg, u32 *val)
 
 static int b53_mmap_read48(struct b53_device *dev, u8 page, u8 reg, u64 *val)
 {
-	u8 __iomem *regs = dev->priv;
-
-	if (WARN_ON(reg % 4))
+	if (WARN_ON(reg % 2))
 		return -EINVAL;
 
-	if (dev->pdata && dev->pdata->big_endian) {
-		*val = readl_be(regs + (page << 8) + reg);
-		*val <<= 16;
-		*val |= readw_be(regs + (page << 8) + reg + 4);
+	if (reg % 4) {
+		u16 lo;
+		u32 hi;
+
+		b53_mmap_read16(dev, page, reg, &lo);
+		b53_mmap_read32(dev, page, reg + 2, &hi);
+
+		*val = ((u64)hi << 16) | lo;
 	} else {
-		*val |= readw(regs + (page << 8) + reg + 4);
-		*val <<= 32;
-		*val = readl(regs + (page << 8) + reg);
+		u32 lo;
+		u16 hi;
+
+		b53_mmap_read32(dev, page, reg, &lo);
+		b53_mmap_read16(dev, page, reg + 4, &hi);
+
+		*val = ((u64)hi << 32) | lo;
 	}
 
 	return 0;
@@ -84,19 +90,13 @@ static int b53_mmap_read48(struct b53_device *dev, u8 page, u8 reg, u64 *val)
 
 static int b53_mmap_read64(struct b53_device *dev, u8 page, u8 reg, u64 *val)
 {
-	u8 __iomem *regs = dev->priv;
 	u32 hi, lo;
 
 	if (WARN_ON(reg % 4))
 		return -EINVAL;
 
-	if (dev->pdata && dev->pdata->big_endian) {
-		lo = readl_be(regs + (page << 8) + reg);
-		hi = readl_be(regs + (page << 8) + reg + 4);
-	} else {
-		lo = readl(regs + (page << 8) + reg);
-		hi = readl(regs + (page << 8) + reg + 4);
-	}
+	b53_mmap_read32(dev, page, reg, &lo);
+	b53_mmap_read32(dev, page, reg + 4, &hi);
 
 	*val = ((u64)hi << 32) | lo;
 
@@ -147,17 +147,21 @@ static int b53_mmap_write32(struct b53_device *dev, u8 page, u8 reg,
 static int b53_mmap_write48(struct b53_device *dev, u8 page, u8 reg,
 				    u64 value)
 {
-	u8 __iomem *regs = dev->priv;
-
-	if (WARN_ON(reg % 4))
+	if (WARN_ON(reg % 2))
 		return -EINVAL;
 
-	if (dev->pdata && dev->pdata->big_endian) {
-		writel_be((u32)(value >> 16), regs + (page << 8) + reg);
-		writew_be((u16)value, regs + (page << 8) + reg + 4);
+	if (reg % 4) {
+		u32 hi = (u32)(value >> 16);
+		u16 lo = (u16)value;
+
+		b53_mmap_write16(dev, page, reg, lo);
+		b53_mmap_write32(dev, page, reg + 2, hi);
 	} else {
-		writel((u32)value, regs + (page << 8) + reg);
-		writew((u16)(value >> 32), regs + (page << 8) + reg + 4);
+		u16 hi = (u16)(value >> 32);
+		u32 lo = (u32)value;
+
+		b53_mmap_write32(dev, page, reg, lo);
+		b53_mmap_write16(dev, page, reg + 4, hi);
 	}
 
 	return 0;
@@ -166,18 +170,16 @@ static int b53_mmap_write48(struct b53_device *dev, u8 page, u8 reg,
 static int b53_mmap_write64(struct b53_device *dev, u8 page, u8 reg,
 			     u64 value)
 {
-	u8 __iomem *regs = dev->priv;
+	u32 hi, lo;
+
+	hi = (u32)(value >> 32);
+	lo = (u32)value;
 
 	if (WARN_ON(reg % 4))
 		return -EINVAL;
 
-	if (dev->pdata && dev->pdata->big_endian) {
-		writel_be((u32)(value >> 32), regs + (page << 8) + reg);
-		writel_be((u32)value, regs + (page << 8) + reg + 4);
-	} else {
-		writel((u32)value, regs + (page << 8) + reg);
-		writel((u32)(value >> 32), regs + (page << 8) + reg + 4);
-	}
+	b53_mmap_write32(dev, page, reg, lo);
+	b53_mmap_write32(dev, page, reg + 4, hi);
 
 	return 0;
 }
