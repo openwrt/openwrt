@@ -5,6 +5,87 @@
 / {
 	model = "Pirelli Alice Gate AGPF-S0";
 	compatible = "pirelli,agpf-s0", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x211>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "AGPF-S0:green:power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+		power_red {
+			label = "AGPF-S0:red:power";
+			gpios = <&gpio0 5 1>;
+		};
+		service_green {
+			label = "AGPF-S0:green:service";
+			gpios = <&gpio0 6 1>;
+		};
+		service_red {
+			label = "AGPF-S0:red:service";
+			gpios = <&gpio0 7 1>;
+		};
+		dsl_green {
+			label = "AGPF-S0:green:adsl";
+			gpios = <&gpio0 9 1>;
+		};
+		dsl_red {
+			label = "AGPF-S0:red:adsl";
+			gpios = <&gpio0 10 1>;
+		};
+		wifi_green {
+			label = "AGPF-S0:green:wifi";
+			gpios = <&gpio0 22 1>;
+		};
+		wifi_red {
+			label = "AGPF-S0:red:wifi";
+			gpios = <&gpio0 23 1>;
+		};
+		inet_red {
+			label = "AGPF-S0:red:internet";
+			gpios = <&gpio0 24 1>;
+		};
+		inet_green {
+			label = "AGPF-S0:green:internet";
+			gpios = <&gpio0 25 1>;
+		};
+		usr1_green {
+			label = "AGPF-S0:green:usr1";
+			gpios = <&gpio0 26 1>;
+		};
+		usr1_red {
+			label = "AGPF-S0:red:usr1";
+			gpios = <&gpio0 27 1>;
+		};
+		usr2_green {
+			label = "AGPF-S0:green:usr2";
+			gpios = <&gpio0 29 1>;
+		};
+		usr2_red {
+			label = "AGPF-S0:red:usr2";
+			gpios = <&gpio0 30 1>;
+		};
+	};
 };
 
 &pflash {

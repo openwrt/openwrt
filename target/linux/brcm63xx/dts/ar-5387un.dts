@@ -5,4 +5,44 @@
 / {
 	model = "Comtrend AR-5387un";
 	compatible = "comtrend,ar-5387un", "brcm,bcm6328";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 23 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet_red {
+			label = "AR-5387un:red:inet";
+			gpios = <&gpio0 1 0>;
+		};
+		power_red {
+			label = "AR-5387un:red:power";
+			gpios = <&gpio0 4 0>;
+		};
+		inet_green {
+			label = "AR-5387un:green:inet";
+			gpios = <&gpio0 7 0>;
+		};
+		power_green {
+			label = "AR-5387un:green:power";
+			gpios = <&gpio0 8 0>;
+			default-state = "on";
+		};
+		dsl_green {
+			label = "AR-5387un:green:dsl";
+			gpios = <&gpio0 11 1>;
+		};
+	};
 };

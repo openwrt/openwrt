@@ -5,6 +5,71 @@
 / {
 	model = "Telsey CPVA642-type (CPA-ZNTE60T)";
 	compatible = "telsey,cpva642", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 4 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio1 5 0>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		eth_green {
+			label = "CPVA642:green:ether";
+			gpios = <&gpio0 1 1>;
+		};
+		phone2_green {
+			label = "CPVA642:green:phone2";
+			gpios = <&gpio0 2 1>;
+		};
+		usb_green {
+			label = "CPVA642:green:usb";
+			gpios = <&gpio0 3 1>;
+		};
+		phone1_green {
+			label = "CPVA642:green:phone1";
+			gpios = <&gpio0 4 1>;
+		};
+		wifi_red {
+			label = "CPVA642:red:wifi";
+			gpios = <&gpio0 6 1>;
+		};
+		link_red {
+			label = "CPVA642:red:link";
+			gpios = <&gpio0 9 1>;
+		};
+		link_green {
+			label = "CPVA642:green:link";
+			gpios = <&gpio0 10 1>;
+		};
+		power_green {
+			label = "CPVA642:green:power";
+			gpios = <&gpio0 11 1>;
+			default-state = "on";
+		};
+		power_red {
+			label = "CPVA642:red:power";
+			gpios = <&gpio0 14 1>;
+		};
+		wifi_green {
+			label = "CPVA642:green:wifi";
+			gpios = <&gpio0 28 0>;
+		};
+	};
 };
 
 &pflash {

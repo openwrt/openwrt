@@ -10,8 +10,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  arch/mips/bcm63xx/gpio.c |   16 +++++++++++++---
  1 file changed, 13 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/bcm63xx/gpio.c b/arch/mips/bcm63xx/gpio.c
-index 70cd05b..cf0b819 100644
 --- a/arch/mips/bcm63xx/gpio.c
 +++ b/arch/mips/bcm63xx/gpio.c
 @@ -20,6 +20,8 @@
@@ -23,7 +21,7 @@ index 70cd05b..cf0b819 100644
  /* for registering lookups; make them large enough to hold OF names */
  static char *gpio_chip_labels[] = {
  	"xxxxxxxx.gpio-controller",
-@@ -49,9 +51,17 @@ static void __init bcm63xx_gpio_init_one(int id, int dir, int data, int ngpio)
+@@ -49,9 +51,17 @@ static void __init bcm63xx_gpio_init_one
  	pdata.base = id * 32;
  	pdata.ngpio = ngpio;
  
@@ -44,6 +42,3 @@ index 70cd05b..cf0b819 100644
  }
  
  int __init bcm63xx_gpio_init(void)
--- 
-1.7.10.4
-

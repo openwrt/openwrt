@@ -6,7 +6,7 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
 ---
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -3457,6 +3457,96 @@ static struct board_info __initdata boar
+@@ -1834,6 +1834,43 @@ static struct board_info __initdata boar
  	.devs = nb6_devices,
  	.num_devs = ARRAY_SIZE(nb6_devices),
  };
@@ -46,64 +46,11 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
 +			},
 +		},
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "fast2504n:orange:power",
-+			.gpio		= 2,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "fast2504n:green:power",
-+			.gpio		= 10,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "fast2504n:red:internet",
-+			.gpio		= 26,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "fast2504n:green:ok",
-+			.gpio		= 28,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "fast2504n:orange:ok",
-+			.gpio		= 29,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "fast2504n:orange:wlan",
-+			.gpio		= 30,
-+			.active_low	= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 24,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+			.active_low	= 1,
-+		},
-+		{
-+			.desc		= "wps",
-+			.gpio		= 25,
-+			.type		= EV_KEY,
-+			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+			.active_low	= 1,
-+		},
-+	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6362 */
  
  /*
-@@ -3674,6 +3764,7 @@ static const struct board_info __initcon
+@@ -1999,6 +2036,7 @@ static const struct board_info __initcon
  
  #ifdef CONFIG_BCM63XX_CPU_6362
  	&board_nb6,
@@ -111,7 +58,7 @@ Signed-off-by: Max Staudt <openwrt.max@enpas.org>
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6368
-@@ -3748,6 +3839,7 @@ static struct of_device_id const bcm963x
+@@ -2073,6 +2111,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6362

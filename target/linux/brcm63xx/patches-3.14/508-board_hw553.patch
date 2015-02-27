@@ -1,8 +1,8 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1458,6 +1458,83 @@ static struct board_info __initdata boar
- 	.spis = nb4_spi_devices,
- 	.num_spis = ARRAY_SIZE(nb4_spi_devices),
+@@ -991,6 +991,34 @@ static struct board_info __initdata boar
+ 	.has_ehci0 = 1,
+ 	.num_usbh_ports			= 2,
  };
 +
 +static struct board_info __initdata board_HW553 = {
@@ -26,55 +26,6 @@
 +	.has_ehci0 = 1,
 +	.num_usbh_ports			= 2,
 +
-+	.leds = {
-+		{
-+			.name		= "HW553:red:adsl",
-+			.gpio		= 34,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:blue:adsl",
-+			.gpio		= 35,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:red:lan",
-+			.gpio		= 22,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:blue:lan",
-+			.gpio		= 23,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:red:power",
-+			.gpio		= 5,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:blue:power",
-+			.gpio		= 4,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "HW553:red:wifi",
-+			.gpio		= 25,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:red:hspa",
-+			.gpio		= 12,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "HW553:blue:hspa",
-+			.gpio		= 13,
-+			.active_low	= 1,
-+		},
-+	},
-+
 +	.fallback_sprom = {
 +		.type 				= SPROM_BCM4318,
 +		.pci_bus			= 0,
@@ -84,7 +35,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -1503,6 +1580,7 @@ static const struct board_info __initcon
+@@ -1036,6 +1064,7 @@ static const struct board_info __initcon
  	&board_dsl_274xb_rev_c,
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
@@ -92,7 +43,7 @@
  #endif
  };
  
-@@ -1544,6 +1622,7 @@ static struct of_device_id const bcm963x
+@@ -1077,6 +1106,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
  	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
  	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },

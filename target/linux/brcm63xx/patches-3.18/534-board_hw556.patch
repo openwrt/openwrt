@@ -6,9 +6,9 @@
  #include <linux/input.h>
 +#include <linux/pci_ids.h>
  #include <linux/platform_device.h>
- #include <linux/spi/spi.h>
- #include <linux/spi/spi_gpio.h>
-@@ -2660,6 +2661,402 @@ static struct board_info __initdata boar
+ #include <linux/rtl8367.h>
+ #include <asm/addrspace.h>
+@@ -1547,6 +1548,93 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -39,105 +39,6 @@
 +		.force_speed_100		= 1,
 +		.force_duplex_full		= 1,
 +	},
-+
-+	.leds = {
-+		{
-+			.name			= "HW556:green:lan1",
-+			.gpio			= 0,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan2",
-+			.gpio			= 1,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:dsl",
-+			.gpio			= 2,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:power",
-+			.gpio			= 3,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "HW556:red:message",
-+			.gpio			= 12,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan1",
-+			.gpio			= 13,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:hspa",
-+			.gpio			= 15,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan2",
-+			.gpio			= 22,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan3",
-+			.gpio			= 23,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan3",
-+			.gpio			= 26,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan4",
-+			.gpio			= 27,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan4",
-+			.gpio			= 28,
-+			.active_low		= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "help",
-+			.gpio			= 8,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_HELP,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "wlan",
-+			.gpio			= 9,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_WLAN,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "restart",
-+			.gpio			= 10,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "reset",
-+			.gpio			= 11,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_CONFIG,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
 +static struct board_info __initdata board_HW556_A = {
 +	.name					= "HW556_A",
@@ -166,111 +67,6 @@
 +		.phy_id				= 0,
 +		.force_speed_100		= 1,
 +		.force_duplex_full		= 1,
-+	},
-+
-+	.leds = {
-+		{
-+			.name			= "HW556:red:message",
-+			.gpio			= 0,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:hspa",
-+			.gpio			= 1,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:dsl",
-+			.gpio			= 2,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:power",
-+			.gpio			= 3,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "HW556:red:all",
-+			.gpio			= 6,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "HW556:green:lan1",
-+			.gpio			= 12,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan1",
-+			.gpio			= 13,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan2",
-+			.gpio			= 15,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan2",
-+			.gpio			= 22,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan3",
-+			.gpio			= 23,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan3",
-+			.gpio			= 26,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan4",
-+			.gpio			= 27,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan4",
-+			.gpio			= 28,
-+			.active_low		= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "help",
-+			.gpio			= 8,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_HELP,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "wlan",
-+			.gpio			= 9,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_WLAN,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "restart",
-+			.gpio			= 10,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "reset",
-+			.gpio			= 11,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_CONFIG,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
 +	},
 +};
 +static struct board_info __initdata board_HW556_B = {
@@ -301,117 +97,12 @@
 +		.force_speed_100		= 1,
 +		.force_duplex_full		= 1,
 +	},
-+
-+	.leds = {
-+		{
-+			.name			= "HW556:red:message",
-+			.gpio			= 0,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:hspa",
-+			.gpio			= 1,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:dsl",
-+			.gpio			= 2,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:power",
-+			.gpio			= 3,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "HW556:red:all",
-+			.gpio			= 6,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "HW556:green:lan1",
-+			.gpio			= 12,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan1",
-+			.gpio			= 13,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan2",
-+			.gpio			= 15,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan2",
-+			.gpio			= 22,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan3",
-+			.gpio			= 23,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan3",
-+			.gpio			= 26,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:green:lan4",
-+			.gpio			= 27,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "HW556:red:lan4",
-+			.gpio			= 28,
-+			.active_low		= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "help",
-+			.gpio			= 8,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_HELP,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "wlan",
-+			.gpio			= 9,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_WLAN,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "restart",
-+			.gpio			= 10,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "reset",
-+			.gpio			= 11,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_CONFIG,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
 +
   /* T-Home Speedport W 303V Typ B */
  static struct board_info __initdata board_spw303v = {
  	.name			= "96358-502V",
-@@ -3096,6 +3493,9 @@ static const struct board_info __initcon
+@@ -1808,6 +1896,9 @@ static const struct board_info __initcon
  	&board_nb4_fxc_r1,
  	&board_ct6373_1,
  	&board_HW553,
@@ -421,7 +112,7 @@
  	&board_spw303v,
  	&board_DVAG3810BN,
  #endif
-@@ -3162,6 +3562,9 @@ static struct of_device_id const bcm963x
+@@ -1874,6 +1965,9 @@ static struct of_device_id const bcm963x
  	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
  	{ .compatible = "d-link,dva-g3810bn/tl", .data = &board_DVAG3810BN, },
  	{ .compatible = "huawei,hg553", .data = &board_HW553, },

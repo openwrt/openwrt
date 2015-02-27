@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -531,6 +531,58 @@ static struct board_info __initdata boar
+@@ -446,6 +446,34 @@ static struct board_info __initdata boar
  };
  
  
@@ -25,30 +25,6 @@
 +	.has_pccard = 1,
 +	.has_ehci0 = 1,
 +
-+	.leds = {
-+		{
-+			.name		= "CT536_CT5621:green:adsl-fail",
-+			.gpio		= 2,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "CT536_CT5621:green:power",
-+			.gpio		= 0,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+	},
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 33,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
-+
 +	.fallback_sprom = {
 +		.type 				= SPROM_BCM4318,
 +		.pci_bus			= 0,
@@ -59,7 +35,7 @@
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -1794,6 +1846,7 @@ static const struct board_info __initcon
+@@ -1126,6 +1154,7 @@ static const struct board_info __initcon
  	&board_96348sv,
  	&board_V2500V_BB,
  	&board_V2110,
@@ -67,7 +43,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1833,6 +1886,8 @@ static struct of_device_id const bcm963x
+@@ -1165,6 +1194,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
  	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },
  	{ .compatible = "bt,v2500v-bb", .data = &board_V2500V_BB, },

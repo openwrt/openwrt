@@ -5,6 +5,83 @@
 / {
 	model = "Pirelli A226G";
 	compatible = "pirelli,a226g", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x211>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		voip_red {
+			label = "DWV-S0:red:VoIP";
+			gpios = <&gpio0 0 1>;
+		};
+		eth_red {
+			label = "DWV-S0:red:ethernet";
+			gpios = <&gpio0 1 1>;
+		};
+		dsl_green {
+			label = "DWV-S0:green:ADSL";
+			gpios = <&gpio0 2 1>;
+		};
+		usb_green {
+			label = "DWV-S0:green:USB";
+			gpios = <&gpio0 3 1>;
+		};
+		power_green {
+			label = "DWV-S0:green:power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+		power_red {
+			label = "DWV-S0:red:power";
+			gpios = <&gpio0 5 1>;
+		};
+		inet_red {
+			label = "DWV-S0:red:internet";
+			gpios = <&gpio0 6 1>;
+		};
+		inet_green {
+			label = "DWV-S0:green:internet";
+			gpios = <&gpio0 7 1>;
+		};
+		eth_green {
+			label = "DWV-S0:green:ethernet";
+			gpios = <&gpio0 8 1>;
+		};
+		voip_green {
+			label = "DWV-S0:green:VoIP";
+			gpios = <&gpio0 9 1>;
+		};
+		wifi_red {
+			label = "DWV-S0:red:wifi";
+			gpios = <&gpio0 10 1>;
+		};
+		usb_red {
+			label = "DWV-S0:red:USB";
+			gpios = <&gpio0 11 1>;
+		};
+		dsl_red {
+			label = "DWV-S0:red:ADSL";
+			gpios = <&gpio0 12 1>;
+		};
+	};
 };
 
 &pflash {

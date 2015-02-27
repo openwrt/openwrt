@@ -5,4 +5,36 @@
 / {
 	model = "Comtrend AR-5381u";
 	compatible = "comtrend,ar-5381u", "brcm,bcm6328";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 23 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		alarm_red {
+			label = "AR-5381u:red:alarm";
+			gpios = <&gpio0 2 1>;
+		};
+		inet_green {
+			label = "AR-5381u:green:inet";
+			gpios = <&gpio0 3 1>;
+		};
+		power_green {
+			label = "AR-5381u:green:power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+	};
 };

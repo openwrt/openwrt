@@ -5,4 +5,34 @@
 / {
 	model = "Broadcom bcm963281TAN reference board";
 	compatible = "brcm,bcm963281TAN", "brcm,bcm6328";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet {
+			label = "963281TAN::internet";
+			gpios = <&gpio0 1 1>;
+		};
+		power {
+			label = "963281TAN::power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+		inet_fail {
+			label = "963281TAN::internet-fail";
+			gpios = <&gpio0 7 1>;
+		};
+		power_fail {
+			label = "963281TAN::power-fail";
+			gpios = <&gpio0 8 1>;
+		};
+		wps {
+			label = "963281TAN::wps";
+			gpios = <&gpio0 9 1>;
+		};
+		dsl {
+			label = "963281TAN::dsl";
+			gpios = <&gpio0 11 1>;
+		};
+	};
 };

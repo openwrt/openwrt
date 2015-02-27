@@ -5,6 +5,89 @@
 / {
 	model = "Huawei EchoLife HG556a (version C)";
 	compatible = "huawei,hg556a-c", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		help {
+			label = "help";
+			gpios = <&gpio0 8 1>;
+			linux,code = <0x8a>;
+		};
+		wlan {
+			label = "wlan";
+			gpios = <&gpio0 9 1>;
+			linux,code = <0xee>;
+		};
+		restart {
+			label = "restart";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 11 1>;
+			linux,code = <0xab>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		lan1_green {
+			label = "HW556:green:lan1";
+			gpios = <&gpio0 0 1>;
+		};
+		lan2_green {
+			label = "HW556:green:lan2";
+			gpios = <&gpio0 1 1>;
+		};
+		dsl_red {
+			label = "HW556:red:dsl";
+			gpios = <&gpio0 2 1>;
+		};
+		power_red {
+			label = "HW556:red:power";
+			gpios = <&gpio0 3 1>;
+			default-state = "on";
+		};
+		message_red {
+			label = "HW556:red:message";
+			gpios = <&gpio0 12 1>;
+		};
+		lan1_red {
+			label = "HW556:red:lan1";
+			gpios = <&gpio0 13 1>;
+		};
+		hspa_red {
+			label = "HW556:red:hspa";
+			gpios = <&gpio0 15 1>;
+		};
+		lan2_red {
+			label = "HW556:red:lan2";
+			gpios = <&gpio0 22 1>;
+		};
+		lan3_green {
+			label = "HW556:green:lan3";
+			gpios = <&gpio0 23 1>;
+		};
+		lan3_red {
+			label = "HW556:red:lan3";
+			gpios = <&gpio0 26 1>;
+		};
+		lan4_green {
+			label = "HW556:green:lan4";
+			gpios = <&gpio0 27 1>;
+		};
+		lan4_red {
+			label = "HW556:red:lan4";
+			gpios = <&gpio0 28 1>;
+		};
+	};
 };
 
 &pflash {

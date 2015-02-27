@@ -5,6 +5,48 @@
 / {
 	model = "Huawei EchoLife HG553";
 	compatible = "huawei,hg553", "brcm,bcm6358";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "HW553:blue:power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+		power_red {
+			label = "HW553:red:power";
+			gpios = <&gpio0 5 1>;
+		};
+		hspa_red {
+			label = "HW553:red:hspa";
+			gpios = <&gpio0 12 1>;
+		};
+		hspa_blue {
+			label = "HW553:blue:hspa";
+			gpios = <&gpio0 13 1>;
+		};
+		lan_red {
+			label = "HW553:red:lan";
+			gpios = <&gpio0 22 1>;
+		};
+		lan_blue {
+			label = "HW553:blue:lan";
+			gpios = <&gpio0 23 1>;
+		};
+		wifi_red {
+			label = "HW553:red:wifi";
+			gpios = <&gpio0 25 1>;
+		};
+		dsl_red {
+			label = "HW553:red:adsl";
+			gpios = <&gpio1 2 1>;
+		};
+		dsl_blue {
+			label = "HW553:blue:adsl";
+			gpios = <&gpio1 3 1>;
+		};
+	};
 };
 
 &pflash {

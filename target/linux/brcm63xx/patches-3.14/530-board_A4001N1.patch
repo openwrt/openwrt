@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -234,6 +234,133 @@ static struct board_info __initdata boar
+@@ -178,6 +178,50 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -41,89 +41,6 @@
 +		},
 +	},
 +
-+	.leds = {
-+		{
-+			.name			= "A4001N1:green:power",
-+			.gpio			= 4,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "A4001N1:red:power",
-+			.gpio			= 8,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:green:inet",
-+			.gpio			= 11,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:red:inet",
-+			.gpio			= 2,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:green:ppp",
-+			.gpio			= 3,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:red:ppp",
-+			.gpio			= 5,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:green:3g",
-+			.gpio			= 6,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:red:3g",
-+			.gpio			= 7,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:green:wlan",
-+			.gpio			= 9,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:red:wlan",
-+			.gpio			= 10,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:green:eth",
-+			.gpio			= 31,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "A4001N1:red:eth",
-+			.gpio			= 20,
-+			.active_low		= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "reset",
-+			.gpio			= 23,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "wlan",
-+			.gpio			= 24,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_WLAN,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
-+
 +	.fallback_sprom = {
 +		.type 				= SPROM_BCM43225,
 +		.pci_bus			= 1,
@@ -134,7 +51,7 @@
  static struct board_info __initdata board_dsl_274xb_f1 = {
  	.name				= "AW4339U",
  	.expected_cpu_id		= 0x6328,
-@@ -2677,6 +2804,7 @@ static const struct board_info __initcon
+@@ -1538,6 +1582,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
@@ -142,7 +59,7 @@
  	&board_dsl_274xb_f1,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -2742,6 +2870,7 @@ static struct of_device_id const bcm963x
+@@ -1603,6 +1648,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328

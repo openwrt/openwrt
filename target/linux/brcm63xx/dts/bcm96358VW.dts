@@ -5,4 +5,30 @@
 / {
 	model = "Broadcom BCM96358VW reference board";
 	compatible = "brcm,bcm96358vw", "brcm,bcm6358";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "96358VW:green:power";
+			gpios = <&gpio0 4 0>;
+			default-state = "on";
+		};
+		stop_green {
+			label = "96358VW:green:stop";
+			gpios = <&gpio0 5 0>;
+		};
+		adsl_fail_green {
+			label = "96358VW:green:adsl-fail";
+			gpios = <&gpio0 15 1>;
+		};
+		ppp_green {
+			label = "96358VW:green:ppp";
+			gpios = <&gpio0 22 1>;
+		};
+		ppp_fail_green {
+			label = "96358VW:green:ppp-fail";
+			gpios = <&gpio0 23 1>;
+		};
+	};
 };

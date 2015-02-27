@@ -5,4 +5,62 @@
 / {
 	model = "Sagem F@ST2704V2";
 	compatible = "sagem,f@st2704v2", "brcm,bcm6328";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio0 15 1>;
+			linux,code = <0xee>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 23 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio0 24 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		usb_green {
+			label = "F@ST2704V2:green:usb";
+			gpios = <&gpio0 1 1>;
+		};
+		inet_red {
+			label = "F@ST2704V2:red:inet";
+			gpios = <&gpio0 2 1>;
+		};
+		dsl_green {
+			label = "F@ST2704V2:green:dsl";
+			gpios = <&gpio0 3 1>;
+		};
+		power_green {
+			label = "F@ST2704V2:green:power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+		power_red {
+			label = "F@ST2704V2:red:power";
+			gpios = <&gpio0 5 1>;
+		};
+		wps_green {
+			label = "F@ST2704V2:green:wps";
+			gpios = <&gpio0 10 1>;
+		};
+		inet_green {
+			label = "F@ST2704V2:green:inet";
+			gpios = <&gpio0 11 1>;
+		};
+	};
 };

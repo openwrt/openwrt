@@ -5,4 +5,49 @@
 / {
 	model = "ADB P.DG A4001N";
 	compatible = "adb,a4001n", "brcm,bcm6328";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 23 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio0 24 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet_red {
+			label = "A4001N:red:inet";
+			gpios = <&gpio0 1 0>;
+		};
+		power_red {
+			label = "A4001N:red:power";
+			gpios = <&gpio0 4 0>;
+		};
+		power_green {
+			label = "A4001N:green:power";
+			gpios = <&gpio0 8 0>;
+			default-state = "on";
+		};
+		usb_green {
+			label = "A4001N:green:usb";
+			gpios = <&gpio0 10 1>;
+		};
+		dsl_green {
+			label = "A4001N:green:dsl";
+			gpios = <&gpio0 11 1>;
+		};
+	};
 };

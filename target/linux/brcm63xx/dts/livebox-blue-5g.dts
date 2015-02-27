@@ -5,6 +5,57 @@
 / {
 	model = "Inventel Livebox 1";
 	compatible = "inventel,livebox-blue-5g", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		button1 {
+			label = "BTN_1";
+			gpios = <&gpio1 4 1>;
+			linux,code = <0x101>;
+		};
+
+		button2 {
+			label = "BTN_2";
+			gpios = <&gpio0 7 1>;
+			linux,code = <0x102>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		red_adsl_fail {
+			label = "Livebox-blue-5g:red:adsl-fail";
+			gpios = <&gpio0 0 0>;
+			default-state = "on";
+		};
+
+		red_adsl {
+			label = "Livebox-blue-5g:red:adsl-fail";
+			gpios = <&gpio0 1 0>;
+		};
+
+		red_traffic {
+			label = "Livebox-blue-5g:red:adsl-fail";
+			gpios = <&gpio0 2 0>;
+		};
+
+		red_phone {
+			label = "Livebox-blue-5g:red:adsl-fail";
+			gpios = <&gpio0 3 0>;
+		};
+
+		red_wifi {
+			label = "Livebox-blue-5g:red:adsl-fail";
+			gpios = <&gpio0 4 0>;
+		};
+	};
 };
 
 &pflash {

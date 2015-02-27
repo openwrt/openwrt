@@ -5,4 +5,33 @@
 / {
 	model = "SFR neufbox 6 (Sercomm)";
 	compatible = "sfr,nb6-ser-r0", "brcm,bcm6362";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		service {
+			label = "service";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x100>;
+		};
+		wlan {
+			label = "wlan";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0xee>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 24 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio0 25 1>;
+			linux,code = <0x211>;
+		};
+	};
 };

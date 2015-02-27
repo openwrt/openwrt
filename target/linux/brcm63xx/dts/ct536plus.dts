@@ -5,4 +5,32 @@
 / {
 	model = "Comtrend CT-536+/CT-5621T";
 	compatible = "comtrend,ct536+", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 1 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "CT536_CT5621:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		adsl_fail_green {
+			label = "CT536_CT5621:green:adsl-fail";
+			gpios = <&gpio0 2 1>;
+		};
+	};
 };

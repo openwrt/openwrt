@@ -5,4 +5,30 @@
 / {
 	model = "Broadcom 96348R reference board";
 	compatible = "brcm,bcm96348r", "brcm,bcm6348";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "96348R:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		stop_green {
+			label = "96348R:green:stop";
+			gpios = <&gpio0 1 1>;
+		};
+		adsl_fail_green {
+			label = "96348R:green:adsl-fail";
+			gpios = <&gpio0 2 1>;
+		};
+		ppp_green {
+			label = "96348R:green:ppp";
+			gpios = <&gpio0 3 1>;
+		};
+		ppp_fail_green {
+			label = "96348R:green:ppp-fail";
+			gpios = <&gpio0 4 1>;
+		};
+	};
 };

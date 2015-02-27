@@ -5,4 +5,96 @@
 / {
 	model = "SFR Neuf Box 4 (Sercomm)";
 	compatible = "sfr,nb4-ser-r0", "brcm,bcm6358";
+/*
+	spi-gpio {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-gpio";
+
+		gpio-mosi = <&gpio0 7 0>;
+		gpio-sck = <&gpio0 6 0>;
+		num-chipselects = <0>;
+
+		hc595: gpio-spi-controller@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <100000>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+*/
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		service {
+			label = "service";
+			gpios = <&gpio0 27 1>;
+			linux,code = <0x100>;
+		};
+		clip {
+			label = "clip";
+			gpios = <&gpio0 31 1>;
+			linux,code = <0x101>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		traffic_white {
+			label = "NB4-SER-r0:white:traffic";
+			gpios = <&gpio0 2 1>;
+		};
+		service_blue {
+			label = "NB4-SER-r0:blue:service";
+			gpios = <&gpio0 4 1>;
+		};
+		wifi_white {
+			label = "NB4-SER-r0:white:wifi";
+			gpios = <&gpio0 15 1>;
+		};
+		service_red {
+			label = "NB4-SER-r0:red:service";
+			gpios = <&gpio0 29 1>;
+		};
+		service_green {
+			label = "NB4-SER-r0:green:service";
+			gpios = <&gpio0 30 1>;
+		};
+/*
+		alarm_white {
+			label = "NB4-SER-r0:white:alarm";
+			gpios = <&hc595 0 1>;
+		};
+		tv_white {
+			label = "NB4-SER-r0:white:tv";
+			gpios = <&hc595 2 1>;
+		};
+		tel_white {
+			label = "NB4-SER-r0:white:tel";
+			gpios = <&hc595 3 1>;
+		};
+		adsl_white {
+			label = "NB4-SER-r0:white:adsl";
+			gpios = <&hc595 4 1>;
+		};
+*/
+	};
 };

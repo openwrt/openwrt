@@ -5,4 +5,39 @@
 / {
 	model = "TECOM GW6200";
 	compatible = "tecom,gw6200", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 4 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		line1_green {
+			label = "GW6200:green:line1";
+			gpios = <&gpio0 4 1>;
+		};
+		line2_green {
+			label = "GW6200:green:line2";
+			gpios = <&gpio0 5 1>;
+		};
+		line3_green {
+			label = "GW6200:green:line3";
+			gpios = <&gpio0 6 1>;
+		};
+		tel_green {
+			label = "GW6200:green:tel";
+			gpios = <&gpio0 7 1>;
+		};
+	};
 };

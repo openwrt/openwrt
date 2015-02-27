@@ -5,6 +5,46 @@
 / {
 	model = "T-Com Speedport W500 V";
 	compatible = "t-com,spw500v", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 1 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "SPW500V:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		power_red {
+			label = "SPW500V:red:power";
+			gpios = <&gpio0 1 1>;
+		};
+		ppp_green {
+			label = "SPW500V:green:ppp";
+			gpios = <&gpio0 3 1>;
+		};
+		pstn_green {
+			label = "SPW500V:green:pstn";
+			gpios = <&gpio0 28 1>;
+		};
+		voip_green {
+			label = "SPW500V:green:voip";
+			gpios = <&gpio1 0 1>;
+		};
+	};
 };
 
 &pflash {

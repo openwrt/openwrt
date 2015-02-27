@@ -1,23 +1,25 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -18,6 +18,7 @@
- #if 0 /* FIXME: 3.14 removed non-DT support */
- #include <linux/spi/74x164.h>
- #endif
+@@ -12,6 +12,8 @@
+ #include <linux/string.h>
+ #include <linux/gpio_keys.h>
+ #include <linux/input.h>
++#include <linux/platform_device.h>
 +#include <linux/rtl8367.h>
  #include <asm/addrspace.h>
  #include <bcm63xx_board.h>
  #include <bcm63xx_cpu.h>
-@@ -42,6 +43,8 @@
- #define NB4_SPI_GPIO_MOSI	7
- #define NB4_SPI_GPIO_CLK	6
- #define NB4_74HC64_GPIO(X)	(NB4_74X164_GPIO_BASE + (X))
+@@ -31,6 +33,9 @@
+ #define BCM963XX_KEYS_POLL_INTERVAL	20
+ #define BCM963XX_KEYS_DEBOUNCE_INTERVAL	(BCM963XX_KEYS_POLL_INTERVAL * 3)
+ 
 +#define NB6_GPIO_RTL8367_SDA	18
 +#define NB6_GPIO_RTL8367_SCK	20
- 
- #define CT6373_PID_OFFSET		0xff80
- #define CT6373_74X164_GPIO_BASE	64
-@@ -2370,6 +2373,104 @@ static struct board_info __initdata boar
++
+ /*
+  * known 3368 boards
+  */
+@@ -1350,6 +1355,69 @@ static struct board_info __initdata boar
  };
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
@@ -79,41 +81,6 @@
 +		},
 +	},
 +
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 24,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+			.active_low	= 1,
-+		},
-+		{
-+			.desc		= "wps",
-+			.gpio		= 25,
-+			.type		= EV_KEY,
-+			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+			.active_low	= 1,
-+		},
-+		{
-+			.desc		= "wlan",
-+			.gpio		= 12,
-+			.type		= EV_KEY,
-+			.code		= KEY_WLAN,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+			.active_low	= 1,
-+		},
-+		{
-+			.desc		= "service",
-+			.gpio		= 10,
-+			.type		= EV_KEY,
-+			.code		= BTN_0,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+			.active_low	= 1,
-+		},
-+	},
-+
 +	.devs = nb6_devices,
 +	.num_devs = ARRAY_SIZE(nb6_devices),
 +};
@@ -122,7 +89,7 @@
  /*
   * known 6368 boards
   */
-@@ -2573,6 +2674,10 @@ static const struct board_info __initcon
+@@ -1501,6 +1569,10 @@ static const struct board_info __initcon
  	&board_DVAG3810BN,
  #endif
  
@@ -133,7 +100,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -2636,6 +2741,9 @@ static struct of_device_id const bcm963x
+@@ -1564,6 +1636,9 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif

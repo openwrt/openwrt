@@ -5,6 +5,76 @@
 / {
 	model = "Comtrend CT-6373";
 	compatible = "comtrend,ct-6373", "brcm,bcm6358";
+/*
+	spi-gpio {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-gpio";
+
+		gpio-mosi = <&gpio0 7 0>;
+		gpio-sck = <&gpio0 6 0>;
+		num-chipselects = <0>;
+
+		hc595: gpio-spi-controller@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <100000>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+*/
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 3 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "CT6373-1:green:power";
+			gpios = <&gpio0 0 0>;
+			default-state = "on";
+		};
+		usb_green {
+			label = "CT6373-1:green:usb";
+			gpios = <&gpio0 3 1>;
+		};
+		wlan_green {
+			label = "CT6373-1:green:wlan";
+			gpios = <&gpio0 9 1>;
+		};
+/*
+		dsl_green {
+			label = "CT6373-1:green:adsl";
+			gpios = <&hc595 0 1>;
+		};
+		line_green {
+			label = "CT6373-1:green:line";
+			gpios = <&hc595 1 1>;
+		};
+		fxs1_green {
+			label = "CT6373-1:green:fxs1";
+			gpios = <&hc595 2 1>;
+		};
+		fxs2_green {
+			label = "CT6373-1:green:fxs2";
+			gpios = <&hc595 3 1>;
+		};
+*/
+	};
 };
 
 &pflash {

@@ -5,4 +5,34 @@
 / {
 	model = "Broadcom BCM96328avng reference board";
 	compatible = "brcm,bcm96328avng", "brcm,bcm6328";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet_fail {
+			label = "96328avng::internet-fail";
+			gpios = <&gpio0 2 1>;
+		};
+		dsl {
+			label = "96328avng::dsl";
+			gpios = <&gpio0 3 1>;
+		};
+		power {
+			label = "96328avng::power";
+			gpios = <&gpio0 4 1>;
+			default-state = "on";
+		};
+		power_fail {
+			label = "96328avng::power-fail";
+			gpios = <&gpio0 8 1>;
+		};
+		wps {
+			label = "96328avng::wps";
+			gpios = <&gpio0 9 1>;
+		};
+		inet {
+			label = "96328avng::internet";
+			gpios = <&gpio0 11 1>;
+		};
+	};
 };
