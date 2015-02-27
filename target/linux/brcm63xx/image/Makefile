@@ -7,15 +7,17 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-LOADADDR = 0x80010000		# RAM start + 16M 
+LOADADDR = 0x80010000		# RAM start + 64K
 KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
-RAMSIZE = 0x01000000		# 64MB
+RAMSIZE = 0x02000000		# 32MB
+LZMA_TEXT_START = 0x81800000	# 32MB - 8MB
 
 LOADER_MAKEOPTS= \
 		KDIR=$(KDIR) \
 		LOADADDR=$(LOADADDR) \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
-		RAMSIZE=$(RAMSIZE)
+		RAMSIZE=$(RAMSIZE) \
+		LZMA_TEXT_START=$(LZMA_TEXT_START) \
 
 define rootfspad/jffs2-128k
 --align-rootfs
@@ -124,7 +126,6 @@ define Image/PrepareLoader
 		TARGET_DIR="$(BIN_DIR)" \
 		LOADER_DATA="$(KDIR)/vmlinux$(1).lzma" \
 		LOADER=$(IMG_PREFIX)-loader$(1).elf \
-		LZMA_TEXT_START=0x80a00000 \
 		compile loader.elf
 
 	rm -f $(KDIR)/vmlinux$(1).lzma
