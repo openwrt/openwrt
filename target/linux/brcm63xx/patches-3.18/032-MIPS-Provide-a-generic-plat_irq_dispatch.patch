@@ -31,8 +31,8 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
 
 --- a/arch/mips/kernel/irq_cpu.c
 +++ b/arch/mips/kernel/irq_cpu.c
-@@ -94,6 +94,24 @@ static struct irq_chip mips_mt_cpu_irq_c
- 	.irq_eoi	= unmask_mips_irq,
+@@ -98,6 +98,24 @@ static struct irq_chip mips_mt_cpu_irq_c
+ 	.irq_enable	= unmask_mips_irq,
  };
  
 +asmlinkage void __weak plat_irq_dispatch(void)
