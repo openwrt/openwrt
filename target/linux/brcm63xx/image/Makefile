@@ -201,8 +201,6 @@ define Image/Build
 
 	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
 	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,--layoutver 5)
-	# RTA1025W_16 (numerous routers)
-	$(call Image/Build/CFE,$(1),RTA1025W_16,6348,RTA1025W_16,,--layoutver 5)
 	# RTA1320_16M (numerous routers)
 	$(call Image/Build/CFE,$(1),RTA1320_16M,6338,RTA1320_16M,,--layoutver 5)
 
@@ -288,6 +286,8 @@ $(eval $(call ImageDTB,CFEDTB,DSL274XB_F,DSL274XB-F1-AU,dsl-274xb-f,AW4339U,6328
 $(eval $(call ImageDTB,CFEDTB,DVAG3810BN,DVAG3810BN,dva-g3810bn_tl,96358VW,6358))
 # Davolink DV-201AMR
 $(eval $(call ImageDTB,OLDCFEDTB,DV201AMR,DV-201AMR,dv-201amr,DV201AMR,6348))
+# Dynalink RTA1025W (numerous routers)
+$(eval $(call ImageDTB,CFEDTB,RTA1025W,RTA1025W_16,rta1025w,RTA1025W_16,6348,--layoutver 5))
 # Huawei HG520v
 $(eval $(call ImageDTB,CFEDTB,HG520v,HG520v,hg520v,HW6358GW_B,6358,--rsa-signature "EchoLife_HG520v"))
 # Huawei HG553
