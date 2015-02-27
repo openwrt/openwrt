@@ -3,6 +3,10 @@
 	#size-cells = <1>;
 	compatible = "brcm,bcm6328";
 
+	aliases {
+		gpio0 = &gpio0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -50,6 +54,14 @@
 
 			interrupt-parent = <&cpu_intc>;
 			interrupts = <2>;
+		};
+
+		gpio0: gpio-controller@10000084 {
+			compatible = "brcm,bcm6345-gpio";
+			reg = <0x10000084 4>, <0x1000008c 4>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 	};
 };

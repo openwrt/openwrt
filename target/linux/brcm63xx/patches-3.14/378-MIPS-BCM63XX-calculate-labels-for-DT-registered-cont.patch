@@ -1,0 +1,49 @@
+From e55892aac9d5508a000647ca66f0e678e02be3bb Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sat, 21 Feb 2015 17:26:50 +0100
+Subject: [PATCH 5/6] MIPS: BCM63XX: calculate labels for DT registered
+ controllers
+
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/bcm63xx/gpio.c |   16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/arch/mips/bcm63xx/gpio.c b/arch/mips/bcm63xx/gpio.c
+index 70cd05b..cf0b819 100644
+--- a/arch/mips/bcm63xx/gpio.c
++++ b/arch/mips/bcm63xx/gpio.c
+@@ -20,6 +20,8 @@
+ #include <bcm63xx_gpio.h>
+ #include <bcm63xx_regs.h>
+ 
++#include "boards/board_common.h"
++
+ /* for registering lookups; make them large enough to hold OF names */
+ static char *gpio_chip_labels[] = {
+ 	"xxxxxxxx.gpio-controller",
+@@ -49,9 +51,17 @@ static void __init bcm63xx_gpio_init_one(int id, int dir, int data, int ngpio)
+ 	pdata.base = id * 32;
+ 	pdata.ngpio = ngpio;
+ 
+-	sprintf(gpio_chip_labels[id], "bcm63xx-gpio.%d", id);
+-	platform_device_register_resndata(NULL, "bcm63xx-gpio", id, res, 2,
+-					  &pdata, sizeof(pdata));
++	if (board_of_device_present("gpio0")) {
++		unsigned long base = res[0].start;
++
++		if (base < 0xf0000000U)
++			base = CPHYSADDR(base);
++		sprintf(gpio_chip_labels[id], "%lx.gpio-controller", base);
++	} else {
++		sprintf(gpio_chip_labels[id], "bcm63xx-gpio.%d", id);
++		platform_device_register_resndata(NULL, "bcm63xx-gpio", id, res,
++						  2, &pdata, sizeof(pdata));
++	}
+ }
+ 
+ int __init bcm63xx_gpio_init(void)
+-- 
+1.7.10.4
+
