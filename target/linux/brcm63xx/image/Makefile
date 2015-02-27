@@ -199,9 +199,6 @@ endef
 define Image/Build
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 
-	# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
-	$(call Image/Build/CFE,$(1),V2500V_BB,6348,BTV2500V,,--layoutver 5)
-
 	# build dtb image list
 	$(foreach image,$(TARGET_$(PROFILE)_IMAGES),$(call Image/Build/$(image),$(1)))
 
@@ -253,6 +250,8 @@ $(eval $(call ImageDTB,CFEDTB,RG100A,RG100A,rg100a,96358VW2,6358,--block-size 0x
 $(eval $(call ImageDTB,CFEDTB,AR1004G,AR1004G,ar1004g,96348GW-10,6348))
 # Belkin F5D7633
 $(eval $(call ImageDTB,CFEDTB,F5D7633,F5D7633,f5d7633,96348GW-10,6348,--block-size 0x20000 --image-offset 0x20000))
+# BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
+$(eval $(call ImageDTB,CFEDTB,BTV2500V,BTV2500V,v2500v-bb,V2500V_BB,6348,--layoutver 5))
 # Comtrend AR-5381u
 $(eval $(call ImageDTB,CFEDTB,AR5381u,AR-5381u,ar-5381u,96328A-1241N,6328,--pad 8))
 # Comtrend AR-5387un
