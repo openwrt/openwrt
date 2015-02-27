@@ -5,4 +5,30 @@
 / {
 	model = "Broadcom BCM96368MVWG reference board";
 	compatible = "brcm,bcm96368mvwg", "brcm,bcm6368";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		dsl_green {
+			label = "96368MVWG:green:adsl";
+			gpios = <&gpio0 2 1>;
+		};
+		ppp_green {
+			label = "96368MVWG:green:ppp";
+			gpios = <&gpio0 5 0>;
+		};
+		power_green {
+			label = "96368MVWG:green:power";
+			gpios = <&gpio0 22 0>;
+			default-state = "on";
+		};
+		wps_green {
+			label = "96368MVWG:green:wps";
+			gpios = <&gpio0 23 1>;
+		};
+		ppp_fail_red {
+			label = "96368MVWG:red:ppp-fail";
+			gpios = <&gpio0 31 0>;
+		};
+	};
 };

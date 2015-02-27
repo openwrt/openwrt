@@ -5,6 +5,62 @@
 / {
 	model = "Comtrend VR-3025u";
 	compatible = "comtrend,vr-3025u", "brcm,bcm6368";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		dsl_green {
+			label = "VR-3025u:green:dsl";
+			gpios = <&gpio0 2 1>;
+		};
+		inet_green {
+			label = "VR-3025u:green:inet";
+			gpios = <&gpio0 5 0>;
+		};
+		lan1_green {
+			label = "VR-3025u:green:lan1";
+			gpios = <&gpio0 6 1>;
+		};
+		lan2_green {
+			label = "VR-3025u:green:lan2";
+			gpios = <&gpio0 7 1>;
+		};
+		lan3_green {
+			label = "VR-3025u:green:lan3";
+			gpios = <&gpio0 8 1>;
+		};
+		lan4_green {
+			label = "VR-3025u:green:lan4";
+			gpios = <&gpio0 9 1>;
+		};
+		power_green {
+			label = "VR-3025u:green:power";
+			gpios = <&gpio0 22 0>;
+			default-state = "on";
+		};
+		power_red {
+			label = "VR-3025u:red:power";
+			gpios = <&gpio0 24 0>;
+		};
+		inet_red {
+			label = "VR-3025u:red:inet";
+			gpios = <&gpio0 31 0>;
+		};
+	};
 };
 
 &pflash {

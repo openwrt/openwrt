@@ -10,8 +10,8 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -224,6 +224,111 @@ static struct board_info __initdata boar
- 
+@@ -172,6 +172,51 @@ static struct board_info __initdata boar
+ 		},
  	},
  };
 +
@@ -58,71 +58,11 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
 +			},
 +		},
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "dsl-274xb:red:internet",
-+			.gpio		= 2,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "dsl-274xb:green:dsl",
-+			.gpio		= 3,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "dsl-274xb:green:power",
-+			.gpio		= 4,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "dsl-274xb:red:power",
-+			.gpio		= 8,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "dsl-274xb:blue:wps",
-+			.gpio		= 9,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "dsl-274xb:green:internet",
-+			.gpio		= 11,
-+			.active_low	= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "wifi",
-+			.gpio		= 10,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= BTN_0,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc		= "reset",
-+			.gpio		= 23,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc		= "wps",
-+			.gpio		= 24,
-+			.active_low	= 1,
-+			.code		= KEY_WPS_BUTTON,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -2176,6 +2281,7 @@ static const struct board_info __initcon
+@@ -1334,6 +1379,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
@@ -130,7 +70,7 @@ Subject: [PATCH 70/79] MIPS: BCM63XX: Add board definition for D-Link
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -2234,6 +2340,7 @@ static struct of_device_id const bcm963x
+@@ -1392,6 +1438,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6328
  	{ .compatible = "brcm,bcm963281TAN", .data = &board_963281TAN, },
  	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },

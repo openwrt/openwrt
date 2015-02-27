@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -530,6 +530,40 @@ static struct board_info __initdata boar
+@@ -445,6 +445,27 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -22,26 +22,13 @@
 +		.phy_id			= 0,
 +	},
 +
-+	.leds = {
-+		{
-+			.name		= "CPVA502+:green:phone",
-+			.gpio		= 0,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "CPVA502+:amber:link",
-+			.gpio		= 5,
-+			.active_low	= 1,
-+		},
-+	},
-+
 +	.ephy_reset_gpio		= 4,
 +	.ephy_reset_gpio_flags		= GPIO_ACTIVE_LOW,
 +};
  
  static struct board_info __initdata board_ct536_ct5621 = {
  	.name				= "CT536_CT5621",
-@@ -1922,6 +1956,7 @@ static const struct board_info __initcon
+@@ -1185,6 +1206,7 @@ static const struct board_info __initcon
  	&board_V2110,
  	&board_ct536_ct5621,
  	&board_96348A_122,

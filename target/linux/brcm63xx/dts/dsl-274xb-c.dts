@@ -5,6 +5,46 @@
 / {
 	model = "D-Link DSL-2740B/DSL-2741B rev C2/3";
 	compatible = "d-link,dsl-274xb-c2", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet_green {
+			label = "dsl-274xb:green:internet";
+			gpios = <&gpio0 2 0>;
+		};
+		power_red {
+			label = "dsl-274xb:red:power";
+			gpios = <&gpio0 4 1>;
+		};
+		power_green {
+			label = "dsl-274xb:green:power";
+			gpios = <&gpio0 5 1>;
+			default-state = "on";
+		};
+		dsl_green {
+			label = "dsl-274xb:green:adsl";
+			gpios = <&gpio0 9 1>;
+		};
+		inet_red {
+			label = "dsl-274xb:red:internet";
+			gpios = <&gpio0 10 0>;
+		};
+	};
 };
 
 &pflash {

@@ -1,7 +1,7 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -3206,6 +3206,56 @@ static struct board_info __initdata boar
- 	.num_spis = ARRAY_SIZE(ct6373_spi_devices),
+@@ -1569,6 +1569,37 @@ static struct board_info __initdata boar
+ 	},
  };
  
 +static struct board_info __initdata board_HW520 = {
@@ -28,25 +28,6 @@
 +		.force_duplex_full	= 1,
 +	},
 +
-+	.leds = {
-+		{
-+			.name		= "HW520:green:net",
-+			.gpio		= 32,
-+			.active_low	= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 37,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
-+
 +	.fallback_sprom = {
 +		.type 				= SPROM_BCM4318,
 +		.pci_bus			= 0,
@@ -57,7 +38,7 @@
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -4928,6 +4978,7 @@ static const struct board_info __initcon
+@@ -2494,6 +2525,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
  	&board_ct6373_1,
@@ -65,7 +46,7 @@
  	&board_HW553,
  	&board_HW556_A,
  	&board_HW556_B,
-@@ -5009,6 +5060,7 @@ static struct of_device_id const bcm963x
+@@ -2575,6 +2607,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
  	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
  	{ .compatible = "d-link,dva-g3810bn/tl", .data = &board_DVAG3810BN, },

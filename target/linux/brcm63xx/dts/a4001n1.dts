@@ -5,4 +5,77 @@
 / {
 	model = "ADB P.DG A4001N1";
 	compatible = "adb,a4001n1", "brcm,bcm6328";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 23 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wlan";
+			gpios = <&gpio0 24 1>;
+			linux,code = <0xee>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet_red {
+			label = "A4001N1:red:inet";
+			gpios = <&gpio0 2 1>;
+		};
+		ppp_green {
+			label = "A4001N1:green:ppp";
+			gpios = <&gpio0 3 1>;
+		};
+		power_red {
+			label = "A4001N1:red:power";
+			gpios = <&gpio0 4 1>;
+		};
+		ppp_red {
+			label = "A4001N1:red:ppp";
+			gpios = <&gpio0 5 1>;
+		};
+		usb_green {
+			label = "A4001N1:green:3g";
+			gpios = <&gpio0 6 1>;
+		};
+		usb_red {
+			label = "A4001N1:red:3g";
+			gpios = <&gpio0 7 1>;
+		};
+		power_green {
+			label = "A4001N1:green:power";
+			gpios = <&gpio0 8 1>;
+			default-state = "on";
+		};
+		wlan_green {
+			label = "A4001N1:green:wlan";
+			gpios = <&gpio0 9 1>;
+		};
+		wlan_red {
+			label = "A4001N1:red:wlan";
+			gpios = <&gpio0 10 1>;
+		};
+		inet_green {
+			label = "A4001N1:green:inet";
+			gpios = <&gpio0 11 1>;
+		};
+		eth_red {
+			label = "A4001N1:red:eth";
+			gpios = <&gpio0 20 1>;
+		};
+		eth_green {
+			label = "A4001N1:green:eth";
+			gpios = <&gpio0 31 1>;
+		};
+	};
 };

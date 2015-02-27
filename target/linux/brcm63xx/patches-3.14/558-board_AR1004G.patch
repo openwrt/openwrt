@@ -8,8 +8,8 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
 ---
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1424,6 +1424,51 @@ static struct board_info __initdata boar
- 	},
+@@ -853,6 +853,22 @@ static struct board_info __initdata boar
+ 	.has_ehci0 = 1,
  };
  
 +static struct board_info __initdata board_96348gw_10_AR1004G = {
@@ -26,41 +26,12 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "AR1004G:green:inet",
-+			.gpio		= 3,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "AR1004G:green:power",
-+			.gpio		= 0,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "AR1004G:red:power",
-+			.gpio		= 6,
-+			.active_low	= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 33,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
 +
  
  /* BT Voyager 2110 */
  static struct board_info __initdata board_V2110 = {
-@@ -4221,6 +4266,7 @@ static const struct board_info __initcon
+@@ -2026,6 +2042,7 @@ static const struct board_info __initcon
  	&board_96348A_122,
  	&board_CPVA502plus,
  	&board_96348W3,
@@ -68,7 +39,7 @@ Signed-off-by: Adrian Feliks <mexit@o2.pl>
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -4278,6 +4324,7 @@ static struct of_device_id const bcm963x
+@@ -2083,6 +2100,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96345gw2", .data = &board_96345gw2, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6348

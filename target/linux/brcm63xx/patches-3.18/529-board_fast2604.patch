@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1103,6 +1103,57 @@ static struct board_info __initdata boar
+@@ -776,6 +776,23 @@ static struct board_info __initdata boar
  	.has_ehci0			= 1,
  };
  
@@ -19,46 +19,12 @@
 +		.force_speed_100		= 1,
 +		.force_duplex_full		= 1,
 +	},
-+
-+	.leds = {
-+		{
-+			.name				= "F@ST2604:green:power",
-+			.gpio				= 0,
-+			.active_low			= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name				= "F@ST2604:red:power",
-+			.gpio				= 1,
-+			.active_low			= 1,
-+		},
-+		{
-+			.name				= "F@ST2604:red:inet",
-+			.gpio				= 4,
-+			.active_low			= 1,
-+		},
-+		{
-+			.name				= "F@ST2604:green:wps",
-+			.gpio				= 5,
-+			.active_low			= 1,
-+		},
-+	},
-+	.buttons = {
-+		{
-+			.desc				= "reset",
-+			.gpio				= 33,
-+			.active_low			= 1,
-+			.type				= EV_KEY,
-+			.code				= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
 +
  static struct board_info __initdata board_rta1025w_16 = {
  	.name				= "RTA1025W_16",
  	.expected_cpu_id		= 0x6348,
-@@ -2645,6 +2696,7 @@ static const struct board_info __initcon
+@@ -1540,6 +1557,7 @@ static const struct board_info __initcon
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,
@@ -66,7 +32,7 @@
  	&board_DV201AMR,
  	&board_96348gw_a,
  	&board_rta1025w_16,
-@@ -2717,6 +2769,7 @@ static struct of_device_id const bcm963x
+@@ -1612,6 +1630,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
  	{ .compatible = "netgear,dg834gtpn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },

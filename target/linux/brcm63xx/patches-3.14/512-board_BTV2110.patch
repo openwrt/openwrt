@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -473,6 +473,64 @@ static struct board_info __initdata boar
+@@ -427,6 +427,25 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -20,52 +20,13 @@
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
-+
-+	.leds = {
-+		{
-+			.name           = "V2110:green:power",
-+			.gpio           = 0,
-+			.active_low     = 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name           = "V2110:red:power",
-+			.gpio           = 1,
-+			.active_low     = 1,
-+		},
-+		{
-+			.name           = "V2110:green:adsl",
-+			.gpio           = 2,
-+			.active_low     = 1,
-+		},
-+		{       .name           = "V2110:green:ppp",
-+			.gpio           = 3,
-+			.active_low     = 1,
-+		},
-+		{
-+			.name           = "V2110:green:wireless",
-+			.gpio           = 6,
-+			.active_low     = 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 33,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
 +
 +
  static struct board_info __initdata board_96348gw = {
  	.name				= "96348GW",
  	.expected_cpu_id		= 0x6348,
-@@ -1735,6 +1793,7 @@ static const struct board_info __initcon
+@@ -1106,6 +1125,7 @@ static const struct board_info __initcon
  	&board_spw500v,
  	&board_96348sv,
  	&board_V2500V_BB,

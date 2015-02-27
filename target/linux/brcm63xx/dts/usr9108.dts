@@ -5,6 +5,19 @@
 / {
 	model = "USRobotics 9108";
 	compatible = "usr,9108", "brcm,bcm6348";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		usb {
+			label = "96348GW-A::usb";
+			gpios = <&gpio0 0 1>;
+		};
+		dsl {
+			label = "96348GW-A::adsl";
+			gpios = <&gpio0 3 1>;
+		};
+	};
 };
 
 &pflash {

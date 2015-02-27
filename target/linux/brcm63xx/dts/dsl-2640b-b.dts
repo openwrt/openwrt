@@ -5,6 +5,42 @@
 / {
 	model = "D-Link DSL-2640B rev B2";
 	compatible = "d-link,dsl-2640b-b", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 7 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "D-4P-W:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		status {
+			label = "D-4P-W::status";
+			gpios = <&gpio0 3 1>;
+		};
+		inet_green {
+			label = "D-4P-W:green:internet";
+			gpios = <&gpio0 4 1>;
+		};
+		inet_red {
+			label = "D-4P-W:red:internet";
+			gpios = <&gpio0 5 1>;
+		};
+	};
 };
 
 &pflash {

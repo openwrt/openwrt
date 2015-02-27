@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -245,6 +245,45 @@ static struct board_info __initdata boar
+@@ -233,6 +233,21 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -18,35 +18,11 @@
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
-+
-+		.leds = {
-+		{
-+			.name		= "RTA1320_16M:green:adsl",
-+			.gpio		= 3,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "RTA1320_16M:green:ppp",
-+			.gpio		= 4,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "RTA1320_16M:green:power",
-+			.gpio		= 0,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "RTA1320_16M:green:stop",
-+			.gpio		= 1,
-+			.active_low	= 1,
-+		},
-+	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6338 */
  
  /*
-@@ -1551,6 +1590,7 @@ static const struct board_info __initcon
+@@ -1035,6 +1050,7 @@ static const struct board_info __initcon
  	&board_96338gw,
  	&board_96338w,
  	&board_96338w2_e7t,
@@ -54,7 +30,7 @@
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6345
  	&board_96345gw2,
-@@ -1595,6 +1635,7 @@ static struct of_device_id const bcm963x
+@@ -1079,6 +1095,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6338
  	{ .compatible = "brcm,bcm96338gw", .data = &board_96338gw, },
  	{ .compatible = "brcm,bcm96338w", .data = &board_96338w, },

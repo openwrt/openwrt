@@ -5,4 +5,44 @@
 / {
 	model = "D-Link DVA-G3810BN/TL";
 	compatible = "d-link,dva-g3810bn/tl", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		voip {
+			label = "DVAG3810BN::voip";
+			gpios = <&gpio0 1 0>;
+		};
+		power {
+			label = "DVAG3810BN::power";
+			gpios = <&gpio0 4 0>;
+			default-state = "on";
+		};
+		stop {
+			label = "DVAG3810BN::stop";
+			gpios = <&gpio0 5 0>;
+		};
+		dsl {
+			label = "DVAG3810BN::dsl";
+			gpios = <&gpio0 22 1>;
+		};
+		inet {
+			label = "DVAG3810BN::internet";
+			gpios = <&gpio0 23 1>;
+		};
+	};
 };

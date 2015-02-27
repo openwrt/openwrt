@@ -9,10 +9,11 @@ Subject: [PATCH] MIPS: BCM63XX: add 96328avng reference board
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -93,13 +93,45 @@ static struct board_info __initdata boar
- 		.port_no		= 0,
+@@ -109,6 +109,33 @@ static struct board_info __initdata boar
+ 			.active_low	= 1,
+ 		},
  	},
- 
++
 +	.has_enetsw			= 1,
 +
 +	.enetsw = {
@@ -39,29 +40,6 @@ Subject: [PATCH] MIPS: BCM63XX: add 96328avng reference board
 +			},
 +		},
 +	},
-+
- 	.leds = {
- 		{
--			.name		= "96328avng::ppp-fail",
-+			.name		= "96328avng::internet-fail",
- 			.gpio		= 2,
- 			.active_low	= 1,
- 		},
- 		{
-+			.name		= "96328avng::dsl",
-+			.gpio		= 3,
-+			.active_low	= 1,
-+		},
-+		{
- 			.name		= "96328avng::power",
- 			.gpio		= 4,
- 			.active_low	= 1,
-@@ -116,7 +148,7 @@ static struct board_info __initdata boar
- 			.active_low	= 1,
- 		},
- 		{
--			.name		= "96328avng::ppp",
-+			.name		= "96328avng::internet",
- 			.gpio		= 11,
- 			.active_low	= 1,
- 		},
+ };
+ #endif /* CONFIG_BCM63XX_CPU_6328 */
+ 

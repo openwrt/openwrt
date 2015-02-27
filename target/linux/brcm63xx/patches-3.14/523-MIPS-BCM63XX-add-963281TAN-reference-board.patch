@@ -9,7 +9,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -154,6 +154,76 @@ static struct board_info __initdata boar
+@@ -137,6 +137,41 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -47,46 +47,11 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
 +			},
 +		},
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "963281TAN::internet",
-+			.gpio		= 1,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "963281TAN::power",
-+			.gpio		= 4,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "963281TAN::internet-fail",
-+			.gpio		= 7,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "963281TAN::power-fail",
-+			.gpio		= 8,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "963281TAN::wps",
-+			.gpio		= 9,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "963281TAN::dsl",
-+			.gpio		= 11,
-+			.active_low	= 1,
-+		},
-+
-+	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -2105,6 +2175,7 @@ static const struct board_info __initcon
+@@ -1298,6 +1333,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
@@ -94,7 +59,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -2161,6 +2232,7 @@ static struct of_device_id const bcm963x
+@@ -1354,6 +1390,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328

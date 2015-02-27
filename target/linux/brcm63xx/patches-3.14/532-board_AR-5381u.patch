@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -164,6 +164,91 @@ static struct board_info __initdata boar
+@@ -143,6 +143,61 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -50,36 +50,6 @@
 +		},
 +	},
 +
-+	.leds = {
-+		{
-+			.name			= "AR-5381u:green:power",
-+			.gpio			= 4,
-+			.active_low		= 1,
-+			.default_trigger	= "default-on",
-+		},
-+		{
-+			.name			= "AR-5381u:red:alarm",
-+			.gpio			= 2,
-+			.active_low		= 1,
-+		},
-+		{
-+			.name			= "AR-5381u:green:inet",
-+			.gpio			= 3,
-+			.active_low		= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "reset",
-+			.gpio			= 23,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
-+
 +	.fallback_sprom = {
 +		.type 				= SPROM_BCM43225,
 +		.pci_bus			= 1,
@@ -92,7 +62,7 @@
  static struct sprom_fixup __initdata ar5387un_fixups[] = {
  	{ .offset = 2, .value = 0x05bb },
  	{ .offset = 65, .value = 0x1204 },
-@@ -2912,6 +2997,7 @@ static const struct board_info __initcon
+@@ -1654,6 +1709,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
@@ -100,7 +70,7 @@
  	&board_AR5387un,
  	&board_963281TAN,
  	&board_A4001N1,
-@@ -2983,6 +3069,7 @@ static struct of_device_id const bcm963x
+@@ -1725,6 +1781,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },
  	{ .compatible = "brcm,bcm963281TAN", .data = &board_963281TAN, },
  	{ .compatible = "brcm,bcm96328avng", .data = &board_96328avng, },

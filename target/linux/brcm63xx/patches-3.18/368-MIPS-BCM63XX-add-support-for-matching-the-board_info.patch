@@ -16,7 +16,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -735,6 +735,10 @@ static const struct board_info __initcon
+@@ -715,6 +715,10 @@ static const struct board_info __initcon
  #endif
  };
  
@@ -27,7 +27,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /*
   * early init callback, read nvram data from flash and checksum it
   */
-@@ -746,6 +750,7 @@ void __init board_bcm963xx_init(void)
+@@ -726,6 +730,7 @@ void __init board_bcm963xx_init(void)
  	char *board_name = NULL;
  	u32 val;
  	struct bcm_hcs *hcs;
@@ -35,7 +35,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	/* read base address of boot chip select (0)
  	 * 6328/6362 do not have MPI but boot from a fixed address
-@@ -785,6 +790,16 @@ void __init board_bcm963xx_init(void)
+@@ -765,6 +770,16 @@ void __init board_bcm963xx_init(void)
  	} else {
  		board_name = bcm63xx_nvram_get_name();
  	}

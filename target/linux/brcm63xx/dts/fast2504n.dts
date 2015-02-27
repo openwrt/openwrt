@@ -5,4 +5,53 @@
 / {
 	model = "Sagem F@ST2504n";
 	compatible = "sagem,f@st2504n", "brcm,bcm6362";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 24 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio0 25 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_orange {
+			label = "fast2504n:orange:power";
+			gpios = <&gpio0 2 1>;
+		};
+		power_green {
+			label = "fast2504n:green:power";
+			gpios = <&gpio0 10 1>;
+			default-state = "on";
+		};
+		inet_red {
+			label = "fast2504n:red:internet";
+			gpios = <&gpio0 26 1>;
+		};
+		ok_green {
+			label = "fast2504n:green:ok";
+			gpios = <&gpio0 28 1>;
+		};
+		ok_orange {
+			label = "fast2504n:orange:ok";
+			gpios = <&gpio0 29 1>;
+		};
+		wlan_orangee {
+			label = "fast2504n:orange:wlan";
+			gpios = <&gpio0 30 1>;
+		};
+	};
 };

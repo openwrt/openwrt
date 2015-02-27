@@ -5,6 +5,46 @@
 / {
 	model = "Netgear DG834GT/PN";
 	compatible = "netgear,dg834gtpn", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 6 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "96348GW-10:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		stop_green {
+			label = "96348GW-10:green:stop";
+			gpios = <&gpio0 1 1>;
+		};
+		adsl_fail_green {
+			label = "96348GW-10:green:adsl-fail";
+			gpios = <&gpio0 2 1>;
+		};
+		ppp_green {
+			label = "96348GW-10:green:ppp";
+			gpios = <&gpio0 3 1>;
+		};
+		ppp_fail_green {
+			label = "96348GW-10:green:ppp-fail";
+			gpios = <&gpio0 4 1>;
+		};
+	};
 };
 
 &pflash {

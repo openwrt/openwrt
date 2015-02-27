@@ -1,7 +1,7 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -640,6 +640,84 @@ static struct board_info __initdata boar
- 		},
+@@ -574,6 +574,45 @@ static struct board_info __initdata boar
+ 		.force_duplex_full	= 1,
  	},
  };
 +
@@ -35,45 +35,6 @@
 +		.cs			= 2,
 +	},
 +
-+	.leds = {
-+		{
-+			.name		= "SPW500V:red:power",
-+			.gpio		= 1,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "SPW500V:green:power",
-+			.gpio		= 0,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "SPW500V:green:ppp",
-+			.gpio		= 3,
-+			.active_low	= 1,
-+		},
-+		{	.name		= "SPW500V:green:pstn",
-+			.gpio		= 28,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "SPW500V:green:voip",
-+			.gpio		= 32,
-+			.active_low	= 1,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 33,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
-+
 +	.fallback_sprom = {
 +		.type			= SPROM_BCM4318,
 +		.pci_bus		= 0,
@@ -85,7 +46,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -1232,6 +1310,7 @@ static const struct board_info __initcon
+@@ -850,6 +889,7 @@ static const struct board_info __initcon
  	&board_96348gw_a,
  	&board_rta1025w_16,
  	&board_96348_D4PW,
@@ -93,7 +54,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1272,6 +1351,7 @@ static struct of_device_id const bcm963x
+@@ -890,6 +930,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
  	{ .compatible = "netgear,dg834gtpn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },

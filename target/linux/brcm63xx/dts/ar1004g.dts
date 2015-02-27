@@ -5,4 +5,36 @@
 / {
 	model = "ASMAX AR 1004g";
 	compatible = "asmax,ar1004g", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 1 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "AR1004G:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		inet_green {
+			label = "AR1004G:green:inet";
+			gpios = <&gpio0 3 1>;
+		};
+		power_red {
+			label = "AR1004G:red:power";
+			gpios = <&gpio0 6 1>;
+		};
+	};
 };

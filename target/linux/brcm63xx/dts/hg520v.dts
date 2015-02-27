@@ -5,6 +5,29 @@
 / {
 	model = "Huawei EchoLife HG520v";
 	compatible = "huawei,hg520v", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet_green {
+			label = "HW520:green:net";
+			gpios = <&gpio1 0 1>;
+		};
+	};
 };
 
 &pflash {

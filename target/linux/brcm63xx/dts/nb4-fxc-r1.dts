@@ -5,4 +5,96 @@
 / {
 	model = "SFR Neuf Box 4 (Foxconn)";
 	compatible = "sfr,nb4-fxc-r1", "brcm,bcm6358";
+/*
+	spi-gpio {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-gpio";
+
+		gpio-mosi = <&gpio0 7 0>;
+		gpio-sck = <&gpio0 6 0>;
+		num-chipselects = <0>;
+
+		hc595: gpio-spi-controller@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <1>;
+			spi-max-frequency = <100000>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+*/
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		service {
+			label = "service";
+			gpios = <&gpio0 27 1>;
+			linux,code = <0x100>;
+		};
+		clip {
+			label = "clip";
+			gpios = <&gpio0 31 1>;
+			linux,code = <0x101>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		traffic_white {
+			label = "NB4-FXC-r1:white:traffic";
+			gpios = <&gpio0 2 0>;
+		};
+		service_blue {
+			label = "NB4-FXC-r1:blue:service";
+			gpios = <&gpio0 4 0>;
+		};
+		wifi_white {
+			label = "NB4-FXC-r1:white:wifi";
+			gpios = <&gpio0 15 0>;
+		};
+		service_red {
+			label = "NB4-FXC-r1:red:service";
+			gpios = <&gpio0 29 0>;
+		};
+		service_green {
+			label = "NB4-FXC-r1:green:service";
+			gpios = <&gpio0 30 0>;
+		};
+/*
+		alarm_white {
+			label = "NB4-FXC-r1:white:alarm";
+			gpios = <&hc595 0 1>;
+		};
+		tv_white {
+			label = "NB4-FXC-r1:white:tv";
+			gpios = <&hc595 2 1>;
+		};
+		tel_white {
+			label = "NB4-FXC-r1:white:tel";
+			gpios = <&hc595 3 1>;
+		};
+		adsl_white {
+			label = "NB4-FXC-r0:white:adsl";
+			gpios = <&hc595 4 1>;
+		};
+*/
+	};
 };

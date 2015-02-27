@@ -5,6 +5,55 @@
 / {
 	model = "T-Com Speedport W303 V";
 	compatible = "t-com,spw303v", "brcm,bcm6358";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 11 0>;
+			linux,code = <0x198>;
+		};
+		ses {
+			label = "ses";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		ses_green {
+			label = "spw303v:green:ses";
+			gpios = <&gpio0 0 1>;
+		};
+		power_adsl_red {
+			label = "spw303v:red:power+adsl";
+			gpios = <&gpio0 2 1>;
+		};
+		ppp_green {
+			label = "spw303v:green:ppp";
+			gpios = <&gpio0 5 1>;
+		};
+		power_adsl_green {
+			label = "spw303v:green:power+adsl";
+			gpios = <&gpio0 22 1>;
+			default-state = "on";
+		};
+		voip_green {
+			label = "spw303v:green:voip";
+			gpios = <&gpio0 27 1>;
+		};
+		pots_green {
+			label = "spw303v:green:pots";
+			gpios = <&gpio0 31 1>;
+		};
+	};
 };
 
 &pflash {

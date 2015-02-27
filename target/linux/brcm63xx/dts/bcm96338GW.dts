@@ -5,4 +5,30 @@
 / {
 	model = "Broadcom BCM96338GW reference board";
 	compatible = "brcm,bcm96338gw", "brcm,bcm6338";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "96338GW:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		stop_green {
+			label = "96338GW:green:stop";
+			gpios = <&gpio0 1 1>;
+		};
+		dsl_green {
+			label = "96338GW:green:adsl";
+			gpios = <&gpio0 3 1>;
+		};
+		ppp_fail_green {
+			label = "96338GW:green:ppp-fail";
+			gpios = <&gpio0 4 1>;
+		};
+		ses_green {
+			label = "96338GW:green:ses";
+			gpios = <&gpio0 5 1>;
+		};
+	};
 };

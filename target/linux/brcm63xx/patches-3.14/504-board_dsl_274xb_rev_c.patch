@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -886,6 +886,61 @@ static struct board_info __initdata boar
+@@ -748,6 +748,23 @@ static struct board_info __initdata boar
  	.has_ohci0			= 1,
  };
  
@@ -19,50 +19,12 @@
 +		.force_speed_100	= 1,
 +		.force_duplex_full	= 1,
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "dsl-274xb:green:power",
-+			.gpio		= 5,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "dsl-274xb:red:power",
-+			.gpio		= 4,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "dsl-274xb:green:adsl",
-+			.gpio		= 9,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "dsl-274xb:green:internet",
-+			.gpio		= 2,
-+		},
-+		{
-+			.name		= "dsl-274xb:red:internet",
-+			.gpio		= 10,
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc		= "reset",
-+			.gpio		= 34,
-+			.active_low	= 1,
-+			.type		= EV_KEY,
-+			.code		= KEY_RESTART,
-+			.debounce_interval = BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
 +
- struct spi_gpio_platform_data nb4_spi_gpio_data = {
- 	.sck		= NB4_SPI_GPIO_CLK,
- 	.mosi		= NB4_SPI_GPIO_MOSI,
-@@ -1185,6 +1240,7 @@ static const struct board_info __initcon
+ static struct board_info __initdata board_nb4_ser_r0 = {
+ 	.name				= "NB4-SER-r0",
+ 	.expected_cpu_id		= 0x6358,
+@@ -841,6 +858,7 @@ static const struct board_info __initcon
  	&board_AGPFS0,
  	&board_CPVA642,
  	&board_DWVS0,
@@ -70,7 +32,7 @@
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
  #endif
-@@ -1223,6 +1279,7 @@ static struct of_device_id const bcm963x
+@@ -879,6 +897,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
  	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
  	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
