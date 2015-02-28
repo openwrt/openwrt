@@ -9,6 +9,15 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
+		green_power {
+			label = "RTA1320_16M:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		green_stop {
+			label = "RTA1320_16M:green:stop";
+			gpios = <&gpio0 1 1>;
+		};
 		green_adsl {
 			label = "RTA1320_16M:green:adsl";
 			gpios = <&gpio0 3 1>;
@@ -16,16 +25,6 @@
 		green_ppp {
 			label = "RTA1320_16M:green:ppp";
 			gpios = <&gpio0 4 1>;
-		};
-		green_power {
-			label = "RTA1320_16M:green:power";
-			gpios = <&gpio0 0 1>;
-			default-state = "on";
-		};
-
-		green_stop {
-			label = "RTA1320_16M:green:stop";
-			gpios = <&gpio0 1 1>;
 		};
 	};
 };

@@ -36,9 +36,10 @@
 			label = "A4001N1:green:ppp";
 			gpios = <&gpio0 3 1>;
 		};
-		power_red {
-			label = "A4001N1:red:power";
+		power_green {
+			label = "A4001N1:green:power";
 			gpios = <&gpio0 4 1>;
+			default-state = "on";
 		};
 		ppp_red {
 			label = "A4001N1:red:ppp";
@@ -52,10 +53,9 @@
 			label = "A4001N1:red:3g";
 			gpios = <&gpio0 7 1>;
 		};
-		power_green {
-			label = "A4001N1:green:power";
+		power_red {
+			label = "A4001N1:red:power";
 			gpios = <&gpio0 8 1>;
-			default-state = "on";
 		};
 		wlan_green {
 			label = "A4001N1:green:wlan";

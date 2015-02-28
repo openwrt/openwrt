@@ -5,6 +5,16 @@
 / {
 	model = "Netgear CVG834G";
 	compatible = "netgear,cvg834g", "brcm,bcm6348";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "CVG834G:green:power";
+			gpios = <&gpio1 5 0>;
+			default-state = "on";
+		};
+	};
 };
 
 &pflash {
