@@ -100,7 +100,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -	u32 mask;
 +	res[0].flags = IORESOURCE_MEM;
 +	res[0].start = bcm63xx_regset_address(RSET_GPIO);
-+	res[0].start += data;
++	res[0].start += dir;
  
 -	if (gpio >= chip->ngpio)
 -		BUG();
@@ -115,7 +115,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -	}
 +	res[1].flags = IORESOURCE_MEM;
 +	res[1].start = bcm63xx_regset_address(RSET_GPIO);
-+	res[1].start += dir;
++	res[1].start += data;
  
 -	return !!(bcm_gpio_readl(reg) & mask);
 -}
@@ -175,7 +175,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	else
 +		data_low_reg = GPIO_DATA_LO_REG;
  
-+	bcm63xx_gpio_init_one(0, data_low_reg, GPIO_CTL_LO_REG, min(ngpio, 32));
++	bcm63xx_gpio_init_one(0, GPIO_CTL_LO_REG, data_low_reg, min(ngpio, 32));
  
 -static struct gpio_chip bcm63xx_gpio_chip = {
 -	.label			= "bcm63xx-gpio",
@@ -191,7 +191,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 -int __init bcm63xx_gpio_init(void)
 -{
 -	bcm63xx_gpio_out_low_reg_init();
-+	bcm63xx_gpio_init_one(1, GPIO_DATA_HI_REG, GPIO_CTL_HI_REG, ngpio - 32);
++	bcm63xx_gpio_init_one(1, GPIO_CTL_HI_REG, GPIO_DATA_HI_REG, ngpio - 32);
  
 -	gpio_out_low = bcm_gpio_readl(gpio_out_low_reg);
 -	if (!BCMCPU_IS_6345())

@@ -87,8 +87,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	struct bgpio_chip *bgc;
 +	struct bgpio_pdata *pdata = dev_get_platdata(dev);
 +
-+	dat_r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-+	dirout_r = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	dirout_r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	dat_r = platform_get_resource(pdev, IORESOURCE_MEM, 1);
 +	if (!dat_r || !dirout_r)
 +		return -EINVAL;
 +
