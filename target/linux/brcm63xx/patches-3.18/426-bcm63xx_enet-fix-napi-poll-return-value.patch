@@ -1,0 +1,27 @@
+From d150ac8f353cb1ab59288829db006300120c9daf Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sat, 28 Feb 2015 20:23:13 +0100
+Subject: [PATCH] bcm63xx_enet: fix napi poll return value
+
+Commit d75b1ade567ffab ("net: less interrupt masking in NAPI") changed
+the way how napi treated a returnvalue < budget, which causes hangs when
+there there was tx_work_done, but rx_work_done is less than budget.
+
+To fix this, return budget instead of rx_done to ensure repolling.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ drivers/net/ethernet/broadcom/bcm63xx_enet.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/broadcom/bcm63xx_enet.c
++++ b/drivers/net/ethernet/broadcom/bcm63xx_enet.c
+@@ -508,7 +508,7 @@ static int bcm_enet_poll(struct napi_str
+ 
+ 	if (rx_work_done >= budget || tx_work_done > 0) {
+ 		/* rx/tx queue is not yet empty/clean */
+-		return rx_work_done;
++		return budget;
+ 	}
+ 
+ 	/* no more packet in rx/tx queue, remove device from poll
