@@ -289,8 +289,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		ext_shift = 4;
  		break;
 +	case BCM63268_CPU_ID:
-+		periph_bases[0] += PERF_IRQSTAT_63268_REG(0);
-+		periph_bases[1] += PERF_IRQSTAT_63268_REG(1);
++		periph_bases[0] += PERF_IRQMASK_63268_REG(0);
++		periph_bases[1] += PERF_IRQMASK_63268_REG(1);
 +		periph_irq_count = 2;
 +		periph_width = 4;
 +
