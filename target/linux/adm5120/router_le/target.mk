@@ -2,7 +2,7 @@ ARCH:=mipsel
 ARCH_PACKAGES:=adm5120_mipsel
 SUBTARGET:=router_le
 BOARDNAME:=Little Endian
-FEATURES:=squashfs tgz
+FEATURES+=squashfs tgz
 
 define Target/Description
 	Build firmware images for Infineon/ADMtek ADM5120 based boards
