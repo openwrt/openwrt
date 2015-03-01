@@ -16,7 +16,7 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 include $(INCLUDE_DIR)/target.mk
 
-DEFAULT_PACKAGES += swconfig kmod-input-gpio-keys-polled kmod-button-hotplug
+DEFAULT_PACKAGES += swconfig kmod-gpio-button-hotplug
 
 define Target/Description
 	Build firmware images for Broadcom based xDSL/routers
