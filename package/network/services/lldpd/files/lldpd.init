@@ -37,14 +37,15 @@ start() {
 	local ifaces
 	config_get ifaces 'config' 'interface'
 
-	local iface
+	local iface ifnames=""
 	for iface in $ifaces; do
 		local ifname=""
 		if network_get_device ifname "$iface" || [ -e "/sys/class/net/$iface" ]; then
-			append args "-I ${ifname:-$iface}"
+			append ifnames "${ifname:-$iface}" ","
 		fi
 	done
 
+	[ -n "$ifnames" ] && append args "-I $ifnames"
 	[ $enable_cdp -gt 0 ] && append args '-c'
 	[ $enable_fdp -gt 0 ] && append args '-f'
 	[ $enable_sonmp -gt 0 ] && append args '-s'
