@@ -35,16 +35,6 @@ define KernelPackage/sound-soc-qilb60
 $(call KernelPackage/sound-soc-xburst/default,QI NanoNote,QI_LB60,qi-lb60,qi_lb60)
 endef
 
-define KernelPackage/sound-soc-n516
-$(call KernelPackage/sound-soc-xburst/default,Hanvon N516,N516,n516)
-endef
-
-define KernelPackage/sound-soc-n526
-$(call KernelPackage/sound-soc-xburst/default,Hanvon N526,N526,n526)
-endef
-
 $(eval $(call KernelPackage,sound-soc-jz4740))
 $(eval $(call KernelPackage,sound-soc-jz4740-codec))
 $(eval $(call KernelPackage,sound-soc-qilb60))
-$(eval $(call KernelPackage,sound-soc-n516))
-$(eval $(call KernelPackage,sound-soc-n526))

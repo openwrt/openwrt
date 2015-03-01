@@ -10,7 +10,7 @@ ARCH:=mipsel
 BOARD:=xburst
 BOARDNAME:=Ingenic XBurst
 FEATURES:=targz nand ubifs audio
-SUBTARGETS:=qi_lb60 n516 n526 id800wt
+SUBTARGETS:=qi_lb60
 
 KERNEL_PATCHVER:=3.10
 
