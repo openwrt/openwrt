@@ -155,7 +155,7 @@
  {
 +#ifdef MODULE_START
  	return __vmalloc_node_range(size, 1, MODULE_START, MODULE_END,
- 				GFP_KERNEL, PAGE_KERNEL, NUMA_NO_NODE,
+ 				GFP_KERNEL, PAGE_KERNEL, 0, NUMA_NO_NODE,
  				__builtin_return_address(0));
 +#else
 +	void *ptr;
