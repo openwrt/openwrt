@@ -30,7 +30,7 @@
  typedef uint8_t Elf64_Byte;		/* Type for a 8-bit quantity.  */
 --- a/arch/mips/kernel/module.c
 +++ b/arch/mips/kernel/module.c
-@@ -43,14 +43,222 @@ struct mips_hi16 {
+@@ -43,14 +43,221 @@ struct mips_hi16 {
  static LIST_HEAD(dbe_list);
  static DEFINE_SPINLOCK(dbe_lock);
  
@@ -126,6 +126,10 @@
 +
 +	split_page(page, order);
 +
++	/* mark all pages except for the last one */
++	for (p = page; p + 1 < page + (size >> PAGE_SHIFT); ++p)
++		set_bit(PG_owner_priv_1, &p->flags);
++
 +	for (p = page + (size >> PAGE_SHIFT); p < page + (1 << order); ++p)
 +		__free_page(p);
 +
@@ -133,16 +137,17 @@
 +}
 +#endif
 +
-+static void free_phys(void *ptr, unsigned long size)
++static void free_phys(void *ptr)
 +{
 +	struct page *page;
-+	struct page *end;
++	bool free;
 +
 +	page = virt_to_page(ptr);
-+	end = page + (PAGE_ALIGN(size) >> PAGE_SHIFT);
-+
-+	for (; page < end; ++page)
++	do {
++		free = test_and_clear_bit(PG_owner_priv_1, &page->flags);
 +		__free_page(page);
++		page++;
++	} while (free);
 +}
 +
 +
@@ -180,18 +185,12 @@
 +}
 +
 +/* Free memory returned from module_alloc */
-+void module_free(struct module *mod, void *module_region)
++void module_memfree(void *module_region)
 +{
-+	if (is_phys_addr(module_region)) {
-+		if (mod->module_init == module_region)
-+			free_phys(module_region, mod->init_size);
-+		else if (mod->module_core == module_region)
-+			free_phys(module_region, mod->core_size);
-+		else
-+			BUG();
-+	} else {
++	if (is_phys_addr(module_region))
++		free_phys(module_region);
++	else
 +		vfree(module_region);
-+	}
 +}
 +
 +static void *__module_alloc(int size, bool phys)
@@ -254,7 +253,7 @@
  
  int apply_r_mips_none(struct module *me, u32 *location, Elf_Addr v)
  {
-@@ -64,8 +272,39 @@ static int apply_r_mips_32_rel(struct mo
+@@ -64,8 +271,39 @@ static int apply_r_mips_32_rel(struct mo
  	return 0;
  }
  
@@ -294,7 +293,7 @@
  	if (v % 4) {
  		pr_err("module %s: dangerous R_MIPS_26 REL relocation\n",
  		       me->name);
-@@ -73,14 +312,17 @@ static int apply_r_mips_26_rel(struct mo
+@@ -73,14 +311,17 @@ static int apply_r_mips_26_rel(struct mo
  	}
  
  	if ((v & 0xf0000000) != (((unsigned long)location + 4) & 0xf0000000)) {
@@ -317,7 +316,7 @@
  
  	return 0;
  }
-@@ -287,11 +529,32 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -287,11 +528,32 @@ int module_finalize(const Elf_Ehdr *hdr,
  		list_add(&me->arch.dbe_list, &dbe_list);
  		spin_unlock_irq(&dbe_lock);
  	}
