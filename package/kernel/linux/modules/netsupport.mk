@@ -405,6 +405,22 @@ endef
 $(eval $(call KernelPackage,iptunnel))
 
 
+define KernelPackage/ipvti
+  SUBMENU:=$(NETWORK_SUPPORT_MENU)
+  TITLE:=IP VTI (Virtual Tunnel Interface)
+  DEPENDS:=+kmod-iptunnel +kmod-iptunnel4 +kmod-ipsec4
+  KCONFIG:=CONFIG_NET_IPVTI
+  FILES:=$(LINUX_DIR)/net/ipv4/ip_vti.ko
+  AUTOLOAD:=$(call AutoLoad,33,ip_vti)
+endef
+
+define KernelPackage/ipvti/description
+ Kernel modules for IP VTI (Virtual Tunnel Interface)
+endef
+
+$(eval $(call KernelPackage,ipvti))
+
+
 define KernelPackage/iptunnel4
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=IPv4 tunneling
