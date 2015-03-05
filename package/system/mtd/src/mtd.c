@@ -337,7 +337,7 @@ mtd_verify(const char *mtd, char *file)
 	if (quiet < 2)
 		fprintf(stderr, "Verifying %s against %s ...\n", mtd, file);
 
-	if (stat(file, &s) || md5sum(file, f_md5)) {
+	if (stat(file, &s) || md5sum(file, f_md5) < 0) {
 		fprintf(stderr, "Failed to hash %s\n", file);
 		return -1;
 	}
