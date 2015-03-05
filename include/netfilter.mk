@@ -183,6 +183,7 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT6,CONFIG_NF_NAT_IPV6, $(P_V6)nf_nat_i
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)xt_nat, ge 3.7.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NETFILTER_XT_NAT, $(P_XT)xt_nat, ge 3.18.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_V4)iptable_nat, lt 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)nf_nat_redirect, ge 3.19.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT_IPV4, $(P_V4)iptable_nat, ge 3.7.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_IP_NF_NAT, $(P_V4)iptable_nat, ge 3.16.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_NF_NAT_IPV6, $(P_V6)ip6table_nat, ge 3.7.0),))
