@@ -10,6 +10,9 @@ include $(INCLUDE_DIR)/image.mk
 UBIFS_OPTS = -F -m 2048 -e 126KiB -c 2048 -U
 UBI_OPTS = -m 2048 -p 128KiB -s 512
 
+AT91SAMA5D3XPLAINED_UBIFS_OPTS = -m 2048 -e 124KiB -c 2048
+AT91SAMA5D3XPLAINED_UBI_OPTS = -m 2048 -p 128KiB -s 2048
+
 define Build/Clean
 	$(MAKE) -C u-boot clean
 endef
