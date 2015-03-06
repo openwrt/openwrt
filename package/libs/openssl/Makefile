@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
 PKG_VERSION:=1.0.2
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_USE_MIPS16:=0
 
 PKG_BUILD_PARALLEL:=1
@@ -118,6 +118,8 @@ else
   OPENSSL_OPTIONS+=no-sse2
   ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
     OPENSSL_TARGET:=linux-mips-openwrt
+  else ifeq ($(CONFIG_arm)$(CONFIG_armeb),y)
+    OPENSSL_TARGET:=linux-armv4-openwrt
   else
     OPENSSL_TARGET:=linux-generic-openwrt
     OPENSSL_OPTIONS+=no-perlasm
@@ -156,7 +158,7 @@ TARGET_CFLAGS += $(FPIC)
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		ASFLAGS="$(TARGET_ASFLAGS) -c" \
+		ASFLAGS="$(TARGET_ASFLAGS) -I$(PKG_BUILD_DIR)/crypto -c" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
@@ -164,7 +166,7 @@ define Build/Compile
 		all
 	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		CC="$(TARGET_CC)" \
-		ASFLAGS="$(TARGET_ASFLAGS) -c" \
+		ASFLAGS="$(TARGET_ASFLAGS) -I$(PKG_BUILD_DIR)/crypto -c" \
 		AR="$(TARGET_CROSS)ar r" \
 		RANLIB="$(TARGET_CROSS)ranlib" \
 		OPENWRT_OPTIMIZATION_FLAGS="$(TARGET_CFLAGS)" \
