@@ -826,6 +826,7 @@ define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
   KCONFIG:= \
+	CONFIG_HAMRADIO=y \
 	CONFIG_AX25 \
 	CONFIG_MKISS
   FILES:= \
