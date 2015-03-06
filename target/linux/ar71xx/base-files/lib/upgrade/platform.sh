@@ -180,10 +180,11 @@ platform_check_image() {
 	ap136-020 | \
 	ap135-020 | \
 	ap96 | \
+	bxu2000n-2-a1 | \
 	db120 | \
 	f9k1115v2 |\
 	hornet-ub | \
-	bxu2000n-2-a1 | \
+	wpj558 | \
 	zcn-1523h-2 | \
 	zcn-1523h-5)
 		[ "$magic_long" != "68737173" -a "$magic_long" != "19852003" ] && {

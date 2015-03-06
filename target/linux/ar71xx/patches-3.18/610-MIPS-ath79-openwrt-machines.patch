@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,189 @@
+@@ -16,22 +16,190 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -178,6 +178,7 @@
 +	ATH79_MACH_WNR1000_V2,		/* NETGEAR WNR1000 v2 */
 +	ATH79_MACH_WP543,		/* Compex WP543 */
 +	ATH79_MACH_WPE72,		/* Compex WPE72 */
++	ATH79_MACH_WPJ558,		/* Compex WPJ558 */
 +	ATH79_MACH_WRT160NL,		/* Linksys WRT160NL */
 +	ATH79_MACH_WRT400N,		/* Linksys WRT400N */
 +	ATH79_MACH_WZR_HP_AG300H,	/* Buffalo WZR-HP-AG300H */
@@ -263,7 +264,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +75,970 @@ config ATH79_MACH_AP121
+@@ -11,62 +75,979 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -497,6 +498,15 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select MYLOADER
++
++config ATH79_MACH_WPJ558
++	bool "Compex WPJ558 board support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_DGL_5500_A1
 +	bool "D-Link DGL-5500 A1 support"
@@ -1382,7 +1392,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,118 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,119 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1491,6 +1501,7 @@
 +obj-$(CONFIG_ATH79_MACH_WNR2200)	+= mach-wnr2200.o
 +obj-$(CONFIG_ATH79_MACH_WP543)		+= mach-wp543.o
 +obj-$(CONFIG_ATH79_MACH_WPE72)		+= mach-wpe72.o
++obj-$(CONFIG_ATH79_MACH_WPJ558)		+= mach-wpj558.o
 +obj-$(CONFIG_ATH79_MACH_WRT160NL)	+= mach-wrt160nl.o
 +obj-$(CONFIG_ATH79_MACH_WRT400N)	+= mach-wrt400n.o
 +obj-$(CONFIG_ATH79_MACH_WZR_HP_G300NH)	+= mach-wzr-hp-g300nh.o
