@@ -771,6 +771,9 @@ ar71xx_board_detect() {
 	*WPE72)
 		name="wpe72"
 		;;
+	*WPJ558)
+		name="wpj558"
+		;;
 	*WNDAP360)
 		name="wndap360"
 		;;
