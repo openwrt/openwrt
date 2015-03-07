@@ -1503,7 +1503,7 @@
 +	bcmnand_reg_awrite(ctrl, NANDC_IDM_APB_LITTLE_ENDIAN, 0);
 +	udelay(10);
 +
-+	dev_info(dev, "NAND Controller rev %d.%d\n",
++	dev_info(dev, "NAND Controller rev %d.%02d\n",
 +		bcmnand_reg_read(ctrl, NANDC_REV_MAJOR),
 +		bcmnand_reg_read(ctrl, NANDC_REV_MINOR));
 +
