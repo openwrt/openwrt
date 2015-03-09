@@ -1442,7 +1442,7 @@ static int ifx_ptm_init(void)
     init_tables();
 
     for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ ) {
-        g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], ether_setup);
+        g_net_dev[i] = alloc_netdev(0, g_net_dev_name[i], NET_NAME_UNKNOWN, ether_setup);
         if ( g_net_dev[i] == NULL )
             goto ALLOC_NETDEV_FAIL;
         ptm_setup(g_net_dev[i], i);
