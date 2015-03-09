@@ -1,6 +1,6 @@
 #!/bin/sh
 
-[ "$ACTION" = add ] || exit 0
+[ "$ACTION" = add ] || [ "$ACTION" = remove ] || exit 0
 [ "${DEVNAME/[0-9]/}" = cdc-wdm ] || exit 0
 
 . /lib/functions.sh
@@ -13,11 +13,13 @@ find_wwan_iface() {
 	config_get proto "$cfg" proto
 	config_get device "$cfg" device
 
-	[ "$proto" = wwan ] || [ "$proto" = mbim ] || [ "$proto" = qmi ] || return 0
+	[ "$proto" = wwan ] || [ "$proto" = mbim ] || [ "$proto" = qmi ] || [ "$proto" = ncm ] || return 0
 	[ -z "$device" -a "$proto" = wwan ] || [ "$device" = "/dev/$DEVNAME" ] || return 0
-
-	proto_set_available "$cfg" 1
-	ifup "$cfg"
+	if [ "$ACTION" = add ]; then
+		proto_set_available "$cfg" 1
+	else
+		proto_set_available "$cfg" 0
+	fi
 	exit 0
 }
 
