@@ -44,7 +44,7 @@ endef
 define Package/comgt-ncm
 $(call Package/comgt/Default)
   TITLE+=NCM 3G/4G Support
-  DEPENDS:=+comgt
+  DEPENDS:=+comgt +wwan
 endef
 
 define Package/comgt/description
