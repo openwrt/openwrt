@@ -28,6 +28,8 @@ define Package/wwan/install
 	$(INSTALL_BIN) ./files/wwan.usb $(1)/etc/hotplug.d/usb/00_wwan.sh
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/usbmisc
 	$(INSTALL_BIN) ./files/wwan.usbmisc $(1)/etc/hotplug.d/usbmisc/00_wwan.sh
+	$(INSTALL_DIR) $(1)/lib/network/wwan/
+	$(INSTALL_DATA) ./files/data/* $(1)/lib/network/wwan/
 endef
 
 $(eval $(call BuildPackage,wwan))
