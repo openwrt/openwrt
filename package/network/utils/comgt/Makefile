@@ -81,8 +81,6 @@ define Package/comgt/install
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/3g.sh $(1)/lib/netifd/proto/3g.sh
 	$(INSTALL_BIN) ./files/directip.sh $(1)/lib/netifd/proto/directip.sh
-	$(INSTALL_DIR) $(1)/lib/network/wwan/
-	$(INSTALL_DATA) ./files/data/* $(1)/lib/network/wwan/
 endef
 
 define Package/comgt-directip/install
