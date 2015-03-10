@@ -45,7 +45,7 @@ static struct gpio_led tl_mr13u_leds_gpio[] __initdata = {
 	{
 		.name		= "tp-link:blue:system",
 		.gpio		= TL_MR13U_GPIO_LED_SYSTEM,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 };
 
