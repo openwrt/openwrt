@@ -210,7 +210,8 @@ static struct mtd_part_parser ac49x_parser = {
 
 static int __init ac49x_parser_init(void)
 {
-	return register_mtd_parser(&ac49x_parser);
+	register_mtd_parser(&ac49x_parser);
+	return 0;
 }
 
 module_init(ac49x_parser_init);
