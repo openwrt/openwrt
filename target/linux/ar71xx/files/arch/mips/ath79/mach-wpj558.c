@@ -32,6 +32,7 @@
 #include "dev-ap9x-pci.h"
 #include "dev-gpio-buttons.h"
 #include "dev-eth.h"
+#include "dev-usb.h"
 #include "dev-leds-gpio.h"
 #include "dev-m25p80.h"
 #include "dev-spi.h"
@@ -141,6 +142,8 @@ static void __init wpj558_setup(void)
 	ath79_register_gpio_keys_polled(-1, WPJ558_KEYS_POLL_INTERVAL,
 					ARRAY_SIZE(wpj558_gpio_keys),
 					wpj558_gpio_keys);
+
+	ath79_register_usb();
 
 	ath79_register_wmac(art + WPJ558_WMAC_CALDATA_OFFSET, NULL);
 
