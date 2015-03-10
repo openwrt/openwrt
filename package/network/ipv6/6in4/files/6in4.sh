@@ -36,7 +36,7 @@ proto_6in4_setup() {
 		return
 	}
 
-	( proto_add_host_dependency "$cfg" 0.0.0.0 )
+	( proto_add_host_dependency "$cfg" "$peeraddr" )
 
 	[ -z "$ipaddr" ] && {
 		local wanif
