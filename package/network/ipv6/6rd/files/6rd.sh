@@ -23,7 +23,7 @@ proto_6rd_setup() {
 		return
 	}
 
-	( proto_add_host_dependency "$cfg" 0.0.0.0 "$tunlink" )
+	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
 
 	[ -z "$ipaddr" ] && {
 		local wanif="$tunlink"
