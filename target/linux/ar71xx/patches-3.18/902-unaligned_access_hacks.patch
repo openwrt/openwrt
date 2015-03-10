@@ -246,7 +246,7 @@
  					       &sin->sin6_addr);
  			sin->sin6_scope_id = 0;
  		}
-@@ -712,12 +712,12 @@ int ip6_datagram_send_ctl(struct net *ne
+@@ -708,12 +708,12 @@ int ip6_datagram_send_ctl(struct net *ne
  			}
  
  			if (fl6->flowlabel&IPV6_FLOWINFO_MASK) {
