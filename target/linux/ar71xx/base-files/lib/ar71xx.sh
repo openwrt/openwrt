@@ -738,7 +738,7 @@ ar71xx_board_detect() {
 	*"TL-MR12U")
 		name="tl-mr12u"
 		;;
-	*"TL-MR13U")
+	*"TL-MR13U v1")
 		name="tl-mr13u"
 		;;
 	*"Tube2H")
