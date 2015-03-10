@@ -193,7 +193,8 @@ static int gpio_latch_remove(struct platform_device *pdev)
 {
 	struct gpio_latch_chip *glc = platform_get_drvdata(pdev);
 
-	return gpiochip_remove(&glc->gc);;
+	gpiochip_remove(&glc->gc);
+	return 0;
 }
 
 
