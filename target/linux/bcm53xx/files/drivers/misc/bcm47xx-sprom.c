@@ -734,7 +734,7 @@ static const struct of_device_id bcm47xx_sprom_of_match_table[] = {
 	{ .compatible = "brcm,bcm47xx-sprom", },
 	{},
 };
-MODULE_DEVICE_TABLE(of, mvebu_pcie_of_match_table);
+MODULE_DEVICE_TABLE(of, bcm47xx_sprom_of_match_table);
 
 static struct platform_driver bcm47xx_sprom_driver = {
 	.driver = {
