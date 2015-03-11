@@ -8,7 +8,7 @@
  #include <linux/of.h>
  
  #include <lantiq_soc.h>
-@@ -38,10 +39,12 @@
+@@ -38,10 +39,12 @@ enum {
  	LTQ_NOR_NORMAL
  };
  
@@ -24,7 +24,7 @@
  };
  
  static const char ltq_map_name[] = "ltq_nor";
-@@ -109,12 +112,44 @@
+@@ -109,12 +112,44 @@ ltq_copy_to(struct map_info *map, unsign
  }
  
  static int
@@ -70,7 +70,7 @@
  
  	if (of_machine_is_compatible("lantiq,falcon") &&
  			(ltq_boot_select() != BS_FLASH)) {
-@@ -128,76 +163,88 @@
+@@ -128,76 +163,88 @@ ltq_mtd_probe(struct platform_device *pd
  
  	platform_set_drvdata(pdev, ltq_mtd);
  
