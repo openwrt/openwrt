@@ -123,12 +123,6 @@ static int cybertan_parse_partitions(struct mtd_info *master,
 		goto free_hdr;
 	}
 
-	if (strncmp(header->cybertan.magic, "NL16", 4) != 0) {
-		printk(KERN_NOTICE "%s: no WRT160NL signature found\n",
-		       master->name);
-		goto free_hdr;
-	}
-
 	theader = &header->trx;
 	if (le32_to_cpu(theader->magic) != TRX_MAGIC) {
 		printk(KERN_NOTICE "%s: no TRX header found\n", master->name);
