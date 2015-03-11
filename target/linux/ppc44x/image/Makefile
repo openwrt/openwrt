@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2007-2010 OpenWrt.org
+# Copyright (C) 2007-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -31,7 +31,7 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	( \
-		dd if=$(KDIR)/cuImage.taishan bs=2048k conv=sync; \
+		dd if=$(KDIR)/cuImage.taishan bs=256k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=256k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-taishan-$(1).img
 	( \
