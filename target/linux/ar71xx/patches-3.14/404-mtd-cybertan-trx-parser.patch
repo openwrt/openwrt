@@ -4,11 +4,11 @@
  	  This provides partitions parser for devices based on BCM47xx
  	  boards.
  
-+config MTD_WRT160NL_PARTS
-+	tristate "Linksys WRT160NL partitioning support"
-+	depends on ATH79_MACH_WRT160NL
++config MTD_CYBERTAN_PARTS
++	tristate "Cybertan partitioning support"
++	depends on ATH79
 +	---help---
-+	   Linksys WRT160NL partitioning support
++	   Cybertan partitioning support
 +
  config MTD_MYLOADER_PARTS
  	tristate "MyLoader partition parsing"
@@ -19,7 +19,7 @@
  obj-$(CONFIG_MTD_BCM63XX_PARTS)	+= bcm63xxpart.o
  obj-$(CONFIG_MTD_BCM47XX_PARTS)	+= bcm47xxpart.o
  obj-$(CONFIG_MTD_MYLOADER_PARTS) += myloader.o
-+obj-$(CONFIG_MTD_WRT160NL_PARTS) += wrt160nl_part.o
++obj-$(CONFIG_MTD_CYBERTAN_PARTS) += cybertan_part.o
  
  # 'Users' - code which presents functionality to userspace.
  obj-$(CONFIG_MTD_BLKDEVS)	+= mtd_blkdevs.o

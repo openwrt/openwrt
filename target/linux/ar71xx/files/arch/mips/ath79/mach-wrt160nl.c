@@ -34,7 +34,7 @@
 #define WRT160NL_NVRAM_SIZE	0x10000
 
 static const char *wrt160nl_part_probes[] = {
-	"wrt160nl",
+	"cybertan",
 	NULL,
 };
 

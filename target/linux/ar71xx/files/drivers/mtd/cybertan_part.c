@@ -61,7 +61,7 @@ struct uimage_header {
 	uint32_t	ih_hcrc;	/* Image Header CRC Checksum */
 	uint32_t	ih_time;	/* Image Creation Timestamp */
 	uint32_t	ih_size;	/* Image Data Size */
-	uint32_t	ih_load;	/* Data» Load  Address */
+	uint32_t	ih_load;	/* DataÂ» Load  Address */
 	uint32_t	ih_ep;		/* Entry Point Address */
 	uint32_t	ih_dcrc;	/* Image Data CRC Checksum */
 	uint8_t		ih_os;		/* Operating System */
@@ -71,21 +71,21 @@ struct uimage_header {
 	uint8_t		ih_name[IH_NMLEN];	/* Image Name */
 };
 
-struct wrt160nl_header {
+struct firmware_header {
 	struct cybertan_header	cybertan;
 	struct trx_header	trx;
 	struct uimage_header	uimage;
-} __attribute__ ((packed));
+} __packed;
 
-#define WRT160NL_UBOOT_LEN	0x40000
-#define WRT160NL_ART_LEN	0x10000
-#define WRT160NL_NVRAM_LEN	0x10000
+#define UBOOT_LEN	0x40000
+#define ART_LEN		0x10000
+#define NVRAM_LEN	0x10000
 
-static int wrt160nl_parse_partitions(struct mtd_info *master,
+static int cybertan_parse_partitions(struct mtd_info *master,
 				     struct mtd_partition **pparts,
 				     struct mtd_part_parser_data *data)
 {
-	struct wrt160nl_header *header;
+	struct firmware_header *header;
 	struct trx_header *theader;
 	struct uimage_header *uheader;
 	struct mtd_partition *trx_parts;
@@ -96,9 +96,9 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 	unsigned int art_len;
 	int ret;
 
-	uboot_len = max_t(unsigned int, master->erasesize, WRT160NL_UBOOT_LEN);
-	nvram_len = max_t(unsigned int, master->erasesize, WRT160NL_NVRAM_LEN);
-	art_len = max_t(unsigned int, master->erasesize, WRT160NL_ART_LEN);
+	uboot_len = max_t(unsigned int, master->erasesize, UBOOT_LEN);
+	nvram_len = max_t(unsigned int, master->erasesize, NVRAM_LEN);
+	art_len = max_t(unsigned int, master->erasesize, ART_LEN);
 
 	trx_parts = kzalloc(TRX_PARTS * sizeof(struct mtd_partition),
 			    GFP_KERNEL);
@@ -125,7 +125,7 @@ static int wrt160nl_parse_partitions(struct mtd_info *master,
 
 	if (strncmp(header->cybertan.magic, "NL16", 4) != 0) {
 		printk(KERN_NOTICE "%s: no WRT160NL signature found\n",
-			master->name);
+		       master->name);
 		goto free_hdr;
 	}
 
@@ -188,20 +188,20 @@ out:
 	return ret;
 }
 
-static struct mtd_part_parser wrt160nl_parser = {
+static struct mtd_part_parser cybertan_parser = {
 	.owner		= THIS_MODULE,
-	.parse_fn	= wrt160nl_parse_partitions,
-	.name		= "wrt160nl",
+	.parse_fn	= cybertan_parse_partitions,
+	.name		= "cybertan",
 };
 
-static int __init wrt160nl_parser_init(void)
+static int __init cybertan_parser_init(void)
 {
-	register_mtd_parser(&wrt160nl_parser);
+	register_mtd_parser(&cybertan_parser);
 
 	return 0;
 }
 
-module_init(wrt160nl_parser_init);
+module_init(cybertan_parser_init);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Christian Daniel <cd@maintech.de>");
