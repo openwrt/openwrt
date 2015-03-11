@@ -1,5 +1,5 @@
---- a/arch/mips/lantiq/xway/reset.c	2015-02-09 18:23:01.837007936 +0200
-+++ b/arch/mips/lantiq/xway/reset.c	2015-02-09 19:16:43.006081435 +0200
+--- a/arch/mips/lantiq/xway/reset.c
++++ b/arch/mips/lantiq/xway/reset.c
 @@ -44,6 +44,37 @@
  #define RCU_BOOT_SEL(x)		((x >> 18) & 0x7)
  #define RCU_BOOT_SEL_XRX200(x)	(((x >> 17) & 0xf) | ((x >> 8) & 0x10))
@@ -84,11 +84,12 @@
  static int __init mips_reboot_setup(void)
  {
  	struct resource res;
-@@ -223,6 +293,8 @@
+@@ -223,6 +293,9 @@
  	if (!ltq_rcu_membase)
  		panic("Failed to remap core memory");
  
-+	ltq_usb_init();
++	if (of_machine_is_compatible("lantiq,vr9"))
++		ltq_usb_init();
 +
  	_machine_restart = ltq_machine_restart;
  	_machine_halt = ltq_machine_halt;
