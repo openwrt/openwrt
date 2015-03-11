@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -8202,6 +8202,27 @@ static const struct rf_channel rf_vals_5
+@@ -8209,6 +8209,27 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
  
@@ -28,7 +28,7 @@
  static int rt2800_probe_hw_mode(struct rt2x00_dev *rt2x00dev)
  {
  	struct hw_mode_spec *spec = &rt2x00dev->spec;
-@@ -8290,7 +8311,10 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8297,7 +8318,10 @@ static int rt2800_probe_hw_mode(struct r
  	case RF5390:
  	case RF5392:
  		spec->num_channels = 14;
@@ -40,7 +40,7 @@
  		break;
  
  	case RF3052:
-@@ -8474,6 +8498,19 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -8481,6 +8505,19 @@ static int rt2800_probe_rt(struct rt2x00
  	return 0;
  }
  
@@ -60,7 +60,7 @@
  int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
  {
  	struct rt2800_drv_data *drv_data = rt2x00dev->drv_data;
-@@ -8516,6 +8553,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
+@@ -8523,6 +8560,15 @@ int rt2800_probe_hw(struct rt2x00_dev *r
  	rt2800_register_write(rt2x00dev, GPIO_CTRL, reg);
  
  	/*

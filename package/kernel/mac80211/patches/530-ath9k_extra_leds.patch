@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ath9k.h
 +++ b/drivers/net/wireless/ath/ath9k/ath9k.h
-@@ -812,6 +812,9 @@ static inline int ath9k_dump_btcoex(stru
+@@ -814,6 +814,9 @@ static inline int ath9k_dump_btcoex(stru
  void ath_init_leds(struct ath_softc *sc);
  void ath_deinit_leds(struct ath_softc *sc);
  void ath_fill_led_pin(struct ath_softc *sc);
@@ -10,7 +10,7 @@
  #else
  static inline void ath_init_leds(struct ath_softc *sc)
  {
-@@ -952,6 +955,13 @@ void ath_ant_comb_scan(struct ath_softc 
+@@ -953,6 +956,13 @@ void ath_ant_comb_scan(struct ath_softc 
  
  #define ATH9K_NUM_CHANCTX  2 /* supports 2 operating channels */
  
@@ -24,7 +24,7 @@
  struct ath_softc {
  	struct ieee80211_hw *hw;
  	struct device *dev;
-@@ -1003,9 +1013,8 @@ struct ath_softc {
+@@ -1004,9 +1014,8 @@ struct ath_softc {
  	spinlock_t chan_lock;
  
  #ifdef CPTCFG_MAC80211_LEDS
@@ -38,15 +38,17 @@
  #ifdef CPTCFG_ATH9K_DEBUGFS
 --- a/drivers/net/wireless/ath/ath9k/gpio.c
 +++ b/drivers/net/wireless/ath/ath9k/gpio.c
-@@ -24,40 +24,102 @@
+@@ -24,45 +24,102 @@
  static void ath_led_brightness(struct led_classdev *led_cdev,
  			       enum led_brightness brightness)
  {
 -	struct ath_softc *sc = container_of(led_cdev, struct ath_softc, led_cdev);
--	ath9k_hw_set_gpio(sc->sc_ah, sc->sc_ah->led_pin, (brightness == LED_OFF));
+-	u32 val = (brightness == LED_OFF);
 +	struct ath_led *led = container_of(led_cdev, struct ath_led, cdev);
 +	struct ath_softc *sc = led->sc;
-+
+ 
+-	if (sc->sc_ah->config.led_active_high)
+-		val = !val;
 +	ath9k_ps_wakeup(sc);
 +	ath9k_hw_set_gpio(sc->sc_ah, led->gpio->gpio,
 +			  (brightness != LED_OFF) ^ led->gpio->active_low);
@@ -78,7 +80,8 @@
 +
 +	return 0;
 +}
-+
+ 
+-	ath9k_hw_set_gpio(sc->sc_ah, sc->sc_ah->led_pin, val);
 +int ath_create_gpio_led(struct ath_softc *sc, int gpio_num, const char *name,
 +			const char *trigger, bool active_low)
 +{
@@ -136,7 +139,7 @@
  	if (AR_SREV_9100(sc->sc_ah))
  		return;
  
--	if (!led_blink)
+-	if (!ath9k_led_blink)
 -		sc->led_cdev.default_trigger =
 -			ieee80211_get_radio_led_name(sc->hw);
 -
@@ -150,7 +153,7 @@
 -	ret = led_classdev_register(wiphy_dev(sc->hw->wiphy), &sc->led_cdev);
 -	if (ret < 0)
 -		return;
-+	if (led_blink)
++	if (ath9k_led_blink)
 +		trigger = sc->led_default_trigger;
 +	else
 +		trigger = ieee80211_get_radio_led_name(sc->hw);
@@ -162,7 +165,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -903,7 +903,7 @@ int ath9k_init_device(u16 devid, struct 
+@@ -924,7 +924,7 @@ int ath9k_init_device(u16 devid, struct 
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -173,7 +176,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1406,6 +1406,61 @@ static const struct file_operations fops
+@@ -1391,6 +1391,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -235,7 +238,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1430,6 +1485,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1415,6 +1470,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);
@@ -243,6 +246,6 @@
 +	debugfs_create_file("gpio_led", S_IWUSR,
 +			   sc->debug.debugfs_phy, sc, &fops_gpio_led);
 +#endif
- 	debugfs_create_file("dma", S_IRUSR, sc->debug.debugfs_phy, sc,
- 			    &fops_dma);
- 	debugfs_create_file("interrupt", S_IRUSR, sc->debug.debugfs_phy, sc,
+ 	debugfs_create_devm_seqfile(sc->dev, "dma", sc->debug.debugfs_phy,
+ 				    read_file_dma);
+ 	debugfs_create_devm_seqfile(sc->dev, "interrupt", sc->debug.debugfs_phy,

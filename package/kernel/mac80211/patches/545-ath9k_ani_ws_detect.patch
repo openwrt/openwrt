@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
-@@ -929,55 +929,6 @@ static bool ar5008_hw_ani_control_new(st
+@@ -944,55 +944,6 @@ static bool ar5008_hw_ani_control_new(st
  		 * on == 0 means more noise imm
  		 */
  		u32 on = param ? 1 : 0;
@@ -58,7 +58,7 @@
  			REG_SET_BIT(ah, AR_PHY_SFCORR_LOW,
 --- a/drivers/net/wireless/ath/ath9k/ar9003_phy.c
 +++ b/drivers/net/wireless/ath/ath9k/ar9003_phy.c
-@@ -26,20 +26,6 @@ static const int cycpwrThr1_table[] =
+@@ -41,20 +41,6 @@ static const int cycpwrThr1_table[] =
  /* level:  0   1   2   3   4   5   6   7   8  */
  	{ -6, -4, -2,  0,  2,  4,  6,  8 };     /* lvl 0-7, default 3 */
  
@@ -76,10 +76,10 @@
 -static const int m1ThreshExt_off = 127;
 -static const int m2ThreshExt_off = 127;
 -
- /**
-  * ar9003_hw_set_channel - set channel on single-chip device
-  * @ah: atheros hardware structure
-@@ -984,11 +970,6 @@ static bool ar9003_hw_ani_control(struct
+ static const u8 ofdm2pwr[] = {
+ 	ALL_TARGET_LEGACY_6_24,
+ 	ALL_TARGET_LEGACY_6_24,
+@@ -1090,11 +1076,6 @@ static bool ar9003_hw_ani_control(struct
  	struct ath_common *common = ath9k_hw_common(ah);
  	struct ath9k_channel *chan = ah->curchan;
  	struct ar5416AniState *aniState = &ah->ani;
@@ -91,7 +91,7 @@
  	s32 value, value2;
  
  	switch (cmd & ah->ani_function) {
-@@ -1002,61 +983,6 @@ static bool ar9003_hw_ani_control(struct
+@@ -1108,61 +1089,6 @@ static bool ar9003_hw_ani_control(struct
  		 */
  		u32 on = param ? 1 : 0;
  

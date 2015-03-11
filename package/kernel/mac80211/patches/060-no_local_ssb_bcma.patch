@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -423,42 +423,6 @@ USB_CDC_PHONET=
+@@ -344,40 +344,3 @@ USB_CDC_PHONET=
  USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
@@ -34,41 +34,27 @@
 -BCMA_HOST_PCI=
 -BCMA_DRIVER_PCI_HOSTMODE=
 -BCMA_HOST_SOC=
+-BCMA_DRIVER_PCI=
 -BCMA_DRIVER_MIPS=
 -BCMA_SFLASH=
 -BCMA_NFLASH=
 -BCMA_DRIVER_GMAC_CMN=
 -BCMA_DRIVER_GPIO=
 -BCMA_DEBUG=
- NFC=
- NFC_DIGITAL=
- NFC_NCI=
---- a/Kconfig
-+++ b/Kconfig
-@@ -33,9 +33,6 @@ source drivers/net/wireless/Kconfig
- source drivers/net/ethernet/Kconfig
- source drivers/net/usb/Kconfig
- 
--source drivers/ssb/Kconfig
--source drivers/bcma/Kconfig
--
- source net/nfc/Kconfig
- 
- source drivers/media/Kconfig
 --- a/Makefile.kernel
 +++ b/Makefile.kernel
-@@ -25,8 +25,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
+@@ -38,8 +38,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
  obj-$(CPTCFG_WLAN) += drivers/net/wireless/
- obj-$(CPTCFG_BT) += net/bluetooth/
- obj-$(CPTCFG_BT) += drivers/bluetooth/
+ #obj-$(CPTCFG_BT) += net/bluetooth/
+ #obj-$(CPTCFG_BT) += drivers/bluetooth/
 -obj-$(CPTCFG_SSB) += drivers/ssb/
 -obj-$(CPTCFG_BCMA) += drivers/bcma/
- obj-$(CPTCFG_ETHERNET) += drivers/net/ethernet/
+ #obj-$(CPTCFG_ETHERNET) += drivers/net/ethernet/
  obj-$(CPTCFG_USB_NET_RNDIS_WLAN) += drivers/net/usb/
- obj-$(CPTCFG_NFC) += net/nfc/
+ #obj-$(CPTCFG_NFC) += net/nfc/
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -2828,7 +2828,7 @@ static struct ssb_device *b43_ssb_gpio_d
+@@ -2866,7 +2866,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
  
@@ -77,7 +63,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4858,7 +4858,7 @@ static int b43_wireless_core_init(struct
+@@ -4907,7 +4907,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
@@ -127,3 +113,15 @@
  void brcms_led_unregister(struct brcms_info *wl);
  int brcms_led_register(struct brcms_info *wl);
  #else
+--- a/Kconfig.sources
++++ b/Kconfig.sources
+@@ -9,9 +9,6 @@ source "$BACKPORT_DIR/drivers/net/wirele
+ #source "$BACKPORT_DIR/drivers/net/ethernet/Kconfig"
+ source "$BACKPORT_DIR/drivers/net/usb/Kconfig"
+ 
+-source "$BACKPORT_DIR/drivers/ssb/Kconfig"
+-source "$BACKPORT_DIR/drivers/bcma/Kconfig"
+-
+ #source "$BACKPORT_DIR/net/nfc/Kconfig"
+ 
+ #source "$BACKPORT_DIR/drivers/media/Kconfig"

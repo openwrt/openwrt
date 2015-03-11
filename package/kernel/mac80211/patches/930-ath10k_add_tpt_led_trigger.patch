@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath10k/mac.c
 +++ b/drivers/net/wireless/ath/ath10k/mac.c
-@@ -4824,6 +4824,21 @@ struct ath10k_vif *ath10k_get_arvif(stru
+@@ -5416,6 +5416,21 @@ struct ath10k_vif *ath10k_get_arvif(stru
  	return arvif_iter.arvif;
  }
  
@@ -21,10 +21,10 @@
 +
  int ath10k_mac_register(struct ath10k *ar)
  {
- 	struct ieee80211_supported_band *band;
-@@ -4965,6 +4980,12 @@ int ath10k_mac_register(struct ath10k *a
- 		goto err_free;
- 	}
+ 	static const u32 cipher_suites[] = {
+@@ -5590,6 +5605,12 @@ int ath10k_mac_register(struct ath10k *a
+ 	ar->hw->wiphy->cipher_suites = cipher_suites;
+ 	ar->hw->wiphy->n_cipher_suites = ARRAY_SIZE(cipher_suites);
  
 +#if CPTCFG_MAC80211_LEDS
 +	ieee80211_create_tpt_led_trigger(ar->hw,

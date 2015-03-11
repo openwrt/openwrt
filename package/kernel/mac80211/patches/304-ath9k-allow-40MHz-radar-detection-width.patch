@@ -1,0 +1,19 @@
+From: Zefir Kurtisi <zefir.kurtisi@neratec.com>
+Date: Tue, 10 Mar 2015 17:49:31 +0100
+Subject: [PATCH] ath9k: allow 40MHz radar detection width
+
+Signed-off-by: Zefir Kurtisi <zefir.kurtisi@neratec.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -763,7 +763,8 @@ static const struct ieee80211_iface_comb
+ 		.num_different_channels = 1,
+ 		.beacon_int_infra_match = true,
+ 		.radar_detect_widths =	BIT(NL80211_CHAN_WIDTH_20_NOHT) |
+-					BIT(NL80211_CHAN_WIDTH_20),
++					BIT(NL80211_CHAN_WIDTH_20) |
++					BIT(NL80211_CHAN_WIDTH_40),
+ 	}
+ #endif
+ };

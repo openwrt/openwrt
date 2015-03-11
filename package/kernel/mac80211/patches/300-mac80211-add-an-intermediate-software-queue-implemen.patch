@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1192,6 +1192,8 @@ struct ieee80211_vif {
+@@ -1257,6 +1257,8 @@ struct ieee80211_vif {
  	u8 cab_queue;
  	u8 hw_queue[IEEE80211_NUM_ACS];
  
@@ -28,16 +28,16 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	struct ieee80211_chanctx_conf __rcu *chanctx_conf;
  
  	u32 driver_flags;
-@@ -1448,6 +1450,8 @@ struct ieee80211_sta {
- 	bool tdls;
+@@ -1519,6 +1521,8 @@ struct ieee80211_sta {
  	bool tdls_initiator;
+ 	bool mfp;
  
 +	struct ieee80211_txq *txq[IEEE80211_NUM_TIDS];
 +
  	/* must be last */
  	u8 drv_priv[0] __aligned(sizeof(void *));
  };
-@@ -1476,6 +1480,27 @@ struct ieee80211_tx_control {
+@@ -1547,6 +1551,27 @@ struct ieee80211_tx_control {
  };
  
  /**
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   * enum ieee80211_hw_flags - hardware flags
   *
   * These flags are used to indicate hardware capabilities to
-@@ -1698,6 +1723,8 @@ enum ieee80211_hw_flags {
+@@ -1770,6 +1795,8 @@ enum ieee80211_hw_flags {
   *	within &struct ieee80211_sta.
   * @chanctx_data_size: size (in bytes) of the drv_priv data area
   *	within &struct ieee80211_chanctx_conf.
@@ -74,7 +74,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   *
   * @max_rates: maximum number of alternate rate retry stages the hw
   *	can handle.
-@@ -1746,6 +1773,9 @@ enum ieee80211_hw_flags {
+@@ -1818,6 +1845,9 @@ enum ieee80211_hw_flags {
   * @n_cipher_schemes: a size of an array of cipher schemes definitions.
   * @cipher_schemes: a pointer to an array of cipher scheme definitions
   *	supported by HW.
@@ -84,7 +84,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   */
  struct ieee80211_hw {
  	struct ieee80211_conf conf;
-@@ -1758,6 +1788,7 @@ struct ieee80211_hw {
+@@ -1830,6 +1860,7 @@ struct ieee80211_hw {
  	int vif_data_size;
  	int sta_data_size;
  	int chanctx_data_size;
@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	u16 queues;
  	u16 max_listen_interval;
  	s8 max_signal;
-@@ -1774,6 +1805,7 @@ struct ieee80211_hw {
+@@ -1846,6 +1877,7 @@ struct ieee80211_hw {
  	u8 uapsd_max_sp_len;
  	u8 n_cipher_schemes;
  	const struct ieee80211_cipher_scheme *cipher_schemes;
@@ -100,26 +100,26 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  };
  
  /**
-@@ -2881,6 +2913,8 @@ enum ieee80211_reconfig_type {
-  *
-  * @get_txpower: get current maximum tx power (in dBm) based on configuration
-  *	and hardware limits.
+@@ -3007,6 +3039,8 @@ enum ieee80211_reconfig_type {
+  *	response template is provided, together with the location of the
+  *	switch-timing IE within the template. The skb can only be used within
+  *	the function call.
 + *
 + * @wake_tx_queue: Called when new packets have been added to the queue.
   */
  struct ieee80211_ops {
  	void (*tx)(struct ieee80211_hw *hw,
-@@ -3095,6 +3129,9 @@ struct ieee80211_ops {
- 	u32 (*get_expected_throughput)(struct ieee80211_sta *sta);
- 	int (*get_txpower)(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
- 			   int *dbm);
+@@ -3238,6 +3272,9 @@ struct ieee80211_ops {
+ 	void (*tdls_recv_channel_switch)(struct ieee80211_hw *hw,
+ 					 struct ieee80211_vif *vif,
+ 					 struct ieee80211_tdls_ch_sw_params *params);
 +
 +	void (*wake_tx_queue)(struct ieee80211_hw *hw,
 +			      struct ieee80211_txq *txq);
  };
  
  /**
-@@ -5038,4 +5075,17 @@ void ieee80211_tdls_oper_request(struct 
+@@ -5249,4 +5286,17 @@ void ieee80211_unreserve_tid(struct ieee
   */
  size_t ieee80211_ie_split(const u8 *ies, size_t ielen,
  			  const u8 *ids, int n_ids, size_t offset);
@@ -130,17 +130,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 + * @hw: pointer as obtained from ieee80211_alloc_hw()
 + * @txq: pointer obtained from .add_tx_queue() call
 + *
-+ * Returns 0 if successful, -EAGAIN if no frame was available.
++ * Returns the sjb if successful, ERR_PTR(-EAGAIN) if no frame was available.
 + */
-+int ieee80211_tx_dequeue(struct ieee80211_hw *hw, struct ieee80211_txq *txq,
-+			 struct sk_buff **skb);
++struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
++				     struct ieee80211_txq *txq);
 +
 +
  #endif /* MAC80211_H */
 --- a/net/mac80211/driver-ops.h
 +++ b/net/mac80211/driver-ops.h
-@@ -1311,4 +1311,21 @@ static inline int drv_get_txpower(struct
- 	return ret;
+@@ -1367,4 +1367,21 @@ drv_tdls_recv_channel_switch(struct ieee
+ 	trace_drv_return_void(local);
  }
  
 +static inline void drv_wake_tx_queue(struct ieee80211_local *local,
@@ -163,7 +163,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #endif /* __MAC80211_DRIVER_OPS */
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -793,6 +793,13 @@ struct mac80211_qos_map {
+@@ -809,6 +809,13 @@ struct mac80211_qos_map {
  	struct rcu_head rcu_head;
  };
  
@@ -177,30 +177,30 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  struct ieee80211_sub_if_data {
  	struct list_head list;
  
-@@ -837,6 +844,8 @@ struct ieee80211_sub_if_data {
+@@ -853,6 +860,7 @@ struct ieee80211_sub_if_data {
  	bool control_port_no_encrypt;
  	int encrypt_headroom;
  
-+	struct txq_info *txq;
-+	atomic_t txq_len[IEEE80211_NUM_ACS];
++	atomic_t txqs_len[IEEE80211_NUM_ACS];
  	struct ieee80211_tx_queue_params tx_conf[IEEE80211_NUM_ACS];
  	struct mac80211_qos_map __rcu *qos_map;
  
-@@ -1868,6 +1877,11 @@ void ieee80211_add_pending_skbs(struct i
- 				struct sk_buff_head *skbs);
- void ieee80211_flush_queues(struct ieee80211_local *local,
- 			    struct ieee80211_sub_if_data *sdata);
+@@ -1905,6 +1913,12 @@ static inline bool ieee80211_can_run_wor
+ 	return true;
+ }
+ 
 +void ieee80211_init_tx_queue(struct ieee80211_sub_if_data *sdata,
 +			     struct sta_info *sta,
 +			     struct txq_info *txq, int tid);
 +void ieee80211_flush_tx_queue(struct ieee80211_local *local,
 +			      struct ieee80211_txq *txq);
- 
++
  void ieee80211_send_auth(struct ieee80211_sub_if_data *sdata,
  			 u16 transaction, u16 auth_alg, u16 status,
+ 			 const u8 *extra, size_t extra_len, const u8 *bssid,
 --- a/net/mac80211/iface.c
 +++ b/net/mac80211/iface.c
-@@ -967,6 +967,9 @@ static void ieee80211_do_stop(struct iee
+@@ -969,6 +969,9 @@ static void ieee80211_do_stop(struct iee
  	}
  	spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
  
@@ -210,23 +210,74 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (local->open_count == 0)
  		ieee80211_clear_tx_pending(local);
  
-@@ -1773,6 +1776,13 @@ int ieee80211_if_add(struct ieee80211_lo
- 	/* setup type-dependent data */
+@@ -1773,6 +1776,15 @@ int ieee80211_if_add(struct ieee80211_lo
  	ieee80211_setup_sdata(sdata, type);
  
-+	if (local->ops->wake_tx_queue) {
-+		sdata->txq = kzalloc(sizeof(*sdata->txq) +
-+				     local->hw.txq_data_size, GFP_KERNEL);
-+		if (sdata->txq)
-+			ieee80211_init_tx_queue(sdata, NULL, sdata->txq, 0);
-+	}
-+
  	if (ndev) {
++		struct txq_info *txqi = NULL;
++
++		if (local->ops->wake_tx_queue) {
++			txqi = kzalloc(sizeof(*txqi) +
++				      local->hw.txq_data_size, GFP_KERNEL);
++			if (txqi)
++				ieee80211_init_tx_queue(sdata, NULL, txqi, 0);
++		}
++
  		if (params) {
  			ndev->ieee80211_ptr->use_4addr = params->use_4addr;
+ 			if (type == NL80211_IFTYPE_STATION)
+@@ -1785,6 +1797,7 @@ int ieee80211_if_add(struct ieee80211_lo
+ 
+ 		ret = register_netdevice(ndev);
+ 		if (ret) {
++			kfree(txqi);
+ 			free_netdev(ndev);
+ 			return ret;
+ 		}
+@@ -1802,6 +1815,7 @@ int ieee80211_if_add(struct ieee80211_lo
+ 
+ void ieee80211_if_remove(struct ieee80211_sub_if_data *sdata)
+ {
++	struct txq_info *txqi;
+ 	ASSERT_RTNL();
+ 
+ 	mutex_lock(&sdata->local->iflist_mtx);
+@@ -1810,6 +1824,11 @@ void ieee80211_if_remove(struct ieee8021
+ 
+ 	synchronize_rcu();
+ 
++	if (sdata->vif.txq) {
++		txqi = container_of(sdata->vif.txq, struct txq_info, txq);
++		kfree(txqi);
++	}
++
+ 	if (sdata->dev) {
+ 		unregister_netdevice(sdata->dev);
+ 	} else {
+@@ -1833,6 +1852,7 @@ void ieee80211_sdata_stop(struct ieee802
+ void ieee80211_remove_interfaces(struct ieee80211_local *local)
+ {
+ 	struct ieee80211_sub_if_data *sdata, *tmp;
++	struct txq_info *txqi;
+ 	LIST_HEAD(unreg_list);
+ 	LIST_HEAD(wdev_list);
+ 
+@@ -1851,6 +1871,12 @@ void ieee80211_remove_interfaces(struct 
+ 	list_for_each_entry_safe(sdata, tmp, &local->interfaces, list) {
+ 		list_del(&sdata->list);
+ 
++		if (sdata->vif.txq) {
++			txqi = container_of(sdata->vif.txq, struct txq_info,
++					   txq);
++			kfree(txqi);
++		}
++
+ 		if (sdata->dev)
+ 			unregister_netdevice_queue(sdata->dev, &unreg_list);
+ 		else
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -1004,6 +1004,9 @@ int ieee80211_register_hw(struct ieee802
+@@ -1019,6 +1019,9 @@ int ieee80211_register_hw(struct ieee802
  
  	local->dynamic_ps_forced_timeout = -1;
  
@@ -238,8 +289,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		wiphy_debug(local->hw.wiphy, "Failed to initialize wep: %d\n",
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -119,6 +119,11 @@ static void __cleanup_single_sta(struct 
- 		sta_info_recalc_tim(sta);
+@@ -118,6 +118,11 @@ static void __cleanup_single_sta(struct 
+ 		atomic_dec(&ps->num_sta_ps);
  	}
  
 +	if (sta->txq) {
@@ -250,23 +301,21 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	for (ac = 0; ac < IEEE80211_NUM_ACS; ac++) {
  		local->total_ps_buffered -= skb_queue_len(&sta->ps_tx_buf[ac]);
  		ieee80211_purge_tx_queue(&local->hw, &sta->ps_tx_buf[ac]);
-@@ -241,6 +246,8 @@ void sta_info_free(struct ieee80211_loca
- 		kfree(sta->tx_lat);
- 	}
+@@ -234,6 +239,7 @@ void sta_info_free(struct ieee80211_loca
  
-+	kfree(sta->txq);
-+
  	sta_dbg(sta->sdata, "Destroyed STA %pM\n", sta->sta.addr);
  
++	kfree(sta->txq);
  	kfree(rcu_dereference_raw(sta->sta.rates));
-@@ -294,12 +301,13 @@ struct sta_info *sta_info_alloc(struct i
+ 	kfree(sta);
+ }
+@@ -285,11 +291,12 @@ struct sta_info *sta_info_alloc(struct i
  				const u8 *addr, gfp_t gfp)
  {
  	struct ieee80211_local *local = sdata->local;
 +	struct ieee80211_hw *hw = &local->hw;
  	struct sta_info *sta;
  	struct timespec uptime;
- 	struct ieee80211_tx_latency_bin_ranges *tx_latency;
  	int i;
  
 -	sta = kzalloc(sizeof(*sta) + local->hw.sta_data_size, gfp);
@@ -274,10 +323,13 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!sta)
  		return NULL;
  
-@@ -357,6 +365,20 @@ struct sta_info *sta_info_alloc(struct i
+@@ -321,11 +328,23 @@ struct sta_info *sta_info_alloc(struct i
  	for (i = 0; i < ARRAY_SIZE(sta->chain_signal_avg); i++)
  		ewma_init(&sta->chain_signal_avg[i], 1024, 8);
  
+-	if (sta_prepare_rate_control(local, sta, gfp)) {
+-		kfree(sta);
+-		return NULL;
 +	if (local->ops->wake_tx_queue) {
 +		int size = sizeof(struct txq_info) +
 +			   ALIGN(hw->txq_data_size, sizeof(void *));
@@ -290,12 +342,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +			struct txq_info *txq = sta->txq + i * size;
 +			ieee80211_init_tx_queue(sdata, sta, txq, i);
 +		}
-+	}
-+
- 	if (sta_prepare_rate_control(local, sta, gfp))
- 		goto free;
+ 	}
  
-@@ -380,7 +402,7 @@ struct sta_info *sta_info_alloc(struct i
++	if (sta_prepare_rate_control(local, sta, gfp))
++		goto free_txq;
++
+ 	for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
+ 		/*
+ 		 * timer_to_tid must be initialized with identity mapping
+@@ -346,7 +365,7 @@ struct sta_info *sta_info_alloc(struct i
  	if (sdata->vif.type == NL80211_IFTYPE_AP ||
  	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
  		struct ieee80211_supported_band *sband =
@@ -304,19 +359,32 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		u8 smps = (sband->ht_cap.cap & IEEE80211_HT_CAP_SM_PS) >>
  				IEEE80211_HT_CAP_SM_PS_SHIFT;
  		/*
+@@ -371,6 +390,12 @@ struct sta_info *sta_info_alloc(struct i
+ 	sta_dbg(sdata, "Allocated STA %pM\n", sta->sta.addr);
+ 
+ 	return sta;
++
++free_txq:
++	kfree(sta->txq);
++free:
++	kfree(sta);
++	return NULL;
+ }
+ 
+ static int sta_info_insert_check(struct sta_info *sta)
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -371,6 +371,7 @@ struct sta_info {
+@@ -368,6 +368,7 @@ struct sta_info {
  	struct sk_buff_head ps_tx_buf[IEEE80211_NUM_ACS];
  	struct sk_buff_head tx_filtered[IEEE80211_NUM_ACS];
  	unsigned long driver_buffered_tids;
-+	void *txq;
++	struct txq_info *txq;
  
  	/* Updated from RX path only, no locking requirements */
  	unsigned long rx_packets;
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2201,6 +2201,40 @@ TRACE_EVENT(drv_get_txpower,
+@@ -2312,6 +2312,40 @@ TRACE_EVENT(drv_tdls_recv_channel_switch
  	)
  );
  
@@ -354,12 +422,12 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	)
 +);
 +
- 
  #ifdef CPTCFG_MAC80211_MESSAGE_TRACING
  #undef TRACE_SYSTEM
+ #define TRACE_SYSTEM mac80211_msg
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1198,13 +1198,75 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1201,13 +1201,76 @@ ieee80211_tx_prepare(struct ieee80211_su
  	return TX_CONTINUE;
  }
  
@@ -373,8 +441,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	struct ieee80211_tx_control control = {
 +		.sta = pubsta
 +	};
-+	struct ieee80211_txq *pubtxq = NULL;
-+	struct txq_info *txq;
++	struct ieee80211_txq *txq = NULL;
++	struct txq_info *txqi;
 +	u8 ac;
 +
 +	if (ieee80211_is_mgmt(hdr->frame_control) ||
@@ -383,22 +451,22 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +
 +	if (pubsta) {
 +		u8 tid = skb->priority & IEEE80211_QOS_CTL_TID_MASK;
-+		pubtxq = pubsta->txq[tid];
++		txq = pubsta->txq[tid];
 +	} else if (vif) {
-+		pubtxq = vif->txq;
++		txq = vif->txq;
 +	}
 +
-+	if (!pubtxq)
++	if (!txq)
 +		goto tx_normal;
 +
-+	ac = pubtxq->ac;
-+	txq = container_of(pubtxq, struct txq_info, txq);
-+	atomic_inc(&sdata->txq_len[ac]);
-+	if (atomic_read(&sdata->txq_len[ac]) >= local->hw.txq_ac_max_pending)
++	ac = txq->ac;
++	txqi = container_of(txq, struct txq_info, txq);
++	atomic_inc(&sdata->txqs_len[ac]);
++	if (atomic_read(&sdata->txqs_len[ac]) >= local->hw.txq_ac_max_pending)
 +		netif_stop_subqueue(sdata->dev, ac);
 +
-+	skb_queue_tail(&txq->queue, skb);
-+	drv_wake_tx_queue(local, txq);
++	skb_queue_tail(&txqi->queue, skb);
++	drv_wake_tx_queue(local, txqi);
 +
 +	return;
 +
@@ -406,23 +474,24 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	drv_tx(local, &control, skb);
 +}
 +
-+int ieee80211_tx_dequeue(struct ieee80211_hw *hw, struct ieee80211_txq *pubtxq,
-+			 struct sk_buff **dest)
++struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
++				     struct ieee80211_txq *txq)
 +{
 +	struct ieee80211_local *local = hw_to_local(hw);
-+	struct ieee80211_sub_if_data *sdata = vif_to_sdata(pubtxq->vif);
-+	struct txq_info *txq = container_of(pubtxq, struct txq_info, txq);
-+	u8 ac = pubtxq->ac;
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(txq->vif);
++	struct txq_info *txqi = container_of(txq, struct txq_info, txq);
++	struct sk_buff *skb;
++	u8 ac = txq->ac;
 +
-+	*dest = skb_dequeue(&txq->queue);
-+	if (!*dest)
-+		return -EAGAIN;
++	skb = skb_dequeue(&txqi->queue);
++	if (!skb)
++		return ERR_PTR(-EAGAIN);
 +
-+	atomic_dec(&sdata->txq_len[ac]);
++	atomic_dec(&sdata->txqs_len[ac]);
 +	if (__netif_subqueue_stopped(sdata->dev, ac))
 +		ieee80211_propagate_queue_wake(local, sdata->vif.hw_queue[ac]);
 +
-+	return 0;
++	return skb;
 +}
 +EXPORT_SYMBOL(ieee80211_tx_dequeue);
 +
@@ -436,7 +505,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	struct sk_buff *skb, *tmp;
  	unsigned long flags;
  
-@@ -1262,10 +1324,9 @@ static bool ieee80211_tx_frags(struct ie
+@@ -1265,10 +1328,9 @@ static bool ieee80211_tx_frags(struct ie
  		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
  
  		info->control.vif = vif;
@@ -455,44 +524,47 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			int ac_queue = sdata->vif.hw_queue[ac];
  
 +			if (local->ops->wake_tx_queue &&
-+			    (atomic_read(&sdata->txq_len[ac]) >
++			    (atomic_read(&sdata->txqs_len[ac]) >
 +			     local->hw.txq_ac_max_pending))
 +				continue;
 +
  			if (ac_queue == queue ||
  			    (sdata->vif.cab_queue == queue &&
  			     local->queue_stop_reasons[ac_queue] == 0 &&
-@@ -3182,3 +3187,33 @@ u8 *ieee80211_add_wmm_info_ie(u8 *buf, u
+@@ -3307,3 +3312,36 @@ u8 *ieee80211_add_wmm_info_ie(u8 *buf, u
  
  	return buf;
  }
 +
 +void ieee80211_init_tx_queue(struct ieee80211_sub_if_data *sdata,
 +			     struct sta_info *sta,
-+			     struct txq_info *txq, int tid)
++			     struct txq_info *txqi, int tid)
 +{
-+	skb_queue_head_init(&txq->queue);
-+	txq->txq.vif = &sdata->vif;
++	skb_queue_head_init(&txqi->queue);
++	txqi->txq.vif = &sdata->vif;
 +
 +	if (sta) {
-+		txq->txq.sta = &sta->sta;
-+		sta->sta.txq[tid] = &txq->txq;
-+		txq->txq.ac = ieee802_1d_to_ac[tid & 7];
++		txqi->txq.sta = &sta->sta;
++		sta->sta.txq[tid] = &txqi->txq;
++		txqi->txq.ac = ieee802_1d_to_ac[tid & 7];
 +	} else {
-+		sdata->vif.txq = &txq->txq;
-+		txq->txq.ac = IEEE80211_AC_BE;
++		sdata->vif.txq = &txqi->txq;
++		txqi->txq.ac = IEEE80211_AC_BE;
 +	}
 +}
 +
 +void ieee80211_flush_tx_queue(struct ieee80211_local *local,
-+			      struct ieee80211_txq *pubtxq)
++			      struct ieee80211_txq *txq)
 +{
-+	struct txq_info *txq = container_of(pubtxq, struct txq_info, txq);
-+	struct ieee80211_sub_if_data *sdata = vif_to_sdata(pubtxq->vif);
++	struct txq_info *txqi = container_of(txq, struct txq_info, txq);
++	struct ieee80211_sub_if_data *sdata = vif_to_sdata(txq->vif);
 +	struct sk_buff *skb;
++	int n = 0;
 +
-+	while ((skb = skb_dequeue(&txq->queue)) != NULL) {
-+		atomic_dec(&sdata->txq_len[pubtxq->ac]);
++	while ((skb = skb_dequeue(&txqi->queue)) != NULL) {
++		n++;
 +		ieee80211_free_txskb(&local->hw, skb);
 +	}
++
++	atomic_sub(n, &sdata->txqs_len[txq->ac]);
 +}

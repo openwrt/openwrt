@@ -121,7 +121,7 @@ drivers/net/wireless/ath/ath5k/debug.c |   86 ++++++++++++++++++++++++++++++++
  	debugfs_create_file("antenna", S_IWUSR | S_IRUSR, phydir, ah,
 --- a/drivers/net/wireless/ath/ath5k/ath5k.h
 +++ b/drivers/net/wireless/ath/ath5k/ath5k.h
-@@ -1370,6 +1370,7 @@ struct ath5k_hw {
+@@ -1371,6 +1371,7 @@ struct ath5k_hw {
  	u8			ah_coverage_class;
  	bool			ah_ack_bitrate_high;
  	u8			ah_bwmode;
