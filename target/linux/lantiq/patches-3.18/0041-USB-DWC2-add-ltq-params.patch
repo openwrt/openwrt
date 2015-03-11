@@ -1,6 +1,6 @@
---- a/drivers/usb/dwc2/platform.c	2015-02-09 19:37:34.553109992 +0200
-+++ b/drivers/usb/dwc2/platform.c	2015-02-09 19:38:30.090111260 +0200
-@@ -105,6 +105,34 @@
+--- a/drivers/usb/dwc2/platform.c
++++ b/drivers/usb/dwc2/platform.c
+@@ -106,6 +106,34 @@ static const struct dwc2_core_params par
  	.uframe_sched			= -1,
  };
  
@@ -35,7 +35,7 @@
  /**
   * dwc2_driver_remove() - Called when the DWC_otg core is unregistered with the
   * DWC_otg driver
-@@ -128,6 +156,7 @@
+@@ -129,6 +157,7 @@ static int dwc2_driver_remove(struct pla
  static const struct of_device_id dwc2_of_match_table[] = {
  	{ .compatible = "brcm,bcm2835-usb", .data = &params_bcm2835 },
  	{ .compatible = "rockchip,rk3066-usb", .data = &params_rk3066 },

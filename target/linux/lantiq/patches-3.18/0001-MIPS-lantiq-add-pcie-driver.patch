@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/lantiq/Kconfig
 +++ b/arch/mips/lantiq/Kconfig
-@@ -17,6 +17,7 @@
+@@ -17,6 +17,7 @@ config SOC_XWAY
  	bool "XWAY"
  	select SOC_TYPE_XWAY
  	select HW_HAS_PCI
@@ -49,7 +49,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  config SOC_FALCON
  	bool "FALCON"
-@@ -37,6 +38,15 @@
+@@ -37,6 +38,15 @@ config PCI_LANTIQ
  	bool "PCI Support"
  	depends on SOC_XWAY && PCI
  
@@ -67,7 +67,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on SOC_XWAY
 --- a/arch/mips/lantiq/xway/sysctrl.c
 +++ b/arch/mips/lantiq/xway/sysctrl.c
-@@ -377,6 +377,8 @@
+@@ -377,6 +377,8 @@ void __init ltq_soc_init(void)
  				PMU_PPE_EMA | PMU_PPE_TC | PMU_PPE_SLL01 |
  				PMU_PPE_QSB | PMU_PPE_TOP);
  		clkdev_add_pmu("1f203000.rcu", "gphy", 0, PMU_GPHY);
@@ -78,7 +78,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  				ltq_ar9_fpi_hz(), CLOCK_250M);
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -43,6 +43,8 @@
+@@ -43,6 +43,8 @@ obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
  obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
@@ -188,7 +188,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	if (ltq_pci_plat_dev_init)
  		return ltq_pci_plat_dev_init(dev);
-@@ -25,5 +26,7 @@
+@@ -25,5 +26,7 @@ int pcibios_plat_dev_init(struct pci_dev
  
  int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
@@ -4161,7 +4161,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/arch/mips/pci/pci.c
 +++ b/arch/mips/pci/pci.c
-@@ -251,6 +251,31 @@
+@@ -251,6 +251,31 @@ static int __init pcibios_init(void)
  
  subsys_initcall(pcibios_init);
  
@@ -5503,7 +5503,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- a/drivers/pci/pcie/aer/Kconfig
 +++ b/drivers/pci/pcie/aer/Kconfig
-@@ -19,6 +19,7 @@
+@@ -19,6 +19,7 @@ config PCIEAER
  config PCIE_ECRC
  	bool "PCI Express ECRC settings control"
  	depends on PCIEAER
@@ -5513,7 +5513,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	  (transaction layer end-to-end CRC checking).
 --- a/include/linux/pci.h
 +++ b/include/linux/pci.h
-@@ -1160,6 +1160,8 @@
+@@ -1160,6 +1160,8 @@ void pci_walk_bus(struct pci_bus *top, i
  		  void *userdata);
  int pci_cfg_space_size(struct pci_dev *dev);
  unsigned char pci_bus_max_busnr(struct pci_bus *bus);

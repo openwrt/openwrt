@@ -38,7 +38,7 @@
  /* remapped base addr of the reset control unit */
  static void __iomem *ltq_rcu_membase;
  static struct device_node *ltq_rcu_np;
-@@ -200,6 +231,45 @@
+@@ -200,6 +231,45 @@ static void ltq_machine_power_off(void)
  	unreachable();
  }
  
@@ -84,7 +84,7 @@
  static int __init mips_reboot_setup(void)
  {
  	struct resource res;
-@@ -223,6 +293,9 @@
+@@ -223,6 +293,9 @@ static int __init mips_reboot_setup(void
  	if (!ltq_rcu_membase)
  		panic("Failed to remap core memory");
  

@@ -1,5 +1,5 @@
---- a/drivers/usb/dwc2/platform.c	2015-02-06 16:53:48.000000000 +0200
-+++ b/drivers/usb/dwc2/platform.c	2015-02-09 19:22:41.974089626 +0200
+--- a/drivers/usb/dwc2/platform.c
++++ b/drivers/usb/dwc2/platform.c
 @@ -40,6 +40,7 @@
  #include <linux/device.h>
  #include <linux/dma-mapping.h>
@@ -8,7 +8,7 @@
  #include <linux/platform_device.h>
  
  #include <linux/usb/of.h>
-@@ -154,6 +155,7 @@
+@@ -154,6 +155,7 @@ static int dwc2_driver_probe(struct plat
  	struct resource *res;
  	int retval;
  	int irq;
@@ -16,7 +16,7 @@
  
  	if (usb_disabled())
  		return -ENODEV;
-@@ -173,6 +175,16 @@
+@@ -173,6 +175,16 @@ static int dwc2_driver_probe(struct plat
  		defparams.dma_desc_enable = 0;
  	}
  
