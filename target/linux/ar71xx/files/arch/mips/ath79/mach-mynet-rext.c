@@ -55,6 +55,16 @@
 
 #define MYNET_REXT_ART_ADDR		0x1f7f0000
 
+static const char *mynet_rext_part_probes[] = {
+	"cybertan",
+	NULL,
+};
+
+static struct flash_platform_data mynet_rext_flash_data = {
+	.type		= "s25fl064k",
+	.part_probes	= mynet_rext_part_probes,
+};
+
 static struct gpio_led mynet_rext_leds_gpio[] __initdata = {
 	{
 		.name		= "wd:blue:power",
@@ -130,7 +140,7 @@ static void __init mynet_rext_setup(void)
 	u8 *art = (u8 *) KSEG1ADDR(MYNET_REXT_ART_ADDR);
 	u8 tmpmac[ETH_ALEN];
 
-	ath79_register_m25p80(NULL);
+	ath79_register_m25p80(&mynet_rext_flash_data);
 
 	/* GPIO configuration from drivers/char/GPIO8.c */
 
