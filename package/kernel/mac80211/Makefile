@@ -129,7 +129,7 @@ endef
 $(eval $(call Download,linux-firmware))
 
 PKG_ATH10K_LINUX_FIRMWARE_NAME:=ath10k-firmware
-PKG_ATH10K_LINUX_FIRMWARE_VERSION:=232b419e71dab27b52b96e80ea7649ed67bdac77
+PKG_ATH10K_LINUX_FIRMWARE_VERSION:=da0f85d924226ee30c46e037120621c9e192b39e
 PKG_ATH10K_LINUX_FIRMWARE_SOURCE:=$(PKG_ATH10K_LINUX_FIRMWARE_NAME)-$(PKG_ATH10K_LINUX_FIRMWARE_VERSION).tar.bz2
 PKG_ATH10K_LINUX_FIRMWARE_PROTO:=git
 PKG_ATH10K_LINUX_FIRMWARE_SOURCE_URL:=https://github.com/kvalo/ath10k-firmware.git
@@ -1857,8 +1857,8 @@ ifeq ($(CONFIG_ATH10K_STA_FW),y)
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
 else
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/10.2/firmware-3.bin_10.2-00082-4-2 \
-		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-3.bin
+		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/10.2.4/firmware-4.bin_10.2.4.45 \
+		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-4.bin
 endif
 endef
 
