@@ -138,11 +138,19 @@
 
 		ifxhcd@E101000 {
 			status = "disabled";
-			compatible = "lantiq,ifxhcd-xrx200";
+			compatible = "lantiq,ifxhcd-xrx200", "lantiq,ifxhcd-xrx200-dwc2";
 			reg = <0xE101000 0x1000
 				0xE120000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <62 91>;
+		};
+
+		ifxhcd@E106000 {
+			status = "disabled";
+			compatible = "lantiq,ifxhcd-xrx200-dwc2";
+			reg = <0xE106000 0x1000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <91>;
 		};
 
 		mei@E116000 {
