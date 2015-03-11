@@ -1,19 +1,18 @@
 --- a/arch/powerpc/boot/dts/taishan.dts
 +++ b/arch/powerpc/boot/dts/taishan.dts
-@@ -195,15 +195,15 @@
+@@ -194,16 +194,12 @@
+ 					#address-cells = <1>;
  					#size-cells = <1>;
  					partition@0 {
- 						label = "kernel";
+-						label = "kernel";
 -						reg = <0x0 0x180000>;
-+						reg = <0x0 0x200000>;
++						label = "firmware";
++						reg = <0x0 0x3e00000>;
  					};
 -					partition@180000 {
 -						label = "root";
 -						reg = <0x180000 0x200000>;
-+					partition@200000 {
-+						label = "rootfs";
-+						reg = <0x200000 0x3c00000>;
- 					};
+-					};
 -					partition@380000 {
 -						label = "user";
 -						reg = <0x380000 0x3bc0000>;
