@@ -13,7 +13,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/net/wireless/rt2x00/rt2800soc.c
 +++ b/drivers/net/wireless/rt2x00/rt2800soc.c
-@@ -237,11 +237,18 @@ static int rt2800soc_probe(struct platfo
+@@ -237,10 +237,17 @@ static int rt2800soc_probe(struct platfo
  	return rt2x00soc_probe(pdev, &rt2800soc_ops);
  }
  
@@ -26,7 +26,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static struct platform_driver rt2800soc_driver = {
  	.driver		= {
  		.name		= "rt2800_wmac",
- 		.owner		= THIS_MODULE,
  		.mod_name	= KBUILD_MODNAME,
 +		.of_match_table	= rt2880_wmac_match,
  	},

@@ -1,7 +1,7 @@
 --- a/net/wireless/Kconfig
 +++ b/net/wireless/Kconfig
-@@ -166,7 +166,7 @@ config CFG80211_WEXT
- 	  extensions with cfg80211-based drivers.
+@@ -174,7 +174,7 @@ config CFG80211_WEXT_EXPORT
+ 	  wext compatibility symbols to be exported.
  
  config LIB80211
 -	tristate
@@ -9,7 +9,7 @@
  	depends on m
  	default n
  	help
-@@ -176,15 +176,15 @@ config LIB80211
+@@ -184,15 +184,15 @@ config LIB80211
  	  Drivers should select this themselves if needed.
  
  config LIB80211_CRYPT_WEP

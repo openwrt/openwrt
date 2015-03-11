@@ -1,0 +1,125 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Wed, 11 Mar 2015 09:14:15 +0100
+Subject: [PATCH] mac80211: lock rate control
+
+Both minstrel (reported by Sven Eckelmann) and the iwlwifi rate
+control aren't properly taking concurrency into account. It's
+likely that the same is true for other rate control algorithms.
+
+In the case of minstrel this manifests itself in crashes when an
+update and other data access are run concurrently, for example
+when the stations change bandwidth or similar. In iwlwifi, this
+can cause firmware crashes.
+
+Since fixing all rate control algorithms will be very difficult,
+just provide locking for invocations. This protects the internal
+data structures the algorithms maintain.
+
+I've manipulated hostapd to test this, by having it change its
+advertised bandwidth roughly ever 150ms. At the same time, I'm
+running a flood ping between the client and the AP, which causes
+this race of update vs. get_rate/status to easily happen on the
+client. With this change, the system survives this test.
+
+Reported-by: Sven Eckelmann <sven@open-mesh.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/rate.c
++++ b/net/mac80211/rate.c
+@@ -683,7 +683,13 @@ void rate_control_get_rate(struct ieee80
+ 	if (sdata->local->hw.flags & IEEE80211_HW_HAS_RATE_CONTROL)
+ 		return;
+ 
+-	ref->ops->get_rate(ref->priv, ista, priv_sta, txrc);
++	if (ista) {
++		spin_lock_bh(&sta->rate_ctrl_lock);
++		ref->ops->get_rate(ref->priv, ista, priv_sta, txrc);
++		spin_unlock_bh(&sta->rate_ctrl_lock);
++	} else {
++		ref->ops->get_rate(ref->priv, NULL, NULL, txrc);
++	}
+ 
+ 	if (sdata->local->hw.flags & IEEE80211_HW_SUPPORTS_RC_TABLE)
+ 		return;
+--- a/net/mac80211/rate.h
++++ b/net/mac80211/rate.h
+@@ -42,10 +42,12 @@ static inline void rate_control_tx_statu
+ 	if (!ref || !test_sta_flag(sta, WLAN_STA_RATE_CONTROL))
+ 		return;
+ 
++	spin_lock_bh(&sta->rate_ctrl_lock);
+ 	if (ref->ops->tx_status)
+ 		ref->ops->tx_status(ref->priv, sband, ista, priv_sta, skb);
+ 	else
+ 		ref->ops->tx_status_noskb(ref->priv, sband, ista, priv_sta, info);
++	spin_unlock_bh(&sta->rate_ctrl_lock);
+ }
+ 
+ static inline void
+@@ -64,7 +66,9 @@ rate_control_tx_status_noskb(struct ieee
+ 	if (WARN_ON_ONCE(!ref->ops->tx_status_noskb))
+ 		return;
+ 
++	spin_lock_bh(&sta->rate_ctrl_lock);
+ 	ref->ops->tx_status_noskb(ref->priv, sband, ista, priv_sta, info);
++	spin_unlock_bh(&sta->rate_ctrl_lock);
+ }
+ 
+ static inline void rate_control_rate_init(struct sta_info *sta)
+@@ -91,8 +95,10 @@ static inline void rate_control_rate_ini
+ 
+ 	sband = local->hw.wiphy->bands[chanctx_conf->def.chan->band];
+ 
++	spin_lock_bh(&sta->rate_ctrl_lock);
+ 	ref->ops->rate_init(ref->priv, sband, &chanctx_conf->def, ista,
+ 			    priv_sta);
++	spin_unlock_bh(&sta->rate_ctrl_lock);
+ 	rcu_read_unlock();
+ 	set_sta_flag(sta, WLAN_STA_RATE_CONTROL);
+ }
+@@ -115,18 +121,20 @@ static inline void rate_control_rate_upd
+ 			return;
+ 		}
+ 
++		spin_lock_bh(&sta->rate_ctrl_lock);
+ 		ref->ops->rate_update(ref->priv, sband, &chanctx_conf->def,
+ 				      ista, priv_sta, changed);
++		spin_unlock_bh(&sta->rate_ctrl_lock);
+ 		rcu_read_unlock();
+ 	}
+ 	drv_sta_rc_update(local, sta->sdata, &sta->sta, changed);
+ }
+ 
+ static inline void *rate_control_alloc_sta(struct rate_control_ref *ref,
+-					   struct ieee80211_sta *sta,
+-					   gfp_t gfp)
++					   struct sta_info *sta, gfp_t gfp)
+ {
+-	return ref->ops->alloc_sta(ref->priv, sta, gfp);
++	spin_lock_init(&sta->rate_ctrl_lock);
++	return ref->ops->alloc_sta(ref->priv, &sta->sta, gfp);
+ }
+ 
+ static inline void rate_control_free_sta(struct sta_info *sta)
+--- a/net/mac80211/sta_info.c
++++ b/net/mac80211/sta_info.c
+@@ -280,7 +280,7 @@ static int sta_prepare_rate_control(stru
+ 
+ 	sta->rate_ctrl = local->rate_ctrl;
+ 	sta->rate_ctrl_priv = rate_control_alloc_sta(sta->rate_ctrl,
+-						     &sta->sta, gfp);
++						     sta, gfp);
+ 	if (!sta->rate_ctrl_priv)
+ 		return -ENOMEM;
+ 
+--- a/net/mac80211/sta_info.h
++++ b/net/mac80211/sta_info.h
+@@ -348,6 +348,7 @@ struct sta_info {
+ 	u8 ptk_idx;
+ 	struct rate_control_ref *rate_ctrl;
+ 	void *rate_ctrl_priv;
++	spinlock_t rate_ctrl_lock;
+ 	spinlock_t lock;
+ 
+ 	struct work_struct drv_deliver_wk;

@@ -50,7 +50,7 @@
  		rt2800_bbp_read(rt2x00dev, 49, &bbp);
  		rt2x00_set_field8(&bbp, BBP49_UPDATE_FLAG, 0);
  		rt2800_bbp_write(rt2x00dev, 49, bbp);
-@@ -4691,6 +4701,7 @@ void rt2800_vco_calibration(struct rt2x0
+@@ -4698,6 +4708,7 @@ void rt2800_vco_calibration(struct rt2x0
  	case RF3070:
  	case RF3290:
  	case RF3853:
@@ -58,7 +58,7 @@
  	case RF5360:
  	case RF5362:
  	case RF5370:
-@@ -5104,6 +5115,8 @@ static int rt2800_init_registers(struct 
+@@ -5111,6 +5122,8 @@ static int rt2800_init_registers(struct 
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG2, 0x00000000);
@@ -67,7 +67,7 @@
  	} else {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000000);
  		rt2800_register_write(rt2x00dev, TX_SW_CFG1, 0x00080606);
-@@ -5759,9 +5772,13 @@ static void rt2800_init_bbp_3352(struct 
+@@ -5766,9 +5779,13 @@ static void rt2800_init_bbp_3352(struct 
  
  	rt2800_bbp_write(rt2x00dev, 82, 0x62);
  
@@ -84,7 +84,7 @@
  
  	rt2800_bbp_write(rt2x00dev, 86, 0x38);
  
-@@ -5775,9 +5792,13 @@ static void rt2800_init_bbp_3352(struct 
+@@ -5782,9 +5799,13 @@ static void rt2800_init_bbp_3352(struct 
  
  	rt2800_bbp_write(rt2x00dev, 104, 0x92);
  
@@ -101,7 +101,7 @@
  
  	rt2800_bbp_write(rt2x00dev, 120, 0x50);
  
-@@ -5802,6 +5823,13 @@ static void rt2800_init_bbp_3352(struct 
+@@ -5809,6 +5830,13 @@ static void rt2800_init_bbp_3352(struct 
  	rt2800_bbp_write(rt2x00dev, 143, 0xa2);
  
  	rt2800_bbp_write(rt2x00dev, 148, 0xc8);
@@ -115,7 +115,7 @@
  }
  
  static void rt2800_init_bbp_3390(struct rt2x00_dev *rt2x00dev)
-@@ -6143,6 +6171,7 @@ static void rt2800_init_bbp(struct rt2x0
+@@ -6150,6 +6178,7 @@ static void rt2800_init_bbp(struct rt2x0
  		rt2800_init_bbp_3290(rt2x00dev);
  		break;
  	case RT3352:
@@ -123,7 +123,7 @@
  		rt2800_init_bbp_3352(rt2x00dev);
  		break;
  	case RT3390:
-@@ -7094,6 +7123,76 @@ static void rt2800_init_rfcsr_3883(struc
+@@ -7101,6 +7130,76 @@ static void rt2800_init_rfcsr_3883(struc
  	rt2800_rfcsr_write(rt2x00dev, 20, rfcsr);
  }
  
@@ -200,7 +200,7 @@
  static void rt2800_init_rfcsr_5390(struct rt2x00_dev *rt2x00dev)
  {
  	rt2800_rf_init_calibration(rt2x00dev, 2);
-@@ -7334,6 +7433,9 @@ static void rt2800_init_rfcsr(struct rt2
+@@ -7341,6 +7440,9 @@ static void rt2800_init_rfcsr(struct rt2
  	case RT3593:
  		rt2800_init_rfcsr_3593(rt2x00dev);
  		break;
@@ -210,7 +210,7 @@
  	case RT5390:
  		rt2800_init_rfcsr_5390(rt2x00dev);
  		break;
-@@ -7593,6 +7695,12 @@ static int rt2800_validate_eeprom(struct
+@@ -7600,6 +7702,12 @@ static int rt2800_validate_eeprom(struct
  		rt2x00_set_field16(&word, EEPROM_NIC_CONF0_RF_TYPE, RF2820);
  		rt2800_eeprom_write(rt2x00dev, EEPROM_NIC_CONF0, word);
  		rt2x00_eeprom_dbg(rt2x00dev, "Antenna: 0x%04x\n", word);
@@ -223,7 +223,7 @@
  	} else if (rt2x00_rt(rt2x00dev, RT2860) ||
  		   rt2x00_rt(rt2x00dev, RT2872)) {
  		/*
-@@ -7731,6 +7839,8 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7738,6 +7846,8 @@ static int rt2800_init_eeprom(struct rt2
  		rt2800_eeprom_read(rt2x00dev, EEPROM_CHIP_ID, &rf);
  	else if (rt2x00_rt(rt2x00dev, RT3883))
  		rf = RF3853;
@@ -232,7 +232,7 @@
  	else
  		rf = rt2x00_get_field16(eeprom, EEPROM_NIC_CONF0_RF_TYPE);
  
-@@ -7750,6 +7860,7 @@ static int rt2800_init_eeprom(struct rt2
+@@ -7757,6 +7867,7 @@ static int rt2800_init_eeprom(struct rt2
  	case RF3320:
  	case RF3322:
  	case RF3853:
@@ -240,7 +240,7 @@
  	case RF5360:
  	case RF5362:
  	case RF5370:
-@@ -8305,6 +8416,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8312,6 +8423,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3290:
  	case RF3320:
  	case RF3322:
@@ -248,7 +248,7 @@
  	case RF5360:
  	case RF5362:
  	case RF5370:
-@@ -8444,6 +8556,7 @@ static int rt2800_probe_hw_mode(struct r
+@@ -8451,6 +8563,7 @@ static int rt2800_probe_hw_mode(struct r
  	case RF3070:
  	case RF3290:
  	case RF3853:
@@ -256,7 +256,7 @@
  	case RF5360:
  	case RF5362:
  	case RF5370:
-@@ -8484,6 +8597,7 @@ static int rt2800_probe_rt(struct rt2x00
+@@ -8491,6 +8604,7 @@ static int rt2800_probe_rt(struct rt2x00
  	case RT3572:
  	case RT3593:
  	case RT3883:

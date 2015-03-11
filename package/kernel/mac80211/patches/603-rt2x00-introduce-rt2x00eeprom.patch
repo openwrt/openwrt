@@ -1,6 +1,6 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -289,6 +289,7 @@ RT2X00_LIB_FIRMWARE=
+@@ -263,6 +263,7 @@ RT2X00_LIB_FIRMWARE=
  RT2X00_LIB_CRYPTO=
  RT2X00_LIB_LEDS=
  RT2X00_LIB_DEBUGFS=
@@ -28,13 +28,13 @@
  	---help---
 @@ -266,6 +268,9 @@ config RT2X00_LIB_FIRMWARE
  config RT2X00_LIB_CRYPTO
- 	boolean
+ 	bool
  
 +config RT2X00_LIB_EEPROM
 +	boolean
 +
  config RT2X00_LIB_LEDS
- 	boolean
+ 	bool
  	default y if (RT2X00_LIB=y && LEDS_CLASS=y) || (RT2X00_LIB=m && LEDS_CLASS!=n)
 --- a/drivers/net/wireless/rt2x00/Makefile
 +++ b/drivers/net/wireless/rt2x00/Makefile

@@ -1,8 +1,8 @@
 --- a/backport-include/linux/device.h
 +++ b/backport-include/linux/device.h
-@@ -177,4 +177,20 @@ static inline void *devm_kmalloc_array(s
- }
+@@ -200,4 +200,20 @@ static inline void *devm_kmemdup(struct
  #endif
+ 
  
 +#if LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0)
 +#define devm_kmemdup LINUX_BACKPORT(devm_kmemdup)
