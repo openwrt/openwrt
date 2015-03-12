@@ -28,8 +28,8 @@
 #define HORNET_UB_GPIO_LED_WAN		17
 #define HORNET_UB_GPIO_LED_WPS		27
 
-#define HORNET_UB_GPIO_BTN_RESET	11
-#define HORNET_UB_GPIO_BTN_WPS		12
+#define HORNET_UB_GPIO_BTN_RESET	12
+#define HORNET_UB_GPIO_BTN_WPS		11
 
 #define HORNET_UB_GPIO_USB_POWER	26
 
@@ -64,7 +64,7 @@ static struct gpio_led hornet_ub_leds_gpio[] __initdata = {
 	{
 		.name		= "alfa:blue:wps",
 		.gpio		= HORNET_UB_GPIO_LED_WPS,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 };
 
@@ -75,7 +75,7 @@ static struct gpio_keys_button hornet_ub_gpio_keys[] __initdata = {
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = HORNET_UB_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= HORNET_UB_GPIO_BTN_WPS,
-		.active_low	= 1,
+		.active_low	= 0,
 	},
 	{
 		.desc		= "Reset button",
@@ -83,7 +83,7 @@ static struct gpio_keys_button hornet_ub_gpio_keys[] __initdata = {
 		.code		= KEY_RESTART,
 		.debounce_interval = HORNET_UB_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= HORNET_UB_GPIO_BTN_RESET,
-		.active_low	= 0,
+		.active_low	= 1,
 	}
 };
 
