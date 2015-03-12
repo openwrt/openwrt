@@ -30,7 +30,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/acx-mac80211
   SUBMENU:=Wireless Drivers
   TITLE:=ACX1xx mac80211 driver
-  DEPENDS:=@(PCI_SUPPORT||TARGET_ar7) @mipsel +kmod-mac80211
+  DEPENDS:=@(PCI_SUPPORT||TARGET_ar7) @!TARGET_cobalt @mipsel +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/acx-mac80211.ko
   AUTOLOAD:=$(call AutoLoad,50,mac80211 acx-mac80211)
   MAINTAINER:=Florian Fainelli <florian@openwrt.org>
