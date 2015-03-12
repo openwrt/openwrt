@@ -67,7 +67,7 @@
 +		settimeofday(NULL, &tz);
 +
 +		memset(&tz, 0, sizeof(tz));
-+#ifdef __USE_BSD
++#ifdef __USE_MISC
 +		tz.tz_minuteswest = -(tm_time.tm_gmtoff / 60);
 +#else
 +		tz.tz_minuteswest = -(tm_time.__tm_gmtoff / 60);
