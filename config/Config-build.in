@@ -135,7 +135,7 @@ menu "Global build settings"
 	choice
 		prompt "Binary stripping method"
 		default USE_STRIP   if EXTERNAL_TOOLCHAIN
-		default USE_STRIP   if USE_GLIBC || USE_EGLIBC || USE_MUSL
+		default USE_STRIP   if USE_GLIBC || USE_MUSL
 		default USE_SSTRIP
 		help
 		  Select the binary stripping method you wish to use.
@@ -156,7 +156,6 @@ menu "Global build settings"
 			bool "sstrip"
 			depends on !DEBUG
 			depends on !USE_GLIBC
-			depends on !USE_EGLIBC
 			help
 			  This will install binaries stripped using sstrip.
 	endchoice
@@ -187,7 +186,7 @@ menu "Global build settings"
 
 	choice
 		prompt "Preferred standard C++ library"
-		default USE_LIBSTDCXX if USE_EGLIBC
+		default USE_LIBSTDCXX if USE_GLIBC
 		default USE_UCLIBCXX
 		help
 		  Select the preferred standard C++ library for all packages that support this.

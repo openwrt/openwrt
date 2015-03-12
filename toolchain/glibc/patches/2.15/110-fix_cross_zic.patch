@@ -1,0 +1,27 @@
+--- a/libc/timezone/zic.c
++++ b/libc/timezone/zic.c
+@@ -8,6 +8,8 @@ static char	elsieid[] = "@(#)zic.c	8.19"
+ #ifdef CROSS_ZIC
+ #define REPORT_BUGS_TO ""
+ #define PKGVERSION ""
++#undef _
++#define _(X) (X)
+ #else
+ #include "config.h"
+ #endif
+@@ -490,6 +492,7 @@ char *	argv[];
+ #ifdef unix
+ 	(void) umask(umask(S_IWGRP | S_IWOTH) | (S_IWGRP | S_IWOTH));
+ #endif /* defined unix */
++#ifndef CROSS_ZIC
+ #if HAVE_GETTEXT
+ 	(void) setlocale(LC_ALL, "");
+ #ifdef TZ_DOMAINDIR
+@@ -497,6 +500,7 @@ char *	argv[];
+ #endif /* defined TEXTDOMAINDIR */
+ 	(void) textdomain(TZ_DOMAIN);
+ #endif /* HAVE_GETTEXT */
++#endif
+ 	progname = argv[0];
+ 	if (TYPE_BIT(zic_t) < 64) {
+ 		(void) fprintf(stderr, "%s: %s\n", progname,

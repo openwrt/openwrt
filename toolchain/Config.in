@@ -211,14 +211,13 @@ comment "C Library"
 
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
-	default LIBC_USE_EGLIBC if (aarch64 || aarch64_be)
-	default LIBC_USE_UCLIBC
+	default LIBC_USE_GLIBC if (aarch64 || aarch64_be)
 	help
 	  Select the C library implementation.
 
-	config LIBC_USE_EGLIBC
-		bool "Use eglibc"
-		select USE_EGLIBC
+	config LIBC_USE_GLIBC
+		bool "Use glibc"
+		select USE_GLIBC
 		depends on !avr32
 
 	config LIBC_USE_UCLIBC
@@ -233,7 +232,7 @@ choice
 
 endchoice
 
-source "toolchain/eglibc/Config.in"
+source "toolchain/glibc/Config.in"
 source "toolchain/uClibc/Config.in"
 source "toolchain/musl/Config.in"
 
@@ -256,7 +255,7 @@ config INSIGHT
 	help
 	  Enable if you want to build insight-gdb.
 
-config USE_EGLIBC
+config USE_GLIBC
 	bool
 	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && (aarch64 || aarch64_be || octeon)
 
@@ -273,26 +272,26 @@ config USE_EXTERNAL_LIBC
 
 source "toolchain/gcc/Config.version"
 
-source "toolchain/eglibc/Config.version"
+source "toolchain/glibc/Config.version"
 source "toolchain/uClibc/Config.version"
 source "toolchain/musl/Config.version"
 
 config LIBC
 	string
-	default "eglibc"  if USE_EGLIBC
+	default "glibc"   if USE_GLIBC
 	default "uClibc"  if USE_UCLIBC
 	default "musl"	  if USE_MUSL
 
 config LIBC_VERSION
 	string
-	default EGLIBC_VERSION  if USE_EGLIBC
+	default GLIBC_VERSION   if USE_GLIBC
 	default UCLIBC_VERSION  if USE_UCLIBC
 	default MUSL_VERSION	if USE_MUSL
 
 config TARGET_SUFFIX
 	string
-	default "gnueabi"         if USE_EGLIBC && (arm || armeb)
-	default "gnu"             if USE_EGLIBC && !(arm || armeb)
+	default "gnueabi"         if USE_GLIBC && (arm || armeb)
+	default "gnu"             if USE_GLIBC && !(arm || armeb)
 	default "uclibcgnueabi"   if USE_UCLIBC && (arm || armeb)
 	default "uclibc"          if USE_UCLIBC && !(arm || armeb)
 	default "muslgnueabi"     if USE_MUSL && (arm || armeb)

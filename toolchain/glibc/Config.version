@@ -1,9 +1,10 @@
-if USE_EGLIBC
+if USE_GLIBC
 
-config EGLIBC_VERSION
+config GLIBC_VERSION
 	string
 	default "2.15" if EGLIBC_VERSION_2_15
 	default "2.19" if EGLIBC_VERSION_2_19
+	default "2.21" if GLIBC_VERSION_2_21
 
 config EGLIBC_VERSION_2_15
 	bool
@@ -12,15 +13,15 @@ config EGLIBC_VERSION_2_19
 	default y if !TOOLCHAINOPTS
 	bool
 
-config EGLIBC_REVISION
+config GLIBC_VERSION_2_21
+	default y if !TOOLCHAINOPTS
+	bool
+
+config GLIBC_REVISION
 	string
 	default "18909" if EGLIBC_VERSION_2_15
 	default "25243" if EGLIBC_VERSION_2_19
+	default "4e42b5b8f8" if GLIBC_VERSION_2_21
 	default ""
 
 endif
-
-menu "eglibc configuration"
-	depends on !TOOLCHAINOPTS && USE_EGLIBC
-	source toolchain/eglibc/config/Config.in
-endmenu
