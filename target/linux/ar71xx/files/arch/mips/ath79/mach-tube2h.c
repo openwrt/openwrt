@@ -26,6 +26,7 @@
 #define TUBE2H_GPIO_LED_SIGNAL2		13
 #define TUBE2H_GPIO_LED_LAN		17
 #define TUBE2H_GPIO_LED_SIGNAL1		27
+#define TUBE2H_GPIO_EXT_LNA		28
 
 #define TUBE2H_GPIO_BTN_RESET		12
 
@@ -91,6 +92,10 @@ static void __init tube2h_setup(void)
 	t = ath79_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
 	t |= AR933X_BOOTSTRAP_MDIO_GPIO_EN;
 	ath79_reset_wr(AR933X_RESET_REG_BOOTSTRAP, t);
+
+	gpio_request_one(TUBE2H_GPIO_EXT_LNA,
+			GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			"external LNA0");
 
 	ath79_register_wmac(art + TUBE2H_CALDATA_OFFSET, NULL);
 

@@ -27,6 +27,7 @@
 #define HORNET_UB_GPIO_LED_LAN		13
 #define HORNET_UB_GPIO_LED_WAN		17
 #define HORNET_UB_GPIO_LED_WPS		27
+#define HORNET_UB_GPIO_EXT_LNA		28
 
 #define HORNET_UB_GPIO_BTN_RESET	12
 #define HORNET_UB_GPIO_BTN_WPS		11
@@ -104,6 +105,10 @@ static void __init hornet_ub_gpio_setup(void)
 	gpio_request_one(HORNET_UB_GPIO_USB_POWER,
 			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
 			 "USB power");
+	gpio_request_one(HORNET_UB_GPIO_EXT_LNA,
+			GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			"external LNA0");
+
 }
 
 static void __init hornet_ub_setup(void)
