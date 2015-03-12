@@ -1,0 +1,26 @@
+choice
+	prompt "(e)glibc version"
+	depends on TOOLCHAINOPTS && USE_GLIBC
+	default EGLIBC_USE_VERSION_2_19
+	help
+	  Select the version of glibc you wish to use.
+
+	config EGLIBC_USE_VERSION_2_15
+		bool "eglibc 2.15"
+		select EGLIBC_VERSION_2_15
+		depends on BROKEN
+
+	config EGLIBC_USE_VERSION_2_19
+		bool "eglibc 2.19"
+		select EGLIBC_VERSION_2_19
+
+	config GLIBC_USE_VERSION_2_21
+		bool "glibc 2.21"
+		select GLIBC_VERSION_2_21
+
+endchoice
+
+menu "eglibc configuration"
+	depends on TOOLCHAINOPTS && USE_GLIBC && (EGLIBC_USE_VERSION_2_15 || EGLIBC_USE_VERSION_2_19)
+	source toolchain/glibc/config/Config.in
+endmenu
