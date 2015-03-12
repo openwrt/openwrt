@@ -26,7 +26,7 @@
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				compatible = "mx25l12805d";
+				compatible = "w25q128";
 				reg = <0 0>;
 				linux,modalias = "m25p80";
 				spi-max-frequency = <10000000>;
@@ -51,7 +51,7 @@
 
 				partition@50000 {
 					label = "firmware";
-					reg = <0x50000 0x7b0000>;
+					reg = <0x50000 0xfb0000>;
 				};
 
 			};
