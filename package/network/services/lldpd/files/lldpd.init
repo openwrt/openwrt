@@ -24,6 +24,7 @@ start() {
 	local lldp_class
 	local lldp_location
 	local lldp_description
+	local readonly_mode
 
 	config_load 'lldpd'
 	config_get_bool enable_cdp 'config' 'enable_cdp' 0
@@ -33,6 +34,7 @@ start() {
 	config_get lldp_class 'config' 'lldp_class'
 	config_get lldp_location 'config' 'lldp_location'
 	config_get lldp_description 'config' 'lldp_description' "$(find_release_info)"
+	config_get_bool readonly_mode 'config' 'readonly_mode' 0
 
 	local ifaces
 	config_get ifaces 'config' 'interface'
@@ -50,6 +52,7 @@ start() {
 	[ $enable_fdp -gt 0 ] && append args '-f'
 	[ $enable_sonmp -gt 0 ] && append args '-s'
 	[ $enable_edp -gt 0 ] && append args '-e'
+	[ $readonly_mode -gt 0 ] && append args '-r'
 
 	mkdir -p /var/run/lldp
 	chown lldp:lldp /var/run/lldp
