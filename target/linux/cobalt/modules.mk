@@ -10,7 +10,7 @@ define KernelPackage/fb-cobalt
   TITLE:=Cobalt framebuffer support
   DEPENDS:=@TARGET_cobalt +kmod-fb
   KCONFIG:=CONFIG_FB_COBALT
-  FILES:=$(LINUX_DIR)/drivers/video/cobalt_lcdfb.ko
+  FILES:=$(LINUX_DIR)/drivers/video/fbdev/cobalt_lcdfb.ko
   AUTOLOAD:=$(call AutoLoad,50,cobalt_lcdfb)
 endef
 
