@@ -1,0 +1,76 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 12 Mar 2015 17:10:50 +0100
+Subject: [PATCH] ath9k: fix tracking of enabled AP beacons
+
+sc->nbcnvifs tracks assigned beacon slots, not enabled beacons.
+Therefore, it cannot be used to decide if cur_conf->enable_beacon (bool)
+should be updated, or if beacons have been enabled already.
+With the current code (depending on the order of calls), beacons often
+do not get enabled in an AP+STA setup.
+To fix tracking of enabled beacons, convert cur_conf->enable_beacon to a
+bitmask of enabled beacon slots.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -219,12 +219,15 @@ void ath9k_beacon_remove_slot(struct ath
+ 	struct ath_common *common = ath9k_hw_common(sc->sc_ah);
+ 	struct ath_vif *avp = (void *)vif->drv_priv;
+ 	struct ath_buf *bf = avp->av_bcbuf;
++	struct ath_beacon_config *cur_conf = &sc->cur_chan->beacon;
+ 
+ 	ath_dbg(common, CONFIG, "Removing interface at beacon slot: %d\n",
+ 		avp->av_bslot);
+ 
+ 	tasklet_disable(&sc->bcon_tasklet);
+ 
++	cur_conf->enable_beacon &= ~BIT(avp->av_bslot);
++
+ 	if (bf && bf->bf_mpdu) {
+ 		struct sk_buff *skb = bf->bf_mpdu;
+ 		dma_unmap_single(sc->dev, bf->bf_buf_addr,
+@@ -521,8 +524,7 @@ static bool ath9k_allow_beacon_config(st
+ 	}
+ 
+ 	if (sc->sc_ah->opmode == NL80211_IFTYPE_AP) {
+-		if ((vif->type != NL80211_IFTYPE_AP) ||
+-		    (sc->nbcnvifs > 1)) {
++		if (vif->type != NL80211_IFTYPE_AP) {
+ 			ath_dbg(common, CONFIG,
+ 				"An AP interface is already present !\n");
+ 			return false;
+@@ -616,12 +618,14 @@ void ath9k_beacon_config(struct ath_soft
+ 	 * enabling/disabling SWBA.
+ 	 */
+ 	if (changed & BSS_CHANGED_BEACON_ENABLED) {
+-		if (!bss_conf->enable_beacon &&
+-		    (sc->nbcnvifs <= 1)) {
+-			cur_conf->enable_beacon = false;
+-		} else if (bss_conf->enable_beacon) {
+-			cur_conf->enable_beacon = true;
+-			ath9k_cache_beacon_config(sc, ctx, bss_conf);
++		bool enabled = cur_conf->enable_beacon;
++
++		if (!bss_conf->enable_beacon) {
++			cur_conf->enable_beacon &= ~BIT(avp->av_bslot);
++		} else {
++			cur_conf->enable_beacon |= BIT(avp->av_bslot);
++			if (!enabled)
++				ath9k_cache_beacon_config(sc, ctx, bss_conf);
+ 		}
+ 	}
+ 
+--- a/drivers/net/wireless/ath/ath9k/common.h
++++ b/drivers/net/wireless/ath/ath9k/common.h
+@@ -54,7 +54,7 @@ struct ath_beacon_config {
+ 	u16 dtim_period;
+ 	u16 bmiss_timeout;
+ 	u8 dtim_count;
+-	bool enable_beacon;
++	u8 enable_beacon;
+ 	bool ibss_creator;
+ 	u32 nexttbtt;
+ 	u32 intval;
