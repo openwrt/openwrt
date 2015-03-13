@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -96,6 +96,19 @@ config AR7
+@@ -96,6 +96,20 @@ config AR7
  	  Support for the Texas Instruments AR7 System-on-a-Chip
  	  family: TNETD7100, 7200 and 7300.
  
@@ -10,6 +10,7 @@
 +	select CSRC_R4K
 +	select DMA_NONCOHERENT
 +	select IRQ_CPU
++	select IRQ_DOMAIN
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_SUPPORTS_32BIT_KERNEL
@@ -20,7 +21,7 @@
  config ATH79
  	bool "Atheros AR71XX/AR724X/AR913X based boards"
  	select ARCH_REQUIRE_GPIOLIB
-@@ -834,6 +847,7 @@ config MIPS_PARAVIRT
+@@ -834,6 +848,7 @@ config MIPS_PARAVIRT
  
  endchoice
  
@@ -668,15 +669,15 @@
 +/*
 + * Miscellaneous interrupts, which share IP2.
 + */
-+#define AR2315_MISC_IRQ_UART0		(AR231X_MISC_IRQ_BASE+0)
-+#define AR2315_MISC_IRQ_I2C_RSVD	(AR231X_MISC_IRQ_BASE+1)
-+#define AR2315_MISC_IRQ_SPI		(AR231X_MISC_IRQ_BASE+2)
-+#define AR2315_MISC_IRQ_AHB		(AR231X_MISC_IRQ_BASE+3)
-+#define AR2315_MISC_IRQ_APB		(AR231X_MISC_IRQ_BASE+4)
-+#define AR2315_MISC_IRQ_TIMER		(AR231X_MISC_IRQ_BASE+5)
-+#define AR2315_MISC_IRQ_GPIO		(AR231X_MISC_IRQ_BASE+6)
-+#define AR2315_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+7)
-+#define AR2315_MISC_IRQ_IR_RSVD		(AR231X_MISC_IRQ_BASE+8)
++#define AR2315_MISC_IRQ_UART0		0
++#define AR2315_MISC_IRQ_I2C_RSVD	1
++#define AR2315_MISC_IRQ_SPI		2
++#define AR2315_MISC_IRQ_AHB		3
++#define AR2315_MISC_IRQ_APB		4
++#define AR2315_MISC_IRQ_TIMER		5
++#define AR2315_MISC_IRQ_GPIO		6
++#define AR2315_MISC_IRQ_WATCHDOG	7
++#define AR2315_MISC_IRQ_IR_RSVD		8
 +#define AR2315_MISC_IRQ_COUNT		9
 +
 +/*
@@ -1149,15 +1150,15 @@
 +/*
 + * Miscellaneous interrupts, which share IP6.
 + */
-+#define AR5312_MISC_IRQ_TIMER		(AR231X_MISC_IRQ_BASE+0)
-+#define AR5312_MISC_IRQ_AHB_PROC	(AR231X_MISC_IRQ_BASE+1)
-+#define AR5312_MISC_IRQ_AHB_DMA		(AR231X_MISC_IRQ_BASE+2)
-+#define AR5312_MISC_IRQ_GPIO		(AR231X_MISC_IRQ_BASE+3)
-+#define AR5312_MISC_IRQ_UART0		(AR231X_MISC_IRQ_BASE+4)
-+#define AR5312_MISC_IRQ_UART0_DMA	(AR231X_MISC_IRQ_BASE+5)
-+#define AR5312_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+6)
-+#define AR5312_MISC_IRQ_LOCAL		(AR231X_MISC_IRQ_BASE+7)
-+#define AR5312_MISC_IRQ_SPI		(AR231X_MISC_IRQ_BASE+8)
++#define AR5312_MISC_IRQ_TIMER		0
++#define AR5312_MISC_IRQ_AHB_PROC	1
++#define AR5312_MISC_IRQ_AHB_DMA		2
++#define AR5312_MISC_IRQ_GPIO		3
++#define AR5312_MISC_IRQ_UART0		4
++#define AR5312_MISC_IRQ_UART0_DMA	5
++#define AR5312_MISC_IRQ_WATCHDOG	6
++#define AR5312_MISC_IRQ_LOCAL		7
++#define AR5312_MISC_IRQ_SPI		8
 +#define AR5312_MISC_IRQ_COUNT		9
 +
 +/*
@@ -1353,7 +1354,7 @@
 +#endif	/* __ASM_MACH_ATH25_AR5312_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.c
-@@ -0,0 +1,474 @@
+@@ -0,0 +1,492 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1378,6 +1379,8 @@
 +#include <linux/mtd/physmap.h>
 +#include <linux/platform_device.h>
 +#include <linux/kernel.h>
++#include <linux/bitops.h>
++#include <linux/irqdomain.h>
 +#include <linux/reboot.h>
 +#include <linux/leds.h>
 +#include <linux/gpio.h>
@@ -1394,6 +1397,7 @@
 +#include "ar5312_regs.h"
 +
 +static void __iomem *ar5312_rst_base;
++static struct irq_domain *ar5312_misc_irq_domain;
 +
 +static inline u32 ar5312_rst_reg_read(u32 reg)
 +{
@@ -1435,40 +1439,36 @@
 +
 +static void ar5312_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
-+	unsigned int ar231x_misc_intrs = ar5312_rst_reg_read(AR5312_ISR) &
-+					 ar5312_rst_reg_read(AR5312_IMR);
++	u32 pending = ar5312_rst_reg_read(AR5312_ISR) &
++		      ar5312_rst_reg_read(AR5312_IMR);
++	unsigned nr, misc_irq = 0;
 +
-+	if (ar231x_misc_intrs & AR5312_ISR_TIMER) {
-+		generic_handle_irq(AR5312_MISC_IRQ_TIMER);
-+		(void)ar5312_rst_reg_read(AR5312_TIMER);
-+	} else if (ar231x_misc_intrs & AR5312_ISR_AHBPROC)
-+		generic_handle_irq(AR5312_MISC_IRQ_AHB_PROC);
-+	else if ((ar231x_misc_intrs & AR5312_ISR_UART0))
-+		generic_handle_irq(AR5312_MISC_IRQ_UART0);
-+	else if (ar231x_misc_intrs & AR5312_ISR_WD)
-+		generic_handle_irq(AR5312_MISC_IRQ_WATCHDOG);
-+	else
++	if (pending) {
++		struct irq_domain *domain = irq_get_handler_data(irq);
++
++		nr = __ffs(pending);
++		misc_irq = irq_find_mapping(domain, nr);
++	}
++
++	if (misc_irq) {
++		generic_handle_irq(misc_irq);
++		if (nr == AR5312_MISC_IRQ_TIMER)
++			ar5312_rst_reg_read(AR5312_TIMER);
++	} else {
 +		spurious_interrupt();
++	}
 +}
 +
 +/* Enable the specified AR5312_MISC_IRQ interrupt */
 +static void ar5312_misc_irq_unmask(struct irq_data *d)
 +{
-+	unsigned int imr;
-+
-+	imr = ar5312_rst_reg_read(AR5312_IMR);
-+	imr |= 1 << (d->irq - AR231X_MISC_IRQ_BASE);
-+	ar5312_rst_reg_write(AR5312_IMR, imr);
++	ar5312_rst_reg_mask(AR5312_IMR, 0, BIT(d->hwirq));
 +}
 +
 +/* Disable the specified AR5312_MISC_IRQ interrupt */
 +static void ar5312_misc_irq_mask(struct irq_data *d)
 +{
-+	unsigned int imr;
-+
-+	imr = ar5312_rst_reg_read(AR5312_IMR);
-+	imr &= ~(1 << (d->irq - AR231X_MISC_IRQ_BASE));
-+	ar5312_rst_reg_write(AR5312_IMR, imr);
++	ar5312_rst_reg_mask(AR5312_IMR, BIT(d->hwirq), 0);
 +	ar5312_rst_reg_read(AR5312_IMR); /* flush write buffer */
 +}
 +
@@ -1478,9 +1478,20 @@
 +	.irq_mask	= ar5312_misc_irq_mask,
 +};
 +
++static int ar5312_misc_irq_map(struct irq_domain *d, unsigned irq,
++			       irq_hw_number_t hw)
++{
++	irq_set_chip_and_handler(irq, &ar5312_misc_irq_chip, handle_level_irq);
++	return 0;
++}
++
++static struct irq_domain_ops ar5312_misc_irq_domain_ops = {
++	.map = ar5312_misc_irq_map,
++};
++
 +static void ar5312_irq_dispatch(void)
 +{
-+	int pending = read_c0_status() & read_c0_cause();
++	u32 pending = read_c0_status() & read_c0_cause();
 +
 +	if (pending & CAUSEF_IP2)
 +		do_IRQ(AR5312_IRQ_WLAN0);
@@ -1500,17 +1511,23 @@
 +
 +void __init ar5312_arch_init_irq(void)
 +{
-+	int i;
++	struct irq_domain *domain;
++	unsigned irq;
 +
 +	ath25_irq_dispatch = ar5312_irq_dispatch;
-+	for (i = 0; i < AR5312_MISC_IRQ_COUNT; i++) {
-+		int irq = AR231X_MISC_IRQ_BASE + i;
 +
-+		irq_set_chip_and_handler(irq, &ar5312_misc_irq_chip,
-+					 handle_level_irq);
-+	}
-+	setup_irq(AR5312_MISC_IRQ_AHB_PROC, &ar5312_ahb_err_interrupt);
++	domain = irq_domain_add_linear(NULL, AR5312_MISC_IRQ_COUNT,
++				       &ar5312_misc_irq_domain_ops, NULL);
++	if (!domain)
++		panic("Failed to add IRQ domain");
++
++	irq = irq_create_mapping(domain, AR5312_MISC_IRQ_AHB_PROC);
++	setup_irq(irq, &ar5312_ahb_err_interrupt);
++
 +	irq_set_chained_handler(AR5312_IRQ_MISC, ar5312_misc_irq_handler);
++	irq_set_handler_data(AR5312_IRQ_MISC, domain);
++
++	ar5312_misc_irq_domain = domain;
 +}
 +
 +static void ar5312_device_reset_set(u32 mask)
@@ -1825,12 +1842,14 @@
 +
 +void __init ar5312_arch_init(void)
 +{
-+	ath25_serial_setup(AR5312_UART0_BASE, AR5312_MISC_IRQ_UART0,
-+			   ar5312_sys_frequency());
++	unsigned irq = irq_create_mapping(ar5312_misc_irq_domain,
++					  AR5312_MISC_IRQ_UART0);
++
++	ath25_serial_setup(AR5312_UART0_BASE, irq, ar5312_sys_frequency());
 +}
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.c
-@@ -0,0 +1,418 @@
+@@ -0,0 +1,438 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1854,6 +1873,8 @@
 +#include <linux/string.h>
 +#include <linux/platform_device.h>
 +#include <linux/kernel.h>
++#include <linux/bitops.h>
++#include <linux/irqdomain.h>
 +#include <linux/reboot.h>
 +#include <linux/delay.h>
 +#include <linux/leds.h>
@@ -1871,6 +1892,7 @@
 +#include "ar2315_regs.h"
 +
 +static void __iomem *ar2315_rst_base;
++static struct irq_domain *ar2315_misc_irq_domain;
 +
 +static inline u32 ar2315_rst_reg_read(u32 reg)
 +{
@@ -1909,49 +1931,53 @@
 +
 +static void ar2315_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
-+	unsigned int misc_intr = ar2315_rst_reg_read(AR2315_ISR) &
-+				 ar2315_rst_reg_read(AR2315_IMR);
++	u32 pending = ar2315_rst_reg_read(AR2315_ISR) &
++		      ar2315_rst_reg_read(AR2315_IMR);
++	unsigned nr, misc_irq = 0;
 +
-+	if (misc_intr & AR2315_ISR_SPI)
-+		generic_handle_irq(AR2315_MISC_IRQ_SPI);
-+	else if (misc_intr & AR2315_ISR_TIMER)
-+		generic_handle_irq(AR2315_MISC_IRQ_TIMER);
-+	else if (misc_intr & AR2315_ISR_AHB)
-+		generic_handle_irq(AR2315_MISC_IRQ_AHB);
-+	else if (misc_intr & AR2315_ISR_GPIO) {
-+		ar2315_rst_reg_write(AR2315_ISR, AR2315_ISR_GPIO);
-+		generic_handle_irq(AR2315_MISC_IRQ_GPIO);
-+	} else if (misc_intr & AR2315_ISR_UART0)
-+		generic_handle_irq(AR2315_MISC_IRQ_UART0);
-+	else if (misc_intr & AR2315_ISR_WD) {
-+		ar2315_rst_reg_write(AR2315_ISR, AR2315_ISR_WD);
-+		generic_handle_irq(AR2315_MISC_IRQ_WATCHDOG);
-+	} else
++	if (pending) {
++		struct irq_domain *domain = irq_get_handler_data(irq);
++
++		nr = __ffs(pending);
++		misc_irq = irq_find_mapping(domain, nr);
++	}
++
++	if (misc_irq) {
++		if (nr == AR2315_MISC_IRQ_GPIO)
++			ar2315_rst_reg_write(AR2315_ISR, AR2315_ISR_GPIO);
++		else if (nr == AR2315_MISC_IRQ_WATCHDOG)
++			ar2315_rst_reg_write(AR2315_ISR, AR2315_ISR_WD);
++		generic_handle_irq(misc_irq);
++	} else {
 +		spurious_interrupt();
++	}
 +}
 +
 +static void ar2315_misc_irq_unmask(struct irq_data *d)
 +{
-+	unsigned int imr;
-+
-+	imr = ar2315_rst_reg_read(AR2315_IMR);
-+	imr |= 1 << (d->irq - AR231X_MISC_IRQ_BASE);
-+	ar2315_rst_reg_write(AR2315_IMR, imr);
++	ar2315_rst_reg_mask(AR2315_IMR, 0, BIT(d->hwirq));
 +}
 +
 +static void ar2315_misc_irq_mask(struct irq_data *d)
 +{
-+	unsigned int imr;
-+
-+	imr = ar2315_rst_reg_read(AR2315_IMR);
-+	imr &= ~(1 << (d->irq - AR231X_MISC_IRQ_BASE));
-+	ar2315_rst_reg_write(AR2315_IMR, imr);
++	ar2315_rst_reg_mask(AR2315_IMR, BIT(d->hwirq), 0);
 +}
 +
 +static struct irq_chip ar2315_misc_irq_chip = {
 +	.name		= "ar2315-misc",
 +	.irq_unmask	= ar2315_misc_irq_unmask,
 +	.irq_mask	= ar2315_misc_irq_mask,
++};
++
++static int ar2315_misc_irq_map(struct irq_domain *d, unsigned irq,
++			       irq_hw_number_t hw)
++{
++	irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip, handle_level_irq);
++	return 0;
++}
++
++static struct irq_domain_ops ar2315_misc_irq_domain_ops = {
++	.map = ar2315_misc_irq_map,
 +};
 +
 +/*
@@ -1964,7 +1990,7 @@
 + */
 +static void ar2315_irq_dispatch(void)
 +{
-+	int pending = read_c0_status() & read_c0_cause();
++	u32 pending = read_c0_status() & read_c0_cause();
 +
 +	if (pending & CAUSEF_IP3)
 +		do_IRQ(AR2315_IRQ_WLAN0);
@@ -1980,17 +2006,23 @@
 +
 +void __init ar2315_arch_init_irq(void)
 +{
-+	int i;
++	struct irq_domain *domain;
++	unsigned irq;
 +
 +	ath25_irq_dispatch = ar2315_irq_dispatch;
-+	for (i = 0; i < AR2315_MISC_IRQ_COUNT; i++) {
-+		int irq = AR231X_MISC_IRQ_BASE + i;
 +
-+		irq_set_chip_and_handler(irq, &ar2315_misc_irq_chip,
-+					 handle_level_irq);
-+	}
-+	setup_irq(AR2315_MISC_IRQ_AHB, &ar2315_ahb_err_interrupt);
++	domain = irq_domain_add_linear(NULL, AR2315_MISC_IRQ_COUNT,
++				       &ar2315_misc_irq_domain_ops, NULL);
++	if (!domain)
++		panic("Failed to add IRQ domain");
++
++	irq = irq_create_mapping(domain, AR2315_MISC_IRQ_AHB);
++	setup_irq(irq, &ar2315_ahb_err_interrupt);
++
 +	irq_set_chained_handler(AR2315_IRQ_MISC, ar2315_misc_irq_handler);
++	irq_set_handler_data(AR2315_IRQ_MISC, domain);
++
++	ar2315_misc_irq_domain = domain;
 +}
 +
 +static void ar2315_device_reset_set(u32 mask)
@@ -2046,8 +2078,6 @@
 +	},
 +	{
 +		.flags = IORESOURCE_IRQ,
-+		.start = AR2315_MISC_IRQ_WATCHDOG,
-+		.end = AR2315_MISC_IRQ_WATCHDOG,
 +	}
 +};
 +
@@ -2109,11 +2139,18 @@
 +	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
 +
 +	ar2315_init_gpio_leds();
++
++	ar2315_wdt_res[1].start = irq_create_mapping(ar2315_misc_irq_domain,
++						     AR2315_MISC_IRQ_WATCHDOG);
++	ar2315_wdt_res[1].end = ar2315_wdt_res[1].start;
 +	platform_device_register(&ar2315_wdt);
++
 +	platform_device_register(&ar2315_spiflash);
++
 +	ath25_add_ethernet(0, AR2315_ENET0_BASE, "eth0_mii",
 +			   AR2315_ENET0_MII_BASE, AR2315_IRQ_ENET0,
 +			   &ar2315_eth_data);
++
 +	ath25_add_wmac(0, AR2315_WLAN0_BASE, AR2315_IRQ_WLAN0);
 +}
 +
@@ -2246,8 +2283,10 @@
 +
 +void __init ar2315_arch_init(void)
 +{
-+	ath25_serial_setup(AR2315_UART0_BASE, AR2315_MISC_IRQ_UART0,
-+			   ar2315_apb_frequency());
++	unsigned irq = irq_create_mapping(ar2315_misc_irq_domain,
++					  AR2315_MISC_IRQ_UART0);
++
++	ath25_serial_setup(AR2315_UART0_BASE, irq, ar2315_apb_frequency());
 +}
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.h
@@ -2329,11 +2368,10 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ath25/devices.h
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,45 @@
 +#ifndef __ATH25_DEVICES_H
 +#define __ATH25_DEVICES_H
 +
-+#define AR231X_MISC_IRQ_BASE		0x20
 +#define AR231X_GPIO_IRQ_BASE		0x30
 +
 +#define ATH25_REG_MS(_val, _field)	(((_val) & _field##_M) >> _field##_S)

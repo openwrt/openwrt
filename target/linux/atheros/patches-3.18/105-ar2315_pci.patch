@@ -10,7 +10,7 @@
  obj-$(CONFIG_MIPS_PCI_VIRTIO)	+= pci-virtio-guest.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-ar2315.c
-@@ -0,0 +1,494 @@
+@@ -0,0 +1,511 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -47,7 +47,7 @@
 + * We know (and support) only one board that uses the PCI interface -
 + * Fonera 2.0g (FON2202). It has a USB EHCI controller connected to the
 + * AR2315 PCI bus. IDSEL pin of USB controller is connected to AD[13] line
-+ * and IDSEL pin of AR125 is connected to AD[16] line.
++ * and IDSEL pin of AR2315 is connected to AD[16] line.
 + */
 +
 +#include <linux/types.h>
@@ -57,7 +57,9 @@
 +#include <linux/init.h>
 +#include <linux/mm.h>
 +#include <linux/delay.h>
++#include <linux/bitops.h>
 +#include <linux/irq.h>
++#include <linux/irqdomain.h>
 +#include <linux/io.h>
 +#include <asm/paccess.h>
 +
@@ -150,11 +152,9 @@
 + * PCI interrupts, which share IP5
 + * Keep ordered according to AR2315_PCI_INT_XXX bits
 + */
-+#define AR2315_PCI_IRQ_BASE		0x50
-+#define AR2315_PCI_IRQ_EXT		(AR2315_PCI_IRQ_BASE+0)
-+#define AR2315_PCI_IRQ_ABORT		(AR2315_PCI_IRQ_BASE+1)
-+#define AR2315_PCI_IRQ_COUNT		2
-+#define AR2315_PCI_IRQ_SHIFT		25	/* in AR2315_PCI_INT_STATUS */
++#define AR2315_PCI_IRQ_EXT		25
++#define AR2315_PCI_IRQ_ABORT		26
++#define AR2315_PCI_IRQ_COUNT		27
 +
 +/* Arbitrary size of memory region to access the configuration space */
 +#define AR2315_PCI_CFG_SIZE	0x00100000
@@ -173,6 +173,8 @@
 +	void __iomem *cfg_mem;
 +	void __iomem *mmr_mem;
 +	unsigned irq;
++	unsigned irq_ext;
++	struct irq_domain *domain;
 +	struct pci_controller pci_ctrl;
 +	struct resource mem_res;
 +	struct resource io_res;
@@ -334,11 +336,13 @@
 +	struct ar2315_pci_ctrl *apc = irq_get_handler_data(irq);
 +	u32 pending = ar2315_pci_reg_read(apc, AR2315_PCI_ISR) &
 +		      ar2315_pci_reg_read(apc, AR2315_PCI_IMR);
++	unsigned pci_irq = 0;
 +
-+	if (pending & AR2315_PCI_INT_EXT)
-+		generic_handle_irq(AR2315_PCI_IRQ_EXT);
-+	else if (pending & AR2315_PCI_INT_ABORT)
-+		generic_handle_irq(AR2315_PCI_IRQ_ABORT);
++	if (pending)
++		pci_irq = irq_find_mapping(apc->domain, __ffs(pending));
++
++	if (pci_irq)
++		generic_handle_irq(pci_irq);
 +	else
 +		spurious_interrupt();
 +}
@@ -346,15 +350,14 @@
 +static void ar2315_pci_irq_mask(struct irq_data *d)
 +{
 +	struct ar2315_pci_ctrl *apc = irq_data_get_irq_chip_data(d);
-+	u32 m = 1 << (d->irq - AR2315_PCI_IRQ_BASE + AR2315_PCI_IRQ_SHIFT);
 +
-+	ar2315_pci_reg_mask(apc, AR2315_PCI_IMR, m, 0);
++	ar2315_pci_reg_mask(apc, AR2315_PCI_IMR, BIT(d->hwirq), 0);
 +}
 +
 +static void ar2315_pci_irq_mask_ack(struct irq_data *d)
 +{
 +	struct ar2315_pci_ctrl *apc = irq_data_get_irq_chip_data(d);
-+	u32 m = 1 << (d->irq - AR2315_PCI_IRQ_BASE + AR2315_PCI_IRQ_SHIFT);
++	u32 m = BIT(d->hwirq);
 +
 +	ar2315_pci_reg_mask(apc, AR2315_PCI_IMR, m, 0);
 +	ar2315_pci_reg_write(apc, AR2315_PCI_ISR, m);
@@ -363,9 +366,8 @@
 +static void ar2315_pci_irq_unmask(struct irq_data *d)
 +{
 +	struct ar2315_pci_ctrl *apc = irq_data_get_irq_chip_data(d);
-+	u32 m = 1 << (d->irq - AR2315_PCI_IRQ_BASE + AR2315_PCI_IRQ_SHIFT);
 +
-+	ar2315_pci_reg_mask(apc, AR2315_PCI_IMR, 0, m);
++	ar2315_pci_reg_mask(apc, AR2315_PCI_IMR, 0, BIT(d->hwirq));
 +}
 +
 +static struct irq_chip ar2315_pci_irq_chip = {
@@ -375,21 +377,25 @@
 +	.irq_unmask = ar2315_pci_irq_unmask,
 +};
 +
++static int ar2315_pci_irq_map(struct irq_domain *d, unsigned irq,
++			      irq_hw_number_t hw)
++{
++	irq_set_chip_and_handler(irq, &ar2315_pci_irq_chip, handle_level_irq);
++	irq_set_chip_data(irq, d->host_data);
++	return 0;
++}
++
++static struct irq_domain_ops ar2315_pci_irq_domain_ops = {
++	.map = ar2315_pci_irq_map,
++};
++
 +static void ar2315_pci_irq_init(struct ar2315_pci_ctrl *apc)
 +{
-+	int i;
-+
 +	ar2315_pci_reg_mask(apc, AR2315_PCI_IER, AR2315_PCI_IER_ENABLE, 0);
 +	ar2315_pci_reg_mask(apc, AR2315_PCI_IMR, (AR2315_PCI_INT_ABORT |
 +			    AR2315_PCI_INT_EXT), 0);
 +
-+	for (i = 0; i < AR2315_PCI_IRQ_COUNT; ++i) {
-+		int irq = AR2315_PCI_IRQ_BASE + i;
-+
-+		irq_set_chip_and_handler(irq, &ar2315_pci_irq_chip,
-+					 handle_level_irq);
-+		irq_set_chip_data(irq, apc);
-+	}
++	apc->irq_ext = irq_create_mapping(apc->domain, AR2315_PCI_IRQ_EXT);
 +
 +	irq_set_chained_handler(apc->irq, ar2315_pci_irq_handler);
 +	irq_set_handler_data(apc->irq, apc);
@@ -465,6 +471,13 @@
 +	if (err)
 +		return err;
 +
++	apc->domain = irq_domain_add_linear(NULL, AR2315_PCI_IRQ_COUNT,
++					    &ar2315_pci_irq_domain_ops, apc);
++	if (!apc->domain) {
++		dev_err(dev, "failed to add IRQ domain\n");
++		return -ENOMEM;
++	}
++
 +	ar2315_pci_irq_init(apc);
 +
 +	/* PCI controller does not support I/O ports */
@@ -478,6 +491,8 @@
 +	apc->pci_ctrl.io_resource = &apc->io_res,
 +
 +	register_pci_controller(&apc->pci_ctrl);
++
++	dev_info(dev, "register PCI controller\n");
 +
 +	return 0;
 +}
@@ -498,7 +513,9 @@
 +
 +int pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 +{
-+	return AR2315_PCI_IRQ_EXT;
++	struct ar2315_pci_ctrl *apc = ar2315_pci_bus_to_apc(dev->bus);
++
++	return slot ? 0 : apc->irq_ext;
 +}
 +
 +int pcibios_plat_dev_init(struct pci_dev *dev)
@@ -520,7 +537,7 @@
 +	default y
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -137,6 +137,10 @@ static void ar2315_irq_dispatch(void)
+@@ -144,6 +144,10 @@ static void ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0);
@@ -531,7 +548,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC);
  	else if (pending & CAUSEF_IP7)
-@@ -440,8 +444,60 @@ void __init ar2315_plat_mem_setup(void)
+@@ -460,10 +464,62 @@ void __init ar2315_plat_mem_setup(void)
  	_machine_restart = ar2315_restart;
  }
  
@@ -560,8 +577,10 @@
 +
  void __init ar2315_arch_init(void)
  {
- 	ath25_serial_setup(AR2315_UART0_BASE, AR2315_MISC_IRQ_UART0,
- 			   ar2315_apb_frequency());
+ 	unsigned irq = irq_create_mapping(ar2315_misc_irq_domain,
+ 					  AR2315_MISC_IRQ_UART0);
+ 
+ 	ath25_serial_setup(AR2315_UART0_BASE, irq, ar2315_apb_frequency());
 +
 +#ifdef CONFIG_PCI_AR2315
 +	if (ath25_soc == ATH25_SOC_AR2315) {
