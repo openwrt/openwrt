@@ -364,12 +364,11 @@ dhcp_boot_add() {
 	[ -n "$filename" ] || return 0
 
 	config_get servername "$cfg" servername
-	[ -n "$servername" ] || return 0
-
 	config_get serveraddress "$cfg" serveraddress
-	[ -n "$serveraddress" ] || return 0
 
-	xappend "--dhcp-boot=${networkid:+net:$networkid,}$filename,$servername,$serveraddress"
+	[ -n "$serveraddress" -a ! -n "$servername" ] && return 0
+
+	xappend "--dhcp-boot=${networkid:+net:$networkid,}${filename}${servername:+,$servername}${serveraddress:+,$serveraddress}"
 
 	config_get_bool force "$cfg" force 0
 
