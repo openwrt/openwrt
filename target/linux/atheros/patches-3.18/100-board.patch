@@ -629,7 +629,7 @@
 +#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/ar2315_regs.h
-@@ -0,0 +1,601 @@
+@@ -0,0 +1,510 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -668,16 +668,6 @@
 +#define AR2315_MISC_IRQ_WATCHDOG	(AR231X_MISC_IRQ_BASE+7)
 +#define AR2315_MISC_IRQ_IR_RSVD		(AR231X_MISC_IRQ_BASE+8)
 +#define AR2315_MISC_IRQ_COUNT		9
-+
-+/*
-+ * PCI interrupts, which share IP5
-+ * Keep ordered according to AR2315_PCI_INT_XXX bits
-+ */
-+#define AR2315_PCI_IRQ_BASE		0x50
-+#define AR2315_PCI_IRQ_EXT		(AR2315_PCI_IRQ_BASE+0)
-+#define AR2315_PCI_IRQ_ABORT		(AR2315_PCI_IRQ_BASE+1)
-+#define AR2315_PCI_IRQ_COUNT		2
-+#define AR2315_PCI_IRQ_SHIFT		25	/* in AR2315_PCI_INT_STATUS */
 +
 +/*
 + * Address map
@@ -1035,80 +1025,6 @@
 +#define SDRAM_BANKADDR_BITS_S       3
 +
 +/*
-+ * PCI Bus Interface Registers
-+ */
-+#define AR2315_PCI_1MS_REG      (AR2315_PCI + 0x0008)
-+#define AR2315_PCI_1MS_MASK     0x3FFFF       /* # of AHB clk cycles in 1ms */
-+
-+#define AR2315_PCI_MISC_CONFIG  (AR2315_PCI + 0x000c)
-+#define AR2315_PCIMISC_TXD_EN   0x00000001      /* Enable TXD for fragments */
-+#define AR2315_PCIMISC_CFG_SEL  0x00000002      /* mem or config cycles */
-+#define AR2315_PCIMISC_GIG_MASK 0x0000000C      /* bits 31-30 for pci req */
-+#define AR2315_PCIMISC_RST_MODE 0x00000030
-+#define AR2315_PCIRST_INPUT     0x00000000      /* 4:5=0 rst is input */
-+#define AR2315_PCIRST_LOW       0x00000010      /* 4:5=1 rst to GND */
-+#define AR2315_PCIRST_HIGH      0x00000020      /* 4:5=2 rst to VDD */
-+#define AR2315_PCIGRANT_EN      0x00000000      /* 6:7=0 early grant en */
-+#define AR2315_PCIGRANT_FRAME   0x00000040      /* 6:7=1 grant waits 4 frame */
-+#define AR2315_PCIGRANT_IDLE    0x00000080      /* 6:7=2 grant waits 4 idle */
-+#define AR2315_PCIGRANT_GAP     0x00000000      /* 6:7=2 grant waits 4 idle */
-+#define AR2315_PCICACHE_DIS     0x00001000      /* PCI external access cache
-+						 * disable */
-+
-+#define AR2315_PCI_OUT_TSTAMP   (AR2315_PCI + 0x0010)
-+
-+#define AR2315_PCI_UNCACHE_CFG  (AR2315_PCI + 0x0014)
-+
-+#define AR2315_PCI_IN_EN        (AR2315_PCI + 0x0100)
-+#define AR2315_PCI_IN_EN0       0x01            /* Enable chain 0 */
-+#define AR2315_PCI_IN_EN1       0x02            /* Enable chain 1 */
-+#define AR2315_PCI_IN_EN2       0x04            /* Enable chain 2 */
-+#define AR2315_PCI_IN_EN3       0x08            /* Enable chain 3 */
-+
-+#define AR2315_PCI_IN_DIS       (AR2315_PCI + 0x0104)
-+#define AR2315_PCI_IN_DIS0      0x01            /* Disable chain 0 */
-+#define AR2315_PCI_IN_DIS1      0x02            /* Disable chain 1 */
-+#define AR2315_PCI_IN_DIS2      0x04            /* Disable chain 2 */
-+#define AR2315_PCI_IN_DIS3      0x08            /* Disable chain 3 */
-+
-+#define AR2315_PCI_IN_PTR       (AR2315_PCI + 0x0200)
-+
-+#define AR2315_PCI_OUT_EN       (AR2315_PCI + 0x0400)
-+#define AR2315_PCI_OUT_EN0      0x01            /* Enable chain 0 */
-+
-+#define AR2315_PCI_OUT_DIS      (AR2315_PCI + 0x0404)
-+#define AR2315_PCI_OUT_DIS0     0x01            /* Disable chain 0 */
-+
-+#define AR2315_PCI_OUT_PTR      (AR2315_PCI + 0x0408)
-+
-+#define AR2315_PCI_ISR          (AR2315_PCI + 0x0500)   /* write one to clr */
-+#define AR2315_PCI_INT_TX       0x00000001      /* Desc In Completed */
-+#define AR2315_PCI_INT_TXOK     0x00000002      /* Desc In OK */
-+#define AR2315_PCI_INT_TXERR    0x00000004      /* Desc In ERR */
-+#define AR2315_PCI_INT_TXEOL    0x00000008      /* Desc In End-of-List */
-+#define AR2315_PCI_INT_RX       0x00000010      /* Desc Out Completed */
-+#define AR2315_PCI_INT_RXOK     0x00000020      /* Desc Out OK */
-+#define AR2315_PCI_INT_RXERR    0x00000040      /* Desc Out ERR */
-+#define AR2315_PCI_INT_RXEOL    0x00000080      /* Desc Out EOL */
-+#define AR2315_PCI_INT_TXOOD    0x00000200      /* Desc In Out-of-Desc */
-+#define AR2315_PCI_INT_DESCMASK 0x0000FFFF      /* Desc Mask */
-+#define AR2315_PCI_INT_EXT      0x02000000      /* Extern PCI INTA */
-+#define AR2315_PCI_INT_ABORT    0x04000000      /* PCI bus abort event */
-+
-+#define AR2315_PCI_IMR          (AR2315_PCI + 0x0504)  /* mask _PCI_ISR bits */
-+
-+#define AR2315_PCI_IER          (AR2315_PCI + 0x0508)  /* global PCI int en */
-+#define AR2315_PCI_IER_DISABLE  0x00            /* disable pci interrupts */
-+#define AR2315_PCI_IER_ENABLE   0x01            /* enable pci interrupts */
-+
-+#define AR2315_PCI_HOST_IN_EN   (AR2315_PCI + 0x0800)
-+#define AR2315_PCI_HOST_IN_DIS  (AR2315_PCI + 0x0804)
-+#define AR2315_PCI_HOST_IN_PTR  (AR2315_PCI + 0x0810)
-+#define AR2315_PCI_HOST_OUT_EN  (AR2315_PCI + 0x0900)
-+#define AR2315_PCI_HOST_OUT_DIS (AR2315_PCI + 0x0904)
-+#define AR2315_PCI_HOST_OUT_PTR (AR2315_PCI + 0x0908)
-+
-+/*
 + * Local Bus Interface Registers
 + */
 +#define AR2315_LB_CONFIG        (AR2315_LOCAL + 0x0000)
@@ -1222,13 +1138,6 @@
 +#define AR2315_IRCFG_SEQ_END_WIN_SEL	0x00008000
 +#define AR2315_IRCFG_SEQ_END_WIN_THRESH	0x001f0000
 +#define AR2315_IRCFG_NUM_BACKOFF_WORDS	0x01e00000
-+
-+/* ??? access BAR */
-+#define AR2315_PCI_HOST_MBAR0		0x10000000
-+/* RAM access BAR */
-+#define AR2315_PCI_HOST_MBAR1		AR2315_PCI_HOST_SDRAM_BASEADDR
-+/* ??? access BAR */
-+#define AR2315_PCI_HOST_MBAR2		0x30000000
 +
 +#endif /* __ASM_MACH_ATH25_AR2315_REGS_H */
 --- /dev/null
