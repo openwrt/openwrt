@@ -21,8 +21,24 @@ config LLDPD_WITH_SONMP
 	default y
 	prompt "Enable support for the SynOptics Network Management Protocol"
 
+config LLDPD_WITH_LLDPMED
+	bool
+	prompt "Enable LLDP-MED extension"
+	default y
+
+config LLDPD_WITH_DOT1
+	bool
+	prompt "Enable Dot1 extension (VLAN stuff)"
+	default y
+
+config LLDPD_WITH_DOT3
+	bool
+	prompt "Enable Dot3 extension (PHY stuff)"
+	default y
+
 config LLDPD_WITH_JSON
 	bool
 	prompt "Enable JSON output for the LLDP Command-Line Interface"
 	default n
+
 endmenu

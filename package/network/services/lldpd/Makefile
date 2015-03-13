@@ -85,6 +85,9 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_CDP),,--disable-cdp) \
 	$(if $(CONFIG_LLDPD_WITH_FDP),,--disable-fdp) \
 	$(if $(CONFIG_LLDPD_WITH_EDP),,--disable-edp) \
+	$(if $(CONFIG_LLDPD_WITH_LLDPMED),,--disable-lldpmed) \
+	$(if $(CONFIG_LLDPD_WITH_DOT1),,--disable-dot1) \
+	$(if $(CONFIG_LLDPD_WITH_DOT3),,--disable-dot3) \
 	$(if $(CONFIG_LLDPD_WITH_SONMP),,--disable-sonmp) \
 	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c)
 
