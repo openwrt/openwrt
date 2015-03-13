@@ -12,7 +12,7 @@
  	bool "Atheros devices"
  	default y
 -	depends on PCI
-+	depends on (PCI || ATHEROS_AR231X)
++	depends on (PCI || ATH25)
  	---help---
  	  If you have a network (Ethernet) card belonging to this class, say Y
  	  and read the Ethernet-HOWTO, available from
@@ -22,7 +22,7 @@
  
 +config NET_AR231X
 +	tristate "Atheros AR231X built-in Ethernet support"
-+	depends on ATHEROS_AR231X
++	depends on ATH25
 +	help
 +	  Support for the AR231x/531x ethernet controller
 +
