@@ -229,7 +229,6 @@ static void mt7621_set_mac(struct fe_priv *priv, unsigned char *mac)
 }
 
 static struct fe_soc_data mt7620_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = mt7620_init_data,
 	.reset_fe = mt7620_fe_reset,
 	.set_mac = mt7620_set_mac,
@@ -251,7 +250,6 @@ static struct fe_soc_data mt7620_data = {
 };
 
 static struct fe_soc_data mt7621_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = mt7621_init_data,
 	.reset_fe = mt7621_fe_reset,
 	.set_mac = mt7621_set_mac,

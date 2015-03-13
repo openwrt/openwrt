@@ -57,7 +57,6 @@ static int rt2880_fwd_config(struct fe_priv *priv)
 }
 
 struct fe_soc_data rt2880_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = rt2880_init_data,
 	.reset_fe = rt2880_fe_reset,
 	.fwd_config = rt2880_fwd_config,
