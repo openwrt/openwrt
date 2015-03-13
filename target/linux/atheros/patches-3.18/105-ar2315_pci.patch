@@ -531,7 +531,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -450,8 +454,60 @@ void __init ar2315_plat_mem_setup(void)
+@@ -440,8 +444,60 @@ void __init ar2315_plat_mem_setup(void)
  	_machine_restart = ar2315_restart;
  }
  
