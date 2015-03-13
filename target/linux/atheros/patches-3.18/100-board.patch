@@ -105,7 +105,7 @@
 +#include <asm/bootinfo.h>
 +#include <asm/time.h>
 +
-+#include <ar231x_platform.h>
++#include <ath25_platform.h>
 +#include "devices.h"
 +#include "ar5312.h"
 +#include "ar2315.h"
@@ -348,7 +348,7 @@
 +{
 +}
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ath25/ar231x_platform.h
++++ b/arch/mips/include/asm/mach-ath25/ath25_platform.h
 @@ -0,0 +1,85 @@
 +#ifndef __ASM_MACH_ATH25_PLATFORM_H
 +#define __ASM_MACH_ATH25_PLATFORM_H
@@ -1542,7 +1542,7 @@
 +#include <linux/irq.h>
 +#include <linux/io.h>
 +
-+#include <ar231x_platform.h>
++#include <ath25_platform.h>
 +#include <ar5312_regs.h>
 +#include <ar231x.h>
 +#include "devices.h"
@@ -2021,7 +2021,7 @@
 +#include <linux/irq.h>
 +#include <linux/io.h>
 +
-+#include <ar231x_platform.h>
++#include <ath25_platform.h>
 +#include <ar2315_regs.h>
 +#include <ar231x.h>
 +#include "devices.h"
@@ -2593,7 +2593,7 @@
 +#include <linux/platform_device.h>
 +#include <asm/bootinfo.h>
 +
-+#include <ar231x_platform.h>
++#include <ath25_platform.h>
 +#include <ar231x.h>
 +#include "devices.h"
 +#include "ar5312.h"
