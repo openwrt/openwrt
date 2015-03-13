@@ -349,7 +349,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/ath25_platform.h
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,84 @@
 +#ifndef __ASM_MACH_ATH25_PLATFORM_H
 +#define __ASM_MACH_ATH25_PLATFORM_H
 +
@@ -430,7 +430,6 @@
 +	void (*reset_clear)(u32);
 +	u32 reset_mac;
 +	u32 reset_phy;
-+	struct ar231x_board_config *config;
 +	char *macaddr;
 +};
 +
@@ -1499,7 +1498,7 @@
 +#endif	/* __ASM_MACH_ATH25_AR5312_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.c
-@@ -0,0 +1,476 @@
+@@ -0,0 +1,474 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1675,7 +1674,6 @@
 +	.reset_clear = ar5312_device_reset_clear,
 +	.reset_mac = AR5312_RESET_ENET0,
 +	.reset_phy = AR5312_RESET_EPHY0,
-+	.config = &ar231x_board,
 +};
 +
 +static struct ar231x_eth ar5312_eth1_data = {
@@ -1683,7 +1681,6 @@
 +	.reset_clear = ar5312_device_reset_clear,
 +	.reset_mac = AR5312_RESET_ENET1,
 +	.reset_phy = AR5312_RESET_EPHY1,
-+	.config = &ar231x_board,
 +};
 +
 +static struct platform_device ar5312_physmap_flash = {
@@ -1978,7 +1975,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.c
-@@ -0,0 +1,431 @@
+@@ -0,0 +1,430 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2148,7 +2145,6 @@
 +	.reset_clear = ar2315_device_reset_clear,
 +	.reset_mac = AR2315_RESET_ENET0,
 +	.reset_phy = AR2315_RESET_EPHY0,
-+	.config = &ar231x_board,
 +};
 +
 +static struct resource ar2315_spiflash_res[] = {
