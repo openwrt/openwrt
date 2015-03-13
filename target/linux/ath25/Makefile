@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 ARCH:=mips
-BOARD:=atheros
+BOARD:=ath25
 BOARDNAME:=Atheros AR231x/AR5312
 FEATURES:=squashfs low_mem
 

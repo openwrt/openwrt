@@ -534,7 +534,7 @@ endef
 define KernelPackage/ath
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros common driver part
-  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ar71xx||TARGET_atheros +kmod-mac80211
+  DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ar71xx||TARGET_ath25 +kmod-mac80211
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath.ko
   MENU:=1
 endef
@@ -547,7 +547,7 @@ define KernelPackage/ath5k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 5xxx wireless cards support
   URL:=http://linuxwireless.org/en/users/Drivers/ath5k
-  DEPENDS+= @PCI_SUPPORT||@TARGET_atheros +kmod-ath
+  DEPENDS+= @PCI_SUPPORT||@TARGET_ath25 +kmod-ath
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath5k/ath5k.ko
   AUTOLOAD:=$(call AutoProbe,ath5k)
 endef
@@ -1556,7 +1556,7 @@ config-$(call config_package,ath9k-htc) += ATH9K_HTC
 config-$(call config_package,ath10k) += ATH10K ATH10K_PCI
 
 config-$(call config_package,ath5k) += ATH5K
-ifdef CONFIG_TARGET_atheros
+ifdef CONFIG_TARGET_ath25
   config-y += ATH5K_AHB
 else
   config-y += ATH5K_PCI
