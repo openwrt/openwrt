@@ -14,9 +14,9 @@
 +#include <linux/serial_reg.h>
 +#include <asm/addrspace.h>
 +
-+#include <asm/mach-ath25/ar2315_regs.h>
-+#include <asm/mach-ath25/ar5312_regs.h>
 +#include "devices.h"
++#include "ar2315_regs.h"
++#include "ar5312_regs.h"
 +
 +static inline void prom_uart_wr(void __iomem *base, unsigned reg,
 +				unsigned char ch)

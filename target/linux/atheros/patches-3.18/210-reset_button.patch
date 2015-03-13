@@ -11,14 +11,13 @@
  
 --- /dev/null
 +++ b/arch/mips/ath25/reset.c
-@@ -0,0 +1,58 @@
+@@ -0,0 +1,57 @@
 +#include <linux/init.h>
 +#include <linux/slab.h>
 +#include <linux/platform_device.h>
 +#include <linux/gpio_keys.h>
 +#include <linux/input.h>
 +#include <ath25_platform.h>
-+#include <ar231x.h>
 +#include "devices.h"
 +
 +static int __init
