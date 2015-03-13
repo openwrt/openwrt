@@ -131,13 +131,36 @@ out_get_link:
 	return ethtool_op_get_link(dev);
 }
 
+static int fe_set_ringparam(struct net_device *dev,
+		struct ethtool_ringparam *ring)
+{
+	struct fe_priv *priv = netdev_priv(dev);
+
+	if ((ring->tx_pending < 2) ||
+			(ring->rx_pending < 2) ||
+			(ring->rx_pending > MAX_DMA_DESC) ||
+			(ring->tx_pending > MAX_DMA_DESC))
+		return -EINVAL;
+
+	dev->netdev_ops->ndo_stop(dev);
+
+	priv->tx_ring_size = BIT(fls(ring->tx_pending) - 1);
+	priv->rx_ring_size = BIT(fls(ring->rx_pending) - 1);
+
+	dev->netdev_ops->ndo_open(dev);
+
+	return 0;
+}
+
 static void fe_get_ringparam(struct net_device *dev,
 		struct ethtool_ringparam *ring)
 {
+	struct fe_priv *priv = netdev_priv(dev);
+
 	ring->rx_max_pending = MAX_DMA_DESC;
 	ring->tx_max_pending = MAX_DMA_DESC;
-	ring->rx_pending = NUM_DMA_DESC;
-	ring->tx_pending = NUM_DMA_DESC;
+	ring->rx_pending = priv->rx_ring_size;
+	ring->tx_pending = priv->tx_ring_size;
 }
 
 static void fe_get_strings(struct net_device *dev, u32 stringset, u8 *data)
@@ -194,6 +217,7 @@ static struct ethtool_ops fe_ethtool_ops = {
 	.set_msglevel		= fe_set_msglevel,
 	.nway_reset		= fe_nway_reset,
 	.get_link		= fe_get_link,
+	.set_ringparam		= fe_set_ringparam,
 	.get_ringparam		= fe_get_ringparam,
 };
 
