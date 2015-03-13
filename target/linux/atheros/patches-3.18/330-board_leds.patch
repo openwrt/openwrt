@@ -1,6 +1,6 @@
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -26,6 +26,7 @@
+@@ -23,6 +23,7 @@
  #include <linux/reboot.h>
  #include <linux/delay.h>
  #include <linux/gpio.h>
@@ -8,7 +8,7 @@
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -265,6 +266,50 @@ static struct platform_device ar2315_spi
+@@ -260,6 +261,50 @@ static struct platform_device ar2315_spi
  	.num_resources = ARRAY_SIZE(ar2315_spiflash_res)
  };
  
@@ -59,7 +59,7 @@
  void __init ar2315_init_devices(void)
  {
  	/* Find board configuration */
-@@ -275,6 +320,8 @@ void __init ar2315_init_devices(void)
+@@ -270,6 +315,8 @@ void __init ar2315_init_devices(void)
  	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
  	platform_device_register(&ar2315_gpio);
  
@@ -70,15 +70,15 @@
  	ar2315_wdt_res[1].end = ar2315_wdt_res[1].start;
 --- a/arch/mips/ath25/ar5312.c
 +++ b/arch/mips/ath25/ar5312.c
-@@ -26,6 +26,7 @@
- #include <linux/irqdomain.h>
+@@ -23,6 +23,7 @@
+ #include <linux/mtd/physmap.h>
  #include <linux/reboot.h>
  #include <linux/gpio.h>
 +#include <linux/leds.h>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -236,6 +237,23 @@ static struct platform_device ar5312_gpi
+@@ -231,6 +232,23 @@ static struct platform_device ar5312_gpi
  	.num_resources = ARRAY_SIZE(ar5312_gpio_res),
  };
  
@@ -102,7 +102,7 @@
  static void __init ar5312_flash_init(void)
  {
  	void __iomem *flashctl_base;
-@@ -306,6 +324,11 @@ void __init ar5312_init_devices(void)
+@@ -301,6 +319,11 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_gpio);
  

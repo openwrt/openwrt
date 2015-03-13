@@ -594,7 +594,7 @@
 +#endif
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -225,6 +225,28 @@ static struct platform_device ar2315_gpi
+@@ -220,6 +220,28 @@ static struct platform_device ar2315_gpi
  	.num_resources = ARRAY_SIZE(ar2315_gpio_res)
  };
  
@@ -623,7 +623,7 @@
  void __init ar2315_init_devices(void)
  {
  	/* Find board configuration */
-@@ -235,6 +257,8 @@ void __init ar2315_init_devices(void)
+@@ -230,6 +252,8 @@ void __init ar2315_init_devices(void)
  	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
  	platform_device_register(&ar2315_gpio);
  

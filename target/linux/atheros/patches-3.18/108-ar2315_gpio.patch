@@ -10,16 +10,16 @@
  config PCI_AR2315
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -24,6 +24,8 @@
- #include <linux/bitops.h>
- #include <linux/irqdomain.h>
+@@ -21,6 +21,8 @@
+ #include <linux/interrupt.h>
+ #include <linux/platform_device.h>
  #include <linux/reboot.h>
 +#include <linux/delay.h>
 +#include <linux/gpio.h>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -172,11 +174,42 @@ void __init ar2315_arch_init_irq(void)
+@@ -167,11 +169,42 @@ void __init ar2315_arch_init_irq(void)
  	ar2315_misc_irq_domain = domain;
  }
  
@@ -62,7 +62,7 @@
  	ath25_add_wmac(0, AR2315_WLAN0_BASE, AR2315_IRQ_WLAN0);
  }
  
-@@ -192,8 +225,8 @@ static void ar2315_restart(char *command
+@@ -187,8 +220,8 @@ static void ar2315_restart(char *command
  	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits
  	 * a workaround. Give it some time to attempt a gpio based hardware
  	 * reset (atheros reference design workaround) */
@@ -337,9 +337,9 @@
 +subsys_initcall(ar2315_gpio_init);
 --- a/arch/mips/ath25/devices.h
 +++ b/arch/mips/ath25/devices.h
-@@ -1,6 +1,11 @@
- #ifndef __ATH25_DEVICES_H
- #define __ATH25_DEVICES_H
+@@ -3,6 +3,11 @@
+ 
+ #include <linux/cpu.h>
  
 +#define AR231X_GPIO_IRQ_BASE		0x30
 +

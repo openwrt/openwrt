@@ -1545,7 +1545,7 @@
   */
 --- a/arch/mips/ath25/ar5312_regs.h
 +++ b/arch/mips/ath25/ar5312_regs.h
-@@ -66,6 +66,10 @@
+@@ -64,6 +64,10 @@
  #define AR5312_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
  #define AR5312_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
  
@@ -1558,7 +1558,7 @@
  #define AR5312_RELOAD		0x0004 /* timer reload value */
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -141,6 +141,8 @@ static void ar2315_irq_dispatch(void)
+@@ -136,6 +136,8 @@ static void ar2315_irq_dispatch(void)
  
  	if (pending & CAUSEF_IP3)
  		do_IRQ(AR2315_IRQ_WLAN0);
@@ -1567,7 +1567,7 @@
  #ifdef CONFIG_PCI_AR2315
  	else if (pending & CAUSEF_IP5)
  		do_IRQ(AR2315_IRQ_LCBUS_PCI);
-@@ -174,6 +176,29 @@ void __init ar2315_arch_init_irq(void)
+@@ -169,6 +171,29 @@ void __init ar2315_arch_init_irq(void)
  	ar2315_misc_irq_domain = domain;
  }
  
@@ -1597,7 +1597,7 @@
  static struct resource ar2315_gpio_res[] = {
  	{
  		.name = "ar2315-gpio",
-@@ -210,6 +235,11 @@ void __init ar2315_init_devices(void)
+@@ -205,6 +230,11 @@ void __init ar2315_init_devices(void)
  	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
  	platform_device_register(&ar2315_gpio);
  
@@ -1611,7 +1611,7 @@
  
 --- a/arch/mips/ath25/ar5312.c
 +++ b/arch/mips/ath25/ar5312.c
-@@ -137,6 +137,10 @@ static void ar5312_irq_dispatch(void)
+@@ -132,6 +132,10 @@ static void ar5312_irq_dispatch(void)
  
  	if (pending & CAUSEF_IP2)
  		do_IRQ(AR5312_IRQ_WLAN0);
@@ -1622,7 +1622,7 @@
  	else if (pending & CAUSEF_IP5)
  		do_IRQ(AR5312_IRQ_WLAN1);
  	else if (pending & CAUSEF_IP6)
-@@ -168,6 +172,36 @@ void __init ar5312_arch_init_irq(void)
+@@ -163,6 +167,36 @@ void __init ar5312_arch_init_irq(void)
  	ar5312_misc_irq_domain = domain;
  }
  
@@ -1659,7 +1659,7 @@
  static struct physmap_flash_data ar5312_flash_data = {
  	.width = 2,
  };
-@@ -248,6 +282,7 @@ static void __init ar5312_flash_init(voi
+@@ -243,6 +277,7 @@ static void __init ar5312_flash_init(voi
  void __init ar5312_init_devices(void)
  {
  	struct ath25_boarddata *config;
@@ -1667,7 +1667,7 @@
  
  	ar5312_flash_init();
  
-@@ -271,8 +306,30 @@ void __init ar5312_init_devices(void)
+@@ -266,8 +301,30 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_gpio);
  
@@ -1698,7 +1698,7 @@
  		if (!ath25_board.radio)
  			return;
  
-@@ -281,8 +338,18 @@ void __init ar5312_init_devices(void)
+@@ -276,8 +333,18 @@ void __init ar5312_init_devices(void)
  
  		ath25_add_wmac(0, AR5312_WLAN0_BASE, AR5312_IRQ_WLAN0);
  		break;
@@ -1719,7 +1719,7 @@
  		break;
 --- a/arch/mips/ath25/devices.h
 +++ b/arch/mips/ath25/devices.h
-@@ -30,6 +30,8 @@ extern struct ar231x_board_config ath25_
+@@ -32,6 +32,8 @@ extern struct ar231x_board_config ath25_
  extern void (*ath25_irq_dispatch)(void);
  
  int ath25_find_config(phys_addr_t offset, unsigned long size);
@@ -1730,7 +1730,7 @@
  
 --- a/arch/mips/ath25/devices.c
 +++ b/arch/mips/ath25/devices.c
-@@ -14,6 +14,51 @@
+@@ -12,6 +12,51 @@
  struct ar231x_board_config ath25_board;
  enum ath25_soc_type ath25_soc = ATH25_SOC_UNKNOWN;
  
@@ -1782,7 +1782,7 @@
  static struct resource ath25_wmac0_res[] = {
  	{
  		.name = "wmac0_membase",
-@@ -72,6 +117,25 @@ const char *get_system_type(void)
+@@ -70,6 +115,25 @@ const char *get_system_type(void)
  	return soc_type_strings[ath25_soc];
  }
  
