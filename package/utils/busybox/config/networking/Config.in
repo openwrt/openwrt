@@ -67,6 +67,7 @@ config BUSYBOX_CONFIG_NC_110_COMPAT
 	bool "Netcat 1.10 compatibility (+2.5k)"
 	default BUSYBOX_DEFAULT_NC_110_COMPAT  # off specially for Rob
 	depends on BUSYBOX_CONFIG_NC
+	select BUSYBOX_CONFIG_NC_SERVER
 	help
 	  This option makes nc closely follow original nc-1.10.
 	  The code is about 2.5k bigger. It enables
