@@ -22,9 +22,9 @@
 	};
 
 	ethernet@10100000 {
-		mtd-mac-address = <&factory 0x66>;
 		port@0 {
 			ralink,fixed-link = <1000 1 1 1>;
+			phy-mode = "rgmii";
 		};
 	};
 
@@ -43,12 +43,19 @@
 		host-bridge {
 			pci-bridge@1 {
 				status = "okay";
+				wmac@0,0 {
+					ralink,5ghz = <0>;
+					compatible = "ralink,rt2880-pci", "pciclass060400", "pciclass0604";
+					reg = < 0x10000 0 0 0 0 >;
+					ralink,eeprom = "rt2x00pci_1_0.eeprom";
+				};
 			};
 		};
 	};
 
 	wmac@10180000 {
 		status = "okay";
+		ralink,2ghz = <0>;
 		ralink,mtd-eeprom = <&factory 0>;
 	};
 
