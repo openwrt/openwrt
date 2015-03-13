@@ -10,7 +10,7 @@
  obj-$(CONFIG_MIPS_PCI_VIRTIO)	+= pci-virtio-guest.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-ar2315.c
-@@ -0,0 +1,482 @@
+@@ -0,0 +1,494 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -60,9 +60,6 @@
 +#include <linux/irq.h>
 +#include <linux/io.h>
 +#include <asm/paccess.h>
-+#include <ath25_platform.h>
-+#include <ar231x.h>
-+#include <ar2315_regs.h>
 +
 +/*
 + * PCI Bus Interface Registers
@@ -175,6 +172,7 @@
 +struct ar2315_pci_ctrl {
 +	void __iomem *cfg_mem;
 +	void __iomem *mmr_mem;
++	unsigned irq;
 +	struct pci_controller pci_ctrl;
 +	struct resource mem_res;
 +	struct resource io_res;
@@ -393,8 +391,8 @@
 +		irq_set_chip_data(irq, apc);
 +	}
 +
-+	irq_set_chained_handler(AR2315_IRQ_LCBUS_PCI, ar2315_pci_irq_handler);
-+	irq_set_handler_data(AR2315_IRQ_LCBUS_PCI, apc);
++	irq_set_chained_handler(apc->irq, ar2315_pci_irq_handler);
++	irq_set_handler_data(apc->irq, apc);
 +
 +	/* Clear any pending Abort or external Interrupts
 +	 * and enable interrupt processing */
@@ -407,23 +405,37 @@
 +{
 +	struct ar2315_pci_ctrl *apc;
 +	struct device *dev = &pdev->dev;
-+	int err;
++	struct resource *res;
++	int irq, err;
 +
 +	apc = devm_kzalloc(dev, sizeof(*apc), GFP_KERNEL);
 +	if (!apc)
 +		return -ENOMEM;
 +
-+	apc->mmr_mem = devm_ioremap_nocache(dev, AR2315_PCI, AR2315_PCI_SIZE);
-+	if (!apc->mmr_mem)
-+		return -ENOMEM;
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0)
++		return -EINVAL;
++	apc->irq = irq;
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++					   "ar2315-pci-ctrl");
++	apc->mmr_mem = devm_ioremap_resource(dev, res);
++	if (IS_ERR(apc->mmr_mem))
++		return PTR_ERR(apc->mmr_mem);
++
++	res = platform_get_resource_byname(pdev, IORESOURCE_MEM,
++					   "ar2315-pci-ext");
++	if (!res)
++		return -EINVAL;
 +
 +	apc->mem_res.name = "AR2315 PCI mem space";
-+	apc->mem_res.start = AR2315_PCIEXT;
-+	apc->mem_res.end = AR2315_PCIEXT + AR2315_PCIEXT_SZ - 1;
++	apc->mem_res.parent = res;
++	apc->mem_res.start = res->start;
++	apc->mem_res.end = res->end;
 +	apc->mem_res.flags = IORESOURCE_MEM;
 +
 +	/* Remap PCI config space */
-+	apc->cfg_mem = devm_ioremap_nocache(dev, AR2315_PCIEXT,
++	apc->cfg_mem = devm_ioremap_nocache(dev, res->start,
 +					    AR2315_PCI_CFG_SIZE);
 +	if (!apc->cfg_mem) {
 +		dev_err(dev, "failed to remap PCI config space\n");
@@ -519,7 +531,34 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -427,4 +431,31 @@ void __init ar2315_arch_init(void)
+@@ -423,8 +427,60 @@ void __init ar2315_plat_mem_setup(void)
+ 	_machine_restart = ar2315_restart;
+ }
+ 
++#ifdef CONFIG_PCI_AR2315
++static struct resource ar2315_pci_res[] = {
++	{
++		.name = "ar2315-pci-ctrl",
++		.flags = IORESOURCE_MEM,
++		.start = AR2315_PCI,
++		.end = AR2315_PCI + AR2315_PCI_SIZE - 1,
++	},
++	{
++		.name = "ar2315-pci-ext",
++		.flags = IORESOURCE_MEM,
++		.start = AR2315_PCIEXT,
++		.end = AR2315_PCIEXT + AR2315_PCIEXT_SZ - 1,
++	},
++	{
++		.name = "ar2315-pci",
++		.flags = IORESOURCE_IRQ,
++		.start = AR2315_IRQ_LCBUS_PCI,
++		.end = AR2315_IRQ_LCBUS_PCI,
++	},
++};
++#endif
++
+ void __init ar2315_arch_init(void)
  {
  	ath25_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
  			   ar2315_apb_frequency());
@@ -547,7 +586,9 @@
 +				(AR2315_IF_PCI_CLK_OUTPUT_CLK <<
 +				 AR2315_IF_PCI_CLK_SHIFT));
 +
-+		platform_device_register_simple("ar2315-pci", -1, NULL, 0);
++		platform_device_register_simple("ar2315-pci", -1,
++						ar2315_pci_res,
++						ARRAY_SIZE(ar2315_pci_res));
 +	}
 +#endif
  }
