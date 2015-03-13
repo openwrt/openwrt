@@ -107,6 +107,10 @@ append_bogusnxdomain() {
 	xappend "--bogus-nxdomain=$1"
 }
 
+append_pxe_service() {
+	xappend "--pxe-service=$1"
+}
+
 dnsmasq() {
 	local cfg="$1"
 	append_bool "$cfg" authoritative "--dhcp-authoritative"
@@ -151,7 +155,8 @@ dnsmasq() {
 	append_parm "$cfg" "tftp_root" "--tftp-root"
 	append_parm "$cfg" "dhcp_boot" "--dhcp-boot"
 	append_parm "$cfg" "local_ttl" "--local-ttl"
-
+	append_parm "$cfg" "pxe_prompt" "--pxe-prompt"
+	config_list_foreach "$cfg" "pxe_service" append_pxe_service
 	config_get DOMAIN "$cfg" domain
 
 	config_get_bool ADD_LOCAL_DOMAIN "$cfg" add_local_domain 1
