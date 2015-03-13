@@ -524,9 +524,9 @@
 +}
 --- a/arch/mips/ath25/Kconfig
 +++ b/arch/mips/ath25/Kconfig
-@@ -9,3 +9,10 @@ config SOC_AR2315
+@@ -7,3 +7,10 @@ config SOC_AR2315
+ 	bool "Atheros 2315+ support"
  	depends on ATH25
- 	select GPIO_AR2315
  	default y
 +
 +config PCI_AR2315
@@ -548,7 +548,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC);
  	else if (pending & CAUSEF_IP7)
-@@ -460,10 +464,62 @@ void __init ar2315_plat_mem_setup(void)
+@@ -429,10 +433,62 @@ void __init ar2315_plat_mem_setup(void)
  	_machine_restart = ar2315_restart;
  }
  
