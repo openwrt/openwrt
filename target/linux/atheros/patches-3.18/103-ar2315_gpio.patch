@@ -8,7 +8,7 @@
  	default y
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -204,6 +204,34 @@ static struct platform_device ar2315_wdt
+@@ -225,6 +225,34 @@ static struct platform_device ar2315_wdt
  	.num_resources = ARRAY_SIZE(ar2315_wdt_res)
  };
  
@@ -16,8 +16,8 @@
 +	{
 +		.name = "ar2315-gpio",
 +		.flags = IORESOURCE_MEM,
-+		.start = AR2315_GPIO,
-+		.end = AR2315_GPIO + 0x10 - 1,
++		.start = AR2315_RST_BASE + AR2315_GPIO,
++		.end = AR2315_RST_BASE + AR2315_GPIO + 0x10 - 1,
 +	},
 +	{
 +		.name = "ar2315-gpio",
@@ -43,7 +43,7 @@
  /*
   * NB: We use mapping size that is larger than the actual flash size,
   * but this shouldn't be a problem here, because the flash will simply
-@@ -264,6 +292,7 @@ void __init ar2315_init_devices(void)
+@@ -285,6 +313,7 @@ void __init ar2315_init_devices(void)
  	ath25_find_config(ar2315_flash_limit());
  	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
  
