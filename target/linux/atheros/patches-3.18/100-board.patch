@@ -1,6 +1,6 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -96,6 +96,20 @@ config AR7
+@@ -96,6 +96,19 @@ config AR7
  	  Support for the Texas Instruments AR7 System-on-a-Chip
  	  family: TNETD7100, 7200 and 7300.
  
@@ -14,14 +14,13 @@
 +	select SYS_HAS_CPU_MIPS32_R1
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_SUPPORTS_32BIT_KERNEL
-+	select ARCH_REQUIRE_GPIOLIB
 +	help
 +	  Support for AR231x and AR531x based boards
 +
  config ATH79
  	bool "Atheros AR71XX/AR724X/AR913X based boards"
  	select ARCH_REQUIRE_GPIOLIB
-@@ -834,6 +848,7 @@ config MIPS_PARAVIRT
+@@ -834,6 +847,7 @@ config MIPS_PARAVIRT
  
  endchoice
  
@@ -354,7 +353,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/ath25_platform.h
-@@ -0,0 +1,84 @@
+@@ -0,0 +1,73 @@
 +#ifndef __ASM_MACH_ATH25_PLATFORM_H
 +#define __ASM_MACH_ATH25_PLATFORM_H
 +
@@ -425,17 +424,6 @@
 +
 +	/* radio calibration data */
 +	const char *radio;
-+};
-+
-+/*
-+ * Platform device information for the Ethernet MAC
-+ */
-+struct ar231x_eth {
-+	void (*reset_set)(u32);
-+	void (*reset_clear)(u32);
-+	u32 reset_mac;
-+	u32 reset_phy;
-+	char *macaddr;
 +};
 +
 +#endif /* __ASM_MACH_ATH25_PLATFORM_H */
@@ -640,7 +628,7 @@
 +#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315_regs.h
-@@ -0,0 +1,479 @@
+@@ -0,0 +1,471 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -699,9 +687,6 @@
 +#define AR2315_SPI_MMR_SIZE	0x00000010
 +#define AR2315_PCI_EXT_BASE	0x80000000	/* PCI external */
 +#define AR2315_PCI_EXT_SIZE	0x40000000
-+
-+/* MII registers offset inside Ethernet MMR region */
-+#define AR2315_ENET0_MII_BASE	(AR2315_ENET0_BASE + 0x14)
 +
 +/*
 + * Cold reset register
@@ -968,11 +953,6 @@
 +#define AR2315_AMBACLK_CLK_DIV_M	0x0000000c
 +#define AR2315_AMBACLK_CLK_DIV_S	2
 +
-+/* GPIO MMR base address */
-+#define AR2315_GPIO			0x0088
-+
-+#define AR2315_RESET_GPIO       5
-+
 +/*
 + *  PCI Clock Control
 + */
@@ -1122,7 +1102,7 @@
 +#endif /* __ASM_MACH_ATH25_AR2315_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312_regs.h
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,225 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1190,10 +1170,6 @@
 +#define AR5312_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
 +#define AR5312_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
 +#define AR5312_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
-+
-+/* MII registers offset inside Ethernet MMR region */
-+#define AR5312_ENET0_MII_BASE	(AR5312_ENET0_BASE + 0x14)
-+#define AR5312_ENET1_MII_BASE	(AR5312_ENET1_BASE + 0x14)
 +
 +/* Reset/Timer Block Address Map */
 +#define AR5312_TIMER		0x0000 /* countdown timer */
@@ -1354,7 +1330,7 @@
 +#endif	/* __ASM_MACH_ATH25_AR5312_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.c
-@@ -0,0 +1,492 @@
+@@ -0,0 +1,401 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1382,8 +1358,6 @@
 +#include <linux/bitops.h>
 +#include <linux/irqdomain.h>
 +#include <linux/reboot.h>
-+#include <linux/leds.h>
-+#include <linux/gpio.h>
 +#include <asm/bootinfo.h>
 +#include <asm/reboot.h>
 +#include <asm/time.h>
@@ -1495,10 +1469,6 @@
 +
 +	if (pending & CAUSEF_IP2)
 +		do_IRQ(AR5312_IRQ_WLAN0);
-+	else if (pending & CAUSEF_IP3)
-+		do_IRQ(AR5312_IRQ_ENET0);
-+	else if (pending & CAUSEF_IP4)
-+		do_IRQ(AR5312_IRQ_ENET1);
 +	else if (pending & CAUSEF_IP5)
 +		do_IRQ(AR5312_IRQ_WLAN1);
 +	else if (pending & CAUSEF_IP6)
@@ -1530,22 +1500,6 @@
 +	ar5312_misc_irq_domain = domain;
 +}
 +
-+static void ar5312_device_reset_set(u32 mask)
-+{
-+	u32 val;
-+
-+	val = ar5312_rst_reg_read(AR5312_RESET);
-+	ar5312_rst_reg_write(AR5312_RESET, val | mask);
-+}
-+
-+static void ar5312_device_reset_clear(u32 mask)
-+{
-+	u32 val;
-+
-+	val = ar5312_rst_reg_read(AR5312_RESET);
-+	ar5312_rst_reg_write(AR5312_RESET, val & ~mask);
-+}
-+
 +static struct physmap_flash_data ar5312_flash_data = {
 +	.width = 2,
 +};
@@ -1556,20 +1510,6 @@
 +	.flags = IORESOURCE_MEM,
 +};
 +
-+static struct ar231x_eth ar5312_eth0_data = {
-+	.reset_set = ar5312_device_reset_set,
-+	.reset_clear = ar5312_device_reset_clear,
-+	.reset_mac = AR5312_RESET_ENET0,
-+	.reset_phy = AR5312_RESET_EPHY0,
-+};
-+
-+static struct ar231x_eth ar5312_eth1_data = {
-+	.reset_set = ar5312_device_reset_set,
-+	.reset_clear = ar5312_device_reset_clear,
-+	.reset_mac = AR5312_RESET_ENET1,
-+	.reset_phy = AR5312_RESET_EPHY1,
-+};
-+
 +static struct platform_device ar5312_physmap_flash = {
 +	.name = "physmap-flash",
 +	.id = 0,
@@ -1577,23 +1517,6 @@
 +	.resource = &ar5312_flash_resource,
 +	.num_resources = 1,
 +};
-+
-+#ifdef CONFIG_LEDS_GPIO
-+static struct gpio_led ar5312_leds[] = {
-+	{ .name = "wlan", .gpio = 0, .active_low = 1, },
-+};
-+
-+static const struct gpio_led_platform_data ar5312_led_data = {
-+	.num_leds = ARRAY_SIZE(ar5312_leds),
-+	.leds = (void *)ar5312_leds,
-+};
-+
-+static struct platform_device ar5312_gpio_leds = {
-+	.name = "leds-gpio",
-+	.id = -1,
-+	.dev.platform_data = (void *)&ar5312_led_data,
-+};
-+#endif
 +
 +static void __init ar5312_flash_init(void)
 +{
@@ -1641,7 +1564,6 @@
 +void __init ar5312_init_devices(void)
 +{
 +	struct ath25_boarddata *config;
-+	u8 *c;
 +
 +	ar5312_flash_init();
 +
@@ -1663,35 +1585,8 @@
 +
 +	platform_device_register(&ar5312_physmap_flash);
 +
-+#ifdef CONFIG_LEDS_GPIO
-+	ar5312_leds[0].gpio = config->sys_led_gpio;
-+	platform_device_register(&ar5312_gpio_leds);
-+#endif
-+
-+	/* Fix up MAC addresses if necessary */
-+	if (is_broadcast_ether_addr(config->enet0_mac))
-+		ether_addr_copy(config->enet0_mac, config->enet1_mac);
-+
-+	/* If ENET0 and ENET1 have the same mac address,
-+	 * increment the one from ENET1 */
-+	if (ether_addr_equal(config->enet0_mac, config->enet1_mac)) {
-+		c = config->enet1_mac + 5;
-+		while ((c >= config->enet1_mac) && !(++(*c)))
-+			c--;
-+	}
-+
 +	switch (ath25_soc) {
 +	case ATH25_SOC_AR5312:
-+		ar5312_eth0_data.macaddr = config->enet0_mac;
-+		ath25_add_ethernet(0, AR5312_ENET0_BASE, "eth0_mii",
-+				   AR5312_ENET0_MII_BASE, AR5312_IRQ_ENET0,
-+				   &ar5312_eth0_data);
-+
-+		ar5312_eth1_data.macaddr = config->enet1_mac;
-+		ath25_add_ethernet(1, AR5312_ENET1_BASE, "eth1_mii",
-+				   AR5312_ENET1_MII_BASE, AR5312_IRQ_ENET1,
-+				   &ar5312_eth1_data);
-+
 +		if (!ath25_board.radio)
 +			return;
 +
@@ -1700,18 +1595,8 @@
 +
 +		ath25_add_wmac(0, AR5312_WLAN0_BASE, AR5312_IRQ_WLAN0);
 +		break;
-+	/*
-+	 * AR2312/3 ethernet uses the PHY of ENET0, but the MAC
-+	 * of ENET1. Atheros calls it 'twisted' for a reason :)
-+	 */
 +	case ATH25_SOC_AR2312:
 +	case ATH25_SOC_AR2313:
-+		ar5312_eth1_data.reset_phy = ar5312_eth0_data.reset_phy;
-+		ar5312_eth1_data.macaddr = config->enet0_mac;
-+		ath25_add_ethernet(1, AR5312_ENET1_BASE, "eth0_mii",
-+				   AR5312_ENET0_MII_BASE, AR5312_IRQ_ENET1,
-+				   &ar5312_eth1_data);
-+
 +		if (!ath25_board.radio)
 +			return;
 +		break;
@@ -1849,7 +1734,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.c
-@@ -0,0 +1,438 @@
+@@ -0,0 +1,312 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1876,9 +1761,6 @@
 +#include <linux/bitops.h>
 +#include <linux/irqdomain.h>
 +#include <linux/reboot.h>
-+#include <linux/delay.h>
-+#include <linux/leds.h>
-+#include <linux/gpio.h>
 +#include <asm/bootinfo.h>
 +#include <asm/reboot.h>
 +#include <asm/time.h>
@@ -1994,8 +1876,6 @@
 +
 +	if (pending & CAUSEF_IP3)
 +		do_IRQ(AR2315_IRQ_WLAN0);
-+	else if (pending & CAUSEF_IP4)
-+		do_IRQ(AR2315_IRQ_ENET0);
 +	else if (pending & CAUSEF_IP2)
 +		do_IRQ(AR2315_IRQ_MISC);
 +	else if (pending & CAUSEF_IP7)
@@ -2025,131 +1905,10 @@
 +	ar2315_misc_irq_domain = domain;
 +}
 +
-+static void ar2315_device_reset_set(u32 mask)
-+{
-+	u32 val;
-+
-+	val = ar2315_rst_reg_read(AR2315_RESET);
-+	ar2315_rst_reg_write(AR2315_RESET, val | mask);
-+}
-+
-+static void ar2315_device_reset_clear(u32 mask)
-+{
-+	u32 val;
-+
-+	val = ar2315_rst_reg_read(AR2315_RESET);
-+	ar2315_rst_reg_write(AR2315_RESET, val & ~mask);
-+}
-+
-+static struct ar231x_eth ar2315_eth_data = {
-+	.reset_set = ar2315_device_reset_set,
-+	.reset_clear = ar2315_device_reset_clear,
-+	.reset_mac = AR2315_RESET_ENET0,
-+	.reset_phy = AR2315_RESET_EPHY0,
-+};
-+
-+static struct resource ar2315_spiflash_res[] = {
-+	{
-+		.name = "spiflash_read",
-+		.flags = IORESOURCE_MEM,
-+		.start = AR2315_SPI_READ_BASE,
-+		.end = AR2315_SPI_READ_BASE + AR2315_SPI_READ_SIZE - 1,
-+	},
-+	{
-+		.name = "spiflash_mmr",
-+		.flags = IORESOURCE_MEM,
-+		.start = AR2315_SPI_MMR_BASE,
-+		.end = AR2315_SPI_MMR_BASE + AR2315_SPI_MMR_SIZE - 1,
-+	},
-+};
-+
-+static struct platform_device ar2315_spiflash = {
-+	.id = 0,
-+	.name = "ar2315-spiflash",
-+	.resource = ar2315_spiflash_res,
-+	.num_resources = ARRAY_SIZE(ar2315_spiflash_res)
-+};
-+
-+static struct resource ar2315_wdt_res[] = {
-+	{
-+		.flags = IORESOURCE_MEM,
-+		.start = AR2315_RST_BASE + AR2315_WDT_TIMER,
-+		.end = AR2315_RST_BASE + AR2315_WDT_TIMER + 8 - 1,
-+	},
-+	{
-+		.flags = IORESOURCE_IRQ,
-+	}
-+};
-+
-+static struct platform_device ar2315_wdt = {
-+	.id = 0,
-+	.name = "ar2315-wdt",
-+	.resource = ar2315_wdt_res,
-+	.num_resources = ARRAY_SIZE(ar2315_wdt_res)
-+};
-+
-+#ifdef CONFIG_LEDS_GPIO
-+static struct gpio_led ar2315_leds[6];
-+static struct gpio_led_platform_data ar2315_led_data = {
-+	.leds = (void *)ar2315_leds,
-+};
-+
-+static struct platform_device ar2315_gpio_leds = {
-+	.name = "leds-gpio",
-+	.id = -1,
-+	.dev = {
-+		.platform_data = (void *)&ar2315_led_data,
-+	}
-+};
-+
-+static void __init ar2315_init_gpio_leds(void)
-+{
-+	static char led_names[6][6];
-+	int i, led = 0;
-+
-+	ar2315_led_data.num_leds = 0;
-+	for (i = 1; i < 8; i++) {
-+		if ((i == AR2315_RESET_GPIO) ||
-+		    (i == ath25_board.config->reset_config_gpio))
-+			continue;
-+
-+		if (i == ath25_board.config->sys_led_gpio)
-+			strcpy(led_names[led], "wlan");
-+		else
-+			sprintf(led_names[led], "gpio%d", i);
-+
-+		ar2315_leds[led].name = led_names[led];
-+		ar2315_leds[led].gpio = i;
-+		ar2315_leds[led].active_low = 0;
-+		led++;
-+	}
-+	ar2315_led_data.num_leds = led;
-+	platform_device_register(&ar2315_gpio_leds);
-+}
-+#else
-+static inline void ar2315_init_gpio_leds(void)
-+{
-+}
-+#endif
-+
 +void __init ar2315_init_devices(void)
 +{
 +	/* Find board configuration */
 +	ath25_find_config(AR2315_SPI_READ_BASE, AR2315_SPI_READ_SIZE);
-+	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
-+
-+	ar2315_init_gpio_leds();
-+
-+	ar2315_wdt_res[1].start = irq_create_mapping(ar2315_misc_irq_domain,
-+						     AR2315_MISC_IRQ_WATCHDOG);
-+	ar2315_wdt_res[1].end = ar2315_wdt_res[1].start;
-+	platform_device_register(&ar2315_wdt);
-+
-+	platform_device_register(&ar2315_spiflash);
-+
-+	ath25_add_ethernet(0, AR2315_ENET0_BASE, "eth0_mii",
-+			   AR2315_ENET0_MII_BASE, AR2315_IRQ_ENET0,
-+			   &ar2315_eth_data);
 +
 +	ath25_add_wmac(0, AR2315_WLAN0_BASE, AR2315_IRQ_WLAN0);
 +}
@@ -2166,8 +1925,8 @@
 +	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits
 +	 * a workaround. Give it some time to attempt a gpio based hardware
 +	 * reset (atheros reference design workaround) */
-+	gpio_request_one(AR2315_RESET_GPIO, GPIOF_OUT_INIT_LOW, "Reset");
-+	mdelay(100);
++
++	/* TODO: implement the GPIO reset workaround */
 +
 +	/* Some boards (e.g. Senao EOC-2610) don't implement the reset logic
 +	 * workaround. Attempt to jump to the mips reset location -
@@ -2368,11 +2127,9 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ath25/devices.h
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,41 @@
 +#ifndef __ATH25_DEVICES_H
 +#define __ATH25_DEVICES_H
-+
-+#define AR231X_GPIO_IRQ_BASE		0x30
 +
 +#define ATH25_REG_MS(_val, _field)	(((_val) & _field##_M) >> _field##_S)
 +
@@ -2398,8 +2155,6 @@
 +extern void (*ath25_irq_dispatch)(void);
 +
 +int ath25_find_config(phys_addr_t offset, unsigned long size);
-+int ath25_add_ethernet(int nr, u32 base, const char *mii_name, u32 mii_base,
-+		       int irq, void *pdata);
 +void ath25_serial_setup(u32 mapbase, int irq, unsigned int uartclk);
 +int ath25_add_wmac(int nr, u32 base, int irq);
 +
@@ -2416,7 +2171,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ath25/devices.c
-@@ -0,0 +1,191 @@
+@@ -0,0 +1,127 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -2432,51 +2187,6 @@
 +
 +struct ar231x_board_config ath25_board;
 +enum ath25_soc_type ath25_soc = ATH25_SOC_UNKNOWN;
-+
-+static struct resource ath25_eth0_res[] = {
-+	{
-+		.name = "eth0_membase",
-+		.flags = IORESOURCE_MEM,
-+	},
-+	{
-+		.name = "eth0_mii",
-+		.flags = IORESOURCE_MEM,
-+	},
-+	{
-+		.name = "eth0_irq",
-+		.flags = IORESOURCE_IRQ,
-+	}
-+};
-+
-+static struct resource ath25_eth1_res[] = {
-+	{
-+		.name = "eth1_membase",
-+		.flags = IORESOURCE_MEM,
-+	},
-+	{
-+		.name = "eth1_mii",
-+		.flags = IORESOURCE_MEM,
-+	},
-+	{
-+		.name = "eth1_irq",
-+		.flags = IORESOURCE_IRQ,
-+	}
-+};
-+
-+static struct platform_device ath25_eth[] = {
-+	{
-+		.id = 0,
-+		.name = "ar231x-eth",
-+		.resource = ath25_eth0_res,
-+		.num_resources = ARRAY_SIZE(ath25_eth0_res)
-+	},
-+	{
-+		.id = 1,
-+		.name = "ar231x-eth",
-+		.resource = ath25_eth1_res,
-+		.num_resources = ARRAY_SIZE(ath25_eth1_res)
-+	}
-+};
 +
 +static struct resource ath25_wmac0_res[] = {
 +	{
@@ -2534,25 +2244,6 @@
 +	    !soc_type_strings[ath25_soc])
 +		return soc_type_strings[ATH25_SOC_UNKNOWN];
 +	return soc_type_strings[ath25_soc];
-+}
-+
-+int __init ath25_add_ethernet(int nr, u32 base, const char *mii_name,
-+			      u32 mii_base, int irq, void *pdata)
-+{
-+	struct resource *res;
-+
-+	ath25_eth[nr].dev.platform_data = pdata;
-+	res = &ath25_eth[nr].resource[0];
-+	res->start = base;
-+	res->end = base + 0x2000 - 1;
-+	res++;
-+	res->name = mii_name;
-+	res->start = mii_base;
-+	res->end = mii_base + 8 - 1;
-+	res++;
-+	res->start = irq;
-+	res->end = irq;
-+	return platform_device_register(&ath25_eth[nr]);
 +}
 +
 +void __init ath25_serial_setup(u32 mapbase, int irq, unsigned int uartclk)

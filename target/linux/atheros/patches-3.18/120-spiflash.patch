@@ -592,3 +592,43 @@
 +#define SPI_STATUS_WIP		STM_STATUS_WIP
 +
 +#endif
+--- a/arch/mips/ath25/ar2315.c
++++ b/arch/mips/ath25/ar2315.c
+@@ -225,6 +225,28 @@ static struct platform_device ar2315_gpi
+ 	.num_resources = ARRAY_SIZE(ar2315_gpio_res)
+ };
+ 
++static struct resource ar2315_spiflash_res[] = {
++	{
++		.name = "spiflash_read",
++		.flags = IORESOURCE_MEM,
++		.start = AR2315_SPI_READ_BASE,
++		.end = AR2315_SPI_READ_BASE + AR2315_SPI_READ_SIZE - 1,
++	},
++	{
++		.name = "spiflash_mmr",
++		.flags = IORESOURCE_MEM,
++		.start = AR2315_SPI_MMR_BASE,
++		.end = AR2315_SPI_MMR_BASE + AR2315_SPI_MMR_SIZE - 1,
++	},
++};
++
++static struct platform_device ar2315_spiflash = {
++	.id = 0,
++	.name = "ar2315-spiflash",
++	.resource = ar2315_spiflash_res,
++	.num_resources = ARRAY_SIZE(ar2315_spiflash_res)
++};
++
+ void __init ar2315_init_devices(void)
+ {
+ 	/* Find board configuration */
+@@ -235,6 +257,8 @@ void __init ar2315_init_devices(void)
+ 	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
+ 	platform_device_register(&ar2315_gpio);
+ 
++	platform_device_register(&ar2315_spiflash);
++
+ 	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
+ 	ath25_add_ethernet(0, AR2315_ENET0_BASE, "eth0_mii",
+ 			   AR2315_ENET0_MII_BASE, AR2315_IRQ_ENET0,

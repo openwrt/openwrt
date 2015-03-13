@@ -10,7 +10,15 @@
  config SOC_AR2315
 --- a/arch/mips/ath25/ar5312.c
 +++ b/arch/mips/ath25/ar5312.c
-@@ -221,6 +221,22 @@ static struct platform_device ar5312_phy
+@@ -25,6 +25,7 @@
+ #include <linux/bitops.h>
+ #include <linux/irqdomain.h>
+ #include <linux/reboot.h>
++#include <linux/gpio.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+@@ -185,6 +186,22 @@ static struct platform_device ar5312_phy
  	.num_resources = 1,
  };
  
@@ -30,18 +38,18 @@
 +	.num_resources = ARRAY_SIZE(ar5312_gpio_res),
 +};
 +
- #ifdef CONFIG_LEDS_GPIO
- static struct gpio_led ar5312_leds[] = {
- 	{ .name = "wlan", .gpio = 0, .active_low = 1, },
-@@ -306,6 +322,8 @@ void __init ar5312_init_devices(void)
+ static void __init ar5312_flash_init(void)
+ {
+ 	void __iomem *flashctl_base;
+@@ -252,6 +269,8 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_physmap_flash);
  
 +	platform_device_register(&ar5312_gpio);
 +
- #ifdef CONFIG_LEDS_GPIO
- 	ar5312_leds[0].gpio = config->sys_led_gpio;
- 	platform_device_register(&ar5312_gpio_leds);
+ 	switch (ath25_soc) {
+ 	case ATH25_SOC_AR5312:
+ 		if (!ath25_board.radio)
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -112,6 +112,13 @@ config GPIO_MAX730X
@@ -192,3 +200,13 @@
 +	return platform_driver_register(&ar5312_gpio_driver);
 +}
 +subsys_initcall(ar5312_gpio_init);
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -107,6 +107,7 @@ config ATH25
+ 	select SYS_SUPPORTS_BIG_ENDIAN
+ 	select SYS_SUPPORTS_32BIT_KERNEL
+ 	select SYS_HAS_EARLY_PRINTK
++	select ARCH_REQUIRE_GPIOLIB
+ 	help
+ 	  Support for AR231x and AR531x based boards
+ 

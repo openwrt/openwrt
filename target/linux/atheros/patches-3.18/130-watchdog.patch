@@ -236,3 +236,42 @@
  obj-$(CONFIG_TXX9_WDT) += txx9wdt.o
  obj-$(CONFIG_OCTEON_WDT) += octeon-wdt.o
  octeon-wdt-y := octeon-wdt-main.o octeon-wdt-nmi.o
+--- a/arch/mips/ath25/ar2315.c
++++ b/arch/mips/ath25/ar2315.c
+@@ -225,6 +225,24 @@ static struct platform_device ar2315_gpi
+ 	.num_resources = ARRAY_SIZE(ar2315_gpio_res)
+ };
+ 
++static struct resource ar2315_wdt_res[] = {
++	{
++		.flags = IORESOURCE_MEM,
++		.start = AR2315_RST_BASE + AR2315_WDT_TIMER,
++		.end = AR2315_RST_BASE + AR2315_WDT_TIMER + 8 - 1,
++	},
++	{
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device ar2315_wdt = {
++	.id = 0,
++	.name = "ar2315-wdt",
++	.resource = ar2315_wdt_res,
++	.num_resources = ARRAY_SIZE(ar2315_wdt_res)
++};
++
+ static struct resource ar2315_spiflash_res[] = {
+ 	{
+ 		.name = "spiflash_read",
+@@ -257,6 +275,11 @@ void __init ar2315_init_devices(void)
+ 	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
+ 	platform_device_register(&ar2315_gpio);
+ 
++	ar2315_wdt_res[1].start = irq_create_mapping(ar2315_misc_irq_domain,
++						     AR2315_MISC_IRQ_WATCHDOG);
++	ar2315_wdt_res[1].end = ar2315_wdt_res[1].start;
++	platform_device_register(&ar2315_wdt);
++
+ 	platform_device_register(&ar2315_spiflash);
+ 
+ 	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
