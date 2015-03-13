@@ -29,7 +29,7 @@
 +	struct gpio_keys_button *p;
 +	int err;
 +
-+	if (ar231x_board.config->reset_config_gpio == 0xffff)
++	if (ath25_board.config->reset_config_gpio == 0xffff)
 +		return -ENODEV;
 +
 +	p = kzalloc(sizeof(*p), GFP_KERNEL);
@@ -40,7 +40,7 @@
 +	p->type = EV_KEY;
 +	p->code = KEY_RESTART;
 +	p->debounce_interval = 60;
-+	p->gpio = ar231x_board.config->reset_config_gpio;
++	p->gpio = ath25_board.config->reset_config_gpio;
 +
 +	memset(&pdata, 0, sizeof(pdata));
 +	pdata.poll_interval = 20;

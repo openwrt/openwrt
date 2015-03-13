@@ -371,7 +371,7 @@
 +	default y
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -77,6 +77,10 @@ ar2315_irq_dispatch(void)
+@@ -76,6 +76,10 @@ static void ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
@@ -382,9 +382,9 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -457,3 +461,18 @@ ar2315_plat_setup(void)
- 	ar231x_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
- 			    ar2315_apb_frequency());
+@@ -445,3 +449,18 @@ void __init ar2315_plat_mem_setup(void)
+ 	ath25_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
+ 			   ar2315_apb_frequency());
  }
 +
 +#ifdef CONFIG_PCI_AR2315
@@ -392,7 +392,7 @@
 +{
 +	struct platform_device *pdev;
 +
-+	if (!is_2315() || ar231x_devtype != DEV_TYPE_AR2315)
++	if (!is_ar2315() || ath25_soc != ATH25_SOC_AR2315)
 +		return -ENODEV;
 +
 +	pdev = platform_device_register_simple("ar2315-pci", -1, NULL, 0);

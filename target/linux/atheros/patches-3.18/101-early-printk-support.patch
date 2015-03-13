@@ -34,7 +34,7 @@
 +	static void __iomem *base;
 +
 +	if (unlikely(base == NULL)) {
-+		if (is_2315())
++		if (is_ar2315())
 +			base = (void __iomem *)(KSEG1ADDR(AR2315_UART0));
 +		else
 +			base = (void __iomem *)(KSEG1ADDR(AR5312_UART0));
