@@ -125,7 +125,6 @@ static void rt5350_fe_reset(void)
 }
 
 static struct fe_soc_data rt3050_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = rt305x_init_data,
 	.reset_fe = rt305x_fe_reset,
 	.fwd_config = rt3050_fwd_config,
@@ -137,7 +136,6 @@ static struct fe_soc_data rt3050_data = {
 };
 
 static struct fe_soc_data rt5350_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = rt5350_init_data,
 	.reg_table = rt5350_reg_table,
 	.reset_fe = rt5350_fe_reset,

@@ -1228,9 +1228,12 @@ static int __init fe_init(struct net_device *dev)
 		priv->soc->switch_init(priv);
 
 	of_get_mac_address_mtd(priv->device->of_node, dev->dev_addr);
-	/*If the mac address is invalid, use default mac address  */
-	if (!is_valid_ether_addr(dev->dev_addr))
-		memcpy(dev->dev_addr, priv->soc->mac, ETH_ALEN);
+	/*If the mac address is invalid, use random mac address  */
+	if (!is_valid_ether_addr(dev->dev_addr)) {
+		random_ether_addr(dev->dev_addr);
+		dev_err(priv->device, "generated random MAC address %pM\n",
+				dev->dev_addr);
+	}
 
 	err = fe_mdio_init(priv);
 	if (err)

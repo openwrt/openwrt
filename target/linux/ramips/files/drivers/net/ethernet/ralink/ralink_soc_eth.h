@@ -386,7 +386,6 @@ struct fe_phy {
 
 struct fe_soc_data
 {
-	unsigned char mac[6];
 	const u32 *reg_table;
 
 	void (*init_data)(struct fe_soc_data *data, struct net_device *netdev);

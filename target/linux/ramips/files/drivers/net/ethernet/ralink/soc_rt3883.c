@@ -56,7 +56,6 @@ static void rt3883_init_data(struct fe_soc_data *data,
 }
 
 static struct fe_soc_data rt3883_data = {
-	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
 	.init_data = rt3883_init_data,
 	.reset_fe = rt3883_fe_reset,
 	.fwd_config = rt3883_fwd_config,
