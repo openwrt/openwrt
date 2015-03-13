@@ -323,7 +323,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!sta)
  		return NULL;
  
-@@ -321,11 +328,23 @@ struct sta_info *sta_info_alloc(struct i
+@@ -321,11 +328,25 @@ struct sta_info *sta_info_alloc(struct i
  	for (i = 0; i < ARRAY_SIZE(sta->chain_signal_avg); i++)
  		ewma_init(&sta->chain_signal_avg[i], 1024, 8);
  
@@ -331,15 +331,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -		kfree(sta);
 -		return NULL;
 +	if (local->ops->wake_tx_queue) {
++		void *txq_data;
 +		int size = sizeof(struct txq_info) +
 +			   ALIGN(hw->txq_data_size, sizeof(void *));
 +
-+		sta->txq = kcalloc(IEEE80211_NUM_TIDS, size, gfp);
-+		if (!sta->txq)
++		txq_data = kcalloc(IEEE80211_NUM_TIDS, size, gfp);
++		if (!txq_data)
 +			goto free;
 +
++		sta->txq = txq_data;
 +		for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
-+			struct txq_info *txq = sta->txq + i * size;
++			struct txq_info *txq = txq_data + i * size;
 +			ieee80211_init_tx_queue(sdata, sta, txq, i);
 +		}
  	}
@@ -350,7 +352,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
  		/*
  		 * timer_to_tid must be initialized with identity mapping
-@@ -346,7 +365,7 @@ struct sta_info *sta_info_alloc(struct i
+@@ -346,7 +367,7 @@ struct sta_info *sta_info_alloc(struct i
  	if (sdata->vif.type == NL80211_IFTYPE_AP ||
  	    sdata->vif.type == NL80211_IFTYPE_AP_VLAN) {
  		struct ieee80211_supported_band *sband =
@@ -359,7 +361,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		u8 smps = (sband->ht_cap.cap & IEEE80211_HT_CAP_SM_PS) >>
  				IEEE80211_HT_CAP_SM_PS_SHIFT;
  		/*
-@@ -371,6 +390,12 @@ struct sta_info *sta_info_alloc(struct i
+@@ -371,6 +392,12 @@ struct sta_info *sta_info_alloc(struct i
  	sta_dbg(sdata, "Allocated STA %pM\n", sta->sta.addr);
  
  	return sta;
