@@ -1,5 +1,5 @@
 --- /dev/null
-+++ b/arch/mips/ar231x/early_printk.c
++++ b/arch/mips/ath25/early_printk.c
 @@ -0,0 +1,46 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -14,8 +14,8 @@
 +#include <linux/serial_reg.h>
 +#include <asm/addrspace.h>
 +
-+#include <asm/mach-ar231x/ar2315_regs.h>
-+#include <asm/mach-ar231x/ar5312_regs.h>
++#include <asm/mach-ath25/ar2315_regs.h>
++#include <asm/mach-ath25/ar5312_regs.h>
 +#include "devices.h"
 +
 +static inline void prom_uart_wr(void __iomem *base, unsigned reg,
@@ -47,8 +47,8 @@
 +		;
 +}
 +
---- a/arch/mips/ar231x/Makefile
-+++ b/arch/mips/ar231x/Makefile
+--- a/arch/mips/ath25/Makefile
++++ b/arch/mips/ath25/Makefile
 @@ -9,5 +9,8 @@
  #
  

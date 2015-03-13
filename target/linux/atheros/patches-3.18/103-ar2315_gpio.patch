@@ -1,13 +1,13 @@
---- a/arch/mips/ar231x/Kconfig
-+++ b/arch/mips/ar231x/Kconfig
+--- a/arch/mips/ath25/Kconfig
++++ b/arch/mips/ath25/Kconfig
 @@ -7,4 +7,5 @@ config SOC_AR5312
  config SOC_AR2315
  	bool "Atheros 2315+ support"
  	depends on ATH25
 +	select GPIO_AR2315
  	default y
---- a/arch/mips/ar231x/ar2315.c
-+++ b/arch/mips/ar231x/ar2315.c
+--- a/arch/mips/ath25/ar2315.c
++++ b/arch/mips/ath25/ar2315.c
 @@ -212,6 +212,34 @@ static struct platform_device ar2315_wdt
  	.num_resources = ARRAY_SIZE(ar2315_wdt_res)
  };

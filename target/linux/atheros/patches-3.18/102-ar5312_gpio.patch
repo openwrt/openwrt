@@ -1,5 +1,5 @@
---- a/arch/mips/ar231x/Kconfig
-+++ b/arch/mips/ar231x/Kconfig
+--- a/arch/mips/ath25/Kconfig
++++ b/arch/mips/ath25/Kconfig
 @@ -1,6 +1,7 @@
  config SOC_AR5312
  	bool "Atheros 5312/2312+ support"
@@ -8,8 +8,8 @@
  	default y
  
  config SOC_AR2315
---- a/arch/mips/ar231x/ar5312.c
-+++ b/arch/mips/ar231x/ar5312.c
+--- a/arch/mips/ath25/ar5312.c
++++ b/arch/mips/ath25/ar5312.c
 @@ -192,6 +192,22 @@ static struct platform_device ar5312_phy
  	.num_resources = 1,
  };

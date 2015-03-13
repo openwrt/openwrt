@@ -24,31 +24,31 @@
  
  endchoice
  
-+source "arch/mips/ar231x/Kconfig"
++source "arch/mips/ath25/Kconfig"
  source "arch/mips/alchemy/Kconfig"
  source "arch/mips/ath79/Kconfig"
  source "arch/mips/bcm47xx/Kconfig"
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
-@@ -6,6 +6,7 @@ platforms += ath79
+@@ -2,6 +2,7 @@
+ 
+ platforms += alchemy
+ platforms += ar7
++platforms += ath25
+ platforms += ath79
  platforms += bcm47xx
  platforms += bcm63xx
- platforms += cavium-octeon
-+platforms += ar231x
- platforms += cobalt
- platforms += dec
- platforms += emma
 --- /dev/null
-+++ b/arch/mips/ar231x/Platform
++++ b/arch/mips/ath25/Platform
 @@ -0,0 +1,6 @@
 +#
 +# Atheros AR531X/AR231X WiSoC
 +#
-+platform-$(CONFIG_ATH25)	+= ar231x/
-+cflags-$(CONFIG_ATH25)		+= -I$(srctree)/arch/mips/include/asm/mach-ar231x
++platform-$(CONFIG_ATH25)	+= ath25/
++cflags-$(CONFIG_ATH25)		+= -I$(srctree)/arch/mips/include/asm/mach-ath25
 +load-$(CONFIG_ATH25)		+= 0xffffffff80041000
 --- /dev/null
-+++ b/arch/mips/ar231x/Kconfig
++++ b/arch/mips/ath25/Kconfig
 @@ -0,0 +1,9 @@
 +config SOC_AR5312
 +	bool "Atheros 5312/2312+ support"
@@ -60,7 +60,7 @@
 +	depends on ATH25
 +	default y
 --- /dev/null
-+++ b/arch/mips/ar231x/Makefile
++++ b/arch/mips/ath25/Makefile
 @@ -0,0 +1,13 @@
 +#
 +# This file is subject to the terms and conditions of the GNU General Public
@@ -76,7 +76,7 @@
 +obj-$(CONFIG_SOC_AR5312) += ar5312.o
 +obj-$(CONFIG_SOC_AR2315) += ar2315.o
 --- /dev/null
-+++ b/arch/mips/ar231x/board.c
++++ b/arch/mips/ath25/board.c
 @@ -0,0 +1,229 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -308,7 +308,7 @@
 +}
 +
 --- /dev/null
-+++ b/arch/mips/ar231x/prom.c
++++ b/arch/mips/ath25/prom.c
 @@ -0,0 +1,37 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -348,10 +348,10 @@
 +{
 +}
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/ar231x_platform.h
++++ b/arch/mips/include/asm/mach-ath25/ar231x_platform.h
 @@ -0,0 +1,85 @@
-+#ifndef __ASM_MACH_AR231X_PLATFORM_H
-+#define __ASM_MACH_AR231X_PLATFORM_H
++#ifndef __ASM_MACH_ATH25_PLATFORM_H
++#define __ASM_MACH_ATH25_PLATFORM_H
 +
 +#include <linux/etherdevice.h>
 +
@@ -434,9 +434,9 @@
 +	char *macaddr;
 +};
 +
-+#endif /* __ASM_MACH_AR231X_PLATFORM_H */
++#endif /* __ASM_MACH_ATH25_PLATFORM_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/cpu-feature-overrides.h
++++ b/arch/mips/include/asm/mach-ath25/cpu-feature-overrides.h
 @@ -0,0 +1,84 @@
 +/*
 + *  Atheros AR231x/AR531x SoC specific CPU feature overrides
@@ -452,8 +452,8 @@
 + *  by the Free Software Foundation.
 + *
 + */
-+#ifndef __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H
-+#define __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H
++#ifndef __ASM_MACH_ATH25_CPU_FEATURE_OVERRIDES_H
++#define __ASM_MACH_ATH25_CPU_FEATURE_OVERRIDES_H
 +
 +/*
 + * The Atheros AR531x/AR231x SoCs have MIPS 4Kc/4KEc core.
@@ -521,9 +521,9 @@
 +/* #define cpu_dcache_line_size()	? */
 +/* #define cpu_icache_line_size()	? */
 +
-+#endif /* __ASM_MACH_AR231X_CPU_FEATURE_OVERRIDES_H */
++#endif /* __ASM_MACH_ATH25_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/dma-coherence.h
++++ b/arch/mips/include/asm/mach-ath25/dma-coherence.h
 @@ -0,0 +1,76 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -534,8 +534,8 @@
 + * Copyright (C) 2007  Felix Fietkau <nbd@openwrt.org>
 + *
 + */
-+#ifndef __ASM_MACH_AR231X_DMA_COHERENCE_H
-+#define __ASM_MACH_AR231X_DMA_COHERENCE_H
++#ifndef __ASM_MACH_ATH25_DMA_COHERENCE_H
++#define __ASM_MACH_ATH25_DMA_COHERENCE_H
 +
 +#include <linux/device.h>
 +#include <ar2315_regs.h>
@@ -600,12 +600,12 @@
 +#endif
 +}
 +
-+#endif /* __ASM_MACH_AR231X_DMA_COHERENCE_H */
++#endif /* __ASM_MACH_ATH25_DMA_COHERENCE_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/gpio.h
++++ b/arch/mips/include/asm/mach-ath25/gpio.h
 @@ -0,0 +1,16 @@
-+#ifndef __ASM_MACH_AR231X_GPIO_H
-+#define __ASM_MACH_AR231X_GPIO_H
++#ifndef __ASM_MACH_ATH25_GPIO_H
++#define __ASM_MACH_ATH25_GPIO_H
 +
 +#include <asm-generic/gpio.h>
 +
@@ -619,18 +619,18 @@
 +	return -EINVAL;
 +}
 +
-+#endif	/* __ASM_MACH_AR231X_GPIO_H */
++#endif	/* __ASM_MACH_ATH25_GPIO_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/reset.h
++++ b/arch/mips/include/asm/mach-ath25/reset.h
 @@ -0,0 +1,6 @@
-+#ifndef __ASM_MACH_AR231X_RESET_H
-+#define __ASM_MACH_AR231X_RESET_H
++#ifndef __ASM_MACH_ATH25_RESET_H
++#define __ASM_MACH_ATH25_RESET_H
 +
 +void ar231x_disable_reset_button(void);
 +
-+#endif /* __ASM_MACH_AR231X_RESET_H */
++#endif /* __ASM_MACH_ATH25_RESET_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/war.h
++++ b/arch/mips/include/asm/mach-ath25/war.h
 @@ -0,0 +1,25 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -639,8 +639,8 @@
 + *
 + * Copyright (C) 2008 Felix Fietkau <nbd@openwrt.org>
 + */
-+#ifndef __ASM_MACH_AR231X_WAR_H
-+#define __ASM_MACH_AR231X_WAR_H
++#ifndef __ASM_MACH_ATH25_WAR_H
++#define __ASM_MACH_ATH25_WAR_H
 +
 +#define R4600_V1_INDEX_ICACHEOP_WAR	0
 +#define R4600_V1_HIT_CACHEOP_WAR	0
@@ -656,9 +656,9 @@
 +#define R10000_LLSC_WAR			0
 +#define MIPS34K_MISSED_ITLB_WAR		0
 +
-+#endif /* __ASM_MACH_AR231X_WAR_H */
++#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/ar2315_regs.h
++++ b/arch/mips/include/asm/mach-ath25/ar2315_regs.h
 @@ -0,0 +1,608 @@
 +/*
 + * Register definitions for AR2315+
@@ -673,8 +673,8 @@
 + * Copyright (C) 2006-2008 Felix Fietkau <nbd@openwrt.org>
 + */
 +
-+#ifndef __ASM_MACH_AR231X_AR2315_REGS_H
-+#define __ASM_MACH_AR231X_AR2315_REGS_H
++#ifndef __ASM_MACH_ATH25_AR2315_REGS_H
++#define __ASM_MACH_ATH25_AR2315_REGS_H
 +
 +/*
 + * IRQs
@@ -1267,9 +1267,9 @@
 +/* ??? access BAR */
 +#define AR2315_PCI_HOST_MBAR2		0x30000000
 +
-+#endif /* __ASM_MACH_AR231X_AR2315_REGS_H */
++#endif /* __ASM_MACH_ATH25_AR2315_REGS_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/ar5312_regs.h
++++ b/arch/mips/include/asm/mach-ath25/ar5312_regs.h
 @@ -0,0 +1,235 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -1281,8 +1281,8 @@
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + */
 +
-+#ifndef __ASM_MACH_AR231X_AR5312_REGS_H
-+#define __ASM_MACH_AR231X_AR5312_REGS_H
++#ifndef __ASM_MACH_ATH25_AR5312_REGS_H
++#define __ASM_MACH_ATH25_AR5312_REGS_H
 +
 +#include <asm/addrspace.h>
 +
@@ -1505,9 +1505,9 @@
 +
 +#define AR5312_GPIO         (AR5312_APBBASE  + 0x2000)
 +
-+#endif	/* __ASM_MACH_AR231X_AR5312_REGS_H */
++#endif	/* __ASM_MACH_ATH25_AR5312_REGS_H */
 --- /dev/null
-+++ b/arch/mips/ar231x/ar5312.c
++++ b/arch/mips/ath25/ar5312.c
 @@ -0,0 +1,476 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -1986,7 +1986,7 @@
 +}
 +
 --- /dev/null
-+++ b/arch/mips/ar231x/ar2315.c
++++ b/arch/mips/ath25/ar2315.c
 @@ -0,0 +1,431 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -2420,7 +2420,7 @@
 +			    ar2315_apb_frequency());
 +}
 --- /dev/null
-+++ b/arch/mips/ar231x/ar2315.h
++++ b/arch/mips/ath25/ar2315.h
 @@ -0,0 +1,37 @@
 +#ifndef __AR2315_H
 +#define __AR2315_H
@@ -2460,7 +2460,7 @@
 +
 +#endif
 --- /dev/null
-+++ b/arch/mips/ar231x/ar5312.h
++++ b/arch/mips/ath25/ar5312.h
 @@ -0,0 +1,37 @@
 +#ifndef __AR5312_H
 +#define __AR5312_H
@@ -2500,10 +2500,10 @@
 +
 +#endif
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ar231x/ar231x.h
++++ b/arch/mips/include/asm/mach-ath25/ar231x.h
 @@ -0,0 +1,38 @@
-+#ifndef __ASM_MACH_AR231X_H
-+#define __ASM_MACH_AR231X_H
++#ifndef __ASM_MACH_ATH25_AR231X_H
++#define __ASM_MACH_ATH25_AR231X_H
 +
 +#include <linux/types.h>
 +#include <linux/io.h>
@@ -2539,12 +2539,12 @@
 +	return ret;
 +}
 +
-+#endif	/* __ASM_MACH_AR231X_H */
++#endif	/* __ASM_MACH_ATH25_AR231X_H */
 --- /dev/null
-+++ b/arch/mips/ar231x/devices.h
++++ b/arch/mips/ath25/devices.h
 @@ -0,0 +1,39 @@
-+#ifndef __AR231X_DEVICES_H
-+#define __AR231X_DEVICES_H
++#ifndef __ATH25_DEVICES_H
++#define __ATH25_DEVICES_H
 +
 +enum {
 +	/* handled by ar5312.c */
@@ -2583,7 +2583,7 @@
 +
 +#endif
 --- /dev/null
-+++ b/arch/mips/ar231x/devices.c
++++ b/arch/mips/ath25/devices.c
 @@ -0,0 +1,181 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
