@@ -521,15 +521,15 @@
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
 @@ -137,6 +137,10 @@ static void ar2315_irq_dispatch(void)
- 		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
+ 		do_IRQ(AR2315_IRQ_WLAN0);
  	else if (pending & CAUSEF_IP4)
- 		do_IRQ(AR2315_IRQ_ENET0_INTRS);
+ 		do_IRQ(AR2315_IRQ_ENET0);
 +#ifdef CONFIG_PCI_AR2315
 +	else if (pending & CAUSEF_IP5)
 +		do_IRQ(AR2315_IRQ_LCBUS_PCI);
 +#endif
  	else if (pending & CAUSEF_IP2)
- 		do_IRQ(AR2315_IRQ_MISC_INTRS);
+ 		do_IRQ(AR2315_IRQ_MISC);
  	else if (pending & CAUSEF_IP7)
 @@ -440,8 +444,60 @@ void __init ar2315_plat_mem_setup(void)
  	_machine_restart = ar2315_restart;
@@ -540,14 +540,14 @@
 +	{
 +		.name = "ar2315-pci-ctrl",
 +		.flags = IORESOURCE_MEM,
-+		.start = AR2315_PCI,
-+		.end = AR2315_PCI + AR2315_PCI_SIZE - 1,
++		.start = AR2315_PCI_BASE,
++		.end = AR2315_PCI_BASE + AR2315_PCI_SIZE - 1,
 +	},
 +	{
 +		.name = "ar2315-pci-ext",
 +		.flags = IORESOURCE_MEM,
-+		.start = AR2315_PCIEXT,
-+		.end = AR2315_PCIEXT + AR2315_PCIEXT_SZ - 1,
++		.start = AR2315_PCI_EXT_BASE,
++		.end = AR2315_PCI_EXT_BASE + AR2315_PCI_EXT_SIZE - 1,
 +	},
 +	{
 +		.name = "ar2315-pci",
@@ -560,7 +560,7 @@
 +
  void __init ar2315_arch_init(void)
  {
- 	ath25_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
+ 	ath25_serial_setup(AR2315_UART0_BASE, AR2315_MISC_IRQ_UART0,
  			   ar2315_apb_frequency());
 +
 +#ifdef CONFIG_PCI_AR2315

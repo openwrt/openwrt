@@ -19,7 +19,7 @@
 +		.name = "ar5312-gpio",
 +		.flags = IORESOURCE_MEM,
 +		.start = AR5312_GPIO_BASE,
-+		.end = AR5312_GPIO_BASE + 0x0c - 1,
++		.end = AR5312_GPIO_BASE + AR5312_GPIO_SIZE - 1,
 +	},
 +};
 +
@@ -33,7 +33,7 @@
  #ifdef CONFIG_LEDS_GPIO
  static struct gpio_led ar5312_leds[] = {
  	{ .name = "wlan", .gpio = 0, .active_low = 1, },
-@@ -294,6 +310,8 @@ void __init ar5312_init_devices(void)
+@@ -290,6 +306,8 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_physmap_flash);
  
