@@ -8,7 +8,7 @@
  	default y
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -212,6 +212,34 @@ static struct platform_device ar2315_wdt
+@@ -211,6 +211,34 @@ static struct platform_device ar2315_wdt
  	.num_resources = ARRAY_SIZE(ar2315_wdt_res)
  };
  
@@ -43,7 +43,7 @@
  /*
   * NB: We use mapping size that is larger than the actual flash size,
   * but this shouldn't be a problem here, because the flash will simply
-@@ -277,6 +305,7 @@ ar2315_init_devices(void)
+@@ -276,6 +304,7 @@ ar2315_init_devices(void)
  	ar231x_find_config(ar2315_flash_limit());
  	ar2315_eth_data.macaddr = ar231x_board.config->enet0_mac;
  
