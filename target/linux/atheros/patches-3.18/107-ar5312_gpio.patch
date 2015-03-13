@@ -10,15 +10,15 @@
  config SOC_AR2315
 --- a/arch/mips/ath25/ar5312.c
 +++ b/arch/mips/ath25/ar5312.c
-@@ -25,6 +25,7 @@
- #include <linux/bitops.h>
- #include <linux/irqdomain.h>
+@@ -22,6 +22,7 @@
+ #include <linux/platform_device.h>
+ #include <linux/mtd/physmap.h>
  #include <linux/reboot.h>
 +#include <linux/gpio.h>
  #include <asm/bootinfo.h>
  #include <asm/reboot.h>
  #include <asm/time.h>
-@@ -185,6 +186,22 @@ static struct platform_device ar5312_phy
+@@ -180,6 +181,22 @@ static struct platform_device ar5312_phy
  	.num_resources = 1,
  };
  
@@ -41,7 +41,7 @@
  static void __init ar5312_flash_init(void)
  {
  	void __iomem *flashctl_base;
-@@ -252,6 +269,8 @@ void __init ar5312_init_devices(void)
+@@ -247,6 +264,8 @@ void __init ar5312_init_devices(void)
  
  	platform_device_register(&ar5312_physmap_flash);
  
