@@ -12,7 +12,7 @@
 +
  config MTD_MYLOADER_PARTS
  	tristate "MyLoader partition parsing"
- 	depends on ADM5120 || ATHEROS_AR231X || ATHEROS_AR71XX || ATH79
+ 	depends on ADM5120 || ATH25 || ATHEROS_AR71XX || ATH79
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
 @@ -16,6 +16,7 @@ obj-$(CONFIG_MTD_AR7_PARTS)	+= ar7part.o

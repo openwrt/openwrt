@@ -3,7 +3,7 @@
 @@ -7,4 +7,5 @@ config SOC_AR5312
  config SOC_AR2315
  	bool "Atheros 2315+ support"
- 	depends on ATHEROS_AR231X
+ 	depends on ATH25
 +	select GPIO_AR2315
  	default y
 --- a/arch/mips/ar231x/ar2315.c

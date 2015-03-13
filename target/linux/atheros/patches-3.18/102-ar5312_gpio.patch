@@ -3,7 +3,7 @@
 @@ -1,6 +1,7 @@
  config SOC_AR5312
  	bool "Atheros 5312/2312+ support"
- 	depends on ATHEROS_AR231X
+ 	depends on ATH25
 +	select GPIO_AR5312
  	default y
  

@@ -1,10 +1,10 @@
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -154,6 +154,19 @@ config BCM63XX
- 	help
- 	 Support for BCM63XX based boards
+@@ -96,6 +96,19 @@ config AR7
+ 	  Support for the Texas Instruments AR7 System-on-a-Chip
+ 	  family: TNETD7100, 7200 and 7300.
  
-+config ATHEROS_AR231X
++config ATH25
 +	bool "Atheros 231x/531x SoC support"
 +	select CEVT_R4K
 +	select CSRC_R4K
@@ -17,9 +17,9 @@
 +	help
 +	  Support for AR231x and AR531x based boards
 +
- config MIPS_COBALT
- 	bool "Cobalt Server"
- 	select CEVT_R4K
+ config ATH79
+ 	bool "Atheros AR71XX/AR724X/AR913X based boards"
+ 	select ARCH_REQUIRE_GPIOLIB
 @@ -834,6 +847,7 @@ config MIPS_PARAVIRT
  
  endchoice
@@ -44,20 +44,20 @@
 +#
 +# Atheros AR531X/AR231X WiSoC
 +#
-+platform-$(CONFIG_ATHEROS_AR231X)          += ar231x/
-+cflags-$(CONFIG_ATHEROS_AR231X)        += -I$(srctree)/arch/mips/include/asm/mach-ar231x
-+load-$(CONFIG_ATHEROS_AR231X)          += 0xffffffff80041000
++platform-$(CONFIG_ATH25)	+= ar231x/
++cflags-$(CONFIG_ATH25)		+= -I$(srctree)/arch/mips/include/asm/mach-ar231x
++load-$(CONFIG_ATH25)		+= 0xffffffff80041000
 --- /dev/null
 +++ b/arch/mips/ar231x/Kconfig
 @@ -0,0 +1,9 @@
 +config SOC_AR5312
 +	bool "Atheros 5312/2312+ support"
-+	depends on ATHEROS_AR231X
++	depends on ATH25
 +	default y
 +
 +config SOC_AR2315
 +	bool "Atheros 2315+ support"
-+	depends on ATHEROS_AR231X
++	depends on ATH25
 +	default y
 --- /dev/null
 +++ b/arch/mips/ar231x/Makefile
