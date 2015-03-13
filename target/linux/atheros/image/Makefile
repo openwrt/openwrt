@@ -51,12 +51,10 @@ define Image/Build
 		-p0x150000:0x2a0000:::rootfs:$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) \
 		$(BIN_DIR)/$(IMG_PREFIX)-wpe53g-$(1).bin
 
-  ifeq ($(BOARD),atheros)
 	-sh $(TOPDIR)/scripts/combined-image.sh \
 		"$(BIN_DIR)/$(IMG_PREFIX)-vmlinux.lzma" \
 		"$(BIN_DIR)/$(IMG_PREFIX)-root.$(1)" \
 		"$(BIN_DIR)/$(IMG_PREFIX)-combined.$(1).img"
-  endif
 endef
 
 $(eval $(call BuildImage))
