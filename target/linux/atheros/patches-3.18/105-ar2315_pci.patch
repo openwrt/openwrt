@@ -382,22 +382,14 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -428,3 +432,18 @@ void __init ar2315_plat_mem_setup(void)
+@@ -427,4 +431,10 @@ void __init ar2315_arch_init(void)
+ {
  	ath25_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
  			   ar2315_apb_frequency());
- }
 +
 +#ifdef CONFIG_PCI_AR2315
-+static int __init ar2315_pci_init(void)
-+{
-+	struct platform_device *pdev;
-+
-+	if (!is_ar2315() || ath25_soc != ATH25_SOC_AR2315)
-+		return -ENODEV;
-+
-+	pdev = platform_device_register_simple("ar2315-pci", -1, NULL, 0);
-+
-+	return pdev ? 0 : -ENODEV;
-+}
-+arch_initcall(ar2315_pci_init);
++	if (ath25_soc == ATH25_SOC_AR2315) {
++		platform_device_register_simple("ar2315-pci", -1, NULL, 0);
++	}
 +#endif
+ }
