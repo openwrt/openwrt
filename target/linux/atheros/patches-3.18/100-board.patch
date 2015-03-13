@@ -629,7 +629,7 @@
 +#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/ar2315_regs.h
-@@ -0,0 +1,511 @@
+@@ -0,0 +1,470 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -850,17 +850,6 @@
 +#define AR2315_GISR_WMACPOLL	0x0010
 +#define AR2315_GISR_TIMER	0x0020
 +#define AR2315_GISR_ETHERNET	0x0040
-+
-+/*
-+ * Interrupt routing from IO to the processor IP bits
-+ * Define our inter mask and level
-+ */
-+#define AR2315_INTR_MISCIO      SR_IBIT3
-+#define AR2315_INTR_WLAN0       SR_IBIT4
-+#define AR2315_INTR_ENET0       SR_IBIT5
-+#define AR2315_INTR_LOCALPCI    SR_IBIT6
-+#define AR2315_INTR_WMACPOLL    SR_IBIT7
-+#define AR2315_INTR_COMPARE     SR_IBIT8
 +
 +/*
 + * Timers
@@ -1110,40 +1099,10 @@
 +#define AR2315_LB_INT_EN        (AR2315_LOCAL + 0x0508)
 +#define AR2315_LB_MBOX          (AR2315_LOCAL + 0x0600)
 +
-+/*
-+ * IR Interface Registers
-+ */
-+#define AR2315_IR_PKTDATA		(AR2315_IR + 0x0000)
-+
-+#define AR2315_IR_PKTLEN		(AR2315_IR + 0x07fc) /* 0 - 63 */
-+
-+#define AR2315_IR_CONTROL		(AR2315_IR + 0x0800)
-+#define AR2315_IRCTL_TX			0x00000000  /* use as tranmitter */
-+#define AR2315_IRCTL_RX			0x00000001  /* use as receiver   */
-+#define AR2315_IRCTL_SAMPLECLK_MASK	0x00003ffe  /* Sample clk divisor */
-+#define AR2315_IRCTL_SAMPLECLK_SHFT	1
-+#define AR2315_IRCTL_OUTPUTCLK_MASK	0x03ffc000  /* Output clk div */
-+#define AR2315_IRCTL_OUTPUTCLK_SHFT	14
-+
-+#define AR2315_IR_STATUS		(AR2315_IR + 0x0804)
-+#define AR2315_IRSTS_RX			0x00000001  /* receive in progress */
-+#define AR2315_IRSTS_TX			0x00000002  /* transmit in progress */
-+
-+#define AR2315_IR_CONFIG		(AR2315_IR + 0x0808)
-+#define AR2315_IRCFG_INVIN		0x00000001  /* invert in polarity */
-+#define AR2315_IRCFG_INVOUT		0x00000002  /* invert out polarity */
-+#define AR2315_IRCFG_SEQ_START_WIN_SEL	0x00000004  /* 1 => 28, 0 => 7 */
-+#define AR2315_IRCFG_SEQ_START_THRESH	0x000000f0
-+#define AR2315_IRCFG_SEQ_END_UNIT_SEL	0x00000100
-+#define AR2315_IRCFG_SEQ_END_UNIT_THRESH 0x00007e00
-+#define AR2315_IRCFG_SEQ_END_WIN_SEL	0x00008000
-+#define AR2315_IRCFG_SEQ_END_WIN_THRESH	0x001f0000
-+#define AR2315_IRCFG_NUM_BACKOFF_WORDS	0x01e00000
-+
 +#endif /* __ASM_MACH_ATH25_AR2315_REGS_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/ar5312_regs.h
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,224 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1184,6 +1143,10 @@
 +
 +/*
 + * Address Map
++ *
++ * The AR5312 supports 2 enet MACS, even though many reference boards only
++ * actually use 1 of them (i.e. Only MAC 0 is actually connected to an enet
++ * PHY or PHY switch. The AR2312 supports 1 enet MAC.
 + */
 +#define AR5312_WLAN0            0x18000000
 +#define AR5312_WLAN1            0x18500000
@@ -1196,15 +1159,6 @@
 +#define AR5312_FLASH            0x1e000000
 +
 +/*
-+ * AR5312_NUM_ENET_MAC defines the number of ethernet MACs that
-+ * should be considered available.  The AR5312 supports 2 enet MACS,
-+ * even though many reference boards only actually use 1 of them
-+ * (i.e. Only MAC 0 is actually connected to an enet PHY or PHY switch.
-+ * The AR2312 supports 1 enet MAC.
-+ */
-+#define AR5312_NUM_ENET_MAC             2
-+
-+/*
 + * Need these defines to determine true number of ethernet MACs
 + */
 +#define AR5312_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
@@ -1214,12 +1168,6 @@
 +/* MII registers offset inside Ethernet MMR region */
 +#define AR5312_ENET0_MII	(AR5312_ENET0 + 0x14)
 +#define AR5312_ENET1_MII	(AR5312_ENET1 + 0x14)
-+
-+/*
-+ * AR5312_NUM_WMAC defines the number of Wireless MACs that\
-+ * should be considered available.
-+ */
-+#define AR5312_NUM_WMAC                 2
 +
 +/* Reset/Timer Block Address Map */
 +#define AR5312_RESETTMR		(AR5312_APBBASE  + 0x3000)
