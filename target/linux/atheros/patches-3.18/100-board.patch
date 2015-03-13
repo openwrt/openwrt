@@ -497,7 +497,7 @@
 +#endif /* __ASM_MACH_ATH25_CPU_FEATURE_OVERRIDES_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/dma-coherence.h
-@@ -0,0 +1,76 @@
+@@ -0,0 +1,82 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -511,7 +511,13 @@
 +#define __ASM_MACH_ATH25_DMA_COHERENCE_H
 +
 +#include <linux/device.h>
-+#include <ar2315_regs.h>
++
++/*
++ * We need some arbitrary non-zero value to be programmed to the BAR1 register
++ * of PCI host controller to enable DMA. The same value should be used as the
++ * offset to calculate the physical address of DMA buffer for PCI devices.
++ */
++#define AR2315_PCI_HOST_SDRAM_BASEADDR	0x20000000
 +
 +static inline dma_addr_t ath25_dev_offset(struct device *dev)
 +{
@@ -623,7 +629,7 @@
 +#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
 +++ b/arch/mips/include/asm/mach-ath25/ar2315_regs.h
-@@ -0,0 +1,608 @@
+@@ -0,0 +1,601 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -1216,13 +1222,6 @@
 +#define AR2315_IRCFG_SEQ_END_WIN_SEL	0x00008000
 +#define AR2315_IRCFG_SEQ_END_WIN_THRESH	0x001f0000
 +#define AR2315_IRCFG_NUM_BACKOFF_WORDS	0x01e00000
-+
-+/*
-+ * We need some arbitrary non-zero value to be programmed to the BAR1 register
-+ * of PCI host controller to enable DMA. The same value should be used as the
-+ * offset to calculate the physical address of DMA buffer for PCI devices.
-+ */
-+#define AR2315_PCI_HOST_SDRAM_BASEADDR	0x20000000
 +
 +/* ??? access BAR */
 +#define AR2315_PCI_HOST_MBAR0		0x10000000
