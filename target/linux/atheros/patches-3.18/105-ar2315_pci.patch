@@ -10,7 +10,7 @@
  obj-$(CONFIG_MIPS_PCI_VIRTIO)	+= pci-virtio-guest.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-ar2315.c
-@@ -0,0 +1,447 @@
+@@ -0,0 +1,428 @@
 +/*
 + * This program is free software; you can redistribute it and/or
 + * modify it under the terms of the GNU General Public License
@@ -378,7 +378,6 @@
 +static int ar2315_pci_probe(struct platform_device *pdev)
 +{
 +	struct device *dev = &pdev->dev;
-+	u32 reg;
 +	int res;
 +
 +	/* Remap PCI config space */
@@ -388,24 +387,6 @@
 +		dev_err(dev, "failed to remap PCI config space\n");
 +		return -ENOMEM;
 +	}
-+
-+	/* Reset PCI DMA logic */
-+	reg = ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
-+	msleep(20);
-+	reg &= ~AR2315_RESET_PCIDMA;
-+	ar231x_write_reg(AR2315_RESET, reg);
-+	msleep(20);
-+
-+	ar231x_mask_reg(AR2315_ENDIAN_CTL, 0,
-+			AR2315_CONFIG_PCIAHB | AR2315_CONFIG_PCIAHB_BRIDGE);
-+
-+	ar231x_write_reg(AR2315_PCICLK, AR2315_PCICLK_PLLC_CLKM |
-+			 (AR2315_PCICLK_IN_FREQ_DIV_6 << AR2315_PCICLK_DIV_S));
-+	ar231x_mask_reg(AR2315_AHB_ARB_CTL, 0, AR2315_ARB_PCI);
-+	ar231x_mask_reg(AR2315_IF_CTL, AR2315_IF_PCI_CLK_MASK | AR2315_IF_MASK,
-+			AR2315_IF_PCI | AR2315_IF_PCI_HOST |
-+			AR2315_IF_PCI_INTR | (AR2315_IF_PCI_CLK_OUTPUT_CLK <<
-+					      AR2315_IF_PCI_CLK_SHIFT));
 +
 +	/* Reset the PCI bus by setting bits 5-4 in PCI_MCFG */
 +	ar231x_mask_reg(AR2315_PCI_MISC_CONFIG, AR2315_PCIMISC_RST_MODE,
@@ -484,13 +465,34 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -427,4 +431,10 @@ void __init ar2315_arch_init(void)
+@@ -427,4 +431,31 @@ void __init ar2315_arch_init(void)
  {
  	ath25_serial_setup(AR2315_UART0, AR2315_MISC_IRQ_UART0,
  			   ar2315_apb_frequency());
 +
 +#ifdef CONFIG_PCI_AR2315
 +	if (ath25_soc == ATH25_SOC_AR2315) {
++		/* Reset PCI DMA logic */
++		ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
++		msleep(20);
++		ar231x_mask_reg(AR2315_RESET, AR2315_RESET_PCIDMA, 0);
++		msleep(20);
++
++		/* Configure endians */
++		ar231x_mask_reg(AR2315_ENDIAN_CTL, 0, AR2315_CONFIG_PCIAHB |
++				AR2315_CONFIG_PCIAHB_BRIDGE);
++
++		/* Configure as PCI host with DMA */
++		ar231x_write_reg(AR2315_PCICLK, AR2315_PCICLK_PLLC_CLKM |
++				 (AR2315_PCICLK_IN_FREQ_DIV_6 <<
++				  AR2315_PCICLK_DIV_S));
++		ar231x_mask_reg(AR2315_AHB_ARB_CTL, 0, AR2315_ARB_PCI);
++		ar231x_mask_reg(AR2315_IF_CTL, AR2315_IF_PCI_CLK_MASK |
++				AR2315_IF_MASK, AR2315_IF_PCI |
++				AR2315_IF_PCI_HOST | AR2315_IF_PCI_INTR |
++				(AR2315_IF_PCI_CLK_OUTPUT_CLK <<
++				 AR2315_IF_PCI_CLK_SHIFT));
++
 +		platform_device_register_simple("ar2315-pci", -1, NULL, 0);
 +	}
 +#endif
