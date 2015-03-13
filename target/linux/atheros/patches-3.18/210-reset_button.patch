@@ -1,5 +1,5 @@
---- a/arch/mips/ar231x/Makefile
-+++ b/arch/mips/ar231x/Makefile
+--- a/arch/mips/ath25/Makefile
++++ b/arch/mips/ath25/Makefile
 @@ -8,7 +8,7 @@
  # Copyright (C) 2006-2009 Felix Fietkau <nbd@openwrt.org>
  #
@@ -10,7 +10,7 @@
  obj-$(CONFIG_EARLY_PRINTK) += early_printk.o
  
 --- /dev/null
-+++ b/arch/mips/ar231x/reset.c
++++ b/arch/mips/ath25/reset.c
 @@ -0,0 +1,58 @@
 +#include <linux/init.h>
 +#include <linux/slab.h>
