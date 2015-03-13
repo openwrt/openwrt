@@ -56,8 +56,8 @@
 
 #define TX_DMA_DESP2_DEF	(TX_DMA_LS0 | TX_DMA_DONE)
 #define TX_DMA_DESP4_DEF	(TX_DMA_QN(3) | TX_DMA_PN(1))
-#define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (NUM_DMA_DESC - 1))
-#define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (NUM_DMA_DESC - 1))
+#define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (priv->tx_ring_size - 1))
+#define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (priv->rx_ring_size - 1))
 
 #define SYSC_REG_RSTCTRL	0x34
 
@@ -204,7 +204,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 	int i;
 
 	if (priv->rx_data) {
-		for (i = 0; i < NUM_DMA_DESC; i++)
+		for (i = 0; i < priv->rx_ring_size; i++)
 			if (priv->rx_data[i]) {
 				if (priv->rx_dma && priv->rx_dma[i].rxd1)
 					dma_unmap_single(&priv->netdev->dev,
@@ -220,7 +220,7 @@ static void fe_clean_rx(struct fe_priv *priv)
 
 	if (priv->rx_dma) {
 		dma_free_coherent(&priv->netdev->dev,
-				NUM_DMA_DESC * sizeof(*priv->rx_dma),
+				priv->rx_ring_size * sizeof(*priv->rx_dma),
 				priv->rx_dma,
 				priv->rx_phys);
 		priv->rx_dma = NULL;
@@ -232,19 +232,19 @@ static int fe_alloc_rx(struct fe_priv *priv)
 	struct net_device *netdev = priv->netdev;
 	int i, pad;
 
-	priv->rx_data = kcalloc(NUM_DMA_DESC, sizeof(*priv->rx_data),
+	priv->rx_data = kcalloc(priv->rx_ring_size, sizeof(*priv->rx_data),
 			GFP_KERNEL);
 	if (!priv->rx_data)
 		goto no_rx_mem;
 
-	for (i = 0; i < NUM_DMA_DESC; i++) {
+	for (i = 0; i < priv->rx_ring_size; i++) {
 		priv->rx_data[i] = netdev_alloc_frag(priv->frag_size);
 		if (!priv->rx_data[i])
 			goto no_rx_mem;
 	}
 
 	priv->rx_dma = dma_alloc_coherent(&netdev->dev,
-			NUM_DMA_DESC * sizeof(*priv->rx_dma),
+			priv->rx_ring_size * sizeof(*priv->rx_dma),
 			&priv->rx_phys,
 			GFP_ATOMIC | __GFP_ZERO);
 	if (!priv->rx_dma)
@@ -254,7 +254,7 @@ static int fe_alloc_rx(struct fe_priv *priv)
 		pad = 0;
 	else
 		pad = NET_IP_ALIGN;
-	for (i = 0; i < NUM_DMA_DESC; i++) {
+	for (i = 0; i < priv->rx_ring_size; i++) {
 		dma_addr_t dma_addr = dma_map_single(&netdev->dev,
 				priv->rx_data[i] + NET_SKB_PAD + pad,
 				priv->rx_buf_size,
@@ -271,8 +271,8 @@ static int fe_alloc_rx(struct fe_priv *priv)
 	wmb();
 
 	fe_reg_w32(priv->rx_phys, FE_REG_RX_BASE_PTR0);
-	fe_reg_w32(NUM_DMA_DESC, FE_REG_RX_MAX_CNT0);
-	fe_reg_w32((NUM_DMA_DESC - 1), FE_REG_RX_CALC_IDX0);
+	fe_reg_w32(priv->rx_ring_size, FE_REG_RX_MAX_CNT0);
+	fe_reg_w32((priv->rx_ring_size - 1), FE_REG_RX_CALC_IDX0);
 	fe_reg_w32(FE_PST_DRX_IDX0, FE_REG_PDMA_RST_CFG);
 
 	return 0;
@@ -312,7 +312,7 @@ static void fe_clean_tx(struct fe_priv *priv)
 	int i;
 
 	if (priv->tx_buf) {
-		for (i = 0; i < NUM_DMA_DESC; i++)
+		for (i = 0; i < priv->tx_ring_size; i++)
 			fe_txd_unmap(&priv->netdev->dev, &priv->tx_buf[i]);
 		kfree(priv->tx_buf);
 		priv->tx_buf = NULL;
@@ -320,7 +320,7 @@ static void fe_clean_tx(struct fe_priv *priv)
 
 	if (priv->tx_dma) {
 		dma_free_coherent(&priv->netdev->dev,
-				NUM_DMA_DESC * sizeof(*priv->tx_dma),
+				priv->tx_ring_size * sizeof(*priv->tx_dma),
 				priv->tx_dma,
 				priv->tx_phys);
 		priv->tx_dma = NULL;
@@ -333,19 +333,19 @@ static int fe_alloc_tx(struct fe_priv *priv)
 
 	priv->tx_free_idx = 0;
 
-	priv->tx_buf = kcalloc(NUM_DMA_DESC, sizeof(*priv->tx_buf),
+	priv->tx_buf = kcalloc(priv->tx_ring_size, sizeof(*priv->tx_buf),
 			GFP_KERNEL);
 	if (!priv->tx_buf)
 		goto no_tx_mem;
 
 	priv->tx_dma = dma_alloc_coherent(&priv->netdev->dev,
-			NUM_DMA_DESC * sizeof(*priv->tx_dma),
+			priv->tx_ring_size * sizeof(*priv->tx_dma),
 			&priv->tx_phys,
 			GFP_ATOMIC | __GFP_ZERO);
 	if (!priv->tx_dma)
 		goto no_tx_mem;
 
-	for (i = 0; i < NUM_DMA_DESC; i++) {
+	for (i = 0; i < priv->tx_ring_size; i++) {
 		if (priv->soc->tx_dma) {
 			priv->soc->tx_dma(&priv->tx_dma[i]);
 		}
@@ -354,7 +354,7 @@ static int fe_alloc_tx(struct fe_priv *priv)
 	wmb();
 
 	fe_reg_w32(priv->tx_phys, FE_REG_TX_BASE_PTR0);
-	fe_reg_w32(NUM_DMA_DESC, FE_REG_TX_MAX_CNT0);
+	fe_reg_w32(priv->tx_ring_size, FE_REG_TX_MAX_CNT0);
 	fe_reg_w32(0, FE_REG_TX_CTX_IDX0);
 	fe_reg_w32(FE_PST_DTX_IDX0, FE_REG_PDMA_RST_CFG);
 
@@ -702,8 +702,8 @@ static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv) {
 
 static inline u32 fe_empty_txd(struct fe_priv *priv, u32 tx_fill_idx)
 {
-	return (u32)(NUM_DMA_DESC - ((tx_fill_idx - priv->tx_free_idx) &
-				(NUM_DMA_DESC - 1)));
+	return (u32)(priv->tx_ring_size - ((tx_fill_idx - priv->tx_free_idx) &
+				(priv->tx_ring_size - 1)));
 }
 
 static inline int fe_cal_txd_req(struct sk_buff *skb)
@@ -1481,16 +1481,15 @@ static int fe_probe(struct platform_device *pdev)
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
 	priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
 	priv->rx_buf_size = fe_max_buf_size(priv->frag_size);
-	if (priv->frag_size > PAGE_SIZE) {
-		dev_err(&pdev->dev, "error frag size.\n");
-		err = -EINVAL;
-		goto err_free_dev;
-	}
+	priv->tx_ring_size = priv->rx_ring_size = NUM_DMA_DESC;
 	INIT_WORK(&priv->pending_work, fe_pending_work);
 
 	napi_weight = 32;
-	if (priv->flags & FE_FLAG_NAPI_WEIGHT)
-		napi_weight = 64;
+	if (priv->flags & FE_FLAG_NAPI_WEIGHT) {
+		napi_weight *= 2;
+		priv->tx_ring_size *= 2;
+		priv->rx_ring_size *= 2;
+	}
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll, napi_weight);
 	fe_set_ethtool_ops(netdev);
 
