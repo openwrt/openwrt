@@ -1526,6 +1526,25 @@
 +#include "devices.h"
 +#include "ar5312.h"
 +
++static irqreturn_t ar5312_ahb_err_handler(int cpl, void *dev_id)
++{
++	u32 proc1 = ar231x_read_reg(AR5312_PROC1);
++	u32 proc_addr = ar231x_read_reg(AR5312_PROCADDR); /* clears error */
++	u32 dma1 = ar231x_read_reg(AR5312_DMA1);
++	u32 dma_addr = ar231x_read_reg(AR5312_DMAADDR);   /* clears error */
++
++	pr_emerg("AHB interrupt: PROCADDR=0x%8.8x PROC1=0x%8.8x DMAADDR=0x%8.8x DMA1=0x%8.8x\n",
++		 proc_addr, proc1, dma_addr, dma1);
++
++	machine_restart("AHB error"); /* Catastrophic failure */
++	return IRQ_HANDLED;
++}
++
++static struct irqaction ar5312_ahb_err_interrupt  = {
++	.handler = ar5312_ahb_err_handler,
++	.name    = "ar5312-ahb-error",
++};
++
 +static void ar5312_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
 +	unsigned int ar231x_misc_intrs = ar231x_read_reg(AR5312_ISR) &
@@ -1540,26 +1559,6 @@
 +		generic_handle_irq(AR5312_MISC_IRQ_UART0);
 +	else if (ar231x_misc_intrs & AR5312_ISR_WD)
 +		generic_handle_irq(AR5312_MISC_IRQ_WATCHDOG);
-+	else
-+		spurious_interrupt();
-+}
-+
-+static void ar5312_irq_dispatch(void)
-+{
-+	int pending = read_c0_status() & read_c0_cause();
-+
-+	if (pending & CAUSEF_IP2)
-+		do_IRQ(AR5312_IRQ_WLAN0_INTRS);
-+	else if (pending & CAUSEF_IP3)
-+		do_IRQ(AR5312_IRQ_ENET0_INTRS);
-+	else if (pending & CAUSEF_IP4)
-+		do_IRQ(AR5312_IRQ_ENET1_INTRS);
-+	else if (pending & CAUSEF_IP5)
-+		do_IRQ(AR5312_IRQ_WLAN1_INTRS);
-+	else if (pending & CAUSEF_IP6)
-+		do_IRQ(AR5312_IRQ_MISC_INTRS);
-+	else if (pending & CAUSEF_IP7)
-+		do_IRQ(AR231X_IRQ_CPU_CLOCK);
 +	else
 +		spurious_interrupt();
 +}
@@ -1591,24 +1590,25 @@
 +	.irq_mask	= ar5312_misc_irq_mask,
 +};
 +
-+static irqreturn_t ar5312_ahb_err_handler(int cpl, void *dev_id)
++static void ar5312_irq_dispatch(void)
 +{
-+	u32 proc1 = ar231x_read_reg(AR5312_PROC1);
-+	u32 proc_addr = ar231x_read_reg(AR5312_PROCADDR); /* clears error */
-+	u32 dma1 = ar231x_read_reg(AR5312_DMA1);
-+	u32 dma_addr = ar231x_read_reg(AR5312_DMAADDR);   /* clears error */
++	int pending = read_c0_status() & read_c0_cause();
 +
-+	pr_emerg("AHB interrupt: PROCADDR=0x%8.8x PROC1=0x%8.8x DMAADDR=0x%8.8x DMA1=0x%8.8x\n",
-+		 proc_addr, proc1, dma_addr, dma1);
-+
-+	machine_restart("AHB error"); /* Catastrophic failure */
-+	return IRQ_HANDLED;
++	if (pending & CAUSEF_IP2)
++		do_IRQ(AR5312_IRQ_WLAN0_INTRS);
++	else if (pending & CAUSEF_IP3)
++		do_IRQ(AR5312_IRQ_ENET0_INTRS);
++	else if (pending & CAUSEF_IP4)
++		do_IRQ(AR5312_IRQ_ENET1_INTRS);
++	else if (pending & CAUSEF_IP5)
++		do_IRQ(AR5312_IRQ_WLAN1_INTRS);
++	else if (pending & CAUSEF_IP6)
++		do_IRQ(AR5312_IRQ_MISC_INTRS);
++	else if (pending & CAUSEF_IP7)
++		do_IRQ(AR231X_IRQ_CPU_CLOCK);
++	else
++		spurious_interrupt();
 +}
-+
-+static struct irqaction ar5312_ahb_err_interrupt  = {
-+	.handler = ar5312_ahb_err_handler,
-+	.name    = "ar5312-ahb-error",
-+};
 +
 +void __init ar5312_arch_init_irq(void)
 +{
@@ -1979,6 +1979,22 @@
 +#include "devices.h"
 +#include "ar2315.h"
 +
++static irqreturn_t ar2315_ahb_err_handler(int cpl, void *dev_id)
++{
++	ar231x_write_reg(AR2315_AHB_ERR0, AHB_ERROR_DET);
++	ar231x_read_reg(AR2315_AHB_ERR1);
++
++	pr_emerg("AHB fatal error\n");
++	machine_restart("AHB error"); /* Catastrophic failure */
++
++	return IRQ_HANDLED;
++}
++
++static struct irqaction ar2315_ahb_err_interrupt  = {
++	.handler	= ar2315_ahb_err_handler,
++	.name		= "ar2315-ahb-error",
++};
++
 +static void ar2315_misc_irq_handler(unsigned irq, struct irq_desc *desc)
 +{
 +	unsigned int misc_intr = ar231x_read_reg(AR2315_ISR) &
@@ -1999,30 +2015,6 @@
 +		ar231x_write_reg(AR2315_ISR, AR2315_ISR_WD);
 +		generic_handle_irq(AR2315_MISC_IRQ_WATCHDOG);
 +	} else
-+		spurious_interrupt();
-+}
-+
-+/*
-+ * Called when an interrupt is received, this function
-+ * determines exactly which interrupt it was, and it
-+ * invokes the appropriate handler.
-+ *
-+ * Implicitly, we also define interrupt priority by
-+ * choosing which to dispatch first.
-+ */
-+static void ar2315_irq_dispatch(void)
-+{
-+	int pending = read_c0_status() & read_c0_cause();
-+
-+	if (pending & CAUSEF_IP3)
-+		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
-+	else if (pending & CAUSEF_IP4)
-+		do_IRQ(AR2315_IRQ_ENET0_INTRS);
-+	else if (pending & CAUSEF_IP2)
-+		do_IRQ(AR2315_IRQ_MISC_INTRS);
-+	else if (pending & CAUSEF_IP7)
-+		do_IRQ(AR231X_IRQ_CPU_CLOCK);
-+	else
 +		spurious_interrupt();
 +}
 +
@@ -2050,21 +2042,29 @@
 +	.irq_mask	= ar2315_misc_irq_mask,
 +};
 +
-+static irqreturn_t ar2315_ahb_err_handler(int cpl, void *dev_id)
++/*
++ * Called when an interrupt is received, this function
++ * determines exactly which interrupt it was, and it
++ * invokes the appropriate handler.
++ *
++ * Implicitly, we also define interrupt priority by
++ * choosing which to dispatch first.
++ */
++static void ar2315_irq_dispatch(void)
 +{
-+	ar231x_write_reg(AR2315_AHB_ERR0, AHB_ERROR_DET);
-+	ar231x_read_reg(AR2315_AHB_ERR1);
++	int pending = read_c0_status() & read_c0_cause();
 +
-+	pr_emerg("AHB fatal error\n");
-+	machine_restart("AHB error"); /* Catastrophic failure */
-+
-+	return IRQ_HANDLED;
++	if (pending & CAUSEF_IP3)
++		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
++	else if (pending & CAUSEF_IP4)
++		do_IRQ(AR2315_IRQ_ENET0_INTRS);
++	else if (pending & CAUSEF_IP2)
++		do_IRQ(AR2315_IRQ_MISC_INTRS);
++	else if (pending & CAUSEF_IP7)
++		do_IRQ(AR231X_IRQ_CPU_CLOCK);
++	else
++		spurious_interrupt();
 +}
-+
-+static struct irqaction ar2315_ahb_err_interrupt  = {
-+	.handler	= ar2315_ahb_err_handler,
-+	.name		= "ar2315-ahb-error",
-+};
 +
 +void __init ar2315_arch_init_irq(void)
 +{
