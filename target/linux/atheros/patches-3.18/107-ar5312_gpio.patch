@@ -2,7 +2,7 @@
 +++ b/arch/mips/ath25/Kconfig
 @@ -1,6 +1,7 @@
  config SOC_AR5312
- 	bool "Atheros 5312/2312+ support"
+ 	bool "Atheros AR5312/AR2312+ SoC support"
  	depends on ATH25
 +	select GPIO_AR5312
  	default y
@@ -208,5 +208,5 @@
  	select SYS_HAS_EARLY_PRINTK
 +	select ARCH_REQUIRE_GPIOLIB
  	help
- 	  Support for AR231x and AR531x based boards
+ 	  Support for Atheros AR231x and Atheros AR531x based boards
  

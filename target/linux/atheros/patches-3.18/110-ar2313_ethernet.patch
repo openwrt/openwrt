@@ -1541,13 +1541,13 @@
 +#define AR2315_ENET0_MII_BASE	(AR2315_ENET0_BASE + 0x14)
 +
  /*
-  * Cold reset register
+  * Configuration registers
   */
 --- a/arch/mips/ath25/ar5312_regs.h
 +++ b/arch/mips/ath25/ar5312_regs.h
 @@ -64,6 +64,10 @@
- #define AR5312_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
- #define AR5312_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
+ #define AR5312_AR5312_REV7	0x0057		/* AR5312 WMAC (AP30-040) */
+ #define AR5312_AR2313_REV8	0x0058		/* AR2313 WMAC (AP43-030) */
  
 +/* MII registers offset inside Ethernet MMR region */
 +#define AR5312_ENET0_MII_BASE	(AR5312_ENET0_BASE + 0x14)

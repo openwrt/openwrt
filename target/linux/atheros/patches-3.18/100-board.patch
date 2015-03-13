@@ -5,7 +5,7 @@
  	  family: TNETD7100, 7200 and 7300.
  
 +config ATH25
-+	bool "Atheros 231x/531x SoC support"
++	bool "Atheros AR231x/AR531x SoC support"
 +	select CEVT_R4K
 +	select CSRC_R4K
 +	select DMA_NONCOHERENT
@@ -15,19 +15,19 @@
 +	select SYS_SUPPORTS_BIG_ENDIAN
 +	select SYS_SUPPORTS_32BIT_KERNEL
 +	help
-+	  Support for AR231x and AR531x based boards
++	  Support for Atheros AR231x and Atheros AR531x based boards
 +
  config ATH79
  	bool "Atheros AR71XX/AR724X/AR913X based boards"
  	select ARCH_REQUIRE_GPIOLIB
-@@ -834,6 +847,7 @@ config MIPS_PARAVIRT
- 
+@@ -835,6 +848,7 @@ config MIPS_PARAVIRT
  endchoice
  
-+source "arch/mips/ath25/Kconfig"
  source "arch/mips/alchemy/Kconfig"
++source "arch/mips/ath25/Kconfig"
  source "arch/mips/ath79/Kconfig"
  source "arch/mips/bcm47xx/Kconfig"
+ source "arch/mips/bcm63xx/Kconfig"
 --- a/arch/mips/Kbuild.platforms
 +++ b/arch/mips/Kbuild.platforms
 @@ -2,6 +2,7 @@
@@ -51,12 +51,12 @@
 +++ b/arch/mips/ath25/Kconfig
 @@ -0,0 +1,9 @@
 +config SOC_AR5312
-+	bool "Atheros 5312/2312+ support"
++	bool "Atheros AR5312/AR2312+ SoC support"
 +	depends on ATH25
 +	default y
 +
 +config SOC_AR2315
-+	bool "Atheros 2315+ support"
++	bool "Atheros AR2315+ SoC support"
 +	depends on ATH25
 +	default y
 --- /dev/null
@@ -77,7 +77,7 @@
 +obj-$(CONFIG_SOC_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ath25/board.c
-@@ -0,0 +1,235 @@
+@@ -0,0 +1,234 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -266,8 +266,7 @@
 +static void ath25_halt(void)
 +{
 +	local_irq_disable();
-+	while (1)
-+		;
++	unreachable();
 +}
 +
 +void __init plat_mem_setup(void)
@@ -329,7 +328,7 @@
 + */
 +
 +/*
-+ * Prom setup file for ar231x
++ * Prom setup file for AR5312/AR231x SoCs
 + */
 +
 +#include <linux/init.h>
@@ -619,7 +618,7 @@
 +#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315_regs.h
-@@ -0,0 +1,471 @@
+@@ -0,0 +1,410 @@
 +/*
 + * Register definitions for AR2315+
 + *
@@ -680,174 +679,128 @@
 +#define AR2315_PCI_EXT_SIZE	0x40000000
 +
 +/*
-+ * Cold reset register
++ * Configuration registers
 + */
++
++/* Cold reset register */
 +#define AR2315_COLD_RESET		0x0000
 +
-+#define AR2315_RESET_COLD_AHB              0x00000001
-+#define AR2315_RESET_COLD_APB              0x00000002
-+#define AR2315_RESET_COLD_CPU              0x00000004
-+#define AR2315_RESET_COLD_CPUWARM          0x00000008
-+#define AR2315_RESET_SYSTEM	\
-+	(RESET_COLD_CPU |\
-+	 RESET_COLD_APB |\
-+	 RESET_COLD_AHB)                                   /* full system */
-+#define AR2317_RESET_SYSTEM                0x00000010
++#define AR2315_RESET_COLD_AHB		0x00000001
++#define AR2315_RESET_COLD_APB		0x00000002
++#define AR2315_RESET_COLD_CPU		0x00000004
++#define AR2315_RESET_COLD_CPUWARM	0x00000008
++#define AR2315_RESET_SYSTEM		(RESET_COLD_CPU |\
++					 RESET_COLD_APB |\
++					 RESET_COLD_AHB)  /* full system */
++#define AR2317_RESET_SYSTEM		0x00000010
 +
-+/*
-+ * Reset register
-+ */
++/* Reset register */
 +#define AR2315_RESET			0x0004
 +
-+/* warm reset WLAN0 MAC */
-+#define AR2315_RESET_WARM_WLAN0_MAC        0x00000001
-+/* warm reset WLAN0 BaseBand */
-+#define AR2315_RESET_WARM_WLAN0_BB         0x00000002
-+/* warm reset MPEG-TS */
-+#define AR2315_RESET_MPEGTS_RSVD           0x00000004
-+/* warm reset PCI ahb/dma */
-+#define AR2315_RESET_PCIDMA                0x00000008
-+/* warm reset memory controller */
-+#define AR2315_RESET_MEMCTL                0x00000010
-+/* warm reset local bus */
-+#define AR2315_RESET_LOCAL                 0x00000020
-+/* warm reset I2C bus */
-+#define AR2315_RESET_I2C_RSVD              0x00000040
-+/* warm reset SPI interface */
-+#define AR2315_RESET_SPI                   0x00000080
-+/* warm reset UART0 */
-+#define AR2315_RESET_UART0                 0x00000100
-+/* warm reset IR interface */
-+#define AR2315_RESET_IR_RSVD               0x00000200
-+/* cold reset ENET0 phy */
-+#define AR2315_RESET_EPHY0                 0x00000400
-+/* cold reset ENET0 mac */
-+#define AR2315_RESET_ENET0                 0x00000800
++#define AR2315_RESET_WARM_WLAN0_MAC	0x00000001  /* warm reset WLAN0 MAC */
++#define AR2315_RESET_WARM_WLAN0_BB	0x00000002  /* warm reset WLAN0 BB */
++#define AR2315_RESET_MPEGTS_RSVD	0x00000004  /* warm reset MPEG-TS */
++#define AR2315_RESET_PCIDMA		0x00000008  /* warm reset PCI ahb/dma */
++#define AR2315_RESET_MEMCTL		0x00000010  /* warm reset mem control */
++#define AR2315_RESET_LOCAL		0x00000020  /* warm reset local bus */
++#define AR2315_RESET_I2C_RSVD		0x00000040  /* warm reset I2C bus */
++#define AR2315_RESET_SPI		0x00000080  /* warm reset SPI iface */
++#define AR2315_RESET_UART0		0x00000100  /* warm reset UART0 */
++#define AR2315_RESET_IR_RSVD		0x00000200  /* warm reset IR iface */
++#define AR2315_RESET_EPHY0		0x00000400  /* cold reset ENET0 phy */
++#define AR2315_RESET_ENET0		0x00000800  /* cold reset ENET0 MAC */
 +
-+/*
-+ * AHB master arbitration control
-+ */
++/* AHB master arbitration control */
 +#define AR2315_AHB_ARB_CTL		0x0008
 +
-+/* CPU, default */
-+#define AR2315_ARB_CPU                     0x00000001
-+/* WLAN */
-+#define AR2315_ARB_WLAN                    0x00000002
-+/* MPEG-TS */
-+#define AR2315_ARB_MPEGTS_RSVD             0x00000004
-+/* LOCAL */
-+#define AR2315_ARB_LOCAL                   0x00000008
-+/* PCI */
-+#define AR2315_ARB_PCI                     0x00000010
-+/* Ethernet */
-+#define AR2315_ARB_ETHERNET                0x00000020
-+/* retry policy, debug only */
-+#define AR2315_ARB_RETRY                   0x00000100
++#define AR2315_ARB_CPU			0x00000001  /* CPU, default */
++#define AR2315_ARB_WLAN			0x00000002  /* WLAN */
++#define AR2315_ARB_MPEGTS_RSVD		0x00000004  /* MPEG-TS */
++#define AR2315_ARB_LOCAL		0x00000008  /* Local bus */
++#define AR2315_ARB_PCI			0x00000010  /* PCI bus */
++#define AR2315_ARB_ETHERNET		0x00000020  /* Ethernet */
++#define AR2315_ARB_RETRY		0x00000100  /* Retry policy (debug) */
 +
-+/*
-+ * Config Register
-+ */
++/* Config Register */
 +#define AR2315_ENDIAN_CTL		0x000c
 +
-+/* EC - AHB bridge endianess */
-+#define AR2315_CONFIG_AHB                  0x00000001
-+/* WLAN byteswap */
-+#define AR2315_CONFIG_WLAN                 0x00000002
-+/* MPEG-TS byteswap */
-+#define AR2315_CONFIG_MPEGTS_RSVD          0x00000004
-+/* PCI byteswap */
-+#define AR2315_CONFIG_PCI                  0x00000008
-+/* Memory controller endianess */
-+#define AR2315_CONFIG_MEMCTL               0x00000010
-+/* Local bus byteswap */
-+#define AR2315_CONFIG_LOCAL                0x00000020
-+/* Ethernet byteswap */
-+#define AR2315_CONFIG_ETHERNET             0x00000040
++#define AR2315_CONFIG_AHB		0x00000001  /* EC-AHB bridge endian */
++#define AR2315_CONFIG_WLAN		0x00000002  /* WLAN byteswap */
++#define AR2315_CONFIG_MPEGTS_RSVD	0x00000004  /* MPEG-TS byteswap */
++#define AR2315_CONFIG_PCI		0x00000008  /* PCI byteswap */
++#define AR2315_CONFIG_MEMCTL		0x00000010  /* Mem controller endian */
++#define AR2315_CONFIG_LOCAL		0x00000020  /* Local bus byteswap */
++#define AR2315_CONFIG_ETHERNET		0x00000040  /* Ethernet byteswap */
++#define AR2315_CONFIG_MERGE		0x00000200  /* CPU write buffer merge */
++#define AR2315_CONFIG_CPU		0x00000400  /* CPU big endian */
++#define AR2315_CONFIG_BIG		0x00000400
++#define AR2315_CONFIG_PCIAHB		0x00000800
++#define AR2315_CONFIG_PCIAHB_BRIDGE	0x00001000
++#define AR2315_CONFIG_SPI		0x00008000  /* SPI byteswap */
++#define AR2315_CONFIG_CPU_DRAM		0x00010000
++#define AR2315_CONFIG_CPU_PCI		0x00020000
++#define AR2315_CONFIG_CPU_MMR		0x00040000
 +
-+/* CPU write buffer merge */
-+#define AR2315_CONFIG_MERGE                0x00000200
-+/* CPU big endian */
-+#define AR2315_CONFIG_CPU                  0x00000400
-+#define AR2315_CONFIG_PCIAHB               0x00000800
-+#define AR2315_CONFIG_PCIAHB_BRIDGE        0x00001000
-+/* SPI byteswap */
-+#define AR2315_CONFIG_SPI                  0x00008000
-+#define AR2315_CONFIG_CPU_DRAM             0x00010000
-+#define AR2315_CONFIG_CPU_PCI              0x00020000
-+#define AR2315_CONFIG_CPU_MMR              0x00040000
-+#define AR2315_CONFIG_BIG                  0x00000400
-+
-+/*
-+ * NMI control
-+ */
++/* NMI control */
 +#define AR2315_NMI_CTL			0x0010
 +
-+#define AR2315_NMI_EN  1
++#define AR2315_NMI_EN			1
 +
-+/*
-+ * Revision Register - Initial value is 0x3010 (WMAC 3.0, AR231X 1.0).
-+ */
++/* Revision Register - Initial value is 0x3010 (WMAC 3.0, AR231X 1.0). */
 +#define AR2315_SREV			0x0014
 +
-+#define AR2315_REV_MAJ                     0x00f0
-+#define AR2315_REV_MAJ_S                   4
-+#define AR2315_REV_MIN                     0x000f
-+#define AR2315_REV_MIN_S                   0
-+#define AR2315_REV_CHIP                    (AR2315_REV_MAJ|AR2315_REV_MIN)
++#define AR2315_REV_MAJ			0x000000f0
++#define AR2315_REV_MAJ_S		4
++#define AR2315_REV_MIN			0x0000000f
++#define AR2315_REV_MIN_S		0
++#define AR2315_REV_CHIP			(AR2315_REV_MAJ | AR2315_REV_MIN)
 +
-+/*
-+ * Interface Enable
-+ */
++/* Interface Enable */
 +#define AR2315_IF_CTL			0x0018
 +
-+#define AR2315_IF_MASK                     0x00000007
-+#define AR2315_IF_DISABLED                 0
-+#define AR2315_IF_PCI                      1
-+#define AR2315_IF_TS_LOCAL                 2
-+/* only for emulation with separate pins */
-+#define AR2315_IF_ALL                      3
-+#define AR2315_IF_LOCAL_HOST               0x00000008
-+#define AR2315_IF_PCI_HOST                 0x00000010
-+#define AR2315_IF_PCI_INTR                 0x00000020
-+#define AR2315_IF_PCI_CLK_MASK             0x00030000
-+#define AR2315_IF_PCI_CLK_INPUT            0
-+#define AR2315_IF_PCI_CLK_OUTPUT_LOW       1
-+#define AR2315_IF_PCI_CLK_OUTPUT_CLK       2
-+#define AR2315_IF_PCI_CLK_OUTPUT_HIGH      3
-+#define AR2315_IF_PCI_CLK_SHIFT            16
++#define AR2315_IF_MASK			0x00000007
++#define AR2315_IF_DISABLED		0		/* Disable all */
++#define AR2315_IF_PCI			1		/* PCI */
++#define AR2315_IF_TS_LOCAL		2		/* Local bus */
++#define AR2315_IF_ALL			3		/* Emulation only */
++#define AR2315_IF_LOCAL_HOST		0x00000008
++#define AR2315_IF_PCI_HOST		0x00000010
++#define AR2315_IF_PCI_INTR		0x00000020
++#define AR2315_IF_PCI_CLK_MASK		0x00030000
++#define AR2315_IF_PCI_CLK_INPUT		0
++#define AR2315_IF_PCI_CLK_OUTPUT_LOW	1
++#define AR2315_IF_PCI_CLK_OUTPUT_CLK	2
++#define AR2315_IF_PCI_CLK_OUTPUT_HIGH	3
++#define AR2315_IF_PCI_CLK_SHIFT		16
 +
-+/*
-+ * APB Interrupt control
-+ */
-+
++/* APB Interrupt control */
 +#define AR2315_ISR			0x0020
 +#define AR2315_IMR			0x0024
 +#define AR2315_GISR			0x0028
 +
-+#define AR2315_ISR_UART0	0x0001           /* high speed UART */
-+#define AR2315_ISR_I2C_RSVD	0x0002           /* I2C bus */
-+#define AR2315_ISR_SPI		0x0004           /* SPI bus */
-+#define AR2315_ISR_AHB		0x0008           /* AHB error */
-+#define AR2315_ISR_APB		0x0010           /* APB error */
-+#define AR2315_ISR_TIMER	0x0020           /* timer */
-+#define AR2315_ISR_GPIO		0x0040           /* GPIO */
-+#define AR2315_ISR_WD		0x0080           /* watchdog */
-+#define AR2315_ISR_IR_RSVD	0x0100           /* IR */
++#define AR2315_ISR_UART0	0x00000001	/* high speed UART */
++#define AR2315_ISR_I2C_RSVD	0x00000002	/* I2C bus */
++#define AR2315_ISR_SPI		0x00000004	/* SPI bus */
++#define AR2315_ISR_AHB		0x00000008	/* AHB error */
++#define AR2315_ISR_APB		0x00000010	/* APB error */
++#define AR2315_ISR_TIMER	0x00000020	/* Timer */
++#define AR2315_ISR_GPIO		0x00000040	/* GPIO */
++#define AR2315_ISR_WD		0x00000080	/* Watchdog */
++#define AR2315_ISR_IR_RSVD	0x00000100	/* IR */
 +
-+#define AR2315_GISR_MISC	0x0001
-+#define AR2315_GISR_WLAN0	0x0002
-+#define AR2315_GISR_MPEGTS_RSVD	0x0004
-+#define AR2315_GISR_LOCALPCI	0x0008
-+#define AR2315_GISR_WMACPOLL	0x0010
-+#define AR2315_GISR_TIMER	0x0020
-+#define AR2315_GISR_ETHERNET	0x0040
++#define AR2315_GISR_MISC	0x00000001	/* Misc */
++#define AR2315_GISR_WLAN0	0x00000002	/* WLAN0 */
++#define AR2315_GISR_MPEGTS_RSVD	0x00000004	/* MPEG-TS */
++#define AR2315_GISR_LOCALPCI	0x00000008	/* Local/PCI bus */
++#define AR2315_GISR_WMACPOLL	0x00000010
++#define AR2315_GISR_TIMER	0x00000020
++#define AR2315_GISR_ETHERNET	0x00000040	/* Ethernet */
 +
-+/*
-+ * Timers
-+ */
++/* Generic timer */
 +#define AR2315_TIMER			0x0030
 +#define AR2315_RELOAD			0x0034
 +
++/* Watchdog timer */
 +#define AR2315_WDT_TIMER		0x0038
 +#define AR2315_WDT_CTRL			0x003c
 +
@@ -855,31 +808,27 @@
 +#define AR2315_WDT_CTRL_NMI	0x00000001	/* NMI on watchdog */
 +#define AR2315_WDT_CTRL_RESET	0x00000002	/* reset on watchdog */
 +
-+/*
-+ * CPU Performance Counters
-+ */
++/* CPU Performance Counters */
 +#define AR2315_PERFCNT0			0x0048
 +#define AR2315_PERFCNT1			0x004c
 +
-+#define AR2315_PERF0_DATAHIT	0x0001  /* Count Data Cache Hits */
-+#define AR2315_PERF0_DATAMISS	0x0002  /* Count Data Cache Misses */
-+#define AR2315_PERF0_INSTHIT	0x0004  /* Count Instruction Cache Hits */
-+#define AR2315_PERF0_INSTMISS	0x0008  /* Count Instruction Cache Misses */
-+#define AR2315_PERF0_ACTIVE	0x0010  /* Count Active Processor Cycles */
-+#define AR2315_PERF0_WBHIT	0x0020  /* Count CPU Write Buffer Hits */
-+#define AR2315_PERF0_WBMISS	0x0040  /* Count CPU Write Buffer Misses */
++#define AR2315_PERF0_DATAHIT	0x00000001  /* Count Data Cache Hits */
++#define AR2315_PERF0_DATAMISS	0x00000002  /* Count Data Cache Misses */
++#define AR2315_PERF0_INSTHIT	0x00000004  /* Count Instruction Cache Hits */
++#define AR2315_PERF0_INSTMISS	0x00000008  /* Count Instruction Cache Misses */
++#define AR2315_PERF0_ACTIVE	0x00000010  /* Count Active Processor Cycles */
++#define AR2315_PERF0_WBHIT	0x00000020  /* Count CPU Write Buffer Hits */
++#define AR2315_PERF0_WBMISS	0x00000040  /* Count CPU Write Buffer Misses */
 +
-+#define AR2315_PERF1_EB_ARDY	0x0001  /* Count EB_ARdy signal */
-+#define AR2315_PERF1_EB_AVALID	0x0002  /* Count EB_AValid signal */
-+#define AR2315_PERF1_EB_WDRDY	0x0004  /* Count EB_WDRdy signal */
-+#define AR2315_PERF1_EB_RDVAL	0x0008  /* Count EB_RdVal signal */
-+#define AR2315_PERF1_VRADDR	0x0010  /* Count valid read address cycles */
-+#define AR2315_PERF1_VWADDR	0x0020  /* Count valid write address cycles */
-+#define AR2315_PERF1_VWDATA	0x0040  /* Count valid write data cycles */
++#define AR2315_PERF1_EB_ARDY	0x00000001  /* Count EB_ARdy signal */
++#define AR2315_PERF1_EB_AVALID	0x00000002  /* Count EB_AValid signal */
++#define AR2315_PERF1_EB_WDRDY	0x00000004  /* Count EB_WDRdy signal */
++#define AR2315_PERF1_EB_RDVAL	0x00000008  /* Count EB_RdVal signal */
++#define AR2315_PERF1_VRADDR	0x00000010  /* Count valid read address cycles*/
++#define AR2315_PERF1_VWADDR	0x00000020  /* Count valid write address cycl.*/
++#define AR2315_PERF1_VWDATA	0x00000040  /* Count valid write data cycles */
 +
-+/*
-+ * AHB Error Reporting.
-+ */
++/* AHB Error Reporting */
 +#define AR2315_AHB_ERR0			0x0050  /* error  */
 +#define AR2315_AHB_ERR1			0x0054  /* haddr  */
 +#define AR2315_AHB_ERR2			0x0058  /* hwdata */
@@ -891,27 +840,24 @@
 +#define AR2315_AHB_ERROR_OVR	2 /* AHB Error overflow has been detected  */
 +#define AR2315_AHB_ERROR_WDT	4 /* AHB Error due to wdt instead of hresp */
 +
-+#define AR2315_PROCERR_HMAST               0x0000000f
-+#define AR2315_PROCERR_HMAST_DFLT          0
-+#define AR2315_PROCERR_HMAST_WMAC          1
-+#define AR2315_PROCERR_HMAST_ENET          2
-+#define AR2315_PROCERR_HMAST_PCIENDPT      3
-+#define AR2315_PROCERR_HMAST_LOCAL         4
-+#define AR2315_PROCERR_HMAST_CPU           5
-+#define AR2315_PROCERR_HMAST_PCITGT        6
++#define AR2315_PROCERR_HMAST		0x0000000f
++#define AR2315_PROCERR_HMAST_DFLT	0
++#define AR2315_PROCERR_HMAST_WMAC	1
++#define AR2315_PROCERR_HMAST_ENET	2
++#define AR2315_PROCERR_HMAST_PCIENDPT	3
++#define AR2315_PROCERR_HMAST_LOCAL	4
++#define AR2315_PROCERR_HMAST_CPU	5
++#define AR2315_PROCERR_HMAST_PCITGT	6
++#define AR2315_PROCERR_HMAST_S		0
++#define AR2315_PROCERR_HWRITE		0x00000010
++#define AR2315_PROCERR_HSIZE		0x00000060
++#define AR2315_PROCERR_HSIZE_S		5
++#define AR2315_PROCERR_HTRANS		0x00000180
++#define AR2315_PROCERR_HTRANS_S		7
++#define AR2315_PROCERR_HBURST		0x00000e00
++#define AR2315_PROCERR_HBURST_S		9
 +
-+#define AR2315_PROCERR_HMAST_S             0
-+#define AR2315_PROCERR_HWRITE              0x00000010
-+#define AR2315_PROCERR_HSIZE               0x00000060
-+#define AR2315_PROCERR_HSIZE_S             5
-+#define AR2315_PROCERR_HTRANS              0x00000180
-+#define AR2315_PROCERR_HTRANS_S            7
-+#define AR2315_PROCERR_HBURST              0x00000e00
-+#define AR2315_PROCERR_HBURST_S            9
-+
-+/*
-+ * Clock Control
-+ */
++/* Clock Control */
 +#define AR2315_PLLC_CTL			0x0064
 +#define AR2315_PLLV_CTL			0x0068
 +#define AR2315_CPUCLK			0x006c
@@ -944,39 +890,30 @@
 +#define AR2315_AMBACLK_CLK_DIV_M	0x0000000c
 +#define AR2315_AMBACLK_CLK_DIV_S	2
 +
-+/*
-+ *  PCI Clock Control
-+ */
++/* PCI Clock Control */
 +#define AR2315_PCICLK			0x00a4
 +
-+#define AR2315_PCICLK_INPUT_M              0x3
-+#define AR2315_PCICLK_INPUT_S              0
++#define AR2315_PCICLK_INPUT_M		0x00000003
++#define AR2315_PCICLK_INPUT_S		0
++#define AR2315_PCICLK_PLLC_CLKM		0
++#define AR2315_PCICLK_PLLC_CLKM1	1
++#define AR2315_PCICLK_PLLC_CLKC		2
++#define AR2315_PCICLK_REF_CLK		3
++#define AR2315_PCICLK_DIV_M		0x0000000c
++#define AR2315_PCICLK_DIV_S		2
++#define AR2315_PCICLK_IN_FREQ		0
++#define AR2315_PCICLK_IN_FREQ_DIV_6	1
++#define AR2315_PCICLK_IN_FREQ_DIV_8	2
++#define AR2315_PCICLK_IN_FREQ_DIV_10	3
 +
-+#define AR2315_PCICLK_PLLC_CLKM            0
-+#define AR2315_PCICLK_PLLC_CLKM1           1
-+#define AR2315_PCICLK_PLLC_CLKC            2
-+#define AR2315_PCICLK_REF_CLK              3
-+
-+#define AR2315_PCICLK_DIV_M                0xc
-+#define AR2315_PCICLK_DIV_S                2
-+
-+#define AR2315_PCICLK_IN_FREQ              0
-+#define AR2315_PCICLK_IN_FREQ_DIV_6        1
-+#define AR2315_PCICLK_IN_FREQ_DIV_8        2
-+#define AR2315_PCICLK_IN_FREQ_DIV_10       3
-+
-+/*
-+ * Observation Control Register
-+ */
++/* Observation Control Register */
 +#define AR2315_OCR			0x00b0
 +
 +#define AR2315_OCR_GPIO0_IRIN		0x00000040
 +#define AR2315_OCR_GPIO1_IROUT		0x00000080
 +#define AR2315_OCR_GPIO3_RXCLR		0x00000200
 +
-+/*
-+ *  General Clock Control
-+ */
++/* General Clock Control */
 +#define AR2315_MISCCLK			0x00b4
 +
 +#define AR2315_MISCCLK_PLLBYPASS_EN	0x00000001
@@ -1004,65 +941,66 @@
 + */
 +#define AR2315_LB_CONFIG		0x0000
 +
-+#define AR2315_LBCONF_OE        0x00000001    /* =1 OE is low-true */
-+#define AR2315_LBCONF_CS0       0x00000002    /* =1 first CS is low-true */
-+#define AR2315_LBCONF_CS1       0x00000004    /* =1 2nd CS is low-true */
-+#define AR2315_LBCONF_RDY       0x00000008    /* =1 RDY is low-true */
-+#define AR2315_LBCONF_WE        0x00000010    /* =1 Write En is low-true */
-+#define AR2315_LBCONF_WAIT      0x00000020    /* =1 WAIT is low-true */
-+#define AR2315_LBCONF_ADS       0x00000040    /* =1 Adr Strobe is low-true */
-+#define AR2315_LBCONF_MOT       0x00000080    /* =0 Intel, =1 Motorola */
-+#define AR2315_LBCONF_8CS       0x00000100    /* =1 8 bits CS, 0= 16bits */
-+#define AR2315_LBCONF_8DS       0x00000200    /* =1 8 bits Data S, 0=16bits */
-+#define AR2315_LBCONF_ADS_EN    0x00000400    /* =1 Enable ADS */
-+#define AR2315_LBCONF_ADR_OE    0x00000800    /* =1 Adr cap on OE, WE or DS */
-+#define AR2315_LBCONF_ADDT_MUX  0x00001000    /* =1 Adr and Data share bus */
-+#define AR2315_LBCONF_DATA_OE   0x00002000    /* =1 Data cap on OE, WE, DS */
-+#define AR2315_LBCONF_16DATA    0x00004000    /* =1 Data is 16 bits wide */
-+#define AR2315_LBCONF_SWAPDT    0x00008000    /* =1 Byte swap data */
-+#define AR2315_LBCONF_SYNC      0x00010000    /* =1 Bus synchronous to clk */
-+#define AR2315_LBCONF_INT       0x00020000    /* =1 Intr is low true */
-+#define AR2315_LBCONF_INT_CTR0  0x00000000    /* GND high-Z, Vdd is high-Z */
-+#define AR2315_LBCONF_INT_CTR1  0x00040000    /* GND drive, Vdd is high-Z */
-+#define AR2315_LBCONF_INT_CTR2  0x00080000    /* GND high-Z, Vdd drive */
-+#define AR2315_LBCONF_INT_CTR3  0x000C0000    /* GND drive, Vdd drive */
-+#define AR2315_LBCONF_RDY_WAIT  0x00100000    /* =1 RDY is negative of WAIT */
-+#define AR2315_LBCONF_INT_PULSE 0x00200000    /* =1 Interrupt is a pulse */
-+#define AR2315_LBCONF_ENABLE    0x00400000    /* =1 Falcon respond to LB */
++#define AR2315_LBCONF_OE	0x00000001	/* =1 OE is low-true */
++#define AR2315_LBCONF_CS0	0x00000002	/* =1 first CS is low-true */
++#define AR2315_LBCONF_CS1	0x00000004	/* =1 2nd CS is low-true */
++#define AR2315_LBCONF_RDY	0x00000008	/* =1 RDY is low-true */
++#define AR2315_LBCONF_WE	0x00000010	/* =1 Write En is low-true */
++#define AR2315_LBCONF_WAIT	0x00000020	/* =1 WAIT is low-true */
++#define AR2315_LBCONF_ADS	0x00000040	/* =1 Adr Strobe is low-true */
++#define AR2315_LBCONF_MOT	0x00000080	/* =0 Intel, =1 Motorola */
++#define AR2315_LBCONF_8CS	0x00000100	/* =1 8 bits CS, 0= 16bits */
++#define AR2315_LBCONF_8DS	0x00000200	/* =1 8 bits Data S, 0=16bits */
++#define AR2315_LBCONF_ADS_EN	0x00000400	/* =1 Enable ADS */
++#define AR2315_LBCONF_ADR_OE	0x00000800	/* =1 Adr cap on OE, WE or DS */
++#define AR2315_LBCONF_ADDT_MUX	0x00001000	/* =1 Adr and Data share bus */
++#define AR2315_LBCONF_DATA_OE	0x00002000	/* =1 Data cap on OE, WE, DS */
++#define AR2315_LBCONF_16DATA	0x00004000	/* =1 Data is 16 bits wide */
++#define AR2315_LBCONF_SWAPDT	0x00008000	/* =1 Byte swap data */
++#define AR2315_LBCONF_SYNC	0x00010000	/* =1 Bus synchronous to clk */
++#define AR2315_LBCONF_INT	0x00020000	/* =1 Intr is low true */
++#define AR2315_LBCONF_INT_CTR0	0x00000000	/* GND high-Z, Vdd is high-Z */
++#define AR2315_LBCONF_INT_CTR1	0x00040000	/* GND drive, Vdd is high-Z */
++#define AR2315_LBCONF_INT_CTR2	0x00080000	/* GND high-Z, Vdd drive */
++#define AR2315_LBCONF_INT_CTR3	0x000c0000	/* GND drive, Vdd drive */
++#define AR2315_LBCONF_RDY_WAIT	0x00100000	/* =1 RDY is negative of WAIT */
++#define AR2315_LBCONF_INT_PULSE	0x00200000	/* =1 Interrupt is a pulse */
++#define AR2315_LBCONF_ENABLE	0x00400000	/* =1 Falcon respond to LB */
 +
 +#define AR2315_LB_CLKSEL		0x0004
 +
-+#define AR2315_LBCLK_EXT        0x0001        /* use external clk for lb */
++#define AR2315_LBCLK_EXT	0x00000001	/* use external clk for lb */
 +
 +#define AR2315_LB_1MS			0x0008
 +
-+#define AR2315_LB1MS_MASK       0x3FFFF       /* # of AHB clk cycles in 1ms */
++#define AR2315_LB1MS_MASK	0x0003ffff	/* # of AHB clk cycles in 1ms */
 +
 +#define AR2315_LB_MISCCFG		0x000c
-+#define AR2315_LBM_TXD_EN       0x00000001    /* Enable TXD for fragments */
-+#define AR2315_LBM_RX_INTEN     0x00000002    /* Enable LB ints on RX ready */
-+#define AR2315_LBM_MBOXWR_INTEN 0x00000004    /* Enable LB ints on mbox wr */
-+#define AR2315_LBM_MBOXRD_INTEN 0x00000008    /* Enable LB ints on mbox rd */
-+#define AR2315_LMB_DESCSWAP_EN  0x00000010    /* Byte swap desc enable */
++
++#define AR2315_LBM_TXD_EN	0x00000001	/* Enable TXD for fragments */
++#define AR2315_LBM_RX_INTEN	0x00000002	/* Enable LB ints on RX ready */
++#define AR2315_LBM_MBOXWR_INTEN	0x00000004	/* Enable LB ints on mbox wr */
++#define AR2315_LBM_MBOXRD_INTEN	0x00000008	/* Enable LB ints on mbox rd */
++#define AR2315_LMB_DESCSWAP_EN	0x00000010	/* Byte swap desc enable */
 +#define AR2315_LBM_TIMEOUT_M	0x00ffff80
 +#define AR2315_LBM_TIMEOUT_S	7
-+#define AR2315_LBM_PORTMUX      0x07000000
++#define AR2315_LBM_PORTMUX	0x07000000
 +
 +#define AR2315_LB_RXTSOFF		0x0010
 +
 +#define AR2315_LB_TX_CHAIN_EN		0x0100
 +
-+#define AR2315_LB_TXEN_0        0x01
-+#define AR2315_LB_TXEN_1        0x02
-+#define AR2315_LB_TXEN_2        0x04
-+#define AR2315_LB_TXEN_3        0x08
++#define AR2315_LB_TXEN_0	0x00000001
++#define AR2315_LB_TXEN_1	0x00000002
++#define AR2315_LB_TXEN_2	0x00000004
++#define AR2315_LB_TXEN_3	0x00000008
 +
 +#define AR2315_LB_TX_CHAIN_DIS		0x0104
 +#define AR2315_LB_TX_DESC_PTR		0x0200
 +
 +#define AR2315_LB_RX_CHAIN_EN		0x0400
 +
-+#define AR2315_LB_RXEN          0x01
++#define AR2315_LB_RXEN		0x00000001
 +
 +#define AR2315_LB_RX_CHAIN_DIS		0x0404
 +#define AR2315_LB_RX_DESC_PTR		0x0408
@@ -1093,7 +1031,7 @@
 +#endif /* __ASM_MACH_ATH25_AR2315_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312_regs.h
-@@ -0,0 +1,223 @@
+@@ -0,0 +1,224 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1156,9 +1094,9 @@
 +/*
 + * Need these defines to determine true number of ethernet MACs
 + */
-+#define AR5312_AR5312_REV2      0x0052          /* AR5312 WMAC (AP31) */
-+#define AR5312_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
-+#define AR5312_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
++#define AR5312_AR5312_REV2	0x0052		/* AR5312 WMAC (AP31) */
++#define AR5312_AR5312_REV7	0x0057		/* AR5312 WMAC (AP30-040) */
++#define AR5312_AR2313_REV8	0x0058		/* AR2313 WMAC (AP43-030) */
 +
 +/* Reset/Timer Block Address Map */
 +#define AR5312_TIMER		0x0000 /* countdown timer */
@@ -1183,96 +1121,95 @@
 +#define AR5312_WDT_CTRL_RESET	0x00000002
 +
 +/* AR5312_ISR register bit field definitions */
-+#define AR5312_ISR_TIMER	0x0001
-+#define AR5312_ISR_AHBPROC	0x0002
-+#define AR5312_ISR_AHBDMA	0x0004
-+#define AR5312_ISR_GPIO		0x0008
-+#define AR5312_ISR_UART0	0x0010
-+#define AR5312_ISR_UART0DMA	0x0020
-+#define AR5312_ISR_WD		0x0040
-+#define AR5312_ISR_LOCAL	0x0080
++#define AR5312_ISR_TIMER	0x00000001
++#define AR5312_ISR_AHBPROC	0x00000002
++#define AR5312_ISR_AHBDMA	0x00000004
++#define AR5312_ISR_GPIO		0x00000008
++#define AR5312_ISR_UART0	0x00000010
++#define AR5312_ISR_UART0DMA	0x00000020
++#define AR5312_ISR_WD		0x00000040
++#define AR5312_ISR_LOCAL	0x00000080
 +
 +/* AR5312_RESET register bit field definitions */
-+#define AR5312_RESET_SYSTEM     0x00000001  /* cold reset full system */
-+#define AR5312_RESET_PROC       0x00000002  /* cold reset MIPS core */
-+#define AR5312_RESET_WLAN0      0x00000004  /* cold reset WLAN MAC and BB */
-+#define AR5312_RESET_EPHY0      0x00000008  /* cold reset ENET0 phy */
-+#define AR5312_RESET_EPHY1      0x00000010  /* cold reset ENET1 phy */
-+#define AR5312_RESET_ENET0      0x00000020  /* cold reset ENET0 mac */
-+#define AR5312_RESET_ENET1      0x00000040  /* cold reset ENET1 mac */
-+#define AR5312_RESET_UART0      0x00000100  /* cold reset UART0 (high speed) */
-+#define AR5312_RESET_WLAN1      0x00000200  /* cold reset WLAN MAC/BB */
-+#define AR5312_RESET_APB        0x00000400  /* cold reset APB (ar5312) */
-+#define AR5312_RESET_WARM_PROC  0x00001000  /* warm reset MIPS core */
-+#define AR5312_RESET_WARM_WLAN0_MAC 0x00002000  /* warm reset WLAN0 MAC */
-+#define AR5312_RESET_WARM_WLAN0_BB  0x00004000  /* warm reset WLAN0 BaseBand */
-+#define AR5312_RESET_NMI        0x00010000  /* send an NMI to the processor */
-+#define AR5312_RESET_WARM_WLAN1_MAC 0x00020000  /* warm reset WLAN1 mac */
-+#define AR5312_RESET_WARM_WLAN1_BB  0x00040000  /* warm reset WLAN1 baseband */
-+#define AR5312_RESET_LOCAL_BUS  0x00080000  /* reset local bus */
-+#define AR5312_RESET_WDOG       0x00100000  /* last reset was a watchdog */
++#define AR5312_RESET_SYSTEM		0x00000001  /* cold reset full system */
++#define AR5312_RESET_PROC		0x00000002  /* cold reset MIPS core */
++#define AR5312_RESET_WLAN0		0x00000004  /* cold reset WLAN MAC/BB */
++#define AR5312_RESET_EPHY0		0x00000008  /* cold reset ENET0 phy */
++#define AR5312_RESET_EPHY1		0x00000010  /* cold reset ENET1 phy */
++#define AR5312_RESET_ENET0		0x00000020  /* cold reset ENET0 MAC */
++#define AR5312_RESET_ENET1		0x00000040  /* cold reset ENET1 MAC */
++#define AR5312_RESET_UART0		0x00000100  /* cold reset UART0 */
++#define AR5312_RESET_WLAN1		0x00000200  /* cold reset WLAN MAC/BB */
++#define AR5312_RESET_APB		0x00000400  /* cold reset APB ar5312 */
++#define AR5312_RESET_WARM_PROC		0x00001000  /* warm reset MIPS core */
++#define AR5312_RESET_WARM_WLAN0_MAC	0x00002000  /* warm reset WLAN0 MAC */
++#define AR5312_RESET_WARM_WLAN0_BB	0x00004000  /* warm reset WLAN0 BB */
++#define AR5312_RESET_NMI		0x00010000  /* send an NMI to the CPU */
++#define AR5312_RESET_WARM_WLAN1_MAC	0x00020000  /* warm reset WLAN1 MAC */
++#define AR5312_RESET_WARM_WLAN1_BB	0x00040000  /* warm reset WLAN1 BB */
++#define AR5312_RESET_LOCAL_BUS		0x00080000  /* reset local bus */
++#define AR5312_RESET_WDOG		0x00100000  /* last reset was a wdt */
 +
-+#define AR5312_RESET_WMAC0_BITS \
-+	(AR5312_RESET_WLAN0 |\
-+	 AR5312_RESET_WARM_WLAN0_MAC |\
-+	 AR5312_RESET_WARM_WLAN0_BB)
++#define AR5312_RESET_WMAC0_BITS		(AR5312_RESET_WLAN0 |\
++					 AR5312_RESET_WARM_WLAN0_MAC |\
++					 AR5312_RESET_WARM_WLAN0_BB)
 +
-+#define AR5312_RESET_WMAC1_BITS \
-+	(AR5312_RESET_WLAN1 |\
-+	 AR5312_RESET_WARM_WLAN1_MAC |\
-+	 AR5312_RESET_WARM_WLAN1_BB)
++#define AR5312_RESET_WMAC1_BITS		(AR5312_RESET_WLAN1 |\
++					 AR5312_RESET_WARM_WLAN1_MAC |\
++					 AR5312_RESET_WARM_WLAN1_BB)
 +
 +/* AR5312_CLOCKCTL1 register bit field definitions */
-+#define AR5312_CLOCKCTL1_PREDIVIDE_MASK    0x00000030
-+#define AR5312_CLOCKCTL1_PREDIVIDE_SHIFT            4
-+#define AR5312_CLOCKCTL1_MULTIPLIER_MASK   0x00001f00
-+#define AR5312_CLOCKCTL1_MULTIPLIER_SHIFT           8
-+#define AR5312_CLOCKCTL1_DOUBLER_MASK      0x00010000
++#define AR5312_CLOCKCTL1_PREDIVIDE_MASK		0x00000030
++#define AR5312_CLOCKCTL1_PREDIVIDE_SHIFT	4
++#define AR5312_CLOCKCTL1_MULTIPLIER_MASK	0x00001f00
++#define AR5312_CLOCKCTL1_MULTIPLIER_SHIFT	8
++#define AR5312_CLOCKCTL1_DOUBLER_MASK		0x00010000
 +
 +/* Valid for AR5312 and AR2312 */
-+#define AR5312_CLOCKCTL1_PREDIVIDE_MASK    0x00000030
-+#define AR5312_CLOCKCTL1_PREDIVIDE_SHIFT            4
-+#define AR5312_CLOCKCTL1_MULTIPLIER_MASK   0x00001f00
-+#define AR5312_CLOCKCTL1_MULTIPLIER_SHIFT           8
-+#define AR5312_CLOCKCTL1_DOUBLER_MASK      0x00010000
++#define AR5312_CLOCKCTL1_PREDIVIDE_MASK		0x00000030
++#define AR5312_CLOCKCTL1_PREDIVIDE_SHIFT	4
++#define AR5312_CLOCKCTL1_MULTIPLIER_MASK	0x00001f00
++#define AR5312_CLOCKCTL1_MULTIPLIER_SHIFT	8
++#define AR5312_CLOCKCTL1_DOUBLER_MASK		0x00010000
 +
 +/* Valid for AR2313 */
-+#define AR2313_CLOCKCTL1_PREDIVIDE_MASK    0x00003000
-+#define AR2313_CLOCKCTL1_PREDIVIDE_SHIFT           12
-+#define AR2313_CLOCKCTL1_MULTIPLIER_MASK   0x001f0000
-+#define AR2313_CLOCKCTL1_MULTIPLIER_SHIFT          16
-+#define AR2313_CLOCKCTL1_DOUBLER_MASK      0x00000000
++#define AR2313_CLOCKCTL1_PREDIVIDE_MASK		0x00003000
++#define AR2313_CLOCKCTL1_PREDIVIDE_SHIFT	12
++#define AR2313_CLOCKCTL1_MULTIPLIER_MASK	0x001f0000
++#define AR2313_CLOCKCTL1_MULTIPLIER_SHIFT	16
++#define AR2313_CLOCKCTL1_DOUBLER_MASK		0x00000000
 +
 +/* AR5312_ENABLE register bit field definitions */
-+#define AR5312_ENABLE_WLAN0              0x0001
-+#define AR5312_ENABLE_ENET0              0x0002
-+#define AR5312_ENABLE_ENET1              0x0004
-+#define AR5312_ENABLE_UART_AND_WLAN1_PIO 0x0008   /* UART, and WLAN1 PIOs */
-+#define AR5312_ENABLE_WLAN1_DMA          0x0010   /* WLAN1 DMAs */
-+#define AR5312_ENABLE_WLAN1 \
-+	(AR5312_ENABLE_UART_AND_WLAN1_PIO |\
-+	 AR5312_ENABLE_WLAN1_DMA)
++#define AR5312_ENABLE_WLAN0			0x00000001
++#define AR5312_ENABLE_ENET0			0x00000002
++#define AR5312_ENABLE_ENET1			0x00000004
++#define AR5312_ENABLE_UART_AND_WLAN1_PIO	0x00000008/* UART & WLAN1 PIO */
++#define AR5312_ENABLE_WLAN1_DMA			0x00000010/* WLAN1 DMAs */
++#define AR5312_ENABLE_WLAN1		(AR5312_ENABLE_UART_AND_WLAN1_PIO |\
++					 AR5312_ENABLE_WLAN1_DMA)
 +
 +/* AR5312_REV register bit field definitions */
-+#define AR5312_REV_WMAC_MAJ    0xf000
-+#define AR5312_REV_WMAC_MAJ_S  12
-+#define AR5312_REV_WMAC_MIN    0x0f00
-+#define AR5312_REV_WMAC_MIN_S  8
-+#define AR5312_REV_MAJ         0x00f0
-+#define AR5312_REV_MAJ_S       4
-+#define AR5312_REV_MIN         0x000f
-+#define AR5312_REV_MIN_S       0
-+#define AR5312_REV_CHIP        (AR5312_REV_MAJ|AR5312_REV_MIN)
++#define AR5312_REV_WMAC_MAJ	0x0000f000
++#define AR5312_REV_WMAC_MAJ_S	12
++#define AR5312_REV_WMAC_MIN	0x00000f00
++#define AR5312_REV_WMAC_MIN_S	8
++#define AR5312_REV_MAJ		0x000000f0
++#define AR5312_REV_MAJ_S	4
++#define AR5312_REV_MIN		0x0000000f
++#define AR5312_REV_MIN_S	0
++#define AR5312_REV_CHIP		(AR5312_REV_MAJ|AR5312_REV_MIN)
 +
 +/* Major revision numbers, bits 7..4 of Revision ID register */
-+#define AR5312_REV_MAJ_AR5312          0x4
-+#define AR5312_REV_MAJ_AR2313          0x5
++#define AR5312_REV_MAJ_AR5312		0x4
++#define AR5312_REV_MAJ_AR2313		0x5
 +
 +/* Minor revision numbers, bits 3..0 of Revision ID register */
-+#define AR5312_REV_MIN_DUAL     0x0     /* Dual WLAN version */
-+#define AR5312_REV_MIN_SINGLE   0x1     /* Single WLAN version */
++#define AR5312_REV_MIN_DUAL		0x0	/* Dual WLAN version */
++#define AR5312_REV_MIN_SINGLE		0x1	/* Single WLAN version */
 +
-+/* ARM Flash Controller -- 3 flash banks with either x8 or x16 devices.  */
++/*
++ * ARM Flash Controller -- 3 flash banks with either x8 or x16 devices
++ */
 +#define AR5312_FLASHCTL0	0x0000
 +#define AR5312_FLASHCTL1	0x0004
 +#define AR5312_FLASHCTL2	0x0008
@@ -1308,7 +1245,9 @@
 +#define AR5312_FLASHCTL_ATR	0x80000000	/* Access == retry every */
 +#define AR5312_FLASHCTL_ATR4	0xc0000000	/* Access == retry every 4 */
 +
-+/* ARM SDRAM Controller -- just enough to determine memory size */
++/*
++ * ARM SDRAM Controller -- just enough to determine memory size
++ */
 +#define AR5312_MEM_CFG1		0x0004
 +
 +#define AR5312_MEM_CFG1_AC0_M	0x00000700	/* bank 0: SDRAM addr check */
@@ -1319,7 +1258,7 @@
 +#endif	/* __ASM_MACH_ATH25_AR5312_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.c
-@@ -0,0 +1,396 @@
+@@ -0,0 +1,393 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1333,7 +1272,7 @@
 + */
 +
 +/*
-+ * Platform devices for Atheros SoCs
++ * Platform devices for Atheros AR5312 SoCs
 + */
 +
 +#include <linux/init.h>
@@ -1608,12 +1547,10 @@
 +
 +static unsigned __init ar5312_cpu_frequency(void)
 +{
-+	unsigned int scratch;
-+	unsigned int predivide_mask, predivide_shift;
-+	unsigned int multiplier_mask, multiplier_shift;
-+	unsigned int clock_ctl1, predivide_select, predivisor, multiplier;
-+	unsigned int doubler_mask;
-+	u16 devid;
++	u32 scratch, devid, clock_ctl1;
++	u32 predivide_mask, multiplier_mask, doubler_mask;
++	unsigned predivide_shift, multiplier_shift;
++	unsigned predivide_select, predivisor, multiplier;
 +
 +	/* Trust the bootrom's idea of cpu frequency. */
 +	scratch = ar5312_rst_reg_read(AR5312_SCRATCH);
@@ -1621,8 +1558,7 @@
 +		return scratch;
 +
 +	devid = ar5312_rst_reg_read(AR5312_REV);
-+	devid &= AR5312_REV_MAJ;
-+	devid >>= AR5312_REV_MAJ_S;
++	devid = (devid & AR5312_REV_MAJ) >> AR5312_REV_MAJ_S;
 +	if (devid == AR5312_REV_MAJ_AR2313) {
 +		predivide_mask = AR2313_CLOCKCTL1_PREDIVIDE_MASK;
 +		predivide_shift = AR2313_CLOCKCTL1_PREDIVIDE_SHIFT;
@@ -1644,7 +1580,7 @@
 +	 *  sys_freq = cpu_freq / 4	  (used for APB clock, serial,
 +	 *				   flash, Timer, Watchdog Timer)
 +	 *
-+	 *  cnt_freq = cpu_freq / 2	   (use for CPU count/compare)
++	 *  cnt_freq = cpu_freq / 2	  (use for CPU count/compare)
 +	 *
 +	 * So, for example, with a PLL multiplier of 5, we have
 +	 *
@@ -1661,7 +1597,7 @@
 +	multiplier = (clock_ctl1 & multiplier_mask) >> multiplier_shift;
 +
 +	if (clock_ctl1 & doubler_mask)
-+		multiplier = multiplier << 1;
++		multiplier <<= 1;
 +
 +	return (40000000 / predivisor) * multiplier;
 +}
@@ -1718,7 +1654,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.c
-@@ -0,0 +1,307 @@
+@@ -0,0 +1,308 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1732,7 +1668,7 @@
 + */
 +
 +/*
-+ * Platform devices for Atheros SoCs
++ * Platform devices for Atheros AR2315 SoCs
 + */
 +
 +#include <linux/init.h>
@@ -1931,7 +1867,7 @@
 +	refdiv = clockctl1_predivide_table[refdiv];
 +	fdiv = ATH25_REG_MS(pllc_ctrl, AR2315_PLLC_FDBACK_DIV);
 +	divby2 = ATH25_REG_MS(pllc_ctrl, AR2315_PLLC_ADD_FDBACK_DIV) + 1;
-+	pllc_out = (40000000/refdiv)*(2*divby2)*fdiv;
++	pllc_out = (40000000 / refdiv) * (2 * divby2) * fdiv;
 +
 +	/* clkm input selected */
 +	switch (clock_ctl & AR2315_CPUCLK_CLK_SEL_M) {
@@ -1978,6 +1914,7 @@
 +	u32 devid;
 +	u32 config;
 +
++	/* Detect memory size */
 +	sdram_base = ioremap_nocache(AR2315_SDRAMCTL_BASE,
 +				     AR2315_SDRAMCTL_SIZE);
 +	memcfg = __raw_readl(sdram_base + AR2315_MEM_CFG);
@@ -2028,7 +1965,7 @@
 +}
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.h
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,22 @@
 +#ifndef __AR2315_H
 +#define __AR2315_H
 +
@@ -2042,32 +1979,18 @@
 +
 +#else
 +
-+static inline void ar2315_arch_init_irq(void)
-+{
-+}
-+
-+static inline void ar2315_init_devices(void)
-+{
-+}
-+
-+static inline void ar2315_plat_time_init(void)
-+{
-+}
-+
-+static inline void ar2315_plat_mem_setup(void)
-+{
-+}
-+
-+static inline void ar2315_arch_init(void)
-+{
-+}
++static inline void ar2315_arch_init_irq(void) {}
++static inline void ar2315_init_devices(void) {}
++static inline void ar2315_plat_time_init(void) {}
++static inline void ar2315_plat_mem_setup(void) {}
++static inline void ar2315_arch_init(void) {}
 +
 +#endif
 +
-+#endif
++#endif	/* __AR2315_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.h
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,22 @@
 +#ifndef __AR5312_H
 +#define __AR5312_H
 +
@@ -2081,29 +2004,15 @@
 +
 +#else
 +
-+static inline void ar5312_arch_init_irq(void)
-+{
-+}
-+
-+static inline void ar5312_init_devices(void)
-+{
-+}
-+
-+static inline void ar5312_plat_time_init(void)
-+{
-+}
-+
-+static inline void ar5312_plat_mem_setup(void)
-+{
-+}
-+
-+static inline void ar5312_arch_init(void)
-+{
-+}
++static inline void ar5312_arch_init_irq(void) {}
++static inline void ar5312_init_devices(void) {}
++static inline void ar5312_plat_time_init(void) {}
++static inline void ar5312_plat_mem_setup(void) {}
++static inline void ar5312_arch_init(void) {}
 +
 +#endif
 +
-+#endif
++#endif	/* __AR5312_H */
 --- /dev/null
 +++ b/arch/mips/ath25/devices.h
 @@ -0,0 +1,43 @@
@@ -2114,7 +2023,7 @@
 +
 +#define ATH25_REG_MS(_val, _field)	(((_val) & _field##_M) >> _field##_S)
 +
-+#define ATH25_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE + 7) /* C0_CAUSE: 0x8000 */
++#define ATH25_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE + 7)	/* C0_CAUSE: 0x8000 */
 +
 +enum ath25_soc_type {
 +	/* handled by ar5312.c */
