@@ -1531,3 +1531,298 @@
 +static void ar231x_check_link(struct net_device *dev);
 +
 +#endif	/* _AR2313_H_ */
+--- a/arch/mips/ath25/ar2315_regs.h
++++ b/arch/mips/ath25/ar2315_regs.h
+@@ -57,6 +57,9 @@
+ #define AR2315_PCI_EXT_BASE	0x80000000	/* PCI external */
+ #define AR2315_PCI_EXT_SIZE	0x40000000
+ 
++/* MII registers offset inside Ethernet MMR region */
++#define AR2315_ENET0_MII_BASE	(AR2315_ENET0_BASE + 0x14)
++
+ /*
+  * Cold reset register
+  */
+--- a/arch/mips/ath25/ar5312_regs.h
++++ b/arch/mips/ath25/ar5312_regs.h
+@@ -66,6 +66,10 @@
+ #define AR5312_AR5312_REV7      0x0057          /* AR5312 WMAC (AP30-040) */
+ #define AR5312_AR2313_REV8      0x0058          /* AR2313 WMAC (AP43-030) */
+ 
++/* MII registers offset inside Ethernet MMR region */
++#define AR5312_ENET0_MII_BASE	(AR5312_ENET0_BASE + 0x14)
++#define AR5312_ENET1_MII_BASE	(AR5312_ENET1_BASE + 0x14)
++
+ /* Reset/Timer Block Address Map */
+ #define AR5312_TIMER		0x0000 /* countdown timer */
+ #define AR5312_RELOAD		0x0004 /* timer reload value */
+--- a/arch/mips/ath25/ar2315.c
++++ b/arch/mips/ath25/ar2315.c
+@@ -141,6 +141,8 @@ static void ar2315_irq_dispatch(void)
+ 
+ 	if (pending & CAUSEF_IP3)
+ 		do_IRQ(AR2315_IRQ_WLAN0);
++	else if (pending & CAUSEF_IP4)
++		do_IRQ(AR2315_IRQ_ENET0);
+ #ifdef CONFIG_PCI_AR2315
+ 	else if (pending & CAUSEF_IP5)
+ 		do_IRQ(AR2315_IRQ_LCBUS_PCI);
+@@ -174,6 +176,29 @@ void __init ar2315_arch_init_irq(void)
+ 	ar2315_misc_irq_domain = domain;
+ }
+ 
++static void ar2315_device_reset_set(u32 mask)
++{
++	u32 val;
++
++	val = ar2315_rst_reg_read(AR2315_RESET);
++	ar2315_rst_reg_write(AR2315_RESET, val | mask);
++}
++
++static void ar2315_device_reset_clear(u32 mask)
++{
++	u32 val;
++
++	val = ar2315_rst_reg_read(AR2315_RESET);
++	ar2315_rst_reg_write(AR2315_RESET, val & ~mask);
++}
++
++static struct ar231x_eth ar2315_eth_data = {
++	.reset_set = ar2315_device_reset_set,
++	.reset_clear = ar2315_device_reset_clear,
++	.reset_mac = AR2315_RESET_ENET0,
++	.reset_phy = AR2315_RESET_EPHY0,
++};
++
+ static struct resource ar2315_gpio_res[] = {
+ 	{
+ 		.name = "ar2315-gpio",
+@@ -210,6 +235,11 @@ void __init ar2315_init_devices(void)
+ 	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
+ 	platform_device_register(&ar2315_gpio);
+ 
++	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
++	ath25_add_ethernet(0, AR2315_ENET0_BASE, "eth0_mii",
++			   AR2315_ENET0_MII_BASE, AR2315_IRQ_ENET0,
++			   &ar2315_eth_data);
++
+ 	ath25_add_wmac(0, AR2315_WLAN0_BASE, AR2315_IRQ_WLAN0);
+ }
+ 
+--- a/arch/mips/ath25/ar5312.c
++++ b/arch/mips/ath25/ar5312.c
+@@ -137,6 +137,10 @@ static void ar5312_irq_dispatch(void)
+ 
+ 	if (pending & CAUSEF_IP2)
+ 		do_IRQ(AR5312_IRQ_WLAN0);
++	else if (pending & CAUSEF_IP3)
++		do_IRQ(AR5312_IRQ_ENET0);
++	else if (pending & CAUSEF_IP4)
++		do_IRQ(AR5312_IRQ_ENET1);
+ 	else if (pending & CAUSEF_IP5)
+ 		do_IRQ(AR5312_IRQ_WLAN1);
+ 	else if (pending & CAUSEF_IP6)
+@@ -168,6 +172,36 @@ void __init ar5312_arch_init_irq(void)
+ 	ar5312_misc_irq_domain = domain;
+ }
+ 
++static void ar5312_device_reset_set(u32 mask)
++{
++	u32 val;
++
++	val = ar5312_rst_reg_read(AR5312_RESET);
++	ar5312_rst_reg_write(AR5312_RESET, val | mask);
++}
++
++static void ar5312_device_reset_clear(u32 mask)
++{
++	u32 val;
++
++	val = ar5312_rst_reg_read(AR5312_RESET);
++	ar5312_rst_reg_write(AR5312_RESET, val & ~mask);
++}
++
++static struct ar231x_eth ar5312_eth0_data = {
++	.reset_set = ar5312_device_reset_set,
++	.reset_clear = ar5312_device_reset_clear,
++	.reset_mac = AR5312_RESET_ENET0,
++	.reset_phy = AR5312_RESET_EPHY0,
++};
++
++static struct ar231x_eth ar5312_eth1_data = {
++	.reset_set = ar5312_device_reset_set,
++	.reset_clear = ar5312_device_reset_clear,
++	.reset_mac = AR5312_RESET_ENET1,
++	.reset_phy = AR5312_RESET_EPHY1,
++};
++
+ static struct physmap_flash_data ar5312_flash_data = {
+ 	.width = 2,
+ };
+@@ -248,6 +282,7 @@ static void __init ar5312_flash_init(voi
+ void __init ar5312_init_devices(void)
+ {
+ 	struct ath25_boarddata *config;
++	u8 *c;
+ 
+ 	ar5312_flash_init();
+ 
+@@ -271,8 +306,30 @@ void __init ar5312_init_devices(void)
+ 
+ 	platform_device_register(&ar5312_gpio);
+ 
++	/* Fix up MAC addresses if necessary */
++	if (is_broadcast_ether_addr(config->enet0_mac))
++		ether_addr_copy(config->enet0_mac, config->enet1_mac);
++
++	/* If ENET0 and ENET1 have the same mac address,
++	 * increment the one from ENET1 */
++	if (ether_addr_equal(config->enet0_mac, config->enet1_mac)) {
++		c = config->enet1_mac + 5;
++		while ((c >= config->enet1_mac) && !(++(*c)))
++			c--;
++	}
++
+ 	switch (ath25_soc) {
+ 	case ATH25_SOC_AR5312:
++		ar5312_eth0_data.macaddr = config->enet0_mac;
++		ath25_add_ethernet(0, AR5312_ENET0_BASE, "eth0_mii",
++				   AR5312_ENET0_MII_BASE, AR5312_IRQ_ENET0,
++				   &ar5312_eth0_data);
++
++		ar5312_eth1_data.macaddr = config->enet1_mac;
++		ath25_add_ethernet(1, AR5312_ENET1_BASE, "eth1_mii",
++				   AR5312_ENET1_MII_BASE, AR5312_IRQ_ENET1,
++				   &ar5312_eth1_data);
++
+ 		if (!ath25_board.radio)
+ 			return;
+ 
+@@ -281,8 +338,18 @@ void __init ar5312_init_devices(void)
+ 
+ 		ath25_add_wmac(0, AR5312_WLAN0_BASE, AR5312_IRQ_WLAN0);
+ 		break;
++	/*
++	 * AR2312/3 ethernet uses the PHY of ENET0, but the MAC
++	 * of ENET1. Atheros calls it 'twisted' for a reason :)
++	 */
+ 	case ATH25_SOC_AR2312:
+ 	case ATH25_SOC_AR2313:
++		ar5312_eth1_data.reset_phy = ar5312_eth0_data.reset_phy;
++		ar5312_eth1_data.macaddr = config->enet0_mac;
++		ath25_add_ethernet(1, AR5312_ENET1_BASE, "eth0_mii",
++				   AR5312_ENET0_MII_BASE, AR5312_IRQ_ENET1,
++				   &ar5312_eth1_data);
++
+ 		if (!ath25_board.radio)
+ 			return;
+ 		break;
+--- a/arch/mips/ath25/devices.h
++++ b/arch/mips/ath25/devices.h
+@@ -30,6 +30,8 @@ extern struct ar231x_board_config ath25_
+ extern void (*ath25_irq_dispatch)(void);
+ 
+ int ath25_find_config(phys_addr_t offset, unsigned long size);
++int ath25_add_ethernet(int nr, u32 base, const char *mii_name, u32 mii_base,
++		       int irq, void *pdata);
+ void ath25_serial_setup(u32 mapbase, int irq, unsigned int uartclk);
+ int ath25_add_wmac(int nr, u32 base, int irq);
+ 
+--- a/arch/mips/ath25/devices.c
++++ b/arch/mips/ath25/devices.c
+@@ -14,6 +14,51 @@
+ struct ar231x_board_config ath25_board;
+ enum ath25_soc_type ath25_soc = ATH25_SOC_UNKNOWN;
+ 
++static struct resource ath25_eth0_res[] = {
++	{
++		.name = "eth0_membase",
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.name = "eth0_mii",
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.name = "eth0_irq",
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct resource ath25_eth1_res[] = {
++	{
++		.name = "eth1_membase",
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.name = "eth1_mii",
++		.flags = IORESOURCE_MEM,
++	},
++	{
++		.name = "eth1_irq",
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device ath25_eth[] = {
++	{
++		.id = 0,
++		.name = "ar231x-eth",
++		.resource = ath25_eth0_res,
++		.num_resources = ARRAY_SIZE(ath25_eth0_res)
++	},
++	{
++		.id = 1,
++		.name = "ar231x-eth",
++		.resource = ath25_eth1_res,
++		.num_resources = ARRAY_SIZE(ath25_eth1_res)
++	}
++};
++
+ static struct resource ath25_wmac0_res[] = {
+ 	{
+ 		.name = "wmac0_membase",
+@@ -72,6 +117,25 @@ const char *get_system_type(void)
+ 	return soc_type_strings[ath25_soc];
+ }
+ 
++int __init ath25_add_ethernet(int nr, u32 base, const char *mii_name,
++			      u32 mii_base, int irq, void *pdata)
++{
++	struct resource *res;
++
++	ath25_eth[nr].dev.platform_data = pdata;
++	res = &ath25_eth[nr].resource[0];
++	res->start = base;
++	res->end = base + 0x2000 - 1;
++	res++;
++	res->name = mii_name;
++	res->start = mii_base;
++	res->end = mii_base + 8 - 1;
++	res++;
++	res->start = irq;
++	res->end = irq;
++	return platform_device_register(&ath25_eth[nr]);
++}
++
+ void __init ath25_serial_setup(u32 mapbase, int irq, unsigned int uartclk)
+ {
+ 	struct uart_port s;
+--- a/arch/mips/include/asm/mach-ath25/ath25_platform.h
++++ b/arch/mips/include/asm/mach-ath25/ath25_platform.h
+@@ -70,4 +70,15 @@ struct ar231x_board_config {
+ 	const char *radio;
+ };
+ 
++/*
++ * Platform device information for the Ethernet MAC
++ */
++struct ar231x_eth {
++	void (*reset_set)(u32);
++	void (*reset_clear)(u32);
++	u32 reset_mac;
++	u32 reset_phy;
++	char *macaddr;
++};
++
+ #endif /* __ASM_MACH_ATH25_PLATFORM_H */

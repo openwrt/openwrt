@@ -60,10 +60,10 @@
  obj-$(CONFIG_SOC_AR2315) += ar2315.o
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -107,6 +107,7 @@ config ATH25
+@@ -106,6 +106,7 @@ config ATH25
+ 	select SYS_HAS_CPU_MIPS32_R1
  	select SYS_SUPPORTS_BIG_ENDIAN
  	select SYS_SUPPORTS_32BIT_KERNEL
- 	select ARCH_REQUIRE_GPIOLIB
 +	select SYS_HAS_EARLY_PRINTK
  	help
  	  Support for AR231x and AR531x based boards

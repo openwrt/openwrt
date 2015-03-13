@@ -10,9 +10,18 @@
  config PCI_AR2315
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -240,6 +240,32 @@ static struct platform_device ar2315_wdt
- 	.num_resources = ARRAY_SIZE(ar2315_wdt_res)
- };
+@@ -24,6 +24,8 @@
+ #include <linux/bitops.h>
+ #include <linux/irqdomain.h>
+ #include <linux/reboot.h>
++#include <linux/delay.h>
++#include <linux/gpio.h>
+ #include <asm/bootinfo.h>
+ #include <asm/reboot.h>
+ #include <asm/time.h>
+@@ -172,11 +174,42 @@ void __init ar2315_arch_init_irq(void)
+ 	ar2315_misc_irq_domain = domain;
+ }
  
 +static struct resource ar2315_gpio_res[] = {
 +	{
@@ -40,21 +49,30 @@
 +	.num_resources = ARRAY_SIZE(ar2315_gpio_res)
 +};
 +
- #ifdef CONFIG_LEDS_GPIO
- static struct gpio_led ar2315_leds[6];
- static struct gpio_led_platform_data ar2315_led_data = {
-@@ -290,6 +316,11 @@ void __init ar2315_init_devices(void)
+ void __init ar2315_init_devices(void)
+ {
+ 	/* Find board configuration */
  	ath25_find_config(AR2315_SPI_READ_BASE, AR2315_SPI_READ_SIZE);
- 	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
  
 +	ar2315_gpio_res[1].start = irq_create_mapping(ar2315_misc_irq_domain,
 +						      AR2315_MISC_IRQ_GPIO);
 +	ar2315_gpio_res[1].end = ar2315_gpio_res[1].start;
 +	platform_device_register(&ar2315_gpio);
 +
- 	ar2315_init_gpio_leds();
+ 	ath25_add_wmac(0, AR2315_WLAN0_BASE, AR2315_IRQ_WLAN0);
+ }
  
- 	ar2315_wdt_res[1].start = irq_create_mapping(ar2315_misc_irq_domain,
+@@ -192,8 +225,8 @@ static void ar2315_restart(char *command
+ 	/* Cold reset does not work on the AR2315/6, use the GPIO reset bits
+ 	 * a workaround. Give it some time to attempt a gpio based hardware
+ 	 * reset (atheros reference design workaround) */
+-
+-	/* TODO: implement the GPIO reset workaround */
++	gpio_request_one(AR2315_RESET_GPIO, GPIOF_OUT_INIT_LOW, "Reset");
++	mdelay(100);
+ 
+ 	/* Some boards (e.g. Senao EOC-2610) don't implement the reset logic
+ 	 * workaround. Attempt to jump to the mips reset location -
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -112,6 +112,13 @@ config GPIO_MAX730X
@@ -317,3 +335,29 @@
 +	return platform_driver_register(&ar2315_gpio_driver);
 +}
 +subsys_initcall(ar2315_gpio_init);
+--- a/arch/mips/ath25/devices.h
++++ b/arch/mips/ath25/devices.h
+@@ -1,6 +1,11 @@
+ #ifndef __ATH25_DEVICES_H
+ #define __ATH25_DEVICES_H
+ 
++#define AR231X_GPIO_IRQ_BASE		0x30
++
++/* GPIO number for AR2315/16 reset issue workaround */
++#define AR2315_RESET_GPIO		5
++
+ #define ATH25_REG_MS(_val, _field)	(((_val) & _field##_M) >> _field##_S)
+ 
+ #define ATH25_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE + 7) /* C0_CAUSE: 0x8000 */
+--- a/arch/mips/ath25/ar2315_regs.h
++++ b/arch/mips/ath25/ar2315_regs.h
+@@ -322,6 +322,9 @@
+ #define AR2315_AMBACLK_CLK_DIV_M	0x0000000c
+ #define AR2315_AMBACLK_CLK_DIV_S	2
+ 
++/* GPIO MMR base address */
++#define AR2315_GPIO			0x0088
++
+ /*
+  *  PCI Clock Control
+  */

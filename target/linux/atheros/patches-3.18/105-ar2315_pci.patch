@@ -537,10 +537,10 @@
 +	default y
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -144,6 +144,10 @@ static void ar2315_irq_dispatch(void)
+@@ -139,6 +139,10 @@ static void ar2315_irq_dispatch(void)
+ 
+ 	if (pending & CAUSEF_IP3)
  		do_IRQ(AR2315_IRQ_WLAN0);
- 	else if (pending & CAUSEF_IP4)
- 		do_IRQ(AR2315_IRQ_ENET0);
 +#ifdef CONFIG_PCI_AR2315
 +	else if (pending & CAUSEF_IP5)
 +		do_IRQ(AR2315_IRQ_LCBUS_PCI);
@@ -548,7 +548,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC);
  	else if (pending & CAUSEF_IP7)
-@@ -429,10 +433,62 @@ void __init ar2315_plat_mem_setup(void)
+@@ -303,10 +307,62 @@ void __init ar2315_plat_mem_setup(void)
  	_machine_restart = ar2315_restart;
  }
  
