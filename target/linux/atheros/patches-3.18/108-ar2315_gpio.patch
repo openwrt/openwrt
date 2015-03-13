@@ -2,7 +2,7 @@
 +++ b/arch/mips/ath25/Kconfig
 @@ -7,6 +7,7 @@ config SOC_AR5312
  config SOC_AR2315
- 	bool "Atheros 2315+ support"
+ 	bool "Atheros AR2315+ SoC support"
  	depends on ATH25
 +	select GPIO_AR2315
  	default y
@@ -348,16 +348,16 @@
 +
  #define ATH25_REG_MS(_val, _field)	(((_val) & _field##_M) >> _field##_S)
  
- #define ATH25_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE + 7) /* C0_CAUSE: 0x8000 */
+ #define ATH25_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE + 7)	/* C0_CAUSE: 0x8000 */
 --- a/arch/mips/ath25/ar2315_regs.h
 +++ b/arch/mips/ath25/ar2315_regs.h
-@@ -322,6 +322,9 @@
- #define AR2315_AMBACLK_CLK_DIV_M	0x0000000c
- #define AR2315_AMBACLK_CLK_DIV_S	2
+@@ -315,6 +315,9 @@
+ #define AR2315_MEM_CFG_BANKADDR_BITS_M	0x00000018
+ #define AR2315_MEM_CFG_BANKADDR_BITS_S	3
  
 +/* GPIO MMR base address */
 +#define AR2315_GPIO			0x0088
 +
  /*
-  *  PCI Clock Control
+  * Local Bus Interface Registers
   */
