@@ -628,7 +628,7 @@
 +
 +#endif /* __ASM_MACH_ATH25_WAR_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ath25/ar2315_regs.h
++++ b/arch/mips/ath25/ar2315_regs.h
 @@ -0,0 +1,480 @@
 +/*
 + * Register definitions for AR2315+
@@ -1111,7 +1111,7 @@
 +
 +#endif /* __ASM_MACH_ATH25_AR2315_REGS_H */
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ath25/ar5312_regs.h
++++ b/arch/mips/ath25/ar5312_regs.h
 @@ -0,0 +1,227 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
@@ -1377,10 +1377,10 @@
 +#include <linux/io.h>
 +
 +#include <ath25_platform.h>
-+#include <ar5312_regs.h>
-+#include <ar231x.h>
++
 +#include "devices.h"
 +#include "ar5312.h"
++#include "ar5312_regs.h"
 +
 +static void __iomem *ar5312_rst_base;
 +
@@ -1863,10 +1863,10 @@
 +#include <linux/io.h>
 +
 +#include <ath25_platform.h>
-+#include <ar2315_regs.h>
-+#include <ar231x.h>
++
 +#include "devices.h"
 +#include "ar2315.h"
++#include "ar2315_regs.h"
 +
 +static void __iomem *ar2315_rst_base;
 +
@@ -2336,26 +2336,15 @@
 +
 +#endif
 --- /dev/null
-+++ b/arch/mips/include/asm/mach-ath25/ar231x.h
-@@ -0,0 +1,13 @@
-+#ifndef __ASM_MACH_ATH25_AR231X_H
-+#define __ASM_MACH_ATH25_AR231X_H
-+
-+#include <linux/types.h>
-+#include <linux/io.h>
++++ b/arch/mips/ath25/devices.h
+@@ -0,0 +1,44 @@
++#ifndef __ATH25_DEVICES_H
++#define __ATH25_DEVICES_H
 +
 +#define AR231X_MISC_IRQ_BASE		0x20
 +#define AR231X_GPIO_IRQ_BASE		0x30
 +
-+/* Software's idea of interrupts handled by "CPU Interrupt Controller" */
-+#define AR231X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE+7) /* C0_CAUSE: 0x8000 */
-+
-+#endif	/* __ASM_MACH_ATH25_AR231X_H */
---- /dev/null
-+++ b/arch/mips/ath25/devices.h
-@@ -0,0 +1,39 @@
-+#ifndef __ATH25_DEVICES_H
-+#define __ATH25_DEVICES_H
++#define AR231X_IRQ_CPU_CLOCK	(MIPS_CPU_IRQ_BASE + 7) /* C0_CAUSE: 0x8000 */
 +
 +enum ath25_soc_type {
 +	/* handled by ar5312.c */
@@ -2395,7 +2384,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ath25/devices.c
-@@ -0,0 +1,192 @@
+@@ -0,0 +1,191 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -2405,7 +2394,6 @@
 +#include <asm/bootinfo.h>
 +
 +#include <ath25_platform.h>
-+#include <ar231x.h>
 +#include "devices.h"
 +#include "ar5312.h"
 +#include "ar2315.h"
