@@ -520,7 +520,7 @@
 +	default y
 --- a/arch/mips/ath25/ar2315.c
 +++ b/arch/mips/ath25/ar2315.c
-@@ -116,6 +116,10 @@ static void ar2315_irq_dispatch(void)
+@@ -137,6 +137,10 @@ static void ar2315_irq_dispatch(void)
  		do_IRQ(AR2315_IRQ_WLAN0_INTRS);
  	else if (pending & CAUSEF_IP4)
  		do_IRQ(AR2315_IRQ_ENET0_INTRS);
@@ -531,7 +531,7 @@
  	else if (pending & CAUSEF_IP2)
  		do_IRQ(AR2315_IRQ_MISC_INTRS);
  	else if (pending & CAUSEF_IP7)
-@@ -423,8 +427,60 @@ void __init ar2315_plat_mem_setup(void)
+@@ -450,8 +454,60 @@ void __init ar2315_plat_mem_setup(void)
  	_machine_restart = ar2315_restart;
  }
  
@@ -566,25 +566,25 @@
 +#ifdef CONFIG_PCI_AR2315
 +	if (ath25_soc == ATH25_SOC_AR2315) {
 +		/* Reset PCI DMA logic */
-+		ar231x_mask_reg(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
++		ar2315_rst_reg_mask(AR2315_RESET, 0, AR2315_RESET_PCIDMA);
 +		msleep(20);
-+		ar231x_mask_reg(AR2315_RESET, AR2315_RESET_PCIDMA, 0);
++		ar2315_rst_reg_mask(AR2315_RESET, AR2315_RESET_PCIDMA, 0);
 +		msleep(20);
 +
 +		/* Configure endians */
-+		ar231x_mask_reg(AR2315_ENDIAN_CTL, 0, AR2315_CONFIG_PCIAHB |
-+				AR2315_CONFIG_PCIAHB_BRIDGE);
++		ar2315_rst_reg_mask(AR2315_ENDIAN_CTL, 0, AR2315_CONFIG_PCIAHB |
++				    AR2315_CONFIG_PCIAHB_BRIDGE);
 +
 +		/* Configure as PCI host with DMA */
-+		ar231x_write_reg(AR2315_PCICLK, AR2315_PCICLK_PLLC_CLKM |
-+				 (AR2315_PCICLK_IN_FREQ_DIV_6 <<
-+				  AR2315_PCICLK_DIV_S));
-+		ar231x_mask_reg(AR2315_AHB_ARB_CTL, 0, AR2315_ARB_PCI);
-+		ar231x_mask_reg(AR2315_IF_CTL, AR2315_IF_PCI_CLK_MASK |
-+				AR2315_IF_MASK, AR2315_IF_PCI |
-+				AR2315_IF_PCI_HOST | AR2315_IF_PCI_INTR |
-+				(AR2315_IF_PCI_CLK_OUTPUT_CLK <<
-+				 AR2315_IF_PCI_CLK_SHIFT));
++		ar2315_rst_reg_write(AR2315_PCICLK, AR2315_PCICLK_PLLC_CLKM |
++				  (AR2315_PCICLK_IN_FREQ_DIV_6 <<
++				   AR2315_PCICLK_DIV_S));
++		ar2315_rst_reg_mask(AR2315_AHB_ARB_CTL, 0, AR2315_ARB_PCI);
++		ar2315_rst_reg_mask(AR2315_IF_CTL, AR2315_IF_PCI_CLK_MASK |
++				    AR2315_IF_MASK, AR2315_IF_PCI |
++				    AR2315_IF_PCI_HOST | AR2315_IF_PCI_INTR |
++				    (AR2315_IF_PCI_CLK_OUTPUT_CLK <<
++				     AR2315_IF_PCI_CLK_SHIFT));
 +
 +		platform_device_register_simple("ar2315-pci", -1,
 +						ar2315_pci_res,
