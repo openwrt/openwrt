@@ -77,7 +77,7 @@
 +obj-$(CONFIG_SOC_AR2315) += ar2315.o
 --- /dev/null
 +++ b/arch/mips/ath25/board.c
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,234 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -274,8 +274,10 @@
 +	_machine_halt = ath25_halt;
 +	pm_power_off = ath25_halt;
 +
-+	ar5312_plat_mem_setup();
-+	ar2315_plat_mem_setup();
++	if (is_ar5312())
++		ar5312_plat_mem_setup();
++	else
++		ar2315_plat_mem_setup();
 +
 +	/* Disable data watchpoints */
 +	write_c0_watchlo0(0);
@@ -288,8 +290,10 @@
 +
 +void __init plat_time_init(void)
 +{
-+	ar5312_plat_time_init();
-+	ar2315_plat_time_init();
++	if (is_ar5312())
++		ar5312_plat_time_init();
++	else
++		ar2315_plat_time_init();
 +}
 +
 +unsigned int __cpuinit get_c0_compare_int(void)
@@ -303,13 +307,14 @@
 +	mips_cpu_irq_init();
 +
 +	/* Initialize interrupt controllers */
-+	ar5312_arch_init_irq();
-+	ar2315_arch_init_irq();
++	if (is_ar5312())
++		ar5312_arch_init_irq();
++	else
++		ar2315_arch_init_irq();
 +}
-+
 --- /dev/null
 +++ b/arch/mips/ath25/prom.c
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,40 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -337,11 +342,14 @@
 +#include <asm/addrspace.h>
 +#include "ar5312.h"
 +#include "ar2315.h"
++#include "devices.h"
 +
 +void __init prom_init(void)
 +{
-+	ar5312_prom_init();
-+	ar2315_prom_init();
++	if (is_ar5312())
++		ar5312_prom_init();
++	else
++		ar2315_prom_init();
 +}
 +
 +void __init prom_free_prom_memory(void)
@@ -1478,7 +1486,7 @@
 +#endif	/* __ASM_MACH_ATH25_AR5312_REGS_H */
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.c
-@@ -0,0 +1,467 @@
+@@ -0,0 +1,450 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -1606,9 +1614,6 @@
 +{
 +	int i;
 +
-+	if (!is_ar5312())
-+		return;
-+
 +	ath25_irq_dispatch = ar5312_irq_dispatch;
 +	for (i = 0; i < AR5312_MISC_IRQ_COUNT; i++) {
 +		int irq = AR231X_MISC_IRQ_BASE + i;
@@ -1719,14 +1724,11 @@
 +	return (char *)KSEG1ADDR(AR5312_FLASH + 0x800000);
 +}
 +
-+int __init ar5312_init_devices(void)
++void __init ar5312_init_devices(void)
 +{
 +	struct ath25_boarddata *config;
 +	u32 fctl = 0;
 +	u8 *c;
-+
-+	if (!is_ar5312())
-+		return 0;
 +
 +	/* Locate board/radio config data */
 +	ath25_find_config(ar5312_flash_limit());
@@ -1788,7 +1790,7 @@
 +				   &ar5312_eth1_data);
 +
 +		if (!ath25_board.radio)
-+			return 0;
++			return;
 +
 +		if (!(config->flags & BD_WLAN0))
 +			break;
@@ -1808,7 +1810,7 @@
 +				   &ar5312_eth1_data);
 +
 +		if (!ath25_board.radio)
-+			return 0;
++			return;
 +		break;
 +	default:
 +		break;
@@ -1816,8 +1818,6 @@
 +
 +	if (config->flags & BD_WLAN1)
 +		ath25_add_wmac(1, AR5312_WLAN1, AR5312_IRQ_WLAN1_INTRS);
-+
-+	return 0;
 +}
 +
 +static void ar5312_restart(char *command)
@@ -1901,9 +1901,6 @@
 +
 +void __init ar5312_plat_time_init(void)
 +{
-+	if (!is_ar5312())
-+		return;
-+
 +	mips_hpt_frequency = ar5312_cpu_frequency() / 2;
 +}
 +
@@ -1912,9 +1909,6 @@
 +{
 +	u32 memsize, memcfg, bank0AC, bank1AC;
 +	u32 devid;
-+
-+	if (!is_ar5312())
-+		return;
 +
 +	/* Detect memory size */
 +	memcfg = ar231x_read_reg(AR5312_MEM_CFG1);
@@ -1933,9 +1927,6 @@
 +
 +void __init ar5312_plat_mem_setup(void)
 +{
-+	if (!is_ar5312())
-+		return;
-+
 +	/* Clear any lingering AHB errors */
 +	ar231x_read_reg(AR5312_PROCADDR);
 +	ar231x_read_reg(AR5312_DMAADDR);
@@ -1948,7 +1939,7 @@
 +
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.c
-@@ -0,0 +1,418 @@
+@@ -0,0 +1,401 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -2078,9 +2069,6 @@
 +void __init ar2315_arch_init_irq(void)
 +{
 +	int i;
-+
-+	if (!is_ar2315())
-+		return;
 +
 +	ath25_irq_dispatch = ar2315_irq_dispatch;
 +	for (i = 0; i < AR2315_MISC_IRQ_COUNT; i++) {
@@ -2212,11 +2200,8 @@
 +}
 +#endif
 +
-+int __init ar2315_init_devices(void)
++void __init ar2315_init_devices(void)
 +{
-+	if (!is_ar2315())
-+		return 0;
-+
 +	/* Find board configuration */
 +	ath25_find_config(ar2315_flash_limit());
 +	ar2315_eth_data.macaddr = ath25_board.config->enet0_mac;
@@ -2227,8 +2212,6 @@
 +	ath25_add_ethernet(0, AR2315_ENET0, "eth0_mii", AR2315_ENET0_MII,
 +			   AR2315_IRQ_ENET0_INTRS, &ar2315_eth_data);
 +	ath25_add_wmac(0, AR2315_WLAN0, AR2315_IRQ_WLAN0_INTRS);
-+
-+	return 0;
 +}
 +
 +static void ar2315_restart(char *command)
@@ -2308,9 +2291,6 @@
 +
 +void __init ar2315_plat_time_init(void)
 +{
-+	if (!is_ar2315())
-+		return;
-+
 +	mips_hpt_frequency = ar2315_cpu_frequency() / 2;
 +}
 +
@@ -2318,9 +2298,6 @@
 +ar2315_prom_init(void)
 +{
 +	u32 memsize, memcfg, devid;
-+
-+	if (!is_ar2315())
-+		return;
 +
 +	memcfg = ar231x_read_reg(AR2315_MEM_CFG);
 +	memsize   = 1 + ((memcfg & SDRAM_DATA_WIDTH_M) >> SDRAM_DATA_WIDTH_S);
@@ -2353,9 +2330,6 @@
 +{
 +	u32 config;
 +
-+	if (!is_ar2315())
-+		return;
-+
 +	/* Clear any lingering AHB errors */
 +	config = read_c0_config();
 +	write_c0_config(config & ~0x3);
@@ -2369,14 +2343,14 @@
 +}
 --- /dev/null
 +++ b/arch/mips/ath25/ar2315.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,36 @@
 +#ifndef __AR2315_H
 +#define __AR2315_H
 +
 +#ifdef CONFIG_SOC_AR2315
 +
 +void ar2315_arch_init_irq(void);
-+int ar2315_init_devices(void);
++void ar2315_init_devices(void);
 +void ar2315_plat_time_init(void);
 +void ar2315_prom_init(void);
 +void ar2315_plat_mem_setup(void);
@@ -2387,9 +2361,8 @@
 +{
 +}
 +
-+static inline int ar2315_init_devices(void)
++static inline void ar2315_init_devices(void)
 +{
-+	return 0;
 +}
 +
 +static inline void ar2315_plat_time_init(void)
@@ -2409,14 +2382,14 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ath25/ar5312.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,36 @@
 +#ifndef __AR5312_H
 +#define __AR5312_H
 +
 +#ifdef CONFIG_SOC_AR5312
 +
 +void ar5312_arch_init_irq(void);
-+int ar5312_init_devices(void);
++void ar5312_init_devices(void);
 +void ar5312_plat_time_init(void);
 +void ar5312_prom_init(void);
 +void ar5312_plat_mem_setup(void);
@@ -2427,9 +2400,8 @@
 +{
 +}
 +
-+static inline int ar5312_init_devices(void)
++static inline void ar5312_init_devices(void)
 +{
-+	return 0;
 +}
 +
 +static inline void ar5312_plat_time_init(void)
@@ -2532,7 +2504,7 @@
 +#endif
 --- /dev/null
 +++ b/arch/mips/ath25/devices.c
-@@ -0,0 +1,178 @@
+@@ -0,0 +1,180 @@
 +#include <linux/kernel.h>
 +#include <linux/init.h>
 +#include <linux/serial.h>
@@ -2704,8 +2676,10 @@
 +
 +static int __init ath25_register_devices(void)
 +{
-+	ar5312_init_devices();
-+	ar2315_init_devices();
++	if (is_ar5312())
++		ar5312_init_devices();
++	else
++		ar2315_init_devices();
 +
 +	return 0;
 +}
