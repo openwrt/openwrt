@@ -32,7 +32,7 @@ GRUB_SERIAL:=$(call qstrip,$(CONFIG_GRUB_SERIAL))
 
 ifneq ($(GRUB_SERIAL),)
   GRUB_CONSOLE_CMDLINE += console=$(GRUB_SERIAL),$(CONFIG_GRUB_BAUDRATE)n8
-  GRUB_SERIAL_CONFIG := serial --unit=0 --speed=$(CONFIG_GRUB_BAUDRATE) --word=8 --parity=no --stop=1
+  GRUB_SERIAL_CONFIG := serial --unit=0 --speed=$(CONFIG_GRUB_BAUDRATE) --word=8 --parity=no --stop=1 --rtscts=off
   GRUB_TERMINALS += serial
 endif
 
