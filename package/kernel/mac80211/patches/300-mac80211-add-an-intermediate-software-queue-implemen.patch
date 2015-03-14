@@ -293,7 +293,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		atomic_dec(&ps->num_sta_ps);
  	}
  
-+	if (sta->txq) {
++	if (sta->txqi) {
 +		for (i = 0; i < IEEE80211_NUM_TIDS; i++)
 +			ieee80211_flush_tx_queue(local, sta->sta.txq[i]);
 +	}
@@ -305,7 +305,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	sta_dbg(sta->sdata, "Destroyed STA %pM\n", sta->sta.addr);
  
-+	kfree(sta->txq);
++	kfree(sta->txqi);
  	kfree(rcu_dereference_raw(sta->sta.rates));
  	kfree(sta);
  }
@@ -339,7 +339,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +		if (!txq_data)
 +			goto free;
 +
-+		sta->txq = txq_data;
++		sta->txqi = txq_data;
 +		for (i = 0; i < IEEE80211_NUM_TIDS; i++) {
 +			struct txq_info *txq = txq_data + i * size;
 +			ieee80211_init_tx_queue(sdata, sta, txq, i);
@@ -367,20 +367,130 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return sta;
 +
 +free_txq:
-+	kfree(sta->txq);
++	kfree(sta->txqi);
 +free:
 +	kfree(sta);
 +	return NULL;
  }
  
  static int sta_info_insert_check(struct sta_info *sta)
+@@ -640,6 +667,8 @@ static void __sta_info_recalc_tim(struct
+ 
+ 		indicate_tim |=
+ 			sta->driver_buffered_tids & tids;
++		indicate_tim |=
++			sta->txq_buffered_tids & tids;
+ 	}
+ 
+  done:
+@@ -1071,7 +1100,7 @@ void ieee80211_sta_ps_deliver_wakeup(str
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct sk_buff_head pending;
+-	int filtered = 0, buffered = 0, ac;
++	int filtered = 0, buffered = 0, ac, i;
+ 	unsigned long flags;
+ 	struct ps_data *ps;
+ 
+@@ -1090,10 +1119,25 @@ void ieee80211_sta_ps_deliver_wakeup(str
+ 
+ 	BUILD_BUG_ON(BITS_TO_LONGS(IEEE80211_NUM_TIDS) > 1);
+ 	sta->driver_buffered_tids = 0;
++	sta->txq_buffered_tids = 0;
+ 
+ 	if (!(local->hw.flags & IEEE80211_HW_AP_LINK_PS))
+ 		drv_sta_notify(local, sdata, STA_NOTIFY_AWAKE, &sta->sta);
+ 
++	if (sta->txqi) {
++		for (i = 0; i < ARRAY_SIZE(sta->sta.txq); i++) {
++			struct txq_info *txqi;
++
++			txqi = container_of(sta->sta.txq[i], struct txq_info,
++					    txq);
++
++			if (!skb_queue_len(&txqi->queue))
++				continue;
++
++			drv_wake_tx_queue(local, txqi);
++		}
++	}
++
+ 	skb_queue_head_init(&pending);
+ 
+ 	/* sync with ieee80211_tx_h_unicast_ps_buf */
+@@ -1254,7 +1298,7 @@ ieee80211_sta_ps_deliver_response(struct
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 	struct ieee80211_local *local = sdata->local;
+ 	bool more_data = false;
+-	int ac;
++	int ac, tid;
+ 	unsigned long driver_release_tids = 0;
+ 	struct sk_buff_head frames;
+ 
+@@ -1275,8 +1319,10 @@ ieee80211_sta_ps_deliver_response(struct
+ 		/* if we already have frames from software, then we can't also
+ 		 * release from hardware queues
+ 		 */
+-		if (skb_queue_empty(&frames))
++		if (skb_queue_empty(&frames)) {
+ 			driver_release_tids |= sta->driver_buffered_tids & tids;
++			driver_release_tids |= sta->txq_buffered_tids & tids;
++		}
+ 
+ 		if (driver_release_tids) {
+ 			/* If the driver has data on more than one TID then
+@@ -1447,6 +1493,8 @@ ieee80211_sta_ps_deliver_response(struct
+ 
+ 		sta_info_recalc_tim(sta);
+ 	} else {
++		unsigned long tids = sta->txq_buffered_tids & driver_release_tids;
++
+ 		/*
+ 		 * We need to release a frame that is buffered somewhere in the
+ 		 * driver ... it'll have to handle that.
+@@ -1466,8 +1514,25 @@ ieee80211_sta_ps_deliver_response(struct
+ 		 * that the TID(s) became empty before returning here from the
+ 		 * release function.
+ 		 * Either way, however, when the driver tells us that the TID(s)
+-		 * became empty we'll do the TIM recalculation.
++		 * became empty or we find that a txq became empty, we'll do the
++		 * TIM recalculation.
+ 		 */
++
++		if (!sta->txqi)
++			return;
++
++		for (tid = 0; tid < IEEE80211_NUM_TIDS; tid++) {
++			struct txq_info *txqi;
++
++			txqi = container_of(sta->sta.txq[tid], struct txq_info,
++					    txq);
++
++			if (!(tids & BIT(tid)) || skb_queue_len(&txqi->queue))
++				continue;
++
++			sta_info_recalc_tim(sta);
++			break;
++		}
+ 	}
+ }
+ 
 --- a/net/mac80211/sta_info.h
 +++ b/net/mac80211/sta_info.h
-@@ -368,6 +368,7 @@ struct sta_info {
+@@ -274,6 +274,7 @@ struct sta_ampdu_mlme {
+  *	entered power saving state, these are also delivered to
+  *	the station when it leaves powersave or polls for frames
+  * @driver_buffered_tids: bitmap of TIDs the driver has data buffered on
++ * @txq_buffered_tids: bitmap of TIDs that mac80211 has txq data buffered on
+  * @rx_packets: Number of MSDUs received from this STA
+  * @rx_bytes: Number of bytes received from this STA
+  * @last_rx: time (in jiffies) when last frame was received from this STA
+@@ -368,6 +369,8 @@ struct sta_info {
  	struct sk_buff_head ps_tx_buf[IEEE80211_NUM_ACS];
  	struct sk_buff_head tx_filtered[IEEE80211_NUM_ACS];
  	unsigned long driver_buffered_tids;
-+	struct txq_info *txq;
++	unsigned long txq_buffered_tids;
++	struct txq_info *txqi;
  
  	/* Updated from RX path only, no locking requirements */
  	unsigned long rx_packets;
@@ -429,7 +539,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define TRACE_SYSTEM mac80211_msg
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1201,13 +1201,76 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1201,13 +1201,80 @@ ieee80211_tx_prepare(struct ieee80211_su
  	return TX_CONTINUE;
  }
  
@@ -440,12 +550,16 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +{
 +	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *) skb->data;
 +	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
++	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 +	struct ieee80211_tx_control control = {
 +		.sta = pubsta
 +	};
 +	struct ieee80211_txq *txq = NULL;
 +	struct txq_info *txqi;
 +	u8 ac;
++
++	if (info->control.flags & IEEE80211_TX_CTRL_PS_RESPONSE)
++		goto tx_normal;
 +
 +	if (ieee80211_is_mgmt(hdr->frame_control) ||
 +	    ieee80211_is_ctl(hdr->frame_control))
@@ -507,7 +621,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	struct sk_buff *skb, *tmp;
  	unsigned long flags;
  
-@@ -1265,10 +1328,9 @@ static bool ieee80211_tx_frags(struct ie
+@@ -1265,10 +1332,9 @@ static bool ieee80211_tx_frags(struct ie
  		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
  
  		info->control.vif = vif;
@@ -570,3 +684,34 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +
 +	atomic_sub(n, &sdata->txqs_len[txq->ac]);
 +}
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -1176,6 +1176,7 @@ static void sta_ps_start(struct sta_info
+ 	struct ieee80211_sub_if_data *sdata = sta->sdata;
+ 	struct ieee80211_local *local = sdata->local;
+ 	struct ps_data *ps;
++	int tid;
+ 
+ 	if (sta->sdata->vif.type == NL80211_IFTYPE_AP ||
+ 	    sta->sdata->vif.type == NL80211_IFTYPE_AP_VLAN)
+@@ -1189,6 +1190,20 @@ static void sta_ps_start(struct sta_info
+ 		drv_sta_notify(local, sdata, STA_NOTIFY_SLEEP, &sta->sta);
+ 	ps_dbg(sdata, "STA %pM aid %d enters power save mode\n",
+ 	       sta->sta.addr, sta->sta.aid);
++
++	if (!sta->txqi)
++		return;
++
++	for (tid = 0; tid < IEEE80211_NUM_TIDS; tid++) {
++		struct txq_info *txqi;
++
++		txqi = container_of(sta->sta.txq[tid], struct txq_info, txq);
++
++		if (!skb_queue_len(&txqi->queue))
++			set_bit(tid, &sta->txq_buffered_tids);
++		else
++			clear_bit(tid, &sta->txq_buffered_tids);
++	}
+ }
+ 
+ static void sta_ps_end(struct sta_info *sta)
