@@ -646,23 +646,27 @@ static struct platform_device *sprom_pdev = NULL;
 
 static char prefix[20];
 
-static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_len)
+static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
 {
-	size_t needle_len = strlen(prefix) - 1;
+	size_t prefix_len = strlen(prefix);
+	size_t short_len = prefix_len - 1;
 	char nvram_var[10];
 	char buf[20];
 	int i;
 
-	if (needle_len <= 0 || prefix[needle_len] != '/')
+	if (prefix_len <= 0 || prefix[prefix_len - 1] != '/') {
+		pr_warn("Invalid prefix: \"%s\"\n", prefix);
 		return;
+	}
 
 	for (i = 0; i < 3; i++) {
 		if (snprintf(nvram_var, sizeof(nvram_var), "devpath%d", i) <= 0)
 			continue;
 		if (bcm47xx_nvram_getenv(nvram_var, buf, sizeof(buf)) < 0)
 			continue;
-		if (strlen(buf) == needle_len && !strncmp(buf, prefix, needle_len)) {
-			snprintf(prefix, prefix_len, "%d:", i);
+		if (!strcmp(buf, prefix) ||
+		    (short_len && strlen(buf) == short_len && !strncmp(buf, prefix, short_len))) {
+			snprintf(prefix, prefix_size, "%d:", i);
 			return;
 		}
 	}
