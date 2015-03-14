@@ -1,0 +1,14 @@
+--- a/grub-core/term/serial.c
++++ b/grub-core/term/serial.c
+@@ -241,9 +241,9 @@ grub_cmd_serial (grub_extcmd_context_t c
+ 
+   if (state[OPTION_RTSCTS].set)
+     {
+-      if (grub_strcmp (state[OPTION_PARITY].arg, "on") == 0)
++      if (grub_strcmp (state[OPTION_RTSCTS].arg, "on") == 0)
+ 	config.rtscts = 1;
+-      if (grub_strcmp (state[OPTION_PARITY].arg, "off") == 0)
++      else if (grub_strcmp (state[OPTION_RTSCTS].arg, "off") == 0)
+ 	config.rtscts = 0;
+       else
+ 	return grub_error (GRUB_ERR_BAD_ARGUMENT,
