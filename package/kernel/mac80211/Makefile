@@ -1478,7 +1478,7 @@ define KernelPackage/brcmfmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n USB FullMAC WLAN driver
   URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil +BRCMFMAC_SDIO:kmod-mmc
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmfmac/brcmfmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmfmac)
 endef
