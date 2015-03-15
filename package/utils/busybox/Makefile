@@ -69,10 +69,6 @@ define Build/Configure
 		oldconfig
 endef
 
-ifdef CONFIG_GCC_VERSION_LLVM
-  TARGET_CFLAGS += -fnested-functions
-endif
-
 LDLIBS:=m crypt
 ifdef CONFIG_BUSYBOX_USE_LIBRPC
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include

@@ -51,11 +51,6 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   $(curdir)/$(LIBC)/utils/prepare:=$(curdir)/$(LIBC)/headers/prepare
 endif
 
-ifdef CONFIG_GCC_VERSION_LLVM
-  $(curdir)/builddirs += llvm
-  $(curdir)/gcc/minimal/compile += $(curdir)/llvm/install
-endif
-
 ifndef DUMP_TARGET_DB
 ifneq ($(ARCH),)
   $(TOOLCHAIN_DIR)/info.mk: .config
