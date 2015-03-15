@@ -34,6 +34,7 @@ sub parse_target_metadata($) {
 	my $file = shift;
 	my ($target, @target, $profile);
 	my %target;
+	my $makefile;
 
 	open FILE, "<$file" or do {
 		warn "Can't open file '$file': $!\n";
@@ -41,11 +42,13 @@ sub parse_target_metadata($) {
 	};
 	while (<FILE>) {
 		chomp;
+		/^Source-Makefile: \s*((.+\/)([^\/]+)\/Makefile)\s*$/ and $makefile = $1;
 		/^Target:\s*(.+)\s*$/ and do {
 			my $name = $1;
 			$target = {
 				id => $name,
 				board => $name,
+				makefile => $makefile,
 				boardconf => confstr($name),
 				conf => confstr($name),
 				profiles => [],
