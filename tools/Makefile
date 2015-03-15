@@ -11,7 +11,7 @@ curdir:=tools
 # subdirectories to descend into
 tools-y :=
 
-ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN)$(CONFIG_GCC_LLVM),)
+ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   BUILD_TOOLCHAIN := y
 endif
 ifdef CONFIG_GCC_USE_GRAPHITE
