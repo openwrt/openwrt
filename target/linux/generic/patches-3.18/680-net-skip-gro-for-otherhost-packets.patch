@@ -1,0 +1,12 @@
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -4003,6 +4003,9 @@ static enum gro_result dev_gro_receive(s
+ 	enum gro_result ret;
+ 	int grow;
+ 
++	if (skb->pkt_type == PACKET_OTHERHOST)
++		goto normal;
++
+ 	if (!(skb->dev->features & NETIF_F_GRO))
+ 		goto normal;
+ 
