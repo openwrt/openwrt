@@ -5,7 +5,7 @@ FW="/tmp/Firmware_Speedport_W921V_1.21.000.bin"
 URL="http://hilfe.telekom.de/dlp/eki/downloads/Speedport/Speedport%20W%20921V/Firmware_Speedport_W921V_1.21.000.bin"
 FW_TAPI="vr9_tapi_fw.bin"
 FW_DSL="vr9_dsl_fw_annex_b.bin"
-MD5_FW="4d812f2c3476dadd738b022c4767c491"
+MD5_FW="0a099d08dbf091c74d685b532cbb1390"
 MD5_TAPI="06b6ab3481b8d3eb7e8bf6131f7f6b7f"
 MD5_DSL="59dd9dc81195c6854433c691b163f757"
 
