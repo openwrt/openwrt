@@ -366,6 +366,30 @@ sub do_install_package($$) {
 	return 0;
 }
 
+sub do_install_target($) {
+	my $target = shift;
+	my $path = $target->{makefile};
+
+	if ($path) {
+		$path =~ s/\/Makefile$//;
+		my $name = $path;
+		$name =~ s/.*\///;
+		my $dest = "./target/linux/$name";
+
+		-e $dest and do {
+			warn "Path $dest already exists";
+			return 1;
+		};
+
+		system("ln -sf ../../$path ./target/linux/");
+	} else {
+		warn "Package is not valid\n";
+		return 1;
+	}
+
+	return 0;
+}
+
 sub lookup_package($$) {
 	my $feed = shift;
 	my $package = shift;
@@ -374,6 +398,18 @@ sub lookup_package($$) {
 		next unless $feed->[1];
 		next unless $feed_cache{$feed->[1]};
 		$feed_cache{$feed->[1]}->[0]->{$package} and return $feed;
+	}
+	return;
+}
+
+sub lookup_target($$) {
+	my $feed = shift;
+	my $target = shift;
+
+	foreach my $feed ($feed, @feeds) {
+		next unless $feed->[1];
+		next unless $feed_cache{$feed->[1]};
+		$feed_cache{$feed->[1]}->[2]->{$target} and return $feed;
 	}
 	return;
 }
@@ -387,11 +423,32 @@ sub is_core_package($) {
 	return 0;
 }
 
+sub install_target {
+	my $feed = shift;
+	my $name = shift;
+
+	$feed = $feed_cache{$feed->[1]}->[2];
+	$feed or return 0;
+
+	my $target = $feed->{$name};
+	$target or return 0;
+
+	warn "Installing target '$name'\n";
+	return do_install_target($target);
+}
+
 sub install_package {
 	my $feed = shift;
 	my $name = shift;
 	my $force = shift;
 	my $ret = 0;
+
+	$feed = lookup_target($feed, $name);
+	$feed and do {
+		$installed_targets{$name} and return 0;
+		install_target($feed, $name);
+		return 0;
+	};
 
 	$feed = lookup_package($feed, $name);
 	$feed or do {
