@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=patch
-PKG_VERSION:=2.7.1
+PKG_VERSION:=2.7.5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
-PKG_SOURCE_URL:=ftp://ftp.gnu.org/gnu/patch
-PKG_MD5SUM:=e9ae5393426d3ad783a300a338c09b72
+PKG_SOURCE_URL:=@GNU/patch
+PKG_MD5SUM:=e3da7940431633fb65a01b91d3b7a27a
 
 include $(INCLUDE_DIR)/host-build.mk
 
