@@ -109,7 +109,7 @@
  		}
  	} else {
  		pr_warn("CFE boot tag CRC invalid (expected %08x, actual %08x)\n",
-@@ -139,16 +108,145 @@ static int bcm63xx_parse_cfe_partitions(
+@@ -139,16 +108,153 @@ static int bcm63xx_parse_cfe_partitions(
  		kernellen = 0;
  		rootfslen = 0;
  		rootfsaddr = 0;
@@ -165,6 +165,16 @@
 +		if (node_has_compatible(pp))
 +			continue;
 +
++		if (!of_get_property(pp, "reg", &len))
++			continue;
++
++		partname = of_get_property(pp, "label", &len);
++		if (!partname)
++			partname = of_get_property(pp, "name", &len);
++
++		if (!strcmp(partname, "linux"))
++			nr_parts += 2;
++
 +		nr_parts++;
 +	}
 +
@@ -182,10 +192,8 @@
 +			continue;
 +
 +		reg = of_get_property(pp, "reg", &len);
-+		if (!reg) {
-+			nr_parts--;
++		if (!reg)
 +			continue;
-+		}
 +
 +		a_cells = of_n_addr_cells(pp);
 +		s_cells = of_n_size_cells(pp);
@@ -262,7 +270,7 @@
  
  	if (caldatalen1 > 0)
  		nrparts++;
-@@ -158,10 +256,8 @@ static int bcm63xx_parse_cfe_partitions(
+@@ -158,10 +264,8 @@ static int bcm63xx_parse_cfe_partitions(
  
  	/* Ask kernel for more memory */
  	parts = kzalloc(sizeof(*parts) * nrparts + 10 * nrparts, GFP_KERNEL);
@@ -274,7 +282,7 @@
  
  	/* Start building partition list */
  	parts[curpart].name = "CFE";
-@@ -169,29 +265,7 @@ static int bcm63xx_parse_cfe_partitions(
+@@ -169,29 +273,7 @@ static int bcm63xx_parse_cfe_partitions(
  	parts[curpart].size = cfelen;
  	curpart++;
  
@@ -305,7 +313,7 @@
  
  	if (caldatalen1 > 0) {
  		if (caldatalen2 > 0)
-@@ -217,25 +291,33 @@ static int bcm63xx_parse_cfe_partitions(
+@@ -217,25 +299,33 @@ static int bcm63xx_parse_cfe_partitions(
  
  	/* Global partition "linux" to make easy firmware upgrade */
  	parts[curpart].name = "linux";
