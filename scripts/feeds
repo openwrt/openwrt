@@ -28,10 +28,12 @@ $valid_mk or die "Unsupported version of make found: $mk\n";
 my @feeds;
 my %build_packages;
 my %installed;
+my %installed_targets;
 my %feed_cache;
 
 my $feed_package = {};
 my $feed_src = {};
+my $feed_target = {};
 
 sub parse_config() {
 	my $line = 0;
@@ -179,6 +181,16 @@ sub update_feed_via($$$$) {
 	return 0;
 }
 
+sub get_targets($) {
+	my $file = shift;
+	my @target = parse_target_metadata($file);
+	my %target;
+	foreach my $target (@target) {
+		$target{$target->{id}} = $target;
+	}
+	return %target
+}
+
 sub get_feed($) {
 	my $feed = shift;
 
@@ -191,11 +203,14 @@ sub get_feed($) {
 			return;
 		};
 		parse_package_metadata($file) or return;
-		$feed_cache{$feed} = [ { %package }, { %srcpackage } ];
+		my %target = get_targets("./feeds/$feed.targetindex");
+
+		$feed_cache{$feed} = [ { %package }, { %srcpackage }, { %target } ];
 	}
 
 	$feed_package = $feed_cache{$feed}->[0];
 	$feed_src = $feed_cache{$feed}->[1];
+	$feed_target = $feed_cache{$feed}->[2];
 	return $feed_cache{$feed}->[0];
 }
 
@@ -204,6 +219,7 @@ sub get_installed() {
 	clear_packages();
 	parse_package_metadata("./tmp/.packageinfo");
 	%installed = %package;
+	%installed_targets = get_targets("./tmp/.targetinfo");
 }
 
 sub search_feed {
@@ -234,6 +250,26 @@ sub search_feed {
 			printf "\%-25s\t\%s\n", $pkg->{name}, $pkg->{title};
 		};
 	}
+
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_target) {
+		my $target = $feed_target->{$name};
+		my $targetmatch = 1;
+
+		foreach my $substr (@substr) {
+			my $match;
+			foreach my $key (qw(id name description)) {
+				$target->{$key} and $substr and $target->{$key} =~ m/$substr/i and $match = 1;
+			}
+			$match or undef $targetmatch;
+		};
+		$targetmatch and do {
+			$display or do {
+				print "Search results in feed '$feed':\n";
+				$display = 1;
+			};
+			printf "TARGET: \%-17s\t\%s\n", $target->{id}, $target->{name};
+		};
+	}
 	return 0;
 }
 
@@ -255,6 +291,13 @@ sub list_feed {
 		next if $pkg->{vdepends};
 		if($pkg->{name}) {
 			printf "\%-32s\t\%s\n", $pkg->{name}, $pkg->{title};
+		}
+	}
+
+	foreach my $name (sort { lc($a) cmp lc($b) } keys %$feed_target) {
+		my $target = $feed_target->{$name};
+		if($target->{name}) {
+			printf "TARGET: \%-24s\t\%s\n", $target->{id}, $target->{name};
 		}
 	}
 
