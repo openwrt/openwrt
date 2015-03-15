@@ -103,6 +103,7 @@ static struct gpio_keys_button wdr4300_gpio_keys[] __initdata = {
 		.code		= KEY_RFKILL,
 		.debounce_interval = WDR4300_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WDR4300_GPIO_BTN_RFKILL,
+		.active_low	= 1,
 	},
 };
 
