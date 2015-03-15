@@ -26,7 +26,7 @@
 
 #include "LzmaWrapper.h"
 
-#define FW_NAME		"/tmp/Firmware_Speedport_W921V_1.20.000.bin"
+#define FW_NAME		"/tmp/Firmware_Speedport_W921V_1.21.000.bin"
 
 #define MAGIC		0x50
 #define MAGIC_SZ	0x3FFC00
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 
 	if (stat(FW_NAME, &s) != 0) {
 		printf("Failed to find %s\n", FW_NAME);
-		printf("Ask Google or try http://hilfe.telekom.de/dlp/eki/downloads/Speedport/Speedport%20W%20921V/Firmware_Speedport_W921V_1.20.000.bin\n");
+		printf("Ask Google or try http://hilfe.telekom.de/dlp/eki/downloads/Speedport/Speedport%20W%20921V/Firmware_Speedport_W921V_1.21.000.bin\n");
 		return -1;
 	}
 
