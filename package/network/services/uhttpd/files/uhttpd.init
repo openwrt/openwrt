@@ -45,8 +45,11 @@ generate_keys() {
 
 	[ -x "$PX5G_BIN" ] && {
 		$PX5G_BIN selfsigned -der \
-			-days ${days:-730} -newkey rsa:${bits:-1024} -keyout "$UHTTPD_KEY" -out "$UHTTPD_CERT" \
+			-days ${days:-730} -newkey rsa:${bits:-1024} -keyout "${UHTTPD_KEY}.new" -out "${UHTTPD_CERT}.new" \
 			-subj /C="${country:-DE}"/ST="${state:-Saxony}"/L="${location:-Leipzig}"/CN="${commonname:-OpenWrt}"
+		sync
+		mv "${UHTTPD_KEY}.new" "${UHTTPD_KEY}"
+		mv "${UHTTPD_CERT}.new" "${UHTTPD_CERT}"
 	}
 }
 
@@ -111,7 +114,7 @@ start_instance()
 	config_get UHTTPD_CERT "$cfg" cert /etc/uhttpd.crt
 
 	[ -f /lib/libustream-ssl.so ] && [ -n "$https" ] && {
-		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] || {
+		[ -s "$UHTTPD_CERT" -a -s "$UHTTPD_KEY" ] || {
 			config_foreach generate_keys cert
 		}
 
