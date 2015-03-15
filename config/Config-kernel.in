@@ -481,3 +481,9 @@ config KERNEL_SECCOMP_FILTER
 		default n
 		help
 		  Build kernel with support for seccomp BPF programs.
+
+config KERNEL_FHANDLE
+	bool "Enable open by fhandle syscalls"
+		default n
+		help
+		  Build kernel with support for open by fhandle syscalls
