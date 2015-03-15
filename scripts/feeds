@@ -366,16 +366,14 @@ sub do_install_package($$) {
 	return 0;
 }
 
-my %feed;
-
 sub lookup_package($$) {
 	my $feed = shift;
 	my $package = shift;
 
 	foreach my $feed ($feed, @feeds) {
 		next unless $feed->[1];
-		next unless $feed{$feed->[1]};
-		$feed{$feed->[1]}->{$package} and return $feed;
+		next unless $feed_cache{$feed->[1]};
+		$feed_cache{$feed->[1]}->[0]->{$package} and return $feed;
 	}
 	return;
 }
@@ -404,9 +402,9 @@ sub install_package {
 	};
 
 	# switch to the metadata for the selected feed
-	get_feed($feed->[1]);
+	my $cur = get_feed($feed->[1]);
 
-	my $pkg = $feed{$feed->[1]}->{$name} or return 1;
+	my $pkg = $cur->{$name} or return 1;
 	$pkg->{name} or do {
 		$installed{$name} and return 0;
 		# TODO: check if this is an alias package, maybe it's known by another name
@@ -488,8 +486,8 @@ sub install {
 	get_installed();
 
 	foreach my $f (@feeds) {
-		# index all feeds
-		$feed{$f->[1]} = get_feed($f->[1]);
+		# fetch all feeds
+		get_feed($f->[1]);
 
 		# look up the preferred feed
 		$opts{p} and $f->[1] eq $opts{p} and $feed = $f;
