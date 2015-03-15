@@ -151,7 +151,7 @@ sub update_feed_via($$$$) {
 	my $name = shift;
 	my $src = shift;
 	my $relocate = shift;
-	
+
 	my $m = $update_method{$type};
 	my $localpath = "./feeds/$name";
 	my $safepath = $localpath;
@@ -173,7 +173,7 @@ sub update_feed_via($$$$) {
 	} else {
 		system("cd '$safepath'; $m->{'update'}") == 0 or return 1;
 	}
-	
+
 	return 0;
 }
 
