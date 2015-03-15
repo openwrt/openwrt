@@ -408,11 +408,11 @@ static void b53_enable_mib(struct b53_device *dev)
 {
 	u8 gc;
 
-	b53_read8(dev, B53_CTRL_PAGE, B53_GLOBAL_CONFIG, &gc);
+	b53_read8(dev, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, &gc);
 
 	gc &= ~(GC_RESET_MIB | GC_MIB_AC_EN);
 
-	b53_write8(dev, B53_CTRL_PAGE, B53_GLOBAL_CONFIG, gc);
+	b53_write8(dev, B53_MGMT_PAGE, B53_GLOBAL_CONFIG, gc);
 }
 
 static int b53_apply(struct b53_device *dev)
