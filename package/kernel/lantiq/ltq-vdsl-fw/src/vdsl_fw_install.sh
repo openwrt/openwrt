@@ -1,8 +1,8 @@
 #!/bin/sh
 . /lib/functions.sh
 
-FW="/tmp/Firmware_Speedport_W921V_1.20.000.bin"
-URL="http://hilfe.telekom.de/dlp/eki/downloads/Speedport/Speedport%20W%20921V/Firmware_Speedport_W921V_1.20.000.bin"
+FW="/tmp/Firmware_Speedport_W921V_1.21.000.bin"
+URL="http://hilfe.telekom.de/dlp/eki/downloads/Speedport/Speedport%20W%20921V/Firmware_Speedport_W921V_1.21.000.bin"
 FW_TAPI="vr9_tapi_fw.bin"
 FW_DSL="vr9_dsl_fw_annex_b.bin"
 MD5_FW="4d812f2c3476dadd738b022c4767c491"
