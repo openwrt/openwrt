@@ -212,6 +212,7 @@ comment "C Library"
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
 	default LIBC_USE_GLIBC if (aarch64 || aarch64_be)
+	default LIBC_USE_UCLIBC
 	help
 	  Select the C library implementation.
 
