@@ -347,7 +347,7 @@ sub list {
 	return 0;
 }
 
-sub install_generic() {
+sub do_install_package($$) {
 	my $feed = shift;
 	my $pkg = shift;
 	my $path = $pkg->{makefile};
@@ -365,17 +365,6 @@ sub install_generic() {
 
 	return 0;
 }
-
-my %install_method = (
-	'src-svn' => \&install_generic,
-	'src-cpy' => \&install_generic,
-	'src-link' => \&install_generic,
-	'src-git' => \&install_generic,
-	'src-gitsvn' => \&install_generic,
-	'src-bzr' => \&install_generic,
-	'src-hg' => \&install_generic,
-	'src-darcs' => \&install_generic,
-);
 
 my %feed;
 
@@ -449,12 +438,7 @@ sub install_package {
 		and warn "Overriding package '$src'\n"
 		or warn "Installing package '$src'\n";
 
-	$install_method{$type} or do {
-		warn "Unknown installation method: '$type'\n";
-		return 1;
-	};
-
-	&{$install_method{$type}}($feed, $pkg) == 0 or do {
+	do_install_package($feed, $pkg) == 0 or do {
 		warn "failed.\n";
 		return 1;
 	};
