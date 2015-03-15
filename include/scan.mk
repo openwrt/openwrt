@@ -47,9 +47,15 @@ $(OVERRIDELIST):
 	rm -f $(TMP_DIR)/info/.overrides-$(SCAN_TARGET)-*
 	touch $@
 
+ifeq ($(SCAN_NAME),target)
+  GREP_STRING=BuildTarget
+else
+  GREP_STRING=(Build/DefaultTargets|BuildPackage|.+Package)
+endif
+
 $(FILELIST): $(OVERRIDELIST)
 	rm -f $(TMP_DIR)/info/.files-$(SCAN_TARGET)-*
-	$(call FIND_L, $(SCAN_DIR)) $(SCAN_EXTRA) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) -name Makefile | xargs grep -HE 'call (Build/DefaultTargets|Build(Package|Target)|.+Package)' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | awk -v of=$(OVERRIDELIST) -f include/scan.awk > $@
+	$(call FIND_L, $(SCAN_DIR)) $(SCAN_EXTRA) -mindepth 1 $(if $(SCAN_DEPTH),-maxdepth $(SCAN_DEPTH)) -name Makefile | xargs grep -HE 'call $(GREP_STRING)' | sed -e 's#^$(SCAN_DIR)/##' -e 's#/Makefile:.*##' | uniq | awk -v of=$(OVERRIDELIST) -f include/scan.awk > $@
 
 $(TMP_DIR)/info/.files-$(SCAN_TARGET).mk: $(FILELIST)
 	( \
