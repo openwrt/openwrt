@@ -581,6 +581,17 @@ sub install {
 	return $ret;
 }
 
+sub uninstall_target($) {
+	my $dir = shift;
+	my $name = $dir;
+	$name =~ s/.*\///g;
+
+	my $dest = readlink $dir;
+	return unless $dest =~ /..\/..\/feeds/;
+	warn "Uninstalling target '$name'\n";
+	unlink "$dir";
+}
+
 sub uninstall {
 	my %opts;
 	my $name;
@@ -595,6 +606,10 @@ sub uninstall {
 
 	if ($opts{a}) {
 		system("rm -rvf ./package/feeds");
+		foreach my $dir (glob "target/linux/*") {
+			next unless -l $dir;
+			uninstall_target($dir);
+		}
 		$uninstall = 1;
 	} else {
 		if($#ARGV == -1) {
@@ -603,6 +618,13 @@ sub uninstall {
 		}
 		get_installed();
 		while ($name = shift @ARGV) {
+			my $target = "target/linux/$name";
+			-l "$target" and do {
+				uninstall_target($target);
+				$uninstall = 1;
+				next;
+			};
+
 			my $pkg = $installed{$name};
 			$pkg or do {
 				warn "WARNING: $name not installed\n";
