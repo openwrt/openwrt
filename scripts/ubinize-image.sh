@@ -98,7 +98,11 @@ if [ ! -x "$ubinize" ]; then
 	exit 1
 fi
 
-ubinizecfg="$( mktemp )"
+ubinizecfg="$( mktemp 2> /dev/null )"
+if [ -z "$ubinizecfg" ]; then
+	# try OSX signature
+	ubinizecfg="$( mktemp -t 'ubitmp' )"
+fi
 ubilayout "$ubootenv" "$rootfs" "$kernel" > "$ubinizecfg"
 
 cat "$ubinizecfg"
@@ -108,4 +112,3 @@ err="$?"
 rm "$ubinizecfg"
 
 exit $err
-
