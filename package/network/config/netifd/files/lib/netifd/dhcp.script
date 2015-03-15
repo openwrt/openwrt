@@ -19,6 +19,7 @@ setup_interface () {
 	# TODO: apply $broadcast
 
 	for i in $router; do
+		proto_add_ipv4_route "$i" 32 "" "$ip"
 		proto_add_ipv4_route 0.0.0.0 0 "$i" "$ip"
 	done
 
