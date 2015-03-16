@@ -545,7 +545,11 @@ sub print_package_config_category($) {
 			print "\t\t".($pkg->{tristate} ? 'tristate' : 'bool')." $title\n";
 			print "\t\tdefault y if DEFAULT_".$pkg->{name}."\n";
 			unless ($pkg->{hidden}) {
-				$pkg->{default} ||= "m if ALL";
+				if ($pkg->{name} =~ /^kmod-/) {
+					$pkg->{default} ||= "m if ALL_KMODS";
+				} else {
+					$pkg->{default} ||= "m if ALL";
+				}
 			}
 			if ($pkg->{default}) {
 				foreach my $default (split /\s*,\s*/, $pkg->{default}) {

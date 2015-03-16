@@ -53,7 +53,7 @@ $(lastword $(subst :, ,$(1)))
 endef
 
 VERSION_TAINT_SPECS := \
-	-ALL:no-all \
+	-ALL_KMODS:no-all \
 	-IPV6:no-ipv6 \
 	+USE_GLIBC:glibc \
 	+USE_MKLIBS:mklibs \

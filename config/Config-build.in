@@ -6,8 +6,12 @@
 
 menu "Global build settings"
 
+	config ALL_KMODS
+		bool "Select all kernel module packages by default"
+		default ALL
+
 	config ALL
-		bool "Select all packages by default"
+		bool "Select all userspace packages by default"
 		default n
 
 	comment "General build options"
