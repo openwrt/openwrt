@@ -10,29 +10,27 @@ do_fixcrc() {
 	mtd fixtrx linux
 }
 
-brcm63xx_detect
-
-case "$board_id" in
-	96328avng |\
-	96328A-1241N |\
-	96328A-1441N1 |\
-	963281TAN |\
-	963281T_TEF |\
-	96328dg2x2 |\
-	96358-502V |\
-	96368M-1341N |\
-	96368M-1541N |\
-	96369R-1231N |\
-	AW4339U |\
-	"CPVA502+" |\
-	CPVA642 |\
-	CT6373-1 |\
-	MAGIC |\
-	P870HW-51a_v2 |\
-	RTA770BW |\
-	RTA770W |\
-	V2110 |\
-	V2500V_BB)
+case "$(brcm63xx_board_name)" in
+	a4001n |\
+	a4001n1 |\
+	ar-5381u |\
+	ar-5387un |\
+	bcm96328avng |\
+	bcm963281tan |\
+	cpva502p |\
+	cpva642 |\
+	ct-6373 |\
+	dsl-274xb-f |\
+	magic |\
+	p870hw-51a_v2 |\
+	rta770bw |\
+	rta770w |\
+	spw303v |\
+	v2110 |\
+	v2500v_bb |\
+	vr-3025u |\
+	vr-3025un |\
+	wap-5813n)
 		do_fixcrc
 		;;
 esac

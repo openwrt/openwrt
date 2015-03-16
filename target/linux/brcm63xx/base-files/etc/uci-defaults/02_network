@@ -12,124 +12,128 @@ touch /etc/config/network
 
 ucidef_set_interface_loopback
 
-case "$board_id" in
+case "$(brcm63xx_board_name)" in
 
-96348W3 |\
-96358-502V |\
-CVG834G_E15R3921 |\
-RTA770BW |\
-RTA770W |\
-SPW500V)
+cvg834g |\
+rta770bw |\
+rta770w |\
+spw303v |\
+spw500v)
 	ucidef_set_interface_lan "eth0"
 	;;
 
-96338GW |\
-96338W |\
-96338W2_E7T |\
-96348A-122 |\
-96348W3 |\
-AR1004G |\
-CPVA642 |\
-CT536_CT5621 |\
-CT6373-1 |\
-D-4P-W |\
-"F@ST2604" |\
-RTA1320_16M |\
-V2110)
+ar1004g |\
+bcm96338gw |\
+bcm96338w |\
+cpva642 |\
+ct-5365 |\
+ct-536p_5621t |\
+ct-6373 |\
+dg834g_v4 |\
+dsl-2640b-b |\
+dsl-2640u |\
+fast2604 |\
+rta1320 |\
+v2110)
 	ucidef_set_interface_lan "eth0"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5"
 	;;
 
-96348GW |\
-96348GW-10 |\
-96348GW-11 |\
-96348GW-A |\
-96358VW |\
-96358VW2 |\
-AGPF-S0 |\
-"CPVA502+" |\
-DV201AMR |\
-DWV-S0 |\
-"F@ST2404" |\
-MAGIC |\
-RTA1025W_16 |\
-V2500V_BB)
+agpf-s0 |\
+bcm96348gw |\
+bcm96348gw-10 |\
+bcm96348gw-11 |\
+bcm96358vw |\
+bcm96358vw2 |\
+cpva502p |\
+dg834gt |\
+dmv-s0 |\
+dsl-2650u |\
+dv-201amr |\
+f5d7633 |\
+fast2404 |\
+magic |\
+rg100a |\
+rta1025W |\
+td-w8900gb |\
+usr9108 |\
+v2500v_bb)
 	ucidef_set_interfaces_lan_wan "eth1" "eth0"
 	ucidef_add_switch "eth1" "1" "1"
 	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5"
 	;;
 
-AW4139 |\
-HW553 |\
-HW556*)
+dsl-274xb-c |\
+hg553 |\
+hg556a_*)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 4 5t"
 	;;
 
-NB4-* |\
-DVG3810BN |\
-HW6358GW_B)
+dva-g3810bn |\
+hg520 |\
+neufbox4)
 	ucidef_set_interfaces_lan_wan "eth1.1" "eth0"
 	ucidef_add_switch "eth1" "1" "1"
 	ucidef_add_switch_vlan "eth1" "1" "0 1 2 3 4 5t"
 	;;
 
-96328avng |\
-96328A-1241N |\
-96328A-1441N1 |\
-963281TAN |\
-963281T_TEF |\
-96328dg2x2 |\
-96368M-1341N |\
-96368M-1541N |\
-96368MVNgr |\
-AW4339U |\
-AW5200B |\
-"F@ST2504n" |\
-"F@ST2704V2" |\
-P870HW-51a_v2)
+a4001n1 |\
+a4001n |\
+ar-5381u |\
+ar-5387un |\
+bcm963281tan |\
+bcm96328avng |\
+bcm96368mvngr |\
+dsl-274xb-f |\
+dsl-275xb-d |\
+fast2504n |\
+fast2704v2 |\
+p870hw-51a_v2 |\
+vr-3025un |\
+vr-3025u)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 8t"
 	;;
 
-96368MVWG)
+bcm96368mvwg)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "1 2 4 5 8t"
 	;;
 
-96369R-1231N)
+wap-5831n)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "0 1 2 3 5t"
 	ucidef_add_switch_vlan "eth0" "2" "4 5t"
 	;;
 
-DGND3700v1_3800B)
+dgnd3700v1_dgnd3800b)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "eth0" "1" "1"
 	ucidef_add_switch_vlan "eth0" "1" "1 2 3 4 8t"
 	ucidef_add_switch_vlan "eth0" "2" "0 8t"
 	;;
 
-NB6)
+neufbox6)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 9t"
 	ucidef_add_switch_vlan "switch0" "2" "0 9t"
 	;;
 
-VW6339GU)
+vg50)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 8t"
 	ucidef_add_switch_vlan "switch0" "2" "4 8t"
 	;;
 
-963268BU_P300)
+bcm963268bu_p300)
 	ucidef_set_interface_lan "eth0.1"
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "0 3 4 5 6 7 8t"
