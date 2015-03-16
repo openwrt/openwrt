@@ -4,7 +4,7 @@
 #
 #
 
-board_name=""
+board_id=""
 status_led=""
 status_led2=""
 sys_mtd_part=""
@@ -12,13 +12,13 @@ brcm63xx_has_reset_button=""
 ifname=""
 
 brcm63xx_detect() {
-	board_name=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
+	board_id=$(awk 'BEGIN{FS="[ \t:/]+"} /system type/ {print $4}' /proc/cpuinfo)
 
-	if [ "$board_name" = "96358VW" ] && [ -n "$(swconfig dev eth1 help 2>/dev/null)" ]; then
-		board_name="DVAG3810BN"
+	if [ "$board_id" = "96358VW" ] && [ -n "$(swconfig dev eth1 help 2>/dev/null)" ]; then
+		board_id="DVAG3810BN"
 	fi
 
-	case "$board_name" in
+	case "$board_id" in
 	963281TAN)
 		status_led="963281TAN::power"
 		ifname=eth0

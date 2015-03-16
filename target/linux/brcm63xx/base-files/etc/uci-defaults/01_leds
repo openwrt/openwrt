@@ -6,7 +6,7 @@
 . /lib/functions/uci-defaults.sh
 . /lib/brcm63xx.sh
 
-case "$board_name" in
+case "$board_id" in
 963281T_TEF)
 	ucidef_set_led_netdev "lan" "LAN" "A4001N1:green:eth" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "A4001N1:green:3g" "1-1"
