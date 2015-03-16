@@ -1,7 +1,46 @@
 #!/bin/sh
 
+. /lib/brcm63xx.sh
+
 set_preinit_iface() {
-	ifconfig $ifname 0.0.0.0 up
+	case "$(brcm63xx_board_name)" in
+	a4001n |\
+	a4001n1 |\
+	ar-5381u |\
+	ar-5387un |\
+	bcm963281tan |\
+	bcm96328avng |\
+	cpva642 |\
+	ct536_ct5621 |\
+	cvg834g |\
+	dgnd3700v1_dgnd3800b |\
+	dsl-2640b-b |\
+	dsl-274xb-c |\
+	dsl-275xb-d |\
+	fast2504n |\
+	fast2704v2 |\
+	hg553 |\
+	hg556a_* |\
+	hg520 |\
+	neufbox6 |\
+	p870hw-51a_v2 |\
+	rta770bw |\
+	rta770w |\
+	spw303v |\
+	spw500v |\
+	v2110 |\
+	vr-3025un |\
+	vr-3025u |\
+	wap-5813n)
+		ifname=eth0
+		;;
+	bcm96348gw |\
+	bcm96348gw-11 |\
+	gw6000 |\
+	gw6200)
+		ifname=eth1
+		;;
+	esac
 }
 
 boot_hook_add preinit_main set_preinit_iface
