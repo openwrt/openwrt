@@ -207,6 +207,21 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
+	963268BU_P300)
+		board_name="bcm963268bu_p300"
+		;;
+	96338W2_E7T)
+		board_name="dsl-2640u"
+		;;
+	96348W3)
+		board_name="dg834g_v4"
+		;;
+	CPVA502+)
+		board_name="cpva502p"
+		;;
+	MAGIC)
+		board_name="magic"
+		;;
 	RTA770BW)
 		board_name="rta770bw"
 		;;
@@ -215,6 +230,12 @@ brcm63xx_legacy_detect() {
 		;;
 	V2110)
 		board_name="v2110"
+		;;
+	V2500V_BB)
+		board_name="v2500v_bb"
+		;;
+	VW6339GU)
+		board_namge="vg50"
 		;;
 	*)
 		board_name="unknown"
