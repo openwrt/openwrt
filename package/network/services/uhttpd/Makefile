@@ -107,6 +107,10 @@ define Package/uhttpd/conffiles
 /etc/uhttpd.key
 endef
 
+ifneq ($(CONFIG_USE_GLIBC),)
+  TARGET_CFLAGS += -D_DEFAULT_SOURCE
+endif
+
 TARGET_LDFLAGS += -lcrypt
 
 CMAKE_OPTIONS = -DTLS_SUPPORT=on
