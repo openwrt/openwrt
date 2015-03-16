@@ -269,5 +269,3 @@ brcm63xx_board_name() {
 
 	echo $name
 }
-
-brcm63xx_detect
