@@ -108,6 +108,13 @@ P870HW-51a_v2)
 	ucidef_add_switch_vlan "eth0" "2" "4 5t"
 	;;
 
+DGND3700v1_3800B)
+	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	ucidef_add_switch "eth0" "1" "1"
+	ucidef_add_switch_vlan "eth0" "1" "1 2 3 4 8t"
+	ucidef_add_switch_vlan "eth0" "2" "0 8t"
+	;;
+
 NB6)
 	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" "1" "1"

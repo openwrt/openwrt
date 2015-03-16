@@ -111,6 +111,12 @@ define Image/Build/HCSDTB
 		--output_file=$(BIN_DIR)/openwrt-$(2)-$(1).bin
 endef
 
+define Image/Build/ChkDTB
+	# Generate Netgear factory image
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(1)-factory.chk \
+	-k $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin -b $(5) -r $(6)
+endef
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
@@ -303,6 +309,12 @@ $(eval $(call ImageDTB,RedBootDTB,Livebox,livebox,livebox-blue-5g))
 $(eval $(call ImageDTB,HCSDTB,CVG834G,,cvg834g,a020,0001,0022,vmlinux-cvg834g))
 # Netgear DG834GT/PN
 $(eval $(call ImageDTB,CFEDTB,DG834GTPN,DG834GT_PN,dg834gtpn,96348GW-10,6348))
+# Netgear DGND3700 v1 / DGND3800B
+$(eval $(call ImageDTB,CFEDTB,DGND3700v1_3800B,DGND3700v1_3800B,dgnd3700v1,96368MVWG,6368,--image-offset 0x20000 --block-size 0x20000))
+#Netgear DGND3700 v1 factory firmware
+$(eval $(call ImageDTB,ChkDTB,DGND3700v1_3800B,DGND3700v1,,DGND3700v1_3800B,U12L144T01_NETGEAR_NEWLED,1))
+#Netgear DGND3800B factory firmware
+$(eval $(call ImageDTB,ChkDTB,DGND3700v1_3800B,DGND3800B,,DGND3700v1_3800B,U12L144T11_NETGEAR_NEWLED,1))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
 $(eval $(call ImageDTB,CFEDTB,AGPF_S0,AGV2+W,agpf-s0,AGPF-S0,6358,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # Pirelli A226G

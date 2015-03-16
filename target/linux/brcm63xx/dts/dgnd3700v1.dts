@@ -1,0 +1,110 @@
+/dts-v1/;
+
+/include/ "bcm6368.dtsi"
+
+/ {
+	model = "Netgear DGND3700v1/DGND3800B";
+	compatible = "netgear,dgnd3700v1", "brcm,bcm6368";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		wlan {
+			label = "wlan";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0xee>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio1 3 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		dsl_green {
+			label = "DGND3700v1_3800B:green:dsl";
+			gpios = <&gpio0 2 1>;
+		};
+		inet_red {
+			label = "DGND3700v1_3800B:red:inet";
+			gpios = <&gpio0 4 1>;
+		};
+		inet_green {
+			label = "DGND3700v1_3800B:green:inet";
+			gpios = <&gpio0 5 1>;
+		};
+		wps_green {
+			label = "DGND3700v1_3800B:green:wps";
+			gpios = <&gpio0 11 1>;
+		};
+		usbfront_green {
+			label = "DGND3700v1_3800B:green:usb-front";
+			gpios = <&gpio0 13 1>;
+		};
+		usbback_green {
+			label = "DGND3700v1_3800B:green:usb-back";
+			gpios = <&gpio0 14 1>;
+		};
+		power_red {
+			label = "DGND3700v1_3800B:red:power";
+			gpios = <&gpio0 22 1>;
+		};
+		lan_green {
+			label = "DGND3700v1_3800B:green:lan";
+			gpios = <&gpio0 23 1>;
+		};
+		power_green {
+			label = "DGND3700v1_3800B:green:power";
+			gpios = <&gpio0 24 1>;
+			default-state = "on";
+		};
+		wifi2g_green {
+			label = "DGND3700v1_3800B:green:wifi2g";
+			gpios = <&gpio0 26 1>;
+		};
+		wifi5g_blue {
+			label = "DGND3700v1_3800B:blue:wifi5g";
+			gpios = <&gpio0 27 1>;
+		};
+	};
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x020000>;
+		read-only;
+	};
+
+	linux@20000 {
+		label = "linux";
+		reg = <0x020000 0x1e20000>;
+	};
+
+	board_data@1e40000 {
+		label = "board_data";
+		reg = <0x1e40000 0x1a0000>;
+		read-only;
+	};
+
+	nvram@1fe0000 {
+		label = "nvram";
+		reg = <0x1fe0000 0x20000>;
+	};
+};

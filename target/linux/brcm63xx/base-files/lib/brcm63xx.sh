@@ -111,6 +111,11 @@ brcm63xx_detect() {
 		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
+	DGND3700v1_3800B)
+		status_led="DGND3700v1_3800B:green:power"
+		brcm63xx_has_reset_button="true"
+		ifname="eth0"
+		;;
 	"F@ST2504n")
 		status_led="fast2504n:green:ok"
 		brcm63xx_has_reset_button="true"
