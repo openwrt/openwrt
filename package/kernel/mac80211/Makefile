@@ -1478,7 +1478,7 @@ define KernelPackage/brcmfmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n USB FullMAC WLAN driver
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil +BRCMFMAC_SDIO:kmod-mmc
+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil +BRCMFMAC_SDIO:kmod-mmc +BRCMFMAC_USB:kmod-usb-core
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmfmac/brcmfmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmfmac)
 endef
@@ -1498,6 +1498,15 @@ define KernelPackage/brcmfmac/config
 		  Select this option only if you are sure that your
 		  board has a Broadcom wireless chip atacched to
 		  that bus.
+
+	config BRCMFMAC_USB
+		bool "Enable USB bus interface support"
+		depends on USB_SUPPORT
+		default y
+		help
+		  Supported USB connected chipsets:
+		  BCM43235, BCM43236, BCM43238 (all in revision 3 only)
+		  BCM43143, BCM43242, BCM43566, BCM43569
 
 	config BRCMFMAC_PCIE
 		bool "Enable PCIE bus interface support"
@@ -1581,7 +1590,7 @@ config-$(call config_package,brcmutil) += BRCMUTIL
 config-$(call config_package,brcmsmac) += BRCMSMAC
 config-$(call config_package,brcmfmac) += BRCMFMAC
 config-$(CONFIG_BRCMFMAC_SDIO) += BRCMFMAC_SDIO
-config-y += BRCMFMAC_USB
+config-$(CONFIG_BRCMFMAC_USB) += BRCMFMAC_USB
 config-$(CONFIG_BRCMFMAC_PCIE) += BRCMFMAC_PCIE
 config-$(CONFIG_PACKAGE_BRCM80211_DEBUG) += BRCMDBG
 
