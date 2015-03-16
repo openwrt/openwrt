@@ -14,6 +14,14 @@ case "$board_name" in
 96328dg2x2)
 	ucidef_set_led_usbdev "usb" "USB" "A4001N:green:usb" "1-1"
 	;;
+DGND3700v1_3800B)
+	ucidef_set_led_netdev "lan" "LAN" "DGND3700v1_3800B:green:lan" "eth0.1"
+	ucidef_set_led_netdev "wan" "WAN" "DGND3700v1_3800B:green:inet" "eth0.2"
+	ucidef_set_led_netdev "wlan0" "WIFI2G" "DGND3700v1_3800B:green:wifi2g" "wlan0"
+	ucidef_set_led_netdev "wlan1" "WIFI5G" "DGND3700v1_3800B:blue:wifi5g" "wlan1"
+	ucidef_set_led_usbdev "usb1" "USB1" "DGND3700v1_3800B:green:usb-back" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "DGND3700v1_3800B:green:usb-front" "1-2"
+	;;
 'F@ST2704V2')
 	ucidef_set_led_usbdev "usb" "USB" "F@ST2704V2:green:usb" "1-1"
 	;;
