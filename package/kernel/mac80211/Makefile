@@ -2002,12 +2002,14 @@ endef
 
 define KernelPackage/brcmfmac/install
 	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+ifneq ($(CONFIG_BRCMFMAC_USB),)
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43236b.bin \
 		$(1)/lib/firmware/brcm/
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43143.bin \
 		$(1)/lib/firmware/brcm/
+endif
 endef
 
 $(eval $(call KernelPackage,adm8211))
