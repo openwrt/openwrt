@@ -20,12 +20,12 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-TARGET_LDFLAGS += $(if $(CONFIG_USE_EGLIBC),-lrt)
+TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
 
 define Package/ubox
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_EGLIBC:librt
+  DEPENDS:=+libubox +ubusd +ubus +libubus +libuci +USE_GLIBC:librt
   TITLE:=OpenWrt system helper toolbox
 endef
 

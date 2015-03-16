@@ -89,7 +89,7 @@ ifneq ($(LOCAL_TYPE),hostapd)
 	CONFIG_DRIVER_ROBOSWITCH=$(CONFIG_PACKAGE_kmod-switch)
 endif
 
-ifdef CONFIG_USE_EGLIBC
+ifdef CONFIG_USE_GLIBC
   TARGET_LDFLAGS += -lrt
   TARGET_LDFLAGS_C += -lrt
 endif

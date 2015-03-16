@@ -30,13 +30,13 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-TARGET_LDFLAGS += $(if $(CONFIG_USE_EGLIBC),-lrt)
+TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
 CMAKE_OPTIONS += $(if $(CONFIG_FSTOOLS_UBIFS_EXTROOT),-DCMAKE_UBIFS_EXTROOT=y)
 
 define Package/fstools
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubox +USE_EGLIBC:librt +NAND_SUPPORT:ubi-utils
+  DEPENDS:=+ubox +USE_GLIBC:librt +NAND_SUPPORT:ubi-utils
   TITLE:=OpenWrt filesystem tools
   MENU:=1
 endef

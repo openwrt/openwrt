@@ -27,12 +27,12 @@ PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
-TARGET_LDFLAGS += $(if $(CONFIG_USE_EGLIBC),-lrt)
+TARGET_LDFLAGS += $(if $(CONFIG_USE_GLIBC),-lrt)
 
 define Package/procd
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_EGLIBC:librt +libubox +libubus +NAND_SUPPORT:procd-nand
+  DEPENDS:=+ubusd +ubus +libjson-script +ubox +USE_GLIBC:librt +libubox +libubus +NAND_SUPPORT:procd-nand
   TITLE:=OpenWrt system process manager
 endef
 

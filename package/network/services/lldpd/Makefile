@@ -31,7 +31,7 @@ define Package/lldpd
   SUBMENU:=Routing and Redirection
   TITLE:=Link Layer Discovery Protocol daemon
   URL:=https://github.com/vincentbernat/lldpd/wiki
-  DEPENDS:=+libevent2 +USE_EGLIBC:libbsd +LLDPD_WITH_JSON:libjson-c
+  DEPENDS:=+libevent2 +USE_GLIBC:libbsd +LLDPD_WITH_JSON:libjson-c
   USERID:=lldp=121:lldp=129
   MENU:=1
 endef
