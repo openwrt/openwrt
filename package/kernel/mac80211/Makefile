@@ -58,7 +58,7 @@ WMENU:=Wireless Drivers
 
 define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
-  URL:=http://linuxwireless.org/
+  URL:=https://wireless.wiki.kernel.org/
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
   DEPENDS:=@(!TARGET_avr32||BROKEN)
 endef
@@ -545,7 +545,7 @@ endef
 define KernelPackage/ath5k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 5xxx wireless cards support
-  URL:=http://linuxwireless.org/en/users/Drivers/ath5k
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath5k
   DEPENDS+= @PCI_SUPPORT||@TARGET_ath25 +kmod-ath
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath5k/ath5k.ko
   AUTOLOAD:=$(call AutoProbe,ath5k)
@@ -559,7 +559,7 @@ endef
 define KernelPackage/ath9k-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n wireless devices (common code for ath9k and ath9k_htc)
-  URL:=http://linuxwireless.org/en/users/Drivers/ath9k
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath9k
   DEPENDS+= @PCI_SUPPORT||USB_SUPPORT||TARGET_ar71xx +kmod-ath +@DRIVER_11N_SUPPORT +@KERNEL_RELAY
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_common.ko \
@@ -569,7 +569,7 @@ endef
 define KernelPackage/ath9k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n PCI wireless cards support
-  URL:=http://linuxwireless.org/en/users/Drivers/ath9k
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath9k
   DEPENDS+= @PCI_SUPPORT||TARGET_ar71xx +kmod-ath9k-common
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k.ko
@@ -592,7 +592,7 @@ endef
 define KernelPackage/ath9k-htc
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n USB device support
-  URL:=http://linuxwireless.org/en/users/Drivers/ath9k
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath9k
   DEPENDS+= @USB_SUPPORT +kmod-ath9k-common +kmod-usb-core
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_htc.ko
@@ -607,7 +607,7 @@ endef
 define KernelPackage/ath10k
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11ac wireless cards support
-  URL:=http://wireless.kernel.org/en/users/Drivers/ath10k
+  URL:=https://wireless.wiki.kernel.org/en/users/Drivers/ath10k
   DEPENDS+= @PCI_SUPPORT +kmod-ath +@DRIVER_11N_SUPPORT
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath10k/ath10k_core.ko \
@@ -1115,7 +1115,7 @@ $(eval $(call Download,b43legacy))
 define KernelPackage/b43
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom 43xx wireless support
-  URL:=http://linuxwireless.org/en/users/Drivers/b43
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/b43
   KCONFIG:= \
   	CONFIG_HW_RANDOM=y
   # Depend on PCI_SUPPORT to make sure we can select kmod-bcma or kmod-ssb
@@ -1360,7 +1360,7 @@ endef
 define KernelPackage/b43legacy
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom 43xx-legacy wireless support
-  URL:=http://linuxwireless.org/en/users/Drivers/b43
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/b43
   KCONFIG:= \
   	CONFIG_HW_RANDOM=y
   DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
@@ -1406,7 +1406,7 @@ endef
 define KernelPackage/brcmutil
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n common driver parts
-  URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
   DEPENDS+=@PCI_SUPPORT||USB_SUPPORT
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmutil/brcmutil.ko
   AUTOLOAD:=$(call AutoProbe,brcmutil)
@@ -1445,7 +1445,7 @@ $(eval $(call Download,brcmsmac))
 define KernelPackage/brcmsmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
-  URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
   DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmsmac/brcmsmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmsmac)
@@ -1477,7 +1477,7 @@ endef
 define KernelPackage/brcmfmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n USB FullMAC WLAN driver
-  URL:=http://linuxwireless.org/en/users/Drivers/brcm80211
+  URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
   DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil +BRCMFMAC_SDIO:kmod-mmc
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/brcm80211/brcmfmac/brcmfmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmfmac)
