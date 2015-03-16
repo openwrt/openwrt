@@ -8,8 +8,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  drivers/gpio/Kconfig        |    8 +++
  drivers/gpio/Makefile       |    1 +
- drivers/gpio/gpio-bcm63xx.c |  117 +++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 126 insertions(+)
+ drivers/gpio/gpio-bcm63xx.c |  122 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 131 insertions(+)
  create mode 100644 drivers/gpio/gpio-bcm63xx.c
 
 --- a/drivers/gpio/Kconfig
@@ -41,7 +41,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_GPIO_CS5535)	+= gpio-cs5535.o
 --- /dev/null
 +++ b/drivers/gpio/gpio-bcm63xx.c
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,122 @@
 +/*
 + * Driver for BCM63XX memory-mapped GPIO controllers, based on
 + * Generic driver for memory-mapped GPIO controllers.
@@ -117,7 +117,12 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	platform_set_drvdata(pdev, bgc);
 +
 +	if (dev->of_node) {
++		int id = of_alias_get_id(dev->of_node, "gpio");
 +		u32 ngpios;
++
++		if (id >= 0)
++			bgc->gc.label = devm_kasprintf(dev, GFP_KERNEL,
++						       "bcm63xx-gpio.%d", id);
 +
 +		if (!of_property_read_u32(dev->of_node, "ngpios", &ngpios))
 +			bgc->gc.ngpio = ngpios;
