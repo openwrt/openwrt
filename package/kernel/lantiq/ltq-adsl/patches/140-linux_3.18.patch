@@ -1,13 +1,40 @@
-Index: drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_os_linux.h
-===================================================================
---- drv_dsl_cpe_api-3.24.4.4.orig/src/include/drv_dsl_cpe_os_linux.h	2015-02-08 09:59:02.424259834 +0100
-+++ drv_dsl_cpe_api-3.24.4.4/src/include/drv_dsl_cpe_os_linux.h	2015-02-08 10:02:19.580740173 +0100
-@@ -218,7 +218,7 @@
+--- a/src/include/drv_dsl_cpe_os_linux.h
++++ b/src/include/drv_dsl_cpe_os_linux.h
+@@ -214,12 +214,35 @@ static inline int dsl_mutex_lock(struct 
+ #define DSL_DRV_MUTEX_LOCK(id)               down_interruptible(&(id))
+ #define DSL_DRV_MUTEX_UNLOCK(id)             up(&(id))
+ #endif
++
++static inline long
++ugly_hack_sleep_on_timeout(wait_queue_head_t *q, long timeout)
++{
++	unsigned long flags;
++	wait_queue_t wait;
++
++	init_waitqueue_entry(&wait, current);
++
++	__set_current_state(TASK_INTERRUPTIBLE);
++	spin_lock_irqsave(&q->lock, flags);
++	__add_wait_queue(q, &wait);
++	spin_unlock(&q->lock);
++
++	timeout = schedule_timeout(timeout);
++
++	spin_lock_irq(&q->lock);
++	__remove_wait_queue(q, &wait);
++	spin_unlock_irqrestore(&q->lock, flags);
++
++	return timeout;
++}
++
+ #define DSL_DRV_INIT_WAKELIST(name,queue)    init_waitqueue_head(&(queue))
  #define DSL_DRV_WAKEUP_WAKELIST(queue)       wake_up_interruptible(&(queue))
  #define DSL_DRV_INIT_EVENT(name,ev)          init_waitqueue_head(&(ev))
  /* wait for an event, timeout is measured in ms */
 -#define DSL_DRV_WAIT_EVENT_TIMEOUT(ev,t)     interruptible_sleep_on_timeout(&(ev), (t) * HZ / 1000)
-+#define DSL_DRV_WAIT_EVENT_TIMEOUT(ev,t)     wait_event_interruptible_timeout((ev), 0 == 1, (t) * HZ / 1000)
- #define DSL_DRV_WAIT_EVENT(ev)               interruptible_sleep_on(&(ev))
+-#define DSL_DRV_WAIT_EVENT(ev)               interruptible_sleep_on(&(ev))
++#define DSL_DRV_WAIT_EVENT_TIMEOUT(ev,t)     ugly_hack_sleep_on_timeout(&(ev), (t) * HZ / 1000)
++#define DSL_DRV_WAIT_EVENT(ev)               ugly_hack_sleep_on_timeout(&(ev), MAX_SCHEDULE_TIMEOUT)
  #define DSL_DRV_WAKEUP_EVENT(ev)             wake_up_interruptible(&(ev))
  #define DSL_DRV_TimeMSecGet()                DSL_DRV_ElapsedTimeMSecGet(0)
+ #define DSL_WAIT(ms)   msleep(ms)
