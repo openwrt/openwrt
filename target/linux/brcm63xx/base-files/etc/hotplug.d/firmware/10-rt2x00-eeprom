@@ -26,12 +26,12 @@ rt2x00_eeprom_extract() {
 
 . /lib/brcm63xx.sh
 
-board=$board_id
+board=$(brcm63xx_board_name)
 
 case "$FIRMWARE" in
 "rt2x00.eeprom" )
 	case $board in
-	HW556_C)
+	hg556a_c)
 		rt2x00_eeprom_extract "cal_data" 130560 512
 		;;
 	*)
