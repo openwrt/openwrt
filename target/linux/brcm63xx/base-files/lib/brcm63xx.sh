@@ -6,7 +6,6 @@
 
 board_id=""
 sys_mtd_part=""
-brcm63xx_has_reset_button=""
 ifname=""
 
 brcm63xx_dt_detect() {
@@ -261,128 +260,96 @@ brcm63xx_detect() {
 		ifname=eth0
 		;;
 	a4001n1)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	bcm96328avng)
 		ifname=eth0
 		;;
 	a4001n)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
 	ar-5381u)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	ar-5387un)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	bcm96348gw)
-		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
 	bcm96348gw-11)
-		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
 	spw303v)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	vr-3025un)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
 	vr-3025u)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
 	wap-5813n)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
-	ar1004g)
-		brcm63xx_has_reset_button="true"
-		;;
 	dsl-274xb-c)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	dsl-275xb-d)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	cpva642)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	ct536_ct5621)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	cvg834g)
 		ifname=eth0
 		;;
 	dsl-2640b-b)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	dgnd3700v1_dgnd3800b)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
 	fast2504n)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	fast2704v2)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	gw6000)
-		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
 	gw6200)
-		brcm63xx_has_reset_button="true"
 		ifname=eth1
 		;;
 	hg553)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	hg556a_*)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	hg520)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
 	neufbox6)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	p870hw-51a_v2)
-		brcm63xx_has_reset_button="true"
 		ifname="eth0"
 		;;
 	rta770bw)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	rta770w)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	spw500v)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	v2110)
-		brcm63xx_has_reset_button="true"
 		ifname=eth0
 		;;
 	esac
