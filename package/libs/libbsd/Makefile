@@ -18,7 +18,7 @@ PKG_INSTALL:=1
 define Package/libbsd
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=@USE_EGLIBC
+  DEPENDS:=@USE_GLIBC
   TITLE:=common BSD library
 endef
 

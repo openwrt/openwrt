@@ -35,7 +35,7 @@ define Package/samba36-server
   CATEGORY:=Network
   TITLE:=Samba 3.6 SMB/CIFS server
   URL:=http://www.samba.org/
-  DEPENDS:=+USE_EGLIBC:librt
+  DEPENDS:=+USE_GLIBC:librt
 endef
 
 define Package/samba36-client
