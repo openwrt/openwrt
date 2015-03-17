@@ -17,12 +17,12 @@ endef
 $(eval $(call Profile,OM2P))
 
 define Profile/OM5P
-	NAME:=OpenMesh OM5P
+	NAME:=OpenMesh OM5P/OM5P-AN
 	PACKAGES:=kmod-ath9k om-watchdog
 endef
 
 define Profile/OM5P/Description
-	Package set optimized for the OpenMesh OM5P.
+	Package set optimized for the OpenMesh OM5P/OM5P-AN.
 endef
 
 $(eval $(call Profile,OM5P))
