@@ -233,7 +233,8 @@ om2p-lc)
 	ucidef_set_led_netdev "port2" "port2" "om2p:blue:lan" "eth1"
 	;;
 
-om5p)
+om5p | \
+om5p-an)
 	ucidef_set_led_netdev "port1" "port1" "om5p:blue:wan" "eth0"
 	ucidef_set_led_netdev "port2" "port2" "om5p:blue:lan" "eth1"
 	;;
