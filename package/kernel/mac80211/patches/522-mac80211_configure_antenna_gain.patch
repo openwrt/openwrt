@@ -18,7 +18,7 @@
  				const u8 *addr);
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -1138,6 +1138,7 @@ enum ieee80211_smps_mode {
+@@ -1166,6 +1166,7 @@ enum ieee80211_smps_mode {
   *
   * @power_level: requested transmit power (in dBm), backward compatibility
   *	value only that is set to the minimum of all interfaces
@@ -26,7 +26,7 @@
   *
   * @chandef: the channel definition to tune to
   * @radar_enabled: whether radar detection is enabled
-@@ -1159,6 +1160,7 @@ struct ieee80211_conf {
+@@ -1187,6 +1188,7 @@ struct ieee80211_conf {
  	u32 flags;
  	int power_level, dynamic_ps_timeout;
  	int max_sleep_period;
@@ -87,7 +87,7 @@
  	CFG80211_TESTMODE_CMD(ieee80211_testmode_cmd)
 --- a/net/mac80211/ieee80211_i.h
 +++ b/net/mac80211/ieee80211_i.h
-@@ -1330,6 +1330,7 @@ struct ieee80211_local {
+@@ -1336,6 +1336,7 @@ struct ieee80211_local {
  	int dynamic_ps_forced_timeout;
  
  	int user_power_level; /* in dBm, for all interfaces */
