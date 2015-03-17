@@ -1,7 +1,7 @@
 define Profile/P2812HNUF1
   NAME:=ZyXEL P-2812HNU-F1
   PACKAGES:=kmod-rt2800-pci wpad-mini \
-	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
+	kmod-ltq-deu-vr9 kmod-usb-dwc2 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
 	ltq-vdsl-app ppp-mod-pppoa \
@@ -16,7 +16,7 @@ $(eval $(call Profile,P2812HNUF1))
 define Profile/P2812HNUF3
   NAME:=ZyXEL P-2812HNU-F3
   PACKAGES:=kmod-rt2800-pci wpad-mini \
-	kmod-ltq-deu-vr9 kmod-ltq-hcd-vr9 \
+	kmod-ltq-deu-vr9 kmod-usb-dwc2 \
 	kmod-ltq-vdsl-vr9-mei kmod-ltq-vdsl-vr9 \
 	kmod-ltq-atm-vr9 ltq-vdsl-vr9-fw-installer \
 	ltq-vdsl-app ppp-mod-pppoa \
