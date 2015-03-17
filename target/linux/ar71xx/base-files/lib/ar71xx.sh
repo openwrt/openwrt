@@ -274,6 +274,19 @@ tplink_pharos_board_detect() {
 	[ -n "$model" ] && AR71XX_MODEL="$model v$2"
 }
 
+gl_inet_board_detect() {
+	local size="$(mtd_get_part_size 'firmware')"
+
+	case "$size" in
+	8192000)
+		AR71XX_MODEL='GL-iNet 6408A v1'
+		;;
+	16580608)
+		AR71XX_MODEL='GL-iNet 6416A v1'
+		;;
+	esac
+}
+
 ar71xx_board_detect() {
 	local machine
 	local name
@@ -401,6 +414,7 @@ ar71xx_board_detect() {
 		;;
 	*"GL-CONNECT INET v1")
 		name="gl-inet"
+		gl_inet_board_detect
 		;;
 	*"EnGenius ESR1750")
 		name="esr1750"
