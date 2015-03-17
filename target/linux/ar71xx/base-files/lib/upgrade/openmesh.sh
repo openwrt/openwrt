@@ -68,6 +68,7 @@ platform_check_image_openmesh()
 			;;
 		OM5P)
 			[ "$board" = "om5p" ] && break
+			[ "$board" = "om5p-an" ] && break
 			echo "Invalid image board target ($img_board_target) for this platform: $board. Use the correct image for this platform"
 			return 1
 			;;
