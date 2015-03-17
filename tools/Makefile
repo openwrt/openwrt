@@ -47,7 +47,6 @@ $(curdir)/libtool/compile := $(curdir)/sed/install $(curdir)/m4/install $(curdir
 $(curdir)/squashfs/compile := $(curdir)/lzma-old/install
 $(curdir)/squashfs4/compile := $(curdir)/xz/install
 $(curdir)/quilt/compile := $(curdir)/sed/install $(curdir)/autoconf/install $(curdir)/findutils/install
-$(curdir)/dtc/compile := $(curdir)/bison/install
 $(curdir)/autoconf/compile := $(curdir)/m4/install
 $(curdir)/automake/compile := $(curdir)/m4/install $(curdir)/autoconf/install $(curdir)/pkg-config/install $(curdir)/xz/install
 $(curdir)/gmp/compile := $(curdir)/libtool/install
