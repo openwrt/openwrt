@@ -1,0 +1,20 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -83,6 +83,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_OM2P_LC,		/* OpenMesh OM2P-LC */
+ 	ATH79_MACH_OM2Pv2,		/* OpenMesh OM2Pv2 */
+ 	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
++	ATH79_MACH_OM5P_AN,		/* OpenMesh OM5P-AN */
+ 	ATH79_MACH_OM5P,		/* OpenMesh OM5P */
+ 	ATH79_MACH_PB42,		/* Atheros PB42 */
+ 	ATH79_MACH_PB92,		/* Atheros PB92 */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -671,6 +671,7 @@ config ATH79_MACH_OM2P
+ config ATH79_MACH_OM5P
+ 	bool "OpenMesh OM5P board support"
+ 	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
