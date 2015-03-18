@@ -75,7 +75,7 @@
 /* IMP Port state override register (8 bit) */
 #define B53_PORT_OVERRIDE_CTRL		0x0e
 #define   PORT_OVERRIDE_LINK		BIT(0)
-#define   PORT_OVERRIDE_HALF_DUPLEX	BIT(1) /* 0 = Full Duplex */
+#define   PORT_OVERRIDE_FULL_DUPLEX	BIT(1) /* 0 = Half Duplex */
 #define   PORT_OVERRIDE_SPEED_S		2
 #define   PORT_OVERRIDE_SPEED_10M	(0 << PORT_OVERRIDE_SPEED_S)
 #define   PORT_OVERRIDE_SPEED_100M	(1 << PORT_OVERRIDE_SPEED_S)
