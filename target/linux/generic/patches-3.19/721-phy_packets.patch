@@ -28,7 +28,7 @@
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1613,6 +1620,10 @@ struct net_device {
+@@ -1615,6 +1622,10 @@ struct net_device {
  	struct wireless_dev	*ieee80211_ptr;
  	struct wpan_dev		*ieee802154_ptr;
  
@@ -41,7 +41,7 @@
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2042,6 +2042,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2043,6 +2043,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -52,7 +52,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -2168,16 +2172,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2169,16 +2173,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -121,7 +121,7 @@
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -548,6 +549,22 @@ struct sk_buff *__napi_alloc_skb(struct
+@@ -548,6 +549,22 @@ struct sk_buff *__napi_alloc_skb(struct 
  }
  EXPORT_SYMBOL(__napi_alloc_skb);
  
@@ -146,7 +146,7 @@
  {
 --- a/net/ethernet/eth.c
 +++ b/net/ethernet/eth.c
-@@ -188,6 +188,12 @@ __be16 eth_type_trans(struct sk_buff *sk
+@@ -200,6 +200,12 @@ __be16 eth_type_trans(struct sk_buff *sk
  	const struct ethhdr *eth;
  
  	skb->dev = dev;
