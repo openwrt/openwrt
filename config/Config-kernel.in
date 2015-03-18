@@ -59,6 +59,26 @@ config KERNEL_ENABLE_DEFAULT_TRACERS
 	depends on KERNEL_FTRACE
 	default n
 
+config KERNEL_FUNCTION_TRACER
+	bool "Function tracer"
+	depends on KERNEL_FTRACE
+	default n
+
+config KERNEL_FUNCTION_GRAPH_TRACER
+	bool "Function graph tracer"
+	depends on KERNEL_FUNCTION_TRACER
+	default n
+
+config KERNEL_DYNAMIC_FTRACE
+	bool "Enable/disable function tracing dynamically"
+	depends on KERNEL_FUNCTION_TRACER
+	default n
+
+config KERNEL_FUNCTION_PROFILER
+	bool "Function profiler"
+	depends on KERNEL_FUNCTION_TRACER
+	default n
+
 config KERNEL_DEBUG_KERNEL
 	bool
 	default n
