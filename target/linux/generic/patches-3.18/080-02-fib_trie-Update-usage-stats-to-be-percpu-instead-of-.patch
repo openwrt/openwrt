@@ -189,7 +189,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  #endif /*  CONFIG_IP_FIB_TRIE_STATS */
  
-@@ -2191,7 +2219,7 @@ static int fib_triestat_seq_show(struct 
+@@ -2191,7 +2219,7 @@ static int fib_triestat_seq_show(struct
  			trie_collect_stats(t, &stat);
  			trie_show_stats(seq, &stat);
  #ifdef CONFIG_IP_FIB_TRIE_STATS

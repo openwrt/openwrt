@@ -823,7 +823,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	seq_printf(seq, "Null ptrs: %u\n", stat->nullpointers);
  	seq_printf(seq, "Total size: %u  kB\n", (bytes + 1023) / 1024);
  }
-@@ -2163,7 +2124,7 @@ static int fib_triestat_seq_show(struct 
+@@ -2163,7 +2124,7 @@ static int fib_triestat_seq_show(struct
  	seq_printf(seq,
  		   "Basic info: size of leaf:"
  		   " %Zd bytes, size of tnode: %Zd bytes.\n",
@@ -859,7 +859,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	++*pos;
  	/* next node in same table */
-@@ -2330,29 +2291,26 @@ static inline const char *rtn_type(char 
+@@ -2329,29 +2290,26 @@ static inline const char *rtn_type(char
  static int fib_trie_seq_show(struct seq_file *seq, void *v)
  {
  	const struct fib_trie_iter *iter = seq->private;
@@ -896,7 +896,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			struct fib_alias *fa;
  
  			list_for_each_entry_rcu(fa, &li->falh, fa_list) {
-@@ -2402,9 +2360,9 @@ struct fib_route_iter {
+@@ -2401,9 +2359,9 @@ struct fib_route_iter {
  	t_key	key;
  };
  
@@ -908,7 +908,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	struct trie *t = iter->main_trie;
  
  	/* use cache location of last found key */
-@@ -2449,7 +2407,7 @@ static void *fib_route_seq_start(struct 
+@@ -2448,7 +2406,7 @@ static void *fib_route_seq_start(struct
  static void *fib_route_seq_next(struct seq_file *seq, void *v, loff_t *pos)
  {
  	struct fib_route_iter *iter = seq->private;
@@ -917,7 +917,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	++*pos;
  	if (v == SEQ_START_TOKEN) {
-@@ -2495,7 +2453,7 @@ static unsigned int fib_flag_trans(int t
+@@ -2494,7 +2452,7 @@ static unsigned int fib_flag_trans(int t
   */
  static int fib_route_seq_show(struct seq_file *seq, void *v)
  {

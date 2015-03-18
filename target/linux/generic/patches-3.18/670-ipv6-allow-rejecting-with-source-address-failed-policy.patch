@@ -68,7 +68,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static void rt_fibinfo_free(struct rtable __rcu **rtp)
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -2324,6 +2324,7 @@ static const char *const rtn_type_names[
+@@ -2236,6 +2236,7 @@ static const char *const rtn_type_names[
  	[RTN_THROW] = "THROW",
  	[RTN_NAT] = "NAT",
  	[RTN_XRESOLVE] = "XRESOLVE",

@@ -231,7 +231,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	/* No children */
  	if (tn->empty_children > (tnode_child_length(tn) - 1))
  		goto no_children;
-@@ -755,39 +756,35 @@ static struct tnode *resize(struct trie 
+@@ -755,39 +756,35 @@ static struct tnode *resize(struct trie
  	 * nonempty nodes that are above the threshold.
  	 */
  	max_work = MAX_WORK;

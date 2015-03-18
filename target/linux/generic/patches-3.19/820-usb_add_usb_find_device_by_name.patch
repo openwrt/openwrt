@@ -74,7 +74,7 @@
   * @dev: device the buffer will be used with
 --- a/include/linux/usb.h
 +++ b/include/linux/usb.h
-@@ -700,6 +700,7 @@ static inline bool usb_device_no_sg_cons
+@@ -695,6 +695,7 @@ static inline bool usb_device_no_sg_cons
  	return udev && udev->bus && udev->bus->no_sg_constraint;
  }
  

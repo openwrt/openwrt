@@ -40,7 +40,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  			struct tnode __rcu *child[0];
  		};
  		/* This list pointer if valid if bits == 0 (LEAF) */
-@@ -302,6 +303,16 @@ static struct tnode *tnode_alloc(size_t 
+@@ -302,6 +303,16 @@ static struct tnode *tnode_alloc(size_t
  		return vzalloc(size);
  }
  
@@ -79,7 +79,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	}
  
  	pr_debug("AT %p s=%zu %zu\n", tn, sizeof(struct tnode),
-@@ -375,11 +388,11 @@ static void put_child(struct tnode *tn, 
+@@ -375,11 +388,11 @@ static void put_child(struct tnode *tn,
  
  	BUG_ON(i >= tnode_child_length(tn));
  
@@ -95,7 +95,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	/* update fullChildren */
  	wasfull = tnode_full(tn, chi);
-@@ -630,6 +643,24 @@ static int halve(struct trie *t, struct 
+@@ -630,6 +643,24 @@ static int halve(struct trie *t, struct
  	return 0;
  }
  
@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static unsigned char update_suffix(struct tnode *tn)
  {
  	unsigned char slen = tn->pos;
-@@ -729,10 +760,12 @@ static bool should_inflate(const struct 
+@@ -729,10 +760,12 @@ static bool should_inflate(const struct
  
  	/* Keep root node larger */
  	threshold *= tp ? inflate_threshold : inflate_threshold_root;

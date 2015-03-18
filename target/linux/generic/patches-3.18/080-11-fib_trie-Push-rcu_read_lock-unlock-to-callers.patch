@@ -47,7 +47,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  #else /* CONFIG_IP_MULTIPLE_TABLES */
-@@ -247,20 +250,25 @@ static inline int fib_lookup(struct net 
+@@ -247,20 +250,25 @@ static inline int fib_lookup(struct net
  			     struct fib_result *res)
  {
  	if (!net->ipv4.fib_has_custom_rules) {
@@ -164,7 +164,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  }
  
  static void nl_fib_input(struct sk_buff *skb)
-@@ -952,7 +958,6 @@ static void nl_fib_input(struct sk_buff 
+@@ -952,7 +958,6 @@ static void nl_fib_input(struct sk_buff
  	struct net *net;
  	struct fib_result_nl *frn;
  	struct nlmsghdr *nlh;
@@ -172,7 +172,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	u32 portid;
  
  	net = sock_net(skb->sk);
-@@ -967,9 +972,7 @@ static void nl_fib_input(struct sk_buff 
+@@ -967,9 +972,7 @@ static void nl_fib_input(struct sk_buff
  	nlh = nlmsg_hdr(skb);
  
  	frn = (struct fib_result_nl *) nlmsg_data(nlh);

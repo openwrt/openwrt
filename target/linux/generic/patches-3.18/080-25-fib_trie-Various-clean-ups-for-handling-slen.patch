@@ -64,7 +64,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		l->slen = KEYLENGTH - new->plen;
  		leaf_push_suffix(l);
  	}
-@@ -1613,6 +1606,7 @@ static int trie_flush_leaf(struct tnode 
+@@ -1613,6 +1606,7 @@ static int trie_flush_leaf(struct tnode
  	struct hlist_head *lih = &l->list;
  	struct hlist_node *tmp;
  	struct leaf_info *li = NULL;
@@ -72,7 +72,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	hlist_for_each_entry_safe(li, tmp, lih, hlist) {
  		found += trie_flush_list(&li->falh);
-@@ -1620,8 +1614,14 @@ static int trie_flush_leaf(struct tnode 
+@@ -1620,8 +1614,14 @@ static int trie_flush_leaf(struct tnode
  		if (list_empty(&li->falh)) {
  			hlist_del_rcu(&li->hlist);
  			free_leaf_info(li);

@@ -139,7 +139,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	int max_work;
  
  	if (!tn)
-@@ -668,86 +750,12 @@ static struct tnode *resize(struct trie 
+@@ -668,86 +750,12 @@ static struct tnode *resize(struct trie
  	/* One child */
  	if (tn->empty_children == (tnode_child_length(tn) - 1))
  		goto one_child;
@@ -229,7 +229,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		old_tn = tn;
  		tn = inflate(t, tn);
  
-@@ -764,16 +772,11 @@ static struct tnode *resize(struct trie 
+@@ -764,16 +772,11 @@ static struct tnode *resize(struct trie
  	if (max_work != MAX_WORK)
  		return tn;
  
