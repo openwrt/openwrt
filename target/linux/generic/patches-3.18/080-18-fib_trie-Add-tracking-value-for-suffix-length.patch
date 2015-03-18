@@ -42,7 +42,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		tn->pos = pos;
  		tn->bits = bits;
  		tn->key = (shift < KEYLENGTH) ? (key >> shift) << shift : 0;
-@@ -387,6 +390,9 @@ static void put_child(struct tnode *tn, 
+@@ -387,6 +390,9 @@ static void put_child(struct tnode *tn,
  	else if (!wasfull && isfull)
  		tn->full_children++;
  
@@ -52,7 +52,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	rcu_assign_pointer(tn->child[i], n);
  }
  
-@@ -635,6 +641,41 @@ static int halve(struct trie *t, struct 
+@@ -635,6 +641,41 @@ static int halve(struct trie *t, struct
  	return 0;
  }
  
@@ -120,7 +120,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
 -static void insert_leaf_info(struct hlist_head *head, struct leaf_info *new)
 +static void leaf_pull_suffix(struct tnode *l)
- {
++{
 +	struct tnode *tp = node_parent(l);
 +
 +	while (tp && (tp->slen > tp->pos) && (tp->slen > l->slen)) {
@@ -169,7 +169,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +}
 +
 +static void insert_leaf_info(struct tnode *l, struct leaf_info *new)
-+{
+ {
 +	struct hlist_head *head = &l->list;
  	struct leaf_info *li = NULL, *last = NULL;
  

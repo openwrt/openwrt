@@ -17,7 +17,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -391,8 +391,6 @@ static void put_child(struct tnode *tn, 
+@@ -391,8 +391,6 @@ static void put_child(struct tnode *tn,
  	else if (!wasfull && isfull)
  		tn->full_children++;
  
@@ -235,7 +235,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	pr_debug("In halve\n");
  
-@@ -577,68 +575,64 @@ static int halve(struct trie *t, struct 
+@@ -577,68 +575,64 @@ static int halve(struct trie *t, struct
  	if (!tn)
  		return -ENOMEM;
  

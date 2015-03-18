@@ -20,7 +20,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  /* tnodes to free after resize(); protected by RTNL */
  static struct callback_head *tnode_free_head;
  static size_t tnode_free_size;
-@@ -447,161 +445,6 @@ static void put_child_root(struct tnode 
+@@ -447,161 +445,6 @@ static void put_child_root(struct tnode
  		rcu_assign_pointer(t->trie, n);
  }
  

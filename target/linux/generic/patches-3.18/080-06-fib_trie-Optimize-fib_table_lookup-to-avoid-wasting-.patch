@@ -149,9 +149,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +		if (IS_LEAF(n))
  			goto found;
 -		}
- 
--		cn = n;
 -
+-		cn = n;
+ 
 -		/*
 -		 * It's a tnode, and we can do some extra checks here if we
 -		 * like, to avoid descending into a dead-end branch.

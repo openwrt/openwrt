@@ -29,7 +29,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/ipv4/fib_trie.c
 +++ b/net/ipv4/fib_trie.c
-@@ -396,8 +396,30 @@ static void put_child(struct tnode *tn, 
+@@ -396,8 +396,30 @@ static void put_child(struct tnode *tn,
  	rcu_assign_pointer(tn->child[i], n);
  }
  
@@ -150,7 +150,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	tp = node_parent(oldtnode);
 -	NODE_INIT_PARENT(tn, tp);
 -	put_child_root(tp, t, tn->key, tn);
--
++	/* setup the parent pointers into and out of this node */
++	replace(t, oldtnode, tn);
+ 
 -	/* prepare oldtnode to be freed */
 -	tnode_free_init(oldtnode);
 -
@@ -170,9 +172,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -		/* fetch new nodes */
 -		node1 = tnode_get_child(tn, 2 * i + 1);
 -		node0 = tnode_get_child(tn, 2 * i);
-+	/* setup the parent pointers into and out of this node */
-+	replace(t, oldtnode, tn);
- 
+-
 -		/* bits == 1 then node0 and node1 represent inode's children */
 -		if (inode->bits == 1) {
 -			node_set_parent(node1, tn);
@@ -207,7 +207,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	unsigned long i;
  
  	pr_debug("In halve\n");
-@@ -577,14 +588,18 @@ static int halve(struct trie *t, struct 
+@@ -577,14 +588,18 @@ static int halve(struct trie *t, struct
  	if (!tn)
  		return -ENOMEM;
  
@@ -228,7 +228,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  		/* At least one of the children is empty */
  		if (!node1 || !node0) {
-@@ -609,34 +624,8 @@ static int halve(struct trie *t, struct 
+@@ -609,34 +624,8 @@ static int halve(struct trie *t, struct
  		put_child(tn, i / 2, inode);
  	}
  

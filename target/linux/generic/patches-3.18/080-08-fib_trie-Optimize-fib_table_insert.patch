@@ -88,12 +88,12 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -	 * If we point to a T_TNODE, check if it matches our key. Note that
 -	 * a T_TNODE might be skipping any number of bits - its 'pos' need
 -	 * not be the parent's 'pos'+'bits'!
- 	 *
+-	 *
 -	 * If it does match the current key, get pos/bits from it, extract
 -	 * the index from our key, push the T_TNODE and walk the tree.
 -	 *
 -	 * If it doesn't, we have to replace it with a new T_TNODE.
--	 *
+ 	 *
 -	 * If we point to a T_LEAF, it might or might not have the same key
 -	 * as we do. If it does, just change the value, update the T_LEAF's
 -	 * value, and return it.
@@ -129,13 +129,13 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 +		if (index >> n->bits)
  			break;
 -	}
- 
+-
 -	/*
 -	 * n  ----> NULL, LEAF or TNODE
 -	 *
 -	 * tp is n's (parent) ----> NULL or TNODE
 -	 */
--
+ 
 -	BUG_ON(tp && IS_LEAF(tp));
 -
 -	/* Case 1: n is a leaf. Compare prefixes */
@@ -162,9 +162,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 -
 -	if (!l)
 -		return NULL;
--
--	li = leaf_info_new(plen);
  
+-	li = leaf_info_new(plen);
+-
 -	if (!li) {
 -		node_free(l);
 +	l = leaf_new(key);

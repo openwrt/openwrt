@@ -27,7 +27,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static size_t tnode_free_size;
  
  /*
-@@ -307,32 +305,6 @@ static struct tnode *tnode_alloc(size_t 
+@@ -307,32 +305,6 @@ static struct tnode *tnode_alloc(size_t
  		return vzalloc(size);
  }
  
@@ -60,7 +60,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static struct tnode *leaf_new(t_key key)
  {
  	struct tnode *l = kmem_cache_alloc(trie_leaf_kmem, GFP_KERNEL);
-@@ -433,17 +405,33 @@ static void put_child_root(struct tnode 
+@@ -433,17 +405,33 @@ static void put_child_root(struct tnode
  		rcu_assign_pointer(t->trie, n);
  }
  
@@ -169,7 +169,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	return -ENOMEM;
  }
  
-@@ -599,17 +593,20 @@ static int halve(struct trie *t, struct 
+@@ -599,17 +593,20 @@ static int halve(struct trie *t, struct
  			struct tnode *newn;
  
  			newn = tnode_new(left->key, oldtnode->pos, 1);
@@ -192,7 +192,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	for (i = 0; i < olen; i += 2) {
  		struct tnode *newBinNode;
  
-@@ -636,11 +633,14 @@ static int halve(struct trie *t, struct 
+@@ -636,11 +633,14 @@ static int halve(struct trie *t, struct
  
  		put_child(tn, i / 2, newBinNode);
  

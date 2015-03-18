@@ -306,7 +306,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		if (!tn) {
  			free_leaf_info(li);
  			node_free(l);
-@@ -1559,12 +1532,7 @@ static int trie_flush_leaf(struct tnode 
+@@ -1559,12 +1532,7 @@ static int trie_flush_leaf(struct tnode
  static struct tnode *leaf_walk_rcu(struct tnode *p, struct tnode *c)
  {
  	do {
@@ -329,7 +329,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  		tn = p;
  		--iter->depth;
  		goto rescan;
-@@ -2187,10 +2155,10 @@ static int fib_trie_seq_show(struct seq_
+@@ -2186,10 +2154,10 @@ static int fib_trie_seq_show(struct seq_
  	if (IS_TNODE(n)) {
  		__be32 prf = htonl(n->key);
  

@@ -88,7 +88,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  static inline void free_leaf_info(struct leaf_info *leaf)
  {
  	kfree_rcu(leaf, rcu);
-@@ -360,43 +369,24 @@ static struct tnode *tnode_alloc(size_t 
+@@ -360,43 +369,24 @@ static struct tnode *tnode_alloc(size_t
  		return vzalloc(size);
  }
  
