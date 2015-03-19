@@ -373,7 +373,6 @@ $(eval $(call KernelPackage,nf-nathelper-extra))
 define KernelPackage/ipt-queue
   TITLE:=Module for user-space packet queueing
   KCONFIG:=$(KCONFIG_IPT_QUEUE)
-  DEPENDS:=@!LINUX_3_6
   FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_QUEUE-m)))
   $(call AddDepends/ipt)
