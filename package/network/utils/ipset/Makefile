@@ -39,25 +39,8 @@ MAKE_FLAGS += \
 	ARCH="$(LINUX_KARCH)" \
 	SHELL="$(BASH)"
 
-IPSET_MODULES:= \
-	ipset/ip_set \
-	ipset/ip_set_bitmap_ip \
-	ipset/ip_set_bitmap_ipmac \
-	ipset/ip_set_bitmap_port \
-	ipset/ip_set_hash_ip \
-	ipset/ip_set_hash_ipmark \
-	ipset/ip_set_hash_ipport \
-	ipset/ip_set_hash_ipportip \
-	ipset/ip_set_hash_ipportnet \
-	ipset/ip_set_hash_net \
-	ipset/ip_set_hash_netiface \
-	ipset/ip_set_hash_netport \
-	ipset/ip_set_list_set \
-	xt_set \
-
 define Build/Compile
 	$(call Build/Compile/Default)
-	$(call Build/Compile/Default,modules)
 endef
 
 define Package/ipset/install
@@ -67,13 +50,4 @@ define Package/ipset/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libipset*.so* $(1)/usr/lib/
 endef
 
-define KernelPackage/ipt-ipset
-  SUBMENU:=Netfilter Extensions
-  TITLE:=IPset netfilter modules
-  DEPENDS+= +kmod-ipt-core +kmod-nfnetlink
-  FILES:=$(foreach mod,$(IPSET_MODULES),$(PKG_BUILD_DIR)/kernel/net/netfilter/$(mod).ko)
-  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(IPSET_MODULES)))
-endef
-
 $(eval $(call BuildPackage,ipset))
-$(eval $(call KernelPackage,ipt-ipset))
