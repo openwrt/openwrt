@@ -66,13 +66,13 @@ $(eval $(call KernelPackage,n810bm))
 define KernelPackage/usb-tahvo
   TITLE:=Support for Tahvo (Nokia n810) USB
   KCONFIG:= \
-	CONFIG_CBUS_TAHVO_USB \
-	CONFIG_CBUS_TAHVO_USB_HOST_BY_DEFAULT=n \
+	CONFIG_TAHVO_USB \
+	CONFIG_TAHVO_USB_HOST_BY_DEFAULT=n \
 	CONFIG_USB_OHCI_HCD_OMAP1=y \
 	CONFIG_USB_GADGET_DEBUG_FS=n
   DEPENDS:=@TARGET_omap24xx +kmod-usb-musb-tusb6010
-  FILES:=$(LINUX_DIR)/drivers/cbus/tahvo-usb.ko
-  AUTOLOAD:=$(call AutoLoad,45,tahvo-usb)
+  FILES:=$(LINUX_DIR)/drivers/usb/phy/phy-tahvo.ko
+  AUTOLOAD:=$(call AutoLoad,45,phy-tahvo)
   $(call AddDepends/usb)
 endef
 
