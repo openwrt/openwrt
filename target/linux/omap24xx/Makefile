@@ -13,7 +13,7 @@ MAINTAINER:=Michael Buesch <m@bues.ch>
 FEATURES:=targz squashfs jffs2_nand usb usbgadget display gpio audio broken
 CPU_TYPE:=arm1136j-s
 
-KERNEL_PATCHVER:=3.3
+KERNEL_PATCHVER:=4.0
 
 define Target/Description
 	TI OMAP-24xx
