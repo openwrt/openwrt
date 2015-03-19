@@ -27,7 +27,7 @@
 +			return err;
 +
 +		if (ec_hdr_has_eof(ech)) {
-+			ubi_msg("EOF marker found, PEBs from %d will be erased",
++			pr_notice("UBI: EOF marker found, PEBs from %d will be erased",
 +				pnum);
 +			ai->eof_found = true;
 +		}
