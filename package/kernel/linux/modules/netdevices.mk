@@ -484,7 +484,7 @@ $(eval $(call KernelPackage,igb))
 define KernelPackage/b44
   TITLE:=Broadcom 44xx driver
   KCONFIG:=CONFIG_B44
-  DEPENDS:=@PCI_SUPPORT @!TARGET_brcm47xx_mips74k +!TARGET_brcm47xx:kmod-ssb +kmod-mii +(!LINUX_3_10&&!LINUX_3_13):kmod-libphy
+  DEPENDS:=@PCI_SUPPORT @!TARGET_brcm47xx_mips74k +!TARGET_brcm47xx:kmod-ssb +kmod-mii +!LINUX_3_10:kmod-libphy
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/broadcom/b44.ko
   AUTOLOAD:=$(call AutoLoad,19,b44,1)

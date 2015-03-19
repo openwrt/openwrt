@@ -119,7 +119,7 @@ $(eval $(call KernelPackage,lib-lzo))
 
 define KernelPackage/lib-lz4
   SUBMENU:=$(LIB_MENU)
-  DEPENDS:=@!(LINUX_3_3||LINUX_3_8||LINUX_3_10||LINUX_3_13||LINUX_3_14)
+  DEPENDS:=@!LINUX_3_10 @!LINUX_3_14
   TITLE:=LZ4 support
   KCONFIG:= \
 	CONFIG_LZ4_COMPRESS \

@@ -22,7 +22,7 @@ endef
 
 $(eval $(call KernelPackage,leds-gpio))
 
-LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds$(if $(CONFIG_LINUX_3_8),,/trigger)
+LED_TRIGGER_DIR=$(LINUX_DIR)/drivers/leds/trigger
 
 define KernelPackage/ledtrig-heartbeat
   SUBMENU:=$(LEDS_MENU)

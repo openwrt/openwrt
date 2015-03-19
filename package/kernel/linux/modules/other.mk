@@ -13,7 +13,7 @@ WATCHDOG_DIR:=watchdog
 define KernelPackage/6lowpan-iphc
   USBMENU:=$(OTHER_MENU)
   TITLE:=6lowpan shared code
-  DEPENDS:=@!LINUX_3_8 @!LINUX_3_10 @!LINUX_3_13
+  DEPENDS:=@!LINUX_3_10
   KCONFIG:=CONFIG_6LOWPAN_IPHC
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/net/ieee802154/6lowpan_iphc.ko
@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,6lowpan-iphc))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +(!LINUX_3_8&&!LINUX_3_10&&!LINUX_3_13):kmod-6lowpan-iphc
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +!LINUX_3_10:kmod-6lowpan-iphc
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -73,7 +73,7 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/bluetooth_6lowpan
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth 6LoWPAN support
-  DEPENDS:=+kmod-bluetooth @!(LINUX_3_8||LINUX_3_10||LINUX_3_13||LINUX_3_14)
+  DEPENDS:=+kmod-bluetooth @!LINUX_3_10 @!LINUX_3_14
   KCONFIG:= \
   CONFIG_6LOWPAN=m \
   CONFIG_BT_6LOWPAN=m
@@ -696,7 +696,7 @@ define KernelPackage/serial-8250
 	CONFIG_SERIAL_8250_SHARE_IRQ=y \
 	CONFIG_SERIAL_8250_DETECT_IRQ=n \
 	CONFIG_SERIAL_8250_RSA=n
-  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250$(if $(CONFIG_LINUX_3_8),_core).ko
+  FILES:=$(LINUX_DIR)/drivers/tty/serial/8250/8250.ko
 endef
 
 define KernelPackage/serial-8250/description
@@ -746,7 +746,7 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
-  DEPENDS:=+kmod-lib-lzo @!TARGET_ep93xx +(!LINUX_3_8&&!LINUX_3_10&&!LINUX_3_13&&!LINUX_3_14):kmod-lib-lz4
+  DEPENDS:=+kmod-lib-lzo @!TARGET_ep93xx +(!LINUX_3_10&&!LINUX_3_14):kmod-lib-lz4
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \

@@ -62,7 +62,7 @@ $(eval $(call KernelPackage,fs-autofs4))
 define KernelPackage/fs-btrfs
   SUBMENU:=$(FS_MENU)
   TITLE:=BTRFS filesystem support
-  DEPENDS:=+kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib +!LINUX_3_8:kmod-lib-raid6 +!LINUX_3_8:kmod-lib-xor
+  DEPENDS:=+kmod-lib-crc32c +kmod-lib-lzo +kmod-lib-zlib +kmod-lib-raid6 +kmod-lib-xor
   KCONFIG:=\
 	CONFIG_BTRFS_FS \
 	CONFIG_BTRFS_FS_POSIX_ACL=n \
