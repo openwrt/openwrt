@@ -223,6 +223,54 @@ endef
 
 $(eval $(call KernelPackage,ipt-ipsec))
 
+IPSET_MODULES:= \
+	ipset/ip_set \
+	ipset/ip_set_bitmap_ip \
+	ipset/ip_set_bitmap_ipmac \
+	ipset/ip_set_bitmap_port \
+	ipset/ip_set_hash_ip \
+	ipset/ip_set_hash_ipmark \
+	ipset/ip_set_hash_ipport \
+	ipset/ip_set_hash_ipportip \
+	ipset/ip_set_hash_ipportnet \
+	ipset/ip_set_hash_mac \
+	ipset/ip_set_hash_netportnet \
+	ipset/ip_set_hash_net \
+	ipset/ip_set_hash_netnet \
+	ipset/ip_set_hash_netport \
+	ipset/ip_set_hash_netiface \
+	ipset/ip_set_list_set \
+	xt_set
+
+define KernelPackage/ipt-ipset
+  SUBMENU:=Netfilter Extensions
+  TITLE:=IPset netfilter modules
+  DEPENDS+= +kmod-ipt-core +kmod-nfnetlink
+  KCONFIG:= \
+	CONFIG_IP_SET \
+	CONFIG_IP_SET_MAX=256 \
+	CONFIG_NETFILTER_XT_SET \
+	CONFIG_IP_SET_BITMAP_IP \
+	CONFIG_IP_SET_BITMAP_IPMAC \
+	CONFIG_IP_SET_BITMAP_PORT \
+	CONFIG_IP_SET_HASH_IP \
+	CONFIG_IP_SET_HASH_IPMARK \
+	CONFIG_IP_SET_HASH_IPPORT \
+	CONFIG_IP_SET_HASH_IPPORTIP \
+	CONFIG_IP_SET_HASH_IPPORTNET \
+	CONFIG_IP_SET_HASH_MAC \
+	CONFIG_IP_SET_HASH_NET \
+	CONFIG_IP_SET_HASH_NETNET \
+	CONFIG_IP_SET_HASH_NETIFACE \
+	CONFIG_IP_SET_HASH_NETPORT \
+	CONFIG_IP_SET_HASH_NETPORTNET \
+	CONFIG_IP_SET_LIST_SET \
+	CONFIG_NET_EMATCH_IPSET=n
+  FILES:=$(foreach mod,$(IPSET_MODULES),$(LINUX_DIR)/net/netfilter/$(mod).ko)
+  AUTOLOAD:=$(call AutoLoad,49,$(notdir $(IPSET_MODULES)))
+endef
+$(eval $(call KernelPackage,ipt-ipset))
+
 
 define KernelPackage/ipt-nat
   TITLE:=Basic NAT targets
