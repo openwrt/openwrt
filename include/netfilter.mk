@@ -49,10 +49,9 @@ $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_MATCH_ID, $(P_XT)xt_id))
 #cluster
 $(eval $(call nf_add,IPT_CLUSTER,CONFIG_NETFILTER_XT_MATCH_CLUSTER, $(P_XT)xt_cluster))
 
-$(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_LOG, $(P_XT)xt_LOG, ge 3.4.0))
+$(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_LOG, $(P_XT)xt_LOG))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_LOG, $(P_XT)nf_log_common, ge 3.16.0))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_LOG, $(P_V4)nf_log_ipv4, ge 3.16.0))
-$(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_LOG, $(P_V4)ipt_LOG, lt 3.4.0))
 $(eval $(call nf_add,IPT_CORE,CONFIG_NETFILTER_XT_TARGET_TCPMSS, $(P_XT)xt_TCPMSS))
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_REJECT, $(P_V4)ipt_REJECT))
 $(eval $(call nf_add,IPT_CORE,CONFIG_IP_NF_TARGET_REJECT, $(P_V4)nf_reject_ipv4, ge 3.18.0))
@@ -74,7 +73,6 @@ $(eval $(if $(NF_KMOD),$(call nf_add,NF_CONNTRACK,CONFIG_NF_CONNTRACK_IPV4, $(P_
 
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_STATE, $(P_XT)xt_state))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_IP_NF_RAW, $(P_V4)iptable_raw))
-$(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_TARGET_NOTRACK, $(P_XT)xt_NOTRACK, lt 3.7.0))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_TARGET_CT, $(P_XT)xt_CT))
 $(eval $(call nf_add,IPT_CONNTRACK,CONFIG_NETFILTER_XT_MATCH_CONNTRACK, $(P_XT)xt_conntrack))
 
@@ -175,22 +173,20 @@ $(eval $(call nf_add,IPT_IPV6_EXTRA,CONFIG_IP6_NF_MATCH_RT, $(P_V6)ip6t_rt))
 # nat
 
 # kernel only
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT,CONFIG_NF_NAT, $(P_V4)nf_nat, lt 3.7.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT,CONFIG_NF_NAT, $(P_XT)nf_nat, ge 3.7.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT,CONFIG_NF_NAT_IPV4, $(P_V4)nf_nat_ipv4, ge 3.7.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT6,CONFIG_NF_NAT_IPV6, $(P_V6)nf_nat_ipv6, ge 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT,CONFIG_NF_NAT, $(P_XT)nf_nat),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT,CONFIG_NF_NAT_IPV4, $(P_V4)nf_nat_ipv4),))
+$(eval $(if $(NF_KMOD),$(call nf_add,NF_NAT6,CONFIG_NF_NAT_IPV6, $(P_V6)nf_nat_ipv6),))
 
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)xt_nat, ge 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)xt_nat),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NETFILTER_XT_NAT, $(P_XT)xt_nat, ge 3.18.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_V4)iptable_nat, lt 3.7.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT, $(P_XT)nf_nat_redirect, ge 3.19.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT_IPV4, $(P_V4)iptable_nat, ge 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_NF_NAT_IPV4, $(P_V4)iptable_nat),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT,CONFIG_IP_NF_NAT, $(P_V4)iptable_nat, ge 3.16.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_NF_NAT_IPV6, $(P_V6)ip6table_nat, ge 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_NF_NAT_IPV6, $(P_V6)ip6table_nat),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_NAT, $(P_V6)ip6table_nat, ge 3.16.0),))
 $(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_NAT, $(P_V6)nf_nat_masquerade_ipv6, ge 3.16.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_MASQUERADE, $(P_V6)ip6t_MASQUERADE, ge 3.7.0),))
-$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, $(P_V6)ip6t_NPT, ge 3.7.0),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_MASQUERADE, $(P_V6)ip6t_MASQUERADE),))
+$(eval $(if $(NF_KMOD),$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, $(P_V6)ip6t_NPT),))
 
 # userland only
 $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT,CONFIG_NF_NAT, ipt_SNAT ipt_DNAT)))
@@ -198,14 +194,12 @@ $(eval $(if $(NF_KMOD),,$(call nf_add,IPT_NAT6,CONFIG_IP6_NF_TARGET_NPT, ip6t_DN
 
 $(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_MASQUERADE, $(P_V4)ipt_MASQUERADE))
 $(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_MASQUERADE, $(P_V4)nf_nat_masquerade_ipv4, ge 3.18.0))
-$(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_REDIRECT, $(P_XT)xt_REDIRECT, ge 3.7.0))
-$(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_REDIRECT, $(P_V4)ipt_REDIRECT, lt 3.7.0))
+$(eval $(call nf_add,IPT_NAT,CONFIG_IP_NF_TARGET_REDIRECT, $(P_XT)xt_REDIRECT))
 
 
 # nat-extra
 
-$(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_XT)xt_NETMAP, ge 3.7.0))
-$(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_V4)ipt_NETMAP, lt 3.7.0))
+$(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_XT)xt_NETMAP))
 
 
 # nathelper
@@ -213,18 +207,15 @@ $(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_V4)ipt_NETMAP
 $(eval $(call nf_add,NF_NATHELPER,CONFIG_IP_NF_NAT_FTP, $(P_V4)ip_nat_ftp))
 $(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_CONNTRACK_FTP, $(P_XT)nf_conntrack_ftp))
 $(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_CONNTRACK_IRC, $(P_XT)nf_conntrack_irc))
-$(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp, ge 3.7.0))
-$(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_IRC, $(P_XT)nf_nat_irc, ge 3.7.0))
-$(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_FTP, $(P_V4)nf_nat_ftp, lt 3.7.0))
-$(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_IRC, $(P_V4)nf_nat_irc, lt 3.7.0))
+$(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp))
+$(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_IRC, $(P_XT)nf_nat_irc))
 
 
 # nathelper-extra
 
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_BROADCAST, $(P_XT)nf_conntrack_broadcast))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_AMANDA, $(P_XT)nf_conntrack_amanda))
-$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_AMANDA, $(P_XT)nf_nat_amanda, ge 3.7.0))
-$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_AMANDA, $(P_V4)nf_nat_amanda, lt 3.7.0))
+$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_AMANDA, $(P_XT)nf_nat_amanda))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CT_PROTO_GRE, $(P_XT)nf_conntrack_proto_gre))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_PROTO_GRE, $(P_V4)nf_nat_proto_gre))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_H323, $(P_XT)nf_conntrack_h323))
@@ -232,18 +223,11 @@ $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_H323, $(P_V4)nf_nat_h323))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_PPTP, $(P_XT)nf_conntrack_pptp))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_PPTP, $(P_V4)nf_nat_pptp))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_SIP, $(P_XT)nf_conntrack_sip))
-$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_SIP, $(P_XT)nf_nat_sip, ge 3.7.0))
-$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_SIP, $(P_V4)nf_nat_sip, lt 3.7.0))
+$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_SIP, $(P_XT)nf_nat_sip))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_SNMP, $(P_XT)nf_conntrack_snmp))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_SNMP_BASIC, $(P_V4)nf_nat_snmp_basic))
 $(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_CONNTRACK_TFTP, $(P_XT)nf_conntrack_tftp))
-$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_TFTP, $(P_XT)nf_nat_tftp, ge 3.7.0))
-$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_TFTP, $(P_V4)nf_nat_tftp, lt 3.7.0))
-
-
-# queue
-
-$(eval $(call nf_add,IPT_QUEUE,CONFIG_IP_NF_QUEUE, $(P_V4)ip_queue, lt 3.5.0))
+$(eval $(call nf_add,NF_NATHELPER_EXTRA,CONFIG_NF_NAT_TFTP, $(P_XT)nf_nat_tftp))
 
 
 # ulog
