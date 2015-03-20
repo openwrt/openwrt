@@ -229,11 +229,11 @@ IPSET_MODULES:= \
 	ipset/ip_set_bitmap_ipmac \
 	ipset/ip_set_bitmap_port \
 	ipset/ip_set_hash_ip \
-	ipset/ip_set_hash_ipmark \
+	ipset/ip_set_hash_ipmark@ge3.18 \
 	ipset/ip_set_hash_ipport \
 	ipset/ip_set_hash_ipportip \
 	ipset/ip_set_hash_ipportnet \
-	ipset/ip_set_hash_mac \
+	ipset/ip_set_hash_mac@ge3.18 \
 	ipset/ip_set_hash_netportnet \
 	ipset/ip_set_hash_net \
 	ipset/ip_set_hash_netnet \
