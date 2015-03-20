@@ -370,23 +370,6 @@ endef
 $(eval $(call KernelPackage,nf-nathelper-extra))
 
 
-define KernelPackage/ipt-queue
-  TITLE:=Module for user-space packet queueing
-  KCONFIG:=$(KCONFIG_IPT_QUEUE)
-  FILES:=$(foreach mod,$(IPT_QUEUE-m),$(LINUX_DIR)/net/$(mod).ko)
-  AUTOLOAD:=$(call AutoProbe,$(notdir $(IPT_QUEUE-m)))
-  $(call AddDepends/ipt)
-endef
-
-define KernelPackage/ipt-queue/description
- Netfilter (IPv4) module for user-space packet queueing
- Includes:
- - QUEUE
-endef
-
-$(eval $(call KernelPackage,ipt-queue))
-
-
 define KernelPackage/ipt-ulog
   TITLE:=Module for user-space packet logging
   KCONFIG:=$(KCONFIG_IPT_ULOG)
