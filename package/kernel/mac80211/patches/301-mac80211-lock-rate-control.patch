@@ -104,7 +104,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  static inline void rate_control_free_sta(struct sta_info *sta)
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -281,7 +281,7 @@ static int sta_prepare_rate_control(stru
+@@ -286,7 +286,7 @@ static int sta_prepare_rate_control(stru
  
  	sta->rate_ctrl = local->rate_ctrl;
  	sta->rate_ctrl_priv = rate_control_alloc_sta(sta->rate_ctrl,
