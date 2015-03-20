@@ -2010,6 +2010,11 @@ ifneq ($(CONFIG_BRCMFMAC_USB),)
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43143.bin \
 		$(1)/lib/firmware/brcm/
 endif
+ifneq ($(CONFIG_BRCMFMAC_PCIE),)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43602-pcie.ap.bin \
+		$(1)/lib/firmware/brcm/brcmfmac43602-pcie.bin
+endif
 endef
 
 $(eval $(call KernelPackage,adm8211))
