@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mips64
 BOARD:=octeon
 BOARDNAME:=Cavium Networks Octeon
-FEATURES:=squashfs jffs2 ext4 pci usb
+FEATURES:=squashfs jffs2 ext4 initramfs pci usb
 CPU_TYPE:=octeon
 CPU_CFLAGS_octeon:=-march=octeon -mabi=64
 MAINTAINER:=John Crispin <blogic@openwrt.org>
