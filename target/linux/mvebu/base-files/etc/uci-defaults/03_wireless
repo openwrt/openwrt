@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+[ ! -e /etc/config/wireless ] && exit 0
+
+. /lib/mvebu.sh
+
+board=$(mvebu_board_name)
+
+case "$board" in
+armada-xp-mamba)
+	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
+	case "$SKU" in
+		US)
+			REGD=US
+		;;
+		EU)
+			REGD=DE
+		;;
+	esac
+	uci get wireless.radio0.country || uci set wireless.radio0.country=$REGD
+	uci get wireless.radio1.country || uci set wireless.radio1.country=$REGD
+	;;
+esac
+
+uci commit wireless
+
+exit 0
