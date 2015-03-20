@@ -1,0 +1,71 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Fri, 20 Mar 2015 16:24:21 +0100
+Subject: [PATCH] mac80211: don't look up destination station twice
+
+There's no need to look up the destination station twice while
+building the 802.11 header for a given frame if the frame will
+actually be transmitted to the station we initially looked up.
+
+This happens for 4-addr VLAN interfaces and TDLS connections, which
+both directly send the frame to the station they looked up, though
+in the case of TDLS some station conditions need to be checked.
+
+To avoid that, add a variable indicating that we've looked up the
+station that the frame is going to be transmitted to, and avoid the
+lookup/flag checking if it already has been done.
+
+In the TDLS case, also move the authorized/wme_sta flag assignment
+to the correct place, i.e. only when that station is really used.
+Before this change, the new lookup should always have succeeded so
+that the potentially erroneous data would be overwritten.
+
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -1895,6 +1895,7 @@ static struct sk_buff *ieee80211_build_h
+ 	bool wme_sta = false, authorized = false, tdls_auth = false;
+ 	bool tdls_peer = false, tdls_setup_frame = false;
+ 	bool multicast;
++	bool have_station = false;
+ 	u16 info_id = 0;
+ 	struct ieee80211_chanctx_conf *chanctx_conf;
+ 	struct ieee80211_sub_if_data *ap_sdata;
+@@ -1919,6 +1920,7 @@ static struct sk_buff *ieee80211_build_h
+ 			hdrlen = 30;
+ 			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
+ 			wme_sta = sta->sta.wme;
++			have_station = true;
+ 		}
+ 		ap_sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
+ 					u.ap);
+@@ -2035,9 +2037,6 @@ static struct sk_buff *ieee80211_build_h
+ 		if (sdata->wdev.wiphy->flags & WIPHY_FLAG_SUPPORTS_TDLS) {
+ 			sta = sta_info_get(sdata, skb->data);
+ 			if (sta) {
+-				authorized = test_sta_flag(sta,
+-							WLAN_STA_AUTHORIZED);
+-				wme_sta = sta->sta.wme;
+ 				tdls_peer = test_sta_flag(sta,
+ 							  WLAN_STA_TDLS_PEER);
+ 				tdls_auth = test_sta_flag(sta,
+@@ -2069,6 +2068,9 @@ static struct sk_buff *ieee80211_build_h
+ 			memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
+ 			memcpy(hdr.addr3, sdata->u.mgd.bssid, ETH_ALEN);
+ 			hdrlen = 24;
++			have_station = true;
++			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
++			wme_sta = sta->sta.wme;
+ 		}  else if (sdata->u.mgd.use_4addr &&
+ 			    cpu_to_be16(ethertype) != sdata->control_port_protocol) {
+ 			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
+@@ -2131,7 +2133,7 @@ static struct sk_buff *ieee80211_build_h
+ 	 * in AP mode)
+ 	 */
+ 	multicast = is_multicast_ether_addr(hdr.addr1);
+-	if (!multicast) {
++	if (!multicast && !have_station) {
+ 		sta = sta_info_get(sdata, hdr.addr1);
+ 		if (sta) {
+ 			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
