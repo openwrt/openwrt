@@ -9,7 +9,6 @@
 #include <linux/err.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/version.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/of_address.h>
@@ -563,30 +562,6 @@ static int oxnas_pmx_set_mux(struct pinctrl_dev *pctldev, unsigned selector,
 	return 0;
 }
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0))
-static void oxnas_pmx_disable(struct pinctrl_dev *pctldev, unsigned selector,
-			      unsigned group)
-{
-	struct oxnas_pinctrl *info = pinctrl_dev_get_drvdata(pctldev);
-	const struct oxnas_pmx_pin *pins_conf = info->groups[group].pins_conf;
-	const struct oxnas_pmx_pin *pin;
-	uint32_t npins = info->groups[group].npins;
-	int i;
-	unsigned mask;
-	void __iomem *pio;
-	void __iomem *cio;
-
-	for (i = 0; i < npins; i++) {
-		pin = &pins_conf[i];
-		oxnas_pin_dbg(info->dev, pin);
-		pio = pin_to_gpioctrl(info, pin->bank);
-		cio = pin_to_muxctrl(info, pin->bank);
-		mask = pin_to_mask(pin->pin);
-		oxnas_mux_gpio_enable(cio, pio, mask, 1);
-	}
-}
-#endif
-
 static int oxnas_pmx_get_funcs_count(struct pinctrl_dev *pctldev)
 {
 	struct oxnas_pinctrl *info = pinctrl_dev_get_drvdata(pctldev);
@@ -660,14 +635,7 @@ static const struct pinmux_ops oxnas_pmx_ops = {
 	.get_functions_count	= oxnas_pmx_get_funcs_count,
 	.get_function_name	= oxnas_pmx_get_func_name,
 	.get_function_groups	= oxnas_pmx_get_groups,
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
 	.set_mux		= oxnas_pmx_set_mux,
-#else
-	.enable			= oxnas_pmx_set_mux,
-#endif
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0))
-	.disable		= oxnas_pmx_disable,
-#endif
 	.gpio_request_enable	= oxnas_gpio_request_enable,
 	.gpio_disable_free	= oxnas_gpio_disable_free,
 };
