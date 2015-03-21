@@ -1,0 +1,32 @@
+Index: linux-4.0-rc4/drivers/pinctrl/Kconfig
+===================================================================
+--- linux-4.0-rc4.orig/drivers/pinctrl/Kconfig
++++ linux-4.0-rc4/drivers/pinctrl/Kconfig
+@@ -188,6 +188,15 @@ config PINCTRL_COH901
+ 	  COH 901 335 and COH 901 571/3. They contain 3, 5 or 7
+ 	  ports of 8 GPIO pins each.
+ 
++config PINCTRL_OXNAS
++	bool "OXNAS pinctrl driver"
++	depends on OF
++	depends on ARCH_OXNAS
++	select PINMUX
++	select PINCONF
++	help
++	  Say Y here to enable the oxnas pinctrl driver
++
+ config PINCTRL_PALMAS
+ 	bool "Pinctrl driver for the PALMAS Series MFD devices"
+ 	depends on OF && MFD_PALMAS
+Index: linux-4.0-rc4/drivers/pinctrl/Makefile
+===================================================================
+--- linux-4.0-rc4.orig/drivers/pinctrl/Makefile
++++ linux-4.0-rc4/drivers/pinctrl/Makefile
+@@ -18,6 +18,7 @@ obj-$(CONFIG_PINCTRL_BCM2835)	+= pinctrl
+ obj-$(CONFIG_PINCTRL_BCM281XX)	+= pinctrl-bcm281xx.o
+ obj-$(CONFIG_PINCTRL_FALCON)	+= pinctrl-falcon.o
+ obj-$(CONFIG_PINCTRL_MESON)	+= meson/
++obj-$(CONFIG_PINCTRL_OXNAS)	+= pinctrl-oxnas.o
+ obj-$(CONFIG_PINCTRL_PALMAS)	+= pinctrl-palmas.o
+ obj-$(CONFIG_PINCTRL_ROCKCHIP)	+= pinctrl-rockchip.o
+ obj-$(CONFIG_PINCTRL_SINGLE)	+= pinctrl-single.o

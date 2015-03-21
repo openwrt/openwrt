@@ -1,0 +1,61 @@
+Index: linux-4.0-rc4/drivers/ata/libata-core.c
+===================================================================
+--- linux-4.0-rc4.orig/drivers/ata/libata-core.c
++++ linux-4.0-rc4/drivers/ata/libata-core.c
+@@ -1586,6 +1586,14 @@ unsigned ata_exec_internal_sg(struct ata
+ 		return AC_ERR_SYSTEM;
+ 	}
+ 
++	if (ap->ops->acquire_hw && !ap->ops->acquire_hw(ap, 0, 0)) {
++		spin_unlock_irqrestore(ap->lock, flags);
++		if (!ap->ops->acquire_hw(ap, 1, (2*HZ))) {
++			return AC_ERR_TIMEOUT;
++		}
++		spin_lock_irqsave(ap->lock, flags);
++	}
++
+ 	/* initialize internal qc */
+ 
+ 	/* XXX: Tag 0 is used for drivers with legacy EH as some
+@@ -4749,6 +4757,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
+ 	if (unlikely(ap->pflags & ATA_PFLAG_FROZEN))
+ 		return NULL;
+ 
++	if (ap->ops->qc_new && ap->ops->qc_new(ap))
++		return NULL;
++
+ 	/* libsas case */
+ 	if (!ap->scsi_host) {
+ 		tag = ata_sas_allocate_tag(ap);
+@@ -4794,6 +4805,8 @@ void ata_qc_free(struct ata_queued_cmd *
+ 		qc->tag = ATA_TAG_POISON;
+ 		if (!ap->scsi_host)
+ 			ata_sas_free_tag(tag, ap);
++		if (ap->ops->qc_free)
++			ap->ops->qc_free(qc);
+ 	}
+ }
+ 
+Index: linux-4.0-rc4/include/linux/libata.h
+===================================================================
+--- linux-4.0-rc4.orig/include/linux/libata.h
++++ linux-4.0-rc4/include/linux/libata.h
+@@ -893,6 +893,8 @@ struct ata_port_operations {
+ 	void (*qc_prep)(struct ata_queued_cmd *qc);
+ 	unsigned int (*qc_issue)(struct ata_queued_cmd *qc);
+ 	bool (*qc_fill_rtf)(struct ata_queued_cmd *qc);
++	int (*qc_new)(struct ata_port *ap);
++	void (*qc_free)(struct ata_queued_cmd *qc);
+ 
+ 	/*
+ 	 * Configuration and exception handling
+@@ -983,6 +985,9 @@ struct ata_port_operations {
+ 	void (*phy_reset)(struct ata_port *ap);
+ 	void (*eng_timeout)(struct ata_port *ap);
+ 
++	int (*acquire_hw)(struct ata_port *ap, int may_sleep,
++			  int timeout_jiffies);
++
+ 	/*
+ 	 * ->inherits must be the last field and all the preceding
+ 	 * fields must be pointers.
