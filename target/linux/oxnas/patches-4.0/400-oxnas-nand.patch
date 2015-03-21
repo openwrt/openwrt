@@ -1,0 +1,29 @@
+Index: linux-4.0-rc4/drivers/mtd/nand/Kconfig
+===================================================================
+--- linux-4.0-rc4.orig/drivers/mtd/nand/Kconfig
++++ linux-4.0-rc4/drivers/mtd/nand/Kconfig
+@@ -530,4 +530,12 @@ config MTD_NAND_HISI504
+ 	help
+ 	  Enables support for NAND controller on Hisilicon SoC Hip04.
+ 
++config MTD_NAND_OXNAS
++	tristate "Support for NAND on Plxtech NAS782X SoC"
++	depends on ARCH_OXNAS
++	select MTD_NAND_PLATFORM
++	help
++	  Enables support for NAND Flash chips on Plxtech NAS782X SoCs. NAND is attached
++	  to the STATIC Unit.
++
+ endif # MTD_NAND
+Index: linux-4.0-rc4/drivers/mtd/nand/Makefile
+===================================================================
+--- linux-4.0-rc4.orig/drivers/mtd/nand/Makefile
++++ linux-4.0-rc4/drivers/mtd/nand/Makefile
+@@ -45,6 +45,7 @@ obj-$(CONFIG_MTD_NAND_SOCRATES)		+= socr
+ obj-$(CONFIG_MTD_NAND_TXX9NDFMC)	+= txx9ndfmc.o
+ obj-$(CONFIG_MTD_NAND_NUC900)		+= nuc900_nand.o
+ obj-$(CONFIG_MTD_NAND_MPC5121_NFC)	+= mpc5121_nfc.o
++obj-$(CONFIG_MTD_NAND_OXNAS)		+= oxnas_nand.o
+ obj-$(CONFIG_MTD_NAND_RICOH)		+= r852.o
+ obj-$(CONFIG_MTD_NAND_JZ4740)		+= jz4740_nand.o
+ obj-$(CONFIG_MTD_NAND_GPMI_NAND)	+= gpmi-nand/
