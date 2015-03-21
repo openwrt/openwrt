@@ -55,6 +55,7 @@ MAKE_FLAGS = \
 	LD="$(TARGET_CROSS)ld" \
 	CFLAGS="$(TARGET_CFLAGS) $(TARGET_CPPFLAGS)" \
 	LDFLAGS="$(TARGET_LDFLAGS)" \
+	WERROR=0 \
 	V=1 \
 	prefix=/usr
 
