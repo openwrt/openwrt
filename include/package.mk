@@ -98,7 +98,7 @@ ifneq ($(PREV_STAMP_PREPARED),)
 else
   STAMP_PREPARED=$(PKG_BUILD_DIR)/.prepared$(if $(QUILT)$(DUMP),,_$(shell $(call find_md5,${CURDIR} $(PKG_FILE_DEPENDS),))$(call confvar,$(PKG_PREPARED_DEPENDS)))
 endif
-STAMP_CONFIGURED:=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PKG_CONFIG_DEPENDS)))
+STAMP_CONFIGURED=$(PKG_BUILD_DIR)/.configured$(if $(DUMP),,_$(call confvar,$(PKG_CONFIG_DEPENDS)))
 STAMP_CONFIGURED_WILDCARD=$(patsubst %_$(call confvar,$(PKG_CONFIG_DEPENDS)),%_*,$(STAMP_CONFIGURED))
 STAMP_BUILT:=$(PKG_BUILD_DIR)/.built
 STAMP_INSTALLED:=$(STAGING_DIR)/stamp/.$(PKG_NAME)_installed
