@@ -9,7 +9,7 @@ Subject: [PATCH] bgmac: check length of received frame
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -363,6 +363,27 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -361,6 +361,27 @@ static int bgmac_dma_rx_read(struct bgma
  			dma_addr_t old_dma_addr = slot->dma_addr;
  			int err;
  
