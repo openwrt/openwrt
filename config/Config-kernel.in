@@ -135,6 +135,18 @@ config KERNEL_DIRECT_IO
 	bool "Compile the kernel with direct IO support"
 	default n
 
+config KERNEL_FHANDLE
+	bool "Compile the kernel with support for fhandle syscalls"
+	default n
+
+config KERNEL_FANOTIFY
+	bool "Compile the kernel with modern file notification support"
+	default n
+
+config KERNEL_BLK_DEV_BSG
+	bool "Compile the kernel with SCSI generic v4 support for any block device"
+	default n
+
 config KERNEL_MAGIC_SYSRQ
 	bool "Compile the kernel with SysRq support"
 	default y
@@ -183,6 +195,22 @@ config USE_RFKILL
 config USE_SPARSE
 	bool "Enable sparse check during kernel build"
 	default n
+
+config KERNEL_DEVTMPFS
+	bool "Compile the kernel with device tmpfs enabled"
+	default n
+	help
+	  devtmpfs is a simple, kernel-managed /dev filesystem. The kernel creates
+	  devices nodes for all registered devices ti simplify boot, but leaves more
+	  complex tasks to userspace (e.g. udev).
+
+if KERNEL_DEVTMPFS
+
+	config KERNEL_DEVTMPFS_MOUNT
+		bool "Automatically mount devtmpfs after root filesystem is mounted"
+		default n
+
+endif
 
 #
 # CGROUP support symbols
@@ -501,9 +529,3 @@ config KERNEL_SECCOMP_FILTER
 		default n
 		help
 		  Build kernel with support for seccomp BPF programs.
-
-config KERNEL_FHANDLE
-	bool "Enable open by fhandle syscalls"
-		default n
-		help
-		  Build kernel with support for open by fhandle syscalls
