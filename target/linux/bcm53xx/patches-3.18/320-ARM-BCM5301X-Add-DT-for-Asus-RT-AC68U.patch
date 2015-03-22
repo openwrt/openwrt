@@ -1,0 +1,79 @@
+From 7c0a25bfc71c08adb5d475563f2773325b8e8e49 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 22 Mar 2015 02:37:17 +0100
+Subject: [PATCH] ARM: BCM5301X: Add DT for Asus RT-AC68U
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/Makefile                  |  1 +
+ arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts | 43 +++++++++++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+ create mode 100644 arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index ae8899d..f06f35e 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -55,6 +55,7 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
+ dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
+ dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
+ dtb-$(CONFIG_ARCH_BCM_5301X) += \
++	bcm4708-asus-rt-ac68u.dtb \
+ 	bcm4708-buffalo-wzr-1750dhp.dtb \
+ 	bcm4708-luxul-xwc-1000.dtb \
+ 	bcm4708-netgear-r6250.dtb \
+diff --git a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+new file mode 100644
+index 0000000..934ca3a
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+@@ -0,0 +1,43 @@
++/*
++ * Broadcom BCM470X / BCM5301X arm platform code.
++ * DTS for Asus RT-AC68U
++ *
++ * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++/dts-v1/;
++
++#include "bcm4708.dtsi"
++
++/ {
++	compatible = "asus,rt-ac68u", "brcm,bcm4708";
++	model = "Asus RT-AC68U (BCM4708)";
++
++	chosen {
++		bootargs = "console=ttyS0,115200 earlyprintk";
++	};
++
++	memory {
++		reg = <0x00000000 0x08000000>;
++	};
++
++	gpio-keys {
++		compatible = "gpio-keys";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		wps {
++			label = "WPS";
++			linux,code = <KEY_WPS_BUTTON>;
++			gpios = <&chipcommon 7 GPIO_ACTIVE_LOW>;
++		};
++
++		restart {
++			label = "Reset";
++			linux,code = <KEY_RESTART>;
++			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++	};
++};
+-- 
+1.8.4.5
+
