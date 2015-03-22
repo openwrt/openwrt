@@ -1,0 +1,331 @@
+From 707ab07695ea8953a5bb56512e7bb38ca79c5c38 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 19 Feb 2015 23:27:59 +0100
+Subject: [PATCH V2] ARM: BCM5301X: Implement SMP support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+V2: Change code after receiving Florian's comments:
+    1) Use "mmio-sram"
+    2) Remove commented out ASM call
+    3) Fix coding style in ASM
+    4) Simplify finding OF node
+---
+ Documentation/devicetree/bindings/arm/bcm4708.txt |  24 ++++
+ Documentation/devicetree/bindings/arm/cpus.txt    |   1 +
+ arch/arm/boot/dts/bcm4708.dtsi                    |  13 ++
+ arch/arm/mach-bcm/Makefile                        |   3 +
+ arch/arm/mach-bcm/bcm5301x_headsmp.S              |  45 ++++++
+ arch/arm/mach-bcm/bcm5301x_smp.c                  | 158 ++++++++++++++++++++++
+ 6 files changed, 244 insertions(+)
+ create mode 100644 arch/arm/mach-bcm/bcm5301x_headsmp.S
+ create mode 100644 arch/arm/mach-bcm/bcm5301x_smp.c
+
+diff --git a/Documentation/devicetree/bindings/arm/bcm4708.txt b/Documentation/devicetree/bindings/arm/bcm4708.txt
+index 6b0f49f..3dd0e9d 100644
+--- a/Documentation/devicetree/bindings/arm/bcm4708.txt
++++ b/Documentation/devicetree/bindings/arm/bcm4708.txt
+@@ -6,3 +6,27 @@ Boards with the BCM4708 SoC shall have the following properties:
+ Required root node property:
+ 
+ compatible = "brcm,bcm4708";
++
++Optional sub-node properties:
++
++compatible = "mmio-sram" for SRAM access with IO memory region
++		This is needed for SMP-capable SoCs which use part of
++		SRAM for storing location of code to be executed by the
++		extra cores.
++		SMP support requires another sub-node with compatible
++		property "brcm,bcm4708-sysram".
++
++Example:
++
++	sysram@ffff0000 {
++		compatible = "mmio-sram";
++		reg = <0xffff0000 0x10000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0xffff0000 0x10000>;
++
++		smp-sysram@0 {
++			compatible = "brcm,bcm4708-sysram";
++			reg = <0x0 0x1000>;
++		};
++	};
+diff --git a/Documentation/devicetree/bindings/arm/cpus.txt b/Documentation/devicetree/bindings/arm/cpus.txt
+index 6aa331d..3507ae3 100644
+--- a/Documentation/devicetree/bindings/arm/cpus.txt
++++ b/Documentation/devicetree/bindings/arm/cpus.txt
+@@ -188,6 +188,7 @@ nodes to be present and contain the properties described below.
+ 			  can be one of:
+ 			    "allwinner,sun6i-a31"
+ 			    "arm,psci"
++			    "brcm,bcm4708-smp"
+ 			    "brcm,brahma-b15"
+ 			    "marvell,armada-375-smp"
+ 			    "marvell,armada-380-smp"
+diff --git a/arch/arm/boot/dts/bcm4708.dtsi b/arch/arm/boot/dts/bcm4708.dtsi
+index 31141e8..c0af5cc 100644
+--- a/arch/arm/boot/dts/bcm4708.dtsi
++++ b/arch/arm/boot/dts/bcm4708.dtsi
+@@ -15,6 +15,7 @@
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		enable-method = "brcm,bcm4708-smp";
+ 
+ 		cpu@0 {
+ 			device_type = "cpu";
+@@ -31,4 +32,16 @@
+ 		};
+ 	};
+ 
++	sysram@ffff0000 {
++		compatible = "mmio-sram";
++		reg = <0xffff0000 0x10000>;
++		#address-cells = <1>;
++		#size-cells = <1>;
++		ranges = <0 0xffff0000 0x10000>;
++
++		smp-sysram@0 {
++			compatible = "brcm,bcm4708-sysram";
++			reg = <0x0 0x1000>;
++		};
++	};
+ };
+diff --git a/arch/arm/mach-bcm/Makefile b/arch/arm/mach-bcm/Makefile
+index 4c38674..ca12727 100644
+--- a/arch/arm/mach-bcm/Makefile
++++ b/arch/arm/mach-bcm/Makefile
+@@ -33,6 +33,9 @@ obj-$(CONFIG_ARCH_BCM2835)	+= board_bcm2835.o
+ 
+ # BCM5301X
+ obj-$(CONFIG_ARCH_BCM_5301X)	+= bcm_5301x.o
++ifeq ($(CONFIG_SMP),y)
++obj-$(CONFIG_ARCH_BCM_5301X)	+= bcm5301x_smp.o bcm5301x_headsmp.o
++endif
+ 
+ # BCM63XXx
+ obj-$(CONFIG_ARCH_BCM_63XX)	:= bcm63xx.o
+diff --git a/arch/arm/mach-bcm/bcm5301x_headsmp.S b/arch/arm/mach-bcm/bcm5301x_headsmp.S
+new file mode 100644
+index 0000000..9ca8d20
+--- /dev/null
++++ b/arch/arm/mach-bcm/bcm5301x_headsmp.S
+@@ -0,0 +1,45 @@
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ *
++ * Copyright (c) 2003 ARM Limited
++ * All Rights Reserved
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++#include <linux/linkage.h>
++
++/*
++ * BCM5301X specific entry point for secondary CPUs.
++ */
++ENTRY(bcm5301x_secondary_startup)
++	mrc	p15, 0, r0, c0, c0, 5
++	and	r0, r0, #15
++	adr	r4, 1f
++	ldmia	r4, {r5, r6}
++	sub	r4, r4, r5
++	add	r6, r6, r4
++pen:	ldr	r7, [r6]
++	cmp	r7, r0
++	bne	pen
++
++	/*
++	 * In case L1 cache has unpredictable contents at power-up
++	 * clean its contents without flushing.
++	 */
++	bl      v7_invalidate_l1
++
++	mov	r0, #0
++	mcr	p15, 0, r0, c7, c5, 0	/* Invalidate icache */
++	dsb
++	isb
++
++	/*
++	 * we've been released from the holding pen: secondary_stack
++	 * should now contain the SVC stack for this core
++	 */
++	b	secondary_startup
++ENDPROC(bcm5301x_secondary_startup)
++
++	.align 2
++1:	.long	.
++	.long	pen_release
+diff --git a/arch/arm/mach-bcm/bcm5301x_smp.c b/arch/arm/mach-bcm/bcm5301x_smp.c
+new file mode 100644
+index 0000000..45d7089
+--- /dev/null
++++ b/arch/arm/mach-bcm/bcm5301x_smp.c
+@@ -0,0 +1,158 @@
++/*
++ * Broadcom BCM470X / BCM5301X ARM platform code.
++ *
++ * Copyright (C) 2002 ARM Ltd.
++ * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <asm/cacheflush.h>
++#include <asm/delay.h>
++#include <asm/smp_plat.h>
++#include <asm/smp_scu.h>
++
++#include <linux/clockchips.h>
++#include <linux/of.h>
++#include <linux/of_address.h>
++
++#define SOC_ROM_LUT_OFF		0x400
++
++extern void bcm5301x_secondary_startup(void);
++
++static void __cpuinit write_pen_release(int val)
++{
++	pen_release = val;
++	smp_wmb();
++	sync_cache_w(&pen_release);
++}
++
++static DEFINE_SPINLOCK(boot_lock);
++
++static void __init bcm5301x_smp_secondary_set_entry(void (*entry_point)(void))
++{
++	void __iomem *sysram_base_addr = NULL;
++	struct device_node *node;
++
++	node = of_find_compatible_node(NULL, NULL, "brcm,bcm4708-sysram");
++	if (!of_device_is_available(node))
++		return;
++
++	sysram_base_addr = of_iomap(node, 0);
++	if (!sysram_base_addr) {
++		pr_warn("Failed to map sysram\n");
++		return;
++	}
++
++	writel(virt_to_phys(entry_point), sysram_base_addr + SOC_ROM_LUT_OFF);
++
++	dsb_sev();	/* Exit WFI */
++	mb();		/* make sure write buffer is drained */
++
++	iounmap(sysram_base_addr);
++}
++
++static void __init bcm5301x_smp_prepare_cpus(unsigned int max_cpus)
++{
++	void __iomem *scu_base;
++
++	if (!scu_a9_has_base()) {
++		pr_warn("Unknown SCU base\n");
++		return;
++	}
++
++	scu_base = ioremap((phys_addr_t)scu_a9_get_base(), SZ_256);
++	if (!scu_base) {
++		pr_err("Failed to remap SCU\n");
++		return;
++	}
++
++	/* Initialise the SCU */
++	scu_enable(scu_base);
++
++	/* Let CPUs know where to start */
++	bcm5301x_smp_secondary_set_entry(bcm5301x_secondary_startup);
++
++	iounmap(scu_base);
++}
++
++static void __cpuinit bcm5301x_smp_secondary_init(unsigned int cpu)
++{
++	trace_hardirqs_off();
++
++	/*
++	 * let the primary processor know we're out of the
++	 * pen, then head off into the C entry point
++	 */
++	write_pen_release(-1);
++
++	/*
++	 * Synchronise with the boot thread.
++	 */
++	spin_lock(&boot_lock);
++	spin_unlock(&boot_lock);
++}
++
++static int __cpuinit bcm5301x_smp_boot_secondary(unsigned int cpu,
++						 struct task_struct *idle)
++{
++	unsigned long timeout;
++
++	/*
++	 * set synchronisation state between this boot processor
++	 * and the secondary one
++	 */
++	spin_lock(&boot_lock);
++
++	/*
++	 * The secondary processor is waiting to be released from
++	 * the holding pen - release it, then wait for it to flag
++	 * that it has been released by resetting pen_release.
++	 *
++	 * Note that "pen_release" is the hardware CPU ID, whereas
++	 * "cpu" is Linux's internal ID.
++	 */
++	write_pen_release(cpu_logical_map(cpu));
++
++	 /* Send the secondary CPU SEV */
++	dsb_sev();
++
++	udelay(100);
++
++	/*
++	 * Send the secondary CPU a soft interrupt, thereby causing
++	 * the boot monitor to read the system wide flags register,
++	 * and branch to the address found there.
++	 */
++	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
++
++	/*
++	 * Timeout set on purpose in jiffies so that on slow processors
++	 * that must also have low HZ it will wait longer.
++	 */
++	timeout = jiffies + (HZ * 10);
++	while (time_before(jiffies, timeout)) {
++		smp_rmb();
++		if (pen_release == -1)
++			break;
++
++		udelay(10);
++	}
++
++	/*
++	 * now the secondary core is starting up let it run its
++	 * calibrations, then wait for it to finish
++	 */
++	spin_unlock(&boot_lock);
++
++	return pen_release != -1 ? -ENOSYS : 0;
++}
++
++static struct smp_operations bcm5301x_smp_ops __initdata = {
++	.smp_prepare_cpus	= bcm5301x_smp_prepare_cpus,
++	.smp_secondary_init	= bcm5301x_smp_secondary_init,
++	.smp_boot_secondary	= bcm5301x_smp_boot_secondary,
++};
++
++CPU_METHOD_OF_DECLARE(bcm5301x_smp, "brcm,bcm4708-smp",
++		      &bcm5301x_smp_ops);
+-- 
+1.8.4.5
+
