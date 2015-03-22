@@ -81,6 +81,7 @@ endef
 define Image/Build
 	( cd $(KDIR); $(STAGING_DIR_HOST)/bin/ubinize -p 128KiB -m 2048 -o $(KDIR)/root-block-0x20000-min-0x800.ubi ubinize.cfg )
 
+	$(call Image/Build/AsusTrx,$(1),bcm4708-asus-rt-ac68u,nand-0x20000-0x800,RT-AC68U)
 	$(call Image/Build/AsusTrx,$(1),bcm47081-asus-rt-n18u,nand-0x20000-0x800,RT-N18U)
 	$(call Image/Build/AsusTrx,$(1),bcm4709-asus-rt-ac87u,nand-0x20000-0x800,RT-AC87U)
 
