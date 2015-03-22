@@ -8,10 +8,7 @@ do_mount_root() {
 	[ -f /sysupgrade.tgz ] && {
 		echo "- config restore -"
 		cd /
-		mv sysupgrade.tgz /tmp
-		tar xzf /tmp/sysupgrade.tgz
-		rm -f /tmp/sysupgrade.tgz
-		sync
+		tar xzf /sysupgrade.tgz
 	}
 }
 
