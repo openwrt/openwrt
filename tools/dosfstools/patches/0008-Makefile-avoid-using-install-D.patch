@@ -1,0 +1,43 @@
+From 02b5a6d9a407daebe903fe64fb1b22673aaa7e92 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Thu, 26 Feb 2015 12:51:23 +0100
+Subject: [PATCH 08/14] Makefile: avoid using install -D
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+OS X and FreeBSD are not compatible with this option
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Signed-off-by: Andreas Bombe <aeb@debian.org>
+---
+ Makefile | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index d25510f..1593f3d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -62,7 +62,8 @@ install-man:
+ 	for MANPAGE in manpages/en/*; \
+ 	do \
+ 		SECTION="8"; \
+-		install -D -m 0644 $${MANPAGE} $(DESTDIR)/$(MANDIR)/man$${SECTION}/$$(basename $${MANPAGE}); \
++		mkdir -p $(DESTDIR)/$(MANDIR)/man$${SECTION}/; \
++		install -m 0644 $${MANPAGE} $(DESTDIR)/$(MANDIR)/man$${SECTION}/$$(basename $${MANPAGE}); \
+ 	done
+ 
+ 	for LANGUAGE in $(LANGUAGES); \
+@@ -70,7 +71,8 @@ install-man:
+ 		for MANPAGE in manpages/$${LANGUAGE}/*; \
+ 		do \
+ 			SECTION="8"; \
+-			install -D -m 0644 $${MANPAGE} $(DESTDIR)/$(MANDIR)/$${LANGUAGE}/man$${SECTION}/$$(basename $${MANPAGE} .$${LANGUAGE}.$${SECTION}).$${SECTION}; \
++			mkdir -p $(DESTDIR)/$(MANDIR)/$${LANGUAGE}/man$${SECTION}/; \
++			install -m 0644 $${MANPAGE} $(DESTDIR)/$(MANDIR)/$${LANGUAGE}/man$${SECTION}/$$(basename $${MANPAGE} .$${LANGUAGE}.$${SECTION}).$${SECTION}; \
+ 		done; \
+ 	done
+ install-symlinks: install-bin install-man
+-- 
+1.9.1
+

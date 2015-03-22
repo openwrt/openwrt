@@ -1,0 +1,25 @@
+From 75c5446d21f02038423d67139a6967975c9b90be Mon Sep 17 00:00:00 2001
+From: Andreas Bombe <aeb@debian.org>
+Date: Sat, 15 Nov 2014 16:48:48 +0100
+Subject: [PATCH 01/14] Add tags and editor backup files to .gitignore
+
+Signed-off-by: Andreas Bombe <aeb@debian.org>
+---
+ .gitignore | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/.gitignore b/.gitignore
+index 384f131..5c9366e 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -2,3 +2,7 @@
+ /fatlabel
+ /fsck.fat
+ /mkfs.fat
++
++tags
++*~
++.*.sw[a-p]
+-- 
+1.9.1
+
