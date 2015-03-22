@@ -77,6 +77,17 @@ index bbb414f..20903a5 100644
  	};
  
  	memory {
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -16,7 +16,7 @@
+ 	model = "Netgear R8000 (BCM4709)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
 -- 
 1.8.4.5
 
