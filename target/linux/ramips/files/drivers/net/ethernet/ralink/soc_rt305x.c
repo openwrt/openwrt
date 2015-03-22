@@ -25,7 +25,7 @@
 #define RT305X_RESET_FE         BIT(21)
 #define RT305X_RESET_ESW        BIT(23)
 
-static const u32 rt5350_reg_table[FE_REG_COUNT] = {
+static const u16 rt5350_reg_table[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
 	[FE_REG_PDMA_RST_CFG] = RT5350_PDMA_RST_CFG,
 	[FE_REG_DLY_INT_CFG] = RT5350_DLY_INT_CFG,
