@@ -13,52 +13,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  2 files changed, 28 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/bcm4709-netgear-r8000.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 25445c2..e93e9e4 100644
---- a/arch/arm/boot/dts/Makefile
-+++ b/arch/arm/boot/dts/Makefile
-@@ -62,7 +62,8 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
- 	bcm47081-asus-rt-n18u.dtb \
- 	bcm47081-buffalo-wzr-600dhp2.dtb \
- 	bcm47081-buffalo-wzr-900dhp.dtb \
--	bcm4709-asus-rt-ac87u.dtb
-+	bcm4709-asus-rt-ac87u.dtb \
-+	bcm4709-netgear-r8000.dtb
- dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
- dtb-$(CONFIG_ARCH_BCM_MOBILE) += bcm28155-ap.dtb \
- 	bcm21664-garnet.dtb
-diff --git a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
-new file mode 100644
-index 0000000..2d7e388
---- /dev/null
-+++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
-@@ -0,0 +1,26 @@
-+/*
-+ * Broadcom BCM470X / BCM5301X ARM platform code.
-+ * DTS for Netgear R8000
-+ *
-+ * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
-+ *
-+ * Licensed under the GNU/GPL. See COPYING for details.
-+ */
-+
-+/dts-v1/;
-+
-+#include "bcm4708.dtsi"
-+
-+/ {
-+	compatible = "netgear,r8000", "brcm,bcm4709", "brcm,bcm4708";
-+	model = "Netgear R8000 (BCM4709)";
-+
-+	chosen {
-+		bootargs = "console=ttyS0,115200 earlyprintk";
-+	};
-+
-+	memory {
-+		reg = <0x00000000 0x08000000
-+		       0x88000000 0x08000000>;
-+	};
-+};
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
 @@ -18,15 +18,16 @@ static bool first_fault = true;
