@@ -382,7 +382,7 @@ struct fe_phy {
 
 struct fe_soc_data
 {
-	const u32 *reg_table;
+	const u16 *reg_table;
 
 	void (*init_data)(struct fe_soc_data *data, struct net_device *netdev);
 	void (*reset_fe)(void);
