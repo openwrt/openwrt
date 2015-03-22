@@ -3,7 +3,7 @@
 
 START=95
 boot() {
-	[ -d /tmp/root ] && mount_root done
+	mount_root done
 	rm -f /sysupgrade.tgz
 
 	# process user commands
