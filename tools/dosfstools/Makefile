@@ -10,10 +10,9 @@ PKG_NAME:=dosfstools
 PKG_VERSION:=3.0.27
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=git://github.com/dosfstools/dosfstools.git
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=266a5fc635135a9ffaa8683da1ec03aae1553b7b
-PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_URL:=https://github.com/dosfstools/dosfstools/releases/download/v$(PKG_VERSION)/ \
+		http://fossies.org/linux/misc
+PKG_MD5SUM:=2e31e7bdf92998e41ed17de505a4a552
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 

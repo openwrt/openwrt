@@ -1,0 +1,217 @@
+From 50897e9d43f61b4ab238d3ebff62cc45d505206a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sat, 7 Mar 2015 15:55:32 +0100
+Subject: [PATCH 13/14] Add compatible ioctl calls for OSX and FreeBSD
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ src/io.c       |   2 --
+ src/mkfs.fat.c | 101 ++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 96 insertions(+), 7 deletions(-)
+
+diff --git a/src/io.c b/src/io.c
+index 450432c..7d0d49a 100644
+--- a/src/io.c
++++ b/src/io.c
+@@ -36,10 +36,8 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <sys/stat.h>
+-#include <sys/ioctl.h>
+ #include <errno.h>
+ #include <fcntl.h>
+-#include <linux/fd.h>
+ 
+ #include "fsck.fat.h"
+ #include "common.h"
+diff --git a/src/mkfs.fat.c b/src/mkfs.fat.c
+index 76d40d8..02e0918 100644
+--- a/src/mkfs.fat.c
++++ b/src/mkfs.fat.c
+@@ -47,17 +47,13 @@
+ #include "version.h"
+ 
+ #include <fcntl.h>
+-#include <linux/hdreg.h>
+ #include <sys/mount.h>
+-#include <linux/fs.h>
+-#include <linux/fd.h>
+ #include <endian.h>
+ #include <mntent.h>
+ #include <signal.h>
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+-#include <sys/ioctl.h>
+ #include <sys/stat.h>
+ #include <sys/time.h>
+ #include <unistd.h>
+@@ -67,6 +63,40 @@
+ #include <stdint.h>
+ #include <endian.h>
+ 
++#if defined(__linux__)
++    #include <linux/hdreg.h>
++    #include <linux/fs.h>
++    #include <linux/fd.h>
++#elif defined(__FreeBSD__) || defined(__APPLE__)
++    #include <sys/disk.h>
++
++    #define BLOCK_SIZE_BITS 10
++    #define BLOCK_SIZE (1<<BLOCK_SIZE_BITS)
++
++    struct floppy_struct {
++        unsigned int size;	/* nr of sectors total */
++        unsigned int sect;	/* sectors per track */
++        unsigned int head;	/* nr of heads */
++        unsigned int track;	/* nr of tracks */
++        unsigned int stretch;	/* bit 0 !=0 means double track steps */
++					/* bit 1 != 0 means swap sides */
++					/* bits 2..9 give the first sector */
++					/*  number (the LSB is flipped) */
++        unsigned char gap;	/* gap1 size */
++        unsigned char rate;	/* data rate. |= 0x40 for perpendicular */
++        unsigned char spec1;	/* stepping rate, head unload time */
++        unsigned char fmt_gap;	/* gap2 size */
++        const char * name;	/* used only for predefined formats */
++    };
++
++    struct hd_geometry {
++        unsigned char heads;
++        unsigned char sectors;
++        unsigned short cylinders;
++        unsigned long start;
++    };
++#endif
++
+ #include "msdos_fs.h"
+ 
+ /* In earlier versions, an own llseek() was used, but glibc lseek() is
+@@ -511,7 +541,9 @@ static void check_mount(char *device_name)
+ static void establish_params(int device_num, int size)
+ {
+     long loop_size;
++#if defined(__linux__) || defined(__FreeBSD__)
+     struct hd_geometry geometry;
++#endif
+     struct floppy_struct param;
+     int def_root_dir_entries = 512;
+ 
+@@ -549,9 +581,12 @@ static void establish_params(int device_num, int size)
+ 	    }
+ 
+ 	} else {		/* is a floppy diskette */
+-
++#if defined(__linux__)
+ 	    if (ioctl(dev, FDGETPRM, &param))	/*  Can we get the diskette geometry? */
+ 		die("unable to get diskette geometry for '%s'");
++#else
++		die("unable to get diskette geometry for '%s'");
++#endif
+ 	}
+ 	bs.secs_track = htole16(param.sect);	/*  Set up the geometry information */
+ 	bs.heads = htole16(param.head);
+@@ -594,8 +629,18 @@ floppy_default:
+ 		goto floppy_default;
+ 	}
+     } else if ((device_num & 0xff00) == 0x0700) {	/* This is a loop device */
++#if defined(__FreeBSD__)
++	if (ioctl(dev, DIOCGSECTORSIZE, &loop_size))
++	    die("unable to get loop device size");
++#elif defined(__linux__)
+ 	if (ioctl(dev, BLKGETSIZE, &loop_size))
+ 	    die("unable to get loop device size");
++#elif defined(__APPLE__)
++	if (ioctl(dev, DKIOCGETBLOCKSIZE, &loop_size))
++	    die("unable to get loop device size");
++#else
++	die("unable to get loop device size");
++#endif
+ 
+ 	switch (loop_size) {	/* Assuming the loop device -> floppy later */
+ 	case 720:		/* 5.25", 2, 9, 40 - 360K */
+@@ -651,6 +696,17 @@ floppy_default:
+     {
+ 	/* Can we get the drive geometry? (Note I'm not too sure about */
+ 	/* whether to use HDIO_GETGEO or HDIO_REQ) */
++#if defined(__FreeBSD__)
++	if (ioctl(dev, DIOCGFWSECTORS, &geometry.sectors) || ioctl(dev, DIOCGFWHEADS, &geometry.heads) || geometry.sectors == 0
++	    || geometry.heads == 0) {
++	    printf("unable to get drive geometry, using default 255/63\n");
++	    bs.secs_track = htole16(63);
++	    bs.heads = htole16(255);
++	} else {
++	    bs.secs_track = htole16(geometry.sectors);	/* Set up the geometry information */
++	    bs.heads = htole16(geometry.heads);
++	}
++#elif defined(__linux__)
+ 	if (ioctl(dev, HDIO_GETGEO, &geometry) || geometry.sectors == 0
+ 	    || geometry.heads == 0) {
+ 	    printf("unable to get drive geometry, using default 255/63\n");
+@@ -662,6 +718,11 @@ floppy_default:
+ 	    if (!hidden_sectors_by_user)
+ 		hidden_sectors = htole32(geometry.start);
+ 	}
++#else
++	    printf("unable to get drive geometry, using default 255/63\n");
++	    bs.secs_track = htole16(63);
++	    bs.heads = htole16(255);
++#endif
+ def_hd_params:
+ 	bs.media = (char)0xf8;	/* Set up the media descriptor for a hard drive */
+ 	if (!size_fat && blocks * SECTORS_PER_BLOCK > 1064960) {
+@@ -1693,6 +1754,15 @@ int main(int argc, char **argv)
+ 	die("Device partition expected, not making filesystem on entire device '%s' (use -I to override)");
+ 
+     if (sector_size_set) {
++#if defined(__FreeBSD__)
++	if (ioctl(dev, DIOCGSECTORSIZE, &min_sector_size) >= 0)
++	    if (sector_size < min_sector_size) {
++		sector_size = min_sector_size;
++		fprintf(stderr,
++			"Warning: sector size was set to %d (minimal for this device)\n",
++			sector_size);
++	    }
++#elif defined(__linux__)
+ 	if (ioctl(dev, BLKSSZGET, &min_sector_size) >= 0)
+ 	    if (sector_size < min_sector_size) {
+ 		sector_size = min_sector_size;
+@@ -1700,11 +1770,32 @@ int main(int argc, char **argv)
+ 			"Warning: sector size was set to %d (minimal for this device)\n",
+ 			sector_size);
+ 	    }
++#elif defined(__APPLE__)
++	if (ioctl(dev, DKIOCGETPHYSICALBLOCKSIZE, &min_sector_size) >= 0)
++	    if (sector_size < min_sector_size) {
++		sector_size = min_sector_size;
++		fprintf(stderr,
++			"Warning: sector size was set to %d (minimal for this device)\n",
++			sector_size);
++	    }
++#endif
+     } else {
++#if defined(__FreeBSD__)
++	if (ioctl(dev, DIOCGSECTORSIZE, &min_sector_size) >= 0) {
++	    sector_size = min_sector_size;
++	    sector_size_set = 1;
++	}
++#elif defined(__linux__)
+ 	if (ioctl(dev, BLKSSZGET, &min_sector_size) >= 0) {
+ 	    sector_size = min_sector_size;
+ 	    sector_size_set = 1;
+ 	}
++#elif defined(__APPLE__)
++	if (ioctl(dev, DKIOCGETPHYSICALBLOCKSIZE, &min_sector_size) >= 0) {
++	    sector_size = min_sector_size;
++	    sector_size_set = 1;
++	}
++#endif
+     }
+ 
+     if (sector_size > 4096)
+-- 
+1.9.1
+

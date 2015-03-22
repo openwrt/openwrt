@@ -1,0 +1,334 @@
+From 514985ae786dcde9842e46899ef5b6218662a119 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C3=81lvaro=20Fern=C3=A1ndez=20Rojas?= <noltari@gmail.com>
+Date: Sat, 7 Mar 2015 16:32:51 +0100
+Subject: [PATCH 14/14] Add OSX and FreeBSD support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
+---
+ Makefile       |  9 ++++++++-
+ src/boot.c     |  1 +
+ src/check.c    |  1 +
+ src/endian.h   | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/fat.c      |  1 +
+ src/fatlabel.c |  1 +
+ src/fsck.fat.h |  3 +--
+ src/io.h       |  2 +-
+ src/lfn.c      |  1 +
+ src/mkfs.fat.c | 19 ++++++++++++++++---
+ src/types.h    | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 11 files changed, 145 insertions(+), 7 deletions(-)
+ create mode 100644 src/endian.h
+ create mode 100644 src/types.h
+
+diff --git a/Makefile b/Makefile
+index 1593f3d..7359a79 100644
+--- a/Makefile
++++ b/Makefile
+@@ -28,12 +28,19 @@ DOCDIR = $(PREFIX)/share/doc
+ MANDIR = $(PREFIX)/share/man
+ 
+ #OPTFLAGS = -O2 -fomit-frame-pointer -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+-OPTFLAGS = -O2 -fomit-frame-pointer -D_GNU_SOURCE $(shell getconf LFS_CFLAGS)
++OPTFLAGS = -O2 -fomit-frame-pointer -D_GNU_SOURCE
+ #WARNFLAGS = -Wall -pedantic -std=c99
+ WARNFLAGS = -Wall -Wextra -Wno-sign-compare -Wno-missing-field-initializers -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings
+ DEBUGFLAGS = -g
+ CFLAGS += $(OPTFLAGS) $(WARNFLAGS) $(DEBUGFLAGS)
+ 
++UNAME_S := $(shell uname -s)
++ifeq ($(UNAME_S),Darwin)
++  LDLIBS += -liconv
++else
++  OPTFLAGS += $(shell getconf LFS_CFLAGS)
++endif
++
+ VPATH = src
+ 
+ all: build
+diff --git a/src/boot.c b/src/boot.c
+index 0c0918f..1da9889 100644
+--- a/src/boot.c
++++ b/src/boot.c
+@@ -31,6 +31,7 @@
+ #include <time.h>
+ 
+ #include "common.h"
++#include "endian.h"
+ #include "fsck.fat.h"
+ #include "fat.h"
+ #include "io.h"
+diff --git a/src/check.c b/src/check.c
+index 488f715..17ff16a 100644
+--- a/src/check.c
++++ b/src/check.c
+@@ -31,6 +31,7 @@
+ #include <time.h>
+ 
+ #include "common.h"
++#include "endian.h"
+ #include "fsck.fat.h"
+ #include "io.h"
+ #include "fat.h"
+diff --git a/src/endian.h b/src/endian.h
+new file mode 100644
+index 0000000..6613e65
+--- /dev/null
++++ b/src/endian.h
+@@ -0,0 +1,57 @@
++/* endian.h - Endian functions
++
++   Copyright (C) 2015 Álvaro Fernández Rojas <noltari@gmail.com>
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program. If not, see <http://www.gnu.org/licenses/>.
++
++   The complete text of the GNU General Public License
++   can be found in /usr/share/common-licenses/GPL-3 file.
++*/
++
++#ifndef _ENDIAN_H
++#define _ENDIAN_H
++
++#if defined(__linux__)
++	#include <endian.h>
++#elif defined(__APPLE__)
++	#include <libkern/OSByteOrder.h>
++
++	#define htobe16(x) OSSwapHostToBigInt16(x)
++	#define htole16(x) OSSwapHostToLittleInt16(x)
++	#define be16toh(x) OSSwapBigToHostInt16(x)
++	#define le16toh(x) OSSwapLittleToHostInt16(x)
++
++	#define htobe32(x) OSSwapHostToBigInt32(x)
++	#define htole32(x) OSSwapHostToLittleInt32(x)
++	#define be32toh(x) OSSwapBigToHostInt32(x)
++	#define le32toh(x) OSSwapLittleToHostInt32(x)
++
++	#define htobe64(x) OSSwapHostToBigInt64(x)
++	#define htole64(x) OSSwapHostToLittleInt64(x)
++	#define be64toh(x) OSSwapBigToHostInt64(x)
++	#define le64toh(x) OSSwapLittleToHostInt64(x)
++#elif defined(__FreeBSD__)
++	#include <sys/endian.h>
++
++	#define be16toh(x) betoh16(x)
++	#define le16toh(x) letoh16(x)
++
++	#define be32toh(x) betoh32(x)
++	#define le32toh(x) letoh32(x)
++
++	#define be64toh(x) betoh64(x)
++	#define le64toh(x) letoh64(x)
++#endif
++
++#endif /* _ENDIAN_H */
+diff --git a/src/fat.c b/src/fat.c
+index 5a92f56..481c08a 100644
+--- a/src/fat.c
++++ b/src/fat.c
+@@ -30,6 +30,7 @@
+ #include <unistd.h>
+ 
+ #include "common.h"
++#include "endian.h"
+ #include "fsck.fat.h"
+ #include "io.h"
+ #include "check.h"
+diff --git a/src/fatlabel.c b/src/fatlabel.c
+index 1484ba5..6de831c 100644
+--- a/src/fatlabel.c
++++ b/src/fatlabel.c
+@@ -33,6 +33,7 @@
+ #include <ctype.h>
+ 
+ #include "common.h"
++#include "types.h"
+ #include "fsck.fat.h"
+ #include "io.h"
+ #include "boot.h"
+diff --git a/src/fsck.fat.h b/src/fsck.fat.h
+index e5f6178..8b0ccb9 100644
+--- a/src/fsck.fat.h
++++ b/src/fsck.fat.h
+@@ -27,11 +27,10 @@
+ #ifndef _DOSFSCK_H
+ #define _DOSFSCK_H
+ 
+-#include <fcntl.h>
+ #include <stddef.h>
+ #include <stdint.h>
+-#include <endian.h>
+ 
++#include "types.h"
+ #include "msdos_fs.h"
+ 
+ #define VFAT_LN_ATTR (ATTR_RO | ATTR_HIDDEN | ATTR_SYS | ATTR_VOLUME)
+diff --git a/src/io.h b/src/io.h
+index d23d07e..eecfdc5 100644
+--- a/src/io.h
++++ b/src/io.h
+@@ -27,7 +27,7 @@
+ #ifndef _IO_H
+ #define _IO_H
+ 
+-#include <fcntl.h>		/* for loff_t */
++#include "types.h"
+ 
+ loff_t llseek(int fd, loff_t offset, int whence);
+ 
+diff --git a/src/lfn.c b/src/lfn.c
+index 2601172..f679168 100644
+--- a/src/lfn.c
++++ b/src/lfn.c
+@@ -28,6 +28,7 @@
+ #include <time.h>
+ 
+ #include "common.h"
++#include "endian.h"
+ #include "io.h"
+ #include "fsck.fat.h"
+ #include "lfn.h"
+diff --git a/src/mkfs.fat.c b/src/mkfs.fat.c
+index 02e0918..f2cee09 100644
+--- a/src/mkfs.fat.c
++++ b/src/mkfs.fat.c
+@@ -48,8 +48,6 @@
+ 
+ #include <fcntl.h>
+ #include <sys/mount.h>
+-#include <endian.h>
+-#include <mntent.h>
+ #include <signal.h>
+ #include <string.h>
+ #include <stdio.h>
+@@ -61,13 +59,14 @@
+ #include <errno.h>
+ #include <ctype.h>
+ #include <stdint.h>
+-#include <endian.h>
+ 
+ #if defined(__linux__)
++    #include <mntent.h>
+     #include <linux/hdreg.h>
+     #include <linux/fs.h>
+     #include <linux/fd.h>
+ #elif defined(__FreeBSD__) || defined(__APPLE__)
++    #include <sys/mount.h>
+     #include <sys/disk.h>
+ 
+     #define BLOCK_SIZE_BITS 10
+@@ -97,7 +96,9 @@
+     };
+ #endif
+ 
++#include "endian.h"
+ #include "msdos_fs.h"
++#include "types.h"
+ 
+ /* In earlier versions, an own llseek() was used, but glibc lseek() is
+  * sufficient (or even better :) for 64 bit offsets in the meantime */
+@@ -525,6 +526,7 @@ static uint64_t count_blocks(char *filename, int *remainder)
+ 
+ static void check_mount(char *device_name)
+ {
++#if defined(__linux__)
+     FILE *f;
+     struct mntent *mnt;
+ 
+@@ -534,6 +536,17 @@ static void check_mount(char *device_name)
+ 	if (strcmp(device_name, mnt->mnt_fsname) == 0)
+ 	    die("%s contains a mounted filesystem.");
+     endmntent(f);
++#elif defined(__APPLE__) || defined(__FreeBSD__)
++    struct statfs* mounts;
++    int num_mounts = getmntinfo(&mounts, MNT_WAIT);
++    if (num_mounts < 0)
++        return;
++    for ( int i = 0; i < num_mounts; i++ )
++    {
++        if (strcmp(device_name, mounts[i].f_mntfromname) == 0)
++        die("%s contains a mounted filesystem.");
++    }
++#endif
+ }
+ 
+ /* Establish the geometry and media parameters for the device */
+diff --git a/src/types.h b/src/types.h
+new file mode 100644
+index 0000000..a3f1a47
+--- /dev/null
++++ b/src/types.h
+@@ -0,0 +1,57 @@
++/* types.h - Missing types
++
++   Copyright (C) 2015 Álvaro Fernández Rojas <noltari@gmail.com>
++
++   This program is free software: you can redistribute it and/or modify
++   it under the terms of the GNU General Public License as published by
++   the Free Software Foundation, either version 3 of the License, or
++   (at your option) any later version.
++
++   This program is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++   GNU General Public License for more details.
++
++   You should have received a copy of the GNU General Public License
++   along with this program. If not, see <http://www.gnu.org/licenses/>.
++
++   The complete text of the GNU General Public License
++   can be found in /usr/share/common-licenses/GPL-3 file.
++*/
++
++#ifndef _TYPES_H
++#define _TYPES_H
++
++#if defined(__linux__)
++	#include <fcntl.h>
++#elif defined(__APPLE__)
++	#ifndef loff_t
++		typedef long long loff_t;
++	#endif /* loff_t */
++
++	#ifndef lseek64
++		#define lseek64 lseek
++	#endif /* lseek64 */
++
++	#ifndef off64_t
++		#ifdef _LP64
++			typedef off_t off64_t;
++		#else
++			typedef __longlong_t off64_t;
++		#endif /* _LP64 */
++	#endif /* off64_t */
++#elif defined(__FreeBSD__)
++	#ifndef loff_t
++		typedef long long loff_t;
++	#endif /* loff_t */
++
++	#ifndef lseek64
++		#define lseek64 lseek
++	#endif /* lseek64 */
++
++	#ifndef off64_t
++		typedef off_t off64_t;
++	#endif /* off64_t */
++#endif
++
++#endif /* _TYPES_H */
+-- 
+1.9.1
+

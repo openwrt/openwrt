@@ -1,0 +1,54 @@
+From a41fc323f2ef38f884954a4ba3773a296fd809f8 Mon Sep 17 00:00:00 2001
+From: Andreas Bombe <aeb@debian.org>
+Date: Wed, 11 Mar 2015 21:45:04 +0100
+Subject: [PATCH 12/14] fsck.fat: Fix read beyond end of array on FAT12
+
+When a FAT12 filesystem contains an odd number of clusters, setting the
+last cluster with set_fat() will trigger a read of the next entry,
+which does not exist in the fat array allocated for this.
+
+Round up the allocation to an even number of FAT entries for FAT12 so
+that this is fixed without introducing special casing in get_fat().
+
+Signed-off-by: Andreas Bombe <aeb@debian.org>
+---
+ src/fat.c | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/src/fat.c b/src/fat.c
+index 027c586..5a92f56 100644
+--- a/src/fat.c
++++ b/src/fat.c
+@@ -80,7 +80,7 @@ void get_fat(FAT_ENTRY * entry, void *fat, uint32_t cluster, DOS_FS * fs)
+  */
+ void read_fat(DOS_FS * fs)
+ {
+-    int eff_size;
++    int eff_size, alloc_size;
+     uint32_t i;
+     void *first, *second = NULL;
+     int first_ok, second_ok;
+@@ -96,10 +96,18 @@ void read_fat(DOS_FS * fs)
+ 
+     total_num_clusters = fs->clusters + 2UL;
+     eff_size = (total_num_clusters * fs->fat_bits + 7) / 8ULL;
+-    first = alloc(eff_size);
++
++    if (fs->fat_bits != 12)
++	    alloc_size = eff_size;
++    else
++	    /* round up to an even number of FAT entries to avoid special
++	     * casing the last entry in get_fat() */
++	    alloc_size = (total_num_clusters * 12 + 23) / 24 * 3;
++
++    first = alloc(alloc_size);
+     fs_read(fs->fat_start, eff_size, first);
+     if (fs->nfats > 1) {
+-	second = alloc(eff_size);
++	second = alloc(alloc_size);
+ 	fs_read(fs->fat_start + fs->fat_size, eff_size, second);
+     }
+     if (second && memcmp(first, second, eff_size) != 0) {
+-- 
+1.9.1
+
