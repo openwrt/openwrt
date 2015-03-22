@@ -61,7 +61,7 @@ index 0000000..2d7e388
 +};
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
-@@ -35,15 +35,16 @@ static struct bcma_bus *bcm5301x_get_bcm
+@@ -18,15 +18,16 @@ static bool first_fault = true;
  static int bcm5301x_abort_handler(unsigned long addr, unsigned int fsr,
  				 struct pt_regs *regs)
  {
