@@ -18,11 +18,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/broadcom/bgmac.c | 7 -------
  1 file changed, 7 deletions(-)
 
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index 676ffe0..0469f72 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -302,9 +302,6 @@ static int bgmac_dma_rx_skb_for_slot(struct bgmac *bgmac,
+@@ -302,9 +302,6 @@ static int bgmac_dma_rx_skb_for_slot(str
  	slot->skb = skb;
  	slot->dma_addr = dma_addr;
  
@@ -32,7 +30,7 @@ index 676ffe0..0469f72 100644
  	return 0;
  }
  
-@@ -505,8 +502,6 @@ static int bgmac_dma_alloc(struct bgmac *bgmac)
+@@ -505,8 +502,6 @@ static int bgmac_dma_alloc(struct bgmac
  				  ring->mmio_base);
  			goto err_dma_free;
  		}
@@ -41,7 +39,7 @@ index 676ffe0..0469f72 100644
  
  		ring->unaligned = bgmac_dma_unaligned(bgmac, ring,
  						      BGMAC_DMA_RING_TX);
-@@ -536,8 +531,6 @@ static int bgmac_dma_alloc(struct bgmac *bgmac)
+@@ -536,8 +531,6 @@ static int bgmac_dma_alloc(struct bgmac
  			err = -ENOMEM;
  			goto err_dma_free;
  		}
@@ -50,6 +48,3 @@ index 676ffe0..0469f72 100644
  
  		ring->unaligned = bgmac_dma_unaligned(bgmac, ring,
  						      BGMAC_DMA_RING_RX);
--- 
-1.8.4.5
-
