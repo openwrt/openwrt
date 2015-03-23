@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mwlwifi
-PKG_VERSION:=10.2.6.1.p4-20141228
+PKG_VERSION:=10.2.8.5.p0-20150320
 PKG_RELEASE=1
 
 PKG_LICENSE:=ISC
@@ -17,7 +17,7 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/kaloz/mwlwifi
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=f92c46695d92dc23606d65bb32611e92235c30fc
+PKG_SOURCE_VERSION:=4774b30dce69a8e97c9431e2dc920ea92b5a976c
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 PKG_MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
@@ -53,8 +53,8 @@ endef
 
 define KernelPackage/mwlwifi/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(CP) $(PKG_BUILD_DIR)/bin/firmware/7.2.6.1/88W8864.bin $(1)/lib/firmware/
-	$(CP) $(PKG_BUILD_DIR)/bin/powertable/Mamba/Mamba_FCC_v1.2_5G4TX.ini $(1)/lib/firmware/
+	$(INSTALL_DIR) $(1)/lib/firmware/mwlwifi
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8864.bin $(1)/lib/firmware/mwlwifi/
 endef
 
 $(eval $(call KernelPackage,mwlwifi))
