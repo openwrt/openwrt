@@ -60,7 +60,7 @@ define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
   URL:=https://wireless.wiki.kernel.org/
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
-  DEPENDS:=@(!TARGET_avr32||BROKEN)
+  DEPENDS:=@(!TARGET_avr32||BROKEN) @!TARGET_uml
 endef
 
 define KernelPackage/cfg80211
