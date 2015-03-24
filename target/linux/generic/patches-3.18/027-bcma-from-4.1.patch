@@ -154,32 +154,47 @@
  	if (err)
 --- a/drivers/bcma/driver_pci.c
 +++ b/drivers/bcma/driver_pci.c
-@@ -282,21 +282,21 @@ void bcma_core_pci_power_save(struct bcm
+@@ -282,39 +282,6 @@ void bcma_core_pci_power_save(struct bcm
  }
  EXPORT_SYMBOL_GPL(bcma_core_pci_power_save);
  
 -int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc, struct bcma_device *core,
-+int bcma_core_pci_irq_ctl(struct bcma_bus *bus, struct bcma_device *core,
- 			  bool enable)
- {
- 	struct pci_dev *pdev;
- 	u32 coremask, tmp;
- 	int err = 0;
- 
+-			  bool enable)
+-{
+-	struct pci_dev *pdev;
+-	u32 coremask, tmp;
+-	int err = 0;
+-
 -	if (!pc || core->bus->hosttype != BCMA_HOSTTYPE_PCI) {
-+	if (bus->hosttype != BCMA_HOSTTYPE_PCI) {
- 		/* This bcma device is not on a PCI host-bus. So the IRQs are
- 		 * not routed through the PCI core.
- 		 * So we must not enable routing through the PCI core. */
- 		goto out;
- 	}
- 
+-		/* This bcma device is not on a PCI host-bus. So the IRQs are
+-		 * not routed through the PCI core.
+-		 * So we must not enable routing through the PCI core. */
+-		goto out;
+-	}
+-
 -	pdev = pc->core->bus->host_pci;
-+	pdev = bus->host_pci;
- 
- 	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
- 	if (err)
-@@ -328,28 +328,12 @@ static void bcma_core_pci_extend_L1timer
+-
+-	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
+-	if (err)
+-		goto out;
+-
+-	coremask = BIT(core->core_index) << 8;
+-	if (enable)
+-		tmp |= coremask;
+-	else
+-		tmp &= ~coremask;
+-
+-	err = pci_write_config_dword(pdev, BCMA_PCI_IRQMASK, tmp);
+-
+-out:
+-	return err;
+-}
+-EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
+-
+ static void bcma_core_pci_extend_L1timer(struct bcma_drv_pci *pc, bool extend)
+ {
+ 	u32 w;
+@@ -328,28 +295,12 @@ static void bcma_core_pci_extend_L1timer
  	bcma_pcie_read(pc, BCMA_CORE_PCI_DLLP_PMTHRESHREG);
  }
  
@@ -318,7 +333,7 @@
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 0x4727) },
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43227) },	/* 0xa8db, BCM43217 (sic!) */
  	{ PCI_DEVICE(PCI_VENDOR_ID_BROADCOM, 43228) },	/* 0xa8dc */
-@@ -310,3 +323,31 @@ void __exit bcma_host_pci_exit(void)
+@@ -310,3 +323,65 @@ void __exit bcma_host_pci_exit(void)
  {
  	pci_unregister_driver(&bcma_pci_bridge_driver);
  }
@@ -350,6 +365,40 @@
 +		bcma_core_pci_down(&bus->drv_pci[0]);
 +}
 +EXPORT_SYMBOL_GPL(bcma_host_pci_down);
++
++/* See also si_pci_setup */
++int bcma_host_pci_irq_ctl(struct bcma_bus *bus, struct bcma_device *core,
++			  bool enable)
++{
++	struct pci_dev *pdev;
++	u32 coremask, tmp;
++	int err = 0;
++
++	if (bus->hosttype != BCMA_HOSTTYPE_PCI) {
++		/* This bcma device is not on a PCI host-bus. So the IRQs are
++		 * not routed through the PCI core.
++		 * So we must not enable routing through the PCI core. */
++		goto out;
++	}
++
++	pdev = bus->host_pci;
++
++	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
++	if (err)
++		goto out;
++
++	coremask = BIT(core->core_index) << 8;
++	if (enable)
++		tmp |= coremask;
++	else
++		tmp &= ~coremask;
++
++	err = pci_write_config_dword(pdev, BCMA_PCI_IRQMASK, tmp);
++
++out:
++	return err;
++}
++EXPORT_SYMBOL_GPL(bcma_host_pci_irq_ctl);
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
 @@ -363,7 +363,7 @@ static int bcma_register_devices(struct
@@ -377,7 +426,7 @@
  #ifdef CONFIG_B43_BCMA
  	case B43_BUS_BCMA:
 -		bcma_core_pci_irq_ctl(&dev->dev->bdev->bus->drv_pci[0],
-+		bcma_core_pci_irq_ctl(dev->dev->bdev->bus,
++		bcma_host_pci_irq_ctl(dev->dev->bdev->bus,
  				      dev->dev->bdev, true);
 -		bcma_core_pci_up(dev->dev->bdev->bus);
 +		bcma_host_pci_up(dev->dev->bdev->bus);
@@ -400,7 +449,7 @@
  	 * to allow mfg hotswap:  down, hotswap (chip power cycle), up.
  	 */
 -	bcma_core_pci_irq_ctl(&wlc_hw->d11core->bus->drv_pci[0], wlc_hw->d11core,
-+	bcma_core_pci_irq_ctl(wlc_hw->d11core->bus, wlc_hw->d11core,
++	bcma_host_pci_irq_ctl(wlc_hw->d11core->bus, wlc_hw->d11core,
  			      true);
  
  	/*
@@ -430,19 +479,28 @@
  	}
 --- a/include/linux/bcma/bcma.h
 +++ b/include/linux/bcma/bcma.h
-@@ -434,6 +434,18 @@ static inline struct bcma_device *bcma_f
+@@ -434,6 +434,27 @@ static inline struct bcma_device *bcma_f
  	return bcma_find_core_unit(bus, coreid, 0);
  }
  
 +#ifdef CONFIG_BCMA_HOST_PCI
 +extern void bcma_host_pci_up(struct bcma_bus *bus);
 +extern void bcma_host_pci_down(struct bcma_bus *bus);
++extern int bcma_host_pci_irq_ctl(struct bcma_bus *bus,
++				 struct bcma_device *core, bool enable);
 +#else
 +static inline void bcma_host_pci_up(struct bcma_bus *bus)
 +{
 +}
 +static inline void bcma_host_pci_down(struct bcma_bus *bus)
 +{
++}
++static inline int bcma_host_pci_irq_ctl(struct bcma_bus *bus,
++					struct bcma_device *core, bool enable)
++{
++	if (bus->hosttype == BCMA_HOSTTYPE_PCI)
++		return -ENOTSUPP;
++	return 0;
 +}
 +#endif
 +
@@ -451,15 +509,14 @@
  extern int bcma_core_enable(struct bcma_device *core, u32 flags);
 --- a/include/linux/bcma/bcma_driver_pci.h
 +++ b/include/linux/bcma/bcma_driver_pci.h
-@@ -238,12 +238,8 @@ struct bcma_drv_pci {
+@@ -238,12 +238,6 @@ struct bcma_drv_pci {
  #define pcicore_write16(pc, offset, val)	bcma_write16((pc)->core, offset, val)
  #define pcicore_write32(pc, offset, val)	bcma_write32((pc)->core, offset, val)
  
 -extern void bcma_core_pci_early_init(struct bcma_drv_pci *pc);
 -extern void bcma_core_pci_init(struct bcma_drv_pci *pc);
 -extern int bcma_core_pci_irq_ctl(struct bcma_drv_pci *pc,
-+extern int bcma_core_pci_irq_ctl(struct bcma_bus *bus,
- 				 struct bcma_device *core, bool enable);
+-				 struct bcma_device *core, bool enable);
 -extern void bcma_core_pci_up(struct bcma_bus *bus);
 -extern void bcma_core_pci_down(struct bcma_bus *bus);
  extern void bcma_core_pci_power_save(struct bcma_bus *bus, bool up);
