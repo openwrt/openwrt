@@ -219,7 +219,6 @@ choice
 	config LIBC_USE_GLIBC
 		bool "Use (e)glibc"
 		select USE_GLIBC
-		depends on !avr32
 
 	config LIBC_USE_UCLIBC
 		select USE_UCLIBC
@@ -242,7 +241,7 @@ comment "Debuggers"
 
 config GDB
 	bool
-	depends on !(avr32 || aarch64 || aarch64_be)
+	depends on !(aarch64 || aarch64_be)
 	prompt "Build gdb" if TOOLCHAINOPTS
 	default y if !EXTERNAL_TOOLCHAIN
 	help
