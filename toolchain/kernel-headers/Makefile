@@ -62,15 +62,6 @@ ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   endef
 endif
 
-define Host/Configure/post/cris
-	$(CP) \
-		$(HOST_BUILD_DIR)/include/linux/user.h \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/linux/
-	ln -snf $(BUILD_DIR_TOOLCHAIN)/linux-dev/include/arch-v10/arch \
-		$(BUILD_DIR_TOOLCHAIN)/linux-dev/include/arch
-	$(SED) '/#include <asm\/page\.h>/d' $(BUILD_DIR_TOOLCHAIN)/linux-dev/include/asm/user.h
-endef
-
 define Host/Configure/post/mips
 	$(call Host/Configure/lzma)
 endef
