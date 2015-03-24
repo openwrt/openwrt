@@ -1,6 +1,6 @@
 --- a/bin/autoheader.in
 +++ b/bin/autoheader.in
-@@ -29,7 +29,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -28,7 +28,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
  
  BEGIN
  {
@@ -10,7 +10,7 @@
    unshift @INC, "$pkgdatadir";
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
-@@ -51,7 +52,7 @@ use strict;
+@@ -50,7 +51,7 @@ use strict;
  use vars qw ($config_h %verbatim %symbol);
  
  # Lib files.
@@ -21,7 +21,21 @@
  my @prepend_include;
 --- a/bin/autom4te.in
 +++ b/bin/autom4te.in
-@@ -25,7 +25,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -1,10 +1,12 @@
+-#! @PERL@ -w
++#! @PERL@
+ # -*- perl -*-
+ # @configure_input@
+ 
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
+ # autom4te - Wrapper around M4 libraries.
+ # Copyright (C) 2001-2003, 2005-2012 Free Software Foundation, Inc.
+ 
+@@ -24,7 +26,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
  
  BEGIN
  {
@@ -31,7 +45,7 @@
    unshift @INC, $pkgdatadir;
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
-@@ -45,7 +46,8 @@ use File::Basename;
+@@ -44,7 +47,8 @@ use File::Basename;
  use strict;
  
  # Data directory.
@@ -41,7 +55,7 @@
  
  # $LANGUAGE{LANGUAGE} -- Automatic options for LANGUAGE.
  my %language;
-@@ -88,7 +90,7 @@ my @include;
+@@ -87,7 +91,7 @@ my @include;
  my $freeze = 0;
  
  # $M4.
@@ -50,7 +64,7 @@
  # Some non-GNU m4's don't reject the --help option, so give them /dev/null.
  fatal "need GNU m4 1.4 or later: $m4"
    if system "$m4 --help </dev/null 2>&1 | grep reload-state >/dev/null";
-@@ -270,6 +272,12 @@ sub load_configuration ($)
+@@ -269,6 +273,12 @@ sub load_configuration ($)
  
        my @words = shellwords ($_);
        my $type = shift @words;
@@ -65,7 +79,21 @@
  	  fatal "$file:$.: end-language missing for: $lang"
 --- a/bin/autoreconf.in
 +++ b/bin/autoreconf.in
-@@ -27,7 +27,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -1,10 +1,12 @@
+-#! @PERL@ -w
++#! @PERL@
+ # -*- perl -*-
+ # @configure_input@
+ 
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
+ # autoreconf - install the GNU Build System in a directory tree
+ # Copyright (C) 1994, 1999-2012 Free Software Foundation, Inc.
+ 
+@@ -26,7 +28,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
  
  BEGIN
  {
@@ -75,7 +103,7 @@
    unshift @INC, $pkgdatadir;
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
-@@ -107,9 +108,9 @@ Written by David J. MacKenzie and Akim D
+@@ -106,9 +109,9 @@ Written by David J. MacKenzie and Akim D
  ";
  
  # Lib files.
@@ -90,8 +118,18 @@
  my $libtoolize = $ENV{'LIBTOOLIZE'} || 'libtoolize';
 --- a/bin/autoscan.in
 +++ b/bin/autoscan.in
-@@ -26,7 +26,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -1,4 +1,4 @@
+-#! @PERL@ -w
++#! @PERL@
+ # -*- perl -*-
+ # @configure_input@
  
+@@ -23,9 +23,12 @@
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
  BEGIN
  {
 -  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '@pkgdatadir@';
@@ -100,7 +138,7 @@
    unshift @INC, $pkgdatadir;
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
-@@ -92,10 +93,10 @@ my $configure_scan = 'configure.scan';
+@@ -91,10 +94,10 @@ my $configure_scan = 'configure.scan';
  my $log;
  
  # Autoconf and lib files.
@@ -115,8 +153,18 @@
  # -----
 --- a/bin/autoupdate.in
 +++ b/bin/autoupdate.in
-@@ -27,7 +27,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -1,4 +1,4 @@
+-#! @PERL@ -w
++#! @PERL@
+ # -*- perl -*-
+ # @configure_input@
  
+@@ -24,9 +24,12 @@
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
  BEGIN
  {
 -  my $pkgdatadir = $ENV{'autom4te_perllibdir'} || '@pkgdatadir@';
@@ -125,7 +173,7 @@
    unshift @INC, $pkgdatadir;
  
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
-@@ -51,10 +52,10 @@ my $autom4te = $ENV{'AUTOM4TE'} || '@bin
+@@ -50,10 +53,10 @@ my $autom4te = $ENV{'AUTOM4TE'} || '@bin
  my $autoconf = "$autom4te --language=autoconf";
  # We need to find m4sugar.
  my @prepend_include;
@@ -140,7 +188,21 @@
  # $HELP
 --- a/bin/ifnames.in
 +++ b/bin/ifnames.in
-@@ -31,7 +31,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -1,10 +1,12 @@
+-#! @PERL@ -w
++#! @PERL@
+ # -*- perl -*-
+ # @configure_input@
+ 
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
+ # ifnames - print the identifiers used in C preprocessor conditionals
+ 
+ # Copyright (C) 1994-1995, 1999-2003, 2005-2012 Free Software
+@@ -31,7 +33,8 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
  
  BEGIN
  {
@@ -152,7 +214,7 @@
    # Override SHELL.  On DJGPP SHELL may not be set to a shell
 --- a/bin/autoconf.as
 +++ b/bin/autoconf.as
-@@ -85,7 +85,11 @@ exit_missing_arg='
+@@ -84,7 +84,11 @@ exit_missing_arg='
  # restore font-lock: '
  
  # Variables.
