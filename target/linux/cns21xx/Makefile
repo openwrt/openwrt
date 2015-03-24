@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=cns21xx
 BOARDNAME:=Cavium Networks Econa CNS21xx
-FEATURES:=squashfs
+FEATURES:=squashfs broken
 CPU_TYPE:=fa526
 
 KERNEL_PATCHVER:=3.10
