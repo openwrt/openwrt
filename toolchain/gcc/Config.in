@@ -2,16 +2,10 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_USE_VERSION_4_4_7 if avr32
 	default GCC_USE_VERSION_4_6_LINARO if TARGET_octeon
 	default GCC_USE_VERSION_4_8_LINARO
 	help
 	  Select the version of gcc you wish to use.
-
-	config GCC_USE_VERSION_4_4_7
-		select GCC_VERSION_4_4_7
-		bool "gcc 4.4.7"
-		depends on avr32
 
 	config GCC_USE_VERSION_4_6_LINARO
 		select GCC_VERSION_4_6_LINARO
