@@ -1,0 +1,104 @@
+--- a/drivers/bcma/driver_pci.c
++++ b/drivers/bcma/driver_pci.c
+@@ -282,39 +282,6 @@ void bcma_core_pci_power_save(struct bcm
+ }
+ EXPORT_SYMBOL_GPL(bcma_core_pci_power_save);
+ 
+-int bcma_core_pci_irq_ctl(struct bcma_bus *bus, struct bcma_device *core,
+-			  bool enable)
+-{
+-	struct pci_dev *pdev;
+-	u32 coremask, tmp;
+-	int err = 0;
+-
+-	if (bus->hosttype != BCMA_HOSTTYPE_PCI) {
+-		/* This bcma device is not on a PCI host-bus. So the IRQs are
+-		 * not routed through the PCI core.
+-		 * So we must not enable routing through the PCI core. */
+-		goto out;
+-	}
+-
+-	pdev = bus->host_pci;
+-
+-	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
+-	if (err)
+-		goto out;
+-
+-	coremask = BIT(core->core_index) << 8;
+-	if (enable)
+-		tmp |= coremask;
+-	else
+-		tmp &= ~coremask;
+-
+-	err = pci_write_config_dword(pdev, BCMA_PCI_IRQMASK, tmp);
+-
+-out:
+-	return err;
+-}
+-EXPORT_SYMBOL_GPL(bcma_core_pci_irq_ctl);
+-
+ static void bcma_core_pci_extend_L1timer(struct bcma_drv_pci *pc, bool extend)
+ {
+ 	u32 w;
+--- a/drivers/bcma/host_pci.c
++++ b/drivers/bcma/host_pci.c
+@@ -351,3 +351,37 @@ void bcma_host_pci_down(struct bcma_bus
+ 		bcma_core_pci_down(&bus->drv_pci[0]);
+ }
+ EXPORT_SYMBOL_GPL(bcma_host_pci_down);
++
++/* See also si_pci_setup */
++int bcma_host_pci_irq_ctl(struct bcma_bus *bus, struct bcma_device *core,
++			  bool enable)
++{
++	struct pci_dev *pdev;
++	u32 coremask, tmp;
++	int err = 0;
++
++	if (bus->hosttype != BCMA_HOSTTYPE_PCI) {
++		/* This bcma device is not on a PCI host-bus. So the IRQs are
++		 * not routed through the PCI core.
++		 * So we must not enable routing through the PCI core. */
++		goto out;
++	}
++
++	pdev = bus->host_pci;
++
++	err = pci_read_config_dword(pdev, BCMA_PCI_IRQMASK, &tmp);
++	if (err)
++		goto out;
++
++	coremask = BIT(core->core_index) << 8;
++	if (enable)
++		tmp |= coremask;
++	else
++		tmp &= ~coremask;
++
++	err = pci_write_config_dword(pdev, BCMA_PCI_IRQMASK, tmp);
++
++out:
++	return err;
++}
++EXPORT_SYMBOL_GPL(bcma_host_pci_irq_ctl);
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -4866,7 +4866,7 @@ static int b43_wireless_core_init(struct
+ 	switch (dev->dev->bus_type) {
+ #ifdef CPTCFG_B43_BCMA
+ 	case B43_BUS_BCMA:
+-		bcma_core_pci_irq_ctl(dev->dev->bdev->bus,
++		bcma_host_pci_irq_ctl(dev->dev->bdev->bus,
+ 				      dev->dev->bdev, true);
+ 		bcma_host_pci_up(dev->dev->bdev->bus);
+ 		break;
+--- a/drivers/net/wireless/brcm80211/brcmsmac/main.c
++++ b/drivers/net/wireless/brcm80211/brcmsmac/main.c
+@@ -4959,7 +4959,7 @@ static int brcms_b_up_prep(struct brcms_
+ 	 * Configure pci/pcmcia here instead of in brcms_c_attach()
+ 	 * to allow mfg hotswap:  down, hotswap (chip power cycle), up.
+ 	 */
+-	bcma_core_pci_irq_ctl(wlc_hw->d11core->bus, wlc_hw->d11core,
++	bcma_host_pci_irq_ctl(wlc_hw->d11core->bus, wlc_hw->d11core,
+ 			      true);
+ 
+ 	/*
