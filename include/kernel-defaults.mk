@@ -127,11 +127,6 @@ endef
 
 OBJCOPY_STRIP = -R .reginfo -R .notes -R .note -R .comment -R .mdebug -R .note.gnu.build-id
 
-# AVR32 uses a non-standard location
-ifeq ($(LINUX_KARCH),avr32)
-IMAGES_DIR:=images
-endif
-
 # AMD64 shares the location with x86
 ifeq ($(LINUX_KARCH),x86_64)
 IMAGES_DIR:=../../x86/boot

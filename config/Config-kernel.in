@@ -518,7 +518,7 @@ endif
 
 config KERNEL_SECCOMP
 	bool "Enable seccomp support"
-		depends on !(TARGET_uml || TARGET_avr32)
+		depends on !(TARGET_uml)
 		default n
 		help
 		  Build kernel with support for seccomp.
