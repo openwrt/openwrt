@@ -1,6 +1,11 @@
 menu "Configuration"
 	depends on PACKAGE_lldpd
 
+config LLDPD_WITH_PRIVSEP
+	bool
+	default y
+	prompt "Enable privilege separation (run lldpd with a chrooted 'lldp' user)"
+
 config LLDPD_WITH_CDP
 	bool
 	default y

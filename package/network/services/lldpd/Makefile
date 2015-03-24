@@ -85,9 +85,11 @@ define Package/lldpd/conffiles
 endef
 
 CONFIGURE_ARGS += \
+	$(if $(CONFIG_LLDPD_WITH_PRIVSEP), \
 	--with-privsep-user=lldp \
 	--with-privsep-group=lldp \
 	--with-privsep-chroot=/var/run/lldp \
+	,--disable-privsep) \
 	--with-readline=no \
 	--with-embedded-libevent=no \
 	$(if $(CONFIG_LLDPD_WITH_CDP),,--disable-cdp) \
