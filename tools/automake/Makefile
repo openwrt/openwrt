@@ -19,7 +19,9 @@ HOST_CONFIGURE_ARGS += \
 	--datarootdir=$(STAGING_DIR_HOST)/share \
 	--disable-silent-rules
 
-HOST_CONFIGURE_VARS += am_cv_prog_PERL_ithreads=no
+HOST_CONFIGURE_VARS += \
+	PERL="/usr/bin/env perl" \
+	am_cv_prog_PERL_ithreads=no
 
 define Host/Configure
 	(cd $(HOST_BUILD_DIR); $(AM_TOOL_PATHS) STAGING_DIR="" ./bootstrap.sh)

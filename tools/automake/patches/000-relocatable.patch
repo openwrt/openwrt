@@ -11,7 +11,21 @@
  # We need at least this version for CLONE support.
 --- a/bin/aclocal.in
 +++ b/bin/aclocal.in
-@@ -27,7 +27,7 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
+@@ -1,10 +1,12 @@
+-#!@PERL@ -w
++#!@PERL@
+ # -*- perl -*-
+ # @configure_input@
+ 
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
+ # aclocal - create aclocal.m4 by scanning configure.ac
+ 
+ # Copyright (C) 1996-2014 Free Software Foundation, Inc.
+@@ -27,7 +29,7 @@ eval 'case $# in 0) exec @PERL@ -S "$0";
  
  BEGIN
  {
@@ -20,7 +34,7 @@
      unless @Aclocal::perl_libdirs;
    unshift @INC, @Aclocal::perl_libdirs;
  }
-@@ -69,8 +69,8 @@ $perl_threads = 0;
+@@ -69,8 +71,8 @@ $perl_threads = 0;
  # ACLOCAL_PATH environment variable, and reset with the '--system-acdir'
  # option.
  my @user_includes = ();
@@ -33,7 +47,21 @@
  my $install = 0;
 --- a/bin/automake.in
 +++ b/bin/automake.in
-@@ -31,7 +31,7 @@ use strict;
+@@ -1,10 +1,12 @@
+-#!@PERL@ -w
++#!@PERL@
+ # -*- perl -*-
+ # @configure_input@
+ 
+ eval 'case $# in 0) exec @PERL@ -S "$0";; *) exec @PERL@ -S "$0" "$@";; esac'
+     if 0;
+ 
++$^W = 1;
++
+ # automake - create Makefile.in from Makefile.am
+ # Copyright (C) 1994-2014 Free Software Foundation, Inc.
+ 
+@@ -31,7 +33,7 @@ use strict;
  
  BEGIN
  {
@@ -42,3 +70,27 @@
      unless @Automake::perl_libdirs;
    unshift @INC, @Automake::perl_libdirs;
  
+--- a/t/wrap/aclocal.in
++++ b/t/wrap/aclocal.in
+@@ -1,6 +1,8 @@
+-#!@PERL@ -w
++#!@PERL@
+ # @configure_input@
+ 
++$^W = 1;
++
+ # Copyright (C) 2012-2014 Free Software Foundation, Inc.
+ 
+ # This program is free software; you can redistribute it and/or modify
+--- a/t/wrap/automake.in
++++ b/t/wrap/automake.in
+@@ -1,6 +1,8 @@
+-#!@PERL@ -w
++#!@PERL@
+ # @configure_input@
+ 
++$^W = 1;
++
+ # Copyright (C) 2012-2014 Free Software Foundation, Inc.
+ 
+ # This program is free software; you can redistribute it and/or modify
