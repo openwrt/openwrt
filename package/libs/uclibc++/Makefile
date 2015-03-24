@@ -42,7 +42,6 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 	-e 's/sh[234].*/sh/' \
 	-e 's/mips.*/mips/' \
 	-e 's/mipsel.*/mips/' \
-	-e 's/cris.*/cris/' \
 )
 
 TARGET_CFLAGS += $(FPIC)

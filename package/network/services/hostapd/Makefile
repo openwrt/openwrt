@@ -94,7 +94,7 @@ ifdef CONFIG_USE_GLIBC
   TARGET_LDFLAGS_C += -lrt
 endif
 
-DRV_DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny @(!TARGET_avr32||BROKEN)
+DRV_DEPENDS:=+PACKAGE_kmod-cfg80211:libnl-tiny
 
 define Package/hostapd/Default
   SECTION:=net
