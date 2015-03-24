@@ -1,13 +1,9 @@
-config GCC_VERSION_4_4_7
-	default y if (!TOOLCHAINOPTS && avr32)
-	bool
-
 config GCC_VERSION_4_6_LINARO
 	default y if (!TOOLCHAINOPTS && TARGET_octeon)
 	bool
 
 config GCC_VERSION_4_8_LINARO
-	default y if (!TOOLCHAINOPTS && !avr32 && !TARGET_octeon)
+	default y if (!TOOLCHAINOPTS && !TARGET_octeon)
 	bool
 
 config GCC_VERSION_4_9_LINARO
@@ -15,16 +11,11 @@ config GCC_VERSION_4_9_LINARO
 
 config GCC_VERSION
 	string
-	default "4.4.7"	    if GCC_VERSION_4_4_7
 	default "4.6.3"	    if GCC_VERSION_4_6_3
 	default "4.6-linaro"    if GCC_VERSION_4_6_LINARO
 	default "4.8-linaro"    if GCC_VERSION_4_8_LINARO
 	default "4.9-linaro"    if GCC_VERSION_4_9_LINARO
 	default "4.6-linaro"
-
-config GCC_VERSION_4_4
-	bool
-	default y	if GCC_VERSION_4_4_7
 
 config GCC_VERSION_4_6
 	bool

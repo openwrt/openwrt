@@ -61,9 +61,6 @@ else
   PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
   PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 
-  ifeq ($(PKG_VERSION),4.4.7)
-    PKG_MD5SUM:=295709feb4441b04e87dea3f1bab4281
-  endif
   ifeq ($(PKG_VERSION),4.6.3)
     PKG_MD5SUM:=773092fe5194353b02bb0110052a972e
   endif
@@ -133,14 +130,10 @@ GCC_CONFIGURE:= \
 			--with-abi=$(subst ",,$(CONFIG_MIPS64_ABI))) \
 		--with-gmp=$(TOPDIR)/staging_dir/host \
 		--with-mpfr=$(TOPDIR)/staging_dir/host \
+		--with-mpc=$(TOPDIR)/staging_dir/host \
 		--disable-decimal-float
 ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
-endif
-
-ifeq ($(CONFIG_GCC_VERSION_4_4),)
-  GCC_CONFIGURE+= \
-		--with-mpc=$(TOPDIR)/staging_dir/host
 endif
 
 ifneq ($(CONFIG_SSP_SUPPORT),)
