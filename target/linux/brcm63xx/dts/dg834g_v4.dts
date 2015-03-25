@@ -1,0 +1,66 @@
+/dts-v1/;
+
+/include/ "bcm6348.dtsi"
+
+/ {
+	model = "Netgear DG834G v4";
+	compatible = "netgear,dg834g-v4", "brcm,bcm6348";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 6 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green {
+			label = "96348W3:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+		status {
+			label = "96348W3:red:power";
+			gpios = <&gpio0 1 1>;
+		};
+		inet_green {
+			label = "96348W3::adsl";
+			gpios = <&gpio0 2 1>;
+		};
+		inet_red {
+			label = "96348W3::internet";
+			gpios = <&gpio0 3 1>;
+		};
+	};
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x010000>;
+		read-only;
+	};
+
+	linux@10000 {
+		label = "linux";
+		reg = <0x010000 0x3e0000>;
+	};
+
+	nvram@3f0000 {
+		label = "nvram";
+		reg = <0x3f0000 0x010000>;
+	};
+};

@@ -144,6 +144,9 @@ brcm63xx_dt_detect() {
 	"Netgear DG834GT/PN")
 		board_name="dg834gt"
 		;;
+	"Netgear DG834G v4")
+		board_name="dg834g_v4"
+		;;
 	"Netgear DGND3700v1/DGND3800B")
 		board_name="dgnd3700v1_dgnd3800b"
 		;;
@@ -213,9 +216,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	96348W3)
-		board_name="dg834g_v4"
-		;;
 	CPVA502+)
 		board_name="cpva502p"
 		;;

@@ -23,6 +23,15 @@ define Profile/DG834GTPN/Description
 endef
 $(eval $(call Profile,DG834GTPN))
 
+define Profile/DG834GV4
+  NAME:=Netgear DG834G v4
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/DG834GTPN/Description
+  Package set optimized for DG834G v4.
+endef
+$(eval $(call Profile,DG834GV4))
+
 define Profile/DGND3700v1_3800B
   NAME:=Netgear DGND3700 v1 / DGND3800B
   PACKAGES:=kmod-b43 wpad-mini \
