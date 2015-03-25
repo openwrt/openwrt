@@ -86,11 +86,33 @@ define Image/Build/ZYXCFEDTB
 endef
 
 define Image/Build/RedBootDTB
-	# Generate the image
+	# Prepare kernel and rootfs
 	gzip -9 -c $(KDIR)/vmlinux-$(3) > $(KDIR)/vmlinux-$(3).bin.gz
-	$(STAGING_DIR_HOST)/bin/lzma e $(KDIR)/vmlinux-$(3) $(KDIR)/vmlinux-$(3).bin.l7
-	dd if=$(KDIR)/vmlinux-$(3).bin.l7 of=$(BIN_DIR)/openwrt-$(2)-vmlinux.lzma bs=65536 conv=sync
 	dd if=$(KDIR)/vmlinux-$(3).bin.gz of=$(BIN_DIR)/openwrt-$(2)-vmlinux.gz bs=65536 conv=sync
+	dd if=$(KDIR)/root.squashfs of="$(BIN_DIR)/openwrt-$(2)-root.squashfs" bs=64k conv=sync
+	echo -ne \\xDE\\xAD\\xC0\\xDE >> "$(BIN_DIR)/openwrt-$(2)-root.squashfs"
+	# Generate the scripted image
+	$(CP) ./redbootscript.template $(BIN_DIR)/redbootscript
+	let \
+		kernellen="$$$$(stat -c%s $(BIN_DIR)/openwrt-$(2)-vmlinux.gz)" \
+		rootfsdatalen="$$$$(stat -c %s $(BIN_DIR)/openwrt-$(2)-root.squashfs)" \
+		rootfsaddr="0xBE430000 + kernellen" \
+		rootfslen="0xBEBF0000 - rootfsaddr" \
+		offset2="0x1000 + kernellen"; \
+		$(SED)	"s,%loadaddr,$(strip $(LOADADDR)),g" \
+			-e "s,%kernellen,$$$$(printf '%#x' $$$$kernellen),g" \
+			-e "s,%offset2,$$$$(printf '%#x' $$$$offset2),g" \
+			-e "s,%rootfsdatalen,$$$$(printf '%#x' $$$$rootfsdatalen),g" \
+			-e "s,%rootfsaddr,$$$$(printf '%#x' $$$$rootfsaddr),g" \
+			-e "s,%rootfslen,$$$$(printf '%#x' $$$$rootfslen),g" \
+		"$(BIN_DIR)/redbootscript"
+
+	dd if="$(BIN_DIR)/redbootscript" of="$(BIN_DIR)/redbootscript.padded" bs=4096 conv=sync
+	cat \
+		"$(BIN_DIR)/redbootscript.padded" \
+		"$(BIN_DIR)/openwrt-$(2)-vmlinux.gz" \
+		"$(BIN_DIR)/openwrt-$(2)-root.squashfs" \
+		> "$(BIN_DIR)/openwrt-$(2)-redboot.bin"
 endef
 
 define Image/Build/HCSDTB

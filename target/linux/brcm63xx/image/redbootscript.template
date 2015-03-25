@@ -1,0 +1,15 @@
+fis init -f
+
+fconfig boot_script true
+fconfig boot_script_data
+fis load -b %loadaddr -d kernel
+exec -c "noinitrd" %loadaddr
+
+
+fconfig boot_script_timeout 20
+
+fis create -o 0x1000 -f 0xBE430000 -l %kernellen kernel
+
+fis create -o %offset2 -s %rootfsdatalen -f %rootfsaddr -l %rootfslen rootfs
+
+reset
