@@ -275,6 +275,8 @@ $(eval $(call ImageDTB,CFEDTB,RG100A,RG100A,rg100a,96358VW2,6358,--block-size 0x
 $(eval $(call ImageDTB,CFEDTB,AR1004G,AR1004G,ar1004g,96348GW-10,6348))
 # Belkin F5D7633
 $(eval $(call ImageDTB,CFEDTB,F5D7633,F5D7633,f5d7633,96348GW-10,6348,--block-size 0x20000 --image-offset 0x20000))
+# Broadcom BCM963268BU_P300
+$(eval $(call ImageDTB,Dummy,BCM963268BU_P300,BCM963268BU_P300,bcm963268bu_p300,963268BU_P300,63268))
 # BT Home Hub 2.0 A
 $(eval $(call ImageDTB,CFEDTB,BTHOMEHUB2A,HomeHub2A,homehub2a,HOMEHUB2A,6358,--image-offset 0x20000 --block-size 0x20000))
 # BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
