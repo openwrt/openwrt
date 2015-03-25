@@ -119,7 +119,8 @@ define Image/Build/HCSDTB
 	# Generate the image
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_byte=$(4) \
 		--rev_maj=$(5) --rev_min=$(6) --input_file=$(KDIR)/$(7) \
-		--output_file=$(BIN_DIR)/openwrt-$(2)-$(1).bin
+		--output_file=$(BIN_DIR)/openwrt-$(2)-$(1).bin \
+		--ldaddress=$(LOADADDR)
 endef
 
 define Image/Build/ChkDTB
