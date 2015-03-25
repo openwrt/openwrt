@@ -72,6 +72,10 @@ set_state() {
 	fast2704v2)
 		status_led="F@ST2704V2:green:power"
 		;;
+	homehub2a)
+		status_led="HOMEHUB2A:green:upgrading"
+		status_led2="HOMEHUB2A:blue:upgrading"
+		;;
 	gw6200)
 		status_led="GW6200:green:line1"
 		status_led2="GW6200:green:tel"
