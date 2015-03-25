@@ -121,7 +121,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		u32 ngpios;
 +
 +		if (id >= 0)
-+			bgc->gc.label = devm_kasprintf(dev, GFP_KERNEL,
++			bgc->gc.label = kasprintf(GFP_KERNEL,
 +						       "bcm63xx-gpio.%d", id);
 +
 +		if (!of_property_read_u32(dev->of_node, "ngpios", &ngpios))
