@@ -106,6 +106,11 @@ define Image/Build/ChkDTB
 	-k $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin -b $(5) -r $(6)
 endef
 
+define Image/Build/Dummy
+	# for boards without a flashable image yet
+	true
+endef
+
 define Build/Clean
 	$(MAKE) -C lzma-loader clean
 endef
@@ -295,7 +300,7 @@ $(eval $(call ImageDTB,CFEDTB,HG556a_C,HG556a_C,hg556a-c,HW556,6358,--rsa-signat
 # Inventel Livebox 1
 $(eval $(call ImageDTB,RedBootDTB,Livebox,livebox,livebox-blue-5g))
 # Netgear CVG834G
-$(eval $(call ImageDTB,HCSDTB,CVG834G,,cvg834g,a020,0001,0022,vmlinux-cvg834g))
+$(eval $(call ImageDTB,Dummy,CVG834G,cvg834g,cvg834g,a020,0001,0022,vmlinux-cvg834g))
 # Netgear DG834GT/PN
 $(eval $(call ImageDTB,CFEDTB,DG834GTPN,DG834GT_PN,dg834gtpn,96348GW-10,6348))
 # Netgear DGND3700 v1 / DGND3800B
