@@ -372,6 +372,8 @@ $(eval $(call ImageDTB,CFEDTB,GW6200,GW6200,gw6200,96348GW,6348,--rsa-signature 
 $(eval $(call ImageDTB,Dummy,CPVA502PLUS,CVPA502PLUS,cpva502plus,CPVA502+,6348,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0"))
 # Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 $(eval $(call ImageDTB,CFEDTB,CPVA642,CPA-ZNTE60T,cpva642,CPVA642,6358,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4))
+# Telsey MAGIC (Alice W-Gate)
+$(eval $(call ImageDTB,Dummy,MAGIC,MAGIC,magic,MAGIC,6348))
 # TP-Link TD-W8900GB
 $(eval $(call ImageDTB,CFEDTB,TDW8900GB,TD-W8900GB,td-w8900gb,96348GW-11,6348,--rsa-signature "$(shell printf 'PRID\x89\x10\x00\x02')" --image-offset 0x20000))
 # USRobotics 9108

@@ -1,0 +1,70 @@
+/dts-v1/;
+
+/include/ "bcm6348.dtsi"
+
+/ {
+	model = "Alice W-Gate";
+	compatible = "telsey,magic", "brcm,bcm6348";
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power {
+			label = "MAGIC:green:power";
+			gpios = <&gpio0 0 1>;
+			default-state = "on";
+		};
+
+		stop {
+			label = "MAGIC:green:stop";
+			gpios = <&gpio0 1 1>;
+		};
+
+		hpna {
+			label = "MAGIC:green:hpna";
+			gpios = <&gpio0 4 1>;
+		};
+
+		status {
+			label = "MAGIC:green:adsl";
+			gpios = <&gpio0 5 1>;
+		};
+
+		voip {
+			label = "MAGIC:green:voip";
+			gpios = <&gpio0 22 1>;
+		};
+
+		wifi {
+			label = "MAGIC:green:wifi";
+			gpios = <&gpio0 28 0>;
+		};
+
+		usb {
+			label = "MAGIC:green:usb";
+			gpios = <&gpio1 3 1>;
+		};
+	};
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x010000>;
+		read-only;
+	};
+
+	linux@10000 {
+		label = "linux";
+		reg = <0x010000 0x3e0000>;
+	};
+
+	nvram@3f0000 {
+		label = "nvram";
+		reg = <0x3f0000 0x010000>;
+	};
+};

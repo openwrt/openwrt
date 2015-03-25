@@ -24,7 +24,7 @@
  static struct board_info __initdata board_rta1025w_16 = {
  	.name				= "RTA1025W_16",
  	.expected_cpu_id		= 0x6348,
-@@ -1520,6 +1537,7 @@ static const struct board_info __initcon
+@@ -1482,6 +1499,7 @@ static const struct board_info __initcon
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,
@@ -32,7 +32,7 @@
  	&board_DV201AMR,
  	&board_96348gw_a,
  	&board_rta1025w_16,
-@@ -1594,6 +1612,7 @@ static struct of_device_id const bcm963x
+@@ -1556,6 +1574,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,dg834gtpn", .data = &board_96348gw_10, },
   	{ .compatible = "netgear,dg834g-v4", .data = &board_96348W3, },
  	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },
