@@ -5,11 +5,6 @@ choice
 	help
 	  Select the version of glibc you wish to use.
 
-	config EGLIBC_USE_VERSION_2_15
-		bool "eglibc 2.15"
-		select EGLIBC_VERSION_2_15
-		depends on BROKEN
-
 	config EGLIBC_USE_VERSION_2_19
 		bool "eglibc 2.19"
 		select EGLIBC_VERSION_2_19
@@ -21,6 +16,6 @@ choice
 endchoice
 
 menu "eglibc configuration"
-	depends on TOOLCHAINOPTS && USE_GLIBC && (EGLIBC_USE_VERSION_2_15 || EGLIBC_USE_VERSION_2_19)
+	depends on TOOLCHAINOPTS && USE_GLIBC && EGLIBC_USE_VERSION_2_19
 	source toolchain/glibc/config/Config.in
 endmenu
