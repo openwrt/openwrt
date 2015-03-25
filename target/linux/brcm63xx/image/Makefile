@@ -332,6 +332,8 @@ $(eval $(call ImageDTB,RedBootDTB,Livebox,livebox,livebox-blue-5g))
 $(eval $(call ImageDTB,Dummy,CVG834G,cvg834g,cvg834g,a020,0001,0022,vmlinux-cvg834g))
 # Netgear DG834GT/PN
 $(eval $(call ImageDTB,CFEDTB,DG834GTPN,DG834GT_PN,dg834gtpn,96348GW-10,6348))
+# Netgear DG834G v4
+$(eval $(call ImageDTB,Dummy,DG834GV4,DG834GTv4,dg834g_v4,96348W3,6348))
 # Netgear DGND3700 v1 / DGND3800B
 $(eval $(call ImageDTB,CFEDTB,DGND3700v1_3800B,DGND3700v1_3800B,dgnd3700v1,96368MVWG,6368,--image-offset 0x20000 --block-size 0x20000))
 #Netgear DGND3700 v1 factory firmware
