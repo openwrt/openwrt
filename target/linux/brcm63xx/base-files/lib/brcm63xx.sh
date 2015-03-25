@@ -30,6 +30,9 @@ brcm63xx_dt_detect() {
 	"Broadcom 96348R reference board")
 		board_name="bcm96348r"
 		;;
+	"Broadcom BCM963268BU_P300 reference board")
+		board_name="bcm963268bu_p300"
+		;;
 	"Broadcom bcm963281TAN reference board")
 		board_name="bcm963281tan"
 		;;
@@ -207,9 +210,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	963268BU_P300)
-		board_name="bcm963268bu_p300"
-		;;
 	96338W2_E7T)
 		board_name="dsl-2640u"
 		;;

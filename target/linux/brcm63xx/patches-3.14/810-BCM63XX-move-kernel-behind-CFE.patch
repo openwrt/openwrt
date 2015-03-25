@@ -19,8 +19,6 @@ and the entry point to be called, so move the kernel to behind CFE.
  arch/mips/bcm63xx/Platform |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/bcm63xx/Platform b/arch/mips/bcm63xx/Platform
-index 5f86b2f..ee73f8f 100644
 --- a/arch/mips/bcm63xx/Platform
 +++ b/arch/mips/bcm63xx/Platform
 @@ -4,4 +4,4 @@
@@ -29,6 +27,3 @@ index 5f86b2f..ee73f8f 100644
  		-I$(srctree)/arch/mips/include/asm/mach-bcm63xx/
 -load-$(CONFIG_BCM63XX)		:= 0xffffffff80010000
 +load-$(CONFIG_BCM63XX)		:= 0xffffffff80800000
--- 
-1.7.10.4
-

@@ -1,0 +1,28 @@
+/dts-v1/;
+
+/include/ "bcm63268.dtsi"
+
+/ {
+	model = "Broadcom BCM963268BU_P300 reference board";
+	compatible = "brcm,bcm963268bu_p300", "brcm,bcm63268";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 0 0>;
+			linux,code = <0x198>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 1 0>;
+			linux,code = <0x211>;
+		};
+        };
+};

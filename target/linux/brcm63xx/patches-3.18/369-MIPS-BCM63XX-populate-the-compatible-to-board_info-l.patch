@@ -9,12 +9,12 @@ for known boards.
 
 Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/bcm63xx/boards/board_bcm963xx.c |   35 +++++++++++++++++++++++++++++
- 1 file changed, 35 insertions(+)
+ arch/mips/bcm63xx/boards/board_bcm963xx.c |   34 +++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -716,6 +716,49 @@ static const struct board_info __initcon
+@@ -716,6 +716,48 @@ static const struct board_info __initcon
  };
  
  static struct of_device_id const bcm963xx_boards_dt[] = {
@@ -58,7 +58,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +#ifdef CONFIG_BCM63XX_CPU_6368
 +#endif
 +#ifdef CONFIG_BCM63XX_CPU_63268
-+	{ .compatible = "brcm,bcm963268bu_p300", .data = &board_963268bu_p300, },
 +#endif
 +#endif /* CONFIG_OF */
  	{ },
