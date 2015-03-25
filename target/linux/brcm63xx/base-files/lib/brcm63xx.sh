@@ -198,6 +198,9 @@ brcm63xx_dt_detect() {
 	"Telsey CPVA642-type (CPA-ZNTE60T)")
 		board_name="cpva642"
 		;;
+	"Telsey MAGIC")
+		board_name="magic"
+		;;
 	"TP-Link TD-W8900GB")
 		board_name="td-w8900gb"
 		;;
@@ -219,9 +222,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	MAGIC)
-		board_name="magic"
-		;;
 	RTA770BW)
 		board_name="rta770bw"
 		;;

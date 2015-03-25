@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -653,6 +653,78 @@ static struct board_info __initdata boar
+@@ -653,6 +653,40 @@ static struct board_info __initdata boar
  		.num_board_fixups	= ARRAY_SIZE(spw500v_fixups),
  	},
  };
@@ -37,49 +37,11 @@
 +		.cs			= 2,
 +		.ext_irq		= 2,
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "MAGIC:green:voip",
-+			.gpio		= 22,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "MAGIC:green:adsl",
-+			.gpio		= 5,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "MAGIC:green:wifi",
-+			.gpio		= 28,
-+		},
-+		{
-+			.name		= "MAGIC:green:usb",
-+			.gpio		= 35,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "MAGIC:green:hpna",
-+			.gpio		= 4,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "MAGIC:green:power",
-+			.gpio		= 0,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+		{
-+			.name		= "MAGIC:green:stop",
-+			.gpio		= 1,
-+			.active_low	= 1,
-+		},
-+	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -932,6 +1004,7 @@ static const struct board_info __initcon
+@@ -932,6 +966,7 @@ static const struct board_info __initcon
  	&board_rta1025w_16,
  	&board_96348_D4PW,
  	&board_spw500v,
@@ -87,3 +49,11 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
+@@ -976,6 +1011,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "t-com,spw500v", .data = &board_spw500v, },
+ 	{ .compatible = "tecom,gw6000", .data = &board_gw6000, },
+ 	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },
++	{ .compatible = "telsey,magic", .data = &board_96348sv, },
+ 	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
+ 	{ .compatible = "usr,9108", .data = &board_96348gw_a, },
+ #endif

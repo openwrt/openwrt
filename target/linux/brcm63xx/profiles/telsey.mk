@@ -23,3 +23,12 @@ define Profile/CPVA642/Description
   Package set optimized for CPVA642-type.
 endef
 $(eval $(call Profile,CPVA642))
+
+define Profile/MAGIC
+  NAME:=Telsey MAGIC (Alice W-Gate)
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/MAGIC/Description
+  Package set optimized for Telsey MAGIC (Alice W-Gate)
+endef
+$(eval $(call Profile,CPVA502PLUS))
