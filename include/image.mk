@@ -388,6 +388,7 @@ define Device/Build/kernel
 endef
 
 define Device/Build/image
+  FILESYSTEM := $(1)
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
   $(eval $(call Device/Export,$(KDIR)/$(KERNEL_IMAGE)))
   $(eval $(call Device/Export,$(KDIR)/$(KERNEL_INITRAMFS_IMAGE)))
