@@ -314,6 +314,10 @@ $(eval $(call ImageDTB,CFEDTB,DSL274XB_F,DSL274XB-F1-AU,dsl-274xb-f,AW4339U,6328
 $(eval $(call ImageDTB,CFEDTB,DVAG3810BN,DVAG3810BN,dva-g3810bn_tl,96358VW,6358))
 # Davolink DV-201AMR
 $(eval $(call ImageDTB,OLDCFEDTB,DV201AMR,DV-201AMR,dv-201amr,DV201AMR,6348))
+# Dynalink RTA770BW (Siemens SE515)
+$(eval $(call ImageDTB,Dummy,RTA770BW,RTA770BW,rta770bw,RTA770BW,6345,--layoutver 5))
+# Dynalink RTA770W
+$(eval $(call ImageDTB,Dummy,RTA770W,RTA770W,rta770w,RTA770W,6345,--layoutver 5))
 # Dynalink RTA1025W (numerous routers)
 $(eval $(call ImageDTB,CFEDTB,RTA1025W,RTA1025W_16,rta1025w,RTA1025W_16,6348,--layoutver 5))
 # Dynalink RTA1320 (numerous routers)
