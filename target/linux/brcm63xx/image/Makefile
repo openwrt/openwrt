@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-LOADADDR = 0x80010000		# RAM start + 64K
+LOADADDR = 0x80800000		# RAM start + 8MB
 KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
 RAMSIZE = 0x02000000		# 32MB
 LZMA_TEXT_START = 0x81800000	# 32MB - 8MB

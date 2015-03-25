@@ -1,0 +1,34 @@
+From b99815f47828214b298178b0d0e2a9f3aae9f24a Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sun, 22 Mar 2015 11:49:16 +0100
+Subject: [PATCH] MIPS: BCM63XX: move kernel behind CFE
+
+CFE will load itself to offset 4 MiB (or 6 MiB) in memory occupying a
+bit over one MiB. Traditionally the kernel will get linked to and loaded
+at offset 64k.
+This will pose a problem if the kernel size reaches 4 MiB - 64 kB, as
+CFE will start overwriting itself. This can easily happen by including a
+ramdisk image in the kernel.
+While for net-booted elf kernels this can be worked around by wrapping
+them in a lzma boot loader, on-flash images require the kernel to be
+lzma compressed. This would cause inefficient double compression.
+
+Luckily we have full control over where the kernel will be extracted to
+and the entry point to be called, so move the kernel to behind CFE.
+---
+ arch/mips/bcm63xx/Platform |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/mips/bcm63xx/Platform b/arch/mips/bcm63xx/Platform
+index 5f86b2f..ee73f8f 100644
+--- a/arch/mips/bcm63xx/Platform
++++ b/arch/mips/bcm63xx/Platform
+@@ -4,4 +4,4 @@
+ platform-$(CONFIG_BCM63XX)	+= bcm63xx/
+ cflags-$(CONFIG_BCM63XX)	+=					\
+ 		-I$(srctree)/arch/mips/include/asm/mach-bcm63xx/
+-load-$(CONFIG_BCM63XX)		:= 0xffffffff80010000
++load-$(CONFIG_BCM63XX)		:= 0xffffffff80800000
+-- 
+1.7.10.4
+
