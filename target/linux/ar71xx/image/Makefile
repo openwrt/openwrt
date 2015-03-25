@@ -132,6 +132,28 @@ endef
 
 TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 
+define Device/tplink
+  TPLINK_HWREV := 0x1
+  KERNEL := kernel-bin | patch-cmdline | lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw initramfs
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory
+endef
+
+define Device/tplink-4mlzma
+$(Device/tplink)
+  TPLINK_FLASHLAYOUT := 4Mlzma
+  IMAGE_SIZE := 3904k
+endef
+
+define Device/tplink-8mlzma
+$(Device/tplink)
+  TPLINK_FLASHLAYOUT := 8Mlzma
+  IMAGE_SIZE := 8000k
+endef
+
+
 rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 
 # $(1): rootfs type.
