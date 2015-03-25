@@ -5,6 +5,16 @@
 # See /LICENSE for more information.
 #
 
+define Profile/BTHOMEHUB2A
+  NAME:=BT Home Hub 2A
+  PACKAGES:=kmod-b43 wpad-mini \
+	kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
+endef
+define Profile/BTHOMEHUB2A/Description
+  Package set optimized for BTHOMEHUB2A.
+endef
+$(eval $(call Profile,BTHOMEHUB2A))
+
 define Profile/BTV2500V
   NAME:=BT Voyager V2500V
   PACKAGES:=kmod-b43 wpad-mini

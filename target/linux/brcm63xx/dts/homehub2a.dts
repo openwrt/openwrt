@@ -1,0 +1,140 @@
+/dts-v1/;
+
+/include/ "bcm6358.dtsi"
+
+/ {
+	model = "BT Home Hub 2.0 Type A";
+	compatible = "thomson,homehub2a", "brcm,bcm6358";
+
+	spi-gpio {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "spi-gpio";
+
+		gpio-mosi = <&gpio0 7 0>;
+		gpio-sck = <&gpio0 6 0>;
+		cs-gpios = <&gpio0 5 0>;
+		num-chipselects = <1>;
+
+		hc595: gpio-spi-controller@0 {
+			compatible = "fairchild,74hc595";
+			reg = <0>;
+			registers-number = <2>;
+			spi-max-frequency = <100000>;
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		phone {
+			label = "phone";
+			gpios = <&gpio0 1 1>;
+			linux,code = <169>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio0 9 1>;
+			linux,code = <0x198>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio0 11 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_red {
+			label = "HOMEHUB2A:red:power";
+			gpios = <&hc595 0 1>;
+		};
+		power_green {
+			label = "HOMEHUB2A:green:power";
+			gpios = <&hc595 1 1>;
+			default-state = "on";
+		};
+		power_blue {
+			label = "HOMEHUB2A:blue:power";
+			gpios = <&hc595 2 1>;
+		};
+		broadband_red {
+			label = "HOMEHUB2A:red:broadband";
+			gpios = <&hc595 3 1>;
+		};
+		broadband_green {
+			label = "HOMEHUB2A:green:broadband";
+			gpios = <&hc595 4 1>;
+		};
+		broadband_blue {
+			label = "HOMEHUB2A:blue:broadband";
+			gpios = <&hc595 5 1>;
+		};
+		wireless_red {
+			label = "HOMEHUB2A:red:wireless";
+			gpios = <&hc595 6 1>;
+		};
+		wireless_green {
+			label = "HOMEHUB2A:green:wireless";
+			gpios = <&hc595 7 1>;
+		};
+		wireless_blue {
+			label = "HOMEHUB2A:blue:wireless";
+			gpios = <&hc595 8 1>;
+		};
+		phone_red {
+			label = "HOMEHUB2A:red:phone";
+			gpios = <&hc595 9 1>;
+		};
+		phone_green {
+			label = "HOMEHUB2A:green:phone";
+			gpios = <&hc595 10 1>;
+		};
+		phone_blue {
+			label = "HOMEHUB2A:blue:phone";
+			gpios = <&hc595 11 1>;
+		};
+		upgrading_red {
+			label = "HOMEHUB2A:red:upgrading";
+			gpios = <&hc595 12 1>;
+		};
+		upgrading_green {
+			label = "HOMEHUB2A:green:upgrading";
+			gpios = <&hc595 13 1>;
+		};
+		upgrading_blue {
+			label = "HOMEHUB2A:blue:upgrading";
+			gpios = <&hc595 14 1>;
+		};
+	};
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x020000>;
+	};
+
+	linux@20000 {
+		label = "linux";
+		reg = <0x020000 0xfc0000>;
+	};
+
+	nvram@fe0000 {
+		label = "nvram";
+		reg = <0xfe0000 0x020000>;
+	};
+};

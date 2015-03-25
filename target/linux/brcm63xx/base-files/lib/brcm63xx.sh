@@ -60,6 +60,9 @@ brcm63xx_dt_detect() {
 	"Broadcom BCM96368MVWG reference board")
 		board_name="bcm96368mvwg"
 		;;
+	"BT Home Hub 2.0 Type A")
+		board_name="homehub2a"
+		;;
 	"BT Voyager V2500V")
 		board_name="v2500v"
 		;;

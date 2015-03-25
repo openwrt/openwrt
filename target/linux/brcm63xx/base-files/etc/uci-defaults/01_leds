@@ -34,6 +34,12 @@ hg556a_*)
 	ucidef_set_led_netdev "lan" "LAN" "HW556:red:dsl" "eth0"
 	ucidef_set_led_usbdev "usb" "USB" "HW556:red:hspa" "1-2"
 	;;
+homehub2a)
+	ucidef_set_led_netdev "lan" "LAN" "HOMEHUB2A:blue:broadband" "eth0.1"
+	ucidef_set_led_netdev "wlan0" "WIFI" "HOMEHUB2A:green:wireless" "wlan0"
+	ucidef_set_led_usbdev "usb1" "USB1" "HOMEHUB2A:blue:phone" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "HOMEHUB2A:green:phone" "2-1"
+	;;
 esac
 
 ucidef_commit_leds
