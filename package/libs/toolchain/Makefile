@@ -397,17 +397,17 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libgcc/install
 	$(INSTALL_DIR) $(1)/lib
-	$(if $(CONFIG_TARGET_coldfire),,$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/)
+	$(CP) $(TOOLCHAIN_DIR)/lib/libgcc_s.so.* $(1)/lib/
   endef
 
   define Package/libatomic/install
 	$(INSTALL_DIR) $(1)/lib
-	$(if $(CONFIG_GCC_VERSION_4_6)$(CONFIG_TARGET_coldfire),,$(CP) $(TOOLCHAIN_DIR)/lib/libatomic.so.* $(1)/lib/)
+	$(if $(CONFIG_GCC_VERSION_4_6),,$(CP) $(TOOLCHAIN_DIR)/lib/libatomic.so.* $(1)/lib/)
   endef
 
   define Package/libgfortran/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(if $(CONFIG_TARGET_coldfire),,$(CP) $(TOOLCHAIN_DIR)/lib/libgfortran.so.* $(1)/usr/lib/)
+	$(CP) $(TOOLCHAIN_DIR)/lib/libgfortran.so.* $(1)/usr/lib/
   endef
 
   define Package/libssp/install
