@@ -114,6 +114,12 @@ brcm63xx_dt_detect() {
 	"D-Link DVA-G3810BN/TL")
 		board_name="dva-g3810bn"
 		;;
+	"Dynalink RTA770BW")
+		board_name="rta770bw"
+		;;
+	"Dynalink RTA770W")
+		board_name="rta770w"
+		;;
 	"Dynalink RTA1025W")
 		board_name="rta1025w"
 		;;
@@ -222,12 +228,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	RTA770BW)
-		board_name="rta770bw"
-		;;
-	RTA770W)
-		board_name="rta770w"
-		;;
 	V2110)
 		board_name="v2110"
 		;;
