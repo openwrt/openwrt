@@ -37,7 +37,7 @@ brcm63xx_dt_detect() {
 		board_name="bcm963281tan"
 		;;
 	"Broadcom BCM96328avng reference board")
-		board_name="bcm6328avng"
+		board_name="bcm96328avng"
 		;;
 	"Broadcom BCM96345GW2 reference board")
 		board_name="bcm96345gw2"
