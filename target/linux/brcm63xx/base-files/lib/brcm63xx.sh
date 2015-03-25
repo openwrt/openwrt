@@ -67,7 +67,7 @@ brcm63xx_dt_detect() {
 		board_name="homehub2a"
 		;;
 	"BT Voyager V2500V")
-		board_name="v2500v"
+		board_name="v2500v_bb"
 		;;
 	"Comtrend AR-5381u")
 		board_name="ar-5381u"
@@ -230,9 +230,6 @@ brcm63xx_legacy_detect() {
 	case "$1" in
 	V2110)
 		board_name="v2110"
-		;;
-	V2500V_BB)
-		board_name="v2500v_bb"
 		;;
 	VW6339GU)
 		board_namge="vg50"
