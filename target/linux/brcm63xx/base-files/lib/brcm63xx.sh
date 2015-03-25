@@ -99,6 +99,9 @@ brcm63xx_dt_detect() {
 	"D-Link DSL-2640B rev B2")
 		board_name="dsl-2640b-b"
 		;;
+	"D-Link DSL-2640U/BRU/C")
+		board_name="dsl-2640u"
+		;;
 	"D-Link DSL-2650U")
 		board_name="dsl-2650u"
 		;;
@@ -210,9 +213,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	96338W2_E7T)
-		board_name="dsl-2640u"
-		;;
 	96348W3)
 		board_name="dg834g_v4"
 		;;
