@@ -5,6 +5,15 @@
 # See /LICENSE for more information.
 #
 
+define Profile/CPVA502PLUS
+  NAME:=Telsey CPVA502+
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/CPVA502PLUS/Description
+  Package set optimized for CPVA502+.
+endef
+$(eval $(call Profile,CPVA502PLUS))
+
 define Profile/CPVA642
   NAME:=Telsey CPVA642-type (CPA-ZNTE60T)
   PACKAGES:=kmod-rt61-pci wpad-mini\

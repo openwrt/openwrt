@@ -36,3 +36,11 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
+@@ -1216,6 +1238,7 @@ static struct of_device_id const bcm963x
+ 	{ .compatible = "t-com,spw500v", .data = &board_spw500v, },
+ 	{ .compatible = "tecom,gw6000", .data = &board_gw6000, },
+ 	{ .compatible = "tecom,gw6200", .data = &board_gw6200, },
++	{ .compatible = "telsey,cpva502+", .data = &board_CPVA502plus, },
+ 	{ .compatible = "tp-link,td-w8900gb", .data = &board_96348gw_11, },
+ 	{ .compatible = "usr,9108", .data = &board_96348gw_a, },
+ #endif
