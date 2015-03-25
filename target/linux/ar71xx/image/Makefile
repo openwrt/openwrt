@@ -45,6 +45,26 @@ define Build/netgear-image
 	mv $@.new $@
 endef
 
+# combine kernel and rootfs into one image
+# -a align the rootfs start on an <align> bytes boundary
+# -j add jffs2 end-of-filesystem markers
+# -s strip padding from end of the image
+# -X reserve <size> bytes in the firmware image (hexval prefixed with 0x)
+define Build/mktplinkfw
+	$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
+		-k $(word 1,$^) \
+		-r $@ \
+		-o $@.new \
+		-a $(call rootfs_align,$(FILESYSTEM)) \
+		$(if $(findstring sysupgrade,$1),-j -X 0x40000) \
+		$(if $(findstring factory,$1),-j -X 0x40000 -s) \
+		$(if $(findstring initramfs,$1),-s -c)
+	@mv $@.new $@
+endef
+
+DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT
+
 define Device/Default
   BOARDNAME :=
   DEVICE_PROFILE = $$(BOARDNAME)
