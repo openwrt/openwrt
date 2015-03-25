@@ -268,6 +268,8 @@ define BuildImage/mkfs
   .PHONY: mkfs-$(1)
   mkfs-$(1): mkfs_prepare
 	$(Image/mkfs/$(1))
+	$(call Build/mkfs/default,$(1))
+	$(call Build/mkfs/$(1),$(1))
   $(KDIR)/root.$(1): mkfs-$(1)
 
 endef
