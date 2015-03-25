@@ -38,17 +38,6 @@ TARGET_IMAGES:=
 TARGET_Default_DTBS:=
 TARGET_Default_IMAGES:=
 
-define Image/Build/CFE
-	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux.lzma.cfe -f $(KDIR)/root.$(1) \
-		--output $(BIN_DIR)/openwrt-$(4)-$(1)-cfe.bin \
-		--boardid $(2) --chipid $(3) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --rsa-signature "$(5)" \
-		--info1 "-$(call Image/LimitName16,$(4))" --info2 $(1) \
-		$(call rootfspad/$(1)) \
-		$(6) $(7) $(8) $(9)
-endef
-
 define Image/Build/CFEDTB
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
