@@ -192,6 +192,9 @@ brcm63xx_dt_detect() {
 	"TECOM GW6200")
 		board_name="g6200"
 		;;
+	"Telsey CVPA502+")
+		board_name="cpva502p"
+		;;
 	"Telsey CPVA642-type (CPA-ZNTE60T)")
 		board_name="cpva642"
 		;;
@@ -216,9 +219,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	CPVA502+)
-		board_name="cpva502p"
-		;;
 	MAGIC)
 		board_name="magic"
 		;;

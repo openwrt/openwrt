@@ -368,6 +368,8 @@ $(eval $(call ImageDTB,CFEDTB,SPW500V,SPW500V,spw500v,96348GW,6348))
 $(eval $(call ImageDTB,CFEDTB,GW6000,GW6000,gw6000,96348GW,6348))
 # Tecom GW6200
 $(eval $(call ImageDTB,CFEDTB,GW6200,GW6200,gw6200,96348GW,6348,--rsa-signature "$(shell printf '\x99')"))
+# Telsey CPVA502+
+$(eval $(call ImageDTB,Dummy,CPVA502PLUS,CVPA502PLUS,cpva502plus,CPVA502+,6348,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0"))
 # Telsey CPVA642-type (e.g. CPA-ZNTE60T)
 $(eval $(call ImageDTB,CFEDTB,CPVA642,CPA-ZNTE60T,cpva642,CPVA642,6358,--signature "Telsey Tlc" --signature2 "99.99.999" --second-image-flag "0" --pad 4))
 # TP-Link TD-W8900GB
