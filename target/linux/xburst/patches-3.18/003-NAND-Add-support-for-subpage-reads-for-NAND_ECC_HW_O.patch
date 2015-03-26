@@ -1,27 +1,18 @@
-From 90e325c5e16db262818bca442b00f5ac10b9c852 Mon Sep 17 00:00:00 2001
+From 6031a240816d1c9a10f596d0648e586f6b878809 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Tue, 15 Mar 2011 12:33:41 +0100
-Subject: [PATCH 03/16] NAND: Add support for subpage reads for
+Subject: [PATCH 3/7] NAND: Add support for subpage reads for
  NAND_ECC_HW_OOB_FIRST
 
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 ---
- drivers/mtd/nand/nand_base.c |   80 ++++++++++++++++++++++++++++++++++++++++--
- include/linux/mtd/nand.h     |    2 +-
- 2 files changed, 78 insertions(+), 4 deletions(-)
+ drivers/mtd/nand/nand_base.c |   77 +++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 76 insertions(+), 1 deletion(-)
 
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index 4c8d646..9809059 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1118,7 +1118,7 @@ static int nand_read_page_swecc(struct m
-  * @bufpoi: buffer to store read data
-  */
- static int nand_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
--			uint32_t data_offs, uint32_t readlen, uint8_t *bufpoi)
-+			uint32_t data_offs, uint32_t readlen, uint8_t *bufpoi, int page)
- {
- 	int start_step, end_step, num_steps;
- 	uint32_t *eccpos = chip->ecc.layout->eccpos;
-@@ -1311,6 +1311,75 @@ static int nand_read_page_hwecc_oob_firs
+@@ -1393,6 +1393,75 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
  }
  
  /**
@@ -97,38 +88,22 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
   * nand_read_page_syndrome - [REPLACEABLE] hardware ECC syndrome based page read
   * @mtd: mtd info structure
   * @chip: nand chip info structure
-@@ -1477,7 +1546,7 @@ static int nand_do_read_ops(struct mtd_i
- 			else if (!aligned && NAND_HAS_SUBPAGE_READ(chip) &&
- 				 !oob)
- 				ret = chip->ecc.read_subpage(mtd, chip,
--							col, bytes, bufpoi);
-+							col, bytes, bufpoi, page);
- 			else
- 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
- 							  oob_required, page);
-@@ -3488,8 +3557,13 @@ int nand_scan_tail(struct mtd_info *mtd)
- 				   "hardware ECC not possible\n");
+@@ -3950,8 +4019,14 @@ int nand_scan_tail(struct mtd_info *mtd)
+ 			pr_warn("No ECC functions supplied; hardware ECC not possible\n");
  			BUG();
  		}
--		if (!chip->ecc.read_page)
-+		if (!chip->ecc.read_page) {
- 			chip->ecc.read_page = nand_read_page_hwecc_oob_first;
-+			if (!chip->ecc.read_subpage) {
-+				chip->ecc.read_subpage = nand_read_subpage_hwecc_oob_first;
+-		if (!ecc->read_page)
++
++		if (!ecc->read_page) {
+ 			ecc->read_page = nand_read_page_hwecc_oob_first;
++			if (!ecc->read_subpage) {
++				ecc->read_subpage = nand_read_subpage_hwecc_oob_first;
 +				chip->options |= NAND_SUBPAGE_READ;
 +			}
 +		}
  
  	case NAND_ECC_HW:
  		/* Use standard hwecc read page function? */
---- a/include/linux/mtd/nand.h
-+++ b/include/linux/mtd/nand.h
-@@ -349,7 +349,7 @@ struct nand_ecc_ctrl {
- 	int (*read_page)(struct mtd_info *mtd, struct nand_chip *chip,
- 			uint8_t *buf, int oob_required, int page);
- 	int (*read_subpage)(struct mtd_info *mtd, struct nand_chip *chip,
--			uint32_t offs, uint32_t len, uint8_t *buf);
-+			uint32_t offs, uint32_t len, uint8_t *buf, int page);
- 	int (*write_subpage)(struct mtd_info *mtd, struct nand_chip *chip,
- 			uint32_t offset, uint32_t data_len,
- 			const uint8_t *data_buf, int oob_required);
+-- 
+1.7.10.4
+

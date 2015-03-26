@@ -1,7 +1,7 @@
-From aff616f4a33bd3a9ab1506fdbe97fcfe285cb7b0 Mon Sep 17 00:00:00 2001
+From f05b1ecd7e4fde7e69320a4b7be461636e982991 Mon Sep 17 00:00:00 2001
 From: Paul Cercueil <paul@crapouillou.net>
 Date: Thu, 13 Sep 2012 00:09:20 +0200
-Subject: [PATCH 07/16] RTC: JZ4740: Init the "regulator" register on startup.
+Subject: [PATCH 5/7] RTC: JZ4740: Init the "regulator" register on startup.
 
 This register controls the accuracy of the RTC. uC/OS-II use
 the RTC as a 100Hz clock, and writes a completely wrong value
@@ -9,37 +9,38 @@ on that register, that we have to overwrite if we want a working
 real-time clock.
 
 Signed-off-by: Paul Cercueil <paul@crapouillou.net>
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 ---
  drivers/rtc/rtc-jz4740.c |   17 +++++++++++++++++
  1 file changed, 17 insertions(+)
 
+diff --git a/drivers/rtc/rtc-jz4740.c b/drivers/rtc/rtc-jz4740.c
+index 08f5160..5f027dc 100644
 --- a/drivers/rtc/rtc-jz4740.c
 +++ b/drivers/rtc/rtc-jz4740.c
-@@ -14,6 +14,7 @@
-  *
+@@ -15,6 +15,7 @@
   */
  
+ #include <linux/io.h>
 +#include <linux/clk.h>
  #include <linux/kernel.h>
  #include <linux/module.h>
  #include <linux/platform_device.h>
-@@ -215,6 +216,7 @@ static int jz4740_rtc_probe(struct platf
- 	int ret;
+@@ -216,6 +217,7 @@ static int jz4740_rtc_probe(struct platform_device *pdev)
  	struct jz4740_rtc *rtc;
  	uint32_t scratchpad;
+ 	struct resource *mem;
 +	struct clk *rtc_clk;
  
- 	rtc = kzalloc(sizeof(*rtc), GFP_KERNEL);
+ 	rtc = devm_kzalloc(&pdev->dev, sizeof(*rtc), GFP_KERNEL);
  	if (!rtc)
-@@ -280,6 +282,21 @@ static int jz4740_rtc_probe(struct platf
+@@ -263,6 +265,21 @@ static int jz4740_rtc_probe(struct platform_device *pdev)
  		}
  	}
  
 +	rtc_clk = clk_get(&pdev->dev, "rtc");
 +	if (IS_ERR(rtc_clk)) {
 +		dev_err(&pdev->dev, "Failed to get RTC clock\n");
-+		goto err_free_irq;
++		return PTR_ERR(rtc_clk);
 +	}
 +
 +	/* TODO: initialize the ADJC bits (25:16) to fine-tune
@@ -52,5 +53,8 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 +		dev_warn(&pdev->dev, "Could not update RTC regulator register\n");
 +
  	return 0;
+ }
  
- err_free_irq:
+-- 
+1.7.10.4
+

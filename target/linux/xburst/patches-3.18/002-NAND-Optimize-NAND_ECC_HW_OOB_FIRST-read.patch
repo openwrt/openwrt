@@ -1,18 +1,18 @@
-From f2b7099d3986e59aab5792cecc052e440caf2cdd Mon Sep 17 00:00:00 2001
+From 98d33db1c87e2447b9b203399d2f995e05ecdb52 Mon Sep 17 00:00:00 2001
 From: Lars-Peter Clausen <lars@metafoo.de>
 Date: Sat, 26 Feb 2011 15:30:07 +0100
-Subject: [PATCH 02/16] NAND: Optimize NAND_ECC_HW_OOB_FIRST read
+Subject: [PATCH 2/7] NAND: Optimize NAND_ECC_HW_OOB_FIRST read
 
 Avoid sending unnecessary READ commands to the chip.
-
-Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
 ---
  drivers/mtd/nand/nand_base.c |   17 +++++++++++++----
  1 file changed, 13 insertions(+), 4 deletions(-)
 
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index 5b5c627..4c8d646 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1278,9 +1278,16 @@ static int nand_read_page_hwecc_oob_firs
+@@ -1360,9 +1360,16 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
  	unsigned int max_bitflips = 0;
  
  	/* Read the OOB area first */
@@ -32,10 +32,10 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  
  	for (i = 0; i < chip->ecc.total; i++)
  		ecc_code[i] = chip->oob_poi[eccpos[i]];
-@@ -1455,7 +1462,9 @@ static int nand_do_read_ops(struct mtd_i
- 		if (realpage != chip->pagebuf || oob) {
- 			bufpoi = aligned ? buf : chip->buffers->databuf;
+@@ -1575,7 +1582,9 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
+ 						 __func__, buf);
  
+ read_retry:
 -			chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 +			if (chip->ecc.mode != NAND_ECC_HW_OOB_FIRST) {
 +				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
@@ -43,3 +43,6 @@ Signed-off-by: Lars-Peter Clausen <lars@metafoo.de>
  
  			/*
  			 * Now read the page into the buffer.  Absent an error,
+-- 
+1.7.10.4
+
