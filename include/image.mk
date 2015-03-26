@@ -398,6 +398,7 @@ define Device/Build/image
 	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
 	$$(call concat_cmd,$(if $(IMAGE/$(2)/$(1)),$(IMAGE/$(2)/$(1)),$(IMAGE/$(2))))
 
+  .IGNORE: $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
   $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$(call IMAGE_NAME,$(1),$(2))
 	cp $$^ $$@
 
