@@ -93,7 +93,7 @@ endef
 
 TARGET_CFLAGS += -DLUA_USE_LINUX $(FPIC) -std=gnu99
 
-ifneq ($(CONFIG_USE_EGLIBC),)
+ifneq ($(CONFIG_USE_GLIBC),)
   ifeq ($(CONFIG_EGLIBC_OPTION_EGLIBC_UTMP),)
     TARGET_CFLAGS += -DNO_GETLOGIN
   endif
