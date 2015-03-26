@@ -29,7 +29,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/mwlwifi
   SUBMENU:=Wireless Drivers
   TITLE:=Marvell 88W8864 wireless driver
-  DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT @PCI_SUPPORT
+  DEPENDS:=+kmod-mac80211 +@DRIVER_11N_SUPPORT @PCI_SUPPORT @TARGET_mvebu
   FILES:=$(PKG_BUILD_DIR)/mwlwifi.ko
   AUTOLOAD:=$(call AutoLoad,50,mac80211 mwlwifi)
 endef
