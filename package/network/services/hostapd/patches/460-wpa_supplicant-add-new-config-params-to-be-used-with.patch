@@ -22,12 +22,10 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "common/defs.h"
  #include "utils/list.h"
  
-@@ -442,6 +443,11 @@ struct wpa_driver_associate_params {
+@@ -538,6 +539,9 @@ struct wpa_driver_associate_params {
  	 * responsible for selecting with which BSS to associate. */
  	const u8 *bssid;
  
-+	int beacon_interval;
-+	int fixed_freq;
 +	unsigned char rates[NL80211_MAX_SUPP_RATES];
 +	int mcast_rate;
 +
@@ -44,9 +42,9 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  #include "config.h"
  
  
-@@ -1576,6 +1577,97 @@ static char * wpa_config_write_psk_list(
+@@ -1722,6 +1723,97 @@ static char * wpa_config_write_mesh_basi
+ #endif /* CONFIG_MESH */
  
- #endif /* CONFIG_P2P */
  
 +static int wpa_config_parse_mcast_rate(const struct parse_data *data,
 +				       struct wpa_ssid *ssid, int line,
@@ -142,7 +140,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  /* Helper macros for network block parser */
  
  #ifdef OFFSET
-@@ -1788,6 +1880,9 @@ static const struct parse_data ssid_fiel
+@@ -1947,6 +2039,9 @@ static const struct parse_data ssid_fiel
  	{ INT(ap_max_inactivity) },
  	{ INT(dtim_period) },
  	{ INT(beacon_int) },
@@ -162,11 +160,10 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  
  #define MAX_SSID_LEN 32
  
-@@ -640,6 +641,10 @@ struct wpa_ssid {
+@@ -675,6 +676,9 @@ struct wpa_ssid {
  	 */
  	void *parent_cred;
  
-+	int fixed_freq;
 +	unsigned char rates[NL80211_MAX_SUPP_RATES];
 +	double mcast_rate;
 +
@@ -175,7 +172,7 @@ Signed-hostap: Antonio Quartulli <ordex@autistici.org>
  	 * macsec_policy - Determines the policy for MACsec secure session
 --- a/wpa_supplicant/wpa_supplicant.c
 +++ b/wpa_supplicant/wpa_supplicant.c
-@@ -1949,6 +1949,13 @@ static void wpas_start_assoc_cb(struct w
+@@ -2266,6 +2266,13 @@ static void wpas_start_assoc_cb(struct w
  			params.beacon_int = ssid->beacon_int;
  		else
  			params.beacon_int = wpa_s->conf->beacon_int;
