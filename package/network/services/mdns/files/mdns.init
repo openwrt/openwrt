@@ -35,6 +35,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command "$PROG"
+	procd_set_param seccomp /etc/seccomp/mdns.json
 	procd_set_param respawn
 	procd_open_trigger
 	procd_add_config_trigger "config.change" "mdns" /etc/init.d/mdns reload
@@ -43,10 +44,11 @@ start_service() {
 	done
 	procd_add_raw_trigger "instance.update" 5000 "/bin/ubus" "call" "mdns" "reload"
 	procd_close_trigger
+	[ "$(uci get mdns.@mdns[-1].jail)" = 1 ] && procd_add_jail mdns ubus log
 	procd_close_instance
 }
 
 service_started() {
-	ubus wait_for -t 5 mdns
+	ubus wait_for -t 10 mdns
 	[ $? = 0 ] && reload_service
 }
