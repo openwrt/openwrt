@@ -112,6 +112,7 @@ _procd_open_instance() {
 	_PROCD_INSTANCE_SEQ="$(($_PROCD_INSTANCE_SEQ + 1))"
 	name="${name:-instance$_PROCD_INSTANCE_SEQ}"
 	json_add_object "$name"
+	[ -n "$TRACE_SYSCALLS" ] && json_add_boolean trace "1"
 }
 
 _procd_open_trigger() {
@@ -120,6 +121,60 @@ _procd_open_trigger() {
 
 _procd_open_validate() {
 	json_add_array "validate"
+}
+
+_procd_add_jail() {
+	json_add_object "jail"
+	json_add_string name "$1"
+	json_add_string root "/tmp/.jail/$1"
+
+	shift
+	
+	for a in $@; do
+		case $a in
+		log)	json_add_boolean "log" "1";;
+		ubus)	json_add_boolean "ubus" "1";;
+		procfs)	json_add_boolean "procfs" "1";;
+		sysfs)	json_add_boolean "sysfs" "1";;
+		esac
+	done
+	json_add_object "mount"
+	json_close_object
+	json_close_object
+}
+
+_procd_add_jail_mount() {
+	local _json_no_warning=1
+
+	json_select "jail"
+	[ $? = 0 ] || return
+	json_select "mount"
+	[ $? = 0 ] || {
+		json_select ..
+		return
+	}
+	for a in $@; do
+		json_add_string "$a" "0"
+	done
+	json_select ..
+	json_select ..
+}
+
+_procd_add_jail_mount_rw() {
+	local _json_no_warning=1
+
+	json_select "jail"
+	[ $? = 0 ] || return
+	json_select "mount"
+	[ $? = 0 ] || {
+		json_select ..
+		return
+	}
+	for a in $@; do
+		json_add_string "$a" "1"
+	done
+	json_select ..
+	json_select ..
 }
 
 _procd_set_param() {
@@ -140,7 +195,7 @@ _procd_set_param() {
 		nice)
 			json_add_int "$type" "$1"
 		;;
-		user)
+		user|seccomp)
 			json_add_string "$type" "$1"
 		;;
 		stdout|stderr)
@@ -367,6 +422,9 @@ _procd_wrapper \
 	procd_close_instance \
 	procd_open_validate \
 	procd_close_validate \
+	procd_add_jail \
+	procd_add_jail_mount \
+	procd_add_jail_mount_rw \
 	procd_set_param \
 	procd_append_param \
 	procd_add_validation \
