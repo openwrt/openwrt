@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=u-boot
-PKG_VERSION:=2014.07
+PKG_VERSION:=2015.01
 PKG_RELEASE:=1
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
@@ -16,7 +16,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
 	http://mirror2.openwrt.org/sources \
 	ftp://ftp.denx.de/pub/u-boot
-PKG_MD5SUM:=36d4bad687edcafa396fee607e505d4e
+PKG_MD5SUM:=7f08dc9e98a71652bd6968888ed6ec95
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
@@ -30,11 +30,17 @@ define uboot/Default
 endef
 
 define uboot/mx23_olinuxino
-  TITLE:=U-Boot 2014.07 for the Olinuxino i.MX233
+  TITLE:=U-Boot 2015.01 for the Olinuxino i.MX233
+endef
+
+define uboot/duckbill
+  TITLE:=U-Boot 2015.01 for the I2SE Duckbill
 endef
 
 UBOOTS := \
-	mx23_olinuxino
+	mx23_olinuxino \
+	duckbill
+	
 
 define Package/uboot/template
 define Package/uboot-mxs-$(1)
