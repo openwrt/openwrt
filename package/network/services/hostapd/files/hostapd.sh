@@ -129,9 +129,7 @@ hostapd_set_bss_options() {
 				append "$var" "radius_das_port=${dae_port:-3799}" "$N"
 				append "$var" "radius_das_client=$dae_client $dae_secret" "$N"
 			}
-			config_get nasid "$vif" nasid
 			config_get ownip "$vif" ownip
-			append "$var" "nas_identifier=$nasid" "$N"
 			append "$var" "own_ip_addr=$ownip" "$N"
 			append "$var" "eapol_key_index_workaround=1" "$N"
 			append "$var" "ieee8021x=1" "$N"
@@ -215,6 +213,12 @@ hostapd_set_bss_options() {
 	[ -n "$bridge" ] && append "$var" "bridge=$bridge" "$N"
 	[ -n "$ieee80211d" ] && append "$var" "ieee80211d=$ieee80211d" "$N"
 	[ -n "$iapp_interface" ] && append "$var" iapp_interface=$(uci_get_state network "$iapp_interface" ifname "$iapp_interface") "$N"
+
+	if [ "$wpa" -ge "1" ]
+	then
+		config_get nasid "$vif" nasid
+		[ -n "$nasid" ] && append "$var" "nas_identifier=$nasid" "$N"
+	fi
 
 	if [ "$wpa" -ge "2" ]
 	then

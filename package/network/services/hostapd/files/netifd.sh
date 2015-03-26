@@ -239,7 +239,7 @@ hostapd_set_bss_options() {
 				auth_server auth_secret auth_port \
 				acct_server acct_secret acct_port \
 				dae_client dae_secret dae_port \
-				nasid ownip \
+				ownip \
 				eap_reauth_period dynamic_vlan \
 				vlan_naming vlan_tagged_interface \
 				vlan_bridge
@@ -273,7 +273,6 @@ hostapd_set_bss_options() {
 				append bss_conf "radius_das_client=$dae_client $dae_secret" "$N"
 			}
 
-			append bss_conf "nas_identifier=$nasid" "$N"
 			[ -n "$ownip" ] && append bss_conf "own_ip_addr=$ownip" "$N"
 			append bss_conf "eapol_key_index_workaround=1" "$N"
 			append bss_conf "ieee8021x=1" "$N"
@@ -338,6 +337,11 @@ hostapd_set_bss_options() {
 		iapp_interface="$(uci_get_state network "$iapp_interface" ifname "$iapp_interface")"
 		[ -n "$iapp_interface" ] && append bss_conf "iapp_interface=$iapp_interface" "$N"
 	}
+
+	if [ "$wpa" -ge "1" ]; then
+		json_get_vars nasid
+		[ -n "$nasid" ] && append bss_conf "nas_identifier=$nasid" "$N"
+	fi
 
 	if [ "$wpa" -ge "2" ]; then
 		if [ -n "$network_bridge" -a "$rsn_preauth" = 1 ]; then
