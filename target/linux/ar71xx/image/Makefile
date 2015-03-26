@@ -13,7 +13,7 @@ JFFS2_BLOCKSIZE = 64k 128k 256k
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD NETGEAR_ID CMDLINE CONSOLE
+DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD NETGEAR_ID CMDLINE CONSOLE IMAGE_SIZE
 
 define Build/netgear-squashfs
 	rm -rf $@.fs $@.squashfs
@@ -92,12 +92,14 @@ define Device/wndr3700
   BOARDNAME = WNDR3700
   NETGEAR_KERNEL_MAGIC = 0x33373030
   NETGEAR_BOARD = WNDR3700
+  IMAGE_SIZE = 7680k
   MTDPARTS = spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,7680k(firmware),64k(art)ro
   IMAGES := sysupgrade.bin factory.img factory-NA.img
   KERNEL := kernel-bin | patch-cmdline | lzma -d20 | netgear-uImage lzma
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img = $$(IMAGE/sysupgrade.bin) | netgear-image
-  IMAGE/factory-NA.img = $$(IMAGE/sysupgrade.bin) | netgear-image NA
+  IMAGE/default = append-kernel $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
+  IMAGE/sysupgrade.bin = $$(IMAGE/default) | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img = $$(IMAGE/default) | netgear-image | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory-NA.img = $$(IMAGE/default) | netgear-image NA | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/wndr3700v2
@@ -105,6 +107,7 @@ $(Device/wndr3700)
   NETGEAR_BOARD = WNDR3700v2
   NETGEAR_KERNEL_MAGIC = 0x33373031
   NETGEAR_ID = 29763654+16+64
+  IMAGE_SIZE = 15872k
   MTDPARTS = spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,15872k(firmware),64k(art)ro
   IMAGES := sysupgrade.bin factory.img
 endef
