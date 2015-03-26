@@ -516,16 +516,14 @@ if KERNEL_LXC_MISC
 
 endif
 
+config KERNEL_SECCOMP_FILTER
+	bool
+	default n
+
 config KERNEL_SECCOMP
 	bool "Enable seccomp support"
 		depends on !(TARGET_uml)
+		select KERNEL_SECCOMP_FILTER
 		default n
 		help
 		  Build kernel with support for seccomp.
-
-config KERNEL_SECCOMP_FILTER
-	bool "Enable seccomp filter support"
-		depends on KERNEL_SECCOMP
-		default n
-		help
-		  Build kernel with support for seccomp BPF programs.
