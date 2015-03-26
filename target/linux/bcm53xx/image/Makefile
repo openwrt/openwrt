@@ -52,6 +52,7 @@ define Device/Default
   DT := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
   KERNEL := kernel-bin | append-dtb | lzma-d16
   FILESYSTEMS := squashfs
+  KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
   IMAGES := trx
   IMAGE/trx := trx-nand
