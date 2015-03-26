@@ -14,7 +14,7 @@ FEATURES:=squashfs pci rtc broken
 CPU_TYPE:=fa526
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
-KERNEL_PATCHVER:=3.10
+KERNEL_PATCHVER:=3.18
 
 KERNELNAME:=zImage
 
