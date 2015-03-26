@@ -1,6 +1,6 @@
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1257,6 +1257,7 @@ enum netdev_priv_flags {
+@@ -1260,6 +1260,7 @@ enum netdev_priv_flags {
  	IFF_XMIT_DST_RELEASE_PERM	= 1<<22,
  	IFF_IPVLAN_MASTER		= 1<<23,
  	IFF_IPVLAN_SLAVE		= 1<<24,
@@ -8,7 +8,7 @@
  };
  
  #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
-@@ -1284,6 +1285,7 @@ enum netdev_priv_flags {
+@@ -1287,6 +1288,7 @@ enum netdev_priv_flags {
  #define IFF_XMIT_DST_RELEASE_PERM	IFF_XMIT_DST_RELEASE_PERM
  #define IFF_IPVLAN_MASTER		IFF_IPVLAN_MASTER
  #define IFF_IPVLAN_SLAVE		IFF_IPVLAN_SLAVE
@@ -16,7 +16,7 @@
  
  /**
   *	struct net_device - The DEVICE structure.
-@@ -1556,6 +1558,11 @@ struct net_device {
+@@ -1559,6 +1561,11 @@ struct net_device {
  	const struct ethtool_ops *ethtool_ops;
  	const struct forwarding_accel_ops *fwd_ops;
  
@@ -28,7 +28,7 @@
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1621,6 +1628,10 @@ struct net_device {
+@@ -1624,6 +1631,10 @@ struct net_device {
  	struct wireless_dev	*ieee80211_ptr;
  	struct wpan_dev		*ieee802154_ptr;
  
@@ -41,7 +41,7 @@
   */
 --- a/include/linux/skbuff.h
 +++ b/include/linux/skbuff.h
-@@ -2050,6 +2050,10 @@ static inline int pskb_trim(struct sk_bu
+@@ -2057,6 +2057,10 @@ static inline int pskb_trim(struct sk_bu
  	return (len < skb->len) ? __pskb_trim(skb, len) : 0;
  }
  
@@ -52,7 +52,7 @@
  /**
   *	pskb_trim_unique - remove end from a paged unique (not cloned) buffer
   *	@skb: buffer to alter
-@@ -2176,16 +2180,6 @@ static inline struct sk_buff *dev_alloc_
+@@ -2183,16 +2187,6 @@ static inline struct sk_buff *dev_alloc_
  }
  
  
@@ -121,7 +121,7 @@
  
  #include <net/protocol.h>
  #include <net/dst.h>
-@@ -550,6 +551,22 @@ struct sk_buff *__napi_alloc_skb(struct 
+@@ -550,6 +551,22 @@ struct sk_buff *__napi_alloc_skb(struct
  }
  EXPORT_SYMBOL(__napi_alloc_skb);
  
