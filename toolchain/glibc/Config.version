@@ -10,7 +10,6 @@ config EGLIBC_VERSION_2_19
 	bool
 
 config GLIBC_VERSION_2_21
-	default y if !TOOLCHAINOPTS
 	bool
 
 config GLIBC_REVISION
@@ -20,3 +19,8 @@ config GLIBC_REVISION
 	default ""
 
 endif
+
+menu "eglibc configuration"
+	depends on !TOOLCHAINOPTS && USE_GLIBC
+	source toolchain/glibc/config/Config.in
+endmenu
