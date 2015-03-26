@@ -1,6 +1,6 @@
 --- a/hostapd/Makefile
 +++ b/hostapd/Makefile
-@@ -164,6 +164,9 @@ endif
+@@ -168,6 +168,9 @@ endif
  ifdef CONFIG_NO_CTRL_IFACE
  CFLAGS += -DCONFIG_NO_CTRL_IFACE
  else
@@ -12,7 +12,7 @@
  endif
 --- a/hostapd/ctrl_iface.c
 +++ b/hostapd/ctrl_iface.c
-@@ -1653,6 +1653,7 @@ static void hostapd_ctrl_iface_receive(i
+@@ -1953,6 +1953,7 @@ static void hostapd_ctrl_iface_receive(i
  						      reply_size);
  	} else if (os_strcmp(buf, "STATUS-DRIVER") == 0) {
  		reply_len = hostapd_drv_status(hapd, reply, reply_size);
@@ -20,7 +20,7 @@
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -1694,6 +1695,7 @@ static void hostapd_ctrl_iface_receive(i
+@@ -1994,6 +1995,7 @@ static void hostapd_ctrl_iface_receive(i
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = hostapd_ctrl_iface_sta_next(hapd, buf + 9, reply,
  							reply_size);
@@ -30,7 +30,7 @@
  			reply_len = -1;
 --- a/wpa_supplicant/Makefile
 +++ b/wpa_supplicant/Makefile
-@@ -809,6 +809,9 @@ ifdef CONFIG_WNM
+@@ -837,6 +837,9 @@ ifdef CONFIG_WNM
  OBJS += ../src/ap/wnm_ap.o
  endif
  ifdef CONFIG_CTRL_IFACE
@@ -42,7 +42,7 @@
  
 --- a/wpa_supplicant/ctrl_iface.c
 +++ b/wpa_supplicant/ctrl_iface.c
-@@ -1628,7 +1628,7 @@ static int wpa_supplicant_ctrl_iface_sta
+@@ -1795,7 +1795,7 @@ static int wpa_supplicant_ctrl_iface_sta
  			pos += ret;
  		}
  
@@ -51,7 +51,7 @@
  		if (wpa_s->ap_iface) {
  			pos += ap_ctrl_iface_wpa_get_status(wpa_s, pos,
  							    end - pos,
-@@ -6720,6 +6720,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -7896,6 +7896,7 @@ char * wpa_supplicant_ctrl_iface_process
  			reply_len = -1;
  	} else if (os_strncmp(buf, "NOTE ", 5) == 0) {
  		wpa_printf(MSG_INFO, "NOTE: %s", buf + 5);
@@ -59,15 +59,15 @@
  	} else if (os_strcmp(buf, "MIB") == 0) {
  		reply_len = wpa_sm_get_mib(wpa_s->wpa, reply, reply_size);
  		if (reply_len >= 0) {
-@@ -6731,6 +6732,7 @@ char * wpa_supplicant_ctrl_iface_process
- 			else
- 				reply_len += res;
+@@ -7903,6 +7904,7 @@ char * wpa_supplicant_ctrl_iface_process
+ 						      reply + reply_len,
+ 						      reply_size - reply_len);
  		}
 +#endif
  	} else if (os_strncmp(buf, "STATUS", 6) == 0) {
  		reply_len = wpa_supplicant_ctrl_iface_status(
  			wpa_s, buf + 6, reply, reply_size);
-@@ -7140,6 +7142,7 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -8353,6 +8355,7 @@ char * wpa_supplicant_ctrl_iface_process
  		reply_len = wpa_supplicant_ctrl_iface_bss(
  			wpa_s, buf + 4, reply, reply_size);
  #ifdef CONFIG_AP
@@ -75,7 +75,7 @@
  	} else if (os_strcmp(buf, "STA-FIRST") == 0) {
  		reply_len = ap_ctrl_iface_sta_first(wpa_s, reply, reply_size);
  	} else if (os_strncmp(buf, "STA ", 4) == 0) {
-@@ -7148,12 +7151,15 @@ char * wpa_supplicant_ctrl_iface_process
+@@ -8361,12 +8364,15 @@ char * wpa_supplicant_ctrl_iface_process
  	} else if (os_strncmp(buf, "STA-NEXT ", 9) == 0) {
  		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
  						   reply_size);
@@ -93,7 +93,7 @@
  			reply_len = -1;
 --- a/src/ap/ctrl_iface_ap.c
 +++ b/src/ap/ctrl_iface_ap.c
-@@ -21,6 +21,7 @@
+@@ -22,6 +22,7 @@
  #include "ctrl_iface_ap.h"
  #include "ap_drv_ops.h"
  
@@ -101,7 +101,7 @@
  
  static int hostapd_get_sta_tx_rx(struct hostapd_data *hapd,
  				 struct sta_info *sta,
-@@ -214,6 +215,7 @@ int hostapd_ctrl_iface_sta_next(struct h
+@@ -224,6 +225,7 @@ int hostapd_ctrl_iface_sta_next(struct h
  	return hostapd_ctrl_iface_sta_mib(hapd, sta->next, buf, buflen);
  }
  
@@ -109,14 +109,9 @@
  
  #ifdef CONFIG_P2P_MANAGER
  static int p2p_manager_disconnect(struct hostapd_data *hapd, u16 stype,
-@@ -527,3 +529,4 @@ int hostapd_parse_csa_settings(const cha
- 
- 	return 0;
- }
-+
 --- a/src/ap/ieee802_1x.c
 +++ b/src/ap/ieee802_1x.c
-@@ -2237,6 +2237,7 @@ static const char * bool_txt(Boolean boo
+@@ -2337,6 +2337,7 @@ static const char * bool_txt(Boolean boo
  	return bool_val ? "TRUE" : "FALSE";
  }
  
@@ -124,7 +119,7 @@
  
  int ieee802_1x_get_mib(struct hostapd_data *hapd, char *buf, size_t buflen)
  {
-@@ -2404,6 +2405,7 @@ int ieee802_1x_get_mib_sta(struct hostap
+@@ -2512,6 +2513,7 @@ int ieee802_1x_get_mib_sta(struct hostap
  	return len;
  }
  
@@ -134,7 +129,7 @@
  				struct sta_info *sta, int success,
 --- a/src/ap/wpa_auth.c
 +++ b/src/ap/wpa_auth.c
-@@ -2835,6 +2835,7 @@ static const char * wpa_bool_txt(int boo
+@@ -2999,6 +2999,7 @@ static const char * wpa_bool_txt(int boo
  	return bool ? "TRUE" : "FALSE";
  }
  
@@ -142,7 +137,7 @@
  
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
-@@ -2979,7 +2980,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
+@@ -3143,7 +3144,7 @@ int wpa_get_mib_sta(struct wpa_state_mac
  
  	return len;
  }
@@ -153,7 +148,7 @@
  {
 --- a/src/rsn_supp/wpa.c
 +++ b/src/rsn_supp/wpa.c
-@@ -1928,6 +1928,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
+@@ -2032,6 +2032,8 @@ static u32 wpa_key_mgmt_suite(struct wpa
  }
  
  
@@ -162,7 +157,7 @@
  #define RSN_SUITE "%02x-%02x-%02x-%d"
  #define RSN_SUITE_ARG(s) \
  ((s) >> 24) & 0xff, ((s) >> 16) & 0xff, ((s) >> 8) & 0xff, (s) & 0xff
-@@ -2011,6 +2013,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
+@@ -2115,6 +2117,7 @@ int wpa_sm_get_mib(struct wpa_sm *sm, ch
  
  	return (int) len;
  }
@@ -172,7 +167,7 @@
  
 --- a/wpa_supplicant/ap.c
 +++ b/wpa_supplicant/ap.c
-@@ -975,7 +975,7 @@ int wpas_ap_wps_nfc_report_handover(stru
+@@ -1015,7 +1015,7 @@ int wpas_ap_wps_nfc_report_handover(stru
  #endif /* CONFIG_WPS */
  
  
