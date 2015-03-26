@@ -1,7 +1,7 @@
 hostapd_set_bss_options() {
 	local var="$1"
 	local vif="$2"
-	local enc wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wps_possible
+	local enc wep_rekey wpa_group_rekey wpa_pair_rekey wpa_master_rekey wps_possible wpa_key_mgmt
 
 	config_get enc "$vif" encryption "none"
 	config_get wep_rekey        "$vif" wep_rekey        # 300
@@ -92,6 +92,7 @@ hostapd_set_bss_options() {
 			[ -n "$wpa_group_rekey"  ] && append "$var" "wpa_group_rekey=$wpa_group_rekey" "$N"
 			[ -n "$wpa_pair_rekey"   ] && append "$var" "wpa_ptk_rekey=$wpa_pair_rekey"    "$N"
 			[ -n "$wpa_master_rekey" ] && append "$var" "wpa_gmk_rekey=$wpa_master_rekey"  "$N"
+			append wpa_key_mgmt "WPA-PSK"
 		;;
 		*wpa*|*8021x*)
 			# required fields? formats?
@@ -133,7 +134,7 @@ hostapd_set_bss_options() {
 			append "$var" "own_ip_addr=$ownip" "$N"
 			append "$var" "eapol_key_index_workaround=1" "$N"
 			append "$var" "ieee8021x=1" "$N"
-			append "$var" "wpa_key_mgmt=WPA-EAP" "$N"
+			append wpa_key_mgmt "WPA-EAP"
 			[ -n "$wpa_group_rekey"  ] && append "$var" "wpa_group_rekey=$wpa_group_rekey" "$N"
 			[ -n "$wpa_pair_rekey"   ] && append "$var" "wpa_ptk_rekey=$wpa_pair_rekey"    "$N"
 			[ -n "$wpa_master_rekey" ] && append "$var" "wpa_gmk_rekey=$wpa_master_rekey"  "$N"
@@ -218,6 +219,7 @@ hostapd_set_bss_options() {
 	then
 		config_get nasid "$vif" nasid
 		[ -n "$nasid" ] && append "$var" "nas_identifier=$nasid" "$N"
+		[ -n "wpa_key_mgmt" ] && append "$var" "wpa_key_mgmt=$wpa_key_mgmt"
 	fi
 
 	if [ "$wpa" -ge "2" ]
