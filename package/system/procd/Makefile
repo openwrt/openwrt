@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2015-03-25
+PKG_VERSION:=2015-03-26
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=git://nbd.name/luci2/procd.git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=29f139217c71c8753643779c800788783bf43c23
+PKG_SOURCE_VERSION:=e5331be64992e865cc7da0ccca8814d494930762
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 CMAKE_INSTALL:=1
 
@@ -24,7 +24,7 @@ PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-PKG_CONFIG_DEPENDS:=CONFIG_KERNEL_SECCOMP
+PKG_CONFIG_DEPENDS:= CONFIG_KERNEL_SECCOMP CONFIG_NAND_SUPPORT CONFIG_PROCD_SHOW_BOOT CONFIG_PROCD_ZRAM_TMPFS CONFIG_PROCD_JAIL_SUPPORT
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -41,7 +41,7 @@ endef
 define Package/procd-jail
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=procd +@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS @mips||mipsel||i386||x86_64
+  DEPENDS:=procd +@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS @PROCD_JAIL_SUPPORT
   TITLE:=OpenWrt process jail
   DEFAULT:=n
 endef
@@ -73,10 +73,19 @@ config PROCD_ZRAM_TMPFS
 	bool
 	default n
 	prompt "Mount /tmp using zram."
+
+config PROCD_JAIL_SUPPORT
+	bool
+	default y
+	depends on mips || mipsel || i386 || x86_64
+
+config PROCD_SECCOMP_SUPPORT
+	bool
+	default y
+	depends on (mips || mipsel || i386 || x86_64) && @KERNEL_SECCOMP
 endmenu
 endef
 
-PKG_CONFIG_DEPENDS:= CONFIG_NAND_SUPPORT CONFIG_PROCD_SHOW_BOOT CONFIG_PROCD_ZRAM_TMPFS
 
 ifeq ($(CONFIG_NAND_SUPPORT),y)
   CMAKE_OPTIONS += -DBUILD_UPGRADED=1
@@ -90,6 +99,14 @@ ifeq ($(CONFIG_PROCD_ZRAM_TMPFS),y)
   CMAKE_OPTIONS += -DZRAM_TMPFS=1
 endif
 
+ifeq ($(CONFIG_PROCD_JAIL_SUPPORT),y)
+  CMAKE_OPTIONS += -DJAIL_SUPPORT=1
+endif
+
+ifeq ($(CONFIG_PROCD_SECCOMP_SUPPORT),y)
+  CMAKE_OPTIONS += -DSECCOMP_SUPPORT=1
+endif
+
 define Package/procd/install
 	$(INSTALL_DIR) $(1)/sbin $(1)/etc $(1)/lib/functions
 
@@ -97,7 +114,7 @@ define Package/procd/install
 	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
 	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
-ifeq ($(CONFIG_KERNEL_SECCOMP),y)
+ifeq ($(CONFIG_PROCD_SECCOMP_SUPPORT),y)
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libpreload-seccomp.so $(1)/lib
 endif
 endef
