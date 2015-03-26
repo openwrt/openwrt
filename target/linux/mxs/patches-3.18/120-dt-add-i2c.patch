@@ -1,0 +1,79 @@
+--- a/arch/arm/boot/dts/imx23.dtsi
++++ b/arch/arm/boot/dts/imx23.dtsi
+@@ -146,6 +146,39 @@
+ 					fsl,pull-up = <MXS_PULL_DISABLE>;
+ 				};
+ 
++				i2c0_pins_a: i2c0@0 {
++					reg = <0>;
++					fsl,pinmux-ids = <
++						0x01e0 /* MX23_PAD_I2C_SCL__I2C_SCL */
++						0x01f0 /* MX23_PAD_I2C_SDA__I2C_SDA */
++					>;
++					fsl,drive-strength = <1>;
++					fsl,voltage = <1>;
++					fsl,pull-up = <1>;
++				};
++
++				i2c1_pins_a: i2c1@0 {
++					reg = <0>;
++					fsl,pinmux-ids = <
++						0x1171 /* MX23_PAD_LCD_ENABLE__I2C_SCL */
++						0x1181 /* MX23_PAD_LCD_HSYNC__I2C_SDA  */
++					>;
++					fsl,drive-strength = <1>;
++					fsl,voltage = <1>;
++					fsl,pull-up = <1>;
++				};
++
++				i2c2_pins_a: i2c2@0 {
++					reg = <0>;
++					fsl,pinmux-ids = <
++						0x2031 /* MX23_PAD_SSP1_DATA1__I2C_SCL  */
++						0x2041 /* MX23_PAD_SSP1_DATA2__I2C_SDA  */
++					>;
++					fsl,drive-strength = <1>;
++					fsl,voltage = <1>;
++					fsl,pull-up = <1>;
++				};
++
+ 				auart0_pins_a: auart0@0 {
+ 					reg = <0>;
+ 					fsl,pinmux-ids = <
+@@ -444,7 +477,12 @@
+ 			};
+ 
+ 			i2c@80058000 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "fsl,imx23-i2c";
+ 				reg = <0x80058000 0x2000>;
++				interrupts = <27>;
++				clock-frequency = <100000>;
+ 				dmas = <&dma_apbx 3>;
+ 				dma-names = "rx-tx";
+ 				status = "disabled";
+--- a/arch/arm/boot/dts/imx23-olinuxino.dts
++++ b/arch/arm/boot/dts/imx23-olinuxino.dts
+@@ -73,6 +73,12 @@
+ 				status = "okay";
+ 			};
+ 
++			i2c0: i2c@80058000 {
++				pinctrl-names = "default";
++				pinctrl-0 = <&i2c1_pins_a>;
++				status = "okay";
++			};
++
+ 			duart: serial@80070000 {
+ 				pinctrl-names = "default";
+ 				pinctrl-0 = <&duart_pins_a>;
+@@ -88,7 +94,7 @@
+ 			usbphy0: usbphy@8007c000 {
+ 				status = "okay";
+ 			};
+-			
++
+ 			codec: mxs-builtin-codec {
+ 				compatible = "fsl,mxs-builtin-codec";
+ 				reg = <0x80048000 0x2000>, <0x8004c000 0x2000>,
