@@ -219,6 +219,35 @@ hostapd_set_bss_options() {
 	then
 		config_get nasid "$vif" nasid
 		[ -n "$nasid" ] && append "$var" "nas_identifier=$nasid" "$N"
+
+		config_get_bool ieee80211r "$vif" ieee80211r 0
+		if [ "$ieee80211r" -gt 0 ]
+		then
+			config_get mobility_domain "$vif" mobility_domain "4f57"
+			config_get r0_key_lifetime "$vif" r0_key_lifetime "10000"
+			config_get r1_key_holder "$vif" r1_key_holder "00004f577274"
+			config_get reassociation_deadline "$vif" reassociation_deadline "1000"
+			config_get r0kh "$vif" r0kh
+			config_get r1kh "$vif" r1kh
+			config_get_bool pmk_r1_push "$vif" pmk_r1_push 0
+
+			append "$var" "mobility_domain=$mobility_domain" "$N"
+			append "$var" "r0_key_lifetime=$r0_key_lifetime" "$N"
+			append "$var" "r1_key_holder=$r1_key_holder" "$N"
+			append "$var" "reassociation_deadline=$reassociation_deadline" "$N"
+			append "$var" "pmk_r1_push=$pmk_r1_push" "$N"
+
+			for kh in $r0kh; do
+				"$var" "r0kh=${kh//,/ }" "$N"
+			done
+			for kh in $r1kh; do
+				"$var" "r1kh=${kh//,/ }" "$N"
+			done
+
+			[ "$wpa_key_mgmt" != "${wpa_key_mgmt/EAP/}" ] && append wpa_key_mgmt "FT-EAP"
+			[ "$wpa_key_mgmt" != "${wpa_key_mgmt/PSK/}" ] && append wpa_key_mgmt "FT-PSK"
+		fi
+
 		[ -n "wpa_key_mgmt" ] && append "$var" "wpa_key_mgmt=$wpa_key_mgmt"
 	fi
 
