@@ -17,8 +17,6 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  drivers/net/ethernet/broadcom/bgmac.c | 34 ++++++++++++++++++++++++++++++++++
  1 file changed, 34 insertions(+)
 
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index 0469f72..efda7cf 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -14,6 +14,7 @@
@@ -29,7 +27,7 @@ index 0469f72..efda7cf 100644
  #include <linux/interrupt.h>
  #include <linux/dma-mapping.h>
  #include <bcm47xx_nvram.h>
-@@ -1330,13 +1331,46 @@ static void bgmac_adjust_link(struct net_device *net_dev)
+@@ -1330,13 +1331,46 @@ static void bgmac_adjust_link(struct net
  	}
  }
  
@@ -76,6 +74,3 @@ index 0469f72..efda7cf 100644
  	mii_bus = mdiobus_alloc();
  	if (!mii_bus)
  		return -ENOMEM;
--- 
-1.8.4.5
-

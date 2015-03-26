@@ -19,11 +19,9 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  net/ipv6/fib6_rules.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/net/ipv6/fib6_rules.c b/net/ipv6/fib6_rules.c
-index b4d5e1d..27ca796 100644
 --- a/net/ipv6/fib6_rules.c
 +++ b/net/ipv6/fib6_rules.c
-@@ -104,6 +104,7 @@ static int fib6_rule_action(struct fib_rule *rule, struct flowi *flp,
+@@ -104,6 +104,7 @@ static int fib6_rule_action(struct fib_r
  				goto again;
  			flp6->saddr = saddr;
  		}
@@ -31,6 +29,3 @@ index b4d5e1d..27ca796 100644
  		goto out;
  	}
  again:
--- 
-2.1.4
-
