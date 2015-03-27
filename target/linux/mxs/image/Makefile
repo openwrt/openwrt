@@ -40,7 +40,7 @@ define Image/Build/SDCard
 	rm -f $(KDIR)/boot.img
 	mkdosfs $(KDIR)/boot.img -C $(FAT32_BLOCKS)
 
-	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(2).dtb ::$(2).dtb
+	mcopy -i $(KDIR)/boot.img $(DTS_DIR)/$(2).dtb ::$(2).dtb
 	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
 
 	./gen_mxs_sdcard_img.sh \
