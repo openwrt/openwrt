@@ -287,12 +287,14 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  					name, NET_NAME_UNKNOWN,
  					ieee80211_if_setup, txqs, 1);
  		if (!ndev)
-@@ -1731,6 +1747,9 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1731,6 +1747,11 @@ int ieee80211_if_add(struct ieee80211_lo
  		memcpy(sdata->vif.addr, ndev->dev_addr, ETH_ALEN);
  		memcpy(sdata->name, ndev->name, IFNAMSIZ);
  
-+		txqi = netdev_priv(ndev) + size;
-+		ieee80211_init_tx_queue(sdata, NULL, txqi, 0);
++		if (txq_size) {
++			txqi = netdev_priv(ndev) + size;
++			ieee80211_init_tx_queue(sdata, NULL, txqi, 0);
++		}
 +
  		sdata->dev = ndev;
  	}
