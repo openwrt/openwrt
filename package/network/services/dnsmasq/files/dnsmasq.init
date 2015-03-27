@@ -547,7 +547,7 @@ start_service() {
 	config_load dhcp
 
 	procd_open_instance
-	procd_set_param command $PROG -C $CONFIGFILE -d -x /var/run/dnsmasq/dnsmasq.pid
+	procd_set_param command $PROG -C $CONFIGFILE -k -x /var/run/dnsmasq/dnsmasq.pid
 	procd_set_param file $CONFIGFILE
 	procd_set_param respawn
 
