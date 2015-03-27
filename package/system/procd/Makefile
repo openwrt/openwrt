@@ -82,7 +82,7 @@ config PROCD_JAIL_SUPPORT
 config PROCD_SECCOMP_SUPPORT
 	bool
 	default y
-	depends on (mips || mipsel || i386 || x86_64) && !@TARGET_uml && @KERNEL_SECCOMP
+	depends on (mips || mipsel || i386 || x86_64) && !TARGET_uml && @KERNEL_SECCOMP
 endmenu
 endef
 
