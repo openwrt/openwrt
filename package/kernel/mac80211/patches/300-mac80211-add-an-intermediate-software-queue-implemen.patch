@@ -259,7 +259,45 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (local->open_count == 0)
  		ieee80211_clear_tx_pending(local);
  
-@@ -1773,6 +1780,15 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1674,6 +1681,7 @@ int ieee80211_if_add(struct ieee80211_lo
+ {
+ 	struct net_device *ndev = NULL;
+ 	struct ieee80211_sub_if_data *sdata = NULL;
++	struct txq_info *txqi;
+ 	int ret, i;
+ 	int txqs = 1;
+ 
+@@ -1693,10 +1701,18 @@ int ieee80211_if_add(struct ieee80211_lo
+ 		ieee80211_assign_perm_addr(local, wdev->address, type);
+ 		memcpy(sdata->vif.addr, wdev->address, ETH_ALEN);
+ 	} else {
++		int size = ALIGN(sizeof(*sdata) + local->hw.vif_data_size,
++				 sizeof(void *));
++		int txq_size = 0;
++
++		if (local->ops->wake_tx_queue)
++			txq_size += sizeof(struct txq_info) +
++				    local->hw.txq_data_size;
++
+ 		if (local->hw.queues >= IEEE80211_NUM_ACS)
+ 			txqs = IEEE80211_NUM_ACS;
+ 
+-		ndev = alloc_netdev_mqs(sizeof(*sdata) + local->hw.vif_data_size,
++		ndev = alloc_netdev_mqs(size + txq_size,
+ 					name, NET_NAME_UNKNOWN,
+ 					ieee80211_if_setup, txqs, 1);
+ 		if (!ndev)
+@@ -1731,6 +1747,9 @@ int ieee80211_if_add(struct ieee80211_lo
+ 		memcpy(sdata->vif.addr, ndev->dev_addr, ETH_ALEN);
+ 		memcpy(sdata->name, ndev->name, IFNAMSIZ);
+ 
++		txqi = netdev_priv(ndev) + size;
++		ieee80211_init_tx_queue(sdata, NULL, txqi, 0);
++
+ 		sdata->dev = ndev;
+ 	}
+ 
+@@ -1773,6 +1792,15 @@ int ieee80211_if_add(struct ieee80211_lo
  	ieee80211_setup_sdata(sdata, type);
  
  	if (ndev) {
@@ -275,7 +313,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		if (params) {
  			ndev->ieee80211_ptr->use_4addr = params->use_4addr;
  			if (type == NL80211_IFTYPE_STATION)
-@@ -1785,6 +1801,7 @@ int ieee80211_if_add(struct ieee80211_lo
+@@ -1785,6 +1813,7 @@ int ieee80211_if_add(struct ieee80211_lo
  
  		ret = register_netdevice(ndev);
  		if (ret) {
@@ -283,26 +321,6 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  			free_netdev(ndev);
  			return ret;
  		}
-@@ -1810,6 +1827,9 @@ void ieee80211_if_remove(struct ieee8021
- 
- 	synchronize_rcu();
- 
-+	if (sdata->vif.txq)
-+		kfree(to_txq_info(sdata->vif.txq));
-+
- 	if (sdata->dev) {
- 		unregister_netdevice(sdata->dev);
- 	} else {
-@@ -1851,6 +1871,9 @@ void ieee80211_remove_interfaces(struct 
- 	list_for_each_entry_safe(sdata, tmp, &local->interfaces, list) {
- 		list_del(&sdata->list);
- 
-+		if (sdata->vif.txq)
-+			kfree(to_txq_info(sdata->vif.txq));
-+
- 		if (sdata->dev)
- 			unregister_netdevice_queue(sdata->dev, &unreg_list);
- 		else
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
 @@ -1019,6 +1019,9 @@ int ieee80211_register_hw(struct ieee802
