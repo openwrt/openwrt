@@ -297,30 +297,6 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		sdata->dev = ndev;
  	}
  
-@@ -1773,6 +1792,15 @@ int ieee80211_if_add(struct ieee80211_lo
- 	ieee80211_setup_sdata(sdata, type);
- 
- 	if (ndev) {
-+		struct txq_info *txqi = NULL;
-+
-+		if (local->ops->wake_tx_queue) {
-+			txqi = kzalloc(sizeof(*txqi) +
-+				      local->hw.txq_data_size, GFP_KERNEL);
-+			if (txqi)
-+				ieee80211_init_tx_queue(sdata, NULL, txqi, 0);
-+		}
-+
- 		if (params) {
- 			ndev->ieee80211_ptr->use_4addr = params->use_4addr;
- 			if (type == NL80211_IFTYPE_STATION)
-@@ -1785,6 +1813,7 @@ int ieee80211_if_add(struct ieee80211_lo
- 
- 		ret = register_netdevice(ndev);
- 		if (ret) {
-+			kfree(txqi);
- 			free_netdev(ndev);
- 			return ret;
- 		}
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
 @@ -1019,6 +1019,9 @@ int ieee80211_register_hw(struct ieee802
