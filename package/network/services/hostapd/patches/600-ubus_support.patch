@@ -41,7 +41,7 @@
  		HAPD_IFACE_DISABLED,
 --- /dev/null
 +++ b/src/ap/ubus.c
-@@ -0,0 +1,490 @@
+@@ -0,0 +1,494 @@
 +/*
 + * hostapd / ubus support
 + * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
@@ -358,6 +358,7 @@
 +	[CSA_BCN_COUNT] = { "bcn_count", BLOBMSG_TYPE_INT32 },
 +};
 +
++#ifdef NEED_AP_MLME
 +static int
 +hostapd_switch_chan(struct ubus_context *ctx, struct ubus_object *obj,
 +		    struct ubus_request_data *req, const char *method,
@@ -381,6 +382,7 @@
 +		return UBUS_STATUS_NOT_SUPPORTED;
 +	return UBUS_STATUS_OK;
 +}
++#endif
 +
 +enum {
 +	VENDOR_ELEMENTS,
@@ -423,7 +425,9 @@
 +	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
 +	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
 +	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
++#ifdef NEED_AP_MLME
 +	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
++#endif
 +	UBUS_METHOD("set_vendor_elements", hostapd_vendor_elements, ve_policy),
 +};
 +
