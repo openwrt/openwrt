@@ -63,10 +63,18 @@ define Image/cmdline/yaffs2
 root=/dev/mtdblock1 rootfstype=yaffs2
 endef
 
+define Image/Build/squashfs
+	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
+endef
+
 define Image/Build
+	$(call Image/Build/$(1),$(1))
 	$(CP) $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel '$(strip $(call Image/cmdline/$(1))) '
-	./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).bin 4 $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel $(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1)
+	./gen_image.sh $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).bin \
+		4 $(BIN_DIR)/$(IMG_PREFIX)-$(1).kernel \
+		$(CONFIG_TARGET_ROOTFS_PARTSIZE) $(KDIR)/root.$(1) \
+		128
 endef
 
 $(eval $(call BuildImage))
