@@ -1,0 +1,11 @@
+--- a/arch/mips/rb532/devices.c
++++ b/arch/mips/rb532/devices.c
+@@ -202,7 +202,7 @@ static struct mtd_partition rb532_partit
+ 		.offset = 0,
+ 		.size = 4 * 1024 * 1024,
+ 	}, {
+-		.name = "rootfs",
++		.name = "rootfs_onboard",
+ 		.offset = MTDPART_OFS_NXTBLK,
+ 		.size = MTDPART_SIZ_FULL,
+ 	}
