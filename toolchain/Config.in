@@ -228,7 +228,7 @@ choice
 	config LIBC_USE_MUSL
 		select USE_MUSL
 		bool "Use musl"
-		depends on !(mips64 || mips64el || aarch64 || aarch64_be)
+		depends on !(mips64 || mips64el)
 
 endchoice
 
