@@ -1,6 +1,6 @@
 --- a/kernel/seccomp.c
 +++ b/kernel/seccomp.c
-@@ -614,6 +614,7 @@
+@@ -614,6 +614,7 @@ int __secure_computing(void)
  #ifdef CONFIG_SECCOMP_FILTER
  static u32 __seccomp_phase1_filter(int this_syscall, struct seccomp_data *sd)
  {
@@ -8,7 +8,7 @@
  	u32 filter_ret, action;
  	int data;
  
-@@ -644,6 +645,13 @@
+@@ -644,6 +645,13 @@ static u32 __seccomp_phase1_filter(int t
  	case SECCOMP_RET_TRACE:
  		return filter_ret;  /* Save the rest for phase 2. */
  
