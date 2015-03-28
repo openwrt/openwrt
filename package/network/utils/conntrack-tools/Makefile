@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=conntrack-tools
-PKG_VERSION:=1.0.0
+PKG_VERSION:=1.4.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -16,7 +16,7 @@ PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/conntrack-tools/files \
 	ftp://ftp.netfilter.org/pub/conntrack-tools \
 	http://mirrors.evolva.ro/netfilter.org/conntrack-tools
-PKG_MD5SUM:=5add24d4761baf17af630d5627a71752
+PKG_MD5SUM:=b1f9d006e7bf000a77395ff7cd3fac16
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=GPL-2.0
@@ -31,7 +31,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/conntrack-tools
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+libnetfilter-conntrack
+  DEPENDS:=+libnetfilter-conntrack +libnetfilter-cttimeout +libnetfilter-cthelper +libnetfilter-queue
   SUBMENU:=Firewall
   TITLE:=Connection tracking userspace tools
   URL:=http://conntrack-tools.netfilter.org/
@@ -48,6 +48,8 @@ endef
 define Package/conntrack-tools/conffiles
 /etc/conntrackd/conntrackd.conf
 endef
+
+TARGET_CFLAGS += -D_GNU_SOURCE=1
 
 define Package/conntrack-tools/install
 	$(INSTALL_DIR) $(1)/etc/conntrackd
