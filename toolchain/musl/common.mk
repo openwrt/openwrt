@@ -11,7 +11,7 @@ PKG_NAME:=musl
 PKG_VERSION:=$(call qstrip,$(CONFIG_MUSL_VERSION))
 PKG_RELEASE=1
 
-PKG_MD5SUM:=591e2d25a12ca1748e30ee0cf23f8b8a
+PKG_MD5SUM:=6fe9fc4d99a7d321432b3e179c138d73
 
 PKG_SOURCE_URL:=http://www.musl-libc.org/releases
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
