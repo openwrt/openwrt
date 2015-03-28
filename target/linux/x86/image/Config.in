@@ -12,9 +12,3 @@ config X86_ETHERBOOT_BOOTOPTS
 	default "ip=dhcp root=/dev/nfs nfsroot=192.168.0.1:/srv/dbe61"
 	help
 	  Kernel arguments to pass to the kernel eg. NFS root location etc.
-
-config OLPC_BOOTSCRIPT_IMAGES
-	bool "Build images with bootscript"
-	depends on TARGET_x86_olpc
-	depends on TARGET_ROOTFS_EXT4FS || TARGET_ROOTFS_ISO || TARGET_ROOTFS_JFFS2 || TARGET_ROOTFS_SQUASHFS
-	default TARGET_x86_olpc

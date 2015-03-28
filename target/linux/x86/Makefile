@@ -10,7 +10,7 @@ ARCH:=i386
 BOARD:=x86
 BOARDNAME:=x86
 FEATURES:=squashfs ext4 vdi vmdk pcmcia targz
-SUBTARGETS=generic olpc xen_domu ep80579 geode kvm_guest rdc
+SUBTARGETS=generic xen_domu ep80579 geode kvm_guest rdc
 
 KERNEL_PATCHVER:=3.18
 
