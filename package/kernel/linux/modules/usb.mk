@@ -435,7 +435,7 @@ $(eval $(call KernelPackage,usb2-pci))
 
 define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
-  DEPENDS:=@!LINUX_3_10 +(TARGET_brcm2708||TARGET_at91||TARGET_brcm63xx):kmod-usb-gadget
+  DEPENDS:=@!LINUX_3_10 +(TARGET_brcm2708||TARGET_at91||TARGET_brcm63xx||TARGET_mxs):kmod-usb-gadget
   KCONFIG:= \
 	CONFIG_USB_DWC2 \
 	CONFIG_USB_DWC2_PCI \
