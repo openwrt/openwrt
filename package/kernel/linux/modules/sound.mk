@@ -145,22 +145,6 @@ endef
 $(eval $(call KernelPackage,sound-i8x0))
 
 
-define KernelPackage/sound-cs5535audio
-  TITLE:=CS5535 PCI Controller
-  DEPENDS:=+kmod-ac97
-  KCONFIG:=CONFIG_SND_CS5535AUDIO
-  FILES:=$(LINUX_DIR)/sound/pci/cs5535audio/snd-cs5535audio.ko
-  AUTOLOAD:=$(call AutoLoad,36,snd-cs5535audio)
-  $(call AddDepends/sound)
-endef
-
-define KernelPackage/sound-cs5535audio/description
- Support for the integrated AC97 sound device on olpc
-endef
-
-$(eval $(call KernelPackage,sound-cs5535audio))
-
-
 define KernelPackage/sound-soc-core
   TITLE:=SoC sound support
   DEPENDS:=+kmod-regmap +kmod-ac97
