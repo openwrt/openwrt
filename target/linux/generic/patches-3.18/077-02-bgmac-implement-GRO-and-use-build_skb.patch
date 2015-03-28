@@ -104,12 +104,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		}
  	}
 +}
- 
--	if (ring->cpu_base) {
--		/* Free ring of descriptors */
--		size = ring->num_slots * sizeof(struct bgmac_dma_desc);
--		dma_free_coherent(dma_dev, size, ring->cpu_base,
--				  ring->dma_base);
++
 +static void bgmac_dma_rx_ring_free(struct bgmac *bgmac,
 +				   struct bgmac_dma_ring *ring)
 +{
@@ -121,7 +116,12 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +		slot = &ring->slots[i];
 +		if (!slot->buf)
 +			continue;
-+
+ 
+-	if (ring->cpu_base) {
+-		/* Free ring of descriptors */
+-		size = ring->num_slots * sizeof(struct bgmac_dma_desc);
+-		dma_free_coherent(dma_dev, size, ring->cpu_base,
+-				  ring->dma_base);
 +		if (slot->dma_addr)
 +			dma_unmap_single(dma_dev, slot->dma_addr,
 +					 BGMAC_RX_BUF_SIZE,
