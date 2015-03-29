@@ -16,6 +16,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#ifdef linux
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -24,20 +26,24 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/in6.h>
+#include <linux/if_bridge.h>
 
 #include "libbridge.h"
 #include "libbridge_private.h"
 
-int br_socket_fd = -1;
+static int br_socket_fd = -1;
 
-static int br_init(void)
+int br_init(void)
 {
 	if ((br_socket_fd = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0)
 		return errno;
 	return 0;
 }
 
-static void br_shutdown(void)
+void br_shutdown(void)
 {
 	close(br_socket_fd);
 	br_socket_fd = -1;
@@ -79,105 +85,18 @@ static int new_foreach_bridge(int (*iterator)(const char *name, void *),
 }
 
 /*
- * Old interface uses ioctl
- */
-static int old_foreach_bridge(int (*iterator)(const char *, void *), 
-			      void *iarg)
-{
-	int i, ret=0, num;
-	char ifname[IFNAMSIZ];
-	int ifindices[MAX_BRIDGES];
-	unsigned long args[3] = { BRCTL_GET_BRIDGES, 
-				 (unsigned long)ifindices, MAX_BRIDGES };
-
-	num = ioctl(br_socket_fd, SIOCGIFBR, args);
-	if (num < 0) {
-		dprintf("Get bridge indices failed: %s\n",
-			strerror(errno));
-		return -errno;
-	}
-
-	for (i = 0; i < num; i++) {
-		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("get find name for ifindex %d\n",
-				ifindices[i]);
-			return -errno;
-		}
-
-		++ret;
-		if(iterator(ifname, iarg)) 
-			break;
-	}
-
-	return ret;
-
-}
-
-/*
  * Go over all bridges and call iterator function.
  * if iterator returns non-zero then stop.
  */
-static int br_foreach_bridge(int (*iterator)(const char *, void *), 
-		     void *arg)
+int br_foreach_bridge(int (*iterator)(const char *, void *), void *arg)
 {
-	int ret;
-
-	ret = new_foreach_bridge(iterator, arg);
-	if (ret <= 0)
-		ret = old_foreach_bridge(iterator, arg);
-
-	return ret;
-}
-
-/* 
- * Only used if sysfs is not available.
- */
-static int old_foreach_port(const char *brname,
-			    int (*iterator)(const char *br, const char *port, 
-					    void *arg),
-			    void *arg)
-{
-	int i, err, count;
-	struct ifreq ifr;
-	char ifname[IFNAMSIZ];
-	int ifindices[MAX_PORTS];
-	unsigned long args[4] = { BRCTL_GET_PORT_LIST,
-				  (unsigned long)ifindices, MAX_PORTS, 0 };
-
-	memset(ifindices, 0, sizeof(ifindices));
-	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
-	ifr.ifr_data = (char *) &args;
-
-	err = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
-	if (err < 0) {
-		dprintf("list ports for bridge:'%s' failed: %s\n",
-			brname, strerror(errno));
-		return -errno;
-	}
-
-	count = 0;
-	for (i = 0; i < MAX_PORTS; i++) {
-		if (!ifindices[i])
-			continue;
-
-		if (!if_indextoname(ifindices[i], ifname)) {
-			dprintf("can't find name for ifindex:%d\n",
-				ifindices[i]);
-			continue;
-		}
-
-		++count;
-		if (iterator(brname, ifname, arg))
-			break;
-	}
-
-	return count;
+	return new_foreach_bridge(iterator, arg);
 }
 
 /*
  * Iterate over all ports in bridge (using sysfs).
  */
-static int br_foreach_port(const char *brname,
+int br_foreach_port(const char *brname,
 		    int (*iterator)(const char *br, const char *port, void *arg),
 		    void *arg)
 {
@@ -187,8 +106,6 @@ static int br_foreach_port(const char *brname,
 
 	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/brif", brname);
 	count = scandir(path, &namelist, 0, alphasort);
-	if (count < 0)
-		return old_foreach_port(brname, iterator, arg);
 
 	for (i = 0; i < count; i++) {
 		if (namelist[i]->d_name[0] == '.'
@@ -206,3 +123,5 @@ static int br_foreach_port(const char *brname,
 
 	return count;
 }
+
+#endif
