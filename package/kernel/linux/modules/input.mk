@@ -25,10 +25,10 @@ $(eval $(call KernelPackage,hid))
 define KernelPackage/hid-generic
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=Generic HID device support
+  DEPENDS:=+kmod-hid
   KCONFIG:=CONFIG_HID_GENERIC
   FILES:=$(LINUX_DIR)/drivers/hid/hid-generic.ko
   AUTOLOAD:=$(call AutoProbe,hid-generic)
-  $(call AddDepends/hid)
 endef
 
 define KernelPackage/hid/description
