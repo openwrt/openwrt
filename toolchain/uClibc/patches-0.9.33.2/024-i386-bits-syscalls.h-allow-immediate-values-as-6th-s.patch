@@ -1,0 +1,25 @@
+From: Natanael Copa <natanael.copa@gmail.com>
+Date: Thu, 5 Jul 2012 11:55:19 +0000
+Subject: [PATCH] i386/bits/syscalls.h: allow immediate values as 6th syscall
+ arg
+
+Allow use of immedate values as the 6th syscall argument. Otherwise we must
+store the arg on memory. This gives gcc more options to optimize better.
+
+This also works around an issue with posix_fallocate.
+
+Signed-off-by: Natanael Copa <ncopa@alpinelinux.org>
+Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
+---
+
+--- a/libc/sysdeps/linux/i386/bits/syscalls.h
++++ b/libc/sysdeps/linux/i386/bits/syscalls.h
+@@ -136,7 +136,7 @@ __asm__ (
+ #define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \
+ 	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)
+ #define ASMFMT_6(arg1, arg2, arg3, arg4, arg5, arg6) \
+-	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5), "m" (arg6)
++	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5), "g" (arg6)
+ 
+ #else /* !PIC */
+ 
