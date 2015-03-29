@@ -105,6 +105,42 @@ define Image/Build/trxV2
 endef
 
 #################################################
+# Images
+#################################################
+
+define Build/trx-with-loader
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $@ \
+		-f $(KDIR)/loader.gz \
+		-f $(word 1,$^) \
+		$(call trxalign/$(lastword $(subst ., ,$(word 2,$^))),$(lastword $(subst ., ,$(word 2,$^))))
+endef
+
+define Build/linksys-bin
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(DEVICE_ID) -v v$(VERSION) -i $@ -o $@.new
+	mv $@.new $@
+endef
+
+#################################################
+# Devices
+#################################################
+
+DEVICE_VARS += DEVICE_ID VERSION
+
+define Device/Default
+	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+	KERNEL_IMAGE = vmlinux.lzma
+	FILESYSTEMS := $(FS_64K)
+	IMAGES := trx
+	IMAGE/bin := trx-with-loader
+endef
+
+define Device/linksys
+	IMAGES := bin
+	IMAGE/bin := trx-with-loader | linksys-bin
+endef
+
+#################################################
 # Subtarget generic
 #################################################
 
@@ -201,7 +237,6 @@ define Image/Build/mips74k/devices-with-64k-blocks
 	$(call Image/Build/CyberTAN,$(1),e900_v1,E900,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e1000_v1_v2,E100,1.1.2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e1200_v1,E120,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1200_v2,E122,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e1500_v1,E150,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e1550_v1,1550,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/CyberTAN,$(1),e2000_v1,32XN,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
@@ -225,6 +260,16 @@ define Image/Build/mips74k/squashfs
 	$(call Image/Build/mips74k/devices-with-64k-blocks,$(1))
 	$(call Image/Build/mips74k/devices-with-128k-blocks,$(1))
 endef
+
+define Device/linksys-e1200-v2
+	$(Device/linksys)
+	DEVICE_ID := E122
+	VERSION := 1.0.4
+endef
+
+ifeq ($(SUBTARGET),mips74k)
+	TARGET_DEVICES += linksys-e1200-v2
+endif
 
 #################################################
 # Shared BuildImage defines
