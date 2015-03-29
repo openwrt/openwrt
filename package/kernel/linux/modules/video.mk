@@ -164,22 +164,6 @@ endef
 $(eval $(call KernelPackage,video-cpia2))
 
 
-define KernelPackage/video-sn9c102
-  TITLE:=SN9C102 Camera Chip support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core
-  KCONFIG:=CONFIG_USB_SN9C102
-  FILES:=$(LINUX_DIR)/drivers/media/$(V4L2_USB_DIR)/sn9c102/sn9c102.ko
-  AUTOLOAD:=$(call AutoProbe,gspca_sn9c20x)
-  $(call AddDepends/camera)
-endef
-
-define KernelPackage/video-sn9c102/description
- Kernel modules for supporting SN9C102 camera chips
-endef
-
-$(eval $(call KernelPackage,video-sn9c102))
-
-
 define KernelPackage/video-pwc
   TITLE:=Philips USB webcam support
   DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-video-videobuf2
