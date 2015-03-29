@@ -1,6 +1,6 @@
 --- a/libc/inet/resolv.c
 +++ b/libc/inet/resolv.c
-@@ -3536,6 +3536,61 @@
+@@ -3536,6 +3536,61 @@ __res_vinit(res_state rp, int preinit)
  	return 0;
  }
  
@@ -62,7 +62,7 @@
  static void
  __res_iclose(void)
  {
-@@ -3608,61 +3663,6 @@
+@@ -3608,61 +3663,6 @@ struct __res_state *__resp = &_res;
  # endif
  #endif /* !__UCLIBC_HAS_THREADS__ */
  
