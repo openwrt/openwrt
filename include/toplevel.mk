@@ -161,7 +161,7 @@ download: .config FORCE
 	@+$(SUBMAKE) target/download
 
 clean dirclean: .config
-	@+$(SUBMAKE) -r $@ 
+	@+$(SUBMAKE) -r $@
 
 prereq:: prepare-tmpinfo .config
 	@+$(NO_TRACE_MAKE) -r -s $@

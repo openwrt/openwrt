@@ -347,6 +347,6 @@ clean: clean-staging FORCE
 
 dist:
 	$(Build/Dist)
-   
+
 distcheck:
-	$(Build/DistCheck) 
+	$(Build/DistCheck)
