@@ -121,23 +121,38 @@ define Build/linksys-bin
 	mv $@.new $@
 endef
 
+define Build/netgear-chk
+	$(STAGING_DIR_HOST)/bin/mkchkimg \
+		-o $@.new \
+		-k $@ \
+		-b $(BOARD_ID) \
+		-r $(REGION)
+	mv $@.new $@
+endef
+
 #################################################
 # Devices
 #################################################
 
 DEVICE_VARS += DEVICE_ID VERSION
+DEVICE_VARS += BOARD_ID REGION
 
 define Device/Default
 	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
 	KERNEL_IMAGE = vmlinux.lzma
 	FILESYSTEMS := $(FS_64K)
 	IMAGES := trx
-	IMAGE/bin := trx-with-loader
+	IMAGE/trx := trx-with-loader
 endef
 
 define Device/linksys
 	IMAGES := bin
 	IMAGE/bin := trx-with-loader | linksys-bin
+endef
+
+define Device/netgear
+	IMAGES := chk
+	IMAGE/chk := trx-with-loader | netgear-chk
 endef
 
 #################################################
@@ -222,7 +237,6 @@ define Image/Build/mips74k/devices-with-64k-blocks
 	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr3400_v3,U12H208T00_NETGEAR,1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3700_v3,U12H194T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wnr1000_v3,U12H139T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
@@ -267,8 +281,16 @@ define Device/linksys-e1200-v2
 	VERSION := 1.0.4
 endef
 
+define Device/netgear-wndr3700-v3
+	$(Device/netgear)
+	BOARD_ID := U12H194T00_NETGEAR
+	REGION := 2
+endef
+
 ifeq ($(SUBTARGET),mips74k)
-	TARGET_DEVICES += linksys-e1200-v2
+	TARGET_DEVICES += \
+		linksys-e1200-v2 \
+		netgear-wndr3700-v3
 endif
 
 #################################################
