@@ -203,7 +203,7 @@ $(_endef)
 			echo ". \$$$${IPKG_INSTROOT}/lib/functions.sh"; \
 			echo "default_prerm \$$$$0 \$$$$@"; \
 		) > prerm; \
-		chmod 0755 prerm; \
+		chmod 0755 postinst prerm; \
 		$($(1)_COMMANDS) \
 	)
 
