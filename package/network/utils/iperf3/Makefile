@@ -30,6 +30,7 @@ define Package/iperf3
   URL:=http://sourceforge.net/projects/iperf/
 endef
 
+TARGET_CFLAGS += -D_GNU_SOURCE
 CONFIGURE_ARGS += --disable-shared
 
 MAKE_FLAGS += noinst_PROGRAMS=
