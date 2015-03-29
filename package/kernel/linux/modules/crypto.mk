@@ -262,10 +262,12 @@ define KernelPackage/crypto-aes
   $(call AddDepends/crypto)
 endef
 
-define KernelPackage/crypto-aes/x86
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.ko
-  AUTOLOAD:=$(call AutoLoad,09,aes-i586)
-endef
+ifndef CONFIG_TARGET_x86_64
+  define KernelPackage/crypto-aes/x86
+    FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.ko
+    AUTOLOAD:=$(call AutoLoad,09,aes-i586)
+  endef
+endif
 
 $(eval $(call KernelPackage,crypto-aes))
 
@@ -530,9 +532,11 @@ define KernelPackage/crypto-misc
   $(call AddDepends/crypto)
 endef
 
-define KernelPackage/crypto-misc/x86
-  FILES+=$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko
-endef
+ifndef CONFIG_TARGET_x86_64
+  define KernelPackage/crypto-misc/x86
+    FILES+=$(LINUX_DIR)/arch/x86/crypto/twofish-i586.ko
+  endef
+endif
 
 $(eval $(call KernelPackage,crypto-misc))
 
