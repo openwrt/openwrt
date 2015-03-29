@@ -37,16 +37,26 @@ wndr3700_board_detect() {
 		machine="NETGEAR WNDR3700"
 		;;
 	"33373031")
-		local model
-		model=$(ar71xx_get_mtd_offset_size_format art 56 10 %c)
-		if [ -z "$model" ] || [ "$model" = $'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff' ]; then
-			machine="NETGEAR WNDR3700v2"
-		elif [ -z "$model" ] || [ "$model" = $'\xff\xff\xff\xff\xff\xff\xff\xff\xffN' ]; then
-			machine="NETGEAR WNDRMAC"
-		else
+		# Use awk to remove everything after the first zero byte
+		model="$(ar71xx_get_mtd_offset_size_format art 41 32 %c | awk 'BEGIN{FS="[[:cntrl:]]"} {print $1; exit}')"
+		case $model in
+		$'\xff'*)
+			if [ "${model:24:1}" = 'N' ]; then
+				machine="NETGEAR WNDRMAC"
+			else
+				machine="NETGEAR WNDR3700v2"
+			fi
+			;;
+		'29763654+16+64'*)
+			machine="NETGEAR ${model:14}"
+			;;
+		'29763654+16+128'*)
+			machine="NETGEAR ${model:15}"
+			;;
+		*)
+			# Unknown ID
 			machine="NETGEAR $model"
-		fi
-		;;
+		esac
 	esac
 
 	AR71XX_BOARD_NAME="$name"
