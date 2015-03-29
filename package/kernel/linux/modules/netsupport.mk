@@ -825,6 +825,7 @@ $(eval $(call KernelPackage,sched))
 define KernelPackage/ax25
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   TITLE:=AX25 support
+  DEPENDS:=+kmod-lib-crc16
   KCONFIG:= \
 	CONFIG_HAMRADIO=y \
 	CONFIG_AX25 \
@@ -833,7 +834,6 @@ define KernelPackage/ax25
 	$(LINUX_DIR)/net/ax25/ax25.ko \
 	$(LINUX_DIR)/drivers/net/hamradio/mkiss.ko
   AUTOLOAD:=$(call AutoLoad,80,ax25 mkiss)
-  $(call AddDepends/crc16)
 endef
 
 define KernelPackage/ax25/description
