@@ -29,7 +29,7 @@ $(eval $(call KernelPackage,6lowpan-iphc))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +!LINUX_3_10:kmod-6lowpan-iphc
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +!LINUX_3_10:kmod-6lowpan-iphc +kmod-lib-crc16
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -50,7 +50,6 @@ define KernelPackage/bluetooth
 	CONFIG_BT_HCIUART_H4 \
 	CONFIG_BT_HIDP \
 	CONFIG_HID_SUPPORT=y
-  $(call AddDepends/crc16)
   $(call AddDepends/hid)
   $(call AddDepends/rfkill)
   FILES:= \

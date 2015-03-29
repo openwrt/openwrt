@@ -155,6 +155,9 @@ $(eval $(call KernelPackage,fs-exportfs))
 define KernelPackage/fs-ext4
   SUBMENU:=$(FS_MENU)
   TITLE:=EXT4 filesystem support
+  DEPENDS := \
+    +kmod-lib-crc16 \
+    +kmod-crypto-hash
   KCONFIG:= \
 	CONFIG_EXT4_FS \
 	CONFIG_JBD2
@@ -163,7 +166,6 @@ define KernelPackage/fs-ext4
 	$(LINUX_DIR)/fs/jbd2/jbd2.ko \
 	$(LINUX_DIR)/fs/mbcache.ko
   AUTOLOAD:=$(call AutoLoad,30,mbcache jbd2 ext4,1)
-  $(call AddDepends/crc16, +kmod-crypto-hash)
 endef
 
 define KernelPackage/fs-ext4/description
