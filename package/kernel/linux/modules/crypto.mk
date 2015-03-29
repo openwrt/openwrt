@@ -316,6 +316,17 @@ endef
 
 $(eval $(call KernelPackage,crypto-ctr))
 
+define KernelPackage/crypto-ccm
+ TITLE:=Support for Counter with CBC MAC (CCM)
+ DEPENDS:=+kmod-crypto-ctr +kmod-crypto-aead
+ KCONFIG:=CONFIG_CRYPTO_CCM
+ FILES:=$(LINUX_DIR)/crypto/ccm.ko
+ AUTOLOAD:=$(call AutoLoad,09,ccm)
+ $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-ccm))
+
 define KernelPackage/crypto-pcbc
   TITLE:=Propagating Cipher Block Chaining CryptoAPI module
   DEPENDS:=+kmod-crypto-manager
