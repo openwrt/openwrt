@@ -39,8 +39,6 @@
 
 #include <linux/fb.h>
 
-#include <error.h>
-
 #define FBDEV "/dev/fb0"
 
 struct vidsize{
