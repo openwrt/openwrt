@@ -205,11 +205,11 @@ EOF
 		grep { /broken/ } @{$target->{features}} and $confstr .= "\tdepends on BROKEN\n";
 	} else {
 		$confstr .= $features;
+		if ($target->{arch} =~ /\w/) {
+			$confstr .= "\tselect $target->{arch}\n";
+		}
 	}
 
-	if ($target->{arch} =~ /\w/) {
-		$confstr .= "\tselect $target->{arch}\n";
-	}
 	foreach my $dep (@{$target->{depends}}) {
 		my $mode = "depends on";
 		my $flags;
