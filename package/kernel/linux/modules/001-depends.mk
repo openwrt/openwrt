@@ -12,8 +12,3 @@ endef
 define AddDepends/rfkill
   DEPENDS+= +USE_RFKILL:kmod-rfkill $(1)
 endef
-
-
-define AddDepends/rtc
-  DEPENDS+= @RTC_SUPPORT $(1)
-endef
