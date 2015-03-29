@@ -18,6 +18,8 @@ PKG_SOURCE_URL:=@SF/e2fsprogs
 PKG_BUILD_DEPENDS:=util-linux
 PKG_INSTALL:=1
 
+PKG_BUILD_PARALLEL:=1
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/e2fsprogs/Default
@@ -112,13 +114,13 @@ define Build/Prepare
 endef
 
 define Build/Compile
-	$(MAKE) -C $(PKG_BUILD_DIR)/util \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR)/util \
 		BUILDCC="$(HOSTCC)" \
 		CFLAGS="" \
 		CPPFLAGS="" \
 		LDFLAGS="" \
 		subst
-	$(MAKE) -C $(PKG_BUILD_DIR) \
+	+$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
 		LDFLAGS=-Wl,--gc-sections \
 		BUILDCC="$(HOSTCC)" \
 		DESTDIR="$(PKG_INSTALL_DIR)" \
