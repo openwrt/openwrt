@@ -32,6 +32,6 @@ trapret() {(
 md5s() {
 	cat "$@" | (
 		md5sum 2>/dev/null ||
-		md5 
+		md5
 	) | awk '{print $1}'
 }
