@@ -5,11 +5,6 @@
 # See /LICENSE for more information.
 #
 
-define AddDepends/input
-  DEPENDS+= +kmod-input-core $(1)
-endef
-
-
 define AddDepends/nls
   DEPENDS+= +kmod-nls-base $(foreach cp,$(1),+kmod-nls-$(cp))
 endef

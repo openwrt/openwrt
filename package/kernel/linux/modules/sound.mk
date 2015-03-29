@@ -51,7 +51,7 @@ endif
 define KernelPackage/sound-core
   SUBMENU:=$(SOUND_MENU)
   TITLE:=Sound support
-  DEPENDS:=@AUDIO_SUPPORT
+  DEPENDS:=@AUDIO_SUPPORT +kmod-input-core
   KCONFIG:= \
 	CONFIG_SOUND \
 	CONFIG_SND \
@@ -70,7 +70,6 @@ define KernelPackage/sound-core
 	CONFIG_SND_COMPRESS_OFFLOAD
   FILES:=$(SOUNDCORE_FILES)
   AUTOLOAD:=$(call AutoLoad,30,$(SOUNDCORE_LOAD))
-  $(call AddDepends/input)
 endef
 
 define KernelPackage/sound-core/uml
@@ -233,7 +232,7 @@ $(eval $(call KernelPackage,sound-soc-gw_avila))
 
 
 define KernelPackage/pcspkr
-  DEPENDS:=@TARGET_x86
+  DEPENDS:=@TARGET_x86 +kmod-input-core
   TITLE:=PC speaker support
   KCONFIG:= \
 	CONFIG_INPUT_PCSPKR \
@@ -242,7 +241,6 @@ define KernelPackage/pcspkr
 	$(LINUX_DIR)/drivers/input/misc/pcspkr.ko \
 	$(LINUX_DIR)/sound/drivers/pcsp/snd-pcsp.ko
   AUTOLOAD:=$(call AutoLoad,50,pcspkr snd-pcsp)
-  $(call AddDepends/input)
   $(call AddDepends/sound)
 endef
 
