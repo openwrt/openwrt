@@ -1,6 +1,6 @@
 --- a/extra/locale/gen_wctype.c
 +++ b/extra/locale/gen_wctype.c
-@@ -227,11 +227,12 @@
+@@ -227,11 +227,12 @@ int main(int argc, char **argv)
  			++verbose;
  			continue;
  		}
@@ -15,7 +15,7 @@
  		if (!(totitle = wctrans("totitle"))) {
  			verbose_msg("no totitle transformation.\n");
  		}
-@@ -306,43 +307,43 @@
+@@ -306,43 +307,43 @@ int main(int argc, char **argv)
  #endif
  #if 0
  				if (c < 256) {
@@ -88,7 +88,7 @@
  
  					mine = 0;
  					if (mywalnum(d,c)) ++mine; mine <<= 1;
-@@ -358,15 +359,15 @@
+@@ -358,15 +359,15 @@ int main(int argc, char **argv)
  					if (mywupper(d,c)) ++mine; mine <<= 1;
  					if (mywxdigit(d,c)) ++mine;
  
@@ -107,7 +107,7 @@
  /*						} */
  					}
  #endif
-@@ -553,7 +554,7 @@
+@@ -553,7 +554,7 @@ int main(int argc, char **argv)
  		for (c = 0; c <= 0x10ffffUL; c++)
  #endif
  		{
@@ -116,7 +116,7 @@
  			unsigned int mine;
  			unsigned int upper, lower;
  
-@@ -568,19 +569,19 @@
+@@ -568,19 +569,19 @@ int main(int argc, char **argv)
  			}
  #endif
  #endif
@@ -149,7 +149,7 @@
  
  			{
  				unsigned int u;
-@@ -630,8 +631,8 @@
+@@ -630,8 +631,8 @@ int main(int argc, char **argv)
  				if (mywupper(d,c)) ++mine; mine <<= 1;
  				if (mywxdigit(d,c)) ++mine;
  
@@ -160,7 +160,7 @@
  					if (c < 0x30000UL) {
  						verbose_msg("sc=%#x u=%#x n=%#x i0=%#x i1=%#x\n", sc, u, n, i0, i1);
  					}
-@@ -655,17 +656,17 @@
+@@ -655,17 +656,17 @@ int main(int argc, char **argv)
  				}
  
  				if (towupper(c) != upper) {

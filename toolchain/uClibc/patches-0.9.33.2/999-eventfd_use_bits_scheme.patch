@@ -16,11 +16,9 @@ enabled.
 Signed-off-by: Hiroaki KAWAI <kawai@stratosphere.co.jp>
 Signed-off-by: Bernhard Reutner-Fischer <rep.dot.nop@gmail.com>
 ---
-diff --git a/Makefile.in b/Makefile.in
-index 3d3ba3d..da865db 100644
 --- a/Makefile.in
 +++ b/Makefile.in
-@@ -272,6 +272,7 @@ HEADERS_RM-$(UCLIBC_HAS_XATTR)               += sys/xattr.h
+@@ -272,6 +272,7 @@ HEADERS_RM-$(UCLIBC_HAS_XATTR)          
  HEADERS_RM-$(UCLIBC_HAS_XLOCALE)             += xlocale.h
  HEADERS_RM-$(UCLIBC_LINUX_SPECIFIC)          += sys/eventfd.h sys/fsuid.h \
  	bits/inotify.h \
@@ -28,9 +26,6 @@ index 3d3ba3d..da865db 100644
  	sys/inotify.h \
  	sys/kdaemon.h \
  	sys/perm.h \
-diff --git a/libc/sysdeps/linux/alpha/bits/eventfd.h b/libc/sysdeps/linux/alpha/bits/eventfd.h
-new file mode 100644
-index 0000000..b5a7e41
 --- /dev/null
 +++ b/libc/sysdeps/linux/alpha/bits/eventfd.h
 @@ -0,0 +1,31 @@
@@ -65,9 +60,6 @@ index 0000000..b5a7e41
 +    EFD_NONBLOCK  = 000000004
 +#define EFD_NONBLOCK EFD_NONBLOCK
 +  };
-diff --git a/libc/sysdeps/linux/common/bits/eventfd.h b/libc/sysdeps/linux/common/bits/eventfd.h
-new file mode 100644
-index 0000000..ef49c61
 --- /dev/null
 +++ b/libc/sysdeps/linux/common/bits/eventfd.h
 @@ -0,0 +1,31 @@
@@ -102,8 +94,6 @@ index 0000000..ef49c61
 +    EFD_NONBLOCK = 00004000
 +#define EFD_NONBLOCK EFD_NONBLOCK
 +  };
-diff --git a/libc/sysdeps/linux/common/sys/eventfd.h b/libc/sysdeps/linux/common/sys/eventfd.h
-index c46c2a5..1bf785f 100644
 --- a/libc/sysdeps/linux/common/sys/eventfd.h
 +++ b/libc/sysdeps/linux/common/sys/eventfd.h
 @@ -1,4 +1,4 @@
@@ -153,9 +143,6 @@ index c46c2a5..1bf785f 100644
  __END_DECLS
  
  #endif /* sys/eventfd.h */
-diff --git a/libc/sysdeps/linux/hppa/bits/eventfd.h b/libc/sysdeps/linux/hppa/bits/eventfd.h
-new file mode 100644
-index 0000000..6182c07
 --- /dev/null
 +++ b/libc/sysdeps/linux/hppa/bits/eventfd.h
 @@ -0,0 +1,32 @@
@@ -191,9 +178,6 @@ index 0000000..6182c07
 +    EFD_NONBLOCK  = 00200004 /* HPUX has separate NDELAY & NONBLOCK */
 +#define EFD_NONBLOCK EFD_NONBLOCK
 +  };
-diff --git a/libc/sysdeps/linux/mips/bits/eventfd.h b/libc/sysdeps/linux/mips/bits/eventfd.h
-new file mode 100644
-index 0000000..17b2f46
 --- /dev/null
 +++ b/libc/sysdeps/linux/mips/bits/eventfd.h
 @@ -0,0 +1,31 @@
@@ -228,9 +212,6 @@ index 0000000..17b2f46
 +    EFD_NONBLOCK = 00000200
 +#define EFD_NONBLOCK EFD_NONBLOCK
 +  };
-diff --git a/libc/sysdeps/linux/sparc/bits/eventfd.h b/libc/sysdeps/linux/sparc/bits/eventfd.h
-new file mode 100644
-index 0000000..bed9f09
 --- /dev/null
 +++ b/libc/sysdeps/linux/sparc/bits/eventfd.h
 @@ -0,0 +1,31 @@
@@ -265,5 +246,3 @@ index 0000000..bed9f09
 +    EFD_NONBLOCK = 0x004000
 +#define EFD_NONBLOCK EFD_NONBLOCK
 +  };
---
-cgit v0.9.1

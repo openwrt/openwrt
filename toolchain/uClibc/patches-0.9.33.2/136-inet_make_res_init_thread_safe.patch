@@ -24,7 +24,7 @@
  	return 0;
  }
  
-@@ -3582,11 +3582,11 @@ res_init(void)
+@@ -3582,11 +3581,11 @@ res_init(void)
  	if (!_res.id)
  		_res.id = res_randomid();
  
@@ -38,7 +38,7 @@
  	return 0;
  }
  libc_hidden_def(res_init)
-@@ -3687,7 +3687,11 @@ struct __res_state *__resp = &_res;
+@@ -3687,7 +3686,11 @@ struct __res_state *__resp = &_res;
  int
  res_ninit(res_state statp)
  {
@@ -51,5 +51,3 @@
  }
  
  #endif /* L_res_init */
---
-cgit v0.9.1
