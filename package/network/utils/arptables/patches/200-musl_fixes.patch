@@ -1,0 +1,31 @@
+--- a/include/arptables.h
++++ b/include/arptables.h
+@@ -1,6 +1,7 @@
+ #ifndef _ARPTABLES_USER_H
+ #define _ARPTABLES_USER_H
+ 
++#include <sys/types.h>
+ #include "arptables_common.h"
+ #include "libarptc/libarptc.h"
+ 
+--- a/arptables.c
++++ b/arptables.c
+@@ -43,6 +43,7 @@
+ #include <arptables.h>
+ #include <fcntl.h>
+ #include <sys/wait.h>
++#include <net/ethernet.h>
+ 
+ #ifndef TRUE
+ #define TRUE 1
+--- a/include/libarptc/arpt_kernel_headers.h
++++ b/include/libarptc/arpt_kernel_headers.h
+@@ -5,7 +5,7 @@
+ 
+ #include <limits.h>
+ 
+-#if defined(__GLIBC__) && __GLIBC__ == 2
++#if 1
+ #include <netinet/ip.h>
+ #include <netinet/in.h>
+ #include <netinet/ip_icmp.h>
