@@ -8,7 +8,7 @@ CONFIGURE_ARGS =
 
 all: ead ead-client
 
-obj = ead-crypt.o
+obj = ead-crypt.o libbridge_init.o
 
 tinysrp/Makefile:
 	cd tinysrp; ./configure $(CONFIGURE_ARGS)
