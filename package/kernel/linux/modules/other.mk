@@ -952,13 +952,13 @@ $(eval $(call KernelPackage,thermal-kirkwood))
 define KernelPackage/gpio-beeper
   SUBMENU:=$(OTHER_MENU)
   TITLE:=GPIO beeper support
+  DEPENDS:=+kmod-input-core
   KCONFIG:= \
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_GPIO_BEEPER
   FILES:= \
 	$(LINUX_DIR)/drivers/input/misc/gpio-beeper.ko
   AUTOLOAD:=$(call AutoLoad,50,gpio-beeper)
-  $(call AddDepends/input)
 endef
 
 define KernelPackage/gpio-beeper/description
