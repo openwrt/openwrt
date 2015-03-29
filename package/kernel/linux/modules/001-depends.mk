@@ -5,10 +5,6 @@
 # See /LICENSE for more information.
 #
 
-define AddDepends/hid
-  DEPENDS+= +kmod-hid $(1)
-endef
-
 define AddDepends/input
   DEPENDS+= +kmod-input-core $(1)
 endef
