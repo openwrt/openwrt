@@ -513,8 +513,7 @@ $(eval $(call KernelPackage,booke-wdt))
 define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
-  $(call AddDepends/rtc)
-  DEPENDS+=+kmod-i2c-core
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_DS1307
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1307)
@@ -531,8 +530,7 @@ $(eval $(call KernelPackage,rtc-ds1307))
 define KernelPackage/rtc-ds1672
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1672 RTC support
-  $(call AddDepends/rtc)
-  DEPENDS+=+kmod-i2c-core
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_DS1672
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1672.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1672)
@@ -548,8 +546,7 @@ $(eval $(call KernelPackage,rtc-ds1672))
 define KernelPackage/rtc-isl1208
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intersil ISL1208 RTC support
-  $(call AddDepends/rtc)
-  DEPENDS+=+kmod-i2c-core
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_ISL1208
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-isl1208.ko
   AUTOLOAD:=$(call AutoProbe,rtc-isl1208)
@@ -565,8 +562,7 @@ $(eval $(call KernelPackage,rtc-isl1208))
 define KernelPackage/rtc-marvell
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SoC built-in RTC support
-  $(call AddDepends/rtc)
-  DEPENDS+=@TARGET_kirkwood||TARGET_orion||TARGET_mvebu
+  DEPENDS:=@RTC_SUPPORT @TARGET_kirkwood||TARGET_orion||TARGET_mvebu
   KCONFIG:=CONFIG_RTC_DRV_MV
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
   AUTOLOAD:=$(call AutoProbe,rtc-mv)
@@ -581,7 +577,7 @@ $(eval $(call KernelPackage,rtc-marvell))
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
-  $(call AddDepends/rtc,+kmod-i2c-core)
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_PCF8563
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf8563)
@@ -598,7 +594,7 @@ $(eval $(call KernelPackage,rtc-pcf8563))
 define KernelPackage/rtc-pcf2123
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF2123 RTC support
-  $(call AddDepends/rtc)
+  DEPENDS:=@RTC_SUPPORT
   KCONFIG:=CONFIG_RTC_DRV_PCF2123
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf2123)
@@ -613,7 +609,7 @@ $(eval $(call KernelPackage,rtc-pcf2123))
 define KernelPackage/rtc-pt7c4338
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Pericom PT7C4338 RTC support
-  $(call AddDepends/rtc,+kmod-i2c-core)
+  DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
   KCONFIG:=CONFIG_RTC_DRV_PT7C4338
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pt7c4338.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pt7c4338)
