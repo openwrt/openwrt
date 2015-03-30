@@ -66,6 +66,9 @@ brcm63xx_dt_detect() {
 	"BT Home Hub 2.0 Type A")
 		board_name="homehub2a"
 		;;
+	"BT Voyager 2110")
+		board_name="v2110"
+		;;
 	"BT Voyager V2500V")
 		board_name="v2500v_bb"
 		;;
@@ -228,9 +231,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	V2110)
-		board_name="v2110"
-		;;
 	VW6339GU)
 		board_namge="vg50"
 		;;

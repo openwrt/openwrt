@@ -302,6 +302,8 @@ $(eval $(call ImageDTB,CFEDTB,F5D7633,F5D7633,f5d7633,96348GW-10,6348,--block-si
 $(eval $(call ImageDTB,Dummy,BCM963268BU_P300,BCM963268BU_P300,bcm963268bu_p300,963268BU_P300,63268))
 # BT Home Hub 2.0 A
 $(eval $(call ImageDTB,CFEDTB,BTHOMEHUB2A,HomeHub2A,homehub2a,HOMEHUB2A,6358,--image-offset 0x20000 --block-size 0x20000))
+# BT Voyager V2110, V2110_AA, V2110_ROI
+$(eval $(call ImageDTB,CFEDTB,BTV2110,BTV2110,v2110,V2110,6348,--layoutver 5))
 # BT Voyager V2500V, V2500V_SIP_CLUB, V2500V_AA
 $(eval $(call ImageDTB,CFEDTB,BTV2500V,BTV2500V,v2500v-bb,V2500V_BB,6348,--layoutver 5))
 # Comtrend AR-5381u
