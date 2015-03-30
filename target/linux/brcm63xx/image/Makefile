@@ -205,12 +205,9 @@ define Image/Prepare
 	$(CP) ../../generic/image/relocate $(KDIR)
 	$(MAKE) -C $(KDIR)/relocate $(RELOCATE_MAKEOPTS)
 
-	$(call Image/PrepareCFELzmaKernel,)
-
 	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareCFELzmaKernelDTB,$(board)))
 
  ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
-	$(call Image/PrepareLoader,-initramfs,$(BIN_DIR),loader.elf)
 	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), \
 		$(call Image/PrepareLoaderDTB,-initramfs,$(board),$(BIN_DIR),loader.elf))
  ifneq (,$(findstring cvg834g,$(TARGET_$(PROFILE)_DTBS)))
