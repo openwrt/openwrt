@@ -15,6 +15,15 @@ define Profile/BTHOMEHUB2A/Description
 endef
 $(eval $(call Profile,BTHOMEHUB2A))
 
+define Profile/BTV2110
+  NAME:=BT Voyager V2110
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/BTV2500V/Description
+  Package set optimized for BTV2110.
+endef
+$(eval $(call Profile,BTV2110))
+
 define Profile/BTV2500V
   NAME:=BT Voyager V2500V
   PACKAGES:=kmod-b43 wpad-mini
