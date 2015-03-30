@@ -353,7 +353,7 @@ define Device/ExportVar
   $(1) : $(2):=$$($(2))
 
 endef
-Device/Export = $(foreach var,$(DEVICE_VARS) KERNEL,$(call Device/ExportVar,$(1),$(var)))
+Device/Export = $(foreach var,$(DEVICE_VARS) KERNEL KERNEL_INITRAMFS,$(call Device/ExportVar,$(1),$(var)))
 
 define Device/Check
   _TARGET = $$(if $$(filter $(PROFILE),$$(PROFILES)),install,install-disabled)
