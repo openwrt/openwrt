@@ -144,6 +144,9 @@ brcm63xx_dt_detect() {
 	"Huawei EchoLife HG556a (version C)")
 		board_name="hg556a_c"
 		;;
+	"Inteno VG50")
+		board_name="vg50"
+		;;
 	"Inventel Livebox 1")
 		board_name="livebox1"
 		;;
@@ -231,9 +234,6 @@ brcm63xx_legacy_detect() {
 	local board_name
 
 	case "$1" in
-	VW6339GU)
-		board_namge="vg50"
-		;;
 	*)
 		board_name="unknown"
 		;;

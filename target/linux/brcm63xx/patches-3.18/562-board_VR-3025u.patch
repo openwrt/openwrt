@@ -61,7 +61,7 @@
  static struct b53_platform_data WAP5813n_b53_pdata = {
  	.alias = "eth0",
  };
-@@ -2170,6 +2224,7 @@ static const struct board_info __initcon
+@@ -2115,6 +2169,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
@@ -69,7 +69,7 @@
  	&board_WAP5813n,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
-@@ -2259,6 +2314,7 @@ static struct of_device_id const bcm963x
+@@ -2204,6 +2259,7 @@ static struct of_device_id const bcm963x
  #ifdef CONFIG_BCM63XX_CPU_6368
  	{ .compatible = "brcm,bcm96368mvngr", .data = &board_96368mvngr, },
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },

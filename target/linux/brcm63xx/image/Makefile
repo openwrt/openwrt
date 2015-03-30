@@ -355,6 +355,8 @@ $(eval $(call ImageDTB,CFEDTB,HG553,HG553,hg553,HW553,6358,--rsa-signature "Echo
 $(eval $(call ImageDTB,CFEDTB,HG556a_AB,HG556a_A,hg556a-a,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x10000 --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,HG556a_AB,HG556a_B,hg556a-b,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
 $(eval $(call ImageDTB,CFEDTB,HG556a_C,HG556a_C,hg556a-c,HW556,6358,--rsa-signature "EchoLife_HG556a" --image-offset 0x20000 --block-size 0x20000 --tag-version 8))
+# Inteno VG50
+$(eval $(call ImageDTB,Dummy,VG50,vg50,vg50,VW6339GU,63268))
 # Inventel Livebox 1
 $(eval $(call ImageDTB,RedBootDTB,Livebox,livebox,livebox-blue-5g))
 # Netgear CVG834G

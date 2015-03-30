@@ -67,7 +67,7 @@
  static struct board_info __initdata board_963269bhr = {
  	.name				= "963269BHR",
  	.expected_cpu_id		= 0x63268,
-@@ -2051,6 +2111,7 @@ static const struct board_info __initcon
+@@ -1996,6 +2056,7 @@ static const struct board_info __initcon
  	&board_96368mvngr,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
@@ -75,11 +75,11 @@
  	&board_963269bhr,
  	&board_vw6339gu,
  #endif
-@@ -2138,6 +2199,7 @@ static struct of_device_id const bcm963x
+@@ -2083,6 +2144,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96368mvwg", .data = &board_96368mvwg, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_63268
 + 	{ .compatible = "brcm,bcm963268bu_p300", .data = &board_963268bu_p300, },
+ 	{ .compatible = "inteno,vg50", .data = &board_vw6339gu, },
  #endif
  #endif /* CONFIG_OF */
- 	{ },
