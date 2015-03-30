@@ -22,6 +22,7 @@ BOARD		:=
 FLASH_OFFS	:=
 FLASH_MAX	:=
 PLATFORM	:=
+CACHELINE_SIZE	:= 32
 
 CC		:= $(CROSS_COMPILE)gcc
 LD		:= $(CROSS_COMPILE)ld
@@ -36,7 +37,8 @@ CFLAGS		= -D__KERNEL__ -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
 		  -fno-common -ffreestanding -fhonour-copts \
 		  -mabi=32 -march=mips32r2 \
 		  -Wa,-32 -Wa,-march=mips32r2 -Wa,-mips32r2 -Wa,--trap \
-		  -DCONFIG_CACHELINE_SIZE=32 -DKERNEL_ADDR=$(KERNEL_ADDR)
+		  -DCONFIG_CACHELINE_SIZE=$(CACHELINE_SIZE) \
+		  -DKERNEL_ADDR=$(KERNEL_ADDR)
 
 ASFLAGS		= $(CFLAGS) -D__ASSEMBLY__
 
