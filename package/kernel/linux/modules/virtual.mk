@@ -118,10 +118,10 @@ define KernelPackage/xen-fbdev
   	CONFIG_FIRMWARE_EDID=n
   FILES:= \
   	$(LINUX_DIR)/drivers/video/fbdev/xen-fbfront.ko \
-  	$(LINUX_DIR)/drivers/video/syscopyarea.ko \
-  	$(LINUX_DIR)/drivers/video/sysfillrect.ko \
-  	$(LINUX_DIR)/drivers/video/fb_sys_fops.ko \
-  	$(LINUX_DIR)/drivers/video/sysimgblt.ko
+  	$(LINUX_DIR)/drivers/video/fbdev/core/syscopyarea.ko \
+  	$(LINUX_DIR)/drivers/video/fbdev/core/sysfillrect.ko \
+  	$(LINUX_DIR)/drivers/video/fbdev/core/fb_sys_fops.ko \
+  	$(LINUX_DIR)/drivers/video/fbdev/core/sysimgblt.ko
   AUTOLOAD:=$(call AutoLoad,07, \
   	fb \
   	syscopyarea \
