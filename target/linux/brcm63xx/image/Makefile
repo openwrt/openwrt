@@ -7,8 +7,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-LOADADDR = 0x80800000		# RAM start + 8MB
+LOADADDR = 0x80010000		# RAM start + 64K
 KERNEL_ENTRY = $(LOADADDR)	# Newer kernels add a jmp to the kernel_entry at the start of the binary
+LOADER_ENTRY = 0x80a00000	# RAM start + 10M, for relocate
 RAMSIZE = 0x02000000		# 32MB
 LZMA_TEXT_START = 0x81800000	# 32MB - 8MB
 
@@ -18,6 +19,12 @@ LOADER_MAKEOPTS= \
 		KERNEL_ENTRY=$(KERNEL_ENTRY) \
 		RAMSIZE=$(RAMSIZE) \
 		LZMA_TEXT_START=$(LZMA_TEXT_START) \
+
+RELOCATE_MAKEOPTS= \
+		CACHELINE_SIZE=16 \
+		KERNEL_ADDR=$(KERNEL_ENTRY) \
+		CROSS_COMPILE=$(TARGET_CROSS) \
+		LZMA_TEXT_START=$(LOADER_ENTRY)
 
 define rootfspad/jffs2-128k
 --align-rootfs
@@ -42,8 +49,8 @@ define Image/Build/CFEDTB
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
 		--output $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin \
-		--boardid $(4) --chipid $(5) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(2))" \
+		--boardid $(4) --chipid $(5) --entry $(LOADER_ENTRY) \
+		--load-addr $(LOADER_ENTRY) --info1 "-$(call Image/LimitName16,$(2))" \
 		$(call rootfspad/$(1)) \
 		--info2 $(1) $(6)
 endef
@@ -51,7 +58,7 @@ endef
 define Image/Build/OLDCFEDTB
 	# Generate the tagged image
 	$(TOPDIR)/scripts/brcmImage.pl -t -p \
-		-b $(4) -c $(5)	-e $(KERNEL_ENTRY) -a $(LOADADDR) \
+		-b $(4) -c $(5)	-e $(LOADER_ENTRY) -a $(LOADER_ENTRY) \
 		-k $(KDIR)/vmlinux-$(3).lzma.cfe -r $(KDIR)/root.$(1) \
 		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe.bin $(6)
 endef
@@ -60,9 +67,9 @@ define Image/Build/SPW303VCFEDTB
 	# Generate the tagged image
 	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
 		--output $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
-		--boardid $(4) --chipid $(5) --entry $(KERNEL_ENTRY) \
+		--boardid $(4) --chipid $(5) --entry $(LOADER_ENTRY) \
 		$(call rootfspad/$(1)) \
-		--load-addr $(LOADADDR) $(6)
+		--load-addr $(LOADER_ENTRY) $(6)
 	# Fix up header
 	$(STAGING_DIR_HOST)/bin/spw303v -i $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
 		-o $(BIN_DIR)/openwrt-$(2)-$(1)-cfe-sysupgrade.bin
@@ -73,10 +80,10 @@ endef
 
 define Image/Build/ZYXCFEDTB
 	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-relocate-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
 		--output $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
-		--boardid $(4) --chipid $(5) --entry $(KERNEL_ENTRY) \
-		--load-addr $(LOADADDR) --info1 "-$(call Image/LimitName16,$(2))" \
+		--boardid $(4) --chipid $(5) --entry $(LOADER_ENTRY) \
+		--load-addr $(LOADER_ENTRY) --info1 "-$(call Image/LimitName16,$(2))" \
 		$(call rootfspad/$(1)) \
 		--info2 $(1) $(6)
 	# Fix up header
@@ -162,16 +169,27 @@ define Image/PrepareLoaderDTB
 endef
 
 define Image/PrepareCFELzmaKernel
+	# CFE only allows ~4 MiB for the uncompressed kernels, but uncompressed
+	# kernel might get larger than that, so let CFE unpack and load at a
+	# higher address and make the kernel relocate itself to the expected
+	# location.
+	( \
+		dd if=$(KDIR)/relocate/loader.bin bs=32 conv=sync && \
+		perl -e '@s = stat("$(KDIR)/vmlinux$(1)"); print pack("N", @s[7])' && \
+		cat $(KDIR)/vmlinux$(1) \
+	) > $(KDIR)/vmlinux-relocate$(1)
+
 	# CFE is a LZMA nazi! It took me hours to find out the parameters!
 	# Also I think lzma has a bug cause it generates different output depending on
 	# if you use stdin / stdout or not. Use files instead of stdio here, cause
 	# otherwise CFE will complain and not boot the image.
-	$(STAGING_DIR_HOST)/bin/lzma e -d22 -fb64 -a1 $(KDIR)/vmlinux$(1) $(KDIR)/vmlinux$(1).lzma.tmp
+	$(STAGING_DIR_HOST)/bin/lzma e -d22 -fb64 -a1 $(KDIR)/vmlinux-relocate$(1) $(KDIR)/vmlinux$(1).lzma.tmp
 
 	# Strip out the length, CFE doesn't like this
 	dd if=$(KDIR)/vmlinux$(1).lzma.tmp of=$(KDIR)/vmlinux$(1).lzma.cfe bs=5 count=1
 	dd if=$(KDIR)/vmlinux$(1).lzma.tmp of=$(KDIR)/vmlinux$(1).lzma.cfe ibs=13 obs=5 skip=1 seek=1 conv=notrunc
 	rm -f $(KDIR)/vmlinux$(1).lzma.tmp
+	rm -f $(KDIR)/vmlinux-relocate$(1)
 endef
 
 define Image/PrepareCFELzmaKernelDTB
@@ -182,6 +200,11 @@ define Image/PrepareCFELzmaKernelDTB
 endef
 
 define Image/Prepare
+	# build relocation code first
+	rm -rf $(KDIR)/relocate
+	$(CP) ../../generic/image/relocate $(KDIR)
+	$(MAKE) -C $(KDIR)/relocate $(RELOCATE_MAKEOPTS)
+
 	$(call Image/PrepareCFELzmaKernel,)
 
 	$(foreach board,$(sort $(TARGET_$(PROFILE)_DTBS)), $(call Image/PrepareCFELzmaKernelDTB,$(board)))
