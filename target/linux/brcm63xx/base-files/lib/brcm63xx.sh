@@ -120,6 +120,9 @@ brcm63xx_dt_detect() {
 	"D-Link DSL-2740B/DSL-2741B rev F1")
 		board_name="dsl-274xb-f"
 		;;
+	"D-Link DSL-2750B/DSL-2751 rev D1")
+		board_name="dsl-275xb-d"
+		;;
 	"D-Link DVA-G3810BN/TL")
 		board_name="dva-g3810bn"
 		;;
