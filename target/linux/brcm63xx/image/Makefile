@@ -339,6 +339,8 @@ $(eval $(call ImageDTB,CFEDTB,DSL274XB_C,DSL274XB-C3,dsl-274xb-c,AW4139,6358))
 # D-Link DSL-2740B/DSL-2741B, rev F1
 $(eval $(call ImageDTB,CFEDTB,DSL274XB_F,DSL274XB-F1-EU,dsl-274xb-f,AW4339U,6328,--signature2 "4.06.01.EUF1" --pad 4))
 $(eval $(call ImageDTB,CFEDTB,DSL274XB_F,DSL274XB-F1-AU,dsl-274xb-f,AW4339U,6328,--signature2 "4.06.01.AUF1" --pad 4))
+# D-Link DSL-2750B/DSL-2751, rev D1
+$(eval $(call ImageDTB,Dummy,DSL275XB_D,DSL275XB-D1,dsl-275xb-d,AW5200U,6318, --pad 4))
 # D-Link DVA-G3810BN/TL
 $(eval $(call ImageDTB,CFEDTB,DVAG3810BN,DVAG3810BN,dva-g3810bn_tl,96358VW,6358))
 # Davolink DV-201AMR
