@@ -1,0 +1,47 @@
+/dts-v1/;
+
+/include/ "bcm6318.dtsi"
+
+/ {
+	model = "Broadcom BCM96318REF reference board";
+	compatible = "brcm,bcm96318ref", "brcm,bcm6318";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio1 1 1>;
+			linux,code = <0x211>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+        };
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		inet {
+			label = "96318REF:green:inet";
+			gpios = <&gpio0 8 1>;
+		};
+
+		inet_fail {
+			label = "96318REF:red:inet-fail";
+			gpios = <&gpio0 9 1>;
+		};
+
+		post_failed {
+			label = "96318REF:red:post-failed";
+			gpios = <&gpio0 11 1>;
+		};
+	};
+};
