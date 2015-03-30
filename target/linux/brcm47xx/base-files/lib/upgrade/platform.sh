@@ -6,6 +6,26 @@ get_magic_long_at() {
 	dd if="$1" skip=$2 bs=1 count=4 2>/dev/null | hexdump -v -n 4 -e '1/1 "%02x"'
 }
 
+platform_machine() {
+	grep "machine" /proc/cpuinfo | sed "s/.*:[ \t]*//"
+}
+
+platform_expected_chk_board_id() {
+	local machine=$(platform_machine)
+
+	case "$machine" in
+		"Netgear WNDR4000")	echo "U12H181T00_NETGEAR"; return;;
+	esac
+}
+
+platform_expected_cybertan_pattern() {
+	local machine=$(platform_machine)
+
+	case "$machine" in
+		"Linksys E1000 V2.1")	echo "E100"; return;;
+	esac
+}
+
 brcm47xx_identify() {
 	local magic
 
@@ -41,7 +61,13 @@ platform_check_image() {
 			local header_len=$((0x$(get_magic_long_at "$1" 4)))
 			local board_id_len=$(($header_len - 40))
 			local board_id=$(dd if="$1" skip=40 bs=1 count=$board_id_len 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			local dev_board_id=$(platform_expected_chk_board_id)
 			echo "Found CHK image with device board_id $board_id"
+
+			[ -n "$dev_board_id" -a "$board_id" != "$dev_board_id" ] && {
+				echo "Firmware board_id doesn't match device board_id ($dev_board_id)"
+				return 1
+			}
 
 			magic=$(get_magic_long_at "$1" "$header_len")
 			[ "$magic" != "48445230" ] && {
@@ -52,8 +78,14 @@ platform_check_image() {
 			return 0
 		;;
 		"cybertan")
-			magic=$(dd if="$1" bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%c"')
-			echo "Found CyberTAN image with device magic: $magic"
+			local pattern=$(dd if="$1" bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%c"')
+			local dev_pattern=$(platform_expected_cybertan_pattern)
+			echo "Found CyberTAN image with device pattern: $pattern"
+
+			[ -n "$dev_pattern" -a "$pattern" != "$dev_pattern" ] && {
+				echo "Firmware pattern doesn't match device pattern ($dev_pattern)"
+				return 1
+			}
 
 			magic=$(get_magic_long_at "$1" 32)
 			[ "$magic" != "48445230" ] && {
