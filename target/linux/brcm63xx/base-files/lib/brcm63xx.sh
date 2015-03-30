@@ -30,6 +30,12 @@ brcm63xx_dt_detect() {
 	"Broadcom 96348R reference board")
 		board_name="bcm96348r"
 		;;
+	"Broadcom BCM96318REF reference board")
+		board_name="bcm96318ref"
+		;;
+	"Broadcom BCM96318REF_P300 reference board")
+		board_name="bcm96318ref_p300"
+		;;
 	"Broadcom BCM963268BU_P300 reference board")
 		board_name="bcm963268bu_p300"
 		;;

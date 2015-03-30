@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -146,6 +146,94 @@ static struct board_info __initdata boar
+@@ -109,6 +109,51 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -48,54 +48,11 @@
 +			},
 +		},
 +	},
-+
-+	.leds = {
-+		{
-+			.name		= "96318REF_P300:red:post-failed",
-+			.gpio		= 11,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "96318REF_P300:green:inet",
-+			.gpio		= 8,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "96318REF_P300:red:inet-fail",
-+			.gpio		= 9,
-+			.active_low	= 1,
-+		},
-+		{
-+			.name		= "96318REF_P300::usb-pwron",
-+			.gpio		= 13,
-+			.active_low	= 1,
-+			.default_trigger = "default-on",
-+		},
-+	},
-+
-+	.buttons = {
-+		{
-+			.desc			= "wps",
-+			.gpio			= 33,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_WPS_BUTTON,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+		{
-+			.desc			= "reset",
-+			.gpio			= 34,
-+			.active_low		= 1,
-+			.type			= EV_KEY,
-+			.code			= KEY_RESTART,
-+			.debounce_interval	= BCM963XX_KEYS_DEBOUNCE_INTERVAL,
-+		},
-+	},
 +};
  #endif /* CONFIG_BCM63XX_CPU_6318 */
  
  /*
-@@ -1702,6 +1790,7 @@ static const struct board_info __initcon
+@@ -1665,6 +1710,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6318
  	&board_96318ref,
@@ -103,3 +60,11 @@
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
+@@ -1745,6 +1791,7 @@ static struct of_device_id const bcm963x
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6318
+ 	{ .compatible = "brcm,bcm96318ref", .data = &board_96318ref, },
++	{ .compatible = "brcm,bcm96318ref_p300", .data = &board_96318ref_p300, },
+ #endif
+ #ifdef CONFIG_BCM63XX_CPU_6328
+ 	{ .compatible = "adb,a4001n1", .data = &board_A4001N1, },
