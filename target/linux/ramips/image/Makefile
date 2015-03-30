@@ -981,7 +981,7 @@ endif
 ifeq ($(SUBTARGET),mt7621)
 define Build/Compile
 	rm -rf $(KDIR)/relocate
-	$(CP) ./relocate $(KDIR)
+	$(CP) ../../generic/image/relocate $(KDIR)
 	$(MAKE) -C $(KDIR)/relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
 endef
 endif
