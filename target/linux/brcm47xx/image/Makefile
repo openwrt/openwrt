@@ -250,56 +250,37 @@ endef
 # Subtarget mips74k
 #################################################
 
-define Image/Build/mips74k/devices-with-64k-blocks
-	$(call Image/Build/Chk,$(1),wgr614_v10_north_america,U12H139T01_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wgr614_v10_other_regions,U12H139T01_NETGEAR,1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v1,U12H155T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v2,U12H187T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3400_v3,U12H208T00_NETGEAR,1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr4000,U12H181T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr1000_v3,U12H139T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr2000v2,U12H114T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3000rp,U12H163T01_NETGEAR,1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500l_v1_north_america,U12H136T99_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500l_v1_other_regions,U12H136T99_NETGEAR,1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500l_v2,U12H172T00_NETGEAR,1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr3500_v2,U12H127T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt160n_v3,N150,3.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt310n_v2,310N,2.0.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt320n_v1,320N,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e900_v1,E900,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1000_v1_v2_v2.1,E100,1.1.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1200_v1,E120,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1500_v1,E150,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e1550_v1,1550,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2000_v1,32XN,1.0.4,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2500_v1,E25X,1.0.7,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2500_v2,E25X,2.0.0,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2500_v2.1,25RU,2.1.0,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e2500_v3,25V3,3.0.0,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e3200_v1,3200,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e4200_v1,4200,1.0.5,$(patsubst jffs2-%,jffs2,$(1)))
-endef
-
-# $(1): filesystem type.
-define Image/Build/mips74k/jffs2-64k
-	$(call Image/Build/mips74k/devices-with-64k-blocks,$(1))
-endef
-
-# $(1): filesystem type.
-define Image/Build/mips74k/jffs2-128k
-	$(call Image/Build/mips74k/devices-with-128k-blocks,$(1))
-endef
-
-# $(1): filesystem type.
-define Image/Build/mips74k/squashfs
-	$(call Image/Build/mips74k/devices-with-64k-blocks,$(1))
-	$(call Image/Build/mips74k/devices-with-128k-blocks,$(1))
-endef
-
 ifeq ($(SUBTARGET),mips74k)
+  $(eval $(call LinksysDevice,wrt160n-v3,N150,3.0.3))
+  $(eval $(call LinksysDevice,wrt310n-v2,310N,2.0.1))
+  $(eval $(call LinksysDevice,wrt320n-v1,320N,1.0.5))
+  $(eval $(call LinksysDevice,e900-v1,E900,1.0.4))
+  $(eval $(call LinksysDevice,e1000-v1-v2-v2.1,E100,1.1.3))
+  $(eval $(call LinksysDevice,e1200-v1,E120,1.0.3))
   $(eval $(call LinksysDevice,e1200-v2-new,E122,1.0.4))
+  $(eval $(call LinksysDevice,e1500-v1,E150,1.0.5))
+  $(eval $(call LinksysDevice,e1550-v1,1550,1.0.3))
+  $(eval $(call LinksysDevice,e2000-v1,32XN,1.0.4))
+  $(eval $(call LinksysDevice,e2500-v1,E25X,1.0.7))
+  $(eval $(call LinksysDevice,e2500-v2,E25X,2.0.0))
+  $(eval $(call LinksysDevice,e2500-v2.1,25RU,2.1.0))
+  $(eval $(call LinksysDevice,e2500-v3,25V3,3.0.0))
+  $(eval $(call LinksysDevice,e3200-v1,3200,1.0.1))
+  $(eval $(call LinksysDevice,e4200-v1,4200,1.0.5))
+  $(eval $(call NetgearDevice,wgr614-v10_north-america,U12H139T01_NETGEAR,2))
+  $(eval $(call NetgearDevice,wgr614-v10_other-regions,U12H139T01_NETGEAR,1))
+  $(eval $(call NetgearDevice,wndr3400-v1,U12H155T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wndr3400-v2,U12H187T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wndr3400-v3,U12H208T00_NETGEAR,1))
   $(eval $(call NetgearDevice,wndr3700-v3,U12H194T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wndr4000,U12H181T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wnr1000-v3,U12H139T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wnr2000v2,U12H114T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wnr3000rp,U12H163T01_NETGEAR,1))
+  $(eval $(call NetgearDevice,wnr3500l-v1-north-america,U12H136T99_NETGEAR,2))
+  $(eval $(call NetgearDevice,wnr3500l-v1-other-regions,U12H136T99_NETGEAR,1))
+  $(eval $(call NetgearDevice,wnr3500l-v2,U12H172T00_NETGEAR,1))
+  $(eval $(call NetgearDevice,wnr3500-v2,U12H127T00_NETGEAR,2))
 endif
 
 #################################################
