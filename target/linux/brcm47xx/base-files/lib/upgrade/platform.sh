@@ -89,6 +89,7 @@ platform_check_image() {
 
 	local file_type=$(brcm47xx_identify "$1")
 	local magic
+	local error=0
 
 	case "$file_type" in
 		"chk")
@@ -100,16 +101,14 @@ platform_check_image() {
 
 			[ -n "$dev_board_id" -a "$board_id" != "$dev_board_id" ] && {
 				echo "Firmware board_id doesn't match device board_id ($dev_board_id)"
-				return 1
+				error=1
 			}
 
 			magic=$(get_magic_long_at "$1" "$header_len")
 			[ "$magic" != "48445230" ] && {
 				echo "No valid TRX firmware in the CHK image"
-				return 1
+				error=1
 			}
-
-			return 0
 		;;
 		"cybertan")
 			local pattern=$(dd if="$1" bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%c"')
@@ -118,25 +117,24 @@ platform_check_image() {
 
 			[ -n "$dev_pattern" -a "$pattern" != "$dev_pattern" ] && {
 				echo "Firmware pattern doesn't match device pattern ($dev_pattern)"
-				return 1
+				error=1
 			}
 
 			magic=$(get_magic_long_at "$1" 32)
 			[ "$magic" != "48445230" ] && {
 				echo "No valid TRX firmware in the CyberTAN image"
-				return 1
+				error=1
 			}
-
-			return 0
 		;;
 		"trx")
-			return 0
 		;;
 		*)
 			echo "Invalid image type. Please use only .trx files"
-			return 1
+			error=1
 		;;
 	esac
+
+	return $error
 }
 
 platform_do_upgrade_chk() {
