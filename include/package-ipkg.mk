@@ -21,7 +21,7 @@ define BuildIPKGVariable
 ifdef Package/$(1)/$(2)
   $$(IPKG_$(1)) : VAR_$(2)$(3)=$$(Package/$(1)/$(2))
   $(call shexport,Package/$(1)/$(2))
-  $(1)_COMMANDS += echo "$$$$$$$$$(call shvar,Package/$(1)/$(2))" > $(2)$(3); $(if $(4),chmod 0755 $(2)$(3))
+  $(1)_COMMANDS += echo "$$$$$$$$$(call shvar,Package/$(1)/$(2))" > $(2)$(3); $(if $(4),chmod 0755 $(2)$(3));
 endif
 endef
 
