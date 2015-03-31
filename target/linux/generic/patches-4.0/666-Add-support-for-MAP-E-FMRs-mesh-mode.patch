@@ -14,10 +14,8 @@ Signed-off-by: Steven Barth <cyrus@openwrt.org>
  net/ipv6/ip6_tunnel.c          | 276 +++++++++++++++++++++++++++++++++++++++--
  3 files changed, 291 insertions(+), 11 deletions(-)
 
-Index: linux-4.0-rc5/include/net/ip6_tunnel.h
-===================================================================
---- linux-4.0-rc5.orig/include/net/ip6_tunnel.h
-+++ linux-4.0-rc5/include/net/ip6_tunnel.h
+--- a/include/net/ip6_tunnel.h
++++ b/include/net/ip6_tunnel.h
 @@ -15,6 +15,18 @@
  /* determine capability on a per-packet basis */
  #define IP6_TNL_F_CAP_PER_PACKET 0x40000
@@ -45,10 +43,8 @@ Index: linux-4.0-rc5/include/net/ip6_tunnel.h
  
  	__be16			i_flags;
  	__be16			o_flags;
-Index: linux-4.0-rc5/include/uapi/linux/if_tunnel.h
-===================================================================
---- linux-4.0-rc5.orig/include/uapi/linux/if_tunnel.h
-+++ linux-4.0-rc5/include/uapi/linux/if_tunnel.h
+--- a/include/uapi/linux/if_tunnel.h
++++ b/include/uapi/linux/if_tunnel.h
 @@ -57,10 +57,23 @@ enum {
  	IFLA_IPTUN_ENCAP_FLAGS,
  	IFLA_IPTUN_ENCAP_SPORT,
@@ -73,10 +69,8 @@ Index: linux-4.0-rc5/include/uapi/linux/if_tunnel.h
  enum tunnel_encap_types {
  	TUNNEL_ENCAP_NONE,
  	TUNNEL_ENCAP_FOU,
-Index: linux-4.0-rc5/net/ipv6/ip6_tunnel.c
-===================================================================
---- linux-4.0-rc5.orig/net/ipv6/ip6_tunnel.c
-+++ linux-4.0-rc5/net/ipv6/ip6_tunnel.c
+--- a/net/ipv6/ip6_tunnel.c
++++ b/net/ipv6/ip6_tunnel.c
 @@ -16,6 +16,8 @@
   *      as published by the Free Software Foundation; either version
   *      2 of the License, or (at your option) any later version.
