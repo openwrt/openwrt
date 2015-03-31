@@ -144,12 +144,12 @@ struct yaffs_cache {
  */
 
 struct yaffs_tags {
-	unsigned chunk_id:20;
-	unsigned serial_number:2;
-	unsigned n_bytes_lsb:10;
-	unsigned obj_id:18;
-	unsigned ecc:12;
-	unsigned n_bytes_msb:2;
+	u32 chunk_id:20;
+	u32 serial_number:2;
+	u32 n_bytes_lsb:10;
+	u32 obj_id:18;
+	u32 ecc:12;
+	u32 n_bytes_msb:2;
 };
 
 union yaffs_tags_union {
@@ -287,9 +287,9 @@ enum yaffs_block_state {
 
 struct yaffs_block_info {
 
-	int soft_del_pages:10;	/* number of soft deleted pages */
-	int pages_in_use:10;	/* number of pages in use */
-	unsigned block_state:4;	/* One of the above block states. */
+	s32 soft_del_pages:10;	/* number of soft deleted pages */
+	s32 pages_in_use:10;	/* number of pages in use */
+	u32 block_state:4;	/* One of the above block states. */
 				/* NB use unsigned because enum is sometimes
 				 * an int */
 	u32 needs_retiring:1;	/* Data has failed on this block, */
@@ -688,8 +688,8 @@ struct yaffs_dev {
 	/* Block Info */
 	struct yaffs_block_info *block_info;
 	u8 *chunk_bits;		/* bitmap of chunks in use */
-	unsigned block_info_alt:1;	/* allocated using alternative alloc */
-	unsigned chunk_bits_alt:1;	/* allocated using alternative alloc */
+	u8 block_info_alt:1;	/* allocated using alternative alloc */
+	u8 chunk_bits_alt:1;	/* allocated using alternative alloc */
 	int chunk_bit_stride;	/* Number of bytes of chunk_bits per block.
 				 * Must be consistent with chunks_per_block.
 				 */
@@ -776,6 +776,7 @@ struct yaffs_dev {
 	u32 n_page_writes;
 	u32 n_page_reads;
 	u32 n_erasures;
+	u32 n_bad_queries;
 	u32 n_bad_markings;
 	u32 n_erase_failures;
 	u32 n_gc_copies;
@@ -854,6 +855,9 @@ int yaffs_rename_obj(struct yaffs_obj *old_dir, const YCHAR * old_name,
 
 int yaffs_unlinker(struct yaffs_obj *dir, const YCHAR * name);
 int yaffs_del_obj(struct yaffs_obj *obj);
+struct yaffs_obj *yaffs_retype_obj(struct yaffs_obj *obj,
+				   enum yaffs_obj_type type);
+
 
 int yaffs_get_obj_name(struct yaffs_obj *obj, YCHAR * name, int buffer_size);
 loff_t yaffs_get_obj_length(struct yaffs_obj *obj);
@@ -872,10 +876,13 @@ struct yaffs_obj *yaffs_create_file(struct yaffs_obj *parent,
 				    const YCHAR *name, u32 mode, u32 uid,
 				    u32 gid);
 
-int yaffs_flush_file(struct yaffs_obj *obj, int update_time, int data_sync);
+int yaffs_flush_file(struct yaffs_obj *in,
+		     int update_time,
+		     int data_sync,
+		     int discard_cache);
 
 /* Flushing and checkpointing */
-void yaffs_flush_whole_cache(struct yaffs_dev *dev);
+void yaffs_flush_whole_cache(struct yaffs_dev *dev, int discard);
 
 int yaffs_checkpoint_save(struct yaffs_dev *dev);
 int yaffs_checkpoint_restore(struct yaffs_dev *dev);
@@ -978,7 +985,7 @@ u32 yaffs_get_group_base(struct yaffs_dev *dev, struct yaffs_tnode *tn,
 
 int yaffs_is_non_empty_dir(struct yaffs_obj *obj);
 
-int yaffs_format_dev(struct yaffs_dev *dev);
+int yaffs_guts_format_dev(struct yaffs_dev *dev);
 
 void yaffs_addr_to_chunk(struct yaffs_dev *dev, loff_t addr,
 				int *chunk_out, u32 *offset_out);

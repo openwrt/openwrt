@@ -4,7 +4,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
 --- a/fs/yaffs2/yaffs_vfs.c
 +++ b/fs/yaffs2/yaffs_vfs.c
-@@ -2634,6 +2634,7 @@ static const struct super_operations yaf
+@@ -2605,6 +2605,7 @@ static const struct super_operations yaf
  
  struct yaffs_options {
  	int inband_tags;
@@ -12,7 +12,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	int skip_checkpoint_read;
  	int skip_checkpoint_write;
  	int no_cache;
-@@ -2673,6 +2674,8 @@ static int yaffs_parse_options(struct ya
+@@ -2644,6 +2645,8 @@ static int yaffs_parse_options(struct ya
  
  		if (!strcmp(cur_opt, "inband-tags")) {
  			options->inband_tags = 1;
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		} else if (!strcmp(cur_opt, "tags-ecc-off")) {
  			options->tags_ecc_on = 0;
  			options->tags_ecc_overridden = 1;
-@@ -2746,7 +2749,6 @@ static struct super_block *yaffs_interna
+@@ -2717,7 +2720,6 @@ static struct super_block *yaffs_interna
  	struct yaffs_param *param;
  
  	int read_only = 0;
@@ -29,7 +29,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  	struct yaffs_options options;
  
-@@ -2786,6 +2788,9 @@ static struct super_block *yaffs_interna
+@@ -2757,6 +2759,9 @@ static struct super_block *yaffs_interna
  
  	memset(&options, 0, sizeof(options));
  
@@ -39,7 +39,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	if (yaffs_parse_options(&options, data_str)) {
  		/* Option parsing failed */
  		return NULL;
-@@ -2819,17 +2824,22 @@ static struct super_block *yaffs_interna
+@@ -2790,17 +2795,22 @@ static struct super_block *yaffs_interna
  	}
  
  	/* Added NCB 26/5/2006 for completeness */
@@ -68,7 +68,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		return NULL;
  
  	/* OK, so if we got here, we have an MTD that's NAND and looks
-@@ -2890,7 +2900,8 @@ static struct super_block *yaffs_interna
+@@ -2857,7 +2867,8 @@ static struct super_block *yaffs_interna
  
  	param->n_reserved_blocks = 5;
  	param->n_caches = (options.no_cache) ? 0 : 10;
@@ -80,15 +80,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	if (options.lazy_loading_overridden)
 --- a/fs/yaffs2/yaffs_mtdif.c
 +++ b/fs/yaffs2/yaffs_mtdif.c
-@@ -16,6 +16,7 @@
- #include "yaffs_mtdif.h"
- 
- #include "linux/mtd/mtd.h"
-+#include "uapi/linux/major.h"
- #include "linux/types.h"
- #include "linux/time.h"
- #include "linux/mtd/nand.h"
-@@ -276,7 +277,8 @@ struct mtd_info * yaffs_get_mtd_device(d
+@@ -278,7 +278,8 @@ struct mtd_info * yaffs_get_mtd_device(d
  	return mtd;
  }
  
@@ -98,7 +90,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  {
  	if (yaffs_version == 2) {
  		if ((WRITE_SIZE(mtd) < YAFFS_MIN_YAFFS2_CHUNK_SIZE ||
-@@ -295,6 +297,12 @@ int yaffs_verify_mtd(struct mtd_info *mt
+@@ -297,6 +298,12 @@ int yaffs_verify_mtd(struct mtd_info *mt
  			);
  			return -1;
  		}
