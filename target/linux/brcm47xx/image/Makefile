@@ -196,24 +196,12 @@ endif
 
 # $(1): filesystem type.
 define Image/Build/legacy/devices-with-128k-blocks
-	$(call Image/Build/CyberTAN,$(1),wrt54gs,W54S,4.80.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrtsl54gs,W54U,2.08.1,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/trxV2,$(1),wrt54g3gv2-vf,3G2V,3.00.24,$(patsubst jffs2-%,jffs2,$(1)),6)
 	$(call Image/Build/wgt634u,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 endef
 
 # $(1): filesystem type.
 define Image/Build/legacy/devices-with-64k-blocks
-	$(call Image/Build/Chk,$(1),wgr614_v8,U12H072T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wndr3300_v1,U12H093T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/Chk,$(1),wnr834b_v2,U12H081T00_NETGEAR,2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt54g3g,W54F,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt54g3g-em,W3GN,2.20.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt54g,W54G,4.71.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt54gs_v4,W54s,1.09.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt150n,N150,1.51.3,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt160n_v1,N150,1.50.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt300n_v1,EWCB,1.03.6,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/dwl3150,$(1),$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Edi,$(1),ps1208mfg,$(patsubst jffs2-%,jffs2,$(1)))
 	$(call Image/Build/Huawei,$(1),e970,$(1))
@@ -238,6 +226,37 @@ define Image/Build/legacy/squashfs
 	$(call Image/Build/legacy/devices-with-64k-blocks,$(1))
 	$(call Image/Build/legacy/devices-with-128k-blocks,$(1))
 endef
+
+define Device/linksys-wrt54gs
+	$(Device/linksys)
+	FILESYSTEMS := $(FS_128K)
+	DEVICE_ID := W54S
+	VERSION := 4.80.1
+endef
+
+define Device/linksys-wrtsl54gs
+	$(Device/linksys)
+	FILESYSTEMS := $(FS_128K)
+	DEVICE_ID := W54U
+	VERSION := 2.08.1
+endef
+
+ifeq ($(SUBTARGET),legacy)
+  TARGET_DEVICES += \
+	linksys-wrt54gs \
+	linksys-wrtsl54gs
+
+  $(eval $(call LinksysDevice,wrt54g3g,W54F,2.20.1))
+  $(eval $(call LinksysDevice,wrt54g3g-em,W3GN,2.20.1))
+  $(eval $(call LinksysDevice,wrt54g,W54G,4.71.1))
+  $(eval $(call LinksysDevice,wrt54gs_v4,W54s,1.09.1))
+  $(eval $(call LinksysDevice,wrt150n,N150,1.51.3))
+  $(eval $(call LinksysDevice,wrt160n_v1,N150,1.50.1))
+  $(eval $(call LinksysDevice,wrt300n_v1,EWCB,1.03.6))
+  $(eval $(call NetgearDevice,wgr614_v8,U12H072T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wndr3300_v1,U12H093T00_NETGEAR,2))
+  $(eval $(call NetgearDevice,wnr834b_v2,U12H081T00_NETGEAR,2))
+endif
 
 #################################################
 # Subtarget mips74k
