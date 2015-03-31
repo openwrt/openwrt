@@ -235,7 +235,6 @@ int yaffs_summary_read(struct yaffs_dev *dev,
 	if (result == YAFFS_OK) {
 		/* Verify header */
 		if (hdr.version != YAFFS_SUMMARY_VERSION ||
-		    hdr.block != blk ||
 		    hdr.seq != bi->seq_number ||
 		    hdr.sum != yaffs_summary_sum(dev))
 			result = YAFFS_FAIL;

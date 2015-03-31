@@ -1193,12 +1193,14 @@ static inline int yaffs2_scan_chunk(struct yaffs_dev *dev,
 		}
 
 		if (!in->valid && in->variant_type !=
-		    (oh ? oh->type : tags.extra_obj_type))
+		    (oh ? oh->type : tags.extra_obj_type)) {
 			yaffs_trace(YAFFS_TRACE_ERROR,
-				"yaffs tragedy: Bad object type, %d != %d, for object %d at chunk %d during scan",
+				"yaffs tragedy: Bad type, %d != %d, for object %d at chunk %d during scan",
 				oh ? oh->type : tags.extra_obj_type,
 				in->variant_type, tags.obj_id,
 				chunk);
+			in = yaffs_retype_obj(in, oh ? oh->type : tags.extra_obj_type);
+		}
 
 		if (!in->valid &&
 		    (tags.obj_id == YAFFS_OBJECTID_ROOT ||
@@ -1439,7 +1441,7 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 		bi++;
 	}
 
-	yaffs_trace(YAFFS_TRACE_SCAN, "%d blocks to be sorted...", n_to_scan);
+	yaffs_trace(YAFFS_TRACE_ALWAYS, "%d blocks to be sorted...", n_to_scan);
 
 	cond_resched();
 

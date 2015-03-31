@@ -1,0 +1,25 @@
+--- a/fs/yaffs2/yaffs_vfs.c
++++ b/fs/yaffs2/yaffs_vfs.c
+@@ -774,7 +774,21 @@ static int yaffs_sync_object(struct file
+ }
+ 
+ 
+-#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 22))
++#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0))
++static const struct file_operations yaffs_file_operations = {
++	.read = new_sync_read,
++	.read_iter = generic_file_read_iter,
++	.write = new_sync_write,
++	.write_iter = generic_file_write_iter,
++	.mmap = generic_file_mmap,
++	.flush = yaffs_file_flush,
++	.fsync = yaffs_sync_object,
++	.splice_read = generic_file_splice_read,
++	.splice_write = iter_file_splice_write,
++	.llseek = generic_file_llseek,
++};
++
++#elif (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 22))
+ static const struct file_operations yaffs_file_operations = {
+ 	.read = do_sync_read,
+ 	.write = do_sync_write,
