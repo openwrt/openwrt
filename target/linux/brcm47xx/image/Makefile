@@ -151,9 +151,27 @@ define Device/linksys
 	IMAGE/bin := trx-with-loader | linksys-bin
 endef
 
+define LinksysDevice
+  define Device/linksys-$(1)
+	$$(Device/linksys)
+	DEVICE_ID := $(2)
+	VERSION := $(3)
+  endef
+  TARGET_DEVICES += linksys-$(1)
+endef
+
 define Device/netgear
 	IMAGES := chk
 	IMAGE/chk := trx-with-loader | netgear-chk
+endef
+
+define NetgearDevice
+  define Device/netgear-$(1)
+	$$(Device/netgear)
+	BOARD_ID := $(2)
+	REGION := $(3)
+  endef
+  TARGET_DEVICES += netgear-$(1)
 endef
 
 #################################################
@@ -279,22 +297,9 @@ define Image/Build/mips74k/squashfs
 	$(call Image/Build/mips74k/devices-with-128k-blocks,$(1))
 endef
 
-define Device/linksys-e1200-v2
-	$(Device/linksys)
-	DEVICE_ID := E122
-	VERSION := 1.0.4
-endef
-
-define Device/netgear-wndr3700-v3
-	$(Device/netgear)
-	BOARD_ID := U12H194T00_NETGEAR
-	REGION := 2
-endef
-
 ifeq ($(SUBTARGET),mips74k)
-	TARGET_DEVICES += \
-		linksys-e1200-v2 \
-		netgear-wndr3700-v3
+  $(eval $(call LinksysDevice,e1200-v2-new,E122,1.0.4))
+  $(eval $(call NetgearDevice,wndr3700-v3,U12H194T00_NETGEAR,2))
 endif
 
 #################################################
