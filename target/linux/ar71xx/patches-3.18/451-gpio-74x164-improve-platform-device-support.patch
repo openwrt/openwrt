@@ -1,6 +1,14 @@
 --- a/drivers/gpio/gpio-74x164.c
 +++ b/drivers/gpio/gpio-74x164.c
-@@ -107,8 +107,18 @@ static int gen_74x164_direction_output(s
+@@ -12,6 +12,7 @@
+ #include <linux/init.h>
+ #include <linux/mutex.h>
+ #include <linux/spi/spi.h>
++#include <linux/spi/74x164.h>
+ #include <linux/gpio.h>
+ #include <linux/of_gpio.h>
+ #include <linux/slab.h>
+@@ -107,8 +108,18 @@ static int gen_74x164_direction_output(s
  static int gen_74x164_probe(struct spi_device *spi)
  {
  	struct gen_74x164_chip *chip;
@@ -19,7 +27,7 @@
  	/*
  	 * bits_per_word cannot be configured in platform data
  	 */
-@@ -130,18 +140,27 @@ static int gen_74x164_probe(struct spi_d
+@@ -130,18 +141,28 @@ static int gen_74x164_probe(struct spi_d
  	chip->gpio_chip.set = gen_74x164_set_value;
  	chip->gpio_chip.base = -1;
  
@@ -35,6 +43,7 @@
 +			goto exit_destroy;
 +		}
 +	} else if (pdata) {
++		chip->gpio_chip.base = pdata->base;
 +		chip->registers = pdata->num_registers;
  	}
  
@@ -52,6 +61,27 @@
  	chip->gpio_chip.can_sleep = true;
  	chip->gpio_chip.dev = &spi->dev;
  	chip->gpio_chip.owner = THIS_MODULE;
+@@ -174,17 +195,19 @@ static int gen_74x164_remove(struct spi_
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_OF
+ static const struct of_device_id gen_74x164_dt_ids[] = {
+ 	{ .compatible = "fairchild,74hc595" },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, gen_74x164_dt_ids);
++#endif /* CONFIG_OF */
+ 
+ static struct spi_driver gen_74x164_driver = {
+ 	.driver = {
+ 		.name		= "74x164",
+ 		.owner		= THIS_MODULE,
+-		.of_match_table	= gen_74x164_dt_ids,
++		.of_match_table	= of_match_ptr(gen_74x164_dt_ids),
+ 	},
+ 	.probe		= gen_74x164_probe,
+ 	.remove		= gen_74x164_remove,
 --- /dev/null
 +++ b/include/linux/spi/74x164.h
 @@ -0,0 +1,13 @@
@@ -68,3 +98,14 @@
 +};
 +
 +#endif
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -821,7 +821,7 @@ config GPIO_MC33880
+ 
+ config GPIO_74X164
+ 	tristate "74x164 serial-in/parallel-out 8-bits shift register"
+-	depends on SPI_MASTER && OF
++	depends on SPI_MASTER
+ 	help
+ 	  Driver for 74x164 compatible serial-in/parallel-out 8-outputs
+ 	  shift registers. This driver can be used to provide access
