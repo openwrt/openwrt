@@ -80,7 +80,7 @@ endef
 
 define Image/Build/ZYXCFEDTB
 	# Generate the tagged image
-	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-relocate-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
+	$(STAGING_DIR_HOST)/bin/imagetag -i $(KDIR)/vmlinux-$(3).lzma.cfe -f $(KDIR)/root.$(1) \
 		--output $(BIN_DIR)/openwrt-$(2)-$(1).tmp \
 		--boardid $(4) --chipid $(5) --entry $(LOADER_ENTRY) \
 		--load-addr $(LOADER_ENTRY) --info1 "-$(call Image/LimitName16,$(2))" \
