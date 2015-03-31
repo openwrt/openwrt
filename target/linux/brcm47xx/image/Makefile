@@ -178,24 +178,17 @@ endef
 # Subtarget generic
 #################################################
 
-# $(1): filesystem type.
-define Image/Build/generic/jffs2-64k
-	# BCM4705 with tg3
-	$(call Image/Build/CyberTAN,$(1),wrt300n_v11,EWC2,1.51.2,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt310n_v1,310N,1.0.10,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt350n_v1,EWCG,1.04.1,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),wrt610n_v1,610N,1.0.1,$(patsubst jffs2-%,jffs2,$(1)))
+ifeq ($(SUBTARGET),generic)
+  # BCM4705 with tg3
+  $(eval $(call LinksysDevice,wrt300n-v1.1,EWC2,1.51.2))
+  $(eval $(call LinksysDevice,wrt310n-v1,310N,1.0.10))
+  $(eval $(call LinksysDevice,wrt350n-v1,EWCG,1.04.1))
+  $(eval $(call LinksysDevice,wrt610n-v1,610N,1.0.1))
 
-	# BCMA SoC with SSB WiFi
-	$(call Image/Build/CyberTAN,$(1),wrt610n_v2,610N,2.0.0,$(patsubst jffs2-%,jffs2,$(1)))
-	$(call Image/Build/CyberTAN,$(1),e3000_v1,61XN,1.0.3,$(patsubst jffs2-%,jffs2,$(1)))
-endef
-
-# $(1): filesystem type.
-define Image/Build/generic/squashfs
-	$(call Image/Build/generic/jffs2-64k,$(1))
-	$(call Image/Build/generic/jffs2-128k,$(1))
-endef
+  # BCMA SoC with SSB WiFi
+  $(eval $(call LinksysDevice,wrt610n-v2,610N,2.0.0))
+  $(eval $(call LinksysDevice,e3000-v1,61XN,1.0.3))
+endif
 
 #################################################
 # Subtarget legacy
