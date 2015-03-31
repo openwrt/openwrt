@@ -138,8 +138,9 @@ DEVICE_VARS += DEVICE_ID VERSION
 DEVICE_VARS += BOARD_ID REGION
 
 define Device/Default
+	KERNEL := kernel-bin
 	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
-	KERNEL_IMAGE = vmlinux.lzma
+	KERNEL_NAME = vmlinux.lzma
 	FILESYSTEMS := $(FS_64K)
 	IMAGES := trx
 	IMAGE/trx := trx-with-loader
