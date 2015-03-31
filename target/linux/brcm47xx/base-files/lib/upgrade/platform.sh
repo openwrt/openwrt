@@ -14,7 +14,24 @@ platform_expected_chk_board_id() {
 	local machine=$(platform_machine)
 
 	case "$machine" in
+		"Netgear WGR614 V8")	echo "U12H072T00_NETGEAR"; return;;
+		"Netgear WGR614 V9")	echo "U12H094T00_NETGEAR"; return;;
+		"Netgear WGR614 V10")	echo "U12H139T01_NETGEAR"; return;;
+		"Netgear WNDR3300")	echo "U12H093T00_NETGEAR"; return;;
+		"Netgear WNDR3400 V1")	echo "U12H155T00_NETGEAR"; return;;
+		"Netgear WNDR3400 V2")	echo "U12H187T00_NETGEAR"; return;;
+		"Netgear WNDR3400 V3")	echo "U12H208T00_NETGEAR"; return;;
+		"Netgear WNDR3400 Vcna")	echo "U12H155T01_NETGEAR"; return;;
+		"Netgear WNDR3700 V3")	echo "U12H194T00_NETGEAR"; return;;
 		"Netgear WNDR4000")	echo "U12H181T00_NETGEAR"; return;;
+		"Netgear WNDR4500 V1")	echo "U12H189T00_NETGEAR"; return;;
+		"Netgear WNDR4500 V2")	echo "U12H224T00_NETGEAR"; return;;
+		"Netgear WNR2000 V2")	echo "U12H114T00_NETGEAR"; return;;
+		"Netgear WNR3500L")	echo "U12H136T99_NETGEAR"; return;;
+		"Netgear WNR3500U")	echo "U12H136T00_NETGEAR"; return;;
+		"Netgear WNR3500 V2")	echo "U12H127T00_NETGEAR"; return;;
+		"Netgear WNR3500 V2vc")	echo "U12H127T70_NETGEAR"; return;;
+		"Netgear WNR834B V2")	echo "U12H081T00_NETGEAR"; return;;
 	esac
 }
 
@@ -22,7 +39,24 @@ platform_expected_cybertan_pattern() {
 	local machine=$(platform_machine)
 
 	case "$machine" in
+		"Linksys E900 V1")	echo "E900"; return;;
+		"Linksys E1000 V1")	echo "E100"; return;;
+		"Linksys E1000 V2")	echo "E100"; return;;
 		"Linksys E1000 V2.1")	echo "E100"; return;;
+		"Linksys E1200 V2")	echo "E122"; return;;
+		"Linksys E2000 V1")	echo "32XN"; return;;
+		"Linksys E3000 V1")	echo "61XN"; return;;
+		"Linksys E3200 V1")	echo "3200"; return;;
+		"Linksys E4200 V1")	echo "4200"; return;;
+		"Linksys WRT150N V1.1")	echo "N150"; return;;
+		"Linksys WRT150N V1")	echo "N150"; return;;
+		"Linksys WRT160N V1")	echo "N150"; return;;
+		"Linksys WRT160N V3")	echo "N150"; return;;
+		"Linksys WRT300N V1.1")	echo "EWCB"; return;;
+		"Linksys WRT310N V1")	echo "310N"; return;;
+		"Linksys WRT310N V2")	echo "310N"; return;;
+		"Linksys WRT610N V1")	echo "610N"; return;;
+		"Linksys WRT610N V2")	echo "610N"; return;;
 	esac
 }
 
