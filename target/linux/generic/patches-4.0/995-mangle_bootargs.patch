@@ -1,0 +1,55 @@
+--- a/init/main.c
++++ b/init/main.c
+@@ -368,6 +368,26 @@ static void __init setup_command_line(ch
+ 	strcpy(static_command_line, command_line);
+ }
+ 
++#ifdef CONFIG_MANGLE_BOOTARGS
++static void __init mangle_bootargs(char *command_line)
++{
++	char *rootdev;
++	char *rootfs;
++
++	rootdev = strstr(command_line, "root=/dev/mtdblock");
++	strncpy(rootdev, "mangled_rootblock=", 18);
++
++	rootfs = strstr(command_line, "rootfstype");
++	strncpy(rootfs, "mangled_fs", 10);
++
++}
++#else
++static void __init mangle_bootargs(char *command_line)
++{
++}
++#endif
++
++
+ /*
+  * We need to finalize in a non-__init function or else race conditions
+  * between the root thread and the init thread may cause start_kernel to
+@@ -519,6 +539,7 @@ asmlinkage __visible void __init start_k
+ 	pr_notice("%s", linux_banner);
+ 	setup_arch(&command_line);
+ 	mm_init_cpumask(&init_mm);
++	mangle_bootargs(command_line);
+ 	setup_command_line(command_line);
+ 	setup_nr_cpu_ids();
+ 	setup_per_cpu_areas();
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1583,6 +1583,15 @@ config EMBEDDED
+ 	  an embedded system so certain expert options are available
+ 	  for configuration.
+ 
++config MANGLE_BOOTARGS
++	bool "Rename offending bootargs"
++	depends on EXPERT
++	help
++	  Sometimes the bootloader passed bogus root= and rootfstype=
++	  parameters to the kernel, and while you want to ignore them,
++	  you need to know the values f.e. to support dual firmware
++	  layouts on the flash.
++
+ config HAVE_PERF_EVENTS
+ 	bool
+ 	help
