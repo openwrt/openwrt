@@ -1,0 +1,56 @@
+From 4faba89e3ffbb1c5f6232651375b9b3212b50f02 Mon Sep 17 00:00:00 2001
+From: Andy Gross <agross@codeaurora.org>
+Date: Thu, 15 Jan 2015 17:56:02 -0800
+Subject: [PATCH] spi: qup: Ensure done detection
+
+This patch fixes an issue where a SPI transaction has completed, but the done
+condition is missed.  This occurs because at the time of interrupt the
+MAX_INPUT_DONE_FLAG is not asserted.  However, in the process of reading blocks
+of data from the FIFO, the last portion of data comes in.
+
+The opflags read at the beginning of the irq handler no longer matches the
+current opflag state.  To get around this condition, the block read function
+should update the opflags so that done detection is correct after the return.
+
+Change-Id: If109e0eeb432f96000d765c4b34dbb2269f8093f
+Signed-off-by: Andy Gross <agross@codeaurora.org>
+---
+ drivers/spi/spi-qup.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+--- a/drivers/spi/spi-qup.c
++++ b/drivers/spi/spi-qup.c
+@@ -298,7 +298,7 @@ static void spi_qup_fifo_write(struct sp
+ }
+ 
+ static void spi_qup_block_read(struct spi_qup *controller,
+-	struct spi_transfer *xfer)
++	struct spi_transfer *xfer, u32 *opflags)
+ {
+ 	u32 data;
+ 	u32 reads_per_blk = controller->in_blk_sz >> 2;
+@@ -327,10 +327,12 @@ static void spi_qup_block_read(struct sp
+ 
+ 	/*
+ 	 * Due to extra stickiness of the QUP_OP_IN_SERVICE_FLAG during block
+-	 * reads, it has to be cleared again at the very end
++	 * reads, it has to be cleared again at the very end.  However, be sure
++	 * to refresh opflags value because MAX_INPUT_DONE_FLAG may now be
++	 * present and this is used to determine if transaction is complete
+ 	 */
+-	if (readl_relaxed(controller->base + QUP_OPERATIONAL) &
+-		QUP_OP_MAX_INPUT_DONE_FLAG)
++	*opflags = readl_relaxed(controller->base + QUP_OPERATIONAL);
++	if (*opflags & QUP_OP_MAX_INPUT_DONE_FLAG)
+ 		writel_relaxed(QUP_OP_IN_SERVICE_FLAG,
+ 			controller->base + QUP_OPERATIONAL);
+ 
+@@ -633,7 +635,7 @@ static irqreturn_t spi_qup_qup_irq(int i
+ 	if (!controller->use_dma) {
+ 		if (opflags & QUP_OP_IN_SERVICE_FLAG) {
+ 			if (opflags & QUP_OP_IN_BLOCK_READ_REQ)
+-				spi_qup_block_read(controller, xfer);
++				spi_qup_block_read(controller, xfer, &opflags);
+ 			else
+ 				spi_qup_fifo_read(controller, xfer);
+ 		}

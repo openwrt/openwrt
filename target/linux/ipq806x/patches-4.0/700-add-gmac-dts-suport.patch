@@ -1,0 +1,172 @@
+--- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
++++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
+@@ -18,8 +18,15 @@
+ 		bootargs = "console=ttyMSM0,115200 root=/dev/mtdblock12 rootfstype=squashfs,jffs2";
+ 	};
+ 
++	aliases {
++		mdio-gpio0 = &mdio0;
++	};
++
+ 	soc {
+ 		pinmux@800000 {
++			pinctrl-0 = <&mdio0_pins &rgmii2_pins>;
++			pinctrl-names = "default";
++
+ 			i2c4_pins: i2c4_pinmux {
+ 				pins = "gpio12", "gpio13";
+ 				function = "gsbi4";
+@@ -34,6 +41,25 @@
+ 					bias-none;
+ 				};
+ 			};
++
++			mdio0_pins: mdio0_pins {
++				mux {
++					pins = "gpio0", "gpio1";
++					function = "gpio";
++					drive-strength = <8>;
++					bias-disable;
++				};
++			};
++
++			rgmii2_pins: rgmii2_pins {
++				mux {
++					pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32",
++					       "gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62" ;
++					function = "rgmii2";
++					drive-strength = <8>;
++					bias-disable;
++				};
++			};
+ 		};
+ 
+ 		gsbi@16300000 {
+@@ -72,6 +98,7 @@
+ 					#size-cells = <1>;
+ 					spi-max-frequency = <50000000>;
+ 					reg = <0>;
++					m25p,fast-read;
+ 
+ 					partition@0 {
+ 						label = "0:SBL1";
+@@ -148,5 +175,66 @@
+ 		sata@29000000 {
+ 			status = "ok";
+ 		};
++
++		mdio0: mdio {
++			compatible = "virtual,mdio-gpio";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			gpios = <&qcom_pinmux 1 0 &qcom_pinmux 0 0>;
++
++			phy0: ethernet-phy@0 {
++				device_type = "ethernet-phy";
++				reg = <0>;
++				qca,ar8327-initvals = <
++					0x00004 0x7600000   /* PAD0_MODE */
++					0x00008 0x1000000   /* PAD5_MODE */
++					0x0000c 0x80        /* PAD6_MODE */
++					0x000e4 0xaa545     /* MAC_POWER_SEL */
++					0x000e0 0xc74164de  /* SGMII_CTRL */
++					0x0007c 0x4e        /* PORT0_STATUS */
++					0x00094 0x4e        /* PORT6_STATUS */
++				>;
++			};
++
++			phy4: ethernet-phy@4 {
++				device_type = "ethernet-phy";
++				reg = <4>;
++			};
++		};
++
++		nss-gmac-common {
++			reg = <0x03000000 0x0000FFFF 0x1bb00000 0x0000FFFF 0x00900000 0x00004000>;
++			reg-names = "nss_reg_base" , "qsgmii_reg_base", "clk_ctl_base";
++		};
++
++		gmac1: ethernet@37200000 {
++			status = "ok";
++			phy-mode = "rgmii";
++			qcom,id = <1>;
++			qcom,phy_mdio_addr = <4>;
++			qcom,poll_required = <1>;
++			qcom,rgmii_delay = <0>;
++			qcom,emulation = <0>;
++			qcom,forced_speed = <1000>;
++			qcom,forced_duplex = <1>;
++			qcom,socver = <0>;
++			local-mac-address = [000000000000];
++			mdiobus = <&mdio0>;
++		};
++
++		gmac2: ethernet@37400000 {
++			status = "ok";
++			phy-mode = "sgmii";
++			qcom,id = <2>;
++			qcom,phy_mdio_addr = <0>;
++			qcom,poll_required = <0>;
++			qcom,rgmii_delay = <0>;
++			qcom,emulation = <0>;
++			qcom,forced_speed = <1000>;
++			qcom,forced_duplex = <1>;
++			qcom,socver = <0>;
++			local-mac-address = [000000000000];
++			mdiobus = <&mdio0>;
++		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -3,6 +3,7 @@
+ #include "skeleton.dtsi"
+ #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
+ #include <dt-bindings/soc/qcom,gsbi.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
+ 
+ / {
+ 	model = "Qualcomm IPQ8064";
+@@ -279,5 +280,42 @@
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+ 		};
++
++		nss-gmac-common {
++			reg = <0x03000000 0x0000FFFF 0x1bb00000 0x0000FFFF 0x00900000 0x00004000>;
++			reg-names = "nss_reg_base" , "qsgmii_reg_base", "clk_ctl_base";
++		};
++
++		gmac0: ethernet@37000000 {
++			device_type = "network";
++			compatible = "qcom,nss-gmac";
++			reg = <0x37000000 0x200000>;
++			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
++			status = "disabled";
++		};
++
++		gmac1: ethernet@37200000 {
++			device_type = "network";
++			compatible = "qcom,nss-gmac";
++			reg = <0x37200000 0x200000>;
++			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL_HIGH>;
++			status = "disabled";
++		};
++
++		gmac2: ethernet@37400000 {
++			device_type = "network";
++			compatible = "qcom,nss-gmac";
++			reg = <0x37400000 0x200000>;
++			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
++			status = "disabled";
++		};
++
++		gmac3: ethernet@37600000 {
++			device_type = "network";
++			compatible = "qcom,nss-gmac";
++			reg = <0x37600000 0x200000>;
++			interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>;
++			status = "disabled";
++		};
+ 	};
+ };
