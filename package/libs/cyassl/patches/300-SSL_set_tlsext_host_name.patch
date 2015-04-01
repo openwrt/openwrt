@@ -1,0 +1,10 @@
+--- a/cyassl/openssl/ssl.h
++++ b/cyassl/openssl/ssl.h
+@@ -372,6 +373,7 @@
+ #define SSL_CTX_get_ex_new_index CyaSSL_CTX_get_ex_new_index
+ 
+ 
++#define SSL_set_tlsext_host_name(x, y) CyaSSL_UseSNI(x, CYASSL_SNI_HOST_NAME, y, strlen(y))
+ 
+ #ifdef __cplusplus
+     } /* extern "C" */
