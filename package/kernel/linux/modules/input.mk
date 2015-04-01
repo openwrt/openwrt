@@ -11,7 +11,7 @@ define KernelPackage/hid
   SUBMENU:=$(INPUT_MODULES_MENU)
   TITLE:=HID Devices
   DEPENDS:=+kmod-input-core +kmod-input-evdev
-  KCONFIG:=CONFIG_HID CONFIG_HIDRAW=y
+  KCONFIG:=CONFIG_HID CONFIG_HIDRAW=y CONFIG_HID_BATTERY_STRENGTH=y
   FILES:=$(LINUX_DIR)/drivers/hid/hid.ko
   AUTOLOAD:=$(call AutoLoad,61,hid)
 endef
