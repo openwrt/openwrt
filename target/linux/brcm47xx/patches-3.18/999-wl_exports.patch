@@ -1,8 +1,8 @@
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -20,7 +20,8 @@
- #include <bcm47xx_nvram.h>
- #include <asm/mach-bcm47xx/bcm47xx.h>
+@@ -31,7 +31,8 @@ struct nvram_header {
+ 	u32 config_ncdl;	/* ncdl values for memc */
+ };
  
 -static char nvram_buf[NVRAM_SPACE];
 +char nvram_buf[NVRAM_SPACE];
