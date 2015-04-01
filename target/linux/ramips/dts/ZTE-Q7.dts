@@ -1,0 +1,111 @@
+/dts-v1/;
+
+/include/ "mt7620a.dtsi"
+
+/ {
+	compatible = "ZTE-Q7", "ralink,mt7620a-soc";
+	model = "ZTE Q7";
+
+	palmbus@10000000 {
+
+		gpio0: gpio@600 {
+			status = "okay";
+		};
+
+		gpio1: gpio@638 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "en25q64";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "en25q64";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x7b0000>;
+				};
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "ephy", "wled", "nd_sd";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&ephy_pins>;
+		mtd-mac-address = <&factory 0x4>;
+		ralink,port-map = "wllll";
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
+	sdhci@10130000 {
+		status = "okay";
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		statred {
+			label = "zte:red:status";
+			gpios = <&gpio0 13 1>;
+		};
+		statblue {
+			label = "zte:blue:status";
+			gpios = <&gpio0 9 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+	};
+};

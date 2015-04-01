@@ -237,6 +237,9 @@ case $board in
 		set_usb_led "lenovo:blue:usb"
 		set_wifi_led "lenovo:blue:wifi"
 		;;
+	zte-q7)
+		set_wifi_led "zte:blue:status"
+		;;
 esac
 
 board_config_flush
