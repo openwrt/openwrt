@@ -128,6 +128,7 @@ dnsmasq() {
 	append_bool "$cfg" boguspriv "--bogus-priv"
 	append_bool "$cfg" expandhosts "--expand-hosts"
 	append_bool "$cfg" enable_tftp "--enable-tftp"
+	append_bool "$cfg" tftp_no_fail "--tftp-no-fail"
 	append_bool "$cfg" nonwildcard "--bind-interfaces"
 	append_bool "$cfg" fqdn "--dhcp-fqdn"
 	append_bool "$cfg" proxydnssec "--proxy-dnssec"
