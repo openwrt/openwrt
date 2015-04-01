@@ -12,7 +12,7 @@ out the configuration than the in kernel cfe config reader.
 +obj-y				+= cfe_env.o
 --- /dev/null
 +++ b/arch/mips/bcm47xx/cfe_env.c
-@@ -0,0 +1,229 @@
+@@ -0,0 +1,228 @@
 +/*
 + * CFE environment variable access
 + *
@@ -138,8 +138,7 @@ out the configuration than the in kernel cfe config reader.
 + * @return	value of variable or NULL if undefined
 + */
 +
-+char* 
-+cfe_env_get(unsigned char *nv_buf, char* name)
++char *cfe_env_get(unsigned char *nv_buf, const char *name)
 +{
 +    int size;
 +    unsigned char *buffer;
@@ -244,7 +243,7 @@ out the configuration than the in kernel cfe config reader.
 +
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -22,6 +22,8 @@
+@@ -33,6 +33,8 @@ struct nvram_header {
  
  static char nvram_buf[NVRAM_SPACE];
  static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
@@ -253,7 +252,7 @@ out the configuration than the in kernel cfe config reader.
  
  static u32 find_nvram_size(void __iomem *end)
  {
-@@ -51,6 +53,26 @@ static int nvram_find_and_copy(void __io
+@@ -62,6 +64,26 @@ static int nvram_find_and_copy(void __io
  		return -EEXIST;
  	}
  
@@ -280,7 +279,7 @@ out the configuration than the in kernel cfe config reader.
  	/* TODO: when nvram is on nand flash check for bad blocks first. */
  	off = FLASH_MIN;
  	while (off <= lim) {
-@@ -142,6 +164,13 @@ int bcm47xx_nvram_getenv(char *name, cha
+@@ -189,6 +211,13 @@ int bcm47xx_nvram_getenv(const char *nam
  			return err;
  	}
  
