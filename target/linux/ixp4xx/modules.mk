@@ -25,7 +25,7 @@ $(eval $(call KernelPackage,ata-ixp4xx-cf))
 define KernelPackage/ixp4xx-beeper
   SUBMENU:=$(OTHER_MENU)
   TITLE:=IXP4XX Beeper support
-  DEPENDS:=@TARGET_ixp4xx
+  DEPENDS:=@TARGET_ixp4xx +kmod-input-core
   KCONFIG:= \
 	CONFIG_INPUT_MISC=y \
 	CONFIG_INPUT_IXP4XX_BEEPER
