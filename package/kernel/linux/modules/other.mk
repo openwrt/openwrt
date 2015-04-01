@@ -963,3 +963,19 @@ define KernelPackage/gpio-beeper/description
 endef
 
 $(eval $(call KernelPackage,gpio-beeper))
+
+
+define KernelPackage/echo
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Line Echo Canceller
+  KCONFIG:=CONFIG_ECHO
+  FILES:=$(LINUX_DIR)/drivers/misc/echo/echo.ko
+  AUTOLOAD:=$(call AutoLoad,50,echo)
+endef
+
+define KernelPackage/echo/description
+ This driver provides line echo cancelling support for mISDN and
+ DAHDI drivers
+endef
+
+$(eval $(call KernelPackage,echo))
