@@ -114,6 +114,7 @@ platform_check_image() {
 	xiaomi-miwifi-mini |\
 	y1 |\
 	y1s |\
+	zte-q7 |\
 	zbt-wa05)
 		[ "$magic" != "27051956" ] && {
 			echo "Invalid image type."
