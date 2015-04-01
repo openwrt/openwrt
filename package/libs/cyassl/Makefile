@@ -40,6 +40,8 @@ TARGET_CFLAGS += $(FPIC)
 CONFIGURE_ARGS += \
 	--without-zlib \
 	--enable-singlethreaded \
+	--enable-opensslextra \
+	--enable-sni \
 	--disable-examples
 
 define Build/InstallDev
