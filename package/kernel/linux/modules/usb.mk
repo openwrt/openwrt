@@ -354,7 +354,7 @@ $(eval $(call KernelPackage,usb-ohci,1))
 
 define KernelPackage/usb-ohci-pci
   TITLE:=Support for PCI OHCI controllers
-  DEPENDS:=@PCI_SUPPORT @(!LINUX_3_3&&!LINUX_3_6) +kmod-usb-ohci
+  DEPENDS:=@PCI_SUPPORT +kmod-usb-ohci
   KCONFIG:=CONFIG_USB_OHCI_HCD_PCI
   FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-pci.ko
   AUTOLOAD:=$(call AutoLoad,51,ohci-pci,1)
