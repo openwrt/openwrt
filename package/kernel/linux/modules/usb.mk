@@ -352,6 +352,22 @@ endef
 $(eval $(call KernelPackage,usb-ohci,1))
 
 
+define KernelPackage/usb-ohci-pci
+  TITLE:=Support for PCI OHCI controllers
+  DEPENDS:=@PCI_SUPPORT @(!LINUX_3_3&&!LINUX_3_6) +kmod-usb-ohci
+  KCONFIG:=CONFIG_USB_OHCI_HCD_PCI
+  FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-pci.ko
+  AUTOLOAD:=$(call AutoLoad,51,ohci-pci,1)
+  $(call AddDepends/usb)
+endef
+
+define KernelPackage/usb2-pci/description
+ Kernel support for PCI OHCI controllers
+endef
+
+$(eval $(call KernelPackage,usb-ohci-pci))
+
+
 define KernelPackage/usb2-fsl
   TITLE:=Support for Freescale USB2 controllers
   DEPENDS:=@TARGET_mpc85xx
