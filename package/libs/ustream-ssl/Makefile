@@ -53,7 +53,7 @@ endef
 
 ifeq ($(BUILD_VARIANT),cyassl)
   TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include/cyassl
-  CMAKE_OPTIONS += -DCYASSL=on
+  CMAKE_OPTIONS += -DCYASSL=on -DHAVE_SNI
 endif
 ifeq ($(BUILD_VARIANT),polarssl)
   CMAKE_OPTIONS += -DPOLARSSL=on
