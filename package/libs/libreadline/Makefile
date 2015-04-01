@@ -19,6 +19,8 @@ PKG_LICENSE:=GPL-3.0
 PKG_LICENSE_FILES:=COPYING
 
 PKG_BUILD_PARALLEL:=1
+PKG_FIXUP:=autoreconf
+PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -38,26 +40,21 @@ define Package/libreadline/description
 	history expansion on previous commands.
 endef
 
-define Build/Configure
-	$(CP) $(SCRIPT_DIR)/config.guess $(SCRIPT_DIR)/config.sub $(PKG_BUILD_DIR)/support/
-	$(call Build/Configure/Default, \
-		--enable-shared \
-		--enable-static \
-		--without-curses \
-		bash_cv_wcwidth_broken=no \
-		bash_cv_func_sigsetjmp=yes \
-	)
-endef
+# prevent "autoreconf" from removing "aclocal.m4"
+PKG_REMOVE_FILES:=
+
+CONFIGURE_ARGS += \
+	--enable-shared \
+	--enable-static \
+	--with-curses \
+
+CONFIGURE_VARS += \
+	bash_cv_wcwidth_broken=no \
+	bash_cv_func_sigsetjmp=yes \
 
 TARGET_CPPFLAGS:=-I. -I.. $(TARGET_CPPFLAGS)
 
 TARGET_CFLAGS += $(FPIC)
-
-define Build/Compile
-	$(MAKE) $(PKG_JOBS) -C $(PKG_BUILD_DIR) \
-		DESTDIR="$(PKG_INSTALL_DIR)" \
-		all install
-endef
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
