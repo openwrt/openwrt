@@ -8,14 +8,13 @@ Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
- arch/arm/Kconfig                          | 2 ++
- drivers/firmware/Kconfig                  | 1 +
- drivers/firmware/Makefile                 | 1 +
- drivers/firmware/broadcom/bcm47xx_nvram.c | 3 ++-
- drivers/net/ethernet/broadcom/b44.c       | 2 +-
- drivers/net/ethernet/broadcom/bgmac.c     | 2 +-
- drivers/ssb/driver_chipcommon_pmu.c       | 2 +-
- 7 files changed, 9 insertions(+), 4 deletions(-)
+ arch/arm/Kconfig                      | 2 ++
+ drivers/firmware/Kconfig              | 1 +
+ drivers/firmware/Makefile             | 1 +
+ drivers/net/ethernet/broadcom/b44.c   | 2 +-
+ drivers/net/ethernet/broadcom/bgmac.c | 2 +-
+ drivers/ssb/driver_chipcommon_pmu.c   | 2 +-
+ 6 files changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
 index 4733d32..ab18030 100644
@@ -54,27 +53,6 @@ index 5373dc5..e251f2b 100644
  obj-$(CONFIG_GOOGLE_FIRMWARE)	+= google/
  obj-$(CONFIG_EFI)		+= efi/
  obj-$(CONFIG_UEFI_CPER)		+= efi/
-diff --git a/drivers/firmware/broadcom/bcm47xx_nvram.c b/drivers/firmware/broadcom/bcm47xx_nvram.c
-index b6e1cc7..8ca7358 100644
---- a/drivers/firmware/broadcom/bcm47xx_nvram.c
-+++ b/drivers/firmware/broadcom/bcm47xx_nvram.c
-@@ -11,6 +11,7 @@
-  * option) any later version.
-  */
- 
-+#include <linux/io.h>
- #include <linux/types.h>
- #include <linux/module.h>
- #include <linux/kernel.h>
-@@ -34,7 +35,7 @@ struct nvram_header {
- };
- 
- static char nvram_buf[NVRAM_SPACE];
--static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
-+static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000, 0x160000, 0x180000};
- 
- static u32 find_nvram_size(void __iomem *end)
- {
 diff --git a/drivers/net/ethernet/broadcom/b44.c b/drivers/net/ethernet/broadcom/b44.c
 index 8a7bf7d..bf3bcd6 100644
 --- a/drivers/net/ethernet/broadcom/b44.c
