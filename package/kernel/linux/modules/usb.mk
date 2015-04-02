@@ -150,11 +150,11 @@ define KernelPackage/usb-phy-omap-usb2
   TITLE:=Support for OMAP2 USB PHY
   KCONFIG:= \
 	CONFIG_OMAP_USB2 \
-	CONFIG_OMAP_CONTROL_USB
+	CONFIG_OMAP_CONTROL_PHY
   DEPENDS:=@TARGET_omap
   FILES:= \
 	$(LINUX_DIR)/drivers/phy/phy-omap-usb2.ko \
-	$(LINUX_DIR)/drivers/usb/phy/phy-omap-control.ko
+	$(LINUX_DIR)/drivers/phy/phy-omap-control.ko
   AUTOLOAD:=$(call AutoLoad,45,phy-omap-control phy-omap-usb2)
   $(call AddDepends/usb)
 endef
