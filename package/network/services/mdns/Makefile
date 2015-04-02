@@ -33,6 +33,10 @@ endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
+define Package/mdns/conffiles
+/etc/config/mdns
+endef
+
 define Package/mdns/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/mdns $(1)/usr/sbin/
