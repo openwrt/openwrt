@@ -40,6 +40,10 @@ define Build/Compile
 	$(MAKE) $(KERNEL_MAKEOPTS) SUBDIRS="$(PKG_BUILD_DIR)" modules
 endef
 
+define KernelPackage/trelay/conffiles
+/etc/config/trelay
+endef
+
 define KernelPackage/trelay/install
 	$(INSTALL_DIR) $(1)/etc/hotplug.d/net $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_DATA) ./files/trelay.hotplug $(1)/etc/hotplug.d/net/50-trelay
