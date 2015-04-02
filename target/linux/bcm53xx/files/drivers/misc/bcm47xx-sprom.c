@@ -32,9 +32,6 @@
 struct bcm47xx_sprom_fill {
 	const char *prefix;
 	bool fallback;
-	int (*getenv)(const struct bcm47xx_sprom_fill *fill, const char *name,
-		      char *val, size_t val_len);
-	const void *priv;
 };
 
 static void create_key(const char *prefix, const char *postfix,
@@ -59,10 +56,10 @@ static int get_nvram_var(const struct bcm47xx_sprom_fill *fill,
 
 	create_key(fill->prefix, postfix, name, key, sizeof(key));
 
-	err = fill->getenv(fill, key, buf, len);
+	err = bcm47xx_nvram_getenv(key, buf, len);
 	if (fill->fallback && err == -ENOENT && fill->prefix) {
 		create_key(NULL, postfix, name, key, sizeof(key));
-		err = fill->getenv(fill, key, buf, len);
+		err = bcm47xx_nvram_getenv(key, buf, len);
 	}
 	return err;
 }
@@ -635,15 +632,6 @@ static void bcm47xx_sprom_fill(struct ssb_sprom *sprom,
 	}
 }
 
-static int bcm47xx_sprom_getenv(const struct bcm47xx_sprom_fill *fill,
-				const char *name, char *val, size_t val_len)
-{
-	return bcm47xx_nvram_getenv(name, val, val_len);
-};
-
-/* FIXME: This should not be static, but some callback argument */
-static struct platform_device *sprom_pdev = NULL;
-
 static char prefix[20];
 
 static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
@@ -681,25 +669,7 @@ static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
  */
 static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 {
-	struct platform_device *pdev = sprom_pdev;
-	struct device *dev = &pdev->dev;
-	struct device_node *np = dev->of_node;
-	const __be32 *handle;
-	struct device_node *nvram_node;
-	struct platform_device *nvram_dev;
 	struct bcm47xx_sprom_fill fill;
-
-	handle = of_get_property(np, "nvram", NULL);
-	if (!handle)
-		return -ENOMEM;
-
-	nvram_node = of_find_node_by_phandle(be32_to_cpup(handle));
-	if (!nvram_node)
-		return -ENOMEM;
-
-	nvram_dev = of_find_device_by_node(nvram_node);
-	if (!nvram_dev)
-		return -ENOMEM;
 
 	switch (bus->hosttype) {
 	case BCMA_HOSTTYPE_PCI:
@@ -710,7 +680,7 @@ static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 		fill.prefix = prefix;
 		break;
 	case BCMA_HOSTTYPE_SOC:
-		fill.prefix = of_get_property(np, "prefix", NULL);
+		fill.prefix = NULL;
 		break;
 	default:
 		pr_err("Unable to fill SPROM for given hosttype.\n");
@@ -718,8 +688,6 @@ static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 	}
 
 	fill.fallback = false;
-	fill.getenv = bcm47xx_sprom_getenv;
-	fill.priv = nvram_dev;
 
 	bcm47xx_sprom_fill(out, &fill);
 
@@ -728,9 +696,6 @@ static int bcm47xx_sprom_init(struct bcma_bus *bus, struct ssb_sprom *out)
 
 static int bcm47xx_sprom_probe(struct platform_device *pdev)
 {
-	/* This is the only way to make pdev accessible to the callback */
-	sprom_pdev = pdev;
-
 	return bcma_arch_register_fallback_sprom(&bcm47xx_sprom_init);
 }
 
