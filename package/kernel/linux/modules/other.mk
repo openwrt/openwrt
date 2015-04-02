@@ -969,7 +969,8 @@ define KernelPackage/echo
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Line Echo Canceller
   KCONFIG:=CONFIG_ECHO
-  FILES:=$(LINUX_DIR)/drivers/misc/echo/echo.ko
+  FILES:=$(LINUX_DIR)/drivers/staging/echo/echo.ko@lt3.18 \
+	  $(LINUX_DIR)/drivers/misc/echo/echo.ko@ge3.18
   AUTOLOAD:=$(call AutoLoad,50,echo)
 endef
 
