@@ -631,6 +631,7 @@ endef
 $(eval $(call KernelPackage,usb-serial-ftdi))
 
 
+<<<<<<< HEAD
 define KernelPackage/usb-serial-garmin
   TITLE:=Support for Garmin GPS devices
   KCONFIG:=CONFIG_USB_SERIAL_GARMIN
@@ -644,6 +645,62 @@ define KernelPackage/usb-serial-garmin/description
 endef
 
 $(eval $(call KernelPackage,usb-serial-garmin))
+=======
+define KernelPackage/usb-serial-simple
+  TITLE:=USB Serial Simple (Motorola phone)
+  KCONFIG:=CONFIG_USB_SERIAL_SIMPLE
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/usb-serial-simple.ko
+  AUTOLOAD:=$(call AutoProbe,usb-serial-simple)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-simple/description
+  Kernel support for "very simple devices".
+
+Specifically, it supports:
+	- Suunto ANT+ USB device.
+	- Medtronic CareLink USB device (3.18)
+	- Fundamental Software dongle.
+	- Google USB serial devices (3.19)
+	- HP4x calculators
+	- a number of Motorola phones
+	- Novatel Wireless GPS receivers (3.18)
+	- Siemens USB/MPI adapter.
+	- ViVOtech ViVOpay USB device.
+	- Infineon Modem Flashloader USB interface
+	- ZIO Motherboard USB serial interface
+endef
+
+$(eval $(call KernelPackage,usb-serial-simple))
+>>>>>>> kernel: add usb-serial-simple module
+
+
+define KernelPackage/usb-serial-simple
+  TITLE:=USB Serial Simple (Motorola phone)
+  KCONFIG:=CONFIG_USB_SERIAL_SIMPLE
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/usb-serial-simple.ko
+  AUTOLOAD:=$(call AutoProbe,usb-serial-simple)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-simple/description
+  Kernel support for "very simple devices".
+
+Specifically, it supports:
+	- Suunto ANT+ USB device.
+	- Medtronic CareLink USB device (3.18)
+	- Fundamental Software dongle.
+	- Google USB serial devices (3.19)
+	- HP4x calculators
+	- a number of Motorola phones
+	- Novatel Wireless GPS receivers (3.18)
+	- Siemens USB/MPI adapter.
+	- ViVOtech ViVOpay USB device.
+	- Infineon Modem Flashloader USB interface
+	- ZIO Motherboard USB serial interface
+endef
+
+$(eval $(call KernelPackage,usb-serial-simple))
 
 
 define KernelPackage/usb-serial-ti-usb
