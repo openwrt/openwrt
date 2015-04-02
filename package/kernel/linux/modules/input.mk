@@ -205,3 +205,21 @@ define KernelPackage/keyboard-imx/description
 endef
 
 $(eval $(call KernelPackage,keyboard-imx))
+
+
+define KernelPackage/input-uinput
+  SUBMENU:=$(INPUT_MODULES_MENU)
+  TITLE:=user input module
+  DEPENDS:=+kmod-input-core
+  KCONFIG:= \
+	CONFIG_INPUT_MISC=y \
+	CONFIG_INPUT_UINPUT
+  FILES:=$(LINUX_DIR)/drivers/input/misc/uinput.ko
+  AUTOLOAD:=$(call AutoProbe,uinput)
+endef
+
+define KernelPackage/input-uinput/description
+  user input modules needed for bluez
+endef
+
+$(eval $(call KernelPackage,input-uinput))
