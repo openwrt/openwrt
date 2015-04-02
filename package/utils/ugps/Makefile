@@ -36,11 +36,15 @@ ifneq ($(CONFIG_USE_GLIBC),)
   TARGET_CFLAGS += -D_DEFAULT_SOURCE
 endif
 
+define Package/ugps/conffiles
+/etc/config/gps
+endef
+
 define Package/ugps/install
 	$(INSTALL_DIR) $(1)/usr/sbin $(1)/etc/init.d $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ugps $(1)/usr/sbin/
 	$(INSTALL_BIN) ./files/ugps.init $(1)/etc/init.d/ugps
-	$(INSTALL_BIN) ./files/gps.config $(1)/etc/config/gps
+	$(INSTALL_CONF) ./files/gps.config $(1)/etc/config/gps
 endef
 
 $(eval $(call BuildPackage,ugps))
