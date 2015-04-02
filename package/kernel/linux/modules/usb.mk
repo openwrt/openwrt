@@ -631,6 +631,21 @@ endef
 $(eval $(call KernelPackage,usb-serial-ftdi))
 
 
+define KernelPackage/usb-serial-garmin
+  TITLE:=Support for Garmin GPS devices
+  KCONFIG:=CONFIG_USB_SERIAL_GARMIN
+  FILES:=$(LINUX_DIR)/drivers/usb/serial/garmin_gps.ko
+  AUTOLOAD:=$(call AutoProbe,garmin_gps)
+  $(call AddDepends/usb-serial)
+endef
+
+define KernelPackage/usb-serial-garmin/description
+ Should work with most Garmin GPS devices which have a native USB port.
+endef
+
+$(eval $(call KernelPackage,usb-serial-garmin))
+
+
 define KernelPackage/usb-serial-ti-usb
   TITLE:=Support for TI USB 3410/5052
   KCONFIG:=CONFIG_USB_SERIAL_TI
