@@ -143,6 +143,10 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/lib/et/*.h $(1)/usr/include/et
 endef
 
+define Package/e2fsprogs/conffiles
+/etc/e2fsck.conf
+endef
+
 define Package/e2fsprogs/install
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/e2fsck $(1)/usr/sbin/
