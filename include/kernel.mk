@@ -157,6 +157,12 @@ define KernelPackage
     $(call KernelPackage/$(1)/$(BOARD))
   endef
 
+  ifdef KernelPackage/$(1)/conffiles
+    define Package/kmod-$(1)/conffiles
+$(call KernelPackage/$(1)/conffiles)
+    endef
+  endif
+
   ifdef KernelPackage/$(1)/description
     define Package/kmod-$(1)/description
 $(call KernelPackage/$(1)/description)
