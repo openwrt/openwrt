@@ -36,12 +36,16 @@ define Package/base-files
 endef
 
 define Package/base-files/conffiles
+/etc/config/network
+/etc/config/system
 /etc/hosts
 /etc/inittab
 /etc/group
 /etc/passwd
 /etc/shadow
 /etc/profile
+/etc/protocols
+/etc/services
 /etc/shells
 /etc/sysctl.conf
 /etc/rc.local
