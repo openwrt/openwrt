@@ -72,7 +72,7 @@ $(curdir)/findutils/compile := $(curdir)/bison/install
 $(curdir)/gengetopt/compile := $(curdir)/libtool/install
 $(curdir)/patchelf/compile := $(curdir)/libtool/install
 
-ifneq ($(CONFIG_CCACHE),)
+ifneq ($(CONFIG_CCACHE)$(CONFIG_SDK),)
 $(foreach tool, $(tools-y), $(eval $(curdir)/$(tool)/compile += $(curdir)/ccache/install))
 tools-y += ccache
 endif
