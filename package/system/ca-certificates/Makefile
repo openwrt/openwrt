@@ -40,7 +40,7 @@ define Package/ca-certificates/install
 		while [ -h "$(1)/etc/ssl/certs/$$$$HASH.$$$$SUFFIX" ]; do \
 			let "SUFFIX += 1" ; \
 		done ; \
-		ln -s "$$$$CERTFILE" "$(1)/etc/ssl/certs/$$$$HASH.$$$$SUFFIX" ; \
+		$(LN) "$$$$CERTFILE" "$(1)/etc/ssl/certs/$$$$HASH.$$$$SUFFIX" ; \
 	done
 endef
 

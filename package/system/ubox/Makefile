@@ -36,11 +36,11 @@ define Package/ubox/install
 	$(INSTALL_BIN) ./files/log.init $(1)/etc/init.d/log
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libvalidate.so $(1)/lib
 
-	ln -s /sbin/kmodloader $(1)/usr/sbin/rmmod
-	ln -s /sbin/kmodloader $(1)/usr/sbin/insmod
-	ln -s /sbin/kmodloader $(1)/usr/sbin/lsmod
-	ln -s /sbin/kmodloader $(1)/usr/sbin/modinfo
-	ln -s /sbin/kmodloader $(1)/usr/sbin/modprobe
+	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/rmmod
+	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/insmod
+	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/lsmod
+	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/modinfo
+	$(LN) ../../sbin/kmodloader $(1)/usr/sbin/modprobe
 endef
 
 $(eval $(call BuildPackage,ubox))
