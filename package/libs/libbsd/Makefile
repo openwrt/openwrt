@@ -39,7 +39,7 @@ define Build/InstallDev
 		$(PKG_INSTALL_DIR)/usr/include/* \
 		$(1)/usr/include/
 
-	( cd $(1)/lib ; ln -s libbsd.so.$(PKG_VERSION) libbsd.so )
+	( cd $(1)/lib ; $(LN) libbsd.so.$(PKG_VERSION) libbsd.so )
 endef
 
 define Package/libbsd/install
@@ -50,7 +50,7 @@ define Package/libbsd/install
 		$(PKG_INSTALL_DIR)/lib/libbsd.so* \
 		$(1)/lib/
 
-	( cd $(1)/lib ; ln -s libbsd.so.$(PKG_VERSION) libbsd.so )
+	( cd $(1)/lib ; $(LN) libbsd.so.$(PKG_VERSION) libbsd.so )
 endef
 
 $(eval $(call BuildPackage,libbsd))

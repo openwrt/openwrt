@@ -81,7 +81,7 @@ define Package/kexec-tools/install
 
 # make a link for compatability with other distros
 	$(INSTALL_DIR) $(1)/sbin
-	ln -s /usr/sbin/kexec $(1)/sbin/kexec
+	$(LN) ../usr/sbin/kexec $(1)/sbin/kexec
 endef
 
 $(eval $(call BuildPackage,kexec-tools))

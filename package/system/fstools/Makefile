@@ -64,7 +64,7 @@ define Package/fstools/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{mount_root,jffs2reset,snapshot_tool} $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libfstools.so $(1)/lib/
 	$(INSTALL_BIN) ./files/snapshot $(1)/sbin/
-	ln -s /sbin/jffs2reset $(1)/sbin/jffs2mark
+	$(LN) jffs2reset $(1)/sbin/jffs2mark
 endef
 
 define Package/block-mount/install
@@ -76,8 +76,8 @@ define Package/block-mount/install
 
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/block $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libblkid-tiny.so $(1)/lib/
-	ln -s /sbin/block $(1)/usr/sbin/swapon
-	ln -s /sbin/block $(1)/usr/sbin/swapoff
+	$(LN) ../../sbin/block $(1)/usr/sbin/swapon
+	$(LN) ../../sbin/block $(1)/usr/sbin/swapoff
 
 endef
 
