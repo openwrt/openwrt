@@ -15,7 +15,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1921,6 +1921,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -1920,6 +1920,9 @@ static struct sk_buff *ieee80211_build_h
  			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
  			wme_sta = sta->sta.wme;
  			have_station = true;
