@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/include/net/mac80211.h
 +++ b/include/net/mac80211.h
-@@ -84,6 +84,35 @@
+@@ -84,6 +84,39 @@
   *
   */
  
@@ -33,13 +33,16 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 + * of letting mac80211 push them via drv_tx().
 + * Other frames (e.g. control or management) are still pushed using drv_tx().
 + *
++ * Drivers indicate that they use this model by implementing the .wake_tx_queue
++ * driver operation.
++ *
 + * Intermediate queues (struct ieee80211_txq) are kept per-sta per-tid, with a
 + * single per-vif queue for multicast data frames.
 + *
 + * The driver is expected to initialize its private per-queue data for stations
 + * and interfaces in the .add_interface and .sta_add ops.
 + *
-+ * The driver can not access the queue directly. To dequeue a frame, it calls
++ * The driver can't access the queue directly. To dequeue a frame, it calls
 + * ieee80211_tx_dequeue(). Whenever mac80211 adds a new frame to a queue, it
 + * calls the .wake_tx_queue driver op.
 + *
@@ -48,14 +51,23 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 + * ieee80211_sta_set_buffered(). For frames buffered in the ieee80211_txq
 + * struct, mac80211 sets the appropriate TIM PVB bits and calls
 + * .release_buffered_frames().
-+ * That callback is expected to release its own buffered frames and afterwards
-+ * also frames from the ieee80211_txq (obtained via ieee80211_tx_dequeue).
++ * In that callback the driver is therefore expected to release its own
++ * buffered frames and afterwards also frames from the ieee80211_txq (obtained
++ * via the usual ieee80211_tx_dequeue).
 + */
 +
  struct device;
  
  /**
-@@ -1257,6 +1286,8 @@ struct ieee80211_vif {
+@@ -1246,6 +1279,7 @@ enum ieee80211_vif_flags {
+  *	monitor interface (if that is requested.)
+  * @drv_priv: data area for driver use, will always be aligned to
+  *	sizeof(void *).
++ * @txq: the multicast data TX queue (if driver uses the TXQ abstraction)
+  */
+ struct ieee80211_vif {
+ 	enum nl80211_iftype type;
+@@ -1257,6 +1291,8 @@ struct ieee80211_vif {
  	u8 cab_queue;
  	u8 hw_queue[IEEE80211_NUM_ACS];
  
@@ -64,7 +76,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	struct ieee80211_chanctx_conf __rcu *chanctx_conf;
  
  	u32 driver_flags;
-@@ -1519,6 +1550,8 @@ struct ieee80211_sta {
+@@ -1501,6 +1537,7 @@ struct ieee80211_sta_rates {
+  * @tdls_initiator: indicates the STA is an initiator of the TDLS link. Only
+  *	valid if the STA is a TDLS peer in the first place.
+  * @mfp: indicates whether the STA uses management frame protection or not.
++ * @txq: per-TID data TX queues (if driver uses the TXQ abstraction)
+  */
+ struct ieee80211_sta {
+ 	u32 supp_rates[IEEE80211_NUM_BANDS];
+@@ -1519,6 +1556,8 @@ struct ieee80211_sta {
  	bool tdls_initiator;
  	bool mfp;
  
@@ -73,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	/* must be last */
  	u8 drv_priv[0] __aligned(sizeof(void *));
  };
-@@ -1547,6 +1580,27 @@ struct ieee80211_tx_control {
+@@ -1547,6 +1586,27 @@ struct ieee80211_tx_control {
  };
  
  /**
@@ -101,7 +121,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   * enum ieee80211_hw_flags - hardware flags
   *
   * These flags are used to indicate hardware capabilities to
-@@ -1770,6 +1824,8 @@ enum ieee80211_hw_flags {
+@@ -1770,6 +1830,8 @@ enum ieee80211_hw_flags {
   *	within &struct ieee80211_sta.
   * @chanctx_data_size: size (in bytes) of the drv_priv data area
   *	within &struct ieee80211_chanctx_conf.
@@ -110,7 +130,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   *
   * @max_rates: maximum number of alternate rate retry stages the hw
   *	can handle.
-@@ -1818,6 +1874,9 @@ enum ieee80211_hw_flags {
+@@ -1818,6 +1880,9 @@ enum ieee80211_hw_flags {
   * @n_cipher_schemes: a size of an array of cipher schemes definitions.
   * @cipher_schemes: a pointer to an array of cipher scheme definitions
   *	supported by HW.
@@ -120,7 +140,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   */
  struct ieee80211_hw {
  	struct ieee80211_conf conf;
-@@ -1830,6 +1889,7 @@ struct ieee80211_hw {
+@@ -1830,6 +1895,7 @@ struct ieee80211_hw {
  	int vif_data_size;
  	int sta_data_size;
  	int chanctx_data_size;
@@ -128,7 +148,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	u16 queues;
  	u16 max_listen_interval;
  	s8 max_signal;
-@@ -1846,6 +1906,7 @@ struct ieee80211_hw {
+@@ -1846,6 +1912,7 @@ struct ieee80211_hw {
  	u8 uapsd_max_sp_len;
  	u8 n_cipher_schemes;
  	const struct ieee80211_cipher_scheme *cipher_schemes;
@@ -136,7 +156,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  };
  
  /**
-@@ -3007,6 +3068,8 @@ enum ieee80211_reconfig_type {
+@@ -3007,6 +3074,8 @@ enum ieee80211_reconfig_type {
   *	response template is provided, together with the location of the
   *	switch-timing IE within the template. The skb can only be used within
   *	the function call.
@@ -145,7 +165,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
   */
  struct ieee80211_ops {
  	void (*tx)(struct ieee80211_hw *hw,
-@@ -3238,6 +3301,9 @@ struct ieee80211_ops {
+@@ -3238,6 +3307,9 @@ struct ieee80211_ops {
  	void (*tdls_recv_channel_switch)(struct ieee80211_hw *hw,
  					 struct ieee80211_vif *vif,
  					 struct ieee80211_tdls_ch_sw_params *params);
@@ -155,7 +175,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  };
  
  /**
-@@ -5249,4 +5315,17 @@ void ieee80211_unreserve_tid(struct ieee
+@@ -5249,4 +5321,15 @@ void ieee80211_unreserve_tid(struct ieee
   */
  size_t ieee80211_ie_split(const u8 *ies, size_t ielen,
  			  const u8 *ids, int n_ids, size_t offset);
@@ -164,14 +184,12 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 + * ieee80211_tx_dequeue - dequeue a packet from a software tx queue
 + *
 + * @hw: pointer as obtained from ieee80211_alloc_hw()
-+ * @txq: pointer obtained from .add_tx_queue() call
++ * @txq: pointer obtained from station or virtual interface
 + *
 + * Returns the skb if successful, %NULL if no frame was available.
 + */
 +struct sk_buff *ieee80211_tx_dequeue(struct ieee80211_hw *hw,
 +				     struct ieee80211_txq *txq);
-+
-+
  #endif /* MAC80211_H */
 --- a/net/mac80211/driver-ops.h
 +++ b/net/mac80211/driver-ops.h
@@ -187,7 +205,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	if (!check_sdata_in_driver(sdata))
 +		return;
 +
-+	trace_drv_wake_tx_queue(local, sdata, txq->txq.sta, txq->txq.tid);
++	trace_drv_wake_tx_queue(local, sdata, txq);
 +	local->ops->wake_tx_queue(&local->hw, &txq->txq);
 +}
 +
@@ -446,15 +464,6 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	skb_queue_head_init(&pending);
  
  	/* sync with ieee80211_tx_h_unicast_ps_buf */
-@@ -1254,7 +1302,7 @@ ieee80211_sta_ps_deliver_response(struct
- 	struct ieee80211_sub_if_data *sdata = sta->sdata;
- 	struct ieee80211_local *local = sdata->local;
- 	bool more_data = false;
--	int ac;
-+	int ac, tid;
- 	unsigned long driver_release_tids = 0;
- 	struct sk_buff_head frames;
- 
 @@ -1275,8 +1323,10 @@ ieee80211_sta_ps_deliver_response(struct
  		/* if we already have frames from software, then we can't also
  		 * release from hardware queues
@@ -467,16 +476,17 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  		if (driver_release_tids) {
  			/* If the driver has data on more than one TID then
-@@ -1447,6 +1497,8 @@ ieee80211_sta_ps_deliver_response(struct
+@@ -1447,6 +1497,9 @@ ieee80211_sta_ps_deliver_response(struct
  
  		sta_info_recalc_tim(sta);
  	} else {
 +		unsigned long tids = sta->txq_buffered_tids & driver_release_tids;
++		int tid;
 +
  		/*
  		 * We need to release a frame that is buffered somewhere in the
  		 * driver ... it'll have to handle that.
-@@ -1466,8 +1518,22 @@ ieee80211_sta_ps_deliver_response(struct
+@@ -1466,8 +1519,22 @@ ieee80211_sta_ps_deliver_response(struct
  		 * that the TID(s) became empty before returning here from the
  		 * release function.
  		 * Either way, however, when the driver tells us that the TID(s)
@@ -520,35 +530,38 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	unsigned long rx_packets;
 --- a/net/mac80211/trace.h
 +++ b/net/mac80211/trace.h
-@@ -2312,6 +2312,34 @@ TRACE_EVENT(drv_tdls_recv_channel_switch
+@@ -2312,6 +2312,37 @@ TRACE_EVENT(drv_tdls_recv_channel_switch
  	)
  );
  
 +TRACE_EVENT(drv_wake_tx_queue,
 +	TP_PROTO(struct ieee80211_local *local,
 +		 struct ieee80211_sub_if_data *sdata,
-+		 struct ieee80211_sta *sta,
-+		 u8 tid),
++		 struct txq_info *txq),
 +
-+	TP_ARGS(local, sdata, sta, tid),
++	TP_ARGS(local, sdata, txq),
 +
 +	TP_STRUCT__entry(
 +		LOCAL_ENTRY
 +		VIF_ENTRY
 +		STA_ENTRY
++		__field(u8, ac)
 +		__field(u8, tid)
 +	),
 +
 +	TP_fast_assign(
++		struct ieee80211_sta *sta = txq->txq.sta;
++
 +		LOCAL_ASSIGN;
 +		VIF_ASSIGN;
 +		STA_ASSIGN;
-+		__entry->tid = tid;
++		__entry->ac = txq->txq.ac;
++		__entry->tid = txq->txq.tid;
 +	),
 +
 +	TP_printk(
-+		LOCAL_PR_FMT  VIF_PR_FMT  STA_PR_FMT " tid: 0x%x",
-+		LOCAL_PR_ARG, VIF_PR_ARG, STA_PR_ARG, __entry->tid
++		LOCAL_PR_FMT  VIF_PR_FMT  STA_PR_FMT " ac:%d tid:%d",
++		LOCAL_PR_ARG, VIF_PR_ARG, STA_PR_ARG, __entry->ac, __entry->tid
 +	)
 +);
 +
@@ -557,15 +570,14 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  #define TRACE_SYSTEM mac80211_msg
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -776,12 +776,23 @@ ieee80211_tx_h_rate_ctrl(struct ieee8021
+@@ -776,12 +776,22 @@ ieee80211_tx_h_rate_ctrl(struct ieee8021
  	return TX_CONTINUE;
  }
  
-+static u16
-+ieee80211_tx_next_seq(struct sta_info *sta, int tid)
++static __le16 ieee80211_tx_next_seq(struct sta_info *sta, int tid)
 +{
 +	u16 *seq = &sta->tid_seq[tid];
-+	u16 ret = cpu_to_le16(*seq);
++	__le16 ret = cpu_to_le16(*seq);
 +
 +	/* Increase the sequence number. */
 +	*seq = (*seq + 0x10) & IEEE80211_SCTL_SEQ;
@@ -582,7 +594,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	u8 *qc;
  	int tid;
  
-@@ -832,13 +843,10 @@ ieee80211_tx_h_sequence(struct ieee80211
+@@ -832,13 +842,10 @@ ieee80211_tx_h_sequence(struct ieee80211
  
  	qc = ieee80211_get_qos_ctl(hdr);
  	tid = *qc & IEEE80211_QOS_CTL_TID_MASK;
@@ -598,7 +610,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	return TX_CONTINUE;
  }
-@@ -1067,7 +1075,7 @@ static bool ieee80211_tx_prep_agg(struct
+@@ -1067,7 +1074,7 @@ static bool ieee80211_tx_prep_agg(struct
  		 * nothing -- this aggregation session is being started
  		 * but that might still fail with the driver
  		 */
@@ -607,7 +619,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		spin_lock(&tx->sta->lock);
  		/*
  		 * Need to re-check now, because we may get here
-@@ -1201,13 +1209,102 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1201,13 +1208,102 @@ ieee80211_tx_prepare(struct ieee80211_su
  	return TX_CONTINUE;
  }
  
@@ -620,7 +632,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	struct ieee80211_sub_if_data *sdata = vif_to_sdata(vif);
 +	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 +	struct ieee80211_tx_control control = {
-+		.sta = pubsta
++		.sta = pubsta,
 +	};
 +	struct ieee80211_txq *txq = NULL;
 +	struct txq_info *txqi;
@@ -711,7 +723,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	struct sk_buff *skb, *tmp;
  	unsigned long flags;
  
-@@ -1265,10 +1362,9 @@ static bool ieee80211_tx_frags(struct ie
+@@ -1265,10 +1361,9 @@ static bool ieee80211_tx_frags(struct ie
  		spin_unlock_irqrestore(&local->queue_stop_reason_lock, flags);
  
  		info->control.vif = vif;

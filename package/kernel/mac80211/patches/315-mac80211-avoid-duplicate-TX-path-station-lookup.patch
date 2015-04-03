@@ -48,7 +48,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1111,11 +1111,13 @@ static bool ieee80211_tx_prep_agg(struct
+@@ -1110,11 +1110,13 @@ static bool ieee80211_tx_prep_agg(struct
  
  /*
   * initialises @tx
@@ -63,7 +63,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_hdr *hdr;
-@@ -1138,17 +1140,22 @@ ieee80211_tx_prepare(struct ieee80211_su
+@@ -1137,17 +1139,22 @@ ieee80211_tx_prepare(struct ieee80211_su
  
  	hdr = (struct ieee80211_hdr *) skb->data;
  
@@ -96,7 +96,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (tx->sta && ieee80211_is_data_qos(hdr->frame_control) &&
  	    !ieee80211_is_qos_nullfunc(hdr->frame_control) &&
-@@ -1486,7 +1493,7 @@ bool ieee80211_tx_prepare_skb(struct iee
+@@ -1485,7 +1492,7 @@ bool ieee80211_tx_prepare_skb(struct iee
  	struct ieee80211_tx_data tx;
  	struct sk_buff *skb2;
  
@@ -105,7 +105,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		return false;
  
  	info->band = band;
-@@ -1519,7 +1526,8 @@ EXPORT_SYMBOL(ieee80211_tx_prepare_skb);
+@@ -1518,7 +1525,8 @@ EXPORT_SYMBOL(ieee80211_tx_prepare_skb);
   * Returns false if the frame couldn't be transmitted but was queued instead.
   */
  static bool ieee80211_tx(struct ieee80211_sub_if_data *sdata,
@@ -115,7 +115,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_tx_data tx;
-@@ -1535,7 +1543,7 @@ static bool ieee80211_tx(struct ieee8021
+@@ -1534,7 +1542,7 @@ static bool ieee80211_tx(struct ieee8021
  
  	/* initialises tx */
  	led_len = skb->len;
@@ -124,7 +124,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (unlikely(res_prepare == TX_DROP)) {
  		ieee80211_free_txskb(&local->hw, skb);
-@@ -1591,7 +1599,8 @@ static int ieee80211_skb_resize(struct i
+@@ -1590,7 +1598,8 @@ static int ieee80211_skb_resize(struct i
  	return 0;
  }
  
@@ -134,7 +134,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
-@@ -1626,7 +1635,7 @@ void ieee80211_xmit(struct ieee80211_sub
+@@ -1625,7 +1634,7 @@ void ieee80211_xmit(struct ieee80211_sub
  	}
  
  	ieee80211_set_qos_hdr(sdata, skb);
@@ -143,7 +143,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  }
  
  static bool ieee80211_parse_tx_radiotap(struct sk_buff *skb)
-@@ -1847,7 +1856,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
+@@ -1846,7 +1855,7 @@ netdev_tx_t ieee80211_monitor_start_xmit
  		goto fail_rcu;
  
  	info->band = chandef->chan->band;
@@ -152,7 +152,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	rcu_read_unlock();
  
  	return NETDEV_TX_OK;
-@@ -1878,7 +1887,8 @@ fail:
+@@ -1877,7 +1886,8 @@ fail:
   * Returns: the (possibly reallocated) skb or an ERR_PTR() code
   */
  static struct sk_buff *ieee80211_build_hdr(struct ieee80211_sub_if_data *sdata,
@@ -162,7 +162,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  {
  	struct ieee80211_local *local = sdata->local;
  	struct ieee80211_tx_info *info;
-@@ -1921,6 +1931,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -1920,6 +1930,7 @@ static struct sk_buff *ieee80211_build_h
  			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
  			wme_sta = sta->sta.wme;
  			have_station = true;
@@ -170,7 +170,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		} else if (sdata->wdev.use_4addr) {
  			ret = -ENOLINK;
  			goto free;
-@@ -2074,6 +2085,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -2073,6 +2084,7 @@ static struct sk_buff *ieee80211_build_h
  			have_station = true;
  			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
  			wme_sta = sta->sta.wme;
@@ -178,7 +178,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		}  else if (sdata->u.mgd.use_4addr &&
  			    cpu_to_be16(ethertype) != sdata->control_port_protocol) {
  			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
-@@ -2137,13 +2149,18 @@ static struct sk_buff *ieee80211_build_h
+@@ -2136,13 +2148,18 @@ static struct sk_buff *ieee80211_build_h
  	 * and mesh mode checks authorization later.
  	 */
  	multicast = is_multicast_ether_addr(hdr.addr1);
@@ -200,7 +200,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	}
  
  	/* For mesh, the use of the QoS header is mandatory */
-@@ -2321,6 +2338,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -2320,6 +2337,7 @@ void __ieee80211_subif_start_xmit(struct
  				  u32 info_flags)
  {
  	struct ieee80211_sub_if_data *sdata = IEEE80211_DEV_TO_SUB_IF(dev);
@@ -208,7 +208,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  
  	if (unlikely(skb->len < ETH_HLEN)) {
  		kfree_skb(skb);
-@@ -2329,7 +2347,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -2328,7 +2346,7 @@ void __ieee80211_subif_start_xmit(struct
  
  	rcu_read_lock();
  
@@ -217,7 +217,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (IS_ERR(skb))
  		goto out;
  
-@@ -2337,7 +2355,7 @@ void __ieee80211_subif_start_xmit(struct
+@@ -2336,7 +2354,7 @@ void __ieee80211_subif_start_xmit(struct
  	dev->stats.tx_bytes += skb->len;
  	dev->trans_start = jiffies;
  
@@ -226,7 +226,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
   out:
  	rcu_read_unlock();
  }
-@@ -2365,10 +2383,11 @@ ieee80211_build_data_template(struct iee
+@@ -2364,10 +2382,11 @@ ieee80211_build_data_template(struct iee
  		.local = sdata->local,
  		.sdata = sdata,
  	};
@@ -239,7 +239,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	if (IS_ERR(skb))
  		goto out;
  
-@@ -2426,7 +2445,7 @@ static bool ieee80211_tx_pending_skb(str
+@@ -2425,7 +2444,7 @@ static bool ieee80211_tx_pending_skb(str
  			return true;
  		}
  		info->band = chanctx_conf->def.chan->band;
@@ -248,7 +248,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	} else {
  		struct sk_buff_head skbs;
  
-@@ -3164,7 +3183,7 @@ ieee80211_get_buffered_bc(struct ieee802
+@@ -3163,7 +3182,7 @@ ieee80211_get_buffered_bc(struct ieee802
  
  		if (sdata->vif.type == NL80211_IFTYPE_AP)
  			sdata = IEEE80211_DEV_TO_SUB_IF(skb->dev);
@@ -257,7 +257,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			break;
  		dev_kfree_skb_any(skb);
  	}
-@@ -3296,6 +3315,6 @@ void __ieee80211_tx_skb_tid_band(struct 
+@@ -3295,6 +3314,6 @@ void __ieee80211_tx_skb_tid_band(struct 
  	 */
  	local_bh_disable();
  	IEEE80211_SKB_CB(skb)->band = band;

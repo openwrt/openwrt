@@ -24,7 +24,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 
 --- a/net/mac80211/tx.c
 +++ b/net/mac80211/tx.c
-@@ -1895,6 +1895,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -1894,6 +1894,7 @@ static struct sk_buff *ieee80211_build_h
  	bool wme_sta = false, authorized = false, tdls_auth = false;
  	bool tdls_peer = false, tdls_setup_frame = false;
  	bool multicast;
@@ -32,7 +32,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  	u16 info_id = 0;
  	struct ieee80211_chanctx_conf *chanctx_conf;
  	struct ieee80211_sub_if_data *ap_sdata;
-@@ -1919,6 +1920,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -1918,6 +1919,7 @@ static struct sk_buff *ieee80211_build_h
  			hdrlen = 30;
  			authorized = test_sta_flag(sta, WLAN_STA_AUTHORIZED);
  			wme_sta = sta->sta.wme;
@@ -40,7 +40,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		}
  		ap_sdata = container_of(sdata->bss, struct ieee80211_sub_if_data,
  					u.ap);
-@@ -2035,9 +2037,6 @@ static struct sk_buff *ieee80211_build_h
+@@ -2034,9 +2036,6 @@ static struct sk_buff *ieee80211_build_h
  		if (sdata->wdev.wiphy->flags & WIPHY_FLAG_SUPPORTS_TDLS) {
  			sta = sta_info_get(sdata, skb->data);
  			if (sta) {
@@ -50,7 +50,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  				tdls_peer = test_sta_flag(sta,
  							  WLAN_STA_TDLS_PEER);
  				tdls_auth = test_sta_flag(sta,
-@@ -2069,6 +2068,9 @@ static struct sk_buff *ieee80211_build_h
+@@ -2068,6 +2067,9 @@ static struct sk_buff *ieee80211_build_h
  			memcpy(hdr.addr2, skb->data + ETH_ALEN, ETH_ALEN);
  			memcpy(hdr.addr3, sdata->u.mgd.bssid, ETH_ALEN);
  			hdrlen = 24;
@@ -60,7 +60,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		}  else if (sdata->u.mgd.use_4addr &&
  			    cpu_to_be16(ethertype) != sdata->control_port_protocol) {
  			fc |= cpu_to_le16(IEEE80211_FCTL_FROMDS |
-@@ -2131,7 +2133,7 @@ static struct sk_buff *ieee80211_build_h
+@@ -2130,7 +2132,7 @@ static struct sk_buff *ieee80211_build_h
  	 * in AP mode)
  	 */
  	multicast = is_multicast_ether_addr(hdr.addr1);
