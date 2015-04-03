@@ -1,0 +1,65 @@
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -132,6 +132,7 @@
+ 
+ 		gsbi2: gsbi@12480000 {
+ 			compatible = "qcom,gsbi-v1.0.0";
++			cell-index = <2>;
+ 			reg = <0x12480000 0x100>;
+ 			clocks = <&gcc GSBI2_H_CLK>;
+ 			clock-names = "iface";
+@@ -140,6 +141,8 @@
+ 			ranges;
+ 			status = "disabled";
+ 
++			syscon-tcsr = <&tcsr>;
++
+ 			uart2: serial@12490000 {
+ 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
+ 				reg = <0x12490000 0x1000>,
+@@ -167,6 +170,7 @@
+ 
+ 		gsbi4: gsbi@16300000 {
+ 			compatible = "qcom,gsbi-v1.0.0";
++			cell-index = <4>;
+ 			reg = <0x16300000 0x100>;
+ 			clocks = <&gcc GSBI4_H_CLK>;
+ 			clock-names = "iface";
+@@ -175,6 +179,8 @@
+ 			ranges;
+ 			status = "disabled";
+ 
++			syscon-tcsr = <&tcsr>;
++
+ 			uart4: serial@16340000 {
+ 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
+ 				reg = <0x16340000 0x1000>,
+@@ -201,6 +207,7 @@
+ 
+ 		gsbi5: gsbi@1a200000 {
+ 			compatible = "qcom,gsbi-v1.0.0";
++			cell-index = <5>;
+ 			reg = <0x1a200000 0x100>;
+ 			clocks = <&gcc GSBI5_H_CLK>;
+ 			clock-names = "iface";
+@@ -209,6 +216,8 @@
+ 			ranges;
+ 			status = "disabled";
+ 
++			syscon-tcsr = <&tcsr>;
++
+ 			uart5: serial@1a240000 {
+ 				compatible = "qcom,msm-uartdm-v1.3", "qcom,msm-uartdm";
+ 				reg = <0x1a240000 0x1000>,
+@@ -279,6 +288,11 @@
+ 			status = "disabled";
+ 		};
+ 
++		tcsr: syscon@1a400000 {
++			compatible = "qcom,tcsr-ipq8064", "syscon";
++			reg = <0x1a400000 0x100>;
++		};
++
+ 		qcom,ssbi@500000 {
+ 			compatible = "qcom,ssbi";
+ 			reg = <0x00500000 0x1000>;

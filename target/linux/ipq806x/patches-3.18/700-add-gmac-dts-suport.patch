@@ -1,7 +1,7 @@
 --- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-@@ -18,8 +18,15 @@
- 		bootargs = "console=ttyMSM0,115200 root=/dev/mtdblock12 rootfstype=squashfs,jffs2";
+@@ -22,8 +22,15 @@
+ 		linux,stdout-path = "serial0:115200n8";
  	};
  
 +	aliases {
@@ -16,7 +16,7 @@
  			i2c4_pins: i2c4_pinmux {
  				pins = "gpio12", "gpio13";
  				function = "gsbi4";
-@@ -34,6 +41,25 @@
+@@ -38,6 +45,25 @@
  					bias-none;
  				};
  			};
@@ -42,16 +42,16 @@
  		};
  
  		gsbi@16300000 {
-@@ -72,6 +98,7 @@
+@@ -76,6 +102,7 @@
  					#size-cells = <1>;
  					spi-max-frequency = <50000000>;
  					reg = <0>;
 +					m25p,fast-read;
  
  					partition@0 {
- 						label = "0:SBL1";
-@@ -148,5 +175,66 @@
- 		sata@29000000 {
+ 						label = "lowlevel_init";
+@@ -136,5 +163,66 @@
+ 		usb30@1 {
  			status = "ok";
  		};
 +
@@ -127,11 +127,10 @@
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -279,5 +280,42 @@
- 			#clock-cells = <1>;
- 			#reset-cells = <1>;
+@@ -390,5 +391,41 @@
+ 			};
  		};
-+
+ 
 +		nss-gmac-common {
 +			reg = <0x03000000 0x0000FFFF 0x1bb00000 0x0000FFFF 0x00900000 0x00004000>;
 +			reg-names = "nss_reg_base" , "qsgmii_reg_base", "clk_ctl_base";
