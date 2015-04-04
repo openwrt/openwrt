@@ -810,3 +810,20 @@ define KernelPackage/vmxnet3/description
 endef
 
 $(eval $(call KernelPackage,vmxnet3))
+
+
+define KernelPackage/spi-ks8995
+  SUBMENU:=$(NETWORK_DEVICES_MENU)
+  TITLE:=Micrel/Kendin KS8995 Ethernet switch control
+  FILES:=$(LINUX_DIR)/drivers/net/phy/spi_ks8995.ko
+  KCONFIG:=CONFIG_MICREL_KS8995MA \
+	CONFIG_SPI=y \
+	CONFIG_SPI_MASTER=y
+  AUTOLOAD:=$(call AutoLoad,50,spi_ks8995)
+endef
+
+define KernelPackage/spi-ks8995/description
+  Kernel module for Micrel/Kendin KS8995 ethernet switch
+endef
+
+$(eval $(call KernelPackage,spi-ks8995))
