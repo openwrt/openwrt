@@ -129,10 +129,17 @@ config BUSYBOX_CONFIG_FEATURE_CHECK_NAMES
 	  For compatibility with Samba machine accounts "$" is also supported
 	  at the end of the user or group name.
 
+config BUSYBOX_CONFIG_LAST_ID
+	int "Last valid uid or gid for adduser and addgroup"
+	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
+	default BUSYBOX_DEFAULT_LAST_ID
+	help
+	  Last valid uid or gid for adduser and addgroup
+
 config BUSYBOX_CONFIG_FIRST_SYSTEM_ID
 	int "First valid system uid or gid for adduser and addgroup"
 	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
-	range 0 64900
+	range 0 BUSYBOX_CONFIG_LAST_ID
 	default BUSYBOX_DEFAULT_FIRST_SYSTEM_ID
 	help
 	  First valid system uid or gid for adduser and addgroup
@@ -140,7 +147,7 @@ config BUSYBOX_CONFIG_FIRST_SYSTEM_ID
 config BUSYBOX_CONFIG_LAST_SYSTEM_ID
 	int "Last valid system uid or gid for adduser and addgroup"
 	depends on BUSYBOX_CONFIG_ADDUSER || BUSYBOX_CONFIG_ADDGROUP
-	range 0 64900
+	range BUSYBOX_CONFIG_FIRST_SYSTEM_ID BUSYBOX_CONFIG_LAST_ID
 	default BUSYBOX_DEFAULT_LAST_SYSTEM_ID
 	help
 	  Last valid system uid or gid for adduser and addgroup
@@ -226,13 +233,6 @@ config BUSYBOX_CONFIG_LOGIN_SESSION_AS_CHILD
 	  when the login session is complete.  If you use PAM, you
 	  almost always would want this to be set to Y, else PAM session
 	  will not be cleaned up.
-
-config BUSYBOX_CONFIG_PAM
-	bool "Support for PAM (Pluggable Authentication Modules)"
-	default BUSYBOX_DEFAULT_PAM
-	depends on BUSYBOX_CONFIG_LOGIN
-	help
-	  Use PAM in login(1) instead of direct access to password database.
 
 config BUSYBOX_CONFIG_LOGIN_SCRIPTS
 	bool "Support for login scripts"

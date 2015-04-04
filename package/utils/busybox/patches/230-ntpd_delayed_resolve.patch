@@ -1,6 +1,6 @@
 --- a/networking/ntpd.c
 +++ b/networking/ntpd.c
-@@ -238,6 +238,7 @@ typedef struct {
+@@ -251,6 +251,7 @@ typedef struct {
  typedef struct {
  	len_and_sockaddr *p_lsa;
  	char             *p_dotted;
@@ -8,7 +8,7 @@
  	int              p_fd;
  	int              datapoint_idx;
  	uint32_t         lastpkt_refid;
-@@ -738,8 +739,9 @@ add_peers(char *s)
+@@ -756,8 +757,9 @@ add_peers(const char *s)
  	peer_t *p;
  
  	p = xzalloc(sizeof(*p));
@@ -20,7 +20,7 @@
  	p->p_fd = -1;
  	p->p_xmt_msg.m_status = MODE_CLIENT | (NTP_VERSION << 3);
  	p->next_action_time = G.cur_time; /* = set_next(p, 0); */
-@@ -788,6 +790,25 @@ send_query_to_peer(peer_t *p)
+@@ -806,6 +808,25 @@ send_query_to_peer(peer_t *p)
  	 *
  	 * Uncomment this and use strace to see it in action:
  	 */

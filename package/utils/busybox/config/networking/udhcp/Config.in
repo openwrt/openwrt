@@ -90,6 +90,17 @@ config BUSYBOX_CONFIG_FEATURE_UDHCPC_ARPING
 	  will DHCPDECLINE the offer if the address is in use,
 	  and restart the discover process.
 
+config BUSYBOX_CONFIG_FEATURE_UDHCPC_SANITIZEOPT
+	bool "Do not pass malformed host and domain names"
+	default BUSYBOX_DEFAULT_FEATURE_UDHCPC_SANITIZEOPT
+	depends on BUSYBOX_CONFIG_UDHCPC
+	help
+	  If selected, udhcpc will check some options (such as option 12 -
+	  hostname) and if they don't look like valid hostnames
+	  (for example, if they start with dash or contain spaces),
+	  they will be replaced with string "bad" when exporting
+	  to the environment.
+
 config BUSYBOX_CONFIG_FEATURE_UDHCP_PORT
 	bool "Enable '-P port' option for udhcpd and udhcpc"
 	default BUSYBOX_DEFAULT_FEATURE_UDHCP_PORT

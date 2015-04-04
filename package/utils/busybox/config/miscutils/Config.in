@@ -15,6 +15,39 @@ config BUSYBOX_CONFIG_CONSPY
 	  example:  conspy NUM      shared access to console num
 	  or        conspy -nd NUM  screenshot of console num
 	  or        conspy -cs NUM  poor man's GNU screen like
+config BUSYBOX_CONFIG_CROND
+	bool "crond"
+	default BUSYBOX_DEFAULT_CROND
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
+	help
+	  Crond is a background daemon that parses individual crontab
+	  files and executes commands on behalf of the users in question.
+	  This is a port of dcron from slackware. It uses files of the
+	  format /var/spool/cron/crontabs/<username> files, for example:
+	      $ cat /var/spool/cron/crontabs/root
+	      # Run daily cron jobs at 4:40 every day:
+	      40 4 * * * /etc/cron/daily > /dev/null 2>&1
+
+config BUSYBOX_CONFIG_FEATURE_CROND_D
+	bool "Support option -d to redirect output to stderr"
+	depends on BUSYBOX_CONFIG_CROND
+	default BUSYBOX_DEFAULT_FEATURE_CROND_D
+	help
+	  -d N sets loglevel (0:most verbose) and directs all output to stderr.
+
+config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
+	bool "Report command output via email (using sendmail)"
+	default BUSYBOX_DEFAULT_FEATURE_CROND_CALL_SENDMAIL
+	depends on BUSYBOX_CONFIG_CROND
+	help
+	  Command output will be sent to corresponding user via email.
+
+config BUSYBOX_CONFIG_FEATURE_CROND_DIR
+	string "crond spool directory"
+	default BUSYBOX_DEFAULT_FEATURE_CROND_DIR
+	depends on BUSYBOX_CONFIG_CROND || BUSYBOX_CONFIG_CRONTAB
+	help
+	  Location of crond spool.
 config BUSYBOX_CONFIG_LESS
 	bool "less"
 	default BUSYBOX_DEFAULT_LESS
@@ -121,6 +154,21 @@ config BUSYBOX_CONFIG_SETSERIAL
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Retrieve or set Linux serial port.
+config BUSYBOX_CONFIG_TASKSET
+	bool "taskset"
+	default BUSYBOX_DEFAULT_TASKSET  # doesn't build on some non-x86 targets (m68k)
+	help
+	  Retrieve or set a processes's CPU affinity.
+	  This requires sched_{g,s}etaffinity support in your libc.
+
+config BUSYBOX_CONFIG_FEATURE_TASKSET_FANCY
+	bool "Fancy output"
+	default BUSYBOX_DEFAULT_FEATURE_TASKSET_FANCY
+	depends on BUSYBOX_CONFIG_TASKSET
+	help
+	  Add code for fancy output. This merely silences a compiler-warning
+	  and adds about 135 Bytes. May be needed for machines with alot
+	  of CPUs.
 config BUSYBOX_CONFIG_UBIATTACH
 	bool "ubiattach"
 	default BUSYBOX_DEFAULT_UBIATTACH
@@ -294,40 +342,6 @@ config BUSYBOX_CONFIG_CHRT
 	help
 	  manipulate real-time attributes of a process.
 	  This requires sched_{g,s}etparam support in your libc.
-
-config BUSYBOX_CONFIG_CROND
-	bool "crond"
-	default BUSYBOX_DEFAULT_CROND
-	select BUSYBOX_CONFIG_FEATURE_SYSLOG
-	help
-	  Crond is a background daemon that parses individual crontab
-	  files and executes commands on behalf of the users in question.
-	  This is a port of dcron from slackware. It uses files of the
-	  format /var/spool/cron/crontabs/<username> files, for example:
-	      $ cat /var/spool/cron/crontabs/root
-	      # Run daily cron jobs at 4:40 every day:
-	      40 4 * * * /etc/cron/daily > /dev/null 2>&1
-
-config BUSYBOX_CONFIG_FEATURE_CROND_D
-	bool "Support option -d to redirect output to stderr"
-	depends on BUSYBOX_CONFIG_CROND
-	default BUSYBOX_DEFAULT_FEATURE_CROND_D
-	help
-	  -d sets loglevel to 0 (most verbose) and directs all output to stderr.
-
-config BUSYBOX_CONFIG_FEATURE_CROND_CALL_SENDMAIL
-	bool "Report command output via email (using sendmail)"
-	default BUSYBOX_DEFAULT_FEATURE_CROND_CALL_SENDMAIL
-	depends on BUSYBOX_CONFIG_CROND
-	help
-	  Command output will be sent to corresponding user via email.
-
-config BUSYBOX_CONFIG_FEATURE_CROND_DIR
-	string "crond spool directory"
-	default BUSYBOX_DEFAULT_FEATURE_CROND_DIR
-	depends on BUSYBOX_CONFIG_CROND || BUSYBOX_CONFIG_CRONTAB
-	help
-	  Location of crond spool.
 
 config BUSYBOX_CONFIG_CRONTAB
 	bool "crontab"
@@ -700,22 +714,6 @@ config BUSYBOX_CONFIG_STRINGS
 	help
 	  strings prints the printable character sequences for each file
 	  specified.
-
-config BUSYBOX_CONFIG_TASKSET
-	bool "taskset"
-	default BUSYBOX_DEFAULT_TASKSET  # doesn't build on some non-x86 targets (m68k)
-	help
-	  Retrieve or set a processes's CPU affinity.
-	  This requires sched_{g,s}etaffinity support in your libc.
-
-config BUSYBOX_CONFIG_FEATURE_TASKSET_FANCY
-	bool "Fancy output"
-	default BUSYBOX_DEFAULT_FEATURE_TASKSET_FANCY
-	depends on BUSYBOX_CONFIG_TASKSET
-	help
-	  Add code for fancy output. This merely silences a compiler-warning
-	  and adds about 135 Bytes. May be needed for machines with alot
-	  of CPUs.
 
 config BUSYBOX_CONFIG_TIME
 	bool "time"

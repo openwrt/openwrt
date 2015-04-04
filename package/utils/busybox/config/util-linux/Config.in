@@ -11,6 +11,12 @@ config BUSYBOX_CONFIG_BLOCKDEV
 	default BUSYBOX_DEFAULT_BLOCKDEV
 	help
 	  Performs some ioctls with block devices.
+config BUSYBOX_CONFIG_FATATTR
+	bool "fatattr"
+	default BUSYBOX_DEFAULT_FATATTR
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  fatattr lists or changes the file attributes on a fat file system.
 config BUSYBOX_CONFIG_FSTRIM
 	bool "fstrim"
 	default BUSYBOX_DEFAULT_FSTRIM
@@ -671,6 +677,15 @@ config BUSYBOX_CONFIG_SWAPONOFF
 	  utility is used, typically at system shutdown, to disable any swap
 	  space. If you are not using any swap space, you can leave this
 	  option disabled.
+
+config BUSYBOX_CONFIG_FEATURE_SWAPON_DISCARD
+	bool "Support discard option -d"
+	default BUSYBOX_DEFAULT_FEATURE_SWAPON_DISCARD
+	depends on BUSYBOX_CONFIG_SWAPONOFF
+	help
+	  Enable support for discarding swap area blocks at swapon and/or as
+	  the kernel frees them. This option enables both the -d option on
+	  'swapon' and the 'discard' option for swap entries in /etc/fstab.
 
 config BUSYBOX_CONFIG_FEATURE_SWAPON_PRI
 	bool "Support priority option -p"
