@@ -73,6 +73,13 @@ config BUSYBOX_CONFIG_ASH_BUILTIN_TEST
 	help
 	  Enable support for test builtin in ash.
 
+config BUSYBOX_CONFIG_ASH_HELP
+	bool "help builtin"
+	default BUSYBOX_DEFAULT_ASH_HELP
+	depends on BUSYBOX_CONFIG_ASH
+	help
+	  Enable help builtin in ash.
+
 config BUSYBOX_CONFIG_ASH_CMDCMD
 	bool "'command' command to override shell builtins"
 	default BUSYBOX_DEFAULT_ASH_CMDCMD

@@ -256,6 +256,26 @@ config BUSYBOX_CONFIG_UNICODE_PRESERVE_BROKEN
 	  at shell prompt will list file named 0xff (single char name
 	  with char value 255), not file named '?'.
 
+config BUSYBOX_CONFIG_PAM
+	bool "Support for PAM (Pluggable Authentication Modules)"
+	default BUSYBOX_DEFAULT_PAM
+	help
+	  Use PAM in some busybox applets (currently login and httpd) instead
+	  of direct access to password database.
+
+config BUSYBOX_CONFIG_FEATURE_USE_SENDFILE
+	bool "Use sendfile system call"
+	default BUSYBOX_DEFAULT_FEATURE_USE_SENDFILE
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  When enabled, busybox will use the kernel sendfile() function
+	  instead of read/write loops to copy data between file descriptors
+	  (for example, cp command does this a lot).
+	  If sendfile() doesn't work, copying code falls back to read/write
+	  loop. sendfile() was originally implemented for faster I/O
+	  from files to sockets, but since Linux 2.6.33 it was extended
+	  to work for many more file types.
+
 config BUSYBOX_CONFIG_LONG_OPTS
 	bool "Support for --long-options"
 	default BUSYBOX_DEFAULT_LONG_OPTS
@@ -415,10 +435,7 @@ config BUSYBOX_CONFIG_SELINUX
 	  the option of compiling in SELinux applets.
 
 	  If you do not have a complete SELinux userland installed, this stuff
-	  will not compile. Go visit
-		http://www.nsa.gov/selinux/index.html
-	  to download the necessary stuff to allow busybox to compile with
-	  this option enabled. Specifially, libselinux 1.28 or better is
+	  will not compile.  Specifially, libselinux 1.28 or better is
 	  directly required by busybox. If the installation is located in a
 	  non-standard directory, provide it by invoking make as follows:
 		CFLAGS=-I<libselinux-include-path> \
@@ -669,6 +686,14 @@ config BUSYBOX_CONFIG_DEBUG_PESSIMIZE
 	  stepping through it with a debugger. This switches it off, resulting
 	  in a much bigger executable that more closely matches the source
 	  code.
+
+config BUSYBOX_CONFIG_UNIT_TEST
+	bool "Build unit tests"
+	default BUSYBOX_DEFAULT_UNIT_TEST
+	help
+	  Say Y here if you want to build unit tests (both the framework and
+	  test cases) as a Busybox applet. This results in bigger code, so you
+	  probably don't want this option in production builds.
 
 config BUSYBOX_CONFIG_WERROR
 	bool "Abort compilation on any warning"

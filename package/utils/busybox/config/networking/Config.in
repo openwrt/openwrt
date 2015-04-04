@@ -67,7 +67,6 @@ config BUSYBOX_CONFIG_NC_110_COMPAT
 	bool "Netcat 1.10 compatibility (+2.5k)"
 	default BUSYBOX_DEFAULT_NC_110_COMPAT  # off specially for Rob
 	depends on BUSYBOX_CONFIG_NC
-	select BUSYBOX_CONFIG_NC_SERVER
 	help
 	  This option makes nc closely follow original nc-1.10.
 	  The code is about 2.5k bigger. It enables
@@ -228,6 +227,13 @@ config BUSYBOX_CONFIG_FEATURE_FTPD_ACCEPT_BROKEN_LIST
 	  it increases the code size by ~40 bytes.
 	  Most other ftp servers seem to behave similar to this.
 
+config BUSYBOX_CONFIG_FEATURE_FTP_AUTHENTICATION
+	bool "Enable authentication"
+	default BUSYBOX_DEFAULT_FEATURE_FTP_AUTHENTICATION
+	depends on BUSYBOX_CONFIG_FTPD
+	help
+	  Enable basic system login as seen in telnet etc.
+
 config BUSYBOX_CONFIG_FTPGET
 	bool "ftpget"
 	default BUSYBOX_DEFAULT_FTPGET
@@ -267,14 +273,6 @@ config BUSYBOX_CONFIG_FEATURE_HTTPD_RANGES
 	  Makes httpd emit "Accept-Ranges: bytes" header and understand
 	  "Range: bytes=NNN-[MMM]" header. Allows for resuming interrupted
 	  downloads, seeking in multimedia players etc.
-
-config BUSYBOX_CONFIG_FEATURE_HTTPD_USE_SENDFILE
-	bool "Use sendfile system call"
-	default BUSYBOX_DEFAULT_FEATURE_HTTPD_USE_SENDFILE
-	depends on BUSYBOX_CONFIG_HTTPD
-	help
-	  When enabled, httpd will use the kernel sendfile() function
-	  instead of read/write loop.
 
 config BUSYBOX_CONFIG_FEATURE_HTTPD_SETUID
 	bool "Enable -u <user> option"
@@ -763,6 +761,14 @@ config BUSYBOX_CONFIG_FEATURE_NTPD_SERVER
 	help
 	  Make ntpd usable as a NTP server. If you disable this option
 	  ntpd will be usable only as a NTP client.
+
+config BUSYBOX_CONFIG_FEATURE_NTPD_CONF
+	bool "Make ntpd understand /etc/ntp.conf"
+	default BUSYBOX_DEFAULT_FEATURE_NTPD_CONF
+	depends on BUSYBOX_CONFIG_NTPD
+	help
+	  Make ntpd look in /etc/ntp.conf for peers. Only "server address"
+	  is supported.
 
 config BUSYBOX_CONFIG_PSCAN
 	bool "pscan"

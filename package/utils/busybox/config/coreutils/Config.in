@@ -74,6 +74,11 @@ config BUSYBOX_CONFIG_GROUPS
 	default BUSYBOX_DEFAULT_GROUPS
 	help
 	  Print the group names associated with current user id.
+config BUSYBOX_CONFIG_SHUF
+	bool "shuf"
+	default BUSYBOX_DEFAULT_SHUF
+	help
+	  Generate random permutations
 config BUSYBOX_CONFIG_TEST
 	bool "test"
 	default BUSYBOX_DEFAULT_TEST
@@ -134,6 +139,11 @@ config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
 	  replace all instances of 'a' with 'xyz'. This option is mainly
 	  useful for cases when no other way of expressing a character
 	  is possible.
+config BUSYBOX_CONFIG_UNLINK
+	bool "unlink"
+	default BUSYBOX_DEFAULT_UNLINK
+	help
+	  unlink deletes a file by calling unlink()
 config BUSYBOX_CONFIG_BASE64
 	bool "base64"
 	default BUSYBOX_DEFAULT_BASE64
@@ -778,12 +788,13 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_TAIL
 	default BUSYBOX_DEFAULT_FEATURE_FANCY_TAIL
 	depends on BUSYBOX_CONFIG_TAIL
 	help
-	  The options (-q, -s, and -v) are provided by GNU tail, but
+	  The options (-q, -s, -v and -F) are provided by GNU tail, but
 	  are not specific in the SUSv3 standard.
 
 	    -q      Never output headers giving file names
 	    -s SEC  Wait SEC seconds between reads with -f
 	    -v      Always output headers giving file names
+	    -F      Same as -f, but keep retrying
 
 config BUSYBOX_CONFIG_TEE
 	bool "tee"
@@ -882,6 +893,16 @@ config BUSYBOX_CONFIG_YES
 	help
 	  yes is used to repeatedly output a specific string, or
 	  the default string `y'.
+
+comment "Common options"
+
+config BUSYBOX_CONFIG_FEATURE_VERBOSE
+	bool "Support verbose options (usually -v) for various applets"
+	default BUSYBOX_DEFAULT_FEATURE_VERBOSE
+	help
+	  Enable cp -v, rm -v and similar messages.
+	  Also enables long option (--verbose) if it exists.
+	  Without this option, -v is accepted but ignored.
 
 comment "Common options for cp and mv"
 	depends on BUSYBOX_CONFIG_CP || BUSYBOX_CONFIG_MV

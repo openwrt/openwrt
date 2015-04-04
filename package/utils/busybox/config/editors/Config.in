@@ -192,6 +192,36 @@ config BUSYBOX_CONFIG_FEATURE_VI_ASK_TERMINAL
 	  cursor position using "ESC [ 6 n" escape sequence, then read stdin.
 
 	  This is not clean but helps a lot on serial lines and such.
+config BUSYBOX_CONFIG_FEATURE_VI_UNDO
+	bool "Support undo command 'u'"
+	default BUSYBOX_DEFAULT_FEATURE_VI_UNDO
+	depends on BUSYBOX_CONFIG_VI
+	help
+	  Support the 'u' command to undo insertion, deletion, and replacement
+	  of text.
+config BUSYBOX_CONFIG_FEATURE_VI_UNDO_QUEUE
+	bool "Enable undo operation queuing"
+	default BUSYBOX_DEFAULT_FEATURE_VI_UNDO_QUEUE
+	depends on BUSYBOX_CONFIG_FEATURE_VI_UNDO
+	help
+	  The vi undo functions can use an intermediate queue to greatly lower
+	  malloc() calls and overhead. When the maximum size of this queue is
+	  reached, the contents of the queue are committed to the undo stack.
+	  This increases the size of the undo code and allows some undo
+	  operations (especially un-typing/backspacing) to be far more useful.
+config BUSYBOX_CONFIG_FEATURE_VI_UNDO_QUEUE_MAX
+	int "Maximum undo character queue size"
+	default BUSYBOX_DEFAULT_FEATURE_VI_UNDO_QUEUE_MAX
+	range 32 65536
+	depends on BUSYBOX_CONFIG_FEATURE_VI_UNDO_QUEUE
+	help
+	  This option sets the number of bytes used at runtime for the queue.
+	  Smaller values will create more undo objects and reduce the amount
+	  of typed or backspaced characters that are grouped into one undo
+	  operation; larger values increase the potential size of each undo
+	  and will generally malloc() larger objects and less frequently.
+	  Unless you want more (or less) frequent "undo points" while typing,
+	  you should probably leave this unchanged.
 
 config BUSYBOX_CONFIG_FEATURE_ALLOW_EXEC
 	bool "Allow vi and awk to execute shell commands"

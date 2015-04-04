@@ -90,6 +90,16 @@ config BUSYBOX_CONFIG_FEATURE_FIND_EXEC
 	  Support the 'find -exec' option for executing commands based upon
 	  the files matched.
 
+config BUSYBOX_CONFIG_FEATURE_FIND_EXEC_PLUS
+	bool "Enable -exec ... {} +"
+	default BUSYBOX_DEFAULT_FEATURE_FIND_EXEC_PLUS
+	depends on BUSYBOX_CONFIG_FEATURE_FIND_EXEC
+	help
+	  Support the 'find -exec ... {} +' option for executing commands
+	  for all matched files at once.
+	  Without this option, -exec + is a synonym for -exec ;
+	  (IOW: it works correctly, but without expected speedup)
+
 config BUSYBOX_CONFIG_FEATURE_FIND_USER
 	bool "Enable -user: username/uid matching"
 	default BUSYBOX_DEFAULT_FEATURE_FIND_USER
@@ -248,5 +258,12 @@ config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_ZERO_TERM
 	  Support -0: input items are terminated by a NUL character
 	  instead of whitespace, and the quotes and backslash
 	  are not special.
+
+config BUSYBOX_CONFIG_FEATURE_XARGS_SUPPORT_REPL_STR
+	bool "Enable -I STR: string to replace"
+	default BUSYBOX_DEFAULT_FEATURE_XARGS_SUPPORT_REPL_STR
+	depends on BUSYBOX_CONFIG_XARGS
+	help
+	  Support -I STR and -i[STR] options.
 
 endmenu
