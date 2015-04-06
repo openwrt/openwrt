@@ -57,8 +57,8 @@ define Build/mktplinkfw
 		-r $@ \
 		-o $@.new \
 		-a $(call rootfs_align,$(FILESYSTEM)) \
-		$(if $(findstring sysupgrade,$1),-j -X 0x40000) \
-		$(if $(findstring factory,$1),-j -X 0x40000 -s) \
+		$(if $(findstring sysupgrade,$1),-j -X 0x40000 -s) \
+		$(if $(findstring factory,$1),-j -X 0x40000) \
 		$(if $(findstring initramfs,$1),-s -c)
 	@mv $@.new $@
 endef
