@@ -1,0 +1,91 @@
+--- a/configure.ac
++++ b/configure.ac
+@@ -169,6 +169,15 @@ if test "x$want_gpgme" = "xyes"; then
+   fi
+ fi
+ 
++AC_ARG_ENABLE(usign,
++    AC_HELP_STRING([--enable-usign], [Enable signature checking with usign
++      [[default=yes]] ]),
++    [want_usign="$enableval"], [want_usign="yes"])
++
++if test "x$want_usign" = "xyes"; then
++  AC_DEFINE(HAVE_USIGN, 1, [Define if you want usign support])
++fi
++
+ AC_SUBST(GPGME_CFLAGS)
+ AC_SUBST(GPGME_LIBS)
+ 
+--- a/libopkg/opkg.c
++++ b/libopkg/opkg.c
+@@ -599,7 +599,7 @@ opkg_update_package_lists(opkg_progress_
+ 		}
+ 		free(url);
+ 
+-#if defined(HAVE_GPGME) || defined(HAVE_OPENSSL)
++#if defined(HAVE_GPGME) || defined(HAVE_OPENSSL) || defined(HAVE_USIGN)
+ 		if (conf->check_signature) {
+ 			char *sig_file_name;
+ 			/* download detached signitures to verify the package lists */
+--- a/libopkg/opkg_cmd.c
++++ b/libopkg/opkg_cmd.c
+@@ -169,7 +169,7 @@ opkg_update_cmd(int argc, char **argv)
+ 			    list_file_name);
+ 	  }
+ 	  free(url);
+-#if defined(HAVE_GPGME) || defined(HAVE_OPENSSL)
++#if defined(HAVE_GPGME) || defined(HAVE_OPENSSL) || defined(HAVE_USIGN)
+           if (conf->check_signature) {
+               /* download detached signitures to verify the package lists */
+               /* get the url for the sig file */
+--- a/libopkg/opkg_install.c
++++ b/libopkg/opkg_install.c
+@@ -1288,7 +1288,7 @@ opkg_install_pkg(pkg_t *pkg, int from_up
+      }
+ 
+      /* check that the repository is valid */
+-     #if defined(HAVE_GPGME) || defined(HAVE_OPENSSL)
++     #if defined(HAVE_GPGME) || defined(HAVE_OPENSSL) || defined(HAVE_USIGN)
+      char *list_file_name, *sig_file_name, *lists_dir;
+ 
+      /* check to ensure the package has come from a repository */
+--- a/libopkg/opkg_download.c
++++ b/libopkg/opkg_download.c
+@@ -19,6 +19,7 @@
+ 
+ #include "config.h"
+ 
++#include <sys/wait.h>
+ #include <stdio.h>
+ #include <unistd.h>
+ #include <libgen.h>
+@@ -342,7 +343,28 @@ opkg_prepare_url_for_install(const char 
+ int
+ opkg_verify_file (char *text_file, char *sig_file)
+ {
+-#if defined HAVE_GPGME
++#if defined HAVE_USIGN
++	int status = -1;
++	int pid;
++
++    if (conf->check_signature == 0 )
++        return 0;
++
++	pid = fork();
++	if (pid < 0)
++		return -1;
++
++	if (!pid) {
++		execl("/usr/sbin/opkg-key", "opkg-key", "verify", sig_file, text_file, NULL);
++		exit(255);
++	}
++
++	waitpid(pid, &status, 0);
++	if (!WIFEXITED(status) || WEXITSTATUS(status))
++		return -1;
++
++	return 0;
++#elif defined HAVE_GPGME
+     if (conf->check_signature == 0 )
+         return 0;
+     int status = -1;
