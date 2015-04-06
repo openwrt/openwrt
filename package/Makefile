@@ -143,6 +143,14 @@ $(curdir)/index: FORCE
 		$(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
 			gzip -9c Packages > Packages.gz; \
 	); done
+ifdef CONFIG_SIGNED_PACKAGES
+	@echo Signing package index...
+	@for d in $(PACKAGE_SUBDIRS); do ( \
+		[ -d $(PACKAGE_DIR)/$$d ] && \
+			cd $(PACKAGE_DIR)/$$d || continue; \
+		$(STAGING_DIR_HOST)/bin/usign -S -m Packages -s $(BUILD_KEY); \
+	); done
+else
 ifeq ($(call qstrip,$(CONFIG_OPKGSMIME_KEY)),)
 	@echo Signing key has not been configured
 else
@@ -159,6 +167,7 @@ else
 			-inkey $(CONFIG_OPKGSMIME_KEY) \
 			$(PASSOPT) $(PASSARG); \
 	); done
+endif
 endif
 endif
 
