@@ -26,6 +26,8 @@ PKG_REMOVE_FILES = autogen.sh aclocal.m4
 PKG_LICENSE:=GPL-2.0
 PKG_LICENSE_FILES:=COPYING
 
+PKG_CONFIG_DEPENDS := CONFIG_SIGNED_PACKAGES
+
 PKG_BUILD_PARALLEL:=1
 HOST_BUILD_PARALLEL:=1
 PKG_INSTALL:=1
@@ -91,7 +93,11 @@ CONFIGURE_ARGS += \
 	--with-opkglockfile=/var/lock/opkg.lock
 
 ifeq ($(BUILD_VARIANT),smime)
-	CONFIGURE_ARGS += --enable-openssl --enable-sha256
+	CONFIGURE_ARGS += --enable-openssl --enable-sha256 --disable-usign
+else
+  ifndef CONFIG_SIGNED_PACKAGES
+    CONFIGURE_ARGS += --disable-usign
+  endif
 endif
 
 MAKE_FLAGS = \
@@ -105,6 +111,9 @@ define Package/opkg/Default/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/opkg$(2).conf $(1)/etc/opkg.conf
+  ifneq ($(CONFIG_SIGNED_PACKAGES),)
+	echo "option check_signature 1" >> $(1)/etc/opkg.conf
+  endif
   ifeq ($(CONFIG_PER_FEED_REPO),)
 	echo "src/gz %n %U" >> $(1)/etc/opkg.conf
   else
@@ -121,7 +130,11 @@ define Package/opkg/Default/install
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 endef
 
-Package/opkg/install = $(call Package/opkg/Default/install,$(1),)
+define Package/opkg/install
+	$(call Package/opkg/Default/install,$(1),)
+	mkdir $(1)/usr/sbin
+	$(INSTALL_BIN) ./files/opkg-key $(1)/usr/sbin/
+endef
 
 define Package/opkg-smime/install
 	$(call Package/opkg/Default/install,$(1),-smime)

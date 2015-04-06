@@ -14,8 +14,10 @@ PKG_NAME:=base-files
 PKG_RELEASE:=157
 
 PKG_FILE_DEPENDS:=$(PLATFORM_DIR)/ $(GENERIC_PLATFORM_DIR)/base-files/
-PKG_BUILD_DEPENDS:=opkg/host
+PKG_BUILD_DEPENDS:=opkg/host usign/host
 PKG_LICENSE:=GPL-2.0
+
+PKG_CONFIG_DEPENDS := CONFIG_SIGNED_PACKAGES
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -29,7 +31,7 @@ endif
 define Package/base-files
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=+netifd +libc +procd +jsonfilter
+  DEPENDS:=+netifd +libc +procd +jsonfilter +SIGNED_PACKAGES:usign
   TITLE:=Base filesystem for OpenWrt
   URL:=http://openwrt.org/
   VERSION:=$(PKG_RELEASE)-$(REVISION)
@@ -87,8 +89,23 @@ define Build/Compile/Default
 endef
 Build/Compile = $(Build/Compile/Default)
 
+ifdef CONFIG_SIGNED_PACKAGES
+  define Build/Configure
+	[ -s $(BUILD_KEY) -a -s $(BUILD_KEY).pub ] || \
+		$(STAGING_DIR_HOST)/bin/usign -G -s $(BUILD_KEY) -p $(BUILD_KEY).pub -c "Local build key"
+
+  endef
+
+  define Package/base-files/install-key
+	mkdir -p $(1)/etc/opkg/keys
+	$(CP) $(BUILD_KEY).pub $(1)/etc/opkg/keys/`$(STAGING_DIR_HOST)/bin/usign -F -p $(BUILD_KEY).pub`
+
+  endef
+endif
+
 define Package/base-files/install
 	$(CP) ./files/* $(1)/
+	$(Package/base-files/install-key)
 	if [ -d $(GENERIC_PLATFORM_DIR)/base-files/. ]; then \
 		$(CP) $(GENERIC_PLATFORM_DIR)/base-files/* $(1)/; \
 	fi
