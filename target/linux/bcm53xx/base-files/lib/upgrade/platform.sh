@@ -54,6 +54,20 @@ platform_identify() {
 	echo "unknown"
 }
 
+# $(1): image that should contain trx
+# $(2): trx offset in image
+platform_check_image_trx() {
+	local magic=$(get_magic_long_at "$1" $2)
+
+	[ "$magic" != "48445230" ] && {
+		return 1
+	}
+
+	# TODO: Check crc32
+
+	return 0
+}
+
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
@@ -79,11 +93,10 @@ platform_check_image() {
 				error=1
 			}
 
-			magic=$(get_magic_long_at "$1" "$header_len")
-			[ "$magic" != "48445230" ] && {
+			if ! platform_check_image_trx "$1" "$header_len"; then
 				echo "No valid TRX firmware in the CHK image"
 				error=1
-			}
+			fi
 		;;
 		"cybertan")
 			local pattern=$(dd if="$1" bs=1 count=4 2>/dev/null | hexdump -v -e '1/1 "%c"')
@@ -95,11 +108,10 @@ platform_check_image() {
 				error=1
 			}
 
-			magic=$(get_magic_long_at "$1" 32)
-			[ "$magic" != "48445230" ] && {
+			if ! platform_check_image_trx "$1" 32; then
 				echo "No valid TRX firmware in the CyberTAN image"
 				error=1
-			}
+			fi
 		;;
 		"trx")
 		;;
