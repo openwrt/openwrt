@@ -1,0 +1,51 @@
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -559,6 +559,16 @@ config ATH79_MACH_RB91X
+ 	select ATH79_DEV_USB
+ 	select ATH79_ROUTERBOOT
+ 
++config ATH79_MACH_RB922
++	bool "MikroTik RouterBOARD 922 support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_NFC
++	select ATH79_DEV_USB
++	select ATH79_ROUTERBOOT
++	select RLE_DECOMPRESS
++
+ config ATH79_MACH_RB95X
+        bool "MikroTik RouterBOARD 95X support"
+        select SOC_AR934X
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
+@@ -96,6 +96,7 @@ obj-$(CONFIG_ATH79_MACH_R6100)		+= mach-
+ obj-$(CONFIG_ATH79_MACH_RB4XX)		+= mach-rb4xx.o
+ obj-$(CONFIG_ATH79_MACH_RB750)		+= mach-rb750.o
+ obj-$(CONFIG_ATH79_MACH_RB91X)		+= mach-rb91x.o
++obj-$(CONFIG_ATH79_MACH_RB922)		+= mach-rb922.o
+ obj-$(CONFIG_ATH79_MACH_RB95X)		+= mach-rb95x.o
+ obj-$(CONFIG_ATH79_MACH_RB2011)		+= mach-rb2011.o
+ obj-$(CONFIG_ATH79_MACH_RBSXTLITE)	+= mach-rbsxtlite.o
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -103,6 +103,7 @@ enum ath79_mach_type {
+ 	ATH79_MACH_RB_750G_R3,		/* MikroTik RouterBOARD 750GL */
+ 	ATH79_MACH_RB_751,		/* MikroTik RouterBOARD 751 */
+ 	ATH79_MACH_RB_751G,		/* Mikrotik RouterBOARD 751G */
++	ATH79_MACH_RB_922GS,		/* Mikrotik RouterBOARD 911/922GS boards */
+ 	ATH79_MACH_RB_951G,		/* Mikrotik RouterBOARD 951G */
+ 	ATH79_MACH_RB_951U,		/* Mikrotik RouterBOARD 951Ui-2HnD */
+ 	ATH79_MACH_RB_2011G,		/* Mikrotik RouterBOARD 2011UAS-2HnD */
+--- a/arch/mips/ath79/prom.c
++++ b/arch/mips/ath79/prom.c
+@@ -184,7 +184,8 @@ void __init prom_init(void)
+ 	if (strstr(arcs_cmdline, "board=750Gr3") ||
+ 	    strstr(arcs_cmdline, "board=951G") ||
+ 	    strstr(arcs_cmdline, "board=2011L") ||
+-	    strstr(arcs_cmdline, "board=711Gr100"))
++	    strstr(arcs_cmdline, "board=711Gr100") ||
++	    strstr(arcs_cmdline, "board=922gs"))
+ 		ath79_prom_append_cmdline("console", "ttyS0,115200");
+ }
+ 
