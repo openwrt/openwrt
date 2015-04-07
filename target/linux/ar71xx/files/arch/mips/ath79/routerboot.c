@@ -15,11 +15,13 @@
 #include <linux/errno.h>
 #include <linux/routerboot.h>
 #include <linux/rle.h>
+#include <linux/lzo.h>
 
 #include "routerboot.h"
 
 #define RB_BLOCK_SIZE		0x1000
 #define RB_ART_SIZE		0x10000
+#define RB_MAGIC_ERD		0x00455244	/* extended radio data */
 
 static struct rb_info rb_info;
 
@@ -63,6 +65,7 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 		    u8 **tag_data, u16 *tag_len)
 {
 	uint32_t magic;
+	bool align = false;
 	int ret;
 
 	if (buflen < 4)
@@ -70,6 +73,9 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 
 	magic = get_u32(buf);
 	switch (magic) {
+	case RB_MAGIC_ERD:
+		align = true;
+		/* fall trough */
 	case RB_MAGIC_HARD:
 		/* skip magic value */
 		buf += 4;
@@ -121,6 +127,9 @@ routerboot_find_tag(u8 *buf, unsigned int buflen, u16 tag_id,
 			break;
 		}
 
+		if (align)
+			len = (len + 3) / 4;
+
 		buf += len;
 		buflen -= len;
 	}
@@ -168,13 +177,16 @@ rb_get_hw_options(void)
 	return get_u32(tag);
 }
 
-__init void *
-rb_get_wlan_data(void)
+static void * __init
+__rb_get_wlan_data(u16 id)
 {
 	u16 tag_len;
 	u8 *tag;
 	void *buf;
 	int err;
+	u32 magic;
+	size_t src_done;
+	size_t dst_done;
 
 	err = rb_find_hard_cfg_tag(RB_ID_WLAN_DATA, &tag, &tag_len);
 	if (err) {
@@ -188,11 +200,38 @@ rb_get_wlan_data(void)
 		goto err;
 	}
 
-	err = rle_decode((char *) tag, tag_len, buf, RB_ART_SIZE,
-			 NULL, NULL);
-	if (err) {
-		pr_err("unable to decode calibration data\n");
-		goto err_free;
+	magic = get_u32(tag);
+	if (magic == RB_MAGIC_ERD) {
+		u8 *erd_data;
+		u16 erd_len;
+
+		if (id == 0)
+			goto err_free;
+
+		err = routerboot_find_tag(tag, tag_len, id,
+					  &erd_data, &erd_len);
+		if (err) {
+			pr_err("no ERD data found for id %u\n", id);
+			goto err_free;
+		}
+
+		dst_done = RB_ART_SIZE;
+		err = lzo1x_decompress_safe(erd_data, erd_len, buf, &dst_done);
+		if (err) {
+			pr_err("unable to decompress calibration data %d\n",
+			       err);
+			goto err_free;
+		}
+	} else {
+		if (id != 0)
+			goto err_free;
+
+		err = rle_decode((char *) tag, tag_len, buf, RB_ART_SIZE,
+				 &src_done, &dst_done);
+		if (err) {
+			pr_err("unable to decode calibration data\n");
+			goto err_free;
+		}
 	}
 
 	return buf;
@@ -201,6 +240,18 @@ err_free:
 	kfree(buf);
 err:
 	return NULL;
+}
+
+__init void *
+rb_get_wlan_data(void)
+{
+	return __rb_get_wlan_data(0);
+}
+
+__init void *
+rb_get_ext_wlan_data(u16 id)
+{
+	return __rb_get_wlan_data(id);
 }
 
 __init const struct rb_info *

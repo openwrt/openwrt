@@ -1379,11 +1379,12 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -154,6 +1226,10 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -154,6 +1226,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
 +	select RLE_DECOMPRESS
++	select LZO_DECOMPRESS
 +	def_bool n
 +
 +config PCI_AR724X
