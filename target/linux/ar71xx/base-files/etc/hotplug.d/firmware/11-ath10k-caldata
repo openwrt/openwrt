@@ -1,0 +1,45 @@
+#!/bin/sh
+
+ath10kcal_die() {
+	echo "ath10cal: " "$*"
+	exit 1
+}
+
+ath10kcal_from_file() {
+	local source=$1
+	local offset=$2
+	local target=$3
+
+	dd if=$source of=$target bs=1 skip=$offset count=2116 2>/dev/null || \
+		ath10kcal_die "failed to extract calibration data from $source"
+}
+
+[ -e /lib/firmware/$FIRMWARE ] && exit 0
+
+. /lib/ar71xx.sh
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+ath10kcal_mac=""
+ath10kcal_tmp="/tmp/ath10k-caldata.bin"
+
+board=$(ar71xx_board_name)
+
+case "$FIRMWARE" in
+"ath10k/cal-pci-0000:01:00.0.bin")
+	case $board in
+	rb-911g-5hpacd)
+		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 $ath10kcal_tmp
+		;;
+	esac
+	;;
+
+*)
+	exit 1
+	;;
+esac
+
+[ -f $ath10kcal_tmp ] && {
+	cp $ath10kcal_tmp /lib/firmware/$FIRMWARE
+	rm -f $ath10kcal_tmp
+}

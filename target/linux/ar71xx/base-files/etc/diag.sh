@@ -161,6 +161,7 @@ get_status_led() {
 		status_led="rb750:green:act"
 		;;
 	rb-911g-2hpnd|\
+	rb-911g-5hpacd|\
 	rb-911g-5hpnd|\
 	rb-912uag-2hpnd|\
 	rb-912uag-5hpnd)
