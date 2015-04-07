@@ -11,6 +11,7 @@
 #define pr_fmt(fmt) "rb: " fmt
 
 #include <linux/kernel.h>
+#include <linux/kobject.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
 #include <linux/routerboot.h>
@@ -298,3 +299,60 @@ rb_init_info(void *data, unsigned int size)
 
 	return &rb_info;
 }
+
+static char *rb_ext_wlan_data;
+
+static ssize_t
+rb_ext_wlan_data_read(struct file *filp, struct kobject *kobj,
+		      struct bin_attribute *attr, char *buf,
+		      loff_t off, size_t count)
+{
+         if (off + count > attr->size)
+                 return -EFBIG;
+
+         memcpy(buf, &rb_ext_wlan_data[off], count);
+
+         return count;
+}
+
+static const struct bin_attribute rb_ext_wlan_data_attr = {
+	.attr = {
+		.name = "ext_wlan_data",
+		.mode = S_IRUSR | S_IWUSR,
+	},
+	.read = rb_ext_wlan_data_read,
+	.size = RB_ART_SIZE,
+};
+
+static int __init rb_sysfs_init(void)
+{
+	struct kobject *rb_kobj;
+	int ret;
+
+	rb_ext_wlan_data = rb_get_ext_wlan_data(1);
+	if (rb_ext_wlan_data == NULL)
+		return -ENOENT;
+
+	rb_kobj = kobject_create_and_add("routerboot", firmware_kobj);
+	if (rb_kobj == NULL) {
+		ret = -ENOMEM;
+		pr_err("unable to create sysfs entry\n");
+		goto err_free_wlan_data;
+	}
+
+	ret = sysfs_create_bin_file(rb_kobj, &rb_ext_wlan_data_attr);
+	if (ret) {
+		pr_err("unable to create sysfs file, %d\n", ret);
+		goto err_put_kobj;
+	}
+
+	return 0;
+
+err_put_kobj:
+	kobject_put(rb_kobj);
+err_free_wlan_data:
+	kfree(rb_ext_wlan_data);
+	return ret;
+}
+
+late_initcall(rb_sysfs_init);
