@@ -264,7 +264,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +75,980 @@ config ATH79_MACH_AP121
+@@ -11,62 +75,976 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -735,7 +735,6 @@
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_USB
 +	select ATH79_ROUTERBOOT
-+	select RLE_DECOMPRESS
 +
 +config ATH79_MACH_RB91X
 +	bool "MikroTik RouterBOARD 91X support"
@@ -745,7 +744,6 @@
 +	select ATH79_DEV_WMAC
 +	select ATH79_DEV_USB
 +	select ATH79_ROUTERBOOT
-+	select RLE_DECOMPRESS
 +
 +config ATH79_MACH_RB95X
 +       bool "MikroTik RouterBOARD 95X support"
@@ -755,7 +753,6 @@
 +       select ATH79_DEV_WMAC
 +       select ATH79_DEV_USB
 +       select ATH79_ROUTERBOOT
-+       select RLE_DECOMPRESS
 +
 +config ATH79_MACH_RB2011
 +	bool "MikroTik RouterBOARD 2011 support"
@@ -766,7 +763,6 @@
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +	select ATH79_ROUTERBOOT
-+	select RLE_DECOMPRESS
 +
 +config ATH79_MACH_RBSXTLITE
 +	bool "MikroTik RouterBOARD SXT Lite"
@@ -1273,7 +1269,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1065,97 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1061,97 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1371,7 +1367,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -124,7 +1197,10 @@ config ATH79_DEV_DSA
+@@ -124,7 +1193,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1383,13 +1379,16 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -156,4 +1232,7 @@ config ATH79_PCI_ATH9K_FIXUP
- config ATH79_ROUTERBOOT
+@@ -154,6 +1226,10 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
-+config PCI_AR724X
+ config ATH79_ROUTERBOOT
++	select RLE_DECOMPRESS
 +	def_bool n
 +
++config PCI_AR724X
+ 	def_bool n
+ 
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
