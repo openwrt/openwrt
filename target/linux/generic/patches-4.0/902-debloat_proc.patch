@@ -1,6 +1,6 @@
 --- a/fs/locks.c
 +++ b/fs/locks.c
-@@ -2641,6 +2641,8 @@ static const struct file_operations proc
+@@ -2640,6 +2640,8 @@ static const struct file_operations proc
  
  static int __init proc_locks_init(void)
  {
@@ -173,7 +173,7 @@
  		goto err;
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -2956,6 +2956,8 @@ static __net_initdata struct pernet_oper
+@@ -2975,6 +2975,8 @@ static __net_initdata struct pernet_oper
  
  static int __init proto_init(void)
  {
