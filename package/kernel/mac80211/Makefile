@@ -1235,9 +1235,9 @@ config PACKAGE_B43_USE_BCMA
 	config B43_FW_SQUASH_PHYTYPES
 		string "PHY types to include"
 		depends on B43_FW_SQUASH
-		default "G,LP" if TARGET_brcm47xx_legacy
+		default "G,N,LP" if TARGET_brcm47xx_legacy
 		default "N,HT" if TARGET_brcm47xx_mips74k
-		default "G,LP,N,HT"
+		default "G,N,LP,HT"
 		help
 		  This is a comma seperated list of PHY types:
 		    A  => A-PHY
@@ -1307,7 +1307,6 @@ config PACKAGE_B43_USE_BCMA
 
 	config PACKAGE_B43_PHY_N
 		bool "Enable support for N-PHYs"
-		default n if TARGET_brcm47xx_legacy
 		default y
 		help
 		  Enable support for N-PHY. This includes support for the following devices:
