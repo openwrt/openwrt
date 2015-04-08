@@ -1,7 +1,7 @@
-From 7c0a25bfc71c08adb5d475563f2773325b8e8e49 Mon Sep 17 00:00:00 2001
+From c2ebc30d9633d80849e99f489497e4c862e532e5 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Sun, 22 Mar 2015 02:37:17 +0100
-Subject: [PATCH] ARM: BCM5301X: Add DT for Asus RT-AC68U
+Date: Sat, 28 Mar 2015 14:51:08 +0100
+Subject: [PATCH V2] ARM: BCM5301X: Add DT for Asus RT-AC68U
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -9,15 +9,15 @@ Content-Transfer-Encoding: 8bit
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
  arch/arm/boot/dts/Makefile                  |  1 +
- arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts | 43 +++++++++++++++++++++++++++++
- 2 files changed, 44 insertions(+)
+ arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts | 83 +++++++++++++++++++++++++++++
+ 2 files changed, 84 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
 
 diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index ae8899d..f06f35e 100644
+index 4e1b387..7c1ca2a 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -55,6 +55,7 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.dtb
+@@ -55,6 +55,7 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.
  dtb-$(CONFIG_ARCH_AXXIA) += axm5516-amarillo.dtb
  dtb-$(CONFIG_ARCH_BCM2835) += bcm2835-rpi-b.dtb
  dtb-$(CONFIG_ARCH_BCM_5301X) += \
@@ -27,12 +27,12 @@ index ae8899d..f06f35e 100644
  	bcm4708-netgear-r6250.dtb \
 diff --git a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
 new file mode 100644
-index 0000000..934ca3a
+index 0000000..8b62836
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,83 @@
 +/*
-+ * Broadcom BCM470X / BCM5301X arm platform code.
++ * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Asus RT-AC68U
 + *
 + * Copyright (C) 2015 Rafał Miłecki <zajec5@gmail.com>
@@ -49,17 +49,51 @@ index 0000000..934ca3a
 +	model = "Asus RT-AC68U (BCM4708)";
 +
 +	chosen {
-+		bootargs = "console=ttyS0,115200 earlyprintk";
++		bootargs = "console=ttyS0,115200";
 +	};
 +
 +	memory {
 +		reg = <0x00000000 0x08000000>;
 +	};
 +
++	leds {
++		compatible = "gpio-leds";
++
++		usb2 {
++			label = "bcm53xx:blue:usb2";
++			gpios = <&chipcommon 0 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++
++		power {
++			label = "bcm53xx:blue:power";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		logo {
++			label = "bcm53xx:white:logo";
++			gpios = <&chipcommon 4 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		usb3 {
++			label = "bcm53xx:blue:usb3";
++			gpios = <&chipcommon 14 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++	};
++
 +	gpio-keys {
 +		compatible = "gpio-keys";
 +		#address-cells = <1>;
 +		#size-cells = <0>;
++
++		brightness {
++			label = "Backlight";
++			linux,code = <KEY_BRIGHTNESS_ZERO>;
++			gpios = <&chipcommon 5 GPIO_ACTIVE_LOW>;
++		};
 +
 +		wps {
 +			label = "WPS";
@@ -71,6 +105,12 @@ index 0000000..934ca3a
 +			label = "Reset";
 +			linux,code = <KEY_RESTART>;
 +			gpios = <&chipcommon 11 GPIO_ACTIVE_LOW>;
++		};
++
++		rfkill {
++			label = "WiFi";
++			linux,code = <KEY_RFKILL>;
++			gpios = <&chipcommon 15 GPIO_ACTIVE_LOW>;
 +		};
 +	};
 +};
