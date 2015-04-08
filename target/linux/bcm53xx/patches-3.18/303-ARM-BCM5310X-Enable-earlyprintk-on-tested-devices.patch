@@ -14,8 +14,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 2 +-
  4 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-index 5fc0fae..fcb17c6 100644
 --- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 @@ -16,7 +16,7 @@
@@ -27,8 +25,6 @@ index 5fc0fae..fcb17c6 100644
  	};
  
  	memory {
-diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
-index 4ed7de1..05e80b1 100644
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 @@ -16,7 +16,7 @@
@@ -40,8 +36,6 @@ index 4ed7de1..05e80b1 100644
  	};
  
  	memory {
-diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
-index fb76378..5dc50e1 100644
 --- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 +++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 @@ -16,7 +16,7 @@
@@ -53,8 +47,6 @@ index fb76378..5dc50e1 100644
  	};
  
  	memory {
-diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
-index bbb414f..20903a5 100644
 --- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 @@ -16,7 +16,7 @@
@@ -88,6 +80,36 @@ index bbb414f..20903a5 100644
  	};
  
  	memory {
--- 
-1.8.4.5
-
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
+@@ -16,7 +16,7 @@
+ 	model = "Asus RT-AC56U (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+@@ -16,7 +16,7 @@
+ 	model = "Asus RT-AC68U (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -16,7 +16,7 @@
+ 	model = "Luxul XWC-1000 (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {

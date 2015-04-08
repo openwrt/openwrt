@@ -99,3 +99,39 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	leds {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
+@@ -20,7 +20,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+@@ -20,7 +20,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -20,7 +20,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	axi@18000000 {

@@ -1,18 +1,23 @@
-From f3389cf7bc90d5702adcd4c100b49baf7a813bb9 Mon Sep 17 00:00:00 2001
+From cd43921285658372c0db8019684979edb74eaffd Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Wed, 28 Jan 2015 22:39:39 +0100
-Subject: [PATCH] ARM: BCM5301X: Add DT for Netgear R8000
+Date: Wed, 11 Feb 2015 16:37:05 +0100
+Subject: [PATCH soc] ARM: BCM5301X: Ignore another (BCM4709 specific) fault
+ code
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
+Broadcom ARM devices seem to generate some fault once per boot. We
+already have an ignoring handler for BCM4707/BCM4708, but BCM4709
+generates different code.
+
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
- arch/arm/boot/dts/Makefile                  |  3 ++-
- arch/arm/boot/dts/bcm4709-netgear-r8000.dts | 26 ++++++++++++++++++++++++++
- 2 files changed, 28 insertions(+), 1 deletion(-)
- create mode 100644 arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+ arch/arm/mach-bcm/bcm_5301x.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
+diff --git a/arch/arm/mach-bcm/bcm_5301x.c b/arch/arm/mach-bcm/bcm_5301x.c
+index e9bcbdb..7aef927 100644
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
 @@ -18,15 +18,16 @@ static bool first_fault = true;
