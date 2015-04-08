@@ -113,7 +113,7 @@ define Build/trx-with-loader
 		-o $@ \
 		-f $(KDIR)/loader.gz \
 		-f $(word 1,$^) \
-		$(call trxalign/$(lastword $(subst ., ,$(word 2,$^))),$(lastword $(subst ., ,$(word 2,$^))))
+		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
 endef
 
 define Build/linksys-bin
