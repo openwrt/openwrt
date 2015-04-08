@@ -50,9 +50,9 @@
  
  static const struct gpio_led
 +bcm47xx_leds_linksys_wrt320n_v1[] __initconst = {
-+	BCM47XX_GPIO_LED(1, "blue", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(1, "blue", "wlan", 1, LEDS_GPIO_DEFSTATE_OFF),
 +	BCM47XX_GPIO_LED(2, "blue", "power", 0, LEDS_GPIO_DEFSTATE_ON),
-+	BCM47XX_GPIO_LED(4, "amber", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(4, "amber", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
 +};
 +
 +static const struct gpio_led
