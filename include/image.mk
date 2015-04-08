@@ -353,7 +353,10 @@ define Device/ExportVar
   $(1) : $(2):=$$($(2))
 
 endef
-Device/Export = $(foreach var,$(DEVICE_VARS) KERNEL KERNEL_INITRAMFS FILESYSTEM,$(call Device/ExportVar,$(1),$(var)))
+define Device/Export
+  $(foreach var,$(DEVICE_VARS) KERNEL KERNEL_INITRAMFS,$(call Device/ExportVar,$(1),$(var)))
+  $(1) : FILESYSTEM:=$(2)
+endef
 
 define Device/Check
   _TARGET = $$(if $$(filter $(PROFILE),$$(PROFILES)),install,install-disabled)
@@ -389,11 +392,10 @@ define Device/Build/kernel
 endef
 
 define Device/Build/image
-  FILESYSTEM := $(1)
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
-  $(eval $(call Device/Export,$(KDIR)/$(KERNEL_IMAGE)))
-  $(eval $(call Device/Export,$(KDIR)/$(KERNEL_INITRAMFS_IMAGE)))
-  $(eval $(call Device/Export,$(KDIR)/$(call IMAGE_NAME,$(1),$(2))))
+  $(eval $(call Device/Export,$(KDIR)/$(KERNEL_IMAGE),$(1)))
+  $(eval $(call Device/Export,$(KDIR)/$(KERNEL_INITRAMFS_IMAGE),$(1)))
+  $(eval $(call Device/Export,$(KDIR)/$(call IMAGE_NAME,$(1),$(2)),$(1)))
   $(KDIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)
 	@rm -f $$@
 	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
