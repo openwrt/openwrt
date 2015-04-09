@@ -41,7 +41,7 @@
  		HAPD_IFACE_DISABLED,
 --- /dev/null
 +++ b/src/ap/ubus.c
-@@ -0,0 +1,494 @@
+@@ -0,0 +1,511 @@
 +/*
 + * hostapd / ubus support
 + * Copyright (c) 2013, Felix Fietkau <nbd@openwrt.org>
@@ -343,6 +343,22 @@
 +	return 0;
 +}
 +
++static int
++hostapd_bss_update_beacon(struct ubus_context *ctx, struct ubus_object *obj,
++			struct ubus_request_data *req, const char *method,
++			struct blob_attr *msg)
++{
++	int rc;
++	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
++
++	rc = ieee802_11_set_beacon(hapd);
++
++	if (rc != 0)
++		return UBUS_STATUS_NOT_SUPPORTED;
++
++	return 0;
++}
++
 +enum {
 +	CSA_FREQ,
 +	CSA_BCN_COUNT,
@@ -425,6 +441,7 @@
 +	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
 +	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
 +	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
++	UBUS_METHOD_NOARG("update_beacon", hostapd_bss_update_beacon),
 +#ifdef NEED_AP_MLME
 +	UBUS_METHOD("switch_chan", hostapd_switch_chan, csa_policy),
 +#endif
@@ -733,7 +750,7 @@
  	sta->capability = capab_info;
  	sta->listen_interval = listen_interval;
  
-@@ -2236,7 +2262,7 @@ int ieee802_11_mgmt(struct hostapd_data 
+@@ -2236,7 +2262,7 @@ int ieee802_11_mgmt(struct hostapd_data
  
  
  	if (stype == WLAN_FC_STYPE_PROBE_REQ) {
@@ -742,7 +759,7 @@
  		return 1;
  	}
  
-@@ -2251,17 +2277,17 @@ int ieee802_11_mgmt(struct hostapd_data 
+@@ -2251,17 +2277,17 @@ int ieee802_11_mgmt(struct hostapd_data
  	switch (stype) {
  	case WLAN_FC_STYPE_AUTH:
  		wpa_printf(MSG_DEBUG, "mgmt::auth");
