@@ -54,20 +54,6 @@ platform_identify() {
 	echo "unknown"
 }
 
-# $(1): image that should contain trx
-# $(2): trx offset in image
-platform_check_image_trx() {
-	local magic=$(get_magic_long_at "$1" $2)
-
-	[ "$magic" != "48445230" ] && {
-		return 1
-	}
-
-	# TODO: Check crc32
-
-	return 0
-}
-
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
@@ -93,7 +79,7 @@ platform_check_image() {
 				error=1
 			}
 
-			if ! platform_check_image_trx "$1" "$header_len"; then
+			if ! otrx -c "$1" -o "$header_len"; then
 				echo "No valid TRX firmware in the CHK image"
 				error=1
 			fi
@@ -108,12 +94,16 @@ platform_check_image() {
 				error=1
 			}
 
-			if ! platform_check_image_trx "$1" 32; then
+			if ! otrx -c "$1" -o 32; then
 				echo "No valid TRX firmware in the CyberTAN image"
 				error=1
 			fi
 		;;
 		"trx")
+			if ! otrx -c "$1"; then
+				echo "Invalid (corrupted?) TRX firmware"
+				error=1
+			fi
 		;;
 		*)
 			echo "Invalid image type. Please use only .trx files"
