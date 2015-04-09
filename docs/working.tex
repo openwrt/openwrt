@@ -33,7 +33,7 @@ The exact same idea works for packages:
 make package/busybox/{clean,compile,install}
 \end{Verbatim}
 
-will clean, compile and install buysbox (if selected to be installed on the final rootfs).
+will clean, compile and install busybox (if selected to be installed on the final rootfs).
 
 Supposing that you made changes to the Linux kernel, but do not want to recompile everything,
 you can recompile only the kernel modules by issuing:
@@ -100,7 +100,7 @@ packages. If you want to use quilt in the same way, you should set the QUILT env
 variable to 1, e.g:
 
 \begin{Verbatim}
-make package/buysbox/{clean,compile} QUILT=1
+make package/busybox/{clean,compile} QUILT=1
 \end{Verbatim}
 
 Will generate the patch series file and allow you to update patches just like we described
@@ -108,5 +108,5 @@ before in the kernel case. Note that once all patches apply cleanly you should r
 as well using the following command:
 
 \begin{Verbatim}
-make package/buysbox/refresh QUILT=1
+make package/busybox/refresh QUILT=1
 \end{Verbatim}
