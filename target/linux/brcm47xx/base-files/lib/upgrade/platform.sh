@@ -45,7 +45,8 @@ platform_expected_image() {
 		"Linksys WRT150N V1")	echo "cybertan N150"; return;;
 		"Linksys WRT160N V1")	echo "cybertan N150"; return;;
 		"Linksys WRT160N V3")	echo "cybertan N150"; return;;
-		"Linksys WRT300N V1.1")	echo "cybertan EWCB"; return;;
+		"Linksys WRT300N V1")	echo "cybertan EWCB"; return;;
+		"Linksys WRT300N V1.1")	echo "cybertan EWC2"; return;;
 		"Linksys WRT310N V1")	echo "cybertan 310N"; return;;
 		"Linksys WRT310N V2")	echo "cybertan 310N"; return;;
 		"Linksys WRT610N V1")	echo "cybertan 610N"; return;;
