@@ -95,7 +95,8 @@ get_status_led() {
 	hiwifi-hc6361)
 		status_led="hiwifi:blue:system"
 		;;
-	hornet-ub)
+	hornet-ub | \
+	hornet-ub-x2)
 		status_led="alfa:blue:wps"
 		;;
 	ja76pf | \
