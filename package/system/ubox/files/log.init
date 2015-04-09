@@ -18,6 +18,7 @@ validate_log_section()
 		'log_remote:bool:1' \
 		'log_port:port:514' \
 		'log_proto:or("tcp", "udp"):udp' \
+		'log_trailer_null:bool:0' \
 		'log_prefix:string'
 }
 
@@ -63,7 +64,7 @@ start_service_remote()
 {
 	PIDCOUNT="$(( ${PIDCOUNT} + 1))"
 	local pid_file="/var/run/logread.${PIDCOUNT}.pid"
-	local log_ip log_port log_proto log_prefix log_remote
+	local log_ip log_port log_proto log_prefix log_remote log_trailer_null
 
 	validate_log_section "${1}" || {
 		echo "validation failed"
@@ -74,7 +75,10 @@ start_service_remote()
 
 	procd_open_instance
 	procd_set_param command "$PROG" -f -r "$log_ip" "${log_port}" -p "$pid_file"
-	[ "${log_proto}" != "udp" ] || procd_append_param command -u
+	case "${log_proto}" in
+		"udp") procd_append_param command -u;;
+		"tcp") [ "${log_trailer_null}" -eq 1 ] && procd_append_param command -0;;
+	esac
 	[ -z "${log_prefix}" ] || procd_append_param command -P "${log_prefix}"
 	procd_close_instance
 }
