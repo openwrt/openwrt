@@ -215,6 +215,14 @@ fi
 
 run_hooks "" $sysupgrade_pre_upgrade
 
+# Some platforms/devices may want different sysupgrade process, e.g. without
+# killing processes yet or calling ubus system upgrade method.
+# This is needed e.g. on NAND devices where we just want to trigger stage1 at
+# this point.
+if type 'platform_pre_upgrade' >/dev/null 2>/dev/null; then
+	platform_pre_upgrade "$ARGV"
+fi
+
 ubus call system upgrade
 touch /tmp/sysupgrade
 
