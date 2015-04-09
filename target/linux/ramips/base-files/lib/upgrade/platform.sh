@@ -60,6 +60,7 @@ platform_check_image() {
 	m2m | \
 	m3 | \
 	m4 | \
+	microwrt | \
 	mlw221 | \
 	mlwg2 | \
 	mofi3500-3gn | \

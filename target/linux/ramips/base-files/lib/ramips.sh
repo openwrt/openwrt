@@ -202,6 +202,9 @@ ramips_board_detect() {
 	*"Planex MZK-750DHP")
 		name="mzk-750dhp"
 		;;
+	*"Microduino MicroWRT")
+		name="microwrt"
+		;;
 	*"NBG-419N")
 		name="nbg-419n"
 		;;
