@@ -127,17 +127,29 @@ setup_interface () {
 		[ -n "$IFACE_MAP_DELEGATE" ] && json_add_boolean delegate "$IFACE_MAP_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
-	elif [ -n "$AFTR_IP" -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
+	elif [ -n "$AFTR" -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
 		[ -z "$IFACE_DSLITE" -o "$IFACE_DSLITE" = 1 ] && IFACE_DSLITE=${INTERFACE}_dslite
 		json_init
 		json_add_string name "$IFACE_DSLITE"
 		json_add_string ifname "@$INTERFACE"
 		json_add_string proto "dslite"
-		json_add_string peeraddr "$AFTR_IP"
+		json_add_string peeraddr "$AFTR"
 		json_add_string tunlink "$INTERFACE"
 		[ -n "$ZONE_DSLITE" ] || ZONE_DSLITE=$ZONE
 		[ -n "$ZONE_DSLITE" ] && json_add_string zone "$ZONE_DSLITE"
 		[ -n "$IFACE_DSLITE_DELEGATE" ] && json_add_boolean delegate "$IFACE_DSLITE_DELEGATE"
+		json_close_object
+		ubus call network add_dynamic "$(json_dump)"
+	elif [ "$IFACE_464XLAT" != 0 -a -f /lib/netifd/proto/464xlat.sh ]; then
+		[ -z "$IFACE_464XLAT" -o "$IFACE_464XLAT" = 1 ] && IFACE_464XLAT=${INTERFACE}_464xlat
+		json_init
+		json_add_string name "$IFACE_464XLAT"
+		json_add_string ifname "@$INTERFACE"
+		json_add_string proto "464xlat"
+		json_add_string tunlink "$INTERFACE"
+		[ -n "$ZONE_464XLAT" ] || ZONE_464XLAT=$ZONE
+		[ -n "$ZONE_464XLAT" ] && json_add_string zone "$ZONE_464XLAT"
+		[ -n "$IFACE_464XLAT_DELEGATE" ] && json_add_boolean delegate "$IFACE_464XLAT_DELEGATE"
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	fi

@@ -19,6 +19,8 @@ proto_dhcpv6_init_config() {
 	proto_config_add_string zone_dslite
 	proto_config_add_string iface_map
 	proto_config_add_string zone_map
+	proto_config_add_string iface_464xlat
+	proto_config_add_string zone_464xlat
 	proto_config_add_string zone
 	proto_config_add_string 'ifaceid:ip6addr'
 	proto_config_add_string 'sourcerouting:bool'
@@ -33,8 +35,8 @@ proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map zone soltimeout fakeroutes
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map zone soltimeout fakeroutes
+	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes
+	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid sourcerouting userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes
 
 
 	# Configure
@@ -67,11 +69,13 @@ proto_dhcpv6_setup() {
 	[ -n "$ip6prefix" ] && proto_export "USERPREFIX=$ip6prefix"
 	[ -n "$iface_dslite" ] && proto_export "IFACE_DSLITE=$iface_dslite"
 	[ -n "$iface_map" ] && proto_export "IFACE_MAP=$iface_map"
+	[ -n "$iface_464xlat" ] && proto_export "IFACE_464XLAT=$iface_464xlat"
 	[ "$sourcerouting" != "0" ] && proto_export "SOURCE_ROUTING=1"
 	[ "$delegate" = "0" ] && proto_export "IFACE_DSLITE_DELEGATE=0"
 	[ "$delegate" = "0" ] && proto_export "IFACE_MAP_DELEGATE=0"
 	[ -n "$zone_dslite" ] && proto_export "ZONE_DSLITE=$zone_dslite"
 	[ -n "$zone_map" ] && proto_export "ZONE_MAP=$zone_map"
+	[ -n "$zone_464xlat" ] && proto_export "ZONE_464XLAT=$zone_464xlat"
 	[ -n "$zone" ] && proto_export "ZONE=$zone"
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
 
