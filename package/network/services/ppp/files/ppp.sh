@@ -8,6 +8,38 @@
 	init_proto "$@"
 }
 
+ppp_exitcode_tostring()
+{
+	local errorcode=$1
+	[ -n "$errorcode" ] || errorcode=5
+
+	case "$errorcode" in
+		0) echo "OK" ;;
+		1) echo "FATAL_ERROR" ;;
+		2) echo "OPTION_ERROR" ;;
+		3) echo "NOT_ROOT" ;;
+		4) echo "NO_KERNEL_SUPPORT" ;;
+		5) echo "USER_REQUEST" ;;
+		6) echo "LOCK_FAILED" ;;
+		7) echo "OPEN_FAILED" ;;
+		8) echo "CONNECT_FAILED" ;;
+		9) echo "PTYCMD_FAILED" ;;
+		10) echo "NEGOTIATION_FAILED" ;;
+		11) echo "PEER_AUTH_FAILED" ;;
+		12) echo "IDLE_TIMEOUT" ;;
+		13) echo "CONNECT_TIME" ;;
+		14) echo "CALLBACK" ;;
+		15) echo "PEER_DEAD" ;;
+		16) echo "HANGUP" ;;
+		17) echo "LOOPBACK" ;;
+		18) echo "INIT_FAILED" ;;
+		19) echo "AUTH_TOPEER_FAILED" ;;
+		20) echo "TRAFFIC_LIMIT" ;;
+		21) echo "CNID_AUTH_FAILED";;
+		*) echo "UNKNOWN_ERROR" ;;
+	esac
+}
+
 ppp_generic_init_config() {
 	proto_config_add_string username
 	proto_config_add_string password
@@ -72,20 +104,27 @@ ppp_generic_setup() {
 
 ppp_generic_teardown() {
 	local interface="$1"
+	local errorstring=$(ppp_exitcode_tostring $ERROR)
 
 	case "$ERROR" in
+		0)
+		;;
+		2)
+			proto_notify_error "$interface" "$errorstring"
+			proto_block_restart "$interface"
+		;;
 		11|19)
-			proto_notify_error "$interface" AUTH_FAILED
 			json_get_var authfail authfail
+			proto_notify_error "$interface" "$errorstring"
 			if [ "${authfail:-0}" -gt 0 ]; then
 				proto_block_restart "$interface"
 			fi
 		;;
-		2)
-			proto_notify_error "$interface" INVALID_OPTIONS
-			proto_block_restart "$interface"
+		*)
+			proto_notify_error "$interface" "$errorstring"
 		;;
 	esac
+
 	proto_kill_command "$interface"
 }
 
@@ -96,6 +135,7 @@ proto_ppp_init_config() {
 	ppp_generic_init_config
 	no_device=1
 	available=1
+	lasterror=1
 }
 
 proto_ppp_setup() {
@@ -114,6 +154,7 @@ proto_pppoe_init_config() {
 	proto_config_add_string "ac"
 	proto_config_add_string "service"
 	proto_config_add_string "host_uniq"
+	lasterror=1
 }
 
 proto_pppoe_setup() {
@@ -151,6 +192,7 @@ proto_pppoa_init_config() {
 	proto_config_add_string "encaps"
 	no_device=1
 	available=1
+	lasterror=1
 }
 
 proto_pppoa_setup() {
@@ -184,6 +226,7 @@ proto_pptp_init_config() {
 	proto_config_add_string "interface"
 	available=1
 	no_device=1
+	lasterror=1
 }
 
 proto_pptp_setup() {
