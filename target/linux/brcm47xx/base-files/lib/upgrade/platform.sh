@@ -119,6 +119,10 @@ platform_check_image() {
 			fi
 		;;
 		"trx")
+			if ! otrx -c "$1"; then
+				echo "Invalid (corrupted?) TRX firmware"
+				error=1
+			fi
 		;;
 		*)
 			echo "Invalid image type. Please use only .trx files"
