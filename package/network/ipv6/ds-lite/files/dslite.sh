@@ -25,6 +25,17 @@ proto_dslite_setup() {
 
 	( proto_add_host_dependency "$cfg" "::" "$tunlink" )
 
+	peeraddr=$(resolveip -6 $peeraddr)
+	if [ -z "$peeraddr" ]; then
+		sleep 3
+		peeraddr=$(resolveip -6 $peeraddr)
+		if [ -z "$peeraddr" ]; then
+			proto_notify_error "$cfg" "AFTR_DNS_FAIL"
+			return
+		fi
+	fi
+	peeraddr="${peeraddr%% *}"
+
 	[ -z "$ip6addr" ] && {
 		local wanif="$tunlink"
 		if [ -z "$wanif" ] && ! network_find_wan6 wanif; then
