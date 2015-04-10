@@ -53,9 +53,25 @@ endef
 
 $(eval $(call KernelPackage,mac802154))
 
-define KernelPackage/fakelb
+define KernelPackage/fakehard
   SUBMENU:=$(WPAN_MENU)
   TITLE:=Fake LR-WPAN driver
+  DEPENDS:=+kmod-mac802154 @!LINUX_4.0
+  KCONFIG:=CONFIG_IEEE802154_FAKEHARD
+  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/fakehard.ko
+  AUTOLOAD:=$(call AutoLoad,92,fakehard)
+endef
+
+define KernelPackage/fakehard/description
+  Say Y here to enable the fake driver that can emulate a net
+  of several interconnected radio devices.
+endef
+
+$(eval $(call KernelPackage,fakehard))
+
+define KernelPackage/fakelb
+  SUBMENU:=$(WPAN_MENU)
+  TITLE:=Fake LR-WPAN loopback driver
   DEPENDS:=+kmod-mac802154 @!LINUX_4.0
   KCONFIG:=CONFIG_IEEE802154_FAKELB
   FILES:=$(LINUX_DIR)/drivers/net/ieee802154/fakelb.ko
