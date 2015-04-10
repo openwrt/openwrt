@@ -525,7 +525,8 @@ static int b53_switch_reset(struct b53_device *dev)
 				return -EINVAL;
 			}
 		}
-	} else if ((is531x5(dev) || is5301x(dev)) && dev->sw_dev.cpu_port == B53_CPU_PORT) {
+	} else if ((is531x5(dev) || is5301x(dev)) &&
+		   dev->sw_dev.cpu_port == B53_CPU_PORT) {
 		u8 mii_port_override;
 
 		b53_read8(dev, B53_CTRL_PAGE, B53_PORT_OVERRIDE_CTRL,
@@ -1161,7 +1162,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.alias = "bcm53011",
 		.vlans = 4096,
 		.enabled_ports = 0x1f,
-		.cpu_port = B53_CPU_PORT_25, // TODO: auto detect
+		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
 		.vta_regs = B53_VTA_REGS,
 		.duplex_reg = B53_DUPLEX_STAT_GE,
 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
@@ -1174,7 +1175,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.alias = "bcm53011",
 		.vlans = 4096,
 		.enabled_ports = 0x1f,
-		.cpu_port = B53_CPU_PORT_25, // TODO: auto detect
+		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
 		.vta_regs = B53_VTA_REGS,
 		.duplex_reg = B53_DUPLEX_STAT_GE,
 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
@@ -1187,7 +1188,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.alias = "bcm53011",
 		.vlans = 4096,
 		.enabled_ports = 0x1f,
-		.cpu_port = B53_CPU_PORT_25, // TODO: auto detect
+		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
 		.vta_regs = B53_VTA_REGS,
 		.duplex_reg = B53_DUPLEX_STAT_GE,
 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
@@ -1200,7 +1201,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.alias = "bcm53018",
 		.vlans = 4096,
 		.enabled_ports = 0x1f,
-		.cpu_port = B53_CPU_PORT_25, // TODO: auto detect
+		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
 		.vta_regs = B53_VTA_REGS,
 		.duplex_reg = B53_DUPLEX_STAT_GE,
 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
@@ -1213,7 +1214,7 @@ static const struct b53_chip_data b53_switch_chips[] = {
 		.alias = "bcm53019",
 		.vlans = 4096,
 		.enabled_ports = 0x1f,
-		.cpu_port = B53_CPU_PORT_25, // TODO: auto detect
+		.cpu_port = B53_CPU_PORT_25, /* TODO: auto detect */
 		.vta_regs = B53_VTA_REGS,
 		.duplex_reg = B53_DUPLEX_STAT_GE,
 		.jumbo_pm_reg = B53_JUMBO_PORT_MASK,
@@ -1307,7 +1308,8 @@ static int b53_switch_init(struct b53_device *dev)
 
 	dev->reset_gpio = b53_switch_get_reset_gpio(dev);
 	if (dev->reset_gpio >= 0) {
-		ret = devm_gpio_request_one(dev->dev, dev->reset_gpio, GPIOF_OUT_INIT_HIGH, "robo_reset");
+		ret = devm_gpio_request_one(dev->dev, dev->reset_gpio,
+					    GPIOF_OUT_INIT_HIGH, "robo_reset");
 		if (ret)
 			return ret;
 	}

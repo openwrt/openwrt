@@ -221,9 +221,8 @@ static int b53_mmap_remove(struct platform_device *pdev)
 {
 	struct b53_device *dev = platform_get_drvdata(pdev);
 
-	if (dev) {
+	if (dev)
 		b53_switch_remove(dev);
-	}
 
 	return 0;
 }
