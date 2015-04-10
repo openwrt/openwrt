@@ -118,8 +118,8 @@ else
   OPENSSL_OPTIONS+=no-sse2
   ifeq ($(CONFIG_mips)$(CONFIG_mipsel),y)
     OPENSSL_TARGET:=linux-mips-openwrt
-  else ifeq ($(CONFIG_arm)$(CONFIG_armeb),y)
-    OPENSSL_TARGET:=linux-armv4-openwrt
+#  else ifeq ($(CONFIG_arm)$(CONFIG_armeb),y)
+#    OPENSSL_TARGET:=linux-armv4-openwrt
   else
     OPENSSL_TARGET:=linux-generic-openwrt
     OPENSSL_OPTIONS+=no-perlasm
