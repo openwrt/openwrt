@@ -254,7 +254,6 @@ define KernelPackage/usb-eth-gadget
 	CONFIG_USB_ETH_RNDIS=y \
 	CONFIG_USB_ETH_EEM=n
   DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
-ifeq ($(CONFIG_LINUX_3_10),)
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/u_ether.ko@ge3.18 \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm.ko@ge3.18 \
@@ -262,16 +261,11 @@ ifeq ($(CONFIG_LINUX_3_10),)
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_rndis.ko@ge3.18 \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ether.ko@ge3.18 \
 	$(LINUX_DIR)/drivers/usb/gadget/u_ether.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/u_rndis.ko@lt3.14 \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm.ko@lt3.18 \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm_subset.ko@lt3.18 \
 	$(LINUX_DIR)/drivers/usb/gadget/usb_f_rndis.ko@lt3.18 \
 	$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko@lt3.18
   AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm g_ether)
-else
-  FILES:=$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko
-  AUTOLOAD:=$(call AutoLoad,52,g_ether)
-endif
   $(call AddDepends/usb)
 endef
 
@@ -337,10 +331,9 @@ define KernelPackage/usb-ohci
 	CONFIG_USB_OCTEON_OHCI=y \
 	CONFIG_USB_OHCI_HCD_OMAP3=y \
 	CONFIG_USB_OHCI_HCD_PLATFORM=y
-  FILES:=$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko
-ifeq ($(CONFIG_LINUX_3_10),)
-  FILES+=$(LINUX_DIR)/drivers/usb/host/ohci-platform.ko
-endif
+  FILES:= \
+	$(LINUX_DIR)/drivers/usb/host/ohci-hcd.ko \
+	$(LINUX_DIR)/drivers/usb/host/ohci-platform.ko
   AUTOLOAD:=$(call AutoLoad,50,ohci-hcd ohci-platform,1)
   $(call AddDepends/usb)
 endef
@@ -453,7 +446,7 @@ $(eval $(call KernelPackage,usb2-pci))
 
 define KernelPackage/usb-dwc2
   TITLE:=DWC2 USB controller driver
-  DEPENDS:=@!LINUX_3_10 +(TARGET_brcm2708||TARGET_at91||TARGET_brcm63xx||TARGET_mxs):kmod-usb-gadget
+  DEPENDS:=+(TARGET_brcm2708||TARGET_at91||TARGET_brcm63xx||TARGET_mxs):kmod-usb-gadget
   KCONFIG:= \
 	CONFIG_USB_DWC2 \
 	CONFIG_USB_DWC2_PCI \
@@ -1336,7 +1329,7 @@ define KernelPackage/usb-net-huawei-cdc-ncm
   KCONFIG:=CONFIG_USB_NET_HUAWEI_CDC_NCM
   FILES:= $(LINUX_DIR)/drivers/$(USBNET_DIR)/huawei_cdc_ncm.ko
   AUTOLOAD:=$(call AutoProbe,huawei_cdc_ncm)
-  $(call AddDepends/usb-net,+kmod-usb-net-cdc-ncm +kmod-usb-wdm @!LINUX_3_10)
+  $(call AddDepends/usb-net,+kmod-usb-net-cdc-ncm +kmod-usb-wdm)
 endef
 
 define KernelPackage/usb-net-huawei-cdc-ncm/description
