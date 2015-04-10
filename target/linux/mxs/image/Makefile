@@ -22,9 +22,14 @@ endef
 
 define Image/InstallKernel
 
-  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
+  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
 	mkdir -p $(TARGET_DIR)/boot
 	$(CP) $(LINUX_DIR)/arch/arm/boot/zImage $(TARGET_DIR)/boot/
+  endif
+
+  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
+	mkdir -p $(TARGET_DIR)/boot
+	cp $(KDIR)/uImage $(TARGET_DIR)/boot/
   endif
   
   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
