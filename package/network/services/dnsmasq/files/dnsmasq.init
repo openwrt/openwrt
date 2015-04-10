@@ -205,6 +205,7 @@ dnsmasq() {
 	[ "$dnssec" -gt 0 ] && {
 		xappend "--conf-file=$TRUSTANCHORSFILE"
 		xappend "--dnssec"
+		xappend "--dnssec-timestamp=/etc/dnsmasq.time"
 		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
 	}
 
@@ -555,7 +556,7 @@ start_service() {
 
 	procd_add_jail dnsmasq ubus log
 	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /dev/urandom /etc/dnsmasq.conf /tmp/dnsmasq.d /tmp/resolv.conf.auto /etc/hosts /etc/ethers
-	procd_add_jail_mount_rw /var/run/dnsmasq/ /tmp/dhcp.leases
+	procd_add_jail_mount_rw /var/run/dnsmasq/ /tmp/dhcp.leases /etc/dnsmasq.time
 	
 	procd_close_instance
 
@@ -565,6 +566,10 @@ start_service() {
 	mkdir -p /var/lib/misc
 	touch /tmp/dhcp.leases
 
+	if [ ! -f /etc/dnsmasq.time ]; then
+		touch -t 197001010000 /etc/dnsmasq.time
+		chmod 0777 /etc/dnsmasq.time
+	fi
 
 	echo "# auto-generated config file from /etc/config/dhcp" > $CONFIGFILE
 	echo "# auto-generated config file from /etc/config/dhcp" > $HOSTFILE
