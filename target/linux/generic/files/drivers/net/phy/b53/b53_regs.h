@@ -50,6 +50,9 @@
 /* Jumbo Frame Registers */
 #define B53_JUMBO_PAGE			0x40
 
+/* CFP Configuration Registers Page */
+#define B53_CFP_PAGE			0xa1
+
 /*************************************************************************
  * Control Page registers
  *************************************************************************/
@@ -98,6 +101,25 @@
 #define B53_UC_FLOOD_MASK		0x32
 #define B53_MC_FLOOD_MASK		0x34
 #define B53_IPMC_FLOOD_MASK		0x36
+
+/*
+ * Override Ports 0-7 State on devices with xMII interfaces (8 bit)
+ *
+ * For port 8 still use B53_PORT_OVERRIDE_CTRL
+ * Please note that not all ports are available on every hardware, e.g. BCM5301X
+ * don't include overriding port 6, BCM63xx also have some limitations.
+ */
+#define B53_GMII_PORT_OVERRIDE_CTRL(i)	(0x58 + i)
+#define   GMII_PO_LINK			BIT(0)
+#define   GMII_PO_FULL_DUPLEX		BIT(1) /* 0 = Half Duplex */
+#define   GMII_PO_SPEED_S		2
+#define   GMII_PO_SPEED_10M		(0 << GMII_PO_SPEED_S)
+#define   GMII_PO_SPEED_100M		(1 << GMII_PO_SPEED_S)
+#define   GMII_PO_SPEED_1000M		(2 << GMII_PO_SPEED_S)
+#define   GMII_PO_RX_FLOW		BIT(4)
+#define   GMII_PO_TX_FLOW		BIT(5)
+#define   GMII_PO_EN			BIT(6) /* Use the register contents */
+#define   GMII_PO_SPEED_2000M		BIT(7) /* BCM5301X only, requires setting 1000M */
 
 /* Software reset register (8 bit) */
 #define B53_SOFTRESET			0x79
@@ -155,6 +177,10 @@
 #define   GC_FRM_MGMT_PORT_M		0xC0
 #define   GC_FRM_MGMT_PORT_04		0x00
 #define   GC_FRM_MGMT_PORT_MII		0x80
+
+/* Broadcom Header control register (8 bit) */
+#define B53_BRCM_HDR			0x03
+#define   BRCM_HDR_EN			BIT(0) /* Enable tagging on IMP port */
 
 /* Device ID register (8 or 32 bit) */
 #define B53_DEVICE_ID			0x30
@@ -309,5 +335,12 @@
 #define B53_JUMBO_MAX_SIZE_63XX		0x08
 #define   JMS_MIN_SIZE			1518
 #define   JMS_MAX_SIZE			9724
+
+/*************************************************************************
+ * CFP Configuration Page Registers
+ *************************************************************************/
+
+/* CFP Control Register with ports map (8 bit) */
+#define B53_CFP_CTRL			0x00
 
 #endif /* !__B53_REGS_H */
