@@ -10,7 +10,7 @@ define Profile/Default
 	PACKAGES:= \
 		kmod-mmc kmod-mvsdio swconfig \
 		kmod-usb2 kmod-usb3 kmod-usb-storage \
-		kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+		kmod-i2c-core kmod-i2c-mv64xxx \
 		kmod-ata-core kmod-ata-marvell-sata \
 		kmod-rtc-marvell kmod-thermal-armada \
 		kmod-gpio-button-hotplug kmod-hwmon-tmp421 \

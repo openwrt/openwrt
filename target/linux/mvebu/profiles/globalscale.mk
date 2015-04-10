@@ -9,7 +9,7 @@ define Profile/Mirabox
   NAME:=Globalscale Mirabox
   PACKAGES:= \
 	kmod-usb3 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-rtc-marvell kmod-thermal-armada \
 	kmod-gpio-button-hotplug kmod-mmc kmod-mvsdio
 endef

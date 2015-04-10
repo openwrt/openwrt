@@ -9,7 +9,7 @@ define Profile/370-DB
   NAME:=Marvell Armada 370 DB (DB-88F6710-BP-DDR3)
   PACKAGES:= \
 	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-thermal-armada
 endef
@@ -24,7 +24,7 @@ define Profile/370-RD
   NAME:=Marvell Armada 370 RD (RD-88F6710-A1)
   PACKAGES:= \
 	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-thermal-armada
 endef
@@ -39,7 +39,7 @@ define Profile/385-RD
   NAME:=Marvell Armada 385 RD (RD-88F6820-AP)
   PACKAGES:= \
 	kmod-mmc kmod-mvsdio kmod-usb3 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-thermal-armada
 endef
 
@@ -53,7 +53,7 @@ define Profile/385-DB-AP
   NAME:=Marvell Armada 385 DB AP (DB-88F6820-AP)
   PACKAGES:= \
 	kmod-usb3 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-thermal-armada
 endef
@@ -68,7 +68,7 @@ define Profile/XP-DB
   NAME:=Marvell Armada XP DB (DB-78460-BP)
   PACKAGES:= \
 	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-thermal-armada
 endef
@@ -83,7 +83,7 @@ define Profile/XP-GP
   NAME:=Marvell Armada XP GP (DB-MV784MP-GP)
   PACKAGES:= \
 	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
-	kmod-of-i2c kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
 	kmod-rtc-marvell kmod-thermal-armada
 endef
