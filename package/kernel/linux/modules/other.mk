@@ -13,7 +13,6 @@ WATCHDOG_DIR:=watchdog
 define KernelPackage/6lowpan-iphc
   USBMENU:=$(OTHER_MENU)
   TITLE:=6lowpan shared code
-  DEPENDS:=@!LINUX_3_10
   KCONFIG:=CONFIG_6LOWPAN_IPHC
   HIDDEN:=1
   FILES:=$(LINUX_DIR)/net/ieee802154/6lowpan_iphc.ko
@@ -29,7 +28,7 @@ $(eval $(call KernelPackage,6lowpan-iphc))
 define KernelPackage/bluetooth
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth support
-  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +!LINUX_3_10:kmod-6lowpan-iphc +kmod-lib-crc16 +kmod-hid
+  DEPENDS:=@USB_SUPPORT +kmod-usb-core +kmod-crypto-hash +kmod-6lowpan-iphc +kmod-lib-crc16 +kmod-hid
   KCONFIG:= \
 	CONFIG_BLUEZ \
 	CONFIG_BLUEZ_L2CAP \
@@ -71,7 +70,7 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/bluetooth_6lowpan
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth 6LoWPAN support
-  DEPENDS:=+kmod-bluetooth @!LINUX_3_10 @!LINUX_3_14
+  DEPENDS:=+kmod-bluetooth @!LINUX_3_14
   KCONFIG:= \
   CONFIG_6LOWPAN=m \
   CONFIG_BT_6LOWPAN=m
@@ -740,7 +739,7 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
-  DEPENDS:=+kmod-lib-lzo +(!LINUX_3_10&&!LINUX_3_14):kmod-lib-lz4
+  DEPENDS:=+kmod-lib-lzo +!LINUX_3_14:kmod-lib-lz4
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
@@ -749,10 +748,8 @@ define KernelPackage/zram
 	CONFIG_ZSMALLOC_STAT=n \
 	CONFIG_ZRAM_LZ4_COMPRESS=y
   FILES:= \
-	$(LINUX_DIR)/drivers/staging/zsmalloc/zsmalloc.ko@lt3.14 \
-	$(LINUX_DIR)/drivers/staging/zram/zram.ko@lt3.14 \
-	$(LINUX_DIR)/mm/zsmalloc.ko@ge3.14 \
-	$(LINUX_DIR)/drivers/block/zram/zram.ko@ge3.14
+	$(LINUX_DIR)/mm/zsmalloc.ko \
+	$(LINUX_DIR)/drivers/block/zram/zram.ko
   AUTOLOAD:=$(call AutoLoad,20,zsmalloc zram)
 endef
 
