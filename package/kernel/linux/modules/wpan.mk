@@ -9,7 +9,7 @@ WPAN_MENU:=Wireless Drivers
 define KernelPackage/ieee802154
   SUBMENU:=$(WPAN_MENU)
   TITLE:=IEEE-802.15.4 support
-  DEPENDS:=@!LINUX_4.0
+  DEPENDS:=@LINUX_4_0
   KCONFIG:= \
 	CONFIG_IEEE802154 \
 	CONFIG_IEEE802154_SOCKET=y
@@ -32,11 +32,11 @@ $(eval $(call KernelPackage,ieee802154))
 define KernelPackage/mac802154
   SUBMENU:=$(WPAN_MENU)
   TITLE:=MAC-802.15.4 support
-  DEPENDS:=@!LINUX_4.0
+  DEPENDS:=@LINUX_4_0
   KCONFIG:= \
 	CONFIG_MAC802154 \
 	CONFIG_IEEE802154_DRIVERS=y
-  DEPENDS:=+kmod-ieee802154 +kmod-crypto-aead +kmod-lib-crc-ccitt @!LINUX_4.0
+  DEPENDS:=+kmod-ieee802154 +kmod-crypto-aead +kmod-lib-crc-ccitt @LINUX_4_0
   FILES:=$(LINUX_DIR)/net/mac802154/mac802154.ko
   AUTOLOAD:=$(call AutoLoad,91,mac802154)
 endef
@@ -53,26 +53,10 @@ endef
 
 $(eval $(call KernelPackage,mac802154))
 
-define KernelPackage/fakehard
-  SUBMENU:=$(WPAN_MENU)
-  TITLE:=Fake LR-WPAN driver
-  DEPENDS:=+kmod-mac802154 @!LINUX_4.0
-  KCONFIG:=CONFIG_IEEE802154_FAKEHARD
-  FILES:=$(LINUX_DIR)/drivers/net/ieee802154/fakehard.ko
-  AUTOLOAD:=$(call AutoLoad,92,fakehard)
-endef
-
-define KernelPackage/fakehard/description
-  Say Y here to enable the fake driver that can emulate a net
-  of several interconnected radio devices.
-endef
-
-$(eval $(call KernelPackage,fakehard))
-
 define KernelPackage/fakelb
   SUBMENU:=$(WPAN_MENU)
-  TITLE:=Fake LR-WPAN loopback driver
-  DEPENDS:=+kmod-mac802154 @!LINUX_4.0
+  TITLE:=Fake LR-WPAN driver
+  DEPENDS:=+kmod-mac802154 @LINUX_4_0
   KCONFIG:=CONFIG_IEEE802154_FAKELB
   FILES:=$(LINUX_DIR)/drivers/net/ieee802154/fakelb.ko
   AUTOLOAD:=$(call AutoLoad,92,fakelb)
@@ -124,9 +108,9 @@ $(eval $(call KernelPackage,cc2520))
 define KernelPackage/ieee802154_6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
-  DEPENDS:=@!LINUX_4.0
+  DEPENDS:=@LINUX_4_0
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
-  DEPENDS:=@!LINUX_4.0
+  DEPENDS:=@LINUX_4_0
   FILES:=$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko
   AUTOLOAD:=$(call AutoLoad,91,ieee802154_6lowpan)
 endef
