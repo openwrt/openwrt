@@ -96,7 +96,7 @@ static int b53_srab_op(struct b53_device *dev, u8 page, u8 reg, u32 op)
 		  B53_SRAB_CMDSTAT_GORDYN |
 		  op;
 	writel(cmdstat, regs + B53_SRAB_CMDSTAT);
-	
+
 	/* check if operation completed */
 	for (i = 0; i < 5; ++i) {
 		cmdstat = readl(regs + B53_SRAB_CMDSTAT);
@@ -189,7 +189,7 @@ static int b53_srab_read48(struct b53_device *dev, u8 page, u8 reg, u64 *val)
 
 	*val = readl(regs + B53_SRAB_RD_L);
 	*val += ((u64)readl(regs + B53_SRAB_RD_H) & 0xffff) << 32;
-	
+
 err:
 	b53_srab_release_grant(dev);
 
@@ -358,9 +358,8 @@ static int b53_srab_remove(struct platform_device *pdev)
 {
 	struct b53_device *dev = platform_get_drvdata(pdev);
 
-	if (dev) {
+	if (dev)
 		b53_switch_remove(dev);
-	}
 
 	return 0;
 }

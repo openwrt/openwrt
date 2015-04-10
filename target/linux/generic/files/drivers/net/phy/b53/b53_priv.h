@@ -150,7 +150,7 @@ static inline int is63xx(struct b53_device *dev)
 	return 0;
 #endif
 }
-	
+
 static inline int is5301x(struct b53_device *dev)
 {
 	return dev->chip_id == BCM53010_DEVICE_ID ||

@@ -31,12 +31,12 @@
 #define B53_MEM_ACCESS_PAGE		0x08 /* Memory access */
 
 /* PHY Registers */
-#define B53_PORT_MII_PAGE(i)		(0x10 + i) /* Port i MII Registers */
+#define B53_PORT_MII_PAGE(i)		(0x10 + (i)) /* Port i MII Registers */
 #define B53_IM_PORT_PAGE		0x18 /* Inverse MII Port (to EMAC) */
 #define B53_ALL_PORT_PAGE		0x19 /* All ports MII (broadcast) */
 
 /* MIB registers */
-#define B53_MIB_PAGE(i)			(0x20 + i)
+#define B53_MIB_PAGE(i)			(0x20 + (i))
 
 /* Quality of Service (QoS) Registers */
 #define B53_QOS_PAGE			0x30
@@ -58,7 +58,7 @@
  *************************************************************************/
 
 /* Port Control Register (8 bit) */
-#define B53_PORT_CTRL(i)		(0x00 + i)
+#define B53_PORT_CTRL(i)		(0x00 + (i))
 #define   PORT_CTRL_RX_DISABLE		BIT(0)
 #define   PORT_CTRL_TX_DISABLE		BIT(1)
 #define   PORT_CTRL_RX_BCST_EN		BIT(2) /* Broadcast RX (P8 only) */
@@ -109,7 +109,7 @@
  * Please note that not all ports are available on every hardware, e.g. BCM5301X
  * don't include overriding port 6, BCM63xx also have some limitations.
  */
-#define B53_GMII_PORT_OVERRIDE_CTRL(i)	(0x58 + i)
+#define B53_GMII_PORT_OVERRIDE_CTRL(i)	(0x58 + (i))
 #define   GMII_PO_LINK			BIT(0)
 #define   GMII_PO_FULL_DUPLEX		BIT(1) /* 0 = Half Duplex */
 #define   GMII_PO_SPEED_S		2
