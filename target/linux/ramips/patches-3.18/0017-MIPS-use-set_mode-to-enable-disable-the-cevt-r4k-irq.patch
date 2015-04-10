@@ -11,7 +11,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -29,12 +29,6 @@ static int mips_next_event(unsigned long
+@@ -29,12 +29,6 @@
  	return res;
  }
  
@@ -24,7 +24,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
  int cp0_timer_irq_installed;
  
-@@ -75,9 +69,38 @@ struct irqaction c0_compare_irqaction =
+@@ -75,9 +69,38 @@
  	.name = "timer",
  };
  
@@ -63,7 +63,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
  
  /*
-@@ -198,12 +221,14 @@ int r4k_clockevent_init(void)
+@@ -198,12 +221,14 @@
  
  	clockevents_register_device(cd);
  
@@ -78,3 +78,22 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	return 0;
  }
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -1,11 +1,16 @@
+ if RALINK
+ 
++config CEVT_SYSTICK_QUIRK
++	bool
++	default n
++
+ config CLKEVT_RT3352
+ 	bool
+ 	depends on SOC_RT305X || SOC_MT7620
+ 	default y
+ 	select CLKSRC_OF
+ 	select CLKSRC_MMIO
++	select CEVT_SYSTICK_QUIRK
+ 
+ config IRQ_INTC
+ 	bool
