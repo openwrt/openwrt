@@ -154,6 +154,13 @@ setup_interface () {
 		ubus call network add_dynamic "$(json_dump)"
 	fi
 
+	# Apply IPv6 / ND configuration
+	HOPLIMIT=$(cat /proc/sys/net/ipv6/conf/$device/hop_limit)
+	[ "$RA_HOPLIMIT" -gt "$HOPLIMIT" ] && echo "$RA_HOPLIMIT" > /proc/sys/net/ipv6/conf/$device/hop_limit
+	[ "$RA_MTU" -gt 0 ] && echo "$RA_MTU" > /proc/sys/net/ipv6/conf/$device/mtu
+	[ "$RA_REACHABLE" -gt 0 ] && echo "$RA_REACHABLE" > /proc/sys/net/ipv6/neigh/$device/base_reachable_time_ms
+	[ "$RA_RETRANSMIT" -gt 0 ] && echo "$RA_RETRANSMIT" > /proc/sys/net/ipv6/neigh/$device/retrans_time_ms
+
 	# TODO: $SNTP_IP $SIP_IP $SNTP_FQDN $SIP_DOMAIN
 }
 
