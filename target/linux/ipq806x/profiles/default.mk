@@ -10,7 +10,7 @@ define Profile/Default
 	NAME:=Default Profile (minimum package set)
 	PACKAGES:= \
 		kmod-usb-core kmod-usb-ohci kmod-usb2 kmod-ledtrig-usbdev \
-		kmod-usb3 kmod-usb-dwc3-qcom
+		kmod-usb3 kmod-usb-dwc3-qcom kmod-usb-phy-qcom-dwc3
 endef
 
 define Profile/Default/Description
