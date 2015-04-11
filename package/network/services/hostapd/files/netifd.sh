@@ -346,6 +346,7 @@ hostapd_set_bss_options() {
 
 	if [ "$wpa" -ge "1" ]; then
 		json_get_vars nasid ieee80211r
+		set_default ieee80211r 0
 		[ -n "$nasid" ] && append bss_conf "nas_identifier=$nasid" "$N"
 
 		if [ "$ieee80211r" -gt "0" ]; then
