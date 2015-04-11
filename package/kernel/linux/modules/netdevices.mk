@@ -115,8 +115,7 @@ define KernelPackage/et131x
   TITLE:=Agere ET131x Gigabit Ethernet driver
   URL:=http://sourceforge.net/projects/et131x
   FILES:= \
-	$(LINUX_DIR)/drivers/staging/et131x/et131x.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/net/ethernet/agere/et131x.ko@ge3.18
+	$(LINUX_DIR)/drivers/net/ethernet/agere/et131x.ko
   KCONFIG:= \
 	CONFIG_ET131X \
 	CONFIG_ET131X_DEBUG=n

@@ -70,7 +70,7 @@ $(eval $(call KernelPackage,bluetooth))
 define KernelPackage/bluetooth_6lowpan
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Bluetooth 6LoWPAN support
-  DEPENDS:=+kmod-bluetooth @!LINUX_3_14
+  DEPENDS:=+kmod-bluetooth
   KCONFIG:= \
   CONFIG_6LOWPAN=m \
   CONFIG_BT_6LOWPAN=m
@@ -739,7 +739,7 @@ $(eval $(call KernelPackage,ikconfig))
 define KernelPackage/zram
   SUBMENU:=$(OTHER_MENU)
   TITLE:=ZRAM
-  DEPENDS:=+kmod-lib-lzo +!LINUX_3_14:kmod-lib-lz4
+  DEPENDS:=+kmod-lib-lzo +kmod-lib-lz4
   KCONFIG:= \
 	CONFIG_ZSMALLOC \
 	CONFIG_ZRAM \
@@ -966,8 +966,7 @@ define KernelPackage/echo
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Line Echo Canceller
   KCONFIG:=CONFIG_ECHO
-  FILES:=$(LINUX_DIR)/drivers/staging/echo/echo.ko@lt3.18 \
-	  $(LINUX_DIR)/drivers/misc/echo/echo.ko@ge3.18
+  FILES:=$(LINUX_DIR)/drivers/misc/echo/echo.ko
   AUTOLOAD:=$(call AutoLoad,50,echo)
 endef
 

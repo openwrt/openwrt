@@ -26,8 +26,7 @@ define KernelPackage/bcm63xx-udc
   DEPENDS:=@TARGET_brcm63xx +kmod-usb-gadget
   KCONFIG:=CONFIG_USB_BCM63XX_UDC
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/gadget/bcm63xx_udc.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/udc/bcm63xx_udc.ko@ge3.18
+	$(LINUX_DIR)/drivers/usb/gadget/udc/bcm63xx_udc.ko
   AUTOLOAD:=$(call AutoLoad,51,bcm63xx_udc)
   $(call AddDepends/usb)
 endef
