@@ -255,7 +255,7 @@ define KernelPackage/usb-eth-gadget
   DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
 	$(LINUX_DIR)/drivers/usb/gadget/function/u_ether.ko \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm.ko@ \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm_subset.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_rndis.ko \
 	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ether.ko
