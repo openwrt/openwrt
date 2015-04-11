@@ -218,8 +218,7 @@ define KernelPackage/usb-gadget
   TITLE:=USB Gadget support
   KCONFIG:=CONFIG_USB_GADGET
   FILES:=\
-	$(LINUX_DIR)/drivers/usb/gadget/udc-core.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/udc/udc-core.ko@ge3.18
+	$(LINUX_DIR)/drivers/usb/gadget/udc/udc-core.ko
   AUTOLOAD:=$(call AutoLoad,45,udc-core)
   DEPENDS:=@USB_GADGET_SUPPORT
   $(call AddDepends/usb)
@@ -255,16 +254,11 @@ define KernelPackage/usb-eth-gadget
 	CONFIG_USB_ETH_EEM=n
   DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/gadget/function/u_ether.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm_subset.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_rndis.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ether.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/u_ether.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_ecm_subset.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_rndis.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/g_ether.ko@lt3.18
+	$(LINUX_DIR)/drivers/usb/gadget/function/u_ether.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm.ko@ \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_ecm_subset.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_rndis.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_ether.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_ecm g_ether)
   $(call AddDepends/usb)
 endef
@@ -281,16 +275,11 @@ define KernelPackage/usb-serial-gadget
   KCONFIG:=CONFIG_USB_G_SERIAL
   DEPENDS:=+kmod-usb-gadget +kmod-usb-lib-composite
   FILES:= \
-	$(LINUX_DIR)/drivers/usb/gadget/function/u_serial.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_acm.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_obex.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_serial.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_serial.ko@ge3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/u_serial.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_acm.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_obex.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/usb_f_serial.ko@lt3.18 \
-	$(LINUX_DIR)/drivers/usb/gadget/g_serial.ko@lt3.18
+	$(LINUX_DIR)/drivers/usb/gadget/function/u_serial.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_acm.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_obex.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/function/usb_f_serial.ko \
+	$(LINUX_DIR)/drivers/usb/gadget/legacy/g_serial.ko
   AUTOLOAD:=$(call AutoLoad,52,usb_f_acm g_serial)
   $(call AddDepends/usb)
 endef
@@ -1072,7 +1061,7 @@ define KernelPackage/usb-net
   TITLE:=Kernel modules for USB-to-Ethernet convertors
   DEPENDS:=+kmod-mii
   KCONFIG:=CONFIG_USB_USBNET \
-	CONFIG_USB_NET_DRIVERS@ge3.18
+	CONFIG_USB_NET_DRIVERS
   AUTOLOAD:=$(call AutoProbe,usbnet)
   FILES:=$(LINUX_DIR)/drivers/$(USBNET_DIR)/usbnet.ko
   $(call AddDepends/usb)

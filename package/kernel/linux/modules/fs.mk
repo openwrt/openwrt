@@ -319,12 +319,12 @@ define KernelPackage/fs-nfs-common
   KCONFIG:= \
 	CONFIG_LOCKD \
 	CONFIG_SUNRPC \
-	CONFIG_GRACE_PERIOD@ge3.18
+	CONFIG_GRACE_PERIOD
   FILES:= \
 	$(LINUX_DIR)/fs/lockd/lockd.ko \
 	$(LINUX_DIR)/net/sunrpc/sunrpc.ko \
-	$(LINUX_DIR)/fs/nfs_common/grace.ko@ge3.18
-  AUTOLOAD:=$(call AutoLoad,30,grace@ge3.18 sunrpc lockd)
+	$(LINUX_DIR)/fs/nfs_common/grace.ko
+  AUTOLOAD:=$(call AutoLoad,30,grace sunrpc lockd)
 endef
 
 $(eval $(call KernelPackage,fs-nfs-common))
