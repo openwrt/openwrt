@@ -480,6 +480,7 @@ static void b53_switch_reset_gpio(struct b53_device *dev)
 
 static int b53_switch_reset(struct b53_device *dev)
 {
+	u8 cpu_port = dev->sw_dev.cpu_port;
 	u8 mgmt;
 
 	b53_switch_reset_gpio(dev);
@@ -525,8 +526,7 @@ static int b53_switch_reset(struct b53_device *dev)
 				return -EINVAL;
 			}
 		}
-	} else if ((is531x5(dev) || is5301x(dev)) &&
-		   dev->sw_dev.cpu_port == B53_CPU_PORT) {
+	} else if (is531x5(dev) && cpu_port == B53_CPU_PORT) {
 		u8 mii_port_override;
 
 		b53_read8(dev, B53_CTRL_PAGE, B53_PORT_OVERRIDE_CTRL,
@@ -534,6 +534,33 @@ static int b53_switch_reset(struct b53_device *dev)
 		b53_write8(dev, B53_CTRL_PAGE, B53_PORT_OVERRIDE_CTRL,
 			   mii_port_override | PORT_OVERRIDE_EN |
 			   PORT_OVERRIDE_LINK);
+	} else if (is5301x(dev)) {
+		if (cpu_port == 8) {
+			u8 mii_port_override;
+
+			b53_read8(dev, B53_CTRL_PAGE, B53_PORT_OVERRIDE_CTRL,
+				  &mii_port_override);
+			mii_port_override |= PORT_OVERRIDE_LINK |
+					     PORT_OVERRIDE_RX_FLOW |
+					     PORT_OVERRIDE_TX_FLOW |
+					     PORT_OVERRIDE_SPEED_2000M |
+					     PORT_OVERRIDE_EN;
+			b53_write8(dev, B53_CTRL_PAGE, B53_PORT_OVERRIDE_CTRL,
+				   mii_port_override);
+
+			/* TODO: Ports 5 & 7 require some extra handling */
+		} else {
+			u8 po_reg = B53_GMII_PORT_OVERRIDE_CTRL(cpu_port);
+			u8 gmii_po;
+
+			b53_read8(dev, B53_CTRL_PAGE, po_reg, &gmii_po);
+			gmii_po |= GMII_PO_LINK |
+				   GMII_PO_RX_FLOW |
+				   GMII_PO_TX_FLOW |
+				   GMII_PO_EN |
+				   GMII_PO_SPEED_2000M;
+			b53_write8(dev, B53_CTRL_PAGE, po_reg, gmii_po);
+		}
 	}
 
 	b53_enable_mib(dev);
