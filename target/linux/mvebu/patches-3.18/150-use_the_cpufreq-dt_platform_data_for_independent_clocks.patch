@@ -21,7 +21,7 @@ Signed-off-by: Arnd Bergmann <arnd@arndb.de>
  #include <linux/delay.h>
  #include <linux/init.h>
  #include <linux/io.h>
-@@ -572,6 +573,10 @@ int mvebu_pmsu_dfs_request(int cpu)
+@@ -586,6 +587,10 @@ int mvebu_pmsu_dfs_request(int cpu)
  	return 0;
  }
  
@@ -32,7 +32,7 @@ Signed-off-by: Arnd Bergmann <arnd@arndb.de>
  static int __init armada_xp_pmsu_cpufreq_init(void)
  {
  	struct device_node *np;
-@@ -644,7 +649,8 @@ static int __init armada_xp_pmsu_cpufreq
+@@ -658,7 +663,8 @@ static int __init armada_xp_pmsu_cpufreq
  		}
  	}
  
