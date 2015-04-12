@@ -13,11 +13,20 @@ case "$board" in
 armada-xp-mamba)
 	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
 	case "$SKU" in
-		US)
-			REGD=US
+		AP)
+			REGD=CN
+		;;
+		AU)
+			REGD=AU
+		;;
+		CA)
+			REGD=CA
 		;;
 		EU)
 			REGD=DE
+		;;
+		US)
+			REGD=US
 		;;
 	esac
 	uci get wireless.radio0.country || uci set wireless.radio0.country=$REGD
