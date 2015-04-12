@@ -1,8 +1,8 @@
 --- a/init/main.c
 +++ b/init/main.c
-@@ -368,6 +368,26 @@ static void __init setup_command_line(ch
- 	strcpy(static_command_line, command_line);
- }
+@@ -351,6 +351,29 @@ static inline void setup_nr_cpu_ids(void
+ static inline void smp_prepare_cpus(unsigned int maxcpus) { }
+ #endif
  
 +#ifdef CONFIG_MANGLE_BOOTARGS
 +static void __init mangle_bootargs(char *command_line)
@@ -11,10 +11,14 @@
 +	char *rootfs;
 +
 +	rootdev = strstr(command_line, "root=/dev/mtdblock");
-+	strncpy(rootdev, "mangled_rootblock=", 18);
++
++	if (rootdev)
++		strncpy(rootdev, "mangled_rootblock=", 18);
 +
 +	rootfs = strstr(command_line, "rootfstype");
-+	strncpy(rootfs, "mangled_fs", 10);
++
++	if (rootfs)
++		strncpy(rootfs, "mangled_fs", 10);
 +
 +}
 +#else
@@ -23,11 +27,10 @@
 +}
 +#endif
 +
-+
  /*
-  * We need to finalize in a non-__init function or else race conditions
-  * between the root thread and the init thread may cause start_kernel to
-@@ -519,6 +539,7 @@ asmlinkage __visible void __init start_k
+  * We need to store the untouched command line for future reference.
+  * We also need to store the touched command line since the parameter
+@@ -519,6 +542,7 @@ asmlinkage __visible void __init start_k
  	pr_notice("%s", linux_banner);
  	setup_arch(&command_line);
  	mm_init_cpumask(&init_mm);
