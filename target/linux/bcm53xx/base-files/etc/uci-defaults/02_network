@@ -20,7 +20,14 @@ if echo "$vlan1ports" | egrep -q "^1 2 3 4 5" && \
    echo "$vlan2ports" | egrep -q "^0 5"; then
 	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
 	ucidef_add_switch_vlan "switch0" "2" "0 5t"
+elif echo "$vlan1ports" | egrep -q "^0 1 2 3 5 7 8" && \
+     echo "$vlan2ports" | egrep -q "^4 8"; then
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5 7 8t"
+	ucidef_add_switch_vlan "switch0" "2" "4 8t"
 else
+	# This also handles some funcy (e.g. R6250) configs like:
+	# vlan1ports=3 2 1 0 5*
+	# vlan2ports=4 5u
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 	ucidef_add_switch_vlan "switch0" "2" "4 5t"
 fi
