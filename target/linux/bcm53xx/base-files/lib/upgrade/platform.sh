@@ -124,6 +124,34 @@ platform_extract_trx_from_cybertan() {
 	dd if="$1" of="$2" bs=32 skip=1
 }
 
+platform_pre_upgrade() {
+	local file_type=$(platform_identify "$1")
+	local dir="/tmp/sysupgrade-bcm53xx"
+	local trx="$1"
+
+	[ "$(platform_flash_type)" != "nand" ] && return
+
+	# Extract trx
+	case "$file_type" in
+		"chk")		trx="/tmp/$1.trx"; platform_extract_trx_from_chk "$1" "$trx";;
+		"cybertan")	trx="/tmp/$1.trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
+	esac
+
+	# Extract partitions from trx
+	rm -fR $dir
+	mkdir -p $dir
+	otrx -e "$trx" \
+		-1 $dir/kernel \
+		-2 $dir/root
+
+	# Firmwares without UBI image should be flashed "normally"
+	local root_type=$(identify $dir/root)
+	[ "$root_type" != "ubi" ] && return
+
+	echo "Provided firmware contains kernel and UBI image, but flashing it in unsupported yet"
+	exit 1
+}
+
 platform_do_upgrade() {
 	local file_type=$(platform_identify "$1")
 	local trx="$1"
