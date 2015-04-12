@@ -15,7 +15,8 @@ define Profile/Default
 		kmod-rtc-marvell kmod-thermal-armada \
 		kmod-gpio-button-hotplug kmod-hwmon-tmp421 \
 		kmod-hwmon-pwmfan kmod-leds-tlc59116 \
-		kmod-ledtrig-usbdev kmod-mwlwifi wpad-mini
+		kmod-ledtrig-usbdev kmod-mwlwifi wpad-mini \
+		kmod-ata-mvebu-ahci
 endef
 
 define Profile/Default/Description
