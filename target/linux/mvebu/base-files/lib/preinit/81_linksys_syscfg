@@ -9,8 +9,17 @@ preinit_mount_syscfg() {
 
 	case $(mvebu_board_name) in
 	armada-xp-mamba)
+		needs_recovery=0
+		ubiattach -m 8 || needs_recovery=1
+		if [ $needs_recovery -eq 1 ]
+		then
+			echo "ubifs syscfg partition is damaged, reformatting"
+			ubidetach -m 8
+			ubiformat -y -O 2048 -q /dev/mtd8
+			ubiattach -m 8
+			ubimkvol /dev/ubi1 -n 0 -N syscfg -t dynamic --maxavsize
+		fi
 		mkdir /tmp/syscfg
-		ubiattach -p /dev/mtd8
 		mount -t ubifs ubi1:syscfg /tmp/syscfg
 		[ -f /tmp/syscfg/sysupgrade.tgz ] && {
 		echo "- config restore -"
