@@ -148,7 +148,7 @@ platform_pre_upgrade() {
 	local root_type=$(identify $dir/root)
 	[ "$root_type" != "ubi" ] && return
 
-	echo "Provided firmware contains kernel and UBI image, but flashing it in unsupported yet"
+	echo "Provided firmware contains kernel and UBI image, but flashing it is unsupported yet"
 	exit 1
 }
 
@@ -157,8 +157,7 @@ platform_do_upgrade() {
 	local trx="$1"
 
 	[ "$(platform_flash_type)" == "nand" ] && {
-		echo "Firmware upgrade on NAND devices is REALLY unsupported."
-		return
+		echo "Flashing firmware without UBI for rootfs. All erase counters will be lost."
 	}
 
 	case "$file_type" in
