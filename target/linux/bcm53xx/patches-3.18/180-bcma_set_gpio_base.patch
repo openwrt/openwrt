@@ -1,5 +1,7 @@
 Subject: [PATCH] bcma: set gpio chip->base for CONFIG_ARCH_BCM_5301X like on 47xx
 
+This makes system GPIOs easier to deal with, e.g. for user space scripts.
+
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
 --- a/drivers/bcma/driver_gpio.c
