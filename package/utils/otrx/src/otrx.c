@@ -27,6 +27,7 @@
 
 #define TRX_MAGIC			0x30524448
 #define TRX_FLAGS_OFFSET		12
+#define TRX_MAX_PARTS			3
 
 struct trx_header {
 	uint32_t magic;
@@ -40,12 +41,14 @@ struct trx_header {
 enum mode {
 	MODE_UNKNOWN,
 	MODE_CHECK,
+	MODE_EXTRACT,
 };
 
 enum mode mode = MODE_UNKNOWN;
 
 char *trx_path;
 size_t trx_offset = 0;
+char *partition[TRX_MAX_PARTS] = {};
 
 /**************************************************
  * CRC32
@@ -196,20 +199,134 @@ out:
 }
 
 /**************************************************
+ * Extract
+ **************************************************/
+
+static int otrx_extract_copy(FILE *trx, size_t offset, size_t length, char *out_path) {
+	FILE *out;
+	size_t bytes;
+	uint8_t *buf;
+	int err = 0;
+
+	out = fopen(out_path, "w");
+	if (!out) {
+		fprintf(stderr, "Couldn't open %s\n", out_path);
+		err = -EACCES;
+		goto out;
+	}
+
+	buf = malloc(length);
+	if (!buf) {
+		fprintf(stderr, "Couldn't alloc %zu B buffer\n", length);
+		err =  -ENOMEM;
+		goto err_close;
+	}
+
+	fseek(trx, offset, SEEK_SET);
+	bytes = fread(buf, 1, length, trx);
+	if (bytes != length) {
+		fprintf(stderr, "Couldn't read %zu B of data from %s\n", length, trx_path);
+		err =  -ENOMEM;
+		goto err_free_buf;
+	};
+
+	bytes = fwrite(buf, 1, length, out);
+	if (bytes != length) {
+		fprintf(stderr, "Couldn't write %zu B to %s\n", length, out_path);
+		err =  -ENOMEM;
+		goto err_free_buf;
+	}
+
+	printf("Extracted 0x%zx bytes into %s\n", length, out_path);
+
+err_free_buf:
+	free(buf);
+err_close:
+	fclose(out);
+out:
+	return err;
+}
+
+static int otrx_extract() {
+	FILE *trx;
+	struct trx_header hdr;
+	size_t bytes;
+	int i;
+	int err = 0;
+
+	trx = fopen(trx_path, "r");
+	if (!trx) {
+		fprintf(stderr, "Couldn't open %s\n", trx_path);
+		err = -EACCES;
+		goto out;
+	}
+
+	fseek(trx, trx_offset, SEEK_SET);
+	bytes = fread(&hdr, 1, sizeof(hdr), trx);
+	if (bytes != sizeof(hdr)) {
+		fprintf(stderr, "Couldn't read %s header\n", trx_path);
+		err =  -EIO;
+		goto err_close;
+	}
+
+	if (le32_to_cpu(hdr.magic) != TRX_MAGIC) {
+		fprintf(stderr, "Invalid TRX magic: 0x%08x\n", le32_to_cpu(hdr.magic));
+		err =  -EINVAL;
+		goto err_close;
+	}
+
+	for (i = 0; i < TRX_MAX_PARTS; i++) {
+		size_t length;
+
+		if (!partition[i])
+			continue;
+		if (!hdr.offset[i]) {
+			printf("TRX doesn't contain partition %d, can't extract %s\n", i + 1, partition[i]);
+			continue;
+		}
+
+		if (i + 1 >= TRX_MAX_PARTS || !hdr.offset[i + 1])
+			length = le32_to_cpu(hdr.length) - le32_to_cpu(hdr.offset[i]);
+		else
+			length = le32_to_cpu(hdr.offset[i + 1]) - le32_to_cpu(hdr.offset[i]);
+
+		otrx_extract_copy(trx, trx_offset + le32_to_cpu(hdr.offset[i]), length, partition[i]);
+	}
+
+err_close:
+	fclose(trx);
+out:
+	return err;
+}
+
+/**************************************************
  * Start
  **************************************************/
 
 static void parse_options(int argc, char **argv) {
 	int c;
 
-	while ((c = getopt(argc, argv, "c:o:")) != -1) {
+	while ((c = getopt(argc, argv, "c:e:o:1:2:3:")) != -1) {
 		switch (c) {
 		case 'c':
 			mode = MODE_CHECK;
 			trx_path = optarg;
 			break;
+		case 'e':
+			mode = MODE_EXTRACT;
+			trx_path = optarg;
+			break;
 		case 'o':
 			trx_offset = atoi(optarg);
+			break;
+		case '1':
+			partition[0] = optarg;
+			break;
+		case '2':
+			partition[1] = optarg;
+			break;
+		case '3':
+			partition[2] = optarg;
 			break;
 		}
 	}
@@ -221,6 +338,13 @@ static void usage() {
 	printf("Checking TRX file:\n");
 	printf("\t-c file\t\tcheck if file is a valid TRX\n");
 	printf("\t-o offset\toffset of TRX data in file (default: 0)\n");
+	printf("\n");
+	printf("Extracting from TRX file:\n");
+	printf("\t-e file\t\tfile with TRX to extract from\n");
+	printf("\t-o offset\toffset of TRX data in file (default: 0)\n");
+	printf("\t-1 file\t\tfile to extract 1st partition to (optional)\n");
+	printf("\t-2 file\t\tfile to extract 2nd partition to (optional)\n");
+	printf("\t-3 file\t\tfile to extract 3rd partition to (optional)\n");
 }
 
 int main(int argc, char **argv) {
@@ -229,6 +353,8 @@ int main(int argc, char **argv) {
 	switch (mode) {
 	case MODE_CHECK:
 		return otrx_check();
+	case MODE_EXTRACT:
+		return otrx_extract();
 	default:
 		usage();
 	}
