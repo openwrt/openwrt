@@ -17,20 +17,33 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -380,6 +380,12 @@ static void bgmac_dma_rx_setup_desc(stru
+@@ -362,6 +362,16 @@ static int bgmac_dma_rx_skb_for_slot(str
+ 	return 0;
+ }
+ 
++static void bgmac_dma_rx_update_index(struct bgmac *bgmac,
++				      struct bgmac_dma_ring *ring)
++{
++	wmb();
++
++	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_INDEX,
++		    ring->index_base +
++		    ring->end * sizeof(struct bgmac_dma_desc));
++}
++
+ static void bgmac_dma_rx_setup_desc(struct bgmac *bgmac,
+ 				    struct bgmac_dma_ring *ring, int desc_idx)
+ {
+@@ -380,6 +390,8 @@ static void bgmac_dma_rx_setup_desc(stru
  	dma_desc->addr_high = cpu_to_le32(upper_32_bits(ring->slots[desc_idx].dma_addr));
  	dma_desc->ctl0 = cpu_to_le32(ctl0);
  	dma_desc->ctl1 = cpu_to_le32(ctl1);
 +
-+	desc_idx = (desc_idx + 1) % BGMAC_RX_RING_SLOTS;
-+
-+	bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_INDEX,
-+			ring->index_base +
-+			desc_idx * sizeof(struct bgmac_dma_desc));
++	ring->end = (desc_idx + 1) % BGMAC_RX_RING_SLOTS;
  }
  
  static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
-@@ -394,9 +400,7 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -394,9 +406,7 @@ static int bgmac_dma_rx_read(struct bgma
  	end_slot &= BGMAC_DMA_RX_STATDPTR;
  	end_slot /= sizeof(struct bgmac_dma_desc);
  
@@ -41,7 +54,21 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		struct device *dma_dev = bgmac->core->dma_dev;
  		struct bgmac_slot_info *slot = &ring->slots[ring->start];
  		struct bgmac_rx_header *rx = slot->buf + BGMAC_RX_BUF_OFFSET;
-@@ -693,10 +697,6 @@ static void bgmac_dma_init(struct bgmac 
+@@ -468,6 +478,8 @@ static int bgmac_dma_rx_read(struct bgma
+ 			break;
+ 	}
+ 
++	bgmac_dma_rx_update_index(bgmac, ring);
++
+ 	return handled;
+ }
+ 
+@@ -690,15 +702,12 @@ static void bgmac_dma_init(struct bgmac 
+ 		if (ring->unaligned)
+ 			bgmac_dma_rx_enable(bgmac, ring);
+ 
++		ring->start = 0;
++		ring->end = 0;
  		for (j = 0; j < ring->num_slots; j++)
  			bgmac_dma_rx_setup_desc(bgmac, ring, j);
  
@@ -49,6 +76,9 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -			    ring->index_base +
 -			    ring->num_slots * sizeof(struct bgmac_dma_desc));
 -
- 		ring->start = 0;
- 		ring->end = 0;
+-		ring->start = 0;
+-		ring->end = 0;
++		bgmac_dma_rx_update_index(bgmac, ring);
  	}
+ }
+ 
