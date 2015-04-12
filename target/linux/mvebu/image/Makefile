@@ -137,7 +137,7 @@ $(eval $(call NANDProfile,XP-DB,armada-xp-db,512KiB,4096))
 $(eval $(call NANDProfile,XP-GP,armada-xp-gp,512KiB,4096))
 
 # Boards with NAND, with subpages
-$(eval $(call NANDProfile,Mamba,armada-xp-mamba,128KiB,2048,512,2048))
+$(eval $(call NANDProfile,Mamba,armada-xp-linksys-mamba,128KiB,2048,512,2048))
 
 # Boards with large NOR, where we want to use UBI
 $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
@@ -146,12 +146,12 @@ $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB)
 $(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
 
 define Image/Build/Profile/Mamba/squashfs
-	$(call Image/Build/UbinizeImage,armada-xp-mamba,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
+	$(call Image/Build/UbinizeImage,armada-xp-linksys-mamba,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
 	( \
-		dd if=$(KDIR)/uImage-armada-xp-mamba bs=3072k conv=sync; \
-		dd if=$(KDIR)/$(IMG_PREFIX)-armada-xp-mamba-squashfs-ubinized.bin \
+		dd if=$(KDIR)/uImage-armada-xp-linksys-mamba bs=3072k conv=sync; \
+		dd if=$(KDIR)/$(IMG_PREFIX)-armada-xp-linksys-mamba-squashfs-ubinized.bin \
 		bs=2048 conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-xp-mamba-squashfs-factory.img
+	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-xp-linksys-mamba-squashfs-factory.img
 endef
 
 # The Default profile should build everything

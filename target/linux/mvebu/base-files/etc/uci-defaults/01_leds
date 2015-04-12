@@ -9,7 +9,7 @@
 board=$(mvebu_board_name)
 
 case "$board" in
-armada-xp-mamba)
+armada-xp-linksys-mamba)
 	ucidef_set_led_netdev "wan" "WAN" "mamba:white:wan" "eth1"
 	ucidef_set_led_usbdev "usb2" "USB2" "mamba:white:usb2" "1-1"
 	ucidef_set_led_usbdev "usb3" "USB3" "mamba:white:usb3_1" "2-2"

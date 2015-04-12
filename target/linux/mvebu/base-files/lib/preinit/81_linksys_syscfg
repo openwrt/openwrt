@@ -8,7 +8,7 @@ preinit_mount_syscfg() {
 	. /lib/mvebu.sh
 
 	case $(mvebu_board_name) in
-	armada-xp-mamba)
+	armada-xp-linksys-mamba)
 		needs_recovery=0
 		ubiattach -m 8 || needs_recovery=1
 		if [ $needs_recovery -eq 1 ]

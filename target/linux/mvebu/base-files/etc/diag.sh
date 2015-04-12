@@ -6,7 +6,7 @@
 
 get_status_led() {
 	case $(mvebu_board_name) in
-	armada-xp-mamba)
+	armada-xp-linksys-mamba)
 		status_led="mamba:white:power"
 		;;
 	esac

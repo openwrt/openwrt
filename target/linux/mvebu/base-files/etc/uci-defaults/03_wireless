@@ -10,7 +10,7 @@
 board=$(mvebu_board_name)
 
 case "$board" in
-armada-xp-mamba)
+armada-xp-linksys-mamba)
 	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
 	case "$SKU" in
 		AP)
