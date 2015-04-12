@@ -391,7 +391,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -44,6 +44,7 @@ $(obj)/cuboot-taishan.o: BOOTCFLAGS += -
+@@ -51,6 +51,7 @@ $(obj)/cuboot-taishan.o: BOOTCFLAGS += -
  $(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
  $(obj)/cuboot-magicbox.o: BOOTCFLAGS += -mcpu=405
@@ -399,7 +399,7 @@
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-iss4xx.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-currituck.o: BOOTCFLAGS += -mcpu=405
-@@ -80,7 +81,7 @@ src-plat-$(CONFIG_40x) += fixed-head.S e
+@@ -88,7 +89,7 @@ src-plat-$(CONFIG_40x) += fixed-head.S e
  				treeboot-walnut.c cuboot-acadia.c \
  				cuboot-kilauea.c simpleboot.c \
  				virtex405-head.S virtex.c \
@@ -408,7 +408,7 @@
  src-plat-$(CONFIG_44x) += treeboot-ebony.c cuboot-ebony.c treeboot-bamboo.c \
  				cuboot-bamboo.c cuboot-sam440ep.c \
  				cuboot-sequoia.c cuboot-rainier.c \
-@@ -224,6 +225,7 @@ image-$(CONFIG_WALNUT)			+= treeImage.wa
+@@ -241,6 +242,7 @@ image-$(CONFIG_WALNUT)			+= treeImage.wa
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_OBS600)			+= uImage.obs600
  image-$(CONFIG_MAGICBOX)		+= cuImage.magicbox

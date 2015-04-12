@@ -1,6 +1,6 @@
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
-@@ -158,6 +158,16 @@ config PDC_ADMA
+@@ -234,6 +234,16 @@ config PDC_ADMA
  
  	  If unsure, say N.
  
@@ -16,10 +16,10 @@
 +
  config PATA_OCTEON_CF
  	tristate "OCTEON Boot Bus Compact Flash support"
- 	depends on CPU_CAVIUM_OCTEON
+ 	depends on CAVIUM_OCTEON_SOC
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
-@@ -84,6 +84,7 @@ obj-$(CONFIG_PATA_AT91)		+= pata_at91.o
+@@ -91,6 +91,7 @@ obj-$(CONFIG_PATA_AT91)		+= pata_at91.o
  obj-$(CONFIG_PATA_CMD640_PCI)	+= pata_cmd640.o
  obj-$(CONFIG_PATA_ISAPNP)	+= pata_isapnp.o
  obj-$(CONFIG_PATA_IXP4XX_CF)	+= pata_ixp4xx_cf.o
