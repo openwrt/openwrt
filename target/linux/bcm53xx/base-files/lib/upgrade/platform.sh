@@ -114,44 +114,30 @@ platform_check_image() {
 	return $error
 }
 
-# Extract TRX and use stadard upgrade method
-platform_do_upgrade_chk() {
+platform_extract_trx_from_chk() {
 	local header_len=$((0x$(get_magic_long_at "$1" 4)))
-	local trx="/tmp/$1.trx"
 
-	dd if="$1" of="$trx" bs=$header_len skip=1
-	shift
-	platform_do_upgrade_trx "$trx" "$@"
+	dd if="$1" of="$2" bs=$header_len skip=1
 }
 
-# Extract TRX and use stadard upgrade method
-platform_do_upgrade_cybertan() {
-	local trx="/tmp/$1.trx"
-
-	dd if="$1" of="$trx" bs=32 skip=1
-	shift
-	platform_do_upgrade_trx "$trx" "$@"
-}
-
-platform_do_upgrade_trx() {
-	local flash_type=$(platform_flash_type)
-
-	case "$flash_type" in
-		"serial")
-			default_do_upgrade "$@"
-		;;
-		"nand")
-			echo "Firmware upgrade on NAND devices is REALLY unsupported."
-		;;
-	esac
+platform_extract_trx_from_cybertan() {
+	dd if="$1" of="$2" bs=32 skip=1
 }
 
 platform_do_upgrade() {
 	local file_type=$(platform_identify "$1")
+	local trx="$1"
+
+	[ "$(platform_flash_type)" == "nand" ] && {
+		echo "Firmware upgrade on NAND devices is REALLY unsupported."
+		return
+	}
 
 	case "$file_type" in
-		"chk")		platform_do_upgrade_chk "$ARGV";;
-		"cybertan")	platform_do_upgrade_cybertan "$ARGV";;
-		*)		platform_do_upgrade_trx "$ARGV";;
+		"chk")		trx="/tmp/$1.trx"; platform_extract_trx_from_chk "$1" "$trx";;
+		"cybertan")	trx="/tmp/$1.trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
 	esac
+
+	shift
+	default_do_upgrade "$trx" "$@"
 }
