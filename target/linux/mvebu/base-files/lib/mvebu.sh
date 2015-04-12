@@ -31,8 +31,8 @@ mvebu_board_detect() {
 	*"Marvell Armada XP GP Board")
 		name="armada-xp-gp"
 		;;
-	*"Linksys WRT1900AC (Mamba)")
-		name="armada-xp-mamba"
+	*"Linksys WRT1900AC")
+		name="armada-xp-linksys-mamba"
 		;;
 	esac
 
