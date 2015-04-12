@@ -10,7 +10,7 @@ This register was set to a value exceeding the rx ring size, effectively
 allowing the hardware constant access to the full ring, regardless of
 which slots are initialized.
 
-Fix this by updating the register in bgmac_dma_rx_setup_desc.
+To fix this issue, always mark the last filled rx slot as invalid.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
@@ -39,7 +39,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	dma_desc->ctl0 = cpu_to_le32(ctl0);
  	dma_desc->ctl1 = cpu_to_le32(ctl1);
 +
-+	ring->end = (desc_idx + 1) % BGMAC_RX_RING_SLOTS;
++	ring->end = desc_idx;
  }
  
  static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
@@ -54,7 +54,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		struct device *dma_dev = bgmac->core->dma_dev;
  		struct bgmac_slot_info *slot = &ring->slots[ring->start];
  		struct bgmac_rx_header *rx = slot->buf + BGMAC_RX_BUF_OFFSET;
-@@ -468,6 +478,8 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -463,6 +473,8 @@ static int bgmac_dma_rx_read(struct bgma
  			break;
  	}
  
@@ -63,14 +63,18 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return handled;
  }
  
-@@ -690,15 +702,12 @@ static void bgmac_dma_init(struct bgmac 
+@@ -682,6 +694,8 @@ static int bgmac_dma_init(struct bgmac *
  		if (ring->unaligned)
  			bgmac_dma_rx_enable(bgmac, ring);
  
 +		ring->start = 0;
 +		ring->end = 0;
- 		for (j = 0; j < ring->num_slots; j++)
+ 		for (j = 0; j < ring->num_slots; j++) {
+ 			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[j]);
+ 			if (err)
+@@ -690,12 +704,7 @@ static int bgmac_dma_init(struct bgmac *
  			bgmac_dma_rx_setup_desc(bgmac, ring, j);
+ 		}
  
 -		bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_INDEX,
 -			    ring->index_base +
@@ -80,5 +84,5 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -		ring->end = 0;
 +		bgmac_dma_rx_update_index(bgmac, ring);
  	}
- }
  
+ 	return 0;
