@@ -1,6 +1,6 @@
 --- a/drivers/usb/host/isp116x-hcd.c
 +++ b/drivers/usb/host/isp116x-hcd.c
-@@ -1534,6 +1534,7 @@ static struct hc_driver isp116x_hc_drive
+@@ -1533,6 +1533,7 @@ static struct hc_driver isp116x_hc_drive
  
  /*----------------------------------------------------------------*/
  
@@ -8,7 +8,7 @@
  static int isp116x_remove(struct platform_device *pdev)
  {
  	struct usb_hcd *hcd = platform_get_drvdata(pdev);
-@@ -1710,4 +1711,251 @@ static struct platform_driver isp116x_dr
+@@ -1711,4 +1712,251 @@ static struct platform_driver isp116x_dr
  	},
  };
  
@@ -263,7 +263,7 @@
 +module_exit(isp116x_cleanup);
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -320,6 +320,24 @@ config USB_ISP116X_HCD
+@@ -327,6 +327,24 @@ config USB_ISP116X_HCD
  	  To compile this driver as a module, choose M here: the
  	  module will be called isp116x-hcd.
  

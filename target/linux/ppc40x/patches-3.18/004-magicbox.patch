@@ -389,7 +389,7 @@
 +};
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -43,6 +43,7 @@ $(obj)/cuboot-hotfoot.o: BOOTCFLAGS += -
+@@ -50,6 +50,7 @@ $(obj)/cuboot-hotfoot.o: BOOTCFLAGS += -
  $(obj)/cuboot-taishan.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-katmai.o: BOOTCFLAGS += -mcpu=440
  $(obj)/cuboot-acadia.o: BOOTCFLAGS += -mcpu=405
@@ -397,7 +397,7 @@
  $(obj)/treeboot-walnut.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-iss4xx.o: BOOTCFLAGS += -mcpu=405
  $(obj)/treeboot-currituck.o: BOOTCFLAGS += -mcpu=405
-@@ -78,7 +79,8 @@ src-plat-y := of.c
+@@ -86,7 +87,8 @@ src-plat-y := of.c epapr.c
  src-plat-$(CONFIG_40x) += fixed-head.S ep405.c cuboot-hotfoot.c \
  				treeboot-walnut.c cuboot-acadia.c \
  				cuboot-kilauea.c simpleboot.c \
@@ -407,7 +407,7 @@
  src-plat-$(CONFIG_44x) += treeboot-ebony.c cuboot-ebony.c treeboot-bamboo.c \
  				cuboot-bamboo.c cuboot-sam440ep.c \
  				cuboot-sequoia.c cuboot-rainier.c \
-@@ -221,6 +223,7 @@ image-$(CONFIG_HOTFOOT)			+= cuImage.hot
+@@ -238,6 +240,7 @@ image-$(CONFIG_HOTFOOT)			+= cuImage.hot
  image-$(CONFIG_WALNUT)			+= treeImage.walnut
  image-$(CONFIG_ACADIA)			+= cuImage.acadia
  image-$(CONFIG_OBS600)			+= uImage.obs600

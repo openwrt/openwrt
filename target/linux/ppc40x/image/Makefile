@@ -53,7 +53,7 @@ define Image/Build/squashfs
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-kilauea-$(1).img
 	( \
-		dd if=$(KDIR)/cuImage.magicbox bs=1408k conv=sync; \
+		dd if=$(KDIR)/cuImage.magicbox bs=64k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=64k conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-magicbox-$(1).img
 	( \

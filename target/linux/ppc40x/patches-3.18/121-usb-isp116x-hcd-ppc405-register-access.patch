@@ -1,7 +1,7 @@
 --- a/drivers/usb/host/isp116x.h
 +++ b/drivers/usb/host/isp116x.h
-@@ -364,22 +364,64 @@ struct isp116x_ep {
- #define	IRQ_TEST()	do{}while(0)
+@@ -354,21 +354,63 @@ struct isp116x_ep {
+ #define isp116x_check_platform_delay(h)	0
  #endif
  
 +#ifdef CONFIG_PPC
@@ -48,7 +48,6 @@
 +
  static inline void isp116x_write_addr(struct isp116x *isp116x, unsigned reg)
  {
- 	IRQ_TEST();
 -	writew(reg & 0xff, isp116x->addr_reg);
 +	isp116x_writew(reg & 0xff, isp116x->addr_reg);
  	isp116x_delay(isp116x, 300);
@@ -68,7 +67,7 @@
  	isp116x_delay(isp116x, 150);
  }
  
-@@ -387,7 +429,7 @@ static inline u16 isp116x_read_data16(st
+@@ -376,7 +418,7 @@ static inline u16 isp116x_read_data16(st
  {
  	u16 val;
  
@@ -77,7 +76,7 @@
  	isp116x_delay(isp116x, 150);
  	return val;
  }
-@@ -396,16 +438,16 @@ static inline u16 isp116x_raw_read_data1
+@@ -385,16 +427,16 @@ static inline u16 isp116x_raw_read_data1
  {
  	u16 val;
  
@@ -97,7 +96,7 @@
  	isp116x_delay(isp116x, 150);
  }
  
-@@ -413,9 +455,9 @@ static inline u32 isp116x_read_data32(st
+@@ -402,9 +444,9 @@ static inline u32 isp116x_read_data32(st
  {
  	u32 val;
  
