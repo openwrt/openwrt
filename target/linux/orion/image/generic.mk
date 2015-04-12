@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2008-2013 OpenWrt.org
+# Copyright (C) 2008-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -14,7 +14,7 @@
 
 
 ## Kernel mtd partition size in KiB
-KERNEL_MTD_SIZE:=1024
+KERNEL_MTD_SIZE:=1280
 
 # Netgear WNR854T: erase size is 128KiB = 0x00020000 = 131072
 ERASE_SIZE_128K:=128
