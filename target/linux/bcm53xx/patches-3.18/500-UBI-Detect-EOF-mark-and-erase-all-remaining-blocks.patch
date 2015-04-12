@@ -1,4 +1,4 @@
-From f41f8b42db092e505382f7120994de21590dff48 Mon Sep 17 00:00:00 2001
+From 2a2af518266a29323cf30c3f9ba9ef2ceb1dd84b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
 Date: Thu, 16 Oct 2014 20:52:16 +0200
 Subject: [PATCH] UBI: Detect EOF mark and erase all remaining blocks
@@ -8,20 +8,39 @@ Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 ---
- drivers/mtd/ubi/io.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ drivers/mtd/ubi/attach.c | 5 +++++
+ drivers/mtd/ubi/io.c     | 4 ++++
+ drivers/mtd/ubi/ubi.h    | 1 +
+ 3 files changed, 10 insertions(+)
 
+diff --git a/drivers/mtd/ubi/attach.c b/drivers/mtd/ubi/attach.c
+index 380268b..8f525c2 100644
+--- a/drivers/mtd/ubi/attach.c
++++ b/drivers/mtd/ubi/attach.c
+@@ -95,6 +95,9 @@ static int self_check_ai(struct ubi_device *ubi, struct ubi_attach_info *ai);
+ static struct ubi_ec_hdr *ech;
+ static struct ubi_vid_hdr *vidh;
+ 
++/* Set on finding block with 0xdeadc0de, indicates erasing all blocks behind */
++bool erase_all_next;
++
+ /**
+  * add_to_list - add physical eraseblock to a list.
+  * @ai: attaching information
+@@ -1418,6 +1421,8 @@ int ubi_attach(struct ubi_device *ubi, int force_scan)
+ 	if (!ai)
+ 		return -ENOMEM;
+ 
++	erase_all_next = false;
++
+ #ifdef CONFIG_MTD_UBI_FASTMAP
+ 	/* On small flash devices we disable fastmap in any case. */
+ 	if ((int)mtd_div_by_eb(ubi->mtd->size, ubi->mtd) <= UBI_FM_MAX_START) {
+diff --git a/drivers/mtd/ubi/io.c b/drivers/mtd/ubi/io.c
+index d361349..f3d29ce 100644
 --- a/drivers/mtd/ubi/io.c
 +++ b/drivers/mtd/ubi/io.c
-@@ -727,6 +727,7 @@ bad:
-  * o %UBI_IO_FF if only 0xFF bytes were read (the PEB is supposedly empty)
-  * o a negative error code in case of failure.
-  */
-+static bool erase_all_next = false;
- int ubi_io_read_ec_hdr(struct ubi_device *ubi, int pnum,
- 		       struct ubi_ec_hdr *ec_hdr, int verbose)
- {
-@@ -753,6 +754,10 @@ int ubi_io_read_ec_hdr(struct ubi_device
+@@ -753,6 +753,10 @@ int ubi_io_read_ec_hdr(struct ubi_device *ubi, int pnum,
  	}
  
  	magic = be32_to_cpu(ec_hdr->magic);
@@ -32,3 +51,18 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	if (magic != UBI_EC_HDR_MAGIC) {
  		if (mtd_is_eccerr(read_err))
  			return UBI_IO_BAD_HDR_EBADMSG;
+diff --git a/drivers/mtd/ubi/ubi.h b/drivers/mtd/ubi/ubi.h
+index 1259e72..142ee3d 100644
+--- a/drivers/mtd/ubi/ubi.h
++++ b/drivers/mtd/ubi/ubi.h
+@@ -743,6 +743,7 @@ extern struct mutex ubi_devices_mutex;
+ extern struct blocking_notifier_head ubi_notifiers;
+ 
+ /* attach.c */
++extern bool erase_all_next;
+ int ubi_add_to_av(struct ubi_device *ubi, struct ubi_attach_info *ai, int pnum,
+ 		  int ec, const struct ubi_vid_hdr *vid_hdr, int bitflips);
+ struct ubi_ainf_volume *ubi_find_av(const struct ubi_attach_info *ai,
+-- 
+1.8.4.5
+
