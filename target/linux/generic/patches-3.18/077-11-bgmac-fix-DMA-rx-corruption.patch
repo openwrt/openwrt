@@ -54,8 +54,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		struct device *dma_dev = bgmac->core->dma_dev;
  		struct bgmac_slot_info *slot = &ring->slots[ring->start];
  		struct bgmac_rx_header *rx = slot->buf + BGMAC_RX_BUF_OFFSET;
-@@ -463,6 +473,8 @@ static int bgmac_dma_rx_read(struct bgma
- 			break;
+@@ -459,6 +469,8 @@ static int bgmac_dma_rx_read(struct bgma
+ 			ring->start = 0;
  	}
  
 +	bgmac_dma_rx_update_index(bgmac, ring);
@@ -63,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return handled;
  }
  
-@@ -682,6 +694,8 @@ static int bgmac_dma_init(struct bgmac *
+@@ -678,6 +690,8 @@ static int bgmac_dma_init(struct bgmac *
  		if (ring->unaligned)
  			bgmac_dma_rx_enable(bgmac, ring);
  
@@ -72,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		for (j = 0; j < ring->num_slots; j++) {
  			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[j]);
  			if (err)
-@@ -690,12 +704,7 @@ static int bgmac_dma_init(struct bgmac *
+@@ -686,12 +700,7 @@ static int bgmac_dma_init(struct bgmac *
  			bgmac_dma_rx_setup_desc(bgmac, ring, j);
  		}
  

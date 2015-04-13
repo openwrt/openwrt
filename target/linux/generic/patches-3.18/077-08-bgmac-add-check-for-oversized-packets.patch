@@ -11,15 +11,14 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -422,6 +422,14 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -428,6 +428,13 @@ static int bgmac_dma_rx_read(struct bgma
  				break;
  			}
  
 +			if (len > BGMAC_RX_ALLOC_SIZE) {
 +				bgmac_err(bgmac, "Found oversized packet at slot %d, DMA issue!\n",
 +					  ring->start);
-+				rx->len = cpu_to_le16(0xdead);
-+				rx->flags = cpu_to_le16(0xbeef);
++				kfree(buf);
 +				break;
 +			}
 +

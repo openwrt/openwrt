@@ -69,7 +69,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -		bgmac_err(bgmac, "Unknown IRQs: 0x%08X\n", bgmac->int_status);
 -		bgmac->int_status = 0;
 -	}
-+	/* poll again if more events arrived in the mean time */
++	/* Poll again if more events arrived in the meantime */
 +	if (bgmac_read(bgmac, BGMAC_INT_STATUS) & (BGMAC_IS_TX0 | BGMAC_IS_RX))
 +		return handled;
  
