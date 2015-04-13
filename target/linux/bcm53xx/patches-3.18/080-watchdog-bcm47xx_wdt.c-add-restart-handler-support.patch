@@ -17,11 +17,9 @@ Signed-off-by: Wim Van Sebroeck <wim@iguana.be>
  include/linux/bcm47xx_wdt.h    |  1 +
  2 files changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/watchdog/bcm47xx_wdt.c b/drivers/watchdog/bcm47xx_wdt.c
-index 9816485..b28a072 100644
 --- a/drivers/watchdog/bcm47xx_wdt.c
 +++ b/drivers/watchdog/bcm47xx_wdt.c
-@@ -169,6 +169,17 @@ static int bcm47xx_wdt_notify_sys(struct notifier_block *this,
+@@ -169,6 +169,17 @@ static int bcm47xx_wdt_notify_sys(struct
  	return NOTIFY_DONE;
  }
  
@@ -39,7 +37,7 @@ index 9816485..b28a072 100644
  static struct watchdog_ops bcm47xx_wdt_soft_ops = {
  	.owner		= THIS_MODULE,
  	.start		= bcm47xx_wdt_soft_start,
-@@ -209,15 +220,23 @@ static int bcm47xx_wdt_probe(struct platform_device *pdev)
+@@ -209,15 +220,23 @@ static int bcm47xx_wdt_probe(struct plat
  	if (ret)
  		goto err_timer;
  
@@ -64,8 +62,6 @@ index 9816485..b28a072 100644
  err_notifier:
  	unregister_reboot_notifier(&wdt->notifier);
  err_timer:
-diff --git a/include/linux/bcm47xx_wdt.h b/include/linux/bcm47xx_wdt.h
-index b708786..5582c21 100644
 --- a/include/linux/bcm47xx_wdt.h
 +++ b/include/linux/bcm47xx_wdt.h
 @@ -16,6 +16,7 @@ struct bcm47xx_wdt {
@@ -76,6 +72,3 @@ index b708786..5582c21 100644
  
  	struct timer_list soft_timer;
  	atomic_t soft_ticks;
--- 
-1.8.4.5
-
