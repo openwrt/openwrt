@@ -110,7 +110,6 @@ define KernelPackage/ieee802154_6lowpan
   TITLE:= 6LoWPAN support over IEEE-802.15.4
   DEPENDS:=@LINUX_4_0
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
-  DEPENDS:=@LINUX_4_0
   FILES:=$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko
   AUTOLOAD:=$(call AutoLoad,91,ieee802154_6lowpan)
 endef
