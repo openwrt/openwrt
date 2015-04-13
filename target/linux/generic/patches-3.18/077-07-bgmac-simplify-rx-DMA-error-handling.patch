@@ -49,7 +49,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -							   slot->dma_addr,
 -							   BGMAC_RX_BUF_SIZE,
 -							   DMA_FROM_DEVICE);
-+				kfree(buf);
++				put_page(virt_to_head_page(buf));
  				break;
  			}
  
@@ -99,3 +99,23 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	}
  
  	return handled;
+@@ -528,14 +512,14 @@ static void bgmac_dma_rx_ring_free(struc
+ 
+ 	for (i = 0; i < ring->num_slots; i++) {
+ 		slot = &ring->slots[i];
+-		if (!slot->buf)
++		if (!slot->dma_addr)
+ 			continue;
+ 
+-		if (slot->dma_addr)
+-			dma_unmap_single(dma_dev, slot->dma_addr,
+-					 BGMAC_RX_BUF_SIZE,
+-					 DMA_FROM_DEVICE);
++		dma_unmap_single(dma_dev, slot->dma_addr,
++				 BGMAC_RX_BUF_SIZE,
++				 DMA_FROM_DEVICE);
+ 		put_page(virt_to_head_page(slot->buf));
++		slot->dma_addr = 0;
+ 	}
+ }
+ 

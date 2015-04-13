@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -	for (i = 0; i < ring->num_slots; i++) {
 +	for (i = 0; i < BGMAC_RX_RING_SLOTS; i++) {
  		slot = &ring->slots[i];
- 		if (!slot->buf)
+ 		if (!slot->dma_addr)
  			continue;
 @@ -543,7 +543,8 @@ static void bgmac_dma_rx_ring_free(struc
  }
