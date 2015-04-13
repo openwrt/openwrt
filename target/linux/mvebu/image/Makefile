@@ -14,8 +14,6 @@ JFFS2_BLOCKSIZE = 128k
 KDIR_TMP:=$(KDIR)/tmp
 
 
-UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
-
 define Image/Build/DTB
 	cp $(KDIR)/zImage$(2) $(KDIR)/zImage$(2)-$(1);
 	cat $(DTS_DIR)/$(1).dtb >> $(KDIR)/zImage$(2)-$(1);
@@ -44,6 +42,7 @@ define NANDProfile
 
   define Image/Build/Profile/$(1)/Initramfs
 	$(call Image/Build/DTB,$(2),-initramfs)
+	cp $(KDIR)/uImage-initramfs-$(2) $(BIN_DIR)/$(IMG_PREFIX)-$(2)-initramfs
   endef
 
   define Image/Build/Profile/$(1)/squashfs
