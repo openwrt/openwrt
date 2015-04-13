@@ -141,6 +141,11 @@ $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB)
 # Boards with small NOR, where UBI doesn't make sense
 $(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
 
+###
+### Linksys
+###
+
+# Mamba: Linksys WRT1900AC
 define Image/Build/Profile/Mamba/squashfs
 	$(call Image/Build/UbinizeImage,armada-xp-linksys-mamba,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
 	( \
@@ -150,6 +155,11 @@ define Image/Build/Profile/Mamba/squashfs
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-xp-linksys-mamba-squashfs-factory.img
 endef
 
+###
+### Marvell
+###
+
+# Marvell Armada 385 Access Point Development board (DB-88F6820-AP)
 define Image/Build/Profile/385-DB-AP/squashfs
 	$(call Image/Build/UbinizeImage,armada-385-db-ap,,squashfs, -p 256KiB -m 4096)
 	( \
@@ -158,6 +168,7 @@ define Image/Build/Profile/385-DB-AP/squashfs
 		bs=4096 conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-db-ap-squashfs-factory.img
 endef
+
 
 # The Default profile should build everything
 $(eval $(call MultiProfile,Default,$(PROFILES_LIST)))
