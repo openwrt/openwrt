@@ -22,8 +22,6 @@ define Image/Build/DTB
 	$(call Image/BuildKernel/MkuImage, \
 		none, $(LOADADDR), $(LOADADDR), \
 		$(KDIR)/zImage$(2)-$(1), $(KDIR)/uImage$(2)-$(1))
-# The next line will be dropped, migrate your board to use a single firmware file
-	cp $(KDIR)/uImage$(2)-$(1) $(UIMAGE)$(2)-$(1);
 endef
 
 # $(1): Profile Name
@@ -50,8 +48,6 @@ define NANDProfile
 
   define Image/Build/Profile/$(1)/squashfs
 	$(call Image/Build/UbinizeImage,$(2),,squashfs, -p $(3) -m $(4) $(if $(5),-s $(5)) $(if $(6),-O $(6)))
-# The next line will be dropped, migrate your board to use a single firmware file
-	cp $(KDIR)/$$(IMG_PREFIX)-$(2)-squashfs-ubinized.bin $(BIN_DIR)
   endef
 
   PROFILES_LIST += $(1)
@@ -179,8 +175,6 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
-# The next line will be dropped, migrate your board to use a single firmware file
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 	$(call Image/Build/Profile/$(PROFILE)/BuildSysupgrade,$(1))
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 	$(call Image/Build/Profile/$(PROFILE)/Initramfs)
