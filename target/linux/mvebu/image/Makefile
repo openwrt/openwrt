@@ -154,6 +154,15 @@ define Image/Build/Profile/Mamba/squashfs
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-xp-linksys-mamba-squashfs-factory.img
 endef
 
+define Image/Build/Profile/385-DB-AP/squashfs
+	$(call Image/Build/UbinizeImage,armada-385-db-ap,,squashfs, -p 256KiB -m 4096)
+	( \
+		dd if=$(KDIR)/uImage-armada-385-db-ap bs=8M conv=sync; \
+		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-db-ap-squashfs-ubinized.bin \
+		bs=4096 conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-db-ap-squashfs-factory.img
+endef
+
 # The Default profile should build everything
 $(eval $(call MultiProfile,Default,$(PROFILES_LIST)))
 
