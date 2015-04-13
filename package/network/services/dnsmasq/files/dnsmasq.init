@@ -15,6 +15,7 @@ ADD_LOCAL_HOSTNAME=1
 CONFIGFILE="/var/etc/dnsmasq.conf"
 HOSTFILE="/tmp/hosts/dhcp"
 TRUSTANCHORSFILE="/usr/share/dnsmasq/trust-anchors.conf"
+TIMESTAMPFILE="/etc/dnsmasq.time"
 
 xappend() {
 	local value="$1"
@@ -205,7 +206,7 @@ dnsmasq() {
 	[ "$dnssec" -gt 0 ] && {
 		xappend "--conf-file=$TRUSTANCHORSFILE"
 		xappend "--dnssec"
-		xappend "--dnssec-timestamp=/etc/dnsmasq.time"
+		xappend "--dnssec-timestamp=$TIMESTAMPFILE"
 		append_bool "$cfg" dnsseccheckunsigned "--dnssec-check-unsigned"
 	}
 
@@ -556,7 +557,7 @@ start_service() {
 
 	procd_add_jail dnsmasq ubus log
 	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /dev/urandom /etc/dnsmasq.conf /tmp/dnsmasq.d /tmp/resolv.conf.auto /etc/hosts /etc/ethers
-	procd_add_jail_mount_rw /var/run/dnsmasq/ /tmp/dhcp.leases /etc/dnsmasq.time
+	procd_add_jail_mount_rw /var/run/dnsmasq/ /tmp/dhcp.leases $TIMESTAMPFILE
 	
 	procd_close_instance
 
@@ -566,9 +567,9 @@ start_service() {
 	mkdir -p /var/lib/misc
 	touch /tmp/dhcp.leases
 
-	if [ ! -f /etc/dnsmasq.time ]; then
-		touch -t 197001010000 /etc/dnsmasq.time
-		chmod 0777 /etc/dnsmasq.time
+	if [ ! -f "$TIMESTAMPFILE" ]; then
+		touch "$TIMESTAMPFILE"
+		chown nobody.nogroup "$TIMESTAMPFILE"
 	fi
 
 	echo "# auto-generated config file from /etc/config/dhcp" > $CONFIGFILE

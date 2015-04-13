@@ -1,0 +1,113 @@
+From 38440b204db65f9be16c4c3daa7e991e4356f6ed Mon Sep 17 00:00:00 2001
+From: Simon Kelley <simon@thekelleys.org.uk>
+Date: Sun, 12 Apr 2015 21:52:47 +0100
+Subject: [PATCH] Fix crash in auth code with odd configuration.
+
+---
+ CHANGELOG  | 32 +++++++++++++++++++++-----------
+ src/auth.c | 13 ++++++++-----
+ 2 files changed, 29 insertions(+), 16 deletions(-)
+
+diff --git a/CHANGELOG b/CHANGELOG
+index 9af6170..f2142c7 100644
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -68,18 +68,31 @@ version 2.73
+ 	    Fix broken DNSSEC validation of ECDSA signatures.
+ 
+ 	    Add --dnssec-timestamp option, which provides an automatic
+-	    way to detect when the system time becomes valid after boot
+-	    on systems without an RTC, whilst allowing DNS queries before the
+-	    clock is valid so that NTP can run. Thanks to
+-	    Kevin Darbyshire-Bryant for developing this idea.
++	    way to detect when the system time becomes valid after 
++	    boot on systems without an RTC, whilst allowing DNS 
++	    queries before the clock is valid so that NTP can run. 
++	    Thanks to Kevin Darbyshire-Bryant for developing this idea.
+ 
+ 	    Add --tftp-no-fail option. Thanks to Stefan Tomanek for
+ 	    the patch.
+ 
+-	    Fix crash caused by looking up servers.bind, CHAOS text record,
+-	    when more than about five --servers= lines are in the dnsmasq
+-	    config. This causes memory corruption which causes a crash later.
+-	    Thanks to Matt Coddington for sterling work chasing this down.
++	    Fix crash caused by looking up servers.bind, CHAOS text 
++	    record, when more than about five --servers= lines are 
++	    in the dnsmasq config. This causes memory corruption 
++	    which causes a crash later. Thanks to Matt Coddington for 
++	    sterling work chasing this down.
++
++	    Fix crash on receipt of certain malformed DNS requests.
++	    Thanks to Nick Sampanis for spotting the problem.
++
++            Fix crash in authoritative DNS code, if a .arpa zone 
++	    is declared as authoritative, and then a PTR query which
++	    is not to be treated as authoritative arrived. Normally, 
++	    directly declaring .arpa zone as authoritative is not 
++	    done, so this crash wouldn't be seen. Instead the 
++	    relevant .arpa zone should be specified as a subnet
++	    in the auth-zone declaration. Thanks to Johnny S. Lee
++	    for the bugreport and initial patch.
+ 
+ 	
+ version 2.72
+@@ -125,10 +138,7 @@ version 2.72
+             Fix problem with --local-service option on big-endian platforms
+ 	    Thanks to Richard Genoud for the patch.
+ 
+-	    Fix crash on receipt of certain malformed DNS requests. Thanks
+-	    to Nick Sampanis for spotting the problem.
+ 	
+-
+ version 2.71
+             Subtle change to error handling to help DNSSEC validation 
+ 	    when servers fail to provide NODATA answers for 
+diff --git a/src/auth.c b/src/auth.c
+index 15721e5..4a5c39f 100644
+--- a/src/auth.c
++++ b/src/auth.c
+@@ -141,7 +141,7 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
+ 	      for (zone = daemon->auth_zones; zone; zone = zone->next)
+ 		if ((subnet = find_subnet(zone, flag, &addr)))
+ 		  break;
+-	      
++			
+ 	      if (!zone)
+ 		{
+ 		  auth = 0;
+@@ -186,7 +186,7 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
+ 	  
+ 	  if (intr)
+ 	    {
+-	      if (in_zone(zone, intr->name, NULL))
++	      if (local_query || in_zone(zone, intr->name, NULL))
+ 		{	
+ 		  found = 1;
+ 		  log_query(flag | F_REVERSE | F_CONFIG, intr->name, &addr, NULL);
+@@ -208,8 +208,11 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
+ 		    *p = 0; /* must be bare name */
+ 		  
+ 		  /* add  external domain */
+-		  strcat(name, ".");
+-		  strcat(name, zone->domain);
++		  if (zone)
++		    {
++		      strcat(name, ".");
++		      strcat(name, zone->domain);
++		    }
+ 		  log_query(flag | F_DHCP | F_REVERSE, name, &addr, record_source(crecp->uid));
+ 		  found = 1;
+ 		  if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
+@@ -217,7 +220,7 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
+ 					  T_PTR, C_IN, "d", name))
+ 		    anscount++;
+ 		}
+-	      else if (crecp->flags & (F_DHCP | F_HOSTS) && in_zone(zone, name, NULL))
++	      else if (crecp->flags & (F_DHCP | F_HOSTS) && (local_query || in_zone(zone, name, NULL)))
+ 		{
+ 		  log_query(crecp->flags & ~F_FORWARD, name, &addr, record_source(crecp->uid));
+ 		  found = 1;
+-- 
+2.1.4
+
