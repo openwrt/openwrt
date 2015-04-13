@@ -171,7 +171,6 @@ endef
 define KernelPackage/ipt-filter/description
  Netfilter (IPv4) kernel modules for packet content inspection
  Includes:
- - layer7
  - string
 endef
 
