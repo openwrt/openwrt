@@ -2,30 +2,44 @@ From: Felix Fietkau <nbd@openwrt.org>
 Date: Sun, 12 Apr 2015 22:23:07 +0200
 Subject: [PATCH] bgmac: simplify rx DMA error handling
 
-Unmap the DMA buffer before checking it. If it is poisoned, map it again
-and pass it back to the hardware.
+Unmap the DMA buffer before checking it. If an error occurs, free the
+buffer and allocate a new one. If allocation or mapping fails, retry as
+long as there is NAPI poll budget left (count every attempt instead of
+every frame).
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -405,25 +405,20 @@ static int bgmac_dma_rx_read(struct bgma
+@@ -404,51 +404,33 @@ static int bgmac_dma_rx_read(struct bgma
+ 		void *buf = slot->buf;
  		u16 len, flags;
  
- 		/* Unmap buffer to make it accessible to the CPU */
+-		/* Unmap buffer to make it accessible to the CPU */
 -		dma_sync_single_for_cpu(dma_dev, slot->dma_addr,
 -					BGMAC_RX_BUF_SIZE, DMA_FROM_DEVICE);
-+		dma_unmap_single(dma_dev, slot->dma_addr,
-+				 BGMAC_RX_BUF_SIZE, DMA_FROM_DEVICE);
- 
- 		/* Get info from the header */
- 		len = le16_to_cpu(rx->len);
- 		flags = le16_to_cpu(rx->flags);
+-
+-		/* Get info from the header */
+-		len = le16_to_cpu(rx->len);
+-		flags = le16_to_cpu(rx->flags);
++		if (++handled >= weight - 1) /* Should never be greater */
++			break;
  
  		do {
 -			dma_addr_t old_dma_addr = slot->dma_addr;
- 			int err;
+-			int err;
++			if (!slot->dma_addr)
++				break;
++
++			/* Unmap buffer to make it accessible to the CPU */
++			dma_unmap_single(dma_dev, slot->dma_addr,
++					 BGMAC_RX_BUF_SIZE, DMA_FROM_DEVICE);
++			slot->dma_addr = 0;
++
++			/* Get info from the header */
++			len = le16_to_cpu(rx->len);
++			flags = le16_to_cpu(rx->flags);
  
  			/* Check for poison and drop or pass the packet */
  			if (len == 0xdead && flags == 0xbeef) {
@@ -35,34 +49,53 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -							   slot->dma_addr,
 -							   BGMAC_RX_BUF_SIZE,
 -							   DMA_FROM_DEVICE);
++				kfree(buf);
  				break;
  			}
  
-@@ -436,18 +431,8 @@ static int bgmac_dma_rx_read(struct bgma
- 				/* Poison the old skb */
- 				rx->len = cpu_to_le16(0xdead);
- 				rx->flags = cpu_to_le16(0xbeef);
+ 			/* Omit CRC. */
+ 			len -= ETH_FCS_LEN;
+ 
+-			/* Prepare new skb as replacement */
+-			err = bgmac_dma_rx_skb_for_slot(bgmac, slot);
+-			if (err) {
+-				/* Poison the old skb */
+-				rx->len = cpu_to_le16(0xdead);
+-				rx->flags = cpu_to_le16(0xbeef);
 -
 -				dma_sync_single_for_device(dma_dev,
 -							   slot->dma_addr,
 -							   BGMAC_RX_BUF_SIZE,
 -							   DMA_FROM_DEVICE);
- 				break;
- 			}
+-				break;
+-			}
 -			bgmac_dma_rx_setup_desc(bgmac, ring, ring->start);
 -
 -			/* Unmap old skb, we'll pass it to the netfif */
 -			dma_unmap_single(dma_dev, old_dma_addr,
 -					 BGMAC_RX_BUF_SIZE, DMA_FROM_DEVICE);
- 
+-
  			skb = build_skb(buf, BGMAC_RX_ALLOC_SIZE);
  			skb_put(skb, BGMAC_RX_FRAME_OFFSET +
-@@ -461,6 +446,8 @@ static int bgmac_dma_rx_read(struct bgma
- 			handled++;
+ 				BGMAC_RX_BUF_OFFSET + len);
+@@ -458,14 +440,16 @@ static int bgmac_dma_rx_read(struct bgma
+ 			skb_checksum_none_assert(skb);
+ 			skb->protocol = eth_type_trans(skb, bgmac->net_dev);
+ 			napi_gro_receive(&bgmac->napi, skb);
+-			handled++;
  		} while (0);
  
++		/* Prepare new skb as replacement */
++		if (bgmac_dma_rx_skb_for_slot(bgmac, slot))
++			continue;
++
 +		bgmac_dma_rx_setup_desc(bgmac, ring, ring->start);
 +
  		if (++ring->start >= BGMAC_RX_RING_SLOTS)
  			ring->start = 0;
+-
+-		if (handled >= weight) /* Should never be greater */
+-			break;
+ 	}
  
+ 	return handled;

@@ -11,7 +11,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -549,18 +549,26 @@ static void bgmac_dma_ring_desc_free(str
+@@ -545,18 +545,26 @@ static void bgmac_dma_ring_desc_free(str
  			  ring->dma_base);
  }
  
@@ -44,7 +44,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static int bgmac_dma_alloc(struct bgmac *bgmac)
-@@ -608,8 +616,6 @@ static int bgmac_dma_alloc(struct bgmac 
+@@ -604,8 +612,6 @@ static int bgmac_dma_alloc(struct bgmac 
  	}
  
  	for (i = 0; i < BGMAC_MAX_RX_RINGS; i++) {
@@ -53,7 +53,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ring = &bgmac->rx_ring[i];
  		ring->num_slots = BGMAC_RX_RING_SLOTS;
  		ring->mmio_base = ring_base[i];
-@@ -632,15 +638,6 @@ static int bgmac_dma_alloc(struct bgmac 
+@@ -628,15 +634,6 @@ static int bgmac_dma_alloc(struct bgmac 
  			ring->index_base = lower_32_bits(ring->dma_base);
  		else
  			ring->index_base = 0;
@@ -69,7 +69,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	}
  
  	return 0;
-@@ -650,10 +647,10 @@ err_dma_free:
+@@ -646,10 +643,10 @@ err_dma_free:
  	return -ENOMEM;
  }
  
@@ -82,7 +82,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++) {
  		ring = &bgmac->tx_ring[i];
-@@ -685,8 +682,13 @@ static void bgmac_dma_init(struct bgmac 
+@@ -681,8 +678,13 @@ static void bgmac_dma_init(struct bgmac 
  		if (ring->unaligned)
  			bgmac_dma_rx_enable(bgmac, ring);
  
@@ -97,7 +97,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  		bgmac_write(bgmac, ring->mmio_base + BGMAC_DMA_RX_INDEX,
  			    ring->index_base +
-@@ -695,6 +697,8 @@ static void bgmac_dma_init(struct bgmac 
+@@ -691,6 +693,8 @@ static void bgmac_dma_init(struct bgmac 
  		ring->start = 0;
  		ring->end = 0;
  	}
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  /**************************************************
-@@ -1170,11 +1174,8 @@ static void bgmac_enable(struct bgmac *b
+@@ -1166,11 +1170,8 @@ static void bgmac_enable(struct bgmac *b
  }
  
  /* http://bcm-v4.sipsolutions.net/mac-gbit/gmac/chipinit */
@@ -119,7 +119,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	/* 1 interrupt per received frame */
  	bgmac_write(bgmac, BGMAC_INT_RECV_LAZY, 1 << BGMAC_IRL_FC_SHIFT);
  
-@@ -1192,16 +1193,7 @@ static void bgmac_chip_init(struct bgmac
+@@ -1188,16 +1189,7 @@ static void bgmac_chip_init(struct bgmac
  
  	bgmac_write(bgmac, BGMAC_RXMAX_LENGTH, 32 + ETHER_MAX_LEN);
  
@@ -137,16 +137,14 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	bgmac_enable(bgmac);
  }
-@@ -1261,8 +1253,15 @@ static int bgmac_open(struct net_device 
+@@ -1257,8 +1249,13 @@ static int bgmac_open(struct net_device 
  	int err = 0;
  
  	bgmac_chip_reset(bgmac);
 +
 +	err = bgmac_dma_init(bgmac);
-+	if (err) {
-+		bgmac_dma_cleanup(bgmac);
-+		return err;
-+	}
++	if (err)
++		goto err_out;
 +
  	/* Specs say about reclaiming rings here, but we do that in DMA init */
 -	bgmac_chip_init(bgmac, true);
@@ -154,7 +152,15 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
  	err = request_irq(bgmac->core->irq, bgmac_interrupt, IRQF_SHARED,
  			  KBUILD_MODNAME, net_dev);
-@@ -1293,6 +1292,7 @@ static int bgmac_stop(struct net_device 
+@@ -1273,6 +1270,7 @@ static int bgmac_open(struct net_device 
+ 	netif_carrier_on(net_dev);
+ 
+ err_out:
++	bgmac_dma_cleanup(bgmac);
+ 	return err;
+ }
+ 
+@@ -1289,6 +1287,7 @@ static int bgmac_stop(struct net_device 
  	free_irq(bgmac->core->irq, net_dev);
  
  	bgmac_chip_reset(bgmac);
