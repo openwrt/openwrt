@@ -124,7 +124,6 @@ iptables extensions for packet content inspection.
 Includes support for:
 
  Matches:
-  - layer7
   - string
 
 endef
