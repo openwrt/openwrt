@@ -68,11 +68,6 @@ parse_matching_rule() {
 			*:dsthost)
 				append "$var" "-d $value"
 			;;
-			*:layer7)
-				add_insmod ipt_layer7
-				add_insmod xt_layer7
-				append "$var" "-m layer7 --l7proto $value${pkt:+ --l7pkt}"
-			;;
 			*:ports|*:srcports|*:dstports)
 				value="$(echo "$value" | sed -e 's,-,:,g')"
 				lproto=${lproto:-tcp}
