@@ -11,11 +11,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/mtd/bcm47xxpart.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
-diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
-index ee3e010..f13c824 100644
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -120,9 +120,15 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -120,9 +120,15 @@ static int bcm47xxpart_parse(struct mtd_
  	/* Parse block by block looking for magics */
  	for (offset = 0; offset <= master->size - blocksize;
  	     offset += blocksize) {
@@ -31,6 +29,3 @@ index ee3e010..f13c824 100644
  
  		if (curr_part >= BCM47XXPART_MAX_PARTS) {
  			pr_warn("Reached maximum number of partitions, scanning stopped!\n");
--- 
-1.8.4.5
-

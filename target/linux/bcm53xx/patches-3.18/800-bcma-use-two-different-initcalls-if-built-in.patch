@@ -25,11 +25,9 @@ Do you see any better idea of solving this?
  drivers/bcma/main.c | 16 ++++++++++++++--
  1 file changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/bcma/main.c b/drivers/bcma/main.c
-index 9635f10..c394207 100644
 --- a/drivers/bcma/main.c
 +++ b/drivers/bcma/main.c
-@@ -637,13 +637,25 @@ static int bcma_device_uevent(struct device *dev, struct kobj_uevent_env *env)
+@@ -637,13 +637,25 @@ static int bcma_device_uevent(struct dev
  			      core->id.rev, core->id.class);
  }
  
@@ -65,6 +63,3 @@ index 9635f10..c394207 100644
  
  static void __exit bcma_modexit(void)
  {
--- 
-1.8.4.5
-

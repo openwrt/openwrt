@@ -17,8 +17,6 @@ ARM: BCM5301X: Add DT for Asus RT-AC68U
  2 files changed, 97 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 7c1ca2a..53f8c1a 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -55,6 +55,7 @@ dtb-$(CONFIG_ARCH_ATLAS6) += atlas6-evb.
@@ -29,9 +27,6 @@ index 7c1ca2a..53f8c1a 100644
  	bcm4708-asus-rt-ac68u.dtb \
  	bcm4708-buffalo-wzr-1750dhp.dtb \
  	bcm4708-luxul-xwc-1000.dtb \
-diff --git a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
-new file mode 100644
-index 0000000..71cff8d
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
 @@ -0,0 +1,96 @@
@@ -131,6 +126,3 @@ index 0000000..71cff8d
 +		};
 +	};
 +};
--- 
-1.8.4.5
-

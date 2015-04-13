@@ -15,8 +15,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  2 files changed, 79 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/boot/dts/bcm4709-netgear-r8000.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 2604d7c..c6e0a4c 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -61,7 +61,8 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
@@ -29,9 +27,6 @@ index 2604d7c..c6e0a4c 100644
  dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
  dtb-$(CONFIG_ARCH_BCM_MOBILE) += bcm28155-ap.dtb \
  	bcm21664-garnet.dtb
-diff --git a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
-new file mode 100644
-index 0000000..ea26dd3
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
 @@ -0,0 +1,77 @@
@@ -112,6 +107,3 @@ index 0000000..ea26dd3
 +		};
 +	};
 +};
--- 
-1.8.4.5
-

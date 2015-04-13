@@ -16,8 +16,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/ssb/driver_chipcommon_pmu.c   | 2 +-
  6 files changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 4733d32..ab18030 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -2166,6 +2166,8 @@ source "net/Kconfig"
@@ -29,8 +27,6 @@ index 4733d32..ab18030 100644
  source "fs/Kconfig"
  
  source "arch/arm/Kconfig.debug"
-diff --git a/drivers/firmware/Kconfig b/drivers/firmware/Kconfig
-index 4198388..ffbc9e4 100644
 --- a/drivers/firmware/Kconfig
 +++ b/drivers/firmware/Kconfig
 @@ -132,6 +132,7 @@ config ISCSI_IBFT
@@ -41,11 +37,9 @@ index 4198388..ffbc9e4 100644
  source "drivers/firmware/google/Kconfig"
  source "drivers/firmware/efi/Kconfig"
  
-diff --git a/drivers/firmware/Makefile b/drivers/firmware/Makefile
-index 5373dc5..e251f2b 100644
 --- a/drivers/firmware/Makefile
 +++ b/drivers/firmware/Makefile
-@@ -12,6 +12,7 @@ obj-$(CONFIG_ISCSI_IBFT_FIND)	+= iscsi_ibft_find.o
+@@ -12,6 +12,7 @@ obj-$(CONFIG_ISCSI_IBFT_FIND)	+= iscsi_i
  obj-$(CONFIG_ISCSI_IBFT)	+= iscsi_ibft.o
  obj-$(CONFIG_FIRMWARE_MEMMAP)	+= memmap.o
  
@@ -53,11 +47,9 @@ index 5373dc5..e251f2b 100644
  obj-$(CONFIG_GOOGLE_FIRMWARE)	+= google/
  obj-$(CONFIG_EFI)		+= efi/
  obj-$(CONFIG_UEFI_CPER)		+= efi/
-diff --git a/drivers/net/ethernet/broadcom/b44.c b/drivers/net/ethernet/broadcom/b44.c
-index 8a7bf7d..bf3bcd6 100644
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
-@@ -400,7 +400,7 @@ static void b44_set_flow_ctrl(struct b44 *bp, u32 local, u32 remote)
+@@ -400,7 +400,7 @@ static void b44_set_flow_ctrl(struct b44
  }
  
  #ifdef CONFIG_BCM47XX
@@ -66,8 +58,6 @@ index 8a7bf7d..bf3bcd6 100644
  static void b44_wap54g10_workaround(struct b44 *bp)
  {
  	char buf[20];
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index 34c7bc8..943707f 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -18,7 +18,7 @@
@@ -79,8 +69,6 @@ index 34c7bc8..943707f 100644
  
  static const struct bcma_device_id bgmac_bcma_tbl[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_4706_MAC_GBIT, BCMA_ANY_REV, BCMA_ANY_CLASS),
-diff --git a/drivers/ssb/driver_chipcommon_pmu.c b/drivers/ssb/driver_chipcommon_pmu.c
-index 1173a09..0942841 100644
 --- a/drivers/ssb/driver_chipcommon_pmu.c
 +++ b/drivers/ssb/driver_chipcommon_pmu.c
 @@ -14,7 +14,7 @@
@@ -92,6 +80,3 @@ index 1173a09..0942841 100644
  #endif
  
  #include "ssb_private.h"
--- 
-1.8.4.5
-
