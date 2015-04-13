@@ -573,6 +573,23 @@ endef
 
 $(eval $(call KernelPackage,rtc-marvell))
 
+
+define KernelPackage/rtc-armada38x
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Marvell Armada 38x SoC built-in RTC support
+  DEPENDS:=@RTC_SUPPORT @TARGET_mvebu
+  KCONFIG:=CONFIG_RTC_DRV_ARMADA38X
+  FILES:=$(LINUX_DIR)/drivers/rtc/rtc-armada38x.ko
+  AUTOLOAD:=$(call AutoProbe,rtc-armada38x)
+endef
+
+define KernelPackage/rtc-armada38x/description
+ Kernel module for Marvell Armada 38x SoC built-in RTC.
+endef
+
+$(eval $(call KernelPackage,rtc-armada38x))
+
+
 define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
