@@ -14,7 +14,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
-@@ -50,7 +50,11 @@ static const char __initconst *bcm5301x_
+@@ -50,7 +50,12 @@ static const char __initconst *bcm5301x_
  };
  
  DT_MACHINE_START(BCM5301X, "BCM5301X")
@@ -23,6 +23,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +			  L310_AUX_CTRL_DATA_PREFETCH |
 +			  L310_AUX_CTRL_INSTR_PREFETCH |
 +			  L310_AUX_CTRL_EARLY_BRESP |
++			  L2C_AUX_CTRL_SHARED_OVERRIDE |
 +			  L310_AUX_CTRL_FULL_LINE_ZERO,
  	.l2c_aux_mask	= ~0,
  	.init_early	= bcm5301x_init_early,
