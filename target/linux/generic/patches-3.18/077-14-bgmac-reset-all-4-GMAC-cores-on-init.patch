@@ -12,7 +12,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1604,8 +1604,11 @@ static int bgmac_probe(struct bcma_devic
+@@ -1605,8 +1605,11 @@ static int bgmac_probe(struct bcma_devic
  			ns_core = bcma_find_core_unit(core->bus,
  						      BCMA_CORE_MAC_GBIT,
  						      ns_gmac);
