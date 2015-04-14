@@ -15,7 +15,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1105,8 +1105,6 @@ static void bgmac_chip_reset(struct bgma
+@@ -1109,8 +1109,6 @@ static void bgmac_chip_reset(struct bgma
  	bgmac_phy_init(bgmac);
  
  	netdev_reset_queue(bgmac->net_dev);
@@ -24,7 +24,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static void bgmac_chip_intrs_on(struct bgmac *bgmac)
-@@ -1221,14 +1219,13 @@ static irqreturn_t bgmac_interrupt(int i
+@@ -1225,14 +1223,13 @@ static irqreturn_t bgmac_interrupt(int i
  	if (!int_status)
  		return IRQ_NONE;
  
@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	napi_schedule(&bgmac->napi);
  
  	return IRQ_HANDLED;
-@@ -1237,25 +1234,17 @@ static irqreturn_t bgmac_interrupt(int i
+@@ -1241,25 +1238,17 @@ static irqreturn_t bgmac_interrupt(int i
  static int bgmac_poll(struct napi_struct *napi, int weight)
  {
  	struct bgmac *bgmac = container_of(napi, struct bgmac, napi);

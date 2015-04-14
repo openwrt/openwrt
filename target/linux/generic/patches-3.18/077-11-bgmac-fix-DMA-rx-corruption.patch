@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -362,6 +362,16 @@ static int bgmac_dma_rx_skb_for_slot(str
+@@ -366,6 +366,16 @@ static int bgmac_dma_rx_skb_for_slot(str
  	return 0;
  }
  
@@ -34,7 +34,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static void bgmac_dma_rx_setup_desc(struct bgmac *bgmac,
  				    struct bgmac_dma_ring *ring, int desc_idx)
  {
-@@ -380,6 +390,8 @@ static void bgmac_dma_rx_setup_desc(stru
+@@ -384,6 +394,8 @@ static void bgmac_dma_rx_setup_desc(stru
  	dma_desc->addr_high = cpu_to_le32(upper_32_bits(ring->slots[desc_idx].dma_addr));
  	dma_desc->ctl0 = cpu_to_le32(ctl0);
  	dma_desc->ctl1 = cpu_to_le32(ctl1);
@@ -42,8 +42,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	ring->end = desc_idx;
  }
  
- static int bgmac_dma_rx_read(struct bgmac *bgmac, struct bgmac_dma_ring *ring,
-@@ -394,9 +406,7 @@ static int bgmac_dma_rx_read(struct bgma
+ static void bgmac_dma_rx_poison_buf(struct device *dma_dev,
+@@ -411,9 +423,7 @@ static int bgmac_dma_rx_read(struct bgma
  	end_slot &= BGMAC_DMA_RX_STATDPTR;
  	end_slot /= sizeof(struct bgmac_dma_desc);
  
@@ -54,8 +54,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		struct device *dma_dev = bgmac->core->dma_dev;
  		struct bgmac_slot_info *slot = &ring->slots[ring->start];
  		struct bgmac_rx_header *rx = slot->buf + BGMAC_RX_BUF_OFFSET;
-@@ -459,6 +469,8 @@ static int bgmac_dma_rx_read(struct bgma
- 			ring->start = 0;
+@@ -476,6 +486,8 @@ static int bgmac_dma_rx_read(struct bgma
+ 			break;
  	}
  
 +	bgmac_dma_rx_update_index(bgmac, ring);
@@ -63,7 +63,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return handled;
  }
  
-@@ -678,6 +690,8 @@ static int bgmac_dma_init(struct bgmac *
+@@ -695,6 +707,8 @@ static int bgmac_dma_init(struct bgmac *
  		if (ring->unaligned)
  			bgmac_dma_rx_enable(bgmac, ring);
  
@@ -72,7 +72,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		for (j = 0; j < ring->num_slots; j++) {
  			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[j]);
  			if (err)
-@@ -686,12 +700,7 @@ static int bgmac_dma_init(struct bgmac *
+@@ -703,12 +717,7 @@ static int bgmac_dma_init(struct bgmac *
  			bgmac_dma_rx_setup_desc(bgmac, ring, j);
  		}
  

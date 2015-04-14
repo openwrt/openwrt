@@ -19,7 +19,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ctl0 |= BGMAC_DESC_CTL0_EOT;
  
  	ctl1 = len & BGMAC_DESC_CTL1_LEN;
-@@ -378,7 +378,7 @@ static void bgmac_dma_rx_setup_desc(stru
+@@ -382,7 +382,7 @@ static void bgmac_dma_rx_setup_desc(stru
  	struct bgmac_dma_desc *dma_desc = ring->cpu_base + desc_idx;
  	u32 ctl0 = 0, ctl1 = 0;
  
@@ -28,7 +28,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ctl0 |= BGMAC_DESC_CTL0_EOT;
  	ctl1 |= BGMAC_RX_BUF_SIZE & BGMAC_DESC_CTL1_LEN;
  	/* Is there any BGMAC device that requires extension? */
-@@ -504,7 +504,7 @@ static void bgmac_dma_tx_ring_free(struc
+@@ -521,7 +521,7 @@ static void bgmac_dma_tx_ring_free(struc
  	struct bgmac_slot_info *slot;
  	int i;
  
@@ -37,7 +37,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		int len = dma_desc[i].ctl1 & BGMAC_DESC_CTL1_LEN;
  
  		slot = &ring->slots[i];
-@@ -529,7 +529,7 @@ static void bgmac_dma_rx_ring_free(struc
+@@ -546,7 +546,7 @@ static void bgmac_dma_rx_ring_free(struc
  	struct bgmac_slot_info *slot;
  	int i;
  
@@ -46,7 +46,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		slot = &ring->slots[i];
  		if (!slot->dma_addr)
  			continue;
-@@ -543,7 +543,8 @@ static void bgmac_dma_rx_ring_free(struc
+@@ -560,7 +560,8 @@ static void bgmac_dma_rx_ring_free(struc
  }
  
  static void bgmac_dma_ring_desc_free(struct bgmac *bgmac,
@@ -56,7 +56,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  {
  	struct device *dma_dev = bgmac->core->dma_dev;
  	int size;
-@@ -552,7 +553,7 @@ static void bgmac_dma_ring_desc_free(str
+@@ -569,7 +570,7 @@ static void bgmac_dma_ring_desc_free(str
  	    return;
  
  	/* Free ring of descriptors */
@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	dma_free_coherent(dma_dev, size, ring->cpu_base,
  			  ring->dma_base);
  }
-@@ -573,10 +574,12 @@ static void bgmac_dma_free(struct bgmac 
+@@ -590,10 +591,12 @@ static void bgmac_dma_free(struct bgmac 
  	int i;
  
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++)
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static int bgmac_dma_alloc(struct bgmac *bgmac)
-@@ -599,11 +602,10 @@ static int bgmac_dma_alloc(struct bgmac 
+@@ -616,11 +619,10 @@ static int bgmac_dma_alloc(struct bgmac 
  
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++) {
  		ring = &bgmac->tx_ring[i];
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ring->cpu_base = dma_zalloc_coherent(dma_dev, size,
  						     &ring->dma_base,
  						     GFP_KERNEL);
-@@ -625,11 +627,10 @@ static int bgmac_dma_alloc(struct bgmac 
+@@ -642,11 +644,10 @@ static int bgmac_dma_alloc(struct bgmac 
  
  	for (i = 0; i < BGMAC_MAX_RX_RINGS; i++) {
  		ring = &bgmac->rx_ring[i];
@@ -106,7 +106,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ring->cpu_base = dma_zalloc_coherent(dma_dev, size,
  						     &ring->dma_base,
  						     GFP_KERNEL);
-@@ -692,7 +693,7 @@ static int bgmac_dma_init(struct bgmac *
+@@ -709,7 +710,7 @@ static int bgmac_dma_init(struct bgmac *
  
  		ring->start = 0;
  		ring->end = 0;
@@ -114,7 +114,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +		for (j = 0; j < BGMAC_RX_RING_SLOTS; j++) {
  			err = bgmac_dma_rx_skb_for_slot(bgmac, &ring->slots[j]);
  			if (err)
- 				return err;
+ 				goto error;
 --- a/drivers/net/ethernet/broadcom/bgmac.h
 +++ b/drivers/net/ethernet/broadcom/bgmac.h
 @@ -419,11 +419,10 @@ struct bgmac_dma_ring {
