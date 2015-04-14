@@ -16,6 +16,7 @@
 #include <linux/i2c.h>
 #include <linux/i2c-algo-bit.h>
 #include <linux/i2c-gpio.h>
+#include <linux/platform_data/phy-at803x.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 #include <asm/mach-ath79/ath79.h>
@@ -150,6 +151,20 @@ static struct i2c_board_info om5pan_i2c_devs[] __initdata = {
 	},
 };
 
+static struct at803x_platform_data om5p_an_at803x_data = {
+	.disable_smarteee = 1,
+	.enable_rgmii_rx_delay = 1,
+	.enable_rgmii_tx_delay = 1,
+};
+
+static struct mdio_board_info om5p_an_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 7,
+		.platform_data = &om5p_an_at803x_data,
+	},
+};
+
 static void __init om5p_an_setup(void)
 {
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
@@ -171,9 +186,14 @@ static void __init om5p_an_setup(void)
 	ath79_init_mac(mac, art, 0x02);
 	ath79_register_wmac(art + OM5P_WMAC_CALDATA_OFFSET, mac);
 
-	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 |
+				   AR934X_ETH_CFG_RXD_DELAY |
+				   AR934X_ETH_CFG_RDV_DELAY);
 	ath79_register_mdio(0, 0x0);
 	ath79_register_mdio(1, 0x0);
+
+	mdiobus_register_board_info(om5p_an_mdio0_info,
+				    ARRAY_SIZE(om5p_an_mdio0_info));
 
 	ath79_init_mac(ath79_eth0_data.mac_addr, art, 0x00);
 	ath79_init_mac(ath79_eth1_data.mac_addr, art, 0x01);
