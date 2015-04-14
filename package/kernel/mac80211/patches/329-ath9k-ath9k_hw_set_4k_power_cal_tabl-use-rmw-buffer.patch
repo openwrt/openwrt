@@ -1,0 +1,26 @@
+From: Oleksij Rempel <linux@rempel-privat.de>
+Date: Sun, 22 Mar 2015 19:29:56 +0100
+Subject: [PATCH] ath9k: ath9k_hw_set_4k_power_cal_tabl: use rmw buffer
+
+Signed-off-by: Oleksij Rempel <linux@rempel-privat.de>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
++++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
+@@ -389,6 +389,7 @@ static void ath9k_hw_set_4k_power_cal_ta
+ 		}
+ 	}
+ 
++	ENABLE_REG_RMW_BUFFER(ah);
+ 	REG_RMW_FIELD(ah, AR_PHY_TPCRG1, AR_PHY_TPCRG1_NUM_PD_GAIN,
+ 		      (numXpdGain - 1) & 0x3);
+ 	REG_RMW_FIELD(ah, AR_PHY_TPCRG1, AR_PHY_TPCRG1_PD_GAIN_1,
+@@ -396,6 +397,7 @@ static void ath9k_hw_set_4k_power_cal_ta
+ 	REG_RMW_FIELD(ah, AR_PHY_TPCRG1, AR_PHY_TPCRG1_PD_GAIN_2,
+ 		      xpdGainValues[1]);
+ 	REG_RMW_FIELD(ah, AR_PHY_TPCRG1, AR_PHY_TPCRG1_PD_GAIN_3, 0);
++	REG_RMW_BUFFER_FLUSH(ah);
+ 
+ 	for (i = 0; i < AR5416_EEP4K_MAX_CHAINS; i++) {
+ 		regChainOffset = i * 0x1000;
