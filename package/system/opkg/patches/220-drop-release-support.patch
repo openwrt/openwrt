@@ -1,0 +1,812 @@
+--- a/libopkg/Makefile.am
++++ b/libopkg/Makefile.am
+@@ -15,7 +15,6 @@
+ 		   opkg_upgrade.c opkg_upgrade.h \
+ 		   opkg_remove.c opkg_remove.h
+ opkg_db_sources = opkg_conf.c opkg_conf.h \
+-		  release.c release.h release_parse.c release_parse.h \
+ 		  opkg_utils.c opkg_utils.h pkg.c pkg.h hash_table.h \
+ 		  pkg_depends.c pkg_depends.h pkg_extract.c pkg_extract.h \
+ 		  hash_table.c pkg_hash.c pkg_hash.h pkg_parse.c pkg_parse.h \
+@@ -28,7 +27,6 @@
+ 		    active_list.c active_list.h list.h 
+ opkg_util_sources = file_util.c file_util.h opkg_message.h opkg_message.c md5.c md5.h \
+ 		    parse_util.c parse_util.h \
+-		    cksum_list.c cksum_list.h \
+ 		    sprintf_alloc.c sprintf_alloc.h \
+ 		    xregex.c xregex.h xsystem.c xsystem.h
+ if HAVE_PATHFINDER
+--- a/libopkg/cksum_list.c
++++ /dev/null
+@@ -1,87 +0,0 @@
+-/* cksum_lis.c - the opkg package management system
+-
+-   Copyright (C) 2010,2011 Javier Palacios
+-
+-   This program is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU General Public License as
+-   published by the Free Software Foundation; either version 2, or (at
+-   your option) any later version.
+-
+-   This program is distributed in the hope that it will be useful, but
+-   WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   General Public License for more details.
+-*/
+-
+-#include "config.h"
+-
+-#include <stdio.h>
+-
+-#include "cksum_list.h"
+-#include "libbb/libbb.h"
+-
+-
+-int cksum_init(cksum_t *cksum, char **itemlist)
+-{
+-    cksum->value = xstrdup(*itemlist++);
+-    cksum->size = atoi(*itemlist++);
+-    cksum->name = xstrdup(*itemlist++);
+-
+-    return 0;
+-}
+-
+-void cksum_deinit(cksum_t *cksum)
+-{
+-    free (cksum->name);
+-    cksum->name = NULL;
+-
+-    free (cksum->value);
+-    cksum->value = NULL;
+-}
+-
+-void cksum_list_init(cksum_list_t *list)
+-{
+-    void_list_init((void_list_t *) list);
+-}
+-
+-void cksum_list_deinit(cksum_list_t *list)
+-{
+-    cksum_list_elt_t *iter, *n;
+-    cksum_t *cksum;
+-
+-    list_for_each_entry_safe(iter, n, &list->head, node) {
+-      cksum = (cksum_t *)iter->data;
+-      cksum_deinit(cksum);
+-
+-      /* malloced in cksum_list_append */
+-      free(cksum);
+-      iter->data = NULL;
+-    }
+-    void_list_deinit((void_list_t *) list);
+-}
+-
+-cksum_t *cksum_list_append(cksum_list_t *list, char **itemlist)
+-{
+-    /* freed in cksum_list_deinit */
+-    cksum_t *cksum = xcalloc(1, sizeof(cksum_t));
+-    cksum_init(cksum, itemlist);
+-
+-    void_list_append((void_list_t *) list, cksum);
+-
+-    return cksum;
+-}
+-
+-const cksum_t *cksum_list_find(cksum_list_t *list, const char *name)
+-{
+-     cksum_list_elt_t *iter;
+-     cksum_t *cksum;
+-
+-     list_for_each_entry(iter, &list->head, node) {
+-	  cksum = (cksum_t *)iter->data;
+-	  if (strcmp(cksum->name, name) == 0) {
+-	       return cksum;
+-	  }
+-     }    
+-     return NULL;
+-}
+-
+--- a/libopkg/cksum_list.h
++++ /dev/null
+@@ -1,46 +0,0 @@
+-/* cksum_list.h - the opkg package management system
+-
+-   Copyright (C) 2010,2011 Javier Palacios
+-
+-   This program is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU General Public License as
+-   published by the Free Software Foundation; either version 2, or (at
+-   your option) any later version.
+-
+-   This program is distributed in the hope that it will be useful, but
+-   WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   General Public License for more details.
+-*/
+-
+-#ifndef CKSUM_LIST_H
+-#define CKSUM_LIST_H
+-
+-typedef struct 
+-{
+-  char *name;
+-  char *value;
+-  int size;
+-} cksum_t;
+-
+-int cksum_init(cksum_t *cksum, char **itemlist);
+-void cksum_deinit(cksum_t *cksum);
+-
+-#include "void_list.h"
+-
+-typedef struct void_list_elt cksum_list_elt_t;
+-
+-typedef struct void_list cksum_list_t;
+-
+-static inline int cksum_list_empty(cksum_list_t *list)
+-{
+-    return void_list_empty ((void_list_t *)list);
+-}
+-
+-void cksum_list_init(cksum_list_t *list);
+-void cksum_list_deinit(cksum_list_t *list);
+-
+-cksum_t *cksum_list_append(cksum_list_t *list, char **itemlist);
+-const cksum_t *cksum_list_find(cksum_list_t *list, const char *name);
+-
+-#endif
+--- a/libopkg/release.c
++++ /dev/null
+@@ -1,342 +0,0 @@
+-/* release.c - the opkg package management system
+-
+-   Copyright (C) 2010,2011 Javier Palacios
+-
+-   This program is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU General Public License as
+-   published by the Free Software Foundation; either version 2, or (at
+-   your option) any later version.
+-
+-   This program is distributed in the hope that it will be useful, but
+-   WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   General Public License for more details.
+-*/
+-
+-#include <unistd.h>
+-#include <ctype.h>
+-
+-#include "release.h"
+-#include "opkg_utils.h"
+-#include "libbb/libbb.h"
+-
+-#include "opkg_download.h"
+-#include "sprintf_alloc.h"
+-
+-#include "release_parse.h"
+-
+-#include "parse_util.h"
+-#include "file_util.h"
+-
+-static void
+-release_init(release_t *release)
+-{
+-     release->name = NULL;
+-     release->datestring = NULL;
+-     release->architectures = NULL;
+-     release->architectures_count = 0;
+-     release->components = NULL;
+-     release->components_count = 0;
+-     release->complist = NULL;
+-     release->complist_count = 0;
+-}
+-
+-release_t *
+-release_new(void)
+-{
+-     release_t *release;
+-
+-     release = xcalloc(1, sizeof(release_t));
+-     release_init(release);
+-
+-     return release;
+-}
+-
+-void
+-release_deinit(release_t *release)
+-{
+-    int i;
+-
+-    free(release->name);
+-    free(release->datestring);
+-
+-    for(i = 0; i < release->architectures_count; i++){
+-	free(release->architectures[i]);
+-    }
+-    free(release->architectures);
+-
+-    for(i = 0; i < release->components_count; i++){
+-	free(release->components[i]);
+-    }
+-    free(release->components);
+-
+-    for(i = 0; i < release->complist_count; i++){
+-	free(release->complist[i]);
+-    }
+-    free(release->complist);
+-
+-}
+-
+-int
+-release_init_from_file(release_t *release, const char *filename)
+-{
+-	int err = 0;
+-	FILE *release_file;
+-
+-	release_file = fopen(filename, "r");
+-	if (release_file == NULL) {
+-		opkg_perror(ERROR, "Failed to open %s", filename);
+-		return -1;
+-	}
+-
+-	err=release_parse_from_stream(release, release_file);
+-	if (!err) {
+-		if (!release_arch_supported(release)) {
+-			opkg_msg(ERROR, "No valid architecture found on Release file.\n");
+-			err = -1;
+-		}
+-	}
+-
+-	return err;
+-}
+-
+-const char *
+-item_in_list(const char *comp, char **complist, const unsigned int count)
+-{
+-     int i;
+-
+-     if (!complist)
+-	  return comp;
+-
+-     for(i = 0; i < count; i++){
+-	  if (strcmp(comp, complist[i]) == 0)
+-		    return complist[i];
+-     }
+-
+-     return NULL;
+-}
+-
+-int
+-release_arch_supported(release_t *release)
+-{
+-     nv_pair_list_elt_t *l;
+-
+-     list_for_each_entry(l , &conf->arch_list.head, node) {
+-	  nv_pair_t *nv = (nv_pair_t *)l->data;
+-	  if (item_in_list(nv->name, release->architectures, release->architectures_count)) {
+-	       opkg_msg(DEBUG, "Arch %s (priority %s) supported for dist %s.\n",
+-			       nv->name, nv->value, release->name);
+-	       return 1;
+-	  }
+-     }
+-
+-     return 0;
+-}
+-
+-int
+-release_comps_supported(release_t *release, const char *complist)
+-{
+-     int ret = 1;
+-     int i;
+-
+-     if (complist) {
+-	  release->complist = parse_list(complist, &release->complist_count, ' ', 1);
+-	  for(i = 0; i < release->complist_count; i++){
+-	       if (!item_in_list(release->complist[i], release->components, release->components_count)) {
+-		    opkg_msg(ERROR, "Component %s not supported for dist %s.\n",
+-				    release->complist[i], release->name);
+-		    ret = 0;
+-	       }
+-	  }
+-     }
+-
+-     return ret;
+-}
+-
+-const char **
+-release_comps(release_t *release, unsigned int *count)
+-{
+-     char **comps = release->complist;
+-
+-     if (!comps) {
+-	  comps = release->components;
+-	  *count = release->components_count;
+-     } else {
+-	  *count = release->complist_count;
+-     }
+-
+-     return (const char **)comps;
+-}
+-
+-int
+-release_download(release_t *release, pkg_src_t *dist, char *lists_dir, char *tmpdir)
+-{
+-     int ret = 0;
+-     unsigned int ncomp;
+-     const char **comps = release_comps(release, &ncomp);
+-     nv_pair_list_elt_t *l;
+-     int i;
+-
+-     for(i = 0; i < ncomp; i++){
+-	  int err = 0;
+-	  char *prefix;
+-
+-	  sprintf_alloc(&prefix, "%s/dists/%s/%s/binary", dist->value, dist->name,
+-			comps[i]);
+-
+-	  list_for_each_entry(l , &conf->arch_list.head, node) {
+-	       char *url;
+-	       char *tmp_file_name, *list_file_name;
+-	       char *subpath = NULL;
+-
+-	       nv_pair_t *nv = (nv_pair_t *)l->data;
+-
+-	       sprintf_alloc(&list_file_name, "%s/%s-%s-%s", lists_dir, dist->name, comps[i], nv->name);
+-
+-	       sprintf_alloc(&tmp_file_name, "%s/%s-%s-%s%s", tmpdir, dist->name, comps[i], nv->name, ".gz");
+-
+-	       sprintf_alloc(&subpath, "%s/binary-%s/%s", comps[i], nv->name, dist->gzip ? "Packages.gz" : "Packages");
+-
+-	       if (dist->gzip) {
+-	       sprintf_alloc(&url, "%s-%s/Packages.gz", prefix, nv->name);
+-	       err = opkg_download(url, tmp_file_name, NULL, NULL, 1);
+-	       if (!err) {
+-		    err = release_verify_file(release, tmp_file_name, subpath);
+-		    if (err) {
+-			 unlink (tmp_file_name);
+-			 unlink (list_file_name);
+-		    }
+-	       }
+-	       if (!err) {
+-		    FILE *in, *out;
+-		    opkg_msg(NOTICE, "Inflating %s.\n", url);
+-		    in = fopen (tmp_file_name, "r");
+-		    out = fopen (list_file_name, "w");
+-		    if (in && out) {
+-			 err = unzip (in, out);
+-			 if (err)
+-			      opkg_msg(INFO, "Corrumpt file at %s.\n", url);
+-		    } else
+-			 err = 1;
+-		    if (in)
+-			 fclose (in);
+-		    if (out)
+-			 fclose (out);
+-		    unlink (tmp_file_name);
+-	       }
+-	       free(url);
+-	       }
+-
+-	       if (err) {
+-		    sprintf_alloc(&url, "%s-%s/Packages", prefix, nv->name);
+-		    err = opkg_download(url, list_file_name, NULL, NULL, 1);
+-		    if (!err) {
+-			 err = release_verify_file(release, tmp_file_name, subpath);
+-			 if (err)
+-			      unlink (list_file_name);
+-		    }
+-		    free(url);
+-	       }
+-
+-	       free(tmp_file_name);
+-	       free(list_file_name);
+-	  }
+-
+-	  if(err)
+-	       ret = 1;
+-
+-	  free(prefix);
+-     }
+-
+-     return ret;
+-}
+-
+-int
+-release_get_size(release_t *release, const char *pathname)
+-{
+-     const cksum_t *cksum;
+-
+-     if (release->md5sums) {
+-	  cksum = cksum_list_find(release->md5sums, pathname);
+-	  return cksum->size;
+-     }
+-
+-#ifdef HAVE_SHA256
+-     if (release->sha256sums) {
+-	  cksum = cksum_list_find(release->sha256sums, pathname);
+-	  return cksum->size;
+-     }
+-#endif
+-
+-     return -1;
+-}
+-
+-const char *
+-release_get_md5(release_t *release, const char *pathname)
+-{
+-     const cksum_t *cksum;
+-
+-     if (release->md5sums) {
+-	  cksum = cksum_list_find(release->md5sums, pathname);
+-	  return cksum->value;
+-     }
+-
+-     return '\0';
+-}
+-
+-#ifdef HAVE_SHA256
+-const char *
+-release_get_sha256(release_t *release, const char *pathname)
+-{
+-     const cksum_t *cksum;
+-
+-     if (release->sha256sums) {
+-	  cksum = cksum_list_find(release->sha256sums, pathname);
+-	  return cksum->value;
+-     }
+-
+-     return '\0';
+-}
+-#endif
+-
+-int
+-release_verify_file(release_t *release, const char* file_name, const char *pathname)
+-{
+-     struct stat f_info;
+-     char *f_md5 = NULL;
+-     const char *md5 = release_get_md5(release, pathname);
+-#ifdef HAVE_SHA256
+-     char *f_sha256 = NULL;
+-     const char *sha256 = release_get_sha256(release, pathname);
+-#endif
+-     int ret = 0;
+-
+-     if (stat(file_name, &f_info) || (f_info.st_size!=release_get_size(release, pathname))) {
+-	  opkg_msg(ERROR, "Size verification failed for %s - %s.\n", release->name, pathname);
+-	  ret = 1;
+-     } else {
+-
+-     f_md5 = file_md5sum_alloc(file_name);
+-#ifdef HAVE_SHA256
+-     f_sha256 = file_sha256sum_alloc(file_name);
+-#endif
+-
+-     if (md5 && strcmp(md5, f_md5)) {
+-	  opkg_msg(ERROR, "MD5 verification failed for %s - %s.\n", release->name, pathname);
+-	  ret = 1;
+-#ifdef HAVE_SHA256
+-     } else if (sha256 && strcmp(sha256, f_sha256)) {
+-	  opkg_msg(ERROR, "SHA256 verification failed for %s - %s.\n", release->name, pathname);
+-	  ret = 1;
+-#endif
+-     }
+-
+-     }
+-
+-     free(f_md5);
+-#ifdef HAVE_SHA256
+-     free(f_sha256);
+-#endif
+-
+-     return ret;
+-}
+--- a/libopkg/release.h
++++ /dev/null
+@@ -1,53 +0,0 @@
+-/* release.h - the opkg package management system
+-
+-   Copyright (C) 2010,2011 Javier Palacios
+-
+-   This program is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU General Public License as
+-   published by the Free Software Foundation; either version 2, or (at
+-   your option) any later version.
+-
+-   This program is distributed in the hope that it will be useful, but
+-   WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   General Public License for more details.
+-*/
+-
+-#ifndef RELEASE_H
+-#define RELEASE_H
+-
+-#include <stdio.h>
+-#include "pkg.h"
+-#include "cksum_list.h"
+-
+-struct release
+-{
+-     char *name;
+-     char *datestring;
+-     char **architectures;
+-     unsigned int architectures_count;
+-     char **components;
+-     unsigned int components_count;
+-     cksum_list_t *md5sums;
+-#ifdef HAVE_SHA256
+-     cksum_list_t *sha256sums;
+-#endif
+-     char **complist;
+-     unsigned int complist_count;
+-};
+-
+-typedef struct release release_t;
+-
+-release_t *release_new(void);
+-void release_deinit(release_t *release);
+-int release_init_from_file(release_t *release, const char *filename);
+-
+-int release_arch_supported(release_t *release);
+-int release_comps_supported(release_t *release, const char *complist);
+-int release_download(release_t *release, pkg_src_t *dist, char *lists_dir, char *tmpdir);
+-
+-const char **release_comps(release_t *release, unsigned int *count);
+-
+-int release_verify_file(release_t *release, const char *filename, const char *pathname);
+-
+-#endif
+--- a/libopkg/release_parse.c
++++ /dev/null
+@@ -1,126 +0,0 @@
+-/* release_parse.c - the opkg package management system
+-
+-   Copyright (C) 2010,2011 Javier Palacios
+-
+-   This program is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU General Public License as
+-   published by the Free Software Foundation; either version 2, or (at
+-   your option) any later version.
+-
+-   This program is distributed in the hope that it will be useful, but
+-   WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   General Public License for more details.
+-*/
+-
+-#include "config.h"
+-
+-#include <stdio.h>
+-
+-#include "release.h"
+-#include "release_parse.h"
+-#include "libbb/libbb.h"
+-#include "parse_util.h"
+-
+-static int
+-release_parse_line(void *ptr, const char *line, uint mask)
+-{
+-	release_t *release = (release_t *) ptr;
+-
+-	int ret = 0;
+-	unsigned int count = 0;
+-	char **list = 0;
+-	static int reading_md5sums = 0;
+-#ifdef HAVE_SHA256
+-	static int reading_sha256sums = 0;
+-#endif
+-
+-	switch (*line) {
+-	case 'A':
+-		if (is_field("Architectures", line)) {
+-			release->architectures = parse_list(line, &release->architectures_count, ' ', 0);
+-		}
+-		break;
+-
+-	case 'C':
+-		if (is_field("Codename", line)) {
+-			release->name = parse_simple("Codename", line);
+-	    	}
+-		else if (is_field("Components", line)) {
+-			release->components = parse_list(line, &release->components_count, ' ', 0);
+-	    	}
+-		break;
+-
+-	case 'D':
+-		if (is_field("Date", line)) {
+-			release->datestring = parse_simple("Date", line);
+-		}
+-		break;
+-
+-	case 'M':
+-		if (is_field("MD5sum", line)) {
+-			reading_md5sums = 1;
+-			if (release->md5sums == NULL) {
+-			     release->md5sums = xcalloc(1, sizeof(cksum_list_t));
+-			     cksum_list_init(release->md5sums);
+-			}
+-			goto dont_reset_flags;
+-	    	}
+-		break;
+-
+-#ifdef HAVE_SHA256
+-	case 'S':
+-		if (is_field("SHA256", line)) {
+-			reading_sha256sums = 1;
+-			if (release->sha256sums == NULL) {
+-			     release->sha256sums = xcalloc(1, sizeof(cksum_list_t));
+-			     cksum_list_init(release->sha256sums);
+-			}
+-			goto dont_reset_flags;
+-	    	}
+-		break;
+-#endif
+-
+-	case ' ':
+-		if (reading_md5sums) {
+-			list = parse_list(line, &count, ' ', 1);
+-			cksum_list_append(release->md5sums, list);
+-			goto dont_reset_flags;
+-		}
+-#ifdef HAVE_SHA256
+-		else if (reading_sha256sums) {
+-			list = parse_list(line, &count, ' ', 1);
+-			cksum_list_append(release->sha256sums, list);
+-			goto dont_reset_flags;
+-		}
+-#endif
+-		break;
+-
+-	default:
+-		ret = 1;
+-	}
+-
+-	reading_md5sums = 0;
+-#ifdef HAVE_SHA256
+-	reading_sha256sums = 0;
+-#endif
+-
+-dont_reset_flags:
+-
+-	return ret;
+-}
+-
+-int
+-release_parse_from_stream(release_t *release, FILE *fp)
+-{
+-	int ret;
+-	char *buf;
+-	const size_t len = 4096;
+-
+-	buf = xmalloc(len);
+-	ret = parse_from_stream_nomalloc(release_parse_line, release, fp, 0, &buf, len);
+-	free(buf);
+-
+-	return ret;
+-}
+-
+--- a/libopkg/release_parse.h
++++ /dev/null
+@@ -1,21 +0,0 @@
+-/* release_parse.h - the opkg package management system
+-
+-   Copyright (C) 2010,2011 Javier Palacios
+-
+-   This program is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU General Public License as
+-   published by the Free Software Foundation; either version 2, or (at
+-   your option) any later version.
+-
+-   This program is distributed in the hope that it will be useful, but
+-   WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   General Public License for more details.
+-*/
+-
+-#ifndef RELEASE_PARSE_H
+-#define RELEASE_PARSE_H
+-
+-int release_parse_from_stream(release_t *release, FILE *fp);
+-
+-#endif
+--- a/libopkg/opkg_cmd.c
++++ b/libopkg/opkg_cmd.c
+@@ -27,7 +27,6 @@
+ #include "opkg_conf.h"
+ #include "opkg_cmd.h"
+ #include "opkg_message.h"
+-#include "release.h"
+ #include "pkg.h"
+ #include "pkg_dest.h"
+ #include "pkg_parse.h"
+@@ -114,39 +113,6 @@
+      }
+ 
+ 
+-     for (iter = void_list_first(&conf->dist_src_list); iter; iter = void_list_next(&conf->dist_src_list, iter)) {
+-	  char *url, *list_file_name;
+-
+-	  src = (pkg_src_t *)iter->data;
+-
+-	  sprintf_alloc(&url, "%s/dists/%s/Release", src->value, src->name);
+-
+-	  sprintf_alloc(&list_file_name, "%s/%s", lists_dir, src->name);
+-	  err = opkg_download(url, list_file_name, NULL, NULL, 0);
+-	  if (!err) {
+-	       opkg_msg(NOTICE, "Downloaded release files for dist %s.\n",
+-			    src->name);
+-	       release_t *release = release_new(); 
+-	       err = release_init_from_file(release, list_file_name);
+-	       if (!err) {
+-		    if (!release_comps_supported(release, src->extra_data))
+-			 err = -1;
+-	       }
+-	       if (!err) {
+-		    err = release_download(release, src, lists_dir, tmp);
+-	       }
+-	       release_deinit(release); 
+-	       if (err)
+-		    unlink(list_file_name);
+-	  }
+-
+-	  if (err)
+-	       failures++;
+-
+-	  free(list_file_name);
+-	  free(url);
+-     }
+-
+      for (iter = void_list_first(&conf->pkg_src_list); iter; iter = void_list_next(&conf->pkg_src_list, iter)) {
+ 	  char *url, *list_file_name;
+ 
+--- a/libopkg/pkg_hash.c
++++ b/libopkg/pkg_hash.c
+@@ -18,7 +18,6 @@
+ #include <stdio.h>
+ 
+ #include "hash_table.h"
+-#include "release.h"
+ #include "pkg.h"
+ #include "opkg_message.h"
+ #include "pkg_vec.h"
+@@ -183,40 +182,6 @@
+ 	lists_dir = conf->restrict_to_default_dest ?
+ 		conf->default_dest->lists_dir : conf->lists_dir;
+ 
+-	for (iter = void_list_first(&conf->dist_src_list); iter;
+-			iter = void_list_next(&conf->dist_src_list, iter)) {
+-
+-		src = (pkg_src_t *)iter->data;
+-
+-		sprintf_alloc(&list_file, "%s/%s", lists_dir, src->name);
+-
+-		if (file_exists(list_file)) {
+-			int i;
+-			release_t *release = release_new();
+-			if(release_init_from_file(release, list_file)) {
+-				free(list_file);
+-				return -1;
+-			}
+-
+-			unsigned int ncomp;
+-			const char **comps = release_comps(release, &ncomp);
+-			subdist = (pkg_src_t *) xmalloc(sizeof(pkg_src_t));
+-			memcpy(subdist, src, sizeof(pkg_src_t));
+-
+-			for(i = 0; i < ncomp; i++){
+-				subdist->name = NULL;
+-				sprintf_alloc(&subdist->name, "%s-%s", src->name, comps[i]);
+-				if (dist_hash_add_from_file(lists_dir, subdist)) {
+-					free(subdist->name); free(subdist);
+-					free(list_file);
+-					return -1;
+-				}
+-			}
+-			free(subdist->name); free(subdist);
+-		}
+-		free(list_file);
+-	}
+-
+ 	for (iter = void_list_first(&conf->pkg_src_list); iter;
+ 			iter = void_list_next(&conf->pkg_src_list, iter)) {
+ 

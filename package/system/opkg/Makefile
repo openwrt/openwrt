@@ -89,11 +89,12 @@ EXTRA_CFLAGS += $(TARGET_CPPFLAGS)
 CONFIGURE_ARGS += \
 	--disable-curl \
 	--disable-gpg \
+	--enable-sha256 \
 	--with-opkgetcdir=/etc \
 	--with-opkglockfile=/var/lock/opkg.lock
 
 ifeq ($(BUILD_VARIANT),smime)
-	CONFIGURE_ARGS += --enable-openssl --enable-sha256 --disable-usign
+	CONFIGURE_ARGS += --enable-openssl --disable-usign
 else
   ifndef CONFIG_SIGNED_PACKAGES
     CONFIGURE_ARGS += --disable-usign
@@ -151,6 +152,7 @@ endef
 HOST_CONFIGURE_ARGS+= \
 	--disable-curl \
 	--disable-gpg \
+	--enable-sha256 \
 	--with-opkgetcdir=/etc \
 	--with-opkglockfile=/tmp/opkg.lock
 
