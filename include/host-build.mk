@@ -131,6 +131,7 @@ define Host/Exports/Default
   $(1) : export STAGING_PREFIX=$$(STAGING_DIR_HOST)
   $(1) : export PKG_CONFIG_PATH=$$(STAGING_DIR_HOST)/lib/pkgconfig
   $(1) : export PKG_CONFIG_LIBDIR=$$(STAGING_DIR_HOST)/lib/pkgconfig
+  $(1) : export CCACHE_DIR:=$(STAGING_DIR_HOST)/ccache
 endef
 Host/Exports=$(Host/Exports/Default)
 
