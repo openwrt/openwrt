@@ -150,6 +150,23 @@ platform_pre_upgrade() {
 
 	echo "Provided firmware contains kernel and UBI image, but flashing it is unsupported yet"
 	exit 1
+
+	# Prepare TRX file with just a kernel that will replace current one
+	local linux_length=$(grep "\"linux\"" /proc/mtd | sed "s/mtd[0-9]*:[ \t]*\([^ \t]*\).*/\1/")
+	[ -z "$linux_length" ] && {
+		echo "Unable to find \"linux\" partition size"
+		exit 1
+	}
+	linux_length=$((0x$linux_length + 28))
+	rm -f /tmp/null.bin
+	rm -f /tmp/kernel.trx
+	touch /tmp/null.bin
+	otrx create /tmp/kernel.trx \
+		-f $dir/kernel -b $linux_length \
+		-f /tmp/null.bin
+
+	# Flash
+	mtd write /tmp/kernel.trx firmware
 }
 
 platform_do_upgrade() {
