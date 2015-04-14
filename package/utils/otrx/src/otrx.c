@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -38,14 +39,6 @@ struct trx_header {
 	uint16_t version;
 	uint32_t offset[3];
 };
-
-enum mode {
-	MODE_UNKNOWN,
-	MODE_CHECK,
-	MODE_EXTRACT,
-};
-
-enum mode mode = MODE_UNKNOWN;
 
 char *trx_path;
 size_t trx_offset = 0;
@@ -137,13 +130,35 @@ uint32_t otrx_crc32(uint8_t *buf, size_t len) {
  * Check
  **************************************************/
 
-static int otrx_check() {
+static void otrx_check_parse_options(int argc, char **argv) {
+	int c;
+
+	while ((c = getopt(argc, argv, "o:")) != -1) {
+		switch (c) {
+		case 'o':
+			trx_offset = atoi(optarg);
+			break;
+		}
+	}
+}
+
+static int otrx_check(int argc, char **argv) {
 	FILE *trx;
 	struct trx_header hdr;
 	size_t bytes, length;
 	uint8_t *buf;
 	uint32_t crc32;
 	int err = 0;
+
+	if (argc < 3) {
+		fprintf(stderr, "No TRX file passed\n");
+		err = -EINVAL;
+		goto out;
+	}
+	trx_path = argv[2];
+
+	optind = 3;
+	otrx_check_parse_options(argc, argv);
 
 	trx = fopen(trx_path, "r");
 	if (!trx) {
@@ -209,6 +224,27 @@ out:
  * Extract
  **************************************************/
 
+static void otrx_extract_parse_options(int argc, char **argv) {
+	int c;
+
+	while ((c = getopt(argc, argv, "c:e:o:1:2:3:")) != -1) {
+		switch (c) {
+		case 'o':
+			trx_offset = atoi(optarg);
+			break;
+		case '1':
+			partition[0] = optarg;
+			break;
+		case '2':
+			partition[1] = optarg;
+			break;
+		case '3':
+			partition[2] = optarg;
+			break;
+		}
+	}
+}
+
 static int otrx_extract_copy(FILE *trx, size_t offset, size_t length, char *out_path) {
 	FILE *out;
 	size_t bytes;
@@ -254,12 +290,22 @@ out:
 	return err;
 }
 
-static int otrx_extract() {
+static int otrx_extract(int argc, char **argv) {
 	FILE *trx;
 	struct trx_header hdr;
 	size_t bytes;
 	int i;
 	int err = 0;
+
+	if (argc < 3) {
+		fprintf(stderr, "No TRX file passed\n");
+		err = -EINVAL;
+		goto out;
+	}
+	trx_path = argv[2];
+
+	optind = 3;
+	otrx_extract_parse_options(argc, argv);
 
 	trx = fopen(trx_path, "r");
 	if (!trx) {
@@ -310,61 +356,29 @@ out:
  * Start
  **************************************************/
 
-static void parse_options(int argc, char **argv) {
-	int c;
-
-	while ((c = getopt(argc, argv, "c:e:o:1:2:3:")) != -1) {
-		switch (c) {
-		case 'c':
-			mode = MODE_CHECK;
-			trx_path = optarg;
-			break;
-		case 'e':
-			mode = MODE_EXTRACT;
-			trx_path = optarg;
-			break;
-		case 'o':
-			trx_offset = atoi(optarg);
-			break;
-		case '1':
-			partition[0] = optarg;
-			break;
-		case '2':
-			partition[1] = optarg;
-			break;
-		case '3':
-			partition[2] = optarg;
-			break;
-		}
-	}
-}
-
 static void usage() {
 	printf("Usage:\n");
 	printf("\n");
 	printf("Checking TRX file:\n");
-	printf("\t-c file\t\tcheck if file is a valid TRX\n");
-	printf("\t-o offset\toffset of TRX data in file (default: 0)\n");
+	printf("\totrx check <file> [options]\tcheck if file is a valid TRX\n");
+	printf("\t-o offset\t\t\toffset of TRX data in file (default: 0)\n");
 	printf("\n");
 	printf("Extracting from TRX file:\n");
-	printf("\t-e file\t\tfile with TRX to extract from\n");
-	printf("\t-o offset\toffset of TRX data in file (default: 0)\n");
-	printf("\t-1 file\t\tfile to extract 1st partition to (optional)\n");
-	printf("\t-2 file\t\tfile to extract 2nd partition to (optional)\n");
-	printf("\t-3 file\t\tfile to extract 3rd partition to (optional)\n");
+	printf("\totrx extract <file> [options]\textract partitions from TRX file\n");
+	printf("\t-o offset\t\t\toffset of TRX data in file (default: 0)\n");
+	printf("\t-1 file\t\t\t\tfile to extract 1st partition to (optional)\n");
+	printf("\t-2 file\t\t\t\tfile to extract 2nd partition to (optional)\n");
+	printf("\t-3 file\t\t\t\tfile to extract 3rd partition to (optional)\n");
 }
 
 int main(int argc, char **argv) {
-	parse_options(argc, argv);
-
-	switch (mode) {
-	case MODE_CHECK:
-		return otrx_check();
-	case MODE_EXTRACT:
-		return otrx_extract();
-	default:
-		usage();
+	if (argc > 1) {
+		if (!strcmp(argv[1], "check"))
+			return otrx_check(argc, argv);
+		else if (!strcmp(argv[1], "extract"))
+			return otrx_extract(argc, argv);
 	}
 
+	usage();
 	return 0;
 }
