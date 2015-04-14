@@ -258,8 +258,7 @@ endef
 
 define Image/Checksum
 	( cd ${BIN_DIR} ; \
-		$(FIND) -maxdepth 1 -type f \! -name 'md5sums'  -printf "%P\n" | sort | xargs \
-		md5sum --binary > md5sums \
+		$(FIND) -maxdepth 1 -type f \! -name 'md5sums'  -printf "%P\n" | sort | xargs $1 > $2 \
 	)
 endef
 
@@ -461,6 +460,7 @@ define BuildImage
 		$(call Image/Build,$(fs))
 	)
 	$(call Image/mkfs/ubifs)
-	$(call Image/Checksum)
+	$(call Image/Checksum,md5sum --binary,md5sums)
+	$(call Image/Checksum,openssl dgst -sha256,sha256sums)
 
 endef
