@@ -79,7 +79,7 @@ platform_check_image() {
 				error=1
 			}
 
-			if ! otrx -c "$1" -o "$header_len"; then
+			if ! otrx check "$1" -o "$header_len"; then
 				echo "No valid TRX firmware in the CHK image"
 				error=1
 			fi
@@ -94,13 +94,13 @@ platform_check_image() {
 				error=1
 			}
 
-			if ! otrx -c "$1" -o 32; then
+			if ! otrx check "$1" -o 32; then
 				echo "No valid TRX firmware in the CyberTAN image"
 				error=1
 			fi
 		;;
 		"trx")
-			if ! otrx -c "$1"; then
+			if ! otrx check "$1"; then
 				echo "Invalid (corrupted?) TRX firmware"
 				error=1
 			fi
@@ -140,7 +140,7 @@ platform_pre_upgrade() {
 	# Extract partitions from trx
 	rm -fR $dir
 	mkdir -p $dir
-	otrx -e "$trx" \
+	otrx extract "$trx" \
 		-1 $dir/kernel \
 		-2 $dir/root
 
