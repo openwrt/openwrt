@@ -20,6 +20,14 @@ setup_interface () {
 		proto_add_dns_server "$dns"
 	done
 
+	for radomain in $RA_DOMAINS; do
+		local duplicate=0
+		for domain in $DOMAINS; do
+			[ "$radomain" = "$domain" ] && duplicate=1
+		done
+		[ "$duplicate" = 0 ] && DOMAINS="$DOMAINS $radomain"
+	done
+
 	for domain in $DOMAINS; do
 		proto_add_dns_search "$domain"
 	done
