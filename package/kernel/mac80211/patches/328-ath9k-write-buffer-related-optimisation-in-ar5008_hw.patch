@@ -1,0 +1,27 @@
+From: Oleksij Rempel <linux@rempel-privat.de>
+Date: Sun, 22 Mar 2015 19:29:55 +0100
+Subject: [PATCH] ath9k: write buffer related optimisation in
+ ar5008_hw_set_channel_regs
+
+Signed-off-by: Oleksij Rempel <linux@rempel-privat.de>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/ar5008_phy.c
++++ b/drivers/net/wireless/ath/ath9k/ar5008_phy.c
+@@ -681,12 +681,13 @@ static void ar5008_hw_set_channel_regs(s
+ 			phymode |= AR_PHY_FC_DYN2040_PRI_CH;
+ 
+ 	}
++	ENABLE_REGWRITE_BUFFER(ah);
+ 	REG_WRITE(ah, AR_PHY_TURBO, phymode);
+ 
++	/* This function do only REG_WRITE, so
++	 * we can include it to REGWRITE_BUFFER. */
+ 	ath9k_hw_set11nmac2040(ah, chan);
+ 
+-	ENABLE_REGWRITE_BUFFER(ah);
+-
+ 	REG_WRITE(ah, AR_GTXTO, 25 << AR_GTXTO_TIMEOUT_LIMIT_S);
+ 	REG_WRITE(ah, AR_CST, 0xF << AR_CST_TIMEOUT_LIMIT_S);
+ 
