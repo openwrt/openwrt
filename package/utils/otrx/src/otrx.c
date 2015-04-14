@@ -175,7 +175,7 @@ static int otrx_check() {
 
 	buf = malloc(length);
 	if (!buf) {
-		fprintf(stderr, "Couldn't alloc %d B buffer\n", length);
+		fprintf(stderr, "Couldn't alloc %zd B buffer\n", length);
 		err =  -ENOMEM;
 		goto err_close;
 	}
@@ -183,7 +183,7 @@ static int otrx_check() {
 	fseek(trx, trx_offset, SEEK_SET);
 	bytes = fread(buf, 1, length, trx);
 	if (bytes != length) {
-		fprintf(stderr, "Couldn't read %d B of data from %s\n", length, trx_path);
+		fprintf(stderr, "Couldn't read %zd B of data from %s\n", length, trx_path);
 		err =  -ENOMEM;
 		goto err_free_buf;
 	}
