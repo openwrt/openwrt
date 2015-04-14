@@ -167,6 +167,12 @@ static int otrx_check() {
 	}
 
 	length = le32_to_cpu(hdr.length);
+	if (length < sizeof(hdr)) {
+		fprintf(stderr, "Length read from TRX too low (%zu B)\n", length);
+		err = -EINVAL;
+		goto err_close;
+	}
+
 	buf = malloc(length);
 	if (!buf) {
 		fprintf(stderr, "Couldn't alloc %d B buffer\n", length);
