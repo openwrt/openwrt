@@ -21,7 +21,9 @@ armada-xp-linksys-mamba)
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
 	ucidef_add_switch_vlan "switch0" "2" "4 6"
 	;;
-
+armada-385-db-ap)
+	ucidef_set_interfaces_lan_wan "eth0 eth1" "eth2"
+	;;
 *)
 	ucidef_set_interface_lan "eth0"
 	;;
