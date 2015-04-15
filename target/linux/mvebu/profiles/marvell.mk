@@ -33,7 +33,7 @@ define Profile/370-RD/Description
  Package set compatible with the Armada 370 reference design board (RD-88F6710-A1).
 endef
 
-$(eval $(call Profile,385-RD))
+$(eval $(call Profile,370-RD))
 
 define Profile/385-RD
   NAME:=Marvell Armada 385 RD (RD-88F6820-AP)
