@@ -310,7 +310,9 @@ $(eval $(call KernelPackage,usb-uhci,1))
 
 define KernelPackage/usb-ohci
   TITLE:=Support for OHCI controllers
-  DEPENDS:=+TARGET_brcm47xx:kmod-usb-brcm47xx
+  DEPENDS:= \
+	+TARGET_brcm47xx:kmod-usb-bcma \
+	+TARGET_brcm47xx:kmod-usb-ssb
   KCONFIG:= \
 	CONFIG_USB_OHCI \
 	CONFIG_USB_OHCI_HCD \
@@ -385,11 +387,34 @@ endef
 
 $(eval $(call KernelPackage,usb2-omap))
 
+define KernelPackage/usb-bcma
+  TITLE:=Support for BCMA USB controllers
+  DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx||TARGET_bcm53xx
+  KCONFIG:=CONFIG_USB_HCD_BCMA
+  FILES:= \
+	$(if $(CONFIG_USB_HCD_BCMA),$(LINUX_DIR)/drivers/usb/host/bcma-hcd.ko)
+  AUTOLOAD:=$(call AutoLoad,19,$(if $(CONFIG_USB_HCD_BCMA),bcma-hcd),1)
+  $(call AddDepends/usb)
+endef
+$(eval $(call KernelPackage,usb-bcma))
+
+define KernelPackage/usb-ssb
+  TITLE:=Support for SSB USB controllers
+  DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx
+  KCONFIG:=CONFIG_USB_HCD_SSB
+  FILES:= \
+	$(if $(CONFIG_USB_HCD_SSB),$(LINUX_DIR)/drivers/usb/host/ssb-hcd.ko)
+  AUTOLOAD:=$(call AutoLoad,19,$(if $(CONFIG_USB_HCD_SSB),ssb-hcd),1)
+  $(call AddDepends/usb)
+endef
+$(eval $(call KernelPackage,usb-ssb))
 
 define KernelPackage/usb2
   TITLE:=Support for USB2 controllers
   DEPENDS:=\
-	+TARGET_brcm47xx:kmod-usb-brcm47xx \
+	+TARGET_brcm47xx:kmod-usb-bcma \
+	+TARGET_brcm47xx:kmod-usb-ssb \
+	+TARGET_bcm53xx:kmod-usb-bcma \
 	+TARGET_mpc85xx:kmod-usb2-fsl
   KCONFIG:=\
 	CONFIG_USB_EHCI_HCD \
