@@ -15,6 +15,12 @@ ucidef_set_interface_loopback
 board=$(mvebu_board_name)
 
 case "$board" in
+armada-385-linksys-caiman)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	;;
+armada-385-linksys-cobra)
+	ucidef_set_interfaces_lan_wan "eth1" "eth0"
+	;;
 armada-xp-linksys-mamba)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"
 	ucidef_add_switch "switch0" "1" "1"
