@@ -166,6 +166,8 @@ clean dirclean: .config
 prereq:: prepare-tmpinfo .config
 	@+$(NO_TRACE_MAKE) -r -s $@
 
+WARN_PARALLEL_ERROR = $(if $(BUILD_LOG),,$(and $(filter -j,$(MAKEFLAGS)),$(findstring s,$(OPENWRT_VERBOSE))))
+
 ifeq ($(SDK),1)
 
 %::
@@ -184,7 +186,10 @@ else
 			printf "$(_R)WARNING: your configuration is out of sync. Please run make menuconfig, oldconfig or defconfig!$(_N)\n" >&2; \
 		fi \
 	)
-	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@
+	@+$(ULIMIT_FIX) $(SUBMAKE) -r $@ $(if $(WARN_PARALLEL_ERROR), || { \
+		printf "$(_R)Build failed - please re-run with -j1 to see the real error message$(_N)\n" >&2; \
+		false; \
+	} )
 
 endif
 
