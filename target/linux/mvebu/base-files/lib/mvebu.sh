@@ -43,6 +43,9 @@ mvebu_board_detect() {
 	*"Marvell Armada 385 Access Point Development Board")
 		name="armada-385-db-ap"
 		;;
+	*"Marvell Armada XP Development Board DB-MV784MP-GP")
+		name="armada-xp-gp"
+		;;
 	esac
 
 	[ -z "$name" ] && name="unknown"
