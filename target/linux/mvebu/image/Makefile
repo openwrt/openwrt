@@ -133,6 +133,8 @@ $(eval $(call NANDProfile,XP-GP,armada-xp-gp,512KiB,4096))
 
 # Boards with NAND, with subpages
 $(eval $(call NANDProfile,Mamba,armada-xp-linksys-mamba,128KiB,2048,512,2048))
+$(eval $(call NANDProfile,Caiman,armada-385-linksys-caiman,128KiB,2048,512,2048))
+$(eval $(call NANDProfile,Cobra,armada-385-linksys-cobra,128KiB,2048,512,2048))
 
 # Boards with large NOR, where we want to use UBI
 $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
@@ -143,6 +145,26 @@ $(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
 ###
 ### Linksys
 ###
+
+# Caiman: Linksys WRT1200AC
+define Image/Build/Profile/Caiman/squashfs
+	$(call Image/Build/UbinizeImage,armada-385-linksys-caiman,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
+	( \
+		dd if=$(KDIR)/uImage-armada-385-linksys-caiman bs=6M conv=sync; \
+		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-linksys-caiman-squashfs-ubinized.bin \
+		bs=2048 conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-linksys-caiman-squashfs-factory.img
+endef
+
+# Cobra: Linksys WRT1900ACv2
+define Image/Build/Profile/Cobra/squashfs
+	$(call Image/Build/UbinizeImage,armada-385-linksys-cobra,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
+	( \
+		dd if=$(KDIR)/uImage-armada-385-linksys-cobra bs=6M conv=sync; \
+		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-linksys-cobra-squashfs-ubinized.bin \
+		bs=2048 conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-linksys-cobra-squashfs-factory.img
+endef
 
 # Mamba: Linksys WRT1900AC
 define Image/Build/Profile/Mamba/squashfs
