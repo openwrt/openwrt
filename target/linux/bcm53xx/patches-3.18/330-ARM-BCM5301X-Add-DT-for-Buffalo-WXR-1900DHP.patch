@@ -8,7 +8,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,152 @@
 +/*
 + * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Buffalo WXR-1900DHP
@@ -57,8 +57,14 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +	leds {
 +		compatible = "gpio-leds";
 +
++		usb {
++			label = "bcm53xx:green:usb";
++			gpios = <&chipcommon 4 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "default-off";
++		};
++
 +		power0 {
-+			label = "bcm53xx:red:power";
++			label = "bcm53xx:amber:power";
 +			gpios = <&chipcommon 5 GPIO_ACTIVE_HIGH>;
 +			linux,default-trigger = "default-off";
 +		};
