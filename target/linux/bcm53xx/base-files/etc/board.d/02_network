@@ -3,11 +3,9 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
-[ -e /etc/config/network ] && exit 0
+. /lib/functions/uci-defaults-new.sh
 
-touch /etc/config/network
-
-. /lib/functions/uci-defaults.sh
+board_config_update
 
 ucidef_set_interface_loopback
 
@@ -32,6 +30,6 @@ else
 	ucidef_add_switch_vlan "switch0" "2" "4 5t"
 fi
 
-uci commit network
+board_config_flush
 
 exit 0
