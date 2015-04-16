@@ -662,7 +662,7 @@
 +	if (irq_off != NANDC_IRQ_CONTROLLER_RDY ||
 +		0 == bcmnand_reg_aread(ctrl, NANDC_IDM_IO_CTRL_RDY)) {
 +
-+		timeout_jiffies = wait_for_completion_interruptible_timeout(
++		timeout_jiffies = wait_for_completion_timeout(
 +					&ctrl->op_completion, timeout_jiffies);
 +
 +		if (timeout_jiffies < 0)
