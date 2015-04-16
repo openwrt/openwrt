@@ -33,6 +33,7 @@ endef
 define Build/trx-nand
 	$(STAGING_DIR_HOST)/bin/trx \
 		-o $@ \
+		-m 33554432 \
 		-f $(word 1,$^) \
 		-a 0x20000 -f $(KDIR)/root-block-0x20000-min-0x800.ubi \
 		-a 0x20000 -A $(KDIR)/fs_mark
