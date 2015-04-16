@@ -1,0 +1,20 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Subject: [PATCH] ARM: BCM5301X: Add USB LED for Buffalo WZR-1750DHP
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -48,6 +48,12 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
++		usb {
++			label = "bcm53xx:blue:usb";
++			gpios = <&hc595 0 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "default-off";
++		};
++
+ 		power0 {
+ 			label = "bcm53xx:red:power";
+ 			gpios = <&hc595 1 GPIO_ACTIVE_HIGH>;
