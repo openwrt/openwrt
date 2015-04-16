@@ -133,29 +133,25 @@ platform_check_image() {
 	return $error
 }
 
-platform_do_upgrade_chk() {
+platform_extract_trx_from_chk() {
 	local header_len=$((0x$(get_magic_long_at "$1" 4)))
-	local trx="/tmp/$1.trx"
 
-	dd if="$1" of="$trx" bs=$header_len skip=1
-	shift
-	default_do_upgrade "$trx" "$@"
+	dd if="$1" of="$2" bs=$header_len skip=1
 }
 
-platform_do_upgrade_cybertan() {
-	local trx="/tmp/$1.trx"
-
-	dd if="$1" of="$trx" bs=32 skip=1
-	shift
-	default_do_upgrade "$trx" "$@"
+platform_extract_trx_from_cybertan() {
+	dd if="$1" of="$2" bs=32 skip=1
 }
 
 platform_do_upgrade() {
 	local file_type=$(brcm47xx_identify "$1")
+	local trx="$1"
 
 	case "$file_type" in
-		"chk")		platform_do_upgrade_chk "$ARGV";;
-		"cybertan")	platform_do_upgrade_cybertan "$ARGV";;
-		*)		default_do_upgrade "$ARGV";;
+		"chk")		trx="/tmp/$1.trx"; platform_extract_trx_from_chk "$1" "$trx";;
+		"cybertan")	trx="/tmp/$1.trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
 	esac
+
+	shift
+	default_do_upgrade "$trx" "$@"
 }
