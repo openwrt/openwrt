@@ -390,6 +390,7 @@ $(eval $(call KernelPackage,usb2-omap))
 define KernelPackage/usb-bcma
   TITLE:=Support for BCMA USB controllers
   DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx||TARGET_bcm53xx
+  HIDDEN:=1
   KCONFIG:=CONFIG_USB_HCD_BCMA
   FILES:= \
 	$(if $(CONFIG_USB_HCD_BCMA),$(LINUX_DIR)/drivers/usb/host/bcma-hcd.ko)
@@ -401,6 +402,7 @@ $(eval $(call KernelPackage,usb-bcma))
 define KernelPackage/usb-ssb
   TITLE:=Support for SSB USB controllers
   DEPENDS:=@USB_SUPPORT @TARGET_brcm47xx
+  HIDDEN:=1
   KCONFIG:=CONFIG_USB_HCD_SSB
   FILES:= \
 	$(if $(CONFIG_USB_HCD_SSB),$(LINUX_DIR)/drivers/usb/host/ssb-hcd.ko)
