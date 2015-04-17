@@ -8,8 +8,7 @@
 define Profile/DOCKSTAR
   NAME:=Seagate FreeAgent Dockstar
   PACKAGES:= \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
-	uboot-envtools
+	kmod-rtc-marvell kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/DOCKSTAR/Description
@@ -25,8 +24,7 @@ define Profile/GOFLEXNET
   NAME:=Seagate GoFlexNet
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-usb2 kmod-usb-storage \
-	uboot-envtools
+	kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/GOFLEXNET/Description
@@ -42,8 +40,7 @@ define Profile/IB62X0
   NAME:=RaidSonic ICY BOX IB-NAS62x0
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
-	uboot-envtools
+	kmod-rtc-marvell kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/IB62X0/Description
@@ -74,8 +71,7 @@ define Profile/IOMEGA_IX2_200
   NAME:=Iomega StorCenter ix2-200
   PACKAGES:= \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-usb2 kmod-usb-storage \
-	uboot-envtools
+	kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/IOMEGA_IX2_200/Description
@@ -90,7 +86,7 @@ $(eval $(call Profile,IOMEGA_IX2_200))
 define Profile/POGOE02
   NAME:=Cloud Engines Pogoplug E02
   PACKAGES:= \
-	kmod-usb2 kmod-usb-storage uboot-envtools
+	kmod-usb2 kmod-usb-storage
 endef
 
 define Profile/POGOE02/Description
