@@ -8,8 +8,7 @@
 define Profile/Generic
   NAME:=Generic (default)
   PACKAGES:= \
-	kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy \
-	uboot-envtools
+	kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
 endef
 
 define Profile/Generic/Description

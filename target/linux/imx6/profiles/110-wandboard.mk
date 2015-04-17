@@ -8,8 +8,7 @@
 define Profile/IMX6DL_WANDBOARD
   NAME:=Wandboard Dual
   PACKAGES:= \
-	kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy \
-	uboot-envtools
+	kmod-thermal-imx kmod-usb-chipidea-imx kmod-usb-mxs-phy
 endef
 
 $(eval $(call Profile,IMX6DL_WANDBOARD))
