@@ -10,10 +10,16 @@
  	{{BCM47XX_BOARD_LINKSYS_WRT610NV2, "Linksys WRT610N V2"}, "WRT610N", "2.0"},
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -270,6 +270,12 @@ bcm47xx_buttons_linksys_wrt310nv1[] __in
+@@ -270,6 +270,18 @@ bcm47xx_buttons_linksys_wrt310nv1[] __in
  };
  
  static const struct gpio_keys_button
++bcm47xx_buttons_linksys_wrt310n_v2[] __initconst = {
++	BCM47XX_GPIO_KEY(5, KEY_WPS_BUTTON),
++	BCM47XX_GPIO_KEY(6, KEY_RESTART),
++};
++
++static const struct gpio_keys_button
 +bcm47xx_buttons_linksys_wrt320n_v1[] __initconst = {
 +	BCM47XX_GPIO_KEY(5, KEY_WPS_BUTTON),
 +	BCM47XX_GPIO_KEY(8, KEY_RESTART),
@@ -23,10 +29,13 @@
  bcm47xx_buttons_linksys_wrt54g3gv2[] __initconst = {
  	BCM47XX_GPIO_KEY(5, KEY_WIMAX),
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
-@@ -537,6 +543,9 @@ int __init bcm47xx_buttons_register(void
+@@ -537,6 +549,12 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
++	case BCM47XX_BOARD_LINKSYS_WRT310NV2:
++		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310n_v2);
++		break;
 +	case BCM47XX_BOARD_LINKSYS_WRT320N_V1:
 +		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt320n_v1);
 +		break;
