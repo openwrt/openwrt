@@ -12,7 +12,7 @@
 proto_dslite_setup() {
 	local cfg="$1"
 	local iface="$2"
-	local link="dslite-$cfg"
+	local link="ds-$cfg"
 
 	local mtu ttl peeraddr ip6addr tunlink zone weakif
 	json_get_vars mtu ttl peeraddr ip6addr tunlink zone weakif

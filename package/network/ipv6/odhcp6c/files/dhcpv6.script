@@ -122,7 +122,7 @@ setup_interface () {
 	[ -n "$ZONE" ] || ZONE=$(fw3 -q network $INTERFACE)
 
 	if [ "$IFACE_MAP" != 0 -a -n "$MAPTYPE" -a -n "$MAPRULE" ]; then
-		[ -z "$IFACE_MAP" -o "$IFACE_MAP" = 1 ] && IFACE_MAP=${INTERFACE}_map
+		[ -z "$IFACE_MAP" -o "$IFACE_MAP" = 1 ] && IFACE_MAP=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_MAP"
 		json_add_string ifname "@$INTERFACE"
@@ -136,7 +136,7 @@ setup_interface () {
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	elif [ -n "$AFTR" -a "$IFACE_DSLITE" != 0 -a -f /lib/netifd/proto/dslite.sh ]; then
-		[ -z "$IFACE_DSLITE" -o "$IFACE_DSLITE" = 1 ] && IFACE_DSLITE=${INTERFACE}_dslite
+		[ -z "$IFACE_DSLITE" -o "$IFACE_DSLITE" = 1 ] && IFACE_DSLITE=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_DSLITE"
 		json_add_string ifname "@$INTERFACE"
@@ -149,7 +149,7 @@ setup_interface () {
 		json_close_object
 		ubus call network add_dynamic "$(json_dump)"
 	elif [ "$IFACE_464XLAT" != 0 -a -f /lib/netifd/proto/464xlat.sh ]; then
-		[ -z "$IFACE_464XLAT" -o "$IFACE_464XLAT" = 1 ] && IFACE_464XLAT=${INTERFACE}_464xlat
+		[ -z "$IFACE_464XLAT" -o "$IFACE_464XLAT" = 1 ] && IFACE_464XLAT=${INTERFACE}_4
 		json_init
 		json_add_string name "$IFACE_464XLAT"
 		json_add_string ifname "@$INTERFACE"
