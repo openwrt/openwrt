@@ -1,0 +1,75 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Fri, 17 Apr 2015 01:54:51 +0200
+Subject: [PATCH] ash: fix a regression in handling local variables
+
+commit 109ee5d33694a03cda3424b4846584250832ba8e
+"ash: make "locak VAR" unset VAR (bash does that)"
+
+This commit introduced a regression where calling local on an already
+local variable unsets it. This does not match bash behavior.
+
+Update test case to check for this behavior
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/shell/ash.c
++++ b/shell/ash.c
+@@ -8961,6 +8961,21 @@ parse_command_args(char **argv, const ch
+ }
+ #endif
+ 
++static bool
++findlocal(struct var *vp)
++{
++	struct localvar *lvp = localvars;
++
++	while (lvp) {
++		if (lvp->vp == vp)
++			return true;
++
++		lvp = lvp->next;
++	}
++
++	return false;
++}
++
+ /*
+  * Make a variable a local variable.  When a variable is made local, it's
+  * value and flags are saved in a localvar structure.  The saved values
+@@ -9000,7 +9015,7 @@ mklocal(char *name)
+ 			vp->flags |= VSTRFIXED|VTEXTFIXED;
+ 			if (eq)
+ 				setvareq(name, 0);
+-			else
++			else if (!findlocal(vp))
+ 				/* "local VAR" unsets VAR: */
+ 				setvar(name, NULL, 0);
+ 		}
+--- a/shell/ash_test/ash-misc/local1.right
++++ b/shell/ash_test/ash-misc/local1.right
+@@ -1,4 +1,5 @@
+ A1:'A'
+ A2:''
+-A3:''
+-A4:'A'
++A3:'B'
++A4:''
++A5:'A'
+--- a/shell/ash_test/ash-misc/local1.tests
++++ b/shell/ash_test/ash-misc/local1.tests
+@@ -3,9 +3,12 @@ f() {
+ 	local a
+ 	# the above line unsets $a
+ 	echo "A2:'$a'"
+-	unset a
++	a=B
++	local a
+ 	echo "A3:'$a'"
++	unset a
++	echo "A4:'$a'"
+ }
+ echo "A1:'$a'"
+ f
+-echo "A4:'$a'"
++echo "A5:'$a'"
