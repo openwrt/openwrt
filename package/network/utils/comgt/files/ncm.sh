@@ -120,13 +120,13 @@ proto_ncm_setup() {
 	proto_send_update "$interface"
 
 	json_init
-	json_add_string name "${interface}_dhcp"
+	json_add_string name "${interface}_4"
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcp"
 	ubus call network add_dynamic "$(json_dump)"
 
 	json_init
-	json_add_string name "${interface}_dhcpv6"
+	json_add_string name "${interface}_6"
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcpv6"
 	ubus call network add_dynamic "$(json_dump)"
