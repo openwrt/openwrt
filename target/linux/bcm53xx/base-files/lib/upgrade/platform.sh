@@ -133,8 +133,8 @@ platform_pre_upgrade() {
 
 	# Extract trx
 	case "$file_type" in
-		"chk")		trx="/tmp/$1.trx"; platform_extract_trx_from_chk "$1" "$trx";;
-		"cybertan")	trx="/tmp/$1.trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
+		"chk")		trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_chk "$1" "$trx";;
+		"cybertan")	trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
 	esac
 
 	# Extract partitions from trx
@@ -178,8 +178,8 @@ platform_do_upgrade() {
 	}
 
 	case "$file_type" in
-		"chk")		trx="/tmp/$1.trx"; platform_extract_trx_from_chk "$1" "$trx";;
-		"cybertan")	trx="/tmp/$1.trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
+		"chk")		trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_chk "$1" "$trx";;
+		"cybertan")	trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
 	esac
 
 	shift
