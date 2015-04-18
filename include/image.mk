@@ -381,6 +381,7 @@ endef
 
 define Device/Build/kernel
   $(KDIR)/$$(KERNEL_NAME): image_prepare
+	touch $$@
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
   $(BIN_DIR)/$$(KERNEL_IMAGE): $(KDIR)/$$(KERNEL_IMAGE)
 	cp $$^ $$@
