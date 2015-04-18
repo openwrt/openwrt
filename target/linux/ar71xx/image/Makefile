@@ -56,10 +56,20 @@ define Build/mktplinkfw
 		-k $(word 1,$^) \
 		-r $@ \
 		-o $@.new \
+		-j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) \
-		$(if $(findstring sysupgrade,$1),-j -X 0x40000 -s) \
-		$(if $(findstring factory,$1),-j -X 0x40000) \
-		$(if $(findstring initramfs,$1),-s -c)
+		$(if $(findstring sysupgrade,$1),-s)
+	@mv $@.new $@
+endef
+
+# -c combined image
+define Build/mktplinkfw-initramfs
+	$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
+		-k $@ \
+		-o $@.new \
+		-s \
+		-c
 	@mv $@.new $@
 endef
 
@@ -138,7 +148,7 @@ TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 define Device/tplink
   TPLINK_HWREV := 0x1
   KERNEL := kernel-bin | patch-cmdline | lzma
-  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw initramfs
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw-initramfs
   IMAGES := sysupgrade.bin factory.bin
   IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory
