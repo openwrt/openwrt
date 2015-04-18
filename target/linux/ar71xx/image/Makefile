@@ -153,7 +153,7 @@ endef
 define Device/tplink-8mlzma
 $(Device/tplink)
   TPLINK_FLASHLAYOUT := 8Mlzma
-  IMAGE_SIZE := 8000k
+  IMAGE_SIZE := 7936k
 endef
 
 define Device/tl-wdr4300-v1
