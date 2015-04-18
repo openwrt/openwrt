@@ -196,6 +196,331 @@ $(Device/tl-wdr4300-v1)
 endef
 TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-wdr4310-v1 mw4530r-v1
 
+define Device/archer-c5
+    $(Device/tplink-16mlzma)
+    BOARDNAME := ARCHER-C5
+    DEVICE_PROFILE := ARCHERC5
+    TPLINK_HWID := 0xc5000001
+endef
+
+define Device/archer-c7-v1
+    $(Device/tplink-8mlzma)
+    BOARDNAME := ARCHER-C7
+    DEVICE_PROFILE := ARCHERC7V1
+    TPLINK_HWID := 0x75000001
+endef
+
+define Device/archer-c7-v2
+    $(Device/tplink-16mlzma)
+    BOARDNAME := ARCHER-C7
+    DEVICE_PROFILE := ARCHERC7V2
+    TPLINK_HWID := 0xc7000002
+endef
+
+define Device/el-m150
+    $(Device/tplink-8mlzma)
+    BOARDNAME := EL-M150
+    DEVICE_PROFILE := ELM150
+    TPLINK_HWID := 0x01500101
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/el-mini
+    $(Device/tplink-8mlzma)
+    BOARDNAME := EL-MINI
+    DEVICE_PROFILE := ELMINI
+    TPLINK_HWID := 0x01530001
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/gl-inet-6408A-v1
+    $(Device/tplink-8mlzma)
+    BOARDNAME := GL-INET
+    DEVICE_PROFILE := GLINET6408A
+    TPLINK_HWID := 0x08000001
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/gl-inet-6416A-v1
+    $(Device/tplink-16mlzma)
+    BOARDNAME := GL-INET
+    DEVICE_PROFILE := GLINET6416A
+    TPLINK_HWID := 0x08000001
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/mc-mac1200r
+    $(Device/tplink-8mlzma)
+    BOARDNAME := MC-MAC1200R
+    DEVICE_PROFILE := MAC1200R
+    TPLINK_HWID := 0x12000001
+endef
+
+define Device/tl-mr10u-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR10U
+    DEVICE_PROFILE := TLMR10U
+    TPLINK_HWID := 0x00100101
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr11u-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR11U
+    DEVICE_PROFILE := TLMR11UV1
+    TPLINK_HWID := 0x00110101
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr11u-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR11U
+    DEVICE_PROFILE := TLMR11UV2
+    TPLINK_HWID := 0x00110102
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr12u-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR13U
+    DEVICE_PROFILE := TLMR12U
+    TPLINK_HWID := 0x00120101
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr13u-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR13U
+    DEVICE_PROFILE := TLMR13U
+    TPLINK_HWID := 0x00130101
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr3020-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR3020
+    DEVICE_PROFILE := TLMR3020
+    TPLINK_HWID := 0x30200001
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr3040-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR3040
+    DEVICE_PROFILE := TLMR3040V1
+    TPLINK_HWID := 0x30400001
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr3040-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR3040-v2
+    DEVICE_PROFILE := TLMR3040V2
+    TPLINK_HWID := 0x30400002
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr3220-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR3220-v2
+    DEVICE_PROFILE := TLMR3220V2
+    TPLINK_HWID := 0x32200002
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-mr3420-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-MR3420-v2
+    DEVICE_PROFILE := TLMR3420V2
+    TPLINK_HWID := 0x34200002
+endef
+
+define Device/tl-wa701nd-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA701ND-v2
+    DEVICE_PROFILE := TLWA701NV2
+    TPLINK_HWID := 0x07010002
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wa7210n-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA7210N-v2
+    DEVICE_PROFILE := TLWA7210NV2
+    TPLINK_HWID := 0x72100002
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wr703n-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR703N
+    DEVICE_PROFILE := TLWR703
+    TPLINK_HWID := 0x07030101
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wr710n-v1
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WR710N
+    DEVICE_PROFILE := TLWR710
+    TPLINK_HWID := 0x07100001
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wr720n-v3
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR720N-v3
+    DEVICE_PROFILE := TLWR720NV3
+    TPLINK_HWID := 0x07200103
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wr740n-v4
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR741ND-v4
+    DEVICE_PROFILE := TLWR740NV4
+    TPLINK_HWID := 0x07400004
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wr741nd-v4
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR741ND-v4
+    DEVICE_PROFILE := TLWR741NV4
+    TPLINK_HWID := 0x07410004
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wr743nd-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR741ND-v4
+    DEVICE_PROFILE := TLWR743NV2
+    TPLINK_HWID := 0x07430002
+    CONSOLE := ttyATH0,115200
+endef
+
+define Device/tl-wa750re-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA750RE
+    DEVICE_PROFILE := TLWA750
+    TPLINK_HWID := 0x07500001
+endef
+
+define Device/tl-wr841n-v8
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR841N-v8
+    DEVICE_PROFILE := TLWR841NV8
+    TPLINK_HWID := 0x08410008
+endef
+
+define Device/tl-wa830re-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA830RE-v2
+    DEVICE_PROFILE := TLWA830RV2
+    TPLINK_HWID := 0x08300002
+endef
+
+define Device/tl-wr841n-v9
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR841N-v9
+    DEVICE_PROFILE := TLWR841NV9
+    TPLINK_HWID := 0x08410009
+endef
+
+define Device/tl-wr847n-v8
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR841N-v8
+    DEVICE_PROFILE := TLWR847NV8
+    TPLINK_HWID := 0x08470008
+endef
+
+define Device/tl-wr842n-v2
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WR842N-v2
+    DEVICE_PROFILE := TLWR842V2
+    TPLINK_HWID := 0x8420002
+endef
+
+define Device/tl-wr843nd-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR841N-v8
+    DEVICE_PROFILE := TLWR843NV1
+    TPLINK_HWID := 0x08430001
+endef
+
+define Device/tl-wa801nd-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA801ND-v2
+    DEVICE_PROFILE := TLWA801NV2
+    TPLINK_HWID := 0x08010002
+endef
+
+define Device/tl-wa850re-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA850RE
+    DEVICE_PROFILE := TLWA850
+    TPLINK_HWID := 0x08500001
+endef
+
+define Device/tl-wa860re-v1
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA860RE
+    DEVICE_PROFILE := TLWA860
+    TPLINK_HWID := 0x08600001
+endef
+
+define Device/tl-wa901nd-v3
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WA901ND-v3
+    DEVICE_PROFILE := TLWA901NV3
+    TPLINK_HWID := 0x09010003
+endef
+
+define Device/tl-wr941nd-v5
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR941ND-v5
+    DEVICE_PROFILE := TLWR941NV5
+    TPLINK_HWID := 0x09410005
+endef
+
+define Device/tl-wr941nd-v6
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WDR3500
+    DEVICE_PROFILE := TLWR941NV6
+    TPLINK_HWID := 0x09410006
+endef
+
+define Device/tl-wr1041n-v2
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR1041N-v2
+    DEVICE_PROFILE := TLWR1041
+    TPLINK_HWID := 0x10410002
+endef
+
+define Device/tl-wdr4900-v2
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WDR4900-v2
+    DEVICE_PROFILE := TLWDR4900V2
+    TPLINK_HWID := 0x49000002
+endef
+
+define Device/smart-300
+    $(Device/tplink-8mlzma)
+    BOARDNAME := SMART-300
+    DEVICE_PROFILE := SMART-300
+    TPLINK_HWID := 0x93410001
+endef
+
+define Device/oolite
+    $(Device/tplink-16mlzma)
+    BOARDNAME := GS-OOLITE
+    DEVICE_PROFILE := OOLITE
+    TPLINK_HWID := 0x3C000101
+    CONSOLE := ttyATH0,115200
+endef
+
+TARGET_DEVICES += archer-c5 archer-c7-v1 archer-c7-v2 el-m150 el-mini gl-inet-6408A-v1 gl-inet-6416A-v1 mc-mac1200r tl-mr10u-v1 tl-mr11u-v1 tl-mr11u-v2 tl-mr12u-v1 tl-mr13u-v1 tl-mr3020-v1 tl-mr3040-v1 tl-mr3040-v2 tl-mr3220-v2 tl-mr3420-v2 tl-wa701nd-v2 tl-wa7210n-v2 tl-wr703n-v1 tl-wr710n-v1 tl-wr720n-v3 tl-wr740n-v4 tl-wr741nd-v4 tl-wr743nd-v2 tl-wa750re-v1 tl-wr841n-v8 tl-wa830re-v2 tl-wr841n-v9 tl-wr847n-v8 tl-wr842n-v2 tl-wr843nd-v1 tl-wa801nd-v2 tl-wa850re-v1 tl-wa860re-v1 tl-wa901nd-v3 tl-wr941nd-v5 tl-wr941nd-v6 tl-wr1041n-v2 tl-wr2543-v1 tl-wdr4900-v2 smart-300 oolite
+
 rootfs_type=$(patsubst jffs2-%,jffs2,$(patsubst squashfs-%,squashfs,$(1)))
 
 # $(1): rootfs type.
@@ -1461,55 +1786,10 @@ $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV3,tl-wr941nd-v3,TL-WR941ND,tt
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR1043V1,tl-wr1043nd-v1,TL-WR1043ND,ttyS0,115200,0x10430001,1,8M))
 
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ARCHERC5,archer-c5,ARCHER-C5,ttyS0,115200,0xc5000001,1,16Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ARCHERC7V1,archer-c7-v1,ARCHER-C7,ttyS0,115200,0x75000001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ARCHERC7V2,archer-c7-v2,ARCHER-C7,ttyS0,115200,0xc7000002,1,16Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ELM150,el-m150,EL-M150,ttyATH0,115200,0x01500101,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,ELMINI,el-mini,EL-MINI,ttyATH0,115200,0x01530001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,GLINET6408A,gl-inet-6408A-v1,GL-INET,ttyATH0,115200,0x08000001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,GLINET6416A,gl-inet-6416A-v1,GL-INET,ttyATH0,115200,0x08000001,1,16Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,MAC1200R,mc-mac1200r,MC-MAC1200R,ttyS0,115200,0x12000001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR10U,tl-mr10u-v1,TL-MR10U,ttyATH0,115200,0x00100101,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR11UV1,tl-mr11u-v1,TL-MR11U,ttyATH0,115200,0x00110101,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR11UV2,tl-mr11u-v2,TL-MR11U,ttyATH0,115200,0x00110102,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR12U,tl-mr12u-v1,TL-MR13U,ttyATH0,115200,0x00120101,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR13U,tl-mr13u-v1,TL-MR13U,ttyATH0,115200,0x00130101,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR3020,tl-mr3020-v1,TL-MR3020,ttyATH0,115200,0x30200001,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR3040V1,tl-mr3040-v1,TL-MR3040,ttyATH0,115200,0x30400001,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR3040V2,tl-mr3040-v2,TL-MR3040-v2,ttyATH0,115200,0x30400002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR3220V2,tl-mr3220-v2,TL-MR3220-v2,ttyATH0,115200,0x32200002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLMR3420V2,tl-mr3420-v2,TL-MR3420-v2,ttyS0,115200,0x34200002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA701NV2,tl-wa701nd-v2,TL-WA701ND-v2,ttyATH0,115200,0x07010002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA7210NV2,tl-wa7210n-v2,TL-WA7210N-v2,ttyATH0,115200,0x72100002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR703,tl-wr703n-v1,TL-WR703N,ttyATH0,115200,0x07030101,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR710,tl-wr710n-v1,TL-WR710N,ttyATH0,115200,0x07100001,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR720NV3,tl-wr720n-v3,TL-WR720N-v3,ttyATH0,115200,0x07200103,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR740NV4,tl-wr740n-v4,TL-WR741ND-v4,ttyATH0,115200,0x07400004,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR741NV4,tl-wr741nd-v4,TL-WR741ND-v4,ttyATH0,115200,0x07410004,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR743NV2,tl-wr743nd-v2,TL-WR741ND-v4,ttyATH0,115200,0x07430002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA750,tl-wa750re-v1,TL-WA750RE,ttyS0,115200,0x07500001,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR841NV8,tl-wr841n-v8,TL-WR841N-v8,ttyS0,115200,0x08410008,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA830RV2,tl-wa830re-v2,TL-WA830RE-v2,ttyS0,115200,0x08300002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR841NV9,tl-wr841n-v9,TL-WR841N-v9,ttyS0,115200,0x08410009,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR847NV8,tl-wr847n-v8,TL-WR841N-v8,ttyS0,115200,0x08470008,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR842V2,tl-wr842n-v2,TL-WR842N-v2,ttyS0,115200,0x8420002,1,8Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR843NV1,tl-wr843nd-v1,TL-WR841N-v8,ttyS0,115200,0x08430001,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA801NV2,tl-wa801nd-v2,TL-WA801ND-v2,ttyS0,115200,0x08010002,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA850,tl-wa850re-v1,TL-WA850RE,ttyS0,115200,0x08500001,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA860,tl-wa860re-v1,TL-WA860RE,ttyS0,115200,0x08600001,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWA901NV3,tl-wa901nd-v3,TL-WA901ND-v3,ttyS0,115200,0x09010003,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR941NV5,tl-wr941nd-v5,TL-WR941ND-v5,ttyS0,115200,0x09410005,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR941NV6,tl-wr941nd-v6,TL-WDR3500,ttyS0,115200,0x09410006,1,4Mlzma))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR1041,tl-wr1041n-v2,TL-WR1041N-v2,ttyS0,115200,0x10410002,1,4Mlzma))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR1043V2,tl-wr1043nd-v2,TL-WR1043ND-v2,ttyS0,115200,0x10430002,1,8M))
 $(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR2543,tl-wr2543-v1,TL-WR2543N,ttyS0,115200,0x25430001,1,8Mlzma,-v 3.13.99))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWDR4900V2,tl-wdr4900-v2,TL-WDR4900-v2,ttyS0,115200,0x49000002,1,8Mlzma))
 
 $(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,CPE510,ttyS0,115200,$$(cpe510_mtdlayout),CPE510))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,SMART-300,smart-300,SMART-300,ttyS0,115200,0x93410001,1,8Mlzma))
-
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,OOLITE,oolite,GS-OOLITE,ttyATH0,115200,0x3C000101,1,16Mlzma))
 
 $(eval $(call SingleProfile,UAPPRO,64k,UAPPRO,ubnt-uap-pro,UAP-PRO,ttyS0,115200,BZ,BZ,ar934x))
 $(eval $(call SingleProfile,UAPPRO,64k,UBNTUNIFIOUTDOORPLUS,ubnt-unifi-outdoor-plus,UBNT-UOP,ttyS0,115200,BZ,BZ,ar7240))
