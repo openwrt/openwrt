@@ -156,6 +156,12 @@ $(Device/tplink)
   IMAGE_SIZE := 7936k
 endef
 
+define Device/tplink-16mlzma
+$(Device/tplink)
+  TPLINK_FLASHLAYOUT := 16Mlzma
+  IMAGE_SIZE := 15872k
+endef
+
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)
   BOARDNAME = TL-WDR4300
