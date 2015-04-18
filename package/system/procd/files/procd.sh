@@ -415,7 +415,6 @@ _procd_wrapper \
 	procd_add_interface_trigger \
 	procd_add_reload_trigger \
 	procd_add_reload_interface_trigger \
-	procd_add_interface_reload \
 	procd_open_trigger \
 	procd_close_trigger \
 	procd_open_instance \
