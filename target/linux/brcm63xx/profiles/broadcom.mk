@@ -15,7 +15,7 @@ endef
 $(eval $(call Profile,BCM96318REF))
 
 define Profile/BCM96318REF_P300
-  NAME:=Broadcom BCM96328BU_P300 reference board
+  NAME:=Broadcom BCM96318REF_P300 reference board
   PACKAGES:= kmod-b43 wpad-mini kmod-usb-ohci kmod-usb2 kmod-bcm63xx-udc
 endef
 define Profile/BCM96318REF_P300/Description
