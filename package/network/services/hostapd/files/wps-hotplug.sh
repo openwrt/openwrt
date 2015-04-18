@@ -1,8 +1,9 @@
 #!/bin/sh
 
 if [ "$ACTION" = "pressed" -a "$BUTTON" = "wps" ]; then
-	for dir in /var/run/hostapd*; do
-		[ -d "$dir" ] || continue
-		hostapd_cli -p "$dir" wps_pbc
+	cd /var/run/hostapd
+	for socket in *; do
+		[ -S "$socket" ] || continue
+		hostapd_cli -i "$socket" wps_pbc
 	done
 fi
