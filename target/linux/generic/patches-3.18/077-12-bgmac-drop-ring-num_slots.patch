@@ -65,7 +65,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	dma_free_coherent(dma_dev, size, ring->cpu_base,
  			  ring->dma_base);
  }
-@@ -590,10 +591,12 @@ static void bgmac_dma_free(struct bgmac 
+@@ -590,10 +591,12 @@ static void bgmac_dma_free(struct bgmac
  	int i;
  
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++)
@@ -80,7 +80,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
  
  static int bgmac_dma_alloc(struct bgmac *bgmac)
-@@ -616,11 +619,10 @@ static int bgmac_dma_alloc(struct bgmac 
+@@ -616,11 +619,10 @@ static int bgmac_dma_alloc(struct bgmac
  
  	for (i = 0; i < BGMAC_MAX_TX_RINGS; i++) {
  		ring = &bgmac->tx_ring[i];
@@ -93,7 +93,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		ring->cpu_base = dma_zalloc_coherent(dma_dev, size,
  						     &ring->dma_base,
  						     GFP_KERNEL);
-@@ -642,11 +644,10 @@ static int bgmac_dma_alloc(struct bgmac 
+@@ -642,11 +644,10 @@ static int bgmac_dma_alloc(struct bgmac
  
  	for (i = 0; i < BGMAC_MAX_RX_RINGS; i++) {
  		ring = &bgmac->rx_ring[i];

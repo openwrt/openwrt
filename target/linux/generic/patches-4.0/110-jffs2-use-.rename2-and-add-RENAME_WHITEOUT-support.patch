@@ -67,7 +67,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	 * file over a directory and vice versa, but if it's a directory,
  	 * the VFS can't check whether the victim is empty. The filesystem
 @@ -828,9 +850,14 @@ static int jffs2_rename (struct inode *o
- 	if (S_ISDIR(old_dentry->d_inode->i_mode) && !victim_f)
+ 	if (d_is_dir(old_dentry) && !victim_f)
  		inc_nlink(new_dir_i);
  
 -	/* Unlink the original */
