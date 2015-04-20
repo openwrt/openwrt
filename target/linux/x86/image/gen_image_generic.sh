@@ -23,17 +23,15 @@ cyl=$(( ($KERNELSIZE + $ROOTFSSIZE) * 1024 * 1024 / ($head * $sect * 512)))
 set `ptgen -o "$OUTPUT" -h $head -s $sect -p ${KERNELSIZE}m -p ${ROOTFSSIZE}m ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE}`
 
 KERNELOFFSET="$(($1 / 512))"
-KERNELSIZE="$(($2 / 512))"
+KERNELSIZE="$2"
 ROOTFSOFFSET="$(($3 / 512))"
 ROOTFSSIZE="$(($4 / 512))"
-
-BLOCKS="$((($KERNELSIZE / 2) - 1))"
 
 [ -n "$PADDING" ] && dd if=/dev/zero of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc count="$ROOTFSSIZE"
 dd if="$ROOTFSIMAGE" of="$OUTPUT" bs=512 seek="$ROOTFSOFFSET" conv=notrunc
 
 [ -n "$NOGRUB" ] && exit 0
 
-genext2fs -d "$KERNELDIR" -b "$BLOCKS" "$OUTPUT.kernel"
+make_ext4fs -J -l "$KERNELSIZE" "$OUTPUT.kernel" "$KERNELDIR"
 dd if="$OUTPUT.kernel" of="$OUTPUT" bs=512 seek="$KERNELOFFSET" conv=notrunc
 rm -f "$OUTPUT.kernel"
