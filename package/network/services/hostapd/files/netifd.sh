@@ -546,7 +546,7 @@ wpa_supplicant_add_network() {
 	local T="	"
 
 	local wpa_key_mgmt="WPA-PSK"
-	local scan_ssid="1"
+	local scan_ssid="scan_ssid=1"
 	local freq
 
 	[[ "$_w_mode" = "adhoc" ]] && {
@@ -557,12 +557,22 @@ wpa_supplicant_add_network() {
 			append network_data "frequency=$freq" "$N$T"
 		}
 
-		scan_ssid=0
+		scan_ssid="scan_ssid=0"
 
 		[ "$_w_driver" = "nl80211" ] ||	wpa_key_mgmt="WPA-NONE"
 	}
 
-	[[ "$_w_mode" = adhoc ]] && append network_data "$_w_modestr" "$N$T"
+	[[ "$_w_mode" = "mesh" ]] && {
+		append network_data "mode=5" "$N$T"
+		[ -n "$channel" ] && {
+			freq="$(get_freq "$phy" "$channel")"
+			append network_data "frequency=$freq" "$N$T"
+		}
+		wpa_key_mgmt="SAE"
+		scan_ssid=""
+	}
+
+	[[ "$_w_mode" = "adhoc" -o "$_w_mode" = "mesh" ]] && append network_data "$_w_modestr" "$N$T"
 
 	case "$auth_type" in
 		none) ;;
@@ -606,21 +616,22 @@ wpa_supplicant_add_network() {
 		;;
 	esac
 
-	case "$wpa" in
-		1)
-			append network_data "proto=WPA" "$N$T"
-		;;
-		2)
-			append network_data "proto=RSN" "$N$T"
-		;;
-	esac
+	[ "$mode" = mesh ] || {
+		case "$wpa" in
+			1)
+				append network_data "proto=WPA" "$N$T"
+			;;
+			2)
+				append network_data "proto=RSN" "$N$T"
+			;;
+		esac
 
-	case "$ieee80211w" in
-		[012])
-			[ "$wpa" -ge 2 ] && append network_data "ieee80211w=$ieee80211w" "$N$T"
-		;;
-	esac
-
+		case "$ieee80211w" in
+			[012])
+				[ "$wpa" -ge 2 ] && append network_data "ieee80211w=$ieee80211w" "$N$T"
+			;;
+		esac
+	}
 	local beacon_int brates mrate
 	[ -n "$bssid" ] && append network_data "bssid=$bssid" "$N$T"
 	[ -n "$beacon_int" ] && append network_data "beacon_int=$beacon_int" "$N$T"
@@ -652,7 +663,7 @@ wpa_supplicant_add_network() {
 
 	cat >> "$_config" <<EOF
 network={
-	scan_ssid=$scan_ssid
+	$scan_ssid
 	ssid="$ssid"
 	key_mgmt=$key_mgmt
 	$network_data
