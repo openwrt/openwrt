@@ -70,7 +70,7 @@
  };
 --- a/lib/utils.c
 +++ b/lib/utils.c
-@@ -630,6 +630,7 @@ const char *rt_addr_n2a(int af, const vo
+@@ -642,6 +642,7 @@ const char *rt_addr_n2a(int af, const vo
  	case AF_INET:
  	case AF_INET6:
  		return inet_ntop(af, addr, buf, buflen);
@@ -78,7 +78,7 @@
  	case AF_IPX:
  		return ipx_ntop(af, addr, buf, buflen);
  	case AF_DECnet:
-@@ -638,6 +639,7 @@ const char *rt_addr_n2a(int af, const vo
+@@ -650,6 +651,7 @@ const char *rt_addr_n2a(int af, const vo
  		memcpy(dna.a_addr, addr, 2);
  		return dnet_ntop(af, &dna, buf, buflen);
  	}
@@ -86,22 +86,6 @@
  	default:
  		return "???";
  	}
-@@ -713,6 +715,7 @@ const char *format_host(int af, int len,
- 			case AF_INET6:
- 				len = 16;
- 				break;
-+#ifndef IPROUTE2_TINY
- 			case AF_IPX:
- 				len = 10;
- 				break;
-@@ -723,6 +726,7 @@ const char *format_host(int af, int len,
- 				len = 2;
- 				break;
- #endif
-+#endif
- 			default: ;
- 			}
- 		}
 --- a/lib/Makefile
 +++ b/lib/Makefile
 @@ -4,6 +4,10 @@ ifeq ($(IP_CONFIG_SETNS),y)
@@ -114,4 +98,4 @@
 +
  CFLAGS += $(FPIC)
  
- UTILOBJ=utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o inet_proto.o namespace.o
+ UTILOBJ=utils.o rt_names.o ll_types.o ll_proto.o ll_addr.o inet_proto.o namespace.o \
