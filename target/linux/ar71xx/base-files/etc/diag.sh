@@ -296,6 +296,9 @@ get_status_led() {
 	wp543)
 		status_led="wp543:green:diag"
 		;;
+	wpj344)
+		status_led="wpj344:green:status"
+		;;
 	wpj558)
 		status_led="wpj558:green:sig3"
 		;;
