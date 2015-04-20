@@ -200,7 +200,6 @@ $(eval $(call nf_add,IPT_NAT_EXTRA,CONFIG_IP_NF_TARGET_NETMAP, $(P_XT)xt_NETMAP)
 
 # nathelper
 
-$(eval $(call nf_add,NF_NATHELPER,CONFIG_IP_NF_NAT_FTP, $(P_V4)ip_nat_ftp))
 $(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_CONNTRACK_FTP, $(P_XT)nf_conntrack_ftp))
 $(eval $(call nf_add,NF_NATHELPER,CONFIG_NF_NAT_FTP, $(P_XT)nf_nat_ftp))
 
