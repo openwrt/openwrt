@@ -231,15 +231,15 @@ define Image/mkfs/targz
 	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)$(if $(PROFILE),-$(PROFILE))-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 endef
 
-E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024/$(CONFIG_TARGET_EXT4_BLOCKSIZE))))
+E2SIZE=$(shell echo $$(($(CONFIG_TARGET_ROOTFS_PARTSIZE)*1024*1024)))
 
 define Image/mkfs/ext4
-# generate an ext2 fs
-	$(STAGING_DIR_HOST)/bin/genext2fs -U -B $(CONFIG_TARGET_EXT4_BLOCKSIZE) -b $(E2SIZE) -N $(CONFIG_TARGET_EXT4_MAXINODE) -d $(TARGET_DIR)/ $(KDIR)/root.ext4 -m $(CONFIG_TARGET_EXT4_RESERVED_PCT) $(MKFS_DEVTABLE_OPT)
-# convert it to ext4
-	$(STAGING_DIR_HOST)/bin/tune2fs $(if $(CONFIG_TARGET_EXT4_JOURNAL),-j) -O extents,uninit_bg,dir_index $(KDIR)/root.ext4
-# fix it up
-	$(STAGING_DIR_HOST)/bin/e2fsck -fy $(KDIR)/root.ext4
+	$(STAGING_DIR_HOST)/bin/make_ext4fs \
+		-l $(E2SIZE) -b $(CONFIG_TARGET_EXT4_BLOCKSIZE) \
+		-i $(CONFIG_TARGET_EXT4_MAXINODE) \
+		-m $(CONFIG_TARGET_EXT4_RESERVED_PCT) \
+		$(if $(CONFIG_TARGET_EXT4_JOURNAL),,-J) \
+		$(KDIR)/root.ext4 $(TARGET_DIR)/
 endef
 
 define Image/mkfs/prepare/default
