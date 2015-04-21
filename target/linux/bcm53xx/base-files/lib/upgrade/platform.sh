@@ -141,7 +141,10 @@ platform_pre_upgrade() {
 
 	# Firmwares without UBI image should be flashed "normally"
 	local root_type=$(identify $dir/root)
-	[ "$root_type" != "ubi" ] && return
+	[ "$root_type" != "ubi" ] && {
+		echo "Provided firmware doesn't use UBI for rootfs."
+		return
+	}
 
 	# Prepare TRX file with just a kernel that will replace current one
 	local linux_length=$(grep "\"linux\"" /proc/mtd | sed "s/mtd[0-9]*:[ \t]*\([^ \t]*\).*/\1/")
@@ -174,7 +177,7 @@ platform_do_upgrade() {
 	local trx="$1"
 
 	[ "$(platform_flash_type)" == "nand" ] && {
-		echo "Flashing firmware without UBI for rootfs. All erase counters will be lost."
+		echo "Writing whole image to NAND flash. All erase counters will be lost."
 	}
 
 	case "$file_type" in
