@@ -57,11 +57,6 @@ platform_identify() {
 platform_check_image() {
 	[ "$#" -gt 1 ] && return 1
 
-	[ "$(platform_flash_type)" = "nand" ] && {
-		echo "Firmware upgrade on NAND devices is not implemented."
-		return 1
-	}
-
 	local file_type=$(platform_identify "$1")
 	local magic
 	local error=0
