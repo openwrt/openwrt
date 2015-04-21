@@ -10,7 +10,7 @@ PKG_LICENSE_FILES:=
 PKG_SOURCE_URL:=https://github.com/openwrt/mt76
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_SOURCE_VERSION:=a94e01211aed8eac39331bc030fd3474357f05e0
+PKG_SOURCE_VERSION:=d637dc05ab56d103908d50353d9020f119611163
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.xz
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
@@ -46,8 +46,10 @@ endef
 
 define KernelPackage/mt76/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(CP) $(PKG_BUILD_DIR)/firmware/mt7662_patch_e3_hdr_v0.0.2_P48.bin $(1)/lib/firmware/mt7662_rom_patch.bin
-	$(CP) $(PKG_BUILD_DIR)/firmware/mt7662_firmware_e3_v1.5.bin $(1)/lib/firmware/mt7662.bin
+	cp \
+		$(PKG_BUILD_DIR)/firmware/mt7662_rom_patch.bin \
+		$(PKG_BUILD_DIR)/firmware/mt7662.bin \
+		$(1)/lib/firmware
 endef
 
 $(eval $(call KernelPackage,mt76))
