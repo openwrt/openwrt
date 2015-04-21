@@ -621,6 +621,9 @@ ar71xx_board_detect() {
 	*"Rocket M")
 		name="rocket-m"
 		;;
+	*"Rocket M XW")
+		name="rocket-m-xw"
+		;;
 	*RouterStation)
 		name="routerstation"
 		;;

@@ -225,6 +225,7 @@ platform_check_image() {
 	loco-m-xw | \
 	nanostation-m | \
 	rocket-m | \
+	rocket-m-xw | \
 	nanostation-m-xw | \
 	rw2458n | \
 	wndap360 | \
