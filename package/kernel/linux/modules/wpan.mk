@@ -32,11 +32,10 @@ $(eval $(call KernelPackage,ieee802154))
 define KernelPackage/mac802154
   SUBMENU:=$(WPAN_MENU)
   TITLE:=MAC-802.15.4 support
-  DEPENDS:=@LINUX_4_0
+  DEPENDS:=+kmod-ieee802154 +kmod-crypto-aead +kmod-lib-crc-ccitt @LINUX_4_0
   KCONFIG:= \
 	CONFIG_MAC802154 \
 	CONFIG_IEEE802154_DRIVERS=y
-  DEPENDS:=+kmod-ieee802154 +kmod-crypto-aead +kmod-lib-crc-ccitt @LINUX_4_0
   FILES:=$(LINUX_DIR)/net/mac802154/mac802154.ko
   AUTOLOAD:=$(call AutoLoad,91,mac802154)
 endef
