@@ -63,28 +63,24 @@
  };
  
  static struct gpio_keys_button db120_gpio_keys[] __initdata = {
-@@ -76,66 +93,85 @@ static struct gpio_keys_button db120_gpi
+@@ -76,60 +93,85 @@ static struct gpio_keys_button db120_gpi
  	},
  };
  
--static struct ath79_spi_controller_data db120_spi0_data = {
--	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
--	.cs_line = 0,
 +static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
 +	.mode = AR8327_PAD_MAC_RGMII,
 +	.txclk_delay_en = true,
 +	.rxclk_delay_en = true,
 +	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
 +	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
- };
- 
++};
++
 -static struct spi_board_info db120_spi_info[] = {
 -	{
 -		.bus_num	= 0,
 -		.chip_select	= 0,
 -		.max_speed_hz	= 25000000,
 -		.modalias	= "s25sl064a",
--		.controller_data = &db120_spi0_data,
 -	}
 +static struct ar8327_led_cfg db120_ar8327_led_cfg = {
 +	.led_ctrl0 = 0x00000000,
