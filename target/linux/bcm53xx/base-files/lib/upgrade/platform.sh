@@ -162,7 +162,6 @@ platform_pre_upgrade() {
 	while [ "$(dd if=$dir/root skip=$ubi_length bs=1 count=4 2>/dev/null)" = "UBI#" ]; do
 		ubi_length=$(($ubi_length + 131072))
 	done
-	echo "ubi_length: $ubi_length"
 	dd if=$dir/root of=/tmp/root.ubi bs=131072 count=$((ubi_length / 131072)) 2>/dev/null
 
 	# Flash
