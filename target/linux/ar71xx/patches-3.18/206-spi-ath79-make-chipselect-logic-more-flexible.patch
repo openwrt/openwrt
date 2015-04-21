@@ -5,79 +5,11 @@ Subject: [PATCH 34/34] spi/ath79: make chipselect logic more flexible
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- arch/mips/ath79/mach-ap121.c                       |    6 ++
- arch/mips/ath79/mach-ap136.c                       |    6 ++
- arch/mips/ath79/mach-ap81.c                        |    6 ++
- arch/mips/ath79/mach-db120.c                       |    6 ++
  arch/mips/ath79/mach-pb44.c                        |    6 ++
- arch/mips/ath79/mach-ubnt-xm.c                     |    6 ++
  .../include/asm/mach-ath79/ath79_spi_platform.h    |    8 ++-
  drivers/spi/spi-ath79.c                            |   67 +++++++++++++-------
  8 files changed, 88 insertions(+), 23 deletions(-)
 
---- a/arch/mips/ath79/mach-ap121.c
-+++ b/arch/mips/ath79/mach-ap121.c
-@@ -58,12 +58,18 @@ static struct gpio_keys_button ap121_gpi
- 	}
- };
- 
-+static struct ath79_spi_controller_data ap121_spi0_data = {
-+	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-+	.cs_line = 0,
-+};
-+
- static struct spi_board_info ap121_spi_info[] = {
- 	{
- 		.bus_num	= 0,
- 		.chip_select	= 0,
- 		.max_speed_hz	= 25000000,
- 		.modalias	= "mx25l1606e",
-+		.controller_data = &ap121_spi0_data,
- 	}
- };
- 
---- a/arch/mips/ath79/mach-ap136.c
-+++ b/arch/mips/ath79/mach-ap136.c
-@@ -98,12 +98,18 @@ static struct gpio_keys_button ap136_gpi
- 	},
- };
- 
-+static struct ath79_spi_controller_data ap136_spi0_data = {
-+	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-+	.cs_line = 0,
-+};
-+
- static struct spi_board_info ap136_spi_info[] = {
- 	{
- 		.bus_num	= 0,
- 		.chip_select	= 0,
- 		.max_speed_hz	= 25000000,
- 		.modalias	= "mx25l6405d",
-+		.controller_data = &ap136_spi0_data,
- 	}
- };
- 
---- a/arch/mips/ath79/mach-db120.c
-+++ b/arch/mips/ath79/mach-db120.c
-@@ -76,12 +76,18 @@ static struct gpio_keys_button db120_gpi
- 	},
- };
- 
-+static struct ath79_spi_controller_data db120_spi0_data = {
-+	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-+	.cs_line = 0,
-+};
-+
- static struct spi_board_info db120_spi_info[] = {
- 	{
- 		.bus_num	= 0,
- 		.chip_select	= 0,
- 		.max_speed_hz	= 25000000,
- 		.modalias	= "s25sl064a",
-+		.controller_data = &db120_spi0_data,
- 	}
- };
- 
 --- a/arch/mips/ath79/mach-pb44.c
 +++ b/arch/mips/ath79/mach-pb44.c
 @@ -87,12 +87,18 @@ static struct gpio_keys_button pb44_gpio
@@ -97,27 +29,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		.modalias	= "m25p64",
 +		.controller_data = &pb44_spi0_data,
  	},
- };
- 
---- a/arch/mips/ath79/mach-ubnt-xm.c
-+++ b/arch/mips/ath79/mach-ubnt-xm.c
-@@ -65,12 +65,18 @@ static struct gpio_keys_button ubnt_xm_g
- 	}
- };
- 
-+static struct ath79_spi_controller_data ubnt_xm_spi0_data = {
-+	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-+	.cs_line = 0,
-+};
-+
- static struct spi_board_info ubnt_xm_spi_info[] = {
- 	{
- 		.bus_num	= 0,
- 		.chip_select	= 0,
- 		.max_speed_hz	= 25000000,
- 		.modalias	= "mx25l6405d",
-+		.controller_data = &ubnt_xm_spi0_data,
- 	}
  };
  
 --- a/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
