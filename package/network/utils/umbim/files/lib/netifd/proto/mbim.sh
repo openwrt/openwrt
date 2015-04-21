@@ -19,7 +19,7 @@ proto_mbim_init_config() {
 	proto_config_add_string password
 }
 
-proto_mbim_setup() {
+_proto_mbim_setup() {
 	local interface="$1"
 	local tid=2
 	local ret
@@ -138,6 +138,20 @@ proto_mbim_setup() {
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcpv6"
 	ubus call network add_dynamic "$(json_dump)"
+}
+
+proto_mbim_setup() {
+	local ret
+
+	_proto_mbim_setup $@
+	ret=$?
+
+	[ "$ret" = 0 ] || {
+		logger "mbim bringup failed, retry in 15s"
+		sleep 15
+	}
+
+	return $rt
 }
 
 proto_mbim_teardown() {
