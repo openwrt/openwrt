@@ -22,6 +22,7 @@ endef
 define Image/BuildKernel
 	$(CP) $(LINUX_DIR)/vmlinux $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
 	$(call Image/BuildKernel/FIT,qcom-ipq8064-ap148)
+	$(call Image/BuildKernel/FIT,qcom-ipq8064-db149)
 endef
 
 define Image/Build/squashfs
