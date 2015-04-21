@@ -15,7 +15,7 @@ define KernelPackage/ieee802154
 	CONFIG_IEEE802154_SOCKET=y
   FILES:= \
 	$(LINUX_DIR)/net/ieee802154/ieee802154.ko \
-	$(LINUX_DIR)/net/ieee802154/ieee802154_socket.ko
+	$(LINUX_DIR)/net/ieee802154/ieee802154_socket.ko@ge4.0
   AUTOLOAD:=$(call AutoLoad,90,ieee802154 ieee802154_socket)
 endef
 
@@ -108,9 +108,11 @@ $(eval $(call KernelPackage,cc2520))
 define KernelPackage/ieee802154_6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
-  DEPENDS:=@LINUX_4_0
+  DEPENDS:=@LINUX_4_0 +kmod-6lowpan
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
-  FILES:=$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko
+  FILES:= \
+	$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko@ge4.0 \
+	$(LINUX_DIR)/net/ieee802154/ieee802154_6lowpan.ko@lt4.0
   AUTOLOAD:=$(call AutoLoad,91,ieee802154_6lowpan)
 endef
 
