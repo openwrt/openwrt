@@ -31,12 +31,14 @@ define Build/mkfs/squashfs
 endef
 
 define Build/trx-nand
+	# kernel: always use 4 MiB (-28 B or TRX header) to allow upgrades even
+	#	  if it grows up between releases
 	$(STAGING_DIR_HOST)/bin/trx \
 		-o $@ \
 		-m 33554432 \
-		-f $(word 1,$^) \
-		-a 0x20000 -f $(KDIR)/root-block-0x20000-min-0x800.ubi \
-		-a 0x20000 -A $(KDIR)/fs_mark
+		-f $(word 1,$^) -a 0x20000 -b 0x400000 \
+		-f $(KDIR)/root-block-0x20000-min-0x800.ubi -a 0x20000 \
+		-A $(KDIR)/fs_mark
 endef
 
 define Build/netgear-chk
