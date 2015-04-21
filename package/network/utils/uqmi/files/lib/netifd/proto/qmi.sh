@@ -34,7 +34,7 @@ qmi_wds_release() {
 	uci_revert_state network $interface cid
 }
 
-proto_qmi_setup() {
+_proto_qmi_setup() {
 	local interface="$1"
 
 	local device apn auth username password pincode delay modes cid pdh
@@ -130,6 +130,20 @@ proto_qmi_setup() {
 	json_add_string proto "dhcpv6"
 	json_close_object
 	ubus call network add_dynamic "$(json_dump)"
+}
+
+proto_qmi_setup() {
+	local ret
+
+	_proto_qmi_setup $@
+	ret=$?
+
+	[ "$ret" = 0 ] || {
+		logger "qmi bringup failed, retry in 15s"
+		sleep 15
+	}
+
+	return $rt
 }
 
 proto_qmi_teardown() {
