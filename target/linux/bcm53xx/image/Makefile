@@ -34,6 +34,13 @@ define Build/mkfs/squashfs
 	( cd $(KDIR); $(STAGING_DIR_HOST)/bin/ubinize -p 128KiB -m 2048 -o $(KDIR)/root-block-0x20000-min-0x800.ubi ubinize.cfg )
 endef
 
+define Build/trx-serial
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $@ \
+		-f $(word 1,$^) -a 1024 \
+		-f $(KDIR)/root.squashfs -a 0x10000 -A $(KDIR)/fs_mark
+endef
+
 define Build/trx-nand
 	# kernel: always use 4 MiB (-28 B or TRX header) to allow upgrades even
 	#	  if it grows up between releases
