@@ -57,27 +57,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	}
  };
  
---- a/arch/mips/ath79/mach-ap81.c
-+++ b/arch/mips/ath79/mach-ap81.c
-@@ -67,12 +67,18 @@ static struct gpio_keys_button ap81_gpio
- 	}
- };
- 
-+static struct ath79_spi_controller_data ap81_spi0_data = {
-+	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
-+	.cs_line = 0,
-+};
-+
- static struct spi_board_info ap81_spi_info[] = {
- 	{
- 		.bus_num	= 0,
- 		.chip_select	= 0,
- 		.max_speed_hz	= 25000000,
- 		.modalias	= "m25p64",
-+		.controller_data = &ap81_spi0_data,
- 	}
- };
- 
 --- a/arch/mips/ath79/mach-db120.c
 +++ b/arch/mips/ath79/mach-db120.c
 @@ -76,12 +76,18 @@ static struct gpio_keys_button db120_gpi
