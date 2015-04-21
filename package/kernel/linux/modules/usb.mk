@@ -838,21 +838,6 @@ endef
 $(eval $(call KernelPackage,usb-serial-sierrawireless))
 
 
-define KernelPackage/usb-serial-motorola-phone
-  TITLE:=Support for Motorola usb phone
-  KCONFIG:=CONFIG_USB_SERIAL_MOTOROLA
-  FILES:=$(LINUX_DIR)/drivers/usb/serial/moto_modem.ko
-  AUTOLOAD:=$(call AutoProbe,moto_modem)
-  $(call AddDepends/usb-serial)
-endef
-
-define KernelPackage/usb-serial-motorola-phone/description
- Kernel support for Motorola usb phone
-endef
-
-$(eval $(call KernelPackage,usb-serial-motorola-phone))
-
-
 define KernelPackage/usb-serial-visor
   TITLE:=Support for Handspring Visor devices
   KCONFIG:=CONFIG_USB_SERIAL_VISOR
