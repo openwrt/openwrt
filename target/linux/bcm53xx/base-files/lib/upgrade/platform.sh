@@ -148,9 +148,6 @@ platform_pre_upgrade() {
 	local root_type=$(identify $dir/root)
 	[ "$root_type" != "ubi" ] && return
 
-	echo "Provided firmware contains kernel and UBI image, but flashing it is unsupported yet"
-	exit 1
-
 	# Prepare TRX file with just a kernel that will replace current one
 	local linux_length=$(grep "\"linux\"" /proc/mtd | sed "s/mtd[0-9]*:[ \t]*\([^ \t]*\).*/\1/")
 	[ -z "$linux_length" ] && {
@@ -165,8 +162,17 @@ platform_pre_upgrade() {
 		-f $dir/kernel -b $linux_length \
 		-f /tmp/null.bin
 
+	# Prepare UBI image (drop unwanted extra blocks)
+	local ubi_length=0
+	while [ "$(dd if=$dir/root skip=$ubi_length bs=1 count=4 2>/dev/null)" = "UBI#" ]; do
+		ubi_length=$(($ubi_length + 131072))
+	done
+	echo "ubi_length: $ubi_length"
+	dd if=$dir/root of=/tmp/root.ubi bs=131072 count=$((ubi_length / 131072)) 2>/dev/null
+
 	# Flash
 	mtd write /tmp/kernel.trx firmware
+	nand_do_upgrade /tmp/root.ubi
 }
 
 platform_do_upgrade() {
