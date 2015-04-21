@@ -14,6 +14,10 @@ define Image/Prepare
 	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/fs_mark
 	$(call prepare_generic_squashfs,$(KDIR)/fs_mark)
 
+	# For UBI we want only one extra block
+	rm -f $(KDIR)/ubi_mark
+	echo -ne '\xde\xad\xc0\xde' > $(KDIR)/ubi_mark
+
 	$(CP) ./ubinize.cfg $(KDIR)
 endef
 
@@ -33,12 +37,14 @@ endef
 define Build/trx-nand
 	# kernel: always use 4 MiB (-28 B or TRX header) to allow upgrades even
 	#	  if it grows up between releases
+	# root: UBI with one extra block containing UBI mark to trigger erasing
+	#	rest of partition
 	$(STAGING_DIR_HOST)/bin/trx \
 		-o $@ \
 		-m 33554432 \
 		-f $(word 1,$^) -a 0x20000 -b 0x400000 \
-		-f $(KDIR)/root-block-0x20000-min-0x800.ubi -a 0x20000 \
-		-A $(KDIR)/fs_mark
+		-f $(KDIR)/root-block-0x20000-min-0x800.ubi \
+		-A $(KDIR)/ubi_mark -a 0x20000
 endef
 
 define Build/netgear-chk
