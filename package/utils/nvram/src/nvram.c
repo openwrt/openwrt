@@ -18,7 +18,8 @@
 	printf("%s(%i) in %s(): %s\n", \
 		__FILE__, __LINE__, __FUNCTION__, msg ? msg : "?")
 
-size_t nvram_erase_size = 0;
+/* Size of "nvram" MTD partition */
+size_t nvram_part_size = 0;
 
 
 /*
@@ -345,10 +346,10 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 	int offset = -1;
 
 	/* If erase size or file are undefined then try to define them */
-	if( (nvram_erase_size == 0) || (file == NULL) )
+	if( (nvram_part_size == 0) || (file == NULL) )
 	{
 		/* Finding the mtd will set the appropriate erase size */
-		if( (mtd = nvram_find_mtd()) == NULL || nvram_erase_size == 0 )
+		if( (mtd = nvram_find_mtd()) == NULL || nvram_part_size == 0 )
 		{
 			free(mtd);
 			return NULL;
@@ -358,12 +359,12 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 	if( (fd = open(file ? file : mtd, O_RDWR)) > -1 )
 	{
 		char *mmap_area = (char *) mmap(
-			NULL, nvram_erase_size, PROT_READ | PROT_WRITE,
+			NULL, nvram_part_size, PROT_READ | PROT_WRITE,
 			(( rdonly == NVRAM_RO ) ? MAP_PRIVATE : MAP_SHARED) | MAP_LOCKED, fd, 0);
 
 		if( mmap_area != MAP_FAILED )
 		{
-			for( i = 0; i <= ((nvram_erase_size - NVRAM_SPACE) / sizeof(uint32_t)); i++ )
+			for( i = 0; i <= ((nvram_part_size - NVRAM_SPACE) / sizeof(uint32_t)); i++ )
 			{
 				if( ((uint32_t *)mmap_area)[i] == NVRAM_MAGIC )
 				{
@@ -383,7 +384,7 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 				h->fd     = fd;
 				h->mmap   = mmap_area;
-				h->length = nvram_erase_size;
+				h->length = nvram_part_size;
 				h->offset = offset;
 
 				header = nvram_header(h);
@@ -422,7 +423,7 @@ int nvram_close(nvram_handle_t *h)
 char * nvram_find_mtd(void)
 {
 	FILE *fp;
-	int i, esz;
+	int i, part_size;
 	char dev[PATH_MAX];
 	char *path = NULL;
 	struct stat s;
@@ -441,9 +442,9 @@ char * nvram_find_mtd(void)
 	{
 		while( fgets(dev, sizeof(dev), fp) )
 		{
-			if( strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &esz) )
+			if( strstr(dev, "nvram") && sscanf(dev, "mtd%d: %08x", &i, &part_size) )
 			{
-				nvram_erase_size = esz;
+				nvram_part_size = part_size;
 
 				sprintf(dev, "/dev/mtdblock%d", i);
 				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
@@ -480,11 +481,11 @@ int nvram_to_staging(void)
 {
 	int fdmtd, fdstg, stat;
 	char *mtd = nvram_find_mtd();
-	char buf[nvram_erase_size];
+	char buf[nvram_part_size];
 
 	stat = -1;
 
-	if( (mtd != NULL) && (nvram_erase_size > 0) )
+	if( (mtd != NULL) && (nvram_part_size > 0) )
 	{
 		if( (fdmtd = open(mtd, O_RDONLY)) > -1 )
 		{
@@ -513,11 +514,11 @@ int staging_to_nvram(void)
 {
 	int fdmtd, fdstg, stat;
 	char *mtd = nvram_find_mtd();
-	char buf[nvram_erase_size];
+	char buf[nvram_part_size];
 
 	stat = -1;
 
-	if( (mtd != NULL) && (nvram_erase_size > 0) )
+	if( (mtd != NULL) && (nvram_part_size > 0) )
 	{
 		if( (fdstg = open(NVRAM_STAGING, O_RDONLY)) > -1 )
 		{
