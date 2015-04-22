@@ -113,7 +113,7 @@ char * nvram_find_staging(void);
 #define	NVRAM_ROUNDUP(x, y)	((((x)+((y)-1))/(y))*(y))
 
 /* NVRAM constants */
-#define NVRAM_SPACE			0x8000
+#define NVRAM_SPACE			0x10000
 #define NVRAM_MAGIC			0x48534C46	/* 'FLSH' */
 #define NVRAM_VERSION		1
 
