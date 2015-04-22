@@ -389,8 +389,8 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 				header = nvram_header(h);
 
-				if( header->magic == NVRAM_MAGIC )
-				{
+				if (header->magic == NVRAM_MAGIC &&
+				    (rdonly || header->len < NVRAM_SPACE)) {
 					_nvram_rehash(h);
 					free(mtd);
 					return h;
