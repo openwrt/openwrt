@@ -445,25 +445,13 @@ char * nvram_find_mtd(void)
 			{
 				nvram_erase_size = esz;
 
-				sprintf(dev, "/dev/mtdblock/%d", i);
+				sprintf(dev, "/dev/mtdblock%d", i);
 				if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
 				{
 					if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
 					{
 						strncpy(path, dev, strlen(dev)+1);
 						break;
-					}
-				}
-				else
-				{
-					sprintf(dev, "/dev/mtdblock%d", i);
-					if( stat(dev, &s) > -1 && (s.st_mode & S_IFBLK) )
-					{
-						if( (path = (char *) malloc(strlen(dev)+1)) != NULL )
-						{
-							strncpy(path, dev, strlen(dev)+1);
-							break;
-						}
 					}
 				}
 			}
