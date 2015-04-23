@@ -129,7 +129,7 @@ ifeq ($(DUMP),)
     $(eval $(call BuildIPKGVariable,$(1),preinst,,1))
     $(eval $(call BuildIPKGVariable,$(1),postinst,-pkg,1))
     $(eval $(call BuildIPKGVariable,$(1),prerm,-pkg,1))
-    $(eval $(call BuildIPKGVariable,$(1),postrm,1))
+    $(eval $(call BuildIPKGVariable,$(1),postrm,,1))
 
     $(STAGING_DIR_ROOT)/stamp/.$(1)_installed: $(STAMP_BUILT)
 	rm -rf $(STAGING_DIR_ROOT)/tmp-$(1)
