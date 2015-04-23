@@ -1,0 +1,35 @@
+From 047f89922c6381432501f248d08226ff9adc4ee3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 23 Apr 2015 20:45:25 +0200
+Subject: [PATCH][FIX 4.1] bgmac: fix requests for extra polling calls from
+ NAPI
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+After d75b1ade567f ("net: less interrupt masking in NAPI") polling
+function has to return whole budget when it wants NAPI to call it again.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Cc: Felix Fietkau <nbd@openwrt.org>
+Fixes: eb64e2923a886 ("bgmac: leave interrupts disabled as long as there is work to do")
+---
+ drivers/net/ethernet/broadcom/bgmac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
+index de77d3a..21e3c38 100644
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1260,7 +1260,7 @@ static int bgmac_poll(struct napi_struct *napi, int weight)
+ 
+ 	/* Poll again if more events arrived in the meantime */
+ 	if (bgmac_read(bgmac, BGMAC_INT_STATUS) & (BGMAC_IS_TX0 | BGMAC_IS_RX))
+-		return handled;
++		return weight;
+ 
+ 	if (handled < weight) {
+ 		napi_complete(napi);
+-- 
+1.8.4.5
+
