@@ -8,11 +8,9 @@ Signed-off-by: Steven Barth <steven@midlink.org>
  src/dnssec.c | 15 +++++++++++----
  1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/src/dnssec.c b/src/dnssec.c
-index 05e0983..9c02548 100644
 --- a/src/dnssec.c
 +++ b/src/dnssec.c
-@@ -408,17 +408,24 @@ static int back_to_the_future;
+@@ -432,17 +432,24 @@ static int back_to_the_future;
  int setup_timestamp(void)
  {
    struct stat statbuf;
@@ -40,7 +38,7 @@ index 05e0983..9c02548 100644
  	{
  	  /* time already OK, update timestamp, and do key checking from the start. */
  	  if (utime(daemon->timestamp_file, NULL) == -1)
-@@ -439,7 +446,7 @@ int setup_timestamp(void)
+@@ -463,7 +470,7 @@ int setup_timestamp(void)
  
  	  close(fd);
  	  
@@ -49,6 +47,3 @@ index 05e0983..9c02548 100644
  	  if (utime(daemon->timestamp_file, &timbuf) == 0)
  	    goto check_and_exit;
  	}
--- 
-2.1.4
-
