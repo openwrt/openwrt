@@ -8,7 +8,7 @@
  
  #ifdef ANDROID
  #include <sys/capability.h>
-@@ -155,59 +156,46 @@ int os_gmtime(os_time_t t, struct os_tm 
+@@ -155,59 +156,46 @@ int os_gmtime(os_time_t t, struct os_tm
  	return 0;
  }
  
@@ -66,8 +66,8 @@
 -#else /* __APPLE__ */
 -#define os_daemon daemon
 -#endif /* __APPLE__ */
--
  
+-
 -int os_daemonize(const char *pid_file)
 -{
 -#if defined(__uClinux__) || defined(__sun__)
