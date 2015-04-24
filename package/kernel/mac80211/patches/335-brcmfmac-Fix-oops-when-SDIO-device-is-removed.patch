@@ -1,0 +1,44 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 6 Mar 2015 18:40:38 +0100
+Subject: [PATCH] brcmfmac: Fix oops when SDIO device is removed.
+
+On removal of SDIO card both functions of card will be getting
+a remove call. When the first is hanging in ctrl frame xmit then
+the second will cause oops. This patch fixes the xmit ctrl
+handling in case of serious errors and also limits the handling
+for remove to function 1 only.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Reviewed-by: Daniel (Deognyoun) Kim <dekim@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
+@@ -1194,7 +1194,7 @@ static void brcmf_ops_sdio_remove(struct
+ 	brcmf_dbg(SDIO, "sdio device ID: 0x%04x\n", func->device);
+ 	brcmf_dbg(SDIO, "Function: %d\n", func->num);
+ 
+-	if (func->num != 1 && func->num != 2)
++	if (func->num != 1)
+ 		return;
+ 
+ 	bus_if = dev_get_drvdata(&func->dev);
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -2740,6 +2740,11 @@ static void brcmf_sdio_dpc(struct brcmf_
+ 	if ((bus->sdiodev->state != BRCMF_SDIOD_DATA) || (err != 0)) {
+ 		brcmf_err("failed backplane access over SDIO, halting operation\n");
+ 		atomic_set(&bus->intstatus, 0);
++		if (bus->ctrl_frame_stat) {
++			bus->ctrl_frame_err = -ENODEV;
++			bus->ctrl_frame_stat = false;
++			brcmf_sdio_wait_event_wakeup(bus);
++		}
+ 	} else if (atomic_read(&bus->intstatus) ||
+ 		   atomic_read(&bus->ipend) > 0 ||
+ 		   (!atomic_read(&bus->fcstate) &&
