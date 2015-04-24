@@ -1,0 +1,28 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Fri, 20 Mar 2015 22:18:17 +0100
+Subject: [PATCH] brcmfmac: disable MBSS feature for BCM43362
+
+The BCM43362 firmware falsely reports it is capable of providing
+MBSS. As a result AP mode no longer works for this device. Therefor
+disable MBSS in the driver for this chipset.
+
+Cc: stable@vger.kernel.org # 3.19.y
+Reported-by: Jorg Krause <jkrause@posteo.de>
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/feature.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/feature.c
+@@ -126,7 +126,8 @@ void brcmf_feat_attach(struct brcmf_pub
+ 	brcmf_feat_iovar_int_get(ifp, BRCMF_FEAT_MCHAN, "mchan");
+ 	if (drvr->bus_if->wowl_supported)
+ 		brcmf_feat_iovar_int_get(ifp, BRCMF_FEAT_WOWL, "wowl");
+-	brcmf_feat_iovar_int_set(ifp, BRCMF_FEAT_MBSS, "mbss", 0);
++	if (drvr->bus_if->chip != BRCM_CC_43362_CHIP_ID)
++		brcmf_feat_iovar_int_set(ifp, BRCMF_FEAT_MBSS, "mbss", 0);
+ 
+ 	/* set chip related quirks */
+ 	switch (drvr->bus_if->chip) {
