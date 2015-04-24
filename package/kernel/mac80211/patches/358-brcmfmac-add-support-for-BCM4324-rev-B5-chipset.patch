@@ -1,0 +1,43 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Tue, 14 Apr 2015 20:10:28 +0200
+Subject: [PATCH] brcmfmac: add support for BCM4324 rev B5 chipset
+
+This patch adds support for the BCM4324 B5 revision. This device
+is similar to BCM43241 from driver and firmware perspective. It
+is known to be used in Lenovo Thinkpad Tablet devices.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -601,6 +601,8 @@ static const struct sdiod_drive_str sdio
+ #define BCM43241B0_NVRAM_NAME		"brcm/brcmfmac43241b0-sdio.txt"
+ #define BCM43241B4_FIRMWARE_NAME	"brcm/brcmfmac43241b4-sdio.bin"
+ #define BCM43241B4_NVRAM_NAME		"brcm/brcmfmac43241b4-sdio.txt"
++#define BCM43241B5_FIRMWARE_NAME	"brcm/brcmfmac43241b5-sdio.bin"
++#define BCM43241B5_NVRAM_NAME		"brcm/brcmfmac43241b5-sdio.txt"
+ #define BCM4329_FIRMWARE_NAME		"brcm/brcmfmac4329-sdio.bin"
+ #define BCM4329_NVRAM_NAME		"brcm/brcmfmac4329-sdio.txt"
+ #define BCM4330_FIRMWARE_NAME		"brcm/brcmfmac4330-sdio.bin"
+@@ -628,6 +630,8 @@ MODULE_FIRMWARE(BCM43241B0_FIRMWARE_NAME
+ MODULE_FIRMWARE(BCM43241B0_NVRAM_NAME);
+ MODULE_FIRMWARE(BCM43241B4_FIRMWARE_NAME);
+ MODULE_FIRMWARE(BCM43241B4_NVRAM_NAME);
++MODULE_FIRMWARE(BCM43241B5_FIRMWARE_NAME);
++MODULE_FIRMWARE(BCM43241B5_NVRAM_NAME);
+ MODULE_FIRMWARE(BCM4329_FIRMWARE_NAME);
+ MODULE_FIRMWARE(BCM4329_NVRAM_NAME);
+ MODULE_FIRMWARE(BCM4330_FIRMWARE_NAME);
+@@ -667,7 +671,8 @@ enum brcmf_firmware_type {
+ static const struct brcmf_firmware_names brcmf_fwname_data[] = {
+ 	{ BRCM_CC_43143_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM43143) },
+ 	{ BRCM_CC_43241_CHIP_ID, 0x0000001F, BRCMF_FIRMWARE_NVRAM(BCM43241B0) },
+-	{ BRCM_CC_43241_CHIP_ID, 0xFFFFFFE0, BRCMF_FIRMWARE_NVRAM(BCM43241B4) },
++	{ BRCM_CC_43241_CHIP_ID, 0x00000020, BRCMF_FIRMWARE_NVRAM(BCM43241B4) },
++	{ BRCM_CC_43241_CHIP_ID, 0xFFFFFFC0, BRCMF_FIRMWARE_NVRAM(BCM43241B5) },
+ 	{ BRCM_CC_4329_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4329) },
+ 	{ BRCM_CC_4330_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4330) },
+ 	{ BRCM_CC_4334_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4334) },
