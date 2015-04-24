@@ -364,7 +364,12 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 
 		if( mmap_area != MAP_FAILED )
 		{
-			for( i = 0; i <= ((nvram_part_size - NVRAM_SPACE) / sizeof(uint32_t)); i++ )
+			/*
+			 * Start looking for NVRAM_MAGIC at beginning of MTD
+			 * partition. Stop if there is less than NVRAM_MIN_SPACE
+			 * to check, that was the lowest used size.
+			 */
+			for( i = 0; i <= ((nvram_part_size - NVRAM_MIN_SPACE) / sizeof(uint32_t)); i++ )
 			{
 				if( ((uint32_t *)mmap_area)[i] == NVRAM_MAGIC )
 				{
