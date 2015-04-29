@@ -37,13 +37,13 @@
 #include "dev-wmac.h"
 #include "machtypes.h"
 
-#define WPJ344_GPIO_LED_USB		11
-#define WPJ344_GPIO_LED_WLAN_5G	12
-#define WPJ344_GPIO_LED_WLAN_2G	13
+#define WPJ344_GPIO_LED_SIG1	15
+#define WPJ344_GPIO_LED_SIG2	20
+#define WPJ344_GPIO_LED_SIG3	21
+#define WPJ344_GPIO_LED_SIG4	22
 #define WPJ344_GPIO_LED_STATUS	14
-#define WPJ344_GPIO_LED_WPS		15
 
-#define WPJ344_GPIO_BTN_RESET	16
+#define WPJ344_GPIO_BTN_RESET	12
 
 #define WPJ344_KEYS_POLL_INTERVAL	20	/* msecs */
 #define WPJ344_KEYS_DEBOUNCE_INTERVAL	(3 * WPJ344_KEYS_POLL_INTERVAL)
@@ -60,23 +60,23 @@ static struct gpio_led wpj344_leds_gpio[] __initdata = {
 		.active_low	= 1,
 	},
 	{
-		.name		= "wpj344:green:wps",
-		.gpio		= WPJ344_GPIO_LED_WPS,
+		.name		= "wpj344:red:sig1",
+		.gpio		= WPJ344_GPIO_LED_SIG1,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wpj344:green:wlan-5g",
-		.gpio		= WPJ344_GPIO_LED_WLAN_5G,
+		.name		= "wpj344:yellow:sig2",
+		.gpio		= WPJ344_GPIO_LED_SIG2,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wpj344:green:wlan-2g",
-		.gpio		= WPJ344_GPIO_LED_WLAN_2G,
+		.name		= "wpj344:green:sig3",
+		.gpio		= WPJ344_GPIO_LED_SIG3,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wpj344:green:usb",
-		.gpio		= WPJ344_GPIO_LED_USB,
+		.name		= "wpj344:green:sig4",
+		.gpio		= WPJ344_GPIO_LED_SIG4,
 		.active_low	= 1,
 	}
 };
@@ -132,7 +132,6 @@ static void __init wpj344_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
 
-	ath79_gpio_output_select(WPJ344_GPIO_LED_USB, AR934X_GPIO_OUT_GPIO);
 	ath79_register_m25p80(NULL);
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wpj344_leds_gpio),
 				 wpj344_leds_gpio);
@@ -148,7 +147,6 @@ static void __init wpj344_setup(void)
 
 	mdiobus_register_board_info(wpj344_mdio0_info,
 					ARRAY_SIZE(wpj344_mdio0_info));
-
 
 	ath79_register_mdio(1, 0x0);
 	ath79_register_mdio(0, 0x0);
