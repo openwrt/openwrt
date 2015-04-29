@@ -184,7 +184,6 @@ platform_check_image() {
 	db120 | \
 	f9k1115v2 |\
 	hornet-ub | \
-	wpj344 | \
 	wpj558 | \
 	zcn-1523h-2 | \
 	zcn-1523h-5)
@@ -229,6 +228,7 @@ platform_check_image() {
 	nanostation-m-xw | \
 	rw2458n | \
 	wndap360 | \
+	wpj344 | \
 	wzr-hp-g300nh2 | \
 	wzr-hp-g300nh | \
 	wzr-hp-g450h | \
