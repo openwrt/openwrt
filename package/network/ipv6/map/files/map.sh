@@ -176,7 +176,7 @@ proto_map_setup() {
 
 	if [ "$type" = "lw4o6" -o "$type" = "map-e" ]; then
 		json_init
-		json_add_string name "${cfg}_local"
+		json_add_string name "${cfg}_"
 		json_add_string ifname "@$(eval "echo \$RULE_${k}_PD6IFACE")"
 		json_add_string proto "static"
 		json_add_array ip6addr
@@ -189,7 +189,7 @@ proto_map_setup() {
 
 proto_map_teardown() {
 	local cfg="$1"
-	ifdown "${cfg}_local"
+	ifdown "${cfg}_"
 	rm -f /tmp/map-$cfg.rules
 }
 
