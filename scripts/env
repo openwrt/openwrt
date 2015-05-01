@@ -15,7 +15,8 @@ Commands:
 	delete <name>     Delete an environment
 	rename <newname>  Rename the current environment
 	diff              Show differences between current state and environment
-	save              Save your changes to the environment
+	save [message]    Save your changes to the environment, optionally using
+	                  the given commit message
 	revert            Revert your changes since last save
 
 Options:
@@ -109,7 +110,7 @@ env_diff() {
 
 env_save() {
 	env_init
-	env_sync
+	env_sync "$@"
 	env_link_config
 }
 
