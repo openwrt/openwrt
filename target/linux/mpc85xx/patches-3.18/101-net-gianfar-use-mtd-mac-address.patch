@@ -1,0 +1,19 @@
+--- a/drivers/net/ethernet/freescale/gianfar.c
++++ b/drivers/net/ethernet/freescale/gianfar.c
+@@ -858,10 +858,13 @@ static int gfar_of_init(struct platform_
+ 	if (stash_len || stash_idx)
+ 		priv->device_flags |= FSL_GIANFAR_DEV_HAS_BUF_STASHING;
+ 
+-	mac_addr = of_get_mac_address(np);
++	err = of_get_mac_address_mtd(np, dev->dev_addr);
++	if (err) {
++		mac_addr = of_get_mac_address(np);
+ 
+-	if (mac_addr)
+-		memcpy(dev->dev_addr, mac_addr, ETH_ALEN);
++		if (mac_addr)
++			memcpy(dev->dev_addr, mac_addr, ETH_ALEN);
++	}
+ 
+ 	if (model && !strcasecmp(model, "TSEC"))
+ 		priv->device_flags |= FSL_GIANFAR_DEV_HAS_GIGABIT |
