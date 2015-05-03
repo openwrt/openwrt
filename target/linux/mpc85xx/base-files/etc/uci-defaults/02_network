@@ -20,8 +20,6 @@ tl-wdr4900-v1)
 	ucidef_add_switch "switch0" "1" "1"
 	ucidef_add_switch_vlan "switch0" "1" "0t 2 3 4 5"
 	ucidef_add_switch_vlan "switch0" "2" "0t 1"
-	ucidef_set_interface_macaddr lan "$(mtd_get_mac_binary config 338)"
-	ucidef_set_interface_macaddr wan "$(mtd_get_mac_binary config 344)"
 	;;
 *)
 	ucidef_set_interfaces_lan_wan "eth0" "eth1"

@@ -63,7 +63,7 @@
 					label = "rootfs";
 				};
 
-				config@fe0000 {
+				config: config@fe0000 {
 					reg = <0x00fe0000 0x00010000>;
 					label = "config";
 					read-only;
@@ -118,6 +118,7 @@
 		enet0: ethernet@b0000 {
 			phy-handle = <&phy0>;
 			phy-connection-type = "rgmii-id";
+			mtd-mac-address = <&config 0x14c>;
 		};
 
 		enet1: ethernet@b1000 {
