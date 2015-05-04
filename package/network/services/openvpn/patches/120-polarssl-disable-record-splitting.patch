@@ -1,0 +1,16 @@
+Index: openvpn-2.3.6/src/openvpn/ssl_polarssl.c
+===================================================================
+--- openvpn-2.3.6.orig/src/openvpn/ssl_polarssl.c
++++ openvpn-2.3.6/src/openvpn/ssl_polarssl.c
+@@ -707,6 +707,11 @@ void key_state_ssl_init(struct key_state
+       if (ssl_ctx->allowed_ciphers)
+ 	ssl_set_ciphersuites (ks_ssl->ctx, ssl_ctx->allowed_ciphers);
+ 
++      /* Disable record splitting (breaks current ssl handling) */
++#if defined(POLARSSL_SSL_CBC_RECORD_SPLITTING)
++      ssl_set_cbc_record_splitting (ks_ssl->ctx, SSL_CBC_RECORD_SPLITTING_DISABLED);
++#endif /* POLARSSL_SSL_CBC_RECORD_SPLITTING */
++
+       /* Initialise authentication information */
+       if (is_server)
+ 	ssl_set_dh_param_ctx (ks_ssl->ctx, ssl_ctx->dhm_ctx );
