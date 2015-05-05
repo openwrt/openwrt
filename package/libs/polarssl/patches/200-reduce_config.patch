@@ -1,5 +1,15 @@
 --- a/include/polarssl/config.h
 +++ b/include/polarssl/config.h
+@@ -370,8 +370,8 @@
+  * Requires: POLARSSL_HMAC_DRBG_C
+  *
+  * Comment this macro to disable deterministic ECDSA.
+- */
+ #define POLARSSL_ECDSA_DETERMINISTIC
++ */
+ 
+ /**
+  * \def POLARSSL_KEY_EXCHANGE_PSK_ENABLED
 @@ -392,8 +392,8 @@
   *      TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
   *      TLS_PSK_WITH_3DES_EDE_CBC_SHA
@@ -160,6 +170,16 @@
  
  /**
   * \def POLARSSL_HAVEGE_C
+@@ -1624,8 +1624,8 @@
+  * Requires: POLARSSL_MD_C
+  *
+  * Uncomment to enable the HMAC_DRBG random number geerator.
+- */
+ #define POLARSSL_HMAC_DRBG_C
++ */
+ 
+ /**
+  * \def POLARSSL_MD_C
 @@ -1746,8 +1746,8 @@
   * Requires: POLARSSL_HAVE_ASM
   *
