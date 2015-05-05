@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mbedtls
 PKG_VERSION:=1.3.10
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_USE_MIPS16:=0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
@@ -38,7 +38,7 @@ $(call Package/polarssl/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE+= (library)
-  ABI_VERSION:=$(PKG_VERSION)
+  ABI_VERSION:=$(PKG_VERSION)-$(PKG_RELEASE)
 endef
 
 define Package/libpolarssl/description
