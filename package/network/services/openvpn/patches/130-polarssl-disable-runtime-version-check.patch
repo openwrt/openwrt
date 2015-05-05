@@ -1,0 +1,11 @@
+--- a/src/openvpn/ssl_polarssl.c
++++ b/src/openvpn/ssl_polarssl.c
+@@ -1119,7 +1119,7 @@ const char *
+ get_ssl_library_version(void)
+ {
+     static char polar_version[30];
+-    unsigned int pv = version_get_number();
++    unsigned int pv = POLARSSL_VERSION_NUMBER;
+     sprintf( polar_version, "PolarSSL %d.%d.%d",
+ 		(pv>>24)&0xff, (pv>>16)&0xff, (pv>>8)&0xff );
+     return polar_version;
