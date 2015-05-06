@@ -11,13 +11,15 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
 
 --- a/tools/env/Makefile
 +++ b/tools/env/Makefile
-@@ -24,6 +24,11 @@ ifeq ($(MTD_VERSION),old)
+@@ -24,6 +24,13 @@ ifeq ($(MTD_VERSION),old)
  HOST_EXTRACFLAGS += -DMTD_OLD
  endif
  
 +ifeq ($(UBI),y)
 +HOST_EXTRACFLAGS += -DUBI
 +HOST_LOADLIBES = "-Wl,--gc-sections,-lubi-utils"
++else
++HOST_LOADLIBES = "-Wl,--gc-sections"
 +endif
 +
  always := fw_printenv
