@@ -1,0 +1,107 @@
+From: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Date: Thu, 26 Feb 2015 19:34:37 +0000
+Subject: [PATCH] usbnet: Fix tx_packets stat for FLAG_MULTI_FRAME drivers
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Currently the usbnet core does not update the tx_packets statistic for
+drivers with FLAG_MULTI_PACKET and there is no hook in the TX
+completion path where they could do this.
+
+cdc_ncm and dependent drivers are bumping tx_packets stat on the
+transmit path while asix and sr9800 aren't updating it at all.
+
+Add a packet count in struct skb_data so these drivers can fill it
+in, initialise it to 1 for other drivers, and add the packet count
+to the tx_packets statistic on completion.
+
+Signed-off-by: Ben Hutchings <ben.hutchings@codethink.co.uk>
+Tested-by: Bjørn Mork <bjorn@mork.no>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/drivers/net/usb/asix_common.c
++++ b/drivers/net/usb/asix_common.c
+@@ -188,6 +188,8 @@ struct sk_buff *asix_tx_fixup(struct usb
+ 		memcpy(skb_tail_pointer(skb), &padbytes, sizeof(padbytes));
+ 		skb_put(skb, sizeof(padbytes));
+ 	}
++
++	usbnet_set_skb_tx_stats(skb, 1);
+ 	return skb;
+ }
+ 
+--- a/drivers/net/usb/cdc_ncm.c
++++ b/drivers/net/usb/cdc_ncm.c
+@@ -1172,7 +1172,6 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
+ 
+ 	/* return skb */
+ 	ctx->tx_curr_skb = NULL;
+-	dev->net->stats.tx_packets += ctx->tx_curr_frame_num;
+ 
+ 	/* keep private stats: framing overhead and number of NTBs */
+ 	ctx->tx_overhead += skb_out->len - ctx->tx_curr_frame_payload;
+@@ -1184,6 +1183,8 @@ cdc_ncm_fill_tx_frame(struct usbnet *dev
+ 	 */
+ 	dev->net->stats.tx_bytes -= skb_out->len - ctx->tx_curr_frame_payload;
+ 
++	usbnet_set_skb_tx_stats(skb_out, n);
++
+ 	return skb_out;
+ 
+ exit_no_skb:
+--- a/drivers/net/usb/sr9800.c
++++ b/drivers/net/usb/sr9800.c
+@@ -144,6 +144,7 @@ static struct sk_buff *sr_tx_fixup(struc
+ 		skb_put(skb, sizeof(padbytes));
+ 	}
+ 
++	usbnet_set_skb_tx_stats(skb, 1);
+ 	return skb;
+ }
+ 
+--- a/drivers/net/usb/usbnet.c
++++ b/drivers/net/usb/usbnet.c
+@@ -1189,8 +1189,7 @@ static void tx_complete (struct urb *urb
+ 	struct usbnet		*dev = entry->dev;
+ 
+ 	if (urb->status == 0) {
+-		if (!(dev->driver_info->flags & FLAG_MULTI_PACKET))
+-			dev->net->stats.tx_packets++;
++		dev->net->stats.tx_packets += entry->packets;
+ 		dev->net->stats.tx_bytes += entry->length;
+ 	} else {
+ 		dev->net->stats.tx_errors++;
+@@ -1349,6 +1348,8 @@ netdev_tx_t usbnet_start_xmit (struct sk
+ 			urb->transfer_flags |= URB_ZERO_PACKET;
+ 	}
+ 	entry->length = urb->transfer_buffer_length = length;
++	if (!(info->flags & FLAG_MULTI_PACKET))
++		usbnet_set_skb_tx_stats(skb, 1);
+ 
+ 	spin_lock_irqsave(&dev->txq.lock, flags);
+ 	retval = usb_autopm_get_interface_async(dev->intf);
+--- a/include/linux/usb/usbnet.h
++++ b/include/linux/usb/usbnet.h
+@@ -228,8 +228,20 @@ struct skb_data {	/* skb->cb is one of t
+ 	struct usbnet		*dev;
+ 	enum skb_state		state;
+ 	size_t			length;
++	unsigned long		packets;
+ };
+ 
++/* Drivers that set FLAG_MULTI_PACKET must call this in their
++ * tx_fixup method before returning an skb.
++ */
++static inline void
++usbnet_set_skb_tx_stats(struct sk_buff *skb, unsigned long packets)
++{
++	struct skb_data *entry = (struct skb_data *) skb->cb;
++
++	entry->packets = packets;
++}
++
+ extern int usbnet_open(struct net_device *net);
+ extern int usbnet_stop(struct net_device *net);
+ extern netdev_tx_t usbnet_start_xmit(struct sk_buff *skb,
