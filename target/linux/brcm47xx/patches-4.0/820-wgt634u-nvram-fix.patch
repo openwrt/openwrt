@@ -260,8 +260,8 @@ out the configuration than the in kernel cfe config reader.
 +
 +	/* XXX: hack for supporting the CFE environment stuff on WGT634U */
 +	if (lim >= 8 * 1024 * 1024) {
-+		src = (u32 *) iobase + 8 * 1024 * 1024 - 0x2000;
-+		dst = (u32 *) nvram_buf;
++		src = (u32 *)(iobase + 8 * 1024 * 1024 - 0x2000);
++		dst = (u32 *)nvram_buf;
 +
 +		if ((*src & 0xff00ff) == 0x000001) {
 +			printk("early_nvram_init: WGT634U NVRAM found.\n");
