@@ -17,6 +17,10 @@ kirkwood_board_detect() {
 		name="dockstar"
 		;;
 
+        "Seagate GoFlex Home")
+                name="goflexhome"
+                ;;
+
 	"Seagate GoFlex Net")
 		name="goflexnet"
 		;;

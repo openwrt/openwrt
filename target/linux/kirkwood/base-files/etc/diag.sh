@@ -7,6 +7,7 @@
 get_status_led() {
 	case $(kirkwood_board_name) in
 	dockstar|\
+	goflexhome|\
 	goflexnet|\
 	pogo_e02)
 		status_led="status:orange:fault"

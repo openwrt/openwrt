@@ -20,6 +20,23 @@ DOCKSTAR_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
 
 $(eval $(call Profile,DOCKSTAR))
 
+define Profile/GOFLEXHOME
+  NAME:=Seagate GoFlexHome
+  PACKAGES:= \
+	kmod-ata-core kmod-ata-marvell-sata \
+	kmod-rtc-marvell kmod-usb2 kmod-usb-storage \
+	uboot-envtools
+endef
+
+define Profile/GOFLEXHOME/Description
+ Package set compatible with Seagate GoFlexHome
+endef
+
+GOFLEXHOME_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+GOFLEXHOME_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
+$(eval $(call Profile,GOFLEXHOME))
+
 define Profile/GOFLEXNET
   NAME:=Seagate GoFlexNet
   PACKAGES:= \
