@@ -97,6 +97,6 @@ case "$1" in
 esac
 
 # user rules
-[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user
+[ -f /etc/udhcpc.user ] && . /etc/udhcpc.user "$@"
 
 exit 0
