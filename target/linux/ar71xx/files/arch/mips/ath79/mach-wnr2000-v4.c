@@ -115,7 +115,7 @@ static struct gpio_keys_button wnr2000v4_gpio_keys[] __initdata = {
 	{
 		.desc		= "WLAN button",
 		.type		= EV_KEY,
-		.code		= KEY_WLAN,
+		.code		= KEY_RFKILL,
 		.debounce_interval = WNR2000V4_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000V4_GPIO_BTN_WLAN,
 		.active_low	= 1,
