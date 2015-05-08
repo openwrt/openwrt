@@ -33,10 +33,14 @@
 #define WNR2000V4_GPIO_LED_WAN_GREEN   17
 #define WNR2000V4_GPIO_LED_WPS 2
 #define WNR2000V4_GPIO_LED_WLAN 12
-#define WNR2000V4_GPIO_LED_LAN1 18
-#define WNR2000V4_GPIO_LED_LAN2 19
-#define WNR2000V4_GPIO_LED_LAN3 20
-#define WNR2000V4_GPIO_LED_LAN4 21
+#define WNR2000V4_GPIO_LED_LAN1_GREEN  13
+#define WNR2000V4_GPIO_LED_LAN2_GREEN  14
+#define WNR2000V4_GPIO_LED_LAN3_GREEN  15
+#define WNR2000V4_GPIO_LED_LAN4_GREEN  16
+#define WNR2000V4_GPIO_LED_LAN1_AMBER  18
+#define WNR2000V4_GPIO_LED_LAN2_AMBER  19
+#define WNR2000V4_GPIO_LED_LAN3_AMBER  20
+#define WNR2000V4_GPIO_LED_LAN4_AMBER  21
 #define STATUS_LED_GPIO         1
 #define WNR2000V4_GPIO_LED_PWR_GREEN    0
 
@@ -76,21 +80,39 @@ static struct gpio_led wnr2000v4_leds_gpio[] __initdata = {
 		.gpio		= WNR2000V4_GPIO_LED_WLAN,
 		.active_low	= 1,
 	},
+	/* LAN LEDS */
+	{
+		.name		= "netgear:green:lan1",
+		.gpio		= WNR2000V4_GPIO_LED_LAN1_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan2",
+		.gpio		= WNR2000V4_GPIO_LED_LAN2_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan3",
+		.gpio		= WNR2000V4_GPIO_LED_LAN3_GREEN,
+		.active_low	= 1,
+	}, {
+		.name		= "netgear:green:lan4",
+		.gpio		= WNR2000V4_GPIO_LED_LAN4_GREEN,
+		.active_low	= 1,
+	},
 	{
 		.name		= "netgear:amber:lan1",
-		.gpio		= WNR2000V4_GPIO_LED_LAN1,
+		.gpio		= WNR2000V4_GPIO_LED_LAN1_AMBER,
 		.active_low	= 1,
 	}, {
 		.name		= "netgear:amber:lan2",
-		.gpio		= WNR2000V4_GPIO_LED_LAN2,
+		.gpio		= WNR2000V4_GPIO_LED_LAN2_AMBER,
 		.active_low	= 1,
 	}, {
 		.name		= "netgear:amber:lan3",
-		.gpio		= WNR2000V4_GPIO_LED_LAN3,
+		.gpio		= WNR2000V4_GPIO_LED_LAN3_AMBER,
 		.active_low	= 1,
 	}, {
 		.name		= "netgear:amber:lan4",
-		.gpio		= WNR2000V4_GPIO_LED_LAN4,
+		.gpio		= WNR2000V4_GPIO_LED_LAN4_AMBER,
 		.active_low	= 1,
 	}
 };
@@ -155,7 +177,17 @@ static void __init wnr_common_setup(void)
 
 static void __init wnr2000v4_setup(void)
 {
+	int i;
+
 	wnr_common_setup();
+
+	/* Ensure no LED has an internal MUX signal, otherwise
+	control of LED could be lost... This is especially important
+	for most green LEDS (Eth,WAN).. who arrive in this function with
+	MUX signals set. */
+	for (i = 0; i < ARRAY_SIZE(wnr2000v4_leds_gpio); i++)
+		ath79_gpio_output_select(wnr2000v4_leds_gpio[i].gpio,
+					AR934X_GPIO_OUT_GPIO);
 
 	ath79_register_leds_gpio(-1, ARRAY_SIZE(wnr2000v4_leds_gpio),
 				 wnr2000v4_leds_gpio);
