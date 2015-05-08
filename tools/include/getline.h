@@ -32,7 +32,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(__linux__) && !defined(__OpenBSD__) && !(defined(__APPLE__) && __DARWIN_C_LEVEL >= 200809L)
+#ifdef __FreeBSD__
+#include <osreldate.h>
+#endif
+
+#if !defined(__linux__) && !defined(__OpenBSD__) && !(defined(__APPLE__) && __DARWIN_C_LEVEL >= 200809L) && !(defined(__FreeBSD__) && __FreeBSD_version >= 800000)
 /*
  * Emulate glibc getline() via BSD fgetln().
  * Note that outsize is not changed unless memory is allocated.
