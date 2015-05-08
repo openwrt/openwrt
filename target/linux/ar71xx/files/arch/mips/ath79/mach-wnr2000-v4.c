@@ -57,7 +57,7 @@ static struct gpio_led wnr2000v4_leds_gpio[] __initdata = {
 		.active_low	= 1,
         .default_trigger = "default-on",
 	}, {
-		.name		= "netgear:green:wan",
+		.name		= "netgear:amber:wan",
 		.gpio		= WNR2000V4_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	},
