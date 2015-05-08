@@ -122,42 +122,32 @@ static struct gpio_keys_button wnr2000v4_gpio_keys[] __initdata = {
 static void __init wnr_common_setup(void)
 {
 	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
-
-	ath79_register_m25p80(NULL);
-
-	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_ONLY_MODE |
-				   AR934X_ETH_CFG_SW_PHY_SWAP);
+	u8 *ee  = (u8 *) KSEG1ADDR(0x1fff1000);
 
 	ath79_register_mdio(1, 0x0);
 
-	/* LAN */
-	ath79_init_mac(ath79_eth1_data.mac_addr, art+WNR2000V4_MAC0_OFFSET, 0);
+	ath79_register_usb();
 
-	/* GMAC1 is connected to the internal switch */
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
-	ath79_register_eth(1);
+	ath79_register_m25p80(NULL);
 
-	/* WAN */
-	ath79_init_mac(ath79_eth0_data.mac_addr, art+WNR2000V4_MAC1_OFFSET, 0);
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_SW_ONLY_MODE);
 
-	/* GMAC0 is connected to the PHY0 of the internal switch */
+	ath79_init_mac(ath79_eth0_data.mac_addr, art+WNR2000V4_MAC0_OFFSET, 0);
+	ath79_init_mac(ath79_eth1_data.mac_addr, art+WNR2000V4_MAC1_OFFSET, 0);
+
+	/* GMAC0 is connected to the PHY0 of the internal switch, GE0 */
 	ath79_switch_data.phy4_mii_en = 1;
 	ath79_switch_data.phy_poll_mask = BIT(4);
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ath79_eth0_data.phy_mask = BIT(4);
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio1_device.dev;
-
-	ath79_eth0_data.speed = SPEED_100;
-	ath79_eth0_data.duplex = DUPLEX_FULL;
-
 	ath79_register_eth(0);
 
-	/* WLAN */
-	ath79_register_wmac(ee, art+WNR2000V4_MAC0_OFFSET);
+	/* GMAC1 is connected to the internal switch, GE1 */
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_register_eth(1);
 
-	/* USB */
-	ath79_register_usb();
+	ath79_register_wmac(ee, art);
 }
 
 static void __init wnr2000v4_setup(void)
