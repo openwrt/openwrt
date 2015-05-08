@@ -1,6 +1,6 @@
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -850,7 +850,7 @@ static int pppoe_sendmsg(struct kiocb *i
+@@ -865,7 +865,7 @@ static int pppoe_sendmsg(struct kiocb *i
  		goto end;
  
  
@@ -9,7 +9,7 @@
  			   0, GFP_KERNEL);
  	if (!skb) {
  		error = -ENOMEM;
-@@ -858,7 +858,7 @@ static int pppoe_sendmsg(struct kiocb *i
+@@ -873,7 +873,7 @@ static int pppoe_sendmsg(struct kiocb *i
  	}
  
  	/* Reserve space for headers. */
