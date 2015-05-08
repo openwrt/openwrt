@@ -102,6 +102,7 @@ static struct gpio_keys_button wnr2000v4_gpio_keys[] __initdata = {
 		.code		= KEY_WPS_BUTTON,
 		.debounce_interval = WNR2000V4_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000V4_GPIO_BTN_WPS,
+		.active_low	= 1,
 	},
 	{
 		.desc		= "Reset button",
@@ -109,6 +110,7 @@ static struct gpio_keys_button wnr2000v4_gpio_keys[] __initdata = {
 		.code		= KEY_RESTART,
 		.debounce_interval = WNR2000V4_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000V4_GPIO_BTN_RESET,
+		.active_low	= 1,
 	},
 	{
 		.desc		= "WLAN button",
@@ -116,6 +118,7 @@ static struct gpio_keys_button wnr2000v4_gpio_keys[] __initdata = {
 		.code		= KEY_WLAN,
 		.debounce_interval = WNR2000V4_KEYS_DEBOUNCE_INTERVAL,
 		.gpio		= WNR2000V4_GPIO_BTN_WLAN,
+		.active_low	= 1,
 	},
 };
 
