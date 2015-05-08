@@ -33,7 +33,12 @@ NOSTDINC_FLAGS = \
 	-I$(STAGING_DIR)/usr/include/mac80211-backport \
 	-I$(STAGING_DIR)/usr/include/mac80211/uapi \
 	-I$(STAGING_DIR)/usr/include/mac80211 \
+	-include backport/autoconf.h \
 	-include backport/backport.h
+
+ifdef CONFIG_PACKAGE_MAC80211_MESH
+  NOSTDINC_FLAGS += -DCONFIG_MAC80211_MESH
+endif
 
 define Build/Compile
 	+$(MAKE) $(PKG_JOBS) -C "$(LINUX_DIR)" \
