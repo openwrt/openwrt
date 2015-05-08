@@ -123,6 +123,9 @@ Image/InstallKernel/Template/EA3500=$(call Image/InstallKernel/Template,ea3500)
 Image/BuildKernel/Template/EA4500=$(call Image/BuildKernel/Template,ea4500)
 Image/InstallKernel/Template/EA4500=$(call Image/InstallKernel/Template,ea4500)
 
+Image/BuildKernel/Template/GOFLEXHOME=$(call Image/BuildKernel/Template,goflexhome)
+Image/InstallKernel/Template/GOFLEXHOME=$(call Image/InstallKernel/Template,goflexhome)
+
 Image/BuildKernel/Template/GOFLEXNET=$(call Image/BuildKernel/Template,goflexnet)
 Image/InstallKernel/Template/GOFLEXNET=$(call Image/InstallKernel/Template,goflexnet)
 
