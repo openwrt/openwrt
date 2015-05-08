@@ -51,15 +51,14 @@ endef
 # -s strip padding from end of the image
 # -X reserve <size> bytes in the firmware image (hexval prefixed with 0x)
 define Build/mktplinkfw
-	$(STAGING_DIR_HOST)/bin/mktplinkfw \
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
 		-k $(word 1,$^) \
 		-r $@ \
 		-o $@.new \
 		-j -X 0x40000 \
 		-a $(call rootfs_align,$(FILESYSTEM)) \
-		$(if $(findstring sysupgrade,$1),-s)
-	@mv $@.new $@
+		$(if $(findstring sysupgrade,$1),-s) && mv $@.new $@ || rm -f $@
 endef
 
 # -c combined image
