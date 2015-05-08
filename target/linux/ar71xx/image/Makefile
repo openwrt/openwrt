@@ -68,7 +68,7 @@ define Build/mktplinkfw-initramfs
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
 		-k $@ \
 		-o $@.new \
-		-s \
+		-s -S \
 		-c
 	@mv $@.new $@
 endef
