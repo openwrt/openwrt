@@ -1,8 +1,9 @@
 /*
  *  NETGEAR WNR2000v4 board support
  *
- *  Copytight (C) 2014 Michaël Burtin <mburtin@gmail.com>
- *  Copytight (C) 2013 Mathieu Olivari <mathieu.olivari@gmail.com>
+ *  Copyright (C) 2015 Michael Bazzinotti <mbazzinotti@gmail.com>
+ *  Copyright (C) 2014 Michaël Burtin <mburtin@gmail.com>
+ *  Copyright (C) 2013 Mathieu Olivari <mathieu.olivari@gmail.com>
  *  Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *  Copyright (C) 2008-2009 Andy Boyett <agb@openwrt.org>
