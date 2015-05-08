@@ -52,44 +52,44 @@
 
 static struct gpio_led wnr2000v4_leds_gpio[] __initdata = {
 	{
-		.name		= "wnr2000-v4:green:power",
+		.name		= "netgear:green:power",
 		.gpio		= WNR2000V4_GPIO_LED_PWR_GREEN,
 		.active_low	= 1,
         .default_trigger = "default-on",
 	}, {
-		.name		= "wnr2000-v4:green:wan",
+		.name		= "netgear:green:wan",
 		.gpio		= WNR2000V4_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wnr2000-v4:green:wps",
+		.name		= "netgear:green:wps",
 		.gpio		= WNR2000V4_GPIO_LED_WPS,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wnr2000-v4:amber:status",
+		.name		= "netgear:amber:status",
 		.gpio		= STATUS_LED_GPIO,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wnr2000-v4:blue:wlan",
+		.name		= "netgear:blue:wlan",
 		.gpio		= WNR2000V4_GPIO_LED_WLAN,
 		.active_low	= 1,
 	},
 	{
-		.name		= "wnr2000-v4:amber:lan1",
+		.name		= "netgear:amber:lan1",
 		.gpio		= WNR2000V4_GPIO_LED_LAN1,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000-v4:amber:lan2",
+		.name		= "netgear:amber:lan2",
 		.gpio		= WNR2000V4_GPIO_LED_LAN2,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000-v4:amber:lan3",
+		.name		= "netgear:amber:lan3",
 		.gpio		= WNR2000V4_GPIO_LED_LAN3,
 		.active_low	= 1,
 	}, {
-		.name		= "wnr2000-v4:amber:lan4",
+		.name		= "netgear:amber:lan4",
 		.gpio		= WNR2000V4_GPIO_LED_LAN4,
 		.active_low	= 1,
 	}
