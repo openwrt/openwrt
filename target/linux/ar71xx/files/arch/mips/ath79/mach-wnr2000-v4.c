@@ -30,54 +30,52 @@
 #include "machtypes.h"
 
 /* AR9341 GPIOs */
-#define WNR2000V4_GPIO_LED_WAN_AMBER   22
-#define WNR2000V4_GPIO_LED_WAN_GREEN   17
-#define WNR2000V4_GPIO_LED_WPS 2
-#define WNR2000V4_GPIO_LED_WLAN 12
-#define WNR2000V4_GPIO_LED_LAN1_GREEN  13
-#define WNR2000V4_GPIO_LED_LAN2_GREEN  14
-#define WNR2000V4_GPIO_LED_LAN3_GREEN  15
-#define WNR2000V4_GPIO_LED_LAN4_GREEN  16
-#define WNR2000V4_GPIO_LED_LAN1_AMBER  18
-#define WNR2000V4_GPIO_LED_LAN2_AMBER  19
-#define WNR2000V4_GPIO_LED_LAN3_AMBER  20
-#define WNR2000V4_GPIO_LED_LAN4_AMBER  21
-#define STATUS_LED_GPIO         1
-#define WNR2000V4_GPIO_LED_PWR_GREEN    0
+#define WNR2000V4_GPIO_LED_PWR_GREEN      0
+#define WNR2000V4_GPIO_LED_PWR_AMBER      1
+#define WNR2000V4_GPIO_LED_WPS            2
+#define WNR2000V4_GPIO_LED_WLAN           12
+#define WNR2000V4_GPIO_LED_LAN1_GREEN     13
+#define WNR2000V4_GPIO_LED_LAN2_GREEN     14
+#define WNR2000V4_GPIO_LED_LAN3_GREEN     15
+#define WNR2000V4_GPIO_LED_LAN4_GREEN     16
+#define WNR2000V4_GPIO_LED_LAN1_AMBER     18
+#define WNR2000V4_GPIO_LED_LAN2_AMBER     19
+#define WNR2000V4_GPIO_LED_LAN3_AMBER     20
+#define WNR2000V4_GPIO_LED_LAN4_AMBER     21
+#define WNR2000V4_GPIO_LED_WAN_GREEN      17
+#define WNR2000V4_GPIO_LED_WAN_AMBER      22
+/* Buttons */
+#define WNR2000V4_GPIO_BTN_WPS            3
+#define WNR2000V4_GPIO_BTN_RESET          4
+#define WNR2000V4_GPIO_BTN_WLAN           11
+#define WNR2000V4_KEYS_POLL_INTERVAL      20      /* msecs */
+#define WNR2000V4_KEYS_DEBOUNCE_INTERVAL  (3 * WNR2000V4_KEYS_POLL_INTERVAL)
 
-#define WNR2000V4_GPIO_BTN_WPS      3
-#define WNR2000V4_GPIO_BTN_RESET    4
-#define WNR2000V4_GPIO_BTN_WLAN     11
 
-#define WNR2000V4_KEYS_POLL_INTERVAL	20	/* msecs */
-#define WNR2000V4_KEYS_DEBOUNCE_INTERVAL	(3 * WNR2000V4_KEYS_POLL_INTERVAL)
-
-#define WNR2000V4_MAC0_OFFSET		0
-#define WNR2000V4_MAC1_OFFSET		6
+/* ART offsets */
+#define WNR2000V4_MAC0_OFFSET             0       /* WAN/WLAN0 MAC   */
+#define WNR2000V4_MAC1_OFFSET             6       /* Eth-switch0 MAC */
 
 static struct gpio_led wnr2000v4_leds_gpio[] __initdata = {
 	{
 		.name		= "netgear:green:power",
 		.gpio		= WNR2000V4_GPIO_LED_PWR_GREEN,
 		.active_low	= 1,
-        .default_trigger = "default-on",
-	}, {
-		.name		= "netgear:green:wan",
-		.gpio		= WNR2000V4_GPIO_LED_WAN_GREEN,
-		.active_low	= 1,
-	}, {
-		.name		= "netgear:amber:wan",
-		.gpio		= WNR2000V4_GPIO_LED_WAN_AMBER,
-		.active_low	= 1,
-	},
-	{
-		.name		= "netgear:green:wps",
-		.gpio		= WNR2000V4_GPIO_LED_WPS,
-		.active_low	= 1,
+		.default_trigger = "default-on",
 	},
 	{
 		.name		= "netgear:amber:status",
-		.gpio		= STATUS_LED_GPIO,
+		.gpio		= WNR2000V4_GPIO_LED_PWR_AMBER,
+		.active_low	= 1,
+	},
+	{
+		.name		= "netgear:green:wan",
+		.gpio		= WNR2000V4_GPIO_LED_WAN_GREEN,
+		.active_low	= 1,
+	},
+	{
+		.name		= "netgear:amber:wan",
+		.gpio		= WNR2000V4_GPIO_LED_WAN_AMBER,
 		.active_low	= 1,
 	},
 	{
@@ -90,15 +88,18 @@ static struct gpio_led wnr2000v4_leds_gpio[] __initdata = {
 		.name		= "netgear:green:lan1",
 		.gpio		= WNR2000V4_GPIO_LED_LAN1_GREEN,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "netgear:green:lan2",
 		.gpio		= WNR2000V4_GPIO_LED_LAN2_GREEN,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "netgear:green:lan3",
 		.gpio		= WNR2000V4_GPIO_LED_LAN3_GREEN,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "netgear:green:lan4",
 		.gpio		= WNR2000V4_GPIO_LED_LAN4_GREEN,
 		.active_low	= 1,
@@ -107,19 +108,27 @@ static struct gpio_led wnr2000v4_leds_gpio[] __initdata = {
 		.name		= "netgear:amber:lan1",
 		.gpio		= WNR2000V4_GPIO_LED_LAN1_AMBER,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "netgear:amber:lan2",
 		.gpio		= WNR2000V4_GPIO_LED_LAN2_AMBER,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "netgear:amber:lan3",
 		.gpio		= WNR2000V4_GPIO_LED_LAN3_AMBER,
 		.active_low	= 1,
-	}, {
+	},
+	{
 		.name		= "netgear:amber:lan4",
 		.gpio		= WNR2000V4_GPIO_LED_LAN4_AMBER,
 		.active_low	= 1,
-	}
+	},
+	{
+		.name		= "netgear:green:wps",
+		.gpio		= WNR2000V4_GPIO_LED_WPS,
+		.active_low	= 1,
+	},
 };
 
 static struct gpio_keys_button wnr2000v4_gpio_keys[] __initdata = {
