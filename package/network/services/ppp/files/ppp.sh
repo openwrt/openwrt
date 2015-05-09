@@ -69,7 +69,7 @@ ppp_generic_setup() {
 	if [ "${demand:-0}" -gt 0 ]; then
 		demand="precompiled-active-filter /etc/ppp/filter demand idle $demand"
 	else
-		demand="persist"
+		demand=""
 	fi
 	[ -n "$mtu" ] || json_get_var mtu mtu
 	[ -n "$pppname" ] || pppname="${proto:-ppp}-$config"
