@@ -51,7 +51,7 @@ sub parse_config() {
 		$line++;
 
 		my $valid = 1;
-		$line[0] =~ /^src-\w+$/ or $valid = 0;
+		$line[0] =~ /^src-[\w-]+$/ or $valid = 0;
 		$line[1] =~ /^\w+$/ or $valid = 0;
 		@src = split /\s+/, $line[2];
 		$valid or die "Syntax error in feeds.conf, line: $line\n";
@@ -124,6 +124,13 @@ my %update_method = (
 	'src-git' => {
 		'init'          => "git clone --depth 1 '%s' '%s'",
 		'init_branch'   => "git clone --depth 1 --branch '%s' '%s' '%s'",
+		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
+		'update'	=> "git pull --ff",
+		'controldir'	=> ".git",
+		'revision'	=> "git show --abbrev-commit HEAD | head -n 1 | cut -d ' ' -f 2 | tr -d '\n'"},
+	'src-git-full' => {
+		'init'          => "git clone '%s' '%s'",
+		'init_branch'   => "git clone --branch '%s' '%s' '%s'",
 		'init_commit'   => "git clone '%s' '%s' && cd '%s' && git checkout -b '%s' '%s' && cd -",
 		'update'	=> "git pull --ff",
 		'controldir'	=> ".git",
