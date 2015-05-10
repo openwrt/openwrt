@@ -80,6 +80,9 @@ get_status_led() {
 	el-m150)
 		status_led="easylink:green:system"
 		;;
+	ew-dorin | ew-dorin-router)
+		status_led="dorin:green:status"
+		;;
 	f9k1115v2)
 		status_led="belkin:blue:status"
 		;;
