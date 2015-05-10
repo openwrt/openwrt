@@ -97,7 +97,7 @@
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
  		instr->addr -= part->offset;
-@@ -514,18 +582,24 @@ static struct mtd_part *allocate_partiti
+@@ -514,18 +582,21 @@ static struct mtd_part *allocate_partiti
  	if ((slave->mtd.flags & MTD_WRITEABLE) &&
  	    mtd_mod_by_eb(slave->offset, &slave->mtd)) {
  		/* Doesn't start on a boundary of major erase size */
@@ -125,9 +125,6 @@
 +		else
 +			slave->mtd.erasesize = slave->mtd.size;
  	}
-+	if ((slave->mtd.flags & (MTD_ERASE_PARTIAL|MTD_WRITEABLE)) == MTD_ERASE_PARTIAL)
-+		printk(KERN_WARNING"mtd: partition \"%s\" must either start or end on erase block boundary or be smaller than an erase block -- forcing read-only\n",
-+				part->name);
  
  	slave->mtd.ecclayout = master->ecclayout;
  	slave->mtd.ecc_step_size = master->ecc_step_size;
