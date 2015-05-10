@@ -1,7 +1,7 @@
 --- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-@@ -18,8 +18,15 @@
- 		bootargs = "console=ttyMSM0,115200 root=/dev/mtdblock12 rootfstype=squashfs,jffs2";
+@@ -22,8 +22,15 @@
+ 		linux,stdout-path = "serial0:115200n8";
  	};
  
 +	aliases {
@@ -16,7 +16,7 @@
  			i2c4_pins: i2c4_pinmux {
  				pins = "gpio12", "gpio13";
  				function = "gsbi4";
-@@ -34,6 +41,25 @@
+@@ -54,6 +61,25 @@
  					bias-none;
  				};
  			};
@@ -42,17 +42,17 @@
  		};
  
  		gsbi@16300000 {
-@@ -72,6 +98,7 @@
+@@ -92,6 +118,7 @@
  					#size-cells = <1>;
  					spi-max-frequency = <50000000>;
  					reg = <0>;
 +					m25p,fast-read;
  
  					partition@0 {
- 						label = "0:SBL1";
-@@ -148,5 +175,66 @@
- 		sata@29000000 {
- 			status = "ok";
+ 						label = "lowlevel_init";
+@@ -142,5 +169,66 @@
+ 			pinctrl-0 = <&pcie2_pins>;
+ 			pinctrl-names = "default";
  		};
 +
 +		mdio0: mdio {
@@ -119,17 +119,17 @@
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -3,6 +3,7 @@
- #include "skeleton.dtsi"
+@@ -4,6 +4,7 @@
  #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
+ #include <dt-bindings/reset/qcom,gcc-ipq806x.h>
 +#include <dt-bindings/interrupt-controller/arm-gic.h>
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -279,5 +280,42 @@
- 			#clock-cells = <1>;
- 			#reset-cells = <1>;
+@@ -415,5 +416,42 @@
+ 
+ 			status = "disabled";
  		};
 +
 +		nss-gmac-common {
