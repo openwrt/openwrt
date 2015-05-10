@@ -16,7 +16,7 @@
  			i2c4_pins: i2c4_pinmux {
  				pins = "gpio12", "gpio13";
  				function = "gsbi4";
-@@ -38,6 +45,25 @@
+@@ -54,6 +61,25 @@
  					bias-none;
  				};
  			};
@@ -42,7 +42,7 @@
  		};
  
  		gsbi@16300000 {
-@@ -76,6 +102,7 @@
+@@ -92,6 +118,7 @@
  					#size-cells = <1>;
  					spi-max-frequency = <50000000>;
  					reg = <0>;
@@ -50,9 +50,9 @@
  
  					partition@0 {
  						label = "lowlevel_init";
-@@ -136,5 +163,66 @@
- 		usb30@1 {
- 			status = "ok";
+@@ -166,5 +193,66 @@
+ 			pinctrl-0 = <&pcie2_pins>;
+ 			pinctrl-names = "default";
  		};
 +
 +		mdio0: mdio {
@@ -119,18 +119,19 @@
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -3,6 +3,7 @@
- #include "skeleton.dtsi"
+@@ -4,6 +4,7 @@
  #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
+ #include <dt-bindings/reset/qcom,gcc-ipq806x.h>
 +#include <dt-bindings/interrupt-controller/arm-gic.h>
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -390,5 +391,41 @@
+@@ -513,5 +514,42 @@
+ 				dr_mode = "host";
  			};
  		};
- 
++
 +		nss-gmac-common {
 +			reg = <0x03000000 0x0000FFFF 0x1bb00000 0x0000FFFF 0x00900000 0x00004000>;
 +			reg-names = "nss_reg_base" , "qsgmii_reg_base", "clk_ctl_base";
