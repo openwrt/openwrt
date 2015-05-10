@@ -448,6 +448,19 @@ platform_check_image() {
 	return 1
 }
 
+platform_pre_upgrade() {
+	local board=$(ar71xx_board_name)
+
+	case "$board" in
+	nbg6716 | \
+	r6100 | \
+	wndr3700v4 | \
+	wndr4300 )
+		nand_do_upgrade "$1"
+		;;
+	esac
+}
+
 platform_do_upgrade() {
 	local board=$(ar71xx_board_name)
 
