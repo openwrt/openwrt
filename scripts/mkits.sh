@@ -55,6 +55,25 @@ fi
 
 ARCH_UPPER=`echo $ARCH | tr '[:lower:]' '[:upper:]'`
 
+# Conditionally create fdt information
+if [ -n "${DTB}" ]; then
+	FDT="
+		fdt@1 {
+			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
+			data = /incbin/(\"${DTB}\");
+			type = \"flat_dt\";
+			arch = \"${ARCH}\";
+			compression = \"none\";
+			hash@1 {
+				algo = \"crc32\";
+			};
+			hash@2 {
+				algo = \"sha1\";
+			};
+		};
+"
+fi
+
 # Create a default, fully populated DTS file
 DATA="/dts-v1/;
 
@@ -80,19 +99,8 @@ DATA="/dts-v1/;
 			};
 		};
 
-		fdt@1 {
-			description = \"${ARCH_UPPER} OpenWrt ${DEVICE} device tree blob\";
-			data = /incbin/(\"${DTB}\");
-			type = \"flat_dt\";
-			arch = \"${ARCH}\";
-			compression = \"none\";
-			hash@1 {
-				algo = \"crc32\";
-			};
-			hash@2 {
-				algo = \"sha1\";
-			};
-		};
+${FDT}
+
 	};
 
 	configurations {
@@ -104,12 +112,6 @@ DATA="/dts-v1/;
 		};
 	};
 };"
-
-# Conditionally strip fdt information out of tree
-if [ -z "${DTB}" ]; then
-	DATA=`echo "$DATA" | sed '/start fdt/,/end fdt/d'`
-	DATA=`echo "$DATA" | sed '/fdt/d'`
-fi
 
 # Write .its file to disk
 echo "$DATA" > ${OUTPUT}
