@@ -193,6 +193,20 @@ else
 
 endif
 
+# update all feeds, re-create index files, install symlinks
+package/symlinks:
+	./scripts/feeds update -a
+	./scripts/feeds install -a
+
+# re-create index files, install symlinks
+package/symlinks-install:
+	./scripts/feeds update -i
+	./scripts/feeds install -a
+
+# remove all symlinks, don't touch ./feeds
+package/symlinks-clean:
+	./scripts/feeds uninstall -a
+
 help:
 	cat README
 
