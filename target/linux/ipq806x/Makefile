@@ -11,7 +11,7 @@ MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 KERNEL_PATCHVER:=3.18
 
-KERNELNAME:=Image dtbs
+KERNELNAME:=zImage Image dtbs
 
 include $(INCLUDE_DIR)/target.mk
 DEFAULT_PACKAGES += \
