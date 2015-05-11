@@ -365,6 +365,7 @@ endef
 define Device/Build/initramfs
   $$(_TARGET): $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
 
+  $(KDIR)/$$(KERNEL_NAME)-initramfs: image_prepare
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_IMAGE)
 	cp $$^ $$@
 
