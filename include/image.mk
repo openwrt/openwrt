@@ -359,7 +359,7 @@ endef
 
 define Device/Check
   _TARGET = $$(if $$(filter $(PROFILE),$$(PROFILES)),install,install-disabled)
-  _COMPILE_TARGET = $$(if $(CONFIG_IB)$$(filter $(PROFILE),$$(PROFILES)),compile,compile-disabled)
+  _COMPILE_TARGET = $$(if $(if $(IB),,$(CONFIG_IB)$$(filter $(PROFILE),$$(PROFILES))),compile,compile-disabled)
 endef
 
 ifndef IB
