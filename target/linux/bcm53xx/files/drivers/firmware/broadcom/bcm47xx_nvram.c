@@ -98,7 +98,7 @@ found:
 		pr_err("The nvram size accoridng to the header seems to be bigger than the partition on flash\n");
 	if (header->len > NVRAM_SPACE)
 		pr_err("nvram on flash (%i bytes) is bigger than the reserved space in memory, will just copy the first %i bytes\n",
-		       header->len, NVRAM_SPACE);
+		       header->len, NVRAM_SPACE - 1);
 
 	src = (u32 *)header;
 	dst = (u32 *)nvram_buf;
@@ -106,6 +106,7 @@ found:
 		*dst++ = __raw_readl(src++);
 	for (; i < header->len && i < NVRAM_SPACE && i < size; i += 4)
 		*dst++ = readl(src++);
+	nvram_buf[NVRAM_SPACE - 1] = '\0';
 
 	return 0;
 }
@@ -150,10 +151,10 @@ static int nvram_init(void)
 		u8 *dst = (uint8_t *)nvram_buf;
 		size_t len = header.len;
 
-		if (header.len > NVRAM_SPACE) {
+		if (len >= NVRAM_SPACE) {
+			len = NVRAM_SPACE - 1;
 			pr_err("nvram on flash (%i bytes) is bigger than the reserved space in memory, will just copy the first %i bytes\n",
-				header.len, NVRAM_SPACE);
-			len = NVRAM_SPACE;
+				header.len, len);
 		}
 
 		err = mtd_read(mtd, 0, len, &bytes_read, dst);
@@ -170,7 +171,7 @@ static int nvram_init(void)
 int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
 {
 	char *var, *value, *end, *eq;
-	int data_left, err;
+	int err;
 
 	if (!name)
 		return -EINVAL;
@@ -183,19 +184,16 @@ int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
 
 	/* Look for name=value and return value */
 	var = &nvram_buf[sizeof(struct nvram_header)];
-	end = nvram_buf + sizeof(nvram_buf) - 2;
-	end[0] = '\0';
-	end[1] = '\0';
-	for (; *var; var = value + strlen(value) + 1) {
-		data_left = end - var;
-
-		eq = strnchr(var, data_left, '=');
+	end = nvram_buf + sizeof(nvram_buf);
+	while (var < end && *var) {
+		eq = strchr(var, '=');
 		if (!eq)
 			break;
 		value = eq + 1;
 		if (eq - var == strlen(name) &&
 		    strncmp(var, name, eq - var) == 0)
 			return snprintf(val, val_len, "%s", value);
+		var = value + strlen(value) + 1;
 	}
 	return -ENOENT;
 }

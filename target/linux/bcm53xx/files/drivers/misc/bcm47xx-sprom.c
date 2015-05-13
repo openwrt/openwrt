@@ -212,6 +212,9 @@ static void bcm47xx_sprom_fill_auto(struct ssb_sprom *sprom,
 	bool fb = fallback;
 
 	ENTRY(0xfffffffe, u16, pre, "boardrev", board_rev, 0, true);
+	ENTRY(0xfffffffe, u32, pre, "boardflags", boardflags, 0, fb);
+	ENTRY(0xfffffff0, u32, pre, "boardflags2", boardflags2, 0, fb);
+	ENTRY(0xfffff800, u32, pre, "boardflags3", boardflags3, 0, fb);
 	ENTRY(0x00000002, u16, pre, "boardflags", boardflags_lo, 0, fb);
 	ENTRY(0xfffffffc, u16, pre, "boardtype", board_type, 0, true);
 	ENTRY(0xfffffffe, u16, pre, "boardnum", board_num, 0, fb);
@@ -539,6 +542,8 @@ static int mac_addr_used = 2;
 static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
 					const char *prefix, bool fallback)
 {
+	bool fb = fallback;
+
 	nvram_read_macaddr(prefix, "et0macaddr", sprom->et0mac, fallback);
 	nvram_read_u8(prefix, NULL, "et0mdcport", &sprom->et0mdcport, 0,
 		      fallback);
@@ -550,6 +555,10 @@ static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
 		      fallback);
 	nvram_read_u8(prefix, NULL, "et1phyaddr", &sprom->et1phyaddr, 0,
 		      fallback);
+
+	nvram_read_macaddr(prefix, "et2macaddr", sprom->et2mac, fb);
+	nvram_read_u8(prefix, NULL, "et2mdcport", &sprom->et2mdcport, 0, fb);
+	nvram_read_u8(prefix, NULL, "et2phyaddr", &sprom->et2phyaddr, 0, fb);
 
 	nvram_read_macaddr(prefix, "macaddr", sprom->il0mac, fallback);
 	nvram_read_macaddr(prefix, "il0macaddr", sprom->il0mac, fallback);
@@ -629,6 +638,13 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
 	bcm47xx_sprom_fill_auto(sprom, prefix, fallback);
 }
 
+/*
+ * Having many NVRAM entries for PCI devices led to repeating prefixes like
+ * pci/1/1/ all the time and wasting flash space. So at some point Broadcom
+ * decided to introduce prefixes like 0: 1: 2: etc.
+ * If we find e.g. devpath0=pci/2/1 or devpath0=pci/2/1/ we should use 0:
+ * instead of pci/2/1/.
+ */
 static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
 {
 	size_t prefix_len = strlen(prefix);
@@ -637,10 +653,8 @@ static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
 	char buf[20];
 	int i;
 
-	if (prefix_len <= 0 || prefix[prefix_len - 1] != '/') {
-		pr_warn("Invalid prefix: \"%s\"\n", prefix);
+	if (prefix_len <= 0 || prefix[prefix_len - 1] != '/')
 		return;
-	}
 
 	for (i = 0; i < 3; i++) {
 		if (snprintf(nvram_var, sizeof(nvram_var), "devpath%d", i) <= 0)
