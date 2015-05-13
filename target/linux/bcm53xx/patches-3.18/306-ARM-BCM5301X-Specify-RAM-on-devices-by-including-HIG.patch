@@ -135,3 +135,15 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	leds {
+--- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
+@@ -20,7 +20,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {

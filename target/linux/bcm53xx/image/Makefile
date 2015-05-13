@@ -95,10 +95,16 @@ define Device/netgear-r8000
   BOARD_ID := U12H315T00_NETGEAR
 endef
 
+define Device/smartrg-sr400ac
+  IMAGES := trx
+  IMAGE/trx := trx-serial
+endef
+
 TARGET_DEVICES += \
 	asus-rt-ac56u asus-rt-ac68u asus-rt-ac87u asus-rt-n18u \
-	netgear-r6250 netgear-r6300-v2 netgear-r8000 \
 	buffalo-wzr-1750dhp buffalo-wzr-600dhp2 buffalo-wzr-900dhp \
-	buffalo-wxr-1900dhp
+	buffalo-wxr-1900dhp \
+	netgear-r6250 netgear-r6300-v2 netgear-r8000 \
+	smartrg-sr400ac
 
 $(eval $(call BuildImage))
