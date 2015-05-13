@@ -1,0 +1,35 @@
+From cd3c4317688caa967f6a1dfda36830ce2fa7059e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 13 May 2015 14:13:28 +0200
+Subject: [PATCH] b53: add hacky CPU port fix for Netgear R8000
+
+---
+ drivers/net/phy/b53/b53_common.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/net/phy/b53/b53_common.c b/drivers/net/phy/b53/b53_common.c
+index 2b05d5d..525103c 100644
+--- a/drivers/net/phy/b53/b53_common.c
++++ b/drivers/net/phy/b53/b53_common.c
+@@ -25,6 +25,7 @@
+ #include <linux/module.h>
+ #include <linux/switch.h>
+ #include <linux/platform_data/b53.h>
++#include <linux/of_fdt.h>
+ 
+ #include "b53_regs.h"
+ #include "b53_priv.h"
+@@ -1313,6 +1314,10 @@ static int b53_switch_init(struct b53_device *dev)
+ 			sw_dev->cpu_port = 5;
+ 	}
+ 
++	if (of_flat_dt_is_compatible(of_get_flat_dt_root(),
++				     "buffalo,wzr-600dhp2"))
++		sw_dev->cpu_port = 7;
++
+ 	/* cpu port is always last */
+ 	sw_dev->ports = sw_dev->cpu_port + 1;
+ 	dev->enabled_ports |= BIT(sw_dev->cpu_port);
+-- 
+1.8.4.5
+
