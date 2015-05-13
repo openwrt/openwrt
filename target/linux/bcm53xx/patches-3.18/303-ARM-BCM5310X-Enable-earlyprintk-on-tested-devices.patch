@@ -113,3 +113,14 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	memory {
+--- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -16,7 +16,7 @@
+ 	model = "Buffalo WXR-1900DHP";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
