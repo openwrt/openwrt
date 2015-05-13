@@ -24,8 +24,8 @@ index 2b05d5d..525103c 100644
  	}
  
 +	if (of_flat_dt_is_compatible(of_get_flat_dt_root(),
-+				     "buffalo,wzr-600dhp2"))
-+		sw_dev->cpu_port = 7;
++				     "netgear,r8000"))
++		sw_dev->cpu_port = 8;
 +
  	/* cpu port is always last */
  	sw_dev->ports = sw_dev->cpu_port + 1;
