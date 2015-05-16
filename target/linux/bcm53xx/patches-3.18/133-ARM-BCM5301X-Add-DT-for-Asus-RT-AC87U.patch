@@ -1,18 +1,21 @@
-From 0cc8daf2488539f734150e64c799e3a4dd014cd8 Mon Sep 17 00:00:00 2001
+From 1f970a144215ec8bbd96a3d79aea8a19ed8d109a Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Mon, 19 Jan 2015 11:34:45 +0100
+Date: Sat, 16 May 2015 16:51:51 +0200
 Subject: [PATCH] ARM: BCM5301X: Add DT for Asus RT-AC87U
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Álvaro Fernández Rojas <noltari@gmail.com>
 ---
- arch/arm/boot/dts/Makefile                  |  3 +-
- arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts | 44 +++++++++++++++++++++++++++++
- 2 files changed, 46 insertions(+), 1 deletion(-)
+ arch/arm/boot/dts/Makefile                  |  1 +
+ arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts | 65 +++++++++++++++++++++++++++++
+ 2 files changed, 66 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
 
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 4802376..4e76f68 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -65,6 +65,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
@@ -23,9 +26,12 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	bcm4709-buffalo-wxr-1900dhp.dtb \
  	bcm4709-netgear-r8000.dtb
  dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
+diff --git a/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts b/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
+new file mode 100644
+index 0000000..aedf3c4
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,65 @@
 +/*
 + * Broadcom BCM470X / BCM5301X ARM platform code.
 + * DTS for Asus RT-AC87U
@@ -41,15 +47,36 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +
 +/ {
 +	compatible = "asus,rt-ac87u", "brcm,bcm4709", "brcm,bcm4708";
-+	model = "Asus RT-AC87U (BCM4709)";
++	model = "Asus RT-AC87U";
 +
 +	chosen {
-+		bootargs = "console=ttyS0,115200 earlyprintk";
++		bootargs = "console=ttyS0,115200";
 +	};
 +
 +	memory {
-+		reg = <0x00000000 0x08000000
-+		       0x88000000 0x08000000>;
++		reg = <0x00000000 0x08000000>;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		wps {
++			label = "bcm53xx:blue:wps";
++			gpios = <&chipcommon 1 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
++
++		power {
++			label = "bcm53xx:blue:power";
++			gpios = <&chipcommon 3 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-on";
++		};
++
++		wan {
++			label = "bcm53xx:red:wan";
++			gpios = <&chipcommon 5 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "default-off";
++		};
 +	};
 +
 +	gpio-keys {
@@ -70,3 +97,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +		};
 +	};
 +};
+-- 
+1.8.4.5
+
