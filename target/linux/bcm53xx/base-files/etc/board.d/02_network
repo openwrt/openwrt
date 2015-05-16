@@ -9,6 +9,9 @@ board_config_update
 
 board=$(cat /proc/device-tree/compatible | tr '\0' '\t' | cut -f 1)
 case "$board" in
+asus,rt-ac87u)
+	ifname=eth1
+	;;
 netgear,r8000)
 	ifname=eth2
 	;;
@@ -32,6 +35,10 @@ if echo "$vlan1ports" | egrep -q "^1 2 3 4 5" && \
    echo "$vlan2ports" | egrep -q "^0 5"; then
 	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
 	ucidef_add_switch_vlan "switch0" "2" "0 5t"
+elif echo "$vlan1ports" | egrep -q "^1 2 3 5 7" && \
+     echo "$vlan2ports" | egrep -q "^0 7"; then
+	ucidef_add_switch_vlan "switch0" "1" "1 2 3 5 7t"
+	ucidef_add_switch_vlan "switch0" "2" "0 7t"
 elif echo "$vlan1ports" | egrep -q "^0 1 2 3 5 7 8" && \
      echo "$vlan2ports" | egrep -q "^4 8"; then
 	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5 7 8t"
