@@ -226,6 +226,9 @@ int main(int argc, char *argv[])
 		if (offset < 0)
 			offset = (lw4o6) ? 0 : (legacy) ? 4 : 6;
 
+		if (lw4o6 && ealen < 0 && psidlen >= 0)
+			ealen = psidlen;
+
 		// Find PD
 		struct blob_attr *c, *cur;
 		unsigned rem;
