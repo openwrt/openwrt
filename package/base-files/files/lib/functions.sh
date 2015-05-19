@@ -165,7 +165,7 @@ insert_modules() {
 
 default_prerm() {
 	local name
-	name=$(echo $(basename $1) | cut -d. -f1)
+	name=$(basename ${1%.*})
 	[ -f /usr/lib/opkg/info/${name}.prerm-pkg ] && . /usr/lib/opkg/info/${name}.prerm-pkg
 	for i in `cat /usr/lib/opkg/info/${name}.list | grep "^/etc/init.d/"`; do
 		$i disable
@@ -175,7 +175,7 @@ default_prerm() {
 
 default_postinst() {
 	local pkgname rusers
-	pkgname=$(echo $(basename $1) | cut -d. -f1)
+	pkgname=$(basename ${1%.*})
 	rusers=$(grep "Require-User:" ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.control)
 	[ -n "$rusers" ] && {
 		local user group uid gid
