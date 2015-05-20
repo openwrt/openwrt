@@ -24,15 +24,13 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/ipv6/route.c      |  5 +++--
  2 files changed, 34 insertions(+), 10 deletions(-)
 
-diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
-index 7fde1f2..c217775 100644
 --- a/net/ipv6/ip6_output.c
 +++ b/net/ipv6/ip6_output.c
-@@ -886,22 +886,45 @@ static int ip6_dst_lookup_tail(struct sock *sk,
+@@ -883,22 +883,45 @@ static int ip6_dst_lookup_tail(struct so
  #endif
  	int err;
  
--	if (!*dst)
+-	if (*dst == NULL)
 -		*dst = ip6_route_output(net, sk, fl6);
 -
 -	err = (*dst)->error;
@@ -82,11 +80,9 @@ index 7fde1f2..c217775 100644
  #ifdef CONFIG_IPV6_OPTIMISTIC_DAD
  	/*
  	 * Here if the dst entry we've looked up
-diff --git a/net/ipv6/route.c b/net/ipv6/route.c
-index 5c48293..d358888 100644
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -2245,9 +2245,10 @@ int ip6_route_get_saddr(struct net *net,
+@@ -2247,9 +2247,10 @@ int ip6_route_get_saddr(struct net *net,
  			unsigned int prefs,
  			struct in6_addr *saddr)
  {
@@ -99,6 +95,3 @@ index 5c48293..d358888 100644
  		*saddr = rt->rt6i_prefsrc.addr;
  	else
  		err = ipv6_dev_get_saddr(net, idev ? idev->dev : NULL,
--- 
-2.1.4
-
