@@ -1,5 +1,3 @@
-diff --git a/arch/mips/include/asm/octeon/octeon-model.h b/arch/mips/include/asm/octeon/octeon-model.h
-index e2c122c..35d7cbd 100644
 --- a/arch/mips/include/asm/octeon/octeon-model.h
 +++ b/arch/mips/include/asm/octeon/octeon-model.h
 @@ -45,6 +45,7 @@
@@ -68,7 +66,7 @@ index e2c122c..35d7cbd 100644
  
  /* These are used to cover entire families of OCTEON processors */
  #define OCTEON_FAM_1		(OCTEON_CN3XXX)
-@@ -288,9 +333,16 @@ static inline uint64_t cvmx_read_csr(uint64_t csr_addr);
+@@ -288,9 +333,16 @@ static inline uint64_t cvmx_read_csr(uin
  		((((arg_model) & (OM_FLAG_MASK)) == OM_CHECK_SUBMODEL)	\
  			&& __OCTEON_MATCH_MASK__((chip_model), (arg_model), OCTEON_58XX_MODEL_REV_MASK)) || \
  		((((arg_model) & (OM_MATCH_5XXX_FAMILY_MODELS)) == OM_MATCH_5XXX_FAMILY_MODELS) \
@@ -87,7 +85,7 @@ index e2c122c..35d7cbd 100644
  		((((arg_model) & (OM_MATCH_PREVIOUS_MODELS)) == OM_MATCH_PREVIOUS_MODELS) \
  			&& (((chip_model) & OCTEON_58XX_MODEL_MASK) < ((arg_model) & OCTEON_58XX_MODEL_MASK))) \
  		)))
-@@ -326,6 +378,15 @@ static inline int __octeon_is_model_runtime__(uint32_t model)
+@@ -326,6 +378,15 @@ static inline int __octeon_is_model_runt
  #define OCTEON_IS_COMMON_BINARY() 1
  #undef OCTEON_MODEL
  

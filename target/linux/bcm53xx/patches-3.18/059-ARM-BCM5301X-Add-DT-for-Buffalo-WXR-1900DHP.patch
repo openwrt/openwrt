@@ -15,8 +15,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  2 files changed, 128 insertions(+)
  create mode 100644 arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 86217db..d34785a 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -62,6 +62,7 @@ dtb-$(CONFIG_ARCH_BCM_5301X) += \
@@ -27,9 +25,6 @@ index 86217db..d34785a 100644
  	bcm4709-netgear-r8000.dtb
  dtb-$(CONFIG_ARCH_BCM_63XX) += bcm963138dvt.dtb
  dtb-$(CONFIG_ARCH_BCM_MOBILE) += bcm28155-ap.dtb \
-diff --git a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
-new file mode 100644
-index 0000000..548e93b
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
 @@ -0,0 +1,127 @@
@@ -160,6 +155,3 @@ index 0000000..548e93b
 +		};
 +	};
 +};
--- 
-1.8.4.5
-

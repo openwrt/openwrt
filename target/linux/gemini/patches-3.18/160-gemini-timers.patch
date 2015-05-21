@@ -1,5 +1,5 @@
---- a/arch/arm/mach-gemini/time.c	2015-03-25 23:06:03.188317455 +0200
-+++ b/arch/arm/mach-gemini/time.c	2015-03-25 23:06:24.417315486 +0200
+--- a/arch/arm/mach-gemini/time.c
++++ b/arch/arm/mach-gemini/time.c
 @@ -15,15 +15,18 @@
  #include <asm/mach/time.h>
  #include <linux/clockchips.h>
@@ -76,7 +76,7 @@
  
  	return 0;
  }
-@@ -66,48 +80,68 @@
+@@ -66,48 +80,68 @@ static void gemini_timer_set_mode(enum c
  	u32 cr;
  
  	switch (mode) {
@@ -176,7 +176,7 @@
  {
  	struct clock_event_device *evt = &gemini_clockevent;
  
-@@ -116,14 +150,11 @@
+@@ -116,14 +150,11 @@ static irqreturn_t gemini_timer_interrup
  }
  
  static struct irqaction gemini_timer_irq = {
@@ -194,7 +194,7 @@
  void __init gemini_timer_init(void)
  {
  	u32 reg_v;
-@@ -151,20 +182,35 @@
+@@ -151,20 +182,35 @@ void __init gemini_timer_init(void)
  	}
  
  	/*

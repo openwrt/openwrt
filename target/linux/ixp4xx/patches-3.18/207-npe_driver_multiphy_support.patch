@@ -37,7 +37,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  /* Information about built-in HSS (synchronous serial) interfaces */
 --- a/drivers/net/ethernet/xscale/ixp4xx_eth.c
 +++ b/drivers/net/ethernet/xscale/ixp4xx_eth.c
-@@ -614,6 +614,37 @@ static int ixp4xx_phy_connect(struct net
+@@ -610,6 +610,37 @@ static int ixp4xx_phy_connect(struct net
  	struct eth_plat_info *plat = port->plat;
  	char phy_id[MII_BUS_ID_SIZE + 3];
  
@@ -75,7 +75,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  	snprintf(phy_id, MII_BUS_ID_SIZE + 3, PHY_ID_FMT,
  		mdio_bus->id, plat->phy);
  	port->phydev = phy_connect(dev, phy_id, &ixp4xx_adjust_link,
-@@ -636,21 +667,32 @@ static void ixp4xx_phy_disconnect(struct
+@@ -632,21 +663,32 @@ static void ixp4xx_phy_disconnect(struct
  {
  	struct port *port = netdev_priv(dev);
  
@@ -111,7 +111,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  }
  
  static inline void debug_pkt(struct net_device *dev, const char *func,
-@@ -1052,6 +1094,9 @@ static int eth_ioctl(struct net_device *
+@@ -1048,6 +1090,9 @@ static int eth_ioctl(struct net_device *
  			return hwtstamp_get(dev, req);
  	}
  
@@ -121,7 +121,7 @@ TODO: take care of additional PHYs through the PHY abstraction layer
  	return phy_mii_ioctl(port->phydev, req, cmd);
  }
  
-@@ -1072,18 +1117,30 @@ static void ixp4xx_get_drvinfo(struct ne
+@@ -1068,18 +1113,30 @@ static void ixp4xx_get_drvinfo(struct ne
  static int ixp4xx_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
  {
  	struct port *port = netdev_priv(dev);

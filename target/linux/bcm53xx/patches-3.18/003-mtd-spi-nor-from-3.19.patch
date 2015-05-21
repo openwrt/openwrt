@@ -234,7 +234,7 @@
  	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
  
  	instr->state = MTD_ERASE_DONE;
-@@ -341,11 +380,6 @@ static int spi_nor_lock(struct mtd_info 
+@@ -341,11 +380,6 @@ static int spi_nor_lock(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -510,7 +510,7 @@
  	case CFI_MFR_MACRONIX:
  		status = macronix_quad_enable(nor);
  		if (status) {
-@@ -909,11 +925,6 @@ static int spi_nor_check(struct spi_nor 
+@@ -909,11 +925,6 @@ static int spi_nor_check(struct spi_nor
  		return -EINVAL;
  	}
  

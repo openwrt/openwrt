@@ -18,11 +18,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/nvram.c | 7 ++-----
  1 file changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index c5c381c..5e4ae04 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -91,7 +91,6 @@ static int nvram_find_and_copy(void __iomem *iobase, u32 lim)
+@@ -91,7 +91,6 @@ static int nvram_find_and_copy(void __io
  	return -ENXIO;
  
  found:
@@ -51,6 +49,3 @@ index c5c381c..5e4ae04 100644
  
  			return 0;
  		}
--- 
-1.8.4.5
-

@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "gpiolib.h"
  
-@@ -315,3 +317,69 @@ void of_gpiochip_remove(struct gpio_chip
+@@ -316,3 +318,69 @@ void of_gpiochip_remove(struct gpio_chip
  	gpiochip_remove_pin_ranges(chip);
  	of_node_put(chip->of_node);
  }

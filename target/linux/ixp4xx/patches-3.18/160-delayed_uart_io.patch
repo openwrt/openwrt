@@ -1,6 +1,6 @@
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -410,6 +410,20 @@ static void mem_serial_out(struct uart_p
+@@ -416,6 +416,20 @@ static void mem_serial_out(struct uart_p
  	writeb(value, p->membase + offset);
  }
  
@@ -21,7 +21,7 @@
  static void mem32_serial_out(struct uart_port *p, int offset, int value)
  {
  	offset = offset << p->regshift;
-@@ -461,6 +475,11 @@ static void set_io_from_upio(struct uart
+@@ -466,6 +480,11 @@ static void set_io_from_upio(struct uart
  		p->serial_out = mem32_serial_out;
  		break;
  
@@ -33,7 +33,7 @@
  #if defined(CONFIG_MIPS_ALCHEMY) || defined(CONFIG_SERIAL_8250_RT288X)
  	case UPIO_AU:
  		p->serial_in = au_serial_in;
-@@ -486,6 +505,7 @@ serial_port_out_sync(struct uart_port *p
+@@ -491,6 +510,7 @@ serial_port_out_sync(struct uart_port *p
  	switch (p->iotype) {
  	case UPIO_MEM:
  	case UPIO_MEM32:
@@ -41,7 +41,7 @@
  	case UPIO_AU:
  		p->serial_out(p, offset, value);
  		p->serial_in(p, UART_LCR);	/* safe, no side-effects */
-@@ -2538,6 +2558,7 @@ static int serial8250_request_std_resour
+@@ -2655,6 +2675,7 @@ static int serial8250_request_std_resour
  	case UPIO_TSI:
  	case UPIO_MEM32:
  	case UPIO_MEM:
@@ -49,7 +49,7 @@
  		if (!port->mapbase)
  			break;
  
-@@ -2574,6 +2595,7 @@ static void serial8250_release_std_resou
+@@ -2691,6 +2712,7 @@ static void serial8250_release_std_resou
  	case UPIO_TSI:
  	case UPIO_MEM32:
  	case UPIO_MEM:
@@ -57,7 +57,7 @@
  		if (!port->mapbase)
  			break;
  
-@@ -3113,6 +3135,7 @@ static int serial8250_probe(struct platf
+@@ -3424,6 +3446,7 @@ static int serial8250_probe(struct platf
  		uart.port.set_termios	= p->set_termios;
  		uart.port.pm		= p->pm;
  		uart.port.dev		= &dev->dev;
@@ -65,7 +65,7 @@
  		uart.port.irqflags	|= irqflag;
  		ret = serial8250_register_8250_port(&uart);
  		if (ret < 0) {
-@@ -3264,6 +3287,7 @@ int serial8250_register_8250_port(struct
+@@ -3580,6 +3603,7 @@ int serial8250_register_8250_port(struct
  		uart->port.flags        = up->port.flags | UPF_BOOT_AUTOCONF;
  		uart->bugs		= up->bugs;
  		uart->port.mapbase      = up->port.mapbase;
@@ -83,7 +83,7 @@
  	case UPIO_MEM:
  	case UPIO_MEM32:
  	case UPIO_AU:
-@@ -2711,6 +2712,7 @@ int uart_match_port(struct uart_port *po
+@@ -2736,6 +2737,7 @@ int uart_match_port(struct uart_port *po
  	case UPIO_HUB6:
  		return (port1->iobase == port2->iobase) &&
  		       (port1->hub6   == port2->hub6);
@@ -103,7 +103,7 @@
  	unsigned int	type;		/* If UPF_FIXED_TYPE */
 --- a/include/linux/serial_core.h
 +++ b/include/linux/serial_core.h
-@@ -141,6 +141,7 @@ struct uart_port {
+@@ -146,6 +146,7 @@ struct uart_port {
  #define UPIO_MEM32		(3)
  #define UPIO_AU			(4)			/* Au1x00 and RT288x type IO */
  #define UPIO_TSI		(5)			/* Tsi108/109 type IO */
@@ -111,8 +111,8 @@
  
  	unsigned int		read_status_mask;	/* driver specific */
  	unsigned int		ignore_status_mask;	/* driver specific */
-@@ -189,6 +190,7 @@ struct uart_port {
- 
+@@ -202,6 +203,7 @@ struct uart_port {
+ 	int			hw_stopped;		/* sw-assisted CTS flow state */
  	unsigned int		mctrl;			/* current modem ctrl settings */
  	unsigned int		timeout;		/* character-based timeout */
 +	unsigned int		rw_delay;		/* udelay for slow busses, IXP4XX Expansion Bus */

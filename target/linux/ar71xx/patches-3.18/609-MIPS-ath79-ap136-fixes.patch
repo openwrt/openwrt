@@ -90,6 +90,13 @@
  	},
  };
  
+-static struct spi_board_info ap136_spi_info[] = {
+-	{
+-		.bus_num	= 0,
+-		.chip_select	= 0,
+-		.max_speed_hz	= 25000000,
+-		.modalias	= "mx25l6405d",
+-	}
 +static struct ar8327_pad_cfg ap136_ar8327_pad0_cfg;
 +static struct ar8327_pad_cfg ap136_ar8327_pad6_cfg;
 +
@@ -110,26 +117,21 @@
 +		.txpause = 1,
 +		.rxpause = 1,
 +	},
-+};
-+
--static struct spi_board_info ap136_spi_info[] = {
+ };
+ 
+-static struct ath79_spi_platform_data ap136_spi_data = {
+-	.bus_num	= 0,
+-	.num_chipselect	= 1,
 +static struct mdio_board_info ap136_mdio0_info[] = {
- 	{
--		.bus_num	= 0,
--		.chip_select	= 0,
--		.max_speed_hz	= 25000000,
--		.modalias	= "mx25l6405d",
--	}
++	{
 +		.bus_id = "ag71xx-mdio.0",
 +		.phy_addr = 0,
 +		.platform_data = &ap136_ar8327_data,
 +	},
  };
  
--static struct ath79_spi_platform_data ap136_spi_data = {
--	.bus_num	= 0,
--	.num_chipselect	= 1,
--};
+-#ifdef CONFIG_PCI
+-static struct ath9k_platform_data ap136_ath9k_data;
 +static void __init ap136_common_setup(void)
 +{
 +	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
@@ -149,12 +151,10 @@
 +
 +	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
  
--#ifdef CONFIG_PCI
--static struct ath9k_platform_data ap136_ath9k_data;
+-static int ap136_pci_plat_dev_init(struct pci_dev *dev)
 +	ath79_register_mdio(0, 0x0);
 +	ath79_init_mac(ath79_eth0_data.mac_addr, art + AP136_MAC0_OFFSET, 0);
- 
--static int ap136_pci_plat_dev_init(struct pci_dev *dev)
++
 +	mdiobus_register_board_info(ap136_mdio0_info,
 +				    ARRAY_SIZE(ap136_mdio0_info));
 +

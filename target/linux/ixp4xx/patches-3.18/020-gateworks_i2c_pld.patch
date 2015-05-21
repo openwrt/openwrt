@@ -1,8 +1,6 @@
-Index: linux-3.18.5/drivers/gpio/Kconfig
-===================================================================
---- linux-3.18.5.orig/drivers/gpio/Kconfig	2015-01-30 02:41:03.000000000 +0100
-+++ linux-3.18.5/drivers/gpio/Kconfig	2015-02-09 13:55:16.942041668 +0100
-@@ -794,6 +794,14 @@
+--- a/drivers/gpio/Kconfig
++++ b/drivers/gpio/Kconfig
+@@ -794,6 +794,14 @@ config GPIO_RDC321X
  	  Support for the RDC R321x SoC GPIOs over southbridge
  	  PCI configuration space.
  
@@ -17,19 +15,15 @@ Index: linux-3.18.5/drivers/gpio/Kconfig
  comment "SPI GPIO expanders:"
  
  config GPIO_MAX7301
-Index: linux-3.18.5/drivers/gpio/Makefile
-===================================================================
---- linux-3.18.5.orig/drivers/gpio/Makefile	2015-01-30 02:41:03.000000000 +0100
-+++ linux-3.18.5/drivers/gpio/Makefile	2015-02-09 13:56:05.990145732 +0100
-@@ -106,3 +106,4 @@
+--- a/drivers/gpio/Makefile
++++ b/drivers/gpio/Makefile
+@@ -106,3 +106,4 @@ obj-$(CONFIG_GPIO_XILINX)	+= gpio-xilinx
  obj-$(CONFIG_GPIO_XTENSA)	+= gpio-xtensa.o
  obj-$(CONFIG_GPIO_ZEVIO)	+= gpio-zevio.o
  obj-$(CONFIG_GPIO_ZYNQ)		+= gpio-zynq.o
 +obj-$(CONFIG_GPIO_GW_I2C_PLD)	+= gw_i2c_pld.o
-Index: linux-3.18.5/drivers/gpio/gw_i2c_pld.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.18.5/drivers/gpio/gw_i2c_pld.c	2015-02-09 14:02:00.146895858 +0100
+--- /dev/null
++++ b/drivers/gpio/gw_i2c_pld.c
 @@ -0,0 +1,371 @@
 +/*
 + * Gateworks I2C PLD GPIO expander
@@ -402,10 +396,8 @@ Index: linux-3.18.5/drivers/gpio/gw_i2c_pld.c
 +
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Chris Lang");
-Index: linux-3.18.5/include/linux/i2c/gw_i2c_pld.h
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.18.5/include/linux/i2c/gw_i2c_pld.h	2015-02-09 13:55:16.946041675 +0100
+--- /dev/null
++++ b/include/linux/i2c/gw_i2c_pld.h
 @@ -0,0 +1,20 @@
 +#ifndef __LINUX_GW_I2C_PLD_H
 +#define __LINUX_GW_I2C_PLD_H

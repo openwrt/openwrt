@@ -1,8 +1,6 @@
-Index: linux-3.18.9/drivers/i2c/busses/Kconfig
-===================================================================
---- linux-3.18.9.orig/drivers/i2c/busses/Kconfig	2015-03-23 15:00:11.730403938 +0800
-+++ linux-3.18.9/drivers/i2c/busses/Kconfig	2015-03-23 15:00:11.982403926 +0800
-@@ -714,6 +714,10 @@
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -714,6 +714,10 @@ config I2C_RALINK
  	tristate "Ralink I2C Controller"
  	select OF_I2C
  
@@ -13,11 +11,9 @@ Index: linux-3.18.9/drivers/i2c/busses/Kconfig
  config HAVE_S3C2410_I2C
  	bool
  	help
-Index: linux-3.18.9/drivers/i2c/busses/Makefile
-===================================================================
---- linux-3.18.9.orig/drivers/i2c/busses/Makefile	2015-03-23 15:00:11.730403938 +0800
-+++ linux-3.18.9/drivers/i2c/busses/Makefile	2015-03-23 15:00:11.982403926 +0800
-@@ -67,6 +67,7 @@
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -67,6 +67,7 @@ obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
  obj-$(CONFIG_I2C_PXA)		+= i2c-pxa.o
  obj-$(CONFIG_I2C_PXA_PCI)	+= i2c-pxa-pci.o
  obj-$(CONFIG_I2C_RALINK)	+= i2c-ralink.o
@@ -25,10 +21,8 @@ Index: linux-3.18.9/drivers/i2c/busses/Makefile
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
  obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
-Index: linux-3.18.9/drivers/i2c/busses/i2c-mt7621.c
-===================================================================
---- /dev/null	1970-01-01 00:00:00.000000000 +0000
-+++ linux-3.18.9/drivers/i2c/busses/i2c-mt7621.c	2015-03-23 16:31:42.684747034 +0800
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-mt7621.c
 @@ -0,0 +1,303 @@
 +/*
 + * drivers/i2c/busses/i2c-mt7621.c

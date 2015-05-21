@@ -12,8 +12,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/mtd/bcm47xxpart.c | 12 ++++++++++++
  1 file changed, 12 insertions(+)
 
-diff --git a/drivers/mtd/bcm47xxpart.c b/drivers/mtd/bcm47xxpart.c
-index 34314f9..d08d329 100644
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
 @@ -14,6 +14,7 @@
@@ -24,7 +22,7 @@ index 34314f9..d08d329 100644
  
  #include <uapi/linux/magic.h>
  
-@@ -135,6 +136,17 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -135,6 +136,17 @@ static int bcm47xxpart_parse(struct mtd_
  			break;
  		}
  
@@ -42,6 +40,3 @@ index 34314f9..d08d329 100644
  		/* Read beginning of the block */
  		if (mtd_read(master, offset, BCM47XXPART_BYTES_TO_READ,
  			     &bytes_read, (uint8_t *)buf) < 0) {
--- 
-1.8.4.5
-

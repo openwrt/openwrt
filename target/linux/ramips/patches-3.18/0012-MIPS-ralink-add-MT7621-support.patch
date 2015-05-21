@@ -78,7 +78,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/arch/mips/kernel/vmlinux.lds.S
 +++ b/arch/mips/kernel/vmlinux.lds.S
-@@ -51,6 +51,7 @@
+@@ -51,6 +51,7 @@ SECTIONS
  	/* read-only */
  	_text = .;	/* Text and read-only data */
  	.text : {
@@ -88,9 +88,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		LOCK_TEXT
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -7,6 +7,11 @@
- 	select CLKSRC_OF
- 	select CLKSRC_MMIO
+@@ -12,6 +12,11 @@ config RALINK_ILL_ACC
+ 	depends on SOC_RT305X
+ 	default y
  
 +config IRQ_INTC
 +	bool
@@ -100,7 +100,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
-@@ -28,6 +33,15 @@
+@@ -33,6 +38,15 @@ choice
  	config SOC_MT7620
  		bool "MT7620"
  
@@ -116,7 +116,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endchoice
  
  choice
-@@ -59,6 +73,10 @@
+@@ -64,6 +78,10 @@ choice
  		depends on SOC_MT7620
  		select BUILTIN_DTB
  
@@ -154,7 +154,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
 --- a/arch/mips/ralink/Platform
 +++ b/arch/mips/ralink/Platform
-@@ -27,3 +27,8 @@
+@@ -27,3 +27,8 @@ cflags-$(CONFIG_SOC_RT3883)	+= -I$(srctr
  #
  load-$(CONFIG_SOC_MT7620)	+= 0xffffffff80000000
  cflags-$(CONFIG_SOC_MT7620)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7620
@@ -715,7 +715,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +}
 --- a/arch/mips/kernel/mips-cm.c
 +++ b/arch/mips/kernel/mips-cm.c
-@@ -105,7 +105,7 @@
+@@ -105,7 +105,7 @@ int mips_cm_probe(void)
  	write_gcr_base(base_reg);
  
  	/* disable CM regions */
@@ -724,7 +724,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	write_gcr_reg0_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
  	write_gcr_reg1_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
  	write_gcr_reg1_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
-@@ -113,7 +113,7 @@
+@@ -113,7 +113,7 @@ int mips_cm_probe(void)
  	write_gcr_reg2_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);
  	write_gcr_reg3_base(CM_GCR_REGn_BASE_BASEADDR_MSK);
  	write_gcr_reg3_mask(CM_GCR_REGn_MASK_ADDRMASK_MSK);

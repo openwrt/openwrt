@@ -39,8 +39,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  delete mode 100644 arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
  create mode 100644 include/linux/bcm47xx_nvram.h
 
-diff --git a/arch/mips/bcm47xx/board.c b/arch/mips/bcm47xx/board.c
-index b3ae068..6e85130 100644
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
 @@ -1,8 +1,8 @@
@@ -53,8 +51,6 @@ index b3ae068..6e85130 100644
  
  struct bcm47xx_board_type {
  	const enum bcm47xx_board board;
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index d805d8a..7c77a88 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -16,7 +16,7 @@
@@ -66,8 +62,6 @@ index d805d8a..7c77a88 100644
  
  #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
  #define NVRAM_SPACE		0x8000
-diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
-index e43b504..b26c9c2 100644
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -42,7 +42,6 @@
@@ -78,8 +72,6 @@ index e43b504..b26c9c2 100644
  #include <bcm47xx_board.h>
  
  union bcm47xx_bus bcm47xx_bus;
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index eff9205..c114b02 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
 @@ -27,7 +27,6 @@
@@ -90,8 +82,6 @@ index eff9205..c114b02 100644
  #include <linux/if_ether.h>
  #include <linux/etherdevice.h>
  
-diff --git a/arch/mips/bcm47xx/time.c b/arch/mips/bcm47xx/time.c
-index 2c85d92..5b46510 100644
 --- a/arch/mips/bcm47xx/time.c
 +++ b/arch/mips/bcm47xx/time.c
 @@ -27,7 +27,6 @@
@@ -102,8 +92,6 @@ index 2c85d92..5b46510 100644
  #include <bcm47xx_board.h>
  
  void __init plat_time_init(void)
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
-index 7527c1d..8ed77f6 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
 @@ -22,6 +22,7 @@
@@ -139,8 +127,6 @@ index 7527c1d..8ed77f6 100644
 -
 -#endif /* __BCM47XX_NVRAM_H */
 +#include <linux/bcm47xx_nvram.h>
-diff --git a/drivers/bcma/driver_mips.c b/drivers/bcma/driver_mips.c
-index 04faf6d..24424f3 100644
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
 @@ -21,7 +21,7 @@
@@ -152,11 +138,9 @@ index 04faf6d..24424f3 100644
  #endif
  
  enum bcma_boot_dev {
-diff --git a/drivers/net/ethernet/broadcom/b44.c b/drivers/net/ethernet/broadcom/b44.c
-index bd5916a..77363d6 100644
 --- a/drivers/net/ethernet/broadcom/b44.c
 +++ b/drivers/net/ethernet/broadcom/b44.c
-@@ -400,7 +400,7 @@ static void b44_set_flow_ctrl(struct b44 *bp, u32 local, u32 remote)
+@@ -400,7 +400,7 @@ static void b44_set_flow_ctrl(struct b44
  }
  
  #ifdef CONFIG_BCM47XX
@@ -165,8 +149,6 @@ index bd5916a..77363d6 100644
  static void b44_wap54g10_workaround(struct b44 *bp)
  {
  	char buf[20];
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index 0469f72..be059df 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
 @@ -18,7 +18,7 @@
@@ -178,8 +160,6 @@ index 0469f72..be059df 100644
  
  static const struct bcma_device_id bgmac_bcma_tbl[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_4706_MAC_GBIT, BCMA_ANY_REV, BCMA_ANY_CLASS),
-diff --git a/drivers/ssb/driver_chipcommon_pmu.c b/drivers/ssb/driver_chipcommon_pmu.c
-index 1173a09..0942841 100644
 --- a/drivers/ssb/driver_chipcommon_pmu.c
 +++ b/drivers/ssb/driver_chipcommon_pmu.c
 @@ -14,7 +14,7 @@
@@ -191,8 +171,6 @@ index 1173a09..0942841 100644
  #endif
  
  #include "ssb_private.h"
-diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
-index 7b986f9..f87efef 100644
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
 @@ -16,7 +16,7 @@
@@ -204,9 +182,6 @@ index 7b986f9..f87efef 100644
  #endif
  
  #include "ssb_private.h"
-diff --git a/include/linux/bcm47xx_nvram.h b/include/linux/bcm47xx_nvram.h
-new file mode 100644
-index 0000000..b12b07e
 --- /dev/null
 +++ b/include/linux/bcm47xx_nvram.h
 @@ -0,0 +1,34 @@
@@ -244,6 +219,3 @@ index 0000000..b12b07e
 +#endif
 +
 +#endif /* __BCM47XX_NVRAM_H */
--- 
-1.8.4.5
-

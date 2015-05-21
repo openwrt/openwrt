@@ -1,6 +1,6 @@
 --- a/drivers/leds/Kconfig
 +++ b/drivers/leds/Kconfig
-@@ -251,6 +251,12 @@ config LEDS_LP8788
+@@ -250,6 +250,12 @@ config LEDS_LP8788
  	help
  	  This option enables support for the Keyboard LEDs on the LP8788 PMIC.
  
@@ -15,7 +15,7 @@
  	depends on LEDS_CLASS
 --- a/drivers/leds/Makefile
 +++ b/drivers/leds/Makefile
-@@ -22,6 +22,7 @@ obj-$(CONFIG_LEDS_SUNFIRE)		+= leds-sunf
+@@ -21,6 +21,7 @@ obj-$(CONFIG_LEDS_SUNFIRE)		+= leds-sunf
  obj-$(CONFIG_LEDS_PCA9532)		+= leds-pca9532.o
  obj-$(CONFIG_LEDS_GPIO_REGISTER)	+= leds-gpio-register.o
  obj-$(CONFIG_LEDS_GPIO)			+= leds-gpio.o
@@ -180,7 +180,7 @@
 +MODULE_DESCRIPTION("Latch LED driver");
 --- a/include/linux/leds.h
 +++ b/include/linux/leds.h
-@@ -285,4 +285,18 @@ static inline void ledtrig_cpu(enum cpu_
+@@ -297,4 +297,18 @@ static inline void ledtrig_cpu(enum cpu_
  }
  #endif
  

@@ -15,11 +15,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/ssb/driver_pcicore.c | 4 ++++
  1 file changed, 4 insertions(+)
 
-diff --git a/drivers/ssb/driver_pcicore.c b/drivers/ssb/driver_pcicore.c
-index 15a7ee3..c603d19 100644
 --- a/drivers/ssb/driver_pcicore.c
 +++ b/drivers/ssb/driver_pcicore.c
-@@ -164,6 +164,10 @@ static int ssb_extpci_write_config(struct ssb_pcicore *pc,
+@@ -164,6 +164,10 @@ static int ssb_extpci_write_config(struc
  	SSB_WARN_ON(!pc->hostmode);
  	if (unlikely(len != 1 && len != 2 && len != 4))
  		goto out;
@@ -30,6 +28,3 @@ index 15a7ee3..c603d19 100644
  	addr = get_cfgspace_addr(pc, bus, dev, func, off);
  	if (unlikely(!addr))
  		goto out;
--- 
-1.8.4.5
-

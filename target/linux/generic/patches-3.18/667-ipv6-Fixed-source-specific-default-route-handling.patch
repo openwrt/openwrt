@@ -24,11 +24,9 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  net/ipv6/route.c      |  5 +++--
  2 files changed, 34 insertions(+), 10 deletions(-)
 
-diff --git a/net/ipv6/ip6_output.c b/net/ipv6/ip6_output.c
-index 7fde1f2..c217775 100644
 --- a/net/ipv6/ip6_output.c
 +++ b/net/ipv6/ip6_output.c
-@@ -897,21 +897,45 @@ static int ip6_dst_lookup_tail(struct so
+@@ -898,21 +898,45 @@ static int ip6_dst_lookup_tail(struct so
  #endif
  	int err;
  
@@ -83,7 +81,7 @@ index 7fde1f2..c217775 100644
  	 * Here if the dst entry we've looked up
 --- a/net/ipv6/route.c
 +++ b/net/ipv6/route.c
-@@ -2215,9 +2215,10 @@ int ip6_route_get_saddr(struct net *net,
+@@ -2182,9 +2182,10 @@ int ip6_route_get_saddr(struct net *net,
  			unsigned int prefs,
  			struct in6_addr *saddr)
  {

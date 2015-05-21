@@ -216,7 +216,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		periph_bases[1] += PERF_IRQMASK_6328_REG(1);
 --- a/arch/mips/bcm63xx/prom.c
 +++ b/arch/mips/bcm63xx/prom.c
-@@ -72,7 +72,7 @@ void __init prom_init(void)
+@@ -68,7 +68,7 @@ void __init prom_init(void)
  
  			if (reg & OTP_6328_REG3_TP1_DISABLED)
  				bmips_smp_enabled = 0;
@@ -274,7 +274,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  		bcm63xx_reset_bits = bcm6328_reset_bits;
 --- a/arch/mips/bcm63xx/setup.c
 +++ b/arch/mips/bcm63xx/setup.c
-@@ -71,6 +71,9 @@ void bcm63xx_machine_reboot(void)
+@@ -72,6 +72,9 @@ void bcm63xx_machine_reboot(void)
  	case BCM3368_CPU_ID:
  		perf_regs[0] = PERF_EXTIRQ_CFG_REG_3368;
  		break;
@@ -284,7 +284,7 @@ Subject: [PATCH 51/53] MIPS: BCM63XX: add support for BCM6318
  	case BCM6328_CPU_ID:
  		perf_regs[0] = PERF_EXTIRQ_CFG_REG_6328;
  		break;
-@@ -110,7 +113,7 @@ void bcm63xx_machine_reboot(void)
+@@ -111,7 +114,7 @@ void bcm63xx_machine_reboot(void)
  		bcm6348_a1_reboot();
  
  	printk(KERN_INFO "triggering watchdog soft-reset...\n");

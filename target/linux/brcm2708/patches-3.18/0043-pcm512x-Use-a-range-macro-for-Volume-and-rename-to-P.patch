@@ -20,6 +20,6 @@ DAC ouput stages.
 -		 PCM512x_DIGITAL_VOLUME_3, 0, 255, 1, digital_tlv),
 +SOC_DOUBLE_R_RANGE_TLV("PCM", PCM512x_DIGITAL_VOLUME_2,
 +		 PCM512x_DIGITAL_VOLUME_3, 0, 40, 255, 1, digital_tlv),
- SOC_DOUBLE_TLV("Playback Volume", PCM512x_ANALOG_GAIN_CTRL,
+ SOC_DOUBLE_TLV("Analogue Playback Volume", PCM512x_ANALOG_GAIN_CTRL,
  	       PCM512x_LAGN_SHIFT, PCM512x_RAGN_SHIFT, 1, 1, analog_tlv),
- SOC_DOUBLE_TLV("Playback Boost Volume", PCM512x_ANALOG_GAIN_BOOST,
+ SOC_DOUBLE_TLV("Analogue Playback Boost Volume", PCM512x_ANALOG_GAIN_BOOST,

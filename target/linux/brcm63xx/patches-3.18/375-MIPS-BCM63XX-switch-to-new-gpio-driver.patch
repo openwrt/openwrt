@@ -7,7 +7,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
  arch/mips/bcm63xx/boards/board_common.c |    2 +
  arch/mips/bcm63xx/gpio.c                |  147 +++++++------------------------
- arch/mips/bcm63xx/prom.c                |    3 -
+ arch/mips/bcm63xx/setup.c                |    3 -
  3 files changed, 33 insertions(+), 119 deletions(-)
 
 --- a/arch/mips/bcm63xx/boards/board_common.c
@@ -202,15 +202,15 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
 -	return gpiochip_add(&bcm63xx_gpio_chip);
  }
---- a/arch/mips/bcm63xx/prom.c
-+++ b/arch/mips/bcm63xx/prom.c
-@@ -54,9 +54,6 @@ void __init prom_init(void)
- 	reg &= ~mask;
- 	bcm_perf_writel(reg, PERF_CKCTL_REG);
+--- a/arch/mips/bcm63xx/setup.c
++++ b/arch/mips/bcm63xx/setup.c
+@@ -164,9 +164,6 @@ void __init plat_mem_setup(void)
  
+ int __init bcm63xx_register_devices(void)
+ {
 -	/* register gpiochip */
 -	bcm63xx_gpio_init();
 -
- 	/* detect and setup flash access */
- 	bcm63xx_flash_detect();
+ 	return board_register_devices();
+ }
  

@@ -23,8 +23,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h | 35 +---------------------
  3 files changed, 33 insertions(+), 39 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 8b64991..c5c381c 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -18,6 +18,19 @@
@@ -47,7 +45,7 @@ index 8b64991..c5c381c 100644
  static char nvram_buf[NVRAM_SPACE];
  static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
  
-@@ -28,7 +41,7 @@ static u32 find_nvram_size(void __iomem *end)
+@@ -28,7 +41,7 @@ static u32 find_nvram_size(void __iomem
  
  	for (i = 0; i < ARRAY_SIZE(nvram_sizes); i++) {
  		header = (struct nvram_header *)(end - nvram_sizes[i]);
@@ -56,7 +54,7 @@ index 8b64991..c5c381c 100644
  			return nvram_sizes[i];
  	}
  
-@@ -63,13 +76,13 @@ static int nvram_find_and_copy(void __iomem *iobase, u32 lim)
+@@ -63,13 +76,13 @@ static int nvram_find_and_copy(void __io
  
  	/* Try embedded NVRAM at 4 KB and 1 KB as last resorts */
  	header = (struct nvram_header *)(iobase + 4096);
@@ -90,11 +88,9 @@ index 8b64991..c5c381c 100644
  {
  	char *var, *value, *end, *eq;
  	int err;
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index e772e77..2eff7fe 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -136,6 +136,20 @@ static void nvram_read_leddc(const char *prefix, const char *name,
+@@ -136,6 +136,20 @@ static void nvram_read_leddc(const char
  	*leddc_off_time = (val >> 16) & 0xff;
  }
  
@@ -115,8 +111,6 @@ index e772e77..2eff7fe 100644
  static void nvram_read_macaddr(const char *prefix, const char *name,
  			       u8 val[6], bool fallback)
  {
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
-index 676be22..ee59ffe 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
 @@ -14,41 +14,8 @@
@@ -162,6 +156,3 @@ index 676be22..ee59ffe 100644
  int bcm47xx_nvram_gpio_pin(const char *name);
  
  #endif /* __BCM47XX_NVRAM_H */
--- 
-1.8.4.5
-

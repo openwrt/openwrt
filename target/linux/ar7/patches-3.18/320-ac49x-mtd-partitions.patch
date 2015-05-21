@@ -1,6 +1,6 @@
 --- a/drivers/mtd/Kconfig
 +++ b/drivers/mtd/Kconfig
-@@ -169,6 +169,11 @@ config MTD_OF_PARTS
+@@ -164,6 +164,11 @@ config MTD_OF_PARTS
  	  the partition map from the children of the flash node,
  	  as described in Documentation/devicetree/booting-without-of.txt.
  
@@ -14,7 +14,7 @@
  	---help---
 --- a/drivers/mtd/Makefile
 +++ b/drivers/mtd/Makefile
-@@ -15,6 +15,7 @@ mtd-$(CONFIG_MTD_SPLIT_LZMA_FW) += mtdsp
+@@ -11,6 +11,7 @@ obj-$(CONFIG_MTD_SPLIT)		+= mtdsplit/
  obj-$(CONFIG_MTD_OF_PARTS)	+= ofpart.o
  obj-$(CONFIG_MTD_REDBOOT_PARTS) += redboot.o
  obj-$(CONFIG_MTD_CMDLINE_PARTS) += cmdlinepart.o

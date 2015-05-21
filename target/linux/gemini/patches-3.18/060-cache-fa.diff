@@ -1,5 +1,5 @@
---- a/arch/arm/mm/cache-fa.S	2011-01-05 01:50:19.000000000 +0100
-+++ b/arch/arm/mm/cache-fa.S	2012-07-25 14:30:40.883639094 +0200
+--- a/arch/arm/mm/cache-fa.S
++++ b/arch/arm/mm/cache-fa.S
 @@ -24,7 +24,8 @@
  /*
   * The size of one data cache line.
@@ -10,7 +10,7 @@
  
  /*
   * The total size of the data cache.
-@@ -169,7 +170,17 @@
+@@ -169,7 +170,17 @@ ENTRY(fa_flush_kern_dcache_area)
   *	- start  - virtual start address
   *	- end	 - virtual end address
   */
@@ -28,7 +28,7 @@
  	tst	r0, #CACHE_DLINESIZE - 1
  	bic	r0, r0, #CACHE_DLINESIZE - 1
  	mcrne	p15, 0, r0, c7, c14, 1		@ clean & invalidate D entry
-@@ -193,6 +204,10 @@
+@@ -193,6 +204,10 @@ fa_dma_inv_range:
   *	- end	 - virtual end address
   */
  fa_dma_clean_range:

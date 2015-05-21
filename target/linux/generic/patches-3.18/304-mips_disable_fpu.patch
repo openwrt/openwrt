@@ -60,7 +60,7 @@ v2: incorporated changes suggested by Jonas Gorski
  core-y += arch/mips/
 --- a/arch/mips/include/asm/fpu.h
 +++ b/arch/mips/include/asm/fpu.h
-@@ -168,8 +168,10 @@ static inline int init_fpu(void)
+@@ -169,8 +169,10 @@ static inline int init_fpu(void)
  		ret = __own_fpu();
  		if (!ret)
  			_init_fpu();

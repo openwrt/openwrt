@@ -11,7 +11,7 @@ Date:   Thu Feb 27 01:02:23 2014 -0800
 
 --- a/drivers/pci/host/pcie-designware.c
 +++ b/drivers/pci/host/pcie-designware.c
-@@ -492,6 +492,9 @@ int __init dw_pcie_host_init(struct pcie
+@@ -492,6 +492,9 @@ int dw_pcie_host_init(struct pcie_port *
  	if (pp->ops->host_init)
  		pp->ops->host_init(pp);
  

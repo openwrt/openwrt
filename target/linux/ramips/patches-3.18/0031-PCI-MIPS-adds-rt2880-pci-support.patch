@@ -309,7 +309,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +arch_initcall(pcibios_init);
 --- a/arch/mips/ralink/Kconfig
 +++ b/arch/mips/ralink/Kconfig
-@@ -21,6 +21,7 @@ choice
+@@ -31,6 +31,7 @@ choice
  	config SOC_RT288X
  		bool "RT288x"
  		select MIPS_L1_CACHE_SHIFT_4

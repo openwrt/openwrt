@@ -1,8 +1,6 @@
-diff --git a/Documentation/devicetree/bindings/soc/qcom/qcom,gsbi.txt b/Documentation/devicetree/bindings/soc/qcom/qcom,gsbi.txt
-index 4ce24d4..186e5f4 100644
 --- a/Documentation/devicetree/bindings/soc/qcom/qcom,gsbi.txt
 +++ b/Documentation/devicetree/bindings/soc/qcom/qcom,gsbi.txt
-@@ -6,7 +6,8 @@ configuration settings.  The mode setting will govern the input/output mode of
+@@ -6,7 +6,8 @@ configuration settings.  The mode settin
  the 4 GSBI IOs.
  
  Required properties:
@@ -48,8 +46,6 @@ index 4ce24d4..186e5f4 100644
 +	};
 +
 +
-diff --git a/drivers/soc/qcom/Kconfig b/drivers/soc/qcom/Kconfig
-index 7bd2c94..460b2db 100644
 --- a/drivers/soc/qcom/Kconfig
 +++ b/drivers/soc/qcom/Kconfig
 @@ -4,6 +4,7 @@
@@ -60,8 +56,6 @@ index 7bd2c94..460b2db 100644
          help
            Say y here to enable GSBI support.  The GSBI provides control
            functions for connecting the underlying serial UART, SPI, and I2C
-diff --git a/drivers/soc/qcom/qcom_gsbi.c b/drivers/soc/qcom/qcom_gsbi.c
-index 729425d..09c669e 100644
 --- a/drivers/soc/qcom/qcom_gsbi.c
 +++ b/drivers/soc/qcom/qcom_gsbi.c
 @@ -18,22 +18,129 @@
@@ -194,7 +188,7 @@ index 729425d..09c669e 100644
  
  	gsbi = devm_kzalloc(&pdev->dev, sizeof(*gsbi), GFP_KERNEL);
  
-@@ -45,6 +152,32 @@ static int gsbi_probe(struct platform_device *pdev)
+@@ -45,6 +152,32 @@ static int gsbi_probe(struct platform_de
  	if (IS_ERR(base))
  		return PTR_ERR(base);
  
@@ -227,7 +221,7 @@ index 729425d..09c669e 100644
  	if (of_property_read_u32(node, "qcom,mode", &gsbi->mode)) {
  		dev_err(&pdev->dev, "missing mode configuration\n");
  		return -EINVAL;
-@@ -64,6 +197,25 @@ static int gsbi_probe(struct platform_device *pdev)
+@@ -64,6 +197,25 @@ static int gsbi_probe(struct platform_de
  	writel_relaxed((gsbi->mode << GSBI_PROTOCOL_SHIFT) | gsbi->crci,
  				base + GSBI_CTRL_REG);
  
@@ -253,6 +247,3 @@ index 729425d..09c669e 100644
  	/* make sure the gsbi control write is not reordered */
  	wmb();
  
--- 
-1.9.1
-

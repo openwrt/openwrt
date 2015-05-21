@@ -15,7 +15,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/drivers/net/ethernet/xscale/ixp4xx_eth.c
 +++ b/drivers/net/ethernet/xscale/ixp4xx_eth.c
-@@ -661,10 +661,10 @@ static inline void queue_put_desc(unsign
+@@ -657,10 +657,10 @@ static inline void queue_put_desc(unsign
  static inline void dma_unmap_tx(struct port *port, struct desc *desc)
  {
  #ifdef __ARMEB__
@@ -28,7 +28,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  			 ALIGN((desc->data & 3) + desc->buf_len, 4),
  			 DMA_TO_DEVICE);
  #endif
-@@ -731,9 +731,9 @@ static int eth_poll(struct napi_struct *
+@@ -727,9 +727,9 @@ static int eth_poll(struct napi_struct *
  
  #ifdef __ARMEB__
  		if ((skb = netdev_alloc_skb(dev, RX_BUFF_SIZE))) {
@@ -40,7 +40,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  				dev_kfree_skb(skb);
  				skb = NULL;
  			}
-@@ -756,10 +756,11 @@ static int eth_poll(struct napi_struct *
+@@ -752,10 +752,11 @@ static int eth_poll(struct napi_struct *
  #ifdef __ARMEB__
  		temp = skb;
  		skb = port->rx_buff_tab[n];
@@ -54,7 +54,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  					RX_BUFF_SIZE, DMA_FROM_DEVICE);
  		memcpy_swab32((u32 *)skb->data, (u32 *)port->rx_buff_tab[n],
  			      ALIGN(NET_IP_ALIGN + desc->pkt_len, 4) / 4);
-@@ -878,7 +879,7 @@ static int eth_xmit(struct sk_buff *skb,
+@@ -874,7 +875,7 @@ static int eth_xmit(struct sk_buff *skb,
  	memcpy_swab32(mem, (u32 *)((int)skb->data & ~3), bytes / 4);
  #endif
  
@@ -63,7 +63,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	if (dma_mapping_error(&dev->dev, phys)) {
  		dev_kfree_skb(skb);
  #ifndef __ARMEB__
-@@ -1128,7 +1129,7 @@ static int init_queues(struct port *port
+@@ -1124,7 +1125,7 @@ static int init_queues(struct port *port
  	int i;
  
  	if (!ports_open) {
@@ -72,7 +72,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  					   POOL_ALLOC_SIZE, 32, 0);
  		if (!dma_pool)
  			return -ENOMEM;
-@@ -1156,9 +1157,9 @@ static int init_queues(struct port *port
+@@ -1152,9 +1153,9 @@ static int init_queues(struct port *port
  		data = buff;
  #endif
  		desc->buf_len = MAX_MRU;
@@ -84,7 +84,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  			free_buffer(buff);
  			return -EIO;
  		}
-@@ -1178,7 +1179,7 @@ static void destroy_queues(struct port *
+@@ -1174,7 +1175,7 @@ static void destroy_queues(struct port *
  			struct desc *desc = rx_desc_ptr(port, i);
  			buffer_t *buff = port->rx_buff_tab[i];
  			if (buff) {

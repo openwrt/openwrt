@@ -67,14 +67,6 @@
  	},
  };
  
-+static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
-+	.mode = AR8327_PAD_MAC_RGMII,
-+	.txclk_delay_en = true,
-+	.rxclk_delay_en = true,
-+	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
-+	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
-+};
-+
 -static struct spi_board_info db120_spi_info[] = {
 -	{
 -		.bus_num	= 0,
@@ -82,27 +74,23 @@
 -		.max_speed_hz	= 25000000,
 -		.modalias	= "s25sl064a",
 -	}
++static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
++	.mode = AR8327_PAD_MAC_RGMII,
++	.txclk_delay_en = true,
++	.rxclk_delay_en = true,
++	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
++	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
+ };
+ 
+-static struct ath79_spi_platform_data db120_spi_data = {
+-	.bus_num	= 0,
+-	.num_chipselect = 1,
 +static struct ar8327_led_cfg db120_ar8327_led_cfg = {
 +	.led_ctrl0 = 0x00000000,
 +	.led_ctrl1 = 0xc737c737,
 +	.led_ctrl2 = 0x00000000,
 +	.led_ctrl3 = 0x00c30c00,
 +	.open_drain = true,
- };
- 
--static struct ath79_spi_platform_data db120_spi_data = {
--	.bus_num	= 0,
--	.num_chipselect = 1,
-+static struct ar8327_platform_data db120_ar8327_data = {
-+	.pad0_cfg = &db120_ar8327_pad0_cfg,
-+	.port0_cfg = {
-+		.force_link = 1,
-+		.speed = AR8327_PORT_SPEED_1000,
-+		.duplex = 1,
-+		.txpause = 1,
-+		.rxpause = 1,
-+	},
-+	.led_cfg = &db120_ar8327_led_cfg,
  };
  
 -#ifdef CONFIG_PCI
@@ -123,7 +111,18 @@
 -{
 -	memcpy(db120_ath9k_data.eeprom_data, eeprom,
 -	       sizeof(db120_ath9k_data.eeprom_data));
--
++static struct ar8327_platform_data db120_ar8327_data = {
++	.pad0_cfg = &db120_ar8327_pad0_cfg,
++	.port0_cfg = {
++		.force_link = 1,
++		.speed = AR8327_PORT_SPEED_1000,
++		.duplex = 1,
++		.txpause = 1,
++		.rxpause = 1,
++	},
++	.led_cfg = &db120_ar8327_led_cfg,
++};
+ 
 -	ath79_pci_set_plat_dev_init(db120_pci_plat_dev_init);
 -	ath79_register_pci();
 -}

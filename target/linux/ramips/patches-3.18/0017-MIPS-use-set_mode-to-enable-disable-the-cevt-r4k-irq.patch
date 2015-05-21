@@ -11,7 +11,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/kernel/cevt-r4k.c
 +++ b/arch/mips/kernel/cevt-r4k.c
-@@ -29,12 +29,6 @@
+@@ -29,12 +29,6 @@ static int mips_next_event(unsigned long
  	return res;
  }
  
@@ -24,7 +24,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
  int cp0_timer_irq_installed;
  
-@@ -75,9 +69,38 @@
+@@ -75,9 +69,38 @@ struct irqaction c0_compare_irqaction =
  	.name = "timer",
  };
  
@@ -63,7 +63,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
  
  /*
-@@ -198,12 +221,14 @@
+@@ -198,12 +221,14 @@ int r4k_clockevent_init(void)
  
  	clockevents_register_device(cd);
  
@@ -95,5 +95,5 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	select CLKSRC_MMIO
 +	select CEVT_SYSTICK_QUIRK
  
- config IRQ_INTC
+ config RALINK_ILL_ACC
  	bool

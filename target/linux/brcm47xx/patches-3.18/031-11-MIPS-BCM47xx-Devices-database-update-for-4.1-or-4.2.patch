@@ -18,8 +18,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h |  4 ++++
  4 files changed, 36 insertions(+)
 
-diff --git a/arch/mips/bcm47xx/board.c b/arch/mips/bcm47xx/board.c
-index f936dcc..41b9736 100644
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
 @@ -151,9 +151,11 @@ static const
@@ -34,7 +32,7 @@ index f936dcc..41b9736 100644
  	{{BCM47XX_BOARD_NETGEAR_WNDR3400VCNA, "Netgear WNDR3400 Vcna"}, "U12H155T01_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR3700V3, "Netgear WNDR3700 V3"}, "U12H194T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WNDR4000, "Netgear WNDR4000"}, "U12H181T00_NETGEAR"},
-@@ -196,6 +198,8 @@ struct bcm47xx_board_type_list2 bcm47xx_board_list_board_type_rev[] __initconst
+@@ -196,6 +198,8 @@ struct bcm47xx_board_type_list2 bcm47xx_
  static const
  struct bcm47xx_board_type_list2 bcm47xx_board_list_key_value[] __initconst = {
  	{{BCM47XX_BOARD_ASUS_WL700GE, "Asus WL700"}, "model_no", "WL700"},
@@ -43,11 +41,9 @@ index f936dcc..41b9736 100644
  	{{BCM47XX_BOARD_LINKSYS_WRTSL54GS, "Linksys WRTSL54GS"}, "machine_name", "WRTSL54GS"},
  	{ {0}, NULL},
  };
-diff --git a/arch/mips/bcm47xx/buttons.c b/arch/mips/bcm47xx/buttons.c
-index 913182b..276276a 100644
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -252,6 +252,12 @@ bcm47xx_buttons_linksys_wrt160nv3[] __initconst = {
+@@ -252,6 +252,12 @@ bcm47xx_buttons_linksys_wrt160nv3[] __in
  };
  
  static const struct gpio_keys_button
@@ -60,7 +56,7 @@ index 913182b..276276a 100644
  bcm47xx_buttons_linksys_wrt300nv11[] __initconst = {
  	BCM47XX_GPIO_KEY(4, KEY_UNKNOWN),
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
-@@ -327,6 +333,12 @@ bcm47xx_buttons_netgear_wndr3400v1[] __initconst = {
+@@ -327,6 +333,12 @@ bcm47xx_buttons_netgear_wndr3400v1[] __i
  };
  
  static const struct gpio_keys_button
@@ -73,7 +69,7 @@ index 913182b..276276a 100644
  bcm47xx_buttons_netgear_wndr3700v3[] __initconst = {
  	BCM47XX_GPIO_KEY(2, KEY_RFKILL),
  	BCM47XX_GPIO_KEY(3, KEY_RESTART),
-@@ -516,6 +528,9 @@ int __init bcm47xx_buttons_register(void)
+@@ -516,6 +528,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT160NV3:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt160nv3);
  		break;
@@ -83,7 +79,7 @@ index 913182b..276276a 100644
  	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt300nv11);
  		break;
-@@ -557,6 +572,9 @@ int __init bcm47xx_buttons_register(void)
+@@ -557,6 +572,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3400v1);
  		break;
@@ -93,11 +89,9 @@ index 913182b..276276a 100644
  	case BCM47XX_BOARD_NETGEAR_WNDR3700V3:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3700v3);
  		break;
-diff --git a/arch/mips/bcm47xx/leds.c b/arch/mips/bcm47xx/leds.c
-index 903a656..0e4ade3 100644
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -292,6 +292,13 @@ bcm47xx_leds_linksys_wrt160nv3[] __initconst = {
+@@ -292,6 +292,13 @@ bcm47xx_leds_linksys_wrt160nv3[] __initc
  };
  
  static const struct gpio_led
@@ -121,8 +115,6 @@ index 903a656..0e4ade3 100644
  	case BCM47XX_BOARD_LINKSYS_WRT300NV11:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt300nv11);
  		break;
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-index 1f5643b..c41d1dc 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
 @@ -67,6 +67,7 @@ enum bcm47xx_board {
@@ -153,6 +145,3 @@ index 1f5643b..c41d1dc 100644
  	BCM47XX_BOARD_NETGEAR_WNDR3400VCNA,
  	BCM47XX_BOARD_NETGEAR_WNDR3700V3,
  	BCM47XX_BOARD_NETGEAR_WNDR4000,
--- 
-1.8.4.5
-

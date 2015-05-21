@@ -9,7 +9,7 @@ Subject: [PATCH 23/36] 205-npe_driver_separate_phy_functions.patch
 
 --- a/drivers/net/ethernet/xscale/ixp4xx_eth.c
 +++ b/drivers/net/ethernet/xscale/ixp4xx_eth.c
-@@ -593,6 +593,51 @@ static void ixp4xx_adjust_link(struct ne
+@@ -589,6 +589,51 @@ static void ixp4xx_adjust_link(struct ne
  	       dev->name, port->speed, port->duplex ? "full" : "half");
  }
  
@@ -61,7 +61,7 @@ Subject: [PATCH 23/36] 205-npe_driver_separate_phy_functions.patch
  
  static inline void debug_pkt(struct net_device *dev, const char *func,
  			     u8 *data, int len)
-@@ -1263,8 +1308,7 @@ static int eth_open(struct net_device *d
+@@ -1259,8 +1304,7 @@ static int eth_open(struct net_device *d
  		return err;
  	}
  
@@ -71,7 +71,7 @@ Subject: [PATCH 23/36] 205-npe_driver_separate_phy_functions.patch
  
  	for (i = 0; i < ETH_ALEN; i++)
  		__raw_writel(dev->dev_addr[i], &port->regs->hw_addr[i]);
-@@ -1385,7 +1429,7 @@ static int eth_close(struct net_device *
+@@ -1381,7 +1425,7 @@ static int eth_close(struct net_device *
  		printk(KERN_CRIT "%s: unable to disable loopback\n",
  		       dev->name);
  
@@ -80,15 +80,15 @@ Subject: [PATCH 23/36] 205-npe_driver_separate_phy_functions.patch
  
  	if (!ports_open)
  		qmgr_disable_irq(TXDONE_QUEUE);
-@@ -1411,7 +1455,6 @@ static int eth_init_one(struct platform_
+@@ -1407,7 +1451,6 @@ static int eth_init_one(struct platform_
  	struct net_device *dev;
  	struct eth_plat_info *plat = dev_get_platdata(&pdev->dev);
  	u32 regs_phys;
 -	char phy_id[MII_BUS_ID_SIZE + 3];
  	int err;
  
- 	if (ptp_filter_init(ptp_filter, ARRAY_SIZE(ptp_filter))) {
-@@ -1474,20 +1517,9 @@ static int eth_init_one(struct platform_
+ 	if (!(dev = alloc_etherdev(sizeof(struct port))))
+@@ -1465,20 +1508,9 @@ static int eth_init_one(struct platform_
  	__raw_writel(DEFAULT_CORE_CNTRL, &port->regs->core_control);
  	udelay(50);
  
@@ -111,7 +111,7 @@ Subject: [PATCH 23/36] 205-npe_driver_separate_phy_functions.patch
  
  	if ((err = register_netdev(dev)))
  		goto err_phy_dis;
-@@ -1498,7 +1530,7 @@ static int eth_init_one(struct platform_
+@@ -1489,7 +1521,7 @@ static int eth_init_one(struct platform_
  	return 0;
  
  err_phy_dis:
@@ -120,7 +120,7 @@ Subject: [PATCH 23/36] 205-npe_driver_separate_phy_functions.patch
  err_free_mem:
  	npe_port_tab[NPE_ID(port->id)] = NULL;
  	release_resource(port->mem_res);
-@@ -1515,7 +1547,7 @@ static int eth_remove_one(struct platfor
+@@ -1506,7 +1538,7 @@ static int eth_remove_one(struct platfor
  	struct port *port = netdev_priv(dev);
  
  	unregister_netdev(dev);

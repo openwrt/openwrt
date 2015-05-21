@@ -8,7 +8,7 @@
  
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
-@@ -32,6 +33,7 @@
+@@ -32,6 +33,7 @@ struct m25p {
  	struct spi_device	*spi;
  	struct spi_nor		spi_nor;
  	struct mtd_info		mtd;
@@ -16,7 +16,7 @@
  	u8			command[MAX_CMD_SIZE];
  };
  
-@@ -157,6 +159,58 @@
+@@ -157,6 +159,58 @@ static int m25p80_read(struct spi_nor *n
  	return 0;
  }
  
@@ -75,7 +75,7 @@
  static int m25p80_erase(struct spi_nor *nor, loff_t offset)
  {
  	struct m25p *flash = nor->priv;
-@@ -197,6 +251,7 @@
+@@ -197,6 +251,7 @@ static int m25p_probe(struct spi_device
  	struct spi_nor *nor;
  	enum read_mode mode = SPI_NOR_NORMAL;
  	char *flash_name = NULL;
@@ -83,7 +83,7 @@
  	int ret;
  
  	data = dev_get_platdata(&spi->dev);
-@@ -244,6 +299,14 @@
+@@ -244,6 +299,14 @@ static int m25p_probe(struct spi_device
  	if (ret)
  		return ret;
  
