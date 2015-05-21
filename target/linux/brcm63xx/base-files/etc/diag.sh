@@ -45,7 +45,8 @@ set_state() {
 	ar1004g)
 		status_led="AR1004G:green:power"
 		;;
-	dsl-274xb-c)
+	dsl-274xb-c|\
+	dsl-274xb-f)
 		status_led="dsl-274xb:green:power"
 		;;
 	dsl-275xb-d)
