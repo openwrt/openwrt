@@ -583,7 +583,7 @@
  	default:
  		return;
  	}
-@@ -5125,9 +5516,42 @@ static int rt2800_init_registers(struct 
+@@ -5125,9 +5516,42 @@ static int rt2800_init_registers(struct
  	} else if (rt2x00_rt(rt2x00dev, RT5390) ||
  		   rt2x00_rt(rt2x00dev, RT5392) ||
  		   rt2x00_rt(rt2x00dev, RT5592)) {
@@ -629,7 +629,7 @@
  	} else if (rt2x00_rt(rt2x00dev, RT5350)) {
  		rt2800_register_write(rt2x00dev, TX_SW_CFG0, 0x00000404);
  	} else {
-@@ -6159,6 +6583,225 @@ static void rt2800_init_bbp_5592(struct 
+@@ -6159,6 +6583,225 @@ static void rt2800_init_bbp_5592(struct
  		rt2800_bbp_write(rt2x00dev, 103, 0xc0);
  }
  

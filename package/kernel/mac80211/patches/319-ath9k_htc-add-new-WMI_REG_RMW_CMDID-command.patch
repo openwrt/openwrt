@@ -121,7 +121,11 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 +		}
 +		priv->wmi->multi_rmw_idx = 0;
 +	}
-+
+ 
+-	val = ath9k_regread(hw_priv, reg_offset);
+-	val &= ~clr;
+-	val |= set;
+-	ath9k_regwrite(hw_priv, val, reg_offset);
 +	mutex_unlock(&priv->wmi->multi_rmw_mutex);
 +}
 +
@@ -133,11 +137,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 +
 +	if (test_bit(HTC_FWFLAG_NO_RMW, &priv->fw_flags))
 +		return;
- 
--	val = ath9k_regread(hw_priv, reg_offset);
--	val &= ~clr;
--	val |= set;
--	ath9k_regwrite(hw_priv, val, reg_offset);
++
 +	atomic_inc(&priv->wmi->m_rmw_cnt);
 +}
 +
@@ -239,7 +239,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  		len += scnprintf(buf + len, size - len, "%20s : %10d\n",\
 --- a/drivers/net/wireless/ath/ath9k/wmi.c
 +++ b/drivers/net/wireless/ath/ath9k/wmi.c
-@@ -61,6 +61,8 @@ static const char *wmi_cmd_to_name(enum 
+@@ -61,6 +61,8 @@ static const char *wmi_cmd_to_name(enum
  		return "WMI_REG_READ_CMDID";
  	case WMI_REG_WRITE_CMDID:
  		return "WMI_REG_WRITE_CMDID";

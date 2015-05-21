@@ -13,7 +13,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 
 --- a/drivers/net/wireless/ath/ath9k/eeprom_4k.c
 +++ b/drivers/net/wireless/ath/ath9k/eeprom_4k.c
-@@ -772,15 +772,14 @@ static void ath9k_hw_4k_set_gain(struct 
+@@ -772,15 +772,14 @@ static void ath9k_hw_4k_set_gain(struct
  				 struct ar5416_eeprom_4k *eep,
  				 u8 txRxAttenLocal)
  {
@@ -37,7 +37,7 @@ Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
  
  	if ((eep->baseEepHeader.version & AR5416_EEP_VER_MINOR_MASK) >=
  	    AR5416_EEP_MINOR_VER_3) {
-@@ -819,6 +818,7 @@ static void ath9k_hw_4k_set_gain(struct 
+@@ -819,6 +818,7 @@ static void ath9k_hw_4k_set_gain(struct
  		      AR9280_PHY_RXGAIN_TXRX_ATTEN, txRxAttenLocal);
  	REG_RMW_FIELD(ah, AR_PHY_RXGAIN + 0x1000,
  		      AR9280_PHY_RXGAIN_TXRX_MARGIN, pModal->rxTxMarginCh[0]);

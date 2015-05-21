@@ -331,7 +331,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		wiphy_debug(local->hw.wiphy, "Failed to initialize wep: %d\n",
 --- a/net/mac80211/sta_info.c
 +++ b/net/mac80211/sta_info.c
-@@ -118,6 +118,16 @@ static void __cleanup_single_sta(struct 
+@@ -118,6 +118,16 @@ static void __cleanup_single_sta(struct
  		atomic_dec(&ps->num_sta_ps);
  	}
  

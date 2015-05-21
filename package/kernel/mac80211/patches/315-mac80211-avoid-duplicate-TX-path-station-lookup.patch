@@ -257,7 +257,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  			break;
  		dev_kfree_skb_any(skb);
  	}
-@@ -3295,6 +3314,6 @@ void __ieee80211_tx_skb_tid_band(struct 
+@@ -3295,6 +3314,6 @@ void __ieee80211_tx_skb_tid_band(struct
  	 */
  	local_bh_disable();
  	IEEE80211_SKB_CB(skb)->band = band;
