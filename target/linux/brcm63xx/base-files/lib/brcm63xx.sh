@@ -156,6 +156,9 @@ brcm63xx_dt_detect() {
 	"Huawei EchoLife HG556a (version C)")
 		board_name="hg556a_c"
 		;;
+	"Huawei HG655b")
+		board_name="hg655b"
+		;;
 	"Inteno VG50")
 		board_name="vg50"
 		;;
