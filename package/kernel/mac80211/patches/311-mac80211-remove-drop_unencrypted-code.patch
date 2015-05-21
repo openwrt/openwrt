@@ -108,7 +108,8 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
  		 (key = rcu_dereference(tx->sdata->default_unicast_key)))
  		tx->key = key;
 -	else if (info->flags & IEEE80211_TX_CTL_INJECTED)
--		tx->key = NULL;
++	else
+ 		tx->key = NULL;
 -	else if (!tx->sdata->drop_unencrypted)
 -		tx->key = NULL;
 -	else if (tx->skb->protocol == tx->sdata->control_port_protocol)
@@ -119,8 +120,7 @@ Signed-off-by: Johannes Berg <johannes.berg@intel.com>
 -		tx->key = NULL;
 -	else if (ieee80211_is_mgmt(hdr->frame_control) &&
 -		 !ieee80211_is_robust_mgmt_frame(tx->skb))
-+	else
- 		tx->key = NULL;
+-		tx->key = NULL;
 -	else {
 -		I802_DEBUG_INC(tx->local->tx_handlers_drop_unencrypted);
 -		return TX_DROP;

@@ -137,10 +137,11 @@
  };
  
  /* policy for the key attributes */
-@@ -2207,6 +2208,20 @@ static int nl80211_set_wiphy(struct sk_b
+@@ -2206,6 +2207,20 @@ static int nl80211_set_wiphy(struct sk_b
+ 		if (result)
  			return result;
  	}
- 
++
 +	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_GAIN]) {
 +		int idx, dbi = 0;
 +
@@ -154,7 +155,6 @@
 +		if (result)
 +			return result;
 +	}
-+
+ 
  	if (info->attrs[NL80211_ATTR_WIPHY_ANTENNA_TX] &&
  	    info->attrs[NL80211_ATTR_WIPHY_ANTENNA_RX]) {
- 		u32 tx_ant, rx_ant;

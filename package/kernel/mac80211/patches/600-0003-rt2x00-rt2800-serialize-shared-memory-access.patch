@@ -187,7 +187,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -4908,14 +4941,19 @@ static int rt2800_init_registers(struct 
+@@ -4908,14 +4941,19 @@ static int rt2800_init_registers(struct
  	/*
  	 * ASIC will keep garbage value after boot, clear encryption keys.
  	 */
@@ -207,7 +207,7 @@ Changes since v1: ---
  	}
  
  	/*
-@@ -5041,8 +5079,10 @@ static int rt2800_wait_bbp_ready(struct 
+@@ -5041,8 +5079,10 @@ static int rt2800_wait_bbp_ready(struct
  	 * BBP was enabled after firmware was loaded,
  	 * but we need to reactivate it now.
  	 */
@@ -372,7 +372,7 @@ Changes since v1: ---
  #endif /* RT2800MMIO_H */
 --- a/drivers/net/wireless/rt2x00/rt2800pci.c
 +++ b/drivers/net/wireless/rt2x00/rt2800pci.c
-@@ -69,7 +69,9 @@ static void rt2800pci_mcu_status(struct 
+@@ -69,7 +69,9 @@ static void rt2800pci_mcu_status(struct
  		return;
  
  	for (i = 0; i < 200; i++) {
@@ -382,7 +382,7 @@ Changes since v1: ---
  
  		if ((rt2x00_get_field32(reg, H2M_MAILBOX_CID_CMD0) == token) ||
  		    (rt2x00_get_field32(reg, H2M_MAILBOX_CID_CMD1) == token) ||
-@@ -83,8 +85,10 @@ static void rt2800pci_mcu_status(struct 
+@@ -83,8 +85,10 @@ static void rt2800pci_mcu_status(struct
  	if (i == 200)
  		rt2x00_err(rt2x00dev, "MCU request failed, no response from hardware\n");
  

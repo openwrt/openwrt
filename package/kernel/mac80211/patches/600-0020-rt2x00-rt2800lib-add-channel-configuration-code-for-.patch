@@ -110,10 +110,13 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  			rt2800_bbp_write(rt2x00dev, 83, 0x9a);
  
  		if (rt2x00_has_cap_external_lna_a(rt2x00dev))
-@@ -3687,6 +3736,23 @@ static void rt2800_config_channel(struct
- 		usleep_range(1000, 1500);
- 	}
+@@ -3684,6 +3733,23 @@ static void rt2800_config_channel(struct
  
+ 		rt2800_bbp_write_with_rx_chain(rt2x00dev, 66, reg);
+ 
++		usleep_range(1000, 1500);
++	}
++
 +	if (rt2x00_rt(rt2x00dev, RT3883)) {
 +		if (!conf_is_ht40(conf))
 +			rt2800_bbp_write(rt2x00dev, 105, 0x34);
@@ -128,9 +131,6 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 +
 +		rt2800_bbp_write_with_rx_chain(rt2x00dev, 66, reg);
 +
-+		usleep_range(1000, 1500);
-+	}
-+
- 	if (rt2x00_rt(rt2x00dev, RT5592)) {
- 		rt2800_bbp_write(rt2x00dev, 195, 141);
- 		rt2800_bbp_write(rt2x00dev, 196, conf_is_ht40(conf) ? 0x10 : 0x1a);
+ 		usleep_range(1000, 1500);
+ 	}
+ 

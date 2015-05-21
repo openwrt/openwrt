@@ -61,7 +61,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
 
 --- a/drivers/net/wireless/ath/ath5k/base.c
 +++ b/drivers/net/wireless/ath/ath5k/base.c
-@@ -2858,7 +2858,7 @@ ath5k_reset(struct ath5k_hw *ah, struct 
+@@ -2858,7 +2858,7 @@ ath5k_reset(struct ath5k_hw *ah, struct
  {
  	struct ath_common *common = ath5k_hw_common(ah);
  	int ret, ani_mode;
@@ -70,7 +70,7 @@ Signed-off-by: Sergey Ryazanov <ryazanov.s.a@gmail.com>
  
  	ATH5K_DBG(ah, ATH5K_DEBUG_RESET, "resetting\n");
  
-@@ -2876,11 +2876,29 @@ ath5k_reset(struct ath5k_hw *ah, struct 
+@@ -2876,11 +2876,29 @@ ath5k_reset(struct ath5k_hw *ah, struct
  	 * so we should also free any remaining
  	 * tx buffers */
  	ath5k_drain_tx_buffs(ah);
