@@ -13,9 +13,9 @@
  {
  	__raw_writel(RESET_GLOBAL | RESET_CPU1,
  		     IO_ADDRESS(GEMINI_GLOBAL_BASE) + GLOBAL_RESET);
---- a/arch/arm/mach-gemini/common.h	2014-08-23 07:06:06.014200638 -0500
-+++ b/arch/arm/mach-gemini/common.h	2014-08-23 07:07:33.450536466 -0500
-@@ -26,6 +26,6 @@
+--- a/arch/arm/mach-gemini/common.h
++++ b/arch/arm/mach-gemini/common.h
+@@ -26,6 +26,6 @@ extern int platform_register_pflash(unsi
  				    struct mtd_partition *parts,
  				    unsigned int nr_parts);
  

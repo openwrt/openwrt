@@ -1,6 +1,6 @@
---- a/arch/arm/mach-gemini/devices.c	2011-04-23 01:00:16.738137491 +0200
-+++ b/arch/arm/mach-gemini/devices.c	2011-04-23 01:06:55.539299920 +0200
-@@ -188,3 +188,64 @@
+--- a/arch/arm/mach-gemini/devices.c
++++ b/arch/arm/mach-gemini/devices.c
+@@ -188,3 +188,64 @@ int platform_register_ethernet(struct ge
  
  	return platform_device_register(&ethernet_device);
  }
@@ -65,9 +65,9 @@
 +	return platform_device_register(&usb_device[id]);
 +}
 +
---- a/arch/arm/mach-gemini/common.h	2011-04-23 01:09:31.413161153 +0200
-+++ b/arch/arm/mach-gemini/common.h	2011-04-23 01:09:52.426358514 +0200
-@@ -28,6 +28,7 @@
+--- a/arch/arm/mach-gemini/common.h
++++ b/arch/arm/mach-gemini/common.h
+@@ -28,6 +28,7 @@ extern int platform_register_pflash(unsi
  				    unsigned int nr_parts);
  extern int platform_register_watchdog(void);
  extern int platform_register_ethernet(struct gemini_gmac_platform_data *pdata);
@@ -77,8 +77,7 @@
  
 --- a/drivers/usb/host/ehci-hcd.c
 +++ b/drivers/usb/host/ehci-hcd.c
-@@ -345,12 +345,14 @@ static void ehci_silence_controller(struct ehci_hcd *ehci)
- 	spin_lock_irq(&ehci->lock);
+@@ -346,11 +346,13 @@ static void ehci_silence_controller(stru
  	ehci->rh_state = EHCI_RH_HALTED;
  	ehci_turn_off_all_ports(ehci);
  
@@ -92,7 +91,7 @@
  	spin_unlock_irq(&ehci->lock);
  }
  
-@@ -602,7 +604,9 @@ static int ehci_run (struct usb_hcd *hcd)
+@@ -602,7 +604,9 @@ static int ehci_run (struct usb_hcd *hcd
  	// Philips, Intel, and maybe others need CMD_RUN before the
  	// root hub will detect new devices (why?); NEC doesn't
  	ehci->command &= ~(CMD_LRESET|CMD_IAAD|CMD_PSE|CMD_ASE|CMD_RESET);
@@ -102,7 +101,7 @@
  	ehci_writel(ehci, ehci->command, &ehci->regs->command);
  	dbg_cmd (ehci, "init", ehci->command);
  
-@@ -622,9 +626,11 @@ static int ehci_run (struct usb_hcd *hcd)
+@@ -622,9 +626,11 @@ static int ehci_run (struct usb_hcd *hcd
  	 */
  	down_write(&ehci_cf_port_reset_rwsem);
  	ehci->rh_state = EHCI_RH_RUNNING;
@@ -114,7 +113,7 @@
  	up_write(&ehci_cf_port_reset_rwsem);
  	ehci->last_periodic_enable = ktime_get_real();
  
-@@ -762,9 +768,10 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
+@@ -762,9 +768,10 @@ static irqreturn_t ehci_irq (struct usb_
  		pcd_status = status;
  
  		/* resume root hub? */
@@ -138,9 +137,9 @@
  #ifdef CONFIG_USB_EHCI_FSL
  #include "ehci-fsl.c"
  #define	PLATFORM_DRIVER		ehci_fsl_driver
---- a/drivers/usb/host/ehci-timer.c	2012-12-24 18:35:19.695560879 +0100
-+++ b/drivers/usb/host/ehci-timer.c	2012-12-24 18:39:39.813308000 +0100
-@@ -208,7 +208,9 @@
+--- a/drivers/usb/host/ehci-timer.c
++++ b/drivers/usb/host/ehci-timer.c
+@@ -208,7 +208,9 @@ static void ehci_handle_controller_death
  
  	/* Clean up the mess */
  	ehci->rh_state = EHCI_RH_HALTED;
@@ -168,7 +167,7 @@
  		case 1:
 --- a/drivers/usb/host/ehci-hub.c
 +++ b/drivers/usb/host/ehci-hub.c
-@@ -1072,6 +1072,11 @@ static int ehci_hub_control (
+@@ -1075,6 +1075,11 @@ int ehci_hub_control(
  			/* see what we found out */
  			temp = check_reset_complete (ehci, wIndex, status_reg,
  					ehci_readl(ehci, status_reg));
@@ -180,26 +179,24 @@
  		}
  
  		/* transfer dedicated ports to the companion hc */
---- a/include/linux/usb/ehci_def.h	2012-12-24 15:01:10.168320497 +0100
-+++ b/include/linux/usb/ehci_def.h	2012-12-24 15:11:43.335575000 +0100
-@@ -110,9 +110,14 @@
+--- a/include/linux/usb/ehci_def.h
++++ b/include/linux/usb/ehci_def.h
+@@ -110,8 +110,13 @@ struct ehci_regs {
  	u32		frame_list;	/* points to periodic list */
  	/* ASYNCLISTADDR: offset 0x18 */
  	u32		async_next;	/* address of next async queue head */
 -
 +#ifndef CONFIG_ARCH_GEMINI
  	u32		reserved1[2];
--
 +#else
 +	u32		reserved1;
 +	/* PORTSC: offset 0x20 for Faraday OTG */
 +	u32		port_status[1];
 +#endif
-+
+ 
  	/* TXFILLTUNING: offset 0x24 */
  	u32		txfill_tuning;	/* TX FIFO Tuning register */
- #define TXFIFO_DEFAULT	(8<<16)		/* FIFO burst threshold 8 */
-@@ -123,8 +128,11 @@
+@@ -123,8 +128,11 @@ struct ehci_regs {
  	u32		configured_flag;
  #define FLAG_CF		(1<<0)		/* true: we'll support "high speed" */
  

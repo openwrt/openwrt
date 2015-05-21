@@ -15,21 +15,16 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  2 files changed, 262 insertions(+)
  create mode 100644 arch/arm/boot/dts/sun7i-a20-bananapro.dts
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 40d2901..b3dcf3f 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -466,6 +466,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
- 	sun6i-a31s-cs908.dtb
+@@ -436,6 +436,7 @@ dtb-$(CONFIG_MACH_SUN6I) += \
+ 	sun6i-a31-m9.dtb
  dtb-$(CONFIG_MACH_SUN7I) += \
  	sun7i-a20-bananapi.dtb \
 +	sun7i-a20-bananapro.dtb \
  	sun7i-a20-cubieboard2.dtb \
  	sun7i-a20-cubietruck.dtb \
  	sun7i-a20-hummingbird.dtb \
-diff --git a/arch/arm/boot/dts/sun7i-a20-bananapro.dts b/arch/arm/boot/dts/sun7i-a20-bananapro.dts
-new file mode 100644
-index 0000000..3b4764d
 --- /dev/null
 +++ b/arch/arm/boot/dts/sun7i-a20-bananapro.dts
 @@ -0,0 +1,261 @@

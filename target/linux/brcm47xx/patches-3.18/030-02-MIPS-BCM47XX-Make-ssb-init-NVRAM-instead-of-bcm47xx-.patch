@@ -22,8 +22,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  drivers/ssb/driver_mipscore.c                      | 14 +++++++++-
  3 files changed, 23 insertions(+), 22 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index e07976b..fecc5ae 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -98,7 +98,14 @@ found:
@@ -42,7 +40,7 @@ index e07976b..fecc5ae 100644
  {
  	void __iomem *iobase;
  	int err;
-@@ -114,25 +121,6 @@ static int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
+@@ -114,25 +121,6 @@ static int bcm47xx_nvram_init_from_mem(u
  	return err;
  }
  
@@ -77,8 +75,6 @@ index e07976b..fecc5ae 100644
  #endif
  #ifdef CONFIG_BCM47XX_BCMA
  	case BCM47XX_BUS_TYPE_BCMA:
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
-index 36a3fc1..676be22 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_nvram.h
 @@ -32,6 +32,7 @@ struct nvram_header {
@@ -89,8 +85,6 @@ index 36a3fc1..676be22 100644
  extern int bcm47xx_nvram_getenv(char *name, char *val, size_t val_len);
  
  static inline void bcm47xx_nvram_parse_macaddr(char *buf, u8 macaddr[6])
-diff --git a/drivers/ssb/driver_mipscore.c b/drivers/ssb/driver_mipscore.c
-index 0907706..7b986f9 100644
 --- a/drivers/ssb/driver_mipscore.c
 +++ b/drivers/ssb/driver_mipscore.c
 @@ -15,6 +15,9 @@
@@ -103,7 +97,7 @@ index 0907706..7b986f9 100644
  
  #include "ssb_private.h"
  
-@@ -210,6 +213,7 @@ static void ssb_mips_serial_init(struct ssb_mipscore *mcore)
+@@ -210,6 +213,7 @@ static void ssb_mips_serial_init(struct
  static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
  {
  	struct ssb_bus *bus = mcore->dev->bus;
@@ -111,7 +105,7 @@ index 0907706..7b986f9 100644
  	struct ssb_pflash *pflash = &mcore->pflash;
  
  	/* When there is no chipcommon on the bus there is 4MB flash */
-@@ -242,7 +246,15 @@ static void ssb_mips_flash_detect(struct ssb_mipscore *mcore)
+@@ -242,7 +246,15 @@ static void ssb_mips_flash_detect(struct
  	}
  
  ssb_pflash:
@@ -128,6 +122,3 @@ index 0907706..7b986f9 100644
  		ssb_pflash_data.width = pflash->buswidth;
  		ssb_pflash_resource.start = pflash->window;
  		ssb_pflash_resource.end = pflash->window + pflash->window_size;
--- 
-1.8.4.5
-

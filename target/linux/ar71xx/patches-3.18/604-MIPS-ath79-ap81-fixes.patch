@@ -20,7 +20,7 @@
  
  #define AP81_GPIO_LED_STATUS	1
  #define AP81_GPIO_LED_AOSS	3
-@@ -67,20 +102,6 @@ static struct gpio_keys_button ap81_gpio
+@@ -67,20 +71,6 @@ static struct gpio_keys_button ap81_gpio
  	}
  };
  
@@ -41,7 +41,7 @@
  static void __init ap81_setup(void)
  {
  	u8 *cal_data = (u8 *) KSEG1ADDR(AP81_CAL_DATA_ADDR);
-@@ -90,10 +105,24 @@ static void __init ap81_setup(void)
+@@ -90,10 +80,24 @@ static void __init ap81_setup(void)
  	ath79_register_gpio_keys_polled(-1, AP81_KEYS_POLL_INTERVAL,
  					ARRAY_SIZE(ap81_gpio_keys),
  					ap81_gpio_keys);

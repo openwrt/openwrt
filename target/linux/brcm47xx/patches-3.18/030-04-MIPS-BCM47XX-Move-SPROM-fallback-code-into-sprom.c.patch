@@ -20,8 +20,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/sprom.c           | 68 +++++++++++++++++++++++++++++++++++++
  3 files changed, 73 insertions(+), 56 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/bcm47xx_private.h b/arch/mips/bcm47xx/bcm47xx_private.h
-index f1cc9d0..12a112d 100644
 --- a/arch/mips/bcm47xx/bcm47xx_private.h
 +++ b/arch/mips/bcm47xx/bcm47xx_private.h
 @@ -6,6 +6,9 @@
@@ -34,8 +32,6 @@ index f1cc9d0..12a112d 100644
  /* buttons.c */
  int __init bcm47xx_buttons_register(void);
  
-diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
-index c00585d..444c65a 100644
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -102,23 +102,6 @@ static void bcm47xx_machine_halt(void)
@@ -62,7 +58,7 @@ index c00585d..444c65a 100644
  static int bcm47xx_get_invariants(struct ssb_bus *bus,
  				  struct ssb_init_invariants *iv)
  {
-@@ -144,11 +127,6 @@ static void __init bcm47xx_register_ssb(void)
+@@ -144,11 +127,6 @@ static void __init bcm47xx_register_ssb(
  	char buf[100];
  	struct ssb_mipscore *mcore;
  
@@ -74,7 +70,7 @@ index c00585d..444c65a 100644
  	err = ssb_bus_ssbbus_register(&(bcm47xx_bus.ssb), SSB_ENUM_BASE,
  				      bcm47xx_get_invariants);
  	if (err)
-@@ -171,44 +149,10 @@ static void __init bcm47xx_register_ssb(void)
+@@ -171,44 +149,10 @@ static void __init bcm47xx_register_ssb(
  #endif
  
  #ifdef CONFIG_BCM47XX_BCMA
@@ -135,11 +131,9 @@ index c00585d..444c65a 100644
  		bcm47xx_register_ssb();
  		bcm47xx_set_system_type(bcm47xx_bus.ssb.chip_id);
  #endif
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 41226b6..e772e77 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -801,3 +801,71 @@ void bcm47xx_fill_bcma_boardinfo(struct bcma_boardinfo *boardinfo,
+@@ -801,3 +801,71 @@ void bcm47xx_fill_bcma_boardinfo(struct
  	nvram_read_u16(prefix, NULL, "boardtype", &boardinfo->type, 0, true);
  }
  #endif
@@ -211,6 +205,3 @@ index 41226b6..e772e77 100644
 +		pr_warn("Failed to registered bcma SPROM handler\n");
 +#endif
 +}
--- 
-1.8.4.5
-

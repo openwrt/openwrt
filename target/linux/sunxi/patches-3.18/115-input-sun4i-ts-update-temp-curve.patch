@@ -23,8 +23,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/input/touchscreen/sun4i-ts.c                        | 13 ++++++++++++-
  2 files changed, 13 insertions(+), 2 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt b/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
-index aef5779..5106709 100644
 --- a/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
 +++ b/Documentation/devicetree/bindings/input/touchscreen/sun4i.txt
 @@ -2,7 +2,7 @@ sun4i resistive touchscreen controller
@@ -36,8 +34,6 @@ index aef5779..5106709 100644
   - reg: mmio address range of the chip
   - interrupts: interrupt to which the chip is connected
  
-diff --git a/drivers/input/touchscreen/sun4i-ts.c b/drivers/input/touchscreen/sun4i-ts.c
-index 2ba8260..52b7114 100644
 --- a/drivers/input/touchscreen/sun4i-ts.c
 +++ b/drivers/input/touchscreen/sun4i-ts.c
 @@ -111,6 +111,8 @@ struct sun4i_ts_data {
@@ -49,7 +45,7 @@ index 2ba8260..52b7114 100644
  };
  
  static void sun4i_ts_irq_handle_input(struct sun4i_ts_data *ts, u32 reg_val)
-@@ -189,7 +191,8 @@ static ssize_t show_temp(struct device *dev, struct device_attribute *devattr,
+@@ -189,7 +191,8 @@ static ssize_t show_temp(struct device *
  	if (ts->temp_data == -1)
  		return -EAGAIN;
  
@@ -59,7 +55,7 @@ index 2ba8260..52b7114 100644
  }
  
  static ssize_t show_temp_label(struct device *dev,
-@@ -224,6 +227,13 @@ static int sun4i_ts_probe(struct platform_device *pdev)
+@@ -224,6 +227,13 @@ static int sun4i_ts_probe(struct platfor
  	ts->dev = dev;
  	ts->ignore_fifo_data = true;
  	ts->temp_data = -1;
@@ -73,7 +69,7 @@ index 2ba8260..52b7114 100644
  
  	ts_attached = of_property_read_bool(np, "allwinner,ts-attached");
  	if (ts_attached) {
-@@ -318,6 +328,7 @@ static int sun4i_ts_remove(struct platform_device *pdev)
+@@ -318,6 +328,7 @@ static int sun4i_ts_remove(struct platfo
  
  static const struct of_device_id sun4i_ts_of_match[] = {
  	{ .compatible = "allwinner,sun4i-a10-ts", },

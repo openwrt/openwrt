@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -809,8 +809,11 @@ static void split_uimage(struct mtd_info
+@@ -806,8 +806,11 @@ static void split_uimage(struct mtd_info
  {
  	struct {
  		__be32 magic;
@@ -13,7 +13,7 @@
  	} hdr;
  	size_t len;
  
-@@ -820,7 +823,10 @@ static void split_uimage(struct mtd_info
+@@ -817,7 +820,10 @@ static void split_uimage(struct mtd_info
  	if (len != sizeof(hdr) || hdr.magic != cpu_to_be32(UBOOT_MAGIC))
  		return;
  

@@ -11,7 +11,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -2635,7 +2635,7 @@ serial8250_pm(struct uart_port *port, un
+@@ -2634,7 +2634,7 @@ serial8250_pm(struct uart_port *port, un
  static unsigned int serial8250_port_size(struct uart_8250_port *pt)
  {
  	if (pt->port.iotype == UPIO_AU)

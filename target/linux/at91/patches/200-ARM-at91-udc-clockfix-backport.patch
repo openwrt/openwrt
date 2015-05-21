@@ -1,6 +1,6 @@
 --- a/drivers/usb/gadget/udc/at91_udc.c
 +++ b/drivers/usb/gadget/udc/at91_udc.c
-@@ -870,8 +870,6 @@
+@@ -870,8 +870,6 @@ static void clk_on(struct at91_udc *udc)
  		return;
  	udc->clocked = 1;
  
@@ -9,7 +9,7 @@
  	clk_enable(udc->iclk);
  	clk_enable(udc->fclk);
  }
-@@ -884,8 +882,6 @@
+@@ -884,8 +882,6 @@ static void clk_off(struct at91_udc *udc
  	udc->gadget.speed = USB_SPEED_UNKNOWN;
  	clk_disable(udc->fclk);
  	clk_disable(udc->iclk);
@@ -18,7 +18,7 @@
  }
  
  /*
-@@ -1766,27 +1762,18 @@
+@@ -1766,27 +1762,18 @@ static int at91udc_probe(struct platform
  	udc_reinit(udc);
  
  	/* get interface and function clocks */
@@ -51,7 +51,7 @@
  
  	retval = clk_prepare_enable(udc->iclk);
  	if (retval)
-@@ -1860,12 +1847,7 @@
+@@ -1860,12 +1847,7 @@ fail1c:
  	clk_unprepare(udc->iclk);
  fail1b:
  	clk_unprepare(udc->fclk);
@@ -64,7 +64,7 @@
  	if (!IS_ERR(udc->fclk))
  		clk_put(udc->fclk);
  	if (!IS_ERR(udc->iclk))
-@@ -1911,15 +1893,11 @@
+@@ -1911,15 +1893,11 @@ static int __exit at91udc_remove(struct
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
  	release_mem_region(res->start, resource_size(res));
  

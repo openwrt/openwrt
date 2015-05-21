@@ -164,7 +164,7 @@
  				 enum mtd_parser_type type,
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -630,7 +630,7 @@ out_register:
+@@ -627,7 +627,7 @@ out_register:
  }
  
  
@@ -173,7 +173,7 @@
  __mtd_add_partition(struct mtd_info *master, const char *name,
  		    long long offset, long long length, bool dup_check)
  {
-@@ -751,7 +751,7 @@ run_parsers_by_type(struct mtd_part *sla
+@@ -748,7 +748,7 @@ run_parsers_by_type(struct mtd_part *sla
  	return nr_parts;
  }
  
@@ -182,7 +182,7 @@
  mtd_pad_erasesize(struct mtd_info *mtd, int offset, int len)
  {
  	unsigned long mask = mtd->erasesize - 1;
-@@ -821,7 +821,6 @@ static void split_uimage(struct mtd_info
+@@ -818,7 +818,6 @@ static void split_uimage(struct mtd_info
  		return;
  
  	len = be32_to_cpu(hdr.size) + 0x40;

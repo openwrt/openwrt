@@ -1,6 +1,3 @@
-diff --git a/Documentation/devicetree/bindings/mmc/octeon-mmc.txt b/Documentation/devicetree/bindings/mmc/octeon-mmc.txt
-new file mode 100644
-index 0000000..40dd7f1
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/mmc/octeon-mmc.txt
 @@ -0,0 +1,69 @@
@@ -73,11 +70,9 @@ index 0000000..40dd7f1
 +			power-gpios = <&gpio 8 0>;
 +		};
 +	};
-diff --git a/drivers/mmc/host/Kconfig b/drivers/mmc/host/Kconfig
-index 2d6fbdd..5077dfa 100644
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -338,6 +338,16 @@
+@@ -405,6 +405,16 @@ config MMC_MXS
  
  	  If unsure, say N.
  
@@ -94,11 +89,9 @@ index 2d6fbdd..5077dfa 100644
  config MMC_TIFM_SD
  	tristate "TI Flash Media MMC/SD Interface support"
  	depends on PCI
-diff --git a/drivers/mmc/host/Makefile b/drivers/mmc/host/Makefile
-index f7b0a77..448bbc9 100644
 --- a/drivers/mmc/host/Makefile
 +++ b/drivers/mmc/host/Makefile
-@@ -19,6 +19,7 @@ obj-$(CONFIG_MMC_SDHCI_SIRF)   	+= sdhci-sirf.o
+@@ -19,6 +19,7 @@ obj-$(CONFIG_MMC_SDHCI_SIRF)   	+= sdhci
  obj-$(CONFIG_MMC_SDHCI_SPEAR)	+= sdhci-spear.o
  obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
  obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
@@ -106,9 +99,6 @@ index f7b0a77..448bbc9 100644
  obj-$(CONFIG_MMC_OMAP)		+= omap.o
  obj-$(CONFIG_MMC_OMAP_HS)	+= omap_hsmmc.o
  obj-$(CONFIG_MMC_ATMELMCI)	+= atmel-mci.o
-diff --git a/drivers/mmc/host/octeon_mmc.c b/drivers/mmc/host/octeon_mmc.c
-new file mode 100644
-index 0000000..baba5a0
 --- /dev/null
 +++ b/drivers/mmc/host/octeon_mmc.c
 @@ -0,0 +1,1518 @@

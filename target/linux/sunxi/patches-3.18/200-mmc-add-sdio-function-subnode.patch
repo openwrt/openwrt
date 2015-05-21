@@ -20,8 +20,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mmc/core/sdio_bus.c | 11 +++++++++++
  4 files changed, 46 insertions(+)
 
-diff --git a/drivers/mmc/core/bus.c b/drivers/mmc/core/bus.c
-index 8a1f124..7868565 100644
 --- a/drivers/mmc/core/bus.c
 +++ b/drivers/mmc/core/bus.c
 @@ -16,6 +16,7 @@
@@ -41,7 +39,7 @@ index 8a1f124..7868565 100644
  	ret = device_add(&card->dev);
  	if (ret)
  		return ret;
-@@ -380,6 +383,7 @@ void mmc_remove_card(struct mmc_card *card)
+@@ -380,6 +383,7 @@ void mmc_remove_card(struct mmc_card *ca
  				mmc_hostname(card->host), card->rca);
  		}
  		device_del(&card->dev);
@@ -49,8 +47,6 @@ index 8a1f124..7868565 100644
  	}
  
  	put_device(&card->dev);
-diff --git a/drivers/mmc/core/core.c b/drivers/mmc/core/core.c
-index f26a5f1..7f7f66c 100644
 --- a/drivers/mmc/core/core.c
 +++ b/drivers/mmc/core/core.c
 @@ -1205,6 +1205,34 @@ EXPORT_SYMBOL(mmc_of_parse_voltage);
@@ -88,8 +84,6 @@ index f26a5f1..7f7f66c 100644
  #ifdef CONFIG_REGULATOR
  
  /**
-diff --git a/drivers/mmc/core/core.h b/drivers/mmc/core/core.h
-index 443a5846..f712f6e 100644
 --- a/drivers/mmc/core/core.h
 +++ b/drivers/mmc/core/core.h
 @@ -32,6 +32,9 @@ struct mmc_bus_ops {
@@ -102,8 +96,6 @@ index 443a5846..f712f6e 100644
  void mmc_init_erase(struct mmc_card *card);
  
  void mmc_set_chip_select(struct mmc_host *host, int mode);
-diff --git a/drivers/mmc/core/sdio_bus.c b/drivers/mmc/core/sdio_bus.c
-index 6da97b1..f63223a 100644
 --- a/drivers/mmc/core/sdio_bus.c
 +++ b/drivers/mmc/core/sdio_bus.c
 @@ -22,7 +22,9 @@
@@ -116,7 +108,7 @@ index 6da97b1..f63223a 100644
  #include "sdio_cis.h"
  #include "sdio_bus.h"
  
-@@ -303,6 +305,13 @@ static void sdio_acpi_set_handle(struct sdio_func *func)
+@@ -303,6 +305,13 @@ static void sdio_acpi_set_handle(struct
  static inline void sdio_acpi_set_handle(struct sdio_func *func) {}
  #endif
  
@@ -130,7 +122,7 @@ index 6da97b1..f63223a 100644
  /*
   * Register a new SDIO function with the driver model.
   */
-@@ -312,6 +321,7 @@ int sdio_add_func(struct sdio_func *func)
+@@ -312,6 +321,7 @@ int sdio_add_func(struct sdio_func *func
  
  	dev_set_name(&func->dev, "%s:%d", mmc_card_id(func->card), func->num);
  
@@ -138,7 +130,7 @@ index 6da97b1..f63223a 100644
  	sdio_acpi_set_handle(func);
  	ret = device_add(&func->dev);
  	if (ret == 0) {
-@@ -335,6 +345,7 @@ void sdio_remove_func(struct sdio_func *func)
+@@ -335,6 +345,7 @@ void sdio_remove_func(struct sdio_func *
  
  	dev_pm_domain_detach(&func->dev, false);
  	device_del(&func->dev);

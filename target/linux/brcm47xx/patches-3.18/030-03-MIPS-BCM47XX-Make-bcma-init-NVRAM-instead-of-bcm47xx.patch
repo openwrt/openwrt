@@ -20,11 +20,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  drivers/bcma/driver_mips.c | 13 +++++++++++--
  2 files changed, 13 insertions(+), 42 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index fecc5ae..21712fb 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -121,48 +121,10 @@ int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
+@@ -121,48 +121,10 @@ int bcm47xx_nvram_init_from_mem(u32 base
  	return err;
  }
  
@@ -75,8 +73,6 @@ index fecc5ae..21712fb 100644
  	return -ENXIO;
  }
  
-diff --git a/drivers/bcma/driver_mips.c b/drivers/bcma/driver_mips.c
-index 004d6aa..8a653dc 100644
 --- a/drivers/bcma/driver_mips.c
 +++ b/drivers/bcma/driver_mips.c
 @@ -20,6 +20,9 @@
@@ -89,7 +85,7 @@ index 004d6aa..8a653dc 100644
  
  enum bcma_boot_dev {
  	BCMA_BOOT_DEV_UNK = 0,
-@@ -316,10 +319,16 @@ static void bcma_core_mips_flash_detect(struct bcma_drv_mips *mcore)
+@@ -316,10 +319,16 @@ static void bcma_core_mips_flash_detect(
  	switch (boot_dev) {
  	case BCMA_BOOT_DEV_PARALLEL:
  	case BCMA_BOOT_DEV_SERIAL:
@@ -108,6 +104,3 @@ index 004d6aa..8a653dc 100644
  		break;
  	default:
  		break;
--- 
-1.8.4.5
-

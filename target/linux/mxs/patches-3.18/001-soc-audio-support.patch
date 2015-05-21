@@ -22,11 +22,9 @@ Subject: [PATCH 1/2] Added ASoC driver for i.MX233's builtin ADC/DAC codec.
  create mode 100644 sound/soc/mxs/mxs-builtin-pcm.c
  create mode 100644 sound/soc/mxs/mxs-builtin-pcm.h
 
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index badb6fb..dc1f4ac 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
-@@ -127,6 +127,7 @@ config SND_SOC_ALL_CODECS
+@@ -164,6 +164,7 @@ config SND_SOC_ALL_CODECS
  	select SND_SOC_WM9705 if SND_SOC_AC97_BUS
  	select SND_SOC_WM9712 if SND_SOC_AC97_BUS
  	select SND_SOC_WM9713 if SND_SOC_AC97_BUS
@@ -34,7 +32,7 @@ index badb6fb..dc1f4ac 100644
          help
            Normally ASoC codec drivers are only built if a machine driver which
            uses them is also built since they are only usable with a machine
-@@ -515,6 +516,9 @@ config SND_SOC_WM9712
+@@ -789,6 +790,9 @@ config SND_SOC_WM9712
  config SND_SOC_WM9713
  	tristate
  
@@ -44,11 +42,9 @@ index badb6fb..dc1f4ac 100644
  # Amp
  config SND_SOC_LM4857
  	tristate
-diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index 70fd806..9c3b73a 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -120,6 +120,7 @@ snd-soc-wm9705-objs := wm9705.o
+@@ -166,6 +166,7 @@ snd-soc-wm9705-objs := wm9705.o
  snd-soc-wm9712-objs := wm9712.o
  snd-soc-wm9713-objs := wm9713.o
  snd-soc-wm-hubs-objs := wm_hubs.o
@@ -56,7 +52,7 @@ index 70fd806..9c3b73a 100644
  
  # Amp
  snd-soc-max9877-objs := max9877.o
-@@ -246,6 +247,7 @@ obj-$(CONFIG_SND_SOC_WM9712)	+= snd-soc-wm9712.o
+@@ -339,6 +340,7 @@ obj-$(CONFIG_SND_SOC_WM9712)	+= snd-soc-
  obj-$(CONFIG_SND_SOC_WM9713)	+= snd-soc-wm9713.o
  obj-$(CONFIG_SND_SOC_WM_ADSP)	+= snd-soc-wm-adsp.o
  obj-$(CONFIG_SND_SOC_WM_HUBS)	+= snd-soc-wm-hubs.o
@@ -64,9 +60,6 @@ index 70fd806..9c3b73a 100644
  
  # Amp
  obj-$(CONFIG_SND_SOC_MAX9877)	+= snd-soc-max9877.o
-diff --git a/sound/soc/codecs/mxs-builtin-codec.c b/sound/soc/codecs/mxs-builtin-codec.c
-new file mode 100644
-index 0000000..e5dcb4e
 --- /dev/null
 +++ b/sound/soc/codecs/mxs-builtin-codec.c
 @@ -0,0 +1,1128 @@
@@ -1198,9 +1191,6 @@ index 0000000..e5dcb4e
 +MODULE_DESCRIPTION("Freescale MXS ADC/DAC SoC Codec Driver");
 +MODULE_AUTHOR("Michal Ulianko <michal.ulianko@gmail.com>");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/codecs/mxs-builtin-codec.h b/sound/soc/codecs/mxs-builtin-codec.h
-new file mode 100644
-index 0000000..75dee0b
 --- /dev/null
 +++ b/sound/soc/codecs/mxs-builtin-codec.h
 @@ -0,0 +1,825 @@
@@ -2029,11 +2019,9 @@ index 0000000..75dee0b
 +#define BV_AUDIOIN_ADCVOL_SELECT__MIC	0x00
 +
 +#endif /* __MXS_ADC_CODEC_H */
-diff --git a/sound/soc/mxs/Kconfig b/sound/soc/mxs/Kconfig
-index 78d321c..9b8dd7d 100644
 --- a/sound/soc/mxs/Kconfig
 +++ b/sound/soc/mxs/Kconfig
-@@ -18,3 +18,13 @@ config SND_SOC_MXS_SGTL5000
+@@ -19,3 +19,13 @@ config SND_SOC_MXS_SGTL5000
  	  a sgtl5000 codec.
  
  endif	# SND_MXS_SOC
@@ -2047,11 +2035,9 @@ index 78d321c..9b8dd7d 100644
 +	help
 +	  Say Y or M if you want to add support for codecs attached to
 +	  the MXS SAIF interface.
-diff --git a/sound/soc/mxs/Makefile b/sound/soc/mxs/Makefile
-index 565b5b5..cd0cf16 100644
 --- a/sound/soc/mxs/Makefile
 +++ b/sound/soc/mxs/Makefile
-@@ -8,3 +8,12 @@ obj-$(CONFIG_SND_MXS_SOC) += snd-soc-mxs.o snd-soc-mxs-pcm.o
+@@ -8,3 +8,12 @@ obj-$(CONFIG_SND_MXS_SOC) += snd-soc-mxs
  snd-soc-mxs-sgtl5000-objs := mxs-sgtl5000.o
  
  obj-$(CONFIG_SND_SOC_MXS_SGTL5000) += snd-soc-mxs-sgtl5000.o
@@ -2064,9 +2050,6 @@ index 565b5b5..cd0cf16 100644
 +obj-$(CONFIG_SND_MXS_SOC_BUILTIN) += snd-soc-mxs-builtin-pcm.o
 +obj-$(CONFIG_SND_MXS_SOC_BUILTIN) += snd-soc-mxs-builtin-dai.o
 +obj-$(CONFIG_SND_MXS_SOC_BUILTIN) += snd-soc-mxs-builtin-audio.o
-diff --git a/sound/soc/mxs/mxs-builtin-audio.c b/sound/soc/mxs/mxs-builtin-audio.c
-new file mode 100644
-index 0000000..7a27c63
 --- /dev/null
 +++ b/sound/soc/mxs/mxs-builtin-audio.c
 @@ -0,0 +1,120 @@
@@ -2190,9 +2173,6 @@ index 0000000..7a27c63
 +MODULE_DESCRIPTION("Freescale MXS ADC/DAC SoC Machine Driver");
 +MODULE_AUTHOR("Michal Ulianko <michal.ulianko@gmail.com>");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/mxs/mxs-builtin-dai.c b/sound/soc/mxs/mxs-builtin-dai.c
-new file mode 100644
-index 0000000..cc81f9a
 --- /dev/null
 +++ b/sound/soc/mxs/mxs-builtin-dai.c
 @@ -0,0 +1,588 @@
@@ -2784,9 +2764,6 @@ index 0000000..cc81f9a
 +MODULE_DESCRIPTION("Freescale MXS ADC/DAC SoC Codec DAI Driver");
 +MODULE_AUTHOR("Michal Ulianko <michal.ulianko@gmail.com>");
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/mxs/mxs-builtin-pcm.c b/sound/soc/mxs/mxs-builtin-pcm.c
-new file mode 100644
-index 0000000..9f155df
 --- /dev/null
 +++ b/sound/soc/mxs/mxs-builtin-pcm.c
 @@ -0,0 +1,69 @@
@@ -2859,9 +2836,6 @@ index 0000000..9f155df
 +EXPORT_SYMBOL_GPL(mxs_adc_pcm_platform_unregister);
 +
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/mxs/mxs-builtin-pcm.h b/sound/soc/mxs/mxs-builtin-pcm.h
-new file mode 100644
-index 0000000..2fba109
 --- /dev/null
 +++ b/sound/soc/mxs/mxs-builtin-pcm.h
 @@ -0,0 +1,25 @@
@@ -2890,6 +2864,3 @@ index 0000000..2fba109
 +void mxs_adc_pcm_platform_unregister(struct device *dev);
 +
 +#endif
--- 
-1.7.10.4
-

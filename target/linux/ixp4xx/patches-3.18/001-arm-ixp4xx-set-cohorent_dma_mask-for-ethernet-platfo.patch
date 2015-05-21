@@ -18,11 +18,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  arch/arm/mach-ixp4xx/vulcan-setup.c  |    2 ++
  7 files changed, 14 insertions(+)
 
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/fsg-setup.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/fsg-setup.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/fsg-setup.c	2015-02-09 13:54:43.025969682 +0100
-@@ -142,12 +142,14 @@
+--- a/arch/arm/mach-ixp4xx/fsg-setup.c
++++ b/arch/arm/mach-ixp4xx/fsg-setup.c
+@@ -142,12 +142,14 @@ static struct platform_device fsg_eth[]
  		.id			= IXP4XX_ETH_NPEB,
  		.dev = {
  			.platform_data	= fsg_plat_eth,
@@ -37,11 +35,9 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/fsg-setup.c
  		},
  	}
  };
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/goramo_mlr.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/goramo_mlr.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/goramo_mlr.c	2015-02-09 13:54:43.025969682 +0100
-@@ -295,10 +295,12 @@
+--- a/arch/arm/mach-ixp4xx/goramo_mlr.c
++++ b/arch/arm/mach-ixp4xx/goramo_mlr.c
+@@ -295,10 +295,12 @@ static struct platform_device device_eth
  		.name			= "ixp4xx_eth",
  		.id			= IXP4XX_ETH_NPEB,
  		.dev.platform_data	= eth_plat,
@@ -54,10 +50,8 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/goramo_mlr.c
  	}
  };
  
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/ixdp425-setup.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/ixdp425-setup.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/ixdp425-setup.c	2015-02-09 13:54:43.025969682 +0100
+--- a/arch/arm/mach-ixp4xx/ixdp425-setup.c
++++ b/arch/arm/mach-ixp4xx/ixdp425-setup.c
 @@ -20,6 +20,7 @@
  #include <linux/mtd/nand.h>
  #include <linux/mtd/partitions.h>
@@ -66,7 +60,7 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/ixdp425-setup.c
  #include <linux/gpio.h>
  #include <asm/types.h>
  #include <asm/setup.h>
-@@ -196,10 +197,12 @@
+@@ -196,10 +197,12 @@ static struct platform_device ixdp425_et
  		.name			= "ixp4xx_eth",
  		.id			= IXP4XX_ETH_NPEB,
  		.dev.platform_data	= ixdp425_plat_eth,
@@ -79,11 +73,9 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/ixdp425-setup.c
  	}
  };
  
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/nas100d-setup.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/nas100d-setup.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/nas100d-setup.c	2015-02-09 13:54:43.025969682 +0100
-@@ -170,6 +170,7 @@
+--- a/arch/arm/mach-ixp4xx/nas100d-setup.c
++++ b/arch/arm/mach-ixp4xx/nas100d-setup.c
+@@ -170,6 +170,7 @@ static struct platform_device nas100d_et
  		.name			= "ixp4xx_eth",
  		.id			= IXP4XX_ETH_NPEB,
  		.dev.platform_data	= nas100d_plat_eth,
@@ -91,11 +83,9 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/nas100d-setup.c
  	}
  };
  
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/nslu2-setup.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/nslu2-setup.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/nslu2-setup.c	2015-02-09 13:54:43.025969682 +0100
-@@ -182,6 +182,7 @@
+--- a/arch/arm/mach-ixp4xx/nslu2-setup.c
++++ b/arch/arm/mach-ixp4xx/nslu2-setup.c
+@@ -182,6 +182,7 @@ static struct platform_device nslu2_eth[
  		.name			= "ixp4xx_eth",
  		.id			= IXP4XX_ETH_NPEB,
  		.dev.platform_data	= nslu2_plat_eth,
@@ -103,10 +93,8 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/nslu2-setup.c
  	}
  };
  
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/omixp-setup.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/omixp-setup.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/omixp-setup.c	2015-02-09 13:55:01.150008153 +0100
+--- a/arch/arm/mach-ixp4xx/omixp-setup.c
++++ b/arch/arm/mach-ixp4xx/omixp-setup.c
 @@ -17,6 +17,7 @@
  #include <linux/serial_8250.h>
  #include <linux/mtd/mtd.h>
@@ -115,7 +103,7 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/omixp-setup.c
  #include <linux/leds.h>
  
  #include <asm/setup.h>
-@@ -188,10 +189,12 @@
+@@ -188,10 +189,12 @@ static struct platform_device ixdp425_et
  		.name			= "ixp4xx_eth",
  		.id			= IXP4XX_ETH_NPEB,
  		.dev.platform_data	= ixdp425_plat_eth,
@@ -128,11 +116,9 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/omixp-setup.c
  	},
  };
  
-Index: linux-3.18.5/arch/arm/mach-ixp4xx/vulcan-setup.c
-===================================================================
---- linux-3.18.5.orig/arch/arm/mach-ixp4xx/vulcan-setup.c	2015-02-09 13:54:27.000000000 +0100
-+++ linux-3.18.5/arch/arm/mach-ixp4xx/vulcan-setup.c	2015-02-09 13:54:43.025969682 +0100
-@@ -139,6 +139,7 @@
+--- a/arch/arm/mach-ixp4xx/vulcan-setup.c
++++ b/arch/arm/mach-ixp4xx/vulcan-setup.c
+@@ -139,6 +139,7 @@ static struct platform_device vulcan_eth
  		.id			= IXP4XX_ETH_NPEB,
  		.dev = {
  			.platform_data	= &vulcan_plat_eth[0],
@@ -140,7 +126,7 @@ Index: linux-3.18.5/arch/arm/mach-ixp4xx/vulcan-setup.c
  		},
  	},
  	[1] = {
-@@ -146,6 +147,7 @@
+@@ -146,6 +147,7 @@ static struct platform_device vulcan_eth
  		.id			= IXP4XX_ETH_NPEC,
  		.dev = {
  			.platform_data	= &vulcan_plat_eth[1],

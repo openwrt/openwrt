@@ -11,8 +11,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i-a13.dtsi                 |  7 ++++
  4 files changed, 100 insertions(+), 4 deletions(-)
 
-diff --git a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
-index ea9519d..0b82d20 100644
 --- a/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
 +++ b/arch/arm/boot/dts/sun5i-a10s-olinuxino-micro.dts
 @@ -12,8 +12,9 @@
@@ -74,8 +72,6 @@ index ea9519d..0b82d20 100644
  		uart0: serial@01c28000 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&uart0_pins_a>;
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index 531272c..7c6c883 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
 @@ -520,6 +520,13 @@
@@ -92,8 +88,6 @@ index 531272c..7c6c883 100644
  		sid: eeprom@01c23800 {
  			compatible = "allwinner,sun4i-a10-sid";
  			reg = <0x01c23800 0x10>;
-diff --git a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
-index 429994e..b4ec8eb 100644
 --- a/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 +++ b/arch/arm/boot/dts/sun5i-a13-olinuxino.dts
 @@ -12,8 +12,9 @@
@@ -155,8 +149,6 @@ index 429994e..b4ec8eb 100644
  		uart1: serial@01c28400 {
  			pinctrl-names = "default";
  			pinctrl-0 = <&uart1_pins_b>;
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index b131068..aa0482c 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
 @@ -468,6 +468,13 @@

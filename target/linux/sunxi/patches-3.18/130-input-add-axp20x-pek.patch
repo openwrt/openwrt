@@ -16,8 +16,6 @@ Acked-by: Dmitry Torokhov <dmitry.torokhov@gmail.com>
  3 files changed, 293 insertions(+)
  create mode 100644 drivers/input/misc/axp20x-pek.c
 
-diff --git a/drivers/input/misc/Kconfig b/drivers/input/misc/Kconfig
-index 23297ab..a49bcd3 100644
 --- a/drivers/input/misc/Kconfig
 +++ b/drivers/input/misc/Kconfig
 @@ -404,6 +404,17 @@ config INPUT_RETU_PWRBUTTON
@@ -38,11 +36,9 @@ index 23297ab..a49bcd3 100644
  config INPUT_TWL4030_PWRBUTTON
  	tristate "TWL4030 Power button Driver"
  	depends on TWL4030_CORE
-diff --git a/drivers/input/misc/Makefile b/drivers/input/misc/Makefile
-index 19c7603..04ea87f 100644
 --- a/drivers/input/misc/Makefile
 +++ b/drivers/input/misc/Makefile
-@@ -54,6 +54,7 @@ obj-$(CONFIG_INPUT_POWERMATE)		+= powermate.o
+@@ -54,6 +54,7 @@ obj-$(CONFIG_INPUT_POWERMATE)		+= powerm
  obj-$(CONFIG_INPUT_PWM_BEEPER)		+= pwm-beeper.o
  obj-$(CONFIG_INPUT_RB532_BUTTON)	+= rb532_button.o
  obj-$(CONFIG_INPUT_RETU_PWRBUTTON)	+= retu-pwrbutton.o
@@ -50,9 +46,6 @@ index 19c7603..04ea87f 100644
  obj-$(CONFIG_INPUT_GPIO_ROTARY_ENCODER)	+= rotary_encoder.o
  obj-$(CONFIG_INPUT_SGI_BTNS)		+= sgi_btns.o
  obj-$(CONFIG_INPUT_SIRFSOC_ONKEY)	+= sirfsoc-onkey.o
-diff --git a/drivers/input/misc/axp20x-pek.c b/drivers/input/misc/axp20x-pek.c
-new file mode 100644
-index 0000000..0fba252
 --- /dev/null
 +++ b/drivers/input/misc/axp20x-pek.c
 @@ -0,0 +1,281 @@

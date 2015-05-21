@@ -16,11 +16,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/board.c | 48 ++++++++++++++++++++---------------------------
  1 file changed, 20 insertions(+), 28 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/board.c b/arch/mips/bcm47xx/board.c
-index d4a5a51..f936dcc 100644
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
-@@ -40,20 +40,6 @@ struct bcm47xx_board_type_list1 bcm47xx_board_list_model_name[] __initconst = {
+@@ -40,20 +40,6 @@ struct bcm47xx_board_type_list1 bcm47xx_
  	{ {0}, NULL},
  };
  
@@ -41,7 +39,7 @@ index d4a5a51..f936dcc 100644
  /* hardware_version */
  static const
  struct bcm47xx_board_type_list1 bcm47xx_board_list_hardware_version[] __initconst = {
-@@ -202,6 +188,18 @@ struct bcm47xx_board_type_list2 bcm47xx_board_list_board_type_rev[] __initconst
+@@ -202,6 +188,18 @@ struct bcm47xx_board_type_list2 bcm47xx_
  	{ {0}, NULL},
  };
  
@@ -60,7 +58,7 @@ index d4a5a51..f936dcc 100644
  static const
  struct bcm47xx_board_type bcm47xx_board_unknown[] __initconst = {
  	{BCM47XX_BOARD_UNKNOWN, "Unknown Board"},
-@@ -225,20 +223,6 @@ static __init const struct bcm47xx_board_type *bcm47xx_board_get_nvram(void)
+@@ -225,20 +223,6 @@ static __init const struct bcm47xx_board
  		}
  	}
  
@@ -81,7 +79,7 @@ index d4a5a51..f936dcc 100644
  	if (bcm47xx_nvram_getenv("hardware_version", buf1, sizeof(buf1)) >= 0) {
  		for (e1 = bcm47xx_board_list_hardware_version; e1->value1; e1++) {
  			if (strstarts(buf1, e1->value1))
-@@ -314,6 +298,14 @@ static __init const struct bcm47xx_board_type *bcm47xx_board_get_nvram(void)
+@@ -314,6 +298,14 @@ static __init const struct bcm47xx_board
  				return &e2->board;
  		}
  	}
@@ -96,6 +94,3 @@ index d4a5a51..f936dcc 100644
  	return bcm47xx_board_unknown;
  }
  
--- 
-1.8.4.5
-

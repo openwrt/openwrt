@@ -20,8 +20,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/nvram.c | 42 ++++++++++++++++++++++++++++++++++++++----
  1 file changed, 38 insertions(+), 4 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 21712fb..8b64991 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -13,12 +13,10 @@
@@ -38,7 +36,7 @@ index 21712fb..8b64991 100644
  
  static char nvram_buf[NVRAM_SPACE];
  static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
-@@ -123,7 +121,43 @@ int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
+@@ -123,7 +121,43 @@ int bcm47xx_nvram_init_from_mem(u32 base
  
  static int nvram_init(void)
  {
@@ -83,6 +81,3 @@ index 21712fb..8b64991 100644
  
  	return -ENXIO;
  }
--- 
-1.8.4.5
-

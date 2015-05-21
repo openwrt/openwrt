@@ -21,11 +21,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/setup.c           | 33 +++++++++++++++++++++++++++------
  3 files changed, 38 insertions(+), 6 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/bcm47xx_private.h b/arch/mips/bcm47xx/bcm47xx_private.h
-index 12a112d..ea909a5 100644
 --- a/arch/mips/bcm47xx/bcm47xx_private.h
 +++ b/arch/mips/bcm47xx/bcm47xx_private.h
-@@ -15,6 +15,9 @@ int __init bcm47xx_buttons_register(void);
+@@ -15,6 +15,9 @@ int __init bcm47xx_buttons_register(void
  /* leds.c */
  void __init bcm47xx_leds_register(void);
  
@@ -35,8 +33,6 @@ index 12a112d..ea909a5 100644
  /* workarounds.c */
  void __init bcm47xx_workarounds(void);
  
-diff --git a/arch/mips/bcm47xx/irq.c b/arch/mips/bcm47xx/irq.c
-index e0585b7..21b4497 100644
 --- a/arch/mips/bcm47xx/irq.c
 +++ b/arch/mips/bcm47xx/irq.c
 @@ -22,6 +22,8 @@
@@ -61,11 +57,9 @@ index e0585b7..21b4497 100644
  #ifdef CONFIG_BCM47XX_BCMA
  	if (bcm47xx_bus_type == BCM47XX_BUS_TYPE_BCMA) {
  		bcma_write32(bcm47xx_bus.bcma.bus.drv_mips.core,
-diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
-index 444c65a..e43b504 100644
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -156,15 +156,14 @@ static void __init bcm47xx_register_bcma(void)
+@@ -156,15 +156,14 @@ static void __init bcm47xx_register_bcma
  	err = bcma_host_soc_register(&bcm47xx_bus.bcma);
  	if (err)
  		panic("Failed to register BCMA bus (err %d)", err);
@@ -115,6 +109,3 @@ index 444c65a..e43b504 100644
  	bcm47xx_board_detect();
  	mips_set_machine_name(bcm47xx_board_get_name());
  }
--- 
-1.8.4.5
-

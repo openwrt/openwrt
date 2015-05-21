@@ -22,8 +22,8 @@
 +};
 +
 +#endif /* __NET_GEMINI_PLATFORM_H__ */
---- a/arch/arm/mach-gemini/common.h	2011-04-19 03:05:29.446367900 +0200
-+++ b/arch/arm/mach-gemini/common.h	2011-04-19 03:07:02.191154293 +0200
+--- a/arch/arm/mach-gemini/common.h
++++ b/arch/arm/mach-gemini/common.h
 @@ -13,6 +13,7 @@
  #define __GEMINI_COMMON_H__
  
@@ -32,7 +32,7 @@
  
  extern void gemini_map_io(void);
  extern void gemini_init_irq(void);
-@@ -26,6 +27,7 @@
+@@ -26,6 +27,7 @@ extern int platform_register_pflash(unsi
  				    struct mtd_partition *parts,
  				    unsigned int nr_parts);
  extern int platform_register_watchdog(void);
@@ -40,8 +40,8 @@
  
  extern void gemini_restart(enum reboot_mode mode, const char *cmd);
  
---- a/arch/arm/mach-gemini/devices.c	2011-04-21 13:01:53.578121892 +0200
-+++ b/arch/arm/mach-gemini/devices.c	2011-04-21 13:14:27.643158445 +0200
+--- a/arch/arm/mach-gemini/devices.c
++++ b/arch/arm/mach-gemini/devices.c
 @@ -17,6 +17,7 @@
  #include <mach/irqs.h>
  #include <mach/hardware.h>
@@ -50,7 +50,7 @@
  #include "common.h"
  
  static struct plat_serial8250_port serial_platform_data[] = {
-@@ -134,3 +134,56 @@
+@@ -134,3 +135,56 @@ int __init platform_register_watchdog(vo
  {
  	return platform_device_register(&wdt_device);
  }
@@ -107,10 +107,9 @@
 +
 +	return platform_device_register(&ethernet_device);
 +}
- 
---- a/drivers/net/ethernet/Kconfig	2012-01-25 22:19:43.633736456 +0100
-+++ b/drivers/net/ethernet/Kconfig	2012-01-25 22:20:28.582730742 +0100
-@@ -70,6 +70,7 @@
+--- a/drivers/net/ethernet/Kconfig
++++ b/drivers/net/ethernet/Kconfig
+@@ -70,6 +70,7 @@ source "drivers/net/ethernet/neterion/Kc
  source "drivers/net/ethernet/faraday/Kconfig"
  source "drivers/net/ethernet/freescale/Kconfig"
  source "drivers/net/ethernet/fujitsu/Kconfig"
@@ -118,9 +117,9 @@
  source "drivers/net/ethernet/hisilicon/Kconfig"
  source "drivers/net/ethernet/hp/Kconfig"
  source "drivers/net/ethernet/ibm/Kconfig"
---- a/drivers/net/ethernet/Makefile	2012-01-27 01:37:10.839114389 +0100
-+++ b/drivers/net/ethernet/Makefile	2012-01-27 01:39:06.102105027 +0100
-@@ -33,6 +33,7 @@
+--- a/drivers/net/ethernet/Makefile
++++ b/drivers/net/ethernet/Makefile
+@@ -33,6 +33,7 @@ obj-$(CONFIG_NET_VENDOR_EXAR) += neterio
  obj-$(CONFIG_NET_VENDOR_FARADAY) += faraday/
  obj-$(CONFIG_NET_VENDOR_FREESCALE) += freescale/
  obj-$(CONFIG_NET_VENDOR_FUJITSU) += fujitsu/
@@ -128,8 +127,8 @@
  obj-$(CONFIG_NET_VENDOR_HISILICON) += hisilicon/
  obj-$(CONFIG_NET_VENDOR_HP) += hp/
  obj-$(CONFIG_NET_VENDOR_IBM) += ibm/
---- /dev/null	2012-01-23 21:36:48.249769447 +0100
-+++ b/drivers/net/ethernet/gemini/Kconfig	2012-01-25 22:16:44.285740226 +0100
+--- /dev/null
++++ b/drivers/net/ethernet/gemini/Kconfig
 @@ -0,0 +1,31 @@
 +#
 +# Gemini device configuration
@@ -162,16 +161,16 @@
 +	  This driver supports StorLink SL351x (Gemini) dual Gigabit Ethernet.
 +
 +endif # NET_VENDOR_GEMINI
---- /dev/null					2012-01-23 21:36:48.249769447 +0100
-+++ b/drivers/net/ethernet/gemini/Makefile	2012-01-25 22:17:29.698741496 +0100
+--- /dev/null
++++ b/drivers/net/ethernet/gemini/Makefile
 @@ -0,0 +1,5 @@
 +#
 +# Makefile for the Cortina Gemini network device drivers.
 +#
 +
 +obj-$(CONFIG_GEMINI_SL351X) += sl351x.o
---- /dev/null					2012-01-23 21:36:48.249769447 +0100
-+++ b/drivers/net/ethernet/gemini/sl351x.c	2012-01-27 17:09:51.000000000 +0100
+--- /dev/null
++++ b/drivers/net/ethernet/gemini/sl351x.c
 @@ -0,0 +1,2340 @@
 +/*
 + *  Ethernet device driver for Gemini SoC (SL351x GMAC).

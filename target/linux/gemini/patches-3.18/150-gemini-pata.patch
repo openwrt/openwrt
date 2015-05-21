@@ -15,9 +15,9 @@
  #define USB1_VBUS_ON			(1 << 23)
  #define USB0_VBUS_ON			(1 << 22)
  #define APB_CLKOUT_ENABLE		(1 << 21)
---- a/arch/arm/mach-gemini/irq.c	2013-02-19 13:38:13.263948000 +0100
-+++ b/arch/arm/mach-gemini/irq.c	2013-02-19 18:24:02.912997292 +0100
-@@ -89,6 +89,9 @@
+--- a/arch/arm/mach-gemini/irq.c
++++ b/arch/arm/mach-gemini/irq.c
+@@ -89,6 +89,9 @@ void __init gemini_init_irq(void)
  			irq_set_handler(i, handle_edge_irq);
  			mode |= 1 << i;
  			level |= 1 << i;
@@ -29,7 +29,7 @@
  		}
 --- a/arch/arm/mach-gemini/common.h
 +++ b/arch/arm/mach-gemini/common.h
-@@ -29,6 +29,7 @@
+@@ -29,6 +29,7 @@ extern int platform_register_pflash(unsi
  extern int platform_register_watchdog(void);
  extern int platform_register_ethernet(struct gemini_gmac_platform_data *pdata);
  extern int platform_register_usb(unsigned int id);
@@ -39,7 +39,7 @@
  
 --- a/arch/arm/mach-gemini/devices.c
 +++ b/arch/arm/mach-gemini/devices.c
-@@ -249,3 +249,67 @@
+@@ -249,3 +249,67 @@ int __init platform_register_usb(unsigne
  	return platform_device_register(&usb_device[id]);
  }
  
@@ -109,7 +109,7 @@
 +}
 --- a/arch/arm/mach-gemini/mm.c
 +++ b/arch/arm/mach-gemini/mm.c
-@@ -24,6 +24,11 @@
+@@ -24,6 +24,11 @@ static struct map_desc gemini_io_desc[]
  		.length		= SZ_512K,
  		.type 		= MT_DEVICE,
  	}, {
@@ -123,7 +123,7 @@
  		.length		= SZ_512K,
 --- a/drivers/ata/Kconfig
 +++ b/drivers/ata/Kconfig
-@@ -536,6 +536,16 @@ config PATA_EFAR
+@@ -536,6 +536,16 @@ config PATA_EP93XX
  
  	  If unsure, say N.
  
@@ -142,7 +142,7 @@
  	depends on PCI
 --- a/drivers/ata/Makefile
 +++ b/drivers/ata/Makefile
-@@ -53,6 +53,7 @@
+@@ -53,6 +53,7 @@ obj-$(CONFIG_PATA_CS5536)	+= pata_cs5536
  obj-$(CONFIG_PATA_CYPRESS)	+= pata_cypress.o
  obj-$(CONFIG_PATA_EFAR)		+= pata_efar.o
  obj-$(CONFIG_PATA_EP93XX)	+= pata_ep93xx.o
@@ -152,7 +152,7 @@
  obj-$(CONFIG_PATA_HPT3X2N)	+= pata_hpt3x2n.o
 --- a/arch/arm/mach-gemini/board-nas4220b.c
 +++ b/arch/arm/mach-gemini/board-nas4220b.c
-@@ -146,11 +146,28 @@
+@@ -146,11 +146,28 @@ static void __init usb_ib4220b_init(void
  		GLOBAL_MISC_CTRL));
  }
  
@@ -181,7 +181,7 @@
  	platform_register_uart();
  	platform_register_pflash(SZ_16M, NULL, 0);
  	platform_device_register(&ib4220b_led_device);
-@@ -161,6 +178,8 @@
+@@ -161,6 +178,8 @@ static void __init ib4220b_init(void)
  	platform_register_ethernet(&ib4220b_gmac_data);
  	platform_register_usb(0);
  	platform_register_usb(1);

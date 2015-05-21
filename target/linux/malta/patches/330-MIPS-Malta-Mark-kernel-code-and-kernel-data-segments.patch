@@ -13,11 +13,9 @@ Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
  arch/mips/mti-malta/malta-memory.c |    9 ++-------
  1 file changed, 2 insertions(+), 7 deletions(-)
 
-diff --git a/arch/mips/mti-malta/malta-memory.c b/arch/mips/mti-malta/malta-memory.c
-index 8fddd2cd..1d562f0 100644
 --- a/arch/mips/mti-malta/malta-memory.c
 +++ b/arch/mips/mti-malta/malta-memory.c
-@@ -106,14 +106,9 @@ fw_memblock_t * __init fw_getmdesc(int eva)
+@@ -112,14 +112,9 @@ fw_memblock_t * __init fw_getmdesc(int e
  	mdesc[2].base = mdesc[0].base + 0x000f0000UL;
  	mdesc[2].size = 0x00010000;
  
@@ -34,6 +32,3 @@ index 8fddd2cd..1d562f0 100644
  
  	return &mdesc[0];
  }
--- 
-1.7.10.4
-

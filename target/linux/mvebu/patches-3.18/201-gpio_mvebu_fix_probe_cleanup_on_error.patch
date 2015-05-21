@@ -8,7 +8,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 
 --- a/drivers/gpio/gpio-mvebu.c
 +++ b/drivers/gpio/gpio-mvebu.c
-@@ -667,6 +667,7 @@ static int mvebu_gpio_probe(struct platf
+@@ -675,6 +675,7 @@ static int mvebu_gpio_probe(struct platf
  	unsigned int ngpios;
  	int soc_variant;
  	int i, cpu, id;
@@ -16,7 +16,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	match = of_match_device(mvebu_gpio_of_match, &pdev->dev);
  	if (match)
-@@ -785,14 +786,16 @@ static int mvebu_gpio_probe(struct platf
+@@ -793,14 +794,16 @@ static int mvebu_gpio_probe(struct platf
  	mvchip->irqbase = irq_alloc_descs(-1, 0, ngpios, -1);
  	if (mvchip->irqbase < 0) {
  		dev_err(&pdev->dev, "no irqs\n");
@@ -35,7 +35,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	}
  
  	gc->private = mvchip;
-@@ -823,13 +826,21 @@ static int mvebu_gpio_probe(struct platf
+@@ -831,13 +834,21 @@ static int mvebu_gpio_probe(struct platf
  	if (!mvchip->domain) {
  		dev_err(&pdev->dev, "couldn't allocate irq domain %s (DT).\n",
  			mvchip->chip.label);

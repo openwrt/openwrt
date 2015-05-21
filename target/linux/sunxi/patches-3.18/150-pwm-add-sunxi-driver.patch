@@ -1,8 +1,6 @@
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index 3865dfb9ed08..424359d3cbb1 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -262,6 +262,15 @@ config PWM_STI
+@@ -263,6 +263,15 @@ config PWM_STI
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-sti.
  
@@ -18,11 +16,9 @@ index 3865dfb9ed08..424359d3cbb1 100644
  config PWM_TEGRA
  	tristate "NVIDIA Tegra PWM support"
  	depends on ARCH_TEGRA
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index c458606c3755..d607804deea1 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -24,6 +24,7 @@ obj-$(CONFIG_PWM_ROCKCHIP)	+= pwm-rockchip.o
+@@ -24,6 +24,7 @@ obj-$(CONFIG_PWM_ROCKCHIP)	+= pwm-rockch
  obj-$(CONFIG_PWM_SAMSUNG)	+= pwm-samsung.o
  obj-$(CONFIG_PWM_SPEAR)		+= pwm-spear.o
  obj-$(CONFIG_PWM_STI)		+= pwm-sti.o
@@ -30,9 +26,6 @@ index c458606c3755..d607804deea1 100644
  obj-$(CONFIG_PWM_TEGRA)		+= pwm-tegra.o
  obj-$(CONFIG_PWM_TIECAP)	+= pwm-tiecap.o
  obj-$(CONFIG_PWM_TIEHRPWM)	+= pwm-tiehrpwm.o
-diff --git a/drivers/pwm/pwm-sun4i.c b/drivers/pwm/pwm-sun4i.c
-new file mode 100644
-index 000000000000..918f8ee79b51
 --- /dev/null
 +++ b/drivers/pwm/pwm-sun4i.c
 @@ -0,0 +1,371 @@

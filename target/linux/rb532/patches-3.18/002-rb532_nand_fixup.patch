@@ -20,7 +20,7 @@
  static int rb532_dev_ready(struct mtd_info *mtd)
  {
  	return gpio_get_value(GPIO_RDY);
-@@ -254,6 +267,16 @@ static void __init parse_mac_addr(char *
+@@ -254,6 +267,16 @@ static struct platform_device *rb532_dev
  /* NAND definitions */
  #define NAND_CHIP_DELAY 25
  

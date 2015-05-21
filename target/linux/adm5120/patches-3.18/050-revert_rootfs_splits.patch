@@ -46,7 +46,7 @@
  	}
  	if (slave->offset == MTDPART_OFS_RETAIN) {
  		slave->offset = cur_offset;
-@@ -629,10 +628,8 @@ out_register:
+@@ -626,10 +625,8 @@ out_register:
  	return slave;
  }
  
@@ -59,7 +59,7 @@
  {
  	struct mtd_partition part;
  	struct mtd_part *p, *new;
-@@ -664,24 +661,21 @@ __mtd_add_partition(struct mtd_info *mas
+@@ -661,24 +658,21 @@ __mtd_add_partition(struct mtd_info *mas
  	end = offset + length;
  
  	mutex_lock(&mtd_partitions_mutex);
@@ -94,7 +94,7 @@
  
  	return ret;
  err_inv:
-@@ -691,12 +685,6 @@ err_inv:
+@@ -688,12 +682,6 @@ err_inv:
  }
  EXPORT_SYMBOL_GPL(mtd_add_partition);
  
@@ -107,7 +107,7 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -720,166 +708,6 @@ int mtd_del_partition(struct mtd_info *m
+@@ -717,166 +705,6 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -274,7 +274,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -909,7 +737,6 @@ int add_mtd_partitions(struct mtd_info *
+@@ -906,7 +734,6 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
@@ -282,7 +282,7 @@
  
  		cur_offset = slave->offset + slave->mtd.size;
  	}
-@@ -939,30 +766,6 @@ static struct mtd_part_parser *get_parti
+@@ -936,30 +763,6 @@ static struct mtd_part_parser *get_parti
  
  #define put_partition_parser(p) do { module_put((p)->owner); } while (0)
  
@@ -313,7 +313,7 @@
  void register_mtd_parser(struct mtd_part_parser *p)
  {
  	spin_lock(&part_parser_lock);
-@@ -1036,38 +839,6 @@ int parse_mtd_partitions(struct mtd_info
+@@ -1033,38 +836,6 @@ int parse_mtd_partitions(struct mtd_info
  	return ret;
  }
  

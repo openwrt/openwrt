@@ -35,7 +35,7 @@
  
  /*
   * MTD methods which simply translate the effective address and pass through
-@@ -708,6 +710,144 @@ int mtd_del_partition(struct mtd_info *m
+@@ -705,6 +707,144 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -180,7 +180,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -724,6 +864,9 @@ int add_mtd_partitions(struct mtd_info *
+@@ -721,6 +861,9 @@ int add_mtd_partitions(struct mtd_info *
  	struct mtd_part *slave;
  	uint64_t cur_offset = 0;
  	int i;
@@ -190,7 +190,7 @@
  
  	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
  
-@@ -738,12 +881,53 @@ int add_mtd_partitions(struct mtd_info *
+@@ -735,12 +878,53 @@ int add_mtd_partitions(struct mtd_info *
  
  		add_mtd_device(&slave->mtd);
  

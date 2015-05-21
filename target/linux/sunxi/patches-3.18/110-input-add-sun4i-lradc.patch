@@ -27,9 +27,6 @@ Changes in v2:
  create mode 100644 Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt
  create mode 100644 drivers/input/keyboard/sun4i-lradc-keys.c
 
-diff --git a/Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt b/Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt
-new file mode 100644
-index 0000000..b9c32f6
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/input/sun4i-lradc-keys.txt
 @@ -0,0 +1,62 @@
@@ -95,11 +92,9 @@ index 0000000..b9c32f6
 +			voltage = <987387>;
 +		};
 +	};
-diff --git a/MAINTAINERS b/MAINTAINERS
-index a20df9b..73d1aef 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -8932,6 +8932,13 @@ F:	arch/m68k/sun3*/
+@@ -9002,6 +9002,13 @@ F:	arch/m68k/sun3*/
  F:	arch/m68k/include/asm/sun3*
  F:	drivers/net/ethernet/i825xx/sun3*
  
@@ -113,8 +108,6 @@ index a20df9b..73d1aef 100644
  SUNDANCE NETWORK DRIVER
  M:	Denis Kirjanov <kda@linux-powerpc.org>
  L:	netdev@vger.kernel.org
-diff --git a/drivers/input/keyboard/Kconfig b/drivers/input/keyboard/Kconfig
-index a3958c6..2d11b44 100644
 --- a/drivers/input/keyboard/Kconfig
 +++ b/drivers/input/keyboard/Kconfig
 @@ -567,6 +567,16 @@ config KEYBOARD_STMPE
@@ -134,11 +127,9 @@ index a3958c6..2d11b44 100644
  config KEYBOARD_DAVINCI
  	tristate "TI DaVinci Key Scan"
  	depends on ARCH_DAVINCI_DM365
-diff --git a/drivers/input/keyboard/Makefile b/drivers/input/keyboard/Makefile
-index 0a33456..a35269a 100644
 --- a/drivers/input/keyboard/Makefile
 +++ b/drivers/input/keyboard/Makefile
-@@ -53,6 +53,7 @@ obj-$(CONFIG_KEYBOARD_SPEAR)		+= spear-keyboard.o
+@@ -53,6 +53,7 @@ obj-$(CONFIG_KEYBOARD_SPEAR)		+= spear-k
  obj-$(CONFIG_KEYBOARD_STMPE)		+= stmpe-keypad.o
  obj-$(CONFIG_KEYBOARD_STOWAWAY)		+= stowaway.o
  obj-$(CONFIG_KEYBOARD_ST_KEYSCAN)	+= st-keyscan.o
@@ -146,9 +137,6 @@ index 0a33456..a35269a 100644
  obj-$(CONFIG_KEYBOARD_SUNKBD)		+= sunkbd.o
  obj-$(CONFIG_KEYBOARD_TC3589X)		+= tc3589x-keypad.o
  obj-$(CONFIG_KEYBOARD_TEGRA)		+= tegra-kbc.o
-diff --git a/drivers/input/keyboard/sun4i-lradc-keys.c b/drivers/input/keyboard/sun4i-lradc-keys.c
-new file mode 100644
-index 0000000..f11f002
 --- /dev/null
 +++ b/drivers/input/keyboard/sun4i-lradc-keys.c
 @@ -0,0 +1,258 @@

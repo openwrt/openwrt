@@ -8,11 +8,9 @@ Subject: [PATCH 3/7] NAND: Add support for subpage reads for
  drivers/mtd/nand/nand_base.c |   77 +++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 76 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 4c8d646..9809059 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1393,6 +1393,75 @@ static int nand_read_page_hwecc_oob_first(struct mtd_info *mtd,
+@@ -1393,6 +1393,75 @@ static int nand_read_page_hwecc_oob_firs
  }
  
  /**
@@ -104,6 +102,3 @@ index 4c8d646..9809059 100644
  
  	case NAND_ECC_HW:
  		/* Use standard hwecc read page function? */
--- 
-1.7.10.4
-

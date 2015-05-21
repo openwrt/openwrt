@@ -23,11 +23,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/sprom.c | 32 +++++++++++++++++++++++++++++---
  1 file changed, 29 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 5d32afc..77790c9 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -180,6 +180,33 @@ static void nvram_read_alpha2(const char *prefix, const char *name,
+@@ -180,6 +180,33 @@ static void nvram_read_alpha2(const char
  	memcpy(val, buf, 2);
  }
  
@@ -61,7 +59,7 @@ index 5d32afc..77790c9 100644
  static void bcm47xx_fill_sprom_r1234589(struct ssb_sprom *sprom,
  					const char *prefix, bool fallback)
  {
-@@ -714,9 +741,6 @@ static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
+@@ -714,9 +741,6 @@ static void bcm47xx_fill_sprom_ethernet(
  static void bcm47xx_fill_board_data(struct ssb_sprom *sprom, const char *prefix,
  				    bool fallback)
  {
@@ -71,7 +69,7 @@ index 5d32afc..77790c9 100644
  	nvram_read_u16(prefix, NULL, "boardtype", &sprom->board_type, 0, true);
  	nvram_read_u32_2(prefix, "boardflags", &sprom->boardflags_lo,
  			 &sprom->boardflags_hi, fallback);
-@@ -787,6 +811,8 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
+@@ -787,6 +811,8 @@ void bcm47xx_fill_sprom(struct ssb_sprom
  		bcm47xx_fill_sprom_r12389(sprom, prefix, fallback);
  		bcm47xx_fill_sprom_r1(sprom, prefix, fallback);
  	}
@@ -80,6 +78,3 @@ index 5d32afc..77790c9 100644
  }
  
  #ifdef CONFIG_BCM47XX_SSB
--- 
-1.8.4.5
-

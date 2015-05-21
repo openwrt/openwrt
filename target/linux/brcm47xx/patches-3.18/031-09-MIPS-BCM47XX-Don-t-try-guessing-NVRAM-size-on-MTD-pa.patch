@@ -19,8 +19,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/nvram.c | 36 ++++++++++++++----------------------
  1 file changed, 14 insertions(+), 22 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 2ac7482..ba632ff 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -139,36 +139,28 @@ static int nvram_init(void)
@@ -39,28 +37,29 @@ index 2ac7482..ba632ff 100644
 -
 -		if (from < 0)
 -			continue;
--
--		err = mtd_read(mtd, from, sizeof(header), &bytes_read,
--			       (uint8_t *)&header);
--		if (!err && header.magic == NVRAM_MAGIC) {
--			u8 *dst = (uint8_t *)nvram_buf;
--			size_t len = header.len;
 +	err = mtd_read(mtd, 0, sizeof(header), &bytes_read, (uint8_t *)&header);
 +	if (!err && header.magic == NVRAM_MAGIC) {
 +		u8 *dst = (uint8_t *)nvram_buf;
 +		size_t len = header.len;
- 
--			if (header.len > NVRAM_SPACE) {
--				pr_err("nvram on flash (%i bytes) is bigger than the reserved space in memory, will just copy the first %i bytes\n",
--				       header.len, NVRAM_SPACE);
--				len = NVRAM_SPACE;
--			}
++
 +		if (header.len > NVRAM_SPACE) {
 +			pr_err("nvram on flash (%i bytes) is bigger than the reserved space in memory, will just copy the first %i bytes\n",
 +				header.len, NVRAM_SPACE);
 +			len = NVRAM_SPACE;
 +		}
  
+-		err = mtd_read(mtd, from, sizeof(header), &bytes_read,
+-			       (uint8_t *)&header);
+-		if (!err && header.magic == NVRAM_MAGIC) {
+-			u8 *dst = (uint8_t *)nvram_buf;
+-			size_t len = header.len;
+-
+-			if (header.len > NVRAM_SPACE) {
+-				pr_err("nvram on flash (%i bytes) is bigger than the reserved space in memory, will just copy the first %i bytes\n",
+-				       header.len, NVRAM_SPACE);
+-				len = NVRAM_SPACE;
+-			}
+-
 -			err = mtd_read(mtd, from, len, &bytes_read, dst);
 -			if (err)
 -				return err;
@@ -74,6 +73,3 @@ index 2ac7482..ba632ff 100644
  	}
  #endif
  
--- 
-1.8.4.5
-

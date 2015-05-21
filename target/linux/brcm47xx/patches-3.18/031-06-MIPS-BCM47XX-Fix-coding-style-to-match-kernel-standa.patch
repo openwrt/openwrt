@@ -25,8 +25,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/time.c            |  1 -
  8 files changed, 34 insertions(+), 30 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/bcm47xx_private.h b/arch/mips/bcm47xx/bcm47xx_private.h
-index ea909a5..41796be 100644
 --- a/arch/mips/bcm47xx/bcm47xx_private.h
 +++ b/arch/mips/bcm47xx/bcm47xx_private.h
 @@ -1,6 +1,10 @@
@@ -40,8 +38,6 @@ index ea909a5..41796be 100644
  #include <linux/kernel.h>
  
  /* prom.c */
-diff --git a/arch/mips/bcm47xx/board.c b/arch/mips/bcm47xx/board.c
-index 6e85130..d4a5a51 100644
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
 @@ -330,9 +330,8 @@ void __init bcm47xx_board_detect(void)
@@ -55,8 +51,6 @@ index 6e85130..d4a5a51 100644
  
  	board_detected = bcm47xx_board_get_nvram();
  	bcm47xx_board.board = board_detected->board;
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 7c77a88..6a97732 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -18,8 +18,10 @@
@@ -83,7 +77,7 @@ index 7c77a88..6a97732 100644
  	for (i = 0; i < sizeof(struct nvram_header); i += 4)
  		*dst++ = __raw_readl(src++);
  	for (; i < header->len && i < NVRAM_SPACE && i < size; i += 4)
-@@ -189,7 +191,8 @@ int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
+@@ -189,7 +191,8 @@ int bcm47xx_nvram_getenv(const char *nam
  	/* Look for name=value and return value */
  	var = &nvram_buf[sizeof(struct nvram_header)];
  	end = nvram_buf + sizeof(nvram_buf) - 2;
@@ -93,7 +87,7 @@ index 7c77a88..6a97732 100644
  	for (; *var; var = value + strlen(value) + 1) {
  		data_left = end - var;
  
-@@ -197,11 +200,10 @@ int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
+@@ -197,11 +200,10 @@ int bcm47xx_nvram_getenv(const char *nam
  		if (!eq)
  			break;
  		value = eq + 1;
@@ -122,8 +116,6 @@ index 7c77a88..6a97732 100644
  		err = snprintf(nvram_var, sizeof(nvram_var), "gpio%i", i);
  		if (err <= 0)
  			continue;
-diff --git a/arch/mips/bcm47xx/prom.c b/arch/mips/bcm47xx/prom.c
-index 1b170bf..ab698ba 100644
 --- a/arch/mips/bcm47xx/prom.c
 +++ b/arch/mips/bcm47xx/prom.c
 @@ -35,7 +35,6 @@
@@ -143,11 +135,9 @@ index 1b170bf..ab698ba 100644
  			break;
  		}
  		if (!memcmp(prom_init, prom_init + mem, 32))
-diff --git a/arch/mips/bcm47xx/serial.c b/arch/mips/bcm47xx/serial.c
-index 2f5bbd6..df761d3 100644
 --- a/arch/mips/bcm47xx/serial.c
 +++ b/arch/mips/bcm47xx/serial.c
-@@ -36,8 +36,8 @@ static int __init uart8250_init_ssb(void)
+@@ -36,8 +36,8 @@ static int __init uart8250_init_ssb(void
  		struct plat_serial8250_port *p = &(uart8250_data[i]);
  		struct ssb_serial_port *ssb_port = &(mcore->serial_ports[i]);
  
@@ -158,7 +148,7 @@ index 2f5bbd6..df761d3 100644
  		p->irq = ssb_port->irq + 2;
  		p->uartclk = ssb_port->baud_base;
  		p->regshift = ssb_port->reg_shift;
-@@ -62,8 +62,8 @@ static int __init uart8250_init_bcma(void)
+@@ -62,8 +62,8 @@ static int __init uart8250_init_bcma(voi
  		struct bcma_serial_port *bcma_port;
  		bcma_port = &(cc->serial_ports[i]);
  
@@ -169,8 +159,6 @@ index 2f5bbd6..df761d3 100644
  		p->irq = bcma_port->irq;
  		p->uartclk = bcma_port->baud_base;
  		p->regshift = bcma_port->reg_shift;
-diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
-index b26c9c2..82ff9fd 100644
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -52,7 +52,7 @@ EXPORT_SYMBOL(bcm47xx_bus_type);
@@ -182,7 +170,7 @@ index b26c9c2..82ff9fd 100644
  	local_irq_disable();
  	/* Set the watchdog timer to reset immediately */
  	switch (bcm47xx_bus_type) {
-@@ -107,7 +107,7 @@ static int bcm47xx_get_invariants(struct ssb_bus *bus,
+@@ -107,7 +107,7 @@ static int bcm47xx_get_invariants(struct
  	char buf[20];
  
  	/* Fill boardinfo structure */
@@ -191,7 +179,7 @@ index b26c9c2..82ff9fd 100644
  
  	bcm47xx_fill_ssb_boardinfo(&iv->boardinfo, NULL);
  
-@@ -126,7 +126,7 @@ static void __init bcm47xx_register_ssb(void)
+@@ -126,7 +126,7 @@ static void __init bcm47xx_register_ssb(
  	char buf[100];
  	struct ssb_mipscore *mcore;
  
@@ -200,7 +188,7 @@ index b26c9c2..82ff9fd 100644
  				      bcm47xx_get_invariants);
  	if (err)
  		panic("Failed to initialize SSB bus (err %d)", err);
-@@ -136,7 +136,7 @@ static void __init bcm47xx_register_ssb(void)
+@@ -136,7 +136,7 @@ static void __init bcm47xx_register_ssb(
  		if (strstr(buf, "console=ttyS1")) {
  			struct ssb_serial_port port;
  
@@ -227,11 +215,9 @@ index b26c9c2..82ff9fd 100644
  #ifdef CONFIG_BCM47XX_SSB
  		bcm47xx_bus_type = BCM47XX_BUS_TYPE_SSB;
  		bcm47xx_sprom_register_fallbacks();
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index c114b02..5d32afc 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -780,8 +780,8 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
+@@ -780,8 +780,8 @@ void bcm47xx_fill_sprom(struct ssb_sprom
  		bcm47xx_fill_sprom_path_r4589(sprom, prefix, fallback);
  		break;
  	default:
@@ -242,7 +228,7 @@ index c114b02..5d32afc 100644
  		sprom->revision = 1;
  		bcm47xx_fill_sprom_r1234589(sprom, prefix, fallback);
  		bcm47xx_fill_sprom_r12389(sprom, prefix, fallback);
-@@ -828,7 +828,7 @@ static int bcm47xx_get_sprom_ssb(struct ssb_bus *bus, struct ssb_sprom *out)
+@@ -828,7 +828,7 @@ static int bcm47xx_get_sprom_ssb(struct
  		bcm47xx_fill_sprom(out, prefix, false);
  		return 0;
  	} else {
@@ -251,7 +237,7 @@ index c114b02..5d32afc 100644
  		return -EINVAL;
  	}
  }
-@@ -893,7 +893,7 @@ static int bcm47xx_get_sprom_bcma(struct bcma_bus *bus, struct ssb_sprom *out)
+@@ -893,7 +893,7 @@ static int bcm47xx_get_sprom_bcma(struct
  		}
  		return 0;
  	default:
@@ -260,8 +246,6 @@ index c114b02..5d32afc 100644
  		return -EINVAL;
  	}
  }
-diff --git a/arch/mips/bcm47xx/time.c b/arch/mips/bcm47xx/time.c
-index 5b46510..74224cf 100644
 --- a/arch/mips/bcm47xx/time.c
 +++ b/arch/mips/bcm47xx/time.c
 @@ -22,7 +22,6 @@
@@ -272,6 +256,3 @@ index 5b46510..74224cf 100644
  #include <linux/init.h>
  #include <linux/ssb/ssb.h>
  #include <asm/time.h>
--- 
-1.8.4.5
-

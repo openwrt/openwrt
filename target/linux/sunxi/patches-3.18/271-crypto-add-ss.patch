@@ -1,8 +1,6 @@
-diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
-index 2fb0fdf..9ba9759 100644
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -436,4 +436,21 @@ config CRYPTO_DEV_QCE
+@@ -437,4 +437,21 @@ config CRYPTO_DEV_QCE
  	  hardware. To compile this driver as a module, choose M here. The
  	  module will be called qcrypto.
  
@@ -24,26 +22,18 @@ index 2fb0fdf..9ba9759 100644
 +	  will be called sunxi-ss.
 +
  endif # CRYPTO_HW
-diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
-index 3924f93..856545c 100644
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -25,3 +25,4 @@ obj-$(CONFIG_CRYPTO_DEV_TALITOS) += talitos.o
+@@ -25,3 +25,4 @@ obj-$(CONFIG_CRYPTO_DEV_TALITOS) += tali
  obj-$(CONFIG_CRYPTO_DEV_UX500) += ux500/
  obj-$(CONFIG_CRYPTO_DEV_QAT) += qat/
  obj-$(CONFIG_CRYPTO_DEV_QCE) += qce/
 +obj-$(CONFIG_CRYPTO_DEV_SUNXI_SS) += sunxi-ss/
-diff --git a/drivers/crypto/sunxi-ss/Makefile b/drivers/crypto/sunxi-ss/Makefile
-new file mode 100644
-index 0000000..8bb287d
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_CRYPTO_DEV_SUNXI_SS) += sunxi-ss.o
 +sunxi-ss-y += sunxi-ss-core.o sunxi-ss-hash.o sunxi-ss-cipher.o
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss-cipher.c b/drivers/crypto/sunxi-ss/sunxi-ss-cipher.c
-new file mode 100644
-index 0000000..8d0416e
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss-cipher.c
 @@ -0,0 +1,489 @@
@@ -536,9 +526,6 @@ index 0000000..8d0416e
 +	memcpy(op->key, key, keylen);
 +	return 0;
 +}
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss-core.c b/drivers/crypto/sunxi-ss/sunxi-ss-core.c
-new file mode 100644
-index 0000000..e66d7e2
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss-core.c
 @@ -0,0 +1,318 @@
@@ -860,9 +847,6 @@ index 0000000..e66d7e2
 +MODULE_DESCRIPTION("Allwinner Security System cryptographic accelerator");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Corentin LABBE <clabbe.montjoie@gmail.com>");
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss-hash.c b/drivers/crypto/sunxi-ss/sunxi-ss-hash.c
-new file mode 100644
-index 0000000..ec8758f
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss-hash.c
 @@ -0,0 +1,445 @@
@@ -1311,9 +1295,6 @@ index 0000000..ec8758f
 +
 +	return sunxi_hash_final(areq);
 +}
-diff --git a/drivers/crypto/sunxi-ss/sunxi-ss.h b/drivers/crypto/sunxi-ss/sunxi-ss.h
-new file mode 100644
-index 0000000..331e75b
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sunxi-ss.h
 @@ -0,0 +1,193 @@

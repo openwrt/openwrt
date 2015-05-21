@@ -1,6 +1,6 @@
 --- a/arch/mips/cavium-octeon/setup.c
 +++ b/arch/mips/cavium-octeon/setup.c
-@@ -609,6 +609,35 @@
+@@ -609,6 +609,35 @@ void octeon_user_io_init(void)
  	write_c0_derraddr1(0);
  }
  
@@ -36,7 +36,7 @@
  /**
   * Early entry point for arch setup
   */
-@@ -798,6 +827,8 @@
+@@ -798,6 +827,8 @@ void __init prom_init(void)
  		}
  	}
  

@@ -299,7 +299,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  {
  	struct mvebu_gpio_chip *mvchip =
  		container_of(chip, struct mvebu_gpio_chip, chip);
-@@ -609,6 +592,8 @@ static int mvebu_gpio_suspend(struct pla
+@@ -617,6 +600,8 @@ static int mvebu_gpio_suspend(struct pla
  		BUG();
  	}
  
@@ -308,7 +308,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	return 0;
  }
  
-@@ -652,6 +637,8 @@ static int mvebu_gpio_resume(struct plat
+@@ -660,6 +645,8 @@ static int mvebu_gpio_resume(struct plat
  		BUG();
  	}
  
@@ -317,7 +317,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	return 0;
  }
  
-@@ -663,7 +650,6 @@ static int mvebu_gpio_probe(struct platf
+@@ -671,7 +658,6 @@ static int mvebu_gpio_probe(struct platf
  	struct resource *res;
  	struct irq_chip_generic *gc;
  	struct irq_chip_type *ct;
@@ -325,7 +325,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	unsigned int ngpios;
  	int soc_variant;
  	int i, cpu, id;
-@@ -693,10 +679,10 @@ static int mvebu_gpio_probe(struct platf
+@@ -701,10 +687,10 @@ static int mvebu_gpio_probe(struct platf
  		return id;
  	}
  
@@ -339,7 +339,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	mvchip->soc_variant = soc_variant;
  	mvchip->chip.label = dev_name(&pdev->dev);
-@@ -830,7 +816,8 @@ static int mvebu_gpio_probe(struct platf
+@@ -838,7 +824,8 @@ static int mvebu_gpio_probe(struct platf
  		goto err_generic_chip;
  	}
  

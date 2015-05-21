@@ -16,8 +16,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/nvram.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 5e4ae04..d805d8a 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -175,7 +175,7 @@ static int nvram_init(void)
@@ -29,7 +27,7 @@ index 5e4ae04..d805d8a 100644
  
  	if (!name)
  		return -EINVAL;
-@@ -191,7 +191,9 @@ int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
+@@ -191,7 +191,9 @@ int bcm47xx_nvram_getenv(const char *nam
  	end = nvram_buf + sizeof(nvram_buf) - 2;
  	end[0] = end[1] = '\0';
  	for (; *var; var = value + strlen(value) + 1) {
@@ -40,6 +38,3 @@ index 5e4ae04..d805d8a 100644
  		if (!eq)
  			break;
  		value = eq + 1;
--- 
-1.8.4.5
-

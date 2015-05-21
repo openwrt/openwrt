@@ -111,7 +111,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	default:
  		BUG();
  	}
-@@ -364,22 +371,22 @@ static void mvebu_gpio_level_irq_unmask(
+@@ -372,22 +379,22 @@ static void mvebu_gpio_level_irq_unmask(
   * value of the line or the opposite value.
   *
   * Level IRQ handlers: DATA_IN is used directly as cause register.
@@ -144,7 +144,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
   *
   ****************************************************************************/
  
-@@ -394,9 +401,8 @@ static int mvebu_gpio_irq_set_type(struc
+@@ -402,9 +409,8 @@ static int mvebu_gpio_irq_set_type(struc
  	pin = d->hwirq;
  
  	u = readl_relaxed(mvebu_gpioreg_io_conf(mvchip)) & (1 << pin);
@@ -155,7 +155,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	type &= IRQ_TYPE_SENSE_MASK;
  	if (type == IRQ_TYPE_NONE)
-@@ -529,13 +535,13 @@ static void mvebu_gpio_dbg_show(struct s
+@@ -537,13 +543,13 @@ static void mvebu_gpio_dbg_show(struct s
  			   (data_in ^ in_pol) & msk  ? "hi" : "lo",
  			   in_pol & msk ? "lo" : "hi");
  		if (!((edg_msk | lvl_msk) & msk)) {
@@ -172,7 +172,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  		seq_printf(s, " (%s)\n", cause & msk ? "pending" : "clear  ");
  	}
  }
-@@ -546,15 +552,15 @@ static void mvebu_gpio_dbg_show(struct s
+@@ -554,15 +560,15 @@ static void mvebu_gpio_dbg_show(struct s
  static const struct of_device_id mvebu_gpio_of_match[] = {
  	{
  		.compatible = "marvell,orion-gpio",
@@ -191,7 +191,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	},
  	{
  		/* sentinel */
-@@ -668,7 +674,8 @@ static int mvebu_gpio_probe(struct platf
+@@ -676,7 +682,8 @@ static int mvebu_gpio_probe(struct platf
  	else
  		soc_variant = MVEBU_GPIO_SOC_VARIANT_ORION;
  
@@ -201,7 +201,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	if (!mvchip)
  		return -ENOMEM;
  
-@@ -767,8 +774,8 @@ static int mvebu_gpio_probe(struct platf
+@@ -775,8 +782,8 @@ static int mvebu_gpio_probe(struct platf
  	 * interrupt handlers, with each handler dealing with 8 GPIO
  	 * pins. */
  	for (i = 0; i < 4; i++) {
@@ -212,7 +212,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  		if (irq < 0)
  			continue;
  		irq_set_handler_data(irq, mvchip);
-@@ -827,7 +834,7 @@ static int mvebu_gpio_probe(struct platf
+@@ -835,7 +842,7 @@ static int mvebu_gpio_probe(struct platf
  
  static struct platform_driver mvebu_gpio_driver = {
  	.driver		= {
