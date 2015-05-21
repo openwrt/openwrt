@@ -43,3 +43,13 @@ define Profile/HG556a_C/Description
   Package set optimized for Huawei HG556a version C (Ralink).
 endef
 $(eval $(call Profile,HG556a_C))
+
+define Profile/HG655b
+  NAME:=Huawei HG655b
+  PACKAGES:=kmod-rt2800-pci wpad-mini \
+	kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev
+endef
+define Profile/HG655b/Description
+  Package set optimized for Huawei HG655b, HG655d.
+endef
+$(eval $(call Profile,HG655b))

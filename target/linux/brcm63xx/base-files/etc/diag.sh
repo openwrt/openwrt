@@ -89,6 +89,9 @@ set_state() {
 	hg520)
 		status_led="HW520:green:net"
 		;;
+	hg655b)
+		status_led="HW65x:green:power"
+		;;
 	p870hw-51a_v2)
 		status_led="P870HW-51a:green:power"
 		;;

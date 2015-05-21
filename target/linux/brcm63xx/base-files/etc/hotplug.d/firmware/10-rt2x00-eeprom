@@ -34,6 +34,9 @@ case "$FIRMWARE" in
 	hg556a_c)
 		rt2x00_eeprom_extract "cal_data" 130560 512
 		;;
+	hg655b)
+		rt2x00_eeprom_extract "cal_data" 0 512
+		;;
 	*)
 		rt2x00_eeprom_die "board $board is not supported yet"
 		;;

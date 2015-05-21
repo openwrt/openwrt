@@ -1,0 +1,110 @@
+/dts-v1/;
+
+/include/ "bcm6368.dtsi"
+
+/ {
+	model = "Huawei HG655b";
+	compatible = "huawei,hg655b", "brcm,bcm6368";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 12 1>;
+			linux,code = <0x211>;
+		};
+		wlan {
+			label = "wlan";
+			gpios = <&gpio0 23 1>;
+			linux,code = <0xee>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <0x198>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		dsl_green {
+			label = "HW65x:green:dsl";
+			gpios = <&gpio0 2 1>;
+		};
+		internet_green {
+			label = "HW65x:green:internet";
+			gpios = <&gpio0 5 1>;
+		};
+		lan1_green {
+			label = "HW65x:green:lan1";
+			gpios = <&gpio0 6 1>;
+		};
+		lan2_green {
+			label = "HW65x:green:lan2";
+			gpios = <&gpio0 7 1>;
+		};
+		lan3_green {
+			label = "HW65x:green:lan3";
+			gpios = <&gpio0 8 1>;
+		};
+		lan4_green {
+			label = "HW65x:green:lan4";
+			gpios = <&gpio0 9 1>;
+		};
+		usb_green {
+			label = "HW65x:green:usb";
+			gpios = <&gpio0 14 1>;
+		};
+		power_green {
+			label = "HW65x:green:power";
+			gpios = <&gpio0 22 1>;
+			default-state = "on";
+		};
+		voip_green {
+			label = "HW65x:green:voip";
+			gpios = <&gpio0 25 1>;
+		};
+		wps_green {
+			label = "HW65x:green:wps";
+			gpios = <&gpio0 27 1>;
+		};
+	};
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x020000>;
+	};
+
+	linux@20000 {
+		label = "linux";
+		reg = <0x020000 0x770000>;
+	};
+
+	board_data@790000 {
+		label = "board_data";
+		reg = <0x790000 0x030000>;
+	};
+
+	cal_data@7c0000 {
+		label = "cal_data";
+		reg = <0x7c0000 0x020000>;
+		read-only;
+	};
+
+	nvram@7d0000 {
+		label = "nvram";
+		reg = <0x7e0000 0x020000>;
+	};
+};
