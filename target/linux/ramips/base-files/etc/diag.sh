@@ -36,6 +36,9 @@ get_status_led() {
 	br6425 | br-6475nd)
 		status_led="edimax:green:power"
 		;;
+	cf-wr800n)
+		status_led="comfast:white:wps"
+		;;
 	cy-swr1100)
 		status_led="samsung:blue:wps"
 		;;

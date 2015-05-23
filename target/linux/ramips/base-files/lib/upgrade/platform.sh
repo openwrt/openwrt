@@ -33,6 +33,7 @@ platform_check_image() {
 	bc2 | \
 	broadway | \
 	carambola | \
+	cf-wr800n | \
 	d105 | \
 	dap-1350 | \
 	dcs-930 | \

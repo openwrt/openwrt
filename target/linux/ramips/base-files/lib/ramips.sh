@@ -91,6 +91,9 @@ ramips_board_detect() {
 	*"Buffalo WSR-1166DHP")
 		name="wsr-1166"
 		;;
+	*"Comfast CF-WR800N")
+		name="cf-wr800n"
+		;;
 	*"Firefly FireWRT")
 		name="firewrt"
 		;;
