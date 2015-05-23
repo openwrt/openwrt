@@ -80,7 +80,6 @@ define Package/comgt/install
 	$(INSTALL_DATA) ./files/3g.usb $(1)/etc/hotplug.d/tty/30-3g
 	$(INSTALL_DIR) $(1)/lib/netifd/proto
 	$(INSTALL_BIN) ./files/3g.sh $(1)/lib/netifd/proto/3g.sh
-	$(INSTALL_BIN) ./files/directip.sh $(1)/lib/netifd/proto/directip.sh
 endef
 
 define Package/comgt-directip/install
