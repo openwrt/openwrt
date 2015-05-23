@@ -112,6 +112,12 @@ get_status_led() {
 	mc-mac1200r)
 		status_led="mercury:green:system"
 		;;
+	mr12)
+		status_led="mr12:green:power"
+		;;
+	mr16)
+		status_led="mr16:green:power"
+		;;
 	mr600)
 		status_led="mr600:orange:power"
 		;;

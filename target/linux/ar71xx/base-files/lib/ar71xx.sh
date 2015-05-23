@@ -471,6 +471,12 @@ ar71xx_board_detect() {
 	*"MAC1200R")
 		name="mc-mac1200r"
 		;;
+	*MR12)
+		name="mr12"
+		;;
+	*MR16)
+		name="mr16"
+		;;
 	*MR600v2)
 		name="mr600v2"
 		;;
