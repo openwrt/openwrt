@@ -76,42 +76,20 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  		return -ENODEV;
  
  	/* TODO: Probably need checks here; is the core connected? */
-@@ -234,18 +281,23 @@ static int bcma_hcd_probe(struct bcma_de
+@@ -234,7 +281,12 @@ static int bcma_hcd_probe(struct bcma_de
  	if (!usb_dev)
  		return -ENOMEM;
  
 -	bcma_hcd_init_chip(dev);
--
--	/* In AI chips EHCI is addrspace 0, OHCI is 1 */
--	ohci_addr = dev->addr_s[0];
--	if ((chipinfo->id == 0x5357 || chipinfo->id == 0x4749)
--	    && chipinfo->rev == 0)
--		ohci_addr = 0x18009000;
--
--	usb_dev->ohci_dev = bcma_hcd_create_pdev(dev, true, ohci_addr);
--	if (IS_ERR(usb_dev->ohci_dev)) {
--		err = PTR_ERR(usb_dev->ohci_dev);
--		goto err_free_usb_dev;
 +	if (IS_BUILTIN(CONFIG_ARCH_BCM_5301X) &&
 +	    chipinfo->id == BCMA_CHIP_ID_BCM4707) {
 +		bcma_hcd_init_chip_arm(dev);
 +	} else if(IS_BUILTIN(CONFIG_BCM47XX)) {
 +		bcma_hcd_init_chip_mips(dev);
-+
-+		/* In AI chips EHCI is addrspace 0, OHCI is 1 */
-+		ohci_addr = dev->addr_s[0];
-+		if ((chipinfo->id == 0x5357 || chipinfo->id == 0x4749)
-+			&& chipinfo->rev == 0)
-+			ohci_addr = 0x18009000;
-+
-+		usb_dev->ohci_dev = bcma_hcd_create_pdev(dev, true, ohci_addr);
-+		if (IS_ERR(usb_dev->ohci_dev)) {
-+			err = PTR_ERR(usb_dev->ohci_dev);
-+			goto err_free_usb_dev;
-+		}
- 	}
++	}
  
- 	usb_dev->ehci_dev = bcma_hcd_create_pdev(dev, false, dev->addr);
+ 	/* In AI chips EHCI is addrspace 0, OHCI is 1 */
+ 	ohci_addr = dev->addr_s[0];
 @@ -306,6 +358,7 @@ static int bcma_hcd_resume(struct bcma_d
  
  static const struct bcma_device_id bcma_hcd_table[] = {
