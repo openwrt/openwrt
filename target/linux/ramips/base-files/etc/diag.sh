@@ -104,6 +104,9 @@ get_status_led() {
 	mpr-a2)
 		status_led="hame:red:power"
 		;;
+	mr-102n)
+		status_led="mr-102n:amber:status"
+		;;
 	nbg-419n)
 		status_led="nbg-419n:green:power"
 		;;

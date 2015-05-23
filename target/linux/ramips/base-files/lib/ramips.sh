@@ -85,6 +85,9 @@ ramips_board_detect() {
 	*"Aztech HW550-3G")
 		name="hw550-3g"
 		;;
+	*"AXIMCom MR-102N")
+		name="mr-102n"
+		;;
 	*"Buffalo WSR-600DHP")
 		name="wsr-600"
 		;;
