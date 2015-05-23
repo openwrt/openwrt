@@ -174,26 +174,34 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +     ifx_pcie_rc_class_early_fixup);
 --- a/arch/mips/pci/fixup-lantiq.c
 +++ b/arch/mips/pci/fixup-lantiq.c
-@@ -11,11 +11,12 @@
+@@ -8,12 +8,18 @@
+ 
+ #include <linux/of_irq.h>
+ #include <linux/of_pci.h>
++#include "ifxmips_pci_common.h"
  
  int (*ltq_pci_plat_arch_init)(struct pci_dev *dev) = NULL;
  int (*ltq_pci_plat_dev_init)(struct pci_dev *dev) = NULL;
-+int (*ltq_pci_map_irq)(const struct pci_dev *dev, u8 slot, u8 pin);
  
  int pcibios_plat_dev_init(struct pci_dev *dev)
  {
++#ifdef CONFIG_PCIE_LANTIQ
++	if (pci_find_capability(dev, PCI_CAP_ID_EXP))
++		ifx_pcie_bios_plat_dev_init(dev);
++#endif
++
  	if (ltq_pci_plat_arch_init)
--		return ltq_pci_plat_arch_init(dev);
-+		ltq_pci_plat_arch_init(dev);
+ 		return ltq_pci_plat_arch_init(dev);
  
- 	if (ltq_pci_plat_dev_init)
- 		return ltq_pci_plat_dev_init(dev);
-@@ -25,5 +26,7 @@ int pcibios_plat_dev_init(struct pci_dev
+@@ -25,5 +31,10 @@
  
  int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {
-+	if (ltq_pci_map_irq)
-+		return ltq_pci_map_irq(dev, slot, pin);
++#ifdef CONFIG_PCIE_LANTIQ
++	if (pci_find_capability(dev, PCI_CAP_ID_EXP))
++		return ifx_pcie_bios_map_irq(dev, slot, pin);
++#endif
++
  	return of_irq_parse_and_map_pci(dev, slot, pin);
  }
 --- /dev/null
@@ -249,7 +257,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +extern int ifx_pci_bios_plat_dev_init(struct pci_dev *dev);
 +#endif /* COFNIG_IFX_PCI */
 +
-+#ifdef CONFIG_IFX_PCIE
++#ifdef CONFIG_PCIE_LANTIQ
 +extern int ifx_pcie_bios_map_irq(IFX_PCI_CONST struct pci_dev *dev, u8 slot, u8 pin);
 +extern int ifx_pcie_bios_plat_dev_init(struct pci_dev *dev);
 +#endif
@@ -258,7 +266,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/arch/mips/pci/ifxmips_pcie.c
-@@ -0,0 +1,1099 @@
+@@ -0,0 +1,1092 @@
 +/*
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -1306,18 +1314,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+extern int (*ltq_pci_plat_arch_init)(struct pci_dev *dev);
-+extern int (*ltq_pci_map_irq)(const struct pci_dev *dev, u8 slot, u8 pin);
-+
 +static int __init ifx_pcie_bios_init(void)
 +{
 +    void __iomem *io_map_base;
 +    int pcie_port;
 +    int startup_port;
-+
-+
-+	ltq_pci_map_irq = ifx_pcie_bios_map_irq;
-+	ltq_pci_plat_arch_init = ifx_pcie_bios_plat_dev_init;
 +
 +    /* Enable AHB Master/ Slave */
 +    pcie_ahb_pmu_setup();
