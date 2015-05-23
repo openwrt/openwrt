@@ -1,0 +1,34 @@
+From 914871b20a901e3e1e981c92bc42b1c93b7ab81b Mon Sep 17 00:00:00 2001
+From: Riku Voipio <riku.voipio@linaro.org>
+Date: Thu, 07 Feb 2013 11:04:21 +0000
+Subject: fuse_kernel.h: clean includes
+
+Use <linux/types.h> for linux and define types used for other operating systems
+using <stdint.h> types.
+---
+(limited to 'include/fuse_kernel.h')
+
+diff --git a/include/fuse_kernel.h b/include/fuse_kernel.h
+index 501450c..df8e9b9 100644
+--- a/include/fuse_kernel.h
++++ b/include/fuse_kernel.h
+@@ -91,12 +91,16 @@
+ #ifndef _LINUX_FUSE_H
+ #define _LINUX_FUSE_H
+ 
+-#include <sys/types.h>
++#ifdef __linux__
++#include <linux/types.h>
++#else
++#include <stdint.h>
+ #define __u64 uint64_t
+ #define __s64 int64_t
+ #define __u32 uint32_t
+ #define __s32 int32_t
+ #define __u16 uint16_t
++#endif
+ 
+ /*
+  * Version negotiation:
+--
+cgit v0.9.0.3-67-gacbf
