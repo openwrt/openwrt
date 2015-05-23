@@ -113,6 +113,7 @@ static int __init w1_gpio_custom_add_one(unsigned int id, unsigned int *params)
 	pdata.pin = params[BUS_PARAM_PIN];
 	pdata.is_open_drain = params[BUS_PARAM_OD] ? 1 : 0;
 	pdata.enable_external_pullup = NULL;
+	pdata.ext_pullup_enable_pin = -EINVAL;
 
 	err = platform_device_add_data(pdev, &pdata, sizeof(pdata));
 	if (err)
