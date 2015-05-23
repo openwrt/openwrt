@@ -63,6 +63,8 @@ define Package/conntrack-tools/install
 		$(PKG_INSTALL_DIR)/usr/sbin/conntrack \
 		$(PKG_INSTALL_DIR)/usr/sbin/conntrackd \
 		$(1)/usr/sbin/
+	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) ./files/conntrackd.init $(1)/etc/init.d/conntrackd
 endef
 
 $(eval $(call BuildPackage,conntrack-tools))
