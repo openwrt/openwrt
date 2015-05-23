@@ -793,7 +793,7 @@ my %commands = (
 	'uninstall' => \&uninstall,
 	'feed_config' => \&feed_config,
 	'clean' => sub {
-		system("rm -rf feeds");
+		system("rm -rf ./feeds ./package/feeds");
 	}
 );
 
