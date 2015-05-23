@@ -20,24 +20,27 @@ define Image/BuildKernel/Initramfs/Template
 endef
 
 ER_CMDLINE:=-mtdparts=phys_mapped_flash:640k(boot0)ro,640k(boot1)ro,64k(eeprom)ro block2mtd.block2mtd=/dev/mmcblk0p2,65536,rootfs,5 root=/dev/mtdblock3 rootfstype=squashfs rootwait
+ERLITE_CMDLINE:=-mtdparts=phys_mapped_flash:512k(boot0),512k(boot1),64k@1024k(eeprom) block2mtd.block2mtd=/dev/sda2,65536,rootfs,5 root=/dev/mtdblock3 rootfstype=squashfs rootwait
 
 define Image/BuildKernel
 	$(call Image/BuildKernel/Template,generic,)
 	$(call Image/BuildKernel/Template,er,$(ER_CMDLINE))
+	$(call Image/BuildKernel/Template,erlite,$(ERLITE_CMDLINE))
 endef
 
 define Image/BuildKernel/Initramfs
 	$(call Image/BuildKernel/Initramfs/Template,generic,)
 	$(call Image/BuildKernel/Initramfs/Template,er,$(ER_CMDLINE))
+	$(call Image/BuildKernel/Initramfs/Template,erlite,$(ERLITE_CMDLINE))
 endef
 
 define Image/Build/sysupgrade
 	mkdir -p $(KDIR)/sysupgrade-$(1)/
-	echo "BOARD=er" > $(KDIR)/sysupgrade-$(1)/CONTROL
+	echo "BOARD=$(1)" > $(KDIR)/sysupgrade-$(1)/CONTROL
 	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(2)-vmlinux.64 $(KDIR)/sysupgrade-$(1)/kernel
 	$(CP) $(KDIR)/root.$(3) $(KDIR)/sysupgrade-$(1)/root
 	(cd $(KDIR); $(TAR) cvf \
-		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-sysupgrade.tar sysupgrade-$(1))
+		$(BIN_DIR)/$(IMG_PREFIX)-$(1)-$(3)-sysupgrade.tar sysupgrade-$(1))
 endef
 
 define Image/Build/ext4
@@ -47,6 +50,7 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 	$(call Image/Build/sysupgrade,er,er,squashfs)
+	$(call Image/Build/sysupgrade,erlite,erlite,squashfs)
 endef
 
 define Image/Build
