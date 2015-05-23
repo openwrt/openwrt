@@ -184,6 +184,8 @@ platform_check_image() {
 	db120 | \
 	f9k1115v2 |\
 	hornet-ub | \
+	mr12 | \
+	mr16 | \
 	wpj558 | \
 	zcn-1523h-2 | \
 	zcn-1523h-5)
