@@ -4115,11 +4115,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    u32 tbus_number = bus_number;
 +
-+#ifdef CONFIG_IFX_PCI
++#ifdef CONFIG_PCI_LANTIQ
 +    if (pcibios_host_nr() > 1) {
 +        tbus_number -= pcibios_1st_host_bus_nr();
 +    }
-+#endif /* CONFIG_IFX_PCI */
++#endif /* CONFIG_PCI_LANTIQ */
 +    return tbus_number;
 +}
 +
@@ -4141,14 +4141,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +
 +    if (read) { /* Read hack */
-+    #ifdef CONFIG_IFX_PCI
++    #ifdef CONFIG_PCI_LANTIQ
 +        if (pcibios_host_nr() > 1) {
 +            tvalue = ifx_pcie_bus_enum_read_hack(where, tvalue);
 +        }
-+    #endif /* CONFIG_IFX_PCI */  
++    #endif /* CONFIG_PCI_LANTIQ */
 +    }
 +    else { /* Write hack */
-+    #ifdef CONFIG_IFX_PCI    
++    #ifdef CONFIG_PCI_LANTIQ
 +        if (pcibios_host_nr() > 1) {
 +            tvalue = ifx_pcie_bus_enum_write_hack(where, tvalue);
 +        }
@@ -5457,11 +5457,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +    u32 tbus_number = bus_number;
 +
-+#ifdef CONFIG_IFX_PCI
++#ifdef CONFIG_PCI_LANTIQ
 +    if (pcibios_host_nr() > 1) {
 +        tbus_number -= pcibios_1st_host_bus_nr();
 +    }
-+#endif /* CONFIG_IFX_PCI */
++#endif /* CONFIG_PCI_LANTIQ */
 +    return tbus_number;
 +}
 +
@@ -5483,14 +5483,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    }
 +
 +    if (read) { /* Read hack */
-+    #ifdef CONFIG_IFX_PCI
++    #ifdef CONFIG_PCI_LANTIQ
 +        if (pcibios_host_nr() > 1) {
 +            tvalue = ifx_pcie_bus_enum_read_hack(where, tvalue);
 +        }
-+    #endif /* CONFIG_IFX_PCI */  
++    #endif /* CONFIG_PCI_LANTIQ */
 +    }
 +    else { /* Write hack */
-+    #ifdef CONFIG_IFX_PCI    
++    #ifdef CONFIG_PCI_LANTIQ
 +        if (pcibios_host_nr() > 1) {
 +            tvalue = ifx_pcie_bus_enum_write_hack(where, tvalue);
 +        }
