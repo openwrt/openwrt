@@ -31,11 +31,9 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  3 files changed, 4 insertions(+), 1 deletion(-)
  create mode 100644 arch/arm/mach-qcom/Makefile.boot
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 89c4b5c..4583ea5 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -311,7 +311,7 @@ config ARCH_MULTIPLATFORM
+@@ -314,7 +314,7 @@ config ARCH_MULTIPLATFORM
  	select ARCH_WANT_OPTIONAL_GPIOLIB
  	select ARM_HAS_SG_CHAIN
  	select ARM_PATCH_PHYS_VIRT
@@ -44,11 +42,9 @@ index 89c4b5c..4583ea5 100644
  	select CLKSRC_OF
  	select COMMON_CLK
  	select GENERIC_CLOCKEVENTS
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index 7453352..5d6f8ac 100644
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -240,9 +240,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(machine-y))/
+@@ -241,9 +241,11 @@ MACHINE  := arch/arm/mach-$(word 1,$(mac
  else
  MACHINE  :=
  endif
@@ -60,13 +56,7 @@ index 7453352..5d6f8ac 100644
  
  machdirs := $(patsubst %,arch/arm/mach-%/,$(machine-y))
  platdirs := $(patsubst %,arch/arm/plat-%/,$(sort $(plat-y)))
-diff --git a/arch/arm/mach-qcom/Makefile.boot b/arch/arm/mach-qcom/Makefile.boot
-new file mode 100644
-index 0000000..67a6d5a
 --- /dev/null
 +++ b/arch/arm/mach-qcom/Makefile.boot
 @@ -0,0 +1 @@
 +zreladdr-y+= 0x42208000
--- 
-1.9.1
-

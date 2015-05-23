@@ -14,8 +14,6 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  drivers/watchdog/qcom-wdt.c | 21 +++++++++++++++------
  1 file changed, 15 insertions(+), 6 deletions(-)
 
-diff --git a/drivers/watchdog/qcom-wdt.c b/drivers/watchdog/qcom-wdt.c
-index aa85618..aa03ca8 100644
 --- a/drivers/watchdog/qcom-wdt.c
 +++ b/drivers/watchdog/qcom-wdt.c
 @@ -20,9 +20,9 @@
@@ -31,7 +29,7 @@ index aa85618..aa03ca8 100644
  
  struct qcom_wdt {
  	struct watchdog_device	wdd;
-@@ -117,6 +117,8 @@ static int qcom_wdt_probe(struct platform_device *pdev)
+@@ -117,6 +117,8 @@ static int qcom_wdt_probe(struct platfor
  {
  	struct qcom_wdt *wdt;
  	struct resource *res;
@@ -40,7 +38,7 @@ index aa85618..aa03ca8 100644
  	int ret;
  
  	wdt = devm_kzalloc(&pdev->dev, sizeof(*wdt), GFP_KERNEL);
-@@ -124,6 +126,14 @@ static int qcom_wdt_probe(struct platform_device *pdev)
+@@ -124,6 +126,14 @@ static int qcom_wdt_probe(struct platfor
  		return -ENOMEM;
  
  	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
@@ -55,7 +53,7 @@ index aa85618..aa03ca8 100644
  	wdt->base = devm_ioremap_resource(&pdev->dev, res);
  	if (IS_ERR(wdt->base))
  		return PTR_ERR(wdt->base);
-@@ -203,9 +213,8 @@ static int qcom_wdt_remove(struct platform_device *pdev)
+@@ -203,9 +213,8 @@ static int qcom_wdt_remove(struct platfo
  }
  
  static const struct of_device_id qcom_wdt_of_table[] = {
@@ -67,6 +65,3 @@ index aa85618..aa03ca8 100644
  	{ },
  };
  MODULE_DEVICE_TABLE(of, qcom_wdt_of_table);
--- 
-1.9.1
-

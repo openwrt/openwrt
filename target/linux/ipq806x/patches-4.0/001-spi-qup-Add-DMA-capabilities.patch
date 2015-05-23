@@ -330,7 +330,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	controller->error = error;
 @@ -339,6 +571,8 @@ static int spi_qup_io_config(struct spi_
  	struct spi_qup *controller = spi_master_get_devdata(spi->master);
- 	u32 config, iomode, mode;
+ 	u32 config, iomode, mode, control;
  	int ret, n_words, w_size;
 +	size_t dma_align = dma_get_cache_alignment();
 +	u32 dma_available = 0;
@@ -383,7 +383,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	iomode |= (mode << QUP_IO_M_OUTPUT_MODE_MASK_SHIFT);
  	iomode |= (mode << QUP_IO_M_INPUT_MODE_MASK_SHIFT);
  
-@@ -419,6 +670,14 @@ static int spi_qup_io_config(struct spi_
+@@ -428,6 +679,14 @@ static int spi_qup_io_config(struct spi_
  	config &= ~(QUP_CONFIG_NO_INPUT | QUP_CONFIG_NO_OUTPUT | QUP_CONFIG_N);
  	config |= xfer->bits_per_word - 1;
  	config |= QUP_CONFIG_SPI_MODE;
@@ -398,7 +398,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	writel_relaxed(config, controller->base + QUP_CONFIG);
  
  	/* only write to OPERATIONAL_MASK when register is present */
-@@ -452,25 +711,29 @@ static int spi_qup_transfer_one(struct s
+@@ -461,25 +720,29 @@ static int spi_qup_transfer_one(struct s
  	controller->tx_bytes = 0;
  	spin_unlock_irqrestore(&controller->lock, flags);
  
@@ -443,7 +443,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  exit:
  	spi_qup_set_state(controller, QUP_STATE_RESET);
  	spin_lock_irqsave(&controller->lock, flags);
-@@ -553,6 +816,7 @@ static int spi_qup_probe(struct platform
+@@ -563,6 +826,7 @@ static int spi_qup_probe(struct platform
  	master->transfer_one = spi_qup_transfer_one;
  	master->dev.of_node = pdev->dev.of_node;
  	master->auto_runtime_pm = true;
@@ -451,7 +451,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  
  	platform_set_drvdata(pdev, master);
  
-@@ -618,6 +882,56 @@ static int spi_qup_probe(struct platform
+@@ -628,6 +892,56 @@ static int spi_qup_probe(struct platform
  			QUP_ERROR_INPUT_UNDER_RUN | QUP_ERROR_OUTPUT_UNDER_RUN,
  			base + QUP_ERROR_FLAGS_EN);
  
@@ -508,7 +508,7 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  	writel_relaxed(0, base + SPI_CONFIG);
  	writel_relaxed(SPI_IO_C_NO_TRI_STATE, base + SPI_IO_CONTROL);
  
-@@ -730,6 +1044,11 @@ static int spi_qup_remove(struct platfor
+@@ -740,6 +1054,11 @@ static int spi_qup_remove(struct platfor
  	if (ret)
  		return ret;
  
