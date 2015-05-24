@@ -1,0 +1,59 @@
+From cfe13b7a217075ae741c018da50cd600e5330de2 Mon Sep 17 00:00:00 2001
+From: Miklos Szeredi <mszeredi@suse.cz>
+Date: Fri, 22 May 2015 10:58:43 +0200
+Subject: [PATCH] libfuse: fix exec environment for mount and umount
+
+Found by Tavis Ormandy (CVE-2015-3202).
+---
+--- a/lib/mount_util.c
++++ b/lib/mount_util.c
+@@ -95,10 +95,12 @@ static int add_mount(const char *prognam
+ 		goto out_restore;
+ 	}
+ 	if (res == 0) {
++		char *env = NULL;
++
+ 		sigprocmask(SIG_SETMASK, &oldmask, NULL);
+ 		setuid(geteuid());
+-		execl("/bin/mount", "/bin/mount", "--no-canonicalize", "-i",
+-		      "-f", "-t", type, "-o", opts, fsname, mnt, NULL);
++		execle("/bin/mount", "/bin/mount", "--no-canonicalize", "-i",
++		       "-f", "-t", type, "-o", opts, fsname, mnt, NULL, &env);
+ 		fprintf(stderr, "%s: failed to execute /bin/mount: %s\n",
+ 			progname, strerror(errno));
+ 		exit(1);
+@@ -146,10 +148,17 @@ static int exec_umount(const char *progn
+ 		goto out_restore;
+ 	}
+ 	if (res == 0) {
++		char *env = NULL;
++
+ 		sigprocmask(SIG_SETMASK, &oldmask, NULL);
+ 		setuid(geteuid());
+-		execl("/bin/umount", "/bin/umount", "-i", rel_mnt,
+-		      lazy ? "-l" : NULL, NULL);
++		if (lazy) {
++			execle("/bin/umount", "/bin/umount", "-i", rel_mnt,
++			       "-l", NULL, &env);
++		} else {
++			execle("/bin/umount", "/bin/umount", "-i", rel_mnt,
++			       NULL, &env);
++		}
+ 		fprintf(stderr, "%s: failed to execute /bin/umount: %s\n",
+ 			progname, strerror(errno));
+ 		exit(1);
+@@ -205,10 +214,12 @@ static int remove_mount(const char *prog
+ 		goto out_restore;
+ 	}
+ 	if (res == 0) {
++		char *env = NULL;
++
+ 		sigprocmask(SIG_SETMASK, &oldmask, NULL);
+ 		setuid(geteuid());
+-		execl("/bin/umount", "/bin/umount", "--no-canonicalize", "-i",
+-		      "--fake", mnt, NULL);
++		execle("/bin/umount", "/bin/umount", "--no-canonicalize", "-i",
++		       "--fake", mnt, NULL, &env);
+ 		fprintf(stderr, "%s: failed to execute /bin/umount: %s\n",
+ 			progname, strerror(errno));
+ 		exit(1);
