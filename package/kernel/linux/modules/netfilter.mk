@@ -460,7 +460,6 @@ define KernelPackage/ipt-tproxy
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
   	CONFIG_NETFILTER_XT_TARGET_TPROXY
   FILES:= \
-	$(if $(call kernel_patchver_lt,3.12),$(LINUX_DIR)/net/netfilter/nf_tproxy_core.ko) \
   	$(foreach mod,$(IPT_TPROXY-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir nf_tproxy_core $(IPT_TPROXY-m)))
   $(call AddDepends/ipt)
