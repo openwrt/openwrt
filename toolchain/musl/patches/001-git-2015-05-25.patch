@@ -1,0 +1,805 @@
+From e4ddd92318e50d8fad1f91fc07c5f6bacb9d6b21 Mon Sep 17 00:00:00 2001
+From: Daniel Golle <daniel@makrotopia.org>
+Date: Mon May 25 16:02:49 2015 -0400
+Subject: [PATCH] squashed commits since v1.1.9
+
+967bcbf mark mips crt code as code
+7b75c48 mark mips cancellable syscall code as code
+0e0e494 simplify/shrink relocation processing in dynamic linker stage 1
+09db855 remove processing of DT_JMPREL from dynamic linker stage 1 bootstrap
+9f26ebd fix stack alignment code in mips crt_arch.h
+63caf1d add .text section directive to all crt_arch.h files missing it
+3b0e832 remove outdated and misleading comment in iconv.c
+39b8ce6 in iconv_open, accept "CHAR" and "" as aliases for "UTF-8"
+c648cef fix inconsistency in a_and and a_or argument types on x86[_64]
+390f93e inline llsc atomics when building for sh4a
+c093e2e reprocess libc/ldso RELA relocations in stage 3 of dynamic linking
+43e9f65 fix null pointer dereference in dcngettext under specific conditions
+68630b5 eliminate costly tricks to avoid TLS access for current locale state
+707d7c3 in i386 __set_thread_area, don't assume %gs register is initially zero
+c0f10cf make arm reloc.h CRTJMP macro compatible with thumb
+83340c7 make arm crt_arch.h compatible with thumb code generation
+---
+ arch/aarch64/crt_arch.h             |   1 +
+ arch/arm/crt_arch.h                 |  11 +--
+ arch/arm/reloc.h                    |   5 ++
+ arch/i386/atomic.h                  |   8 +--
+ arch/microblaze/crt_arch.h          |   1 +
+ arch/mips/crt_arch.h                |   5 +-
+ arch/or1k/crt_arch.h                |   1 +
+ arch/powerpc/crt_arch.h             |   1 +
+ arch/sh/atomic.h                    |  83 ++++++++++++++++++++++
+ arch/sh/crt_arch.h                  |   1 +
+ arch/sh/src/atomic.c                | 135 ++++++++++++------------------------
+ arch/x32/atomic.h                   |   8 +--
+ arch/x86_64/atomic.h                |   8 +--
+ crt/mips/crt1.s                     |   2 +
+ crt/mips/crti.s                     |   2 +
+ src/internal/libc.h                 |   2 -
+ src/internal/locale_impl.h          |   6 +-
+ src/ldso/dlstart.c                  |  41 +++++------
+ src/ldso/dynlink.c                  |   2 +-
+ src/locale/dcngettext.c             |   2 +-
+ src/locale/iconv.c                  |   9 +--
+ src/locale/setlocale.c              |   7 +-
+ src/locale/uselocale.c              |  10 +--
+ src/thread/i386/__set_thread_area.s |  13 ++--
+ src/thread/mips/syscall_cp.s        |   3 +
+ src/thread/pthread_create.c         |   6 --
+ 26 files changed, 200 insertions(+), 173 deletions(-)
+
+diff --git a/arch/aarch64/crt_arch.h b/arch/aarch64/crt_arch.h
+index 3a4b321..b64fb3d 100644
+--- a/arch/aarch64/crt_arch.h
++++ b/arch/aarch64/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START "\n"
+ ".type " START ",%function\n"
+ START ":\n"
+diff --git a/arch/arm/crt_arch.h b/arch/arm/crt_arch.h
+index d1f9a66..99508b1 100644
+--- a/arch/arm/crt_arch.h
++++ b/arch/arm/crt_arch.h
+@@ -1,15 +1,18 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".type " START ",%function \n"
+ START ": \n"
+ "	mov fp, #0 \n"
+ "	mov lr, #0 \n"
+-"	mov a1, sp \n"
+ "	ldr a2, 1f \n"
+-"2:	add a2, pc, a2 \n"
+-"	and sp, sp, #-16 \n"
++"	add a2, pc, a2 \n"
++"	mov a1, sp \n"
++"2:	and ip, a1, #-16 \n"
++"	mov sp, ip \n"
+ "	bl " START "_c \n"
+ ".weak _DYNAMIC \n"
+ ".hidden _DYNAMIC \n"
+-"1:	.word _DYNAMIC-2b-8 \n"
++".align 2 \n"
++"1:	.word _DYNAMIC-2b \n"
+ );
+diff --git a/arch/arm/reloc.h b/arch/arm/reloc.h
+index dec0031..e1ef350 100644
+--- a/arch/arm/reloc.h
++++ b/arch/arm/reloc.h
+@@ -28,5 +28,10 @@
+ #define REL_TPOFF       R_ARM_TLS_TPOFF32
+ //#define REL_TLSDESC     R_ARM_TLS_DESC
+ 
++#ifdef __thumb__
++#define CRTJMP(pc,sp) __asm__ __volatile__( \
++	"mov sp,%1 ; bx %0" : : "r"(pc), "r"(sp) : "memory" )
++#else
+ #define CRTJMP(pc,sp) __asm__ __volatile__( \
+ 	"mov sp,%1 ; tst %0,#1 ; moveq pc,%0 ; bx %0" : : "r"(pc), "r"(sp) : "memory" )
++#endif
+diff --git a/arch/i386/atomic.h b/arch/i386/atomic.h
+index 4fe7bde..95fecbd 100644
+--- a/arch/i386/atomic.h
++++ b/arch/i386/atomic.h
+@@ -50,16 +50,16 @@ static inline int a_cas(volatile int *p, int t, int s)
+ 	return t;
+ }
+ 
+-static inline void a_or(volatile void *p, int v)
++static inline void a_or(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; orl %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+-static inline void a_and(volatile void *p, int v)
++static inline void a_and(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; andl %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+ static inline int a_swap(volatile int *x, int v)
+diff --git a/arch/microblaze/crt_arch.h b/arch/microblaze/crt_arch.h
+index ada98c8..bca78bf 100644
+--- a/arch/microblaze/crt_arch.h
++++ b/arch/microblaze/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".align  2 \n"
+ START ": \n"
+diff --git a/arch/mips/crt_arch.h b/arch/mips/crt_arch.h
+index 9a60be0..21e139b 100644
+--- a/arch/mips/crt_arch.h
++++ b/arch/mips/crt_arch.h
+@@ -1,6 +1,7 @@
+ __asm__(
+ ".set push\n"
+ ".set noreorder\n"
++".text \n"
+ ".global _" START "\n"
+ ".global " START "\n"
+ ".type   _" START ", @function\n"
+@@ -21,8 +22,8 @@ __asm__(
+ "	addu $5, $5, $gp \n"
+ "	lw $25, 4($ra) \n"
+ "	addu $25, $25, $gp \n"
+-"	subu $sp, $sp, 16 \n"
++"	and $sp, $sp, -8 \n"
+ "	jalr $25 \n"
+-"	 and $sp, $sp, -8 \n"
++"	 subu $sp, $sp, 16 \n"
+ ".set pop \n"
+ );
+diff --git a/arch/or1k/crt_arch.h b/arch/or1k/crt_arch.h
+index 8441556..9e310ca 100644
+--- a/arch/or1k/crt_arch.h
++++ b/arch/or1k/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".align  4 \n"
+ START ": \n"
+diff --git a/arch/powerpc/crt_arch.h b/arch/powerpc/crt_arch.h
+index ec3cd29..9b65886 100644
+--- a/arch/powerpc/crt_arch.h
++++ b/arch/powerpc/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".type   " START ", %function \n"
+ START ": \n"
+diff --git a/arch/sh/atomic.h b/arch/sh/atomic.h
+index a1d22e4..f2e6dac 100644
+--- a/arch/sh/atomic.h
++++ b/arch/sh/atomic.h
+@@ -22,6 +22,88 @@ static inline int a_ctz_64(uint64_t x)
+ 	return a_ctz_l(y);
+ }
+ 
++#define LLSC_CLOBBERS "r0", "t", "memory"
++#define LLSC_START(mem) "synco\n"  \
++	"0:	movli.l @" mem ", r0\n"
++#define LLSC_END(mem)              \
++	"1:	movco.l r0, @" mem "\n"    \
++	"	bf 0b\n"                   \
++	"	synco\n"
++
++static inline int __sh_cas_llsc(volatile int *p, int t, int s)
++{
++	int old;
++	__asm__ __volatile__(
++		LLSC_START("%1")
++		"	mov r0, %0\n"
++		"	cmp/eq %0, %2\n"
++		"	bf 1f\n"
++		"	mov %3, r0\n"
++		LLSC_END("%1")
++		: "=&r"(old) : "r"(p), "r"(t), "r"(s) : LLSC_CLOBBERS);
++	return old;
++}
++
++static inline int __sh_swap_llsc(volatile int *x, int v)
++{
++	int old;
++	__asm__ __volatile__(
++		LLSC_START("%1")
++		"	mov r0, %0\n"
++		"	mov %2, r0\n"
++		LLSC_END("%1")
++		: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
++	return old;
++}
++
++static inline int __sh_fetch_add_llsc(volatile int *x, int v)
++{
++	int old;
++	__asm__ __volatile__(
++		LLSC_START("%1")
++		"	mov r0, %0\n"
++		"	add %2, r0\n"
++		LLSC_END("%1")
++		: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
++	return old;
++}
++
++static inline void __sh_store_llsc(volatile int *p, int x)
++{
++	__asm__ __volatile__(
++		"	synco\n"
++		"	mov.l %1, @%0\n"
++		"	synco\n"
++		: : "r"(p), "r"(x) : "memory");
++}
++
++static inline void __sh_and_llsc(volatile int *x, int v)
++{
++	__asm__ __volatile__(
++		LLSC_START("%0")
++		"	and %1, r0\n"
++		LLSC_END("%0")
++		: : "r"(x), "r"(v) : LLSC_CLOBBERS);
++}
++
++static inline void __sh_or_llsc(volatile int *x, int v)
++{
++	__asm__ __volatile__(
++		LLSC_START("%0")
++		"	or %1, r0\n"
++		LLSC_END("%0")
++		: : "r"(x), "r"(v) : LLSC_CLOBBERS);
++}
++
++#ifdef __SH4A__
++#define a_cas(p,t,s)     __sh_cas_llsc(p,t,s)
++#define a_swap(x,v)      __sh_swap_llsc(x,v)
++#define a_fetch_add(x,v) __sh_fetch_add_llsc(x, v)
++#define a_store(x,v)     __sh_store_llsc(x, v)
++#define a_and(x,v)       __sh_and_llsc(x, v)
++#define a_or(x,v)        __sh_or_llsc(x, v)
++#else
++
+ int  __sh_cas(volatile int *, int, int);
+ int  __sh_swap(volatile int *, int);
+ int  __sh_fetch_add(volatile int *, int);
+@@ -35,6 +117,7 @@ void __sh_or(volatile int *, int);
+ #define a_store(x,v)     __sh_store(x, v)
+ #define a_and(x,v)       __sh_and(x, v)
+ #define a_or(x,v)        __sh_or(x, v)
++#endif
+ 
+ static inline void *a_cas_p(volatile void *p, void *t, void *s)
+ {
+diff --git a/arch/sh/crt_arch.h b/arch/sh/crt_arch.h
+index a873ffd..f890710 100644
+--- a/arch/sh/crt_arch.h
++++ b/arch/sh/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ START ": \n"
+ "	mova 1f, r0 \n"
+diff --git a/arch/sh/src/atomic.c b/arch/sh/src/atomic.c
+index 1339567..f8c615f 100644
+--- a/arch/sh/src/atomic.c
++++ b/arch/sh/src/atomic.c
+@@ -1,12 +1,7 @@
+-#include "libc.h"
++#ifndef __SH4A__
+ 
+-#define LLSC_CLOBBERS   "r0", "t", "memory"
+-#define LLSC_START(mem) "synco\n"  \
+-	"0:	movli.l @" mem ", r0\n"
+-#define LLSC_END(mem)              \
+-	"1:	movco.l r0, @" mem "\n"    \
+-	"	bf 0b\n"                   \
+-	"	synco\n"
++#include "atomic.h"
++#include "libc.h"
+ 
+ /* gusa is a hack in the kernel which lets you create a sequence of instructions
+  * which will be restarted if the process is preempted in the middle of the
+@@ -34,114 +29,74 @@
+ 
+ int __sh_cas(volatile int *p, int t, int s)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_cas_llsc(p, t, s);
++
+ 	int old;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%1")
+-			"	mov r0, %0\n"
+-			"	cmp/eq %0, %2\n"
+-			"	bf 1f\n"
+-			"	mov %3, r0\n"
+-			LLSC_END("%1")
+-			: "=&r"(old) : "r"(p), "r"(t), "r"(s) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_EVEN("%1", "%0")
+-			"	cmp/eq %0, %2\n"
+-			"	bf 1f\n"
+-			GUSA_END("%1", "%3")
+-			: "=&r"(old) : "r"(p), "r"(t), "r"(s) : GUSA_CLOBBERS, "t");
+-	}
++	__asm__ __volatile__(
++		GUSA_START_EVEN("%1", "%0")
++		"	cmp/eq %0, %2\n"
++		"	bf 1f\n"
++		GUSA_END("%1", "%3")
++		: "=&r"(old) : "r"(p), "r"(t), "r"(s) : GUSA_CLOBBERS, "t");
+ 	return old;
+ }
+ 
+ int __sh_swap(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_swap_llsc(x, v);
++
+ 	int old;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%1")
+-			"	mov r0, %0\n"
+-			"	mov %2, r0\n"
+-			LLSC_END("%1")
+-			: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_EVEN("%1", "%0")
+-			GUSA_END("%1", "%2")
+-			: "=&r"(old) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_EVEN("%1", "%0")
++		GUSA_END("%1", "%2")
++		: "=&r"(old) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ 	return old;
+ }
+ 
+ int __sh_fetch_add(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_fetch_add_llsc(x, v);
++
+ 	int old, dummy;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%1")
+-			"	mov r0, %0\n"
+-			"	add %2, r0\n"
+-			LLSC_END("%1")
+-			: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_EVEN("%2", "%0")
+-			"	mov %0, %1\n"
+-			"	add %3, %1\n"
+-			GUSA_END("%2", "%1")
+-			: "=&r"(old), "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_EVEN("%2", "%0")
++		"	mov %0, %1\n"
++		"	add %3, %1\n"
++		GUSA_END("%2", "%1")
++		: "=&r"(old), "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ 	return old;
+ }
+ 
+ void __sh_store(volatile int *p, int x)
+ {
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			"	synco\n"
+-			"	mov.l %1, @%0\n"
+-			"	synco\n"
+-			: : "r"(p), "r"(x) : "memory");
+-	} else {
+-		__asm__ __volatile__(
+-			"	mov.l %1, @%0\n"
+-			: : "r"(p), "r"(x) : "memory");
+-	}
++	if (__hwcap & CPU_HAS_LLSC) return __sh_store_llsc(p, x);
++	__asm__ __volatile__(
++		"	mov.l %1, @%0\n"
++		: : "r"(p), "r"(x) : "memory");
+ }
+ 
+ void __sh_and(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_and_llsc(x, v);
++
+ 	int dummy;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%0")
+-			"	and %1, r0\n"
+-			LLSC_END("%0")
+-			: : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_ODD("%1", "%0")
+-			"	and %2, %0\n"
+-			GUSA_END("%1", "%0")
+-			: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_ODD("%1", "%0")
++		"	and %2, %0\n"
++		GUSA_END("%1", "%0")
++		: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ }
+ 
+ void __sh_or(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_or_llsc(x, v);
++
+ 	int dummy;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%0")
+-			"	or %1, r0\n"
+-			LLSC_END("%0")
+-			: : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_ODD("%1", "%0")
+-			"	or %2, %0\n"
+-			GUSA_END("%1", "%0")
+-			: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_ODD("%1", "%0")
++		"	or %2, %0\n"
++		GUSA_END("%1", "%0")
++		: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ }
++
++#endif
+diff --git a/arch/x32/atomic.h b/arch/x32/atomic.h
+index 333098c..b2014cc 100644
+--- a/arch/x32/atomic.h
++++ b/arch/x32/atomic.h
+@@ -47,16 +47,16 @@ static inline int a_cas(volatile int *p, int t, int s)
+ 	return t;
+ }
+ 
+-static inline void a_or(volatile void *p, int v)
++static inline void a_or(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; or %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+-static inline void a_and(volatile void *p, int v)
++static inline void a_and(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; and %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+ static inline int a_swap(volatile int *x, int v)
+diff --git a/arch/x86_64/atomic.h b/arch/x86_64/atomic.h
+index 333098c..b2014cc 100644
+--- a/arch/x86_64/atomic.h
++++ b/arch/x86_64/atomic.h
+@@ -47,16 +47,16 @@ static inline int a_cas(volatile int *p, int t, int s)
+ 	return t;
+ }
+ 
+-static inline void a_or(volatile void *p, int v)
++static inline void a_or(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; or %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+-static inline void a_and(volatile void *p, int v)
++static inline void a_and(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; and %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+ static inline int a_swap(volatile int *x, int v)
+diff --git a/crt/mips/crt1.s b/crt/mips/crt1.s
+index 093d7d5..794b6f7 100644
+--- a/crt/mips/crt1.s
++++ b/crt/mips/crt1.s
+@@ -4,6 +4,8 @@
+ .weak  _fini
+ .global __start
+ .global _start
++.type __start,@function
++.type _start,@function
+ __start:
+ _start:
+ 	subu    $fp, $fp, $fp            # Zero the frame pointer.
+diff --git a/crt/mips/crti.s b/crt/mips/crti.s
+index b1593d1..39dee38 100644
+--- a/crt/mips/crti.s
++++ b/crt/mips/crti.s
+@@ -2,6 +2,7 @@
+ 
+ .section .init
+ .global _init
++.type _init,@function
+ .align 2
+ _init:
+ 	subu $sp,$sp,32
+@@ -10,6 +11,7 @@ _init:
+ 
+ .section .fini
+ .global _fini
++.type _fini,@function
+ .align 2
+ _fini:
+ 	subu $sp,$sp,32
+diff --git a/src/internal/libc.h b/src/internal/libc.h
+index 51ee186..212f0e8 100644
+--- a/src/internal/libc.h
++++ b/src/internal/libc.h
+@@ -23,8 +23,6 @@ struct __libc {
+ 	volatile int ofl_lock[2];
+ 	size_t tls_size;
+ 	size_t page_size;
+-	volatile int uselocale_cnt;
+-	volatile int bytelocale_cnt_minus_1;
+ 	struct __locale_struct global_locale;
+ };
+ 
+diff --git a/src/internal/locale_impl.h b/src/internal/locale_impl.h
+index 9142f0c..5aebbf6 100644
+--- a/src/internal/locale_impl.h
++++ b/src/internal/locale_impl.h
+@@ -20,11 +20,9 @@ const char *__lctrans_cur(const char *);
+ #define LCTRANS(msg, lc, loc) __lctrans(msg, (loc)->cat[(lc)-2])
+ #define LCTRANS_CUR(msg) __lctrans_cur(msg)
+ 
+-#define CURRENT_LOCALE \
+-	(libc.uselocale_cnt ? __pthread_self()->locale : &libc.global_locale)
++#define CURRENT_LOCALE (__pthread_self()->locale)
+ 
+-#define CURRENT_UTF8 \
+-	(libc.bytelocale_cnt_minus_1<0 || __pthread_self()->locale->ctype_utf8)
++#define CURRENT_UTF8 (__pthread_self()->locale->ctype_utf8)
+ 
+ #undef MB_CUR_MAX
+ #define MB_CUR_MAX (CURRENT_UTF8 ? 4 : 1)
+diff --git a/src/ldso/dlstart.c b/src/ldso/dlstart.c
+index 46f4a5c..5f84465 100644
+--- a/src/ldso/dlstart.c
++++ b/src/ldso/dlstart.c
+@@ -56,31 +56,22 @@ void _dlstart_c(size_t *sp, size_t *dynv)
+ 		for (i=0; i<local_cnt; i++) got[i] += (size_t)base;
+ 	}
+ 
+-	/* The use of the reloc_info structure and nested loops is a trick
+-	 * to work around the fact that we can't necessarily make function
+-	 * calls yet. Each struct in the array serves like the arguments
+-	 * to a function call. */
+-	struct {
+-		void *rel;
+-		size_t size;
+-		size_t stride;
+-	} reloc_info[] = {
+-		{ base+dyn[DT_JMPREL], dyn[DT_PLTRELSZ], 2+(dyn[DT_PLTREL]==DT_RELA) },
+-		{ base+dyn[DT_REL], dyn[DT_RELSZ], 2 },
+-		{ base+dyn[DT_RELA], dyn[DT_RELASZ], 3 },
+-		{ 0, 0, 0 }
+-	};
+-
+-	for (i=0; reloc_info[i].stride; i++) {
+-		size_t *rel = reloc_info[i].rel;
+-		size_t rel_size = reloc_info[i].size;
+-		size_t stride = reloc_info[i].stride;
+-		for (; rel_size; rel+=stride, rel_size-=stride*sizeof(size_t)) {
+-			if (!IS_RELATIVE(rel[1])) continue;
+-			size_t *rel_addr = (void *)(base + rel[0]);
+-			size_t addend = stride==3 ? rel[2] : *rel_addr;
+-			*rel_addr = (size_t)base + addend;
+-		}
++	size_t *rel, rel_size;
++
++	rel = (void *)(base+dyn[DT_REL]);
++	rel_size = dyn[DT_RELSZ];
++	for (; rel_size; rel+=2, rel_size-=2*sizeof(size_t)) {
++		if (!IS_RELATIVE(rel[1])) continue;
++		size_t *rel_addr = (void *)(base + rel[0]);
++		*rel_addr += (size_t)base;
++	}
++
++	rel = (void *)(base+dyn[DT_RELA]);
++	rel_size = dyn[DT_RELASZ];
++	for (; rel_size; rel+=3, rel_size-=3*sizeof(size_t)) {
++		if (!IS_RELATIVE(rel[1])) continue;
++		size_t *rel_addr = (void *)(base + rel[0]);
++		*rel_addr = (size_t)base + rel[2];
+ 	}
+ 
+ 	const char *strings = (void *)(base + dyn[DT_STRTAB]);
+diff --git a/src/ldso/dynlink.c b/src/ldso/dynlink.c
+index 7c92ef6..93595a0 100644
+--- a/src/ldso/dynlink.c
++++ b/src/ldso/dynlink.c
+@@ -281,7 +281,7 @@ static void do_relocs(struct dso *dso, size_t *rel, size_t rel_size, size_t stri
+ 		}
+ 
+ 		int gotplt = (type == REL_GOT || type == REL_PLT);
+-		if (dso->rel_update_got && !gotplt) continue;
++		if (dso->rel_update_got && !gotplt && stride==2) continue;
+ 
+ 		addend = stride>2 ? rel[2]
+ 			: gotplt || type==REL_COPY ? 0
+diff --git a/src/locale/dcngettext.c b/src/locale/dcngettext.c
+index 0057cb5..30dd41d 100644
+--- a/src/locale/dcngettext.c
++++ b/src/locale/dcngettext.c
+@@ -132,7 +132,7 @@ char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2,
+ 	switch (category) {
+ 	case LC_MESSAGES:
+ 		locname = loc->messages_name;
+-		if (!*locname) goto notrans;
++		if (!locname || !*locname) goto notrans;
+ 		break;
+ 	case LC_TIME:
+ 	case LC_MONETARY:
+diff --git a/src/locale/iconv.c b/src/locale/iconv.c
+index a0b0232..e6121ae 100644
+--- a/src/locale/iconv.c
++++ b/src/locale/iconv.c
+@@ -23,19 +23,13 @@
+ #define BIG5        0340
+ #define EUC_KR      0350
+ 
+-/* FIXME: these are not implemented yet
+- * EUC:   A1-FE A1-FE
+- * GBK:   81-FE 40-7E,80-FE
+- * Big5:  A1-FE 40-7E,A1-FE
+- */
+-
+ /* Definitions of charmaps. Each charmap consists of:
+  * 1. Empty-string-terminated list of null-terminated aliases.
+  * 2. Special type code or number of elided entries.
+  * 3. Character table (size determined by field 2). */
+ 
+ static const unsigned char charmaps[] =
+-"utf8\0\0\310"
++"utf8\0char\0\0\310"
+ "wchart\0\0\306"
+ "ucs2\0ucs2be\0\0\304"
+ "ucs2le\0\0\305"
+@@ -90,6 +84,7 @@ static int fuzzycmp(const unsigned char *a, const unsigned char *b)
+ static size_t find_charmap(const void *name)
+ {
+ 	const unsigned char *s;
++	if (!*(char *)name) name=charmaps; /* "utf8" */
+ 	for (s=charmaps; *s; ) {
+ 		if (!fuzzycmp(name, s)) {
+ 			for (; *s; s+=strlen((void *)s)+1);
+diff --git a/src/locale/setlocale.c b/src/locale/setlocale.c
+index 8ea389a..d797f43 100644
+--- a/src/locale/setlocale.c
++++ b/src/locale/setlocale.c
+@@ -55,12 +55,7 @@ char *setlocale(int cat, const char *name)
+ 		return buf;
+ 	}
+ 
+-	if (name) {
+-		int adj = libc.global_locale.ctype_utf8;
+-		__setlocalecat(&libc.global_locale, cat, name);
+-		adj -= libc.global_locale.ctype_utf8;
+-		if (adj) a_fetch_add(&libc.bytelocale_cnt_minus_1, adj);
+-	}
++	if (name) __setlocalecat(&libc.global_locale, cat, name);
+ 
+ 	switch (cat) {
+ 	case LC_CTYPE:
+diff --git a/src/locale/uselocale.c b/src/locale/uselocale.c
+index 5106795..b70a0c1 100644
+--- a/src/locale/uselocale.c
++++ b/src/locale/uselocale.c
+@@ -10,15 +10,7 @@ locale_t __uselocale(locale_t new)
+ 
+ 	if (new == LC_GLOBAL_LOCALE) new = global;
+ 
+-	if (new && new != old) {
+-		int adj = 0;
+-		if (new == global) a_dec(&libc.uselocale_cnt);
+-		else if (!new->ctype_utf8) adj++;
+-		if (old == global) a_inc(&libc.uselocale_cnt);
+-		else if (!old->ctype_utf8) adj--;
+-		a_fetch_add(&libc.bytelocale_cnt_minus_1, adj);
+-		self->locale = new;
+-	}
++	self->locale = new;
+ 
+ 	return old == global ? LC_GLOBAL_LOCALE : old;
+ }
+diff --git a/src/thread/i386/__set_thread_area.s b/src/thread/i386/__set_thread_area.s
+index 1d85268..3a558fb 100644
+--- a/src/thread/i386/__set_thread_area.s
++++ b/src/thread/i386/__set_thread_area.s
+@@ -6,10 +6,10 @@ __set_thread_area:
+ 	push $0x51
+ 	push $0xfffff
+ 	push 16(%esp)
+-	xor %edx,%edx
+-	mov %gs,%dx
+-	sub $3,%edx
+-	sar $3,%edx
++	call 1f
++1:	addl $4f-1b,(%esp)
++	pop %ecx
++	mov (%ecx),%edx
+ 	push %edx
+ 	mov %esp,%ebx
+ 	xor %eax,%eax
+@@ -18,6 +18,7 @@ __set_thread_area:
+ 	testl %eax,%eax
+ 	jnz 2f
+ 	movl (%esp),%edx
++	movl %edx,(%ecx)
+ 	leal 3(,%edx,8),%edx
+ 3:	movw %dx,%gs
+ 1:
+@@ -38,3 +39,7 @@ __set_thread_area:
+ 	mov $7,%dl
+ 	inc %al
+ 	jmp 3b
++
++.data
++	.align 4
++4:	.long -1
+diff --git a/src/thread/mips/syscall_cp.s b/src/thread/mips/syscall_cp.s
+index 399289e..8f76d40 100644
+--- a/src/thread/mips/syscall_cp.s
++++ b/src/thread/mips/syscall_cp.s
+@@ -2,10 +2,13 @@
+ 
+ .global __cp_begin
+ .hidden __cp_begin
++.type   __cp_begin,@function
+ .global __cp_end
+ .hidden __cp_end
++.type   __cp_end,@function
+ .global __cp_cancel
+ .hidden __cp_cancel
++.type   __cp_cancel,@function
+ .hidden __cancel
+ .global __syscall_cp_asm
+ .hidden __syscall_cp_asm
+diff --git a/src/thread/pthread_create.c b/src/thread/pthread_create.c
+index 4eb8b88..de72818 100644
+--- a/src/thread/pthread_create.c
++++ b/src/thread/pthread_create.c
+@@ -67,12 +67,6 @@ _Noreturn void __pthread_exit(void *result)
+ 		exit(0);
+ 	}
+ 
+-	if (self->locale != &libc.global_locale) {
+-		a_dec(&libc.uselocale_cnt);
+-		if (self->locale->ctype_utf8)
+-			a_dec(&libc.bytelocale_cnt_minus_1);
+-	}
+-
+ 	/* Process robust list in userspace to handle non-pshared mutexes
+ 	 * and the detached thread case where the robust list head will
+ 	 * be invalid when the kernel would process it. */
+-- 
+2.4.1
+
