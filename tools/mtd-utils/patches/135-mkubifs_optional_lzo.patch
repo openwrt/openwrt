@@ -8,15 +8,15 @@
  #include <linux/types.h>
  
  #define crc32 __zlib_crc32
-@@ -35,7 +34,6 @@
- #include "ubifs-media.h"
+@@ -34,7 +33,6 @@
+ #include "compr.h"
  #include "mkfs.ubifs.h"
  
 -static void *lzo_mem;
  static unsigned long long errcnt = 0;
  static struct ubifs_info *c = &info_;
  
-@@ -86,6 +84,25 @@ static int zlib_deflate(void *in_buf, si
+@@ -85,6 +83,25 @@ static int zlib_deflate(void *in_buf, si
  	return 0;
  }
  
@@ -42,7 +42,7 @@
  static int lzo_compress(void *in_buf, size_t in_len, void *out_buf,
  			size_t *out_len)
  {
-@@ -103,6 +120,12 @@ static int lzo_compress(void *in_buf, si
+@@ -102,6 +119,12 @@ static int lzo_compress(void *in_buf, si
  
  	return 0;
  }
@@ -55,7 +55,7 @@
  
  static int no_compress(void *in_buf, size_t in_len, void *out_buf,
  		       size_t *out_len)
-@@ -123,7 +146,6 @@ static int favor_lzo_compress(void *in_b
+@@ -122,7 +145,6 @@ static int favor_lzo_compress(void *in_b
  	lzo_len = zlib_len = *out_len;
  	lzo_ret = lzo_compress(in_buf, in_len, out_buf, &lzo_len);
  	zlib_ret = zlib_deflate(in_buf, in_len, zlib_buf, &zlib_len);
@@ -63,7 +63,7 @@
  	if (lzo_ret && zlib_ret)
  		/* Both compressors failed */
  		return -1;
-@@ -198,23 +220,28 @@ int compress_data(void *in_buf, size_t i
+@@ -197,23 +219,28 @@ int compress_data(void *in_buf, size_t i
  
  int init_compression(void)
  {
@@ -100,20 +100,20 @@
  	if (errcnt)
  		fprintf(stderr, "%llu compression errors occurred\n", errcnt);
  }
---- a/mkfs.ubifs/Makefile
-+++ b/mkfs.ubifs/Makefile
-@@ -6,7 +6,13 @@ ALL_SOURCES=*.[ch] hashtable/*.[ch]
- 
- TARGETS = mkfs.ubifs
- 
--LDLIBS_mkfs.ubifs = -lz -llzo2 -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
+--- a/Makefile
++++ b/Makefile
+@@ -108,7 +108,13 @@ $(call _mkdep,lib/,libmtd.a)
+ obj-mkfs.ubifs = crc16.o lpt.o compr.o devtable.o \
+ 	hashtable/hashtable.o hashtable/hashtable_itr.o
+ LDFLAGS_mkfs.ubifs = $(ZLIBLDFLAGS) $(LZOLDFLAGS) $(UUIDLDFLAGS)
+-LDLIBS_mkfs.ubifs = -lz -llzo2 -lm -luuid
 +ifeq ($(WITHOUT_LZO), 1)
 +  CPPFLAGS += -DWITHOUT_LZO
 +else
 +  LZOLDLIBS = -llzo2
 +endif
 +
-+LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
- LDLIBS_mkfs.ubifs += -L$(BUILDDIR)/../lib -lmtd
- LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS)
++LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) -lm -luuid
+ $(call mkdep,mkfs.ubifs/,mkfs.ubifs,,ubi-utils/libubi.a)
  
+ #
