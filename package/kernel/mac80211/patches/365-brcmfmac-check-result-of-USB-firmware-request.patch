@@ -1,0 +1,33 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 7 May 2015 14:13:03 +0200
+Subject: [PATCH] brcmfmac: check result of USB firmware request
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This prevents silence failures with driver waiting (infinitely) for a
+callback.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/usb.c
+@@ -1270,8 +1270,13 @@ static int brcmf_usb_probe_cb(struct brc
+ 	bus->chiprev = bus_pub->chiprev;
+ 
+ 	/* request firmware here */
+-	brcmf_fw_get_firmwares(dev, 0, brcmf_usb_get_fwname(devinfo), NULL,
+-			       brcmf_usb_probe_phase2);
++	ret = brcmf_fw_get_firmwares(dev, 0, brcmf_usb_get_fwname(devinfo),
++				     NULL, brcmf_usb_probe_phase2);
++	if (ret) {
++		brcmf_err("firmware request failed: %d\n", ret);
++		goto fail;
++	}
++
+ 	return 0;
+ 
+ fail:

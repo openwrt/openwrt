@@ -1,0 +1,87 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 20 May 2015 14:09:48 +0200
+Subject: [PATCH] brcmfmac: Improve throughput by scheduling msbug flow worker.
+
+The tx flow worker in msgbuf gets scheduled at tx till a certain
+threshold has been reached. Then the tx completes will take over
+the scheduling. When amsdu and ampdu is used the frames are
+transferred wireless in a very bulky fashion, in combination
+with this scheduling algorithm and buffer limiters in the stack
+this can result in limited throughput. This change causes the
+flow worker to be scheduled more frequently from tx.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Reviewed-by: Daniel (Deognyoun) Kim <dekim@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/flowring.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/flowring.c
+@@ -249,8 +249,8 @@ void brcmf_flowring_delete(struct brcmf_
+ }
+ 
+ 
+-void brcmf_flowring_enqueue(struct brcmf_flowring *flow, u8 flowid,
+-			    struct sk_buff *skb)
++u32 brcmf_flowring_enqueue(struct brcmf_flowring *flow, u8 flowid,
++			   struct sk_buff *skb)
+ {
+ 	struct brcmf_flowring_ring *ring;
+ 
+@@ -271,6 +271,7 @@ void brcmf_flowring_enqueue(struct brcmf
+ 		if (skb_queue_len(&ring->skblist) < BRCMF_FLOWRING_LOW)
+ 			brcmf_flowring_block(flow, flowid, false);
+ 	}
++	return skb_queue_len(&ring->skblist);
+ }
+ 
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/flowring.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/flowring.h
+@@ -64,8 +64,8 @@ u32 brcmf_flowring_create(struct brcmf_f
+ void brcmf_flowring_delete(struct brcmf_flowring *flow, u8 flowid);
+ void brcmf_flowring_open(struct brcmf_flowring *flow, u8 flowid);
+ u8 brcmf_flowring_tid(struct brcmf_flowring *flow, u8 flowid);
+-void brcmf_flowring_enqueue(struct brcmf_flowring *flow, u8 flowid,
+-			    struct sk_buff *skb);
++u32 brcmf_flowring_enqueue(struct brcmf_flowring *flow, u8 flowid,
++			   struct sk_buff *skb);
+ struct sk_buff *brcmf_flowring_dequeue(struct brcmf_flowring *flow, u8 flowid);
+ void brcmf_flowring_reinsert(struct brcmf_flowring *flow, u8 flowid,
+ 			     struct sk_buff *skb);
+--- a/drivers/net/wireless/brcm80211/brcmfmac/msgbuf.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/msgbuf.c
+@@ -73,7 +73,7 @@
+ #define BRCMF_MSGBUF_TX_FLUSH_CNT1		32
+ #define BRCMF_MSGBUF_TX_FLUSH_CNT2		96
+ 
+-#define BRCMF_MSGBUF_DELAY_TXWORKER_THRS	64
++#define BRCMF_MSGBUF_DELAY_TXWORKER_THRS	96
+ #define BRCMF_MSGBUF_TRICKLE_TXWORKER_THRS	32
+ 
+ struct msgbuf_common_hdr {
+@@ -797,6 +797,8 @@ static int brcmf_msgbuf_txdata(struct br
+ 	struct brcmf_flowring *flow = msgbuf->flow;
+ 	struct ethhdr *eh = (struct ethhdr *)(skb->data);
+ 	u32 flowid;
++	u32 queue_count;
++	bool force;
+ 
+ 	flowid = brcmf_flowring_lookup(flow, eh->h_dest, skb->priority, ifidx);
+ 	if (flowid == BRCMF_FLOWRING_INVALID_ID) {
+@@ -804,8 +806,9 @@ static int brcmf_msgbuf_txdata(struct br
+ 		if (flowid == BRCMF_FLOWRING_INVALID_ID)
+ 			return -ENOMEM;
+ 	}
+-	brcmf_flowring_enqueue(flow, flowid, skb);
+-	brcmf_msgbuf_schedule_txdata(msgbuf, flowid, false);
++	queue_count = brcmf_flowring_enqueue(flow, flowid, skb);
++	force = ((queue_count % BRCMF_MSGBUF_TRICKLE_TXWORKER_THRS) == 0);
++	brcmf_msgbuf_schedule_txdata(msgbuf, flowid, force);
+ 
+ 	return 0;
+ }
