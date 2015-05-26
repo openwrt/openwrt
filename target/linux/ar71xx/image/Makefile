@@ -412,7 +412,7 @@ endef
 
 define Device/tl-wr710n-v1
     $(Device/tplink-8mlzma)
-    BOARDNAME := TL-WR710NV1
+    BOARDNAME := TL-WR710N
     DEVICE_PROFILE := TLWR710
     TPLINK_HWID := 0x07100001
     CONSOLE := ttyATH0,115200
@@ -420,7 +420,7 @@ endef
 
 define Device/tl-wr710n-v2
     $(Device/tplink-4mlzma)
-    BOARDNAME := TL-WR710NV2
+    BOARDNAME := TL-WR710N
     DEVICE_PROFILE := TLWR710
     TPLINK_HWID := 0x07100001
     CONSOLE := ttyATH0,115200
