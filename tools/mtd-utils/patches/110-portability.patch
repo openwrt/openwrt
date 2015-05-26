@@ -50,7 +50,7 @@
  #define UBI_VERSION 1
 --- a/mkfs.ubifs/mkfs.ubifs.h
 +++ b/mkfs.ubifs/mkfs.ubifs.h
-@@ -34,7 +34,17 @@
+@@ -32,7 +32,17 @@
  #include <endian.h>
  #include <byteswap.h>
  #include <linux/types.h>
@@ -70,18 +70,7 @@
  #include <sys/types.h>
 --- a/mkfs.ubifs/mkfs.ubifs.c
 +++ b/mkfs.ubifs/mkfs.ubifs.c
-@@ -821,8 +821,8 @@ int write_leb(int lnum, int len, void *b
- 		if (ubi_leb_change_start(ubi, out_fd, lnum, c->leb_size, dtype))
- 			return sys_err_msg("ubi_leb_change_start failed");
- 
--	if (lseek64(out_fd, pos, SEEK_SET) != pos)
--		return sys_err_msg("lseek64 failed seeking %lld",
-+	if (llseek(out_fd, pos, SEEK_SET) != pos)
-+		return sys_err_msg("llseek failed seeking %lld",
- 				   (long long)pos);
- 
- 	if (write(out_fd, buf, c->leb_size) != c->leb_size)
-@@ -1079,6 +1079,7 @@ static int add_inode_with_data(struct st
+@@ -1010,6 +1010,7 @@ static int add_inode_with_data(struct st
  
  	if (c->default_compr != UBIFS_COMPR_NONE)
  		use_flags |= UBIFS_COMPR_FL;
@@ -89,7 +78,7 @@
  	if (flags & FS_COMPR_FL)
  		use_flags |= UBIFS_COMPR_FL;
  	if (flags & FS_SYNC_FL)
-@@ -1089,6 +1090,7 @@ static int add_inode_with_data(struct st
+@@ -1020,6 +1021,7 @@ static int add_inode_with_data(struct st
  		use_flags |= UBIFS_APPEND_FL;
  	if (flags & FS_DIRSYNC_FL && S_ISDIR(st->st_mode))
  		use_flags |= UBIFS_DIRSYNC_FL;
@@ -97,7 +86,7 @@
  
  	memset(ino, 0, UBIFS_INO_NODE_SZ);
  
-@@ -1158,7 +1160,9 @@ static int add_dir_inode(DIR *dir, ino_t
+@@ -1089,7 +1091,9 @@ static int add_dir_inode(DIR *dir, ino_t
  		fd = dirfd(dir);
  		if (fd == -1)
  			return sys_err_msg("dirfd failed");
@@ -107,7 +96,7 @@
  			flags = 0;
  	}
  
-@@ -1343,10 +1347,12 @@ static int add_file(const char *path_nam
+@@ -1274,10 +1278,12 @@ static int add_file(const char *path_nam
  		key_write(&key, &dn->key);
  		dn->size = cpu_to_le32(bytes_read);
  		out_len = NODE_BUFFER_SIZE - UBIFS_DATA_NODE_SZ;
@@ -120,7 +109,7 @@
  			use_compr = c->default_compr;
  		compr_type = compress_data(buf, bytes_read, &dn->data,
  					   &out_len, use_compr);
-@@ -1388,7 +1394,9 @@ static int add_non_dir(const char *path_
+@@ -1319,7 +1325,9 @@ static int add_non_dir(const char *path_
  		if (fd == -1)
  			return sys_err_msg("failed to open file '%s'",
  					   path_name);
@@ -151,3 +140,52 @@
  		return err_msg("too long path");
  
  	if (!strcmp(buf, "/"))
+--- a/include/common.h
++++ b/include/common.h
+@@ -26,7 +26,6 @@
+ #include <string.h>
+ #include <fcntl.h>
+ #include <errno.h>
+-#include <features.h>
+ #include <inttypes.h>
+ #include "version.h"
+ 
+@@ -117,11 +116,6 @@ extern "C" {
+ 	fprintf(stderr, "%s: warning!: " fmt "\n", PROGRAM_NAME, ##__VA_ARGS__); \
+ } while(0)
+ 
+-#if defined(__UCLIBC__)
+-/* uClibc versions before 0.9.34 don't have rpmatch() */
+-#if __UCLIBC_MAJOR__ == 0 && \
+-		(__UCLIBC_MINOR__ < 9 || \
+-		(__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 34))
+ #undef rpmatch
+ #define rpmatch __rpmatch
+ static inline int __rpmatch(const char *resp)
+@@ -129,8 +123,6 @@ static inline int __rpmatch(const char *
+     return (resp[0] == 'y' || resp[0] == 'Y') ? 1 :
+ 	(resp[0] == 'n' || resp[0] == 'N') ? 0 : -1;
+ }
+-#endif
+-#endif
+ 
+ /**
+  * prompt the user for confirmation
+--- a/include/mtd/ubifs-media.h
++++ b/include/mtd/ubifs-media.h
+@@ -33,7 +33,15 @@
+ #ifndef __UBIFS_MEDIA_H__
+ #define __UBIFS_MEDIA_H__
+ 
++#ifdef __linux__
+ #include <asm/byteorder.h>
++#else
++#include <stdint.h>
++typedef uint8_t __u8;
++typedef uint16_t __be16;
++typedef uint32_t __be32;
++typedef uint64_t __be64;
++#endif
+ 
+ /* UBIFS node magic number (must not have the padding byte first or last) */
+ #define UBIFS_NODE_MAGIC  0x06101831

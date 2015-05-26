@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2012 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,14 +7,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mtd-utils
-PKG_VERSION:=1.4.5
+PKG_VERSION:=1.5.1
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_VERSION:=92686f212c9a4e16891c6a3c57629cbf4f0f8360
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-$(PKG_SOURCE_VERSION).tar.gz
 PKG_SOURCE_URL:=git://git.infradead.org/mtd-utils.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=5319b84974fcb71504aed2d1b8285e9c0a4a4bb8
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_MIRROR_MD5SUM:=a85581474b39e56b30439c903974acb9
+PKG_MIRROR_MD5SUM:=154592f5bbb01e1e98bdd26c8a592305
 PKG_CAT:=zcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
@@ -31,31 +31,20 @@ MTD_MAKEOPTS = \
 	CFLAGS="$(CFLAGS)" \
 	LDFLAGS="$(HOST_LDFLAGS)" \
 	WITHOUT_LZO=1 WITHOUT_XATTR=1 \
-	LZMA_STATIC_LIB="$(STAGING_DIR_HOST)/lib/liblzma.a" \
 	SUBDIRS="" \
 	BUILDDIR="$(HOST_BUILD_DIR)"
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR)/lib \
-		$(MTD_MAKEOPTS) \
-		TARGETS="libmtd.a libcrc32.a" \
-		LIBS="libmtd libcrc32"
 	$(MAKE) -C $(HOST_BUILD_DIR) \
 		$(MTD_MAKEOPTS) \
-		TARGETS=mkfs.jffs2
-	$(MAKE) -C $(HOST_BUILD_DIR)/ubi-utils \
-		$(MTD_MAKEOPTS) \
-		TARGETS=ubinize
-	$(MAKE) -C $(HOST_BUILD_DIR)/mkfs.ubifs \
-		$(MTD_MAKEOPTS) \
-		BUILDDIR="$(HOST_BUILD_DIR)/mkfs.ubifs"
+		TARGETS="mkfs.jffs2 ubi-utils/ubinize mkfs.ubifs/mkfs.ubifs"
 endef
 
 define Host/Install
 	$(CP) \
 		$(HOST_BUILD_DIR)/mkfs.jffs2 \
 		$(HOST_BUILD_DIR)/mkfs.ubifs/mkfs.ubifs \
-		$(HOST_BUILD_DIR)/ubinize \
+		$(HOST_BUILD_DIR)/ubi-utils/ubinize \
 		$(STAGING_DIR_HOST)/bin/
 endef
 

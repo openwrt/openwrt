@@ -1,17 +1,32 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -1,7 +1,7 @@
+@@ -4,7 +4,7 @@
+ VERSION = 1.5.1
  
- # -*- sh -*-
- 
--CPPFLAGS += -I./include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) -I./include/linux/lzma
-+CPPFLAGS += -I./include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(XZCPPFLAGS) -I./include/linux/lzma
+ CPPFLAGS += -D_GNU_SOURCE -I./include -I$(BUILDDIR)/include -I./ubi-utils/include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(UUIDCPPFLAGS)
+-CPPFLAGS += -I./include/linux/lzma
++CPPFLAGS += $(XZCPPFLAGS) -I./include/linux/lzma
  
  ifeq ($(WITHOUT_XATTR), 1)
    CPPFLAGS += -DWITHOUT_XATTR
+@@ -113,8 +113,13 @@ ifeq ($(WITHOUT_LZO), 1)
+ else
+   LZOLDLIBS = -llzo2
+ endif
++ifeq ($(WITHOUT_XZ), 1)
++  CPPFLAGS += -DWITHOUT_XZ
++else
++  XZLDLIBS = -llzma
++endif
+ 
+-LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) -lm -luuid
++LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) $(XZLDLIBS) -lm -luuid
+ $(call mkdep,mkfs.ubifs/,mkfs.ubifs,,ubi-utils/libubi.a)
+ 
+ #
 --- a/mkfs.ubifs/compr.c
 +++ b/mkfs.ubifs/compr.c
-@@ -127,6 +127,114 @@ static inline int lzo_init(void) { retur
+@@ -126,6 +126,114 @@ static inline int lzo_init(void) { retur
  static inline void lzo_fini(void) { }
  #endif
  
@@ -126,7 +141,7 @@
  static int no_compress(void *in_buf, size_t in_len, void *out_buf,
  		       size_t *out_len)
  {
-@@ -199,6 +307,9 @@ int compress_data(void *in_buf, size_t i
+@@ -198,6 +306,9 @@ int compress_data(void *in_buf, size_t i
  		case MKFS_UBIFS_COMPR_LZO:
  			ret = lzo_compress(in_buf, in_len, out_buf, out_len);
  			break;
@@ -136,7 +151,7 @@
  		case MKFS_UBIFS_COMPR_ZLIB:
  			ret = zlib_deflate(in_buf, in_len, out_buf, out_len);
  			break;
-@@ -226,12 +337,18 @@ int init_compression(void)
+@@ -225,12 +336,18 @@ int init_compression(void)
  	if (ret)
  		goto err;
  
@@ -156,7 +171,7 @@
  err_lzo:
  	lzo_fini();
  err:
-@@ -241,6 +358,7 @@ err:
+@@ -240,6 +357,7 @@ err:
  void destroy_compression(void)
  {
  	free(zlib_buf);
@@ -174,50 +189,9 @@
  };
  
  int compress_data(void *in_buf, size_t in_len, void *out_buf, size_t *out_len,
---- a/mkfs.ubifs/Makefile
-+++ b/mkfs.ubifs/Makefile
-@@ -6,21 +6,33 @@ ALL_SOURCES=*.[ch] hashtable/*.[ch]
- 
- TARGETS = mkfs.ubifs
- 
-+MKFS_UBIFS_OBJS = $(addprefix $(BUILDDIR)/,\
-+	crc16.o lpt.o compr.o devtable.o \
-+	hashtable/hashtable.o hashtable/hashtable_itr.o)
-+
- ifeq ($(WITHOUT_LZO), 1)
-   CPPFLAGS += -DWITHOUT_LZO
- else
-   LZOLDLIBS = -llzo2
- endif
- 
--LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
-+ifeq ($(WITHOUT_XZ), 1)
-+  CPPFLAGS += -DWITHOUT_XZ
-+else
-+ifneq ($(LZMA_STATIC_LIB),)
-+  MKFS_UBIFS_OBJS += $(LZMA_STATIC_LIB)
-+else
-+  XZLDLIBS = -llzma
-+endif
-+endif
-+
-+LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) $(XZLDLIBS) -lm -luuid -L$(BUILDDIR)/../ubi-utils/ -lubi
- LDLIBS_mkfs.ubifs += -L$(BUILDDIR)/../lib -lmtd
--LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS)
-+LDLIBS_mkfs.ubifs += $(ZLIBLDFLAGS) $(LZOLDFLAGS) $(XZLDFLAGS)
- 
- include ../common.mk
- 
--$(BUILDDIR)/mkfs.ubifs: $(addprefix $(BUILDDIR)/,\
--	crc16.o lpt.o compr.o devtable.o \
--	hashtable/hashtable.o hashtable/hashtable_itr.o)
-+$(BUILDDIR)/mkfs.ubifs: $(MKFS_UBIFS_OBJS)
- 
- clean::
- 	rm -f $(BUILDDIR)/hashtable/*.o cscope.*
 --- a/mkfs.ubifs/mkfs.ubifs.c
 +++ b/mkfs.ubifs/mkfs.ubifs.c
-@@ -98,6 +98,9 @@ struct ubifs_info info_;
+@@ -99,6 +99,9 @@ struct ubifs_info info_;
  static struct ubifs_info *c = &info_;
  static libubi_t ubi;
  
@@ -227,20 +201,20 @@
  /* Debug levels are: 0 (none), 1 (statistics), 2 (files) ,3 (more details) */
  int debug_level;
  int verbose;
-@@ -132,7 +135,7 @@ static struct inum_mapping **hash_table;
+@@ -133,7 +136,7 @@ static struct inum_mapping **hash_table;
  /* Inode creation sequence number */
  static unsigned long long creat_sqnum;
  
--static const char *optstring = "d:r:m:o:D:h?vVe:c:g:f:Fp:k:x:X:j:R:l:j:UQq";
-+static const char *optstring = "d:r:m:o:D:h?vVe:c:g:f:Fp:k:x:X:y:j:R:l:j:UQq";
+-static const char *optstring = "d:r:m:o:D:yh?vVe:c:g:f:Fp:k:x:X:j:R:l:j:UQq";
++static const char *optstring = "d:r:m:o:D:yh?vVe:c:g:f:Fp:k:x:X:z:j:R:l:j:UQq";
  
  static const struct option longopts[] = {
  	{"root",               1, NULL, 'r'},
-@@ -149,6 +152,7 @@ static const struct option longopts[] =
+@@ -151,6 +154,7 @@ static const struct option longopts[] =
  	{"reserved",           1, NULL, 'R'},
  	{"compr",              1, NULL, 'x'},
  	{"favor-percent",      1, NULL, 'X'},
-+	{"force-compr",        1, NULL, 'y'},
++	{"force-compr",        1, NULL, 'z'},
  	{"fanout",             1, NULL, 'f'},
  	{"space-fixup",        0, NULL, 'F'},
  	{"keyhash",            1, NULL, 'k'},
@@ -255,12 +229,12 @@
  "-X, --favor-percent      may only be used with favor LZO compression and defines\n"
  "                         how many percent better zlib should compress to make\n"
  "                         mkfs.ubifs use zlib instead of LZO (default 20%)\n"
-+"-y, --force-compr=TYPE   force to build the fs with different compression -\n"
++"-z, --force-compr=TYPE   force to build the fs with different compression -\n"
 +"                         \"lzo\", \"zlib\" or \"none\"\n"
  "-f, --fanout=NUM         fanout NUM (default: 8)\n"
  "-F, --space-fixup        file-system free space has to be fixed up on first mount\n"
  "                         (requires kernel version 3.0 or greater)\n"
-@@ -530,6 +536,43 @@ static int open_ubi(const char *node)
+@@ -472,6 +478,43 @@ static int open_ubi(const char *node)
  	return 0;
  }
  
@@ -304,7 +278,7 @@
  static int get_options(int argc, char**argv)
  {
  	int opt, i;
-@@ -649,14 +692,13 @@ static int get_options(int argc, char**a
+@@ -594,14 +637,13 @@ static int get_options(int argc, char**a
  				return err_msg("bad key hash");
  			break;
  		case 'x':
@@ -326,11 +300,11 @@
  			break;
  		case 'X':
  			c->favor_percent = strtol(optarg, &endp, 0);
-@@ -665,6 +707,12 @@ static int get_options(int argc, char**a
+@@ -610,6 +652,12 @@ static int get_options(int argc, char**a
  				return err_msg("bad favor LZO percent '%s'",
  					       optarg);
  			break;
-+		case 'y':
++		case 'z':
 +			if (get_compr_option(optarg, &force_compr, NULL))
 +				return err_msg("bad forced compressor name '%s'",
 +						optarg);
@@ -339,7 +313,7 @@
  		case 'j':
  			c->max_bud_bytes = get_bytes(optarg);
  			if (c->max_bud_bytes <= 0)
-@@ -749,6 +797,9 @@ static int get_options(int argc, char**a
+@@ -684,6 +732,9 @@ static int get_options(int argc, char**a
  		c->min_io_size = 8;
  	c->rp_size = add_space_overhead(c->rp_size);
  
@@ -349,7 +323,7 @@
  	if (verbose) {
  		printf("mkfs.ubifs\n");
  		printf("\troot:         %s\n", root);
-@@ -758,17 +809,10 @@ static int get_options(int argc, char**a
+@@ -693,17 +744,10 @@ static int get_options(int argc, char**a
  		printf("\toutput:       %s\n", output);
  		printf("\tjrn_size:     %llu\n", c->max_bud_bytes);
  		printf("\treserved:     %llu\n", c->rp_size);
@@ -371,7 +345,7 @@
  		printf("\tkeyhash:      %s\n", (c->key_hash == key_r5_hash) ?
  						"r5" : "test");
  		printf("\tfanout:       %d\n", c->fanout);
-@@ -1353,7 +1397,7 @@ static int add_file(const char *path_nam
+@@ -1284,7 +1328,7 @@ static int add_file(const char *path_nam
  			use_compr = UBIFS_COMPR_LZO;
  		else
  #endif
@@ -382,7 +356,7 @@
  		dn->compr_type = cpu_to_le16(compr_type);
 --- a/mkfs.ubifs/mkfs.ubifs.h
 +++ b/mkfs.ubifs/mkfs.ubifs.h
-@@ -77,6 +77,9 @@
+@@ -83,6 +83,9 @@
  #if MKFS_UBIFS_COMPR_ZLIB != UBIFS_COMPR_ZLIB
  #error MKFS_UBIFS_COMPR_ZLIB != UBIFS_COMPR_ZLIB
  #endif
@@ -392,9 +366,9 @@
  
  extern int verbose;
  extern int debug_level;
---- a/mkfs.ubifs/ubifs-media.h
-+++ b/mkfs.ubifs/ubifs-media.h
-@@ -303,6 +303,7 @@ enum {
+--- a/include/mtd/ubifs-media.h
++++ b/include/mtd/ubifs-media.h
+@@ -313,6 +313,7 @@ enum {
  	UBIFS_COMPR_NONE,
  	UBIFS_COMPR_LZO,
  	UBIFS_COMPR_ZLIB,
