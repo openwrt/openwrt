@@ -9,8 +9,10 @@ if [ -z $pkg_dir ] || [ ! -d $pkg_dir ]; then
 fi
 
 which md5sum >/dev/null 2>&1 || alias md5sum=md5
+empty=1
 
 for pkg in `find $pkg_dir -name '*.ipk' | sort`; do
+	empty=
 	name="${pkg##*/}"
 	name="${name%%_*}"
 	[[ "$name" = "kernel" ]] && continue
@@ -28,3 +30,4 @@ SHA256sum: $sha256sum\\
 Description:/"
 	echo ""
 done
+[ -n "$empty" ] && echo
