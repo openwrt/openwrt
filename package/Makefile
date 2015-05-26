@@ -132,7 +132,11 @@ endif
 
 PACKAGE_SUBDIRS=.
 ifneq ($(CONFIG_PER_FEED_REPO),)
-  PACKAGE_SUBDIRS=base $(FEEDS_ENABLED)
+  ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
+    PACKAGE_SUBDIRS=base $(FEEDS_AVAILABLE)
+  else
+    PACKAGE_SUBDIRS=base $(FEEDS_ENABLED)
+  endif
 endif
 
 $(curdir)/index: FORCE
