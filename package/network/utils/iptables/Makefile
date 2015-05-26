@@ -392,7 +392,7 @@ define Package/libiptc
 $(call Package/iptables/Default)
   SECTION:=libs
   CATEGORY:=Libraries
-  DEPENDS:=+libip4tc +libip6tc
+  DEPENDS:=+libip4tc +libip6tc +libxtables
   TITLE:=IPv4/IPv6 firewall - shared libiptc library (compatibility stub)
 endef
 
@@ -401,6 +401,7 @@ $(call Package/iptables/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=IPv4 firewall - shared libiptc library
+  DEPENDS:=+libxtables
 endef
 
 define Package/libip6tc
@@ -408,6 +409,7 @@ $(call Package/iptables/Default)
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=IPv6 firewall - shared libiptc library
+  DEPENDS:=+libxtables
 endef
 
 define Package/libxtables
@@ -425,7 +427,8 @@ TARGET_CPPFLAGS := \
 TARGET_CFLAGS += \
 	-I$(PKG_BUILD_DIR)/include \
 	-I$(LINUX_DIR)/user_headers/include \
-	-ffunction-sections -fdata-sections
+	-ffunction-sections -fdata-sections \
+	-DNO_LEGACY
 
 TARGET_LDFLAGS += \
 	-Wl,--gc-sections
@@ -466,8 +469,7 @@ define Build/InstallDev
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/libip*tc.pc $(1)/usr/lib/pkgconfig/
 
 	# XXX: needed by firewall3
-	$(INSTALL_DIR) $(1)/usr/lib/iptables
-	$(CP) $(PKG_BUILD_DIR)/extensions/libext*.a $(1)/usr/lib/iptables/
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext*.so $(1)/usr/lib/
 endef
 
 define Package/iptables/install
@@ -490,16 +492,19 @@ endef
 define Package/libip4tc/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip4tc.so* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext4.so $(1)/usr/lib/
 endef
 
 define Package/libip6tc/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libip6tc.so* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext6.so $(1)/usr/lib/
 endef
 
 define Package/libxtables/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libxtables.so* $(1)/usr/lib/
+	$(CP) $(PKG_BUILD_DIR)/extensions/libiptext.so $(1)/usr/lib/
 endef
 
 define BuildPlugin
