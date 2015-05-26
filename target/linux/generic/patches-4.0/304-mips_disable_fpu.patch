@@ -49,7 +49,7 @@ v2: incorporated changes suggested by Jonas Gorski
  	select OF
 --- a/arch/mips/Makefile
 +++ b/arch/mips/Makefile
-@@ -286,7 +286,7 @@ OBJCOPYFLAGS		+= --remove-section=.regin
+@@ -292,7 +292,7 @@ OBJCOPYFLAGS		+= --remove-section=.regin
  head-y := arch/mips/kernel/head.o
  
  libs-y			+= arch/mips/lib/
@@ -60,7 +60,7 @@ v2: incorporated changes suggested by Jonas Gorski
  core-y += arch/mips/
 --- a/arch/mips/include/asm/fpu.h
 +++ b/arch/mips/include/asm/fpu.h
-@@ -211,8 +211,10 @@ static inline int init_fpu(void)
+@@ -212,8 +212,10 @@ static inline int init_fpu(void)
  		/* Restore FRE */
  		write_c0_config5(config5);
  		enable_fpu_hazard();

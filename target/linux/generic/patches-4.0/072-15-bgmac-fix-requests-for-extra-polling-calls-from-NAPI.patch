@@ -17,11 +17,9 @@ Fixes: eb64e2923a886 ("bgmac: leave interrupts disabled as long as there is work
  drivers/net/ethernet/broadcom/bgmac.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/net/ethernet/broadcom/bgmac.c b/drivers/net/ethernet/broadcom/bgmac.c
-index de77d3a..21e3c38 100644
 --- a/drivers/net/ethernet/broadcom/bgmac.c
 +++ b/drivers/net/ethernet/broadcom/bgmac.c
-@@ -1260,7 +1260,7 @@ static int bgmac_poll(struct napi_struct *napi, int weight)
+@@ -1260,7 +1260,7 @@ static int bgmac_poll(struct napi_struct
  
  	/* Poll again if more events arrived in the meantime */
  	if (bgmac_read(bgmac, BGMAC_INT_STATUS) & (BGMAC_IS_TX0 | BGMAC_IS_RX))
@@ -30,6 +28,3 @@ index de77d3a..21e3c38 100644
  
  	if (handled < weight) {
  		napi_complete(napi);
--- 
-1.8.4.5
-
