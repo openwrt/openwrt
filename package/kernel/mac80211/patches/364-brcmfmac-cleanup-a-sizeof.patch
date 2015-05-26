@@ -1,0 +1,23 @@
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Date: Thu, 7 May 2015 12:59:19 +0300
+Subject: [PATCH] brcmfmac: cleanup a sizeof()
+
+"flowrings" and "*flowrings" are both pointers so this always returns
+sizeof(void *) and the current code works fine.  But "*flowrings" is
+intended here and static checkers complain, so lets change it.
+
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
+@@ -1617,7 +1617,7 @@ static void brcmf_pcie_setup(struct devi
+ 		bus->msgbuf->commonrings[i] =
+ 				&devinfo->shared.commonrings[i]->commonring;
+ 
+-	flowrings = kcalloc(devinfo->shared.nrof_flowrings, sizeof(flowrings),
++	flowrings = kcalloc(devinfo->shared.nrof_flowrings, sizeof(*flowrings),
+ 			    GFP_KERNEL);
+ 	if (!flowrings)
+ 		goto fail;

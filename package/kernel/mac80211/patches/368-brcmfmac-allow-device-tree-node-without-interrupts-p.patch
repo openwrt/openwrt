@@ -1,0 +1,45 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Wed, 20 May 2015 14:09:47 +0200
+Subject: [PATCH] brcmfmac: allow device tree node without 'interrupts'
+ property
+
+As described in the device tree bindings for 'brcm,bcm4329-fmac'
+nodes, the interrupts property is optional. So adding a check
+for the presence of this property before attempting to parse
+and map the interrupt. If not present or parsing fails return
+and fallback to in-band sdio interrupt.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/of.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/of.c
+@@ -39,10 +39,16 @@ void brcmf_of_probe(struct brcmf_sdio_de
+ 	if (!sdiodev->pdata)
+ 		return;
+ 
++	if (of_property_read_u32(np, "brcm,drive-strength", &val) == 0)
++		sdiodev->pdata->drive_strength = val;
++
++	/* make sure there are interrupts defined in the node */
++	if (!of_find_property(np, "interrupts", NULL))
++		return;
++
+ 	irq = irq_of_parse_and_map(np, 0);
+ 	if (!irq) {
+ 		brcmf_err("interrupt could not be mapped\n");
+-		devm_kfree(dev, sdiodev->pdata);
+ 		return;
+ 	}
+ 	irqf = irqd_get_trigger_type(irq_get_irq_data(irq));
+@@ -50,7 +56,4 @@ void brcmf_of_probe(struct brcmf_sdio_de
+ 	sdiodev->pdata->oob_irq_supported = true;
+ 	sdiodev->pdata->oob_irq_nr = irq;
+ 	sdiodev->pdata->oob_irq_flags = irqf;
+-
+-	if (of_property_read_u32(np, "brcm,drive-strength", &val) == 0)
+-		sdiodev->pdata->drive_strength = val;
+ }
