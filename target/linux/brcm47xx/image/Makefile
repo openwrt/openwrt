@@ -116,6 +116,11 @@ define Build/trx-with-loader
 		$(call trxalign/$(FILESYSTEM),$(FILESYSTEM))
 endef
 
+define Build/asus-trx
+	$(STAGING_DIR_HOST)/bin/asustrx -p $(PRODUCTID) -i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Build/linksys-bin
 	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(DEVICE_ID) -v v$(VERSION) -i $@ -o $@.new
 	mv $@.new $@
@@ -134,6 +139,7 @@ endef
 # Devices
 #################################################
 
+DEVICE_VARS += PRODUCTID
 DEVICE_VARS += DEVICE_ID VERSION
 DEVICE_VARS += BOARD_ID REGION
 
@@ -144,6 +150,19 @@ define Device/Default
 	FILESYSTEMS := $(FS_64K)
 	IMAGES := trx
 	IMAGE/trx := trx-with-loader
+endef
+
+define Device/asus
+	IMAGES := trx
+	IMAGE/trx := trx-with-loader | asus-trx
+endef
+
+define AsusDevice
+  define Device/asus-$(1)
+	$$(Device/asus)
+	PRODUCTID := $(2)
+  endef
+  TARGET_DEVICES += asus-$(1)
 endef
 
 define Device/linksys
@@ -263,6 +282,7 @@ endif
 #################################################
 
 ifeq ($(SUBTARGET),mips74k)
+  $(eval $(call AsusDevice,rt-n66u,RT-N66U))
   $(eval $(call LinksysDevice,wrt160n-v3,N150,3.0.3))
   $(eval $(call LinksysDevice,wrt310n-v2,310N,2.0.1))
   $(eval $(call LinksysDevice,wrt320n-v1,320N,1.0.5))
