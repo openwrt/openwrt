@@ -35,13 +35,13 @@ endif
 endef
 
 define Image/Build/wgt634u
-	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/openwrt-wgt634u-$(2).bin bs=131072 conv=sync
-	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx >> $(BIN_DIR)/openwrt-wgt634u-$(2).bin
+	dd if=$(KDIR)/loader.elf of=$(BIN_DIR)/$(IMG_PREFIX)-wgt634u-$(2).bin bs=131072 conv=sync
+	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx >> $(BIN_DIR)/$(IMG_PREFIX)-wgt634u-$(2).bin
 endef
 
 define Image/Build/dwl3150
-	cp $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-dwl3150-$(2).bin
-	echo "BCM-5352-2050-0000000-01" >> $(BIN_DIR)/openwrt-dwl3150-$(2).bin
+	cp $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-dwl3150-$(2).bin
+	echo "BCM-5352-2050-0000000-01" >> $(BIN_DIR)/$(IMG_PREFIX)-dwl3150-$(2).bin
 endef
 
 # $(1): filesystem type.
@@ -50,31 +50,31 @@ endef
 # $(4): version.
 # $(5): simplified filesystem type (without block size).
 define Image/Build/CyberTAN
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
 define Image/Build/CyberTAN2
-	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/openwrt-$(2)-$(5).noheader.bin -o $(BIN_DIR)/openwrt-$(2)-$(5).bin $(if $(6),-s $(6))
+	$(STAGING_DIR_HOST)/bin/addpattern -4 -p $(3) -v v$(4) -i $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).noheader.bin -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).bin $(if $(6),-s $(6))
 endef
 define Image/Build/CyberTANHead
-	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/openwrt-$(2)-header.bin $(if $(6),-s $(6))
+	$(STAGING_DIR_HOST)/bin/addpattern -5 -p $(3) -v v$(4) -i /dev/null -o $(KDIR)/$(IMG_PREFIX)-$(2)-header.bin $(if $(6),-s $(6))
 endef
 
 define Image/Build/Motorola
-	$(STAGING_DIR_HOST)/bin/motorola-bin -$(3) $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(4).bin
+	$(STAGING_DIR_HOST)/bin/motorola-bin -$(3) $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(4).bin
 endef
 
 define Image/Build/USR
-	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+	$(STAGING_DIR_HOST)/bin/trx2usr $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3).bin
 endef
 
 define Image/Build/Edi
-	$(STAGING_DIR_HOST)/bin/trx2edips $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/openwrt-$(2)-$(3).bin
+	$(STAGING_DIR_HOST)/bin/trx2edips $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3).bin
 endef
 
 define Image/Build/Huawei
-	dd if=/dev/zero of=$(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin bs=92 count=1
-	echo -ne 'HDR0\x08\x00\x00\x00' >> $(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin
-	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx >> $(BIN_DIR)/openwrt-$(2)-$(3)-gz.bin
+	dd if=/dev/zero of=$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-gz.bin bs=92 count=1
+	echo -ne 'HDR0\x08\x00\x00\x00' >> $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-gz.bin
+	cat $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx >> $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(3)-gz.bin
 endef
 
 # $(1): filesystem type.
@@ -83,7 +83,7 @@ endef
 # $(4): region.
 # $(5): simplified filesystem type (without block size).
 define Image/Build/Chk
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/openwrt-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
+	$(STAGING_DIR_HOST)/bin/mkchkimg -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).chk -k $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx -b $(3) -r $(4)
 endef
 
 define trxalign/jffs2-128k
@@ -98,9 +98,9 @@ endef
 
 define Image/Build/trxV2
 	$(call Image/Build/CyberTANHead,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
-	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/openwrt-$(2)-$(5).noheader.bin \
+	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).noheader.bin \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
-		$(call trxalign/$(1),$(1),$(KDIR)/openwrt-$(2)-header.bin)
+		$(call trxalign/$(1),$(1),$(KDIR)/$(IMG_PREFIX)-$(2)-header.bin)
 	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
 endef
 
