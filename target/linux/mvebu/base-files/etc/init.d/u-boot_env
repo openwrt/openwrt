@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2015 OpenWrt.org
+
+START=97
+boot() {
+. /lib/functions.sh
+. /lib/mvebu.sh
+
+case $(mvebu_board_name) in
+	armada-385-linksys-caiman|armada-385-linksys-cobra|armada-xp-linksys-mamba)
+		fw_setenv auto_recovery off
+		;;
+esac
+}
