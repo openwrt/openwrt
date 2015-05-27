@@ -48,6 +48,7 @@ struct asustrx_tail {
 char *in_path = NULL;
 char *out_path = NULL;
 char *productid = NULL;
+uint8_t version[4] = { };
 
 static const uint32_t crc32_tbl[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba,
@@ -119,7 +120,7 @@ static const uint32_t crc32_tbl[] = {
 static void parse_options(int argc, char **argv) {
 	int c;
 
-	while ((c = getopt(argc, argv, "i:o:p:")) != -1) {
+	while ((c = getopt(argc, argv, "i:o:p:v:")) != -1) {
 		switch (c) {
 		case 'i':
 			in_path = optarg;
@@ -130,6 +131,10 @@ static void parse_options(int argc, char **argv) {
 		case 'p':
 			productid = optarg;
 			break;
+		case 'v':
+			if (sscanf(optarg, "%hu.%hu.%hu.%hu", &version[0], &version[1], &version[2], &version[3]) != 4)
+				fprintf(stderr, "Version %s doesn't match suppored 4-digits format\n", optarg);
+			break;
 		}
 	}
 }
@@ -137,8 +142,9 @@ static void parse_options(int argc, char **argv) {
 static void usage() {
 	printf("Usage:\n");
 	printf("\t-i file\t\t\t\tinput TRX file\n");
-	printf("\t-o offset\t\t\toutput Asus TRX file\n");
+	printf("\t-o file\t\t\t\toutput Asus TRX file\n");
 	printf("\t-p productid\t\t\tproduct (device) ID\n");
+	printf("\t-v version\t\t\tfirmware version formatted with 4 digits like: 1.2.3.4\n");
 }
 
 int main(int argc, char **argv) {
@@ -161,6 +167,10 @@ int main(int argc, char **argv) {
 	}
 
 	/* Fill Asus tail */
+	tail.version[0] = version[0];
+	tail.version[1] = version[1];
+	tail.version[2] = version[2];
+	tail.version[3] = version[3];
 	strncpy(tail.productid, productid, sizeof(tail.productid));
 
 	/* Open files */
