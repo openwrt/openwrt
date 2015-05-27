@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 
 linksys_get_target_firmware() {
@@ -18,6 +18,9 @@ linksys_get_target_firmware() {
 		fw_setenv boot_part 1
 		fw_setenv bootcmd "run nandboot"
 	fi
+
+	# re-enable recovery so we get back if the new firmware is broken
+	fw_setenv auto_recovery yes
 
 	echo "$target_firmware"
 }
