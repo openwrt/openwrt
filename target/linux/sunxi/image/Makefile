@@ -52,7 +52,7 @@ define Image/Build/SDCard
 	rm -f $(KDIR)/boot.img
 	mkdosfs $(KDIR)/boot.img -C $(FAT32_BLOCKS)
 	
-	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/uboot-sunxi-$(PROFILE)/openwrt-sunxi-$(PROFILE)-boot.scr ::boot.scr
+	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/uboot-sunxi-$(PROFILE)/$(IMG_PREFIX)-$(PROFILE)-boot.scr ::boot.scr
 	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(2).dtb ::dtb
 	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
 	
@@ -62,7 +62,7 @@ define Image/Build/SDCard
 		$(KDIR)/root.$(1) \
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
-		$(BIN_DIR)/uboot-sunxi-$(PROFILE)/openwrt-sunxi-$(PROFILE)-u-boot-with-spl.bin
+		$(BIN_DIR)/uboot-sunxi-$(PROFILE)/$(IMG_PREFIX)-$(PROFILE)-u-boot-with-spl.bin
 endef
 
 define Image/Build/Profile/A10-OLinuXino-Lime
@@ -125,7 +125,7 @@ define Image/Build
 	$(call Image/Build/$(1),$(1))
 	$(call Image/Build/Profile/$(PROFILE),$(1))
 	
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 
 $(eval $(call BuildImage))
