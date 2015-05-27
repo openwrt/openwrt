@@ -117,7 +117,7 @@ define Build/trx-with-loader
 endef
 
 define Build/asus-trx
-	$(STAGING_DIR_HOST)/bin/asustrx -p $(PRODUCTID) -i $@ -o $@.new
+	$(STAGING_DIR_HOST)/bin/asustrx -p "$(PRODUCTID)" -i $@ -o $@.new
 	mv $@.new $@
 endef
 
@@ -265,6 +265,15 @@ ifeq ($(SUBTARGET),legacy)
 	linksys-wrt54gs \
 	linksys-wrtsl54gs
 
+  $(eval $(call AsusDevice,wl-300g,WL300g      ))
+  $(eval $(call AsusDevice,wl-320gp,WL320gP     ))
+  $(eval $(call AsusDevice,wl-330ge,WL-330gE    ))
+  $(eval $(call AsusDevice,wl-500gp-v1,WL500gp     ))
+  $(eval $(call AsusDevice,wl-520gp-v2,WL500gpv2   ))
+  $(eval $(call AsusDevice,wl-500w,WL500W      ))
+  $(eval $(call AsusDevice,wl-520gu,WL520gu     ))
+  $(eval $(call AsusDevice,wl-550ge,WL550gE     ))
+  $(eval $(call AsusDevice,wl-hdd25,WLHDD       ))
   $(eval $(call LinksysDevice,wrt54g3g,W54F,2.20.1))
   $(eval $(call LinksysDevice,wrt54g3g-em,W3GN,2.20.1))
   $(eval $(call LinksysDevice,wrt54g,W54G,4.71.1))
@@ -282,7 +291,24 @@ endif
 #################################################
 
 ifeq ($(SUBTARGET),mips74k)
+  $(eval $(call AsusDevice,rt-ac53u,RT-AC53U))
+# $(eval $(call AsusDevice,rt-ac66u,RT-AC66U))
+  $(eval $(call AsusDevice,rt-n10,RT-N10      ))
+  $(eval $(call AsusDevice,rt-n10p,RT-N10P))
+  $(eval $(call AsusDevice,rt-n10p-v2,RT-N10PV2))
+  $(eval $(call AsusDevice,rt-n10u,RT-N10U))
+  $(eval $(call AsusDevice,rt-n10u-b,RT-N10U))
+  $(eval $(call AsusDevice,rt-n12,RT-N12      ))
+  $(eval $(call AsusDevice,rt-n12-b1,RT-N12B1))
+  $(eval $(call AsusDevice,rt-n12-c1,RT-N12C1))
+  $(eval $(call AsusDevice,rt-n12-d1,RT-N12D1))
+  $(eval $(call AsusDevice,rt-n12hp,RT-N12HP))
+  $(eval $(call AsusDevice,rt-n14uhp,RT-N14UHP))
+  $(eval $(call AsusDevice,rt-n15u,RT-N15U))
+  $(eval $(call AsusDevice,rt-n16,RT-N16))
+  $(eval $(call AsusDevice,rt-n53,RT-N53))
   $(eval $(call AsusDevice,rt-n66u,RT-N66U))
+  $(eval $(call AsusDevice,rt-n66w,RT-N66U))
   $(eval $(call LinksysDevice,wrt160n-v3,N150,3.0.3))
   $(eval $(call LinksysDevice,wrt310n-v2,310N,2.0.1))
   $(eval $(call LinksysDevice,wrt320n-v1,320N,1.0.5))
