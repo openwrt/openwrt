@@ -11,23 +11,23 @@ ifdef CONFIG_PACKAGE_apex
   define Image/Build/Linksys
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
 		-L $(BIN_DIR)/apex/apex-$(2)-armeb.bin \
-		-k $(BIN_DIR)/openwrt-$(2)-zImage \
+		-k $(BIN_DIR)/$(IMG_PREFIX)-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-$(2)-$(1).bin
+		-p -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).bin
 	BIN_DIR=$(BIN_DIR) $(TOPDIR)/scripts/slugimage.pl \
 		-F -L $(BIN_DIR)/apex/apex-$(2)-16mb-armeb.bin \
-		-k $(BIN_DIR)/openwrt-$(2)-zImage \
+		-k $(BIN_DIR)/$(IMG_PREFIX)-$(2)-zImage \
 		-r rootfs:$(BIN_DIR)/$(IMG_PREFIX)-$(1).img \
-		-p -o $(BIN_DIR)/openwrt-$(2)-$(1)-16mb.bin
+		-p -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-16mb.bin
   endef
 endif
 
 define Image/Build/Freecom
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
 	# TODO: Add special CMDLINE shim for webupgrade image here
-	$(CP) $(BIN_DIR)/openwrt-$(2)-zImage $(TARGET_DIR)/zImage
-	$(TAR) cfj $(BIN_DIR)/openwrt-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
-	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/openwrt-$(2)-$(1).img $(BIN_DIR)/openwrt-$(2)-$(1)-webupgrade.img
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(2)-zImage $(TARGET_DIR)/zImage
+	$(TAR) cfj $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).img --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+	$(STAGING_DIR_HOST)/bin/encode_crc $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).img $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1)-webupgrade.img
 	rm -f $(TARGET_DIR)/zImage
 endef
 
