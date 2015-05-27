@@ -18,6 +18,7 @@ endef
 define Host/Compile
 	mkdir -p $(HOST_BUILD_DIR)/bin
 	$(call cc,addpattern)
+	$(call cc,asustrx)
 	$(call cc,trx)
 	$(call cc,motorola-bin)
 	$(call cc,dgfirmware)
