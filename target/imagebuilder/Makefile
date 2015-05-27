@@ -9,6 +9,7 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/host.mk
 include $(INCLUDE_DIR)/version.mk
+include $(INCLUDE_DIR)/feeds.mk
 
 override MAKEFLAGS=
 
@@ -33,8 +34,38 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 		$(TMP_DIR)/.targetinfo \
 		$(TMP_DIR)/.packageinfo \
 		$(PKG_BUILD_DIR)/
+
+ifeq ($(CONFIG_IB_STANDALONE),)
+	echo '## Remote package repositories' >> $(PKG_BUILD_DIR)/repositories.conf
+  ifeq ($(CONFIG_PER_FEED_REPO),)
+	echo "src/gz %n %U" >> $(PKG_BUILD_DIR)/repositories.conf
+  else
+	for d in base $(FEEDS_ENABLED); do \
+		echo "src/gz %n_$$d %U/$$d" >> $(PKG_BUILD_DIR)/repositories.conf; \
+	done
+    ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
+	for d in $(FEEDS_DISABLED); do \
+		echo "$(if $(CONFIG_PER_FEED_REPO_ADD_COMMENTED),# )src/gz %n_$$d %U/$$d" >> $(PKG_BUILD_DIR)/repositories.conf; \
+	done
+    endif
+  endif
+endif
+
+	echo '## This is the local package repository, do not remove!' >> $(PKG_BUILD_DIR)/repositories.conf
+	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
+
 	$(VERSION_SED) $(PKG_BUILD_DIR)/repositories.conf
+
+ifeq ($(CONFIG_IB_STANDALONE),)
+	(cd $(PACKAGE_DIR); $(FIND) -type f -name 'libc_*.ipk' -or -name 'kernel_*.ipk' -or -name 'kmod-*.ipk') | \
+		while read path; do \
+			mkdir -p "$(PKG_BUILD_DIR)/packages/$${path%/*}"; \
+			cp "$(PACKAGE_DIR)/$$path" "$(PKG_BUILD_DIR)/packages/$$path"; \
+		done
+else
 	$(CP) $(PACKAGE_DIR) $(PKG_BUILD_DIR)/packages
+endif
+
 	$(CP) $(TOPDIR)/target/linux $(PKG_BUILD_DIR)/target/
 	if [ -d $(TOPDIR)/staging_dir/host/lib/grub ]; then \
 		$(CP) $(TOPDIR)/staging_dir/host/lib/grub/ $(PKG_BUILD_DIR)/staging_dir/host/lib; \
