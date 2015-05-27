@@ -1,0 +1,14 @@
+--- a/arch/mips/ralink/Kconfig
++++ b/arch/mips/ralink/Kconfig
+@@ -13,9 +13,9 @@
+ 	select CEVT_SYSTICK_QUIRK
+ 
+ config RALINK_ILL_ACC
+-	bool
++	bool "illegal access irq"
+ 	depends on SOC_RT305X
+-	default y
++	default n
+ 
+ config IRQ_INTC
+ 	bool
