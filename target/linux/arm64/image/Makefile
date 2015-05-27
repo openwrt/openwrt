@@ -19,14 +19,14 @@ define Build/Clean
 endef
 
 define Image/Build/QemuVirt
-	$(CP) $(KDIR)/Image $(BIN_DIR)/openwrt-$(BOARD)-qemu-virt.Image
+	$(CP) $(KDIR)/Image $(BIN_DIR)/$(IMG_PREFIX)-qemu-virt.Image
 ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(CP) $(KDIR)/Image-initramfs $(BIN_DIR)/openwrt-$(BOARD)-qemu-virt-initramfs.Image
+	$(CP) $(KDIR)/Image-initramfs $(BIN_DIR)/$(IMG_PREFIX)-qemu-virt-initramfs.Image
 endif
 endef
 
 define Image/Build/VexpressFoundation
-	$(CP) $(KDIR)/linux-system.axf $(BIN_DIR)/openwrt-$(BOARD)-vexpress-foundation.axf
+	$(CP) $(KDIR)/linux-system.axf $(BIN_DIR)/$(IMG_PREFIX)-vexpress-foundation.axf
 endef
 
 define Image/BuildKernel
@@ -40,7 +40,7 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-root.$(1) bs=128k conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
 
 $(eval $(call BuildImage))
