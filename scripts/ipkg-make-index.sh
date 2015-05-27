@@ -31,3 +31,4 @@ Description:/"
 	echo ""
 done
 [ -n "$empty" ] && echo
+exit 0
