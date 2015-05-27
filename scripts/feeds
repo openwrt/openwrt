@@ -390,7 +390,7 @@ sub do_install_target($) {
 
 		system("ln -sf ../../$path ./target/linux/");
 	} else {
-		warn "Package is not valid\n";
+		warn "Target is not valid\n";
 		return 1;
 	}
 
