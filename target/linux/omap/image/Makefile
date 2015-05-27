@@ -11,14 +11,14 @@ UBIFS_OPTS = -F -m 2048 -e 124KiB -c 4096 -U
 UBI_OPTS = -m 2048 -p 128KiB -s 512 -O 2048
 
 define Image/BuildKernel
-	$(CP) $(KDIR)/zImage $(BIN_DIR)/openwrt-$(BOARD)-zImage
+	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/openwrt-$(BOARD)-zImage-initramfs
+	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
  endif
 
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
-	$(CP) $(BIN_DIR)/openwrt-$(BOARD)-zImage $(TARGET_DIR)/boot/zImage
+	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/zImage
  endif
  ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB),)
 	$(INSTALL_DIR) $(TARGET_DIR)/boot
@@ -37,16 +37,16 @@ define Image/Build
 endef
 
 define Image/Build/jffs2-64k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=65536 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=65536 conv=sync
 endef
 
 define Image/Build/jffs2-128k
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=131072 conv=sync
 endef
 
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/openwrt-$(BOARD)-$(1).img bs=131072 conv=sync
+	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img bs=131072 conv=sync
 endef
 
 $(eval $(call BuildImage))
