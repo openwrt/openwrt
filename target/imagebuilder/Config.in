@@ -7,4 +7,10 @@ config IB
 	  with precompiled packages, kernel image and image building tools.
 	  You can use it to generate custom images without compiling anything
 
-
+config IB_STANDALONE
+	bool "Include package repositories"
+	depends on IB
+	help
+	  By default, the ImageBuilder will use the online package repositories
+	  to fetch additional .ipk archives. Enabling this option will cause
+	  the ImageBuilder to embed all built packages locally instead.

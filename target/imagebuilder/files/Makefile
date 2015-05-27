@@ -107,7 +107,7 @@ _call_image:
 		$(MAKE) package_index; \
 	else \
 		mkdir -p $(TARGET_DIR)/tmp; \
-		$(OPKG) update; \
+		$(OPKG) update || true; \
 	fi
 	$(MAKE) package_install
 ifneq ($(USER_FILES),)
@@ -123,7 +123,7 @@ package_index: FORCE
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9c Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
-	$(OPKG) update
+	$(OPKG) update || true
 
 package_install: FORCE
 	@echo
