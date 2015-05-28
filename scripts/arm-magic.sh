@@ -28,15 +28,15 @@ do
   hexid=$(printf %x\\n $2)
   if [ "$2" -lt "256" ]; then
     # we have a low machtypeid, we just need a "mov" (e3a)
-    printf "\xe3\xa0\x10\x$hexid" > $BIN_DIR/openwrt-$1-zImage
+    printf "\xe3\xa0\x10\x$hexid" > $BIN_DIR/$IMG_PREFIX-$1-zImage
   else
     # we have a high machtypeid, we need a "mov" (e3a) and an "orr" (e38)
     if [ "$2" -lt "4096" ]; then
-      printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/openwrt-$1-zImage
+      printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "2 3")\xe3\x81\x1c\x$(echo $hexid|cut -b 1)" > $BIN_DIR/$IMG_PREFIX-$1-zImage
     else
-      printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "3 4")\xe3\x81\x1c\x$(echo $hexid|cut -b "1 2")" > $BIN_DIR/openwrt-$1-zImage
+      printf "\xe3\xa0\x10\x$(echo $hexid|cut -b "3 4")\xe3\x81\x1c\x$(echo $hexid|cut -b "1 2")" > $BIN_DIR/$IMG_PREFIX-$1-zImage
     fi
   fi
     # generate the image
-    cat $BIN_DIR/$IMG_PREFIX-zImage >> $BIN_DIR/openwrt-$1-zImage
+    cat $BIN_DIR/$IMG_PREFIX-zImage >> $BIN_DIR/$IMG_PREFIX-$1-zImage
 done
