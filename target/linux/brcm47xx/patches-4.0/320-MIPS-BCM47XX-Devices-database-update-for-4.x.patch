@@ -10,7 +10,20 @@
  	{{BCM47XX_BOARD_LINKSYS_WRT610NV2, "Linksys WRT610N V2"}, "WRT610N", "2.0"},
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -270,6 +270,18 @@ bcm47xx_buttons_linksys_wrt310nv1[] __in
+@@ -20,6 +20,12 @@
+ /* Asus */
+ 
+ static const struct gpio_keys_button
++bcm47xx_buttons_asus_rtn10u[] __initconst = {
++	BCM47XX_GPIO_KEY(20, KEY_WPS_BUTTON),
++	BCM47XX_GPIO_KEY(21, KEY_RESTART),
++};
++
++static const struct gpio_keys_button
+ bcm47xx_buttons_asus_rtn12[] __initconst = {
+ 	BCM47XX_GPIO_KEY(0, KEY_WPS_BUTTON),
+ 	BCM47XX_GPIO_KEY(1, KEY_RESTART),
+@@ -270,6 +276,18 @@ bcm47xx_buttons_linksys_wrt310nv1[] __in
  };
  
  static const struct gpio_keys_button
@@ -29,7 +42,17 @@
  bcm47xx_buttons_linksys_wrt54g3gv2[] __initconst = {
  	BCM47XX_GPIO_KEY(5, KEY_WIMAX),
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
-@@ -537,6 +549,12 @@ int __init bcm47xx_buttons_register(void
+@@ -407,6 +425,9 @@ int __init bcm47xx_buttons_register(void
+ 	int err;
+ 
+ 	switch (board) {
++	case BCM47XX_BOARD_ASUS_RTN10U:
++		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_rtn10u);
++		break;
+ 	case BCM47XX_BOARD_ASUS_RTN12:
+ 		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_rtn12);
+ 		break;
+@@ -537,6 +558,12 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
@@ -54,7 +77,22 @@
  	BCM47XX_BOARD_LINKSYS_WRT54G_TYPE_0467,
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -313,6 +313,13 @@ bcm47xx_leds_linksys_wrt310nv1[] __initc
+@@ -29,6 +29,14 @@
+ /* Asus */
+ 
+ static const struct gpio_led
++bcm47xx_leds_asus_rtn10u[] __initconst = {
++	BCM47XX_GPIO_LED(5, "green", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(6, "green", "power", 1, LEDS_GPIO_DEFSTATE_ON),
++	BCM47XX_GPIO_LED(7, "green", "wps", 0, LEDS_GPIO_DEFSTATE_OFF),
++	BCM47XX_GPIO_LED(8, "green", "usb", 0, LEDS_GPIO_DEFSTATE_OFF),
++};
++
++static const struct gpio_led
+ bcm47xx_leds_asus_rtn12[] __initconst = {
+ 	BCM47XX_GPIO_LED(2, "unk", "power", 1, LEDS_GPIO_DEFSTATE_ON),
+ 	BCM47XX_GPIO_LED(7, "unk", "wlan", 0, LEDS_GPIO_DEFSTATE_OFF),
+@@ -313,6 +321,13 @@ bcm47xx_leds_linksys_wrt310nv1[] __initc
  };
  
  static const struct gpio_led
@@ -68,7 +106,17 @@
  bcm47xx_leds_linksys_wrt54g_generic[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(1, "unk", "power", 0, LEDS_GPIO_DEFSTATE_ON),
-@@ -601,6 +608,9 @@ void __init bcm47xx_leds_register(void)
+@@ -468,6 +483,9 @@ void __init bcm47xx_leds_register(void)
+ 	enum bcm47xx_board board = bcm47xx_board_get();
+ 
+ 	switch (board) {
++	case BCM47XX_BOARD_ASUS_RTN10U:
++		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn10u);
++		break;
+ 	case BCM47XX_BOARD_ASUS_RTN12:
+ 		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
+ 		break;
+@@ -601,6 +619,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt310nv1);
  		break;
