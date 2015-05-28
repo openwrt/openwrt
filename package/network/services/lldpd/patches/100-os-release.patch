@@ -1,0 +1,39 @@
+Index: lldpd-0.7.15/src/daemon/lldpd.c
+===================================================================
+--- lldpd-0.7.15.orig/src/daemon/lldpd.c
++++ lldpd-0.7.15/src/daemon/lldpd.c
+@@ -736,6 +736,10 @@ lldpd_get_os_release() {
+ 		fp = fopen("/usr/lib/os-release", "r");
+ 	}
+ 	if (!fp) {
++		log_debug("localchassis", "could not open /usr/lib/os-release");
++		fp = fopen("/etc/openwrt_release", "r");
++	}
++	if (!fp) {
+ 		log_info("localchassis",
+ 		    "could not open either /etc/os-release or /usr/lib/os-release");
+ 		return NULL;
+@@ -745,7 +749,8 @@ lldpd_get_os_release() {
+ 		key = strtok(line, "=");
+ 		val = strtok(NULL, "=");
+ 
+-		if (strncmp(key, "PRETTY_NAME", sizeof(line)) == 0) {
++		if (strncmp(key, "PRETTY_NAME", sizeof(line)) == 0 ||
++		    strncmp(key, "DISTRIB_DESCRIPTION", sizeof(line)) == 0) {
+ 			strlcpy(release, val, sizeof(line));
+ 			break;
+ 		}
+@@ -755,11 +760,11 @@ lldpd_get_os_release() {
+ 	/* Remove trailing newline and all " in the string. */
+ 	ptr1 = release + strlen(release) - 1;
+ 	while (ptr1 != release &&
+-	    ((*ptr1 == '"') || (*ptr1 == '\n'))) {
++	    ((*ptr1 == '"') || (*ptr1 == '\n') || (*ptr1 == '\''))) {
+ 		*ptr1 = '\0';
+ 		ptr1--;
+ 	}
+-	if (release[0] == '"')
++	if (release[0] == '"' || release[0] == '\'')
+ 		return release+1;
+ 	return release;
+ }
