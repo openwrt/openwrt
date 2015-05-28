@@ -37,20 +37,10 @@ $(BIN_DIR)/$(IB_NAME).tar.bz2: clean
 
 ifeq ($(CONFIG_IB_STANDALONE),)
 	echo '## Remote package repositories' >> $(PKG_BUILD_DIR)/repositories.conf
-  ifeq ($(CONFIG_PER_FEED_REPO),)
-	echo "src/gz %n %U" >> $(PKG_BUILD_DIR)/repositories.conf
-  else
-	for d in base $(FEEDS_ENABLED); do \
-		echo "src/gz %n_$$d %U/$$d" >> $(PKG_BUILD_DIR)/repositories.conf; \
-	done
-    ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
-	for d in $(FEEDS_DISABLED); do \
-		echo "$(if $(CONFIG_PER_FEED_REPO_ADD_COMMENTED),# )src/gz %n_$$d %U/$$d" >> $(PKG_BUILD_DIR)/repositories.conf; \
-	done
-    endif
-  endif
+	$(call FeedSourcesAppend,$(PKG_BUILD_DIR)/repositories.conf)
 endif
 
+	echo ''                                                        >> $(PKG_BUILD_DIR)/repositories.conf
 	echo '## This is the local package repository, do not remove!' >> $(PKG_BUILD_DIR)/repositories.conf
 	echo 'src imagebuilder file:packages'                          >> $(PKG_BUILD_DIR)/repositories.conf
 

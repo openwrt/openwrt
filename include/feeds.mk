@@ -24,3 +24,16 @@ $(strip $(if $(CONFIG_PER_FEED_REPO), \
   $(abspath $(PACKAGE_DIR)/$(if $(Package/$(1)/feed),$(Package/$(1)/feed),base)), \
   $(PACKAGE_DIR)))
 endef
+
+# 1: destination file
+define FeedSourcesAppend
+( \
+  $(strip $(if $(CONFIG_PER_FEED_REPO), \
+	$(foreach feed,base $(FEEDS_ENABLED),echo "src/gz %n_$(feed) %U/$(feed)";) \
+	$(if $(CONFIG_PER_FEED_REPO_ADD_DISABLED), \
+		$(foreach feed,$(FEEDS_DISABLED),echo "$(if $(CONFIG_PER_FEED_REPO_ADD_COMMENTED),# )src/gz %n_$(feed) %U/$(feed)";)) \
+  , \
+	echo "src/gz %n %U"; \
+  )) \
+) >> $(1)
+endef

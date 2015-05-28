@@ -115,18 +115,7 @@ define Package/opkg/Default/install
   ifneq ($(CONFIG_SIGNED_PACKAGES),)
 	echo "option check_signature 1" >> $(1)/etc/opkg.conf
   endif
-  ifeq ($(CONFIG_PER_FEED_REPO),)
-	echo "src/gz %n %U" >> $(1)/etc/opkg.conf
-  else
-	for d in base $(FEEDS_ENABLED); do \
-		echo "src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
-	done
-    ifneq ($(CONFIG_PER_FEED_REPO_ADD_DISABLED),)
-	for d in $(FEEDS_DISABLED); do \
-		echo "$(if $(CONFIG_PER_FEED_REPO_ADD_COMMENTED),# )src/gz %n_$$$$d %U/$$$$d" >> $(1)/etc/opkg.conf; \
-	done
-    endif
-  endif
+	$(call FeedSourcesAppend,$(1)/etc/opkg.conf)
 	$(VERSION_SED) $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
 endef
