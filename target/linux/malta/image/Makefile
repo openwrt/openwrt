@@ -25,12 +25,17 @@ define MkuImage
 		-d $(3) $(4)
 endef
 
-define Image/BuildKernel
+define Image/Prepare
 	cp $(KDIR)/vmlinux.elf $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
 	$(call CompressLzma,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.lzma)
-	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(BIN_DIR)/$(IMG_PREFIX)-uImage-lzma)
+	$(call MkuImage,lzma,,$(KDIR)/vmlinux.bin.lzma,$(KDIR)/uImage.lzma)
 	$(call CompressGzip,$(KDIR)/vmlinux,$(KDIR)/vmlinux.bin.gz)
-	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(BIN_DIR)/$(IMG_PREFIX)-uImage-gzip)
+	$(call MkuImage,gzip,,$(KDIR)/vmlinux.bin.gz,$(KDIR)/uImage.gz)
+endef
+
+define Image/BuildKernel
+	cp $(KDIR)/uImage.lzma $(BIN_DIR)/$(IMG_PREFIX)-uImage-lzma
+	cp $(KDIR)/uImage.gz $(BIN_DIR)/$(IMG_PREFIX)-uImage-gzip
 endef
 
 define Image/Build/squashfs
