@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=lldpd
-PKG_VERSION:=0.7.13
-PKG_RELEASE:=2
+PKG_VERSION:=0.7.15
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://media.luffy.cx/files/lldpd
-PKG_MD5SUM:=13e8be761753eac9a8e12128acba40b4
+PKG_MD5SUM:=46f7ad97fc1d04084ab11b32fc0ed708
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=ISC
@@ -92,6 +92,7 @@ CONFIGURE_ARGS += \
 	,--disable-privsep) \
 	--with-readline=no \
 	--with-embedded-libevent=no \
+	--disable-hardening \
 	$(if $(CONFIG_LLDPD_WITH_CDP),,--disable-cdp) \
 	$(if $(CONFIG_LLDPD_WITH_FDP),,--disable-fdp) \
 	$(if $(CONFIG_LLDPD_WITH_EDP),,--disable-edp) \
@@ -99,7 +100,7 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_DOT1),,--disable-dot1) \
 	$(if $(CONFIG_LLDPD_WITH_DOT3),,--disable-dot3) \
 	$(if $(CONFIG_LLDPD_WITH_SONMP),,--disable-sonmp) \
-	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c)
+	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c,--with-json=no)
 
 
 $(eval $(call BuildPackage,lldpd))
