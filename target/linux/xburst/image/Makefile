@@ -31,8 +31,12 @@ define MkImageGzip
 		-d $(1).gz $(2)
 endef
 
+define Image/Prepare
+	$(call MkImageGzip,$(KDIR)/vmlinux,$(KDIR)/uimage)
+endef
+
 define Image/BuildKernel
-	$(call MkImageGzip,$(KDIR)/vmlinux,$(UIMAGE))
+	cp $(KDIR)/uimage $(UIMAGE)
 endef
 
 define Image/Build/squashfs
