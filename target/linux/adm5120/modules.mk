@@ -25,7 +25,7 @@ $(eval $(call KernelPackage,ledtrig-adm5120-switch))
 define KernelPackage/pata-rb153-cf
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=RouterBOARD 153 CF Slot support
-  DEPENDS:=@TARGET_adm5120_router_le
+  DEPENDS:=@TARGET_adm5120_rb1xx
   KCONFIG:=CONFIG_PATA_RB153_CF
   FILES:=$(LINUX_DIR)/drivers/ata/pata_rb153_cf.ko
   AUTOLOAD:=$(call AutoLoad,30,pata_rb153_cf,1)
