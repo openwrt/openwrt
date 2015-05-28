@@ -55,7 +55,7 @@ define Image/Build/Initramfs
 endef
 
 define Image/Build
-	$(TARGET_CROSS)objcopy -O srec -I binary --adjust-vma $(FLASH_FS) $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec
+	$(SCRIPT_DIR)/srecimage.pl $(KDIR)/root.$(1) $(KDIR)/root.$(1).srec $(FLASH_FS)
 	grep -v S7 $(KDIR)/root.$(1).srec > $(BIN_DIR)/$(IMG_PREFIX)-$(1).srec
 	grep -v S0 $(KDIR)/kernel.flash.srec >> $(BIN_DIR)/$(IMG_PREFIX)-$(1).srec
 	$(INSTALL_BIN) $(KDIR)/kernel.flash.bin $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.bin
