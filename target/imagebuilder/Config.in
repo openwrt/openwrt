@@ -9,8 +9,9 @@ config IB
 
 config IB_STANDALONE
 	bool "Include package repositories"
+	default y
 	depends on IB
 	help
-	  By default, the ImageBuilder will use the online package repositories
-	  to fetch additional .ipk archives. Enabling this option will cause
-	  the ImageBuilder to embed all built packages locally instead.
+	  Disabling this option will cause the ImageBuilder to embed only
+	  toolchain and kmod packages while all other ipk archives will be
+	  fetched from online repositories.
