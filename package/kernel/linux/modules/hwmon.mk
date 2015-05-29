@@ -304,7 +304,7 @@ define KernelPackage/hwmon-k10temp
   KCONFIG:=CONFIG_SENSORS_K10TEMP
   FILES:=$(LINUX_DIR)/drivers/hwmon/k10temp.ko
   AUTOLOAD:=$(call AutoLoad,60,k10temp)
-  $(call AddDepends/hwmon,@PCI_SUPPORT @(x86||x86_64))
+  $(call AddDepends/hwmon,@PCI_SUPPORT @TARGET_x86)
 endef
 
 define KernelPackage/hwmon-k10temp/description
