@@ -356,7 +356,7 @@ ramips_setup_macs()
 		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
 
-	wsr-600)
+	wsr-600|whr-300hp2|whr-600d|whr-1166d)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$wan_mac
 		;;
