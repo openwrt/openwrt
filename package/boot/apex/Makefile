@@ -6,6 +6,7 @@
 #
 
 include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=apex
 PKG_VERSION:=1.6.9
@@ -52,6 +53,10 @@ endef
 define Package/apex/install
 	$(INSTALL_DIR) $(STAGING_DIR)/apex
 	$(CP) $(PKG_BUILD_DIR)/out/*.bin $(1)/
+endef
+
+define Build/InstallDev
+	$(CP) $(PKG_BUILD_DIR)/out/*.bin $(KERNEL_BUILD_DIR)
 endef
 
 $(eval $(call BuildPackage,apex))
