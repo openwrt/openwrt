@@ -334,7 +334,7 @@ define KernelPackage/usb-ohci-pci
   $(call AddDepends/usb)
 endef
 
-define KernelPackage/usb2-pci/description
+define KernelPackage/usb-ohci-pci/description
  Kernel support for PCI OHCI controllers
 endef
 
