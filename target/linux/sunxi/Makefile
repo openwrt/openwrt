@@ -17,7 +17,6 @@ MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
 KERNEL_PATCHVER:=3.18
 KERNELNAME:=zImage dtbs
-DEFAULT_PACKAGES += uboot-envtools uboot-sunxi kmod-eeprom-sunxi kmod-wdt-sunxi
 
 # A10: Cortex-A8
 # A13: Cortex-A8
@@ -25,5 +24,7 @@ DEFAULT_PACKAGES += uboot-envtools uboot-sunxi kmod-eeprom-sunxi kmod-wdt-sunxi
 # A31: quad Cortex-A7
 
 include $(INCLUDE_DIR)/target.mk
+
+DEFAULT_PACKAGES += uboot-envtools kmod-eeprom-sunxi kmod-wdt-sunxi
 
 $(eval $(call BuildTarget))
