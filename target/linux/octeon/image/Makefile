@@ -7,9 +7,13 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Image/BuildKernel/Template
+define Image/Prepare
 	# Workaround pre-SDK-1.9.0 u-boot versions not handling the .notes section
-	$(TARGET_CROSS)strip -R .notes $(KDIR)/vmlinux.elf -o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux.64
+	$(TARGET_CROSS)strip -R .notes $(KDIR)/vmlinux.elf -o $(KDIR)/vmlinux.elf.stripped
+endef
+
+define Image/BuildKernel/Template
+	$(CP) $(KDIR)/vmlinux.elf.stripped $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux.64
 	$(STAGING_DIR_HOST)/bin/patch-cmdline $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux.64 '$(strip $(2))'
 	md5sum $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux.64 | cut -d " " -f 1 | tee $(BIN_DIR)/$(IMG_PREFIX)-$(1)-vmlinux.64.md5
 endef
