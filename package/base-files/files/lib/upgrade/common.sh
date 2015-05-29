@@ -56,7 +56,6 @@ run_ramfs() { # <command> [...]
 		/bin/rm /usr/bin/basename /bin/kill /bin/chmod
 
 	install_bin /sbin/mtd
-	install_bin /sbin/ubi
 	install_bin /sbin/mount_root
 	install_bin /sbin/snapshot
 	install_bin /sbin/snapshot_tool
