@@ -113,25 +113,27 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
-		s1 {
+		reset {
 			label = "reset";
 			gpios = <&gpio2 12 1>;
-			linux,code = <0x100>;
+			linux,code = <0x198>;
 		};
-		s2 {
+		aoss {
 			label = "aoss";
 			gpios = <&gpio2 13 1>;
-			linux,code = <0x101>;
+			linux,code = <0x211>;
 		};
-		s3 {
+		ap {
 			label = "ap";
 			gpios = <&gpio2 14 1>;
-			linux,code = <0x102>;
+			linux,code = <0x100>;
+			linux,input-type = <5>; /* EV_SW */
 		};
-		s4 {
+		bridge {
 			label = "bridge";
 			gpios = <&gpio2 15 1>;
-			linux,code = <0x103>;
+			linux,code = <0x100>;
+			linux,input-type = <5>; /* EV_SW */
 		};
 	};
 };
