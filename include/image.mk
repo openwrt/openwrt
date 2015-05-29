@@ -367,10 +367,10 @@ define Device/Build/initramfs
   $$(_TARGET): $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
 
   $(KDIR)/$$(KERNEL_NAME)-initramfs: image_prepare
-  $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_IMAGE)
+  $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
 	cp $$^ $$@
 
-  $(KDIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_NAME)-initramfs
+  $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_NAME)-initramfs
 	@rm -f $$@
 	$$(call concat_cmd,$$(KERNEL_INITRAMFS))
 endef
@@ -406,7 +406,7 @@ endef
 define Device/Build/image
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
   $(eval $(call Device/Export,$(KDIR)/$(KERNEL_IMAGE),$(1)))
-  $(eval $(call Device/Export,$(KDIR)/$(KERNEL_INITRAMFS_IMAGE),$(1)))
+  $(eval $(call Device/Export,$(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE),$(1)))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)),$(1)))
   $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)
 	@rm -f $$@
