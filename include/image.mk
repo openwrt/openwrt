@@ -407,14 +407,14 @@ define Device/Build/image
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
   $(eval $(call Device/Export,$(KDIR)/$(KERNEL_IMAGE),$(1)))
   $(eval $(call Device/Export,$(KDIR)/$(KERNEL_INITRAMFS_IMAGE),$(1)))
-  $(eval $(call Device/Export,$(KDIR)/$(call IMAGE_NAME,$(1),$(2)),$(1)))
-  $(KDIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)
+  $(eval $(call Device/Export,$(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)),$(1)))
+  $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)
 	@rm -f $$@
 	[ -f $$(word 1,$$^) -a -f $$(word 2,$$^) ]
 	$$(call concat_cmd,$(if $(IMAGE/$(2)/$(1)),$(IMAGE/$(2)/$(1)),$(IMAGE/$(2))))
 
   .IGNORE: $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
-  $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$(call IMAGE_NAME,$(1),$(2))
+  $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2))
 	cp $$^ $$@
 
 endef
@@ -457,6 +457,7 @@ define BuildImage
 		$(call Build/Clean)
 
     image_prepare: compile
+		mkdir -p $(KDIR)/tmp
 		$(call Image/Prepare)
   endif
 
