@@ -14,11 +14,9 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  drivers/regulator/qcom_rpm-regulator.c | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/drivers/regulator/qcom_rpm-regulator.c b/drivers/regulator/qcom_rpm-regulator.c
-index b55cd5b..fbcbd3f 100644
 --- a/drivers/regulator/qcom_rpm-regulator.c
 +++ b/drivers/regulator/qcom_rpm-regulator.c
-@@ -183,6 +183,13 @@ static const struct regulator_linear_range ftsmps_ranges[] = {
+@@ -183,6 +183,13 @@ static const struct regulator_linear_ran
  	REGULATOR_LINEAR_RANGE(1500000,  64, 100, 50000),
  };
  
@@ -32,7 +30,7 @@ index b55cd5b..fbcbd3f 100644
  static const struct regulator_linear_range ncp_ranges[] = {
  	REGULATOR_LINEAR_RANGE(1500000,   0,  31, 50000),
  };
-@@ -559,6 +566,16 @@ static const struct qcom_rpm_reg pm8921_switch = {
+@@ -559,6 +566,16 @@ static const struct qcom_rpm_reg pm8921_
  	.parts = &rpm8960_switch_parts,
  };
  
@@ -49,7 +47,7 @@ index b55cd5b..fbcbd3f 100644
  static const struct of_device_id rpm_of_match[] = {
  	{ .compatible = "qcom,rpm-pm8058-pldo",     .data = &pm8058_pldo },
  	{ .compatible = "qcom,rpm-pm8058-nldo",     .data = &pm8058_nldo },
-@@ -578,6 +595,8 @@ static const struct of_device_id rpm_of_match[] = {
+@@ -578,6 +595,8 @@ static const struct of_device_id rpm_of_
  	{ .compatible = "qcom,rpm-pm8921-ftsmps",   .data = &pm8921_ftsmps },
  	{ .compatible = "qcom,rpm-pm8921-ncp",      .data = &pm8921_ncp },
  	{ .compatible = "qcom,rpm-pm8921-switch",   .data = &pm8921_switch },
@@ -58,6 +56,3 @@ index b55cd5b..fbcbd3f 100644
  	{ }
  };
  MODULE_DEVICE_TABLE(of, rpm_of_match);
--- 
-2.1.4
-

@@ -60,7 +60,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064-db149.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-db149.dts
-@@ -37,6 +37,30 @@
+@@ -30,6 +30,30 @@
  				bias-disable;
  			};
  
@@ -91,10 +91,11 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  			spi_pins: spi_pins {
  				mux {
  					pins = "gpio18", "gpio19", "gpio21";
-@@ -153,6 +177,27 @@
+@@ -128,5 +152,26 @@
+ 		usb30@1 {
  			status = "ok";
  		};
- 
++
 +		pcie0: pci@1b500000 {
 +			status = "ok";
 +			reset-gpio = <&qcom_pinmux 3 0>;
@@ -115,10 +116,8 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +			pinctrl-0 = <&pcie3_pins>;
 +			pinctrl-names = "default";
 +		};
-+
- 		mdio0: mdio {
- 			compatible = "virtual,mdio-gpio";
- 			#address-cells = <1>;
+ 	};
+ };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
 @@ -3,6 +3,8 @@
@@ -130,7 +129,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -306,6 +307,129 @@
+@@ -306,6 +308,129 @@
  			#reset-cells = <1>;
  		};
  
@@ -260,7 +259,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		hs_phy_1: phy@100f8800 {
  			compatible = "qcom,dwc3-hs-usb-phy";
  			reg = <0x100f8800 0x30>;
-@@ -389,6 +513,5 @@
+@@ -389,6 +514,5 @@
  				dr_mode = "host";
  			};
  		};

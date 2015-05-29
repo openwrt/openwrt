@@ -1,0 +1,65 @@
+From 0149d275415cd1b2382ce94e5eb32641590097d0 Mon Sep 17 00:00:00 2001
+From: Mathieu Olivari <mathieu@codeaurora.org>
+Date: Fri, 8 May 2015 15:57:12 -0700
+Subject: [PATCH 2/8] stmmac: move error path at the end of
+ stmmac_probe_config_dt()
+
+We will want to do additional clean-up on certain errors. Therefore,
+this change moves the error path at the end of the function for better
+code readability.
+
+This patch doesn't change anything functionally.
+
+Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
+---
+ .../net/ethernet/stmicro/stmmac/stmmac_platform.c  | 22 ++++++++++++++++------
+ 1 file changed, 16 insertions(+), 6 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
+@@ -129,13 +129,18 @@ static int stmmac_probe_config_dt(struct
+ 	struct device_node *np = pdev->dev.of_node;
+ 	struct stmmac_dma_cfg *dma_cfg;
+ 	const struct of_device_id *device;
++	int ret;
+ 
+-	if (!np)
+-		return -ENODEV;
++	if (!np) {
++		ret = -ENODEV;
++		goto err;
++	}
+ 
+ 	device = of_match_device(stmmac_dt_ids, &pdev->dev);
+-	if (!device)
+-		return -ENODEV;
++	if (!device) {
++		ret = -ENODEV;
++		goto err;
++	}
+ 
+ 	if (device->data) {
+ 		const struct stmmac_of_data *data = device->data;
+@@ -231,8 +236,10 @@ static int stmmac_probe_config_dt(struct
+ 	if (of_find_property(np, "snps,pbl", NULL)) {
+ 		dma_cfg = devm_kzalloc(&pdev->dev, sizeof(*dma_cfg),
+ 				       GFP_KERNEL);
+-		if (!dma_cfg)
+-			return -ENOMEM;
++		if (!dma_cfg) {
++			ret = -ENOMEM;
++			goto err;
++		}
+ 		plat->dma_cfg = dma_cfg;
+ 		of_property_read_u32(np, "snps,pbl", &dma_cfg->pbl);
+ 		dma_cfg->fixed_burst =
+@@ -250,6 +257,9 @@ static int stmmac_probe_config_dt(struct
+ 	}
+ 
+ 	return 0;
++
++err:
++	return ret;
+ }
+ #else
+ static int stmmac_probe_config_dt(struct platform_device *pdev,

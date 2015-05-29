@@ -42,11 +42,9 @@ Signed-off-by: Michael Turquette <mturquette@linaro.org>
  drivers/clk/clk-mux.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/clk-mux.c b/drivers/clk/clk-mux.c
-index 4f96ff3..6e1ecf9 100644
 --- a/drivers/clk/clk-mux.c
 +++ b/drivers/clk/clk-mux.c
-@@ -77,7 +77,7 @@ static int clk_mux_set_parent(struct clk_hw *hw, u8 index)
+@@ -77,7 +77,7 @@ static int clk_mux_set_parent(struct clk
  
  	else {
  		if (mux->flags & CLK_MUX_INDEX_BIT)
@@ -55,6 +53,3 @@ index 4f96ff3..6e1ecf9 100644
  
  		if (mux->flags & CLK_MUX_INDEX_ONE)
  			index++;
--- 
-2.1.4
-

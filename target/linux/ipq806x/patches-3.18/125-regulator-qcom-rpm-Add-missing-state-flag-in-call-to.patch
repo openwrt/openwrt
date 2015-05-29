@@ -13,11 +13,9 @@ Signed-off-by: Lee Jones <lee.jones@linaro.org>
  drivers/regulator/qcom_rpm-regulator.c | 1 +
  1 file changed, 1 insertion(+)
 
-diff --git a/drivers/regulator/qcom_rpm-regulator.c b/drivers/regulator/qcom_rpm-regulator.c
-index 8364ff3..edd0a17 100644
 --- a/drivers/regulator/qcom_rpm-regulator.c
 +++ b/drivers/regulator/qcom_rpm-regulator.c
-@@ -205,6 +205,7 @@ static int rpm_reg_write(struct qcom_rpm_reg *vreg,
+@@ -205,6 +205,7 @@ static int rpm_reg_write(struct qcom_rpm
  	vreg->val[req->word] |= value << req->shift;
  
  	return qcom_rpm_write(vreg->rpm,
@@ -25,6 +23,3 @@ index 8364ff3..edd0a17 100644
  			      vreg->resource,
  			      vreg->val,
  			      vreg->parts->request_len);
--- 
-2.1.4
-
