@@ -1,4 +1,5 @@
 BOARDNAME:=Au1550
+FEATURES += pcmcia
 
 DEFAULT_PACKAGES+= wpad-mini
 
