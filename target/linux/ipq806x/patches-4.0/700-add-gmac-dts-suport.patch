@@ -119,14 +119,6 @@
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -5,6 +5,7 @@
- #include <dt-bindings/mfd/qcom-rpm.h>
- #include <dt-bindings/soc/qcom,gsbi.h>
- #include <dt-bindings/reset/qcom,gcc-ipq806x.h>
-+#include <dt-bindings/interrupt-controller/arm-gic.h>
- 
- / {
- 	model = "Qualcomm IPQ8064";
 @@ -539,5 +540,42 @@
  
  			status = "disabled";
