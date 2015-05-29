@@ -27,7 +27,7 @@ define Image/InstallKernel
 
   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
 	mkdir -p $(TARGET_DIR)/boot
-	$(CP) $(LINUX_DIR)/arch/arm/boot/zImage $(TARGET_DIR)/boot/
+	cp $(KDIR)/zImage $(TARGET_DIR)/boot/
   endif
 
   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE),)
