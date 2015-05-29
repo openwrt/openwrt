@@ -95,6 +95,7 @@ platform_check_image() {
 	w306r-v20 |\
 	w502u |\
 	whr-g300n |\
+	whr-300hp2 |\
 	whr-600d |\
 	whr-1166d |\
 	wsr-600 |\
