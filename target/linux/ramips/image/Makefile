@@ -62,7 +62,7 @@ endef
 
 define Build/relocate-kernel
 	( \
-		dd if=$(KDIR)/relocate/loader.bin bs=32 conv=sync && \
+		dd if=$(KDIR)/loader.bin bs=32 conv=sync && \
 		perl -e '@s = stat("$@"); print pack("V", @s[7])' && \
 		cat $@ \
 	) > $@.new
@@ -989,10 +989,12 @@ endef
 endif
 
 ifeq ($(SUBTARGET),mt7621)
-define Build/Compile
+define Image/Prepare
+#define Build/Compile
 	rm -rf $(KDIR)/relocate
 	$(CP) ../../generic/image/relocate $(KDIR)
 	$(MAKE) -C $(KDIR)/relocate KERNEL_ADDR=$(KERNEL_LOADADDR) CROSS_COMPILE=$(TARGET_CROSS)
+	$(CP) $(KDIR)/relocate/loader.bin $(KDIR)/loader.bin
 endef
 endif
 
