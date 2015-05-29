@@ -471,7 +471,7 @@ define BuildImage
 
   kernel_prepare: mkfs_prepare
 	$(call Image/BuildKernel)
-	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(call Image/BuildKernel/Initramfs))
+	$(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),$(if $(IB),,$(call Image/BuildKernel/Initramfs)))
 	$(call Image/InstallKernel)
 
   $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
