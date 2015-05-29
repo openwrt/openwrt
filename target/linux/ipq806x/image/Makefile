@@ -19,8 +19,12 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 
+define Image/Prepare
+	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/$(IMG_PREFIX)-vmlinux.elf
+endef
+
 define Image/BuildKernel
-	$(CP) $(LINUX_DIR)/vmlinux $(BIN_DIR)/$(IMG_PREFIX)-vmlinux.elf
+	$(CP) $(KDIR)/$(IMG_PREFIX)-vmlinux.elf $(BIN_DIR)
 	$(call Image/BuildKernel/FIT,qcom-ipq8064-ap148)
 	$(call Image/BuildKernel/FIT,qcom-ipq8064-db149)
 endef
