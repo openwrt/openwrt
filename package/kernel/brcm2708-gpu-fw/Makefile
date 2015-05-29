@@ -33,11 +33,21 @@ define Package/brcm2708-gpu-fw/description
 endef
 
 define Build/Compile
+	true
+endef
+
+define Package/brcm2708-gpu-fw/install
+	true
 endef
 
 define Build/InstallDev
-	$(INSTALL_DIR) $(BUILD_DIR)/brcm2708-gpu-fw-boot
-	$(CP) $(PKG_BUILD_DIR)/* $(BUILD_DIR)/brcm2708-gpu-fw-boot
+	$(CP) $(PKG_BUILD_DIR)/bootcode.bin $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/COPYING.linux $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/LICENCE.broadcom $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/start.elf $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/start_cd.elf $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/fixup.dat $(KERNEL_BUILD_DIR)
+	$(CP) $(PKG_BUILD_DIR)/fixup_cd.dat $(KERNEL_BUILD_DIR)
 endef
 
 $(eval $(call BuildPackage,brcm2708-gpu-fw))
