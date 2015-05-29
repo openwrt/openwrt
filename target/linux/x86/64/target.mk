@@ -1,6 +1,6 @@
 ARCH:=x86_64
 BOARDNAME:=x86_64
-DEFAULT_PACKAGES += kmod-e1000 kmod-r8169
+DEFAULT_PACKAGES += kmod-e1000e kmod-e1000 kmod-r8169
 ARCH_PACKAGES:=x86_64
 MAINTAINER:=Imre Kaloz <kaloz@openwrt.org>
 
