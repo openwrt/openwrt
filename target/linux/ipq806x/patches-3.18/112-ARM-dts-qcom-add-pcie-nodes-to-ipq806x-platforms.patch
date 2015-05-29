@@ -121,11 +121,12 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  			#address-cells = <1>;
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -3,6 +3,7 @@
+@@ -3,6 +3,8 @@
  #include "skeleton.dtsi"
  #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
 +#include <dt-bindings/reset/qcom,gcc-ipq806x.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
  
  / {
  	model = "Qualcomm IPQ8064";
