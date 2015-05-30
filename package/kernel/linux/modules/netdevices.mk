@@ -814,7 +814,7 @@ $(eval $(call KernelPackage,vmxnet3))
 define KernelPackage/stmmac
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=STMicro 10/100/1000 Ethernet driver
-  DEPENDS:=+kmod-mii +kmod-ptp
+  DEPENDS:=+kmod-mii +kmod-ptp +kmod-libphy
   KCONFIG:=CONFIG_NET_VENDOR_STMICRO=y \
 	  CONFIG_STMMAC_ETH \
 	  CONFIG_STMMAC_PLATFORM=y \
