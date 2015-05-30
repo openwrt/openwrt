@@ -842,6 +842,28 @@ define Image/BuildLoader
 endef
 
 #
+# Embed patched lzma-compressed kernel inside lzma-loader.
+#
+# Specifying the command line via the lzma-loader doesn't work with some
+# models (like the TP-LINK CPE series), so this version first patches the
+# command line in the image and then builds the loader around it.
+#
+# $(1), suffix of output filename, e.g. generic, lowercase board name, etc.
+# $(2), suffix of target file to build, e.g. bin, gz, elf
+# $(3), kernel command line to pass from lzma-loader to kernel
+# $(4), unused here
+# $(5), suffix of kernel filename, e.g. -initramfs, or empty
+define Image/BuildLoaderPatched
+	$(call PatchKernelLzma,$(1),$(3))
+	-rm -rf $(KDIR)/lzma-loader
+	$(LOADER_MAKE) LOADER=loader-$(1).$(2) \
+		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
+		LOADER_DATA="$(KDIR_TMP)/vmlinux-$(1)$(5).bin.lzma" BOARD="$(1)" \
+		compile loader.$(2)
+	-$(CP) $(KDIR)/loader-$(1).$(2) $(KDIR)/loader-$(1)$(5).$(2)
+endef
+
+#
 # Build lzma-loader alone which will search for lzma-compressed kernel identified by
 # uImage header with magic "OKLI" at boot time.
 #
