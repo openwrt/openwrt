@@ -1495,14 +1495,10 @@ define Image/Build/TPLINK-LZMA/initramfs
 endef
 
 
-Image/Build/TPLINK-SAFELOADER/buildkernel=$(call PatchKernelLzma,$(2),$(3) $(4))
+Image/Build/TPLINK-SAFELOADER/loader = $(call Image/BuildLoaderPatched,$(1),elf,$(2) $(3))
 
 define Image/Build/TPLINK-SAFELOADER
-	-rm -rf $(KDIR)/lzma-loader
-	$(LOADER_MAKE) LOADER=loader-$(2).elf\
-		LZMA_TEXT_START=0x80a00000 LOADADDR=0x80060000 \
-		LOADER_DATA="$(KDIR_TMP)/vmlinux-$(2).bin.lzma" BOARD="$(2)" \
-		compile loader.elf
+	[ -e "$(KDIR)/loader-$(2).elf" ]
 
 	-$(STAGING_DIR_HOST)/bin/tplink-safeloader \
 		-B $(5) \
