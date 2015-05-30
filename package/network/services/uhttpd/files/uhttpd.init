@@ -126,6 +126,8 @@ start_instance()
 				procd_append_param command -s "$listen"
 			done
 		}
+
+		append_bool "$cfg" redirect_https "-q" 0
 	}
 
 	procd_close_instance
