@@ -93,6 +93,7 @@ CONFIGURE_ARGS += \
 	--with-readline=no \
 	--with-embedded-libevent=no \
 	--disable-hardening \
+	--without-xml \
 	$(if $(CONFIG_LLDPD_WITH_CDP),,--disable-cdp) \
 	$(if $(CONFIG_LLDPD_WITH_FDP),,--disable-fdp) \
 	$(if $(CONFIG_LLDPD_WITH_EDP),,--disable-edp) \
