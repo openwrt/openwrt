@@ -1,5 +1,5 @@
-# 
-# Copyright (C) 2006 OpenWrt.org
+#
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ca-certificates
-PKG_VERSION:=20141019
+PKG_VERSION:=20150426
 
 PKG_SOURCE:=$(PKG_NAME)_$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://ftp.debian.org/debian/pool/main/c/ca-certificates
-PKG_MD5SUM:=f619282081c8bfc65ea64c37fa5285ed
+PKG_MD5SUM:=717455f13fb31fd014a11a468ea3895d
 
 PKG_INSTALL:=1
 
