@@ -1,6 +1,6 @@
 # Makefile for OpenWrt
 #
-# Copyright (C) 2007-2010 OpenWrt.org
+# Copyright (C) 2007-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -55,16 +55,16 @@ help: FORCE
 PACKAGE_DIR:=$(TOPDIR)/packages
 OPKG:= \
   IPKG_NO_SCRIPT=1 \
-  IPKG_TMP="$(TOPDIR)/tmp/ipkgtmp" \
+  IPKG_TMP="$(TMP_DIR)/ipkgtmp" \
   IPKG_INSTROOT="$(TARGET_DIR)" \
-  IPKG_CONF_DIR="$(TOPDIR)/tmp" \
+  IPKG_CONF_DIR="$(TMP_DIR)" \
   IPKG_OFFLINE_ROOT="$(TARGET_DIR)" \
   $(STAGING_DIR_HOST)/bin/opkg \
 	-f $(TOPDIR)/repositories.conf \
 	--force-depends \
 	--force-overwrite \
 	--force-postinstall \
-	--cache $(TOPDIR)/dl \
+	--cache $(DL_DIR) \
 	--offline-root $(TARGET_DIR) \
 	--add-dest root:/ \
 	--add-arch all:100 \
@@ -101,7 +101,7 @@ _call_image:
 	echo 'Packages: $(BUILD_PACKAGES)'
 	echo
 	rm -rf $(TARGET_DIR)
-	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR)
+	mkdir -p $(TARGET_DIR) $(BIN_DIR) $(TMP_DIR) $(DL_DIR)
 	if [ ! -f "$(PACKAGE_DIR)/Packages" ] || [ ! -f "$(PACKAGE_DIR)/Packages.gz" ] || [ "`find $(PACKAGE_DIR) -cnewer $(PACKAGE_DIR)/Packages.gz`" ]; then \
 		echo "Package list missing or not up-to-date, generating it.";\
 		$(MAKE) package_index; \
@@ -119,7 +119,7 @@ endif
 package_index: FORCE
 	@echo
 	@echo Building package index...
-	@mkdir -p $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR)/tmp
+	@mkdir -p $(TMP_DIR) $(TARGET_DIR)/tmp
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
 		gzip -9c Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
@@ -161,7 +161,7 @@ build_image: FORCE
 		$(if $(USER_PROFILE),PROFILE="$(USER_PROFILE)")
 
 clean:
-	rm -rf $(TOPDIR)/tmp $(TOPDIR)/dl $(TARGET_DIR) $(BIN_DIR)
+	rm -rf $(TMP_DIR) $(DL_DIR) $(TARGET_DIR) $(BIN_DIR)
 
 
 info:
