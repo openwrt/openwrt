@@ -167,6 +167,7 @@ define Image/PrepareLoaderDTB
 	# append dtb to vmlinux, then build a standard LZMA loader
 	cat $(KDIR)/vmlinux$(1) $(DTS_DIR)/$(2).dtb > $(KDIR)/vmlinux$(1)-$(2)
 	$(call Image/PrepareLoader,$(1)-$(2),$(3),$(4))
+	rm -f $(KDIR)/vmlinux$(1)-$(2)
 endef
 
 define Image/PrepareCFELzmaKernel
@@ -198,6 +199,7 @@ define Image/PrepareCFELzmaKernelDTB
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(DTS_DIR)/$(1).dtb ../dts/$(1).dts
 	cat $(KDIR)/vmlinux $(DTS_DIR)/$(1).dtb > $(KDIR)/vmlinux-$(1)
 	$(call Image/PrepareCFELzmaKernel,-$(1))
+	rm -f $(KDIR)/vmlinux-$(1)
 endef
 
 define Image/Prepare
