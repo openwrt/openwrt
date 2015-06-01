@@ -811,27 +811,6 @@ endef
 $(eval $(call KernelPackage,vmxnet3))
 
 
-define KernelPackage/stmmac
-  SUBMENU:=$(NETWORK_DEVICES_MENU)
-  TITLE:=STMicro 10/100/1000 Ethernet driver
-  DEPENDS:=+kmod-mii +kmod-ptp +kmod-libphy
-  KCONFIG:=CONFIG_NET_VENDOR_STMICRO=y \
-	  CONFIG_STMMAC_ETH \
-	  CONFIG_STMMAC_PLATFORM=y \
-	  CONFIG_STMMAC_DEBUG_FS=y \
-	  CONFIG_STMMAC_DA=y \
-	  CONFIG_DWMAC_IPQ806X=y
-  FILES:=$(LINUX_DIR)/drivers/net/ethernet/stmicro/stmmac/stmmac.ko
-  AUTOLOAD:=$(call AutoLoad,50,stmmac.ko)
-endef
-
-define KernelPackage/stmmac/description
-  Kernel module for STMicroelectronics 10/100/1000 Ethernet driver
-endef
-
-$(eval $(call KernelPackage,stmmac))
-
-
 define KernelPackage/spi-ks8995
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=Micrel/Kendin KS8995 Ethernet switch control
