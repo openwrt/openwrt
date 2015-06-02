@@ -52,7 +52,7 @@ hostapd_common_add_device_config() {
 	config_add_array supported_rates
 
 	config_add_string country
-	config_add_boolean country_ie doth
+	config_add_boolean country_ie doth ht_coex
 	config_add_string require_mode
 
 	hostapd_add_log_config
@@ -65,13 +65,15 @@ hostapd_prepare_device_config() {
 	local base="${config%%.conf}"
 	local base_cfg=
 
-	json_get_vars country country_ie beacon_int doth require_mode
+	json_get_vars country country_ie beacon_int doth require_mode ht_coex
 
 	hostapd_set_log_options base_cfg
 
 	set_default country_ie 1
 	set_default doth 1
+	set_default ht_coex 0
 
+	append base_cfg "ht_coex=$ht_coex" "$N"
 	[ -n "$country" ] && {
 		append base_cfg "country_code=$country" "$N"
 
