@@ -94,6 +94,7 @@ endef
 
 define Image/Build/RedBootDTB
 	# Prepare kernel and rootfs
+	cat $(KDIR)/vmlinux $(DTS_DIR)/$(3).dtb > $(KDIR)/vmlinux-$(3)
 	gzip -9 -c $(KDIR)/vmlinux-$(3) > $(KDIR)/vmlinux-$(3).bin.gz
 	dd if=$(KDIR)/vmlinux-$(3).bin.gz of=$(BIN_DIR)/$(IMG_PREFIX)-$(2)-vmlinux.gz bs=65536 conv=sync
 	dd if=$(KDIR)/root.squashfs of="$(BIN_DIR)/$(IMG_PREFIX)-$(2)-root.squashfs" bs=64k conv=sync
@@ -121,6 +122,7 @@ define Image/Build/RedBootDTB
 		"$(BIN_DIR)/$(IMG_PREFIX)-$(2)-root.squashfs" \
 		> "$(BIN_DIR)/$(IMG_PREFIX)-$(2)-redboot.bin"
 	rm -f $(BIN_DIR)/redbootscript $(BIN_DIR)/redbootscript.padded
+	rm -f $(KDIR)/vmlinux-$(3)
 endef
 
 define Image/Build/HCSDTB
