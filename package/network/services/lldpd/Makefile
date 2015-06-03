@@ -100,6 +100,7 @@ CONFIGURE_ARGS += \
 	$(if $(CONFIG_LLDPD_WITH_LLDPMED),,--disable-lldpmed) \
 	$(if $(CONFIG_LLDPD_WITH_DOT1),,--disable-dot1) \
 	$(if $(CONFIG_LLDPD_WITH_DOT3),,--disable-dot3) \
+	$(if $(CONFIG_LLDPD_WITH_CUSTOM),,--disable-custom) \
 	$(if $(CONFIG_LLDPD_WITH_SONMP),,--disable-sonmp) \
 	$(if $(CONFIG_LLDPD_WITH_JSON),--with-json=json-c,--with-json=no)
 
