@@ -32,9 +32,14 @@
 
 static uint32_t crc32[1<<BPB];
 
+static char *output_file = "default-brnImage";
+static uint32_t magic = 0x12345678;
+static char *signature = "BRNDTW502";
+static uint32_t crc32_poly = 0x2083b8ed;
+
 static void init_crc32()
 {
-	const uint32_t poly = ntohl(0x2083b8ed);
+	const uint32_t poly = ntohl(crc32_poly);
 	int n;
 
 	for (n = 0; n < 1<<BPB; n++) {
@@ -61,21 +66,17 @@ static void usage(const char *) __attribute__ (( __noreturn__ ));
 static void usage(const char *mess)
 {
 	fprintf(stderr, "Error: %s\n", mess);
-	fprintf(stderr, "Usage: mkbrnimg [-o output_file] [-m magic] [-s signature] kernel_file [additional files]\n");
+	fprintf(stderr, "Usage: mkbrnimg [-o output_file] [-m magic] [-s signature] [-p crc32 poly] kernel_file [additional files]\n");
 	fprintf(stderr, "\n");
 	exit(1);
 }
-
-static char *output_file = "default-brnImage";
-static uint32_t magic = 0x12345678;
-static char *signature = "BRNDTW502";
 
 static void parseopts(int *argc, char ***argv)
 {
 	char *endptr;
 	int res;
 
-	while ((res = getopt(*argc, *argv, "o:m:s:")) != -1) {
+	while ((res = getopt(*argc, *argv, "o:m:s:p:")) != -1) {
 		switch (res) {
 		default:
 			usage("Unknown option");
@@ -90,6 +91,11 @@ static void parseopts(int *argc, char ***argv)
 			break;
 		case 's':
 			signature = optarg;
+			break;
+		case 'p':
+			crc32_poly = strtoul(optarg, &endptr, 0);
+			if (endptr == optarg || *endptr != 0)
+				usage("'crc32 poly' must be a decimal or hexadecimal 32-bit value");
 			break;
 		}
 	}
