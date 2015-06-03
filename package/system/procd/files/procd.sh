@@ -222,8 +222,6 @@ _procd_add_interface_trigger() {
 	json_close_array
 
 	json_close_array
-
-	_procd_add_array_data "10000"
 	json_close_array
 }
 
