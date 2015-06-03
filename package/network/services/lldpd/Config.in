@@ -41,6 +41,11 @@ config LLDPD_WITH_DOT3
 	prompt "Enable Dot3 extension (PHY stuff)"
 	default y
 
+config LLDPD_WITH_CUSTOM
+	bool
+	prompt "Enable Custom TLVs"
+	default y
+
 config LLDPD_WITH_JSON
 	bool
 	prompt "Enable JSON output for the LLDP Command-Line Interface"
