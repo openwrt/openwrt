@@ -1,0 +1,2015 @@
+commit b6a6cd703ffefa6352249fb01f4da28d85d17306
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu Jun 4 11:45:17 2015 -0400
+
+    fix dynamic linker regression processing R_*_NONE type relocations
+    
+    commit f3ddd173806fd5c60b3f034528ca24542aecc5b9 inadvertently removed
+    the early check for "none" type relocations, causing the address
+    dso->base+0 to be dereferenced to obtain an addend. shared libraries,
+    (including libc.so) and PIE executables were unaffected, since their
+    base addresses are the actual address of their mappings and are
+    readable. non-PIE main executables, however, have a base address of 0
+    because their load addresses are absolute and not offset at load time.
+    
+    in practice none-type relocations do not arise with toolchains that
+    are in use except on mips, and on mips it's moderately rare for a
+    non-PIE executable to have a relocation table, since the mips-specific
+    got processing serves in its place for most purposes.
+
+commit 585ba14df4799d50ec9682ce75825d2eafec2a6a
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed Jun 3 02:00:44 2015 -0400
+
+    add additional Makefile dependency rules for rcrt1.o PIE start file
+
+commit 2b4fcfdacf93c3dfd6ac15e31790a9e154374679
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu May 28 23:08:12 2015 -0400
+
+    fix failure of ungetc and ungetwc to work on files in eof status
+    
+    these functions were written to handle clearing eof status, but failed
+    to account for the __toread function's handling of eof. with this
+    patch applied, __toread still returns EOF when the file is in eof
+    status, so that read operations will fail, but it also sets up valid
+    buffer pointers for read mode, which are set to the end of the buffer
+    rather than the beginning in order to make the whole buffer available
+    to ungetc/ungetwc.
+    
+    minor changes to __uflow were needed since it's now possible to have
+    non-zero buffer pointers while in eof status. as made, these changes
+    remove a 'fast path' bypassing the function call to __toread, which
+    could be reintroduced with slightly different logic, but since
+    ordinary files have a syscall in f->read, optimizing the code path
+    does not seem worthwhile.
+    
+    the __stdio_read function is also updated not to zero the read buffer
+    pointers on eof/error. while not necessary for correctness, this
+    change avoids the overhead of calling __toread in ungetc after
+    reaching eof, and it also reduces code size and increases consistency
+    with the fmemopen read operation which does not zero the pointers.
+
+commit b6e7c664677ab7c77f183b8c41105f2be519800c
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu May 28 15:37:23 2015 -0400
+
+    add missing legacy LFS64 macros in sys/resource.h
+    
+    based on patch by Felix Janda, with RLIM64_SAVED_CUR and
+    RLIM64_SAVED_MAX added for completeness.
+
+commit fc431d3f76bb9bde34a89e4a3e4d0c27de959855
+Author: Shiz <hi@shiz.me>
+Date:   Thu May 28 05:52:22 2015 +0200
+
+    configure: work around compilers that merely warn for unknown options
+    
+    some compilers (such as clang) accept unknown options without error,
+    but then print warnings on each invocation, cluttering the build
+    output and burying meaningful warnings. this patch makes configure's
+    tryflag and tryldflag functions use additional options to turn the
+    unknown-option warnings into errors, if available, but only at check
+    time. these options are not output in config.mak to avoid the risk of
+    spurious build breakage; if they work, they will have already done
+    their job at configure time.
+
+commit aeeac9ca5490d7d90fe061ab72da446c01ddf746
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed May 27 15:54:47 2015 -0400
+
+    implement fail-safe static locales for newlocale
+    
+    this frees applications which need to make temporary use of the C
+    locale (via uselocale) from the possibility that newlocale might fail.
+    
+    the C.UTF-8 locale is also provided as a static locale. presently they
+    behave the same, but this may change in the future.
+
+commit 11858d31aa020df3e7e7dedf49f9870ce12f31cc
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed May 27 03:32:46 2015 -0400
+
+    rename internal locale file handling locale maps
+    
+    since the __setlocalecat function was removed, the filename
+    __setlocalecat.c no longer made sense.
+
+commit 61a3364d246e72b903da8b76c2e27a225a51351e
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed May 27 03:22:52 2015 -0400
+
+    overhaul locale internals to treat categories roughly uniformly
+    
+    previously, LC_MESSAGES was treated specially as the only category
+    which could be set to a locale name without a definition file, in
+    order to facilitate gettext message translations when no libc locale
+    was available. LC_NUMERIC was completely un-settable, and LC_CTYPE
+    stored a flag intended to be used for a possible future byte-based C
+    locale, instead of storing a __locale_map pointer like the other
+    categories use.
+    
+    this patch changes all categories to be represented by pointers to
+    __locale_map structures, and allows locale names without definition
+    files to be treated as valid locales with trivial definition when used
+    in any category. outwardly visible functional changes should be minor,
+    limited mainly to the strings read back from setlocale and the way
+    gettext handles translations in categories other than LC_MESSAGES.
+    
+    various internal refactoring has also been performed, and improvements
+    in const correctness have been made.
+
+commit 63c188ec42e76ff768e81f6b65b11c68fc43351e
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed May 27 00:22:43 2015 -0400
+
+    replace atomics with locks in locale-setting code
+    
+    this is part of a general program of removing direct use of atomics
+    where they are not necessary to meet correctness or performance needs,
+    but in this case it's also an optimization. only the global locale
+    needs synchronization; allocated locales referenced with locale_t
+    handles are immutable during their lifetimes, and using atomics to
+    initialize them increases their cost of setup.
+
+commit dc031ee0b1ba11baa00cd7f0769e461a5f396c71
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue May 26 03:37:41 2015 -0400
+
+    add rcrt1 start file for fully static-linked PIE
+    
+    static-linked PIE files need startup code to relocate themselves, much
+    like the dynamic linker does. rcrt1.c reuses the code in dlstart.c,
+    stage 1 of the dynamic linker, which in turn reuses crt_arch.h, to
+    achieve static PIE with no new code. only relative relocations are
+    supported.
+    
+    existing toolchains that don't yet support static PIE directly can be
+    repurposed by passing "-shared -Wl,-Bstatic -Wl,-Bsymbolic" instead of
+    "-static -pie" and substituting rcrt1.o in place of crt1.o.
+    
+    all libraries being linked must be built as PIC/PIE; TEXTRELs are not
+    supported at this time.
+
+commit ed0c8249825161036356a3616e8c5247c15d0927
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue May 26 02:31:04 2015 -0400
+
+    fix incorrect application of visibility to Scrt1.o
+    
+    commit de2b67f8d41e08caa56bf6540277f6561edb647f attempted to avoid
+    having vis.h affect crt files, but the Makefile variable used,
+    CRT_LIBS, refers to the final output copies in the lib directory, not
+    the copies in the crt build directory, and thus the -DCRT was not
+    applied.
+    
+    while unlikely to be noticed, this regression probably broke
+    production of PIE executables whose main functions are not in the
+    executable but rather a shared library.
+
+commit 9bbddf730f7837cf87f4c789fbb41a312e295d6c
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 25 23:33:59 2015 -0400
+
+    reprocess all libc/ldso symbolic relocations in dynamic linking stage 3
+    
+    commit f3ddd173806fd5c60b3f034528ca24542aecc5b9 introduced early
+    relocations and subsequent reprocessing as part of the dynamic linker
+    bootstrap overhaul, to allow use of arbitrary libc functions before
+    the main application and libraries are loaded, but only reprocessed
+    GOT/PLT relocation types.
+    
+    commit c093e2e8201524db0d638920e76bcb6b1d925f3a added reprocessing of
+    non-GOT/PLT relocations to fix an actual regression that was observed
+    on powerpc, but only for RELA format tables with out-of-line addends.
+    REL table (inline addends at the relocation address) reprocessing is
+    trickier because the first relocation pass clobbers the addends.
+    
+    this patch extends symbolic relocation reprocessing for libc/ldso to
+    support all relocation types, whether REL or RELA format tables are
+    used. it is believed not to alter behavior on any existing archs for
+    the current dynamic linker and libc code. the motivations for this
+    change are consistency and future-proofing. it ensures that behavior
+    does not differ depending on whether REL or RELA tables are used,
+    which could lead to undetected arch-specific bugs. it also ensures
+    that, if in the future code depending on additional relocation types
+    is added to libc.so, either at the source level or as part of the
+    compiler runtime that gets pulled in (for example, soft-float with TLS
+    for fenv), the new code will work properly.
+    
+    the implementation concept is simple: stage 2 of the dynamic linker
+    counts the number of symbolic relocations in the libc/ldso REL table
+    and allocates a VLA to save their addends into; stage 3 then uses the
+    saved addends in place of the inline ones which were clobbered. for
+    stack safety, a hard limit (currently 4k) is imposed on the number of
+    such addends; this should be a couple orders of magnitude larger than
+    the actual need. this number is not a runtime variable that could
+    break fail-safety; it is constant for a given libc.so build.
+
+commit 768b82c6de24e480267c4c251c440edfc71800e3
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 25 19:15:17 2015 -0400
+
+    move call to dynamic linker stage-3 into stage-2 function
+    
+    this move eliminates a duplicate "by-hand" symbol lookup loop from the
+    stage-1 code and replaces it with a call to find_sym, which can be
+    used once we're in stage 2. it reduces the size of the stage 1 code,
+    which is helpful because stage 1 will become the crt start file for
+    static-PIE executables, and it will allow stage 3 to access stage 2's
+    automatic storage, which will be important in an upcoming commit.
+
+commit 967bcbf67c3ffac587de4d79abc1e5e072d83e3e
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 25 16:02:49 2015 -0400
+
+    mark mips crt code as code
+    
+    otherwise disassemblers treat it as data.
+
+commit 7b75c4877ddf22f219f944c61d939df1dee4f6d3
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 25 15:56:36 2015 -0400
+
+    mark mips cancellable syscall code as code
+    
+    otherwise disassemblers treat it as data.
+
+commit 0e0e49421f08cfd670975ecd3604f7f9015e1833
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 25 00:32:37 2015 -0400
+
+    simplify/shrink relocation processing in dynamic linker stage 1
+    
+    the outer-loop approach made sense when we were also processing
+    DT_JMPREL, which might be in REL or RELA form, to avoid major code
+    duplication. commit 09db855b35709aa627d7055c57a98e1e471920ab removed
+    processing of DT_JMPREL, and in the remaining two tables, the format
+    (REL or RELA) is known by the name of the table. simply writing two
+    versions of the loop results in smaller and simpler code.
+
+commit 09db855b35709aa627d7055c57a98e1e471920ab
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 25 00:25:56 2015 -0400
+
+    remove processing of DT_JMPREL from dynamic linker stage 1 bootstrap
+    
+    the DT_JMPREL relocation table necessarily consists entirely of
+    JMP_SLOT (REL_PLT in internal nomenclature) relocations, which are
+    symbolic; they cannot be resolved in stage 1, so there is no point in
+    processing them.
+
+commit 9f26ebded188ed78c3571a4ca1477dd6351bc647
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sun May 24 23:03:47 2015 -0400
+
+    fix stack alignment code in mips crt_arch.h
+    
+    the instruction used to align the stack, "and $sp, $sp, -8", does not
+    actually exist; it's expanded to 2 instructions using the 'at'
+    (assembler temporary) register, and thus cannot be used in a branch
+    delay slot. since alignment mod 16 commutes with subtracting 8, simply
+    swapping these two operations fixes the problem.
+    
+    crt1.o was not affected because it's still being generated from a
+    dedicated asm source file. dlstart.lo was not affected because the
+    stack pointer it receives is already aligned by the kernel. but
+    Scrt1.o was affected in cases where the dynamic linker gave it a
+    misaligned stack pointer.
+
+commit 63caf1d207d143fe405bbe0cda9aac8deca1171a
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Fri May 22 01:50:05 2015 -0400
+
+    add .text section directive to all crt_arch.h files missing it
+    
+    i386 and x86_64 versions already had the .text directive; other archs
+    did not. normally, top-level (file scope) __asm__ starts in the .text
+    section anyway, but problems were reported with some versions of
+    clang, and it seems preferable to set it explicitly anyway, at least
+    for the sake of consistency between archs.
+
+commit 3b0e83264d156f9e496ab32badd89e4447b807aa
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu May 21 17:06:28 2015 -0400
+
+    remove outdated and misleading comment in iconv.c
+    
+    the comment claimed that EUC/GBK/Big5 are not implemented, which has
+    been incorrect since commit 19b4a0a20efc6b9df98b6a43536ecdd628ba4643.
+
+commit 39b8ce66f2ed9c17427ec3a48be9bda29b93b9d7
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu May 21 17:01:23 2015 -0400
+
+    in iconv_open, accept "CHAR" and "" as aliases for "UTF-8"
+    
+    while not a requirement, it's common convention in other iconv
+    implementations to accept "CHAR" as an alias for nl_langinfo(CODESET),
+    meaning the encoding used for char[] strings in the current locale,
+    and also "" as an alternate form. supporting this is not costly and
+    improves compatibility.
+
+commit c648cefb27984db60474ec1747cbfde83c2856d0
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed May 20 00:17:35 2015 -0400
+
+    fix inconsistency in a_and and a_or argument types on x86[_64]
+    
+    conceptually, and on other archs, these functions take a pointer to
+    int, but in the i386, x86_64, and x32 versions of atomic.h, they took
+    a pointer to void instead.
+
+commit 390f93ef69153bf2087fcf3baa1776ad9a6765ab
+Author: Bobby Bingham <koorogi@koorogi.info>
+Date:   Sun May 17 13:46:38 2015 -0500
+
+    inline llsc atomics when building for sh4a
+    
+    If we're building for sh4a, the compiler is already free to use
+    instructions only available on sh4a, so we can do the same and inline the
+    llsc atomics. If we're building for an older processor, we still do the
+    same runtime atomics selection as before.
+
+commit c093e2e8201524db0d638920e76bcb6b1d925f3a
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 18 16:51:54 2015 -0400
+
+    reprocess libc/ldso RELA relocations in stage 3 of dynamic linking
+    
+    this fixes a regression on powerpc that was introduced in commit
+    f3ddd173806fd5c60b3f034528ca24542aecc5b9. global data accesses on
+    powerpc seem to be using a translation-unit-local GOT filled via
+    R_PPC_ADDR32 relocations rather than R_PPC_GLOB_DAT. being a non-GOT
+    relocation type, these were not reprocessed after adding the main
+    application and its libraries to the chain, causing libc code not to
+    see copy relocations in the main program, and therefore to use the
+    pre-copy-relocation addresses for global data objects (like environ).
+    
+    the motivation for the dynamic linker only reprocessing GOT/PLT
+    relocation types in stage 3 is that these types always have a zero
+    addend, making them safe to process again even if the storage for the
+    addend has been clobbered. other relocation types which can be used
+    for address constants in initialized data objects may have non-zero
+    addends which will be clobbered during the first pass of relocation
+    processing if they're stored inline (REL form) rather than out-of-line
+    (RELA form).
+    
+    powerpc generally uses only RELA, so this patch is sufficient to fix
+    the regression in practice, but is not fully general, and would not
+    suffice if an alternate toolchain generated REL for powerpc.
+
+commit 43e9f652bf4b2195b04fc14c93db591b30a7b790
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon May 18 12:11:25 2015 -0400
+
+    fix null pointer dereference in dcngettext under specific conditions
+    
+    if setlocale has not been called, the current locale's messages_name
+    may be a null pointer. the code path where it's assumed to be non-null
+    was only reachable if bindtextdomain had already been called, which is
+    normally not done in programs which do not call setlocale, so the
+    omitted check went unnoticed.
+    
+    patch from Void Linux, with description rewritten.
+
+commit 68630b55c0c7219fe9df70dc28ffbf9efc8021d8
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat May 16 01:53:54 2015 -0400
+
+    eliminate costly tricks to avoid TLS access for current locale state
+    
+    the code being removed used atomics to track whether any threads might
+    be using a locale other than the current global locale, and whether
+    any threads might have abstract 8-bit (non-UTF-8) LC_CTYPE active, a
+    feature which was never committed (still pending). the motivations
+    were to support early execution prior to setup of the thread pointer,
+    to partially support systems (ancient kernels) where thread pointer
+    setup is not possible, and to avoid high performance cost on archs
+    where accessing the thread pointer may be very slow.
+    
+    since commit 19a1fe670acb3ab9ead0fe31859ca7d4fe40dd54, the thread
+    pointer is always available, so these hacks are no longer needed.
+    removing them greatly simplifies the affected code.
+
+commit 707d7c30f3379441de9b320536ddfd354f4c2143
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat May 16 01:15:40 2015 -0400
+
+    in i386 __set_thread_area, don't assume %gs register is initially zero
+    
+    commit f630df09b1fd954eda16e2f779da0b5ecc9d80d3 added logic to handle
+    the case where __set_thread_area is called more than once by reusing
+    the GDT slot already in the %gs register, and only setting up a new
+    GDT slot when %gs is zero. this created a hidden assumption that %gs
+    is zero when a new process image starts, which is true in practice on
+    Linux, but does not seem to be documented ABI, and fails to hold under
+    qemu app-level emulation.
+    
+    while it would in theory be possible to zero %gs in the entry point
+    code, this code is shared between static and dynamic binaries, and
+    dynamic binaries must not clobber the value of %gs already setup by
+    the dynamic linker.
+    
+    the alternative solution implemented in this commit simply uses global
+    data to store the GDT index that's selected. __set_thread_area should
+    only be called in the initial thread anyway (subsequent threads get
+    their thread pointer setup by __clone), but even if it were called by
+    another thread, it would simply read and write back the same GDT index
+    that was already assigned to the initial thread, and thus (in the x86
+    memory model) there is no data race.
+
+commit c0f10cf06725bd0de37f3ced7954a653bf9f1049
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu May 14 18:51:27 2015 -0400
+
+    make arm reloc.h CRTJMP macro compatible with thumb
+    
+    compilers targeting armv7 may be configured to produce thumb2 code
+    instead of arm code by default, and in the future we may wish to
+    support targets where only the thumb instruction set is available.
+    
+    the instructions this patch omits in thumb mode are needed only for
+    non-thumb versions of armv4 or earlier, which are not supported by any
+    current compilers/toolchains and thus rather pointless to have. at
+    some point these compatibility return sequences may be removed from
+    all asm source files, and in that case it would make sense to remove
+    them here too and remove the ifdef.
+
+commit 83340c7a580e91b22f58321b7cf6d976af61084c
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu May 14 18:26:16 2015 -0400
+
+    make arm crt_arch.h compatible with thumb code generation
+    
+    compilers targeting armv7 may be configured to produce thumb2 code
+    instead of arm code by default, and in the future we may wish to
+    support targets where only the thumb instruction set is available.
+    
+    the changes made here avoid operating directly on the sp register,
+    which is not possible in thumb code, and address an issue with the way
+    the address of _DYNAMIC is computed.
+    
+    previously, the relative address of _DYNAMIC was stored with an
+    additional offset of -8 versus the pc-relative add instruction, since
+    on arm the pc register evaluates to ".+8". in thumb code, it instead
+    evaluates to ".+4". both are two (normal-size) instructions beyond "."
+    in the current execution mode, so the numbered label 2 used in the
+    relative address expression is simply moved two instructions ahead to
+    be compatible with both instruction sets.
+
+--- a/Makefile
++++ b/Makefile
+@@ -44,7 +44,7 @@ ALL_INCLUDES = $(sort $(wildcard include
+ 
+ EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl
+ EMPTY_LIBS = $(EMPTY_LIB_NAMES:%=lib/lib%.a)
+-CRT_LIBS = lib/crt1.o lib/Scrt1.o lib/crti.o lib/crtn.o
++CRT_LIBS = lib/crt1.o lib/Scrt1.o lib/rcrt1.o lib/crti.o lib/crtn.o
+ STATIC_LIBS = lib/libc.a
+ SHARED_LIBS = lib/libc.so
+ TOOL_LIBS = lib/musl-gcc.specs
+@@ -85,11 +85,13 @@ src/internal/version.h: $(wildcard VERSI
+ 
+ src/internal/version.lo: src/internal/version.h
+ 
+-src/ldso/dlstart.lo src/ldso/dynlink.lo: src/internal/dynlink.h arch/$(ARCH)/reloc.h
++crt/rcrt1.o src/ldso/dlstart.lo src/ldso/dynlink.lo: src/internal/dynlink.h arch/$(ARCH)/reloc.h
+ 
+-crt/crt1.o crt/Scrt1.o src/ldso/dlstart.lo: $(wildcard arch/$(ARCH)/crt_arch.h)
++crt/crt1.o crt/Scrt1.o crt/rcrt1.o src/ldso/dlstart.lo: $(wildcard arch/$(ARCH)/crt_arch.h)
+ 
+-crt/Scrt1.o: CFLAGS += -fPIC
++crt/rcrt1.o: src/ldso/dlstart.c
++
++crt/Scrt1.o crt/rcrt1.o: CFLAGS += -fPIC
+ 
+ OPTIMIZE_SRCS = $(wildcard $(OPTIMIZE_GLOBS:%=src/%))
+ $(OPTIMIZE_SRCS:%.c=%.o) $(OPTIMIZE_SRCS:%.c=%.lo): CFLAGS += -O3
+@@ -104,7 +106,7 @@ NOSSP_SRCS = $(wildcard crt/*.c) \
+ 	src/ldso/dlstart.c src/ldso/dynlink.c
+ $(NOSSP_SRCS:%.c=%.o) $(NOSSP_SRCS:%.c=%.lo): CFLAGS += $(CFLAGS_NOSSP)
+ 
+-$(CRT_LIBS): CFLAGS += -DCRT
++$(CRT_LIBS:lib/%=crt/%): CFLAGS += -DCRT
+ 
+ # This incantation ensures that changes to any subarch asm files will
+ # force the corresponding object file to be rebuilt, even if the implicit
+--- a/arch/aarch64/crt_arch.h
++++ b/arch/aarch64/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START "\n"
+ ".type " START ",%function\n"
+ START ":\n"
+--- a/arch/arm/crt_arch.h
++++ b/arch/arm/crt_arch.h
+@@ -1,15 +1,18 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".type " START ",%function \n"
+ START ": \n"
+ "	mov fp, #0 \n"
+ "	mov lr, #0 \n"
+-"	mov a1, sp \n"
+ "	ldr a2, 1f \n"
+-"2:	add a2, pc, a2 \n"
+-"	and sp, sp, #-16 \n"
++"	add a2, pc, a2 \n"
++"	mov a1, sp \n"
++"2:	and ip, a1, #-16 \n"
++"	mov sp, ip \n"
+ "	bl " START "_c \n"
+ ".weak _DYNAMIC \n"
+ ".hidden _DYNAMIC \n"
+-"1:	.word _DYNAMIC-2b-8 \n"
++".align 2 \n"
++"1:	.word _DYNAMIC-2b \n"
+ );
+--- a/arch/arm/reloc.h
++++ b/arch/arm/reloc.h
+@@ -28,5 +28,10 @@
+ #define REL_TPOFF       R_ARM_TLS_TPOFF32
+ //#define REL_TLSDESC     R_ARM_TLS_DESC
+ 
++#ifdef __thumb__
++#define CRTJMP(pc,sp) __asm__ __volatile__( \
++	"mov sp,%1 ; bx %0" : : "r"(pc), "r"(sp) : "memory" )
++#else
+ #define CRTJMP(pc,sp) __asm__ __volatile__( \
+ 	"mov sp,%1 ; tst %0,#1 ; moveq pc,%0 ; bx %0" : : "r"(pc), "r"(sp) : "memory" )
++#endif
+--- a/arch/i386/atomic.h
++++ b/arch/i386/atomic.h
+@@ -50,16 +50,16 @@ static inline int a_cas(volatile int *p,
+ 	return t;
+ }
+ 
+-static inline void a_or(volatile void *p, int v)
++static inline void a_or(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; orl %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+-static inline void a_and(volatile void *p, int v)
++static inline void a_and(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; andl %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+ static inline int a_swap(volatile int *x, int v)
+--- a/arch/microblaze/crt_arch.h
++++ b/arch/microblaze/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".align  2 \n"
+ START ": \n"
+--- a/arch/mips/crt_arch.h
++++ b/arch/mips/crt_arch.h
+@@ -1,6 +1,7 @@
+ __asm__(
+ ".set push\n"
+ ".set noreorder\n"
++".text \n"
+ ".global _" START "\n"
+ ".global " START "\n"
+ ".type   _" START ", @function\n"
+@@ -21,8 +22,8 @@ __asm__(
+ "	addu $5, $5, $gp \n"
+ "	lw $25, 4($ra) \n"
+ "	addu $25, $25, $gp \n"
+-"	subu $sp, $sp, 16 \n"
++"	and $sp, $sp, -8 \n"
+ "	jalr $25 \n"
+-"	 and $sp, $sp, -8 \n"
++"	 subu $sp, $sp, 16 \n"
+ ".set pop \n"
+ );
+--- a/arch/or1k/crt_arch.h
++++ b/arch/or1k/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".align  4 \n"
+ START ": \n"
+--- a/arch/powerpc/crt_arch.h
++++ b/arch/powerpc/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ ".type   " START ", %function \n"
+ START ": \n"
+--- a/arch/sh/atomic.h
++++ b/arch/sh/atomic.h
+@@ -22,6 +22,88 @@ static inline int a_ctz_64(uint64_t x)
+ 	return a_ctz_l(y);
+ }
+ 
++#define LLSC_CLOBBERS "r0", "t", "memory"
++#define LLSC_START(mem) "synco\n"  \
++	"0:	movli.l @" mem ", r0\n"
++#define LLSC_END(mem)              \
++	"1:	movco.l r0, @" mem "\n"    \
++	"	bf 0b\n"                   \
++	"	synco\n"
++
++static inline int __sh_cas_llsc(volatile int *p, int t, int s)
++{
++	int old;
++	__asm__ __volatile__(
++		LLSC_START("%1")
++		"	mov r0, %0\n"
++		"	cmp/eq %0, %2\n"
++		"	bf 1f\n"
++		"	mov %3, r0\n"
++		LLSC_END("%1")
++		: "=&r"(old) : "r"(p), "r"(t), "r"(s) : LLSC_CLOBBERS);
++	return old;
++}
++
++static inline int __sh_swap_llsc(volatile int *x, int v)
++{
++	int old;
++	__asm__ __volatile__(
++		LLSC_START("%1")
++		"	mov r0, %0\n"
++		"	mov %2, r0\n"
++		LLSC_END("%1")
++		: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
++	return old;
++}
++
++static inline int __sh_fetch_add_llsc(volatile int *x, int v)
++{
++	int old;
++	__asm__ __volatile__(
++		LLSC_START("%1")
++		"	mov r0, %0\n"
++		"	add %2, r0\n"
++		LLSC_END("%1")
++		: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
++	return old;
++}
++
++static inline void __sh_store_llsc(volatile int *p, int x)
++{
++	__asm__ __volatile__(
++		"	synco\n"
++		"	mov.l %1, @%0\n"
++		"	synco\n"
++		: : "r"(p), "r"(x) : "memory");
++}
++
++static inline void __sh_and_llsc(volatile int *x, int v)
++{
++	__asm__ __volatile__(
++		LLSC_START("%0")
++		"	and %1, r0\n"
++		LLSC_END("%0")
++		: : "r"(x), "r"(v) : LLSC_CLOBBERS);
++}
++
++static inline void __sh_or_llsc(volatile int *x, int v)
++{
++	__asm__ __volatile__(
++		LLSC_START("%0")
++		"	or %1, r0\n"
++		LLSC_END("%0")
++		: : "r"(x), "r"(v) : LLSC_CLOBBERS);
++}
++
++#ifdef __SH4A__
++#define a_cas(p,t,s)     __sh_cas_llsc(p,t,s)
++#define a_swap(x,v)      __sh_swap_llsc(x,v)
++#define a_fetch_add(x,v) __sh_fetch_add_llsc(x, v)
++#define a_store(x,v)     __sh_store_llsc(x, v)
++#define a_and(x,v)       __sh_and_llsc(x, v)
++#define a_or(x,v)        __sh_or_llsc(x, v)
++#else
++
+ int  __sh_cas(volatile int *, int, int);
+ int  __sh_swap(volatile int *, int);
+ int  __sh_fetch_add(volatile int *, int);
+@@ -35,6 +117,7 @@ void __sh_or(volatile int *, int);
+ #define a_store(x,v)     __sh_store(x, v)
+ #define a_and(x,v)       __sh_and(x, v)
+ #define a_or(x,v)        __sh_or(x, v)
++#endif
+ 
+ static inline void *a_cas_p(volatile void *p, void *t, void *s)
+ {
+--- a/arch/sh/crt_arch.h
++++ b/arch/sh/crt_arch.h
+@@ -1,4 +1,5 @@
+ __asm__(
++".text \n"
+ ".global " START " \n"
+ START ": \n"
+ "	mova 1f, r0 \n"
+--- a/arch/sh/src/atomic.c
++++ b/arch/sh/src/atomic.c
+@@ -1,12 +1,7 @@
+-#include "libc.h"
++#ifndef __SH4A__
+ 
+-#define LLSC_CLOBBERS   "r0", "t", "memory"
+-#define LLSC_START(mem) "synco\n"  \
+-	"0:	movli.l @" mem ", r0\n"
+-#define LLSC_END(mem)              \
+-	"1:	movco.l r0, @" mem "\n"    \
+-	"	bf 0b\n"                   \
+-	"	synco\n"
++#include "atomic.h"
++#include "libc.h"
+ 
+ /* gusa is a hack in the kernel which lets you create a sequence of instructions
+  * which will be restarted if the process is preempted in the middle of the
+@@ -34,114 +29,74 @@
+ 
+ int __sh_cas(volatile int *p, int t, int s)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_cas_llsc(p, t, s);
++
+ 	int old;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%1")
+-			"	mov r0, %0\n"
+-			"	cmp/eq %0, %2\n"
+-			"	bf 1f\n"
+-			"	mov %3, r0\n"
+-			LLSC_END("%1")
+-			: "=&r"(old) : "r"(p), "r"(t), "r"(s) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_EVEN("%1", "%0")
+-			"	cmp/eq %0, %2\n"
+-			"	bf 1f\n"
+-			GUSA_END("%1", "%3")
+-			: "=&r"(old) : "r"(p), "r"(t), "r"(s) : GUSA_CLOBBERS, "t");
+-	}
++	__asm__ __volatile__(
++		GUSA_START_EVEN("%1", "%0")
++		"	cmp/eq %0, %2\n"
++		"	bf 1f\n"
++		GUSA_END("%1", "%3")
++		: "=&r"(old) : "r"(p), "r"(t), "r"(s) : GUSA_CLOBBERS, "t");
+ 	return old;
+ }
+ 
+ int __sh_swap(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_swap_llsc(x, v);
++
+ 	int old;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%1")
+-			"	mov r0, %0\n"
+-			"	mov %2, r0\n"
+-			LLSC_END("%1")
+-			: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_EVEN("%1", "%0")
+-			GUSA_END("%1", "%2")
+-			: "=&r"(old) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_EVEN("%1", "%0")
++		GUSA_END("%1", "%2")
++		: "=&r"(old) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ 	return old;
+ }
+ 
+ int __sh_fetch_add(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_fetch_add_llsc(x, v);
++
+ 	int old, dummy;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%1")
+-			"	mov r0, %0\n"
+-			"	add %2, r0\n"
+-			LLSC_END("%1")
+-			: "=&r"(old) : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_EVEN("%2", "%0")
+-			"	mov %0, %1\n"
+-			"	add %3, %1\n"
+-			GUSA_END("%2", "%1")
+-			: "=&r"(old), "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_EVEN("%2", "%0")
++		"	mov %0, %1\n"
++		"	add %3, %1\n"
++		GUSA_END("%2", "%1")
++		: "=&r"(old), "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ 	return old;
+ }
+ 
+ void __sh_store(volatile int *p, int x)
+ {
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			"	synco\n"
+-			"	mov.l %1, @%0\n"
+-			"	synco\n"
+-			: : "r"(p), "r"(x) : "memory");
+-	} else {
+-		__asm__ __volatile__(
+-			"	mov.l %1, @%0\n"
+-			: : "r"(p), "r"(x) : "memory");
+-	}
++	if (__hwcap & CPU_HAS_LLSC) return __sh_store_llsc(p, x);
++	__asm__ __volatile__(
++		"	mov.l %1, @%0\n"
++		: : "r"(p), "r"(x) : "memory");
+ }
+ 
+ void __sh_and(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_and_llsc(x, v);
++
+ 	int dummy;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%0")
+-			"	and %1, r0\n"
+-			LLSC_END("%0")
+-			: : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_ODD("%1", "%0")
+-			"	and %2, %0\n"
+-			GUSA_END("%1", "%0")
+-			: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_ODD("%1", "%0")
++		"	and %2, %0\n"
++		GUSA_END("%1", "%0")
++		: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ }
+ 
+ void __sh_or(volatile int *x, int v)
+ {
++	if (__hwcap & CPU_HAS_LLSC) return __sh_or_llsc(x, v);
++
+ 	int dummy;
+-	if (__hwcap & CPU_HAS_LLSC) {
+-		__asm__ __volatile__(
+-			LLSC_START("%0")
+-			"	or %1, r0\n"
+-			LLSC_END("%0")
+-			: : "r"(x), "r"(v) : LLSC_CLOBBERS);
+-	} else {
+-		__asm__ __volatile__(
+-			GUSA_START_ODD("%1", "%0")
+-			"	or %2, %0\n"
+-			GUSA_END("%1", "%0")
+-			: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+-	}
++	__asm__ __volatile__(
++		GUSA_START_ODD("%1", "%0")
++		"	or %2, %0\n"
++		GUSA_END("%1", "%0")
++		: "=&r"(dummy) : "r"(x), "r"(v) : GUSA_CLOBBERS);
+ }
++
++#endif
+--- a/arch/x32/atomic.h
++++ b/arch/x32/atomic.h
+@@ -47,16 +47,16 @@ static inline int a_cas(volatile int *p,
+ 	return t;
+ }
+ 
+-static inline void a_or(volatile void *p, int v)
++static inline void a_or(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; or %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+-static inline void a_and(volatile void *p, int v)
++static inline void a_and(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; and %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+ static inline int a_swap(volatile int *x, int v)
+--- a/arch/x86_64/atomic.h
++++ b/arch/x86_64/atomic.h
+@@ -47,16 +47,16 @@ static inline int a_cas(volatile int *p,
+ 	return t;
+ }
+ 
+-static inline void a_or(volatile void *p, int v)
++static inline void a_or(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; or %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+-static inline void a_and(volatile void *p, int v)
++static inline void a_and(volatile int *p, int v)
+ {
+ 	__asm__( "lock ; and %1, %0"
+-		: "=m"(*(int *)p) : "r"(v) : "memory" );
++		: "=m"(*p) : "r"(v) : "memory" );
+ }
+ 
+ static inline int a_swap(volatile int *x, int v)
+--- a/configure
++++ b/configure
+@@ -80,7 +80,7 @@ fi
+ tryflag () {
+ printf "checking whether compiler accepts %s... " "$2"
+ echo "typedef int x;" > "$tmpc"
+-if $CC $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
++if $CC $CFLAGS_TRY $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+ printf "yes\n"
+ eval "$1=\"\${$1} \$2\""
+ eval "$1=\${$1# }"
+@@ -94,7 +94,7 @@ fi
+ tryldflag () {
+ printf "checking whether linker accepts %s... " "$2"
+ echo "typedef int x;" > "$tmpc"
+-if $CC -nostdlib -shared "$2" -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
++if $CC $LDFLAGS_TRY -nostdlib -shared "$2" -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
+ printf "yes\n"
+ eval "$1=\"\${$1} \$2\""
+ eval "$1=\${$1# }"
+@@ -113,7 +113,9 @@ CFLAGS_C99FSE=
+ CFLAGS_AUTO=
+ CFLAGS_MEMOPS=
+ CFLAGS_NOSSP=
++CFLAGS_TRY=
+ LDFLAGS_AUTO=
++LDFLAGS_TRY=
+ OPTIMIZE_GLOBS=
+ prefix=/usr/local/musl
+ exec_prefix='$(prefix)'
+@@ -205,6 +207,14 @@ exit 1
+ fi
+ 
+ #
++# Figure out options to force errors on unknown flags.
++#
++tryflag   CFLAGS_TRY  -Werror=unknown-warning-option
++tryflag   CFLAGS_TRY  -Werror=unused-command-line-argument
++tryldflag LDFLAGS_TRY -Werror=unknown-warning-option
++tryldflag LDFLAGS_TRY -Werror=unused-command-line-argument
++
++#
+ # Need to know if the compiler is gcc to decide whether to build the
+ # musl-gcc wrapper, and for critical bug detection in some gcc versions.
+ #
+--- a/crt/mips/crt1.s
++++ b/crt/mips/crt1.s
+@@ -4,6 +4,8 @@
+ .weak  _fini
+ .global __start
+ .global _start
++.type __start,@function
++.type _start,@function
+ __start:
+ _start:
+ 	subu    $fp, $fp, $fp            # Zero the frame pointer.
+--- a/crt/mips/crti.s
++++ b/crt/mips/crti.s
+@@ -2,6 +2,7 @@
+ 
+ .section .init
+ .global _init
++.type _init,@function
+ .align 2
+ _init:
+ 	subu $sp,$sp,32
+@@ -10,6 +11,7 @@ _init:
+ 
+ .section .fini
+ .global _fini
++.type _fini,@function
+ .align 2
+ _fini:
+ 	subu $sp,$sp,32
+--- /dev/null
++++ b/crt/rcrt1.c
+@@ -0,0 +1,15 @@
++#define SHARED
++#define START "_start"
++#define _dlstart_c _start_c
++#include "../src/ldso/dlstart.c"
++
++int main();
++void _init() __attribute__((weak));
++void _fini() __attribute__((weak));
++_Noreturn int __libc_start_main(int (*)(), int, char **,
++	void (*)(), void(*)(), void(*)());
++
++_Noreturn void __dls2(unsigned char *base, size_t *sp)
++{
++	__libc_start_main(main, *sp, (void *)(sp+1), _init, _fini, 0);
++}
+--- a/include/sys/resource.h
++++ b/include/sys/resource.h
+@@ -96,6 +96,9 @@ int prlimit(pid_t, int, const struct rli
+ #define RLIM_NLIMITS RLIMIT_NLIMITS
+ 
+ #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
++#define RLIM64_INFINITY RLIM_INFINITY
++#define RLIM64_SAVED_CUR RLIM_SAVED_CUR
++#define RLIM64_SAVED_MAX RLIM_SAVED_MAX
+ #define getrlimit64 getrlimit
+ #define setrlimit64 setrlimit
+ #define rlimit64 rlimit
+--- a/src/internal/dynlink.h
++++ b/src/internal/dynlink.h
+@@ -51,7 +51,7 @@ enum {
+ #define AUX_CNT 32
+ #define DYN_CNT 32
+ 
+-typedef void (*stage2_func)(unsigned char *);
++typedef void (*stage2_func)(unsigned char *, size_t *);
+ typedef _Noreturn void (*stage3_func)(size_t *);
+ 
+ #endif
+--- a/src/internal/libc.h
++++ b/src/internal/libc.h
+@@ -8,9 +8,7 @@
+ struct __locale_map;
+ 
+ struct __locale_struct {
+-	volatile int ctype_utf8;
+-	char *messages_name;
+-	struct __locale_map *volatile cat[4];
++	const struct __locale_map *volatile cat[6];
+ };
+ 
+ struct __libc {
+@@ -23,8 +21,6 @@ struct __libc {
+ 	volatile int ofl_lock[2];
+ 	size_t tls_size;
+ 	size_t page_size;
+-	volatile int uselocale_cnt;
+-	volatile int bytelocale_cnt_minus_1;
+ 	struct __locale_struct global_locale;
+ };
+ 
+--- a/src/internal/locale_impl.h
++++ b/src/internal/locale_impl.h
+@@ -9,22 +9,20 @@ struct __locale_map {
+ 	const void *map;
+ 	size_t map_size;
+ 	char name[LOCALE_NAME_MAX+1];
+-	struct __locale_map *next;
++	const struct __locale_map *next;
+ };
+ 
+-int __setlocalecat(locale_t, int, const char *);
++const struct __locale_map *__get_locale(int, const char *);
+ const char *__mo_lookup(const void *, size_t, const char *);
+ const char *__lctrans(const char *, const struct __locale_map *);
+ const char *__lctrans_cur(const char *);
+ 
+-#define LCTRANS(msg, lc, loc) __lctrans(msg, (loc)->cat[(lc)-2])
++#define LCTRANS(msg, lc, loc) __lctrans(msg, (loc)->cat[(lc)])
+ #define LCTRANS_CUR(msg) __lctrans_cur(msg)
+ 
+-#define CURRENT_LOCALE \
+-	(libc.uselocale_cnt ? __pthread_self()->locale : &libc.global_locale)
++#define CURRENT_LOCALE (__pthread_self()->locale)
+ 
+-#define CURRENT_UTF8 \
+-	(libc.bytelocale_cnt_minus_1<0 || __pthread_self()->locale->ctype_utf8)
++#define CURRENT_UTF8 (!!__pthread_self()->locale->cat[LC_CTYPE])
+ 
+ #undef MB_CUR_MAX
+ #define MB_CUR_MAX (CURRENT_UTF8 ? 4 : 1)
+--- a/src/ldso/dlstart.c
++++ b/src/ldso/dlstart.c
+@@ -56,31 +56,22 @@ void _dlstart_c(size_t *sp, size_t *dynv
+ 		for (i=0; i<local_cnt; i++) got[i] += (size_t)base;
+ 	}
+ 
+-	/* The use of the reloc_info structure and nested loops is a trick
+-	 * to work around the fact that we can't necessarily make function
+-	 * calls yet. Each struct in the array serves like the arguments
+-	 * to a function call. */
+-	struct {
+-		void *rel;
+-		size_t size;
+-		size_t stride;
+-	} reloc_info[] = {
+-		{ base+dyn[DT_JMPREL], dyn[DT_PLTRELSZ], 2+(dyn[DT_PLTREL]==DT_RELA) },
+-		{ base+dyn[DT_REL], dyn[DT_RELSZ], 2 },
+-		{ base+dyn[DT_RELA], dyn[DT_RELASZ], 3 },
+-		{ 0, 0, 0 }
+-	};
+-
+-	for (i=0; reloc_info[i].stride; i++) {
+-		size_t *rel = reloc_info[i].rel;
+-		size_t rel_size = reloc_info[i].size;
+-		size_t stride = reloc_info[i].stride;
+-		for (; rel_size; rel+=stride, rel_size-=stride*sizeof(size_t)) {
+-			if (!IS_RELATIVE(rel[1])) continue;
+-			size_t *rel_addr = (void *)(base + rel[0]);
+-			size_t addend = stride==3 ? rel[2] : *rel_addr;
+-			*rel_addr = (size_t)base + addend;
+-		}
++	size_t *rel, rel_size;
++
++	rel = (void *)(base+dyn[DT_REL]);
++	rel_size = dyn[DT_RELSZ];
++	for (; rel_size; rel+=2, rel_size-=2*sizeof(size_t)) {
++		if (!IS_RELATIVE(rel[1])) continue;
++		size_t *rel_addr = (void *)(base + rel[0]);
++		*rel_addr += (size_t)base;
++	}
++
++	rel = (void *)(base+dyn[DT_RELA]);
++	rel_size = dyn[DT_RELASZ];
++	for (; rel_size; rel+=3, rel_size-=3*sizeof(size_t)) {
++		if (!IS_RELATIVE(rel[1])) continue;
++		size_t *rel_addr = (void *)(base + rel[0]);
++		*rel_addr = (size_t)base + rel[2];
+ 	}
+ 
+ 	const char *strings = (void *)(base + dyn[DT_STRTAB]);
+@@ -93,16 +84,7 @@ void _dlstart_c(size_t *sp, size_t *dynv
+ 		 && s[3]=='l' && s[4]=='s' && s[5]=='2' && !s[6])
+ 			break;
+ 	}
+-	((stage2_func)(base + syms[i].st_value))(base);
+-
+-	/* Call dynamic linker stage-3, __dls3 */
+-	for (i=0; ;i++) {
+-		const char *s = strings + syms[i].st_name;
+-		if (s[0]=='_' && s[1]=='_' && s[2]=='d'
+-		 && s[3]=='l' && s[4]=='s' && s[5]=='3' && !s[6])
+-			break;
+-	}
+-	((stage3_func)(base + syms[i].st_value))(sp);
++	((stage2_func)(base + syms[i].st_value))(base, sp);
+ }
+ 
+ #endif
+--- a/src/ldso/dynlink.c
++++ b/src/ldso/dynlink.c
+@@ -74,7 +74,6 @@ struct dso {
+ 	volatile int new_dtv_idx, new_tls_idx;
+ 	struct td_index *td_index;
+ 	struct dso *fini_next;
+-	int rel_early_relative, rel_update_got;
+ 	char *shortname;
+ 	char buf[];
+ };
+@@ -96,6 +95,9 @@ static struct builtin_tls {
+ } builtin_tls[1];
+ #define MIN_TLS_ALIGN offsetof(struct builtin_tls, pt)
+ 
++#define ADDEND_LIMIT 4096
++static size_t *saved_addends, *apply_addends_to;
++
+ static struct dso ldso;
+ static struct dso *head, *tail, *fini_head;
+ static char *env_path, *sys_path;
+@@ -256,10 +258,19 @@ static void do_relocs(struct dso *dso, s
+ 	size_t sym_val;
+ 	size_t tls_val;
+ 	size_t addend;
++	int skip_relative = 0, reuse_addends = 0, save_slot = 0;
++
++	if (dso == &ldso) {
++		/* Only ldso's REL table needs addend saving/reuse. */
++		if (rel == apply_addends_to)
++			reuse_addends = 1;
++		skip_relative = 1;
++	}
+ 
+ 	for (; rel_size; rel+=stride, rel_size-=stride*sizeof(size_t)) {
+-		if (dso->rel_early_relative && IS_RELATIVE(rel[1])) continue;
++		if (skip_relative && IS_RELATIVE(rel[1])) continue;
+ 		type = R_TYPE(rel[1]);
++		if (type == REL_NONE) continue;
+ 		sym_index = R_SYM(rel[1]);
+ 		reloc_addr = (void *)(base + rel[0]);
+ 		if (sym_index) {
+@@ -280,12 +291,20 @@ static void do_relocs(struct dso *dso, s
+ 			def.dso = dso;
+ 		}
+ 
+-		int gotplt = (type == REL_GOT || type == REL_PLT);
+-		if (dso->rel_update_got && !gotplt) continue;
+-
+-		addend = stride>2 ? rel[2]
+-			: gotplt || type==REL_COPY ? 0
+-			: *reloc_addr;
++		if (stride > 2) {
++			addend = rel[2];
++		} else if (type==REL_GOT || type==REL_PLT|| type==REL_COPY) {
++			addend = 0;
++		} else if (reuse_addends) {
++			/* Save original addend in stage 2 where the dso
++			 * chain consists of just ldso; otherwise read back
++			 * saved addend since the inline one was clobbered. */
++			if (head==&ldso)
++				saved_addends[save_slot] = *reloc_addr;
++			addend = saved_addends[save_slot++];
++		} else {
++			addend = *reloc_addr;
++		}
+ 
+ 		sym_val = def.sym ? (size_t)def.dso->base+def.sym->st_value : 0;
+ 		tls_val = def.sym ? def.sym->st_value : 0;
+@@ -879,7 +898,7 @@ static void do_mips_relocs(struct dso *p
+ 	size_t i, j, rel[2];
+ 	unsigned char *base = p->base;
+ 	i=0; search_vec(p->dynv, &i, DT_MIPS_LOCAL_GOTNO);
+-	if (p->rel_early_relative) {
++	if (p==&ldso) {
+ 		got += i;
+ 	} else {
+ 		while (i--) *got++ += (size_t)base;
+@@ -1116,7 +1135,7 @@ static void update_tls_size()
+  * linker itself, but some of the relocations performed may need to be
+  * replaced later due to copy relocations in the main program. */
+ 
+-void __dls2(unsigned char *base)
++void __dls2(unsigned char *base, size_t *sp)
+ {
+ 	Ehdr *ehdr = (void *)base;
+ 	ldso.base = base;
+@@ -1125,15 +1144,35 @@ void __dls2(unsigned char *base)
+ 	ldso.phnum = ehdr->e_phnum;
+ 	ldso.phdr = (void *)(base + ehdr->e_phoff);
+ 	ldso.phentsize = ehdr->e_phentsize;
+-	ldso.rel_early_relative = 1;
+ 	kernel_mapped_dso(&ldso);
+ 	decode_dyn(&ldso);
+ 
++	/* Prepare storage for to save clobbered REL addends so they
++	 * can be reused in stage 3. There should be very few. If
++	 * something goes wrong and there are a huge number, abort
++	 * instead of risking stack overflow. */
++	size_t dyn[DYN_CNT];
++	decode_vec(ldso.dynv, dyn, DYN_CNT);
++	size_t *rel = (void *)(base+dyn[DT_REL]);
++	size_t rel_size = dyn[DT_RELSZ];
++	size_t symbolic_rel_cnt = 0;
++	apply_addends_to = rel;
++	for (; rel_size; rel+=2, rel_size-=2*sizeof(size_t))
++		if (!IS_RELATIVE(rel[1])) symbolic_rel_cnt++;
++	if (symbolic_rel_cnt >= ADDEND_LIMIT) a_crash();
++	size_t addends[symbolic_rel_cnt+1];
++	saved_addends = addends;
++
+ 	head = &ldso;
+ 	reloc_all(&ldso);
+ 
+ 	ldso.relocated = 0;
+-	ldso.rel_update_got = 1;
++
++	/* Call dynamic linker stage-3, __dls3, looking it up
++	 * symbolically as a barrier against moving the address
++	 * load across the above relocation processing. */
++	struct symdef dls3_def = find_sym(&ldso, "__dls3", 0);
++	((stage3_func)(ldso.base+dls3_def.sym->st_value))(sp);
+ }
+ 
+ /* Stage 3 of the dynamic linker is called with the dynamic linker/libc
+--- a/src/locale/__lctrans.c
++++ b/src/locale/__lctrans.c
+@@ -16,5 +16,5 @@ const char *__lctrans(const char *msg, c
+ 
+ const char *__lctrans_cur(const char *msg)
+ {
+-	return __lctrans_impl(msg, CURRENT_LOCALE->cat[LC_MESSAGES-2]);
++	return __lctrans_impl(msg, CURRENT_LOCALE->cat[LC_MESSAGES]);
+ }
+--- a/src/locale/__setlocalecat.c
++++ /dev/null
+@@ -1,111 +0,0 @@
+-#include <locale.h>
+-#include <string.h>
+-#include "locale_impl.h"
+-#include "libc.h"
+-#include "atomic.h"
+-
+-const char *__lctrans_impl(const char *msg, const struct __locale_map *lm)
+-{
+-	const char *trans = 0;
+-	if (lm) trans = __mo_lookup(lm->map, lm->map_size, msg);
+-	return trans ? trans : msg;
+-}
+-
+-const unsigned char *__map_file(const char *, size_t *);
+-int __munmap(void *, size_t);
+-char *__strchrnul(const char *, int);
+-
+-static struct __locale_map *findlocale(const char *name, size_t n)
+-{
+-	static void *volatile loc_head;
+-	struct __locale_map *p, *new, *old_head;
+-	const char *path = 0, *z;
+-	char buf[256];
+-	size_t l;
+-	const void *map;
+-	size_t map_size;
+-
+-	for (p=loc_head; p; p=p->next)
+-		if (!strcmp(name, p->name)) return p;
+-
+-	if (!libc.secure) path = getenv("MUSL_LOCPATH");
+-	/* FIXME: add a default path? */
+-	if (!path) return 0;
+-
+-	for (; *path; path=z+!!*z) {
+-		z = __strchrnul(path, ':');
+-		l = z - path - !!*z;
+-		if (l >= sizeof buf - n - 2) continue;
+-		memcpy(buf, path, l);
+-		buf[l] = '/';
+-		memcpy(buf+l+1, name, n);
+-		buf[l+1+n] = 0;
+-		map = __map_file(buf, &map_size);
+-		if (map) {
+-			new = malloc(sizeof *new);
+-			if (!new) {
+-				__munmap((void *)map, map_size);
+-				return 0;
+-			}
+-			new->map = map;
+-			new->map_size = map_size;
+-			memcpy(new->name, name, n);
+-			new->name[n] = 0;
+-			do {
+-				old_head = loc_head;
+-				new->next = old_head;
+-			} while (a_cas_p(&loc_head, old_head, new) != old_head);
+-			return new;
+-		}
+-	}
+-	return 0;
+-}
+-
+-static const char envvars[][12] = {
+-	"LC_CTYPE",
+-	"LC_NUMERIC",
+-	"LC_TIME",
+-	"LC_COLLATE",
+-	"LC_MONETARY",
+-	"LC_MESSAGES",
+-};
+-
+-int __setlocalecat(locale_t loc, int cat, const char *val)
+-{
+-	if (!*val) {
+-		(val = getenv("LC_ALL")) && *val ||
+-		(val = getenv(envvars[cat])) && *val ||
+-		(val = getenv("LANG")) && *val ||
+-		(val = "C.UTF-8");
+-	}
+-
+-	size_t n;
+-	for (n=0; n<LOCALE_NAME_MAX && val[n] && val[n]!='/'; n++);
+-	if (val[0]=='.' || val[n]) val = "C.UTF-8";
+-	int builtin = (val[0]=='C' && !val[1])
+-		|| !strcmp(val, "C.UTF-8")
+-		|| !strcmp(val, "POSIX");
+-	struct __locale_map *data, *old;
+-
+-	switch (cat) {
+-	case LC_CTYPE:
+-		a_store(&loc->ctype_utf8, !builtin || val[1]=='.');
+-		break;
+-	case LC_MESSAGES:
+-		if (builtin) {
+-			loc->messages_name[0] = 0;
+-		} else {
+-			memcpy(loc->messages_name, val, n);
+-			loc->messages_name[n] = 0;
+-		}
+-		/* fall through */
+-	default:
+-		data = builtin ? 0 : findlocale(val, n);
+-		if (data == loc->cat[cat-2]) break;
+-		do old = loc->cat[cat-2];
+-		while (a_cas_p(&loc->cat[cat-2], old, data) != old);
+-	case LC_NUMERIC:
+-		break;
+-	}
+-	return 0;
+-}
+--- a/src/locale/dcngettext.c
++++ b/src/locale/dcngettext.c
+@@ -84,13 +84,15 @@ char *bindtextdomain(const char *domainn
+ }
+ 
+ static const char catnames[][12] = {
++	"LC_CTYPE",
++	"LC_NUMERIC",
+ 	"LC_TIME",
+ 	"LC_COLLATE",
+ 	"LC_MONETARY",
+ 	"LC_MESSAGES",
+ };
+ 
+-static const char catlens[] = { 7, 10, 11, 11 };
++static const char catlens[] = { 8, 10, 7, 10, 11, 11 };
+ 
+ struct msgcat {
+ 	struct msgcat *next;
+@@ -117,10 +119,12 @@ char *dcngettext(const char *domainname,
+ 	static struct msgcat *volatile cats;
+ 	struct msgcat *p;
+ 	struct __locale_struct *loc = CURRENT_LOCALE;
+-	struct __locale_map *lm;
++	const struct __locale_map *lm;
+ 	const char *dirname, *locname, *catname;
+ 	size_t dirlen, loclen, catlen, domlen;
+ 
++	if ((unsigned)category >= LC_ALL) goto notrans;
++
+ 	if (!domainname) domainname = __gettextdomain();
+ 
+ 	domlen = strlen(domainname);
+@@ -129,25 +133,15 @@ char *dcngettext(const char *domainname,
+ 	dirname = gettextdir(domainname, &dirlen);
+ 	if (!dirname) goto notrans;
+ 
+-	switch (category) {
+-	case LC_MESSAGES:
+-		locname = loc->messages_name;
+-		if (!*locname) goto notrans;
+-		break;
+-	case LC_TIME:
+-	case LC_MONETARY:
+-	case LC_COLLATE:
+-		lm = loc->cat[category-2];
+-		if (!lm) goto notrans;
+-		locname = lm->name;
+-		break;
+-	default:
++	lm = loc->cat[category];
++	if (!lm) {
+ notrans:
+ 		return (char *) ((n == 1) ? msgid1 : msgid2);
+ 	}
++	locname = lm->name;
+ 
+-	catname = catnames[category-2];
+-	catlen = catlens[category-2];
++	catname = catnames[category];
++	catlen = catlens[category];
+ 	loclen = strlen(locname);
+ 
+ 	size_t namelen = dirlen+1 + loclen+1 + catlen+1 + domlen+3;
+--- a/src/locale/duplocale.c
++++ b/src/locale/duplocale.c
+@@ -5,17 +5,10 @@
+ 
+ locale_t __duplocale(locale_t old)
+ {
+-	locale_t new = calloc(1, sizeof *new + LOCALE_NAME_MAX + 1);
++	locale_t new = malloc(sizeof *new);
+ 	if (!new) return 0;
+-	new->messages_name = (void *)(new+1);
+-
+ 	if (old == LC_GLOBAL_LOCALE) old = &libc.global_locale;
+-	new->ctype_utf8 = old->ctype_utf8;
+-	if (old->messages_name)
+-		strcpy(new->messages_name, old->messages_name);
+-
+-	for (size_t i=0; i<sizeof new->cat/sizeof new->cat[0]; i++)
+-		new->cat[i] = old->cat[i];
++	*new = *old;
+ 	return new;
+ }
+ 
+--- a/src/locale/freelocale.c
++++ b/src/locale/freelocale.c
+@@ -2,9 +2,11 @@
+ #include "locale_impl.h"
+ #include "libc.h"
+ 
++int __loc_is_allocated(locale_t);
++
+ void freelocale(locale_t l)
+ {
+-	free(l);
++	if (__loc_is_allocated(l)) free(l);
+ }
+ 
+ weak_alias(freelocale, __freelocale);
+--- a/src/locale/iconv.c
++++ b/src/locale/iconv.c
+@@ -23,19 +23,13 @@
+ #define BIG5        0340
+ #define EUC_KR      0350
+ 
+-/* FIXME: these are not implemented yet
+- * EUC:   A1-FE A1-FE
+- * GBK:   81-FE 40-7E,80-FE
+- * Big5:  A1-FE 40-7E,A1-FE
+- */
+-
+ /* Definitions of charmaps. Each charmap consists of:
+  * 1. Empty-string-terminated list of null-terminated aliases.
+  * 2. Special type code or number of elided entries.
+  * 3. Character table (size determined by field 2). */
+ 
+ static const unsigned char charmaps[] =
+-"utf8\0\0\310"
++"utf8\0char\0\0\310"
+ "wchart\0\0\306"
+ "ucs2\0ucs2be\0\0\304"
+ "ucs2le\0\0\305"
+@@ -90,6 +84,7 @@ static int fuzzycmp(const unsigned char
+ static size_t find_charmap(const void *name)
+ {
+ 	const unsigned char *s;
++	if (!*(char *)name) name=charmaps; /* "utf8" */
+ 	for (s=charmaps; *s; ) {
+ 		if (!fuzzycmp(name, s)) {
+ 			for (; *s; s+=strlen((void *)s)+1);
+--- /dev/null
++++ b/src/locale/locale_map.c
+@@ -0,0 +1,124 @@
++#include <locale.h>
++#include <string.h>
++#include "locale_impl.h"
++#include "libc.h"
++#include "atomic.h"
++
++const char *__lctrans_impl(const char *msg, const struct __locale_map *lm)
++{
++	const char *trans = 0;
++	if (lm) trans = __mo_lookup(lm->map, lm->map_size, msg);
++	return trans ? trans : msg;
++}
++
++const unsigned char *__map_file(const char *, size_t *);
++int __munmap(void *, size_t);
++char *__strchrnul(const char *, int);
++
++static const char envvars[][12] = {
++	"LC_CTYPE",
++	"LC_NUMERIC",
++	"LC_TIME",
++	"LC_COLLATE",
++	"LC_MONETARY",
++	"LC_MESSAGES",
++};
++
++static const uint32_t empty_mo[] = { 0x950412de, 0, -1, -1, -1 };
++
++const struct __locale_map __c_dot_utf8 = {
++	.map = empty_mo,
++	.map_size = sizeof empty_mo,
++	.name = "C.UTF-8"
++};
++
++const struct __locale_map *__get_locale(int cat, const char *val)
++{
++	static int lock[2];
++	static void *volatile loc_head;
++	const struct __locale_map *p;
++	struct __locale_map *new = 0;
++	const char *path = 0, *z;
++	char buf[256];
++	size_t l, n;
++
++	if (!*val) {
++		(val = getenv("LC_ALL")) && *val ||
++		(val = getenv(envvars[cat])) && *val ||
++		(val = getenv("LANG")) && *val ||
++		(val = "C.UTF-8");
++	}
++
++	/* Limit name length and forbid leading dot or any slashes. */
++	for (n=0; n<LOCALE_NAME_MAX && val[n] && val[n]!='/'; n++);
++	if (val[0]=='.' || val[n]) val = "C.UTF-8";
++	int builtin = (val[0]=='C' && !val[1])
++		|| !strcmp(val, "C.UTF-8")
++		|| !strcmp(val, "POSIX");
++
++	if (builtin) {
++		if (cat == LC_CTYPE && val[1]=='.')
++			return (void *)&__c_dot_utf8;
++		return 0;
++	}
++
++	for (p=loc_head; p; p=p->next)
++		if (!strcmp(val, p->name)) return p;
++
++	LOCK(lock);
++
++	for (p=loc_head; p; p=p->next)
++		if (!strcmp(val, p->name)) {
++			UNLOCK(lock);
++			return p;
++		}
++
++	if (!libc.secure) path = getenv("MUSL_LOCPATH");
++	/* FIXME: add a default path? */
++
++	if (path) for (; *path; path=z+!!*z) {
++		z = __strchrnul(path, ':');
++		l = z - path - !!*z;
++		if (l >= sizeof buf - n - 2) continue;
++		memcpy(buf, path, l);
++		buf[l] = '/';
++		memcpy(buf+l+1, val, n);
++		buf[l+1+n] = 0;
++		size_t map_size;
++		const void *map = __map_file(buf, &map_size);
++		if (map) {
++			new = malloc(sizeof *new);
++			if (!new) {
++				__munmap((void *)map, map_size);
++				break;
++			}
++			new->map = map;
++			new->map_size = map_size;
++			memcpy(new->name, val, n);
++			new->name[n] = 0;
++			new->next = loc_head;
++			loc_head = new;
++			break;
++		}
++	}
++
++	/* If no locale definition was found, make a locale map
++	 * object anyway to store the name, which is kept for the
++	 * sake of being able to do message translations at the
++	 * application level. */
++	if (!new && (new = malloc(sizeof *new))) {
++		new->map = empty_mo;
++		new->map_size = sizeof empty_mo;
++		memcpy(new->name, val, n);
++		new->name[n] = 0;
++		new->next = loc_head;
++		loc_head = new;
++	}
++
++	/* For LC_CTYPE, never return a null pointer unless the
++	 * requested name was "C" or "POSIX". */
++	if (!new && cat == LC_CTYPE) new = (void *)&__c_dot_utf8;
++
++	UNLOCK(lock);
++	return new;
++}
+--- a/src/locale/newlocale.c
++++ b/src/locale/newlocale.c
+@@ -3,22 +3,52 @@
+ #include "locale_impl.h"
+ #include "libc.h"
+ 
++extern const struct __locale_map __c_dot_utf8;
++
++static const struct __locale_struct c_locale = { 0 };
++static const struct __locale_struct c_dot_utf8_locale = {
++	.cat[LC_CTYPE] = &__c_dot_utf8
++};
++
++int __loc_is_allocated(locale_t loc)
++{
++	return loc && loc != &c_locale && loc != &c_dot_utf8_locale;
++}
++
+ locale_t __newlocale(int mask, const char *name, locale_t loc)
+ {
+-	int i;
++	int i, j;
++	struct __locale_struct tmp;
++	const struct __locale_map *lm;
+ 
+-	if (!loc) {
+-		loc = calloc(1, sizeof *loc + LOCALE_NAME_MAX + 1);
+-		if (!loc) return 0;
+-		loc->messages_name = (void *)(loc+1);
++	/* For locales with allocated storage, modify in-place. */
++	if (__loc_is_allocated(loc)) {
+ 		for (i=0; i<LC_ALL; i++)
+-			if (!(mask & (1<<i)))
+-				__setlocalecat(loc, i, "");
++			if (mask & (1<<i))
++				loc->cat[i] = __get_locale(i, name);
++		return loc;
++	}
++
++	/* Otherwise, build a temporary locale object, which will only
++	 * be instantiated in allocated storage if it does not match
++	 * one of the built-in static locales. This makes the common
++	 * usage case for newlocale, getting a C locale with predictable
++	 * behavior, very fast, and more importantly, fail-safe. */
++	for (j=i=0; i<LC_ALL; i++) {
++		if (loc && !(mask & (1<<i)))
++			lm = loc->cat[i];
++		else
++			lm = __get_locale(i, mask & (1<<i) ? name : "");
++		if (lm) j++;
++		tmp.cat[i] = lm;
+ 	}
+ 
+-	for (i=0; i<LC_ALL; i++)
+-		if (mask & (1<<i))
+-			__setlocalecat(loc, i, name);
++	if (!j)
++		return (locale_t)&c_locale;
++	if (j==1 && tmp.cat[LC_CTYPE]==c_dot_utf8_locale.cat[LC_CTYPE])
++		return (locale_t)&c_dot_utf8_locale;
++
++	if ((loc = malloc(sizeof *loc))) *loc = tmp;
+ 
+ 	return loc;
+ }
+--- a/src/locale/setlocale.c
++++ b/src/locale/setlocale.c
+@@ -5,73 +5,66 @@
+ #include "libc.h"
+ #include "atomic.h"
+ 
+-static char buf[2+4*(LOCALE_NAME_MAX+1)];
++static char buf[LC_ALL*(LOCALE_NAME_MAX+1)];
+ 
+-char *setlocale(int cat, const char *name)
++static char *setlocale_one_unlocked(int cat, const char *name)
+ {
+-	struct __locale_map *lm;
+-	int i, j;
++	const struct __locale_map *lm;
+ 
+-	if (!libc.global_locale.messages_name) {
+-		libc.global_locale.messages_name =
+-			buf + 2 + 3*(LOCALE_NAME_MAX+1);
+-	}
++	if (name) libc.global_locale.cat[cat] = lm = __get_locale(cat, name);
++	else lm = libc.global_locale.cat[cat];
++
++	return lm ? (char *)lm->name : "C";
++}
++
++char *__strchrnul(const char *, int);
++
++char *setlocale(int cat, const char *name)
++{
++	static volatile int lock[2];
+ 
+ 	if ((unsigned)cat > LC_ALL) return 0;
+ 
++	LOCK(lock);
++
+ 	/* For LC_ALL, setlocale is required to return a string which
+ 	 * encodes the current setting for all categories. The format of
+ 	 * this string is unspecified, and only the following code, which
+ 	 * performs both the serialization and deserialization, depends
+ 	 * on the format, so it can easily be changed if needed. */
+ 	if (cat == LC_ALL) {
++		int i;
+ 		if (name) {
+-			char part[LOCALE_NAME_MAX+1];
+-			if (name[0] && name[1]==';'
+-			    && strlen(name) > 2 + 3*(LOCALE_NAME_MAX+1)) {
+-				part[0] = name[0];
+-				part[1] = 0;
+-				setlocale(LC_CTYPE, part);
+-				part[LOCALE_NAME_MAX] = 0;
+-				for (i=LC_TIME; i<LC_MESSAGES; i++) {
+-					memcpy(part, name + 2 + (i-2)*(LOCALE_NAME_MAX+1), LOCALE_NAME_MAX);
+-					for (j=LOCALE_NAME_MAX-1; j && part[j]==';'; j--)
+-						part[j] = 0;
+-					setlocale(i, part);
++			char part[LOCALE_NAME_MAX+1] = "C.UTF-8";
++			const char *p = name;
++			for (i=0; i<LC_ALL; i++) {
++				const char *z = __strchrnul(p, ';');
++				if (z-p <= LOCALE_NAME_MAX) {
++					memcpy(part, p, z-p);
++					part[z-p] = 0;
++					if (*z) p = z+1;
+ 				}
+-				setlocale(LC_MESSAGES, name + 2 + 3*(LOCALE_NAME_MAX+1));
+-			} else {
+-				for (i=0; i<LC_ALL; i++)
+-					setlocale(i, name);
++				setlocale_one_unlocked(i, part);
+ 			}
+ 		}
+-		memset(buf, ';', 2 + 3*(LOCALE_NAME_MAX+1));
+-		buf[0] = libc.global_locale.ctype_utf8 ? 'U' : 'C';
+-		for (i=LC_TIME; i<LC_MESSAGES; i++) {
+-			lm = libc.global_locale.cat[i-2];
+-			if (lm) memcpy(buf + 2 + (i-2)*(LOCALE_NAME_MAX+1),
+-				lm->name, strlen(lm->name));
++		char *s = buf;
++		for (i=0; i<LC_ALL; i++) {
++			const struct __locale_map *lm =
++				libc.global_locale.cat[i];
++			const char *part = lm ? lm->name : "C";
++			size_t l = strlen(part);
++			memcpy(s, part, l);
++			s[l] = ';';
++			s += l+1;
+ 		}
++		*--s = 0;
++		UNLOCK(lock);
+ 		return buf;
+ 	}
+ 
+-	if (name) {
+-		int adj = libc.global_locale.ctype_utf8;
+-		__setlocalecat(&libc.global_locale, cat, name);
+-		adj -= libc.global_locale.ctype_utf8;
+-		if (adj) a_fetch_add(&libc.bytelocale_cnt_minus_1, adj);
+-	}
++	char *ret = setlocale_one_unlocked(cat, name);
+ 
+-	switch (cat) {
+-	case LC_CTYPE:
+-		return libc.global_locale.ctype_utf8 ? "C.UTF-8" : "C";
+-	case LC_NUMERIC:
+-		return "C";
+-	case LC_MESSAGES:
+-		return libc.global_locale.messages_name[0]
+-			? libc.global_locale.messages_name : "C";
+-	default:
+-		lm = libc.global_locale.cat[cat-2];
+-		return lm ? lm->name : "C";
+-	}
++	UNLOCK(lock);
++
++	return ret;
+ }
+--- a/src/locale/uselocale.c
++++ b/src/locale/uselocale.c
+@@ -10,15 +10,7 @@ locale_t __uselocale(locale_t new)
+ 
+ 	if (new == LC_GLOBAL_LOCALE) new = global;
+ 
+-	if (new && new != old) {
+-		int adj = 0;
+-		if (new == global) a_dec(&libc.uselocale_cnt);
+-		else if (!new->ctype_utf8) adj++;
+-		if (old == global) a_inc(&libc.uselocale_cnt);
+-		else if (!old->ctype_utf8) adj--;
+-		a_fetch_add(&libc.bytelocale_cnt_minus_1, adj);
+-		self->locale = new;
+-	}
++	self->locale = new;
+ 
+ 	return old == global ? LC_GLOBAL_LOCALE : old;
+ }
+--- a/src/stdio/__stdio_read.c
++++ b/src/stdio/__stdio_read.c
+@@ -21,7 +21,6 @@ size_t __stdio_read(FILE *f, unsigned ch
+ 	pthread_cleanup_pop(0);
+ 	if (cnt <= 0) {
+ 		f->flags |= F_EOF ^ ((F_ERR^F_EOF) & cnt);
+-		f->rpos = f->rend = 0;
+ 		return cnt;
+ 	}
+ 	if (cnt <= iov[0].iov_len) return cnt;
+--- a/src/stdio/__toread.c
++++ b/src/stdio/__toread.c
+@@ -5,12 +5,12 @@ int __toread(FILE *f)
+ 	f->mode |= f->mode-1;
+ 	if (f->wpos > f->buf) f->write(f, 0, 0);
+ 	f->wpos = f->wbase = f->wend = 0;
+-	if (f->flags & (F_EOF|F_NORD)) {
+-		if (f->flags & F_NORD) f->flags |= F_ERR;
++	if (f->flags & F_NORD) {
++		f->flags |= F_ERR;
+ 		return EOF;
+ 	}
+-	f->rpos = f->rend = f->buf;
+-	return 0;
++	f->rpos = f->rend = f->buf + f->buf_size;
++	return (f->flags & F_EOF) ? EOF : 0;
+ }
+ 
+ void __stdio_exit_needed(void);
+--- a/src/stdio/__uflow.c
++++ b/src/stdio/__uflow.c
+@@ -1,11 +1,11 @@
+ #include "stdio_impl.h"
+ 
+-/* This function will never be called if there is already data
+- * buffered for reading. Thus we can get by with very few branches. */
++/* This function assumes it will never be called if there is already
++ * data buffered for reading. */
+ 
+ int __uflow(FILE *f)
+ {
+ 	unsigned char c;
+-	if ((f->rend || !__toread(f)) && f->read(f, &c, 1)==1) return c;
++	if (!__toread(f) && f->read(f, &c, 1)==1) return c;
+ 	return EOF;
+ }
+--- a/src/stdio/ungetc.c
++++ b/src/stdio/ungetc.c
+@@ -6,7 +6,8 @@ int ungetc(int c, FILE *f)
+ 
+ 	FLOCK(f);
+ 
+-	if ((!f->rend && __toread(f)) || f->rpos <= f->buf - UNGET) {
++	if (!f->rpos) __toread(f);
++	if (!f->rpos || f->rpos <= f->buf - UNGET) {
+ 		FUNLOCK(f);
+ 		return EOF;
+ 	}
+--- a/src/stdio/ungetwc.c
++++ b/src/stdio/ungetwc.c
+@@ -19,7 +19,8 @@ wint_t ungetwc(wint_t c, FILE *f)
+ 
+ 	f->mode |= f->mode+1;
+ 
+-	if ((!f->rend && __toread(f)) || f->rpos < f->buf - UNGET + l) {
++	if (!f->rpos) __toread(f);
++	if (!f->rpos || f->rpos < f->buf - UNGET + l) {
+ 		FUNLOCK(f);
+ 		return EOF;
+ 	}
+--- a/src/thread/i386/__set_thread_area.s
++++ b/src/thread/i386/__set_thread_area.s
+@@ -6,10 +6,10 @@ __set_thread_area:
+ 	push $0x51
+ 	push $0xfffff
+ 	push 16(%esp)
+-	xor %edx,%edx
+-	mov %gs,%dx
+-	sub $3,%edx
+-	sar $3,%edx
++	call 1f
++1:	addl $4f-1b,(%esp)
++	pop %ecx
++	mov (%ecx),%edx
+ 	push %edx
+ 	mov %esp,%ebx
+ 	xor %eax,%eax
+@@ -18,6 +18,7 @@ __set_thread_area:
+ 	testl %eax,%eax
+ 	jnz 2f
+ 	movl (%esp),%edx
++	movl %edx,(%ecx)
+ 	leal 3(,%edx,8),%edx
+ 3:	movw %dx,%gs
+ 1:
+@@ -38,3 +39,7 @@ __set_thread_area:
+ 	mov $7,%dl
+ 	inc %al
+ 	jmp 3b
++
++.data
++	.align 4
++4:	.long -1
+--- a/src/thread/mips/syscall_cp.s
++++ b/src/thread/mips/syscall_cp.s
+@@ -2,10 +2,13 @@
+ 
+ .global __cp_begin
+ .hidden __cp_begin
++.type   __cp_begin,@function
+ .global __cp_end
+ .hidden __cp_end
++.type   __cp_end,@function
+ .global __cp_cancel
+ .hidden __cp_cancel
++.type   __cp_cancel,@function
+ .hidden __cancel
+ .global __syscall_cp_asm
+ .hidden __syscall_cp_asm
+--- a/src/thread/pthread_create.c
++++ b/src/thread/pthread_create.c
+@@ -67,12 +67,6 @@ _Noreturn void __pthread_exit(void *resu
+ 		exit(0);
+ 	}
+ 
+-	if (self->locale != &libc.global_locale) {
+-		a_dec(&libc.uselocale_cnt);
+-		if (self->locale->ctype_utf8)
+-			a_dec(&libc.bytelocale_cnt_minus_1);
+-	}
+-
+ 	/* Process robust list in userspace to handle non-pshared mutexes
+ 	 * and the detached thread case where the robust list head will
+ 	 * be invalid when the kernel would process it. */
