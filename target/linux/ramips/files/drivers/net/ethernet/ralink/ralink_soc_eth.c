@@ -1153,7 +1153,6 @@ static int fe_open(struct net_device *dev)
 		goto err_out;
 
 	spin_lock_irqsave(&priv->page_lock, flags);
-	napi_enable(&priv->rx_napi);
 
 	val = FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN;
 	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
@@ -1169,8 +1168,9 @@ static int fe_open(struct net_device *dev)
 	if (priv->soc->has_carrier && priv->soc->has_carrier(priv))
 		netif_carrier_on(dev);
 
-	netif_start_queue(dev);
+	napi_enable(&priv->rx_napi);
 	fe_int_enable(priv->soc->tx_int | priv->soc->rx_int);
+	netif_start_queue(dev);
 
 	return 0;
 
@@ -1185,15 +1185,14 @@ static int fe_stop(struct net_device *dev)
 	unsigned long flags;
 	int i;
 
-	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
-
 	netif_tx_disable(dev);
+	fe_int_disable(priv->soc->tx_int | priv->soc->rx_int);
+	napi_disable(&priv->rx_napi);
 
 	if (priv->phy)
 		priv->phy->stop(priv);
 
 	spin_lock_irqsave(&priv->page_lock, flags);
-	napi_disable(&priv->rx_napi);
 
 	fe_reg_w32(fe_reg_r32(FE_REG_PDMA_GLO_CFG) &
 		     ~(FE_TX_WB_DDONE | FE_RX_DMA_EN | FE_TX_DMA_EN),
