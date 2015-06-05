@@ -1,0 +1,33 @@
+/dts-v1/;
+
+/include/ "VGV7510KW22.dtsi"
+
+/ {
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				partition@0 {
+					label = "uboot";
+					reg = <0x0 0x60000>; /* 384 KiB */
+					read-only;
+				};
+
+				partition@60000 {
+					label = "uboot-env";
+					reg = <0x60000 0x20000>; /* 128 KiB */
+					read-only;
+				};
+
+				partition@80000 {
+					label = "firmware";
+					reg = <0x80000 0xe60000>; /* 14720 KiB */
+				};
+
+				partition@1e80000 {
+					label = "dsl_fw";
+					reg = <0xee0000 0x100000>;  /* 1024 KiB */
+				};
+			};
+		};
+	};
+};
