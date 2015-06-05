@@ -514,7 +514,7 @@ static int fe_vlan_rx_kill_vid(struct net_device *dev,
 	u32 idx = (vid & 0xf);
 
 	if (!((fe_reg_table[FE_REG_FE_DMA_VID_BASE]) &&
-				(dev->features | NETIF_F_HW_VLAN_CTAG_TX)))
+				(dev->features & NETIF_F_HW_VLAN_CTAG_TX)))
 		return 0;
 
 	clear_bit(idx, &priv->vlan_map);
