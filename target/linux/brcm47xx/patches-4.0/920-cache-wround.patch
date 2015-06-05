@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/r4kcache.h
 +++ b/arch/mips/include/asm/r4kcache.h
-@@ -26,10 +26,28 @@ extern void (*r4k_blast_icache)(void);
+@@ -28,10 +28,28 @@ extern void (*r4k_blast_icache)(void);
  #ifdef CONFIG_BCM47XX
  #include <asm/paccess.h>
  #include <linux/ssb/ssb.h>
@@ -34,7 +34,7 @@
  
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -941,6 +941,9 @@ build_get_pgde32(u32 **p, unsigned int t
+@@ -924,6 +924,9 @@ build_get_pgde32(u32 **p, unsigned int t
  		uasm_i_srl(p, ptr, ptr, SMP_CPUID_PTRSHIFT);
  		uasm_i_addu(p, ptr, tmp, ptr);
  #else
@@ -44,7 +44,7 @@
  		UASM_i_LA_mostly(p, ptr, pgdc);
  #endif
  		uasm_i_mfc0(p, tmp, C0_BADVADDR); /* get faulting address */
-@@ -1286,12 +1289,12 @@ static void build_r4000_tlb_refill_handl
+@@ -1269,12 +1272,12 @@ static void build_r4000_tlb_refill_handl
  			/* No need for uasm_i_nop */
  		}
  
@@ -60,7 +60,7 @@
  		build_get_pgde32(&p, K0, K1); /* get pgd in K1 */
  #endif
  
-@@ -1303,6 +1306,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1286,6 +1289,9 @@ static void build_r4000_tlb_refill_handl
  		build_update_entries(&p, K0, K1);
  		build_tlb_write_entry(&p, &l, &r, tlb_random);
  		uasm_l_leave(&l, p);
@@ -70,7 +70,7 @@
  		uasm_i_eret(&p); /* return from trap */
  	}
  #ifdef CONFIG_MIPS_HUGE_TLB_SUPPORT
-@@ -1851,12 +1857,12 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1834,12 +1840,12 @@ build_r4000_tlbchange_handler_head(u32 *
  {
  	struct work_registers wr = build_get_work_registers(p);
  
@@ -86,7 +86,7 @@
  	build_get_pgde32(p, wr.r1, wr.r2); /* get pgd in ptr */
  #endif
  
-@@ -1903,6 +1909,9 @@ build_r4000_tlbchange_handler_tail(u32 *
+@@ -1886,6 +1892,9 @@ build_r4000_tlbchange_handler_tail(u32 *
  	build_tlb_write_entry(p, l, r, tlb_indexed);
  	uasm_l_leave(l, *p);
  	build_restore_work_registers(p);
