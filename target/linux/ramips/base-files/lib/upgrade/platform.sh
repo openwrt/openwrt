@@ -74,6 +74,8 @@ platform_check_image() {
 	omni-emb | \
 	omni-emb-hpm | \
 	omni-plug | \
+	olinuxino-rt5350f | \
+	olinuxino-rt5350f-evb | \
 	psr-680w | \
 	px4885 | \
 	rp-n53 | \

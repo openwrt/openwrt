@@ -241,6 +241,12 @@ ramips_board_detect() {
 	*"Omnima MiniPlug")
 		name="omni-plug"
 		;;
+	*"OLinuXino-RT5350F")
+		name="olinuxino-rt5350f"
+		;;
+	*"OLinuXino-RT5350F-EVB")
+		name="olinuxino-rt5350f-evb"
+		;;
 	*"Petatel PSR-680W"*)
 		name="psr-680w"
 		;;

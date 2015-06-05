@@ -577,6 +577,10 @@ Image/Build/Profile/OMNI-EMB=$(call BuildFirmware/Default8M/$(1),$(1),omni-emb,O
 
 Image/Build/Profile/OMNI-PLUG=$(call BuildFirmware/Default8M/$(1),$(1),omni-plug,OMNI-PLUG)
 
+Image/Build/Profile/OLINUXINO-RT5350F=$(call BuildFirmware/Default8M/$(1),$(1),olinuxino-rt5350f,OLINUXINO-RT5350F)
+
+Image/Build/Profile/OLINUXINO-RT5350F-EVB=$(call BuildFirmware/Default8M/$(1),$(1),olinuxino-rt5350f-evb,OLINUXINO-RT5350F-EVB)
+
 Image/Build/Profile/PSR-680W=$(call BuildFirmware/Default4M/$(1),$(1),psr-680w,PSR-680W)
 
 Image/Build/Profile/PWH2004=$(call BuildFirmware/Default8M/$(1),$(1),pwh2004,PWH2004)
@@ -602,6 +606,7 @@ Image/Build/Profile/W306R_V20=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),
 Image/Build/Profile/W502U=$(call BuildFirmware/Default8M/$(1),$(1),w502u,W502U)
 
 Image/Build/Profile/WCR150GN=$(call BuildFirmware/Default4M/$(1),$(1),wcr150gn,WCR150GN)
+
 
 buffalo_whrg300n_mtd_size=3801088
 define BuildFirmware/WHRG300N/squashfs
@@ -735,6 +740,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/NW718,$(1))
 	$(call Image/Build/Profile/OMNI-EMB,$(1))
 	$(call Image/Build/Profile/OMNI-PLUG,$(1))
+	$(call Image/Build/Profile/OLINUXINO-RT5350F,$(1))
+	$(call Image/Build/Profile/OLINUXINO-RT5350F-EVB,$(1))
 	$(call Image/Build/Profile/PSR-680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/PX4885,$(1))
@@ -763,6 +770,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/X5,$(1))
 	$(call Image/Build/Profile/X8,$(1))
 	$(call Image/Build/Profile/XDXRN502J,$(1))
+
 endef
 endif
 
