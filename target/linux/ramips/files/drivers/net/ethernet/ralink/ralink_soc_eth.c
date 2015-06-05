@@ -56,7 +56,7 @@
 
 #define TX_DMA_DESP2_DEF	(TX_DMA_LS0 | TX_DMA_DONE)
 #define TX_DMA_DESP4_DEF	(TX_DMA_QN(3) | TX_DMA_PN(1))
-#define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (priv->tx_ring_size - 1))
+#define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (ring->tx_ring_size - 1))
 #define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (priv->rx_ring_size - 1))
 
 #define SYSC_REG_RSTCTRL	0x34
@@ -310,51 +310,56 @@ static void fe_txd_unmap(struct device *dev, struct fe_tx_buf *tx_buf)
 static void fe_clean_tx(struct fe_priv *priv)
 {
 	int i;
+	struct device *dev = &priv->netdev->dev;
+	struct fe_tx_ring *ring = &priv->tx_ring;
 
-	if (priv->tx_buf) {
-		for (i = 0; i < priv->tx_ring_size; i++)
-			fe_txd_unmap(&priv->netdev->dev, &priv->tx_buf[i]);
-		kfree(priv->tx_buf);
-		priv->tx_buf = NULL;
+	if (ring->tx_buf) {
+		for (i = 0; i < ring->tx_ring_size; i++)
+			fe_txd_unmap(dev, &ring->tx_buf[i]);
+		kfree(ring->tx_buf);
+		ring->tx_buf = NULL;
 	}
 
-	if (priv->tx_dma) {
-		dma_free_coherent(&priv->netdev->dev,
-				priv->tx_ring_size * sizeof(*priv->tx_dma),
-				priv->tx_dma,
-				priv->tx_phys);
-		priv->tx_dma = NULL;
+	if (ring->tx_dma) {
+		dma_free_coherent(dev,
+				ring->tx_ring_size * sizeof(*ring->tx_dma),
+				ring->tx_dma,
+				ring->tx_phys);
+		ring->tx_dma = NULL;
 	}
+
+	netdev_reset_queue(priv->netdev);
 }
 
 static int fe_alloc_tx(struct fe_priv *priv)
 {
 	int i;
+	struct fe_tx_ring *ring = &priv->tx_ring;
 
-	priv->tx_free_idx = 0;
+	ring->tx_free_idx = 0;
 
-	priv->tx_buf = kcalloc(priv->tx_ring_size, sizeof(*priv->tx_buf),
+	ring->tx_buf = kcalloc(ring->tx_ring_size, sizeof(*ring->tx_buf),
 			GFP_KERNEL);
-	if (!priv->tx_buf)
+	if (!ring->tx_buf)
 		goto no_tx_mem;
 
-	priv->tx_dma = dma_alloc_coherent(&priv->netdev->dev,
-			priv->tx_ring_size * sizeof(*priv->tx_dma),
-			&priv->tx_phys,
+	ring->tx_dma = dma_alloc_coherent(&priv->netdev->dev,
+			ring->tx_ring_size * sizeof(*ring->tx_dma),
+			&ring->tx_phys,
 			GFP_ATOMIC | __GFP_ZERO);
-	if (!priv->tx_dma)
+	if (!ring->tx_dma)
 		goto no_tx_mem;
 
-	for (i = 0; i < priv->tx_ring_size; i++) {
+	for (i = 0; i < ring->tx_ring_size; i++) {
 		if (priv->soc->tx_dma) {
-			priv->soc->tx_dma(&priv->tx_dma[i]);
+			priv->soc->tx_dma(&ring->tx_dma[i]);
 		}
-		priv->tx_dma[i].txd2 = TX_DMA_DESP2_DEF;
+		ring->tx_dma[i].txd2 = TX_DMA_DESP2_DEF;
 	}
 	wmb();
 
-	fe_reg_w32(priv->tx_phys, FE_REG_TX_BASE_PTR0);
-	fe_reg_w32(priv->tx_ring_size, FE_REG_TX_MAX_CNT0);
+	fe_reg_w32(ring->tx_phys, FE_REG_TX_BASE_PTR0);
+	fe_reg_w32(ring->tx_ring_size, FE_REG_TX_MAX_CNT0);
 	fe_reg_w32(0, FE_REG_TX_CTX_IDX0);
 	fe_reg_w32(FE_PST_DTX_IDX0, FE_REG_PDMA_RST_CFG);
 
@@ -383,8 +388,6 @@ static void fe_free_dma(struct fe_priv *priv)
 {
 	fe_clean_tx(priv);
 	fe_clean_rx(priv);
-
-	netdev_reset_queue(priv->netdev);
 }
 
 void fe_stats_update(struct fe_priv *priv)
@@ -523,7 +526,7 @@ static int fe_vlan_rx_kill_vid(struct net_device *dev,
 }
 
 static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
-		int idx, int tx_num)
+		int idx, int tx_num, struct fe_tx_ring *ring)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct skb_frag_struct *frag;
@@ -534,7 +537,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	u32 def_txd4;
 	int i, j, k, frag_size, frag_map_size, offset;
 
-	tx_buf = &priv->tx_buf[idx];
+	tx_buf = &ring->tx_buf[idx];
 	memset(tx_buf, 0, sizeof(*tx_buf));
 	memset(&txd, 0, sizeof(txd));
 	nr_frags = skb_shinfo(skb)->nr_frags;
@@ -606,7 +609,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 				txd.txd2 = TX_DMA_PLEN0(frag_map_size);
 				txd.txd4 = def_txd4;
 
-				tx_buf = &priv->tx_buf[j];
+				tx_buf = &ring->tx_buf[j];
 				memset(tx_buf, 0, sizeof(*tx_buf));
 
 				tx_buf->flags |= FE_TX_FLAGS_PAGE0;
@@ -623,7 +626,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 
 				if (!((i == (nr_frags -1)) &&
 							(frag_map_size == frag_size))) {
-					fe_set_txd(&txd, &priv->tx_dma[j]);
+					fe_set_txd(&txd, &ring->tx_dma[j]);
 					memset(&txd, 0, sizeof(txd));
 				}
 			}
@@ -638,7 +641,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		txd.txd2 |= TX_DMA_LS1;
 	else
 		txd.txd2 |= TX_DMA_LS0;
-	fe_set_txd(&txd, &priv->tx_dma[j]);
+	fe_set_txd(&txd, &ring->tx_dma[j]);
 
 	/* store skb to cleanup */
 	tx_buf->skb = skb;
@@ -655,8 +658,8 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 err_dma:
 	j = idx;
 	for (i = 0; i < tx_num; i++) {
-		ptxd = &priv->tx_dma[j];
-		tx_buf = &priv->tx_buf[j];
+		ptxd = &ring->tx_dma[j];
+		tx_buf = &ring->tx_buf[j];
 
 		/* unmap dma */
 		fe_txd_unmap(&dev->dev, tx_buf);
@@ -700,10 +703,10 @@ static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv) {
 	return ret;
 }
 
-static inline u32 fe_empty_txd(struct fe_priv *priv, u32 tx_fill_idx)
+static inline u32 fe_empty_txd(struct fe_tx_ring *ring, u32 tx_fill_idx)
 {
-	return (u32)(priv->tx_ring_size - ((tx_fill_idx - priv->tx_free_idx) &
-				(priv->tx_ring_size - 1)));
+	return (u32)(ring->tx_ring_size - ((tx_fill_idx - ring->tx_free_idx) &
+				(ring->tx_ring_size - 1)));
 }
 
 static inline int fe_cal_txd_req(struct sk_buff *skb)
@@ -727,6 +730,7 @@ static inline int fe_cal_txd_req(struct sk_buff *skb)
 static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
+	struct fe_tx_ring *ring = &priv->tx_ring;
 	struct net_device_stats *stats = &dev->stats;
 	u32 tx;
 	int tx_num;
@@ -739,7 +743,7 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	tx_num = fe_cal_txd_req(skb);
 	tx = fe_reg_r32(FE_REG_TX_CTX_IDX0);
-	if (unlikely(fe_empty_txd(priv, tx) <= tx_num))
+	if (unlikely(fe_empty_txd(ring, tx) <= tx_num))
 	{
 		netif_stop_queue(dev);
 		netif_err(priv, tx_queued,dev,
@@ -747,7 +751,7 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_BUSY;
 	}
 
-	if (fe_tx_map_dma(skb, dev, tx, tx_num) < 0) {
+	if (fe_tx_map_dma(skb, dev, tx, tx_num, ring) < 0) {
 		stats->tx_dropped++;
 	} else {
 		stats->tx_packets++;
@@ -868,7 +872,8 @@ release_desc:
 	return done;
 }
 
-static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr)
+static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
+		int *tx_again)
 {
 	struct net_device *netdev = priv->netdev;
 	struct device *dev = &netdev->dev;
@@ -877,13 +882,13 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr)
 	struct fe_tx_buf *tx_buf;
 	int done = 0;
 	u32 idx, hwidx;
+	struct fe_tx_ring *ring = &priv->tx_ring;
 
+	idx = ring->tx_free_idx;
 	hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
-	idx = priv->tx_free_idx;
 
-txpoll_again:
 	while ((idx != hwidx) && budget) {
-		tx_buf = &priv->tx_buf[idx];
+		tx_buf = &ring->tx_buf[idx];
 		skb = tx_buf->skb;
 
 		if (!skb)
@@ -897,22 +902,24 @@ txpoll_again:
 		fe_txd_unmap(dev, tx_buf);
 		idx = NEXT_TX_DESP_IDX(idx);
 	}
-	priv->tx_free_idx = idx;
+	ring->tx_free_idx = idx;
 
-	if (budget) {
-		fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
+	if (idx == hwidx) {
+		/* read hw index again make sure no new tx packet */
 		hwidx = fe_reg_r32(FE_REG_TX_DTX_IDX0);
-		if (idx != hwidx)
-			goto txpoll_again;
-	}
+		if (idx == hwidx)
+			fe_reg_w32(tx_intr, FE_REG_FE_INT_STATUS);
+		else
+			*tx_again = 1;
+	} else
+		*tx_again = 1;
 
-	if (!done)
-		return 0;
-
-	netdev_completed_queue(netdev, done, bytes_compl);
-	if (unlikely(netif_queue_stopped(netdev) &&
-				netif_carrier_ok(netdev))) {
-		netif_wake_queue(netdev);
+	if (done) {
+		netdev_completed_queue(netdev, done, bytes_compl);
+		if (unlikely(netif_queue_stopped(netdev) &&
+					netif_carrier_ok(netdev))) {
+			netif_wake_queue(netdev);
+		}
 	}
 
 	return done;
@@ -922,7 +929,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 {
 	struct fe_priv *priv = container_of(napi, struct fe_priv, rx_napi);
 	struct fe_hw_stats *hwstat = priv->hw_stats;
-	int tx_done, rx_done;
+	int tx_done, rx_done, tx_again;
 	u32 status, fe_status, status_reg, mask;
 	u32 tx_intr, rx_intr, status_intr;
 
@@ -930,7 +937,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 	tx_intr = priv->soc->tx_int;
 	rx_intr = priv->soc->rx_int;
 	status_intr = priv->soc->status_int;
-	tx_done = rx_done = 0;
+	tx_done = rx_done = tx_again = 0;
 
 	if (fe_reg_table[FE_REG_FE_INT_STATUS2]) {
 		fe_status = fe_reg_r32(FE_REG_FE_INT_STATUS2);
@@ -939,7 +946,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 		status_reg = FE_REG_FE_INT_STATUS;
 
 	if (status & tx_intr)
-		tx_done = fe_poll_tx(priv, budget, tx_intr);
+		tx_done = fe_poll_tx(priv, budget, tx_intr, &tx_again);
 
 	if (status & rx_intr)
 		rx_done = fe_poll_rx(napi, budget, priv, rx_intr);
@@ -959,7 +966,7 @@ static int fe_poll(struct napi_struct *napi, int budget)
 				tx_done, rx_done, status, mask);
 	}
 
-	if ((tx_done < budget) && (rx_done < budget)) {
+	if (!tx_again && (rx_done < budget)) {
 		status = fe_reg_r32(FE_REG_FE_INT_STATUS);
 		if (status & (tx_intr | rx_intr ))
 			goto poll_again;
@@ -975,6 +982,7 @@ poll_again:
 static void fe_tx_timeout(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
+	struct fe_tx_ring *ring = &priv->tx_ring;
 
 	priv->netdev->stats.tx_errors++;
 	netif_err(priv, tx_err, dev,
@@ -987,7 +995,7 @@ static void fe_tx_timeout(struct net_device *dev)
 			fe_reg_r32(FE_REG_TX_MAX_CNT0),
 			fe_reg_r32(FE_REG_TX_CTX_IDX0),
 			fe_reg_r32(FE_REG_TX_DTX_IDX0),
-			priv->tx_free_idx
+			ring->tx_free_idx
 		  );
 	netif_info(priv, drv, dev, "rx_ring=%d, " \
 			"base=%08x, max=%u, calc=%u, drx=%u\n", 0,
@@ -1480,13 +1488,13 @@ static int fe_probe(struct platform_device *pdev)
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
 	priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
 	priv->rx_buf_size = fe_max_buf_size(priv->frag_size);
-	priv->tx_ring_size = priv->rx_ring_size = NUM_DMA_DESC;
+	priv->tx_ring.tx_ring_size = priv->rx_ring_size = NUM_DMA_DESC;
 	INIT_WORK(&priv->pending_work, fe_pending_work);
 
 	napi_weight = 32;
 	if (priv->flags & FE_FLAG_NAPI_WEIGHT) {
 		napi_weight *= 4;
-		priv->tx_ring_size *= 4;
+		priv->tx_ring.tx_ring_size *= 4;
 		priv->rx_ring_size *= 4;
 	}
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll, napi_weight);
