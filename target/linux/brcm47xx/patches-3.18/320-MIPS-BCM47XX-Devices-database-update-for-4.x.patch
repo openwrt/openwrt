@@ -42,7 +42,7 @@
  bcm47xx_buttons_linksys_wrt54g3gv2[] __initconst = {
  	BCM47XX_GPIO_KEY(5, KEY_WIMAX),
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
-@@ -407,6 +425,9 @@ int __init bcm47xx_buttons_register(void
+@@ -414,6 +432,9 @@ int __init bcm47xx_buttons_register(void
  	int err;
  
  	switch (board) {
@@ -52,7 +52,7 @@
  	case BCM47XX_BOARD_ASUS_RTN12:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_rtn12);
  		break;
-@@ -537,6 +558,12 @@ int __init bcm47xx_buttons_register(void
+@@ -544,6 +565,12 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
@@ -106,7 +106,7 @@
  bcm47xx_leds_linksys_wrt54g_generic[] __initconst = {
  	BCM47XX_GPIO_LED(0, "unk", "dmz", 1, LEDS_GPIO_DEFSTATE_OFF),
  	BCM47XX_GPIO_LED(1, "unk", "power", 0, LEDS_GPIO_DEFSTATE_ON),
-@@ -468,6 +483,9 @@ void __init bcm47xx_leds_register(void)
+@@ -478,6 +493,9 @@ void __init bcm47xx_leds_register(void)
  	enum bcm47xx_board board = bcm47xx_board_get();
  
  	switch (board) {
@@ -116,7 +116,7 @@
  	case BCM47XX_BOARD_ASUS_RTN12:
  		bcm47xx_set_pdata(bcm47xx_leds_asus_rtn12);
  		break;
-@@ -601,6 +619,9 @@ void __init bcm47xx_leds_register(void)
+@@ -611,6 +629,9 @@ void __init bcm47xx_leds_register(void)
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		bcm47xx_set_pdata(bcm47xx_leds_linksys_wrt310nv1);
  		break;
