@@ -1,0 +1,101 @@
+/dts-v1/;
+
+/include/ "rt5350.dtsi"
+
+/ {
+        compatible = "RT5350F-OLINUXINO", "ralink,rt5350-soc";
+        model = "RT5350F-OLINUXINO";
+
+        palmbus@10000000 {
+                spi@b00 {
+                        status = "okay";
+                        m25p80@0 {
+                                #address-cells = <1>;
+                                #size-cells = <1>;
+                                compatible = "s25fl064k";
+                                reg = <0 0>;
+                                linux,modalias = "m25p80", "s25fl064k";
+                                spi-max-frequency = <10000000>;
+
+                                partition@0 {
+                                        label = "u-boot";
+                                        reg = <0x0 0x30000>;
+                                        read-only;
+                                };
+
+                                partition@30000 {
+                                        label = "u-boot-env";
+                                        reg = <0x30000 0x10000>;
+                                        read-only;
+                                };
+
+                                factory: partition@40000 {
+                                        label = "factory";
+                                        reg = <0x40000 0x10000>;
+                                        read-only;
+                                };
+
+                                partition@50000 {
+                                        label = "firmware";
+                                        reg = <0x50000 0x3b0000>;
+                                };
+                        };
+                };
+                gpio1: gpio@660 {
+                        status = "okay";
+                };
+        };
+
+        pinctrl {
+                state_default: pinctrl0 {
+                        gpio {
+                                ralink,group = "jtag", "rgmii", "mdio", "uartf";
+                                ralink,function = "gpio";
+                        };
+                };
+        };
+
+        ethernet@10100000 {
+                mtd-mac-address = <&factory 0x4>;
+        };
+
+        esw@10110000 {
+                ralink,portmap = <0x2f>;
+                ralink,led_polarity = <0x17>;
+        };
+
+        wmac@10180000 {
+                ralink,mtd-eeprom = <&factory 0>;
+        };
+
+        ehci@101c0000 {
+                status = "okay";
+        };
+
+        ohci@101c1000 {
+                status = "okay";
+        };
+
+        gpio_export {
+                compatible = "gpio-export";
+                #size-cells = <0>;
+
+                relay1 {
+                        gpio-export,name = "gpio12";
+                        gpio-export,output = <0>;
+                        gpios = <&gpio0 12 0>;
+                };
+
+                relay2 {
+                        gpio-export,name = "gpio14";
+                        gpio-export,output = <0>;
+                        gpios = <&gpio0 14 0>;
+                };
+
+                button {
+                        gpio-export,name = "button";
+                        gpios = <&gpio0 0 1>;
+                };
+
+        };
+};
