@@ -151,6 +151,10 @@ tplink_board_detect() {
 		;;
 	"083000"*)
 		model="TP-Link TL-WA830RE"
+
+		if [ "$hwver" = 'v10' ]; then
+			hwver='v1'
+		fi
 		;;
 	"084100"*)
 		model="TP-Link TL-WR841N/ND"
