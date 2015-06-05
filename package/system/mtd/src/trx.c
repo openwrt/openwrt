@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <endian.h>
 #include <string.h>
 #include <errno.h>
 
