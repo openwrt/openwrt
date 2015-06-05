@@ -454,6 +454,15 @@ struct fe_tx_buf
 	DEFINE_DMA_UNMAP_LEN(dma_len1);
 };
 
+struct fe_tx_ring
+{
+	struct fe_tx_dma *tx_dma;
+	struct fe_tx_buf *tx_buf;
+	dma_addr_t tx_phys;
+	u16 tx_ring_size;
+	u16 tx_free_idx;
+};
+
 struct fe_priv
 {
 	spinlock_t			page_lock;
@@ -473,10 +482,7 @@ struct fe_priv
 	dma_addr_t			rx_phys;
 	struct napi_struct		rx_napi;
 
-	struct fe_tx_dma		*tx_dma;
-	struct fe_tx_buf		*tx_buf;
-	dma_addr_t			tx_phys;
-	unsigned int			tx_free_idx;
+	struct fe_tx_ring               tx_ring;
 
 	struct fe_phy			*phy;
 	struct mii_bus			*mii_bus;
@@ -489,7 +495,6 @@ struct fe_priv
 	unsigned long			vlan_map;
 	struct work_struct		pending_work;
 	DECLARE_BITMAP(pending_flags, FE_FLAG_MAX);
-	u16				tx_ring_size;
 	u16				rx_ring_size;
 };
 
