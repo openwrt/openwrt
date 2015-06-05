@@ -46,4 +46,15 @@ case "$FIRMWARE" in
 		;;
 	esac
 	;;
+"RT3062.eeprom" )
+	local board=$(lantiq_board_name)
+	case $board in
+	VGV7510KW22)
+		rt2x00_eeprom_extract "board_config" 520 256 1
+		;;
+	*)
+		rt2x00_eeprom_die "board $board is not supported yet"
+		;;
+	esac
+	;;
 esac

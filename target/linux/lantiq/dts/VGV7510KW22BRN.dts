@@ -1,0 +1,53 @@
+/dts-v1/;
+
+/include/ "VGV7510KW22.dtsi"
+
+/ {
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				partition@0 {
+					label = "Boot";
+					reg = <0x00000 0x40000>;
+					read-only;
+				};
+
+				partition@40000 {
+					label = "Configuration";
+					reg = <0x40000 0x40000>;
+					read-only;
+				};
+
+				partition@80000 {
+					label = "Certificate";
+					reg = <0x80000 0x20000>;
+					read-only;
+				};
+
+				partition@a0000 {
+					label = "Special_Area";
+					reg = <0xa0000 0x20000>;
+					read-only;
+				};
+
+				partition@c0000 {
+					label = "Primary_Setting";
+					reg = <0xc0000 0x20000>;
+					read-only;
+				};
+
+				partition@e0000 {
+					label = "firmware"; /* "Code Image 0" in OFW */
+					reg = <0xe0000 0x780000>;
+					read-only;
+				};
+
+				partition@860000 {
+					label = "Code_Image_1";
+					reg = <0x860000 0x780000>;
+					read-only;
+				};
+			};
+		};
+	};
+};

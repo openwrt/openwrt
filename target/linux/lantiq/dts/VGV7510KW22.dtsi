@@ -1,0 +1,256 @@
+/include/ "vr9.dtsi"
+
+/ {
+	model = "VGV7510KW22 - o2 Box 6431";
+
+	chosen {
+		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+	};
+
+	memory@0 {
+		reg = <0x0 0x4000000>;
+	};
+
+	fpi@10000000 {
+		localbus@0 {
+			nor-boot@0 {
+				compatible = "lantiq,nor";
+				bank-width = <2>;
+				reg = <0 0x0 0x1000000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				boardconfig: partition@fe0000 {
+					label = "board_config";
+					reg = <0xfe0000 0x20000>;
+					read-only;
+				};
+			};
+		};
+
+		gpio: pinmux@E100B10 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&state_default>;
+
+			state_default: pinmux {
+				ip101a-rst {
+					lantiq,pins = "io46";
+					lantiq,output = <0>;
+					lantiq,pull = <1>;
+				};
+				gphy-leds {
+					lantiq,groups = "gphy0 led1",
+							"gphy1 led0", "gphy1 led1";
+					lantiq,function = "gphy";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
+				};
+				stp {
+					lantiq,groups = "stp";
+					lantiq,function = "stp";
+					lantiq,pull = <2>;
+					lantiq,open-drain = <0>;
+					lantiq,output = <1>;
+				};
+				mdio {
+					lantiq,groups = "mdio";
+					lantiq,function = "mdio";
+				};
+				pci-rst {
+					lantiq,pins = "io21";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <0>;
+					lantiq,output = <1>;
+				};
+				spi {
+					lantiq,groups = "spi";
+					lantiq,function = "spi";
+				};
+			};
+		};
+
+		eth@E108000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "lantiq,xrx200-net";
+			reg = <	0xE108000 0x3000 /* switch */
+				0xE10B100 0x70 /* mdio */
+				0xE10B1D8 0x30 /* mii */
+				0xE10B308 0x30 /* pmac */
+			>;
+			interrupt-parent = <&icu0>;
+			interrupts = <73 72>;
+
+			lan: interface@0 {
+				compatible = "lantiq,xrx200-pdi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+				mtd-mac-address = <&boardconfig 0x16>;
+				lantiq,switch;
+
+				ethernet@2 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <2>;
+					phy-mode = "mii";
+					phy-handle = <&phy11>;
+				};
+				ethernet@3 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <3>;
+					phy-mode = "mii";
+					phy-handle = <&phy12>;
+				};
+				ethernet@4 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <4>;
+					phy-mode = "mii";
+					phy-handle = <&phy13>;
+				};
+				ethernet@5 {
+					compatible = "lantiq,xrx200-pdi-port";
+					reg = <5>;
+					phy-mode = "mii";
+					phy-handle = <&phy14>;
+				};
+			};
+
+			mdio@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "lantiq,xrx200-mdio";
+
+				phy11: ethernet-phy@11 {
+					reg = <0x11>;
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+				};
+				phy12: ethernet-phy@12 {
+					reg = <0x12>;
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+				};
+				phy13: ethernet-phy@13 {
+					reg = <0x13>;
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+				};
+				phy14: ethernet-phy@14 {
+					reg = <0x14>;
+					compatible = "lantiq,phy22f", "ethernet-phy-ieee802.3-c22";
+				};
+			};
+		};
+
+		stp: stp@E100BB0 {
+			compatible = "lantiq,gpio-stp-xway";
+			reg = <0xE100BB0 0x40>;
+			#gpio-cells = <2>;
+			gpio-controller;
+
+			lantiq,shadow = <0xff>;
+			lantiq,groups = <0x1>;
+			lantiq,dsl = <0x0>;
+			lantiq,phy1 = <0x7>;
+			lantiq,phy2 = <0x7>; /* enable gphy0 led2 = LAN2 LED */
+		};
+
+		ifxhcd@E101000 {
+			status = "okay";
+			gpios = <&gpio 47 0>;
+		};
+
+		pci@E105400 {
+			status = "okay";
+			lantiq,bus-clock = <33333333>;
+			interrupt-map-mask = <0xf800 0x0 0x0 0x7>;
+			interrupt-map = <
+				0x7000 0 0 1 &icu0 30 1 // slot 14, irq 30
+				>;
+			gpio-reset = <&gpio 21 0>;
+			req-mask = <0x1>;	/* GNT1 */
+		};
+
+		pcie@d900000 {
+			status = "disabled";
+		};
+	};
+
+	gphy-xrx200 {
+		compatible = "lantiq,phy-xrx200";
+		firmware1 = "lantiq/vr9_phy22f_a1x.bin";	/*VR9 1.1*/
+		firmware2 = "lantiq/vr9_phy22f_a2x.bin";	/*VR9 1.2*/
+		phys = [ 00 01 ];
+	};
+
+	ralink_eep {
+		compatible = "ralink,eeprom";
+		ralink,eeprom = "RT3062.eeprom";
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <100>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio 6 1>;
+			linux,code = <0x198>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio 9 1>;
+			linux,code = <0x211>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		dsl {
+			label = "dsl";
+			gpios = <&gpio 2 1>;
+		};
+
+		internet_red {
+			label = "internet_red";
+			gpios = <&gpio 10 1>;
+		};
+
+		info_red {
+			label = "info_red";
+			gpios = <&gpio 12 1>;
+		};
+
+		power {
+			label = "power"; /* green */
+			gpios = <&gpio 14 1>;
+		};
+
+		info_green {
+			label = "info_green";
+			gpios = <&gpio 15 1>;
+		};
+
+		internet_green {
+			label = "internet_green";
+			gpios = <&gpio 19 1>;
+		};
+
+		wifi {
+			label = "wifi";
+			gpios = <&gpio 20 1>;
+		};
+
+		power2 {
+			label = "power2"; /* red */
+			gpios = <&gpio 28 1>;
+		};
+
+		phone_red {
+			label = "phone_red";
+			gpios = <&gpio 29 1>;
+		};
+	};
+};
