@@ -153,6 +153,5 @@ platform_do_upgrade() {
 		"cybertan")	cmd=$(platform_trx_from_cybertan_cmd "$trx");;
 	esac
 
-	shift
 	default_do_upgrade "$trx" "$cmd"
 }
