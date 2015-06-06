@@ -109,16 +109,6 @@ platform_check_image() {
 	return $error
 }
 
-platform_extract_trx_from_chk() {
-	local header_len=$((0x$(get_magic_long_at "$1" 4)))
-
-	dd if="$1" of="$2" bs=$header_len skip=1
-}
-
-platform_extract_trx_from_cybertan() {
-	dd if="$1" of="$2" bs=32 skip=1
-}
-
 platform_pre_upgrade() {
 	local file_type=$(platform_identify "$1")
 	local dir="/tmp/sysupgrade-bcm53xx"
@@ -179,19 +169,30 @@ platform_pre_upgrade() {
 	nand_do_upgrade /tmp/root.ubi
 }
 
+platform_trx_from_chk_cmd() {
+	local header_len=$((0x$(get_magic_long_at "$1" 4)))
+
+	echo -n dd bs=$header_len skip=1
+}
+
+platform_trx_from_cybertan_cmd() {
+	echo -n dd bs=32 skip=1
+}
+
 platform_do_upgrade() {
 	local file_type=$(platform_identify "$1")
 	local trx="$1"
+	local cmd=
 
 	[ "$(platform_flash_type)" == "nand" ] && {
 		echo "Writing whole image to NAND flash. All erase counters will be lost."
 	}
 
 	case "$file_type" in
-		"chk")		trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_chk "$1" "$trx";;
-		"cybertan")	trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
+		"chk")		cmd=$(platform_trx_from_chk_cmd "$trx");;
+		"cybertan")	cmd=$(platform_trx_from_cybertan_cmd "$trx");;
 	esac
 
 	shift
-	default_do_upgrade "$trx" "$@"
+	default_do_upgrade "$trx" "$cmd"
 }
