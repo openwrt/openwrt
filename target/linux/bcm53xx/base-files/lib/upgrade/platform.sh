@@ -130,6 +130,10 @@ platform_pre_upgrade() {
 		${offset:+-o $offset} \
 		-1 $dir/kernel \
 		-2 $dir/root
+	[ $? -ne 0 ] && {
+		echo "Failed to extract TRX partitions."
+		return
+	}
 
 	# Firmwares without UBI image should be flashed "normally"
 	local root_type=$(identify $dir/root)
@@ -156,6 +160,10 @@ platform_pre_upgrade() {
 	otrx create /tmp/kernel.trx \
 		-f $dir/kernel -b $(($linux_length + 28)) \
 		-f /tmp/null.bin
+	[ $? -ne 0 ] && {
+		echo "Failed to create simple TRX with new kernel."
+		return
+	}
 
 	# Prepare UBI image (drop unwanted extra blocks)
 	local ubi_length=0
@@ -163,6 +171,10 @@ platform_pre_upgrade() {
 		ubi_length=$(($ubi_length + 131072))
 	done
 	dd if=$dir/root of=/tmp/root.ubi bs=131072 count=$((ubi_length / 131072)) 2>/dev/null
+	[ $? -ne 0 ] && {
+		echo "Failed to prepare new UBI image."
+		return
+	}
 
 	# Flash
 	mtd write /tmp/kernel.trx firmware
