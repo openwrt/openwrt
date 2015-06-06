@@ -123,19 +123,21 @@ platform_pre_upgrade() {
 	local file_type=$(platform_identify "$1")
 	local dir="/tmp/sysupgrade-bcm53xx"
 	local trx="$1"
+	local offset
 
 	[ "$(platform_flash_type)" != "nand" ] && return
 
-	# Extract trx
+	# Find trx offset
 	case "$file_type" in
-		"chk")		trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_chk "$1" "$trx";;
-		"cybertan")	trx="/tmp/$(basename $1).trx"; platform_extract_trx_from_cybertan "$1" "$trx";;
+		"chk")		offset=$((0x$(get_magic_long_at "$1" 4)));;
+		"cybertan")	offset=32;;
 	esac
 
 	# Extract partitions from trx
 	rm -fR $dir
 	mkdir -p $dir
 	otrx extract "$trx" \
+		${offset:+-o $offset} \
 		-1 $dir/kernel \
 		-2 $dir/root
 
