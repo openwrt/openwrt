@@ -1,8 +1,7 @@
-From cd43921285658372c0db8019684979edb74eaffd Mon Sep 17 00:00:00 2001
+From 7eb68a2a0519a77b93184c695d4d293c92dc2286 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Wed, 11 Feb 2015 16:37:05 +0100
-Subject: [PATCH soc] ARM: BCM5301X: Ignore another (BCM4709 specific) fault
- code
+Date: Wed, 11 Feb 2015 16:40:58 +0100
+Subject: [PATCH] ARM: BCM5301X: Ignore another (BCM4709 specific) fault code
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -12,10 +11,13 @@ already have an ignoring handler for BCM4707/BCM4708, but BCM4709
 generates different code.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm/mach-bcm/bcm_5301x.c | 9 +++++----
  1 file changed, 5 insertions(+), 4 deletions(-)
 
+diff --git a/arch/arm/mach-bcm/bcm_5301x.c b/arch/arm/mach-bcm/bcm_5301x.c
+index e9bcbdb..7aef927 100644
 --- a/arch/arm/mach-bcm/bcm_5301x.c
 +++ b/arch/arm/mach-bcm/bcm_5301x.c
 @@ -18,15 +18,16 @@ static bool first_fault = true;
@@ -39,3 +41,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  		/* Returning non-zero causes fault display and panic */
  		return 0;
+-- 
+1.8.4.5
+
