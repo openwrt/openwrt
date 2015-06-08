@@ -1,0 +1,56 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Thu, 28 May 2015 14:19:21 +0200
+Subject: [PATCH] brcmfmac: support NVRAMs containing pci devpaths (instead of
+ pcie)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Recently Broadcom added support for NVRAMs with entries for multiple
+PCIe devices. One of the supported formats is based on prefixes defined
+like: devpath0=pcie/1/4/ and entries like 0:foo=bar 0:baz=qux etc.
+
+Unfortunately there are also a bit older devices using different way of
+defining prefixes, e.g. SmartRG SR400ac (2 x BCM43602) with entries:
+devpath0=pci/1/1/
+devpath1=pci/2/1
+Broadcom stated this old format will never be used/supported by brcmfmac
+but given the simplicity of this patch I'll insist on supporting it.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
+@@ -232,6 +232,8 @@ static void brcmf_fw_strip_multi_v1(stru
+ 				    u16 bus_nr)
+ {
+ 	/* Device path with a leading '=' key-value separator */
++	char pci_path[] = "=pci/?/?";
++	size_t pci_len;
+ 	char pcie_path[] = "=pcie/?/?";
+ 	size_t pcie_len;
+ 
+@@ -251,6 +253,9 @@ static void brcmf_fw_strip_multi_v1(stru
+ 	/* First search for the devpathX and see if it is the configuration
+ 	 * for domain_nr/bus_nr. Search complete nvp
+ 	 */
++	snprintf(pci_path, sizeof(pci_path), "=pci/%d/%d", domain_nr,
++		 bus_nr);
++	pci_len = strlen(pci_path);
+ 	snprintf(pcie_path, sizeof(pcie_path), "=pcie/%d/%d", domain_nr,
+ 		 bus_nr);
+ 	pcie_len = strlen(pcie_path);
+@@ -260,8 +265,9 @@ static void brcmf_fw_strip_multi_v1(stru
+ 		/* Format: devpathX=pcie/Y/Z/
+ 		 * Y = domain_nr, Z = bus_nr, X = virtual ID
+ 		 */
+-		if ((strncmp(&nvp->nvram[i], "devpath", 7) == 0) &&
+-		    (strncmp(&nvp->nvram[i + 8], pcie_path, pcie_len) == 0)) {
++		if (strncmp(&nvp->nvram[i], "devpath", 7) == 0 &&
++		    (!strncmp(&nvp->nvram[i + 8], pci_path, pci_len) ||
++		     !strncmp(&nvp->nvram[i + 8], pcie_path, pcie_len))) {
+ 			id = nvp->nvram[i + 7] - '0';
+ 			found = true;
+ 			break;
