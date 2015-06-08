@@ -1,0 +1,32 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sat, 6 Jun 2015 22:45:59 +0200
+Subject: [PATCH] b43: fix support for 14e4:4321 PCI dev with BCM4321 chipset
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It seems Broadcom released two devices with conflicting device id. There
+are for sure 14e4:4321 PCI devices with BCM4321 (N-PHY) chipset, they
+can be found in routers, e.g. Netgear WNR834Bv2. However, according to
+Broadcom public sources 0x4321 is also used for 5 GHz BCM4306 (G-PHY).
+It's unsure if they meant PCI device id, or "virtual" id (from SPROM).
+To distinguish these devices lets check PHY type (G vs. N).
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Cc: <stable@vger.kernel.org> # 3.16+
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/b43/main.c
++++ b/drivers/net/wireless/b43/main.c
+@@ -5365,6 +5365,10 @@ static void b43_supported_bands(struct b
+ 		*have_5ghz_phy = true;
+ 		return;
+ 	case 0x4321: /* BCM4306 */
++		/* There are 14e4:4321 PCI devs with 2.4 GHz BCM4321 (N-PHY) */
++		if (dev->phy.type != B43_PHYTYPE_G)
++			break;
++		/* fall through */
+ 	case 0x4313: /* BCM4311 */
+ 	case 0x431a: /* BCM4318 */
+ 	case 0x432a: /* BCM4321 */
