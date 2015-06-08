@@ -1,0 +1,80 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 8 Jun 2015 16:59:31 +0200
+Subject: [PATCH] brcmfmac: use bcm47xx platform NVRAM as fallback
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
+@@ -19,6 +19,9 @@
+ #include <linux/device.h>
+ #include <linux/firmware.h>
+ #include <linux/module.h>
++#if IS_ENABLED(CONFIG_BCM47XX_NVRAM)
++#include <linux/bcm47xx_nvram.h>
++#endif
+ 
+ #include "debug.h"
+ #include "firmware.h"
+@@ -424,17 +427,42 @@ struct brcmf_fw {
+ static void brcmf_fw_request_nvram_done(const struct firmware *fw, void *ctx)
+ {
+ 	struct brcmf_fw *fwctx = ctx;
++#if IS_ENABLED(CONFIG_BCM47XX_NVRAM)
++	const u8 *bcm47xx_nvram = NULL;
++	size_t bcm47xx_nvram_len;
++#endif
++	const u8 *data = NULL;
++	size_t data_len;
+ 	u32 nvram_length = 0;
+ 	void *nvram = NULL;
+ 
+ 	brcmf_dbg(TRACE, "enter: dev=%s\n", dev_name(fwctx->dev));
+-	if (!fw && !(fwctx->flags & BRCMF_FW_REQ_NV_OPTIONAL))
++	if (fw) {
++		data = fw->data;
++		data_len = fw->size;
++	}
++#if IS_ENABLED(CONFIG_BCM47XX_NVRAM)
++	else {
++		bcm47xx_nvram = bcm47xx_nvram_get_contents(&bcm47xx_nvram_len);
++		if (bcm47xx_nvram) {
++			data = bcm47xx_nvram;
++			data_len = bcm47xx_nvram_len;
++			brcmf_err("Found platform NVRAM (%zu B)\n", data_len);
++		}
++	}
++#endif
++	if (!data && !(fwctx->flags & BRCMF_FW_REQ_NV_OPTIONAL))
+ 		goto fail;
+ 
+-	if (fw) {
+-		nvram = brcmf_fw_nvram_strip(fw->data, fw->size, &nvram_length,
++	if (data) {
++		nvram = brcmf_fw_nvram_strip(data, data_len, &nvram_length,
+ 					     fwctx->domain_nr, fwctx->bus_nr);
+-		release_firmware(fw);
++		if (fw)
++			release_firmware(fw);
++#if IS_ENABLED(CONFIG_BCM47XX_NVRAM)
++		if (bcm47xx_nvram)
++			bcm47xx_nvram_release_contents(bcm47xx_nvram);
++#endif
+ 		if (!nvram && !(fwctx->flags & BRCMF_FW_REQ_NV_OPTIONAL))
+ 			goto fail;
+ 	}
+--- a/drivers/net/wireless/brcm80211/brcmfmac/debug.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/debug.h
+@@ -17,6 +17,8 @@
+ #ifndef BRCMFMAC_DEBUG_H
+ #define BRCMFMAC_DEBUG_H
+ 
++#include <linux/net.h>
++
+ /* message levels */
+ #define BRCMF_TRACE_VAL		0x00000002
+ #define BRCMF_INFO_VAL		0x00000004
