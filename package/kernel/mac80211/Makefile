@@ -1140,7 +1140,7 @@ config PACKAGE_B43_USE_SSB
 config PACKAGE_B43_USE_BCMA
 	select PACKAGE_kmod-bcma
 	tristate
-	depends on !TARGET_brcm47xx
+	depends on !TARGET_brcm47xx && !TARGET_bcm53xx
 	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA_AND_SSB
 	default PACKAGE_kmod-b43 if PACKAGE_B43_BUSES_BCMA
 
@@ -1263,7 +1263,7 @@ config PACKAGE_B43_USE_BCMA
 		  This allows choosing buses that b43 should support.
 
 	config PACKAGE_B43_BUSES_BCMA_AND_SSB
-		depends on !TARGET_brcm47xx_legacy && !TARGET_brcm47xx_mips74k
+		depends on !TARGET_brcm47xx_legacy && !TARGET_brcm47xx_mips74k && !TARGET_bcm53xx
 		bool "BCMA and SSB"
 
 	config PACKAGE_B43_BUSES_BCMA
@@ -1271,7 +1271,7 @@ config PACKAGE_B43_USE_BCMA
 		bool "BCMA only"
 
 	config PACKAGE_B43_BUSES_SSB
-		depends on !TARGET_brcm47xx_mips74k
+		depends on !TARGET_brcm47xx_mips74k && !TARGET_bcm53xx
 		bool "SSB only"
 
 	endchoice
