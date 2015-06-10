@@ -94,7 +94,6 @@ proto_6rd_init_config() {
 	proto_config_add_string "ip6prefixlen"
 	proto_config_add_string "ip4prefixlen"
 	proto_config_add_string "tunlink"
-	proto_config_add_boolean "sourcerouting"
 	proto_config_add_string "zone"
 }
 
