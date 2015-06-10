@@ -803,8 +803,8 @@ static int b53_global_reset_switch(struct switch_dev *dev)
 	priv->enable_jumbo = 0;
 	priv->allow_vid_4095 = 0;
 
-	memset(priv->vlans, 0, sizeof(priv->vlans) * dev->vlans);
-	memset(priv->ports, 0, sizeof(priv->ports) * dev->ports);
+	memset(priv->vlans, 0, sizeof(*priv->vlans) * dev->vlans);
+	memset(priv->ports, 0, sizeof(*priv->ports) * dev->ports);
 
 	return b53_switch_reset(priv);
 }
