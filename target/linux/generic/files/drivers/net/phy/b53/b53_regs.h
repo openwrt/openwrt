@@ -65,7 +65,7 @@
 #define   PORT_CTRL_RX_MCST_EN		BIT(3) /* Multicast RX (P8 only) */
 #define   PORT_CTRL_RX_UCST_EN		BIT(4) /* Unicast RX (P8 only) */
 #define	  PORT_CTRL_STP_STATE_S		5
-#define   PORT_CTRL_STP_STATE_MASK	(0x3 << PORT_CTRL_STP_STATE_S)
+#define   PORT_CTRL_STP_STATE_MASK	(0x7 << PORT_CTRL_STP_STATE_S)
 
 /* SMP Control Register (8 bit) */
 #define B53_SMP_CTRL			0x0a
