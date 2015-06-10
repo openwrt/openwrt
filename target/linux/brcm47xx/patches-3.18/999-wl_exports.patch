@@ -7,9 +7,9 @@
 -static char nvram_buf[NVRAM_SPACE];
 +char nvram_buf[NVRAM_SPACE];
 +EXPORT_SYMBOL(nvram_buf);
+ static size_t nvram_len;
  static const u32 nvram_sizes[] = {0x8000, 0xF000, 0x10000};
  static int cfe_env;
- extern char *cfe_env_get(char *nv_buf, const char *name);
 --- a/arch/mips/mm/cache.c
 +++ b/arch/mips/mm/cache.c
 @@ -59,6 +59,7 @@ void (*_dma_cache_wback)(unsigned long s
