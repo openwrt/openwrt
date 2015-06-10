@@ -88,6 +88,10 @@ setup_interface () {
 
 		if [ -z "$gw" ]; then
 			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid"
+
+			# work around if there is a PIO matching a RIO
+			# Linux seems to prefer source-dest over dest-only even if metric is higher
+			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "$addr/$mask"
 		else
 			for prefix in $PREFIXES $ADDRESSES; do
 				local paddr="${prefix%%,*}"
