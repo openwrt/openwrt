@@ -91,7 +91,6 @@ proto_6to4_init_config() {
 	proto_config_add_int "mtu"
 	proto_config_add_int "ttl"
 	proto_config_add_string "tos"
-	proto_config_add_boolean "sourcerouting"
 }
 
 [ -n "$INCLUDE_ONLY" ] || {
