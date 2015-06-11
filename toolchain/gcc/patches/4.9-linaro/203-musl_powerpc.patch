@@ -1,6 +1,6 @@
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -2334,6 +2334,10 @@ powerpc*-*-linux*)
+@@ -2344,6 +2344,10 @@ powerpc*-*-linux*)
  	    powerpc*-*-linux*paired*)
  		tm_file="${tm_file} rs6000/750cl.h" ;;
  	esac
@@ -13,7 +13,7 @@
  	fi
 --- a/gcc/config/rs6000/linux64.h
 +++ b/gcc/config/rs6000/linux64.h
-@@ -375,17 +375,21 @@ extern int dot_symbols;
+@@ -371,17 +371,21 @@ extern int dot_symbols;
  #endif
  #define UCLIBC_DYNAMIC_LINKER32 "/lib/ld-uClibc.so.0"
  #define UCLIBC_DYNAMIC_LINKER64 "/lib/ld64-uClibc.so.0"
@@ -41,7 +41,7 @@
  #if (TARGET_DEFAULT & MASK_LITTLE_ENDIAN)
 --- a/gcc/config/rs6000/secureplt.h
 +++ b/gcc/config/rs6000/secureplt.h
-@@ -18,3 +18,4 @@ along with GCC; see the file COPYING3.  
+@@ -18,3 +18,4 @@ along with GCC; see the file COPYING3.
  <http://www.gnu.org/licenses/>.  */
  
  #define CC1_SECURE_PLT_DEFAULT_SPEC "-msecure-plt"

@@ -48,9 +48,9 @@ sellcey@mips.com
 
 --- a/gcc/config/mips/mips.c
 +++ b/gcc/config/mips/mips.c
-@@ -19134,6 +19134,9 @@ mips_atomic_assign_expand_fenv (tree *ho
- #undef TARGET_ATOMIC_ASSIGN_EXPAND_FENV
- #define TARGET_ATOMIC_ASSIGN_EXPAND_FENV mips_atomic_assign_expand_fenv
+@@ -19142,6 +19142,9 @@ mips_atomic_assign_expand_fenv (tree *ho
+ #define TARGET_USE_BY_PIECES_INFRASTRUCTURE_P \
+   mips_use_by_pieces_infrastructure_p
  
 +#undef TARGET_ASM_FILE_END
 +#define TARGET_ASM_FILE_END file_end_indicate_exec_stack
@@ -85,7 +85,7 @@ sellcey@mips.com
  
 --- a/libgcc/config/mips/mips16.S
 +++ b/libgcc/config/mips/mips16.S
-@@ -31,6 +31,10 @@ see the files COPYING3 and COPYING.RUNTI
+@@ -35,6 +35,10 @@ see the files COPYING3 and COPYING.RUNTI
     values using the soft-float calling convention, but do the actual
     operation using the hard floating point instructions.  */
  

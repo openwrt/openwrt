@@ -1,10 +1,8 @@
-Index: gcc-linaro-4.8-2014.04/gcc/config/mips/linux64.h
-===================================================================
---- gcc-linaro-4.8-2014.04.orig/gcc/config/mips/linux64.h	2014-10-23 15:52:48.999134219 -0700
-+++ gcc-linaro-4.8-2014.04/gcc/config/mips/linux64.h	2014-10-23 15:59:19.815116979 -0700
-@@ -27,6 +27,16 @@
- #define GLIBC_DYNAMIC_LINKERN32 "/lib32/ld.so.1"
- #define UCLIBC_DYNAMIC_LINKERN32 "/lib32/ld-uClibc.so.0"
+--- a/gcc/config/mips/linux64.h
++++ b/gcc/config/mips/linux64.h
+@@ -39,6 +39,16 @@ along with GCC; see the file COPYING3.
+   "%{mnan=2008:/lib32/ld-uClibc-mipsn8.so.0;:/lib32/ld-uClibc.so.0}"
+ 
  #define BIONIC_DYNAMIC_LINKERN32 "/system/bin/linker32"
 +
 +#if TARGET_ENDIAN_DEFAULT == 0 /* LE */
