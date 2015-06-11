@@ -34,9 +34,9 @@
 -build_all: build_libs build_apps build_tests build_tools
 +build_all: build_libs build_apps build_tools
  
- build_libs: build_crypto build_ssl build_engines
+ build_libs: build_libcrypto build_libssl openssl.pc
  
-@@ -538,7 +538,7 @@ dist:
+@@ -528,7 +528,7 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -47,7 +47,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -536,7 +536,7 @@ dist:
+@@ -526,7 +526,7 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
