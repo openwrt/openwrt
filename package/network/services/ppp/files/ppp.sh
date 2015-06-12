@@ -4,8 +4,33 @@
 
 [ -n "$INCLUDE_ONLY" ] || {
 	. /lib/functions.sh
+	. /lib/functions/network.sh
 	. ../netifd-proto.sh
 	init_proto "$@"
+}
+
+ppp_select_ipaddr()
+{
+	local subnets=$1
+	local res
+	local res_mask
+
+	for subnet in $subnets; do
+		local addr="${subnet%%/*}"
+		local mask="${subnet#*/}"
+
+		if [ -n "$res_mask" -a "$mask" != 32 ]; then
+			[ "$mask" -gt "$res_mask" ] || [ "$res_mask" = 32 ] && {
+				res="$addr"
+				res_mask="$mask"
+			}
+		elif [ -z "$res_mask" ]; then
+			res="$addr"
+			res_mask="$mask"
+		fi
+	done
+
+	echo "$res"
 }
 
 ppp_exitcode_tostring()
@@ -53,12 +78,14 @@ ppp_generic_init_config() {
 	proto_config_add_boolean authfail
 	proto_config_add_int mtu
 	proto_config_add_string pppname
+	proto_config_add_string unnumbered
 }
 
 ppp_generic_setup() {
 	local config="$1"; shift
+	local localip
 
-	json_get_vars ipv6 demand keepalive keepalive_adaptive username password pppd_options pppname
+	json_get_vars ipv6 demand keepalive keepalive_adaptive username password pppd_options pppname unnumbered
 	if [ "$ipv6" = 0 ]; then
 		ipv6=""
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
@@ -73,6 +100,16 @@ ppp_generic_setup() {
 	fi
 	[ -n "$mtu" ] || json_get_var mtu mtu
 	[ -n "$pppname" ] || pppname="${proto:-ppp}-$config"
+	[ -n "$unnumbered" ] && {
+		local subnets
+		( proto_add_host_dependency "$config" "" "$unnumbered" )
+		network_get_subnets subnets "$unnumbered"
+		localip=$(ppp_select_ipaddr "$subnets")
+		[ -n "$localip" ] || {
+			proto_block_restart "$config"
+			return
+		}
+	}
 
 	local lcp_failure="${keepalive%%[, ]*}"
 	local lcp_interval="${keepalive##*[, ]}"
@@ -86,6 +123,7 @@ ppp_generic_setup() {
 	proto_run_command "$config" /usr/sbin/pppd \
 		nodetach ipparam "$config" \
 		ifname "$pppname" \
+		${localip:+$localip:} \
 		${lcp_failure:+lcp-echo-interval $lcp_interval lcp-echo-failure $lcp_failure $lcp_adaptive} \
 		${ipv6:++ipv6} \
 		nodefaultroute \
