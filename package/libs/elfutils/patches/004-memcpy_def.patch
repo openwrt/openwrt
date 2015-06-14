@@ -1,0 +1,14 @@
+--- a/libelf/libelf.h
++++ b/libelf/libelf.h
+@@ -34,6 +34,11 @@
+ /* Get the ELF types.  */
+ #include <elf.h>
+ 
++#ifndef _LIBC
++#ifndef __mempcpy
++#define __mempcpy mempcpy
++#endif
++#endif
+ 
+ /* Known translation types.  */
+ typedef enum
