@@ -1082,7 +1082,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 more:
 	DBG("%s: stay in polling mode, rx=%d, tx=%d, limit=%d\n",
 			dev->name, rx_done, tx_done, limit);
-	return rx_done;
+	return limit;
 
 oom:
 	if (netif_msg_rx_err(ag))
