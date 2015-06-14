@@ -32,6 +32,14 @@
  #define AT803X_DEBUG_SYSTEM_MODE_CTRL		0x05
  #define AT803X_DEBUG_RGMII_TX_CLK_DLY		BIT(8)
  
+@@ -50,6 +60,7 @@ MODULE_LICENSE("GPL");
+ struct at803x_priv {
+ 	bool phy_reset:1;
+ 	struct gpio_desc *gpiod_reset;
++	int prev_speed;
+ };
+ 
+ struct at803x_context {
 @@ -61,6 +71,43 @@ struct at803x_context {
  	u16 led_control;
  };
@@ -120,16 +128,53 @@
  	return 0;
  }
  
+@@ -258,6 +334,8 @@ static int at803x_config_intr(struct phy
+ static void at803x_link_change_notify(struct phy_device *phydev)
+ {
+ 	struct at803x_priv *priv = phydev->priv;
++	struct at803x_platform_data *pdata;
++	pdata = dev_get_platdata(&phydev->dev);
+ 
+ 	/*
+ 	 * Conduct a hardware reset for AT8030 every time a link loss is
+@@ -287,6 +365,26 @@ static void at803x_link_change_notify(st
+ 		} else {
+ 			priv->phy_reset = false;
+ 		}
++	}
++	if (pdata->fixup_rgmii_tx_delay &&
++	    phydev->speed != priv->prev_speed) {
++		switch (phydev->speed) {
++		case SPEED_10:
++		case SPEED_100:
++			at803x_dbg_reg_set(phydev,
++				AT803X_DEBUG_SYSTEM_MODE_CTRL,
++				AT803X_DEBUG_RGMII_TX_CLK_DLY);
++			break;
++		case SPEED_1000:
++			at803x_dbg_reg_clr(phydev,
++				AT803X_DEBUG_SYSTEM_MODE_CTRL,
++				AT803X_DEBUG_RGMII_TX_CLK_DLY);
++			break;
++		default:
++			break;
++		}
++
++		priv->prev_speed = phydev->speed;
+ 	}
+ }
+ 
 --- /dev/null
 +++ b/include/linux/platform_data/phy-at803x.h
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,11 @@
 +#ifndef _PHY_AT803X_PDATA_H
 +#define _PHY_AT803X_PDATA_H
 +
 +struct at803x_platform_data {
-+       int disable_smarteee:1;
-+       int enable_rgmii_tx_delay:1;
-+       int enable_rgmii_rx_delay:1;
++	int disable_smarteee:1;
++	int enable_rgmii_tx_delay:1;
++	int enable_rgmii_rx_delay:1;
++	int fixup_rgmii_tx_delay:1;
 +};
 +
 +#endif /* _PHY_AT803X_PDATA_H */
