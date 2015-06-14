@@ -186,6 +186,7 @@ static void __init wlr8100_010_setup(void)
 	wlr8100_ar8327_pad0_cfg.rxclk_delay_en = true;
 	wlr8100_ar8327_pad0_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
 	wlr8100_ar8327_pad0_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+	wlr8100_ar8327_pad0_cfg.mac06_exchange_en = true;
 
 	/* GMAC6 of the AR8337 switch is connected to GMAC1 via SGMII */
 	wlr8100_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;

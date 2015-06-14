@@ -47,6 +47,7 @@ struct ar8327_pad_cfg {
 	bool sgmii_delay_en;
 	enum ar8327_clk_delay_sel txclk_delay_sel;
 	enum ar8327_clk_delay_sel rxclk_delay_sel;
+	bool mac06_exchange_en;
 };
 
 enum ar8327_port_speed {
@@ -129,3 +130,4 @@ struct ar8327_platform_data {
 };
 
 #endif /* AR8216_PLATFORM_H */
+
