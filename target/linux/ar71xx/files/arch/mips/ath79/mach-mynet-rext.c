@@ -14,6 +14,7 @@
 #include <linux/platform_device.h>
 #include <linux/ath9k_platform.h>
 #include <linux/ar8216_platform.h>
+#include <linux/platform_data/phy-at803x.h>
 
 #include <asm/mach-ath79/ar71xx_regs.h>
 
@@ -124,6 +125,21 @@ static struct gpio_keys_button mynet_rext_gpio_keys[] __initdata = {
 	},
 };
 
+static struct at803x_platform_data mynet_rext_at803x_data = {
+	.disable_smarteee = 0,
+	.enable_rgmii_rx_delay = 1,
+	.enable_rgmii_tx_delay = 0,
+	.fixup_rgmii_tx_delay = 1,
+};
+
+static struct mdio_board_info mynet_rext_mdio0_info[] = {
+        {
+                .bus_id = "ag71xx-mdio.0",
+                .phy_addr = 4,
+                .platform_data = &mynet_rext_at803x_data,
+        },
+};
+
 static void mynet_rext_get_mac(const char *name, char *mac)
 {
 	u8 *nvram = (u8 *) KSEG1ADDR(MYNET_REXT_NVRAM_ADDR);
@@ -169,12 +185,16 @@ static void __init mynet_rext_setup(void)
 
 	ath79_register_mdio(0, 0x0);
 
+	mdiobus_register_board_info(mynet_rext_mdio0_info,
+				    ARRAY_SIZE(mynet_rext_mdio0_info));
+
 	/* LAN */
 	mynet_rext_get_mac("et0macaddr=", ath79_eth0_data.mac_addr);
 
 	/* GMAC0 is connected to an external PHY on Port 4 */
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ath79_eth0_data.phy_mask = BIT(4);
+	ath79_eth0_pll_data.pll_10   = 0x00001313; /* athrs_mac.c */
 	ath79_eth0_pll_data.pll_1000 = 0x0e000000; /* athrs_mac.c */
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
 	ath79_register_eth(0);
