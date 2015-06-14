@@ -50,10 +50,10 @@ printdb:
 prepare: $(target/stamp-compile)
 
 clean: FORCE
-	rm -rf $(BUILD_DIR) $(BIN_DIR) $(BUILD_LOG_DIR)
+	rm -rf $(BUILD_DIR) $(STAGING_DIR) $(BIN_DIR) $(BUILD_LOG_DIR)
 
 dirclean: clean
-	rm -rf $(STAGING_DIR) $(STAGING_DIR_HOST) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
+	rm -rf $(STAGING_DIR_HOST) $(TOOLCHAIN_DIR) $(BUILD_DIR_HOST) $(BUILD_DIR_TOOLCHAIN)
 	rm -rf $(TMP_DIR)
 
 ifndef DUMP_TARGET_DB
