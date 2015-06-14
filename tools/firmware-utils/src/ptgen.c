@@ -31,9 +31,9 @@
 #include <stdint.h>
 
 #if __BYTE_ORDER == __BIG_ENDIAN
-#define cpu_to_le16(x) bswap_16(x)
+#define cpu_to_le32(x) bswap_32(x)
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
-#define cpu_to_le16(x) (x)
+#define cpu_to_le32(x) (x)
 #else
 #error unknown endianness!
 #endif
@@ -142,11 +142,11 @@ static int gen_ptable(uint32_t signature, int nr)
 		start = sect + sectors;
 		if (kb_align != 0)
 			start = round_to_kb(start);
-		pte[i].start = cpu_to_le16(start);
+		pte[i].start = cpu_to_le32(start);
 		sect = start + parts[i].size * 2;
 		if (kb_align == 0)
 			sect = round_to_cyl(sect);
-		pte[i].length = cpu_to_le16(len = sect - start);
+		pte[i].length = cpu_to_le32(len = sect - start);
 		to_chs(start, pte[i].chs_start);
 		to_chs(start + len - 1, pte[i].chs_end);
 		if (verbose)
