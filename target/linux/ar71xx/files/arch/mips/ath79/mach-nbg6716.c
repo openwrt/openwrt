@@ -251,6 +251,7 @@ static void __init nbg6716_010_setup(void)
 	nbg6716_ar8327_pad0_cfg.rxclk_delay_en = true;
 	nbg6716_ar8327_pad0_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
 	nbg6716_ar8327_pad0_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+	nbg6716_ar8327_pad0_cfg.mac06_exchange_en = true;
 
 	/* GMAC6 of the AR8337 switch is connected to GMAC1 via SGMII */
 	nbg6716_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;

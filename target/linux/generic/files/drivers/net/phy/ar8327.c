@@ -124,6 +124,9 @@ ar8327_get_pad_cfg(struct ar8327_pad_cfg *cfg)
 		break;
 	}
 
+	if (cfg->mac06_exchange_en)
+		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
+
 	return t;
 }
 
@@ -508,9 +511,6 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	data->port6_status = ar8327_get_port_init_status(&pdata->port6_cfg);
 
 	t = ar8327_get_pad_cfg(pdata->pad0_cfg);
-	if (chip_is_ar8337(priv))
-		t |= AR8337_PAD_MAC06_EXCHANGE_EN;
-
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
