@@ -111,6 +111,10 @@ $(curdir)/install: $(TMP_DIR)/.build
 		cd $(TARGET_DIR); \
 		for script in ./usr/lib/opkg/info/*.postinst; do \
 			IPKG_INSTROOT=$(TARGET_DIR) $$(which bash) $$script; \
+		done; \
+		for script in ./etc/init.d/*; do \
+			grep '#!/bin/sh /etc/rc.common' $$script >/dev/null || continue; \
+			IPKG_INSTROOT=$(TARGET_DIR) $$(which bash) ./etc/rc.common $$script enable; \
 		done || true \
 	)
 	@-find $(TARGET_DIR) -name CVS   | $(XARGS) rm -rf
