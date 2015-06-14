@@ -1,0 +1,11 @@
+--- elfutils-0.161/libdw/Makefile.in.orig	2015-01-16 03:50:15.311237461 -0200
++++ elfutils-0.161/libdw/Makefile.in	2015-01-16 03:55:35.082090075 -0200
+@@ -969,7 +969,7 @@
+ 		-Wl,--enable-new-dtags,-rpath,$(pkglibdir) \
+ 		-Wl,--version-script,$<,--no-undefined \
+ 		-Wl,--whole-archive $(filter-out $<,$^) -Wl,--no-whole-archive\
+-		-ldl $(zip_LIBS)
++		-ldl $(zip_LIBS) $(LIBS)
+ 	@$(textrel_check)
+ 	ln -fs $@ $@.$(VERSION)
+ 

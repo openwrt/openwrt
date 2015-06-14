@@ -1,0 +1,1871 @@
+--- elfutils/backends/ChangeLog
++++ elfutils/backends/ChangeLog
+@@ -433,6 +433,10 @@
+ 	* ppc_attrs.c (ppc_check_object_attribute): Handle tag
+ 	GNU_Power_ABI_Struct_Return.
+ 
++2009-01-23  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (libebl_%.so): Use $(LD_AS_NEEDED).
++
+ 2008-10-04  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* i386_reloc.def: Fix entries for TLS_GOTDESC, TLS_DESC_CALL, and
+@@ -760,6 +764,11 @@
+ 	* sparc_init.c: Likewise.
+ 	* x86_64_init.c: Likewise.
+ 
++2005-11-22  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (LD_AS_NEEDED): New variable, substituted by configure.
++	(libebl_%.so rule): Use it in place of -Wl,--as-needed.
++
+ 2005-11-19  Roland McGrath  <roland@redhat.com>
+ 
+ 	* ppc64_reloc.def: REL30 -> ADDR30.
+@@ -782,6 +791,9 @@
+ 	* Makefile.am (uninstall): Don't try to remove $(pkgincludedir).
+ 	(CLEANFILES): Add libebl_$(m).so.
+ 
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 	* ppc_reloc.def: Update bits per Alan Modra <amodra@bigpond.net.au>.
+ 	* ppc64_reloc.def: Likewise.
+ 
+--- elfutils/backends/Makefile.am
++++ elfutils/backends/Makefile.am
+@@ -119,7 +119,7 @@ libebl_%.so libebl_%.map: libebl_%_pic.a
+ 	$(LINK) -shared -o $(@:.map=.so) \
+ 		-Wl,--whole-archive $< $(cpu_$*) -Wl,--no-whole-archive \
+ 		-Wl,--version-script,$(@:.so=.map) \
+-		-Wl,-z,defs -Wl,--as-needed $(libelf) $(libdw)
++		-Wl,-z,defs $(LD_AS_NEEDED) $(libelf) $(libdw)
+ 	@$(textrel_check)
+ 
+ libebl_i386.so: $(cpu_i386)
+--- elfutils/backends/Makefile.in
++++ elfutils/backends/Makefile.in
+@@ -83,6 +83,7 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(noinst_HEADERS) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ subdir = backends
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -285,6 +286,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -316,6 +318,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -378,11 +381,11 @@ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(top_srcdir)/libebl -I$(top_srcdir)/libasm \
+ 	-I$(top_srcdir)/libelf -I$(top_srcdir)/libdw
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $($(*F)_CFLAGS)
+-
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
++	$($(*F)_no_Werror),,-Werror) $(if \
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(foreach m,$(modules), libebl_$(m).map \
+ 	libebl_$(m).so $(am_libebl_$(m)_pic_a_OBJECTS))
+@@ -888,7 +891,7 @@ libebl_%.so libebl_%.map: libebl_%_pic.a
+ 	$(LINK) -shared -o $(@:.map=.so) \
+ 		-Wl,--whole-archive $< $(cpu_$*) -Wl,--no-whole-archive \
+ 		-Wl,--version-script,$(@:.so=.map) \
+-		-Wl,-z,defs -Wl,--as-needed $(libelf) $(libdw)
++		-Wl,-z,defs $(LD_AS_NEEDED) $(libelf) $(libdw)
+ 	@$(textrel_check)
+ 
+ libebl_i386.so: $(cpu_i386)
+--- elfutils/ChangeLog
++++ elfutils/ChangeLog
+@@ -187,6 +187,8 @@
+ 
+ 2012-01-24  Mark Wielaard  <mjw@redhat.com>
+ 
++	* configure.ac: Wrap AC_COMPILE_IFELSE sources in AC_LANG_SOURCE.
++
+ 	* COPYING: Fix address. Updated version from gnulib.
+ 
+ 2012-01-23  Mark Wielaard  <mjw@redhat.com>
+@@ -205,6 +207,9 @@
+ 
+ 2011-10-08  Mike Frysinger  <vapier@gentoo.org>
+ 
++	* configure.ac (--disable-werror): Handle it, controlling BUILD_WERROR
++	automake option.
++
+ 	* configure.ac: Fix use of AC_ARG_ENABLE to handle $enableval correctly.
+ 
+ 2011-10-02  Ulrich Drepper  <drepper@gmail.com>
+@@ -226,6 +231,10 @@
+ 
+ 	* configure.ac (LOCALEDIR, DATADIRNAME): Removed.
+ 
++2009-11-22  Roland McGrath  <roland@redhat.com>
++
++	* configure.ac: Use sed and expr instead of modern bash extensions.
++
+ 2009-09-21  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* configure.ac: Update for more modern autoconf.
+@@ -234,6 +243,10 @@
+ 
+ 	* configure.ac (zip_LIBS): Check for liblzma too.
+ 
++2009-08-17  Roland McGrath  <roland@redhat.com>
++
++	* configure.ac: Check for -fgnu89-inline; add it to WEXTRA if it works.
++
+ 2009-04-19  Roland McGrath  <roland@redhat.com>
+ 
+ 	* configure.ac (eu_version): Round down here, not in version.h macros.
+@@ -245,6 +258,8 @@
+ 
+ 2009-01-23  Roland McGrath  <roland@redhat.com>
+ 
++	* configure.ac: Check for __builtin_popcount.
++
+ 	* configure.ac (zlib check): Check for gzdirect, need zlib >= 1.2.2.3.
+ 
+ 	* configure.ac (__thread check): Use AC_LINK_IFELSE, in case of
+@@ -325,6 +340,10 @@
+ 	* configure.ac: Add dummy automake conditional to get dependencies
+ 	for non-generic linker right.  See src/Makefile.am.
+ 
++2005-11-22  Roland McGrath  <roland@redhat.com>
++
++	* configure.ac: Check for --as-needed linker option.
++
+ 2005-11-18  Roland McGrath  <roland@redhat.com>
+ 
+ 	* Makefile.am (DISTCHECK_CONFIGURE_FLAGS): New variable.
+@@ -372,6 +391,17 @@
+ 	* Makefile.am (all_SUBDIRS): Add libdwfl.
+ 	* configure.ac: Write libdwfl/Makefile.
+ 
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
++	* configure.ac (WEXTRA): Check for -Wextra and set this substitution.
++
++	* configure.ac: Check for struct stat st_?tim members.
++	* src/strip.c (process_file): Use st_?time if st_?tim are not there.
++
++	* configure.ac: Check for futimes function.
++	* src/strip.c (handle_elf) [! HAVE_FUTIMES]: Use utimes instead.
++	(handle_ar) [! HAVE_FUTIMES]: Likewise.
++
+ 2005-05-19  Roland McGrath  <roland@redhat.com>
+ 
+ 	* configure.ac [AH_BOTTOM] (INTDECL, _INTDECL): New macros.
+--- elfutils/config/ChangeLog
++++ elfutils/config/ChangeLog
+@@ -71,6 +71,10 @@
+ 
+ 	* known-dwarf.awk: Use gawk.
+ 
++2011-10-08  Mike Frysinger  <vapier@gentoo.org>
++
++	* eu.am [BUILD_WERROR]: Conditionalize -Werror use on this.
++
+ 2010-07-02  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* elfutils.spec.in: Add more BuildRequires.
+--- elfutils/config/eu.am
++++ elfutils/config/eu.am
+@@ -1,6 +1,6 @@
+ ## Common automake fragments for elfutils subdirectory makefiles.
+ ##
+-## Copyright (C) 2010, 2014 Red Hat, Inc.
++## Copyright (C) 2010-2011, 2014 Red Hat, Inc.
+ ##
+ ## This file is part of elfutils.
+ ##
+@@ -29,13 +29,21 @@
+ ## not, see <http://www.gnu.org/licenses/>.
+ ##
+ 
++WEXTRA = @WEXTRA@
++LD_AS_NEEDED = @LD_AS_NEEDED@
++
+ DEFS = -D_GNU_SOURCE -DHAVE_CONFIG_H -DLOCALEDIR='"${localedir}"'
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I..
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow \
+ 	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
++	    $(if $($(*F)_no_Wunused),,-Wunused $(WEXTRA)) \
++	    $(if $($(*F)_no_Wformat),-Wno-format,-Wformat=2) \
+ 	    $($(*F)_CFLAGS)
+ 
++if BUILD_WERROR
++AM_CFLAGS += $(if $($(*F)_no_Werror),,-Werror)
++endif
++
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ 
+ %.os: %.c %.o
+--- elfutils/config/Makefile.in
++++ elfutils/config/Makefile.in
+@@ -147,6 +147,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -178,6 +179,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+--- elfutils/config.h.in
++++ elfutils/config.h.in
+@@ -3,6 +3,9 @@
+ /* Should ar and ranlib use -D behavior by default? */
+ #undef DEFAULT_AR_DETERMINISTIC
+ 
++/* Have __builtin_popcount. */
++#undef HAVE_BUILTIN_POPCOUNT
++
+ /* Define to 1 if you have the <inttypes.h> header file. */
+ #undef HAVE_INTTYPES_H
+ 
+@@ -102,4 +105,7 @@
+ /* Define for large files, on AIX-style hosts. */
+ #undef _LARGE_FILES
+ 
++/* Stubbed out if missing compiler support. */
++#undef __thread
++
+ #include <eu-config.h>
+--- elfutils/configure
++++ elfutils/configure
+@@ -663,6 +663,8 @@ ZLIB_TRUE
+ LIBEBL_SUBDIR
+ TESTS_RPATH_FALSE
+ TESTS_RPATH_TRUE
++BUILD_WERROR_FALSE
++BUILD_WERROR_TRUE
+ BUILD_STATIC_FALSE
+ BUILD_STATIC_TRUE
+ USE_VALGRIND_FALSE
+@@ -678,6 +680,8 @@ NEVER_TRUE
+ base_cpu
+ NATIVE_LD_FALSE
+ NATIVE_LD_TRUE
++LD_AS_NEEDED
++WEXTRA
+ NM
+ READELF
+ ac_ct_AR
+@@ -798,6 +802,7 @@ enable_debugpred
+ enable_gprof
+ enable_gcov
+ enable_valgrind
++enable_werror
+ enable_tests_rpath
+ enable_libebl_subdir
+ with_zlib
+@@ -1455,6 +1460,7 @@ Optional Features:
+   --enable-gprof          build binaries with gprof support
+   --enable-gcov           build binaries with gcov support
+   --enable-valgrind       run all tests under valgrind
++  --disable-werror        do not build with -Werror
+   --enable-tests-rpath    build $ORIGIN-using rpath into tests
+   --enable-libebl-subdir=DIR
+                           install libebl_CPU modules in $(libdir)/DIR
+@@ -4843,6 +4849,130 @@ if test "x$ac_cv_c99" != xyes; then :
+   as_fn_error $? "gcc with C99 support required" "$LINENO" 5
+ fi
+ 
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wextra option to $CC" >&5
++$as_echo_n "checking for -Wextra option to $CC... " >&6; }
++if ${ac_cv_cc_wextra+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  old_CFLAGS="$CFLAGS"
++CFLAGS="$CFLAGS -Wextra"
++cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++void foo (void) { }
++_ACEOF
++if ac_fn_c_try_compile "$LINENO"; then :
++  ac_cv_cc_wextra=yes
++else
++  ac_cv_cc_wextra=no
++fi
++rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
++CFLAGS="$old_CFLAGS"
++fi
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_wextra" >&5
++$as_echo "$ac_cv_cc_wextra" >&6; }
++
++if test "x$ac_cv_cc_wextra" = xyes; then :
++  WEXTRA=-Wextra
++else
++  WEXTRA=-W
++fi
++
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for -fgnu89-inline option to $CC" >&5
++$as_echo_n "checking for -fgnu89-inline option to $CC... " >&6; }
++if ${ac_cv_cc_gnu89_inline+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  old_CFLAGS="$CFLAGS"
++CFLAGS="$CFLAGS -fgnu89-inline -Werror"
++cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++
++void foo (void)
++{
++  inline void bar (void) {}
++  bar ();
++}
++extern inline void baz (void) {}
++
++_ACEOF
++if ac_fn_c_try_compile "$LINENO"; then :
++  ac_cv_cc_gnu89_inline=yes
++else
++  ac_cv_cc_gnu89_inline=no
++fi
++rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
++CFLAGS="$old_CFLAGS"
++fi
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cc_gnu89_inline" >&5
++$as_echo "$ac_cv_cc_gnu89_inline" >&6; }
++if test "x$ac_cv_cc_gnu89_inline" = xyes; then :
++  WEXTRA="${WEXTRA:+$WEXTRA }-fgnu89-inline"
++fi
++
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --as-needed linker option" >&5
++$as_echo_n "checking for --as-needed linker option... " >&6; }
++if ${ac_cv_as_needed+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  cat > conftest.c <<EOF
++int main (void) { return 0; }
++EOF
++if { ac_try='${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS
++			    -fPIC -shared -o conftest.so conftest.c
++			    -Wl,--as-needed 1>&5'
++  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
++  (eval $ac_try) 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; }
++then
++  ac_cv_as_needed=yes
++else
++  ac_cv_as_needed=no
++fi
++rm -f conftest*
++fi
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_as_needed" >&5
++$as_echo "$ac_cv_as_needed" >&6; }
++if test "x$ac_cv_as_needed" = xyes; then :
++  LD_AS_NEEDED=-Wl,--as-needed
++else
++  LD_AS_NEEDED=
++fi
++
++
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_popcount" >&5
++$as_echo_n "checking for __builtin_popcount... " >&6; }
++if ${ac_cv_popcount+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++
++int
++main ()
++{
++exit (__builtin_popcount (127));
++  ;
++  return 0;
++}
++_ACEOF
++if ac_fn_c_try_link "$LINENO"; then :
++  ac_cv_popcount=yes
++else
++  ac_cv_popcount=no
++fi
++rm -f core conftest.err conftest.$ac_objext \
++    conftest$ac_exeext conftest.$ac_ext
++fi
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_popcount" >&5
++$as_echo "$ac_cv_popcount" >&6; }
++if test "x$ac_cv_popcount" = xyes; then :
++
++$as_echo "#define HAVE_BUILTIN_POPCOUNT 1" >>confdefs.h
++
++fi
++
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __thread support" >&5
+ $as_echo_n "checking for __thread support... " >&6; }
+ if ${ac_cv_tls+:} false; then :
+@@ -4879,7 +5009,13 @@ fi
+ { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tls" >&5
+ $as_echo "$ac_cv_tls" >&6; }
+ if test "x$ac_cv_tls" != xyes; then :
+-  as_fn_error $? "__thread support required" "$LINENO" 5
++  if test "$use_locks" = yes; then :
++  as_fn_error $? "--enable-thread-safety requires __thread support" "$LINENO" 5
++else
++
++$as_echo "#define __thread /* empty: no multi-thread support */" >>confdefs.h
++
++fi
+ fi
+ 
+ # Check whether --enable-largefile was given.
+@@ -5246,6 +5382,22 @@ else
+ fi
+ 
+ 
++# Check whether --enable-werror was given.
++if test "${enable_werror+set}" = set; then :
++  enableval=$enable_werror; enable_werror=$enableval
++else
++  enable_werror=yes
++fi
++
++ if test "$enable_werror" = yes; then
++  BUILD_WERROR_TRUE=
++  BUILD_WERROR_FALSE='#'
++else
++  BUILD_WERROR_TRUE='#'
++  BUILD_WERROR_FALSE=
++fi
++
++
+ # Check whether --enable-tests-rpath was given.
+ if test "${enable_tests_rpath+set}" = set; then :
+   enableval=$enable_tests_rpath; tests_use_rpath=$enableval
+@@ -5983,7 +6135,7 @@ case "$eu_version" in
+ esac
+ 
+ # Round up to the next release API (x.y) version.
+-eu_version=$(( (eu_version + 999) / 1000 ))
++eu_version=`expr \( $eu_version + 999 \) / 1000`
+ 
+ ac_ext=c
+ ac_cpp='$CPP $CPPFLAGS'
+@@ -6729,6 +6881,10 @@ if test -z "${BUILD_STATIC_TRUE}" && tes
+   as_fn_error $? "conditional \"BUILD_STATIC\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+ fi
++if test -z "${BUILD_WERROR_TRUE}" && test -z "${BUILD_WERROR_FALSE}"; then
++  as_fn_error $? "conditional \"BUILD_WERROR\" was never defined.
++Usually this means the macro was only invoked conditionally." "$LINENO" 5
++fi
+ if test -z "${TESTS_RPATH_TRUE}" && test -z "${TESTS_RPATH_FALSE}"; then
+   as_fn_error $? "conditional \"TESTS_RPATH\" was never defined.
+ Usually this means the macro was only invoked conditionally." "$LINENO" 5
+--- elfutils/configure.ac
++++ elfutils/configure.ac
+@@ -89,6 +89,54 @@ CFLAGS="$old_CFLAGS"])
+ AS_IF([test "x$ac_cv_c99" != xyes],
+       AC_MSG_ERROR([gcc with C99 support required]))
+ 
++AC_CACHE_CHECK([for -Wextra option to $CC], ac_cv_cc_wextra, [dnl
++old_CFLAGS="$CFLAGS"
++CFLAGS="$CFLAGS -Wextra"
++AC_COMPILE_IFELSE([AC_LANG_SOURCE([void foo (void) { }])],
++		  ac_cv_cc_wextra=yes, ac_cv_cc_wextra=no)
++CFLAGS="$old_CFLAGS"])
++AC_SUBST(WEXTRA)
++AS_IF([test "x$ac_cv_cc_wextra" = xyes], [WEXTRA=-Wextra], [WEXTRA=-W])
++
++AC_CACHE_CHECK([for -fgnu89-inline option to $CC], ac_cv_cc_gnu89_inline, [dnl
++old_CFLAGS="$CFLAGS"
++CFLAGS="$CFLAGS -fgnu89-inline -Werror"
++AC_COMPILE_IFELSE([AC_LANG_SOURCE([
++void foo (void)
++{
++  inline void bar (void) {}
++  bar ();
++}
++extern inline void baz (void) {}
++])], ac_cv_cc_gnu89_inline=yes, ac_cv_cc_gnu89_inline=no)
++CFLAGS="$old_CFLAGS"])
++AS_IF([test "x$ac_cv_cc_gnu89_inline" = xyes],
++      [WEXTRA="${WEXTRA:+$WEXTRA }-fgnu89-inline"])
++
++AC_CACHE_CHECK([for --as-needed linker option],
++	       ac_cv_as_needed, [dnl
++cat > conftest.c <<EOF
++int main (void) { return 0; }
++EOF
++if AC_TRY_COMMAND([${CC-cc} $CFLAGS $CPPFLAGS $LDFLAGS
++			    -fPIC -shared -o conftest.so conftest.c
++			    -Wl,--as-needed 1>&AS_MESSAGE_LOG_FD])
++then
++  ac_cv_as_needed=yes
++else
++  ac_cv_as_needed=no
++fi
++rm -f conftest*])
++AS_IF([test "x$ac_cv_as_needed" = xyes],
++      [LD_AS_NEEDED=-Wl,--as-needed], [LD_AS_NEEDED=])
++AC_SUBST(LD_AS_NEEDED)
++
++AC_CACHE_CHECK([for __builtin_popcount], ac_cv_popcount, [dnl
++AC_LINK_IFELSE([AC_LANG_PROGRAM([], [[exit (__builtin_popcount (127));]])],
++	       ac_cv_popcount=yes, ac_cv_popcount=no)])
++AS_IF([test "x$ac_cv_popcount" = xyes],
++      [AC_DEFINE([HAVE_BUILTIN_POPCOUNT], [1], [Have __builtin_popcount.])])
++
+ AC_CACHE_CHECK([for __thread support], ac_cv_tls, [dnl
+ # Use the same flags that we use for our DSOs, so the test is representative.
+ # Some old compiler/linker/libc combinations fail some ways and not others.
+@@ -104,7 +152,10 @@ static __thread int a; int foo (int b) {
+ CFLAGS="$save_CFLAGS"
+ LDFLAGS="$save_LDFLAGS"])
+ AS_IF([test "x$ac_cv_tls" != xyes],
+-      AC_MSG_ERROR([__thread support required]))
++      [AS_IF([test "$use_locks" = yes],
++	     [AC_MSG_ERROR([--enable-thread-safety requires __thread support])],
++	     [AC_DEFINE([__thread], [/* empty: no multi-thread support */],
++			[Stubbed out if missing compiler support.])])])
+ 
+ dnl This test must come as early as possible after the compiler configuration
+ dnl tests, because the choice of the file model can (in principle) affect
+@@ -183,6 +234,11 @@ AM_CONDITIONAL(USE_VALGRIND, test "$use_
+ AM_CONDITIONAL(BUILD_STATIC, [dnl
+ test "$use_gprof" = yes -o "$use_gcov" = yes])
+ 
++AC_ARG_ENABLE([werror],
++AS_HELP_STRING([--disable-werror],[do not build with -Werror]),
++	       [enable_werror=$enableval], [enable_werror=yes])
++AM_CONDITIONAL(BUILD_WERROR, test "$enable_werror" = yes)
++
+ AC_ARG_ENABLE([tests-rpath],
+ AS_HELP_STRING([--enable-tests-rpath],[build $ORIGIN-using rpath into tests]),
+ 	       [tests_use_rpath=$enableval], [tests_use_rpath=no])
+@@ -302,7 +358,7 @@ case "$eu_version" in
+ esac
+ 
+ # Round up to the next release API (x.y) version.
+-eu_version=$(( (eu_version + 999) / 1000 ))
++eu_version=`expr \( $eu_version + 999 \) / 1000`
+ 
+ AC_CHECK_SIZEOF(long)
+ 
+--- elfutils/lib/ChangeLog
++++ elfutils/lib/ChangeLog
+@@ -65,6 +65,9 @@
+ 
+ 2009-01-23  Roland McGrath  <roland@redhat.com>
+ 
++	* eu-config.h [! HAVE_BUILTIN_POPCOUNT]
++	(__builtin_popcount): New inline function.
++
+ 	* eu-config.h: Add multiple inclusion protection.
+ 
+ 2009-01-17  Ulrich Drepper  <drepper@redhat.com>
+@@ -121,6 +124,11 @@
+ 	* Makefile.am (libeu_a_SOURCES): Add it.
+ 	* system.h: Declare crc32_file.
+ 
++2005-02-07  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 2005-04-30  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* Makefile.am: Use -ffunction-sections for xmalloc.c.
+--- elfutils/lib/eu-config.h
++++ elfutils/lib/eu-config.h
+@@ -162,6 +162,17 @@ asm (".section predict_data, \"aw\"; .pr
+ /* This macro is used by the tests conditionalize for standalone building.  */
+ #define ELFUTILS_HEADER(name) <lib##name.h>
+ 
++#ifndef HAVE_BUILTIN_POPCOUNT
++# define __builtin_popcount hakmem_popcount
++static inline unsigned int __attribute__ ((unused))
++hakmem_popcount (unsigned int x)
++{
++  /* HAKMEM 169 */
++  unsigned int n = x - ((x >> 1) & 033333333333) - ((x >> 2) & 011111111111);
++  return ((n + (n >> 3)) & 030707070707) % 63;
++}
++#endif	/* HAVE_BUILTIN_POPCOUNT */
++
+ 
+ #ifdef SHARED
+ # define OLD_VERSION(name, version) \
+--- elfutils/lib/Makefile.in
++++ elfutils/lib/Makefile.in
+@@ -82,6 +82,7 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(noinst_HEADERS) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ subdir = lib
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -197,6 +198,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -228,6 +230,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -289,9 +292,11 @@ top_srcdir = @top_srcdir@
+ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(srcdir)/../libelf
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
+ 	$($(*F)_no_Werror),,-Werror) $(if \
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) -fpic
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1) -fpic
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+--- elfutils/libasm/ChangeLog
++++ elfutils/libasm/ChangeLog
+@@ -87,6 +87,11 @@
+ 	* asm_error.c: Add new error ASM_E_IOERROR.
+ 	* libasmP.h: Add ASM_E_IOERROR definition.
+ 
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 2005-02-15  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* Makefile.am (AM_CFLAGS): Add -Wunused -Wextra -Wformat=2.
+--- elfutils/libasm/Makefile.in
++++ elfutils/libasm/Makefile.in
+@@ -83,8 +83,9 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ noinst_PROGRAMS = $(am__EXEEXT_1)
+-@USE_LOCKS_TRUE@am__append_1 = -lpthread
++@USE_LOCKS_TRUE@am__append_2 = -lpthread
+ subdir = libasm
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -248,6 +249,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -279,6 +281,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = 1
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -341,11 +344,11 @@ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(top_srcdir)/libelf -I$(top_srcdir)/libebl \
+ 	-I$(top_srcdir)/libdw
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $($(*F)_CFLAGS)
+-
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
++	$($(*F)_no_Werror),,-Werror) $(if \
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(am_libasm_pic_a_OBJECTS) \
+ 	libasm.so.$(VERSION)
+@@ -373,7 +376,7 @@ libasm_a_SOURCES = asm_begin.c asm_abort
+ 
+ libasm_pic_a_SOURCES = 
+ am_libasm_pic_a_OBJECTS = $(libasm_a_SOURCES:.c=.os)
+-libasm_so_LDLIBS = $(am__append_1)
++libasm_so_LDLIBS = $(am__append_2)
+ libasm_so_SOURCES = 
+ noinst_HEADERS = libasmP.h symbolhash.h
+ EXTRA_DIST = libasm.map
+--- elfutils/libcpu/ChangeLog
++++ elfutils/libcpu/ChangeLog
+@@ -51,6 +51,9 @@
+ 
+ 2009-01-23  Roland McGrath  <roland@redhat.com>
+ 
++	* i386_disasm.c (i386_disasm): Add abort after assert-constant for old
++	compilers that don't realize it's noreturn.
++
+ 	* Makefile.am (i386_parse_CFLAGS): Use quotes around command
+ 	substitution that can produce leading whitespace.
+ 
+@@ -380,6 +383,11 @@
+ 	* defs/i386.doc: New file.
+ 	* defs/x86_64: New file.
+ 
++2005-04-04  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it instead of -Wextra.
++
+ 2005-02-15  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* Makefile (AM_CFLAGS): Add -Wunused -Wextra -Wformat=2.
+--- elfutils/libcpu/i386_disasm.c
++++ elfutils/libcpu/i386_disasm.c
+@@ -822,6 +822,7 @@ i386_disasm (const uint8_t **startp, con
+ 
+ 			default:
+ 			  assert (! "INVALID not handled");
++			  abort ();
+ 			}
+ 		    }
+ 		  else
+--- elfutils/libcpu/Makefile.in
++++ elfutils/libcpu/Makefile.in
+@@ -84,6 +84,7 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+ 	$(srcdir)/Makefile.am i386_lex.c i386_parse.c \
+ 	$(top_srcdir)/config/depcomp $(top_srcdir)/config/ylwrap \
+ 	$(am__noinst_HEADERS_DIST) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ @MAINTAINER_MODE_TRUE@noinst_PROGRAMS = i386_gendis$(EXEEXT)
+ subdir = libcpu
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+@@ -223,6 +224,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = lex.$(<F:lex.l=)
+@@ -254,6 +256,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -316,10 +319,11 @@ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(srcdir)/../libelf -I$(srcdir)/../libebl \
+ 	-I$(srcdir)/../libdw -I$(srcdir)/../libasm
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
+ 	$($(*F)_no_Werror),,-Werror) $(if \
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) -fpic \
+-	-fdollars-in-identifiers
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1) -fpic -fdollars-in-identifiers
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(foreach P,i386 x86_64,$P_defs \
+ 	$P.mnemonics)
+--- elfutils/libdw/ChangeLog
++++ elfutils/libdw/ChangeLog
+@@ -717,6 +717,10 @@
+ 
+ 	* Makefile.am (known-dwarf.h): Run gawk on config/known-dwarf.awk.
+ 
++2011-07-20  Mark Wielaard  <mjw@redhat.com>
++
++	* dwarf_begin_elf.c: Add fallback for be64toh if not defined.
++
+ 2011-07-14  Mark Wielaard  <mjw@redhat.com>
+ 
+ 	* libdw.h (dwarf_offdie): Fix documentation to mention .debug_info.
+@@ -1076,6 +1080,10 @@
+ 
+ 	* dwarf_hasattr_integrate.c: Integrate DW_AT_specification too.
+ 
++2009-08-17  Roland McGrath  <roland@redhat.com>
++
++	* libdw.h: Disable extern inlines for GCC 4.2.
++
+ 2009-08-10  Roland McGrath  <roland@redhat.com>
+ 
+ 	* dwarf_getscopevar.c: Use dwarf_diename.
+@@ -1844,6 +1852,11 @@
+ 
+ 2005-05-31  Roland McGrath  <roland@redhat.com>
+ 
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
+ 	* dwarf_formref_die.c (dwarf_formref_die): Add CU header offset to
+ 	formref offset.
+ 
+--- elfutils/libdw/dwarf_begin_elf.c
++++ elfutils/libdw/dwarf_begin_elf.c
+@@ -47,6 +47,14 @@
+ #if USE_ZLIB
+ # include <endian.h>
+ # define crc32		loser_crc32
++# ifndef be64toh
++#  include <byteswap.h>
++#  if __BYTE_ORDER == __LITTLE_ENDIAN
++#   define be64toh(x) bswap_64 (x)
++#  else
++#   define be64toh(x) (x)
++#  endif
++# endif
+ # include <zlib.h>
+ # undef crc32
+ #endif
+--- elfutils/libdw/libdw.h
++++ elfutils/libdw/libdw.h
+@@ -1003,7 +1003,7 @@ extern Dwarf_OOM dwarf_new_oom_handler (
+ 
+ 
+ /* Inline optimizations.  */
+-#ifdef __OPTIMIZE__
++#if defined __OPTIMIZE__ && !(__GNUC__ == 4 && __GNUC_MINOR__ == 2)
+ /* Return attribute code of given attribute.  */
+ __libdw_extern_inline unsigned int
+ dwarf_whatattr (Dwarf_Attribute *attr)
+--- elfutils/libdw/Makefile.in
++++ elfutils/libdw/Makefile.in
+@@ -84,7 +84,8 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(include_HEADERS) $(noinst_HEADERS) $(pkginclude_HEADERS) \
+ 	ChangeLog
+-@BUILD_STATIC_TRUE@am__append_1 = -fpic
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@BUILD_STATIC_TRUE@am__append_2 = -fpic
+ noinst_PROGRAMS = $(am__EXEEXT_1)
+ subdir = libdw
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+@@ -298,6 +299,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -329,6 +331,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = 1
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -390,10 +393,11 @@ top_srcdir = @top_srcdir@
+ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(srcdir)/../libelf
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
+ 	$($(*F)_no_Werror),,-Werror) $(if \
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) \
+-	$(am__append_1)
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1) $(am__append_2)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+--- elfutils/libdwelf/Makefile.in
++++ elfutils/libdwelf/Makefile.in
+@@ -82,6 +82,7 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ subdir = libdwelf
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -227,6 +228,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -258,6 +260,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = 1
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -320,11 +323,11 @@ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(srcdir)/../libelf -I$(srcdir)/../libdw \
+ 	-I$(srcdir)/../libdwfl -I$(srcdir)/../libebl
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $($(*F)_CFLAGS)
+-
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
++	$($(*F)_no_Werror),,-Werror) $(if \
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(am_libdwelf_pic_a_OBJECTS)
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+--- elfutils/libdwfl/ChangeLog
++++ elfutils/libdwfl/ChangeLog
+@@ -571,6 +571,21 @@
+ 	(dwfl_module_addrsym) (i_to_symfile): New function.
+ 	(dwfl_module_addrsym) (search_table): Use it.
+ 
++2013-11-09  Jan Kratochvil  <jan.kratochvil@redhat.com>
++
++	Older OS compatibility bits.
++	* linux-core-attach.c (be64toh, le64toh, be32toh, le32toh): Provide
++	fallbacks if not defined by system.
++
++2013-11-09  Jan Kratochvil  <jan.kratochvil@redhat.com>
++
++	Handle T-stopped detach for old kernels.
++	* linux-pid-attach.c (struct pid_arg): New field stopped.
++	(ptrace_attach): New parameter stoppedp.  Set it appropriately.
++	(pid_set_initial_registers): Pass the new field.
++	(pid_thread_detach): Handle the case of STOPPED for old kernels.
++	(__libdwfl_attach_state_for_pid): Initialize STOPPED.
++
+ 2013-11-07  Jan Kratochvil  <jan.kratochvil@redhat.com>
+ 	    Mark Wielaard  <mjw@redhat.com>
+ 
+@@ -2336,6 +2351,11 @@
+ 
+ 2005-07-21  Roland McGrath  <roland@redhat.com>
+ 
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
++2005-07-21  Roland McGrath  <roland@redhat.com>
++
+ 	* Makefile.am (noinst_HEADERS): Add loc2c.c.
+ 
+ 	* test2.c (main): Check sscanf result to quiet warning.
+--- elfutils/libdwfl/linux-core-attach.c
++++ elfutils/libdwfl/linux-core-attach.c
+@@ -29,6 +29,35 @@
+ #include "libdwflP.h"
+ #include <fcntl.h>
+ #include "system.h"
++#include <endian.h>
++#include <byteswap.h>
++#if __BYTE_ORDER == __LITTLE_ENDIAN
++# ifndef be64toh
++#  define be64toh(x) bswap_64 (x)
++# endif
++# ifndef le64toh
++#  define le64toh(x) (x)
++# endif
++# ifndef be32toh
++#  define be32toh(x) bswap_32 (x)
++# endif
++# ifndef le32toh
++#  define le32toh(x) (x)
++# endif
++#else
++# ifndef be64toh
++#  define be64toh(x) (x)
++# endif
++# ifndef le64toh
++#  define le64toh(x) bswap_64 (x)
++# endif
++# ifndef be32toh
++#  define be32toh(x) (x)
++# endif
++# ifndef le32toh
++#  define le32toh(x) bswap_32 (x)
++# endif
++#endif
+ 
+ #include "../libdw/memory-access.h"
+ 
+--- elfutils/libdwfl/linux-pid-attach.c
++++ elfutils/libdwfl/linux-pid-attach.c
+@@ -255,6 +255,11 @@ void
+ internal_function
+ __libdwfl_ptrace_detach (pid_t tid, bool tid_was_stopped)
+ {
++  // Older kernels (tested kernel-2.6.18-348.12.1.el5.x86_64) need special
++  // handling of the detachment to keep the process State: T (stopped).
++  if (tid_was_stopped)
++    syscall (__NR_tkill, tid, SIGSTOP);
++
+   /* This handling is needed only on older Linux kernels such as
+      2.6.32-358.23.2.el6.ppc64.  Later kernels such as
+      3.11.7-200.fc19.x86_64 remember the T (stopped) state
+@@ -262,6 +267,15 @@ __libdwfl_ptrace_detach (pid_t tid, bool
+      PTRACE_DETACH.  */
+   ptrace (PTRACE_DETACH, tid, NULL,
+ 	  (void *) (intptr_t) (tid_was_stopped ? SIGSTOP : 0));
++
++  if (tid_was_stopped)
++    {
++      // Wait till the SIGSTOP settles down.
++      int i;
++      for (i = 0; i < 100000; i++)
++	if (linux_proc_pid_is_stopped (tid))
++	  break;
++    }
+ }
+ 
+ static void
+--- elfutils/libdwfl/Makefile.in
++++ elfutils/libdwfl/Makefile.in
+@@ -82,9 +82,10 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
+-@ZLIB_TRUE@am__append_1 = gzip.c
+-@BZLIB_TRUE@am__append_2 = bzip2.c
+-@LZMA_TRUE@am__append_3 = lzma.c
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@ZLIB_TRUE@am__append_2 = gzip.c
++@BZLIB_TRUE@am__append_3 = bzip2.c
++@LZMA_TRUE@am__append_4 = lzma.c
+ subdir = libdwfl
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -286,6 +287,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -317,6 +319,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = 1
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -379,11 +382,11 @@ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. -I$(srcdir) \
+ 	-I$(srcdir)/../libelf -I$(srcdir)/../libebl \
+ 	-I$(srcdir)/../libdw -I$(srcdir)/../libdwelf
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $($(*F)_CFLAGS)
+-
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
++	$($(*F)_no_Werror),,-Werror) $(if \
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(am_libdwfl_pic_a_OBJECTS)
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+@@ -413,8 +416,8 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
+ 	dwfl_module_register_names.c dwfl_segment_report_module.c \
+ 	link_map.c core-file.c open.c image-header.c dwfl_frame.c \
+ 	frame_unwind.c dwfl_frame_pc.c linux-pid-attach.c \
+-	linux-core-attach.c dwfl_frame_regs.c $(am__append_1) \
+-	$(am__append_2) $(am__append_3)
++	linux-core-attach.c dwfl_frame_regs.c $(am__append_2) \
++	$(am__append_3) $(am__append_4)
+ libdwfl = $(libdw)
+ libdw = ../libdw/libdw.so
+ libelf = ../libelf/libelf.so
+--- elfutils/libebl/ChangeLog
++++ elfutils/libebl/ChangeLog
+@@ -765,6 +765,11 @@
+ 	* Makefile.am (libebl_*_so_SOURCES): Set to $(*_SRCS) so dependency
+ 	tracking works right.
+ 
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 2005-05-21  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* libebl_x86_64.map: Add x86_64_core_note.
+--- elfutils/libebl/Makefile.in
++++ elfutils/libebl/Makefile.in
+@@ -82,6 +82,7 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ subdir = libebl
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -249,6 +250,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -280,6 +282,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = 1
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -342,9 +345,11 @@ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
+ 	-I$(srcdir)/../libelf -I$(srcdir)/../libdw \
+ 	-I$(srcdir)/../libasm
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
+ 	$($(*F)_no_Werror),,-Werror) $(if \
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) -fpic
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1) -fpic
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(am_libebl_pic_a_OBJECTS)
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+--- elfutils/libelf/ChangeLog
++++ elfutils/libelf/ChangeLog
+@@ -244,6 +244,11 @@
+ 
+ 	* elf-knowledge.h (SECTION_STRIP_P): Remove < SHT_NUM check.
+ 
++2011-03-10  Roland McGrath  <roland@redhat.com>
++
++	* gnuhash_xlate.h (elf_cvt_gnuhash): Avoid post-increment in bswap_32
++	argument, since some implementations are buggy macros.
++
+ 2011-02-26  Mark Wielaard  <mjw@redhat.com>
+ 
+ 	* elf_end.c (elf_end): Call rwlock_unlock before rwlock_fini.
+@@ -921,6 +926,11 @@
+ 
+ 	* elf.h: Update from glibc.
+ 
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 2005-05-08  Roland McGrath  <roland@redhat.com>
+ 
+ 	* elf_begin.c (read_file) [_MUDFLAP]: Don't use mmap for now.
+--- elfutils/libelf/common.h
++++ elfutils/libelf/common.h
+@@ -139,7 +139,7 @@ libelf_release_all (Elf *elf)
+   (Var) = (sizeof (Var) == 1						      \
+ 	   ? (unsigned char) (Var)					      \
+ 	   : (sizeof (Var) == 2						      \
+-	      ? bswap_16 (Var)						      \
++	      ? (unsigned short int) bswap_16 (Var)			      \
+ 	      : (sizeof (Var) == 4					      \
+ 		 ? bswap_32 (Var)					      \
+ 		 : bswap_64 (Var))))
+@@ -148,7 +148,7 @@ libelf_release_all (Elf *elf)
+   (Dst) = (sizeof (Var) == 1						      \
+ 	   ? (unsigned char) (Var)					      \
+ 	   : (sizeof (Var) == 2						      \
+-	      ? bswap_16 (Var)						      \
++	      ? (unsigned short int) bswap_16 (Var)			      \
+ 	      : (sizeof (Var) == 4					      \
+ 		 ? bswap_32 (Var)					      \
+ 		 : bswap_64 (Var))))
+--- elfutils/libelf/gnuhash_xlate.h
++++ elfutils/libelf/gnuhash_xlate.h
+@@ -1,5 +1,5 @@
+ /* Conversion functions for versioning information.
+-   Copyright (C) 2006, 2007 Red Hat, Inc.
++   Copyright (C) 2006-2011 Red Hat, Inc.
+    This file is part of elfutils.
+    Written by Ulrich Drepper <drepper@redhat.com>, 2006.
+ 
+@@ -68,7 +68,9 @@ elf_cvt_gnuhash (void *dest, const void
+   dest32 = (Elf32_Word *) &dest64[bitmask_words];
+   while (len >= 4)
+     {
+-      *dest32++ = bswap_32 (*src32++);
++      *dest32 = bswap_32 (*src32);
++      ++dest32;
++      ++src32;
+       len -= 4;
+     }
+ }
+--- elfutils/libelf/Makefile.in
++++ elfutils/libelf/Makefile.in
+@@ -84,9 +84,10 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(include_HEADERS) $(noinst_HEADERS) $(pkginclude_HEADERS) \
+ 	ChangeLog
+-@BUILD_STATIC_TRUE@am__append_1 = -fpic
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@BUILD_STATIC_TRUE@am__append_2 = -fpic
+ noinst_PROGRAMS = $(am__EXEEXT_1)
+-@USE_LOCKS_TRUE@am__append_2 = -lpthread
++@USE_LOCKS_TRUE@am__append_3 = -lpthread
+ subdir = libelf
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -291,6 +292,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -322,6 +324,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = 1
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -382,10 +385,11 @@ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ zip_LIBS = @zip_LIBS@
+ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I..
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
+ 	$($(*F)_no_Werror),,-Werror) $(if \
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) \
+-	$(am__append_1)
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1) $(am__append_2)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda $(am_libelf_pic_a_OBJECTS) \
+ 	libelf.so.$(VERSION)
+@@ -449,7 +453,7 @@ libelf_a_SOURCES = elf_version.c elf_has
+ 
+ libelf_pic_a_SOURCES = 
+ am_libelf_pic_a_OBJECTS = $(libelf_a_SOURCES:.c=.os)
+-libelf_so_LDLIBS = $(am__append_2)
++libelf_so_LDLIBS = $(am__append_3)
+ libelf_so_SOURCES = 
+ noinst_HEADERS = elf.h abstract.h common.h exttypes.h gelf_xlate.h libelfP.h \
+ 		 version_xlate.h gnuhash_xlate.h note_xlate.h dl-hash.h
+--- elfutils/m4/Makefile.in
++++ elfutils/m4/Makefile.in
+@@ -145,6 +145,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -176,6 +177,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+--- elfutils/Makefile.in
++++ elfutils/Makefile.in
+@@ -263,6 +263,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -294,6 +295,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+--- elfutils/src/addr2line.c
++++ elfutils/src/addr2line.c
+@@ -540,10 +540,10 @@ handle_address (const char *string, Dwfl
+       bool parsed = false;
+       int i, j;
+       char *name = NULL;
+-      if (sscanf (string, "(%m[^)])%" PRIiMAX "%n", &name, &addr, &i) == 2
++      if (sscanf (string, "(%a[^)])%" PRIiMAX "%n", &name, &addr, &i) == 2
+ 	  && string[i] == '\0')
+ 	parsed = adjust_to_section (name, &addr, dwfl);
+-      switch (sscanf (string, "%m[^-+]%n%" PRIiMAX "%n", &name, &i, &addr, &j))
++      switch (sscanf (string, "%a[^-+]%n%" PRIiMAX "%n", &name, &i, &addr, &j))
+ 	{
+ 	default:
+ 	  break;
+--- elfutils/src/ChangeLog
++++ elfutils/src/ChangeLog
+@@ -1371,8 +1371,16 @@
+ 	* readelf.c (attr_callback): Use print_block only when we don't use
+ 	print_ops.
+ 
++2009-08-17  Roland McGrath  <roland@redhat.com>
++
++	* ld.h: Disable extern inlines for GCC 4.2.
++
+ 2009-08-14  Roland McGrath  <roland@redhat.com>
+ 
++	* strings.c (read_block): Conditionalize posix_fadvise use
++	on [POSIX_FADV_SEQUENTIAL].
++	From Petr Salinger <Petr.Salinger@seznam.cz>.
++
+ 	* ar.c (do_oper_extract): Use pathconf instead of statfs.
+ 
+ 2009-08-01  Ulrich Drepper  <drepper@redhat.com>
+@@ -1536,6 +1544,8 @@
+ 	* readelf.c (print_debug_frame_section): Use t instead of j formats
+ 	for ptrdiff_t OFFSET.
+ 
++	* addr2line.c (handle_address): Use %a instead of %m for compatibility.
++
+ 2009-01-21  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* elflint.c (check_program_header): Fix typo in .eh_frame_hdr section
+@@ -1719,6 +1729,11 @@
+ 	that matches its PT_LOAD's p_flags &~ PF_W.  On sparc, PF_X really
+ 	is valid in RELRO.
+ 
++2008-03-01  Roland McGrath  <roland@redhat.com>
++
++	* readelf.c (dump_archive_index): Tweak portability hack
++	to match [__GNUC__ < 4] too.
++
+ 2008-02-29  Roland McGrath  <roland@redhat.com>
+ 
+ 	* readelf.c (print_attributes): Add a cast.
+@@ -1970,6 +1985,8 @@
+ 
+ 	* readelf.c (hex_dump): Fix rounding error in whitespace calculation.
+ 
++	* Makefile.am (readelf_no_Werror): New variable.
++
+ 2007-10-15  Roland McGrath  <roland@redhat.com>
+ 
+ 	* make-debug-archive.in: New file.
+@@ -2409,6 +2426,10 @@
+ 	* elflint.c (valid_e_machine): Add EM_ALPHA.
+ 	Reported by Christian Aichinger <Greek0@gmx.net>.
+ 
++	* strings.c (map_file): Define POSIX_MADV_SEQUENTIAL to
++	MADV_SEQUENTIAL if undefined.  	Don't call posix_madvise
++	if neither is defined.
++
+ 2006-08-08  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* elflint.c (check_dynamic): Don't require DT_HASH for DT_SYMTAB.
+@@ -2485,6 +2506,10 @@
+ 	* Makefile.am: Add hacks to create dependency files for non-generic
+ 	linker.
+ 
++2006-04-05  Roland McGrath  <roland@redhat.com>
++
++	* strings.c (MAP_POPULATE): Define to 0 if undefined.
++
+ 2006-06-12  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* ldgeneric.c (ld_generic_generate_sections): Don't create .interp
+@@ -2833,6 +2858,11 @@
+ 	* readelf.c (print_debug_loc_section): Fix indentation for larger
+ 	address size.
+ 
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 2005-05-30  Roland McGrath  <roland@redhat.com>
+ 
+ 	* readelf.c (print_debug_line_section): Print section offset of each
+--- elfutils/src/findtextrel.c
++++ elfutils/src/findtextrel.c
+@@ -502,7 +502,11 @@ ptrcompare (const void *p1, const void *
+ 
+ 
+ static void
+-check_rel (size_t nsegments, struct segments segments[nsegments],
++check_rel (size_t nsegments, struct segments segments[
++#if __GNUC__ >= 4
++						      nsegments
++#endif
++	   ],
+ 	   GElf_Addr addr, Elf *elf, Elf_Scn *symscn, Dwarf *dw,
+ 	   const char *fname, bool more_than_one, void **knownsrcs)
+ {
+--- elfutils/src/ld.h
++++ elfutils/src/ld.h
+@@ -1114,6 +1114,7 @@ extern bool dynamically_linked_p (void);
+ 
+ /* Checked whether the symbol is undefined and referenced from a DSO.  */
+ extern bool linked_from_dso_p (struct scninfo *scninfo, size_t symidx);
++#if defined __OPTIMIZE__ && !(__GNUC__ == 4 && __GNUC_MINOR__ == 2)
+ #ifdef __GNUC_STDC_INLINE__
+ __attribute__ ((__gnu_inline__))
+ #endif
+@@ -1131,5 +1132,6 @@ linked_from_dso_p (struct scninfo *scnin
+ 
+   return sym->defined && sym->in_dso;
+ }
++#endif	/* Optimizing and not GCC 4.2.  */
+ 
+ #endif	/* ld.h */
+--- elfutils/src/Makefile.am
++++ elfutils/src/Makefile.am
+@@ -89,6 +89,11 @@ endif
+ # XXX While the file is not finished, don't warn about this
+ ldgeneric_no_Wunused = yes
+ 
++# Buggy old compilers or libc headers.
++readelf_no_Werror = yes
++strings_no_Werror = yes
++addr2line_no_Wformat = yes
++
+ readelf_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl
+ nm_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl \
+ 	   $(demanglelib)
+--- elfutils/src/Makefile.in
++++ elfutils/src/Makefile.in
+@@ -85,6 +85,7 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+ 	$(srcdir)/Makefile.am ldlex.c ldscript.c \
+ 	$(top_srcdir)/config/depcomp $(top_srcdir)/config/ylwrap \
+ 	$(noinst_HEADERS) ChangeLog
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
+ bin_PROGRAMS = readelf$(EXEEXT) nm$(EXEEXT) size$(EXEEXT) \
+ 	strip$(EXEEXT) ld$(EXEEXT) elflint$(EXEEXT) \
+ 	findtextrel$(EXEEXT) addr2line$(EXEEXT) elfcmp$(EXEEXT) \
+@@ -93,9 +94,9 @@ bin_PROGRAMS = readelf$(EXEEXT) nm$(EXEE
+ @NATIVE_LD_FALSE@noinst_PROGRAMS = $(am__EXEEXT_1)
+ # We never build this library but we need to get the dependency files
+ # of all the linker backends that might be used in a non-generic linker.
+-@NEVER_TRUE@am__append_1 = libdummy.a
++@NEVER_TRUE@am__append_2 = libdummy.a
+ # -ldl is always needed for libebl.
+-@NATIVE_LD_TRUE@am__append_2 = libld_elf.a
++@NATIVE_LD_TRUE@am__append_3 = libld_elf.a
+ @NATIVE_LD_TRUE@am_libld_elf_i386_pic_a_OBJECTS =
+ subdir = src
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+@@ -159,7 +160,7 @@ am_ld_OBJECTS = ld.$(OBJEXT) ldgeneric.$
+ 	ldscript.$(OBJEXT) symbolhash.$(OBJEXT) sectionhash.$(OBJEXT) \
+ 	versionhash.$(OBJEXT)
+ ld_OBJECTS = $(am_ld_OBJECTS)
+-ld_DEPENDENCIES = $(libebl) $(libelf) $(libeu) $(am__append_2)
++ld_DEPENDENCIES = $(libebl) $(libelf) $(libeu) $(am__append_3)
+ ld_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ld_LDFLAGS) $(LDFLAGS) -o \
+ 	$@
+ am_libld_elf_i386_so_OBJECTS =
+@@ -340,6 +341,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -371,6 +373,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -434,11 +437,11 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 	-I$(srcdir)/../libelf -I$(srcdir)/../libebl \
+ 	-I$(srcdir)/../libdw -I$(srcdir)/../libdwelf \
+ 	-I$(srcdir)/../libdwfl -I$(srcdir)/../libasm
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $($(*F)_CFLAGS)
+-
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
++	$($(*F)_no_Werror),,-Werror) $(if \
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda make-debug-archive none_ld.os \
+ 	$(ld_modules:.c=.os) *.gconv
+@@ -452,8 +455,8 @@ AM_LFLAGS = -Pld -olex.yy.c
+ native_ld = @native_ld@
+ ld_dsos = libld_elf_i386_pic.a
+ @NATIVE_LD_FALSE@noinst_LIBRARIES = libld_elf.a libar.a $(ld_dsos) \
+-@NATIVE_LD_FALSE@	$(am__append_1)
+-@NATIVE_LD_TRUE@noinst_LIBRARIES = libld_elf.a libar.a $(am__append_1)
++@NATIVE_LD_FALSE@	$(am__append_2)
++@NATIVE_LD_TRUE@noinst_LIBRARIES = libld_elf.a libar.a $(am__append_2)
+ @NATIVE_LD_TRUE@native_ld_cflags = -DBASE_ELF_NAME=elf_$(base_cpu)
+ @NEVER_TRUE@libdummy_a_SOURCES = i386_ld.c
+ ld_SOURCES = ld.c ldgeneric.c ldlex.l ldscript.y symbolhash.c sectionhash.c \
+@@ -479,13 +482,18 @@ libeu = ../lib/libeu.a
+ 
+ # XXX While the file is not finished, don't warn about this
+ ldgeneric_no_Wunused = yes
++
++# Buggy old compilers or libc headers.
++readelf_no_Werror = yes
++strings_no_Werror = yes
++addr2line_no_Wformat = yes
+ readelf_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl
+ nm_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl \
+ 	   $(demanglelib)
+ 
+ size_LDADD = $(libelf) $(libeu)
+ strip_LDADD = $(libebl) $(libelf) $(libeu) -ldl
+-ld_LDADD = $(libebl) $(libelf) $(libeu) -ldl $(am__append_2)
++ld_LDADD = $(libebl) $(libelf) $(libeu) -ldl $(am__append_3)
+ ld_LDFLAGS = -rdynamic
+ elflint_LDADD = $(libebl) $(libelf) $(libeu) -ldl
+ findtextrel_LDADD = $(libdw) $(libelf)
+--- elfutils/src/readelf.c
++++ elfutils/src/readelf.c
+@@ -4368,10 +4368,12 @@ listptr_base (struct listptr *p)
+   return base;
+ }
+ 
++static const char *listptr_name;
++
+ static int
+-compare_listptr (const void *a, const void *b, void *arg)
++compare_listptr (const void *a, const void *b)
+ {
+-  const char *name = arg;
++  const char *const name = listptr_name;
+   struct listptr *p1 = (void *) a;
+   struct listptr *p2 = (void *) b;
+ 
+@@ -4467,8 +4469,11 @@ static void
+ sort_listptr (struct listptr_table *table, const char *name)
+ {
+   if (table->n > 0)
+-    qsort_r (table->table, table->n, sizeof table->table[0],
+-	     &compare_listptr, (void *) name);
++    {
++      listptr_name = name;
++      qsort (table->table, table->n, sizeof table->table[0],
++	     &compare_listptr);
++    }
+ }
+ 
+ static bool
+@@ -9539,7 +9544,7 @@ dump_archive_index (Elf *elf, const char
+ 	  if (unlikely (elf_rand (elf, as_off) == 0)
+ 	      || unlikely ((subelf = elf_begin (-1, ELF_C_READ_MMAP, elf))
+ 			   == NULL))
+-#if __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 7)
++#if __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 7) || __GNUC__ < 4
+ 	    while (1)
+ #endif
+ 	      error (EXIT_FAILURE, 0,
+--- elfutils/src/strings.c
++++ elfutils/src/strings.c
+@@ -43,6 +43,10 @@
+ 
+ #include <system.h>
+ 
++#ifndef MAP_POPULATE
++# define MAP_POPULATE 0
++#endif
++
+ 
+ /* Prototypes of local functions.  */
+ static int read_fd (int fd, const char *fname, off64_t fdlen);
+@@ -489,8 +493,13 @@ map_file (int fd, off64_t start_off, off
+ 		    fd, start_off);
+       if (mem != MAP_FAILED)
+ 	{
++#if !defined POSIX_MADV_SEQUENTIAL && defined MADV_SEQUENTIAL
++# define POSIX_MADV_SEQUENTIAL MADV_SEQUENTIAL
++#endif
++#ifdef POSIX_MADV_SEQUENTIAL
+ 	  /* We will go through the mapping sequentially.  */
+ 	  (void) posix_madvise (mem, map_size, POSIX_MADV_SEQUENTIAL);
++#endif
+ 	  break;
+ 	}
+       if (errno != EINVAL && errno != ENOMEM)
+@@ -581,9 +590,11 @@ read_block (int fd, const char *fname, o
+       elfmap_off = from & ~(ps - 1);
+       elfmap_base = elfmap = map_file (fd, elfmap_off, fdlen, &elfmap_size);
+ 
++#ifdef POSIX_FADV_SEQUENTIAL
+       if (unlikely (elfmap == MAP_FAILED))
+ 	/* Let the kernel know we are going to read everything in sequence.  */
+ 	(void) posix_fadvise (fd, 0, 0, POSIX_FADV_SEQUENTIAL);
++#endif
+     }
+ 
+   if (unlikely (elfmap == MAP_FAILED))
+--- elfutils/src/strip.c
++++ elfutils/src/strip.c
+@@ -45,6 +45,12 @@
+ #include <libebl.h>
+ #include <system.h>
+ 
++#ifdef HAVE_FUTIMES
++# define FUTIMES(fd, fname, tvp) futimes (fd, tvp)
++#else
++# define FUTIMES(fd, fname, tvp) utimes (fname, tvp)
++#endif
++
+ typedef uint8_t GElf_Byte;
+ 
+ /* Name and version of program.  */
+@@ -318,8 +324,18 @@ process_file (const char *fname)
+ 
+       /* If we have to preserve the timestamp, we need it in the
+ 	 format utimes() understands.  */
++#ifdef HAVE_STRUCT_STAT_ST_ATIM
+       TIMESPEC_TO_TIMEVAL (&tv[0], &pre_st.st_atim);
++#else
++      tv[0].tv_sec = pre_st.st_atime;
++      tv[0].tv_usec = 0;
++#endif
++#ifdef HAVE_STRUCT_STAT_ST_MTIM
+       TIMESPEC_TO_TIMEVAL (&tv[1], &pre_st.st_mtim);
++#else
++      tv[1].tv_sec = pre_st.st_atime;
++      tv[1].tv_usec = 0;
++#endif
+     }
+ 
+   /* Open the file.  */
+@@ -2091,7 +2107,7 @@ while computing checksum for debug infor
+   /* If requested, preserve the timestamp.  */
+   if (tvp != NULL)
+     {
+-      if (futimes (fd, tvp) != 0)
++      if (FUTIMES (fd, output_fname, tvp) != 0)
+ 	{
+ 	  error (0, errno, gettext ("\
+ cannot set access and modification date of '%s'"),
+@@ -2148,7 +2164,7 @@ handle_ar (int fd, Elf *elf, const char
+ 
+   if (tvp != NULL)
+     {
+-      if (unlikely (futimes (fd, tvp) != 0))
++      if (unlikely (FUTIMES (fd, fname, tvp) != 0))
+ 	{
+ 	  error (0, errno, gettext ("\
+ cannot set access and modification date of '%s'"), fname);
+--- elfutils/tests/backtrace.c
++++ elfutils/tests/backtrace.c
+@@ -36,6 +36,7 @@
+ #include <fcntl.h>
+ #include <string.h>
+ #include <argp.h>
++#include <sys/syscall.h>
+ #include ELFUTILS_HEADER(dwfl)
+ 
+ #ifndef __linux__
+--- elfutils/tests/ChangeLog
++++ elfutils/tests/ChangeLog
+@@ -421,6 +421,13 @@
+ 
+ 2013-12-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+ 
++	Handle T-stopped detach for old kernels.
++	* backtrace.c: Include sys/syscall.h.
++	(linux_proc_pid_is_stopped): New function.
++	(ptrace_detach_stopped): Handle old kernels.
++
++2013-12-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
++
+ 	* Makefile.am (check_PROGRAMS): Add backtrace, backtrace-child,
+ 	backtrace-data and backtrace-dwarf.
+ 	(BUILT_SOURCES, clean-local, backtrace-child-biarch): New.
+@@ -1285,6 +1292,8 @@
+ 
+ 2008-01-21  Roland McGrath  <roland@redhat.com>
+ 
++	* line2addr.c (main): Revert last change.
++
+ 	* testfile45.S.bz2: Add tests for cltq, cqto.
+ 	* testfile45.expect.bz2: Adjust.
+ 
+@@ -1993,6 +2002,11 @@
+ 	* Makefile.am (TESTS): Add run-elflint-test.sh.
+ 	(EXTRA_DIST): Add run-elflint-test.sh and testfile18.bz2.
+ 
++2005-05-31  Roland McGrath  <roland@redhat.com>
++
++	* Makefile.am (WEXTRA): New variable, substituted by configure.
++	(AM_CFLAGS): Use it in place of -Wextra.
++
+ 2005-05-24  Ulrich Drepper  <drepper@redhat.com>
+ 
+ 	* get-files.c (main): Use correct format specifier.
+--- elfutils/tests/line2addr.c
++++ elfutils/tests/line2addr.c
+@@ -124,7 +124,7 @@ main (int argc, char *argv[])
+     {
+       struct args a = { .arg = argv[cnt] };
+ 
+-      switch (sscanf (a.arg, "%m[^:]:%d", &a.file, &a.line))
++      switch (sscanf (a.arg, "%a[^:]:%d", &a.file, &a.line))
+ 	{
+ 	default:
+ 	case 0:
+--- elfutils/tests/Makefile.am
++++ elfutils/tests/Makefile.am
+@@ -365,6 +365,7 @@ get_lines_LDADD = $(libdw) $(libelf)
+ get_files_LDADD = $(libdw) $(libelf)
+ get_aranges_LDADD = $(libdw) $(libelf)
+ allfcts_LDADD = $(libdw) $(libelf)
++line2addr_no_Wformat = yes
+ line2addr_LDADD = $(libdw)
+ addrscopes_LDADD = $(libdw)
+ funcscopes_LDADD = $(libdw)
+--- elfutils/tests/Makefile.in
++++ elfutils/tests/Makefile.in
+@@ -80,13 +80,14 @@ host_triplet = @host@
+ DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
+ 	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
+ 	$(top_srcdir)/config/test-driver ChangeLog
+-@STANDALONE_FALSE@am__append_1 = -I$(top_srcdir)/libasm -I$(top_srcdir)/libdw \
++@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@STANDALONE_FALSE@am__append_2 = -I$(top_srcdir)/libasm -I$(top_srcdir)/libdw \
+ @STANDALONE_FALSE@	    -I$(top_srcdir)/libdwfl -I$(top_srcdir)/libdwelf \
+ @STANDALONE_FALSE@	    -I$(top_srcdir)/libebl -I$(top_srcdir)/libelf \
+ @STANDALONE_FALSE@	    -I$(top_srcdir)/lib -I..
+ 
+-@STANDALONE_FALSE@am__append_2 = -Wl,-rpath-link,../libasm:../libdw:../libelf
+-@TESTS_RPATH_TRUE@am__append_3 = -Wl,-rpath,$(BUILD_RPATH)
++@STANDALONE_FALSE@am__append_3 = -Wl,-rpath-link,../libasm:../libdw:../libelf
++@TESTS_RPATH_TRUE@am__append_4 = -Wl,-rpath,$(BUILD_RPATH)
+ check_PROGRAMS = arextract$(EXEEXT) arsymtest$(EXEEXT) \
+ 	newfile$(EXEEXT) saridx$(EXEEXT) scnnames$(EXEEXT) \
+ 	sectiondump$(EXEEXT) showptable$(EXEEXT) update1$(EXEEXT) \
+@@ -113,7 +114,7 @@ check_PROGRAMS = arextract$(EXEEXT) arsy
+ 	deleted$(EXEEXT) deleted-lib.so$(EXEEXT) \
+ 	aggregate_size$(EXEEXT) vdsosyms$(EXEEXT) $(am__EXEEXT_1) \
+ 	$(am__EXEEXT_2) $(am__EXEEXT_4)
+-@BIARCH_TRUE@am__append_4 = backtrace-child-biarch
++@BIARCH_TRUE@am__append_5 = backtrace-child-biarch
+ TESTS = run-arextract.sh run-arsymtest.sh newfile$(EXEEXT) \
+ 	test-nlist$(EXEEXT) update1$(EXEEXT) update2$(EXEEXT) \
+ 	update3$(EXEEXT) update4$(EXEEXT) run-show-die-info.sh \
+@@ -159,14 +160,14 @@ TESTS = run-arextract.sh run-arsymtest.s
+ 	run-stack-i-test.sh run-readelf-dwz-multi.sh \
+ 	run-allfcts-multi.sh run-deleted.sh run-linkmap-cut.sh \
+ 	run-aggregate-size.sh vdsosyms$(EXEEXT) run-readelf-A.sh \
+-	$(am__EXEEXT_2) $(am__append_7) $(am__append_8) \
++	$(am__EXEEXT_2) $(am__append_8) $(am__append_9) \
+ 	$(am__EXEEXT_4)
+-@STANDALONE_FALSE@am__append_5 = msg_tst md5-sha1-test
+ @STANDALONE_FALSE@am__append_6 = msg_tst md5-sha1-test
+-@LZMA_TRUE@am__append_7 = run-readelf-s.sh run-dwflsyms.sh
+-@ZLIB_TRUE@am__append_8 = run-readelf-zdebug.sh
+-@HAVE_LIBASM_TRUE@am__append_9 = $(asm_TESTS)
++@STANDALONE_FALSE@am__append_7 = msg_tst md5-sha1-test
++@LZMA_TRUE@am__append_8 = run-readelf-s.sh run-dwflsyms.sh
++@ZLIB_TRUE@am__append_9 = run-readelf-zdebug.sh
+ @HAVE_LIBASM_TRUE@am__append_10 = $(asm_TESTS)
++@HAVE_LIBASM_TRUE@am__append_11 = $(asm_TESTS)
+ subdir = tests
+ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
+ am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
+@@ -787,6 +788,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ INSTALL_SCRIPT = @INSTALL_SCRIPT@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
++LD_AS_NEEDED = @LD_AS_NEEDED@
+ LEX = @LEX@
+ LEXLIB = @LEXLIB@
+ LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
+@@ -818,6 +820,7 @@ SHELL = @SHELL@
+ STRIP = @STRIP@
+ USE_NLS = @USE_NLS@
+ VERSION = @VERSION@
++WEXTRA = @WEXTRA@
+ XGETTEXT = @XGETTEXT@
+ XGETTEXT_015 = @XGETTEXT_015@
+ XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
+@@ -877,12 +880,12 @@ top_build_prefix = @top_build_prefix@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ zip_LIBS = @zip_LIBS@
+-AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. $(am__append_1)
+-AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
+-	    $(if $($(*F)_no_Werror),,-Werror) \
+-	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $($(*F)_CFLAGS)
+-
++AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. $(am__append_2)
++AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
++	$($(*F)_no_Werror),,-Werror) $(if \
++	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
++	$(am__append_1)
+ COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+ CLEANFILES = *.gcno *.gcda
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+@@ -890,7 +893,7 @@ textrel_msg = echo "WARNING: TEXTREL fou
+ @FATAL_TEXTREL_TRUE@textrel_found = $(textrel_msg); exit 1
+ textrel_check = if $(READELF) -d $@ | fgrep -q TEXTREL; then $(textrel_found); fi
+ BUILD_RPATH = \$$ORIGIN/../libasm:\$$ORIGIN/../libdw:\$$ORIGIN/../backends:\$$ORIGIN/../libelf
+-AM_LDFLAGS = $(am__append_2) $(am__append_3)
++AM_LDFLAGS = $(am__append_3) $(am__append_4)
+ @TESTS_RPATH_FALSE@tests_rpath = no
+ @TESTS_RPATH_TRUE@tests_rpath = yes
+ asm_TESTS = asm-tst1 asm-tst2 asm-tst3 asm-tst4 asm-tst5 \
+@@ -1106,6 +1109,7 @@ get_lines_LDADD = $(libdw) $(libelf)
+ get_files_LDADD = $(libdw) $(libelf)
+ get_aranges_LDADD = $(libdw) $(libelf)
+ allfcts_LDADD = $(libdw) $(libelf)
++line2addr_no_Wformat = yes
+ line2addr_LDADD = $(libdw)
+ addrscopes_LDADD = $(libdw)
+ funcscopes_LDADD = $(libdw)

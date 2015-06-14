@@ -1,0 +1,788 @@
+--- a/lib/system.h
++++ b/lib/system.h
+@@ -68,6 +68,16 @@ extern int crc32_file (int fd, uint32_t
+ 
+ #define gettext_noop(Str) Str
+ 
++#ifndef TEMP_FAILURE_RETRY
++#define TEMP_FAILURE_RETRY(expression) \
++  (__extension__							      \
++    ({ long int __result;						      \
++       do __result = (long int) (expression);				      \
++       while (__result == -1L && errno == EINTR);			      \
++       __result; }))
++#endif
++
++#define error(status, errno, ...) err(status, __VA_ARGS__)
+ 
+ static inline ssize_t __attribute__ ((unused))
+ pwrite_retry (int fd, const void *buf, size_t len, off_t off)
+--- a/lib/color.c
++++ b/lib/color.c
+@@ -32,7 +32,7 @@
+ #endif
+ 
+ #include <argp.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/lib/xmalloc.c
++++ b/lib/xmalloc.c
+@@ -30,7 +30,7 @@
+ # include <config.h>
+ #endif
+ 
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <stddef.h>
+ #include <stdlib.h>
+--- a/src/addr2line.c
++++ b/src/addr2line.c
+@@ -23,7 +23,7 @@
+ #include <argp.h>
+ #include <assert.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+ #include <libdwfl.h>
+--- a/src/ar.c
++++ b/src/ar.c
+@@ -22,7 +22,7 @@
+ 
+ #include <argp.h>
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <libintl.h>
+--- a/src/arlib2.c
++++ b/src/arlib2.c
+@@ -20,7 +20,7 @@
+ # include <config.h>
+ #endif
+ 
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <limits.h>
+ #include <string.h>
+--- a/src/arlib.c
++++ b/src/arlib.c
+@@ -21,7 +21,7 @@
+ #endif
+ 
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <gelf.h>
+ #include <libintl.h>
+ #include <stdio.h>
+--- a/src/elfcmp.c
++++ b/src/elfcmp.c
+@@ -23,7 +23,7 @@
+ #include <argp.h>
+ #include <assert.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <locale.h>
+ #include <libintl.h>
+--- a/src/elflint.c
++++ b/src/elflint.c
+@@ -24,7 +24,7 @@
+ #include <assert.h>
+ #include <byteswap.h>
+ #include <endian.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
+--- a/src/findtextrel.c
++++ b/src/findtextrel.c
+@@ -23,7 +23,7 @@
+ #include <argp.h>
+ #include <assert.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <libdw.h>
+--- a/src/i386_ld.c
++++ b/src/i386_ld.c
+@@ -20,7 +20,7 @@
+ #endif
+ 
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/src/ld.c
++++ b/src/ld.c
+@@ -21,7 +21,7 @@
+ 
+ #include <argp.h>
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <libelf.h>
+ #include <libintl.h>
+--- a/src/ldgeneric.c
++++ b/src/ldgeneric.c
+@@ -23,7 +23,7 @@
+ #include <ctype.h>
+ #include <dlfcn.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <fnmatch.h>
+ #include <gelf.h>
+--- a/src/ldlex.c
++++ b/src/ldlex.c
+@@ -1099,7 +1099,7 @@ char *ldtext;
+ #include <assert.h>
+ #include <ctype.h>
+ #include <elf.h>
+-#include <error.h>
++#include <err.h>
+ #include <inttypes.h>
+ #include <libintl.h>
+ #include <stdbool.h>
+--- a/src/ldscript.c
++++ b/src/ldscript.c
+@@ -95,7 +95,7 @@
+ #endif
+ 
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <stdbool.h>
+ #include <stdint.h>
+@@ -106,7 +106,7 @@
+ #include <system.h>
+ #include <ld.h>
+ 
+-/* The error handler.  */
++/* The err.handler.  */
+ static void yyerror (const char *s);
+ 
+ /* Some helper functions we need to construct the data structures
+--- a/src/nm.c
++++ b/src/nm.c
+@@ -26,7 +26,7 @@
+ #include <ctype.h>
+ #include <dwarf.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
+--- a/src/objdump.c
++++ b/src/objdump.c
+@@ -21,7 +21,7 @@
+ #endif
+ 
+ #include <argp.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <inttypes.h>
+ #include <libintl.h>
+--- a/src/ranlib.c
++++ b/src/ranlib.c
+@@ -24,7 +24,7 @@
+ #include <argp.h>
+ #include <assert.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <libintl.h>
+--- a/src/readelf.c
++++ b/src/readelf.c
+@@ -25,7 +25,7 @@
+ #include <ctype.h>
+ #include <dwarf.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
+--- a/src/size.c
++++ b/src/size.c
+@@ -21,7 +21,7 @@
+ #endif
+ 
+ #include <argp.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
+--- a/src/stack.c
++++ b/src/stack.c
+@@ -18,7 +18,7 @@
+ #include <config.h>
+ #include <assert.h>
+ #include <argp.h>
+-#include <error.h>
++#include <err.h>
+ #include <stdlib.h>
+ #include <inttypes.h>
+ #include <stdio.h>
+--- a/src/strings.c
++++ b/src/strings.c
+@@ -25,7 +25,7 @@
+ #include <ctype.h>
+ #include <endian.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
+--- a/src/strip.c
++++ b/src/strip.c
+@@ -24,7 +24,7 @@
+ #include <assert.h>
+ #include <byteswap.h>
+ #include <endian.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <libelf.h>
+--- a/src/unstrip.c
++++ b/src/unstrip.c
+@@ -31,7 +31,7 @@
+ #include <argp.h>
+ #include <assert.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <fnmatch.h>
+ #include <libintl.h>
+--- a/tests/addrscopes.c
++++ b/tests/addrscopes.c
+@@ -25,7 +25,7 @@
+ #include <stdio_ext.h>
+ #include <locale.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ 
+ 
+--- a/tests/allregs.c
++++ b/tests/allregs.c
+@@ -21,7 +21,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <error.h>
++#include <err.h>
+ #include <locale.h>
+ #include <argp.h>
+ #include <assert.h>
+--- a/tests/backtrace.c
++++ b/tests/backtrace.c
+@@ -24,7 +24,7 @@
+ #include <dirent.h>
+ #include <stdlib.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <unistd.h>
+ #include <dwarf.h>
+ #include <sys/resource.h>
+--- a/tests/backtrace-data.c
++++ b/tests/backtrace-data.c
+@@ -27,7 +27,7 @@
+ #include <dirent.h>
+ #include <stdlib.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <unistd.h>
+ #include <dwarf.h>
+ #include <sys/resource.h>
+--- a/tests/buildid.c
++++ b/tests/buildid.c
+@@ -23,7 +23,7 @@
+ #include ELFUTILS_HEADER(elf)
+ #include ELFUTILS_HEADER(dwelf)
+ #include <stdio.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <stdlib.h>
+ #include <sys/types.h>
+--- a/tests/debugaltlink.c
++++ b/tests/debugaltlink.c
+@@ -23,7 +23,7 @@
+ #include ELFUTILS_HEADER(dw)
+ #include ELFUTILS_HEADER(dwelf)
+ #include <stdio.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <stdlib.h>
+ #include <sys/types.h>
+--- a/tests/debuglink.c
++++ b/tests/debuglink.c
+@@ -21,7 +21,7 @@
+ #include <errno.h>
+ #include ELFUTILS_HEADER(dwelf)
+ #include <stdio.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <stdlib.h>
+ #include <sys/types.h>
+--- a/tests/dwfl-addr-sect.c
++++ b/tests/dwfl-addr-sect.c
+@@ -23,7 +23,7 @@
+ #include <stdio_ext.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <error.h>
++#include <err.h>
+ #include <locale.h>
+ #include <argp.h>
+ #include ELFUTILS_HEADER(dwfl)
+--- a/tests/dwfl-bug-addr-overflow.c
++++ b/tests/dwfl-bug-addr-overflow.c
+@@ -20,7 +20,7 @@
+ #include <inttypes.h>
+ #include <stdio.h>
+ #include <stdio_ext.h>
+-#include <error.h>
++#include <err.h>
+ #include <locale.h>
+ #include ELFUTILS_HEADER(dwfl)
+ 
+--- a/tests/dwfl-bug-fd-leak.c
++++ b/tests/dwfl-bug-fd-leak.c
+@@ -24,7 +24,7 @@
+ #include <dirent.h>
+ #include <stdlib.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <unistd.h>
+ #include <dwarf.h>
+ #include <sys/resource.h>
+--- a/tests/dwfl-bug-getmodules.c
++++ b/tests/dwfl-bug-getmodules.c
+@@ -18,7 +18,7 @@
+ #include <config.h>
+ #include ELFUTILS_HEADER(dwfl)
+ 
+-#include <error.h>
++#include <err.h>
+ 
+ static const Dwfl_Callbacks callbacks =
+   {
+--- a/tests/dwfllines.c
++++ b/tests/dwfllines.c
+@@ -27,7 +27,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <error.h>
++#include <err.h>
+ 
+ int
+ main (int argc, char *argv[])
+--- a/tests/dwflmodtest.c
++++ b/tests/dwflmodtest.c
+@@ -23,7 +23,7 @@
+ #include <stdio_ext.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <error.h>
++#include <err.h>
+ #include <locale.h>
+ #include <argp.h>
+ #include ELFUTILS_HEADER(dwfl)
+--- a/tests/dwfl-report-elf-align.c
++++ b/tests/dwfl-report-elf-align.c
+@@ -20,7 +20,7 @@
+ #include <inttypes.h>
+ #include <stdio.h>
+ #include <stdio_ext.h>
+-#include <error.h>
++#include <err.h>
+ #include <locale.h>
+ #include <string.h>
+ #include <stdlib.h>
+--- a/tests/dwflsyms.c
++++ b/tests/dwflsyms.c
+@@ -25,7 +25,7 @@
+ #include <stdio.h>
+ #include <stdio_ext.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ 
+ static const char *
+--- a/tests/early-offscn.c
++++ b/tests/early-offscn.c
+@@ -19,7 +19,7 @@
+ #endif
+ 
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <stdio.h>
+--- a/tests/ecp.c
++++ b/tests/ecp.c
+@@ -16,7 +16,7 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <stdlib.h>
+--- a/tests/find-prologues.c
++++ b/tests/find-prologues.c
+@@ -25,7 +25,7 @@
+ #include <stdio_ext.h>
+ #include <locale.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <fnmatch.h>
+ 
+--- a/tests/funcretval.c
++++ b/tests/funcretval.c
+@@ -25,7 +25,7 @@
+ #include <stdio_ext.h>
+ #include <locale.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <fnmatch.h>
+ 
+--- a/tests/funcscopes.c
++++ b/tests/funcscopes.c
+@@ -25,7 +25,7 @@
+ #include <stdio_ext.h>
+ #include <locale.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <fnmatch.h>
+ 
+--- a/tests/line2addr.c
++++ b/tests/line2addr.c
+@@ -26,7 +26,7 @@
+ #include <locale.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <error.h>
++#include <err.h>
+ 
+ 
+ static void
+--- a/tests/low_high_pc.c
++++ b/tests/low_high_pc.c
+@@ -25,7 +25,7 @@
+ #include <stdio_ext.h>
+ #include <locale.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <fnmatch.h>
+ 
+--- a/tests/md5-sha1-test.c
++++ b/tests/md5-sha1-test.c
+@@ -19,7 +19,7 @@
+ #endif
+ 
+ #include <string.h>
+-#include <error.h>
++#include <err.h>
+ 
+ #include "md5.h"
+ #include "sha1.h"
+--- a/tests/rdwrmmap.c
++++ b/tests/rdwrmmap.c
+@@ -15,7 +15,7 @@
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ 
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <stdio.h>
+ #include <fcntl.h>
+ #include <unistd.h>
+--- a/tests/saridx.c
++++ b/tests/saridx.c
+@@ -17,7 +17,7 @@
+ 
+ #include <config.h>
+ 
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <stdio.h>
+--- a/tests/sectiondump.c
++++ b/tests/sectiondump.c
+@@ -18,7 +18,7 @@
+ #include <config.h>
+ 
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <fcntl.h>
+ #include <gelf.h>
+ #include <inttypes.h>
+--- a/tests/varlocs.c
++++ b/tests/varlocs.c
+@@ -25,7 +25,7 @@
+ #include <dwarf.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+-#include <error.h>
++#include <err.h>
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+--- a/libelf/libelf.h
++++ b/libelf/libelf.h
+@@ -29,6 +29,7 @@
+ #ifndef _LIBELF_H
+ #define _LIBELF_H 1
+ 
++#include <fcntl.h>
+ #include <sys/types.h>
+ 
+ /* Get the ELF types.  */
+--- a/libasm/asm_end.c
++++ b/libasm/asm_end.c
+@@ -32,7 +32,7 @@
+ #endif
+ 
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+--- a/libasm/asm_newscn.c
++++ b/libasm/asm_newscn.c
+@@ -32,7 +32,7 @@
+ #endif
+ 
+ #include <assert.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- a/libcpu/i386_gendis.c
++++ b/libcpu/i386_gendis.c
+@@ -31,7 +31,7 @@
+ # include <config.h>
+ #endif
+ 
+-#include <error.h>
++#include <err.h>
+ #include <errno.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+--- a/libcpu/i386_lex.c
++++ b/libcpu/i386_lex.c
+@@ -571,7 +571,7 @@ char *i386_text;
+ #endif
+ 
+ #include <ctype.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ 
+ #include <system.h>
+--- a/libcpu/i386_lex.l
++++ b/libcpu/i386_lex.l
+@@ -31,7 +31,7 @@
+ #endif
+ 
+ #include <ctype.h>
+-#include <error.h>
++#include <err.h>
+ #include <libintl.h>
+ 
+ #include <system.h>
+--- a/libcpu/i386_parse.c
++++ b/libcpu/i386_parse.c
+@@ -107,7 +107,7 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <errno.h>
+-#include <error.h>
++#include <err.h>
+ #include <inttypes.h>
+ #include <libintl.h>
+ #include <math.h>
+--- a/libdw/libdw_alloc.c
++++ b/libdw/libdw_alloc.c
+@@ -31,7 +31,7 @@
+ # include <config.h>
+ #endif
+ 
+-#include <error.h>
++#include <err.h>
+ #include <errno.h>
+ #include <stdlib.h>
+ #include <sys/param.h>
+@@ -74,5 +74,5 @@ __attribute ((noreturn, visibility ("hid
+ __libdw_oom (void)
+ {
+   while (1)
+-    error (EXIT_FAILURE, ENOMEM, "libdw");
++    err (EXIT_FAILURE, "libdw: out of memory");
+ }
+--- a/libebl/eblopenbackend.c
++++ b/libebl/eblopenbackend.c
+@@ -32,7 +32,7 @@
+ 
+ #include <assert.h>
+ #include <dlfcn.h>
+-#include <error.h>
++#include <err.h>
+ #include <libelfP.h>
+ #include <dwarf.h>
+ #include <stdlib.h>
+--- a/src/ldlex.l
++++ b/src/ldlex.l
+@@ -23,7 +23,7 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <elf.h>
+-#include <error.h>
++#include <err.h>
+ #include <inttypes.h>
+ #include <libintl.h>
+ #include <stdbool.h>
+--- a/libebl/eblwstrtab.c
++++ b/libebl/eblwstrtab.c
+@@ -305,7 +305,7 @@ copystrings (struct Ebl_WStrent *nodep,
+ 
+   /* Process the current node.  */
+   nodep->offset = *offsetp;
+-  *freep = wmempcpy (*freep, nodep->string, nodep->len);
++  *freep = wmemcpy (*freep, nodep->string, nodep->len) + nodep->len;
+   *offsetp += nodep->len * sizeof (wchar_t);
+ 
+   for (subs = nodep->next; subs != NULL; subs = subs->next)
+--- a/libdwfl/dwfl_error.c
++++ b/libdwfl/dwfl_error.c
+@@ -128,6 +128,7 @@ const char *
+ dwfl_errmsg (error)
+      int error;
+ {
++  static __thread char s[64] = "";
+   if (error == 0 || error == -1)
+     {
+       int last_error = global_error;
+@@ -142,7 +143,8 @@ dwfl_errmsg (error)
+   switch (error &~ 0xffff)
+     {
+     case OTHER_ERROR (ERRNO):
+-      return strerror_r (error & 0xffff, "bad", 0);
++      strerror_r (error & 0xffff, s, sizeof(s));
++      return s;
+     case OTHER_ERROR (LIBELF):
+       return elf_errmsg (error & 0xffff);
+     case OTHER_ERROR (LIBDW):
+--- a/libdwfl/libdwfl.h
++++ b/libdwfl/libdwfl.h
+@@ -31,6 +31,27 @@
+ 
+ #include "libdw.h"
+ #include <stdio.h>
++#include <unistd.h>
++#include <alloca.h>
++#include <string.h>
++
++#ifndef TEMP_FAILURE_RETRY
++#define TEMP_FAILURE_RETRY(expression) \
++  (__extension__                                                              \
++    ({ long int __result;                                                     \
++       do __result = (long int) (expression);                                 \
++       while (__result == -1L && errno == EINTR);                             \
++       __result; }))
++#endif
++
++#ifndef strndupa
++#define strndupa(s, n) \
++	(__extension__ ({const char *__in = (s); \
++			 size_t __len = strnlen (__in, (n)) + 1; \
++			 char *__out = (char *) alloca (__len); \
++			 __out[__len-1] = '\0'; \
++			 (char *) memcpy (__out, __in, __len-1);}))
++#endif
+ 
+ /* Handle for a session using the library.  */
+ typedef struct Dwfl Dwfl;
+--- a/libdwfl/find-debuginfo.c
++++ b/libdwfl/find-debuginfo.c
+@@ -338,7 +338,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
+       /* If FILE_NAME is a symlink, the debug file might be associated
+ 	 with the symlink target name instead.  */
+ 
+-      char *canon = canonicalize_file_name (file_name);
++      char *canon = realpath (file_name, NULL);
+       if (canon != NULL && strcmp (file_name, canon))
+ 	fd = find_debuginfo_in_path (mod, canon,
+ 				     debuglink_file, debuglink_crc,
+--- a/libdwfl/dwfl_build_id_find_elf.c
++++ b/libdwfl/dwfl_build_id_find_elf.c
+@@ -80,7 +80,7 @@ __libdwfl_open_by_build_id (Dwfl_Module
+ 	{
+ 	  if (*file_name != NULL)
+ 	    free (*file_name);
+-	  *file_name = canonicalize_file_name (name);
++	  *file_name = realpath (name, NULL);
+ 	  if (*file_name == NULL)
+ 	    {
+ 	      *file_name = name;
+--- a/libelf/elf_getarsym.c
++++ b/libelf/elf_getarsym.c
+@@ -284,7 +284,7 @@ elf_getarsym (elf, ptr)
+ 		arsym[cnt].as_off = file_data->u32[cnt];
+ 
+ 	      arsym[cnt].as_hash = _dl_elf_hash (str_data);
+-	      str_data = rawmemchr (str_data, '\0') + 1;
++	      str_data = memchr (str_data, '\0', SIZE_MAX) + 1;
+ 	    }
+ 
+ 	  /* At the end a special entry.  */
