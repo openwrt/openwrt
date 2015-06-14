@@ -12,7 +12,7 @@
 # procd_set_param(type, [value...])
 #   Available types:
 #     command: command line (array).
-#     respawn info: array with 3 values $restart_timeout $fail_hreshold $max_fail
+#     respawn info: array with 3 values $fail_threshold $restart_timeout $max_fail
 #     env: environment variable (passed to the process)
 #     data: arbitrary name/value pairs for detecting config changes (table)
 #     file: configuration files (array)
