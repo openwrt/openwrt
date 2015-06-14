@@ -29,7 +29,7 @@ do_patch_ath10k_firmware() {
 
 			cp $firmware_file /tmp/ath10k-firmware.bin
 			macaddr_2bin $mac | dd of=/tmp/ath10k-firmware.bin \
-				conv=notrunc bs=1 seek=280 count=6
+				conv=notrunc bs=1 seek=276 count=6
 
 		;;
 	esac
