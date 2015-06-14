@@ -38,7 +38,7 @@ define Image/BuildKernel/Template
 	$(CP) $(KDIR)/fit-$(1)-initramfs.itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage-initramfs.itb
 	if [ -e "$(KDIR)/u-boot.bin" ]; then \
 	( dd if=$(KDIR)/u-boot.bin bs=128k conv=sync ; dd if=$(KDIR)/fit-$(1)-initramfs.itb bs=128k conv=sync ) \
-		> $(BIN_DIR)/$(IMG_PREFIX)-$(1)-u-boot-initramfs.itb; \
+		> $(BIN_DIR)/$(IMG_PREFIX)-$(1)-u-boot-initramfs.bin; \
 	fi
  endif
 
