@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -39,13 +40,13 @@
 #endif
 
 /* Partition table entry */
-struct pte { 
-	unsigned char active;
-	unsigned char chs_start[3];
-	unsigned char type;
-	unsigned char chs_end[3];
-	unsigned int start;
-	unsigned int length;
+struct pte {
+	uint8_t active;
+	uint8_t chs_start[3];
+	uint8_t type;
+	uint8_t chs_end[3];
+	uint32_t start;
+	uint32_t length;
 };
 
 struct partinfo {
