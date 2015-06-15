@@ -72,27 +72,6 @@ endef
 
 $(eval $(call KernelPackage,net-rtl8188eu))
 
-
-define KernelPackage/net-rtl8723au
-  SUBMENU:=$(WIRELESS_MENU)
-  TITLE:=RTL8723AU support (staging)
-  DEPENDS:=@USB_SUPPORT +@DRIVER_WEXT_SUPPORT +r8188eu-firmware +kmod-usb-core
-  KCONFIG:=\
-        CONFIG_STAGING=y \
-        CONFIG_R8723AU \
-        CONFIG_8723AU_AP_MODE=y \
-        CONFIG_8723AU_BT_COEXIST=y
-  FILES:=$(LINUX_DIR)/drivers/staging/rtl8723au/r8723au.ko
-  AUTOLOAD:=$(call AutoProbe,r8723au)
-endef
-
-define KernelPackage/net-rtl8723au/description
- Kernel modules for RealTek RTL8723AU support
-endef
-
-$(eval $(call KernelPackage,net-rtl8723au))
-
-
 define KernelPackage/net-rtl8192su
   SUBMENU:=$(WIRELESS_MENU)
   TITLE:=RTL8192SU support (staging)
