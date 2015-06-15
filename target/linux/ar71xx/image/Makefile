@@ -104,6 +104,35 @@ endef
 
 DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT
 
+# UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
+# UBNT_TYPE e.g. one of (BZ, XM, XW)
+# UBNT_CHIP e.g. one of (ar7240, ar933x, ar934x)
+
+# mkubntimage is using the kernel image direct
+# routerboard creates partitions out of the ubnt header
+define Build/mkubntimage
+	$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
+		-k $(word 1,$^) \
+		-r $@ \
+		-o $@
+endef
+
+# all UBNT XM device expect the kernel image to have 1024k while flash, when
+# booting the image, the size doesn't matter.
+define Build/mkubntimage-split
+	dd if=$@ of=$@.old1 bs=1024k count=1
+	dd if=$@ of=$@.old2 bs=1024k skip=1
+	$(STAGING_DIR_HOST)/bin/mkfwimage \
+		-B $(UBNT_BOARD) -v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
+		-k $@.old1 \
+		-r $@.old2 \
+		-o $@
+	rm $@.old1 $@.old2
+endef
+
+DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE
+
 define Device/Default
   BOARDNAME :=
   DEVICE_PROFILE = $$(BOARDNAME)
