@@ -21,16 +21,16 @@ qstrip_escape=$(subst ','\'',$(call qstrip,$(1)))
 #'
 
 VERSION_NUMBER:=$(call qstrip_escape,$(CONFIG_VERSION_NUMBER))
-VERSION_NUMBER:=$(if $(VERSION_NUMBER),$(VERSION_NUMBER),$(REVISION))
+VERSION_NUMBER:=$(if $(VERSION_NUMBER),$(VERSION_NUMBER),15.05)
 
 VERSION_CODE:=$(call qstrip_escape,$(CONFIG_VERSION_NUMBER))
-VERSION_CODE:=$(if $(VERSION_CODE),$(VERSION_CODE),Bleeding Edge)
+VERSION_CODE:=$(if $(VERSION_CODE),$(VERSION_CODE),Chaos Calmer)
 
 VERSION_NICK:=$(call qstrip_escape,$(CONFIG_VERSION_NICK))
 VERSION_NICK:=$(if $(VERSION_NICK),$(VERSION_NICK),$(RELEASE))
 
 VERSION_REPO:=$(call qstrip_escape,$(CONFIG_VERSION_REPO))
-VERSION_REPO:=$(if $(VERSION_REPO),$(VERSION_REPO),http://downloads.openwrt.org/snapshots/trunk/%S/packages)
+VERSION_REPO:=$(if $(VERSION_REPO),$(VERSION_REPO),http://downloads.openwrt.org/%n/%v/%S/packages)
 
 VERSION_DIST:=$(call qstrip_escape,$(CONFIG_VERSION_DIST))
 VERSION_DIST:=$(if $(VERSION_DIST),$(VERSION_DIST),OpenWrt)
