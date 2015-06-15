@@ -1,6 +1,6 @@
---- elfutils/backends/ChangeLog
-+++ elfutils/backends/ChangeLog
-@@ -433,6 +433,10 @@
+--- a/backends/ChangeLog
++++ b/backends/ChangeLog
+@@ -498,6 +498,10 @@
  	* ppc_attrs.c (ppc_check_object_attribute): Handle tag
  	GNU_Power_ABI_Struct_Return.
  
@@ -11,7 +11,7 @@
  2008-10-04  Ulrich Drepper  <drepper@redhat.com>
  
  	* i386_reloc.def: Fix entries for TLS_GOTDESC, TLS_DESC_CALL, and
-@@ -760,6 +764,11 @@
+@@ -825,6 +829,11 @@
  	* sparc_init.c: Likewise.
  	* x86_64_init.c: Likewise.
  
@@ -23,7 +23,7 @@
  2005-11-19  Roland McGrath  <roland@redhat.com>
  
  	* ppc64_reloc.def: REL30 -> ADDR30.
-@@ -782,6 +791,9 @@
+@@ -847,6 +856,9 @@
  	* Makefile.am (uninstall): Don't try to remove $(pkgincludedir).
  	(CLEANFILES): Add libebl_$(m).so.
  
@@ -33,8 +33,8 @@
  	* ppc_reloc.def: Update bits per Alan Modra <amodra@bigpond.net.au>.
  	* ppc64_reloc.def: Likewise.
  
---- elfutils/backends/Makefile.am
-+++ elfutils/backends/Makefile.am
+--- a/backends/Makefile.am
++++ b/backends/Makefile.am
 @@ -119,7 +119,7 @@ libebl_%.so libebl_%.map: libebl_%_pic.a
  	$(LINK) -shared -o $(@:.map=.so) \
  		-Wl,--whole-archive $< $(cpu_$*) -Wl,--no-whole-archive \
@@ -44,17 +44,19 @@
  	@$(textrel_check)
  
  libebl_i386.so: $(cpu_i386)
---- elfutils/backends/Makefile.in
-+++ elfutils/backends/Makefile.in
-@@ -83,6 +83,7 @@ host_triplet = @host@
+--- a/backends/Makefile.in
++++ b/backends/Makefile.in
+@@ -83,7 +83,8 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(noinst_HEADERS) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  subdir = backends
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -285,6 +286,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -289,6 +290,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -62,7 +64,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -316,6 +318,7 @@ SHELL = @SHELL@
+@@ -320,6 +322,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -70,24 +72,29 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -378,11 +381,11 @@ zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(top_srcdir)/libebl -I$(top_srcdir)/libasm \
- 	-I$(top_srcdir)/libelf -I$(top_srcdir)/libdw
+@@ -387,14 +390,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 -	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
 -	    $($(*F)_CFLAGS)
 -
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
 +	$($(*F)_no_Werror),,-Werror) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
++	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
++	$($(*F)_CFLAGS) $(am__append_1)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(foreach m,$(modules), libebl_$(m).map \
  	libebl_$(m).so $(am_libebl_$(m)_pic_a_OBJECTS))
-@@ -888,7 +891,7 @@ libebl_%.so libebl_%.map: libebl_%_pic.a
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+@@ -900,7 +903,7 @@ libebl_%.so libebl_%.map: libebl_%_pic.a
  	$(LINK) -shared -o $(@:.map=.so) \
  		-Wl,--whole-archive $< $(cpu_$*) -Wl,--no-whole-archive \
  		-Wl,--version-script,$(@:.so=.map) \
@@ -96,9 +103,9 @@
  	@$(textrel_check)
  
  libebl_i386.so: $(cpu_i386)
---- elfutils/ChangeLog
-+++ elfutils/ChangeLog
-@@ -187,6 +187,8 @@
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -253,6 +253,8 @@
  
  2012-01-24  Mark Wielaard  <mjw@redhat.com>
  
@@ -107,7 +114,7 @@
  	* COPYING: Fix address. Updated version from gnulib.
  
  2012-01-23  Mark Wielaard  <mjw@redhat.com>
-@@ -205,6 +207,9 @@
+@@ -271,6 +273,9 @@
  
  2011-10-08  Mike Frysinger  <vapier@gentoo.org>
  
@@ -117,7 +124,7 @@
  	* configure.ac: Fix use of AC_ARG_ENABLE to handle $enableval correctly.
  
  2011-10-02  Ulrich Drepper  <drepper@gmail.com>
-@@ -226,6 +231,10 @@
+@@ -292,6 +297,10 @@
  
  	* configure.ac (LOCALEDIR, DATADIRNAME): Removed.
  
@@ -128,7 +135,7 @@
  2009-09-21  Ulrich Drepper  <drepper@redhat.com>
  
  	* configure.ac: Update for more modern autoconf.
-@@ -234,6 +243,10 @@
+@@ -300,6 +309,10 @@
  
  	* configure.ac (zip_LIBS): Check for liblzma too.
  
@@ -139,7 +146,7 @@
  2009-04-19  Roland McGrath  <roland@redhat.com>
  
  	* configure.ac (eu_version): Round down here, not in version.h macros.
-@@ -245,6 +258,8 @@
+@@ -311,6 +324,8 @@
  
  2009-01-23  Roland McGrath  <roland@redhat.com>
  
@@ -148,7 +155,7 @@
  	* configure.ac (zlib check): Check for gzdirect, need zlib >= 1.2.2.3.
  
  	* configure.ac (__thread check): Use AC_LINK_IFELSE, in case of
-@@ -325,6 +340,10 @@
+@@ -391,6 +406,10 @@
  	* configure.ac: Add dummy automake conditional to get dependencies
  	for non-generic linker right.  See src/Makefile.am.
  
@@ -159,7 +166,7 @@
  2005-11-18  Roland McGrath  <roland@redhat.com>
  
  	* Makefile.am (DISTCHECK_CONFIGURE_FLAGS): New variable.
-@@ -372,6 +391,17 @@
+@@ -438,6 +457,17 @@
  	* Makefile.am (all_SUBDIRS): Add libdwfl.
  	* configure.ac: Write libdwfl/Makefile.
  
@@ -177,9 +184,9 @@
  2005-05-19  Roland McGrath  <roland@redhat.com>
  
  	* configure.ac [AH_BOTTOM] (INTDECL, _INTDECL): New macros.
---- elfutils/config/ChangeLog
-+++ elfutils/config/ChangeLog
-@@ -71,6 +71,10 @@
+--- a/config/ChangeLog
++++ b/config/ChangeLog
+@@ -106,6 +106,10 @@
  
  	* known-dwarf.awk: Use gawk.
  
@@ -190,8 +197,8 @@
  2010-07-02  Ulrich Drepper  <drepper@redhat.com>
  
  	* elfutils.spec.in: Add more BuildRequires.
---- elfutils/config/eu.am
-+++ elfutils/config/eu.am
+--- a/config/eu.am
++++ b/config/eu.am
 @@ -1,6 +1,6 @@
  ## Common automake fragments for elfutils subdirectory makefiles.
  ##
@@ -200,7 +207,7 @@
  ##
  ## This file is part of elfutils.
  ##
-@@ -29,13 +29,21 @@
+@@ -29,6 +29,9 @@
  ## not, see <http://www.gnu.org/licenses/>.
  ##
  
@@ -209,12 +216,18 @@
 +
  DEFS = -D_GNU_SOURCE -DHAVE_CONFIG_H -DLOCALEDIR='"${localedir}"'
  AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I..
+ 
+@@ -38,12 +41,17 @@ STACK_USAGE_WARNING=-Wstack-usage=262144
+ else
+ STACK_USAGE_WARNING=
+ endif
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow \
  	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
 +	    $(if $($(*F)_no_Wunused),,-Wunused $(WEXTRA)) \
 +	    $(if $($(*F)_no_Wformat),-Wno-format,-Wformat=2) \
+ 	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
  	    $($(*F)_CFLAGS)
  
 +if BUILD_WERROR
@@ -223,10 +236,10 @@
 +
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
  
- %.os: %.c %.o
---- elfutils/config/Makefile.in
-+++ elfutils/config/Makefile.in
-@@ -147,6 +147,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+ DEFS.os = -DPIC -DSHARED
+--- a/config/Makefile.in
++++ b/config/Makefile.in
+@@ -150,6 +150,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -234,7 +247,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -178,6 +179,7 @@ SHELL = @SHELL@
+@@ -181,6 +182,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -242,19 +255,22 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
---- elfutils/config.h.in
-+++ elfutils/config.h.in
-@@ -3,6 +3,9 @@
+--- a/config.h.in
++++ b/config.h.in
+@@ -6,6 +6,12 @@
  /* Should ar and ranlib use -D behavior by default? */
  #undef DEFAULT_AR_DETERMINISTIC
  
 +/* Have __builtin_popcount. */
 +#undef HAVE_BUILTIN_POPCOUNT
 +
++/* Define to 1 if you have the `futimens' function. */
++#undef HAVE_FUTIMENS
++
  /* Define to 1 if you have the <inttypes.h> header file. */
  #undef HAVE_INTTYPES_H
  
-@@ -102,4 +105,7 @@
+@@ -105,4 +111,7 @@
  /* Define for large files, on AIX-style hosts. */
  #undef _LARGE_FILES
  
@@ -262,9 +278,9 @@
 +#undef __thread
 +
  #include <eu-config.h>
---- elfutils/configure
-+++ elfutils/configure
-@@ -663,6 +663,8 @@ ZLIB_TRUE
+--- a/configure
++++ b/configure
+@@ -672,6 +672,8 @@ ZLIB_TRUE
  LIBEBL_SUBDIR
  TESTS_RPATH_FALSE
  TESTS_RPATH_TRUE
@@ -273,7 +289,7 @@
  BUILD_STATIC_FALSE
  BUILD_STATIC_TRUE
  USE_VALGRIND_FALSE
-@@ -678,6 +680,8 @@ NEVER_TRUE
+@@ -687,6 +689,8 @@ NEVER_TRUE
  base_cpu
  NATIVE_LD_FALSE
  NATIVE_LD_TRUE
@@ -282,24 +298,117 @@
  NM
  READELF
  ac_ct_AR
-@@ -798,6 +802,7 @@ enable_debugpred
- enable_gprof
+@@ -807,6 +811,7 @@ enable_gprof
  enable_gcov
+ enable_sanitize_undefined
  enable_valgrind
 +enable_werror
  enable_tests_rpath
  enable_libebl_subdir
  with_zlib
-@@ -1455,6 +1460,7 @@ Optional Features:
-   --enable-gprof          build binaries with gprof support
-   --enable-gcov           build binaries with gcov support
+@@ -1467,6 +1472,7 @@ Optional Features:
+   --enable-sanitize-undefined
+                           Use gcc undefined behaviour sanitizer
    --enable-valgrind       run all tests under valgrind
 +  --disable-werror        do not build with -Werror
    --enable-tests-rpath    build $ORIGIN-using rpath into tests
    --enable-libebl-subdir=DIR
                            install libebl_CPU modules in $(libdir)/DIR
-@@ -4843,6 +4849,130 @@ if test "x$ac_cv_c99" != xyes; then :
-   as_fn_error $? "gcc with C99 support required" "$LINENO" 5
+@@ -1665,6 +1671,73 @@ fi
+ 
+ } # ac_fn_c_try_link
+ 
++# ac_fn_c_check_func LINENO FUNC VAR
++# ----------------------------------
++# Tests whether FUNC exists, setting the cache variable VAR accordingly
++ac_fn_c_check_func ()
++{
++  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
++  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
++$as_echo_n "checking for $2... " >&6; }
++if eval \${$3+:} false; then :
++  $as_echo_n "(cached) " >&6
++else
++  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
++/* end confdefs.h.  */
++/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
++   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
++#define $2 innocuous_$2
++
++/* System header to define __stub macros and hopefully few prototypes,
++    which can conflict with char $2 (); below.
++    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
++    <limits.h> exists even on freestanding compilers.  */
++
++#ifdef __STDC__
++# include <limits.h>
++#else
++# include <assert.h>
++#endif
++
++#undef $2
++
++/* Override any GCC internal prototype to avoid an error.
++   Use char because int might match the return type of a GCC
++   builtin and then its argument prototype would still apply.  */
++#ifdef __cplusplus
++extern "C"
++#endif
++char $2 ();
++/* The GNU C library defines this for functions which it implements
++    to always fail with ENOSYS.  Some functions are actually named
++    something starting with __ and the normal name is an alias.  */
++#if defined __stub_$2 || defined __stub___$2
++choke me
++#endif
++
++int
++main ()
++{
++return $2 ();
++  ;
++  return 0;
++}
++_ACEOF
++if ac_fn_c_try_link "$LINENO"; then :
++  eval "$3=yes"
++else
++  eval "$3=no"
++fi
++rm -f core conftest.err conftest.$ac_objext \
++    conftest$ac_exeext conftest.$ac_ext
++fi
++eval ac_res=\$$3
++	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
++$as_echo "$ac_res" >&6; }
++  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
++
++} # ac_fn_c_check_func
++
+ # ac_fn_c_try_run LINENO
+ # ----------------------
+ # Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
+@@ -4824,6 +4897,18 @@ else
+ fi
+ 
+ 
++for ac_func in futimens
++do :
++  ac_fn_c_check_func "$LINENO" "futimens" "ac_cv_func_futimens"
++if test "x$ac_cv_func_futimens" = xyes; then :
++  cat >>confdefs.h <<_ACEOF
++#define HAVE_FUTIMENS 1
++_ACEOF
++
++fi
++done
++
++
+ # We use -std=gnu99 but have explicit checks for some language constructs
+ # and GNU extensions since some compilers claim GNU99 support, but don't
+ # really support all language extensions. In particular we need
+@@ -4872,6 +4957,130 @@ if test "x$ac_cv_c99" != xyes; then :
+   as_fn_error $? "gcc with GNU99 support required" "$LINENO" 5
  fi
  
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wextra option to $CC" >&5
@@ -429,7 +538,7 @@
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __thread support" >&5
  $as_echo_n "checking for __thread support... " >&6; }
  if ${ac_cv_tls+:} false; then :
-@@ -4879,7 +5009,13 @@ fi
+@@ -4909,7 +5118,13 @@ fi
  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tls" >&5
  $as_echo "$ac_cv_tls" >&6; }
  if test "x$ac_cv_tls" != xyes; then :
@@ -444,7 +553,7 @@
  fi
  
  # Check whether --enable-largefile was given.
-@@ -5246,6 +5382,22 @@ else
+@@ -5317,6 +5532,22 @@ else
  fi
  
  
@@ -467,16 +576,16 @@
  # Check whether --enable-tests-rpath was given.
  if test "${enable_tests_rpath+set}" = set; then :
    enableval=$enable_tests_rpath; tests_use_rpath=$enableval
-@@ -5983,7 +6135,7 @@ case "$eu_version" in
+@@ -6198,7 +6429,7 @@ case "$eu_version" in
  esac
  
  # Round up to the next release API (x.y) version.
 -eu_version=$(( (eu_version + 999) / 1000 ))
 +eu_version=`expr \( $eu_version + 999 \) / 1000`
  
- ac_ext=c
- ac_cpp='$CPP $CPPFLAGS'
-@@ -6729,6 +6881,10 @@ if test -z "${BUILD_STATIC_TRUE}" && tes
+ MODVERSION="Build for ${LIBEBL_SUBDIR} ${eu_version} ${ac_cv_build}"
+ 
+@@ -7087,6 +7318,10 @@ if test -z "${BUILD_STATIC_TRUE}" && tes
    as_fn_error $? "conditional \"BUILD_STATIC\" was never defined.
  Usually this means the macro was only invoked conditionally." "$LINENO" 5
  fi
@@ -487,11 +596,20 @@
  if test -z "${TESTS_RPATH_TRUE}" && test -z "${TESTS_RPATH_FALSE}"; then
    as_fn_error $? "conditional \"TESTS_RPATH\" was never defined.
  Usually this means the macro was only invoked conditionally." "$LINENO" 5
---- elfutils/configure.ac
-+++ elfutils/configure.ac
-@@ -89,6 +89,54 @@ CFLAGS="$old_CFLAGS"])
+--- a/configure.ac
++++ b/configure.ac
+@@ -73,6 +73,8 @@ m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+ AC_CHECK_TOOL([READELF], [readelf])
+ AC_CHECK_TOOL([NM], [nm])
+ 
++AC_CHECK_FUNCS([futimens])
++
+ # We use -std=gnu99 but have explicit checks for some language constructs
+ # and GNU extensions since some compilers claim GNU99 support, but don't
+ # really support all language extensions. In particular we need
+@@ -106,6 +108,54 @@ CFLAGS="$old_CFLAGS"])
  AS_IF([test "x$ac_cv_c99" != xyes],
-       AC_MSG_ERROR([gcc with C99 support required]))
+       AC_MSG_ERROR([gcc with GNU99 support required]))
  
 +AC_CACHE_CHECK([for -Wextra option to $CC], ac_cv_cc_wextra, [dnl
 +old_CFLAGS="$CFLAGS"
@@ -544,7 +662,7 @@
  AC_CACHE_CHECK([for __thread support], ac_cv_tls, [dnl
  # Use the same flags that we use for our DSOs, so the test is representative.
  # Some old compiler/linker/libc combinations fail some ways and not others.
-@@ -104,7 +152,10 @@ static __thread int a; int foo (int b) {
+@@ -122,7 +172,10 @@ static __thread int a; int foo (int b) {
  CFLAGS="$save_CFLAGS"
  LDFLAGS="$save_LDFLAGS"])
  AS_IF([test "x$ac_cv_tls" != xyes],
@@ -556,7 +674,7 @@
  
  dnl This test must come as early as possible after the compiler configuration
  dnl tests, because the choice of the file model can (in principle) affect
-@@ -183,6 +234,11 @@ AM_CONDITIONAL(USE_VALGRIND, test "$use_
+@@ -224,6 +277,11 @@ AM_CONDITIONAL(USE_VALGRIND, test "$use_
  AM_CONDITIONAL(BUILD_STATIC, [dnl
  test "$use_gprof" = yes -o "$use_gcov" = yes])
  
@@ -568,18 +686,18 @@
  AC_ARG_ENABLE([tests-rpath],
  AS_HELP_STRING([--enable-tests-rpath],[build $ORIGIN-using rpath into tests]),
  	       [tests_use_rpath=$enableval], [tests_use_rpath=no])
-@@ -302,7 +358,7 @@ case "$eu_version" in
+@@ -388,7 +446,7 @@ case "$eu_version" in
  esac
  
  # Round up to the next release API (x.y) version.
 -eu_version=$(( (eu_version + 999) / 1000 ))
 +eu_version=`expr \( $eu_version + 999 \) / 1000`
  
- AC_CHECK_SIZEOF(long)
- 
---- elfutils/lib/ChangeLog
-+++ elfutils/lib/ChangeLog
-@@ -65,6 +65,9 @@
+ dnl Unique ID for this build.
+ MODVERSION="Build for ${LIBEBL_SUBDIR} ${eu_version} ${ac_cv_build}"
+--- a/lib/ChangeLog
++++ b/lib/ChangeLog
+@@ -73,6 +73,9 @@
  
  2009-01-23  Roland McGrath  <roland@redhat.com>
  
@@ -589,7 +707,7 @@
  	* eu-config.h: Add multiple inclusion protection.
  
  2009-01-17  Ulrich Drepper  <drepper@redhat.com>
-@@ -121,6 +124,11 @@
+@@ -129,6 +132,11 @@
  	* Makefile.am (libeu_a_SOURCES): Add it.
  	* system.h: Declare crc32_file.
  
@@ -601,9 +719,9 @@
  2005-04-30  Ulrich Drepper  <drepper@redhat.com>
  
  	* Makefile.am: Use -ffunction-sections for xmalloc.c.
---- elfutils/lib/eu-config.h
-+++ elfutils/lib/eu-config.h
-@@ -162,6 +162,17 @@ asm (".section predict_data, \"aw\"; .pr
+--- a/lib/eu-config.h
++++ b/lib/eu-config.h
+@@ -163,6 +163,17 @@ asm (".section predict_data, \"aw\"; .pr
  /* This macro is used by the tests conditionalize for standalone building.  */
  #define ELFUTILS_HEADER(name) <lib##name.h>
  
@@ -619,19 +737,21 @@
 +#endif	/* HAVE_BUILTIN_POPCOUNT */
 +
  
- #ifdef SHARED
+ #ifdef SYMBOL_VERSIONING
  # define OLD_VERSION(name, version) \
---- elfutils/lib/Makefile.in
-+++ elfutils/lib/Makefile.in
-@@ -82,6 +82,7 @@ host_triplet = @host@
+--- a/lib/Makefile.in
++++ b/lib/Makefile.in
+@@ -82,7 +82,8 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(noinst_HEADERS) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  subdir = lib
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -197,6 +198,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -201,6 +202,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -639,7 +759,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -228,6 +230,7 @@ SHELL = @SHELL@
+@@ -232,6 +234,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -647,22 +767,27 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -289,9 +292,11 @@ top_srcdir = @top_srcdir@
- zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(srcdir)/../libelf
+@@ -298,13 +301,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
  	$($(*F)_no_Werror),,-Werror) $(if \
--	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) -fpic
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1) -fpic
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
+ 	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+-	$($(*F)_CFLAGS) -fpic
++	$($(*F)_CFLAGS) $(am__append_1) -fpic
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda
  textrel_msg = echo "WARNING: TEXTREL found in '$@'"
---- elfutils/libasm/ChangeLog
-+++ elfutils/libasm/ChangeLog
+ @FATAL_TEXTREL_FALSE@textrel_found = $(textrel_msg)
+--- a/libasm/ChangeLog
++++ b/libasm/ChangeLog
 @@ -87,6 +87,11 @@
  	* asm_error.c: Add new error ASM_E_IOERROR.
  	* libasmP.h: Add ASM_E_IOERROR definition.
@@ -675,20 +800,22 @@
  2005-02-15  Ulrich Drepper  <drepper@redhat.com>
  
  	* Makefile.am (AM_CFLAGS): Add -Wunused -Wextra -Wformat=2.
---- elfutils/libasm/Makefile.in
-+++ elfutils/libasm/Makefile.in
-@@ -83,8 +83,9 @@ host_triplet = @host@
+--- a/libasm/Makefile.in
++++ b/libasm/Makefile.in
+@@ -83,9 +83,10 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  noinst_PROGRAMS = $(am__EXEEXT_1)
--@USE_LOCKS_TRUE@am__append_1 = -lpthread
-+@USE_LOCKS_TRUE@am__append_2 = -lpthread
+-@USE_LOCKS_TRUE@am__append_2 = -lpthread
++@USE_LOCKS_TRUE@am__append_3 = -lpthread
  subdir = libasm
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -248,6 +249,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -252,6 +253,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -696,7 +823,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -279,6 +281,7 @@ SHELL = @SHELL@
+@@ -283,6 +285,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = 1
@@ -704,34 +831,39 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -341,11 +344,11 @@ zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(top_srcdir)/libelf -I$(top_srcdir)/libebl \
- 	-I$(top_srcdir)/libdw
+@@ -350,14 +353,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 -	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
 -	    $($(*F)_CFLAGS)
 -
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
 +	$($(*F)_no_Werror),,-Werror) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
++	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
++	$($(*F)_CFLAGS) $(am__append_1)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(am_libasm_pic_a_OBJECTS) \
  	libasm.so.$(VERSION)
-@@ -373,7 +376,7 @@ libasm_a_SOURCES = asm_begin.c asm_abort
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+@@ -384,7 +387,7 @@ libasm_a_SOURCES = asm_begin.c asm_abort
  
  libasm_pic_a_SOURCES = 
  am_libasm_pic_a_OBJECTS = $(libasm_a_SOURCES:.c=.os)
--libasm_so_LDLIBS = $(am__append_1)
-+libasm_so_LDLIBS = $(am__append_2)
+-libasm_so_LDLIBS = $(am__append_2)
++libasm_so_LDLIBS = $(am__append_3)
  libasm_so_SOURCES = 
  noinst_HEADERS = libasmP.h symbolhash.h
  EXTRA_DIST = libasm.map
---- elfutils/libcpu/ChangeLog
-+++ elfutils/libcpu/ChangeLog
+--- a/libcpu/ChangeLog
++++ b/libcpu/ChangeLog
 @@ -51,6 +51,9 @@
  
  2009-01-23  Roland McGrath  <roland@redhat.com>
@@ -754,8 +886,8 @@
  2005-02-15  Ulrich Drepper  <drepper@redhat.com>
  
  	* Makefile (AM_CFLAGS): Add -Wunused -Wextra -Wformat=2.
---- elfutils/libcpu/i386_disasm.c
-+++ elfutils/libcpu/i386_disasm.c
+--- a/libcpu/i386_disasm.c
++++ b/libcpu/i386_disasm.c
 @@ -822,6 +822,7 @@ i386_disasm (const uint8_t **startp, con
  
  			default:
@@ -764,17 +896,19 @@
  			}
  		    }
  		  else
---- elfutils/libcpu/Makefile.in
-+++ elfutils/libcpu/Makefile.in
-@@ -84,6 +84,7 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+--- a/libcpu/Makefile.in
++++ b/libcpu/Makefile.in
+@@ -84,7 +84,8 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
  	$(srcdir)/Makefile.am i386_lex.c i386_parse.c \
  	$(top_srcdir)/config/depcomp $(top_srcdir)/config/ylwrap \
  	$(am__noinst_HEADERS_DIST) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  @MAINTAINER_MODE_TRUE@noinst_PROGRAMS = i386_gendis$(EXEEXT)
  subdir = libcpu
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-@@ -223,6 +224,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -227,6 +228,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -782,7 +916,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = lex.$(<F:lex.l=)
-@@ -254,6 +256,7 @@ SHELL = @SHELL@
+@@ -258,6 +260,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -790,24 +924,28 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -316,10 +319,11 @@ zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(srcdir)/../libelf -I$(srcdir)/../libebl \
- 	-I$(srcdir)/../libdw -I$(srcdir)/../libasm
+@@ -325,13 +328,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
  	$($(*F)_no_Werror),,-Werror) $(if \
--	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) -fpic \
--	-fdollars-in-identifiers
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1) -fpic -fdollars-in-identifiers
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
+ 	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+-	$($(*F)_CFLAGS) -fpic -fdollars-in-identifiers
++	$($(*F)_CFLAGS) $(am__append_1) -fpic -fdollars-in-identifiers
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(foreach P,i386 x86_64,$P_defs \
  	$P.mnemonics)
---- elfutils/libdw/ChangeLog
-+++ elfutils/libdw/ChangeLog
-@@ -717,6 +717,10 @@
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+--- a/libdw/ChangeLog
++++ b/libdw/ChangeLog
+@@ -889,6 +889,10 @@
  
  	* Makefile.am (known-dwarf.h): Run gawk on config/known-dwarf.awk.
  
@@ -818,7 +956,7 @@
  2011-07-14  Mark Wielaard  <mjw@redhat.com>
  
  	* libdw.h (dwarf_offdie): Fix documentation to mention .debug_info.
-@@ -1076,6 +1080,10 @@
+@@ -1248,6 +1252,10 @@
  
  	* dwarf_hasattr_integrate.c: Integrate DW_AT_specification too.
  
@@ -829,7 +967,7 @@
  2009-08-10  Roland McGrath  <roland@redhat.com>
  
  	* dwarf_getscopevar.c: Use dwarf_diename.
-@@ -1844,6 +1852,11 @@
+@@ -2016,6 +2024,11 @@
  
  2005-05-31  Roland McGrath  <roland@redhat.com>
  
@@ -841,8 +979,8 @@
  	* dwarf_formref_die.c (dwarf_formref_die): Add CU header offset to
  	formref offset.
  
---- elfutils/libdw/dwarf_begin_elf.c
-+++ elfutils/libdw/dwarf_begin_elf.c
+--- a/libdw/dwarf_begin_elf.c
++++ b/libdw/dwarf_begin_elf.c
 @@ -47,6 +47,14 @@
  #if USE_ZLIB
  # include <endian.h>
@@ -858,9 +996,9 @@
  # include <zlib.h>
  # undef crc32
  #endif
---- elfutils/libdw/libdw.h
-+++ elfutils/libdw/libdw.h
-@@ -1003,7 +1003,7 @@ extern Dwarf_OOM dwarf_new_oom_handler (
+--- a/libdw/libdw.h
++++ b/libdw/libdw.h
+@@ -1004,7 +1004,7 @@ extern Dwarf_OOM dwarf_new_oom_handler (
  
  
  /* Inline optimizations.  */
@@ -869,19 +1007,21 @@
  /* Return attribute code of given attribute.  */
  __libdw_extern_inline unsigned int
  dwarf_whatattr (Dwarf_Attribute *attr)
---- elfutils/libdw/Makefile.in
-+++ elfutils/libdw/Makefile.in
-@@ -84,7 +84,8 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+--- a/libdw/Makefile.in
++++ b/libdw/Makefile.in
+@@ -84,8 +84,9 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(include_HEADERS) $(noinst_HEADERS) $(pkginclude_HEADERS) \
  	ChangeLog
--@BUILD_STATIC_TRUE@am__append_1 = -fpic
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
+-@BUILD_STATIC_TRUE@am__append_2 = -fpic
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
-+@BUILD_STATIC_TRUE@am__append_2 = -fpic
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
++@BUILD_STATIC_TRUE@am__append_3 = -fpic
  noinst_PROGRAMS = $(am__EXEEXT_1)
  subdir = libdw
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-@@ -298,6 +299,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -302,6 +303,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -889,7 +1029,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -329,6 +331,7 @@ SHELL = @SHELL@
+@@ -333,6 +335,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = 1
@@ -897,32 +1037,38 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -390,10 +393,11 @@ top_srcdir = @top_srcdir@
- zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(srcdir)/../libelf
+@@ -399,13 +402,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
  	$($(*F)_no_Werror),,-Werror) $(if \
--	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) \
--	$(am__append_1)
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1) $(am__append_2)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
+ 	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+-	$($(*F)_CFLAGS) $(am__append_2)
++	$($(*F)_CFLAGS) $(am__append_1) $(am__append_3)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda
  textrel_msg = echo "WARNING: TEXTREL found in '$@'"
---- elfutils/libdwelf/Makefile.in
-+++ elfutils/libdwelf/Makefile.in
-@@ -82,6 +82,7 @@ host_triplet = @host@
+ @FATAL_TEXTREL_FALSE@textrel_found = $(textrel_msg)
+--- a/libdwelf/Makefile.in
++++ b/libdwelf/Makefile.in
+@@ -82,7 +82,8 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  subdir = libdwelf
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -227,6 +228,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -231,6 +232,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -930,7 +1076,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -258,6 +260,7 @@ SHELL = @SHELL@
+@@ -262,6 +264,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = 1
@@ -938,26 +1084,31 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -320,11 +323,11 @@ zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(srcdir)/../libelf -I$(srcdir)/../libdw \
- 	-I$(srcdir)/../libdwfl -I$(srcdir)/../libebl
+@@ -329,14 +332,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 -	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
 -	    $($(*F)_CFLAGS)
 -
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
 +	$($(*F)_no_Werror),,-Werror) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
++	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
++	$($(*F)_CFLAGS) $(am__append_1)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(am_libdwelf_pic_a_OBJECTS)
  textrel_msg = echo "WARNING: TEXTREL found in '$@'"
---- elfutils/libdwfl/ChangeLog
-+++ elfutils/libdwfl/ChangeLog
-@@ -571,6 +571,21 @@
+ @FATAL_TEXTREL_FALSE@textrel_found = $(textrel_msg)
+--- a/libdwfl/ChangeLog
++++ b/libdwfl/ChangeLog
+@@ -704,6 +704,21 @@
  	(dwfl_module_addrsym) (i_to_symfile): New function.
  	(dwfl_module_addrsym) (search_table): Use it.
  
@@ -979,7 +1130,7 @@
  2013-11-07  Jan Kratochvil  <jan.kratochvil@redhat.com>
  	    Mark Wielaard  <mjw@redhat.com>
  
-@@ -2336,6 +2351,11 @@
+@@ -2469,6 +2484,11 @@
  
  2005-07-21  Roland McGrath  <roland@redhat.com>
  
@@ -991,8 +1142,8 @@
  	* Makefile.am (noinst_HEADERS): Add loc2c.c.
  
  	* test2.c (main): Check sscanf result to quiet warning.
---- elfutils/libdwfl/linux-core-attach.c
-+++ elfutils/libdwfl/linux-core-attach.c
+--- a/libdwfl/linux-core-attach.c
++++ b/libdwfl/linux-core-attach.c
 @@ -29,6 +29,35 @@
  #include "libdwflP.h"
  #include <fcntl.h>
@@ -1029,8 +1180,8 @@
  
  #include "../libdw/memory-access.h"
  
---- elfutils/libdwfl/linux-pid-attach.c
-+++ elfutils/libdwfl/linux-pid-attach.c
+--- a/libdwfl/linux-pid-attach.c
++++ b/libdwfl/linux-pid-attach.c
 @@ -255,6 +255,11 @@ void
  internal_function
  __libdwfl_ptrace_detach (pid_t tid, bool tid_was_stopped)
@@ -1059,23 +1210,25 @@
  }
  
  static void
---- elfutils/libdwfl/Makefile.in
-+++ elfutils/libdwfl/Makefile.in
-@@ -82,9 +82,10 @@ host_triplet = @host@
+--- a/libdwfl/Makefile.in
++++ b/libdwfl/Makefile.in
+@@ -82,10 +82,11 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
--@ZLIB_TRUE@am__append_1 = gzip.c
--@BZLIB_TRUE@am__append_2 = bzip2.c
--@LZMA_TRUE@am__append_3 = lzma.c
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
+-@ZLIB_TRUE@am__append_2 = gzip.c
+-@BZLIB_TRUE@am__append_3 = bzip2.c
+-@LZMA_TRUE@am__append_4 = lzma.c
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
-+@ZLIB_TRUE@am__append_2 = gzip.c
-+@BZLIB_TRUE@am__append_3 = bzip2.c
-+@LZMA_TRUE@am__append_4 = lzma.c
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
++@ZLIB_TRUE@am__append_3 = gzip.c
++@BZLIB_TRUE@am__append_4 = bzip2.c
++@LZMA_TRUE@am__append_5 = lzma.c
  subdir = libdwfl
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -286,6 +287,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -290,6 +291,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1083,7 +1236,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -317,6 +319,7 @@ SHELL = @SHELL@
+@@ -321,6 +323,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = 1
@@ -1091,37 +1244,42 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -379,11 +382,11 @@ zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. -I$(srcdir) \
- 	-I$(srcdir)/../libelf -I$(srcdir)/../libebl \
- 	-I$(srcdir)/../libdw -I$(srcdir)/../libdwelf
+@@ -388,14 +391,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 -	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
 -	    $($(*F)_CFLAGS)
 -
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
 +	$($(*F)_no_Werror),,-Werror) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
++	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
++	$($(*F)_CFLAGS) $(am__append_1)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(am_libdwfl_pic_a_OBJECTS)
  textrel_msg = echo "WARNING: TEXTREL found in '$@'"
-@@ -413,8 +416,8 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
+ @FATAL_TEXTREL_FALSE@textrel_found = $(textrel_msg)
+@@ -424,8 +427,8 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
  	dwfl_module_register_names.c dwfl_segment_report_module.c \
  	link_map.c core-file.c open.c image-header.c dwfl_frame.c \
  	frame_unwind.c dwfl_frame_pc.c linux-pid-attach.c \
--	linux-core-attach.c dwfl_frame_regs.c $(am__append_1) \
--	$(am__append_2) $(am__append_3)
-+	linux-core-attach.c dwfl_frame_regs.c $(am__append_2) \
-+	$(am__append_3) $(am__append_4)
+-	linux-core-attach.c dwfl_frame_regs.c $(am__append_2) \
+-	$(am__append_3) $(am__append_4)
++	linux-core-attach.c dwfl_frame_regs.c $(am__append_3) \
++	$(am__append_4) $(am__append_5)
  libdwfl = $(libdw)
  libdw = ../libdw/libdw.so
  libelf = ../libelf/libelf.so
---- elfutils/libebl/ChangeLog
-+++ elfutils/libebl/ChangeLog
-@@ -765,6 +765,11 @@
+--- a/libebl/ChangeLog
++++ b/libebl/ChangeLog
+@@ -780,6 +780,11 @@
  	* Makefile.am (libebl_*_so_SOURCES): Set to $(*_SRCS) so dependency
  	tracking works right.
  
@@ -1133,17 +1291,19 @@
  2005-05-21  Ulrich Drepper  <drepper@redhat.com>
  
  	* libebl_x86_64.map: Add x86_64_core_note.
---- elfutils/libebl/Makefile.in
-+++ elfutils/libebl/Makefile.in
-@@ -82,6 +82,7 @@ host_triplet = @host@
+--- a/libebl/Makefile.in
++++ b/libebl/Makefile.in
+@@ -82,7 +82,8 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(noinst_HEADERS) $(pkginclude_HEADERS) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  subdir = libebl
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -249,6 +250,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -253,6 +254,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1151,7 +1311,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -280,6 +282,7 @@ SHELL = @SHELL@
+@@ -284,6 +286,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = 1
@@ -1159,23 +1319,28 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -342,9 +345,11 @@ zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. \
- 	-I$(srcdir)/../libelf -I$(srcdir)/../libdw \
- 	-I$(srcdir)/../libasm
+@@ -351,13 +354,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
  	$($(*F)_no_Werror),,-Werror) $(if \
--	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) -fpic
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1) -fpic
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
+ 	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+-	$($(*F)_CFLAGS) -fpic
++	$($(*F)_CFLAGS) $(am__append_1) -fpic
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(am_libebl_pic_a_OBJECTS)
  textrel_msg = echo "WARNING: TEXTREL found in '$@'"
---- elfutils/libelf/ChangeLog
-+++ elfutils/libelf/ChangeLog
-@@ -244,6 +244,11 @@
+ @FATAL_TEXTREL_FALSE@textrel_found = $(textrel_msg)
+--- a/libelf/ChangeLog
++++ b/libelf/ChangeLog
+@@ -398,6 +398,11 @@
  
  	* elf-knowledge.h (SECTION_STRIP_P): Remove < SHT_NUM check.
  
@@ -1187,7 +1352,7 @@
  2011-02-26  Mark Wielaard  <mjw@redhat.com>
  
  	* elf_end.c (elf_end): Call rwlock_unlock before rwlock_fini.
-@@ -921,6 +926,11 @@
+@@ -1075,6 +1080,11 @@
  
  	* elf.h: Update from glibc.
  
@@ -1199,8 +1364,8 @@
  2005-05-08  Roland McGrath  <roland@redhat.com>
  
  	* elf_begin.c (read_file) [_MUDFLAP]: Don't use mmap for now.
---- elfutils/libelf/common.h
-+++ elfutils/libelf/common.h
+--- a/libelf/common.h
++++ b/libelf/common.h
 @@ -139,7 +139,7 @@ libelf_release_all (Elf *elf)
    (Var) = (sizeof (Var) == 1						      \
  	   ? (unsigned char) (Var)					      \
@@ -1219,8 +1384,8 @@
  	      : (sizeof (Var) == 4					      \
  		 ? bswap_32 (Var)					      \
  		 : bswap_64 (Var))))
---- elfutils/libelf/gnuhash_xlate.h
-+++ elfutils/libelf/gnuhash_xlate.h
+--- a/libelf/gnuhash_xlate.h
++++ b/libelf/gnuhash_xlate.h
 @@ -1,5 +1,5 @@
  /* Conversion functions for versioning information.
 -   Copyright (C) 2006, 2007 Red Hat, Inc.
@@ -1239,22 +1404,24 @@
        len -= 4;
      }
  }
---- elfutils/libelf/Makefile.in
-+++ elfutils/libelf/Makefile.in
-@@ -84,9 +84,10 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+--- a/libelf/Makefile.in
++++ b/libelf/Makefile.in
+@@ -84,10 +84,11 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(include_HEADERS) $(noinst_HEADERS) $(pkginclude_HEADERS) \
  	ChangeLog
--@BUILD_STATIC_TRUE@am__append_1 = -fpic
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
+-@BUILD_STATIC_TRUE@am__append_2 = -fpic
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
-+@BUILD_STATIC_TRUE@am__append_2 = -fpic
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
++@BUILD_STATIC_TRUE@am__append_3 = -fpic
  noinst_PROGRAMS = $(am__EXEEXT_1)
--@USE_LOCKS_TRUE@am__append_2 = -lpthread
-+@USE_LOCKS_TRUE@am__append_3 = -lpthread
+-@USE_LOCKS_TRUE@am__append_3 = -lpthread
++@USE_LOCKS_TRUE@am__append_4 = -lpthread
  subdir = libelf
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -291,6 +292,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -295,6 +296,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1262,7 +1429,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -322,6 +324,7 @@ SHELL = @SHELL@
+@@ -326,6 +328,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = 1
@@ -1270,33 +1437,37 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -382,10 +385,11 @@ top_builddir = @top_builddir@
- top_srcdir = @top_srcdir@
- zip_LIBS = @zip_LIBS@
- AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I..
+@@ -391,13 +394,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 $(if \
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
  	$($(*F)_no_Werror),,-Werror) $(if \
--	$($(*F)_no_Wunused),,-Wunused -Wextra) $($(*F)_CFLAGS) \
--	$(am__append_1)
+-	$($(*F)_no_Wunused),,-Wunused -Wextra) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1) $(am__append_2)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
+ 	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
+-	$($(*F)_CFLAGS) $(am__append_2)
++	$($(*F)_CFLAGS) $(am__append_1) $(am__append_3)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda $(am_libelf_pic_a_OBJECTS) \
  	libelf.so.$(VERSION)
-@@ -449,7 +453,7 @@ libelf_a_SOURCES = elf_version.c elf_has
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+@@ -460,7 +464,7 @@ libelf_a_SOURCES = elf_version.c elf_has
  
  libelf_pic_a_SOURCES = 
  am_libelf_pic_a_OBJECTS = $(libelf_a_SOURCES:.c=.os)
--libelf_so_LDLIBS = $(am__append_2)
-+libelf_so_LDLIBS = $(am__append_3)
+-libelf_so_LDLIBS = $(am__append_3)
++libelf_so_LDLIBS = $(am__append_4)
  libelf_so_SOURCES = 
  noinst_HEADERS = elf.h abstract.h common.h exttypes.h gelf_xlate.h libelfP.h \
  		 version_xlate.h gnuhash_xlate.h note_xlate.h dl-hash.h
---- elfutils/m4/Makefile.in
-+++ elfutils/m4/Makefile.in
-@@ -145,6 +145,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+--- a/m4/Makefile.in
++++ b/m4/Makefile.in
+@@ -148,6 +148,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1304,7 +1475,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -176,6 +177,7 @@ SHELL = @SHELL@
+@@ -179,6 +180,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -1312,9 +1483,9 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
---- elfutils/Makefile.in
-+++ elfutils/Makefile.in
-@@ -263,6 +263,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -266,6 +266,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1322,7 +1493,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -294,6 +295,7 @@ SHELL = @SHELL@
+@@ -297,6 +298,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -1330,9 +1501,9 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
---- elfutils/src/addr2line.c
-+++ elfutils/src/addr2line.c
-@@ -540,10 +540,10 @@ handle_address (const char *string, Dwfl
+--- a/src/addr2line.c
++++ b/src/addr2line.c
+@@ -622,10 +622,10 @@ handle_address (const char *string, Dwfl
        bool parsed = false;
        int i, j;
        char *name = NULL;
@@ -1345,9 +1516,26 @@
  	{
  	default:
  	  break;
---- elfutils/src/ChangeLog
-+++ elfutils/src/ChangeLog
-@@ -1371,8 +1371,16 @@
+--- a/src/ar.c
++++ b/src/ar.c
+@@ -685,7 +685,14 @@ do_oper_extract (int oper, const char *a
+ 		  tv[1].tv_sec = arhdr->ar_date;
+ 		  tv[1].tv_nsec = 0;
+ 
++#ifdef HAVE_FUTIMENS
+ 		  if (unlikely (futimens (xfd, tv) != 0))
++#else
++		  struct timeval times[2];
++		  TIMESPEC_TO_TIMEVAL (&times[0], &tv[0]);
++		  TIMESPEC_TO_TIMEVAL (&times[1], &tv[1]);
++		  if (unlikely (futimes (xfd, times) != 0))
++#endif
+ 		    {
+ 		      error (0, errno,
+ 			     gettext ("cannot change modification time of %s"),
+--- a/src/ChangeLog
++++ b/src/ChangeLog
+@@ -1598,8 +1598,16 @@
  	* readelf.c (attr_callback): Use print_block only when we don't use
  	print_ops.
  
@@ -1364,7 +1552,7 @@
  	* ar.c (do_oper_extract): Use pathconf instead of statfs.
  
  2009-08-01  Ulrich Drepper  <drepper@redhat.com>
-@@ -1536,6 +1544,8 @@
+@@ -1763,6 +1771,8 @@
  	* readelf.c (print_debug_frame_section): Use t instead of j formats
  	for ptrdiff_t OFFSET.
  
@@ -1373,7 +1561,7 @@
  2009-01-21  Ulrich Drepper  <drepper@redhat.com>
  
  	* elflint.c (check_program_header): Fix typo in .eh_frame_hdr section
-@@ -1719,6 +1729,11 @@
+@@ -1946,6 +1956,11 @@
  	that matches its PT_LOAD's p_flags &~ PF_W.  On sparc, PF_X really
  	is valid in RELRO.
  
@@ -1385,7 +1573,7 @@
  2008-02-29  Roland McGrath  <roland@redhat.com>
  
  	* readelf.c (print_attributes): Add a cast.
-@@ -1970,6 +1985,8 @@
+@@ -2197,6 +2212,8 @@
  
  	* readelf.c (hex_dump): Fix rounding error in whitespace calculation.
  
@@ -1394,7 +1582,7 @@
  2007-10-15  Roland McGrath  <roland@redhat.com>
  
  	* make-debug-archive.in: New file.
-@@ -2409,6 +2426,10 @@
+@@ -2636,6 +2653,10 @@
  	* elflint.c (valid_e_machine): Add EM_ALPHA.
  	Reported by Christian Aichinger <Greek0@gmx.net>.
  
@@ -1405,7 +1593,7 @@
  2006-08-08  Ulrich Drepper  <drepper@redhat.com>
  
  	* elflint.c (check_dynamic): Don't require DT_HASH for DT_SYMTAB.
-@@ -2485,6 +2506,10 @@
+@@ -2712,6 +2733,10 @@
  	* Makefile.am: Add hacks to create dependency files for non-generic
  	linker.
  
@@ -1416,7 +1604,7 @@
  2006-06-12  Ulrich Drepper  <drepper@redhat.com>
  
  	* ldgeneric.c (ld_generic_generate_sections): Don't create .interp
-@@ -2833,6 +2858,11 @@
+@@ -3060,6 +3085,11 @@
  	* readelf.c (print_debug_loc_section): Fix indentation for larger
  	address size.
  
@@ -1428,8 +1616,8 @@
  2005-05-30  Roland McGrath  <roland@redhat.com>
  
  	* readelf.c (print_debug_line_section): Print section offset of each
---- elfutils/src/findtextrel.c
-+++ elfutils/src/findtextrel.c
+--- a/src/findtextrel.c
++++ b/src/findtextrel.c
 @@ -502,7 +502,11 @@ ptrcompare (const void *p1, const void *
  
  
@@ -1443,8 +1631,8 @@
  	   GElf_Addr addr, Elf *elf, Elf_Scn *symscn, Dwarf *dw,
  	   const char *fname, bool more_than_one, void **knownsrcs)
  {
---- elfutils/src/ld.h
-+++ elfutils/src/ld.h
+--- a/src/ld.h
++++ b/src/ld.h
 @@ -1114,6 +1114,7 @@ extern bool dynamically_linked_p (void);
  
  /* Checked whether the symbol is undefined and referenced from a DSO.  */
@@ -1460,52 +1648,54 @@
 +#endif	/* Optimizing and not GCC 4.2.  */
  
  #endif	/* ld.h */
---- elfutils/src/Makefile.am
-+++ elfutils/src/Makefile.am
-@@ -89,6 +89,11 @@ endif
- # XXX While the file is not finished, don't warn about this
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -90,6 +90,11 @@ endif
  ldgeneric_no_Wunused = yes
+ ldgeneric_no_Wstack_usage = yes
  
 +# Buggy old compilers or libc headers.
 +readelf_no_Werror = yes
 +strings_no_Werror = yes
 +addr2line_no_Wformat = yes
 +
- readelf_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl
- nm_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl \
- 	   $(demanglelib)
---- elfutils/src/Makefile.in
-+++ elfutils/src/Makefile.in
-@@ -85,6 +85,7 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
+ # Bad, bad stack usage...
+ readelf_no_Wstack_usage = yes
+ nm_no_Wstack_usage = yes
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -85,7 +85,8 @@ DIST_COMMON = $(top_srcdir)/config/eu.am
  	$(srcdir)/Makefile.am ldlex.c ldscript.c \
  	$(top_srcdir)/config/depcomp $(top_srcdir)/config/ylwrap \
  	$(noinst_HEADERS) ChangeLog
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
  bin_PROGRAMS = readelf$(EXEEXT) nm$(EXEEXT) size$(EXEEXT) \
  	strip$(EXEEXT) ld$(EXEEXT) elflint$(EXEEXT) \
  	findtextrel$(EXEEXT) addr2line$(EXEEXT) elfcmp$(EXEEXT) \
-@@ -93,9 +94,9 @@ bin_PROGRAMS = readelf$(EXEEXT) nm$(EXEE
+@@ -94,9 +95,9 @@ bin_PROGRAMS = readelf$(EXEEXT) nm$(EXEE
  @NATIVE_LD_FALSE@noinst_PROGRAMS = $(am__EXEEXT_1)
  # We never build this library but we need to get the dependency files
  # of all the linker backends that might be used in a non-generic linker.
--@NEVER_TRUE@am__append_1 = libdummy.a
-+@NEVER_TRUE@am__append_2 = libdummy.a
+-@NEVER_TRUE@am__append_2 = libdummy.a
++@NEVER_TRUE@am__append_3 = libdummy.a
  # -ldl is always needed for libebl.
--@NATIVE_LD_TRUE@am__append_2 = libld_elf.a
-+@NATIVE_LD_TRUE@am__append_3 = libld_elf.a
+-@NATIVE_LD_TRUE@am__append_3 = libld_elf.a
++@NATIVE_LD_TRUE@am__append_4 = libld_elf.a
  @NATIVE_LD_TRUE@am_libld_elf_i386_pic_a_OBJECTS =
  subdir = src
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-@@ -159,7 +160,7 @@ am_ld_OBJECTS = ld.$(OBJEXT) ldgeneric.$
- 	ldscript.$(OBJEXT) symbolhash.$(OBJEXT) sectionhash.$(OBJEXT) \
+@@ -164,7 +165,7 @@ am_ld_OBJECTS = ld.$(OBJEXT) ldgeneric.$
  	versionhash.$(OBJEXT)
  ld_OBJECTS = $(am_ld_OBJECTS)
--ld_DEPENDENCIES = $(libebl) $(libelf) $(libeu) $(am__append_2)
-+ld_DEPENDENCIES = $(libebl) $(libelf) $(libeu) $(am__append_3)
+ ld_DEPENDENCIES = $(libebl) $(libelf) $(libeu) $(am__DEPENDENCIES_1) \
+-	$(am__append_3)
++	$(am__append_4)
  ld_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(ld_LDFLAGS) $(LDFLAGS) -o \
  	$@
  am_libld_elf_i386_so_OBJECTS =
-@@ -340,6 +341,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -350,6 +351,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1513,7 +1703,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -371,6 +373,7 @@ SHELL = @SHELL@
+@@ -381,6 +383,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -1521,57 +1711,63 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -434,11 +437,11 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
- 	-I$(srcdir)/../libelf -I$(srcdir)/../libebl \
- 	-I$(srcdir)/../libdw -I$(srcdir)/../libdwelf \
- 	-I$(srcdir)/../libdwfl -I$(srcdir)/../libasm
+@@ -449,14 +452,14 @@ AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_sr
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 -	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
 -	    $($(*F)_CFLAGS)
 -
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
 +	$($(*F)_no_Werror),,-Werror) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
++	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
++	$($(*F)_CFLAGS) $(am__append_1)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda make-debug-archive none_ld.os \
  	$(ld_modules:.c=.os) *.gconv
-@@ -452,8 +455,8 @@ AM_LFLAGS = -Pld -olex.yy.c
+ textrel_msg = echo "WARNING: TEXTREL found in '$@'"
+@@ -469,8 +472,8 @@ AM_LFLAGS = -Pld -olex.yy.c
  native_ld = @native_ld@
  ld_dsos = libld_elf_i386_pic.a
  @NATIVE_LD_FALSE@noinst_LIBRARIES = libld_elf.a libar.a $(ld_dsos) \
--@NATIVE_LD_FALSE@	$(am__append_1)
--@NATIVE_LD_TRUE@noinst_LIBRARIES = libld_elf.a libar.a $(am__append_1)
-+@NATIVE_LD_FALSE@	$(am__append_2)
-+@NATIVE_LD_TRUE@noinst_LIBRARIES = libld_elf.a libar.a $(am__append_2)
+-@NATIVE_LD_FALSE@	$(am__append_2)
+-@NATIVE_LD_TRUE@noinst_LIBRARIES = libld_elf.a libar.a $(am__append_2)
++@NATIVE_LD_FALSE@	$(am__append_3)
++@NATIVE_LD_TRUE@noinst_LIBRARIES = libld_elf.a libar.a $(am__append_3)
  @NATIVE_LD_TRUE@native_ld_cflags = -DBASE_ELF_NAME=elf_$(base_cpu)
  @NEVER_TRUE@libdummy_a_SOURCES = i386_ld.c
  ld_SOURCES = ld.c ldgeneric.c ldlex.l ldscript.y symbolhash.c sectionhash.c \
-@@ -479,13 +482,18 @@ libeu = ../lib/libeu.a
- 
- # XXX While the file is not finished, don't warn about this
+@@ -498,6 +501,11 @@ libeu = ../lib/libeu.a
  ldgeneric_no_Wunused = yes
-+
+ ldgeneric_no_Wstack_usage = yes
+ 
 +# Buggy old compilers or libc headers.
 +readelf_no_Werror = yes
 +strings_no_Werror = yes
 +addr2line_no_Wformat = yes
- readelf_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl
- nm_LDADD = $(libdw) $(libebl) $(libelf) $(libeu) -ldl \
- 	   $(demanglelib)
- 
- size_LDADD = $(libelf) $(libeu)
- strip_LDADD = $(libebl) $(libelf) $(libeu) -ldl
--ld_LDADD = $(libebl) $(libelf) $(libeu) -ldl $(am__append_2)
-+ld_LDADD = $(libebl) $(libelf) $(libeu) -ldl $(am__append_3)
++
+ # Bad, bad stack usage...
+ readelf_no_Wstack_usage = yes
+ nm_no_Wstack_usage = yes
+@@ -517,7 +525,7 @@ nm_LDADD = $(libdw) $(libebl) $(libelf)
+ size_LDADD = $(libelf) $(libeu) $(argp_LDADD)
+ strip_LDADD = $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl
+ ld_LDADD = $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl \
+-	$(am__append_3)
++	$(am__append_4)
  ld_LDFLAGS = -rdynamic
- elflint_LDADD = $(libebl) $(libelf) $(libeu) -ldl
- findtextrel_LDADD = $(libdw) $(libelf)
---- elfutils/src/readelf.c
-+++ elfutils/src/readelf.c
-@@ -4368,10 +4368,12 @@ listptr_base (struct listptr *p)
+ elflint_LDADD = $(libebl) $(libelf) $(libeu) $(argp_LDADD) -ldl
+ findtextrel_LDADD = $(libdw) $(libelf) $(argp_LDADD)
+--- a/src/readelf.c
++++ b/src/readelf.c
+@@ -4364,10 +4364,12 @@ listptr_base (struct listptr *p)
    return base;
  }
  
@@ -1586,7 +1782,7 @@
    struct listptr *p1 = (void *) a;
    struct listptr *p2 = (void *) b;
  
-@@ -4467,8 +4469,11 @@ static void
+@@ -4463,8 +4465,11 @@ static void
  sort_listptr (struct listptr_table *table, const char *name)
  {
    if (table->n > 0)
@@ -1600,7 +1796,7 @@
  }
  
  static bool
-@@ -9539,7 +9544,7 @@ dump_archive_index (Elf *elf, const char
+@@ -9561,7 +9566,7 @@ dump_archive_index (Elf *elf, const char
  	  if (unlikely (elf_rand (elf, as_off) == 0)
  	      || unlikely ((subelf = elf_begin (-1, ELF_C_READ_MMAP, elf))
  			   == NULL))
@@ -1609,8 +1805,8 @@
  	    while (1)
  #endif
  	      error (EXIT_FAILURE, 0,
---- elfutils/src/strings.c
-+++ elfutils/src/strings.c
+--- a/src/strings.c
++++ b/src/strings.c
 @@ -43,6 +43,10 @@
  
  #include <system.h>
@@ -1648,60 +1844,40 @@
      }
  
    if (unlikely (elfmap == MAP_FAILED))
---- elfutils/src/strip.c
-+++ elfutils/src/strip.c
-@@ -45,6 +45,12 @@
- #include <libebl.h>
- #include <system.h>
- 
-+#ifdef HAVE_FUTIMES
-+# define FUTIMES(fd, fname, tvp) futimes (fd, tvp)
-+#else
-+# define FUTIMES(fd, fname, tvp) utimes (fname, tvp)
-+#endif
-+
- typedef uint8_t GElf_Byte;
- 
- /* Name and version of program.  */
-@@ -318,8 +324,18 @@ process_file (const char *fname)
- 
-       /* If we have to preserve the timestamp, we need it in the
- 	 format utimes() understands.  */
-+#ifdef HAVE_STRUCT_STAT_ST_ATIM
-       TIMESPEC_TO_TIMEVAL (&tv[0], &pre_st.st_atim);
-+#else
-+      tv[0].tv_sec = pre_st.st_atime;
-+      tv[0].tv_usec = 0;
-+#endif
-+#ifdef HAVE_STRUCT_STAT_ST_MTIM
-       TIMESPEC_TO_TIMEVAL (&tv[1], &pre_st.st_mtim);
-+#else
-+      tv[1].tv_sec = pre_st.st_atime;
-+      tv[1].tv_usec = 0;
-+#endif
-     }
- 
-   /* Open the file.  */
-@@ -2091,7 +2107,7 @@ while computing checksum for debug infor
+--- a/src/strip.c
++++ b/src/strip.c
+@@ -2191,7 +2191,14 @@ while computing checksum for debug infor
    /* If requested, preserve the timestamp.  */
    if (tvp != NULL)
      {
--      if (futimes (fd, tvp) != 0)
-+      if (FUTIMES (fd, output_fname, tvp) != 0)
++#ifdef HAVE_FUTIMENS
+       if (futimens (fd, tvp) != 0)
++#else
++      struct timeval times[2];
++      TIMESPEC_TO_TIMEVAL (&times[0], &tvp[0]);
++      TIMESPEC_TO_TIMEVAL (&times[1], &tvp[1]);
++      if (futimes (fd, times) != 0)
++#endif
  	{
  	  error (0, errno, gettext ("\
  cannot set access and modification date of '%s'"),
-@@ -2148,7 +2164,7 @@ handle_ar (int fd, Elf *elf, const char
+@@ -2263,7 +2270,14 @@ handle_ar (int fd, Elf *elf, const char
  
    if (tvp != NULL)
      {
--      if (unlikely (futimes (fd, tvp) != 0))
-+      if (unlikely (FUTIMES (fd, fname, tvp) != 0))
++#ifdef HAVE_FUTIMENS
+       if (unlikely (futimens (fd, tvp) != 0))
++#else
++      struct timeval times[2];
++      TIMESPEC_TO_TIMEVAL (&times[0], &tvp[0]);
++      TIMESPEC_TO_TIMEVAL (&times[1], &tvp[1]);
++      if (unlikely (futimes (fd, times) != 0))
++#endif
  	{
  	  error (0, errno, gettext ("\
  cannot set access and modification date of '%s'"), fname);
---- elfutils/tests/backtrace.c
-+++ elfutils/tests/backtrace.c
+--- a/tests/backtrace.c
++++ b/tests/backtrace.c
 @@ -36,6 +36,7 @@
  #include <fcntl.h>
  #include <string.h>
@@ -1710,9 +1886,9 @@
  #include ELFUTILS_HEADER(dwfl)
  
  #ifndef __linux__
---- elfutils/tests/ChangeLog
-+++ elfutils/tests/ChangeLog
-@@ -421,6 +421,13 @@
+--- a/tests/ChangeLog
++++ b/tests/ChangeLog
+@@ -609,6 +609,13 @@
  
  2013-12-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
  
@@ -1726,7 +1902,7 @@
  	* Makefile.am (check_PROGRAMS): Add backtrace, backtrace-child,
  	backtrace-data and backtrace-dwarf.
  	(BUILT_SOURCES, clean-local, backtrace-child-biarch): New.
-@@ -1285,6 +1292,8 @@
+@@ -1473,6 +1480,8 @@
  
  2008-01-21  Roland McGrath  <roland@redhat.com>
  
@@ -1735,7 +1911,7 @@
  	* testfile45.S.bz2: Add tests for cltq, cqto.
  	* testfile45.expect.bz2: Adjust.
  
-@@ -1993,6 +2002,11 @@
+@@ -2181,6 +2190,11 @@
  	* Makefile.am (TESTS): Add run-elflint-test.sh.
  	(EXTRA_DIST): Add run-elflint-test.sh and testfile18.bz2.
  
@@ -1747,8 +1923,8 @@
  2005-05-24  Ulrich Drepper  <drepper@redhat.com>
  
  	* get-files.c (main): Use correct format specifier.
---- elfutils/tests/line2addr.c
-+++ elfutils/tests/line2addr.c
+--- a/tests/line2addr.c
++++ b/tests/line2addr.c
 @@ -124,7 +124,7 @@ main (int argc, char *argv[])
      {
        struct args a = { .arg = argv[cnt] };
@@ -1758,66 +1934,69 @@
  	{
  	default:
  	case 0:
---- elfutils/tests/Makefile.am
-+++ elfutils/tests/Makefile.am
-@@ -365,6 +365,7 @@ get_lines_LDADD = $(libdw) $(libelf)
+--- a/tests/Makefile.am
++++ b/tests/Makefile.am
+@@ -382,6 +382,7 @@ get_lines_LDADD = $(libdw) $(libelf)
  get_files_LDADD = $(libdw) $(libelf)
  get_aranges_LDADD = $(libdw) $(libelf)
  allfcts_LDADD = $(libdw) $(libelf)
 +line2addr_no_Wformat = yes
- line2addr_LDADD = $(libdw)
- addrscopes_LDADD = $(libdw)
- funcscopes_LDADD = $(libdw)
---- elfutils/tests/Makefile.in
-+++ elfutils/tests/Makefile.in
-@@ -80,13 +80,14 @@ host_triplet = @host@
+ line2addr_LDADD = $(libdw) $(argp_LDADD)
+ addrscopes_LDADD = $(libdw) $(argp_LDADD)
+ funcscopes_LDADD = $(libdw) $(argp_LDADD)
+--- a/tests/Makefile.in
++++ b/tests/Makefile.in
+@@ -80,14 +80,15 @@ host_triplet = @host@
  DIST_COMMON = $(top_srcdir)/config/eu.am $(srcdir)/Makefile.in \
  	$(srcdir)/Makefile.am $(top_srcdir)/config/depcomp \
  	$(top_srcdir)/config/test-driver ChangeLog
--@STANDALONE_FALSE@am__append_1 = -I$(top_srcdir)/libasm -I$(top_srcdir)/libdw \
+-@SYMBOL_VERSIONING_TRUE@am__append_1 = -DSYMBOL_VERSIONING
+-@STANDALONE_FALSE@am__append_2 = -I$(top_srcdir)/libasm -I$(top_srcdir)/libdw \
 +@BUILD_WERROR_TRUE@am__append_1 = $(if $($(*F)_no_Werror),,-Werror)
-+@STANDALONE_FALSE@am__append_2 = -I$(top_srcdir)/libasm -I$(top_srcdir)/libdw \
++@SYMBOL_VERSIONING_TRUE@am__append_2 = -DSYMBOL_VERSIONING
++@STANDALONE_FALSE@am__append_3 = -I$(top_srcdir)/libasm -I$(top_srcdir)/libdw \
  @STANDALONE_FALSE@	    -I$(top_srcdir)/libdwfl -I$(top_srcdir)/libdwelf \
  @STANDALONE_FALSE@	    -I$(top_srcdir)/libebl -I$(top_srcdir)/libelf \
  @STANDALONE_FALSE@	    -I$(top_srcdir)/lib -I..
  
--@STANDALONE_FALSE@am__append_2 = -Wl,-rpath-link,../libasm:../libdw:../libelf
--@TESTS_RPATH_TRUE@am__append_3 = -Wl,-rpath,$(BUILD_RPATH)
-+@STANDALONE_FALSE@am__append_3 = -Wl,-rpath-link,../libasm:../libdw:../libelf
-+@TESTS_RPATH_TRUE@am__append_4 = -Wl,-rpath,$(BUILD_RPATH)
+-@STANDALONE_FALSE@am__append_3 = -Wl,-rpath-link,../libasm:../libdw:../libelf
+-@TESTS_RPATH_TRUE@am__append_4 = -Wl,-rpath,$(BUILD_RPATH)
++@STANDALONE_FALSE@am__append_4 = -Wl,-rpath-link,../libasm:../libdw:../libelf
++@TESTS_RPATH_TRUE@am__append_5 = -Wl,-rpath,$(BUILD_RPATH)
  check_PROGRAMS = arextract$(EXEEXT) arsymtest$(EXEEXT) \
  	newfile$(EXEEXT) saridx$(EXEEXT) scnnames$(EXEEXT) \
  	sectiondump$(EXEEXT) showptable$(EXEEXT) update1$(EXEEXT) \
-@@ -113,7 +114,7 @@ check_PROGRAMS = arextract$(EXEEXT) arsy
- 	deleted$(EXEEXT) deleted-lib.so$(EXEEXT) \
- 	aggregate_size$(EXEEXT) vdsosyms$(EXEEXT) $(am__EXEEXT_1) \
- 	$(am__EXEEXT_2) $(am__EXEEXT_4)
--@BIARCH_TRUE@am__append_4 = backtrace-child-biarch
-+@BIARCH_TRUE@am__append_5 = backtrace-child-biarch
+@@ -116,7 +117,7 @@ check_PROGRAMS = arextract$(EXEEXT) arsy
+ 	aggregate_size$(EXEEXT) vdsosyms$(EXEEXT) getsrc_die$(EXEEXT) \
+ 	strptr$(EXEEXT) newdata$(EXEEXT) elfstrtab$(EXEEXT) \
+ 	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_4)
+-@BIARCH_TRUE@am__append_5 = backtrace-child-biarch
++@BIARCH_TRUE@am__append_6 = backtrace-child-biarch
  TESTS = run-arextract.sh run-arsymtest.sh newfile$(EXEEXT) \
  	test-nlist$(EXEEXT) update1$(EXEEXT) update2$(EXEEXT) \
  	update3$(EXEEXT) update4$(EXEEXT) run-show-die-info.sh \
-@@ -159,14 +160,14 @@ TESTS = run-arextract.sh run-arsymtest.s
- 	run-stack-i-test.sh run-readelf-dwz-multi.sh \
+@@ -166,14 +167,14 @@ TESTS = run-arextract.sh run-arsymtest.s
  	run-allfcts-multi.sh run-deleted.sh run-linkmap-cut.sh \
  	run-aggregate-size.sh vdsosyms$(EXEEXT) run-readelf-A.sh \
--	$(am__EXEEXT_2) $(am__append_7) $(am__append_8) \
-+	$(am__EXEEXT_2) $(am__append_8) $(am__append_9) \
- 	$(am__EXEEXT_4)
--@STANDALONE_FALSE@am__append_5 = msg_tst md5-sha1-test
- @STANDALONE_FALSE@am__append_6 = msg_tst md5-sha1-test
--@LZMA_TRUE@am__append_7 = run-readelf-s.sh run-dwflsyms.sh
--@ZLIB_TRUE@am__append_8 = run-readelf-zdebug.sh
--@HAVE_LIBASM_TRUE@am__append_9 = $(asm_TESTS)
-+@STANDALONE_FALSE@am__append_7 = msg_tst md5-sha1-test
-+@LZMA_TRUE@am__append_8 = run-readelf-s.sh run-dwflsyms.sh
-+@ZLIB_TRUE@am__append_9 = run-readelf-zdebug.sh
- @HAVE_LIBASM_TRUE@am__append_10 = $(asm_TESTS)
-+@HAVE_LIBASM_TRUE@am__append_11 = $(asm_TESTS)
+ 	run-getsrc-die.sh run-strptr.sh newdata$(EXEEXT) \
+-	elfstrtab$(EXEEXT) $(am__EXEEXT_2) $(am__append_8) \
+-	$(am__append_9) $(am__EXEEXT_4)
+-@STANDALONE_FALSE@am__append_6 = msg_tst md5-sha1-test
++	elfstrtab$(EXEEXT) $(am__EXEEXT_2) $(am__append_9) \
++	$(am__append_10) $(am__EXEEXT_4)
+ @STANDALONE_FALSE@am__append_7 = msg_tst md5-sha1-test
+-@LZMA_TRUE@am__append_8 = run-readelf-s.sh run-dwflsyms.sh
+-@ZLIB_TRUE@am__append_9 = run-readelf-zdebug.sh
+-@HAVE_LIBASM_TRUE@am__append_10 = $(asm_TESTS)
++@STANDALONE_FALSE@am__append_8 = msg_tst md5-sha1-test
++@LZMA_TRUE@am__append_9 = run-readelf-s.sh run-dwflsyms.sh
++@ZLIB_TRUE@am__append_10 = run-readelf-zdebug.sh
+ @HAVE_LIBASM_TRUE@am__append_11 = $(asm_TESTS)
++@HAVE_LIBASM_TRUE@am__append_12 = $(asm_TESTS)
  subdir = tests
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
  am__aclocal_m4_deps = $(top_srcdir)/m4/biarch.m4 \
-@@ -787,6 +788,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
+@@ -819,6 +820,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
  INSTALL_SCRIPT = @INSTALL_SCRIPT@
  INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
  LDFLAGS = @LDFLAGS@
@@ -1825,7 +2004,7 @@
  LEX = @LEX@
  LEXLIB = @LEXLIB@
  LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
-@@ -818,6 +820,7 @@ SHELL = @SHELL@
+@@ -850,6 +852,7 @@ SHELL = @SHELL@
  STRIP = @STRIP@
  USE_NLS = @USE_NLS@
  VERSION = @VERSION@
@@ -1833,39 +2012,47 @@
  XGETTEXT = @XGETTEXT@
  XGETTEXT_015 = @XGETTEXT_015@
  XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
-@@ -877,12 +880,12 @@ top_build_prefix = @top_build_prefix@
+@@ -910,26 +913,26 @@ top_build_prefix = @top_build_prefix@
  top_builddir = @top_builddir@
  top_srcdir = @top_srcdir@
  zip_LIBS = @zip_LIBS@
--AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. $(am__append_1)
+-AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. $(am__append_2)
++AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. $(am__append_3)
+ @ADD_STACK_USAGE_WARNING_FALSE@STACK_USAGE_WARNING = 
+ 
+ # Warn about stack usage of more than 256K = 262144 bytes.
+ @ADD_STACK_USAGE_WARNING_TRUE@STACK_USAGE_WARNING = -Wstack-usage=262144
 -AM_CFLAGS = -std=gnu99 -Wall -Wshadow -Wformat=2 \
 -	    $(if $($(*F)_no_Werror),,-Werror) \
 -	    $(if $($(*F)_no_Wunused),,-Wunused -Wextra) \
+-	    $(if $($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
 -	    $($(*F)_CFLAGS)
 -
-+AM_CPPFLAGS = -I. -I$(srcdir) -I$(top_srcdir)/lib -I.. $(am__append_2)
 +AM_CFLAGS = -std=gnu99 -Wall -Wshadow $(if \
 +	$($(*F)_no_Werror),,-Werror) $(if \
 +	$($(*F)_no_Wunused),,-Wunused $(WEXTRA)) $(if \
-+	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $($(*F)_CFLAGS) \
-+	$(am__append_1)
++	$($(*F)_no_Wformat),-Wno-format,-Wformat=2) $(if \
++	$($(*F)_no_Wstack_usage),,$(STACK_USAGE_WARNING)) \
++	$($(*F)_CFLAGS) $(am__append_1)
  COMPILE.os = $(filter-out -fprofile-arcs -ftest-coverage, $(COMPILE))
+-DEFS.os = -DPIC -DSHARED $(am__append_1)
++DEFS.os = -DPIC -DSHARED $(am__append_2)
  CLEANFILES = *.gcno *.gcda
  textrel_msg = echo "WARNING: TEXTREL found in '$@'"
-@@ -890,7 +893,7 @@ textrel_msg = echo "WARNING: TEXTREL fou
+ @FATAL_TEXTREL_FALSE@textrel_found = $(textrel_msg)
  @FATAL_TEXTREL_TRUE@textrel_found = $(textrel_msg); exit 1
  textrel_check = if $(READELF) -d $@ | fgrep -q TEXTREL; then $(textrel_found); fi
  BUILD_RPATH = \$$ORIGIN/../libasm:\$$ORIGIN/../libdw:\$$ORIGIN/../backends:\$$ORIGIN/../libelf
--AM_LDFLAGS = $(am__append_2) $(am__append_3)
-+AM_LDFLAGS = $(am__append_3) $(am__append_4)
+-AM_LDFLAGS = $(am__append_3) $(am__append_4)
++AM_LDFLAGS = $(am__append_4) $(am__append_5)
  @TESTS_RPATH_FALSE@tests_rpath = no
  @TESTS_RPATH_TRUE@tests_rpath = yes
  asm_TESTS = asm-tst1 asm-tst2 asm-tst3 asm-tst4 asm-tst5 \
-@@ -1106,6 +1109,7 @@ get_lines_LDADD = $(libdw) $(libelf)
+@@ -1156,6 +1159,7 @@ get_lines_LDADD = $(libdw) $(libelf)
  get_files_LDADD = $(libdw) $(libelf)
  get_aranges_LDADD = $(libdw) $(libelf)
  allfcts_LDADD = $(libdw) $(libelf)
 +line2addr_no_Wformat = yes
- line2addr_LDADD = $(libdw)
- addrscopes_LDADD = $(libdw)
- funcscopes_LDADD = $(libdw)
+ line2addr_LDADD = $(libdw) $(argp_LDADD)
+ addrscopes_LDADD = $(libdw) $(argp_LDADD)
+ funcscopes_LDADD = $(libdw) $(argp_LDADD)

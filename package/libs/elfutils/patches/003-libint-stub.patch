@@ -1,6 +1,7 @@
---- elfutils-0.160/libelf/libelfP.h.old	2014-11-06 01:47:55.420116984 -0200
-+++ elfutils-0.160/libelf/libelfP.h	2014-11-06 01:48:33.368116980 -0200
-@@ -43,6 +43,9 @@
+--- a/libelf/libelfP.h
++++ b/libelf/libelfP.h
+@@ -42,6 +42,9 @@
+ #include <stdio.h>
  #include <string.h>
  
 +#ifdef _ /* fix libintl-stub */
@@ -9,9 +10,8 @@
  /* gettext helper macros.  */
  #define _(Str) dgettext ("elfutils", Str)
  
- 
---- elfutils-0.160/libdw/libdwP.h.old	2014-11-06 02:27:12.628116703 -0200
-+++ elfutils-0.160/libdw/libdwP.h	2014-11-06 02:27:39.816116700 -0200
+--- a/libdw/libdwP.h
++++ b/libdw/libdwP.h
 @@ -36,7 +36,9 @@
  #include <libdw.h>
  #include <dwarf.h>
@@ -23,8 +23,8 @@
  /* gettext helper macros.  */
  #define _(Str) dgettext ("elfutils", Str)
  
---- elfutils-0.160/libdwfl/libdwflP.h.old	2014-11-06 02:31:20.112116673 -0200
-+++ elfutils-0.160/libdwfl/libdwflP.h	2014-11-06 02:33:00.548116661 -0200
+--- a/libdwfl/libdwflP.h
++++ b/libdwfl/libdwflP.h
 @@ -46,6 +46,9 @@
  
  typedef struct Dwfl_Process Dwfl_Process;
@@ -35,8 +35,8 @@
  /* gettext helper macros.  */
  #define _(Str) dgettext ("elfutils", Str)
  
---- elfutils-0.160/libasm/libasmP.h.old	2014-11-06 02:31:32.064116672 -0200
-+++ elfutils-0.160/libasm/libasmP.h	2014-11-06 02:33:08.656116660 -0200
+--- a/libasm/libasmP.h
++++ b/libasm/libasmP.h
 @@ -33,6 +33,9 @@
  
  #include <libasm.h>
