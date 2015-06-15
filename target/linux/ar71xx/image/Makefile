@@ -131,7 +131,29 @@ define Build/mkubntimage-split
 	rm $@.old1 $@.old2
 endef
 
+define Build/mkubntimage2
+	$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
+		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
+		-p jffs2:0x50000:0xf60000:0:0:$@ \
+		-o $@.new
+	@mv $@.new $@
+endef
+
 DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE
+
+define Build/mkubntkernelimage
+	rm -rf $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image && \
+		mkdir -p $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image && \
+		cp $@ $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image/kernel0 && \
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
+			--pad --big-endian --squash-uids -v -e 64KiB \
+			-o $@.new \
+			-d $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image \
+			2>&1 && \
+		$(STAGING_DIR_HOST)/bin/padjffs2 $@.new -J 64
+	-rm -rf $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image
+	@mv $@.new $@
+endef
 
 define Device/Default
   BOARDNAME :=
