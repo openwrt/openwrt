@@ -705,7 +705,7 @@
    for (subs = nodep->next; subs != NULL; subs = subs->next)
 --- a/libdwfl/dwfl_error.c
 +++ b/libdwfl/dwfl_error.c
-@@ -128,6 +128,7 @@ const char *
+@@ -141,6 +141,7 @@ const char *
  dwfl_errmsg (error)
       int error;
  {
@@ -713,7 +713,7 @@
    if (error == 0 || error == -1)
      {
        int last_error = global_error;
-@@ -142,7 +143,8 @@ dwfl_errmsg (error)
+@@ -155,7 +156,8 @@ dwfl_errmsg (error)
    switch (error &~ 0xffff)
      {
      case OTHER_ERROR (ERRNO):
@@ -755,7 +755,7 @@
  typedef struct Dwfl Dwfl;
 --- a/libdwfl/find-debuginfo.c
 +++ b/libdwfl/find-debuginfo.c
-@@ -338,7 +338,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
+@@ -360,7 +360,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
        /* If FILE_NAME is a symlink, the debug file might be associated
  	 with the symlink target name instead.  */
  
@@ -766,7 +766,7 @@
  				     debuglink_file, debuglink_crc,
 --- a/libdwfl/dwfl_build_id_find_elf.c
 +++ b/libdwfl/dwfl_build_id_find_elf.c
-@@ -80,7 +80,7 @@ __libdwfl_open_by_build_id (Dwfl_Module
+@@ -94,7 +94,7 @@ __libdwfl_open_by_build_id (Dwfl_Module
  	{
  	  if (*file_name != NULL)
  	    free (*file_name);
@@ -777,7 +777,7 @@
  	      *file_name = name;
 --- a/libelf/elf_getarsym.c
 +++ b/libelf/elf_getarsym.c
-@@ -284,7 +284,7 @@ elf_getarsym (elf, ptr)
+@@ -301,7 +301,7 @@ elf_getarsym (elf, ptr)
  		arsym[cnt].as_off = file_data->u32[cnt];
  
  	      arsym[cnt].as_hash = _dl_elf_hash (str_data);
