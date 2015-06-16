@@ -1,6 +1,6 @@
 --- a/src/locale/iconv.c
 +++ b/src/locale/iconv.c
-@@ -38,6 +38,7 @@ static const unsigned char charmaps[] =
+@@ -39,6 +39,7 @@ static const unsigned char charmaps[] =
  "ucs4\0ucs4be\0utf32\0utf32be\0\0\300"
  "ucs4le\0utf32le\0\0\303"
  "ascii\0usascii\0iso646\0iso646us\0\0\307"
@@ -8,7 +8,7 @@
  "eucjp\0\0\320"
  "shiftjis\0sjis\0\0\321"
  "gb18030\0\0\330"
-@@ -45,6 +46,7 @@ static const unsigned char charmaps[] =
+@@ -46,6 +47,7 @@ static const unsigned char charmaps[] =
  "gb2312\0\0\332"
  "big5\0bigfive\0cp950\0big5hkscs\0\0\340"
  "euckr\0ksc5601\0ksx1001\0cp949\0\0\350"
@@ -16,7 +16,7 @@
  #include "codepages.h"
  ;
  
-@@ -52,6 +54,7 @@ static const unsigned short legacy_chars
+@@ -53,6 +55,7 @@ static const unsigned short legacy_chars
  #include "legacychars.h"
  };
  
@@ -24,7 +24,7 @@
  static const unsigned short jis0208[84][94] = {
  #include "jis0208.h"
  };
-@@ -71,6 +74,7 @@ static const unsigned short hkscs[] = {
+@@ -72,6 +75,7 @@ static const unsigned short hkscs[] = {
  static const unsigned short ksc[93][94] = {
  #include "ksc.h"
  };
@@ -32,7 +32,7 @@
  
  static int fuzzycmp(const unsigned char *a, const unsigned char *b)
  {
-@@ -212,6 +216,7 @@ size_t iconv(iconv_t cd0, char **restric
+@@ -216,6 +220,7 @@ size_t iconv(iconv_t cd0, char **restric
  				c = ((c-0xd7c0)<<10) + (d-0xdc00);
  			}
  			break;
@@ -40,7 +40,7 @@
  		case SHIFT_JIS:
  			if (c-0xa1 <= 0xdf-0xa1) {
  				c += 0xff61-0xa1;
-@@ -358,6 +363,7 @@ size_t iconv(iconv_t cd0, char **restric
+@@ -362,6 +367,7 @@ size_t iconv(iconv_t cd0, char **restric
  			c = ksc[c][d];
  			if (!c) goto ilseq;
  			break;

@@ -1,0 +1,1578 @@
+commit 1b0cdc8700d29ef018bf226d74b2b58b23bce91c
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 16 07:11:19 2015 +0000
+
+    refactor stdio open file list handling, move it out of global libc struct
+    
+    functions which open in-memory FILE stream variants all shared a tail
+    with __fdopen, adding the FILE structure to stdio's open file list.
+    replacing this common tail with a function call reduces code size and
+    duplication of logic. the list is also partially encapsulated now.
+    
+    function signatures were chosen to facilitate tail call optimization
+    and reduce the need for additional accessor functions.
+    
+    with these changes, static linked programs that do not use stdio no
+    longer have an open file list at all.
+
+commit f22a9edaf8a6f2ca1d314d18b3785558279a5c03
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 16 06:18:00 2015 +0000
+
+    byte-based C locale, phase 3: make MB_CUR_MAX variable to activate code
+    
+    this patch activates the new byte-based C locale (high bytes treated
+    as abstract code unit "characters" rather than decoded as multibyte
+    characters) by making the value of MB_CUR_MAX depend on the active
+    locale. for the C locale, the LC_CTYPE category pointer is null,
+    yielding a value of 1. all other locales yield a value of 4.
+
+commit 16f18d036d9a7bf590ee6eb86785c0a9658220b6
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 16 05:35:31 2015 +0000
+
+    byte-based C locale, phase 2: stdio and iconv (multibyte callers)
+    
+    this patch adjusts libc components which use the multibyte functions
+    internally, and which depend on them operating in a particular
+    encoding, to make the appropriate locale changes before calling them
+    and restore the calling thread's locale afterwards. activating the
+    byte-based C locale without these changes would cause regressions in
+    stdio and iconv.
+    
+    in the case of iconv, the current implementation was simply using the
+    multibyte functions as UTF-8 conversions. setting a multibyte UTF-8
+    locale for the duration of the iconv operation allows the code to
+    continue working.
+    
+    in the case of stdio, POSIX requires that FILE streams have an
+    encoding rule bound at the time of setting wide orientation. as long
+    as all locales, including the C locale, used the same encoding,
+    treating high bytes as UTF-8, there was no need to store an encoding
+    rule as part of the stream's state.
+    
+    a new locale field in the FILE structure points to the locale that
+    should be made active during fgetwc/fputwc/ungetwc on the stream. it
+    cannot point to the locale active at the time the stream becomes
+    oriented, because this locale could be mutable (the global locale) or
+    could be destroyed (locale_t objects produced by newlocale) before the
+    stream is closed. instead, a pointer to the static C or C.UTF-8 locale
+    object added in commit commit aeeac9ca5490d7d90fe061ab72da446c01ddf746
+    is used. this is valid since categories other than LC_CTYPE will not
+    affect these functions.
+
+commit 1507ebf837334e9e07cfab1ca1c2e88449069a80
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 16 04:44:17 2015 +0000
+
+    byte-based C locale, phase 1: multibyte character handling functions
+    
+    this patch makes the functions which work directly on multibyte
+    characters treat the high bytes as individual abstract code units
+    rather than as multibyte sequences when MB_CUR_MAX is 1. since
+    MB_CUR_MAX is presently defined as a constant 4, all of the new code
+    added is dead code, and optimizing compilers' code generation should
+    not be affected at all. a future commit will activate the new code.
+    
+    as abstract code units, bytes 0x80 to 0xff are represented by wchar_t
+    values 0xdf80 to 0xdfff, at the end of the surrogates range. this
+    ensures that they will never be misinterpreted as Unicode characters,
+    and that all wctype functions return false for these "characters"
+    without needing locale-specific logic. a high range outside of Unicode
+    such as 0x7fffff80 to 0x7fffffff was also considered, but since C11's
+    char16_t also needs to be able to represent conversions of these
+    bytes, the surrogate range was the natural choice.
+
+commit 38e2f727237230300fea6aff68802db04625fd23
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 16 04:21:38 2015 +0000
+
+    fix btowc corner case
+    
+    btowc is required to interpret its argument by conversion to unsigned
+    char, unless the argument is equal to EOF. since the conversion to
+    produces a non-character value anyway, we can just unconditionally
+    convert, for now.
+
+commit ee59c296d56bf26f49f354d6eb32b4b6d4190188
+Author: Szabolcs Nagy <nsz@port70.net>
+Date:   Wed Jun 3 10:32:14 2015 +0100
+
+    arm: add vdso support
+    
+    vdso will be available on arm in linux v4.2, the user-space code
+    for it is in kernel commit 8512287a8165592466cb9cb347ba94892e9c56a5
+
+commit e3bc22f1eff87b8f029a6ab31f1a269d69e4b053
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sun Jun 14 01:59:02 2015 +0000
+
+    refactor malloc's expand_heap to share with __simple_malloc
+    
+    this extends the brk/stack collision protection added to full malloc
+    in commit 276904c2f6bde3a31a24ebfa201482601d18b4f9 to also protect the
+    __simple_malloc function used in static-linked programs that don't
+    reference the free function.
+    
+    it also extends support for using mmap when brk fails, which full
+    malloc got in commit 5446303328adf4b4e36d9fba21848e6feb55fab4, to
+    __simple_malloc.
+    
+    since __simple_malloc may expand the heap by arbitrarily large
+    increments, the stack collision detection is enhanced to detect
+    interval overlap rather than just proximity of a single address to the
+    stack. code size is increased a bit, but this is partly offset by the
+    sharing of code between the two malloc implementations, which due to
+    linking semantics, both get linked in a program that needs the full
+    malloc with realloc/free support.
+
+commit 4ef9b828c1f39553a69e0635ac91f0fcadd6e8c6
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 13 20:53:02 2015 +0000
+
+    remove cancellation points in stdio
+    
+    commit 58165923890865a6ac042fafce13f440ee986fd9 added these optional
+    cancellation points on the basis that cancellable stdio could be
+    useful, to unblock threads stuck on stdio operations that will never
+    complete. however, the only way to ensure that cancellation can
+    achieve this is to violate the rules for side effects when
+    cancellation is acted upon, discarding knowledge of any partial data
+    transfer already completed. our implementation exhibited this behavior
+    and was thus non-conforming.
+    
+    in addition to improving correctness, removing these cancellation
+    points moderately reduces code size, and should significantly improve
+    performance on i386, where sysenter/syscall instructions can be used
+    instead of "int $128" for non-cancellable syscalls.
+
+commit 536c6d5a4205e2a3f161f2983ce1e0ac3082187d
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 13 05:17:16 2015 +0000
+
+    fix idiom for setting stdio stream orientation to wide
+    
+    the old idiom, f->mode |= f->mode+1, was adapted from the idiom for
+    setting byte orientation, f->mode |= f->mode-1, but the adaptation was
+    incorrect. unless the stream was alreasdy set byte-oriented, this code
+    incremented f->mode each time it was executed, which would eventually
+    lead to overflow. it could be fixed by changing it to f->mode |= 1,
+    but upcoming changes will require slightly more work at the time of
+    wide orientation, so it makes sense to just call fwide. as an
+    optimization in the single-character functions, fwide is only called
+    if the stream is not already wide-oriented.
+
+commit f8f565df467c13248104223f99abf7f37cef7584
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 13 04:42:38 2015 +0000
+
+    add printing of null %s arguments as "(null)" in wide printf
+    
+    this is undefined, but supported in our implementation of the normal
+    printf, so for consistency the wide variant should support it too.
+
+commit f9e25d813860d53cd1e9b6145cc63375d2fe2529
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 13 04:37:27 2015 +0000
+
+    add %m support to wide printf
+
+commit ec634aad91f57479ef17525e33ed446c780a61f4
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu Jun 11 05:01:04 2015 +0000
+
+    add sh asm for vfork
+
+commit c30cbcb0a646b1f13a22c645616dce624465b883
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed Jun 10 02:27:40 2015 +0000
+
+    implement arch-generic version of __unmapself
+    
+    this can be used to put off writing an asm version of __unmapself for
+    new archs, or as a permanent solution on archs where it's not
+    practical or even possible to run momentarily with no stack.
+    
+    the concept here is simple: the caller takes a lock on a global shared
+    stack and uses it to make the munmap and exit syscalls. the only trick
+    is unlocking, which must be done after the thread exits, and this is
+    achieved by using the set_tid_address syscall to have the kernel zero
+    and futex-wake the lock word as part of the exit syscall.
+
+commit 276904c2f6bde3a31a24ebfa201482601d18b4f9
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 9 20:30:35 2015 +0000
+
+    in malloc, refuse to use brk if it grows into stack
+    
+    the linux/nommu fdpic ELF loader sets up the brk range to overlap
+    entirely with the main thread's stack (but growing from opposite
+    ends), so that the resulting failure mode for malloc is not to return
+    a null pointer but to start returning pointers to memory that overlaps
+    with the caller's stack. needless to say this extremely dangerous and
+    makes brk unusable.
+    
+    since it's non-trivial to detect execution environments that might be
+    affected by this kernel bug, and since the severity of the bug makes
+    any sort of detection that might yield false-negatives unsafe, we
+    instead check the proximity of the brk to the stack pointer each time
+    the brk is to be expanded. both the main thread's stack (where the
+    real known risk lies) and the calling thread's stack are checked. an
+    arbitrary gap distance of 8 MB is imposed, chosen to be larger than
+    linux default main-thread stack reservation sizes and larger than any
+    reasonable stack configuration on nommu.
+    
+    the effeciveness of this patch relies on an assumption that the amount
+    by which the brk is being grown is smaller than the gap limit, which
+    is always true for malloc's use of brk. reliance on this assumption is
+    why the check is being done in malloc-specific code and not in __brk.
+
+commit bd1eaceaa3975bd2a2a34e211cff896affaecadf
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Tue Jun 9 20:09:27 2015 +0000
+
+    fix spurious errors from pwd/grp functions when nscd backend is absent
+    
+    for several pwd/grp functions, the only way the caller can distinguish
+    between a successful negative result ("no such user/group") and an
+    internal error is by clearing errno before the call and checking errno
+    afterwards. the nscd backend support code correctly simulated a
+    not-found response on systems where such a backend is not running, but
+    failed to restore errno.
+    
+    this commit also fixed an outdated/incorrect comment.
+
+commit 75ce4503950621b11fcc7f1fd1187dbcf3cde312
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sun Jun 7 20:55:23 2015 +0000
+
+    fix regression in pre-v7 arm on kernels with kuser helper removed
+    
+    the arm atomics/TLS runtime selection code is called from
+    __set_thread_area and depends on having libc.auxv and __hwcap
+    available. commit 71f099cb7db821c51d8f39dfac622c61e54d794c moved the
+    first call to __set_thread_area to the top of dynamic linking stage 3,
+    before this data is made available, causing the runtime detection code
+    to always see __hwcap as zero and thereby select the atomics/TLS
+    implementations based on kuser helper.
+    
+    upcoming work on superh will use similar runtime detection.
+    
+    ideally this early-init code should be cleanly refactored and shared
+    between the dynamic linker and static-linked startup.
+
+commit 32f3c4f70633488550c29a2444f819aafdf345ff
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sun Jun 7 03:09:16 2015 +0000
+
+    add multiple inclusion guard to locale_impl.h
+
+commit 04b8360adbb6487f61aa0c00e53ec3a90a5a0d29
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sun Jun 7 02:59:49 2015 +0000
+
+    remove redefinition of MB_CUR_MAX in locale_impl.h
+    
+    unless/until the byte-based C locale is implemented, defining
+    MB_CUR_MAX to 1 in the C locale is wrong. no internal code currently
+    uses the MB_CUR_MAX macro, but having it defined inconsistently is
+    error-prone. applications get the value from stdlib.h and were
+    unaffected.
+
+commit 16bf466532d7328e971012b0731ad493b017ad29
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 6 18:53:02 2015 +0000
+
+    make static C and C.UTF-8 locales available outside of newlocale
+
+commit 312eea2ea4f4363fb01b73660c08bfcf43dd3bb4
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 6 18:20:30 2015 +0000
+
+    remove another invalid skip of locking in ungetwc
+
+commit 3d7e32d28dc9962e9efc1c317c5b44b5b2df3008
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 6 18:16:22 2015 +0000
+
+    add macro version of ctype.h isascii function
+    
+    presumably internal code (ungetwc and fputwc) was written assuming a
+    macro implementation existed; otherwise use of isascii is just a
+    pessimization.
+
+commit 7e816a6487932cbb3cb71d94b609e50e81f4e5bf
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Sat Jun 6 18:11:17 2015 +0000
+
+    remove invalid skip of locking in ungetwc
+    
+    aside from being invalid, the early check only optimized the error
+    case, and likely pessimized the common case by separating the
+    two branches on isascii(c) at opposite ends of the function.
+
+commit 63f4b9f18f3674124d8bcb119739fec85e6da005
+Author: Timo Teräs <timo.teras@iki.fi>
+Date:   Fri Jun 5 10:39:42 2015 +0300
+
+    fix uselocale((locale_t)0) not to modify locale
+    
+    commit 68630b55c0c7219fe9df70dc28ffbf9efc8021d8 made the new locale to
+    be assigned unconditonally resulting in crashes later on.
+
+--- a/arch/arm/syscall_arch.h
++++ b/arch/arm/syscall_arch.h
+@@ -72,3 +72,7 @@ static inline long __syscall6(long n, lo
+ 	register long r5 __asm__("r5") = f;
+ 	__asm_syscall("r"(r7), "0"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5));
+ }
++
++#define VDSO_USEFUL
++#define VDSO_CGT_SYM "__vdso_clock_gettime"
++#define VDSO_CGT_VER "LINUX_2.6"
+--- a/include/ctype.h
++++ b/include/ctype.h
+@@ -64,6 +64,7 @@ int   isascii(int);
+ int   toascii(int);
+ #define _tolower(a) ((a)|0x20)
+ #define _toupper(a) ((a)&0x5f)
++#define isascii(a) (0 ? isascii(a) : (unsigned)(a) < 128)
+ 
+ #endif
+ 
+--- a/include/stdlib.h
++++ b/include/stdlib.h
+@@ -76,7 +76,8 @@ size_t wcstombs (char *__restrict, const
+ #define EXIT_FAILURE 1
+ #define EXIT_SUCCESS 0
+ 
+-#define MB_CUR_MAX ((size_t)+4)
++size_t __ctype_get_mb_cur_max(void);
++#define MB_CUR_MAX (__ctype_get_mb_cur_max())
+ 
+ #define RAND_MAX (0x7fffffff)
+ 
+--- a/src/ctype/__ctype_get_mb_cur_max.c
++++ b/src/ctype/__ctype_get_mb_cur_max.c
+@@ -1,6 +1,7 @@
+-#include <stddef.h>
++#include <stdlib.h>
++#include "locale_impl.h"
+ 
+ size_t __ctype_get_mb_cur_max()
+ {
+-	return 4;
++	return MB_CUR_MAX;
+ }
+--- a/src/ctype/isascii.c
++++ b/src/ctype/isascii.c
+@@ -1,4 +1,5 @@
+ #include <ctype.h>
++#undef isascii
+ 
+ int isascii(int c)
+ {
+--- a/src/internal/libc.h
++++ b/src/internal/libc.h
+@@ -17,8 +17,6 @@ struct __libc {
+ 	int secure;
+ 	volatile int threads_minus_1;
+ 	size_t *auxv;
+-	FILE *ofl_head;
+-	volatile int ofl_lock[2];
+ 	size_t tls_size;
+ 	size_t page_size;
+ 	struct __locale_struct global_locale;
+--- a/src/internal/locale_impl.h
++++ b/src/internal/locale_impl.h
+@@ -1,3 +1,6 @@
++#ifndef _LOCALE_IMPL_H
++#define _LOCALE_IMPL_H
++
+ #include <locale.h>
+ #include <stdlib.h>
+ #include "libc.h"
+@@ -12,6 +15,10 @@ struct __locale_map {
+ 	const struct __locale_map *next;
+ };
+ 
++extern const struct __locale_map __c_dot_utf8;
++extern const struct __locale_struct __c_locale;
++extern const struct __locale_struct __c_dot_utf8_locale;
++
+ const struct __locale_map *__get_locale(int, const char *);
+ const char *__mo_lookup(const void *, size_t, const char *);
+ const char *__lctrans(const char *, const struct __locale_map *);
+@@ -20,9 +27,14 @@ const char *__lctrans_cur(const char *);
+ #define LCTRANS(msg, lc, loc) __lctrans(msg, (loc)->cat[(lc)])
+ #define LCTRANS_CUR(msg) __lctrans_cur(msg)
+ 
++#define C_LOCALE ((locale_t)&__c_locale)
++#define UTF8_LOCALE ((locale_t)&__c_dot_utf8_locale)
++
+ #define CURRENT_LOCALE (__pthread_self()->locale)
+ 
+ #define CURRENT_UTF8 (!!__pthread_self()->locale->cat[LC_CTYPE])
+ 
+ #undef MB_CUR_MAX
+ #define MB_CUR_MAX (CURRENT_UTF8 ? 4 : 1)
++
++#endif
+--- a/src/internal/stdio_impl.h
++++ b/src/internal/stdio_impl.h
+@@ -47,6 +47,7 @@ struct _IO_FILE {
+ 	unsigned char *shend;
+ 	off_t shlim, shcnt;
+ 	FILE *prev_locked, *next_locked;
++	struct __locale_struct *locale;
+ };
+ 
+ size_t __stdio_read(FILE *, unsigned char *, size_t);
+@@ -75,8 +76,9 @@ int __putc_unlocked(int, FILE *);
+ FILE *__fdopen(int, const char *);
+ int __fmodeflags(const char *);
+ 
+-#define OFLLOCK() LOCK(libc.ofl_lock)
+-#define OFLUNLOCK() UNLOCK(libc.ofl_lock)
++FILE *__ofl_add(FILE *f);
++FILE **__ofl_lock(void);
++void __ofl_unlock(void);
+ 
+ #define feof(f) ((f)->flags & F_EOF)
+ #define ferror(f) ((f)->flags & F_ERR)
+--- a/src/ldso/dynlink.c
++++ b/src/ldso/dynlink.c
+@@ -1192,6 +1192,17 @@ _Noreturn void __dls3(size_t *sp)
+ 	char **argv_orig = argv;
+ 	char **envp = argv+argc+1;
+ 
++	/* Find aux vector just past environ[] and use it to initialize
++	 * global data that may be needed before we can make syscalls. */
++	__environ = envp;
++	for (i=argc+1; argv[i]; i++);
++	libc.auxv = auxv = (void *)(argv+i+1);
++	decode_vec(auxv, aux, AUX_CNT);
++	__hwcap = aux[AT_HWCAP];
++	libc.page_size = aux[AT_PAGESZ];
++	libc.secure = ((aux[0]&0x7800)!=0x7800 || aux[AT_UID]!=aux[AT_EUID]
++		|| aux[AT_GID]!=aux[AT_EGID] || aux[AT_SECURE]);
++
+ 	/* Setup early thread pointer in builtin_tls for ldso/libc itself to
+ 	 * use during dynamic linking. If possible it will also serve as the
+ 	 * thread pointer at runtime. */
+@@ -1200,25 +1211,11 @@ _Noreturn void __dls3(size_t *sp)
+ 		a_crash();
+ 	}
+ 
+-	/* Find aux vector just past environ[] */
+-	for (i=argc+1; argv[i]; i++)
+-		if (!memcmp(argv[i], "LD_LIBRARY_PATH=", 16))
+-			env_path = argv[i]+16;
+-		else if (!memcmp(argv[i], "LD_PRELOAD=", 11))
+-			env_preload = argv[i]+11;
+-	auxv = (void *)(argv+i+1);
+-
+-	decode_vec(auxv, aux, AUX_CNT);
+-
+ 	/* Only trust user/env if kernel says we're not suid/sgid */
+-	if ((aux[0]&0x7800)!=0x7800 || aux[AT_UID]!=aux[AT_EUID]
+-	  || aux[AT_GID]!=aux[AT_EGID] || aux[AT_SECURE]) {
+-		env_path = 0;
+-		env_preload = 0;
+-		libc.secure = 1;
++	if (!libc.secure) {
++		env_path = getenv("LD_LIBRARY_PATH");
++		env_preload = getenv("LD_PRELOAD");
+ 	}
+-	libc.page_size = aux[AT_PAGESZ];
+-	libc.auxv = auxv;
+ 
+ 	/* If the main program was already loaded by the kernel,
+ 	 * AT_PHDR will point to some location other than the dynamic
+--- /dev/null
++++ b/src/locale/c_locale.c
+@@ -0,0 +1,15 @@
++#include "locale_impl.h"
++#include <stdint.h>
++
++static const uint32_t empty_mo[] = { 0x950412de, 0, -1, -1, -1 };
++
++const struct __locale_map __c_dot_utf8 = {
++	.map = empty_mo,
++	.map_size = sizeof empty_mo,
++	.name = "C.UTF-8"
++};
++
++const struct __locale_struct __c_locale = { 0 };
++const struct __locale_struct __c_dot_utf8_locale = {
++	.cat[LC_CTYPE] = &__c_dot_utf8
++};
+--- a/src/locale/iconv.c
++++ b/src/locale/iconv.c
+@@ -5,6 +5,7 @@
+ #include <stdlib.h>
+ #include <limits.h>
+ #include <stdint.h>
++#include "locale_impl.h"
+ 
+ #define UTF_32BE    0300
+ #define UTF_16LE    0301
+@@ -165,9 +166,12 @@ size_t iconv(iconv_t cd0, char **restric
+ 	int err;
+ 	unsigned char type = map[-1];
+ 	unsigned char totype = tomap[-1];
++	locale_t *ploc = &CURRENT_LOCALE, loc = *ploc;
+ 
+ 	if (!in || !*in || !*inb) return 0;
+ 
++	*ploc = UTF8_LOCALE;
++
+ 	for (; *inb; *in+=l, *inb-=l) {
+ 		c = *(unsigned char *)*in;
+ 		l = 1;
+@@ -431,6 +435,7 @@ size_t iconv(iconv_t cd0, char **restric
+ 			break;
+ 		}
+ 	}
++	*ploc = loc;
+ 	return x;
+ ilseq:
+ 	err = EILSEQ;
+@@ -445,5 +450,6 @@ starved:
+ 	x = -1;
+ end:
+ 	errno = err;
++	*ploc = loc;
+ 	return x;
+ }
+--- a/src/locale/langinfo.c
++++ b/src/locale/langinfo.c
+@@ -33,7 +33,8 @@ char *__nl_langinfo_l(nl_item item, loca
+ 	int idx = item & 65535;
+ 	const char *str;
+ 
+-	if (item == CODESET) return "UTF-8";
++	if (item == CODESET)
++		return MB_CUR_MAX==1 ? "UTF-8-CODE-UNITS" : "UTF-8";
+ 	
+ 	switch (cat) {
+ 	case LC_NUMERIC:
+--- a/src/locale/locale_map.c
++++ b/src/locale/locale_map.c
+@@ -24,14 +24,6 @@ static const char envvars[][12] = {
+ 	"LC_MESSAGES",
+ };
+ 
+-static const uint32_t empty_mo[] = { 0x950412de, 0, -1, -1, -1 };
+-
+-const struct __locale_map __c_dot_utf8 = {
+-	.map = empty_mo,
+-	.map_size = sizeof empty_mo,
+-	.name = "C.UTF-8"
+-};
+-
+ const struct __locale_map *__get_locale(int cat, const char *val)
+ {
+ 	static int lock[2];
+@@ -107,8 +99,8 @@ const struct __locale_map *__get_locale(
+ 	 * sake of being able to do message translations at the
+ 	 * application level. */
+ 	if (!new && (new = malloc(sizeof *new))) {
+-		new->map = empty_mo;
+-		new->map_size = sizeof empty_mo;
++		new->map = __c_dot_utf8.map;
++		new->map_size = __c_dot_utf8.map_size;
+ 		memcpy(new->name, val, n);
+ 		new->name[n] = 0;
+ 		new->next = loc_head;
+--- a/src/locale/newlocale.c
++++ b/src/locale/newlocale.c
+@@ -3,16 +3,9 @@
+ #include "locale_impl.h"
+ #include "libc.h"
+ 
+-extern const struct __locale_map __c_dot_utf8;
+-
+-static const struct __locale_struct c_locale = { 0 };
+-static const struct __locale_struct c_dot_utf8_locale = {
+-	.cat[LC_CTYPE] = &__c_dot_utf8
+-};
+-
+ int __loc_is_allocated(locale_t loc)
+ {
+-	return loc && loc != &c_locale && loc != &c_dot_utf8_locale;
++	return loc && loc != C_LOCALE && loc != UTF8_LOCALE;
+ }
+ 
+ locale_t __newlocale(int mask, const char *name, locale_t loc)
+@@ -44,9 +37,9 @@ locale_t __newlocale(int mask, const cha
+ 	}
+ 
+ 	if (!j)
+-		return (locale_t)&c_locale;
+-	if (j==1 && tmp.cat[LC_CTYPE]==c_dot_utf8_locale.cat[LC_CTYPE])
+-		return (locale_t)&c_dot_utf8_locale;
++		return C_LOCALE;
++	if (j==1 && tmp.cat[LC_CTYPE]==&__c_dot_utf8)
++		return UTF8_LOCALE;
+ 
+ 	if ((loc = malloc(sizeof *loc))) *loc = tmp;
+ 
+--- a/src/locale/uselocale.c
++++ b/src/locale/uselocale.c
+@@ -8,9 +8,7 @@ locale_t __uselocale(locale_t new)
+ 	locale_t old = self->locale;
+ 	locale_t global = &libc.global_locale;
+ 
+-	if (new == LC_GLOBAL_LOCALE) new = global;
+-
+-	self->locale = new;
++	if (new) self->locale = new == LC_GLOBAL_LOCALE ? global : new;
+ 
+ 	return old == global ? LC_GLOBAL_LOCALE : old;
+ }
+--- /dev/null
++++ b/src/malloc/expand_heap.c
+@@ -0,0 +1,72 @@
++#include <limits.h>
++#include <stdint.h>
++#include <errno.h>
++#include <sys/mman.h>
++#include "libc.h"
++#include "syscall.h"
++
++/* This function returns true if the interval [old,new]
++ * intersects the 'len'-sized interval below &libc.auxv
++ * (interpreted as the main-thread stack) or below &b
++ * (the current stack). It is used to defend against
++ * buggy brk implementations that can cross the stack. */
++
++static int traverses_stack_p(uintptr_t old, uintptr_t new)
++{
++	const uintptr_t len = 8<<20;
++	uintptr_t a, b;
++
++	b = (uintptr_t)libc.auxv;
++	a = b > len ? b-len : 0;
++	if (new>a && old<b) return 1;
++
++	b = (uintptr_t)&b;
++	a = b > len ? b-len : 0;
++	if (new>a && old<b) return 1;
++
++	return 0;
++}
++
++void *__mmap(void *, size_t, int, int, int, off_t);
++
++/* Expand the heap in-place if brk can be used, or otherwise via mmap,
++ * using an exponential lower bound on growth by mmap to make
++ * fragmentation asymptotically irrelevant. The size argument is both
++ * an input and an output, since the caller needs to know the size
++ * allocated, which will be larger than requested due to page alignment
++ * and mmap minimum size rules. The caller is responsible for locking
++ * to prevent concurrent calls. */
++
++void *__expand_heap(size_t *pn)
++{
++	static uintptr_t brk;
++	static unsigned mmap_step;
++	size_t n = *pn;
++
++	if (n > SIZE_MAX/2 - PAGE_SIZE) {
++		errno = ENOMEM;
++		return 0;
++	}
++	n += -n & PAGE_SIZE-1;
++
++	if (!brk) {
++		brk = __syscall(SYS_brk, 0);
++		brk += -brk & PAGE_SIZE-1;
++	}
++
++	if (n < SIZE_MAX-brk && !traverses_stack_p(brk, brk+n)
++	    && __syscall(SYS_brk, brk+n)==brk+n) {
++		*pn = n;
++		brk += n;
++		return (void *)(brk-n);
++	}
++
++	size_t min = (size_t)PAGE_SIZE << mmap_step/2;
++	if (n < min) n = min;
++	void *area = __mmap(0, n, PROT_READ|PROT_WRITE,
++		MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
++	if (area == MAP_FAILED) return 0;
++	*pn = n;
++	mmap_step++;
++	return area;
++}
+--- a/src/malloc/lite_malloc.c
++++ b/src/malloc/lite_malloc.c
+@@ -4,43 +4,46 @@
+ #include <errno.h>
+ #include "libc.h"
+ 
+-uintptr_t __brk(uintptr_t);
+-
+ #define ALIGN 16
+ 
++void *__expand_heap(size_t *);
++
+ void *__simple_malloc(size_t n)
+ {
+-	static uintptr_t cur, brk;
+-	uintptr_t base, new;
++	static char *cur, *end;
+ 	static volatile int lock[2];
+-	size_t align=1;
++	size_t align=1, pad;
++	void *p;
+ 
+ 	if (!n) n++;
+-	if (n > SIZE_MAX/2) goto toobig;
+-
+ 	while (align<n && align<ALIGN)
+ 		align += align;
+-	n = n + align - 1 & -align;
+ 
+ 	LOCK(lock);
+-	if (!cur) cur = brk = __brk(0)+16;
+-	base = cur + align-1 & -align;
+-	if (n > SIZE_MAX - PAGE_SIZE - base) goto fail;
+-	if (base+n > brk) {
+-		new = base+n + PAGE_SIZE-1 & -PAGE_SIZE;
+-		if (__brk(new) != new) goto fail;
+-		brk = new;
+-	}
+-	cur = base+n;
+-	UNLOCK(lock);
+ 
+-	return (void *)base;
++	pad = -(uintptr_t)cur & align-1;
++
++	if (n <= SIZE_MAX/2 + ALIGN) n += pad;
++
++	if (n > end-cur) {
++		size_t m = n;
++		char *new = __expand_heap(&m);
++		if (!new) {
++			UNLOCK(lock);
++			return 0;
++		}
++		if (new != end) {
++			cur = new;
++			n -= pad;
++			pad = 0;
++		}
++		end = new + m;
++	}
+ 
+-fail:
++	p = cur + pad;
++	cur += n;
+ 	UNLOCK(lock);
+-toobig:
+-	errno = ENOMEM;
+-	return 0;
++	return p;
+ }
+ 
+ weak_alias(__simple_malloc, malloc);
+--- a/src/malloc/malloc.c
++++ b/src/malloc/malloc.c
+@@ -13,7 +13,6 @@
+ #define inline inline __attribute__((always_inline))
+ #endif
+ 
+-uintptr_t __brk(uintptr_t);
+ void *__mmap(void *, size_t, int, int, int, off_t);
+ int __munmap(void *, size_t);
+ void *__mremap(void *, size_t, size_t, int, ...);
+@@ -31,13 +30,9 @@ struct bin {
+ };
+ 
+ static struct {
+-	uintptr_t brk;
+-	size_t *heap;
+ 	volatile uint64_t binmap;
+ 	struct bin bins[64];
+-	volatile int brk_lock[2];
+ 	volatile int free_lock[2];
+-	unsigned mmap_step;
+ } mal;
+ 
+ 
+@@ -152,69 +147,52 @@ void __dump_heap(int x)
+ }
+ #endif
+ 
++void *__expand_heap(size_t *);
++
+ static struct chunk *expand_heap(size_t n)
+ {
+-	static int init;
++	static int heap_lock[2];
++	static void *end;
++	void *p;
+ 	struct chunk *w;
+-	uintptr_t new;
+-
+-	lock(mal.brk_lock);
+ 
+-	if (!init) {
+-		mal.brk = __brk(0);
+-#ifdef SHARED
+-		mal.brk = mal.brk + PAGE_SIZE-1 & -PAGE_SIZE;
+-#endif
+-		mal.brk = mal.brk + 2*SIZE_ALIGN-1 & -SIZE_ALIGN;
+-		mal.heap = (void *)mal.brk;
+-		init = 1;
++	/* The argument n already accounts for the caller's chunk
++	 * overhead needs, but if the heap can't be extended in-place,
++	 * we need room for an extra zero-sized sentinel chunk. */
++	n += SIZE_ALIGN;
++
++	lock(heap_lock);
++
++	p = __expand_heap(&n);
++	if (!p) {
++		unlock(heap_lock);
++		return 0;
+ 	}
+ 
+-	if (n > SIZE_MAX - mal.brk - 2*PAGE_SIZE) goto fail;
+-	new = mal.brk + n + SIZE_ALIGN + PAGE_SIZE - 1 & -PAGE_SIZE;
+-	n = new - mal.brk;
+-
+-	if (__brk(new) != new) {
+-		size_t min = (size_t)PAGE_SIZE << mal.mmap_step/2;
+-		n += -n & PAGE_SIZE-1;
+-		if (n < min) n = min;
+-		void *area = __mmap(0, n, PROT_READ|PROT_WRITE,
+-			MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+-		if (area == MAP_FAILED) goto fail;
+-
+-		mal.mmap_step++;
+-		area = (char *)area + SIZE_ALIGN - OVERHEAD;
+-		w = area;
++	/* If not just expanding existing space, we need to make a
++	 * new sentinel chunk below the allocated space. */
++	if (p != end) {
++		/* Valid/safe because of the prologue increment. */
+ 		n -= SIZE_ALIGN;
++		p = (char *)p + SIZE_ALIGN;
++		w = MEM_TO_CHUNK(p);
+ 		w->psize = 0 | C_INUSE;
+-		w->csize = n | C_INUSE;
+-		w = NEXT_CHUNK(w);
+-		w->psize = n | C_INUSE;
+-		w->csize = 0 | C_INUSE;
+-
+-		unlock(mal.brk_lock);
+-
+-		return area;
+ 	}
+ 
+-	w = MEM_TO_CHUNK(mal.heap);
+-	w->psize = 0 | C_INUSE;
+-
+-	w = MEM_TO_CHUNK(new);
++	/* Record new heap end and fill in footer. */
++	end = (char *)p + n;
++	w = MEM_TO_CHUNK(end);
+ 	w->psize = n | C_INUSE;
+ 	w->csize = 0 | C_INUSE;
+ 
+-	w = MEM_TO_CHUNK(mal.brk);
++	/* Fill in header, which may be new or may be replacing a
++	 * zero-size sentinel header at the old end-of-heap. */
++	w = MEM_TO_CHUNK(p);
+ 	w->csize = n | C_INUSE;
+-	mal.brk = new;
+-	
+-	unlock(mal.brk_lock);
++
++	unlock(heap_lock);
+ 
+ 	return w;
+-fail:
+-	unlock(mal.brk_lock);
+-	errno = ENOMEM;
+-	return 0;
+ }
+ 
+ static int adjust_size(size_t *n)
+--- a/src/multibyte/btowc.c
++++ b/src/multibyte/btowc.c
+@@ -1,7 +1,10 @@
+ #include <stdio.h>
+ #include <wchar.h>
++#include <stdlib.h>
++#include "internal.h"
+ 
+ wint_t btowc(int c)
+ {
+-	return c<128U ? c : EOF;
++	int b = (unsigned char)c;
++	return b<128U ? b : (MB_CUR_MAX==1 && c!=EOF) ? CODEUNIT(c) : WEOF;
+ }
+--- a/src/multibyte/internal.h
++++ b/src/multibyte/internal.h
+@@ -23,3 +23,10 @@ extern const uint32_t bittab[];
+ 
+ #define SA 0xc2u
+ #define SB 0xf4u
++
++/* Arbitrary encoding for representing code units instead of characters. */
++#define CODEUNIT(c) (0xdfff & (signed char)(c))
++#define IS_CODEUNIT(c) ((unsigned)(c)-0xdf80 < 0x80)
++
++/* Get inline definition of MB_CUR_MAX. */
++#include "locale_impl.h"
+--- a/src/multibyte/mbrtowc.c
++++ b/src/multibyte/mbrtowc.c
+@@ -4,6 +4,7 @@
+  * unnecessary.
+  */
+ 
++#include <stdlib.h>
+ #include <wchar.h>
+ #include <errno.h>
+ #include "internal.h"
+@@ -27,6 +28,7 @@ size_t mbrtowc(wchar_t *restrict wc, con
+ 	if (!n) return -2;
+ 	if (!c) {
+ 		if (*s < 0x80) return !!(*wc = *s);
++		if (MB_CUR_MAX==1) return (*wc = CODEUNIT(*s)), 1;
+ 		if (*s-SA > SB-SA) goto ilseq;
+ 		c = bittab[*s++-SA]; n--;
+ 	}
+--- a/src/multibyte/mbsrtowcs.c
++++ b/src/multibyte/mbsrtowcs.c
+@@ -7,6 +7,8 @@
+ #include <stdint.h>
+ #include <wchar.h>
+ #include <errno.h>
++#include <string.h>
++#include <stdlib.h>
+ #include "internal.h"
+ 
+ size_t mbsrtowcs(wchar_t *restrict ws, const char **restrict src, size_t wn, mbstate_t *restrict st)
+@@ -24,6 +26,23 @@ size_t mbsrtowcs(wchar_t *restrict ws, c
+ 		}
+ 	}
+ 
++	if (MB_CUR_MAX==1) {
++		if (!ws) return strlen((const char *)s);
++		for (;;) {
++			if (!wn) {
++				*src = (const void *)s;
++				return wn0;
++			}
++			if (!*s) break;
++			c = *s++;
++			*ws++ = CODEUNIT(c);
++			wn--;
++		}
++		*ws = 0;
++		*src = 0;
++		return wn0-wn;
++	}
++
+ 	if (!ws) for (;;) {
+ 		if (*s-1u < 0x7f && (uintptr_t)s%4 == 0) {
+ 			while (!(( *(uint32_t*)s | *(uint32_t*)s-0x01010101) & 0x80808080)) {
+--- a/src/multibyte/mbtowc.c
++++ b/src/multibyte/mbtowc.c
+@@ -4,6 +4,7 @@
+  * unnecessary.
+  */
+ 
++#include <stdlib.h>
+ #include <wchar.h>
+ #include <errno.h>
+ #include "internal.h"
+@@ -19,6 +20,7 @@ int mbtowc(wchar_t *restrict wc, const c
+ 	if (!wc) wc = &dummy;
+ 
+ 	if (*s < 0x80) return !!(*wc = *s);
++	if (MB_CUR_MAX==1) return (*wc = CODEUNIT(*s)), 1;
+ 	if (*s-SA > SB-SA) goto ilseq;
+ 	c = bittab[*s++-SA];
+ 
+--- a/src/multibyte/wcrtomb.c
++++ b/src/multibyte/wcrtomb.c
+@@ -4,8 +4,10 @@
+  * unnecessary.
+  */
+ 
++#include <stdlib.h>
+ #include <wchar.h>
+ #include <errno.h>
++#include "internal.h"
+ 
+ size_t wcrtomb(char *restrict s, wchar_t wc, mbstate_t *restrict st)
+ {
+@@ -13,6 +15,13 @@ size_t wcrtomb(char *restrict s, wchar_t
+ 	if ((unsigned)wc < 0x80) {
+ 		*s = wc;
+ 		return 1;
++	} else if (MB_CUR_MAX == 1) {
++		if (!IS_CODEUNIT(wc)) {
++			errno = EILSEQ;
++			return -1;
++		}
++		*s = wc;
++		return 1;
+ 	} else if ((unsigned)wc < 0x800) {
+ 		*s++ = 0xc0 | (wc>>6);
+ 		*s = 0x80 | (wc&0x3f);
+--- a/src/multibyte/wctob.c
++++ b/src/multibyte/wctob.c
+@@ -1,8 +1,10 @@
+-#include <stdio.h>
+ #include <wchar.h>
++#include <stdlib.h>
++#include "internal.h"
+ 
+ int wctob(wint_t c)
+ {
+ 	if (c < 128U) return c;
++	if (MB_CUR_MAX==1 && IS_CODEUNIT(c)) return (unsigned char)c;
+ 	return EOF;
+ }
+--- a/src/passwd/nscd_query.c
++++ b/src/passwd/nscd_query.c
+@@ -32,6 +32,7 @@ FILE *__nscd_query(int32_t req, const ch
+ 		},
+ 		.msg_iovlen = 2
+ 	};
++	int errno_save = errno;
+ 
+ 	*swap = 0;
+ retry:
+@@ -50,11 +51,14 @@ retry:
+ 		return f;
+ 
+ 	if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+-		/* If there isn't a running nscd we return -1 to indicate that
+-		 * that is precisely what happened
+-		 */
+-		if (errno == EACCES || errno == ECONNREFUSED || errno == ENOENT)
++		/* If there isn't a running nscd we simulate a "not found"
++		 * result and the caller is responsible for calling
++		 * fclose on the (unconnected) socket. The value of
++		 * errno must be left unchanged in this case.  */
++		if (errno == EACCES || errno == ECONNREFUSED || errno == ENOENT) {
++			errno = errno_save;
+ 			return f;
++		}
+ 		goto error;
+ 	}
+ 
+--- /dev/null
++++ b/src/process/sh/vfork.s
+@@ -0,0 +1,23 @@
++.global __vfork
++.weak vfork
++.type __vfork,@function
++.type vfork,@function
++__vfork:
++vfork:
++	mov #95, r3
++	add r3, r3
++
++	trapa #16
++	or    r0, r0
++	or    r0, r0
++	or    r0, r0
++	or    r0, r0
++	or    r0, r0
++
++	mov r0, r4
++	mov.l 1f, r0
++2:	braf r0
++	 nop
++	.align 2
++	.hidden __syscall_ret
++1:	.long __syscall_ret@PLT-(2b+4-.)
+--- a/src/regex/fnmatch.c
++++ b/src/regex/fnmatch.c
+@@ -18,6 +18,7 @@
+ #include <stdlib.h>
+ #include <wchar.h>
+ #include <wctype.h>
++#include "locale_impl.h"
+ 
+ #define END 0
+ #define UNMATCHABLE -2
+@@ -229,7 +230,7 @@ static int fnmatch_internal(const char *
+ 	 * On illegal sequences we may get it wrong, but in that case
+ 	 * we necessarily have a matching failure anyway. */
+ 	for (s=endstr; s>str && tailcnt; tailcnt--) {
+-		if (s[-1] < 128U) s--;
++		if (s[-1] < 128U || MB_CUR_MAX==1) s--;
+ 		else while ((unsigned char)*--s-0x80U<0x40 && s>str);
+ 	}
+ 	if (tailcnt) return FNM_NOMATCH;
+--- a/src/stdio/__fdopen.c
++++ b/src/stdio/__fdopen.c
+@@ -54,13 +54,7 @@ FILE *__fdopen(int fd, const char *mode)
+ 	if (!libc.threaded) f->lock = -1;
+ 
+ 	/* Add new FILE to open file list */
+-	OFLLOCK();
+-	f->next = libc.ofl_head;
+-	if (libc.ofl_head) libc.ofl_head->prev = f;
+-	libc.ofl_head = f;
+-	OFLUNLOCK();
+-
+-	return f;
++	return __ofl_add(f);
+ }
+ 
+ weak_alias(__fdopen, fdopen);
+--- a/src/stdio/__stdio_exit.c
++++ b/src/stdio/__stdio_exit.c
+@@ -16,8 +16,7 @@ static void close_file(FILE *f)
+ void __stdio_exit(void)
+ {
+ 	FILE *f;
+-	OFLLOCK();
+-	for (f=libc.ofl_head; f; f=f->next) close_file(f);
++	for (f=*__ofl_lock(); f; f=f->next) close_file(f);
+ 	close_file(__stdin_used);
+ 	close_file(__stdout_used);
+ }
+--- a/src/stdio/__stdio_read.c
++++ b/src/stdio/__stdio_read.c
+@@ -1,12 +1,5 @@
+ #include "stdio_impl.h"
+ #include <sys/uio.h>
+-#include <pthread.h>
+-
+-static void cleanup(void *p)
+-{
+-	FILE *f = p;
+-	if (!f->lockcount) __unlockfile(f);
+-}
+ 
+ size_t __stdio_read(FILE *f, unsigned char *buf, size_t len)
+ {
+@@ -16,9 +9,7 @@ size_t __stdio_read(FILE *f, unsigned ch
+ 	};
+ 	ssize_t cnt;
+ 
+-	pthread_cleanup_push(cleanup, f);
+-	cnt = syscall_cp(SYS_readv, f->fd, iov, 2);
+-	pthread_cleanup_pop(0);
++	cnt = syscall(SYS_readv, f->fd, iov, 2);
+ 	if (cnt <= 0) {
+ 		f->flags |= F_EOF ^ ((F_ERR^F_EOF) & cnt);
+ 		return cnt;
+--- a/src/stdio/__stdio_write.c
++++ b/src/stdio/__stdio_write.c
+@@ -1,12 +1,5 @@
+ #include "stdio_impl.h"
+ #include <sys/uio.h>
+-#include <pthread.h>
+-
+-static void cleanup(void *p)
+-{
+-	FILE *f = p;
+-	if (!f->lockcount) __unlockfile(f);
+-}
+ 
+ size_t __stdio_write(FILE *f, const unsigned char *buf, size_t len)
+ {
+@@ -19,9 +12,7 @@ size_t __stdio_write(FILE *f, const unsi
+ 	int iovcnt = 2;
+ 	ssize_t cnt;
+ 	for (;;) {
+-		pthread_cleanup_push(cleanup, f);
+-		cnt = syscall_cp(SYS_writev, f->fd, iov, iovcnt);
+-		pthread_cleanup_pop(0);
++		cnt = syscall(SYS_writev, f->fd, iov, iovcnt);
+ 		if (cnt == rem) {
+ 			f->wend = f->buf + f->buf_size;
+ 			f->wpos = f->wbase = f->buf;
+@@ -34,11 +25,8 @@ size_t __stdio_write(FILE *f, const unsi
+ 		}
+ 		rem -= cnt;
+ 		if (cnt > iov[0].iov_len) {
+-			f->wpos = f->wbase = f->buf;
+ 			cnt -= iov[0].iov_len;
+ 			iov++; iovcnt--;
+-		} else if (iovcnt == 2) {
+-			f->wbase += cnt;
+ 		}
+ 		iov[0].iov_base = (char *)iov[0].iov_base + cnt;
+ 		iov[0].iov_len -= cnt;
+--- a/src/stdio/fclose.c
++++ b/src/stdio/fclose.c
+@@ -14,11 +14,11 @@ int fclose(FILE *f)
+ 	__unlist_locked_file(f);
+ 
+ 	if (!(perm = f->flags & F_PERM)) {
+-		OFLLOCK();
++		FILE **head = __ofl_lock();
+ 		if (f->prev) f->prev->next = f->next;
+ 		if (f->next) f->next->prev = f->prev;
+-		if (libc.ofl_head == f) libc.ofl_head = f->next;
+-		OFLUNLOCK();
++		if (*head == f) *head = f->next;
++		__ofl_unlock();
+ 	}
+ 
+ 	r = fflush(f);
+--- a/src/stdio/fflush.c
++++ b/src/stdio/fflush.c
+@@ -35,13 +35,12 @@ int fflush(FILE *f)
+ 
+ 	r = __stdout_used ? fflush(__stdout_used) : 0;
+ 
+-	OFLLOCK();
+-	for (f=libc.ofl_head; f; f=f->next) {
++	for (f=*__ofl_lock(); f; f=f->next) {
+ 		FLOCK(f);
+ 		if (f->wpos > f->wbase) r |= __fflush_unlocked(f);
+ 		FUNLOCK(f);
+ 	}
+-	OFLUNLOCK();
++	__ofl_unlock();
+ 	
+ 	return r;
+ }
+--- a/src/stdio/fgetwc.c
++++ b/src/stdio/fgetwc.c
+@@ -1,8 +1,9 @@
+ #include "stdio_impl.h"
++#include "locale_impl.h"
+ #include <wchar.h>
+ #include <errno.h>
+ 
+-wint_t __fgetwc_unlocked(FILE *f)
++static wint_t __fgetwc_unlocked_internal(FILE *f)
+ {
+ 	mbstate_t st = { 0 };
+ 	wchar_t wc;
+@@ -10,8 +11,6 @@ wint_t __fgetwc_unlocked(FILE *f)
+ 	unsigned char b;
+ 	size_t l;
+ 
+-	f->mode |= f->mode+1;
+-
+ 	/* Convert character from buffer if possible */
+ 	if (f->rpos < f->rend) {
+ 		l = mbrtowc(&wc, (void *)f->rpos, f->rend - f->rpos, &st);
+@@ -39,6 +38,16 @@ wint_t __fgetwc_unlocked(FILE *f)
+ 	return wc;
+ }
+ 
++wint_t __fgetwc_unlocked(FILE *f)
++{
++	locale_t *ploc = &CURRENT_LOCALE, loc = *ploc;
++	if (f->mode <= 0) fwide(f, 1);
++	*ploc = f->locale;
++	wchar_t wc = __fgetwc_unlocked_internal(f);
++	*ploc = loc;
++	return wc;
++}
++
+ wint_t fgetwc(FILE *f)
+ {
+ 	wint_t c;
+--- a/src/stdio/fmemopen.c
++++ b/src/stdio/fmemopen.c
+@@ -110,11 +110,5 @@ FILE *fmemopen(void *restrict buf, size_
+ 
+ 	if (!libc.threaded) f->lock = -1;
+ 
+-	OFLLOCK();
+-	f->next = libc.ofl_head;
+-	if (libc.ofl_head) libc.ofl_head->prev = f;
+-	libc.ofl_head = f;
+-	OFLUNLOCK();
+-
+-	return f;
++	return __ofl_add(f);
+ }
+--- a/src/stdio/fopen.c
++++ b/src/stdio/fopen.c
+@@ -18,7 +18,7 @@ FILE *fopen(const char *restrict filenam
+ 	/* Compute the flags to pass to open() */
+ 	flags = __fmodeflags(mode);
+ 
+-	fd = sys_open_cp(filename, flags, 0666);
++	fd = sys_open(filename, flags, 0666);
+ 	if (fd < 0) return 0;
+ 	if (flags & O_CLOEXEC)
+ 		__syscall(SYS_fcntl, fd, F_SETFD, FD_CLOEXEC);
+--- a/src/stdio/fputwc.c
++++ b/src/stdio/fputwc.c
+@@ -1,4 +1,5 @@
+ #include "stdio_impl.h"
++#include "locale_impl.h"
+ #include <wchar.h>
+ #include <limits.h>
+ #include <ctype.h>
+@@ -7,8 +8,10 @@ wint_t __fputwc_unlocked(wchar_t c, FILE
+ {
+ 	char mbc[MB_LEN_MAX];
+ 	int l;
++	locale_t *ploc = &CURRENT_LOCALE, loc = *ploc;
+ 
+-	f->mode |= f->mode+1;
++	if (f->mode <= 0) fwide(f, 1);
++	*ploc = f->locale;
+ 
+ 	if (isascii(c)) {
+ 		c = putc_unlocked(c, f);
+@@ -20,6 +23,8 @@ wint_t __fputwc_unlocked(wchar_t c, FILE
+ 		l = wctomb(mbc, c);
+ 		if (l < 0 || __fwritex((void *)mbc, l, f) < l) c = WEOF;
+ 	}
++	if (c==WEOF) f->flags |= F_ERR;
++	*ploc = loc;
+ 	return c;
+ }
+ 
+--- a/src/stdio/fputws.c
++++ b/src/stdio/fputws.c
+@@ -1,23 +1,28 @@
+ #include "stdio_impl.h"
++#include "locale_impl.h"
+ #include <wchar.h>
+ 
+ int fputws(const wchar_t *restrict ws, FILE *restrict f)
+ {
+ 	unsigned char buf[BUFSIZ];
+ 	size_t l=0;
++	locale_t *ploc = &CURRENT_LOCALE, loc = *ploc;
+ 
+ 	FLOCK(f);
+ 
+-	f->mode |= f->mode+1;
++	fwide(f, 1);
++	*ploc = f->locale;
+ 
+ 	while (ws && (l = wcsrtombs((void *)buf, (void*)&ws, sizeof buf, 0))+1 > 1)
+ 		if (__fwritex(buf, l, f) < l) {
+ 			FUNLOCK(f);
++			*ploc = loc;
+ 			return -1;
+ 		}
+ 
+ 	FUNLOCK(f);
+ 
++	*ploc = loc;
+ 	return l; /* 0 or -1 */
+ }
+ 
+--- a/src/stdio/fwide.c
++++ b/src/stdio/fwide.c
+@@ -1,13 +1,14 @@
+-#include <wchar.h>
+ #include "stdio_impl.h"
+-
+-#define SH (8*sizeof(int)-1)
+-#define NORMALIZE(x) ((x)>>SH | -((-(x))>>SH))
++#include "locale_impl.h"
+ 
+ int fwide(FILE *f, int mode)
+ {
+ 	FLOCK(f);
+-	if (!f->mode) f->mode = NORMALIZE(mode);
++	if (mode) {
++		if (!f->locale) f->locale = MB_CUR_MAX==1
++			? C_LOCALE : UTF8_LOCALE;
++		if (!f->mode) f->mode = mode>0 ? 1 : -1;
++	}
+ 	mode = f->mode;
+ 	FUNLOCK(f);
+ 	return mode;
+--- /dev/null
++++ b/src/stdio/ofl.c
+@@ -0,0 +1,16 @@
++#include "stdio_impl.h"
++#include "libc.h"
++
++static FILE *ofl_head;
++static volatile int ofl_lock[2];
++
++FILE **__ofl_lock()
++{
++	LOCK(ofl_lock);
++	return &ofl_head;
++}
++
++void __ofl_unlock()
++{
++	UNLOCK(ofl_lock);
++}
+--- /dev/null
++++ b/src/stdio/ofl_add.c
+@@ -0,0 +1,11 @@
++#include "stdio_impl.h"
++
++FILE *__ofl_add(FILE *f)
++{
++	FILE **head = __ofl_lock();
++	f->next = *head;
++	if (*head) (*head)->prev = f;
++	*head = f;
++	__ofl_unlock();
++	return f;
++}
+--- a/src/stdio/open_memstream.c
++++ b/src/stdio/open_memstream.c
+@@ -79,11 +79,5 @@ FILE *open_memstream(char **bufp, size_t
+ 
+ 	if (!libc.threaded) f->lock = -1;
+ 
+-	OFLLOCK();
+-	f->next = libc.ofl_head;
+-	if (libc.ofl_head) libc.ofl_head->prev = f;
+-	libc.ofl_head = f;
+-	OFLUNLOCK();
+-
+-	return f;
++	return __ofl_add(f);
+ }
+--- a/src/stdio/open_wmemstream.c
++++ b/src/stdio/open_wmemstream.c
+@@ -81,11 +81,5 @@ FILE *open_wmemstream(wchar_t **bufp, si
+ 
+ 	if (!libc.threaded) f->lock = -1;
+ 
+-	OFLLOCK();
+-	f->next = libc.ofl_head;
+-	if (libc.ofl_head) libc.ofl_head->prev = f;
+-	libc.ofl_head = f;
+-	OFLUNLOCK();
+-
+-	return f;
++	return __ofl_add(f);
+ }
+--- a/src/stdio/ungetwc.c
++++ b/src/stdio/ungetwc.c
+@@ -1,4 +1,5 @@
+ #include "stdio_impl.h"
++#include "locale_impl.h"
+ #include <wchar.h>
+ #include <limits.h>
+ #include <ctype.h>
+@@ -8,21 +9,19 @@ wint_t ungetwc(wint_t c, FILE *f)
+ {
+ 	unsigned char mbc[MB_LEN_MAX];
+ 	int l=1;
+-
+-	if (c == WEOF) return c;
+-
+-	/* Try conversion early so we can fail without locking if invalid */
+-	if (!isascii(c) && (l = wctomb((void *)mbc, c)) < 0)
+-		return WEOF;
++	locale_t *ploc = &CURRENT_LOCALE, loc = *ploc;
+ 
+ 	FLOCK(f);
+ 
+-	f->mode |= f->mode+1;
++	if (f->mode <= 0) fwide(f, 1);
++	*ploc = f->locale;
+ 
+ 	if (!f->rpos) __toread(f);
+-	if (!f->rpos || f->rpos < f->buf - UNGET + l) {
++	if (!f->rpos || f->rpos < f->buf - UNGET + l || c == WEOF ||
++	    (!isascii(c) && (l = wctomb((void *)mbc, c)) < 0)) {
+ 		FUNLOCK(f);
+-		return EOF;
++		*ploc = loc;
++		return WEOF;
+ 	}
+ 
+ 	if (isascii(c)) *--f->rpos = c;
+@@ -31,5 +30,6 @@ wint_t ungetwc(wint_t c, FILE *f)
+ 	f->flags &= ~F_EOF;
+ 
+ 	FUNLOCK(f);
++	*ploc = loc;
+ 	return c;
+ }
+--- a/src/stdio/vfwprintf.c
++++ b/src/stdio/vfwprintf.c
+@@ -293,7 +293,10 @@ static int wprintf_core(FILE *f, const w
+ 			if ((fl&LEFT_ADJ)) fprintf(f, "%.*s", w-p, "");
+ 			l=w;
+ 			continue;
++		case 'm':
++			arg.p = strerror(errno);
+ 		case 's':
++			if (!arg.p) arg.p = "(null)";
+ 			bs = arg.p;
+ 			if (p<0) p = INT_MAX;
+ 			for (i=l=0; l<p && (i=mbtowc(&wc, bs, MB_LEN_MAX))>0; bs+=i, l++);
+@@ -356,7 +359,7 @@ int vfwprintf(FILE *restrict f, const wc
+ 	}
+ 
+ 	FLOCK(f);
+-	f->mode |= f->mode+1;
++	fwide(f, 1);
+ 	olderr = f->flags & F_ERR;
+ 	f->flags &= ~F_ERR;
+ 	ret = wprintf_core(f, fmt, &ap2, nl_arg, nl_type);
+--- a/src/stdio/vfwscanf.c
++++ b/src/stdio/vfwscanf.c
+@@ -104,7 +104,7 @@ int vfwscanf(FILE *restrict f, const wch
+ 
+ 	FLOCK(f);
+ 
+-	f->mode |= f->mode+1;
++	fwide(f, 1);
+ 
+ 	for (p=fmt; *p; p++) {
+ 
+--- /dev/null
++++ b/src/thread/__unmapself.c
+@@ -0,0 +1,29 @@
++#include "pthread_impl.h"
++#include "atomic.h"
++#include "syscall.h"
++/* cheat and reuse CRTJMP macro from dynlink code */
++#include "dynlink.h"
++
++static volatile int lock;
++static void *unmap_base;
++static size_t unmap_size;
++static char shared_stack[256];
++
++static void do_unmap()
++{
++	__syscall(SYS_munmap, unmap_base, unmap_size);
++	__syscall(SYS_exit);
++}
++
++void __unmapself(void *base, size_t size)
++{
++	int tid=__pthread_self()->tid;
++	char *stack = shared_stack + sizeof shared_stack;
++	stack -= (uintptr_t)stack % 16;
++	while (lock || a_cas(&lock, 0, tid))
++		a_spin();
++	__syscall(SYS_set_tid_address, &lock);
++	unmap_base = base;
++	unmap_size = size;
++	CRTJMP(do_unmap, stack);
++}
+--- a/src/thread/pthread_create.c
++++ b/src/thread/pthread_create.c
+@@ -191,8 +191,9 @@ int __pthread_create(pthread_t *restrict
+ 	if (!libc.can_do_threads) return ENOSYS;
+ 	self = __pthread_self();
+ 	if (!libc.threaded) {
+-		for (FILE *f=libc.ofl_head; f; f=f->next)
++		for (FILE *f=*__ofl_lock(); f; f=f->next)
+ 			init_file_lock(f);
++		__ofl_unlock();
+ 		init_file_lock(__stdin_used);
+ 		init_file_lock(__stdout_used);
+ 		init_file_lock(__stderr_used);
