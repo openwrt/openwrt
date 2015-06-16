@@ -270,6 +270,7 @@ menu "Global build settings"
 
 	choice
 		prompt "Enable RELRO protection"
+		default PKG_RELRO_FULL
 		help
 		  Enable a link-time protection known as RELRO (Relocation Read Only)
 		  which helps to protect from certain type of exploitation techniques
