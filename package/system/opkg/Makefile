@@ -112,9 +112,6 @@ define Package/opkg/Default/install
 	$(INSTALL_DIR) $(1)/bin
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DATA) ./files/opkg$(2).conf $(1)/etc/opkg.conf
-  ifneq ($(CONFIG_SIGNED_PACKAGES),)
-	echo "option check_signature 1" >> $(1)/etc/opkg.conf
-  endif
 	$(call FeedSourcesAppend,$(1)/etc/opkg.conf)
 	$(VERSION_SED) $(1)/etc/opkg.conf
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/opkg-cl $(1)/bin/opkg
@@ -122,6 +119,9 @@ endef
 
 define Package/opkg/install
 	$(call Package/opkg/Default/install,$(1),)
+  ifneq ($(CONFIG_SIGNED_PACKAGES),)
+	echo "option check_signature 1" >> $(1)/etc/opkg.conf
+  endif
 	mkdir $(1)/usr/sbin
 	$(INSTALL_BIN) ./files/opkg-key $(1)/usr/sbin/
 endef
