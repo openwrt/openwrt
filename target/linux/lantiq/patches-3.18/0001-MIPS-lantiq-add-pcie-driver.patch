@@ -193,7 +193,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (ltq_pci_plat_arch_init)
  		return ltq_pci_plat_arch_init(dev);
  
-@@ -25,5 +31,10 @@
+@@ -25,5 +31,10 @@ int pcibios_plat_dev_init(struct pci_dev
  
  int __init pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
  {

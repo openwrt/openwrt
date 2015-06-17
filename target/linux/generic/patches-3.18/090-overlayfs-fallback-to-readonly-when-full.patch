@@ -45,53 +45,53 @@ Miklos
 --- a/fs/overlayfs/copy_up.c
 +++ b/fs/overlayfs/copy_up.c
 @@ -300,6 +300,9 @@ int ovl_copy_up_one(struct dentry *paren
-	struct cred *override_cred;
-	char *link = NULL;
-
+ 	struct cred *override_cred;
+ 	char *link = NULL;
+ 
 +	if (WARN_ON(!workdir))
 +		return -EROFS;
 +
-	ovl_path_upper(parent, &parentpath);
-	upperdir = parentpath.dentry;
-
+ 	ovl_path_upper(parent, &parentpath);
+ 	upperdir = parentpath.dentry;
+ 
 --- a/fs/overlayfs/dir.c
 +++ b/fs/overlayfs/dir.c
 @@ -222,6 +222,9 @@ static struct dentry *ovl_clear_empty(st
-	struct kstat stat;
-	int err;
-
+ 	struct kstat stat;
+ 	int err;
+ 
 +	if (WARN_ON(!workdir))
 +		return ERR_PTR(-EROFS);
 +
-	err = ovl_lock_rename_workdir(workdir, upperdir);
-	if (err)
-		goto out;
+ 	err = ovl_lock_rename_workdir(workdir, upperdir);
+ 	if (err)
+ 		goto out;
 @@ -322,6 +325,9 @@ static int ovl_create_over_whiteout(stru
-	struct dentry *newdentry;
-	int err;
-
+ 	struct dentry *newdentry;
+ 	int err;
+ 
 +	if (WARN_ON(!workdir))
 +		return -EROFS;
 +
-	err = ovl_lock_rename_workdir(workdir, upperdir);
-	if (err)
-		goto out;
+ 	err = ovl_lock_rename_workdir(workdir, upperdir);
+ 	if (err)
+ 		goto out;
 @@ -506,6 +512,9 @@ static int ovl_remove_and_whiteout(struc
-	struct dentry *opaquedir = NULL;
-	int err;
-
+ 	struct dentry *opaquedir = NULL;
+ 	int err;
+ 
 +	if (WARN_ON(!workdir))
 +		return -EROFS;
 +
-	if (is_dir) {
-		opaquedir = ovl_check_empty_and_clear(dentry);
-		err = PTR_ERR(opaquedir);
+ 	if (is_dir) {
+ 		opaquedir = ovl_check_empty_and_clear(dentry);
+ 		err = PTR_ERR(opaquedir);
 --- a/fs/overlayfs/super.c
 +++ b/fs/overlayfs/super.c
 @@ -740,9 +740,15 @@ static int ovl_fill_super(struct super_b
-	ufs->workdir = ovl_workdir_create(ufs->upper_mnt, workpath.dentry);
-	err = PTR_ERR(ufs->workdir);
-	if (IS_ERR(ufs->workdir)) {
+ 	ufs->workdir = ovl_workdir_create(ufs->upper_mnt, workpath.dentry);
+ 	err = PTR_ERR(ufs->workdir);
+ 	if (IS_ERR(ufs->workdir)) {
 -		pr_err("overlayfs: failed to create directory %s/%s\n",
 -		       ufs->config.workdir, OVL_WORKDIR_NAME);
 -		goto out_put_lower_mnt;
@@ -104,6 +104,6 @@ Miklos
 +			       ufs->config.workdir, OVL_WORKDIR_NAME);
 +			goto out_put_lower_mnt;
 +		}
-	}
-
-	/*
+ 	}
+ 
+ 	/*

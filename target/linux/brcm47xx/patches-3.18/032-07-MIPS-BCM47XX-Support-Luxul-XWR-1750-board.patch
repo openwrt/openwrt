@@ -20,11 +20,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h |  2 ++
  4 files changed, 28 insertions(+)
 
-diff --git a/arch/mips/bcm47xx/board.c b/arch/mips/bcm47xx/board.c
-index bd56415..a88975a 100644
 --- a/arch/mips/bcm47xx/board.c
 +++ b/arch/mips/bcm47xx/board.c
-@@ -149,6 +149,7 @@ struct bcm47xx_board_type_list2 bcm47xx_board_list_boot_hw[] __initconst = {
+@@ -149,6 +149,7 @@ struct bcm47xx_board_type_list2 bcm47xx_
  /* board_id */
  static const
  struct bcm47xx_board_type_list1 bcm47xx_board_list_board_id[] __initconst = {
@@ -32,11 +30,9 @@ index bd56415..a88975a 100644
  	{{BCM47XX_BOARD_NETGEAR_WGR614V8, "Netgear WGR614 V8"}, "U12H072T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WGR614V9, "Netgear WGR614 V9"}, "U12H094T00_NETGEAR"},
  	{{BCM47XX_BOARD_NETGEAR_WGR614_V10, "Netgear WGR614 V10"}, "U12H139T01_NETGEAR"},
-diff --git a/arch/mips/bcm47xx/buttons.c b/arch/mips/bcm47xx/buttons.c
-index 276276a..08a4abf 100644
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -299,6 +299,13 @@ bcm47xx_buttons_linksys_wrtsl54gs[] __initconst = {
+@@ -299,6 +299,13 @@ bcm47xx_buttons_linksys_wrtsl54gs[] __in
  	BCM47XX_GPIO_KEY(6, KEY_RESTART),
  };
  
@@ -50,7 +46,7 @@ index 276276a..08a4abf 100644
  /* Microsoft */
  
  static const struct gpio_keys_button
-@@ -555,6 +562,10 @@ int __init bcm47xx_buttons_register(void)
+@@ -555,6 +562,10 @@ int __init bcm47xx_buttons_register(void
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrtsl54gs);
  		break;
  
@@ -61,11 +57,9 @@ index 276276a..08a4abf 100644
  	case BCM47XX_BOARD_MICROSOFT_MN700:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_microsoft_nm700);
  		break;
-diff --git a/arch/mips/bcm47xx/leds.c b/arch/mips/bcm47xx/leds.c
-index 0e4ade3..d20ae63 100644
 --- a/arch/mips/bcm47xx/leds.c
 +++ b/arch/mips/bcm47xx/leds.c
-@@ -370,6 +370,16 @@ bcm47xx_leds_linksys_wrtsl54gs[] __initconst = {
+@@ -370,6 +370,16 @@ bcm47xx_leds_linksys_wrtsl54gs[] __initc
  	BCM47XX_GPIO_LED(7, "orange", "wps", 1, LEDS_GPIO_DEFSTATE_OFF),
  };
  
@@ -93,8 +87,6 @@ index 0e4ade3..d20ae63 100644
  	case BCM47XX_BOARD_MICROSOFT_MN700:
  		bcm47xx_set_pdata(bcm47xx_leds_microsoft_nm700);
  		break;
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
-index c41d1dc..2afb840 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx_board.h
 @@ -80,6 +80,8 @@ enum bcm47xx_board {
@@ -106,6 +98,3 @@ index c41d1dc..2afb840 100644
  	BCM47XX_BOARD_MICROSOFT_MN700,
  
  	BCM47XX_BOARD_MOTOROLA_WE800G,
--- 
-1.8.4.5
-

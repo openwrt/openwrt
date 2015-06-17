@@ -1,11 +1,9 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1928,6 +1928,53 @@
- 
- 	.spis = DGND3700v1_3800B_spi_devices,
+@@ -1930,6 +1930,53 @@ static struct board_info __initdata boar
  	.num_spis = ARRAY_SIZE(DGND3700v1_3800B_spi_devices),
-+};
-+
+ };
+ 
 +static struct board_info __initdata board_HG655b = {
 +	.name				= "HW65x",
 +	.expected_cpu_id		= 0x6368,
@@ -51,10 +49,12 @@
 +			},
 +		},
 +	},
- };
- 
++};
++
  static struct sprom_fixup __initdata vr3025u_fixups[] = {
-@@ -2380,6 +2427,7 @@
+ 	{ .offset = 97, .value = 0xfeb3 },
+ 	{ .offset = 98, .value = 0x1618 },
+@@ -2380,6 +2427,7 @@ static const struct board_info __initcon
  	&board_96368mvwg,
  	&board_96368mvngr,
  	&board_DGND3700v1_3800B,
@@ -62,7 +62,7 @@
  	&board_P870HW51A_V2,
  	&board_VR3025u,
  	&board_VR3025un,
-@@ -2483,6 +2531,7 @@
+@@ -2483,6 +2531,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "comtrend,vr-3025u", .data = &board_VR3025u, },
  	{ .compatible = "comtrend,vr-3025un", .data = &board_VR3025un, },
  	{ .compatible = "comtrend,wap-5813n", .data = &board_WAP5813n, },

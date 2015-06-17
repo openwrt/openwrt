@@ -21,8 +21,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  include/linux/ssb/ssb.h   | 3 +++
  2 files changed, 9 insertions(+)
 
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 4048083..92a6c9d 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
 @@ -531,6 +531,8 @@ static int mac_addr_used = 2;
@@ -34,7 +32,7 @@ index 4048083..92a6c9d 100644
  	nvram_read_macaddr(prefix, "et0macaddr", sprom->et0mac, fallback);
  	nvram_read_u8(prefix, NULL, "et0mdcport", &sprom->et0mdcport, 0,
  		      fallback);
-@@ -543,6 +545,10 @@ static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
+@@ -543,6 +545,10 @@ static void bcm47xx_fill_sprom_ethernet(
  	nvram_read_u8(prefix, NULL, "et1phyaddr", &sprom->et1phyaddr, 0,
  		      fallback);
  

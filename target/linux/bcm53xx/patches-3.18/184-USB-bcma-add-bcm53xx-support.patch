@@ -13,8 +13,6 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  drivers/usb/host/bcma-hcd.c | 81 +++++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 78 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/usb/host/bcma-hcd.c b/drivers/usb/host/bcma-hcd.c
-index 8a38313..983bc67 100644
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
 @@ -2,7 +2,8 @@
@@ -27,7 +25,7 @@ index 8a38313..983bc67 100644
   *
   * Based on ssb-ohci driver
   * Copyright 2007 Michael Buesch <m@bues.ch>
-@@ -88,7 +89,7 @@ static void bcma_hcd_4716wa(struct bcma_device *dev)
+@@ -88,7 +89,7 @@ static void bcma_hcd_4716wa(struct bcma_
  }
  
  /* based on arch/mips/brcm-boards/bcm947xx/pcibios.c */
@@ -36,7 +34,7 @@ index 8a38313..983bc67 100644
  {
  	u32 tmp;
  
-@@ -159,6 +160,70 @@ static void bcma_hcd_init_chip(struct bcma_device *dev)
+@@ -159,6 +160,70 @@ static void bcma_hcd_init_chip(struct bc
  	}
  }
  
@@ -107,7 +105,7 @@ index 8a38313..983bc67 100644
  static const struct usb_ehci_pdata ehci_pdata = {
  };
  
-@@ -230,7 +295,16 @@ static int bcma_hcd_probe(struct bcma_device *dev)
+@@ -230,7 +295,16 @@ static int bcma_hcd_probe(struct bcma_de
  	if (!usb_dev)
  		return -ENOMEM;
  
@@ -125,7 +123,7 @@ index 8a38313..983bc67 100644
  
  	/* In AI chips EHCI is addrspace 0, OHCI is 1 */
  	ohci_addr = dev->addr_s[0];
-@@ -299,6 +373,7 @@ static int bcma_hcd_resume(struct bcma_device *dev)
+@@ -299,6 +373,7 @@ static int bcma_hcd_resume(struct bcma_d
  
  static const struct bcma_device_id bcma_hcd_table[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_USB20_HOST, BCMA_ANY_REV, BCMA_ANY_CLASS),
@@ -133,6 +131,3 @@ index 8a38313..983bc67 100644
  	BCMA_CORETABLE_END
  };
  MODULE_DEVICE_TABLE(bcma, bcma_hcd_table);
--- 
-1.8.4.5
-

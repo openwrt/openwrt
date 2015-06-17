@@ -21,11 +21,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  include/linux/ssb/ssb.h   | 5 ++++-
  2 files changed, 7 insertions(+), 1 deletion(-)
 
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 68ebf23..4048083 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -201,6 +201,9 @@ static void bcm47xx_sprom_fill_auto(struct ssb_sprom *sprom,
+@@ -201,6 +201,9 @@ static void bcm47xx_sprom_fill_auto(stru
  	bool fb = fallback;
  
  	ENTRY(0xfffffffe, u16, pre, "boardrev", board_rev, 0, true);

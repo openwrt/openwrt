@@ -140,9 +140,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 -int gpiod_export(struct gpio_desc *desc, bool direction_may_change)
 +int __gpiod_export(struct gpio_desc *desc, bool direction_may_change, const char *name)
  {
+ 	struct gpio_chip	*chip;
  	unsigned long		flags;
- 	int			status;
-@@ -557,6 +557,8 @@ int gpiod_export(struct gpio_desc *desc,
+@@ -566,6 +566,8 @@ int gpiod_export(struct gpio_desc *desc,
  	offset = gpio_chip_hwgpio(desc);
  	if (desc->chip->names && desc->chip->names[offset])
  		ioname = desc->chip->names[offset];
@@ -151,7 +151,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	dev = device_create_with_groups(&gpio_class, desc->chip->dev,
  					MKDEV(0, 0), desc, gpio_groups,
-@@ -593,6 +595,12 @@ fail_unlock:
+@@ -602,6 +604,12 @@ fail_unlock:
  	gpiod_dbg(desc, "%s: status %d\n", __func__, status);
  	return status;
  }
