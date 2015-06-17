@@ -219,7 +219,7 @@ menu "Global build settings"
 
 	choice
 		prompt "User space Stack-Smashing Protection"
-		default PKG_CC_STACKPROTECTOR_NONE
+		default PKG_CC_STACKPROTECTOR_REGULAR
 		help
 		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
 		config PKG_CC_STACKPROTECTOR_NONE
@@ -237,7 +237,7 @@ menu "Global build settings"
 
 	choice
 		prompt "Kernel space Stack-Smashing Protection"
-		default KERNEL_CC_STACKPROTECTOR_NONE
+		default KERNEL_CC_STACKPROTECTOR_REGULAR
 		help
 		  Enable GCC Stack-Smashing Protection (SSP) for the kernel
 		config KERNEL_CC_STACKPROTECTOR_NONE
