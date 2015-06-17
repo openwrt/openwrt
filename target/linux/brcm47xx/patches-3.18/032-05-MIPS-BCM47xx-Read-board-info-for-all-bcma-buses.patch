@@ -27,8 +27,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/include/asm/mach-bcm47xx/bcm47xx.h |  4 ---
  3 files changed, 22 insertions(+), 29 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
-index 82ff9fd..98c075f 100644
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
 @@ -206,9 +206,6 @@ void __init bcm47xx_bus_setup(void)
@@ -41,11 +39,9 @@ index 82ff9fd..98c075f 100644
  	}
  #endif
  
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 92a6c9d..b0d62e7 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -640,19 +640,6 @@ void bcm47xx_fill_ssb_boardinfo(struct ssb_boardinfo *boardinfo,
+@@ -640,19 +640,6 @@ void bcm47xx_fill_ssb_boardinfo(struct s
  }
  #endif
  
@@ -65,7 +61,7 @@ index 92a6c9d..b0d62e7 100644
  #if defined(CONFIG_BCM47XX_SSB)
  static int bcm47xx_get_sprom_ssb(struct ssb_bus *bus, struct ssb_sprom *out)
  {
-@@ -707,33 +694,46 @@ static void bcm47xx_sprom_apply_prefix_alias(char *prefix, size_t prefix_size)
+@@ -707,33 +694,46 @@ static void bcm47xx_sprom_apply_prefix_a
  
  static int bcm47xx_get_sprom_bcma(struct bcma_bus *bus, struct ssb_sprom *out)
  {
@@ -121,11 +117,9 @@ index 92a6c9d..b0d62e7 100644
  }
  #endif
  
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
-index 8ed77f6..1461c10 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
-@@ -52,10 +52,6 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
+@@ -52,10 +52,6 @@ void bcm47xx_fill_sprom(struct ssb_sprom
  void bcm47xx_fill_ssb_boardinfo(struct ssb_boardinfo *boardinfo,
  				const char *prefix);
  #endif
@@ -136,6 +130,3 @@ index 8ed77f6..1461c10 100644
  
  void bcm47xx_set_system_type(u16 chip_id);
  
--- 
-1.8.4.5
-

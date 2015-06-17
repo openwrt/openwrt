@@ -27,8 +27,6 @@ Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
  14 files changed, 50 insertions(+), 6 deletions(-)
  create mode 100644 arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
 
-diff --git a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
-index 71cff8d..112a5a8 100644
 --- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
 +++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
 @@ -10,6 +10,7 @@
@@ -39,8 +37,6 @@ index 71cff8d..112a5a8 100644
  
  / {
  	compatible = "asus,rt-ac56u", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
-index 8b62836..3600f56 100644
 --- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
 +++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
 @@ -10,6 +10,7 @@
@@ -51,8 +47,6 @@ index 8b62836..3600f56 100644
  
  / {
  	compatible = "asus,rt-ac68u", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-index 78e95c0..24f0ab5 100644
 --- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 @@ -10,6 +10,7 @@
@@ -63,8 +57,6 @@ index 78e95c0..24f0ab5 100644
  
  / {
  	compatible = "buffalo,wzr-1750dhp", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
-index 946c728..f039393 100644
 --- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
 +++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
 @@ -10,6 +10,7 @@
@@ -90,8 +82,6 @@ index 946c728..f039393 100644
  			partition@0 {
  				label = "ubi";
  				reg = <0x00000000 0x08000000>;
-diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
-index 2ed9e57..326ce8f 100644
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 @@ -10,6 +10,7 @@
@@ -102,8 +92,6 @@ index 2ed9e57..326ce8f 100644
  
  / {
  	compatible = "netgear,r6250v1", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
-index 3991042..3a94606 100644
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 @@ -10,6 +10,7 @@
@@ -114,8 +102,6 @@ index 3991042..3a94606 100644
  
  / {
  	compatible = "netgear,r6300v2", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
-index 66dfb53..d6a033b 100644
 --- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
 +++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
 @@ -10,6 +10,7 @@
@@ -126,8 +112,6 @@ index 66dfb53..d6a033b 100644
  
  / {
  	compatible = "smartrg,sr400ac", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
-index 0ee85ea..71b98cf 100644
 --- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 +++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
 @@ -10,6 +10,7 @@
@@ -138,8 +122,6 @@ index 0ee85ea..71b98cf 100644
  
  / {
  	compatible = "asus,rt-n18u", "brcm,bcm47081", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
-index db9131e..bb0cb0b 100644
 --- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
 @@ -10,6 +10,7 @@
@@ -150,8 +132,6 @@ index db9131e..bb0cb0b 100644
  
  / {
  	compatible = "buffalo,wzr-600dhp2", "brcm,bcm47081", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
-index 7d6868a..184fd92 100644
 --- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
 @@ -10,6 +10,7 @@
@@ -162,8 +142,6 @@ index 7d6868a..184fd92 100644
  
  / {
  	compatible = "buffalo,wzr-900dhp", "brcm,bcm47081", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
-index 548e93b..2a92e8d 100644
 --- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
 +++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
 @@ -10,6 +10,7 @@
@@ -174,8 +152,6 @@ index 548e93b..2a92e8d 100644
  
  / {
  	compatible = "buffalo,wxr-1900dhp", "brcm,bcm4709", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
-index ea26dd3..446c586 100644
 --- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
 +++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
 @@ -10,6 +10,7 @@
@@ -186,9 +162,6 @@ index ea26dd3..446c586 100644
  
  / {
  	compatible = "netgear,r8000", "brcm,bcm4709", "brcm,bcm4708";
-diff --git a/arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi b/arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
-new file mode 100644
-index 0000000..d10781e
 --- /dev/null
 +++ b/arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
 @@ -0,0 +1,24 @@
@@ -216,8 +189,6 @@ index 0000000..d10781e
 +		};
 +	};
 +};
-diff --git a/arch/arm/boot/dts/bcm5301x.dtsi b/arch/arm/boot/dts/bcm5301x.dtsi
-index 78aec62..a97f631 100644
 --- a/arch/arm/boot/dts/bcm5301x.dtsi
 +++ b/arch/arm/boot/dts/bcm5301x.dtsi
 @@ -143,4 +143,16 @@
@@ -237,6 +208,3 @@ index 78aec62..a97f631 100644
 +		brcm,nand-has-wp;
 +	};
  };
--- 
-1.8.4.5
-

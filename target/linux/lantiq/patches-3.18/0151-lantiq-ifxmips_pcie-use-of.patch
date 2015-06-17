@@ -9,16 +9,16 @@
  #include "ifxmips_pcie.h"
  #include "ifxmips_pcie_reg.h"
  
-@@ -1048,7 +1050,7 @@ pcie_rc_initialize(int pcie_port)
- extern int (*ltq_pci_plat_arch_init)(struct pci_dev *dev);
- extern int (*ltq_pci_map_irq)(const struct pci_dev *dev, u8 slot, u8 pin);
+@@ -1045,7 +1047,7 @@ pcie_rc_initialize(int pcie_port)
+ 	return 0;
+ }
  
 -static int __init ifx_pcie_bios_init(void)
 +static int __init ifx_pcie_bios_probe(struct platform_device *pdev)
  {
      void __iomem *io_map_base;
      int pcie_port;
-@@ -1090,6 +1092,30 @@ static int __init ifx_pcie_bios_init(voi
+@@ -1083,6 +1085,30 @@ static int __init ifx_pcie_bios_init(voi
  
      return 0;
  }
