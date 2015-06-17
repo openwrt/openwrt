@@ -10,11 +10,9 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  drivers/usb/host/bcma-hcd.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/usb/host/bcma-hcd.c b/drivers/usb/host/bcma-hcd.c
-index 080587e..853bf9d 100644
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -233,7 +233,8 @@ static int bcma_hcd_probe(struct bcma_device *dev)
+@@ -233,7 +233,8 @@ static int bcma_hcd_probe(struct bcma_de
  
  	/* In AI chips EHCI is addrspace 0, OHCI is 1 */
  	ohci_addr = dev->addr_s[0];
@@ -24,6 +22,3 @@ index 080587e..853bf9d 100644
  	    && chipinfo->rev == 0)
  		ohci_addr = 0x18009000;
  
--- 
-1.8.4.5
-

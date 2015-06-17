@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -687,6 +687,26 @@ config ATH79_MACH_OM5P
+@@ -694,6 +694,26 @@ config ATH79_MACH_OM5P
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_WMAC
  
@@ -29,7 +29,7 @@
  	select SOC_AR934X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -78,6 +78,8 @@ obj-$(CONFIG_ATH79_MACH_JA76PF)	+
+@@ -78,6 +78,8 @@ obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach
  obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
  obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
  obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)     += mach-mc-mac1200r.o
@@ -48,4 +48,4 @@
 +	ATH79_MACH_MR16,		/* Cisco Meraki MR16 */
  	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
  	ATH79_MACH_MR600,		/* OpenMesh MR600 */
- 	ATH79_MACH_MR900,		/* OpenMesh MR900 */ 
+ 	ATH79_MACH_MR900,		/* OpenMesh MR900 */

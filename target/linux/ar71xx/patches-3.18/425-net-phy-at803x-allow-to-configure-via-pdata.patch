@@ -40,7 +40,7 @@
  };
  
  struct at803x_context {
-@@ -61,6 +71,43 @@ struct at803x_context {
+@@ -61,6 +72,43 @@ struct at803x_context {
  	u16 led_control;
  };
  
@@ -84,7 +84,7 @@
  /* save relevant PHY registers to private copy */
  static void at803x_context_save(struct phy_device *phydev,
  				struct at803x_context *context)
-@@ -208,8 +255,16 @@ static int at803x_probe(struct phy_devic
+@@ -208,8 +256,16 @@ static int at803x_probe(struct phy_devic
  	return 0;
  }
  
@@ -101,7 +101,7 @@
  	int ret;
  
  	ret = genphy_config_init(phydev);
-@@ -227,6 +282,26 @@ static int at803x_config_init(struct phy
+@@ -227,6 +283,26 @@ static int at803x_config_init(struct phy
  			return ret;
  	}
  
@@ -137,11 +137,10 @@
  
  	/*
  	 * Conduct a hardware reset for AT8030 every time a link loss is
-@@ -287,6 +365,26 @@ static void at803x_link_change_notify(st
- 		} else {
+@@ -288,6 +366,26 @@ static void at803x_link_change_notify(st
  			priv->phy_reset = false;
  		}
-+	}
+ 	}
 +	if (pdata->fixup_rgmii_tx_delay &&
 +	    phydev->speed != priv->prev_speed) {
 +		switch (phydev->speed) {
@@ -161,9 +160,10 @@
 +		}
 +
 +		priv->prev_speed = phydev->speed;
- 	}
++	}
  }
  
+ static struct phy_driver at803x_driver[] = {
 --- /dev/null
 +++ b/include/linux/platform_data/phy-at803x.h
 @@ -0,0 +1,11 @@
