@@ -37,6 +37,16 @@ endef
 
 $(eval $(call Profile,WPJ344))
 
+define Profile/WPJ531
+	NAME:=Compex WPJ531
+endef
+
+define Profile/WPJ531/Description
+	Package set optimized for the Compex WPJ531 board.
+endef
+
+$(eval $(call Profile,WPJ531))
+
 define Profile/WPJ558
 	NAME:=Compex WPJ558
 endef
