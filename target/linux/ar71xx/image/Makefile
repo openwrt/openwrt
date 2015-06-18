@@ -330,6 +330,14 @@ define Device/archer-c7-v2
 endef
 TARGET_DEVICES += archer-c5 archer-c7-v1 archer-c7-v2
 
+define Device/antminer-s1
+	$(Device/tplink-8mlzma)
+	BOARDNAME := ANTMINER-S1
+	DEVICE_PROFILE := ANTMINER_S1
+	TPLINK_HWID := 0x04440001
+	CONSOLE := ttyATH0,115200
+endef
+
 define Device/el-m150
     $(Device/tplink-8mlzma)
     BOARDNAME := EL-M150
@@ -345,7 +353,7 @@ define Device/el-mini
     TPLINK_HWID := 0x01530001
     CONSOLE := ttyATH0,115200
 endef
-TARGET_DEVICES += el-m150 el-mini
+TARGET_DEVICES += antminer-s1 el-m150 el-mini
 
 define Device/gl-inet-6408A-v1
     $(Device/tplink-8mlzma)

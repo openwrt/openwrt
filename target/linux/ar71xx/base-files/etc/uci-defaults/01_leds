@@ -31,6 +31,11 @@ all0315n)
 	ucidef_set_led_rssi "rssihigh" "RSSIHIGH" "all0315n:green:rssihigh" "wlan0" "70" "100" "-69" "8"
 	;;
 
+antminer-s1)
+	ucidef_set_led_default "sys" "SYS" "bitmain:green:sys" "0"
+	ucidef_set_led_wlan "wlan" "WLAN" "bitmain:green:wlan" "phy0tpt"
+	;;
+
 ap113)
 	ucidef_set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
 	;;
