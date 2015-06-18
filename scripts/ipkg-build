@@ -13,6 +13,7 @@ version=1.0
 FIND="$(which find)"
 FIND="${FIND:-$(which gfind)}"
 TAR="${TAR:-$(which tar)}"
+export GZIP="-n"
 
 ipkg_extract_value() {
 	sed -e "s/^[^:]*:[[:space:]]*//"
