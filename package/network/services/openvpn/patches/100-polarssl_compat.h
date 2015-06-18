@@ -239,7 +239,7 @@
  	{
 --- a/configure.ac
 +++ b/configure.ac
-@@ -819,13 +819,13 @@ if test "${with_crypto_library}" = "pola
+@@ -832,13 +832,13 @@ if test "${with_crypto_library}" = "pola
  #include <polarssl/version.h>
  			]],
  			[[
