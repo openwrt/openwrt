@@ -473,7 +473,7 @@ define Device/tl-wr710n-v2
     $(Device/tplink-4mlzma)
     BOARDNAME := TL-WR710N
     DEVICE_PROFILE := TLWR710
-    TPLINK_HWID := 0x07100001
+    TPLINK_HWID := 0x07100002
     CONSOLE := ttyATH0,115200
 endef
 
