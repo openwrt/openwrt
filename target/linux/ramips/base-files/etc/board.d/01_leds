@@ -175,6 +175,11 @@ case $board in
 		set_wifi_led "7links:orange:wifi"
 		set_usb_led "7links:blue:storage"
 		;;
+    pbr-m1)
+        ucidef_set_led_netdev "internet" "internet" "pbr-m1:green:internet" "eth0.2"
+        ucidef_set_led_default "power" "power" "pbr-m1:green:power" "1"
+        ucidef_set_led_default "sys" "sys" "pbr-m1:green:sys" "1"
+        ;;
 	sl-r7205)
 		set_wifi_led "rt2800pci-phy0::radio"
 		;;

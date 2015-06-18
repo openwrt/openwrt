@@ -919,7 +919,7 @@ endif
 #
 
 ifeq ($(SUBTARGET),mt7621)
-  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1 firewrt
+  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1 firewrt pbr-m1
 endif
 
 define Device/mt7621
@@ -953,6 +953,11 @@ endef
 
 define Device/firewrt
   DTS := FIREWRT
+  IMAGE_SIZE := $(ralink_default_fw_size_16M)
+endef
+
+define Device/pbr-m1
+  DTS := PBR-M1
   IMAGE_SIZE := $(ralink_default_fw_size_16M)
 endef
 

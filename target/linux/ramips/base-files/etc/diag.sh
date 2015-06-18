@@ -117,6 +117,9 @@ get_status_led() {
 	omni-emb-hpm)
 		status_led="emb:green:status"
 		;;
+	pbr-m1)
+		status_led="pbr-m1:green:sys"
+		;;
 	psr-680w)
 		status_led="psr-680w:red:wan"
 		;;
