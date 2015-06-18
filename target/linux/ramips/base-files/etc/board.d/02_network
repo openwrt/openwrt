@@ -104,6 +104,7 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "2" "0 9t"
 		;;
 
+        re6500 | \
 	asl26555)
 		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" "1" "1"
