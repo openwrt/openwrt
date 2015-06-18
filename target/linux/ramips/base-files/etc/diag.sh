@@ -132,6 +132,9 @@ get_status_led() {
 	px4885)
 		status_led="7links:orange:wifi"
 		;;
+	re6500)
+		status_led="linksys:orange:wifi"
+		;;
 	rt-n15)
 		status_led="rt-n15:blue:power"
 		;;
