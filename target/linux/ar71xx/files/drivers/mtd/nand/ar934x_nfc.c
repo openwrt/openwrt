@@ -1437,6 +1437,10 @@ ar934x_nfc_probe(struct platform_device *pdev)
 		nand->ecc.mode = NAND_ECC_SOFT;
 		break;
 
+	case AR934X_NFC_ECC_SOFT_BCH:
+		nand->ecc.mode = NAND_ECC_SOFT_BCH;
+		break;
+
 	case AR934X_NFC_ECC_HW:
 		ret = ar934x_nfc_setup_hwecc(nfc);
 		if (ret)
