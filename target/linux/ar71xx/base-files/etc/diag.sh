@@ -311,6 +311,9 @@ get_status_led() {
 	wpj344)
 		status_led="wpj344:green:status"
 		;;
+	wpj531)
+		status_led="wpj531:green:sig3"
+		;;
 	wpj558)
 		status_led="wpj558:green:sig3"
 		;;
