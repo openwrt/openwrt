@@ -92,6 +92,9 @@ get_status_led() {
 	gl-inet)
 		status_led="gl-connect:green:lan"
 		;;
+	epg5000)
+		status_led="epg5000:amber:power"
+		;;
 	esr1750)
 		status_led="esr1750:amber:power"
 		;;

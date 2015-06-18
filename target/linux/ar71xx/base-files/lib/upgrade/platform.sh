@@ -208,6 +208,7 @@ platform_check_image() {
 	dir-825-c1 | \
 	dir-835-a1 | \
 	dragino2 | \
+	epg5000 | \
 	esr1750 | \
 	esr900 | \
 	ew-dorin | \
