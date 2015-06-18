@@ -492,7 +492,15 @@ define Device/tl-wr720n-v3
     TPLINK_HWID := 0x07200103
     CONSOLE := ttyATH0,115200
 endef
-TARGET_DEVICES += tl-wr703n-v1 tl-wr710n-v1 tl-wr710n-v2 tl-wr720n-v3
+
+define Device/tl-wr720n-v4
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR720N-v3
+    DEVICE_PROFILE := TLWR720
+    TPLINK_HWID := 0x07200104
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += tl-wr703n-v1 tl-wr710n-v1 tl-wr710n-v2 tl-wr720n-v3 tl-wr720n-v4
 
 define Device/tl-wr740n-v4
     $(Device/tplink-4mlzma)
