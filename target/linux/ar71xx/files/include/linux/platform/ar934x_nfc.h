@@ -20,6 +20,7 @@ struct mtd_partition;
 enum ar934x_nfc_ecc_mode {
 	AR934X_NFC_ECC_SOFT = 0,
 	AR934X_NFC_ECC_HW,
+	AR934X_NFC_ECC_SOFT_BCH,
 };
 
 struct ar934x_nfc_platform_data {
