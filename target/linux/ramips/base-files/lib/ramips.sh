@@ -247,6 +247,9 @@ ramips_board_detect() {
 	*"OLinuXino-RT5350F-EVB")
 		name="olinuxino-rt5350f-evb"
 		;;
+	*"PBR-M1")
+		name="pbr-m1"
+		;;
 	*"Petatel PSR-680W"*)
 		name="psr-680w"
 		;;
