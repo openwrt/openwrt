@@ -85,6 +85,10 @@ case $board in
 		ucidef_set_led_default "power" "POWER" "d105:red:power" "1"
 		set_usb_led "d105:green:usb"
 		;;
+	dcs-930l-b1)
+		ucidef_set_led_default "power" "POWER" "d-link:red:power" "1"
+		ucidef_set_led_netdev "wifi" "WiFi" "d-link:blue:wps"
+		;;
 	dir-300-b1|\
 	dir-600-b1|\
 	dir-600-b2|\
