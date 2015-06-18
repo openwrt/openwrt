@@ -48,11 +48,13 @@ endif
 ifdef CONFIG_PKG_CC_STACKPROTECTOR_REGULAR
   ifeq ($(strip $(PKG_CC_STACKPROTECTOR_REGULAR)),1)
     TARGET_CFLAGS += -fstack-protector
+    TARGET_LDFLAGS += -fstack-protector
   endif
 endif
 ifdef CONFIG_PKG_CC_STACKPROTECTOR_STRONG
   ifeq ($(strip $(PKG_CC_STACKPROTECTOR_STRONG)),1)
     TARGET_CFLAGS += -fstack-protector-strong
+    TARGET_LDFLAGS += -fstack-protector-strong
   endif
 endif
 ifdef CONFIG_PKG_FORTIFY_SOURCE_1
@@ -68,11 +70,13 @@ endif
 ifdef CONFIG_PKG_RELRO_PARTIAL
   ifeq ($(strip $(PKG_RELRO_PARTIAL)),1)
     TARGET_CFLAGS += -Wl,-z,relro
+    TARGET_LDFLAGS += -Wl,-z,relro
   endif
 endif
 ifdef CONFIG_PKG_RELRO_FULL
   ifeq ($(strip $(PKG_RELRO_FULL)),1)
     TARGET_CFLAGS += -Wl,-z,now -Wl,-z,relro
+    TARGET_LDFLAGS += -Wl,-z,now -Wl,-z,relro
   endif
 endif
 
