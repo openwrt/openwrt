@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,191 @@
+@@ -16,22 +16,192 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -179,6 +179,7 @@
 +	ATH79_MACH_WP543,		/* Compex WP543 */
 +	ATH79_MACH_WPE72,		/* Compex WPE72 */
 +	ATH79_MACH_WPJ344,		/* Compex WPJ344 */
++	ATH79_MACH_WPJ531,		/* Compex WPJ531 */
 +	ATH79_MACH_WPJ558,		/* Compex WPJ558 */
 +	ATH79_MACH_WRT160NL,		/* Linksys WRT160NL */
 +	ATH79_MACH_WRT400N,		/* Linksys WRT400N */
@@ -265,7 +266,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +75,986 @@ config ATH79_MACH_AP121
+@@ -11,62 +75,996 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -509,6 +510,16 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
++
++config ATH79_MACH_WPJ531
++       bool "Compex WPJ531 board support"
++       select SOC_QCA953X
++       select ATH79_DEV_ETH
++       select ATH79_DEV_GPIO_BUTTONS
++       select ATH79_DEV_LEDS_GPIO
++       select ATH79_DEV_M25P80
++       select ATH79_DEV_USB
++       select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_WPJ558
 +	bool "Compex WPJ558 board support"
@@ -1280,7 +1291,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1071,97 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1081,97 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1378,7 +1389,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -124,7 +1203,10 @@ config ATH79_DEV_DSA
+@@ -124,7 +1213,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1390,7 +1401,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -154,6 +1236,11 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -154,6 +1246,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
@@ -1404,7 +1415,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,120 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +48,121 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1514,6 +1525,7 @@
 +obj-$(CONFIG_ATH79_MACH_WP543)		+= mach-wp543.o
 +obj-$(CONFIG_ATH79_MACH_WPE72)		+= mach-wpe72.o
 +obj-$(CONFIG_ATH79_MACH_WPJ344)	+= mach-wpj344.o
++obj-$(CONFIG_ATH79_MACH_WPJ531)	+= mach-wpj531.o
 +obj-$(CONFIG_ATH79_MACH_WPJ558)	+= mach-wpj558.o
 +obj-$(CONFIG_ATH79_MACH_WRT160NL)	+= mach-wrt160nl.o
 +obj-$(CONFIG_ATH79_MACH_WRT400N)	+= mach-wrt400n.o
