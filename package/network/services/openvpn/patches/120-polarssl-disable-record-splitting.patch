@@ -1,7 +1,5 @@
-Index: openvpn-2.3.6/src/openvpn/ssl_polarssl.c
-===================================================================
---- openvpn-2.3.6.orig/src/openvpn/ssl_polarssl.c
-+++ openvpn-2.3.6/src/openvpn/ssl_polarssl.c
+--- a/src/openvpn/ssl_polarssl.c
++++ b/src/openvpn/ssl_polarssl.c
 @@ -707,6 +707,11 @@ void key_state_ssl_init(struct key_state
        if (ssl_ctx->allowed_ciphers)
  	ssl_set_ciphersuites (ks_ssl->ctx, ssl_ctx->allowed_ciphers);
