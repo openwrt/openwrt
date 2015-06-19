@@ -1,7 +1,5 @@
-Index: linux-4.0-rc4/drivers/ata/libata-core.c
-===================================================================
---- linux-4.0-rc4.orig/drivers/ata/libata-core.c
-+++ linux-4.0-rc4/drivers/ata/libata-core.c
+--- a/drivers/ata/libata-core.c
++++ b/drivers/ata/libata-core.c
 @@ -1586,6 +1586,14 @@ unsigned ata_exec_internal_sg(struct ata
  		return AC_ERR_SYSTEM;
  	}
@@ -17,7 +15,7 @@ Index: linux-4.0-rc4/drivers/ata/libata-core.c
  	/* initialize internal qc */
  
  	/* XXX: Tag 0 is used for drivers with legacy EH as some
-@@ -4749,6 +4757,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
+@@ -4760,6 +4768,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
  	if (unlikely(ap->pflags & ATA_PFLAG_FROZEN))
  		return NULL;
  
@@ -25,22 +23,20 @@ Index: linux-4.0-rc4/drivers/ata/libata-core.c
 +		return NULL;
 +
  	/* libsas case */
- 	if (!ap->scsi_host) {
+ 	if (ap->flags & ATA_FLAG_SAS_HOST) {
  		tag = ata_sas_allocate_tag(ap);
-@@ -4794,6 +4805,8 @@ void ata_qc_free(struct ata_queued_cmd *
+@@ -4805,6 +4816,8 @@ void ata_qc_free(struct ata_queued_cmd *
  		qc->tag = ATA_TAG_POISON;
- 		if (!ap->scsi_host)
+ 		if (ap->flags & ATA_FLAG_SAS_HOST)
  			ata_sas_free_tag(tag, ap);
 +		if (ap->ops->qc_free)
 +			ap->ops->qc_free(qc);
  	}
  }
  
-Index: linux-4.0-rc4/include/linux/libata.h
-===================================================================
---- linux-4.0-rc4.orig/include/linux/libata.h
-+++ linux-4.0-rc4/include/linux/libata.h
-@@ -893,6 +893,8 @@ struct ata_port_operations {
+--- a/include/linux/libata.h
++++ b/include/linux/libata.h
+@@ -903,6 +903,8 @@ struct ata_port_operations {
  	void (*qc_prep)(struct ata_queued_cmd *qc);
  	unsigned int (*qc_issue)(struct ata_queued_cmd *qc);
  	bool (*qc_fill_rtf)(struct ata_queued_cmd *qc);
@@ -49,7 +45,7 @@ Index: linux-4.0-rc4/include/linux/libata.h
  
  	/*
  	 * Configuration and exception handling
-@@ -983,6 +985,9 @@ struct ata_port_operations {
+@@ -993,6 +995,9 @@ struct ata_port_operations {
  	void (*phy_reset)(struct ata_port *ap);
  	void (*eng_timeout)(struct ata_port *ap);
  

@@ -7,8 +7,8 @@
 +#include <dt-bindings/mfd/qcom-rpm.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
  #include <dt-bindings/reset/qcom,gcc-ipq806x.h>
- 
-@@ -75,6 +76,63 @@
+ #include <include/dt-bindings/interrupt-controller/arm-gic.h>
+@@ -76,6 +77,63 @@
  		ranges;
  		compatible = "simple-bus";
  
@@ -72,7 +72,7 @@
  		qcom_pinmux: pinmux@800000 {
  			compatible = "qcom,ipq8064-pinctrl";
  			reg = <0x800000 0x4000>;
-@@ -119,6 +177,12 @@
+@@ -120,6 +178,12 @@
  			reg = <0x02098000 0x1000>, <0x02008000 0x1000>;
  		};
  
