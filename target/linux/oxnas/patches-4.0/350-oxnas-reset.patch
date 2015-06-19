@@ -1,7 +1,5 @@
-Index: linux-4.0-rc4/drivers/reset/Kconfig
-===================================================================
---- linux-4.0-rc4.orig/drivers/reset/Kconfig
-+++ linux-4.0-rc4/drivers/reset/Kconfig
+--- a/drivers/reset/Kconfig
++++ b/drivers/reset/Kconfig
 @@ -12,4 +12,9 @@ menuconfig RESET_CONTROLLER
  
  	  If unsure, say no.
@@ -12,10 +10,8 @@ Index: linux-4.0-rc4/drivers/reset/Kconfig
 +
  source "drivers/reset/sti/Kconfig"
 +
-Index: linux-4.0-rc4/drivers/reset/Makefile
-===================================================================
---- linux-4.0-rc4.orig/drivers/reset/Makefile
-+++ linux-4.0-rc4/drivers/reset/Makefile
+--- a/drivers/reset/Makefile
++++ b/drivers/reset/Makefile
 @@ -1,4 +1,5 @@
  obj-$(CONFIG_RESET_CONTROLLER) += core.o
 +obj-$(CONFIG_RESET_CONTROLLER_OXNAS) += reset-ox820.o

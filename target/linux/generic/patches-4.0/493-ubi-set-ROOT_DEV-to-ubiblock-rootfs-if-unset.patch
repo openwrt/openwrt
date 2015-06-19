@@ -19,7 +19,7 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  
  #include "ubi-media.h"
  #include "ubi.h"
-@@ -437,6 +438,15 @@ int ubiblock_create(struct ubi_volume_in
+@@ -439,6 +440,15 @@ int ubiblock_create(struct ubi_volume_in
  	add_disk(dev->gd);
  	dev_info(disk_to_dev(dev->gd), "created from ubi%d:%d(%s)",
  		 dev->ubi_num, dev->vol_id, vi->name);

@@ -17,8 +17,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/nvram.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 6a97732..2357ea3 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
 @@ -11,6 +11,7 @@
@@ -29,7 +27,7 @@ index 6a97732..2357ea3 100644
  #include <linux/types.h>
  #include <linux/module.h>
  #include <linux/kernel.h>
-@@ -203,7 +204,7 @@ int bcm47xx_nvram_getenv(const char *name, char *val, size_t val_len)
+@@ -203,7 +204,7 @@ int bcm47xx_nvram_getenv(const char *nam
  		if (eq - var == strlen(name) &&
  		    strncmp(var, name, eq - var) == 0)
  			return snprintf(val, val_len, "%s", value);
@@ -38,6 +36,3 @@ index 6a97732..2357ea3 100644
  	return -ENOENT;
  }
  EXPORT_SYMBOL(bcm47xx_nvram_getenv);
--- 
-1.8.4.5
-

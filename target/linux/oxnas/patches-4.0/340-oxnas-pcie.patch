@@ -1,7 +1,5 @@
-Index: linux-4.0-rc4/drivers/pci/host/Kconfig
-===================================================================
---- linux-4.0-rc4.orig/drivers/pci/host/Kconfig
-+++ linux-4.0-rc4/drivers/pci/host/Kconfig
+--- a/drivers/pci/host/Kconfig
++++ b/drivers/pci/host/Kconfig
 @@ -106,4 +106,9 @@ config PCI_VERSATILE
  	bool "ARM Versatile PB PCI controller"
  	depends on ARCH_VERSATILE
@@ -12,10 +10,8 @@ Index: linux-4.0-rc4/drivers/pci/host/Kconfig
 +	select PCIEPORTBUS
 +
  endmenu
-Index: linux-4.0-rc4/drivers/pci/host/Makefile
-===================================================================
---- linux-4.0-rc4.orig/drivers/pci/host/Makefile
-+++ linux-4.0-rc4/drivers/pci/host/Makefile
+--- a/drivers/pci/host/Makefile
++++ b/drivers/pci/host/Makefile
 @@ -3,6 +3,7 @@ obj-$(CONFIG_PCI_DRA7XX) += pci-dra7xx.o
  obj-$(CONFIG_PCI_EXYNOS) += pci-exynos.o
  obj-$(CONFIG_PCI_IMX6) += pci-imx6.o

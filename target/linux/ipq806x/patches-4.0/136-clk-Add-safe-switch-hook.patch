@@ -47,7 +47,7 @@ handles that problem on Krait, but on other platforms it won't work.
  	struct clk_core		*new_parent;
  	struct clk_core		*new_child;
  	unsigned long		flags;
-@@ -1549,7 +1552,8 @@ out:
+@@ -1557,7 +1560,8 @@ out:
  static void clk_calc_subtree(struct clk_core *clk, unsigned long new_rate,
  			     struct clk_core *new_parent, u8 p_index)
  {
@@ -57,7 +57,7 @@ handles that problem on Krait, but on other platforms it won't work.
  
  	clk->new_rate = new_rate;
  	clk->new_parent = new_parent;
-@@ -1559,6 +1563,18 @@ static void clk_calc_subtree(struct clk_
+@@ -1567,6 +1571,18 @@ static void clk_calc_subtree(struct clk_
  	if (new_parent && new_parent != clk->parent)
  		new_parent->new_child = clk;
  
@@ -76,7 +76,7 @@ handles that problem on Krait, but on other platforms it won't work.
  	hlist_for_each_entry(child, &clk->children, child_node) {
  		child->new_rate = clk_recalc(child, new_rate);
  		clk_calc_subtree(child, child->new_rate, NULL, 0);
-@@ -1654,14 +1670,43 @@ static struct clk_core *clk_propagate_ra
+@@ -1662,14 +1678,43 @@ static struct clk_core *clk_propagate_ra
  						  unsigned long event)
  {
  	struct clk_core *child, *tmp_clk, *fail_clk = NULL;
@@ -123,7 +123,7 @@ handles that problem on Krait, but on other platforms it won't work.
  			fail_clk = clk;
  	}
  
-@@ -1707,7 +1752,8 @@ clk_change_rate(struct clk_core *clk, un
+@@ -1715,7 +1760,8 @@ clk_change_rate(struct clk_core *clk, un
  
  	old_rate = clk->rate;
  
@@ -133,7 +133,7 @@ handles that problem on Krait, but on other platforms it won't work.
  		old_parent = __clk_set_parent_before(clk, clk->new_parent);
  
  		if (clk->ops->set_rate_and_parent) {
-@@ -1727,9 +1773,6 @@ clk_change_rate(struct clk_core *clk, un
+@@ -1735,9 +1781,6 @@ clk_change_rate(struct clk_core *clk, un
  
  	clk->rate = clk->new_rate;
  
@@ -143,7 +143,7 @@ handles that problem on Krait, but on other platforms it won't work.
  	/*
  	 * Use safe iteration, as change_rate can actually swap parents
  	 * for certain clock types.
-@@ -1789,6 +1832,8 @@ static int clk_core_set_rate_nolock(stru
+@@ -1797,6 +1840,8 @@ static int clk_core_set_rate_nolock(stru
  
  	clk->req_rate = req_rate;
  

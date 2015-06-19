@@ -25,8 +25,6 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/mm/tlb-r4k.c             | 2 +-
  3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/prom.c b/arch/mips/bcm47xx/prom.c
-index ab698ba..135a540 100644
 --- a/arch/mips/bcm47xx/prom.c
 +++ b/arch/mips/bcm47xx/prom.c
 @@ -126,7 +126,7 @@ void __init prom_free_prom_memory(void)
@@ -38,8 +36,6 @@ index ab698ba..135a540 100644
  {
  	write_c0_pagemask(PM_DEFAULT_MASK);
  	write_c0_wired(0);
-diff --git a/arch/mips/include/asm/pgtable-32.h b/arch/mips/include/asm/pgtable-32.h
-index 7d56686..832e216 100644
 --- a/arch/mips/include/asm/pgtable-32.h
 +++ b/arch/mips/include/asm/pgtable-32.h
 @@ -18,7 +18,7 @@
@@ -51,11 +47,9 @@ index 7d56686..832e216 100644
  
  /*
   * - add_temporary_entry() add a temporary TLB entry. We use TLB entries
-diff --git a/arch/mips/mm/tlb-r4k.c b/arch/mips/mm/tlb-r4k.c
-index 08318ec..5037d58 100644
 --- a/arch/mips/mm/tlb-r4k.c
 +++ b/arch/mips/mm/tlb-r4k.c
-@@ -411,7 +411,7 @@ int __init has_transparent_hugepage(void)
+@@ -411,7 +411,7 @@ int __init has_transparent_hugepage(void
   * lifetime of the system
   */
  
@@ -64,6 +58,3 @@ index 08318ec..5037d58 100644
  
  __init int add_temporary_entry(unsigned long entrylo0, unsigned long entrylo1,
  			       unsigned long entryhi, unsigned long pagemask)
--- 
-1.8.4.5
-

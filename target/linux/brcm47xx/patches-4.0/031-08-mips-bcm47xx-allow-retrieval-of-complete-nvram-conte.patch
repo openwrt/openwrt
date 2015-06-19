@@ -22,11 +22,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  include/linux/bcm47xx_nvram.h | 15 +++++++++++
  2 files changed, 60 insertions(+), 15 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/nvram.c b/arch/mips/bcm47xx/nvram.c
-index 95d028c..2ed762e 100644
 --- a/arch/mips/bcm47xx/nvram.c
 +++ b/arch/mips/bcm47xx/nvram.c
-@@ -94,17 +94,22 @@ static int nvram_find_and_copy(void __iomem *iobase, u32 lim)
+@@ -94,17 +94,22 @@ static int nvram_find_and_copy(void __io
  	return -ENXIO;
  
  found:
@@ -94,7 +92,7 @@ index 95d028c..2ed762e 100644
  		return 0;
  	}
  #endif
-@@ -219,3 +226,26 @@ int bcm47xx_nvram_gpio_pin(const char *name)
+@@ -219,3 +226,26 @@ int bcm47xx_nvram_gpio_pin(const char *n
  	return -ENOENT;
  }
  EXPORT_SYMBOL(bcm47xx_nvram_gpio_pin);
@@ -121,8 +119,6 @@ index 95d028c..2ed762e 100644
 +	return nvram;
 +}
 +EXPORT_SYMBOL(bcm47xx_nvram_get_contents);
-diff --git a/include/linux/bcm47xx_nvram.h b/include/linux/bcm47xx_nvram.h
-index b12b07e..c73927c 100644
 --- a/include/linux/bcm47xx_nvram.h
 +++ b/include/linux/bcm47xx_nvram.h
 @@ -10,11 +10,17 @@
@@ -143,7 +139,7 @@ index b12b07e..c73927c 100644
  #else
  static inline int bcm47xx_nvram_init_from_mem(u32 base, u32 lim)
  {
-@@ -29,6 +35,15 @@ static inline int bcm47xx_nvram_gpio_pin(const char *name)
+@@ -29,6 +35,15 @@ static inline int bcm47xx_nvram_gpio_pin
  {
  	return -ENOTSUPP;
  };
@@ -159,6 +155,3 @@ index b12b07e..c73927c 100644
  #endif
  
  #endif /* __BCM47XX_NVRAM_H */
--- 
-1.8.4.5
-
