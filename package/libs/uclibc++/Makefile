@@ -44,7 +44,11 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 	-e 's/mipsel.*/mips/' \
 )
 
-TARGET_CFLAGS += $(FPIC) -fno-stack-protector
+ifeq ($(ARCH),powerpc)
+TARGET_CFLAGS += -fno-stack-protector
+endif
+
+TARGET_CFLAGS += $(FPIC)
 
 ifneq ($(CONFIG_CCACHE),)
 TARGET_CXX=$(TARGET_CXX_NOCACHE)
