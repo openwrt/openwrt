@@ -44,10 +44,6 @@ UCLIBC_TARGET_ARCH:=$(shell echo $(ARCH) | sed -e s'/-.*//' \
 	-e 's/mipsel.*/mips/' \
 )
 
-ifeq ($(ARCH),powerpc)
-TARGET_CFLAGS += -fno-stack-protector
-endif
-
 TARGET_CFLAGS += $(FPIC)
 
 ifneq ($(CONFIG_CCACHE),)
@@ -61,7 +57,7 @@ MAKE_FLAGS:= \
 	CROSS="$(TARGET_CROSS)" \
 	LDFLAGS="-Wl,--warn-common -Wl,--warn-once -Wl,-z,combreloc -Wl,-z,defs $(TARGET_LDFLAGS)" \
 	CP="$(CP)" \
-	GEN_LIBS="-lc $(LIBGCC_S) -lssp" \
+	GEN_LIBS="-lc $(LIBGCC_S) -lssp_nonshared" \
 	check_as_needed=
 
 # check_as_needed overrides dependency on libgcc_s
