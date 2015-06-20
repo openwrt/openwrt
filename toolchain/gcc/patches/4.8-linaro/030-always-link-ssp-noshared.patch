@@ -1,0 +1,11 @@
+--- gcc-4.7.4.org/gcc/gcc.c
++++ gcc-4.7.4/gcc/gcc.c
+@@ -603,7 +603,7 @@
+ 
+ #ifndef LINK_SSP_SPEC
+ #ifdef TARGET_LIBC_PROVIDES_SSP
+-#define LINK_SSP_SPEC "%{fstack-protector:}"
++#define LINK_SSP_SPEC "%{fstack-protector|fstack-protector-all:-lssp_nonshared}"
+ #else
+ #define LINK_SSP_SPEC "%{fstack-protector|fstack-protector-all:-lssp_nonshared -lssp}"
+ #endif
