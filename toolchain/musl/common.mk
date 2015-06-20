@@ -21,6 +21,7 @@ PATCH_DIR:=$(PATH_PREFIX)/patches
 HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/toolchain-build.mk
+include $(INCLUDE_DIR)/hardening.mk
 
 MUSL_CONFIGURE:= \
 	$(TARGET_CONFIGURE_OPTS) \
