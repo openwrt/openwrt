@@ -44,6 +44,10 @@ char *trx_path;
 size_t trx_offset = 0;
 char *partition[TRX_MAX_PARTS] = {};
 
+static inline size_t otrx_min(size_t x, size_t y) {
+	return x < y ? x : y;
+}
+
 /**************************************************
  * CRC32
  **************************************************/
@@ -147,8 +151,9 @@ static int otrx_check(int argc, char **argv) {
 	FILE *trx;
 	struct trx_header hdr;
 	size_t bytes, length;
-	uint8_t *buf;
+	uint8_t buf[1024];
 	uint32_t crc32;
+	int i;
 	int err = 0;
 
 	if (argc < 3) {
@@ -189,32 +194,29 @@ static int otrx_check(int argc, char **argv) {
 		goto err_close;
 	}
 
-	buf = malloc(length);
-	if (!buf) {
-		fprintf(stderr, "Couldn't alloc %zd B buffer\n", length);
-		err =  -ENOMEM;
+	crc32 = 0xffffffff;
+	fseek(trx, trx_offset + TRX_FLAGS_OFFSET, SEEK_SET);
+	length -= TRX_FLAGS_OFFSET;
+	while ((bytes = fread(buf, 1, otrx_min(sizeof(buf), length), trx)) > 0) {
+		for (i = 0; i < bytes; i++)
+			crc32 = crc32_tbl[(crc32 ^ buf[i]) & 0xff] ^ (crc32 >> 8);
+		length -= bytes;
+	}
+
+	if (length) {
+		fprintf(stderr, "Couldn't read last %zd B of data from %s\n", length, trx_path);
+		err = -EIO;
 		goto err_close;
 	}
 
-	fseek(trx, trx_offset, SEEK_SET);
-	bytes = fread(buf, 1, length, trx);
-	if (bytes != length) {
-		fprintf(stderr, "Couldn't read %zd B of data from %s\n", length, trx_path);
-		err =  -ENOMEM;
-		goto err_free_buf;
-	}
-
-	crc32 = otrx_crc32(buf + TRX_FLAGS_OFFSET, length - TRX_FLAGS_OFFSET);
 	if (crc32 != le32_to_cpu(hdr.crc32)) {
 		fprintf(stderr, "Invalid data crc32: 0x%08x instead of 0x%08x\n", crc32, le32_to_cpu(hdr.crc32));
 		err =  -EINVAL;
-		goto err_free_buf;
+		goto err_close;
 	}
 
 	printf("Found a valid TRX version %d\n", le32_to_cpu(hdr.version));
 
-err_free_buf:
-	free(buf);
 err_close:
 	fclose(trx);
 out:
