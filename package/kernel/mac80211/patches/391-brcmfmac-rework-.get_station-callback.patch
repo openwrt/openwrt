@@ -1,0 +1,326 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Thu, 11 Jun 2015 00:12:19 +0200
+Subject: [PATCH] brcmfmac: rework .get_station() callback
+
+The .get_station() cfg80211 callback is used in several scenarios. In
+managed mode it can obtain information about the access-point and its
+BSS parameters. In managed mode it can also obtain information about
+TDLS peers. In AP mode it can obtain information about connected
+clients.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Daniel (Deognyoun) Kim <dekim@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -2395,27 +2395,80 @@ brcmf_cfg80211_reconfigure_wep(struct br
+ 		brcmf_err("set wsec error (%d)\n", err);
+ }
+ 
++static void brcmf_convert_sta_flags(u32 fw_sta_flags, struct station_info *si)
++{
++	struct nl80211_sta_flag_update *sfu;
++
++	brcmf_dbg(TRACE, "flags %08x\n", fw_sta_flags);
++	si->filled |= BIT(NL80211_STA_INFO_STA_FLAGS);
++	sfu = &si->sta_flags;
++	sfu->mask = BIT(NL80211_STA_FLAG_WME) |
++		    BIT(NL80211_STA_FLAG_AUTHENTICATED) |
++		    BIT(NL80211_STA_FLAG_ASSOCIATED) |
++		    BIT(NL80211_STA_FLAG_AUTHORIZED);
++	if (fw_sta_flags & BRCMF_STA_WME)
++		sfu->set |= BIT(NL80211_STA_FLAG_WME);
++	if (fw_sta_flags & BRCMF_STA_AUTHE)
++		sfu->set |= BIT(NL80211_STA_FLAG_AUTHENTICATED);
++	if (fw_sta_flags & BRCMF_STA_ASSOC)
++		sfu->set |= BIT(NL80211_STA_FLAG_ASSOCIATED);
++	if (fw_sta_flags & BRCMF_STA_AUTHO)
++		sfu->set |= BIT(NL80211_STA_FLAG_AUTHORIZED);
++}
++
++static void brcmf_fill_bss_param(struct brcmf_if *ifp, struct station_info *si)
++{
++	struct {
++		__le32 len;
++		struct brcmf_bss_info_le bss_le;
++	} *buf;
++	u16 capability;
++	int err;
++
++	buf = kzalloc(WL_BSS_INFO_MAX, GFP_KERNEL);
++	if (!buf)
++		return;
++
++	buf->len = cpu_to_le32(WL_BSS_INFO_MAX);
++	err = brcmf_fil_cmd_data_get(ifp, BRCMF_C_GET_BSS_INFO, buf,
++				     WL_BSS_INFO_MAX);
++	if (err) {
++		brcmf_err("Failed to get bss info (%d)\n", err);
++		return;
++	}
++	si->filled |= BIT(NL80211_STA_INFO_BSS_PARAM);
++	si->bss_param.beacon_interval = le16_to_cpu(buf->bss_le.beacon_period);
++	si->bss_param.dtim_period = buf->bss_le.dtim_period;
++	capability = le16_to_cpu(buf->bss_le.capability);
++	if (capability & IEEE80211_HT_STBC_PARAM_DUAL_CTS_PROT)
++		si->bss_param.flags |= BSS_PARAM_FLAGS_CTS_PROT;
++	if (capability & WLAN_CAPABILITY_SHORT_PREAMBLE)
++		si->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_PREAMBLE;
++	if (capability & WLAN_CAPABILITY_SHORT_SLOT_TIME)
++		si->bss_param.flags |= BSS_PARAM_FLAGS_SHORT_SLOT_TIME;
++}
++
+ static s32
+ brcmf_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
+ 			   const u8 *mac, struct station_info *sinfo)
+ {
+ 	struct brcmf_if *ifp = netdev_priv(ndev);
+-	struct brcmf_cfg80211_profile *profile = &ifp->vif->profile;
+-	struct brcmf_scb_val_le scb_val;
+-	int rssi;
+-	s32 rate;
+ 	s32 err = 0;
+-	u8 *bssid = profile->bssid;
+ 	struct brcmf_sta_info_le sta_info_le;
+-	u32 beacon_period;
+-	u32 dtim_period;
++	u32 sta_flags;
++	u32 is_tdls_peer;
+ 
+ 	brcmf_dbg(TRACE, "Enter, MAC %pM\n", mac);
+ 	if (!check_vif_up(ifp->vif))
+ 		return -EIO;
+ 
+-	if (brcmf_is_apmode(ifp->vif)) {
+-		memcpy(&sta_info_le, mac, ETH_ALEN);
++	memset(&sta_info_le, 0, sizeof(sta_info_le));
++	memcpy(&sta_info_le, mac, ETH_ALEN);
++	err = brcmf_fil_iovar_data_get(ifp, "tdls_sta_info",
++				       &sta_info_le,
++				       sizeof(sta_info_le));
++	is_tdls_peer = !err;
++	if (err) {
+ 		err = brcmf_fil_iovar_data_get(ifp, "sta_info",
+ 					       &sta_info_le,
+ 					       sizeof(sta_info_le));
+@@ -2423,73 +2476,48 @@ brcmf_cfg80211_get_station(struct wiphy
+ 			brcmf_err("GET STA INFO failed, %d\n", err);
+ 			goto done;
+ 		}
+-		sinfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME);
+-		sinfo->inactive_time = le32_to_cpu(sta_info_le.idle) * 1000;
+-		if (le32_to_cpu(sta_info_le.flags) & BRCMF_STA_ASSOC) {
+-			sinfo->filled |= BIT(NL80211_STA_INFO_CONNECTED_TIME);
+-			sinfo->connected_time = le32_to_cpu(sta_info_le.in);
+-		}
+-		brcmf_dbg(TRACE, "STA idle time : %d ms, connected time :%d sec\n",
+-			  sinfo->inactive_time, sinfo->connected_time);
+-	} else if (ifp->vif->wdev.iftype == NL80211_IFTYPE_STATION) {
+-		if (memcmp(mac, bssid, ETH_ALEN)) {
+-			brcmf_err("Wrong Mac address cfg_mac-%pM wl_bssid-%pM\n",
+-				  mac, bssid);
+-			err = -ENOENT;
+-			goto done;
+-		}
+-		/* Report the current tx rate */
+-		err = brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_RATE, &rate);
+-		if (err) {
+-			brcmf_err("Could not get rate (%d)\n", err);
+-			goto done;
+-		} else {
++	}
++	brcmf_dbg(TRACE, "version %d\n", le16_to_cpu(sta_info_le.ver));
++	sinfo->filled = BIT(NL80211_STA_INFO_INACTIVE_TIME);
++	sinfo->inactive_time = le32_to_cpu(sta_info_le.idle) * 1000;
++	sta_flags = le32_to_cpu(sta_info_le.flags);
++	brcmf_convert_sta_flags(sta_flags, sinfo);
++	sinfo->sta_flags.mask |= BIT(NL80211_STA_FLAG_TDLS_PEER);
++	if (is_tdls_peer)
++		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
++	else
++		sinfo->sta_flags.set &= ~BIT(NL80211_STA_FLAG_TDLS_PEER);
++	if (sta_flags & BRCMF_STA_ASSOC) {
++		sinfo->filled |= BIT(NL80211_STA_INFO_CONNECTED_TIME);
++		sinfo->connected_time = le32_to_cpu(sta_info_le.in);
++		brcmf_fill_bss_param(ifp, sinfo);
++	}
++	if (sta_flags & BRCMF_STA_SCBSTATS) {
++		sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
++		sinfo->tx_failed = le32_to_cpu(sta_info_le.tx_failures);
++		sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
++		sinfo->tx_packets = le32_to_cpu(sta_info_le.tx_pkts);
++		sinfo->tx_packets += le32_to_cpu(sta_info_le.tx_mcast_pkts);
++		sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
++		sinfo->rx_packets = le32_to_cpu(sta_info_le.rx_ucast_pkts);
++		sinfo->rx_packets += le32_to_cpu(sta_info_le.rx_mcast_pkts);
++		if (sinfo->tx_packets) {
+ 			sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
+-			sinfo->txrate.legacy = rate * 5;
+-			brcmf_dbg(CONN, "Rate %d Mbps\n", rate / 2);
++			sinfo->txrate.legacy = le32_to_cpu(sta_info_le.tx_rate);
++			sinfo->txrate.legacy /= 100;
+ 		}
+-
+-		if (test_bit(BRCMF_VIF_STATUS_CONNECTED,
+-			     &ifp->vif->sme_state)) {
+-			memset(&scb_val, 0, sizeof(scb_val));
+-			err = brcmf_fil_cmd_data_get(ifp, BRCMF_C_GET_RSSI,
+-						     &scb_val, sizeof(scb_val));
+-			if (err) {
+-				brcmf_err("Could not get rssi (%d)\n", err);
+-				goto done;
+-			} else {
+-				rssi = le32_to_cpu(scb_val.val);
+-				sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
+-				sinfo->signal = rssi;
+-				brcmf_dbg(CONN, "RSSI %d dBm\n", rssi);
+-			}
+-			err = brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_BCNPRD,
+-						    &beacon_period);
+-			if (err) {
+-				brcmf_err("Could not get beacon period (%d)\n",
+-					  err);
+-				goto done;
+-			} else {
+-				sinfo->bss_param.beacon_interval =
+-					beacon_period;
+-				brcmf_dbg(CONN, "Beacon peroid %d\n",
+-					  beacon_period);
+-			}
+-			err = brcmf_fil_cmd_int_get(ifp, BRCMF_C_GET_DTIMPRD,
+-						    &dtim_period);
+-			if (err) {
+-				brcmf_err("Could not get DTIM period (%d)\n",
+-					  err);
+-				goto done;
+-			} else {
+-				sinfo->bss_param.dtim_period = dtim_period;
+-				brcmf_dbg(CONN, "DTIM peroid %d\n",
+-					  dtim_period);
+-			}
+-			sinfo->filled |= BIT(NL80211_STA_INFO_BSS_PARAM);
++		if (sinfo->rx_packets) {
++			sinfo->filled |= BIT(NL80211_STA_INFO_RX_BITRATE);
++			sinfo->rxrate.legacy = le32_to_cpu(sta_info_le.rx_rate);
++			sinfo->rxrate.legacy /= 100;
++		}
++		if (le16_to_cpu(sta_info_le.ver) >= 4) {
++			sinfo->filled |= BIT(NL80211_STA_INFO_TX_BYTES);
++			sinfo->tx_bytes = le64_to_cpu(sta_info_le.tx_tot_bytes);
++			sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES);
++			sinfo->rx_bytes = le64_to_cpu(sta_info_le.rx_tot_bytes);
+ 		}
+-	} else
+-		err = -EPERM;
++	}
+ done:
+ 	brcmf_dbg(TRACE, "Exit\n");
+ 	return err;
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fwil_types.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fwil_types.h
+@@ -32,7 +32,11 @@
+ #define	BRCMF_BSS_INFO_VERSION	109 /* curr ver of brcmf_bss_info_le struct */
+ #define BRCMF_BSS_RSSI_ON_CHANNEL	0x0002
+ 
+-#define BRCMF_STA_ASSOC			0x10		/* Associated */
++#define BRCMF_STA_WME              0x00000002      /* WMM association */
++#define BRCMF_STA_AUTHE            0x00000008      /* Authenticated */
++#define BRCMF_STA_ASSOC            0x00000010      /* Associated */
++#define BRCMF_STA_AUTHO            0x00000020      /* Authorized */
++#define BRCMF_STA_SCBSTATS         0x00004000      /* Per STA debug stats */
+ 
+ /* size of brcmf_scan_params not including variable length array */
+ #define BRCMF_SCAN_PARAMS_FIXED_SIZE	64
+@@ -113,6 +117,7 @@
+ #define BRCMF_WOWL_MAXPATTERNSIZE	128
+ 
+ #define BRCMF_COUNTRY_BUF_SZ		4
++#define BRCMF_ANT_MAX			4
+ 
+ /* join preference types for join_pref iovar */
+ enum brcmf_join_pref_types {
+@@ -456,25 +461,61 @@ struct brcmf_channel_info_le {
+ };
+ 
+ struct brcmf_sta_info_le {
+-	__le16	ver;		/* version of this struct */
+-	__le16	len;		/* length in bytes of this structure */
+-	__le16	cap;		/* sta's advertised capabilities */
+-	__le32	flags;		/* flags defined below */
+-	__le32	idle;		/* time since data pkt rx'd from sta */
+-	u8	ea[ETH_ALEN];		/* Station address */
+-	__le32	count;			/* # rates in this set */
+-	u8	rates[BRCMF_MAXRATES_IN_SET];	/* rates in 500kbps units */
++	__le16 ver;		/* version of this struct */
++	__le16 len;		/* length in bytes of this structure */
++	__le16 cap;		/* sta's advertised capabilities */
++	__le32 flags;		/* flags defined below */
++	__le32 idle;		/* time since data pkt rx'd from sta */
++	u8 ea[ETH_ALEN];		/* Station address */
++	__le32 count;			/* # rates in this set */
++	u8 rates[BRCMF_MAXRATES_IN_SET];	/* rates in 500kbps units */
+ 						/* w/hi bit set if basic */
+-	__le32	in;		/* seconds elapsed since associated */
+-	__le32	listen_interval_inms; /* Min Listen interval in ms for STA */
+-	__le32	tx_pkts;	/* # of packets transmitted */
+-	__le32	tx_failures;	/* # of packets failed */
+-	__le32	rx_ucast_pkts;	/* # of unicast packets received */
+-	__le32	rx_mcast_pkts;	/* # of multicast packets received */
+-	__le32	tx_rate;	/* Rate of last successful tx frame */
+-	__le32	rx_rate;	/* Rate of last successful rx frame */
+-	__le32	rx_decrypt_succeeds;	/* # of packet decrypted successfully */
+-	__le32	rx_decrypt_failures;	/* # of packet decrypted failed */
++	__le32 in;		/* seconds elapsed since associated */
++	__le32 listen_interval_inms; /* Min Listen interval in ms for STA */
++	__le32 tx_pkts;	/* # of packets transmitted */
++	__le32 tx_failures;	/* # of packets failed */
++	__le32 rx_ucast_pkts;	/* # of unicast packets received */
++	__le32 rx_mcast_pkts;	/* # of multicast packets received */
++	__le32 tx_rate;	/* Rate of last successful tx frame */
++	__le32 rx_rate;	/* Rate of last successful rx frame */
++	__le32 rx_decrypt_succeeds;	/* # of packet decrypted successfully */
++	__le32 rx_decrypt_failures;	/* # of packet decrypted failed */
++	__le32 tx_tot_pkts;    /* # of tx pkts (ucast + mcast) */
++	__le32 rx_tot_pkts;    /* # of data packets recvd (uni + mcast) */
++	__le32 tx_mcast_pkts;  /* # of mcast pkts txed */
++	__le64 tx_tot_bytes;   /* data bytes txed (ucast + mcast) */
++	__le64 rx_tot_bytes;   /* data bytes recvd (ucast + mcast) */
++	__le64 tx_ucast_bytes; /* data bytes txed (ucast) */
++	__le64 tx_mcast_bytes; /* # data bytes txed (mcast) */
++	__le64 rx_ucast_bytes; /* data bytes recvd (ucast) */
++	__le64 rx_mcast_bytes; /* data bytes recvd (mcast) */
++	s8 rssi[BRCMF_ANT_MAX];   /* per antenna rssi */
++	s8 nf[BRCMF_ANT_MAX];     /* per antenna noise floor */
++	__le16 aid;                    /* association ID */
++	__le16 ht_capabilities;        /* advertised ht caps */
++	__le16 vht_flags;              /* converted vht flags */
++	__le32 tx_pkts_retry_cnt;      /* # of frames where a retry was
++					 * exhausted.
++					 */
++	__le32 tx_pkts_retry_exhausted; /* # of user frames where a retry
++					 * was exhausted
++					 */
++	s8 rx_lastpkt_rssi[BRCMF_ANT_MAX]; /* Per antenna RSSI of last
++					    * received data frame.
++					    */
++	/* TX WLAN retry/failure statistics:
++	 * Separated for host requested frames and locally generated frames.
++	 * Include unicast frame only where the retries/failures can be counted.
++	 */
++	__le32 tx_pkts_total;          /* # user frames sent successfully */
++	__le32 tx_pkts_retries;        /* # user frames retries */
++	__le32 tx_pkts_fw_total;       /* # FW generated sent successfully */
++	__le32 tx_pkts_fw_retries;     /* # retries for FW generated frames */
++	__le32 tx_pkts_fw_retry_exhausted;     /* # FW generated where a retry
++						* was exhausted
++						*/
++	__le32 rx_pkts_retried;        /* # rx with retry bit set */
++	__le32 tx_rate_fallback;       /* lowest fallback TX rate */
+ };
+ 
+ struct brcmf_chanspec_list {
