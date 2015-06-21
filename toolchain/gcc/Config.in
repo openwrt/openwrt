@@ -18,6 +18,7 @@ choice
 	config GCC_USE_VERSION_4_9_LINARO
 		select GCC_VERSION_4_9_LINARO
 		bool "gcc 4.9.x with Linaro enhancements"
+		depends on BROKEN
 
 endchoice
 
