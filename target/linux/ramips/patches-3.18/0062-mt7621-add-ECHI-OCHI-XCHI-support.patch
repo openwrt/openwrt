@@ -44,23 +44,21 @@
  }
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -32,7 +32,14 @@ config USB_XHCI_PCI
-        default y
+@@ -41,6 +41,13 @@ config USB_XHCI_PLATFORM
  
- config USB_XHCI_PLATFORM
--	tristate
-+	tristate "xHCI platform"
-+
+ 	  If unsure, say N.
+ 
 +config USB_MT7621_XHCI_PLATFORM
 +	bool
 +	depends on USB_XHCI_PLATFORM
 +	depends on SOC_MT7621
 +	select USB_PHY
 +	default y
- 
++
  config USB_XHCI_MVEBU
  	tristate "xHCI support for Marvell Armada 375/38x"
-@@ -589,7 +596,7 @@ endif # USB_OHCI_HCD
+ 	select USB_XHCI_PLATFORM
+@@ -596,7 +603,7 @@ endif # USB_OHCI_HCD
  
  config USB_UHCI_HCD
  	tristate "UHCI HCD (most Intel and VIA) support"
