@@ -1,0 +1,56 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Thu, 11 Jun 2015 00:12:20 +0200
+Subject: [PATCH] brcmfmac: have sdio return -EIO when device communication
+ is not possible
+
+The bus interface functions txctl and rxctl may be used while the device
+can not be accessed, eg. upon driver .remove() callback. This patch will
+immediately return -EIO when this is the case which speeds up the module
+unload.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/bcmsdh.c
+@@ -988,6 +988,7 @@ static void brcmf_sdiod_freezer_detach(s
+ 
+ static int brcmf_sdiod_remove(struct brcmf_sdio_dev *sdiodev)
+ {
++	sdiodev->state = BRCMF_SDIOD_DOWN;
+ 	if (sdiodev->bus) {
+ 		brcmf_sdio_remove(sdiodev->bus);
+ 		sdiodev->bus = NULL;
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -2820,6 +2820,8 @@ static int brcmf_sdio_bus_txdata(struct
+ 	struct brcmf_sdio *bus = sdiodev->bus;
+ 
+ 	brcmf_dbg(TRACE, "Enter: pkt: data %p len %d\n", pkt->data, pkt->len);
++	if (sdiodev->state != BRCMF_SDIOD_DATA)
++		return -EIO;
+ 
+ 	/* Add space for the header */
+ 	skb_push(pkt, bus->tx_hdrlen);
+@@ -2948,6 +2950,8 @@ brcmf_sdio_bus_txctl(struct device *dev,
+ 	int ret;
+ 
+ 	brcmf_dbg(TRACE, "Enter\n");
++	if (sdiodev->state != BRCMF_SDIOD_DATA)
++		return -EIO;
+ 
+ 	/* Send from dpc */
+ 	bus->ctrl_frame_buf = msg;
+@@ -3238,6 +3242,8 @@ brcmf_sdio_bus_rxctl(struct device *dev,
+ 	struct brcmf_sdio *bus = sdiodev->bus;
+ 
+ 	brcmf_dbg(TRACE, "Enter\n");
++	if (sdiodev->state != BRCMF_SDIOD_DATA)
++		return -EIO;
+ 
+ 	/* Wait until control frame is available */
+ 	timeleft = brcmf_sdio_dcmd_resp_wait(bus, &bus->rxlen, &pending);
