@@ -1,0 +1,20 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 21 Jun 2015 19:45:59 +0200
+Subject: [PATCH] ath9k_hw: fix device ID check for AR956x
+
+Because of the missing return, the macVersion value was being
+overwritten with an invalid register read
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -278,6 +278,7 @@ static void ath9k_hw_read_revisions(stru
+ 		return;
+ 	case AR9300_DEVID_QCA956X:
+ 		ah->hw_version.macVersion = AR_SREV_VERSION_9561;
++		return;
+ 	}
+ 
+ 	val = REG_READ(ah, AR_SREV) & AR_SREV_ID;
