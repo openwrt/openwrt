@@ -1527,7 +1527,9 @@ XHCI_AUTOLOAD := $(patsubst $(LINUX_DIR)/drivers/usb/host/%.ko,%,$(XHCI_FILES))
 
 define KernelPackage/usb3
   TITLE:=Support for USB3 controllers
-  DEPENDS:=+TARGET_omap:kmod-usb-phy-omap-usb3
+  DEPENDS:= \
+	+TARGET_bcm53xx:kmod-usb-bcma \
+	+TARGET_omap:kmod-usb-phy-omap-usb3
   KCONFIG:= \
 	CONFIG_USB_XHCI_HCD \
 	CONFIG_USB_XHCI_PCI \
