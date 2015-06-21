@@ -1,0 +1,31 @@
+From a9e32f77ff74492d79fe2e24f0418136acd8a680 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 21 Jun 2015 12:09:57 +0200
+Subject: [PATCH] USB: bcma: fix setting VCC GPIO value
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+It wasn't working (on most of devices?) without setting GPIO direction.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/usb/host/bcma-hcd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/usb/host/bcma-hcd.c b/drivers/usb/host/bcma-hcd.c
+index f7a66b9..b31e3cc 100644
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -238,7 +238,7 @@ static void bcma_hci_platform_power_gpio(struct bcma_device *dev, bool val)
+ 
+ 	if (val) {
+ 		gpio_request(gpio, "bcma-hcd-gpio");
+-		gpio_set_value(gpio, 1);
++		gpio_direction_output(gpio, 1);
+ 	} else {
+ 		gpio_set_value(gpio, 0);
+ 		gpio_free(gpio);
+-- 
+1.8.4.5
+
