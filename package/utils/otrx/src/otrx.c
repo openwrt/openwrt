@@ -10,6 +10,7 @@
  */
 
 #include <byteswap.h>
+#include <endian.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
