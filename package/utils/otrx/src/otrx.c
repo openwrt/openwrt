@@ -18,6 +18,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#if !defined(__BYTE_ORDER)
+#error "Unknown byte order"
+#endif
+
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define cpu_to_le32(x)	bswap_32(x)
 #define le32_to_cpu(x)	bswap_32(x)
