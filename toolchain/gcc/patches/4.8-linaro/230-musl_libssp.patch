@@ -1,0 +1,13 @@
+--- gcc-4.8.1/gcc/gcc.c.orig	2013-09-24 06:27:32.133894539 +0000
++++ gcc-4.8.1/gcc/gcc.c	2013-09-24 06:29:35.790562854 +0000
+@@ -656,7 +656,9 @@
+ #endif
+ 
+ #ifndef LINK_SSP_SPEC
+-#ifdef TARGET_LIBC_PROVIDES_SSP
++#if DEFAULT_LIBC == LIBC_MUSL
++#define LINK_SSP_SPEC "-lssp_nonshared"
++#elif defined(TARGET_LIBC_PROVIDES_SSP)
+ #define LINK_SSP_SPEC "%{fstack-protector:}"
+ #else
+ #define LINK_SSP_SPEC "%{fstack-protector|fstack-protector-all:-lssp_nonshared -lssp}"
