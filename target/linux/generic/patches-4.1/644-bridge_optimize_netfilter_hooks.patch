@@ -1,0 +1,172 @@
+--- a/net/bridge/br_forward.c
++++ b/net/bridge/br_forward.c
+@@ -51,7 +51,7 @@ EXPORT_SYMBOL_GPL(br_dev_queue_push_xmit
+ 
+ int br_forward_finish(struct sock *sk, struct sk_buff *skb)
+ {
+-	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING, sk, skb,
++	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING, sk, skb,
+ 		       NULL, skb->dev,
+ 		       br_dev_queue_push_xmit);
+ 
+@@ -76,7 +76,7 @@ static void __br_deliver(const struct ne
+ 		return;
+ 	}
+ 
+-	NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, NULL, skb,
++	BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, NULL, skb,
+ 		NULL, skb->dev,
+ 		br_forward_finish);
+ }
+@@ -98,7 +98,7 @@ static void __br_forward(const struct ne
+ 	skb->dev = to->dev;
+ 	skb_forward_csum(skb);
+ 
+-	NF_HOOK(NFPROTO_BRIDGE, NF_BR_FORWARD, NULL, skb,
++	BR_HOOK(NFPROTO_BRIDGE, NF_BR_FORWARD, NULL, skb,
+ 		indev, skb->dev,
+ 		br_forward_finish);
+ }
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -55,7 +55,7 @@ static int br_pass_frame_up(struct sk_bu
+ 	if (!skb)
+ 		return NET_RX_DROP;
+ 
+-	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, NULL, skb,
++	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, NULL, skb,
+ 		       indev, NULL,
+ 		       netif_receive_skb_sk);
+ }
+@@ -284,7 +284,7 @@ rx_handler_result_t br_handle_frame(stru
+ 		}
+ 
+ 		/* Deliver packet to local host only */
+-		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, NULL, skb,
++		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_IN, NULL, skb,
+ 			    skb->dev, NULL, br_handle_local_finish)) {
+ 			return RX_HANDLER_CONSUMED; /* consumed by filter */
+ 		} else {
+@@ -299,7 +299,7 @@ forward:
+ 		if (ether_addr_equal(p->br->dev->dev_addr, dest))
+ 			skb->pkt_type = PACKET_HOST;
+ 
+-		if (NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, NULL, skb, skb->dev, NULL,
++		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, NULL, skb, skb->dev, NULL,
+ 			br_handle_local_finish))
+ 			break;
+ 
+@@ -321,7 +321,7 @@ forward:
+ 		if (ether_addr_equal(p->br->dev->dev_addr, dest))
+ 			skb->pkt_type = PACKET_HOST;
+ 
+-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, NULL, skb,
++		BR_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, NULL, skb,
+ 			skb->dev, NULL,
+ 			br_handle_frame_finish);
+ 		break;
+--- a/net/bridge/br_multicast.c
++++ b/net/bridge/br_multicast.c
+@@ -814,7 +814,7 @@ static void __br_multicast_send_query(st
+ 
+ 	if (port) {
+ 		skb->dev = port->dev;
+-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, NULL, skb,
++		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, NULL, skb,
+ 			NULL, skb->dev,
+ 			br_dev_queue_push_xmit);
+ 	} else {
+--- a/net/bridge/br_netfilter.c
++++ b/net/bridge/br_netfilter.c
+@@ -69,6 +69,15 @@ static int brnf_pass_vlan_indev __read_m
+ #define IS_ARP(skb) \
+ 	(!skb_vlan_tag_present(skb) && skb->protocol == htons(ETH_P_ARP))
+ 
++int brnf_call_ebtables __read_mostly = 0;
++EXPORT_SYMBOL_GPL(brnf_call_ebtables);
++
++bool br_netfilter_run_hooks(void)
++{
++	return brnf_call_iptables | brnf_call_ip6tables | brnf_call_arptables |
++	       brnf_call_ebtables;
++}
++
+ static inline __be16 vlan_proto(const struct sk_buff *skb)
+ {
+ 	if (skb_vlan_tag_present(skb))
+--- a/net/bridge/br_private.h
++++ b/net/bridge/br_private.h
+@@ -779,6 +779,24 @@ static inline void br_nf_core_fini(void)
+ #define br_netfilter_rtable_init(x)
+ #endif
+ 
++#if IS_BUILTIN(CONFIG_BRIDGE_NETFILTER)
++extern int brnf_call_ebtables;
++bool br_netfilter_run_hooks(void);
++#else
++#define br_netfilter_run_hooks()	false
++#endif
++
++static inline int
++BR_HOOK(uint8_t pf, unsigned int hook, struct sock *sk, struct sk_buff *skb,
++	struct net_device *in, struct net_device *out,
++	int (*okfn)(struct sock *, struct sk_buff *))
++{
++	if (!br_netfilter_run_hooks())
++		return okfn(sk, skb);
++
++	return NF_HOOK(pf, hook, sk, skb, in, out, okfn);
++}
++
+ /* br_stp.c */
+ void br_log_state(const struct net_bridge_port *p);
+ void br_set_state(struct net_bridge_port *p, unsigned int state);
+--- a/net/bridge/br_stp_bpdu.c
++++ b/net/bridge/br_stp_bpdu.c
+@@ -54,7 +54,7 @@ static void br_send_bpdu(struct net_brid
+ 
+ 	skb_reset_mac_header(skb);
+ 
+-	NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, NULL, skb,
++	BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT, NULL, skb,
+ 		NULL, skb->dev,
+ 		dev_queue_xmit_sk);
+ }
+--- a/net/bridge/netfilter/ebtables.c
++++ b/net/bridge/netfilter/ebtables.c
+@@ -2414,11 +2414,19 @@ static int __init ebtables_init(void)
+ 	}
+ 
+ 	printk(KERN_INFO "Ebtables v2.0 registered\n");
++
++#if IS_BUILTIN(CONFIG_BRIDGE_NETFILTER)
++	brnf_call_ebtables = 1;
++#endif
++
+ 	return 0;
+ }
+ 
+ static void __exit ebtables_fini(void)
+ {
++#if IS_BUILTIN(CONFIG_BRIDGE_NETFILTER)
++	brnf_call_ebtables = 0;
++#endif
+ 	nf_unregister_sockopt(&ebt_sockopts);
+ 	xt_unregister_target(&ebt_standard_target);
+ 	printk(KERN_INFO "Ebtables v2.0 unregistered\n");
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -177,11 +177,11 @@ config NETFILTER_ADVANCED
+ 	  If unsure, say Y.
+ 
+ config BRIDGE_NETFILTER
+-	tristate "Bridged IP/ARP packets filtering"
++	bool "Bridged IP/ARP packets filtering"
+ 	depends on BRIDGE
+ 	depends on NETFILTER && INET
+ 	depends on NETFILTER_ADVANCED
+-	default m
++	default y
+ 	---help---
+ 	  Enabling this option will let arptables resp. iptables see bridged
+ 	  ARP resp. IP traffic. If you want a bridging firewall, you probably

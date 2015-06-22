@@ -1,0 +1,32 @@
+--- a/arch/mips/mm/cache.c
++++ b/arch/mips/mm/cache.c
+@@ -38,6 +38,7 @@ void (*__flush_cache_vunmap)(void);
+ 
+ void (*__flush_kernel_vmap_range)(unsigned long vaddr, int size);
+ EXPORT_SYMBOL_GPL(__flush_kernel_vmap_range);
++EXPORT_SYMBOL(__flush_cache_all);
+ void (*__invalidate_kernel_vmap_range)(unsigned long vaddr, int size);
+ 
+ /* MIPS specific cache operations */
+--- a/fs/fuse/dev.c
++++ b/fs/fuse/dev.c
+@@ -19,6 +19,9 @@
+ #include <linux/pipe_fs_i.h>
+ #include <linux/swap.h>
+ #include <linux/splice.h>
++#ifdef CONFIG_MIPS
++#include <asm/cacheflush.h>
++#endif
+ 
+ MODULE_ALIAS_MISCDEV(FUSE_MINOR);
+ MODULE_ALIAS("devname:fuse");
+@@ -816,6 +819,9 @@ static int fuse_copy_fill(struct fuse_co
+ static int fuse_copy_do(struct fuse_copy_state *cs, void **val, unsigned *size)
+ {
+ 	unsigned ncpy = min(*size, cs->len);
++#ifdef CONFIG_MIPS
++	__flush_cache_all();
++#endif
+ 	if (val) {
+ 		void *pgaddr = kmap_atomic(cs->pg);
+ 		void *buf = pgaddr + cs->offset;

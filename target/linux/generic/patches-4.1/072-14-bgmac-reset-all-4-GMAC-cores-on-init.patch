@@ -1,0 +1,28 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Mon, 13 Apr 2015 15:56:26 +0200
+Subject: [PATCH] bgmac: reset all 4 GMAC cores on init
+
+On a BCM4709 based device, I found that GMAC cores may be enabled at
+probe time, but only become usable after a full reset.
+Disable cores before re-enabling them to ensure that they are properly
+reset.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/ethernet/broadcom/bgmac.c
++++ b/drivers/net/ethernet/broadcom/bgmac.c
+@@ -1623,8 +1623,11 @@ static int bgmac_probe(struct bcma_devic
+ 			ns_core = bcma_find_core_unit(core->bus,
+ 						      BCMA_CORE_MAC_GBIT,
+ 						      ns_gmac);
+-			if (ns_core && !bcma_core_is_enabled(ns_core))
+-				bcma_core_enable(ns_core, 0);
++			if (!ns_core)
++				continue;
++
++			bcma_core_disable(ns_core, 0);
++			bcma_core_enable(ns_core, 0);
+ 		}
+ 	}
+ 
