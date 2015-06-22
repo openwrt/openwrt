@@ -13,7 +13,9 @@ WATCHDOG_DIR:=watchdog
 define KernelPackage/6lowpan
   SUBMENU:=$(OTHER_MENU)
   TITLE:=6LoWPAN shared code
-  KCONFIG:=CONFIG_6LOWPAN
+  KCONFIG:= \
+	CONFIG_6LOWPAN \
+	CONFIG_6LOWPAN_NHC=n
   FILES:=$(LINUX_DIR)/net/6lowpan/6lowpan.ko
   AUTOLOAD:=$(call AutoProbe,6lowpan)
 endef
@@ -40,14 +42,18 @@ define KernelPackage/bluetooth
 	CONFIG_BLUEZ_HIDP \
 	CONFIG_BT \
 	CONFIG_BT_BREDR=y \
+	CONFIG_BT_DEBUGFS=n \
 	CONFIG_BT_L2CAP=y \
 	CONFIG_BT_LE=y \
 	CONFIG_BT_SCO=y \
 	CONFIG_BT_RFCOMM \
 	CONFIG_BT_BNEP \
 	CONFIG_BT_HCIBTUSB \
+	CONFIG_BT_HCIBTUSB_BCM=n \
 	CONFIG_BT_HCIUSB \
 	CONFIG_BT_HCIUART \
+	CONFIG_BT_HCIUART_BCM=n \
+	CONFIG_BT_HCIUART_INTEL=n \
 	CONFIG_BT_HCIUART_H4 \
 	CONFIG_BT_HIDP \
 	CONFIG_HID_SUPPORT=y
@@ -59,6 +65,10 @@ define KernelPackage/bluetooth
 	$(LINUX_DIR)/net/bluetooth/hidp/hidp.ko \
 	$(LINUX_DIR)/drivers/bluetooth/hci_uart.ko \
 	$(LINUX_DIR)/drivers/bluetooth/btusb.ko
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,4.1.0)),1)
+  FILES+= \
+	$(LINUX_DIR)/drivers/bluetooth/btintel.ko
+endif
   AUTOLOAD:=$(call AutoProbe,bluetooth rfcomm bnep hidp hci_uart btusb)
 endef
 

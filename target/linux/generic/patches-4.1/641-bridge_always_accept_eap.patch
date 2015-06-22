@@ -1,0 +1,11 @@
+--- a/net/bridge/br_input.c
++++ b/net/bridge/br_input.c
+@@ -146,7 +146,7 @@ int br_handle_frame_finish(struct sock *
+ 	    br_multicast_rcv(br, p, skb, vid))
+ 		goto drop;
+ 
+-	if (p->state == BR_STATE_LEARNING)
++	if ((p->state == BR_STATE_LEARNING) && skb->protocol != htons(ETH_P_PAE))
+ 		goto drop;
+ 
+ 	BR_INPUT_SKB_CB(skb)->brdev = br->dev;

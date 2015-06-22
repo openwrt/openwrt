@@ -240,7 +240,7 @@ $(eval $(call KernelPackage,can-c-can))
 define KernelPackage/can-c-can-platform
   TITLE:=Platform Bus based BOSCH C_CAN/D_CAN driver
   KCONFIG:=CONFIG_CAN_C_CAN_PLATFORM
-  DEPENDS:=kmod-can-c-can
+  DEPENDS:=kmod-can-c-can +LINUX_4_1:kmod-regmap
   FILES:=$(LINUX_DIR)/drivers/net/can/c_can/c_can_platform.ko
   AUTOLOAD:=$(call AutoProbe,c_can_platform)
   $(call AddDepends/can)
