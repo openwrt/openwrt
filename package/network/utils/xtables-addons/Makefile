@@ -92,7 +92,7 @@ define BuildTemplate
   define KernelPackage/ipt-$(1)
     SUBMENU:=Netfilter Extensions
     TITLE:=$(2) netfilter module
-    DEPENDS:=+kmod-ipt-core $(5)
+    DEPENDS:=+kmod-ipt-core @!LINUX_4_1 $(5)
     KCONFIG:=$(6)
     FILES:=$(foreach mod,$(4),$(PKG_BUILD_DIR)/extensions/$(mod).$(LINUX_KMOD_SUFFIX))
     AUTOLOAD:=$(call AutoProbe,$(notdir $(4)))
