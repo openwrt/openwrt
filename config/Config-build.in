@@ -226,11 +226,11 @@ menu "Global build settings"
 			bool "None"
 		config PKG_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
-			select SSP_SUPPORT
+			select SSP_SUPPORT if !USE_MUSL
 			depends on KERNEL_CC_STACKPROTECTOR_REGULAR
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
-			select SSP_SUPPORT
+			select SSP_SUPPORT if !USE_MUSL
 			depends on GCC_VERSION_4_9_LINARO
 			depends on KERNEL_CC_STACKPROTECTOR_STRONG
 	endchoice
