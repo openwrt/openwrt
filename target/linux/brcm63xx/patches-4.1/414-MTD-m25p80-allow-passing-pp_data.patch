@@ -1,0 +1,40 @@
+From 7f17dfe9009beb07a3de0e380932a725293829df Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jonas.gorski@gmail.com>
+Date: Tue, 1 May 2012 17:33:03 +0200
+Subject: [PATCH 64/79] MTD: m25p80: allow passing pp_data
+
+---
+ drivers/mtd/devices/m25p80.c |    3 +++
+ include/linux/spi/flash.h    |    2 ++
+ 2 files changed, 5 insertions(+)
+
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -255,6 +255,9 @@ static int m25p_probe(struct spi_device
+ 	if (data)
+ 		flash->max_transfer_len = data->max_transfer_len;
+ 
++	if (data && data->pp_data)
++		memcpy(&ppdata, data->pp_data, sizeof(ppdata));
++
+ 	ret = spi_nor_scan(nor, flash_name, mode);
+ 	if (ret)
+ 		return ret;
+--- a/include/linux/spi/flash.h
++++ b/include/linux/spi/flash.h
+@@ -12,6 +12,7 @@ struct mtd_part_parser_data;
+  *	with chips that can't be queried for JEDEC or other IDs
+  * @part_probe_types: optional list of MTD parser names to use for
+  *	partitioning
++ * @pp_data: optional partition parser data.
+  *
+  * @max_transfer_len: option maximum read/write length limitation for
+  *	SPI controllers not able to transfer any length commands.
+@@ -30,6 +31,7 @@ struct flash_platform_data {
+ 	char		*type;
+ 
+ 	const char	**part_probe_types;
++	struct mtd_part_parser_data *pp_data;
+ 
+ 	unsigned int	max_transfer_len;
+ 	/* we'll likely add more ... use JEDEC IDs, etc */
