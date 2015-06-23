@@ -1,0 +1,26 @@
+From 1f9848efc8a329cb9a13323cbb94b353d39802c1 Mon Sep 17 00:00:00 2001
+From: Steven Barth <steven@midlink.org>
+Date: Mon, 22 Jun 2015 14:36:16 +0200
+Subject: [PATCH] unistd: fix signed / unsigned comparison in getgroups
+
+Signed-off-by: Steven Barth <steven@midlink.org>
+---
+ include/unistd.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/unistd.h b/include/unistd.h
+index 45304e1..5274e22 100644
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -71,7 +71,7 @@ _FORTIFY_FN(getgroups) int getgroups(int __l, gid_t *__s)
+ {
+ 	size_t __b = __builtin_object_size(__s, 0);
+ 
+-	if (__l > __b / sizeof(gid_t))
++	if (__l < 0 || (size_t)__l > __b / sizeof(gid_t))
+ 		__builtin_trap();
+ 	return __orig_getgroups(__l, __s);
+ }
+-- 
+2.1.4
+
