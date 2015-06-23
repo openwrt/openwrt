@@ -1,7 +1,7 @@
 CFLAGS?=-O2
 CFLAGS+=
 SFLAGS:=--std=gnu99
-WFLAGS:=-Wall -Werror -pedantic
+WFLAGS:=-Wall -Werror
 LDFLAGS?=
 BINARY:=px5g
 
