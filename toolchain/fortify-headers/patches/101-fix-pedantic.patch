@@ -1,0 +1,122 @@
+From 631ada7ea21c9a8f389ce0448ae05e0881264fec Mon Sep 17 00:00:00 2001
+From: Steven Barth <steven@midlink.org>
+Date: Wed, 24 Jun 2015 20:13:37 +0200
+Subject: [PATCH] Add __extension__ mark to include_next to silence -pedantic
+
+Signed-off-by: Steven Barth <steven@midlink.org>
+---
+ include/poll.h       | 1 +
+ include/stdio.h      | 1 +
+ include/stdlib.h     | 2 ++
+ include/string.h     | 1 +
+ include/sys/select.h | 1 +
+ include/sys/socket.h | 1 +
+ include/unistd.h     | 1 +
+ include/wchar.h      | 2 ++
+ 8 files changed, 10 insertions(+)
+
+diff --git a/include/poll.h b/include/poll.h
+index d9b602c..9e1d99a 100644
+--- a/include/poll.h
++++ b/include/poll.h
+@@ -16,6 +16,7 @@
+ #ifndef _FORTIFY_POLL_H
+ #define _FORTIFY_POLL_H
+ 
++__extension__
+ #include_next <poll.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+diff --git a/include/stdio.h b/include/stdio.h
+index 996c661..1b76f82 100644
+--- a/include/stdio.h
++++ b/include/stdio.h
+@@ -16,6 +16,7 @@
+ #ifndef _FORTIFY_STDIO_H
+ #define _FORTIFY_STDIO_H
+ 
++__extension__
+ #include_next <stdio.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+diff --git a/include/stdlib.h b/include/stdlib.h
+index 2b67235..f89341f 100644
+--- a/include/stdlib.h
++++ b/include/stdlib.h
+@@ -16,9 +16,11 @@
+ #ifndef _FORTIFY_STDLIB_H
+ #define _FORTIFY_STDLIB_H
+ 
++__extension__
+ #include_next <stdlib.h>
+ 
+ #if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
++__extension__
+ #include_next <limits.h>
+ #endif
+ 
+diff --git a/include/string.h b/include/string.h
+index 98bfea1..a4072d6 100644
+--- a/include/string.h
++++ b/include/string.h
+@@ -16,6 +16,7 @@
+ #ifndef _FORTIFY_STRING_H
+ #define _FORTIFY_STRING_H
+ 
++__extension__
+ #include_next <string.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+diff --git a/include/sys/select.h b/include/sys/select.h
+index db6135d..7f768f4 100644
+--- a/include/sys/select.h
++++ b/include/sys/select.h
+@@ -16,6 +16,7 @@
+ #ifndef _FORTIFY_SYS_SELECT_H
+ #define _FORTIFY_SYS_SELECT_H
+ 
++__extension__
+ #include_next <sys/select.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+diff --git a/include/sys/socket.h b/include/sys/socket.h
+index e68e21c..9454951 100644
+--- a/include/sys/socket.h
++++ b/include/sys/socket.h
+@@ -16,6 +16,7 @@
+ #ifndef _FORTIFY_SYS_SOCKET_H
+ #define _FORTIFY_SYS_SOCKET_H
+ 
++__extension__
+ #include_next <sys/socket.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+diff --git a/include/unistd.h b/include/unistd.h
+index 5274e22..5fa3b44 100644
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -16,6 +16,7 @@
+ #ifndef _FORTIFY_UNISTD_H
+ #define _FORTIFY_UNISTD_H
+ 
++__extension__
+ #include_next <unistd.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+diff --git a/include/wchar.h b/include/wchar.h
+index 6fa86f2..0d4abfa 100644
+--- a/include/wchar.h
++++ b/include/wchar.h
+@@ -16,7 +16,9 @@
+ #ifndef _FORTIFY_WCHAR_H
+ #define _FORTIFY_WCHAR_H
+ 
++__extension__
+ #include_next <stdlib.h>
++__extension__
+ #include_next <wchar.h>
+ 
+ #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0 && defined(__OPTIMIZE__) && __OPTIMIZE__ > 0
+-- 
+2.1.4
+
