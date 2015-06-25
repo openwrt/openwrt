@@ -22,6 +22,8 @@ PKG_MD5SUM:=be62932eade308a364ea4bbc91295930
 HOST_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=grub2/host
 
+PKG_SSP:=0
+
 include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
