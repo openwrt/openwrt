@@ -1,0 +1,11 @@
+--- a/arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
++++ b/arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
+@@ -19,6 +19,8 @@
+ 
+ 			nand-ecc-strength = <8>;
+ 			nand-ecc-step-size = <512>;
++
++			linux,part-probe = "ofpart", "bcm47xxpart";
+ 		};
+ 	};
+ };
