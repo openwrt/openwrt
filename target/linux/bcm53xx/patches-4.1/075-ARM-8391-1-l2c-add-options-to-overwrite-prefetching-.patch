@@ -1,0 +1,60 @@
+From ec3bd0e68a679a7af2c46af1ddc9af8b534a8b0e Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Wed, 10 Jun 2015 20:23:24 +0100
+Subject: [PATCH] ARM: 8391/1: l2c: add options to overwrite prefetching
+ behavior
+
+These options make it possible to overwrites the data and instruction
+prefetching behavior of the arm pl310 cache controller.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Acked-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ Documentation/devicetree/bindings/arm/l2cc.txt |  5 +++++
+ arch/arm/mm/cache-l2x0.c                       | 20 ++++++++++++++++++++
+ 2 files changed, 25 insertions(+)
+
+--- a/Documentation/devicetree/bindings/arm/l2cc.txt
++++ b/Documentation/devicetree/bindings/arm/l2cc.txt
+@@ -67,6 +67,11 @@ Optional properties:
+   disable if zero.
+ - arm,prefetch-offset : Override prefetch offset value. Valid values are
+   0-7, 15, 23, and 31.
++- prefetch-data : Data prefetch. Value: <0> (forcibly disable), <1>
++  (forcibly enable), property absent (retain settings set by firmware)
++- prefetch-instr : Instruction prefetch. Value: <0> (forcibly disable),
++  <1> (forcibly enable), property absent (retain settings set by
++  firmware)
+ 
+ Example:
+ 
+--- a/arch/arm/mm/cache-l2x0.c
++++ b/arch/arm/mm/cache-l2x0.c
+@@ -1221,6 +1221,26 @@ static void __init l2c310_of_parse(const
+ 		pr_err("L2C-310 OF arm,prefetch-offset property value is missing\n");
+ 	}
+ 
++	ret = of_property_read_u32(np, "prefetch-data", &val);
++	if (ret == 0) {
++		if (val)
++			prefetch |= L310_PREFETCH_CTRL_DATA_PREFETCH;
++		else
++			prefetch &= ~L310_PREFETCH_CTRL_DATA_PREFETCH;
++	} else if (ret != -EINVAL) {
++		pr_err("L2C-310 OF prefetch-data property value is missing\n");
++	}
++
++	ret = of_property_read_u32(np, "prefetch-instr", &val);
++	if (ret == 0) {
++		if (val)
++			prefetch |= L310_PREFETCH_CTRL_INSTR_PREFETCH;
++		else
++			prefetch &= ~L310_PREFETCH_CTRL_INSTR_PREFETCH;
++	} else if (ret != -EINVAL) {
++		pr_err("L2C-310 OF prefetch-instr property value is missing\n");
++	}
++
+ 	l2x0_saved_regs.prefetch_ctrl = prefetch;
+ }
+ 

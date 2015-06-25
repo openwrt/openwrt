@@ -1,0 +1,30 @@
+From 7705dd256ce363f8b01429efb2f0dc4d1ee23c89 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 15 May 2015 11:07:14 +0100
+Subject: [PATCH 71/74] ARM: l2c: write auxiliary control register first
+
+Before calling the controller specific configuration function, write
+the auxiliary control register first, so that bits shared with other
+registers (such as the prefetch control register) are not overwritten
+by the later write to the auxctrl register.
+
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/mm/cache-l2x0.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/mm/cache-l2x0.c
++++ b/arch/arm/mm/cache-l2x0.c
+@@ -115,10 +115,10 @@ static void l2c_configure(void __iomem *
+ 		return;
+ 	}
+ 
++	l2c_write_sec(l2x0_saved_regs.aux_ctrl, base, L2X0_AUX_CTRL);
++
+ 	if (l2x0_data->configure)
+ 		l2x0_data->configure(base);
+-
+-	l2c_write_sec(l2x0_saved_regs.aux_ctrl, base, L2X0_AUX_CTRL);
+ }
+ 
+ /*

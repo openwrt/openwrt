@@ -1,0 +1,29 @@
+From e8ec653c767f56346eb1fadbc07e0706d6dbd56f Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 14 May 2015 00:38:28 +0200
+Subject: [PATCH 3/3] ARM: BCM5301X: activate some additional options in pl310
+ cache controller
+
+In the default Broadcom SDK the shared override is activated for this
+cache controller, do the same in the upstream code. Data and
+instruction prefetching is not activated by default for this cache
+controller on the bcm53xx SoC, do it manually like it is done in the
+vendor SDK.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ arch/arm/boot/dts/bcm5301x.dtsi | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -78,6 +78,9 @@
+ 			compatible = "arm,pl310-cache";
+ 			reg = <0x2000 0x1000>;
+ 			cache-unified;
++			arm,shared-override;
++			prefetch-data = <1>;
++			prefetch-instr = <1>;
+ 			cache-level = <2>;
+ 		};
+ 	};
