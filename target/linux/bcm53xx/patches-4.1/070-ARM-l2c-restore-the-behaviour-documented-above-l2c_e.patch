@@ -1,0 +1,43 @@
+From d965b0fca7dcde3f82c982e0bf1631069fdeb8c9 Mon Sep 17 00:00:00 2001
+From: Russell King <rmk+kernel@arm.linux.org.uk>
+Date: Fri, 15 May 2015 11:56:45 +0100
+Subject: [PATCH 70/74] ARM: l2c: restore the behaviour documented above
+ l2c_enable()
+
+l2c_enable() is documented that it must not be called if the cache has
+already been enabled.  Unfortunately, commit 6b49241ac252 ("ARM: 8259/1:
+l2c: Refactor the driver to use commit-like interface") changed this
+without updating the comment, for very little reason.  Revert this
+change and restore the expected behaviour.
+
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+---
+ arch/arm/mm/cache-l2x0.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/mm/cache-l2x0.c
++++ b/arch/arm/mm/cache-l2x0.c
+@@ -129,10 +129,6 @@ static void l2c_enable(void __iomem *bas
+ {
+ 	unsigned long flags;
+ 
+-	/* Do not touch the controller if already enabled. */
+-	if (readl_relaxed(base + L2X0_CTRL) & L2X0_CTRL_EN)
+-		return;
+-
+ 	l2x0_saved_regs.aux_ctrl = aux;
+ 	l2c_configure(base);
+ 
+@@ -163,7 +159,11 @@ static void l2c_save(void __iomem *base)
+ 
+ static void l2c_resume(void)
+ {
+-	l2c_enable(l2x0_base, l2x0_saved_regs.aux_ctrl, l2x0_data->num_lock);
++	void __iomem *base = l2x0_base;
++
++	/* Do not touch the controller if already enabled. */
++	if (!(readl_relaxed(base + L2X0_CTRL) & L2X0_CTRL_EN))
++		l2c_enable(base, l2x0_saved_regs.aux_ctrl, l2x0_data->num_lock);
+ }
+ 
+ /*
