@@ -1,0 +1,34 @@
+From baf3d128e5bdf9d322539609133a15b493b0c2ef Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 11 Jun 2015 22:57:35 +0200
+Subject: [PATCH] USB: bcma: remove chip id check
+
+I have never seen any bcma device with an USB host core which was not a
+SoC, the bcma devices have an USB device core with a different core id.
+Some SoC have IDs with 47XX and 53XX in decimal form which would be
+rejected by this check. Instead of fixing this check just remove it.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/usb/host/bcma-hcd.c | 5 -----
+ 1 file changed, 5 deletions(-)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -214,16 +214,11 @@ err_alloc:
+ static int bcma_hcd_probe(struct bcma_device *dev)
+ {
+ 	int err;
+-	u16 chipid_top;
+ 	u32 ohci_addr;
+ 	struct bcma_hcd_device *usb_dev;
+ 	struct bcma_chipinfo *chipinfo;
+ 
+ 	chipinfo = &dev->bus->chipinfo;
+-	/* USBcores are only connected on embedded devices. */
+-	chipid_top = (chipinfo->id & 0xFF00);
+-	if (chipid_top != 0x4700 && chipid_top != 0x5300)
+-		return -ENODEV;
+ 
+ 	/* TODO: Probably need checks here; is the core connected? */
+ 

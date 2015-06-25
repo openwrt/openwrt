@@ -1,0 +1,82 @@
+From f3cf44a313b3687efd55ba091558e20a4d218c31 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Thu, 11 Jun 2015 22:57:40 +0200
+Subject: [PATCH] USB: bcma: add support for controlling bus power through GPIO
+
+On some boards a GPIO is needed to activate USB controller. Make it
+possible to specify such a GPIO in device tree.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/usb/host/bcma-hcd.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -24,6 +24,8 @@
+ #include <linux/platform_device.h>
+ #include <linux/module.h>
+ #include <linux/slab.h>
++#include <linux/of.h>
++#include <linux/of_gpio.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ 
+@@ -224,6 +226,23 @@ static void bcma_hcd_init_chip_arm(struc
+ 	}
+ }
+ 
++static void bcma_hci_platform_power_gpio(struct bcma_device *dev, bool val)
++{
++	int gpio;
++
++	gpio = of_get_named_gpio(dev->dev.of_node, "vcc-gpio", 0);
++	if (!gpio_is_valid(gpio))
++		return;
++
++	if (val) {
++		gpio_request(gpio, "bcma-hcd-gpio");
++		gpio_set_value(gpio, 1);
++	} else {
++		gpio_set_value(gpio, 0);
++		gpio_free(gpio);
++	}
++}
++
+ static const struct usb_ehci_pdata ehci_pdata = {
+ };
+ 
+@@ -295,6 +314,8 @@ static int bcma_hcd_probe(struct bcma_de
+ 	if (!usb_dev)
+ 		return -ENOMEM;
+ 
++	bcma_hci_platform_power_gpio(dev, true);
++
+ 	switch (dev->id.id) {
+ 	case BCMA_CORE_NS_USB20:
+ 		bcma_hcd_init_chip_arm(dev);
+@@ -347,6 +368,7 @@ static void bcma_hcd_remove(struct bcma_
+ 
+ static void bcma_hcd_shutdown(struct bcma_device *dev)
+ {
++	bcma_hci_platform_power_gpio(dev, false);
+ 	bcma_core_disable(dev, 0);
+ }
+ 
+@@ -354,6 +376,7 @@ static void bcma_hcd_shutdown(struct bcm
+ 
+ static int bcma_hcd_suspend(struct bcma_device *dev)
+ {
++	bcma_hci_platform_power_gpio(dev, false);
+ 	bcma_core_disable(dev, 0);
+ 
+ 	return 0;
+@@ -361,6 +384,7 @@ static int bcma_hcd_suspend(struct bcma_
+ 
+ static int bcma_hcd_resume(struct bcma_device *dev)
+ {
++	bcma_hci_platform_power_gpio(dev, true);
+ 	bcma_core_enable(dev, 0);
+ 
+ 	return 0;

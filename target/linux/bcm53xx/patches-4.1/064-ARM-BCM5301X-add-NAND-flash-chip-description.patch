@@ -1,0 +1,210 @@
+From 9faa5960eef3204cae6637b530f5e23e53b5a9ef Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Fri, 29 May 2015 23:39:47 +0200
+Subject: [PATCH] ARM: BCM5301X: add NAND flash chip description
+
+This adds the NAND flash chip description for a standard chip found
+connected to this SoC. This makes use of generic Broadcom NAND driver
+with the iProc interface.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts        |  1 +
+ arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts        |  1 +
+ arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  |  1 +
+ arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts       |  9 +++-----
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts        |  1 +
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts     |  1 +
+ arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts      |  1 +
+ arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts        |  1 +
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts |  1 +
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts  |  1 +
+ arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts  |  1 +
+ arch/arm/boot/dts/bcm4709-netgear-r8000.dts        |  1 +
+ arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi      | 24 ++++++++++++++++++++++
+ arch/arm/boot/dts/bcm5301x.dtsi                    | 12 +++++++++++
+ 14 files changed, 50 insertions(+), 6 deletions(-)
+ create mode 100644 arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
+
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "asus,rt-ac56u", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "asus,rt-ac68u", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "buffalo,wzr-1750dhp", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "luxul,xwc-1000", "brcm,bcm4708";
+@@ -23,12 +24,8 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
+-	axi@18000000 {
+-		nand@28000 {
+-			reg = <0x00028000 0x1000>;
+-			#address-cells = <1>;
+-			#size-cells = <1>;
+-
++	nand: nand@18028000 {
++		nandcs@0 {
+ 			partition@0 {
+ 				label = "ubi";
+ 				reg = <0x00000000 0x08000000>;
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "netgear,r6250v1", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "netgear,r6300v2", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "smartrg,sr400ac", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm47081.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "asus,rt-n18u", "brcm,bcm47081", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm47081.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "buffalo,wzr-600dhp2", "brcm,bcm47081", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm47081.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "buffalo,wzr-900dhp", "brcm,bcm47081", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "buffalo,wxr-1900dhp", "brcm,bcm4709", "brcm,bcm4708";
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -10,6 +10,7 @@
+ /dts-v1/;
+ 
+ #include "bcm4708.dtsi"
++#include "bcm5301x-nand-cs0-bch8.dtsi"
+ 
+ / {
+ 	compatible = "netgear,r8000", "brcm,bcm4709", "brcm,bcm4708";
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm5301x-nand-cs0-bch8.dtsi
+@@ -0,0 +1,24 @@
++/*
++ * Broadcom BCM470X / BCM5301X Nand chip defaults.
++ *
++ * This should be included if the NAND controller is on chip select 0
++ * and uses 8 bit ECC.
++ *
++ * Copyright (C) 2015 Hauke Mehrtens <hauke@hauke-m.de>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++/ {
++	nand@18028000 {
++		nandcs@0 {
++			compatible = "brcm,nandcs";
++			reg = <0>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			nand-ecc-strength = <8>;
++			nand-ecc-step-size = <512>;
++		};
++	};
++};
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -143,4 +143,16 @@
+ 			#gpio-cells = <2>;
+ 		};
+ 	};
++
++	nand: nand@18028000 {
++		compatible = "brcm,nand-iproc", "brcm,brcmnand-v6.1", "brcm,brcmnand";
++		reg = <0x18028000 0x600>, <0x1811a408 0x600>, <0x18028f00 0x20>;
++		reg-names = "nand", "iproc-idm", "iproc-ext";
++		interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL_HIGH>;
++
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		brcm,nand-has-wp;
++	};
+ };

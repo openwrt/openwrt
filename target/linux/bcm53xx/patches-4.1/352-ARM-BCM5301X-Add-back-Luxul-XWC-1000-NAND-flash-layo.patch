@@ -1,0 +1,37 @@
+From b97e582cd05f6ba80bdb63d9f677a3395edc7ff1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 7 Jun 2015 15:37:43 +0200
+Subject: [PATCH] ARM: BCM5301X: Add back Luxul XWC-1000 NAND flash layout
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+In OpenWrt we still use old NAND driver instead of "brcm,nandcs", so
+we need to add this DT entry back.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -34,6 +34,18 @@
+ 		};
+ 	};
+ 
++	axi@18000000 {
++		nand@28000 {
++			reg = <0x00028000 0x1000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			partition@0 {
++				label = "ubi";
++				reg = <0x00000000 0x08000000>;
++			};
++		};
++	};
++
+ 	nand: nand@18028000 {
+ 		nandcs@0 {
+ 			partition@0 {

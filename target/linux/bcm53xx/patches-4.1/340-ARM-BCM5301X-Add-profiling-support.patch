@@ -1,0 +1,20 @@
+Subject: [PATCH] ARM: BCM5301X: Add profiling support
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -82,6 +82,13 @@
+ 		};
+ 	};
+ 
++	pmu {
++		compatible = "arm,cortex-a9-pmu";
++		interrupts =
++			<GIC_SPI 8 IRQ_TYPE_LEVEL_HIGH>,
++			<GIC_SPI 9 IRQ_TYPE_LEVEL_HIGH>;
++	};
++
+ 	clocks {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;

@@ -1,0 +1,148 @@
+From eb1075cc48d3c315c7403822c33da9588ab76492 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 14 Jan 2015 08:33:25 +0100
+Subject: [PATCH] ARM: BCM5310X: Enable earlyprintk on tested devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  | 2 +-
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts        | 2 +-
+ arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts        | 2 +-
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -17,7 +17,7 @@
+ 	model = "Buffalo WZR-1750DHP (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -17,7 +17,7 @@
+ 	model = "Netgear R6250 V1 (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+@@ -17,7 +17,7 @@
+ 	model = "Asus RT-N18U (BCM47081)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -17,7 +17,7 @@
+ 	model = "Buffalo WZR-600DHP2 (BCM47081)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+@@ -17,7 +17,7 @@
+ 	model = "Buffalo WZR-900DHP (BCM47081)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -17,7 +17,7 @@
+ 	model = "Netgear R8000 (BCM4709)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
+@@ -17,7 +17,7 @@
+ 	model = "Asus RT-AC56U (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+@@ -17,7 +17,7 @@
+ 	model = "Asus RT-AC68U (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
++++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
+@@ -17,7 +17,7 @@
+ 	model = "Luxul XWC-1000 (BCM4708)";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -17,7 +17,7 @@
+ 	model = "Buffalo WXR-1900DHP";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
+@@ -17,7 +17,7 @@
+ 	model = "SmartRG SR400ac";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
+--- a/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
++++ b/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
+@@ -16,7 +16,7 @@
+ 	model = "Asus RT-AC87U";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
