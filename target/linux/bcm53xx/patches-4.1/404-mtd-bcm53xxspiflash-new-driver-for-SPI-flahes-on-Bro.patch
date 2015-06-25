@@ -1,0 +1,19 @@
+--- a/drivers/mtd/spi-nor/Kconfig
++++ b/drivers/mtd/spi-nor/Kconfig
+@@ -28,4 +28,10 @@ config SPI_FSL_QUADSPI
+ 	  This enables support for the Quad SPI controller in master mode.
+ 	  We only connect the NOR to this controller now.
+ 
++config MTD_SPI_BCM53XXSPIFLASH
++	tristate "SPI-NOR flashes connected to the Broadcom ARM SoC"
++	depends on MTD_SPI_NOR
++	help
++	  SPI driver for flashes used on Broadcom ARM SoCs.
++
+ endif # MTD_SPI_NOR
+--- a/drivers/mtd/spi-nor/Makefile
++++ b/drivers/mtd/spi-nor/Makefile
+@@ -1,2 +1,3 @@
+ obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
+ obj-$(CONFIG_SPI_FSL_QUADSPI)	+= fsl-quadspi.o
++obj-$(CONFIG_MTD_SPI_BCM53XXSPIFLASH)	+= bcm53xxspiflash.o

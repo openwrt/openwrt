@@ -1,0 +1,102 @@
+From 4aed231f49954114d5ae23e97789e9aa540a0b70 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 16 Jun 2015 12:52:07 +0200
+Subject: [PATCH] USB: bcma: use separated function for USB 2.0 initialization
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This will allow adding USB 3.0 (XHCI) support cleanly.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/usb/host/bcma-hcd.c | 51 +++++++++++++++++++++++++++++++--------------
+ 1 file changed, 35 insertions(+), 16 deletions(-)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -34,6 +34,7 @@ MODULE_DESCRIPTION("Common USB driver fo
+ MODULE_LICENSE("GPL");
+ 
+ struct bcma_hcd_device {
++	struct bcma_device *core;
+ 	struct platform_device *ehci_dev;
+ 	struct platform_device *ohci_dev;
+ };
+@@ -293,27 +294,16 @@ err_alloc:
+ 	return ERR_PTR(ret);
+ }
+ 
+-static int bcma_hcd_probe(struct bcma_device *dev)
++static int bcma_hcd_usb20_init(struct bcma_hcd_device *usb_dev)
+ {
+-	int err;
++	struct bcma_device *dev = usb_dev->core;
++	struct bcma_chipinfo *chipinfo = &dev->bus->chipinfo;
+ 	u32 ohci_addr;
+-	struct bcma_hcd_device *usb_dev;
+-	struct bcma_chipinfo *chipinfo;
+-
+-	chipinfo = &dev->bus->chipinfo;
+-
+-	/* TODO: Probably need checks here; is the core connected? */
++	int err;
+ 
+ 	if (dma_set_mask_and_coherent(dev->dma_dev, DMA_BIT_MASK(32)))
+ 		return -EOPNOTSUPP;
+ 
+-	usb_dev = devm_kzalloc(&dev->dev, sizeof(struct bcma_hcd_device),
+-			       GFP_KERNEL);
+-	if (!usb_dev)
+-		return -ENOMEM;
+-
+-	bcma_hci_platform_power_gpio(dev, true);
+-
+ 	switch (dev->id.id) {
+ 	case BCMA_CORE_NS_USB20:
+ 		bcma_hcd_init_chip_arm(dev);
+@@ -346,7 +336,6 @@ static int bcma_hcd_probe(struct bcma_de
+ 		goto err_unregister_ohci_dev;
+ 	}
+ 
+-	bcma_set_drvdata(dev, usb_dev);
+ 	return 0;
+ 
+ err_unregister_ohci_dev:
+@@ -354,6 +343,36 @@ err_unregister_ohci_dev:
+ 	return err;
+ }
+ 
++static int bcma_hcd_probe(struct bcma_device *dev)
++{
++	int err;
++	struct bcma_hcd_device *usb_dev;
++
++	/* TODO: Probably need checks here; is the core connected? */
++
++	usb_dev = devm_kzalloc(&dev->dev, sizeof(struct bcma_hcd_device),
++			       GFP_KERNEL);
++	if (!usb_dev)
++		return -ENOMEM;
++	usb_dev->core = dev;
++
++	bcma_hci_platform_power_gpio(dev, true);
++
++	switch (dev->id.id) {
++	case BCMA_CORE_USB20_HOST:
++	case BCMA_CORE_NS_USB20:
++		err = bcma_hcd_usb20_init(usb_dev);
++		if (err)
++			return err;
++		break;
++	default:
++		return -ENODEV;
++	}
++
++	bcma_set_drvdata(dev, usb_dev);
++	return 0;
++}
++
+ static void bcma_hcd_remove(struct bcma_device *dev)
+ {
+ 	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
