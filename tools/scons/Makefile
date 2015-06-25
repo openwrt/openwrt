@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=scons
-PKG_VERSION:=2.3.1
+PKG_VERSION:=2.3.5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SF/scons
-PKG_MD5SUM:=60a3cfb98b661df9f4406c61b5686bd7
+PKG_MD5SUM:=a8988c7ef11133bb3b6ccf0af67ce010
 
 include $(INCLUDE_DIR)/host-build.mk
 
