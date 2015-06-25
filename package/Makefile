@@ -41,7 +41,7 @@ ifdef CONFIG_USE_MKLIBS
 		--sysroot $(STAGING_DIR_ROOT) \
 		`cat $(TMP_DIR)/mklibs-libs | sed 's:/*[^/]\+/*$$::' | uniq | sed 's:^$(STAGING_DIR_ROOT):-L :'` \
 		--ldlib $(patsubst $(STAGING_DIR_ROOT)/%,/%,$(firstword $(wildcard \
-			$(foreach name,ld-uClibc.so.* ld-linux.so.* ld-*.so, \
+			$(foreach name,ld-uClibc.so.* ld-linux.so.* ld-*.so ld-musl-*.so.*, \
 			  $(STAGING_DIR_ROOT)/lib/$(name) \
 			)))) \
 		--target $(REAL_GNU_TARGET_NAME) \
