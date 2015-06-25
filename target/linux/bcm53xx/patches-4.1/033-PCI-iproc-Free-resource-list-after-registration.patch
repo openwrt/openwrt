@@ -1,0 +1,57 @@
+From ef07991a95de76b07594448c3521361831ec2cfe Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 24 May 2015 22:37:03 +0200
+Subject: [PATCH 2/2] PCI: iproc: Free resource list after registration
+
+The resource list is only used in the setup process and was never freed.
+pci_add_resource() allocates a memory area to store the list item.
+
+Fix the memory leak.
+
+Tested-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Reviewed-by: Ray Jui <rjui@broadcom.com>
+---
+ drivers/pci/host/pcie-iproc-bcma.c     | 8 ++++----
+ drivers/pci/host/pcie-iproc-platform.c | 8 ++++----
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+--- a/drivers/pci/host/pcie-iproc-bcma.c
++++ b/drivers/pci/host/pcie-iproc-bcma.c
+@@ -65,12 +65,12 @@ static int iproc_pcie_bcma_probe(struct
+ 	pcie->map_irq = iproc_pcie_bcma_map_irq;
+ 
+ 	ret = iproc_pcie_setup(pcie, &res);
+-	if (ret) {
++	if (ret)
+ 		dev_err(pcie->dev, "PCIe controller setup failed\n");
+-		return ret;
+-	}
+ 
+-	return 0;
++	pci_free_resource_list(&res);
++
++	return ret;
+ }
+ 
+ static void iproc_pcie_bcma_remove(struct bcma_device *bdev)
+--- a/drivers/pci/host/pcie-iproc-platform.c
++++ b/drivers/pci/host/pcie-iproc-platform.c
+@@ -72,12 +72,12 @@ static int iproc_pcie_pltfm_probe(struct
+ 	pcie->map_irq = of_irq_parse_and_map_pci;
+ 
+ 	ret = iproc_pcie_setup(pcie, &res);
+-	if (ret) {
++	if (ret)
+ 		dev_err(pcie->dev, "PCIe controller setup failed\n");
+-		return ret;
+-	}
+ 
+-	return 0;
++	pci_free_resource_list(&res);
++
++	return ret;
+ }
+ 
+ static int iproc_pcie_pltfm_remove(struct platform_device *pdev)
