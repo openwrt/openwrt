@@ -219,6 +219,7 @@ menu "Global build settings"
 
 	choice
 		prompt "User space Stack-Smashing Protection"
+		depends on USE_MUSL
 		default PKG_CC_STACKPROTECTOR_REGULAR
 		help
 		  Enable GCC Stack Smashing Protection (SSP) for userspace applications
