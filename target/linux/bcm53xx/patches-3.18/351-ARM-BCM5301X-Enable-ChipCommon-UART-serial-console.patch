@@ -14,25 +14,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 10 ++++++++++
  4 files changed, 40 insertions(+)
 
---- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-+++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-@@ -25,6 +25,16 @@
- 		       0x88000000 0x18000000>;
- 	};
- 
-+	chipcommonA {
-+		uart0: serial@0300 {
-+			status = "okay";
-+		};
-+
-+		uart1: serial@0400 {
-+			status = "okay";
-+		};
-+	};
-+
- 	axi@18000000 {
- 		usb2@21000 {
- 			reg = <0x00021000 0x1000>;
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
 @@ -25,6 +25,16 @@
@@ -71,44 +52,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	leds {
  		compatible = "gpio-leds";
  
---- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
-+++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
-@@ -25,6 +25,16 @@
- 		       0x88000000 0x08000000>;
- 	};
- 
-+	chipcommonA {
-+		uart0: serial@0300 {
-+			status = "okay";
-+		};
-+
-+		uart1: serial@0400 {
-+			status = "okay";
-+		};
-+	};
-+
- 	spi {
- 		compatible = "spi-gpio";
- 		num-chipselects = <1>;
---- a/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
-+++ b/arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts
-@@ -23,6 +23,16 @@
- 	memory {
- 		reg = <0x00000000 0x08000000>;
- 	};
-+ 
-+	chipcommonA {
-+		uart0: serial@0300 {
-+			status = "okay";
-+		};
-+
-+		uart1: serial@0400 {
-+			status = "okay";
-+		};
-+	};
- 
- 	nand: nand@18028000 {
- 		nandcs@0 {
 --- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
 +++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
 @@ -25,6 +25,16 @@
@@ -229,22 +172,3 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	clocks {
  		clk_periph: periph {
  			clock-frequency = <500000000>;
---- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
-+++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
-@@ -25,6 +25,16 @@
- 		       0x88000000 0x08000000>;
- 	};
- 
-+	chipcommonA {
-+		uart0: serial@0300 {
-+			status = "okay";
-+		};
-+
-+		uart1: serial@0400 {
-+			status = "okay";
-+		};
-+	};
-+
- 	leds {
- 		compatible = "gpio-leds";
- 
