@@ -39,15 +39,3 @@ define Profile/ESR1750/Description
 endef
 
 $(eval $(call Profile,ESR1750))
-
-
-define Profile/EPG5000
-        NAME:=EnGenius EPG5000
-        PACKAGES:=kmod-usb-core kmod-usb2 kmod-usb-storage kmod-ath10k wpad-mini
-endef
-
-define Profile/EPG5000/Description
-        Package set optimized for the EnGenius EPG5000
-endef
-
-$(eval $(call Profile,EPG5000))
