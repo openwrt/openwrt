@@ -144,7 +144,11 @@ ifndef DUMP
     export GCC_HONOUR_COPTS:=0
     TARGET_CROSS:=$(if $(TARGET_CROSS),$(TARGET_CROSS),$(OPTIMIZE_FOR_CPU)-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))-)
     TARGET_CFLAGS+= -fhonour-copts $(if $(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),,-Wno-error=unused-but-set-variable)
-    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/usr/include -I$(TOOLCHAIN_DIR)/include/fortify -I$(TOOLCHAIN_DIR)/include
+    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/usr/include
+    ifeq ($(CONFIG_USE_MUSL),y)
+      TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include/fortify
+    endif
+    TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include
     TARGET_LDFLAGS+= -L$(TOOLCHAIN_DIR)/usr/lib -L$(TOOLCHAIN_DIR)/lib
     TARGET_PATH:=$(TOOLCHAIN_DIR)/bin:$(TARGET_PATH)
   else
