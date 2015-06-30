@@ -19,7 +19,7 @@
  /*
   * known 3368 boards
   */
-@@ -1292,6 +1297,69 @@ static struct board_info __initdata boar
+@@ -1318,6 +1323,69 @@ static struct board_info __initdata boar
  };
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
@@ -89,7 +89,7 @@
  /*
   * known 6368 boards
   */
-@@ -1443,6 +1511,10 @@ static const struct board_info __initcon
+@@ -1469,6 +1537,10 @@ static const struct board_info __initcon
  	&board_DVAG3810BN,
  #endif
  
@@ -100,7 +100,7 @@
  #ifdef CONFIG_BCM63XX_CPU_6368
  	&board_96368mvwg,
  	&board_96368mvngr,
-@@ -1511,6 +1583,9 @@ static struct of_device_id const bcm963x
+@@ -1537,6 +1609,9 @@ static struct of_device_id const bcm963x
  	{ .compatible = "t-com,spw303v", .data = &board_spw303v, },
  	{ .compatible = "telsey,cpva642", .data = &board_CPVA642, },
  #endif

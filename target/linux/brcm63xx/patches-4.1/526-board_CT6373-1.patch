@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -1193,6 +1193,31 @@ static struct board_info __initdata boar
+@@ -1219,6 +1219,31 @@ static struct board_info __initdata boar
  	.num_usbh_ports			= 2,
  };
  
@@ -32,7 +32,7 @@
  static struct board_info __initdata board_HW553 = {
  	.name                           = "HW553",
  	.expected_cpu_id                = 0x6358,
-@@ -1382,6 +1407,7 @@ static const struct board_info __initcon
+@@ -1408,6 +1433,7 @@ static const struct board_info __initcon
  	&board_dsl_274xb_rev_c,
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
@@ -40,7 +40,7 @@
  	&board_HW553,
  	&board_spw303v,
  #endif
-@@ -1440,6 +1466,7 @@ static struct of_device_id const bcm963x
+@@ -1466,6 +1492,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "alcatel,rg100a", .data = &board_96358vw2, },
  	{ .compatible = "brcm,bcm96358vw", .data = &board_96358vw, },
  	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },

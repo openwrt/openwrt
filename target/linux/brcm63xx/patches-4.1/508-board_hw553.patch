@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -933,6 +933,34 @@ static struct board_info __initdata boar
+@@ -959,6 +959,34 @@ static struct board_info __initdata boar
  	.has_ehci0 = 1,
  	.num_usbh_ports			= 2,
  };
@@ -35,7 +35,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -978,6 +1006,7 @@ static const struct board_info __initcon
+@@ -1004,6 +1032,7 @@ static const struct board_info __initcon
  	&board_dsl_274xb_rev_c,
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
@@ -43,7 +43,7 @@
  #endif
  };
  
-@@ -1021,6 +1050,7 @@ static struct of_device_id const bcm963x
+@@ -1047,6 +1076,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96358vw2", .data = &board_96358vw2, },
  	{ .compatible = "d-link,dsl-274xb-c2", .data = &board_dsl_274xb_rev_c, },
  	{ .compatible = "d-link,dsl-2650u", .data = &board_96358vw2, },
