@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -976,6 +976,21 @@ static struct board_info __initdata boar
+@@ -1002,6 +1002,21 @@ static struct board_info __initdata boar
  		.pci_dev			= 1,
  	},
  };
@@ -22,7 +22,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6358 */
  
  /*
-@@ -1023,6 +1038,7 @@ static const struct board_info __initcon
+@@ -1049,6 +1064,7 @@ static const struct board_info __initcon
  	&board_nb4_ser_r0,
  	&board_nb4_fxc_r1,
  	&board_HW553,
@@ -30,7 +30,7 @@
  #endif
  };
  
-@@ -1074,6 +1090,7 @@ static struct of_device_id const bcm963x
+@@ -1100,6 +1116,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "pirelli,agpf-s0", .data = &board_AGPFS0, },
  	{ .compatible = "sfr,nb4-ser-r0", .data = &board_nb4_ser_r0, },
  	{ .compatible = "sfr,nb4-fxc-r1", .data = &board_nb4_fxc_r1, },

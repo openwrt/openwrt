@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -815,6 +815,25 @@ static struct board_info __initdata boar
+@@ -833,6 +833,25 @@ static struct board_info __initdata boar
  	.has_ohci0 = 1,
  };
  
@@ -26,7 +26,7 @@
  static struct board_info __initdata board_96348_D4PW = {
  	.name				= "D-4P-W",
  	.expected_cpu_id		= 0x6348,
-@@ -1351,6 +1370,7 @@ static const struct board_info __initcon
+@@ -1377,6 +1396,7 @@ static const struct board_info __initcon
  	&board_ct536_ct5621,
  	&board_96348A_122,
  	&board_CPVA502plus,
@@ -34,7 +34,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1406,6 +1426,7 @@ static struct of_device_id const bcm963x
+@@ -1432,6 +1452,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "davolink,dv-201amr", .data = &board_DV201AMR, },
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
  	{ .compatible = "netgear,dg834gtpn", .data = &board_96348gw_10, },

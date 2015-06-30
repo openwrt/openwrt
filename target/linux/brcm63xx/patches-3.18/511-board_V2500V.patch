@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -702,6 +702,27 @@ static struct board_info __initdata boar
+@@ -720,6 +720,27 @@ static struct board_info __initdata boar
  		.ext_irq		= 2,
  	},
  };
@@ -28,7 +28,7 @@
  #endif /* CONFIG_BCM63XX_CPU_6348 */
  
  /*
-@@ -1026,6 +1047,7 @@ static const struct board_info __initcon
+@@ -1052,6 +1073,7 @@ static const struct board_info __initcon
  	&board_96348_D4PW,
  	&board_spw500v,
  	&board_96348sv,
@@ -36,7 +36,7 @@
  #endif
  
  #ifdef CONFIG_BCM63XX_CPU_6358
-@@ -1065,6 +1087,7 @@ static struct of_device_id const bcm963x
+@@ -1091,6 +1113,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "brcm,bcm96348gw-10", .data = &board_96348gw_10, },
  	{ .compatible = "brcm,bcm96348gw-11", .data = &board_96348gw_11, },
  	{ .compatible = "brcm,bcm96348gw-a", .data = &board_96348gw_a, },
@@ -44,7 +44,7 @@
  	{ .compatible = "d-link,dsl-2640b-b", .data = &board_96348_D4PW, },
  	{ .compatible = "davolink,dv-201amr", .data = &board_DV201AMR, },
  	{ .compatible = "dynalink,rta1025w", .data = &board_rta1025w_16, },
-@@ -1124,6 +1147,22 @@ void __init board_bcm963xx_init(void)
+@@ -1150,6 +1173,22 @@ void __init board_bcm963xx_init(void)
  		val &= MPI_CSBASE_BASE_MASK;
  	}
  	boot_addr = (u8 *)KSEG1ADDR(val);
