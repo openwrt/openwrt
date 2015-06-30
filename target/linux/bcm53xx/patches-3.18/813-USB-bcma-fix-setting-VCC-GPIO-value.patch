@@ -14,11 +14,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/usb/host/bcma-hcd.c | 13 +++++++++----
  1 file changed, 9 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/usb/host/bcma-hcd.c b/drivers/usb/host/bcma-hcd.c
-index 8853ef7..d18ffdc 100644
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -230,17 +230,22 @@ static void bcma_hcd_init_chip_arm(struct bcma_device *dev)
+@@ -230,17 +230,22 @@ static void bcma_hcd_init_chip_arm(struc
  
  static void bcma_hci_platform_power_gpio(struct bcma_device *dev, bool val)
  {
@@ -45,6 +43,3 @@ index 8853ef7..d18ffdc 100644
  		gpio_free(gpio);
  	}
  }
--- 
-1.8.4.5
-
