@@ -13,11 +13,9 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/usb/host/bcma-hcd.c | 51 +++++++++++++++++++++++++++++++--------------
  1 file changed, 35 insertions(+), 16 deletions(-)
 
-diff --git a/drivers/usb/host/bcma-hcd.c b/drivers/usb/host/bcma-hcd.c
-index d347282..0b4d0e8 100644
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -34,6 +34,7 @@ MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
+@@ -34,6 +34,7 @@ MODULE_DESCRIPTION("Common USB driver fo
  MODULE_LICENSE("GPL");
  
  struct bcma_hcd_device {
@@ -57,7 +55,7 @@ index d347282..0b4d0e8 100644
  	switch (dev->id.id) {
  	case BCMA_CORE_NS_USB20:
  		bcma_hcd_init_chip_arm(dev);
-@@ -346,7 +336,6 @@ static int bcma_hcd_probe(struct bcma_device *dev)
+@@ -346,7 +336,6 @@ static int bcma_hcd_probe(struct bcma_de
  		goto err_unregister_ohci_dev;
  	}
  
@@ -102,6 +100,3 @@ index d347282..0b4d0e8 100644
  static void bcma_hcd_remove(struct bcma_device *dev)
  {
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
--- 
-1.8.4.5
-
