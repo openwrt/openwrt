@@ -1,8 +1,6 @@
-Index: linux-3.18.16/arch/mips/ralink/cevt-rt3352.c
-===================================================================
---- linux-3.18.16.orig/arch/mips/ralink/cevt-rt3352.c	2015-06-14 09:10:18.544132719 +0200
-+++ linux-3.18.16/arch/mips/ralink/cevt-rt3352.c	2015-06-18 13:30:04.830117077 +0200
-@@ -53,8 +53,7 @@
+--- a/arch/mips/ralink/cevt-rt3352.c
++++ b/arch/mips/ralink/cevt-rt3352.c
+@@ -53,8 +53,7 @@ static int systick_next_event(unsigned l
  
  	sdev = container_of(evt, struct systick_device, dev);
  	count = ioread32(sdev->membase + SYSTICK_COUNT);

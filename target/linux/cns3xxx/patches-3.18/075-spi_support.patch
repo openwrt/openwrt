@@ -26,7 +26,7 @@
  obj-$(CONFIG_SPI_DESIGNWARE)		+= spi-dw.o
 --- a/drivers/spi/spi-bitbang.c
 +++ b/drivers/spi/spi-bitbang.c
-@@ -332,6 +332,10 @@ static int spi_bitbang_transfer_one(stru
+@@ -335,6 +335,10 @@ static int spi_bitbang_transfer_one(stru
  			 */
  			if (!m->is_dma_mapped)
  				t->rx_dma = t->tx_dma = 0;

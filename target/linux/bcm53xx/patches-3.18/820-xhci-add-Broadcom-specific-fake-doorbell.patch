@@ -14,8 +14,6 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  drivers/usb/host/xhci.c | 62 +++++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 62 insertions(+)
 
-diff --git a/drivers/usb/host/xhci.c b/drivers/usb/host/xhci.c
-index 3bceabe..0737ab2 100644
 --- a/drivers/usb/host/xhci.c
 +++ b/drivers/usb/host/xhci.c
 @@ -122,6 +122,64 @@ int xhci_halt(struct xhci_hcd *xhci)
@@ -83,7 +81,7 @@ index 3bceabe..0737ab2 100644
  /*
   * Set the run bit and wait for the host to be running.
   */
-@@ -146,6 +204,10 @@ static int xhci_start(struct xhci_hcd *xhci)
+@@ -146,6 +204,10 @@ static int xhci_start(struct xhci_hcd *x
  		xhci_err(xhci, "Host took too long to start, "
  				"waited %u microseconds.\n",
  				XHCI_MAX_HALT_USEC);
@@ -94,6 +92,3 @@ index 3bceabe..0737ab2 100644
  	if (!ret)
  		xhci->xhc_state &= ~XHCI_STATE_HALTED;
  	return ret;
--- 
-1.8.4.5
-
