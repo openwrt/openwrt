@@ -32,14 +32,14 @@
 			label = "A4001N:red:inet";
 			gpios = <&gpio0 1 0>;
 		};
-		power_green {
-			label = "A4001N:green:power";
-			gpios = <&gpio0 4 0>;
-			default-state = "on";
-		};
 		power_red {
 			label = "A4001N:red:power";
+			gpios = <&gpio0 4 0>;
+		};
+		power_green {
+			label = "A4001N:green:power";
 			gpios = <&gpio0 8 0>;
+			default-state = "on";
 		};
 		usb_green {
 			label = "A4001N:green:usb";
