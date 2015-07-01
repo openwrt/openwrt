@@ -51,7 +51,7 @@
  static struct board_info __initdata board_dsl_274xb_f1 = {
  	.name				= "AW4339U",
  	.expected_cpu_id		= 0x6328,
-@@ -1480,6 +1524,7 @@ static const struct board_info __initcon
+@@ -1506,6 +1550,7 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
  	&board_963281TAN,
@@ -59,7 +59,7 @@
  	&board_dsl_274xb_f1,
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
-@@ -1545,6 +1590,7 @@ static struct of_device_id const bcm963x
+@@ -1571,6 +1616,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328

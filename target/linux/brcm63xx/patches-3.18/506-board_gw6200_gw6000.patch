@@ -1,6 +1,6 @@
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -451,6 +451,66 @@ static struct board_info __initdata boar
+@@ -461,6 +461,66 @@ static struct board_info __initdata boar
  	},
  };
  
@@ -67,7 +67,7 @@
  static struct board_info __initdata board_FAST2404 = {
  	.name				= "F@ST2404",
  	.expected_cpu_id		= 0x6348,
-@@ -862,6 +922,8 @@ static const struct board_info __initcon
+@@ -888,6 +948,8 @@ static const struct board_info __initcon
  #ifdef CONFIG_BCM63XX_CPU_6348
  	&board_96348r,
  	&board_96348gw,
@@ -76,7 +76,7 @@
  	&board_96348gw_10,
  	&board_96348gw_11,
  	&board_FAST2404,
-@@ -912,6 +974,8 @@ static struct of_device_id const bcm963x
+@@ -938,6 +1000,8 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,dg834gtpn", .data = &board_96348gw_10, },
  	{ .compatible = "sagem,f@st2404", .data = &board_FAST2404, },
  	{ .compatible = "t-com,spw500v", .data = &board_spw500v, },
