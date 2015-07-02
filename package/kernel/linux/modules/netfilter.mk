@@ -774,7 +774,7 @@ $(eval $(call KernelPackage,nfnetlink-queue))
 define KernelPackage/nf-conntrack-netlink
   TITLE:=Connection tracking netlink interface
   FILES:=$(LINUX_DIR)/net/netfilter/nf_conntrack_netlink.ko
-  KCONFIG:=CONFIG_NF_CT_NETLINK
+  KCONFIG:=CONFIG_NF_CT_NETLINK CONFIG_NF_CONNTRACK_EVENTS=y
   AUTOLOAD:=$(call AutoProbe,nf_conntrack_netlink)
   $(call AddDepends/nfnetlink,+kmod-ipt-conntrack)
 endef
