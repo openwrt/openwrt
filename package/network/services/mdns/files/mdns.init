@@ -49,6 +49,6 @@ start_service() {
 }
 
 service_started() {
-	ubus wait_for -t 10 mdns
+	ubus -t 10 wait_for mdns
 	[ $? = 0 ] && reload_service
 }
