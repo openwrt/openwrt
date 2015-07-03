@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
-PKG_VERSION:=3.4.6
+PKG_VERSION:=3.6.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
-PKG_SOURCE_URL:=http://www.yassl.com/
-PKG_MD5SUM:=0410b3841588d635e9ecacb2d42c38f5
+PKG_SOURCE_URL:=http://www.wolfssl.com/
+PKG_MD5SUM:=69a6700998fdef621103983817b96fe6
 
 PKG_FIXUP:=libtool
 PKG_INSTALL:=1
@@ -27,7 +27,7 @@ define Package/libcyassl
   SUBMENU:=SSL
   CATEGORY:=Libraries
   TITLE:=CyaSSL library
-  URL:=http://www.yassl.com/
+  URL:=http://www.wolfssl.com/
 endef
 
 define Package/libcyassl/description

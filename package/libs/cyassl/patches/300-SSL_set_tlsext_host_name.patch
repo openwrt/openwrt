@@ -1,8 +1,8 @@
 --- a/wolfssl/openssl/ssl.h
 +++ b/wolfssl/openssl/ssl.h
-@@ -398,6 +398,7 @@
+@@ -397,6 +397,7 @@ typedef WOLFSSL_X509_STORE_CTX X509_STOR
+ /* yassl had set the default to be 500 */
  #define SSL_get_default_timeout(ctx) 500
- 
  
 +#define SSL_set_tlsext_host_name(x, y) wolfSSL_UseSNI(x, WOLFSSL_SNI_HOST_NAME, y, strlen(y))
  
