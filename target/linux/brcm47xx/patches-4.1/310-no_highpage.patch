@@ -8,12 +8,10 @@
  
  extern void build_clear_page(void);
  extern void build_copy_page(void);
-@@ -105,13 +106,16 @@ static inline void clear_user_page(void
+@@ -105,11 +106,16 @@ static inline void clear_user_page(void
  		flush_data_cache_page((unsigned long)addr);
  }
  
--extern void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
--	struct page *to);
 -struct vm_area_struct;
 -extern void copy_user_highpage(struct page *to, struct page *from,
 -	unsigned long vaddr, struct vm_area_struct *vma);
@@ -33,7 +31,7 @@
   * These are used to make use of C type-checking..
 --- a/arch/mips/mm/init.c
 +++ b/arch/mips/mm/init.c
-@@ -149,30 +149,6 @@ void kunmap_coherent(void)
+@@ -154,30 +154,6 @@ void kunmap_coherent(void)
  	pagefault_enable();
  }
  

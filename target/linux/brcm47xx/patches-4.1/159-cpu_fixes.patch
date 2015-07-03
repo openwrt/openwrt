@@ -308,7 +308,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -784,6 +796,8 @@ static void local_r4k_flush_cache_sigtra
+@@ -785,6 +797,8 @@ static void local_r4k_flush_cache_sigtra
  	unsigned long addr = (unsigned long) arg;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -317,7 +317,7 @@
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1580,6 +1594,17 @@ static void coherency_setup(void)
+@@ -1591,6 +1605,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -335,7 +335,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1626,6 +1651,15 @@ void r4k_cache_init(void)
+@@ -1637,6 +1662,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -351,7 +351,7 @@
  	probe_pcache();
  	setup_scache();
  
-@@ -1695,7 +1729,15 @@ void r4k_cache_init(void)
+@@ -1706,7 +1740,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  
@@ -369,7 +369,7 @@
  	/*
 --- a/arch/mips/mm/tlbex.c
 +++ b/arch/mips/mm/tlbex.c
-@@ -1269,6 +1269,9 @@ static void build_r4000_tlb_refill_handl
+@@ -1296,6 +1296,9 @@ static void build_r4000_tlb_refill_handl
  			/* No need for uasm_i_nop */
  		}
  
@@ -379,7 +379,7 @@
  #ifdef CONFIG_64BIT
  		build_get_pmde64(&p, &l, &r, K0, K1); /* get pmd in K1 */
  #else
-@@ -1831,6 +1834,9 @@ build_r4000_tlbchange_handler_head(u32 *
+@@ -1868,6 +1871,9 @@ build_r4000_tlbchange_handler_head(u32 *
  {
  	struct work_registers wr = build_get_work_registers(p);
  
