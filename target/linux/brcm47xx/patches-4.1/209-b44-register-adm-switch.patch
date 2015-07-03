@@ -100,14 +100,14 @@ Subject: [PATCH 210/210] b44: register adm switch
  		dev_info(sdev->dev,
  			 "could not find PHY at %i, use fixed one\n",
  			 bp->phy_addr);
-@@ -2478,6 +2547,7 @@ static void b44_remove_one(struct ssb_de
+@@ -2479,6 +2548,7 @@ static void b44_remove_one(struct ssb_de
  	unregister_netdev(dev);
  	if (bp->flags & B44_FLAG_EXTERNAL_PHY)
  		b44_unregister_phy_one(bp);
 +	b44_unregister_adm_switch(bp);
  	ssb_device_disable(sdev, 0);
  	ssb_bus_may_powerdown(sdev->bus);
- 	free_netdev(dev);
+ 	netif_napi_del(&bp->napi);
 --- a/drivers/net/ethernet/broadcom/b44.h
 +++ b/drivers/net/ethernet/broadcom/b44.h
 @@ -404,6 +404,9 @@ struct b44 {
