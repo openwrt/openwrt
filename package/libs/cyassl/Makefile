@@ -7,13 +7,13 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=cyassl
-PKG_VERSION:=3.3.0
-PKG_RELEASE:=2
+PKG_NAME:=wolfssl
+PKG_VERSION:=3.4.6
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
 PKG_SOURCE_URL:=http://www.yassl.com/
-PKG_MD5SUM:=0303eb0f2f9065a1207d9104ab0eba7c
+PKG_MD5SUM:=0410b3841588d635e9ecacb2d42c38f5
 
 PKG_FIXUP:=libtool
 PKG_INSTALL:=1
@@ -45,17 +45,27 @@ CONFIGURE_ARGS += \
 	--enable-ecc \
 	--disable-examples
 
+ifneq ($(CONFIG_TARGET_x86),)
+	CONFIGURE_ARGS += --enable-intelasm
+endif
+ifneq ($(CONFIG_TARGET_x86_64),)
+	CONFIGURE_ARGS += --enable-intelasm
+endif
+
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/* $(1)/usr/include/
 
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcyassl.{so*,la} $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libwolfssl.{so*,la} $(1)/usr/lib/
+	ln -s libwolfssl.so $(1)/usr/lib/libcyassl.so
+	ln -s libwolfssl.la $(1)/usr/lib/libcyassl.la
 endef
 
 define Package/libcyassl/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libcyassl.so* $(1)/usr/lib/
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libwolfssl.so* $(1)/usr/lib/
+	ln -s libwolfssl.so $(1)/usr/lib/libcyassl.so
 endef
 
 $(eval $(call BuildPackage,libcyassl))

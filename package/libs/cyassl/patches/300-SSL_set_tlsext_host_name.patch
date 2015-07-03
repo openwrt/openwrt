@@ -1,10 +1,10 @@
---- a/cyassl/openssl/ssl.h
-+++ b/cyassl/openssl/ssl.h
-@@ -372,6 +373,7 @@
- #define SSL_CTX_get_ex_new_index CyaSSL_CTX_get_ex_new_index
+--- a/wolfssl/openssl/ssl.h
++++ b/wolfssl/openssl/ssl.h
+@@ -398,6 +398,7 @@
+ #define SSL_get_default_timeout(ctx) 500
  
  
-+#define SSL_set_tlsext_host_name(x, y) CyaSSL_UseSNI(x, CYASSL_SNI_HOST_NAME, y, strlen(y))
++#define SSL_set_tlsext_host_name(x, y) wolfSSL_UseSNI(x, WOLFSSL_SNI_HOST_NAME, y, strlen(y))
  
  #ifdef __cplusplus
      } /* extern "C" */
