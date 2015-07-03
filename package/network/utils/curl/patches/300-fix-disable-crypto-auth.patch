@@ -1,6 +1,6 @@
 --- a/lib/curl_ntlm_msgs.c
 +++ b/lib/curl_ntlm_msgs.c
-@@ -571,7 +571,7 @@ CURLcode Curl_sasl_create_ntlm_type3_mes
+@@ -569,7 +569,7 @@ CURLcode Curl_sasl_create_ntlm_type3_mes
    else
  #endif
  
@@ -11,9 +11,9 @@
      unsigned char ntbuffer[0x18];
 --- a/lib/vtls/vtls.c
 +++ b/lib/vtls/vtls.c
-@@ -835,9 +835,9 @@ void Curl_ssl_md5sum(unsigned char *tmp,
-                      unsigned char *md5sum, /* output */
-                      size_t md5len)
+@@ -852,9 +852,9 @@ CURLcode Curl_ssl_md5sum(unsigned char *
+                          unsigned char *md5sum, /* output */
+                          size_t md5len)
  {
 -#ifdef curlssl_md5sum
 +#if defined(curlssl_md5sum)
