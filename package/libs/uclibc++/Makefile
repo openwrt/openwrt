@@ -74,8 +74,9 @@ define Build/InstallDev
 	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/bin/g++-uc $(TOOLCHAIN_DIR)/bin/
 	$(CP) $(PKG_INSTALL_DIR)/include/* $(1)/usr/include/uClibc++/
 	$(CP) $(PKG_INSTALL_DIR)/lib/libuClibc++*.{a,so}* $(1)/usr/lib/
-	$(SED) 's|-I/include/|-I$(STAGING_DIR)/usr/include/uClibc++/|g' $(TOOLCHAIN_DIR)/bin/g++-uc
-	$(SED) 's|-L/lib/|-L$(STAGING_DIR)/usr/lib/|g' $(TOOLCHAIN_DIR)/bin/g++-uc
+	$(SED) 's!\(^\|[[:space:]]\)-[IL]$(TOOLCHAIN_DIR)/[^[:space:]]*!!g' $(TOOLCHAIN_DIR)/bin/g++-uc
+	$(SED) 's|-I/include/|-I$$$${STAGING_DIR:-$(STAGING_DIR)}/usr/include/uClibc++/|g' $(TOOLCHAIN_DIR)/bin/g++-uc
+	$(SED) 's|-L/lib/|-L$$$${STAGING_DIR:-$(STAGING_DIR)}/lib/|g' $(TOOLCHAIN_DIR)/bin/g++-uc
 # add another wrapper which links against both uClibc++ and libstdc++ 
 	$(INSTALL_BIN) $(TOOLCHAIN_DIR)/bin/g++-uc $(TOOLCHAIN_DIR)/bin/g++-uc+std
 	$(SED) 's|^WRAPPER_INCLUDEDIR=.*||g' $(TOOLCHAIN_DIR)/bin/g++-uc+std
