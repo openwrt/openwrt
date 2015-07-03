@@ -745,15 +745,15 @@
  u32 secure_ipv6_port_ephemeral(const __be32 *saddr, const __be32 *daddr,
 --- a/include/uapi/linux/in.h
 +++ b/include/uapi/linux/in.h
-@@ -78,7 +78,7 @@ enum {
+@@ -81,7 +81,7 @@ enum {
  /* Internet address. */
  struct in_addr {
  	__be32	s_addr;
 -};
 +} __attribute__((packed, aligned(2)));
+ #endif
  
  #define IP_TOS		1
- #define IP_TTL		2
 --- a/net/core/secure_seq.c
 +++ b/net/core/secure_seq.c
 @@ -46,11 +46,12 @@ __u32 secure_tcpv6_sequence_number(const
