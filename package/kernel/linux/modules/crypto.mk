@@ -408,6 +408,18 @@ endef
 $(eval $(call KernelPackage,crypto-hmac))
 
 
+define KernelPackage/crypto-cmac
+  TITLE:=Support for Cipher-based Message Authentication Code (CMAC)
+  DEPENDS:=+kmod-crypto-hash
+  KCONFIG:=CONFIG_CRYPTO_CMAC
+  FILES:=$(LINUX_DIR)/crypto/cmac.ko
+  AUTOLOAD:=$(call AutoLoad,09,cmac)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-cmac))
+
+
 define KernelPackage/crypto-gcm
   TITLE:=GCM/GMAC CryptoAPI module
   DEPENDS:=+kmod-crypto-ctr +kmod-crypto-ghash +kmod-crypto-null
