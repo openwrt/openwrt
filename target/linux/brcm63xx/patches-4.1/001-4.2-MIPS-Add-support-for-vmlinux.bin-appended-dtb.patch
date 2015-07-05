@@ -1,0 +1,112 @@
+From 1da8f1798e307fb8422753984339beb00025f97d Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sun, 12 Apr 2015 12:24:58 +0200
+Subject: [PATCH] MIPS: Add support for vmlinux.bin appended dtb
+
+Add support for detecting a vmlinux.bin appended dtb and overriding
+the boot arguments to match the UHI interface.
+
+Due to the PERCPU section being empty for !SMP, but still modifying
+the current address by aligning it to the page size, do not define
+it for !SMP builds to allow __appended_dtb to still point to
+the actual end of the data.
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+Cc: linux-mips@linux-mips.org
+Cc: devicetree@vger.kernel.org
+Cc: John Crispin <blogic@openwrt.org>
+Cc: Kevin Cernekee <cernekee@gmail.com>
+Cc: Florian Fainelli <f.fainelli@gmail.com>
+Cc: Aaro Koskinen <aaro.koskinen@iki.fi>
+Cc: Markos Chandras <markos.chandras@imgtec.com>
+Cc: Andrew Bresticker <abrestic@chromium.org>
+Cc: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Cc: Paul Burton <paul.burton@imgtec.com>
+Cc: James Hartley <James.Hartley@imgtec.com>
+Patchwork: https://patchwork.linux-mips.org/patch/9739/
+Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+---
+ arch/mips/Kconfig              | 27 +++++++++++++++++++++++++++
+ arch/mips/kernel/head.S        | 16 ++++++++++++++++
+ arch/mips/kernel/vmlinux.lds.S |  8 +++++++-
+ 3 files changed, 50 insertions(+), 1 deletion(-)
+
+--- a/arch/mips/Kconfig
++++ b/arch/mips/Kconfig
+@@ -2702,6 +2702,33 @@ config BOOT_RAW
+ 
+ 
+ 
++choice
++	prompt "Kernel appended dtb support" if OF
++	default MIPS_NO_APPENDED_DTB
++
++	config MIPS_NO_APPENDED_DTB
++		bool "None"
++		help
++		  Do not enable appended dtb support.
++
++	config MIPS_RAW_APPENDED_DTB
++		bool "vmlinux.bin"
++		help
++		  With this option, the boot code will look for a device tree binary
++		  DTB) appended to raw vmlinux.bin (without decompressor).
++		  (e.g. cat vmlinux.bin <filename>.dtb > vmlinux_w_dtb).
++
++		  This is meant as a backward compatibility convenience for those
++		  systems with a bootloader that can't be upgraded to accommodate
++		  the documented boot protocol using a device tree.
++
++		  Beware that there is very little in terms of protection against
++		  this option being confused by leftover garbage in memory that might
++		  look like a DTB header after a reboot if no actual DTB is appended
++		  to vmlinux.bin.  Do not leave this option active in a production kernel
++		  if you don't intend to always append a DTB.
++endchoice
++
+ endmenu
+ 
+ config LOCKDEP_SUPPORT
+--- a/arch/mips/kernel/head.S
++++ b/arch/mips/kernel/head.S
+@@ -100,6 +100,22 @@ NESTED(kernel_entry, 16, sp)			# kernel
+ 	jr	t0
+ 0:
+ 
++#ifdef CONFIG_MIPS_RAW_APPENDED_DTB
++	PTR_LA		t0, __appended_dtb
++
++#ifdef CONFIG_CPU_BIG_ENDIAN
++	li		t1, 0xd00dfeed
++#else
++	li		t1, 0xedfe0dd0
++#endif
++	lw		t2, (t0)
++	bne		t1, t2, not_found
++	 nop
++
++	move		a1, t0
++	PTR_LI		a0, -2
++not_found:
++#endif
+ 	PTR_LA		t0, __bss_start		# clear .bss
+ 	LONG_S		zero, (t0)
+ 	PTR_LA		t1, __bss_stop - LONGSIZE
+--- a/arch/mips/kernel/vmlinux.lds.S
++++ b/arch/mips/kernel/vmlinux.lds.S
+@@ -125,8 +125,14 @@ SECTIONS
+ 	.exit.data : {
+ 		EXIT_DATA
+ 	}
+-
++#ifdef CONFIG_SMP
+ 	PERCPU_SECTION(1 << CONFIG_MIPS_L1_CACHE_SHIFT)
++#endif
++#ifdef CONFIG_MIPS_RAW_APPENDED_DTB
++	__appended_dtb = .;
++	/* leave space for appended DTB */
++	. += 0x100000;
++#endif
+ 	/*
+ 	 * Align to 64K in attempt to eliminate holes before the
+ 	 * .bss..swapper_pg_dir section at the start of .bss.  This
