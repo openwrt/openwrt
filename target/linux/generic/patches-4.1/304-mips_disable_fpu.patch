@@ -82,7 +82,7 @@ v2: incorporated changes suggested by Jonas Gorski
  #ifdef CONFIG_DEBUG_FS
  
  struct mips_fpu_emulator_stats {
-@@ -66,6 +67,20 @@ extern int do_dsemulret(struct pt_regs *
+@@ -66,6 +67,21 @@ extern int do_dsemulret(struct pt_regs *
  extern int fpu_emulator_cop1Handler(struct pt_regs *xcp,
  				    struct mips_fpu_struct *ctx, int has_fpu,
  				    void *__user *fault_addr);
@@ -96,6 +96,7 @@ v2: incorporated changes suggested by Jonas Gorski
 +				struct mips_fpu_struct *ctx, int has_fpu,
 +				void *__user *fault_addr)
 +{
++	*fault_addr = NULL;
 +	return SIGILL;	/* we don't speak MIPS FPU */
 +}
 +#endif	/* CONFIG_MIPS_FPU_EMULATOR */
