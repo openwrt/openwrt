@@ -1,0 +1,79 @@
+From 91e20b5040c67c51aad88cf87db4305c5bd7f79d Mon Sep 17 00:00:00 2001
+From: Joel Porquet <joel@porquet.org>
+Date: Thu, 2 Jul 2015 15:32:00 -0400
+Subject: [PATCH] irqchip: Move IRQCHIP_DECLARE macro to
+ include/linux/irqchip.h
+
+At the moment the IRQCHIP_DECLARE macro is only declared locally in
+drivers/irqchip/irqchip.h. It prevents from using it directly in arch/*
+directories whenever irqchip drivers only exist there, which happens in a few
+cases (e.g. arc, arm, microblaze and mips).
+
+This patch makes the macro to be globally defined, i.e. in
+include/linux/irqchip.h, and thus usable for arch-specific declarations of
+irqchip drivers. In this way, it is very similar to what clocksource does (ie
+CLOCKSOURCE_OF_DECLARE is defined in include/linux/clocksource.h).
+
+For now, this patch only moves the declaration of the macro
+IRQCHIP_DECLARE to the global header 'include/linux/irqchip.h' and make
+'drivers/irqchip/irqchip.h' include 'include/linux/irqchip.h'. Later, other
+patches will get rid of 'drivers/irqchip/irqchip.h' and modify all the impacted
+irqchip drivers.
+
+Signed-off-by: Joel Porquet <joel@porquet.org>
+Cc: Jason Cooper <jason@lakedaemon.net>
+Link: http://lkml.kernel.org/r/1435865565-14114-1-git-send-email-joel@porquet.org
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/irqchip/irqchip.h | 19 +------------------
+ include/linux/irqchip.h   | 14 ++++++++++++++
+ 2 files changed, 15 insertions(+), 18 deletions(-)
+
+--- a/drivers/irqchip/irqchip.h
++++ b/drivers/irqchip/irqchip.h
+@@ -8,21 +8,4 @@
+  * warranty of any kind, whether express or implied.
+  */
+ 
+-#ifndef _IRQCHIP_H
+-#define _IRQCHIP_H
+-
+-#include <linux/of.h>
+-
+-/*
+- * This macro must be used by the different irqchip drivers to declare
+- * the association between their DT compatible string and their
+- * initialization function.
+- *
+- * @name: name that must be unique accross all IRQCHIP_DECLARE of the
+- * same file.
+- * @compstr: compatible string of the irqchip driver
+- * @fn: initialization function
+- */
+-#define IRQCHIP_DECLARE(name, compat, fn) OF_DECLARE_2(irqchip, name, compat, fn)
+-
+-#endif
++#include <linux/irqchip.h>
+--- a/include/linux/irqchip.h
++++ b/include/linux/irqchip.h
+@@ -11,6 +11,20 @@
+ #ifndef _LINUX_IRQCHIP_H
+ #define _LINUX_IRQCHIP_H
+ 
++#include <linux/of.h>
++
++/*
++ * This macro must be used by the different irqchip drivers to declare
++ * the association between their DT compatible string and their
++ * initialization function.
++ *
++ * @name: name that must be unique accross all IRQCHIP_DECLARE of the
++ * same file.
++ * @compstr: compatible string of the irqchip driver
++ * @fn: initialization function
++ */
++#define IRQCHIP_DECLARE(name, compat, fn) OF_DECLARE_2(irqchip, name, compat, fn)
++
+ #ifdef CONFIG_IRQCHIP
+ void irqchip_init(void);
+ #else
