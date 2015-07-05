@@ -41,7 +41,7 @@ static int ar7_gpio_major;
 static ssize_t ar7_gpio_write(struct file *file, const char __user *buf,
 	size_t len, loff_t *ppos)
 {
-	int pin = iminor(file->f_dentry->d_inode);
+	int pin = iminor(file->f_path.dentry->d_inode);
 	size_t i;
 
 	for (i = 0; i < len; ++i) {
@@ -84,7 +84,7 @@ static ssize_t ar7_gpio_write(struct file *file, const char __user *buf,
 static ssize_t ar7_gpio_read(struct file *file, char __user *buf,
 	size_t len, loff_t *ppos)
 {
-	int pin = iminor(file->f_dentry->d_inode);
+	int pin = iminor(file->f_path.dentry->d_inode);
 	int value;
 
 	value = gpio_get_value(pin);
