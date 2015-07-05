@@ -181,18 +181,14 @@ $(call KernelPackage/$(1)/config)
     ifneq ($(if $(SDK),$(filter-out $(LINUX_DIR)/%.ko,$(FILES)),$(strip $(FILES))),)
       define Package/kmod-$(1)/install
 		  @for mod in $$(call version_filter,$$(FILES)); do \
-			if [ -e $$$$$$$$mod ]; then \
+			if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
+				echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
+			elif [ -e $$$$$$$$mod ]; then \
 				mkdir -p $$(1)/$(MODULES_SUBDIR) ; \
 				$(CP) -L $$$$$$$$mod $$(1)/$(MODULES_SUBDIR)/ ; \
-			elif [ -e "$(LINUX_DIR)/modules.builtin" ]; then \
-				if grep -q "$$$$$$$${mod##$(LINUX_DIR)/}" "$(LINUX_DIR)/modules.builtin"; then \
-					echo "NOTICE: module '$$$$$$$$mod' is built-in."; \
-				else \
-					echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
-					exit 1; \
-				fi; \
 			else \
-				echo "WARNING: module '$$$$$$$$mod' missing and modules.builtin not available, assuming built-in." >&2; \
+				echo "ERROR: module '$$$$$$$$mod' is missing." >&2; \
+				exit 1; \
 			fi; \
 		  done;
 		  $(call ModuleAutoLoad,$(1),$$(1),$(AUTOLOAD))
