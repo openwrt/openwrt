@@ -1,12 +1,14 @@
-From db896341299cbcb703821228574ba9b79b6a3565 Mon Sep 17 00:00:00 2001
+From 26546e5499d98616322fb3472b977e2e86603f3a Mon Sep 17 00:00:00 2001
 From: Jonas Gorski <jogo@openwrt.org>
 Date: Tue, 24 Jun 2014 10:57:51 +0200
 Subject: [PATCH 45/48] MIPS: BCM63XX: add support for loading DTB
 
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 ---
- arch/mips/bcm63xx/boards/Kconfig        |  4 ++++
- arch/mips/bcm63xx/boards/board_common.c | 34 +++++++++++++++++++++++++++++++++
- 2 files changed, 38 insertions(+)
+ arch/mips/bcm63xx/boards/Kconfig        |    4 ++++
+ arch/mips/bcm63xx/boards/board_common.c |   34 +++++++++++++++++++++++++++++++
+ arch/mips/bcm63xx/prom.c                |    6 ++++++
+ 3 files changed, 44 insertions(+)
 
 --- a/arch/mips/bcm63xx/boards/Kconfig
 +++ b/arch/mips/bcm63xx/boards/Kconfig
@@ -94,3 +96,25 @@ Subject: [PATCH 45/48] MIPS: BCM63XX: add support for loading DTB
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
  
+--- a/arch/mips/bcm63xx/prom.c
++++ b/arch/mips/bcm63xx/prom.c
+@@ -8,6 +8,7 @@
+ 
+ #include <linux/init.h>
+ #include <linux/bootmem.h>
++#include <linux/of_fdt.h>
+ #include <linux/smp.h>
+ #include <asm/bootinfo.h>
+ #include <asm/bmips.h>
+@@ -23,6 +24,11 @@ void __init prom_init(void)
+ {
+ 	u32 reg, mask;
+ 
++#if CONFIG_OF
++	if (fw_arg0 == -2)
++		early_init_dt_verify((void *)fw_arg1);
++#endif
++
+ 	bcm63xx_cpu_init();
+ 
+ 	/* stop any running watchdog */
