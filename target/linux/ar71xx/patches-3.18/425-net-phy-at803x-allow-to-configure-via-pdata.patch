@@ -141,7 +141,7 @@
  			priv->phy_reset = false;
  		}
  	}
-+	if (pdata->fixup_rgmii_tx_delay &&
++	if (pdata && pdata->fixup_rgmii_tx_delay &&
 +	    phydev->speed != priv->prev_speed) {
 +		switch (phydev->speed) {
 +		case SPEED_10:
