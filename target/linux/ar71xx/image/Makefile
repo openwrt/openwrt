@@ -852,18 +852,18 @@ define Device/ubnt-uap-pro
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1536k(kernel),14208k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
   UBNT_TYPE := BZ
   UBNT_CHIP := ar934x
-  BOARD_NAME := UAP-PRO
+  BOARDNAME := UAP-PRO
   DEVICE_PROFILE := UBNT UAPPRO
   KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | mkubntkernelimage
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE) | mkubntimage2
+  IMAGE/sysupgrade.bin = append-kernel 1536k | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage2
 endef
 
 define Device/ubnt-unifi-outdoor-plus
 $(Device/ubnt-uap-pro)
   UBNT_CHIP := ar7240
-  BOARD_NAME := UBNT-UOP
+  BOARDNAME := UBNT-UOP
   DEVICE_PROFILE := UBNT
 endef
 
