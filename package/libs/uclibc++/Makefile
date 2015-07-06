@@ -50,6 +50,10 @@ ifneq ($(CONFIG_CCACHE),)
 TARGET_CXX=$(TARGET_CXX_NOCACHE)
 endif
 
+ifeq ($(CONFIG_USE_MUSL),y)
+SSP_LIB=-lssp_nonshared
+endif
+
 MAKE_FLAGS:= \
 	TOPDIR="$(PKG_BUILD_DIR)/" \
 	$(TARGET_CONFIGURE_OPTS) \
@@ -57,7 +61,7 @@ MAKE_FLAGS:= \
 	CROSS="$(TARGET_CROSS)" \
 	LDFLAGS="-Wl,--warn-common -Wl,--warn-once -Wl,-z,combreloc -Wl,-z,defs $(TARGET_LDFLAGS)" \
 	CP="$(CP)" \
-	GEN_LIBS="-lc $(LIBGCC_S) -lssp_nonshared" \
+	GEN_LIBS="-lc $(LIBGCC_S) $(SSP_LIB)" \
 	check_as_needed=
 
 # check_as_needed overrides dependency on libgcc_s
