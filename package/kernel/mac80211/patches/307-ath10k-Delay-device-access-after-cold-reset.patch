@@ -1,0 +1,56 @@
+From: Vasanthakumar Thiagarajan <vthiagar@qti.qualcomm.com>
+Date: Fri, 3 Jul 2015 11:45:42 +0530
+Subject: [PATCH] ath10k: Delay device access after cold reset
+
+It is observed that during cold reset pcie access right
+after a write operation to SOC_GLOBAL_RESET_ADDRESS causes
+Data Bus Error and system hard lockup. The reason
+for bus error is that pcie needs some time to get
+back to stable state for any transaction during cold reset. Add
+delay of 20 msecs after write of SOC_GLOBAL_RESET_ADDRESS
+to fix this issue.
+
+Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@qti.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -2602,7 +2602,6 @@ static int ath10k_pci_wait_for_target_in
+ 
+ static int ath10k_pci_cold_reset(struct ath10k *ar)
+ {
+-	int i;
+ 	u32 val;
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset\n");
+@@ -2618,23 +2617,18 @@ static int ath10k_pci_cold_reset(struct
+ 	val |= 1;
+ 	ath10k_pci_reg_write32(ar, SOC_GLOBAL_RESET_ADDRESS, val);
+ 
+-	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
+-		if (ath10k_pci_reg_read32(ar, RTC_STATE_ADDRESS) &
+-					  RTC_STATE_COLD_RESET_MASK)
+-			break;
+-		msleep(1);
+-	}
++	/* After writing into SOC_GLOBAL_RESET to put device into
++	 * reset and pulling out of reset pcie may not be stable
++	 * for any immediate pcie register access and cause bus error,
++	 * add delay before any pcie access request to fix this issue.
++	 */
++	msleep(20);
+ 
+ 	/* Pull Target, including PCIe, out of RESET. */
+ 	val &= ~1;
+ 	ath10k_pci_reg_write32(ar, SOC_GLOBAL_RESET_ADDRESS, val);
+ 
+-	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
+-		if (!(ath10k_pci_reg_read32(ar, RTC_STATE_ADDRESS) &
+-					    RTC_STATE_COLD_RESET_MASK))
+-			break;
+-		msleep(1);
+-	}
++	msleep(20);
+ 
+ 	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset complete\n");
+ 

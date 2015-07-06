@@ -42,7 +42,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  
 --- a/drivers/net/wireless/ath/ath9k/recv.c
 +++ b/drivers/net/wireless/ath/ath9k/recv.c
-@@ -496,10 +496,9 @@ bool ath_stoprecv(struct ath_softc *sc)
+@@ -491,10 +491,9 @@ bool ath_stoprecv(struct ath_softc *sc)
  
  	if (!(ah->ah_flags & AH_UNPLUGGED) &&
  	    unlikely(!stopped)) {
@@ -58,7 +58,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  }
 --- a/drivers/net/wireless/ath/ath9k/xmit.c
 +++ b/drivers/net/wireless/ath/ath9k/xmit.c
-@@ -1896,8 +1896,11 @@ bool ath_drain_all_txq(struct ath_softc
+@@ -1883,8 +1883,11 @@ bool ath_drain_all_txq(struct ath_softc
  			npend |= BIT(i);
  	}
  
