@@ -11,7 +11,7 @@
   * RFCSR 31:
 --- a/drivers/net/wireless/rt2x00/rt2800lib.c
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.c
-@@ -3551,8 +3551,13 @@ static void rt2800_config_channel(struct
+@@ -3527,8 +3527,13 @@ static void rt2800_config_channel(struct
  	    rt2x00_rf(rt2x00dev, RF5390) ||
  	    rt2x00_rf(rt2x00dev, RF5392)) {
  		rt2800_rfcsr_read(rt2x00dev, 30, &rfcsr);

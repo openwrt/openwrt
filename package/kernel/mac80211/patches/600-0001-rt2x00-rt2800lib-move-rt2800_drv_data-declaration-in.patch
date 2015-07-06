@@ -20,32 +20,14 @@ Changes since v1: ---
  drivers/net/wireless/rt2x00/rt2800lib.h |   11 +++++++++++
  2 files changed, 11 insertions(+), 13 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800.h
-+++ b/drivers/net/wireless/rt2x00/rt2800.h
-@@ -2960,17 +2960,4 @@ enum rt2800_eeprom_word {
-  */
- #define BCN_TBTT_OFFSET 64
- 
--/*
-- * RT2800 driver data structure
-- */
--struct rt2800_drv_data {
--	u8 calibration_bw20;
--	u8 calibration_bw40;
--	u8 bbp25;
--	u8 bbp26;
--	u8 txmixer_gain_24g;
--	u8 txmixer_gain_5g;
--	unsigned int tbtt_tick;
--};
--
- #endif /* RT2800_H */
 --- a/drivers/net/wireless/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -20,6 +20,17 @@
+@@ -20,6 +20,20 @@
  #ifndef RT2800LIB_H
  #define RT2800LIB_H
  
++#include "rt2800.h"
++
 +/* RT2800 driver data structure */
 +struct rt2800_drv_data {
 +	u8 calibration_bw20;
@@ -55,6 +37,7 @@ Changes since v1: ---
 +	u8 txmixer_gain_24g;
 +	u8 txmixer_gain_5g;
 +	unsigned int tbtt_tick;
++	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
 +};
 +
  struct rt2800_ops {

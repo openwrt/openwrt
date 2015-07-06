@@ -165,7 +165,7 @@
  void ath_fill_led_pin(struct ath_softc *sc)
 --- a/drivers/net/wireless/ath/ath9k/init.c
 +++ b/drivers/net/wireless/ath/ath9k/init.c
-@@ -935,7 +935,7 @@ int ath9k_init_device(u16 devid, struct
+@@ -942,7 +942,7 @@ int ath9k_init_device(u16 devid, struct
  
  #ifdef CPTCFG_MAC80211_LEDS
  	/* must be initialized before ieee80211_register_hw */
@@ -176,7 +176,7 @@
  #endif
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1391,6 +1391,61 @@ static const struct file_operations fops
+@@ -1393,6 +1393,61 @@ static const struct file_operations fops
  	.llseek = default_llseek,
  };
  
@@ -238,7 +238,7 @@
  
  int ath9k_init_debug(struct ath_hw *ah)
  {
-@@ -1415,6 +1470,10 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1417,6 +1472,10 @@ int ath9k_init_debug(struct ath_hw *ah)
  			    &fops_eeprom);
  	debugfs_create_file("chanbw", S_IRUSR | S_IWUSR, sc->debug.debugfs_phy,
  			    sc, &fops_chanbw);

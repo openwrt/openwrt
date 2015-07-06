@@ -1,13 +1,13 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -263,6 +263,7 @@ RT2X00_LIB_FIRMWARE=
+@@ -311,6 +311,7 @@ RT2X00_LIB_FIRMWARE=
  RT2X00_LIB_CRYPTO=
  RT2X00_LIB_LEDS=
  RT2X00_LIB_DEBUGFS=
 +RT2X00_LIB_EEPROM=
  RT2X00_DEBUG=
- RTL_CARDS=
- RTL8192CE=
+ WL_MEDIATEK=
+ MT7601U=
 --- a/drivers/net/wireless/rt2x00/Kconfig
 +++ b/drivers/net/wireless/rt2x00/Kconfig
 @@ -69,6 +69,7 @@ config RT2800PCI
@@ -48,7 +48,7 @@
  obj-$(CPTCFG_RT2X00_LIB_MMIO)		+= rt2x00mmio.o
 --- a/drivers/net/wireless/rt2x00/rt2800lib.h
 +++ b/drivers/net/wireless/rt2x00/rt2800lib.h
-@@ -43,6 +43,8 @@ struct rt2800_drv_data {
+@@ -46,6 +46,8 @@ struct rt2800_drv_data {
  	} shmem_lock;
  };
  
@@ -57,7 +57,7 @@
  struct rt2800_ops {
  	void (*register_read)(struct rt2x00_dev *rt2x00dev,
  			      const unsigned int offset, u32 *value);
-@@ -176,6 +178,15 @@ static inline int rt2800_read_eeprom(str
+@@ -179,6 +181,15 @@ static inline int rt2800_read_eeprom(str
  {
  	const struct rt2800_ops *rt2800ops = rt2x00dev->ops->drv;
  

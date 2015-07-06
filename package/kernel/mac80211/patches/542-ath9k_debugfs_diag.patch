@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1447,6 +1447,50 @@ static const struct file_operations fops
+@@ -1449,6 +1449,50 @@ static const struct file_operations fops
  #endif
  
  
@@ -51,7 +51,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1474,6 +1518,8 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1476,6 +1520,8 @@ int ath9k_init_debug(struct ath_hw *ah)
  	debugfs_create_file("gpio_led", S_IWUSR,
  			   sc->debug.debugfs_phy, sc, &fops_gpio_led);
  #endif
@@ -62,7 +62,7 @@
  	debugfs_create_devm_seqfile(sc->dev, "interrupt", sc->debug.debugfs_phy,
 --- a/drivers/net/wireless/ath/ath9k/hw.h
 +++ b/drivers/net/wireless/ath/ath9k/hw.h
-@@ -513,6 +513,12 @@ enum {
+@@ -519,6 +519,12 @@ enum {
  	ATH9K_RESET_COLD,
  };
  
@@ -75,7 +75,7 @@
  struct ath9k_hw_version {
  	u32 magic;
  	u16 devid;
-@@ -794,6 +800,8 @@ struct ath_hw {
+@@ -804,6 +810,8 @@ struct ath_hw {
  	u32 rfkill_polarity;
  	u32 ah_flags;
  
@@ -84,7 +84,7 @@
  	bool reset_power_on;
  	bool htc_reset_init;
  
-@@ -1055,6 +1063,7 @@ void ath9k_hw_check_nav(struct ath_hw *a
+@@ -1066,6 +1074,7 @@ void ath9k_hw_check_nav(struct ath_hw *a
  bool ath9k_hw_check_alive(struct ath_hw *ah);
  
  bool ath9k_hw_setpower(struct ath_hw *ah, enum ath9k_power_mode mode);
@@ -94,7 +94,7 @@
  struct ath_gen_timer *ath_gen_timer_alloc(struct ath_hw *ah,
 --- a/drivers/net/wireless/ath/ath9k/hw.c
 +++ b/drivers/net/wireless/ath/ath9k/hw.c
-@@ -1804,6 +1804,20 @@ u32 ath9k_hw_get_tsf_offset(struct times
+@@ -1808,6 +1808,20 @@ u32 ath9k_hw_get_tsf_offset(struct times
  }
  EXPORT_SYMBOL(ath9k_hw_get_tsf_offset);
  
@@ -115,7 +115,7 @@
  int ath9k_hw_reset(struct ath_hw *ah, struct ath9k_channel *chan,
  		   struct ath9k_hw_cal_data *caldata, bool fastcc)
  {
-@@ -2012,6 +2026,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
+@@ -2016,6 +2030,7 @@ int ath9k_hw_reset(struct ath_hw *ah, st
  		ar9003_hw_disable_phy_restart(ah);
  
  	ath9k_hw_apply_gpio_override(ah);

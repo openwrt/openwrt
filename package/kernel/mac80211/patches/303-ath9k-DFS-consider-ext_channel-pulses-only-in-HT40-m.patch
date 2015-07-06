@@ -1,0 +1,25 @@
+From: Zefir Kurtisi <zefir.kurtisi@neratec.com>
+Date: Tue, 16 Jun 2015 11:46:42 +0200
+Subject: [PATCH] ath9k: DFS - consider ext_channel pulses only in HT40
+ mode
+
+The chip reports radar pulses on extension channel
+even if operating in HT20 mode. This patch adds a
+sanity check for HT40 mode before it feeds pulses
+on extension channel to the pattern detector.
+
+Signed-off-by: Zefir Kurtisi <zefir.kurtisi@neratec.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/dfs.c
++++ b/drivers/net/wireless/ath/ath9k/dfs.c
+@@ -198,7 +198,8 @@ void ath9k_dfs_process_phyerr(struct ath
+ 	sc->dfs_prev_pulse_ts = pe.ts;
+ 	if (ard.pulse_bw_info & PRI_CH_RADAR_FOUND)
+ 		ath9k_dfs_process_radar_pulse(sc, &pe);
+-	if (ard.pulse_bw_info & EXT_CH_RADAR_FOUND) {
++	if (IS_CHAN_HT40(ah->curchan) &&
++	    ard.pulse_bw_info & EXT_CH_RADAR_FOUND) {
+ 		pe.freq += IS_CHAN_HT40PLUS(ah->curchan) ? 20 : -20;
+ 		ath9k_dfs_process_radar_pulse(sc, &pe);
+ 	}
