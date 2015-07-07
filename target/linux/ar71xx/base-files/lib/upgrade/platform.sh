@@ -300,6 +300,7 @@ platform_check_image() {
 		return 1
 		;;
 
+	antminer-s1 | \
 	archer-c5 | \
 	archer-c7 | \
 	el-m150 | \
