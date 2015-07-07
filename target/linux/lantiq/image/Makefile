@@ -414,6 +414,9 @@ Image/Build/Profile/P2812HNUF3=$(call Image/BuildNAND/$(1),$(1),P2812HNUF3)
 Image/BuildKernel/Profile/ARV7519RW22=$(call Image/BuildKernel/Template,ARV7519RW22,$(1))
 Image/Build/Profile/ARV7519RW22=$(call Image/Build/$(1),$(1),ARV7519RW22)
 
+Image/BuildKernel/Profile/BTHOMEHUBV5A=$(call Image/BuildKernel/Template,BTHOMEHUBV5A)
+Image/Build/Profile/BTHOMEHUBV5A=$(call Image/BuildNAND/$(1),$(1),BTHOMEHUBV5A)
+
 Image/BuildKernel/Profile/EASY80920NAND=$(call Image/BuildKernel/Template,EASY80920NAND)
 Image/Build/Profile/EASY80920NAND=$(call Image/Build/$(1),$(1),EASY80920NAND)
 
