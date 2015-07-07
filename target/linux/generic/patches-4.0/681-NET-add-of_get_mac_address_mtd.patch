@@ -23,12 +23,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /**
   * of_get_phy_mode - Get phy mode for given device_node
-@@ -75,3 +76,39 @@ const void *of_get_mac_address(struct de
+@@ -75,3 +76,43 @@ const void *of_get_mac_address(struct de
  	return NULL;
  }
  EXPORT_SYMBOL(of_get_mac_address);
 +
-+int of_get_mac_address_mtd(struct device_node *np, void *mac)
++int of_get_mac_address_mtd(struct device_node *np, unsigned char *mac)
 +{
 +	struct device_node *mtd_np = NULL;
 +	size_t retlen;
@@ -37,6 +37,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	const char *part;
 +	const __be32 *list;
 +	phandle phandle;
++	u32 mac_inc = 0;
 +
 +	list = of_get_property(np, "mtd-mac-address", &size);
 +	if (!list || (size != (2 * sizeof(*list))))
@@ -57,8 +58,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (IS_ERR(mtd))
 +		return PTR_ERR(mtd);
 +
-+	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, (u_char *) mac);
++	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, mac);
 +	put_mtd_device(mtd);
++
++	if (!of_property_read_u32(np, "mtd-mac-address-increment", &mac_inc))
++		mac[5] += mac_inc;
 +
 +	return ret;
 +}
@@ -69,7 +73,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #include <linux/of.h>
  extern int of_get_phy_mode(struct device_node *np);
  extern const void *of_get_mac_address(struct device_node *np);
-+extern int of_get_mac_address_mtd(struct device_node *np, void *mac);
++extern int of_get_mac_address_mtd(struct device_node *np, unsigned char *mac);
  #else
  static inline int of_get_phy_mode(struct device_node *np)
  {
