@@ -116,8 +116,8 @@ struct uci_package;
 struct switch_dev {
 	int id;
 	char dev_name[IFNAMSIZ];
-	const char *name;
-	const char *alias;
+	char *name;
+	char *alias;
 	int ports;
 	int vlans;
 	int cpu_port;
