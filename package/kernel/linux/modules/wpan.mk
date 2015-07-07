@@ -4,7 +4,7 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 
-WPAN_MENU:=Wireless Drivers
+WPAN_MENU:=WPAN 802.15.4 Support
 
 define KernelPackage/ieee802154
   SUBMENU:=$(WPAN_MENU)
