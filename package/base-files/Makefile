@@ -55,6 +55,8 @@ define Package/base-files/conffiles
 /etc/config/
 /etc/dropbear/
 /etc/crontabs/
+/etc/sysctl.d/local.conf
+/etc/sysctl.d/
 $(call $(TARGET)/conffiles)
 endef
 
