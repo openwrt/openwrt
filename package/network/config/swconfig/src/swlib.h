@@ -135,7 +135,7 @@ struct switch_val {
 	int err;
 	int port_vlan;
 	union {
-		const char *s;
+		char *s;
 		int i;
 		struct switch_port *ports;
 	} value;
