@@ -205,6 +205,7 @@ platform_check_image() {
 	dir-615-c1 | \
 	dir-615-e1 | \
 	dir-615-e4 | \
+	dir-615-i1 | \
 	dir-825-c1 | \
 	dir-835-a1 | \
 	dragino2 | \
