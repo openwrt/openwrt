@@ -411,6 +411,9 @@ ar71xx_board_detect() {
 	*"DIR-615 rev. E4")
 		name="dir-615-e4"
 		;;
+	*"DIR-615 rev. I1")
+		name="dir-615-i1"
+		;;
 	*"DIR-825 rev. B1")
 		name="dir-825-b1"
 		;;

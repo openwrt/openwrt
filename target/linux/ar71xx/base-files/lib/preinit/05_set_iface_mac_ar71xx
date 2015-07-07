@@ -29,6 +29,9 @@ preinit_set_mac_address() {
 			fetch_mac_from_mtd config lan_mac wan_mac
 			echo 1 > /sys/class/leds/dir-615-c1:green:wancpu/brightness
 			;;
+		dir-615-i1)
+			fetch_mac_from_mtd nvram sys_lan_mac sys_wan_mac
+			;;
 		r6100)
 			mac_lan=$(mtd_get_mac_binary caldata 0)
 			[ -n "$mac_lan" ] && ifconfig eth1 hw ether "$mac_lan"
