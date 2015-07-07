@@ -286,11 +286,11 @@ int nvram_commit(nvram_handle_t *h)
 
 	/* Clear data area */
 	ptr = (char *) header + sizeof(nvram_header_t);
-	memset(ptr, 0xFF, NVRAM_SPACE - sizeof(nvram_header_t));
+	memset(ptr, 0xFF, nvram_part_size - h->offset - sizeof(nvram_header_t));
 	memset(&tmp, 0, sizeof(nvram_header_t));
 
 	/* Leave space for a double NUL at the end */
-	end = (char *) header + NVRAM_SPACE - 2;
+	end = (char *) header + nvram_part_size - h->offset - 2;
 
 	/* Write out all tuples */
 	for (i = 0; i < NVRAM_ARRAYSIZE(h->nvram_hash); i++) {
