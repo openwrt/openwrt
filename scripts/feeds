@@ -497,8 +497,8 @@ sub install_package {
 	$installed{$src} = 1;
 
 	defined($override) and $override == 1
-		and warn "Overriding package '$src'\n"
-		or warn "Installing package '$src'\n";
+		and warn "Overriding core package '$src' with version from $feed->[1]\n"
+		or warn "Installing package '$src' from $feed->[1]\n";
 
 	do_install_package($feed, $pkg) == 0 or do {
 		warn "failed.\n";
