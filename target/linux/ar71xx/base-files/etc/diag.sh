@@ -40,6 +40,9 @@ get_status_led() {
 	bullet-m | rocket-m | rocket-m-xw | nano-m | nanostation-m | nanostation-m-xw | loco-m-xw)
 		status_led="ubnt:green:link4"
 		;;
+	rocket-m-ti)
+		status_led="ubnt:green:link6"
+		;;
 	bxu2000n-2-a1)
 		status_led="bhu:green:status"
 		;;
