@@ -8,6 +8,18 @@ endef
 
 $(eval $(call Profile,ARV4525PW))
 
+define Profile/ARV8539PW22
+  NAME:=Speedport W504V Typ A - ARV8539PW22
+  PACKAGES:=kmod-ltq-hcd-danube \
+        kmod-ltq-adsl-danube-mei kmod-ltq-adsl-danube \
+        kmod-ltq-adsl-danube-fw-b kmod-ltq-atm-danube \
+        ltq-adsl-app ppp-mod-pppoa \
+        kmod-ath9k wpad-mini \
+        swconfig
+endef
+
+$(eval $(call Profile,ARV8539PW22))
+
 define Profile/ARV7525PW
   NAME:=Speedport W303V Typ A - ARV7525PW
   PACKAGES:=kmod-rt2800-pci wpad-mini \
