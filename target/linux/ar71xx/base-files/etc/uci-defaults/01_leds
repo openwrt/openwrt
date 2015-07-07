@@ -165,6 +165,11 @@ esr1750)
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "esr1750:blue:wlan-5g" "phy1tpt"
 	;;
 
+epg5000)
+	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "epg5000:blue:wlan-2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "epg5000:blue:wlan-5g" "phy0tpt"
+	;;
+
 hiwifi-hc6361)
 	ucidef_set_led_netdev "inet" "INET" "hiwifi:blue:internet" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "hiwifi:blue:wlan-2p4" "phy0tpt"
