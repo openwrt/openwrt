@@ -338,6 +338,14 @@ define Device/antminer-s1
 	CONSOLE := ttyATH0,115200
 endef
 
+define Device/antminer-s3
+	$(Device/tplink-8mlzma)
+	BOARDNAME := ANTMINER-S3
+	DEVICE_PROFILE := ANTMINER_S3
+	TPLINK_HWID := 0x04440003
+	CONSOLE := ttyATH0,115200
+endef
+
 define Device/el-m150
     $(Device/tplink-8mlzma)
     BOARDNAME := EL-M150
@@ -353,7 +361,7 @@ define Device/el-mini
     TPLINK_HWID := 0x01530001
     CONSOLE := ttyATH0,115200
 endef
-TARGET_DEVICES += antminer-s1 el-m150 el-mini
+TARGET_DEVICES += antminer-s1 antminer-s3 el-m150 el-mini
 
 define Device/gl-inet-6408A-v1
     $(Device/tplink-8mlzma)
