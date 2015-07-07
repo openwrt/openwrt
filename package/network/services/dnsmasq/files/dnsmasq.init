@@ -121,7 +121,7 @@ dnsmasq() {
 	append_bool "$cfg" nohosts "--no-hosts"
 	append_bool "$cfg" nonegcache "--no-negcache"
 	append_bool "$cfg" strictorder "--strict-order"
-	append_bool "$cfg" logqueries "--log-queries"
+	append_bool "$cfg" logqueries "--log-queries=extra"
 	append_bool "$cfg" noresolv "--no-resolv"
 	append_bool "$cfg" localise_queries "--localise-queries"
 	append_bool "$cfg" readethers "--read-ethers"
