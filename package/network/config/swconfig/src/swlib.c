@@ -755,12 +755,26 @@ swlib_free_attributes(struct switch_attr **head)
 	*head = NULL;
 }
 
+static void
+swlib_free_port_map(struct switch_dev *dev)
+{
+	int i;
+
+	if (!dev || !dev->maps)
+		return;
+
+	for (i = 0; i < dev->ports; i++)
+		free(dev->maps[i].segment);
+	free(dev->maps);
+}
+
 void
 swlib_free(struct switch_dev *dev)
 {
 	swlib_free_attributes(&dev->ops);
 	swlib_free_attributes(&dev->port_ops);
 	swlib_free_attributes(&dev->vlan_ops);
+	swlib_free_port_map(dev);
 	free(dev->name);
 	free(dev->alias);
 	free(dev);
