@@ -749,6 +749,8 @@ swlib_free_attributes(struct switch_attr **head)
 
 	while (a) {
 		next = a->next;
+		free(a->name);
+		free(a->description);
 		free(a);
 		a = next;
 	}
