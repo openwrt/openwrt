@@ -363,7 +363,7 @@ int swlib_set_attr_string(struct switch_dev *dev, struct switch_attr *a, int por
 		val.value.i = atoi(str);
 		break;
 	case SWITCH_TYPE_STRING:
-		val.value.s = str;
+		val.value.s = (char *)str;
 		break;
 	case SWITCH_TYPE_PORTS:
 		ports = alloca(sizeof(struct switch_port) * dev->ports);
