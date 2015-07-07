@@ -3,5 +3,7 @@
 
 START=11
 start() {
-	[ -f /etc/sysctl.conf ] && sysctl -p -e >&-
+	for CONF in /etc/sysctl.conf /etc/sysctl.d/*.conf; do
+		[ -f "$CONF" ] && sysctl -p "$CONF" -e >&-
+	done
 }
