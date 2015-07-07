@@ -146,8 +146,8 @@ struct switch_attr {
 	int atype;
 	int id;
 	int type;
-	const char *name;
-	const char *description;
+	char *name;
+	char *description;
 	struct switch_attr *next;
 };
 
