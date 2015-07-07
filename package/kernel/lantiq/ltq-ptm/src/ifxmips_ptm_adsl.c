@@ -1455,7 +1455,11 @@ static int ifx_ptm_init(void)
     }
 
     /*  register interrupt handler  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0)
+    ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, 0, "ptm_mailbox_isr", &g_ptm_priv_data);
+#else
     ret = request_irq(PPE_MAILBOX_IGU1_INT, mailbox_irq_handler, IRQF_DISABLED, "ptm_mailbox_isr", &g_ptm_priv_data);
+#endif
     if ( ret ) {
         if ( ret == -EBUSY ) {
             err("IRQ may be occupied by other driver, please reconfig to disable it.");
