@@ -158,7 +158,7 @@ struct switch_port {
 
 struct switch_portmap {
 	unsigned int virt;
-	const char *segment;
+	char *segment;
 };
 
 /**
