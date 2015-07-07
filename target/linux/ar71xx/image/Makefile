@@ -787,7 +787,14 @@ define Device/ubnt-rocket-m-xw
   $(Device/ubnt-xw)
   BOARDNAME := UBNT-RM-XW
 endef
-TARGET_DEVICES += ubnt-nano-m-xw ubnt-loco-m-xw ubnt-rocket-m-xw
+
+define Device/ubnt-rocket-m-ti
+  $(Device/ubnt-xw)
+  BOARDNAME := UBNT-RM-TI
+  UBNT_TYPE := TI
+  UBNT_BOARD := XM
+endef
+TARGET_DEVICES += ubnt-nano-m-xw ubnt-loco-m-xw ubnt-rocket-m-xw ubnt-rocket-m-ti
 
 define Device/ubnt-air-gateway
   $(Device/ubnt-xm)

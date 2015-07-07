@@ -228,6 +228,7 @@ platform_check_image() {
 	nanostation-m | \
 	rocket-m | \
 	rocket-m-xw | \
+	rocket-m-ti | \
 	nanostation-m-xw | \
 	rw2458n | \
 	wpj531 | \

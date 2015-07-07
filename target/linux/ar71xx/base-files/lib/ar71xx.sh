@@ -640,6 +640,9 @@ ar71xx_board_detect() {
 	*"Rocket M")
 		name="rocket-m"
 		;;
+	*"Rocket M TI")
+		name="rocket-m-ti"
+		;;
 	*"Rocket M XW")
 		name="rocket-m-xw"
 		;;
