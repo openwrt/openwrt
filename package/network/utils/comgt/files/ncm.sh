@@ -27,6 +27,8 @@ proto_ncm_setup() {
 	local device apn auth username password pincode delay mode
 	json_get_vars device apn auth username password pincode delay mode
 
+	[ -n "$ctl_device" ] && device=$ctl_device
+
 	[ -n "$device" ] || {
 		echo "No control device specified"
 		proto_notify_error "$interface" NO_DEVICE
