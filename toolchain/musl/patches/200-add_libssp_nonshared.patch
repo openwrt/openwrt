@@ -51,8 +51,8 @@ index 0000000..2b403a6
 --- /dev/null
 +++ b/libssp_nonshared/__stack_chk_fail_local.c
 @@ -0,0 +1,2 @@
-+extern void __stack_chk_fail(void);
-+void __attribute__((visibility ("hidden"))) __stack_chk_fail_local(void) { __stack_chk_fail(); }
++#include "atomic.h"
++void __attribute__((visibility ("hidden"))) __stack_chk_fail_local(void) { a_crash(); }
 -- 
 2.1.4
 
