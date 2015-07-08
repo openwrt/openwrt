@@ -9,7 +9,7 @@ WPAN_MENU:=WPAN 802.15.4 Support
 define KernelPackage/ieee802154
   SUBMENU:=$(WPAN_MENU)
   TITLE:=IEEE-802.15.4 support
-  DEPENDS:=@LINUX_4_0
+  DEPENDS:=@!LINUX_3_18
   KCONFIG:= \
 	CONFIG_IEEE802154 \
 	CONFIG_IEEE802154_SOCKET=y
@@ -32,7 +32,7 @@ $(eval $(call KernelPackage,ieee802154))
 define KernelPackage/mac802154
   SUBMENU:=$(WPAN_MENU)
   TITLE:=MAC-802.15.4 support
-  DEPENDS:=+kmod-ieee802154 +kmod-crypto-aead +kmod-lib-crc-ccitt @LINUX_4_0
+  DEPENDS:=+kmod-ieee802154 +kmod-crypto-aead +kmod-lib-crc-ccitt @!LINUX_3_18
   KCONFIG:= \
 	CONFIG_MAC802154 \
 	CONFIG_IEEE802154_DRIVERS=y
@@ -55,7 +55,7 @@ $(eval $(call KernelPackage,mac802154))
 define KernelPackage/fakelb
   SUBMENU:=$(WPAN_MENU)
   TITLE:=Fake LR-WPAN driver
-  DEPENDS:=+kmod-mac802154 @LINUX_4_0
+  DEPENDS:=+kmod-mac802154 @!LINUX_3_18
   KCONFIG:=CONFIG_IEEE802154_FAKELB
   FILES:=$(LINUX_DIR)/drivers/net/ieee802154/fakelb.ko
   AUTOLOAD:=$(call AutoLoad,92,fakelb)
@@ -107,7 +107,7 @@ $(eval $(call KernelPackage,cc2520))
 define KernelPackage/ieee802154_6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
-  DEPENDS:=@LINUX_4_0 +kmod-6lowpan
+  DEPENDS:=@!LINUX_3_18 +kmod-6lowpan
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
   FILES:= \
 	$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko@ge4.0 \
