@@ -65,7 +65,7 @@ static void _nvram_free(nvram_handle_t *h)
 static nvram_tuple_t * _nvram_realloc( nvram_handle_t *h, nvram_tuple_t *t,
 	const char *name, const char *value )
 {
-	if ((strlen(value) + 1) > NVRAM_SPACE)
+	if ((strlen(value) + 1) > h->length - h->offset)
 		return NULL;
 
 	if (!t) {
@@ -395,7 +395,7 @@ nvram_handle_t * nvram_open(const char *file, int rdonly)
 				header = nvram_header(h);
 
 				if (header->magic == NVRAM_MAGIC &&
-				    (rdonly || header->len < NVRAM_SPACE)) {
+				    (rdonly || header->len < h->length - h->offset)) {
 					_nvram_rehash(h);
 					free(mtd);
 					return h;
