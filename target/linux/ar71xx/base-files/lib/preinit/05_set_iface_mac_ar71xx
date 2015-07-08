@@ -22,9 +22,6 @@ fetch_mac_from_mtd() {
 
 preinit_set_mac_address() {
 	case $(ar71xx_board_name) in
-		tew-632brp)
-			fetch_mac_from_mtd config lan_mac wan_mac
-			;;
 		dir-615-c1)
 			fetch_mac_from_mtd config lan_mac wan_mac
 			echo 1 > /sys/class/leds/dir-615-c1:green:wancpu/brightness
@@ -37,6 +34,9 @@ preinit_set_mac_address() {
 			[ -n "$mac_lan" ] && ifconfig eth1 hw ether "$mac_lan"
 			mac_wan=$(mtd_get_mac_binary caldata 6)
 			[ -n "$mac_wan" ] && ifconfig eth0 hw ether "$mac_wan"
+			;;
+		tew-632brp)
+			fetch_mac_from_mtd config lan_mac wan_mac
 			;;
 		wrt160nl)
 			fetch_mac_from_mtd nvram lan_hwaddr wan_hwaddr
