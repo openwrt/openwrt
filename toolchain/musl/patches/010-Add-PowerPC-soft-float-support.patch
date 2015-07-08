@@ -1,0 +1,141 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Wed, 8 Jul 2015 13:56:37 +0200
+Subject: [PATCH] Add PowerPC soft-float support
+
+Some PowerPC CPUs (e.g. Freescale MPC85xx) have a completely different
+instruction set for floating point operations (SPE).
+Executing regular PowerPC floating point instructions results in
+"Illegal instruction" errors.
+
+Until support for SPE FPU is added, make it possible to run these
+devices in soft-float mode.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+ create mode 100644 src/fenv/powerpc-sf/fenv.sub
+ create mode 100644 src/setjmp/powerpc-sf/longjmp.s
+ create mode 100644 src/setjmp/powerpc-sf/longjmp.sub
+ create mode 100644 src/setjmp/powerpc-sf/setjmp.s
+ create mode 100644 src/setjmp/powerpc-sf/setjmp.sub
+
+--- a/configure
++++ b/configure
+@@ -498,6 +498,10 @@ trycppif "_MIPSEL || __MIPSEL || __MIPSE
+ trycppif __mips_soft_float "$t" && SUBARCH=${SUBARCH}-sf
+ fi
+ 
++if test "$ARCH" = "powerpc" ; then
++trycppif _SOFT_FLOAT "$t" && SUBARCH=${SUBARCH}-sf
++fi
++
+ test "$ARCH" = "microblaze" && trycppif __MICROBLAZEEL__ "$t" \
+ && SUBARCH=${SUBARCH}el
+ 
+--- /dev/null
++++ b/src/fenv/powerpc-sf/fenv.sub
+@@ -0,0 +1 @@
++../fenv.c
+--- /dev/null
++++ b/src/setjmp/powerpc-sf/longjmp.s
+@@ -0,0 +1,47 @@
++	.global _longjmp
++	.global longjmp
++	.type   _longjmp,@function
++	.type   longjmp,@function
++_longjmp:
++longjmp:
++# void longjmp(jmp_buf env, int val);
++# put val into return register and restore the env saved in setjmp
++# if val(r4) is 0, put 1 there.
++	# 0) move old return address into r0
++	lwz 0, 0(3)
++	# 1) put it into link reg
++	mtlr 0
++	#2 ) restore stack ptr
++	lwz 1, 4(3)
++	#3) restore control reg
++	lwz 0, 8(3)
++	mtcr 0
++	#4) restore r14-r31
++	lwz 14, 12(3)
++	lwz 15, 16(3)
++	lwz 16, 20(3)
++	lwz 17, 24(3)
++	lwz 18, 28(3)
++	lwz 19, 32(3)
++	lwz 20, 36(3)
++	lwz 21, 40(3)
++	lwz 22, 44(3)
++	lwz 23, 48(3)
++	lwz 24, 52(3)
++	lwz 25, 56(3)
++	lwz 26, 60(3)
++	lwz 27, 64(3)
++	lwz 28, 68(3)
++	lwz 29, 72(3)
++	lwz 30, 76(3)
++	lwz 31, 80(3)
++	#5) put val into return reg r3
++	mr 3, 4
++
++	#6) check if return value is 0, make it 1 in that case
++	cmpwi cr7, 4, 0
++	bne cr7, 1f
++	li 3, 1
++1:
++	blr
++
+--- /dev/null
++++ b/src/setjmp/powerpc-sf/longjmp.sub
+@@ -0,0 +1 @@
++longjmp.s
+--- /dev/null
++++ b/src/setjmp/powerpc-sf/setjmp.s
+@@ -0,0 +1,43 @@
++	.global ___setjmp
++	.hidden ___setjmp
++	.global __setjmp
++	.global _setjmp
++	.global setjmp
++	.type   __setjmp,@function
++	.type   _setjmp,@function
++	.type   setjmp,@function
++___setjmp:
++__setjmp:
++_setjmp:
++setjmp:
++	# 0) store IP int 0, then into the jmpbuf pointed to by r3 (first arg)
++	mflr 0
++	stw 0, 0(3)
++	# 1) store reg1 (SP)
++	stw 1, 4(3)
++	# 2) store cr
++	mfcr 0
++	stw 0, 8(3)
++	# 3) store r14-31
++	stw 14, 12(3)
++	stw 15, 16(3)
++	stw 16, 20(3)
++	stw 17, 24(3)
++	stw 18, 28(3)
++	stw 19, 32(3)
++	stw 20, 36(3)
++	stw 21, 40(3)
++	stw 22, 44(3)
++	stw 23, 48(3)
++	stw 24, 52(3)
++	stw 25, 56(3)
++	stw 26, 60(3)
++	stw 27, 64(3)
++	stw 28, 68(3)
++	stw 29, 72(3)
++	stw 30, 76(3)
++	stw 31, 80(3)
++	# 4) set return value to 0
++	li 3, 0
++	# 5) return
++	blr
+--- /dev/null
++++ b/src/setjmp/powerpc-sf/setjmp.sub
+@@ -0,0 +1 @@
++setjmp.s
