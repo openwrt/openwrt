@@ -123,8 +123,8 @@ static int do_info(nvram_handle_t *nvram)
 	printf("NCDL values:   0x%08X\n\n", hdr->config_ncdl);
 
 	printf("%i bytes used / %i bytes available (%.2f%%)\n",
-		hdr->len, NVRAM_SPACE - hdr->len,
-		(100.00 / (double)NVRAM_SPACE) * (double)hdr->len);
+		hdr->len, nvram->length - nvram->offset - hdr->len,
+		(100.00 / (double)(nvram->length - nvram->offset)) * (double)hdr->len);
 
 	return 0;
 }
