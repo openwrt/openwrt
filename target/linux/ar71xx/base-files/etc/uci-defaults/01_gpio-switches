@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/ar71xx.sh
+
+board=$(ar71xx_board_name)
+
+case "$board" in
+nanostation-m)
+	ucidef_set_gpio_switch "poe_passthrough" "PoE Passthrough" "2"
+	;;
+nanostation-m-xw)
+	ucidef_set_gpio_switch "poe_passthrough" "PoE Passthrough" "8"
+	;;
+cpe510)
+	ucidef_set_gpio_switch "poe_passthrough" "PoE Passthrough" "20"
+	;;
+esac
+
+ucidef_commit_gpio_switches
+
+exit 0
