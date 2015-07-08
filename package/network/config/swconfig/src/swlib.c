@@ -529,10 +529,13 @@ struct switch_attr *swlib_lookup_attr(struct switch_dev *dev,
 static void
 swlib_priv_free(void)
 {
+	if (family)
+		nl_object_put((struct nl_object*)family);
 	if (cache)
 		nl_cache_free(cache);
 	if (handle)
 		nl_socket_free(handle);
+	family = NULL;
 	handle = NULL;
 	cache = NULL;
 }
