@@ -198,6 +198,11 @@
 			gpios = <&gpio0 4 1>; /* active low */
 			label = "tp-link:green:usb2";
 		};
+
+		usbpower {
+			gpios = <&gpio0 10 1>; /* active low */
+			label = "tp-link:usb:power";
+		};
 	};
 
 	buttons {
@@ -207,6 +212,12 @@
 			label = "Reset button";
 			gpios = <&gpio0 5 1>; /* active low */
 			linux,code = <0x198>; /* KEY_RESTART */
+		};
+
+		rfkill {
+			label = "RFKILL switch";
+			gpios = <&gpio0 11 1>; /* active low */
+			linux,code = <0xf7>; /* RFKill */
 		};
 	};
 };
