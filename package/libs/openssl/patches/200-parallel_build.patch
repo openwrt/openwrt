@@ -1,35 +1,30 @@
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -277,17 +277,17 @@ build_libcrypto: build_crypto build_engi
+@@ -278,17 +278,17 @@ build_libcrypto: build_crypto build_engi
  build_libssl: build_ssl libssl.pc
  
  build_crypto:
 -	@dir=crypto; target=all; $(BUILD_ONE_CMD)
--build_ssl:
--	@dir=ssl; target=all; $(BUILD_ONE_CMD)
--build_engines:
--	@dir=engines; target=all; $(BUILD_ONE_CMD)
--build_apps:
--	@dir=apps; target=all; $(BUILD_ONE_CMD)
--build_tests:
--	@dir=test; target=all; $(BUILD_ONE_CMD)
--build_tools:
--	@dir=tools; target=all; $(BUILD_ONE_CMD)
 +	+@dir=crypto; target=all; $(BUILD_ONE_CMD)
-+build_ssl: build_crypto
+ build_ssl: build_crypto
+-	@dir=ssl; target=all; $(BUILD_ONE_CMD)
 +	+@dir=ssl; target=all; $(BUILD_ONE_CMD)
-+build_engines: build_crypto
+ build_engines: build_crypto
+-	@dir=engines; target=all; $(BUILD_ONE_CMD)
 +	+@dir=engines; target=all; $(BUILD_ONE_CMD)
-+build_apps: build_libs
+ build_apps: build_libs
+-	@dir=apps; target=all; $(BUILD_ONE_CMD)
 +	+@dir=apps; target=all; $(BUILD_ONE_CMD)
-+build_tests: build_libs
+ build_tests: build_libs
+-	@dir=test; target=all; $(BUILD_ONE_CMD)
 +	+@dir=test; target=all; $(BUILD_ONE_CMD)
-+build_tools: build_libs
+ build_tools: build_libs
+-	@dir=tools; target=all; $(BUILD_ONE_CMD)
 +	+@dir=tools; target=all; $(BUILD_ONE_CMD)
  
  all_testapps: build_libs build_testapps
  build_testapps:
-@@ -459,7 +459,7 @@ update: errors stacks util/libeay.num ut
+@@ -460,7 +460,7 @@ update: errors stacks util/libeay.num ut
  	@set -e; target=update; $(RECURSIVE_BUILD_CMD)
  
  depend:
@@ -38,7 +33,7 @@
  
  lint:
  	@set -e; target=lint; $(RECURSIVE_BUILD_CMD)
-@@ -521,9 +521,9 @@ dist:
+@@ -522,9 +522,9 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -50,7 +45,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR) \
  		$(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/engines \
-@@ -532,12 +532,19 @@ install_sw:
+@@ -533,12 +533,19 @@ install_sw:
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/misc \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/certs \
  		$(INSTALL_PREFIX)$(OPENSSLDIR)/private
@@ -71,7 +66,7 @@
  	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
  	do \
  		if [ -f "$$i" ]; then \
-@@ -621,12 +628,7 @@ install_html_docs:
+@@ -622,12 +629,7 @@ install_html_docs:
  		done; \
  	done
  
@@ -169,7 +164,7 @@
  	ctags $(SRC)
 --- a/test/Makefile
 +++ b/test/Makefile
-@@ -133,7 +133,7 @@ install:
+@@ -134,7 +134,7 @@ install:
  tags:
  	ctags $(SRC)
  
@@ -178,7 +173,7 @@
  
  apps:
  	@(cd ..; $(MAKE) DIRS=apps all)
-@@ -530,7 +530,7 @@ $(CONSTTIMETEST)$(EXE_EXT): $(CONSTTIMET
+@@ -538,7 +538,7 @@ $(VERIFYEXTRATEST)$(EXE_EXT): $(VERIFYEX
  #	fi
  
  dummytest$(EXE_EXT): dummytest.o $(DLIBCRYPTO)
