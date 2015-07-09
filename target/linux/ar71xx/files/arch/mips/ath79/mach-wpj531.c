@@ -94,9 +94,8 @@ static struct gpio_keys_button wpj531_gpio_keys[] __initdata = {
 
 static void __init common_setup(void)
 {
-	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
-	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
-	u8 tmpmac[ETH_ALEN];
+	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
+	u8 *mac = (u8 *) KSEG1ADDR(0x1f02e000);
 
 	ath79_register_m25p80(NULL);
 
@@ -109,7 +108,7 @@ static void __init common_setup(void)
 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ath79_eth0_data.speed = SPEED_100;
 	ath79_eth0_data.phy_mask = BIT(4);
-	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 0);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac + WPJ531_MAC0_OFFSET, 0);
 	ath79_register_eth(0);
 
 	/* WAN */
@@ -118,10 +117,10 @@ static void __init common_setup(void)
 	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ath79_eth1_data.speed = SPEED_1000;
 	ath79_switch_data.phy_poll_mask |= BIT(4);
-	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 1);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac + WPJ531_MAC1_OFFSET, 0);
 	ath79_register_eth(1);
 
-	ath79_register_wmac(ee, tmpmac);
+	ath79_register_wmac(art + WPJ531_WMAC_CALDATA_OFFSET, NULL);
 
 	ath79_register_pci();
 }
