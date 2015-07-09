@@ -115,8 +115,8 @@ static void __init common_setup(void)
 	/* WAN */
 	ath79_switch_data.phy4_mii_en = 1;
 	ath79_eth1_data.duplex = DUPLEX_FULL;
-	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-	ath79_eth1_data.speed = SPEED_100;
+	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ath79_eth1_data.speed = SPEED_1000;
 	ath79_switch_data.phy_poll_mask |= BIT(4);
 	ath79_init_mac(ath79_eth1_data.mac_addr, mac, 1);
 	ath79_register_eth(1);
