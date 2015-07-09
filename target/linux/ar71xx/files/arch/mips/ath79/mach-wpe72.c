@@ -8,7 +8,7 @@
  *  by the Free Software Foundation.
  */
 
-#include<asm/mach-ath79/ath79.h>
+#include <asm/mach-ath79/ath79.h>
 
 #include "dev-eth.h"
 #include "dev-gpio-buttons.h"
