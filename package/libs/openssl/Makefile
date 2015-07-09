@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=openssl
-PKG_VERSION:=1.0.2c
-PKG_RELEASE:=0
+PKG_VERSION:=1.0.2d
+PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
 PKG_BUILD_PARALLEL:=1
@@ -18,7 +18,7 @@ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.openssl.org/source/ \
 	ftp://ftp.funet.fi/pub/crypt/mirrors/ftp.openssl.org/source \
 	ftp://ftp.sunet.se/pub/security/tools/net/openssl/source/
-PKG_MD5SUM:=8c8d81a9ae7005276e486702edbcd4b6
+PKG_MD5SUM:=38dd619b2e77cbac69b99f52a053d25a
 
 PKG_LICENSE:=SSLEAY OPENSSL
 PKG_LICENSE_FILES:=LICENSE

@@ -27,16 +27,16 @@
  WDIRS=  windows
  LIBS=   libcrypto.a libssl.a
  SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
-@@ -271,7 +271,7 @@ reflect:
- 	@[ -n "$(THIS)" ] && $(CLEARENV) && $(MAKE) $(THIS) -e $(BUILDENV)
+@@ -272,7 +272,7 @@ reflect:
  
  sub_all: build_all
+ 
 -build_all: build_libs build_apps build_tests build_tools
 +build_all: build_libs build_apps build_tools
  
  build_libs: build_libcrypto build_libssl openssl.pc
  
-@@ -528,7 +528,7 @@ dist:
+@@ -529,7 +529,7 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
@@ -47,7 +47,7 @@
  	@$(PERL) $(TOP)/util/mkdir-p.pl $(INSTALL_PREFIX)$(INSTALLTOP)/bin \
 --- a/Makefile.org
 +++ b/Makefile.org
-@@ -526,7 +526,7 @@ dist:
+@@ -527,7 +527,7 @@ dist:
  dist_pem_h:
  	(cd crypto/pem; $(MAKE) -e $(BUILDENV) pem.h; $(MAKE) clean)
  
