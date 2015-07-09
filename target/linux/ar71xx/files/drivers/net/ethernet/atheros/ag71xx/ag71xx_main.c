@@ -1248,7 +1248,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 
 	dev->irq = platform_get_irq(pdev, 0);
 	err = request_irq(dev->irq, ag71xx_interrupt,
-			  IRQF_DISABLED,
+			  0x0,
 			  dev->name, dev);
 	if (err) {
 		dev_err(&pdev->dev, "unable to request IRQ %d\n", dev->irq);
