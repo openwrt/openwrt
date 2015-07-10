@@ -145,7 +145,7 @@ static int fe_set_ringparam(struct net_device *dev,
 	dev->netdev_ops->ndo_stop(dev);
 
 	priv->tx_ring.tx_ring_size = BIT(fls(ring->tx_pending) - 1);
-	priv->rx_ring_size = BIT(fls(ring->rx_pending) - 1);
+	priv->rx_ring.rx_ring_size = BIT(fls(ring->rx_pending) - 1);
 
 	dev->netdev_ops->ndo_open(dev);
 
@@ -159,7 +159,7 @@ static void fe_get_ringparam(struct net_device *dev,
 
 	ring->rx_max_pending = MAX_DMA_DESC;
 	ring->tx_max_pending = MAX_DMA_DESC;
-	ring->rx_pending = priv->rx_ring_size;
+	ring->rx_pending = priv->rx_ring.rx_ring_size;
 	ring->tx_pending = priv->tx_ring.tx_ring_size;
 }
 
