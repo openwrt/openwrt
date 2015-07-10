@@ -17,22 +17,20 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/toolchain-build.mk
 
-define Host/Configure
-	(cd $(HOST_BUILD_DIR); \
-		gdb_cv_func_sigsetjmp=yes \
-		CFLAGS="-O2" \
-		$(HOST_BUILD_DIR)/configure \
-		--prefix=$(TOOLCHAIN_DIR) \
-		--build=$(GNU_HOST_NAME) \
-		--host=$(GNU_HOST_NAME) \
-		--target=$(REAL_GNU_TARGET_NAME) \
-		--disable-werror \
-		--without-uiout \
-		--disable-tui --disable-gdbtk --without-x \
-		--without-included-gettext \
-		--enable-threads \
-	);
-endef
+HOST_CONFIGURE_VARS += \
+	gdb_cv_func_sigsetjmp=yes
+
+HOST_CONFIGURE_ARGS = \
+	--prefix=$(TOOLCHAIN_DIR) \
+	--build=$(GNU_HOST_NAME) \
+	--host=$(GNU_HOST_NAME) \
+	--target=$(REAL_GNU_TARGET_NAME) \
+	--disable-werror \
+	--without-uiout \
+	--disable-tui --disable-gdbtk --without-x \
+	--without-included-gettext \
+	--enable-threads \
+	--with-expat
 
 define Host/Install
 	mkdir -p $(TOOLCHAIN_DIR)/bin
