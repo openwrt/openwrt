@@ -23,7 +23,7 @@ ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_kmod-b43legacy)$(CONFIG_BRCMSM
   BUILD_B43_TOOLS = y
 endif
 
-tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf
+tools-$(BUILD_TOOLCHAIN) += gmp mpfr mpc libelf expat
 tools-y += m4 libtool autoconf automake flex bison pkg-config sed mklibs
 tools-y += sstrip make-ext4fs e2fsprogs mtd-utils mkimage
 tools-y += firmware-utils patch-image patch quilt yaffs2 flock padjffs2
