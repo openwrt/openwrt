@@ -57,7 +57,7 @@
 #define TX_DMA_DESP2_DEF	(TX_DMA_LS0 | TX_DMA_DONE)
 #define TX_DMA_DESP4_DEF	(TX_DMA_QN(3) | TX_DMA_PN(1))
 #define NEXT_TX_DESP_IDX(X)	(((X) + 1) & (ring->tx_ring_size - 1))
-#define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (priv->rx_ring_size - 1))
+#define NEXT_RX_DESP_IDX(X)	(((X) + 1) & (ring->rx_ring_size - 1))
 
 #define SYSC_REG_RSTCTRL	0x34
 
@@ -202,77 +202,80 @@ static inline void fe_set_txd(struct fe_tx_dma *txd, struct fe_tx_dma *dma_txd)
 static void fe_clean_rx(struct fe_priv *priv)
 {
 	int i;
+	struct fe_rx_ring *ring = &priv->rx_ring;
 
-	if (priv->rx_data) {
-		for (i = 0; i < priv->rx_ring_size; i++)
-			if (priv->rx_data[i]) {
-				if (priv->rx_dma && priv->rx_dma[i].rxd1)
+	if (ring->rx_data) {
+		for (i = 0; i < ring->rx_ring_size; i++)
+			if (ring->rx_data[i]) {
+				if (ring->rx_dma && ring->rx_dma[i].rxd1)
 					dma_unmap_single(&priv->netdev->dev,
-							priv->rx_dma[i].rxd1,
-							priv->rx_buf_size,
+							ring->rx_dma[i].rxd1,
+							ring->rx_buf_size,
 							DMA_FROM_DEVICE);
-				put_page(virt_to_head_page(priv->rx_data[i]));
+				put_page(virt_to_head_page(ring->rx_data[i]));
 			}
 
-		kfree(priv->rx_data);
-		priv->rx_data = NULL;
+		kfree(ring->rx_data);
+		ring->rx_data = NULL;
 	}
 
-	if (priv->rx_dma) {
+	if (ring->rx_dma) {
 		dma_free_coherent(&priv->netdev->dev,
-				priv->rx_ring_size * sizeof(*priv->rx_dma),
-				priv->rx_dma,
-				priv->rx_phys);
-		priv->rx_dma = NULL;
+				ring->rx_ring_size * sizeof(*ring->rx_dma),
+				ring->rx_dma,
+				ring->rx_phys);
+		ring->rx_dma = NULL;
 	}
 }
 
 static int fe_alloc_rx(struct fe_priv *priv)
 {
 	struct net_device *netdev = priv->netdev;
+	struct fe_rx_ring *ring = &priv->rx_ring;
 	int i, pad;
 
-	priv->rx_data = kcalloc(priv->rx_ring_size, sizeof(*priv->rx_data),
+	ring->rx_data = kcalloc(ring->rx_ring_size, sizeof(*ring->rx_data),
 			GFP_KERNEL);
-	if (!priv->rx_data)
+	if (!ring->rx_data)
 		goto no_rx_mem;
 
-	for (i = 0; i < priv->rx_ring_size; i++) {
-		priv->rx_data[i] = netdev_alloc_frag(priv->frag_size);
-		if (!priv->rx_data[i])
+	for (i = 0; i < ring->rx_ring_size; i++) {
+		ring->rx_data[i] = netdev_alloc_frag(ring->frag_size);
+		if (!ring->rx_data[i])
 			goto no_rx_mem;
 	}
 
-	priv->rx_dma = dma_alloc_coherent(&netdev->dev,
-			priv->rx_ring_size * sizeof(*priv->rx_dma),
-			&priv->rx_phys,
+	ring->rx_dma = dma_alloc_coherent(&netdev->dev,
+			ring->rx_ring_size * sizeof(*ring->rx_dma),
+			&ring->rx_phys,
 			GFP_ATOMIC | __GFP_ZERO);
-	if (!priv->rx_dma)
+	if (!ring->rx_dma)
 		goto no_rx_mem;
 
 	if (priv->flags & FE_FLAG_RX_2B_OFFSET)
 		pad = 0;
 	else
 		pad = NET_IP_ALIGN;
-	for (i = 0; i < priv->rx_ring_size; i++) {
+	for (i = 0; i < ring->rx_ring_size; i++) {
 		dma_addr_t dma_addr = dma_map_single(&netdev->dev,
-				priv->rx_data[i] + NET_SKB_PAD + pad,
-				priv->rx_buf_size,
+				ring->rx_data[i] + NET_SKB_PAD + pad,
+				ring->rx_buf_size,
 				DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr)))
 			goto no_rx_mem;
-		priv->rx_dma[i].rxd1 = (unsigned int) dma_addr;
+		ring->rx_dma[i].rxd1 = (unsigned int) dma_addr;
 
 		if (priv->flags & FE_FLAG_RX_SG_DMA)
-			priv->rx_dma[i].rxd2 = RX_DMA_PLEN0(priv->rx_buf_size);
+			ring->rx_dma[i].rxd2 = RX_DMA_PLEN0(ring->rx_buf_size);
 		else
-			priv->rx_dma[i].rxd2 = RX_DMA_LSO;
+			ring->rx_dma[i].rxd2 = RX_DMA_LSO;
 	}
+	ring->rx_calc_idx = ring->rx_ring_size - 1;
 	wmb();
 
-	fe_reg_w32(priv->rx_phys, FE_REG_RX_BASE_PTR0);
-	fe_reg_w32(priv->rx_ring_size, FE_REG_RX_MAX_CNT0);
-	fe_reg_w32((priv->rx_ring_size - 1), FE_REG_RX_CALC_IDX0);
+	fe_reg_w32(ring->rx_phys, FE_REG_RX_BASE_PTR0);
+	fe_reg_w32(ring->rx_ring_size, FE_REG_RX_MAX_CNT0);
+	fe_reg_w32(ring->rx_calc_idx, FE_REG_RX_CALC_IDX0);
 	fe_reg_w32(FE_PST_DRX_IDX0, FE_REG_PDMA_RST_CFG);
 
 	return 0;
@@ -791,8 +794,9 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 	struct net_device *netdev = priv->netdev;
 	struct net_device_stats *stats = &netdev->stats;
 	struct fe_soc_data *soc = priv->soc;
+	struct fe_rx_ring *ring = &priv->rx_ring;
+	int idx = ring->rx_calc_idx;
 	u32 checksum_bit;
-	int idx = fe_reg_r32(FE_REG_RX_CALC_IDX0);
 	struct sk_buff *skb;
 	u8 *data, *new_data;
 	struct fe_rx_dma *rxd, trxd;
@@ -813,22 +817,22 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		unsigned int pktlen;
 		dma_addr_t dma_addr;
 		idx = NEXT_RX_DESP_IDX(idx);
-		rxd = &priv->rx_dma[idx];
-		data = priv->rx_data[idx];
+		rxd = &ring->rx_dma[idx];
+		data = ring->rx_data[idx];
 
 		fe_get_rxd(&trxd, rxd);
 		if (!(trxd.rxd2 & RX_DMA_DONE))
 			break;
 
 		/* alloc new buffer */
-		new_data = netdev_alloc_frag(priv->frag_size);
+		new_data = netdev_alloc_frag(ring->frag_size);
 		if (unlikely(!new_data)) {
 			stats->rx_dropped++;
 			goto release_desc;
 		}
 		dma_addr = dma_map_single(&netdev->dev,
 				new_data + NET_SKB_PAD + pad,
-				priv->rx_buf_size,
+				ring->rx_buf_size,
 				DMA_FROM_DEVICE);
 		if (unlikely(dma_mapping_error(&netdev->dev, dma_addr))) {
 			put_page(virt_to_head_page(new_data));
@@ -836,7 +840,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		}
 
 		/* receive data */
-		skb = build_skb(data, priv->frag_size);
+		skb = build_skb(data, ring->frag_size);
 		if (unlikely(!skb)) {
 			put_page(virt_to_head_page(new_data));
 			goto release_desc;
@@ -844,7 +848,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 		skb_reserve(skb, NET_SKB_PAD + NET_IP_ALIGN);
 
 		dma_unmap_single(&netdev->dev, trxd.rxd1,
-				priv->rx_buf_size, DMA_FROM_DEVICE);
+				ring->rx_buf_size, DMA_FROM_DEVICE);
 		pktlen = RX_DMA_PLEN0(trxd.rxd2);
 		skb->dev = netdev;
 		skb_put(skb, pktlen);
@@ -862,17 +866,18 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 
 		napi_gro_receive(napi, skb);
 
-		priv->rx_data[idx] = new_data;
+		ring->rx_data[idx] = new_data;
 		rxd->rxd1 = (unsigned int) dma_addr;
 
 release_desc:
 		if (priv->flags & FE_FLAG_RX_SG_DMA)
-			rxd->rxd2 = RX_DMA_PLEN0(priv->rx_buf_size);
+			rxd->rxd2 = RX_DMA_PLEN0(ring->rx_buf_size);
 		else
 			rxd->rxd2 = RX_DMA_LSO;
 
+		ring->rx_calc_idx = idx;
 		wmb();
-		fe_reg_w32(idx, FE_REG_RX_CALC_IDX0);
+		fe_reg_w32(ring->rx_calc_idx, FE_REG_RX_CALC_IDX0);
 		done++;
 	}
 
@@ -1342,10 +1347,10 @@ static int fe_change_mtu(struct net_device *dev, int new_mtu)
 		return 0;
 
 	if (new_mtu <= ETH_DATA_LEN)
-		priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
+		priv->rx_ring.frag_size = fe_max_frag_size(ETH_DATA_LEN);
 	else
-		priv->frag_size = PAGE_SIZE;
-	priv->rx_buf_size = fe_max_buf_size(priv->frag_size);
+		priv->rx_ring.frag_size = PAGE_SIZE;
+	priv->rx_ring.rx_buf_size = fe_max_buf_size(priv->rx_ring.frag_size);
 
 	if (!netif_running(dev))
 		return 0;
@@ -1497,16 +1502,16 @@ static int fe_probe(struct platform_device *pdev)
 	priv->device = &pdev->dev;
 	priv->soc = soc;
 	priv->msg_enable = netif_msg_init(fe_msg_level, FE_DEFAULT_MSG_ENABLE);
-	priv->frag_size = fe_max_frag_size(ETH_DATA_LEN);
-	priv->rx_buf_size = fe_max_buf_size(priv->frag_size);
-	priv->tx_ring.tx_ring_size = priv->rx_ring_size = NUM_DMA_DESC;
+	priv->rx_ring.frag_size = fe_max_frag_size(ETH_DATA_LEN);
+	priv->rx_ring.rx_buf_size = fe_max_buf_size(priv->rx_ring.frag_size);
+	priv->tx_ring.tx_ring_size = priv->rx_ring.rx_ring_size = NUM_DMA_DESC;
 	INIT_WORK(&priv->pending_work, fe_pending_work);
 
 	napi_weight = 32;
 	if (priv->flags & FE_FLAG_NAPI_WEIGHT) {
 		napi_weight *= 4;
 		priv->tx_ring.tx_ring_size *= 4;
-		priv->rx_ring_size *= 4;
+		priv->rx_ring.rx_ring_size *= 4;
 	}
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll, napi_weight);
 	fe_set_ethtool_ops(netdev);
