@@ -461,6 +461,8 @@ struct fe_tx_ring
 	dma_addr_t tx_phys;
 	u16 tx_ring_size;
 	u16 tx_free_idx;
+	u16 tx_next_idx;
+	u16 tx_thresh;
 };
 
 struct fe_priv

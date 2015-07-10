@@ -337,6 +337,8 @@ static int fe_alloc_tx(struct fe_priv *priv)
 	struct fe_tx_ring *ring = &priv->tx_ring;
 
 	ring->tx_free_idx = 0;
+	ring->tx_next_idx = 0;
+	ring->tx_thresh = max((unsigned long)ring->tx_ring_size >> 2, MAX_SKB_FRAGS);
 
 	ring->tx_buf = kcalloc(ring->tx_ring_size, sizeof(*ring->tx_buf),
 			GFP_KERNEL);
@@ -525,8 +527,16 @@ static int fe_vlan_rx_kill_vid(struct net_device *dev,
 	return 0;
 }
 
+static inline u32 fe_empty_txd(struct fe_tx_ring *ring)
+{
+	barrier();
+	return (u32)(ring->tx_ring_size -
+			((ring->tx_next_idx - ring->tx_free_idx) &
+			 (ring->tx_ring_size - 1)));
+}
+
 static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
-		int idx, int tx_num, struct fe_tx_ring *ring)
+		int tx_num, struct fe_tx_ring *ring)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct skb_frag_struct *frag;
@@ -537,7 +547,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	u32 def_txd4;
 	int i, j, k, frag_size, frag_map_size, offset;
 
-	tx_buf = &ring->tx_buf[idx];
+	tx_buf = &ring->tx_buf[ring->tx_next_idx];
 	memset(tx_buf, 0, sizeof(*tx_buf));
 	memset(&txd, 0, sizeof(txd));
 	nr_frags = skb_shinfo(skb)->nr_frags;
@@ -589,7 +599,7 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	dma_unmap_len_set(tx_buf, dma_len0, skb_headlen(skb));
 
 	/* TX SG offload */
-	j = idx;
+	j = ring->tx_next_idx;
 	k = 0;
 	for (i = 0; i < nr_frags; i++) {
 		offset = 0;
@@ -649,14 +659,22 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 	netdev_sent_queue(dev, skb->len);
 	skb_tx_timestamp(skb);
 
-	j = NEXT_TX_DESP_IDX(j);
+	ring->tx_next_idx = NEXT_TX_DESP_IDX(j);
 	wmb();
-	fe_reg_w32(j, FE_REG_TX_CTX_IDX0);
+	if (unlikely(fe_empty_txd(ring) <= ring->tx_thresh)) {
+		netif_stop_queue(dev);
+		smp_mb();
+		if (unlikely(fe_empty_txd(ring) > ring->tx_thresh))
+			netif_wake_queue(dev);
+	}
+
+	if (netif_xmit_stopped(netdev_get_tx_queue(dev, 0)) || !skb->xmit_more)
+		fe_reg_w32(ring->tx_next_idx, FE_REG_TX_CTX_IDX0);
 
 	return 0;
 
 err_dma:
-	j = idx;
+	j = ring->tx_next_idx;
 	for (i = 0; i < tx_num; i++) {
 		ptxd = &ring->tx_dma[j];
 		tx_buf = &ring->tx_buf[j];
@@ -703,12 +721,6 @@ static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv) {
 	return ret;
 }
 
-static inline u32 fe_empty_txd(struct fe_tx_ring *ring, u32 tx_fill_idx)
-{
-	return (u32)(ring->tx_ring_size - ((tx_fill_idx - ring->tx_free_idx) &
-				(ring->tx_ring_size - 1)));
-}
-
 static inline int fe_cal_txd_req(struct sk_buff *skb)
 {
 	int i, nfrags;
@@ -732,7 +744,6 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct fe_priv *priv = netdev_priv(dev);
 	struct fe_tx_ring *ring = &priv->tx_ring;
 	struct net_device_stats *stats = &dev->stats;
-	u32 tx;
 	int tx_num;
 	int len = skb->len;
 
@@ -742,8 +753,7 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	}
 
 	tx_num = fe_cal_txd_req(skb);
-	tx = fe_reg_r32(FE_REG_TX_CTX_IDX0);
-	if (unlikely(fe_empty_txd(ring, tx) <= tx_num))
+	if (unlikely(fe_empty_txd(ring) <= tx_num))
 	{
 		netif_stop_queue(dev);
 		netif_err(priv, tx_queued,dev,
@@ -751,7 +761,7 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_BUSY;
 	}
 
-	if (fe_tx_map_dma(skb, dev, tx, tx_num, ring) < 0) {
+	if (fe_tx_map_dma(skb, dev, tx_num, ring) < 0) {
 		stats->tx_dropped++;
 	} else {
 		stats->tx_packets++;
@@ -916,10 +926,10 @@ static int fe_poll_tx(struct fe_priv *priv, int budget, u32 tx_intr,
 
 	if (done) {
 		netdev_completed_queue(netdev, done, bytes_compl);
+		smp_mb();
 		if (unlikely(netif_queue_stopped(netdev) &&
-					netif_carrier_ok(netdev))) {
+					(fe_empty_txd(ring) > ring->tx_thresh)))
 			netif_wake_queue(netdev);
-		}
 	}
 
 	return done;
@@ -990,12 +1000,13 @@ static void fe_tx_timeout(struct net_device *dev)
 	netif_info(priv, drv, dev, "dma_cfg:%08x\n",
 			fe_reg_r32(FE_REG_PDMA_GLO_CFG));
 	netif_info(priv, drv, dev, "tx_ring=%d, " \
-			"base=%08x, max=%u, ctx=%u, dtx=%u, fdx=%d\n", 0,
+			"base=%08x, max=%u, ctx=%u, dtx=%u, fdx=%hu, next=%hu\n", 0,
 			fe_reg_r32(FE_REG_TX_BASE_PTR0),
 			fe_reg_r32(FE_REG_TX_MAX_CNT0),
 			fe_reg_r32(FE_REG_TX_CTX_IDX0),
 			fe_reg_r32(FE_REG_TX_DTX_IDX0),
-			ring->tx_free_idx
+			ring->tx_free_idx,
+			ring->tx_next_idx
 		  );
 	netif_info(priv, drv, dev, "rx_ring=%d, " \
 			"base=%08x, max=%u, calc=%u, drx=%u\n", 0,
