@@ -1,6 +1,6 @@
 --- a/drivers/net/phy/phy_device.c
 +++ b/drivers/net/phy/phy_device.c
-@@ -1132,7 +1132,7 @@ int genphy_config_init(struct phy_device
+@@ -1133,7 +1133,7 @@ int genphy_config_init(struct phy_device
  	return 0;
  }
  
@@ -9,7 +9,7 @@
  {
  	/* Do nothing for now */
  	return 0;
-@@ -1346,7 +1346,7 @@ static struct phy_driver genphy_driver[]
+@@ -1347,7 +1347,7 @@ static struct phy_driver genphy_driver[]
  	.phy_id		= 0xffffffff,
  	.phy_id_mask	= 0xffffffff,
  	.name		= "Generic PHY",
@@ -18,7 +18,7 @@
  	.config_init	= genphy_config_init,
  	.features	= PHY_GBIT_FEATURES | SUPPORTED_MII |
  			  SUPPORTED_AUI | SUPPORTED_FIBRE |
-@@ -1361,7 +1361,7 @@ static struct phy_driver genphy_driver[]
+@@ -1362,7 +1362,7 @@ static struct phy_driver genphy_driver[]
  	.phy_id         = 0xffffffff,
  	.phy_id_mask    = 0xffffffff,
  	.name           = "Generic 10G PHY",
