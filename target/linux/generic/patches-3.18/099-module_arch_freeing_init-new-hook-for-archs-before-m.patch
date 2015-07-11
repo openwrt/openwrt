@@ -122,7 +122,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
 +	mod->arch.syminfo = NULL;
  }
  
- static void
+ static void check_rela(Elf_Rela *rela, struct module *me)
 --- a/arch/tile/kernel/module.c
 +++ b/arch/tile/kernel/module.c
 @@ -83,7 +83,7 @@ void module_free(struct module *mod, voi
@@ -136,7 +136,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  }
 --- a/include/linux/moduleloader.h
 +++ b/include/linux/moduleloader.h
-@@ -80,4 +80,6 @@ int module_finalize(const Elf_Ehdr *hdr,
+@@ -82,4 +82,6 @@ int module_finalize(const Elf_Ehdr *hdr,
  /* Any cleanup needed when module leaves. */
  void module_arch_cleanup(struct module *mod);
  
@@ -145,7 +145,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  #endif
 --- a/kernel/module.c
 +++ b/kernel/module.c
-@@ -1855,6 +1855,10 @@ void __weak module_arch_cleanup(struct m
+@@ -1833,6 +1833,10 @@ void __weak module_arch_cleanup(struct m
  {
  }
  
@@ -156,7 +156,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  /* Free a module, remove from lists, etc. */
  static void free_module(struct module *mod)
  {
-@@ -1880,6 +1884,7 @@ static void free_module(struct module *m
+@@ -1865,6 +1869,7 @@ static void free_module(struct module *m
  
  	/* This may be NULL, but that's OK */
  	unset_module_init_ro_nx(mod);
@@ -164,7 +164,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  	module_free(mod, mod->module_init);
  	kfree(mod->args);
  	percpu_modfree(mod);
-@@ -2983,6 +2988,7 @@ out:
+@@ -2954,6 +2959,7 @@ static struct module *layout_and_allocat
  static void module_deallocate(struct module *mod, struct load_info *info)
  {
  	percpu_modfree(mod);
@@ -172,7 +172,7 @@ Origin: backport, https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.gi
  	module_free(mod, mod->module_init);
  	module_free(mod, mod->module_core);
  }
-@@ -3122,6 +3128,7 @@ static int do_init_module(struct module
+@@ -3077,6 +3083,7 @@ static int do_init_module(struct module
  	mod->strtab = mod->core_strtab;
  #endif
  	unset_module_init_ro_nx(mod);
