@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=valgrind
-PKG_VERSION:=3.10.0
+PKG_VERSION:=3.10.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://valgrind.org/downloads/
-PKG_MD5SUM:=7c311a72a20388aceced1aa5573ce970
+PKG_MD5SUM:=60ddae962bc79e7c95cfc4667245707f
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 PKG_LICENSE:=GPL-2.0+
