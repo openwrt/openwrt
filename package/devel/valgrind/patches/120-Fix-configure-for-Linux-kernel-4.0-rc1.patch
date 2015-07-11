@@ -1,0 +1,42 @@
+From bf803555d10b5b4c9223b24bf13845ee88d8f3b5 Mon Sep 17 00:00:00 2001
+From: cborntra <cborntra@a5019735-40e9-0310-863c-91ae7b9d1cf9>
+Date: Mon, 23 Feb 2015 20:19:03 +0000
+Subject: [PATCH] Fix configure for Linux kernel >= 4.0-rc1 In addition raise
+ the minimal Linux version to 2.6 as there is almost no test coverage for 2.4
+ and 2.6 was released in 2003.
+
+git-svn-id: svn://svn.valgrind.org/valgrind/trunk@14955 a5019735-40e9-0310-863c-91ae7b9d1cf9
+---
+ NEWS         |  3 +++
+ configure.ac | 18 ++++++------------
+ 2 files changed, 9 insertions(+), 12 deletions(-)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -303,20 +303,14 @@ case "${host_os}" in
+         kernel=${UNAME_R:-`uname -r`}
+ 
+         case "${kernel}" in
+-             2.6.*|3.*) 
+-        	    AC_MSG_RESULT([2.6.x/3.x family (${kernel})])
+-        	    AC_DEFINE([KERNEL_2_6], 1, [Define to 1 if you're using Linux 2.6.x or Linux 3.x])
+-        	    ;;
+-
+-             2.4.*) 
+-        	    AC_MSG_RESULT([2.4 family (${kernel})])
+-        	    AC_DEFINE([KERNEL_2_4], 1, [Define to 1 if you're using Linux 2.4.x])
+-        	    ;;
+-
+-             *) 
++             0.*|1.*|2.0.*|2.1.*|2.2.*|2.3.*|2.4.*|2.5.*) 
+         	    AC_MSG_RESULT([unsupported (${kernel})])
+-        	    AC_MSG_ERROR([Valgrind works on kernels 2.4, 2.6])
++        	    AC_MSG_ERROR([Valgrind needs a Linux kernel >= 2.6])
+         	    ;;
++
++             *)
++        	    AC_MSG_RESULT([2.6 or later (${kernel})])
++                    ;;
+         esac
+ 
+         ;;
