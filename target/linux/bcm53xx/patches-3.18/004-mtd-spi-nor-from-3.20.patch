@@ -31,7 +31,7 @@
  
  	/* PMC */
  	{ "pm25lv512",   INFO(0,        0, 32 * 1024,    2, SECT_4K_PMC) },
-@@ -895,6 +896,45 @@ static int spansion_quad_enable(struct s
+@@ -896,6 +897,45 @@ static int spansion_quad_enable(struct s
  	return 0;
  }
  
@@ -77,7 +77,7 @@
  static int set_quad_mode(struct spi_nor *nor, struct flash_info *info)
  {
  	int status;
-@@ -907,6 +947,13 @@ static int set_quad_mode(struct spi_nor
+@@ -908,6 +948,13 @@ static int set_quad_mode(struct spi_nor
  			return -EINVAL;
  		}
  		return status;

@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -554,6 +554,16 @@ config ATH79_MACH_R6100
+@@ -566,6 +566,16 @@ config ATH79_MACH_R6100
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
  
@@ -19,7 +19,7 @@
  	select SOC_AR71XX
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -78,6 +78,7 @@ obj-$(CONFIG_ATH79_MACH_HIWIFI_HC6361)	+
+@@ -79,6 +79,7 @@ obj-$(CONFIG_ATH79_MACH_HIWIFI_HC6361)	+
  obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
  obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
  obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
@@ -29,7 +29,7 @@
  obj-$(CONFIG_ATH79_MACH_MYNET_N600)	+= mach-mynet-n600.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -117,6 +117,7 @@ enum ath79_mach_type {
+@@ -118,6 +118,7 @@ enum ath79_mach_type {
  	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
  	ATH79_MACH_TEW_712BR,		/* TRENDnet TEW-712BR */
  	ATH79_MACH_TEW_732BR,		/* TRENDnet TEW-732BR */
