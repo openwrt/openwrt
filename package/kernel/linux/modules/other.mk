@@ -75,7 +75,7 @@ define KernelPackage/bluetooth_6lowpan
   DEPENDS:=+kmod-6lowpan +kmod-bluetooth
   KCONFIG:=CONFIG_BT_6LOWPAN
   FILES:=$(LINUX_DIR)/net/bluetooth/bluetooth_6lowpan.ko
-       AUTOLOAD:=$(call AutoProbe,bluetooth)
+  AUTOLOAD:=$(call AutoProbe,bluetooth_6lowpan)
 endef
 
 define KernelPackage/bluetooth_6lowpan/description
