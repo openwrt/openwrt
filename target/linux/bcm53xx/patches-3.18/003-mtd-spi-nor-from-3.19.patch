@@ -349,7 +349,7 @@
  	{ "s25fl129p0", INFO(0x012018, 0x4d00, 256 * 1024,  64, 0) },
  	{ "s25fl129p1", INFO(0x012018, 0x4d01,  64 * 1024, 256, 0) },
  	{ "s25sl004a",  INFO(0x010212,      0,  64 * 1024,   8, 0) },
-@@ -581,6 +611,7 @@ static const struct spi_device_id spi_no
+@@ -582,6 +612,7 @@ static const struct spi_device_id spi_no
  	{ "sst25wf010",  INFO(0xbf2502, 0, 64 * 1024,  2, SECT_4K | SST_WRITE) },
  	{ "sst25wf020",  INFO(0xbf2503, 0, 64 * 1024,  4, SECT_4K | SST_WRITE) },
  	{ "sst25wf040",  INFO(0xbf2504, 0, 64 * 1024,  8, SECT_4K | SST_WRITE) },
@@ -357,7 +357,7 @@
  
  	/* ST Microelectronics -- newer production may have feature updates */
  	{ "m25p05",  INFO(0x202010,  0,  32 * 1024,   2, 0) },
-@@ -592,7 +623,6 @@ static const struct spi_device_id spi_no
+@@ -593,7 +624,6 @@ static const struct spi_device_id spi_no
  	{ "m25p32",  INFO(0x202016,  0,  64 * 1024,  64, 0) },
  	{ "m25p64",  INFO(0x202017,  0,  64 * 1024, 128, 0) },
  	{ "m25p128", INFO(0x202018,  0, 256 * 1024,  64, 0) },
@@ -365,7 +365,7 @@
  
  	{ "m25p05-nonjedec",  INFO(0, 0,  32 * 1024,   2, 0) },
  	{ "m25p10-nonjedec",  INFO(0, 0,  32 * 1024,   4, 0) },
-@@ -648,32 +678,24 @@ static const struct spi_device_id spi_no
+@@ -649,32 +679,24 @@ static const struct spi_device_id spi_no
  static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
  {
  	int			tmp;
@@ -404,7 +404,7 @@
  	return ERR_PTR(-ENODEV);
  }
  
-@@ -708,11 +730,6 @@ static int sst_write(struct mtd_info *mt
+@@ -709,11 +731,6 @@ static int sst_write(struct mtd_info *mt
  	if (ret)
  		return ret;
  
@@ -416,7 +416,7 @@
  	write_enable(nor);
  
  	nor->sst_write_second = false;
-@@ -724,7 +741,7 @@ static int sst_write(struct mtd_info *mt
+@@ -725,7 +742,7 @@ static int sst_write(struct mtd_info *mt
  
  		/* write one byte. */
  		nor->write(nor, to, 1, retlen, buf);
@@ -425,7 +425,7 @@
  		if (ret)
  			goto time_out;
  	}
-@@ -736,7 +753,7 @@ static int sst_write(struct mtd_info *mt
+@@ -737,7 +754,7 @@ static int sst_write(struct mtd_info *mt
  
  		/* write two bytes. */
  		nor->write(nor, to, 2, retlen, buf + actual);
@@ -434,7 +434,7 @@
  		if (ret)
  			goto time_out;
  		to += 2;
-@@ -745,7 +762,7 @@ static int sst_write(struct mtd_info *mt
+@@ -746,7 +763,7 @@ static int sst_write(struct mtd_info *mt
  	nor->sst_write_second = false;
  
  	write_disable(nor);
@@ -443,7 +443,7 @@
  	if (ret)
  		goto time_out;
  
-@@ -756,7 +773,7 @@ static int sst_write(struct mtd_info *mt
+@@ -757,7 +774,7 @@ static int sst_write(struct mtd_info *mt
  		nor->program_opcode = SPINOR_OP_BP;
  		nor->write(nor, to, 1, retlen, buf + actual);
  
@@ -452,7 +452,7 @@
  		if (ret)
  			goto time_out;
  		write_disable(nor);
-@@ -784,11 +801,6 @@ static int spi_nor_write(struct mtd_info
+@@ -785,11 +802,6 @@ static int spi_nor_write(struct mtd_info
  	if (ret)
  		return ret;
  
@@ -464,7 +464,7 @@
  	write_enable(nor);
  
  	page_offset = to & (nor->page_size - 1);
-@@ -807,16 +819,20 @@ static int spi_nor_write(struct mtd_info
+@@ -808,16 +820,20 @@ static int spi_nor_write(struct mtd_info
  			if (page_size > nor->page_size)
  				page_size = nor->page_size;
  
@@ -487,7 +487,7 @@
  }
  
  static int macronix_quad_enable(struct spi_nor *nor)
-@@ -829,7 +845,7 @@ static int macronix_quad_enable(struct s
+@@ -830,7 +846,7 @@ static int macronix_quad_enable(struct s
  	nor->cmd_buf[0] = val | SR_QUAD_EN_MX;
  	nor->write_reg(nor, SPINOR_OP_WRSR, nor->cmd_buf, 1, 0);
  
@@ -496,7 +496,7 @@
  		return 1;
  
  	ret = read_sr(nor);
-@@ -879,11 +895,11 @@ static int spansion_quad_enable(struct s
+@@ -880,11 +896,11 @@ static int spansion_quad_enable(struct s
  	return 0;
  }
  
@@ -510,7 +510,7 @@
  	case CFI_MFR_MACRONIX:
  		status = macronix_quad_enable(nor);
  		if (status) {
-@@ -909,11 +925,6 @@ static int spi_nor_check(struct spi_nor
+@@ -910,11 +926,6 @@ static int spi_nor_check(struct spi_nor
  		return -EINVAL;
  	}
  
@@ -522,7 +522,7 @@
  	return 0;
  }
  
-@@ -931,16 +942,24 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -932,16 +943,24 @@ int spi_nor_scan(struct spi_nor *nor, co
  	if (ret)
  		return ret;
  
@@ -551,7 +551,7 @@
  		if (IS_ERR(jid)) {
  			return PTR_ERR(jid);
  		} else if (jid != id) {
-@@ -965,9 +984,9 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -966,9 +985,9 @@ int spi_nor_scan(struct spi_nor *nor, co
  	 * up with the software protection bits set
  	 */
  
@@ -564,7 +564,7 @@
  		write_enable(nor);
  		write_sr(nor, 0);
  	}
-@@ -982,7 +1001,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -983,7 +1002,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	mtd->_read = spi_nor_read;
  
  	/* nor protection support for STmicro chips */
@@ -573,7 +573,7 @@
  		mtd->_lock = spi_nor_lock;
  		mtd->_unlock = spi_nor_unlock;
  	}
-@@ -993,9 +1012,8 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -994,9 +1013,8 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else
  		mtd->_write = spi_nor_write;
  
@@ -585,7 +585,7 @@
  
  #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
  	/* prefer "small sector" erase if possible */
-@@ -1036,7 +1054,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1037,7 +1055,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  
  	/* Quad/Dual-read mode takes precedence over fast/normal */
  	if (mode == SPI_NOR_QUAD && info->flags & SPI_NOR_QUAD_READ) {
@@ -594,7 +594,7 @@
  		if (ret) {
  			dev_err(dev, "quad mode not supported\n");
  			return ret;
-@@ -1072,7 +1090,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1073,7 +1091,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  	else if (mtd->size > 0x1000000) {
  		/* enable 4-byte addressing if the device exceeds 16MiB */
  		nor->addr_width = 4;
@@ -603,7 +603,7 @@
  			/* Dedicated 4-byte command set */
  			switch (nor->flash_read) {
  			case SPI_NOR_QUAD:
-@@ -1093,7 +1111,7 @@ int spi_nor_scan(struct spi_nor *nor, co
+@@ -1094,7 +1112,7 @@ int spi_nor_scan(struct spi_nor *nor, co
  			nor->erase_opcode = SPINOR_OP_SE_4B;
  			mtd->erasesize = info->sector_size;
  		} else

@@ -1,7 +1,5 @@
-Index: linux-3.18.14/arch/mips/ath79/mach-ubnt-xm.c
-===================================================================
---- linux-3.18.14.orig/arch/mips/ath79/mach-ubnt-xm.c
-+++ linux-3.18.14/arch/mips/ath79/mach-ubnt-xm.c
+--- a/arch/mips/ath79/mach-ubnt-xm.c
++++ b/arch/mips/ath79/mach-ubnt-xm.c
 @@ -21,6 +21,8 @@
  #include <asm/mach-ath79/irq.h>
  #include <asm/mach-ath79/ar71xx_regs.h>
@@ -125,11 +123,9 @@ Index: linux-3.18.14/arch/mips/ath79/mach-ubnt-xm.c
  static struct gpio_led ubnt_airgateway_gpio_leds[] __initdata = {
  	{
  		.name	   = "ubnt:blue:wlan",
-Index: linux-3.18.14/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.18.14.orig/arch/mips/ath79/machtypes.h
-+++ linux-3.18.14/arch/mips/ath79/machtypes.h
-@@ -172,6 +172,7 @@ enum ath79_mach_type {
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -176,6 +176,7 @@ enum ath79_mach_type {
  	ATH79_MACH_UBNT_NANO_M_XW, 	/* Ubiquiti NanoStation M XW */
  	ATH79_MACH_UBNT_ROCKET_M,	/* Ubiquiti Rocket M */
  	ATH79_MACH_UBNT_ROCKET_M_XW,	/* Ubiquiti Rocket M XW*/
