@@ -1,0 +1,37 @@
+From 6abfb512ed22c2de891a4398616d81a2a0690b5a Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Sat, 18 Apr 2015 23:50:16 +0200
+Subject: [PATCH] http_done: close Negotiate connections when done
+
+When doing HTTP requests Negotiate authenticated, the entire connnection
+may become authenticated and not just the specific HTTP request which is
+otherwise how HTTP works, as Negotiate can basically use NTLM under the
+hood. curl was not adhering to this fact but would assume that such
+requests would also be authenticated per request.
+
+CVE-2015-3148
+
+Bug: http://curl.haxx.se/docs/adv_20150422B.html
+Reported-by: Isaac Boukris
+---
+ lib/http.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/lib/http.c
++++ b/lib/http.c
+@@ -1493,8 +1493,14 @@ CURLcode Curl_http_done(struct connectda
+ 
+ #ifdef USE_SPNEGO
+   if(data->state.proxyneg.state == GSS_AUTHSENT ||
+-      data->state.negotiate.state == GSS_AUTHSENT)
++      data->state.negotiate.state == GSS_AUTHSENT) {
++    /* add forbid re-use if http-code != 401 as a WA
++     * only needed for 401 that failed handling
++     * otherwie state will be RECV with current code */
++    if((data->req.httpcode != 401) && (data->req.httpcode != 407))
++      connclose(conn, "Negotiate transfer completed");
+     Curl_cleanup_negotiate(data);
++  }
+ #endif
+ 
+   /* set the proper values (possibly modified on POST) */

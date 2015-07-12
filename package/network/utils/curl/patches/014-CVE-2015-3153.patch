@@ -1,0 +1,95 @@
+From 69a2e8d7ec581695a62527cb2252e7350f314ffa Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Thu, 23 Apr 2015 15:58:21 +0200
+Subject: [PATCH] CURLOPT_HEADEROPT: default to separate
+
+Make the HTTP headers separated by default for improved security and
+reduced risk for information leakage.
+
+Bug: http://curl.haxx.se/docs/adv_20150429.html
+Reported-by: Yehezkel Horowitz, Oren Souroujon
+---
+ docs/libcurl/opts/CURLOPT_HEADEROPT.3 | 12 ++++++------
+ lib/url.c                             |  1 +
+ tests/data/test1527                   |  2 +-
+ tests/data/test287                    |  2 +-
+ tests/libtest/lib1527.c               |  1 +
+ 5 files changed, 10 insertions(+), 8 deletions(-)
+
+--- a/docs/libcurl/opts/CURLOPT_HEADEROPT.3
++++ b/docs/libcurl/opts/CURLOPT_HEADEROPT.3
+@@ -5,7 +5,7 @@
+ .\" *                            | (__| |_| |  _ <| |___
+ .\" *                             \___|\___/|_| \_\_____|
+ .\" *
+-.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
++.\" * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ .\" *
+ .\" * This software is licensed as described in the file COPYING, which
+ .\" * you should have received as part of this distribution. The terms
+@@ -31,10 +31,10 @@ CURLcode curl_easy_setopt(CURL *handle,
+ Pass a long that is a bitmask of options of how to deal with headers. The two
+ mutually exclusive options are:
+ 
+-\fBCURLHEADER_UNIFIED\fP - keep working as before. This means
+-\fICURLOPT_HTTPHEADER(3)\fP headers will be used in requests both to servers
+-and proxies. With this option enabled, \fICURLOPT_PROXYHEADER(3)\fP will not
+-have any effect.
++\fBCURLHEADER_UNIFIED\fP - the headers specified in
++\fICURLOPT_HTTPHEADER(3)\fP will be used in requests both to servers and
++proxies. With this option enabled, \fICURLOPT_PROXYHEADER(3)\fP will not have
++any effect.
+ 
+ \fBCURLHEADER_SEPARATE\fP - makes \fICURLOPT_HTTPHEADER(3)\fP headers only get
+ sent to a server and not to a proxy. Proxy headers must be set with
+@@ -44,7 +44,7 @@ headers. When doing CONNECT, libcurl wil
+ headers only to the proxy and then \fICURLOPT_HTTPHEADER(3)\fP headers only to
+ the server.
+ .SH DEFAULT
+-CURLHEADER_UNIFIED
++CURLHEADER_SEPARATE (changed in 7.42.1, ased CURLHEADER_UNIFIED before then)
+ .SH PROTOCOLS
+ HTTP
+ .SH EXAMPLE
+--- a/lib/url.c
++++ b/lib/url.c
+@@ -605,6 +605,7 @@ CURLcode Curl_init_userdefined(struct Us
+   set->ssl_enable_alpn = TRUE;
+ 
+   set->expect_100_timeout = 1000L; /* Wait for a second by default. */
++  set->sep_headers = TRUE; /* separated header lists by default */
+   return result;
+ }
+ 
+--- a/tests/data/test1527
++++ b/tests/data/test1527
+@@ -45,7 +45,7 @@ http-proxy
+ lib1527
+ </tool>
+  <name>
+-Check same headers are generated without CURLOPT_PROXYHEADER
++Check same headers are generated with CURLOPT_HEADEROPT == CURLHEADER_UNIFIED
+  </name>
+  <command>
+  http://the.old.moo.1527:%HTTPPORT/1527 %HOSTIP:%PROXYPORT
+--- a/tests/data/test287
++++ b/tests/data/test287
+@@ -28,7 +28,7 @@ http
+ HTTP proxy CONNECT with custom User-Agent header
+  </name>
+  <command>
+-http://test.remote.example.com.287:%HTTPPORT/path/287 -H "User-Agent: looser/2007" --proxy http://%HOSTIP:%HTTPPORT --proxytunnel
++http://test.remote.example.com.287:%HTTPPORT/path/287 -H "User-Agent: looser/2015" --proxy http://%HOSTIP:%HTTPPORT --proxytunnel --proxy-header "User-Agent: looser/2007"
+ </command>
+ </client>
+ 
+--- a/tests/libtest/lib1527.c
++++ b/tests/libtest/lib1527.c
+@@ -83,6 +83,7 @@ int test(char *URL)
+   test_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+   test_setopt(curl, CURLOPT_HTTPPROXYTUNNEL, 1L);
+   test_setopt(curl, CURLOPT_INFILESIZE, strlen(data));
++  test_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_UNIFIED);
+ 
+   res = curl_easy_perform(curl);
+ 

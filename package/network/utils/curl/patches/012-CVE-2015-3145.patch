@@ -1,0 +1,53 @@
+From ea595c516bc936a514753597aa6c59fd6eb0765e Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Thu, 16 Apr 2015 16:37:40 +0200
+Subject: [PATCH] cookie: cookie parser out of boundary memory access
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The internal libcurl function called sanitize_cookie_path() that cleans
+up the path element as given to it from a remote site or when read from
+a file, did not properly validate the input. If given a path that
+consisted of a single double-quote, libcurl would index a newly
+allocated memory area with index -1 and assign a zero to it, thus
+destroying heap memory it wasn't supposed to.
+
+CVE-2015-3145
+
+Bug: http://curl.haxx.se/docs/adv_20150422C.html
+Reported-by: Hanno Böck
+---
+ lib/cookie.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+--- a/lib/cookie.c
++++ b/lib/cookie.c
+@@ -236,11 +236,14 @@ static char *sanitize_cookie_path(const
+     return NULL;
+ 
+   /* some stupid site sends path attribute with '"'. */
++  len = strlen(new_path);
+   if(new_path[0] == '\"') {
+-    memmove((void *)new_path, (const void *)(new_path + 1), strlen(new_path));
++    memmove((void *)new_path, (const void *)(new_path + 1), len);
++    len--;
+   }
+-  if(new_path[strlen(new_path) - 1] == '\"') {
+-    new_path[strlen(new_path) - 1] = 0x0;
++  if(len && (new_path[len - 1] == '\"')) {
++    new_path[len - 1] = 0x0;
++    len--;
+   }
+ 
+   /* RFC6265 5.2.4 The Path Attribute */
+@@ -252,8 +255,7 @@ static char *sanitize_cookie_path(const
+   }
+ 
+   /* convert /hoge/ to /hoge */
+-  len = strlen(new_path);
+-  if(1 < len && new_path[len - 1] == '/') {
++  if(len && new_path[len - 1] == '/') {
+     new_path[len - 1] = 0x0;
+   }
+ 

@@ -1,0 +1,32 @@
+From 6218ded6001ea330e589f92b6b2fa12777752b5d Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Thu, 16 Apr 2015 23:52:04 +0200
+Subject: [PATCH] fix_hostname: zero length host name caused -1 index offset
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If a URL is given with a zero-length host name, like in "http://:80" or
+just ":80", `fix_hostname()` will index the host name pointer with a -1
+offset (as it blindly assumes a non-zero length) and both read and
+assign that address.
+
+CVE-2015-3144
+
+Bug: http://curl.haxx.se/docs/adv_20150422D.html
+Reported-by: Hanno Böck
+---
+ lib/url.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/url.c
++++ b/lib/url.c
+@@ -3606,7 +3606,7 @@ static void fix_hostname(struct SessionH
+   host->dispname = host->name;
+ 
+   len = strlen(host->name);
+-  if(host->name[len-1] == '.')
++  if(len && (host->name[len-1] == '.'))
+     /* strip off a single trailing dot if present, primarily for SNI but
+        there's no use for it */
+     host->name[len-1]=0;

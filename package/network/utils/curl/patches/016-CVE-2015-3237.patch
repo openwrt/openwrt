@@ -1,0 +1,35 @@
+From d2f1a8bdce9d77a277d05adae025d369c1bdd9e6 Mon Sep 17 00:00:00 2001
+From: Daniel Stenberg <daniel@haxx.se>
+Date: Fri, 22 May 2015 10:28:21 +0200
+Subject: [PATCH] SMB: rangecheck values read off incoming packet
+
+CVE-2015-3237
+
+Detected by Coverity. CID 1299430.
+
+Bug: http://curl.haxx.se/docs/adv_20150617B.html
+---
+ lib/smb.c | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+--- a/lib/smb.c
++++ b/lib/smb.c
+@@ -783,9 +783,15 @@ static CURLcode smb_request_state(struct
+     off = Curl_read16_le(((unsigned char *) msg) +
+                          sizeof(struct smb_header) + 13);
+     if(len > 0) {
+-      result = Curl_client_write(conn, CLIENTWRITE_BODY,
+-                                 (char *)msg + off + sizeof(unsigned int),
+-                                 len);
++      struct smb_conn *smbc = &conn->proto.smbc;
++      if(off + sizeof(unsigned int) + len > smbc->got) {
++        failf(conn->data, "Invalid input packet");
++        result = CURLE_RECV_ERROR;
++      }
++      else
++        result = Curl_client_write(conn, CLIENTWRITE_BODY,
++                                   (char *)msg + off + sizeof(unsigned int),
++                                   len);
+       if(result) {
+         req->result = result;
+         next_state = SMB_CLOSE;

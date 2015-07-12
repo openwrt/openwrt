@@ -1,0 +1,42 @@
+From e6d7c30734487246e83b95520e81bc1ccf0a2376 Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Thu, 28 May 2015 20:04:35 +0200
+Subject: [PATCH] http: do not leak basic auth credentials on re-used
+ connections
+
+CVE-2015-3236
+
+This partially reverts commit curl-7_39_0-237-g87c4abb
+
+Bug: http://curl.haxx.se/docs/adv_20150617A.html
+---
+ lib/http.c | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+--- a/lib/http.c
++++ b/lib/http.c
+@@ -2333,20 +2333,12 @@ CURLcode Curl_http(struct connectdata *c
+                      te
+       );
+ 
+-  /*
+-   * Free userpwd for Negotiate/NTLM. Cannot reuse as it is associated with
+-   * the connection and shouldn't be repeated over it either.
+-   */
+-  switch (data->state.authhost.picked) {
+-  case CURLAUTH_NEGOTIATE:
+-  case CURLAUTH_NTLM:
+-  case CURLAUTH_NTLM_WB:
+-    Curl_safefree(conn->allocptr.userpwd);
+-    break;
+-  }
++  /* clear userpwd to avoid re-using credentials from re-used connections */
++  Curl_safefree(conn->allocptr.userpwd);
+ 
+   /*
+-   * Same for proxyuserpwd
++   * Free proxyuserpwd for Negotiate/NTLM. Cannot reuse as it is associated
++   * with the connection and shouldn't be repeated over it either.
+    */
+   switch (data->state.authproxy.picked) {
+   case CURLAUTH_NEGOTIATE:
