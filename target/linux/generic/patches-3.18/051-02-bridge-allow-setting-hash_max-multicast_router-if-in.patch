@@ -26,7 +26,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -1949,11 +1949,9 @@ out:
+@@ -1948,11 +1948,9 @@ out:
  
  int br_multicast_set_router(struct net_bridge *br, unsigned long val)
  {
@@ -39,7 +39,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	switch (val) {
  	case 0:
-@@ -1964,13 +1962,8 @@ int br_multicast_set_router(struct net_b
+@@ -1963,13 +1961,8 @@ int br_multicast_set_router(struct net_b
  		br->multicast_router = val;
  		err = 0;
  		break;
@@ -53,7 +53,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	spin_unlock_bh(&br->multicast_lock);
  
  	return err;
-@@ -1979,11 +1972,9 @@ unlock:
+@@ -1978,11 +1971,9 @@ unlock:
  int br_multicast_set_port_router(struct net_bridge_port *p, unsigned long val)
  {
  	struct net_bridge *br = p->br;
@@ -66,7 +66,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  
  	switch (val) {
  	case 0:
-@@ -2005,13 +1996,8 @@ int br_multicast_set_port_router(struct
+@@ -2004,13 +1995,8 @@ int br_multicast_set_port_router(struct
  
  		br_multicast_add_router(br, p);
  		break;
@@ -80,7 +80,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  	spin_unlock(&br->multicast_lock);
  
  	return err;
-@@ -2116,15 +2102,11 @@ unlock:
+@@ -2115,15 +2101,11 @@ unlock:
  
  int br_multicast_set_hash_max(struct net_bridge *br, unsigned long val)
  {

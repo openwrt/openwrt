@@ -342,7 +342,7 @@
  #endif /* _LINUX_TYPES_H */
 --- a/net/ipv4/af_inet.c
 +++ b/net/ipv4/af_inet.c
-@@ -1324,8 +1324,8 @@ static struct sk_buff **inet_gro_receive
+@@ -1326,8 +1326,8 @@ static struct sk_buff **inet_gro_receive
  	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
  		goto out_unlock;
  

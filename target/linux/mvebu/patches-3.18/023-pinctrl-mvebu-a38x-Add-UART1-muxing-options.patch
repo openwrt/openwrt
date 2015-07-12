@@ -17,9 +17,9 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
 
 --- a/drivers/pinctrl/mvebu/pinctrl-armada-38x.c
 +++ b/drivers/pinctrl/mvebu/pinctrl-armada-38x.c
-@@ -145,14 +145,16 @@ static struct mvebu_mpp_mode armada_38x_
+@@ -146,13 +146,15 @@ static struct mvebu_mpp_mode armada_38x_
  		 MPP_VAR_FUNCTION(2, "ptp",   "event_req",  V_88F6810_PLUS),
- 		 MPP_VAR_FUNCTION(3, "pcie0", "clkreq",     V_88F6810_PLUS),
+ 		 MPP_VAR_FUNCTION(3, "ge0",   "txerr",      V_88F6810_PLUS),
  		 MPP_VAR_FUNCTION(4, "sata1", "prsnt",      V_88F6810_PLUS),
 -		 MPP_VAR_FUNCTION(5, "ua0",   "cts",        V_88F6810_PLUS)),
 +		 MPP_VAR_FUNCTION(5, "ua0",   "cts",        V_88F6810_PLUS),
@@ -28,7 +28,6 @@ Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
  		 MPP_VAR_FUNCTION(0, "gpio",  NULL,         V_88F6810_PLUS),
  		 MPP_VAR_FUNCTION(1, "ge0",   "txclk",      V_88F6810_PLUS),
  		 MPP_VAR_FUNCTION(2, "ptp",   "clk",        V_88F6810_PLUS),
- 		 MPP_VAR_FUNCTION(3, "pcie1", "rstout",     V_88F6820_PLUS),
  		 MPP_VAR_FUNCTION(4, "sata0", "prsnt",      V_88F6810_PLUS),
 -		 MPP_VAR_FUNCTION(5, "ua0",   "rts",        V_88F6810_PLUS)),
 +		 MPP_VAR_FUNCTION(5, "ua0",   "rts",        V_88F6810_PLUS),
