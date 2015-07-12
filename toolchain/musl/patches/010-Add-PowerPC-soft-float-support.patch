@@ -7,8 +7,7 @@ instruction set for floating point operations (SPE).
 Executing regular PowerPC floating point instructions results in
 "Illegal instruction" errors.
 
-Until support for SPE FPU is added, make it possible to run these
-devices in soft-float mode.
+Make it possible to run these devices in soft-float mode.
 
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 ---
@@ -18,6 +17,20 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  create mode 100644 src/setjmp/powerpc-sf/setjmp.s
  create mode 100644 src/setjmp/powerpc-sf/setjmp.sub
 
+--- a/arch/powerpc/reloc.h
++++ b/arch/powerpc/reloc.h
+@@ -1,4 +1,10 @@
+-#define LDSO_ARCH "powerpc"
++#ifdef _SOFT_FLOAT
++#define FP_SUFFIX "-sf"
++#else
++#define FP_SUFFIX ""
++#endif
++
++#define LDSO_ARCH "powerpc" FP_SUFFIX
+ 
+ #define TPOFF_K (-0x7000)
+ 
 --- a/configure
 +++ b/configure
 @@ -498,6 +498,10 @@ trycppif "_MIPSEL || __MIPSEL || __MIPSE
