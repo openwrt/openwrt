@@ -1,0 +1,67 @@
+diff --git a/main.c b/main.c
+index bfec856..3c482d9 100644
+--- a/main.c
++++ b/main.c
+@@ -497,7 +497,7 @@ int acx_free_mechanics(acx_device_t *adev)
+ 
+ int acx_init_ieee80211(acx_device_t *adev, struct ieee80211_hw *hw)
+ {
+-	hw->flags &= ~IEEE80211_HW_RX_INCLUDES_FCS;
++	__clear_bit(IEEE80211_HW_RX_INCLUDES_FCS, hw->flags);
+ 	hw->queues = 1;
+ 	hw->wiphy->max_scan_ssids = 1;
+ 
+@@ -525,7 +525,7 @@ int acx_init_ieee80211(acx_device_t *adev, struct ieee80211_hw *hw)
+ 	/* We base signal quality on winlevel approach of previous driver
+ 	 * TODO OW 20100615 This should into a common init code
+ 	 */
+-	hw->flags |= IEEE80211_HW_SIGNAL_UNSPEC;
++	__set_bit(IEEE80211_HW_SIGNAL_UNSPEC, hw->flags);
+ 	hw->max_signal = 100;
+ 
+ 	if (IS_ACX100(adev)) {
+@@ -945,8 +945,8 @@ void acx_op_configure_filter(struct ieee80211_hw *hw,
+ 		changed_flags, *total_flags);
+ 
+ 	/* OWI TODO: Set also FIF_PROBE_REQ ? */
+-	*total_flags &= (FIF_PROMISC_IN_BSS | FIF_ALLMULTI | FIF_FCSFAIL
+-			| FIF_CONTROL | FIF_OTHER_BSS);
++	*total_flags &= (FIF_ALLMULTI | FIF_FCSFAIL | FIF_CONTROL
++			| FIF_OTHER_BSS);
+ 
+ 	logf1(L_DEBUG, "2: *total_flags=0x%08x\n", *total_flags);
+ 
+@@ -1045,9 +1045,10 @@ void acx_op_tx(struct ieee80211_hw *hw, struct ieee80211_tx_control *control,
+ }
+ 
+ int acx_op_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-                   struct cfg80211_scan_request *req)
++                   struct ieee80211_scan_request *hw_req)
+ {
+ 	acx_device_t *adev = hw2adev(hw);
++	struct cfg80211_scan_request *req = &hw_req->req;
+ 	struct sk_buff *skb;
+ 	size_t ssid_len = 0;
+ 	u8 *ssid = NULL;
+@@ -1082,7 +1083,7 @@ int acx_op_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+ 		goto out;
+ 	}
+ #else
+-	skb = ieee80211_probereq_get(adev->hw, adev->vif, ssid, ssid_len,
++	skb = ieee80211_probereq_get(adev->hw, vif->addr, ssid, ssid_len,
+ 		req->ie_len);
+ 	if (!skb) {
+ 		ret = -ENOMEM;
+diff --git a/main.h b/main.h
+index 293f5c8..84ecb9a 100644
+--- a/main.h
++++ b/main.h
+@@ -62,7 +62,7 @@ void acx_op_tx(struct ieee80211_hw *hw, struct ieee80211_tx_control *control,
+ #endif
+ 
+ int acx_op_hw_scan(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
+-                   struct cfg80211_scan_request *req);
++                   struct ieee80211_scan_request *req);
+ 
+ int acx_recover_hw(acx_device_t *adev);
+ 
