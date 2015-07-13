@@ -76,6 +76,7 @@ setup_interface () {
 	done
 
 	for entry in $RA_ROUTES; do
+		local duplicate=0
 		local addr="${entry%%/*}"
 		entry="${entry#*/}"
 		local mask="${entry%%,*}"
@@ -86,12 +87,16 @@ setup_interface () {
 		entry="${entry#*,}"
 		local metric="${entry%%,*}"
 
-		if [ -z "$gw" ]; then
-			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid"
+		for xentry in $RA_ROUTES; do
+			local xprefix="${xentry%%,*}"
+			xentry="${xentry#*,}"
+			local xgw="${xentry%%,*}"
 
-			# work around if there is a PIO matching a RIO
-			# Linux seems to prefer source-dest over dest-only even if metric is higher
-			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid" "$addr/$mask"
+			[ -n "$gw" -a -z "$xgw" -a "$addr/$mask" = "$xprefix" ] && duplicate=1
+		done
+
+		if [ -z "$gw" -o "$duplicate" = 1 ]; then
+			proto_add_ipv6_route "$addr" "$mask" "$gw" "$metric" "$valid"
 		else
 			for prefix in $PREFIXES $ADDRESSES; do
 				local paddr="${prefix%%,*}"
