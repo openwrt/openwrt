@@ -14,7 +14,7 @@ FEATURES:=squashfs pci rtc
 CPU_TYPE:=fa526
 MAINTAINER:=Roman Yeryomin <roman@advem.lv>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.1
 
 KERNELNAME:=zImage
 
