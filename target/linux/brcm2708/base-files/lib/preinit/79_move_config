@@ -1,0 +1,18 @@
+#!/bin/sh
+# Copyright (C) 2015 OpenWrt.org
+
+BOOTPART=/dev/mmcblk0p1
+
+move_config() {
+	if [ -b $BOOTPART ]; then
+		insmod nls_cp437
+		insmod nls_iso8859-1
+		insmod fat
+		insmod vfat
+		mount -t vfat -o rw,noatime $BOOTPART /mnt
+		[ -f /mnt/sysupgrade.tgz ] && mv -f /mnt/sysupgrade.tgz /
+		umount /mnt
+	fi
+}
+
+boot_hook_add preinit_mount_root move_config

@@ -40,6 +40,9 @@ endef
 define Build/sdcard-img
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(word 2,$^) \
 		$(CONFIG_BRCM2708_SD_BOOT_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+	gzip -k -f9 $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img
+  endif
 endef
 
 ### Device macros ###
