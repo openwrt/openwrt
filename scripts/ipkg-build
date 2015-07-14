@@ -13,7 +13,18 @@ version=1.0
 FIND="$(which find)"
 FIND="${FIND:-$(which gfind)}"
 TAR="${TAR:-$(which tar)}"
+SVN="$(which svn)"
+GIT="$(which git)"
 export GZIP="-n"
+
+# look up date of last commit
+if [ -d "$TOPDIR/.git" ]; then
+	TIMESTAMP=$($GIT log -1 -s --format=%ci)
+elif [ -d "$TOPDIR/.svn" ]; then
+	TIMESTAMP=$($SVN info "$TOPDIR" | sed -n "s/^Last Changed Date: \(.*\)/\1/p")
+else
+	TIMESTAMP=$(date)
+fi
 
 ipkg_extract_value() {
 	sed -e "s/^[^:]*:[[:space:]]*//"
@@ -128,20 +139,20 @@ mkdir $tmp_dir
 
 echo $CONTROL > $tmp_dir/tarX
 # Preserve permissions (-p) when creating data.tar.gz as non-root user
-( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX --format=gnu -czpf $tmp_dir/data.tar.gz . )
+( cd $pkg_dir && $TAR $ogargs -X $tmp_dir/tarX --format=gnu -czpf $tmp_dir/data.tar.gz --mtime="$TIMESTAMP" . )
 
 installed_size=`stat -c "%s" $tmp_dir/data.tar.gz`
 sed -i -e "s/^Installed-Size: .*/Installed-Size: $installed_size/" \
 	$pkg_dir/$CONTROL/control
 
-( cd $pkg_dir/$CONTROL && $TAR $ogargs --format=gnu -czf $tmp_dir/control.tar.gz . )
+( cd $pkg_dir/$CONTROL && $TAR $ogargs --format=gnu -czf $tmp_dir/control.tar.gz --mtime="$TIMESTAMP" . )
 rm $tmp_dir/tarX
 
 echo "2.0" > $tmp_dir/debian-binary
 
 pkg_file=$dest_dir/${pkg}_${version}_${arch}.ipk
 rm -f $pkg_file
-( cd $tmp_dir && $TAR --format=gnu -zcf $pkg_file ./debian-binary ./data.tar.gz ./control.tar.gz )
+( cd $tmp_dir && $TAR --format=gnu -zcf $pkg_file --mtime="$TIMESTAMP" ./debian-binary ./data.tar.gz ./control.tar.gz )
 
 rm $tmp_dir/debian-binary $tmp_dir/data.tar.gz $tmp_dir/control.tar.gz
 rmdir $tmp_dir
