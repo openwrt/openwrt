@@ -1,0 +1,51 @@
+--- a/drivers/rtc/Kconfig
++++ b/drivers/rtc/Kconfig
+@@ -1182,6 +1182,15 @@ config RTC_DRV_BFIN
+ 	  This driver can also be built as a module. If so, the module
+ 	  will be called rtc-bfin.
+ 
++config RTC_DRV_GEMINI
++	tristate "Gemini SoC RTC"
++	help
++	  If you say Y here you will get support for the
++	  RTC found on Gemini SoC's.
++
++	  This driver can also be built as a module. If so, the module
++	  will be called rtc-gemini.
++
+ config RTC_DRV_RS5C313
+ 	tristate "Ricoh RS5C313"
+ 	depends on SH_LANDISK
+--- a/drivers/rtc/Makefile
++++ b/drivers/rtc/Makefile
+@@ -60,6 +60,7 @@ obj-$(CONFIG_RTC_DRV_EFI)	+= rtc-efi.o
+ obj-$(CONFIG_RTC_DRV_EM3027)	+= rtc-em3027.o
+ obj-$(CONFIG_RTC_DRV_EP93XX)	+= rtc-ep93xx.o
+ obj-$(CONFIG_RTC_DRV_FM3130)	+= rtc-fm3130.o
++obj-$(CONFIG_RTC_DRV_GEMINI)	+= rtc-gemini.o
+ obj-$(CONFIG_RTC_DRV_GENERIC)	+= rtc-generic.o
+ obj-$(CONFIG_RTC_DRV_HID_SENSOR_TIME) += rtc-hid-sensor-time.o
+ obj-$(CONFIG_RTC_DRV_HYM8563)	+= rtc-hym8563.o
+--- a/arch/arm/mach-gemini/common.h
++++ b/arch/arm/mach-gemini/common.h
+@@ -18,9 +18,9 @@ extern void gemini_map_io(void);
+ extern void gemini_init_irq(void);
+ extern void gemini_timer_init(void);
+ extern void gemini_gpio_init(void);
+-extern void platform_register_rtc(void);
+ 
+ /* Common platform devices registration functions */
++extern int platform_register_rtc(void);
+ extern int platform_register_uart(void);
+ extern int platform_register_pflash(unsigned int size,
+ 				    struct mtd_partition *parts,
+--- a/arch/arm/mach-gemini/devices.c
++++ b/arch/arm/mach-gemini/devices.c
+@@ -17,6 +17,7 @@
+ #include <mach/irqs.h>
+ #include <mach/hardware.h>
+ #include <mach/global_reg.h>
++#include "common.h"
+ 
+ static struct plat_serial8250_port serial_platform_data[] = {
+ 	{
