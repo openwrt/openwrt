@@ -423,6 +423,9 @@ ar71xx_board_detect() {
 	*"DIR-835 rev. A1")
 		name="dir-835-a1"
 		;;
+	*"dLAN pro 500 Wireless+")
+		name="dlan-pro-500-wp"
+		;;
 	*"Dragino v2")
 		name="dragino2"
 		;;
