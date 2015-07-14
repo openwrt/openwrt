@@ -23,29 +23,13 @@ define Host/Install/ccache
 	$(CP) ./files/* $(STAGING_DIR_HOST)/bin/
 endef
 
-ifneq ($(strip $(shell which ccache >/dev/null && echo found)),found)
-  define Host/Clean
+define Host/Clean
 	-$(MAKE) -C $(HOST_BUILD_DIR) uninstall
 	$(call Host/Clean/Default)
-  endef
-  define Host/Install
+endef
+define Host/Install
 	$(call Host/Install/Default)
 	$(call Host/Install/ccache)
-  endef
-else
-  define Host/Prepare
-  endef
-  define Host/Configure
-  endef
-  define Host/Compile
-  endef
-  define Host/Install
-	$(call Host/Install/ccache)
-  endef
-  define Host/Clean
-  endef
-  define Download
-  endef
-endif
+endef
 
 $(eval $(call HostBuild))

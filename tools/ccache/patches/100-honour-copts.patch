@@ -1,0 +1,33 @@
+From 90762a9b8d9a50b6176f10bd6c2e2b9501117561 Mon Sep 17 00:00:00 2001
+From: Karl Vogel <karl.vogel@gmail.com>
+Date: Tue, 14 Jul 2015 11:05:33 +0200
+Subject: [PATCH] Include environment variable GCC_HONOUR_COPTS in hash.
+
+The OpenWRT patch, 910-mbsd_multi.patch, to GCC adds an extra
+compilation flag, -fhonour-copts, which is influenced by an
+environment variable called GCC_HONOUR_COPTS.
+
+Include this environment var in the hash calculation as otherwise
+the gcc stdout warning from a previous compilation might be shown
+where, even when GCC_HONOUR_COPTS is in 's'ilent mode.
+
+Signed-off-by: Karl Vogel <karl.vogel@gmail.com>
+---
+ ccache.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ccache.c b/ccache.c
+index e41af13..b736a9c 100644
+--- a/ccache.c
++++ b/ccache.c
+@@ -965,6 +965,7 @@ calculate_object_hash(struct args *args, struct mdfour *hash, int direct_mode)
+ 			"CPLUS_INCLUDE_PATH",
+ 			"OBJC_INCLUDE_PATH",
+ 			"OBJCPLUS_INCLUDE_PATH", /* clang */
++			"GCC_HONOUR_COPTS",
+ 			NULL
+ 		};
+ 		for (p = envvars; *p != NULL ; ++p) {
+-- 
+1.9.1
+
