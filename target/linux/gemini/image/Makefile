@@ -74,7 +74,8 @@ define Image/Build
 	dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img of=$(BIN_DIR)/rd.gz bs=6144k count=1
 #	dd if=/dev/zero of=$(BIN_DIR)/hddapp.tgz bs=6144k count=1
 	dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(1).img of=$(BIN_DIR)/hddapp.tgz bs=6144k count=1 seek=1
-	cp $(KDIR)/$(IMG_PREFIX)-nas4220-zImage $(BIN_DIR)/zImage
+	cp $(KDIR)/$(IMG_PREFIX)-nas4220-zImage $(BIN_DIR)/
+	cp $(BIN_DIR)/$(IMG_PREFIX)-nas4220-zImage $(BIN_DIR)/zImage
 	cp ./ImageInfo-ib4220 $(BIN_DIR)/ImageInfo
 	(cd $(BIN_DIR); tar -czf $(IMG_PREFIX)-sysupgrade-ib4220.tar.gz ImageInfo zImage rd.gz hddapp.tgz)
 	mv $(BIN_DIR)/rd.gz $(BIN_DIR)/$(IMG_PREFIX)-nas4220-rd.gz
