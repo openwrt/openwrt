@@ -99,6 +99,14 @@ define Device/netgear
   REGION := 1
 endef
 
+define NetgearDevice
+  define Device/netgear-$(1)
+	$$(Device/netgear)
+	BOARD_ID := $(2)
+  endef
+  TARGET_DEVICES += netgear-$(1)
+endef
+
 define Device/netgear-r6250
   $(Device/netgear)
   BOARD_ID := U12H245T00_NETGEAR
@@ -129,5 +137,6 @@ $(eval $(call AsusDevice,rt-ac56u,RT-AC56U))
 $(eval $(call AsusDevice,rt-ac68u,RT-AC68U))
 $(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
 $(eval $(call AsusDevice,rt-n18u,RT-N18U))
+$(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
 
 $(eval $(call BuildImage))
