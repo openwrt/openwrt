@@ -476,7 +476,7 @@
 ##     Stop start.elf from filling in ATAGS (memory from 0x100) before
 ##     launching kernel
 ##
-#disable_commandline_tags=0
+disable_commandline_tags=1
 
 ## cmdline (string)
 ##     Command line parameters. Can be used instead of cmdline.txt file
@@ -491,7 +491,7 @@
 ## kernel_address
 ##     Address to load kernel.img file at
 ##
-#kernel_address=0x00000000
+kernel_address=0x8000
 
 ## ramfsfile (string)
 ##     ramfs file to load
@@ -515,21 +515,21 @@
 ## device_tree_address
 ##     Address to load device_tree at
 ##
-#device_tree_address=0x00000000
+device_tree_address=0x100
 
 ## init_uart_baud
 ##     Initial uart baud rate.
 ##
 ##     Default 115200
 ##
-#init_uart_baud=115200
+init_uart_baud=115200
 
 ## init_uart_clock
 ##     Initial uart clock.
 ##
 ##     Default 3000000 (3MHz)
 ##
-#init_uart_clock=3000000
+init_uart_clock=3000000
 
 ## init_emmc_clock
 ##     Initial emmc clock, increasing this can speedup your SD-card.
