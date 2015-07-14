@@ -158,6 +158,26 @@ EOF
 	UCIDEF_LEDS_CHANGED=1
 }
 
+ucidef_set_led_trigger_gpio() {
+	local cfg="led_$1"
+	local name=$2
+	local sysfs=$3
+	local gpio=$4
+	local inverted=$5
+
+	uci -q get system.$cfg && return 0
+
+	uci batch <<EOF
+set system.$cfg='led'
+set system.$cfg.name='$name'
+set system.$cfg.sysfs='$sysfs'
+set system.$cfg.trigger='gpio'
+set system.$cfg.gpio='$gpio'
+set system.$cfg.inverted='$inverted'
+EOF
+	UCIDEF_LEDS_CHANGED=1
+}
+
 ucidef_set_rssimon() {
 	local dev="$1"
 	local refresh="$2"
