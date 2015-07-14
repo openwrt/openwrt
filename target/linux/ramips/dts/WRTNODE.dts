@@ -7,6 +7,10 @@
 	model = "WRTNODE";
 
 	palmbus@10000000 {
+		gpio1: gpio@638 {
+			status = "okay";
+		};
+
 		gpio2: gpio@660 {
 			status = "okay";
 		};
@@ -75,6 +79,14 @@
 				ralink,group = "ephy", "wled", "pa", "i2c", "wdt", "uartf";
 				ralink,function = "gpio";
 			};
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		indicator {
+			label = "wrtnode:blue:indicator";
+			gpios = <&gpio1 14 1>;
 		};
 	};
 };
