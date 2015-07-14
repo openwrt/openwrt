@@ -620,6 +620,19 @@ Atheros IEEE 802.11ac family of chipsets. For now only
 PCI is supported.
 endef
 
+define KernelPackage/ath10k/config
+  if PACKAGE_kmod-ath10k
+
+	config ATH10K_API2_FW
+		bool "Firmware optimized for AP operation (v10.1 / API v2)"
+		default n
+		help
+		  Use the ath10k firmware from the 10.1 SDK using API v2 optimized
+		  for access point operation if the default firmware keeps crashing.
+
+  endif
+endef
+
 define KernelPackage/carl9170
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for Atheros AR9170 USB sticks
@@ -1844,9 +1857,15 @@ define KernelPackage/ath10k/install
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/ath10k/QCA988X/hw2.0/board.bin \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/
+ifeq ($(CONFIG_ATH10K_API2_FW),y)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/10.1/firmware-2.bin_10.1.467.2-1 \
+		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
+else
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/10.2.4/untested/firmware-5.bin_10.2.4.70-2 \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin
+endif
 endef
 
 define KernelPackage/mwl8k/install
