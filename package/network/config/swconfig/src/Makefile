@@ -6,7 +6,10 @@ LIBS=-lnl -lnl-genl
 all: swconfig
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -fPIC -c -o $@ $^
 
-swconfig: cli.o swlib.o uci.o
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+libsw.so: swlib.o
+	$(CC) $(CFLAGS) -fPIC -shared -o $@ swlib.o
+
+swconfig: libsw.so cli.o uci.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) -L./ -lsw
