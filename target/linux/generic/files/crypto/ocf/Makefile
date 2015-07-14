@@ -144,5 +144,5 @@ release:
 		find $$RELDIR/ocf -name CVS | xargs rm -rf; \
 		cd $$RELDIR/..; \
 		tar cvf ocf-linux-$$REL.tar ocf-linux-$$REL; \
-		gzip -9 ocf-linux-$$REL.tar
+		gzip -9n ocf-linux-$$REL.tar
 

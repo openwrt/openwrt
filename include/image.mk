@@ -224,7 +224,7 @@ ifneq ($(CONFIG_TARGET_ROOTFS_UBIFS),)
 endif
 
 define Image/mkfs/cpiogz
-	( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9 >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
+	( cd $(TARGET_DIR); find . | cpio -o -H newc | gzip -9n >$(BIN_DIR)/$(IMG_PREFIX)-rootfs.cpio.gz )
 endef
 
 define Image/mkfs/targz

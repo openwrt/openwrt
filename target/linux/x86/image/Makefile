@@ -149,8 +149,8 @@ ifneq ($(CONFIG_VMDK_IMAGES),)
 endif
 
 define Image/Build/gzip
-	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
-	gzip -f9 $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
+	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-combined-$(1).img
+	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-rootfs-$(1).img
 endef
 
 ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
