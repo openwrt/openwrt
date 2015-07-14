@@ -47,6 +47,9 @@ board=$(ar71xx_board_name)
 case "$FIRMWARE" in
 "ath10k/cal-pci-0000:00:00.0.bin")
 	case $board in
+	dlan-pro-1200-ac)
+		ath10kcal_extract "art" 20480 2116
+		;;
 	mc-mac1200r)
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -1)
