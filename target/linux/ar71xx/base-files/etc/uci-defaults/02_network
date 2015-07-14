@@ -305,6 +305,12 @@ dlan-pro-500-wp)
 	ucidef_set_interface_lan "eth0 eth1"
 	;;
 
+dlan-pro-1200-ac)
+	ucidef_set_interface_lan "eth0"
+	ucidef_add_switch "switch0" "1" "0"
+	ucidef_add_switch_vlan "switch0" "0" "0 2 3 4"
+	;;
+
 all0305 |\
 aw-nr580 |\
 bullet-m |\

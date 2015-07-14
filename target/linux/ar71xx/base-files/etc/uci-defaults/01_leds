@@ -180,6 +180,12 @@ dlan-pro-500-wp)
 	ucidef_set_led_wlan "wlan5g" "WLAN 5 GHz" "devolo:blue:wlan-5g" "none"
 	;;
 
+dlan-pro-1200-ac)
+	ucidef_set_led_wlan "wlan" "WLAN" "devolo:status:wlan" "phy0radio"
+	ucidef_set_led_trigger_gpio "plcw" "dLAN" "devolo:status:dlan" "17" "0"
+	ucidef_set_led_trigger_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
+	;;
+
 gl-inet)
 	ucidef_set_led_netdev "lan" "LAN" "gl-connect:green:lan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "gl-connect:red:wlan" "phy0tpt"
