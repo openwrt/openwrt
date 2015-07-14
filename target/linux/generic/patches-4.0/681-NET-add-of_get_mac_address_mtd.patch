@@ -23,11 +23,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  /**
   * of_get_phy_mode - Get phy mode for given device_node
-@@ -75,3 +76,43 @@ const void *of_get_mac_address(struct de
+@@ -75,3 +76,45 @@ const void *of_get_mac_address(struct de
  	return NULL;
  }
  EXPORT_SYMBOL(of_get_mac_address);
 +
++#ifdef CONFIG_MTD
 +int of_get_mac_address_mtd(struct device_node *np, unsigned char *mac)
 +{
 +	struct device_node *mtd_np = NULL;
@@ -67,13 +68,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	return ret;
 +}
 +EXPORT_SYMBOL_GPL(of_get_mac_address_mtd);
++#endif
 --- a/include/linux/of_net.h
 +++ b/include/linux/of_net.h
-@@ -11,6 +11,7 @@
+@@ -11,6 +11,14 @@
  #include <linux/of.h>
  extern int of_get_phy_mode(struct device_node *np);
  extern const void *of_get_mac_address(struct device_node *np);
++#ifdef CONFIG_MTD
 +extern int of_get_mac_address_mtd(struct device_node *np, unsigned char *mac);
++#else
++static inline int of_get_mac_address_mtd(struct device_node *np, unsigned char *mac)
++{
++	return -ENOENT;
++}
++#endif
  #else
  static inline int of_get_phy_mode(struct device_node *np)
  {
