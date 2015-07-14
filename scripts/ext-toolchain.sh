@@ -91,7 +91,7 @@ test_uclibc() {
 	local sysroot="$("$CC" $CFLAGS -print-sysroot 2>/dev/null)"
 	if [ -d "${sysroot:-$TOOLCHAIN}" ]; then
 		local lib
-		for lib in "${sysroot:-$TOOLCHAIN}"/{lib,usr/lib,usr/local/lib}/ld-uClibc*.so*; do
+		for lib in "${sysroot:-$TOOLCHAIN}"/{lib,usr/lib,usr/local/lib}/ld*-uClibc*.so*; do
 			if [ -f "$lib" ] && [ ! -h "$lib" ]; then
 				return 0
 			fi
