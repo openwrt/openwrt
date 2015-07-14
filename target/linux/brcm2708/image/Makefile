@@ -11,30 +11,67 @@ include $(INCLUDE_DIR)/host.mk
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_BRCM2708_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
-define Image/Build/RaspberryPi
-	rm -f $(KDIR)/boot.img
+### Image scripts ###
+define Build/build-dtb
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $@.dtb $(DTS_DIR)/$(DEVICE_DTS).dts
+endef
 
-	mkfs.fat -C $(KDIR)/boot.img $(FAT32_BLOCKS)
-	# Raspberry Pi has no bootloader, instead the GPU loads and starts the kernel
-	mcopy -i $(KDIR)/boot.img $(KDIR)/bootcode.bin ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/COPYING.linux ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/LICENCE.broadcom ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/start.elf ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/start_cd.elf ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/fixup.dat ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/fixup_cd.dat ::
-	mcopy -i $(KDIR)/boot.img cmdline.txt ::
-	mcopy -i $(KDIR)/boot.img config.txt ::
-	mcopy -i $(KDIR)/boot.img $(KDIR)/Image ::kernel.img  # Copy OpenWrt built kernel
-	./gen_rpi_sdcard_img.sh $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img $(KDIR)/boot.img $(KDIR)/root.$(1) \
+define Build/gen-cfg
+	cat config.txt > $@.config
+	echo -e "\ndevice_tree=$(DEVICE_DTS).dtb" >> $@.config
+endef
+
+define Build/boot-img
+	rm -f $@.boot
+	mkfs.fat -C $@.boot $(FAT32_BLOCKS)
+	mcopy -i $@.boot $(KDIR)/bootcode.bin ::
+	mcopy -i $@.boot $(KDIR)/COPYING.linux ::
+	mcopy -i $@.boot $(KDIR)/LICENCE.broadcom ::
+	mcopy -i $@.boot $(KDIR)/start.elf ::
+	mcopy -i $@.boot $(KDIR)/start_cd.elf ::
+	mcopy -i $@.boot $(KDIR)/fixup.dat ::
+	mcopy -i $@.boot $(KDIR)/fixup_cd.dat ::
+	mcopy -i $@.boot cmdline.txt ::
+	mcopy -i $@.boot $@.config ::config.txt
+	mcopy -i $@.boot $(word 1,$^) ::kernel.img
+	mcopy -i $@.boot $@.dtb ::$(DEVICE_DTS).dtb
+endef
+
+define Build/sdcard-img
+	./gen_rpi_sdcard_img.sh $@ $@.boot $(word 2,$^) \
 		$(CONFIG_BRCM2708_SD_BOOT_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
 endef
 
-define Image/Build
-	$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1).img
-	$(CP) $(KDIR)/Image $(BIN_DIR)/$(IMG_PREFIX)-Image
-
-	$(call Image/Build/RaspberryPi,$(1))
+### Device macros ###
+define Device/Default
+  FILESYSTEMS := ext4
+  PROFILES = Default $$(DEVICE_PROFILE)
+  KERNEL := kernel-bin
+  IMAGES := sdcard.bin
+  IMAGE/sdcard.bin := build-dtb | gen-cfg | boot-img | sdcard-img
+  DEVICE_PROFILE :=
+  DEVICE_NAME :=
+  DEVICE_DTS :=
 endef
+DEVICE_VARS += DEVICE_PROFILE DEVICE_NAME DEVICE_DTS
+
+# $(1) = profile
+# $(2) = image name
+# $(3) = dts
+define add_bcm2708
+  define Device/$(2)
+    DEVICE_PROFILE := $(1)
+    DEVICE_NAME := $(2)
+    DEVICE_DTS := $(3)
+  endef
+  TARGET_DEVICES += $(2)
+endef
+
+# Raspberry Pi Model B
+$(eval $(call add_bcm2708,RaspberryPi,rpi-b,bcm2708-rpi-b))
+# Raspberry Pi Model B+
+$(eval $(call add_bcm2708,RaspberryPi,rpi-b-plus,bcm2708-rpi-b-plus))
+# Raspberry Pi 2 Model B
+$(eval $(call add_bcm2708,RaspberryPi2,rpi-2-b,bcm2709-rpi-2-b))
 
 $(eval $(call BuildImage))
