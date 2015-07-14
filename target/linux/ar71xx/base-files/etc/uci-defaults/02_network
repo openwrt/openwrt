@@ -301,6 +301,10 @@ esr900)
 	[ -n "$mac" ] && ucidef_set_interface_macaddr "wan" "$mac"
 	;;
 
+dlan-pro-500-wp)
+	ucidef_set_interface_lan "eth0 eth1"
+	;;
+
 all0305 |\
 aw-nr580 |\
 bullet-m |\
