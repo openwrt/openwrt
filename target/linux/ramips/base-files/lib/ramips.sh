@@ -400,6 +400,9 @@ ramips_board_detect() {
 	*"Zbtlink ZBT-WA05")
 		name="zbt-wa05"
 		;;
+	*"OY-0001")
+		name="oy-0001"
+		;;
 	*"ZBT WR8305RT")
 		name="wr8305rt"
 		;;

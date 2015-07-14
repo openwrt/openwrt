@@ -1,0 +1,123 @@
+/dts-v1/;
+
+/include/ "mt7620a.dtsi"
+
+/ {
+	compatible = "ralink,mt7620a-soc";
+	model = "OY-0001";
+
+        chosen {
+                bootargs = "console=ttyS0,115200";
+        };
+
+	palmbus@10000000 {
+		gpio2: gpio@660 {
+			status = "okay";
+		};
+
+		gpio3: gpio@688 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "w25q128";
+				reg = <0 0>;
+				linux,modalias = "m25p80", "w25q128";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "u-boot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "u-boot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0xfb0000>;
+				};
+
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "i2c", "uartf", "rgmii1", "rgmii2", "wled", "nd_sd";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&ephy_pins>;
+
+		ralink,port-map = "llllw";
+	};
+
+	gsw@10110000 {
+		ralink,port4 = "ephy";
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		powerled {
+			label = "oy:green:power";
+			gpios = <&gpio0 9 1>;
+		};
+		wifiled {
+			label = "oy:green:wifi";
+			gpios = <&gpio3 0 1>;
+		};
+	};
+
+	sdhci@10130000 {
+		status = "okay";
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
+
+	pcie@10140000 {
+		status = "okay";
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		s1 {
+			label = "reset";
+			gpios = <&gpio0 1 1>;
+			linux,code = <0x198>;
+		};
+	};
+};
