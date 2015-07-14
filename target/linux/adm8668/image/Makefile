@@ -16,7 +16,7 @@ endef
 
 
 define CompressGzip
-	gzip -9 -c $(1) > $(2)
+	gzip -9n -c $(1) > $(2)
 endef
 
 define MkImage

@@ -149,7 +149,7 @@ $(curdir)/index: FORCE
 		mkdir -p $(PACKAGE_DIR)/$$d; \
 		cd $(PACKAGE_DIR)/$$d || continue; \
 		$(SCRIPT_DIR)/ipkg-make-index.sh . 2>&1 > Packages && \
-			gzip -9c Packages > Packages.gz; \
+			gzip -9nc Packages > Packages.gz; \
 	); done
 ifdef CONFIG_SIGNED_PACKAGES
 	@echo Signing package index...

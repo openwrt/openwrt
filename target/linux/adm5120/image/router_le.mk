@@ -72,7 +72,7 @@ define Image/Build/Cellvision
 	$(call Image/Build/Loader,$(2),bin,0x80500000,0x6D8,y,$(3))
 	mkdir -p $(BIN_DIR)/tmp
 	cp $(KDIR)/loader-$(2).bin $(BIN_DIR)/tmp/vmlinux.bin
-	gzip -9 $(BIN_DIR)/tmp/vmlinux.bin
+	gzip -9n $(BIN_DIR)/tmp/vmlinux.bin
 	dd if=$(BIN_DIR)/tmp/vmlinux.bin.gz of=$(call imgname,$(1),$(2))-xmodem.bin bs=64k conv=sync
 	rm -rf $(BIN_DIR)/tmp
 	$(call Image/Build/TRXNoloader,$(call imgname,$(1),$(2)).trx,$(1))

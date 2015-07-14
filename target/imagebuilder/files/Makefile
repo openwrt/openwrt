@@ -121,7 +121,7 @@ package_index: FORCE
 	@echo Building package index...
 	@mkdir -p $(TMP_DIR) $(TARGET_DIR)/tmp
 	(cd $(PACKAGE_DIR); $(SCRIPT_DIR)/ipkg-make-index.sh . > Packages && \
-		gzip -9c Packages > Packages.gz \
+		gzip -9nc Packages > Packages.gz \
 	) >/dev/null 2>/dev/null
 	$(OPKG) update || true
 
