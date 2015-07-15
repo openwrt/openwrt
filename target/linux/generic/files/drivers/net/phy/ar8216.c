@@ -1882,12 +1882,12 @@ ar8xxx_check_link_states(struct ar8xxx_priv *priv)
 
 		priv->link_up[i] = link_new;
 		changed = true;
+		/* flush ARL entries for this port if it went down*/
+		if (!link_new)
+			priv->chip->atu_flush_port(priv, i);
 		dev_info(&priv->phy->dev, "Port %d is %s\n",
 			 i, link_new ? "up" : "down");
 	}
-
-	if (changed)
-		priv->chip->atu_flush(priv);
 
 	mutex_unlock(&priv->reg_mutex);
 
@@ -1900,9 +1900,7 @@ ar8xxx_phy_read_status(struct phy_device *phydev)
 	struct ar8xxx_priv *priv = phydev->priv;
 	struct switch_port_link link;
 
-	/* check for link changes and flush ATU
-	 * if a change was detected
-	 */
+	/* check for switch port link changes */
 	if (phydev->state == PHY_CHANGELINK)
 		ar8xxx_check_link_states(priv);
 
