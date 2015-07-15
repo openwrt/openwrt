@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=xtables-addons
-PKG_VERSION:=2.5
+PKG_VERSION:=2.7
 PKG_RELEASE:=1
-PKG_MD5SUM:=335663ece5fb17c7d0bb24dbdc697eb1
+PKG_MD5SUM:=81bd7ba82e5f7bfd1458fc97ddf72e1d
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SF/xtables-addons
@@ -92,7 +92,7 @@ define BuildTemplate
   define KernelPackage/ipt-$(1)
     SUBMENU:=Netfilter Extensions
     TITLE:=$(2) netfilter module
-    DEPENDS:=+kmod-ipt-core @!LINUX_4_1 $(5)
+    DEPENDS:=+kmod-ipt-core $(5)
     KCONFIG:=$(6)
     FILES:=$(foreach mod,$(4),$(PKG_BUILD_DIR)/extensions/$(mod).$(LINUX_KMOD_SUFFIX))
     AUTOLOAD:=$(call AutoProbe,$(notdir $(4)))
