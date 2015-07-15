@@ -765,6 +765,24 @@ ar8327_atu_flush(struct ar8xxx_priv *priv)
 	return ret;
 }
 
+static int
+ar8327_atu_flush_port(struct ar8xxx_priv *priv, int port)
+{
+	u32 t;
+	int ret;
+
+	ret = ar8216_wait_bit(priv, AR8327_REG_ATU_FUNC,
+			      AR8327_ATU_FUNC_BUSY, 0);
+	if (!ret) {
+		t = (port << AR8327_ATU_PORT_NUM_S);
+		t |= AR8327_ATU_FUNC_OP_FLUSH_PORT;
+		t |= AR8327_ATU_FUNC_BUSY;
+		ar8xxx_write(priv, AR8327_REG_ATU_FUNC, t);
+	}
+
+	return ret;
+}
+
 static void
 ar8327_vtu_op(struct ar8xxx_priv *priv, u32 op, u32 val)
 {
@@ -1189,6 +1207,7 @@ const struct ar8xxx_chip ar8327_chip = {
 	.read_port_status = ar8327_read_port_status,
 	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
+	.atu_flush_port = ar8327_atu_flush_port,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
@@ -1222,6 +1241,7 @@ const struct ar8xxx_chip ar8337_chip = {
 	.read_port_status = ar8327_read_port_status,
 	.read_port_eee_status = ar8327_read_port_eee_status,
 	.atu_flush = ar8327_atu_flush,
+	.atu_flush_port = ar8327_atu_flush_port,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
 	.phy_fixup = ar8327_phy_fixup,
