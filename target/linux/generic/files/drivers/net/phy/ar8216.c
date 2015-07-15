@@ -606,6 +606,22 @@ ar8216_atu_flush(struct ar8xxx_priv *priv)
 	return ret;
 }
 
+static int
+ar8216_atu_flush_port(struct ar8xxx_priv *priv, int port)
+{
+	u32 t;
+	int ret;
+
+	ret = ar8216_wait_bit(priv, AR8216_REG_ATU_FUNC0, AR8216_ATU_ACTIVE, 0);
+	if (!ret) {
+		t = (port << AR8216_ATU_PORT_NUM_S) | AR8216_ATU_OP_FLUSH_PORT;
+		t |= AR8216_ATU_ACTIVE;
+		ar8xxx_write(priv, AR8216_REG_ATU_FUNC0, t);
+	}
+
+	return ret;
+}
+
 static u32
 ar8216_read_port_status(struct ar8xxx_priv *priv, int port)
 {
@@ -1542,6 +1558,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.setup_port = ar8216_setup_port,
 	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
+	.atu_flush_port = ar8216_atu_flush_port,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 	.set_mirror_regs = ar8216_set_mirror_regs,
@@ -1570,6 +1587,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.setup_port = ar8236_setup_port,
 	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
+	.atu_flush_port = ar8216_atu_flush_port,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 	.set_mirror_regs = ar8216_set_mirror_regs,
@@ -1598,6 +1616,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.setup_port = ar8216_setup_port,
 	.read_port_status = ar8216_read_port_status,
 	.atu_flush = ar8216_atu_flush,
+	.atu_flush_port = ar8216_atu_flush_port,
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 	.set_mirror_regs = ar8216_set_mirror_regs,

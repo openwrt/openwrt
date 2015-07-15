@@ -85,11 +85,12 @@
 #define   AR8216_ATU_OP_FLUSH		0x1
 #define   AR8216_ATU_OP_LOAD		0x2
 #define   AR8216_ATU_OP_PURGE		0x3
-#define   AR8216_ATU_OP_FLUSH_LOCKED	0x4
-#define   AR8216_ATU_OP_FLUSH_UNICAST	0x5
+#define   AR8216_ATU_OP_FLUSH_UNLOCKED	0x4
+#define   AR8216_ATU_OP_FLUSH_PORT	0x5
 #define   AR8216_ATU_OP_GET_NEXT	0x6
 #define   AR8216_ATU_ACTIVE		BIT(3)
 #define   AR8216_ATU_PORT_NUM		BITS(8, 4)
+#define   AR8216_ATU_PORT_NUM_S		8
 #define   AR8216_ATU_FULL_VIO		BIT(12)
 #define   AR8216_ATU_ADDR5		BITS(16, 8)
 #define   AR8216_ATU_ADDR5_S		16
@@ -397,6 +398,7 @@ struct ar8xxx_chip {
 	u32 (*read_port_status)(struct ar8xxx_priv *priv, int port);
 	u32 (*read_port_eee_status)(struct ar8xxx_priv *priv, int port);
 	int (*atu_flush)(struct ar8xxx_priv *priv);
+	int (*atu_flush_port)(struct ar8xxx_priv *priv, int port);
 	void (*vtu_flush)(struct ar8xxx_priv *priv);
 	void (*vtu_load_vlan)(struct ar8xxx_priv *priv, u32 vid, u32 port_mask);
 	void (*phy_fixup)(struct ar8xxx_priv *priv, int phy);
