@@ -598,10 +598,10 @@ ar8216_atu_flush(struct ar8xxx_priv *priv)
 {
 	int ret;
 
-	ret = ar8216_wait_bit(priv, AR8216_REG_ATU, AR8216_ATU_ACTIVE, 0);
+	ret = ar8216_wait_bit(priv, AR8216_REG_ATU_FUNC0, AR8216_ATU_ACTIVE, 0);
 	if (!ret)
-		ar8xxx_write(priv, AR8216_REG_ATU, AR8216_ATU_OP_FLUSH |
-						   AR8216_ATU_ACTIVE);
+		ar8xxx_write(priv, AR8216_REG_ATU_FUNC0, AR8216_ATU_OP_FLUSH |
+							 AR8216_ATU_ACTIVE);
 
 	return ret;
 }
@@ -698,6 +698,77 @@ ar8216_init_port(struct ar8xxx_priv *priv, int port)
 	} else {
 		ar8xxx_write(priv, AR8216_REG_PORT_STATUS(port),
 			AR8216_PORT_STATUS_LINK_AUTO);
+	}
+}
+
+static void
+ar8216_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
+{
+	int timeout = 20;
+
+	while (ar8xxx_mii_read32(priv, r2, r1) & AR8216_ATU_ACTIVE && --timeout)
+                udelay(10);
+
+	if (!timeout)
+		pr_err("ar8216: timeout waiting for atu to become ready\n");
+}
+
+static void ar8216_get_arl_entry(struct ar8xxx_priv *priv,
+				 struct arl_entry *a, u32 *status, enum arl_op op)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 r2, page;
+	u16 r1_func0, r1_func1, r1_func2;
+	u32 t, val0, val1, val2;
+	int i;
+
+	split_addr(AR8216_REG_ATU_FUNC0, &r1_func0, &r2, &page);
+	r2 |= 0x10;
+
+	r1_func1 = (AR8216_REG_ATU_FUNC1 >> 1) & 0x1e;
+	r1_func2 = (AR8216_REG_ATU_FUNC2 >> 1) & 0x1e;
+
+	switch (op) {
+	case AR8XXX_ARL_INITIALIZE:
+		/* all ATU registers are on the same page
+		* therefore set page only once
+		*/
+		bus->write(bus, 0x18, 0, page);
+		wait_for_page_switch();
+
+		ar8216_wait_atu_ready(priv, r2, r1_func0);
+
+		ar8xxx_mii_write32(priv, r2, r1_func0, AR8216_ATU_OP_GET_NEXT);
+		ar8xxx_mii_write32(priv, r2, r1_func1, 0);
+		ar8xxx_mii_write32(priv, r2, r1_func2, 0);
+		break;
+	case AR8XXX_ARL_GET_NEXT:
+		t = ar8xxx_mii_read32(priv, r2, r1_func0);
+		t |= AR8216_ATU_ACTIVE;
+		ar8xxx_mii_write32(priv, r2, r1_func0, t);
+		ar8216_wait_atu_ready(priv, r2, r1_func0);
+
+		val0 = ar8xxx_mii_read32(priv, r2, r1_func0);
+		val1 = ar8xxx_mii_read32(priv, r2, r1_func1);
+		val2 = ar8xxx_mii_read32(priv, r2, r1_func2);
+
+		*status = (val2 & AR8216_ATU_STATUS) >> AR8216_ATU_STATUS_S;
+		if (!*status)
+			break;
+
+		i = 0;
+		t = AR8216_ATU_PORT0;
+		while (!(val2 & t) && ++i < priv->dev.ports)
+			t <<= 1;
+
+		a->port = i;
+		a->mac[0] = (val0 & AR8216_ATU_ADDR5) >> AR8216_ATU_ADDR5_S;
+		a->mac[1] = (val0 & AR8216_ATU_ADDR4) >> AR8216_ATU_ADDR4_S;
+		a->mac[2] = (val1 & AR8216_ATU_ADDR3) >> AR8216_ATU_ADDR3_S;
+		a->mac[3] = (val1 & AR8216_ATU_ADDR2) >> AR8216_ATU_ADDR2_S;
+		a->mac[4] = (val1 & AR8216_ATU_ADDR1) >> AR8216_ATU_ADDR1_S;
+		a->mac[5] = (val1 & AR8216_ATU_ADDR0) >> AR8216_ATU_ADDR0_S;
+		break;
 	}
 }
 
@@ -1349,7 +1420,6 @@ ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 	return 0;
 }
 
-
 static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1475,6 +1545,7 @@ static const struct ar8xxx_chip ar8216_chip = {
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 	.set_mirror_regs = ar8216_set_mirror_regs,
+	.get_arl_entry = ar8216_get_arl_entry,
 	.sw_hw_apply = ar8xxx_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8216_mibs),
@@ -1502,6 +1573,7 @@ static const struct ar8xxx_chip ar8236_chip = {
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 	.set_mirror_regs = ar8216_set_mirror_regs,
+	.get_arl_entry = ar8216_get_arl_entry,
 	.sw_hw_apply = ar8xxx_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
@@ -1529,6 +1601,7 @@ static const struct ar8xxx_chip ar8316_chip = {
 	.vtu_flush = ar8216_vtu_flush,
 	.vtu_load_vlan = ar8216_vtu_load_vlan,
 	.set_mirror_regs = ar8216_set_mirror_regs,
+	.get_arl_entry = ar8216_get_arl_entry,
 	.sw_hw_apply = ar8xxx_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
