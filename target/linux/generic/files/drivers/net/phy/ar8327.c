@@ -1138,6 +1138,12 @@ static const struct switch_attr ar8327_sw_attr_globals[] = {
 		.set = NULL,
 		.get = ar8xxx_sw_get_arl_table,
 	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "flush_arl_table",
+		.description = "Flush ARL table",
+		.set = ar8xxx_sw_set_flush_arl_table,
+	},
 };
 
 static const struct switch_attr ar8327_sw_attr_port[] = {
@@ -1161,6 +1167,12 @@ static const struct switch_attr ar8327_sw_attr_port[] = {
 		.set = ar8327_sw_set_eee,
 		.get = ar8327_sw_get_eee,
 		.max = 1,
+	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "flush_arl_table",
+		.description = "Flush port's ARL table entries",
+		.set = ar8xxx_sw_set_flush_port_arl_table,
 	},
 };
 

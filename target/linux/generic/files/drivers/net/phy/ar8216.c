@@ -1436,6 +1436,40 @@ ar8xxx_sw_get_arl_table(struct switch_dev *dev,
 	return 0;
 }
 
+int
+ar8xxx_sw_set_flush_arl_table(struct switch_dev *dev,
+			      const struct switch_attr *attr,
+			      struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int ret;
+
+	mutex_lock(&priv->reg_mutex);
+	ret = priv->chip->atu_flush(priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
+int
+ar8xxx_sw_set_flush_port_arl_table(struct switch_dev *dev,
+				   const struct switch_attr *attr,
+				   struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	int port, ret;
+
+	port = val->port_vlan;
+	if (port >= dev->ports)
+		return -EINVAL;
+
+	mutex_lock(&priv->reg_mutex);
+	ret = priv->chip->atu_flush_port(priv, port);
+	mutex_unlock(&priv->reg_mutex);
+
+	return ret;
+}
+
 static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 	{
 		.type = SWITCH_TYPE_INT,
@@ -1490,9 +1524,15 @@ static const struct switch_attr ar8xxx_sw_attr_globals[] = {
 		.set = NULL,
 		.get = ar8xxx_sw_get_arl_table,
 	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "flush_arl_table",
+		.description = "Flush ARL table",
+		.set = ar8xxx_sw_set_flush_arl_table,
+	},
 };
 
-const struct switch_attr ar8xxx_sw_attr_port[2] = {
+const struct switch_attr ar8xxx_sw_attr_port[] = {
 	{
 		.type = SWITCH_TYPE_NOVAL,
 		.name = "reset_mib",
@@ -1505,6 +1545,12 @@ const struct switch_attr ar8xxx_sw_attr_port[2] = {
 		.description = "Get port's MIB counters",
 		.set = NULL,
 		.get = ar8xxx_sw_get_port_mib,
+	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "flush_arl_table",
+		.description = "Flush port's ARL table entries",
+		.set = ar8xxx_sw_set_flush_port_arl_table,
 	},
 };
 
