@@ -19,7 +19,7 @@ export GZIP="-n"
 
 # look up date of last commit
 if [ -d "$TOPDIR/.git" ]; then
-	TIMESTAMP=$($GIT log -1 -s --format=%ci)
+	TIMESTAMP=$(cd $TOPDIR; $GIT log -1 -s --format=%ci)
 elif [ -d "$TOPDIR/.svn" ]; then
 	TIMESTAMP=$($SVN info "$TOPDIR" | sed -n "s/^Last Changed Date: \(.*\)/\1/p")
 else
