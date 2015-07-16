@@ -126,6 +126,22 @@ define Image/BuildKernel/MkFIT
 	PATH=$(LINUX_DIR)/scripts/dtc:$(PATH) mkimage -f $(KDIR)/fit-$(1).its $(KDIR)/fit-$(1)$(7).itb
 endef
 
+# $(1) source dts file
+# $(2) target dtb file
+# $(3) extra CPP flags
+# $(4) extra DTC flags
+define Image/BuildDTB
+	$(CPP) -nostdinc -x assembler-with-cpp \
+		-I$(LINUX_DIR)/arch/$(ARCH)/boot/dts \
+		-I$(LINUX_DIR)/arch/$(ARCH)/boot/dts/include \
+		-undef -D__DTS__ $(3) \
+		-o $(2).tmp $(1)
+	$(LINUX_DIR)/scripts/dtc/dtc -O dtb \
+		-i$(dir $(1)) $(4) \
+		-o $(2) $(2).tmp
+	$(RM) $(2).tmp
+endef
+
 define Image/mkfs/jffs2/sub
 		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 $(3) --pad -e $(patsubst %k,%KiB,$(1)) -o $(KDIR)/root.jffs2-$(2) -d $(TARGET_DIR) -v 2>&1 1>/dev/null | awk '/^.+$$$$/'
 		$(call add_jffs2_mark,$(KDIR)/root.jffs2-$(2))
