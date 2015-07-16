@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6328.dtsi"
+#include "bcm6328.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "ADB P.DG A4001N1";
@@ -16,12 +18,12 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 23 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wlan";
 			gpios = <&gpio0 24 1>;
-			linux,code = <0xee>;
+			linux,code = <KEY_WLAN>;
 		};
 	};
 

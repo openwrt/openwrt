@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6358.dtsi"
+#include "bcm6358.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Huawei EchoLife HG553";
@@ -16,13 +18,13 @@
 		rfkill {
 			label = "rfkill";
 			gpios = <&gpio0 9 1>;
-			linux,code = <0xf7>;
+			linux,code = <KEY_RFKILL>;
 		};
 
 		reset {
 			label = "reset";
 			gpios = <&gpio1 5 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 
