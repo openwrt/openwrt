@@ -198,7 +198,7 @@ endef
 
 define Image/PrepareCFELzmaKernelDTB
 	# compile the dts (the dtb will be later reused for the lzma loader)
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $(DTS_DIR)/$(1).dtb ../dts/$(1).dts
+	$(call Image/BuildDTB,../dts/$(1).dts,$(DTS_DIR)/$(1).dtb)
 	cat $(KDIR)/vmlinux $(DTS_DIR)/$(1).dtb > $(KDIR)/vmlinux-$(1)
 	$(call Image/PrepareCFELzmaKernel,-$(1))
 	rm -f $(KDIR)/vmlinux-$(1)
