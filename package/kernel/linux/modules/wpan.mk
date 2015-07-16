@@ -71,7 +71,7 @@ $(eval $(call KernelPackage,fakelb))
 define KernelPackage/at86rf230
   SUBMENU:=$(WPAN_MENU)
   TITLE:=AT86RF230 transceiver driver
-  DEPENDS:=+kmod-mac802154
+  DEPENDS:=+kmod-mac802154 +kmod-regmap
   KCONFIG:=CONFIG_IEEE802154_AT86RF230 \
 	CONFIG_SPI=y \
 	CONFIG_SPI_MASTER=y
