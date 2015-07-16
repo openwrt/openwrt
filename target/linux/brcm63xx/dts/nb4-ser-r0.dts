@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6358.dtsi"
+#include "bcm6358.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "SFR Neuf Box 4 (Sercomm)";
@@ -36,22 +38,22 @@
 		service {
 			label = "service";
 			gpios = <&gpio0 27 1>;
-			linux,code = <0x100>;
+			linux,code = <BTN_0>;
 		};
 		clip {
 			label = "clip";
 			gpios = <&gpio0 31 1>;
-			linux,code = <0x101>;
+			linux,code = <BTN_1>;
 		};
 		reset {
 			label = "reset";
 			gpios = <&gpio1 2 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
 			gpios = <&gpio1 5 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 

@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6358.dtsi"
+#include "bcm6358.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Huawei EchoLife HG556a (version B)";
@@ -16,22 +18,22 @@
 		help {
 			label = "help";
 			gpios = <&gpio0 8 1>;
-			linux,code = <0x8a>;
+			linux,code = <KEY_HELP>;
 		};
 		wlan {
 			label = "wlan";
 			gpios = <&gpio0 9 1>;
-			linux,code = <0xee>;
+			linux,code = <KEY_WLAN>;
 		};
 		restart {
 			label = "restart";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 		reset {
 			label = "reset";
 			gpios = <&gpio0 11 1>;
-			linux,code = <0xab>;
+			linux,code = <KEY_CONFIG>;
 		};
 	};
 

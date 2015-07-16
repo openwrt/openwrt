@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6345.dtsi"
+#include "bcm6345.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Siemens Gigaset SE515";
@@ -16,7 +18,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 13 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
         };
 

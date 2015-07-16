@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6348.dtsi"
+#include "bcm6348.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Inventel Livebox 1";
@@ -17,13 +19,13 @@
 		button1 {
 			label = "BTN_1";
 			gpios = <&gpio1 4 1>;
-			linux,code = <0x101>;
+			linux,code = <BTN_1>;
 		};
 
 		button2 {
 			label = "BTN_2";
 			gpios = <&gpio0 7 1>;
-			linux,code = <0x102>;
+			linux,code = <BTN_2>;
 		};
 	};
 

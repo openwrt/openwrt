@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6368.dtsi"
+#include "bcm6368.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Netgear DGND3700v1/DGND3800B";
@@ -16,17 +18,17 @@
 		wlan {
 			label = "wlan";
 			gpios = <&gpio0 10 1>;
-			linux,code = <0xee>;
+			linux,code = <KEY_WLAN>;
 		};
 		reset {
 			label = "reset";
 			gpios = <&gpio0 12 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 		wps {
 			label = "wps";
 			gpios = <&gpio1 3 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 

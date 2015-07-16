@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6358.dtsi"
+#include "bcm6358.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "T-Com Speedport W303 V";
@@ -16,12 +18,12 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio0 11 0>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 		ses {
 			label = "ses";
 			gpios = <&gpio1 5 1>;
-			linux,code = <0x211>;
+			linux,code = <KEY_WPS_BUTTON>;
 		};
 	};
 

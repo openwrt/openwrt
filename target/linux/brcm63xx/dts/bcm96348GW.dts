@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm6348.dtsi"
+#include "bcm6348.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Broadcom BCM96348GW reference board";
@@ -16,7 +18,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio1 4 1>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
 	};
 

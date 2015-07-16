@@ -1,6 +1,8 @@
 /dts-v1/;
 
-/include/ "bcm63268.dtsi"
+#include "bcm63268.dtsi"
+
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Broadcom BCM963269BHR reference board";
@@ -16,7 +18,7 @@
 		reset {
 			label = "reset";
 			gpios = <&gpio1 0 0>;
-			linux,code = <0x198>;
+			linux,code = <KEY_RESTART>;
 		};
         };
 
