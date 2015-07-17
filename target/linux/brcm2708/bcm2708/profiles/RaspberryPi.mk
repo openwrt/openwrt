@@ -28,3 +28,11 @@ define Profile/RaspberryPi_BPlus/Description
   Raspberry Pi Model B+
 endef
 $(eval $(call Profile,RaspberryPi_BPlus))
+
+define Profile/RaspberryPi_CM
+  NAME:=Raspberry Pi Compute Module
+endef
+define Profile/RaspberryPi_CM/Description
+  Raspberry Pi Model Compute Module
+endef
+$(eval $(call Profile,RaspberryPi_CM))
