@@ -73,6 +73,8 @@ ifeq ($(SUBTARGET),bcm2708)
   $(eval $(call add_bcm2708,RaspberryPi_B,rpi-b,bcm2708-rpi-b))
   # Raspberry Pi Model B+
   $(eval $(call add_bcm2708,RaspberryPi_BPlus,rpi-b-plus,bcm2708-rpi-b-plus))
+  # Raspberry Pi Compute Module
+  $(eval $(call add_bcm2708,RaspberryPi_CM,rpi-cm,bcm2708-rpi-cm))
 endif
 
 ### BCM2709/BCM2836 ###
