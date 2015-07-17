@@ -67,11 +67,18 @@ define add_bcm2708
   TARGET_DEVICES += $(2)
 endef
 
-# Raspberry Pi Model B
-$(eval $(call add_bcm2708,RaspberryPi,rpi-b,bcm2708-rpi-b))
-# Raspberry Pi Model B+
-$(eval $(call add_bcm2708,RaspberryPi,rpi-b-plus,bcm2708-rpi-b-plus))
-# Raspberry Pi 2 Model B
-$(eval $(call add_bcm2708,RaspberryPi2,rpi-2-b,bcm2709-rpi-2-b))
+### BCM2708/BCM2835 ###
+ifeq ($(SUBTARGET),bcm2708)
+  # Raspberry Pi Model B
+  $(eval $(call add_bcm2708,RaspberryPi_B,rpi-b,bcm2708-rpi-b))
+  # Raspberry Pi Model B+
+  $(eval $(call add_bcm2708,RaspberryPi_BPlus,rpi-b-plus,bcm2708-rpi-b-plus))
+endif
+
+### BCM2709/BCM2836 ###
+ifeq ($(SUBTARGET),bcm2709)
+  # Raspberry Pi 2 Model B
+  $(eval $(call add_bcm2708,RaspberryPi_2,rpi-2-b,bcm2709-rpi-2-b))
+endif
 
 $(eval $(call BuildImage))
