@@ -5,12 +5,26 @@
 # See /LICENSE for more information.
 #
 
-define Profile/RaspberryPi
+define Profile/Default
   NAME:=Raspberry Pi
 endef
-
-define Profile/RaspberryPi/Description
-	Raspberry Pi board
+define Profile/Default/Description
+  Raspberry Pi
 endef
+$(eval $(call Profile,Default))
 
-$(eval $(call Profile,RaspberryPi))
+define Profile/RaspberryPi_B
+  NAME:=Raspberry Pi Model B
+endef
+define Profile/RaspberryPi_B/Description
+  Raspberry Pi Model B
+endef
+$(eval $(call Profile,RaspberryPi_B))
+
+define Profile/RaspberryPi_BPlus
+  NAME:=Raspberry Pi Model B+
+endef
+define Profile/RaspberryPi_BPlus/Description
+  Raspberry Pi Model B+
+endef
+$(eval $(call Profile,RaspberryPi_BPlus))
