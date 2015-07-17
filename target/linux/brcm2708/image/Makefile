@@ -11,6 +11,16 @@ include $(INCLUDE_DIR)/host.mk
 FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_BRCM2708_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
+ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+  define Image/gzip
+    gzip -9n -c $(1) > $(1).gz
+    mv $(1).gz $(BIN_DIR)
+  endef
+else
+  define Image/gzip
+  endef
+endif
+
 ### Image scripts ###
 define Build/build-dtb
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $@.dtb $(DTS_DIR)/$(DEVICE_DTS).dts
@@ -40,6 +50,7 @@ endef
 define Build/sdcard-img
 	./gen_rpi_sdcard_img.sh $@ $@.boot $(word 2,$^) \
 		$(CONFIG_BRCM2708_SD_BOOT_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+	$(call Image/gzip,$@)
 endef
 
 ### Device macros ###
