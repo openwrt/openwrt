@@ -1,0 +1,3750 @@
+From 73ffc770b510d914757449f9bd52ff5e0b300a52 Mon Sep 17 00:00:00 2001
+From: notro <notro@tronnes.org>
+Date: Wed, 9 Jul 2014 14:46:08 +0200
+Subject: [PATCH 025/121] BCM2708: Add core Device Tree support
+
+Add the bare minimum needed to boot BCM2708 from a Device Tree.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+
+BCM2708: DT: change 'axi' nodename to 'soc'
+
+Change DT node named 'axi' to 'soc' so it matches ARCH_BCM2835.
+The VC4 bootloader fills in certain properties in the 'axi' subtree,
+but since this is part of an upstreaming effort, the name is changed.
+
+Signed-off-by: Noralf Tronnes notro@tronnes.org
+
+BCM2708_DT: Correct length of the peripheral space
+---
+ arch/arm/boot/dts/Makefile                         |  27 ++
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts           | 140 ++++++
+ arch/arm/boot/dts/bcm2708-rpi-b.dts                | 130 ++++++
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts               |  18 +
+ arch/arm/boot/dts/bcm2708-rpi-cm.dtsi              |  51 +++
+ arch/arm/boot/dts/bcm2708.dtsi                     |  19 +
+ arch/arm/boot/dts/bcm2708_common.dtsi              | 230 ++++++++++
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts              | 140 ++++++
+ arch/arm/boot/dts/bcm2709.dtsi                     |  70 +++
+ arch/arm/boot/dts/bcm2835-rpi-b-plus.dts           |  45 +-
+ arch/arm/boot/dts/bcm2835-rpi-b.dts                |  29 +-
+ arch/arm/boot/dts/bcm2835-rpi.dtsi                 |  97 +++-
+ arch/arm/boot/dts/bcm2835.dtsi                     |  45 +-
+ arch/arm/boot/dts/overlays/Makefile                |  57 +++
+ arch/arm/boot/dts/overlays/README                  | 493 +++++++++++++++++++++
+ arch/arm/boot/dts/overlays/ads7846-overlay.dts     |  83 ++++
+ .../dts/overlays/bmp085_i2c-sensor-overlay.dts     |  23 +
+ arch/arm/boot/dts/overlays/dht11-overlay.dts       |  39 ++
+ arch/arm/boot/dts/overlays/enc28j60-overlay.dts    |  50 +++
+ .../boot/dts/overlays/hifiberry-amp-overlay.dts    |  39 ++
+ .../boot/dts/overlays/hifiberry-dac-overlay.dts    |  34 ++
+ .../dts/overlays/hifiberry-dacplus-overlay.dts     |  39 ++
+ .../boot/dts/overlays/hifiberry-digi-overlay.dts   |  39 ++
+ arch/arm/boot/dts/overlays/hy28a-overlay.dts       |  87 ++++
+ arch/arm/boot/dts/overlays/hy28b-overlay.dts       | 142 ++++++
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts     |  49 ++
+ arch/arm/boot/dts/overlays/i2s-mmap-overlay.dts    |  13 +
+ arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts |  39 ++
+ .../boot/dts/overlays/iqaudio-dacplus-overlay.dts  |  39 ++
+ arch/arm/boot/dts/overlays/lirc-rpi-overlay.dts    |  57 +++
+ .../arm/boot/dts/overlays/mcp2515-can0-overlay.dts |  69 +++
+ arch/arm/boot/dts/overlays/mmc-overlay.dts         |  19 +
+ arch/arm/boot/dts/overlays/mz61581-overlay.dts     | 109 +++++
+ arch/arm/boot/dts/overlays/piscreen-overlay.dts    |  96 ++++
+ .../dts/overlays/pitft28-resistive-overlay.dts     | 115 +++++
+ arch/arm/boot/dts/overlays/pps-gpio-overlay.dts    |  34 ++
+ arch/arm/boot/dts/overlays/rpi-dac-overlay.dts     |  34 ++
+ arch/arm/boot/dts/overlays/rpi-display-overlay.dts |  82 ++++
+ arch/arm/boot/dts/overlays/rpi-proto-overlay.dts   |  39 ++
+ arch/arm/boot/dts/overlays/sdhost-overlay.dts      |  78 ++++
+ arch/arm/boot/dts/overlays/spi-bcm2708-overlay.dts |  18 +
+ arch/arm/boot/dts/overlays/spi-bcm2835-overlay.dts |  18 +
+ arch/arm/boot/dts/overlays/tinylcd35-overlay.dts   | 216 +++++++++
+ arch/arm/boot/dts/overlays/w1-gpio-overlay.dts     |  39 ++
+ .../boot/dts/overlays/w1-gpio-pullup-overlay.dts   |  41 ++
+ 45 files changed, 3316 insertions(+), 54 deletions(-)
+ create mode 100644 arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+ create mode 100644 arch/arm/boot/dts/bcm2708-rpi-b.dts
+ create mode 100755 arch/arm/boot/dts/bcm2708-rpi-cm.dts
+ create mode 100644 arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+ create mode 100644 arch/arm/boot/dts/bcm2708.dtsi
+ create mode 100644 arch/arm/boot/dts/bcm2708_common.dtsi
+ create mode 100644 arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+ create mode 100644 arch/arm/boot/dts/bcm2709.dtsi
+ create mode 100644 arch/arm/boot/dts/overlays/Makefile
+ create mode 100644 arch/arm/boot/dts/overlays/README
+ create mode 100644 arch/arm/boot/dts/overlays/ads7846-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/bmp085_i2c-sensor-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/dht11-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/enc28j60-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/hy28a-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/hy28b-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/i2s-mmap-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/lirc-rpi-overlay.dts
+ create mode 100755 arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/mmc-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/mz61581-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/piscreen-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/pps-gpio-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/rpi-dac-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/rpi-display-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/rpi-proto-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/sdhost-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi-bcm2708-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/spi-bcm2835-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/w1-gpio-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -1,5 +1,21 @@
+ ifeq ($(CONFIG_OF),y)
+ 
++dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b.dtb
++dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-b-plus.dtb
++dtb-$(CONFIG_BCM2708_DT) += bcm2708-rpi-cm.dtb
++dtb-$(CONFIG_BCM2709_DT) += bcm2709-rpi-2-b.dtb
++
++# Raspberry Pi
++ifeq ($(CONFIG_BCM2708_DT),y)
++   RPI_DT_OVERLAYS=y
++endif
++ifeq ($(CONFIG_BCM2709_DT),y)
++   RPI_DT_OVERLAYS=y
++endif
++ifeq ($(CONFIG_ARCH_BCM2835),y)
++   RPI_DT_OVERLAYS=y
++endif
++
+ dtb-$(CONFIG_ARCH_ALPINE) += \
+ 	alpine-db.dtb
+ dtb-$(CONFIG_MACH_ASM9260) += \
+@@ -660,7 +676,18 @@ dtb-$(CONFIG_ARCH_MEDIATEK) += \
+ 	mt6592-evb.dtb \
+ 	mt8127-moose.dtb \
+ 	mt8135-evbp1.dtb
++
++targets += dtbs dtbs_install
++targets += $(dtb-y)
++
+ endif
+ 
+ always		:= $(dtb-y)
+ clean-files	:= *.dtb
++
++# Enable fixups to support overlays on BCM2708 platforms
++ifeq ($(RPI_DT_OVERLAYS),y)
++	DTC_FLAGS ?= -@
++endif
++
++subdir-y  += overlays
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -0,0 +1,140 @@
++/dts-v1/;
++
++/include/ "bcm2708.dtsi"
++
++/ {
++	compatible = "brcm,bcm2708";
++	model = "Raspberry Pi Model B+";
++
++	aliases {
++		soc = &soc;
++		spi0 = &spi0;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2s  = &i2s;
++		gpio = &gpio;
++		intc = &intc;
++		leds = &leds;
++		audio = &audio;
++		sound = &sound;
++		uart0 = &uart0;
++		uart1 = &uart1;
++		clocks = &clocks;
++	};
++
++	sound: sound {
++	};
++};
++
++&gpio {
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
++
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++
++	i2s_pins: i2s {
++		brcm,pins = <18 19 20 21>;
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
++&mmc {
++	status = "okay";
++	bus-width = <4>;
++};
++
++&fb {
++	status = "okay";
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 47 0>;
++	};
++
++	pwr_led: pwr {
++		label = "led1";
++		linux,default-trigger = "input";
++		gpios = <&gpio 35 0>;
++	};
++};
++
++/ {
++	__overrides__ {
++		uart0 = <&uart0>,"status";
++		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		pwr_led_gpio = <&pwr_led>,"gpios:4";
++		pwr_led_activelow = <&pwr_led>,"gpios:8";
++		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
++
++		audio = <&audio>,"status";
++		watchdog = <&watchdog>,"status";
++		random = <&random>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -0,0 +1,130 @@
++/dts-v1/;
++
++/include/ "bcm2708.dtsi"
++
++/ {
++	compatible = "brcm,bcm2708";
++	model = "Raspberry Pi Model B";
++
++	aliases {
++		soc = &soc;
++		spi0 = &spi0;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2s  = &i2s;
++		gpio = &gpio;
++		intc = &intc;
++		leds = &leds;
++		audio = &audio;
++		sound = &sound;
++		uart0 = &uart0;
++		uart1 = &uart1;
++		clocks = &clocks;
++	};
++
++	sound: sound {
++	};
++};
++
++&gpio {
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
++
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++
++	i2s_pins: i2s {
++		brcm,pins = <28 29 30 31>;
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
++&mmc {
++	status = "okay";
++	bus-width = <4>;
++};
++
++&fb {
++	status = "okay";
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 16 1>;
++	};
++};
++
++/ {
++	__overrides__ {
++		uart0 = <&uart0>,"status";
++		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		audio = <&audio>,"status";
++		watchdog = <&watchdog>,"status";
++		random = <&random>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -0,0 +1,18 @@
++/dts-v1/;
++
++/include/ "bcm2708-rpi-cm.dtsi"
++
++/ {
++	model = "Raspberry Pi Compute Module";
++};
++
++&uart0 {
++	status = "okay";
++};
++
++/ {
++	__overrides__ {
++		uart0 = <&uart0>,"status";
++		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+@@ -0,0 +1,51 @@
++/include/ "bcm2708.dtsi"
++
++/ {
++	aliases {
++		soc = &soc;
++		spi0 = &spi0;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2s  = &i2s;
++		gpio = &gpio;
++		intc = &intc;
++		leds = &leds;
++		audio = &audio;
++		sound = &sound;
++		uart0 = &uart0;
++		uart1 = &uart1;
++		clocks = &clocks;
++	};
++
++	sound: sound {
++	};
++};
++
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 47 0>;
++	};
++};
++
++&mmc {
++	status = "okay";
++	bus-width = <4>;
++};
++
++&fb {
++	status = "okay";
++};
++
++&audio {
++	status = "okay";
++};
++
++/ {
++	__overrides__ {
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2708.dtsi
+@@ -0,0 +1,19 @@
++/include/ "bcm2708_common.dtsi"
++
++/ {
++	compatible = "brcm,bcm2708";
++	model = "BCM2708";
++
++	chosen {
++		/* No padding required - the boot loader can do that. */
++		bootargs = "";
++	};
++
++	soc {
++		ranges = <0x7e000000 0x20000000 0x01000000>;
++
++		arm-pmu {
++			compatible = "arm,arm1176-pmu";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -0,0 +1,230 @@
++/include/ "skeleton.dtsi"
++
++/ {
++	interrupt-parent = <&intc>;
++
++	/* Onboard audio */
++	audio: audio {
++		compatible = "brcm,bcm2835-audio";
++		brcm,pwm-channels = <8>;
++		status = "disabled";
++	};
++
++	soc: soc {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <1>;
++
++		dma: dma@7e007000 {
++			compatible = "brcm,bcm2835-dma";
++			reg = <0x7e007000 0xf00>;
++			interrupts = <1 16>,
++				     <1 17>,
++				     <1 18>,
++				     <1 19>,
++				     <1 20>,
++				     <1 21>,
++				     <1 22>,
++				     <1 23>,
++				     <1 24>,
++				     <1 25>,
++				     <1 26>,
++				     <1 27>,
++				     <1 28>;
++
++			#dma-cells = <1>;
++			brcm,dma-channel-mask = <0x7f35>;
++		};
++
++		intc: interrupt-controller {
++			compatible = "brcm,bcm2708-armctrl-ic";
++			reg = <0x7e00b200 0x200>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		watchdog: watchdog@7e100000 {
++			compatible = "brcm,bcm2835-pm-wdt";
++			reg = <0x7e100000 0x28>;
++			status = "disabled";
++		};
++
++		random: rng@7e104000 {
++			compatible = "brcm,bcm2835-rng";
++			reg = <0x7e104000 0x10>;
++			status = "disabled";
++		};
++
++		mailbox: mailbox@7e00b800 {
++			compatible = "brcm,bcm2708-vcio";
++			reg = <0x7e00b880 0x40>;
++			interrupts = <0 1>;
++		};
++
++		gpio: gpio {
++			compatible = "brcm,bcm2835-gpio";
++			reg = <0x7e200000 0xb4>;
++			interrupts = <2 17>, <2 18>;
++
++			gpio-controller;
++			#gpio-cells = <2>;
++
++			interrupt-controller;
++			#interrupt-cells = <2>;
++		};
++
++		mmc: mmc@7e300000 {
++			compatible = "brcm,bcm2835-mmc";
++			reg = <0x7e300000 0x100>;
++			interrupts = <2 30>;
++			clocks = <&clk_mmc>;
++			dmas = <&dma 11>,
++			       <&dma 11>;
++			dma-names = "tx", "rx";
++			status = "disabled";
++		};
++
++		uart0: uart@7e201000 {
++			compatible = "arm,pl011", "arm,primecell";
++			reg = <0x7e201000 0x1000>;
++			interrupts = <2 25>;
++			clocks = <&clk_uart0 &clk_apb_p>;
++			clock-names = "uartclk","apb_pclk";
++			arm,primecell-periphid = <0x00241011>; // For an explanation, see
++			// https://github.com/raspberrypi/linux/commit/13731d862cf5219216533a3b0de052cee4cc5038
++			status = "disabled";
++		};
++
++		i2s: i2s@7e203000 {
++			compatible = "brcm,bcm2708-i2s";
++			reg = <0x7e203000 0x20>,
++			      <0x7e101098 0x02>;
++
++			//dmas = <&dma 2>,
++			//       <&dma 3>;
++			dma-names = "tx", "rx";
++			status = "disabled";
++		};
++
++		spi0: spi@7e204000 {
++			compatible = "brcm,bcm2835-spi";
++			reg = <0x7e204000 0x1000>;
++			interrupts = <2 22>;
++			clocks = <&clk_spi>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++			/* the dma channels */
++			dmas = <&dma 6>, <&dma 7>;
++			dma-names = "tx", "rx";
++			/* the chipselects used - <0> means native GPIO
++			 * add more gpios if necessary as <&gpio 6 1>
++			 * (but do not forget to make them output!)
++			 */
++			cs-gpios = <0>, <0>;
++		};
++
++		i2c0: i2c@7e205000 {
++			compatible = "brcm,bcm2708-i2c";
++			reg = <0x7e205000 0x1000>;
++			interrupts = <2 21>;
++			clocks = <&clk_i2c>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		uart1: uart@7e215040 {
++			compatible = "brcm,bcm2835-aux-uart", "ns16550";
++			reg = <0x7e215040 0x40>;
++			interrupts = <1 29>;
++			clock-frequency = <500000000>;
++			reg-shift = <2>;
++			no-loopback-test;
++			status = "disabled";
++	        };
++
++		i2c1: i2c@7e804000 {
++			compatible = "brcm,bcm2708-i2c";
++			reg = <0x7e804000 0x1000>;
++			interrupts = <2 21>;
++			clocks = <&clk_i2c>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		usb: usb@7e980000 {
++			compatible = "brcm,bcm2708-usb";
++			reg = <0x7e980000 0x10000>,
++			      <0x7e006000 0x1000>;
++			interrupts = <2 0>,
++				     <1 9>;
++		};
++
++		leds: leds {
++			compatible = "gpio-leds";
++		};
++
++		fb: fb {
++			compatible = "brcm,bcm2708-fb";
++			status = "disabled";
++		};
++
++		vchiq: vchiq {
++			compatible = "brcm,bcm2835-vchiq";
++			reg = <0x7e00b840 0xf>;
++			interrupts = <0 2>;
++		};
++
++		thermal: thermal {
++			compatible = "brcm,bcm2835-thermal";
++		};
++	};
++
++	clocks: clocks {
++		compatible = "simple-bus";
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		clk_mmc: clock@0 {
++			compatible = "fixed-clock";
++			reg = <0>;
++			#clock-cells = <0>;
++			clock-output-names = "mmc";
++			clock-frequency = <250000000>;
++		};
++
++		clk_i2c: clock@1 {
++			compatible = "fixed-clock";
++			reg = <1>;
++			#clock-cells = <0>;
++			clock-output-names = "i2c";
++			clock-frequency = <250000000>;
++		};
++
++		clk_spi: clock@2 {
++			compatible = "fixed-clock";
++			reg = <2>;
++			#clock-cells = <0>;
++			clock-output-names = "spi";
++			clock-frequency = <250000000>;
++		};
++
++		clk_uart0: clock@3 {
++			compatible = "fixed-clock";
++			reg = <3>;
++			#clock-cells = <0>;
++			clock-output-names = "uart0_pclk";
++			clock-frequency = <3000000>;
++		};
++
++		clk_apb_p: clock@4 {
++			compatible = "fixed-clock";
++			reg = <4>;
++			#clock-cells = <0>;
++			clock-output-names = "apb_pclk";
++			clock-frequency = <126000000>;
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -0,0 +1,140 @@
++/dts-v1/;
++
++/include/ "bcm2709.dtsi"
++
++/ {
++	compatible = "brcm,bcm2709";
++	model = "Raspberry Pi 2 Model B";
++
++	aliases {
++		soc = &soc;
++		spi0 = &spi0;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2s  = &i2s;
++		gpio = &gpio;
++		intc = &intc;
++		leds = &leds;
++		audio = &audio;
++		sound = &sound;
++		uart0 = &uart0;
++		uart1 = &uart1;
++		clocks = &clocks;
++	};
++
++	sound: sound {
++	};
++};
++
++&gpio {
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
++
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++
++	i2s_pins: i2s {
++		brcm,pins = <18 19 20 21>;
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
++&mmc {
++	status = "okay";
++	bus-width = <4>;
++};
++
++&fb {
++	status = "okay";
++};
++
++&uart0 {
++	status = "okay";
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&leds {
++	act_led: act {
++		label = "led0";
++		linux,default-trigger = "mmc0";
++		gpios = <&gpio 47 0>;
++	};
++
++	pwr_led: pwr {
++		label = "led1";
++		linux,default-trigger = "input";
++		gpios = <&gpio 35 0>;
++	};
++};
++
++/ {
++	__overrides__ {
++		uart0 = <&uart0>,"status";
++		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		pwr_led_gpio = <&pwr_led>,"gpios:4";
++		pwr_led_activelow = <&pwr_led>,"gpios:8";
++		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
++
++		audio = <&audio>,"status";
++		watchdog = <&watchdog>,"status";
++		random = <&random>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/bcm2709.dtsi
+@@ -0,0 +1,70 @@
++/include/ "bcm2708_common.dtsi"
++
++/ {
++	compatible = "brcm,bcm2709";
++	model = "BCM2709";
++
++	chosen {
++		/* No padding required - the boot loader can do that. */
++		bootargs = "";
++	};
++
++	soc {
++		ranges = <0x7e000000 0x3f000000 0x01000000>;
++
++		arm-pmu {
++			compatible = "arm,cortex-a7-pmu";
++			interrupts = <3 9>;
++		};
++	};
++
++	timer {
++		compatible = "arm,armv7-timer";
++		clock-frequency = <19200000>;
++		interrupts = <3 0>, // PHYS_SECURE_PPI
++			     <3 1>, // PHYS_NONSECURE_PPI
++			     <3 3>, // VIRT_PPI
++			     <3 2>; // HYP_PPI
++		always-on;
++	};
++
++	cpus: cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		v7_cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0xf00>;
++			clock-frequency = <800000000>;
++		};
++
++		v7_cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0xf01>;
++			clock-frequency = <800000000>;
++		};
++
++		v7_cpu2: cpu@2 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0xf02>;
++			clock-frequency = <800000000>;
++		};
++
++		v7_cpu3: cpu@3 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a7";
++			reg = <0xf03>;
++			clock-frequency = <800000000>;
++		};
++	};
++
++	__overrides__ {
++		arm_freq = <&v7_cpu0>, "clock-frequency:0",
++		       <&v7_cpu1>, "clock-frequency:0",
++		       <&v7_cpu2>, "clock-frequency:0",
++		       <&v7_cpu3>, "clock-frequency:0";
++	};
++};
+--- a/arch/arm/boot/dts/bcm2835-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2835-rpi-b-plus.dts
+@@ -4,27 +4,40 @@
+ / {
+ 	compatible = "raspberrypi,model-b-plus", "brcm,bcm2835";
+ 	model = "Raspberry Pi Model B+";
+-
+-	leds {
+-		act {
+-			gpios = <&gpio 47 0>;
+-		};
+-
+-		pwr {
+-			label = "PWR";
+-			gpios = <&gpio 35 0>;
+-			default-state = "keep";
+-			linux,default-trigger = "default-on";
+-		};
+-	};
+ };
+ 
+ &gpio {
+-	pinctrl-0 = <&gpioout &alt0 &i2s_alt0 &alt3>;
+-
+-	/* I2S interface */
+-	i2s_alt0: i2s_alt0 {
++	i2s_pins: i2s {
+ 		brcm,pins = <18 19 20 21>;
+ 		brcm,function = <4>; /* alt0 */
+ 	};
+ };
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&act_led {
++	gpios = <&gpio 47 0>;
++};
++
++&leds {
++	pwr_led: pwr {
++		label = "led1";
++		linux,default-trigger = "input";
++		gpios = <&gpio 35 0>;
++	};
++};
++
++/ {
++	__overrides__ {
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
++
++		pwr_led_gpio = <&pwr_led>,"gpios:4";
++		pwr_led_activelow = <&pwr_led>,"gpios:8";
++		pwr_led_trigger = <&pwr_led>,"linux,default-trigger";
++	};
++};
+--- a/arch/arm/boot/dts/bcm2835-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2835-rpi-b.dts
+@@ -5,19 +5,28 @@
+ 	compatible = "raspberrypi,model-b", "brcm,bcm2835";
+ 	model = "Raspberry Pi Model B";
+ 
+-	leds {
+-		act {
+-			gpios = <&gpio 16 1>;
+-		};
+-	};
+ };
+ 
+ &gpio {
+-	pinctrl-0 = <&gpioout &alt0 &i2s_alt2 &alt3>;
+-
+-	/* I2S interface */
+-	i2s_alt2: i2s_alt2 {
++	i2s_pins: i2s {
+ 		brcm,pins = <28 29 30 31>;
+-		brcm,function = <6>; /* alt2 */
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
++&act_led {
++	gpios = <&gpio 16 1>;
++};
++
++/ {
++	__overrides__ {
++		act_led_gpio = <&act_led>,"gpios:4";
++		act_led_activelow = <&act_led>,"gpios:8";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2835-rpi.dtsi
++++ b/arch/arm/boot/dts/bcm2835-rpi.dtsi
+@@ -1,51 +1,112 @@
+ /include/ "bcm2835.dtsi"
+ 
+ / {
++	/* This is left here in case u-boot needs it */
+ 	memory {
+ 		reg = <0 0x10000000>;
+ 	};
+ 
+-	leds {
++	aliases {
++		soc = &soc;
++		spi0 = &spi0;
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2s  = &i2s;
++		gpio = &gpio;
++		intc = &intc;
++		leds = &leds;
++		sound = &sound;
++	};
++
++	leds: leds {
+ 		compatible = "gpio-leds";
+ 
+-		act {
+-			label = "ACT";
+-			default-state = "keep";
+-			linux,default-trigger = "heartbeat";
++		act_led: act {
++			label = "led0";
++			linux,default-trigger = "mmc0";
+ 		};
+ 	};
++
++	/* Onboard audio */
++	audio: audio {
++		compatible = "brcm,bcm2835-audio";
++		brcm,pwm-channels = <8>;
++		status = "disabled";
++	};
++
++	/* External sound card */
++	sound: sound {
++	};
+ };
+ 
+ &gpio {
+-	pinctrl-names = "default";
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
+ 
+-	gpioout: gpioout {
+-		brcm,pins = <6>;
+-		brcm,function = <1>; /* GPIO out */
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
+ 	};
+ 
+-	alt0: alt0 {
+-		brcm,pins = <0 1 2 3 4 5 7 8 9 10 11 14 15 40 45>;
+-		brcm,function = <4>; /* alt0 */
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
+ 	};
+ 
+-	alt3: alt3 {
+-		brcm,pins = <48 49 50 51 52 53>;
+-		brcm,function = <7>; /* alt3 */
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
+ 	};
+ };
+ 
+ &i2c0 {
+-	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
+ 	clock-frequency = <100000>;
+ };
+ 
+ &i2c1 {
+-	status = "okay";
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
+ 	clock-frequency = <100000>;
+ };
+ 
+-&sdhci {
++&mmc {
+ 	status = "okay";
+ 	bus-width = <4>;
+ };
++
++&fb {
++	status = "okay";
++};
++
++/ {
++	__overrides__ {
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		act_led_trigger = <&act_led>,"linux,default-trigger";
++		audio = <&audio>,"status";
++	};
++};
+--- a/arch/arm/boot/dts/bcm2835.dtsi
++++ b/arch/arm/boot/dts/bcm2835.dtsi
+@@ -6,14 +6,15 @@
+ 	interrupt-parent = <&intc>;
+ 
+ 	chosen {
+-		bootargs = "earlyprintk console=ttyAMA0";
++		bootargs = "";
+ 	};
+ 
+-	soc {
++	soc: soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+ 		#size-cells = <1>;
+ 		ranges = <0x7e000000 0x20000000 0x02000000>;
++		dma-ranges = <0x40000000 0x00000000 0x20000000>;
+ 
+ 		timer@7e003000 {
+ 			compatible = "brcm,bcm2835-system-timer";
+@@ -50,16 +51,22 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 
+-		watchdog@7e100000 {
++		watchdog: watchdog@7e100000 {
+ 			compatible = "brcm,bcm2835-pm-wdt";
+ 			reg = <0x7e100000 0x28>;
+ 		};
+ 
+-		rng@7e104000 {
++		random: rng@7e104000 {
+ 			compatible = "brcm,bcm2835-rng";
+ 			reg = <0x7e104000 0x10>;
+ 		};
+ 
++		mailbox: mailbox@7e00b800 {
++			compatible = "brcm,bcm2708-vcio";
++			reg = <0x7e00b880 0x40>;
++			interrupts = <0 1>;
++		};
++
+ 		gpio: gpio@7e200000 {
+ 			compatible = "brcm,bcm2835-gpio";
+ 			reg = <0x7e200000 0xb4>;
+@@ -83,7 +90,7 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 
+-		uart@7e201000 {
++		uart0: uart@7e201000 {
+ 			compatible = "brcm,bcm2835-pl011", "arm,pl011", "arm,primecell";
+ 			reg = <0x7e201000 0x1000>;
+ 			interrupts = <2 25>;
+@@ -102,7 +109,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		spi: spi@7e204000 {
++		spi0: spi@7e204000 {
+ 			compatible = "brcm,bcm2835-spi";
+ 			reg = <0x7e204000 0x1000>;
+ 			interrupts = <2 22>;
+@@ -122,11 +129,14 @@
+ 			status = "disabled";
+ 		};
+ 
+-		sdhci: sdhci@7e300000 {
+-			compatible = "brcm,bcm2835-sdhci";
++		mmc: mmc@7e300000 {
++			compatible = "brcm,bcm2835-mmc";
+ 			reg = <0x7e300000 0x100>;
+ 			interrupts = <2 30>;
+ 			clocks = <&clk_mmc>;
++			dmas = <&dma 11>,
++			       <&dma 11>;
++			dma-names = "tx", "rx";
+ 			status = "disabled";
+ 		};
+ 
+@@ -140,7 +150,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		usb@7e980000 {
++		usb: usb@7e980000 {
+ 			compatible = "brcm,bcm2835-usb";
+ 			reg = <0x7e980000 0x10000>;
+ 			interrupts = <1 9>;
+@@ -149,6 +159,21 @@
+ 		arm-pmu {
+ 			compatible = "arm,arm1176-pmu";
+ 		};
++
++		fb: fb {
++			compatible = "brcm,bcm2708-fb";
++			status = "disabled";
++		};
++
++		vchiq: vchiq {
++			compatible = "brcm,bcm2835-vchiq";
++			reg = <0x7e00b840 0xf>;
++			interrupts = <0 2>;
++		};
++
++		thermal: thermal {
++			compatible = "brcm,bcm2835-thermal";
++		};
+ 	};
+ 
+ 	clocks {
+@@ -161,7 +186,7 @@
+ 			reg = <0>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "mmc";
+-			clock-frequency = <100000000>;
++			clock-frequency = <250000000>;
+ 		};
+ 
+ 		clk_i2c: clock@1 {
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -0,0 +1,57 @@
++ifeq ($(CONFIG_OF),y)
++
++# Overlays for the Raspberry Pi platform
++
++ifeq ($(CONFIG_BCM2708_DT),y)
++   RPI_DT_OVERLAYS=y
++endif
++ifeq ($(CONFIG_BCM2709_DT),y)
++   RPI_DT_OVERLAYS=y
++endif
++ifeq ($(CONFIG_ARCH_BCM2835),y)
++   RPI_DT_OVERLAYS=y
++endif
++
++dtb-$(RPI_DT_OVERLAYS) += ads7846-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += hifiberry-dac-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += hifiberry-dacplus-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += hifiberry-digi-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += hy28a-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += hy28b-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += i2c-rtc-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += i2s-mmap-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += iqaudio-dac-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += iqaudio-dacplus-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += lirc-rpi-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += mcp2515-can0-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += mmc-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += mz61581-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += piscreen-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += pitft28-resistive-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += rpi-dac-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += rpi-display-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += rpi-proto-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi-bcm2708-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi-bcm2835-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += w1-gpio-pullup-overlay.dtb
++
++targets += dtbs dtbs_install
++targets += $(dtb-y)
++
++endif
++
++always		:= $(dtb-y)
++clean-files	:= *.dtb
++
++# Enable fixups to support overlays on BCM2708 platforms
++ifeq ($(RPI_DT_OVERLAYS),y)
++	DTC_FLAGS ?= -@
++endif
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/README
+@@ -0,0 +1,493 @@
++Introduction
++============
++
++This directory contains Device Tree overlays. Device Tree makes it possible
++to support many hardware configurations with a single kernel and without the
++need to explicitly load or blacklist kernel modules. Note that this isn't a
++"pure" Device Tree configuration (c.f. MACH_BCM2835) - some on-board devices
++are still configured by the board support code, but the intention is to
++eventually reach that goal.
++
++On Raspberry Pi, Device Tree usage is controlled from /boot/config.txt. By
++default, the Raspberry Pi kernel boots with device tree enabled. You can
++completely disable DT usage (for now) by adding:
++
++    device_tree=
++
++to your config.txt, which should cause your Pi to revert to the old way of
++doing things after a reboot.
++
++In /boot you will find a .dtb for each base platform. This describes the
++hardware that is part of the Raspberry Pi board. The loader (start.elf and its
++siblings) selects the .dtb file appropriate for the platform by name, and reads
++it into memory. At this point, all of the optional interfaces (i2c, i2s, spi)
++are disabled, but they can be enabled using Device Tree parameters:
++
++    dtparam=i2c=on,i2s=on,spi=on
++
++However, this shouldn't be necessary in many use cases because loading an
++overlay that requires one of those interfaces will cause it to be enabled
++automatically, and it is advisable to only enable interfaces if they are
++needed.
++
++Configuring additional, optional hardware is done using Device Tree overlays
++(see below).
++
++raspi-config
++============
++
++The Advanced Options section of the raspi-config utility can enable and disable
++Device Tree use, as well as toggling the I2C and SPI interfaces. Note that it
++is possible to both enable an interface and blacklist the driver, if for some
++reason you should want to defer the loading.
++
++Modules
++=======
++
++As well as describing the hardware, Device Tree also gives enough information
++to allow suitable driver modules to be located and loaded, with the corollary
++that unneeded modules are not loaded. As a result it should be possible to
++remove lines from /etc/modules, and /etc/modprobe.d/raspi-blacklist.conf can
++have its contents deleted (or commented out).
++
++Using Overlays
++==============
++
++Overlays are loaded using the "dtoverlay" directive. As an example, consider the
++popular lirc-rpi module, the Linux Infrared Remote Control driver. In the
++pre-DT world this would be loaded from /etc/modules, with an explicit
++"modprobe lirc-rpi" command, or programmatically by lircd. With DT enabled,
++this becomes a line in config.txt:
++
++    dtoverlay=lirc-rpi
++
++This causes the file /boot/overlays/lirc-rpi-overlay.dtb to be loaded. By
++default it will use GPIOs 17 (out) and 18 (in), but this can be modified using
++DT parameters:
++
++    dtoverlay=lirc-rpi,gpio_out_pin=17,gpio_in_pin=13
++
++Parameters always have default values, although in some cases (e.g. "w1-gpio")
++it is necessary to provided multiple overlays in order to get the desired
++behaviour. See the list of overlays below for a description of the parameters and their defaults.
++
++The Overlay and Parameter Reference
++===================================
++
++Name:   <The base DTB>
++Info:   Configures the base Raspberry Pi hardware
++Load:   <loaded automatically>
++Params:
++        audio                    Set to "on" to disable the onboard ALSA audio
++                                 interface (default "off")
++
++        i2c_arm                  Set to "on" to enable the ARM's i2c interface
++                                 (default "off")
++
++        i2c_vc                   Set to "on" to enable the i2c interface
++                                 usually reserved for the VideoCore processor
++                                 (default "off")
++
++        i2c                      An alias for i2c_arm
++
++        i2c_arm_baudrate         Set the baudrate of the ARM's i2c interface
++                                 (default "100000")
++
++        i2c_vc_baudrate          Set the baudrate of the VideoCore i2c interface
++                                 (default "100000")
++
++        i2c_baudrate             An alias for i2c_arm_baudrate
++
++        i2s                      Set to "on" to enable the i2s interface
++                                 (default "off")
++
++        spi                      Set to "on" to enable the spi interfaces
++                                 (default "off")
++
++        random                   Set to "on" to enable the hardware random
++                                 number generator (default "off")
++
++        uart0                    Set to "off" to disable uart0 (default "on")
++
++        watchdog                 Set to "on" to enable the hardware watchdog
++                                 (default "off")
++
++        act_led_trigger          Choose which activity the LED tracks.
++                                 Use "heartbeat" for a nice load indicator.
++                                 (default "mmc")
++
++        act_led_activelow        Set to "on" to invert the sense of the LED
++                                 (default "off")
++
++        act_led_gpio             Set which GPIO to use for the activity LED
++                                 (in case you want to connect it to an external
++                                 device)
++                                 (default "16" on a non-Plus board, "47" on a
++                                 Plus or Pi 2)
++
++        pwr_led_trigger
++        pwr_led_activelow
++        pwr_led_gpio
++                                 As for act_led_*, but using the PWR LED.
++                                 Not available on Model A/B boards.
++
++        N.B. It is recommended to only enable those interfaces that are needed.
++        Leaving all interfaces enabled can lead to unwanted behaviour (i2c_vc
++        interfering with Pi Camera, I2S and SPI hogging GPIO pins, etc.)
++        Note also that i2c, i2c_arm and i2c_vc are aliases for the physical
++        interfaces i2c0 and i2c1. Use of the numeric variants is still possible
++        but deprecated because the ARM/VC assignments differ between board
++        revisions. The same board-specific mapping applies to i2c_baudrate,
++        and the other i2c baudrate parameters.
++
++
++Name:   ads7846
++Info:   ADS7846 Touch controller
++Load:   dtoverlay=ads7846,<param>=<val>
++Params: cs                       SPI bus Chip Select (default 1)
++        speed                    SPI bus speed (default 2Mhz, max 3.25MHz)
++        penirq                   GPIO used for PENIRQ. REQUIRED
++        penirq_pull              Set GPIO pull (default 0=none, 2=pullup)
++        swapxy                   Swap x and y axis
++        xmin                     Minimum value on the X axis (default 0)
++        ymin                     Minimum value on the Y axis (default 0)
++        xmax                     Maximum value on the X axis (default 4095)
++        ymax                     Maximum value on the Y axis (default 4095)
++        pmin                     Minimum reported pressure value (default 0)
++        pmax                     Maximum reported pressure value (default 65535)
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++                                 (default 400)
++
++        penirq is required and usually xohms (60-100) has to be set as well.
++        Apart from that, pmax (255) and swapxy are also common.
++        The rest of the calibration can be done with xinput-calibrator.
++        See: github.com/notro/fbtft/wiki/FBTFT-on-Raspian
++        Device Tree binding document:
++        www.kernel.org/doc/Documentation/devicetree/bindings/input/ads7846.txt
++
++
++Name:   bmp085_i2c-sensor
++Info:   Configures the BMP085/BMP180 digital barometric pressure and temperature
++        sensors from Bosch Sensortec
++Load:   dtoverlay=bmp085_i2c-sensor
++Params: <None>
++
++
++[ The ds1307-rtc overlay has been deleted. See i2c-rtc. ]
++
++
++Name:   enc28j60
++Info:   Overlay for the Microchip ENC28J60 Ethernet Controller (SPI)
++Load:   dtoverlay=enc28j60,<param>=<val>
++Params: int_pin                  GPIO used for INT (default 25)
++
++        speed                    SPI bus speed (default 12000000)
++
++
++Name:   hifiberry-amp
++Info:   Configures the HifiBerry Amp and Amp+ audio cards
++Load:   dtoverlay=hifiberry-amp
++Params: <None>
++
++
++Name:   hifiberry-dac
++Info:   Configures the HifiBerry DAC audio card
++Load:   dtoverlay=hifiberry-dac
++Params: <None>
++
++
++Name:   hifiberry-dacplus
++Info:   Configures the HifiBerry DAC+ audio card
++Load:   dtoverlay=hifiberry-dacplus
++Params: <None>
++
++
++Name:   hifiberry-digi
++Info:   Configures the HifiBerry Digi audio card
++Load:   dtoverlay=hifiberry-digi
++Params: <None>
++
++
++Name:   hy28a
++Info:   HY28A - 2.8" TFT LCD Display Module by HAOYU Electronics
++        Default values match Texy's display shield
++Load:   dtoverlay=hy28a,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++
++        resetgpio                GPIO used to reset controller
++
++        ledgpio                  GPIO used to control backlight
++
++
++Name:   hy28b
++Info:   HY28B - 2.8" TFT LCD Display Module by HAOYU Electronics
++        Default values match Texy's display shield
++Load:   dtoverlay=hy28b,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++
++        resetgpio                GPIO used to reset controller
++
++        ledgpio                  GPIO used to control backlight
++
++
++Name:   i2c-rtc
++Info:   Adds support for a number of I2C Real Time Clock devices
++Load:   dtoverlay=i2c-rtc,<param>
++Params: ds1307                   Select the DS1307 device
++
++        ds3231                   Select the DS3231 device
++
++        pcf2127                  Select the PCF2127 device
++
++        pcf8523                  Select the PCF8523 device
++
++        pcf8563                  Select the PCF8563 device
++
++
++Name:   iqaudio-dac
++Info:   Configures the IQaudio DAC audio card
++Load:   dtoverlay=iqaudio-dac
++Params: <None>
++
++
++Name:   iqaudio-dacplus
++Info:   Configures the IQaudio DAC+ audio card
++Load:   dtoverlay=iqaudio-dacplus
++Params: <None>
++
++
++Name:   lirc-rpi
++Info:   Configures lirc-rpi (Linux Infrared Remote Control for Raspberry Pi)
++        Consult the module documentation for more details.
++Load:   dtoverlay=lirc-rpi,<param>=<val>,...
++Params: gpio_out_pin             GPIO for output (default "17")
++
++        gpio_in_pin              GPIO for input (default "18")
++
++        gpio_in_pull             Pull up/down/off on the input pin
++                                 (default "down")
++
++        sense                    Override the IR receive auto-detection logic:
++                                   "1" = force active high
++                                   "0" = force active low
++                                   "-1" = use auto-detection
++                                 (default "-1")
++
++        softcarrier              Turn the software carrier "on" or "off"
++                                 (default "on")
++
++        invert                   "on" = invert the output pin (default "off")
++
++        debug                    "on" = enable additional debug messages
++                                 (default "off")
++
++
++Name:   mcp2515-can0
++Info:   Configures the MCP2515 CAN controller
++Load:   dtoverlay=mcp2515-can0,<param>=<val>
++Params: oscillator               Clock frequency for the CAN controller (Hz)
++
++        spimaxfrequency          Maximum SPI frequence (Hz)
++
++        interrupt                GPIO for interrupt signal
++
++
++Name:   mmc
++Info:   Selects the bcm2835-mmc SD/MMC driver, optionally with overclock
++Load:   dtoverlay=mmc,<param>=<val>
++Params: overclock_50             Clock (in MHz) to use when the MMC framework
++                                 requests 50MHz
++        force_pio                Disable DMA support
++
++
++Name:   mz61581
++Info:   MZ61581 display by Tontec
++Load:   dtoverlay=mz61581,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++
++
++[ The pcf2127-rtc overlay has been deleted. See i2c-rtc. ]
++
++
++[ The pcf8523-rtc overlay has been deleted. See i2c-rtc. ]
++
++
++[ The pcf8563-rtc overlay has been deleted. See i2c-rtc. ]
++
++
++Name:   piscreen
++Info:   PiScreen display by OzzMaker.com
++Load:   dtoverlay=piscreen,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++
++
++Name:   pitft28-resistive
++Info:   Adafruit PiTFT 2.8" resistive touch screen
++Load:   dtoverlay=pitft28-resistive,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++
++Name:   pps-gpio
++Info:   Configures the pps-gpio (pulse-per-second time signal via GPIO).
++Load:   dtoverlay=pps-gpio,<param>=<val>
++Params: gpiopin                  Input GPIO (default "18")
++
++
++Name:   rpi-dac
++Info:   Configures the RPi DAC audio card
++Load:   dtoverlay=rpi-dac
++Params: <None>
++
++
++Name:   rpi-display
++Info:   RPi-Display - 2.8" Touch Display by Watterott
++Load:   dtoverlay=rpi-display,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        xohms                    Touchpanel sensitivity (X-plate resistance)
++
++
++Name:   rpi-proto
++Info:   Configures the RPi Proto audio card
++Load:   dtoverlay=rpi-proto
++Params: <None>
++
++
++Name:   sdhost
++Info:   Selects the bcm2835-sdhost SD/MMC driver, optionally with overclock
++Load:   dtoverlay=sdhost,<param>=<val>
++Params: overclock_50             Clock (in MHz) to use when the MMC framework
++                                 requests 50MHz
++        force_pio                Disable DMA support
++
++
++Name:   spi-bcm2708
++Info:   Selects the bcm2708-spi SPI driver
++Load:   dtoverlay=spi-bcm2708
++Params: <None>
++
++
++Name:   spi-bcm2835
++Info:   Selects the bcm2835-spi SPI driver
++Load:   dtoverlay=spi-bcm2835
++Params: <None>
++
++
++Name:   tinylcd35
++Info:   3.5" Color TFT Display by www.tinylcd.com
++        Options: Touch, RTC, keypad
++Load:   dtoverlay=tinylcd35,<param>=<val>
++Params: speed                    Display SPI bus speed
++
++        rotate                   Display rotation {0,90,180,270}
++
++        fps                      Delay between frame updates
++
++        debug                    Debug output level {0-7}
++
++        touch                    Enable touch panel
++
++        touchgpio                Touch controller IRQ GPIO
++
++        xohms                    Touchpanel: Resistance of X-plate in ohms
++
++        rtc-pcf                  PCF8563 Real Time Clock
++
++        rtc-ds                   DS1307 Real Time Clock
++
++        keypad                   Enable keypad
++
++        Examples:
++            Display with touchpanel, PCF8563 RTC and keypad:
++                dtoverlay=tinylcd35,touch,rtc-pcf,keypad
++            Old touch display:
++                dtoverlay=tinylcd35,touch,touchgpio=3
++
++
++Name:   w1-gpio
++Info:   Configures the w1-gpio Onewire interface module.
++        Use this overlay if you *don't* need a GPIO to drive an external pullup.
++Load:   dtoverlay=w1-gpio,<param>=<val>
++Params: gpiopin                  GPIO for I/O (default "4")
++
++        pullup                   Non-zero, "on", or "y" to enable the parasitic
++                                 power (2-wire, power-on-data) feature
++
++
++Name:   w1-gpio-pullup
++Info:   Configures the w1-gpio Onewire interface module.
++        Use this overlay if you *do* need a GPIO to drive an external pullup.
++Load:   dtoverlay=w1-gpio-pullup,<param>=<val>,...
++Params: gpiopin                  GPIO for I/O (default "4")
++
++        pullup                   Non-zero, "on", or "y" to enable the parasitic
++                                 power (2-wire, power-on-data) feature
++
++        extpullup                GPIO for external pullup (default "5")
++
++
++Troubleshooting
++===============
++
++If you are experiencing problems that you think are DT-related, enable DT
++diagnostic output by adding this to /boot/config.txt:
++
++    dtdebug=on
++
++and rebooting. Then run:
++
++    sudo vcdbg log msg
++
++and look for relevant messages.
++
++Further reading
++===============
++
++This is only meant to be a quick introduction to the subject of Device Tree on
++Raspberry Pi. There is a more complete explanation here:
++
++http://www.raspberrypi.org/documentation/configuration/device-tree.md
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/ads7846-overlay.dts
+@@ -0,0 +1,83 @@
++/*
++ * Generic Device Tree overlay for the ADS7846 touch controller
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			ads7846_pins: ads7846_pins {
++				brcm,pins = <255>; /* illegal default value */
++				brcm,function = <0>; /* in */
++				brcm,pull = <0>; /* none */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			ads7846: ads7846@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&ads7846_pins>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <255 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 255 0>;
++
++				/* driver defaults */
++				ti,x-min = /bits/ 16 <0>;
++				ti,y-min = /bits/ 16 <0>;
++				ti,x-max = /bits/ 16 <0x0FFF>;
++				ti,y-max = /bits/ 16 <0x0FFF>;
++				ti,pressure-min = /bits/ 16 <0>;
++				ti,pressure-max = /bits/ 16 <0xFFFF>;
++				ti,x-plate-ohms = /bits/ 16 <400>;
++			};
++		};
++	};
++	__overrides__ {
++		cs =     <&ads7846>,"reg:0";
++		speed =  <&ads7846>,"spi-max-frequency:0";
++		penirq = <&ads7846_pins>,"brcm,pins:0", /* REQUIRED */
++			 <&ads7846>,"interrupts:0",
++			 <&ads7846>,"pendown-gpio:4";
++		penirq_pull = <&ads7846_pins>,"brcm,pull:0";
++		swapxy = <&ads7846>,"ti,swap-xy?";
++		xmin =   <&ads7846>,"ti,x-min;0";
++		ymin =   <&ads7846>,"ti,y-min;0";
++		xmax =   <&ads7846>,"ti,x-max;0";
++		ymax =   <&ads7846>,"ti,y-max;0";
++		pmin =   <&ads7846>,"ti,pressure-min;0";
++		pmax =   <&ads7846>,"ti,pressure-max;0";
++		xohms =  <&ads7846>,"ti,x-plate-ohms;0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/bmp085_i2c-sensor-overlay.dts
+@@ -0,0 +1,23 @@
++// Definitions for BMP085/BMP180 digital barometric pressure and temperature sensors from Bosch Sensortec
++/dts-v1/;
++/plugin/;
++
++/ {
++        compatible = "brcm,bcm2708";
++
++        fragment@0 {
++                target = <&i2c1>;
++                __overlay__ {
++                        #address-cells = <1>;
++                        #size-cells = <0>;
++                        status = "okay";
++
++                        bmp085@77 {
++                                compatible = "bosch,bmp085";
++                                reg = <0x77>;
++                                default-oversampling = <3>;
++                                status = "okay";
++                        };
++                };
++        };
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/dht11-overlay.dts
+@@ -0,0 +1,39 @@
++/*
++ * Overlay for the DHT11/21/22 humidity/temperature sensor modules.
++ */
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++
++			dht11: dht11@0 {
++				compatible = "dht11";
++				pinctrl-names = "default";
++				pinctrl-0 = <&dht11_pins>;
++				gpios = <&gpio 4 0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			dht11_pins: dht11_pins {
++				brcm,pins = <4>;
++				brcm,function = <0>; // in
++				brcm,pull = <0>; // off
++			};
++		};
++	};
++
++	__overrides__ {
++		gpiopin = <&dht11_pins>,"brcm,pins:0",
++			<&dht11>,"gpios:4";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/enc28j60-overlay.dts
+@@ -0,0 +1,50 @@
++// Overlay for the Microchip ENC28J60 Ethernet Controller
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			eth1: enc28j60@0{
++				compatible = "microchip,enc28j60";
++				reg = <0>; /* CE0 */
++				pinctrl-names = "default";
++				pinctrl-0 = <&eth1_pins>;
++				interrupt-parent = <&gpio>;
++				interrupts = <25 0x2>; /* falling edge */
++				spi-max-frequency = <12000000>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			eth1_pins: eth1_pins {
++				brcm,pins = <25>;
++				brcm,function = <0>; /* in */
++				brcm,pull = <0>; /* none */
++			};
++		};
++	};
++
++	__overrides__ {
++		int_pin = <&eth1>, "interrupts:0",
++		          <&eth1_pins>, "brcm,pins:0";
++		speed   = <&eth1>, "spi-max-frequency:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hifiberry-amp-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for HiFiBerry Amp/Amp+
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-amp";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			tas5713@1b {
++				#sound-dai-cells = <0>;
++				compatible = "ti,tas5713";
++				reg = <0x1b>;
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hifiberry-dac-overlay.dts
+@@ -0,0 +1,34 @@
++// Definitions for HiFiBerry DAC
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/";
++		__overlay__ {
++			pcm5102a-codec {
++				#sound-dai-cells = <0>;
++				compatible = "ti,pcm5102a";
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hifiberry-dacplus-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for HiFiBerry DAC+
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-dacplus";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pcm5122@4d {
++				#sound-dai-cells = <0>;
++				compatible = "ti,pcm5122";
++				reg = <0x4d>;
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hifiberry-digi-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for HiFiBerry Digi
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "hifiberry,hifiberry-digi";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			wm8804@3b {
++				#sound-dai-cells = <0>;
++				compatible = "wlf,wm8804";
++				reg = <0x3b>;
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hy28a-overlay.dts
+@@ -0,0 +1,87 @@
++/*
++ * Device Tree overlay for HY28A display
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			hy28a_pins: hy28a_pins {
++				brcm,pins = <17 25 18>;
++				brcm,function = <0 1 1>; /* in out out */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			hy28a: hy28a@0{
++				compatible = "ilitek,ili9320";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&hy28a_pins>;
++
++				spi-max-frequency = <32000000>;
++				spi-cpol;
++				spi-cpha;
++				rotate = <270>;
++				bgr;
++				fps = <50>;
++				buswidth = <8>;
++				startbyte = <0x70>;
++				reset-gpios = <&gpio 25 0>;
++				led-gpios = <&gpio 18 1>;
++				debug = <0>;
++			};
++
++			hy28a_ts: hy28a-ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <17 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 17 0>;
++				ti,x-plate-ohms = /bits/ 16 <100>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++	__overrides__ {
++		speed =		<&hy28a>,"spi-max-frequency:0";
++		rotate =	<&hy28a>,"rotate:0";
++		fps =		<&hy28a>,"fps:0";
++		debug =		<&hy28a>,"debug:0";
++		xohms =		<&hy28a_ts>,"ti,x-plate-ohms;0";
++		resetgpio =	<&hy28a>,"reset-gpios:4",
++				<&hy28a_pins>, "brcm,pins:1";
++		ledgpio =	<&hy28a>,"led-gpios:4",
++				<&hy28a_pins>, "brcm,pins:2";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/hy28b-overlay.dts
+@@ -0,0 +1,142 @@
++/*
++ * Device Tree overlay for HY28b display shield by Texy
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			hy28b_pins: hy28b_pins {
++				brcm,pins = <17 25 18>;
++				brcm,function = <0 1 1>; /* in out out */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			hy28b: hy28b@0{
++				compatible = "ilitek,ili9325";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&hy28b_pins>;
++
++				spi-max-frequency = <48000000>;
++				spi-cpol;
++				spi-cpha;
++				rotate = <270>;
++				bgr;
++				fps = <50>;
++				buswidth = <8>;
++				startbyte = <0x70>;
++				reset-gpios = <&gpio 25 0>;
++				led-gpios = <&gpio 18 1>;
++
++				gamma = "04 1F 4 7 7 0 7 7 6 0\n0F 00 1 7 4 0 0 0 6 7";
++
++				init = <0x10000e7 0x0010
++					0x1000000 0x0001
++					0x1000001 0x0100
++					0x1000002 0x0700
++				        0x1000003 0x1030
++					0x1000004 0x0000
++					0x1000008 0x0207
++					0x1000009 0x0000
++				        0x100000a 0x0000
++					0x100000c 0x0001
++					0x100000d 0x0000
++					0x100000f 0x0000
++				        0x1000010 0x0000
++					0x1000011 0x0007
++					0x1000012 0x0000
++					0x1000013 0x0000
++				        0x2000032
++					0x1000010 0x1590
++					0x1000011 0x0227
++				        0x2000032
++					0x1000012 0x009c
++				        0x2000032
++				        0x1000013 0x1900
++					0x1000029 0x0023
++					0x100002b 0x000e
++				        0x2000032
++				        0x1000020 0x0000
++					0x1000021 0x0000
++				        0x2000032
++					0x1000050 0x0000
++				        0x1000051 0x00ef
++					0x1000052 0x0000
++					0x1000053 0x013f
++					0x1000060 0xa700
++				        0x1000061 0x0001
++					0x100006a 0x0000
++					0x1000080 0x0000
++					0x1000081 0x0000
++				        0x1000082 0x0000
++					0x1000083 0x0000
++					0x1000084 0x0000
++					0x1000085 0x0000
++				        0x1000090 0x0010
++					0x1000092 0x0000
++					0x1000093 0x0003
++					0x1000095 0x0110
++				        0x1000097 0x0000
++					0x1000098 0x0000
++					0x1000007 0x0133
++					0x1000020 0x0000
++				        0x1000021 0x0000
++				        0x2000064>;
++				debug = <0>;
++			};
++
++			hy28b_ts: hy28b-ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <17 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 17 0>;
++				ti,x-plate-ohms = /bits/ 16 <100>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++	__overrides__ {
++		speed = 	<&hy28b>,"spi-max-frequency:0";
++		rotate = 	<&hy28b>,"rotate:0";
++		fps = 		<&hy28b>,"fps:0";
++		debug = 	<&hy28b>,"debug:0";
++		xohms =		<&hy28b_ts>,"ti,x-plate-ohms;0";
++		resetgpio =	<&hy28b>,"reset-gpios:4",
++				<&hy28b_pins>, "brcm,pins:1";
++		ledgpio =	<&hy28b>,"led-gpios:4",
++				<&hy28b_pins>, "brcm,pins:2";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -0,0 +1,49 @@
++// Definitions for several I2C based Real Time Clocks
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			ds1307: ds1307@68 {
++				compatible = "maxim,ds1307";
++				reg = <0x68>;
++				status = "disable";
++			};
++			ds3231: ds3231@68 {
++				compatible = "maxim,ds3231";
++				reg = <0x68>;
++				status = "disable";
++			};
++			pcf2127: pcf2127@51 {
++				compatible = "nxp,pcf2127";
++				reg = <0x51>;
++				status = "disable";
++			};
++			pcf8523: pcf8523@68 {
++				compatible = "nxp,pcf8523";
++				reg = <0x68>;
++				status = "disable";
++			};
++			pcf8563: pcf8563@51 {
++				compatible = "nxp,pcf8563";
++				reg = <0x51>;
++				status = "disable";
++			};
++		};
++	};
++	__overrides__ {
++		ds1307 = <&ds1307>,"status";
++		ds3231 = <&ds3231>,"status";
++		pcf2127 = <&pcf2127>,"status";
++		pcf8523 = <&pcf8523>,"status";
++		pcf8563 = <&pcf8563>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/i2s-mmap-overlay.dts
+@@ -0,0 +1,13 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&i2s>;
++		__overlay__ {
++			brcm,enable-mmap;
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/iqaudio-dac-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for IQaudIO DAC
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "iqaudio,iqaudio-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pcm5122@4c {
++				#sound-dai-cells = <0>;
++				compatible = "ti,pcm5122";
++				reg = <0x4c>;
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/iqaudio-dacplus-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for IQaudIO DAC+
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "iqaudio,iqaudio-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			pcm5122@4c {
++				#sound-dai-cells = <0>;
++				compatible = "ti,pcm5122";
++				reg = <0x4c>;
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/lirc-rpi-overlay.dts
+@@ -0,0 +1,57 @@
++// Definitions for lirc-rpi module
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			lirc_rpi: lirc_rpi {
++				compatible = "rpi,lirc-rpi";
++				pinctrl-names = "default";
++				pinctrl-0 = <&lirc_pins>;
++				status = "okay";
++
++				// Override autodetection of IR receiver circuit
++				// (0 = active high, 1 = active low, -1 = no override )
++				rpi,sense = <0xffffffff>;
++
++				// Software carrier
++				// (0 = off, 1 = on)
++				rpi,softcarrier = <1>;
++
++				// Invert output
++				// (0 = off, 1 = on)
++				rpi,invert = <0>;
++
++				// Enable debugging messages
++				// (0 = off, 1 = on)
++				rpi,debug = <0>;
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			lirc_pins: lirc_pins {
++				brcm,pins = <17 18>;
++				brcm,function = <1 0>; // out in
++				brcm,pull = <0 1>; // off down
++			};
++		};
++	};
++
++	__overrides__ {
++		gpio_out_pin =  <&lirc_pins>,"brcm,pins:0";
++		gpio_in_pin =   <&lirc_pins>,"brcm,pins:4";
++		gpio_in_pull =  <&lirc_pins>,"brcm,pull:4";
++
++		sense =         <&lirc_rpi>,"rpi,sense:0";
++		softcarrier =   <&lirc_rpi>,"rpi,softcarrier:0";
++		invert =        <&lirc_rpi>,"rpi,invert:0";
++		debug =         <&lirc_rpi>,"rpi,debug:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/mcp2515-can0-overlay.dts
+@@ -0,0 +1,69 @@
++/*
++ * Device tree overlay for mcp251x/can0 on spi0.0
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++    compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++    /* disable spi-dev for spi0.0 */
++    fragment@0 {
++        target = <&spi0>;
++        __overlay__ {
++            status = "okay";
++            spidev@0{
++                status = "disabled";
++            };
++        };
++    };
++
++    /* the interrupt pin of the can-controller */
++    fragment@1 {
++        target = <&gpio>;
++        __overlay__ {
++            can0_pins: can0_pins {
++                brcm,pins = <25>;
++                brcm,function = <0>; /* input */
++            };
++        };
++    };
++
++    /* the clock/oscillator of the can-controller */
++    fragment@2 {
++        target-path = "/clocks";
++        __overlay__ {
++            /* external oscillator of mcp2515 on SPI0.0 */
++            can0_osc: can0_osc {
++                compatible = "fixed-clock";
++                #clock-cells = <0>;
++                clock-frequency  = <16000000>;
++            };
++        };
++    };
++
++    /* the spi config of the can-controller itself binding everything together */
++    fragment@3 {
++        target = <&spi0>;
++        __overlay__ {
++            /* needed to avoid dtc warning */
++            #address-cells = <1>;
++            #size-cells = <0>;
++            can0: mcp2515@0 {
++                reg = <0>;
++                compatible = "microchip,mcp2515";
++                pinctrl-names = "default";
++                pinctrl-0 = <&can0_pins>;
++                spi-max-frequency = <10000000>;
++                interrupt-parent = <&gpio>;
++                interrupts = <25 0x2>;
++                clocks = <&can0_osc>;
++            };
++        };
++    };
++    __overrides__ {
++        oscillator = <&can0_osc>,"clock-frequency:0";
++        spimaxfrequency = <&can0>,"spi-max-frequency:0";
++        interrupt = <&can0_pins>,"brcm,pins:0",<&can0>,"interrupts:0";
++    };
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/mmc-overlay.dts
+@@ -0,0 +1,19 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&mmc>;
++
++		__overlay__ {
++			brcm,overclock-50 = <0>;
++		};
++	};
++
++	__overrides__ {
++		overclock_50     = <&mmc>,"brcm,overclock-50:0";
++		force_pio        = <&mmc>,"brcm,force-pio?";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/mz61581-overlay.dts
+@@ -0,0 +1,109 @@
++/*
++ * Device Tree overlay for MZ61581-PI-EXT 2014.12.28 by Tontec
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			mz61581_pins: mz61581_pins {
++				brcm,pins = <4 15 18 25>;
++				brcm,function = <0 1 1 1>; /* in out out out */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			mz61581: mz61581@0{
++				compatible = "samsung,s6d02a1";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&mz61581_pins>;
++
++				spi-max-frequency = <128000000>;
++				spi-cpol;
++				spi-cpha;
++
++				width = <320>;
++				height = <480>;
++				rotate = <270>;
++				bgr;
++				fps = <30>;
++				buswidth = <8>;
++
++				reset-gpios = <&gpio 15 0>;
++				dc-gpios = <&gpio 25 0>;
++				led-gpios = <&gpio 18 0>;
++
++				init = <0x10000b0 00
++					0x1000011
++					0x20000ff
++					0x10000b3 0x02 0x00 0x00 0x00
++					0x10000c0 0x13 0x3b 0x00 0x02 0x00 0x01 0x00 0x43
++					0x10000c1 0x08 0x16 0x08 0x08
++					0x10000c4 0x11 0x07 0x03 0x03
++					0x10000c6 0x00
++					0x10000c8 0x03 0x03 0x13 0x5c 0x03 0x07 0x14 0x08 0x00 0x21 0x08 0x14 0x07 0x53 0x0c 0x13 0x03 0x03 0x21 0x00
++					0x1000035 0x00
++					0x1000036 0xa0
++					0x100003a 0x55
++					0x1000044 0x00 0x01
++					0x10000d0 0x07 0x07 0x1d 0x03
++					0x10000d1 0x03 0x30 0x10
++					0x10000d2 0x03 0x14 0x04
++					0x1000029
++					0x100002c>;
++
++				/* This is a workaround to make sure the init sequence slows down and doesn't fail */
++				debug = <3>;
++			};
++
++			mz61581_ts: mz61581_ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <4 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 4 0>;
++
++				ti,x-plate-ohms = /bits/ 16 <60>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++	__overrides__ {
++		speed =   <&mz61581>, "spi-max-frequency:0";
++		rotate =  <&mz61581>, "rotate:0";
++		fps =     <&mz61581>, "fps:0";
++		debug =   <&mz61581>, "debug:0";
++		xohms =   <&mz61581_ts>,"ti,x-plate-ohms;0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/piscreen-overlay.dts
+@@ -0,0 +1,96 @@
++/*
++ * Device Tree overlay for PiScreen 3.5" display shield by Ozzmaker
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			piscreen_pins: piscreen_pins {
++				brcm,pins = <17 25 24 22>;
++				brcm,function = <0 1 1 1>; /* in out out out */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			piscreen: piscreen@0{
++				compatible = "ilitek,ili9486";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&piscreen_pins>;
++
++				spi-max-frequency = <24000000>;
++				rotate = <270>;
++				bgr;
++				fps = <30>;
++				buswidth = <8>;
++				regwidth = <16>;
++				reset-gpios = <&gpio 25 0>;
++				dc-gpios = <&gpio 24 0>;
++				led-gpios = <&gpio 22 1>;
++				debug = <0>;
++
++				init = <0x10000b0 0x00
++				        0x1000011
++					0x20000ff
++					0x100003a 0x55
++					0x1000036 0x28
++					0x10000c2 0x44
++					0x10000c5 0x00 0x00 0x00 0x00
++					0x10000e0 0x0f 0x1f 0x1c 0x0c 0x0f 0x08 0x48 0x98 0x37 0x0a 0x13 0x04 0x11 0x0d 0x00
++					0x10000e1 0x0f 0x32 0x2e 0x0b 0x0d 0x05 0x47 0x75 0x37 0x06 0x10 0x03 0x24 0x20 0x00
++					0x10000e2 0x0f 0x32 0x2e 0x0b 0x0d 0x05 0x47 0x75 0x37 0x06 0x10 0x03 0x24 0x20 0x00
++					0x1000011
++					0x1000029>;
++			};
++
++			piscreen_ts: piscreen-ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <17 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 17 0>;
++				ti,swap-xy;
++				ti,x-plate-ohms = /bits/ 16 <100>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++	__overrides__ {
++		speed =		<&piscreen>,"spi-max-frequency:0";
++		rotate =	<&piscreen>,"rotate:0";
++		fps =		<&piscreen>,"fps:0";
++		debug =		<&piscreen>,"debug:0";
++		xohms =		<&piscreen_ts>,"ti,x-plate-ohms;0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pitft28-resistive-overlay.dts
+@@ -0,0 +1,115 @@
++/*
++ * Device Tree overlay for Adafruit PiTFT 2.8" resistive touch screen
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			pitft_pins: pitft_pins {
++				brcm,pins = <24 25>;
++				brcm,function = <0 1>; /* in out */
++				brcm,pull = <2 0>; /* pullup none */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			pitft: pitft@0{
++				compatible = "ilitek,ili9340";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&pitft_pins>;
++
++				spi-max-frequency = <32000000>;
++				rotate = <90>;
++				fps = <25>;
++				bgr;
++				buswidth = <8>;
++				dc-gpios = <&gpio 25 0>;
++				debug = <0>;
++			};
++
++			pitft_ts@1 {
++				#address-cells = <1>;
++				#size-cells = <0>;
++				compatible = "st,stmpe610";
++				reg = <1>;
++
++				spi-max-frequency = <500000>;
++				irq-gpio = <&gpio 24 0x2>; /* IRQF_TRIGGER_FALLING */
++				interrupts = <24 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				interrupt-controller;
++
++				stmpe_touchscreen {
++					compatible = "st,stmpe-ts";
++					st,sample-time = <4>;
++					st,mod-12b = <1>;
++					st,ref-sel = <0>;
++					st,adc-freq = <2>;
++					st,ave-ctrl = <3>;
++					st,touch-det-delay = <4>;
++					st,settling = <2>;
++					st,fraction-z = <7>;
++					st,i-drive = <0>;
++				};
++
++				stmpe_gpio: stmpe_gpio {
++					#gpio-cells = <2>;
++					compatible = "st,stmpe-gpio";
++					/*
++					 * only GPIO2 is wired/available
++					 * and it is wired to the backlight
++					 */
++					st,norequest-mask = <0x7b>;
++				};
++			};
++		};
++	};
++
++	fragment@3 {
++		target-path = "/soc";
++		__overlay__ {
++			backlight {
++				compatible = "gpio-backlight";
++				gpios = <&stmpe_gpio 2 0>;
++				default-on;
++			};
++		};
++	};
++
++	__overrides__ {
++		speed =   <&pitft>,"spi-max-frequency:0";
++		rotate =  <&pitft>,"rotate:0";
++		fps =     <&pitft>,"fps:0";
++		debug =   <&pitft>,"debug:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pps-gpio-overlay.dts
+@@ -0,0 +1,34 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			pps: pps {
++				compatible = "pps-gpio";
++				pinctrl-names = "default";
++				pinctrl-0 = <&pps_pins>;
++				gpios = <&gpio 18 0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			pps_pins: pps_pins {
++				brcm,pins =     <18>;
++				brcm,function = <0>;    // in
++				brcm,pull =     <0>;    // off
++			};
++		};
++	};
++
++	__overrides__ {
++		gpiopin = <&pps>,"gpios:4",
++			  <&pps_pins>,"brcm,pins:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/rpi-dac-overlay.dts
+@@ -0,0 +1,34 @@
++// Definitions for RPi DAC
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "rpi,rpi-dac";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target-path = "/";
++		__overlay__ {
++			pcm1794a-codec {
++				#sound-dai-cells = <0>;
++				compatible = "ti,pcm1794a";
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/rpi-display-overlay.dts
+@@ -0,0 +1,82 @@
++/*
++ * Device Tree overlay for rpi-display by Watterott
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			rpi_display_pins: rpi_display_pins {
++				brcm,pins = <18 23 24 25>;
++				brcm,function = <1 1 1 0>; /* out out out in */
++				brcm,pull = <0 0 0 2>; /* - - - up */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			rpidisplay: rpi-display@0{
++				compatible = "ilitek,ili9341";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&rpi_display_pins>;
++
++				spi-max-frequency = <32000000>;
++				rotate = <270>;
++				bgr;
++				fps = <30>;
++				buswidth = <8>;
++				reset-gpios = <&gpio 23 0>;
++				dc-gpios = <&gpio 24 0>;
++				led-gpios = <&gpio 18 1>;
++				debug = <0>;
++			};
++
++			rpidisplay_ts: rpi-display-ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++
++				spi-max-frequency = <2000000>;
++				interrupts = <25 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 25 0>;
++				ti,x-plate-ohms = /bits/ 16 <60>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++	__overrides__ {
++		speed =   <&rpidisplay>,"spi-max-frequency:0";
++		rotate =  <&rpidisplay>,"rotate:0";
++		fps =     <&rpidisplay>,"fps:0";
++		debug =   <&rpidisplay>,"debug:0";
++		xohms =   <&rpidisplay_ts>,"ti,x-plate-ohms;0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/rpi-proto-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for Rpi-Proto
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&sound>;
++		__overlay__ {
++			compatible = "rpi,rpi-proto";
++			i2s-controller = <&i2s>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&i2s>;
++		__overlay__ {
++			status = "okay";
++		};
++	};
++
++	fragment@2 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			wm8731@1a {
++				#sound-dai-cells = <0>;
++				compatible = "wlf,wm8731";
++				reg = <0x1a>;
++				status = "okay";
++			};
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
+@@ -0,0 +1,78 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&soc>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			sdhost: sdhost@7e202000 {
++				compatible = "brcm,bcm2835-sdhost";
++				reg = <0x7e202000 0x100>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&sdhost_pins>;
++				interrupts = <2 24>;
++				clocks = <&clk_sdhost>;
++				dmas = <&dma 13>,
++				       <&dma 13>;
++				dma-names = "tx", "rx";
++				brcm,delay-after-stop = <0>;
++				brcm,overclock-50 = <0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&clocks>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			clk_sdhost: sdhost {
++				compatible = "fixed-clock";
++				reg = <0>;
++				#clock-cells = <0>;
++				clock-output-names = "sdhost";
++				clock-frequency = <250000000>;
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&gpio>;
++		__overlay__ {
++			sdhost_pins: sdhost_pins {
++				brcm,pins = <48 49 50 51 52 53>;
++				brcm,function = <4>; /* alt0 */
++			};
++		};
++	};
++
++	fragment@3 {
++		target = <&mmc>;
++		__overlay__ {
++			/* Find a way to disable the other driver */
++			compatible = "";
++			status = "disabled";
++		};
++	};
++
++	fragment@4 {
++		target-path = "/__overrides__";
++		__overlay__ {
++			sdhost_freq      = <&clk_sdhost>,"clock-frequency:0";
++		};
++	};
++
++	__overrides__ {
++		delay_after_stop = <&sdhost>,"brcm,delay-after-stop:0";
++		overclock_50     = <&sdhost>,"brcm,overclock-50:0";
++		force_pio        = <&sdhost>,"brcm,force-pio?";
++		sdhost_freq      = <&clk_sdhost>,"clock-frequency:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi-bcm2708-overlay.dts
+@@ -0,0 +1,18 @@
++/*
++ * Device tree overlay for spi-bcm2835
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++	/* setting up compatiblity to allow loading the spi-bcm2835 driver */
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++			compatible = "brcm,bcm2708-spi";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi-bcm2835-overlay.dts
+@@ -0,0 +1,18 @@
++/*
++ * Device tree overlay for spi-bcm2835
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++	/* setting up compatiblity to allow loading the spi-bcm2835 driver */
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++			compatible = "brcm,bcm2835-spi";
++		};
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/tinylcd35-overlay.dts
+@@ -0,0 +1,216 @@
++/*
++ * tinylcd35-overlay.dts
++ *
++ * -------------------------------------------------
++ * www.tinlylcd.com
++ * -------------------------------------------------
++ * Device---Driver-----BUS       GPIO's
++ * display  tinylcd35  spi0.0    25 24 18
++ * touch    ads7846    spi0.1    5
++ * rtc      ds1307     i2c1-0068
++ * rtc      pcf8563    i2c1-0051
++ * keypad   gpio-keys  --------- 17 22 27 23 28
++ *
++ *
++ * TinyLCD.com 3.5 inch TFT
++ *
++ *  Version 001
++ *  5/3/2015  -- Noralf Trønnes     Initial Device tree framework
++ *  10/3/2015 -- tinylcd@gmail.com  added ds1307 support.
++ *
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			status = "okay";
++
++			spidev@0{
++				status = "disabled";
++			};
++
++			spidev@1{
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			tinylcd35_pins: tinylcd35_pins {
++				brcm,pins = <25 24 18>;
++				brcm,function = <1>; /* out */
++			};
++			tinylcd35_ts_pins: tinylcd35_ts_pins {
++				brcm,pins = <5>;
++				brcm,function = <0>; /* in */
++			};
++			keypad_pins: keypad_pins {
++				brcm,pins = <4 17 22 23 27>;
++				brcm,function = <0>; /* in */
++				brcm,pull = <1>; /* down */
++			};
++		};
++	};
++
++	fragment@2 {
++		target = <&spi0>;
++		__overlay__ {
++			/* needed to avoid dtc warning */
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			tinylcd35: tinylcd35@0{
++				compatible = "neosec,tinylcd";
++				reg = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&tinylcd35_pins>,
++					    <&tinylcd35_ts_pins>;
++
++				spi-max-frequency = <48000000>;
++				rotate = <270>;
++				fps = <20>;
++				bgr;
++				buswidth = <8>;
++				reset-gpios = <&gpio 25 0>;
++				dc-gpios = <&gpio 24 0>;
++				led-gpios = <&gpio 18 1>;
++				debug = <0>;
++
++				init = <0x10000B0 0x80
++					0x10000C0 0x0A 0x0A
++					0x10000C1 0x01 0x01
++					0x10000C2 0x33
++					0x10000C5 0x00 0x42 0x80
++					0x10000B1 0xD0 0x11
++					0x10000B4 0x02
++					0x10000B6 0x00 0x22 0x3B
++					0x10000B7 0x07
++					0x1000036 0x58
++					0x10000F0 0x36 0xA5 0xD3
++					0x10000E5 0x80
++					0x10000E5 0x01
++					0x10000B3 0x00
++					0x10000E5 0x00
++					0x10000F0 0x36 0xA5 0x53
++					0x10000E0 0x00 0x35 0x33 0x00 0x00 0x00 0x00 0x35 0x33 0x00 0x00 0x00
++					0x100003A 0x55
++					0x1000011
++					0x2000001
++					0x1000029>;
++			};
++
++			tinylcd35_ts: tinylcd35_ts@1 {
++				compatible = "ti,ads7846";
++				reg = <1>;
++				status = "disabled";
++
++				spi-max-frequency = <2000000>;
++				interrupts = <5 2>; /* high-to-low edge triggered */
++				interrupt-parent = <&gpio>;
++				pendown-gpio = <&gpio 5 0>;
++				ti,x-plate-ohms = /bits/ 16 <100>;
++				ti,pressure-max = /bits/ 16 <255>;
++			};
++		};
++	};
++
++	/*  RTC    */
++
++	fragment@3 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			pcf8563: pcf8563@51 {
++				compatible = "nxp,pcf8563";
++				reg = <0x51>;
++				status = "disabled";
++			};
++		};
++	};
++
++	fragment@4 {
++		target = <&i2c1>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++
++			ds1307: ds1307@68 {
++				compatible = "maxim,ds1307";
++				reg = <0x68>;
++				status = "disabled";
++			};
++		};
++	};
++
++	/*
++	 * Values for input event code is found under the
++	 * 'Keys and buttons' heading in include/uapi/linux/input.h
++	 */
++	fragment@5 {
++		target-path = "/soc";
++		__overlay__ {
++			keypad: keypad {
++				compatible = "gpio-keys";
++				#address-cells = <1>;
++				#size-cells = <0>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&keypad_pins>;
++				status = "disabled";
++				autorepeat;
++
++				button@17 {
++					label = "GPIO KEY_UP";
++					linux,code = <103>;
++					gpios = <&gpio 17 0>;
++				};
++				button@22 {
++					label = "GPIO KEY_DOWN";
++					linux,code = <108>;
++					gpios = <&gpio 22 0>;
++				};
++				button@27 {
++					label = "GPIO KEY_LEFT";
++					linux,code = <105>;
++					gpios = <&gpio 27 0>;
++				};
++				button@23 {
++					label = "GPIO KEY_RIGHT";
++					linux,code = <106>;
++					gpios = <&gpio 23 0>;
++				};
++				button@4 {
++					label = "GPIO KEY_ENTER";
++					linux,code = <28>;
++					gpios = <&gpio 4 0>;
++				};
++			};
++		};
++	};
++
++	__overrides__ {
++		speed =      <&tinylcd35>,"spi-max-frequency:0";
++		rotate =     <&tinylcd35>,"rotate:0";
++		fps =        <&tinylcd35>,"fps:0";
++		debug =      <&tinylcd35>,"debug:0";
++		touch =      <&tinylcd35_ts>,"status";
++		touchgpio =  <&tinylcd35_ts_pins>,"brcm,pins:0",
++			     <&tinylcd35_ts>,"interrupts:0",
++			     <&tinylcd35_ts>,"pendown-gpio:4";
++		xohms =      <&tinylcd35_ts>,"ti,x-plate-ohms;0";
++		rtc-pcf =    <&i2c1>,"status",
++			     <&pcf8563>,"status";
++		rtc-ds =     <&i2c1>,"status",
++			     <&ds1307>,"status";
++		keypad =     <&keypad>,"status";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/w1-gpio-overlay.dts
+@@ -0,0 +1,39 @@
++// Definitions for w1-gpio module (without external pullup)
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++
++			w1: onewire@0 {
++				compatible = "w1-gpio";
++				pinctrl-names = "default";
++				pinctrl-0 = <&w1_pins>;
++				gpios = <&gpio 4 0>;
++				rpi,parasitic-power = <0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			w1_pins: w1_pins {
++				brcm,pins = <4>;
++				brcm,function = <0>; // in (initially)
++				brcm,pull = <0>; // off
++			};
++		};
++	};
++
++	__overrides__ {
++		gpiopin =       <&w1>,"gpios:4",
++				<&w1_pins>,"brcm,pins:0";
++		pullup =        <&w1>,"rpi,parasitic-power:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/w1-gpio-pullup-overlay.dts
+@@ -0,0 +1,41 @@
++// Definitions for w1-gpio module (with external pullup)
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++
++			w1: onewire@0 {
++				compatible = "w1-gpio";
++				pinctrl-names = "default";
++				pinctrl-0 = <&w1_pins>;
++				gpios = <&gpio 4 0>, <&gpio 5 1>;
++				rpi,parasitic-power = <0>;
++				status = "okay";
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			w1_pins: w1_pins {
++				brcm,pins = <4 5>;
++				brcm,function = <0 1>; // in out
++				brcm,pull = <0 0>; // off off
++			};
++		};
++	};
++
++	__overrides__ {
++		gpiopin =       <&w1>,"gpios:4",
++				<&w1_pins>,"brcm,pins:0";
++		extpullup =     <&w1>,"gpios:16",
++				<&w1_pins>,"brcm,pins:4";
++		pullup =        <&w1>,"rpi,parasitic-power:0";
++	};
++};

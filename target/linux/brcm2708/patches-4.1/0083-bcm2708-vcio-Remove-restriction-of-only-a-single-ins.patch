@@ -1,0 +1,45 @@
+From 79796a03fa8311ea9030817db27690f24f72214c Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 26 Jun 2015 17:37:38 +0100
+Subject: [PATCH 083/121] bcm2708-vcio: Remove restriction of only a single
+ instance being open
+
+We need more than one process to be able to use mailbox interface (e.g. HW cursor in fbturbo and hello_fft).
+Locking should be handled on each mailbox access
+---
+ drivers/mailbox/bcm2708-vcio.c | 14 --------------
+ 1 file changed, 14 deletions(-)
+
+--- a/drivers/mailbox/bcm2708-vcio.c
++++ b/drivers/mailbox/bcm2708-vcio.c
+@@ -242,20 +242,9 @@ EXPORT_SYMBOL_GPL(bcm_mailbox_property);
+ 
+ /* Platform Device for Mailbox */
+ 
+-/*
+- * Is the device open right now? Used to prevent
+- * concurent access into the same device
+- */
+-static bool device_is_open;
+-
+ /* This is called whenever a process attempts to open the device file */
+ static int device_open(struct inode *inode, struct file *file)
+ {
+-	/* We don't want to talk to two processes at the same time */
+-	if (device_is_open)
+-		return -EBUSY;
+-
+-	device_is_open = true;
+ 	try_module_get(THIS_MODULE);
+ 
+ 	return 0;
+@@ -263,9 +252,6 @@ static int device_open(struct inode *ino
+ 
+ static int device_release(struct inode *inode, struct file *file)
+ {
+-	/* We're now ready for our next caller */
+-	device_is_open = false;
+-
+ 	module_put(THIS_MODULE);
+ 
+ 	return 0;

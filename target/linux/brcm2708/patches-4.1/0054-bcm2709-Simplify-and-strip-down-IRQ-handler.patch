@@ -1,0 +1,222 @@
+From a926a1d2720eef63b580a4510a9aec4540836d40 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 20 Jun 2014 17:19:27 +0100
+Subject: [PATCH 054/121] bcm2709: Simplify and strip down IRQ handler
+
+---
+ arch/arm/include/asm/entry-macro-multi.S         |   2 +
+ arch/arm/mach-bcm2709/include/mach/entry-macro.S | 173 +++++++++++------------
+ 2 files changed, 87 insertions(+), 88 deletions(-)
+
+--- a/arch/arm/include/asm/entry-macro-multi.S
++++ b/arch/arm/include/asm/entry-macro-multi.S
+@@ -1,5 +1,6 @@
+ #include <asm/assembler.h>
+ 
++#ifndef CONFIG_ARCH_BCM2709
+ /*
+  * Interrupt handling.  Preserves r7, r8, r9
+  */
+@@ -28,6 +29,7 @@
+ #endif
+ 9997:
+ 	.endm
++#endif
+ 
+ 	.macro	arch_irq_handler, symbol_name
+ 	.align	5
+--- a/arch/arm/mach-bcm2709/include/mach/entry-macro.S
++++ b/arch/arm/mach-bcm2709/include/mach/entry-macro.S
+@@ -22,102 +22,99 @@
+ #include <mach/hardware.h>
+ #include <mach/irqs.h>
+ 
+-		.macro	disable_fiq
+-		.endm
++	.macro  arch_ret_to_user, tmp1, tmp2
++	.endm
+ 
+-		.macro  get_irqnr_preamble, base, tmp
+-		ldr	\base, =IO_ADDRESS(ARMCTRL_IC_BASE)
+-		.endm
+-
+-		.macro  arch_ret_to_user, tmp1, tmp2
+-		.endm
+-
+-		.macro	get_irqnr_and_base, irqnr, irqstat, base, tmp
+-		/* get core number */
+-		mrc     p15, 0, \tmp, c0, c0, 5
+-		ubfx    \tmp, \tmp, #0, #2
+-
+-		/* get core's local interrupt controller */
+-		ldr	\irqstat, = __io_address(ARM_LOCAL_IRQ_PENDING0)	@ local interrupt source
+-		add	\irqstat, \irqstat, \tmp, lsl #2
+-		ldr	\tmp, [\irqstat]
+-		/* ignore gpu interrupt */
+-		bic     \tmp, #0x100
+-		/* ignore mailbox interrupts */
+-		bics    \tmp, #0xf0
+-		beq	1005f
+-
+-		@ For non-zero x, LSB(x) = 31 - CLZ(x^(x-1))
+-		@ N.B. CLZ is an ARM5 instruction.
+-		mov	\irqnr, #(ARM_IRQ_LOCAL_BASE + 31)
+-		sub	\irqstat, \tmp, #1
+-		eor	\irqstat, \irqstat, \tmp
+-		clz	\tmp, \irqstat
+-		sub	\irqnr, \tmp
+-		b	1020f
+-1005:
+-		/* get core number */
+-		mrc     p15, 0, \tmp, c0, c0, 5
+-		ubfx    \tmp, \tmp, #0, #2
+-
+-                cmp	\tmp, #1
+-		beq	1020f
+-                cmp	\tmp, #2
+-		beq	1020f
+-                cmp	\tmp, #3
+-		beq	1020f
+-
+-		/* get masked status */
+-		ldr	\irqstat, [\base, #(ARM_IRQ_PEND0 - ARMCTRL_IC_BASE)]
+-		mov	\irqnr, #(ARM_IRQ0_BASE + 31)
+-		and	\tmp, \irqstat, #0x300		 @ save bits 8 and 9
+-		/* clear bits 8 and 9, and test */
+-		bics	\irqstat, \irqstat, #0x300
+-		bne	1010f
+-
+-		tst	\tmp, #0x100
+-		ldrne	\irqstat, [\base, #(ARM_IRQ_PEND1 - ARMCTRL_IC_BASE)]
+-		movne \irqnr, #(ARM_IRQ1_BASE + 31)
+-		@ Mask out the interrupts also present in PEND0 - see SW-5809
+-		bicne \irqstat, #((1<<7) | (1<<9) | (1<<10))
+-		bicne \irqstat, #((1<<18) | (1<<19))
+-		bne	1010f
+-
+-		tst	\tmp, #0x200
+-		ldrne \irqstat, [\base, #(ARM_IRQ_PEND2 - ARMCTRL_IC_BASE)]
+-		movne \irqnr, #(ARM_IRQ2_BASE + 31)
+-		@ Mask out the interrupts also present in PEND0 - see SW-5809
+-		bicne \irqstat, #((1<<21) | (1<<22) | (1<<23) | (1<<24) | (1<<25))
+-		bicne \irqstat, #((1<<30))
+-		beq 1020f
++	.macro	get_irqnr_and_base, irqnr, irqstat, base, tmp
+ 
++	/* get core number */
++	mrc     p15, 0, \base, c0, c0, 5
++	ubfx    \base, \base, #0, #2
++
++	/* get core's local interrupt controller */
++	ldr	\irqstat, = __io_address(ARM_LOCAL_IRQ_PENDING0)	@ local interrupt source
++	add	\irqstat, \irqstat, \base, lsl #2
++	ldr	\tmp, [\irqstat]
++#ifdef CONFIG_SMP
++	/* test for mailbox0 (IPI) interrupt */
++	tst	\tmp, #0x10
++	beq	1030f
++
++	/* get core's mailbox interrupt control */
++	ldr	\irqstat, = __io_address(ARM_LOCAL_MAILBOX0_CLR0)	@ mbox_clr
++	add	\irqstat, \irqstat, \base, lsl #4
++	ldr	\tmp, [\irqstat]
++	clz	\tmp, \tmp
++	rsb	\irqnr, \tmp, #31
++	mov	\tmp, #1
++	lsl	\tmp, \irqnr
++	str	\tmp, [\irqstat]  @ clear interrupt source
++	dsb
++	mov	r1, sp
++	adr	lr, BSYM(1b)
++	b	do_IPI
++#endif
++1030:
++	/* check gpu interrupt */
++	tst	\tmp, #0x100
++	beq	1040f
++
++	ldr	\base, =IO_ADDRESS(ARMCTRL_IC_BASE)
++	/* get masked status */
++	ldr	\irqstat, [\base, #(ARM_IRQ_PEND0 - ARMCTRL_IC_BASE)]
++	mov	\irqnr, #(ARM_IRQ0_BASE + 31)
++	and	\tmp, \irqstat, #0x300		 @ save bits 8 and 9
++	/* clear bits 8 and 9, and test */
++	bics	\irqstat, \irqstat, #0x300
++	bne	1010f
++
++	tst	\tmp, #0x100
++	ldrne	\irqstat, [\base, #(ARM_IRQ_PEND1 - ARMCTRL_IC_BASE)]
++	movne	\irqnr, #(ARM_IRQ1_BASE + 31)
++	@ Mask out the interrupts also present in PEND0 - see SW-5809
++	bicne	\irqstat, #((1<<7) | (1<<9) | (1<<10))
++	bicne	\irqstat, #((1<<18) | (1<<19))
++	bne	1010f
++
++	tst	\tmp, #0x200
++	ldrne	\irqstat, [\base, #(ARM_IRQ_PEND2 - ARMCTRL_IC_BASE)]
++	movne	\irqnr, #(ARM_IRQ2_BASE + 31)
++	@ Mask out the interrupts also present in PEND0 - see SW-5809
++	bicne	\irqstat, #((1<<21) | (1<<22) | (1<<23) | (1<<24) | (1<<25))
++	bicne	\irqstat, #((1<<30))
++	beq	1020f
+ 1010:
+-		@ For non-zero x, LSB(x) = 31 - CLZ(x^(x-1))
+-		@ N.B. CLZ is an ARM5 instruction.
+-		sub	\tmp, \irqstat, #1
+-		eor	\irqstat, \irqstat, \tmp
+-		clz	\tmp, \irqstat
+-		sub	\irqnr, \tmp
++	@ For non-zero x, LSB(x) = 31 - CLZ(x^(x-1))
++	sub	\tmp, \irqstat, #1
++	eor	\irqstat, \irqstat, \tmp
++	clz	\tmp, \irqstat
++	sub	\irqnr, \tmp
++	b	1050f
++1040:
++	cmp	\tmp, #0
++	beq	1020f
++
++	/* handle local (e.g. timer) interrupts */
++	@ For non-zero x, LSB(x) = 31 - CLZ(x^(x-1))
++	mov	\irqnr, #(ARM_IRQ_LOCAL_BASE + 31)
++	sub	\irqstat, \tmp, #1
++	eor	\irqstat, \irqstat, \tmp
++	clz	\tmp, \irqstat
++	sub	\irqnr, \tmp
++1050:
++	mov	r1, sp
++	@
++	@ routine called with r0 = irq number, r1 = struct pt_regs *
++	@
++	adr	lr, BSYM(1b)
++	b	asm_do_IRQ
+ 
+ 1020:	@ EQ will be set if no irqs pending
++	.endm
+ 
+-		.endm
+-
+-		.macro  test_for_ipi, irqnr, irqstat, base, tmp
+-		/* get core number */
+-		mrc     p15, 0, \tmp, c0, c0, 5
+-		ubfx    \tmp, \tmp, #0, #2
+-		/* get core's mailbox interrupt control */
+-		ldr	\irqstat, = __io_address(ARM_LOCAL_MAILBOX0_CLR0)	@ mbox_clr
+-		add	\irqstat, \irqstat, \tmp, lsl #4
+-		ldr	\tmp, [\irqstat]
+-		cmp     \tmp, #0
+-		beq	1030f
+-		clz	\tmp, \tmp
+-		rsb	\irqnr, \tmp, #31
+-		mov	\tmp, #1
+-		lsl	\tmp, \irqnr
+-		str	\tmp, [\irqstat]  @ clear interrupt source
+-		dsb
+-1030:	@ EQ will be set if no irqs pending
+-		.endm
++/*
++ * Interrupt handling.  Preserves r7, r8, r9
++ */
++	.macro	arch_irq_handler_default
++1:	get_irqnr_and_base r0, r2, r6, lr
++	.endm

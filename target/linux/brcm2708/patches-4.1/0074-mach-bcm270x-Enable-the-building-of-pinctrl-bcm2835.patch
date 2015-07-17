@@ -1,0 +1,19 @@
+From 2efab5a48bc519a3901b62da297ee5523c91ee58 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 18 Jun 2015 17:46:17 +0100
+Subject: [PATCH 074/121] mach-bcm270x: Enable the building of pinctrl-bcm2835
+
+---
+ drivers/pinctrl/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/pinctrl/Makefile
++++ b/drivers/pinctrl/Makefile
+@@ -38,6 +38,7 @@ obj-$(CONFIG_PINCTRL_TB10X)	+= pinctrl-t
+ obj-$(CONFIG_PINCTRL_ST) 	+= pinctrl-st.o
+ obj-$(CONFIG_PINCTRL_ZYNQ)	+= pinctrl-zynq.o
+ 
++obj-$(CONFIG_ARCH_BCM2708)$(CONFIG_ARCH_BCM2709) += bcm/
+ obj-$(CONFIG_ARCH_BCM)		+= bcm/
+ obj-$(CONFIG_ARCH_BERLIN)	+= berlin/
+ obj-y				+= freescale/

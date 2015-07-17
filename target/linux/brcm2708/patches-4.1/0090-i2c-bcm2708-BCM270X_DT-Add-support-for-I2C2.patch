@@ -1,0 +1,163 @@
+From f40ed032e6f0892778bac7d33d45593c0483628b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 22 Jun 2015 14:23:03 +0100
+Subject: [PATCH 090/121] i2c-bcm2708/BCM270X_DT: Add support for I2C2
+
+The third I2C bus (I2C2) is normally reserved for HDMI use. Careless
+use of this bus can break an attached display - use with caution.
+
+It is recommended to disable accesses by VideoCore by setting
+hdmi_ignore_edid=1 or hdmi_edid_file=1 in config.txt.
+
+The interface is disabled by default - enable using the
+i2c2_iknowwhatimdoing DT parameter.
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts |  6 ++++++
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      |  6 ++++++
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts     |  6 ++++++
+ arch/arm/boot/dts/bcm2708_common.dtsi    | 14 ++++++++++++++
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    |  6 ++++++
+ drivers/i2c/busses/i2c-bcm2708.c         |  5 ++++-
+ 6 files changed, 42 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -75,6 +75,10 @@
+ 	clock-frequency = <100000>;
+ };
+ 
++&i2c2 {
++	clock-frequency = <100000>;
++};
++
+ &i2s {
+ 	#sound-dai-cells = <0>;
+ 	pinctrl-names = "default";
+@@ -103,8 +107,10 @@
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+ 		i2c1 = <&i2c1>,"status";
++		i2c2_iknowwhatimdoing = <&i2c2>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
+ 		core_freq = <&clk_core>,"clock-frequency:0";
+ 
+ 		act_led_gpio = <&act_led>,"gpios:4";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -75,6 +75,10 @@
+ 	clock-frequency = <100000>;
+ };
+ 
++&i2c2 {
++	clock-frequency = <100000>;
++};
++
+ &i2s {
+ 	#sound-dai-cells = <0>;
+ 	pinctrl-names = "default";
+@@ -97,8 +101,10 @@
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+ 		i2c1 = <&i2c1>,"status";
++		i2c2_iknowwhatimdoing = <&i2c2>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
+ 		core_freq = <&clk_core>,"clock-frequency:0";
+ 
+ 		act_led_gpio = <&act_led>,"gpios:4";
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -65,6 +65,10 @@
+ 	clock-frequency = <100000>;
+ };
+ 
++&i2c2 {
++	clock-frequency = <100000>;
++};
++
+ &i2s {
+ 	#sound-dai-cells = <0>;
+ 	pinctrl-names = "default";
+@@ -79,8 +83,10 @@
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+ 		i2c1 = <&i2c1>,"status";
++		i2c2_iknowwhatimdoing = <&i2c2>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
+ 		core_freq = <&clk_core>,"clock-frequency:0";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -20,6 +20,7 @@
+ 		uart1 = &uart1;
+ 		mmc = &mmc;
+ 		i2c1 = &i2c1;
++		i2c2 = &i2c2;
+ 		usb = &usb;
+ 		leds = &leds;
+ 		fb = &fb;
+@@ -179,6 +180,19 @@
+ 			interrupts = <2 21>;
+ 			clocks = <&clk_i2c>;
+ 			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
++		i2c2: i2c@7e805000 {
++			// Beware - this is shared with the HDMI module.
++			// Careless use may break (really) your display.
++			// Caveat emptor.
++			compatible = "brcm,bcm2708-i2c";
++			reg = <0x7e805000 0x1000>;
++			interrupts = <2 21>;
++			clocks = <&clk_i2c>;
++			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";
+ 		};
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -75,6 +75,10 @@
+ 	clock-frequency = <100000>;
+ };
+ 
++&i2c2 {
++	clock-frequency = <100000>;
++};
++
+ &i2s {
+ 	#sound-dai-cells = <0>;
+ 	pinctrl-names = "default";
+@@ -103,8 +107,10 @@
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+ 		i2c1 = <&i2c1>,"status";
++		i2c2_iknowwhatimdoing = <&i2c2>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		i2c2_baudrate = <&i2c2>,"clock-frequency:0";
+ 		core_freq = <&clk_core>,"clock-frequency:0";
+ 
+ 		act_led_gpio = <&act_led>,"gpios:4";
+--- a/drivers/i2c/busses/i2c-bcm2708.c
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -407,8 +407,11 @@ static int bcm2708_i2c_probe(struct plat
+ 	case 1:
+ 		adap->class = I2C_CLASS_DDC;
+ 		break;
++	case 2:
++		adap->class = I2C_CLASS_DDC;
++		break;
+ 	default:
+-		dev_err(&pdev->dev, "can only bind to BSC 0 or 1\n");
++		dev_err(&pdev->dev, "can only bind to BSC 0, 1 or 2\n");
+ 		err = -ENXIO;
+ 		goto out_free_bi;
+ 	}

@@ -1,0 +1,46 @@
+From 9e053b2e623361aa3a3bbfa298e7b8d33adf7abc Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 23 Jun 2015 13:24:01 +0100
+Subject: [PATCH 081/121] config: Enable 8250 serial port
+
+---
+ arch/arm/configs/bcm2709_defconfig | 7 +++++++
+ arch/arm/configs/bcmrpi_defconfig  | 7 +++++++
+ 2 files changed, 14 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -557,8 +557,15 @@ CONFIG_GAMEPORT_L4=m
+ CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
++CONFIG_SERIAL_8250=y
++# CONFIG_SERIAL_8250_DEPRECATED_OPTIONS is not set
++CONFIG_SERIAL_8250_CONSOLE=y
++# CONFIG_SERIAL_8250_DMA is not set
++CONFIG_SERIAL_8250_NR_UARTS=1
++CONFIG_SERIAL_8250_RUNTIME_UARTS=1
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+ CONFIG_HW_RANDOM_BCM2835=m
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -550,8 +550,15 @@ CONFIG_GAMEPORT_L4=m
+ CONFIG_DEVPTS_MULTIPLE_INSTANCES=y
+ # CONFIG_LEGACY_PTYS is not set
+ # CONFIG_DEVKMEM is not set
++CONFIG_SERIAL_8250=y
++# CONFIG_SERIAL_8250_DEPRECATED_OPTIONS is not set
++CONFIG_SERIAL_8250_CONSOLE=y
++# CONFIG_SERIAL_8250_DMA is not set
++CONFIG_SERIAL_8250_NR_UARTS=1
++CONFIG_SERIAL_8250_RUNTIME_UARTS=1
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
++CONFIG_SERIAL_OF_PLATFORM=y
+ CONFIG_TTY_PRINTK=y
+ CONFIG_HW_RANDOM=y
+ CONFIG_HW_RANDOM_BCM2835=m

@@ -1,0 +1,39 @@
+From 2e6c5de15687dadf4c24d880d0cdcb6763aacda5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 15 Jun 2015 09:59:38 +0100
+Subject: [PATCH 095/121] bcm2708-spi: Don't use static pin configuration with
+ DT
+
+Also remove superfluous error checking - the SPI framework ensures the
+validity of the chip_select value.
+---
+ drivers/spi/spi-bcm2708.c | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+
+--- a/drivers/spi/spi-bcm2708.c
++++ b/drivers/spi/spi-bcm2708.c
+@@ -386,14 +386,6 @@ static int bcm2708_spi_setup(struct spi_
+ 	if (bs->stopping)
+ 		return -ESHUTDOWN;
+ 
+-	if (!(spi->mode & SPI_NO_CS) &&
+-			(spi->chip_select > spi->master->num_chipselect)) {
+-		dev_dbg(&spi->dev,
+-			"setup: invalid chipselect %u (%u defined)\n",
+-			spi->chip_select, spi->master->num_chipselect);
+-		return -EINVAL;
+-	}
+-
+ 	state = spi->controller_state;
+ 	if (!state) {
+ 		state = kzalloc(sizeof(*state), GFP_KERNEL);
+@@ -496,7 +488,8 @@ static int bcm2708_spi_probe(struct plat
+ 		return PTR_ERR(clk);
+ 	}
+ 
+-	bcm2708_init_pinmode();
++	if (!pdev->dev.of_node)
++		bcm2708_init_pinmode();
+ 
+ 	master = spi_alloc_master(&pdev->dev, sizeof(*bs));
+ 	if (!master) {

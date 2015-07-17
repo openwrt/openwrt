@@ -1,0 +1,33 @@
+From 4fc03ec1bfe73a125775bb06937a246be639dc55 Mon Sep 17 00:00:00 2001
+From: Steve Glendinning <steve.glendinning@smsc.com>
+Date: Thu, 19 Feb 2015 18:47:12 +0000
+Subject: [PATCH 064/121] smsx95xx: fix crimes against truesize
+
+smsc95xx is adjusting truesize when it shouldn't, and following a recent patch from Eric this is now triggering warnings.
+
+This patch stops smsc95xx from changing truesize.
+
+Signed-off-by: Steve Glendinning <steve.glendinning@smsc.com>
+---
+ drivers/net/usb/smsc95xx.c | 2 --
+ 1 file changed, 2 deletions(-)
+ mode change 100644 => 100755 drivers/net/usb/smsc95xx.c
+
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -1841,7 +1841,6 @@ static int smsc95xx_rx_fixup(struct usbn
+ 				if (dev->net->features & NETIF_F_RXCSUM)
+ 					smsc95xx_rx_csum_offload(skb);
+ 				skb_trim(skb, skb->len - 4); /* remove fcs */
+-				skb->truesize = size + sizeof(struct sk_buff);
+ 
+ 				return 1;
+ 			}
+@@ -1859,7 +1858,6 @@ static int smsc95xx_rx_fixup(struct usbn
+ 			if (dev->net->features & NETIF_F_RXCSUM)
+ 				smsc95xx_rx_csum_offload(ax_skb);
+ 			skb_trim(ax_skb, ax_skb->len - 4); /* remove fcs */
+-			ax_skb->truesize = size + sizeof(struct sk_buff);
+ 
+ 			usbnet_skb_return(dev, ax_skb);
+ 		}

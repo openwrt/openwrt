@@ -1,0 +1,141 @@
+From 6bda1bf0de21592f772c2d65b3e66ddf89d50bdf Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 26 Jun 2015 08:39:19 +0100
+Subject: [PATCH 084/121] BCM270X_DT: Create a "core" clock, use it for SPI and
+ sdhost
+
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts      |  1 +
+ arch/arm/boot/dts/bcm2708-rpi-b.dts           |  1 +
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts          |  1 +
+ arch/arm/boot/dts/bcm2708_common.dtsi         |  6 +++---
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts         |  1 +
+ arch/arm/boot/dts/overlays/sdhost-overlay.dts | 28 ++-------------------------
+ 6 files changed, 9 insertions(+), 29 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -124,6 +124,7 @@
+ 		i2c1 = <&i2c1>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		core_freq = <&clk_core>,"clock-frequency:0";
+ 
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -118,6 +118,7 @@
+ 		i2c1 = <&i2c1>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		core_freq = <&clk_core>,"clock-frequency:0";
+ 
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -14,5 +14,6 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		core_freq = <&clk_core>,"clock-frequency:0";
+ 	};
+ };
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -110,7 +110,7 @@
+ 			compatible = "brcm,bcm2835-spi";
+ 			reg = <0x7e204000 0x1000>;
+ 			interrupts = <2 22>;
+-			clocks = <&clk_spi>;
++			clocks = <&clk_core>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";
+@@ -203,11 +203,11 @@
+ 			clock-frequency = <250000000>;
+ 		};
+ 
+-		clk_spi: clock@2 {
++		clk_core: clock@2 {
+ 			compatible = "fixed-clock";
+ 			reg = <2>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "spi";
++			clock-output-names = "core";
+ 			clock-frequency = <250000000>;
+ 		};
+ 
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -124,6 +124,7 @@
+ 		i2c1 = <&i2c1>,"status";
+ 		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
+ 		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
++		core_freq = <&clk_core>,"clock-frequency:0";
+ 
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+--- a/arch/arm/boot/dts/overlays/sdhost-overlay.dts
++++ b/arch/arm/boot/dts/overlays/sdhost-overlay.dts
+@@ -16,7 +16,7 @@
+ 				pinctrl-names = "default";
+ 				pinctrl-0 = <&sdhost_pins>;
+ 				interrupts = <2 24>;
+-				clocks = <&clk_sdhost>;
++				clocks = <&clk_core>;
+ 				dmas = <&dma 13>,
+ 				       <&dma 13>;
+ 				dma-names = "tx", "rx";
+@@ -29,22 +29,6 @@
+ 	};
+ 
+ 	fragment@1 {
+-		target = <&clocks>;
+-		__overlay__ {
+-			#address-cells = <1>;
+-			#size-cells = <0>;
+-
+-			clk_sdhost: sdhost {
+-				compatible = "fixed-clock";
+-				reg = <0>;
+-				#clock-cells = <0>;
+-				clock-output-names = "sdhost";
+-				clock-frequency = <250000000>;
+-			};
+-		};
+-	};
+-
+-	fragment@2 {
+ 		target = <&gpio>;
+ 		__overlay__ {
+ 			sdhost_pins: sdhost_pins {
+@@ -54,7 +38,7 @@
+ 		};
+ 	};
+ 
+-	fragment@3 {
++	fragment@2 {
+ 		target = <&mmc>;
+ 		__overlay__ {
+ 			/* Find a way to disable the other driver */
+@@ -63,18 +47,10 @@
+ 		};
+ 	};
+ 
+-	fragment@4 {
+-		target-path = "/__overrides__";
+-		__overlay__ {
+-			sdhost_freq      = <&clk_sdhost>,"clock-frequency:0";
+-		};
+-	};
+-
+ 	__overrides__ {
+ 		overclock_50     = <&sdhost>,"brcm,overclock-50:0";
+ 		force_pio        = <&sdhost>,"brcm,force-pio?";
+ 		pio_limit        = <&sdhost>,"brcm,pio-limit:0";
+ 		debug            = <&sdhost>,"brcm,debug?";
+-		sdhost_freq      = <&clk_sdhost>,"clock-frequency:0";
+ 	};
+ };

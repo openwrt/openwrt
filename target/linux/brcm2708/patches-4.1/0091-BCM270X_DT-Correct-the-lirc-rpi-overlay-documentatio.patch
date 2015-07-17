@@ -1,0 +1,26 @@
+From 9451939c7a95b4f81886a2bf89f953be1833189d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 29 Jun 2015 12:14:02 +0100
+Subject: [PATCH 091/121] BCM270X_DT: Correct the lirc-rpi overlay
+ documentation
+
+The polarity of the "sense" parameter was inverted with respect to reality.
+
+See: https://github.com/raspberrypi/linux/issues/1038
+---
+ arch/arm/boot/dts/overlays/README | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -313,8 +313,8 @@ Params: gpio_out_pin             GPIO fo
+                                  (default "down")
+ 
+         sense                    Override the IR receive auto-detection logic:
+-                                   "1" = force active high
+-                                   "0" = force active low
++                                   "0" = force active-high
++                                   "1" = force active-low
+                                    "-1" = use auto-detection
+                                  (default "-1")
+ 

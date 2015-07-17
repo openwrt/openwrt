@@ -1,0 +1,792 @@
+From 31dade83cc4f448f81d7d460c59d02b9ebc3b05b Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 17 Jun 2015 15:44:08 +0100
+Subject: [PATCH 020/121] Add Chris Boot's i2c driver
+
+i2c-bcm2708: fixed baudrate
+
+Fixed issue where the wrong CDIV value was set for baudrates below 3815 Hz (for 250MHz bus clock).
+In that case the computed CDIV value was more than 0xffff. However the CDIV register width is only 16 bits.
+This resulted in incorrect setting of CDIV and higher baudrate than intended.
+Example: 3500Hz -> CDIV=0x11704 -> CDIV(16bit)=0x1704 -> 42430Hz
+After correction: 3500Hz -> CDIV=0x11704 -> CDIV(16bit)=0xffff -> 3815Hz
+The correct baudrate is shown in the log after the cdiv > 0xffff correction.
+
+Perform I2C combined transactions when possible
+
+Perform I2C combined transactions whenever possible, within the
+restrictions of the Broadcomm Serial Controller.
+
+Disable DONE interrupt during TA poll
+
+Prevent interrupt from being triggered if poll is missed and transfer
+starts and finishes.
+
+i2c: Make combined transactions optional and disabled by default
+
+i2c: bcm2708: add device tree support
+
+Add DT support to driver and add to .dtsi file.
+Setup pins in .dts file.
+i2c is disabled by default.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+
+bcm2708: don't register i2c controllers when using DT
+
+The devices for the i2c controllers are in the Device Tree.
+Only register devices when not using DT.
+
+Signed-off-by: Noralf Tronnes <notro@tronnes.org>
+
+I2C: Only register the I2C device for the current board revision
+
+i2c_bcm2708: Fix clock reference counting
+
+Fix grabbing lock from atomic context in i2c driver
+
+2 main changes:
+- check for timeouts in the bcm2708_bsc_setup function as indicated by this comment:
+      /* poll for transfer start bit (should only take 1-20 polls) */
+  This implies that the setup function can now fail so account for this everywhere it's called
+- Removed the clk_get_rate call from inside the setup function as it locks a mutex and that's not ok since we call it from under a spin lock.
+
+i2c-bcm2708: When using DT, leave the GPIO setup to pinctrl
+---
+ arch/arm/mach-bcm2708/bcm2708.c  |  51 ++++
+ arch/arm/mach-bcm2709/bcm2709.c  |  51 ++++
+ drivers/i2c/busses/Kconfig       |  21 +-
+ drivers/i2c/busses/Makefile      |   2 +
+ drivers/i2c/busses/i2c-bcm2708.c | 522 +++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 646 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/i2c/busses/i2c-bcm2708.c
+
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -83,6 +83,7 @@ static unsigned uart_clock = UART0_CLOCK
+ static unsigned disk_led_gpio = 16;
+ static unsigned disk_led_active_low = 1;
+ static unsigned reboot_part = 0;
++static bool vc_i2c_override = false;
+ 
+ static unsigned use_dt = 0;
+ 
+@@ -550,6 +551,45 @@ static struct spi_board_info bcm2708_spi
+ };
+ #endif
+ 
++static struct resource bcm2708_bsc0_resources[] = {
++	{
++		.start = BSC0_BASE,
++		.end = BSC0_BASE + SZ_256 - 1,
++		.flags = IORESOURCE_MEM,
++	}, {
++		.start = INTERRUPT_I2C,
++		.end = INTERRUPT_I2C,
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device bcm2708_bsc0_device = {
++	.name = "bcm2708_i2c",
++	.id = 0,
++	.num_resources = ARRAY_SIZE(bcm2708_bsc0_resources),
++	.resource = bcm2708_bsc0_resources,
++};
++
++
++static struct resource bcm2708_bsc1_resources[] = {
++	{
++		.start = BSC1_BASE,
++		.end = BSC1_BASE + SZ_256 - 1,
++		.flags = IORESOURCE_MEM,
++	}, {
++		.start = INTERRUPT_I2C,
++		.end = INTERRUPT_I2C,
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device bcm2708_bsc1_device = {
++	.name = "bcm2708_i2c",
++	.id = 1,
++	.num_resources = ARRAY_SIZE(bcm2708_bsc1_resources),
++	.resource = bcm2708_bsc1_resources,
++};
++
+ static struct platform_device bcm2835_thermal_device = {
+ 	.name = "bcm2835_thermal",
+ };
+@@ -702,6 +742,15 @@ void __init bcm2708_init(void)
+ 
+ 	bcm_register_device_dt(&bcm2708_spi_device);
+ 
++	if (vc_i2c_override) {
++		bcm_register_device_dt(&bcm2708_bsc0_device);
++		bcm_register_device_dt(&bcm2708_bsc1_device);
++	} else if ((boardrev & 0xffffff) == 0x2 || (boardrev & 0xffffff) == 0x3) {
++		bcm_register_device_dt(&bcm2708_bsc0_device);
++	} else {
++		bcm_register_device_dt(&bcm2708_bsc1_device);
++	}
++
+ 	bcm_register_device_dt(&bcm2835_thermal_device);
+ 
+ 	if (!use_dt) {
+@@ -893,3 +942,5 @@ module_param(uart_clock, uint, 0644);
+ module_param(disk_led_gpio, uint, 0644);
+ module_param(disk_led_active_low, uint, 0644);
+ module_param(reboot_part, uint, 0644);
++module_param(vc_i2c_override, bool, 0644);
++MODULE_PARM_DESC(vc_i2c_override, "Allow the use of VC's I2C peripheral.");
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -85,6 +85,7 @@ static unsigned uart_clock = UART0_CLOCK
+ static unsigned disk_led_gpio = 16;
+ static unsigned disk_led_active_low = 1;
+ static unsigned reboot_part = 0;
++static bool vc_i2c_override = false;
+ 
+ static unsigned use_dt = 0;
+ 
+@@ -570,6 +571,45 @@ static struct spi_board_info bcm2708_spi
+ };
+ #endif
+ 
++static struct resource bcm2708_bsc0_resources[] = {
++	{
++		.start = BSC0_BASE,
++		.end = BSC0_BASE + SZ_256 - 1,
++		.flags = IORESOURCE_MEM,
++	}, {
++		.start = INTERRUPT_I2C,
++		.end = INTERRUPT_I2C,
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device bcm2708_bsc0_device = {
++	.name = "bcm2708_i2c",
++	.id = 0,
++	.num_resources = ARRAY_SIZE(bcm2708_bsc0_resources),
++	.resource = bcm2708_bsc0_resources,
++};
++
++
++static struct resource bcm2708_bsc1_resources[] = {
++	{
++		.start = BSC1_BASE,
++		.end = BSC1_BASE + SZ_256 - 1,
++		.flags = IORESOURCE_MEM,
++	}, {
++		.start = INTERRUPT_I2C,
++		.end = INTERRUPT_I2C,
++		.flags = IORESOURCE_IRQ,
++	}
++};
++
++static struct platform_device bcm2708_bsc1_device = {
++	.name = "bcm2708_i2c",
++	.id = 1,
++	.num_resources = ARRAY_SIZE(bcm2708_bsc1_resources),
++	.resource = bcm2708_bsc1_resources,
++};
++
+ static struct platform_device bcm2835_thermal_device = {
+ 	.name = "bcm2835_thermal",
+ };
+@@ -722,6 +762,15 @@ void __init bcm2709_init(void)
+ 
+ 	bcm_register_device_dt(&bcm2708_spi_device);
+ 
++	if (vc_i2c_override) {
++		bcm_register_device_dt(&bcm2708_bsc0_device);
++		bcm_register_device_dt(&bcm2708_bsc1_device);
++	} else if ((boardrev & 0xffffff) == 0x2 || (boardrev & 0xffffff) == 0x3) {
++		bcm_register_device_dt(&bcm2708_bsc0_device);
++	} else {
++		bcm_register_device_dt(&bcm2708_bsc1_device);
++	}
++
+ 	bcm_register_device_dt(&bcm2835_thermal_device);
+ 
+ 	if (!use_dt) {
+@@ -1061,3 +1110,5 @@ module_param(uart_clock, uint, 0644);
+ module_param(disk_led_gpio, uint, 0644);
+ module_param(disk_led_active_low, uint, 0644);
+ module_param(reboot_part, uint, 0644);
++module_param(vc_i2c_override, bool, 0644);
++MODULE_PARM_DESC(vc_i2c_override, "Allow the use of VC's I2C peripheral.");
+--- a/drivers/i2c/busses/Kconfig
++++ b/drivers/i2c/busses/Kconfig
+@@ -8,6 +8,25 @@ menu "I2C Hardware Bus support"
+ comment "PC SMBus host controller drivers"
+ 	depends on PCI
+ 
++config I2C_BCM2708
++	tristate "BCM2708 BSC"
++	depends on MACH_BCM2708 || MACH_BCM2709
++	help
++	  Enabling this option will add BSC (Broadcom Serial Controller)
++	  support for the BCM2708. BSC is a Broadcom proprietary bus compatible
++	  with I2C/TWI/SMBus.
++
++config I2C_BCM2708_BAUDRATE
++	prompt "BCM2708 I2C baudrate"
++	depends on I2C_BCM2708
++	int
++	default 100000
++	help
++	  Set the I2C baudrate. This will alter the default value. A
++	  different baudrate can be set by using a module parameter as well. If
++	  no parameter is provided when loading, this is the value that will be
++	  used.
++
+ config I2C_ALI1535
+ 	tristate "ALI 1535"
+ 	depends on PCI
+@@ -362,7 +381,7 @@ config I2C_AXXIA
+ 
+ config I2C_BCM2835
+ 	tristate "Broadcom BCM2835 I2C controller"
+-	depends on ARCH_BCM2835
++	depends on ARCH_BCM2835 || ARCH_BCM2708 || ARCH_BCM2709
+ 	help
+ 	  If you say yes to this option, support will be included for the
+ 	  BCM2835 I2C controller.
+--- a/drivers/i2c/busses/Makefile
++++ b/drivers/i2c/busses/Makefile
+@@ -2,6 +2,8 @@
+ # Makefile for the i2c bus drivers.
+ #
+ 
++obj-$(CONFIG_I2C_BCM2708)	+= i2c-bcm2708.o
++
+ # ACPI drivers
+ obj-$(CONFIG_I2C_SCMI)		+= i2c-scmi.o
+ 
+--- /dev/null
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -0,0 +1,522 @@
++/*
++ * Driver for Broadcom BCM2708 BSC Controllers
++ *
++ * Copyright (C) 2012 Chris Boot & Frank Buss
++ *
++ * This driver is inspired by:
++ * i2c-ocores.c, by Peter Korsgaard <jacmet@sunsite.dk>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public License
++ * along with this program; if not, write to the Free Software
++ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
++ */
++
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/spinlock.h>
++#include <linux/clk.h>
++#include <linux/err.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/io.h>
++#include <linux/slab.h>
++#include <linux/i2c.h>
++#include <linux/interrupt.h>
++#include <linux/sched.h>
++#include <linux/wait.h>
++
++/* BSC register offsets */
++#define BSC_C			0x00
++#define BSC_S			0x04
++#define BSC_DLEN		0x08
++#define BSC_A			0x0c
++#define BSC_FIFO		0x10
++#define BSC_DIV			0x14
++#define BSC_DEL			0x18
++#define BSC_CLKT		0x1c
++
++/* Bitfields in BSC_C */
++#define BSC_C_I2CEN		0x00008000
++#define BSC_C_INTR		0x00000400
++#define BSC_C_INTT		0x00000200
++#define BSC_C_INTD		0x00000100
++#define BSC_C_ST		0x00000080
++#define BSC_C_CLEAR_1		0x00000020
++#define BSC_C_CLEAR_2		0x00000010
++#define BSC_C_READ		0x00000001
++
++/* Bitfields in BSC_S */
++#define BSC_S_CLKT		0x00000200
++#define BSC_S_ERR		0x00000100
++#define BSC_S_RXF		0x00000080
++#define BSC_S_TXE		0x00000040
++#define BSC_S_RXD		0x00000020
++#define BSC_S_TXD		0x00000010
++#define BSC_S_RXR		0x00000008
++#define BSC_S_TXW		0x00000004
++#define BSC_S_DONE		0x00000002
++#define BSC_S_TA		0x00000001
++
++#define I2C_TIMEOUT_MS	150
++#define I2C_WAIT_LOOP_COUNT 40
++
++#define DRV_NAME	"bcm2708_i2c"
++
++static unsigned int baudrate = CONFIG_I2C_BCM2708_BAUDRATE;
++module_param(baudrate, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
++MODULE_PARM_DESC(baudrate, "The I2C baudrate");
++
++static bool combined = false;
++module_param(combined, bool, 0644);
++MODULE_PARM_DESC(combined, "Use combined transactions");
++
++struct bcm2708_i2c {
++	struct i2c_adapter adapter;
++
++	spinlock_t lock;
++	void __iomem *base;
++	int irq;
++	struct clk *clk;
++	u32 cdiv;
++
++	struct completion done;
++
++	struct i2c_msg *msg;
++	int pos;
++	int nmsgs;
++	bool error;
++};
++
++/*
++ * This function sets the ALT mode on the I2C pins so that we can use them with
++ * the BSC hardware.
++ *
++ * FIXME: This is a hack. Use pinmux / pinctrl.
++ */
++static void bcm2708_i2c_init_pinmode(int id)
++{
++#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
++#define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
++
++	int pin;
++	u32 *gpio = ioremap(GPIO_BASE, SZ_16K);
++
++	BUG_ON(id != 0 && id != 1);
++	/* BSC0 is on GPIO 0 & 1, BSC1 is on GPIO 2 & 3 */
++	for (pin = id*2+0; pin <= id*2+1; pin++) {
++		printk("bcm2708_i2c_init_pinmode(%d,%d)\n", id, pin);
++		INP_GPIO(pin);		/* set mode to GPIO input first */
++		SET_GPIO_ALT(pin, 0);	/* set mode to ALT 0 */
++	}
++
++	iounmap(gpio);
++
++#undef INP_GPIO
++#undef SET_GPIO_ALT
++}
++
++static inline u32 bcm2708_rd(struct bcm2708_i2c *bi, unsigned reg)
++{
++	return readl(bi->base + reg);
++}
++
++static inline void bcm2708_wr(struct bcm2708_i2c *bi, unsigned reg, u32 val)
++{
++	writel(val, bi->base + reg);
++}
++
++static inline void bcm2708_bsc_reset(struct bcm2708_i2c *bi)
++{
++	bcm2708_wr(bi, BSC_C, 0);
++	bcm2708_wr(bi, BSC_S, BSC_S_CLKT | BSC_S_ERR | BSC_S_DONE);
++}
++
++static inline void bcm2708_bsc_fifo_drain(struct bcm2708_i2c *bi)
++{
++	while ((bcm2708_rd(bi, BSC_S) & BSC_S_RXD) && (bi->pos < bi->msg->len))
++		bi->msg->buf[bi->pos++] = bcm2708_rd(bi, BSC_FIFO);
++}
++
++static inline void bcm2708_bsc_fifo_fill(struct bcm2708_i2c *bi)
++{
++	while ((bcm2708_rd(bi, BSC_S) & BSC_S_TXD) && (bi->pos < bi->msg->len))
++		bcm2708_wr(bi, BSC_FIFO, bi->msg->buf[bi->pos++]);
++}
++
++static inline int bcm2708_bsc_setup(struct bcm2708_i2c *bi)
++{
++	u32 cdiv, s;
++	u32 c = BSC_C_I2CEN | BSC_C_INTD | BSC_C_ST | BSC_C_CLEAR_1;
++	int wait_loops = I2C_WAIT_LOOP_COUNT;
++
++	/* Can't call clk_get_rate as it locks a mutex and here we are spinlocked.
++	 * Use the value that we cached in the probe.
++	 */
++	cdiv = bi->cdiv;
++
++	if (bi->msg->flags & I2C_M_RD)
++		c |= BSC_C_INTR | BSC_C_READ;
++	else
++		c |= BSC_C_INTT;
++
++	bcm2708_wr(bi, BSC_DIV, cdiv);
++	bcm2708_wr(bi, BSC_A, bi->msg->addr);
++	bcm2708_wr(bi, BSC_DLEN, bi->msg->len);
++	if (combined)
++	{
++		/* Do the next two messages meet combined transaction criteria?
++		   - Current message is a write, next message is a read
++		   - Both messages to same slave address
++		   - Write message can fit inside FIFO (16 bytes or less) */
++		if ( (bi->nmsgs > 1) &&
++			!(bi->msg[0].flags & I2C_M_RD) && (bi->msg[1].flags & I2C_M_RD) &&
++			 (bi->msg[0].addr == bi->msg[1].addr) && (bi->msg[0].len <= 16)) {
++			/* Fill FIFO with entire write message (16 byte FIFO) */
++			while (bi->pos < bi->msg->len) {
++				bcm2708_wr(bi, BSC_FIFO, bi->msg->buf[bi->pos++]);
++			}
++			/* Start write transfer (no interrupts, don't clear FIFO) */
++			bcm2708_wr(bi, BSC_C, BSC_C_I2CEN | BSC_C_ST);
++
++			/* poll for transfer start bit (should only take 1-20 polls) */
++			do {
++				s = bcm2708_rd(bi, BSC_S);
++			} while (!(s & (BSC_S_TA | BSC_S_ERR | BSC_S_CLKT | BSC_S_DONE)) && --wait_loops >= 0);
++
++			/* did we time out or some error occured? */
++			if (wait_loops < 0 || (s & (BSC_S_ERR | BSC_S_CLKT))) {
++				return -1;
++			}
++
++			/* Send next read message before the write transfer finishes. */
++			bi->nmsgs--;
++			bi->msg++;
++			bi->pos = 0;
++			bcm2708_wr(bi, BSC_DLEN, bi->msg->len);
++			c = BSC_C_I2CEN | BSC_C_INTD | BSC_C_INTR | BSC_C_ST | BSC_C_READ;
++		}
++	}
++	bcm2708_wr(bi, BSC_C, c);
++
++	return 0;
++}
++
++static irqreturn_t bcm2708_i2c_interrupt(int irq, void *dev_id)
++{
++	struct bcm2708_i2c *bi = dev_id;
++	bool handled = true;
++	u32 s;
++	int ret;
++
++	spin_lock(&bi->lock);
++
++	/* we may see camera interrupts on the "other" I2C channel
++		   Just return if we've not sent anything */
++	if (!bi->nmsgs || !bi->msg) {
++		goto early_exit;
++	}
++
++	s = bcm2708_rd(bi, BSC_S);
++
++	if (s & (BSC_S_CLKT | BSC_S_ERR)) {
++		bcm2708_bsc_reset(bi);
++		bi->error = true;
++
++		bi->msg = 0; /* to inform the that all work is done */
++		bi->nmsgs = 0;
++		/* wake up our bh */
++		complete(&bi->done);
++	} else if (s & BSC_S_DONE) {
++		bi->nmsgs--;
++
++		if (bi->msg->flags & I2C_M_RD) {
++			bcm2708_bsc_fifo_drain(bi);
++		}
++
++		bcm2708_bsc_reset(bi);
++
++		if (bi->nmsgs) {
++			/* advance to next message */
++			bi->msg++;
++			bi->pos = 0;
++			ret = bcm2708_bsc_setup(bi);
++			if (ret < 0) {
++				bcm2708_bsc_reset(bi);
++				bi->error = true;
++				bi->msg = 0; /* to inform the that all work is done */
++				bi->nmsgs = 0;
++				/* wake up our bh */
++				complete(&bi->done);
++				goto early_exit;
++			}
++		} else {
++			bi->msg = 0; /* to inform the that all work is done */
++			bi->nmsgs = 0;
++			/* wake up our bh */
++			complete(&bi->done);
++		}
++	} else if (s & BSC_S_TXW) {
++		bcm2708_bsc_fifo_fill(bi);
++	} else if (s & BSC_S_RXR) {
++		bcm2708_bsc_fifo_drain(bi);
++	} else {
++		handled = false;
++	}
++
++early_exit:
++	spin_unlock(&bi->lock);
++
++	return handled ? IRQ_HANDLED : IRQ_NONE;
++}
++
++static int bcm2708_i2c_master_xfer(struct i2c_adapter *adap,
++	struct i2c_msg *msgs, int num)
++{
++	struct bcm2708_i2c *bi = adap->algo_data;
++	unsigned long flags;
++	int ret;
++
++	spin_lock_irqsave(&bi->lock, flags);
++
++	reinit_completion(&bi->done);
++	bi->msg = msgs;
++	bi->pos = 0;
++	bi->nmsgs = num;
++	bi->error = false;
++
++	ret = bcm2708_bsc_setup(bi);
++
++	spin_unlock_irqrestore(&bi->lock, flags);
++
++	/* check the result of the setup */
++	if (ret < 0)
++	{
++		dev_err(&adap->dev, "transfer setup timed out\n");
++		goto error_timeout;
++	}
++
++	ret = wait_for_completion_timeout(&bi->done, msecs_to_jiffies(I2C_TIMEOUT_MS));
++	if (ret == 0) {
++		dev_err(&adap->dev, "transfer timed out\n");
++		goto error_timeout;
++	}
++
++	ret = bi->error ? -EIO : num;
++	return ret;
++
++error_timeout:
++	spin_lock_irqsave(&bi->lock, flags);
++	bcm2708_bsc_reset(bi);
++	bi->msg = 0; /* to inform the interrupt handler that there's nothing else to be done */
++	bi->nmsgs = 0;
++	spin_unlock_irqrestore(&bi->lock, flags);
++	return -ETIMEDOUT;
++}
++
++static u32 bcm2708_i2c_functionality(struct i2c_adapter *adap)
++{
++	return I2C_FUNC_I2C | /*I2C_FUNC_10BIT_ADDR |*/ I2C_FUNC_SMBUS_EMUL;
++}
++
++static struct i2c_algorithm bcm2708_i2c_algorithm = {
++	.master_xfer = bcm2708_i2c_master_xfer,
++	.functionality = bcm2708_i2c_functionality,
++};
++
++static int bcm2708_i2c_probe(struct platform_device *pdev)
++{
++	struct resource *regs;
++	int irq, err = -ENOMEM;
++	struct clk *clk;
++	struct bcm2708_i2c *bi;
++	struct i2c_adapter *adap;
++	unsigned long bus_hz;
++	u32 cdiv;
++
++	if (pdev->dev.of_node) {
++		u32 bus_clk_rate;
++		pdev->id = of_alias_get_id(pdev->dev.of_node, "i2c");
++		if (pdev->id < 0) {
++			dev_err(&pdev->dev, "alias is missing\n");
++			return -EINVAL;
++		}
++		if (!of_property_read_u32(pdev->dev.of_node,
++					"clock-frequency", &bus_clk_rate))
++			baudrate = bus_clk_rate;
++		else
++			dev_warn(&pdev->dev,
++				"Could not read clock-frequency property\n");
++	}
++
++	regs = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!regs) {
++		dev_err(&pdev->dev, "could not get IO memory\n");
++		return -ENXIO;
++	}
++
++	irq = platform_get_irq(pdev, 0);
++	if (irq < 0) {
++		dev_err(&pdev->dev, "could not get IRQ\n");
++		return irq;
++	}
++
++	clk = clk_get(&pdev->dev, NULL);
++	if (IS_ERR(clk)) {
++		dev_err(&pdev->dev, "could not find clk: %ld\n", PTR_ERR(clk));
++		return PTR_ERR(clk);
++	}
++
++	err = clk_prepare_enable(clk);
++	if (err) {
++		dev_err(&pdev->dev, "could not enable clk: %d\n", err);
++		goto out_clk_put;
++	}
++
++	if (!pdev->dev.of_node)
++		bcm2708_i2c_init_pinmode(pdev->id);
++
++	bi = kzalloc(sizeof(*bi), GFP_KERNEL);
++	if (!bi)
++		goto out_clk_disable;
++
++	platform_set_drvdata(pdev, bi);
++
++	adap = &bi->adapter;
++	adap->class = I2C_CLASS_HWMON | I2C_CLASS_DDC;
++	adap->algo = &bcm2708_i2c_algorithm;
++	adap->algo_data = bi;
++	adap->dev.parent = &pdev->dev;
++	adap->nr = pdev->id;
++	strlcpy(adap->name, dev_name(&pdev->dev), sizeof(adap->name));
++	adap->dev.of_node = pdev->dev.of_node;
++
++	switch (pdev->id) {
++	case 0:
++		adap->class = I2C_CLASS_HWMON;
++		break;
++	case 1:
++		adap->class = I2C_CLASS_DDC;
++		break;
++	default:
++		dev_err(&pdev->dev, "can only bind to BSC 0 or 1\n");
++		err = -ENXIO;
++		goto out_free_bi;
++	}
++
++	spin_lock_init(&bi->lock);
++	init_completion(&bi->done);
++
++	bi->base = ioremap(regs->start, resource_size(regs));
++	if (!bi->base) {
++		dev_err(&pdev->dev, "could not remap memory\n");
++		goto out_free_bi;
++	}
++
++	bi->irq = irq;
++	bi->clk = clk;
++
++	err = request_irq(irq, bcm2708_i2c_interrupt, IRQF_SHARED,
++			dev_name(&pdev->dev), bi);
++	if (err) {
++		dev_err(&pdev->dev, "could not request IRQ: %d\n", err);
++		goto out_iounmap;
++	}
++
++	bcm2708_bsc_reset(bi);
++
++	err = i2c_add_numbered_adapter(adap);
++	if (err < 0) {
++		dev_err(&pdev->dev, "could not add I2C adapter: %d\n", err);
++		goto out_free_irq;
++	}
++
++	bus_hz = clk_get_rate(bi->clk);
++	cdiv = bus_hz / baudrate;
++	if (cdiv > 0xffff) {
++		cdiv = 0xffff;
++		baudrate = bus_hz / cdiv;
++	}
++	bi->cdiv = cdiv;
++
++	dev_info(&pdev->dev, "BSC%d Controller at 0x%08lx (irq %d) (baudrate %d)\n",
++		pdev->id, (unsigned long)regs->start, irq, baudrate);
++
++	return 0;
++
++out_free_irq:
++	free_irq(bi->irq, bi);
++out_iounmap:
++	iounmap(bi->base);
++out_free_bi:
++	kfree(bi);
++out_clk_disable:
++	clk_disable_unprepare(clk);
++out_clk_put:
++	clk_put(clk);
++	return err;
++}
++
++static int bcm2708_i2c_remove(struct platform_device *pdev)
++{
++	struct bcm2708_i2c *bi = platform_get_drvdata(pdev);
++
++	platform_set_drvdata(pdev, NULL);
++
++	i2c_del_adapter(&bi->adapter);
++	free_irq(bi->irq, bi);
++	iounmap(bi->base);
++	clk_disable_unprepare(bi->clk);
++	clk_put(bi->clk);
++	kfree(bi);
++
++	return 0;
++}
++
++static const struct of_device_id bcm2708_i2c_of_match[] = {
++        { .compatible = "brcm,bcm2708-i2c" },
++        {},
++};
++MODULE_DEVICE_TABLE(of, bcm2708_i2c_of_match);
++
++static struct platform_driver bcm2708_i2c_driver = {
++	.driver		= {
++		.name	= DRV_NAME,
++		.owner	= THIS_MODULE,
++		.of_match_table = bcm2708_i2c_of_match,
++	},
++	.probe		= bcm2708_i2c_probe,
++	.remove		= bcm2708_i2c_remove,
++};
++
++// module_platform_driver(bcm2708_i2c_driver);
++
++
++static int __init bcm2708_i2c_init(void)
++{
++	return platform_driver_register(&bcm2708_i2c_driver);
++}
++
++static void __exit bcm2708_i2c_exit(void)
++{
++	platform_driver_unregister(&bcm2708_i2c_driver);
++}
++
++module_init(bcm2708_i2c_init);
++module_exit(bcm2708_i2c_exit);
++
++
++
++MODULE_DESCRIPTION("BSC controller driver for Broadcom BCM2708");
++MODULE_AUTHOR("Chris Boot <bootc@bootc.net>");
++MODULE_LICENSE("GPL v2");
++MODULE_ALIAS("platform:" DRV_NAME);

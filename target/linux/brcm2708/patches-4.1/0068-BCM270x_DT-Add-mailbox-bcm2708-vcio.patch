@@ -1,0 +1,39 @@
+From 984698645ff73ed2100b4bfea99ed035139ac721 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 1 May 2015 23:00:15 +0200
+Subject: [PATCH 068/121] BCM270x_DT: Add mailbox bcm2708-vcio
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add bcm2708-vcio to Device Tree and don't add the
+platform device when booting in DT mode.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/mach-bcm2708/bcm2708.c | 2 +-
+ arch/arm/mach-bcm2709/bcm2709.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -870,7 +870,7 @@ void __init bcm2708_init(void)
+ 	bcm2708_dt_init();
+ 
+ 	bcm_register_device_dt(&bcm2708_dmaengine_device);
+-	bcm_register_device(&bcm2708_vcio_device);
++	bcm_register_device_dt(&bcm2708_vcio_device);
+ 	bcm_register_device_dt(&bcm2708_vchiq_device);
+ #ifdef CONFIG_BCM2708_GPIO
+ 	bcm_register_device_dt(&bcm2708_gpio_device);
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -890,7 +890,7 @@ void __init bcm2709_init(void)
+ 	bcm2709_dt_init();
+ 
+ 	bcm_register_device_dt(&bcm2708_dmaengine_device);
+-	bcm_register_device(&bcm2708_vcio_device);
++	bcm_register_device_dt(&bcm2708_vcio_device);
+ 	bcm_register_device_dt(&bcm2708_vchiq_device);
+ #ifdef CONFIG_BCM2708_GPIO
+ 	bcm_register_device_dt(&bcm2708_gpio_device);

@@ -1,0 +1,20 @@
+From 9131a29e8e039bdc5055dad93d41f11a111a13b9 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Fri, 17 Apr 2015 16:58:45 +0100
+Subject: [PATCH 065/121] smsc95xx: Disable turbo mode by default
+
+---
+ drivers/net/usb/smsc95xx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/usb/smsc95xx.c
++++ b/drivers/net/usb/smsc95xx.c
+@@ -71,7 +71,7 @@ struct smsc95xx_priv {
+ 	u8 suspend_flags;
+ };
+ 
+-static bool turbo_mode = true;
++static bool turbo_mode = false;
+ module_param(turbo_mode, bool, 0644);
+ MODULE_PARM_DESC(turbo_mode, "Enable multiple frames per Rx transaction");
+ 

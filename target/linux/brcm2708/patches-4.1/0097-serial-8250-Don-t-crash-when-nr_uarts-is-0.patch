@@ -1,0 +1,20 @@
+From 6b8e6f74b78fcc225c873ea1b07890352dd77ee5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 30 Jun 2015 14:12:42 +0100
+Subject: [PATCH 097/121] serial: 8250: Don't crash when nr_uarts is 0
+
+---
+ drivers/tty/serial/8250/8250_core.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/tty/serial/8250/8250_core.c
++++ b/drivers/tty/serial/8250/8250_core.c
+@@ -3262,6 +3262,8 @@ static void __init serial8250_isa_init_p
+ 
+ 	if (nr_uarts > UART_NR)
+ 		nr_uarts = UART_NR;
++	if (!nr_uarts)
++		return;
+ 
+ 	for (i = 0; i < nr_uarts; i++) {
+ 		struct uart_8250_port *up = &serial8250_ports[i];

@@ -1,0 +1,69 @@
+From 8a609b1977da490cd177740e61169444383fd8c4 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 16 Jun 2015 17:47:27 +0100
+Subject: [PATCH 073/121] platform: Add force_core command line setting to boot
+ from a different core number
+
+---
+ arch/arm/mach-bcm2709/armctrl.c | 17 ++++++++++++++++-
+ arch/arm/mach-bcm2709/bcm2709.c |  2 ++
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/mach-bcm2709/armctrl.c
++++ b/arch/arm/mach-bcm2709/armctrl.c
+@@ -45,6 +45,8 @@ static unsigned int remap_irqs[(INTERRUP
+ 	INTERRUPT_VC_ARASANSDIO
+ };
+ 
++extern unsigned force_core;
++
+ static void armctrl_mask_irq(struct irq_data *d)
+ {
+ 	static const unsigned int disables[4] = {
+@@ -92,7 +94,13 @@ static void armctrl_unmask_irq(struct ir
+ 	int i;
+ 	if (d->irq >= FIQ_START) {
+ 		unsigned int data;
+-		if (num_online_cpus() > 1) {
++		if (force_core) {
++			data = readl(__io_address(ARM_LOCAL_GPU_INT_ROUTING));
++			data &= ~0xc;
++			data |= ((force_core-1) << 2);
++			writel(data, __io_address(ARM_LOCAL_GPU_INT_ROUTING));
++		}
++		else if (num_online_cpus() > 1) {
+ 			data = readl(__io_address(ARM_LOCAL_GPU_INT_ROUTING));
+ 			data &= ~0xc;
+ 			data |= (1 << 2);
+@@ -119,6 +127,13 @@ static void armctrl_unmask_irq(struct ir
+ 		}
+ #endif
+ 	} else if (d->irq >= ARM_IRQ1_BASE && d->irq < ARM_IRQ_LOCAL_BASE) {
++		if (force_core) {
++			unsigned int data;
++			data = readl(__io_address(ARM_LOCAL_GPU_INT_ROUTING));
++			data &= ~0x3;
++			data |= ((force_core-1) << 0);
++			writel(data, __io_address(ARM_LOCAL_GPU_INT_ROUTING));
++		}
+ 		unsigned int data = (unsigned int)irq_get_chip_data(d->irq);
+ 		writel(1 << (data & 0x1f), __io_address(enables[(data >> 5) & 0x3]));
+ 	} else if (d->irq == INTERRUPT_ARM_LOCAL_PMU_FAST) {
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -96,6 +96,7 @@ static unsigned w1_gpio_pin = W1_GPIO;
+ static unsigned w1_gpio_pullup = W1_PULLUP;
+ static bool vc_i2c_override = false;
+ static int pps_gpio_pin = -1;
++unsigned force_core;
+ 
+ static unsigned use_dt = 0;
+ 
+@@ -1305,6 +1306,7 @@ MACHINE_START(BCM2708, "BCM2709")
+ 	.dt_compat = bcm2709_compat,
+ MACHINE_END
+ 
++module_param(force_core, uint, 0644);
+ module_param(boardrev, uint, 0644);
+ module_param(serial, uint, 0644);
+ module_param(uart_clock, uint, 0644);

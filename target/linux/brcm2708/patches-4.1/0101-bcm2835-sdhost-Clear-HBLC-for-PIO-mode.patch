@@ -1,0 +1,34 @@
+From 0ca1e1d7ffdfcf1e716205491a00bf025fb71a77 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 1 Jul 2015 12:51:52 +0100
+Subject: [PATCH 101/121] bcm2835-sdhost: Clear HBLC for PIO mode
+
+Also update pio_limit default in overlay README.
+---
+ arch/arm/boot/dts/overlays/README | 2 +-
+ drivers/mmc/host/bcm2835-sdhost.c | 3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -441,7 +441,7 @@ Params: overclock_50             Clock (
+         force_pio                Disable DMA support (default off)
+ 
+         pio_limit                Number of blocks above which to use DMA
+-                                 (default 2)
++                                 (default 1)
+ 
+         debug                    Enable debug output (default off)
+ 
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -699,8 +699,7 @@ static void bcm2835_sdhost_prepare_data(
+ 	bcm2835_sdhost_set_transfer_irqs(host);
+ 
+ 	bcm2835_sdhost_write(host, data->blksz, SDHBCT);
+-	if (host->use_dma)
+-		bcm2835_sdhost_write(host, data->blocks, SDHBLC);
++	bcm2835_sdhost_write(host, host->use_dma ? data->blocks : 0, SDHBLC);
+ 
+ 	BUG_ON(!host->data);
+ }

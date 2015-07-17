@@ -1,0 +1,24 @@
+From 04f7264e602d7148822f3a162176190fcc41f71a Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 30 Jun 2015 10:33:52 +0100
+Subject: [PATCH 094/121] spi-bcm2708: Increase timeout from 150ms to 1s
+
+See: https://github.com/raspberrypi/linux/issues/260
+---
+ drivers/spi/spi-bcm2708.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/spi/spi-bcm2708.c
++++ b/drivers/spi/spi-bcm2708.c
+@@ -70,9 +70,9 @@
+ #define SPI_CS_CS_10		0x00000002
+ #define SPI_CS_CS_01		0x00000001
+ 
+-#define SPI_TIMEOUT_MS	150
++#define SPI_TIMEOUT_MS		1000
+ 
+-#define DRV_NAME	"bcm2708_spi"
++#define DRV_NAME		"bcm2708_spi"
+ 
+ struct bcm2708_spi {
+ 	spinlock_t lock;

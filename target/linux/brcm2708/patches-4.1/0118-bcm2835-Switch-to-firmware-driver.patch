@@ -1,0 +1,54 @@
+From 04f82e046133586649c9c9c72b565c2dbccf0e97 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 26 Jun 2015 14:39:21 +0200
+Subject: [PATCH 118/121] bcm2835: Switch to firmware driver
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+defconfig: enable BCM2835_MBOX, RASPBERRYPI_FIRMWARE and BCM_VCIO.
+
+Add firmware node and change mailbox node in Device Tree.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2835.dtsi     | 3 ++-
+ arch/arm/configs/bcm2835_defconfig | 3 +++
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm2835.dtsi
++++ b/arch/arm/boot/dts/bcm2835.dtsi
+@@ -62,9 +62,10 @@
+ 		};
+ 
+ 		mailbox: mailbox@7e00b800 {
+-			compatible = "brcm,bcm2708-vcio";
++			compatible = "brcm,bcm2835-mbox";
+ 			reg = <0x7e00b880 0x40>;
+ 			interrupts = <0 1>;
++			#mbox-cells = <0>;
+ 		};
+ 
+ 		gpio: gpio@7e200000 {
+--- a/arch/arm/configs/bcm2835_defconfig
++++ b/arch/arm/configs/bcm2835_defconfig
+@@ -568,6 +568,7 @@ CONFIG_HW_RANDOM_BCM2835=m
+ CONFIG_RAW_DRIVER=y
+ CONFIG_BRCM_CHAR_DRIVERS=y
+ CONFIG_BCM_VC_CMA=y
++CONFIG_BCM_VCIO=y
+ CONFIG_BCM_VC_SM=y
+ CONFIG_I2C=y
+ CONFIG_I2C_CHARDEV=m
+@@ -1064,9 +1065,11 @@ CONFIG_FB_FLEX=m
+ CONFIG_FB_TFT_FBTFT_DEVICE=m
+ CONFIG_MAILBOX=y
+ CONFIG_BCM2708_MBOX=y
++CONFIG_BCM2835_MBOX=y
+ # CONFIG_IOMMU_SUPPORT is not set
+ CONFIG_EXTCON=m
+ CONFIG_EXTCON_ARIZONA=m
++CONFIG_RASPBERRYPI_FIRMWARE=y
+ CONFIG_EXT2_FS=y
+ CONFIG_EXT2_FS_XATTR=y
+ CONFIG_EXT2_FS_POSIX_ACL=y

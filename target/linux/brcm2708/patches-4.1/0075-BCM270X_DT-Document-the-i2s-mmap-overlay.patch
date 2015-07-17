@@ -1,0 +1,24 @@
+From 436bd2ba164863768b90c2456a943dcfed3b053c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 19 Jun 2015 16:41:39 +0100
+Subject: [PATCH 075/121] BCM270X_DT: Document the i2s-mmap overlay
+
+---
+ arch/arm/boot/dts/overlays/README | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -260,6 +260,12 @@ Params: ds1307                   Select
+         pcf8563                  Select the PCF8563 device
+ 
+ 
++Name:   i2s-mmap
++Info:   Enables mmap support in the bcm2708-i2s driver
++Load:   dtoverlay=i2s-mmap
++Params: <None>
++
++
+ Name:   iqaudio-dac
+ Info:   Configures the IQaudio DAC audio card
+ Load:   dtoverlay=iqaudio-dac

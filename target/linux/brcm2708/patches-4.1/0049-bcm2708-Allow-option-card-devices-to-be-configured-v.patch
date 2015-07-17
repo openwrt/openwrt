@@ -1,0 +1,25 @@
+From b904f76b1090667c9f4741a60da8e60cebc8a91c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 13 Apr 2015 19:14:18 +0100
+Subject: [PATCH 049/121] bcm2708: Allow option card devices to be configured
+ via DT
+
+If the kernel is built with Device Tree support, and if a DT blob
+is provided for the kernel at boot time, then the platform devices
+for option cards are not created. This avoids both the need to
+blacklist unwanted devices, and the need to update the board
+support code with each new device.
+---
+ sound/soc/bcm/bcm2835-i2s.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/sound/soc/bcm/bcm2835-i2s.c
++++ b/sound/soc/bcm/bcm2835-i2s.c
+@@ -861,6 +861,7 @@ static const struct of_device_id bcm2835
+ 	{ .compatible = "brcm,bcm2835-i2s", },
+ 	{},
+ };
++MODULE_DEVICE_TABLE(of, bcm2835_i2s_of_match);
+ 
+ static struct platform_driver bcm2835_i2s_driver = {
+ 	.probe		= bcm2835_i2s_probe,
