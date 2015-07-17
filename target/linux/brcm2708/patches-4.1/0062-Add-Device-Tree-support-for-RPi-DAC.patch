@@ -1,0 +1,73 @@
+From db5f1ae7154cf08397ba74b67af282f246a17ddf Mon Sep 17 00:00:00 2001
+From: Clive Messer <clive.m.messer@gmail.com>
+Date: Thu, 2 Apr 2015 12:22:55 +0100
+Subject: [PATCH 062/121] Add Device Tree support for RPi-DAC.
+
+---
+ sound/soc/bcm/rpi-dac.c     | 21 +++++++++++++++++++++
+ sound/soc/codecs/pcm1794a.c |  7 +++++++
+ 2 files changed, 28 insertions(+)
+
+--- a/sound/soc/bcm/rpi-dac.c
++++ b/sound/soc/bcm/rpi-dac.c
+@@ -69,6 +69,20 @@ static int snd_rpi_rpi_dac_probe(struct
+ 	int ret = 0;
+ 
+ 	snd_rpi_rpi_dac.dev = &pdev->dev;
++	
++	if (pdev->dev.of_node) {
++		struct device_node *i2s_node;
++		struct snd_soc_dai_link *dai = &snd_rpi_rpi_dac_dai[0];
++		i2s_node = of_parse_phandle(pdev->dev.of_node, "i2s-controller", 0);
++
++		if (i2s_node) {
++			dai->cpu_dai_name = NULL;
++			dai->cpu_of_node = i2s_node;
++			dai->platform_name = NULL;
++			dai->platform_of_node = i2s_node;
++		}
++	}
++	
+ 	ret = snd_soc_register_card(&snd_rpi_rpi_dac);
+ 	if (ret)
+ 		dev_err(&pdev->dev, "snd_soc_register_card() failed: %d\n", ret);
+@@ -81,10 +95,17 @@ static int snd_rpi_rpi_dac_remove(struct
+ 	return snd_soc_unregister_card(&snd_rpi_rpi_dac);
+ }
+ 
++static const struct of_device_id snd_rpi_rpi_dac_of_match[] = {
++	{ .compatible = "rpi,rpi-dac", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, snd_rpi_rpi_dac_of_match);
++
+ static struct platform_driver snd_rpi_rpi_dac_driver = {
+         .driver = {
+                 .name   = "snd-rpi-dac",
+                 .owner  = THIS_MODULE,
++                .of_match_table = snd_rpi_rpi_dac_of_match,
+         },
+         .probe          = snd_rpi_rpi_dac_probe,
+         .remove         = snd_rpi_rpi_dac_remove,
+--- a/sound/soc/codecs/pcm1794a.c
++++ b/sound/soc/codecs/pcm1794a.c
+@@ -46,12 +46,19 @@ static int pcm1794a_remove(struct platfo
+ 	return 0;
+ }
+ 
++static const struct of_device_id pcm1794a_of_match[] = {
++	{ .compatible = "ti,pcm1794a", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, pcm1794a_of_match);
++
+ static struct platform_driver pcm1794a_codec_driver = {
+ 	.probe 		= pcm1794a_probe,
+ 	.remove 	= pcm1794a_remove,
+ 	.driver		= {
+ 		.name	= "pcm1794a-codec",
+ 		.owner	= THIS_MODULE,
++		.of_match_table = of_match_ptr(pcm1794a_of_match),
+ 	},
+ };
+ 

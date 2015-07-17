@@ -1,0 +1,78 @@
+From dd888666ae9c4f80521f3bbe48edb86b423bb6f6 Mon Sep 17 00:00:00 2001
+From: Gordon Hollingworth <gordon@fiveninjas.com>
+Date: Mon, 22 Jun 2015 16:27:07 +0100
+Subject: [PATCH 079/121] Add rpi-ft5406 overlay Add rpi-ft5406 driver as
+ module
+
+---
+ arch/arm/boot/dts/overlays/Makefile               |  1 +
+ arch/arm/boot/dts/overlays/README                 |  5 +++++
+ arch/arm/boot/dts/overlays/rpi-ft5406-overlay.dts | 16 ++++++++++++++++
+ arch/arm/configs/bcm2709_defconfig                |  1 +
+ arch/arm/configs/bcmrpi_defconfig                 |  1 +
+ 5 files changed, 24 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/rpi-ft5406-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -35,6 +35,7 @@ dtb-$(RPI_DT_OVERLAYS) += pitft28-resist
+ dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += rpi-dac-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += rpi-display-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += rpi-ft5406-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += rpi-proto-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2708-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -396,6 +396,11 @@ Params: speed                    Display
+ 
+         xohms                    Touchpanel sensitivity (X-plate resistance)
+ 
++Name:   rpi-ft5406
++Info:   Official Raspberry Pi display touchscreen
++Load:   dtoverlay=rpi-ft5406
++Params: <None>
++
+ 
+ Name:   rpi-proto
+ Info:   Configures the RPi Proto audio card
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/rpi-ft5406-overlay.dts
+@@ -0,0 +1,16 @@
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			rpi_ft5406: rpi_ft5406 {
++				compatible = "rpi,rpi-ft5406";
++				status = "okay";
++			};
++		};
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -535,6 +535,7 @@ CONFIG_JOYSTICK_XPAD_FF=y
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ADS7846=m
+ CONFIG_TOUCHSCREEN_EGALAX=m
++CONFIG_TOUCHSCREEN_RPI_FT5406=m
+ CONFIG_TOUCHSCREEN_USB_COMPOSITE=m
+ CONFIG_TOUCHSCREEN_STMPE=m
+ CONFIG_INPUT_MISC=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -528,6 +528,7 @@ CONFIG_JOYSTICK_XPAD_FF=y
+ CONFIG_INPUT_TOUCHSCREEN=y
+ CONFIG_TOUCHSCREEN_ADS7846=m
+ CONFIG_TOUCHSCREEN_EGALAX=m
++CONFIG_TOUCHSCREEN_RPI_FT5406=m
+ CONFIG_TOUCHSCREEN_USB_COMPOSITE=m
+ CONFIG_TOUCHSCREEN_STMPE=m
+ CONFIG_INPUT_MISC=y

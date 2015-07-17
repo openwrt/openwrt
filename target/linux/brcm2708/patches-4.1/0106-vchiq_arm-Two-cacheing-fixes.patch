@@ -1,0 +1,268 @@
+From edb21286ac7e246dfe7c9ee05101880f719e00e8 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 8 Jul 2015 14:48:57 +0100
+Subject: [PATCH 106/121] vchiq_arm: Two cacheing fixes
+
+1) Make fragment size vary with cache line size
+Without this patch, non-cache-line-aligned transfers may corrupt
+(or be corrupted by) adjacent data structures.
+
+Both ARM and VC need to be updated to enable this feature. This is
+ensured by having the loader apply a new DT parameter -
+cache-line-size. The existence of this parameter guarantees that the
+kernel is capable, and the parameter will only be modified from the
+safe default if the loader is capable.
+
+2) Flush/invalidate vmalloc'd memory, and invalidate after reads
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi              |   5 +
+ .../interface/vchiq_arm/vchiq_2835_arm.c           | 112 +++++++++++++--------
+ 2 files changed, 77 insertions(+), 40 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -218,6 +218,7 @@
+ 			compatible = "brcm,bcm2835-vchiq";
+ 			reg = <0x7e00b840 0xf>;
+ 			interrupts = <0 2>;
++			cache-line-size = <32>;
+ 		};
+ 
+ 		thermal: thermal {
+@@ -270,4 +271,8 @@
+ 			clock-frequency = <126000000>;
+ 		};
+ 	};
++
++	__overrides__ {
++		cache_line_size = <&vchiq>, "cache-line-size:0";
++	};
+ };
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
+@@ -42,6 +42,7 @@
+ #include <linux/platform_data/mailbox-bcm2708.h>
+ #include <linux/platform_device.h>
+ #include <linux/uaccess.h>
++#include <linux/of.h>
+ #include <asm/pgtable.h>
+ 
+ #define TOTAL_SLOTS (VCHIQ_SLOT_ZERO_SLOTS + 2 * 32)
+@@ -64,8 +65,10 @@ typedef struct vchiq_2835_state_struct {
+ } VCHIQ_2835_ARM_STATE_T;
+ 
+ static void __iomem *g_regs;
+-static FRAGMENTS_T *g_fragments_base;
+-static FRAGMENTS_T *g_free_fragments;
++static unsigned int g_cache_line_size = sizeof(CACHE_LINE_SIZE);
++static unsigned int g_fragments_size;
++static char *g_fragments_base;
++static char *g_free_fragments;
+ static struct semaphore g_free_fragments_sema;
+ static unsigned long g_virt_to_bus_offset;
+ 
+@@ -95,9 +98,13 @@ int vchiq_platform_init(struct platform_
+ 
+ 	g_virt_to_bus_offset = virt_to_dma(dev, (void *)0);
+ 
++	(void)of_property_read_u32(dev->of_node, "cache-line-size",
++				   &g_cache_line_size);
++	g_fragments_size = 2 * g_cache_line_size;
++
+ 	/* Allocate space for the channels in coherent memory */
+ 	slot_mem_size = PAGE_ALIGN(TOTAL_SLOTS * VCHIQ_SLOT_SIZE);
+-	frag_mem_size = PAGE_ALIGN(sizeof(FRAGMENTS_T) * MAX_FRAGMENTS);
++	frag_mem_size = PAGE_ALIGN(g_fragments_size * MAX_FRAGMENTS);
+ 
+ 	slot_mem = dmam_alloc_coherent(dev, slot_mem_size + frag_mem_size,
+ 				       &slot_phys, GFP_KERNEL);
+@@ -117,15 +124,15 @@ int vchiq_platform_init(struct platform_
+ 	vchiq_slot_zero->platform_data[VCHIQ_PLATFORM_FRAGMENTS_COUNT_IDX] =
+ 		MAX_FRAGMENTS;
+ 
+-	g_fragments_base = (FRAGMENTS_T *)(slot_mem + slot_mem_size);
++	g_fragments_base = (char *)slot_mem + slot_mem_size;
+ 	slot_mem_size += frag_mem_size;
+ 
+ 	g_free_fragments = g_fragments_base;
+ 	for (i = 0; i < (MAX_FRAGMENTS - 1); i++) {
+-		*(FRAGMENTS_T **)&g_fragments_base[i] =
+-			&g_fragments_base[i + 1];
++		*(char **)&g_fragments_base[i*g_fragments_size] =
++			&g_fragments_base[(i + 1)*g_fragments_size];
+ 	}
+-	*(FRAGMENTS_T **)&g_fragments_base[i] = NULL;
++	*(char **)&g_fragments_base[i * g_fragments_size] = NULL;
+ 	sema_init(&g_free_fragments_sema, MAX_FRAGMENTS);
+ 
+ 	if (vchiq_init_state(state, vchiq_slot_zero, 0) != VCHIQ_SUCCESS)
+@@ -344,7 +351,7 @@ vchiq_doorbell_irq(int irq, void *dev_id
+ ** cached area.
+ 
+ ** N.B. This implementation plays slightly fast and loose with the Linux
+-** driver programming rules, e.g. its use of __virt_to_bus instead of
++** driver programming rules, e.g. its use of dmac_map_area instead of
+ ** dma_map_single, but it isn't a multi-platform driver and it benefits
+ ** from increased speed as a result.
+ */
+@@ -355,7 +362,6 @@ create_pagelist(char __user *buf, size_t
+ {
+ 	PAGELIST_T *pagelist;
+ 	struct page **pages;
+-	struct page *page;
+ 	unsigned long *addrs;
+ 	unsigned int num_pages, offset, i;
+ 	char *addr, *base_addr, *next_addr;
+@@ -386,10 +392,25 @@ create_pagelist(char __user *buf, size_t
+ 	pages = (struct page **)(addrs + num_pages + 1);
+ 
+ 	if (is_vmalloc_addr(buf)) {
+-		for (actual_pages = 0; actual_pages < num_pages; actual_pages++) {
+-			pages[actual_pages] = vmalloc_to_page(buf + (actual_pages * PAGE_SIZE));
++		int dir = (type == PAGELIST_WRITE) ?
++			DMA_TO_DEVICE : DMA_FROM_DEVICE;
++		unsigned long length = pagelist->length;
++		unsigned int offset = pagelist->offset;
++
++		for (actual_pages = 0; actual_pages < num_pages;
++		     actual_pages++) {
++			struct page *pg = vmalloc_to_page(buf + (actual_pages *
++								 PAGE_SIZE));
++			size_t bytes = PAGE_SIZE - offset;
++
++			if (bytes > length)
++				bytes = length;
++			pages[actual_pages] = pg;
++			dmac_map_area(page_address(pg) + offset, bytes, dir);
++			length -= bytes;
++			offset = 0;
+ 		}
+-                *need_release = 0; /* do not try and release vmalloc pages */
++		*need_release = 0; /* do not try and release vmalloc pages */
+ 	} else {
+ 		down_read(&task->mm->mmap_sem);
+ 		actual_pages = get_user_pages(task, task->mm,
+@@ -418,7 +439,7 @@ create_pagelist(char __user *buf, size_t
+ 				actual_pages = -ENOMEM;
+ 			return actual_pages;
+ 		}
+-                *need_release = 1; /* release user pages */
++		*need_release = 1; /* release user pages */
+ 	}
+ 
+ 	pagelist->length = count;
+@@ -451,10 +472,10 @@ create_pagelist(char __user *buf, size_t
+ 
+ 	/* Partial cache lines (fragments) require special measures */
+ 	if ((type == PAGELIST_READ) &&
+-		((pagelist->offset & (CACHE_LINE_SIZE - 1)) ||
++		((pagelist->offset & (g_cache_line_size - 1)) ||
+ 		((pagelist->offset + pagelist->length) &
+-		(CACHE_LINE_SIZE - 1)))) {
+-		FRAGMENTS_T *fragments;
++		(g_cache_line_size - 1)))) {
++		char *fragments;
+ 
+ 		if (down_interruptible(&g_free_fragments_sema) != 0) {
+ 			kfree(pagelist);
+@@ -464,19 +485,15 @@ create_pagelist(char __user *buf, size_t
+ 		WARN_ON(g_free_fragments == NULL);
+ 
+ 		down(&g_free_fragments_mutex);
+-		fragments = (FRAGMENTS_T *) g_free_fragments;
++		fragments = g_free_fragments;
+ 		WARN_ON(fragments == NULL);
+-		g_free_fragments = *(FRAGMENTS_T **) g_free_fragments;
++		g_free_fragments = *(char **) g_free_fragments;
+ 		up(&g_free_fragments_mutex);
+-		pagelist->type =
+-			 PAGELIST_READ_WITH_FRAGMENTS + (fragments -
+-							 g_fragments_base);
++		pagelist->type = PAGELIST_READ_WITH_FRAGMENTS +
++			(fragments - g_fragments_base) / g_fragments_size;
+ 	}
+ 
+-	for (page = virt_to_page(pagelist);
+-		page <= virt_to_page(addrs + num_pages - 1); page++) {
+-		flush_dcache_page(page);
+-	}
++	dmac_flush_range(pagelist, addrs + num_pages);
+ 
+ 	*ppagelist = pagelist;
+ 
+@@ -502,13 +519,14 @@ free_pagelist(PAGELIST_T *pagelist, int
+ 
+ 	/* Deal with any partial cache lines (fragments) */
+ 	if (pagelist->type >= PAGELIST_READ_WITH_FRAGMENTS) {
+-		FRAGMENTS_T *fragments = g_fragments_base +
+-			(pagelist->type - PAGELIST_READ_WITH_FRAGMENTS);
++		char *fragments = g_fragments_base +
++			(pagelist->type - PAGELIST_READ_WITH_FRAGMENTS) *
++			g_fragments_size;
+ 		int head_bytes, tail_bytes;
+-		head_bytes = (CACHE_LINE_SIZE - pagelist->offset) &
+-			(CACHE_LINE_SIZE - 1);
++		head_bytes = (g_cache_line_size - pagelist->offset) &
++			(g_cache_line_size - 1);
+ 		tail_bytes = (pagelist->offset + actual) &
+-			(CACHE_LINE_SIZE - 1);
++			(g_cache_line_size - 1);
+ 
+ 		if ((actual >= 0) && (head_bytes != 0)) {
+ 			if (head_bytes > actual)
+@@ -516,32 +534,46 @@ free_pagelist(PAGELIST_T *pagelist, int
+ 
+ 			memcpy((char *)page_address(pages[0]) +
+ 				pagelist->offset,
+-				fragments->headbuf,
++				fragments,
+ 				head_bytes);
+ 		}
+ 		if ((actual >= 0) && (head_bytes < actual) &&
+ 			(tail_bytes != 0)) {
+ 			memcpy((char *)page_address(pages[num_pages - 1]) +
+ 				((pagelist->offset + actual) &
+-				(PAGE_SIZE - 1) & ~(CACHE_LINE_SIZE - 1)),
+-				fragments->tailbuf, tail_bytes);
++				(PAGE_SIZE - 1) & ~(g_cache_line_size - 1)),
++				fragments + g_cache_line_size,
++				tail_bytes);
+ 		}
+ 
+ 		down(&g_free_fragments_mutex);
+-		*(FRAGMENTS_T **) fragments = g_free_fragments;
++		*(char **)fragments = g_free_fragments;
+ 		g_free_fragments = fragments;
+ 		up(&g_free_fragments_mutex);
+ 		up(&g_free_fragments_sema);
+ 	}
+ 
+-        if (*need_release) {
++	if (*need_release) {
++		unsigned int length = pagelist->length;
++		unsigned int offset = pagelist->offset;
++
+ 		for (i = 0; i < num_pages; i++) {
+-			if (pagelist->type != PAGELIST_WRITE)
+-				set_page_dirty(pages[i]);
++			struct page *pg = pages[i];
+ 
+-			page_cache_release(pages[i]);
++			if (pagelist->type != PAGELIST_WRITE) {
++				unsigned int bytes = PAGE_SIZE - offset;
++
++				if (bytes > length)
++					bytes = length;
++				dmac_unmap_area(page_address(pg) + offset,
++						bytes, DMA_FROM_DEVICE);
++				length -= bytes;
++				offset = 0;
++				set_page_dirty(pg);
++			}
++			page_cache_release(pg);
+ 		}
+-        }
++	}
+ 
+ 	kfree(pagelist);
+ }

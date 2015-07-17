@@ -1,0 +1,234 @@
+From bd6dabc8c7f6cdaba821ff3246034cd704f6364d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 22 Jun 2015 14:21:55 +0100
+Subject: [PATCH 089/121] BCM270X_DT: Sort nodes by bus address, and
+ consolidate aliases
+
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 19 ----------
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      | 19 ----------
+ arch/arm/boot/dts/bcm2708-rpi-cm.dtsi    | 21 -----------
+ arch/arm/boot/dts/bcm2708_common.dtsi    | 63 +++++++++++++++++++++++---------
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 19 ----------
+ 5 files changed, 46 insertions(+), 95 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -5,25 +5,6 @@
+ / {
+ 	compatible = "brcm,bcm2708";
+ 	model = "Raspberry Pi Model B+";
+-
+-	aliases {
+-		soc = &soc;
+-		spi0 = &spi0;
+-		i2c0 = &i2c0;
+-		i2c1 = &i2c1;
+-		i2s  = &i2s;
+-		gpio = &gpio;
+-		intc = &intc;
+-		leds = &leds;
+-		audio = &audio;
+-		sound = &sound;
+-		uart0 = &uart0;
+-		uart1 = &uart1;
+-		clocks = &clocks;
+-	};
+-
+-	sound: sound {
+-	};
+ };
+ 
+ &gpio {
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -5,25 +5,6 @@
+ / {
+ 	compatible = "brcm,bcm2708";
+ 	model = "Raspberry Pi Model B";
+-
+-	aliases {
+-		soc = &soc;
+-		spi0 = &spi0;
+-		i2c0 = &i2c0;
+-		i2c1 = &i2c1;
+-		i2s  = &i2s;
+-		gpio = &gpio;
+-		intc = &intc;
+-		leds = &leds;
+-		audio = &audio;
+-		sound = &sound;
+-		uart0 = &uart0;
+-		uart1 = &uart1;
+-		clocks = &clocks;
+-	};
+-
+-	sound: sound {
+-	};
+ };
+ 
+ &gpio {
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+@@ -1,26 +1,5 @@
+ /include/ "bcm2708.dtsi"
+ 
+-/ {
+-	aliases {
+-		soc = &soc;
+-		spi0 = &spi0;
+-		i2c0 = &i2c0;
+-		i2c1 = &i2c1;
+-		i2s  = &i2s;
+-		gpio = &gpio;
+-		intc = &intc;
+-		leds = &leds;
+-		audio = &audio;
+-		sound = &sound;
+-		uart0 = &uart0;
+-		uart1 = &uart1;
+-		clocks = &clocks;
+-	};
+-
+-	sound: sound {
+-	};
+-};
+-
+ &leds {
+ 	act_led: act {
+ 		label = "led0";
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -3,6 +3,31 @@
+ / {
+ 	interrupt-parent = <&intc>;
+ 
++	aliases {
++		audio = &audio;
++		sound = &sound;
++		soc = &soc;
++		dma = &dma;
++		intc = &intc;
++		watchdog = &watchdog;
++		random = &random;
++		mailbox = &mailbox;
++		gpio = &gpio;
++		uart0 = &uart0;
++		i2s  = &i2s;
++		spi0 = &spi0;
++		i2c0 = &i2c0;
++		uart1 = &uart1;
++		mmc = &mmc;
++		i2c1 = &i2c1;
++		usb = &usb;
++		leds = &leds;
++		fb = &fb;
++		vchiq = &vchiq;
++		thermal = &thermal;
++		clocks = &clocks;
++	};
++
+ 	/* Onboard audio */
+ 	audio: audio {
+ 		compatible = "brcm,bcm2835-audio";
+@@ -10,6 +35,10 @@
+ 		status = "disabled";
+ 	};
+ 
++	/* External sound card */
++	sound: sound {
++	};
++
+ 	soc: soc {
+ 		compatible = "simple-bus";
+ 		#address-cells = <1>;
+@@ -43,6 +72,12 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 
++		mailbox: mailbox@7e00b800 {
++			compatible = "brcm,bcm2708-vcio";
++			reg = <0x7e00b880 0x40>;
++			interrupts = <0 1>;
++		};
++
+ 		watchdog: watchdog@7e100000 {
+ 			compatible = "brcm,bcm2835-pm-wdt";
+ 			reg = <0x7e100000 0x28>;
+@@ -55,12 +90,6 @@
+ 			status = "disabled";
+ 		};
+ 
+-		mailbox: mailbox@7e00b800 {
+-			compatible = "brcm,bcm2708-vcio";
+-			reg = <0x7e00b880 0x40>;
+-			interrupts = <0 1>;
+-		};
+-
+ 		gpio: gpio {
+ 			compatible = "brcm,bcm2835-gpio";
+ 			reg = <0x7e200000 0xb4>;
+@@ -73,17 +102,6 @@
+ 			#interrupt-cells = <2>;
+ 		};
+ 
+-		mmc: mmc@7e300000 {
+-			compatible = "brcm,bcm2835-mmc";
+-			reg = <0x7e300000 0x100>;
+-			interrupts = <2 30>;
+-			clocks = <&clk_mmc>;
+-			dmas = <&dma 11>,
+-			       <&dma 11>;
+-			dma-names = "tx", "rx";
+-			status = "disabled";
+-		};
+-
+ 		uart0: uart@7e201000 {
+ 			compatible = "arm,pl011", "arm,primecell";
+ 			reg = <0x7e201000 0x1000>;
+@@ -144,6 +162,17 @@
+ 			status = "disabled";
+ 	        };
+ 
++		mmc: mmc@7e300000 {
++			compatible = "brcm,bcm2835-mmc";
++			reg = <0x7e300000 0x100>;
++			interrupts = <2 30>;
++			clocks = <&clk_mmc>;
++			dmas = <&dma 11>,
++			       <&dma 11>;
++			dma-names = "tx", "rx";
++			status = "disabled";
++		};
++
+ 		i2c1: i2c@7e804000 {
+ 			compatible = "brcm,bcm2708-i2c";
+ 			reg = <0x7e804000 0x1000>;
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -5,25 +5,6 @@
+ / {
+ 	compatible = "brcm,bcm2709";
+ 	model = "Raspberry Pi 2 Model B";
+-
+-	aliases {
+-		soc = &soc;
+-		spi0 = &spi0;
+-		i2c0 = &i2c0;
+-		i2c1 = &i2c1;
+-		i2s  = &i2s;
+-		gpio = &gpio;
+-		intc = &intc;
+-		leds = &leds;
+-		audio = &audio;
+-		sound = &sound;
+-		uart0 = &uart0;
+-		uart1 = &uart1;
+-		clocks = &clocks;
+-	};
+-
+-	sound: sound {
+-	};
+ };
+ 
+ &gpio {

@@ -1,0 +1,52 @@
+From 92f76fcdda43617a0f3461741bba9e6d328684da Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 27 May 2015 17:22:15 +0100
+Subject: [PATCH 071/121] bcm2835-audio: Create the platform device if the DT
+ node is disabled
+
+For backwards compatibility, allow the built-in ALSA driver to be enabled
+either by loading the module from /etc/modules or by enabling the "/audio"
+node in DT.
+---
+ arch/arm/mach-bcm2708/bcm2708.c | 10 ++++++++--
+ arch/arm/mach-bcm2709/bcm2709.c | 10 ++++++++--
+ 2 files changed, 16 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -898,8 +898,14 @@ void __init bcm2708_init(void)
+ #endif
+ 	bcm2708_init_led();
+ 	bcm2708_init_uart1();
+-	for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
+-		bcm_register_device_dt(&bcm2708_alsa_devices[i]);
++
++	/* Only create the platform devices for the ALSA driver in the
++	   absence of an enabled "audio" DT node */
++	if (!use_dt ||
++	    !of_device_is_available(of_find_node_by_path("/audio"))) {
++		for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
++			bcm_register_device(&bcm2708_alsa_devices[i]);
++	}
+ 
+ 	bcm_register_device_dt(&bcm2708_spi_device);
+ 
+--- a/arch/arm/mach-bcm2709/bcm2709.c
++++ b/arch/arm/mach-bcm2709/bcm2709.c
+@@ -918,8 +918,14 @@ void __init bcm2709_init(void)
+ #endif
+ 	bcm2709_init_led();
+ 	bcm2709_init_uart1();
+-	for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
+-		bcm_register_device_dt(&bcm2708_alsa_devices[i]);
++
++	/* Only create the platform devices for the ALSA driver in the
++	   absence of an enabled "audio" DT node */
++	if (!use_dt ||
++	    !of_device_is_available(of_find_node_by_path("/audio"))) {
++		for (i = 0; i < ARRAY_SIZE(bcm2708_alsa_devices); i++)
++			bcm_register_device(&bcm2708_alsa_devices[i]);
++	}
+ 
+ 	bcm_register_device_dt(&bcm2708_spi_device);
+ 

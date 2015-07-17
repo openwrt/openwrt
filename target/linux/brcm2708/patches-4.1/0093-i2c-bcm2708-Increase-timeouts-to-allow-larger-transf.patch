@@ -1,0 +1,38 @@
+From 11667799f99dca096d4d92e63b7823db2a8f8779 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 30 Jun 2015 10:28:59 +0100
+Subject: [PATCH 093/121] i2c-bcm2708: Increase timeouts to allow larger
+ transfers
+
+Use the timeout value provided by the I2C_TIMEOUT ioctl when waiting
+for completion. The default timeout is 1 second.
+
+See: https://github.com/raspberrypi/linux/issues/260
+---
+ drivers/i2c/busses/i2c-bcm2708.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
+
+--- a/drivers/i2c/busses/i2c-bcm2708.c
++++ b/drivers/i2c/busses/i2c-bcm2708.c
+@@ -67,10 +67,9 @@
+ #define BSC_S_DONE		0x00000002
+ #define BSC_S_TA		0x00000001
+ 
+-#define I2C_TIMEOUT_MS	150
+-#define I2C_WAIT_LOOP_COUNT 40
++#define I2C_WAIT_LOOP_COUNT	200
+ 
+-#define DRV_NAME	"bcm2708_i2c"
++#define DRV_NAME		"bcm2708_i2c"
+ 
+ static unsigned int baudrate = CONFIG_I2C_BCM2708_BAUDRATE;
+ module_param(baudrate, uint, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+@@ -305,7 +304,7 @@ static int bcm2708_i2c_master_xfer(struc
+ 		goto error_timeout;
+ 	}
+ 
+-	ret = wait_for_completion_timeout(&bi->done, msecs_to_jiffies(I2C_TIMEOUT_MS));
++	ret = wait_for_completion_timeout(&bi->done, adap->timeout);
+ 	if (ret == 0) {
+ 		dev_err(&adap->dev, "transfer timed out\n");
+ 		goto error_timeout;

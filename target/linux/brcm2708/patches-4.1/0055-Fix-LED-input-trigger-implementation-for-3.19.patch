@@ -1,0 +1,83 @@
+From 39cf4677b7c38fac3da503b75d5cd7efc64dd19a Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 12 Feb 2015 11:17:53 +0000
+Subject: [PATCH 055/121] Fix LED "input" trigger implementation for 3.19
+
+---
+ drivers/leds/leds-gpio.c             | 10 +++++++++-
+ drivers/leds/trigger/ledtrig-input.c | 19 ++++---------------
+ include/linux/leds.h                 |  3 +++
+ 3 files changed, 16 insertions(+), 16 deletions(-)
+
+--- a/drivers/leds/leds-gpio.c
++++ b/drivers/leds/leds-gpio.c
+@@ -41,6 +41,13 @@ static void gpio_led_work(struct work_st
+ 		led_dat->platform_gpio_blink_set(led_dat->gpiod,
+ 					led_dat->new_level, NULL, NULL);
+ 		led_dat->blinking = 0;
++	} else if (led_dat->cdev.flags & SET_GPIO_INPUT) {
++		gpiod_direction_input(led_dat->gpiod);
++		led_dat->cdev.flags &= ~SET_GPIO_INPUT;
++	}
++	else if (led_dat->cdev.flags & SET_GPIO_OUTPUT) {
++		gpiod_direction_output(led_dat->gpiod, led_dat->new_level);
++		led_dat->cdev.flags &= ~SET_GPIO_OUTPUT;
+ 	} else
+ 		gpiod_set_value_cansleep(led_dat->gpiod, led_dat->new_level);
+ }
+@@ -61,7 +68,8 @@ static void gpio_led_set(struct led_clas
+ 	 * seem to have a reliable way to know if we're already in one; so
+ 	 * let's just assume the worst.
+ 	 */
+-	if (led_dat->can_sleep) {
++	if (led_dat->can_sleep ||
++	    (led_dat->cdev.flags & (SET_GPIO_INPUT | SET_GPIO_OUTPUT) )) {
+ 		led_dat->new_level = level;
+ 		schedule_work(&led_dat->work);
+ 	} else {
+--- a/drivers/leds/trigger/ledtrig-input.c
++++ b/drivers/leds/trigger/ledtrig-input.c
+@@ -18,27 +18,16 @@
+ #include <linux/gpio.h>
+ #include "../leds.h"
+ 
+-/* This is a hack to get at the private 'gpio' member */
+-
+-struct gpio_led_data {
+-	struct led_classdev cdev;
+-	unsigned gpio;
+-};
+-
+ static void input_trig_activate(struct led_classdev *led_cdev)
+ {
+-	struct gpio_led_data *led_dat =
+-		container_of(led_cdev, struct gpio_led_data, cdev);
+-	if (gpio_is_valid(led_dat->gpio))
+-		gpio_direction_input(led_dat->gpio);
++	led_cdev->flags |= SET_GPIO_INPUT;
++	led_set_brightness_async(led_cdev, 0);
+ }
+ 
+ static void input_trig_deactivate(struct led_classdev *led_cdev)
+ {
+-	struct gpio_led_data *led_dat =
+-		container_of(led_cdev, struct gpio_led_data, cdev);
+-	if (gpio_is_valid(led_dat->gpio))
+-		gpio_direction_output(led_dat->gpio, 0);
++	led_cdev->flags |= SET_GPIO_OUTPUT;
++	led_set_brightness_async(led_cdev, 0);
+ }
+ 
+ static struct led_trigger input_led_trigger = {
+--- a/include/linux/leds.h
++++ b/include/linux/leds.h
+@@ -47,6 +47,9 @@ struct led_classdev {
+ #define SET_BRIGHTNESS_ASYNC	(1 << 21)
+ #define SET_BRIGHTNESS_SYNC	(1 << 22)
+ #define LED_DEV_CAP_FLASH	(1 << 23)
++	/* Additions for Raspberry Pi PWR LED */
++#define SET_GPIO_INPUT		(1 << 30)
++#define SET_GPIO_OUTPUT		(1 << 31)
+ 
+ 	/* Set LED brightness level */
+ 	/* Must not sleep, use a workqueue if needed */

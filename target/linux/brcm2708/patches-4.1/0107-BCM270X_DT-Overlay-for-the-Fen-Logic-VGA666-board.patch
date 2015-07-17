@@ -1,0 +1,77 @@
+From 265838d467aedd75abf2949373d889cfec090168 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 30 Jun 2015 09:10:36 +0100
+Subject: [PATCH 107/121] BCM270X_DT: Overlay for the Fen Logic VGA666 board
+
+The VGA666 board requires GPIOs 2-21 (so no I2C or UART). Using the
+overlay (instead of a custom dt-blob.bin) has the advantage that it will
+reserve those pins and stop other devices using them (except for GPIO),
+but it does delay the point at which the output becomes valid until 2-3
+seconds after the kernel has started.
+---
+ arch/arm/boot/dts/overlays/Makefile           |  1 +
+ arch/arm/boot/dts/overlays/README             |  8 +++++++
+ arch/arm/boot/dts/overlays/vga666-overlay.dts | 30 +++++++++++++++++++++++++++
+ 3 files changed, 39 insertions(+)
+ create mode 100644 arch/arm/boot/dts/overlays/vga666-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -43,6 +43,7 @@ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2708-ov
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2835-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += uart1-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += vga666-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-pullup-overlay.dtb
+ 
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -497,6 +497,14 @@ Params: txd1_pin                 GPIO pi
+         rxd1_pin                 GPIO pin for RXD1 (15, 33 or 41 - default 15)
+ 
+ 
++Name:   vga666
++Info:   Overlay for the Fen Logic VGA666 board
++        This uses GPIOs 2-21 (so no I2C), and activates the output 2-3 seconds
++        after the kernel has started.
++Load:   dtoverlay=vga666
++Params: <None>
++
++
+ Name:   w1-gpio
+ Info:   Configures the w1-gpio Onewire interface module.
+         Use this overlay if you *don't* need a GPIO to drive an external pullup.
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/vga666-overlay.dts
+@@ -0,0 +1,30 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	// There is no VGA driver module, but we need a platform device
++	// node (that doesn't already use pinctrl) to hang the pinctrl
++	// reference on - leds will do
++
++	fragment@0 {
++		target = <&leds>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&vga666_pins>;
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			vga666_pins: vga666_pins {
++				brcm,pins = <2 3 4 5 6 7 8 9 10 11 12
++					     13 14 15 16 17 18 19 20 21>;
++				brcm,function = <6>; /* alt2 */
++				brcm,pull = <0>; /* no pull */
++			};
++		};
++	};
++};

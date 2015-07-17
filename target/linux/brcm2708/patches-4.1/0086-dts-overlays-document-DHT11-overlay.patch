@@ -1,0 +1,26 @@
+From 54695dcb27d8e4c37e8dd9620e85257b8abb89d8 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Wed, 24 Jun 2015 11:23:06 +0100
+Subject: [PATCH 086/121] dts/overlays: document DHT11 overlay
+
+---
+ arch/arm/boot/dts/overlays/README | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -173,6 +173,14 @@ Load:   dtoverlay=bmp085_i2c-sensor
+ Params: <None>
+ 
+ 
++Name:   dht11
++Info:   Overlay for the DHT11/DHT21/DHT22 humidity/temperature sensors
++        Also sometimes found with the part number(s) AM230x.
++Load:   dtoverlay=dht11,<param>=<val>
++Params: gpiopin                  GPIO connected to the sensor's DATA output.
++                                 (default 4)
++
++
+ [ The ds1307-rtc overlay has been deleted. See i2c-rtc. ]
+ 
+ 

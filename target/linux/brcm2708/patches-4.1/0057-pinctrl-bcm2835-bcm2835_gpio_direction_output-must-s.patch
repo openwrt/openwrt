@@ -1,0 +1,28 @@
+From 0bb455e4eca847aa74560f58bfd7daa13e9fb496 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 4 Feb 2015 10:02:24 +0000
+Subject: [PATCH 057/121] pinctrl-bcm2835: bcm2835_gpio_direction_output must
+ set the value
+
+---
+ drivers/pinctrl/bcm/pinctrl-bcm2835.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
++++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
+@@ -355,7 +355,14 @@ static int bcm2835_gpio_get(struct gpio_
+ static int bcm2835_gpio_direction_output(struct gpio_chip *chip,
+ 		unsigned offset, int value)
+ {
+-	return pinctrl_gpio_direction_output(chip->base + offset);
++	struct bcm2835_pinctrl *pc = dev_get_drvdata(chip->dev);
++	int ret;
++
++	ret = pinctrl_gpio_direction_output(chip->base + offset);
++	if (ret >= 0)
++		bcm2835_gpio_set_bit(pc, value ? GPSET0 : GPCLR0, offset);
++
++	return ret;
+ }
+ 
+ static void bcm2835_gpio_set(struct gpio_chip *chip, unsigned offset, int value)

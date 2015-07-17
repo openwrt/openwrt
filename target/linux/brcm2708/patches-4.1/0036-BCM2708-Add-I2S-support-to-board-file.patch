@@ -1,0 +1,87 @@
+From 1ae47f91380b552b3bb3adb28f3283be31786064 Mon Sep 17 00:00:00 2001
+From: Florian Meier <florian.meier@koalo.de>
+Date: Fri, 22 Nov 2013 19:04:54 +0100
+Subject: [PATCH 036/121] BCM2708: Add I2S support to board file
+
+Adds the required initializations for I2S
+to the board file of mach-bcm2708.
+
+Signed-off-by: Florian Meier <florian.meier@koalo.de>
+
+bcm2708-i2s: Enable MMAP support via a DT property and overlay
+
+The i2s driver used to claim to support MMAP, but that feature was disabled
+when some problems were found. Add the ability to enable this feature
+through Device Tree, using the i2s-mmap overlay.
+
+See: #1004
+---
+ arch/arm/mach-bcm2708/bcm2708.c | 26 ++++++++++++++++++++++++++
+ sound/soc/bcm/bcm2708-i2s.c     |  7 ++++++-
+ 2 files changed, 32 insertions(+), 1 deletion(-)
+
+--- a/arch/arm/mach-bcm2708/bcm2708.c
++++ b/arch/arm/mach-bcm2708/bcm2708.c
+@@ -616,6 +616,28 @@ static struct platform_device bcm2835_th
+ 	.name = "bcm2835_thermal",
+ };
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_I2S) || defined(CONFIG_SND_BCM2708_SOC_I2S_MODULE)
++static struct resource bcm2708_i2s_resources[] = {
++	{
++		.start = I2S_BASE,
++		.end = I2S_BASE + 0x20,
++		.flags = IORESOURCE_MEM,
++	},
++        {
++		.start = PCM_CLOCK_BASE,
++		.end = PCM_CLOCK_BASE + 0x02,
++		.flags = IORESOURCE_MEM,
++	}
++};
++
++static struct platform_device bcm2708_i2s_device = {
++	.name = "bcm2708-i2s",
++	.id = 0,
++	.num_resources = ARRAY_SIZE(bcm2708_i2s_resources),
++	.resource = bcm2708_i2s_resources,
++};
++#endif
++
+ int __init bcm_register_device(struct platform_device *pdev)
+ {
+ 	int ret;
+@@ -780,6 +802,10 @@ void __init bcm2708_init(void)
+ 
+ 	bcm_register_device_dt(&bcm2835_thermal_device);
+ 
++#if defined(CONFIG_SND_BCM2708_SOC_I2S) || defined(CONFIG_SND_BCM2708_SOC_I2S_MODULE)
++	bcm_register_device_dt(&bcm2708_i2s_device);
++#endif
++
+ 	if (!use_dt) {
+ 		for (i = 0; i < ARRAY_SIZE(amba_devs); i++) {
+ 			struct amba_device *d = amba_devs[i];
+--- a/sound/soc/bcm/bcm2708-i2s.c
++++ b/sound/soc/bcm/bcm2708-i2s.c
+@@ -874,7 +874,7 @@ static const struct snd_soc_component_dr
+ 	.name		= "bcm2708-i2s-comp",
+ };
+ 
+-static const struct snd_pcm_hardware bcm2708_pcm_hardware = {
++static struct snd_pcm_hardware bcm2708_pcm_hardware = {
+ 	.info			= SNDRV_PCM_INFO_INTERLEAVED |
+ 				  SNDRV_PCM_INFO_JOINT_DUPLEX,
+ 	.formats		= SNDRV_PCM_FMTBIT_S16_LE |
+@@ -902,6 +902,11 @@ static int bcm2708_i2s_probe(struct plat
+ 	struct regmap *regmap[2];
+ 	struct resource *mem[2];
+ 
++	if (of_property_read_bool(pdev->dev.of_node, "brcm,enable-mmap"))
++		bcm2708_pcm_hardware.info |=
++			SNDRV_PCM_INFO_MMAP |
++			SNDRV_PCM_INFO_MMAP_VALID;
++
+ 	/* Request both ioareas */
+ 	for (i = 0; i <= 1; i++) {
+ 		void __iomem *base;

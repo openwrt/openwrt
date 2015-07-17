@@ -1,0 +1,23 @@
+From 699c056af380b45856086c0b33a65acc3d2ad3d8 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 15 Jun 2015 10:10:59 +0100
+Subject: [PATCH 096/121] bcm2708-i2s: Don't use static pin configuration with
+ DT
+
+---
+ sound/soc/bcm/bcm2708-i2s.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/sound/soc/bcm/bcm2708-i2s.c
++++ b/sound/soc/bcm/bcm2708-i2s.c
+@@ -409,8 +409,8 @@ static int bcm2708_i2s_hw_params(struct
+ 	if (csreg & (BCM2708_I2S_TXON | BCM2708_I2S_RXON))
+ 		return 0;
+ 
+-
+-	bcm2708_i2s_setup_gpio();
++	if (!dev->dev->of_node)
++		bcm2708_i2s_setup_gpio();
+ 
+ 	/*
+ 	 * Adjust the data length according to the format.

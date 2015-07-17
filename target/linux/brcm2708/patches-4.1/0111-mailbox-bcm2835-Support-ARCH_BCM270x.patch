@@ -1,0 +1,112 @@
+From 36301913195582a2398add6d60477be534d4f603 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 26 Jun 2015 14:19:30 +0200
+Subject: [PATCH 111/121] mailbox: bcm2835: Support ARCH_BCM270x
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Make it possible to use bcm2835-mailbox without Device Tree.
+Load driver early because of lacking support for deferred probing
+in many drivers.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/mailbox/Kconfig           |  2 +-
+ drivers/mailbox/bcm2835-mailbox.c | 18 ++++++++++++++++--
+ drivers/mailbox/mailbox.c         | 13 ++++++++++++-
+ 3 files changed, 29 insertions(+), 4 deletions(-)
+
+--- a/drivers/mailbox/Kconfig
++++ b/drivers/mailbox/Kconfig
+@@ -69,7 +69,7 @@ config ALTERA_MBOX
+ 
+ config BCM2835_MBOX
+ 	tristate "BCM2835 Mailbox"
+-	depends on ARCH_BCM2835
++	depends on ARCH_BCM2835 || ARCH_BCM2708 || ARCH_BCM2709
+ 	help
+ 	  An implementation of the BCM2385 Mailbox.  It is used to invoke
+ 	  the services of the Videocore. Say Y here if you want to use the
+--- a/drivers/mailbox/bcm2835-mailbox.c
++++ b/drivers/mailbox/bcm2835-mailbox.c
+@@ -51,12 +51,15 @@
+ #define MAIL1_WRT	(ARM_0_MAIL1 + 0x00)
+ #define MAIL1_STA	(ARM_0_MAIL1 + 0x18)
+ 
++/* On ARCH_BCM270x these come through <linux/interrupt.h> (arm_control.h ) */
++#ifndef ARM_MS_FULL
+ /* Status register: FIFO state. */
+ #define ARM_MS_FULL		BIT(31)
+ #define ARM_MS_EMPTY		BIT(30)
+ 
+ /* Configuration register: Enable interrupts. */
+ #define ARM_MC_IHAVEDATAIRQEN	BIT(0)
++#endif
+ 
+ struct bcm2835_mbox {
+ 	void __iomem *regs;
+@@ -151,7 +154,7 @@ static int bcm2835_mbox_probe(struct pla
+ 		return -ENOMEM;
+ 	spin_lock_init(&mbox->lock);
+ 
+-	ret = devm_request_irq(dev, irq_of_parse_and_map(dev->of_node, 0),
++	ret = devm_request_irq(dev, platform_get_irq(pdev, 0),
+ 			       bcm2835_mbox_irq, 0, dev_name(dev), mbox);
+ 	if (ret) {
+ 		dev_err(dev, "Failed to register a mailbox IRQ handler: %d\n",
+@@ -210,7 +213,18 @@ static struct platform_driver bcm2835_mb
+ 	.probe		= bcm2835_mbox_probe,
+ 	.remove		= bcm2835_mbox_remove,
+ };
+-module_platform_driver(bcm2835_mbox_driver);
++
++static int __init bcm2835_mbox_init(void)
++{
++	return platform_driver_register(&bcm2835_mbox_driver);
++}
++arch_initcall(bcm2835_mbox_init);
++
++static void __init bcm2835_mbox_exit(void)
++{
++	platform_driver_unregister(&bcm2835_mbox_driver);
++}
++module_exit(bcm2835_mbox_exit);
+ 
+ MODULE_AUTHOR("Lubomir Rintel <lkundrak@v3.sk>");
+ MODULE_DESCRIPTION("BCM2835 mailbox IPC driver");
+--- a/drivers/mailbox/mailbox.c
++++ b/drivers/mailbox/mailbox.c
+@@ -304,13 +304,23 @@ struct mbox_chan *mbox_request_channel(s
+ 	unsigned long flags;
+ 	int ret;
+ 
+-	if (!dev || !dev->of_node) {
++	if (!dev) {
+ 		pr_debug("%s: No owner device node\n", __func__);
+ 		return ERR_PTR(-ENODEV);
+ 	}
+ 
+ 	mutex_lock(&con_mutex);
+ 
++	if (!dev->of_node) {
++		chan = NULL;
++		/* pick the first controller in the list */
++		list_for_each_entry(mbox, &mbox_cons, node) {
++			chan = &mbox->chans[0];
++			break;
++		}
++		goto skip_dt;
++	}
++
+ 	if (of_parse_phandle_with_args(dev->of_node, "mboxes",
+ 				       "#mbox-cells", index, &spec)) {
+ 		dev_dbg(dev, "%s: can't parse \"mboxes\" property\n", __func__);
+@@ -327,6 +337,7 @@ struct mbox_chan *mbox_request_channel(s
+ 
+ 	of_node_put(spec.np);
+ 
++skip_dt:
+ 	if (!chan || chan->cl || !try_module_get(mbox->dev->driver->owner)) {
+ 		dev_dbg(dev, "%s: mailbox not free\n", __func__);
+ 		mutex_unlock(&con_mutex);

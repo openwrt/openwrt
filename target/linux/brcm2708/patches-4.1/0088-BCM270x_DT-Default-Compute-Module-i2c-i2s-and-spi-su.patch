@@ -1,0 +1,90 @@
+From 311119b99b34e88df249d706c69bdcffcd8dafb5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 17 Jun 2015 17:10:40 +0100
+Subject: [PATCH 088/121] BCM270x_DT: Default Compute Module i2c, i2s and spi
+ support
+
+---
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts | 67 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -10,10 +10,77 @@
+ 	status = "okay";
+ };
+ 
++&gpio {
++	spi0_pins: spi0_pins {
++		brcm,pins = <7 8 9 10 11>;
++		brcm,function = <4>; /* alt0 */
++	};
++
++	i2c0_pins: i2c0 {
++		brcm,pins = <0 1>;
++		brcm,function = <4>;
++	};
++
++	i2c1_pins: i2c1 {
++		brcm,pins = <2 3>;
++		brcm,function = <4>;
++	};
++
++	i2s_pins: i2s {
++		brcm,pins = <18 19 20 21>;
++		brcm,function = <4>; /* alt0 */
++	};
++};
++
++&spi0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&spi0_pins>;
++
++	spidev@0{
++		compatible = "spidev";
++		reg = <0>;	/* CE0 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++
++	spidev@1{
++		compatible = "spidev";
++		reg = <1>;	/* CE1 */
++		#address-cells = <1>;
++		#size-cells = <0>;
++		spi-max-frequency = <500000>;
++	};
++};
++
++&i2c0 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c0_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2c1 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2c1_pins>;
++	clock-frequency = <100000>;
++};
++
++&i2s {
++	#sound-dai-cells = <0>;
++	pinctrl-names = "default";
++	pinctrl-0 = <&i2s_pins>;
++};
++
+ / {
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		i2s = <&i2s>,"status";
++		spi = <&spi0>,"status";
++		i2c0 = <&i2c0>,"status";
++		i2c1 = <&i2c1>,"status";
++		i2c0_baudrate = <&i2c0>,"clock-frequency:0";
++		i2c1_baudrate = <&i2c1>,"clock-frequency:0";
+ 		core_freq = <&clk_core>,"clock-frequency:0";
+ 	};
+ };

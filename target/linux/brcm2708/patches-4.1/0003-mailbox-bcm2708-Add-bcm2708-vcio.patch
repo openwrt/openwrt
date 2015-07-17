@@ -1,0 +1,623 @@
+From 6f5003498da677a660cbdfaf9be78d3c0aff2e4c Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 1 May 2015 19:11:03 +0200
+Subject: [PATCH 003/121] mailbox: bcm2708: Add bcm2708-vcio
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: popcornmix <popcornmix@gmail.com>
+
+Copy the arch vcio.c driver to drivers/mailbox.
+This is done to make it available on ARCH_BCM2835.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+
+mailbox: bcm2708-vcio: Allocation does not need to be atomic
+
+No need to do atomic allocation in a context that can sleep.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+
+mailbox: bcm2708-vcio: Check the correct status register before writing
+
+With the VC reader blocked and the ARM writing, MAIL0_STA reads
+empty permanently while MAIL1_STA goes from empty (0x40000000)
+to non-empty (0x00000001-0x00000007) to full (0x80000008).
+
+Suggested-by: Phil Elwell <phil@raspberrypi.org>
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/mailbox/Kconfig                       |   6 +
+ drivers/mailbox/Makefile                      |   2 +
+ drivers/mailbox/bcm2708-vcio.c                | 427 ++++++++++++++++++++++++++
+ include/linux/platform_data/mailbox-bcm2708.h | 126 ++++++++
+ 4 files changed, 561 insertions(+)
+ create mode 100644 drivers/mailbox/bcm2708-vcio.c
+ create mode 100644 include/linux/platform_data/mailbox-bcm2708.h
+
+--- a/drivers/mailbox/Kconfig
++++ b/drivers/mailbox/Kconfig
+@@ -7,6 +7,12 @@ menuconfig MAILBOX
+ 
+ if MAILBOX
+ 
++config BCM2708_MBOX
++	bool "Broadcom BCM2708 Mailbox (vcio)"
++	depends on MACH_BCM2708 || MACH_BCM2709 || ARCH_BCM2835
++	help
++	  Broadcom BCM2708 Mailbox (vcio)
++
+ config ARM_MHU
+ 	tristate "ARM MHU Mailbox"
+ 	depends on ARM_AMBA
+--- a/drivers/mailbox/Makefile
++++ b/drivers/mailbox/Makefile
+@@ -2,6 +2,8 @@
+ 
+ obj-$(CONFIG_MAILBOX)		+= mailbox.o
+ 
++obj-$(CONFIG_BCM2708_MBOX)	+= bcm2708-vcio.o
++
+ obj-$(CONFIG_ARM_MHU)	+= arm_mhu.o
+ 
+ obj-$(CONFIG_PL320_MBOX)	+= pl320-ipc.o
+--- /dev/null
++++ b/drivers/mailbox/bcm2708-vcio.c
+@@ -0,0 +1,427 @@
++/*
++ *  linux/arch/arm/mach-bcm2708/vcio.c
++ *
++ *  Copyright (C) 2010 Broadcom
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This device provides a shared mechanism for writing to the mailboxes,
++ * semaphores, doorbells etc. that are shared between the ARM and the
++ * VideoCore processor
++ */
++
++#include <linux/device.h>
++#include <linux/dma-mapping.h>
++#include <linux/module.h>
++#include <linux/errno.h>
++#include <linux/fs.h>
++#include <linux/init.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/ioctl.h>
++#include <linux/platform_data/mailbox-bcm2708.h>
++#include <linux/platform_device.h>
++#include <linux/uaccess.h>
++
++#define DRIVER_NAME "bcm2708_vcio"
++#define DEVICE_FILE_NAME "vcio"
++
++/* offsets from a mail box base address */
++#define MAIL0_RD	0x00	/* read - and next 4 words */
++#define MAIL0_POL	0x10	/* read without popping the fifo */
++#define MAIL0_SND	0x14	/* sender ID (bottom two bits) */
++#define MAIL0_STA	0x18	/* status */
++#define MAIL0_CNF	0x1C	/* configuration */
++#define MAIL1_WRT	0x20	/* write - and next 4 words */
++#define MAIL1_STA	0x38	/* status */
++
++/* On MACH_BCM270x these come through <linux/interrupt.h> (arm_control.h ) */
++#ifndef ARM_MS_EMPTY
++#define ARM_MS_EMPTY   BIT(30)
++#define ARM_MS_FULL    BIT(31)
++
++#define ARM_MC_IHAVEDATAIRQEN  BIT(0)
++#endif
++
++#define MBOX_MSG(chan, data28)		(((data28) & ~0xf) | ((chan) & 0xf))
++#define MBOX_MSG_LSB(chan, data28)	(((data28) << 4) | ((chan) & 0xf))
++#define MBOX_CHAN(msg)			((msg) & 0xf)
++#define MBOX_DATA28(msg)		((msg) & ~0xf)
++#define MBOX_DATA28_LSB(msg)		(((uint32_t)msg) >> 4)
++
++#define MBOX_MAGIC 0xd0d0c0de
++
++#define MAJOR_NUM 100
++#define IOCTL_MBOX_PROPERTY _IOWR(MAJOR_NUM, 0, char *)
++
++static struct class *vcio_class;
++
++struct vc_mailbox {
++	void __iomem *regs;
++	uint32_t msg[MBOX_CHAN_COUNT];
++	struct semaphore sema[MBOX_CHAN_COUNT];
++	uint32_t magic;
++};
++
++static void mbox_init(struct vc_mailbox *mbox_out)
++{
++	int i;
++
++	for (i = 0; i < MBOX_CHAN_COUNT; i++) {
++		mbox_out->msg[i] = 0;
++		sema_init(&mbox_out->sema[i], 0);
++	}
++
++	/* Enable the interrupt on data reception */
++	writel(ARM_MC_IHAVEDATAIRQEN, mbox_out->regs + MAIL0_CNF);
++
++	mbox_out->magic = MBOX_MAGIC;
++}
++
++static int mbox_write(struct vc_mailbox *mbox, unsigned chan, uint32_t data28)
++{
++	if (mbox->magic != MBOX_MAGIC)
++		return -EINVAL;
++
++	/* wait for the mailbox FIFO to have some space in it */
++	while (0 != (readl(mbox->regs + MAIL1_STA) & ARM_MS_FULL))
++		cpu_relax();
++
++	writel(MBOX_MSG(chan, data28), mbox->regs + MAIL1_WRT);
++
++	return 0;
++}
++
++static int mbox_read(struct vc_mailbox *mbox, unsigned chan, uint32_t *data28)
++{
++	if (mbox->magic != MBOX_MAGIC)
++		return -EINVAL;
++
++	down(&mbox->sema[chan]);
++	*data28 = MBOX_DATA28(mbox->msg[chan]);
++	mbox->msg[chan] = 0;
++
++	return 0;
++}
++
++static irqreturn_t mbox_irq_handler(int irq, void *dev_id)
++{
++	/* wait for the mailbox FIFO to have some data in it */
++	struct vc_mailbox *mbox = (struct vc_mailbox *)dev_id;
++	int status = readl(mbox->regs + MAIL0_STA);
++	int ret = IRQ_NONE;
++
++	while (!(status & ARM_MS_EMPTY)) {
++		uint32_t msg = readl(mbox->regs + MAIL0_RD);
++		int chan = MBOX_CHAN(msg);
++
++		if (chan < MBOX_CHAN_COUNT) {
++			if (mbox->msg[chan]) {
++				pr_err(DRIVER_NAME
++				       ": mbox chan %d overflow - drop %08x\n",
++				       chan, msg);
++			} else {
++				mbox->msg[chan] = (msg | 0xf);
++				up(&mbox->sema[chan]);
++			}
++		} else {
++			pr_err(DRIVER_NAME
++			       ": invalid channel selector (msg %08x)\n", msg);
++		}
++		ret = IRQ_HANDLED;
++		status = readl(mbox->regs + MAIL0_STA);
++	}
++	return ret;
++}
++
++/* Mailbox Methods */
++
++static struct device *mbox_dev;	/* we assume there's only one! */
++
++static int dev_mbox_write(struct device *dev, unsigned chan, uint32_t data28)
++{
++	struct vc_mailbox *mailbox = dev_get_drvdata(dev);
++	int rc;
++
++	device_lock(dev);
++	rc = mbox_write(mailbox, chan, data28);
++	device_unlock(dev);
++
++	return rc;
++}
++
++static int dev_mbox_read(struct device *dev, unsigned chan, uint32_t *data28)
++{
++	struct vc_mailbox *mailbox = dev_get_drvdata(dev);
++	int rc;
++
++	device_lock(dev);
++	rc = mbox_read(mailbox, chan, data28);
++	device_unlock(dev);
++
++	return rc;
++}
++
++extern int bcm_mailbox_write(unsigned chan, uint32_t data28)
++{
++	if (!mbox_dev)
++		return -ENODEV;
++
++	return dev_mbox_write(mbox_dev, chan, data28);
++}
++EXPORT_SYMBOL_GPL(bcm_mailbox_write);
++
++extern int bcm_mailbox_read(unsigned chan, uint32_t *data28)
++{
++	if (!mbox_dev)
++		return -ENODEV;
++
++	return dev_mbox_read(mbox_dev, chan, data28);
++}
++EXPORT_SYMBOL_GPL(bcm_mailbox_read);
++
++static int mbox_copy_from_user(void *dst, const void *src, int size)
++{
++	if ((uint32_t)src < TASK_SIZE)
++		return copy_from_user(dst, src, size);
++
++	memcpy(dst, src, size);
++
++	return 0;
++}
++
++static int mbox_copy_to_user(void *dst, const void *src, int size)
++{
++	if ((uint32_t)dst < TASK_SIZE)
++		return copy_to_user(dst, src, size);
++
++	memcpy(dst, src, size);
++
++	return 0;
++}
++
++static DEFINE_MUTEX(mailbox_lock);
++extern int bcm_mailbox_property(void *data, int size)
++{
++	uint32_t success;
++	dma_addr_t mem_bus; /* the memory address accessed from videocore */
++	void *mem_kern;     /* the memory address accessed from driver */
++	int s = 0;
++
++	mutex_lock(&mailbox_lock);
++	/* allocate some memory for the messages communicating with GPU */
++	mem_kern = dma_alloc_coherent(NULL, PAGE_ALIGN(size), &mem_bus,
++				      GFP_KERNEL);
++	if (mem_kern) {
++		/* create the message */
++		mbox_copy_from_user(mem_kern, data, size);
++
++		/* send the message */
++		wmb();
++		s = bcm_mailbox_write(MBOX_CHAN_PROPERTY, (uint32_t)mem_bus);
++		if (s == 0)
++			s = bcm_mailbox_read(MBOX_CHAN_PROPERTY, &success);
++		if (s == 0) {
++			/* copy the response */
++			rmb();
++			mbox_copy_to_user(data, mem_kern, size);
++		}
++		dma_free_coherent(NULL, PAGE_ALIGN(size), mem_kern, mem_bus);
++	} else {
++		s = -ENOMEM;
++	}
++	if (s != 0)
++		pr_err(DRIVER_NAME ": %s failed (%d)\n", __func__, s);
++
++	mutex_unlock(&mailbox_lock);
++	return s;
++}
++EXPORT_SYMBOL_GPL(bcm_mailbox_property);
++
++/* Platform Device for Mailbox */
++
++/*
++ * Is the device open right now? Used to prevent
++ * concurent access into the same device
++ */
++static bool device_is_open;
++
++/* This is called whenever a process attempts to open the device file */
++static int device_open(struct inode *inode, struct file *file)
++{
++	/* We don't want to talk to two processes at the same time */
++	if (device_is_open)
++		return -EBUSY;
++
++	device_is_open = true;
++	try_module_get(THIS_MODULE);
++
++	return 0;
++}
++
++static int device_release(struct inode *inode, struct file *file)
++{
++	/* We're now ready for our next caller */
++	device_is_open = false;
++
++	module_put(THIS_MODULE);
++
++	return 0;
++}
++
++/*
++ * This function is called whenever a process tries to do an ioctl on our
++ * device file. We get two extra parameters (additional to the inode and file
++ * structures, which all device functions get): the number of the ioctl called
++ * and the parameter given to the ioctl function.
++ *
++ * If the ioctl is write or read/write (meaning output is returned to the
++ * calling process), the ioctl call returns the output of this function.
++ *
++ */
++static long device_ioctl(struct file *file, unsigned int ioctl_num,
++			 unsigned long ioctl_param)
++{
++	unsigned size;
++
++	switch (ioctl_num) {
++	case IOCTL_MBOX_PROPERTY:
++		/*
++		 * Receive a pointer to a message (in user space) and set that
++		 * to be the device's message.  Get the parameter given to
++		 * ioctl by the process.
++		 */
++		mbox_copy_from_user(&size, (void *)ioctl_param, sizeof(size));
++		return bcm_mailbox_property((void *)ioctl_param, size);
++	default:
++		pr_err(DRIVER_NAME "unknown ioctl: %d\n", ioctl_num);
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++/* Module Declarations */
++
++/*
++ * This structure will hold the functions to be called
++ * when a process does something to the device we
++ * created. Since a pointer to this structure is kept in
++ * the devices table, it can't be local to
++ * init_module. NULL is for unimplemented functios.
++ */
++const struct file_operations fops = {
++	.unlocked_ioctl = device_ioctl,
++	.open = device_open,
++	.release = device_release,	/* a.k.a. close */
++};
++
++static int bcm_vcio_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device *vdev;
++	struct vc_mailbox *mailbox;
++	struct resource *res;
++	int irq, ret;
++
++	mailbox = devm_kzalloc(dev, sizeof(*mailbox), GFP_KERNEL);
++	if (!mailbox)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	mailbox->regs = devm_ioremap_resource(dev, res);
++	if (IS_ERR(mailbox->regs))
++		return PTR_ERR(mailbox->regs);
++
++	irq = platform_get_irq(pdev, 0);
++	ret = devm_request_irq(dev, irq, mbox_irq_handler,
++			       IRQF_IRQPOLL,
++			       dev_name(dev), mailbox);
++	if (ret) {
++		dev_err(dev, "Interrupt request failed %d\n", ret);
++		return ret;
++	}
++
++	ret = register_chrdev(MAJOR_NUM, DEVICE_FILE_NAME, &fops);
++	if (ret < 0) {
++		pr_err("Character device registration failed %d\n", ret);
++		return ret;
++	}
++
++	vcio_class = class_create(THIS_MODULE, DRIVER_NAME);
++	if (IS_ERR(vcio_class)) {
++		ret = PTR_ERR(vcio_class);
++		pr_err("Class creation failed %d\n", ret);
++		goto err_class;
++	}
++
++	vdev = device_create(vcio_class, NULL, MKDEV(MAJOR_NUM, 0), NULL,
++			     "vcio");
++	if (IS_ERR(vdev)) {
++		ret = PTR_ERR(vdev);
++		pr_err("Device creation failed %d\n", ret);
++		goto err_dev;
++	}
++
++	mbox_init(mailbox);
++	platform_set_drvdata(pdev, mailbox);
++	mbox_dev = dev;
++
++	dev_info(dev, "mailbox at %p\n", mailbox->regs);
++
++	return 0;
++
++err_dev:
++	class_destroy(vcio_class);
++err_class:
++	unregister_chrdev(MAJOR_NUM, DEVICE_FILE_NAME);
++
++	return ret;
++}
++
++static int bcm_vcio_remove(struct platform_device *pdev)
++{
++	mbox_dev = NULL;
++	platform_set_drvdata(pdev, NULL);
++	device_destroy(vcio_class, MKDEV(MAJOR_NUM, 0));
++	class_destroy(vcio_class);
++	unregister_chrdev(MAJOR_NUM, DEVICE_FILE_NAME);
++
++	return 0;
++}
++
++static const struct of_device_id bcm_vcio_of_match_table[] = {
++	{ .compatible = "brcm,bcm2708-vcio", },
++	{},
++};
++MODULE_DEVICE_TABLE(of, bcm_vcio_of_match_table);
++
++static struct platform_driver bcm_mbox_driver = {
++	.probe = bcm_vcio_probe,
++	.remove = bcm_vcio_remove,
++
++	.driver = {
++		   .name = DRIVER_NAME,
++		   .owner = THIS_MODULE,
++		   .of_match_table = bcm_vcio_of_match_table,
++		   },
++};
++
++static int __init bcm_mbox_init(void)
++{
++	return platform_driver_register(&bcm_mbox_driver);
++}
++
++static void __exit bcm_mbox_exit(void)
++{
++	platform_driver_unregister(&bcm_mbox_driver);
++}
++
++arch_initcall(bcm_mbox_init);	/* Initialize early */
++module_exit(bcm_mbox_exit);
++
++MODULE_AUTHOR("Gray Girling");
++MODULE_DESCRIPTION("ARM I/O to VideoCore processor");
++MODULE_LICENSE("GPL");
+--- /dev/null
++++ b/include/linux/platform_data/mailbox-bcm2708.h
+@@ -0,0 +1,126 @@
++/*
++ *  Copyright (C) 2010 Broadcom
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++#ifndef _PLAT_MAILBOX_BCM2708_H
++#define _PLAT_MAILBOX_BCM2708_H
++
++/* Routines to handle I/O via the VideoCore "ARM control" registers
++ * (semaphores, doorbells, mailboxes)
++ */
++
++/* Constants shared with the ARM identifying separate mailbox channels */
++#define MBOX_CHAN_POWER    0 /* for use by the power management interface */
++#define MBOX_CHAN_FB       1 /* for use by the frame buffer */
++#define MBOX_CHAN_VCHIQ    3 /* for use by the VCHIQ interface */
++#define MBOX_CHAN_PROPERTY 8 /* for use by the property channel */
++#define MBOX_CHAN_COUNT    9
++
++enum {
++	VCMSG_PROCESS_REQUEST		= 0x00000000
++};
++
++enum {
++	VCMSG_REQUEST_SUCCESSFUL	= 0x80000000,
++	VCMSG_REQUEST_FAILED		= 0x80000001
++};
++
++/* Mailbox property tags */
++enum {
++	VCMSG_PROPERTY_END               = 0x00000000,
++	VCMSG_GET_FIRMWARE_REVISION      = 0x00000001,
++	VCMSG_GET_BOARD_MODEL            = 0x00010001,
++	VCMSG_GET_BOARD_REVISION	 = 0x00010002,
++	VCMSG_GET_BOARD_MAC_ADDRESS	 = 0x00010003,
++	VCMSG_GET_BOARD_SERIAL		 = 0x00010004,
++	VCMSG_GET_ARM_MEMORY		 = 0x00010005,
++	VCMSG_GET_VC_MEMORY		 = 0x00010006,
++	VCMSG_GET_CLOCKS		 = 0x00010007,
++	VCMSG_GET_COMMAND_LINE           = 0x00050001,
++	VCMSG_GET_DMA_CHANNELS           = 0x00060001,
++	VCMSG_GET_POWER_STATE            = 0x00020001,
++	VCMSG_GET_TIMING		 = 0x00020002,
++	VCMSG_SET_POWER_STATE            = 0x00028001,
++	VCMSG_GET_CLOCK_STATE            = 0x00030001,
++	VCMSG_SET_CLOCK_STATE            = 0x00038001,
++	VCMSG_GET_CLOCK_RATE             = 0x00030002,
++	VCMSG_SET_CLOCK_RATE             = 0x00038002,
++	VCMSG_GET_VOLTAGE                = 0x00030003,
++	VCMSG_SET_VOLTAGE                = 0x00038003,
++	VCMSG_GET_MAX_CLOCK              = 0x00030004,
++	VCMSG_GET_MAX_VOLTAGE            = 0x00030005,
++	VCMSG_GET_TEMPERATURE            = 0x00030006,
++	VCMSG_GET_MIN_CLOCK              = 0x00030007,
++	VCMSG_GET_MIN_VOLTAGE            = 0x00030008,
++	VCMSG_GET_TURBO                  = 0x00030009,
++	VCMSG_GET_MAX_TEMPERATURE        = 0x0003000a,
++	VCMSG_GET_STC                    = 0x0003000b,
++	VCMSG_SET_TURBO                  = 0x00038009,
++	VCMSG_SET_ALLOCATE_MEM           = 0x0003000c,
++	VCMSG_SET_LOCK_MEM               = 0x0003000d,
++	VCMSG_SET_UNLOCK_MEM             = 0x0003000e,
++	VCMSG_SET_RELEASE_MEM            = 0x0003000f,
++	VCMSG_SET_EXECUTE_CODE           = 0x00030010,
++	VCMSG_SET_EXECUTE_QPU            = 0x00030011,
++	VCMSG_SET_ENABLE_QPU             = 0x00030012,
++	VCMSG_GET_RESOURCE_HANDLE        = 0x00030014,
++	VCMSG_GET_EDID_BLOCK             = 0x00030020,
++	VCMSG_GET_CUSTOMER_OTP           = 0x00030021,
++	VCMSG_SET_CUSTOMER_OTP           = 0x00038021,
++	VCMSG_SET_ALLOCATE_BUFFER        = 0x00040001,
++	VCMSG_SET_RELEASE_BUFFER         = 0x00048001,
++	VCMSG_SET_BLANK_SCREEN           = 0x00040002,
++	VCMSG_TST_BLANK_SCREEN           = 0x00044002,
++	VCMSG_GET_PHYSICAL_WIDTH_HEIGHT  = 0x00040003,
++	VCMSG_TST_PHYSICAL_WIDTH_HEIGHT  = 0x00044003,
++	VCMSG_SET_PHYSICAL_WIDTH_HEIGHT  = 0x00048003,
++	VCMSG_GET_VIRTUAL_WIDTH_HEIGHT   = 0x00040004,
++	VCMSG_TST_VIRTUAL_WIDTH_HEIGHT   = 0x00044004,
++	VCMSG_SET_VIRTUAL_WIDTH_HEIGHT   = 0x00048004,
++	VCMSG_GET_DEPTH                  = 0x00040005,
++	VCMSG_TST_DEPTH                  = 0x00044005,
++	VCMSG_SET_DEPTH                  = 0x00048005,
++	VCMSG_GET_PIXEL_ORDER            = 0x00040006,
++	VCMSG_TST_PIXEL_ORDER            = 0x00044006,
++	VCMSG_SET_PIXEL_ORDER            = 0x00048006,
++	VCMSG_GET_ALPHA_MODE             = 0x00040007,
++	VCMSG_TST_ALPHA_MODE             = 0x00044007,
++	VCMSG_SET_ALPHA_MODE             = 0x00048007,
++	VCMSG_GET_PITCH                  = 0x00040008,
++	VCMSG_TST_PITCH                  = 0x00044008,
++	VCMSG_SET_PITCH                  = 0x00048008,
++	VCMSG_GET_VIRTUAL_OFFSET         = 0x00040009,
++	VCMSG_TST_VIRTUAL_OFFSET         = 0x00044009,
++	VCMSG_SET_VIRTUAL_OFFSET         = 0x00048009,
++	VCMSG_GET_OVERSCAN               = 0x0004000a,
++	VCMSG_TST_OVERSCAN               = 0x0004400a,
++	VCMSG_SET_OVERSCAN               = 0x0004800a,
++	VCMSG_GET_PALETTE                = 0x0004000b,
++	VCMSG_TST_PALETTE                = 0x0004400b,
++	VCMSG_SET_PALETTE                = 0x0004800b,
++	VCMSG_GET_LAYER                  = 0x0004000c,
++	VCMSG_TST_LAYER                  = 0x0004400c,
++	VCMSG_SET_LAYER                  = 0x0004800c,
++	VCMSG_GET_TRANSFORM              = 0x0004000d,
++	VCMSG_TST_TRANSFORM              = 0x0004400d,
++	VCMSG_SET_TRANSFORM              = 0x0004800d,
++	VCMSG_TST_VSYNC                  = 0x0004400e,
++	VCMSG_SET_VSYNC                  = 0x0004800e,
++	VCMSG_SET_CURSOR_INFO            = 0x00008010,
++	VCMSG_SET_CURSOR_STATE           = 0x00008011,
++};
++
++int bcm_mailbox_read(unsigned chan, uint32_t *data28);
++int bcm_mailbox_write(unsigned chan, uint32_t data28);
++int bcm_mailbox_property(void *data, int size);
++
++#endif

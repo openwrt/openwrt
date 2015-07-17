@@ -1,0 +1,51 @@
+From d4a0abb7a644365a9f21204a5e3f530a8112d5e8 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 24 Jun 2015 09:24:31 +0100
+Subject: [PATCH 085/121] BCM270X_DT: Add MCP7941X to i2c-rtc overlay
+
+---
+ arch/arm/boot/dts/overlays/README              | 3 +++
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts | 6 ++++++
+ 2 files changed, 9 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -253,6 +253,8 @@ Params: ds1307                   Select
+ 
+         ds3231                   Select the DS3231 device
+ 
++        mcp7941x                 Select the MCP7941x device
++
+         pcf2127                  Select the PCF2127 device
+ 
+         pcf8523                  Select the PCF8523 device
+@@ -396,6 +398,7 @@ Params: speed                    Display
+ 
+         xohms                    Touchpanel sensitivity (X-plate resistance)
+ 
++
+ Name:   rpi-ft5406
+ Info:   Official Raspberry Pi display touchscreen
+ Load:   dtoverlay=rpi-ft5406
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -17,6 +17,11 @@
+ 				reg = <0x68>;
+ 				status = "disable";
+ 			};
++			mcp7941x: mcp7941x@6f {
++				compatible = "microchip,mcp7941x";
++				reg = <0x6f>;
++				status = "disable";
++			};
+ 			ds3231: ds3231@68 {
+ 				compatible = "maxim,ds3231";
+ 				reg = <0x68>;
+@@ -42,6 +47,7 @@
+ 	__overrides__ {
+ 		ds1307 = <&ds1307>,"status";
+ 		ds3231 = <&ds3231>,"status";
++		mcp7941x = <&mcp7941x>,"status";
+ 		pcf2127 = <&pcf2127>,"status";
+ 		pcf8523 = <&pcf8523>,"status";
+ 		pcf8563 = <&pcf8563>,"status";

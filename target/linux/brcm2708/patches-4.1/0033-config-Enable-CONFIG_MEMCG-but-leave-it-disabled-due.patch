@@ -1,0 +1,53 @@
+From 2722779be49b7b76dea3de564e03d9fd0083f094 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 18 Dec 2013 22:16:19 +0000
+Subject: [PATCH 033/121] config: Enable CONFIG_MEMCG, but leave it disabled
+ (due to memory cost). Enable with cgroup_enable=memory.
+
+---
+ kernel/cgroup.c | 23 +++++++++++++++++++++++
+ mm/memcontrol.c |  1 +
+ 2 files changed, 24 insertions(+)
+
+--- a/kernel/cgroup.c
++++ b/kernel/cgroup.c
+@@ -5395,6 +5395,29 @@ static int __init cgroup_disable(char *s
+ }
+ __setup("cgroup_disable=", cgroup_disable);
+ 
++static int __init cgroup_enable(char *str)
++{
++	struct cgroup_subsys *ss;
++	char *token;
++	int i;
++
++	while ((token = strsep(&str, ",")) != NULL) {
++		if (!*token)
++			continue;
++
++		for_each_subsys(ss, i) {
++			if (!strcmp(token, ss->name)) {
++				ss->disabled = 0;
++				printk(KERN_INFO "Enabling %s control group"
++					" subsystem\n", ss->name);
++				break;
++			}
++		}
++	}
++	return 1;
++}
++__setup("cgroup_enable=", cgroup_enable);
++
+ static int __init cgroup_set_legacy_files_on_dfl(char *str)
+ {
+ 	printk("cgroup: using legacy files on the default hierarchy\n");
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -5388,6 +5388,7 @@ struct cgroup_subsys memory_cgrp_subsys
+ 	.dfl_cftypes = memory_files,
+ 	.legacy_cftypes = mem_cgroup_legacy_files,
+ 	.early_init = 0,
++        .disabled = 1,
+ };
+ 
+ /**

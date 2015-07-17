@@ -1,0 +1,62 @@
+From 4b72dfbcb5e820f4bfdb2ccb423538b2e4821329 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 26 Jun 2015 14:21:20 +0200
+Subject: [PATCH 113/121] firmware: bcm2835: Add missing property tags
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ include/soc/bcm2835/raspberrypi-firmware.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/include/soc/bcm2835/raspberrypi-firmware.h
++++ b/include/soc/bcm2835/raspberrypi-firmware.h
+@@ -60,6 +60,7 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_GET_MIN_VOLTAGE =                        0x00030008,
+ 	RPI_FIRMWARE_GET_TURBO =                              0x00030009,
+ 	RPI_FIRMWARE_GET_MAX_TEMPERATURE =                    0x0003000a,
++	RPI_FIRMWARE_GET_STC =                                0x0003000b,
+ 	RPI_FIRMWARE_ALLOCATE_MEMORY =                        0x0003000c,
+ 	RPI_FIRMWARE_LOCK_MEMORY =                            0x0003000d,
+ 	RPI_FIRMWARE_UNLOCK_MEMORY =                          0x0003000e,
+@@ -69,10 +70,12 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_SET_ENABLE_QPU =                         0x00030012,
+ 	RPI_FIRMWARE_GET_DISPMANX_RESOURCE_MEM_HANDLE =       0x00030014,
+ 	RPI_FIRMWARE_GET_EDID_BLOCK =                         0x00030020,
++	RPI_FIRMWARE_GET_CUSTOMER_OTP =                       0x00030021,
+ 	RPI_FIRMWARE_SET_CLOCK_STATE =                        0x00038001,
+ 	RPI_FIRMWARE_SET_CLOCK_RATE =                         0x00038002,
+ 	RPI_FIRMWARE_SET_VOLTAGE =                            0x00038003,
+ 	RPI_FIRMWARE_SET_TURBO =                              0x00038009,
++	RPI_FIRMWARE_SET_CUSTOMER_OTP =                       0x00038021,
+ 
+ 	/* Dispmanx TAGS */
+ 	RPI_FIRMWARE_FRAMEBUFFER_ALLOCATE =                   0x00040001,
+@@ -86,6 +89,7 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_FRAMEBUFFER_GET_VIRTUAL_OFFSET =         0x00040009,
+ 	RPI_FIRMWARE_FRAMEBUFFER_GET_OVERSCAN =               0x0004000a,
+ 	RPI_FIRMWARE_FRAMEBUFFER_GET_PALETTE =                0x0004000b,
++	RPI_FIRMWARE_FRAMEBUFFER_GET_TOUCHBUF =               0x0004000f,
+ 	RPI_FIRMWARE_FRAMEBUFFER_RELEASE =                    0x00048001,
+ 	RPI_FIRMWARE_FRAMEBUFFER_TEST_PHYSICAL_WIDTH_HEIGHT = 0x00044003,
+ 	RPI_FIRMWARE_FRAMEBUFFER_TEST_VIRTUAL_WIDTH_HEIGHT =  0x00044004,
+@@ -95,6 +99,7 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_FRAMEBUFFER_TEST_VIRTUAL_OFFSET =        0x00044009,
+ 	RPI_FIRMWARE_FRAMEBUFFER_TEST_OVERSCAN =              0x0004400a,
+ 	RPI_FIRMWARE_FRAMEBUFFER_TEST_PALETTE =               0x0004400b,
++	RPI_FIRMWARE_FRAMEBUFFER_TEST_VSYNC =                 0x0004400e,
+ 	RPI_FIRMWARE_FRAMEBUFFER_SET_PHYSICAL_WIDTH_HEIGHT =  0x00048003,
+ 	RPI_FIRMWARE_FRAMEBUFFER_SET_VIRTUAL_WIDTH_HEIGHT =   0x00048004,
+ 	RPI_FIRMWARE_FRAMEBUFFER_SET_DEPTH =                  0x00048005,
+@@ -103,6 +108,9 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_FRAMEBUFFER_SET_VIRTUAL_OFFSET =         0x00048009,
+ 	RPI_FIRMWARE_FRAMEBUFFER_SET_OVERSCAN =               0x0004800a,
+ 	RPI_FIRMWARE_FRAMEBUFFER_SET_PALETTE =                0x0004800b,
++	RPI_FIRMWARE_FRAMEBUFFER_SET_VSYNC =                  0x0004800e,
++
++	RPI_FIRMWARE_VCHIQ_INIT =                             0x00048010,
+ 
+ 	RPI_FIRMWARE_GET_COMMAND_LINE =                       0x00050001,
+ 	RPI_FIRMWARE_GET_DMA_CHANNELS =                       0x00060001,

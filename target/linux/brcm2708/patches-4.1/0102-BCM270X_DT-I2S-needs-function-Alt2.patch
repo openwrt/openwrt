@@ -1,0 +1,56 @@
+From f158c5aa486712cfad1c405eb849d65272b2cbc3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 3 Jul 2015 12:21:01 +0100
+Subject: [PATCH 102/121] BCM270X_DT: I2S needs function Alt2
+
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts | 2 +-
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      | 2 +-
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts     | 2 +-
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -25,7 +25,7 @@
+ 
+ 	i2s_pins: i2s {
+ 		brcm,pins = <18 19 20 21>;
+-		brcm,function = <4>; /* alt0 */
++		brcm,function = <6>; /* alt2 */
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -25,7 +25,7 @@
+ 
+ 	i2s_pins: i2s {
+ 		brcm,pins = <28 29 30 31>;
+-		brcm,function = <4>; /* alt0 */
++		brcm,function = <6>; /* alt2 */
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -28,7 +28,7 @@
+ 
+ 	i2s_pins: i2s {
+ 		brcm,pins = <18 19 20 21>;
+-		brcm,function = <4>; /* alt0 */
++		brcm,function = <6>; /* alt2 */
+ 	};
+ };
+ 
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -25,7 +25,7 @@
+ 
+ 	i2s_pins: i2s {
+ 		brcm,pins = <18 19 20 21>;
+-		brcm,function = <4>; /* alt0 */
++		brcm,function = <6>; /* alt2 */
+ 	};
+ };
+ 

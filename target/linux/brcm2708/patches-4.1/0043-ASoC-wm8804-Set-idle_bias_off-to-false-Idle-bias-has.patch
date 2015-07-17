@@ -1,0 +1,22 @@
+From c1291a2b3390ab53e3a6ca2325e39d0a01908d87 Mon Sep 17 00:00:00 2001
+From: Daniel Matuschek <info@crazy-audio.com>
+Date: Thu, 16 Jan 2014 07:36:35 +0100
+Subject: [PATCH 043/121] ASoC: wm8804: Set idle_bias_off to false Idle bias
+ has been change to remove warning on driver startup
+
+Signed-off-by: Daniel Matuschek <daniel@matuschek.net>
+---
+ sound/soc/codecs/wm8804.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/sound/soc/codecs/wm8804.c
++++ b/sound/soc/codecs/wm8804.c
+@@ -544,7 +544,7 @@ static struct snd_soc_dai_driver wm8804_
+ };
+ 
+ static const struct snd_soc_codec_driver soc_codec_dev_wm8804 = {
+-	.idle_bias_off = true,
++	.idle_bias_off = false,
+ 
+ 	.dapm_widgets = wm8804_dapm_widgets,
+ 	.num_dapm_widgets = ARRAY_SIZE(wm8804_dapm_widgets),

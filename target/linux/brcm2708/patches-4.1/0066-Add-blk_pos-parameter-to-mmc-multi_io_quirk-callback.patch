@@ -1,0 +1,75 @@
+From 510eb2621d1b1b74618236a324538c19c9106ece Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 17 Apr 2015 19:30:22 +0100
+Subject: [PATCH 066/121] Add blk_pos parameter to mmc multi_io_quirk callback
+
+---
+ drivers/mmc/card/block.c          | 1 +
+ drivers/mmc/host/omap_hsmmc.c     | 4 +++-
+ drivers/mmc/host/sh_mobile_sdhi.c | 4 +++-
+ drivers/mmc/host/tmio_mmc_pio.c   | 4 +++-
+ include/linux/mmc/host.h          | 4 +++-
+ 5 files changed, 13 insertions(+), 4 deletions(-)
+
+--- a/drivers/mmc/card/block.c
++++ b/drivers/mmc/card/block.c
+@@ -1413,6 +1413,7 @@ static void mmc_blk_rw_rq_prep(struct mm
+ 			brq->data.blocks = card->host->ops->multi_io_quirk(card,
+ 						(rq_data_dir(req) == READ) ?
+ 						MMC_DATA_READ : MMC_DATA_WRITE,
++						blk_rq_pos(req),
+ 						brq->data.blocks);
+ 	}
+ 
+--- a/drivers/mmc/host/omap_hsmmc.c
++++ b/drivers/mmc/host/omap_hsmmc.c
+@@ -1749,7 +1749,9 @@ static void omap_hsmmc_conf_bus_power(st
+ }
+ 
+ static int omap_hsmmc_multi_io_quirk(struct mmc_card *card,
+-				     unsigned int direction, int blk_size)
++				     unsigned int direction,
++				     u32 blk_pos,
++				     int blk_size)
+ {
+ 	/* This controller can't do multiblock reads due to hw bugs */
+ 	if (direction == MMC_DATA_READ)
+--- a/drivers/mmc/host/sh_mobile_sdhi.c
++++ b/drivers/mmc/host/sh_mobile_sdhi.c
+@@ -170,7 +170,9 @@ static int sh_mobile_sdhi_write16_hook(s
+ }
+ 
+ static int sh_mobile_sdhi_multi_io_quirk(struct mmc_card *card,
+-					 unsigned int direction, int blk_size)
++					 unsigned int direction,
++					 u32 blk_pos,
++					 int blk_size)
+ {
+ 	/*
+ 	 * In Renesas controllers, when performing a
+--- a/drivers/mmc/host/tmio_mmc_pio.c
++++ b/drivers/mmc/host/tmio_mmc_pio.c
+@@ -1001,7 +1001,9 @@ static int tmio_mmc_get_ro(struct mmc_ho
+ }
+ 
+ static int tmio_multi_io_quirk(struct mmc_card *card,
+-			       unsigned int direction, int blk_size)
++			       unsigned int direction,
++			       u32 blk_pos,
++			       int blk_size)
+ {
+ 	struct tmio_mmc_host *host = mmc_priv(card->host);
+ 
+--- a/include/linux/mmc/host.h
++++ b/include/linux/mmc/host.h
+@@ -140,7 +140,9 @@ struct mmc_host_ops {
+ 	 * I/O. Returns the number of supported blocks for the request.
+ 	 */
+ 	int	(*multi_io_quirk)(struct mmc_card *card,
+-				  unsigned int direction, int blk_size);
++				  unsigned int direction,
++				  u32 blk_pos,
++				  int blk_size);
+ };
+ 
+ struct mmc_card;

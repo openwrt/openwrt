@@ -1,0 +1,108 @@
+From 842fe412d512dabb76d169395086b6337150015a Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 25 Jun 2015 12:16:11 +0100
+Subject: [PATCH 087/121] gpio-poweroff: Allow it to work on Raspberry Pi
+
+The Raspberry Pi firmware manages the power-down and reboot
+process. To do this it installs a pm_power_off handler, causing
+the gpio-poweroff module to abort the probe function.
+
+This patch introduces a "force" DT property that overrides that
+behaviour, and also adds a DT overlay to enable and control it.
+
+Note that running in an active-low configuration (DT parameter
+"active_low") requires a custom dt-blob.bin and probably won't
+allow a reboot without switching off, so an external inversion
+of the trigger signal may be preferable.
+---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  | 13 +++++++++
+ .../boot/dts/overlays/gpio-poweroff-overlay.dts    | 34 ++++++++++++++++++++++
+ drivers/power/reset/gpio-poweroff.c                |  4 ++-
+ 4 files changed, 51 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/overlays/gpio-poweroff-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -16,6 +16,7 @@ dtb-$(RPI_DT_OVERLAYS) += ads7846-overla
+ dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += gpio-poweroff-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += hifiberry-amp-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += hifiberry-dac-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += hifiberry-dacplus-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -192,6 +192,19 @@ Params: int_pin                  GPIO us
+         speed                    SPI bus speed (default 12000000)
+ 
+ 
++Name:   gpio-poweroff
++Info:   Drives a GPIO high or low on reboot
++Load:   gpio-poweroff,<param>=<val>
++Params: gpiopin                  GPIO for signalling (default 26)
++
++        active_low               Set if the power control device requires a
++                                 high->low transition to trigger a power-down.
++                                 Note that this will require the support of a
++                                 custom dt-blob.bin to prevent a power-down
++                                 during the boot process, and that a reboot
++                                 will also cause the pin to go low.
++
++
+ Name:   hifiberry-amp
+ Info:   Configures the HifiBerry Amp and Amp+ audio cards
+ Load:   dtoverlay=hifiberry-amp
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/gpio-poweroff-overlay.dts
+@@ -0,0 +1,34 @@
++// Definitions for gpio-poweroff module
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target-path = "/";
++		__overlay__ {
++			power_ctrl: power_ctrl {
++				compatible = "gpio-poweroff";
++				gpios = <&gpio 26 0>;
++				force;
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			power_ctrl_pins: power_ctrl_pins {
++				brcm,pins = <26>;
++				brcm,function = <1>; // out
++			};
++		};
++	};
++
++	__overrides__ {
++		gpiopin =       <&power_ctrl>,"gpios:4",
++				<&power_ctrl_pins>,"brcm,pins:0";
++		active_low =    <&power_ctrl>,"gpios:8";
++	};
++};
+--- a/drivers/power/reset/gpio-poweroff.c
++++ b/drivers/power/reset/gpio-poweroff.c
+@@ -48,9 +48,11 @@ static void gpio_poweroff_do_poweroff(vo
+ static int gpio_poweroff_probe(struct platform_device *pdev)
+ {
+ 	bool input = false;
++	bool force = false;
+ 
+ 	/* If a pm_power_off function has already been added, leave it alone */
+-	if (pm_power_off != NULL) {
++	force = of_property_read_bool(pdev->dev.of_node, "force");
++	if (!force && (pm_power_off != NULL)) {
+ 		dev_err(&pdev->dev,
+ 			"%s: pm_power_off function already registered",
+ 		       __func__);

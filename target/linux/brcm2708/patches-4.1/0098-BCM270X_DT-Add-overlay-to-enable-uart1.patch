@@ -1,0 +1,152 @@
+From 5131bc710dd79b98d12c08b2f22477f48fdbd0d3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 26 Jun 2015 08:50:11 +0100
+Subject: [PATCH 098/121] BCM270X_DT: Add overlay to enable uart1
+
+N.B. The UART1 clock is derived from the core clock. The firmware
+will update clock-frequency if core_freq is set, but be aware
+that unless force_turbo=1 while overclocking then the baud rate
+will vary with ARM activity.
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts     |  1 +
+ arch/arm/boot/dts/bcm2708-rpi-b.dts          |  1 +
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts         |  1 +
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts        |  1 +
+ arch/arm/boot/dts/overlays/Makefile          |  1 +
+ arch/arm/boot/dts/overlays/README            |  8 ++++++
+ arch/arm/boot/dts/overlays/uart1-overlay.dts | 38 ++++++++++++++++++++++++++++
+ arch/arm/configs/bcm2709_defconfig           |  2 +-
+ arch/arm/configs/bcmrpi_defconfig            |  2 +-
+ 9 files changed, 53 insertions(+), 2 deletions(-)
+ create mode 100644 arch/arm/boot/dts/overlays/uart1-overlay.dts
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -103,6 +103,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -97,6 +97,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -79,6 +79,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -103,6 +103,7 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
++		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -42,6 +42,7 @@ dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2708-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2835-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += uart1-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += w1-gpio-pullup-overlay.dtb
+ 
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -489,6 +489,14 @@ Params: speed                    Display
+                 dtoverlay=tinylcd35,touch,touchgpio=3
+ 
+ 
++Name:   uart1
++Info:   Enable uart1 in place of uart0
++Load:   dtoverlay=uart1,<param>=<val>
++Params: txd1_pin                 GPIO pin for TXD1 (14, 32 or 40 - default 14)
++
++        rxd1_pin                 GPIO pin for RXD1 (15, 33 or 41 - default 15)
++
++
+ Name:   w1-gpio
+ Info:   Configures the w1-gpio Onewire interface module.
+         Use this overlay if you *don't* need a GPIO to drive an external pullup.
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/uart1-overlay.dts
+@@ -0,0 +1,38 @@
++/dts-v1/;
++/plugin/;
++
++/{
++	compatible = "brcm,bcm2708";
++
++	fragment@0 {
++		target = <&uart1>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&uart1_pins>;
++			status = "okay";
++		};
++	};
++
++	fragment@1 {
++		target = <&gpio>;
++		__overlay__ {
++			uart1_pins: uart1_pins {
++				brcm,pins = <14 15>;
++				brcm,function = <2>; /* alt5 */
++				brcm,pull = <0 2>;
++			};
++		};
++	};
++
++	fragment@2 {
++		target-path = "/chosen";
++		__overlay__ {
++			bootargs = "8250.nr_uarts=1";
++		};
++	};
++
++	__overrides__ {
++		txd1_pin = <&uart1_pins>,"brcm,pins:0";
++		rxd1_pin = <&uart1_pins>,"brcm,pins:4";
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -562,7 +562,7 @@ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+ # CONFIG_SERIAL_8250_DMA is not set
+ CONFIG_SERIAL_8250_NR_UARTS=1
+-CONFIG_SERIAL_8250_RUNTIME_UARTS=1
++CONFIG_SERIAL_8250_RUNTIME_UARTS=0
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -555,7 +555,7 @@ CONFIG_SERIAL_8250=y
+ CONFIG_SERIAL_8250_CONSOLE=y
+ # CONFIG_SERIAL_8250_DMA is not set
+ CONFIG_SERIAL_8250_NR_UARTS=1
+-CONFIG_SERIAL_8250_RUNTIME_UARTS=1
++CONFIG_SERIAL_8250_RUNTIME_UARTS=0
+ CONFIG_SERIAL_AMBA_PL011=y
+ CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+ CONFIG_SERIAL_OF_PLATFORM=y

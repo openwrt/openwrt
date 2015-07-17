@@ -1,0 +1,122 @@
+From 5c8148df6f5147fcaa9fe81425b58a3e7a64cdba Mon Sep 17 00:00:00 2001
+From: petit-miner <cooker5000@gmail.com>
+Date: Fri, 10 Jul 2015 13:59:18 +0200
+Subject: [PATCH 108/121] Added support for 2 mcp2515 CAN Bus IC
+
+See: https://github.com/raspberrypi/linux/issues/1018
+     https://github.com/raspberrypi/linux/pull/1049
+     https://github.com/raspberrypi/linux/pull/1052
+---
+ arch/arm/boot/dts/overlays/Makefile                |  1 +
+ arch/arm/boot/dts/overlays/README                  | 12 +++-
+ .../arm/boot/dts/overlays/mcp2515-can1-overlay.dts | 69 ++++++++++++++++++++++
+ 3 files changed, 81 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -29,6 +29,7 @@ dtb-$(RPI_DT_OVERLAYS) += iqaudio-dac-ov
+ dtb-$(RPI_DT_OVERLAYS) += iqaudio-dacplus-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += lirc-rpi-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += mcp2515-can0-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += mcp2515-can1-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += mmc-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += mz61581-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += piscreen-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -328,11 +328,21 @@ Params: gpio_out_pin             GPIO fo
+ 
+ 
+ Name:   mcp2515-can0
+-Info:   Configures the MCP2515 CAN controller
++Info:   Configures the MCP2515 CAN controller on spi0.0
+ Load:   dtoverlay=mcp2515-can0,<param>=<val>
+ Params: oscillator               Clock frequency for the CAN controller (Hz)
+ 
+         spimaxfrequency          Maximum SPI frequence (Hz)
++
++        interrupt                GPIO for interrupt signal
++
++
++Name:   mcp2515-can1
++Info:   Configures the MCP2515 CAN controller on spi0.1
++Load:   dtoverlay=mcp2515-can1,<param>=<val>
++Params: oscillator               Clock frequency for the CAN controller (Hz)
++
++        spimaxfrequency          Maximum SPI frequence (Hz)
+ 
+         interrupt                GPIO for interrupt signal
+ 
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/mcp2515-can1-overlay.dts
+@@ -0,0 +1,69 @@
++/*
++ * Device tree overlay for mcp251x/can1 on spi0.1 edited by petit_miner
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++    compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++    /* disable spi-dev for spi0.1 */
++    fragment@0 {
++        target = <&spi0>;
++        __overlay__ {
++            status = "okay";
++            spidev@1{
++                status = "disabled";
++            };
++        };
++    };
++
++    /* the interrupt pin of the can-controller */
++    fragment@1 {
++        target = <&gpio>;
++        __overlay__ {
++            can1_pins: can1_pins {
++                brcm,pins = <25>;
++                brcm,function = <0>; /* input */
++            };
++        };
++    };
++
++    /* the clock/oscillator of the can-controller */
++    fragment@2 {
++        target-path = "/clocks";
++        __overlay__ {
++            /* external oscillator of mcp2515 on spi0.1 */
++            can1_osc: can1_osc {
++                compatible = "fixed-clock";
++                #clock-cells = <0>;
++                clock-frequency  = <16000000>;
++            };
++        };
++    };
++
++    /* the spi config of the can-controller itself binding everything together */
++    fragment@3 {
++        target = <&spi0>;
++        __overlay__ {
++            /* needed to avoid dtc warning */
++            #address-cells = <1>;
++            #size-cells = <0>;
++            can1: mcp2515@1 {
++                reg = <1>;
++                compatible = "microchip,mcp2515";
++                pinctrl-names = "default";
++                pinctrl-0 = <&can1_pins>;
++                spi-max-frequency = <10000000>;
++                interrupt-parent = <&gpio>;
++                interrupts = <25 0x2>;
++                clocks = <&can1_osc>;
++            };
++        };
++    };
++    __overrides__ {
++        oscillator = <&can1_osc>,"clock-frequency:0";
++        spimaxfrequency = <&can1>,"spi-max-frequency:0";
++        interrupt = <&can1_pins>,"brcm,pins:0",<&can1>,"interrupts:0";
++    };
++};

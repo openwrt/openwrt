@@ -1,0 +1,39 @@
+From aa1ca835a9a179168f9d8355a458bd0eecda3912 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 13 May 2015 13:10:32 -0700
+Subject: [PATCH 110/121] mailbox/bcm2835: Fix mailbox full detection.
+
+With the VC reader blocked and the ARM writing, MAIL0_STA reads empty
+permanently while MAIL1_STA goes from empty (0x40000000) to non-empty
+(0x00000001-0x00000007) to full (0x80000008).
+
+This bug ended up having no effect on us, because all of our
+transactions in the client driver were synchronous and under a mutex.
+
+Suggested-by: Phil Elwell <phil@raspberrypi.org>
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Acked-by: Stephen Warren <swarren@wwwdotorg.org>
+Signed-off-by: Jassi Brar <jaswinder.singh@linaro.org>
+---
+ drivers/mailbox/bcm2835-mailbox.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/mailbox/bcm2835-mailbox.c
++++ b/drivers/mailbox/bcm2835-mailbox.c
+@@ -49,6 +49,7 @@
+ #define MAIL0_STA	(ARM_0_MAIL0 + 0x18)
+ #define MAIL0_CNF	(ARM_0_MAIL0 + 0x1C)
+ #define MAIL1_WRT	(ARM_0_MAIL1 + 0x00)
++#define MAIL1_STA	(ARM_0_MAIL1 + 0x18)
+ 
+ /* Status register: FIFO state. */
+ #define ARM_MS_FULL		BIT(31)
+@@ -117,7 +118,7 @@ static bool bcm2835_last_tx_done(struct
+ 	bool ret;
+ 
+ 	spin_lock(&mbox->lock);
+-	ret = !(readl(mbox->regs + MAIL0_STA) & ARM_MS_FULL);
++	ret = !(readl(mbox->regs + MAIL1_STA) & ARM_MS_FULL);
+ 	spin_unlock(&mbox->lock);
+ 	return ret;
+ }

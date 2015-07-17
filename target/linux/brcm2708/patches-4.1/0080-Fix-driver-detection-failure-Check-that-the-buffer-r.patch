@@ -1,0 +1,21 @@
+From afae7dff11e5ee1d5aaf0d00cf26ea3cf24db2d8 Mon Sep 17 00:00:00 2001
+From: Gordon Hollingworth <gordon@fiveninjas.com>
+Date: Tue, 23 Jun 2015 09:53:40 +0100
+Subject: [PATCH 080/121] Fix driver detection failure Check that the buffer
+ response is non-zero meaning the touchscreen was detected
+
+---
+ drivers/input/touchscreen/rpi-ft5406.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/input/touchscreen/rpi-ft5406.c
++++ b/drivers/input/touchscreen/rpi-ft5406.c
+@@ -184,7 +184,7 @@ static int ft5406_probe(struct platform_
+ 	
+ 	bcm_mailbox_property(&request, sizeof(request));
+ 	
+-	if(request.request_code == VCMSG_REQUEST_SUCCESSFUL)
++	if(request.request_code == VCMSG_REQUEST_SUCCESSFUL && request.tag.val != 0)
+ 	{
+ 		dev_dbg(&pdev->dev, "Got TS buffer 0x%x\n", request.tag.val);
+ 	}
