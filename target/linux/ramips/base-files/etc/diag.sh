@@ -249,6 +249,9 @@ get_status_led() {
 	zte-q7)
 		status_led="zte:red:status"
 		;;
+	mzk-dp150n)
+		status_led="mzkdp150n:green:power"
+		;;
 	esac
 }
 

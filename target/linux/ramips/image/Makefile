@@ -609,6 +609,8 @@ Image/Build/Profile/W502U=$(call BuildFirmware/Default8M/$(1),$(1),w502u,W502U)
 Image/Build/Profile/WCR150GN=$(call BuildFirmware/Default4M/$(1),$(1),wcr150gn,WCR150GN)
 
 
+Image/Build/Profile/MZK-DP150N=$(call BuildFirmware/Default4M/$(1),$(1),mzk-dp150n,MZK-DP150N)
+
 buffalo_whrg300n_mtd_size=3801088
 define BuildFirmware/WHRG300N/squashfs
 	$(call BuildFirmware/Default4M/$(1),$(1),whr-g300n,WHR-G300N)
@@ -772,6 +774,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/X5,$(1))
 	$(call Image/Build/Profile/X8,$(1))
 	$(call Image/Build/Profile/XDXRN502J,$(1))
+	$(call Image/Build/Profile/MZK-DP150N,$(1))
 
 endef
 endif
