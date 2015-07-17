@@ -1,0 +1,98 @@
+/dts-v1/;
+
+/include/ "rt5350.dtsi"
+
+/ {
+	compatible = "MZK-DP150N", "ralink,rt5350-soc";
+	model = "Planex MZK-DP150N";
+
+	palmbus@10000000 {
+		gpio1: gpio@660 {
+			status = "okay";
+		};
+
+		spi@b00 {
+			status = "okay";
+
+			m25p80@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "s25fl064k";
+				reg = <0>;
+				linux,modalias = "m25p80", "s25fl064k";
+				spi-max-frequency = <10000000>;
+
+				partition@0 {
+					label = "uboot";
+					reg = <0x0 0x30000>;
+					read-only;
+				};
+
+				partition@30000 {
+					label = "uboot-env";
+					reg = <0x30000 0x10000>;
+					read-only;
+				};
+
+				factory: partition@40000 {
+					label = "factory";
+					reg = <0x40000 0x10000>;
+					read-only;
+				};
+
+				partition@50000 {
+					label = "firmware";
+					reg = <0x50000 0x3b0000>;
+				};
+			};
+
+			spidev@1 {
+				compatible = "linux,spidev";
+				spi-max-frequency = <10000000>;
+				reg = <1>;
+			};
+		};
+	};
+
+	pinctrl {
+		state_default: pinctrl0 {
+			gpio {
+				ralink,group = "jtag", "uartf", "led";
+				ralink,function = "gpio";
+			};
+		};
+	};
+
+	ethernet@10100000 {
+		mtd-mac-address = <&factory 0x4>;
+	};
+
+	esw@10110000 {
+		ralink,portmap = <0x17>;
+	};
+
+	wmac@10180000 {
+		ralink,mtd-eeprom = <&factory 0>;
+		ralink,led-polarity = <1>;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+		power {
+			label = "mzkdp150n:green:power";
+			gpios = <&gpio0 9 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
+		};
+	};
+};

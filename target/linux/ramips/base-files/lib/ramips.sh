@@ -421,6 +421,9 @@ ramips_board_detect() {
 	*"Mediatek MT7628AN evaluation board")
 		name="mt7628"
 		;;
+	*"Planex MZK-DP150N")
+		name="mzk-dp150n"
+		;;
 	*)
 		name="generic"
 		;;

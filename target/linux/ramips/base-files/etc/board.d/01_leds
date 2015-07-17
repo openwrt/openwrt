@@ -265,6 +265,9 @@ case $board in
 	zte-q7)
 		set_wifi_led "zte:blue:status"
 		;;
+	mzk-dp150n)
+		ucidef_set_led_default "power" "power" "mzkdp150n:green:power" "1"
+		;;
 esac
 
 board_config_flush
