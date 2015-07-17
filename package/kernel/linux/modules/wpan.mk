@@ -107,7 +107,7 @@ $(eval $(call KernelPackage,cc2520))
 define KernelPackage/ieee802154_6lowpan
   SUBMENU:=$(WPAN_MENU)
   TITLE:= 6LoWPAN support over IEEE-802.15.4
-  DEPENDS:=@!LINUX_3_18 +kmod-6lowpan
+  DEPENDS:=@!LINUX_3_18 +kmod-6lowpan +kmod-ieee802154
   KCONFIG:=CONFIG_IEEE802154_6LOWPAN
   FILES:= \
 	$(LINUX_DIR)/net/ieee802154/6lowpan/ieee802154_6lowpan.ko@ge4.0 \
