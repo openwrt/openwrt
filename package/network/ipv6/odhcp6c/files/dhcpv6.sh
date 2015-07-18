@@ -28,14 +28,15 @@ proto_dhcpv6_init_config() {
 	proto_config_add_boolean delegate
 	proto_config_add_int "soltimeout"
 	proto_config_add_boolean fakeroutes
+	proto_config_add_boolean sourcefilter
 }
 
 proto_dhcpv6_setup() {
 	local config="$1"
 	local iface="$2"
 
-	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes
-	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes
+	local reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter
+	json_get_vars reqaddress reqprefix clientid reqopts noslaaconly forceprefix norelease ip6prefix iface_dslite iface_map iface_464xlat ifaceid userclass vendorclass delegate zone_dslite zone_map zone_464xlat zone soltimeout fakeroutes sourcefilter
 
 
 	# Configure
@@ -76,6 +77,7 @@ proto_dhcpv6_setup() {
 	[ -n "$zone_464xlat" ] && proto_export "ZONE_464XLAT=$zone_464xlat"
 	[ -n "$zone" ] && proto_export "ZONE=$zone"
 	[ "$fakeroutes" != "0" ] && proto_export "FAKE_ROUTES=1"
+	[ "$sourcefilter" = "0" ] && proto_export "NOSOURCEFILTER=1"
 
 	proto_export "INTERFACE=$config"
 	proto_run_command "$config" odhcp6c \
