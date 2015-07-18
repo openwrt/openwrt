@@ -1,0 +1,216 @@
+From: Arik Nemtsov <arik@wizery.com>
+Date: Wed, 8 Jul 2015 15:41:44 +0300
+Subject: [PATCH] cfg80211: use RTNL locked reg_can_beacon for IR-relaxation
+
+The RTNL is required to check for IR-relaxation conditions that allow
+more channels to beacon. Export an RTNL locked version of reg_can_beacon
+and use it where possible in AP/STA interface type flows, where
+IR-relaxation may be applicable.
+
+Fixes: 06f207fc5418 ("cfg80211: change GO_CONCURRENT to IR_CONCURRENT for STA")
+Signed-off-by: Arik Nemtsov <arikx.nemtsov@intel.com>
+Signed-off-by: Emmanuel Grumbach <emmanuel.grumbach@intel.com>
+---
+
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -4871,6 +4871,23 @@ bool cfg80211_reg_can_beacon(struct wiph
+ 			     struct cfg80211_chan_def *chandef,
+ 			     enum nl80211_iftype iftype);
+ 
++/**
++ * cfg80211_reg_can_beacon_relax - check if beaconing is allowed with relaxation
++ * @wiphy: the wiphy
++ * @chandef: the channel definition
++ * @iftype: interface type
++ *
++ * Return: %true if there is no secondary channel or the secondary channel(s)
++ * can be used for beaconing (i.e. is not a radar channel etc.). This version
++ * also checks if IR-relaxation conditions apply, to allow beaconing under
++ * more permissive conditions.
++ *
++ * Requires the RTNL to be held.
++ */
++bool cfg80211_reg_can_beacon_relax(struct wiphy *wiphy,
++				   struct cfg80211_chan_def *chandef,
++				   enum nl80211_iftype iftype);
++
+ /*
+  * cfg80211_ch_switch_notify - update wdev channel and notify userspace
+  * @dev: the device which switched channels
+--- a/net/mac80211/tdls.c
++++ b/net/mac80211/tdls.c
+@@ -69,6 +69,7 @@ ieee80211_tdls_add_subband(struct ieee80
+ 	struct ieee80211_channel *ch;
+ 	struct cfg80211_chan_def chandef;
+ 	int i, subband_start;
++	struct wiphy *wiphy = sdata->local->hw.wiphy;
+ 
+ 	for (i = start; i <= end; i += spacing) {
+ 		if (!ch_cnt)
+@@ -79,9 +80,8 @@ ieee80211_tdls_add_subband(struct ieee80
+ 			/* we will be active on the channel */
+ 			cfg80211_chandef_create(&chandef, ch,
+ 						NL80211_CHAN_NO_HT);
+-			if (cfg80211_reg_can_beacon(sdata->local->hw.wiphy,
+-						    &chandef,
+-						    sdata->wdev.iftype)) {
++			if (cfg80211_reg_can_beacon_relax(wiphy, &chandef,
++							  sdata->wdev.iftype)) {
+ 				ch_cnt++;
+ 				/*
+ 				 * check if the next channel is also part of
+--- a/net/wireless/chan.c
++++ b/net/wireless/chan.c
+@@ -797,23 +797,18 @@ static bool cfg80211_ir_permissive_chan(
+ 	return false;
+ }
+ 
+-bool cfg80211_reg_can_beacon(struct wiphy *wiphy,
+-			     struct cfg80211_chan_def *chandef,
+-			     enum nl80211_iftype iftype)
++static bool _cfg80211_reg_can_beacon(struct wiphy *wiphy,
++				     struct cfg80211_chan_def *chandef,
++				     enum nl80211_iftype iftype,
++				     bool check_no_ir)
+ {
+ 	bool res;
+ 	u32 prohibited_flags = IEEE80211_CHAN_DISABLED |
+ 			       IEEE80211_CHAN_RADAR;
+ 
+-	trace_cfg80211_reg_can_beacon(wiphy, chandef, iftype);
++	trace_cfg80211_reg_can_beacon(wiphy, chandef, iftype, check_no_ir);
+ 
+-	/*
+-	 * Under certain conditions suggested by some regulatory bodies a
+-	 * GO/STA can IR on channels marked with IEEE80211_NO_IR. Set this flag
+-	 * only if such relaxations are not enabled and the conditions are not
+-	 * met.
+-	 */
+-	if (!cfg80211_ir_permissive_chan(wiphy, iftype, chandef->chan))
++	if (check_no_ir)
+ 		prohibited_flags |= IEEE80211_CHAN_NO_IR;
+ 
+ 	if (cfg80211_chandef_dfs_required(wiphy, chandef, iftype) > 0 &&
+@@ -827,8 +822,36 @@ bool cfg80211_reg_can_beacon(struct wiph
+ 	trace_cfg80211_return_bool(res);
+ 	return res;
+ }
++
++bool cfg80211_reg_can_beacon(struct wiphy *wiphy,
++			     struct cfg80211_chan_def *chandef,
++			     enum nl80211_iftype iftype)
++{
++	return _cfg80211_reg_can_beacon(wiphy, chandef, iftype, true);
++}
+ EXPORT_SYMBOL(cfg80211_reg_can_beacon);
+ 
++bool cfg80211_reg_can_beacon_relax(struct wiphy *wiphy,
++				   struct cfg80211_chan_def *chandef,
++				   enum nl80211_iftype iftype)
++{
++	bool check_no_ir;
++
++	ASSERT_RTNL();
++
++	/*
++	 * Under certain conditions suggested by some regulatory bodies a
++	 * GO/STA can IR on channels marked with IEEE80211_NO_IR. Set this flag
++	 * only if such relaxations are not enabled and the conditions are not
++	 * met.
++	 */
++	check_no_ir = !cfg80211_ir_permissive_chan(wiphy, iftype,
++						   chandef->chan);
++
++	return _cfg80211_reg_can_beacon(wiphy, chandef, iftype, check_no_ir);
++}
++EXPORT_SYMBOL(cfg80211_reg_can_beacon_relax);
++
+ int cfg80211_set_monitor_channel(struct cfg80211_registered_device *rdev,
+ 				 struct cfg80211_chan_def *chandef)
+ {
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -2007,7 +2007,8 @@ static int __nl80211_set_channel(struct
+ 	switch (iftype) {
+ 	case NL80211_IFTYPE_AP:
+ 	case NL80211_IFTYPE_P2P_GO:
+-		if (!cfg80211_reg_can_beacon(&rdev->wiphy, &chandef, iftype)) {
++		if (!cfg80211_reg_can_beacon_relax(&rdev->wiphy, &chandef,
++						   iftype)) {
+ 			result = -EINVAL;
+ 			break;
+ 		}
+@@ -3408,8 +3409,8 @@ static int nl80211_start_ap(struct sk_bu
+ 	} else if (!nl80211_get_ap_channel(rdev, &params))
+ 		return -EINVAL;
+ 
+-	if (!cfg80211_reg_can_beacon(&rdev->wiphy, &params.chandef,
+-				     wdev->iftype))
++	if (!cfg80211_reg_can_beacon_relax(&rdev->wiphy, &params.chandef,
++					   wdev->iftype))
+ 		return -EINVAL;
+ 
+ 	if (info->attrs[NL80211_ATTR_ACL_POLICY]) {
+@@ -6500,8 +6501,8 @@ skip_beacons:
+ 	if (err)
+ 		return err;
+ 
+-	if (!cfg80211_reg_can_beacon(&rdev->wiphy, &params.chandef,
+-				     wdev->iftype))
++	if (!cfg80211_reg_can_beacon_relax(&rdev->wiphy, &params.chandef,
++					   wdev->iftype))
+ 		return -EINVAL;
+ 
+ 	err = cfg80211_chandef_dfs_required(wdev->wiphy,
+@@ -10188,7 +10189,8 @@ static int nl80211_tdls_channel_switch(s
+ 		return -EINVAL;
+ 
+ 	/* we will be active on the TDLS link */
+-	if (!cfg80211_reg_can_beacon(&rdev->wiphy, &chandef, wdev->iftype))
++	if (!cfg80211_reg_can_beacon_relax(&rdev->wiphy, &chandef,
++					   wdev->iftype))
+ 		return -EINVAL;
+ 
+ 	/* don't allow switching to DFS channels */
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -1589,7 +1589,7 @@ static bool reg_wdev_chan_valid(struct w
+ 	case NL80211_IFTYPE_AP:
+ 	case NL80211_IFTYPE_P2P_GO:
+ 	case NL80211_IFTYPE_ADHOC:
+-		return cfg80211_reg_can_beacon(wiphy, &chandef, iftype);
++		return cfg80211_reg_can_beacon_relax(wiphy, &chandef, iftype);
+ 	case NL80211_IFTYPE_STATION:
+ 	case NL80211_IFTYPE_P2P_CLIENT:
+ 		return cfg80211_chandef_usable(wiphy, &chandef,
+--- a/net/wireless/trace.h
++++ b/net/wireless/trace.h
+@@ -2358,20 +2358,23 @@ TRACE_EVENT(cfg80211_cqm_rssi_notify,
+ 
+ TRACE_EVENT(cfg80211_reg_can_beacon,
+ 	TP_PROTO(struct wiphy *wiphy, struct cfg80211_chan_def *chandef,
+-		 enum nl80211_iftype iftype),
+-	TP_ARGS(wiphy, chandef, iftype),
++		 enum nl80211_iftype iftype, bool check_no_ir),
++	TP_ARGS(wiphy, chandef, iftype, check_no_ir),
+ 	TP_STRUCT__entry(
+ 		WIPHY_ENTRY
+ 		CHAN_DEF_ENTRY
+ 		__field(enum nl80211_iftype, iftype)
++		__field(bool, check_no_ir)
+ 	),
+ 	TP_fast_assign(
+ 		WIPHY_ASSIGN;
+ 		CHAN_DEF_ASSIGN(chandef);
+ 		__entry->iftype = iftype;
++		__entry->check_no_ir = check_no_ir;
+ 	),
+-	TP_printk(WIPHY_PR_FMT ", " CHAN_DEF_PR_FMT ", iftype=%d",
+-		  WIPHY_PR_ARG, CHAN_DEF_PR_ARG, __entry->iftype)
++	TP_printk(WIPHY_PR_FMT ", " CHAN_DEF_PR_FMT ", iftype=%d check_no_ir=%s",
++		  WIPHY_PR_ARG, CHAN_DEF_PR_ARG, __entry->iftype,
++		  BOOL_TO_STR(__entry->check_no_ir))
+ );
+ 
+ TRACE_EVENT(cfg80211_chandef_dfs_required,

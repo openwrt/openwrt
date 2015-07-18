@@ -20,7 +20,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
-@@ -5813,6 +5813,7 @@ static void brcmf_wiphy_wowl_params(struct wiphy *wiphy)
+@@ -5813,6 +5813,7 @@ static void brcmf_wiphy_wowl_params(stru
  
  static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
  {
@@ -28,7 +28,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	struct ieee80211_supported_band *band;
  	__le32 bandlist[3];
  	u32 n_bands;
-@@ -5826,6 +5827,19 @@ static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
+@@ -5826,6 +5827,19 @@ static int brcmf_setup_wiphy(struct wiph
  	if (err)
  		return err;
  
