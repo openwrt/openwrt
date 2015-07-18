@@ -9,7 +9,7 @@ define Profile/Firefly
 	NAME:=Firefly Device
 	PACKAGES:=\
 		kmod-usb-core kmod-usb3 kmod-usb-hid kmod-sdhci-mt7620 \
-		kmod-ledtrig-usbdev kmod-mt76
+		kmod-ledtrig-usbdev
 endef
 
 define Profile/Firefly/Description
