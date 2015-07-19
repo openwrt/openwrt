@@ -1256,8 +1256,6 @@ define Image/Build/WRT400N
 	fi
 endef
 
-Image/Build/WAP4410N/buildkernel=$(call MkuImageGzip,$(2),$(3))
-Image/Build/WAP4410N=$(call Sysupgrade/KRuImage,$(1),$(2),1638400,6356992)
 
 define Image/Build/CameoAP94/buildkernel
 	$(call MkuImageLzma,$(2),$(3) $(4))
@@ -2164,7 +2162,6 @@ $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRHPGN,whr-hp-gn,WHR-HP-GN,ttyS0,
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WLAEAG300N,wlae-ag300n,WLAE-AG300N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WLAE-AG300N))
 
 $(eval $(call SingleProfile,WRT400N,64k,WRT400N,wrt400n,WRT400N,ttyS0,115200))
-$(eval $(call SingleProfile,WAP4410N,64k,WAP4410N,wap4410n,WAP4410N,ttyS0,115200))
 
 $(eval $(call SingleProfile,WZRHP128K,128kraw,WZRHPG300NH,wzr-hp-g300nh,WZR-HP-G300NH,ttyS0,115200,WZR-HP-G300NH))
 $(eval $(call SingleProfile,WZRHP64K,64kraw,WZRHPG300NH2,wzr-hp-g300nh2,WZR-HP-G300NH2,ttyS0,115200,WZR-HP-G300NH2))

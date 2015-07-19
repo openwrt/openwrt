@@ -23,15 +23,5 @@ define Profile/WRT400N/Description
 	Package set optimized for the Linksys WRT400N.
 endef
 
-define Profile/WAP4410N
-	NAME:=Linksys WAP4410N
-	PACKAGES:=
-endef
-
-define Profile/WAP4410N/Description
-	Package set optimized for the Linksys WAP4410N.
-endef
-
 $(eval $(call Profile,WRT160NL))
 $(eval $(call Profile,WRT400N))
-$(eval $(call Profile,WAP4410N))

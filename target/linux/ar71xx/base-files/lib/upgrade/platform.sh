@@ -235,7 +235,6 @@ platform_check_image() {
 	nanostation-m-xw | \
 	rw2458n | \
 	wpj531 | \
-	wap4410n | \
 	wndap360 | \
 	wpj344 | \
 	wzr-hp-g300nh2 | \
