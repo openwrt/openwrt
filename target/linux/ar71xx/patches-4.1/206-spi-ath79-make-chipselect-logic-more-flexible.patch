@@ -1,0 +1,191 @@
+From 7008284716403237f6bc7d7590b3ed073555bd56 Mon Sep 17 00:00:00 2001
+From: Gabor Juhos <juhosg@openwrt.org>
+Date: Wed, 11 Jan 2012 22:25:11 +0100
+Subject: [PATCH 34/34] spi/ath79: make chipselect logic more flexible
+
+Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
+---
+ arch/mips/ath79/mach-pb44.c                        |    6 ++
+ .../include/asm/mach-ath79/ath79_spi_platform.h    |    8 ++-
+ drivers/spi/spi-ath79.c                            |   67 +++++++++++++-------
+ 8 files changed, 88 insertions(+), 23 deletions(-)
+
+--- a/arch/mips/ath79/mach-pb44.c
++++ b/arch/mips/ath79/mach-pb44.c
+@@ -87,12 +87,18 @@ static struct gpio_keys_button pb44_gpio
+ 	}
+ };
+ 
++static struct ath79_spi_controller_data pb44_spi0_data = {
++	.cs_type = ATH79_SPI_CS_TYPE_INTERNAL,
++	.cs_line = 0,
++};
++
+ static struct spi_board_info pb44_spi_info[] = {
+ 	{
+ 		.bus_num	= 0,
+ 		.chip_select	= 0,
+ 		.max_speed_hz	= 25000000,
+ 		.modalias	= "m25p64",
++		.controller_data = &pb44_spi0_data,
+ 	},
+ };
+ 
+--- a/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
++++ b/arch/mips/include/asm/mach-ath79/ath79_spi_platform.h
+@@ -16,8 +16,14 @@ struct ath79_spi_platform_data {
+ 	unsigned	num_chipselect;
+ };
+ 
++enum ath79_spi_cs_type {
++	ATH79_SPI_CS_TYPE_INTERNAL,
++	ATH79_SPI_CS_TYPE_GPIO,
++};
++
+ struct ath79_spi_controller_data {
+-	unsigned	gpio;
++	enum ath79_spi_cs_type cs_type;
++	unsigned cs_line;
+ };
+ 
+ #endif /* _ATH79_SPI_PLATFORM_H */
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -33,6 +33,8 @@
+ #define ATH79_SPI_RRW_DELAY_FACTOR	12000
+ #define MHZ				(1000 * 1000)
+ 
++#define ATH79_SPI_CS_LINE_MAX		2
++
+ struct ath79_spi {
+ 	struct spi_bitbang	bitbang;
+ 	u32			ioc_base;
+@@ -67,6 +69,7 @@ static void ath79_spi_chipselect(struct
+ {
+ 	struct ath79_spi *sp = ath79_spidev_to_sp(spi);
+ 	int cs_high = (spi->mode & SPI_CS_HIGH) ? is_active : !is_active;
++	struct ath79_spi_controller_data *cdata = spi->controller_data;
+ 
+ 	if (is_active) {
+ 		/* set initial clock polarity */
+@@ -78,20 +81,24 @@ static void ath79_spi_chipselect(struct
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
+ 	}
+ 
+-	if (spi->chip_select) {
+-		struct ath79_spi_controller_data *cdata = spi->controller_data;
+-
+-		/* SPI is normally active-low */
+-		gpio_set_value(cdata->gpio, cs_high);
+-	} else {
++	switch (cdata->cs_type) {
++	case ATH79_SPI_CS_TYPE_INTERNAL:
+ 		if (cs_high)
+-			sp->ioc_base |= AR71XX_SPI_IOC_CS0;
++			sp->ioc_base |= AR71XX_SPI_IOC_CS(cdata->cs_line);
+ 		else
+-			sp->ioc_base &= ~AR71XX_SPI_IOC_CS0;
++			sp->ioc_base &= ~AR71XX_SPI_IOC_CS(cdata->cs_line);
+ 
+ 		ath79_spi_wr(sp, AR71XX_SPI_REG_IOC, sp->ioc_base);
+-	}
++		break;
+ 
++	case ATH79_SPI_CS_TYPE_GPIO:
++		/* SPI is normally active-low */
++		if (gpio_cansleep(cdata->cs_line))
++			gpio_set_value_cansleep(cdata->cs_line, cs_high);
++		else
++			gpio_set_value(cdata->cs_line, cs_high);
++		break;
++	}
+ }
+ 
+ static void ath79_spi_enable(struct ath79_spi *sp)
+@@ -118,24 +125,30 @@ static void ath79_spi_disable(struct ath
+ static int ath79_spi_setup_cs(struct spi_device *spi)
+ {
+ 	struct ath79_spi_controller_data *cdata;
++	unsigned long flags;
+ 	int status;
+ 
+ 	cdata = spi->controller_data;
+-	if (spi->chip_select && !cdata)
++	if (!cdata)
+ 		return -EINVAL;
+ 
+ 	status = 0;
+-	if (spi->chip_select) {
+-		unsigned long flags;
++	switch (cdata->cs_type) {
++	case ATH79_SPI_CS_TYPE_INTERNAL:
++		if (cdata->cs_line > ATH79_SPI_CS_LINE_MAX)
++			status = -EINVAL;
++		break;
+ 
++	case ATH79_SPI_CS_TYPE_GPIO:
+ 		flags = GPIOF_DIR_OUT;
+ 		if (spi->mode & SPI_CS_HIGH)
+ 			flags |= GPIOF_INIT_LOW;
+ 		else
+ 			flags |= GPIOF_INIT_HIGH;
+ 
+-		status = gpio_request_one(cdata->gpio, flags,
++		status = gpio_request_one(cdata->cs_line, flags,
+ 					  dev_name(&spi->dev));
++		break;
+ 	}
+ 
+ 	return status;
+@@ -143,9 +156,19 @@ static int ath79_spi_setup_cs(struct spi
+ 
+ static void ath79_spi_cleanup_cs(struct spi_device *spi)
+ {
+-	if (spi->chip_select) {
+-		struct ath79_spi_controller_data *cdata = spi->controller_data;
+-		gpio_free(cdata->gpio);
++	struct ath79_spi_controller_data *cdata;
++
++	cdata = spi->controller_data;
++	if (!cdata)
++		return;
++
++	switch (cdata->cs_type) {
++	case ATH79_SPI_CS_TYPE_INTERNAL:
++		/* nothing to do */
++		break;
++	case ATH79_SPI_CS_TYPE_GPIO:
++		gpio_free(cdata->cs_line);
++		break;
+ 	}
+ }
+ 
+@@ -210,6 +233,10 @@ static int ath79_spi_probe(struct platfo
+ 	unsigned long rate;
+ 	int ret;
+ 
++	pdata = pdev->dev.platform_data;
++	if (!pdata)
++		return -EINVAL;
++
+ 	master = spi_alloc_master(&pdev->dev, sizeof(*sp));
+ 	if (master == NULL) {
+ 		dev_err(&pdev->dev, "failed to allocate spi master\n");
+@@ -219,15 +246,11 @@ static int ath79_spi_probe(struct platfo
+ 	sp = spi_master_get_devdata(master);
+ 	platform_set_drvdata(pdev, sp);
+ 
+-	pdata = dev_get_platdata(&pdev->dev);
+-
+ 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(1, 32);
+ 	master->setup = ath79_spi_setup;
+ 	master->cleanup = ath79_spi_cleanup;
+-	if (pdata) {
+-		master->bus_num = pdata->bus_num;
+-		master->num_chipselect = pdata->num_chipselect;
+-	}
++	master->bus_num = pdata->bus_num;
++	master->num_chipselect = pdata->num_chipselect;
+ 
+ 	sp->bitbang.master = master;
+ 	sp->bitbang.chipselect = ath79_spi_chipselect;

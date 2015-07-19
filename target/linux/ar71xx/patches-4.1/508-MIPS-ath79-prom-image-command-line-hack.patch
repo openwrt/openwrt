@@ -1,0 +1,57 @@
+--- a/arch/mips/ath79/prom.c
++++ b/arch/mips/ath79/prom.c
+@@ -32,6 +32,35 @@ static void __init ath79_prom_append_cmd
+ 	strlcat(arcs_cmdline, ath79_cmdline_buf, sizeof(arcs_cmdline));
+ }
+ 
++#ifdef CONFIG_IMAGE_CMDLINE_HACK
++extern char __image_cmdline[];
++
++static int __init ath79_use_image_cmdline(void)
++{
++	char *p = __image_cmdline;
++	int replace = 0;
++
++	if (*p == '-') {
++		replace = 1;
++		p++;
++	}
++
++	if (*p == '\0')
++		return 0;
++
++	if (replace) {
++		strlcpy(arcs_cmdline, p, sizeof(arcs_cmdline));
++	} else {
++		strlcat(arcs_cmdline, " ", sizeof(arcs_cmdline));
++		strlcat(arcs_cmdline, p, sizeof(arcs_cmdline));
++	}
++
++	return 1;
++}
++#else
++static inline int ath79_use_image_cmdline(void) { return 0; }
++#endif
++
+ static int __init ath79_prom_init_myloader(void)
+ {
+ 	struct myloader_info *mylo;
+@@ -60,6 +89,8 @@ static int __init ath79_prom_init_myload
+ 
+ 	ath79_prom_append_cmdline("ethaddr", mac_buf);
+ 
++	ath79_use_image_cmdline();
++
+ 	return 1;
+ }
+ 
+@@ -70,7 +101,8 @@ void __init prom_init(void)
+ 	if (ath79_prom_init_myloader())
+ 		return;
+ 
+-	fw_init_cmdline();
++	if (!ath79_use_image_cmdline())
++		fw_init_cmdline();
+ 
+ 	env = fw_getenv("ethaddr");
+ 	if (env)
