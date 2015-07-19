@@ -1,0 +1,35 @@
+--- a/drivers/mtd/devices/m25p80.c
++++ b/drivers/mtd/devices/m25p80.c
+@@ -142,6 +142,9 @@ static int m25p80_read(struct spi_nor *n
+ 	flash->command[0] = nor->read_opcode;
+ 	m25p_addr2cmd(nor, from, flash->command);
+ 
++	if (dummy == 1)
++		t[0].dummy = true;
++
+ 	t[0].type = SPI_TRANSFER_FLASH_READ_CMD;
+ 	t[0].tx_buf = flash->command;
+ 	t[0].len = m25p_cmdsz(nor) + dummy;
+--- a/drivers/spi/spi-ath79.c
++++ b/drivers/spi/spi-ath79.c
+@@ -260,6 +260,10 @@ static int ath79_spi_do_read_flash_cmd(s
+ 	sp->read_addr = 0;
+ 
+ 	len = t->len - 1;
++
++	if (t->dummy)
++		len -= 1;
++
+ 	p = t->tx_buf;
+ 
+ 	while (len--) {
+--- a/include/linux/spi/spi.h
++++ b/include/linux/spi/spi.h
+@@ -635,6 +635,7 @@ struct spi_transfer {
+ 	u16		delay_usecs;
+ 	u32		speed_hz;
+ 	enum spi_transfer_type type;
++	bool dummy;
+ 
+ 	struct list_head transfer_list;
+ };
