@@ -22,7 +22,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
 
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1229,6 +1229,10 @@ config SOC_AR934X
+@@ -105,6 +105,10 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -33,7 +33,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  config SOC_QCA955X
  	select HW_HAS_PCI
  	select PCI_AR724X if PCI
-@@ -1271,7 +1275,7 @@ config ATH79_DEV_USB
+@@ -144,7 +148,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC
@@ -237,8 +237,8 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  
  	ath79_wmac_data.external_reset = ar933x_wmac_reset;
  }
-@@ -149,6 +149,26 @@ static void ar934x_wmac_setup(void)
- 		ath79_wmac_data.is_clk_25mhz = true;
+@@ -151,6 +151,26 @@ static void ar934x_wmac_setup(void)
+ 	ath79_wmac_data.get_mac_revision = ar93xx_get_soc_revision;
  }
  
 +static void qca953x_wmac_setup(void)
@@ -264,7 +264,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  static void qca955x_wmac_setup(void)
  {
  	u32 t;
-@@ -366,6 +386,8 @@ void __init ath79_register_wmac(u8 *cal_
+@@ -368,6 +388,8 @@ void __init ath79_register_wmac(u8 *cal_
  		ar933x_wmac_setup();
  	else if (soc_is_ar934x())
  		ar934x_wmac_setup();
@@ -405,7 +405,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  }
 --- a/arch/mips/ath79/setup.c
 +++ b/arch/mips/ath79/setup.c
-@@ -59,6 +59,7 @@ static void __init ath79_detect_sys_type
+@@ -60,6 +60,7 @@ static void __init ath79_detect_sys_type
  	u32 major;
  	u32 minor;
  	u32 rev = 0;
@@ -413,7 +413,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  
  	id = ath79_reset_rr(AR71XX_RESET_REG_REV_ID);
  	major = id & REV_ID_MAJOR_MASK;
-@@ -151,6 +152,16 @@ static void __init ath79_detect_sys_type
+@@ -152,6 +153,16 @@ static void __init ath79_detect_sys_type
  		rev = id & AR934X_REV_ID_REVISION_MASK;
  		break;
  
@@ -430,7 +430,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  	case REV_ID_MAJOR_QCA9556:
  		ath79_soc = ATH79_SOC_QCA9556;
  		chip = "9556";
-@@ -169,7 +180,7 @@ static void __init ath79_detect_sys_type
+@@ -170,7 +181,7 @@ static void __init ath79_detect_sys_type
  
  	ath79_soc_rev = rev;
  
