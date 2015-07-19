@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,195 @@
+@@ -16,24 +16,206 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -9,6 +9,8 @@
 +	ATH79_MACH_ALL0258N,		/* Allnet ALL0258N */
 +	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
 +	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */
++	ATH79_MACH_ANTMINER_S1,	/* Bitmain Antminer S1 */
++	ATH79_MACH_ANTMINER_S3,	/* Bitmain Antminer S3 */
 +	ATH79_MACH_AP113,		/* Atheros AP113 reference board */
  	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
  	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
@@ -16,6 +18,7 @@
  	ATH79_MACH_AP135_020,		/* Atheros AP135-020 reference board */
  	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
  	ATH79_MACH_AP136_020,		/* Atheros AP136-020 reference board */
++	ATH79_MACH_AP143,		/* Atheros AP143 reference board */
  	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
 +	ATH79_MACH_AP83,		/* Atheros AP83 */
 +	ATH79_MACH_AP96,		/* Atheros AP96 */
@@ -50,6 +53,7 @@
 +	ATH79_MACH_EL_M150,		/* EasyLink EL-M150 */
 +	ATH79_MACH_EL_MINI,		/* EasyLink EL-MINI */
 +	ATH79_MACH_ESR1750,		/* EnGenius ESR1750 */
++	ATH79_MACH_EPG5000,		/* EnGenius EPG5000 */
 +	ATH79_MACH_F9K1115V2,		/* Belkin AC1750DB */
 +	ATH79_MACH_GL_INET,		/* GL-CONNECT GL-INET */
 +	ATH79_MACH_GS_OOLITE,           /* GS OOLITE V1.0 */
@@ -58,6 +62,8 @@
 +	ATH79_MACH_JA76PF2,		/* jjPlus JA76PF2 */
 +	ATH79_MACH_JWAP003,		/* jjPlus JWAP003 */
 +	ATH79_MACH_HORNET_UB,		/* ALFA Networks Hornet-UB */
++	ATH79_MACH_MR12,		/* Cisco Meraki MR12 */
++	ATH79_MACH_MR16,		/* Cisco Meraki MR16 */
 +	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
 +	ATH79_MACH_MR600,		/* OpenMesh MR600 */
 +	ATH79_MACH_MR900,		/* OpenMesh MR900 */
@@ -74,6 +80,7 @@
 +	ATH79_MACH_OM2P_LC,		/* OpenMesh OM2P-LC */
 +	ATH79_MACH_OM2Pv2,		/* OpenMesh OM2Pv2 */
 +	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
++	ATH79_MACH_OM5P_AN,		/* OpenMesh OM5P-AN */
 +	ATH79_MACH_OM5P,		/* OpenMesh OM5P */
 +	ATH79_MACH_PB42,		/* Atheros PB42 */
 +	ATH79_MACH_PB92,		/* Atheros PB92 */
@@ -93,6 +100,7 @@
 +	ATH79_MACH_RB_750G_R3,		/* MikroTik RouterBOARD 750GL */
 +	ATH79_MACH_RB_751,		/* MikroTik RouterBOARD 751 */
 +	ATH79_MACH_RB_751G,		/* Mikrotik RouterBOARD 751G */
++	ATH79_MACH_RB_922GS,		/* Mikrotik RouterBOARD 911/922GS boards */
 +	ATH79_MACH_RB_951G,		/* Mikrotik RouterBOARD 951G */
 +	ATH79_MACH_RB_951U,		/* Mikrotik RouterBOARD 951Ui-2HnD */
 +	ATH79_MACH_RB_2011G,		/* Mikrotik RouterBOARD 2011UAS-2HnD */
@@ -107,6 +115,7 @@
 +	ATH79_MACH_TEW_673GRU,		/* TRENDnet TEW-673GRU */
 +	ATH79_MACH_TEW_712BR,		/* TRENDnet TEW-712BR */
 +	ATH79_MACH_TEW_732BR,		/* TRENDnet TEW-732BR */
++	ATH79_MACH_MC_MAC1200R,		/* MERCURY MAC1200R*/
 +	ATH79_MACH_TL_MR10U,		/* TP-LINK TL-MR10U */
 +	ATH79_MACH_TL_MR11U,		/* TP-LINK TL-MR11U */
 +	ATH79_MACH_TL_MR13U,		/* TP-LINK TL-MR13U */
@@ -157,6 +166,8 @@
  	ATH79_MACH_UBNT_NANO_M, 	/* Ubiquiti NanoStation M */
 +	ATH79_MACH_UBNT_NANO_M_XW, 	/* Ubiquiti NanoStation M XW */
  	ATH79_MACH_UBNT_ROCKET_M,	/* Ubiquiti Rocket M */
+ 	ATH79_MACH_UBNT_ROCKET_M_XW,	/* Ubiquiti Rocket M XW*/
+ 	ATH79_MACH_UBNT_ROCKET_M_TI,	/* Ubiquiti Rocket M TI*/
 +	ATH79_MACH_UBNT_RSPRO,		/* Ubiquiti RouterStation Pro */
 +	ATH79_MACH_UBNT_RS,		/* Ubiquiti RouterStation */
  	ATH79_MACH_UBNT_UAP_PRO,	/* Ubiquiti UniFi AP Pro */
@@ -198,7 +209,7 @@
  #endif /* _ATH79_MACHTYPE_H */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -2,6 +2,70 @@ if ATH79
+@@ -2,6 +2,90 @@ if ATH79
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
  
@@ -256,6 +267,26 @@
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +
++config ATH79_MACH_ANTMINER_S1
++	bool "Bitmain Antminer S1 support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_ANTMINER_S3
++	bool "Bitmain Antminer S3 support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_AP113
 +	bool "Atheros AP113 board support"
 +	select SOC_AR724X
@@ -269,7 +300,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +75,1031 @@ config ATH79_MACH_AP121
+@@ -11,62 +95,1097 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -304,6 +335,20 @@
 +	help
 +	  Say 'Y' here if you want your kernel to support the
 +	  Atheros AP136 or AP135 reference boards.
++
++config ATH79_MACH_AP143
++	bool "Atheros AP143 reference board"
++	select SOC_QCA953X
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	select ATH79_DEV_ETH
++	select ATH79_DEV_M25P80
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  Atheros AP143 reference board.
 +
 +config ATH79_MACH_AP81
 +	bool "Atheros AP81 reference board"
@@ -396,6 +441,17 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
++
++config ATH79_MACH_EPG5000
++	bool "EnGenius EPG5000 board support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	select ATH79_NVRAM
 +
 +config ATH79_MACH_ESR1750
 +	bool "EnGenius ESR1750 board support"
@@ -780,6 +836,16 @@
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_MC_MAC1200R
++	bool "MERCURY MAC1200R board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_RB4XX
 +	bool "MikroTik RouterBOARD 4xx series support"
 +	select SOC_AR71XX
@@ -804,6 +870,16 @@
 +	select ATH79_DEV_WMAC
 +	select ATH79_DEV_USB
 +	select ATH79_ROUTERBOOT
++
++config ATH79_MACH_RB922
++	bool "MikroTik RouterBOARD 922 support"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_NFC
++	select ATH79_DEV_USB
++	select ATH79_ROUTERBOOT
++	select RLE_DECOMPRESS
 +
 +config ATH79_MACH_RB95X
 +       bool "MikroTik RouterBOARD 95X support"
@@ -923,6 +999,27 @@
 +config ATH79_MACH_OM5P
 +	bool "OpenMesh OM5P board support"
 +	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_MR12
++	bool "Meraki MR12 board support"
++	select SOC_AR724X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_MR16
++	bool "Meraki MR16 board support"
++	select SOC_AR71XX
++	select ATH79_DEV_AP9X_PCI if PCI
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
@@ -1329,7 +1426,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1116,97 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1202,97 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1427,7 +1524,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -124,7 +1248,10 @@ config ATH79_DEV_DSA
+@@ -134,7 +1344,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1439,7 +1536,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -154,6 +1281,11 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,6 +1377,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
@@ -1453,7 +1550,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,124 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,132 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1461,10 +1558,13 @@
 +obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach-alfa-nx.o
 +obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
 +obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
++obj-$(CONFIG_ATH79_MACH_ANTMINER_S1)+= mach-antminer-s1.o
++obj-$(CONFIG_ATH79_MACH_ANTMINER_S3)+= mach-antminer-s3.o
 +obj-$(CONFIG_ATH79_MACH_AP113)		+= mach-ap113.o
  obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o
 +obj-$(CONFIG_ATH79_MACH_AP132)		+= mach-ap132.o
  obj-$(CONFIG_ATH79_MACH_AP136)		+= mach-ap136.o
++obj-$(CONFIG_ATH79_MACH_AP143)		+= mach-ap143.o
  obj-$(CONFIG_ATH79_MACH_AP81)		+= mach-ap81.o
 +obj-$(CONFIG_ATH79_MACH_AP83)		+= mach-ap83.o
 +obj-$(CONFIG_ATH79_MACH_AP96)		+= mach-ap96.o
@@ -1491,6 +1591,7 @@
 +obj-$(CONFIG_ATH79_MACH_EAP7660D)	+= mach-eap7660d.o
 +obj-$(CONFIG_ATH79_MACH_EL_M150)	+= mach-el-m150.o
 +obj-$(CONFIG_ATH79_MACH_EL_MINI)	+= mach-el-mini.o
++obj-$(CONFIG_ATH79_MACH_EPG5000)	+= mach-epg5000.o
 +obj-$(CONFIG_ATH79_MACH_ESR1750)	+= mach-esr1750.o
 +obj-$(CONFIG_ATH79_MACH_F9K1115V2)	+= mach-f9k1115v2.o
 +obj-$(CONFIG_ATH79_MACH_GL_INET)	+= mach-gl-inet.o
@@ -1499,6 +1600,9 @@
 +obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o
 +obj-$(CONFIG_ATH79_MACH_JWAP003)	+= mach-jwap003.o
 +obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
++obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)     += mach-mc-mac1200r.o
++obj-$(CONFIG_ATH79_MACH_MR12)		+= mach-mr12.o
++obj-$(CONFIG_ATH79_MACH_MR16)		+= mach-mr16.o
 +obj-$(CONFIG_ATH79_MACH_MR600)		+= mach-mr600.o
 +obj-$(CONFIG_ATH79_MACH_MR900)		+= mach-mr900.o
 +obj-$(CONFIG_ATH79_MACH_MYNET_N600)	+= mach-mynet-n600.o
@@ -1517,6 +1621,7 @@
 +obj-$(CONFIG_ATH79_MACH_RB4XX)		+= mach-rb4xx.o
 +obj-$(CONFIG_ATH79_MACH_RB750)		+= mach-rb750.o
 +obj-$(CONFIG_ATH79_MACH_RB91X)		+= mach-rb91x.o
++obj-$(CONFIG_ATH79_MACH_RB922)		+= mach-rb922.o
 +obj-$(CONFIG_ATH79_MACH_RB95X)		+= mach-rb95x.o
 +obj-$(CONFIG_ATH79_MACH_RB2011)		+= mach-rb2011.o
 +obj-$(CONFIG_ATH79_MACH_RBSXTLITE)	+= mach-rbsxtlite.o
@@ -1580,7 +1685,7 @@
 +obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
-@@ -130,6 +130,12 @@ void __init prom_init(void)
+@@ -130,6 +130,13 @@ void __init prom_init(void)
  		initrd_end = initrd_start + fw_getenvl("initrd_size");
  	}
  #endif
@@ -1588,7 +1693,8 @@
 +	if (strstr(arcs_cmdline, "board=750Gr3") ||
 +	    strstr(arcs_cmdline, "board=951G") ||
 +	    strstr(arcs_cmdline, "board=2011L") ||
-+	    strstr(arcs_cmdline, "board=711Gr100"))
++	    strstr(arcs_cmdline, "board=711Gr100") ||
++	    strstr(arcs_cmdline, "board=922gs"))
 +		ath79_prom_append_cmdline("console", "ttyS0,115200");
  }
  
