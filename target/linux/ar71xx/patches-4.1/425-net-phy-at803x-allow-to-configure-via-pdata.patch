@@ -84,7 +84,7 @@
  /* save relevant PHY registers to private copy */
  static void at803x_context_save(struct phy_device *phydev,
  				struct at803x_context *context)
-@@ -208,8 +256,16 @@ static int at803x_probe(struct phy_devic
+@@ -209,8 +257,16 @@ static int at803x_probe(struct phy_devic
  	return 0;
  }
  
@@ -101,7 +101,7 @@
  	int ret;
  
  	ret = genphy_config_init(phydev);
-@@ -227,6 +283,26 @@ static int at803x_config_init(struct phy
+@@ -228,6 +284,26 @@ static int at803x_config_init(struct phy
  			return ret;
  	}
  
@@ -128,7 +128,7 @@
  	return 0;
  }
  
-@@ -258,6 +334,8 @@ static int at803x_config_intr(struct phy
+@@ -259,6 +335,8 @@ static int at803x_config_intr(struct phy
  static void at803x_link_change_notify(struct phy_device *phydev)
  {
  	struct at803x_priv *priv = phydev->priv;
@@ -137,7 +137,7 @@
  
  	/*
  	 * Conduct a hardware reset for AT8030 every time a link loss is
-@@ -288,6 +366,26 @@ static void at803x_link_change_notify(st
+@@ -289,6 +367,26 @@ static void at803x_link_change_notify(st
  			priv->phy_reset = false;
  		}
  	}

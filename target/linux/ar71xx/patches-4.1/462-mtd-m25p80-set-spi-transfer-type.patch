@@ -1,6 +1,6 @@
 --- a/drivers/mtd/devices/m25p80.c
 +++ b/drivers/mtd/devices/m25p80.c
-@@ -142,10 +142,12 @@ static int m25p80_read(struct spi_nor *n
+@@ -139,10 +139,12 @@ static int m25p80_read(struct spi_nor *n
  	flash->command[0] = nor->read_opcode;
  	m25p_addr2cmd(nor, from, flash->command);
  

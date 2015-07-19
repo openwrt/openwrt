@@ -1,6 +1,6 @@
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -647,6 +647,13 @@ config SPI_TLE62X0
+@@ -676,6 +676,13 @@ config SPI_TLE62X0
  	  sysfs interface, with each line presented as a kind of GPIO
  	  exposing both switch control and diagnostic feedback.
  
@@ -16,7 +16,7 @@
  #
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -63,6 +63,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_
+@@ -66,6 +66,7 @@ spi-pxa2xx-platform-$(CONFIG_SPI_PXA2XX_
  obj-$(CONFIG_SPI_PXA2XX)		+= spi-pxa2xx-platform.o
  obj-$(CONFIG_SPI_PXA2XX_PCI)		+= spi-pxa2xx-pci.o
  obj-$(CONFIG_SPI_RB4XX)			+= spi-rb4xx.o

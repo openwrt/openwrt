@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
-@@ -32,6 +32,35 @@ static void __init ath79_prom_append_cmd
+@@ -33,6 +33,35 @@ static void __init ath79_prom_append_cmd
  	strlcat(arcs_cmdline, ath79_cmdline_buf, sizeof(arcs_cmdline));
  }
  
@@ -36,7 +36,7 @@
  static int __init ath79_prom_init_myloader(void)
  {
  	struct myloader_info *mylo;
-@@ -60,6 +89,8 @@ static int __init ath79_prom_init_myload
+@@ -61,6 +90,8 @@ static int __init ath79_prom_init_myload
  
  	ath79_prom_append_cmdline("ethaddr", mac_buf);
  
@@ -45,7 +45,7 @@
  	return 1;
  }
  
-@@ -70,7 +101,8 @@ void __init prom_init(void)
+@@ -71,7 +102,8 @@ void __init prom_init(void)
  	if (ath79_prom_init_myloader())
  		return;
  
