@@ -22,7 +22,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
 
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1205,6 +1205,10 @@ config SOC_AR934X
+@@ -1229,6 +1229,10 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -33,7 +33,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  config SOC_QCA955X
  	select HW_HAS_PCI
  	select PCI_AR724X if PCI
-@@ -1247,7 +1251,7 @@ config ATH79_DEV_USB
+@@ -1271,7 +1275,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC
@@ -394,7 +394,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  	} else if (soc_is_qca955x()) {
  		ath79_ip2_handler = ath79_default_ip2_handler;
  		ath79_ip3_handler = ath79_default_ip3_handler;
-@@ -365,6 +407,8 @@ void __init arch_init_irq(void)
+@@ -364,6 +406,8 @@ void __init arch_init_irq(void)
  
  	if (soc_is_ar934x())
  		ar934x_ip2_irq_init();

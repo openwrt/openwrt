@@ -53,16 +53,16 @@
  	#define OHCI_CTRL_HCFS          (3 << 6)
 --- a/include/linux/usb/ehci_pdriver.h
 +++ b/include/linux/usb/ehci_pdriver.h
-@@ -46,6 +46,8 @@ struct usb_ehci_pdata {
- 	unsigned	big_endian_mmio:1;
- 	unsigned	no_io_watchdog:1;
+@@ -50,6 +50,8 @@ struct usb_ehci_pdata {
+ 	unsigned	reset_on_resume:1;
+ 	unsigned	dma_mask_64:1;
  	unsigned	ignore_oc:1;
 +	unsigned	qca_force_host_mode:1;
 +	unsigned	qca_force_16bit_ptw:1;
  
  	/* Turn on all power and clocks */
  	int (*power_on)(struct platform_device *pdev);
-@@ -55,6 +57,7 @@ struct usb_ehci_pdata {
+@@ -59,6 +61,7 @@ struct usb_ehci_pdata {
  	 * turn off everything else */
  	void (*power_suspend)(struct platform_device *pdev);
  	int (*pre_setup)(struct usb_hcd *hcd);
@@ -72,7 +72,7 @@
  #endif /* __USB_CORE_EHCI_PDRIVER_H */
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
-@@ -48,6 +48,14 @@ struct ehci_platform_priv {
+@@ -49,6 +49,14 @@ struct ehci_platform_priv {
  
  static const char hcd_name[] = "ehci-platform";
  
@@ -87,7 +87,7 @@
  static int ehci_platform_reset(struct usb_hcd *hcd)
  {
  	struct platform_device *pdev = to_platform_device(hcd->self.controller);
-@@ -228,6 +236,13 @@ static int ehci_platform_probe(struct pl
+@@ -266,6 +274,13 @@ static int ehci_platform_probe(struct pl
  		ehci->big_endian_mmio = 1;
  	if (pdata->ignore_oc)
  		ehci->ignore_oc = 1;

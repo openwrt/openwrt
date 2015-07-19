@@ -1580,7 +1580,7 @@
 +obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
-@@ -127,6 +127,12 @@ void __init prom_init(void)
+@@ -130,6 +130,12 @@ void __init prom_init(void)
  		initrd_end = initrd_start + fw_getenvl("initrd_size");
  	}
  #endif
