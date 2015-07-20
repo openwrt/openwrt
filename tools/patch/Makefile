@@ -15,4 +15,7 @@ PKG_MD5SUM:=e3da7940431633fb65a01b91d3b7a27a
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOSTCC := $(HOSTCC_NOCACHE)
+HOSTCXX := $(HOSTCXX_NOCACHE)
+
 $(eval $(call HostBuild))
