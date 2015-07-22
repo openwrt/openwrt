@@ -15,7 +15,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@qti.qualcomm.com>
 
 --- a/drivers/net/wireless/ath/ath10k/pci.c
 +++ b/drivers/net/wireless/ath/ath10k/pci.c
-@@ -2602,7 +2602,6 @@ static int ath10k_pci_wait_for_target_in
+@@ -2761,7 +2761,6 @@ static int ath10k_pci_wait_for_target_in
  
  static int ath10k_pci_cold_reset(struct ath10k *ar)
  {
@@ -23,7 +23,7 @@ Signed-off-by: Vasanthakumar Thiagarajan <vthiagar@qti.qualcomm.com>
  	u32 val;
  
  	ath10k_dbg(ar, ATH10K_DBG_BOOT, "boot cold reset\n");
-@@ -2618,23 +2617,18 @@ static int ath10k_pci_cold_reset(struct
+@@ -2777,23 +2776,18 @@ static int ath10k_pci_cold_reset(struct
  	val |= 1;
  	ath10k_pci_reg_write32(ar, SOC_GLOBAL_RESET_ADDRESS, val);
  

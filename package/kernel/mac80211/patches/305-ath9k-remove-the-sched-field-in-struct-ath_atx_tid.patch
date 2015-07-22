@@ -1,0 +1,90 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sat, 4 Apr 2015 18:42:33 +0200
+Subject: [PATCH] ath9k: remove the sched field in struct ath_atx_tid
+
+Use list_empty(&tid->list) instead
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/ath9k.h
++++ b/drivers/net/wireless/ath/ath9k/ath9k.h
+@@ -245,7 +245,6 @@ struct ath_atx_tid {
+ 	int baw_tail;   /* next unused tx buffer slot */
+ 
+ 	s8 bar_index;
+-	bool sched;
+ 	bool active;
+ 	bool clear_ps_filter;
+ };
+--- a/drivers/net/wireless/ath/ath9k/xmit.c
++++ b/drivers/net/wireless/ath/ath9k/xmit.c
+@@ -113,12 +113,9 @@ static void ath_tx_queue_tid(struct ath_
+ 	if (!ctx)
+ 		return;
+ 
+-	if (tid->sched)
+-		return;
+-
+-	tid->sched = true;
+ 	list = &ctx->acq[TID_TO_WME_AC(tid->tidno)];
+-	list_add_tail(&tid->list, list);
++	if (list_empty(&tid->list))
++		list_add_tail(&tid->list, list);
+ }
+ 
+ static struct ath_frame_info *get_frame_info(struct sk_buff *skb)
+@@ -1556,15 +1553,14 @@ void ath_tx_aggr_sleep(struct ieee80211_
+ 
+ 		ath_txq_lock(sc, txq);
+ 
+-		if (!tid->sched) {
++		if (list_empty(&tid->list)) {
+ 			ath_txq_unlock(sc, txq);
+ 			continue;
+ 		}
+ 
+ 		buffered = ath_tid_has_buffered(tid);
+ 
+-		tid->sched = false;
+-		list_del(&tid->list);
++		list_del_init(&tid->list);
+ 
+ 		ath_txq_unlock(sc, txq);
+ 
+@@ -1944,8 +1940,7 @@ void ath_txq_schedule(struct ath_softc *
+ 			break;
+ 
+ 		tid = list_first_entry(tid_list, struct ath_atx_tid, list);
+-		list_del(&tid->list);
+-		tid->sched = false;
++		list_del_init(&tid->list);
+ 
+ 		if (ath_tx_sched_aggr(sc, txq, tid, &stop))
+ 			sent = true;
+@@ -2863,11 +2858,11 @@ void ath_tx_node_init(struct ath_softc *
+ 		tid->seq_start = tid->seq_next = 0;
+ 		tid->baw_size  = WME_MAX_BA;
+ 		tid->baw_head  = tid->baw_tail = 0;
+-		tid->sched     = false;
+ 		tid->active	   = false;
+ 		tid->clear_ps_filter = true;
+ 		__skb_queue_head_init(&tid->buf_q);
+ 		__skb_queue_head_init(&tid->retry_q);
++		INIT_LIST_HEAD(&tid->list);
+ 		acno = TID_TO_WME_AC(tidno);
+ 		tid->txq = sc->tx.txq_map[acno];
+ 	}
+@@ -2886,10 +2881,8 @@ void ath_tx_node_cleanup(struct ath_soft
+ 
+ 		ath_txq_lock(sc, txq);
+ 
+-		if (tid->sched) {
+-			list_del(&tid->list);
+-			tid->sched = false;
+-		}
++		if (!list_empty(&tid->list))
++			list_del_init(&tid->list);
+ 
+ 		ath_tid_drain(sc, txq, tid);
+ 		tid->active = false;

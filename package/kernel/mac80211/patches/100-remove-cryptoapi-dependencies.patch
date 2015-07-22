@@ -1,3 +1,14 @@
+--- a/net/mac80211/Kconfig
++++ b/net/mac80211/Kconfig
+@@ -5,8 +5,6 @@ config MAC80211
+ 	depends on CRYPTO
+ 	depends on CRYPTO_ARC4
+ 	depends on CRYPTO_AES
+-	select BPAUTO_CRYPTO_CCM
+-	depends on CRYPTO_GCM
+ 	depends on CRC32
+ 	select BPAUTO_AVERAGE
+ 	---help---
 --- a/net/mac80211/Makefile
 +++ b/net/mac80211/Makefile
 @@ -15,9 +15,7 @@ mac80211-y := \
@@ -10,84 +21,25 @@
  	cfg.o \
  	ethtool.o \
  	rx.o \
---- a/net/mac80211/aes_gcm.h
-+++ b/net/mac80211/aes_gcm.h
-@@ -11,12 +11,28 @@
- 
- #include <linux/crypto.h>
- 
--void ieee80211_aes_gcm_encrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
--			       u8 *data, size_t data_len, u8 *mic);
--int ieee80211_aes_gcm_decrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
--			      u8 *data, size_t data_len, u8 *mic);
--struct crypto_aead *ieee80211_aes_gcm_key_setup_encrypt(const u8 key[],
--							size_t key_len);
--void ieee80211_aes_gcm_key_free(struct crypto_aead *tfm);
-+static inline void
-+ieee80211_aes_gcm_encrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
-+			  u8 *data, size_t data_len, u8 *mic)
-+{
-+}
-+
-+static inline int
-+ieee80211_aes_gcm_decrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
-+			  u8 *data, size_t data_len, u8 *mic)
-+{
-+    return -EOPNOTSUPP;
-+}
-+
-+static inline struct crypto_aead *
-+ieee80211_aes_gcm_key_setup_encrypt(const u8 key[], size_t key_len)
-+{
-+    return NULL;
-+}
-+
-+static inline void
-+ieee80211_aes_gcm_key_free(struct crypto_aead *tfm)
-+{
-+}
- 
- #endif /* AES_GCM_H */
---- a/net/mac80211/aes_gmac.h
-+++ b/net/mac80211/aes_gmac.h
-@@ -11,10 +11,22 @@
- 
- #include <linux/crypto.h>
- 
--struct crypto_aead *ieee80211_aes_gmac_key_setup(const u8 key[],
--						 size_t key_len);
--int ieee80211_aes_gmac(struct crypto_aead *tfm, const u8 *aad, u8 *nonce,
--		       const u8 *data, size_t data_len, u8 *mic);
--void ieee80211_aes_gmac_key_free(struct crypto_aead *tfm);
-+static inline struct crypto_aead *
-+ieee80211_aes_gmac_key_setup(const u8 key[], size_t key_len)
-+{
-+	return NULL;
-+}
-+
-+static inline int
-+ieee80211_aes_gmac(struct crypto_aead *tfm, const u8 *aad, u8 *nonce,
-+		   const u8 *data, size_t data_len, u8 *mic)
-+{
-+	return -EOPNOTSUPP;
-+}
-+
-+static inline void
-+ieee80211_aes_gmac_key_free(struct crypto_aead *tfm)
-+{
-+}
- 
- #endif /* AES_GMAC_H */
 --- a/net/mac80211/aes_ccm.c
 +++ b/net/mac80211/aes_ccm.c
-@@ -19,86 +19,126 @@
+@@ -13,89 +13,132 @@
+ #include <linux/types.h>
+ #include <linux/err.h>
+ #include <crypto/aead.h>
++#include <crypto/aes.h>
+ 
+ #include <net/mac80211.h>
  #include "key.h"
  #include "aes_ccm.h"
  
 -void ieee80211_aes_ccm_encrypt(struct crypto_aead *tfm, u8 *b_0, u8 *aad,
+-			       u8 *data, size_t data_len, u8 *mic,
+-			       size_t mic_len)
 +static void aes_ccm_prepare(struct crypto_cipher *tfm, u8 *b_0, u8 *aad, u8 *s_0,
 +			    u8 *a, u8 *b)
-+{
+ {
+-	struct scatterlist sg[3];
 +	int i;
 +
 +	crypto_cipher_encrypt_one(tfm, b, b_0);
@@ -102,22 +54,33 @@
 +	for (i = 0; i < AES_BLOCK_SIZE; i++)
 +		aad[i] ^= b[i];
 +	crypto_cipher_encrypt_one(tfm, a, aad);
-+
+ 
+-	char aead_req_data[sizeof(struct aead_request) +
+-			   crypto_aead_reqsize(tfm)]
+-		__aligned(__alignof__(struct aead_request));
+-	struct aead_request *aead_req = (void *) aead_req_data;
 +	/* Mask out bits from auth-only-b_0 */
 +	b_0[0] &= 0x07;
-+
+ 
+-	memset(aead_req, 0, sizeof(aead_req_data));
 +	/* S_0 is used to encrypt T (= MIC) */
 +	b_0[14] = 0;
 +	b_0[15] = 0;
 +	crypto_cipher_encrypt_one(tfm, s_0, b_0);
 +}
-+
-+
+ 
+-	sg_init_table(sg, 3);
+-	sg_set_buf(&sg[0], &aad[2], be16_to_cpup((__be16 *)aad));
+-	sg_set_buf(&sg[1], data, data_len);
+-	sg_set_buf(&sg[2], mic, mic_len);
+ 
+-	aead_request_set_tfm(aead_req, tfm);
+-	aead_request_set_crypt(aead_req, sg, sg, data_len, b_0);
+-	aead_request_set_ad(aead_req, sg[0].length);
 +void ieee80211_aes_ccm_encrypt(struct crypto_cipher *tfm, u8 *b_0, u8 *aad,
- 			       u8 *data, size_t data_len, u8 *mic,
- 			       size_t mic_len)
- {
--	struct scatterlist assoc, pt, ct[2];
++			       u8 *data, size_t data_len, u8 *mic,
++			       size_t mic_len)
++{
 +	int i, j, last_len, num_blocks;
 +	u8 b[AES_BLOCK_SIZE];
 +	u8 s_0[AES_BLOCK_SIZE];
@@ -147,23 +110,6 @@
 +			*cpos++ = *pos++ ^ e[i];
 +	}
  
--	char aead_req_data[sizeof(struct aead_request) +
--			   crypto_aead_reqsize(tfm)]
--		__aligned(__alignof__(struct aead_request));
--	struct aead_request *aead_req = (void *) aead_req_data;
--
--	memset(aead_req, 0, sizeof(aead_req_data));
--
--	sg_init_one(&pt, data, data_len);
--	sg_init_one(&assoc, &aad[2], be16_to_cpup((__be16 *)aad));
--	sg_init_table(ct, 2);
--	sg_set_buf(&ct[0], data, data_len);
--	sg_set_buf(&ct[1], mic, mic_len);
--
--	aead_request_set_tfm(aead_req, tfm);
--	aead_request_set_assoc(aead_req, &assoc, assoc.length);
--	aead_request_set_crypt(aead_req, &pt, ct, data_len, b_0);
--
 -	crypto_aead_encrypt(aead_req);
 +	for (i = 0; i < mic_len; i++)
 +		mic[i] = b[i] ^ s_0[i];
@@ -174,7 +120,7 @@
  			      u8 *data, size_t data_len, u8 *mic,
  			      size_t mic_len)
  {
--	struct scatterlist assoc, pt, ct[2];
+-	struct scatterlist sg[3];
 -	char aead_req_data[sizeof(struct aead_request) +
 -			   crypto_aead_reqsize(tfm)]
 -		__aligned(__alignof__(struct aead_request));
@@ -185,15 +131,14 @@
 -
 -	memset(aead_req, 0, sizeof(aead_req_data));
 -
--	sg_init_one(&pt, data, data_len);
--	sg_init_one(&assoc, &aad[2], be16_to_cpup((__be16 *)aad));
--	sg_init_table(ct, 2);
--	sg_set_buf(&ct[0], data, data_len);
--	sg_set_buf(&ct[1], mic, mic_len);
+-	sg_init_table(sg, 3);
+-	sg_set_buf(&sg[0], &aad[2], be16_to_cpup((__be16 *)aad));
+-	sg_set_buf(&sg[1], data, data_len);
+-	sg_set_buf(&sg[2], mic, mic_len);
 -
 -	aead_request_set_tfm(aead_req, tfm);
--	aead_request_set_assoc(aead_req, &assoc, assoc.length);
--	aead_request_set_crypt(aead_req, ct, &pt, data_len + mic_len, b_0);
+-	aead_request_set_crypt(aead_req, sg, sg, data_len + mic_len, b_0);
+-	aead_request_set_ad(aead_req, sg[0].length);
 +	int i, j, last_len, num_blocks;
 +	u8 *pos, *cpos;
 +	u8 a[AES_BLOCK_SIZE];
@@ -270,6 +215,98 @@
 -	crypto_free_aead(tfm);
 +	crypto_free_cipher(tfm);
  }
+--- a/net/mac80211/aes_ccm.h
++++ b/net/mac80211/aes_ccm.h
+@@ -12,15 +12,15 @@
+ 
+ #include <linux/crypto.h>
+ 
+-struct crypto_aead *ieee80211_aes_key_setup_encrypt(const u8 key[],
+-						    size_t key_len,
+-						    size_t mic_len);
+-void ieee80211_aes_ccm_encrypt(struct crypto_aead *tfm, u8 *b_0, u8 *aad,
++struct crypto_cipher *ieee80211_aes_key_setup_encrypt(const u8 key[],
++						      size_t key_len,
++						      size_t mic_len);
++void ieee80211_aes_ccm_encrypt(struct crypto_cipher *tfm, u8 *b_0, u8 *aad,
+ 			       u8 *data, size_t data_len, u8 *mic,
+ 			       size_t mic_len);
+-int ieee80211_aes_ccm_decrypt(struct crypto_aead *tfm, u8 *b_0, u8 *aad,
++int ieee80211_aes_ccm_decrypt(struct crypto_cipher *tfm, u8 *b_0, u8 *aad,
+ 			      u8 *data, size_t data_len, u8 *mic,
+ 			      size_t mic_len);
+-void ieee80211_aes_key_free(struct crypto_aead *tfm);
++void ieee80211_aes_key_free(struct crypto_cipher *tfm);
+ 
+ #endif /* AES_CCM_H */
+--- a/net/mac80211/aes_gcm.h
++++ b/net/mac80211/aes_gcm.h
+@@ -11,12 +11,28 @@
+ 
+ #include <linux/crypto.h>
+ 
+-void ieee80211_aes_gcm_encrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
+-			       u8 *data, size_t data_len, u8 *mic);
+-int ieee80211_aes_gcm_decrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
+-			      u8 *data, size_t data_len, u8 *mic);
+-struct crypto_aead *ieee80211_aes_gcm_key_setup_encrypt(const u8 key[],
+-							size_t key_len);
+-void ieee80211_aes_gcm_key_free(struct crypto_aead *tfm);
++static inline void
++ieee80211_aes_gcm_encrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
++			  u8 *data, size_t data_len, u8 *mic)
++{
++}
++
++static inline int
++ieee80211_aes_gcm_decrypt(struct crypto_aead *tfm, u8 *j_0, u8 *aad,
++			  u8 *data, size_t data_len, u8 *mic)
++{
++    return -EOPNOTSUPP;
++}
++
++static inline struct crypto_aead *
++ieee80211_aes_gcm_key_setup_encrypt(const u8 key[], size_t key_len)
++{
++    return NULL;
++}
++
++static inline void
++ieee80211_aes_gcm_key_free(struct crypto_aead *tfm)
++{
++}
+ 
+ #endif /* AES_GCM_H */
+--- a/net/mac80211/aes_gmac.h
++++ b/net/mac80211/aes_gmac.h
+@@ -11,10 +11,22 @@
+ 
+ #include <linux/crypto.h>
+ 
+-struct crypto_aead *ieee80211_aes_gmac_key_setup(const u8 key[],
+-						 size_t key_len);
+-int ieee80211_aes_gmac(struct crypto_aead *tfm, const u8 *aad, u8 *nonce,
+-		       const u8 *data, size_t data_len, u8 *mic);
+-void ieee80211_aes_gmac_key_free(struct crypto_aead *tfm);
++static inline struct crypto_aead *
++ieee80211_aes_gmac_key_setup(const u8 key[], size_t key_len)
++{
++	return NULL;
++}
++
++static inline int
++ieee80211_aes_gmac(struct crypto_aead *tfm, const u8 *aad, u8 *nonce,
++		   const u8 *data, size_t data_len, u8 *mic)
++{
++	return -EOPNOTSUPP;
++}
++
++static inline void
++ieee80211_aes_gmac_key_free(struct crypto_aead *tfm)
++{
++}
+ 
+ #endif /* AES_GMAC_H */
 --- a/net/mac80211/key.h
 +++ b/net/mac80211/key.h
 @@ -84,7 +84,7 @@ struct ieee80211_key {
@@ -337,38 +374,3 @@
  
  			if (ieee80211_aes_ccm_decrypt(
  				    key->u.ccmp.tfm, b_0, aad,
---- a/net/mac80211/aes_ccm.h
-+++ b/net/mac80211/aes_ccm.h
-@@ -12,15 +12,15 @@
- 
- #include <linux/crypto.h>
- 
--struct crypto_aead *ieee80211_aes_key_setup_encrypt(const u8 key[],
--						    size_t key_len,
--						    size_t mic_len);
--void ieee80211_aes_ccm_encrypt(struct crypto_aead *tfm, u8 *b_0, u8 *aad,
-+struct crypto_cipher *ieee80211_aes_key_setup_encrypt(const u8 key[],
-+						      size_t key_len,
-+						      size_t mic_len);
-+void ieee80211_aes_ccm_encrypt(struct crypto_cipher *tfm, u8 *b_0, u8 *aad,
- 			       u8 *data, size_t data_len, u8 *mic,
- 			       size_t mic_len);
--int ieee80211_aes_ccm_decrypt(struct crypto_aead *tfm, u8 *b_0, u8 *aad,
-+int ieee80211_aes_ccm_decrypt(struct crypto_cipher *tfm, u8 *b_0, u8 *aad,
- 			      u8 *data, size_t data_len, u8 *mic,
- 			      size_t mic_len);
--void ieee80211_aes_key_free(struct crypto_aead *tfm);
-+void ieee80211_aes_key_free(struct crypto_cipher *tfm);
- 
- #endif /* AES_CCM_H */
---- a/net/mac80211/Kconfig
-+++ b/net/mac80211/Kconfig
-@@ -5,8 +5,6 @@ config MAC80211
- 	depends on CRYPTO
- 	depends on CRYPTO_ARC4
- 	depends on CRYPTO_AES
--	select BPAUTO_CRYPTO_CCM
--	depends on CRYPTO_GCM
- 	depends on CRC32
- 	select BPAUTO_AVERAGE
- 	---help---
