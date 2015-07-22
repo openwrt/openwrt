@@ -1,0 +1,30 @@
+From: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Date: Wed, 22 Jul 2015 10:42:43 +0200
+Subject: [PATCH] ath9k: Fix NF CCA limits for AR9287 and AR9227
+
+The FreeBSD driver [0] uses the same 2G values as for the AR9280 chips.
+Using the same values in ath9k results in much better throughput for me.
+
+Before this patch I had a huge amount of packet loss (sometimes up to
+40%) and the max transfer speed was somewhere around 5Mbit/s. With this
+patch applied I have zero packet loss and ten times the throughput.
+My device uses a AR9227 which is the PCI variant of the AR9287.
+
+[0] http://bxr.su/FreeBSD/sys/dev/ath/ath_hal/ar9002/ar9287.h
+
+Signed-off-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/ar9002_phy.h
++++ b/drivers/net/wireless/ath/ath9k/ar9002_phy.h
+@@ -610,8 +610,8 @@
+ #define AR_PHY_CCA_MIN_GOOD_VAL_9271_2GHZ      -127
+ #define AR_PHY_CCA_MAX_GOOD_VAL_9271_2GHZ      -116
+ 
+-#define AR_PHY_CCA_NOM_VAL_9287_2GHZ           -120
++#define AR_PHY_CCA_NOM_VAL_9287_2GHZ           -112
+ #define AR_PHY_CCA_MIN_GOOD_VAL_9287_2GHZ    -127
+-#define AR_PHY_CCA_MAX_GOOD_VAL_9287_2GHZ    -110
++#define AR_PHY_CCA_MAX_GOOD_VAL_9287_2GHZ    -97
+ 
+ #endif

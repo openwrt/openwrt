@@ -1,0 +1,17 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Mon, 11 May 2015 18:35:20 +0200
+Subject: [PATCH] ath9k: add fast-xmit support
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -826,6 +826,7 @@ static void ath9k_set_hw_capab(struct at
+ 	ieee80211_hw_set(hw, SIGNAL_DBM);
+ 	ieee80211_hw_set(hw, RX_INCLUDES_FCS);
+ 	ieee80211_hw_set(hw, HOST_BROADCAST_PS_BUFFERING);
++	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
+ 
+ 	if (ath9k_ps_enable)
+ 		ieee80211_hw_set(hw, SUPPORTS_PS);
