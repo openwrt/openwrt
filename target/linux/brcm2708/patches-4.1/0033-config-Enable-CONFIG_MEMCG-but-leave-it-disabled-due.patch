@@ -11,7 +11,7 @@ Subject: [PATCH 033/121] config: Enable CONFIG_MEMCG, but leave it disabled
 
 --- a/kernel/cgroup.c
 +++ b/kernel/cgroup.c
-@@ -5395,6 +5395,29 @@ static int __init cgroup_disable(char *s
+@@ -5393,6 +5393,29 @@ static int __init cgroup_disable(char *s
  }
  __setup("cgroup_disable=", cgroup_disable);
  

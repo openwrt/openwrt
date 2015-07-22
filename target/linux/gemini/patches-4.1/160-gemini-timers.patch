@@ -181,10 +181,9 @@
  
  static struct irqaction gemini_timer_irq = {
 -	.name		= "Gemini Timer Tick",
--	.flags		= IRQF_TIMER,
--	.handler	= gemini_timer_interrupt,
 +	.name		= "gemini timer 1",
-+	.flags		= IRQF_TIMER,
+ 	.flags		= IRQF_TIMER,
+-	.handler	= gemini_timer_interrupt,
 +	.handler	= gemini_timer_intr,
  };
  

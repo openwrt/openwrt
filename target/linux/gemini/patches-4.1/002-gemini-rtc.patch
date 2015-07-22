@@ -1,6 +1,6 @@
 --- a/drivers/rtc/Kconfig
 +++ b/drivers/rtc/Kconfig
-@@ -1182,6 +1182,15 @@ config RTC_DRV_BFIN
+@@ -1300,6 +1300,15 @@ config RTC_DRV_BFIN
  	  This driver can also be built as a module. If so, the module
  	  will be called rtc-bfin.
  
@@ -18,7 +18,7 @@
  	depends on SH_LANDISK
 --- a/drivers/rtc/Makefile
 +++ b/drivers/rtc/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_RTC_DRV_EFI)	+= rtc-efi.o
+@@ -65,6 +65,7 @@ obj-$(CONFIG_RTC_DRV_EFI)	+= rtc-efi.o
  obj-$(CONFIG_RTC_DRV_EM3027)	+= rtc-em3027.o
  obj-$(CONFIG_RTC_DRV_EP93XX)	+= rtc-ep93xx.o
  obj-$(CONFIG_RTC_DRV_FM3130)	+= rtc-fm3130.o
@@ -28,7 +28,7 @@
  obj-$(CONFIG_RTC_DRV_HYM8563)	+= rtc-hym8563.o
 --- a/arch/arm/mach-gemini/common.h
 +++ b/arch/arm/mach-gemini/common.h
-@@ -18,9 +18,9 @@ extern void gemini_map_io(void);
+@@ -20,9 +20,9 @@ extern void gemini_map_io(void);
  extern void gemini_init_irq(void);
  extern void gemini_timer_init(void);
  extern void gemini_gpio_init(void);
