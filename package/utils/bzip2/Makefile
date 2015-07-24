@@ -19,6 +19,7 @@ PKG_MAINTAINER:=Steven Barth <cyrus@openwrt.org>
 PKG_LICENSE:=BZIP2
 PKG_LICENSE_FILES:=LICENSE
 
+include $(INCLUDE_DIR)/host-build.mk
 include $(INCLUDE_DIR)/package.mk
 
 define Package/bzip2/Default
@@ -82,6 +83,26 @@ define Package/bzip2/install
 	$(INSTALL_DIR) $(1)/usr/bin/
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/bzip2-shared $(1)/usr/bin/bzip2
 endef
+
+HOST_CFLAGS += \
+	$(FPIC) \
+	$(HOST_LDFLAGS)
+
+HOST_MAKE_FLAGS+= \
+	-f Makefile-libbz2_so \
+	CFLAGS="$(HOST_CFLAGS)" \
+	all
+
+HOST_CONFIGURE_ARGS+= \
+	--prefix=$(STAGING_DIR_HOST)
+
+define Host/Install
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
+	$(MAKE) -C $(HOST_BUILD_DIR) PREFIX=$(STAGING_DIR_HOST)/usr/ install
+#	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(STAGING_DIR_HOST)/bin/pgen2
+endef
+
+$(eval $(call HostBuild))
 
 $(eval $(call BuildPackage,libbz2))
 $(eval $(call BuildPackage,bzip2))
