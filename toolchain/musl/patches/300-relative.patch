@@ -1,6 +1,6 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -180,7 +180,7 @@ $(DESTDIR)$(includedir)/%: include/%
+@@ -187,7 +187,7 @@ $(DESTDIR)$(includedir)/%: include/%
  	$(INSTALL) -D -m 644 $< $@
  
  $(DESTDIR)$(LDSO_PATHNAME): $(DESTDIR)$(libdir)/libc.so

@@ -23,6 +23,6 @@
 +		s = tzfile = (void *)__map_file("/etc/TZ", &tzfile_size);
 +	}
 +
- 	if (!s || !*s) s = "/etc/localtime";
+ 	if (!s) s = "/etc/localtime";
+ 	if (!*s) s = __gmt;
  
- 	if (old_tz && !strcmp(s, old_tz)) return;

@@ -10,11 +10,9 @@ Signed-off-by: Steven Barth <steven@midlink.org>
  2 files changed, 10 insertions(+), 2 deletions(-)
  create mode 100644 libssp_nonshared/__stack_chk_fail_local.c
 
-diff --git a/Makefile b/Makefile
-index 2eb7b30..bfcabf7 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -48,7 +48,7 @@ CRT_LIBS = lib/crt1.o lib/Scrt1.o lib/rcrt1.o lib/crti.o lib/crtn.o
+@@ -48,7 +48,7 @@ CRT_LIBS = lib/crt1.o lib/Scrt1.o lib/rc
  STATIC_LIBS = lib/libc.a
  SHARED_LIBS = lib/libc.so
  TOOL_LIBS = lib/musl-gcc.specs
@@ -22,8 +20,8 @@ index 2eb7b30..bfcabf7 100644
 +ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS) lib/libssp_nonshared.a
  ALL_TOOLS = tools/musl-gcc
  
- LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH)$(SUBARCH).so.1
-@@ -103,7 +103,8 @@ NOSSP_SRCS = $(wildcard crt/*.c) \
+ WRAPCC_GCC = gcc
+@@ -106,7 +106,8 @@ NOSSP_SRCS = $(wildcard crt/*.c) \
  	src/env/__libc_start_main.c src/env/__init_tls.c \
  	src/thread/__set_thread_area.c src/env/__stack_chk_fail.c \
  	src/string/memset.c src/string/memcpy.c \
@@ -33,7 +31,7 @@ index 2eb7b30..bfcabf7 100644
  $(NOSSP_SRCS:%.c=%.o) $(NOSSP_SRCS:%.c=%.lo): CFLAGS += $(CFLAGS_NOSSP)
  
  $(CRT_LIBS:lib/%=crt/%): CFLAGS += -DCRT
-@@ -144,6 +145,11 @@ lib/libc.a: $(OBJS)
+@@ -147,6 +148,11 @@ lib/libc.a: $(OBJS)
  	$(AR) rc $@ $(OBJS)
  	$(RANLIB) $@
  
@@ -45,14 +43,8 @@ index 2eb7b30..bfcabf7 100644
  $(EMPTY_LIBS):
  	rm -f $@
  	$(AR) rc $@
-diff --git a/libssp_nonshared/__stack_chk_fail_local.c b/libssp_nonshared/__stack_chk_fail_local.c
-new file mode 100644
-index 0000000..2b403a6
 --- /dev/null
 +++ b/libssp_nonshared/__stack_chk_fail_local.c
 @@ -0,0 +1,2 @@
 +#include "atomic.h"
 +void __attribute__((visibility ("hidden"))) __stack_chk_fail_local(void) { a_crash(); }
--- 
-2.1.4
-

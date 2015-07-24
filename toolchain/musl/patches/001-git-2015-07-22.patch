@@ -1,3 +1,192 @@
+commit 3975577922aedab7d60788dd320a2c8e4e94bc6e
+Author: Roman Yeryomin <roman@ubnt.com>
+Date:   Thu Jul 2 12:29:00 2015 +0300
+
+    socket.h: cleanup/reorder mips and powerpc bits/socket.h
+    
+    ....to be somewhat consistent and easily comparable with asm/socket.h
+    
+    Signed-off-by: Roman Yeryomin <roman@ubnt.com>
+
+commit 29ec7677a73a5227badbb1064205be09e707e466
+Author: Roman Yeryomin <roman@ubnt.com>
+Date:   Thu Jul 2 12:28:41 2015 +0300
+
+    socket.h: fix SO_* for mips
+    
+    Signed-off-by: Roman Yeryomin <roman@ubnt.com>
+
+commit 3fffa7a658aa925b8f95d36aef7531c1827dbf28
+Author: Felix Fietkau <nbd@openwrt.org>
+Date:   Tue Jul 21 15:01:25 2015 +0200
+
+    mips: fix mcontext_t register array field name
+    
+    glibc and uclibc use gregs instead of regs
+    
+    Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+
+commit 0f9c2666aca95eb98eb0ef4f4d8d1473c8ce3fa0
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu Jul 9 18:36:02 2015 +0000
+
+    handle loss of syslog socket connection
+    
+    when traditional syslogd implementations are restarted, the old server
+    socket ceases to exist and a new unix socket with the same pathname is
+    created. when this happens, the default destination address associated
+    with the client socket via connect is no longer valid, and attempts to
+    send produce errors. this happens despite the socket being datagram
+    type, and is in contrast to the behavior that would be seen with an IP
+    datagram (UDP) socket.
+    
+    in order to avoid a situation where the application is unable to send
+    further syslog messages without calling closelog, this patch makes
+    syslog attempt to reconnect the socket when send returns an error
+    indicating a lost connection.
+    
+    additionally, initial failure to connect the socket no longer results
+    in the socket being closed. this ensures that an application which
+    calls openlog to reserve the socket file descriptor will not run into
+    a situation where transient connection failure (e.g. due to syslogd
+    restart) prevents fd reservation. however, applications which may be
+    unable to connect the socket later (e.g. due to chroot, restricted
+    permissions, seccomp, etc.) will still fail to log if the syslog
+    socket cannot be connected at openlog time or if it has to be
+    reconnected later.
+
+commit 11894f6d3a80be950a490dc7dfab349f057a545f
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Thu Jul 9 17:07:35 2015 +0000
+
+    fix incorrect void return type for syncfs function
+    
+    being nonstandard, the closest thing to a specification for this
+    function is its man page, which documents it as returning int. it can
+    fail with EBADF if the file descriptor passed is invalid.
+
+commit e8cbe0bad4284906230a53af4c91ad2b9713d03b
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Wed Jul 8 02:46:45 2015 +0000
+
+    fix negated return value of ns_skiprr, breakage in related functions
+    
+    due to a reversed pointer difference computation, ns_skiprr always
+    returned a negative value, which functions using it would interpret as
+    an error.
+    
+    patch by Yu Lu.
+
+commit fb58545f8d1c5fa32122244caeaf3625c12ddc01
+Author: Shiz <hi@shiz.me>
+Date:   Sun Jun 28 23:08:21 2015 +0200
+
+    add musl-clang, a wrapper for system clang installs
+    
+    musl-clang allows the user to compile musl-powered programs using their
+    already existent clang install, without the need of a special cross compiler.
+    it achieves this by wrapping around both the system clang install and the
+    linker and passing them special flags to re-target musl at runtime.
+    it does only affect invocations done through the special musl-clang wrapper
+    script, so that the user setup remains fully intact otherwise.
+    
+    the clang wrapper consists of the compiler frontend wrapper script,
+    musl-clang, and the linker wrapper script, ld.musl-clang.
+    musl-clang makes sure clang invokes ld.musl-clang to link objects; neither
+    script needs to be in PATH for the wrapper to work.
+
+commit f8db6f74b2c74a50c4dec7e30be5215f0e2c37a6
+Author: Shiz <hi@shiz.me>
+Date:   Sun Jun 28 23:08:20 2015 +0200
+
+    build: fix musl-targeting toolchain test
+    
+    the old test was broken in that it would never fail on a toolchains built
+    without dynamic linking support, leading to the wrapper script possibly being
+    installed on compilers that do not support it. in addition, the new test is
+    portable across compilers: the old test only worked on GCC.
+    
+    the new test works by testing whether the toolchain libc defines __GLIBC__:
+    most non-musl Linux libc's do define this for compatibility even when they
+    are not glibc, so this is a safe bet to check for musl. in addition, the
+    compiler runtime would need to have a somewhat glibc-compatible ABI in the
+    first place, so any non-glibc compatible libc's compiler runtime might not
+    work. it is safer to disable these cases by default and have the user enable
+    the wrappers manually there using --enable-wrapper if they certain it works.
+
+commit b3cd7d13fe630ba1847326242525298e361018c1
+Author: Shiz <hi@shiz.me>
+Date:   Sun Jun 28 23:08:19 2015 +0200
+
+    build: overhaul wrapper script system for multiple wrapper support
+    
+    this overhauls part of the build system in order to support multiple
+    toolchain wrapper scripts, as opposed to solely the musl-gcc wrapper as
+    before. it thereby replaces --enable-gcc-wrapper with --enable-wrapper=...,
+    which has the options 'auto' (the default, detect whether to use wrappers),
+    'all' (build and install all wrappers), 'no' (don't build any) and finally
+    the options named after the individual compiler scripts (currently only
+    'gcc' is available) to build and install only that wrapper.
+    the old --enable-gcc-wrapper is removed from --help, but still available.
+    
+    it also modifies the wrappers to use the C compiler specified to the build
+    system as 'inner' compiler, when applicable. as wrapper detection works by
+    probing this compiler, it may not work with any other.
+
+commit 2a780aa3050b86d888489361f04220bfb58890a1
+Author: Rich Felker <dalias@aerifal.cx>
+Date:   Mon Jul 6 22:13:11 2015 +0000
+
+    treat empty TZ environment variable as GMT rather than default
+    
+    this improves compatibility with the behavior of other systems and
+    with some applications which set an empty TZ var to disable use of
+    local time by mktime, etc.
+
+commit 8f08a58c635bea5cdfae6bc0e323c80aa9ff82a7
+Author: Alexander Monakov <amonakov@ispras.ru>
+Date:   Sun Jun 28 02:48:33 2015 +0300
+
+    dynlink.c: pass gnu-hash table pointer to gnu_lookup
+    
+    The callers need to check the value of the pointer anyway, so make
+    them pass the pointer to gnu_lookup instead of reloading it there.
+    
+    Reorder gnu_lookup arguments so that always-used ones are listed
+    first. GCC can choose a calling convention with arguments in registers
+    (e.g. up to 3 arguments in eax, ecx, edx on x86), but cannot reorder
+    the arguments for static functions.
+
+commit 5b4286e12cd6baac343b10a41dc17ac578832089
+Author: Alexander Monakov <amonakov@ispras.ru>
+Date:   Sun Jun 28 02:48:32 2015 +0300
+
+    dynlink.c: slim down gnu_lookup
+    
+    Do not reference dso->syms and dso->strings until point of use.
+    Check 'h1 == (h2|1)', the simplest condition, before the others.
+
+commit 84389c64562e2b2ba43225b5b7a9df7d974479b1
+Author: Alexander Monakov <amonakov@ispras.ru>
+Date:   Sun Jun 28 02:48:31 2015 +0300
+
+    dynlink.c: use bloom filter in gnu hash lookup
+    
+    Introduce gnu_lookup_filtered and use it to speed up symbol lookups in
+    find_sym (do_dlsym is left as is, based on an expectation that
+    frequently dlsym queries will use a dlopen handle rather than
+    RTLD_NEXT or RTLD_DEFAULT, and will not need to look at more than one
+    DSO).
+
+commit 66d45787c865a1807ae397a89a14699394ed4fa4
+Author: Alexander Monakov <amonakov@ispras.ru>
+Date:   Sun Jun 28 02:48:30 2015 +0300
+
+    dynlink.c: use a faster expression in gnu_hash
+    
+    With -Os, GCC uses a multiply rather than a shift and addition for 'h*33'.
+    Use a more efficient expression explicitely.
+
 commit 6ba5517a460c6c438f64d69464fdfc3269a4c91a
 Author: Rich Felker <dalias@aerifal.cx>
 Date:   Thu Jun 25 22:22:00 2015 +0000
@@ -515,11 +704,44 @@ Date:   Fri Jun 5 10:39:42 2015 +0300
     commit 68630b55c0c7219fe9df70dc28ffbf9efc8021d8 made the new locale to
     be assigned unconditonally resulting in crashes later on.
 
-diff --git a/arch/arm/syscall_arch.h b/arch/arm/syscall_arch.h
-index 199ad2a..64461ec 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -7,5 +7,7 @@ arch/*/bits/alltypes.h
+ config.mak
+ include/bits
+ tools/musl-gcc
++tools/musl-clang
++tools/ld.musl-clang
+ lib/musl-gcc.specs
+ src/internal/version.h
+--- a/Makefile
++++ b/Makefile
+@@ -51,6 +51,9 @@ TOOL_LIBS = lib/musl-gcc.specs
+ ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
+ ALL_TOOLS = tools/musl-gcc
+ 
++WRAPCC_GCC = gcc
++WRAPCC_CLANG = clang
++
+ LDSO_PATHNAME = $(syslibdir)/ld-musl-$(ARCH)$(SUBARCH).so.1
+ 
+ -include config.mak
+@@ -155,7 +158,11 @@ lib/musl-gcc.specs: tools/musl-gcc.specs
+ 	sh $< "$(includedir)" "$(libdir)" "$(LDSO_PATHNAME)" > $@
+ 
+ tools/musl-gcc: config.mak
+-	printf '#!/bin/sh\nexec "$${REALGCC:-gcc}" "$$@" -specs "%s/musl-gcc.specs"\n' "$(libdir)" > $@
++	printf '#!/bin/sh\nexec "$${REALGCC:-$(WRAPCC_GCC)}" "$$@" -specs "%s/musl-gcc.specs"\n' "$(libdir)" > $@
++	chmod +x $@
++
++tools/%-clang: tools/%-clang.in config.mak
++	sed -e 's!@CC@!$(WRAPCC_CLANG)!g' -e 's!@PREFIX@!$(prefix)!g' -e 's!@INCDIR@!$(includedir)!g' -e 's!@LIBDIR@!$(libdir)!g' -e 's!@LDSO@!$(LDSO_PATHNAME)!g' $< > $@
+ 	chmod +x $@
+ 
+ $(DESTDIR)$(bindir)/%: tools/%
 --- a/arch/arm/syscall_arch.h
 +++ b/arch/arm/syscall_arch.h
-@@ -72,3 +72,7 @@ static inline long __syscall6(long n, long a, long b, long c, long d, long e, lo
+@@ -72,3 +72,7 @@ static inline long __syscall6(long n, lo
  	register long r5 __asm__("r5") = f;
  	__asm_syscall("r"(r7), "0"(r0), "r"(r1), "r"(r2), "r"(r3), "r"(r4), "r"(r5));
  }
@@ -527,22 +749,97 @@ index 199ad2a..64461ec 100644
 +#define VDSO_USEFUL
 +#define VDSO_CGT_SYM "__vdso_clock_gettime"
 +#define VDSO_CGT_VER "LINUX_2.6"
-diff --git a/arch/mips/pthread_arch.h b/arch/mips/pthread_arch.h
-index f8e35ae..904a248 100644
+--- a/arch/mips/bits/signal.h
++++ b/arch/mips/bits/signal.h
+@@ -28,7 +28,7 @@ struct sigcontext
+ typedef struct
+ {
+ 	unsigned regmask, status;
+-	unsigned long long pc, regs[32], fpregs[32];
++	unsigned long long pc, gregs[32], fpregs[32];
+ 	unsigned ownedfp, fpc_csr, fpc_eir, used_math, dsp;
+ 	unsigned long long mdhi, mdlo;
+ 	unsigned long hi1, lo1, hi2, lo2, hi3, lo3;
+--- a/arch/mips/bits/socket.h
++++ b/arch/mips/bits/socket.h
+@@ -22,26 +22,31 @@ struct cmsghdr
+ #define SOL_SOCKET     65535
+ 
+ #define SO_DEBUG        1
+-#define SO_REUSEADDR    4
+-#define SO_TYPE         0x1008
+-#define SO_ERROR        0x1007
+-#define SO_DONTROUTE    16
+-#define SO_BROADCAST    32
++
++#define SO_REUSEADDR    0x0004
++#define SO_KEEPALIVE    0x0008
++#define SO_DONTROUTE    0x0010
++#define SO_BROADCAST    0x0020
++#define SO_LINGER       0x0080
++#define SO_OOBINLINE    0x0100
++#define SO_REUSEPORT    0x0200
+ #define SO_SNDBUF       0x1001
+ #define SO_RCVBUF       0x1002
+-#define SO_KEEPALIVE    8
+-#define SO_OOBINLINE    256
++#define SO_SNDLOWAT     0x1003
++#define SO_RCVLOWAT     0x1004
++#define SO_RCVTIMEO     0x1006
++#define SO_SNDTIMEO     0x1005
++#define SO_ERROR        0x1007
++#define SO_TYPE         0x1008
++#define SO_ACCEPTCONN   0x1009
++#define SO_PROTOCOL     0x1028
++#define SO_DOMAIN       0x1029
++
+ #define SO_NO_CHECK     11
+ #define SO_PRIORITY     12
+-#define SO_LINGER       128
+ #define SO_BSDCOMPAT    14
+-#define SO_REUSEPORT    512
+ #define SO_PASSCRED     17
+ #define SO_PEERCRED     18
+-#define SO_RCVLOWAT     0x1004
+-#define SO_SNDLOWAT     0x1003
+-#define SO_RCVTIMEO     0x1006
+-#define SO_SNDTIMEO     0x1005
+ #define SO_SNDBUFFORCE  31
+ #define SO_RCVBUFFORCE  33
+ 
 --- a/arch/mips/pthread_arch.h
 +++ b/arch/mips/pthread_arch.h
-@@ -13,4 +13,6 @@ static inline struct pthread *__pthread_self()
+@@ -13,4 +13,6 @@ static inline struct pthread *__pthread_
  #define TLS_ABOVE_TP
  #define TP_ADJ(p) ((char *)(p) + sizeof(struct pthread) + 0x7000)
  
 +#define DTP_OFFSET 0x8000
 +
  #define CANCEL_REG_IP (3-(union {int __i; char __b;}){1}.__b)
-diff --git a/arch/powerpc/pthread_arch.h b/arch/powerpc/pthread_arch.h
-index 4115ec8..1cbfc22 100644
+--- a/arch/powerpc/bits/socket.h
++++ b/arch/powerpc/bits/socket.h
+@@ -24,8 +24,6 @@ struct cmsghdr
+ #define SO_BROADCAST    6
+ #define SO_SNDBUF       7
+ #define SO_RCVBUF       8
+-#define SO_SNDBUFFORCE  32
+-#define SO_RCVBUFFORCE  33
+ #define SO_KEEPALIVE    9
+ #define SO_OOBINLINE    10
+ #define SO_NO_CHECK     11
+@@ -39,4 +37,8 @@ struct cmsghdr
+ #define SO_SNDTIMEO     19
+ #define SO_PASSCRED     20
+ #define SO_PEERCRED     21
+- 
++#define SO_ACCEPTCONN   30
++#define SO_SNDBUFFORCE  32
++#define SO_RCVBUFFORCE  33
++#define SO_PROTOCOL     38
++#define SO_DOMAIN       39
 --- a/arch/powerpc/pthread_arch.h
 +++ b/arch/powerpc/pthread_arch.h
-@@ -12,6 +12,8 @@ static inline struct pthread *__pthread_self()
+@@ -12,6 +12,8 @@ static inline struct pthread *__pthread_
  #define TLS_ABOVE_TP
  #define TP_ADJ(p) ((char *)(p) + sizeof(struct pthread) + 0x7000)
  
@@ -551,9 +848,6 @@ index 4115ec8..1cbfc22 100644
  // offset of the PC register in mcontext_t, divided by the system wordsize
  // the kernel calls the ip "nip", it's the first saved value after the 32
  // GPRs.
-diff --git a/arch/sh/src/__set_thread_area.c b/arch/sh/src/__set_thread_area.c
-new file mode 100644
-index 0000000..1d3e022
 --- /dev/null
 +++ b/arch/sh/src/__set_thread_area.c
 @@ -0,0 +1,34 @@
@@ -591,9 +885,6 @@ index 0000000..1d3e022
 +#endif
 +	return 0;
 +}
-diff --git a/arch/sh/src/__unmapself.c b/arch/sh/src/__unmapself.c
-new file mode 100644
-index 0000000..4df9e7b
 --- /dev/null
 +++ b/arch/sh/src/__unmapself.c
 @@ -0,0 +1,19 @@
@@ -616,8 +907,6 @@ index 0000000..4df9e7b
 +	if (__sh_nommu) __unmapself_sh_nommu(base, size);
 +	else __unmapself_sh_mmu(base, size);
 +}
-diff --git a/arch/sh/src/atomic.c b/arch/sh/src/atomic.c
-index f8c615f..7fd7307 100644
 --- a/arch/sh/src/atomic.c
 +++ b/arch/sh/src/atomic.c
 @@ -1,8 +1,26 @@
@@ -668,7 +957,7 @@ index f8c615f..7fd7307 100644
  
  	int old;
  	__asm__ __volatile__(
-@@ -43,7 +67,15 @@ int __sh_cas(volatile int *p, int t, int s)
+@@ -43,7 +67,15 @@ int __sh_cas(volatile int *p, int t, int
  
  int __sh_swap(volatile int *x, int v)
  {
@@ -702,7 +991,7 @@ index f8c615f..7fd7307 100644
  
  	int old, dummy;
  	__asm__ __volatile__(
-@@ -69,7 +109,7 @@ int __sh_fetch_add(volatile int *x, int v)
+@@ -69,7 +109,7 @@ int __sh_fetch_add(volatile int *x, int
  
  void __sh_store(volatile int *p, int x)
  {
@@ -745,9 +1034,6 @@ index f8c615f..7fd7307 100644
  
  	int dummy;
  	__asm__ __volatile__(
-diff --git a/arch/sh/src/sh_atomic.h b/arch/sh/src/sh_atomic.h
-new file mode 100644
-index 0000000..054c2a3
 --- /dev/null
 +++ b/arch/sh/src/sh_atomic.h
 @@ -0,0 +1,15 @@
@@ -766,8 +1052,6 @@ index 0000000..054c2a3
 +extern __attribute__((__visibility__("hidden"))) unsigned __sh_atomic_model;
 +
 +#endif
-diff --git a/arch/sh/syscall_arch.h b/arch/sh/syscall_arch.h
-index 7ee21a5..f63675a 100644
 --- a/arch/sh/syscall_arch.h
 +++ b/arch/sh/syscall_arch.h
 @@ -8,7 +8,7 @@
@@ -779,8 +1063,141 @@ index 7ee21a5..f63675a 100644
  		"or r0, r0\n"                     \
  		"or r0, r0\n"                     \
  		"or r0, r0\n"                     \
-diff --git a/include/ctype.h b/include/ctype.h
-index cd2e016..7936536 100644
+--- a/configure
++++ b/configure
+@@ -28,7 +28,7 @@ Optional features:
+   --enable-debug          build with debugging information [disabled]
+   --enable-warnings       build with recommended warnings flags [disabled]
+   --enable-visibility     use global visibility options to optimize PIC [auto]
+-  --enable-gcc-wrapper    build musl-gcc toolchain wrapper [auto]
++  --enable-wrapper=...    build given musl toolchain wrapper [auto]
+   --disable-shared        inhibit building shared library [enabled]
+   --disable-static        inhibit building static library [enabled]
+ 
+@@ -123,6 +123,8 @@ bindir='$(exec_prefix)/bin'
+ libdir='$(prefix)/lib'
+ includedir='$(prefix)/include'
+ syslibdir='/lib'
++tools=
++tool_libs=
+ target=
+ optimize=auto
+ debug=no
+@@ -131,6 +133,8 @@ visibility=auto
+ shared=auto
+ static=yes
+ wrapper=auto
++gcc_wrapper=no
++clang_wrapper=no
+ 
+ for arg ; do
+ case "$arg" in
+@@ -154,7 +158,12 @@ case "$arg" in
+ --disable-warnings|--enable-warnings=no) warnings=no ;;
+ --enable-visibility|--enable-visibility=yes) visibility=yes ;;
+ --disable-visibility|--enable-visibility=no) visibility=no ;;
+---enable-gcc-wrapper|--enable-gcc-wrapper=yes) wrapper=yes ;;
++--enable-wrapper|--enable-wrapper=yes) wrapper=detect ;;
++--enable-wrapper=all) wrapper=yes ; gcc_wrapper=yes ; clang_wrapper=yes ;;
++--enable-wrapper=gcc) wrapper=yes ; gcc_wrapper=yes ;;
++--enable-wrapper=clang) wrapper=yes ; clang_wrapper=yes ;;
++--disable-wrapper|--enable-wrapper=no) wrapper=no ;;
++--enable-gcc-wrapper|--enable-gcc-wrapper=yes) wrapper=yes ; gcc_wrapper=yes ;;
+ --disable-gcc-wrapper|--enable-gcc-wrapper=no) wrapper=no ;;
+ --enable-*|--disable-*|--with-*|--without-*|--*dir=*|--build=*) ;;
+ --host=*|--target=*) target=${arg#*=} ;;
+@@ -215,36 +224,51 @@ tryldflag LDFLAGS_TRY -Werror=unknown-wa
+ tryldflag LDFLAGS_TRY -Werror=unused-command-line-argument
+ 
+ #
+-# Need to know if the compiler is gcc to decide whether to build the
+-# musl-gcc wrapper, and for critical bug detection in some gcc versions.
++# Need to know if the compiler is gcc or clang to decide which toolchain
++# wrappers to build.
+ #
+-printf "checking whether compiler is gcc... "
+-if fnmatch '*gcc\ version*' "$(LC_ALL=C $CC -v 2>&1)" ; then
+-cc_is_gcc=yes
++printf "checking for C compiler family... "
++cc_ver="$(LC_ALL=C $CC -v 2>&1)"
++cc_family=unknown
++if fnmatch '*gcc\ version*' "$cc_ver" ; then
++cc_family=gcc
++elif fnmatch '*clang\ version*' "$cc_ver" ; then
++cc_family=clang
++fi
++echo "$cc_family"
++
++#
++# Figure out toolchain wrapper to build
++#
++if test "$wrapper" = auto -o "$wrapper" = detect ; then
++echo "#include <stdlib.h>" > "$tmpc"
++echo "#if ! __GLIBC__" >> "$tmpc"
++echo "#error no" >> "$tmpc"
++echo "#endif" >> "$tmpc"
++printf "checking for toolchain wrapper to build... "
++if test "$wrapper" = auto && ! $CC -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
++echo "none"
++elif test "$cc_family" = gcc ; then
++gcc_wrapper=yes
++echo "gcc"
++elif test "$cc_family" = clang ; then
++clang_wrapper=yes
++echo "clang"
+ else
+-cc_is_gcc=no
++echo "none"
++if test "$wrapper" = detect ; then
++fail "$0: could not find an appropriate toolchain wrapper"
+ fi
+-echo "$cc_is_gcc"
+-
+-#
+-# Only build musl-gcc wrapper if toolchain does not already target musl
+-#
+-if test "$wrapper" = auto ; then
+-printf "checking whether to build musl-gcc wrapper... "
+-if test "$cc_is_gcc" = yes ; then
+-wrapper=yes
+-while read line ; do
+-case "$line" in */ld-musl-*) wrapper=no ;; esac
+-done <<EOF
+-$($CC -dumpspecs)
+-EOF
+-else
+-wrapper=no
+ fi
+-echo "$wrapper"
+ fi
+ 
+-
++if test "$gcc_wrapper" = yes ; then
++tools="$tools tools/musl-gcc"
++tool_libs="$tool_libs lib/musl-gcc.specs"
++fi
++if test "$clang_wrapper" = yes ; then
++tools="$tools tools/musl-clang tools/ld.musl-clang"
++fi
+ 
+ #
+ # Find the target architecture
+@@ -580,11 +604,13 @@ LDFLAGS = $LDFLAGS_AUTO $LDFLAGS
+ CROSS_COMPILE = $CROSS_COMPILE
+ LIBCC = $LIBCC
+ OPTIMIZE_GLOBS = $OPTIMIZE_GLOBS
++ALL_TOOLS = $tools
++TOOL_LIBS = $tool_libs
+ EOF
+ test "x$static" = xno && echo "STATIC_LIBS ="
+ test "x$shared" = xno && echo "SHARED_LIBS ="
+-test "x$wrapper" = xno && echo "ALL_TOOLS ="
+-test "x$wrapper" = xno && echo "TOOL_LIBS ="
++test "x$cc_family" = xgcc && echo 'WRAPCC_GCC = $(CC)'
++test "x$cc_family" = xclang && echo 'WRAPCC_CLANG = $(CC)'
+ exec 1>&3 3>&-
+ 
+ printf "done\n"
 --- a/include/ctype.h
 +++ b/include/ctype.h
 @@ -64,6 +64,7 @@ int   isascii(int);
@@ -791,11 +1208,9 @@ index cd2e016..7936536 100644
  
  #endif
  
-diff --git a/include/stdlib.h b/include/stdlib.h
-index 97ce5a7..d2c911f 100644
 --- a/include/stdlib.h
 +++ b/include/stdlib.h
-@@ -76,7 +76,8 @@ size_t wcstombs (char *__restrict, const wchar_t *__restrict, size_t);
+@@ -76,7 +76,8 @@ size_t wcstombs (char *__restrict, const
  #define EXIT_FAILURE 1
  #define EXIT_SUCCESS 0
  
@@ -805,8 +1220,48 @@ index 97ce5a7..d2c911f 100644
  
  #define RAND_MAX (0x7fffffff)
  
-diff --git a/src/ctype/__ctype_get_mb_cur_max.c b/src/ctype/__ctype_get_mb_cur_max.c
-index d235f4d..8e946fc 100644
+--- a/include/sys/socket.h
++++ b/include/sys/socket.h
+@@ -177,8 +177,11 @@ struct linger
+ #define SO_SNDLOWAT     19
+ #define SO_RCVTIMEO     20
+ #define SO_SNDTIMEO     21
++#define SO_ACCEPTCONN   30
+ #define SO_SNDBUFFORCE  32
+ #define SO_RCVBUFFORCE  33
++#define SO_PROTOCOL     38
++#define SO_DOMAIN       39
+ #endif
+ 
+ #define SO_SECURITY_AUTHENTICATION              22
+@@ -195,7 +198,6 @@ struct linger
+ #define SO_TIMESTAMP            29
+ #define SCM_TIMESTAMP           SO_TIMESTAMP
+ 
+-#define SO_ACCEPTCONN           30
+ #define SO_PEERSEC              31
+ #define SO_PASSSEC              34
+ #define SO_TIMESTAMPNS          35
+@@ -203,8 +205,6 @@ struct linger
+ #define SO_MARK                 36
+ #define SO_TIMESTAMPING         37
+ #define SCM_TIMESTAMPING        SO_TIMESTAMPING
+-#define SO_PROTOCOL             38
+-#define SO_DOMAIN               39
+ #define SO_RXQ_OVFL             40
+ #define SO_WIFI_STATUS          41
+ #define SCM_WIFI_STATUS         SO_WIFI_STATUS
+--- a/include/unistd.h
++++ b/include/unistd.h
+@@ -185,7 +185,7 @@ int setresgid(gid_t, gid_t, gid_t);
+ int getresuid(uid_t *, uid_t *, uid_t *);
+ int getresgid(gid_t *, gid_t *, gid_t *);
+ char *get_current_dir_name(void);
+-void syncfs(int);
++int syncfs(int);
+ int euidaccess(const char *, int);
+ int eaccess(const char *, int);
+ #endif
 --- a/src/ctype/__ctype_get_mb_cur_max.c
 +++ b/src/ctype/__ctype_get_mb_cur_max.c
 @@ -1,6 +1,7 @@
@@ -819,8 +1274,6 @@ index d235f4d..8e946fc 100644
 -	return 4;
 +	return MB_CUR_MAX;
  }
-diff --git a/src/ctype/isascii.c b/src/ctype/isascii.c
-index 3af0a10..54ad3bf 100644
 --- a/src/ctype/isascii.c
 +++ b/src/ctype/isascii.c
 @@ -1,4 +1,5 @@
@@ -829,8 +1282,6 @@ index 3af0a10..54ad3bf 100644
  
  int isascii(int c)
  {
-diff --git a/src/env/__stack_chk_fail.c b/src/env/__stack_chk_fail.c
-index 47784c6..be0c184 100644
 --- a/src/env/__stack_chk_fail.c
 +++ b/src/env/__stack_chk_fail.c
 @@ -25,4 +25,8 @@ void __stack_chk_fail_local(void)
@@ -842,8 +1293,6 @@ index 47784c6..be0c184 100644
 +weak_alias(__stack_chk_fail, __stack_chk_fail_local);
 +
  #endif
-diff --git a/src/internal/libc.h b/src/internal/libc.h
-index 6810cd8..98c7535 100644
 --- a/src/internal/libc.h
 +++ b/src/internal/libc.h
 @@ -17,8 +17,6 @@ struct __libc {
@@ -855,8 +1304,6 @@ index 6810cd8..98c7535 100644
  	size_t tls_size;
  	size_t page_size;
  	struct __locale_struct global_locale;
-diff --git a/src/internal/locale_impl.h b/src/internal/locale_impl.h
-index 9b8385e..f5e4d9b 100644
 --- a/src/internal/locale_impl.h
 +++ b/src/internal/locale_impl.h
 @@ -1,3 +1,6 @@
@@ -892,8 +1339,6 @@ index 9b8385e..f5e4d9b 100644
  #define MB_CUR_MAX (CURRENT_UTF8 ? 4 : 1)
 +
 +#endif
-diff --git a/src/internal/pthread_impl.h b/src/internal/pthread_impl.h
-index e29f9c8..3890bb5 100644
 --- a/src/internal/pthread_impl.h
 +++ b/src/internal/pthread_impl.h
 @@ -94,6 +94,10 @@ struct __timer {
@@ -907,8 +1352,6 @@ index e29f9c8..3890bb5 100644
  #define SIGTIMER 32
  #define SIGCANCEL 33
  #define SIGSYNCCALL 34
-diff --git a/src/internal/sh/syscall.s b/src/internal/sh/syscall.s
-index d00712a..331918a 100644
 --- a/src/internal/sh/syscall.s
 +++ b/src/internal/sh/syscall.s
 @@ -13,7 +13,7 @@ __syscall:
@@ -920,8 +1363,6 @@ index d00712a..331918a 100644
  	or r0, r0
  	or r0, r0
  	or r0, r0
-diff --git a/src/internal/stdio_impl.h b/src/internal/stdio_impl.h
-index e1325fe..0dd7fb5 100644
 --- a/src/internal/stdio_impl.h
 +++ b/src/internal/stdio_impl.h
 @@ -47,6 +47,7 @@ struct _IO_FILE {
@@ -944,11 +1385,94 @@ index e1325fe..0dd7fb5 100644
  
  #define feof(f) ((f)->flags & F_EOF)
  #define ferror(f) ((f)->flags & F_ERR)
-diff --git a/src/ldso/dynlink.c b/src/ldso/dynlink.c
-index 42b056d..d2a7249 100644
 --- a/src/ldso/dynlink.c
 +++ b/src/ldso/dynlink.c
-@@ -337,7 +337,7 @@ static void do_relocs(struct dso *dso, size_t *rel, size_t rel_size, size_t stri
+@@ -156,7 +156,7 @@ static uint32_t gnu_hash(const char *s0)
+ 	const unsigned char *s = (void *)s0;
+ 	uint_fast32_t h = 5381;
+ 	for (; *s; s++)
+-		h = h*33 + *s;
++		h += h*32 + *s;
+ 	return h;
+ }
+ 
+@@ -174,32 +174,39 @@ static Sym *sysv_lookup(const char *s, u
+ 	return 0;
+ }
+ 
+-static Sym *gnu_lookup(const char *s, uint32_t h1, struct dso *dso)
++static Sym *gnu_lookup(uint32_t h1, uint32_t *hashtab, struct dso *dso, const char *s)
+ {
+-	Sym *syms = dso->syms;
+-	char *strings = dso->strings;
+-	uint32_t *hashtab = dso->ghashtab;
+ 	uint32_t nbuckets = hashtab[0];
+ 	uint32_t *buckets = hashtab + 4 + hashtab[2]*(sizeof(size_t)/4);
+-	uint32_t h2;
+-	uint32_t *hashval;
+ 	uint32_t i = buckets[h1 % nbuckets];
+ 
+ 	if (!i) return 0;
+ 
+-	hashval = buckets + nbuckets + (i - hashtab[1]);
++	uint32_t *hashval = buckets + nbuckets + (i - hashtab[1]);
+ 
+ 	for (h1 |= 1; ; i++) {
+-		h2 = *hashval++;
+-		if ((!dso->versym || dso->versym[i] >= 0)
+-		    && (h1 == (h2|1)) && !strcmp(s, strings + syms[i].st_name))
+-			return syms+i;
++		uint32_t h2 = *hashval++;
++		if ((h1 == (h2|1)) && (!dso->versym || dso->versym[i] >= 0)
++		    && !strcmp(s, dso->strings + dso->syms[i].st_name))
++			return dso->syms+i;
+ 		if (h2 & 1) break;
+ 	}
+ 
+ 	return 0;
+ }
+ 
++static Sym *gnu_lookup_filtered(uint32_t h1, uint32_t *hashtab, struct dso *dso, const char *s, uint32_t fofs, size_t fmask)
++{
++	const size_t *bloomwords = (const void *)(hashtab+4);
++	size_t f = bloomwords[fofs & (hashtab[2]-1)];
++	if (!(f & fmask)) return 0;
++
++	f >>= (h1 >> hashtab[3]) % (8 * sizeof f);
++	if (!(f & 1)) return 0;
++
++	return gnu_lookup(h1, hashtab, dso, s);
++}
++
+ #define OK_TYPES (1<<STT_NOTYPE | 1<<STT_OBJECT | 1<<STT_FUNC | 1<<STT_COMMON | 1<<STT_TLS)
+ #define OK_BINDS (1<<STB_GLOBAL | 1<<STB_WEAK | 1<<STB_GNU_UNIQUE)
+ 
+@@ -209,14 +216,20 @@ static Sym *gnu_lookup(const char *s, ui
+ 
+ static struct symdef find_sym(struct dso *dso, const char *s, int need_def)
+ {
+-	uint32_t h = 0, gh = 0;
++	uint32_t h = 0, gh, gho, *ght;
++	size_t ghm = 0;
+ 	struct symdef def = {0};
+ 	for (; dso; dso=dso->next) {
+ 		Sym *sym;
+ 		if (!dso->global) continue;
+-		if (dso->ghashtab) {
+-			if (!gh) gh = gnu_hash(s);
+-			sym = gnu_lookup(s, gh, dso);
++		if ((ght = dso->ghashtab)) {
++			if (!ghm) {
++				gh = gnu_hash(s);
++				int maskbits = 8 * sizeof ghm;
++				gho = gh / maskbits;
++				ghm = 1ul << gh % maskbits;
++			}
++			sym = gnu_lookup_filtered(gh, ght, dso, s, gho, ghm);
+ 		} else {
+ 			if (!h) h = sysv_hash(s);
+ 			sym = sysv_lookup(s, h, dso);
+@@ -337,7 +350,7 @@ static void do_relocs(struct dso *dso, s
  			*reloc_addr = def.dso->tls_id;
  			break;
  		case REL_DTPOFF:
@@ -957,7 +1481,7 @@ index 42b056d..d2a7249 100644
  			break;
  #ifdef TLS_ABOVE_TP
  		case REL_TPOFF:
-@@ -423,6 +423,28 @@ static void reclaim_gaps(struct dso *dso)
+@@ -423,6 +436,28 @@ static void reclaim_gaps(struct dso *dso
  	}
  }
  
@@ -986,7 +1510,7 @@ index 42b056d..d2a7249 100644
  static void *map_library(int fd, struct dso *dso)
  {
  	Ehdr buf[(896+sizeof(Ehdr))/sizeof(Ehdr)];
-@@ -524,19 +546,20 @@ static void *map_library(int fd, struct dso *dso)
+@@ -524,19 +559,20 @@ static void *map_library(int fd, struct
  		prot = (((ph->p_flags&PF_R) ? PROT_READ : 0) |
  			((ph->p_flags&PF_W) ? PROT_WRITE: 0) |
  			((ph->p_flags&PF_X) ? PROT_EXEC : 0));
@@ -1010,7 +1534,7 @@ index 42b056d..d2a7249 100644
  				goto error;
  			break;
  		}
-@@ -927,7 +950,8 @@ static void reloc_all(struct dso *p)
+@@ -927,7 +963,8 @@ static void reloc_all(struct dso *p)
  		do_relocs(p, (void *)(p->base+dyn[DT_RELA]), dyn[DT_RELASZ], 3);
  
  		if (head != &ldso && p->relro_start != p->relro_end &&
@@ -1020,7 +1544,7 @@ index 42b056d..d2a7249 100644
  			error("Error relocating %s: RELRO protection failed: %m",
  				p->name);
  			if (runtime) longjmp(*rtld_fail, 1);
-@@ -1078,7 +1102,7 @@ void *__tls_get_new(size_t *v)
+@@ -1078,7 +1115,7 @@ void *__tls_get_new(size_t *v)
  	__block_all_sigs(&set);
  	if (v[0]<=(size_t)self->dtv[0]) {
  		__restore_sigs(&set);
@@ -1029,7 +1553,7 @@ index 42b056d..d2a7249 100644
  	}
  
  	/* This is safe without any locks held because, if the caller
-@@ -1111,7 +1135,7 @@ void *__tls_get_new(size_t *v)
+@@ -1111,7 +1148,7 @@ void *__tls_get_new(size_t *v)
  		if (p->tls_id == v[0]) break;
  	}
  	__restore_sigs(&set);
@@ -1038,7 +1562,7 @@ index 42b056d..d2a7249 100644
  }
  
  static void update_tls_size()
-@@ -1192,6 +1216,17 @@ _Noreturn void __dls3(size_t *sp)
+@@ -1192,6 +1229,17 @@ _Noreturn void __dls3(size_t *sp)
  	char **argv_orig = argv;
  	char **envp = argv+argc+1;
  
@@ -1056,7 +1580,7 @@ index 42b056d..d2a7249 100644
  	/* Setup early thread pointer in builtin_tls for ldso/libc itself to
  	 * use during dynamic linking. If possible it will also serve as the
  	 * thread pointer at runtime. */
-@@ -1200,25 +1235,11 @@ _Noreturn void __dls3(size_t *sp)
+@@ -1200,25 +1248,11 @@ _Noreturn void __dls3(size_t *sp)
  		a_crash();
  	}
  
@@ -1085,9 +1609,51 @@ index 42b056d..d2a7249 100644
  
  	/* If the main program was already loaded by the kernel,
  	 * AT_PHDR will point to some location other than the dynamic
-diff --git a/src/locale/c_locale.c b/src/locale/c_locale.c
-new file mode 100644
-index 0000000..77ccf58
+@@ -1523,7 +1557,7 @@ void *__tls_get_addr(size_t *);
+ static void *do_dlsym(struct dso *p, const char *s, void *ra)
+ {
+ 	size_t i;
+-	uint32_t h = 0, gh = 0;
++	uint32_t h = 0, gh = 0, *ght;
+ 	Sym *sym;
+ 	if (p == head || p == RTLD_DEFAULT || p == RTLD_NEXT) {
+ 		if (p == RTLD_DEFAULT) {
+@@ -1541,9 +1575,9 @@ static void *do_dlsym(struct dso *p, con
+ 	}
+ 	if (invalid_dso_handle(p))
+ 		return 0;
+-	if (p->ghashtab) {
++	if ((ght = p->ghashtab)) {
+ 		gh = gnu_hash(s);
+-		sym = gnu_lookup(s, gh, p);
++		sym = gnu_lookup(gh, ght, p, s);
+ 	} else {
+ 		h = sysv_hash(s);
+ 		sym = sysv_lookup(s, h, p);
+@@ -1553,9 +1587,9 @@ static void *do_dlsym(struct dso *p, con
+ 	if (sym && sym->st_value && (1<<(sym->st_info&0xf) & OK_TYPES))
+ 		return p->base + sym->st_value;
+ 	if (p->deps) for (i=0; p->deps[i]; i++) {
+-		if (p->deps[i]->ghashtab) {
++		if ((ght = p->deps[i]->ghashtab)) {
+ 			if (!gh) gh = gnu_hash(s);
+-			sym = gnu_lookup(s, gh, p->deps[i]);
++			sym = gnu_lookup(gh, ght, p->deps[i], s);
+ 		} else {
+ 			if (!h) h = sysv_hash(s);
+ 			sym = sysv_lookup(s, h, p->deps[i]);
+--- a/src/linux/syncfs.c
++++ b/src/linux/syncfs.c
+@@ -2,7 +2,7 @@
+ #include <unistd.h>
+ #include "syscall.h"
+ 
+-void syncfs(int fd)
++int syncfs(int fd)
+ {
+-	__syscall(SYS_syncfs, fd);
++	return syscall(SYS_syncfs, fd);
+ }
 --- /dev/null
 +++ b/src/locale/c_locale.c
 @@ -0,0 +1,15 @@
@@ -1106,8 +1672,6 @@ index 0000000..77ccf58
 +const struct __locale_struct __c_dot_utf8_locale = {
 +	.cat[LC_CTYPE] = &__c_dot_utf8
 +};
-diff --git a/src/locale/iconv.c b/src/locale/iconv.c
-index e6121ae..1eeea94 100644
 --- a/src/locale/iconv.c
 +++ b/src/locale/iconv.c
 @@ -5,6 +5,7 @@
@@ -1118,7 +1682,7 @@ index e6121ae..1eeea94 100644
  
  #define UTF_32BE    0300
  #define UTF_16LE    0301
-@@ -165,9 +166,12 @@ size_t iconv(iconv_t cd0, char **restrict in, size_t *restrict inb, char **restr
+@@ -165,9 +166,12 @@ size_t iconv(iconv_t cd0, char **restric
  	int err;
  	unsigned char type = map[-1];
  	unsigned char totype = tomap[-1];
@@ -1131,7 +1695,7 @@ index e6121ae..1eeea94 100644
  	for (; *inb; *in+=l, *inb-=l) {
  		c = *(unsigned char *)*in;
  		l = 1;
-@@ -431,6 +435,7 @@ size_t iconv(iconv_t cd0, char **restrict in, size_t *restrict inb, char **restr
+@@ -431,6 +435,7 @@ size_t iconv(iconv_t cd0, char **restric
  			break;
  		}
  	}
@@ -1146,11 +1710,9 @@ index e6121ae..1eeea94 100644
 +	*ploc = loc;
  	return x;
  }
-diff --git a/src/locale/langinfo.c b/src/locale/langinfo.c
-index a1ada24..776b447 100644
 --- a/src/locale/langinfo.c
 +++ b/src/locale/langinfo.c
-@@ -33,7 +33,8 @@ char *__nl_langinfo_l(nl_item item, locale_t loc)
+@@ -33,7 +33,8 @@ char *__nl_langinfo_l(nl_item item, loca
  	int idx = item & 65535;
  	const char *str;
  
@@ -1160,8 +1722,6 @@ index a1ada24..776b447 100644
  	
  	switch (cat) {
  	case LC_NUMERIC:
-diff --git a/src/locale/locale_map.c b/src/locale/locale_map.c
-index 4346bb0..c3e5917 100644
 --- a/src/locale/locale_map.c
 +++ b/src/locale/locale_map.c
 @@ -24,14 +24,6 @@ static const char envvars[][12] = {
@@ -1179,7 +1739,7 @@ index 4346bb0..c3e5917 100644
  const struct __locale_map *__get_locale(int cat, const char *val)
  {
  	static int lock[2];
-@@ -107,8 +99,8 @@ const struct __locale_map *__get_locale(int cat, const char *val)
+@@ -107,8 +99,8 @@ const struct __locale_map *__get_locale(
  	 * sake of being able to do message translations at the
  	 * application level. */
  	if (!new && (new = malloc(sizeof *new))) {
@@ -1190,8 +1750,6 @@ index 4346bb0..c3e5917 100644
  		memcpy(new->name, val, n);
  		new->name[n] = 0;
  		new->next = loc_head;
-diff --git a/src/locale/newlocale.c b/src/locale/newlocale.c
-index 89d36b1..f50bbe9 100644
 --- a/src/locale/newlocale.c
 +++ b/src/locale/newlocale.c
 @@ -3,16 +3,9 @@
@@ -1212,7 +1770,7 @@ index 89d36b1..f50bbe9 100644
  }
  
  locale_t __newlocale(int mask, const char *name, locale_t loc)
-@@ -44,9 +37,9 @@ locale_t __newlocale(int mask, const char *name, locale_t loc)
+@@ -44,9 +37,9 @@ locale_t __newlocale(int mask, const cha
  	}
  
  	if (!j)
@@ -1225,8 +1783,6 @@ index 89d36b1..f50bbe9 100644
  
  	if ((loc = malloc(sizeof *loc))) *loc = tmp;
  
-diff --git a/src/locale/uselocale.c b/src/locale/uselocale.c
-index b70a0c1..0fc5ecb 100644
 --- a/src/locale/uselocale.c
 +++ b/src/locale/uselocale.c
 @@ -8,9 +8,7 @@ locale_t __uselocale(locale_t new)
@@ -1240,8 +1796,6 @@ index b70a0c1..0fc5ecb 100644
  
  	return old == global ? LC_GLOBAL_LOCALE : old;
  }
-diff --git a/src/malloc/calloc.c b/src/malloc/calloc.c
-index c3dfb47..436c0b0 100644
 --- a/src/malloc/calloc.c
 +++ b/src/malloc/calloc.c
 @@ -1,22 +1,13 @@
@@ -1270,9 +1824,6 @@ index c3dfb47..436c0b0 100644
 -	return p;
 +	return __malloc0(n * m);
  }
-diff --git a/src/malloc/expand_heap.c b/src/malloc/expand_heap.c
-new file mode 100644
-index 0000000..d8c0be7
 --- /dev/null
 +++ b/src/malloc/expand_heap.c
 @@ -0,0 +1,72 @@
@@ -1348,8 +1899,6 @@ index 0000000..d8c0be7
 +	mmap_step++;
 +	return area;
 +}
-diff --git a/src/malloc/lite_malloc.c b/src/malloc/lite_malloc.c
-index 7643fc2..09ac575 100644
 --- a/src/malloc/lite_malloc.c
 +++ b/src/malloc/lite_malloc.c
 @@ -4,43 +4,47 @@
@@ -1423,8 +1972,6 @@ index 7643fc2..09ac575 100644
  
  weak_alias(__simple_malloc, malloc);
 +weak_alias(__simple_malloc, __malloc0);
-diff --git a/src/malloc/malloc.c b/src/malloc/malloc.c
-index d4de2dc..eb68d55 100644
 --- a/src/malloc/malloc.c
 +++ b/src/malloc/malloc.c
 @@ -13,7 +13,6 @@
@@ -1465,7 +2012,7 @@ index d4de2dc..eb68d55 100644
 -	uintptr_t new;
 -
 -	lock(mal.brk_lock);
- 
+-
 -	if (!init) {
 -		mal.brk = __brk(0);
 -#ifdef SHARED
@@ -1475,16 +2022,11 @@ index d4de2dc..eb68d55 100644
 -		mal.heap = (void *)mal.brk;
 -		init = 1;
 -	}
-+	/* The argument n already accounts for the caller's chunk
-+	 * overhead needs, but if the heap can't be extended in-place,
-+	 * we need room for an extra zero-sized sentinel chunk. */
-+	n += SIZE_ALIGN;
- 
+-
 -	if (n > SIZE_MAX - mal.brk - 2*PAGE_SIZE) goto fail;
 -	new = mal.brk + n + SIZE_ALIGN + PAGE_SIZE - 1 & -PAGE_SIZE;
 -	n = new - mal.brk;
-+	lock(heap_lock);
- 
+-
 -	if (__brk(new) != new) {
 -		size_t min = (size_t)PAGE_SIZE << mal.mmap_step/2;
 -		n += -n & PAGE_SIZE-1;
@@ -1492,15 +2034,23 @@ index d4de2dc..eb68d55 100644
 -		void *area = __mmap(0, n, PROT_READ|PROT_WRITE,
 -			MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 -		if (area == MAP_FAILED) goto fail;
+ 
+-		mal.mmap_step++;
+-		area = (char *)area + SIZE_ALIGN - OVERHEAD;
+-		w = area;
++	/* The argument n already accounts for the caller's chunk
++	 * overhead needs, but if the heap can't be extended in-place,
++	 * we need room for an extra zero-sized sentinel chunk. */
++	n += SIZE_ALIGN;
++
++	lock(heap_lock);
++
 +	p = __expand_heap(&n);
 +	if (!p) {
 +		unlock(heap_lock);
 +		return 0;
 +	}
- 
--		mal.mmap_step++;
--		area = (char *)area + SIZE_ALIGN - OVERHEAD;
--		w = area;
++
 +	/* If not just expanding existing space, we need to make a
 +	 * new sentinel chunk below the allocated space. */
 +	if (p != end) {
@@ -1566,8 +2116,47 @@ index d4de2dc..eb68d55 100644
  void *realloc(void *p, size_t n)
  {
  	struct chunk *self, *next;
-diff --git a/src/multibyte/btowc.c b/src/multibyte/btowc.c
-index 9d2c3b1..8acd0a2 100644
+--- a/src/misc/syslog.c
++++ b/src/misc/syslog.c
+@@ -48,12 +48,8 @@ void closelog(void)
+ 
+ static void __openlog()
+ {
+-	int fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC, 0);
+-	if (fd < 0) return;
+-	if (connect(fd, (void *)&log_addr, sizeof log_addr) < 0)
+-		close(fd);
+-	else
+-		log_fd = fd;
++	log_fd = socket(AF_UNIX, SOCK_DGRAM|SOCK_CLOEXEC, 0);
++	if (log_fd >= 0) connect(log_fd, (void *)&log_addr, sizeof log_addr);
+ }
+ 
+ void openlog(const char *ident, int opt, int facility)
+@@ -78,6 +74,11 @@ void openlog(const char *ident, int opt,
+ 	pthread_setcancelstate(cs, 0);
+ }
+ 
++static int is_lost_conn(int e)
++{
++	return e==ECONNREFUSED || e==ECONNRESET || e==ENOTCONN || e==EPIPE;
++}
++
+ static void _vsyslog(int priority, const char *message, va_list ap)
+ {
+ 	char timebuf[16];
+@@ -107,7 +108,10 @@ static void _vsyslog(int priority, const
+ 		if (l2 >= sizeof buf - l) l = sizeof buf - 1;
+ 		else l += l2;
+ 		if (buf[l-1] != '\n') buf[l++] = '\n';
+-		if (send(log_fd, buf, l, 0) < 0 && (log_opt & LOG_CONS)) {
++		if (send(log_fd, buf, l, 0) < 0 && (!is_lost_conn(errno)
++		    || connect(log_fd, (void *)&log_addr, sizeof log_addr) < 0
++		    || send(log_fd, buf, l, 0) < 0)
++		    && (log_opt & LOG_CONS)) {
+ 			fd = open("/dev/console", O_WRONLY|O_NOCTTY|O_CLOEXEC);
+ 			if (fd >= 0) {
+ 				dprintf(fd, "%.*s", l-hlen, buf+hlen);
 --- a/src/multibyte/btowc.c
 +++ b/src/multibyte/btowc.c
 @@ -1,7 +1,10 @@
@@ -1582,8 +2171,6 @@ index 9d2c3b1..8acd0a2 100644
 +	int b = (unsigned char)c;
 +	return b<128U ? b : (MB_CUR_MAX==1 && c!=EOF) ? CODEUNIT(c) : WEOF;
  }
-diff --git a/src/multibyte/internal.h b/src/multibyte/internal.h
-index cc017fa..53d62ed 100644
 --- a/src/multibyte/internal.h
 +++ b/src/multibyte/internal.h
 @@ -23,3 +23,10 @@ extern const uint32_t bittab[];
@@ -1597,8 +2184,6 @@ index cc017fa..53d62ed 100644
 +
 +/* Get inline definition of MB_CUR_MAX. */
 +#include "locale_impl.h"
-diff --git a/src/multibyte/mbrtowc.c b/src/multibyte/mbrtowc.c
-index e7b3654..ca7da70 100644
 --- a/src/multibyte/mbrtowc.c
 +++ b/src/multibyte/mbrtowc.c
 @@ -4,6 +4,7 @@
@@ -1609,7 +2194,7 @@ index e7b3654..ca7da70 100644
  #include <wchar.h>
  #include <errno.h>
  #include "internal.h"
-@@ -27,6 +28,7 @@ size_t mbrtowc(wchar_t *restrict wc, const char *restrict src, size_t n, mbstate
+@@ -27,6 +28,7 @@ size_t mbrtowc(wchar_t *restrict wc, con
  	if (!n) return -2;
  	if (!c) {
  		if (*s < 0x80) return !!(*wc = *s);
@@ -1617,8 +2202,6 @@ index e7b3654..ca7da70 100644
  		if (*s-SA > SB-SA) goto ilseq;
  		c = bittab[*s++-SA]; n--;
  	}
-diff --git a/src/multibyte/mbsrtowcs.c b/src/multibyte/mbsrtowcs.c
-index 3c1343a..e23083d 100644
 --- a/src/multibyte/mbsrtowcs.c
 +++ b/src/multibyte/mbsrtowcs.c
 @@ -7,6 +7,8 @@
@@ -1630,7 +2213,7 @@ index 3c1343a..e23083d 100644
  #include "internal.h"
  
  size_t mbsrtowcs(wchar_t *restrict ws, const char **restrict src, size_t wn, mbstate_t *restrict st)
-@@ -24,6 +26,23 @@ size_t mbsrtowcs(wchar_t *restrict ws, const char **restrict src, size_t wn, mbs
+@@ -24,6 +26,23 @@ size_t mbsrtowcs(wchar_t *restrict ws, c
  		}
  	}
  
@@ -1654,8 +2237,6 @@ index 3c1343a..e23083d 100644
  	if (!ws) for (;;) {
  		if (*s-1u < 0x7f && (uintptr_t)s%4 == 0) {
  			while (!(( *(uint32_t*)s | *(uint32_t*)s-0x01010101) & 0x80808080)) {
-diff --git a/src/multibyte/mbtowc.c b/src/multibyte/mbtowc.c
-index 803d221..71a9506 100644
 --- a/src/multibyte/mbtowc.c
 +++ b/src/multibyte/mbtowc.c
 @@ -4,6 +4,7 @@
@@ -1666,7 +2247,7 @@ index 803d221..71a9506 100644
  #include <wchar.h>
  #include <errno.h>
  #include "internal.h"
-@@ -19,6 +20,7 @@ int mbtowc(wchar_t *restrict wc, const char *restrict src, size_t n)
+@@ -19,6 +20,7 @@ int mbtowc(wchar_t *restrict wc, const c
  	if (!wc) wc = &dummy;
  
  	if (*s < 0x80) return !!(*wc = *s);
@@ -1674,8 +2255,6 @@ index 803d221..71a9506 100644
  	if (*s-SA > SB-SA) goto ilseq;
  	c = bittab[*s++-SA];
  
-diff --git a/src/multibyte/wcrtomb.c b/src/multibyte/wcrtomb.c
-index 59f733d..ddc37a5 100644
 --- a/src/multibyte/wcrtomb.c
 +++ b/src/multibyte/wcrtomb.c
 @@ -4,8 +4,10 @@
@@ -1689,7 +2268,7 @@ index 59f733d..ddc37a5 100644
  
  size_t wcrtomb(char *restrict s, wchar_t wc, mbstate_t *restrict st)
  {
-@@ -13,6 +15,13 @@ size_t wcrtomb(char *restrict s, wchar_t wc, mbstate_t *restrict st)
+@@ -13,6 +15,13 @@ size_t wcrtomb(char *restrict s, wchar_t
  	if ((unsigned)wc < 0x80) {
  		*s = wc;
  		return 1;
@@ -1703,8 +2282,6 @@ index 59f733d..ddc37a5 100644
  	} else if ((unsigned)wc < 0x800) {
  		*s++ = 0xc0 | (wc>>6);
  		*s = 0x80 | (wc&0x3f);
-diff --git a/src/multibyte/wctob.c b/src/multibyte/wctob.c
-index d6353ee..4aeda6a 100644
 --- a/src/multibyte/wctob.c
 +++ b/src/multibyte/wctob.c
 @@ -1,8 +1,10 @@
@@ -1719,11 +2296,20 @@ index d6353ee..4aeda6a 100644
 +	if (MB_CUR_MAX==1 && IS_CODEUNIT(c)) return (unsigned char)c;
  	return EOF;
  }
-diff --git a/src/passwd/nscd_query.c b/src/passwd/nscd_query.c
-index 69a7815..d38e371 100644
+--- a/src/network/ns_parse.c
++++ b/src/network/ns_parse.c
+@@ -95,7 +95,7 @@ int ns_skiprr(const unsigned char *ptr,
+ 			p += r;
+ 		}
+ 	}
+-	return ptr - p;
++	return p - ptr;
+ bad:
+ 	errno = EMSGSIZE;
+ 	return -1;
 --- a/src/passwd/nscd_query.c
 +++ b/src/passwd/nscd_query.c
-@@ -32,6 +32,7 @@ FILE *__nscd_query(int32_t req, const char *key, int32_t *buf, size_t len, int *
+@@ -32,6 +32,7 @@ FILE *__nscd_query(int32_t req, const ch
  		},
  		.msg_iovlen = 2
  	};
@@ -1750,9 +2336,6 @@ index 69a7815..d38e371 100644
  		goto error;
  	}
  
-diff --git a/src/process/sh/vfork.s b/src/process/sh/vfork.s
-new file mode 100644
-index 0000000..48cc939
 --- /dev/null
 +++ b/src/process/sh/vfork.s
 @@ -0,0 +1,23 @@
@@ -1779,8 +2362,6 @@ index 0000000..48cc939
 +	.align 2
 +	.hidden __syscall_ret
 +1:	.long __syscall_ret@PLT-(2b+4-.)
-diff --git a/src/regex/fnmatch.c b/src/regex/fnmatch.c
-index 7f6b65f..978fff8 100644
 --- a/src/regex/fnmatch.c
 +++ b/src/regex/fnmatch.c
 @@ -18,6 +18,7 @@
@@ -1791,7 +2372,7 @@ index 7f6b65f..978fff8 100644
  
  #define END 0
  #define UNMATCHABLE -2
-@@ -229,7 +230,7 @@ static int fnmatch_internal(const char *pat, size_t m, const char *str, size_t n
+@@ -229,7 +230,7 @@ static int fnmatch_internal(const char *
  	 * On illegal sequences we may get it wrong, but in that case
  	 * we necessarily have a matching failure anyway. */
  	for (s=endstr; s>str && tailcnt; tailcnt--) {
@@ -1800,8 +2381,6 @@ index 7f6b65f..978fff8 100644
  		else while ((unsigned char)*--s-0x80U<0x40 && s>str);
  	}
  	if (tailcnt) return FNM_NOMATCH;
-diff --git a/src/signal/sh/restore.s b/src/signal/sh/restore.s
-index ab26034..eaedcdf 100644
 --- a/src/signal/sh/restore.s
 +++ b/src/signal/sh/restore.s
 @@ -2,7 +2,7 @@
@@ -1822,8 +2401,6 @@ index ab26034..eaedcdf 100644
  
  	or    r0, r0
  	or    r0, r0
-diff --git a/src/stdio/__fdopen.c b/src/stdio/__fdopen.c
-index ef8f47d..8d6ce81 100644
 --- a/src/stdio/__fdopen.c
 +++ b/src/stdio/__fdopen.c
 @@ -54,13 +54,7 @@ FILE *__fdopen(int fd, const char *mode)
@@ -1841,8 +2418,6 @@ index ef8f47d..8d6ce81 100644
  }
  
  weak_alias(__fdopen, fdopen);
-diff --git a/src/stdio/__stdio_exit.c b/src/stdio/__stdio_exit.c
-index 716e5f7..191b445 100644
 --- a/src/stdio/__stdio_exit.c
 +++ b/src/stdio/__stdio_exit.c
 @@ -16,8 +16,7 @@ static void close_file(FILE *f)
@@ -1855,8 +2430,6 @@ index 716e5f7..191b445 100644
  	close_file(__stdin_used);
  	close_file(__stdout_used);
  }
-diff --git a/src/stdio/__stdio_read.c b/src/stdio/__stdio_read.c
-index 5947344..f8fa6d3 100644
 --- a/src/stdio/__stdio_read.c
 +++ b/src/stdio/__stdio_read.c
 @@ -1,12 +1,5 @@
@@ -1872,7 +2445,7 @@ index 5947344..f8fa6d3 100644
  
  size_t __stdio_read(FILE *f, unsigned char *buf, size_t len)
  {
-@@ -16,9 +9,7 @@ size_t __stdio_read(FILE *f, unsigned char *buf, size_t len)
+@@ -16,9 +9,7 @@ size_t __stdio_read(FILE *f, unsigned ch
  	};
  	ssize_t cnt;
  
@@ -1883,8 +2456,6 @@ index 5947344..f8fa6d3 100644
  	if (cnt <= 0) {
  		f->flags |= F_EOF ^ ((F_ERR^F_EOF) & cnt);
  		return cnt;
-diff --git a/src/stdio/__stdio_write.c b/src/stdio/__stdio_write.c
-index 8c89389..d2d8947 100644
 --- a/src/stdio/__stdio_write.c
 +++ b/src/stdio/__stdio_write.c
 @@ -1,12 +1,5 @@
@@ -1900,7 +2471,7 @@ index 8c89389..d2d8947 100644
  
  size_t __stdio_write(FILE *f, const unsigned char *buf, size_t len)
  {
-@@ -19,9 +12,7 @@ size_t __stdio_write(FILE *f, const unsigned char *buf, size_t len)
+@@ -19,9 +12,7 @@ size_t __stdio_write(FILE *f, const unsi
  	int iovcnt = 2;
  	ssize_t cnt;
  	for (;;) {
@@ -1911,7 +2482,7 @@ index 8c89389..d2d8947 100644
  		if (cnt == rem) {
  			f->wend = f->buf + f->buf_size;
  			f->wpos = f->wbase = f->buf;
-@@ -34,11 +25,8 @@ size_t __stdio_write(FILE *f, const unsigned char *buf, size_t len)
+@@ -34,11 +25,8 @@ size_t __stdio_write(FILE *f, const unsi
  		}
  		rem -= cnt;
  		if (cnt > iov[0].iov_len) {
@@ -1923,8 +2494,6 @@ index 8c89389..d2d8947 100644
  		}
  		iov[0].iov_base = (char *)iov[0].iov_base + cnt;
  		iov[0].iov_len -= cnt;
-diff --git a/src/stdio/fclose.c b/src/stdio/fclose.c
-index 317b3c9..839d88a 100644
 --- a/src/stdio/fclose.c
 +++ b/src/stdio/fclose.c
 @@ -14,11 +14,11 @@ int fclose(FILE *f)
@@ -1942,8 +2511,6 @@ index 317b3c9..839d88a 100644
  	}
  
  	r = fflush(f);
-diff --git a/src/stdio/fflush.c b/src/stdio/fflush.c
-index 7bf862a..3f462c8 100644
 --- a/src/stdio/fflush.c
 +++ b/src/stdio/fflush.c
 @@ -35,13 +35,12 @@ int fflush(FILE *f)
@@ -1962,8 +2529,6 @@ index 7bf862a..3f462c8 100644
  	
  	return r;
  }
-diff --git a/src/stdio/fgetwc.c b/src/stdio/fgetwc.c
-index 8626d54..e455cfe 100644
 --- a/src/stdio/fgetwc.c
 +++ b/src/stdio/fgetwc.c
 @@ -1,8 +1,9 @@
@@ -2003,11 +2568,9 @@ index 8626d54..e455cfe 100644
  wint_t fgetwc(FILE *f)
  {
  	wint_t c;
-diff --git a/src/stdio/fmemopen.c b/src/stdio/fmemopen.c
-index d784960..7c193a5 100644
 --- a/src/stdio/fmemopen.c
 +++ b/src/stdio/fmemopen.c
-@@ -110,11 +110,5 @@ FILE *fmemopen(void *restrict buf, size_t size, const char *restrict mode)
+@@ -110,11 +110,5 @@ FILE *fmemopen(void *restrict buf, size_
  
  	if (!libc.threaded) f->lock = -1;
  
@@ -2020,11 +2583,9 @@ index d784960..7c193a5 100644
 -	return f;
 +	return __ofl_add(f);
  }
-diff --git a/src/stdio/fopen.c b/src/stdio/fopen.c
-index 07bdb6e..252f082 100644
 --- a/src/stdio/fopen.c
 +++ b/src/stdio/fopen.c
-@@ -18,7 +18,7 @@ FILE *fopen(const char *restrict filename, const char *restrict mode)
+@@ -18,7 +18,7 @@ FILE *fopen(const char *restrict filenam
  	/* Compute the flags to pass to open() */
  	flags = __fmodeflags(mode);
  
@@ -2033,8 +2594,6 @@ index 07bdb6e..252f082 100644
  	if (fd < 0) return 0;
  	if (flags & O_CLOEXEC)
  		__syscall(SYS_fcntl, fd, F_SETFD, FD_CLOEXEC);
-diff --git a/src/stdio/fputwc.c b/src/stdio/fputwc.c
-index 7b621dd..789fe9c 100644
 --- a/src/stdio/fputwc.c
 +++ b/src/stdio/fputwc.c
 @@ -1,4 +1,5 @@
@@ -2043,7 +2602,7 @@ index 7b621dd..789fe9c 100644
  #include <wchar.h>
  #include <limits.h>
  #include <ctype.h>
-@@ -7,8 +8,10 @@ wint_t __fputwc_unlocked(wchar_t c, FILE *f)
+@@ -7,8 +8,10 @@ wint_t __fputwc_unlocked(wchar_t c, FILE
  {
  	char mbc[MB_LEN_MAX];
  	int l;
@@ -2055,7 +2614,7 @@ index 7b621dd..789fe9c 100644
  
  	if (isascii(c)) {
  		c = putc_unlocked(c, f);
-@@ -20,6 +23,8 @@ wint_t __fputwc_unlocked(wchar_t c, FILE *f)
+@@ -20,6 +23,8 @@ wint_t __fputwc_unlocked(wchar_t c, FILE
  		l = wctomb(mbc, c);
  		if (l < 0 || __fwritex((void *)mbc, l, f) < l) c = WEOF;
  	}
@@ -2064,8 +2623,6 @@ index 7b621dd..789fe9c 100644
  	return c;
  }
  
-diff --git a/src/stdio/fputws.c b/src/stdio/fputws.c
-index 5723cbc..0ed02f1 100644
 --- a/src/stdio/fputws.c
 +++ b/src/stdio/fputws.c
 @@ -1,23 +1,28 @@
@@ -2098,8 +2655,6 @@ index 5723cbc..0ed02f1 100644
  	return l; /* 0 or -1 */
  }
  
-diff --git a/src/stdio/fwide.c b/src/stdio/fwide.c
-index 8088e7a..8410b15 100644
 --- a/src/stdio/fwide.c
 +++ b/src/stdio/fwide.c
 @@ -1,13 +1,14 @@
@@ -2122,9 +2677,6 @@ index 8088e7a..8410b15 100644
  	mode = f->mode;
  	FUNLOCK(f);
  	return mode;
-diff --git a/src/stdio/ofl.c b/src/stdio/ofl.c
-new file mode 100644
-index 0000000..b143999
 --- /dev/null
 +++ b/src/stdio/ofl.c
 @@ -0,0 +1,16 @@
@@ -2144,9 +2696,6 @@ index 0000000..b143999
 +{
 +	UNLOCK(ofl_lock);
 +}
-diff --git a/src/stdio/ofl_add.c b/src/stdio/ofl_add.c
-new file mode 100644
-index 0000000..d7de9f1
 --- /dev/null
 +++ b/src/stdio/ofl_add.c
 @@ -0,0 +1,11 @@
@@ -2161,11 +2710,9 @@ index 0000000..d7de9f1
 +	__ofl_unlock();
 +	return f;
 +}
-diff --git a/src/stdio/open_memstream.c b/src/stdio/open_memstream.c
-index 9eafdfb..58504c9 100644
 --- a/src/stdio/open_memstream.c
 +++ b/src/stdio/open_memstream.c
-@@ -79,11 +79,5 @@ FILE *open_memstream(char **bufp, size_t *sizep)
+@@ -79,11 +79,5 @@ FILE *open_memstream(char **bufp, size_t
  
  	if (!libc.threaded) f->lock = -1;
  
@@ -2178,11 +2725,9 @@ index 9eafdfb..58504c9 100644
 -	return f;
 +	return __ofl_add(f);
  }
-diff --git a/src/stdio/open_wmemstream.c b/src/stdio/open_wmemstream.c
-index 3537030..7ab2c64 100644
 --- a/src/stdio/open_wmemstream.c
 +++ b/src/stdio/open_wmemstream.c
-@@ -81,11 +81,5 @@ FILE *open_wmemstream(wchar_t **bufp, size_t *sizep)
+@@ -81,11 +81,5 @@ FILE *open_wmemstream(wchar_t **bufp, si
  
  	if (!libc.threaded) f->lock = -1;
  
@@ -2195,8 +2740,6 @@ index 3537030..7ab2c64 100644
 -	return f;
 +	return __ofl_add(f);
  }
-diff --git a/src/stdio/ungetwc.c b/src/stdio/ungetwc.c
-index 913f716..80d6e20 100644
 --- a/src/stdio/ungetwc.c
 +++ b/src/stdio/ungetwc.c
 @@ -1,4 +1,5 @@
@@ -2241,11 +2784,9 @@ index 913f716..80d6e20 100644
 +	*ploc = loc;
  	return c;
  }
-diff --git a/src/stdio/vfwprintf.c b/src/stdio/vfwprintf.c
-index ebdff00..f06d5ae 100644
 --- a/src/stdio/vfwprintf.c
 +++ b/src/stdio/vfwprintf.c
-@@ -293,7 +293,10 @@ static int wprintf_core(FILE *f, const wchar_t *fmt, va_list *ap, union arg *nl_
+@@ -293,7 +293,10 @@ static int wprintf_core(FILE *f, const w
  			if ((fl&LEFT_ADJ)) fprintf(f, "%.*s", w-p, "");
  			l=w;
  			continue;
@@ -2256,7 +2797,7 @@ index ebdff00..f06d5ae 100644
  			bs = arg.p;
  			if (p<0) p = INT_MAX;
  			for (i=l=0; l<p && (i=mbtowc(&wc, bs, MB_LEN_MAX))>0; bs+=i, l++);
-@@ -356,7 +359,7 @@ int vfwprintf(FILE *restrict f, const wchar_t *restrict fmt, va_list ap)
+@@ -356,7 +359,7 @@ int vfwprintf(FILE *restrict f, const wc
  	}
  
  	FLOCK(f);
@@ -2265,11 +2806,9 @@ index ebdff00..f06d5ae 100644
  	olderr = f->flags & F_ERR;
  	f->flags &= ~F_ERR;
  	ret = wprintf_core(f, fmt, &ap2, nl_arg, nl_type);
-diff --git a/src/stdio/vfwscanf.c b/src/stdio/vfwscanf.c
-index ac5c2c2..223aad4 100644
 --- a/src/stdio/vfwscanf.c
 +++ b/src/stdio/vfwscanf.c
-@@ -104,7 +104,7 @@ int vfwscanf(FILE *restrict f, const wchar_t *restrict fmt, va_list ap)
+@@ -104,7 +104,7 @@ int vfwscanf(FILE *restrict f, const wch
  
  	FLOCK(f);
  
@@ -2278,8 +2817,6 @@ index ac5c2c2..223aad4 100644
  
  	for (p=fmt; *p; p++) {
  
-diff --git a/src/string/strverscmp.c b/src/string/strverscmp.c
-index 6f37cc6..4daf276 100644
 --- a/src/string/strverscmp.c
 +++ b/src/string/strverscmp.c
 @@ -2,40 +2,33 @@
@@ -2348,8 +2885,6 @@ index 6f37cc6..4daf276 100644
 +
 +	return l[i] - r[i];
  }
-diff --git a/src/thread/__tls_get_addr.c b/src/thread/__tls_get_addr.c
-index 3633396..84a413d 100644
 --- a/src/thread/__tls_get_addr.c
 +++ b/src/thread/__tls_get_addr.c
 @@ -8,9 +8,9 @@ void *__tls_get_addr(size_t *v)
@@ -2364,9 +2899,7 @@ index 3633396..84a413d 100644
 +	return (char *)self->dtv[1]+v[1]+DTP_OFFSET;
  #endif
  }
-diff --git a/src/thread/__unmapself.c b/src/thread/__unmapself.c
-index e69de29..1d3bee1 100644
---- a/src/thread/__unmapself.c
+--- /dev/null
 +++ b/src/thread/__unmapself.c
 @@ -0,0 +1,29 @@
 +#include "pthread_impl.h"
@@ -2398,8 +2931,6 @@ index e69de29..1d3bee1 100644
 +	unmap_size = size;
 +	CRTJMP(do_unmap, stack);
 +}
-diff --git a/src/thread/mips/__unmapself.s b/src/thread/mips/__unmapself.s
-index 9aa0371..ba139dc 100644
 --- a/src/thread/mips/__unmapself.s
 +++ b/src/thread/mips/__unmapself.s
 @@ -2,6 +2,7 @@
@@ -2410,11 +2941,9 @@ index 9aa0371..ba139dc 100644
  	li $2, 4091
  	syscall
  	li $4, 0
-diff --git a/src/thread/pthread_create.c b/src/thread/pthread_create.c
-index de72818..e7df34a 100644
 --- a/src/thread/pthread_create.c
 +++ b/src/thread/pthread_create.c
-@@ -191,8 +191,9 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
+@@ -191,8 +191,9 @@ int __pthread_create(pthread_t *restrict
  	if (!libc.can_do_threads) return ENOSYS;
  	self = __pthread_self();
  	if (!libc.threaded) {
@@ -2425,7 +2954,7 @@ index de72818..e7df34a 100644
  		init_file_lock(__stdin_used);
  		init_file_lock(__stdout_used);
  		init_file_lock(__stderr_used);
-@@ -231,7 +232,8 @@ int __pthread_create(pthread_t *restrict res, const pthread_attr_t *restrict att
+@@ -231,7 +232,8 @@ int __pthread_create(pthread_t *restrict
  		if (guard) {
  			map = __mmap(0, size, PROT_NONE, MAP_PRIVATE|MAP_ANON, -1, 0);
  			if (map == MAP_FAILED) goto fail;
@@ -2435,8 +2964,6 @@ index de72818..e7df34a 100644
  				__munmap(map, size);
  				goto fail;
  			}
-diff --git a/src/thread/sh/__set_thread_area.s b/src/thread/sh/__set_thread_area.s
-index d9f1181..e69de29 100644
 --- a/src/thread/sh/__set_thread_area.s
 +++ b/src/thread/sh/__set_thread_area.s
 @@ -1,6 +0,0 @@
@@ -2446,8 +2973,6 @@ index d9f1181..e69de29 100644
 -	ldc r4, gbr
 -	rts
 -	 mov #0, r0
-diff --git a/src/thread/sh/__unmapself.s b/src/thread/sh/__unmapself.s
-index b34c3c8..0161d53 100644
 --- a/src/thread/sh/__unmapself.s
 +++ b/src/thread/sh/__unmapself.s
 @@ -1,9 +1,9 @@
@@ -2473,8 +2998,6 @@ index b34c3c8..0161d53 100644
  
  	or    r0, r0
  	or    r0, r0
-diff --git a/src/thread/sh/clone.s b/src/thread/sh/clone.s
-index d6c9184..f8ad845 100644
 --- a/src/thread/sh/clone.s
 +++ b/src/thread/sh/clone.s
 @@ -17,7 +17,7 @@ __clone:
@@ -2495,8 +3018,6 @@ index d6c9184..f8ad845 100644
  
  	or   r0, r0
  	or   r0, r0
-diff --git a/src/thread/sh/syscall_cp.s b/src/thread/sh/syscall_cp.s
-index 6b28ddf..c3cafac 100644
 --- a/src/thread/sh/syscall_cp.s
 +++ b/src/thread/sh/syscall_cp.s
 @@ -31,7 +31,7 @@ L1:	.long __cancel@PLT-(1b-.)
@@ -2508,8 +3029,18 @@ index 6b28ddf..c3cafac 100644
  
  __cp_end:
  	! work around hardware bug
-diff --git a/src/unistd/sh/pipe.s b/src/unistd/sh/pipe.s
-index d865ae3..46c4908 100644
+--- a/src/time/__tz.c
++++ b/src/time/__tz.c
+@@ -125,7 +125,8 @@ static void do_tzset()
+ 		"/usr/share/zoneinfo/\0/share/zoneinfo/\0/etc/zoneinfo/\0";
+ 
+ 	s = getenv("TZ");
+-	if (!s || !*s) s = "/etc/localtime";
++	if (!s) s = "/etc/localtime";
++	if (!*s) s = __gmt;
+ 
+ 	if (old_tz && !strcmp(s, old_tz)) return;
+ 
 --- a/src/unistd/sh/pipe.s
 +++ b/src/unistd/sh/pipe.s
 @@ -2,7 +2,7 @@
@@ -2521,3 +3052,95 @@ index d865ae3..46c4908 100644
  
  	! work around hardware bug
  	or     r0, r0
+--- /dev/null
++++ b/tools/ld.musl-clang.in
+@@ -0,0 +1,51 @@
++#!/bin/sh
++cc="@CC@"
++libc_lib="@LIBDIR@"
++ldso="@LDSO@"
++cleared=
++shared=
++userlinkdir=
++userlink=
++
++for x ; do
++    test "$cleared" || set -- ; cleared=1
++
++    case "$x" in
++        -L-user-start)
++            userlinkdir=1
++            ;;
++        -L-user-end)
++            userlinkdir=
++            ;;
++        -L*)
++            test "$userlinkdir" && set -- "$@" "$x"
++            ;;
++        -l-user-start)
++            userlink=1
++            ;;
++        -l-user-end)
++            userlink=
++            ;;
++        crtbegin*.o|crtend*.o)
++            set -- "$@" $($cc -print-file-name=$x)
++            ;;
++        -lgcc|-lgcc_eh)
++            file=lib${x#-l}.a
++            set -- "$@" $($cc -print-file-name=$file)
++            ;;
++        -l*)
++            test "$userlink" && set -- "$@" "$x"
++            ;;
++        -shared)
++            shared=1
++            set -- "$@" -shared
++            ;;
++        -sysroot=*|--sysroot=*)
++            ;;
++        *)
++            set -- "$@" "$x"
++            ;;
++    esac
++done
++
++exec $($cc -print-prog-name=ld) -nostdlib "$@" -lc -dynamic-linker "$ldso"
+--- /dev/null
++++ b/tools/musl-clang.in
+@@ -0,0 +1,35 @@
++#!/bin/sh
++cc="@CC@"
++libc="@PREFIX@"
++libc_inc="@INCDIR@"
++libc_lib="@LIBDIR@"
++thisdir="`cd "$(dirname "$0")"; pwd`"
++
++# prevent clang from running the linker (and erroring) on no input.
++sflags=
++eflags=
++for x ; do
++    case "$x" in
++        -l*) input=1 ;;
++        *) input= ;;
++    esac
++    if test "$input" ; then
++        sflags="-l-user-start"
++        eflags="-l-user-end"
++        break
++    fi
++done
++
++exec $cc \
++    -B"$thisdir" \
++    -fuse-ld=musl-clang \
++    -static-libgcc \
++    -nostdinc \
++    --sysroot "$libc" \
++    -isystem "$libc_inc" \
++    -L-user-start \
++    $sflags \
++    "$@" \
++    $eflags \
++    -L"$libc_lib" \
++    -L-user-end
