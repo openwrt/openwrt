@@ -34,6 +34,14 @@ case "$FIRMWARE" in
 	esac
 	;;
 
+"ath10k/cal-pci-0000:00:00.0.bin")
+	case $board in
+	dlan-pro-1200-ac)
+		ath10kcal_from_file $(find_mtd_part "art") 20480 $ath10kcal_tmp
+		;;
+	esac
+	;;
+
 *)
 	exit 1
 	;;
