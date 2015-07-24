@@ -591,6 +591,7 @@ static int read_to_buf(struct file_info *fdata, char *buf)
 static int check_options(void)
 {
 	int ret;
+	int exceed_bytes;
 
 	if (inspect_info.file_name) {
 		ret = get_file_stat(&inspect_info);
@@ -664,10 +665,10 @@ static int check_options(void)
 	kernel_len = kernel_info.file_size;
 
 	if (combined) {
-		if (kernel_info.file_size >
-		    fw_max_len - sizeof(struct fw_header)) {
+		exceed_bytes = kernel_info.file_size - (fw_max_len - sizeof(struct fw_header));
+		if (exceed_bytes > 0) {
 			if (!ignore_size) {
-				ERR("kernel image is too big");
+				ERR("kernel image is too big by %i bytes", exceed_bytes);
 				return -1;
 			}
 			layout->fw_max_len = sizeof(struct fw_header) +
@@ -691,20 +692,20 @@ static int check_options(void)
 
 			DBG("kernel length aligned to %u", kernel_len);
 
-			if (kernel_len + rootfs_info.file_size >
-			    fw_max_len - sizeof(struct fw_header)) {
-				ERR("images are too big");
+			exceed_bytes = kernel_len + rootfs_info.file_size - (fw_max_len - sizeof(struct fw_header));
+			if (exceed_bytes > 0) {
+				ERR("images are too big by %i bytes", exceed_bytes);
 				return -1;
 			}
 		} else {
-			if (kernel_info.file_size >
-			    rootfs_ofs - sizeof(struct fw_header)) {
+			exceed_bytes = kernel_info.file_size - (rootfs_ofs - sizeof(struct fw_header));
+			if (exceed_bytes > 0) {
 				ERR("kernel image is too big");
 				return -1;
 			}
 
-			if (rootfs_info.file_size >
-			    (fw_max_len - rootfs_ofs)) {
+			exceed_bytes = rootfs_info.file_size - (fw_max_len - rootfs_ofs);
+			if (exceed_bytes > 0) {
 				ERR("rootfs image is too big");
 				return -1;
 			}
