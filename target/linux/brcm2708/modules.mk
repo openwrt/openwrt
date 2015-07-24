@@ -25,6 +25,161 @@ endef
 $(eval $(call KernelPackage,sound-arm-bcm2835))
 
 
+define KernelPackage/sound-soc-bcm2708-i2s
+  TITLE:=SoC Audio support for the Broadcom 2708 I2S module
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_I2S \
+	CONFIG_SND_SOC_DMAENGINE_PCM=y \
+	CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-bcm2708-i2s.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-bcm2708-i2s)
+  DEPENDS:=@TARGET_brcm2708 +kmod-regmap +kmod-sound-soc-core
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-bcm2708-i2s/description
+  This package contains support for codecs attached to the Broadcom 2708 I2S interface
+endef
+
+$(eval $(call KernelPackage,sound-soc-bcm2708-i2s))
+
+define KernelPackage/sound-soc-hifiberry-dac
+  TITLE:=Support for HifiBerry DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_HIFIBERRY_DAC \
+	CONFIG_SND_SOC_PCM5102A
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm5102a.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm5102a snd-soc-hifiberry-dac)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-hifiberry-dac/description
+  This package contains support for HifiBerry DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-hifiberry-dac))
+
+define KernelPackage/sound-soc-hifiberry-dacplus
+  TITLE:=Support for HifiBerry DAC+
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS \
+	CONFIG_SND_SOC_PCM512x
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-hifiberry-dacplus)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-hifiberry-dacplus/description
+  This package contains support for HifiBerry DAC+
+endef
+
+$(eval $(call KernelPackage,sound-soc-hifiberry-dacplus))
+
+define KernelPackage/sound-soc-hifiberry-digi
+  TITLE:=Support for HifiBerry Digi
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_HIFIBERRY_DIGI \
+	CONFIG_SND_SOC_WM8804
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-digi.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8804.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8804 snd-soc-hifiberry-digi)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-hifiberry-digi/description
+  This package contains support for HifiBerry Digi
+endef
+
+$(eval $(call KernelPackage,sound-soc-hifiberry-digi))
+
+define KernelPackage/sound-soc-hifiberry-amp
+  TITLE:=Support for HifiBerry Amp
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_HIFIBERRY_AMP \
+	CONFIG_SND_SOC_TAS5713
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-amp.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tas5713.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-tas5713 snd-soc-hifiberry-amp)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-hifiberry-amp/description
+  This package contains support for HifiBerry Amp
+endef
+
+$(eval $(call KernelPackage,sound-soc-hifiberry-amp))
+
+define KernelPackage/sound-soc-rpi-dac
+  TITLE:=Support for RPi-DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_RPI_DAC \
+	CONFIG_SND_SOC_PCM1794A
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm1794a.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm1794a snd-soc-rpi-dac)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-rpi-dac/description
+  This package contains support for RPi-DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-rpi-dac))
+
+define KernelPackage/sound-soc-rpi-proto
+  TITLE:=Support for RPi-PROTO
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_RPI_PROTO \
+	CONFIG_SND_SOC_WM8731
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-rpi-proto.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-wm8731.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-wm8731 snd-soc-rpi-proto)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-rpi-proto/description
+  This package contains support for RPi-PROTO
+endef
+
+$(eval $(call KernelPackage,sound-soc-rpi-proto))
+
+define KernelPackage/sound-soc-iqaudio-dac
+  TITLE:=Support for IQaudIO-DAC
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_IQAUDIO_DAC \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-dac.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
+  AUTOLOAD:=$(call AutoLoad,68,sound-soc-bcm2708-i2s snd-soc-pcm512x-i2c snd-soc-iqaudio-dac)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-iqaudio-dac/description
+  This package contains support for IQaudIO-DAC
+endef
+
+$(eval $(call KernelPackage,sound-soc-iqaudio-dac))
+
+
 define KernelPackage/random-bcm2708
   SUBMENU:=$(OTHER_MENU)
   TITLE:=BCM2708 HW Random Number Generator
