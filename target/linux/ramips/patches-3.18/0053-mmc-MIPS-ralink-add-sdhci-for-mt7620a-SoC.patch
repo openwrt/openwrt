@@ -25,7 +25,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -773,3 +773,5 @@ config MMC_SUNXI
+@@ -773,3 +773,5 @@
  	help
  	  This selects support for the SD/MMC Host Controller on
  	  Allwinner sunxi SoCs.
@@ -1760,7 +1760,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3047 @@
+@@ -0,0 +1,3050 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -1821,6 +1821,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/kernel.h>
 +#include <linux/version.h>
 +#include <linux/pm.h>
++#include <linux/of.h>
 +
 +#define MSDC_SMPL_FALLING   (1)
 +#define MSDC_CD_PIN_EN      (1 << 0)  /* card detection pin is wired   */
@@ -1915,6 +1916,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#ifdef MT6575_SD_DEBUG
 +static struct msdc_regs *msdc_reg[HOST_MAX_NUM];
 +#endif 
++
++static int mtk_sw_poll;
 +
 +//=================================
 +#define PERI_MSDC0_PDN      (15)
@@ -2331,7 +2334,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    spin_lock(&host->lock);
 +
 +    if (hw->get_cd_status) { // NULL
-+        inserted = hw->get_cd_status();
++	inserted = hw->get_cd_status();
 +    } else {
 +        status = sdr_read32(MSDC_PS);
 +        inserted = (status & MSDC_PS_CDSTS) ? 0 : 1;
@@ -2401,7 +2404,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    //u8  clksrc = hw->clk_src;
 +
 +    if (!hz) { // set mmc system clock to 0 ?
-+        ERR_MSG("set mclk to 0!!!");
++        //ERR_MSG("set mclk to 0!!!");
 +        msdc_reset();
 +        return;
 +    }
@@ -3899,7 +3902,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +    if (msdc_do_request(mmc,mrq)) {  	
 +        if(host->hw->flags & MSDC_REMOVABLE && mrq->data && mrq->data->error) {
-+            msdc_tune_request(mmc,mrq);                                    	
++            //msdc_tune_request(mmc,mrq);                                    	
 +        }        	
 +    }
 +
@@ -4148,10 +4151,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +        
 +    /* card change interrupt */
 +    if (intsts & MSDC_INT_CDSC){
-+#if defined CONFIG_MTK_MMC_CD_POLL        
-+	return IRQ_HANDLED;
-+#endif
-+        IRQ_MSG("MSDC_INT_CDSC irq<0x%.8x>", intsts); 
++	if (mtk_sw_poll)
++		return IRQ_HANDLED;
++	IRQ_MSG("MSDC_INT_CDSC irq<0x%.8x>", intsts); 
 +#if 0 /* ---/+++ by chhung: fix slot mechanical bounce issue */
 +        tasklet_hi_schedule(&host->card_tasklet);
 +#else
@@ -4532,9 +4534,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    if ((hw->flags & MSDC_SDIO_IRQ) || (hw->flags & MSDC_EXT_SDIO_IRQ))
 +        mmc->caps |= MMC_CAP_SDIO_IRQ;  /* yes for sdio */
 +
-+#if defined CONFIG_MTK_MMC_CD_POLL
-+    mmc->caps |= MMC_CAP_NEEDS_POLL;
-+#endif
++	mtk_sw_poll = of_property_read_bool(pdev->dev.of_node, "mediatek,cd-poll");
++
++	if (mtk_sw_poll)
++		mmc->caps |= MMC_CAP_NEEDS_POLL;
 +
 +    /* MMC core transfer sizes tunable parameters */
 +#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,0)
