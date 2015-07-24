@@ -157,7 +157,7 @@
     /* can't fail */
     request_mem_region(physicalAddr, addrRangeSize_byte, pName);
 +#else
-+   if ( request_mem_region(physicalAddr, addrRangeSize_byte, pName) )
++   if ( !request_mem_region(physicalAddr, addrRangeSize_byte, pName) )
 +   {
 +      IFXOS_PRN_USR_ERR_NL( IFXOS, IFXOS_PRN_LEVEL_ERR,
 +         ("IFXOS: ERROR Phy2Virt map, region request - addr 0x%08lX (size 0x%lX) not free" IFXOS_CRLF,
