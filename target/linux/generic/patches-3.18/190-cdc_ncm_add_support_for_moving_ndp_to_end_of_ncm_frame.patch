@@ -1,0 +1,195 @@
+diff -u a/drivers/net/usb/cdc_mbim.c b/drivers/net/usb/cdc_mbim.c
+--- a/drivers/net/usb/cdc_mbim.c	2015-06-28 17:40:40.000000000 +0000
++++ b/drivers/net/usb/cdc_mbim.c	2015-07-04 15:05:14.546901702 +0000
+@@ -158,7 +158,7 @@
+ 	if (!cdc_ncm_comm_intf_is_mbim(intf->cur_altsetting))
+ 		goto err;
+
+-	ret = cdc_ncm_bind_common(dev, intf, data_altsetting);
++	ret = cdc_ncm_bind_common(dev, intf, data_altsetting, 0);
+ 	if (ret)
+ 		goto err;
+
+diff -u a/drivers/net/usb/cdc_ncm.c b/drivers/net/usb/cdc_ncm.c
+--- a/drivers/net/usb/cdc_ncm.c	2015-06-28 17:40:40.000000000 +0000
++++ b/drivers/net/usb/cdc_ncm.c	2015-07-09 08:43:01.658770535 +0000
+@@ -684,10 +684,11 @@
+ 		ctx->tx_curr_skb = NULL;
+ 	}
+
++	kfree(ctx->delayed_ndp16);
+ 	kfree(ctx);
+ }
+
+-int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting)
++int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting, int drvflags)
+ {
+ 	const struct usb_cdc_union_desc *union_desc = NULL;
+ 	struct cdc_ncm_ctx *ctx;
+@@ -855,6 +856,17 @@
+ 	/* finish setting up the device specific data */
+ 	cdc_ncm_setup(dev);
+
++	/* Device-specific flags */
++	ctx->drvflags = drvflags;
++
++	/* Allocate the delayed NDP if needed. */
++	if (ctx->drvflags & CDC_NCM_FLAG_NDP_TO_END) {
++		ctx->delayed_ndp16 = kzalloc(ctx->max_ndp_size, GFP_KERNEL);
++		if (!ctx->delayed_ndp16)
++			goto error2;
++		dev_info(&intf->dev, "NDP will be placed at end of frame for this device.");
++	}
++
+ 	/* override ethtool_ops */
+ 	dev->net->ethtool_ops = &cdc_ncm_ethtool_ops;
+
+@@ -954,8 +966,11 @@
+ 	if (cdc_ncm_select_altsetting(intf) != CDC_NCM_COMM_ALTSETTING_NCM)
+ 		return -ENODEV;
+
+-	/* The NCM data altsetting is fixed */
+-	ret = cdc_ncm_bind_common(dev, intf, CDC_NCM_DATA_ALTSETTING_NCM);
++	/* The NCM data altsetting is fixed, so we hard-coded it.
++	 * Additionally, generic NCM devices are assumed to accept arbitrarily
++	 * placed NDP.
++	 */
++	ret = cdc_ncm_bind_common(dev, intf, CDC_NCM_DATA_ALTSETTING_NCM, 0);
+
+ 	/*
+ 	 * We should get an event when network connection is "connected" or
+@@ -986,6 +1001,14 @@
+ 	struct usb_cdc_ncm_nth16 *nth16 = (void *)skb->data;
+ 	size_t ndpoffset = le16_to_cpu(nth16->wNdpIndex);
+
++	/* If NDP should be moved to the end of the NCM package, we can't follow the
++	* NTH16 header as we would normally do. NDP isn't written to the SKB yet, and
++	* the wNdpIndex field in the header is actually not consistent with reality. It will be later.
++	*/
++	if (ctx->drvflags & CDC_NCM_FLAG_NDP_TO_END)
++		if (ctx->delayed_ndp16->dwSignature == sign)
++			return ctx->delayed_ndp16;
++
+ 	/* follow the chain of NDPs, looking for a match */
+ 	while (ndpoffset) {
+ 		ndp16 = (struct usb_cdc_ncm_ndp16 *)(skb->data + ndpoffset);
+@@ -995,7 +1018,8 @@
+ 	}
+
+ 	/* align new NDP */
+-	cdc_ncm_align_tail(skb, ctx->tx_ndp_modulus, 0, ctx->tx_max);
++	if (!(ctx->drvflags & CDC_NCM_FLAG_NDP_TO_END))
++		cdc_ncm_align_tail(skb, ctx->tx_ndp_modulus, 0, ctx->tx_max);
+
+ 	/* verify that there is room for the NDP and the datagram (reserve) */
+ 	if ((ctx->tx_max - skb->len - reserve) < ctx->max_ndp_size)
+@@ -1008,7 +1032,11 @@
+ 		nth16->wNdpIndex = cpu_to_le16(skb->len);
+
+ 	/* push a new empty NDP */
+-	ndp16 = (struct usb_cdc_ncm_ndp16 *)memset(skb_put(skb, ctx->max_ndp_size), 0, ctx->max_ndp_size);
++	if (!(ctx->drvflags & CDC_NCM_FLAG_NDP_TO_END))
++		ndp16 = (struct usb_cdc_ncm_ndp16 *)memset(skb_put(skb, ctx->max_ndp_size), 0, ctx->max_ndp_size);
++	else
++		ndp16 = ctx->delayed_ndp16;
++
+ 	ndp16->dwSignature = sign;
+ 	ndp16->wLength = cpu_to_le16(sizeof(struct usb_cdc_ncm_ndp16) + sizeof(struct usb_cdc_ncm_dpe16));
+ 	return ndp16;
+@@ -1023,6 +1051,15 @@
+ 	struct sk_buff *skb_out;
+ 	u16 n = 0, index, ndplen;
+ 	u8 ready2send = 0;
++	u32 delayed_ndp_size;
++
++	/* When our NDP gets written in cdc_ncm_ndp(), then skb_out->len gets updated
++	 * accordingly. Otherwise, we should check here.
++	 */
++	if (ctx->drvflags & CDC_NCM_FLAG_NDP_TO_END)
++		delayed_ndp_size = ctx->max_ndp_size;
++	else
++		delayed_ndp_size = 0;
+
+ 	/* if there is a remaining skb, it gets priority */
+ 	if (skb != NULL) {
+@@ -1077,7 +1114,7 @@
+ 		cdc_ncm_align_tail(skb_out,  ctx->tx_modulus, ctx->tx_remainder, ctx->tx_max);
+
+ 		/* check if we had enough room left for both NDP and frame */
+-		if (!ndp16 || skb_out->len + skb->len > ctx->tx_max) {
++		if (!ndp16 || skb_out->len + skb->len + delayed_ndp_size > ctx->tx_max) {
+ 			if (n == 0) {
+ 				/* won't fit, MTU problem? */
+ 				dev_kfree_skb_any(skb);
+@@ -1150,6 +1187,17 @@
+ 		/* variables will be reset at next call */
+ 	}
+
++	/* If requested, put NDP at end of frame. */
++	if (ctx->drvflags & CDC_NCM_FLAG_NDP_TO_END) {
++		nth16 = (struct usb_cdc_ncm_nth16 *)skb_out->data;
++		cdc_ncm_align_tail(skb_out, ctx->tx_ndp_modulus, 0, ctx->tx_max);
++		nth16->wNdpIndex = cpu_to_le16(skb_out->len);
++		memcpy(skb_put(skb_out, ctx->max_ndp_size), ctx->delayed_ndp16, ctx->max_ndp_size);
++
++		/* Zero out delayed NDP - signature checking will naturally fail. */
++		ndp16 = memset(ctx->delayed_ndp16, 0, ctx->max_ndp_size);
++	}
++
+ 	/* If collected data size is less or equal ctx->min_tx_pkt
+ 	 * bytes, we send buffers as it is. If we get more data, it
+ 	 * would be more efficient for USB HS mobile device with DMA
+diff -u a/drivers/net/usb/huawei_cdc_ncm.c b/drivers/net/usb/huawei_cdc_ncm.c
+--- a/drivers/net/usb/huawei_cdc_ncm.c	2015-06-28 17:40:40.000000000 +0000
++++ b/drivers/net/usb/huawei_cdc_ncm.c	2015-07-04 15:23:25.779014586 +0000
+@@ -73,11 +73,14 @@
+ 	struct usb_driver *subdriver = ERR_PTR(-ENODEV);
+ 	int ret = -ENODEV;
+ 	struct huawei_cdc_ncm_state *drvstate = (void *)&usbnet_dev->data;
++	int drvflags = 0;
+
+ 	/* altsetting should always be 1 for NCM devices - so we hard-coded
+-	 * it here
++	 * it here. Some huawei devices will need the NDP part of the NCM package to
++	 * be at the end of the frame.
+ 	 */
+-	ret = cdc_ncm_bind_common(usbnet_dev, intf, 1);
++	drvflags |= CDC_NCM_FLAG_NDP_TO_END;
++	ret = cdc_ncm_bind_common(usbnet_dev, intf, 1, drvflags);
+ 	if (ret)
+ 		goto err;
+
+diff -u a/include/linux/usb/cdc_ncm.h b/include/linux/usb/cdc_ncm.h
+--- a/include/linux/usb/cdc_ncm.h	2015-06-28 17:40:40.000000000 +0000
++++ b/include/linux/usb/cdc_ncm.h	2015-07-04 15:27:52.171388014 +0000
+@@ -80,6 +80,9 @@
+ #define CDC_NCM_TIMER_INTERVAL_MIN		5UL
+ #define CDC_NCM_TIMER_INTERVAL_MAX		(U32_MAX / NSEC_PER_USEC)
+
++/* Driver flags */
++#define CDC_NCM_FLAG_NDP_TO_END			0x02	/* NDP is placed at end of frame */
++
+ #define cdc_ncm_comm_intf_is_mbim(x)  ((x)->desc.bInterfaceSubClass == USB_CDC_SUBCLASS_MBIM && \
+ 				       (x)->desc.bInterfaceProtocol == USB_CDC_PROTO_NONE)
+ #define cdc_ncm_data_intf_is_mbim(x)  ((x)->desc.bInterfaceProtocol == USB_CDC_MBIM_PROTO_NTB)
+@@ -103,9 +106,11 @@
+
+ 	spinlock_t mtx;
+ 	atomic_t stop;
++	int drvflags;
+
+ 	u32 timer_interval;
+ 	u32 max_ndp_size;
++	struct usb_cdc_ncm_ndp16 *delayed_ndp16;
+
+ 	u32 tx_timer_pending;
+ 	u32 tx_curr_frame_num;
+@@ -133,7 +138,7 @@
+ };
+
+ u8 cdc_ncm_select_altsetting(struct usb_interface *intf);
+-int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting);
++int cdc_ncm_bind_common(struct usbnet *dev, struct usb_interface *intf, u8 data_altsetting, int drvflags);
+ void cdc_ncm_unbind(struct usbnet *dev, struct usb_interface *intf);
+ struct sk_buff *cdc_ncm_fill_tx_frame(struct usbnet *dev, struct sk_buff *skb, __le32 sign);
+ int cdc_ncm_rx_verify_nth16(struct cdc_ncm_ctx *ctx, struct sk_buff *skb_in);
