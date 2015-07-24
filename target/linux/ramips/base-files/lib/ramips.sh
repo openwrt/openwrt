@@ -307,6 +307,9 @@ ramips_board_detect() {
 	*"Sparklan WCR-150GN")
 		name="wcr-150gn"
 		;;
+	*"STORYLiNK SAP-G3200U3")
+		name="sap-g3200u3"
+		;;
 	*"V22RW-2X2")
 		name="v22rw-2x2"
 		;;

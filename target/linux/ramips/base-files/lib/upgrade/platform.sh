@@ -90,6 +90,7 @@ platform_check_image() {
 	rt-n15 | \
 	rt-n56u | \
 	rut5xx | \
+	sap-g3200u3 | \
 	sl-r7205 | \
 	tew-691gr | \
 	tew-692gr | \
