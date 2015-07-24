@@ -515,7 +515,7 @@ define KernelPackage/ath/config
 		bool "Atheros wireless debugging"
 		help
 		  Say Y, if you want to debug atheros wireless drivers.
-		  Right now only ath9k makes use of this.
+		  Only ath9k & ath10k make use of this.
 
 	config PACKAGE_ATH_DFS
 		bool "Enable DFS support"
