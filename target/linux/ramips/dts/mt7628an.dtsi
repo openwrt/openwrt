@@ -135,6 +135,46 @@
 			pinctrl-names = "default";
 			pinctrl-0 = <&uart0_pins>;
 		};
+
+		uart1@d00 {
+			compatible = "ns16550a";
+			reg = <0xd00 0x100>;
+
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			no-loopback-test;
+
+			resets = <&rstctrl 19>;
+			reset-names = "uart1";
+
+			interrupt-parent = <&intc>;
+			interrupts = <21>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart1_pins>;
+
+			status = "disabled";
+		};
+
+		uart2@e00 {
+			compatible = "ns16550a";
+			reg = <0xe00 0x100>;
+
+			reg-shift = <2>;
+			reg-io-width = <4>;
+			no-loopback-test;
+
+			resets = <&rstctrl 20>;
+			reset-names = "uart2";
+
+			interrupt-parent = <&intc>;
+			interrupts = <22>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&uart2_pins>;
+
+			status = "disabled";
+		};
 	};
 
 	pinctrl {
@@ -150,9 +190,27 @@
 			};
 		};
 		uart0_pins: uartlite {
-			uart {
+			uartlite {
 				ralink,group = "uart0";
-				ralink,function = "uart";
+				ralink,function = "uart0";
+			};
+		};
+		uart1_pins: uart1 {
+			uart1 {
+				ralink,group = "uart1";
+				ralink,function = "uart1";
+			};
+		};
+		uart2_pins: uart2 {
+			uart2 {
+				ralink,group = "uart2";
+				ralink,function = "uart2";
+			};
+		};
+		sdxc_pins: sdxc {
+			sdxc {
+				ralink,group = "sdmode";
+				ralink,function = "sdxc";
 			};
 		};
 	};
@@ -176,6 +234,9 @@
 
 		interrupt-parent = <&intc>;
 		interrupts = <14>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdxc_pins>;
 
 		status = "disabled";
 	};
