@@ -7,3 +7,5 @@ if [ "$ACTION" = "pressed" -a "$BUTTON" = "wps" ]; then
 		hostapd_cli -i "$socket" wps_pbc
 	done
 fi
+
+return 0
