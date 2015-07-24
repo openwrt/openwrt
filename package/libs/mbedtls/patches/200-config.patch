@@ -1,0 +1,235 @@
+--- a/include/mbedtls/config.h
++++ b/include/mbedtls/config.h
+@@ -181,7 +181,7 @@
+  *
+  * Uncomment to get errors on using deprecated functions.
+  */
+-//#define MBEDTLS_DEPRECATED_REMOVED
++#define MBEDTLS_DEPRECATED_REMOVED
+ 
+ /* \} name SECTION: System support */
+ 
+@@ -320,7 +320,7 @@
+  *
+  * Enable Cipher Feedback mode (CFB) for symmetric ciphers.
+  */
+-#define MBEDTLS_CIPHER_MODE_CFB
++//#define MBEDTLS_CIPHER_MODE_CFB
+ 
+ /**
+  * \def MBEDTLS_CIPHER_MODE_CTR
+@@ -413,13 +413,13 @@
+  *
+  * Comment macros to disable the curve and functions for it
+  */
+-#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP256R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP384R1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP521R1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
+-#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
++//#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
+ #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
+ #define MBEDTLS_ECP_DP_BP256R1_ENABLED
+ #define MBEDTLS_ECP_DP_BP384R1_ENABLED
+@@ -435,7 +435,7 @@
+  *
+  * Comment this macro to disable NIST curves optimisation.
+  */
+-#define MBEDTLS_ECP_NIST_OPTIM
++//#define MBEDTLS_ECP_NIST_OPTIM
+ 
+ /**
+  * \def MBEDTLS_ECDSA_DETERMINISTIC
+@@ -443,7 +443,7 @@
+  * Enable deterministic ECDSA (RFC 6979).
+  * Standard ECDSA is "fragile" in the sense that lack of entropy when signing
+  * may result in a compromise of the long-term signing key. This is avoided by
+- * the deterministic variant.
++       DH	* the deterministic variant.
+  *
+  * Requires: MBEDTLS_HMAC_DRBG_C
+  *
+@@ -495,7 +495,7 @@
+  *      MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA
+  *      MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA
+  */
+-#define MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+@@ -540,7 +540,7 @@
+  *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
+  *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
+  */
+-#define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
+@@ -594,7 +594,7 @@
+  *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA
+  *      MBEDTLS_TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA
+  */
+-#define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+@@ -667,7 +667,7 @@
+  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
+  *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
+  */
+-#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+ 
+ /**
+  * \def MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+@@ -691,7 +691,7 @@
+  *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
+  *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
+  */
+-#define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
++//#define MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+ 
+ /**
+  * \def MBEDTLS_PK_PARSE_EC_EXTENDED
+@@ -810,7 +810,7 @@
+  *
+  * Comment this macro to disable support for external private RSA keys.
+  */
+-#define MBEDTLS_PK_RSA_ALT_SUPPORT
++//#define MBEDTLS_PK_RSA_ALT_SUPPORT
+ 
+ /**
+  * \def MBEDTLS_PKCS1_V15
+@@ -842,14 +842,14 @@
+  * Uncomment this macro to disable the use of CRT in RSA.
+  *
+  */
+-//#define MBEDTLS_RSA_NO_CRT
++#define MBEDTLS_RSA_NO_CRT
+ 
+ /**
+  * \def MBEDTLS_SELF_TEST
+  *
+  * Enable the checkup functions (*_self_test).
+  */
+-#define MBEDTLS_SELF_TEST
++//#define MBEDTLS_SELF_TEST
+ 
+ /**
+  * \def MBEDTLS_SHA256_SMALLER
+@@ -865,7 +865,7 @@
+  *
+  * Uncomment to enable the smaller implementation of SHA256.
+  */
+-//#define MBEDTLS_SHA256_SMALLER
++#define MBEDTLS_SHA256_SMALLER
+ 
+ /**
+  * \def MBEDTLS_SSL_AEAD_RANDOM_IV
+@@ -1038,7 +1038,7 @@
+  *
+  * Comment this macro to disable support for SSL 3.0
+  */
+-#define MBEDTLS_SSL_PROTO_SSL3
++//#define MBEDTLS_SSL_PROTO_SSL3
+ 
+ /**
+  * \def MBEDTLS_SSL_PROTO_TLS1
+@@ -1176,7 +1176,7 @@
+  *
+  * Comment this macro to disable support for truncated HMAC in SSL
+  */
+-#define MBEDTLS_SSL_TRUNCATED_HMAC
++//#define MBEDTLS_SSL_TRUNCATED_HMAC
+ 
+ /**
+  * \def MBEDTLS_THREADING_ALT
+@@ -1410,7 +1410,7 @@
+  *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
+  *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
+  */
+-#define MBEDTLS_ARC4_C
++//#define MBEDTLS_ARC4_C
+ 
+ /**
+  * \def MBEDTLS_ASN1_PARSE_C
+@@ -1475,7 +1475,7 @@
+  *
+  * Module:  library/blowfish.c
+  */
+-#define MBEDTLS_BLOWFISH_C
++//#define MBEDTLS_BLOWFISH_C
+ 
+ /**
+  * \def MBEDTLS_CAMELLIA_C
+@@ -1530,7 +1530,7 @@
+  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
+  *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
+  */
+-#define MBEDTLS_CAMELLIA_C
++//#define MBEDTLS_CAMELLIA_C
+ 
+ /**
+  * \def MBEDTLS_CCM_C
+@@ -1544,7 +1544,7 @@
+  * This module enables the AES-CCM ciphersuites, if other requisites are
+  * enabled as well.
+  */
+-#define MBEDTLS_CCM_C
++//#define MBEDTLS_CCM_C
+ 
+ /**
+  * \def MBEDTLS_CERTS_C
+@@ -1556,7 +1556,7 @@
+  *
+  * This module is used for testing (ssl_client/server).
+  */
+-#define MBEDTLS_CERTS_C
++//#define MBEDTLS_CERTS_C
+ 
+ /**
+  * \def MBEDTLS_CIPHER_C
+@@ -1596,7 +1596,7 @@
+  *
+  * This module provides debugging functions.
+  */
+-#define MBEDTLS_DEBUG_C
++//#define MBEDTLS_DEBUG_C
+ 
+ /**
+  * \def MBEDTLS_DES_C
+@@ -1636,7 +1636,7 @@
+  * This module is used by the following key exchanges:
+  *      DHE-RSA, DHE-PSK
+  */
+-#define MBEDTLS_DHM_C
++//#define MBEDTLS_DHM_C
+ 
+ /**
+  * \def MBEDTLS_ECDH_C
+@@ -2026,7 +2026,7 @@
+  * Caller:  library/mbedtls_md.c
+  *
+  */
+-#define MBEDTLS_RIPEMD160_C
++//#define MBEDTLS_RIPEMD160_C
+ 
+ /**
+  * \def MBEDTLS_RSA_C
+@@ -2324,7 +2324,7 @@
+  * Module:  library/xtea.c
+  * Caller:
+  */
+-#define MBEDTLS_XTEA_C
++//#define MBEDTLS_XTEA_C
+ 
+ /* \} name SECTION: mbed TLS modules */
+ 
