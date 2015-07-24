@@ -388,6 +388,15 @@ define Device/mc-mac1200r
 endef
 TARGET_DEVICES += mc-mac1200r
 
+define Device/onion-omega
+    $(Device/tplink-16mlzma)
+    BOARDNAME := ONION-OMEGA
+    DEVICE_PROFILE := OMEGA
+    TPLINK_HWID := 0x04700001
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += onion-omega
+
 define Device/tl-mr10u-v1
     $(Device/tplink-4mlzma)
     BOARDNAME := TL-MR10U
