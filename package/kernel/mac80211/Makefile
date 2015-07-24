@@ -631,6 +631,14 @@ define KernelPackage/ath10k/config
 		  Use the ath10k firmware optimized for wireless client instead
 		  of access point operation.
 
+	config ATH10K_API2_FW
+		bool "Firmware optimized for AP operation (v10.1 / API v2)"
+		default n
+		depends on !ATH10K_STA_FW
+		help
+		  Use the ath10k firmware from the 10.1 SDK using API v2 optimized
+		  for access point operation if the default firmware keeps crashing.
+
   endif
 endef
 
@@ -1861,6 +1869,10 @@ define KernelPackage/ath10k/install
 ifeq ($(CONFIG_ATH10K_STA_FW),y)
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/main/firmware-2.bin_999.999.0.636 \
+		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
+else ifeq ($(CONFIG_ATH10K_API2_FW),y)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)/10.1/firmware-2.bin_10.1.467.2-1 \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-2.bin
 else
 	$(INSTALL_DATA) \
