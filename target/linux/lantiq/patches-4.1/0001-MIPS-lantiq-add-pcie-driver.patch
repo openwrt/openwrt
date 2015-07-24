@@ -1105,7 +1105,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	int pcie_port = ctrl->port;
 +	u32 reg;
 +
-+	printk("PCIe RC error intr %d\n", irq);
++	pr_debug("PCIe RC error intr %d\n", irq);
 +	reg = IFX_REG_R32(PCIE_IRNCR(pcie_port));
 +	reg &= PCIE_RC_CORE_COMBINED_INT;
 +	IFX_REG_W32(reg, PCIE_IRNCR(pcie_port));
