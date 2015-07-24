@@ -152,7 +152,7 @@ $(eval $(call KernelPackage,crypto-seqiv))
 
 define KernelPackage/crypto-hw-talitos
   TITLE:=Freescale integrated security engine (SEC) driver
-  DEPENDS:=+kmod-crypto-aes +kmod-crypto-manager +kmod-crypto-hash +kmod-random-core +kmod-crypto-authenc
+  DEPENDS:=+kmod-crypto-manager +kmod-crypto-hash +kmod-random-core +kmod-crypto-authenc
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_TALITOS
   FILES:= \
@@ -166,7 +166,7 @@ $(eval $(call KernelPackage,crypto-hw-talitos))
 
 define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
-  DEPENDS:=+kmod-crypto-aes +kmod-crypto-manager
+  DEPENDS:=+kmod-crypto-manager
   KCONFIG:= \
 	CONFIG_CRYPTO_DEV_PADLOCK \
 	CONFIG_CRYPTO_DEV_PADLOCK_AES \
@@ -252,24 +252,6 @@ define KernelPackage/crypto-hw-omap/description
 endef
 
 $(eval $(call KernelPackage,crypto-hw-omap))
-
-
-define KernelPackage/crypto-aes
-  TITLE:=AES cipher CryptoAPI module
-  KCONFIG:=CONFIG_CRYPTO_AES CONFIG_CRYPTO_AES_586
-  FILES:=$(LINUX_DIR)/crypto/aes_generic.ko
-  AUTOLOAD:=$(call AutoLoad,09,aes_generic)
-  $(call AddDepends/crypto)
-endef
-
-ifndef CONFIG_TARGET_x86_64
-  define KernelPackage/crypto-aes/x86
-    FILES+=$(LINUX_DIR)/arch/x86/crypto/aes-i586.ko
-    AUTOLOAD:=$(call AutoLoad,09,aes-i586)
-  endef
-endif
-
-$(eval $(call KernelPackage,crypto-aes))
 
 
 define KernelPackage/crypto-arc4
@@ -645,7 +627,7 @@ $(eval $(call KernelPackage,crypto-xts))
 
 define KernelPackage/crypto-mv-cesa
   TITLE:=Marvell crypto engine
-  DEPENDS:=+kmod-crypto-manager +kmod-crypto-aes @TARGET_kirkwood||TARGET_orion||TARGET_mvebu
+  DEPENDS:=+kmod-crypto-manager @TARGET_kirkwood||TARGET_orion||TARGET_mvebu
   KCONFIG:=CONFIG_CRYPTO_DEV_MV_CESA
   FILES:=$(LINUX_DIR)/drivers/crypto/mv_cesa.ko
   AUTOLOAD:=$(call AutoLoad,09,mv_cesa)
