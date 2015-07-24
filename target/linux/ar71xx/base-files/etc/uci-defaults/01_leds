@@ -36,6 +36,12 @@ antminer-s1)
 	ucidef_set_led_wlan "wlan" "WLAN" "bitmain:green:wlan" "phy0tpt"
 	;;
 
+antminer-s3)
+	ucidef_set_led_wlan "wlan" "WLAN" "bitmain:green:wlan" "phy0tpt"
+	ucidef_set_led_default "sys" "SYS" "bitmain:green:sys" "0"
+	ucidef_set_led_default "lan" "LAN" "bitmain:yellow:lan" "0"
+	;;
+
 ap113)
 	ucidef_set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
 	;;

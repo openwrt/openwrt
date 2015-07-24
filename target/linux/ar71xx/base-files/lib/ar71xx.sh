@@ -110,6 +110,9 @@ tplink_board_detect() {
 	"04440001"*)
 		model="BITMAIN ANTMINER S1"
 		;;
+	"04440003"*)
+		model="BITMAIN ANTMINER S3"
+		;;
 	"120000"*)
 		model="MERCURY MAC1200R"
 		;;
