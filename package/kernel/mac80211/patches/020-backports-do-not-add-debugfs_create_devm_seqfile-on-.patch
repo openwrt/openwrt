@@ -1,0 +1,33 @@
+From e15e9231e7a9f81f5264d294fd3fd96a20d92516 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sat, 25 Jul 2015 15:19:17 +0200
+Subject: [PATCH 3/3] backports: do not add debugfs_create_devm_seqfile() on
+ recent kernel versions
+
+An #ifdef for the kernel version was missing around the header of
+debugfs_create_devm_seqfile() and the LINUX_BACKPORT() was also not
+done.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ backport/backport-include/linux/debugfs.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/backport-include/linux/debugfs.h
++++ b/backport-include/linux/debugfs.h
+@@ -5,6 +5,8 @@
+ #include <linux/device.h>
+ #include <generated/utsrelease.h>
+ 
++#if LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0)
++#define debugfs_create_devm_seqfile LINUX_BACKPORT(debugfs_create_devm_seqfile)
+ #if defined(CONFIG_DEBUG_FS)
+ struct dentry *debugfs_create_devm_seqfile(struct device *dev, const char *name,
+ 					   struct dentry *parent,
+@@ -20,5 +22,6 @@ static inline struct dentry *debugfs_cre
+ 	return ERR_PTR(-ENODEV);
+ }
+ #endif /* CONFIG_DEBUG_FS */
++#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(3,19,0) */
+ 
+ #endif /* __BACKPORT_DEBUGFS_H_ */
