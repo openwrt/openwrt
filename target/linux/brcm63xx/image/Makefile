@@ -100,21 +100,11 @@ define Image/Build/RedBootDTB
 	dd if=$(KDIR)/root.squashfs of="$(BIN_DIR)/$(IMG_PREFIX)-$(2)-root.squashfs" bs=64k conv=sync
 	echo -ne \\xDE\\xAD\\xC0\\xDE >> "$(BIN_DIR)/$(IMG_PREFIX)-$(2)-root.squashfs"
 	# Generate the scripted image
-	$(CP) ./redbootscript.template $(BIN_DIR)/redbootscript
-	let \
-		kernellen="$$$$(stat -c%s $(BIN_DIR)/$(IMG_PREFIX)-$(2)-vmlinux.gz)" \
-		rootfsdatalen="$$$$(stat -c %s $(BIN_DIR)/$(IMG_PREFIX)-$(2)-root.squashfs)" \
-		rootfsaddr="0xBE430000 + kernellen" \
-		rootfslen="0xBEBF0000 - rootfsaddr" \
-		offset2="0x1000 + kernellen"; \
-		$(SED)	"s,%loadaddr,$(strip $(LOADADDR)),g" \
-			-e "s,%kernellen,$$$$(printf '%#x' $$$$kernellen),g" \
-			-e "s,%offset2,$$$$(printf '%#x' $$$$offset2),g" \
-			-e "s,%rootfsdatalen,$$$$(printf '%#x' $$$$rootfsdatalen),g" \
-			-e "s,%rootfsaddr,$$$$(printf '%#x' $$$$rootfsaddr),g" \
-			-e "s,%rootfslen,$$$$(printf '%#x' $$$$rootfslen),g" \
-		"$(BIN_DIR)/redbootscript"
-
+	$(TOPDIR)/scripts/redboot-script.pl \
+		-k $(BIN_DIR)/$(IMG_PREFIX)-$(2)-vmlinux.gz \
+		-r $(BIN_DIR)/$(IMG_PREFIX)-$(2)-root.squashfs \
+		-a $(strip $(LOADADDR)) -f 0xbe430000 -l 0x7c0000 \
+		-s 0x1000 -t 20 -o $(BIN_DIR)/redbootscript
 	dd if="$(BIN_DIR)/redbootscript" of="$(BIN_DIR)/redbootscript.padded" bs=4096 conv=sync
 	cat \
 		"$(BIN_DIR)/redbootscript.padded" \
