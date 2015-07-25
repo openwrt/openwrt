@@ -6,6 +6,26 @@
 	model = "Huawei EchoLife HG553";
 	compatible = "huawei,hg553", "brcm,bcm6358";
 
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		rfkill {
+			label = "rfkill";
+			gpios = <&gpio0 9 1>;
+			linux,code = <0xf7>;
+		};
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 5 1>;
+			linux,code = <0x198>;
+		};
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 
