@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -196,6 +196,16 @@ config ATH79_MACH_F9K1115V2
+@@ -196,6 +196,17 @@ config ATH79_MACH_F9K1115V2
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
  
@@ -13,6 +13,7 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
++	select ATH79_NVRAM
 +
  config ATH79_MACH_ESR1750
  	bool "EnGenius ESR1750 board support"
