@@ -34,8 +34,9 @@
  	depends on SPMI
  
  config REGMAP_MMIO
+-	tristate
++	tristate "Regmap MMIO"
 +	select REGMAP
- 	tristate
  
  config REGMAP_IRQ
 +	select REGMAP
