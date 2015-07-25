@@ -1,7 +1,5 @@
-Index: linux-3.18.18/arch/mips/ath79/Kconfig
-===================================================================
---- linux-3.18.18.orig/arch/mips/ath79/Kconfig
-+++ linux-3.18.18/arch/mips/ath79/Kconfig
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
 @@ -66,6 +66,16 @@ config ATH79_MACH_ANTMINER_S1
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -19,10 +17,8 @@ Index: linux-3.18.18/arch/mips/ath79/Kconfig
  config ATH79_MACH_AP113
  	bool "Atheros AP113 board support"
  	select SOC_AR724X
-Index: linux-3.18.18/arch/mips/ath79/Makefile
-===================================================================
---- linux-3.18.18.orig/arch/mips/ath79/Makefile
-+++ linux-3.18.18/arch/mips/ath79/Makefile
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
 @@ -43,6 +43,7 @@ obj-$(CONFIG_ATH79_MACH_ALFA_NX)	+= mach
  obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
  obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
@@ -31,10 +27,8 @@ Index: linux-3.18.18/arch/mips/ath79/Makefile
  obj-$(CONFIG_ATH79_MACH_AP113)		+= mach-ap113.o
  obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o
  obj-$(CONFIG_ATH79_MACH_AP132)		+= mach-ap132.o
-Index: linux-3.18.18/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.18.18.orig/arch/mips/ath79/machtypes.h
-+++ linux-3.18.18/arch/mips/ath79/machtypes.h
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
 @@ -22,6 +22,7 @@ enum ath79_mach_type {
  	ATH79_MACH_ALL0305,		/* Allnet ALL0305 */
  	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */

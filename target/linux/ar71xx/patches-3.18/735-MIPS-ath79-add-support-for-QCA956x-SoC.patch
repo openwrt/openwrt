@@ -445,7 +445,7 @@
  }
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1203,6 +1203,12 @@ config SOC_QCA955X
+@@ -1237,6 +1237,12 @@ config SOC_QCA955X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -458,7 +458,7 @@
  config ATH79_DEV_M25P80
  	select ATH79_DEV_SPI
  	def_bool n
-@@ -1240,7 +1246,7 @@ config ATH79_DEV_USB
+@@ -1274,7 +1280,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC

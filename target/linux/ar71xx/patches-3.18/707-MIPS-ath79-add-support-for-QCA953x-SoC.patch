@@ -22,7 +22,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
 
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -1194,6 +1194,10 @@ config SOC_AR934X
+@@ -1218,6 +1218,10 @@ config SOC_AR934X
  	select PCI_AR724X if PCI
  	def_bool n
  
@@ -33,7 +33,7 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  config SOC_QCA955X
  	select HW_HAS_PCI
  	select PCI_AR724X if PCI
-@@ -1236,7 +1240,7 @@ config ATH79_DEV_USB
+@@ -1260,7 +1264,7 @@ config ATH79_DEV_USB
  	def_bool n
  
  config ATH79_DEV_WMAC
