@@ -101,8 +101,8 @@ static struct bh_map button_map[] = {
 
 /* -------------------------------------------------------------------------*/
 
-static int bh_event_add_var(struct bh_event *event, int argv,
-		const char *format, ...)
+static __printf(3, 4)
+int bh_event_add_var(struct bh_event *event, int argv, const char *format, ...)
 {
 	static char buf[128];
 	char *s;
@@ -117,8 +117,7 @@ static int bh_event_add_var(struct bh_event *event, int argv,
 	va_end(args);
 
 	if (len >= sizeof(buf)) {
-		BH_ERR("buffer size too small\n");
-		WARN_ON(1);
+		WARN(1, "buffer size too small");
 		return -ENOMEM;
 	}
 
@@ -384,7 +383,18 @@ gpio_keys_get_devtree_pdata(struct device *dev)
 		button = &pdata->buttons[i++];
 
 		button->gpio = of_get_gpio_flags(pp, 0, &flags);
-		button->active_low = flags & OF_GPIO_ACTIVE_LOW;
+		if (button->gpio < 0) {
+			error = button->gpio;
+			if (error != -ENOENT) {
+				if (error != -EPROBE_DEFER)
+					dev_err(dev,
+						"Failed to get gpio flags, error: %d\n",
+						error);
+				return ERR_PTR(error);
+			}
+		} else {
+			button->active_low = flags & OF_GPIO_ACTIVE_LOW;
+		}
 
 		if (of_property_read_u32(pp, "linux,code", &button->code)) {
 			dev_err(dev, "Button without keycode: 0x%x\n",
