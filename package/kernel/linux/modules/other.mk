@@ -301,7 +301,6 @@ $(eval $(call KernelPackage,iio-dht11))
 define KernelPackage/lp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Parallel port and line printer support
-  DEPENDS:=@BROKEN
   KCONFIG:= \
 	CONFIG_PARPORT \
 	CONFIG_PRINTER \
@@ -310,7 +309,7 @@ define KernelPackage/lp
 	$(LINUX_DIR)/drivers/parport/parport.ko \
 	$(LINUX_DIR)/drivers/char/lp.ko \
 	$(LINUX_DIR)/drivers/char/ppdev.ko
-  AUTOLOAD:=$(call AutoLoad,50,parport lp)
+  AUTOLOAD:=$(call AutoLoad,50,parport lp ppdev)
 endef
 
 $(eval $(call KernelPackage,lp))
