@@ -1,0 +1,39 @@
+--- a/pe_profiling/operf.cpp
++++ b/pe_profiling/operf.cpp
+@@ -857,11 +857,14 @@ static int __delete_old_previous_sample_
+                                 int tflag  __attribute__((unused)),
+                                 struct FTW *ftwbuf __attribute__((unused)))
+ {
++	int err;
++
+ 	if (remove(fpath)) {
++		err = errno;
+ 		perror("sample data removal error");
+-		return FTW_STOP;
++		return err;
+ 	} else {
+-		return FTW_CONTINUE;
++		return 0;
+ 	}
+ }
+ 
+@@ -896,7 +899,7 @@ static void convert_sample_data(void)
+ 		return;
+ 
+ 	if (!operf_options::append) {
+-                int flags = FTW_DEPTH | FTW_ACTIONRETVAL;
++                int flags = FTW_DEPTH;
+ 		errno = 0;
+ 		if (nftw(previous_sampledir.c_str(), __delete_old_previous_sample_data, 32, flags) !=0 &&
+ 				errno != ENOENT) {
+--- a/libop/op_events.c
++++ b/libop/op_events.c
+@@ -83,7 +83,7 @@ static int parse_hex(char const * str)
+ static u64 parse_long_hex(char const * str)
+ {
+ 	u64 value;
+-	if (sscanf(str, "%Lx", &value) != 1)
++	if (sscanf(str, "0x%llx", &value) != 1)
+ 		parse_error("expected long hexadecimal value");
+ 
+ 	fflush(stderr);
