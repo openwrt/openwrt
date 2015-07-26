@@ -72,7 +72,7 @@
 			mt76@0,0 {
 				reg = <0x0000 0 0 0 0>;
 				device_type = "pci";
-				mediatek,mtd-eeprom = <&radio 0>;
+				mediatek,mtd-eeprom = <&radio 0x2000>;
 				mediatek,2ghz = <0>;
 			};
 		};
@@ -80,7 +80,7 @@
 			mt76@1,0 {
 				reg = <0x0000 0 0 0 0>;
 				device_type = "pci";
-				mediatek,mtd-eeprom = <&radio 0x2000>;
+				mediatek,mtd-eeprom = <&radio 0>;
 				mediatek,5ghz = <0>;
 			};
 		};
