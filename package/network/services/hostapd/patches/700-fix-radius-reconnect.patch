@@ -1,0 +1,41 @@
+From 94b39e5927e570e6b0fe41d455dde0a361c71c36 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Sat, 28 Feb 2015 11:57:57 +0000
+Subject: RADIUS client: Fix server connection recovery after initial failure
+
+If the initial attempt at opening the socket connection to the RADIUS
+server failed due to missing IP connectivity during startup, e.g., with
+"connect[radius]: Network is unreachable", hostapd did not try to
+reconnect when RADIUS messages were sent. Instead, it only reported "No
+authentication server configured" even if the configuration did have a
+server entry.
+
+This was broken by commit 9ed40766735a9628cc6c936076b175e6f66534bb
+('RADIUS client: Do not try to send message without socket') for the
+initial case and the more recent fixes in RADIUS server failover cases
+did not cover the initial failure case.
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+
+--- a/src/radius/radius_client.c
++++ b/src/radius/radius_client.c
+@@ -658,6 +658,9 @@ int radius_client_send(struct radius_cli
+ 	}
+ 
+ 	if (msg_type == RADIUS_ACCT || msg_type == RADIUS_ACCT_INTERIM) {
++		if (conf->acct_server && radius->acct_sock < 0)
++			radius_client_init_acct(radius);
++
+ 		if (conf->acct_server == NULL || radius->acct_sock < 0) {
+ 			hostapd_logger(radius->ctx, NULL,
+ 				       HOSTAPD_MODULE_RADIUS,
+@@ -672,6 +675,9 @@ int radius_client_send(struct radius_cli
+ 		s = radius->acct_sock;
+ 		conf->acct_server->requests++;
+ 	} else {
++		if (conf->auth_server && radius->auth_sock < 0)
++			radius_client_init_auth(radius);
++
+ 		if (conf->auth_server == NULL || radius->auth_sock < 0) {
+ 			hostapd_logger(radius->ctx, NULL,
+ 				       HOSTAPD_MODULE_RADIUS,
