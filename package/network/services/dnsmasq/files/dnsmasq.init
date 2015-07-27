@@ -556,7 +556,7 @@ start_service() {
 	procd_set_param respawn
 
 	procd_add_jail dnsmasq ubus log
-	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /dev/urandom /etc/dnsmasq.conf /tmp/dnsmasq.d /tmp/resolv.conf.auto /etc/hosts /etc/ethers
+	procd_add_jail_mount $CONFIGFILE $TRUSTANCHORSFILE $HOSTFILE /etc/passwd /etc/group /etc/TZ /dev/null /dev/urandom /etc/dnsmasq.conf /tmp/dnsmasq.d /tmp/resolv.conf.auto /etc/hosts /etc/ethers
 	procd_add_jail_mount_rw /var/run/dnsmasq/ /tmp/dhcp.leases $TIMESTAMPFILE
 	
 	procd_close_instance
