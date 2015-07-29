@@ -5,6 +5,8 @@
 
 setup_interface () {
 	local device="$1"
+	local prefsig=""
+	local addrsig=""
 	proto_init_update "*" 1
 
 	# Merge RA-DNS
@@ -34,6 +36,7 @@ setup_interface () {
 
 	for prefix in $PREFIXES; do
 		proto_add_ipv6_prefix "$prefix"
+		prefsig="$prefsig ${prefix%%,*}"
 		local entry="${prefix#*/}"
 		entry="${entry#*,}"
 		entry="${entry#*,}"
@@ -68,6 +71,7 @@ setup_interface () {
 		local valid="${entry%%,*}"
 
 		proto_add_ipv6_address "$addr" "$mask" "$preferred" "$valid" 1
+		addrsig="$addrsig $addr/$mask"
 
 		if [ -z "$RA_ADDRESSES" -a -z "$RA_ROUTES" -a \
 				-z "$RA_DNS" -a "$FAKE_ROUTES" = 1 ]; then
@@ -136,6 +140,8 @@ setup_interface () {
 		json_add_string ifname "@$INTERFACE"
 		json_add_string proto map
 		json_add_string type "$MAPTYPE"
+		json_add_string _prefsig "$prefsig"
+		[ "$MAPTYPE" = lw4o6 ] && json_add_string _addrsig "$addrsig"
 		json_add_string rule "$MAPRULE"
 		json_add_string tunlink "$INTERFACE"
 		[ -n "$ZONE_MAP" ] || ZONE_MAP=$ZONE
@@ -163,6 +169,7 @@ setup_interface () {
 		json_add_string ifname "@$INTERFACE"
 		json_add_string proto "464xlat"
 		json_add_string tunlink "$INTERFACE"
+		json_add_string _addrsig "$addrsig"
 		[ -n "$ZONE_464XLAT" ] || ZONE_464XLAT=$ZONE
 		[ -n "$ZONE_464XLAT" ] && json_add_string zone "$ZONE_464XLAT"
 		[ -n "$IFACE_464XLAT_DELEGATE" ] && json_add_boolean delegate "$IFACE_464XLAT_DELEGATE"
