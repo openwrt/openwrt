@@ -114,7 +114,7 @@ sunxi_board_detect() {
 			;;
 
 		"Olimex A20-Olinuxino Micro")
-			board="olinuxino-micro"
+			board="olinuxino-a20-micro"
 			;;
 
 		"LinkSprite pcDuino3")
