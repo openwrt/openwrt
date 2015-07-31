@@ -1,0 +1,104 @@
+diff --git a/arch/arm/boot/dts/imx23.dtsi b/arch/arm/boot/dts/imx23.dtsi
+index bbcfb5a..efdd702 100644
+--- a/arch/arm/boot/dts/imx23.dtsi
++++ b/arch/arm/boot/dts/imx23.dtsi
+@@ -404,8 +404,46 @@
+ 			};
+ 
+ 			power@80044000 {
++				compatible = "fsl,imx23-power", "syscon";
+ 				reg = <0x80044000 0x2000>;
+-				status = "disabled";
++				interrupts = <3>;
++
++				dcdc: regulator@1 {
++					compatible = "fsl,imx23-dcdc";
++					regulator-name = "dcdc";
++					regulator-boot-on;
++					regulator-always-on;
++				};
++
++				reg_vddd: regulator@2 {
++					compatible = "fsl,imx23-vddd";
++					regulator-name = "vddd";
++					regulator-min-microvolt = <1350000>;
++					regulator-max-microvolt = <1550000>;
++					vddd-supply = <&reg_vdda>;
++					regulator-boot-on;
++					regulator-always-on;
++				};
++
++				reg_vdda: regulator@3 {
++					compatible = "fsl,imx23-vdda";
++					regulator-name = "vdda";
++					regulator-min-microvolt = <1725000>;
++					regulator-max-microvolt = <1950000>;
++					vdda-supply = <&reg_vddio>;
++					regulator-boot-on;
++					regulator-always-on;
++				};
++
++				reg_vddio: regulator@4 {
++					compatible = "fsl,imx23-vddio";
++					regulator-name = "vddio";
++					regulator-min-microvolt = <3000000>;
++					regulator-max-microvolt = <3575000>;
++					regulator-microvolt-offset = <80000>;
++					regulator-boot-on;
++					regulator-always-on;
++				};
+ 			};
+ 
+ 			saif1: saif@80046000 {
+diff --git a/arch/arm/boot/dts/imx28.dtsi b/arch/arm/boot/dts/imx28.dtsi
+index 25e25f8..378b1f2 100644
+--- a/arch/arm/boot/dts/imx28.dtsi
++++ b/arch/arm/boot/dts/imx28.dtsi
+@@ -1035,8 +1035,46 @@
+ 			};
+ 
+ 			power: power@80044000 {
++				compatible = "fsl,imx28-power", "syscon";
+ 				reg = <0x80044000 0x2000>;
+-				status = "disabled";
++				interrupts = <6>;
++
++				dcdc: regulator@1 {
++					compatible = "fsl,imx28-dcdc";
++					regulator-name = "dcdc";
++					regulator-boot-on;
++					regulator-always-on;
++				};
++
++				reg_vddd: regulator@2 {
++					compatible = "fsl,imx28-vddd";
++					regulator-name = "vddd";
++					regulator-min-microvolt = <1350000>;
++					regulator-max-microvolt = <1550000>;
++					vddd-supply = <&reg_vdda>;
++					regulator-boot-on;
++					regulator-always-on;
++				};
++
++				reg_vdda: regulator@3 {
++					compatible = "fsl,imx28-vdda";
++					regulator-name = "vdda";
++					regulator-min-microvolt = <1725000>;
++					regulator-max-microvolt = <1950000>;
++					vdda-supply = <&reg_vddio>;
++					regulator-boot-on;
++					regulator-always-on;
++				};
++
++				reg_vddio: regulator@4 {
++					compatible = "fsl,imx28-vddio";
++					regulator-name = "vddio";
++					regulator-min-microvolt = <3000000>;
++					regulator-max-microvolt = <3550000>;
++					regulator-microvolt-offset = <80000>;
++					regulator-boot-on;
++					regulator-always-on;
++				};
+ 			};
+ 
+ 			saif1: saif@80046000 {
