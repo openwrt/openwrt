@@ -1,0 +1,12 @@
+diff -ruN old/Makefile new/Makefile
+--- old/Makefile	2015-04-13 16:53:03.000000000 +0200
++++ new/Makefile	2015-07-31 15:52:08.920097812 +0200
+@@ -346,7 +346,7 @@
+ AWK		= awk
+ PERL		= perl
+ PYTHON		= python
+-DTC		= dtc
++DTC		= $(DTCDIR)dtc
+ CHECK		= sparse
+ 
+ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
