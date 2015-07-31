@@ -44,7 +44,7 @@ define KernelPackage/sound-soc-mxs
 	$(LINUX_DIR)/sound/soc/mxs/snd-soc-mxs-builtin-pcm.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-mxs-builtin-codec.ko
   AUTOLOAD:=$(call AutoLoad,65,snd-soc-mxs-builtin-pcm snd-soc-mxs-builtin-dai snd-soc-mxs-builtin-codec snd-soc-mxs-builtin-audio)
-  DEPENDS:=@TARGET_mxs +kmod-sound-soc-core
+  DEPENDS:=@TARGET_mxs +kmod-sound-soc-core @LINUX_3_18
   $(call AddDepends/sound)
 endef
 
