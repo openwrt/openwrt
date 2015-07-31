@@ -1,0 +1,20 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 30 Jul 2015 14:12:25 +0200
+Subject: [PATCH] mac80211: make local->tx_headroom a multiple of 4
+
+This ensures that mac80211 generated management frames and beacons are
+aligned before being passed to the driver
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -1031,6 +1031,7 @@ int ieee80211_register_hw(struct ieee802
+ 	 */
+ 	local->tx_headroom = max_t(unsigned int , local->hw.extra_tx_headroom,
+ 				   IEEE80211_TX_STATUS_HEADROOM);
++	local->tx_headroom = ALIGN(local->tx_headroom, 4);
+ 
+ 	debugfs_hw_add(local);
+ 
