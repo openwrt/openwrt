@@ -4,8 +4,9 @@
 #include <linux/mtd/spi-nor.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/cfi.h>
+#include <linux/mtd/partitions.h>
 
-static const char * const probes[] = { "bcm47xxpart", NULL };
+static const char * const probes[] = { "ofpart", "bcm47xxpart", NULL };
 
 struct bcm53xxsf {
 	struct spi_device *spi;
@@ -176,6 +177,7 @@ static const char *bcm53xxspiflash_chip_name(struct spi_nor *nor)
 
 static int bcm53xxspiflash_probe(struct spi_device *spi)
 {
+	struct mtd_part_parser_data parser_data = {};
 	struct bcm53xxsf *b53sf;
 	struct spi_nor *nor;
 	int err;
@@ -203,7 +205,9 @@ static int bcm53xxspiflash_probe(struct spi_device *spi)
 	if (err)
 		return err;
 
-	err = mtd_device_parse_register(&b53sf->mtd, probes, NULL, NULL, 0);
+	parser_data.of_node = spi->master->dev.parent->of_node;
+	err = mtd_device_parse_register(&b53sf->mtd, probes, &parser_data,
+					NULL, 0);
 	if (err)
 		return err;
 
