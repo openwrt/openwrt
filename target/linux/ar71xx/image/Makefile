@@ -465,7 +465,7 @@ endef
 define Device/tl-mr3220-v2
     $(Device/tplink-4mlzma)
     BOARDNAME := TL-MR3220-v2
-    DEVICE_PROFILE := TLMR3220V2
+    DEVICE_PROFILE := TLMR3220
     TPLINK_HWID := 0x32200002
     CONSOLE := ttyATH0,115200
 endef
