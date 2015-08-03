@@ -14,7 +14,7 @@ PKG_VERSION:=20140216
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
-PKG_SOURCE_URL:=git://acx100.git.sourceforge.net/gitroot/acx100/acx-mac80211
+PKG_SOURCE_URL:=git://git.code.sf.net/p/acx100/acx-mac80211
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_VERSION:=$(PKG_REV)
