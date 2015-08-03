@@ -169,6 +169,9 @@ get_status_led() {
 	om5p-an)
 		status_led="om5p:blue:power"
 		;;
+	onion-omega)
+		status_led="onion:amber:system"
+		;;
 	pb44)
 		status_led="pb44:amber:jump1"
 		;;

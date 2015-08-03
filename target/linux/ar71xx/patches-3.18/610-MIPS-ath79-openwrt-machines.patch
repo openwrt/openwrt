@@ -1,6 +1,8 @@
---- a/arch/mips/ath79/machtypes.h
-+++ b/arch/mips/ath79/machtypes.h
-@@ -16,22 +16,194 @@
+Index: linux-3.18.19/arch/mips/ath79/machtypes.h
+===================================================================
+--- linux-3.18.19.orig/arch/mips/ath79/machtypes.h
++++ linux-3.18.19/arch/mips/ath79/machtypes.h
+@@ -16,22 +16,195 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -74,6 +76,7 @@
 +	ATH79_MACH_OM2Pv2,		/* OpenMesh OM2Pv2 */
 +	ATH79_MACH_OM2P,		/* OpenMesh OM2P */
 +	ATH79_MACH_OM5P,		/* OpenMesh OM5P */
++	ATH79_MACH_ONION_OMEGA,		/* ONION OMEGA */
 +	ATH79_MACH_PB42,		/* Atheros PB42 */
 +	ATH79_MACH_PB92,		/* Atheros PB92 */
 +	ATH79_MACH_QIHOO_C301,		/* Qihoo 360 C301 */
@@ -195,8 +198,10 @@
  };
  
  #endif /* _ATH79_MACHTYPE_H */
---- a/arch/mips/ath79/Kconfig
-+++ b/arch/mips/ath79/Kconfig
+Index: linux-3.18.19/arch/mips/ath79/Kconfig
+===================================================================
+--- linux-3.18.19.orig/arch/mips/ath79/Kconfig
++++ linux-3.18.19/arch/mips/ath79/Kconfig
 @@ -2,6 +2,70 @@ if ATH79
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
@@ -268,7 +273,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +75,1020 @@ config ATH79_MACH_AP121
+@@ -11,62 +75,1030 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -917,6 +922,16 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_ONION_OMEGA
++	bool "ONION OMEGA support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_MR600
 +	bool "OpenMesh MR600 board support"
 +	select SOC_AR934X
@@ -1317,7 +1332,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1105,97 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1115,97 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1415,7 +1430,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -124,7 +1237,10 @@ config ATH79_DEV_DSA
+@@ -124,7 +1247,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1427,7 +1442,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -154,6 +1270,11 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -154,6 +1280,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
@@ -1439,9 +1454,11 @@
  	def_bool n
  
  endif
---- a/arch/mips/ath79/Makefile
-+++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,123 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+Index: linux-3.18.19/arch/mips/ath79/Makefile
+===================================================================
+--- linux-3.18.19.orig/arch/mips/ath79/Makefile
++++ linux-3.18.19/arch/mips/ath79/Makefile
+@@ -38,9 +38,124 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1496,6 +1513,7 @@
 +obj-$(CONFIG_ATH79_MACH_NBG460N)	+= mach-nbg460n.o
 +obj-$(CONFIG_ATH79_MACH_OM2P)		+= mach-om2p.o
 +obj-$(CONFIG_ATH79_MACH_OM5P)		+= mach-om5p.o
++obj-$(CONFIG_ATH79_MACH_ONION_OMEGA)	+= mach-onion-omega.o
 +obj-$(CONFIG_ATH79_MACH_PB42)		+= mach-pb42.o
  obj-$(CONFIG_ATH79_MACH_PB44)		+= mach-pb44.o
 +obj-$(CONFIG_ATH79_MACH_PB92)		+= mach-pb92.o
@@ -1565,8 +1583,10 @@
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 +obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
 +obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
---- a/arch/mips/ath79/prom.c
-+++ b/arch/mips/ath79/prom.c
+Index: linux-3.18.19/arch/mips/ath79/prom.c
+===================================================================
+--- linux-3.18.19.orig/arch/mips/ath79/prom.c
++++ linux-3.18.19/arch/mips/ath79/prom.c
 @@ -180,6 +180,12 @@ void __init prom_init(void)
  			ath79_prom_append_cmdline("board", env);
  		}

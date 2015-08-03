@@ -310,6 +310,7 @@ platform_check_image() {
 	el-mini | \
 	gl-inet | \
 	mc-mac1200r | \
+	onion-omega | \
 	oolite | \
 	smart-300 | \
 	tl-mr10u | \

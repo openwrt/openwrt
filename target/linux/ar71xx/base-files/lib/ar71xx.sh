@@ -550,6 +550,9 @@ ar71xx_board_detect() {
 	*"OM5P AN")
 		name="om5p-an"
 		;;
+	*"Onion Omega")
+		name="onion-omega"
+		;;
 	*PB42)
 		name="pb42"
 		;;
