@@ -116,11 +116,10 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -540,5 +540,91 @@
- 
+@@ -578,5 +578,91 @@
  			status = "disabled";
  		};
-+
+ 
 +		nss_common: syscon@03000000 {
 +			compatible = "syscon";
 +			reg = <0x03000000 0x0000FFFF>;
@@ -206,5 +205,6 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +
 +			status = "disabled";
 +		};
++
  	};
  };

@@ -17,7 +17,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -129,13 +129,18 @@ static int stmmac_probe_config_dt(struct
+@@ -130,13 +130,18 @@ static int stmmac_probe_config_dt(struct
  	struct device_node *np = pdev->dev.of_node;
  	struct stmmac_dma_cfg *dma_cfg;
  	const struct of_device_id *device;
@@ -40,7 +40,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  
  	if (device->data) {
  		const struct stmmac_of_data *data = device->data;
-@@ -231,8 +236,10 @@ static int stmmac_probe_config_dt(struct
+@@ -236,8 +241,10 @@ static int stmmac_probe_config_dt(struct
  	if (of_find_property(np, "snps,pbl", NULL)) {
  		dma_cfg = devm_kzalloc(&pdev->dev, sizeof(*dma_cfg),
  				       GFP_KERNEL);
@@ -53,7 +53,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		plat->dma_cfg = dma_cfg;
  		of_property_read_u32(np, "snps,pbl", &dma_cfg->pbl);
  		dma_cfg->fixed_burst =
-@@ -250,6 +257,9 @@ static int stmmac_probe_config_dt(struct
+@@ -255,6 +262,9 @@ static int stmmac_probe_config_dt(struct
  	}
  
  	return 0;

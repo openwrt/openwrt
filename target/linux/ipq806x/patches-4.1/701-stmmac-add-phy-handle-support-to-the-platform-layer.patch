@@ -67,7 +67,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		pr_err("%s: Could not attach to PHY\n", dev->name);
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -27,6 +27,7 @@
+@@ -28,6 +28,7 @@
  #include <linux/of.h>
  #include <linux/of_net.h>
  #include <linux/of_device.h>
@@ -75,7 +75,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  
  #include "stmmac.h"
  #include "stmmac_platform.h"
-@@ -167,13 +168,16 @@ static int stmmac_probe_config_dt(struct
+@@ -168,13 +169,16 @@ static int stmmac_probe_config_dt(struct
  	/* Default to phy auto-detection */
  	plat->phy_addr = -1;
  

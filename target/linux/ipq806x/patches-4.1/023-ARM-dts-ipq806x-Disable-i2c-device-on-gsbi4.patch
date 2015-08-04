@@ -24,7 +24,7 @@
  		gsbi5: gsbi@1a200000 {
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -805,7 +805,7 @@ static struct clk_rcg gsbi7_qup_src = {
+@@ -807,7 +807,7 @@ static struct clk_rcg gsbi7_qup_src = {
  			.parent_names = gcc_pxo_pll8,
  			.num_parents = 2,
  			.ops = &clk_rcg_ops,
@@ -33,7 +33,7 @@
  		},
  	},
  };
-@@ -821,7 +821,7 @@ static struct clk_branch gsbi7_qup_clk =
+@@ -823,7 +823,7 @@ static struct clk_branch gsbi7_qup_clk =
  			.parent_names = (const char *[]){ "gsbi7_qup_src" },
  			.num_parents = 1,
  			.ops = &clk_branch_ops,
@@ -42,7 +42,7 @@
  		},
  	},
  };
-@@ -869,7 +869,7 @@ static struct clk_branch gsbi4_h_clk = {
+@@ -871,7 +871,7 @@ static struct clk_branch gsbi4_h_clk = {
  		.hw.init = &(struct clk_init_data){
  			.name = "gsbi4_h_clk",
  			.ops = &clk_branch_ops,
