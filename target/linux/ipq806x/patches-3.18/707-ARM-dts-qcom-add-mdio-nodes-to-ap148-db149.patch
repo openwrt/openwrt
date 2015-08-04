@@ -11,7 +11,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-@@ -14,8 +14,9 @@
+@@ -19,8 +19,9 @@
  		};
  	};
  
@@ -22,7 +22,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  	};
  
  	chosen {
-@@ -54,6 +55,15 @@
+@@ -59,6 +60,15 @@
  					bias-none;
  				};
  			};
@@ -38,8 +38,8 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		};
  
  		gsbi@16300000 {
-@@ -163,5 +173,33 @@
- 			pinctrl-0 = <&pcie2_pins>;
+@@ -168,5 +178,33 @@
+ 			pinctrl-0 = <&pcie1_pins>;
  			pinctrl-names = "default";
  		};
 +
@@ -99,7 +99,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  
  		gsbi2: gsbi@12480000 {
 @@ -173,5 +183,44 @@
- 			pinctrl-0 = <&pcie3_pins>;
+ 			pinctrl-0 = <&pcie2_pins>;
  			pinctrl-names = "default";
  		};
 +
