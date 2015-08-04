@@ -82,7 +82,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	};
 --- a/drivers/clk/qcom/Kconfig
 +++ b/drivers/clk/qcom/Kconfig
-@@ -97,6 +97,14 @@ config QCOM_HFPLL
+@@ -106,6 +106,14 @@ config QCOM_HFPLL
  	  Say Y if you want to support CPU frequency scaling on devices
  	  such as MSM8974, APQ8084, etc.
  
@@ -99,7 +99,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	select KRAIT_L2_ACCESSORS
 --- a/drivers/clk/qcom/Makefile
 +++ b/drivers/clk/qcom/Makefile
-@@ -22,4 +22,5 @@ obj-$(CONFIG_MSM_LCC_8960) += lcc-msm896
+@@ -23,4 +23,5 @@ obj-$(CONFIG_MSM_LCC_8960) += lcc-msm896
  obj-$(CONFIG_MSM_GCC_8974) += gcc-msm8974.o
  obj-$(CONFIG_MSM_MMCC_8960) += mmcc-msm8960.o
  obj-$(CONFIG_MSM_MMCC_8974) += mmcc-msm8974.o

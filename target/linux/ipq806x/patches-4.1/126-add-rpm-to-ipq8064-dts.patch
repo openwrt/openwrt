@@ -5,12 +5,12 @@
  #include "skeleton.dtsi"
  #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
 +#include <dt-bindings/mfd/qcom-rpm.h>
+ #include <dt-bindings/clock/qcom,lcc-ipq806x.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
  #include <dt-bindings/reset/qcom,gcc-ipq806x.h>
- #include <include/dt-bindings/interrupt-controller/arm-gic.h>
-@@ -76,6 +77,63 @@
- 		ranges;
- 		compatible = "simple-bus";
+@@ -92,6 +93,63 @@
+ 			reg-names = "lpass-lpaif";
+ 		};
  
 +		rpm@108000 {
 +			compatible = "qcom,rpm-ipq8064";
@@ -72,7 +72,7 @@
  		qcom_pinmux: pinmux@800000 {
  			compatible = "qcom,ipq8064-pinctrl";
  			reg = <0x800000 0x4000>;
-@@ -120,6 +178,12 @@
+@@ -136,6 +194,12 @@
  			reg = <0x02098000 0x1000>, <0x02008000 0x1000>;
  		};
  
@@ -81,7 +81,7 @@
 +			reg = <0x2011000 0x1000>;
 +			clock-output-names = "acpu_l2_aux";
 + 		};
-+ 
++
  		saw0: regulator@2089000 {
  			compatible = "qcom,saw2";
  			reg = <0x02089000 0x1000>, <0x02009000 0x1000>;

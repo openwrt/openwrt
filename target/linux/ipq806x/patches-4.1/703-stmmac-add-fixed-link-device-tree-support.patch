@@ -29,7 +29,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  	}
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -176,6 +176,14 @@ static int stmmac_probe_config_dt(struct
+@@ -177,6 +177,14 @@ static int stmmac_probe_config_dt(struct
  	/* If we find a phy-handle property, use it as the PHY */
  	plat->phy_node = of_parse_phandle(np, "phy-handle", 0);
  
@@ -44,7 +44,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  	/* "snps,phy-addr" is not a standard property. Mark it as deprecated
  	 * and warn of its use. Remove this when phy node support is added.
  	 */
-@@ -238,7 +246,7 @@ static int stmmac_probe_config_dt(struct
+@@ -243,7 +251,7 @@ static int stmmac_probe_config_dt(struct
  				       GFP_KERNEL);
  		if (!dma_cfg) {
  			ret = -ENOMEM;
@@ -53,7 +53,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		}
  		plat->dma_cfg = dma_cfg;
  		of_property_read_u32(np, "snps,pbl", &dma_cfg->pbl);
-@@ -258,6 +266,8 @@ static int stmmac_probe_config_dt(struct
+@@ -263,6 +271,8 @@ static int stmmac_probe_config_dt(struct
  
  	return 0;
  

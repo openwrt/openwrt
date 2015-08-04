@@ -16,7 +16,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 
 --- a/drivers/clk/qcom/gcc-ipq806x.c
 +++ b/drivers/clk/qcom/gcc-ipq806x.c
-@@ -220,11 +220,46 @@ static struct clk_regmap pll14_vote = {
+@@ -220,12 +220,47 @@ static struct clk_regmap pll14_vote = {
  	},
  };
  
@@ -53,26 +53,27 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	},
 +};
 +
- #define P_PXO	0
- #define P_PLL8	1
- #define P_PLL3	1
- #define P_PLL0	2
- #define P_CXO	2
-+#define P_PLL14	3
-+#define P_PLL18 4
+ enum {
+ 	P_PXO,
+ 	P_PLL8,
+ 	P_PLL3,
+ 	P_PLL0,
+ 	P_CXO,
++	P_PLL14,
++	P_PLL18,
+ };
  
- static const u8 gcc_pxo_pll8_map[] = {
- 	[P_PXO]		= 0,
-@@ -275,6 +310,22 @@ static const char *gcc_pxo_pll8_pll0_map
+ static const struct parent_map gcc_pxo_pll8_map[] = {
+@@ -277,6 +312,22 @@ static const char *gcc_pxo_pll8_pll0_map
  	"pll0_vote",
  };
  
-+static const u8 gcc_pxo_pll8_pll14_pll18_pll0_map[] = {
-+	[P_PXO] = 0 ,
-+	[P_PLL8] = 4,
-+	[P_PLL0] = 2,
-+	[P_PLL14] = 5,
-+	[P_PLL18] = 1,
++static const struct parent_map gcc_pxo_pll8_pll14_pll18_pll0_map[] = {
++	{ P_PXO, 0 },
++	{ P_PLL8, 4 },
++	{ P_PLL0, 2 },
++	{ P_PLL14, 5 },
++	{ P_PLL18, 1 },
 +};
 +
 +static const char *gcc_pxo_pll8_pll14_pll18_pll0[] = {
@@ -86,7 +87,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  static struct freq_tbl clk_tbl_gsbi_uart[] = {
  	{  1843200, P_PLL8, 2,  6, 625 },
  	{  3686400, P_PLL8, 2, 12, 625 },
-@@ -2250,6 +2301,472 @@ static struct clk_branch usb_fs1_h_clk =
+@@ -2282,6 +2333,472 @@ static struct clk_branch ebi2_aon_clk =
  	},
  };
  
@@ -559,7 +560,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  static struct clk_regmap *gcc_ipq806x_clks[] = {
  	[PLL0] = &pll0.clkr,
  	[PLL0_VOTE] = &pll0_vote,
-@@ -2259,6 +2776,7 @@ static struct clk_regmap *gcc_ipq806x_cl
+@@ -2291,6 +2808,7 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[PLL8_VOTE] = &pll8_vote,
  	[PLL14] = &pll14.clkr,
  	[PLL14_VOTE] = &pll14_vote,
@@ -567,7 +568,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  	[GSBI1_UART_SRC] = &gsbi1_uart_src.clkr,
  	[GSBI1_UART_CLK] = &gsbi1_uart_clk.clkr,
  	[GSBI2_UART_SRC] = &gsbi2_uart_src.clkr,
-@@ -2356,6 +2874,18 @@ static struct clk_regmap *gcc_ipq806x_cl
+@@ -2390,6 +2908,18 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[PLL9] = &hfpll0.clkr,
  	[PLL10] = &hfpll1.clkr,
  	[PLL12] = &hfpll_l2.clkr,
@@ -586,7 +587,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  };
  
  static const struct qcom_reset_map gcc_ipq806x_resets[] = {
-@@ -2474,6 +3004,48 @@ static const struct qcom_reset_map gcc_i
+@@ -2508,6 +3038,48 @@ static const struct qcom_reset_map gcc_i
  	[USB30_1_PHY_RESET] = { 0x3b58, 0 },
  	[NSSFB0_RESET] = { 0x3b60, 6 },
  	[NSSFB1_RESET] = { 0x3b60, 7 },
@@ -635,7 +636,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  };
  
  static const struct regmap_config gcc_ipq806x_regmap_config = {
-@@ -2502,6 +3074,8 @@ static int gcc_ipq806x_probe(struct plat
+@@ -2536,6 +3108,8 @@ static int gcc_ipq806x_probe(struct plat
  {
  	struct clk *clk;
  	struct device *dev = &pdev->dev;
@@ -644,7 +645,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  
  	/* Temporary until RPM clocks supported */
  	clk = clk_register_fixed_rate(dev, "cxo", NULL, CLK_IS_ROOT, 25000000);
-@@ -2512,7 +3086,25 @@ static int gcc_ipq806x_probe(struct plat
+@@ -2546,7 +3120,25 @@ static int gcc_ipq806x_probe(struct plat
  	if (IS_ERR(clk))
  		return PTR_ERR(clk);
  
@@ -671,16 +672,6 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
  }
  
  static int gcc_ipq806x_remove(struct platform_device *pdev)
---- a/include/dt-bindings/clock/qcom,gcc-ipq806x.h
-+++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
-@@ -288,5 +288,7 @@
- #define UBI32_CORE2_CLK_SRC			278
- #define UBI32_CORE1_CLK				279
- #define UBI32_CORE2_CLK				280
-+#define NSSTCM_CLK_SRC				281
-+#define NSSTCM_CLK				282
- 
- #endif
 --- a/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 +++ b/include/dt-bindings/reset/qcom,gcc-ipq806x.h
 @@ -129,4 +129,47 @@
@@ -730,4 +721,14 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +#define NSS_LCKDT_RST_N_RESET				155
 +#define NSS_SRDS_N_RESET				156
 +
+ #endif
+--- a/include/dt-bindings/clock/qcom,gcc-ipq806x.h
++++ b/include/dt-bindings/clock/qcom,gcc-ipq806x.h
+@@ -289,5 +289,7 @@
+ #define UBI32_CORE1_CLK				279
+ #define UBI32_CORE2_CLK				280
+ #define EBI2_AON_CLK				281
++#define NSSTCM_CLK_SRC				282
++#define NSSTCM_CLK				283
+ 
  #endif

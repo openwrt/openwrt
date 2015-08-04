@@ -34,7 +34,7 @@ MAINTAINERS                  |    7 +
 
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -7511,6 +7511,13 @@ L:	linux-pci@vger.kernel.org
+@@ -7599,6 +7599,13 @@ L:	linux-pci@vger.kernel.org
  S:	Maintained
  F:	drivers/pci/host/*spear*
  
@@ -50,9 +50,9 @@ MAINTAINERS                  |    7 +
  L:	linux-pcmcia@lists.infradead.org
 --- a/drivers/pci/host/Kconfig
 +++ b/drivers/pci/host/Kconfig
-@@ -106,4 +106,13 @@ config PCI_VERSATILE
- 	bool "ARM Versatile PB PCI controller"
- 	depends on ARCH_VERSATILE
+@@ -125,4 +125,13 @@ config PCIE_IPROC_PLATFORM
+ 	  Say Y here if you want to use the Broadcom iProc PCIe controller
+ 	  through the generic platform bus interface
  
 +config PCIE_QCOM
 +	bool "Qualcomm PCIe controller"
@@ -746,8 +746,8 @@ MAINTAINERS                  |    7 +
 +MODULE_ALIAS("platform:qcom-pcie");
 --- a/drivers/pci/host/Makefile
 +++ b/drivers/pci/host/Makefile
-@@ -13,3 +13,4 @@ obj-$(CONFIG_PCIE_XILINX) += pcie-xilinx
- obj-$(CONFIG_PCI_XGENE) += pci-xgene.o
- obj-$(CONFIG_PCI_LAYERSCAPE) += pci-layerscape.o
+@@ -15,3 +15,4 @@ obj-$(CONFIG_PCI_LAYERSCAPE) += pci-laye
  obj-$(CONFIG_PCI_VERSATILE) += pci-versatile.o
+ obj-$(CONFIG_PCIE_IPROC) += pcie-iproc.o
+ obj-$(CONFIG_PCIE_IPROC_PLATFORM) += pcie-iproc-platform.o
 +obj-$(CONFIG_PCIE_QCOM) += pcie-qcom.o

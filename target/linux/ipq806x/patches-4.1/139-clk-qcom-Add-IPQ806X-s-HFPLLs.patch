@@ -115,10 +115,10 @@ drivers/clk/qcom/gcc-ipq806x.c | 83 ++++++++++++++++++++++++++++++++++++++++++
  static struct clk_pll pll14 = {
  	.l_reg = 0x31c4,
  	.m_reg = 0x31c8,
-@@ -2273,6 +2353,9 @@ static struct clk_regmap *gcc_ipq806x_cl
- 	[USB_FS1_XCVR_SRC] = &usb_fs1_xcvr_clk_src.clkr,
- 	[USB_FS1_XCVR_CLK] = &usb_fs1_xcvr_clk.clkr,
+@@ -2307,6 +2387,9 @@ static struct clk_regmap *gcc_ipq806x_cl
  	[USB_FS1_SYSTEM_CLK] = &usb_fs1_sys_clk.clkr,
+ 	[EBI2_CLK] = &ebi2_clk.clkr,
+ 	[EBI2_AON_CLK] = &ebi2_aon_clk.clkr,
 +	[PLL9] = &hfpll0.clkr,
 +	[PLL10] = &hfpll1.clkr,
 +	[PLL12] = &hfpll_l2.clkr,

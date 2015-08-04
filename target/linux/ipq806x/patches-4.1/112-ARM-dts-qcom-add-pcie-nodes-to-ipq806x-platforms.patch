@@ -120,20 +120,19 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -3,6 +3,8 @@
- #include "skeleton.dtsi"
+@@ -4,6 +4,8 @@
  #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
+ #include <dt-bindings/clock/qcom,lcc-ipq806x.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
 +#include <dt-bindings/reset/qcom,gcc-ipq806x.h>
 +#include <include/dt-bindings/interrupt-controller/arm-gic.h>
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -291,5 +293,128 @@
- 			#clock-cells = <1>;
+@@ -329,5 +331,128 @@
  			#reset-cells = <1>;
  		};
-+
+ 
 +		pcie0: pci@1b500000 {
 +			compatible = "qcom,pcie-v0";
 +			reg = <0x1b500000 0x1000
@@ -256,5 +255,6 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +
 +			status = "disabled";
 +		};
++
  	};
  };
