@@ -19,7 +19,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  				bias-disable;
  			};
  
-+			pcie1_pins: pcie1_pinmux {
++			pcie0_pins: pcie0_pinmux {
 +				mux {
 +					pins = "gpio3";
 +					drive-strength = <2>;
@@ -27,7 +27,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				};
 +			};
 +
-+			pcie2_pins: pcie2_pinmux {
++			pcie1_pins: pcie1_pinmux {
 +				mux {
 +					pins = "gpio48";
 +					drive-strength = <2>;
@@ -46,14 +46,14 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +		pcie0: pci@1b500000 {
 +			status = "ok";
 +			reset-gpio = <&qcom_pinmux 3 0>;
-+			pinctrl-0 = <&pcie1_pins>;
++			pinctrl-0 = <&pcie0_pins>;
 +			pinctrl-names = "default";
 +		};
 +
 +		pcie1: pci@1b700000 {
 +			status = "ok";
 +			reset-gpio = <&qcom_pinmux 48 0>;
-+			pinctrl-0 = <&pcie2_pins>;
++			pinctrl-0 = <&pcie1_pins>;
 +			pinctrl-names = "default";
 +		};
  	};
@@ -64,7 +64,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  				bias-disable;
  			};
  
-+			pcie1_pins: pcie1_pinmux {
++			pcie0_pins: pcie0_pinmux {
 +				mux {
 +					pins = "gpio3";
 +					drive-strength = <2>;
@@ -72,7 +72,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				};
 +			};
 +
-+			pcie2_pins: pcie2_pinmux {
++			pcie1_pins: pcie1_pinmux {
 +				mux {
 +					pins = "gpio48";
 +					drive-strength = <2>;
@@ -80,7 +80,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				};
 +			};
 +
-+			pcie3_pins: pcie3_pinmux {
++			pcie2_pins: pcie2_pinmux {
 +				mux {
 +					pins = "gpio63";
 +					drive-strength = <2>;
@@ -99,21 +99,21 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +		pcie0: pci@1b500000 {
 +			status = "ok";
 +			reset-gpio = <&qcom_pinmux 3 0>;
-+			pinctrl-0 = <&pcie1_pins>;
++			pinctrl-0 = <&pcie0_pins>;
 +			pinctrl-names = "default";
 +		};
 +
 +		pcie1: pci@1b700000 {
 +			status = "ok";
 +			reset-gpio = <&qcom_pinmux 48 0>;
-+			pinctrl-0 = <&pcie2_pins>;
++			pinctrl-0 = <&pcie1_pins>;
 +			pinctrl-names = "default";
 +		};
 +
 +		pcie2: pci@1b900000 {
 +			status = "ok";
 +			reset-gpio = <&qcom_pinmux 63 0>;
-+			pinctrl-0 = <&pcie3_pins>;
++			pinctrl-0 = <&pcie2_pins>;
 +			pinctrl-names = "default";
 +		};
  	};
@@ -125,11 +125,11 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  #include <dt-bindings/clock/qcom,lcc-ipq806x.h>
  #include <dt-bindings/soc/qcom,gsbi.h>
 +#include <dt-bindings/reset/qcom,gcc-ipq806x.h>
-+#include <include/dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -329,5 +331,128 @@
+@@ -329,5 +331,127 @@
  			#reset-cells = <1>;
  		};
  
@@ -255,6 +255,5 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +
 +			status = "disabled";
 +		};
-+
  	};
  };
