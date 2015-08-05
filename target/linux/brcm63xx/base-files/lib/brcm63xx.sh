@@ -198,6 +198,9 @@ brcm63xx_dt_detect() {
 	"Sagem F@ST2604")
 		board_name="fast2604"
 		;;
+	"Sagem F@ST2704N")
+		board_name="fast2704n"
+		;;
 	"Sagem F@ST2704V2")
 		board_name="fast2704v2"
 		;;
