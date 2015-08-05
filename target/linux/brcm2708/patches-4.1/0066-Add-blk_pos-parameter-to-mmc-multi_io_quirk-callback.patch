@@ -13,7 +13,7 @@ Subject: [PATCH 066/121] Add blk_pos parameter to mmc multi_io_quirk callback
 
 --- a/drivers/mmc/card/block.c
 +++ b/drivers/mmc/card/block.c
-@@ -1413,6 +1413,7 @@ static void mmc_blk_rw_rq_prep(struct mm
+@@ -1415,6 +1415,7 @@ static void mmc_blk_rw_rq_prep(struct mm
  			brq->data.blocks = card->host->ops->multi_io_quirk(card,
  						(rq_data_dir(req) == READ) ?
  						MMC_DATA_READ : MMC_DATA_WRITE,

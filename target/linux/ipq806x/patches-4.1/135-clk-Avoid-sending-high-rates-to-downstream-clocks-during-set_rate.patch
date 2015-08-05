@@ -47,7 +47,7 @@ drivers/clk/clk.c | 34 ++++++++++++++++++++++------------
 
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -1743,21 +1743,24 @@ static struct clk_core *clk_propagate_ra
+@@ -1744,21 +1744,24 @@ static struct clk_core *clk_propagate_ra
   * walk down a subtree and set the new rates notifying the rate
   * change on the way
   */
@@ -79,7 +79,7 @@ drivers/clk/clk.c | 34 ++++++++++++++++++++++------------
  
  	if (clk->new_parent && clk->new_parent != clk->parent) {
  		old_parent = __clk_set_parent_before(clk, clk->new_parent);
-@@ -1783,7 +1786,7 @@ static void clk_change_rate(struct clk_c
+@@ -1784,7 +1787,7 @@ static void clk_change_rate(struct clk_c
  
  	trace_clk_set_rate_complete(clk, clk->new_rate);
  
@@ -88,7 +88,7 @@ drivers/clk/clk.c | 34 ++++++++++++++++++++++------------
  
  	if (clk->notifier_count && old_rate != clk->rate)
  		__clk_notify(clk, POST_RATE_CHANGE, old_rate, clk->rate);
-@@ -1796,12 +1799,13 @@ static void clk_change_rate(struct clk_c
+@@ -1797,12 +1800,13 @@ static void clk_change_rate(struct clk_c
  		/* Skip children who will be reparented to another clock */
  		if (child->new_parent && child->new_parent != clk)
  			continue;
@@ -105,7 +105,7 @@ drivers/clk/clk.c | 34 ++++++++++++++++++++++------------
  }
  
  static int clk_core_set_rate_nolock(struct clk_core *clk,
-@@ -1810,6 +1814,7 @@ static int clk_core_set_rate_nolock(stru
+@@ -1811,6 +1815,7 @@ static int clk_core_set_rate_nolock(stru
  	struct clk_core *top, *fail_clk;
  	unsigned long rate = req_rate;
  	int ret = 0;
@@ -113,7 +113,7 @@ drivers/clk/clk.c | 34 ++++++++++++++++++++++------------
  
  	if (!clk)
  		return 0;
-@@ -1835,8 +1840,13 @@ static int clk_core_set_rate_nolock(stru
+@@ -1836,8 +1841,13 @@ static int clk_core_set_rate_nolock(stru
  		return -EBUSY;
  	}
  

@@ -1,5 +1,3 @@
-diff --git a/drivers/power/Kconfig b/drivers/power/Kconfig
-index 4091fb0..0fcc158 100644
 --- a/drivers/power/Kconfig
 +++ b/drivers/power/Kconfig
 @@ -43,6 +43,14 @@ config MAX8925_POWER
@@ -17,11 +15,9 @@ index 4091fb0..0fcc158 100644
  config WM831X_BACKUP
  	tristate "WM831X backup battery charger support"
  	depends on MFD_WM831X
-diff --git a/drivers/power/Makefile b/drivers/power/Makefile
-index b7b0181..8edcad7 100644
 --- a/drivers/power/Makefile
 +++ b/drivers/power/Makefile
-@@ -10,6 +10,7 @@ obj-$(CONFIG_GENERIC_ADC_BATTERY)	+= generic-adc-battery.o
+@@ -10,6 +10,7 @@ obj-$(CONFIG_GENERIC_ADC_BATTERY)	+= gen
  obj-$(CONFIG_PDA_POWER)		+= pda_power.o
  obj-$(CONFIG_APM_POWER)		+= apm_power.o
  obj-$(CONFIG_MAX8925_POWER)	+= max8925_power.o
@@ -29,9 +25,6 @@ index b7b0181..8edcad7 100644
  obj-$(CONFIG_WM831X_BACKUP)	+= wm831x_backup.o
  obj-$(CONFIG_WM831X_POWER)	+= wm831x_power.o
  obj-$(CONFIG_WM8350_POWER)	+= wm8350_power.o
-diff --git a/drivers/power/mxs_power.c b/drivers/power/mxs_power.c
-new file mode 100644
-index 0000000..669bfb1
 --- /dev/null
 +++ b/drivers/power/mxs_power.c
 @@ -0,0 +1,136 @@

@@ -1,5 +1,3 @@
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index a6f116a..7b525f5 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
 @@ -450,6 +450,14 @@ config REGULATOR_MT6397
@@ -17,11 +15,9 @@ index a6f116a..7b525f5 100644
  config REGULATOR_PALMAS
  	tristate "TI Palmas PMIC Regulators"
  	depends on MFD_PALMAS
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index 2c4da15..a3ebf23 100644
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -60,6 +60,7 @@ obj-$(CONFIG_REGULATOR_MC13783) += mc13783-regulator.o
+@@ -60,6 +60,7 @@ obj-$(CONFIG_REGULATOR_MC13783) += mc137
  obj-$(CONFIG_REGULATOR_MC13892) += mc13892-regulator.o
  obj-$(CONFIG_REGULATOR_MC13XXX_CORE) +=  mc13xxx-regulator-core.o
  obj-$(CONFIG_REGULATOR_MT6397)	+= mt6397-regulator.o
@@ -29,9 +25,6 @@ index 2c4da15..a3ebf23 100644
  obj-$(CONFIG_REGULATOR_QCOM_RPM) += qcom_rpm-regulator.o
  obj-$(CONFIG_REGULATOR_PALMAS) += palmas-regulator.o
  obj-$(CONFIG_REGULATOR_PFUZE100) += pfuze100-regulator.o
-diff --git a/drivers/regulator/mxs-regulator.c b/drivers/regulator/mxs-regulator.c
-new file mode 100644
-index 0000000..e53707b
 --- /dev/null
 +++ b/drivers/regulator/mxs-regulator.c
 @@ -0,0 +1,540 @@
