@@ -4,12 +4,14 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+JFFS2_BLOCKSIZE = 128k
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 LOADADDR:=0x00008000
 
-JFFS2_BLOCKSIZE = 128k
 
 KDIR_TMP:=$(KDIR)/tmp
 
