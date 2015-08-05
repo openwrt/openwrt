@@ -70,6 +70,9 @@ set_state() {
 	fast2504n)
 		status_led="fast2504n:green:ok"
 		;;
+	fast2704n)
+		status_led2="F@ST2704N:red:power"
+		;;
 	fast2704v2)
 		status_led="F@ST2704V2:green:power"
 		;;

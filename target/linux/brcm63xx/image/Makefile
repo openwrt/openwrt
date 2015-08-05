@@ -623,6 +623,8 @@ $(eval $(call bcm63xxCfe,FAST2404,F@ST2404,fast2404,F@ST2404,6348))
 $(eval $(call bcm63xxCfe,FAST2504n,F@ST2504n,fast2504n,F@ST2504n,6362))
 # Sagem F@ST2604
 $(eval $(call bcm63xxCfe,FAST2604,F@ST2604,fast2604,F@ST2604,6348))
+# Sagem F@ST2704N V1 / Plusnet F@ST2704N V1
+$(eval $(call bcm63xxCfe,FAST2704N,FAST2704N,fast2704n,F@ST2704N,6318,--pad 4))
 # Sagem F@ST2704V2
 $(eval $(call bcm63xxCfe,FAST2704V2,F@ST2704V2,fast2704v2,F@ST2704V2,6328))
 # SFR Neufbox 4
