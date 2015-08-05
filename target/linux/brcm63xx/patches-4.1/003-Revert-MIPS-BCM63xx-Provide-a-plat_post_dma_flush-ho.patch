@@ -1,0 +1,49 @@
+From 1b02e59087d3de3953d3fa0536356e3e137bf74b Mon Sep 17 00:00:00 2001
+From: Florian Fainelli <f.fainelli@gmail.com>
+Date: Tue, 28 Jul 2015 19:24:24 -0700
+Subject: [PATCH] Revert "MIPS: BCM63xx: Provide a plat_post_dma_flush hook"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 3cf29543413207d3ab1c3f62a88c09bb46f2264e ("MIPS:
+BCM63xx: Provide a plat_post_dma_flush hook") since this commit was
+found to prevent BCM6358 (early BMIPS4350 cores) and some BCM6368
+(BMIPS4380 cores) from booting reliably.
+
+Alvaro was able to track this down to an issue specifically located to
+devices that use the second thread (TP1) when booting. Since BCM63xx did
+not have a need for plat_post_dma_flush() hook before, let's just keep
+things the way they were.
+
+CC: stable@vger.kernel.org
+CC: Kevin Cernekee <cernekee@gmail.com>
+CC: Nicolas Schichan <nschichan@freebox.fr>
+Reported-by: Álvaro Fernández Rojas <noltari@gmail.com>
+Reported-by: Jonas Gorski <jogo@openwrt.org>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ arch/mips/include/asm/mach-bcm63xx/dma-coherence.h | 10 ----------
+ 1 file changed, 10 deletions(-)
+ delete mode 100644 arch/mips/include/asm/mach-bcm63xx/dma-coherence.h
+
+diff --git a/arch/mips/include/asm/mach-bcm63xx/dma-coherence.h b/arch/mips/include/asm/mach-bcm63xx/dma-coherence.h
+deleted file mode 100644
+index 11d3b57..0000000
+--- a/arch/mips/include/asm/mach-bcm63xx/dma-coherence.h
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#ifndef __ASM_MACH_BCM63XX_DMA_COHERENCE_H
+-#define __ASM_MACH_BCM63XX_DMA_COHERENCE_H
+-
+-#include <asm/bmips.h>
+-
+-#define plat_post_dma_flush	bmips_post_dma_flush
+-
+-#include <asm/mach-generic/dma-coherence.h>
+-
+-#endif /* __ASM_MACH_BCM63XX_DMA_COHERENCE_H */
+-- 
+2.1.4
+
