@@ -4,12 +4,13 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+JFFS2_BLOCKSIZE = 64k 128k 256k
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
-
-JFFS2_BLOCKSIZE = 64k 128k 256k
 
 KERNEL_LOADADDR = 0x80060000
 

@@ -4,6 +4,9 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+JFFS2_BLOCKSIZE = 128k
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
@@ -12,8 +15,6 @@ TARGET_DTBS := rbt-832 dlan-usb-extender
 DTBS_DIR:=dts/
 
 LOADADDR:=0x00008000
-
-JFFS2_BLOCKSIZE = 128k
 
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 

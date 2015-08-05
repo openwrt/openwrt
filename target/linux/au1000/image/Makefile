@@ -4,14 +4,15 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+JFFS2_BLOCKSIZE = 128k
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
 LOADADDR = 0x81000000		# RAM start + 16M 
 KERNEL_ENTRY = 0x80100000
 RAMSIZE = 0x00100000		# 1MB
-
-JFFS2_BLOCKSIZE = 128k
 
 FLASH_KERNEL := 0xBFD00000
 FLASH_FS     := 0xBE000000

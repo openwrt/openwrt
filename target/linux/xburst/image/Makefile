@@ -4,10 +4,11 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
-include $(TOPDIR)/rules.mk
-include $(INCLUDE_DIR)/image.mk
 
 JFFS2_BLOCKSIZE=256k 512k
+
+include $(TOPDIR)/rules.mk
+include $(INCLUDE_DIR)/image.mk
 
 ifneq ($(CONFIG_TARGET_xburst_qi_lb60),)
 UBI_OPTS = -m 4096 -p 512KiB

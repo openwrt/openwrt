@@ -4,10 +4,12 @@
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
+
+JFFS2_BLOCKSIZE=256k
+
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-JFFS2_BLOCKSIZE=256k
 
 define Image/Prepare
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -R 4 -S 0x20000 $(DTS_DIR)/canyonlands.dts > $(KDIR)/openwrt-canyonlands.dtb
