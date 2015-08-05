@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -118,6 +118,19 @@ config ATH79_MACH_AP143
+@@ -138,6 +138,19 @@ config ATH79_MACH_AP143
  	  Say 'Y' here if you want your kernel to support the
  	  Atheros AP143 reference board.
  
@@ -22,7 +22,7 @@
  	select SOC_AR913X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -47,6 +47,7 @@ obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-
+@@ -49,6 +49,7 @@ obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-
  obj-$(CONFIG_ATH79_MACH_AP132)		+= mach-ap132.o
  obj-$(CONFIG_ATH79_MACH_AP136)		+= mach-ap136.o
  obj-$(CONFIG_ATH79_MACH_AP143)		+= mach-ap143.o
@@ -32,7 +32,7 @@
  obj-$(CONFIG_ATH79_MACH_AP96)		+= mach-ap96.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -29,6 +29,7 @@ enum ath79_mach_type {
+@@ -31,6 +31,7 @@ enum ath79_mach_type {
  	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
  	ATH79_MACH_AP136_020,		/* Atheros AP136-020 reference board */
  	ATH79_MACH_AP143,		/* Atheros AP143 reference board */

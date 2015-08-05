@@ -894,7 +894,7 @@ dwc_otg: Fix crash when fiq_enable=0
  }
 --- a/drivers/usb/core/hub.c
 +++ b/drivers/usb/core/hub.c
-@@ -4922,7 +4922,7 @@ static void port_event(struct usb_hub *h
+@@ -4906,7 +4906,7 @@ static void port_event(struct usb_hub *h
  	if (portchange & USB_PORT_STAT_C_OVERCURRENT) {
  		u16 status = 0, unused;
  
