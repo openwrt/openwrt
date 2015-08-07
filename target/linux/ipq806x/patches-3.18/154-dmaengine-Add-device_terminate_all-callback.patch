@@ -1,0 +1,47 @@
+From 7fa0cf462daa6f6121b332b87833d7f5bdb515c0 Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 17 Nov 2014 14:42:02 +0100
+Subject: [PATCH] dmaengine: Add device_terminate_all callback
+
+Split out the terminate_all command from device_control to a dma_device
+callback. In order to preserve backward capability, still rely on
+device_control if no such callback has been implemented.
+
+Eventually, this will allow to create a generic dma_slave_caps callback.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Vinod Koul <vinod.koul@intel.com>
+---
+ include/linux/dmaengine.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/include/linux/dmaengine.h
++++ b/include/linux/dmaengine.h
+@@ -611,6 +611,8 @@ struct dma_tx_state {
+  *	code
+  * @device_control: manipulate all pending operations on a channel, returns
+  *	zero or error code
++ * @device_terminate_all: Aborts all transfers on a channel. Returns 0
++ *	or an error code
+  * @device_tx_status: poll for transaction completion, the optional
+  *	txstate parameter can be supplied with a pointer to get a
+  *	struct with auxiliary transfer status information, otherwise the call
+@@ -680,6 +682,7 @@ struct dma_device {
+ 			     struct dma_slave_config *config);
+ 	int (*device_control)(struct dma_chan *chan, enum dma_ctrl_cmd cmd,
+ 		unsigned long arg);
++	int (*device_terminate_all)(struct dma_chan *chan);
+ 
+ 	enum dma_status (*device_tx_status)(struct dma_chan *chan,
+ 					    dma_cookie_t cookie,
+@@ -789,6 +792,9 @@ static inline int dma_get_slave_caps(str
+ 
+ static inline int dmaengine_terminate_all(struct dma_chan *chan)
+ {
++	if (chan->device->device_terminate_all)
++		return chan->device->device_terminate_all(chan);
++
+ 	return dmaengine_device_control(chan, DMA_TERMINATE_ALL, 0);
+ }
+ 

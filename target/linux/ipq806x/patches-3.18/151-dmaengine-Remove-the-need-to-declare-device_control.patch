@@ -1,0 +1,27 @@
+From 4f8ef9f4140cc286d7d1cf9237da7a7439e4fc0b Mon Sep 17 00:00:00 2001
+From: Maxime Ripard <maxime.ripard@free-electrons.com>
+Date: Mon, 17 Nov 2014 14:42:03 +0100
+Subject: [PATCH] dmaengine: Remove the need to declare device_control
+
+In order to migrate the drivers without triggering a BUG_ON for the converted
+drivers, which would cause bisectability issues, we need to remove that check
+before removing the device_control function entirely.
+
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+Acked-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Signed-off-by: Vinod Koul <vinod.koul@intel.com>
+---
+ drivers/dma/dmaengine.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/dma/dmaengine.c
++++ b/drivers/dma/dmaengine.c
+@@ -814,8 +814,6 @@ int dma_async_device_register(struct dma
+ 		!device->device_prep_dma_sg);
+ 	BUG_ON(dma_has_cap(DMA_CYCLIC, device->cap_mask) &&
+ 		!device->device_prep_dma_cyclic);
+-	BUG_ON(dma_has_cap(DMA_SLAVE, device->cap_mask) &&
+-		!device->device_control);
+ 	BUG_ON(dma_has_cap(DMA_INTERLEAVE, device->cap_mask) &&
+ 		!device->device_prep_interleaved_dma);
+ 
