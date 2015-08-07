@@ -12,7 +12,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-@@ -71,6 +71,16 @@
+@@ -93,6 +93,16 @@
  					bias-disable;
  				};
  			};
@@ -29,7 +29,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		};
  
  		gsbi@16300000 {
-@@ -188,5 +198,26 @@
+@@ -220,6 +230,27 @@
  				reg = <4>;
  			};
  		};
@@ -56,6 +56,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +		};
  	};
  };
+ 
 --- a/arch/arm/boot/dts/qcom-ipq8064-db149.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-db149.dts
 @@ -75,6 +75,14 @@
@@ -116,7 +117,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -615,5 +615,91 @@
+@@ -631,5 +631,91 @@
  
  			status = "disabled";
  		};
