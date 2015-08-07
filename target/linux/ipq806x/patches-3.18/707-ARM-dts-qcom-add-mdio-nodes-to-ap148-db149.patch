@@ -22,8 +22,8 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  	};
  
  	chosen {
-@@ -61,6 +62,15 @@
- 					bias-none;
+@@ -86,6 +87,15 @@
+ 					bias-bus-hold;
  				};
  			};
 +
@@ -38,9 +38,9 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		};
  
  		gsbi@16300000 {
-@@ -174,5 +184,33 @@
- 			pinctrl-0 = <&pcie1_pins>;
- 			pinctrl-names = "default";
+@@ -209,6 +219,34 @@
+ 			nand-ecc-strength = <4>;
+ 			nand-bus-width = <8>;
  		};
 +
 +		mdio0: mdio {
@@ -72,6 +72,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +		};
  	};
  };
+ 
 --- a/arch/arm/boot/dts/qcom-ipq8064-db149.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-db149.dts
 @@ -16,6 +16,7 @@
