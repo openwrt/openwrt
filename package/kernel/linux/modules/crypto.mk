@@ -41,7 +41,7 @@ define KernelPackage/crypto-aead
 	CONFIG_CRYPTO_AEAD \
 	CONFIG_CRYPTO_AEAD2
   FILES:=$(LINUX_DIR)/crypto/aead.ko
-  AUTOLOAD:=$(call AutoLoad,09,crypto_aead,1)
+  AUTOLOAD:=$(call AutoLoad,09,aead,1)
   $(call AddDepends/crypto)
 endef
 
