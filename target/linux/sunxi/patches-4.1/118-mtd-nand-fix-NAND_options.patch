@@ -1,0 +1,43 @@
+From f8ff99a839ed05e1e4993b543357183b095b77f1 Mon Sep 17 00:00:00 2001
+From: Michal Suchanek <hramrach@gmail.com>
+Date: Thu, 1 Jan 2015 16:44:45 +0100
+Subject: [PATCH] mtd: nand: Fix NAND_* options to use unique values.
+
+NAND_BUSWIDTH_AUTO (64b37b2a6) and NAND_USE_BOUNCE_BUFFER (66507c7bc)
+are the same value. Change the later introduced NAND_USE_BOUNCE_BUFFER
+to a different value.
+
+Signed-off-by: Michal Suchanek <hramrach@gmail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ include/linux/mtd/nand.h | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 328aab2..c20f35b 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -176,17 +176,17 @@ typedef enum {
+ /* Chip may not exist, so silence any errors in scan */
+ #define NAND_SCAN_SILENT_NODEV	0x00040000
+ /*
+- * This option could be defined by controller drivers to protect against
+- * kmap'ed, vmalloc'ed highmem buffers being passed from upper layers
+- */
+-#define NAND_USE_BOUNCE_BUFFER	0x00080000
+-/*
+  * Autodetect nand buswidth with readid/onfi.
+  * This suppose the driver will configure the hardware in 8 bits mode
+  * when calling nand_scan_ident, and update its configuration
+  * before calling nand_scan_tail.
+  */
+-#define NAND_BUSWIDTH_AUTO      0x00080000
++#define NAND_BUSWIDTH_AUTO	0x00080000
++/*
++ * This option could be defined by controller drivers to protect against
++ * kmap'ed, vmalloc'ed highmem buffers being passed from upper layers
++ */
++#define NAND_USE_BOUNCE_BUFFER	0x00100000
+ 
+ /* Options set by nand scan */
+ /* Nand scan has allocated controller struct */

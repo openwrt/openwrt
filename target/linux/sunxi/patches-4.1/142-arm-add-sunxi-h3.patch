@@ -1,0 +1,55 @@
+From 14a882df14a5ae859b245bc708ce3fce47a91594 Mon Sep 17 00:00:00 2001
+From: Jens Kuske <jenskuske@gmail.com>
+Date: Fri, 15 May 2015 18:38:55 +0200
+Subject: ARM: sunxi: Introduce Allwinner H3 support
+
+The Allwinner H3 is a quad-core Cortex-A7-based SoC. It is very similar
+to other sun8i family SoCs like the A23.
+
+Signed-off-by: Jens Kuske <jenskuske@gmail.com>
+Signed-off-by: Maxime Ripard <maxime.ripard@free-electrons.com>
+
+diff --git a/Documentation/devicetree/bindings/arm/sunxi.txt b/Documentation/devicetree/bindings/arm/sunxi.txt
+index 42941fd..3cb4b94 100644
+--- a/Documentation/devicetree/bindings/arm/sunxi.txt
++++ b/Documentation/devicetree/bindings/arm/sunxi.txt
+@@ -9,4 +9,5 @@ using one of the following compatible strings:
+   allwinner,sun6i-a31
+   allwinner,sun7i-a20
+   allwinner,sun8i-a23
++  allwinner,sun8i-h3
+   allwinner,sun9i-a80
+diff --git a/arch/arm/mach-sunxi/Kconfig b/arch/arm/mach-sunxi/Kconfig
+index 81502b9..4efe2d4 100644
+--- a/arch/arm/mach-sunxi/Kconfig
++++ b/arch/arm/mach-sunxi/Kconfig
+@@ -35,7 +35,7 @@ config MACH_SUN7I
+ 	select SUN5I_HSTIMER
+ 
+ config MACH_SUN8I
+-	bool "Allwinner A23 (sun8i) SoCs support"
++	bool "Allwinner sun8i Family SoCs support"
+ 	default ARCH_SUNXI
+ 	select ARM_GIC
+ 	select MFD_SUN6I_PRCM
+diff --git a/arch/arm/mach-sunxi/sunxi.c b/arch/arm/mach-sunxi/sunxi.c
+index 1bc811a..8270902 100644
+--- a/arch/arm/mach-sunxi/sunxi.c
++++ b/arch/arm/mach-sunxi/sunxi.c
+@@ -67,10 +67,12 @@ MACHINE_END
+ 
+ static const char * const sun8i_board_dt_compat[] = {
+ 	"allwinner,sun8i-a23",
++	"allwinner,sun8i-h3",
+ 	NULL,
+ };
+ 
+-DT_MACHINE_START(SUN8I_DT, "Allwinner sun8i (A23) Family")
++DT_MACHINE_START(SUN8I_DT, "Allwinner sun8i Family")
++	.init_time	= sun6i_timer_init,
+ 	.dt_compat	= sun8i_board_dt_compat,
+ 	.init_late	= sunxi_dt_cpufreq_init,
+ MACHINE_END
+-- 
+cgit v0.10.2
+

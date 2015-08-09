@@ -1,0 +1,84 @@
+From eb7f9115409710732ebc4dfe1be629252280910e Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Mon, 28 Jul 2014 14:47:04 +0200
+Subject: [PATCH] of: mtd: Add NAND randomizer mode retrieval
+
+Add a of_get_nand_rnd_mode() helper function.
+
+Signed-off-by: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/of/of_mtd.c    | 35 +++++++++++++++++++++++++++++++++++
+ include/linux/of_mtd.h |  6 ++++++
+ 2 files changed, 41 insertions(+)
+
+diff --git a/drivers/of/of_mtd.c b/drivers/of/of_mtd.c
+index b7361ed..4e42c26 100644
+--- a/drivers/of/of_mtd.c
++++ b/drivers/of/of_mtd.c
+@@ -84,6 +84,41 @@ int of_get_nand_ecc_strength(struct device_node *np)
+ EXPORT_SYMBOL_GPL(of_get_nand_ecc_strength);
+ 
+ /**
++ * It maps 'enum nand_rnd_modes_t' found in include/linux/mtd/nand.h
++ * into the device tree binding of 'nand-rnd', so that MTD
++ * device driver can get nand rnd from device tree.
++ */
++static const char *nand_rnd_modes[] = {
++	[NAND_RND_NONE]		= "none",
++	[NAND_RND_SOFT]		= "soft",
++	[NAND_RND_HW]		= "hw",
++};
++
++/**
++ * of_get_nand_rnd_mode - Get nand randomizer mode for given device_node
++ * @np:	Pointer to the given device_node
++ *
++ * The function gets randomizer mode string from property 'nand-rnd-mode',
++ * and return its index in nand_rnd_modes table, or errno in error case.
++ */
++int of_get_nand_rnd_mode(struct device_node *np)
++{
++	const char *pm;
++	int err, i;
++
++	err = of_property_read_string(np, "nand-rnd-mode", &pm);
++	if (err < 0)
++		return err;
++
++	for (i = 0; i < ARRAY_SIZE(nand_rnd_modes); i++)
++		if (!strcasecmp(pm, nand_rnd_modes[i]))
++			return i;
++
++	return -ENODEV;
++}
++EXPORT_SYMBOL_GPL(of_get_nand_rnd_mode);
++
++/**
+  * of_get_nand_bus_width - Get nand bus witdh for given device_node
+  * @np:	Pointer to the given device_node
+  *
+diff --git a/include/linux/of_mtd.h b/include/linux/of_mtd.h
+index e266caa..1059472 100644
+--- a/include/linux/of_mtd.h
++++ b/include/linux/of_mtd.h
+@@ -15,6 +15,7 @@
+ int of_get_nand_ecc_mode(struct device_node *np);
+ int of_get_nand_ecc_step_size(struct device_node *np);
+ int of_get_nand_ecc_strength(struct device_node *np);
++int of_get_nand_rnd_mode(struct device_node *np);
+ int of_get_nand_bus_width(struct device_node *np);
+ bool of_get_nand_on_flash_bbt(struct device_node *np);
+ 
+@@ -35,6 +36,11 @@ static inline int of_get_nand_ecc_strength(struct device_node *np)
+ 	return -ENOSYS;
+ }
+ 
++static inline int of_get_nand_rnd_mode(struct device_node *np)
++{
++	return -ENOSYS;
++}
++
+ static inline int of_get_nand_bus_width(struct device_node *np)
+ {
+ 	return -ENOSYS;

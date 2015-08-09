@@ -1,0 +1,74 @@
+From e9051f5dbc26e78f91cf23ca79ae4c8471119667 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Fri, 18 Jul 2014 15:26:08 -0300
+Subject: [PATCH] ARM: sun7i: Add mod1 clock nodes
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit adds all the mod1 clocks available on A20 to its device
+tree. This list was created by looking at the A20 user manual.
+
+Not-signed-off-by: Emilio López <emilio@elopez.com.ar>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 39 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 400e696..a0d18b2 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -450,6 +450,29 @@
+ 			clock-output-names = "ir1";
+ 		};
+ 
++		iis0_clk: clk@01c200b8 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-a10-mod1-clk";
++			reg = <0x01c200b8 0x4>;
++			clocks = <&pll2 0>, <&pll2 1>, <&pll2 2>, <&pll2 3>;
++			clock-output-names = "iis0";
++		};
++
++		ac97_clk: clk@01c200bc {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-a10-mod1-clk";
++			reg = <0x01c200bc 0x4>;
++			clocks = <&pll2 3>, <&pll2 2>, <&pll2 1>, <&pll2 0>;
++			clock-output-names = "ac97";
++		};
++
++		spdif_clk: clk@01c200c0 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-a10-mod1-clk";
++			reg = <0x01c200c0 0x4>;
++			clocks = <&pll2 0>, <&pll2 1>, <&pll2 2>, <&pll2 3>;
++			clock-output-names = "spdif";
++		};
+ 		usb_clk: clk@01c200cc {
+ 			#clock-cells = <1>;
+ 			#reset-cells = <1>;
+@@ -468,6 +491,22 @@
+ 			clock-output-names = "spi3";
+ 		};
+ 
++		iis1_clk: clk@01c200d8 {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-a10-mod1-clk";
++			reg = <0x01c200d8 0x4>;
++			clocks = <&pll2 0>, <&pll2 1>, <&pll2 2>, <&pll2 3>;
++			clock-output-names = "iis1";
++		};
++
++		iis2_clk: clk@01c200dc {
++			#clock-cells = <0>;
++			compatible = "allwinner,sun4i-a10-mod1-clk";
++			reg = <0x01c200dc 0x4>;
++			clocks = <&pll2 0>, <&pll2 1>, <&pll2 2>, <&pll2 3>;
++			clock-output-names = "iis2";
++		};
++
+ 		codec_clk: clk@01c20140 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-a10-codec-clk";

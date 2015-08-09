@@ -1,0 +1,35 @@
+From a5bbf2ee4ca1479e4488399a45336e003e09647f Mon Sep 17 00:00:00 2001
+From: Michal Suchanek <hramrach@gmail.com>
+Date: Tue, 26 May 2015 17:03:41 +0200
+Subject: [PATCH] ARM: dts: sun4i: Add NFC node to Allwinner A10 SoC
+
+Add NAND Flash controller node definition to the A10 SoC.
+
+Signed-off-by: Michal Suchanek <hramrach@gmail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index e0a737f..7cd636d 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -514,6 +514,17 @@
+ 			#dma-cells = <2>;
+ 		};
+ 
++		nfc: nand@01c03000 {
++			compatible = "allwinner,sun4i-a10-nand";
++			reg = <0x01c03000 0x1000>;
++			interrupts = <37>;
++			clocks = <&ahb_gates 13>, <&nand_clk>;
++			clock-names = "ahb", "mod";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		spi0: spi@01c05000 {
+ 			compatible = "allwinner,sun4i-a10-spi";
+ 			reg = <0x01c05000 0x1000>;

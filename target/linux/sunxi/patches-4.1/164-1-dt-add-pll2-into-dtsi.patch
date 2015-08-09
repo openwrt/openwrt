@@ -1,0 +1,76 @@
+From 32bb743195e1e48c48fc5cefd7c6ecdce56046a3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Fri, 18 Jul 2014 15:58:44 -0300
+Subject: [PATCH] ARM: sunxi: Add PLL2 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit adds the PLL2 definition to the sun4i, sun5i and sun7i
+device trees. PLL2 is used to clock audio devices.
+
+Signed-off-by: Emilio López <emilio@elopez.com.ar>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 8 ++++++++
+ arch/arm/boot/dts/sun5i.dtsi     | 8 ++++++++
+ arch/arm/boot/dts/sun7i-a20.dtsi | 8 ++++++++
+ 3 files changed, 24 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index 30f663a..fab13af 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -195,6 +195,14 @@
+ 			clock-output-names = "pll1";
+ 		};
+ 
++		pll2: clk@01c20008 {
++			#clock-cells = <1>;
++			compatible = "allwinner,sun4i-a10-b-pll2-clk";
++			reg = <0x01c20008 0x4>;
++			clocks = <&osc24M>;
++			clock-output-names = "pll2", "pll2x2", "pll2x4", "pll2x8";
++		};
++
+ 		pll4: clk@01c20018 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-a10-pll1-clk";
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 53d3ead..a4b6a66 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -102,6 +102,14 @@
+ 			clock-output-names = "pll1";
+ 		};
+ 
++		pll2: clk@01c20008 {
++			#clock-cells = <1>;
++			compatible = "allwinner,sun4i-a10-b-pll2-clk";
++			reg = <0x01c20008 0x4>;
++			clocks = <&osc24M>;
++			clock-output-names = "pll2", "pll2x2", "pll2x4", "pll2x8";
++		};
++
+ 		pll4: clk@01c20018 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-a10-pll1-clk";
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 7549f1b..12d9ffd 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -199,6 +199,14 @@
+ 			clock-output-names = "pll1";
+ 		};
+ 
++		pll2: clk@01c20008 {
++			#clock-cells = <1>;
++			compatible = "allwinner,sun4i-a10-b-pll2-clk";
++			reg = <0x01c20008 0x4>;
++			clocks = <&osc24M>;
++			clock-output-names = "pll2", "pll2x2", "pll2x4", "pll2x8";
++		};
++
+ 		pll4: clk@01c20018 {
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun7i-a20-pll4-clk";

@@ -1,0 +1,32 @@
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index f561c68..8e636df 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -3624,8 +3624,13 @@ static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
+ 		chip->ecc_strength_ds = NAND_ECC_STRENGTH(type);
+ 		chip->ecc_step_ds = NAND_ECC_STEP(type);
+ 
+-		mode = type->onfi_timing_mode_default;
+-		chip->sdr_timings = onfi_async_timing_mode_to_sdr_timings(mode);
++		if (type->custom_sdr_timing) {
++			chip->sdr_timings = type->custom_sdr_timing;
++		} else {
++			mode = type->onfi_timing_mode_default;
++			chip->sdr_timings =
++				onfi_async_timing_mode_to_sdr_timings(mode);
++		}
+ 
+ 		*busw = type->options & NAND_BUSWIDTH_16;
+ 
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 2eb92a3..7d9e599 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -863,6 +863,7 @@ struct nand_flash_dev {
+ 		uint16_t step_ds;
+ 	} ecc;
+ 	int onfi_timing_mode_default;
++	const struct nand_sdr_timings *custom_sdr_timing;
+ };
+ 
+ /**

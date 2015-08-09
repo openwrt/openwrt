@@ -1,0 +1,878 @@
+From 97dcb50623db12f13c9c9a8b68dca61901b7f030 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <emilio@elopez.com.ar>
+Date: Mon, 14 Jul 2014 20:25:23 -0300
+Subject: [PATCH] ASoC: sunxi: add support for the on-chip codec on early
+ Allwinner SoCs
+
+The sun4i, sun5i and sun7i SoC families have a built-in codec, capable
+of both audio capture and playback. This memory-mapped device can be fed
+with audio data via the Allwinner DMA controller.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ sound/soc/Kconfig             |   1 +
+ sound/soc/Makefile            |   1 +
+ sound/soc/sunxi/Kconfig       |  10 +
+ sound/soc/sunxi/Makefile      |   2 +
+ sound/soc/sunxi/sunxi-codec.c | 802 ++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 816 insertions(+)
+ create mode 100644 sound/soc/sunxi/Kconfig
+ create mode 100644 sound/soc/sunxi/Makefile
+ create mode 100644 sound/soc/sunxi/sunxi-codec.c
+
+diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
+index 3ba52da..87dbf48 100644
+--- a/sound/soc/Kconfig
++++ b/sound/soc/Kconfig
+@@ -53,6 +53,7 @@ source "sound/soc/samsung/Kconfig"
+ source "sound/soc/sh/Kconfig"
+ source "sound/soc/sirf/Kconfig"
+ source "sound/soc/spear/Kconfig"
++source "sound/soc/sunxi/Kconfig"
+ source "sound/soc/tegra/Kconfig"
+ source "sound/soc/txx9/Kconfig"
+ source "sound/soc/ux500/Kconfig"
+diff --git a/sound/soc/Makefile b/sound/soc/Makefile
+index 974ba70..39011b8 100644
+--- a/sound/soc/Makefile
++++ b/sound/soc/Makefile
+@@ -34,6 +34,7 @@ obj-$(CONFIG_SND_SOC)	+= samsung/
+ obj-$(CONFIG_SND_SOC)	+= sh/
+ obj-$(CONFIG_SND_SOC)	+= sirf/
+ obj-$(CONFIG_SND_SOC)	+= spear/
++obj-$(CONFIG_SND_SOC)	+= sunxi/
+ obj-$(CONFIG_SND_SOC)	+= tegra/
+ obj-$(CONFIG_SND_SOC)	+= txx9/
+ obj-$(CONFIG_SND_SOC)	+= ux500/
+diff --git a/sound/soc/sunxi/Kconfig b/sound/soc/sunxi/Kconfig
+new file mode 100644
+index 0000000..79511ae
+--- /dev/null
++++ b/sound/soc/sunxi/Kconfig
+@@ -0,0 +1,10 @@
++menu "SoC Audio support for Allwinner SoCs"
++        depends on ARCH_SUNXI
++
++config SND_SUNXI_SOC_CODEC
++	tristate "APB on-chip sun4i/sun5i/sun7i CODEC"
++	select SND_SOC_GENERIC_DMAENGINE_PCM
++	select REGMAP_MMIO
++	default y
++
++endmenu
+diff --git a/sound/soc/sunxi/Makefile b/sound/soc/sunxi/Makefile
+new file mode 100644
+index 0000000..b8950d3
+--- /dev/null
++++ b/sound/soc/sunxi/Makefile
+@@ -0,0 +1,2 @@
++obj-$(CONFIG_SND_SUNXI_SOC_CODEC) += sunxi-codec.o
++
+diff --git a/sound/soc/sunxi/sunxi-codec.c b/sound/soc/sunxi/sunxi-codec.c
+new file mode 100644
+index 0000000..67f978e
+--- /dev/null
++++ b/sound/soc/sunxi/sunxi-codec.c
+@@ -0,0 +1,802 @@
++/*
++ * Copyright 2014 Emilio López <emilio@elopez.com.ar>
++ * Copyright 2014 Jon Smirl <jonsmirl@gmail.com>
++ *
++ * Based on the Allwinner SDK driver, released under the GPL.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/init.h>
++#include <linux/kernel.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/of_address.h>
++#include <linux/clk.h>
++#include <linux/regmap.h>
++
++#include <sound/core.h>
++#include <sound/pcm.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++#include <sound/tlv.h>
++#include <sound/initval.h>
++#include <sound/dmaengine_pcm.h>
++
++/* Codec DAC register offsets and bit fields */
++#define SUNXI_DAC_DPC			(0x00)
++#define SUNXI_DAC_DPC_EN_DA			(31)
++#define SUNXI_DAC_DPC_DVOL			(12)
++#define SUNXI_DAC_FIFOC			(0x04)
++#define SUNXI_DAC_FIFOC_DAC_FS			(29)
++#define SUNXI_DAC_FIFOC_FIR_VERSION		(28)
++#define SUNXI_DAC_FIFOC_SEND_LASAT		(26)
++#define SUNXI_DAC_FIFOC_TX_FIFO_MODE		(24)
++#define SUNXI_DAC_FIFOC_DRQ_CLR_CNT		(21)
++#define SUNXI_DAC_FIFOC_TX_TRIG_LEVEL		(8)
++#define SUNXI_DAC_FIFOC_MONO_EN			(6)
++#define SUNXI_DAC_FIFOC_TX_SAMPLE_BITS		(5)
++#define SUNXI_DAC_FIFOC_DAC_DRQ_EN		(4)
++#define SUNXI_DAC_FIFOC_FIFO_FLUSH		(0)
++#define SUNXI_DAC_FIFOS			(0x08)
++#define SUNXI_DAC_TXDATA		(0x0c)
++#define SUNXI_DAC_ACTL			(0x10)
++#define SUNXI_DAC_ACTL_DACAENR			(31)
++#define SUNXI_DAC_ACTL_DACAENL			(30)
++#define SUNXI_DAC_ACTL_MIXEN			(29)
++#define SUNXI_DAC_ACTL_LDACLMIXS		(15)
++#define SUNXI_DAC_ACTL_RDACRMIXS		(14)
++#define SUNXI_DAC_ACTL_LDACRMIXS		(13)
++#define SUNXI_DAC_ACTL_DACPAS			(8)
++#define SUNXI_DAC_ACTL_MIXPAS			(7)
++#define SUNXI_DAC_ACTL_PA_MUTE			(6)
++#define SUNXI_DAC_ACTL_PA_VOL			(0)
++#define SUNXI_DAC_TUNE			(0x14)
++#define SUNXI_DAC_DEBUG			(0x18)
++
++/* Codec ADC register offsets and bit fields */
++#define SUNXI_ADC_FIFOC			(0x1c)
++#define SUNXI_ADC_FIFOC_EN_AD			(28)
++#define SUNXI_ADC_FIFOC_RX_FIFO_MODE		(24)
++#define SUNXI_ADC_FIFOC_RX_TRIG_LEVEL		(8)
++#define SUNXI_ADC_FIFOC_MONO_EN			(7)
++#define SUNXI_ADC_FIFOC_RX_SAMPLE_BITS		(6)
++#define SUNXI_ADC_FIFOC_ADC_DRQ_EN		(4)
++#define SUNXI_ADC_FIFOC_FIFO_FLUSH		(0)
++#define SUNXI_ADC_FIFOS			(0x20)
++#define SUNXI_ADC_RXDATA		(0x24)
++#define SUNXI_ADC_ACTL			(0x28)
++#define SUNXI_ADC_ACTL_ADCREN			(31)
++#define SUNXI_ADC_ACTL_ADCLEN			(30)
++#define SUNXI_ADC_ACTL_PREG1EN			(29)
++#define SUNXI_ADC_ACTL_PREG2EN			(28)
++#define SUNXI_ADC_ACTL_VMICEN			(27)
++#define SUNXI_ADC_ACTL_VADCG			(20)
++#define SUNXI_ADC_ACTL_ADCIS			(17)
++#define SUNXI_ADC_ACTL_PA_EN			(4)
++#define SUNXI_ADC_ACTL_DDE			(3)
++#define SUNXI_ADC_DEBUG			(0x2c)
++
++/* Other various ADC registers */
++#define SUNXI_DAC_TXCNT			(0x30)
++#define SUNXI_ADC_RXCNT			(0x34)
++#define SUNXI_AC_SYS_VERI		(0x38)
++#define SUNXI_AC_MIC_PHONE_CAL		(0x3c)
++
++/* Supported SoC families - used for quirks */
++enum sunxi_soc_family {
++	SUN4IA,	/* A10 SoC - revision A */
++	SUN4I,	/* A10 SoC - later revisions */
++	SUN5I,	/* A10S/A13 SoCs */
++	SUN7I,	/* A20 SoC */
++};
++
++struct sunxi_priv {
++	struct regmap *regmap;
++	struct clk *clk_apb, *clk_module;
++
++	enum sunxi_soc_family revision;
++
++	struct snd_dmaengine_dai_dma_data playback_dma_data;
++	struct snd_dmaengine_dai_dma_data capture_dma_data;
++};
++
++static void sunxi_codec_play_start(struct sunxi_priv *priv)
++{
++	/* TODO: see if we need to drive PA GPIO high */
++
++	/* flush TX FIFO */
++	regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_FIFO_FLUSH, 0x1 << SUNXI_DAC_FIFOC_FIFO_FLUSH);
++
++	/* enable DAC DRQ */
++	regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_DAC_DRQ_EN, 0x1 << SUNXI_DAC_FIFOC_DAC_DRQ_EN);
++}
++
++static void sunxi_codec_play_stop(struct sunxi_priv *priv)
++{
++	/* TODO: see if we need to drive PA GPIO low */
++
++	/* disable DAC DRQ */
++	regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_DAC_DRQ_EN, 0x0 << SUNXI_DAC_FIFOC_DAC_DRQ_EN);
++}
++
++static void sunxi_codec_capture_start(struct sunxi_priv *priv)
++{
++	/* TODO: see if we need to drive PA GPIO high */
++
++	/* enable ADC DRQ */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_ADC_DRQ_EN, 0x1 << SUNXI_ADC_FIFOC_ADC_DRQ_EN);
++}
++
++static void sunxi_codec_capture_stop(struct sunxi_priv *priv)
++{
++	/* disable ADC DRQ */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_ADC_DRQ_EN, 0x0 << SUNXI_ADC_FIFOC_ADC_DRQ_EN);
++
++	/* enable mic1 PA */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x1 << SUNXI_ADC_ACTL_PREG1EN, 0x0 << SUNXI_ADC_ACTL_PREG1EN);
++
++	/* enable VMIC */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x1 << SUNXI_ADC_ACTL_VMICEN, 0x0 << SUNXI_ADC_ACTL_VMICEN);
++	if (priv->revision == SUN7I) {
++		/* TODO: undocumented */
++		regmap_update_bits(priv->regmap, SUNXI_DAC_TUNE, 0x3 << 8, 0x0 << 8);
++	}
++
++	/* enable ADC digital */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_EN_AD, 0x0 << SUNXI_ADC_FIFOC_EN_AD);
++
++	/* set RX FIFO mode */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_RX_FIFO_MODE, 0x0 << SUNXI_ADC_FIFOC_RX_FIFO_MODE);
++
++	/* flush RX FIFO */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_FIFO_FLUSH, 0x0 << SUNXI_ADC_FIFOC_FIFO_FLUSH);
++
++	/* enable adc1 analog */
++	regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x3 << SUNXI_ADC_ACTL_ADCLEN, 0x0 << SUNXI_ADC_ACTL_ADCLEN);
++}
++
++static int sunxi_codec_trigger(struct snd_pcm_substream *substream, int cmd,
++			       struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sunxi_priv *priv = snd_soc_card_get_drvdata(rtd->card);
++
++	switch (cmd) {
++	case SNDRV_PCM_TRIGGER_START:
++	case SNDRV_PCM_TRIGGER_RESUME:
++	case SNDRV_PCM_TRIGGER_PAUSE_RELEASE:
++		if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
++			sunxi_codec_capture_start(priv);
++		else
++			sunxi_codec_play_start(priv);
++		break;
++	case SNDRV_PCM_TRIGGER_STOP:
++	case SNDRV_PCM_TRIGGER_SUSPEND:
++	case SNDRV_PCM_TRIGGER_PAUSE_PUSH:
++		if (substream->stream == SNDRV_PCM_STREAM_CAPTURE)
++			sunxi_codec_capture_stop(priv);
++		else
++			sunxi_codec_play_stop(priv);
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static int sunxi_codec_prepare(struct snd_pcm_substream *substream,
++			       struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sunxi_priv *priv = snd_soc_card_get_drvdata(rtd->card);
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_FIFO_FLUSH, 0x1 << SUNXI_DAC_FIFOC_FIFO_FLUSH);
++
++		/* set TX FIFO send DRQ level */
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x3f << SUNXI_DAC_FIFOC_TX_TRIG_LEVEL, 0xf << SUNXI_DAC_FIFOC_TX_TRIG_LEVEL);
++		if (substream->runtime->rate > 32000) {
++			regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_FIR_VERSION, 0x0 << SUNXI_DAC_FIFOC_FIR_VERSION);
++		} else {
++			regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_FIR_VERSION, 0x1 << SUNXI_DAC_FIFOC_FIR_VERSION);
++		}
++
++		/* set TX FIFO MODE - 0 works for both 16 and 24 bits */
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_TX_FIFO_MODE, 0x0 << SUNXI_DAC_FIFOC_TX_FIFO_MODE);
++
++		/* send last sample when DAC FIFO under run */
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_SEND_LASAT, 0x0 << SUNXI_DAC_FIFOC_SEND_LASAT);
++	} else {
++		/* enable mic1 PA */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x1 << SUNXI_ADC_ACTL_PREG1EN, 0x1 << SUNXI_ADC_ACTL_PREG1EN);
++
++		/* mic1 gain 32dB */  /* FIXME - makes no sense */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x3 << 25, 0x1 << 25);
++
++		/* enable VMIC */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x1 << SUNXI_ADC_ACTL_VMICEN, 0x1 << SUNXI_ADC_ACTL_VMICEN);
++
++		if (priv->revision == SUN7I) {
++			/* boost up record effect */
++			regmap_update_bits(priv->regmap, SUNXI_DAC_TUNE, 0x3 << 8, 0x1 << 8);
++		}
++
++		/* enable ADC digital */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_EN_AD, 0x1 << SUNXI_ADC_FIFOC_EN_AD);
++
++		/* set RX FIFO mode */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_RX_FIFO_MODE, 0x1 << SUNXI_ADC_FIFOC_RX_FIFO_MODE);
++
++		/* flush RX FIFO */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0x1 << SUNXI_ADC_FIFOC_FIFO_FLUSH, 0x1 << SUNXI_ADC_FIFOC_FIFO_FLUSH);
++
++		/* set RX FIFO rec drq level */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 0xf << SUNXI_ADC_FIFOC_RX_TRIG_LEVEL, 0x7 << SUNXI_ADC_FIFOC_RX_TRIG_LEVEL);
++
++		/* enable adc1 analog */
++		regmap_update_bits(priv->regmap, SUNXI_ADC_ACTL, 0x3 << SUNXI_ADC_ACTL_ADCLEN, 0x3 << SUNXI_ADC_ACTL_ADCLEN);
++	}
++
++	return 0;
++}
++
++static int sunxi_codec_hw_params(struct snd_pcm_substream *substream,
++				 struct snd_pcm_hw_params *params,
++				 struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sunxi_priv *priv = snd_soc_card_get_drvdata(rtd->card);
++	int is_mono = !!(params_channels(params) == 1);
++	int is_24bit = !!(hw_param_interval(params, SNDRV_PCM_HW_PARAM_SAMPLE_BITS)->min == 32);
++	unsigned int rate = params_rate(params);
++	unsigned int hwrate;
++
++	switch (rate) {
++	case 176400:
++	case 88200:
++	case 44100:
++	case 33075:
++	case 22050:
++	case 14700:
++	case 11025:
++	case 7350:
++	default:
++		clk_set_rate(priv->clk_module, 22579200);
++		break;
++	case 192000:
++	case 96000:
++	case 48000:
++	case 32000:
++	case 24000:
++	case 16000:
++	case 12000:
++	case 8000:
++		clk_set_rate(priv->clk_module, 24576000);
++		break;
++	}
++
++	switch (rate) {
++	case 192000:
++	case 176400:
++		hwrate = 6;
++		break;
++	case 96000:
++	case 88200:
++		hwrate = 7;
++		break;
++	default:
++	case 48000:
++	case 44100:
++		hwrate = 0;
++		break;
++	case 32000:
++	case 33075:
++		hwrate = 1;
++		break;
++	case 24000:
++	case 22050:
++		hwrate = 2;
++		break;
++	case 16000:
++	case 14700:
++		hwrate = 3;
++		break;
++	case 12000:
++	case 11025:
++		hwrate = 4;
++		break;
++	case 8000:
++	case 7350:
++		hwrate = 5;
++		break;
++	}
++
++	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 7 << SUNXI_DAC_FIFOC_DAC_FS, hwrate << SUNXI_DAC_FIFOC_DAC_FS);
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 1 << SUNXI_DAC_FIFOC_MONO_EN, is_mono << SUNXI_DAC_FIFOC_MONO_EN);
++		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 1 << SUNXI_DAC_FIFOC_TX_SAMPLE_BITS, is_24bit << SUNXI_DAC_FIFOC_TX_SAMPLE_BITS);
++		if (is_24bit)
++			priv->playback_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_4_BYTES;
++		else
++			priv->playback_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++	} else  {
++		regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 7 << SUNXI_DAC_FIFOC_DAC_FS, hwrate << SUNXI_DAC_FIFOC_DAC_FS);
++		regmap_update_bits(priv->regmap, SUNXI_ADC_FIFOC, 1 << SUNXI_ADC_FIFOC_MONO_EN, is_mono << SUNXI_ADC_FIFOC_MONO_EN);
++	}
++
++	return 0;
++}
++
++static const struct snd_kcontrol_new sun7i_dac_ctls[] = {
++	/*SUNXI_DAC_ACTL = 0x10,PAVOL*/
++	SOC_SINGLE("Master Playback Volume", SUNXI_DAC_ACTL, 0, 0x3f, 0),
++	SOC_SINGLE("Playback Switch", SUNXI_DAC_ACTL, 6, 1, 0), /* Global output switch */
++	SOC_SINGLE("FmL Switch", SUNXI_DAC_ACTL, 17, 1, 0), /* FM left switch */
++	SOC_SINGLE("FmR Switch", SUNXI_DAC_ACTL, 16, 1, 0), /* FM right switch */
++	SOC_SINGLE("LineL Switch", SUNXI_DAC_ACTL, 19, 1, 0), /* Line left switch */
++	SOC_SINGLE("LineR Switch", SUNXI_DAC_ACTL, 18, 1, 0), /* Line right switch */
++	SOC_SINGLE("Ldac Left Mixer", SUNXI_DAC_ACTL, 15, 1, 0),
++	SOC_SINGLE("Rdac Right Mixer", SUNXI_DAC_ACTL, 14, 1, 0),
++	SOC_SINGLE("Ldac Right Mixer", SUNXI_DAC_ACTL, 13, 1, 0),
++	SOC_SINGLE("Mic Input Mux", SUNXI_DAC_ACTL, 9, 15, 0), /* from bit 9 to bit 12. Microphone input mute */
++	SOC_SINGLE("MIC output volume", SUNXI_DAC_ACTL, 20, 7, 0),
++	/*	FM Input to output mixer Gain Control
++	* 	From -4.5db to 6db,1.5db/step,default is 0db
++	*	-4.5db:0x0,-3.0db:0x1,-1.5db:0x2,0db:0x3
++	*	1.5db:0x4,3.0db:0x5,4.5db:0x6,6db:0x7
++	*/
++	SOC_SINGLE("Fm output Volume", SUNXI_DAC_ACTL, 23, 7, 0),
++	/*	Line-in gain stage to output mixer Gain Control
++	*	0:-1.5db,1:0db
++	*/
++	SOC_SINGLE("Line output Volume", SUNXI_DAC_ACTL, 26, 1, 0),
++
++	SOC_SINGLE("Master Capture Mute", SUNXI_ADC_ACTL, 4, 1, 0),
++	SOC_SINGLE("Right Capture Mute", SUNXI_ADC_ACTL, 31, 1, 0),
++	SOC_SINGLE("Left Capture Mute", SUNXI_ADC_ACTL, 30, 1, 0),
++	SOC_SINGLE("Linein Pre-AMP", SUNXI_ADC_ACTL, 13, 7, 0),
++	SOC_SINGLE("LINEIN APM Volume", SUNXI_AC_MIC_PHONE_CAL, 13, 0x7, 0),
++	/* ADC Input Gain Control, capture volume
++	* 000:-4.5db,001:-3db,010:-1.5db,011:0db,100:1.5db,101:3db,110:4.5db,111:6db
++	*/
++	SOC_SINGLE("Capture Volume", SUNXI_ADC_ACTL, 20, 7, 0),
++	/*
++	*	MIC2 pre-amplifier Gain Control
++	*	00:0db,01:35db,10:38db,11:41db
++	*/
++	SOC_SINGLE("MicL Volume", SUNXI_ADC_ACTL, 25, 3, 0), /* Microphone left volume */
++	SOC_SINGLE("MicR Volume", SUNXI_ADC_ACTL, 23, 3, 0), /* Microphone right volume */
++	SOC_SINGLE("Mic2 Boost", SUNXI_ADC_ACTL, 29, 1, 0),
++	SOC_SINGLE("Mic1 Boost", SUNXI_ADC_ACTL, 28, 1, 0),
++	SOC_SINGLE("Mic Power", SUNXI_ADC_ACTL, 27, 1, 0),
++	SOC_SINGLE("ADC Input Mux", SUNXI_ADC_ACTL, 17, 7, 0), /* ADC input mute */
++	SOC_SINGLE("Mic2 gain Volume", SUNXI_AC_MIC_PHONE_CAL, 26, 7, 0),
++	/*
++	*	MIC1 pre-amplifier Gain Control
++	*	00:0db,01:35db,10:38db,11:41db
++	*/
++	SOC_SINGLE("Mic1 gain Volume", SUNXI_AC_MIC_PHONE_CAL, 29, 3, 0),
++};
++
++static int sunxi_codec_dai_probe(struct snd_soc_dai *dai)
++{
++	struct snd_soc_card *card = snd_soc_dai_get_drvdata(dai);
++	struct sunxi_priv *priv = snd_soc_card_get_drvdata(card);
++
++	snd_soc_dai_init_dma_data(dai, &priv->playback_dma_data, &priv->capture_dma_data);
++
++	return 0;
++}
++
++static void sunxi_codec_init(struct sunxi_priv *priv)
++{
++	regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 1 << SUNXI_DAC_FIFOC_FIR_VERSION, 1 << SUNXI_DAC_FIFOC_FIR_VERSION);
++
++	/* set digital volume to maximum */
++	if (priv->revision == SUN4IA)
++		regmap_update_bits(priv->regmap, SUNXI_DAC_DPC, 0x3F << SUNXI_DAC_DPC_DVOL, 0 << SUNXI_DAC_DPC_DVOL);
++
++	regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 3 << SUNXI_DAC_FIFOC_DRQ_CLR_CNT, 3 << SUNXI_DAC_FIFOC_DRQ_CLR_CNT);
++
++	/* set volume */ /* TODO: is A10A inverted? */
++	if (priv->revision == SUN4IA)
++		regmap_update_bits(priv->regmap, SUNXI_DAC_ACTL, 0x3f << SUNXI_DAC_ACTL_PA_VOL, 1 << SUNXI_DAC_ACTL_PA_VOL);
++	else
++		regmap_update_bits(priv->regmap, SUNXI_DAC_ACTL, 0x3f << SUNXI_DAC_ACTL_PA_VOL, 0x3b << SUNXI_DAC_ACTL_PA_VOL);
++}
++
++static int sunxi_codec_startup(struct snd_pcm_substream *substream,
++			       struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sunxi_priv *priv = snd_soc_card_get_drvdata(rtd->card);
++
++	sunxi_codec_init(priv);
++
++	return clk_prepare_enable(priv->clk_module);
++}
++
++static void sunxi_codec_shutdown(struct snd_pcm_substream *substream,
++				 struct snd_soc_dai *dai)
++{
++	struct snd_soc_pcm_runtime *rtd = substream->private_data;
++	struct sunxi_priv *priv = snd_soc_card_get_drvdata(rtd->card);
++
++	clk_disable_unprepare(priv->clk_module);
++}
++
++/*** Codec DAI ***/
++
++static const struct snd_soc_dai_ops sunxi_codec_dai_ops = {
++	.startup = sunxi_codec_startup,
++	.shutdown = sunxi_codec_shutdown,
++	.trigger = sunxi_codec_trigger,
++	.hw_params = sunxi_codec_hw_params,
++	.prepare = sunxi_codec_prepare,
++};
++
++static struct snd_soc_dai_driver sunxi_codec_dai = {
++	.name = "Codec",
++	.playback = {
++		.stream_name = "Codec Playback",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rate_min = 8000,
++		.rate_max = 192000,
++		.rates = (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 | SNDRV_PCM_RATE_11025 |\
++			 SNDRV_PCM_RATE_22050| SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100 |\
++			 SNDRV_PCM_RATE_48000 |SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 |\
++			 SNDRV_PCM_RATE_KNOT),
++		.formats = (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S32_LE),
++		.sig_bits = 24,
++	},
++	.capture = {
++		.stream_name = "Codec Capture",
++		.channels_min = 1,
++		.channels_max = 2,
++		.rate_min = 8000,
++		.rate_max = 192000,
++		.rates = (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 | SNDRV_PCM_RATE_11025 |\
++			 SNDRV_PCM_RATE_22050| SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_44100 |\
++			 SNDRV_PCM_RATE_48000 |SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 |\
++			 SNDRV_PCM_RATE_KNOT),
++		.formats = (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S32_LE),
++		.sig_bits = 24,
++	},
++	.ops = &sunxi_codec_dai_ops,
++};
++
++/*** Codec ***/
++
++static const struct snd_kcontrol_new sunxi_pa =
++	SOC_DAPM_SINGLE("PA Switch", SUNXI_ADC_ACTL, SUNXI_ADC_ACTL_PA_EN, 1, 0);
++
++static const struct snd_kcontrol_new sunxi_pa_mute =
++	SOC_DAPM_SINGLE("PA Mute Switch", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_PA_MUTE, 1, 0);
++
++static DECLARE_TLV_DB_SCALE(sunxi_pa_volume_scale, -6300, 100, 1);
++
++static const struct snd_kcontrol_new sunxi_codec_widgets[] = {
++	SOC_SINGLE_TLV("PA Volume", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_PA_VOL,
++		       0x3F, 0, sunxi_pa_volume_scale),
++};
++
++static const char *right_output_mixer_text[] = { "Disabled", "Left", "Right" };
++static const unsigned int right_output_mixer_values[] = { 0x0, 0x1, 0x2 };
++static SOC_VALUE_ENUM_SINGLE_DECL(right_output_mixer, SUNXI_DAC_ACTL,
++				  SUNXI_DAC_ACTL_LDACRMIXS, 0x3,
++				  right_output_mixer_text,
++				  right_output_mixer_values);
++
++static const char *left_output_mixer_text[] = { "Disabled", "Left" };
++static const unsigned int left_output_mixer_values[] = { 0x0, 0x1 };
++static SOC_VALUE_ENUM_SINGLE_DECL(left_output_mixer, SUNXI_DAC_ACTL,
++				  SUNXI_DAC_ACTL_LDACLMIXS, 0x1,
++				  left_output_mixer_text,
++				  left_output_mixer_values);
++
++static const struct snd_kcontrol_new right_mixer =
++	SOC_DAPM_ENUM("Right Mixer", right_output_mixer);
++
++static const struct snd_kcontrol_new left_mixer =
++	SOC_DAPM_ENUM("Left Mixer", left_output_mixer);
++
++static const struct snd_kcontrol_new sunxi_mixer =
++	SOC_DAPM_SINGLE("Mixer Switch", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_MIXEN, 1, 0);
++
++static const char *sunxi_dac_output_text[] = { "Muted", "Mixed", "Direct" };
++static const unsigned int sunxi_dac_output_values[] = { 0x0, 0x1, 0x2 };
++static SOC_VALUE_ENUM_SINGLE_DECL(dac_output_mux, SUNXI_DAC_ACTL,
++				  SUNXI_DAC_ACTL_MIXPAS, 0x3,
++				  sunxi_dac_output_text,
++				  sunxi_dac_output_values);
++
++static const struct snd_kcontrol_new sunxi_dac_output =
++	SOC_DAPM_ENUM("DAC Output", dac_output_mux);
++
++static const struct snd_soc_dapm_widget codec_dapm_widgets[] = {
++	/* Digital parts of the DACs */
++	SND_SOC_DAPM_SUPPLY("DAC", SUNXI_DAC_DPC, SUNXI_DAC_DPC_EN_DA, 0, NULL, 0),
++
++	/* Analog parts of the DACs */
++	SND_SOC_DAPM_DAC("Left DAC", NULL, SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_DACAENL, 0),
++	SND_SOC_DAPM_DAC("Right DAC", NULL, SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_DACAENR, 0),
++
++	SND_SOC_DAPM_SWITCH("PA", SUNXI_ADC_ACTL, SUNXI_ADC_ACTL_PA_EN, 0, &sunxi_pa),
++	SND_SOC_DAPM_SWITCH("PA Mute", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_PA_MUTE, 0, &sunxi_pa_mute),
++
++	SND_SOC_DAPM_MUX("Right Mixer", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_LDACRMIXS, 0, &right_mixer),
++	SND_SOC_DAPM_MUX("Left Mixer", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_LDACLMIXS, 0, &left_mixer),
++	SND_SOC_DAPM_SWITCH("Mixer", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_MIXEN, 0, &sunxi_mixer),
++
++	SND_SOC_DAPM_MUX("DAC Output", SUNXI_DAC_ACTL, SUNXI_DAC_ACTL_MIXPAS, 0, &sunxi_dac_output),
++
++	SND_SOC_DAPM_OUTPUT("Mic Bias"),
++	SND_SOC_DAPM_OUTPUT("HP Right"),
++	SND_SOC_DAPM_OUTPUT("HP Left"),
++	SND_SOC_DAPM_INPUT("MIC_IN"),
++	SND_SOC_DAPM_INPUT("LINE_IN"),
++};
++
++static const struct snd_soc_dapm_route codec_dapm_routes[] = {
++	/* DAC block */
++	{ "Left DAC", NULL, "Codec Playback" },
++	{ "Right DAC", NULL, "Codec Playback" },
++	{ "Left DAC", NULL, "DAC" },
++	{ "Right DAC", NULL, "DAC" },
++
++	/* DAC -> PA path */
++	{ "DAC Output", "Direct", "Left DAC" },
++	{ "DAC Output", "Direct", "Right DAC" },
++	{ "PA", NULL, "DAC Output"},
++
++	/* DAC -> MIX -> PA path */
++	{ "Left Mixer", "Left", "Left DAC" },
++	{ "Right Mixer", "Right", "Right DAC" },
++	{ "Mixer", NULL, "Left Mixer" },
++	{ "Mixer", NULL, "Right Mixer" },
++	{ "DAC Output", "Mixed", "Mixer" },
++	{ "PA", NULL, "DAC Output" },
++
++	/* PA -> HP path */
++	{ "PA Mute", NULL, "PA" },
++	{ "HP Right", NULL, "PA Mute" },
++	{ "HP Left", NULL, "PA Mute" },
++};
++
++static struct snd_soc_codec_driver sunxi_codec = {
++	.controls = sunxi_codec_widgets,
++	.num_controls = ARRAY_SIZE(sunxi_codec_widgets),
++	.dapm_widgets = codec_dapm_widgets,
++	.num_dapm_widgets = ARRAY_SIZE(codec_dapm_widgets),
++	.dapm_routes = codec_dapm_routes,
++	.num_dapm_routes = ARRAY_SIZE(codec_dapm_routes),
++};
++
++/*** Board routing ***/
++/* TODO: do this with DT */
++
++static const struct snd_soc_dapm_widget sunxi_board_dapm_widgets[] = {
++	SND_SOC_DAPM_HP("Headphone Jack", NULL),
++};
++
++static const struct snd_soc_dapm_route sunxi_board_routing[] = {
++	{ "Headphone Jack",	NULL,	"HP Right" },
++	{ "Headphone Jack",	NULL,	"HP Left" },
++};
++
++/*** Card and DAI Link ***/
++
++static struct snd_soc_dai_link cdc_dai = {
++	.name = "cdc",
++
++	.stream_name = "CDC PCM",
++	.codec_dai_name = "Codec",
++	.cpu_dai_name = "1c22c00.codec",
++	.codec_name = "1c22c00.codec",
++	.platform_name = "1c22c00.codec",
++	.dai_fmt = SND_SOC_DAIFMT_I2S,
++};
++
++static struct snd_soc_card snd_soc_sunxi_codec = {
++	.name = "sunxi-codec",
++	.owner = THIS_MODULE,
++	.dai_link = &cdc_dai,
++	.num_links = 1,
++	.dapm_widgets = sunxi_board_dapm_widgets,
++	.num_dapm_widgets = ARRAY_SIZE(sunxi_board_dapm_widgets),
++	.dapm_routes = sunxi_board_routing,
++	.num_dapm_routes = ARRAY_SIZE(sunxi_board_routing),
++};
++
++/*** CPU DAI ***/
++
++static const struct snd_soc_component_driver sunxi_codec_component = {
++	.name = "sunxi-codec",
++};
++
++#define SUNXI_RATES	SNDRV_PCM_RATE_8000_192000
++#define SUNXI_FORMATS	(SNDRV_PCM_FMTBIT_S16_LE | \
++			SNDRV_PCM_FMTBIT_S32_LE)
++
++static struct snd_soc_dai_driver dummy_cpu_dai = {
++	.name = "sunxi-cpu-dai",
++	.probe = sunxi_codec_dai_probe,
++	.playback = {
++		.stream_name	= "Playback",
++		.channels_min	= 1,
++		.channels_max	= 2,
++		.rates		= SUNXI_RATES,
++		.formats	= SUNXI_FORMATS,
++		.sig_bits	= 24,
++	},
++	.capture = {
++		.stream_name	= "Capture",
++		.channels_min	= 1,
++		.channels_max	= 2,
++		.rates 		= SUNXI_RATES,
++		.formats 	= SUNXI_FORMATS,
++		.sig_bits	= 24,
++	 },
++};
++
++static const struct regmap_config sunxi_codec_regmap_config = {
++	.reg_bits = 32,
++	.reg_stride = 4,
++	.val_bits = 32,
++	.max_register = SUNXI_AC_MIC_PHONE_CAL,
++};
++
++static const struct of_device_id sunxi_codec_of_match[] = {
++	{ .compatible = "allwinner,sun4i-a10a-codec", .data = (void *)SUN4IA},
++	{ .compatible = "allwinner,sun4i-a10-codec", .data = (void *)SUN4I},
++	{ .compatible = "allwinner,sun5i-a13-codec", .data = (void *)SUN5I},
++	{ .compatible = "allwinner,sun7i-a20-codec", .data = (void *)SUN7I},
++	{}
++};
++MODULE_DEVICE_TABLE(of, sunxi_codec_of_match);
++
++static int sunxi_codec_probe(struct platform_device *pdev)
++{
++	struct device_node *np = pdev->dev.of_node;
++	struct snd_soc_card *card = &snd_soc_sunxi_codec;
++	const struct of_device_id *of_id;
++	struct device *dev = &pdev->dev;
++	struct sunxi_priv *priv;
++	struct resource *res;
++	void __iomem *base;
++	int ret;
++
++	if (!of_device_is_available(np))
++		return -ENODEV;
++
++	of_id = of_match_device(sunxi_codec_of_match, dev);
++	if (!of_id)
++		return -EINVAL;
++
++	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	card->dev = &pdev->dev;
++	platform_set_drvdata(pdev, card);
++	snd_soc_card_set_drvdata(card, priv);
++
++	priv->revision = (enum sunxi_soc_family)of_id->data;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(base))
++		return PTR_ERR(base);
++
++	priv->regmap = devm_regmap_init_mmio(&pdev->dev, base,
++					     &sunxi_codec_regmap_config);
++	if (IS_ERR(priv->regmap))
++		return PTR_ERR(priv->regmap);
++
++	/* Get the clocks from the DT */
++	priv->clk_apb = devm_clk_get(dev, "apb");
++	if (IS_ERR(priv->clk_apb)) {
++		dev_err(dev, "failed to get apb clock\n");
++		return PTR_ERR(priv->clk_apb);
++	}
++	priv->clk_module = devm_clk_get(dev, "codec");
++	if (IS_ERR(priv->clk_module)) {
++		dev_err(dev, "failed to get codec clock\n");
++		return PTR_ERR(priv->clk_module);
++	}
++
++	/* Enable the clock on a basic rate */
++	ret = clk_set_rate(priv->clk_module, 24576000);
++	if (ret) {
++		dev_err(dev, "failed to set codec base clock rate\n");
++		return ret;
++	}
++
++	/* Enable the bus clock */
++	if (clk_prepare_enable(priv->clk_apb)) {
++		dev_err(dev, "failed to enable apb clock\n");
++		clk_disable_unprepare(priv->clk_module);
++		return -EINVAL;
++	}
++
++	/* DMA configuration for TX FIFO */
++	priv->playback_dma_data.addr = res->start + SUNXI_DAC_TXDATA;
++	priv->playback_dma_data.maxburst = 4;
++	priv->playback_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++
++	/* DMA configuration for RX FIFO */
++	priv->capture_dma_data.addr = res->start + SUNXI_ADC_RXDATA;
++	priv->capture_dma_data.maxburst = 4;
++	priv->capture_dma_data.addr_width = DMA_SLAVE_BUSWIDTH_2_BYTES;
++
++	ret = snd_soc_register_codec(&pdev->dev, &sunxi_codec, &sunxi_codec_dai, 1);
++
++	ret = devm_snd_soc_register_component(&pdev->dev, &sunxi_codec_component, &dummy_cpu_dai, 1);
++	if (ret)
++		goto err_clk_disable;
++
++	ret = devm_snd_dmaengine_pcm_register(&pdev->dev, NULL, 0);
++	if (ret)
++		goto err_clk_disable;
++
++	sunxi_codec_init(priv);
++
++	ret = snd_soc_register_card(card);
++	if (ret) {
++		dev_err(&pdev->dev, "snd_soc_register_card failed (%d)\n", ret);
++		goto err_fini_utils;
++	}
++
++	ret = snd_soc_of_parse_audio_routing(card, "routing");
++	if (ret)
++		goto err;
++
++	return 0;
++
++err_fini_utils:
++err:
++err_clk_disable:
++	clk_disable_unprepare(priv->clk_apb);
++	return ret;
++}
++
++static int sunxi_codec_remove(struct platform_device *pdev)
++{
++	struct sunxi_priv *priv = platform_get_drvdata(pdev);
++
++	clk_disable_unprepare(priv->clk_apb);
++	clk_disable_unprepare(priv->clk_module);
++
++	return 0;
++}
++
++static struct platform_driver sunxi_codec_driver = {
++	.driver = {
++		.name = "sunxi-codec",
++		.owner = THIS_MODULE,
++		.of_match_table = sunxi_codec_of_match,
++	},
++	.probe = sunxi_codec_probe,
++	.remove = sunxi_codec_remove,
++};
++module_platform_driver(sunxi_codec_driver);
++
++MODULE_DESCRIPTION("sunxi codec ASoC driver");
++MODULE_AUTHOR("Emilio López <emilio@elopez.com.ar>");
++MODULE_AUTHOR("Jon Smirl <jonsmirl@gmail.com>");
++MODULE_LICENSE("GPL");

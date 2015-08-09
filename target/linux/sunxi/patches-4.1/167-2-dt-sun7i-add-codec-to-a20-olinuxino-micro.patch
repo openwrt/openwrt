@@ -1,0 +1,14 @@
+diff -ruN old/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts new/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts
+--- old/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts	2015-07-10 18:50:06.000000000 +0200
++++ new/arch/arm/boot/dts/sun7i-a20-olinuxino-micro.dts	2015-08-02 11:45:06.000000000 +0200
+@@ -245,3 +245,10 @@
+ 	};
+ };
+ 
++
++&codec {
++	routing =
++		"Headphone Jack", "HP Left",
++		"Headphone Jack", "HP Right";
++	status = "okay";
++};

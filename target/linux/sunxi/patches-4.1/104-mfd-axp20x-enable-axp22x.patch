@@ -1,0 +1,28 @@
+From 6d4fa89dcd85e2427da83319ce75e5df5febcc96 Mon Sep 17 00:00:00 2001
+From: Chen-Yu Tsai <wens@csie.org>
+Date: Fri, 10 Apr 2015 12:09:06 +0800
+Subject: [PATCH] mfd: axp20x: Enable AXP22X regulators
+
+Now that the axp20x-regulators driver supports different variants of the
+AXP family, we can enable regulator support for AXP22X without the risk
+of incorrectly configuring regulators.
+
+Signed-off-by: Chen-Yu Tsai <wens@csie.org>
+Signed-off-by: Lee Jones <lee.jones@linaro.org>
+---
+ drivers/mfd/axp20x.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
+index cfbb7d7..6df9155 100644
+--- a/drivers/mfd/axp20x.c
++++ b/drivers/mfd/axp20x.c
+@@ -370,6 +370,8 @@ static struct mfd_cell axp22x_cells[] = {
+ 		.name			= "axp20x-pek",
+ 		.num_resources		= ARRAY_SIZE(axp22x_pek_resources),
+ 		.resources		= axp22x_pek_resources,
++	}, {
++		.name			= "axp20x-regulator",
+ 	},
+ };
+ 

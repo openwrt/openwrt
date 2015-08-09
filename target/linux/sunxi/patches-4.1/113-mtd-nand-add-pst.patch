@@ -1,0 +1,265 @@
+From bec69bb8e85151729014d859106dcc3fe652b1d4 Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Mon, 28 Jul 2014 14:45:40 +0200
+Subject: [PATCH] mtd: nand: Add page status table (pst)
+
+Page status table is an byte array storing pages status.
+It defines 3 status:
+ - unknown: the page has not been read yet and we do not know its current
+   state
+ - empty: the page contains only FFs
+ - filled: the page has been filled with data
+
+Care must be taken: an empty page does not mean it can be written, because
+it might have already been written with only FFs.
+
+These page status are useful to check wether the controller should try to
+correct errors (using ECC) or a derandomize data (using a randomizer
+block).
+
+Signed-off-by: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/mtd/nand/nand_base.c | 154 +++++++++++++++++++++++++++++++++++++++++++
+ include/linux/mtd/nand.h     |  21 ++++++
+ 2 files changed, 175 insertions(+)
+
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index a30b67f..8a5d12e 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -1102,6 +1102,138 @@ int nand_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+ EXPORT_SYMBOL(nand_lock);
+ 
+ /**
++ * nand_page_is_empty - check wether a NAND page contains only FFs
++ * @mtd:	mtd info
++ * @data:	data buffer
++ * @oob:	oob buffer
++ *
++ * Reads the data stored in the databuf buffer and check if it contains only
++ * FFs.
++ *
++ * Return true if it does else return false.
++ */
++bool nand_page_is_empty(struct mtd_info *mtd, void *data, void *oob)
++{
++	u8 *buf;
++	int length;
++	u32 pattern = 0xffffffff;
++	int bitflips = 0;
++	int cnt;
++
++	buf = data;
++	length = mtd->writesize;
++	while (length) {
++		cnt = length < sizeof(pattern) ? length : sizeof(pattern);
++		if (memcmp(&pattern, buf, cnt)) {
++			int i;
++			for (i = 0; i < cnt * BITS_PER_BYTE; i++) {
++				if (!(buf[i / BITS_PER_BYTE] &
++				      (1 << (i % BITS_PER_BYTE)))) {
++					bitflips++;
++					if (bitflips > mtd->ecc_strength)
++						return false;
++				}
++			}
++		}
++
++		buf += sizeof(pattern);
++		length -= sizeof(pattern);
++	}
++
++	buf = oob;
++	length = mtd->oobsize;
++	while (length) {
++		cnt = length < sizeof(pattern) ? length : sizeof(pattern);
++		if (memcmp(&pattern, buf, cnt)) {
++			int i;
++			for (i = 0; i < cnt * BITS_PER_BYTE; i++) {
++				if (!(buf[i / BITS_PER_BYTE] &
++				      (1 << (i % BITS_PER_BYTE)))) {
++					bitflips++;
++					if (bitflips > mtd->ecc_strength)
++						return false;
++				}
++			}
++		}
++
++		buf += sizeof(pattern);
++		length -= sizeof(pattern);
++	}
++
++	return true;
++}
++EXPORT_SYMBOL(nand_page_is_empty);
++
++/**
++ * nand_page_get_status - retrieve page status from the page status table (pst)
++ * @mtd:	mtd info
++ * @page:	page you want to get status on
++ *
++ * Return the page status.
++ */
++int nand_page_get_status(struct mtd_info *mtd, int page)
++{
++	struct nand_chip *chip = mtd->priv;
++	u8 shift = (page % 4) * 2;
++	uint64_t offset = page / 4;
++	int ret = NAND_PAGE_STATUS_UNKNOWN;
++
++	if (chip->pst)
++		ret = (chip->pst[offset] >> shift) & 0x3;
++
++	return ret;
++}
++EXPORT_SYMBOL(nand_page_get_status);
++
++/**
++ * nand_page_set_status - assign page status from in the page status table
++ * @mtd:	mtd info
++ * @page:	page you want to get status on
++ * @status:	new status to assign
++ */
++void nand_page_set_status(struct mtd_info *mtd, int page,
++			  enum nand_page_status status)
++{
++	struct nand_chip *chip = mtd->priv;
++	u8 shift;
++	uint64_t offset;
++
++	if (!chip->pst)
++		return;
++
++	shift = (page % 4) * 2;
++	offset = page / 4;
++	chip->pst[offset] &= ~(0x3 << shift);
++	chip->pst[offset] |= (status & 0x3) << shift;
++}
++EXPORT_SYMBOL(nand_page_set_status);
++
++/**
++ * nand_pst_create - create a page status table
++ * @mtd:	mtd info
++ *
++ * Allocate a page status table and assign it to the mtd device.
++ *
++ * Returns 0 in case of success or -ERRNO in case of error.
++ */
++int nand_pst_create(struct mtd_info *mtd)
++{
++	struct nand_chip *chip = mtd->priv;
++
++	if (chip->pst)
++		return 0;
++
++	chip->pst = kzalloc(mtd->size >>
++			    (chip->page_shift + mtd->subpage_sft + 2),
++			    GFP_KERNEL);
++	if (!chip->pst)
++		return -ENOMEM;
++
++	return 0;
++}
++EXPORT_SYMBOL(nand_pst_create);
++
++/**
+  * nand_read_page_raw - [INTERN] read raw page data without ecc
+  * @mtd: mtd info structure
+  * @chip: nand chip info structure
+@@ -2539,6 +2671,7 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
+ 		uint8_t *wbuf = buf;
+ 		int use_bufpoi;
+ 		int part_pagewr = (column || writelen < (mtd->writesize - 1));
++		int subpage;
+ 
+ 		if (part_pagewr)
+ 			use_bufpoi = 1;
+@@ -2574,6 +2707,14 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
+ 		if (ret)
+ 			break;
+ 
++		for (subpage = column / chip->subpagesize;
++		     subpage < (column + writelen) / chip->subpagesize;
++		     subpage++)
++			nand_page_set_status(mtd,
++					     (page << mtd->subpage_sft) +
++					     subpage,
++					     NAND_PAGE_FILLED);
++
+ 		writelen -= bytes;
+ 		if (!writelen)
+ 			break;
+@@ -2979,6 +3120,7 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
+ 	int page, status, pages_per_block, ret, chipnr;
+ 	struct nand_chip *chip = mtd->priv;
+ 	loff_t len;
++	int i;
+ 
+ 	pr_debug("%s: start = 0x%012llx, len = %llu\n",
+ 			__func__, (unsigned long long)instr->addr,
+@@ -3051,6 +3193,18 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
+ 			goto erase_exit;
+ 		}
+ 
++		for (i = 0; i < pages_per_block; i++) {
++			int subpage;
++			for (subpage = 0;
++			     subpage < 1 << mtd->subpage_sft;
++			     subpage++) {
++				nand_page_set_status(mtd,
++					((page + i) << mtd->subpage_sft) +
++					subpage,
++					NAND_PAGE_EMPTY);
++			}
++		}
++
+ 		/* Increment page address and decrement length */
+ 		len -= (1ULL << chip->phys_erase_shift);
+ 		page += pages_per_block;
+diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
+index 5616f51..4f7ca8d 100644
+--- a/include/linux/mtd/nand.h
++++ b/include/linux/mtd/nand.h
+@@ -521,6 +521,24 @@ struct nand_ecc_ctrl {
+ 			int page);
+ };
+ 
++/*
++ * Constants for page status
++ */
++enum nand_page_status {
++	NAND_PAGE_STATUS_UNKNOWN,
++	NAND_PAGE_EMPTY,
++	NAND_PAGE_FILLED,
++};
++
++bool nand_page_is_empty(struct mtd_info *mtd, void *data, void *oob);
++
++int nand_page_get_status(struct mtd_info *mtd, int page);
++
++void nand_page_set_status(struct mtd_info *mtd, int page,
++			  enum nand_page_status status);
++
++int nand_pst_create(struct mtd_info *mtd);
++
+ /**
+  * struct nand_buffers - buffer structure for read/write
+  * @ecccalc:	buffer pointer for calculated ECC, size is oobsize.
+@@ -630,6 +648,7 @@ struct nand_buffers {
+  * @bbt_md:		[REPLACEABLE] bad block table mirror descriptor
+  * @badblock_pattern:	[REPLACEABLE] bad block scan pattern used for initial
+  *			bad block scan.
++ * @pst:		[INTERN] page status table
+  * @controller:		[REPLACEABLE] a pointer to a hardware controller
+  *			structure which is shared among multiple independent
+  *			devices.
+@@ -718,6 +737,8 @@ struct nand_chip {
+ 
+ 	struct nand_bbt_descr *badblock_pattern;
+ 
++	uint8_t *pst;
++
+ 	struct list_head partitions;
+ 	struct mutex part_lock;
+ 
