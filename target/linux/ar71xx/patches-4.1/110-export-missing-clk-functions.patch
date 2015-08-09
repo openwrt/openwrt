@@ -1,0 +1,28 @@
+This exports some clock functions used by some modules.
+This fixes this linking problem:
+
+ERROR: "clk_set_rate" [drivers/usb/phy/phy-generic.ko] undefined!
+ERROR: "clk_round_rate" [drivers/media/v4l2-core/videodev.ko] undefined!
+ERROR: "clk_set_rate" [drivers/media/v4l2-core/videodev.ko] undefined!
+
+In the upstream kernel it is fixed here:
+https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=411520af8ec9456886359b42628e583ac58e7e44
+
+--- a/arch/mips/ath79/clock.c
++++ b/arch/mips/ath79/clock.c
+@@ -488,3 +488,15 @@ unsigned long clk_get_rate(struct clk *c
+ 	return clk->rate;
+ }
+ EXPORT_SYMBOL(clk_get_rate);
++
++int clk_set_rate(struct clk *clk, unsigned long rate)
++{
++	return 0;
++}
++EXPORT_SYMBOL_GPL(clk_set_rate);
++
++long clk_round_rate(struct clk *clk, unsigned long rate)
++{
++	return 0;
++}
++EXPORT_SYMBOL_GPL(clk_round_rate);
