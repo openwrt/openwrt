@@ -1,0 +1,35 @@
+From 9cc66234a20c6ba1611233a122f04f3b175ad2d3 Mon Sep 17 00:00:00 2001
+From: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Date: Mon, 28 Jul 2014 14:01:22 +0200
+Subject: [PATCH] ARM: dts: sun7i: Add NFC node to Allwinner A20 SoC
+
+Add NAND Flash controller node definition to the A20 SoC.
+
+Signed-off-by: Boris BREZILLON <boris.brezillon@free-electrons.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index 6ec86c9..092adc6 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -641,6 +641,17 @@
+ 			#dma-cells = <2>;
+ 		};
+ 
++		nfc: nand@01c03000 {
++			compatible = "allwinner,sun4i-a10-nand";
++			reg = <0x01c03000 0x1000>;
++			interrupts = <0 37 4>;
++			clocks = <&ahb_gates 13>, <&nand_clk>;
++			clock-names = "ahb", "mod";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "disabled";
++		};
++
+ 		spi0: spi@01c05000 {
+ 			compatible = "allwinner,sun4i-a10-spi";
+ 			reg = <0x01c05000 0x1000>;

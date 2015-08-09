@@ -1,0 +1,65 @@
+diff --git a/drivers/mtd/nand/nand_ids.c b/drivers/mtd/nand/nand_ids.c
+index dd620c1..15b4a03 100644
+--- a/drivers/mtd/nand/nand_ids.c
++++ b/drivers/mtd/nand/nand_ids.c
+@@ -19,6 +19,49 @@
+ #define SP_OPTIONS16 (SP_OPTIONS | NAND_BUSWIDTH_16)
+ 
+ /*
++ * Hynix H27UBG8T2BTR timings
++ * This chip has an exceptionally large tADL, which results in only supporting
++ * ONFI timing mode 0. Using these timings, the clock can be raised from
++ * 12.5MHz to 50MHz.
++ */
++const struct nand_sdr_timings hynix_h27ubg8t2btr_sdr_timing = {
++	.tADL_min = 200000,
++	.tALH_min = 5000,
++	.tALS_min = 10000,
++	.tAR_min = 10000,
++	.tCEA_max = 100000,
++	.tCEH_min = 20000,
++	.tCH_min = 5000,
++	.tCHZ_max = 50000,
++	.tCLH_min = 5000,
++	.tCLR_min = 10000,
++	.tCLS_min = 10000,
++	.tCOH_min = 15000,
++	.tCS_min = 20000,
++	.tDH_min = 5000,
++	.tDS_min = 10000,
++	.tFEAT_max = 1000000,
++	.tIR_min = 0,
++	.tITC_max = 1000000,
++	.tRC_min = 20000,
++	.tREA_max = 16000,
++	.tREH_min = 8000,
++	.tRHOH_min = 15000,
++	.tRHW_min = 100000,
++	.tRHZ_max = 100000,
++	.tRLOH_min = 5000,
++	.tRP_min = 10000,
++	.tRST_max = 500000000,
++	.tWB_max = 100000,
++	.tRR_min = 20000,
++	.tWC_min = 20000,
++	.tWH_min = 10000,
++	.tWHR_min = 80000,
++	.tWP_min = 8000,
++	.tWW_min = 100000,
++};
++
++/*
+  * The chip ID list:
+  *    name, device ID, page size, chip size in MiB, eraseblock size, options
+  *
+@@ -50,6 +93,10 @@ struct nand_flash_dev nand_flash_ids[] = {
+ 		{ .id = {0xad, 0xde, 0x94, 0xda, 0x74, 0xc4} },
+ 		  SZ_8K, SZ_8K, SZ_2M, 0, 6, 640, NAND_ECC_INFO(40, SZ_1K),
+ 		  4 },
++	{"H27UBG8T2BTR-BC 64G 3.3V 8-bit",
++		{ .id = {0xad, 0xd7, 0x94, 0xda, 0x74, 0xc3} },
++		  SZ_8K, SZ_4K, SZ_2M, 0, 6, 640, NAND_ECC_INFO(40, SZ_1K),
++		  0, &hynix_h27ubg8t2btr_sdr_timing },
+ 
+ 	LEGACY_ID_NAND("NAND 4MiB 5V 8-bit",   0x6B, 4, SZ_8K, SP_OPTIONS),
+ 	LEGACY_ID_NAND("NAND 4MiB 3,3V 8-bit", 0xE3, 4, SZ_8K, SP_OPTIONS),

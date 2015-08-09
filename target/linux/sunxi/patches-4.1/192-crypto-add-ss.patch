@@ -1,0 +1,1732 @@
+From 6298e948215f2a3eb8a9af5c490d025deb66f179 Mon Sep 17 00:00:00 2001
+From: LABBE Corentin <clabbe.montjoie@gmail.com>
+Date: Fri, 17 Jul 2015 16:39:41 +0200
+Subject: [PATCH] crypto: sunxi-ss - Add Allwinner Security System crypto
+ accelerator
+
+Add support for the Security System included in Allwinner SoC A20.
+The Security System is a hardware cryptographic accelerator that support:
+- MD5 and SHA1 hash algorithms
+- AES block cipher in CBC/ECB mode with 128/196/256bits keys.
+- DES and 3DES block cipher in CBC/ECB mode
+
+Signed-off-by: LABBE Corentin <clabbe.montjoie@gmail.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/Kconfig                    |  17 +
+ drivers/crypto/Makefile                   |   1 +
+ drivers/crypto/sunxi-ss/Makefile          |   2 +
+ drivers/crypto/sunxi-ss/sun4i-ss-cipher.c | 542 ++++++++++++++++++++++++++++++
+ drivers/crypto/sunxi-ss/sun4i-ss-core.c   | 403 ++++++++++++++++++++++
+ drivers/crypto/sunxi-ss/sun4i-ss-hash.c   | 492 +++++++++++++++++++++++++++
+ drivers/crypto/sunxi-ss/sun4i-ss.h        | 199 +++++++++++
+ 7 files changed, 1656 insertions(+)
+ create mode 100644 drivers/crypto/sunxi-ss/Makefile
+ create mode 100644 drivers/crypto/sunxi-ss/sun4i-ss-cipher.c
+ create mode 100644 drivers/crypto/sunxi-ss/sun4i-ss-core.c
+ create mode 100644 drivers/crypto/sunxi-ss/sun4i-ss-hash.c
+ create mode 100644 drivers/crypto/sunxi-ss/sun4i-ss.h
+
+diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
+index 4044125..07bc7aa 100644
+--- a/drivers/crypto/Kconfig
++++ b/drivers/crypto/Kconfig
+@@ -480,4 +480,21 @@ config CRYPTO_DEV_IMGTEC_HASH
+ 	  hardware hash accelerator. Supporting MD5/SHA1/SHA224/SHA256
+ 	  hashing algorithms.
+ 
++config CRYPTO_DEV_SUN4I_SS
++	tristate "Support for Allwinner Security System cryptographic accelerator"
++	depends on ARCH_SUNXI
++	select CRYPTO_MD5
++	select CRYPTO_SHA1
++	select CRYPTO_AES
++	select CRYPTO_DES
++	select CRYPTO_BLKCIPHER
++	help
++	  Some Allwinner SoC have a crypto accelerator named
++	  Security System. Select this if you want to use it.
++	  The Security System handle AES/DES/3DES ciphers in CBC mode
++	  and SHA1 and MD5 hash algorithms.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called sun4i-ss.
++
+ endif # CRYPTO_HW
+diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
+index e35c07a..c3ced6f 100644
+--- a/drivers/crypto/Makefile
++++ b/drivers/crypto/Makefile
+@@ -28,3 +28,4 @@ obj-$(CONFIG_CRYPTO_DEV_UX500) += ux500/
+ obj-$(CONFIG_CRYPTO_DEV_QAT) += qat/
+ obj-$(CONFIG_CRYPTO_DEV_QCE) += qce/
+ obj-$(CONFIG_CRYPTO_DEV_VMX) += vmx/
++obj-$(CONFIG_CRYPTO_DEV_SUN4I_SS) += sunxi-ss/
+diff --git a/drivers/crypto/sunxi-ss/Makefile b/drivers/crypto/sunxi-ss/Makefile
+new file mode 100644
+index 0000000..8f4c7a2
+--- /dev/null
++++ b/drivers/crypto/sunxi-ss/Makefile
+@@ -0,0 +1,2 @@
++obj-$(CONFIG_CRYPTO_DEV_SUN4I_SS) += sun4i-ss.o
++sun4i-ss-y += sun4i-ss-core.o sun4i-ss-hash.o sun4i-ss-cipher.o
+diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-cipher.c b/drivers/crypto/sunxi-ss/sun4i-ss-cipher.c
+new file mode 100644
+index 0000000..e070c31
+--- /dev/null
++++ b/drivers/crypto/sunxi-ss/sun4i-ss-cipher.c
+@@ -0,0 +1,542 @@
++/*
++ * sun4i-ss-cipher.c - hardware cryptographic accelerator for Allwinner A20 SoC
++ *
++ * Copyright (C) 2013-2015 Corentin LABBE <clabbe.montjoie@gmail.com>
++ *
++ * This file add support for AES cipher with 128,192,256 bits
++ * keysize in CBC and ECB mode.
++ * Add support also for DES and 3DES in CBC and ECB mode.
++ *
++ * You could find the datasheet in Documentation/arm/sunxi/README
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#include "sun4i-ss.h"
++
++static int sun4i_ss_opti_poll(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_ss_ctx *ss = op->ss;
++	unsigned int ivsize = crypto_ablkcipher_ivsize(tfm);
++	struct sun4i_cipher_req_ctx *ctx = ablkcipher_request_ctx(areq);
++	u32 mode = ctx->mode;
++	/* when activating SS, the default FIFO space is SS_RX_DEFAULT(32) */
++	u32 rx_cnt = SS_RX_DEFAULT;
++	u32 tx_cnt = 0;
++	u32 spaces;
++	u32 v;
++	int i, err = 0;
++	unsigned int ileft = areq->nbytes;
++	unsigned int oleft = areq->nbytes;
++	unsigned int todo;
++	struct sg_mapping_iter mi, mo;
++	unsigned int oi, oo; /* offset for in and out */
++
++	if (areq->nbytes == 0)
++		return 0;
++
++	if (!areq->info) {
++		dev_err_ratelimited(ss->dev, "ERROR: Empty IV\n");
++		return -EINVAL;
++	}
++
++	if (!areq->src || !areq->dst) {
++		dev_err_ratelimited(ss->dev, "ERROR: Some SGs are NULL\n");
++		return -EINVAL;
++	}
++
++	spin_lock_bh(&ss->slock);
++
++	for (i = 0; i < op->keylen; i += 4)
++		writel(*(op->key + i / 4), ss->base + SS_KEY0 + i);
++
++	if (areq->info) {
++		for (i = 0; i < 4 && i < ivsize / 4; i++) {
++			v = *(u32 *)(areq->info + i * 4);
++			writel(v, ss->base + SS_IV0 + i * 4);
++		}
++	}
++	writel(mode, ss->base + SS_CTL);
++
++	sg_miter_start(&mi, areq->src, sg_nents(areq->src),
++		       SG_MITER_FROM_SG | SG_MITER_ATOMIC);
++	sg_miter_start(&mo, areq->dst, sg_nents(areq->dst),
++		       SG_MITER_TO_SG | SG_MITER_ATOMIC);
++	sg_miter_next(&mi);
++	sg_miter_next(&mo);
++	if (!mi.addr || !mo.addr) {
++		dev_err_ratelimited(ss->dev, "ERROR: sg_miter return null\n");
++		err = -EINVAL;
++		goto release_ss;
++	}
++
++	ileft = areq->nbytes / 4;
++	oleft = areq->nbytes / 4;
++	oi = 0;
++	oo = 0;
++	do {
++		todo = min3(rx_cnt, ileft, (mi.length - oi) / 4);
++		if (todo > 0) {
++			ileft -= todo;
++			writesl(ss->base + SS_RXFIFO, mi.addr + oi, todo);
++			oi += todo * 4;
++		}
++		if (oi == mi.length) {
++			sg_miter_next(&mi);
++			oi = 0;
++		}
++
++		spaces = readl(ss->base + SS_FCSR);
++		rx_cnt = SS_RXFIFO_SPACES(spaces);
++		tx_cnt = SS_TXFIFO_SPACES(spaces);
++
++		todo = min3(tx_cnt, oleft, (mo.length - oo) / 4);
++		if (todo > 0) {
++			oleft -= todo;
++			readsl(ss->base + SS_TXFIFO, mo.addr + oo, todo);
++			oo += todo * 4;
++		}
++		if (oo == mo.length) {
++			sg_miter_next(&mo);
++			oo = 0;
++		}
++	} while (mo.length > 0);
++
++	if (areq->info) {
++		for (i = 0; i < 4 && i < ivsize / 4; i++) {
++			v = readl(ss->base + SS_IV0 + i * 4);
++			*(u32 *)(areq->info + i * 4) = v;
++		}
++	}
++
++release_ss:
++	sg_miter_stop(&mi);
++	sg_miter_stop(&mo);
++	writel(0, ss->base + SS_CTL);
++	spin_unlock_bh(&ss->slock);
++	return err;
++}
++
++/* Generic function that support SG with size not multiple of 4 */
++static int sun4i_ss_cipher_poll(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_ss_ctx *ss = op->ss;
++	int no_chunk = 1;
++	struct scatterlist *in_sg = areq->src;
++	struct scatterlist *out_sg = areq->dst;
++	unsigned int ivsize = crypto_ablkcipher_ivsize(tfm);
++	struct sun4i_cipher_req_ctx *ctx = ablkcipher_request_ctx(areq);
++	u32 mode = ctx->mode;
++	/* when activating SS, the default FIFO space is SS_RX_DEFAULT(32) */
++	u32 rx_cnt = SS_RX_DEFAULT;
++	u32 tx_cnt = 0;
++	u32 v;
++	u32 spaces;
++	int i, err = 0;
++	unsigned int ileft = areq->nbytes;
++	unsigned int oleft = areq->nbytes;
++	unsigned int todo;
++	struct sg_mapping_iter mi, mo;
++	unsigned int oi, oo;	/* offset for in and out */
++	char buf[4 * SS_RX_MAX];/* buffer for linearize SG src */
++	char bufo[4 * SS_TX_MAX]; /* buffer for linearize SG dst */
++	unsigned int ob = 0;	/* offset in buf */
++	unsigned int obo = 0;	/* offset in bufo*/
++	unsigned int obl = 0;	/* length of data in bufo */
++
++	if (areq->nbytes == 0)
++		return 0;
++
++	if (!areq->info) {
++		dev_err_ratelimited(ss->dev, "ERROR: Empty IV\n");
++		return -EINVAL;
++	}
++
++	if (!areq->src || !areq->dst) {
++		dev_err_ratelimited(ss->dev, "ERROR: Some SGs are NULL\n");
++		return -EINVAL;
++	}
++
++	/*
++	 * if we have only SGs with size multiple of 4,
++	 * we can use the SS optimized function
++	 */
++	while (in_sg && no_chunk == 1) {
++		if ((in_sg->length % 4) != 0)
++			no_chunk = 0;
++		in_sg = sg_next(in_sg);
++	}
++	while (out_sg && no_chunk == 1) {
++		if ((out_sg->length % 4) != 0)
++			no_chunk = 0;
++		out_sg = sg_next(out_sg);
++	}
++
++	if (no_chunk == 1)
++		return sun4i_ss_opti_poll(areq);
++
++	spin_lock_bh(&ss->slock);
++
++	for (i = 0; i < op->keylen; i += 4)
++		writel(*(op->key + i / 4), ss->base + SS_KEY0 + i);
++
++	if (areq->info) {
++		for (i = 0; i < 4 && i < ivsize / 4; i++) {
++			v = *(u32 *)(areq->info + i * 4);
++			writel(v, ss->base + SS_IV0 + i * 4);
++		}
++	}
++	writel(mode, ss->base + SS_CTL);
++
++	sg_miter_start(&mi, areq->src, sg_nents(areq->src),
++		       SG_MITER_FROM_SG | SG_MITER_ATOMIC);
++	sg_miter_start(&mo, areq->dst, sg_nents(areq->dst),
++		       SG_MITER_TO_SG | SG_MITER_ATOMIC);
++	sg_miter_next(&mi);
++	sg_miter_next(&mo);
++	if (!mi.addr || !mo.addr) {
++		dev_err_ratelimited(ss->dev, "ERROR: sg_miter return null\n");
++		err = -EINVAL;
++		goto release_ss;
++	}
++	ileft = areq->nbytes;
++	oleft = areq->nbytes;
++	oi = 0;
++	oo = 0;
++
++	while (oleft > 0) {
++		if (ileft > 0) {
++			/*
++			 * todo is the number of consecutive 4byte word that we
++			 * can read from current SG
++			 */
++			todo = min3(rx_cnt, ileft / 4, (mi.length - oi) / 4);
++			if (todo > 0 && ob == 0) {
++				writesl(ss->base + SS_RXFIFO, mi.addr + oi,
++					todo);
++				ileft -= todo * 4;
++				oi += todo * 4;
++			} else {
++				/*
++				 * not enough consecutive bytes, so we need to
++				 * linearize in buf. todo is in bytes
++				 * After that copy, if we have a multiple of 4
++				 * we need to be able to write all buf in one
++				 * pass, so it is why we min() with rx_cnt
++				 */
++				todo = min3(rx_cnt * 4 - ob, ileft,
++					    mi.length - oi);
++				memcpy(buf + ob, mi.addr + oi, todo);
++				ileft -= todo;
++				oi += todo;
++				ob += todo;
++				if (ob % 4 == 0) {
++					writesl(ss->base + SS_RXFIFO, buf,
++						ob / 4);
++					ob = 0;
++				}
++			}
++			if (oi == mi.length) {
++				sg_miter_next(&mi);
++				oi = 0;
++			}
++		}
++
++		spaces = readl(ss->base + SS_FCSR);
++		rx_cnt = SS_RXFIFO_SPACES(spaces);
++		tx_cnt = SS_TXFIFO_SPACES(spaces);
++		dev_dbg(ss->dev, "%x %u/%u %u/%u cnt=%u %u/%u %u/%u cnt=%u %u %u\n",
++			mode,
++			oi, mi.length, ileft, areq->nbytes, rx_cnt,
++			oo, mo.length, oleft, areq->nbytes, tx_cnt,
++			todo, ob);
++
++		if (tx_cnt == 0)
++			continue;
++		/* todo in 4bytes word */
++		todo = min3(tx_cnt, oleft / 4, (mo.length - oo) / 4);
++		if (todo > 0) {
++			readsl(ss->base + SS_TXFIFO, mo.addr + oo, todo);
++			oleft -= todo * 4;
++			oo += todo * 4;
++			if (oo == mo.length) {
++				sg_miter_next(&mo);
++				oo = 0;
++			}
++		} else {
++			/*
++			 * read obl bytes in bufo, we read at maximum for
++			 * emptying the device
++			 */
++			readsl(ss->base + SS_TXFIFO, bufo, tx_cnt);
++			obl = tx_cnt * 4;
++			obo = 0;
++			do {
++				/*
++				 * how many bytes we can copy ?
++				 * no more than remaining SG size
++				 * no more than remaining buffer
++				 * no need to test against oleft
++				 */
++				todo = min(mo.length - oo, obl - obo);
++				memcpy(mo.addr + oo, bufo + obo, todo);
++				oleft -= todo;
++				obo += todo;
++				oo += todo;
++				if (oo == mo.length) {
++					sg_miter_next(&mo);
++					oo = 0;
++				}
++			} while (obo < obl);
++			/* bufo must be fully used here */
++		}
++	}
++	if (areq->info) {
++		for (i = 0; i < 4 && i < ivsize / 4; i++) {
++			v = readl(ss->base + SS_IV0 + i * 4);
++			*(u32 *)(areq->info + i * 4) = v;
++		}
++	}
++
++release_ss:
++	sg_miter_stop(&mi);
++	sg_miter_stop(&mo);
++	writel(0, ss->base + SS_CTL);
++	spin_unlock_bh(&ss->slock);
++
++	return err;
++}
++
++/* CBC AES */
++int sun4i_ss_cbc_aes_encrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_AES | SS_CBC | SS_ENABLED | SS_ENCRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_cbc_aes_decrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_AES | SS_CBC | SS_ENABLED | SS_DECRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++/* ECB AES */
++int sun4i_ss_ecb_aes_encrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_AES | SS_ECB | SS_ENABLED | SS_ENCRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_ecb_aes_decrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_AES | SS_ECB | SS_ENABLED | SS_DECRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++/* CBC DES */
++int sun4i_ss_cbc_des_encrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_DES | SS_CBC | SS_ENABLED | SS_ENCRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_cbc_des_decrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_DES | SS_CBC | SS_ENABLED | SS_DECRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++/* ECB DES */
++int sun4i_ss_ecb_des_encrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_DES | SS_ECB | SS_ENABLED | SS_ENCRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_ecb_des_decrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_DES | SS_ECB | SS_ENABLED | SS_DECRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++/* CBC 3DES */
++int sun4i_ss_cbc_des3_encrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_3DES | SS_CBC | SS_ENABLED | SS_ENCRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_cbc_des3_decrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_3DES | SS_CBC | SS_ENABLED | SS_DECRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++/* ECB 3DES */
++int sun4i_ss_ecb_des3_encrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_3DES | SS_ECB | SS_ENABLED | SS_ENCRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_ecb_des3_decrypt(struct ablkcipher_request *areq)
++{
++	struct crypto_ablkcipher *tfm = crypto_ablkcipher_reqtfm(areq);
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_cipher_req_ctx *rctx = ablkcipher_request_ctx(areq);
++
++	rctx->mode = SS_OP_3DES | SS_ECB | SS_ENABLED | SS_DECRYPTION |
++		op->keymode;
++	return sun4i_ss_cipher_poll(areq);
++}
++
++int sun4i_ss_cipher_init(struct crypto_tfm *tfm)
++{
++	struct sun4i_tfm_ctx *op = crypto_tfm_ctx(tfm);
++	struct crypto_alg *alg = tfm->__crt_alg;
++	struct sun4i_ss_alg_template *algt;
++
++	memset(op, 0, sizeof(struct sun4i_tfm_ctx));
++
++	algt = container_of(alg, struct sun4i_ss_alg_template, alg.crypto);
++	op->ss = algt->ss;
++
++	tfm->crt_ablkcipher.reqsize = sizeof(struct sun4i_cipher_req_ctx);
++
++	return 0;
++}
++
++/* check and set the AES key, prepare the mode to be used */
++int sun4i_ss_aes_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
++			unsigned int keylen)
++{
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_ss_ctx *ss = op->ss;
++
++	switch (keylen) {
++	case 128 / 8:
++		op->keymode = SS_AES_128BITS;
++		break;
++	case 192 / 8:
++		op->keymode = SS_AES_192BITS;
++		break;
++	case 256 / 8:
++		op->keymode = SS_AES_256BITS;
++		break;
++	default:
++		dev_err(ss->dev, "ERROR: Invalid keylen %u\n", keylen);
++		crypto_ablkcipher_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
++		return -EINVAL;
++	}
++	op->keylen = keylen;
++	memcpy(op->key, key, keylen);
++	return 0;
++}
++
++/* check and set the DES key, prepare the mode to be used */
++int sun4i_ss_des_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
++			unsigned int keylen)
++{
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_ss_ctx *ss = op->ss;
++	u32 flags;
++	u32 tmp[DES_EXPKEY_WORDS];
++	int ret;
++
++	if (unlikely(keylen != DES_KEY_SIZE)) {
++		dev_err(ss->dev, "Invalid keylen %u\n", keylen);
++		crypto_ablkcipher_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
++		return -EINVAL;
++	}
++
++	flags = crypto_ablkcipher_get_flags(tfm);
++
++	ret = des_ekey(tmp, key);
++	if (unlikely(ret == 0) && (flags & CRYPTO_TFM_REQ_WEAK_KEY)) {
++		crypto_ablkcipher_set_flags(tfm, CRYPTO_TFM_RES_WEAK_KEY);
++		dev_dbg(ss->dev, "Weak key %u\n", keylen);
++		return -EINVAL;
++	}
++
++	op->keylen = keylen;
++	memcpy(op->key, key, keylen);
++	return 0;
++}
++
++/* check and set the 3DES key, prepare the mode to be used */
++int sun4i_ss_des3_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
++			 unsigned int keylen)
++{
++	struct sun4i_tfm_ctx *op = crypto_ablkcipher_ctx(tfm);
++	struct sun4i_ss_ctx *ss = op->ss;
++
++	if (unlikely(keylen != 3 * DES_KEY_SIZE)) {
++		dev_err(ss->dev, "Invalid keylen %u\n", keylen);
++		crypto_ablkcipher_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
++		return -EINVAL;
++	}
++	op->keylen = keylen;
++	memcpy(op->key, key, keylen);
++	return 0;
++}
+diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-core.c b/drivers/crypto/sunxi-ss/sun4i-ss-core.c
+new file mode 100644
+index 0000000..0b79b58
+--- /dev/null
++++ b/drivers/crypto/sunxi-ss/sun4i-ss-core.c
+@@ -0,0 +1,403 @@
++/*
++ * sun4i-ss-core.c - hardware cryptographic accelerator for Allwinner A20 SoC
++ *
++ * Copyright (C) 2013-2015 Corentin LABBE <clabbe.montjoie@gmail.com>
++ *
++ * Core file which registers crypto algorithms supported by the SS.
++ *
++ * You could find a link for the datasheet in Documentation/arm/sunxi/README
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#include <linux/clk.h>
++#include <linux/crypto.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <crypto/scatterwalk.h>
++#include <linux/scatterlist.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++
++#include "sun4i-ss.h"
++
++static struct sun4i_ss_alg_template ss_algs[] = {
++{       .type = CRYPTO_ALG_TYPE_AHASH,
++	.mode = SS_OP_MD5,
++	.alg.hash = {
++		.init = sun4i_hash_init,
++		.update = sun4i_hash_update,
++		.final = sun4i_hash_final,
++		.finup = sun4i_hash_finup,
++		.digest = sun4i_hash_digest,
++		.export = sun4i_hash_export_md5,
++		.import = sun4i_hash_import_md5,
++		.halg = {
++			.digestsize = MD5_DIGEST_SIZE,
++			.base = {
++				.cra_name = "md5",
++				.cra_driver_name = "md5-sun4i-ss",
++				.cra_priority = 300,
++				.cra_alignmask = 3,
++				.cra_flags = CRYPTO_ALG_TYPE_AHASH,
++				.cra_blocksize = MD5_HMAC_BLOCK_SIZE,
++				.cra_ctxsize = sizeof(struct sun4i_req_ctx),
++				.cra_module = THIS_MODULE,
++				.cra_type = &crypto_ahash_type,
++				.cra_init = sun4i_hash_crainit
++			}
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_AHASH,
++	.mode = SS_OP_SHA1,
++	.alg.hash = {
++		.init = sun4i_hash_init,
++		.update = sun4i_hash_update,
++		.final = sun4i_hash_final,
++		.finup = sun4i_hash_finup,
++		.digest = sun4i_hash_digest,
++		.export = sun4i_hash_export_sha1,
++		.import = sun4i_hash_import_sha1,
++		.halg = {
++			.digestsize = SHA1_DIGEST_SIZE,
++			.base = {
++				.cra_name = "sha1",
++				.cra_driver_name = "sha1-sun4i-ss",
++				.cra_priority = 300,
++				.cra_alignmask = 3,
++				.cra_flags = CRYPTO_ALG_TYPE_AHASH,
++				.cra_blocksize = SHA1_BLOCK_SIZE,
++				.cra_ctxsize = sizeof(struct sun4i_req_ctx),
++				.cra_module = THIS_MODULE,
++				.cra_type = &crypto_ahash_type,
++				.cra_init = sun4i_hash_crainit
++			}
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_ABLKCIPHER,
++	.alg.crypto = {
++		.cra_name = "cbc(aes)",
++		.cra_driver_name = "cbc-aes-sun4i-ss",
++		.cra_priority = 300,
++		.cra_blocksize = AES_BLOCK_SIZE,
++		.cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER,
++		.cra_ctxsize = sizeof(struct sun4i_tfm_ctx),
++		.cra_module = THIS_MODULE,
++		.cra_alignmask = 3,
++		.cra_type = &crypto_ablkcipher_type,
++		.cra_init = sun4i_ss_cipher_init,
++		.cra_ablkcipher = {
++			.min_keysize	= AES_MIN_KEY_SIZE,
++			.max_keysize	= AES_MAX_KEY_SIZE,
++			.ivsize		= AES_BLOCK_SIZE,
++			.setkey         = sun4i_ss_aes_setkey,
++			.encrypt        = sun4i_ss_cbc_aes_encrypt,
++			.decrypt        = sun4i_ss_cbc_aes_decrypt,
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_ABLKCIPHER,
++	.alg.crypto = {
++		.cra_name = "ecb(aes)",
++		.cra_driver_name = "ecb-aes-sun4i-ss",
++		.cra_priority = 300,
++		.cra_blocksize = AES_BLOCK_SIZE,
++		.cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER,
++		.cra_ctxsize = sizeof(struct sun4i_tfm_ctx),
++		.cra_module = THIS_MODULE,
++		.cra_alignmask = 3,
++		.cra_type = &crypto_ablkcipher_type,
++		.cra_init = sun4i_ss_cipher_init,
++		.cra_ablkcipher = {
++			.min_keysize	= AES_MIN_KEY_SIZE,
++			.max_keysize	= AES_MAX_KEY_SIZE,
++			.ivsize		= AES_BLOCK_SIZE,
++			.setkey         = sun4i_ss_aes_setkey,
++			.encrypt        = sun4i_ss_ecb_aes_encrypt,
++			.decrypt        = sun4i_ss_ecb_aes_decrypt,
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_ABLKCIPHER,
++	.alg.crypto = {
++		.cra_name = "cbc(des)",
++		.cra_driver_name = "cbc-des-sun4i-ss",
++		.cra_priority = 300,
++		.cra_blocksize = DES_BLOCK_SIZE,
++		.cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER,
++		.cra_ctxsize = sizeof(struct sun4i_req_ctx),
++		.cra_module = THIS_MODULE,
++		.cra_alignmask = 3,
++		.cra_type = &crypto_ablkcipher_type,
++		.cra_init = sun4i_ss_cipher_init,
++		.cra_u.ablkcipher = {
++			.min_keysize    = DES_KEY_SIZE,
++			.max_keysize    = DES_KEY_SIZE,
++			.ivsize         = DES_BLOCK_SIZE,
++			.setkey         = sun4i_ss_des_setkey,
++			.encrypt        = sun4i_ss_cbc_des_encrypt,
++			.decrypt        = sun4i_ss_cbc_des_decrypt,
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_ABLKCIPHER,
++	.alg.crypto = {
++		.cra_name = "ecb(des)",
++		.cra_driver_name = "ecb-des-sun4i-ss",
++		.cra_priority = 300,
++		.cra_blocksize = DES_BLOCK_SIZE,
++		.cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER,
++		.cra_ctxsize = sizeof(struct sun4i_req_ctx),
++		.cra_module = THIS_MODULE,
++		.cra_alignmask = 3,
++		.cra_type = &crypto_ablkcipher_type,
++		.cra_init = sun4i_ss_cipher_init,
++		.cra_u.ablkcipher = {
++			.min_keysize    = DES_KEY_SIZE,
++			.max_keysize    = DES_KEY_SIZE,
++			.setkey         = sun4i_ss_des_setkey,
++			.encrypt        = sun4i_ss_ecb_des_encrypt,
++			.decrypt        = sun4i_ss_ecb_des_decrypt,
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_ABLKCIPHER,
++	.alg.crypto = {
++			.cra_name = "cbc(des3_ede)",
++			.cra_driver_name = "cbc-des3-sun4i-ss",
++			.cra_priority = 300,
++			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
++			.cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER,
++			.cra_ctxsize = sizeof(struct sun4i_req_ctx),
++			.cra_module = THIS_MODULE,
++			.cra_alignmask = 3,
++			.cra_type = &crypto_ablkcipher_type,
++			.cra_init = sun4i_ss_cipher_init,
++			.cra_u.ablkcipher = {
++				.min_keysize    = DES3_EDE_KEY_SIZE,
++				.max_keysize    = DES3_EDE_KEY_SIZE,
++				.ivsize         = DES3_EDE_BLOCK_SIZE,
++				.setkey         = sun4i_ss_des3_setkey,
++				.encrypt        = sun4i_ss_cbc_des3_encrypt,
++				.decrypt        = sun4i_ss_cbc_des3_decrypt,
++		}
++	}
++},
++{       .type = CRYPTO_ALG_TYPE_ABLKCIPHER,
++	.alg.crypto = {
++			.cra_name = "ecb(des3_ede)",
++			.cra_driver_name = "ecb-des3-sun4i-ss",
++			.cra_priority = 300,
++			.cra_blocksize = DES3_EDE_BLOCK_SIZE,
++			.cra_flags = CRYPTO_ALG_TYPE_ABLKCIPHER,
++			.cra_ctxsize = sizeof(struct sun4i_req_ctx),
++			.cra_module = THIS_MODULE,
++			.cra_alignmask = 3,
++			.cra_type = &crypto_ablkcipher_type,
++			.cra_init = sun4i_ss_cipher_init,
++			.cra_u.ablkcipher = {
++				.min_keysize    = DES3_EDE_KEY_SIZE,
++				.max_keysize    = DES3_EDE_KEY_SIZE,
++				.ivsize         = DES3_EDE_BLOCK_SIZE,
++				.setkey         = sun4i_ss_des3_setkey,
++				.encrypt        = sun4i_ss_ecb_des3_encrypt,
++				.decrypt        = sun4i_ss_ecb_des3_decrypt,
++		}
++	}
++},
++};
++
++static int sun4i_ss_probe(struct platform_device *pdev)
++{
++	struct resource *res;
++	u32 v;
++	int err, i;
++	unsigned long cr;
++	const unsigned long cr_ahb = 24 * 1000 * 1000;
++	const unsigned long cr_mod = 150 * 1000 * 1000;
++	struct sun4i_ss_ctx *ss;
++
++	if (!pdev->dev.of_node)
++		return -ENODEV;
++
++	ss = devm_kzalloc(&pdev->dev, sizeof(*ss), GFP_KERNEL);
++	if (!ss)
++		return -ENOMEM;
++
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	ss->base = devm_ioremap_resource(&pdev->dev, res);
++	if (IS_ERR(ss->base)) {
++		dev_err(&pdev->dev, "Cannot request MMIO\n");
++		return PTR_ERR(ss->base);
++	}
++
++	ss->ssclk = devm_clk_get(&pdev->dev, "mod");
++	if (IS_ERR(ss->ssclk)) {
++		err = PTR_ERR(ss->ssclk);
++		dev_err(&pdev->dev, "Cannot get SS clock err=%d\n", err);
++		return err;
++	}
++	dev_dbg(&pdev->dev, "clock ss acquired\n");
++
++	ss->busclk = devm_clk_get(&pdev->dev, "ahb");
++	if (IS_ERR(ss->busclk)) {
++		err = PTR_ERR(ss->busclk);
++		dev_err(&pdev->dev, "Cannot get AHB SS clock err=%d\n", err);
++		return err;
++	}
++	dev_dbg(&pdev->dev, "clock ahb_ss acquired\n");
++
++	/* Enable both clocks */
++	err = clk_prepare_enable(ss->busclk);
++	if (err != 0) {
++		dev_err(&pdev->dev, "Cannot prepare_enable busclk\n");
++		return err;
++	}
++	err = clk_prepare_enable(ss->ssclk);
++	if (err != 0) {
++		dev_err(&pdev->dev, "Cannot prepare_enable ssclk\n");
++		goto error_ssclk;
++	}
++
++	/*
++	 * Check that clock have the correct rates given in the datasheet
++	 * Try to set the clock to the maximum allowed
++	 */
++	err = clk_set_rate(ss->ssclk, cr_mod);
++	if (err != 0) {
++		dev_err(&pdev->dev, "Cannot set clock rate to ssclk\n");
++		goto error_clk;
++	}
++
++	/*
++	 * The only impact on clocks below requirement are bad performance,
++	 * so do not print "errors"
++	 * warn on Overclocked clocks
++	 */
++	cr = clk_get_rate(ss->busclk);
++	if (cr >= cr_ahb)
++		dev_dbg(&pdev->dev, "Clock bus %lu (%lu MHz) (must be >= %lu)\n",
++			cr, cr / 1000000, cr_ahb);
++	else
++		dev_warn(&pdev->dev, "Clock bus %lu (%lu MHz) (must be >= %lu)\n",
++			 cr, cr / 1000000, cr_ahb);
++
++	cr = clk_get_rate(ss->ssclk);
++	if (cr <= cr_mod)
++		if (cr < cr_mod)
++			dev_warn(&pdev->dev, "Clock ss %lu (%lu MHz) (must be <= %lu)\n",
++				 cr, cr / 1000000, cr_mod);
++		else
++			dev_dbg(&pdev->dev, "Clock ss %lu (%lu MHz) (must be <= %lu)\n",
++				cr, cr / 1000000, cr_mod);
++	else
++		dev_warn(&pdev->dev, "Clock ss is at %lu (%lu MHz) (must be <= %lu)\n",
++			 cr, cr / 1000000, cr_mod);
++
++	/*
++	 * Datasheet named it "Die Bonding ID"
++	 * I expect to be a sort of Security System Revision number.
++	 * Since the A80 seems to have an other version of SS
++	 * this info could be useful
++	 */
++	writel(SS_ENABLED, ss->base + SS_CTL);
++	v = readl(ss->base + SS_CTL);
++	v >>= 16;
++	v &= 0x07;
++	dev_info(&pdev->dev, "Die ID %d\n", v);
++	writel(0, ss->base + SS_CTL);
++
++	ss->dev = &pdev->dev;
++
++	spin_lock_init(&ss->slock);
++
++	for (i = 0; i < ARRAY_SIZE(ss_algs); i++) {
++		ss_algs[i].ss = ss;
++		switch (ss_algs[i].type) {
++		case CRYPTO_ALG_TYPE_ABLKCIPHER:
++			err = crypto_register_alg(&ss_algs[i].alg.crypto);
++			if (err != 0) {
++				dev_err(ss->dev, "Fail to register %s\n",
++					ss_algs[i].alg.crypto.cra_name);
++				goto error_alg;
++			}
++			break;
++		case CRYPTO_ALG_TYPE_AHASH:
++			err = crypto_register_ahash(&ss_algs[i].alg.hash);
++			if (err != 0) {
++				dev_err(ss->dev, "Fail to register %s\n",
++					ss_algs[i].alg.hash.halg.base.cra_name);
++				goto error_alg;
++			}
++			break;
++		}
++	}
++	platform_set_drvdata(pdev, ss);
++	return 0;
++error_alg:
++	i--;
++	for (; i >= 0; i--) {
++		switch (ss_algs[i].type) {
++		case CRYPTO_ALG_TYPE_ABLKCIPHER:
++			crypto_unregister_alg(&ss_algs[i].alg.crypto);
++			break;
++		case CRYPTO_ALG_TYPE_AHASH:
++			crypto_unregister_ahash(&ss_algs[i].alg.hash);
++			break;
++		}
++	}
++error_clk:
++	clk_disable_unprepare(ss->ssclk);
++error_ssclk:
++	clk_disable_unprepare(ss->busclk);
++	return err;
++}
++
++static int sun4i_ss_remove(struct platform_device *pdev)
++{
++	int i;
++	struct sun4i_ss_ctx *ss = platform_get_drvdata(pdev);
++
++	for (i = 0; i < ARRAY_SIZE(ss_algs); i++) {
++		switch (ss_algs[i].type) {
++		case CRYPTO_ALG_TYPE_ABLKCIPHER:
++			crypto_unregister_alg(&ss_algs[i].alg.crypto);
++			break;
++		case CRYPTO_ALG_TYPE_AHASH:
++			crypto_unregister_ahash(&ss_algs[i].alg.hash);
++			break;
++		}
++	}
++
++	writel(0, ss->base + SS_CTL);
++	clk_disable_unprepare(ss->busclk);
++	clk_disable_unprepare(ss->ssclk);
++	return 0;
++}
++
++static const struct of_device_id a20ss_crypto_of_match_table[] = {
++	{ .compatible = "allwinner,sun4i-a10-crypto" },
++	{}
++};
++MODULE_DEVICE_TABLE(of, a20ss_crypto_of_match_table);
++
++static struct platform_driver sun4i_ss_driver = {
++	.probe          = sun4i_ss_probe,
++	.remove         = sun4i_ss_remove,
++	.driver         = {
++		.name           = "sun4i-ss",
++		.of_match_table	= a20ss_crypto_of_match_table,
++	},
++};
++
++module_platform_driver(sun4i_ss_driver);
++
++MODULE_DESCRIPTION("Allwinner Security System cryptographic accelerator");
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Corentin LABBE <clabbe.montjoie@gmail.com>");
+diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-hash.c b/drivers/crypto/sunxi-ss/sun4i-ss-hash.c
+new file mode 100644
+index 0000000..ff80314
+--- /dev/null
++++ b/drivers/crypto/sunxi-ss/sun4i-ss-hash.c
+@@ -0,0 +1,492 @@
++/*
++ * sun4i-ss-hash.c - hardware cryptographic accelerator for Allwinner A20 SoC
++ *
++ * Copyright (C) 2013-2015 Corentin LABBE <clabbe.montjoie@gmail.com>
++ *
++ * This file add support for MD5 and SHA1.
++ *
++ * You could find the datasheet in Documentation/arm/sunxi/README
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ */
++#include "sun4i-ss.h"
++#include <linux/scatterlist.h>
++
++/* This is a totally arbitrary value */
++#define SS_TIMEOUT 100
++
++int sun4i_hash_crainit(struct crypto_tfm *tfm)
++{
++	crypto_ahash_set_reqsize(__crypto_ahash_cast(tfm),
++				 sizeof(struct sun4i_req_ctx));
++	return 0;
++}
++
++/* sun4i_hash_init: initialize request context */
++int sun4i_hash_init(struct ahash_request *areq)
++{
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	struct crypto_ahash *tfm = crypto_ahash_reqtfm(areq);
++	struct ahash_alg *alg = __crypto_ahash_alg(tfm->base.__crt_alg);
++	struct sun4i_ss_alg_template *algt;
++	struct sun4i_ss_ctx *ss;
++
++	memset(op, 0, sizeof(struct sun4i_req_ctx));
++
++	algt = container_of(alg, struct sun4i_ss_alg_template, alg.hash);
++	ss = algt->ss;
++	op->ss = algt->ss;
++	op->mode = algt->mode;
++
++	return 0;
++}
++
++int sun4i_hash_export_md5(struct ahash_request *areq, void *out)
++{
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	struct md5_state *octx = out;
++	int i;
++
++	octx->byte_count = op->byte_count + op->len;
++
++	memcpy(octx->block, op->buf, op->len);
++
++	if (op->byte_count > 0) {
++		for (i = 0; i < 4; i++)
++			octx->hash[i] = op->hash[i];
++	} else {
++		octx->hash[0] = SHA1_H0;
++		octx->hash[1] = SHA1_H1;
++		octx->hash[2] = SHA1_H2;
++		octx->hash[3] = SHA1_H3;
++	}
++
++	return 0;
++}
++
++int sun4i_hash_import_md5(struct ahash_request *areq, const void *in)
++{
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	const struct md5_state *ictx = in;
++	int i;
++
++	sun4i_hash_init(areq);
++
++	op->byte_count = ictx->byte_count & ~0x3F;
++	op->len = ictx->byte_count & 0x3F;
++
++	memcpy(op->buf, ictx->block, op->len);
++
++	for (i = 0; i < 4; i++)
++		op->hash[i] = ictx->hash[i];
++
++	return 0;
++}
++
++int sun4i_hash_export_sha1(struct ahash_request *areq, void *out)
++{
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	struct sha1_state *octx = out;
++	int i;
++
++	octx->count = op->byte_count + op->len;
++
++	memcpy(octx->buffer, op->buf, op->len);
++
++	if (op->byte_count > 0) {
++		for (i = 0; i < 5; i++)
++			octx->state[i] = op->hash[i];
++	} else {
++		octx->state[0] = SHA1_H0;
++		octx->state[1] = SHA1_H1;
++		octx->state[2] = SHA1_H2;
++		octx->state[3] = SHA1_H3;
++		octx->state[4] = SHA1_H4;
++	}
++
++	return 0;
++}
++
++int sun4i_hash_import_sha1(struct ahash_request *areq, const void *in)
++{
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	const struct sha1_state *ictx = in;
++	int i;
++
++	sun4i_hash_init(areq);
++
++	op->byte_count = ictx->count & ~0x3F;
++	op->len = ictx->count & 0x3F;
++
++	memcpy(op->buf, ictx->buffer, op->len);
++
++	for (i = 0; i < 5; i++)
++		op->hash[i] = ictx->state[i];
++
++	return 0;
++}
++
++/*
++ * sun4i_hash_update: update hash engine
++ *
++ * Could be used for both SHA1 and MD5
++ * Write data by step of 32bits and put then in the SS.
++ *
++ * Since we cannot leave partial data and hash state in the engine,
++ * we need to get the hash state at the end of this function.
++ * We can get the hash state every 64 bytes
++ *
++ * So the first work is to get the number of bytes to write to SS modulo 64
++ * The extra bytes will go to a temporary buffer op->buf storing op->len bytes
++ *
++ * So at the begin of update()
++ * if op->len + areq->nbytes < 64
++ * => all data will be written to wait buffer (op->buf) and end=0
++ * if not, write all data from op->buf to the device and position end to
++ * complete to 64bytes
++ *
++ * example 1:
++ * update1 60o => op->len=60
++ * update2 60o => need one more word to have 64 bytes
++ * end=4
++ * so write all data from op->buf and one word of SGs
++ * write remaining data in op->buf
++ * final state op->len=56
++ */
++int sun4i_hash_update(struct ahash_request *areq)
++{
++	u32 v, ivmode = 0;
++	unsigned int i = 0;
++	/*
++	 * i is the total bytes read from SGs, to be compared to areq->nbytes
++	 * i is important because we cannot rely on SG length since the sum of
++	 * SG->length could be greater than areq->nbytes
++	 */
++
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	struct sun4i_ss_ctx *ss = op->ss;
++	struct crypto_ahash *tfm = crypto_ahash_reqtfm(areq);
++	unsigned int in_i = 0; /* advancement in the current SG */
++	unsigned int end;
++	/*
++	 * end is the position when we need to stop writing to the device,
++	 * to be compared to i
++	 */
++	int in_r, err = 0;
++	unsigned int todo;
++	u32 spaces, rx_cnt = SS_RX_DEFAULT;
++	size_t copied = 0;
++	struct sg_mapping_iter mi;
++
++	dev_dbg(ss->dev, "%s %s bc=%llu len=%u mode=%x wl=%u h0=%0x",
++		__func__, crypto_tfm_alg_name(areq->base.tfm),
++		op->byte_count, areq->nbytes, op->mode,
++		op->len, op->hash[0]);
++
++	if (areq->nbytes == 0)
++		return 0;
++
++	/* protect against overflow */
++	if (areq->nbytes > UINT_MAX - op->len) {
++		dev_err(ss->dev, "Cannot process too large request\n");
++		return -EINVAL;
++	}
++
++	if (op->len + areq->nbytes < 64) {
++		/* linearize data to op->buf */
++		copied = sg_pcopy_to_buffer(areq->src, sg_nents(areq->src),
++					    op->buf + op->len, areq->nbytes, 0);
++		op->len += copied;
++		return 0;
++	}
++
++	end = ((areq->nbytes + op->len) / 64) * 64 - op->len;
++
++	if (end > areq->nbytes || areq->nbytes - end > 63) {
++		dev_err(ss->dev, "ERROR: Bound error %u %u\n",
++			end, areq->nbytes);
++		return -EINVAL;
++	}
++
++	spin_lock_bh(&ss->slock);
++
++	/*
++	 * if some data have been processed before,
++	 * we need to restore the partial hash state
++	 */
++	if (op->byte_count > 0) {
++		ivmode = SS_IV_ARBITRARY;
++		for (i = 0; i < 5; i++)
++			writel(op->hash[i], ss->base + SS_IV0 + i * 4);
++	}
++	/* Enable the device */
++	writel(op->mode | SS_ENABLED | ivmode, ss->base + SS_CTL);
++
++	i = 0;
++	sg_miter_start(&mi, areq->src, sg_nents(areq->src),
++		       SG_MITER_FROM_SG | SG_MITER_ATOMIC);
++	sg_miter_next(&mi);
++	in_i = 0;
++
++	do {
++		/*
++		 * we need to linearize in two case:
++		 * - the buffer is already used
++		 * - the SG does not have enough byte remaining ( < 4)
++		 */
++		if (op->len > 0 || (mi.length - in_i) < 4) {
++			/*
++			 * if we have entered here we have two reason to stop
++			 * - the buffer is full
++			 * - reach the end
++			 */
++			while (op->len < 64 && i < end) {
++				/* how many bytes we can read from current SG */
++				in_r = min3(mi.length - in_i, end - i,
++					    64 - op->len);
++				memcpy(op->buf + op->len, mi.addr + in_i, in_r);
++				op->len += in_r;
++				i += in_r;
++				in_i += in_r;
++				if (in_i == mi.length) {
++					sg_miter_next(&mi);
++					in_i = 0;
++				}
++			}
++			if (op->len > 3 && (op->len % 4) == 0) {
++				/* write buf to the device */
++				writesl(ss->base + SS_RXFIFO, op->buf,
++					op->len / 4);
++				op->byte_count += op->len;
++				op->len = 0;
++			}
++		}
++		if (mi.length - in_i > 3 && i < end) {
++			/* how many bytes we can read from current SG */
++			in_r = min3(mi.length - in_i, areq->nbytes - i,
++				    ((mi.length - in_i) / 4) * 4);
++			/* how many bytes we can write in the device*/
++			todo = min3((u32)(end - i) / 4, rx_cnt, (u32)in_r / 4);
++			writesl(ss->base + SS_RXFIFO, mi.addr + in_i, todo);
++			op->byte_count += todo * 4;
++			i += todo * 4;
++			in_i += todo * 4;
++			rx_cnt -= todo;
++			if (rx_cnt == 0) {
++				spaces = readl(ss->base + SS_FCSR);
++				rx_cnt = SS_RXFIFO_SPACES(spaces);
++			}
++			if (in_i == mi.length) {
++				sg_miter_next(&mi);
++				in_i = 0;
++			}
++		}
++	} while (i < end);
++	/* final linear */
++	if ((areq->nbytes - i) < 64) {
++		while (i < areq->nbytes && in_i < mi.length && op->len < 64) {
++			/* how many bytes we can read from current SG */
++			in_r = min3(mi.length - in_i, areq->nbytes - i,
++				    64 - op->len);
++			memcpy(op->buf + op->len, mi.addr + in_i, in_r);
++			op->len += in_r;
++			i += in_r;
++			in_i += in_r;
++			if (in_i == mi.length) {
++				sg_miter_next(&mi);
++				in_i = 0;
++			}
++		}
++	}
++
++	sg_miter_stop(&mi);
++
++	writel(op->mode | SS_ENABLED | SS_DATA_END, ss->base + SS_CTL);
++	i = 0;
++	do {
++		v = readl(ss->base + SS_CTL);
++		i++;
++	} while (i < SS_TIMEOUT && (v & SS_DATA_END) > 0);
++	if (i >= SS_TIMEOUT) {
++		dev_err_ratelimited(ss->dev,
++				    "ERROR: hash end timeout %d>%d ctl=%x len=%u\n",
++				    i, SS_TIMEOUT, v, areq->nbytes);
++		err = -EIO;
++		goto release_ss;
++	}
++
++	/* get the partial hash only if something was written */
++	for (i = 0; i < crypto_ahash_digestsize(tfm) / 4; i++)
++		op->hash[i] = readl(ss->base + SS_MD0 + i * 4);
++
++release_ss:
++	writel(0, ss->base + SS_CTL);
++	spin_unlock_bh(&ss->slock);
++	return err;
++}
++
++/*
++ * sun4i_hash_final: finalize hashing operation
++ *
++ * If we have some remaining bytes, we write them.
++ * Then ask the SS for finalizing the hashing operation
++ *
++ * I do not check RX FIFO size in this function since the size is 32
++ * after each enabling and this function neither write more than 32 words.
++ */
++int sun4i_hash_final(struct ahash_request *areq)
++{
++	u32 v, ivmode = 0;
++	unsigned int i;
++	unsigned int j = 0;
++	int zeros, err = 0;
++	unsigned int index, padlen;
++	__be64 bits;
++	struct sun4i_req_ctx *op = ahash_request_ctx(areq);
++	struct sun4i_ss_ctx *ss = op->ss;
++	struct crypto_ahash *tfm = crypto_ahash_reqtfm(areq);
++	u32 bf[32];
++	u32 wb = 0;
++	unsigned int nwait, nbw = 0;
++
++	dev_dbg(ss->dev, "%s: byte=%llu len=%u mode=%x wl=%u h=%x",
++		__func__, op->byte_count, areq->nbytes, op->mode,
++		op->len, op->hash[0]);
++
++	spin_lock_bh(&ss->slock);
++
++	/*
++	 * if we have already written something,
++	 * restore the partial hash state
++	 */
++	if (op->byte_count > 0) {
++		ivmode = SS_IV_ARBITRARY;
++		for (i = 0; i < crypto_ahash_digestsize(tfm) / 4; i++)
++			writel(op->hash[i], ss->base + SS_IV0 + i * 4);
++	}
++	writel(op->mode | SS_ENABLED | ivmode, ss->base + SS_CTL);
++
++	/* write the remaining words of the wait buffer */
++	if (op->len > 0) {
++		nwait = op->len / 4;
++		if (nwait > 0) {
++			writesl(ss->base + SS_RXFIFO, op->buf, nwait);
++			op->byte_count += 4 * nwait;
++		}
++		nbw = op->len - 4 * nwait;
++		wb = *(u32 *)(op->buf + nwait * 4);
++		wb &= (0xFFFFFFFF >> (4 - nbw) * 8);
++	}
++
++	/* write the remaining bytes of the nbw buffer */
++	if (nbw > 0) {
++		wb |= ((1 << 7) << (nbw * 8));
++		bf[j++] = wb;
++	} else {
++		bf[j++] = 1 << 7;
++	}
++
++	/*
++	 * number of space to pad to obtain 64o minus 8(size) minus 4 (final 1)
++	 * I take the operations from other MD5/SHA1 implementations
++	 */
++
++	/* we have already send 4 more byte of which nbw data */
++	if (op->mode == SS_OP_MD5) {
++		index = (op->byte_count + 4) & 0x3f;
++		op->byte_count += nbw;
++		if (index > 56)
++			zeros = (120 - index) / 4;
++		else
++			zeros = (56 - index) / 4;
++	} else {
++		op->byte_count += nbw;
++		index = op->byte_count & 0x3f;
++		padlen = (index < 56) ? (56 - index) : ((64 + 56) - index);
++		zeros = (padlen - 1) / 4;
++	}
++
++	memset(bf + j, 0, 4 * zeros);
++	j += zeros;
++
++	/* write the length of data */
++	if (op->mode == SS_OP_SHA1) {
++		bits = cpu_to_be64(op->byte_count << 3);
++		bf[j++] = bits & 0xffffffff;
++		bf[j++] = (bits >> 32) & 0xffffffff;
++	} else {
++		bf[j++] = (op->byte_count << 3) & 0xffffffff;
++		bf[j++] = (op->byte_count >> 29) & 0xffffffff;
++	}
++	writesl(ss->base + SS_RXFIFO, bf, j);
++
++	/* Tell the SS to stop the hashing */
++	writel(op->mode | SS_ENABLED | SS_DATA_END, ss->base + SS_CTL);
++
++	/*
++	 * Wait for SS to finish the hash.
++	 * The timeout could happen only in case of bad overcloking
++	 * or driver bug.
++	 */
++	i = 0;
++	do {
++		v = readl(ss->base + SS_CTL);
++		i++;
++	} while (i < SS_TIMEOUT && (v & SS_DATA_END) > 0);
++	if (i >= SS_TIMEOUT) {
++		dev_err_ratelimited(ss->dev,
++				    "ERROR: hash end timeout %d>%d ctl=%x len=%u\n",
++				    i, SS_TIMEOUT, v, areq->nbytes);
++		err = -EIO;
++		goto release_ss;
++	}
++
++	/* Get the hash from the device */
++	if (op->mode == SS_OP_SHA1) {
++		for (i = 0; i < 5; i++) {
++			v = cpu_to_be32(readl(ss->base + SS_MD0 + i * 4));
++			memcpy(areq->result + i * 4, &v, 4);
++		}
++	} else {
++		for (i = 0; i < 4; i++) {
++			v = readl(ss->base + SS_MD0 + i * 4);
++			memcpy(areq->result + i * 4, &v, 4);
++		}
++	}
++
++release_ss:
++	writel(0, ss->base + SS_CTL);
++	spin_unlock_bh(&ss->slock);
++	return err;
++}
++
++/* sun4i_hash_finup: finalize hashing operation after an update */
++int sun4i_hash_finup(struct ahash_request *areq)
++{
++	int err;
++
++	err = sun4i_hash_update(areq);
++	if (err != 0)
++		return err;
++
++	return sun4i_hash_final(areq);
++}
++
++/* combo of init/update/final functions */
++int sun4i_hash_digest(struct ahash_request *areq)
++{
++	int err;
++
++	err = sun4i_hash_init(areq);
++	if (err != 0)
++		return err;
++
++	err = sun4i_hash_update(areq);
++	if (err != 0)
++		return err;
++
++	return sun4i_hash_final(areq);
++}
+diff --git a/drivers/crypto/sunxi-ss/sun4i-ss.h b/drivers/crypto/sunxi-ss/sun4i-ss.h
+new file mode 100644
+index 0000000..db18b255
+--- /dev/null
++++ b/drivers/crypto/sunxi-ss/sun4i-ss.h
+@@ -0,0 +1,199 @@
++/*
++ * sun4i-ss.h - hardware cryptographic accelerator for Allwinner A20 SoC
++ *
++ * Copyright (C) 2013-2015 Corentin LABBE <clabbe.montjoie@gmail.com>
++ *
++ * Support AES cipher with 128,192,256 bits keysize.
++ * Support MD5 and SHA1 hash algorithms.
++ * Support DES and 3DES
++ *
++ * You could find the datasheet in Documentation/arm/sunxi/README
++ *
++ * Licensed under the GPL-2.
++ */
++
++#include <linux/clk.h>
++#include <linux/crypto.h>
++#include <linux/io.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <crypto/scatterwalk.h>
++#include <linux/scatterlist.h>
++#include <linux/interrupt.h>
++#include <linux/delay.h>
++#include <crypto/md5.h>
++#include <crypto/sha.h>
++#include <crypto/hash.h>
++#include <crypto/internal/hash.h>
++#include <crypto/aes.h>
++#include <crypto/des.h>
++#include <crypto/internal/rng.h>
++
++#define SS_CTL            0x00
++#define SS_KEY0           0x04
++#define SS_KEY1           0x08
++#define SS_KEY2           0x0C
++#define SS_KEY3           0x10
++#define SS_KEY4           0x14
++#define SS_KEY5           0x18
++#define SS_KEY6           0x1C
++#define SS_KEY7           0x20
++
++#define SS_IV0            0x24
++#define SS_IV1            0x28
++#define SS_IV2            0x2C
++#define SS_IV3            0x30
++
++#define SS_FCSR           0x44
++
++#define SS_MD0            0x4C
++#define SS_MD1            0x50
++#define SS_MD2            0x54
++#define SS_MD3            0x58
++#define SS_MD4            0x5C
++
++#define SS_RXFIFO         0x200
++#define SS_TXFIFO         0x204
++
++/* SS_CTL configuration values */
++
++/* PRNG generator mode - bit 15 */
++#define SS_PRNG_ONESHOT		(0 << 15)
++#define SS_PRNG_CONTINUE	(1 << 15)
++
++/* IV mode for hash */
++#define SS_IV_ARBITRARY		(1 << 14)
++
++/* SS operation mode - bits 12-13 */
++#define SS_ECB			(0 << 12)
++#define SS_CBC			(1 << 12)
++#define SS_CTS			(3 << 12)
++
++/* Counter width for CNT mode - bits 10-11 */
++#define SS_CNT_16BITS		(0 << 10)
++#define SS_CNT_32BITS		(1 << 10)
++#define SS_CNT_64BITS		(2 << 10)
++
++/* Key size for AES - bits 8-9 */
++#define SS_AES_128BITS		(0 << 8)
++#define SS_AES_192BITS		(1 << 8)
++#define SS_AES_256BITS		(2 << 8)
++
++/* Operation direction - bit 7 */
++#define SS_ENCRYPTION		(0 << 7)
++#define SS_DECRYPTION		(1 << 7)
++
++/* SS Method - bits 4-6 */
++#define SS_OP_AES		(0 << 4)
++#define SS_OP_DES		(1 << 4)
++#define SS_OP_3DES		(2 << 4)
++#define SS_OP_SHA1		(3 << 4)
++#define SS_OP_MD5		(4 << 4)
++#define SS_OP_PRNG		(5 << 4)
++
++/* Data end bit - bit 2 */
++#define SS_DATA_END		(1 << 2)
++
++/* PRNG start bit - bit 1 */
++#define SS_PRNG_START		(1 << 1)
++
++/* SS Enable bit - bit 0 */
++#define SS_DISABLED		(0 << 0)
++#define SS_ENABLED		(1 << 0)
++
++/* SS_FCSR configuration values */
++/* RX FIFO status - bit 30 */
++#define SS_RXFIFO_FREE		(1 << 30)
++
++/* RX FIFO empty spaces - bits 24-29 */
++#define SS_RXFIFO_SPACES(val)	(((val) >> 24) & 0x3f)
++
++/* TX FIFO status - bit 22 */
++#define SS_TXFIFO_AVAILABLE	(1 << 22)
++
++/* TX FIFO available spaces - bits 16-21 */
++#define SS_TXFIFO_SPACES(val)	(((val) >> 16) & 0x3f)
++
++#define SS_RX_MAX	32
++#define SS_RX_DEFAULT	SS_RX_MAX
++#define SS_TX_MAX	33
++
++#define SS_RXFIFO_EMP_INT_PENDING	(1 << 10)
++#define SS_TXFIFO_AVA_INT_PENDING	(1 << 8)
++#define SS_RXFIFO_EMP_INT_ENABLE	(1 << 2)
++#define SS_TXFIFO_AVA_INT_ENABLE	(1 << 0)
++
++struct sun4i_ss_ctx {
++	void __iomem *base;
++	int irq;
++	struct clk *busclk;
++	struct clk *ssclk;
++	struct device *dev;
++	struct resource *res;
++	spinlock_t slock; /* control the use of the device */
++};
++
++struct sun4i_ss_alg_template {
++	u32 type;
++	u32 mode;
++	union {
++		struct crypto_alg crypto;
++		struct ahash_alg hash;
++	} alg;
++	struct sun4i_ss_ctx *ss;
++};
++
++struct sun4i_tfm_ctx {
++	u32 key[AES_MAX_KEY_SIZE / 4];/* divided by sizeof(u32) */
++	u32 keylen;
++	u32 keymode;
++	struct sun4i_ss_ctx *ss;
++};
++
++struct sun4i_cipher_req_ctx {
++	u32 mode;
++};
++
++struct sun4i_req_ctx {
++	u32 mode;
++	u64 byte_count; /* number of bytes "uploaded" to the device */
++	u32 hash[5]; /* for storing SS_IVx register */
++	char buf[64];
++	unsigned int len;
++	struct sun4i_ss_ctx *ss;
++};
++
++int sun4i_hash_crainit(struct crypto_tfm *tfm);
++int sun4i_hash_init(struct ahash_request *areq);
++int sun4i_hash_update(struct ahash_request *areq);
++int sun4i_hash_final(struct ahash_request *areq);
++int sun4i_hash_finup(struct ahash_request *areq);
++int sun4i_hash_digest(struct ahash_request *areq);
++int sun4i_hash_export_md5(struct ahash_request *areq, void *out);
++int sun4i_hash_import_md5(struct ahash_request *areq, const void *in);
++int sun4i_hash_export_sha1(struct ahash_request *areq, void *out);
++int sun4i_hash_import_sha1(struct ahash_request *areq, const void *in);
++
++int sun4i_ss_cbc_aes_encrypt(struct ablkcipher_request *areq);
++int sun4i_ss_cbc_aes_decrypt(struct ablkcipher_request *areq);
++int sun4i_ss_ecb_aes_encrypt(struct ablkcipher_request *areq);
++int sun4i_ss_ecb_aes_decrypt(struct ablkcipher_request *areq);
++
++int sun4i_ss_cbc_des_encrypt(struct ablkcipher_request *areq);
++int sun4i_ss_cbc_des_decrypt(struct ablkcipher_request *areq);
++int sun4i_ss_ecb_des_encrypt(struct ablkcipher_request *areq);
++int sun4i_ss_ecb_des_decrypt(struct ablkcipher_request *areq);
++
++int sun4i_ss_cbc_des3_encrypt(struct ablkcipher_request *areq);
++int sun4i_ss_cbc_des3_decrypt(struct ablkcipher_request *areq);
++int sun4i_ss_ecb_des3_encrypt(struct ablkcipher_request *areq);
++int sun4i_ss_ecb_des3_decrypt(struct ablkcipher_request *areq);
++
++int sun4i_ss_cipher_init(struct crypto_tfm *tfm);
++int sun4i_ss_aes_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
++			unsigned int keylen);
++int sun4i_ss_des_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
++			unsigned int keylen);
++int sun4i_ss_des3_setkey(struct crypto_ablkcipher *tfm, const u8 *key,
++			 unsigned int keylen);

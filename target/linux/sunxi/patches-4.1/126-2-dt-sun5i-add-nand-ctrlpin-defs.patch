@@ -1,0 +1,87 @@
+From a8ad7637cec0c2c2b1322d78b142beea4621dd23 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Tue, 26 May 2015 17:18:26 +0200
+Subject: [PATCH] ARM: dts: sun5i: Add NAND controller pin definitions
+
+Define the NAND controller pin configs.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun5i-a10s.dtsi | 14 ++++++++++++++
+ arch/arm/boot/dts/sun5i.dtsi      | 38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
+index f11efb7..1962ec9 100644
+--- a/arch/arm/boot/dts/sun5i-a10s.dtsi
++++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
+@@ -201,6 +201,20 @@
+ 		allwinner,drive = <SUN4I_PINCTRL_30_MA>;
+ 		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+ 	};
++
++	nand_cs2_pins_a: nand_cs@2 {
++		allwinner,pins = "PC17";
++		allwinner,function = "nand0";
++		allwinner,drive = <0>;
++		allwinner,pull = <0>;
++	};
++
++	nand_cs3_pins_a: nand_cs@3 {
++		allwinner,pins = "PC18";
++		allwinner,function = "nand0";
++		allwinner,drive = <0>;
++		allwinner,pull = <0>;
++	};
+ };
+ 
+ &sram_a {
+diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
+index 772f8d8..0dc7c96 100644
+--- a/arch/arm/boot/dts/sun5i-a13.dtsi
++++ b/arch/arm/boot/dts/sun5i-a13.dtsi
+@@ -544,6 +544,44 @@
+ 				allwinner,drive = <SUN4I_PINCTRL_30_MA>;
+ 				allwinner,pull = <SUN4I_PINCTRL_PULL_UP>;
+ 			};
++
++			nand_pins_a: nand_base0@0 {
++				allwinner,pins = "PC0", "PC1", "PC2",
++						"PC5", "PC8", "PC9", "PC10",
++						"PC11", "PC12", "PC13", "PC14",
++						"PC15";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs0_pins_a: nand_cs@0 {
++				allwinner,pins = "PC4";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs1_pins_a: nand_cs@1 {
++				allwinner,pins = "PC3";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_rb0_pins_a: nand_rb@0 {
++				allwinner,pins = "PC6";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_rb1_pins_a: nand_rb@1 {
++				allwinner,pins = "PC7";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
+ 		};
+ 
+ 		timer@01c20c00 {

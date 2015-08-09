@@ -1,0 +1,31 @@
+From ec6cde9ea451ffa94b4d0ccbbcbe15c0d35f73d8 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 25 May 2015 12:57:48 +0200
+Subject: [PATCH] mtd: nand: nand_get_flash_type: Print detected ECC strength
+ and size
+
+Print the detected ECC strength and size from nand_get_flash_type().
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/mtd/nand/nand_base.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
+index e3d4d8e..5c6f465 100644
+--- a/drivers/mtd/nand/nand_base.c
++++ b/drivers/mtd/nand/nand_base.c
+@@ -4437,9 +4437,11 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
+ 		pr_info("%s %s\n", nand_manuf_ids[maf_idx].name,
+ 				type->name);
+ 
+-	pr_info("%d MiB, %s, erase size: %d KiB, page size: %d, OOB size: %d\n",
++	pr_info("%d MiB, %s, erase size: %d KiB, page size: %d, "
++		"OOB size: %d, ECC strength %d size %d\n",
+ 		(int)(chip->chipsize >> 20), nand_is_slc(chip) ? "SLC" : "MLC",
+-		mtd->erasesize >> 10, mtd->writesize, mtd->oobsize);
++		mtd->erasesize >> 10, mtd->writesize, mtd->oobsize,
++		chip->ecc_strength_ds, chip->ecc_step_ds);
+ 	return type;
+ }
+ 

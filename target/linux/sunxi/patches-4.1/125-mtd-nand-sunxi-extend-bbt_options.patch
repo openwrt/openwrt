@@ -1,0 +1,36 @@
+From a5ba30016f4a29f5875112169a92a28a9ba7f5c9 Mon Sep 17 00:00:00 2001
+From: Hans de Goede <hdegoede@redhat.com>
+Date: Mon, 25 May 2015 11:59:03 +0200
+Subject: [PATCH] mtd: nand: sunxi: Add NAND_BBT_CREATE_EMPTY to bbt_options
+
+The ftl format used by the Allwinner Android kernels, with which most
+Allwinnner devices ship, overrides the factory bad block markers, and
+fills the oob data with a pattern which causes a lot of false bad block
+positives, so when we first create a bbt table, start with an empty one
+to avoid marking a ton of blocks as bad from the start.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ drivers/mtd/nand/sunxi_nand.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
+index 74f2caf..72ab770 100644
+--- a/drivers/mtd/nand/sunxi_nand.c
++++ b/drivers/mtd/nand/sunxi_nand.c
+@@ -1853,6 +1853,15 @@ static int sunxi_nand_chip_init(struct device *dev, struct sunxi_nfc *nfc,
+ 	if (of_get_nand_on_flash_bbt(np))
+ 		nand->bbt_options |= NAND_BBT_USE_FLASH | NAND_BBT_NO_OOB;
+ 
++	/*
++	 * The ftl format used by the Allwinner Android kernels overrides
++	 * the factory bad block markers, and fills the oob data with a
++	 * pattern which causes a lot of false bad block positives, so
++	 * when we first create a bbt table, start with an empty one
++	 * to avoid marking a ton of blocks as bad from the start.
++	 */
++	nand->bbt_options |= NAND_BBT_CREATE_EMPTY;
++
+ 	mtd = &chip->mtd;
+ 	mtd->dev.parent = dev;
+ 	mtd->priv = nand;

@@ -1,0 +1,31 @@
+From 42ac277ad129cf69d5540938c943f6291a7a9898 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <elopez93@gmail.com>
+Date: Mon, 18 Aug 2014 01:10:05 -0300
+Subject: [PATCH] ARM: sun7i: dt: enable audio codec on Cubietruck
+
+This commit enables the on-chip audio codec present on the A20 SoC
+and outlines the SoC to connector routes for the Cubietruck.
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+index 4611e2f..d05e06d 100644
+--- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
++++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+@@ -105,6 +105,13 @@
+ 	status = "okay";
+ };
+ 
++&codec {
++	routing =
++		"Headphone Jack", "HP Left",
++		"Headphone Jack", "HP Right";
++	status = "okay";
++};
++
+ &cpu0 {
+ 	cpu-supply = <&reg_dcdc2>;
+ };

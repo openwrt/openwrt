@@ -1,0 +1,98 @@
+From b1488f1a55da6a297ac4e8e9140922f35b7583c5 Mon Sep 17 00:00:00 2001
+From: Boris Brezillon <boris.brezillon@free-electrons.com>
+Date: Mon, 15 Jun 2015 11:09:58 +0200
+Subject: [PATCH] nand: sunxi: fix write to USER_DATA reg
+
+The USER_DATA register cannot be updated with readb on A13 SoCs, thus
+triggering a bug when using memcpy_toio on this register.
+Use writel (plus a temporary variable to old the USER_DATA value) to
+address that problem.
+
+Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
+---
+ drivers/mtd/nand/sunxi_nand.c | 38 +++++++++++++++++++++-----------------
+ 1 file changed, 21 insertions(+), 17 deletions(-)
+
+diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
+index 72ab770..3668197 100644
+--- a/drivers/mtd/nand/sunxi_nand.c
++++ b/drivers/mtd/nand/sunxi_nand.c
+@@ -904,7 +904,7 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+ 
+ 	for (i = 0; i < ecc->steps; i++) {
+ 		bool rndactiv = false;
+-		u8 oob_buf[4];
++		u32 user_data;
+ 
+ 		if (i)
+ 			chip->cmdfunc(mtd, NAND_CMD_RNDIN, i * ecc->size, -1);
+@@ -915,15 +915,13 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+ 		offset = layout->eccpos[i * ecc->bytes] - 4 + mtd->writesize;
+ 
+ 		/* Fill OOB data in */
+-		if (!oob_required)
+-			memset(oob_buf, 0xff, 4);
+-		else
+-			memcpy(oob_buf,
+-			       chip->oob_poi + layout->oobfree[i].offset,
+-			       4);
+-
+-
+-		memcpy_toio(nfc->regs + NFC_REG_USER_DATA_BASE, oob_buf, 4);
++		if (!oob_required) {
++			user_data = 0xffffffff;
++		} else {
++			memcpy(&user_data,
++			       chip->oob_poi + layout->oobfree[i].offset, 4);
++			user_data = le32_to_cpu(user_data);
++		}
+ 
+ 		if (i) {
+ 			cnt = ecc->bytes + 4;
+@@ -942,12 +940,16 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+ 		if (rndactiv) {
+ 			/* pre randomize to generate FF patterns on the NAND */
+ 			if (!i) {
++				u8 oob_tmp[2];
+ 				u16 state = rnd->subseeds[rnd->page % rnd->nseeds];
++				oob_tmp[0] = user_data;
++				oob_tmp[1] = user_data >> 8;
+ 				state = sunxi_nfc_hwrnd_single_step(state, 15);
+-				oob_buf[0] ^= state;
++				oob_tmp[0] ^= state;
+ 				state = sunxi_nfc_hwrnd_step(rnd, state, 1);
+-				oob_buf[1] ^= state;
+-				memcpy_toio(nfc->regs + NFC_REG_USER_DATA_BASE, oob_buf, 4);
++				oob_tmp[1] ^= state;
++				user_data &= ~0xffff;
++				user_data |= oob_tmp[0] | (oob_tmp[1] << 8);
+ 			}
+ 			tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
+ 			tmp &= ~(NFC_RANDOM_DIRECTION | NFC_ECC_EXCEPTION);
+@@ -955,6 +957,8 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+ 			writel(tmp, nfc->regs + NFC_REG_ECC_CTL);
+ 		}
+ 
++		writel(user_data, nfc->regs + NFC_REG_USER_DATA_BASE);
++
+ 		chip->cmdfunc(mtd, NAND_CMD_RNDIN, offset, -1);
+ 
+ 		ret = sunxi_nfc_wait_cmd_fifo_empty(nfc);
+@@ -1164,13 +1168,13 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+ 		/* Fill OOB data in */
+ 		if (oob_required) {
+ 			tmp = 0xffffffff;
+-			memcpy_toio(nfc->regs + NFC_REG_USER_DATA_BASE, &tmp,
+-				    4);
+ 		} else {
+-			memcpy_toio(nfc->regs + NFC_REG_USER_DATA_BASE, oob,
+-				    4);
++			memcpy(&tmp, oob, sizeof(tmp));
++			tmp = le32_to_cpu(tmp);
+ 		}
+ 
++		writel(tmp, nfc->regs + NFC_REG_USER_DATA_BASE);
++
+ 		cnt = ecc->bytes + 4;
+ 		if (rnd &&
+ 		    nand_rnd_is_activ(mtd, rnd->page, offset, &cnt) > 0 &&

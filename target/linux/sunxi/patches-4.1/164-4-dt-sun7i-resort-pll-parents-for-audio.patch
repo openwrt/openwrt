@@ -1,0 +1,23 @@
+From ed5c1e047de4e8a849cd0517590d5c1bbf3247fc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Emilio=20L=C3=B3pez?= <elopez93@gmail.com>
+Date: Sun, 17 Aug 2014 19:25:53 -0300
+Subject: [PATCH] resort pll parents for audio
+
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun7i-a20.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
+index a0d18b2..1cced70 100644
+--- a/arch/arm/boot/dts/sun7i-a20.dtsi
++++ b/arch/arm/boot/dts/sun7i-a20.dtsi
+@@ -470,7 +470,7 @@
+ 			#clock-cells = <0>;
+ 			compatible = "allwinner,sun4i-a10-mod1-clk";
+ 			reg = <0x01c200c0 0x4>;
+-			clocks = <&pll2 0>, <&pll2 1>, <&pll2 2>, <&pll2 3>;
++			clocks = <&pll2 3>, <&pll2 2>, <&pll2 1>, <&pll2 0>;
+ 			clock-output-names = "spdif";
+ 		};
+ 		usb_clk: clk@01c200cc {

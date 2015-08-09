@@ -1,0 +1,104 @@
+From 00f9956384e3cf011e0d5ffd211847bf9336ec78 Mon Sep 17 00:00:00 2001
+From: Michal Suchanek <hramrach@gmail.com>
+Date: Tue, 26 May 2015 17:01:33 +0200
+Subject: [PATCH] ARM: dts: sun4i: Add NAND controller pin definitions
+
+Define the NAND controller pin configs.
+
+Signed-off-by: Michal Suchanek <hramrach@gmail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+---
+ arch/arm/boot/dts/sun4i-a10.dtsi | 80 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
+index abea24e..e0a737f 100644
+--- a/arch/arm/boot/dts/sun4i-a10.dtsi
++++ b/arch/arm/boot/dts/sun4i-a10.dtsi
+@@ -924,6 +924,86 @@
+ 				allwinner,drive = <SUN4I_PINCTRL_10_MA>;
+ 				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+ 			};
++
++			nand_pins_a: nand_base0@0 {
++				allwinner,pins = "PC0", "PC1", "PC2",
++						"PC5", "PC8", "PC9", "PC10",
++						"PC11", "PC12", "PC13", "PC14",
++						"PC15", "PC16";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs0_pins_a: nand_cs@0 {
++				allwinner,pins = "PC4";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs1_pins_a: nand_cs@1 {
++				allwinner,pins = "PC3";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs2_pins_a: nand_cs@2 {
++				allwinner,pins = "PC17";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs3_pins_a: nand_cs@3 {
++				allwinner,pins = "PC18";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs4_pins_a: nand_cs@4 {
++				allwinner,pins = "PC19";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs5_pins_a: nand_cs@5 {
++				allwinner,pins = "PC20";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs6_pins_a: nand_cs@6 {
++				allwinner,pins = "PC21";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_cs7_pins_a: nand_cs@7 {
++				allwinner,pins = "PC22";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_rb0_pins_a: nand_rb@0 {
++				allwinner,pins = "PC6";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
++
++			nand_rb1_pins_a: nand_rb@1 {
++				allwinner,pins = "PC7";
++				allwinner,function = "nand0";
++				allwinner,drive = <0>;
++				allwinner,pull = <0>;
++			};
+ 		};
+ 
+ 		timer@01c20c00 {
