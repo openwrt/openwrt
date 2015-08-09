@@ -380,10 +380,9 @@ $(eval $(call KernelPackage,crypto-ecb))
 
 define KernelPackage/crypto-hmac
   TITLE:=HMAC digest CryptoAPI module
-  DEPENDS:=+kmod-crypto-hash
+  DEPENDS:=+kmod-crypto-hash +kmod-crypto-manager
   KCONFIG:=CONFIG_CRYPTO_HMAC
   FILES:=$(LINUX_DIR)/crypto/hmac.ko
-  DEPENDS:=+kmod-crypto-manager
   AUTOLOAD:=$(call AutoLoad,09,hmac)
   $(call AddDepends/crypto)
 endef
