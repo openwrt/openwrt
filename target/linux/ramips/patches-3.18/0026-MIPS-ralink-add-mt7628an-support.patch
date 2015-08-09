@@ -264,7 +264,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  		/*
  		 * When the CPU goes into sleep mode, the BUS clock will be too low for
  		 * USB to function properly
-@@ -367,6 +500,52 @@ void __init ralink_of_remap(void)
+@@ -367,6 +502,52 @@ void __init ralink_of_remap(void)
  		panic("Failed to remap core resources");
  }
  
@@ -317,7 +317,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  void prom_soc_init(struct ralink_soc_info *soc_info)
  {
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7620_SYSC_BASE);
-@@ -384,18 +563,25 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -384,18 +565,25 @@ void prom_soc_init(struct ralink_soc_inf
  	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
  	bga = (rev >> CHIP_REV_PKG_SHIFT) & CHIP_REV_PKG_MASK;
  
@@ -353,7 +353,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	}
  
  	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
-@@ -407,28 +593,11 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -407,28 +595,11 @@ void prom_soc_init(struct ralink_soc_inf
  	cfg0 = __raw_readl(sysc + SYSC_REG_SYSTEM_CONFIG0);
  	dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
  
@@ -386,7 +386,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  	pmu0 = __raw_readl(sysc + PMU0_CFG);
  	pmu1 = __raw_readl(sysc + PMU1_CFG);
-@@ -437,4 +606,9 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -437,4 +608,9 @@ void prom_soc_init(struct ralink_soc_inf
  		(pmu0 & PMU_SW_SET) ? ("sw") : ("hw"));
  	pr_info("Digital PMU set to %s control\n",
  		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
