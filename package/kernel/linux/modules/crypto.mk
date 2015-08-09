@@ -66,6 +66,7 @@ define KernelPackage/crypto-manager
 	CONFIG_CRYPTO_MANAGER \
 	CONFIG_CRYPTO_MANAGER2
   FILES:=$(LINUX_DIR)/crypto/cryptomgr.ko
+  AUTOLOAD:=$(call AutoLoad,09,cryptomgr,1)
   $(call AddDepends/crypto)
 endef
 
