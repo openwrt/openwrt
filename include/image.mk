@@ -396,6 +396,7 @@ define Device/Build/kernel
   _KERNEL_IMAGES += $(KDIR)/$$(KERNEL_NAME)
   $(KDIR)/$$(KERNEL_NAME): image_prepare
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
+  $(call Device/Export,$(KDIR)/$$(KERNEL_IMAGE),$(1))
   $(BIN_DIR)/$$(KERNEL_IMAGE): $(KDIR)/$$(KERNEL_IMAGE)
 	cp $$^ $$@
   ifndef IB
@@ -411,7 +412,6 @@ endef
 
 define Device/Build/image
   $$(_TARGET): $(BIN_DIR)/$(call IMAGE_NAME,$(1),$(2))
-  $(eval $(call Device/Export,$(KDIR)/$(KERNEL_IMAGE),$(1)))
   $(eval $(call Device/Export,$(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)),$(1)))
   $(KDIR)/tmp/$(call IMAGE_NAME,$(1),$(2)): $(KDIR)/$$(KERNEL_IMAGE) $(KDIR)/root.$(1)
 	@rm -f $$@
