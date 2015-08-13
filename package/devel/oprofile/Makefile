@@ -50,6 +50,7 @@ endef
 define Build/Configure
 	$(call Build/Configure/Default, \
 		--with-kernel-support \
+		--with-kernel=$(LINUX_DIR)/user_headers \
 		--without-x \
 	)
 endef
