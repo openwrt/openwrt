@@ -11,19 +11,6 @@ Signed-off-by: Andy Gross <agross@codeaurora.org>
  arch/arm/boot/dts/qcom-ipq8064.dtsi      | 21 +++++++++++++++++++++
  2 files changed, 25 insertions(+)
 
---- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-+++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-@@ -90,6 +90,10 @@
- 
- 				cs-gpios = <&qcom_pinmux 20 0>;
- 
-+				dmas = <&adm_dma 6>,
-+					<&adm_dma 5>;
-+				dma-names = "rx", "tx";
-+
- 				flash: m25p80@0 {
- 					compatible = "s25fl256s1";
- 					#address-cells = <1>;
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
 @@ -657,5 +657,25 @@
