@@ -367,6 +367,7 @@ endef
 
 define Device/Init
   PROFILES := $(PROFILE)
+  DEVICE_NAME := $(1)
   KERNEL:=
   KERNEL_INITRAMFS = $$(KERNEL)
   KERNEL_SIZE:=
@@ -391,7 +392,7 @@ define Device/ExportVar
 
 endef
 define Device/Export
-  $(foreach var,$(DEVICE_VARS) KERNEL KERNEL_INITRAMFS,$(call Device/ExportVar,$(1),$(var)))
+  $(foreach var,$(DEVICE_VARS) DEVICE_NAME KERNEL KERNEL_INITRAMFS,$(call Device/ExportVar,$(1),$(var)))
   $(1) : FILESYSTEM:=$(2)
 endef
 
