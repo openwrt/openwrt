@@ -11,11 +11,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mtd/nand/nand_base.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index e3d4d8e..5c6f465 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -4437,9 +4437,11 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
+@@ -4437,9 +4437,11 @@ ident_done:
  		pr_info("%s %s\n", nand_manuf_ids[maf_idx].name,
  				type->name);
  

@@ -13,11 +13,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  include/linux/mtd/nand.h     | 4 ++++
  2 files changed, 11 insertions(+)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 577cb9e..51642c6 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -4382,6 +4382,13 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
+@@ -4382,6 +4382,13 @@ ident_done:
  	if (mtd->writesize > 512 && chip->cmdfunc == nand_command)
  		chip->cmdfunc = nand_command_lp;
  
@@ -31,8 +29,6 @@ index 577cb9e..51642c6 100644
  	pr_info("device found, Manufacturer ID: 0x%02x, Chip ID: 0x%02x\n",
  		*maf_id, *dev_id);
  
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 6cbd06a3..5844d6f 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -748,6 +748,9 @@ struct nand_chip {

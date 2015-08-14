@@ -22,11 +22,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mtd/nand/nand_base.c | 35 +++++++++++++++++++++++++++++++++++
  1 file changed, 35 insertions(+)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 51642c6..e3d4d8e 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -4063,6 +4063,41 @@ static void nand_decode_ext_id(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -4063,6 +4063,41 @@ static void nand_decode_ext_id(struct mt
  		mtd->erasesize = (128 * 1024) <<
  			(((extid >> 1) & 0x04) | (extid & 0x03));
  		*busw = 0;

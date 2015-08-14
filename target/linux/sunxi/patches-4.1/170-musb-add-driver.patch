@@ -26,9 +26,6 @@ Signed-off-by: Felipe Balbi <balbi@ti.com>
  create mode 100644 Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt
  create mode 100644 drivers/usb/musb/sunxi.c
 
-diff --git a/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt b/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt
-new file mode 100644
-index 0000000..9254a6c
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt
 @@ -0,0 +1,27 @@
@@ -59,8 +56,6 @@ index 0000000..9254a6c
 +		extcon = <&usbphy 0>;
 +		status = "disabled";
 +	};
-diff --git a/drivers/usb/musb/Kconfig b/drivers/usb/musb/Kconfig
-index 39db8b6..37081ed 100644
 --- a/drivers/usb/musb/Kconfig
 +++ b/drivers/usb/musb/Kconfig
 @@ -5,7 +5,7 @@
@@ -97,11 +92,9 @@ index 39db8b6..37081ed 100644
  config USB_MUSB_DAVINCI
  	tristate "DaVinci"
  	depends on ARCH_DAVINCI_DMx
-diff --git a/drivers/usb/musb/Makefile b/drivers/usb/musb/Makefile
-index ba49501..f95befe 100644
 --- a/drivers/usb/musb/Makefile
 +++ b/drivers/usb/musb/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_USB_MUSB_DA8XX)			+= da8xx.o
+@@ -20,6 +20,7 @@ obj-$(CONFIG_USB_MUSB_DA8XX)			+= da8xx.
  obj-$(CONFIG_USB_MUSB_BLACKFIN)			+= blackfin.o
  obj-$(CONFIG_USB_MUSB_UX500)			+= ux500.o
  obj-$(CONFIG_USB_MUSB_JZ4740)			+= jz4740.o
@@ -109,9 +102,6 @@ index ba49501..f95befe 100644
  
  
  obj-$(CONFIG_USB_MUSB_AM335X_CHILD)		+= musb_am335x.o
-diff --git a/drivers/usb/musb/sunxi.c b/drivers/usb/musb/sunxi.c
-new file mode 100644
-index 0000000..00d7248
 --- /dev/null
 +++ b/drivers/usb/musb/sunxi.c
 @@ -0,0 +1,703 @@

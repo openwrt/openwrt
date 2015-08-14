@@ -12,11 +12,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mtd/nand/nand_base.c | 23 ++++++++++++++++++-----
  1 file changed, 18 insertions(+), 5 deletions(-)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index 5c6f465..05ec786 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -4247,7 +4247,7 @@ static inline bool is_full_id_nand(struct nand_flash_dev *type)
+@@ -4247,7 +4247,7 @@ static inline bool is_full_id_nand(struc
  }
  
  static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
@@ -25,7 +23,7 @@ index 5c6f465..05ec786 100644
  {
  	if (!strncmp(type->id, id_data, type->id_len)) {
  		mtd->writesize = type->pagesize;
-@@ -4273,6 +4273,21 @@ static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -4273,6 +4273,21 @@ static bool find_full_id_nand(struct mtd
  }
  
  /*
@@ -47,7 +45,7 @@ index 5c6f465..05ec786 100644
   * Get the flash and manufacturer id and lookup if the type is supported.
   */
  static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
-@@ -4385,8 +4400,7 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
+@@ -4385,8 +4400,7 @@ ident_done:
  		 * Check, if buswidth is correct. Hardware drivers should set
  		 * chip correct!
  		 */
@@ -57,7 +55,7 @@ index 5c6f465..05ec786 100644
  		pr_info("%s %s\n", nand_manuf_ids[maf_idx].name, mtd->name);
  		pr_warn("bus width %d instead %d bit\n",
  			   (chip->options & NAND_BUSWIDTH_16) ? 16 : 8,
-@@ -4424,8 +4438,7 @@ static struct nand_flash_dev *nand_get_flash_type(struct mtd_info *mtd,
+@@ -4424,8 +4438,7 @@ ident_done:
  			return ERR_PTR(err);
  	}
  

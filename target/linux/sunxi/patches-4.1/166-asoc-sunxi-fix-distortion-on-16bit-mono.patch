@@ -11,11 +11,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  sound/soc/sunxi/sunxi-codec.c | 4 +---
  1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/sound/soc/sunxi/sunxi-codec.c b/sound/soc/sunxi/sunxi-codec.c
-index 67f978e..77a191b 100644
 --- a/sound/soc/sunxi/sunxi-codec.c
 +++ b/sound/soc/sunxi/sunxi-codec.c
-@@ -215,9 +215,6 @@ static int sunxi_codec_prepare(struct snd_pcm_substream *substream,
+@@ -215,9 +215,6 @@ static int sunxi_codec_prepare(struct sn
  			regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_FIR_VERSION, 0x1 << SUNXI_DAC_FIFOC_FIR_VERSION);
  		}
  
@@ -25,7 +23,7 @@ index 67f978e..77a191b 100644
  		/* send last sample when DAC FIFO under run */
  		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 0x1 << SUNXI_DAC_FIFOC_SEND_LASAT, 0x0 << SUNXI_DAC_FIFOC_SEND_LASAT);
  	} else {
-@@ -329,6 +326,7 @@ static int sunxi_codec_hw_params(struct snd_pcm_substream *substream,
+@@ -329,6 +326,7 @@ static int sunxi_codec_hw_params(struct
  		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 7 << SUNXI_DAC_FIFOC_DAC_FS, hwrate << SUNXI_DAC_FIFOC_DAC_FS);
  		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 1 << SUNXI_DAC_FIFOC_MONO_EN, is_mono << SUNXI_DAC_FIFOC_MONO_EN);
  		regmap_update_bits(priv->regmap, SUNXI_DAC_FIFOC, 1 << SUNXI_DAC_FIFOC_TX_SAMPLE_BITS, is_24bit << SUNXI_DAC_FIFOC_TX_SAMPLE_BITS);

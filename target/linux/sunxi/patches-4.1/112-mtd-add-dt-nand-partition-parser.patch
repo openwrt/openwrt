@@ -17,9 +17,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  2 files changed, 121 insertions(+)
  create mode 100644 drivers/mtd/nand/ofnandpart.c
 
-diff --git a/drivers/mtd/nand/ofnandpart.c b/drivers/mtd/nand/ofnandpart.c
-new file mode 100644
-index 0000000..293daee
 --- /dev/null
 +++ b/drivers/mtd/nand/ofnandpart.c
 @@ -0,0 +1,104 @@
@@ -127,11 +124,9 @@ index 0000000..293daee
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Parser for NAND flash partitioning information in device tree");
 +MODULE_AUTHOR("Boris BREZILLON");
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 510e09b..5616f51 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -1013,6 +1013,23 @@ static inline int jedec_feature(struct nand_chip *chip)
+@@ -1014,6 +1014,23 @@ static inline int jedec_feature(struct n
  		: 0;
  }
  

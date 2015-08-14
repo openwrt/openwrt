@@ -24,11 +24,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  include/linux/mtd/nand.h     |  21 ++++++
  2 files changed, 175 insertions(+)
 
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index a30b67f..8a5d12e 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -1102,6 +1102,138 @@ int nand_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+@@ -1102,6 +1102,138 @@ out:
  EXPORT_SYMBOL(nand_lock);
  
  /**
@@ -167,7 +165,7 @@ index a30b67f..8a5d12e 100644
   * nand_read_page_raw - [INTERN] read raw page data without ecc
   * @mtd: mtd info structure
   * @chip: nand chip info structure
-@@ -2539,6 +2671,7 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
+@@ -2539,6 +2671,7 @@ static int nand_do_write_ops(struct mtd_
  		uint8_t *wbuf = buf;
  		int use_bufpoi;
  		int part_pagewr = (column || writelen < (mtd->writesize - 1));
@@ -175,7 +173,7 @@ index a30b67f..8a5d12e 100644
  
  		if (part_pagewr)
  			use_bufpoi = 1;
-@@ -2574,6 +2707,14 @@ static int nand_do_write_ops(struct mtd_info *mtd, loff_t to,
+@@ -2574,6 +2707,14 @@ static int nand_do_write_ops(struct mtd_
  		if (ret)
  			break;
  
@@ -190,7 +188,7 @@ index a30b67f..8a5d12e 100644
  		writelen -= bytes;
  		if (!writelen)
  			break;
-@@ -2979,6 +3120,7 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
+@@ -2979,6 +3120,7 @@ int nand_erase_nand(struct mtd_info *mtd
  	int page, status, pages_per_block, ret, chipnr;
  	struct nand_chip *chip = mtd->priv;
  	loff_t len;
@@ -198,7 +196,7 @@ index a30b67f..8a5d12e 100644
  
  	pr_debug("%s: start = 0x%012llx, len = %llu\n",
  			__func__, (unsigned long long)instr->addr,
-@@ -3051,6 +3193,18 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
+@@ -3051,6 +3193,18 @@ int nand_erase_nand(struct mtd_info *mtd
  			goto erase_exit;
  		}
  
@@ -217,8 +215,6 @@ index a30b67f..8a5d12e 100644
  		/* Increment page address and decrement length */
  		len -= (1ULL << chip->phys_erase_shift);
  		page += pages_per_block;
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 5616f51..4f7ca8d 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -521,6 +521,24 @@ struct nand_ecc_ctrl {

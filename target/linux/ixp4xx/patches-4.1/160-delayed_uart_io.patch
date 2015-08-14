@@ -75,7 +75,7 @@
  		uart->tx_loadsz		= up->tx_loadsz;
 --- a/drivers/tty/serial/serial_core.c
 +++ b/drivers/tty/serial/serial_core.c
-@@ -2176,6 +2176,7 @@ uart_report_port(struct uart_driver *drv
+@@ -2177,6 +2177,7 @@ uart_report_port(struct uart_driver *drv
  		snprintf(address, sizeof(address),
  			 "I/O 0x%lx offset 0x%x", port->iobase, port->hub6);
  		break;
@@ -83,7 +83,7 @@
  	case UPIO_MEM:
  	case UPIO_MEM32:
  	case UPIO_MEM32BE:
-@@ -2823,6 +2824,7 @@ int uart_match_port(struct uart_port *po
+@@ -2824,6 +2825,7 @@ int uart_match_port(struct uart_port *po
  	case UPIO_HUB6:
  		return (port1->iobase == port2->iobase) &&
  		       (port1->hub6   == port2->hub6);

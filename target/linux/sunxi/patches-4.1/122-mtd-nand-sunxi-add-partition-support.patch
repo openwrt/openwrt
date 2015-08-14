@@ -12,8 +12,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mtd/nand/sunxi_nand.c | 73 +++++++++++++++++++++++++++++++++++++------
  2 files changed, 65 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mtd/nand/Kconfig b/drivers/mtd/nand/Kconfig
-index 8242470..7df88c6 100644
 --- a/drivers/mtd/nand/Kconfig
 +++ b/drivers/mtd/nand/Kconfig
 @@ -525,6 +525,7 @@ config MTD_NAND_XWAY
@@ -24,8 +22,6 @@ index 8242470..7df88c6 100644
  	help
  	  Enables support for NAND Flash chips on Allwinner SoCs.
  
-diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
-index 6f93b29..c3e0473 100644
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
 @@ -202,6 +202,23 @@ struct sunxi_nand_hw_ecc {
@@ -52,7 +48,7 @@ index 6f93b29..c3e0473 100644
   * NAND chip structure: stores NAND chip device related information
   *
   * @node:		used to store NAND chips into a list
-@@ -521,7 +538,7 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -521,7 +538,7 @@ static int sunxi_nfc_hw_ecc_read_page(st
  				      int oob_required, int page)
  {
  	struct sunxi_nfc *nfc = to_sunxi_nfc(chip->controller);
@@ -61,7 +57,7 @@ index 6f93b29..c3e0473 100644
  	struct nand_ecclayout *layout = ecc->layout;
  	struct sunxi_nand_hw_ecc *data = ecc->priv;
  	unsigned int max_bitflips = 0;
-@@ -607,7 +624,7 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -607,7 +624,7 @@ static int sunxi_nfc_hw_ecc_write_page(s
  				       const uint8_t *buf, int oob_required)
  {
  	struct sunxi_nfc *nfc = to_sunxi_nfc(chip->controller);
@@ -70,7 +66,7 @@ index 6f93b29..c3e0473 100644
  	struct nand_ecclayout *layout = ecc->layout;
  	struct sunxi_nand_hw_ecc *data = ecc->priv;
  	int offset;
-@@ -681,7 +698,7 @@ static int sunxi_nfc_hw_syndrome_ecc_read_page(struct mtd_info *mtd,
+@@ -681,7 +698,7 @@ static int sunxi_nfc_hw_syndrome_ecc_rea
  					       int page)
  {
  	struct sunxi_nfc *nfc = to_sunxi_nfc(chip->controller);
@@ -79,7 +75,7 @@ index 6f93b29..c3e0473 100644
  	struct sunxi_nand_hw_ecc *data = ecc->priv;
  	unsigned int max_bitflips = 0;
  	uint8_t *oob = chip->oob_poi;
-@@ -749,7 +766,7 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -749,7 +766,7 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  						int oob_required)
  {
  	struct sunxi_nfc *nfc = to_sunxi_nfc(chip->controller);
@@ -88,7 +84,7 @@ index 6f93b29..c3e0473 100644
  	struct sunxi_nand_hw_ecc *data = ecc->priv;
  	uint8_t *oob = chip->oob_poi;
  	int offset = 0;
-@@ -1099,8 +1116,13 @@ static int sunxi_nand_ecc_init(struct mtd_info *mtd, struct nand_ecc_ctrl *ecc,
+@@ -1099,8 +1116,13 @@ static int sunxi_nand_ecc_init(struct mt
  		ecc->strength = nand->ecc_strength_ds;
  	}
  
@@ -104,7 +100,7 @@ index 6f93b29..c3e0473 100644
  
  	ecc->mode = NAND_ECC_HW;
  
-@@ -1135,12 +1157,39 @@ static int sunxi_nand_ecc_init(struct mtd_info *mtd, struct nand_ecc_ctrl *ecc,
+@@ -1135,12 +1157,39 @@ static int sunxi_nand_ecc_init(struct mt
  	return 0;
  }
  
@@ -145,7 +141,7 @@ index 6f93b29..c3e0473 100644
  	struct mtd_info *mtd;
  	struct nand_chip *nand;
  	int nsels;
-@@ -1269,8 +1318,14 @@ static int sunxi_nand_chip_init(struct device *dev, struct sunxi_nfc *nfc,
+@@ -1269,8 +1318,14 @@ static int sunxi_nand_chip_init(struct d
  		return ret;
  	}
  

@@ -15,11 +15,9 @@ Signed-off-by: Felipe Balbi <balbi@ti.com>
  drivers/usb/musb/sunxi.c                           | 50 +++++++++++++++++++---
  2 files changed, 46 insertions(+), 7 deletions(-)
 
-diff --git a/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt b/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt
-index 9254a6c..fde180b 100644
 --- a/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt
 +++ b/Documentation/devicetree/bindings/usb/allwinner,sun4i-a10-musb.txt
-@@ -2,9 +2,10 @@ Allwinner sun4i A10 musb DRC/OTG controller
+@@ -2,9 +2,10 @@ Allwinner sun4i A10 musb DRC/OTG control
  -------------------------------------------
  
  Required properties:
@@ -31,8 +29,6 @@ index 9254a6c..fde180b 100644
   - interrupts      : interrupt to which the musb controller is connected
   - interrupt-names : must be "mc"
   - phys            : phy specifier for the otg phy
-diff --git a/drivers/usb/musb/sunxi.c b/drivers/usb/musb/sunxi.c
-index 00d7248..df2f75e 100644
 --- a/drivers/usb/musb/sunxi.c
 +++ b/drivers/usb/musb/sunxi.c
 @@ -26,6 +26,7 @@
@@ -60,7 +56,7 @@ index 00d7248..df2f75e 100644
  	struct phy		*phy;
  	struct platform_device	*usb_phy;
  	struct usb_phy		*xceiv;
-@@ -229,14 +233,22 @@ static int sunxi_musb_init(struct musb *musb)
+@@ -229,14 +233,22 @@ static int sunxi_musb_init(struct musb *
  	musb->phy = glue->phy;
  	musb->xceiv = glue->xceiv;
  
@@ -86,7 +82,7 @@ index 00d7248..df2f75e 100644
  	writeb(SUNXI_MUSB_VEND0_PIO_MODE, musb->mregs + SUNXI_MUSB_VEND0);
  
  	/* Register notifier before calling phy_init() */
-@@ -244,7 +256,7 @@ static int sunxi_musb_init(struct musb *musb)
+@@ -244,7 +256,7 @@ static int sunxi_musb_init(struct musb *
  		ret = extcon_register_notifier(glue->extcon, EXTCON_USB_HOST,
  					       &glue->host_nb);
  		if (ret)
@@ -95,7 +91,7 @@ index 00d7248..df2f75e 100644
  	}
  
  	ret = phy_init(glue->phy);
-@@ -273,10 +285,14 @@ static int sunxi_musb_init(struct musb *musb)
+@@ -273,10 +285,14 @@ error_unregister_notifier:
  	if (musb->port_mode == MUSB_PORT_MODE_DUAL_ROLE)
  		extcon_unregister_notifier(glue->extcon, EXTCON_USB_HOST,
  					   &glue->host_nb);
@@ -111,7 +107,7 @@ index 00d7248..df2f75e 100644
  	return ret;
  }
  
-@@ -296,8 +312,12 @@ static int sunxi_musb_exit(struct musb *musb)
+@@ -296,8 +312,12 @@ static int sunxi_musb_exit(struct musb *
  		extcon_unregister_notifier(glue->extcon, EXTCON_USB_HOST,
  					   &glue->host_nb);
  
@@ -125,7 +121,7 @@ index 00d7248..df2f75e 100644
  
  	return 0;
  }
-@@ -617,6 +637,12 @@ static int sunxi_musb_probe(struct platform_device *pdev)
+@@ -617,6 +637,12 @@ static int sunxi_musb_probe(struct platf
  	INIT_WORK(&glue->work, sunxi_musb_work);
  	glue->host_nb.notifier_call = sunxi_musb_host_notifier;
  
@@ -138,7 +134,7 @@ index 00d7248..df2f75e 100644
  	glue->clk = devm_clk_get(&pdev->dev, NULL);
  	if (IS_ERR(glue->clk)) {
  		dev_err(&pdev->dev, "Error getting clock: %ld\n",
-@@ -624,6 +650,17 @@ static int sunxi_musb_probe(struct platform_device *pdev)
+@@ -624,6 +650,17 @@ static int sunxi_musb_probe(struct platf
  		return PTR_ERR(glue->clk);
  	}
  
@@ -156,7 +152,7 @@ index 00d7248..df2f75e 100644
  	glue->phy = devm_phy_get(&pdev->dev, "usb");
  	if (IS_ERR(glue->phy)) {
  		if (PTR_ERR(glue->phy) == -EPROBE_DEFER)
-@@ -685,6 +722,7 @@ static int sunxi_musb_remove(struct platform_device *pdev)
+@@ -685,6 +722,7 @@ static int sunxi_musb_remove(struct plat
  
  static const struct of_device_id sunxi_musb_match[] = {
  	{ .compatible = "allwinner,sun4i-a10-musb", },

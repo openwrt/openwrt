@@ -55,9 +55,6 @@ Changes from v1:
  create mode 100644 Documentation/devicetree/bindings/dma/sun4i-dma.txt
  create mode 100644 drivers/dma/sun4i-dma.c
 
-diff --git a/Documentation/devicetree/bindings/dma/sun4i-dma.txt b/Documentation/devicetree/bindings/dma/sun4i-dma.txt
-new file mode 100644
-index 0000000..f1634a2
 --- /dev/null
 +++ b/Documentation/devicetree/bindings/dma/sun4i-dma.txt
 @@ -0,0 +1,46 @@
@@ -107,11 +104,9 @@ index 0000000..f1634a2
 +		#address-cells = <1>;
 +		#size-cells = <0>;
 +	};
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index fd7ac13..12372c2 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
-@@ -443,6 +443,17 @@ config XGENE_DMA
+@@ -444,6 +444,17 @@ config XGENE_DMA
  	help
  	  Enable support for the APM X-Gene SoC DMA engine.
  
@@ -129,8 +124,6 @@ index fd7ac13..12372c2 100644
  config DMA_ENGINE
  	bool
  
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index 69f77d5..3eba5e9 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
 @@ -54,3 +54,4 @@ obj-$(CONFIG_NBPFAXI_DMA) += nbpfaxi.o
@@ -138,9 +131,6 @@ index 69f77d5..3eba5e9 100644
  obj-$(CONFIG_IMG_MDC_DMA) += img-mdc-dma.o
  obj-$(CONFIG_XGENE_DMA) += xgene-dma.o
 +obj-$(CONFIG_SUN4I_DMA) += sun4i-dma.o
-diff --git a/drivers/dma/sun4i-dma.c b/drivers/dma/sun4i-dma.c
-new file mode 100644
-index 0000000..a8d55518
 --- /dev/null
 +++ b/drivers/dma/sun4i-dma.c
 @@ -0,0 +1,1235 @@

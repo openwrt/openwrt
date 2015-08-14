@@ -17,11 +17,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi | 8 ++++++++
  3 files changed, 24 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10.dtsi b/arch/arm/boot/dts/sun4i-a10.dtsi
-index 30f663a..fab13af 100644
 --- a/arch/arm/boot/dts/sun4i-a10.dtsi
 +++ b/arch/arm/boot/dts/sun4i-a10.dtsi
-@@ -195,6 +195,14 @@
+@@ -162,6 +162,14 @@
  			clock-output-names = "pll1";
  		};
  
@@ -36,11 +34,9 @@ index 30f663a..fab13af 100644
  		pll4: clk@01c20018 {
  			#clock-cells = <0>;
  			compatible = "allwinner,sun4i-a10-pll1-clk";
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 53d3ead..a4b6a66 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
-@@ -102,6 +102,14 @@
+@@ -136,6 +136,14 @@
  			clock-output-names = "pll1";
  		};
  
@@ -55,11 +51,9 @@ index 53d3ead..a4b6a66 100644
  		pll4: clk@01c20018 {
  			#clock-cells = <0>;
  			compatible = "allwinner,sun4i-a10-pll1-clk";
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 7549f1b..12d9ffd 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -199,6 +199,14 @@
+@@ -203,6 +203,14 @@
  			clock-output-names = "pll1";
  		};
  

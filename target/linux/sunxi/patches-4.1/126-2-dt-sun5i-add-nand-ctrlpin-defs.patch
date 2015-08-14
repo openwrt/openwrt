@@ -11,13 +11,11 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun5i.dtsi      | 38 ++++++++++++++++++++++++++++++++++++++
  2 files changed, 52 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun5i-a10s.dtsi b/arch/arm/boot/dts/sun5i-a10s.dtsi
-index f11efb7..1962ec9 100644
 --- a/arch/arm/boot/dts/sun5i-a10s.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a10s.dtsi
-@@ -201,6 +201,20 @@
- 		allwinner,drive = <SUN4I_PINCTRL_30_MA>;
- 		allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
+@@ -656,4 +656,18 @@
+ 			clocks = <&ahb_gates 28>;
+ 		};
  	};
 +
 +	nand_cs2_pins_a: nand_cs@2 {
@@ -34,15 +32,11 @@ index f11efb7..1962ec9 100644
 +		allwinner,pull = <0>;
 +	};
  };
- 
- &sram_a {
-diff --git a/arch/arm/boot/dts/sun5i-a13.dtsi b/arch/arm/boot/dts/sun5i-a13.dtsi
-index 772f8d8..0dc7c96 100644
 --- a/arch/arm/boot/dts/sun5i-a13.dtsi
 +++ b/arch/arm/boot/dts/sun5i-a13.dtsi
-@@ -544,6 +544,44 @@
+@@ -528,6 +528,44 @@
  				allwinner,drive = <SUN4I_PINCTRL_30_MA>;
- 				allwinner,pull = <SUN4I_PINCTRL_PULL_UP>;
+ 				allwinner,pull = <SUN4I_PINCTRL_NO_PULL>;
  			};
 +
 +			nand_pins_a: nand_base0@0 {

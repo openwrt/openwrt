@@ -12,11 +12,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  include/linux/of_mtd.h |  6 ++++++
  2 files changed, 41 insertions(+)
 
-diff --git a/drivers/of/of_mtd.c b/drivers/of/of_mtd.c
-index b7361ed..4e42c26 100644
 --- a/drivers/of/of_mtd.c
 +++ b/drivers/of/of_mtd.c
-@@ -84,6 +84,41 @@ int of_get_nand_ecc_strength(struct device_node *np)
+@@ -84,6 +84,41 @@ int of_get_nand_ecc_strength(struct devi
  EXPORT_SYMBOL_GPL(of_get_nand_ecc_strength);
  
  /**
@@ -58,8 +56,6 @@ index b7361ed..4e42c26 100644
   * of_get_nand_bus_width - Get nand bus witdh for given device_node
   * @np:	Pointer to the given device_node
   *
-diff --git a/include/linux/of_mtd.h b/include/linux/of_mtd.h
-index e266caa..1059472 100644
 --- a/include/linux/of_mtd.h
 +++ b/include/linux/of_mtd.h
 @@ -15,6 +15,7 @@
@@ -70,15 +66,15 @@ index e266caa..1059472 100644
  int of_get_nand_bus_width(struct device_node *np);
  bool of_get_nand_on_flash_bbt(struct device_node *np);
  
-@@ -35,6 +36,11 @@ static inline int of_get_nand_ecc_strength(struct device_node *np)
+@@ -34,6 +35,11 @@ static inline int of_get_nand_ecc_streng
+ {
  	return -ENOSYS;
  }
- 
++
 +static inline int of_get_nand_rnd_mode(struct device_node *np)
 +{
 +	return -ENOSYS;
 +}
-+
+ 
  static inline int of_get_nand_bus_width(struct device_node *np)
  {
- 	return -ENOSYS;

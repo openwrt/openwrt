@@ -13,11 +13,9 @@ Signed-off-by: Boris Brezillon <boris.brezillon@free-electrons.com>
  drivers/mtd/nand/sunxi_nand.c | 38 +++++++++++++++++++++-----------------
  1 file changed, 21 insertions(+), 17 deletions(-)
 
-diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
-index 72ab770..3668197 100644
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
-@@ -904,7 +904,7 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -904,7 +904,7 @@ static int sunxi_nfc_hw_ecc_write_page(s
  
  	for (i = 0; i < ecc->steps; i++) {
  		bool rndactiv = false;
@@ -26,7 +24,7 @@ index 72ab770..3668197 100644
  
  		if (i)
  			chip->cmdfunc(mtd, NAND_CMD_RNDIN, i * ecc->size, -1);
-@@ -915,15 +915,13 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -915,15 +915,13 @@ static int sunxi_nfc_hw_ecc_write_page(s
  		offset = layout->eccpos[i * ecc->bytes] - 4 + mtd->writesize;
  
  		/* Fill OOB data in */
@@ -49,7 +47,7 @@ index 72ab770..3668197 100644
  
  		if (i) {
  			cnt = ecc->bytes + 4;
-@@ -942,12 +940,16 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -942,12 +940,16 @@ static int sunxi_nfc_hw_ecc_write_page(s
  		if (rndactiv) {
  			/* pre randomize to generate FF patterns on the NAND */
  			if (!i) {
@@ -69,7 +67,7 @@ index 72ab770..3668197 100644
  			}
  			tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
  			tmp &= ~(NFC_RANDOM_DIRECTION | NFC_ECC_EXCEPTION);
-@@ -955,6 +957,8 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -955,6 +957,8 @@ static int sunxi_nfc_hw_ecc_write_page(s
  			writel(tmp, nfc->regs + NFC_REG_ECC_CTL);
  		}
  
@@ -78,7 +76,7 @@ index 72ab770..3668197 100644
  		chip->cmdfunc(mtd, NAND_CMD_RNDIN, offset, -1);
  
  		ret = sunxi_nfc_wait_cmd_fifo_empty(nfc);
-@@ -1164,13 +1168,13 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -1164,13 +1168,13 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  		/* Fill OOB data in */
  		if (oob_required) {
  			tmp = 0xffffffff;
