@@ -138,7 +138,7 @@ endef
 
 define Build/netgear-chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg -o $@.netgear -k $@ \
-	-b $(NETGEAR_ID) -r $(NETGEAR_REGION)
+	-b $(NETGEAR_BOARD_ID) -r $(NETGEAR_REGION)
 	mv $@.netgear $@
 endef
 
@@ -257,10 +257,10 @@ define Device/bcm63xxCfeNetgear
   CFE_BOARD_ID :=
   CFE_CHIP_ID :=
   CFE_EXTRAS :=
-  NETGEAR_ID :=
+  NETGEAR_BOARD_ID :=
   NETGEAR_REGION :=
 endef
-DEVICE_VARS += NETGEAR_ID NETGEAR_REGION
+DEVICE_VARS += NETGEAR_BOARD_ID NETGEAR_REGION
 
 # BCM63xx Old CFE devices: both ramdisks and parallel/spi bin images
 # Old versions of CFE bootloader not compatible with imagetag
@@ -415,7 +415,7 @@ define bcm63xxCfeNetgear
     CFE_BOARD_ID := $(4)
     CFE_CHIP_ID := $(5)
     CFE_EXTRAS := $(6)
-    NETGEAR_ID := $(7)
+    NETGEAR_BOARD_ID := $(7)
     NETGEAR_REGION := $(8)
   endef
   TARGET_DEVICES += $(2)
