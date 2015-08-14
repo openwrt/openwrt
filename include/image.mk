@@ -323,6 +323,11 @@ define Build/lzma
 	@mv $@.new $@
 endef
 
+define Build/gzip
+	gzip -9n -c $@ $(1) > $@.new
+	@mv $@.new $@
+endef
+
 define Build/kernel-bin
 	rm -f $@
 	cp $^ $@

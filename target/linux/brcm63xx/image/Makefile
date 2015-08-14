@@ -38,11 +38,6 @@ define Build/append-dtb
 	cat $@.dtb >> $@
 endef
 
-define Build/gzip
-	gzip -9 -c $@ > $@.gz
-	mv $@.gz $@
-endef
-
 define Build/hcs-initramfs
 	$(STAGING_DIR_HOST)/bin/hcsmakeimage --magic_bytes=$(HCS_MAGIC_BYTES) \
 		--rev_maj=$(HCS_REV_MAJ) --rev_min=$(HCS_REV_MIN) --input_file=$@ \
