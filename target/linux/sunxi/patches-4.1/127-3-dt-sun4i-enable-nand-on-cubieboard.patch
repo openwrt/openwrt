@@ -11,13 +11,11 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun4i-a10-cubieboard.dts | 57 ++++++++++++++++++++++++++++++
  1 file changed, 57 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
-index 046a84d..a6faca3 100644
 --- a/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
 +++ b/arch/arm/boot/dts/sun4i-a10-cubieboard.dts
-@@ -147,3 +147,60 @@
-	regulator-max-microvolt = <3000000>;
-	regulator-name = "avcc";
+@@ -215,3 +215,60 @@
+ 	regulator-max-microvolt = <3000000>;
+ 	regulator-name = "avcc";
  };
 +&nfc {
 +		pinctrl-names = "default";

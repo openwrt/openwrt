@@ -13,11 +13,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mtd/nand/sunxi_nand.c | 27 ++++++++++++++++++---------
  1 file changed, 18 insertions(+), 9 deletions(-)
 
-diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
-index 2f6ab39..74f2caf 100644
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
-@@ -1711,28 +1711,37 @@ static void sunxi_nand_part_release(struct nand_part *part)
+@@ -1711,28 +1711,37 @@ static void sunxi_nand_part_release(stru
  struct nand_part *sunxi_ofnandpart_parse(void *priv, struct mtd_info *master,
  					 struct device_node *pp)
  {
@@ -31,15 +29,16 @@ index 2f6ab39..74f2caf 100644
 -	ret = sunxi_nand_ecc_init(master, &part->ecc, pp);
 -	if (ret)
 -		goto err;
-+	if (of_find_property(pp, "nand-ecc-mode", NULL)) {
-+		ret = sunxi_nand_ecc_init(master, &part->ecc, pp);
-+		if (ret)
-+			goto err;
- 
+-
 -	ret = sunxi_nand_rnd_init(master, &part->rnd, &part->ecc, pp);
 -	if (ret) {
 -		sunxi_nand_ecc_cleanup(&part->ecc);
 -		goto err;
++	if (of_find_property(pp, "nand-ecc-mode", NULL)) {
++		ret = sunxi_nand_ecc_init(master, &part->ecc, pp);
++		if (ret)
++			goto err;
++
 +		part->part.ecc = &part->ecc;
  	}
  

@@ -16,8 +16,6 @@ Signed-off-by: Lee Jones <lee.jones@linaro.org>
  drivers/regulator/axp20x-regulator.c | 143 +++++++++++++++++++++++------------
  1 file changed, 94 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/regulator/axp20x-regulator.c b/drivers/regulator/axp20x-regulator.c
-index e4331f5..50ae0b5 100644
 --- a/drivers/regulator/axp20x-regulator.c
 +++ b/drivers/regulator/axp20x-regulator.c
 @@ -32,15 +32,15 @@
@@ -97,7 +95,7 @@ index e4331f5..50ae0b5 100644
  		.n_voltages	= ARRAY_SIZE(_table),				\
  		.owner		= THIS_MODULE,					\
  		.vsel_reg	= (_vreg),					\
-@@ -136,37 +136,57 @@ static struct regulator_ops axp20x_ops = {
+@@ -136,37 +136,57 @@ static struct regulator_ops axp20x_ops =
  };
  
  static const struct regulator_desc axp20x_regulators[] = {
@@ -135,7 +133,10 @@ index e4331f5..50ae0b5 100644
  {
  	struct axp20x_dev *axp20x = dev_get_drvdata(pdev->dev.parent);
 +	u32 min, max, def, step;
-+
+ 
+-	if (dcdcfreq < 750) {
+-		dcdcfreq = 750;
+-		dev_warn(&pdev->dev, "DCDC frequency too low. Set to 750kHz\n");
 +	switch (axp20x->variant) {
 +	case AXP202_ID:
 +	case AXP209_ID:
@@ -148,35 +149,32 @@ index e4331f5..50ae0b5 100644
 +		dev_err(&pdev->dev,
 +			"Setting DCDC frequency for unsupported AXP variant\n");
 +		return -EINVAL;
-+	}
-+
+ 	}
+ 
+-	if (dcdcfreq > 1875) {
+-		dcdcfreq = 1875;
+-		dev_warn(&pdev->dev, "DCDC frequency too high. Set to 1875kHz\n");
 +	if (dcdcfreq == 0)
 +		dcdcfreq = def;
- 
--	if (dcdcfreq < 750) {
--		dcdcfreq = 750;
--		dev_warn(&pdev->dev, "DCDC frequency too low. Set to 750kHz\n");
++
 +	if (dcdcfreq < min) {
 +		dcdcfreq = min;
 +		dev_warn(&pdev->dev, "DCDC frequency too low. Set to %ukHz\n",
 +			 min);
  	}
  
--	if (dcdcfreq > 1875) {
--		dcdcfreq = 1875;
--		dev_warn(&pdev->dev, "DCDC frequency too high. Set to 1875kHz\n");
+-	dcdcfreq = (dcdcfreq - 750) / 75;
 +	if (dcdcfreq > max) {
 +		dcdcfreq = max;
 +		dev_warn(&pdev->dev, "DCDC frequency too high. Set to %ukHz\n",
 +			 max);
- 	}
- 
--	dcdcfreq = (dcdcfreq - 750) / 75;
++	}
++
 +	dcdcfreq = (dcdcfreq - min) / step;
  
  	return regmap_update_bits(axp20x->regmap, AXP20X_DCDC_FREQ,
  				  AXP20X_FREQ_DCDC_MASK, dcdcfreq);
-@@ -176,7 +196,7 @@ static int axp20x_regulator_parse_dt(struct platform_device *pdev)
+@@ -176,7 +196,7 @@ static int axp20x_regulator_parse_dt(str
  {
  	struct device_node *np, *regulators;
  	int ret;
@@ -185,7 +183,7 @@ index e4331f5..50ae0b5 100644
  
  	np = of_node_get(pdev->dev.parent->of_node);
  	if (!np)
-@@ -186,7 +206,6 @@ static int axp20x_regulator_parse_dt(struct platform_device *pdev)
+@@ -186,7 +206,6 @@ static int axp20x_regulator_parse_dt(str
  	if (!regulators) {
  		dev_warn(&pdev->dev, "regulators node not found\n");
  	} else {
@@ -193,7 +191,7 @@ index e4331f5..50ae0b5 100644
  		of_property_read_u32(regulators, "x-powers,dcdc-freq", &dcdcfreq);
  		ret = axp20x_set_dcdc_freq(pdev, dcdcfreq);
  		if (ret < 0) {
-@@ -202,15 +221,27 @@ static int axp20x_regulator_parse_dt(struct platform_device *pdev)
+@@ -202,15 +221,27 @@ static int axp20x_regulator_parse_dt(str
  
  static int axp20x_set_dcdc_workmode(struct regulator_dev *rdev, int id, u32 workmode)
  {
@@ -202,7 +200,6 @@ index e4331f5..50ae0b5 100644
 +	unsigned int mask;
  
 -	if ((id != AXP20X_DCDC2) && (id != AXP20X_DCDC3))
--		return -EINVAL;
 +	switch (axp20x->variant) {
 +	case AXP202_ID:
 +	case AXP209_ID:
@@ -212,22 +209,24 @@ index e4331f5..50ae0b5 100644
 +		mask = AXP20X_WORKMODE_DCDC2_MASK;
 +		if (id == AXP20X_DCDC3)
 +			mask = AXP20X_WORKMODE_DCDC3_MASK;
- 
--	if (id == AXP20X_DCDC3)
--		mask = AXP20X_WORKMODE_DCDC3_MASK;
++
 +		workmode <<= ffs(mask) - 1;
 +		break;
- 
--	workmode <<= ffs(mask) - 1;
++
 +	default:
 +		/* should not happen */
 +		WARN_ON(1);
-+		return -EINVAL;
+ 		return -EINVAL;
+-
+-	if (id == AXP20X_DCDC3)
+-		mask = AXP20X_WORKMODE_DCDC3_MASK;
+-
+-	workmode <<= ffs(mask) - 1;
 +	}
  
  	return regmap_update_bits(rdev->regmap, AXP20X_DCDC_MODE, mask, workmode);
  }
-@@ -219,22 +250,36 @@ static int axp20x_regulator_probe(struct platform_device *pdev)
+@@ -219,22 +250,36 @@ static int axp20x_regulator_probe(struct
  {
  	struct regulator_dev *rdev;
  	struct axp20x_dev *axp20x = dev_get_drvdata(pdev->dev.parent);
@@ -268,7 +267,7 @@ index e4331f5..50ae0b5 100644
  
  			return PTR_ERR(rdev);
  		}
-@@ -245,7 +290,7 @@ static int axp20x_regulator_probe(struct platform_device *pdev)
+@@ -245,7 +290,7 @@ static int axp20x_regulator_probe(struct
  		if (!ret) {
  			if (axp20x_set_dcdc_workmode(rdev, i, workmode))
  				dev_err(&pdev->dev, "Failed to set workmode on %s\n",

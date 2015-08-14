@@ -27,11 +27,9 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  create mode 100644 drivers/crypto/sunxi-ss/sun4i-ss-hash.c
  create mode 100644 drivers/crypto/sunxi-ss/sun4i-ss.h
 
-diff --git a/drivers/crypto/Kconfig b/drivers/crypto/Kconfig
-index 4044125..07bc7aa 100644
 --- a/drivers/crypto/Kconfig
 +++ b/drivers/crypto/Kconfig
-@@ -480,4 +480,21 @@ config CRYPTO_DEV_IMGTEC_HASH
+@@ -460,4 +460,21 @@ config CRYPTO_DEV_IMGTEC_HASH
  	  hardware hash accelerator. Supporting MD5/SHA1/SHA224/SHA256
  	  hashing algorithms.
  
@@ -53,26 +51,18 @@ index 4044125..07bc7aa 100644
 +	  will be called sun4i-ss.
 +
  endif # CRYPTO_HW
-diff --git a/drivers/crypto/Makefile b/drivers/crypto/Makefile
-index e35c07a..c3ced6f 100644
 --- a/drivers/crypto/Makefile
 +++ b/drivers/crypto/Makefile
-@@ -28,3 +28,4 @@ obj-$(CONFIG_CRYPTO_DEV_UX500) += ux500/
+@@ -27,3 +27,4 @@ obj-$(CONFIG_CRYPTO_DEV_UX500) += ux500/
  obj-$(CONFIG_CRYPTO_DEV_QAT) += qat/
  obj-$(CONFIG_CRYPTO_DEV_QCE) += qce/
  obj-$(CONFIG_CRYPTO_DEV_VMX) += vmx/
 +obj-$(CONFIG_CRYPTO_DEV_SUN4I_SS) += sunxi-ss/
-diff --git a/drivers/crypto/sunxi-ss/Makefile b/drivers/crypto/sunxi-ss/Makefile
-new file mode 100644
-index 0000000..8f4c7a2
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_CRYPTO_DEV_SUN4I_SS) += sun4i-ss.o
 +sun4i-ss-y += sun4i-ss-core.o sun4i-ss-hash.o sun4i-ss-cipher.o
-diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-cipher.c b/drivers/crypto/sunxi-ss/sun4i-ss-cipher.c
-new file mode 100644
-index 0000000..e070c31
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sun4i-ss-cipher.c
 @@ -0,0 +1,542 @@
@@ -618,9 +608,6 @@ index 0000000..e070c31
 +	memcpy(op->key, key, keylen);
 +	return 0;
 +}
-diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-core.c b/drivers/crypto/sunxi-ss/sun4i-ss-core.c
-new file mode 100644
-index 0000000..0b79b58
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sun4i-ss-core.c
 @@ -0,0 +1,403 @@
@@ -1027,9 +1014,6 @@ index 0000000..0b79b58
 +MODULE_DESCRIPTION("Allwinner Security System cryptographic accelerator");
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Corentin LABBE <clabbe.montjoie@gmail.com>");
-diff --git a/drivers/crypto/sunxi-ss/sun4i-ss-hash.c b/drivers/crypto/sunxi-ss/sun4i-ss-hash.c
-new file mode 100644
-index 0000000..ff80314
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sun4i-ss-hash.c
 @@ -0,0 +1,492 @@
@@ -1525,9 +1509,6 @@ index 0000000..ff80314
 +
 +	return sun4i_hash_final(areq);
 +}
-diff --git a/drivers/crypto/sunxi-ss/sun4i-ss.h b/drivers/crypto/sunxi-ss/sun4i-ss.h
-new file mode 100644
-index 0000000..db18b255
 --- /dev/null
 +++ b/drivers/crypto/sunxi-ss/sun4i-ss.h
 @@ -0,0 +1,199 @@

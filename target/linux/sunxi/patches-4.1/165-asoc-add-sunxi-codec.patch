@@ -20,8 +20,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  create mode 100644 sound/soc/sunxi/Makefile
  create mode 100644 sound/soc/sunxi/sunxi-codec.c
 
-diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
-index 3ba52da..87dbf48 100644
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
 @@ -53,6 +53,7 @@ source "sound/soc/samsung/Kconfig"
@@ -32,8 +30,6 @@ index 3ba52da..87dbf48 100644
  source "sound/soc/tegra/Kconfig"
  source "sound/soc/txx9/Kconfig"
  source "sound/soc/ux500/Kconfig"
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index 974ba70..39011b8 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -34,6 +34,7 @@ obj-$(CONFIG_SND_SOC)	+= samsung/
@@ -44,9 +40,6 @@ index 974ba70..39011b8 100644
  obj-$(CONFIG_SND_SOC)	+= tegra/
  obj-$(CONFIG_SND_SOC)	+= txx9/
  obj-$(CONFIG_SND_SOC)	+= ux500/
-diff --git a/sound/soc/sunxi/Kconfig b/sound/soc/sunxi/Kconfig
-new file mode 100644
-index 0000000..79511ae
 --- /dev/null
 +++ b/sound/soc/sunxi/Kconfig
 @@ -0,0 +1,10 @@
@@ -60,17 +53,11 @@ index 0000000..79511ae
 +	default y
 +
 +endmenu
-diff --git a/sound/soc/sunxi/Makefile b/sound/soc/sunxi/Makefile
-new file mode 100644
-index 0000000..b8950d3
 --- /dev/null
 +++ b/sound/soc/sunxi/Makefile
 @@ -0,0 +1,2 @@
 +obj-$(CONFIG_SND_SUNXI_SOC_CODEC) += sunxi-codec.o
 +
-diff --git a/sound/soc/sunxi/sunxi-codec.c b/sound/soc/sunxi/sunxi-codec.c
-new file mode 100644
-index 0000000..67f978e
 --- /dev/null
 +++ b/sound/soc/sunxi/sunxi-codec.c
 @@ -0,0 +1,802 @@

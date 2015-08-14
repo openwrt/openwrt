@@ -26,11 +26,9 @@ Changes in v3:
  include/linux/mfd/axp20x.h | 6 ++++++
  2 files changed, 13 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
-index b369cfc..8bd3283 100644
 --- a/drivers/mfd/axp20x.c
 +++ b/drivers/mfd/axp20x.c
-@@ -61,10 +61,16 @@ static const struct regmap_access_table axp152_volatile_table = {
+@@ -39,10 +39,16 @@ static const char * const axp20x_model_n
  static const struct regmap_range axp20x_writeable_ranges[] = {
  	regmap_reg_range(AXP20X_DATACACHE(0), AXP20X_IRQ5_STATE),
  	regmap_reg_range(AXP20X_DCDC_MODE, AXP20X_FG_RES),
@@ -47,7 +45,7 @@ index b369cfc..8bd3283 100644
  };
  
  static const struct regmap_access_table axp20x_writeable_table = {
-@@ -195,7 +201,7 @@ static const struct regmap_config axp20x_regmap_config = {
+@@ -159,7 +165,7 @@ static const struct regmap_config axp20x
  	.val_bits	= 8,
  	.wr_table	= &axp20x_writeable_table,
  	.volatile_table	= &axp20x_volatile_table,
@@ -56,11 +54,9 @@ index b369cfc..8bd3283 100644
  	.cache_type	= REGCACHE_RBTREE,
  };
  
-diff --git a/include/linux/mfd/axp20x.h b/include/linux/mfd/axp20x.h
-index 52203d5..cc8ad1e 100644
 --- a/include/linux/mfd/axp20x.h
 +++ b/include/linux/mfd/axp20x.h
-@@ -190,6 +190,12 @@ enum {
+@@ -151,6 +151,12 @@ enum {
  #define AXP20X_CC_CTRL			0xb8
  #define AXP20X_FG_RES			0xb9
  

@@ -268,9 +268,9 @@
  #endif
 --- a/arch/mips/mm/c-r4k.c
 +++ b/arch/mips/mm/c-r4k.c
-@@ -38,6 +38,9 @@
- #include <asm/traps.h>
+@@ -39,6 +39,9 @@
  #include <asm/dma-coherence.h>
+ #include <asm/mips-cm.h>
  
 +/* For enabling BCM4710 cache workarounds */
 +int bcm4710 = 0;
@@ -278,7 +278,7 @@
  /*
   * Special Variant of smp_call_function for use by cache functions:
   *
-@@ -149,6 +152,9 @@ static void r4k_blast_dcache_user_page_s
+@@ -157,6 +160,9 @@ static void r4k_blast_dcache_user_page_s
  {
  	unsigned long  dc_lsize = cpu_dcache_line_size();
  
@@ -288,7 +288,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache_user_page = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -167,6 +173,9 @@ static void r4k_blast_dcache_page_indexe
+@@ -175,6 +181,9 @@ static void r4k_blast_dcache_page_indexe
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -298,7 +298,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache_page_indexed = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -186,6 +195,9 @@ static void r4k_blast_dcache_setup(void)
+@@ -194,6 +203,9 @@ static void r4k_blast_dcache_setup(void)
  {
  	unsigned long dc_lsize = cpu_dcache_line_size();
  
@@ -308,7 +308,7 @@
  	if (dc_lsize == 0)
  		r4k_blast_dcache = (void *)cache_noop;
  	else if (dc_lsize == 16)
-@@ -785,6 +797,8 @@ static void local_r4k_flush_cache_sigtra
+@@ -793,6 +805,8 @@ static void local_r4k_flush_cache_sigtra
  	unsigned long addr = (unsigned long) arg;
  
  	R4600_HIT_CACHEOP_WAR_IMPL;
@@ -317,7 +317,7 @@
  	if (dc_lsize)
  		protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
  	if (!cpu_icache_snoops_remote_store && scache_size)
-@@ -1591,6 +1605,17 @@ static void coherency_setup(void)
+@@ -1599,6 +1613,17 @@ static void coherency_setup(void)
  	 * silly idea of putting something else there ...
  	 */
  	switch (current_cpu_type()) {
@@ -335,7 +335,7 @@
  	case CPU_R4000PC:
  	case CPU_R4000SC:
  	case CPU_R4000MC:
-@@ -1637,6 +1662,15 @@ void r4k_cache_init(void)
+@@ -1645,6 +1670,15 @@ void r4k_cache_init(void)
  	extern void build_copy_page(void);
  	struct cpuinfo_mips *c = &current_cpu_data;
  
@@ -351,7 +351,7 @@
  	probe_pcache();
  	setup_scache();
  
-@@ -1706,7 +1740,15 @@ void r4k_cache_init(void)
+@@ -1714,7 +1748,15 @@ void r4k_cache_init(void)
  	 */
  	local_r4k___flush_cache_all(NULL);
  

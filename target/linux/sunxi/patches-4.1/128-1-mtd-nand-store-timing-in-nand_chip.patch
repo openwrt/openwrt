@@ -1,17 +1,15 @@
-diff --git a/drivers/mtd/nand/nand_base.c b/drivers/mtd/nand/nand_base.c
-index c2e1232..f561c68 100644
 --- a/drivers/mtd/nand/nand_base.c
 +++ b/drivers/mtd/nand/nand_base.c
-@@ -3611,6 +3611,8 @@ static inline bool is_full_id_nand(struct nand_flash_dev *type)
+@@ -4249,6 +4249,8 @@ static inline bool is_full_id_nand(struc
  static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
- 		   struct nand_flash_dev *type, u8 *id_data, int *busw)
+ 		   struct nand_flash_dev *type, const u8 *id_data, int *busw)
  {
 +	int mode;
 +
  	if (!strncmp(type->id, id_data, type->id_len)) {
  		mtd->writesize = type->pagesize;
  		mtd->erasesize = type->erasesize;
-@@ -3621,8 +3623,9 @@ static bool find_full_id_nand(struct mtd_info *mtd, struct nand_chip *chip,
+@@ -4259,8 +4261,9 @@ static bool find_full_id_nand(struct mtd
  		chip->options |= type->options;
  		chip->ecc_strength_ds = NAND_ECC_STRENGTH(type);
  		chip->ecc_step_ds = NAND_ECC_STEP(type);
@@ -23,11 +21,9 @@ index c2e1232..f561c68 100644
  
  		*busw = type->options & NAND_BUSWIDTH_16;
  
-diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
-index 5095a32..72e4135 100644
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
-@@ -1083,7 +1083,7 @@ static int sunxi_nand_chip_init_timings(struct sunxi_nand_chip *chip,
+@@ -1427,7 +1427,7 @@ static int sunxi_nand_chip_init_timings(
  
  	mode = onfi_get_async_timing_mode(&chip->nand);
  	if (mode == ONFI_TIMING_MODE_UNKNOWN) {
@@ -36,7 +32,7 @@ index 5095a32..72e4135 100644
  	} else {
  		uint8_t feature[ONFI_SUBFEATURE_PARAM_LEN] = {};
  
-@@ -1097,9 +1097,10 @@ static int sunxi_nand_chip_init_timings(struct sunxi_nand_chip *chip,
+@@ -1441,9 +1441,10 @@ static int sunxi_nand_chip_init_timings(
  						feature);
  		if (ret)
  			return ret;
@@ -48,11 +44,9 @@ index 5095a32..72e4135 100644
  	if (IS_ERR(timings))
  		return PTR_ERR(timings);
  
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 3d4ea7e..2eb92a3 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
-@@ -536,6 +536,55 @@ struct nand_buffers {
+@@ -612,6 +612,55 @@ struct nand_buffers {
  	uint8_t *databuf;
  };
  
@@ -108,7 +102,7 @@ index 3d4ea7e..2eb92a3 100644
  /**
   * struct nand_chip - NAND Private Flash Chip Data
   * @IO_ADDR_R:		[BOARDSPECIFIC] address to read the 8 I/O lines of the
-@@ -600,11 +649,7 @@ struct nand_buffers {
+@@ -676,11 +725,7 @@ struct nand_buffers {
   * @ecc_step_ds:	[INTERN] ECC step required by the @ecc_strength_ds,
   *                      also from the datasheet. It is the recommended ECC step
   *			size, if known; if unknown, set to zero.
@@ -121,7 +115,7 @@ index 3d4ea7e..2eb92a3 100644
   * @numchips:		[INTERN] number of physical chips
   * @chipsize:		[INTERN] the size of one chip for multichip arrays
   * @pagemask:		[INTERN] page number mask = number of (pages / chip) - 1
-@@ -689,7 +734,7 @@ struct nand_chip {
+@@ -769,7 +814,7 @@ struct nand_chip {
  	uint8_t bits_per_cell;
  	uint16_t ecc_strength_ds;
  	uint16_t ecc_step_ds;
@@ -130,9 +124,9 @@ index 3d4ea7e..2eb92a3 100644
  	int badblockpos;
  	int badblockbits;
  
-@@ -975,55 +1020,6 @@ static inline int jedec_feature(struct nand_chip *chip)
- 		: 0;
- }
+@@ -1156,55 +1201,6 @@ struct ofnandpart_data {
+ int ofnandpart_parse(struct mtd_info *master,
+ 		     const struct ofnandpart_data *data);
  
 -/*
 - * struct nand_sdr_timings - SDR NAND chip timings

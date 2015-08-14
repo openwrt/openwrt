@@ -15,8 +15,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  4 files changed, 164 insertions(+), 2 deletions(-)
  create mode 100644 drivers/mtd/nand/nand_hynix.c
 
-diff --git a/drivers/mtd/nand/Makefile b/drivers/mtd/nand/Makefile
-index fcbe032..07b7c8c 100644
 --- a/drivers/mtd/nand/Makefile
 +++ b/drivers/mtd/nand/Makefile
 @@ -5,7 +5,7 @@
@@ -28,9 +26,6 @@ index fcbe032..07b7c8c 100644
  obj-$(CONFIG_MTD_SM_COMMON) 		+= sm_common.o
  
  obj-$(CONFIG_MTD_NAND_CAFE)		+= cafe_nand.o
-diff --git a/drivers/mtd/nand/nand_hynix.c b/drivers/mtd/nand/nand_hynix.c
-new file mode 100644
-index 0000000..0d051bf5
 --- /dev/null
 +++ b/drivers/mtd/nand/nand_hynix.c
 @@ -0,0 +1,159 @@
@@ -193,11 +188,9 @@ index 0000000..0d051bf5
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("Boris BREZILLON <b.brezillon.dev@gmail.com>");
 +MODULE_DESCRIPTION("Hynix NAND specific code");
-diff --git a/drivers/mtd/nand/nand_ids.c b/drivers/mtd/nand/nand_ids.c
-index dd620c1..b786718 100644
 --- a/drivers/mtd/nand/nand_ids.c
 +++ b/drivers/mtd/nand/nand_ids.c
-@@ -163,6 +163,7 @@ struct nand_flash_dev nand_flash_ids[] = {
+@@ -163,6 +163,7 @@ struct nand_flash_dev nand_flash_ids[] =
  	{NULL}
  };
  
@@ -205,7 +198,7 @@ index dd620c1..b786718 100644
  /* Manufacturer IDs */
  struct nand_manufacturers nand_manuf_ids[] = {
  	{NAND_MFR_TOSHIBA, "Toshiba"},
-@@ -171,7 +172,7 @@ struct nand_manufacturers nand_manuf_ids[] = {
+@@ -171,7 +172,7 @@ struct nand_manufacturers nand_manuf_ids
  	{NAND_MFR_NATIONAL, "National"},
  	{NAND_MFR_RENESAS, "Renesas"},
  	{NAND_MFR_STMICRO, "ST Micro"},
@@ -214,8 +207,6 @@ index dd620c1..b786718 100644
  	{NAND_MFR_MICRON, "Micron"},
  	{NAND_MFR_AMD, "AMD/Spansion"},
  	{NAND_MFR_MACRONIX, "Macronix"},
-diff --git a/include/linux/mtd/nand.h b/include/linux/mtd/nand.h
-index 5844d6f..328aab2 100644
 --- a/include/linux/mtd/nand.h
 +++ b/include/linux/mtd/nand.h
 @@ -959,6 +959,8 @@ struct nand_manufacturers {

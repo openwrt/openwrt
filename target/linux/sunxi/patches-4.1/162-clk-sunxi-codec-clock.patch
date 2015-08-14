@@ -17,8 +17,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  2 files changed, 42 insertions(+)
  create mode 100644 drivers/clk/sunxi/clk-a10-codec.c
 
-diff --git a/drivers/clk/sunxi/Makefile b/drivers/clk/sunxi/Makefile
-index eb36c38..6fa845e 100644
 --- a/drivers/clk/sunxi/Makefile
 +++ b/drivers/clk/sunxi/Makefile
 @@ -3,6 +3,7 @@
@@ -29,9 +27,6 @@ index eb36c38..6fa845e 100644
  obj-y += clk-a10-hosc.o
  obj-y += clk-a10-pll2.o
  obj-y += clk-a20-gmac.o
-diff --git a/drivers/clk/sunxi/clk-a10-codec.c b/drivers/clk/sunxi/clk-a10-codec.c
-new file mode 100644
-index 0000000..c70acbf
 --- /dev/null
 +++ b/drivers/clk/sunxi/clk-a10-codec.c
 @@ -0,0 +1,41 @@

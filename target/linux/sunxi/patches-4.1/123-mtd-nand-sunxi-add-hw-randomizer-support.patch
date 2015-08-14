@@ -11,8 +11,6 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  drivers/mtd/nand/sunxi_nand.c | 603 ++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 585 insertions(+), 18 deletions(-)
 
-diff --git a/drivers/mtd/nand/sunxi_nand.c b/drivers/mtd/nand/sunxi_nand.c
-index c3e0473..2f6ab39 100644
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
 @@ -206,10 +206,12 @@ struct sunxi_nand_hw_ecc {
@@ -28,7 +26,7 @@ index c3e0473..2f6ab39 100644
  };
  
  static inline struct sunxi_nand_part *
-@@ -219,6 +221,29 @@ to_sunxi_nand_part(struct nand_part *part)
+@@ -219,6 +221,29 @@ to_sunxi_nand_part(struct nand_part *par
  }
  
  /*
@@ -66,7 +64,7 @@ index c3e0473..2f6ab39 100644
  	unsigned long clk_rate;
  	int selected;
  	int nsels;
-@@ -489,6 +515,185 @@ static void sunxi_nfc_write_buf(struct mtd_info *mtd, const uint8_t *buf,
+@@ -489,6 +515,185 @@ static void sunxi_nfc_write_buf(struct m
  	}
  }
  
@@ -252,7 +250,7 @@ index c3e0473..2f6ab39 100644
  static uint8_t sunxi_nfc_read_byte(struct mtd_info *mtd)
  {
  	uint8_t ret;
-@@ -538,16 +743,43 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -538,16 +743,43 @@ static int sunxi_nfc_hw_ecc_read_page(st
  				      int oob_required, int page)
  {
  	struct sunxi_nfc *nfc = to_sunxi_nfc(chip->controller);
@@ -296,7 +294,7 @@ index c3e0473..2f6ab39 100644
  	tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
  	tmp &= ~(NFC_ECC_MODE | NFC_ECC_PIPELINE | NFC_ECC_BLOCK_SIZE);
  	tmp |= NFC_ECC_EN | (data->mode << NFC_ECC_MODE_SHIFT) |
-@@ -556,12 +788,15 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -556,12 +788,15 @@ static int sunxi_nfc_hw_ecc_read_page(st
  	writel(tmp, nfc->regs + NFC_REG_ECC_CTL);
  
  	for (i = 0; i < ecc->steps; i++) {
@@ -313,7 +311,7 @@ index c3e0473..2f6ab39 100644
  
  		chip->cmdfunc(mtd, NAND_CMD_RNDOUT, offset, -1);
  
-@@ -569,6 +804,25 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -569,6 +804,25 @@ static int sunxi_nfc_hw_ecc_read_page(st
  		if (ret)
  			return ret;
  
@@ -339,7 +337,7 @@ index c3e0473..2f6ab39 100644
  		tmp = NFC_DATA_TRANS | NFC_DATA_SWAP_METHOD | (1 << 30);
  		writel(tmp, nfc->regs + NFC_REG_CMD);
  
-@@ -579,6 +833,9 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -579,6 +833,9 @@ static int sunxi_nfc_hw_ecc_read_page(st
  		memcpy_fromio(buf + (i * ecc->size),
  			      nfc->regs + NFC_RAM0_BASE, ecc->size);
  
@@ -349,7 +347,7 @@ index c3e0473..2f6ab39 100644
  		if (readl(nfc->regs + NFC_REG_ECC_ST) & 0x1) {
  			mtd->ecc_stats.failed++;
  		} else {
-@@ -594,9 +851,10 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -594,9 +851,10 @@ static int sunxi_nfc_hw_ecc_read_page(st
  			if (ret)
  				return ret;
  
@@ -362,7 +360,7 @@ index c3e0473..2f6ab39 100644
  		}
  	}
  
-@@ -606,11 +864,14 @@ static int sunxi_nfc_hw_ecc_read_page(struct mtd_info *mtd,
+@@ -606,11 +864,14 @@ static int sunxi_nfc_hw_ecc_read_page(st
  			offset = mtd->writesize +
  				 ecc->layout->oobfree[ecc->steps].offset;
  			chip->cmdfunc(mtd, NAND_CMD_RNDOUT, offset, -1);
@@ -378,7 +376,7 @@ index c3e0473..2f6ab39 100644
  	tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
  	tmp &= ~NFC_ECC_EN;
  
-@@ -627,6 +888,7 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -627,6 +888,7 @@ static int sunxi_nfc_hw_ecc_write_page(s
  	struct nand_ecc_ctrl *ecc = chip->cur_ecc;
  	struct nand_ecclayout *layout = ecc->layout;
  	struct sunxi_nand_hw_ecc *data = ecc->priv;
@@ -386,7 +384,7 @@ index c3e0473..2f6ab39 100644
  	int offset;
  	int ret;
  	u32 tmp;
-@@ -641,22 +903,56 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -641,22 +903,56 @@ static int sunxi_nfc_hw_ecc_write_page(s
  	writel(tmp, nfc->regs + NFC_REG_ECC_CTL);
  
  	for (i = 0; i < ecc->steps; i++) {
@@ -451,7 +449,7 @@ index c3e0473..2f6ab39 100644
  		}
  
  		chip->cmdfunc(mtd, NAND_CMD_RNDIN, offset, -1);
-@@ -671,6 +967,9 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -671,6 +967,9 @@ static int sunxi_nfc_hw_ecc_write_page(s
  		ret = sunxi_nfc_wait_int(nfc, NFC_CMD_INT_FLAG, 0);
  		if (ret)
  			return ret;
@@ -461,7 +459,7 @@ index c3e0473..2f6ab39 100644
  	}
  
  	if (oob_required) {
-@@ -679,11 +978,14 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -679,11 +978,14 @@ static int sunxi_nfc_hw_ecc_write_page(s
  			offset = mtd->writesize +
  				 ecc->layout->oobfree[i].offset;
  			chip->cmdfunc(mtd, NAND_CMD_RNDIN, offset, -1);
@@ -477,7 +475,7 @@ index c3e0473..2f6ab39 100644
  	tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
  	tmp &= ~NFC_ECC_EN;
  
-@@ -692,22 +994,76 @@ static int sunxi_nfc_hw_ecc_write_page(struct mtd_info *mtd,
+@@ -692,22 +994,76 @@ static int sunxi_nfc_hw_ecc_write_page(s
  	return 0;
  }
  
@@ -554,7 +552,7 @@ index c3e0473..2f6ab39 100644
  	tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
  	tmp &= ~(NFC_ECC_MODE | NFC_ECC_PIPELINE | NFC_ECC_BLOCK_SIZE);
  	tmp |= NFC_ECC_EN | (data->mode << NFC_ECC_MODE_SHIFT) |
-@@ -716,7 +1072,17 @@ static int sunxi_nfc_hw_syndrome_ecc_read_page(struct mtd_info *mtd,
+@@ -716,7 +1072,17 @@ static int sunxi_nfc_hw_syndrome_ecc_rea
  	writel(tmp, nfc->regs + NFC_REG_ECC_CTL);
  
  	for (i = 0; i < ecc->steps; i++) {
@@ -573,7 +571,7 @@ index c3e0473..2f6ab39 100644
  
  		tmp = NFC_DATA_TRANS | NFC_DATA_SWAP_METHOD | (1 << 30);
  		writel(tmp, nfc->regs + NFC_REG_CMD);
-@@ -729,6 +1095,9 @@ static int sunxi_nfc_hw_syndrome_ecc_read_page(struct mtd_info *mtd,
+@@ -729,6 +1095,9 @@ static int sunxi_nfc_hw_syndrome_ecc_rea
  		buf += ecc->size;
  		offset += ecc->size;
  
@@ -583,7 +581,7 @@ index c3e0473..2f6ab39 100644
  		if (readl(nfc->regs + NFC_REG_ECC_ST) & 0x1) {
  			mtd->ecc_stats.failed++;
  		} else {
-@@ -739,7 +1108,8 @@ static int sunxi_nfc_hw_syndrome_ecc_read_page(struct mtd_info *mtd,
+@@ -739,7 +1108,8 @@ static int sunxi_nfc_hw_syndrome_ecc_rea
  
  		if (oob_required) {
  			chip->cmdfunc(mtd, NAND_CMD_RNDOUT, offset, -1);
@@ -593,7 +591,7 @@ index c3e0473..2f6ab39 100644
  			oob += ecc->bytes + ecc->prepad;
  		}
  
-@@ -750,10 +1120,13 @@ static int sunxi_nfc_hw_syndrome_ecc_read_page(struct mtd_info *mtd,
+@@ -750,10 +1120,13 @@ static int sunxi_nfc_hw_syndrome_ecc_rea
  		cnt = mtd->oobsize - (oob - chip->oob_poi);
  		if (cnt > 0) {
  			chip->cmdfunc(mtd, NAND_CMD_RNDOUT, offset, -1);
@@ -608,7 +606,7 @@ index c3e0473..2f6ab39 100644
  	writel(readl(nfc->regs + NFC_REG_ECC_CTL) & ~NFC_ECC_EN,
  	       nfc->regs + NFC_REG_ECC_CTL);
  
-@@ -768,6 +1141,7 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -768,6 +1141,7 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  	struct sunxi_nfc *nfc = to_sunxi_nfc(chip->controller);
  	struct nand_ecc_ctrl *ecc = chip->cur_ecc;
  	struct sunxi_nand_hw_ecc *data = ecc->priv;
@@ -616,7 +614,7 @@ index c3e0473..2f6ab39 100644
  	uint8_t *oob = chip->oob_poi;
  	int offset = 0;
  	int ret;
-@@ -783,7 +1157,8 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -783,7 +1157,8 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  	writel(tmp, nfc->regs + NFC_REG_ECC_CTL);
  
  	for (i = 0; i < ecc->steps; i++) {
@@ -626,7 +624,7 @@ index c3e0473..2f6ab39 100644
  		offset += ecc->size;
  
  		/* Fill OOB data in */
-@@ -796,6 +1171,16 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -796,6 +1171,16 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  				    4);
  		}
  
@@ -643,7 +641,7 @@ index c3e0473..2f6ab39 100644
  		tmp = NFC_DATA_TRANS | NFC_DATA_SWAP_METHOD | NFC_ACCESS_DIR |
  		      (1 << 30);
  		writel(tmp, nfc->regs + NFC_REG_CMD);
-@@ -804,6 +1189,9 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -804,6 +1189,9 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  		if (ret)
  			return ret;
  
@@ -653,7 +651,7 @@ index c3e0473..2f6ab39 100644
  		offset += ecc->bytes + ecc->prepad;
  		oob += ecc->bytes + ecc->prepad;
  	}
-@@ -812,9 +1200,11 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -812,9 +1200,11 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  		cnt = mtd->oobsize - (oob - chip->oob_poi);
  		if (cnt > 0) {
  			chip->cmdfunc(mtd, NAND_CMD_RNDIN, offset, -1);
@@ -666,7 +664,7 @@ index c3e0473..2f6ab39 100644
  
  	tmp = readl(nfc->regs + NFC_REG_ECC_CTL);
  	tmp &= ~NFC_ECC_EN;
-@@ -824,6 +1214,128 @@ static int sunxi_nfc_hw_syndrome_ecc_write_page(struct mtd_info *mtd,
+@@ -824,6 +1214,128 @@ static int sunxi_nfc_hw_syndrome_ecc_wri
  	return 0;
  }
  
@@ -795,7 +793,7 @@ index c3e0473..2f6ab39 100644
  static int sunxi_nand_chip_set_timings(struct sunxi_nand_chip *chip,
  				       const struct nand_sdr_timings *timings)
  {
-@@ -1084,6 +1596,40 @@ static int sunxi_nand_hw_syndrome_ecc_ctrl_init(struct mtd_info *mtd,
+@@ -1084,6 +1596,40 @@ static int sunxi_nand_hw_syndrome_ecc_ct
  	return 0;
  }
  
@@ -836,7 +834,7 @@ index c3e0473..2f6ab39 100644
  static void sunxi_nand_ecc_cleanup(struct nand_ecc_ctrl *ecc)
  {
  	switch (ecc->mode) {
-@@ -1175,7 +1721,14 @@ struct nand_part *sunxi_ofnandpart_parse(void *priv, struct mtd_info *master,
+@@ -1175,7 +1721,14 @@ struct nand_part *sunxi_ofnandpart_parse
  	if (ret)
  		goto err;
  
@@ -851,7 +849,7 @@ index c3e0473..2f6ab39 100644
  
  	return &part->part;
  
-@@ -1300,18 +1853,30 @@ static int sunxi_nand_chip_init(struct device *dev, struct sunxi_nfc *nfc,
+@@ -1300,18 +1853,30 @@ static int sunxi_nand_chip_init(struct d
  	if (ret)
  		return ret;
  
@@ -882,7 +880,7 @@ index c3e0473..2f6ab39 100644
  	ret = nand_scan_tail(mtd);
  	if (ret) {
  		dev_err(dev, "nand_scan_tail failed: %d\n", ret);
-@@ -1367,6 +1932,8 @@ static void sunxi_nand_chips_cleanup(struct sunxi_nfc *nfc)
+@@ -1367,6 +1932,8 @@ static void sunxi_nand_chips_cleanup(str
  					node);
  		nand_release(&chip->mtd);
  		sunxi_nand_ecc_cleanup(&chip->nand.ecc);

@@ -15,11 +15,9 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
  arch/arm/boot/dts/sun7i-a20.dtsi | 39 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 39 insertions(+)
 
-diff --git a/arch/arm/boot/dts/sun7i-a20.dtsi b/arch/arm/boot/dts/sun7i-a20.dtsi
-index 400e696..a0d18b2 100644
 --- a/arch/arm/boot/dts/sun7i-a20.dtsi
 +++ b/arch/arm/boot/dts/sun7i-a20.dtsi
-@@ -450,6 +450,29 @@
+@@ -447,6 +447,29 @@
  			clock-output-names = "ir1";
  		};
  
@@ -48,8 +46,8 @@ index 400e696..a0d18b2 100644
 +		};
  		usb_clk: clk@01c200cc {
  			#clock-cells = <1>;
- 			#reset-cells = <1>;
-@@ -468,6 +491,22 @@
+ 		        #reset-cells = <1>;
+@@ -464,6 +487,22 @@
  			clock-output-names = "spi3";
  		};
  

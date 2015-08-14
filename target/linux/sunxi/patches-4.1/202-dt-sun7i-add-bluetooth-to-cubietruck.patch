@@ -14,10 +14,8 @@ GPIO, but this is not supported in this patch.
  arch/arm/boot/dts/sun7i-a20-cubietruck.dts | 36 ++++++++++++++++++++++++++++++
  1 file changed, 36 insertions(+)
 
-Index: linux-4.1.3/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-===================================================================
---- linux-4.1.3.orig/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
-+++ linux-4.1.3/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
+--- a/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
++++ b/arch/arm/boot/dts/sun7i-a20-cubietruck.dts
 @@ -88,6 +88,20 @@
  				interrupts = <10 8>; /* PH10 / EINT10 */
  				interrupt-names = "host-wake";

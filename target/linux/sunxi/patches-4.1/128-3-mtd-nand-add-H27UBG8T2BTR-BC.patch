@@ -1,5 +1,3 @@
-diff --git a/drivers/mtd/nand/nand_ids.c b/drivers/mtd/nand/nand_ids.c
-index dd620c1..15b4a03 100644
 --- a/drivers/mtd/nand/nand_ids.c
 +++ b/drivers/mtd/nand/nand_ids.c
 @@ -19,6 +19,49 @@
@@ -52,7 +50,7 @@ index dd620c1..15b4a03 100644
   * The chip ID list:
   *    name, device ID, page size, chip size in MiB, eraseblock size, options
   *
-@@ -50,6 +93,10 @@ struct nand_flash_dev nand_flash_ids[] = {
+@@ -50,6 +93,10 @@ struct nand_flash_dev nand_flash_ids[] =
  		{ .id = {0xad, 0xde, 0x94, 0xda, 0x74, 0xc4} },
  		  SZ_8K, SZ_8K, SZ_2M, 0, 6, 640, NAND_ECC_INFO(40, SZ_1K),
  		  4 },

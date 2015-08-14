@@ -28,8 +28,6 @@ Signed-off-by: Lee Jones <lee.jones@linaro.org>
  include/linux/mfd/axp20x.h | 86 ++++++++++++++++++++++++++++++++++++++++
  2 files changed, 184 insertions(+)
 
-diff --git a/drivers/mfd/axp20x.c b/drivers/mfd/axp20x.c
-index d18029b..cfbb7d7 100644
 --- a/drivers/mfd/axp20x.c
 +++ b/drivers/mfd/axp20x.c
 @@ -32,6 +32,7 @@
@@ -40,7 +38,7 @@ index d18029b..cfbb7d7 100644
  	"AXP288",
  };
  
-@@ -54,6 +55,25 @@ static const struct regmap_access_table axp20x_volatile_table = {
+@@ -54,6 +55,25 @@ static const struct regmap_access_table
  	.n_yes_ranges	= ARRAY_SIZE(axp20x_volatile_ranges),
  };
  
@@ -66,7 +64,7 @@ index d18029b..cfbb7d7 100644
  static const struct regmap_range axp288_writeable_ranges[] = {
  	regmap_reg_range(AXP20X_DATACACHE(0), AXP20X_IRQ6_STATE),
  	regmap_reg_range(AXP20X_DCDC_MODE, AXP288_FG_TUNE5),
-@@ -87,6 +107,20 @@ static struct resource axp20x_pek_resources[] = {
+@@ -87,6 +107,20 @@ static struct resource axp20x_pek_resour
  	},
  };
  
@@ -87,7 +85,7 @@ index d18029b..cfbb7d7 100644
  static struct resource axp288_fuel_gauge_resources[] = {
  	{
  		.start = AXP288_IRQ_QWBTU,
-@@ -129,6 +163,15 @@ static const struct regmap_config axp20x_regmap_config = {
+@@ -129,6 +163,15 @@ static const struct regmap_config axp20x
  	.cache_type	= REGCACHE_RBTREE,
  };
  
@@ -103,7 +101,7 @@ index d18029b..cfbb7d7 100644
  static const struct regmap_config axp288_regmap_config = {
  	.reg_bits	= 8,
  	.val_bits	= 8,
-@@ -181,6 +224,34 @@ static const struct regmap_irq axp20x_regmap_irqs[] = {
+@@ -181,6 +224,34 @@ static const struct regmap_irq axp20x_re
  	INIT_REGMAP_IRQ(AXP20X, GPIO0_INPUT,		4, 0),
  };
  
@@ -138,7 +136,7 @@ index d18029b..cfbb7d7 100644
  /* some IRQs are compatible with axp20x models */
  static const struct regmap_irq axp288_regmap_irqs[] = {
  	INIT_REGMAP_IRQ(AXP288, VBUS_FALL,              0, 2),
-@@ -224,6 +295,7 @@ static const struct regmap_irq axp288_regmap_irqs[] = {
+@@ -224,6 +295,7 @@ static const struct regmap_irq axp288_re
  static const struct of_device_id axp20x_of_match[] = {
  	{ .compatible = "x-powers,axp202", .data = (void *) AXP202_ID },
  	{ .compatible = "x-powers,axp209", .data = (void *) AXP209_ID },
@@ -146,7 +144,7 @@ index d18029b..cfbb7d7 100644
  	{ },
  };
  MODULE_DEVICE_TABLE(of, axp20x_of_match);
-@@ -258,6 +330,18 @@ static const struct regmap_irq_chip axp20x_regmap_irq_chip = {
+@@ -258,6 +330,18 @@ static const struct regmap_irq_chip axp2
  
  };
  
@@ -165,7 +163,7 @@ index d18029b..cfbb7d7 100644
  static const struct regmap_irq_chip axp288_regmap_irq_chip = {
  	.name			= "axp288_irq_chip",
  	.status_base		= AXP20X_IRQ1_STATE,
-@@ -281,6 +365,14 @@ static struct mfd_cell axp20x_cells[] = {
+@@ -281,6 +365,14 @@ static struct mfd_cell axp20x_cells[] =
  	},
  };
  
@@ -180,7 +178,7 @@ index d18029b..cfbb7d7 100644
  static struct resource axp288_adc_resources[] = {
  	{
  		.name  = "GPADC",
-@@ -426,6 +518,12 @@ static int axp20x_match_device(struct axp20x_dev *axp20x, struct device *dev)
+@@ -426,6 +518,12 @@ static int axp20x_match_device(struct ax
  		axp20x->regmap_cfg = &axp20x_regmap_config;
  		axp20x->regmap_irq_chip = &axp20x_regmap_irq_chip;
  		break;
@@ -193,8 +191,6 @@ index d18029b..cfbb7d7 100644
  	case AXP288_ID:
  		axp20x->cells = axp288_cells;
  		axp20x->nr_cells = ARRAY_SIZE(axp288_cells);
-diff --git a/include/linux/mfd/axp20x.h b/include/linux/mfd/axp20x.h
-index dfabd6d..95568eb 100644
 --- a/include/linux/mfd/axp20x.h
 +++ b/include/linux/mfd/axp20x.h
 @@ -14,6 +14,7 @@
