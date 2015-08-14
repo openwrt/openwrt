@@ -62,11 +62,11 @@ endef
 
 define Build/netgear-chk
 	$(STAGING_DIR_HOST)/bin/mkchkimg \
-		-o $@.new -k $@ -b $(BOARD_ID) -r $(REGION)
+		-o $@.new -k $@ -b $(NETGEAR_BOARD_ID) -r $(NETGEAR_REGION)
 	mv $@.new $@
 endef
 
-DEVICE_VARS += DT PRODUCTID BOARD_ID REGION
+DEVICE_VARS += DT PRODUCTID NETGEAR_BOARD_ID NETGEAR_REGION
 
 define Device/Default
   # .dtb files are prefixed by SoC type, e.g. bcm4708- which is not included in device/image names
@@ -96,30 +96,30 @@ endef
 define Device/netgear
   IMAGES := chk
   IMAGE/chk := trx-nand | netgear-chk
-  REGION := 1
+  NETGEAR_REGION := 1
 endef
 
 define NetgearDevice
   define Device/netgear-$(1)
 	$$(Device/netgear)
-	BOARD_ID := $(2)
+	NETGEAR_BOARD_ID := $(2)
   endef
   TARGET_DEVICES += netgear-$(1)
 endef
 
 define Device/netgear-r6250
   $(Device/netgear)
-  BOARD_ID := U12H245T00_NETGEAR
+  NETGEAR_BOARD_ID := U12H245T00_NETGEAR
 endef
 
 define Device/netgear-r6300-v2
   $(Device/netgear)
-  BOARD_ID := U12H240T00_NETGEAR
+  NETGEAR_BOARD_ID := U12H240T00_NETGEAR
 endef
 
 define Device/netgear-r8000
   $(Device/netgear)
-  BOARD_ID := U12H315T00_NETGEAR
+  NETGEAR_BOARD_ID := U12H315T00_NETGEAR
 endef
 
 define Device/smartrg-sr400ac
