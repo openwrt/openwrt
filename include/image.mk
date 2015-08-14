@@ -299,6 +299,15 @@ define Build/uImage
 	@mv $@.new $@
 endef
 
+define Build/netgear-chk
+	$(STAGING_DIR_HOST)/bin/mkchkimg \
+		-o $@.new \
+		-k $@ \
+		-b $(NETGEAR_BOARD_ID) \
+		-r $(NETGEAR_REGION)
+	mv $@.new $@
+endef
+
 define Build/lzma
 	$(STAGING_DIR_HOST)/bin/lzma e $@ -lc1 -lp2 -pb2 $(1) $@.new
 	@mv $@.new $@

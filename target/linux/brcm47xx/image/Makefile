@@ -126,15 +126,6 @@ define Build/linksys-bin
 	mv $@.new $@
 endef
 
-define Build/netgear-chk
-	$(STAGING_DIR_HOST)/bin/mkchkimg \
-		-o $@.new \
-		-k $@ \
-		-b $(NETGEAR_BOARD_ID) \
-		-r $(NETGEAR_REGION)
-	mv $@.new $@
-endef
-
 #################################################
 # Devices
 #################################################
