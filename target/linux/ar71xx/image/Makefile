@@ -961,7 +961,6 @@ endef
 
 LOADER_MAKE := $(NO_TRACE_MAKE) -C lzma-loader KDIR=$(KDIR)
 
-KDIR_TMP:=$(KDIR)/tmp
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 
