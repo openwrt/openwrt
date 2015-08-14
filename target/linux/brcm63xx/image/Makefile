@@ -136,12 +136,6 @@ define Build/cfe-spw303v-bin
 		$(CFE_EXTRAS)
 endef
 
-define Build/netgear-chk
-	$(STAGING_DIR_HOST)/bin/mkchkimg -o $@.netgear -k $@ \
-	-b $(NETGEAR_BOARD_ID) -r $(NETGEAR_REGION)
-	mv $@.netgear $@
-endef
-
 define Build/spw303v-bin
 	$(STAGING_DIR_HOST)/bin/spw303v -i $@ -o $@.spw303v
 	mv $@.spw303v $@
