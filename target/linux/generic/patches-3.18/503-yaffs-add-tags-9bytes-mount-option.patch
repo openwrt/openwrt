@@ -4,7 +4,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
 --- a/fs/yaffs2/yaffs_vfs.c
 +++ b/fs/yaffs2/yaffs_vfs.c
-@@ -2605,6 +2605,7 @@ static const struct super_operations yaf
+@@ -2644,6 +2644,7 @@ static const struct super_operations yaf
  
  struct yaffs_options {
  	int inband_tags;
@@ -12,7 +12,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	int skip_checkpoint_read;
  	int skip_checkpoint_write;
  	int no_cache;
-@@ -2644,6 +2645,8 @@ static int yaffs_parse_options(struct ya
+@@ -2683,6 +2684,8 @@ static int yaffs_parse_options(struct ya
  
  		if (!strcmp(cur_opt, "inband-tags")) {
  			options->inband_tags = 1;
@@ -21,7 +21,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		} else if (!strcmp(cur_opt, "tags-ecc-off")) {
  			options->tags_ecc_on = 0;
  			options->tags_ecc_overridden = 1;
-@@ -2717,7 +2720,6 @@ static struct super_block *yaffs_interna
+@@ -2756,7 +2759,6 @@ static struct super_block *yaffs_interna
  	struct yaffs_param *param;
  
  	int read_only = 0;
@@ -29,7 +29,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
  	struct yaffs_options options;
  
-@@ -2757,6 +2759,9 @@ static struct super_block *yaffs_interna
+@@ -2796,6 +2798,9 @@ static struct super_block *yaffs_interna
  
  	memset(&options, 0, sizeof(options));
  
@@ -39,7 +39,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	if (yaffs_parse_options(&options, data_str)) {
  		/* Option parsing failed */
  		return NULL;
-@@ -2790,17 +2795,22 @@ static struct super_block *yaffs_interna
+@@ -2829,17 +2834,22 @@ static struct super_block *yaffs_interna
  	}
  
  	/* Added NCB 26/5/2006 for completeness */
@@ -68,7 +68,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  		return NULL;
  
  	/* OK, so if we got here, we have an MTD that's NAND and looks
-@@ -2857,7 +2867,8 @@ static struct super_block *yaffs_interna
+@@ -2896,7 +2906,8 @@ static struct super_block *yaffs_interna
  
  	param->n_reserved_blocks = 5;
  	param->n_caches = (options.no_cache) ? 0 : 10;

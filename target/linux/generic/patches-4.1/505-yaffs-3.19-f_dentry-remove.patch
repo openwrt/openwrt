@@ -1,0 +1,95 @@
+--- a/fs/yaffs2/yaffs_vfs.c
++++ b/fs/yaffs2/yaffs_vfs.c
+@@ -283,7 +283,7 @@ static int yaffs_readpage_nolock(struct
+ 		(long long)pos,
+ 		(unsigned)PAGE_CACHE_SIZE);
+ 
+-	obj = yaffs_dentry_to_obj(f->f_dentry);
++	obj = yaffs_dentry_to_obj(f->f_path.dentry);
+ 
+ 	dev = obj->my_dev;
+ 
+@@ -481,7 +481,7 @@ static ssize_t yaffs_hold_space(struct f
+ 
+ 	int n_free_chunks;
+ 
+-	obj = yaffs_dentry_to_obj(f->f_dentry);
++	obj = yaffs_dentry_to_obj(f->f_path.dentry);
+ 
+ 	dev = obj->my_dev;
+ 
+@@ -499,7 +499,7 @@ static void yaffs_release_space(struct f
+ 	struct yaffs_obj *obj;
+ 	struct yaffs_dev *dev;
+ 
+-	obj = yaffs_dentry_to_obj(f->f_dentry);
++	obj = yaffs_dentry_to_obj(f->f_path.dentry);
+ 
+ 	dev = obj->my_dev;
+ 
+@@ -591,7 +591,7 @@ static ssize_t yaffs_file_write(struct f
+ 	struct inode *inode;
+ 	struct yaffs_dev *dev;
+ 
+-	obj = yaffs_dentry_to_obj(f->f_dentry);
++	obj = yaffs_dentry_to_obj(f->f_path.dentry);
+ 
+ 	if (!obj) {
+ 		yaffs_trace(YAFFS_TRACE_OS,
+@@ -603,7 +603,7 @@ static ssize_t yaffs_file_write(struct f
+ 
+ 	yaffs_gross_lock(dev);
+ 
+-	inode = f->f_dentry->d_inode;
++	inode = f->f_path.dentry->d_inode;
+ 
+ 	if (!S_ISBLK(inode->i_mode) && f->f_flags & O_APPEND)
+ 		ipos = inode->i_size;
+@@ -727,7 +727,7 @@ static int yaffs_file_flush(struct file
+ static int yaffs_file_flush(struct file *file)
+ #endif
+ {
+-	struct yaffs_obj *obj = yaffs_dentry_to_obj(file->f_dentry);
++	struct yaffs_obj *obj = yaffs_dentry_to_obj(file->f_path.dentry);
+ 
+ 	struct yaffs_dev *dev = obj->my_dev;
+ 
+@@ -1734,7 +1734,7 @@ static int yaffs_iterate(struct file *f,
+ 
+ 	char name[YAFFS_MAX_NAME_LENGTH + 1];
+ 
+-	obj = yaffs_dentry_to_obj(f->f_dentry);
++	obj = yaffs_dentry_to_obj(f->f_path.dentry);
+ 	dev = obj->my_dev;
+ 
+ 	yaffs_gross_lock(dev);
+@@ -1798,14 +1798,14 @@ static int yaffs_readdir(struct file *f,
+ 	struct yaffs_obj *obj;
+ 	struct yaffs_dev *dev;
+ 	struct yaffs_search_context *sc;
+-	struct inode *inode = f->f_dentry->d_inode;
++	struct inode *inode = f->f_path.dentry->d_inode;
+ 	unsigned long offset, curoffs;
+ 	struct yaffs_obj *l;
+ 	int ret_val = 0;
+ 
+ 	char name[YAFFS_MAX_NAME_LENGTH + 1];
+ 
+-	obj = yaffs_dentry_to_obj(f->f_dentry);
++	obj = yaffs_dentry_to_obj(f->f_path.dentry);
+ 	dev = obj->my_dev;
+ 
+ 	yaffs_gross_lock(dev);
+@@ -1839,10 +1839,10 @@ static int yaffs_readdir(struct file *f,
+ 	if (offset == 1) {
+ 		yaffs_trace(YAFFS_TRACE_OS,
+ 			"yaffs_readdir: entry .. ino %d",
+-			(int)f->f_dentry->d_parent->d_inode->i_ino);
++			(int)f->f_path.dentry->d_parent->d_inode->i_ino);
+ 		yaffs_gross_unlock(dev);
+ 		if (filldir(dirent, "..", 2, offset,
+-			    f->f_dentry->d_parent->d_inode->i_ino,
++			    f->f_path.dentry->d_parent->d_inode->i_ino,
+ 			    DT_DIR) < 0) {
+ 			yaffs_gross_lock(dev);
+ 			goto out;

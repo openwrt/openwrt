@@ -738,7 +738,7 @@ static int yaffs_file_flush(struct file *file)
 
 	yaffs_gross_lock(dev);
 
-	yaffs_flush_file(obj, 1, 0);
+	yaffs_flush_file(obj, 1, 0, 0);
 
 	yaffs_gross_unlock(dev);
 
@@ -768,7 +768,7 @@ static int yaffs_sync_object(struct file *file, struct dentry *dentry,
 	yaffs_trace(YAFFS_TRACE_OS | YAFFS_TRACE_SYNC,
 		"yaffs_sync_object");
 	yaffs_gross_lock(dev);
-	yaffs_flush_file(obj, 1, datasync);
+	yaffs_flush_file(obj, 1, datasync, 0);
 	yaffs_gross_unlock(dev);
 	return 0;
 }
@@ -2187,7 +2187,7 @@ static void yaffs_flush_inodes(struct super_block *sb)
 			yaffs_trace(YAFFS_TRACE_OS,
 				"flushing obj %d",
 				obj->obj_id);
-			yaffs_flush_file(obj, 1, 0);
+			yaffs_flush_file(obj, 1, 0, 0);
 		}
 	}
 }
@@ -2200,7 +2200,7 @@ static void yaffs_flush_super(struct super_block *sb, int do_checkpoint)
 
 	yaffs_flush_inodes(sb);
 	yaffs_update_dirty_dirs(dev);
-	yaffs_flush_whole_cache(dev);
+	yaffs_flush_whole_cache(dev, 1);
 	if (do_checkpoint)
 		yaffs_checkpoint_save(dev);
 }
@@ -2579,7 +2579,45 @@ static int yaffs_sync_fs(struct super_block *sb)
 	return 0;
 }
 
+/* the function only is used to change dev->read_only when this file system
+ * is remounted.
+ */
+static int yaffs_remount_fs(struct super_block *sb, int *flags, char *data)
+{
+	int read_only = 0;
+	struct mtd_info *mtd;
+	struct yaffs_dev *dev = 0;
 
+	/* Get the device */
+	mtd = get_mtd_device(NULL, MINOR(sb->s_dev));
+	if (!mtd) {
+		yaffs_trace(YAFFS_TRACE_ALWAYS,
+			"MTD device #%u doesn't appear to exist",
+			MINOR(sb->s_dev));
+		return 1;
+	}
+
+	/* Check it's NAND */
+	if (mtd->type != MTD_NANDFLASH) {
+		yaffs_trace(YAFFS_TRACE_ALWAYS,
+			"MTD device is not NAND it's type %d",
+			mtd->type);
+		return 1;
+	}
+
+	read_only = ((*flags & MS_RDONLY) != 0);
+	if (!read_only && !(mtd->flags & MTD_WRITEABLE)) {
+		read_only = 1;
+		printk(KERN_INFO
+			"yaffs: mtd is read only, setting superblock read only");
+		*flags |= MS_RDONLY;
+	}
+
+	dev = sb->s_fs_info;
+	dev->read_only = read_only;
+
+	return 0;
+}
 
 static const struct super_operations yaffs_super_ops = {
 	.statfs = yaffs_statfs,
@@ -2601,6 +2639,7 @@ static const struct super_operations yaffs_super_ops = {
 #ifdef YAFFS_HAS_WRITE_SUPER
 	.write_super = yaffs_write_super,
 #endif
+	.remount_fs = yaffs_remount_fs,
 };
 
 struct yaffs_options {
