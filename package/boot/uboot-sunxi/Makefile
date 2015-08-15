@@ -17,7 +17,7 @@ PKG_SOURCE_URL:= \
 
 PKG_MD5SUM:=3dac9a0b46fed77fc768ad3bd2d68c05
 
-PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 PKG_LICENSE:=GPL-2.0 GPL-2.0+
 PKG_LICENSE_FILES:=Licenses/README
@@ -138,16 +138,16 @@ define Build/Compile
 endef
 
 define Package/uboot/install/default
-	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
 	$(CP) $(PKG_BUILD_DIR)/u-boot.bin \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot.bin
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot.bin
 	$(CP) $(PKG_BUILD_DIR)/spl/sunxi-spl.bin \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-spl.bin
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-spl.bin
 	$(CP) $(PKG_BUILD_DIR)/u-boot-sunxi-with-spl.bin \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-u-boot-with-spl.bin
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-u-boot-with-spl.bin
 	$(CP) uEnv.txt \
-		$(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-uEnv.txt
-	mkimage -C none -A arm -T script -d $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-uEnv.txt $(BIN_DIR)/uboot-$(BOARD)-$(1)/openwrt-$(BOARD)-$(1)-boot.scr
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt
+	mkimage -C none -A arm -T script -d $(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-uEnv.txt \
+		$(KERNEL_BUILD_DIR)/uboot-$(BOARD)-$(1)-boot.scr
 endef
 
 define Package/uboot/install/template
