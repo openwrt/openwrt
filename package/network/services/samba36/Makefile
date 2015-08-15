@@ -129,6 +129,7 @@ MAKE_FLAGS += DYNEXP= PICFLAG= MODULES=
 define Package/samba36-server/conffiles
 /etc/config/samba
 /etc/samba/smb.conf.template
+/etc/samba/smbpasswd
 endef
 
 define Package/samba36-server/install
