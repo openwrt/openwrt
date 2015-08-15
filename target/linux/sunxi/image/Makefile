@@ -12,6 +12,8 @@ FAT32_BLOCK_SIZE=1024
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_SUNXI_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 define Image/BuildKernel
+	-mkdir -p $(KDIR_TMP)
+
 	mkimage -A arm -O linux -T kernel -C none \
 		-a 0x40008000 -e 0x40008000 \
 		-n 'ARM OpenWrt Linux-$(LINUX_VERSION)' \
@@ -29,16 +31,16 @@ define Image/BuildKernel
 endef
 
 define Image/Build/SDCard
-	rm -f $(KDIR)/boot.img
-	mkdosfs $(KDIR)/boot.img -C $(FAT32_BLOCKS)
+	rm -f $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img
+	mkdosfs $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img -C $(FAT32_BLOCKS)
 
-	mcopy -i $(KDIR)/boot.img $(KDIR)/uboot-sunxi-$(PROFILE)-boot.scr ::boot.scr
-	mcopy -i $(KDIR)/boot.img $(DTS_DIR)/$(2).dtb ::dtb
-	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(KDIR)/uboot-sunxi-$(PROFILE)-boot.scr ::boot.scr
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(DTS_DIR)/$(2).dtb ::dtb
+	mcopy -i $(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
 
 	./gen_sunxi_sdcard_img.sh \
 		$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img \
-		$(KDIR)/boot.img \
+		$(KDIR_TMP)/$(IMG_PREFIX)-$(PROFILE)-boot.img \
 		$(KDIR)/root.$(1) \
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
