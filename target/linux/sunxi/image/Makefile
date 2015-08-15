@@ -45,6 +45,10 @@ define Image/Build/SDCard
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
 		$(KDIR)/uboot-sunxi-$(PROFILE)-u-boot-with-spl.bin
+
+  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+	gzip -f9n $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)-sdcard-vfat-$(1).img
+  endif
 endef
 
 define Image/Build/Profile/A10-OLinuXino-Lime
