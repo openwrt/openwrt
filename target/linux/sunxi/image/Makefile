@@ -32,7 +32,7 @@ define Image/Build/SDCard
 	rm -f $(KDIR)/boot.img
 	mkdosfs $(KDIR)/boot.img -C $(FAT32_BLOCKS)
 
-	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/uboot-sunxi-$(PROFILE)/$(IMG_PREFIX)-$(PROFILE)-boot.scr ::boot.scr
+	mcopy -i $(KDIR)/boot.img $(KDIR)/uboot-sunxi-$(PROFILE)-boot.scr ::boot.scr
 	mcopy -i $(KDIR)/boot.img $(DTS_DIR)/$(2).dtb ::dtb
 	mcopy -i $(KDIR)/boot.img $(BIN_DIR)/$(IMG_PREFIX)-uImage ::uImage
 
@@ -42,7 +42,7 @@ define Image/Build/SDCard
 		$(KDIR)/root.$(1) \
 		$(CONFIG_SUNXI_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
-		$(BIN_DIR)/uboot-sunxi-$(PROFILE)/$(IMG_PREFIX)-$(PROFILE)-u-boot-with-spl.bin
+		$(KDIR)/uboot-sunxi-$(PROFILE)-u-boot-with-spl.bin
 endef
 
 define Image/Build/Profile/A10-OLinuXino-Lime
