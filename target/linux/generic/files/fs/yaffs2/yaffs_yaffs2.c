@@ -1351,7 +1351,6 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 	int n_to_scan = 0;
 	enum yaffs_block_state state;
 	int c;
-	int deleted;
 	LIST_HEAD(hard_list);
 	struct yaffs_block_info *bi;
 	u32 seq_number;
@@ -1469,7 +1468,6 @@ int yaffs2_scan_backwards(struct yaffs_dev *dev)
 		/* get the block to scan in the correct order */
 		blk = block_index[block_iter].block;
 		bi = yaffs_get_block_info(dev, blk);
-		deleted = 0;
 
 		summary_available = yaffs_summary_read(dev, dev->sum_tags, blk);
 
