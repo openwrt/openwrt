@@ -20,6 +20,11 @@ choice
 		bool "gcc 4.9.x with Linaro enhancements"
 		depends on BROKEN
 
+	config GCC_USE_VERSION_5
+		select GCC_VERSION_5
+		bool "gcc 5.x"
+		depends on BROKEN
+
 endchoice
 
 config GCC_USE_GRAPHITE

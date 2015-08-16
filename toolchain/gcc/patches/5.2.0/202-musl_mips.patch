@@ -1,0 +1,34 @@
+From 8de85695e46ed2bc57c3482b4f995be3a82c405e Mon Sep 17 00:00:00 2001
+From: ktkachov <ktkachov@138bc75d-0d04-0410-961f-82ee72b054a4>
+Date: Fri, 8 May 2015 15:16:50 +0000
+Subject: [PATCH 09/12] [PATCH 6/13] mips musl support
+
+2015-05-08  Gregor Richards  <gregor.richards@uwaterloo.ca>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/mips/linux.h (MUSL_DYNAMIC_LINKER32): Define.
+	(MUSL_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKERN32): Define.
+	(GNU_USER_DYNAMIC_LINKERN32): Update.
+
+git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222915 138bc75d-0d04-0410-961f-82ee72b054a4
+---
+ gcc/config/mips/linux.h | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/gcc/config/mips/linux.h
++++ b/gcc/config/mips/linux.h
+@@ -37,7 +37,13 @@ along with GCC; see the file COPYING3.
+ #define UCLIBC_DYNAMIC_LINKERN32 \
+   "%{mnan=2008:/lib32/ld-uClibc-mipsn8.so.0;:/lib32/ld-uClibc.so.0}"
+ 
++#undef MUSL_DYNAMIC_LINKER32
++#define MUSL_DYNAMIC_LINKER32 "/lib/ld-musl-mips%{EL:el}%{msoft-float:-sf}.so.1"
++#undef MUSL_DYNAMIC_LINKER64
++#define MUSL_DYNAMIC_LINKER64 "/lib/ld-musl-mips64%{EL:el}%{msoft-float:-sf}.so.1"
++#define MUSL_DYNAMIC_LINKERN32 "/lib/ld-musl-mipsn32%{EL:el}%{msoft-float:-sf}.so.1"
++
+ #define BIONIC_DYNAMIC_LINKERN32 "/system/bin/linker32"
+ #define GNU_USER_DYNAMIC_LINKERN32 \
+   CHOOSE_DYNAMIC_LINKER (GLIBC_DYNAMIC_LINKERN32, UCLIBC_DYNAMIC_LINKERN32, \
+-                         BIONIC_DYNAMIC_LINKERN32)
++                         BIONIC_DYNAMIC_LINKERN32, MUSL_DYNAMIC_LINKERN32)
