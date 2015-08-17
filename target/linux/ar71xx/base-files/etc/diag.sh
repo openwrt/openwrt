@@ -289,6 +289,9 @@ get_status_led() {
 	tl-wr2543n)
 		status_led="tp-link:green:wps"
 		;;
+	tl-wdr6500-v2)
+		status_led="tp-link:white:system"
+		;;
 	tube2h)
 		status_led="alfa:green:signal4"
 		;;
