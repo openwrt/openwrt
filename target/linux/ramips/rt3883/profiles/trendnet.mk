@@ -15,6 +15,7 @@ define Profile/TEW691GR/Description
 endef
 $(eval $(call Profile,TEW691GR))
 
+
 define Profile/TEW692GR
 	NAME:=TRENDnet TEW-692GR
 	PACKAGES:=swconfig

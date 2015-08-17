@@ -15,5 +15,4 @@ endef
 define Profile/ASL26555/Description
 	Package set for Alpha ASL26555
 endef
-
 $(eval $(call Profile,ASL26555))

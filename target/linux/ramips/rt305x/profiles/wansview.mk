@@ -7,12 +7,11 @@
 
 define Profile/NCS601W
 	NAME:=Wansview NCS601W
-        PACKAGES:=kmod-video-core kmod-video-uvc \
+	PACKAGES:=kmod-video-core kmod-video-uvc \
 		kmod-usb-core kmod-usb-ohci
 endef
 
 define Profile/NCS601W/Description
 	Package set for Wansview NCS601W board
 endef
-
 $(eval $(call Profile,NCS601W))

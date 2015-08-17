@@ -17,5 +17,4 @@ endef
 define Profile/WIZARD8800/Description
 	Package set for EasyAcc Wi-Stor Wizard 4in1 wireless storage 8800
 endef
-
 $(eval $(call Profile,WIZARD8800))

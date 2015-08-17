@@ -12,6 +12,4 @@ endef
 define Profile/HLKRM04/Description
 	Package set for HiLink RM04 Module
 endef
-
 $(eval $(call Profile,HLKRM04))
-

@@ -15,5 +15,4 @@ endef
 define Profile/HW550-3G/Description
 	Package set for Aztech HW550-3G
 endef
-
 $(eval $(call Profile,HW550-3G))

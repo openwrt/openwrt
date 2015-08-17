@@ -13,5 +13,4 @@ endef
 define Profile/WT1520/Description
 	Package set for WT1520
 endef
-
 $(eval $(call Profile,WT1520))

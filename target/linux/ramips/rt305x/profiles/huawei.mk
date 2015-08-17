@@ -6,12 +6,11 @@
 #
 
 define Profile/HG255D
-	NAME:=HuaWei HG255D
+	NAME:=Huawei HG255D
 	PACKAGES:=kmod-leds-gpio wpad-mini kmod-usb-dwc2
 endef
 
 define Profile/HG255D/Description
-	Package set for HuaWei HG255D.
+	Package set for Huawei HG255D.
 endef
-
 $(eval $(call Profile,HG255D))

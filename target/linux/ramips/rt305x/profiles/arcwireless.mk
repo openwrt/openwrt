@@ -6,13 +6,12 @@
 #
 
 define Profile/FREESTATION5
-	NAME:=FreeStation5
+	NAME:=ARC Wireless FreeStation
 	PACKAGES:=\
 		 kmod-usb-dwc2 kmod-rt2500-usb kmod-rt2800-usb kmod-rt2x00-usb
 endef
 
 define Profile/FREESTATION5/Description
-	Package set for ARC FreeStation, Flex mARC, iFlex, and SplitStation
+	Package set for ARC Wireless FreeStation, Flex mARC, iFlex, and SplitStation
 endef
-
 $(eval $(call Profile,FREESTATION5))

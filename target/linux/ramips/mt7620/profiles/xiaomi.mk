@@ -6,13 +6,13 @@
 #
 
 define Profile/MIWIFI-MINI
- NAME:=Xiaomi MiWiFi Mini
- PACKAGES:=\
-	kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
-	kmod-mt76
+	NAME:=Xiaomi MiWiFi Mini
+	PACKAGES:=\
+		kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
+		kmod-mt76
 endef
 
 define Profile/MIWIFI-MINI/Description
- Support for Xiaomi MiWiFi Mini routers
+	Support for Xiaomi MiWiFi Mini routers
 endef
 $(eval $(call Profile,MIWIFI-MINI))

@@ -15,5 +15,4 @@ endef
 define Profile/FONERA20N/Description
 	Package set for Fonera 2.0N
 endef
-
 $(eval $(call Profile,FONERA20N))

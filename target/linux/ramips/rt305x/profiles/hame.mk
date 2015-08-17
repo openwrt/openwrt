@@ -14,8 +14,8 @@ endef
 define Profile/MPRA1/Description
 	Package set for HAME MPR-A1 board
 endef
-
 $(eval $(call Profile,MPRA1))
+
 
 define Profile/MPRA2
 	NAME:=HAME MPR-A2
@@ -26,6 +26,4 @@ endef
 define Profile/MPRA2/Description
 	Package set for HAME MPR-A2 board
 endef
-
 $(eval $(call Profile,MPRA2))
-

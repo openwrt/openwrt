@@ -13,6 +13,4 @@ endef
 define Profile/HT-TM02/Description
 	Package set optimized for the HooToo HT-TM02.
 endef
-
 $(eval $(call Profile,HT-TM02))
-

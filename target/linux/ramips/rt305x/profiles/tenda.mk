@@ -15,8 +15,8 @@ endef
 define Profile/3G150B/Description
 	Package set for Tenda 3G150B board
 endef
-
 $(eval $(call Profile,3G150B))
+
 
 define Profile/3G300M
 	NAME:=Tenda 3G300M
@@ -28,8 +28,8 @@ endef
 define Profile/3G300M/Description
 	Package set for Tenda 3G300M board
 endef
-
 $(eval $(call Profile,3G300M))
+
 
 define Profile/W306R_V20
 	NAME:=Tenda W306R V2.0
@@ -39,5 +39,4 @@ endef
 define Profile/W306R_V20/Description
 	Package set for Tenda W306R V2.0 board
 endef
-
 $(eval $(call Profile,W306R_V20))

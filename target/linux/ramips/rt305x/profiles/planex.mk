@@ -13,5 +13,4 @@ endef
 define Profile/MZK-DP150N/Description
 	Package set optimized for the Planex MZK-DP150N.
 endef
-
 $(eval $(call Profile,MZK-DP150N))

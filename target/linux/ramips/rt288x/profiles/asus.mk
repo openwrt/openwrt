@@ -6,13 +6,11 @@
 #
 
 define Profile/RTN15
-       NAME:=Asus RT-N15
-       PACKAGES:=kmod-switch-rtl8366s kmod-swconfig swconfig
+	NAME:=Asus RT-N15
+	PACKAGES:=kmod-switch-rtl8366s kmod-swconfig swconfig
 endef
 
 define Profile/RTN15/Description
-       Package set for Asus RT-N15 board
+	Package set for Asus RT-N15 board
 endef
-
 $(eval $(call Profile,RTN15))
-
