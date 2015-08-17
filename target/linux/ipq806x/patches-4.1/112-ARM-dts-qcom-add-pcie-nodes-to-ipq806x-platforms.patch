@@ -134,10 +134,11 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  
  / {
  	model = "Qualcomm IPQ8064";
-@@ -329,5 +331,127 @@
- 			#reset-cells = <1>;
+@@ -333,6 +335,129 @@
+ 			compatible = "syscon";
+ 			reg = <0x01200600 0x100>;
  		};
- 
++
 +		pcie0: pci@1b500000 {
 +			compatible = "qcom,pcie-v0";
 +			reg = <0x1b500000 0x1000
@@ -261,4 +262,5 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +			status = "disabled";
 +		};
  	};
- };
+ 
+ 	sfpb_mutex: sfpb-mutex {
