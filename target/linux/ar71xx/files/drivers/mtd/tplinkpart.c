@@ -18,10 +18,12 @@
 
 #define TPLINK_NUM_PARTS	5
 #define TPLINK_HEADER_V1	0x01000000
+#define TPLINK_HEADER_V2	0x02000000
 #define MD5SUM_LEN		16
 
 #define TPLINK_ART_LEN		0x10000
 #define TPLINK_KERNEL_OFFS	0x20000
+#define TPLINK_64K_KERNEL_OFFS	0x10000
 
 struct tplink_fw_header {
 	uint32_t	version;	/* header version */
@@ -70,7 +72,7 @@ tplink_read_header(struct mtd_info *mtd, size_t offset)
 
 	/* sanity checks */
 	t = be32_to_cpu(header->version);
-	if (t != TPLINK_HEADER_V1)
+	if ((t != TPLINK_HEADER_V1) && (t != TPLINK_HEADER_V2))
 		goto err_free_header;
 
 	t = be32_to_cpu(header->kernel_ofs);
@@ -106,14 +108,14 @@ static int tplink_check_rootfs_magic(struct mtd_info *mtd, size_t offset)
 	return 0;
 }
 
-static int tplink_parse_partitions(struct mtd_info *master,
+static int tplink_parse_partitions_offset(struct mtd_info *master,
 				   struct mtd_partition **pparts,
-				   struct mtd_part_parser_data *data)
+				   struct mtd_part_parser_data *data,
+				   size_t offset)
 {
 	struct mtd_partition *parts;
 	struct tplink_fw_header *header;
 	int nr_parts;
-	size_t offset;
 	size_t art_offset;
 	size_t rootfs_offset;
 	size_t squashfs_offset;
@@ -125,8 +127,6 @@ static int tplink_parse_partitions(struct mtd_info *master,
 		ret = -ENOMEM;
 		goto err;
 	}
-
-	offset = TPLINK_KERNEL_OFFS;
 
 	header = tplink_read_header(master, offset);
 	if (!header) {
@@ -180,15 +180,38 @@ err:
 	return ret;
 }
 
+static int tplink_parse_partitions(struct mtd_info *master,
+				   struct mtd_partition **pparts,
+				   struct mtd_part_parser_data *data)
+{
+	return tplink_parse_partitions_offset(master, pparts, data,
+		                              TPLINK_KERNEL_OFFS);
+}
+
+static int tplink_parse_64k_partitions(struct mtd_info *master,
+				   struct mtd_partition **pparts,
+				   struct mtd_part_parser_data *data)
+{
+	return tplink_parse_partitions_offset(master, pparts, data,
+		                              TPLINK_64K_KERNEL_OFFS);
+}
+
 static struct mtd_part_parser tplink_parser = {
 	.owner		= THIS_MODULE,
 	.parse_fn	= tplink_parse_partitions,
 	.name		= "tp-link",
 };
 
+static struct mtd_part_parser tplink_64k_parser = {
+	.owner		= THIS_MODULE,
+	.parse_fn	= tplink_parse_64k_partitions,
+	.name		= "tp-link-64k",
+};
+
 static int __init tplink_parser_init(void)
 {
 	register_mtd_parser(&tplink_parser);
+	register_mtd_parser(&tplink_64k_parser);
 
 	return 0;
 }
