@@ -3,8 +3,8 @@
 /include/ "rt5350.dtsi"
 
 / {
-	compatible = "OMNI-PLUG", "ralink,rt5350-soc";
-	model = "Omnima MiniPlug";
+	compatible = "MINIEMBPLUG", "ralink,rt5350-soc";
+	model = "Omnima MiniEMBPlug";
 
 	pinctrl {
 		state_default: pinctrl0 {
@@ -19,12 +19,12 @@
 		compatible = "gpio-leds";
 
 		wlan {
-			label = "miniplug:red:wlan";
+			label = "miniembplug:red:wlan";
 			gpios = <&gpio0 9 0>;
 		};
 
 		mobile {
-			label = "miniplug:green:mobile";
+			label = "miniembplug:green:mobile";
 			gpios = <&gpio0 13 1>;
 		};
 	};

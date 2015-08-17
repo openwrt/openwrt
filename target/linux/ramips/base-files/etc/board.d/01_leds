@@ -166,14 +166,14 @@ case $board in
 		set_wifi_led "m2m:blue:wifi"
 		ucidef_set_led_netdev "eth" "Ethernet" "m2m:green:wan" "eth0"
 		;;
-	omni-emb-hpm)
-		ucidef_set_led_default "power" "POWER" "emb:orange:power" "1"
-		ucidef_set_led_netdev "eth" "ETH" "emb:green:eth" "eth0"
-		set_wifi_led "emb:green:wifi"
+	hpm)
+		ucidef_set_led_default "power" "POWER" "hpm:orange:power" "1"
+		ucidef_set_led_netdev "eth" "ETH" "hpm:green:eth" "eth0"
+		set_wifi_led "hpm:green:wifi"
 		;;
-	omni-plug)
-		set_wifi_led "miniplug:green:wlan"
-		set_usb_led "miniplug:green:mobile"
+	miniembplug)
+		set_wifi_led "miniembplug:green:wlan"
+		set_usb_led "miniembplug:green:mobile"
 		;;
 	px4885)
 		set_wifi_led "7links:orange:wifi"

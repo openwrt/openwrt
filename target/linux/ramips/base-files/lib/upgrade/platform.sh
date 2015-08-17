@@ -74,9 +74,9 @@ platform_check_image() {
 	mzk-dp150n | \
 	nbg-419n | \
 	nw718 | \
-	omni-emb | \
-	omni-emb-hpm | \
-	omni-plug | \
+	miniembwifi | \
+	hpm | \
+	miniembplug | \
 	rt5350f-olinuxino | \
 	rt5350f-olinuxino-evb | \
 	psr-680w | \
