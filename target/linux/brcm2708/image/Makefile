@@ -23,7 +23,7 @@ endif
 
 ### Image scripts ###
 define Build/build-dtb
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $@.dtb $(DTS_DIR)/$(DEVICE_DTS).dts
+	$(call Image/BuildDTB,$(DTS_DIR)/$(DEVICE_DTS).dts,$@.dtb)
 endef
 
 define Build/gen-cfg
