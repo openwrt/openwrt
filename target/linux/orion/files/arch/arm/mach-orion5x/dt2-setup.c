@@ -335,7 +335,7 @@ static void __init dt2_init(void)
 	platform_device_register(&dt2_leds);
 
 	if (request_irq(gpio_to_irq(DT2_PIN_GPIO_RESET), &dt2_reset_handler,
-			IRQF_DISABLED | IRQF_TRIGGER_LOW,
+			IRQF_TRIGGER_LOW,
 			"DT2: Reset button", NULL) < 0) {
 
 		printk("DT2: Reset Button IRQ %d not available\n",
@@ -343,7 +343,7 @@ static void __init dt2_init(void)
 	}
 
 	if (request_irq(gpio_to_irq(DT2_PIN_GPIO_POWER), &dt2_power_handler,
-			IRQF_DISABLED | IRQF_TRIGGER_LOW,
+			IRQF_TRIGGER_LOW,
 			"DT2: Power button", NULL) < 0) {
 
 		printk(KERN_DEBUG "DT2: Power Button IRQ %d not available\n",
