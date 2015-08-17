@@ -442,7 +442,7 @@ Image/Build/Profile/ALL5002=$(call BuildFirmware/CustomFlash/$(1),$(1),all5002,A
 Image/Build/Profile/ALL5003=$(call BuildFirmware/CustomFlash/$(1),$(1),all5003,ALL5003,$(allnet_all5002_mtd_size))
 
 argus_atp52b_mtd_size=7995392
-Image/Build/Profile/ARGUS_ATP52B=$(call BuildFirmware/CustomFlash/$(1),$(1),argus_atp52b,ARGUS_ATP52B,$(argus_atp52b_mtd_size))
+Image/Build/Profile/ATP-52B=$(call BuildFirmware/CustomFlash/$(1),$(1),atp-52b,ATP-52B,$(argus_atp52b_mtd_size))
 
 asl26555_8mb_mtd_size=7929856
 asl26555_16mb_mtd_size=16252928
@@ -699,8 +699,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/ALL0256N,$(1))
 	$(call Image/Build/Profile/ALL5002,$(1))
 	$(call Image/Build/Profile/ALL5003,$(1))
-	$(call Image/Build/Profile/ARGUS_ATP52B,$(1))
 	$(call Image/Build/Profile/ASL26555,$(1))
+	$(call Image/Build/Profile/ATP-52B,$(1))
 	$(call Image/Build/Profile/AWM002EVB,$(1))
 	$(call Image/Build/Profile/AWAPN2403,$(1))
 	$(call Image/Build/Profile/BC2,$(1))

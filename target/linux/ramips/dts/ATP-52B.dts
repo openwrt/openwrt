@@ -3,7 +3,7 @@
 /include/ "rt3050.dtsi"
 
 / {
-	compatible = "ARGUS_ATP52B", "ralink,rt3052-soc";
+	compatible = "ATP-52B", "ralink,rt3052-soc";
 	model = "Argus ATP-52B";
 
 	pinctrl {
@@ -49,12 +49,12 @@
 		compatible = "gpio-leds";
 
 		run {
-			label = "argus-atp52b:green:run";
+			label = "atp-52b:green:run";
 			gpios = <&gpio0 9 1>;
 		};
 
 		net {
-			label = "argus-atp52b:amber:net";
+			label = "atp-52b:amber:net";
 			gpios = <&gpio0 13 1>;
 		};
 	};
