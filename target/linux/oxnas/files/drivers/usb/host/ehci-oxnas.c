@@ -232,7 +232,7 @@ static int ehci_oxnas_drv_probe(struct platform_device *ofdev)
 
 	start_oxnas_usb_ehci(oxnas);
 
-	err = usb_add_hcd(hcd, irq, IRQF_SHARED | IRQF_DISABLED);
+	err = usb_add_hcd(hcd, irq, IRQF_SHARED);
 	if (err)
 		goto err_hcd;
 
