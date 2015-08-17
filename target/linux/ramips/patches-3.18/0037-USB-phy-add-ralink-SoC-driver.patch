@@ -1,6 +1,6 @@
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
-@@ -239,6 +239,11 @@ config PHY_XGENE
+@@ -239,6 +239,11 @@
  	help
  	  This option enables support for APM X-Gene SoC multi-purpose PHY.
  
@@ -14,14 +14,14 @@
  	depends on RESET_CONTROLLER
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -31,3 +31,4 @@ obj-$(CONFIG_PHY_ST_SPEAR1340_MIPHY)	+=
+@@ -31,3 +31,4 @@
  obj-$(CONFIG_PHY_XGENE)			+= phy-xgene.o
  obj-$(CONFIG_PHY_STIH407_USB)		+= phy-stih407-usb.o
  obj-$(CONFIG_PHY_STIH41X_USB)		+= phy-stih41x-usb.o
 +obj-$(CONFIG_PHY_RALINK_USB)		+= phy-ralink-usb.o
 --- /dev/null
 +++ b/drivers/phy/phy-ralink-usb.c
-@@ -0,0 +1,177 @@
+@@ -0,0 +1,175 @@
 +/*
 + * Allwinner ralink USB phy driver
 + *
@@ -168,7 +168,6 @@
 +	struct phy_provider *phy_provider;
 +	const struct of_device_id *match;
 +
-+	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +	match = of_match_device(ralink_usb_phy_of_match, &pdev->dev);
 +	phy_clk = (int) match->data;
 +
@@ -182,7 +181,6 @@
 +	}
 +
 +	phy_provider = devm_of_phy_provider_register(dev, ralink_usb_phy_xlate);
-+printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +
 +	return PTR_ERR_OR_ZERO(phy_provider);
 +}
