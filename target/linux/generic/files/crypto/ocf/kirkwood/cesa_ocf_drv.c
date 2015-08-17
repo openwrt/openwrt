@@ -1203,7 +1203,7 @@ mv_cesa_ocf_init(struct platform_device *pdev)
 #endif
 	/* register interrupt */
 	if( request_irq( cesa_device.irq, cesa_interrupt_handler,
-                             (IRQF_DISABLED) , "cesa", &cesa_ocf_id) < 0) {
+                             0, "cesa", &cesa_ocf_id) < 0) {
             	printk("%s,%d: cannot assign irq %x\n", __FILE__, __LINE__, cesa_device.reg);
 		return EINVAL;
         }
