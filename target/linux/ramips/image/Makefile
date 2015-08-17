@@ -631,9 +631,9 @@ Image/Build/Profile/WHRG300N=$(call BuildFirmware/WHRG300N/$(1),$(1))
 
 Image/Build/Profile/WIZARD8800=$(call BuildFirmware/Default8M/$(1),$(1),wizard-8800,WIZARD8800,Linux Kernel Image)
 
-Image/Build/Profile/WL_330N=$(call BuildFirmware/Default4M/$(1),$(1),wl-330n,WL_330N)
+Image/Build/Profile/WL-330N=$(call BuildFirmware/Default4M/$(1),$(1),wl-330n,WL-330N)
 
-Image/Build/Profile/WL_330N3G=$(call BuildFirmware/Default4M/$(1),$(1),wl-330n3g,WL_330N3G)
+Image/Build/Profile/WL-330N3G=$(call BuildFirmware/Default4M/$(1),$(1),wl-330n3g,WL-330N3G)
 
 kernel_size_wl341v3=917504
 rootfs_size_wl341v3=2949120
@@ -763,8 +763,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WCR150GN,$(1))
 	$(call Image/Build/Profile/WHRG300N,$(1))
 	$(call Image/Build/Profile/WIZARD8800,$(1))
-	$(call Image/Build/Profile/WL_330N,$(1))
-	$(call Image/Build/Profile/WL_330N3G,$(1))
+	$(call Image/Build/Profile/WL-330N,$(1))
+	$(call Image/Build/Profile/WL-330N3G,$(1))
 	$(call Image/Build/Profile/WL341V3,$(1))
 	$(call Image/Build/Profile/WL-351,$(1))
 	$(call Image/Build/Profile/WNCE2001,$(1))
