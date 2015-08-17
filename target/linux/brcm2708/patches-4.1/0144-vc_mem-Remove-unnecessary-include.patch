@@ -1,0 +1,23 @@
+From 5385d08b17b5eda5ed816978b29f50c6aad560ac Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 24 Jul 2015 19:33:46 +0200
+Subject: [PATCH 144/148] vc_mem: Remove unnecessary include
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/char/broadcom/vc_mem.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/char/broadcom/vc_mem.c
++++ b/drivers/char/broadcom/vc_mem.c
+@@ -22,7 +22,6 @@
+ #include <linux/debugfs.h>
+ #include <asm/uaccess.h>
+ #include <linux/dma-mapping.h>
+-#include <linux/platform_data/mailbox-bcm2708.h>
+ #include <linux/broadcom/vc_mem.h>
+ 
+ #define DRIVER_NAME  "vc-mem"

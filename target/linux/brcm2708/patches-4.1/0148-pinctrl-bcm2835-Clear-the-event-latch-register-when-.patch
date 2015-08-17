@@ -1,0 +1,37 @@
+From 2a2dc4e5e4946e75b98c71eacc3660e913dbd302 Mon Sep 17 00:00:00 2001
+From: Jonathan Bell <jonathan@raspberrypi.org>
+Date: Tue, 30 Jun 2015 12:35:39 +0100
+Subject: [PATCH 148/148] pinctrl: bcm2835: Clear the event latch register when
+ disabling interrupts
+
+It's possible to hit a race condition if interrupts are generated on a GPIO
+pin when the IRQ line in question is being disabled.
+
+If the interrupt is freed, bcm2835_gpio_irq_disable() is called which
+disables the event generation sources (edge, level). If an event occurred
+between the last disabling of hard IRQs and the write to the event
+source registers, a bit would be set in the GPIO event detect register
+(GPEDSn) which goes unacknowledged by bcm2835_gpio_irq_handler()
+so Linux complains loudly.
+
+There is no per-GPIO mask register, so when disabling GPIO interrupts
+write 1 to the relevant bit in GPEDSn to clear out any stale events.
+
+Signed-off-by: Jonathan Bell <jonathan@raspberrypi.org>
+Acked-by: Stephen Warren <swarren@wwwdotorg.org>
+Signed-off-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/pinctrl/bcm/pinctrl-bcm2835.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/pinctrl/bcm/pinctrl-bcm2835.c
++++ b/drivers/pinctrl/bcm/pinctrl-bcm2835.c
+@@ -503,6 +503,8 @@ static void bcm2835_gpio_irq_disable(str
+ 
+ 	spin_lock_irqsave(&pc->irq_lock[bank], flags);
+ 	bcm2835_gpio_irq_config(pc, gpio, false);
++	/* Clear events that were latched prior to clearing event sources */
++	bcm2835_gpio_set_bit(pc, GPEDS0, gpio);
+ 	clear_bit(offset, &pc->enabled_irq_map[bank]);
+ 	spin_unlock_irqrestore(&pc->irq_lock[bank], flags);
+ }

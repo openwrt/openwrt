@@ -1,0 +1,89 @@
+From dc3946ac37e0c7aed74b0041f742a102d37af425 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 24 Jul 2015 19:34:55 +0200
+Subject: [PATCH 147/148] Revert "firmware: bcm2835: Support legacy mailbox
+ API"
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This reverts commit 40aa3c4f0c430cd5c574498f4d1d5e9f0bc1cf11.
+
+The legacy mailbox API has been removed so this is not needed.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/firmware/raspberrypi.c             | 15 ++-------------
+ include/soc/bcm2835/raspberrypi-firmware.h |  2 --
+ 2 files changed, 2 insertions(+), 15 deletions(-)
+
+--- a/drivers/firmware/raspberrypi.c
++++ b/drivers/firmware/raspberrypi.c
+@@ -19,7 +19,6 @@
+ #define MBOX_MSG(chan, data28)		(((data28) & ~0xf) | ((chan) & 0xf))
+ #define MBOX_CHAN(msg)			((msg) & 0xf)
+ #define MBOX_DATA28(msg)		((msg) & ~0xf)
+-#define MBOX_CHAN_VCHIQ			3
+ #define MBOX_CHAN_PROPERTY		8
+ 
+ struct rpi_firmware {
+@@ -27,7 +26,6 @@ struct rpi_firmware {
+ 	struct mbox_chan *chan; /* The property channel. */
+ 	struct completion c;
+ 	u32 enabled;
+-	u32 received;
+ };
+ 
+ static struct platform_device *g_pdev;
+@@ -37,7 +35,6 @@ static DEFINE_MUTEX(transaction_lock);
+ static void response_callback(struct mbox_client *cl, void *msg)
+ {
+ 	struct rpi_firmware *fw = container_of(cl, struct rpi_firmware, cl);
+-	fw->received = *(u32 *)msg;
+ 	complete(&fw->c);
+ }
+ 
+@@ -45,7 +42,7 @@ static void response_callback(struct mbo
+  * Sends a request to the firmware through the BCM2835 mailbox driver,
+  * and synchronously waits for the reply.
+  */
+-int
++static int
+ rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data)
+ {
+ 	u32 message = MBOX_MSG(chan, data);
+@@ -57,8 +54,7 @@ rpi_firmware_transaction(struct rpi_firm
+ 	reinit_completion(&fw->c);
+ 	ret = mbox_send_message(fw->chan, &message);
+ 	if (ret >= 0) {
+-		if (chan != MBOX_CHAN_VCHIQ)
+-			wait_for_completion(&fw->c);
++		wait_for_completion(&fw->c);
+ 		ret = 0;
+ 	} else {
+ 		dev_err(fw->cl.dev, "mbox_send_message returned %d\n", ret);
+@@ -67,13 +63,6 @@ rpi_firmware_transaction(struct rpi_firm
+ 
+ 	return ret;
+ }
+-EXPORT_SYMBOL(rpi_firmware_transaction);
+-
+-u32 rpi_firmware_transaction_received(struct rpi_firmware *fw)
+-{
+-	return MBOX_DATA28(fw->received);
+-}
+-EXPORT_SYMBOL(rpi_firmware_transaction_received);
+ 
+ /**
+  * rpi_firmware_property_list - Submit firmware property list
+--- a/include/soc/bcm2835/raspberrypi-firmware.h
++++ b/include/soc/bcm2835/raspberrypi-firmware.h
+@@ -116,8 +116,6 @@ enum rpi_firmware_property_tag {
+ 	RPI_FIRMWARE_GET_DMA_CHANNELS =                       0x00060001,
+ };
+ 
+-int rpi_firmware_transaction(struct rpi_firmware *fw, u32 chan, u32 data);
+-u32 rpi_firmware_transaction_received(struct rpi_firmware *fw);
+ int rpi_firmware_property(struct rpi_firmware *fw,
+ 			  u32 tag, void *data, size_t len);
+ int rpi_firmware_property_list(struct rpi_firmware *fw,

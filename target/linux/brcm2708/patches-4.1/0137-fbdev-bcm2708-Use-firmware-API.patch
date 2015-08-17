@@ -1,0 +1,413 @@
+From b436501db9136833c1e213d6efdb3b1c6e711bf1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Mon, 20 Jul 2015 12:20:59 +0200
+Subject: [PATCH 137/148] fbdev: bcm2708: Use firmware API
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Use the new firmware API instead of the legacy mailbox API.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi |   1 +
+ drivers/video/fbdev/bcm2708_fb.c      | 273 +++++++++++++++++++---------------
+ 2 files changed, 152 insertions(+), 122 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -217,6 +217,7 @@
+ 
+ 		fb: fb {
+ 			compatible = "brcm,bcm2708-fb";
++			firmware = <&firmware>;
+ 			status = "disabled";
+ 		};
+ 
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -25,7 +25,6 @@
+ #include <linux/ioport.h>
+ #include <linux/list.h>
+ #include <linux/platform_data/dma-bcm2708.h>
+-#include <linux/platform_data/mailbox-bcm2708.h>
+ #include <linux/platform_device.h>
+ #include <linux/clk.h>
+ #include <linux/printk.h>
+@@ -34,6 +33,7 @@
+ #include <asm/sizes.h>
+ #include <linux/io.h>
+ #include <linux/dma-mapping.h>
++#include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+ //#define BCM2708_FB_DEBUG
+ #define MODULE_NAME "bcm2708_fb"
+@@ -58,15 +58,19 @@ static u32 dma_busy_wait_threshold = 1<<
+ module_param(dma_busy_wait_threshold, int, 0644);
+ MODULE_PARM_DESC(dma_busy_wait_threshold, "Busy-wait for DMA completion below this area");
+ 
+-/* this data structure describes each frame buffer device we find */
+-
+-struct fbinfo_s {
+-	u32 xres, yres, xres_virtual, yres_virtual;
+-	u32 pitch, bpp;
++struct fb_alloc_tags {
++	struct rpi_firmware_property_tag_header tag1;
++	u32 xres, yres;
++	struct rpi_firmware_property_tag_header tag2;
++	u32 xres_virtual, yres_virtual;
++	struct rpi_firmware_property_tag_header tag3;
++	u32 bpp;
++	struct rpi_firmware_property_tag_header tag4;
+ 	u32 xoffset, yoffset;
+-	u32 base;
+-	u32 screen_size;
+-	u16 cmap[256];
++	struct rpi_firmware_property_tag_header tag5;
++	u32 base, screen_size;
++	struct rpi_firmware_property_tag_header tag6;
++	u32 pitch;
+ };
+ 
+ struct bcm2708_fb_stats {
+@@ -78,9 +82,9 @@ struct bcm2708_fb_stats {
+ struct bcm2708_fb {
+ 	struct fb_info fb;
+ 	struct platform_device *dev;
+-	struct fbinfo_s *info;
+-	dma_addr_t dma;
++	struct rpi_firmware *fw;
+ 	u32 cmap[16];
++	u32 gpu_cmap[256];
+ 	int dma_chan;
+ 	int dma_irq;
+ 	void __iomem *dma_chan_base;
+@@ -270,69 +274,71 @@ static int bcm2708_fb_check_var(struct f
+ 
+ static int bcm2708_fb_set_par(struct fb_info *info)
+ {
+-	uint32_t val = 0;
+ 	struct bcm2708_fb *fb = to_bcm2708(info);
+-	volatile struct fbinfo_s *fbinfo = fb->info;
+-	fbinfo->xres = info->var.xres;
+-	fbinfo->yres = info->var.yres;
+-	fbinfo->xres_virtual = info->var.xres_virtual;
+-	fbinfo->yres_virtual = info->var.yres_virtual;
+-	fbinfo->bpp = info->var.bits_per_pixel;
+-	fbinfo->xoffset = info->var.xoffset;
+-	fbinfo->yoffset = info->var.yoffset;
+-	fbinfo->base = 0;	/* filled in by VC */
+-	fbinfo->pitch = 0;	/* filled in by VC */
++	struct fb_alloc_tags fbinfo = {
++		.tag1 = { RPI_FIRMWARE_FRAMEBUFFER_SET_PHYSICAL_WIDTH_HEIGHT,
++			  8, 0, },
++			.xres = info->var.xres,
++			.yres = info->var.yres,
++		.tag2 = { RPI_FIRMWARE_FRAMEBUFFER_SET_VIRTUAL_WIDTH_HEIGHT,
++			  8, 0, },
++			.xres_virtual = info->var.xres_virtual,
++			.yres_virtual = info->var.yres_virtual,
++		.tag3 = { RPI_FIRMWARE_FRAMEBUFFER_SET_DEPTH, 4, 0 },
++			.bpp = info->var.bits_per_pixel,
++		.tag4 = { RPI_FIRMWARE_FRAMEBUFFER_SET_VIRTUAL_OFFSET, 8, 0 },
++			.xoffset = info->var.xoffset,
++			.yoffset = info->var.yoffset,
++		.tag5 = { RPI_FIRMWARE_FRAMEBUFFER_ALLOCATE, 8, 0 },
++			.base = 0,
++			.screen_size = 0,
++		.tag6 = { RPI_FIRMWARE_FRAMEBUFFER_GET_PITCH, 4, 0 },
++			.pitch = 0,
++	};
++	int ret;
+ 
+ 	print_debug("bcm2708_fb_set_par info(%p) %dx%d (%dx%d), %d, %d\n", info,
+ 		info->var.xres, info->var.yres, info->var.xres_virtual,
+ 		info->var.yres_virtual, (int)info->screen_size,
+ 		info->var.bits_per_pixel);
+ 
+-	/* ensure last write to fbinfo is visible to GPU */
+-	wmb();
+-
+-	/* inform vc about new framebuffer */
+-	bcm_mailbox_write(MBOX_CHAN_FB, fb->dma);
++	ret = rpi_firmware_property_list(fb->fw, &fbinfo, sizeof(fbinfo));
++	if (ret) {
++		dev_err(info->device,
++			"Failed to allocate GPU framebuffer (%d)\n", ret);
++		return ret;
++	}
+ 
+-	/* TODO: replace fb driver with vchiq version */
+-	/* wait for response */
+-	bcm_mailbox_read(MBOX_CHAN_FB, &val);
+-
+-	/* ensure GPU writes are visible to us */
+-	rmb();
+-
+-        if (val == 0) {
+-		fb->fb.fix.line_length = fbinfo->pitch;
+-
+-		if (info->var.bits_per_pixel <= 8)
+-			fb->fb.fix.visual = FB_VISUAL_PSEUDOCOLOR;
+-		else
+-			fb->fb.fix.visual = FB_VISUAL_TRUECOLOR;
+-
+-		fb->fb_bus_address = fbinfo->base;
+-		fbinfo->base &= ~0xc0000000;
+-		fb->fb.fix.smem_start = fbinfo->base;
+-		fb->fb.fix.smem_len = fbinfo->pitch * fbinfo->yres_virtual;
+-		fb->fb.screen_size = fbinfo->screen_size;
+-		if (fb->fb.screen_base)
+-			iounmap(fb->fb.screen_base);
+-		fb->fb.screen_base =
+-			(void *)ioremap_wc(fbinfo->base, fb->fb.screen_size);
+-		if (!fb->fb.screen_base) {
+-			/* the console may currently be locked */
+-			console_trylock();
+-			console_unlock();
+-			pr_err("bcm2708_fb_set_par: Failed to set screen_base\n");
+-			return -EIO;
+-		}
++	if (info->var.bits_per_pixel <= 8)
++		fb->fb.fix.visual = FB_VISUAL_PSEUDOCOLOR;
++	else
++		fb->fb.fix.visual = FB_VISUAL_TRUECOLOR;
++
++	fb->fb.fix.line_length = fbinfo.pitch;
++	fbinfo.base |= 0x40000000;
++	fb->fb_bus_address = fbinfo.base;
++	fbinfo.base &= ~0xc0000000;
++	fb->fb.fix.smem_start = fbinfo.base;
++	fb->fb.fix.smem_len = fbinfo.pitch * fbinfo.yres_virtual;
++	fb->fb.screen_size = fbinfo.screen_size;
++	if (fb->fb.screen_base)
++		iounmap(fb->fb.screen_base);
++	fb->fb.screen_base = ioremap_wc(fbinfo.base, fb->fb.screen_size);
++	if (!fb->fb.screen_base) {
++		/* the console may currently be locked */
++		console_trylock();
++		console_unlock();
++		dev_err(info->device, "Failed to set screen_base\n");
++		return -ENOMEM;
+ 	}
++
+ 	print_debug
+-	    ("BCM2708FB: start = %p,%p width=%d, height=%d, bpp=%d, pitch=%d size=%d success=%d\n",
++	    ("BCM2708FB: start = %p,%p width=%d, height=%d, bpp=%d, pitch=%d size=%d\n",
+ 	     (void *)fb->fb.screen_base, (void *)fb->fb_bus_address,
+-	     fbinfo->xres, fbinfo->yres, fbinfo->bpp,
+-	     fbinfo->pitch, (int)fb->fb.screen_size, val);
++	     fbinfo.xres, fbinfo.yres, fbinfo.bpp,
++	     fbinfo.pitch, (int)fb->fb.screen_size);
+ 
+-	return val;
++	return 0;
+ }
+ 
+ static inline u32 convert_bitfield(int val, struct fb_bitfield *bf)
+@@ -352,15 +358,34 @@ static int bcm2708_fb_setcolreg(unsigned
+ 	/*print_debug("BCM2708FB: setcolreg %d:(%02x,%02x,%02x,%02x) %x\n", regno, red, green, blue, transp, fb->fb.fix.visual);*/
+ 	if (fb->fb.var.bits_per_pixel <= 8) {
+ 		if (regno < 256) {
+-			/* blue [0:4], green [5:10], red [11:15] */
+-			fb->info->cmap[regno] = ((red   >> (16-5)) & 0x1f) << 11 |
+-						((green >> (16-6)) & 0x3f) << 5 |
+-						((blue  >> (16-5)) & 0x1f) << 0;
++			/* blue [23:16], green [15:8], red [7:0] */
++			fb->gpu_cmap[regno] = ((red   >> 8) & 0xff) << 0 |
++					      ((green >> 8) & 0xff) << 8 |
++					      ((blue  >> 8) & 0xff) << 16;
+ 		}
+ 		/* Hack: we need to tell GPU the palette has changed, but currently bcm2708_fb_set_par takes noticable time when called for every (256) colour */
+ 		/* So just call it for what looks like the last colour in a list for now. */
+-		if (regno == 15 || regno == 255)
+-			bcm2708_fb_set_par(info);
++		if (regno == 15 || regno == 255) {
++			struct packet {
++				u32 offset;
++				u32 length;
++				u32 cmap[256];
++			} *packet;
++			int ret;
++
++			packet = kmalloc(sizeof(*packet), GFP_KERNEL);
++			if (!packet)
++				return -ENOMEM;
++			packet->offset = 0;
++			packet->length = regno + 1;
++			memcpy(packet->cmap, fb->gpu_cmap, sizeof(packet->cmap));
++			ret = rpi_firmware_property(fb->fw, RPI_FIRMWARE_FRAMEBUFFER_SET_PALETTE,
++						    packet, (2 + packet->length) * sizeof(u32));
++			if (ret || packet->offset)
++				dev_err(info->device, "Failed to set palette (%d,%u)\n",
++					ret, packet->offset);
++			kfree(packet);
++		}
+         } else if (regno < 16) {
+ 		fb->cmap[regno] = convert_bitfield(transp, &fb->fb.var.transp) |
+ 		    convert_bitfield(blue, &fb->fb.var.blue) |
+@@ -372,27 +397,31 @@ static int bcm2708_fb_setcolreg(unsigned
+ 
+ static int bcm2708_fb_blank(int blank_mode, struct fb_info *info)
+ {
+-	s32 result = -1;
+-	u32 p[7];
+-	if ( 	(blank_mode == FB_BLANK_NORMAL) ||
+-		(blank_mode == FB_BLANK_UNBLANK)) {
+-
+-		p[0] = 28; //  size = sizeof u32 * length of p
+-		p[1] = VCMSG_PROCESS_REQUEST; // process request
+-		p[2] = VCMSG_SET_BLANK_SCREEN; // (the tag id)
+-		p[3] = 4; // (size of the response buffer)
+-		p[4] = 4; // (size of the request data)
+-		p[5] = blank_mode;
+-		p[6] = VCMSG_PROPERTY_END; // end tag
+-
+-		bcm_mailbox_property(&p, p[0]);
+-
+-		if ( p[1] == VCMSG_REQUEST_SUCCESSFUL )
+-			result = 0;
+-		else
+-			pr_err("bcm2708_fb_blank(%d) returns=%d p[1]=0x%x\n", blank_mode, p[5], p[1]);
++	struct bcm2708_fb *fb = to_bcm2708(info);
++	u32 value;
++	int ret;
++
++	switch (blank_mode) {
++	case FB_BLANK_UNBLANK:
++		value = 0;
++		break;
++	case FB_BLANK_NORMAL:
++	case FB_BLANK_VSYNC_SUSPEND:
++	case FB_BLANK_HSYNC_SUSPEND:
++	case FB_BLANK_POWERDOWN:
++		value = 1;
++		break;
++	default:
++		return -EINVAL;
+ 	}
+-	return result;
++
++	ret = rpi_firmware_property(fb->fw, RPI_FIRMWARE_FRAMEBUFFER_BLANK,
++				    &value, sizeof(value));
++	if (ret)
++		dev_err(info->device, "bcm2708_fb_blank(%d) failed: %d\n",
++			blank_mode, ret);
++
++	return ret;
+ }
+ 
+ static int bcm2708_fb_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
+@@ -408,25 +437,25 @@ static int bcm2708_fb_pan_display(struct
+ 
+ static int bcm2708_ioctl(struct fb_info *info, unsigned int cmd, unsigned long arg)
+ {
+-	s32 result = -1;
+-	u32 p[7];
+-	if (cmd == FBIO_WAITFORVSYNC) {
+-		p[0] = 28; //  size = sizeof u32 * length of p
+-		p[1] = VCMSG_PROCESS_REQUEST; // process request
+-		p[2] = VCMSG_SET_VSYNC; // (the tag id)
+-		p[3] = 4; // (size of the response buffer)
+-		p[4] = 4; // (size of the request data)
+-		p[5] = 0; // dummy
+-		p[6] = VCMSG_PROPERTY_END; // end tag
+-
+-		bcm_mailbox_property(&p, p[0]);
+-
+-		if ( p[1] == VCMSG_REQUEST_SUCCESSFUL )
+-			result = 0;
+-		else
+-			pr_err("bcm2708_fb_ioctl %x,%lx returns=%d p[1]=0x%x\n", cmd, arg, p[5], p[1]);
++	struct bcm2708_fb *fb = to_bcm2708(info);
++	u32 dummy = 0;
++	int ret;
++
++	switch (cmd) {
++	case FBIO_WAITFORVSYNC:
++		ret = rpi_firmware_property(fb->fw,
++					    RPI_FIRMWARE_FRAMEBUFFER_SET_VSYNC,
++					    &dummy, sizeof(dummy));
++		break;
++	default:
++		dev_err(info->device, "Unknown ioctl 0x%x\n", cmd);
++		return -EINVAL;
+ 	}
+-	return result;
++
++	if (ret)
++		dev_err(info->device, "ioctl 0x%x failed (%d)\n", cmd, ret);
++
++	return ret;
+ }
+ static void bcm2708_fb_fillrect(struct fb_info *info,
+ 				const struct fb_fillrect *rect)
+@@ -621,20 +650,7 @@ static struct fb_ops bcm2708_fb_ops = {
+ static int bcm2708_fb_register(struct bcm2708_fb *fb)
+ {
+ 	int ret;
+-	dma_addr_t dma;
+-	void *mem;
+ 
+-	mem =
+-	    dma_alloc_coherent(&fb->dev->dev, PAGE_ALIGN(sizeof(*fb->info)), &dma,
+-			       GFP_KERNEL);
+-
+-	if (NULL == mem) {
+-		pr_err(": unable to allocate fbinfo buffer\n");
+-		ret = -ENOMEM;
+-	} else {
+-		fb->info = (struct fbinfo_s *)mem;
+-		fb->dma = dma;
+-	}
+ 	fb->fb.fbops = &bcm2708_fb_ops;
+ 	fb->fb.flags = FBINFO_FLAG_DEFAULT | FBINFO_HWACCEL_COPYAREA;
+ 	fb->fb.pseudo_palette = fb->cmap;
+@@ -693,9 +709,22 @@ out:
+ 
+ static int bcm2708_fb_probe(struct platform_device *dev)
+ {
++	struct device_node *fw_np;
++	struct rpi_firmware *fw;
+ 	struct bcm2708_fb *fb;
+ 	int ret;
+ 
++	fw_np = of_parse_phandle(dev->dev.of_node, "firmware", 0);
++/* Remove comment when booting without Device Tree is no longer supported
++	if (!fw_np) {
++		dev_err(&dev->dev, "Missing firmware node\n");
++		return -ENOENT;
++	}
++*/
++	fw = rpi_firmware_get(fw_np);
++	if (!fw)
++		return -EPROBE_DEFER;
++
+ 	fb = kzalloc(sizeof(struct bcm2708_fb), GFP_KERNEL);
+ 	if (!fb) {
+ 		dev_err(&dev->dev,
+@@ -704,6 +733,7 @@ static int bcm2708_fb_probe(struct platf
+ 		goto free_region;
+ 	}
+ 
++	fb->fw = fw;
+ 	bcm2708_fb_debugfs_init(fb);
+ 
+ 	fb->cb_base = dma_alloc_writecombine(&dev->dev, SZ_64K,
+@@ -737,6 +767,7 @@ static int bcm2708_fb_probe(struct platf
+ 	       fb->dma_chan, fb->dma_chan_base);
+ 
+ 	fb->dev = dev;
++	fb->fb.device = &dev->dev;
+ 
+ 	ret = bcm2708_fb_register(fb);
+ 	if (ret == 0) {
+@@ -769,8 +800,6 @@ static int bcm2708_fb_remove(struct plat
+ 	dma_free_writecombine(&dev->dev, SZ_64K, fb->cb_base, fb->cb_handle);
+ 	bcm_dma_chan_free(fb->dma_chan);
+ 
+-	dma_free_coherent(NULL, PAGE_ALIGN(sizeof(*fb->info)), (void *)fb->info,
+-			  fb->dma);
+ 	bcm2708_fb_debugfs_deinit(fb);
+ 
+ 	free_irq(fb->dma_irq, fb);

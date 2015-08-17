@@ -1,0 +1,43 @@
+From b0482b8fe870cfc43e4f9a00470b267f27900ce7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 15 Jul 2015 13:46:08 +0100
+Subject: [PATCH 123/148] leds-gpio: Implement the brightness_get method
+
+The power LED uses some clever logic that means it is driven
+by a voltage measuring circuit when configured as input, otherwise
+it is driven by the GPIO output value. This patch wires up the
+brightness_get method for leds-gpio so that user-space can monitor
+the LED value via /sys/class/gpio/led1/brightness. Using the input
+trigger this returns an indication of the system power health,
+otherwise it is just whatever value the trigger has written most
+recently.
+
+See: https://github.com/raspberrypi/linux/issues/1064
+---
+ drivers/leds/leds-gpio.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/drivers/leds/leds-gpio.c
++++ b/drivers/leds/leds-gpio.c
+@@ -82,6 +82,13 @@ static void gpio_led_set(struct led_clas
+ 	}
+ }
+ 
++static enum led_brightness gpio_led_get(struct led_classdev *led_cdev)
++{
++	struct gpio_led_data *led_dat =
++		container_of(led_cdev, struct gpio_led_data, cdev);
++	return gpiod_get_value_cansleep(led_dat->gpiod) ? LED_FULL : LED_OFF;
++}
++
+ static int gpio_blink_set(struct led_classdev *led_cdev,
+ 	unsigned long *delay_on, unsigned long *delay_off)
+ {
+@@ -138,6 +145,7 @@ static int create_gpio_led(const struct
+ 		led_dat->cdev.blink_set = gpio_blink_set;
+ 	}
+ 	led_dat->cdev.brightness_set = gpio_led_set;
++	led_dat->cdev.brightness_get = gpio_led_get;
+ 	if (template->default_state == LEDS_GPIO_DEFSTATE_KEEP)
+ 		state = !!gpiod_get_value_cansleep(led_dat->gpiod);
+ 	else

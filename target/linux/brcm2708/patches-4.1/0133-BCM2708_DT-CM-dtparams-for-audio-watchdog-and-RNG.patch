@@ -1,0 +1,30 @@
+From 1126ca25bb63e74218db91e9abbe6bb4ba712f99 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 24 Jul 2015 12:11:31 +0100
+Subject: [PATCH 133/148] BCM2708_DT: CM dtparams for audio, watchdog and RNG
+
+---
+ arch/arm/boot/dts/bcm2708-rpi-cm.dtsi | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dtsi
+@@ -17,14 +17,14 @@
+ 	status = "okay";
+ };
+ 
+-&audio {
+-	status = "okay";
+-};
+-
+ / {
+ 	__overrides__ {
+ 		act_led_gpio = <&act_led>,"gpios:4";
+ 		act_led_activelow = <&act_led>,"gpios:8";
+ 		act_led_trigger = <&act_led>,"linux,default-trigger";
++
++		audio = <&audio>,"status";
++		watchdog = <&watchdog>,"status";
++		random = <&random>,"status";
+ 	};
+ };

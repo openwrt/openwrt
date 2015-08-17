@@ -1,0 +1,21 @@
+From fc3fb877e0c097321d9d8a2a4cb10d5c0d2fc6a0 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 20 Jul 2015 10:53:26 +0100
+Subject: [PATCH 129/148] bcm2835-sdhost: Add the ERASE capability
+
+See: https://github.com/raspberrypi/linux/issues/1076
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -1675,7 +1675,7 @@ int bcm2835_sdhost_add_host(struct bcm28
+ 	/* host controller capabilities */
+ 	mmc->caps |= /* MMC_CAP_SDIO_IRQ |*/ MMC_CAP_4_BIT_DATA |
+ 		MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED |
+-		MMC_CAP_NEEDS_POLL | MMC_CAP_HW_RESET |
++		MMC_CAP_NEEDS_POLL | MMC_CAP_HW_RESET | MMC_CAP_ERASE |
+ 		(ALLOW_CMD23 * MMC_CAP_CMD23);
+ 
+ 	spin_lock_init(&host->lock);

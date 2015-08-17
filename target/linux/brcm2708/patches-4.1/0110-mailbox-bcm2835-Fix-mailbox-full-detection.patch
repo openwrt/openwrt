@@ -1,7 +1,7 @@
-From aa1ca835a9a179168f9d8355a458bd0eecda3912 Mon Sep 17 00:00:00 2001
+From 38a0a5c357245cfe2b359277bc38509fa05c268d Mon Sep 17 00:00:00 2001
 From: Eric Anholt <eric@anholt.net>
 Date: Wed, 13 May 2015 13:10:32 -0700
-Subject: [PATCH 110/121] mailbox/bcm2835: Fix mailbox full detection.
+Subject: [PATCH 110/148] mailbox/bcm2835: Fix mailbox full detection.
 
 With the VC reader blocked and the ARM writing, MAIL0_STA reads empty
 permanently while MAIL1_STA goes from empty (0x40000000) to non-empty
