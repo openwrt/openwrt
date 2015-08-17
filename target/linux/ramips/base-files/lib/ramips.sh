@@ -238,14 +238,14 @@ ramips_board_detect() {
 	*"Intenso Memory 2 Move")
 		name="m2m"
 		;;
-	*"Omnima EMB HPM")
-		name="omni-emb-hpm"
+	*"Omnima HPM")
+		name="hpm"
 		;;
 	*"Omnima MiniEMBWiFi")
-		name="omni-emb"
+		name="miniembwifi"
 		;;
-	*"Omnima MiniPlug")
-		name="omni-plug"
+	*"Omnima MiniEMBPlug")
+		name="miniembplug"
 		;;
 	*"Olimex RT5350F-OLinuXino")
 		name="rt5350f-olinuxino"

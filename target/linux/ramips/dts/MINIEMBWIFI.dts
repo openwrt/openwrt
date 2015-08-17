@@ -3,7 +3,7 @@
 /include/ "rt3050.dtsi"
 
 / {
-	compatible = "OMNI-EMB", "ralink,rt3052-soc";
+	compatible = "MINIEMBWIFI", "ralink,rt3052-soc";
 	model = "Omnima MiniEMBWiFi";
 
 	pinctrl {
@@ -19,12 +19,12 @@
 		compatible = "gpio-leds";
 
 		status {
-			label = "emb:green:status";
+			label = "miniembwifi:green:status";
 			gpios = <&gpio0 9 1>;
 		};
 
 		wlan {
-			label = "emb:green:wlan";
+			label = "miniembwifi:green:wlan";
 			gpios = <&gpio0 14 1>;
 		};
 	};

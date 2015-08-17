@@ -574,9 +574,9 @@ Image/Build/Profile/NW718=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),nw71
 
 Image/Build/Profile/M2M=$(call BuildFirmware/Default8M/$(1),$(1),m2m,M2M,Linux Kernel Image)
 
-Image/Build/Profile/OMNI-EMB=$(call BuildFirmware/Default8M/$(1),$(1),omni-emb,OMNI-EMB)
+Image/Build/Profile/MINIEMBPLUG=$(call BuildFirmware/Default8M/$(1),$(1),miniembplug,MINIEMBPLUG)
 
-Image/Build/Profile/OMNI-PLUG=$(call BuildFirmware/Default8M/$(1),$(1),omni-plug,OMNI-PLUG)
+Image/Build/Profile/MINIEMBWIFI=$(call BuildFirmware/Default8M/$(1),$(1),miniembwifi,MINIEMBWIFI)
 
 Image/Build/Profile/PSR-680W=$(call BuildFirmware/Default4M/$(1),$(1),psr-680w,PSR-680W)
 
@@ -742,8 +742,8 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/NBG-419N,$(1))
 	$(call Image/Build/Profile/NCS601W,$(1))
 	$(call Image/Build/Profile/NW718,$(1))
-	$(call Image/Build/Profile/OMNI-EMB,$(1))
-	$(call Image/Build/Profile/OMNI-PLUG,$(1))
+	$(call Image/Build/Profile/MINIEMBWIFI,$(1))
+	$(call Image/Build/Profile/MINIEMBPLUG,$(1))
 	$(call Image/Build/Profile/PSR-680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
 	$(call Image/Build/Profile/PX4885,$(1))
@@ -815,8 +815,8 @@ Image/Build/Profile/CYSWR1100=$(call BuildFirmware/Seama/$(1),$(1),cy-swr1100,CY
 
 Image/Build/Profile/DIR645=$(call BuildFirmware/Seama/$(1),$(1),dir-645,DIR-645,wrgn39_dlob.hans_dir645,$(ralink_default_fw_size_8M))
 
-omniembhpm_mtd_size=16449536
-Image/Build/Profile/OMNIEMBHPM=$(call BuildFirmware/CustomFlash/$(1),$(1),omni-emb-hpm,OMNI-EMB-HPM,$(omniembhpm_mtd_size))
+hpm_mtd_size=16449536
+Image/Build/Profile/HPM=$(call BuildFirmware/CustomFlash/$(1),$(1),hpm,HPM,$(hpm_mtd_size))
 
 define BuildFirmware/RTN56U/squashfs
 	$(call BuildFirmware/Default8M/$(1),$(1),rt-n56u,RT-N56U)
@@ -838,7 +838,7 @@ ifeq ($(SUBTARGET),rt3883)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/CYSWR1100,$(1))
 	$(call Image/Build/Profile/DIR645,$(1))
-	$(call Image/Build/Profile/OMNIEMBHPM,$(1))
+	$(call Image/Build/Profile/HPM,$(1))
 	$(call Image/Build/Profile/RTN56U,$(1))
 	$(call Image/Build/Profile/BR6475ND,$(1))
 	$(call Image/Build/Profile/TEW691GR,$(1))

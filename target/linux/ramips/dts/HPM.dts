@@ -3,8 +3,8 @@
 /include/ "rt3883.dtsi"
 
 / {
-	compatible = "OMNI-EMB-HPM", "ralink,rt3883-soc";
-	model = "Omnima EMB HPM";
+	compatible = "HPM", "ralink,rt3883-soc";
+	model = "Omnima HPM";
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
@@ -99,32 +99,32 @@
 		compatible = "gpio-leds";
 
 		power {
-			label = "emb:orange:power";
+			label = "hpm:orange:power";
 			gpios = <&gpio0 7 1>;
 		};
 
 		status {
-			label = "emb:green:status";
+			label = "hpm:green:status";
 			gpios = <&gpio0 21 1>;
 		};
 
 		eth {
-			label = "emb:green:eth";
+			label = "hpm:green:eth";
 			gpios = <&gpio0 20 1>;
 		};
 
 		eth2 {
-			label = "emb:red:eth";
+			label = "hpm:red:eth";
 			gpios = <&gpio0 18 1>;
 		};
 
 		wifi {
-			label = "emb:green:wifi";
+			label = "hpm:green:wifi";
 			gpios = <&gpio0 17 1>;
 		};
 
 		wifi2 {
-			label = "emb:red:wifi";
+			label = "hpm:red:wifi";
 			gpios = <&gpio0 19 1>;
 		};
 	};

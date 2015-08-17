@@ -119,9 +119,11 @@ get_status_led() {
 	nw718)
 		status_led="nw718:amber:cpu"
 		;;
-	omni-emb|\
-	omni-emb-hpm)
-		status_led="emb:green:status"
+	miniembwifi)
+		status_led="miniembwifi:green:status"
+		;;
+	hpm)
+		status_led="hpm:green:status"
 		;;
 	pbr-m1)
 		status_led="pbr-m1:green:sys"
