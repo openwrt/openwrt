@@ -637,8 +637,8 @@ Image/Build/Profile/WL-330N3G=$(call BuildFirmware/Default4M/$(1),$(1),wl-330n3g
 
 kernel_size_wl341v3=917504
 rootfs_size_wl341v3=2949120
-define BuildFirmware/WL341V3/squashfs
-	$(call BuildFirmware/Default4M/$(1),$(1),wl341v3,WL341V3)
+define BuildFirmware/WL-341V3/squashfs
+	$(call BuildFirmware/Default4M/$(1),$(1),wl-341v3,WL-341V3)
 	# This code looks broken and really needs to be converted to C
 	if [ -e "$(call sysupname,$(1),$(2))" ]; then \
 		( \
@@ -654,8 +654,8 @@ define BuildFirmware/WL341V3/squashfs
 		) > $(call imgname,$(1),$(2))-factory.bin; \
 	fi
 endef
-BuildFirmware/WL341V3/initramfs=$(call BuildFirmware/OF/initramfs,$(1),wl341v3,WL341V3)
-Image/Build/Profile/WL341V3=$(call BuildFirmware/WL341V3/$(1),$(1))
+BuildFirmware/WL-341V3/initramfs=$(call BuildFirmware/OF/initramfs,$(1),wl-341v3,WL-341V3)
+Image/Build/Profile/WL-341V3=$(call BuildFirmware/WL-341V3/$(1),$(1))
 
 Image/Build/Profile/WL-351=$(call BuildFirmware/Default4M/$(1),$(1),wl-351,WL-351)
 
@@ -765,7 +765,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/WIZARD8800,$(1))
 	$(call Image/Build/Profile/WL-330N,$(1))
 	$(call Image/Build/Profile/WL-330N3G,$(1))
-	$(call Image/Build/Profile/WL341V3,$(1))
+	$(call Image/Build/Profile/WL-341V3,$(1))
 	$(call Image/Build/Profile/WL-351,$(1))
 	$(call Image/Build/Profile/WNCE2001,$(1))
 	$(call Image/Build/Profile/WR512-3GN,$(1))
