@@ -1,0 +1,20 @@
+From c9510f8f7162eb3f377ea9895cb6296cc81c0158 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 20 Jul 2015 14:48:21 +0100
+Subject: [PATCH 131/148] BCM270X_DT: Add unit address to gpio node name
+
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -92,7 +92,7 @@
+ 			status = "disabled";
+ 		};
+ 
+-		gpio: gpio {
++		gpio: gpio@7e200000 {
+ 			compatible = "brcm,bcm2835-gpio";
+ 			reg = <0x7e200000 0xb4>;
+ 			interrupts = <2 17>, <2 18>;

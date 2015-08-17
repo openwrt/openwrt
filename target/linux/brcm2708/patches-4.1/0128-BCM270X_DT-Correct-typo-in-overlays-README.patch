@@ -1,0 +1,20 @@
+From 6c9ebd30d2a1c6ec36515b45235be02e61ced87e Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 20 Jul 2015 14:07:14 +0100
+Subject: [PATCH 128/148] BCM270X_DT: Correct typo in overlays/README
+
+---
+ arch/arm/boot/dts/overlays/README | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -78,7 +78,7 @@ Name:   <The base DTB>
+ Info:   Configures the base Raspberry Pi hardware
+ Load:   <loaded automatically>
+ Params:
+-        audio                    Set to "on" to disable the onboard ALSA audio
++        audio                    Set to "on" to enable the onboard ALSA audio
+                                  interface (default "off")
+ 
+         i2c_arm                  Set to "on" to enable the ARM's i2c interface

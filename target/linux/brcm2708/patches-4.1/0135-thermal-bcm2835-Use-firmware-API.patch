@@ -1,0 +1,281 @@
+From da339e29c12fc20d13610ed458082104b12e48f1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Mon, 20 Jul 2015 12:17:10 +0200
+Subject: [PATCH 135/148] thermal: bcm2835: Use firmware API
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Use the new firmware API instead of the legacy mailbox API.
+Remove retry loop on failure to read temperature.
+Clean up code.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi |   1 +
+ drivers/thermal/bcm2835-thermal.c     | 197 +++++++++++++---------------------
+ 2 files changed, 75 insertions(+), 123 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -230,6 +230,7 @@
+ 
+ 		thermal: thermal {
+ 			compatible = "brcm,bcm2835-thermal";
++			firmware = <&firmware>;
+ 		};
+ 	};
+ 
+--- a/drivers/thermal/bcm2835-thermal.c
++++ b/drivers/thermal/bcm2835-thermal.c
+@@ -12,161 +12,113 @@
+ * consent.
+ *****************************************************************************/
+ 
+-#include <linux/kernel.h>
+ #include <linux/module.h>
+-#include <linux/init.h>
+-#include <linux/platform_data/mailbox-bcm2708.h>
+ #include <linux/platform_device.h>
+-#include <linux/slab.h>
+-#include <linux/sysfs.h>
+ #include <linux/thermal.h>
++#include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+-
+-/* --- DEFINITIONS --- */
+-#define MODULE_NAME "bcm2835_thermal"
+-
+-/*#define THERMAL_DEBUG_ENABLE*/
+-
+-#ifdef THERMAL_DEBUG_ENABLE
+-#define print_debug(fmt,...) printk(KERN_INFO "%s:%s:%d: "fmt"\n", MODULE_NAME, __func__, __LINE__, ##__VA_ARGS__)
+-#else
+-#define print_debug(fmt,...)
+-#endif
+-#define print_err(fmt,...) printk(KERN_ERR "%s:%s:%d: "fmt"\n", MODULE_NAME, __func__,__LINE__, ##__VA_ARGS__)
+-
+-#define VC_TAG_GET_TEMP 0x00030006
+-#define VC_TAG_GET_MAX_TEMP 0x0003000A
+-
+-typedef enum {
+-	TEMP,
+-	MAX_TEMP,
+-} temp_type;
+-
+-/* --- STRUCTS --- */
+-/* tag part of the message */
+-struct vc_msg_tag {
+-	uint32_t tag_id;		/* the tag ID for the temperature */
+-	uint32_t buffer_size;	/* size of the buffer (should be 8) */
+-	uint32_t request_code;	/* identifies message as a request (should be 0) */
+-	uint32_t id;			/* extra ID field (should be 0) */
+-	uint32_t val;			/* returned value of the temperature */
+-};
+-
+-/* message structure to be sent to videocore */
+-struct vc_msg {
+-	uint32_t msg_size;		/* simply, sizeof(struct vc_msg) */
+-	uint32_t request_code;		/* holds various information like the success and number of bytes returned (refer to mailboxes wiki) */
+-	struct vc_msg_tag tag;		/* the tag structure above to make */
+-	uint32_t end_tag;		/* an end identifier, should be set to NULL */
+-};
+-
+-struct bcm2835_thermal_data {
+-	struct thermal_zone_device *thermal_dev;
+-	struct vc_msg msg;
+-};
+-
+-/* --- GLOBALS --- */
+-static struct bcm2835_thermal_data bcm2835_data;
+-
+-/* Thermal Device Operations */
+-static struct thermal_zone_device_ops ops;
+-
+-/* --- FUNCTIONS --- */
+-
+-static int bcm2835_get_temp_or_max(struct thermal_zone_device *thermal_dev, unsigned long *temp, unsigned tag_id)
++static int bcm2835_thermal_get_property(struct thermal_zone_device *tz,
++					unsigned long *temp, u32 tag)
+ {
+-	int result = -1, retry = 3;
+-	print_debug("IN");
++	struct rpi_firmware *fw = tz->devdata;
++	struct {
++		u32 id;
++		u32 val;
++	} packet;
++	int ret;
+ 
+ 	*temp = 0;
+-	while (result != 0 && retry-- > 0) {
+-		/* wipe all previous message data */
+-		memset(&bcm2835_data.msg, 0, sizeof bcm2835_data.msg);
+-
+-		/* prepare message */
+-		bcm2835_data.msg.msg_size = sizeof bcm2835_data.msg;
+-		bcm2835_data.msg.tag.buffer_size = 8;
+-		bcm2835_data.msg.tag.tag_id = tag_id;
+-
+-		/* send the message */
+-		result = bcm_mailbox_property(&bcm2835_data.msg, sizeof bcm2835_data.msg);
+-		print_debug("Got %stemperature as %u (%d,%x)\n", tag_id==VC_TAG_GET_MAX_TEMP ? "max ":"", (uint)bcm2835_data.msg.tag.val, result, bcm2835_data.msg.request_code);
+-		if (!(bcm2835_data.msg.request_code & 0x80000000))
+-			result = -1;
++	packet.id = 0;
++	ret = rpi_firmware_property(fw, tag, &packet, sizeof(packet));
++	if (ret) {
++		dev_err(&tz->device, "Failed to get temperature\n");
++		return ret;
+ 	}
+ 
+-	/* check if it was all ok and return the rate in milli degrees C */
+-	if (result == 0)
+-		*temp = (uint)bcm2835_data.msg.tag.val;
+-	else
+-		print_err("Failed to get temperature! (%x:%d)\n", tag_id, result);
+-	print_debug("OUT");
+-	return result;
++	*temp = packet.val;
++	dev_dbg(&tz->device, "%stemp=%lu\n",
++		tag == RPI_FIRMWARE_GET_MAX_TEMPERATURE ? "max" : "", *temp);
++
++	return 0;
+ }
+ 
+-static int bcm2835_get_temp(struct thermal_zone_device *thermal_dev, unsigned long *temp)
++static int bcm2835_thermal_get_temp(struct thermal_zone_device *tz,
++				    unsigned long *temp)
+ {
+-	return bcm2835_get_temp_or_max(thermal_dev, temp, VC_TAG_GET_TEMP);
++	return bcm2835_thermal_get_property(tz, temp,
++					    RPI_FIRMWARE_GET_TEMPERATURE);
+ }
+ 
+-static int bcm2835_get_max_temp(struct thermal_zone_device *thermal_dev, int trip_num, unsigned long *temp)
++static int bcm2835_thermal_get_max_temp(struct thermal_zone_device *tz,
++					int trip, unsigned long *temp)
+ {
+-	return bcm2835_get_temp_or_max(thermal_dev, temp, VC_TAG_GET_MAX_TEMP);
++	/*
++	 * The maximum safe temperature of the SoC.
++	 * Overclock may be disabled above this temperature.
++	 */
++	return bcm2835_thermal_get_property(tz, temp,
++					    RPI_FIRMWARE_GET_MAX_TEMPERATURE);
+ }
+ 
+-static int bcm2835_get_trip_type(struct thermal_zone_device * thermal_dev, int trip_num, enum thermal_trip_type *trip_type)
++static int bcm2835_thermal_get_trip_type(struct thermal_zone_device *tz,
++					 int trip, enum thermal_trip_type *type)
+ {
+-	*trip_type = THERMAL_TRIP_HOT;
++	*type = THERMAL_TRIP_HOT;
++
+ 	return 0;
+ }
+ 
+-
+-static int bcm2835_get_mode(struct thermal_zone_device *thermal_dev, enum thermal_device_mode *dev_mode)
++static int bcm2835_thermal_get_mode(struct thermal_zone_device *tz,
++				    enum thermal_device_mode *mode)
+ {
+-	*dev_mode = THERMAL_DEVICE_ENABLED;
++	*mode = THERMAL_DEVICE_ENABLED;
++
+ 	return 0;
+ }
+ 
++static struct thermal_zone_device_ops ops  = {
++	.get_temp = bcm2835_thermal_get_temp,
++	.get_trip_temp = bcm2835_thermal_get_max_temp,
++	.get_trip_type = bcm2835_thermal_get_trip_type,
++	.get_mode = bcm2835_thermal_get_mode,
++};
+ 
+ static int bcm2835_thermal_probe(struct platform_device *pdev)
+ {
+-	print_debug("IN");
+-	print_debug("THERMAL Driver has been probed!");
+-
+-	/* check that the device isn't null!*/
+-	if(pdev == NULL)
+-	{
+-		print_debug("Platform device is empty!");
+-		return -ENODEV;
++	struct device_node *fw_np;
++	struct rpi_firmware *fw;
++	struct thermal_zone_device *tz;
++
++	fw_np = of_parse_phandle(pdev->dev.of_node, "firmware", 0);
++/* Remove comment when booting without Device Tree is no longer supported
++	if (!fw_np) {
++		dev_err(&pdev->dev, "Missing firmware node\n");
++		return -ENOENT;
+ 	}
+-
+-	if(!(bcm2835_data.thermal_dev = thermal_zone_device_register("bcm2835_thermal",  1, 0, NULL, &ops, NULL, 0, 0)))
+-	{
+-		print_debug("Unable to register the thermal device!");
+-		return -EFAULT;
++*/
++	fw = rpi_firmware_get(fw_np);
++	if (!fw)
++		return -EPROBE_DEFER;
++
++	tz = thermal_zone_device_register("bcm2835_thermal", 1, 0, fw, &ops,
++					  NULL, 0, 0);
++	if (IS_ERR(tz)) {
++		dev_err(&pdev->dev, "Failed to register the thermal device\n");
++		return PTR_ERR(tz);
+ 	}
++
++	platform_set_drvdata(pdev, tz);
++
+ 	return 0;
+ }
+ 
+-
+ static int bcm2835_thermal_remove(struct platform_device *pdev)
+ {
+-	print_debug("IN");
+-
+-	thermal_zone_device_unregister(bcm2835_data.thermal_dev);
+-
+-	print_debug("OUT");
++	thermal_zone_device_unregister(platform_get_drvdata(pdev));
+ 
+ 	return 0;
+ }
+ 
+-static struct thermal_zone_device_ops ops  = {
+-	.get_temp = bcm2835_get_temp,
+-	.get_trip_temp = bcm2835_get_max_temp,
+-	.get_trip_type = bcm2835_get_trip_type,
+-	.get_mode = bcm2835_get_mode,
+-};
+-
+ static const struct of_device_id bcm2835_thermal_of_match_table[] = {
+ 	{ .compatible = "brcm,bcm2835-thermal", },
+ 	{},
+@@ -177,14 +129,13 @@ static struct platform_driver bcm2835_th
+ 	.probe = bcm2835_thermal_probe,
+ 	.remove = bcm2835_thermal_remove,
+ 	.driver = {
+-				.name = "bcm2835_thermal",
+-				.owner = THIS_MODULE,
+-				.of_match_table = bcm2835_thermal_of_match_table,
+-			},
++		.name = "bcm2835_thermal",
++		.of_match_table = bcm2835_thermal_of_match_table,
++	},
+ };
++module_platform_driver(bcm2835_thermal_driver);
+ 
+-MODULE_LICENSE("GPL");
+ MODULE_AUTHOR("Dorian Peake");
++MODULE_AUTHOR("Noralf Trønnes");
+ MODULE_DESCRIPTION("Thermal driver for bcm2835 chip");
+-
+-module_platform_driver(bcm2835_thermal_driver);
++MODULE_LICENSE("GPL");

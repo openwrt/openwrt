@@ -1,0 +1,64 @@
+From 34b107a036211e45ce06d2c1406fab77dc4ec3c7 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 20 Jul 2015 17:32:18 +0100
+Subject: [PATCH 130/148] bcm2835-sdhost: Ignore CRC7 for MMC CMD1
+
+It seems that the sdhost interface returns CRC7 errors for CMD1,
+which is the MMC-specific SEND_OP_COND. Returning these errors to
+the MMC layer causes a downward spiral, but ignoring them seems
+to be harmless.
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 39 +++++++++++++++++++++++----------------
+ 1 file changed, 23 insertions(+), 16 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -959,25 +959,32 @@ static void bcm2835_sdhost_finish_comman
+ 				mmc_hostname(host->mmc), sdcmd, sdhsts,
+ 				bcm2835_sdhost_read(host, SDEDM));
+ 
+-		if (sdhsts & SDHSTS_CMD_TIME_OUT) {
+-			switch (host->cmd->opcode) {
+-			case 5: case 52: case 53:
+-				/* Don't warn about SDIO commands */
+-				break;
+-			default:
+-				pr_err("%s: command timeout\n",
++		if ((sdhsts & SDHSTS_CRC7_ERROR) &&
++		    (host->cmd->opcode == 1)) {
++			if (host->debug)
++				pr_info("%s: ignoring CRC7 error for CMD1\n",
++					mmc_hostname(host->mmc));
++		} else {
++			if (sdhsts & SDHSTS_CMD_TIME_OUT) {
++				switch (host->cmd->opcode) {
++				case 5: case 52: case 53:
++					/* Don't warn about SDIO commands */
++					break;
++				default:
++					pr_err("%s: command timeout\n",
++					       mmc_hostname(host->mmc));
++					break;
++				}
++				host->cmd->error = -ETIMEDOUT;
++			} else {
++				pr_err("%s: unexpected command error\n",
+ 				       mmc_hostname(host->mmc));
+-				break;
++				bcm2835_sdhost_dumpregs(host);
++				host->cmd->error = -EIO;
+ 			}
+-			host->cmd->error = -ETIMEDOUT;
+-		} else {
+-			pr_err("%s: unexpected command error\n",
+-			       mmc_hostname(host->mmc));
+-			bcm2835_sdhost_dumpregs(host);
+-			host->cmd->error = -EIO;
++			tasklet_schedule(&host->finish_tasklet);
++			return;
+ 		}
+-		tasklet_schedule(&host->finish_tasklet);
+-		return;
+ 	}
+ 
+ 	if (host->cmd->flags & MMC_RSP_PRESENT) {

@@ -1,0 +1,112 @@
+From e3508264148f91aceb5f557d45eb29986c522f1e Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Mon, 20 Jul 2015 12:13:18 +0200
+Subject: [PATCH 134/148] vchiq: Use firmware API
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Use the new firmware API instead of the legacy mailbox API.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi                   |  1 +
+ .../vc04_services/interface/vchiq_arm/vchiq_2835_arm.c  | 17 +++++++++--------
+ .../misc/vc04_services/interface/vchiq_arm/vchiq_arm.c  | 17 +++++++++++++++++
+ 3 files changed, 27 insertions(+), 8 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -225,6 +225,7 @@
+ 			reg = <0x7e00b840 0xf>;
+ 			interrupts = <0 2>;
+ 			cache-line-size = <32>;
++			firmware = <&firmware>;
+ 		};
+ 
+ 		thermal: thermal {
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_2835_arm.c
+@@ -39,11 +39,11 @@
+ #include <linux/dma-mapping.h>
+ #include <linux/version.h>
+ #include <linux/io.h>
+-#include <linux/platform_data/mailbox-bcm2708.h>
+ #include <linux/platform_device.h>
+ #include <linux/uaccess.h>
+ #include <linux/of.h>
+ #include <asm/pgtable.h>
++#include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+ #define TOTAL_SLOTS (VCHIQ_SLOT_ZERO_SLOTS + 2 * 32)
+ 
+@@ -89,10 +89,12 @@ free_pagelist(PAGELIST_T *pagelist, int
+ int vchiq_platform_init(struct platform_device *pdev, VCHIQ_STATE_T *state)
+ {
+ 	struct device *dev = &pdev->dev;
++	struct rpi_firmware *fw = platform_get_drvdata(pdev);
+ 	VCHIQ_SLOT_ZERO_T *vchiq_slot_zero;
+ 	struct resource *res;
+ 	void *slot_mem;
+ 	dma_addr_t slot_phys;
++	u32 channelbase;
+ 	int slot_mem_size, frag_mem_size;
+ 	int err, irq, i;
+ 
+@@ -157,13 +159,12 @@ int vchiq_platform_init(struct platform_
+ 	}
+ 
+ 	/* Send the base address of the slots to VideoCore */
+-
+-	dsb(); /* Ensure all writes have completed */
+-
+-	err = bcm_mailbox_write(MBOX_CHAN_VCHIQ, (unsigned int)slot_phys);
+-	if (err) {
+-		dev_err(dev, "mailbox write failed\n");
+-		return err;
++	channelbase = slot_phys;
++	err = rpi_firmware_property(fw, RPI_FIRMWARE_VCHIQ_INIT,
++				    &channelbase, sizeof(channelbase));
++	if (err || channelbase) {
++		dev_err(dev, "failed to set channelbase\n");
++		return err ? : -ENXIO;
+ 	}
+ 
+ 	vchiq_log_info(vchiq_arm_log_level,
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_arm.c
+@@ -45,7 +45,9 @@
+ #include <linux/bug.h>
+ #include <linux/semaphore.h>
+ #include <linux/list.h>
++#include <linux/of.h>
+ #include <linux/platform_device.h>
++#include <soc/bcm2835/raspberrypi-firmware.h>
+ 
+ #include "vchiq_core.h"
+ #include "vchiq_ioctl.h"
+@@ -2793,9 +2795,24 @@ void vchiq_platform_conn_state_changed(V
+ 
+ static int vchiq_probe(struct platform_device *pdev)
+ {
++	struct device_node *fw_node;
++	struct rpi_firmware *fw;
+ 	int err;
+ 	void *ptr_err;
+ 
++	fw_node = of_parse_phandle(pdev->dev.of_node, "firmware", 0);
++/* Remove comment when booting without Device Tree is no longer supported
++	if (!fw_node) {
++		dev_err(&pdev->dev, "Missing firmware node\n");
++		return -ENOENT;
++	}
++*/
++	fw = rpi_firmware_get(fw_node);
++	if (!fw)
++		return -EPROBE_DEFER;
++
++	platform_set_drvdata(pdev, fw);
++
+ 	/* create debugfs entries */
+ 	err = vchiq_debugfs_init();
+ 	if (err != 0)

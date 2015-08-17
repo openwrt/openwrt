@@ -1,0 +1,32 @@
+From c9dce515346664285992ebac03a5fd9d63e9a964 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 24 Jul 2015 10:36:32 +0100
+Subject: [PATCH 132/148] BCM270X_DT: Use i2c_arm for rtc and bmp085 overlays
+
+---
+ arch/arm/boot/dts/overlays/bmp085_i2c-sensor-overlay.dts | 2 +-
+ arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts           | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/bmp085_i2c-sensor-overlay.dts
++++ b/arch/arm/boot/dts/overlays/bmp085_i2c-sensor-overlay.dts
+@@ -6,7 +6,7 @@
+         compatible = "brcm,bcm2708";
+ 
+         fragment@0 {
+-                target = <&i2c1>;
++                target = <&i2c_arm>;
+                 __overlay__ {
+                         #address-cells = <1>;
+                         #size-cells = <0>;
+--- a/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/i2c-rtc-overlay.dts
+@@ -6,7 +6,7 @@
+ 	compatible = "brcm,bcm2708";
+ 
+ 	fragment@0 {
+-		target = <&i2c1>;
++		target = <&i2c_arm>;
+ 		__overlay__ {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;

@@ -1,0 +1,22 @@
+From 7906fa935ee088391c6a3092374e477f51e799cd Mon Sep 17 00:00:00 2001
+From: Robert Tiemann <rtie@gmx.de>
+Date: Mon, 20 Jul 2015 11:01:13 +0200
+Subject: [PATCH 125/148] BCM270X_DT: Fix I2S register map
+
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -117,8 +117,8 @@
+ 
+ 		i2s: i2s@7e203000 {
+ 			compatible = "brcm,bcm2708-i2s";
+-			reg = <0x7e203000 0x20>,
+-			      <0x7e101098 0x02>;
++			reg = <0x7e203000 0x24>,
++			      <0x7e101098 0x08>;
+ 
+ 			//dmas = <&dma 2>,
+ 			//       <&dma 3>;

@@ -1,0 +1,73 @@
+From 3817be453657d116131317525915d3e378d46fdc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 24 Jul 2015 19:33:16 +0200
+Subject: [PATCH 143/148] Fix RASPBERRYPI_FIRMWARE dependents
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If forgot this when converting the drivers.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/cpufreq/Kconfig.arm        | 2 +-
+ drivers/input/touchscreen/Kconfig  | 2 +-
+ drivers/misc/vc04_services/Kconfig | 2 +-
+ drivers/thermal/Kconfig            | 2 +-
+ drivers/video/fbdev/Kconfig        | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+--- a/drivers/cpufreq/Kconfig.arm
++++ b/drivers/cpufreq/Kconfig.arm
+@@ -259,7 +259,7 @@ config ARM_SPEAR_CPUFREQ
+ 	  This adds the CPUFreq driver support for SPEAr SOCs.
+ 
+ config ARM_BCM2835_CPUFREQ
+-	depends on BCM2708_MBOX
++	depends on RASPBERRYPI_FIRMWARE
+ 	bool "BCM2835 Driver"
+ 	default y
+ 	help
+--- a/drivers/input/touchscreen/Kconfig
++++ b/drivers/input/touchscreen/Kconfig
+@@ -585,7 +585,7 @@ config TOUCHSCREEN_EDT_FT5X06
+ 
+ config TOUCHSCREEN_RPI_FT5406
+ 	tristate "Raspberry Pi FT5406 driver"
+-	depends on ARCH_BCM2708 || ARCH_BCM2709
++	depends on RASPBERRYPI_FIRMWARE
+ 	help
+ 	  Say Y here to enable the Raspberry Pi memory based FT5406 device
+ 
+--- a/drivers/misc/vc04_services/Kconfig
++++ b/drivers/misc/vc04_services/Kconfig
+@@ -1,6 +1,6 @@
+ config BCM2708_VCHIQ
+ 	tristate "Videocore VCHIQ"
+-	depends on (MACH_BCM2708 || MACH_BCM2709 || ARCH_BCM2835) && BCM2708_MBOX
++	depends on RASPBERRYPI_FIRMWARE
+ 	default y
+ 	help
+ 		Kernel to VideoCore communication interface for the
+--- a/drivers/thermal/Kconfig
++++ b/drivers/thermal/Kconfig
+@@ -239,7 +239,7 @@ config INTEL_POWERCLAMP
+ 	  user interface is exposed via generic thermal framework.
+ 
+ config THERMAL_BCM2835
+-	depends on BCM2708_MBOX
++	depends on RASPBERRYPI_FIRMWARE
+ 	tristate "BCM2835 Thermal Driver"
+ 	help
+ 	  This will enable temperature monitoring for the Broadcom BCM2835
+--- a/drivers/video/fbdev/Kconfig
++++ b/drivers/video/fbdev/Kconfig
+@@ -226,7 +226,7 @@ comment "Frame buffer hardware drivers"
+ 
+ config FB_BCM2708
+ 	tristate "BCM2708 framebuffer support"
+-	depends on FB && ARM && BCM2708_MBOX
++	depends on FB && RASPBERRYPI_FIRMWARE
+ 	select FB_CFB_FILLRECT
+ 	select FB_CFB_COPYAREA
+ 	select FB_CFB_IMAGEBLIT

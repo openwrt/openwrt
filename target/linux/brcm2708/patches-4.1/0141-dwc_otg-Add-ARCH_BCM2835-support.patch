@@ -1,0 +1,49 @@
+From 5b2e3f5dc51d75e3ed1aefc57f9520feadf63948 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Fri, 24 Jul 2015 15:50:04 +0200
+Subject: [PATCH 141/148] dwc_otg: Add ARCH_BCM2835 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/usb/host/dwc_otg/dwc_otg_driver.c    | 1 +
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c  | 1 -
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c | 4 ++++
+ 3 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_driver.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_driver.c
+@@ -723,6 +723,7 @@ static int dwc_otg_driver_probe(
+ 
+ 	memset(dwc_otg_device, 0, sizeof(*dwc_otg_device));
+ 	dwc_otg_device->os_dep.reg_offset = 0xFFFFFFFF;
++	dwc_otg_device->os_dep.platformdev = _dev;
+ 
+ 	/*
+ 	 * Map the DWC_otg Core memory into virtual address space.
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -36,7 +36,6 @@
+ #include "dwc_otg_regs.h"
+ 
+ #include <linux/jiffies.h>
+-#include <mach/hardware.h>
+ #include <asm/fiq.h>
+ 
+ 
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_linux.c
+@@ -445,7 +445,11 @@ static void hcd_init_fiq(void *cookie)
+ 		DWC_WARN("MPHI periph has NOT been enabled");
+ #endif
+ 	// Enable FIQ interrupt from USB peripheral
++#ifdef CONFIG_ARCH_BCM2835
++	enable_fiq(platform_get_irq(otg_dev->os_dep.platformdev, 1));
++#else
+ 	enable_fiq(INTERRUPT_VC_USB);
++#endif
+ 	local_fiq_enable();
+ }
+ 
