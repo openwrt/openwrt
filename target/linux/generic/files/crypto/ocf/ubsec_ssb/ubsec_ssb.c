@@ -499,7 +499,7 @@ ubsec_ssb_probe(struct ssb_device *sdev,
     }
 
     err = request_irq(sdev->irq, (irq_handler_t)ubsec_ssb_isr, 
-        IRQF_DISABLED | IRQF_SHARED, DRV_MODULE_NAME, sdev);
+        IRQF_SHARED, DRV_MODULE_NAME, sdev);
     if (err) {
         dev_err(sdev->dev, "Could not request irq\n");
         goto err_out_powerdown;

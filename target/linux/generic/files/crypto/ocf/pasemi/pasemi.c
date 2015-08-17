@@ -767,7 +767,7 @@ static int pasemi_dma_setup_tx_resources(struct pasemi_softc *sc, int chan)
 
 	ring->irq = irq_create_mapping(NULL, sc->base_irq + chan);
 	ret = request_irq(ring->irq, (irq_handler_t)
-			  pasemi_intr, IRQF_DISABLED, ring->irq_name, sc);
+			  pasemi_intr, 0, ring->irq_name, sc);
 	if (ret) {
 		printk(KERN_ERR DRV_NAME ": failed to hook irq %d ret %d\n",
 		       ring->irq, ret);
