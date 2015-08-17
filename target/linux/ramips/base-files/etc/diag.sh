@@ -208,9 +208,6 @@ get_status_led() {
 	wnce2001)
 		status_led="netgear:green:power"
 		;;
-	nexx-wt1520)
-		status_led="nexx-wt1520:white:power"
-		;;
 	wt3020)
 		status_led="nexx:blue:power"
 		;;
