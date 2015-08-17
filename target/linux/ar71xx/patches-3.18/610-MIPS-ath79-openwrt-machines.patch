@@ -1,7 +1,5 @@
-Index: linux-3.18.19/arch/mips/ath79/machtypes.h
-===================================================================
---- linux-3.18.19.orig/arch/mips/ath79/machtypes.h
-+++ linux-3.18.19/arch/mips/ath79/machtypes.h
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
 @@ -16,22 +16,195 @@
  
  enum ath79_mach_type {
@@ -198,10 +196,8 @@ Index: linux-3.18.19/arch/mips/ath79/machtypes.h
  };
  
  #endif /* _ATH79_MACHTYPE_H */
-Index: linux-3.18.19/arch/mips/ath79/Kconfig
-===================================================================
---- linux-3.18.19.orig/arch/mips/ath79/Kconfig
-+++ linux-3.18.19/arch/mips/ath79/Kconfig
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
 @@ -2,6 +2,70 @@ if ATH79
  
  menu "Atheros AR71XX/AR724X/AR913X machine selection"
@@ -1454,10 +1450,8 @@ Index: linux-3.18.19/arch/mips/ath79/Kconfig
  	def_bool n
  
  endif
-Index: linux-3.18.19/arch/mips/ath79/Makefile
-===================================================================
---- linux-3.18.19.orig/arch/mips/ath79/Makefile
-+++ linux-3.18.19/arch/mips/ath79/Makefile
+--- a/arch/mips/ath79/Makefile
++++ b/arch/mips/ath79/Makefile
 @@ -38,9 +38,124 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
@@ -1583,10 +1577,8 @@ Index: linux-3.18.19/arch/mips/ath79/Makefile
 +obj-$(CONFIG_ATH79_MACH_ZCN_1523H)	+= mach-zcn-1523h.o
 +obj-$(CONFIG_ATH79_MACH_CARAMBOLA2)	+= mach-carambola2.o
 +obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
-Index: linux-3.18.19/arch/mips/ath79/prom.c
-===================================================================
---- linux-3.18.19.orig/arch/mips/ath79/prom.c
-+++ linux-3.18.19/arch/mips/ath79/prom.c
+--- a/arch/mips/ath79/prom.c
++++ b/arch/mips/ath79/prom.c
 @@ -180,6 +180,12 @@ void __init prom_init(void)
  			ath79_prom_append_cmdline("board", env);
  		}
