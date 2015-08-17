@@ -80,7 +80,7 @@ platform_check_image() {
 	rt5350f-olinuxino | \
 	rt5350f-olinuxino-evb | \
 	psr-680w | \
-	px4885 | \
+	px-4885 | \
 	re6500 | \
 	rp-n53 | \
 	rt-g32-b1 | \

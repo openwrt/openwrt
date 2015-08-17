@@ -582,7 +582,7 @@ Image/Build/Profile/PSR-680W=$(call BuildFirmware/Default4M/$(1),$(1),psr-680w,P
 
 Image/Build/Profile/PWH2004=$(call BuildFirmware/Default8M/$(1),$(1),pwh2004,PWH2004)
 
-Image/Build/Profile/PX4885=$(call BuildFirmware/DefaultDualSize/$(1),$(1),px4885,PX4885)
+Image/Build/Profile/PX-4885=$(call BuildFirmware/DefaultDualSize/$(1),$(1),px-4885,PX-4885)
 
 Image/Build/Profile/RT5350F-OLINUXINO=$(call BuildFirmware/Default8M/$(1),$(1),rt5350f-olinuxino,RT5350F-OLINUXINO)
 
@@ -746,7 +746,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/MINIEMBPLUG,$(1))
 	$(call Image/Build/Profile/PSR-680W,$(1))
 	$(call Image/Build/Profile/PWH2004,$(1))
-	$(call Image/Build/Profile/PX4885,$(1))
+	$(call Image/Build/Profile/PX-4885,$(1))
 	$(call Image/Build/Profile/RT5350F-OLINUXINO,$(1))
 	$(call Image/Build/Profile/RT5350F-OLINUXINO-EVB,$(1))
 	$(call Image/Build/Profile/RTG32B1,$(1))
