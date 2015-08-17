@@ -16,5 +16,4 @@ endef
 define Profile/M2M/Description
 	Package set for Intenso Memory 2 Move USB 3.0
 endef
-
 $(eval $(call Profile,M2M))

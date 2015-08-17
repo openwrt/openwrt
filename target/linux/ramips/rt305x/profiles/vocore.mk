@@ -16,5 +16,4 @@ endef
 define Profile/VOCORE/Description
 	Package set for VoCore board
 endef
-
 $(eval $(call Profile,VOCORE))

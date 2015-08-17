@@ -14,5 +14,4 @@ endef
 define Profile/A5-V11/Description
 	Package set for A5-V11
 endef
-
 $(eval $(call Profile,A5-V11))

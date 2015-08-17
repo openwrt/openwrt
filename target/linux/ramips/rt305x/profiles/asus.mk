@@ -5,14 +5,16 @@
 # See /LICENSE for more information.
 #
 
-define Profile/RT-N10-PLUS
+define Profile/RTN10PLUS
 	NAME:=Asus RT-N10+
 	PACKAGES:=kmod-leds-gpio wpad-mini
 endef
 
-define Profile/RT-N10-PLUS/Description
+define Profile/RTN10PLUS/Description
 	Package set for Asus RT-N10+.
 endef
+$(eval $(call Profile,RTN10PLUS))
+
 
 define Profile/RT-N13U
 	NAME:=Asus RT-N13U
@@ -22,6 +24,4 @@ endef
 define Profile/RT-N13U/Description
 	Package set for Asus RT-N13U.
 endef
-
-$(eval $(call Profile,RT-N10-PLUS))
 $(eval $(call Profile,RT-N13U))

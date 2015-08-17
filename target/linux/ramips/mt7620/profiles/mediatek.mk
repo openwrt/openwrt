@@ -9,7 +9,7 @@ define Profile/MT7620a
 	NAME:=MT7620a EVB
 endef
 
-define Profile/Default/Description
+define Profile/MT7620a/Description
 	Default package set compatible with MT7620a eval board
 endef
 $(eval $(call Profile,MT7620a))

@@ -15,5 +15,4 @@ endef
 define Profile/BROADWAY/Description
 	Package set for Hauppauge Broadway
 endef
-
 $(eval $(call Profile,BROADWAY))

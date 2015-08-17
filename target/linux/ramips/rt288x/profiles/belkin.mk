@@ -6,13 +6,11 @@
 #
 
 define Profile/F5D8235V1
-       NAME:=Belkin F5D8235 V1
-       PACKAGES:=kmod-switch-rtl8366s kmod-swconfig swconfig
+	NAME:=Belkin F5D8235 V1
+	PACKAGES:=kmod-switch-rtl8366s kmod-swconfig swconfig
 endef
 
-define Profile/F5D8235_V1/Description
-       Package set for Belkin F5D8235 V1
+define Profile/F5D8235V1/Description
+	Package set for Belkin F5D8235 V1
 endef
-
 $(eval $(call Profile,F5D8235V1))
-

@@ -13,5 +13,4 @@ endef
 define Profile/MR102N/Description
 	Package set for AXIMCom MR-102N
 endef
-
 $(eval $(call Profile,MR102N))

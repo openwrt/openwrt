@@ -5,12 +5,12 @@
 # See /LICENSE for more information.
 #
 
-define Profile/ESR9753
-	NAME:=EnGenius Profile
+define Profile/ESR-9753
+	NAME:=EnGenius ESR-9753
 	PACKAGES:=
 endef
 
-define Profile/ESR9753/Description
-	EnGenius profile.
+define Profile/ESR-9753/Description
+	EnGenius ESR-9753 profile.
 endef
-$(eval $(call Profile,ESR9753))
+$(eval $(call Profile,ESR-9753))

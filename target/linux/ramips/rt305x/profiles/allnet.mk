@@ -15,8 +15,8 @@ endef
 define Profile/ALL02393G/Description
 	Package set for Allnet ALL0239-3G
 endef
-
 $(eval $(call Profile,ALL02393G))
+
 
 define Profile/ALL0256N
 	NAME:=Allnet ALL0256N
@@ -26,8 +26,8 @@ endef
 define Profile/ALL0256N/Description
 	Package set for Allnet ALL0256N
 endef
-
 $(eval $(call Profile,ALL0256N))
+
 
 define Profile/ALL5002
 	NAME:=Allnet ALL5002
@@ -38,8 +38,8 @@ endef
 define Profile/ALL5002/Description
 	Package set for Allnet ALL5002
 endef
-
 $(eval $(call Profile,ALL5002))
+
 
 define Profile/ALL5003
 	NAME:=Allnet ALL5003
@@ -50,5 +50,4 @@ endef
 define Profile/ALL5003/Description
 	Package set for Allnet ALL5003
 endef
-
 $(eval $(call Profile,ALL5003))

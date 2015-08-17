@@ -1,18 +1,18 @@
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
 #
 
-define Profile/Firefly
-	NAME:=Firefly Device
+define Profile/FIREWRT
+	NAME:=Firefly FireWRT
 	PACKAGES:=\
 		kmod-usb-core kmod-usb3 kmod-usb-hid kmod-sdhci-mt7620 \
 		kmod-ledtrig-usbdev
 endef
 
-define Profile/Firefly/Description
-	Default package set compatible with most boards.
+define Profile/FIREWRT/Description
+	Package set compatible with the Firefly FireWRT board.
 endef
-$(eval $(call Profile,Firefly))
+$(eval $(call Profile,FIREWRT))
