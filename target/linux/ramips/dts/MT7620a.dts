@@ -55,10 +55,8 @@
 
 	ethernet@10100000 {
 		status = "okay";
-
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-
 		ralink,port-map = "llllw";
 
 		port@4 {
@@ -105,11 +103,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		s2 {
 			label = "S2";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x100>;
 		};
+
 		s3 {
 			label = "S3";
 			gpios = <&gpio0 2 1>;

@@ -68,14 +68,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		aoss1 {
 			label = "buffalo:red:aoss";
 			gpios = <&gpio2 1 1>;
 		};
+
 		aoss2 {
 			label = "buffalo:green:aoss";
 			gpios = <&gpio2 2 1>;
 		};
+
 		power {
 			label = "buffalo:green:status";
 			gpios = <&gpio2 4 1>;
@@ -87,11 +90,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x198>;
 		};
+
 		aoss {
 			label = "aoss";
 			gpios = <&gpio0 2 1>;

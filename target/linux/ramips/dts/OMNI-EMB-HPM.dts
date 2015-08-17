@@ -18,7 +18,6 @@
 				compatible = "macronix,mx25l12805d";
 				spi-max-frequency = <25000000>;
 				reg = <0>;
-
 				#address-cells = <1>;
 				#size-cells = <1>;
 
@@ -88,6 +87,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 14 0>;
@@ -102,22 +102,27 @@
 			label = "emb:orange:power";
 			gpios = <&gpio0 7 1>;
 		};
+
 		status {
 			label = "emb:green:status";
 			gpios = <&gpio0 21 1>;
 		};
+
 		eth {
 			label = "emb:green:eth";
 			gpios = <&gpio0 20 1>;
 		};
+
 		eth2 {
 			label = "emb:red:eth";
 			gpios = <&gpio0 18 1>;
 		};
+
 		wifi {
 			label = "emb:green:wifi";
 			gpios = <&gpio0 17 1>;
 		};
+
 		wifi2 {
 			label = "emb:red:wifi";
 			gpios = <&gpio0 19 1>;
@@ -128,11 +133,13 @@
 		compatible = "gpio-export";
 		#size-cells = <0>;
 		/* gpio 12 and 13 handle the OC input */
+
 		usb0 {
 			gpio-export,name = "usb0";
 			gpio-export,output = <1>;
 			gpios = <&gpio0 2 0>;
 		};
+
 		usb1 {
 			gpio-export,name = "usb1";
 			gpio-export,output = <1>;

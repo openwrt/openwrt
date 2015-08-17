@@ -11,7 +11,6 @@
 		mtd-mac-address = <&factory 0x4>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-
 		ralink,port-map = "wllll";
 
 		port@4 {
@@ -47,30 +46,37 @@
 	
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power1 {
 			label = "lenovo:yellow:power";
 			gpios = <&gpio0 14 1>;
 		};
+
 		power2 {
 			label = "lenovo:blue:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		wlan1 {
 			label = "lenovo:yellow:wifi";
 			gpios = <&gpio3 0 1>;
 		};
+
 		wlan2 {
 			label = "lenovo:blue:wifi";
 			gpios = <&gpio2 10 1>;
 		};
+
 		usb1 {
 			label = "lenovo:yellow:usb";
 			gpios = <&gpio2 13 1>;
 		};
+
 		usb2 {
 			label = "lenovo:blue:usb";
 			gpios = <&gpio2 12 1>;
 		};
+
 		internet {
 			label = "lenovo:blue:internet";
 			gpios = <&gpio2 11 1>;

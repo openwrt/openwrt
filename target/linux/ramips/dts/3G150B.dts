@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -41,6 +42,7 @@
 				};
 			};
 		};
+
 		gpio1: gpio@660 {
 			status = "okay";
 		};
@@ -78,10 +80,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		ap {
 			label = "tenda:blue:ap";
 			gpios = <&gpio0 7 1>;
 		};
+
 		3g {
 			label = "tenda:blue:3g";
 			gpios = <&gpio0 14 1>;
@@ -93,6 +97,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
@@ -110,5 +115,4 @@
 			gpios = <&gpio0 13 0>;
 		};
 	};
-
 };

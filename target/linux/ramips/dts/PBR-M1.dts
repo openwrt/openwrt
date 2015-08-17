@@ -60,22 +60,19 @@
 		i2c@900 {
 			compatible = "ralink,i2c-mt7621";
 			reg = <0x900 0x100>;
-
 			#address-cells = <1>;
 			#size-cells = <0>;
-
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c_pins>;
-
 			status = "okay";
 
 			pcf8563: rtc@51 {
 				status = "okay";
 				compatible = "nxp,pcf8563";
 				reg = <0x51>;
-            };
-        };
-    };
+			};
+		};
+	};
 
 	pcie@1e140000 {
 		status = "okay";
@@ -132,6 +129,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 18 1>;
@@ -141,7 +139,7 @@
 
 	pinctrl {
 		state_default: pinctrl0 {
-		gpio {
+			gpio {
 				ralink,group = "wdt", "rgmii2", "wdt rst", "jtag", "mdio";
 				ralink,function = "gpio";
 			};

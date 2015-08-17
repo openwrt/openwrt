@@ -23,7 +23,7 @@
 	palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
-                ranges = <0x0 0x10000000 0x1FFFFF>;
+		ranges = <0x0 0x10000000 0x1FFFFF>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -202,14 +202,17 @@
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
+
 		state_default: pinctrl0 {
 		};
+
 		spi_pins: spi {
 			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
 			};
 		};
+
 		uartlite_pins: uartlite {
 			uart {
 				ralink,group = "uartlite";

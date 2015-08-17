@@ -10,6 +10,7 @@
 		gpio1: gpio@638 {
 			status = "okay";
 		};
+
 		gpio3: gpio@688 {
 			status = "okay";
 		};
@@ -74,6 +75,7 @@
 				ralink,group = "ephy";
 				ralink,function = "ephy";
 			};
+
 			default {
 				ralink,group = "i2c", "uartf", "spi refclk", "wled";
 				ralink,function = "gpio";
@@ -83,14 +85,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		sys {
 			label = "wr8305rt:sys";
 			gpios = <&gpio1 14 1>;
 		};
+
 		lan {
 			label = "wr8305rt:usb";
 			gpios = <&gpio1 15 1>;
 		};
+
 		wifi {
 			label = "wr8305rt:wifi";
 			gpios = <&gpio3 0 1>;
@@ -102,6 +107,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
@@ -109,4 +115,3 @@
 		};
 	};
 };
-

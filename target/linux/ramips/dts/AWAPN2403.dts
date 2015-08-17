@@ -4,11 +4,12 @@
 
 / {
 	compatible = "AWAPN2403", "ralink,rt3052-soc";
-	model =  "AsiaRF AWAPN2403";
+	model = "AsiaRF AWAPN2403";
 
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -62,6 +63,7 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		link {
 			label = "asiarf:green:wps";
 			gpios = <&gpio0 14 1>;
@@ -73,6 +75,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;

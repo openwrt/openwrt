@@ -53,7 +53,6 @@
 					label = "firmware";
 					reg = <0x50000 0xfb0000>;
 				};
-
 			};
 		};
 	};
@@ -98,11 +97,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 18 1>;
 			linux,code = <0x211>;
 		};
+
 		power {
 			label = "power";
 			gpios = <&gpio0 23 1>;
@@ -112,7 +113,7 @@
 
 	pinctrl {
 		state_default: pinctrl0 {
-		gpio {
+			gpio {
 				ralink,group = "wdt", "rgmii2";
 				ralink,function = "gpio";
 			};

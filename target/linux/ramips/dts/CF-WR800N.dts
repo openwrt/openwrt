@@ -8,7 +8,7 @@
 
 	chosen {
 		bootargs = "console=ttyS0,115200";
-        };
+	};
 
 	palmbus@10000000 {
 		gpio0: gpio@600 {
@@ -100,15 +100,16 @@
 		};
 	};
 
-        gpio-keys-polled {
-                compatible = "gpio-keys-polled";
-                #address-cells = <1>;
-                #size-cells = <0>;
-                poll-interval = <20>;
-                reset {
-                        label = "reset";
-                        gpios = <&gpio0 2 1>;
-                        linux,code = <0x198>;
-                };
-        };
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 2 1>;
+			linux,code = <0x198>;
+		};
+	};
 };

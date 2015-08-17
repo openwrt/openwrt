@@ -64,34 +64,42 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "buffalo:green:power";
 			gpios = <&gpio0 12 1>;
 		};
+
 		wifi_o {
 			label = "buffalo:orange:wifi";
 			gpios = <&gpio1 9 1>;
 		};
+
 		diag {
 			label = "buffalo:orange:diag";
 			gpios = <&gpio1 10 1>;
 		};
+
 		wifi_g {
 			label = "buffalo:green:wifi";
 			gpios = <&gpio1 12 1>;
 		};
+
 		router_o {
 			label = "buffalo:orange:router";
 			gpios = <&gpio1 13 1>;
 		};
+
 		router_g {
 			label = "buffalo:green:router";
 			gpios = <&gpio1 14 1>;
 		};
+
 		internet_o {
 			label = "buffalo:orange:internet";
 			gpios = <&gpio1 15 1>;
 		};
+
 		internet_g {
 			label = "buffalo:green:internet";
 			gpios = <&gpio1 16 1>;
@@ -103,33 +111,39 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		power {
 			label = "power";
 			gpios = <&gpio0 8 1>;
 			linux,code = <0x74>;
 		};
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 11 1>;
 			linux,code = <0x198>;
 		};
+
 		aoss {
 			label = "aoss";
 			gpios = <&gpio0 18 1>;
 			linux,code = <0x211>;
 		};
+
 		auto {
 			label = "mode";
 			gpios = <&gpio0 7 0>;
 			linux,code = <0x100>;
 			linux,input-type = <5>; /* EV_SW */
 		};
+
 		ap {
 			label = "ap";
 			gpios = <&gpio0 6 0>;
 			linux,code = <0x100>;
 			linux,input-type = <5>; /* EV_SW */
 		};
+
 		router {
 			label = "router";
 			gpios = <&gpio0 10 0>;
@@ -137,6 +151,7 @@
 			linux,input-type = <5>; /* EV_SW */
 		};
 	};
+
 	gpio_poweroff {
 		compatible = "gpio-poweroff";
 		gpios = <&gpio1 11 1>;

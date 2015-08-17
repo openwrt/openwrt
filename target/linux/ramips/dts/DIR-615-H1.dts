@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -49,10 +50,12 @@
 				ralink,group = "i2c", "jtag", "uartf";
 				ralink,function = "gpio";
 			};
+
 			rgmii {
 				ralink,group = "rgmii";
 				ralink,function = "rgmii";
 			};
+
 			mdio {
 				ralink,group = "mdio";
 				ralink,function = "mdio";
@@ -74,22 +77,27 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		status {
 			label = "d-link:amber:status";
 			gpios = <&gpio0 7 0>;
 		};
+
 		status2 {
 			label = "d-link:green:status";
 			gpios = <&gpio0 9 0>;
 		};
+
 		wan {
 			label = "d-link:amber:wan";
 			gpios = <&gpio0 12 1>;
 		};
+
 		wan2 {
 			label = "d-link:green:wan";
 			gpios = <&gpio0 13 1>;
 		};
+
 		wps {
 			label = "d-link:blue:wps";
 			gpios = <&gpio0 14 1>;
@@ -101,11 +109,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;

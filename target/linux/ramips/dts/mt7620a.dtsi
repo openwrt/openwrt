@@ -23,7 +23,7 @@
 	palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
-                ranges = <0x0 0x10000000 0x1FFFFF>;
+		ranges = <0x0 0x10000000 0x1FFFFF>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -280,68 +280,80 @@
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
+
 		state_default: pinctrl0 {
 		};
+
 		pcm_i2s_pins: pcm_i2s {
 			pcm_i2s {
 				ralink,group = "uartf";
 				ralink,function = "pcm i2s";
 			};
 		};
+
 		uartf_gpio_pins: uartf_gpio {
 			uartf_gpio {
 				ralink,group = "uartf";
 				ralink,function = "gpio uartf";
 			};
 		};
+
 		spi_pins: spi {
 			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
 			};
 		};
+
 		i2c_pins: i2c {
 			i2c {
 				ralink,group = "i2c";
 				ralink,function = "i2c";
 			};
 		};
+
 		uartlite_pins: uartlite {
 			uart {
 				ralink,group = "uartlite";
 				ralink,function = "uartlite";
 			};
 		};
+
 		mdio_pins: mdio {
 			mdio {
 				ralink,group = "mdio";
 				ralink,function = "mdio";
 			};
 		};
+
 		ephy_pins: ephy {
 			ephy {
 				ralink,group = "ephy";
 				ralink,function = "ephy";
 			};
 		};
+
 		wled_pins: wled {
 			wled {
 				ralink,group = "wled";
 				ralink,function = "wled";
 			};
 		};
+
 		rgmii1_pins: rgmii1 {
 			rgmii1 {
 				ralink,group = "rgmii1";
 				ralink,function = "rgmii1";
 			};
 		};
+
 		rgmii2_pins: rgmii2 {
 			rgmii2 {
 				ralink,group = "rgmii2";
 				ralink,function = "rgmii2";
 			};
 		};
+
 		pcie_pins: pcie {
 			pcie {
 				ralink,group = "pcie";

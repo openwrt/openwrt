@@ -13,6 +13,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -83,18 +84,22 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power-green {
 			label = "netgear:green:power";
 			gpios = <&gpio0 8 1>;
 		};
+
 		power-red {
 			label = "netgear:red:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		wlan-green {
 			label = "netgear:green:wlan";
 			gpios = <&gpio0 12 0>;
 		};
+
 		wlan-red {
 			label = "netgear:red:wlan";
 			gpios = <&gpio0 13 0>;
@@ -106,21 +111,25 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x211>;
 		};
+
 		rt {
 			label = "rt";
 			gpios = <&gpio0 11 1>;
 			linux,code = <0x100>;
 		};
+
 		ap {
 			label = "ap";
 			gpios = <&gpio0 7 1>;

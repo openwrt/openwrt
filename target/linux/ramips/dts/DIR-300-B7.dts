@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -56,41 +57,43 @@
 		mtd-mac-address = <&factory 0x4>;
 	};
 
-        esw@10110000 {
-                ralink,portmap = <0x2f>;
-                ralink,led_polarity = <0x17>;
-        };
+	esw@10110000 {
+		ralink,portmap = <0x2f>;
+		ralink,led_polarity = <0x17>;
+	};
 
-        gpio-leds {
-                compatible = "gpio-leds";
-                status {
-                        label = "d-link:green:status";
-                        gpios = <&gpio0 9 1>;
-                };
-                wps {
-                        label = "d-link:blue:wps";
-                        gpios = <&gpio0 13 1>;
-                };
-        };
+	gpio-leds {
+		compatible = "gpio-leds";
 
-        gpio-keys-polled {
-                gpio-keys-polled {
-                compatible = "gpio-keys-polled";
-                #address-cells = <1>;
-                #size-cells = <0>;
-                poll-interval = <20>;
-                        reset {
-                                label = "reset";
-                                gpios = <&gpio0 10 1>;
-                                linux,code = <0x198>;
-                        };
-                        wps {
-                                label = "wps";
-                                gpios = <&gpio0 0 1>;
-                                linux,code = <0x211>;
-                        };
-                };
-        };
+		status {
+			label = "d-link:green:status";
+			gpios = <&gpio0 9 1>;
+		};
+
+		wps {
+			label = "d-link:blue:wps";
+			gpios = <&gpio0 13 1>;
+		};
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio0 10 1>;
+			linux,code = <0x198>;
+		};
+
+		wps {
+			label = "wps";
+			gpios = <&gpio0 0 1>;
+			linux,code = <0x211>;
+		};
+	};
 
 	wmac@10180000 {
 		status = "okay";
@@ -98,4 +101,3 @@
 		ralink,mtd-eeprom = <&factory 0>;
 	};
 };
-

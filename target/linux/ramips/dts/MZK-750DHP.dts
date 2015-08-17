@@ -60,7 +60,6 @@
 	ethernet@10100000 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&ephy_pins>;
-
 		mtd-mac-address = <&factory 0x4>;
 		ralink,port-map = "llllw";
 	};
@@ -79,10 +78,12 @@
 	
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wps {
 			label = "mzk750:green:wps";
 			gpios = <&gpio1 11 1>;
 		};
+
 		power {
 			label = "mzk750:green:power";
 			gpios = <&gpio1 15 1>;
@@ -94,11 +95,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		s1 {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x100>;
 		};
+
 		s2 {
 			label = "wps";
 			gpios = <&gpio0 2 1>;

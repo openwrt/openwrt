@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -54,26 +55,32 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		3grouter {
 			label = "tenda:blue:3grouter";
 			gpios = <&gpio0 11 1>;
 		};
+
 		ap {
 			label = "tenda:blue:ap";
 			gpios = <&gpio0 12 1>;
 		};
+
 		wisprouter {
 			label = "tenda:blue:wisprouter";
 			gpios = <&gpio0 9 1>;
 		};
+
 		wirelessrouter {
 			label = "tenda:blue:wirelessrouter";
 			gpios = <&gpio0 13 1>;
 		};
+
 		3g {
 			label = "tenda:blue:3g";
 			gpios = <&gpio0 7 1>;
 		};
+
 		wpsreset {
 			label = "tenda:blue:wpsreset";
 			gpios = <&gpio0 14 1>;
@@ -85,11 +92,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x198>;
 		};
+
 		mode {
 			label = "mode";
 			gpios = <&gpio0 10 1>;

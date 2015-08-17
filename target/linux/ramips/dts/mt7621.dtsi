@@ -23,7 +23,7 @@
 	palmbus@1E000000 {
 		compatible = "palmbus";
 		reg = <0x1E000000 0x100000>;
-                ranges = <0x0 0x1E000000 0x0FFFFF>;
+		ranges = <0x0 0x1E000000 0x0FFFFF>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -113,72 +113,85 @@
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
+
 		state_default: pinctrl0 {
 		};
+
 		spi_pins: spi {
 			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
 			};
 		};
+
 		i2c_pins: i2c {
 			i2c {
 				ralink,group = "i2c";
 				ralink,function = "i2c";
 			};
 		};
+
 		uart1_pins: uart1 {
 			uart1 {
 				ralink,group = "uart1";
 				ralink,function = "uart";
 			};
 		};
+
 		uart2_pins: uart2 {
 			uart2 {
 				ralink,group = "uart2";
 				ralink,function = "uart";
 			};
 		};
+
 		uart3_pins: uart3 {
 			uart3 {
 				ralink,group = "uart3";
 				ralink,function = "uart";
 			};
 		};
+
 		rgmii1_pins: rgmii1 {
 			rgmii1 {
 				ralink,group = "rgmii1";
 				ralink,function = "rgmii";
 			};
 		};
+
 		rgmii2_pins: rgmii2 {
 			rgmii2 {
 				ralink,group = "rgmii2";
 				ralink,function = "rgmii";
 			};
 		};
+
 		mdio_pins: mdio {
 			mdio {
 				ralink,group = "mdio";
 				ralink,function = "mdio";
 			};
 		};
+
 		pcie_pins: pcie {
 			pcie {
 				ralink,group = "pcie";
 				ralink,function = "pcie rst";
 			};
 		};
+
 		nand_pins: nand {
 			spi-nand {
 				ralink,group = "spi";
 				ralink,function = "nand";
 			};
+
 			sdhci-nand {
 				ralink,group = "sdhci";
 				ralink,function = "nand";
 			};
 		};
+
 		sdhci_pins: sdhci {
 			sdhci {
 				ralink,group = "sdhci";
@@ -233,14 +246,17 @@
 			label = "uboot";
 			reg = <0x00000 0x80000>; /* 64 KB */
 		};
+
 		partition@80000 {
 			label = "uboot_env";
 			reg = <0x80000 0x80000>; /* 64 KB */
 		};
+
 		partition@100000 {
 			label = "factory";
 			reg = <0x100000 0x40000>;
 		};
+
 		partition@140000 {
 			label = "rootfs";
 			reg = <0x140000 0xec0000>;
@@ -275,7 +291,7 @@
 		compatible = "ralink,mt7620a-gsw";
 		reg = <0x1e110000 8000>;
 		interrupt-parent = <&gic>;
-		interrupts = <23>; 
+		interrupts = <23>;
 	};
 
 	pcie@1e140000 {

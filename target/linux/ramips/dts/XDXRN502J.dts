@@ -18,7 +18,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -62,10 +61,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wifi {
 			label = "xdxrn502j:green:wifi";
 			gpios = <&gpio0 7 1>;
 		};
+
 		power {
 			label = "xdxrn502j:green:power";
 			gpios = <&gpio0 9 1>;
@@ -77,6 +78,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;

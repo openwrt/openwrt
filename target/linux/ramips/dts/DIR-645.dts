@@ -21,30 +21,36 @@
 				reg = <0 0>;
 				linux,modalias = "m25p80";
 				spi-max-frequency = <25000000>;
+
 				partition@0 {
 					label = "uboot";
 					reg = <0x0 0x30000>;
 					read-only;
 				};
+
 				partition@30000 {
 					label = "uboot-env";
 					reg = <0x30000 0x4000>;
 					read-only;
 				};
+
 				factory: partition@34000 {
 					label = "factory";
 					reg = <0x34000 0x4000>;
 					read-only;
 				};
+
 				partition@38000 {
 					label = "nvram";
 					reg = <0x38000 0x8000>;
 					read-only;
 				};
+
 				partition@40000 {
 					label = "devdata";
 					reg = <0x40000 0x10000>;
 				};
+
 				partition@50000 {
 					label = "firmware";
 					reg = <0x50000 0x7b0000>;
@@ -64,6 +70,7 @@
 
 	ethernet@10100000 {
 		mtd-mac-address = <&factory 0x4>;
+
 		port@0 {
 			ralink,fixed-link = <1000 1 1 0>;
 		};
@@ -94,11 +101,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 9 0>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 14 0>;
@@ -113,6 +122,7 @@
 			label = "d-link:green:inet";
 			gpios = <&gpio0 0 1>;
 		};
+
 		wps {
 			label = "d-link:green:wps";
 			gpios = <&gpio1 2 0>;
@@ -122,6 +132,7 @@
 	gpio_export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
+
 		usb {
 			gpio-export,name = "usb";
 			gpio-export,output = <1>;

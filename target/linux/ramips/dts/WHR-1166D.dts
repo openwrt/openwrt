@@ -97,33 +97,40 @@
 			};
 		};
 	};
-	
+
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "buffalo:red:power";
 			gpios = <&gpio0 7 1>;
 		};
+
 		wifi {
 			label = "buffalo:green:wifi";
 			gpios = <&gpio0 8 1>;
 		};
+
 		power2 {
 			label = "buffalo:green:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		wifi2 {
 			label = "buffalo:orange:wifi";
 			gpios = <&gpio0 10 1>;
 		};
+
 		internet {
 			label = "buffalo:green:internet";
 			gpios = <&gpio2 17 1>;
 		};
+
 		router {
 			label = "buffalo:orange:router";
 			gpios = <&gpio2 18 1>;
 		};
+
 		router2 {
 			label = "buffalo:green:router";
 			gpios = <&gpio2 19 1>;
@@ -135,22 +142,26 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio2 12 1>;
 			linux,code = <0x198>;
 		};
+
 		aoss {
 			label = "aoss";
 			gpios = <&gpio2 13 1>;
 			linux,code = <0x211>;
 		};
+
 		ap {
 			label = "ap";
 			gpios = <&gpio2 14 1>;
 			linux,code = <0x100>;
 			linux,input-type = <5>; /* EV_SW */
 		};
+
 		bridge {
 			label = "bridge";
 			gpios = <&gpio2 15 1>;

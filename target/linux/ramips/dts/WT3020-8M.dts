@@ -7,13 +7,13 @@
 	model = "Nexx WT3020";
 
 	palmbus@10000000 {
-                gpio2: gpio@660 {
-                        status = "okay";
-                };
+		gpio2: gpio@660 {
+			status = "okay";
+		};
 
-                gpio3: gpio@688 {
-                        status = "okay";
-                };
+		gpio3: gpio@688 {
+			status = "okay";
+		};
 
 		spi@b00 {
 			status = "okay";
@@ -83,6 +83,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
@@ -90,11 +91,12 @@
 		};
 	};
 
-        gpio-leds {
-                compatible = "gpio-leds";
-                power {
-                        label = "nexx:blue:power";
-                        gpios = <&gpio3 0 0>;
-                };
-        };
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power {
+			label = "nexx:blue:power";
+			gpios = <&gpio3 0 0>;
+		};
+	};
 };

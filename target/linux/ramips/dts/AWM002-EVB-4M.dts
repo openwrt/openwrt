@@ -15,14 +15,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		tx {
 			label = "awm002-evb:green:tx";
 			gpios = <&gpio0 15 1>;
 		};
+
 		rx {
 			label = "awm002-evb:green:rx";
 			gpios = <&gpio0 16 1>;
 		};
+
 		wps {
 			label = "awm002-evb:green:wps";
 			gpios = <&gpio0 21 1>;
@@ -34,11 +37,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x198>;
 		};
+
 		mode {
 			label = "mode";
 			gpios = <&gpio0 20 1>;
