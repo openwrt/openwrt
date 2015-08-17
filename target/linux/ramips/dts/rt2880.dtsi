@@ -23,7 +23,7 @@
 	palmbus@300000 {
 		compatible = "palmbus";
 		reg = <0x300000 0x200000>;
-                ranges = <0x0 0x300000 0x1FFFFF>;
+		ranges = <0x0 0x300000 0x1FFFFF>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -191,5 +191,4 @@
 
 		ralink,eeprom = "soc_wmac.eeprom";
 	};
-
 };

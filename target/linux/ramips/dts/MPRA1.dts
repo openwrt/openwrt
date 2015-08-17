@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -41,6 +42,7 @@
 				};
 			};
 		};
+
 		gpio1: gpio@660 {
 			status = "okay";
 		};
@@ -77,10 +79,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		system {
 			label = "hame:blue:system";
 			gpios = <&gpio0 20 1>;
 		};
+
 		power {
 			label = "hame:red:power";
 			gpios = <&gpio0 17 1>;
@@ -92,6 +96,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		wps {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
@@ -108,6 +113,7 @@
 			gpio-export,output = <1>;
 			gpios = <&gpio0 7 0>;
 		};
+
 		root_hub {
 			gpio-export,name = "root_hub";
 			gpio-export,output = <1>;

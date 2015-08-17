@@ -32,6 +32,7 @@
 
 		mdio-bus {
 			status = "okay";
+
 			phy0: ethernet-phy@0 {
 				phy-mode = "mii";
 				reg = <0>;
@@ -47,7 +48,6 @@
 	cfi@bdc00000 {
 		compatible = "cfi-flash";
 		reg = <0xbc400000 0x800000>;
-
 		bank-width = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -89,11 +89,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x211>;
 		};
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 9 1>;

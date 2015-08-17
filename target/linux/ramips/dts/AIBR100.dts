@@ -82,10 +82,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wan {
 			label = "aigale:blue:wan";
 			gpios = <&gpio2 4 1>;
 		};
+
 		wlan {
 			label = "aigale:blue:wlan";
 			gpios = <&gpio3 0 1>;
@@ -97,6 +99,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 12 1>;

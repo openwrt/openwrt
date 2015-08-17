@@ -93,15 +93,17 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 2 1>;
 			linux,code = <0x211>;
 		};
 	};
-   };
+};

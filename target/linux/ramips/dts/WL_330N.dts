@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -66,10 +67,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		link {
 			label = "asus:blue:link";
 			gpios = <&gpio0 9 1>;
 		};
+
 		power {
 			label = "asus:blue:power";
 			gpios = <&gpio0 11 1>;
@@ -81,11 +84,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;

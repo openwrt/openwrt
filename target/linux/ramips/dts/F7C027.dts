@@ -9,6 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -83,38 +84,46 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		status {
 			label = "belkin:blue:status";
 			gpios = <&gpio0 7 1>;
 		};
+
 		power {
 			label = "belkin:blue:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		orange {
 			label = "belkin:orange:status";
 			gpios = <&gpio0 11 1>;
 		};
+
 		relay {
 			label = "belkin:device:relay";
 			gpios = <&gpio0 13 0>;
 		};
 	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		top {
 			label = "top";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
+
 		power {
 			label = "power";
 			gpios = <&gpio0 12 1>;
 			linux,code = <0x100>;
 		};
+
 		sensor {
 			label = "sensor";
 			gpios = <&gpio0 14 1>;

@@ -26,7 +26,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -37,16 +36,19 @@
 			reg = <0x0 0x30000>;
 			read-only;
 		};
+
 		partition@30000 {
 			label = "uboot-env";
 			reg = <0x30000 0x10000>;
 			read-only;
 		};
+
 		factory: partition@40000 {
 			label = "factory";
 			reg = <0x40000 0x10000>;
 			read-only;
 		};
+
 		partition@50000 {
 			label = "firmware";
 			reg = <0x50000 0x3b0000>;
@@ -57,12 +59,13 @@
 		status = "okay";
 		mtd-mac-address = <&factory 0x4>;
 
-                port@0 {
+		port@0 {
 			ralink,fixed-link = <1000 1 1 1>;
 		};
 
 		mdio-bus {
 			status = "okay";
+
 			phy0: ethernet-phy@0 {
 				phy-mode = "mii";
 				reg = <0>;
@@ -85,11 +88,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 0>;
 			linux,code = <0x211>;
 		};
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 12 0>;

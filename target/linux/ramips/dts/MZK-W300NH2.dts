@@ -18,7 +18,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -68,14 +67,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "mzkw300nh2:green:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		wlan {
 			label = "mzkw300nh2:amber:wlan";
 			gpios = <&gpio0 14 1>;
 		};
+
 		wps {
 			label = "mzkw300nh2:amber:wps";
 			gpios = <&gpio0 11 1>;
@@ -87,16 +89,19 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 12 1>;
 			linux,code = <0x211>;
 		};
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 0 1>;
 			linux,code = <0x198>;
 		};
+
 		rt {
 			label = "rt";
 			gpios = <&gpio0 13 1>;

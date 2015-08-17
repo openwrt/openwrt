@@ -88,14 +88,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "zbtlink:blue:power";
 			gpios = <&gpio1 14 1>;
 		};
+
 		usb {
 			label = "zbtlink:blue:usb";
 			gpios = <&gpio1 15 0>;
 		};
+
 		air {
 			label = "zbtlink:blue:air";
 			gpios = <&gpio3 0 1>;
@@ -107,6 +110,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;

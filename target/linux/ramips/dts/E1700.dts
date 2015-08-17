@@ -65,9 +65,7 @@
 
 	ethernet@10100000 {
 		status = "okay";
-
 		mtd-mac-address = <&factory 0x28>;
-
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
 
@@ -84,22 +82,27 @@
 				reg = <0>;
 				phy-mode = "rgmii";
 			};
+
 			phy1: ethernet-phy@1 {
 				reg = <1>;
 				phy-mode = "rgmii";
 			};
+
 			phy2: ethernet-phy@2 {
 				reg = <2>;
 				phy-mode = "rgmii";
 			};
+
 			phy3: ethernet-phy@3 {
 				reg = <3>;
 				phy-mode = "rgmii";
 			};
+
 			phy4: ethernet-phy@4 {
 				reg = <4>;
 				phy-mode = "rgmii";
 			};
+
 			phy1f: ethernet-phy@1f {
 				reg = <0x1f>;
 				phy-mode = "rgmii";
@@ -121,11 +124,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 0>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 2 0>;
@@ -135,10 +140,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "linksys:green:power";
 			gpios = <&gpio0 10 1>;
 		};
+
 		wan {
 			label = "linksys:green:wps";
 			gpios = <&gpio0 12 1>;

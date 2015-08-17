@@ -10,8 +10,10 @@
 		gpio0: gpio@600 {
 			status = "okay";
 		};
+
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -19,21 +21,25 @@
 				reg = <0 0>;
 				linux,modalias = "m25p80", "mx25l6405d";
 				spi-max-frequency = <10000000>;
+
 				partition@0 {
 					label = "u-boot";
 					reg = <0x0 0x30000>;
 					read-only;
 				};
+
 				partition@30000 {
 					label = "u-boot-env";
 					reg = <0x30000 0x10000>;
 					read-only;
 				};
+
 				factory: partition@40000 {
 					label = "factory";
 					reg = <0x40000 0x10000>;
 					read-only;
 				};
+
 				partition@50000 {
 					label = "firmware";
 					reg = <0x50000 0x7b0000>;
@@ -73,15 +79,16 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wlan {
 			label = "ht-tm02:blue:wlan";
 			gpios = <&gpio0 7 1>;
 		};
+
 		lan {
 			label = "ht-tm02:green:lan";
 			gpios = <&gpio0 12 1>;
 		};
-
 	};
 
 	gpio-keys-polled {
@@ -89,11 +96,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
+
 		modeswitch {
 			label = "modeswitch";
 			gpios = <&gpio0 14 1>;

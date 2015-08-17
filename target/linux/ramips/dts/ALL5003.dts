@@ -13,6 +13,7 @@
 
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -78,7 +79,6 @@
 
 	i2c-gpio {
 		compatible = "i2c-gpio";
-
 		gpios = <&gpio0 1 0 &gpio0 2 0>;
 		i2c-gpio,delay-us = <10>;
 
@@ -97,10 +97,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		ld1 {
 			label = "allnet:green:ld1";
 			gpios = <&pcf0 0 1>;
 		};
+
 		ld2 {
 			label = "allnet:green:ld2";
 			gpios = <&pcf0 1 1>;

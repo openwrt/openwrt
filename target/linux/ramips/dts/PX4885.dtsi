@@ -30,6 +30,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
@@ -39,10 +40,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		orange {
 			label = "7links:orange:wifi";
 			gpios = <&gpio0 18 1>;
 		};
+
 		blue {
 			label = "7links:blue:storage";
 			gpios = <&gpio0 19 1>;

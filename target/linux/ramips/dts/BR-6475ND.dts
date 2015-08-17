@@ -45,9 +45,9 @@
 
 	pci@10140000 {
 		status = "okay";
-
 		pinctrl-names = "default";
 		pinctrl-0 = <&pci_pins>;
+
 		pci_pins: pci {
 			pci {
 				ralink,group = "pci";
@@ -58,6 +58,7 @@
 		host-bridge {
 			pci-bridge@1 {
 				status = "okay";
+
 				wmac@0,0 {
 					ralink,5ghz = <0>;
 					compatible = "ralink,rt2880-pci", "pciclass060400", "pciclass0604";
@@ -79,7 +80,6 @@
 	nor-flash@1c000000 {
 		compatible = "cfi-flash";
 		reg = <0x1c000000 0x800000>;
-
 		bank-width = <2>;
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -131,11 +131,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <100>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 7 1>;
 			linux,code = <0x198>;
 		};
+
 		rfkill {
 			label = "rfkill";
 			gpios = <&gpio0 9 1>;
@@ -151,10 +153,12 @@
 			label = "edimax:green:power";
 			gpios = <&gpio0 10 1>;
 		};
+
 		wlan {
 			label = "edimax:amber:wlan";
 			gpios = <&gpio0 11 1>;
 		};
+
 		wlan_5ghz {
 			label = "edimax:amber:wlan_5ghz";
 			gpios = <&gpio0 14 1>;
@@ -168,6 +172,7 @@
 	gpio_export {
 		compatible = "gpio-export";
 		#size-cells = <0>;
+
 		usb {
 			gpio-export,name="usb";
 			gpio-export,output=<0>;

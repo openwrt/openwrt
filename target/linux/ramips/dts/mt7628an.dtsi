@@ -23,7 +23,7 @@
 	palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
-                ranges = <0x0 0x10000000 0x1FFFFF>;
+		ranges = <0x0 0x10000000 0x1FFFFF>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -181,32 +181,38 @@
 		compatible = "ralink,rt2880-pinmux";
 		pinctrl-names = "default";
 		pinctrl-0 = <&state_default>;
+
 		state_default: pinctrl0 {
 		};
+
 		spi_pins: spi {
 			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
 			};
 		};
+
 		uart0_pins: uartlite {
 			uartlite {
 				ralink,group = "uart0";
 				ralink,function = "uart0";
 			};
 		};
+
 		uart1_pins: uart1 {
 			uart1 {
 				ralink,group = "uart1";
 				ralink,function = "uart1";
 			};
 		};
+
 		uart2_pins: uart2 {
 			uart2 {
 				ralink,group = "uart2";
 				ralink,function = "uart2";
 			};
 		};
+
 		sdxc_pins: sdxc {
 			sdxc {
 				ralink,group = "sdmode";
@@ -318,5 +324,4 @@
 			device_type = "pci";
 		};
 	};
-
 };

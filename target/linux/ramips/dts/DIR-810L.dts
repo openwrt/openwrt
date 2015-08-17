@@ -84,7 +84,6 @@
 
 	gsw@10110000 {
 		ralink,port4 = "ephy";
-
 		pinctrl-names = "default";
 		pinctrl-0 = <&ephy_pins>;
 	};
@@ -102,11 +101,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x100>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 2 1>;
@@ -116,14 +117,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "d-link:green:power";
 			gpios = <&gpio0 9 0>;
 		};
+
 		wan {
 			label = "d-link:orange:wan";
 			gpios = <&gpio0 12 0>;
 		};
+
 		status {
 			label = "d-link:orange:power";
 			gpios = <&gpio0 13 0>;

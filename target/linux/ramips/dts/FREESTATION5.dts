@@ -22,7 +22,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -70,6 +69,7 @@
 
 	gpio-export {
 		compatible = "gpio-export";
+
 		// Used to enable power-over-ethernet passthrough from port0 to port1.
 		// Disable passthrough by default to prevent accidental equipment damage.
 		poe {
@@ -81,16 +81,19 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		// The following leds are defined in the ArcOS firmware, but reportedly
 		// not present in the Freestation5 device.
 		wifi {
 			label = "freestation:unknown:wifi";
 			gpios = <&gpio0 7 1>;
 		};
+
 		powerg {
 			label = "freestation:unknown:powerg";
 			gpios = <&gpio0 9 1>;
 		};
+
 		usb {
 			label = "freestation:unknown:usb";
 			gpios = <&gpio0 14 1>;

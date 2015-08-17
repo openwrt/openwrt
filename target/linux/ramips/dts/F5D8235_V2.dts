@@ -18,7 +18,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -70,38 +69,47 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		internet {
 			label = "f5d8235v2:blue:internet";
 			gpios = <&gpio0 5 1>;
 		};
+
 		internet2 {
 			label = "f5d8235v2:amber:internet";
 			gpios = <&gpio0 6 1>;
 		};
+
 		modem {
 			label = "f5d8235v2:blue:modem";
 			gpios = <&gpio0 11 1>;
 		};
+
 		modem2 {
 			label = "f5d8235v2:amber:modem";
 			gpios = <&gpio0 8 1>;
 		};
+
 		router {
 			label = "f5d8235v2:blue:router";
 			gpios = <&gpio0 9 1>;
 		};
+
 		storage {
 			label = "f5d8235v2:blue:storage";
 			gpios = <&gpio0 23 1>;
 		};
+
 		storage2 {
 			label = "f5d8235v2:amber:storage";
 			gpios = <&gpio0 22 1>;
 		};
+
 		security {
 			label = "f5d8235v2:blue:security";
 			gpios = <&gpio0 13 1>;
 		};
+
 		security2 {
 			label = "f5d8235v2:amber:security";
 			gpios = <&gpio0 12 1>;

@@ -18,7 +18,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -39,10 +38,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		power {
 			label = "edimax:green:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		wlan {
 			label = "edimax:orange:wlan";
 			gpios = <&gpio0 14 1>;
@@ -54,11 +55,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset_wps {
 			label = "reset_wps";
 			gpios = <&gpio0 12 1>;
 			linux,code = <0x198>;
 		};
+
 		rfkill {
 			label = "RFKILL switch";
 			gpios = <&gpio0 13 1>;

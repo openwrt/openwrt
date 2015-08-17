@@ -18,7 +18,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -50,14 +49,17 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wifi {
 			label = "fonera20n:orange:wifi";
 			gpios = <&gpio0 7 1>;
 		};
+
 		power {
 			label = "fonera20n:green:power";
 			gpios = <&gpio0 9 1>;
 		};
+
 		usb {
 			label = "fonera20n:orange:usb";
 			gpios = <&gpio0 14 1>;
@@ -69,11 +71,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 12 1>;
 			linux,code = <0x198>;
 		};
+
 		switch {
 			label = "switch";
 			gpios = <&gpio0 13 1>;
@@ -94,21 +98,25 @@
 			swconfig,segment = "lan";
 			swconfig,portmap = <0 4>;
 		};
+
 		port@1 {
 			compatible = "swconfig,port";
 			swconfig,segment = "lan";
 			swconfig,portmap = <1 3>;
 		};
+
 		port@2 {
 			compatible = "swconfig,port";
 			swconfig,segment = "lan";
 			swconfig,portmap = <2 2>;
 		};
+
 		port@3 {
 			compatible = "swconfig,port";
 			swconfig,segment = "lan";
 			swconfig,portmap = <3 1>;
 		};
+
 		port@4 {
 			compatible = "swconfig,port";
 			swconfig,segment = "wan";

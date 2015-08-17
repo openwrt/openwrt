@@ -7,7 +7,6 @@
 	model = "ZTE Q7";
 
 	palmbus@10000000 {
-
 		gpio0: gpio@600 {
 			status = "okay";
 		};
@@ -87,10 +86,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		statred {
 			label = "zte:red:status";
 			gpios = <&gpio0 13 1>;
 		};
+
 		statblue {
 			label = "zte:blue:status";
 			gpios = <&gpio0 9 1>;
@@ -102,6 +103,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio1 2 1>;

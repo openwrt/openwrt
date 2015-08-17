@@ -18,7 +18,6 @@
 	cfi@1f000000 {
 		compatible = "cfi-flash";
 		reg = <0x1f000000 0x800000>;
-
 		bank-width = <2>;
 		device-width = <2>;
 		#address-cells = <1>;
@@ -54,18 +53,22 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		usb {
 			label = "mofi3500-3gn:green:usb";
 			gpios = <&gpio0 8 1>;
 		};
+
 		3g {
 			label = "mofi3500-3gn:green:3g";
 			gpios = <&gpio0 11 1>;
 		};
+
 		status {
 			label = "mofi3500-3gn:green:status";
 			gpios = <&gpio0 12 1>;
 		};
+
 		wps {
 			label = "mofi3500-3gn:green:wps";
 			gpios = <&gpio0 14 1>;
@@ -77,16 +80,19 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;
 			linux,code = <0x198>;
 		};
+
 		connect {
 			label = "connect";
 			gpios = <&gpio0 7 1>;
 			linux,code = <0xda>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 0 1>;

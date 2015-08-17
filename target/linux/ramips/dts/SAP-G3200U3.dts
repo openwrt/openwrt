@@ -99,11 +99,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 16 1>;
 			linux,code = <0x198>;
 		};
+
 		rfkill {
 			label = "rfkill";
 			gpios = <&gpio0 14 1>;

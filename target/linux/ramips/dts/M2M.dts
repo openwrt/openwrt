@@ -13,6 +13,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -58,10 +59,12 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wifi {
 			label = "m2m:blue:wifi";
 			gpios = <&gpio0 7 1>;
 		};
+
 		wan {
 			label = "m2m:green:wan";
 			gpios = <&gpio0 12 1>;
@@ -73,11 +76,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		power {
 			label = "power";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x116>;
 		};
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 10 1>;

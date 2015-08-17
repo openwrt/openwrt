@@ -81,22 +81,27 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+
 		wan {
 			label = "asus:blue:wan";
 			gpios = <&gpio2 0 1>;
 		};
+
 		lan {
 			label = "asus:blue:lan";
 			gpios = <&gpio2 1 1>;
 		};
+
 		usb {
 			label = "asus:blue:usb";
 			gpios = <&gpio2 2 1>;
 		};
+
 		power {
 			label = "asus:blue:power";
 			gpios = <&gpio2 3 1>;
 		};
+
 		air {
 			label = "asus:blue:air";
 			gpios = <&gpio3 0 1>;
@@ -108,11 +113,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		poll-interval = <20>;
+
 		reset {
 			label = "reset";
 			gpios = <&gpio0 1 1>;
 			linux,code = <0x198>;
 		};
+
 		wps {
 			label = "wps";
 			gpios = <&gpio0 2 1>;
