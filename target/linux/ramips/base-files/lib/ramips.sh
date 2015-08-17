@@ -41,7 +41,7 @@ ramips_board_detect() {
 		name="air3gii"
 		;;
 	*"Edimax BR-6425")
-		name="br6425"
+		name="br-6425"
 		;;
 	*"Allnet ALL0239-3G")
 		name="all0239-3g"
