@@ -664,6 +664,9 @@ ar71xx_board_detect() {
 	*"SMART-300")
 		name="smart-300"
 		;;
+	"Smart Electronics Black Swift board"*)
+		name="bsb"
+		;;
 	*TEW-632BRP)
 		name="tew-632brp"
 		;;

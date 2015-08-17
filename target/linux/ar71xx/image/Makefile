@@ -120,6 +120,14 @@ define Device/Default
   IMAGE/sysupgrade.bin = append-kernel $$$$(BLOCKSIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
 endef
 
+define Device/bsb
+  BOARDNAME = BSB
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyATH0,115200
+  MTDPARTS = spi0.0:128k(u-boot)ro,64k(u-boot-env)ro,16128k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += bsb
+
 define Device/carambola2
   BOARDNAME = CARAMBOLA2
   IMAGE_SIZE = 16000k

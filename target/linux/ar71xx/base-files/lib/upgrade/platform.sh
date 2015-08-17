@@ -260,6 +260,7 @@ platform_check_image() {
 		return 1
 		;;
 
+	bsb | \
 	dir-825-b1 | \
 	tew-673gru)
 		dir825b_check_image "$1" && return 0
