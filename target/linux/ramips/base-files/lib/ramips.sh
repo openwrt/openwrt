@@ -370,10 +370,10 @@ ramips_board_detect() {
 	*"WR512-3GN-like router")
 		name="wr512-3gn"
 		;;
-	*"UR-326N4G Wireless N router")
+	*"UPVEL UR-326N4G")
 		name="ur-326n4g"
 		;;
-	*"UR-336UN Wireless N router")
+	*"UPVEL UR-336UN")
 		name="ur-336un"
 		;;
 	*"AWB WR6202")
