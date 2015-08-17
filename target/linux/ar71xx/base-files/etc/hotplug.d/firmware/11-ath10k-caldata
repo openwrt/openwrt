@@ -39,6 +39,10 @@ case "$FIRMWARE" in
 	dlan-pro-1200-ac)
 		ath10kcal_from_file $(find_mtd_part "art") 20480 $ath10kcal_tmp
 		;;
+	esr1750 | \
+	epg5000)
+		ath10kcal_from_file $(find_mtd_part "caldata") 20480 $ath10kcal_tmp
+		;;
 	esac
 	;;
 
