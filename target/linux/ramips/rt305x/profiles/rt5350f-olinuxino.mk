@@ -5,17 +5,16 @@
 # See /LICENSE for more information.
 #
 
-define Profile/OLINUXINO-RT5350F-EVB
-	NAME:=OLinuXino-RT5350F-EVB
+define Profile/RT5350F-OLINUXINO
+	NAME:=RT5350F-OLinuXino
 	PACKAGES:=\
 		kmod-usb-core kmod-usb-ohci kmod-usb2 \
 		kmod-i2c-core kmod-i2c-ralink \
 		kmod-spi-dev
 endef
 
-define Profile/OLINUXINO-RT5350F/Description
-	Package set for OLinuXino-RT5350F-EVB board
+define Profile/RT5350F-OLINUXINO/Description
+	Package set for RT5350F-OLinuXino board
 endef
 
-$(eval $(call Profile,OLINUXINO-RT5350F-EVB))
-
+$(eval $(call Profile,RT5350F-OLINUXINO))
