@@ -406,8 +406,8 @@ ramips_board_detect() {
 	*"OY-0001")
 		name="oy-0001"
 		;;
-	*"ZBT WR8305RT")
-		name="wr8305rt"
+	*"Zbtlink ZBT-WR8305RT")
+		name="zbt-wr8305rt"
 		;;
 	*"ZTE Q7")
 		name="zte-q7"

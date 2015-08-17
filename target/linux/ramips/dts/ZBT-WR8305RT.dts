@@ -3,8 +3,8 @@
 /include/ "mt7620n.dtsi"
 
 / {
-	compatible = "wr8305rt", "ralink,mt7620n-soc";
-	model = "ZBT WR8305RT";
+	compatible = "zbtlink,zbt-wr8305rt", "ralink,mt7620n-soc";
+	model = "Zbtlink ZBT-WR8305RT";
 
 	palmbus@10000000 {
 		gpio1: gpio@638 {
@@ -87,17 +87,17 @@
 		compatible = "gpio-leds";
 
 		sys {
-			label = "wr8305rt:sys";
+			label = "zbt-wr8305rt:sys";
 			gpios = <&gpio1 14 1>;
 		};
 
 		lan {
-			label = "wr8305rt:usb";
+			label = "zbt-wr8305rt:usb";
 			gpios = <&gpio1 15 1>;
 		};
 
 		wifi {
-			label = "wr8305rt:wifi";
+			label = "zbt-wr8305rt:wifi";
 			gpios = <&gpio3 0 1>;
 		};
 	};

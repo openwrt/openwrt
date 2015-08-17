@@ -196,8 +196,8 @@ get_status_led() {
 	wr512-3gn)
 		status_led="wr512:green:wps"
 		;;
-	wr8305rt)
-		status_led="wr8305rt:sys"
+	zbt-wr8305rt)
+		status_led="zbt-wr8305rt:sys"
 		;;
 	whr-300hp2 | \
 	whr-600d | \

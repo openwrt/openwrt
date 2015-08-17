@@ -116,7 +116,7 @@ platform_check_image() {
 	wnce2001 | \
 	wr512-3gn |\
 	wr6202 |\
-	wr8305rt |\
+	zbt-wr8305rt |\
 	wrtnode |\
 	oy-0001 |\
 	wt1520 |\
