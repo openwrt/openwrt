@@ -134,15 +134,22 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	wsr-1166)
-		[ "$magic" != "48445230" ] && {
+	ar670w)
+		[ "$magic" != "6d000080" ] && {
 			echo "Invalid image type."
 			return 1
 		}
 		return 0
 		;;
-	ar670w)
-		[ "$magic" != "6d000080" ] && {
+	br-6475nd)
+		[ "$magic" != "43535953" ] && {
+			echo "Invalid image type."
+			return 1
+		}
+		return 0
+		;;
+	c20i)
+		[ "$magic" != "03000000" ] && {
 			echo "Invalid image type."
 			return 1
 		}
@@ -158,15 +165,8 @@ platform_check_image() {
 		}
 		return 0
 		;;
-	br-6475nd)
-		[ "$magic" != "43535953" ] && {
-			echo "Invalid image type."
-			return 1
-		}
-		return 0
-		;;
-	c20i)
-		[ "$magic" != "03000000" ] && {
+	wsr-1166)
+		[ "$magic" != "48445230" ] && {
 			echo "Invalid image type."
 			return 1
 		}
