@@ -37,175 +37,160 @@ ramips_setup_interfaces()
 	ucidef_set_interface_loopback
 
 	case $board in
-	a5-v11)
-		ucidef_set_interface_lan "eth0.1"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 6t"
-		;;
-
-	3g150b | \
-	3g300m | \
-	microwrt | \
-	w150m | \
-	zte-q7 | \
-	all0256n | \
-	all5002 | \
-	all5003 | \
-	broadway | \
-	dcs-930| \
-	dcs-930l-b1| \
-	ht-tm02| \
-	ncs601w | \
-	wnce2001)
+	3g150b|\
+	3g300m|\
+	all0256n|\
+	all5002|\
+	all5003|\
+	broadway|\
+	dcs-930|\
+	dcs-930l-b1|\
+	ht-tm02|\
+	microwrt|\
+	ncs601w|\
+	w150m|\
+	wnce2001|\
+	zte-q7)
 		ucidef_add_switch "switch0" "1" "0"
 		ucidef_set_interface_lan "eth0"
 		;;
-
-	3g-6200nl | \
-	mlw221 | \
+	3g-6200nl|\
+	mlw221|\
 	mr-102n)
 		ucidef_set_interface_lan "eth0.2"
 		;;
-	mlwg2)
-		ucidef_set_interface_lan "eth0.1"
-		;;
-
-	m2m)
-		ucidef_add_switch "switch0" "4"
-		ucidef_set_interface_lan "eth0"
-		;;
-
-	wizard8800 | \
-	wl-330n | \
-	wmr-300)
-		ucidef_set_interface_lan "eth0.1"
-		;;
-
-	b2c | \
-	nw718 | \
-	psr-680w | \
-	sl-r7205 | \
-	w502u | \
-	wr6202)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		;;
-
-	awapn2403)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 6t"
-		ucidef_add_switch_vlan "switch0" "2" "1 6t"
-		;;
-
-	br-6475nd)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 9t"
-		ucidef_add_switch_vlan "switch0" "2" "0 9t"
-		;;
-
-        re6500 | \
-	asl26555)
-		ucidef_set_interface_lan "eth0.1"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
-		;;
-
-	cf-wr800n)
-		ucidef_set_interface_lan "eth0.1"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "4 6t"
-		;;
-
-	cy-swr1100)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 9t"
-		ucidef_add_switch_vlan "switch0" "2" "4 9t"
-		;;
-
-	3g-6200n | \
-	ai-br100 | \
-	dir-610-a1 | \
-	dir-300-b7 | \
-	dir-320-b1 | \
-	dir-615-h1 | \
-	firewrt | \
-	pbr-m1 | \
-	hlk-rm04 | \
-	mt7621 | \
-	mt7628 | \
-	mzk-w300nh2 | \
-	mzk-750dhp | \
-	whr-300hp2 | \
-	whr-600d | \
-	oy-0001 | \
-	sap-g3200u3 | \
-	wsr-600 | \
-	wsr-1166 | \
-	wt1520 | \
-	miwifi-mini |\
+	3g-6200n|\
+	ai-br100|\
+	dir-300-b7|\
+	dir-320-b1|\
+	dir-610-a1|\
+	dir-615-h1|\
+	firewrt|\
+	hlk-rm04|\
+	miwifi-mini|\
+	mt7621|\
+	mt7628|\
+	mzk-750dhp|\
+	mzk-w300nh2|\
+	oy-0001|\
+	pbr-m1|\
+	sap-g3200u3|\
+	whr-300hp2|\
+	whr-600d|\
+	wsr-1166|\
+	wsr-600|\
+	wt1520|\
 	y1)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 6t"
 		ucidef_add_switch_vlan "switch0" "2" "4 6t"
 		;;
-
-	whr-1166d)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+	a5-v11)
+		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 6t"
-		ucidef_add_switch_vlan "switch0" "2" "5 6t"
+		ucidef_add_switch_vlan "switch0" "1" "0 6t"
 		;;
-
-	awm002-evb | \
-	awm003-evb | \
-	atp-52b | \
-	dir-645 | \
-	dir-860l-b1 | \
-	f5d8235-v1 | \
-	f5d8235-v2 | \
-	hg255d | \
-	rt-n14u | \
-	wrtnode | \
-	wt3020 | \
-	ur-326n4g | \
-	zbt-wa05)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
-		ucidef_add_switch_vlan "switch0" "2" "0 6t"
-		;;
-
-	ur-336un)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		;;
-
-	v11st-fe)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
-		ucidef_add_switch_vlan "switch0" "2" "0 5t"
-		;;
-
-	ar670w | \
-	ar725w | \
-	rt-n15 | \
+	ar670w|\
+	ar725w|\
+	rt-n15|\
 	wl-351)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
 		ucidef_add_switch_vlan "switch0" "2" "4 5t"
 		;;
-
+	asl26555|\
+	re6500)
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
+		;;
+	atp-52b|\
+	awm002-evb|\
+	awm003-evb|\
+	dir-645|\
+	dir-860l-b1|\
+	f5d8235-v1|\
+	f5d8235-v2|\
+	hg255d|\
+	rt-n14u|\
+	ur-326n4g|\
+	wrtnode|\
+	wt3020|\
+	zbt-wa05)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 6t"
+		ucidef_add_switch_vlan "switch0" "2" "0 6t"
+		;;
+	awapn2403)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 6t"
+		ucidef_add_switch_vlan "switch0" "2" "1 6t"
+		;;
+	b2c|\
+	nw718|\
+	psr-680w|\
+	sl-r7205|\
+	ur-336un|\
+	w502u|\
+	wr6202)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		;;
+	br-6475nd)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 9t"
+		ucidef_add_switch_vlan "switch0" "2" "0 9t"
+		;;
+	cf-wr800n)
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "4 6t"
+		;;
+	cy-swr1100)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 9t"
+		ucidef_add_switch_vlan "switch0" "2" "4 9t"
+		;;
+	d105|\
+	hpm|\
+	na930|\
+	wli-tx4-ag300n)
+		ucidef_set_interface_lan "eth0"
+		;;
+	e1700|\
+	mt7620a_mt7530)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch1" "1" "1"
+		ucidef_add_switch_vlan "switch1" "1" "0 1 2 3 6t"
+		ucidef_add_switch_vlan "switch1" "2" "4 6t"
+		;;
+	m2m)
+		ucidef_add_switch "switch0" "4"
+		ucidef_set_interface_lan "eth0"
+		;;
+	mlwg2|\
+	wizard8800|\
+	wl-330n|\
+	wmr-300)
+		ucidef_set_interface_lan "eth0.1"
+		;;
+	mzk-dp150n|\
+	vocore)
+		ucidef_set_interface_lan "eth0.1"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 4 6t"
+		;;
 	rt-n56u)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 8t"
 		ucidef_add_switch_vlan "switch0" "2" "4 8t"
 		;;
-
 	tew-691gr|\
 	tew-692gr)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
@@ -213,61 +198,37 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "1" "0t 1 2 3 4"
 		ucidef_add_switch_vlan "switch0" "2" "0t 5"
 		;;
-
-	vocore)
-		ucidef_set_interface_lan "eth0.1"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 4 6t"
-		;;
-
-	wcr-150gn)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 6t"
-		ucidef_add_switch_vlan "switch0" "2" "6t"
-		;;
-
-	zbt-wr8305rt)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4 6t"
-		ucidef_add_switch_vlan "switch0" "2" "4 6t"
-		;;
-
-	y1s)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5 6t"
-		ucidef_add_switch_vlan "switch0" "2" "0 6t"
-		;;
-	d105 | \
-	na930 | \
-	hpm|\
-	wli-tx4-ag300n)
-		ucidef_set_interface_lan "eth0"
-		;;
-
-	e1700 | \
-	mt7620a_mt7530)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
-		ucidef_add_switch "switch1" "1" "1"
-		ucidef_add_switch_vlan "switch1" "1" "0 1 2 3 6t"
-		ucidef_add_switch_vlan "switch1" "2" "4 6t"
-		;;
-
+	v11st-fe|\
 	wzr-agl300nh)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
 		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
 		ucidef_add_switch_vlan "switch0" "2" "0 5t"
 		;;
-
-	mzk-dp150n)
-		ucidef_set_interface_lan "eth0.1"
+	wcr-150gn)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
-		ucidef_add_switch_vlan "switch0" "1" "0 4 6t"
+		ucidef_add_switch_vlan "switch0" "1" "0 6t"
+		ucidef_add_switch_vlan "switch0" "2" "6t"
 		;;
-
+	whr-1166d)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 6t"
+		ucidef_add_switch_vlan "switch0" "2" "5 6t"
+		;;
+	y1s)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5 6t"
+		ucidef_add_switch_vlan "switch0" "2" "0 6t"
+		;;
+	zbt-wr8305rt)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 4 6t"
+		ucidef_add_switch_vlan "switch0" "2" "4 6t"
+		;;
 	*)
 		RT3X5X=`cat /proc/cpuinfo | egrep "(RT3.5|RT5350)"`
 		if [ -n "${RT3X5X}" ]; then
@@ -286,93 +247,83 @@ ramips_setup_macs()
 	local wan_mac=""
 
 	case $board in
-	br-6475nd)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(mtd_get_mac_binary devdata 7)
-		;;
-
-	oy-0001)
-		lan_mac=$(mtd_get_mac_binary factory 40)
-		wan_mac=$(mtd_get_mac_binary factory 46)
-		;;
-
-	w306r-v20)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 5)
-		;;
-
-	tew-691gr)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 3)
-		;;
-
-	tew-692gr)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		wan_mac=$(macaddr_add "$lan_mac" 4)
-		;;
-
-	m3 |\
-	m4 |\
-	x5 |\
-	x8)
-		lan_mac=$(cat /sys/class/net/eth0/address)
-		lan_mac=$(macaddr_add "$lan_mac" -2)
-		;;
-
-	a5-v11 |\
-	bc2 |\
-	broadway |\
-	d105 |\
-	dir-620-a1 |\
-	esr-9753 |\
-	freestation5 |\
-	hlk-rm04 | \
-	mpr-a1 | \
-	mpr-a2 | \
-	dir-300-b7 | \
-	dir-320-b1 | \
-	psr-680w |\
-	sl-r7205 |\
-	y1 |\
+	a5-v11|\
+	bc2|\
+	broadway|\
+	d105|\
+	dir-300-b7|\
+	dir-320-b1|\
+	dir-620-a1|\
+	esr-9753|\
+	freestation5|\
+	hlk-rm04|\
+	mpr-a1|\
+	mpr-a2|\
+	psr-680w|\
+	sl-r7205|\
+	y1|\
 	y1s)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
-
-	ht-tm02)
-		lan_mac=$(cat /sys/class/net/eth0/address)
+	all0239-3g|\
+	carambola|\
+	freestation5|\
+	w502u|\
+	wnce2001)
+		wan_mac=$(mtd_get_mac_binary factory 46)
 		;;
-
-	cy-swr1100 | \
+	br-6475nd)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(mtd_get_mac_binary devdata 7)
+		;;
+	cy-swr1100|\
 	dir-645)
 		lan_mac=$(mtd_get_mac_ascii nvram lanmac)
 		wan_mac=$(mtd_get_mac_ascii nvram wanmac)
 		;;
-
 	e1700)
 		wan_mac=$(mtd_get_mac_ascii config WAN_MAC_ADDR)
 		;;
-
-	wcr-150gn)
-		wan_mac=$(mtd_get_mac_binary factory 40)
+	ht-tm02)
+		lan_mac=$(cat /sys/class/net/eth0/address)
 		;;
-
+	m3|\
+	m4|\
+	x5|\
+	x8)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		lan_mac=$(macaddr_add "$lan_mac" -2)
+		;;
+	oy-0001)
+		lan_mac=$(mtd_get_mac_binary factory 40)
+		wan_mac=$(mtd_get_mac_binary factory 46)
+		;;
 	rt-n56u)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		lan_mac=$(macaddr_setbit_la "$lan_mac")
 		wan_mac=$(mtd_get_mac_binary factory 32772)
 		;;
-
-	all0239-3g | \
-	carambola | \
-	freestation5 | \
-	w502u | \
-	wnce2001)
-		wan_mac=$(mtd_get_mac_binary factory 46)
+	tew-691gr)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add "$lan_mac" 3)
 		;;
-
-	wsr-600|whr-300hp2|whr-600d|whr-1166d)
+	tew-692gr)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add "$lan_mac" 4)
+		;;
+	w306r-v20)
+		lan_mac=$(cat /sys/class/net/eth0/address)
+		wan_mac=$(macaddr_add "$lan_mac" 5)
+		;;
+	wcr-150gn)
+		wan_mac=$(mtd_get_mac_binary factory 40)
+		;;
+	whr-1166d|\
+	whr-300hp2|\
+	whr-600d|\
+	wsr-600)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$wan_mac
 		;;
@@ -385,7 +336,6 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 1)
 		;;
-
 	esac
 
 	[ -n "$lan_mac" ] && ucidef_set_interface_macaddr lan $lan_mac
