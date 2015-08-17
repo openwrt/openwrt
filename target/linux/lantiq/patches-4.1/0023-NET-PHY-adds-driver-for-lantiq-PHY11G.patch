@@ -189,7 +189,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static struct phy_driver lantiq_phy[] = {
 +	{
 +		.phy_id		= 0xd565a400,
-+		.phy_id_mask	= 0xffffffff,
++		.phy_id_mask	= 0xfffffff8,
 +		.name		= "Lantiq XWAY PEF7071",
 +		.features	= (PHY_GBIT_FEATURES | SUPPORTED_Pause),
 +		.flags		= 0, /*PHY_HAS_INTERRUPT,*/
