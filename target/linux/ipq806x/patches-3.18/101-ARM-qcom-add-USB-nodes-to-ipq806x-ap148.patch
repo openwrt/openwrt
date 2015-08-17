@@ -32,9 +32,9 @@
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -291,5 +291,90 @@
- 			#clock-cells = <1>;
- 			#reset-cells = <1>;
+@@ -296,6 +296,91 @@
+ 			compatible = "syscon";
+ 			reg = <0x01200600 0x100>;
  		};
 +
 +		hs_phy_1: phy@100f8800 {
@@ -122,4 +122,5 @@
 +		};
 +
  	};
- };
+ 
+ 	sfpb_mutex: sfpb-mutex {
