@@ -3,7 +3,7 @@
 /include/ "mt7620a.dtsi"
 
 / {
-	compatible = "XIAOMI MIWIFI MINI", "ralink,mt7620a-soc";
+	compatible = "xiaomi,miwifi-mini", "ralink,mt7620a-soc";
 	model = "Xiaomi MiWiFi Mini";
 
 	chosen {
@@ -120,17 +120,17 @@
 		compatible = "gpio-leds";
 
 		blue {
-			label = "xiaomi:blue:status";
+			label = "miwifi-mini:blue:status";
 			gpios = <&gpio1 0 1>;
 		};
 
 		yellow {
-			label = "xiaomi:yellow:status";
+			label = "miwifi-mini:yellow:status";
 			gpios = <&gpio1 2 1>;
 		};
 
 		red {
-			label = "xiaomi:red:status";
+			label = "miwifi-mini:red:status";
 			gpios = <&gpio1 5 1>;
 		};
 	};
