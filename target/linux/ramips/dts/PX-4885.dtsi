@@ -1,7 +1,7 @@
 /include/ "rt5350.dtsi"
 
 / {
-	compatible = "PX4885", "ralink,rt5350-soc";
+	compatible = "PX-4885", "ralink,rt5350-soc";
 	model = "7Links PX-4885";
 
 	pinctrl {
@@ -42,12 +42,12 @@
 		compatible = "gpio-leds";
 
 		orange {
-			label = "7links:orange:wifi";
+			label = "px-4885:orange:wifi";
 			gpios = <&gpio0 18 1>;
 		};
 
 		blue {
-			label = "7links:blue:storage";
+			label = "px-4885:blue:storage";
 			gpios = <&gpio0 19 1>;
 		};
 	};

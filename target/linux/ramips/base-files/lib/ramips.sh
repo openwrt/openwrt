@@ -14,7 +14,7 @@ ramips_board_detect() {
 
 	case "$machine" in
 	*"7Links PX-4885")
-		name="px4885"
+		name="px-4885"
 		;;
 	*"8devices Carambola")
 		name="carambola"
