@@ -112,7 +112,7 @@ platform_check_image() {
 	wl-341v3 | \
 	wli-tx4-ag300n | \
 	wzr-agl300nh | \
-	wmr300 |\
+	wmr-300 |\
 	wnce2001 | \
 	wr512-3gn |\
 	wr6202 |\

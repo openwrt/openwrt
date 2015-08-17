@@ -320,7 +320,7 @@ ramips_board_detect() {
 		name="w502u"
 		;;
 	*"WMR-300")
-		name="wmr300"
+		name="wmr-300"
 		;;
 	*"WHR-300HP2")
 		name="whr-300hp2"
