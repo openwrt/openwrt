@@ -5,12 +5,12 @@
 # See /LICENSE for more information.
 #
 
-define Profile/AIBR100
+define Profile/AI-BR100
 	NAME:=Aigale Ai-BR100
 	PACKAGES:=kmod-usb-ohci kmod-usb2
 endef
 
-define Profile/AIBR100/Description
+define Profile/AI-BR100/Description
 	Default package set for Aigale Ai-BR100.
 endef
-$(eval $(call Profile,AIBR100))
+$(eval $(call Profile,AI-BR100))
