@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -641,6 +641,37 @@ int mtd_del_partition(struct mtd_info *m
+@@ -642,6 +642,37 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -38,7 +38,7 @@
  #ifdef CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #define SPLIT_FIRMWARE_NAME	CONFIG_MTD_SPLIT_FIRMWARE_NAME
  #else
-@@ -649,6 +680,7 @@ EXPORT_SYMBOL_GPL(mtd_del_partition);
+@@ -650,6 +681,7 @@ EXPORT_SYMBOL_GPL(mtd_del_partition);
  
  static void split_firmware(struct mtd_info *master, struct mtd_part *part)
  {
@@ -46,7 +46,7 @@
  }
  
  void __weak arch_split_mtd_part(struct mtd_info *master, const char *name,
-@@ -663,6 +695,12 @@ static void mtd_partition_split(struct m
+@@ -664,6 +696,12 @@ static void mtd_partition_split(struct m
  	if (rootfs_found)
  		return;
  

@@ -14,7 +14,7 @@
  	default y
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -695,6 +695,47 @@ mtd_pad_erasesize(struct mtd_info *mtd,
+@@ -696,6 +696,47 @@ mtd_pad_erasesize(struct mtd_info *mtd,
  	return len;
  }
  
@@ -62,7 +62,7 @@
  #define UBOOT_MAGIC	0x27051956
  
  static void split_uimage(struct mtd_info *master, struct mtd_part *part)
-@@ -757,7 +798,10 @@ static void mtd_partition_split(struct m
+@@ -758,7 +799,10 @@ static void mtd_partition_split(struct m
  		return;
  
  	if (!strcmp(part->mtd.name, "rootfs")) {

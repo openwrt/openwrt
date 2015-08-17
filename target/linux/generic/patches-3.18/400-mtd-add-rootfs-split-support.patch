@@ -26,10 +26,10 @@
  	depends on m
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -29,9 +29,11 @@
- #include <linux/kmod.h>
+@@ -30,9 +30,11 @@
  #include <linux/mtd/mtd.h>
  #include <linux/mtd/partitions.h>
+ #include <linux/of.h>
 +#include <linux/magic.h>
  #include <linux/err.h>
  
@@ -38,7 +38,7 @@
  
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
-@@ -45,13 +47,14 @@ struct mtd_part {
+@@ -46,13 +48,14 @@ struct mtd_part {
  	struct list_head list;
  };
  
@@ -54,7 +54,7 @@
  /*
   * MTD methods which simply translate the effective address and pass through
   * to the _real_ device.
-@@ -547,8 +550,10 @@ out_register:
+@@ -548,8 +551,10 @@ out_register:
  	return slave;
  }
  
@@ -67,7 +67,7 @@
  {
  	struct mtd_partition part;
  	struct mtd_part *p, *new;
-@@ -580,21 +585,24 @@ int mtd_add_partition(struct mtd_info *m
+@@ -581,21 +586,24 @@ int mtd_add_partition(struct mtd_info *m
  	end = offset + length;
  
  	mutex_lock(&mtd_partitions_mutex);
@@ -102,7 +102,7 @@
  
  	return ret;
  err_inv:
-@@ -604,6 +612,12 @@ err_inv:
+@@ -605,6 +613,12 @@ err_inv:
  }
  EXPORT_SYMBOL_GPL(mtd_add_partition);
  
@@ -115,7 +115,7 @@
  int mtd_del_partition(struct mtd_info *master, int partno)
  {
  	struct mtd_part *slave, *next;
-@@ -627,6 +641,35 @@ int mtd_del_partition(struct mtd_info *m
+@@ -628,6 +642,35 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -151,7 +151,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -656,6 +699,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -657,6 +700,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);

@@ -1,6 +1,6 @@
 --- a/drivers/mtd/mtdpart.c
 +++ b/drivers/mtd/mtdpart.c
-@@ -35,6 +35,8 @@
+@@ -36,6 +36,8 @@
  #include "mtdcore.h"
  #include "mtdsplit/mtdsplit.h"
  
@@ -9,7 +9,7 @@
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
  static DEFINE_MUTEX(mtd_partitions_mutex);
-@@ -233,13 +235,61 @@ static int part_erase(struct mtd_info *m
+@@ -234,13 +236,61 @@ static int part_erase(struct mtd_info *m
  	struct mtd_part *part = PART(mtd);
  	int ret;
  
@@ -71,7 +71,7 @@
  	return ret;
  }
  
-@@ -247,7 +297,25 @@ void mtd_erase_callback(struct erase_inf
+@@ -248,7 +298,25 @@ void mtd_erase_callback(struct erase_inf
  {
  	if (instr->mtd->_erase == part_erase) {
  		struct mtd_part *part = PART(instr->mtd);
@@ -97,7 +97,7 @@
  		if (instr->fail_addr != MTD_FAIL_ADDR_UNKNOWN)
  			instr->fail_addr -= part->offset;
  		instr->addr -= part->offset;
-@@ -514,17 +582,20 @@ static struct mtd_part *allocate_partiti
+@@ -515,17 +583,20 @@ static struct mtd_part *allocate_partiti
  	if ((slave->mtd.flags & MTD_WRITEABLE) &&
  	    mtd_mod_by_eb(slave->offset, &slave->mtd)) {
  		/* Doesn't start on a boundary of major erase size */
