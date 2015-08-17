@@ -62,7 +62,7 @@ ramips_board_detect() {
 		name="c20i"
 		;;
 	*"Argus ATP-52B")
-		name="argus-atp52b"
+		name="atp-52b"
 		;;
 	*"AsiaRF AWM002 EVB")
 		name="awm002-evb"

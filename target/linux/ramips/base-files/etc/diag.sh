@@ -27,8 +27,8 @@ get_status_led() {
 	awapn2403)
 		status_led="asiarf:green:wps"
 		;;
-	argus-atp52b)
-		status_led="argus-atp52b:green:run"
+	atp-52b)
+		status_led="atp-52b:green:run"
 		;;
 	asl26555)
 		status_led="asl26555:green:power"
