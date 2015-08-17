@@ -168,7 +168,7 @@ define KernelPackage/sound-soc-iqaudio-dac
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-iqaudio-dac.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko
-  AUTOLOAD:=$(call AutoLoad,68,sound-soc-bcm2708-i2s snd-soc-pcm512x-i2c snd-soc-iqaudio-dac)
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-iqaudio-dac)
   DEPENDS:=kmod-sound-soc-bcm2708-i2s
   $(call AddDepends/sound)
 endef
@@ -271,7 +271,9 @@ I2C_BCM2708_MODULES:=\
 define KernelPackage/i2c-bcm2708
   $(call i2c_defaults,$(I2C_BCM2708_MODULES),59)
   TITLE:=Broadcom BCM2708 I2C master controller driver
-  KCONFIG+= CONFIG_I2C_BCM2708_BAUDRATE=100000
+  KCONFIG+= \
+	CONFIG_I2C_BCM2708_BAUDRATE=100000 \
+	CONFIG_MFD_RPISENSE_CORE=n
   DEPENDS:=@TARGET_brcm2708 +kmod-i2c-core
 endef
 
@@ -287,6 +289,8 @@ I2C_BCM2835_MODULES:=\
 define KernelPackage/i2c-bcm2835
   $(call i2c_defaults,$(I2C_BCM2835_MODULES),59)
   TITLE:=Broadcom BCM2835 I2C master controller driver
+  KCONFIG+= \
+	CONFIG_MFD_RPISENSE_CORE=n
   DEPENDS:=@TARGET_brcm2708 +kmod-i2c-core
 endef
 
