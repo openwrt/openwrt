@@ -109,7 +109,7 @@ platform_check_image() {
 	wl-330n | \
 	wl-330n3g | \
 	wl-351 | \
-	wl341v3 | \
+	wl-341v3 | \
 	wli-tx4-ag300n | \
 	wzr-agl300nh | \
 	wmr300 |\
