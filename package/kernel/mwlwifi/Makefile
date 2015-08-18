@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mwlwifi
-PKG_VERSION:=10.3.0.3-20150729
+PKG_VERSION:=10.3.0.8-20150818
 PKG_RELEASE=1
 
 PKG_LICENSE:=ISC
@@ -55,6 +55,8 @@ define KernelPackage/mwlwifi/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DIR) $(1)/lib/firmware/mwlwifi
 	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8864.bin $(1)/lib/firmware/mwlwifi/
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/88W8897.bin $(1)/lib/firmware/mwlwifi/
+	$(CP) $(PKG_BUILD_DIR)/bin/firmware/Marvell_license.txt $(1)/lib/firmware/mwlwifi/
 endef
 
 $(eval $(call KernelPackage,mwlwifi))
