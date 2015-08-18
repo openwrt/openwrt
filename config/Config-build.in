@@ -232,7 +232,7 @@ menu "Global build settings"
 		config PKG_CC_STACKPROTECTOR_STRONG
 			bool "Strong"
 			select SSP_SUPPORT if !USE_MUSL
-			depends on GCC_VERSION_4_9_LINARO
+			depends on GCC_VERSION_4_9_LINARO || GCC_VERSION_5
 			depends on KERNEL_CC_STACKPROTECTOR_STRONG
 	endchoice
 
@@ -247,7 +247,7 @@ menu "Global build settings"
 		config KERNEL_CC_STACKPROTECTOR_REGULAR
 			bool "Regular"
 		config KERNEL_CC_STACKPROTECTOR_STRONG
-			depends on GCC_VERSION_4_9_LINARO
+			depends on GCC_VERSION_4_9_LINARO || GCC_VERSION_5
 			bool "Strong"
 	endchoice
 
