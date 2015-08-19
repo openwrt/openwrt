@@ -640,6 +640,10 @@ static void usage(void)
 	"        verify <imagefile>|-    verify <imagefile> (use - for stdin) to device\n"
 	"        write <imagefile>|-     write <imagefile> (use - for stdin) to device\n"
 	"        jffs2write <file>       append <file> to the jffs2 partition on the device\n");
+	if (mtd_resetbc) {
+	    fprintf(stderr,
+	"        resetbc <device>        reset the uboot boot counter\n");
+	}
 	if (mtd_fixtrx) {
 	    fprintf(stderr,
 	"        fixtrx                  fix the checksum in a trx header on first boot\n");
@@ -706,6 +710,7 @@ int main (int argc, char **argv)
 		CMD_FIXSEAMA,
 		CMD_VERIFY,
 		CMD_DUMP,
+		CMD_RESETBC,
 	} cmd = -1;
 
 	erase[0] = NULL;
@@ -800,6 +805,9 @@ int main (int argc, char **argv)
 	} else if ((strcmp(argv[0], "erase") == 0) && (argc == 2)) {
 		cmd = CMD_ERASE;
 		device = argv[1];
+	} else if (((strcmp(argv[0], "resetbc") == 0) && (argc == 2)) && mtd_resetbc) {
+		cmd = CMD_RESETBC;
+		device = argv[1];
 	} else if (((strcmp(argv[0], "fixtrx") == 0) && (argc == 2)) && mtd_fixtrx) {
 		cmd = CMD_FIXTRX;
 		device = argv[1];
@@ -891,6 +899,10 @@ int main (int argc, char **argv)
 		case CMD_FIXTRX:
 		    if (mtd_fixtrx) {
 			    mtd_fixtrx(device, offset);
+            }
+		case CMD_RESETBC:
+		    if (mtd_resetbc) {
+			    mtd_resetbc(device);
             }
 		case CMD_FIXSEAMA:
 			if (mtd_fixseama)
