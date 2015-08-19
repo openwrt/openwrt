@@ -10,6 +10,7 @@ obj.brcm47xx = $(obj.brcm)
 obj.bcm53xx = $(obj.brcm)
 obj.brcm63xx = imagetag.o
 obj.ramips = $(obj.seama)
+obj.mvebu = linksys_bootcount.o
 
 ifdef FIS_SUPPORT
   obj += fis.o
