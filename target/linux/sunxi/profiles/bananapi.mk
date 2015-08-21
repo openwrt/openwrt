@@ -8,7 +8,7 @@
 define Profile/Bananapi
 	NAME:=Bananapi
 	PACKAGES:=\
-		uboot-sunxi-Bananapi kmod-rtc-sunxi
+		uboot-sunxi-Bananapi kmod-rtc-sunxi kmod-ata-core kmod-ata-sunxi
 endef
 
 define Profile/Bananapi/Description

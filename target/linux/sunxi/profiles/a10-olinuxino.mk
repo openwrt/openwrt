@@ -8,7 +8,8 @@
 define Profile/A10-OLinuXino-Lime
 	NAME:=A10 OLinuXino LIME
 	PACKAGES:=\
-		uboot-sunxi-A10-OLinuXino-Lime kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+		uboot-sunxi-A10-OLinuXino-Lime kmod-ata-core kmod-ata-sunxi \
+		kmod-sun4i-emac kmod-rtc-sunxi
 endef
 
 define Profile/A10-OLinuXino-Lime/Description

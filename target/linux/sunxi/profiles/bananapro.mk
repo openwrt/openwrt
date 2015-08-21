@@ -8,7 +8,7 @@
 define Profile/Bananapro
 	NAME:=Bananapro
 	PACKAGES:=\
-		uboot-sunxi-Bananapro kmod-rtc-sunxi
+		uboot-sunxi-Bananapro kmod-rtc-sunxi kmod-ata-core kmod-ata-sunxi
 endef
 
 define Profile/Bananapro/Description
