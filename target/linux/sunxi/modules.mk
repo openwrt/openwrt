@@ -61,10 +61,8 @@ $(eval $(call KernelPackage,eeprom-sunxi))
 define KernelPackage/ata-sunxi
     TITLE:=AllWinner sunXi AHCI SATA support
     SUBMENU:=$(BLOCK_MENU)
-    DEPENDS:=@TARGET_sunxi +kmod-scsi-core
-    KCONFIG:=\
-	CONFIG_AHCI_SUNXI \
-	CONFIG_SATA_AHCI_PLATFORM
+    DEPENDS:=@TARGET_sunxi +kmod-ata-ahci-platform +kmod-scsi-core
+    KCONFIG:=CONFIG_AHCI_SUNXI
     FILES:=$(LINUX_DIR)/drivers/ata/ahci_sunxi.ko
     AUTOLOAD:=$(call AutoLoad,41,ahci_sunxi,1)
 endef
