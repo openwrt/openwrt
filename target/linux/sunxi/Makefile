@@ -15,13 +15,15 @@ CPU_TYPE:=cortex-a8
 CPU_SUBTYPE:=vfpv3
 MAINTAINER:=Zoltan HERPAI <wigyori@uid0.hu>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.1
 KERNELNAME:=zImage dtbs
 
 # A10: Cortex-A8
 # A13: Cortex-A8
 # A20: dual Cortex-A7
 # A31: quad Cortex-A7
+# A80: octa Cortex-A15/A7
+# H3: quad Cortex-A7
 
 include $(INCLUDE_DIR)/target.mk
 
