@@ -8,7 +8,8 @@
 define Profile/Cubietruck
 	NAME:=Cubietruck
 	PACKAGES:=\
-		uboot-sunxi-Cubietruck kmod-ata-sunxi kmod-rtc-sunxi kmod-brcmfmac
+		uboot-sunxi-Cubietruck kmod-ata-core kmod-ata-sunxi \
+		kmod-rtc-sunxi kmod-brcmfmac
 endef
 
 define Profile/Cubietruck/Description

@@ -8,7 +8,8 @@
 define Profile/Linksprite_pcDuino3
 	NAME:=pcDuino3
 	PACKAGES:=\
-		uboot-sunxi-Linksprite_pcDuino3 kmod-sun4i-emac kmod-rtc-sunxi kmod-net-rtl8188eu
+		uboot-sunxi-Linksprite_pcDuino3 kmod-sun4i-emac kmod-rtc-sunxi \
+		kmod-net-rtl8188eu kmod-ata-core kmod-ata-sunxi
 endef
 
 define Profile/Linksprite_pcDuino3/Description

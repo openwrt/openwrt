@@ -8,7 +8,8 @@
 define Profile/A20-OLinuXino-Lime
 	NAME:=A20 OLinuXino Lime
 	PACKAGES:=\
-		uboot-sunxi-A20-OLinuXino-Lime kmod-ata-sunxi kmod-rtc-sunxi
+		uboot-sunxi-A20-OLinuXino-Lime kmod-ata-core kmod-ata-sunxi \
+		kmod-rtc-sunxi
 endef
 
 define Profile/A20-OLinuXino-Lime/Description
@@ -21,7 +22,8 @@ $(eval $(call Profile,A20-OLinuXino-Lime))
 define Profile/A20-OLinuXino_MICRO
 	NAME:=A20 OLinuXino Micro
 	PACKAGES:=\
-		uboot-sunxi-A20-OLinuXino_MICRO kmod-ata-sunxi kmod-sun4i-emac kmod-rtc-sunxi
+		uboot-sunxi-A20-OLinuXino_MICRO kmod-ata-core kmod-ata-sunxi \
+		kmod-sun4i-emac kmod-rtc-sunxi
 endef
 
 define Profile/A20-OLinuXino_MICRO/Description
