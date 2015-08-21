@@ -25,9 +25,12 @@ $(eval $(call KernelPackage,aoe))
 define KernelPackage/ata-core
   SUBMENU:=$(BLOCK_MENU)
   TITLE:=Serial and Parallel ATA support
-  DEPENDS:=@PCI_SUPPORT +kmod-scsi-core
+  DEPENDS:=@PCI_SUPPORT||TARGET_sunxi +kmod-scsi-core
   KCONFIG:=CONFIG_ATA
   FILES:=$(LINUX_DIR)/drivers/ata/libata.ko
+ifneq ($(wildcard $(LINUX_DIR)/drivers/ata/libahci.ko),)
+  FILES+=$(LINUX_DIR)/drivers/ata/libahci.ko
+endif
 endef
 
 $(eval $(call KernelPackage,ata-core))
@@ -43,8 +46,7 @@ define KernelPackage/ata-ahci
   TITLE:=AHCI Serial ATA support
   KCONFIG:=CONFIG_SATA_AHCI
   FILES:= \
-    $(LINUX_DIR)/drivers/ata/ahci.ko \
-    $(LINUX_DIR)/drivers/ata/libahci.ko
+    $(LINUX_DIR)/drivers/ata/ahci.ko
   AUTOLOAD:=$(call AutoLoad,41,libahci ahci,1)
   $(call AddDepends/ata)
 endef
@@ -62,8 +64,8 @@ define KernelPackage/ata-ahci-platform
   FILES:= \
     $(LINUX_DIR)/drivers/ata/ahci_platform.ko \
     $(LINUX_DIR)/drivers/ata/libahci_platform.ko
-  AUTOLOAD:=$(call AutoLoad,40,libahci_platform ahci_platform,1)
-  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_mvebu +kmod-ata-ahci)
+  AUTOLOAD:=$(call AutoLoad,40,libahci libahci_platform ahci_platform,1)
+  $(call AddDepends/ata,@TARGET_ipq806x||TARGET_mvebu||TARGET_sunxi)
 endef
 
 define KernelPackage/ata-ahci-platform/description
