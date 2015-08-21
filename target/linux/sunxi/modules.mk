@@ -100,3 +100,20 @@ endef
 
 $(eval $(call KernelPackage,wdt-sunxi))
 
+
+define KernelPackage/sound-soc-sunxi
+  TITLE:=AllWinner built-in SoC sound support
+  KCONFIG:= \
+	CONFIG_SND_SUNXI_SOC_CODEC
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/sunxi/sunxi-codec.ko
+  AUTOLOAD:=$(call AutoLoad,65,sunxi-codec)
+  DEPENDS:=@TARGET_sunxi +kmod-sound-soc-core @LINUX_4_1
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-sunxi/description
+  Kernel support for AllWinner built-in SoC audio
+endef
+
+$(eval $(call KernelPackage,sound-soc-sunxi))
