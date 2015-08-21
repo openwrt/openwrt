@@ -224,6 +224,11 @@ enum {
 
 #define MV_PVID_MASK			0x0fff
 
+#define MV_FDB_HI_MASK			0x00ff
+#define MV_FDB_LO_MASK			0xf000
+#define MV_FDB_HI_SHIFT			4
+#define MV_FDB_LO_SHIFT			12
+
 struct mvsw61xx_state {
 	struct switch_dev dev;
 	struct mii_bus *bus;
@@ -238,6 +243,7 @@ struct mvsw61xx_state {
 
 	int vlan_enabled;
 	struct port_state {
+		u16 fdb;
 		u16 pvid;
 		u16 mask;
 		u8 qmode;

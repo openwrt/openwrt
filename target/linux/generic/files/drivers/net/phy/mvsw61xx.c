@@ -493,7 +493,7 @@ static int mvsw61xx_vtu_program(struct switch_dev *dev)
 		sw16(dev, MV_GLOBALREG(VTU_VID),
 				MV_VTU_VID_VALID | state->vlans[i].vid);
 		sw16(dev, MV_GLOBALREG(VTU_SID), i);
-		sw16(dev, MV_GLOBALREG(VTU_FID), 0);
+		sw16(dev, MV_GLOBALREG(VTU_FID), i);
 		sw16(dev, MV_GLOBALREG(VTU_DATA1), v1);
 		sw16(dev, MV_GLOBALREG(VTU_DATA2), v2);
 		sw16(dev, MV_GLOBALREG(VTU_DATA3), 0);
@@ -521,8 +521,10 @@ static void mvsw61xx_vlan_port_config(struct switch_dev *dev, int vno)
 		if(mode != MV_VTUCTL_EGRESS_TAGGED)
 			state->ports[i].pvid = state->vlans[vno].vid;
 
-		if (state->vlans[vno].port_based)
+		if (state->vlans[vno].port_based) {
 			state->ports[i].mask |= state->vlans[vno].mask;
+			state->ports[i].fdb = vno;
+		}
 		else
 			state->ports[i].qmode = MV_8021Q_MODE_SECURE;
 	}
@@ -579,8 +581,14 @@ static int mvsw61xx_update_state(struct switch_dev *dev)
 
 		state->ports[i].mask &= ~(1 << i);
 
-		reg = sr16(dev, MV_PORTREG(VLANMAP, i)) & ~MV_PORTS_MASK;
-		reg |= state->ports[i].mask;
+		/* set default forwarding DB number and port mask */
+		reg = sr16(dev, MV_PORTREG(CONTROL1, i)) & ~MV_FDB_HI_MASK;
+		reg |= (state->ports[i].fdb >> MV_FDB_HI_SHIFT) &
+			MV_FDB_HI_MASK;
+		sw16(dev, MV_PORTREG(CONTROL1, i), reg);
+
+		reg = ((state->ports[i].fdb & 0xf) << MV_FDB_LO_SHIFT) |
+			state->ports[i].mask;
 		sw16(dev, MV_PORTREG(VLANMAP, i), reg);
 
 		reg = sr16(dev, MV_PORTREG(CONTROL2, i)) &
@@ -620,6 +628,7 @@ static int mvsw61xx_reset(struct switch_dev *dev)
 		return -ETIMEDOUT;
 
 	for (i = 0; i < dev->ports; i++) {
+		state->ports[i].fdb = 0;
 		state->ports[i].qmode = 0;
 		state->ports[i].mask = 0;
 		state->ports[i].pvid = 0;
