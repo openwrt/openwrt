@@ -13,61 +13,61 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/arch/mips/ath79/setup.c
 +++ b/arch/mips/ath79/setup.c
-@@ -186,6 +186,7 @@ int get_c0_perfcount_int(void)
+@@ -181,6 +181,7 @@ const char *get_system_type(void)
  {
- 	return ATH79_MISC_IRQ(5);
+ 	return ath79_sys_type;
  }
 +EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
  
- unsigned int get_c0_compare_int(void)
+ int get_c0_perfcount_int(void)
  {
 --- a/arch/mips/lantiq/irq.c
 +++ b/arch/mips/lantiq/irq.c
-@@ -466,6 +466,7 @@ int get_c0_perfcount_int(void)
- {
- 	return ltq_perfcount_irq;
+@@ -461,6 +461,7 @@ int __init icu_of_init(struct device_nod
+ 
+ 	return 0;
  }
 +EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
  
- unsigned int get_c0_compare_int(void)
+ int get_c0_perfcount_int(void)
  {
 --- a/arch/mips/mti-malta/malta-time.c
 +++ b/arch/mips/mti-malta/malta-time.c
-@@ -148,6 +148,7 @@ int get_c0_perfcount_int(void)
+@@ -163,6 +163,7 @@ unsigned int get_c0_compare_int(void)
  
- 	return mips_cpu_perf_irq;
+ 	return mips_cpu_timer_irq;
  }
 +EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
  
- unsigned int get_c0_compare_int(void)
+ static void __init init_rtc(void)
  {
 --- a/arch/mips/mti-sead3/sead3-time.c
 +++ b/arch/mips/mti-sead3/sead3-time.c
-@@ -77,6 +77,7 @@ int get_c0_perfcount_int(void)
- 		return MIPS_CPU_IRQ_BASE + cp0_perfcount_irq;
- 	return -1;
- }
-+EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
- 
- unsigned int get_c0_compare_int(void)
- {
---- a/arch/mips/pistachio/time.c
-+++ b/arch/mips/pistachio/time.c
-@@ -26,6 +26,7 @@ int get_c0_perfcount_int(void)
- {
- 	return gic_get_c0_perfcount_int();
+@@ -85,6 +85,7 @@ unsigned int get_c0_compare_int(void)
+ 		return gic_get_c0_compare_int();
+ 	return MIPS_CPU_IRQ_BASE + cp0_compare_irq;
  }
 +EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
  
  void __init plat_time_init(void)
  {
---- a/arch/mips/ralink/irq.c
-+++ b/arch/mips/ralink/irq.c
-@@ -89,6 +89,7 @@ int get_c0_perfcount_int(void)
+--- a/arch/mips/pistachio/time.c
++++ b/arch/mips/pistachio/time.c
+@@ -21,6 +21,7 @@ unsigned int get_c0_compare_int(void)
  {
- 	return rt_perfcount_irq;
+ 	return gic_get_c0_compare_int();
  }
 +EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
  
- unsigned int get_c0_compare_int(void)
+ int get_c0_perfcount_int(void)
+ {
+--- a/arch/mips/ralink/irq.c
++++ b/arch/mips/ralink/irq.c
+@@ -95,6 +95,7 @@ unsigned int get_c0_compare_int(void)
+ {
+ 	return CP0_LEGACY_COMPARE_IRQ;
+ }
++EXPORT_SYMBOL_GPL(get_c0_perfcount_int);
+ 
+ static void ralink_intc_irq_handler(unsigned int irq, struct irq_desc *desc)
  {
