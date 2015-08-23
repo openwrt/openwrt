@@ -14,7 +14,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
-@@ -57,6 +57,12 @@ static struct platform_device mtd_dev =
+@@ -58,6 +58,12 @@ static struct platform_device mtd_dev =
  	},
  };
  
@@ -27,7 +27,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static int __init bcm63xx_detect_flash_type(void)
  {
  	u32 val;
-@@ -158,12 +164,15 @@ int __init bcm63xx_flash_register(void)
+@@ -172,12 +178,15 @@ int __init bcm63xx_flash_register(void)
  
  	switch (flash_type) {
  	case BCM63XX_FLASH_TYPE_PARALLEL:
