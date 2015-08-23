@@ -314,7 +314,7 @@ sub list_feed {
 sub list {
 	my %opts;
 
-	getopts('r:d:nsh', \%opts);
+	getopts('r:d:nshf', \%opts);
 	if ($opts{h}) {
 		usage();
 		return 0;
@@ -341,6 +341,14 @@ sub list {
 			}
 			if ($opts{d}) {
 				printf "%s%s%s%s%s%s%s\n", $feed->[1], $opts{d}, $feed->[0], $opts{d}, $revision, $opts{d}, join(", ", @{$feed->[2]});
+			}
+			elsif ($opts{f}) {
+				my $uri = join(", ", @{$feed->[2]});
+				if ($revision ne "local" && $revision ne "X") {
+					$uri =~ s/[;^].*//;
+					$uri .= "^" . $revision;
+				}
+				printf "%s %s %s\n", $feed->[0], $feed->[1], $uri;
 			}
 			else {
 				printf "\%-8s \%-8s \%-8s \%s\n", $feed->[1], $feed->[0], $revision, join(", ", @{$feed->[2]});
@@ -758,6 +766,7 @@ Commands:
 	    -s :            List of feed names and their URL.
 	    -r <feedname>:  List packages of specified feed.
 	    -d <delimiter>: Use specified delimiter to distinguish rows (default: spaces)
+	    -f :            List feeds in feeds.conf compatible format (when using -s).
 
 	install [options] <package>: Install a package
 	Options:
