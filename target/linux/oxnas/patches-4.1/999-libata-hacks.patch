@@ -15,7 +15,7 @@
  	/* initialize internal qc */
  
  	/* XXX: Tag 0 is used for drivers with legacy EH as some
-@@ -4781,6 +4789,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
+@@ -4796,6 +4804,9 @@ struct ata_queued_cmd *ata_qc_new_init(s
  	if (unlikely(ap->pflags & ATA_PFLAG_FROZEN))
  		return NULL;
  
@@ -25,7 +25,7 @@
  	/* libsas case */
  	if (ap->flags & ATA_FLAG_SAS_HOST) {
  		tag = ata_sas_allocate_tag(ap);
-@@ -4826,6 +4837,8 @@ void ata_qc_free(struct ata_queued_cmd *
+@@ -4841,6 +4852,8 @@ void ata_qc_free(struct ata_queued_cmd *
  		qc->tag = ATA_TAG_POISON;
  		if (ap->flags & ATA_FLAG_SAS_HOST)
  			ata_sas_free_tag(tag, ap);
@@ -36,7 +36,7 @@
  
 --- a/include/linux/libata.h
 +++ b/include/linux/libata.h
-@@ -902,6 +902,8 @@ struct ata_port_operations {
+@@ -905,6 +905,8 @@ struct ata_port_operations {
  	void (*qc_prep)(struct ata_queued_cmd *qc);
  	unsigned int (*qc_issue)(struct ata_queued_cmd *qc);
  	bool (*qc_fill_rtf)(struct ata_queued_cmd *qc);
@@ -45,7 +45,7 @@
  
  	/*
  	 * Configuration and exception handling
-@@ -992,6 +994,9 @@ struct ata_port_operations {
+@@ -995,6 +997,9 @@ struct ata_port_operations {
  	void (*phy_reset)(struct ata_port *ap);
  	void (*eng_timeout)(struct ata_port *ap);
  
