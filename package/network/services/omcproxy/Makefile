@@ -9,13 +9,13 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=omcproxy
 PKG_VERSION:=2015-08-24
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=https://github.com/sbyx/omcproxy.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=8df8017b8bc6d31e975d72361d8f9512e743d0c7
+PKG_SOURCE_VERSION:=dc45078e6098f5dcdb1ef6e46edbb6ca78a03456
 PKG_MAINTAINER:=Steven Barth <cyrus@openwrt.org>
 PKG_LICENSE:=APACHE-2.0
 
@@ -29,7 +29,7 @@ define Package/omcproxy
   TITLE:=IGMPv3 and MLDv2 Multicast Proxy
 endef
 
-CMAKE_OPTIONS += -DWITH_LIBUBOX=1 -DWITH_UBUS=1
+CMAKE_OPTIONS += -DWITH_LIBUBOX=1
 
 define Package/omcproxy/install
 	$(INSTALL_DIR) $(1)/etc/config
