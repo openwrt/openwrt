@@ -1,0 +1,48 @@
+From: Franky Lin <frankyl@broadcom.com>
+Date: Thu, 20 Aug 2015 22:06:06 +0200
+Subject: [PATCH] brcmfmac: block the correct flowring when backup queue
+ overflow
+
+brcmf_flowring_block blocks the last active flowring under the same
+interface instead of the one provided by caller. This could lead to a
+dead lock of netif stop if there are more than one flowring under the
+interface and the traffic is high enough so brcmf_flowring_enqueue can
+not unblock the ring right away.
+
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Franky Lin <frankyl@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/flowring.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/flowring.c
+@@ -194,11 +194,15 @@ static void brcmf_flowring_block(struct
+ 	spin_lock_irqsave(&flow->block_lock, flags);
+ 
+ 	ring = flow->rings[flowid];
++	if (ring->blocked == blocked) {
++		spin_unlock_irqrestore(&flow->block_lock, flags);
++		return;
++	}
+ 	ifidx = brcmf_flowring_ifidx_get(flow, flowid);
+ 
+ 	currently_blocked = false;
+ 	for (i = 0; i < flow->nrofrings; i++) {
+-		if (flow->rings[i]) {
++		if ((flow->rings[i]) && (i != flowid)) {
+ 			ring = flow->rings[i];
+ 			if ((ring->status == RING_OPEN) &&
+ 			    (brcmf_flowring_ifidx_get(flow, i) == ifidx)) {
+@@ -209,8 +213,8 @@ static void brcmf_flowring_block(struct
+ 			}
+ 		}
+ 	}
+-	ring->blocked = blocked;
+-	if (currently_blocked == blocked) {
++	flow->rings[flowid]->blocked = blocked;
++	if (currently_blocked) {
+ 		spin_unlock_irqrestore(&flow->block_lock, flags);
+ 		return;
+ 	}
