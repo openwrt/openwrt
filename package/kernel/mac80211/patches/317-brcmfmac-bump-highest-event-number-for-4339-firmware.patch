@@ -1,0 +1,52 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Thu, 20 Aug 2015 22:06:07 +0200
+Subject: [PATCH] brcmfmac: bump highest event number for 4339 firmware
+
+The event mask length is determined by the highest event number
+that is specified in the driver. When this length is shorter than
+firmware expects setting event mask will fail and device becomes
+pretty useless. This issue was reported with bcm4339 firmware that
+was recently released.
+
+Reported-by: Pontus Fuchs <pontusf@broadcom.com>
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Reviewed-by: Pontus Fuchs <pontusf@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fweh.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fweh.h
+@@ -85,7 +85,6 @@ struct brcmf_event;
+ 	BRCMF_ENUM_DEF(IF, 54) \
+ 	BRCMF_ENUM_DEF(P2P_DISC_LISTEN_COMPLETE, 55) \
+ 	BRCMF_ENUM_DEF(RSSI, 56) \
+-	BRCMF_ENUM_DEF(PFN_SCAN_COMPLETE, 57) \
+ 	BRCMF_ENUM_DEF(EXTLOG_MSG, 58) \
+ 	BRCMF_ENUM_DEF(ACTION_FRAME, 59) \
+ 	BRCMF_ENUM_DEF(ACTION_FRAME_COMPLETE, 60) \
+@@ -103,8 +102,7 @@ struct brcmf_event;
+ 	BRCMF_ENUM_DEF(FIFO_CREDIT_MAP, 74) \
+ 	BRCMF_ENUM_DEF(ACTION_FRAME_RX, 75) \
+ 	BRCMF_ENUM_DEF(TDLS_PEER_EVENT, 92) \
+-	BRCMF_ENUM_DEF(BCMC_CREDIT_SUPPORT, 127) \
+-	BRCMF_ENUM_DEF(PSTA_PRIMARY_INTF_IND, 128)
++	BRCMF_ENUM_DEF(BCMC_CREDIT_SUPPORT, 127)
+ 
+ #define BRCMF_ENUM_DEF(id, val) \
+ 	BRCMF_E_##id = (val),
+@@ -112,7 +110,11 @@ struct brcmf_event;
+ /* firmware event codes sent by the dongle */
+ enum brcmf_fweh_event_code {
+ 	BRCMF_FWEH_EVENT_ENUM_DEFLIST
+-	BRCMF_E_LAST
++	/* this determines event mask length which must match
++	 * minimum length check in device firmware so it is
++	 * hard-coded here.
++	 */
++	BRCMF_E_LAST = 139
+ };
+ #undef BRCMF_ENUM_DEF
+ 
