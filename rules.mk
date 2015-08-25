@@ -143,7 +143,7 @@ ifndef DUMP
     -include $(TOOLCHAIN_DIR)/info.mk
     export GCC_HONOUR_COPTS:=0
     TARGET_CROSS:=$(if $(TARGET_CROSS),$(TARGET_CROSS),$(OPTIMIZE_FOR_CPU)-openwrt-linux$(if $(TARGET_SUFFIX),-$(TARGET_SUFFIX))-)
-    TARGET_CFLAGS+= -fhonour-copts $(if $(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_5),,-Wno-error=unused-but-set-variable)
+    TARGET_CFLAGS+= -fhonour-copts -Wno-error=unused-but-set-variable
     TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/usr/include
     ifeq ($(CONFIG_USE_MUSL),y)
       TARGET_CPPFLAGS+= -I$(TOOLCHAIN_DIR)/include/fortify
@@ -201,7 +201,7 @@ HOST_CPPFLAGS:=-I$(STAGING_DIR_HOST)/include -I$(STAGING_DIR_HOST)/usr/include
 HOST_CFLAGS:=-O2 $(HOST_CPPFLAGS)
 HOST_LDFLAGS:=-L$(STAGING_DIR_HOST)/lib -L$(STAGING_DIR_HOST)/usr/lib
 
-ifeq ($(CONFIG_GCC_VERSION_4_4)$(CONFIG_GCC_VERSION_4_6)$(CONFIG_EXTERNAL_TOOLCHAIN),)
+ifeq ($(CONFIG_GCC_VERSION_4_6)$(CONFIG_EXTERNAL_TOOLCHAIN),)
   TARGET_AR:=$(TARGET_CROSS)gcc-ar
   TARGET_RANLIB:=$(TARGET_CROSS)gcc-ranlib
   TARGET_NM:=$(TARGET_CROSS)gcc-nm
