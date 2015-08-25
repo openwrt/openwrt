@@ -1,0 +1,68 @@
+From 61dc388f577b6f984797949f32c30021d9ea73dc Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sun, 23 Aug 2015 12:16:02 +0200
+Subject: [PATCH V2] spi/bcm63xx-hsspi: add support for dual spi read/write
+
+Add support for dual read/writes on spi-bcm63xx-hsspi. This has been
+tested with a s25fl129p1 dual read capable spi flash, with a nice speed
+improvement:
+
+serial read:
+
+root@OpenWrt:/# time dd if=/dev/mtd4 of=/dev/null bs=8192
+2032+0 records in
+2032+0 records out
+real    0m 4.39s
+user    0m 0.00s
+sys     0m 1.55s
+
+dual read:
+
+root@OpenWrt:/# time dd if=/dev/mtd4 of=/dev/null bs=8192
+2032+0 records in
+2032+0 records out
+real    0m 3.09s
+user    0m 0.00s
+sys     0m 1.56s
+
+Signed-off-by: Jonas Gorski <jogo@openwrt.org>
+---
+ drivers/spi/spi-bcm63xx-hsspi.c | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+--- a/drivers/spi/spi-bcm63xx-hsspi.c
++++ b/drivers/spi/spi-bcm63xx-hsspi.c
+@@ -76,6 +76,7 @@
+ #define HSSPI_FIFO_REG(x)			(0x200 + (x) * 0x200)
+ 
+ 
++#define HSSPI_OP_MULTIBIT			BIT(11)
+ #define HSSPI_OP_CODE_SHIFT			13
+ #define HSSPI_OP_SLEEP				(0 << HSSPI_OP_CODE_SHIFT)
+ #define HSSPI_OP_READ_WRITE			(1 << HSSPI_OP_CODE_SHIFT)
+@@ -171,9 +172,12 @@ static int bcm63xx_hsspi_do_txrx(struct
+ 	if (opcode != HSSPI_OP_READ)
+ 		step_size -= HSSPI_OPCODE_LEN;
+ 
+-	__raw_writel(0 << MODE_CTRL_PREPENDBYTE_CNT_SHIFT |
+-		     2 << MODE_CTRL_MULTIDATA_WR_STRT_SHIFT |
+-		     2 << MODE_CTRL_MULTIDATA_RD_STRT_SHIFT | 0xff,
++	if ((opcode == HSSPI_OP_READ && t->rx_nbits == SPI_NBITS_DUAL) ||
++	    (opcode == HSSPI_OP_WRITE && t->tx_nbits == SPI_NBITS_DUAL))
++		opcode |= HSSPI_OP_MULTIBIT;
++
++	__raw_writel(1 << MODE_CTRL_MULTIDATA_WR_SIZE_SHIFT |
++		     1 << MODE_CTRL_MULTIDATA_RD_SIZE_SHIFT | 0xff,
+ 		     bs->regs + HSSPI_PROFILE_MODE_CTRL_REG(chip_select));
+ 
+ 	while (pending > 0) {
+@@ -374,7 +378,8 @@ static int bcm63xx_hsspi_probe(struct pl
+ 	master->num_chipselect = 8;
+ 	master->setup = bcm63xx_hsspi_setup;
+ 	master->transfer_one_message = bcm63xx_hsspi_transfer_one;
+-	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH;
++	master->mode_bits = SPI_CPOL | SPI_CPHA | SPI_CS_HIGH |
++			    SPI_RX_DUAL | SPI_TX_DUAL;
+ 	master->bits_per_word_mask = SPI_BPW_MASK(8);
+ 	master->auto_runtime_pm = true;
+ 

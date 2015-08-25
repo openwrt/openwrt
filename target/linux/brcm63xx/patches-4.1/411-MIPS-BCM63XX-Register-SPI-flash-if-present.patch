@@ -5,7 +5,7 @@ Subject: [PATCH 29/60] MIPS: BCM63XX: Register SPI flash if present
 
 Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
 ---
- arch/mips/bcm63xx/dev-flash.c                     |   33 +++++++++++++++++++-
+ arch/mips/bcm63xx/dev-flash.c                     |   35 +++++++++++++++++++-
  arch/mips/include/asm/mach-bcm63xx/bcm63xx_regs.h |    2 +
  2 files changed, 33 insertions(+), 2 deletions(-)
 
@@ -95,15 +95,17 @@ Signed-off-by: Jonas Gorski <jonas.gorski@gmail.com>
  		if (val & STRAPBUS_63268_BOOT_SEL_SERIAL)
  			return BCM63XX_FLASH_TYPE_SERIAL;
  		else
-@@ -195,8 +232,15 @@ int __init bcm63xx_flash_register(void)
+@@ -195,8 +232,17 @@ int __init bcm63xx_flash_register(void)
  
  		return platform_device_register(&mtd_dev);
  	case BCM63XX_FLASH_TYPE_SERIAL:
 -		pr_warn("unsupported serial flash detected\n");
 -		return -ENODEV;
 +		if (BCMCPU_IS_6318() || BCMCPU_IS_6328() || BCMCPU_IS_6362() ||
-+		    BCMCPU_IS_63268())
++		    BCMCPU_IS_63268()) {
 +			bcm63xx_spi_flash_info[0].bus_num = 1;
++			bcm63xx_spi_flash_info[0].mode = SPI_RX_DUAL;
++		}
 +
 +		if (BCMCPU_IS_6358() || BCMCPU_IS_6368())
 +			bcm63xx_flash_data.max_transfer_len = SPI_6358_MSG_DATA_SIZE;
