@@ -1,0 +1,46 @@
+From 25b97c016b26039982daaa2c11d83979f93b71ab Mon Sep 17 00:00:00 2001
+From: Andy Whitcroft <apw@canonical.com>
+Date: Thu, 13 Aug 2015 20:49:01 +0100
+Subject: [PATCH] ipv4: off-by-one in continuation handling in /proc/net/route
+
+When generating /proc/net/route we emit a header followed by a line for
+each route.  When a short read is performed we will restart this process
+based on the open file descriptor.  When calculating the start point we
+fail to take into account that the 0th entry is the header.  This leads
+us to skip the first entry when doing a continuation read.
+
+This can be easily seen with the comparison below:
+
+  while read l; do echo "$l"; done </proc/net/route >A
+  cat /proc/net/route >B
+  diff -bu A B | grep '^[+-]'
+
+On my example machine I have approximatly 10KB of route output.  There we
+see the very first non-title element is lost in the while read case,
+and an entry around the 8K mark in the cat case:
+
+  +wlan0 00000000 02021EAC 0003 0 0 400 00000000 0 0 0
+  -tun1  00C0AC0A 00000000 0001 0 0 950 00C0FFFF 0 0 0
+
+Fix up the off-by-one when reaquiring position on continuation.
+
+Fixes: 8be33e955cb9 ("fib_trie: Fib walk rcu should take a tnode and key instead of a trie and a leaf")
+BugLink: http://bugs.launchpad.net/bugs/1483440
+Acked-by: Alexander Duyck <alexander.h.duyck@redhat.com>
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+ net/ipv4/fib_trie.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/ipv4/fib_trie.c
++++ b/net/ipv4/fib_trie.c
+@@ -2457,7 +2457,7 @@ static struct key_vector *fib_route_get_
+ 		key = l->key + 1;
+ 		iter->pos++;
+ 
+-		if (pos-- <= 0)
++		if (--pos <= 0)
+ 			break;
+ 
+ 		l = NULL;
