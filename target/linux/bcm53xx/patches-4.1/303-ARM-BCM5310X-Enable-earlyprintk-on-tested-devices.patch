@@ -146,3 +146,14 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	memory {
+--- a/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
+@@ -17,7 +17,7 @@
+ 	model = "Netgear R7000";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
