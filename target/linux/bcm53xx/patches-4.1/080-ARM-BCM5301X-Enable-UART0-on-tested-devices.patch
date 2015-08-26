@@ -1,7 +1,6 @@
-From 7ad224b884d85e8df3339d0149c7e7c8c3ce058c Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Sun, 28 Jun 2015 19:40:16 +0200
-Subject: [PATCH V2] ARM: BCM5301X: Enable UART0 on tested devices
+Date: Mon, 29 Jun 2015 07:22:16 +0200
+Subject: [PATCH] ARM: BCM5301X: Enable UART0 on tested devices
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -13,16 +12,8 @@ doesn't have uart1 connected.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
-V2: Drop old overwrite on R6250
----
- arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  |  4 ++++
- arch/arm/boot/dts/bcm4708-luxul-xwc-1000.dts       |  4 ++++
- arch/arm/boot/dts/bcm4708-netgear-r6250.dts        | 14 ++++----------
- arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts      |  4 ++++
- arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts |  4 ++++
- 5 files changed, 20 insertions(+), 10 deletions(-)
-
 --- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 @@ -135,3 +135,7 @@
