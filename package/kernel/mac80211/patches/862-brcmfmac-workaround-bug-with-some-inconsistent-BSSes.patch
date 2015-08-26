@@ -10,12 +10,13 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
-@@ -661,8 +661,36 @@ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
+@@ -691,9 +691,37 @@ static struct wireless_dev *brcmf_cfg802
  						     u32 *flags,
  						     struct vif_params *params)
  {
 +	struct net_device *dev;
  	struct wireless_dev *wdev;
+ 	int err;
  
 +	/*
 +	 * There is a bug with in-firmware BSS management. When adding virtual
@@ -45,5 +46,5 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +	}
 +
  	brcmf_dbg(TRACE, "enter: %s type %d\n", name, type);
- 	switch (type) {
- 	case NL80211_IFTYPE_ADHOC:
+ 	err = brcmf_vif_add_validate(wiphy_to_cfg(wiphy), type);
+ 	if (err) {

@@ -1,9 +1,6 @@
-From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
-Date: Thu, 9 Jul 2015 16:53:30 +0200
+From: Rafa? Mi?ecki <zajec5@gmail.com>
+Date: Thu, 9 Jul 2015 17:07:08 +0200
 Subject: [PATCH] brcmfmac: set wiphy's addresses to provide valid MACs
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 8bit
 
 Broadcom's firmware requires every BSS to use MAC address with unique
 last few bits. The amount of bits may depend on a particular firmware,
@@ -15,12 +12,13 @@ We don't want to simply set addr_mask as it would also disallow using
 locally administrated bit. Instead let's build a list of addresses
 manually enabling 0x2 bit for extra interfaces.
 
-Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Rafa? Mi?ecki <zajec5@gmail.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
 ---
 
 --- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
 +++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
-@@ -5812,6 +5812,7 @@ static void brcmf_wiphy_wowl_params(struct wiphy *wiphy)
+@@ -5784,6 +5784,7 @@ static void brcmf_wiphy_wowl_params(stru
  
  static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
  {
@@ -28,7 +26,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	struct ieee80211_supported_band *band;
  	__le32 bandlist[3];
  	u32 n_bands;
-@@ -5825,6 +5826,19 @@ static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
+@@ -5797,6 +5798,19 @@ static int brcmf_setup_wiphy(struct wiph
  	if (err)
  		return err;
  

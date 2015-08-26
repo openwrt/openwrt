@@ -1,0 +1,63 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Thu, 11 Jun 2015 00:12:23 +0200
+Subject: [PATCH] brcmfmac: assure p2pdev is unregistered upon driver
+ unload
+
+When unloading the driver with a p2pdev interface it resulted in
+a warning upon calling wiphy_unregister() and subsequently a crash
+in the driver. This patch assures the p2pdev is unregistered calling
+unregister_wdev() before doing the wiphy_unregister().
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -6206,10 +6206,8 @@ void brcmf_cfg80211_detach(struct brcmf_
+ 	if (!cfg)
+ 		return;
+ 
+-	WARN_ON(!list_empty(&cfg->vif_list));
+-	wiphy_unregister(cfg->wiphy);
+ 	brcmf_btcoex_detach(cfg);
+-	brcmf_p2p_detach(&cfg->p2p);
++	wiphy_unregister(cfg->wiphy);
+ 	wl_deinit_priv(cfg);
+ 	brcmf_free_wiphy(cfg->wiphy);
+ }
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -1098,6 +1098,7 @@ void brcmf_detach(struct device *dev)
+ 
+ 	/* stop firmware event handling */
+ 	brcmf_fweh_detach(drvr);
++	brcmf_p2p_detach(&drvr->config->p2p);
+ 
+ 	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -16,6 +16,7 @@
+ #include <linux/slab.h>
+ #include <linux/netdevice.h>
+ #include <linux/etherdevice.h>
++#include <linux/rtnetlink.h>
+ #include <net/cfg80211.h>
+ 
+ #include <brcmu_wifi.h>
+@@ -2418,8 +2419,9 @@ void brcmf_p2p_detach(struct brcmf_p2p_i
+ 		brcmf_p2p_cancel_remain_on_channel(vif->ifp);
+ 		brcmf_p2p_deinit_discovery(p2p);
+ 		/* remove discovery interface */
+-		brcmf_free_vif(vif);
+-		p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif = NULL;
++		rtnl_lock();
++		brcmf_p2p_delete_p2pdev(p2p, vif);
++		rtnl_unlock();
+ 	}
+ 	/* just set it all to zero */
+ 	memset(p2p, 0, sizeof(*p2p));

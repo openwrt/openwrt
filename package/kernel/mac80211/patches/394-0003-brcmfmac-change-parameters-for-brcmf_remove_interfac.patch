@@ -1,0 +1,87 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Wed, 26 Aug 2015 22:14:55 +0200
+Subject: [PATCH] brcmfmac: change parameters for
+ brcmf_remove_interface()
+
+Just pass the interface to be removed, ie. the struct brcmf_if instance.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -4982,7 +4982,7 @@ brcmf_notify_connect_status_ap(struct br
+ 		brcmf_dbg(CONN, "AP mode link down\n");
+ 		complete(&cfg->vif_disabled);
+ 		if (ifp->vif->mbss)
+-			brcmf_remove_interface(ifp->drvr, ifp->bssidx);
++			brcmf_remove_interface(ifp);
+ 		return 0;
+ 	}
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -887,12 +887,13 @@ static void brcmf_del_if(struct brcmf_pu
+ 	}
+ }
+ 
+-void brcmf_remove_interface(struct brcmf_pub *drvr, u32 bssidx)
++void brcmf_remove_interface(struct brcmf_if *ifp)
+ {
+-	if (drvr->iflist[bssidx]) {
+-		brcmf_fws_del_interface(drvr->iflist[bssidx]);
+-		brcmf_del_if(drvr, bssidx);
+-	}
++	if (!ifp || WARN_ON(ifp->drvr->iflist[ifp->bssidx] != ifp))
++		return;
++
++	brcmf_fws_del_interface(ifp);
++	brcmf_del_if(ifp->drvr, ifp->bssidx);
+ }
+ 
+ int brcmf_get_next_free_bsscfgidx(struct brcmf_pub *drvr)
+@@ -1122,7 +1123,7 @@ void brcmf_detach(struct device *dev)
+ 
+ 	/* make sure primary interface removed last */
+ 	for (i = BRCMF_MAX_IFS-1; i > -1; i--)
+-		brcmf_remove_interface(drvr, i);
++		brcmf_remove_interface(drvr->iflist[i]);
+ 
+ 	brcmf_cfg80211_detach(drvr->config);
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.h
+@@ -206,7 +206,7 @@ struct brcmf_if *brcmf_get_ifp(struct br
+ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked);
+ struct brcmf_if *brcmf_add_if(struct brcmf_pub *drvr, s32 bssidx, s32 ifidx,
+ 			      char *name, u8 *mac_addr);
+-void brcmf_remove_interface(struct brcmf_pub *drvr, u32 bssidx);
++void brcmf_remove_interface(struct brcmf_if *ifp);
+ int brcmf_get_next_free_bsscfgidx(struct brcmf_pub *drvr);
+ void brcmf_txflowblock_if(struct brcmf_if *ifp,
+ 			  enum brcmf_netif_stop_reason reason, bool state);
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fweh.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fweh.c
+@@ -222,7 +222,7 @@ static void brcmf_fweh_handle_if_event(s
+ 	err = brcmf_fweh_call_event_handler(ifp, emsg->event_code, emsg, data);
+ 
+ 	if (ifp && ifevent->action == BRCMF_E_IF_DEL)
+-		brcmf_remove_interface(drvr, ifevent->bssidx);
++		brcmf_remove_interface(ifp);
+ }
+ 
+ /**
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -2140,7 +2140,7 @@ static void brcmf_p2p_delete_p2pdev(stru
+ {
+ 	cfg80211_unregister_wdev(&vif->wdev);
+ 	p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif = NULL;
+-	brcmf_remove_interface(vif->ifp->drvr, vif->ifp->bssidx);
++	brcmf_remove_interface(vif->ifp);
+ 	brcmf_free_vif(vif);
+ }
+ 
