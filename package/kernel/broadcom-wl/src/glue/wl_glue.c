@@ -74,7 +74,7 @@ static void wl_glue_ssb_remove(struct ssb_device *dev)
 
 static const struct ssb_device_id wl_glue_ssb_tbl[] = {
 	SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_80211, SSB_ANY_REV),
-	SSB_DEVTABLE_END
+	{},
 };
 
 static struct ssb_driver wl_glue_ssb_driver = {
@@ -132,7 +132,7 @@ static void wl_glue_bcma_remove(struct bcma_device *dev)
 
 static const struct bcma_device_id wl_glue_bcma_tbl[] = {
 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_80211, BCMA_ANY_REV, BCMA_ANY_CLASS),
-	BCMA_CORETABLE_END
+	{},
 };
 
 static struct bcma_driver wl_glue_bcma_driver = {
