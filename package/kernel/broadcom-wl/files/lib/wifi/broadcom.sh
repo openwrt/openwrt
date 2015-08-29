@@ -377,6 +377,7 @@ enable_broadcom() {
 
 		local net_cfg="$(find_net_config "$vif")"
 		[ -z "$net_cfg" ] || {
+			ubus -t 30 wait_for network.interface."$net_cfg"
 			append if_up "set_wifi_up '$vif' '$ifname'" ";$N"
 			append if_up "start_net '$ifname' '$net_cfg'" ";$N"
 		}
