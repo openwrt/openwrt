@@ -1,0 +1,88 @@
+/dts-v1/;
+
+#include "bcm6368.dtsi"
+
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Comtrend VR-3026e";
+	compatible = "comtrend,vr-3026e", "brcm,bcm6368";
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		debounce-interval = <60>;
+
+		reset {
+			label = "reset";
+			gpios = <&gpio1 2 1>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		dsl_green {
+			label = "VR-3026e:green:dsl";
+			gpios = <&gpio0 2 1>;
+		};
+		inet_green {
+			label = "VR-3026e:green:inet";
+			gpios = <&gpio0 5 0>;
+		};
+		lan1_green {
+			label = "VR-3026e:green:lan1";
+			gpios = <&gpio0 6 1>;
+		};
+		lan2_green {
+			label = "VR-3026e:green:lan2";
+			gpios = <&gpio0 7 1>;
+		};
+		lan3_green {
+			label = "VR-3026e:green:lan3";
+			gpios = <&gpio0 8 1>;
+		};
+		lan4_green {
+			label = "VR-3026e:green:lan4";
+			gpios = <&gpio0 9 1>;
+		};
+		power_green {
+			label = "VR-3026e:green:power";
+			gpios = <&gpio0 22 0>;
+			default-state = "on";
+		};
+		power_red {
+			label = "VR-3026e:red:power";
+			gpios = <&gpio0 24 0>;
+		};
+		inet_red {
+			label = "VR-3026e:red:inet";
+			gpios = <&gpio0 31 0>;
+		};
+	};
+};
+
+&pflash {
+	status = "ok";
+
+	linux,part-probe = "bcm63xxpart";
+
+	cfe@0 {
+		label = "CFE";
+		reg = <0x000000 0x010000>;
+		read-only;
+	};
+
+	linux@10000 {
+		label = "linux";
+		reg = <0x010000 0x7e0000>;
+	};
+
+	nvram@7f0000 {
+		label = "nvram";
+		reg = <0x7f0000 0x010000>;
+	};
+};

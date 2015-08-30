@@ -73,6 +73,15 @@ define Profile/VR3025un/Description
 endef
 $(eval $(call Profile,VR3025un))
 
+define Profile/VR3026e
+  NAME:=Comtrend VR-3026e
+  PACKAGES:=kmod-b43 wpad-mini
+endef
+define Profile/VR3026e/Description
+  Package set optimized for VR-3026e.
+endef
+$(eval $(call Profile,VR3026e))
+
 define Profile/WAP5813n
   NAME:=Comtrend WAP-5813n
   PACKAGES:=kmod-b43 wpad-mini \

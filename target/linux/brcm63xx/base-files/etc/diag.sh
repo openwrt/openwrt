@@ -39,6 +39,9 @@ set_state() {
 	vr-3025u)
 		status_led="VR-3025u:green:power"
 		;;
+	vr-3026e)
+		status_led="VR-3026e:green:power"
+		;;
 	wap-5813n)
 		status_led="WAP-5813n:green:power"
 		;;
