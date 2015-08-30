@@ -9,7 +9,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -137,6 +137,41 @@ static struct board_info __initdata boar
+@@ -132,6 +132,41 @@ static struct board_info __initdata boar
  		},
  	},
  };
@@ -51,7 +51,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif /* CONFIG_BCM63XX_CPU_6328 */
  
  /*
-@@ -1266,6 +1301,7 @@ static const struct board_info __initcon
+@@ -1261,6 +1296,7 @@ static const struct board_info __initcon
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328
  	&board_96328avng,
@@ -59,7 +59,7 @@ Subject: [PATCH] MIPS: BCM63XX: add 963281TAN reference board
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6338
  	&board_96338gw,
-@@ -1322,6 +1358,7 @@ static struct of_device_id const bcm963x
+@@ -1317,6 +1353,7 @@ static struct of_device_id const bcm963x
  	{ .compatible = "netgear,cvg834g", .data = &board_cvg834g, },
  #endif
  #ifdef CONFIG_BCM63XX_CPU_6328

@@ -31,7 +31,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-y		+= boards/
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -43,44 +43,6 @@
+@@ -40,44 +40,6 @@
  static struct board_info board;
  
  /*
@@ -76,15 +76,15 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
   * return board name for /proc/cpuinfo
   */
  const char *board_get_name(void)
-@@ -195,6 +157,7 @@ int __init board_register_devices(void)
- 	int button_count = 0;
- 	int led_count = 0;
+@@ -180,6 +142,7 @@ static struct platform_device bcm63xx_gp
+ int __init board_register_devices(void)
+ {
  	int usbh_ports = 0;
 +	u8 mac[ETH_ALEN];
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -239,15 +202,10 @@ int __init board_register_devices(void)
+@@ -224,15 +187,10 @@ int __init board_register_devices(void)
  	/* Generate MAC address for WLAN and register our SPROM,
  	 * do this after registering enet devices
  	 */

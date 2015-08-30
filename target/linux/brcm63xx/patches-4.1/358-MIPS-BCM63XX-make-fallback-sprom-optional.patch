@@ -18,7 +18,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -74,6 +74,7 @@ static struct board_info __initdata boar
+@@ -69,6 +69,7 @@ static struct board_info __initdata boar
  	.has_uart0			= 1,
  	.has_pci			= 1,
  	.has_usbd			= 0,
@@ -26,7 +26,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.usbd = {
  		.use_fullspeed		= 0,
-@@ -223,6 +224,7 @@ static struct board_info __initdata boar
+@@ -218,6 +219,7 @@ static struct board_info __initdata boar
  	.has_uart0			= 1,
  	.has_enet0			= 1,
  	.has_pci			= 1,
@@ -34,7 +34,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -268,6 +270,7 @@ static struct board_info __initdata boar
+@@ -263,6 +265,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -42,7 +42,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -328,6 +331,7 @@ static struct board_info __initdata boar
+@@ -323,6 +326,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -50,7 +50,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -382,6 +386,7 @@ static struct board_info __initdata boar
+@@ -377,6 +381,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -58,7 +58,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -440,6 +445,7 @@ static struct board_info __initdata boar
+@@ -435,6 +440,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -66,7 +66,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -463,6 +469,7 @@ static struct board_info __initdata boar
+@@ -458,6 +464,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -74,7 +74,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -481,6 +488,7 @@ static struct board_info __initdata boar
+@@ -476,6 +483,7 @@ static struct board_info __initdata boar
  
  	.has_uart0			= 1,
  	.has_pci			= 1,
@@ -82,7 +82,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	.has_ohci0			= 1,
  
  	.has_enet0			= 1,
-@@ -503,6 +511,7 @@ static struct board_info __initdata boar
+@@ -498,6 +506,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -90,7 +90,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -529,6 +538,7 @@ static struct board_info __initdata boar
+@@ -524,6 +533,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -98,7 +98,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -581,6 +591,7 @@ static struct board_info __initdata boar
+@@ -576,6 +586,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -106,7 +106,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  	.enet0 = {
  		.has_phy		= 1,
-@@ -652,6 +663,7 @@ static struct board_info __initdata boar
+@@ -647,6 +658,7 @@ static struct board_info __initdata boar
  	.has_enet0			= 1,
  	.has_enet1			= 1,
  	.has_pci			= 1,
@@ -116,7 +116,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		.has_phy		= 1,
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -202,8 +202,9 @@ int __init board_register_devices(void)
+@@ -187,8 +187,9 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  
@@ -130,7 +130,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	bcm63xx_spi_register();
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -35,6 +35,7 @@ struct board_info {
+@@ -34,6 +34,7 @@ struct board_info {
  	unsigned int	has_dsp:1;
  	unsigned int	has_uart0:1;
  	unsigned int	has_uart1:1;
