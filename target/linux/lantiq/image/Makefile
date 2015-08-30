@@ -60,22 +60,6 @@ define MkImageEVA
 	cat ./eva.dummy.squashfs >> $(KDIR)/$(1)$(2).eva.align.64k
 endef
 
-define CompressGzip
-	gzip -c $(1) > $(2)
-endef
-
-define PatchKernelGzip
-	cp $(KDIR)/vmlinux$(3) $(KDIR)/vmlinux$(3)-$(1)
-	$(STAGING_DIR_HOST)/bin/patch-cmdline $(KDIR)/vmlinux$(3)-$(1) '$(strip $(2))'
-	$(call CompressGzip,$(KDIR)/vmlinux$(3)-$(1),$(KDIR)/vmlinux$(3)-$(1).gzip)
-endef
-
-define MkImageGzip
-	mkimage -A mips -O linux -T kernel -a 0x80002000 -C gzip \
-		-e 0x80002000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $(KDIR)/vmlinux$(2)-$(1).gzip $(KDIR)/uImage-$(1)$(2)
-endef
-
 define Image/Build/squashfs
 	cat $(KDIR)/uImage-$(2) $(KDIR)/root.$(1) > $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image
 	$(call prepare_generic_squashfs,$(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(1).image)
@@ -284,17 +268,6 @@ ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
 endif
 endef
 
-define Image/BuildKernelGzip/Template
-	$(call PatchKernelGzip,$(1),$(if $(2),$(2) machtype=$(1),))
-	$(call MkImageGzip,$(1))
-	$(CP) $(KDIR)/uImage-$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage
-ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(call PatchKernelGzip,$(1),$(if $(2),$(2) machtype=$(1),),-initramfs)
-	$(call MkImageGzip,$(1),-initramfs)
-	$(CP) $(KDIR)/uImage-$(1)-initramfs $(BIN_DIR)/$(IMG_PREFIX)-$(1)-uImage-initramfs
-endif
-endef
-
 
 ifeq ($(CONFIG_TARGET_lantiq_falcon),y)
 
@@ -453,14 +426,6 @@ define Image/Prepare
 	$(call Image/Prepare/Profile,VG3503J)
 	$(call Image/Prepare/Profile,VG3503J_V2)
 endef
-
-endif
-
-
-ifeq ($(CONFIG_TARGET_lantiq_svip_be),y)
-
-Image/BuildKernel/Profile/EASY33016=$(call Image/BuildKernelGzip/Template,EASY33016)
-Image/Build/Profile/EASY33016=$(call Image/Build/$(1),$(1),EASY33016)
 
 endif
 
