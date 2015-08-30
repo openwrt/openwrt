@@ -17,15 +17,15 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -157,7 +157,6 @@ int __init board_register_devices(void)
- 	int button_count = 0;
- 	int led_count = 0;
+@@ -142,7 +142,6 @@ static struct platform_device bcm63xx_gp
+ int __init board_register_devices(void)
+ {
  	int usbh_ports = 0;
 -	u8 mac[ETH_ALEN];
  
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -203,8 +202,8 @@ int __init board_register_devices(void)
+@@ -188,8 +187,8 @@ int __init board_register_devices(void)
  	 * do this after registering enet devices
  	 */
  
@@ -75,7 +75,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #endif
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -8,6 +8,7 @@
+@@ -7,6 +7,7 @@
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_usb_usbd.h>
  #include <bcm63xx_dev_dsp.h>
@@ -83,7 +83,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
  /*
   * flash mapping
-@@ -59,6 +60,9 @@ struct board_info {
+@@ -55,6 +56,9 @@ struct board_info {
  	/* External PHY reset GPIO flags from gpio.h */
  	unsigned long ephy_reset_gpio_flags;
  

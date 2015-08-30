@@ -1,6 +1,6 @@
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -42,6 +42,7 @@ struct board_info {
+@@ -41,6 +41,7 @@ struct board_info {
  
  	/* USB config */
  	struct bcm63xx_usbd_platform_data usbd;
@@ -30,15 +30,16 @@
  #endif /* BCM63XX_DEV_USB_OHCI_H_ */
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -181,6 +181,7 @@ int __init board_register_devices(void)
+@@ -166,6 +166,8 @@ static struct platform_device bcm63xx_gp
+  */
+ int __init board_register_devices(void)
  {
- 	int button_count = 0;
- 	int led_count = 0;
 +	int usbh_ports = 0;
- 
++
  	if (board.has_uart0)
  		bcm63xx_uart_register(0);
-@@ -203,14 +204,21 @@ int __init board_register_devices(void)
+ 
+@@ -187,14 +189,21 @@ int __init board_register_devices(void)
  	    !board_get_mac_address(board.enetsw.mac_addr))
  		bcm63xx_enetsw_register(&board.enetsw);
  

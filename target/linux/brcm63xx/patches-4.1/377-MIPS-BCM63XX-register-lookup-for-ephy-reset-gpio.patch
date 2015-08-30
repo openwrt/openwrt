@@ -15,7 +15,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 
 --- a/arch/mips/bcm63xx/boards/board_bcm963xx.c
 +++ b/arch/mips/bcm63xx/boards/board_bcm963xx.c
-@@ -59,7 +59,7 @@ static struct board_info __initdata boar
+@@ -54,7 +54,7 @@ static struct board_info __initdata boar
  	},
  
  	.ephy_reset_gpio		= 36,
@@ -26,9 +26,9 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -278,9 +278,10 @@ int __init board_register_devices(void)
- 		platform_device_register(&bcm63xx_gpio_leds);
- 	}
+@@ -257,9 +257,10 @@ int __init board_register_devices(void)
+ 
+ 	platform_device_register(&bcm63xx_gpio_leds);
  
 -	if (board.ephy_reset_gpio && board.ephy_reset_gpio_flags)
 -		gpio_request_one(board.ephy_reset_gpio,
@@ -38,8 +38,8 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +					board.ephy_reset_gpio_flags);
 +	}
  
- 	/* count number of BUTTONs defined by this device */
- 	while (button_count < ARRAY_SIZE(board.buttons) && board.buttons[button_count].desc)
+ 	return 0;
+ }
 --- a/arch/mips/bcm63xx/gpio.c
 +++ b/arch/mips/bcm63xx/gpio.c
 @@ -8,15 +8,24 @@
@@ -117,15 +117,15 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  {
 --- a/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
 +++ b/arch/mips/include/asm/mach-bcm63xx/board_bcm963xx.h
-@@ -4,6 +4,7 @@
+@@ -3,6 +3,7 @@
+ 
  #include <linux/types.h>
  #include <linux/gpio.h>
- #include <linux/gpio_keys.h>
 +#include <linux/gpio/machine.h>
  #include <linux/leds.h>
  #include <bcm63xx_dev_enet.h>
  #include <bcm63xx_dev_usb_usbd.h>
-@@ -58,8 +59,8 @@ struct board_info {
+@@ -54,8 +55,8 @@ struct board_info {
  	/* External PHY reset GPIO */
  	unsigned int ephy_reset_gpio;
  

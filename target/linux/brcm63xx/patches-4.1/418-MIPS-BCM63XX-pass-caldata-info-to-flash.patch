@@ -11,15 +11,15 @@ Subject: [PATCH 69/80] MIPS: BCM63XX: pass caldata info to flash
 
 --- a/arch/mips/bcm63xx/boards/board_common.c
 +++ b/arch/mips/bcm63xx/boards/board_common.c
-@@ -269,7 +269,7 @@ int __init board_register_devices(void)
+@@ -254,7 +254,7 @@ int __init board_register_devices(void)
  	if (board.num_spis)
  		spi_register_board_info(board.spis, board.num_spis);
  
 -	bcm63xx_flash_register();
 +	bcm63xx_flash_register(board.has_caldata, board.caldata);
  
- 	/* count number of LEDs defined by this device */
- 	while (led_count < ARRAY_SIZE(board.leds) && board.leds[led_count].name)
+ 	bcm63xx_led_data.num_leds = ARRAY_SIZE(board.leds);
+ 	bcm63xx_led_data.leds = board.leds;
 --- a/arch/mips/bcm63xx/dev-flash.c
 +++ b/arch/mips/bcm63xx/dev-flash.c
 @@ -38,12 +38,15 @@ static struct mtd_partition mtd_partitio
