@@ -23,6 +23,25 @@ xappend() {
 	echo "${value#--}" >> $CONFIGFILE
 }
 
+hex_to_hostid() {
+        local var="$1"
+        local hex="${2#0x}"     # strip optional "0x" prefix
+
+        if [ -n "${hex//[0-9a-fA-F]/}" ]; then
+                # is invalid hex literal
+                return 1
+        fi
+
+        # convert into host id
+        export "$var=$(
+                printf "%0x:%0x"  \
+                        $(((0x$hex >> 16) % 65536)) \
+                        $(( 0x$hex        % 256))
+        )"
+
+        return 0
+}
+
 dhcp_calc() {
 	local ip="$1"
 	local res=0
@@ -353,12 +372,19 @@ dhcp_host_add() {
 
 	config_get tag "$cfg" tag
 
+	if [ "$DHCPv6CAPABLE" -eq 1 ]; then
+		config_get hostid "$cfg" hostid
+		if [ -n "$hostid" ]; then
+			hex_to_hostid hostid "$hostid"
+		fi
+	fi
+
 	config_get_bool broadcast "$cfg" broadcast 0
 	[ "$broadcast" = "0" ] && broadcast=
 
 	config_get leasetime "$cfg" leasetime
 
-	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip}${name:+,$name}${leasetime:+,$leasetime}"
+	xappend "--dhcp-host=$macs${networkid:+,net:$networkid}${broadcast:+,set:needs-broadcast}${tag:+,set:$tag}${ip:+,$ip${hostid:+,[::$hostid]}}${name:+,$name}${leasetime:+,$leasetime}"
 }
 
 dhcp_tag_add() {
@@ -613,6 +639,8 @@ start_service() {
 	[ -f /etc/dnsmasq.conf ] && {
 		xappend "--conf-file=/etc/dnsmasq.conf"
 	}
+
+	$PROG --version | grep -osqE "^Compile time options:.* DHCPv6( |$)" && DHCPv6CAPABLE=1 || DHCPv6CAPABLE=0
 
 	args=""
 	config_foreach dnsmasq dnsmasq
