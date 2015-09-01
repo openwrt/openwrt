@@ -157,6 +157,8 @@ enum {
 	OPT_PSID,
 	OPT_BR,
 	OPT_DMR,
+	OPT_PD,
+	OPT_PDLEN,
 	OPT_MAX
 };
 
@@ -173,6 +175,8 @@ static char *const token[] = {
 	[OPT_PSID] = "psid",
 	[OPT_BR] = "br",
 	[OPT_DMR] = "dmr",
+	[OPT_PD] = "pd",
+	[OPT_PDLEN] = "pdlen",
 	[OPT_MAX] = NULL
 };
 
@@ -239,10 +243,14 @@ int main(int argc, char *argv[])
 				// dummy
 			} else if (idx == OPT_IPV6PREFIX && inet_pton(AF_INET6, value, &ipv6prefix) == 1) {
 				// dummy
+			} else if (idx == OPT_PD && inet_pton(AF_INET6, value, &pd) == 1) {
+				// dummy
 			} else if (idx == OPT_OFFSET && (intval = strtoul(value, NULL, 0)) <= 16 && !errno) {
 				offset = intval;
 			} else if (idx == OPT_PSIDLEN && (intval = strtoul(value, NULL, 0)) <= 16 && !errno) {
 				psidlen = intval;
+			} else if (idx == OPT_PDLEN && (intval = strtoul(value, NULL, 0)) <= 128 && !errno) {
+				pdlen = intval;
 			} else if (idx == OPT_PSID && (intval = strtoul(value, NULL, 0)) <= 65535 && !errno) {
 				psid = intval;
 			} else if (idx == OPT_DMR) {
@@ -270,24 +278,26 @@ int main(int argc, char *argv[])
 		}
 
 		// Find PD
-		struct blob_attr *c;
-		unsigned rem;
-		blobmsg_for_each_attr(c, dump, rem) {
-			struct blob_attr *tb[IFACE_ATTR_MAX];
-			blobmsg_parse(iface_attrs, IFACE_ATTR_MAX, tb, blobmsg_data(c), blobmsg_data_len(c));
+		if (pdlen < 0) {
+			struct blob_attr *c;
+			unsigned rem;
+			blobmsg_for_each_attr(c, dump, rem) {
+				struct blob_attr *tb[IFACE_ATTR_MAX];
+				blobmsg_parse(iface_attrs, IFACE_ATTR_MAX, tb, blobmsg_data(c), blobmsg_data_len(c));
 
-			if (!tb[IFACE_ATTR_INTERFACE] || (strcmp(argv[1], "*") && strcmp(argv[1],
-					blobmsg_get_string(tb[IFACE_ATTR_INTERFACE]))))
-				continue;
+				if (!tb[IFACE_ATTR_INTERFACE] || (strcmp(argv[1], "*") && strcmp(argv[1],
+						blobmsg_get_string(tb[IFACE_ATTR_INTERFACE]))))
+					continue;
 
-			match_prefix(&pdlen, &pd, tb[IFACE_ATTR_PREFIX], &ipv6prefix, prefix6len);
+				match_prefix(&pdlen, &pd, tb[IFACE_ATTR_PREFIX], &ipv6prefix, prefix6len);
 
-			if (lw4o6)
-				match_prefix(&pdlen, &pd, tb[IFACE_ATTR_ADDRESS], &ipv6prefix, prefix6len);
+				if (lw4o6)
+					match_prefix(&pdlen, &pd, tb[IFACE_ATTR_ADDRESS], &ipv6prefix, prefix6len);
 
-			if (pdlen >= 0) {
-				iface = blobmsg_get_string(tb[IFACE_ATTR_INTERFACE]);
-				break;
+				if (pdlen >= 0) {
+					iface = blobmsg_get_string(tb[IFACE_ATTR_INTERFACE]);
+					break;
+				}
 			}
 		}
 
