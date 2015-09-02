@@ -31,7 +31,7 @@ Signed-off-by: Steven Barth <steven@midlink.org>
  $(NOSSP_SRCS:%.c=%.o) $(NOSSP_SRCS:%.c=%.lo): CFLAGS += $(CFLAGS_NOSSP)
  
  $(CRT_LIBS:lib/%=crt/%): CFLAGS += -DCRT
-@@ -147,6 +148,11 @@ lib/libc.a: $(OBJS)
+@@ -155,6 +156,11 @@ lib/libc.a: $(OBJS)
  	$(AR) rc $@ $(OBJS)
  	$(RANLIB) $@
  
