@@ -1,6 +1,6 @@
 --- a/svr-authpubkey.c
 +++ b/svr-authpubkey.c
-@@ -208,17 +208,21 @@ static int checkpubkey(unsigned char* al
+@@ -218,17 +218,21 @@ static int checkpubkey(char* algo, unsig
  		goto out;
  	}
  
@@ -33,7 +33,7 @@
  	if (authfile == NULL) {
  		goto out;
  	}
-@@ -371,26 +375,35 @@ static int checkpubkeyperms() {
+@@ -381,26 +385,35 @@ static int checkpubkeyperms() {
  		goto out;
  	}
  

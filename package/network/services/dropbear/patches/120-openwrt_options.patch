@@ -18,7 +18,7 @@
  
  /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
  #define ENABLE_USER_ALGO_LIST
-@@ -126,9 +126,9 @@ much traffic. */
+@@ -131,9 +131,9 @@ If you test it please contact the Dropbe
   * If you disable MD5, Dropbear will fall back to SHA1 fingerprints,
   * which are not the standard form. */
  #define DROPBEAR_SHA1_HMAC
@@ -31,7 +31,7 @@
  #define DROPBEAR_MD5_HMAC
  
  /* You can also disable integrity. Don't bother disabling this if you're
-@@ -184,7 +184,7 @@ much traffic. */
+@@ -189,7 +189,7 @@ If you test it please contact the Dropbe
  
  /* Whether to print the message of the day (MOTD). This doesn't add much code
   * size */
@@ -40,7 +40,7 @@
  
  /* The MOTD file path */
  #ifndef MOTD_FILENAME
-@@ -226,7 +226,7 @@ much traffic. */
+@@ -231,7 +231,7 @@ Homedir is prepended unless path begins
   * note that it will be provided for all "hidden" client-interactive
   * style prompts - if you want something more sophisticated, use 
   * SSH_ASKPASS instead. Comment out this var to remove this functionality.*/
