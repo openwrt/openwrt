@@ -13,7 +13,7 @@ load_ifaces() {
 	local network="$(uci get mdns.@mdns[-1].network)"
 	for n in $network; do
 		local device
-		json_load "$(ifstatus $network)"
+		json_load "$(ifstatus $n)"
 		json_get_var device l3_device
 		echo -n "$device "
 	done
