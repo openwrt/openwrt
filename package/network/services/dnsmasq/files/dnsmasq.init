@@ -176,10 +176,6 @@ dnsmasq() {
 	config_get hostsfile "$cfg" dhcphostsfile
 	[ -e "$hostsfile" ] && xappend "--dhcp-hostsfile=$hostsfile"
 
-	mkdir -p /tmp/hosts /tmp/dnsmasq.d
-	xappend "--addn-hosts=/tmp/hosts"
-	xappend "--conf-dir=/tmp/dnsmasq.d"
-
 	local rebind
 	config_get_bool rebind "$cfg" rebind_protection 1
 	[ $rebind -gt 0 ] && {
@@ -214,6 +210,10 @@ dnsmasq() {
 	dhcp_option_add "$cfg" "" 0
 
 	xappend "--dhcp-broadcast=tag:needs-broadcast"
+
+	mkdir -p /tmp/hosts /tmp/dnsmasq.d
+	xappend "--addn-hosts=/tmp/hosts"
+	xappend "--conf-dir=/tmp/dnsmasq.d"
 
 	echo >> $CONFIGFILE
 }
