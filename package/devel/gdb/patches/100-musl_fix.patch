@@ -8,9 +8,9 @@
  #include "defs.h"
  #include "inferior.h"
  #include "infrun.h"
-@@ -81,6 +82,10 @@
- # endif
- #endif /* HAVE_PERSONALITY */
+@@ -73,6 +74,10 @@
+ #define SPUFS_MAGIC 0x23c9b64e
+ #endif
  
 +#ifndef __SIGRTMIN
 +#define __SIGRTMIN SIGRTMIN
