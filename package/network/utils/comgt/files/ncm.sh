@@ -131,6 +131,7 @@ proto_ncm_setup() {
 	json_add_string name "${interface}_6"
 	json_add_string ifname "@$interface"
 	json_add_string proto "dhcpv6"
+	json_add_string extendprefix 1
 	ubus call network add_dynamic "$(json_dump)"
 }
 
