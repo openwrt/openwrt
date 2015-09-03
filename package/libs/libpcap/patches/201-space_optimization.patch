@@ -1,6 +1,6 @@
 --- a/gencode.c
 +++ b/gencode.c
-@@ -511,20 +511,6 @@ pcap_compile_nopcap(int snaplen_arg, int
+@@ -543,20 +543,6 @@ pcap_compile_nopcap(int snaplen_arg, int
  }
  
  /*
@@ -23,7 +23,7 @@
   * back to another unresolved block (or nil).  At least one of the fields
 --- a/pcap.c
 +++ b/pcap.c
-@@ -1075,6 +1075,59 @@ static const u_char charmap[] = {
+@@ -1087,6 +1087,59 @@ static const u_char charmap[] = {
  	(u_char)'\374', (u_char)'\375', (u_char)'\376', (u_char)'\377',
  };
  
@@ -85,7 +85,7 @@
  {
 --- a/optimize.c
 +++ b/optimize.c
-@@ -2193,45 +2193,6 @@ icode_to_fcode(struct block *root, u_int
+@@ -2203,45 +2203,6 @@ icode_to_fcode(struct block *root, u_int
  	return fp;
  }
  
@@ -130,4 +130,30 @@
 -
  #ifdef BDEBUG
  static void
- opt_dump(struct block *root)
+ dot_dump_node(struct block *block, struct bpf_program *prog, FILE *out)
+--- a/pcap-common.c
++++ b/pcap-common.c
+@@ -1372,14 +1372,23 @@ swap_pseudo_headers(int linktype, struct
+ 	switch (linktype) {
+ 
+ 	case DLT_USB_LINUX:
++#ifndef PCAP_SUPPORT_USB
++		return;
++#endif
+ 		swap_linux_usb_header(hdr, data, 0);
+ 		break;
+ 
+ 	case DLT_USB_LINUX_MMAPPED:
++#ifndef PCAP_SUPPORT_USB
++		return;
++#endif
+ 		swap_linux_usb_header(hdr, data, 1);
+ 		break;
+ 
+ 	case DLT_NFLOG:
++#ifndef PCAP_SUPPORT_NETFILTER
++		return;
++#endif
+ 		swap_nflog_header(hdr, data);
+ 		break;
+ 	}
