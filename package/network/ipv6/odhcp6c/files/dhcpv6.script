@@ -77,6 +77,11 @@ setup_interface () {
 				-z "$RA_DNS" -a "$FAKE_ROUTES" = 1 ]; then
 			RA_ROUTES="::/0,$SERVER,$valid,4096"
 		fi
+
+		# RFC 7278
+		if [ "$mask" -eq 64 -a -z "$PREFIXES" -a -n "$EXTENDPREFIX" ]; then
+			proto_add_ipv6_prefix "$entry"
+		fi
 	done
 
 	for entry in $RA_ROUTES; do
