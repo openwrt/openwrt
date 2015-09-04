@@ -14,7 +14,7 @@ IMAGE_PROFILE:=$(if $(PROFILE),$(PROFILE),Default)
 
 KERNEL_LOADADDR = 0x80060000
 
-DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD NETGEAR_ID CMDLINE CONSOLE IMAGE_SIZE BOARDNAME LOADER_FLASH_OFFS
+DEVICE_VARS += NETGEAR_KERNEL_MAGIC NETGEAR_BOARD_ID NETGEAR_HW_ID CMDLINE CONSOLE IMAGE_SIZE BOARDNAME LOADER_FLASH_OFFS
 
 define Build/netgear-squashfs
 	rm -rf $@.fs $@.squashfs
@@ -39,8 +39,8 @@ endef
 
 define Build/netgear-image
 	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD) -v OpenWrt.$(REVISION) \
-		$(if $(NETGEAR_ID),-H $(NETGEAR_ID)) \
+		-B $(NETGEAR_BOARD_ID) -v OpenWrt.$(REVISION) \
+		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
 		-r "$(1)" \
 		-i $@ -o $@.new
 	mv $@.new $@
@@ -191,7 +191,7 @@ TARGET_DEVICES += carambola2
 define Device/wndr3700
   BOARDNAME = WNDR3700
   NETGEAR_KERNEL_MAGIC = 0x33373030
-  NETGEAR_BOARD = WNDR3700
+  NETGEAR_BOARD_ID = WNDR3700
   IMAGE_SIZE = 7680k
   MTDPARTS = spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,7680k(firmware),64k(art)ro
   IMAGES := sysupgrade.bin factory.img factory-NA.img
@@ -204,9 +204,9 @@ endef
 
 define Device/wndr3700v2
 $(Device/wndr3700)
-  NETGEAR_BOARD = WNDR3700v2
+  NETGEAR_BOARD_ID = WNDR3700v2
   NETGEAR_KERNEL_MAGIC = 0x33373031
-  NETGEAR_ID = 29763654+16+64
+  NETGEAR_HW_ID = 29763654+16+64
   IMAGE_SIZE = 15872k
   MTDPARTS = spi0.0:320k(u-boot)ro,128k(u-boot-env)ro,15872k(firmware),64k(art)ro
   IMAGES := sysupgrade.bin factory.img
@@ -214,23 +214,23 @@ endef
 
 define Device/wndr3800
 $(Device/wndr3700v2)
-  NETGEAR_BOARD = WNDR3800
-  NETGEAR_ID = 29763654+16+128
+  NETGEAR_BOARD_ID = WNDR3800
+  NETGEAR_HW_ID = 29763654+16+128
 endef
 
 define Device/wndr3800ch
 $(Device/wndr3800)
-  NETGEAR_BOARD = WNDR3800CH
+  NETGEAR_BOARD_ID = WNDR3800CH
 endef
 
 define Device/wndrmac
 $(Device/wndr3700v2)
-  NETGEAR_BOARD = WNDRMAC
+  NETGEAR_BOARD_ID = WNDRMAC
 endef
 
 define Device/wndrmacv2
 $(Device/wndr3800)
-  NETGEAR_BOARD = WNDRMACv2
+  NETGEAR_BOARD_ID = WNDRMACv2
 endef
 
 TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
