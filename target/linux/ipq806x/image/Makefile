@@ -35,36 +35,50 @@ define Device/Default
 	DEVICE_DTS :=
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
 	IMAGES :=
+	KERNEL_IN_UBI :=
 endef
-DEVICE_VARS += DEVICE_DTS
+DEVICE_VARS += DEVICE_DTS KERNEL_IN_UBI
 
 define Device/LegacyImage
 	KERNEL_SUFFIX := -uImage
 	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
-	KERNEL_INSTALL := 1
 endef
 
 define Device/FitImage
 	KERNEL_SUFFIX := -fit-uImage.itb
 	KERNEL = kernel-bin | gzip | fit gzip $$(DTS_DIR)/$$(DEVICE_DTS).dtb
 	KERNEL_NAME := Image
-	KERNEL_INSTALL := 1
+endef
+
+define Device/UbiFit
+	KERNEL_IN_UBI := 1
+	IMAGES := nand-factory.ubi nand-sysupgrade.tar
+	IMAGE/nand-factory.ubi := append-ubi
+	IMAGE/nand-sysupgrade.tar := sysupgrade-nand
 endef
 
 define Device/AP148
 	$(call Device/FitImage)
+	$(call Device/UbiFit)
 	DEVICE_DTS := qcom-ipq8064-ap148
+	BLOCKSIZE := 128KiB
+	PAGESIZE := 2048
 endef
 
 define Device/AP148-legacy
 	$(call Device/LegacyImage)
+	$(call Device/UbiFit)
 	DEVICE_DTS := qcom-ipq8064-ap148
+	BLOCKSIZE := 128KiB
+	PAGESIZE := 2048
+	BOARD_NAME := AP148
 endef
 
 define Device/DB149
 	$(call Device/FitImage)
 	DEVICE_DTS := qcom-ipq8064-db149
+	KERNEL_INSTALL := 1
 endef
 
 TARGET_DEVICES += AP148 AP148-legacy DB149
