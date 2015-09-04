@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults.sh
+. /lib/ipq806x.sh
+
+board=$(ipq806x_board_name)
+
+case "$board" in
+r7500)
+	ucidef_set_led_usbdev "usb1" "USB 1" "r7500:white:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB 2" "r7500:white:usb3" "3-1"
+	ucidef_set_led_netdev "wan" "WAN" "r7500:white:wan" "eth0"
+	ucidef_set_led_ide_disk "esata" "eSATA" "r7500:amber:esata"
+	ucidef_set_led_default "wps" "WPS" "r7500:white:wps" "0"
+	ucidef_set_led_default "rfkill" "rfkill" "r7500:white:rfkill" "0"
+	;;
+*)
+	;;
+esac
+
+ucidef_commit_leds
+
+exit 0
