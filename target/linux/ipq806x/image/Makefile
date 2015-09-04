@@ -38,8 +38,8 @@ endef
 DEVICE_VARS += DEVICE_DTS
 
 define Device/LegacyImage
-	KERNEL_SUFFIX := -zImage
-	KERNEL = kernel-bin | append-dtb
+	KERNEL_SUFFIX := -uImage
+	KERNEL = kernel-bin | append-dtb | uImage none
 	KERNEL_NAME := zImage
 	KERNEL_INSTALL := 1
 endef
