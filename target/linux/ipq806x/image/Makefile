@@ -10,6 +10,12 @@ KERNEL_LOADADDR := 0x42208000
 
 define Image/Prepare
 	$(CP) $(LINUX_DIR)/vmlinux $(KDIR)/$(IMG_PREFIX)-vmlinux.elf
+	mkimage -A arm -O linux -T filesystem -C none \
+		-a $(KERNEL_LOADADDR) -e $(KERNEL_LOADADDR) \
+		-n 'ARM OpenWrt fakeroot' \
+		-s $(KDIR_TMP)/root.dummy-uImage.tmp
+	echo -ne '\xff' > $(KDIR_TMP)/root.dummy
+	cat $(KDIR_TMP)/root.dummy $(KDIR_TMP)/root.dummy-uImage.tmp > $(KDIR)/root.dummy
 endef
 
 define Image/BuildKernel
@@ -17,6 +23,7 @@ define Image/BuildKernel
 endef
 
 define Image/Build/squashfs
+	cp $(KDIR)/root.squashfs $(KDIR)/root.squashfs-raw
 	$(call prepare_generic_squashfs,$(KDIR)/root.squashfs)
 endef
 
@@ -27,6 +34,10 @@ endef
 
 define Build/append-dtb
 	cat $(DTS_DIR)/$(DEVICE_DTS).dtb >> $@
+endef
+
+define Build/append-file
+	cat $(1) >> $@
 endef
 
 define Device/Default
@@ -58,6 +69,22 @@ define Device/UbiFit
 	IMAGE/nand-sysupgrade.tar := sysupgrade-nand
 endef
 
+define Device/DniImage
+	PROFILES += $$(DEVICE_NAME)
+	FILESYSTEMS := squashfs
+	KERNEL_SUFFIX := -uImage
+	KERNEL_INITRAMFS := kernel-bin | append-dtb | uImage none
+	KERNEL = kernel-bin | append-dtb | pad-to $$$$(($$(KERNEL_SIZE)-2*64-1)) | append-file $(KDIR)/root.dummy | uImage none
+	KERNEL_NAME := zImage
+	NETGEAR_BOARD_ID :=
+	NETGEAR_HW_ID :=
+	BOARD_NAME :=
+	IMAGES := factory.img sysupgrade.tar
+	IMAGE/factory.img := append-kernel | append-ubi | netgear-dni
+	IMAGE/sysupgrade.tar = sysupgrade-nand
+endef
+DEVICE_VARS += KERNEL_SIZE NETGEAR_BOARD_ID NETGEAR_HW_ID DEVICE_BLOCK_SIZE DEVICE_PAGE_SIZE BOARD_NAME
+
 define Device/AP148
 	$(call Device/FitImage)
 	$(call Device/UbiFit)
@@ -81,6 +108,17 @@ define Device/DB149
 	KERNEL_INSTALL := 1
 endef
 
-TARGET_DEVICES += AP148 AP148-legacy DB149
+define Device/R7500
+	$(call Device/DniImage)
+	DEVICE_DTS := qcom-ipq8064-r7500
+	KERNEL_SIZE := 2097152
+	NETGEAR_BOARD_ID := R7500
+	NETGEAR_HW_ID := 29764841+0+128+256+3x3+4x4
+	BLOCKSIZE := 128KiB
+	PAGESIZE := 2048
+	BOARD_NAME := r7500
+endef
+
+TARGET_DEVICES += AP148 AP148-legacy DB149 R7500
 
 $(eval $(call BuildImage))

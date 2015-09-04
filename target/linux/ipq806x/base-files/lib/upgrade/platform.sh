@@ -6,7 +6,8 @@ platform_check_image() {
 	local board=$(ipq806x_board_name)
 
 	case "$board" in
-	AP148)
+	AP148 |\
+	r7500)
 		nand_do_platform_check $board $1
 		return $?;
 		;;
