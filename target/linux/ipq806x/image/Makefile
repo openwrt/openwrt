@@ -34,6 +34,7 @@ define Device/Default
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	DEVICE_DTS :=
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
+	IMAGES :=
 endef
 DEVICE_VARS += DEVICE_DTS
 
