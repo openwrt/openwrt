@@ -345,6 +345,16 @@ define Build/append-rootfs
 	dd if=$(word 2,$^) $(if $(1),bs=$(1) conv=sync) >> $@
 endef
 
+define Build/append-ubi
+	sh $(TOPDIR)/scripts/ubinize-image.sh \
+		$(if $(KERNEL_IN_UBI),--kernel $(word 1,$^)) \
+		$(word 2,$^) \
+		$@.tmp \
+		-p $(BLOCKSIZE) -m $(PAGESIZE) -E 5
+	cat $@.tmp >> $@
+	rm $@.tmp
+endef
+
 define Build/pad-to
 	dd if=$@ of=$@.new bs=$(1) conv=sync
 	mv $@.new $@
