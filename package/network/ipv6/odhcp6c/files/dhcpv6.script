@@ -80,7 +80,7 @@ setup_interface () {
 
 		# RFC 7278
 		if [ "$mask" -eq 64 -a -z "$PREFIXES" -a -n "$EXTENDPREFIX" ]; then
-			proto_add_ipv6_prefix "$entry"
+			proto_add_ipv6_prefix "$addr/$mask,$preferred,$valid"
 		fi
 	done
 
