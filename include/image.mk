@@ -308,6 +308,15 @@ define Build/netgear-chk
 	mv $@.new $@
 endef
 
+define Build/netgear-dni
+	$(STAGING_DIR_HOST)/bin/mkdniimg \
+		-B $(NETGEAR_BOARD_ID) -v OpenWrt.$(REVISION) \
+		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
+		-r "$(1)" \
+		-i $@ -o $@.new
+	mv $@.new $@
+endef
+
 define Build/fit
 	$(TOPDIR)/scripts/mkits.sh \
 		-D $(DEVICE_NAME) -o $@.its -k $@ \

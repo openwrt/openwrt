@@ -37,15 +37,6 @@ define Build/netgear-uImage
 	$(call Build/uImage,$(1) -M $(NETGEAR_KERNEL_MAGIC))
 endef
 
-define Build/netgear-image
-	$(STAGING_DIR_HOST)/bin/mkdniimg \
-		-B $(NETGEAR_BOARD_ID) -v OpenWrt.$(REVISION) \
-		$(if $(NETGEAR_HW_ID),-H $(NETGEAR_HW_ID)) \
-		-r "$(1)" \
-		-i $@ -o $@.new
-	mv $@.new $@
-endef
-
 # combine kernel and rootfs into one image
 # -a align the rootfs start on an <align> bytes boundary
 # -j add jffs2 end-of-filesystem markers
@@ -198,8 +189,8 @@ define Device/wndr3700
   KERNEL := kernel-bin | patch-cmdline | lzma -d20 | netgear-uImage lzma
   IMAGE/default = append-kernel $$$$(BLOCKSIZE) | netgear-squashfs | append-rootfs | pad-rootfs
   IMAGE/sysupgrade.bin = $$(IMAGE/default) | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory.img = $$(IMAGE/default) | netgear-image | check-size $$$$(IMAGE_SIZE)
-  IMAGE/factory-NA.img = $$(IMAGE/default) | netgear-image NA | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory.img = $$(IMAGE/default) | netgear-dni | check-size $$$$(IMAGE_SIZE)
+  IMAGE/factory-NA.img = $$(IMAGE/default) | netgear-dni NA | check-size $$$$(IMAGE_SIZE)
 endef
 
 define Device/wndr3700v2
