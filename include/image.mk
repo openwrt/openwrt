@@ -390,6 +390,14 @@ define Build/combined-image
 	@mv $@.new $@
 endef
 
+define Build/sysupgrade-nand
+	sh $(TOPDIR)/scripts/sysupgrade-nand.sh \
+		--board $(if $(BOARD_NAME),$(BOARD_NAME),$(DEVICE_NAME)) \
+		--kernel $(word 1,$^) \
+		--rootfs $(word 2,$^) \
+		$@
+endef
+
 define Device/Init
   PROFILES := $(PROFILE)
   DEVICE_NAME := $(1)
