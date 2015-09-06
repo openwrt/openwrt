@@ -6,16 +6,12 @@ config GCC_VERSION_4_8_LINARO
 	default y if (!TOOLCHAINOPTS && !TARGET_octeon)
 	bool
 
-config GCC_VERSION_4_9_LINARO
-	bool
-
 config GCC_VERSION
 	string
 	default "4.6.3"	    if GCC_VERSION_4_6_3
 	default "5.2.0"	    if GCC_VERSION_5
 	default "4.6-linaro"    if GCC_VERSION_4_6_LINARO
 	default "4.8-linaro"    if GCC_VERSION_4_8_LINARO
-	default "4.9-linaro"    if GCC_VERSION_4_9_LINARO
 	default "4.6-linaro"
 
 config GCC_VERSION_4_6
@@ -25,10 +21,6 @@ config GCC_VERSION_4_6
 config GCC_VERSION_4_8
 	bool
 	default y	if GCC_VERSION_4_8_LINARO
-
-config GCC_VERSION_4_9
-	bool
-	default y	if GCC_VERSION_4_9_LINARO
 
 config GCC_VERSION_5
 	bool
