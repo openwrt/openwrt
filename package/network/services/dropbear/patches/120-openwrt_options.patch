@@ -18,6 +18,17 @@
  
  /* Whether to support "-c" and "-m" flags to choose ciphers/MACs at runtime */
  #define ENABLE_USER_ALGO_LIST
+@@ -95,8 +95,8 @@ much traffic. */
+ #define DROPBEAR_AES256
+ /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
+ /*#define DROPBEAR_BLOWFISH*/
+-#define DROPBEAR_TWOFISH256
+-#define DROPBEAR_TWOFISH128
++/*#define DROPBEAR_TWOFISH256*/
++/*#define DROPBEAR_TWOFISH128*/
+ 
+ /* Enable CBC mode for ciphers. This has security issues though
+  * is the most compatible with older SSH implementations */
 @@ -131,9 +131,9 @@ If you test it please contact the Dropbe
   * If you disable MD5, Dropbear will fall back to SHA1 fingerprints,
   * which are not the standard form. */
