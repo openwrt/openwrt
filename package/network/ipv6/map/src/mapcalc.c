@@ -314,7 +314,9 @@ int main(int argc, char *argv[])
 			psid = be16_to_cpu(psid16);
 		}
 
-		psid16 = cpu_to_be16(psid >> (16 - psidlen));
+		psid = psid >> (16 - psidlen);
+		psid16 = cpu_to_be16(psid);
+		psid = psid << (16 - psidlen);
 
 		if (prefix4len < 0 || prefix6len < 0 || ealen < 0 || ealen < psidlen) {
 			fprintf(stderr, "Skipping invalid or incomplete rule: %s\n", argv[i]);
