@@ -432,7 +432,7 @@ config BUSYBOX_DEFAULT_FEATURE_DATE_COMPAT
 	default n
 config BUSYBOX_DEFAULT_HOSTID
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_ID
 	bool
 	default y
@@ -1785,7 +1785,7 @@ config BUSYBOX_DEFAULT_FEATURE_DEVFS
 	default n
 config BUSYBOX_DEFAULT_DEVMEM
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_EJECT
 	bool
 	default n
@@ -1950,7 +1950,7 @@ config BUSYBOX_DEFAULT_ARP
 	default n
 config BUSYBOX_DEFAULT_ARPING
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_BRCTL
 	bool
 	default y
@@ -2103,16 +2103,16 @@ config BUSYBOX_DEFAULT_FEATURE_INETD_RPC
 	default n
 config BUSYBOX_DEFAULT_IP
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_IP_ADDRESS
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_IP_LINK
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_IP_ROUTE
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_IP_TUNNEL
 	bool
 	default n
@@ -2229,7 +2229,7 @@ config BUSYBOX_DEFAULT_TRACEROUTE
 	default y
 config BUSYBOX_DEFAULT_TRACEROUTE6
 	bool
-	default n
+	default y
 config BUSYBOX_DEFAULT_FEATURE_TRACEROUTE_VERBOSE
 	bool
 	default y
@@ -2301,7 +2301,7 @@ config BUSYBOX_DEFAULT_UDPSVD
 	default n
 config BUSYBOX_DEFAULT_VCONFIG
 	bool
-	default y
+	default n
 config BUSYBOX_DEFAULT_WGET
 	bool
 	default y
