@@ -10,13 +10,15 @@ preinit_ip() {
 	fi
 
 	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
-		ifconfig $pi_ifname $pi_ip netmask $pi_netmask broadcast $pi_broadcast up
+		ip link set dev $pi_ifname up
+		ip -4 address add $pi_ip/$pi_netmask broadcast $pi_broadcast dev $pi_ifname
 	}
 }
 
 preinit_ip_deconfig() {
 	[ -n "$pi_ifname" ] && grep -q "$pi_ifname" /proc/net/dev && {
-		ifconfig $pi_ifname 0.0.0.0 down
+		ip -4 address flush dev $pi_ifname
+		ip link set dev $pi_ifname down
 	}
 }
 
