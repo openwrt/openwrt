@@ -1,3 +1,16 @@
+From: Jonas Gorski <jonas.gorski+openwrt@gmail.com>
+Subject: [PATCH] bridge: remove IPv6 depependency of bridge in 2.6.38+
+
+Since 2.6.38 the bridge module has a dependency to IPv6 if IPv6 is
+enabled. Since the IPv6 module isn't exactly lightweight and bridge also
+only needs a single function from IPv6, it's rather easy to create a
+common "lib" module with a RCU pointer to the actual implementation, if
+the IPv6 module is loaded (although slightly hackish).
+
+The codepath seems to be only taken when using IPv6, so there should be
+no negative side effects when IPv6 isn't loaded. I did not measure how
+big the performance impact is.
+---
 --- a/include/net/addrconf.h
 +++ b/include/net/addrconf.h
 @@ -91,6 +91,12 @@ int ipv6_rcv_saddr_equal(const struct so
