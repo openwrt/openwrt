@@ -1,10 +1,12 @@
 --- a/Makefile
 +++ b/Makefile
-@@ -16,7 +16,7 @@ OBJS = iw.o genl.o event.o info.o phy.o
+@@ -15,8 +15,8 @@ CFLAGS += -Wall -Wundef -Wstrict-prototy
+ OBJS = iw.o genl.o event.o info.o phy.o \
  	interface.o ibss.o station.o survey.o util.o ocb.o \
  	mesh.o mpath.o mpp.o scan.o reg.o version.o \
- 	reason.o status.o connect.o link.o offch.o ps.o cqm.o \
+-	reason.o status.o connect.o link.o offch.o ps.o cqm.o \
 -	bitrate.o wowlan.o coalesce.o roc.o p2p.o vendor.o
++	reason.o status.o link.o offch.o ps.o cqm.o \
 +	bitrate.o vendor.o
  OBJS += sections.o
  
@@ -104,4 +106,133 @@
 +#endif
  
  static int print_feature_handler(struct nl_msg *msg, void *arg)
+ {
+--- a/event.c
++++ b/event.c
+@@ -298,6 +298,7 @@ static int print_event(struct nl_msg *ms
+ 	int rem_nst;
+ 	__u16 status;
+ 
++	return;
+ 	if (args->time || args->reltime) {
+ 		unsigned long long usecs, previous;
+ 
+@@ -764,8 +765,10 @@ static int print_events(struct nl80211_s
+ 
+ 	return __do_listen_events(state, 0, NULL, &args);
+ }
++#if 0
+ TOPLEVEL(event, "[-t] [-r] [-f]", 0, 0, CIB_NONE, print_events,
+ 	"Monitor events from the kernel.\n"
+ 	"-t - print timestamp\n"
+ 	"-r - print relative timstamp\n"
+ 	"-f - print full frame for auth/assoc etc.");
++#endif
+--- a/scan.c
++++ b/scan.c
+@@ -1080,6 +1080,7 @@ static void print_ht_op(const uint8_t ty
+ 	printf("\t\t * secondary channel offset: %s\n",
+ 		ht_secondary_offset[data[1] & 0x3]);
+ 	printf("\t\t * STA channel width: %s\n", sta_chan_width[(data[1] & 0x4)>>2]);
++	return;
+ 	printf("\t\t * RIFS: %d\n", (data[1] & 0x8)>>3);
+ 	printf("\t\t * HT protection: %s\n", protection[data[2] & 0x3]);
+ 	printf("\t\t * non-GF present: %d\n", (data[2] & 0x4) >> 2);
+@@ -1311,6 +1312,13 @@ static void print_ie(const struct ie_pri
+ 
+ static const struct ie_print ieprinters[] = {
+ 	[0] = { "SSID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
++	[45] = { "HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN), },
++	[48] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
++	[61] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
++	[62] = { "Secondary Channel Offset", print_secchan_offs, 1, 1, BIT(PRINT_SCAN), },
++	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
++	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
++#if 0
+ 	[1] = { "Supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
+ 	[3] = { "DS Parameter set", print_ds, 1, 1, BIT(PRINT_SCAN), },
+ 	[5] = { "TIM", print_tim, 4, 255, BIT(PRINT_SCAN), },
+@@ -1320,14 +1328,8 @@ static const struct ie_print ieprinters[
+ 	[32] = { "Power constraint", print_powerconstraint, 1, 1, BIT(PRINT_SCAN), },
+ 	[35] = { "TPC report", print_tpcreport, 2, 2, BIT(PRINT_SCAN), },
+ 	[42] = { "ERP", print_erp, 1, 255, BIT(PRINT_SCAN), },
+-	[45] = { "HT capabilities", print_ht_capa, 26, 26, BIT(PRINT_SCAN), },
+ 	[47] = { "ERP D4.0", print_erp, 1, 255, BIT(PRINT_SCAN), },
+ 	[74] = { "Overlapping BSS scan params", print_obss_scan_params, 14, 255, BIT(PRINT_SCAN), },
+-	[61] = { "HT operation", print_ht_op, 22, 22, BIT(PRINT_SCAN), },
+-	[62] = { "Secondary Channel Offset", print_secchan_offs, 1, 1, BIT(PRINT_SCAN), },
+-	[191] = { "VHT capabilities", print_vht_capa, 12, 255, BIT(PRINT_SCAN), },
+-	[192] = { "VHT operation", print_vht_oper, 5, 255, BIT(PRINT_SCAN), },
+-	[48] = { "RSN", print_rsn, 2, 255, BIT(PRINT_SCAN), },
+ 	[50] = { "Extended supported rates", print_supprates, 0, 255, BIT(PRINT_SCAN), },
+ 	[113] = { "MESH Configuration", print_mesh_conf, 7, 7, BIT(PRINT_SCAN), },
+ 	[114] = { "MESH ID", print_ssid, 0, 32, BIT(PRINT_SCAN) | BIT(PRINT_LINK), },
+@@ -1335,6 +1337,7 @@ static const struct ie_print ieprinters[
+ 	[107] = { "802.11u Interworking", print_interworking, 0, 255, BIT(PRINT_SCAN), },
+ 	[108] = { "802.11u Advertisement", print_11u_advert, 0, 255, BIT(PRINT_SCAN), },
+ 	[111] = { "802.11u Roaming Consortium", print_11u_rcon, 0, 255, BIT(PRINT_SCAN), },
++#endif
+ };
+ 
+ static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t *data)
+@@ -1766,6 +1769,7 @@ void print_ies(unsigned char *ie, int ie
+ 		    ieprinters[ie[0]].name &&
+ 		    ieprinters[ie[0]].flags & BIT(ptype)) {
+ 			print_ie(&ieprinters[ie[0]], ie[0], ie[1], ie + 2);
++#if 0
+ 		} else if (ie[0] == 221 /* vendor */) {
+ 			print_vendor(ie[1], ie + 2, unknown, ptype);
+ 		} else if (unknown) {
+@@ -1775,6 +1779,7 @@ void print_ies(unsigned char *ie, int ie
+ 			for (i=0; i<ie[1]; i++)
+ 				printf(" %.2x", ie[2+i]);
+ 			printf("\n");
++#endif
+ 		}
+ 		ielen -= ie[1] + 2;
+ 		ie += ie[1] + 2;
+@@ -1815,6 +1820,7 @@ static void print_capa_non_dmg(__u16 cap
+ 		printf(" ESS");
+ 	if (capa & WLAN_CAPABILITY_IBSS)
+ 		printf(" IBSS");
++#if 0
+ 	if (capa & WLAN_CAPABILITY_CF_POLLABLE)
+ 		printf(" CfPollable");
+ 	if (capa & WLAN_CAPABILITY_CF_POLL_REQUEST)
+@@ -1843,6 +1849,7 @@ static void print_capa_non_dmg(__u16 cap
+ 		printf(" DelayedBACK");
+ 	if (capa & WLAN_CAPABILITY_IMM_BACK)
+ 		printf(" ImmediateBACK");
++#endif
+ }
+ 
+ static int print_bss_handler(struct nl_msg *msg, void *arg)
+@@ -1921,8 +1928,10 @@ static int print_bss_handler(struct nl_m
+ 	if (bss[NL80211_BSS_FREQUENCY]) {
+ 		int freq = nla_get_u32(bss[NL80211_BSS_FREQUENCY]);
+ 		printf("\tfreq: %d\n", freq);
++#if 0
+ 		if (freq > 45000)
+ 			is_dmg = true;
++#endif
+ 	}
+ 	if (bss[NL80211_BSS_BEACON_INTERVAL])
+ 		printf("\tbeacon interval: %d TUs\n",
+--- a/util.c
++++ b/util.c
+@@ -264,6 +264,7 @@ static const char *commands[NL80211_CMD_
+ 
+ static char cmdbuf[100];
+ 
++#if 0
+ const char *command_name(enum nl80211_commands cmd)
+ {
+ 	if (cmd <= NL80211_CMD_MAX && commands[cmd])
+@@ -271,6 +272,7 @@ const char *command_name(enum nl80211_co
+ 	sprintf(cmdbuf, "Unknown command (%d)", cmd);
+ 	return cmdbuf;
+ }
++#endif
+ 
+ int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
  {
