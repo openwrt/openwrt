@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
 PKG_VERSION:=4.0.0
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=http://kernel.org/pub/linux/utils/net/iproute2/
@@ -38,10 +38,6 @@ $(call Package/iproute2/Default,tiny,Minimal)
 endef
 
 Package/ip-full=$(call Package/iproute2/Default,full,Full)
-
-define Package/ip/conffiles
-/etc/iproute2/rt_tables
-endef
 
 define Package/ip-$(BUILD_VARIANT)/conffiles
 $(Package/ip/conffiles)
@@ -112,13 +108,12 @@ endef
 
 define Package/ip/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_DIR) $(1)/etc/iproute2
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/etc/iproute2/rt_tables $(1)/etc/iproute2
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ip/ip $(1)/usr/sbin/
 endef
 
-define Package/ip-$(BUILD_VARIANT)/install
-	$(Package/ip/install)
+define Package/ip-full/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/ip/ip $(1)/usr/bin/
 endef
 
 define Package/tc/install
