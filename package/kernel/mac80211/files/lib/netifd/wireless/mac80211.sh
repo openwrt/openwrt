@@ -486,7 +486,7 @@ mac80211_prepare_vif() {
 		# All interfaces must have unique mac addresses
 		# which can either be explicitly set in the device
 		# section, or automatically generated
-		ifconfig "$ifname" hw ether "$macaddr"
+		ip link set dev "$ifname" address "$macaddr"
 	fi
 
 	json_select ..
@@ -582,7 +582,7 @@ mac80211_setup_vif() {
 	json_get_vars mode
 	json_get_var vif_txpower txpower
 
-	ifconfig "$ifname" up || {
+	ip link set dev "$ifname" up || {
 		wireless_setup_vif_failed IFUP_ERROR
 		json_select ..
 		return
@@ -638,7 +638,7 @@ mac80211_interface_cleanup() {
 	local phy="$1"
 
 	for wdev in $(list_phy_interfaces "$phy"); do
-		ifconfig "$wdev" down 2>/dev/null
+		ip link set dev "$wdev" down 2>/dev/null
 		iw dev "$wdev" del
 	done
 }

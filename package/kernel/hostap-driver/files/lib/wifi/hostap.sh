@@ -78,7 +78,7 @@ disable_prism2() (
 		set $line
 		[ -f "/var/run/wifi-${1}.pid" ] &&
 			kill "$(cat "/var/run/wifi-${1}.pid")"
-		ifconfig "$1" down
+		ip link set dev "$1" down
 		unbridge "$1"
 		iwpriv "$phy" wds_del "$2"
 	done
@@ -204,7 +204,7 @@ enable_prism2() {
 					hostapd_setup_vif "$vif" hostap || {
 						echo "enable_prism2($device): Failed to set up hostapd for interface $ifname" >&2
 						# make sure this wifi interface won't accidentally stay open without encryption
-						ifconfig "$ifname" down
+						ip link set dev "$ifname" down
 						continue
 					}
 				fi
@@ -213,7 +213,7 @@ enable_prism2() {
 				if eval "type wpa_supplicant_setup_vif" 2>/dev/null >/dev/null; then
 					wpa_supplicant_setup_vif "$vif" wext || {
 						echo "enable_prism2($device): Failed to set up wpa_supplicant for interface $ifname" >&2
-						ifconfig "$ifname" down
+						ip link set dev "$ifname" down
 						continue
 					}
 				fi
