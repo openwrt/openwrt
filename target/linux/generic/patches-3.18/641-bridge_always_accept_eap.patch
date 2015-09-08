@@ -1,3 +1,9 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Subject: [PATCH] bridge: always accept EAP
+
+Allow EAP frames to pass through bridges even in learning state. Fixes
+issues with WDS.
+---
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
 @@ -84,7 +84,7 @@ int br_handle_frame_finish(struct sk_buf
