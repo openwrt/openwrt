@@ -15,24 +15,9 @@ crypto_confvar=CONFIG_CRYPTO_$(word 1,$(subst =,$(space),$(1)))
 crypto_file=$(LINUX_DIR)/crypto/$(word 2,$(subst =,$(space),$(1))).ko
 crypto_name=$(if $(findstring y,$($(call crypto_confvar,$(1)))),,$(word 2,$(subst =,$(space),$(1))))
 
-define KernelPackage/crypto-core
-  SUBMENU:=$(CRYPTO_MENU)
-  TITLE:=Core CryptoAPI modules
-  KCONFIG:= \
-	CONFIG_CRYPTO=y \
-	CONFIG_CRYPTO_HW=y \
-	CONFIG_CRYPTO_BLKCIPHER \
-	CONFIG_CRYPTO_ALGAPI \
-	$(foreach mod,$(CRYPTO_MODULES),$(call crypto_confvar,$(mod)))
-  FILES:=$(foreach mod,$(CRYPTO_MODULES),$(call crypto_file,$(mod)))
-endef
-
-$(eval $(call KernelPackage,crypto-core))
-
-
 define AddDepends/crypto
   SUBMENU:=$(CRYPTO_MENU)
-  DEPENDS+=+kmod-crypto-core $(1)
+  DEPENDS+= $(1)
 endef
 
 define KernelPackage/crypto-aead
@@ -253,17 +238,6 @@ define KernelPackage/crypto-hw-omap/description
 endef
 
 $(eval $(call KernelPackage,crypto-hw-omap))
-
-
-define KernelPackage/crypto-arc4
-  TITLE:=ARC4 (RC4) cipher CryptoAPI module
-  KCONFIG:=CONFIG_CRYPTO_ARC4
-  FILES:=$(LINUX_DIR)/crypto/arc4.ko
-  AUTOLOAD:=$(call AutoLoad,09,arc4)
-  $(call AddDepends/crypto)
-endef
-
-$(eval $(call KernelPackage,crypto-arc4))
 
 
 define KernelPackage/crypto-authenc
