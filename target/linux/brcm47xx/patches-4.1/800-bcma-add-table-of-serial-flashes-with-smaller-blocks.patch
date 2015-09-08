@@ -35,7 +35,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static const struct bcma_sflash_tbl_e bcma_sflash_sst_tbl[] = {
  	{ "SST25WF512", 1, 0x1000, 16, },
  	{ "SST25VF512", 0x48, 0x1000, 16, },
-@@ -84,6 +92,23 @@ static void bcma_sflash_cmd(struct bcma_
+@@ -84,6 +92,24 @@ static void bcma_sflash_cmd(struct bcma_
  	bcma_err(cc->core->bus, "SFLASH control command failed (timeout)!\n");
  }
  
@@ -46,6 +46,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +
 +	switch (board) {
 +	case BCM47XX_BOARD_NETGEAR_WGR614_V10:
++	case BCM47XX_BOARD_NETGEAR_WNR1000_V3:
 +		for (e = bcma_sflash_st_shrink_tbl; e->name; e++) {
 +			if (e->id == id)
 +				return e;
@@ -59,7 +60,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  /* Initialize serial flash access */
  int bcma_sflash_init(struct bcma_drv_cc *cc)
  {
-@@ -114,6 +139,10 @@ int bcma_sflash_init(struct bcma_drv_cc
+@@ -114,6 +140,10 @@ int bcma_sflash_init(struct bcma_drv_cc
  		case 0x13:
  			return -ENOTSUPP;
  		default:
