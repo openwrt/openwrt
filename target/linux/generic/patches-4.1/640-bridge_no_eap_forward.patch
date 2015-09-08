@@ -1,3 +1,11 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Subject: [PATCH] bridge: no EAP forward
+
+When bridging, do not forward EAP frames to other ports, only deliver
+them locally.
+Fixes WPA authentication issues with multiples APs that are connected to
+each other via bridges.
+---
 --- a/net/bridge/br_input.c
 +++ b/net/bridge/br_input.c
 @@ -162,7 +162,11 @@ int br_handle_frame_finish(struct sock *
