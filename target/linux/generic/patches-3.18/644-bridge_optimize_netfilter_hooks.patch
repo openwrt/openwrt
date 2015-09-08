@@ -1,3 +1,10 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Subject: [PATCH] bridge: optimize netfilter hooks
+
+Bypass all netfilter hooks if the sysctls for that functionality have
+been disabled - eliminates the overhead of enabling
+CONFIG_BRIDGE_NETFILTER in the kernel config
+---
 --- a/net/bridge/br_forward.c
 +++ b/net/bridge/br_forward.c
 @@ -53,7 +53,7 @@ EXPORT_SYMBOL_GPL(br_dev_queue_push_xmit
