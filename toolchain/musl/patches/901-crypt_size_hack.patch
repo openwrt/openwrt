@@ -1,0 +1,110 @@
+--- a/src/crypt/crypt_r.c
++++ b/src/crypt/crypt_r.c
+@@ -16,17 +16,7 @@ char *__crypt_r(const char *key, const c
+ 	 * use the structure to store any internal state, and treats
+ 	 * it purely as a char buffer for storing the result. */
+ 	char *output = (char *)data;
+-	if (salt[0] == '$' && salt[1] && salt[2]) {
+-		if (salt[1] == '1' && salt[2] == '$')
+-			return __crypt_md5(key, salt, output);
+-		if (salt[1] == '2' && salt[3] == '$')
+-			return __crypt_blowfish(key, salt, output);
+-		if (salt[1] == '5' && salt[2] == '$')
+-			return __crypt_sha256(key, salt, output);
+-		if (salt[1] == '6' && salt[2] == '$')
+-			return __crypt_sha512(key, salt, output);
+-	}
+-	return __crypt_des(key, salt, output);
++	return __crypt_md5(key, salt, output);
+ }
+ 
+ weak_alias(__crypt_r, crypt_r);
+--- a/src/crypt/crypt_sha512.c
++++ b/src/crypt/crypt_sha512.c
+@@ -12,6 +12,7 @@
+ #include <stdio.h>
+ #include <string.h>
+ #include <stdint.h>
++#if 0
+ 
+ /* public domain sha512 implementation based on fips180-3 */
+ /* >=2^64 bits messages are not supported (about 2000 peta bytes) */
+@@ -369,3 +370,4 @@ char *__crypt_sha512(const char *key, co
+ 		return "*";
+ 	return p;
+ }
++#endif
+--- a/src/crypt/crypt_blowfish.c
++++ b/src/crypt/crypt_blowfish.c
+@@ -50,6 +50,7 @@
+ #include <string.h>
+ #include <stdint.h>
+ 
++#if 0
+ typedef uint32_t BF_word;
+ typedef int32_t BF_word_signed;
+ 
+@@ -796,3 +797,4 @@ char *__crypt_blowfish(const char *key,
+ 
+ 	return "*";
+ }
++#endif
+--- a/src/crypt/crypt_des.c
++++ b/src/crypt/crypt_des.c
+@@ -56,6 +56,7 @@
+ #include <stdint.h>
+ #include <string.h>
+ 
++#if 0
+ struct expanded_key {
+ 	uint32_t l[16], r[16];
+ };
+@@ -1016,3 +1017,4 @@ char *__crypt_des(const char *key, const
+ 
+ 	return (setting[0]=='*') ? "x" : "*";
+ }
++#endif
+--- a/src/crypt/encrypt.c
++++ b/src/crypt/encrypt.c
+@@ -16,6 +16,7 @@ static struct expanded_key __encrypt_key
+ 
+ void setkey(const char *key)
+ {
++#if 0
+ 	unsigned char bkey[8];
+ 	int i, j;
+ 
+@@ -26,10 +27,12 @@ void setkey(const char *key)
+ 	}
+ 
+ 	__des_setkey(bkey, &__encrypt_key);
++#endif
+ }
+ 
+ void encrypt(char *block, int edflag)
+ {
++#if 0
+ 	struct expanded_key decrypt_key, *key;
+ 	uint32_t b[2];
+ 	int i, j;
+@@ -57,4 +60,5 @@ void encrypt(char *block, int edflag)
+ 	for (i = 0; i < 2; i++)
+ 		for (j = 31; j >= 0; j--)
+ 			*p++ = b[i]>>j & 1;
++#endif
+ }
+--- a/src/crypt/crypt_sha256.c
++++ b/src/crypt/crypt_sha256.c
+@@ -13,6 +13,7 @@
+ #include <string.h>
+ #include <stdint.h>
+ 
++#if 0
+ /* public domain sha256 implementation based on fips180-3 */
+ 
+ struct sha256 {
+@@ -320,3 +321,4 @@ char *__crypt_sha256(const char *key, co
+ 		return "*";
+ 	return p;
+ }
++#endif
