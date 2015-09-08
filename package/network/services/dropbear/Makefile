@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dropbear
 PKG_VERSION:=2015.68
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:= \
@@ -48,7 +48,6 @@ endef
 
 define Package/dropbear/conffiles
 /etc/dropbear/dropbear_rsa_host_key
-/etc/dropbear/dropbear_dss_host_key 
 /etc/config/dropbear 
 endef
 
@@ -118,7 +117,6 @@ define Package/dropbear/install
 	$(INSTALL_DIR) $(1)/usr/lib/opkg/info
 	$(INSTALL_DIR) $(1)/etc/dropbear
 	touch $(1)/etc/dropbear/dropbear_rsa_host_key
-	touch $(1)/etc/dropbear/dropbear_dss_host_key
 endef
 
 define Package/dropbearconvert/install
