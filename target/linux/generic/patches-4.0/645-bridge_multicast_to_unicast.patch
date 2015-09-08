@@ -1,3 +1,8 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Subject: [PATCH] bridge: multicast to unicast
+
+Implement optinal multicast->unicast conversion for igmp snooping
+---
 --- a/include/linux/if_bridge.h
 +++ b/include/linux/if_bridge.h
 @@ -45,6 +45,7 @@ struct br_ip_list {

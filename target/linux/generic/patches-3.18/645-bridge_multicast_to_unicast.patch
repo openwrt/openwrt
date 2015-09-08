@@ -1,3 +1,8 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Subject: [PATCH] bridge: multicast to unicast
+
+Implement optinal multicast->unicast conversion for igmp snooping
+---
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
 @@ -635,7 +635,8 @@ struct net_bridge_port_group *br_multica
