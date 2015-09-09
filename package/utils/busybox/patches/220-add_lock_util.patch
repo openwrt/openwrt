@@ -35,7 +35,7 @@
  lib-$(CONFIG_MICROCOM)    += microcom.o
 --- /dev/null
 +++ b/miscutils/lock.c
-@@ -0,0 +1,135 @@
+@@ -0,0 +1,144 @@
 +/*
 + * Copyright (C) 2006 Felix Fietkau <nbd@openwrt.org>
 + *
@@ -56,6 +56,7 @@
 +static int unlock = 0;
 +static int shared = 0;
 +static int waitonly = 0;
++static int try_lock = 0;
 +static int fd;
 +static char *file;
 +
@@ -65,6 +66,7 @@
 +	                "	-s	Use shared locking\n"
 +	                "	-u	Unlock\n"
 +	                "	-w	Wait for the lock to become free, don't acquire lock\n"
++			"	-n	Don't wait for the lock to become free. Fail with exit code\n"
 +					"\n", name);
 +	exit(1);
 +}
@@ -95,6 +97,7 @@
 +static int do_lock(void)
 +{
 +	int pid;
++	int flags;
 +	char pidstr[8];
 +
 +	if ((fd = open(file, O_RDWR | O_CREAT | O_EXCL, 0700)) < 0) {
@@ -104,7 +107,10 @@
 +		}
 +	}
 +
-+	if (flock(fd, (shared ? LOCK_SH : LOCK_EX)) < 0) {
++	flags = shared ? LOCK_SH : LOCK_EX;
++	flags |= try_lock ? LOCK_NB : 0;
++
++	if (flock(fd, flags) < 0) {
 +		fprintf(stderr, "Can't lock %s\n", file);
 +		return 1;
 +	}
@@ -155,6 +161,9 @@
 +					break;
 +				case 'u':
 +					unlock = 1;
++					break;
++				case 'n':
++					try_lock = 1;
 +					break;
 +			}
 +		}
