@@ -1,0 +1,73 @@
+From 6a7cd3d4aba493c0b0d00155b1e09a867db437cf Mon Sep 17 00:00:00 2001
+From: Michael Tokarev <mjt@tls.msk.ru>
+Date: Wed, 20 May 2015 16:27:44 +0300
+Subject: [PATCH] ip addr: support change and replace commands
+
+Signed-off-by: Michael Tokarev <mjt@tls.msk.ru>
+Signed-off-by: Denys Vlasenko <vda.linux@googlemail.com>
+---
+ networking/ip.c                   |  2 +-
+ networking/libiproute/ipaddress.c | 20 ++++++++++++--------
+ 2 files changed, 13 insertions(+), 9 deletions(-)
+
+--- a/networking/ip.c
++++ b/networking/ip.c
+@@ -33,7 +33,7 @@
+ //usage:       "{ {add|del} IFADDR dev STRING | {show|flush}\n"
+ //usage:       "		[dev STRING] [to PREFIX] }"
+ //usage:#define ipaddr_full_usage "\n\n"
+-//usage:       "ipaddr {add|delete} IFADDR dev STRING\n"
++//usage:       "ipaddr {add|change|replace|delete} IFADDR dev STRING\n"
+ //usage:       "ipaddr {show|flush} [dev STRING] [scope SCOPE-ID]\n"
+ //usage:       "	[to PREFIX] [label PATTERN]\n"
+ //usage:       "	IFADDR := PREFIX | ADDR peer PREFIX\n"
+--- a/networking/libiproute/ipaddress.c
++++ b/networking/libiproute/ipaddress.c
+@@ -598,7 +598,7 @@ static int default_scope(inet_prefix *lc
+ }
+ 
+ /* Return value becomes exitcode. It's okay to not return at all */
+-static int ipaddr_modify(int cmd, char **argv)
++static int ipaddr_modify(int cmd, int flags, char **argv)
+ {
+ 	static const char option[] ALIGN1 =
+ 		"peer\0""remote\0""broadcast\0""brd\0"
+@@ -622,7 +622,7 @@ static int ipaddr_modify(int cmd, char *
+ 	memset(&req, 0, sizeof(req));
+ 
+ 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifaddrmsg));
+-	req.n.nlmsg_flags = NLM_F_REQUEST;
++	req.n.nlmsg_flags = NLM_F_REQUEST | flags;
+ 	req.n.nlmsg_type = cmd;
+ 	req.ifa.ifa_family = preferred_family;
+ 
+@@ -749,16 +749,24 @@ static int ipaddr_modify(int cmd, char *
+ int FAST_FUNC do_ipaddr(char **argv)
+ {
+ 	static const char commands[] ALIGN1 =
+-		"add\0""delete\0""list\0""show\0""lst\0""flush\0";
++		/* 0    1         2      3          4         5       6       7      8 */
++		"add\0""change\0""chg\0""replace\0""delete\0""list\0""show\0""lst\0""flush\0";
+ 	int cmd = 2;
+ 	if (*argv) {
+ 		cmd = index_in_substrings(commands, *argv);
+ 		if (cmd < 0)
+ 			invarg(*argv, applet_name);
+ 		argv++;
+-		if (cmd <= 1)
+-			return ipaddr_modify((cmd == 0) ? RTM_NEWADDR : RTM_DELADDR, argv);
++		if (cmd <= 4) {
++			return ipaddr_modify(
++				/*cmd:*/ cmd == 4 ? RTM_DELADDR : RTM_NEWADDR,
++				/*flags:*/
++					cmd == 0 ? NLM_F_CREATE|NLM_F_EXCL : /* add */
++					cmd == 1 || cmd == 2 ? NLM_F_REPLACE : /* change */
++					cmd == 3 ? NLM_F_CREATE|NLM_F_REPLACE : /* replace */
++					0 /* delete */
++			, argv);
++		}
+ 	}
+-	/* 2 == list, 3 == show, 4 == lst */
+-	return ipaddr_list_or_flush(argv, cmd == 5);
++	return ipaddr_list_or_flush(argv, cmd == 8);
+ }
