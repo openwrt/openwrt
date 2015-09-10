@@ -270,7 +270,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +	struct device *dev;
 +	struct clk *clk;
 +	struct regulator *core;
-+	unsigned long freq_Hz, freq, max_cpu_freq;
++	unsigned long freq_Hz, freq, max_cpu_freq = 0;
 +	struct dev_pm_opp *opp;
 +	unsigned long volt, tol;
 +
@@ -341,7 +341,7 @@ Signed-off-by: Stephen Boyd <sboyd@codeaurora.org>
 +		}
 +		per_cpu(krait_supply_core, cpu) = core;
 +
-+		freq_Hz = clk_get_rate(clk);
++		freq = freq_Hz = clk_get_rate(clk);
 +
 +		rcu_read_lock();
 +		opp = dev_pm_opp_find_freq_ceil(cpu_dev, &freq_Hz);
