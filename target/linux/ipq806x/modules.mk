@@ -17,7 +17,7 @@ $(eval $(call KernelPackage,usb-phy-qcom-dwc3))
 
 define KernelPackage/usb-dwc3-qcom
   TITLE:=DWC3 USB QCOM controller driver
-  DEPENDS:=@TARGET_ipq806x +kmod-usb-dwc3 +kmod-usb-phy-dwc3-qcom
+  DEPENDS:=@TARGET_ipq806x +kmod-usb-dwc3 +kmod-usb-phy-qcom-dwc3
   KCONFIG:= CONFIG_USB_DWC3_QCOM
   FILES:= $(LINUX_DIR)/drivers/usb/dwc3/dwc3-qcom.ko
   AUTOLOAD:=$(call AutoLoad,53,dwc3-qcom,1)
