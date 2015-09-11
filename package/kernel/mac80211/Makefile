@@ -831,8 +831,9 @@ define KernelPackage/iwlagn
   TITLE:=Intel AGN Wireless support
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlwifi.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/dvm/iwldvm.ko
-  AUTOLOAD:=$(call AutoProbe,iwlwifi iwldvm)
+	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/dvm/iwldvm.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/mvm/iwlmvm.ko
+  AUTOLOAD:=$(call AutoProbe,iwlwifi iwldvm iwlmvm)
   MENU:=1
 endef
 
@@ -1642,7 +1643,7 @@ config-y += RT2800USB_RT33XX RT2800USB_RT35XX RT2800USB_RT3573 RT2800USB_RT53XX 
 config-$(call config_package,iwl-legacy) += IWLEGACY
 config-$(call config_package,iwl3945) += IWL3945
 config-$(call config_package,iwl4965) += IWL4965
-config-$(call config_package,iwlagn) += IWLWIFI IWLDVM
+config-$(call config_package,iwlagn) += IWLWIFI IWLDVM IWLMVM
 
 config-$(call config_package,net-libipw) += LIBIPW
 config-$(call config_package,net-ipw2100) += IPW2100
