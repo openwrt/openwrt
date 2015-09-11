@@ -98,8 +98,11 @@ endef
 
 define Image/Build/trxV2
 	$(call Image/Build/CyberTANHead,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
-	$(STAGING_DIR_HOST)/bin/trx -2 -o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).noheader.bin \
-		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
+	$(STAGING_DIR_HOST)/bin/trx \
+		-2 \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-$(2)-$(5).noheader.bin \
+		-f $(KDIR)/loader.gz \
+		-f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(1),$(1),$(KDIR)/$(IMG_PREFIX)-$(2)-header.bin)
 	$(call Image/Build/CyberTAN2,$(1),$(2),$(3),$(4),$(5),$(if $(6),$(6)))
 endef
@@ -337,19 +340,27 @@ endif
 #################################################
 
 define Image/Build/Initramfs
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-initramfs.trx -f $(KDIR)/loader.gz -f $(KDIR)/vmlinux-initramfs.lzma
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-initramfs-noloader-nodictionary.trx -f $(KDIR)/vmlinux-initramfs-nodictionary.lzma
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-initramfs.trx \
+		-f $(KDIR)/loader.gz \
+		-f $(KDIR)/vmlinux-initramfs.lzma
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-initramfs-noloader-nodictionary.trx \
+		-f $(KDIR)/vmlinux-initramfs-nodictionary.lzma
 endef
 
 # $(1): filesystem type.
 define Image/Build
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1).trx \
 		-f $(KDIR)/loader.gz -f $(KDIR)/vmlinux.lzma \
 		$(call trxalign/$(1),$(1))
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-noloader-nodictionary.trx \
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-noloader-nodictionary.trx \
 		-f $(KDIR)/vmlinux-nodictionary.lzma \
 		$(call trxalign/$(1),$(1))
-	$(STAGING_DIR_HOST)/bin/trx -o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
+	$(STAGING_DIR_HOST)/bin/trx \
+		-o $(BIN_DIR)/$(IMG_PREFIX)-$(1)-gz.trx \
 		-f $(KDIR)/vmlinux.gz \
 		$(call trxalign/$(1),$(1))
 	$(call Image/Build/$(SUBTARGET)/$(1),$(1))
