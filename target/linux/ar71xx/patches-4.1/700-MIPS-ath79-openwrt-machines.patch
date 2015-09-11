@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,24 +16,207 @@
+@@ -16,24 +16,208 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -28,6 +28,7 @@
 +	ATH79_MACH_BHU_BXU2000N2_A1,	/* BHU BXU2000n-2 A1 */
 +	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
 +	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
++	ATH79_MACH_CF_E316N_V2,		/* COMFAST CF-E316N v2 */
 +	ATH79_MACH_CPE510,		/* TP-LINK CPE510 */
  	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
  	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
@@ -1437,7 +1438,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1212,97 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1212,107 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1511,6 +1512,16 @@
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_CF_E316N_V2
++	bool "COMFAST CF-E316N v2 board"
++	select SOC_AR934X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
 +config ATH79_MACH_BHU_BXU2000N2_A
 +	bool "BHU BXU2000n-2 rev. A support"
 +	select SOC_AR934X
@@ -1535,7 +1546,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -134,7 +1354,10 @@ config ATH79_DEV_DSA
+@@ -134,7 +1364,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1547,7 +1558,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,6 +1387,11 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,6 +1397,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
@@ -1561,7 +1572,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,133 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,134 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1583,6 +1594,7 @@
 +obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mach-aw-nr580.o
 +obj-$(CONFIG_ATH79_MACH_BHU_BXU2000N2_A)+= mach-bhu-bxu2000n2-a.o
 +obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
++obj-$(CONFIG_ATH79_MACH_CF_E316N_V2)	+= mach-cf-e316n-v2.o
 +obj-$(CONFIG_ATH79_MACH_CPE510)		+= mach-cpe510.o
  obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 +obj-$(CONFIG_ATH79_MACH_DLAN_PRO_500_WP)	+= mach-dlan-pro-500-wp.o
