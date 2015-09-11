@@ -1,0 +1,173 @@
+From 4e62a443aa8ffecca7918db93329d8bd8210a92c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 20 Aug 2015 13:50:18 +0100
+Subject: [PATCH 165/171] bcm2708-dmaengine: Use more DMA channels (but not 12)
+
+1) Only the bcm2708_fb drivers uses the legacy DMA API, and
+it requires a BULK-capable channel, so all other types
+(FAST, NORMAL and LITE) can be made available to the regular
+DMA API.
+
+2) DMA channels 11-14 share an interrupt. The driver can't
+handle this, so don't use channels 12-14 (12 was used, probably
+because it appears to have an interrupt, but in reality that
+interrupt is for activity on ANY channel). This may explain
+a lockup encountered when running out of DMA channels.
+
+The combined effect of this patch is to leave 7 DMA channels
+available + channel 0 for bcm2708_fb via the legacy API.
+
+See: https://github.com/raspberrypi/linux/issues/1110
+     https://github.com/raspberrypi/linux/issues/1108
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi |  5 ++--
+ drivers/dma/bcm2708-dmaengine.c       | 43 +++++++++++++++++++++++------------
+ 2 files changed, 31 insertions(+), 17 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -59,11 +59,10 @@
+ 				     <1 24>,
+ 				     <1 25>,
+ 				     <1 26>,
+-				     <1 27>,
+-				     <1 28>;
++				     <1 27>;
+ 
+ 			#dma-cells = <1>;
+-			brcm,dma-channel-mask = <0x7f35>;
++			brcm,dma-channel-mask = <0x0f35>;
+ 		};
+ 
+ 		intc: interrupt-controller {
+--- a/drivers/dma/bcm2708-dmaengine.c
++++ b/drivers/dma/bcm2708-dmaengine.c
+@@ -184,7 +184,7 @@ static void vc_dmaman_init(struct vc_dma
+ }
+ 
+ static int vc_dmaman_chan_alloc(struct vc_dmaman *dmaman,
+-				unsigned preferred_feature_set)
++				unsigned required_feature_set)
+ {
+ 	u32 chans;
+ 	int chan = 0;
+@@ -193,10 +193,8 @@ static int vc_dmaman_chan_alloc(struct v
+ 	chans = dmaman->chan_available;
+ 	for (feature = 0; feature < BCM_DMA_FEATURE_COUNT; feature++)
+ 		/* select the subset of available channels with the desired
+-		   feature so long as some of the candidate channels have that
+-		   feature */
+-		if ((preferred_feature_set & (1 << feature)) &&
+-		    (chans & dmaman->has_feature[feature]))
++		   features */
++		if (required_feature_set & (1 << feature))
+ 			chans &= dmaman->has_feature[feature];
+ 
+ 	if (!chans)
+@@ -228,7 +226,7 @@ static int vc_dmaman_chan_free(struct vc
+ 
+ /* DMA Manager Monitor */
+ 
+-extern int bcm_dma_chan_alloc(unsigned preferred_feature_set,
++extern int bcm_dma_chan_alloc(unsigned required_feature_set,
+ 			      void __iomem **out_dma_base, int *out_dma_irq)
+ {
+ 	struct vc_dmaman *dmaman = g_dmaman;
+@@ -240,7 +238,7 @@ extern int bcm_dma_chan_alloc(unsigned p
+ 		return -ENODEV;
+ 
+ 	mutex_lock(&dmaman->lock);
+-	chan = vc_dmaman_chan_alloc(dmaman, preferred_feature_set);
++	chan = vc_dmaman_chan_alloc(dmaman, required_feature_set);
+ 	if (chan < 0)
+ 		goto out;
+ 
+@@ -442,6 +440,7 @@ static inline struct bcm2835_desc *to_bc
+ 	return container_of(t, struct bcm2835_desc, vd.tx);
+ }
+ 
++#if 0
+ static void dma_dumpregs(struct bcm2835_chan *c)
+ {
+ 	pr_debug("-------------DMA DUMPREGS-------------\n");
+@@ -457,6 +456,7 @@ static void dma_dumpregs(struct bcm2835_
+ 		readl(c->chan_base + BCM2835_DMA_NEXTCB));
+ 	pr_debug("--------------------------------------\n");
+ }
++#endif
+ 
+ static void bcm2835_dma_desc_free(struct virt_dma_desc *vd)
+ {
+@@ -862,6 +862,7 @@ static struct dma_async_tx_descriptor *b
+ 		uint32_t len = sg_dma_len(sgent);
+ 
+ 		for (j = 0; j < len; j += max_size) {
++			u32 waits;
+ 			struct bcm2835_dma_cb *control_block =
+ 				&d->control_block_base[i+splitct];
+ 
+@@ -879,7 +880,7 @@ static struct dma_async_tx_descriptor *b
+ 			}
+ 
+ 			/* Common part */
+-			u32 waits = SDHCI_BCM_DMA_WAITS;
++			waits = SDHCI_BCM_DMA_WAITS;
+ 			if ((dma_debug >> 0) & 0x1f)
+ 				waits = (dma_debug >> 0) & 0x1f;
+ 			control_block->info |= BCM2835_DMA_WAITS(waits);
+@@ -1074,6 +1075,14 @@ static int bcm2835_dma_probe(struct plat
+ 	int rc;
+ 	int i;
+ 	int irq;
++#ifdef CONFIG_DMA_BCM2708_LEGACY
++	static const u32 wanted_features[] = {
++		BCM_DMA_FEATURE_FAST,
++		BCM_DMA_FEATURE_NORMAL,
++		BCM_DMA_FEATURE_LITE
++	};
++	int j;
++#endif
+ 
+ 
+ 	if (!pdev->dev.dma_mask)
+@@ -1120,20 +1129,24 @@ static int bcm2835_dma_probe(struct plat
+ 
+ 	platform_set_drvdata(pdev, od);
+ 
+-	for (i = 0; i < 5; i++) {
++	for (i = 0, j = 0; j < ARRAY_SIZE(wanted_features);) {
++
+ 		void __iomem *chan_base;
+ 		int chan_id;
+ 
+-		chan_id = bcm_dma_chan_alloc(BCM_DMA_FEATURE_LITE,
+-			&chan_base,
+-			&irq);
+-
+-		if (chan_id < 0)
+-			break;
++		chan_id = bcm_dma_chan_alloc(wanted_features[j],
++					     &chan_base,
++					     &irq);
++
++		if (chan_id < 0) {
++			j++;
++			continue;
++		}
+ 
+ 		rc = bcm2708_dma_chan_init(od, chan_base, chan_id, irq);
+ 		if (rc)
+ 			goto err_no_dma;
++		i++;
+ 	}
+ 
+ 	if (pdev->dev.of_node) {
+@@ -1146,6 +1159,8 @@ static int bcm2835_dma_probe(struct plat
+ 		}
+ 	}
+ 
++	dev_info(&pdev->dev, "Initialized %i DMA channels (+ 1 legacy)\n", i);
++
+ #else
+ 	rc = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(32));
+ 	if (rc)

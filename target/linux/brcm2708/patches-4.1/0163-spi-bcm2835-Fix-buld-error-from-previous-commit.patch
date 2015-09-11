@@ -1,0 +1,27 @@
+From e418efa578dab433bf7e25eaaec809b33351792c Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 18 Aug 2015 11:50:03 +0100
+Subject: [PATCH 163/171] spi: bcm2835: Fix buld error from previous commit
+
+---
+ drivers/spi/spi-bcm2835.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/spi/spi-bcm2835.c
++++ b/drivers/spi/spi-bcm2835.c
+@@ -592,7 +592,6 @@ static int bcm2835_spi_transfer_one(stru
+ 	return bcm2835_spi_transfer_one_irq(master, spi, tfr, cs);
+ }
+ 
+-#if 0
+ static void bcm2835_spi_handle_err(struct spi_master *master,
+ 				   struct spi_message *msg)
+ {
+@@ -607,7 +606,6 @@ static void bcm2835_spi_handle_err(struc
+ 	/* and reset */
+ 	bcm2835_spi_reset_hw(master);
+ }
+-#endif
+ 
+ static void bcm2835_spi_set_cs(struct spi_device *spi, bool gpio_level)
+ {

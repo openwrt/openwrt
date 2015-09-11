@@ -1,7 +1,7 @@
-From 2a2dc4e5e4946e75b98c71eacc3660e913dbd302 Mon Sep 17 00:00:00 2001
+From 909e2b2c6b73991394f89769aa3fca05ab146d72 Mon Sep 17 00:00:00 2001
 From: Jonathan Bell <jonathan@raspberrypi.org>
 Date: Tue, 30 Jun 2015 12:35:39 +0100
-Subject: [PATCH 148/148] pinctrl: bcm2835: Clear the event latch register when
+Subject: [PATCH 148/171] pinctrl: bcm2835: Clear the event latch register when
  disabling interrupts
 
 It's possible to hit a race condition if interrupts are generated on a GPIO

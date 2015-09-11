@@ -1,0 +1,29 @@
+From c36a53b3df68f0311b808f87c186b9623a28ecd9 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Wed, 22 Jul 2015 07:43:28 +0000
+Subject: [PATCH 159/171] spi: bcm2835: fixed compile issues due to embedded
+ comments... replaced with #if to avoid issues in the future.
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ drivers/spi/spi-bcm2835.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/spi/spi-bcm2835.c
++++ b/drivers/spi/spi-bcm2835.c
+@@ -592,6 +592,7 @@ static int bcm2835_spi_transfer_one(stru
+ 	return bcm2835_spi_transfer_one_irq(master, spi, tfr, cs);
+ }
+ 
++#if 0
+ static void bcm2835_spi_handle_err(struct spi_master *master,
+ 				   struct spi_message *msg)
+ {
+@@ -606,6 +607,7 @@ static void bcm2835_spi_handle_err(struc
+ 	/* and reset */
+ 	bcm2835_spi_reset_hw(master);
+ }
++#endif
+ 
+ static void bcm2835_spi_set_cs(struct spi_device *spi, bool gpio_level)
+ {

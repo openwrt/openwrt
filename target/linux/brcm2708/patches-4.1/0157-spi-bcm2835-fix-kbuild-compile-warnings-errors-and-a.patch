@@ -1,0 +1,56 @@
+From fb89852f9971a3d5f40be06e2d8017b9b9b56e19 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Tue, 12 May 2015 10:32:08 +0000
+Subject: [PATCH 157/171] spi: bcm2835: fix kbuild compile warnings/errors and
+ a typo
+
+fixes several warnings/error emmitted by the kbuild system:
+* warn: cast from pointer to integer of different size
+  using size_t instead of u32
+* error: 'SZ_4K' undeclared
+  moved to PAGE_SIZE and PAGE_MASK instead
+
+Review showed also a typo in the same code where tx_buff
+was checked twice instead of checking both rx and tx_buff.
+
+Reported by: Stephen Rothwell <sfr@canb.auug.org.au>
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 7e52be0d576e8f7bc99a606f07b9d000c4340f04)
+---
+ drivers/spi/spi-bcm2835.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/spi/spi-bcm2835.c
++++ b/drivers/spi/spi-bcm2835.c
+@@ -20,6 +20,7 @@
+  * GNU General Public License for more details.
+  */
+ 
++#include <asm/page.h>
+ #include <linux/clk.h>
+ #include <linux/completion.h>
+ #include <linux/delay.h>
+@@ -378,18 +379,19 @@ static bool bcm2835_spi_can_dma(struct s
+ 	}
+ 
+ 	/* if we run rx/tx_buf with word aligned addresses then we are OK */
+-	if (((u32)tfr->tx_buf % 4 == 0) && ((u32)tfr->tx_buf % 4 == 0))
++	if ((((size_t)tfr->rx_buf & 3) == 0) &&
++	    (((size_t)tfr->tx_buf & 3) == 0))
+ 		return true;
+ 
+ 	/* otherwise we only allow transfers within the same page
+ 	 * to avoid wasting time on dma_mapping when it is not practical
+ 	 */
+-	if (((u32)tfr->tx_buf % SZ_4K) + tfr->len > SZ_4K) {
++	if (((size_t)tfr->tx_buf & PAGE_MASK) + tfr->len > PAGE_SIZE) {
+ 		dev_warn_once(&spi->dev,
+ 			      "Unaligned spi tx-transfer bridging page\n");
+ 		return false;
+ 	}
+-	if (((u32)tfr->rx_buf % SZ_4K) + tfr->len > SZ_4K) {
++	if (((size_t)tfr->rx_buf & PAGE_MASK) + tfr->len > PAGE_SIZE) {
+ 		dev_warn_once(&spi->dev,
+ 			      "Unaligned spi tx-transfer bridging page\n");
+ 		return false;

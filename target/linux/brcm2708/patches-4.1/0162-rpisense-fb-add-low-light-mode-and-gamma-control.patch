@@ -1,0 +1,141 @@
+From a0d9e5b5186d36693a44d5fd85c1fcd43cfeee61 Mon Sep 17 00:00:00 2001
+From: Serge Schneider <serge@raspberrypi.org>
+Date: Mon, 17 Aug 2015 18:06:16 +0100
+Subject: [PATCH 162/171] rpisense-fb: add low-light mode and gamma control
+
+---
+ drivers/video/fbdev/rpisense-fb.c        | 68 +++++++++++++++++++++++++++++---
+ include/linux/mfd/rpisense/framebuffer.h |  6 ++-
+ 2 files changed, 68 insertions(+), 6 deletions(-)
+
+--- a/drivers/video/fbdev/rpisense-fb.c
++++ b/drivers/video/fbdev/rpisense-fb.c
+@@ -19,6 +19,7 @@
+ #include <linux/string.h>
+ #include <linux/mm.h>
+ #include <linux/slab.h>
++#include <linux/uaccess.h>
+ #include <linux/delay.h>
+ #include <linux/fb.h>
+ #include <linux/init.h>
+@@ -26,22 +27,35 @@
+ #include <linux/mfd/rpisense/framebuffer.h>
+ #include <linux/mfd/rpisense/core.h>
+ 
++static bool lowlight;
++module_param(lowlight, bool, 0);
++MODULE_PARM_DESC(lowlight, "Reduce LED matrix brightness to one third");
++
+ struct rpisense *rpisense;
+ 
+ struct rpisense_fb_param {
+ 	char __iomem *vmem;
+ 	u8 *vmem_work;
+ 	u32 vmemsize;
+-	u8 gamma[32];
++	u8 *gamma;
+ };
+ 
++static u8 gamma_default[32] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
++			       0x02, 0x02, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07,
++			       0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0E, 0x0F, 0x11,
++			       0x12, 0x14, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F,};
++
++static u8 gamma_low[32] = {0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
++			   0x01, 0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02,
++			   0x03, 0x03, 0x03, 0x04, 0x04, 0x05, 0x05, 0x06,
++			   0x06, 0x07, 0x07, 0x08, 0x08, 0x09, 0x0A, 0x0A,};
++
++static u8 gamma_user[32];
++
+ static struct rpisense_fb_param rpisense_fb_param = {
+ 	.vmem = NULL,
+ 	.vmemsize = 128,
+-	.gamma = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+-		  0x02, 0x02, 0x03, 0x03, 0x04, 0x05, 0x06, 0x07,
+-		  0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0E, 0x0F, 0x11,
+-		  0x12, 0x14, 0x15, 0x17, 0x19, 0x1B, 0x1D, 0x1F,},
++	.gamma = gamma_default,
+ };
+ 
+ static struct fb_deferred_io rpisense_fb_defio;
+@@ -127,6 +141,46 @@ static struct fb_deferred_io rpisense_fb
+ 	.deferred_io	= rpisense_fb_deferred_io,
+ };
+ 
++static int rpisense_fb_ioctl(struct fb_info *info, unsigned int cmd,
++			     unsigned long arg)
++{
++	switch (cmd) {
++	case SENSEFB_FBIOGET_GAMMA:
++		if (copy_to_user((void __user *) arg, rpisense_fb_param.gamma,
++				 sizeof(u8[32])))
++			return -EFAULT;
++		return 0;
++	case SENSEFB_FBIOSET_GAMMA:
++		if (copy_from_user(gamma_user, (void __user *)arg,
++				   sizeof(u8[32])))
++			return -EFAULT;
++		rpisense_fb_param.gamma = gamma_user;
++		schedule_delayed_work(&info->deferred_work,
++				      rpisense_fb_defio.delay);
++		return 0;
++	case SENSEFB_FBIORESET_GAMMA:
++		switch (arg) {
++		case 0:
++			rpisense_fb_param.gamma = gamma_default;
++			break;
++		case 1:
++			rpisense_fb_param.gamma = gamma_low;
++			break;
++		case 2:
++			rpisense_fb_param.gamma = gamma_user;
++			break;
++		default:
++			return -EINVAL;
++		}
++		schedule_delayed_work(&info->deferred_work,
++				      rpisense_fb_defio.delay);
++		break;
++	default:
++		return -EINVAL;
++	}
++	return 0;
++}
++
+ static struct fb_ops rpisense_fb_ops = {
+ 	.owner		= THIS_MODULE,
+ 	.fb_read	= fb_sys_read,
+@@ -134,6 +188,7 @@ static struct fb_ops rpisense_fb_ops = {
+ 	.fb_fillrect	= rpisense_fb_fillrect,
+ 	.fb_copyarea	= rpisense_fb_copyarea,
+ 	.fb_imageblit	= rpisense_fb_imageblit,
++	.fb_ioctl	= rpisense_fb_ioctl,
+ };
+ 
+ static int rpisense_fb_probe(struct platform_device *pdev)
+@@ -171,6 +226,9 @@ static int rpisense_fb_probe(struct plat
+ 	info->screen_base = rpisense_fb_param.vmem;
+ 	info->screen_size = rpisense_fb_param.vmemsize;
+ 
++	if (lowlight)
++		rpisense_fb_param.gamma = gamma_low;
++
+ 	fb_deferred_io_init(info);
+ 
+ 	ret = register_framebuffer(info);
+--- a/include/linux/mfd/rpisense/framebuffer.h
++++ b/include/linux/mfd/rpisense/framebuffer.h
+@@ -16,7 +16,11 @@
+ #ifndef __LINUX_RPISENSE_FB_H_
+ #define __LINUX_RPISENSE_FB_H_
+ 
+-#include <linux/platform_device.h>
++#define SENSEFB_FBIO_IOC_MAGIC 0xF1
++
++#define SENSEFB_FBIOGET_GAMMA _IO(SENSEFB_FBIO_IOC_MAGIC, 0)
++#define SENSEFB_FBIOSET_GAMMA _IO(SENSEFB_FBIO_IOC_MAGIC, 1)
++#define SENSEFB_FBIORESET_GAMMA _IO(SENSEFB_FBIO_IOC_MAGIC, 2)
+ 
+ struct rpisense;
+ 

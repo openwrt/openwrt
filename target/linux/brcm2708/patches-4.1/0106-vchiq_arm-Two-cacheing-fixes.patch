@@ -1,7 +1,7 @@
-From cc9c5f1595655eee24d4e08d86a1760dc8c7ef36 Mon Sep 17 00:00:00 2001
+From fa6257d47be3fff4cf93de15a0bb59223d6a81b5 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Wed, 8 Jul 2015 14:48:57 +0100
-Subject: [PATCH 106/148] vchiq_arm: Two cacheing fixes
+Subject: [PATCH 106/171] vchiq_arm: Two cacheing fixes
 
 1) Make fragment size vary with cache line size
 Without this patch, non-cache-line-aligned transfers may corrupt

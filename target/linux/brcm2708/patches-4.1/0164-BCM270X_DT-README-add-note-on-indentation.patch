@@ -1,0 +1,22 @@
+From a5fcc9f342ed9a3f028b8cbff4a610f1a8816b5d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 19 Aug 2015 11:38:10 +0100
+Subject: [PATCH 164/171] BCM270X_DT: README - add note on indentation
+
+---
+ arch/arm/boot/dts/overlays/README | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -74,6 +74,10 @@ behaviour. See the list of overlays belo
+ The Overlay and Parameter Reference
+ ===================================
+ 
++N.B. When editing this file, please preserve the indentation levels to make it simple to parse
++programmatically. NO HARD TABS.
++
++
+ Name:   <The base DTB>
+ Info:   Configures the base Raspberry Pi hardware
+ Load:   <loaded automatically>

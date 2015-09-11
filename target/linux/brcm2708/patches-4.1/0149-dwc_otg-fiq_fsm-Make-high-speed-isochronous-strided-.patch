@@ -1,0 +1,134 @@
+From cab5abd144fc154c140f9f522c3c2f81a94aaa74 Mon Sep 17 00:00:00 2001
+From: P33M <P33M@github.com>
+Date: Tue, 4 Aug 2015 01:15:20 +0100
+Subject: [PATCH 149/171] dwc_otg: fiq_fsm: Make high-speed isochronous strided
+ transfers work properly
+
+Certain low-bandwidth high-speed USB devices (specialist audio devices,
+compressed-frame webcams) have packet intervals > 1 microframe.
+
+Stride these transfers in the FIQ by using the start-of-frame interrupt
+to restart the channel at the right time.
+---
+ drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c  | 17 +++++++++++++----
+ drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h  |  5 ++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd.c      |  7 ++++++-
+ drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c |  6 ++++--
+ 4 files changed, 27 insertions(+), 8 deletions(-)
+
+--- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.c
+@@ -615,8 +615,11 @@ static int notrace noinline fiq_fsm_do_s
+ 			break;
+ 
+ 		case FIQ_HS_ISOC_SLEEPING:
+-			state->channel[n].fsm = FIQ_HS_ISOC_TURBO;
+-			fiq_fsm_restart_channel(state, n, 0);
++			/* Is it time to wake this channel yet? */
++			if (--state->channel[n].uframe_sleeps == 0) {
++				state->channel[n].fsm = FIQ_HS_ISOC_TURBO;
++				fiq_fsm_restart_channel(state, n, 0);
++			}
+ 			break;
+ 
+ 		case FIQ_PER_SSPLIT_QUEUED:
+@@ -624,7 +627,7 @@ static int notrace noinline fiq_fsm_do_s
+ 				break;
+ 			if(!fiq_fsm_tt_in_use(state, num_channels, n)) {
+ 				if (!fiq_fsm_too_late(state, n)) {
+-					fiq_print(FIQDBG_INT, st, "SOF GO %01d", n);
++					fiq_print(FIQDBG_INT, state, "SOF GO %01d", n);
+ 					fiq_fsm_restart_channel(state, n, 0);
+ 					state->channel[n].fsm = FIQ_PER_SSPLIT_STARTED;
+ 				} else {
+@@ -1069,8 +1072,14 @@ static int notrace noinline fiq_fsm_do_h
+ 		if (fiq_fsm_update_hs_isoc(state, n, hcint)) {
+ 			/* more transactions to come */
+ 			handled = 1;
+-			restart = 1;
+ 			fiq_print(FIQDBG_INT, state, "HSISO M ");
++			/* For strided transfers, put ourselves to sleep */
++			if (st->hs_isoc_info.stride > 1) {
++				st->uframe_sleeps = st->hs_isoc_info.stride - 1;
++				st->fsm = FIQ_HS_ISOC_SLEEPING;
++			} else {
++				restart = 1;
++			}
+ 		} else {
+ 			st->fsm = FIQ_HS_ISOC_DONE;
+ 			fiq_print(FIQDBG_INT, state, "HSISO F ");
+--- a/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
++++ b/drivers/usb/host/dwc_otg/dwc_otg_fiq_fsm.h
+@@ -260,12 +260,13 @@ struct fiq_dma_blob {
+  * @iso_frame:	Pointer to the array of OTG URB iso_frame_descs.
+  * @nrframes:	Total length of iso_frame_desc array
+  * @index:	Current index (FIQ-maintained)
+- *
++ * @stride:	Interval in uframes between HS isoc transactions
+  */
+ struct fiq_hs_isoc_info {
+ 	struct dwc_otg_hcd_iso_packet_desc *iso_desc;
+ 	unsigned int nrframes;
+ 	unsigned int index;
++	unsigned int stride;
+ };
+ 
+ /**
+@@ -296,6 +297,8 @@ struct fiq_channel_state {
+ 	/* Hardware bug workaround: sometimes channel halt interrupts are
+ 	 * delayed until the next SOF. Keep track of when we expected to get interrupted. */
+ 	unsigned int expected_uframe;
++	/* number of uframes remaining (for interval > 1 HS isoc transfers) before next transfer */
++	unsigned int uframe_sleeps;
+ 	/* in/out for communicating number of dma buffers used, or number of ISOC to do */
+ 	unsigned int nrpackets;
+ 	struct fiq_dma_info dma_info;
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd.c
+@@ -1678,6 +1678,9 @@ int fiq_fsm_queue_isoc_transaction(dwc_o
+ 		}
+ 	}
+ 
++	st->hs_isoc_info.stride = qh->interval;
++	st->uframe_sleeps = 0;
++
+ 	fiq_print(FIQDBG_INT, hcd->fiq_state, "FSMQ  %01d ", hc->hc_num);
+ 	fiq_print(FIQDBG_INT, hcd->fiq_state, "%08x", st->hcchar_copy.d32);
+ 	fiq_print(FIQDBG_INT, hcd->fiq_state, "%08x", st->hctsiz_copy.d32);
+@@ -1692,9 +1695,11 @@ int fiq_fsm_queue_isoc_transaction(dwc_o
+ 	DWC_WRITE_REG32(&hc_regs->hcintmsk, st->hcintmsk_copy.d32);
+ 	if (hfnum.b.frrem < PERIODIC_FRREM_BACKOFF) {
+ 		/* Prevent queueing near EOF1. Bad things happen if a periodic
+-		 * split transaction is queued very close to EOF.
++		 * split transaction is queued very close to EOF. SOF interrupt handler
++		 * will wake this channel at the next interrupt.
+ 		 */
+ 		st->fsm = FIQ_HS_ISOC_SLEEPING;
++		st->uframe_sleeps = 1;
+ 	} else {
+ 		st->fsm = FIQ_HS_ISOC_TURBO;
+ 		st->hcchar_copy.b.chen = 1;
+--- a/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
++++ b/drivers/usb/host/dwc_otg/dwc_otg_hcd_intr.c
+@@ -2297,10 +2297,10 @@ void dwc_otg_fiq_unmangle_isoc(dwc_otg_h
+ 			dwc_urb->error_count++;
+ 		}
+ 	}
++	qh->sched_frame = dwc_frame_num_inc(qh->sched_frame, qh->interval * (nr_frames - 1));
++
+ 	//printk_ratelimited(KERN_INFO "%s: HS isochronous of %d/%d frames with %d errors complete\n",
+ 	//			__FUNCTION__, i, dwc_urb->packet_count, dwc_urb->error_count);
+-	hcd->fops->complete(hcd, dwc_urb->priv, dwc_urb, 0);
+-	release_channel(hcd, qh->channel, qtd, DWC_OTG_HC_XFER_URB_COMPLETE);
+ }
+ 
+ /**
+@@ -2543,6 +2543,8 @@ void dwc_otg_hcd_handle_hc_fsm(dwc_otg_h
+ 		 * fail.
+ 		 */
+ 		dwc_otg_fiq_unmangle_isoc(hcd, qh, qtd, num);
++		hcd->fops->complete(hcd, qtd->urb->priv, qtd->urb, 0);
++		release_channel(hcd, hc, qtd, DWC_OTG_HC_XFER_URB_COMPLETE);
+ 		break;
+ 
+ 	case FIQ_PER_SPLIT_LS_ABORTED:
