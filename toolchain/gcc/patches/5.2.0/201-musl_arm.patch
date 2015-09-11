@@ -1,7 +1,9 @@
-From ec39b7c91facdd74fddea95128502c25ec3948a3 Mon Sep 17 00:00:00 2001
 From: ktkachov <ktkachov@138bc75d-0d04-0410-961f-82ee72b054a4>
-Date: Wed, 27 May 2015 13:17:11 +0000
-Subject: [PATCH 11/12] [PATCH 4/13] arm musl support
+Date: Wed, 27 May 2015 13:17:11 +0000 (+0000)
+Subject: [PATCH 4/13] arm musl support
+X-Git-Url: https://gcc.gnu.org/git/?p=gcc.git;a=commitdiff_plain;h=de799bd087ab9a179768fea75bd195a31d3432a4
+
+[PATCH 4/13] arm musl support
 
 On behalf of szabolcs.nagy@arm.com
 
@@ -9,10 +11,9 @@ On behalf of szabolcs.nagy@arm.com
 
 	* config/arm/linux-eabi.h (MUSL_DYNAMIC_LINKER): Define.
 
+
 git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@223749 138bc75d-0d04-0410-961f-82ee72b054a4
 ---
- gcc/config/arm/linux-eabi.h | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
 
 --- a/gcc/config/arm/linux-eabi.h
 +++ b/gcc/config/arm/linux-eabi.h
@@ -40,17 +41,3 @@ git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@223749 138bc75d-0d04-0410-961f-8
  /* At this point, bpabi.h will have clobbered LINK_SPEC.  We want to
     use the GNU/Linux version, not the generic BPABI version.  */
  #undef  LINK_SPEC
---- a/libitm/config/arm/hwcap.cc
-+++ b/libitm/config/arm/hwcap.cc
-@@ -40,7 +40,11 @@ int GTM_hwcap HIDDEN = 0
- 
- #ifdef __linux__
- #include <unistd.h>
-+#ifdef __GLIBC__
- #include <sys/fcntl.h>
-+#else
-+#include <fcntl.h>
-+#endif
- #include <elf.h>
- 
- static void __attribute__((constructor))

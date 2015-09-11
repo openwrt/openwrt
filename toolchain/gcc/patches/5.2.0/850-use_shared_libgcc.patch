@@ -13,7 +13,7 @@
     is used.  */
 --- a/gcc/config/linux.h
 +++ b/gcc/config/linux.h
-@@ -51,6 +51,10 @@ see the files COPYING3 and COPYING.RUNTI
+@@ -53,6 +53,10 @@ see the files COPYING3 and COPYING.RUNTI
  	builtin_assert ("system=posix");			\
      } while (0)
  
@@ -22,8 +22,8 @@
 +#endif
 +
  /* Determine which dynamic linker to use depending on whether GLIBC or
-    uClibc or Bionic is the default C library and whether
-    -muclibc or -mglibc or -mbionic has been passed to change the default.  */
+    uClibc or Bionic or musl is the default C library and whether
+    -muclibc or -mglibc or -mbionic or -mmusl has been passed to change
 --- a/libgcc/mkmap-symver.awk
 +++ b/libgcc/mkmap-symver.awk
 @@ -132,5 +132,5 @@ function output(lib) {
@@ -35,7 +35,7 @@
  }
 --- a/gcc/config/rs6000/linux.h
 +++ b/gcc/config/rs6000/linux.h
-@@ -56,6 +56,9 @@
+@@ -60,6 +60,9 @@
  #undef	CPP_OS_DEFAULT_SPEC
  #define CPP_OS_DEFAULT_SPEC "%(cpp_os_linux)"
  
