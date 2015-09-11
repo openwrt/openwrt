@@ -6,7 +6,8 @@
 			"ATQ0",
 			"ATV1",
 			"ATE1",
-			"ATS0=0"
+			"ATS0=0",
+			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\""
 		],
 		"modes": {
 			"preferlte": "AT^SYSCFGEX=\\\"030201\\\",3fffffff,2,4,7fffffffffffffff,,",
@@ -25,7 +26,7 @@
 			"AT+CGREG=2",
 			"AT+CFUN=5",
 			"AT+MODESELECT=3",
-			"AT+CGDCONT=1,\\\"IP\\\",\\\"${apn}\\\""
+			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\""
 		],
 		"modes": {
 			"umts": "AT+CHANGEALLPATH=1"
@@ -33,10 +34,27 @@
 		"connect": "AT+CGATT=1",
 		"disconnect": "AT+CGATT=0"
 	},
-	"sony": {
+	"sierra wireless, incorporated": {
 		"initialize": [
 			"AT+CFUN=1",
-			"AT+CGDCONT=1,\\\"IP\\\",\\\"${apn}\\\"",
+			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\"",
+			"AT$QCPDPP=1${auth:+,$auth}${password:+,\\\"$password\\\"}${username:+,\\\"$username\\\"}"
+		],
+		"modes": {
+			"preferlte": "AT!SELRAT=07",
+			"preferumts": "AT!SELRAT=05",
+			"lte": "AT!SELRAT=06",
+			"umts": "AT!SELRAT=01",
+			"gsm": "AT!SELRAT=02",
+			"auto": "AT!SELRAT=00"
+		},
+		"connect": "AT!SCACT=1,1",
+		"disconnect": "AT!SCACT=0,1"
+	},
+	"sony ericsson": {
+		"initialize": [
+			"AT+CFUN=1",
+			"AT+CGDCONT=1,\\\"${pdptype}\\\",\\\"${apn}\\\"",
 			"AT*EIAAUW=1,1,\\\"${username}\\\",\\\"${password}\\\",${auth:-00111}"
 		],
 		"modes": {
