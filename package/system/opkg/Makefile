@@ -72,7 +72,7 @@ endef
 define Package/opkg-smime
   $(call Package/opkg/Default)
   TITLE+= (with S/MIME signature support)
-  DEPENDS+=+libopenssl
+  DEPENDS+=+PACKAGE_opkg-smime:libopenssl
   VARIANT:=smime
 endef
 
