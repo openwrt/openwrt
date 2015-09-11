@@ -152,7 +152,7 @@ echo "2.0" > $tmp_dir/debian-binary
 
 pkg_file=$dest_dir/${pkg}_${version}_${arch}.ipk
 rm -f $pkg_file
-( cd $tmp_dir && $TAR --format=gnu --sort=name -zcf $pkg_file --mtime="$TIMESTAMP" ./debian-binary ./data.tar.gz ./control.tar.gz )
+( cd $tmp_dir && $TAR $ogargs --format=gnu --sort=name -zcf $pkg_file --mtime="$TIMESTAMP" ./debian-binary ./data.tar.gz ./control.tar.gz )
 
 rm $tmp_dir/debian-binary $tmp_dir/data.tar.gz $tmp_dir/control.tar.gz
 rmdir $tmp_dir
