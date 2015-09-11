@@ -219,73 +219,32 @@ mvsw61xx_set_pvid(struct switch_dev *dev, int port, int val)
 }
 
 static int
-mvsw61xx_get_port_status(struct switch_dev *dev,
-		const struct switch_attr *attr, struct switch_val *val)
-{
-	struct mvsw61xx_state *state = get_state(dev);
-	char *buf = state->buf;
-	u16 status, speed;
-	int len;
-
-	status = sr16(dev, MV_PORTREG(STATUS, val->port_vlan));
-	speed = (status & MV_PORT_STATUS_SPEED_MASK) >>
-			MV_PORT_STATUS_SPEED_SHIFT;
-
-	len = sprintf(buf, "link: ");
-	if (status & MV_PORT_STATUS_LINK) {
-		len += sprintf(buf + len, "up, speed: ");
-
-		switch (speed) {
-		case MV_PORT_STATUS_SPEED_10:
-			len += sprintf(buf + len, "10");
-			break;
-		case MV_PORT_STATUS_SPEED_100:
-			len += sprintf(buf + len, "100");
-			break;
-		case MV_PORT_STATUS_SPEED_1000:
-			len += sprintf(buf + len, "1000");
-			break;
-		}
-
-		len += sprintf(buf + len, " Mbps, duplex: ");
-
-		if (status & MV_PORT_STATUS_FDX)
-			len += sprintf(buf + len, "full");
-		else
-			len += sprintf(buf + len, "half");
-	} else {
-		len += sprintf(buf + len, "down");
-	}
-
-	val->value.s = buf;
-
-	return 0;
-}
-
-static int
-mvsw61xx_get_port_speed(struct switch_dev *dev,
-		const struct switch_attr *attr, struct switch_val *val)
+mvsw61xx_get_port_link(struct switch_dev *dev, int port,
+		struct switch_port_link *link)
 {
 	u16 status, speed;
 
-	status = sr16(dev, MV_PORTREG(STATUS, val->port_vlan));
+	status = sr16(dev, MV_PORTREG(STATUS, port));
+
+	link->link = status & MV_PORT_STATUS_LINK;
+	if (!link->link)
+		return 0;
+
+	link->duplex = status & MV_PORT_STATUS_FDX;
+
 	speed = (status & MV_PORT_STATUS_SPEED_MASK) >>
 			MV_PORT_STATUS_SPEED_SHIFT;
 
-	val->value.i = 0;
-
-	if (status & MV_PORT_STATUS_LINK) {
-		switch (speed) {
-		case MV_PORT_STATUS_SPEED_10:
-			val->value.i = 10;
-			break;
-		case MV_PORT_STATUS_SPEED_100:
-			val->value.i = 100;
-			break;
-		case MV_PORT_STATUS_SPEED_1000:
-			val->value.i = 1000;
-			break;
-		}
+	switch (speed) {
+	case MV_PORT_STATUS_SPEED_10:
+		link->speed = SWITCH_PORT_SPEED_10;
+		break;
+	case MV_PORT_STATUS_SPEED_100:
+		link->speed = SWITCH_PORT_SPEED_100;
+		break;
+	case MV_PORT_STATUS_SPEED_1000:
+		link->speed = SWITCH_PORT_SPEED_1000;
+		break;
 	}
 
 	return 0;
@@ -676,8 +635,6 @@ enum {
 enum {
 	MVSW61XX_PORT_MASK,
 	MVSW61XX_PORT_QMODE,
-	MVSW61XX_PORT_STATUS,
-	MVSW61XX_PORT_LINK,
 };
 
 static const struct switch_attr mvsw61xx_global[] = {
@@ -727,22 +684,6 @@ static const struct switch_attr mvsw61xx_port[] = {
 		.get = mvsw61xx_get_port_qmode,
 		.set = mvsw61xx_set_port_qmode,
 	},
-	[MVSW61XX_PORT_STATUS] = {
-		.id = MVSW61XX_PORT_STATUS,
-		.type = SWITCH_TYPE_STRING,
-		.description = "Return port status",
-		.name = "status",
-		.get = mvsw61xx_get_port_status,
-		.set = NULL,
-	},
-	[MVSW61XX_PORT_LINK] = {
-		.id = MVSW61XX_PORT_LINK,
-		.type = SWITCH_TYPE_INT,
-		.description = "Get link speed",
-		.name = "link",
-		.get = mvsw61xx_get_port_speed,
-		.set = NULL,
-	},
 };
 
 static const struct switch_dev_ops mvsw61xx_ops = {
@@ -758,6 +699,7 @@ static const struct switch_dev_ops mvsw61xx_ops = {
 		.attr = mvsw61xx_port,
 		.n_attr = ARRAY_SIZE(mvsw61xx_port),
 	},
+	.get_port_link = mvsw61xx_get_port_link,
 	.get_port_pvid = mvsw61xx_get_pvid,
 	.set_port_pvid = mvsw61xx_set_pvid,
 	.get_vlan_ports = mvsw61xx_get_vlan_ports,
