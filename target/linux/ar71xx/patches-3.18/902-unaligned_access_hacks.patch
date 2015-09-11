@@ -822,7 +822,7 @@
  				       | TCPOLEN_TIMESTAMP))
 --- a/net/xfrm/xfrm_input.c
 +++ b/net/xfrm/xfrm_input.c
-@@ -152,8 +152,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
+@@ -154,8 +154,8 @@ int xfrm_parse_spi(struct sk_buff *skb,
  	if (!pskb_may_pull(skb, hlen))
  		return -EINVAL;
  

@@ -5546,7 +5546,7 @@
  	ctrl_ctx->add_flags |= cpu_to_le32(added_ctxs);
  	new_add_flags = le32_to_cpu(ctrl_ctx->add_flags);
  
-@@ -4451,8 +4597,14 @@ static u16 xhci_call_host_update_timeout
+@@ -4454,8 +4600,14 @@ static u16 xhci_call_host_update_timeout
  		u16 *timeout)
  {
  	if (state == USB3_LPM_U1)
@@ -5561,7 +5561,7 @@
  		return xhci_calculate_u2_timeout(xhci, udev, desc);
  
  	return USB3_LPM_DISABLED;
-@@ -4837,7 +4989,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4840,7 +4992,9 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  	hcd->self.no_sg_constraint = 1;
  
  	/* XHCI controllers don't stop the ep queue on short packets :| */
@@ -5571,7 +5571,7 @@
  
  	if (usb_hcd_is_primary_hcd(hcd)) {
  		xhci = kzalloc(sizeof(struct xhci_hcd), GFP_KERNEL);
-@@ -4900,6 +5054,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
+@@ -4903,6 +5057,10 @@ int xhci_gen_setup(struct usb_hcd *hcd,
  		goto error;
  	xhci_dbg(xhci, "Reset complete\n");
  
@@ -5582,7 +5582,7 @@
  	/* Set dma_mask and coherent_dma_mask to 64-bits,
  	 * if xHC supports 64-bit addressing */
  	if (HCC_64BIT_ADDR(xhci->hcc_params) &&
-@@ -4994,8 +5152,57 @@ MODULE_DESCRIPTION(DRIVER_DESC);
+@@ -4997,8 +5155,57 @@ MODULE_DESCRIPTION(DRIVER_DESC);
  MODULE_AUTHOR(DRIVER_AUTHOR);
  MODULE_LICENSE("GPL");
  
