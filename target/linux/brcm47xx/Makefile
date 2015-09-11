@@ -13,7 +13,7 @@ FEATURES:=squashfs usb
 SUBTARGETS:=generic mips74k legacy
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.1
 
 include $(INCLUDE_DIR)/target.mk
 
