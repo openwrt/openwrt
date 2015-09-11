@@ -14,8 +14,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
 +++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
-@@ -25,6 +25,26 @@
- 		       0x88000000 0x18000000>;
+@@ -24,6 +24,26 @@
+ 		reg = <0x00000000 0x08000000>;
  	};
  
 +	axi@18000000 {
@@ -43,8 +43,8 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  		num-chipselects = <1>;
 --- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
 +++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
-@@ -25,6 +25,17 @@
- 		       0x88000000 0x08000000>;
+@@ -24,6 +24,17 @@
+ 		reg = <0x00000000 0x08000000>;
  	};
  
 +	axi@18000000 {
