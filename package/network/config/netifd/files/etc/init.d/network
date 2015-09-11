@@ -21,7 +21,6 @@ start_service() {
 	procd_set_param watch network.interface
 	[ -e /proc/sys/kernel/core_pattern ] && {
 		procd_set_param limits core="unlimited"
-		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
 	}
 	procd_close_instance
 }
