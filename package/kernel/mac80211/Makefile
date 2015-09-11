@@ -859,6 +859,40 @@ endef
 define KernelPackage/iwlagn/config
   if PACKAGE_kmod-iwlagn
 
+	config PACKAGE_IWLWIFI_DEBUG
+		bool "Enable full debugging output in the iwlagn driver"
+		default n
+		help
+		  This option will enable debug tracing output for the iwlwifi drivers
+
+		  This will result in the kernel module being ~100k larger.  You can
+		  control which debug output is sent to the kernel log by setting the
+		  value in
+
+			/sys/module/iwlwifi/parameters/debug
+
+		  This entry will only exist if this option is enabled.
+
+		  To set a value, simply echo an 8-byte hex value to the same file:
+
+			  % echo 0x43fff > /sys/module/iwlwifi/parameters/debug
+
+		  You can find the list of debug mask values in:
+			  drivers/net/wireless/iwlwifi/iwl-debug.h
+
+		  If this is your first time using this driver, you should say Y here
+		  as the debug information can assist others in helping you resolve
+		  any problems you may encounter.
+
+	config PACKAGE_IWLWIFI_DEBUGFS
+	        bool "iwlwifi debugfs support"
+		depends on PACKAGE_MAC80211_DEBUGFS
+		default n
+		help
+		  Enable creation of debugfs files for the iwlwifi drivers. This
+		  is a low-impact option that allows getting insight into the
+		  driver's state at runtime.
+
 	config IWL100_FW
 		bool "Intel 100 Firmware"
 		default y
@@ -1667,6 +1701,8 @@ config-$(call config_package,iwl-legacy) += IWLEGACY
 config-$(call config_package,iwl3945) += IWL3945
 config-$(call config_package,iwl4965) += IWL4965
 config-$(call config_package,iwlagn) += IWLWIFI IWLDVM IWLMVM
+config-$(CONFIG_PACKAGE_IWLWIFI_DEBUG)+= IWLWIFI_DEBUG
+config-$(CONFIG_PACKAGE_IWLWIFI_DEBUGFS)+= IWLWIFI_DEBUGFS
 
 config-$(call config_package,net-libipw) += LIBIPW
 config-$(call config_package,net-ipw2100) += IPW2100
