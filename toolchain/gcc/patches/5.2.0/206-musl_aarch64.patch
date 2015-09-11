@@ -1,7 +1,9 @@
-From 3640f7722df1c5e39d1d4980e3dd51fbda45912c Mon Sep 17 00:00:00 2001
 From: jgreenhalgh <jgreenhalgh@138bc75d-0d04-0410-961f-82ee72b054a4>
-Date: Wed, 27 May 2015 16:46:39 +0000
-Subject: [PATCH 12/12] [PATCH 3/13] aarch64 musl support
+Date: Wed, 27 May 2015 16:46:39 +0000 (+0000)
+Subject: [PATCH 3/13] aarch64 musl support
+X-Git-Url: https://gcc.gnu.org/git/?p=gcc.git;a=commitdiff_plain;h=b3ff21cf0531be91bc3fb8200296a7633090ec78
+
+[PATCH 3/13] aarch64 musl support
 
 gcc/Changelog:
 
@@ -10,10 +12,10 @@ gcc/Changelog:
 
 	* config/aarch64/aarch64-linux.h (MUSL_DYNAMIC_LINKER): Define.
 
+
+
 git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@223766 138bc75d-0d04-0410-961f-82ee72b054a4
 ---
- gcc/config/aarch64/aarch64-linux.h | 3 +++
- 1 file changed, 3 insertions(+)
 
 --- a/gcc/config/aarch64/aarch64-linux.h
 +++ b/gcc/config/aarch64/aarch64-linux.h

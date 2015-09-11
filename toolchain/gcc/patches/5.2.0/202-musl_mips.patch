@@ -1,7 +1,9 @@
-From 8de85695e46ed2bc57c3482b4f995be3a82c405e Mon Sep 17 00:00:00 2001
 From: ktkachov <ktkachov@138bc75d-0d04-0410-961f-82ee72b054a4>
-Date: Fri, 8 May 2015 15:16:50 +0000
-Subject: [PATCH 09/12] [PATCH 6/13] mips musl support
+Date: Fri, 8 May 2015 15:16:50 +0000 (+0000)
+Subject: [PATCH 6/13] mips musl support
+X-Git-Url: https://gcc.gnu.org/git/?p=gcc.git;a=commitdiff_plain;h=2550b6a866c887472b587bef87d433c51cf1ebc8
+
+[PATCH 6/13] mips musl support
 
 2015-05-08  Gregor Richards  <gregor.richards@uwaterloo.ca>
 	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
@@ -10,10 +12,9 @@ Subject: [PATCH 09/12] [PATCH 6/13] mips musl support
 	(MUSL_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKERN32): Define.
 	(GNU_USER_DYNAMIC_LINKERN32): Update.
 
+
 git-svn-id: svn+ssh://gcc.gnu.org/svn/gcc/trunk@222915 138bc75d-0d04-0410-961f-82ee72b054a4
 ---
- gcc/config/mips/linux.h | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
 
 --- a/gcc/config/mips/linux.h
 +++ b/gcc/config/mips/linux.h
