@@ -8,11 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wpan-tools
-PKG_VERSION:=0.4
+PKG_VERSION:=0.5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_URL:=http://wpan.cakelab.org/releases/
-PKG_MD5SUM:=37575523d1543e06b11295f03a891fa7
+PKG_MD5SUM:=6226df405a98c13ec41bf4d1f0777d6b
 
 include $(INCLUDE_DIR)/package.mk
 
