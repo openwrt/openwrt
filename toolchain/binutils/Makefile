@@ -10,12 +10,21 @@ PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 BIN_VERSION:=$(PKG_VERSION)
 
-PKG_SOURCE_URL:=https://releases.linaro.org/14.09/components/toolchain/binutils-linaro/
-PKG_REV:=2.24.0-2014.09
-PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
-PKG_MD5SUM:=8f9b2b2e049d59b1b86ce9657802a353
-BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
-HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
+ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
+  PKG_SOURCE_URL:=https://releases.linaro.org/14.09/components/toolchain/binutils-linaro/
+  PKG_REV:=2.24.0-2014.09
+  PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.xz
+  PKG_MD5SUM:=8f9b2b2e049d59b1b86ce9657802a353
+  BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
+  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
+else
+  PKG_SOURCE_URL:=@GNU/binutils/
+  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+
+  ifeq ($(PKG_VERSION),2.25.1)
+    PKG_MD5SUM:=ac493a78de4fee895961d025b7905be4
+  endif
+endif
 
 HOST_BUILD_PARALLEL:=1
 

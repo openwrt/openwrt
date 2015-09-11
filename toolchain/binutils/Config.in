@@ -9,6 +9,9 @@ choice
 	config BINUTILS_VERSION_LINARO
 		bool "Linaro binutils 2.24"
 
+	config BINUTILS_VERSION_2_25_1
+		bool "Linaro binutils 2.25.1"
+
 endchoice
 
 config EXTRA_BINUTILS_CONFIG_OPTIONS
@@ -22,4 +25,5 @@ config BINUTILS_VERSION
 	string
 	prompt "Binutils Version" if (TOOLCHAINOPTS && NULL)
 	default "linaro"          if BINUTILS_VERSION_LINARO
+	default "2.25.1"          if BINUTILS_VERSION_2_25_1
 	default "linaro"
