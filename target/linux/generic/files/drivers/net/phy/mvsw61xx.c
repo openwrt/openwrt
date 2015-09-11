@@ -196,7 +196,7 @@ mvsw61xx_set_port_qmode(struct switch_dev *dev,
 }
 
 static int
-mvsw61xx_get_pvid(struct switch_dev *dev, int port, int *val)
+mvsw61xx_get_port_pvid(struct switch_dev *dev, int port, int *val)
 {
 	struct mvsw61xx_state *state = get_state(dev);
 
@@ -206,7 +206,7 @@ mvsw61xx_get_pvid(struct switch_dev *dev, int port, int *val)
 }
 
 static int
-mvsw61xx_set_pvid(struct switch_dev *dev, int port, int val)
+mvsw61xx_set_port_pvid(struct switch_dev *dev, int port, int val)
 {
 	struct mvsw61xx_state *state = get_state(dev);
 
@@ -700,8 +700,8 @@ static const struct switch_dev_ops mvsw61xx_ops = {
 		.n_attr = ARRAY_SIZE(mvsw61xx_port),
 	},
 	.get_port_link = mvsw61xx_get_port_link,
-	.get_port_pvid = mvsw61xx_get_pvid,
-	.set_port_pvid = mvsw61xx_set_pvid,
+	.get_port_pvid = mvsw61xx_get_port_pvid,
+	.set_port_pvid = mvsw61xx_set_port_pvid,
 	.get_vlan_ports = mvsw61xx_get_vlan_ports,
 	.set_vlan_ports = mvsw61xx_set_vlan_ports,
 	.apply_config = mvsw61xx_apply,
