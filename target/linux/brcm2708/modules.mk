@@ -179,6 +179,29 @@ endef
 
 $(eval $(call KernelPackage,sound-soc-iqaudio-dac))
 
+define KernelPackage/sound-soc-raspidac3
+  TITLE:=Support for RaspiDAC Rev.3x
+  KCONFIG:= \
+	CONFIG_SND_BCM2708_SOC_RASPIDAC3 \
+	CONFIG_SND_SOC_PCM512x \
+	CONFIG_SND_SOC_PCM512x_I2C \
+	CONFIG_SND_SOC_TPA6130A2
+  FILES:= \
+	$(LINUX_DIR)/sound/soc/bcm/snd-soc-raspidac3.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x-i2c.ko \
+	$(LINUX_DIR)/sound/soc/codecs/snd-soc-tpa6130a2.ko
+  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-pcm512x-i2c snd-soc-tpa6130a2 snd-soc-raspidac3)
+  DEPENDS:=kmod-sound-soc-bcm2708-i2s
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-soc-raspidac3/description
+  This package contains support for RaspiDAC Rev.3x
+endef
+
+$(eval $(call KernelPackage,sound-soc-raspidac3))
+
 
 define KernelPackage/random-bcm2708
   SUBMENU:=$(OTHER_MENU)
