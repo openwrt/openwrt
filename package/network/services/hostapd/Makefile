@@ -177,7 +177,7 @@ endef
 define Package/wpad-mesh
 $(call Package/wpad/Default)
   TITLE+= (with 802.11s mesh and SAE support)
-  DEPENDS:=$(DRV_DEPENDS) +libubus +libopenssl +@CONFIG_WPA_SUPPLICANT_OPENSSL @(!TARGET_uml||BROKEN)
+  DEPENDS:=$(DRV_DEPENDS) +libubus +PACKAGE_wpad-mesh:libopenssl +@CONFIG_WPA_SUPPLICANT_OPENSSL @(!TARGET_uml||BROKEN)
   CONFLICTS:=@WPA_SUPPLICANT_INTERNAL
   VARIANT:=wpad-mesh
 endef
