@@ -392,6 +392,9 @@ ar71xx_board_detect() {
 	*CAP4200AG)
 		name="cap4200ag"
 		;;
+	*"COMFAST CF-E316N v2")
+		name="cf-e316n-v2"
+		;;
 	*"CPE210/220/510/520")
 		name="cpe510"
 		tplink_pharos_board_detect

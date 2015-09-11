@@ -25,8 +25,8 @@
  obj-$(CONFIG_ATH79_MACH_BHU_BXU2000N2_A)+= mach-bhu-bxu2000n2-a.o
 +obj-$(CONFIG_ATH79_MACH_BSB)		+= mach-bsb.o
  obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
+ obj-$(CONFIG_ATH79_MACH_CF_E316N_V2)	+= mach-cf-e316n-v2.o
  obj-$(CONFIG_ATH79_MACH_CPE510)		+= mach-cpe510.o
- obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
 @@ -39,6 +39,7 @@ enum ath79_mach_type {
@@ -36,4 +36,4 @@
 +	ATH79_MACH_BSB,			/* Smart Electronics Black Swift board */
  	ATH79_MACH_CAP4200AG,		/* Senao CAP4200AG */
  	ATH79_MACH_CARAMBOLA2,		/* 8devices Carambola2 */
- 	ATH79_MACH_CPE510,		/* TP-LINK CPE510 */
+ 	ATH79_MACH_CF_E316N_V2,		/* COMFAST CF-E316N v2 */
