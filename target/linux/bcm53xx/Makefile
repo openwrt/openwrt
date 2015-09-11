@@ -13,7 +13,7 @@ FEATURES:=squashfs nand usb pci pcie gpio
 MAINTAINER:=Hauke Mehrtens <hauke@hauke-m.de>
 CPU_TYPE:=cortex-a9
 
-KERNEL_PATCHVER:=3.18
+KERNEL_PATCHVER:=4.1
 
 include $(INCLUDE_DIR)/target.mk
 
