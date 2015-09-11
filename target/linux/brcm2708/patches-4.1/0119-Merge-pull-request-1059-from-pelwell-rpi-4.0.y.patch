@@ -1,14 +1,14 @@
-From 35f9c869b55fa358e089d4394205082c5c825a27 Mon Sep 17 00:00:00 2001
+From ea390b711a1c1ceaf30d7a44a6b1eb59249456b6 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <pelwell@users.noreply.github.com>
 Date: Mon, 13 Jul 2015 13:25:31 +0100
-Subject: [PATCH 119/148] Merge pull request #1059 from pelwell/rpi-4.0.y
+Subject: [PATCH 119/171] Merge pull request #1059 from pelwell/rpi-4.0.y
 
 w1_therm: Back-port locking improvements from 4.2-rc1
 ---
- Documentation/ABI/stable/sysfs-driver-w1_ds28ea00 |   6 +
- Documentation/w1/slaves/w1_therm                  |  11 +-
- drivers/w1/slaves/w1_therm.c                      | 162 ++++++++++++++++++++--
- 3 files changed, 163 insertions(+), 16 deletions(-)
+ Documentation/ABI/stable/sysfs-driver-w1_ds28ea00 |   6 ++
+ Documentation/w1/slaves/w1_therm                  |  11 ++-
+ drivers/w1/slaves/w1_therm.c                      | 102 +++++++++++++++++++++-
+ 3 files changed, 117 insertions(+), 2 deletions(-)
  create mode 100644 Documentation/ABI/stable/sysfs-driver-w1_ds28ea00
 
 --- /dev/null

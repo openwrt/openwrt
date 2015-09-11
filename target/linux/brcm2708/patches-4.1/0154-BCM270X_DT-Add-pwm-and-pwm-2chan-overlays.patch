@@ -1,0 +1,250 @@
+From 9ace261c44e2a16d13305b34b06a56c1a4838dc5 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 17 Aug 2015 10:49:44 +0100
+Subject: [PATCH 154/171] BCM270X_DT: Add pwm and pwm-2chan overlays
+
+From the README entries:
+  Legal pin,function combinations for each channel:
+    PWM0: 12,4(Alt0) 18,2(Alt5) 40,4(Alt0)            52,5(Alt1)
+    PWM1: 13,4(Alt0) 19,2(Alt5) 41,4(Alt0) 45,4(Alt0) 53,5(Alt1)
+  N.B.:
+    1) Pin 18 is the only one available on all platforms, and
+       it is the one used by the I2S audio interface.
+       Pins 12 and 13 might be better choices on an A+, B+ or Pi2.
+    2) The onboard analogue audio output uses both PWM channels.
+    3) So be careful mixing audio and PWM.
+    4) Currently the clock must have been enabled and configured
+       by other means.
+
+See: https://github.com/raspberrypi/linux/issues/756
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi            | 16 +++++++++
+ arch/arm/boot/dts/overlays/Makefile              |  2 ++
+ arch/arm/boot/dts/overlays/README                | 41 +++++++++++++++++++++
+ arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts | 46 ++++++++++++++++++++++++
+ arch/arm/boot/dts/overlays/pwm-overlay.dts       | 42 ++++++++++++++++++++++
+ arch/arm/configs/bcm2709_defconfig               |  1 +
+ arch/arm/configs/bcmrpi_defconfig                |  1 +
+ drivers/pwm/Kconfig                              |  2 +-
+ 8 files changed, 150 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts
+ create mode 100644 arch/arm/boot/dts/overlays/pwm-overlay.dts
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -154,6 +154,14 @@
+ 			status = "disabled";
+ 		};
+ 
++		pwm: pwm@7e20c000 {
++			compatible = "brcm,bcm2835-pwm";
++			reg = <0x7e20c000 0x28>;
++			clocks = <&clk_pwm>;
++			#pwm-cells = <2>;
++			status = "disabled";
++		};
++
+ 		uart1: uart@7e215040 {
+ 			compatible = "brcm,bcm2835-aux-uart", "ns16550";
+ 			reg = <0x7e215040 0x40>;
+@@ -279,6 +287,14 @@
+ 			clock-output-names = "apb_pclk";
+ 			clock-frequency = <126000000>;
+ 		};
++
++		clk_pwm: clock@5 {
++			 compatible = "fixed-clock";
++			 reg = <3>;
++			 #clock-cells = <0>;
++			 clock-output-names = "pwm";
++			 clock-frequency = <100000000>;
++		};
+ 	};
+ 
+ 	__overrides__ {
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -35,6 +35,8 @@ dtb-$(RPI_DT_OVERLAYS) += mz61581-overla
+ dtb-$(RPI_DT_OVERLAYS) += piscreen-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pitft28-resistive-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += pps-gpio-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += pwm-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += pwm-2chan-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += rpi-dac-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += rpi-display-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += rpi-ft5406-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -410,6 +410,47 @@ Load:   dtoverlay=pps-gpio,<param>=<val>
+ Params: gpiopin                  Input GPIO (default "18")
+ 
+ 
++Name:   pwm
++Info:   Configures a single PWM channel
++        Legal pin,function combinations for each channel:
++          PWM0: 12,4(Alt0) 18,2(Alt5) 40,4(Alt0)            52,5(Alt1)
++          PWM1: 13,4(Alt0) 19,2(Alt5) 41,4(Alt0) 45,4(Alt0) 53,5(Alt1)
++        N.B.:
++          1) Pin 18 is the only one available on all platforms, and
++             it is the one used by the I2S audio interface.
++             Pins 12 and 13 might be better choices on an A+, B+ or Pi2.
++          2) The onboard analogue audio output uses both PWM channels.
++          3) So be careful mixing audio and PWM.
++          4) Currently the clock must have been enabled and configured
++             by other means.
++Load:   dtoverlay=pwm-2chan,<param>=<val>
++Load:   dtoverlay=pwm,<param>=<val>
++Params: pin                      Output pin (default 18) - see table
++        func                     Pin function (default 2 = Alt5) - see above
++        clock                    PWM clock frequency (informational)
++
++
++Name:   pwm-2chan
++Info:   Configures both PWM channels
++        Legal pin,function combinations for each channel:
++          PWM0: 12,4(Alt0) 18,2(Alt5) 40,4(Alt0)            52,5(Alt1)
++          PWM1: 13,4(Alt0) 19,2(Alt5) 41,4(Alt0) 45,4(Alt0) 53,5(Alt1)
++        N.B.:
++          1) Pin 18 is the only one available on all platforms, and
++             it is the one used by the I2S audio interface.
++             Pins 12 and 13 might be better choices on an A+, B+ or Pi2.
++          2) The onboard analogue audio output uses both PWM channels.
++          3) So be careful mixing audio and PWM.
++          4) Currently the clock must have been enabled and configured
++             by other means.
++Load:   dtoverlay=pwm-2chan,<param>=<val>
++Params: pin                      Output pin (default 18) - see table
++        pin2                     Output pin for other channel (default 19)
++        func                     Pin function (default 2 = Alt5) - see above
++        func2                    Function for pin2 (default 2 = Alt5)
++        clock                    PWM clock frequency (informational)
++
++
+ Name:   rpi-dac
+ Info:   Configures the RPi DAC audio card
+ Load:   dtoverlay=rpi-dac
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pwm-2chan-overlay.dts
+@@ -0,0 +1,46 @@
++/dts-v1/;
++/plugin/;
++
++/*
++This is the 2-channel overlay - only use it if you need both channels.
++
++Legal pin,function combinations for each channel:
++  PWM0: 12,4(Alt0) 18,2(Alt5) 40,4(Alt0)            52,5(Alt1)
++  PWM1: 13,4(Alt0) 19,2(Alt5) 41,4(Alt0) 45,4(Alt0) 53,5(Alt1)
++
++N.B.:
++  1) Pin 18 is the only one available on all platforms, and
++     it is the one used by the I2S audio interface.
++     Pins 12 and 13 might be better choices on an A+, B+ or Pi2.
++  2) The onboard analogue audio output uses both PWM channels.
++  3) So be careful mixing audio and PWM.
++*/
++
++/ {
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			pwm_pins: pwm_pins {
++				brcm,pins = <18 19>;
++				brcm,function = <2 2>; /* Alt5 */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&pwm>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm_pins>;
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		pin   = <&pwm_pins>,"brcm,pins:0";
++		pin2  = <&pwm_pins>,"brcm,pins:4";
++		func  = <&pwm_pins>,"brcm,function:0";
++		func2 = <&pwm_pins>,"brcm,function:4";
++		clock = <&clk_pwm>,"clock-frequency:0";
++	};
++};
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/pwm-overlay.dts
+@@ -0,0 +1,42 @@
++/dts-v1/;
++/plugin/;
++
++/*
++Legal pin,function combinations for each channel:
++  PWM0: 12,4(Alt0) 18,2(Alt5) 40,4(Alt0)            52,5(Alt1)
++  PWM1: 13,4(Alt0) 19,2(Alt5) 41,4(Alt0) 45,4(Alt0) 53,5(Alt1)
++
++N.B.:
++  1) Pin 18 is the only one available on all platforms, and
++     it is the one used by the I2S audio interface.
++     Pins 12 and 13 might be better choices on an A+, B+ or Pi2.
++  2) The onboard analogue audio output uses both PWM channels.
++  3) So be careful mixing audio and PWM.
++*/
++
++/ {
++	fragment@0 {
++		target = <&gpio>;
++		__overlay__ {
++			pwm_pins: pwm_pins {
++				brcm,pins = <18>;
++				brcm,function = <2>; /* Alt5 */
++			};
++		};
++	};
++
++	fragment@1 {
++		target = <&pwm>;
++		__overlay__ {
++			pinctrl-names = "default";
++			pinctrl-0 = <&pwm_pins>;
++			status = "okay";
++		};
++	};
++
++	__overrides__ {
++		pin   = <&pwm_pins>,"brcm,pins:0";
++		func  = <&pwm_pins>,"brcm,function:0";
++		clock = <&clk_pwm>,"clock-frequency:0";
++	};
++};
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -1089,6 +1089,7 @@ CONFIG_IIO_BUFFER=y
+ CONFIG_IIO_BUFFER_CB=y
+ CONFIG_IIO_KFIFO_BUF=m
+ CONFIG_DHT11=m
++CONFIG_PWM_BCM2835=m
+ CONFIG_RASPBERRYPI_FIRMWARE=y
+ CONFIG_EXT4_FS=y
+ CONFIG_EXT4_FS_POSIX_ACL=y
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1082,6 +1082,7 @@ CONFIG_IIO_BUFFER=y
+ CONFIG_IIO_BUFFER_CB=y
+ CONFIG_IIO_KFIFO_BUF=m
+ CONFIG_DHT11=m
++CONFIG_PWM_BCM2835=m
+ CONFIG_RASPBERRYPI_FIRMWARE=y
+ CONFIG_EXT4_FS=y
+ CONFIG_EXT4_FS_POSIX_ACL=y
+--- a/drivers/pwm/Kconfig
++++ b/drivers/pwm/Kconfig
+@@ -85,7 +85,7 @@ config PWM_BCM_KONA
+ 
+ config PWM_BCM2835
+ 	tristate "BCM2835 PWM support"
+-	depends on ARCH_BCM2835
++	depends on ARCH_BCM2835 || ARCH_BCM2708 || ARCH_BCM2709
+ 	help
+ 	  PWM framework driver for BCM2835 controller (Raspberry Pi)
+ 

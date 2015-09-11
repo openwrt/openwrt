@@ -1,0 +1,25 @@
+From ad7d23327d85897f4c467a3cde377d73a2769ac3 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Wed, 22 Jul 2015 12:41:54 +0000
+Subject: [PATCH 161/171] dt: overlay: added documentation of spi-dma overlay
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ arch/arm/boot/dts/overlays/README | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -515,6 +515,12 @@ Load:   dtoverlay=spi-bcm2835
+ Params: <None>
+ 
+ 
++Name:   spi-dma
++Info:   enables dma modes for spi-bcm2835
++Load:   dtoverlay=spi-dma
++Params: <None>
++
++
+ Name:   tinylcd35
+ Info:   3.5" Color TFT Display by www.tinylcd.com
+         Options: Touch, RTC, keypad

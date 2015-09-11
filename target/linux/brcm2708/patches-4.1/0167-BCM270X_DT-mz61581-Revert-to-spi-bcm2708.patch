@@ -1,0 +1,31 @@
+From 79cc7775c324c4dd392d62db7f50c2933d23cf1f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Sun, 19 Jul 2015 18:57:06 +0200
+Subject: [PATCH 167/171] BCM270X_DT: mz61581: Revert to spi-bcm2708
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The MZ61581 display does not work with spi-bcm2835 and software
+chip select. It works before the commit:
+spi: bcm2835: transform native-cs to gpio-cs on first spi_setup
+
+Revert to spi-bcm2708 until the cause has been detected and the
+issue resolved.
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/overlays/mz61581-overlay.dts | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/mz61581-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mz61581-overlay.dts
+@@ -12,6 +12,8 @@
+ 	fragment@0 {
+ 		target = <&spi0>;
+ 		__overlay__ {
++			/* does not work with spi-bcm2835 using software chip selects */
++			compatible = "brcm,bcm2708-spi";
+ 			status = "okay";
+ 
+ 			spidev@0{

@@ -1,0 +1,45 @@
+From 6d356030061c6e90437dbf4b32f95a1fa36d8868 Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Wed, 22 Jul 2015 08:34:41 +0000
+Subject: [PATCH 160/171] dt-overlay to enable dma for spi driver
+
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+---
+ arch/arm/boot/dts/overlays/Makefile            |  1 +
+ arch/arm/boot/dts/overlays/spi-dma-overlay.dts | 20 ++++++++++++++++++++
+ 2 files changed, 21 insertions(+)
+ create mode 100755 arch/arm/boot/dts/overlays/spi-dma-overlay.dts
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -45,6 +45,7 @@ dtb-$(RPI_DT_OVERLAYS) += rpi-sense-over
+ dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2708-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2835-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += spi-dma-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += tinylcd35-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += uart1-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += vga666-overlay.dtb
+--- /dev/null
++++ b/arch/arm/boot/dts/overlays/spi-dma-overlay.dts
+@@ -0,0 +1,20 @@
++/*
++ * Device tree overlay for spi-bcm2835 to allow dma
++ */
++
++/dts-v1/;
++/plugin/;
++
++/ {
++	compatible = "brcm,bcm2835", "brcm,bcm2836", "brcm,bcm2708", "brcm,bcm2709";
++
++	fragment@0 {
++		target = <&spi0>;
++		__overlay__ {
++			#address-cells = <1>;
++			#size-cells = <0>;
++			dmas = <&dma 6>, <&dma 7>;
++			dma-names = "tx", "rx";
++		};
++	};
++ };
