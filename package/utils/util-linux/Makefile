@@ -303,6 +303,17 @@ define Package/namei/description
  files, directories, and so forth)
 endef
 
+define Package/prlimit
+$(call Package/util-linux/Default)
+  TITLE:=get and set process resource limits
+  DEPENDS:= +libsmartcols
+endef
+
+define Package/prlimit/description
+  Given a process id and one or more resources, prlimit tries to retrieve
+  and/or modify the limits.
+endef
+
 define Package/rename
 $(call Package/util-linux/Default)
   TITLE:=rename files
@@ -534,6 +545,11 @@ define Package/namei/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/namei $(1)/usr/bin/
 endef
 
+define Package/prlimit/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/.libs/prlimit $(1)/usr/bin/
+endef
+
 define Package/rename/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/rename $(1)/usr/bin/
@@ -614,6 +630,7 @@ $(eval $(call BuildPackage,lsblk))
 $(eval $(call BuildPackage,mcookie))
 $(eval $(call BuildPackage,mount-utils))
 $(eval $(call BuildPackage,namei))
+$(eval $(call BuildPackage,prlimit))
 $(eval $(call BuildPackage,rename))
 $(eval $(call BuildPackage,partx-utils))
 $(eval $(call BuildPackage,script-utils))
