@@ -1,0 +1,17 @@
+--- a/lib/xattr-at.c
++++ b/lib/xattr-at.c
+@@ -18,6 +18,8 @@
+ 
+ #include <config.h>
+ 
++#ifdef HAVE_XATTRS
++
+ #include "xattr-at.h"
+ #include "openat.h"
+ 
+@@ -108,3 +110,5 @@
+ #undef AT_FUNC_RESULT
+ #undef AT_FUNC_POST_FILE_PARAM_DECLS
+ #undef AT_FUNC_POST_FILE_ARGS
++
++#endif
