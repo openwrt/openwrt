@@ -8,6 +8,10 @@
 	model = "Comtrend AR-5381u";
 	compatible = "comtrend,ar-5381u", "brcm,bcm6328";
 
+	chosen {
+		bootargs = "root=/dev/mtdblock2 rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
+	};
+
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
