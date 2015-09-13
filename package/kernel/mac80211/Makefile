@@ -624,7 +624,7 @@ define KernelPackage/ath10k/config
   if PACKAGE_kmod-ath10k
 
 	config ATH10K_API2_FW
-		bool "Firmware optimized for AP operation (v10.1 / API v2)"
+		bool "Use old AP mode firmware release (v10.1 / API v2)"
 		default n
 		help
 		  Use the ath10k firmware from the 10.1 SDK using API v2 optimized
