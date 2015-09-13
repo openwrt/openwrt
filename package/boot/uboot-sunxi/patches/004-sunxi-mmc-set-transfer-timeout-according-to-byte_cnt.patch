@@ -1,0 +1,42 @@
+diff --git a/package/boot/uboot-sunxi/patches/004-sunxi-mmc-set-transfer-timeout-according-to-byte_cnt.patch b/package/boot/uboot-sunxi/patches/004-sunxi-mmc-set-transfer-timeout-according-to-byte_cnt.patch
+new file mode 100644
+index 0000000..180b60b
+--- /dev/null
++++ b/package/boot/uboot-sunxi/patches/004-sunxi-mmc-set-transfer-timeout-according-to-byte_cnt.patch
+@@ -0,0 +1,36 @@
++From 8a5481e2e51a86e858c4f1481729421f26cc240c Mon Sep 17 00:00:00 2001
++From: Yousong Zhou <yszhou4tech@gmail.com>
++Date: Sat, 29 Aug 2015 21:26:11 +0800
++Subject: [PATCH] sunxi: mmc: set transfer timeout according to byte_cnt.
++
++Originally a timeout value of 2 seconds was used regardless of the size
++of data to be transfered.  This prevented slow devices from working
++correctly while there was no much gain for faster devices, e.g. it takes
++3708ms for a transfer of uImage of size 1899008 bytes.
++
++Signed-off-by: Yousong Zhou <yszhou4tech@gmail.com>
++---
++ drivers/mmc/sunxi_mmc.c |    6 ++++--
++ 1 file changed, 4 insertions(+), 2 deletions(-)
++
++diff --git a/drivers/mmc/sunxi_mmc.c b/drivers/mmc/sunxi_mmc.c
++index e7ab828..7a990f7 100644
++--- a/drivers/mmc/sunxi_mmc.c
+++++ b/drivers/mmc/sunxi_mmc.c
++@@ -257,9 +257,11 @@ static int mmc_trans_data_by_cpu(struct mmc *mmc, struct mmc_data *data)
++ 	const uint32_t status_bit = reading ? SUNXI_MMC_STATUS_FIFO_EMPTY :
++ 					      SUNXI_MMC_STATUS_FIFO_FULL;
++ 	unsigned i;
++-	unsigned byte_cnt = data->blocksize * data->blocks;
++-	unsigned timeout_msecs = 2000;
++ 	unsigned *buff = (unsigned int *)(reading ? data->dest : data->src);
+++	unsigned byte_cnt = data->blocksize * data->blocks;
+++	unsigned timeout_msecs = byte_cnt >> 8;
+++	if (timeout_msecs < 2000)
+++		timeout_msecs = 2000;
++ 
++ 	/* Always read / write data through the CPU */
++ 	setbits_le32(&mmchost->reg->gctrl, SUNXI_MMC_GCTRL_ACCESS_BY_AHB);
++-- 
++1.7.10.4
++
