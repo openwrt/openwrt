@@ -1,0 +1,141 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Sun, 13 Sep 2015 18:46:17 +0200
+Subject: [PATCH] fix termios custom speed field names
+
+Using c_ispeed/c_ospeed is necessary for setting custom baud rates not
+covered by the existing defines (via BOTHER).
+Rename those fields to match glibc/uClibc.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/arch/aarch64/bits/termios.h
++++ b/arch/aarch64/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/arm/bits/termios.h
++++ b/arch/arm/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/i386/bits/termios.h
++++ b/arch/i386/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/microblaze/bits/termios.h
++++ b/arch/microblaze/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/mips/bits/termios.h
++++ b/arch/mips/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/or1k/bits/termios.h
++++ b/arch/or1k/bits/termios.h
+@@ -5,8 +5,8 @@ struct termios {
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/powerpc/bits/termios.h
++++ b/arch/powerpc/bits/termios.h
+@@ -8,8 +8,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_cc[NCCS];
+ 	cc_t c_line;
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR		0
+--- a/arch/sh/bits/termios.h
++++ b/arch/sh/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/x32/bits/termios.h
++++ b/arch/x32/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
+--- a/arch/x86_64/bits/termios.h
++++ b/arch/x86_64/bits/termios.h
+@@ -6,8 +6,8 @@ struct termios
+ 	tcflag_t c_lflag;
+ 	cc_t c_line;
+ 	cc_t c_cc[NCCS];
+-	speed_t __c_ispeed;
+-	speed_t __c_ospeed;
++	speed_t c_ispeed;
++	speed_t c_ospeed;
+ };
+ 
+ #define VINTR     0
