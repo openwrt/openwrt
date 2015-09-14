@@ -218,6 +218,12 @@ ramips_setup_interfaces()
 		ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 6t"
 		ucidef_add_switch_vlan "switch0" "2" "5 6t"
 		;;
+	wizfi630a)
+		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
+		ucidef_add_switch "switch0" "1" "1"
+		ucidef_add_switch_vlan "switch0" "1" "1 2 6t"
+		ucidef_add_switch_vlan "switch0" "2" "0 6t"
+		;;
 	y1s)
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" "1" "1"
@@ -327,6 +333,10 @@ ramips_setup_macs()
 	wsr-600)
 		wan_mac=$(mtd_get_mac_binary factory 4)
 		lan_mac=$wan_mac
+		;;
+	wizfi630a)
+		lan_mac=$(mtd_get_mac_binary factory 4)
+		wan_mac=$(mtd_get_mac_binary factory 40)
 		;;
 	wsr-1166)
 		local index="$(find_mtd_index "board_data")"

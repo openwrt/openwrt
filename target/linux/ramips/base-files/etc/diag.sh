@@ -166,6 +166,9 @@ get_status_led() {
 	wzr-agl300nh)
 		status_led="$board:green:router"
 		;;
+	wizfi630a)
+		status_led="$board::run"
+		;;
 	wsr-1166|\
 	wsr-600)
 		status_led="$board:orange:diag"
