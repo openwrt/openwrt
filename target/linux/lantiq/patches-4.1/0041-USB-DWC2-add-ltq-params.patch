@@ -5,7 +5,7 @@
  };
  
 +static const struct dwc2_core_params params_ltq = {
-+	.otg_cap			= -1,
++	.otg_cap			= 2,	/* non-HNP/non-SRP */
 +	.otg_ver			= -1,
 +	.dma_enable			= -1,
 +	.dma_desc_enable		= -1,
@@ -35,10 +35,11 @@
  /**
   * dwc2_driver_remove() - Called when the DWC_otg core is unregistered with the
   * DWC_otg driver
-@@ -133,6 +161,7 @@ static int dwc2_driver_remove(struct pla
+@@ -133,6 +161,8 @@ static int dwc2_driver_remove(struct pla
  static const struct of_device_id dwc2_of_match_table[] = {
  	{ .compatible = "brcm,bcm2835-usb", .data = &params_bcm2835 },
  	{ .compatible = "rockchip,rk3066-usb", .data = &params_rk3066 },
++	{ .compatible = "lantiq,ifxhcd-arx100-dwc2", .data = &params_ltq },
 +	{ .compatible = "lantiq,ifxhcd-xrx200-dwc2", .data = &params_ltq },
  	{ .compatible = "snps,dwc2", .data = NULL },
  	{ .compatible = "samsung,s3c6400-hsotg", .data = NULL},
