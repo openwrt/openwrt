@@ -21,7 +21,16 @@ endef
 
 define Image/Build
 	$(call Image/Build/$(1))
+	$(call Build/sdcard-img)
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-root.$(1) bs=128k conv=sync
 endef
+
+define Build/sdcard-img
+	./gen_realview_sdcard_img.sh \
+	$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE)sdcard.img \
+	$(KDIR)/root.ext4 \
+	$(CONFIG_TARGET_ROOTFS_PARTSIZE)
+endef
+
 
 $(eval $(call BuildImage))
