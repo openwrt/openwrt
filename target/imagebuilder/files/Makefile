@@ -53,6 +53,7 @@ help: FORCE
 
 # override variables from rules.mk
 PACKAGE_DIR:=$(TOPDIR)/packages
+LISTS_DIR:=$(subst $(space),/,$(patsubst %,..,$(subst /,$(space),$(TARGET_DIR))))$(DL_DIR)
 OPKG:= \
   IPKG_NO_SCRIPT=1 \
   IPKG_TMP="$(TMP_DIR)/ipkgtmp" \
@@ -65,6 +66,7 @@ OPKG:= \
 	--force-overwrite \
 	--force-postinstall \
 	--cache $(DL_DIR) \
+	--lists-dir $(LISTS_DIR) \
 	--offline-root $(TARGET_DIR) \
 	--add-dest root:/ \
 	--add-arch all:100 \
