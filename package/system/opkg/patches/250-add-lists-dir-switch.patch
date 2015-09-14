@@ -1,0 +1,39 @@
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -101,6 +101,8 @@ static struct option long_options[] = {
+ 	{"test", 0, 0, ARGS_OPT_NOACTION},
+ 	{"tmp-dir", 1, 0, 't'},
+ 	{"tmp_dir", 1, 0, 't'},
++	{"lists-dir", 1, 0, 'l'},
++	{"lists_dir", 1, 0, 'l'},
+ 	{"verbosity", 2, 0, 'V'},
+ 	{"version", 0, 0, 'v'},
+ 	{0, 0, 0, 0}
+@@ -115,7 +117,7 @@ args_parse(int argc, char *argv[])
+ 	char *tuple, *targ;
+ 
+ 	while (1) {
+-		c = getopt_long_only(argc, argv, "Ad:f:ino:p:t:vV::",
++		c = getopt_long_only(argc, argv, "Ad:f:ino:p:l:t:vV::",
+ 				long_options, &option_index);
+ 		if (c == -1)
+ 			break;
+@@ -139,6 +141,9 @@ args_parse(int argc, char *argv[])
+ 		case 't':
+ 			conf->tmp_dir = xstrdup(optarg);
+ 			break;
++		case 'l':
++			conf->lists_dir = xstrdup(optarg);
++			break;
+ 		case 'v':
+ 			printf("opkg version %s\n", VERSION);
+ 			exit(0);
+@@ -316,6 +321,8 @@ usage()
+ 	printf("\t			automatically to satisfy dependencies\n");
+ 	printf("\t-t			Specify tmp-dir.\n");
+ 	printf("\t--tmp-dir		Specify tmp-dir.\n");
++	printf("\t-l			Specify lists-dir.\n");
++	printf("\t--lists-dir		Specify lists-dir.\n");
+ 
+ 	printf("\n");
+ 
