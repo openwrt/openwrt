@@ -115,11 +115,20 @@
 		};
 
 		ifxhcd@E101000 {
-			compatible = "lantiq,ifxhcd-arx100";
+			compatible = "lantiq,ifxhcd-arx100", "lantiq,ifxhcd-arx100-dwc2";
 			reg = <0xE101000 0x1000
 				0xE120000 0x3f000>;
 			interrupt-parent = <&icu0>;
 			interrupts = <62 91>;
+			status = "disabled";
+		};
+
+		ifxhcd@E106000 {
+			compatible = "lantiq,ifxhcd-arx100-dwc2";
+			reg = <0xE106000 0x1000
+				0xE1E0000 0x3f000>;
+			interrupt-parent = <&icu0>;
+			interrupts = <91>;
 			status = "disabled";
 		};
 
