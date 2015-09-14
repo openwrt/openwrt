@@ -84,11 +84,12 @@
  static int __init mips_reboot_setup(void)
  {
  	struct resource res;
-@@ -223,6 +293,9 @@ static int __init mips_reboot_setup(void
+@@ -223,6 +293,10 @@ static int __init mips_reboot_setup(void
  	if (!ltq_rcu_membase)
  		panic("Failed to remap core memory");
  
-+	if (of_machine_is_compatible("lantiq,vr9"))
++	if (of_machine_is_compatible("lantiq,ar9") ||
++	    of_machine_is_compatible("lantiq,vr9"))
 +		ltq_usb_init();
 +
  	_machine_restart = ltq_machine_restart;
