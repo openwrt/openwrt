@@ -7,22 +7,26 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=make-ext4fs
-PKG_VERSION:=2015-05-01
+PKG_VERSION:=2015-09-14
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://git.openwrt.org/project/make_ext4fs.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=7c15bef6c732896d9ffb883fb1480fcd60c94a50
+PKG_SOURCE_VERSION:=98e3d5c1ceddd4a32b92c1cfafe929fe006fb98c
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
-PKG_MIRROR_MD5SUM:=d81eca37852cbf840108e1a8ad8fb22f
+PKG_MIRROR_MD5SUM:=c736e546de3b36da73f5e84a9ce3ffee
 PKG_CAT:=zcat
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/host-build.mk
 
+ifeq ($(HOST_OS),Linux)
+ MAKE_STATIC := STATIC=1
+endif
+
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) make_ext4fs
+	$(MAKE) -C $(HOST_BUILD_DIR) make_ext4fs $(MAKE_STATIC)
 endef
 
 define Host/Install
