@@ -7,13 +7,13 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-app
-PKG_VERSION:=4.11.4
+PKG_VERSION:=4.16.2.4
 PKG_RELEASE:=1
 PKG_BASE_NAME:=dsl_cpe_control_vrx
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=e9152ced26a91fbeefa4f34badb97484
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/dsl_cpe_control-$(PKG_VERSION)
+PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_BASE_NAME)/archive/v$(PKG_VERSION)
+PKG_MD5SUM:=487925ef5327ea38c544035b388de8bb
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
 PKG_LICENSE:=BSD-2-Clause
 
 PKG_BUILD_DEPENDS:=kmod-ltq-vdsl-vr9
@@ -25,7 +25,7 @@ define Package/ltq-vdsl-app
   CATEGORY:=Network
   TITLE:=Lantiq VDSL userland tool
   URL:=http://www.lantiq.com/
-  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread
+  DEPENDS:=@TARGET_lantiq_xrx200 +libpthread +librt
 endef
 
 define Package/ltq-vdsl-app/description
@@ -43,7 +43,7 @@ CONFIGURE_ARGS += \
 	--enable-ifxos \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos" \
 	--enable-ifxos-library="-I$(STAGING_DIR)/usr/lib" \
-	--enable-dsl-ceoc \
+	--disable-dsl-ceoc \
 	--enable-dsl-pm-total \
 	--enable-dsl-pm-showtime \
 	--enable-dsl-pm-line-counters \
@@ -53,6 +53,7 @@ CONFIGURE_ARGS += \
 	--enable-deprecated \
 	--disable-soap-support \
 	--enable-dsl-bonding=no \
+	--enable-debug-prints=err \
 	--disable-dti
 
 ifeq ($(CONFIG_IFX_CLI),y)

@@ -7,14 +7,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9
-PKG_VERSION:=4.11.4
+PKG_VERSION:=4.16.2.4
 PKG_RELEASE:=1
 
 PKG_BASE_NAME:=drv_dsl_cpe_api_vrx
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
-PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/drv_dsl_cpe_api-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources/
-PKG_MD5SUM:=b6d9c1e3c5db1bfcd6e81bb2f582cadb
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
+PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_BASE_NAME)/archive/v$(PKG_VERSION)
+PKG_MD5SUM:=0a3e35d199eb8936f3e8f61bb074223a
 
 PKG_USE_MIPS16:=0
 
@@ -48,16 +48,18 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--with-lines-per-device="1" \
 	--with-channels-per-line="1" \
 	--enable-vrx \
+	--enable-vrx-device=vr9 \
 	--enable-ifxos \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos" \
 	--enable-driver-include="-I$(STAGING_DIR)/usr/include/vdsl" \
-	--enable-add-drv-cflags="-DMODULE -DINCLUDE_DSL_ATM_PTM_INTERFACE_SUPPORT -DDSL_DEBUG_DISABLE" \
+	--enable-add-drv-cflags="-DMODULE -DINCLUDE_DSL_ATM_PTM_INTERFACE_SUPPORT" \
 	--enable-adsl-led=no \
 	--enable-adsl-mib=no \
 	--enable-dsl-ceoc=no \
 	--enable-dsl-bonding=no \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
+	--enable-debug-prints=no \
 	KERNEL_ARCH=mips
 
 CONFIGURE_ARGS += --enable-model=full
