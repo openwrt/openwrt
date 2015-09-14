@@ -53,10 +53,31 @@ define Build/mktplinkfw
 		$(if $(findstring sysupgrade,$1),-s) && mv $@.new $@ || rm -f $@
 endef
 
+define Build/mktplinkfw-chn-v2
+	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) -m 2 \
+		-k $(word 1,$^) \
+		-r $@ \
+		-o $@.new \
+		-j -X 0x40000 \
+		-a $(call rootfs_align,$(FILESYSTEM)) \
+		$(if $(findstring sysupgrade,$1),-s) && mv $@.new $@ || rm -f $@
+endef
+
 # -c combined image
 define Build/mktplinkfw-initramfs
 	$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) \
+		-k $@ \
+		-o $@.new \
+		-s -S \
+		-c
+	@mv $@.new $@
+endef
+
+define Build/mktplinkfw-initramfs-chn-v2
+	$(STAGING_DIR_HOST)/bin/mktplinkfw \
+		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) -m 2 \
 		-k $@ \
 		-o $@.new \
 		-s -S \
@@ -243,6 +264,15 @@ define Device/tplink
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
 
+define Device/tplink-chn-v2
+  TPLINK_HWREV := 0x1
+  KERNEL := kernel-bin | patch-cmdline | lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw-initramfs-chn-v2
+  IMAGES := sysupgrade.bin factory.bin
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw-chn-v2 sysupgrade
+  IMAGE/factory.bin := append-rootfs | mktplinkfw-chn-v2 factory
+endef
+
 define Device/tplink-nolzma
 $(Device/tplink)
   LOADER_FLASH_OFFS := 0x22000
@@ -282,6 +312,12 @@ $(Device/tplink)
   IMAGE_SIZE := 15872k
 endef
 
+define Device/tplink-chn-v2-4mlzma
+$(Device/tplink-chn-v2)
+  TPLINK_FLASHLAYOUT := 4Mlzma
+  IMAGE_SIZE := 3904k
+endef
+
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)
   BOARDNAME = TL-WDR4300
@@ -314,7 +350,15 @@ define Device/mw4530r-v1
 $(Device/tl-wdr4300-v1)
   TPLINK_HWID := 0x45300001
 endef
-TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-wdr4310-v1 mw4530r-v1
+
+define Device/tl-wdr3320-v2
+$(Device/tplink-chn-v2-4mlzma)
+  BOARDNAME = TL-WDR3320-v2
+  DEVICE_PROFILE = TLWDR3320V2
+  TPLINK_HWID := 0x33200002
+endef
+
+TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-wdr4310-v1 mw4530r-v1 tl-wdr3320-v2
 
 define Device/archer-c5
     $(Device/tplink-16mlzma)
