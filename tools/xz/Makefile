@@ -17,6 +17,10 @@ HOST_BUILD_PARALLEL:=1
 
 include $(INCLUDE_DIR)/host-build.mk
 
+HOST_CONFIGURE_ARGS += \
+	--enable-static=yes \
+	--enable-shared=no \
+
 define Host/Install
 	+$(MAKE) $(HOST_JOBS) -C $(HOST_BUILD_DIR) install xzlinks="unxz xzcat"
 endef
