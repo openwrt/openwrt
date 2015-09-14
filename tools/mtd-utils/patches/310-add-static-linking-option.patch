@@ -1,0 +1,23 @@
+--- a/common.mk
++++ b/common.mk
+@@ -2,6 +2,11 @@ CC := $(CROSS)gcc
+ AR := $(CROSS)ar
+ RANLIB := $(CROSS)ranlib
+ 
++ifeq ($(STATIC),1)
++  LD_STATIC_ON := -Wl,-Bstatic
++  LD_STATIC_OFF := -Wl,-Bdynamic
++endif
++
+ # Stolen from Linux build system
+ comma = ,
+ try-run = $(shell set -e; ($(1)) >/dev/null 2>&1 && echo "$(2)" || echo "$(3)")
+@@ -68,7 +73,7 @@ endef
+ 
+ %: %.o $(LDDEPS)
+ 	$(call BECHO,LD)
+-	$(Q)$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_$(notdir $@)) -g -o $@ $^ $(LDLIBS) $(LDLIBS_$(notdir $@))
++	$(Q)$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_$(notdir $@)) -g -o $@ $(LD_STATIC_ON) $^ $(LDLIBS) $(LDLIBS_$(notdir $@)) $(LD_STATIC_OFF)
+ 
+ $(BUILDDIR)/%.a:
+ 	$(call BECHO,AR)
