@@ -20,10 +20,8 @@ else
 endif
 
 HOSTCC ?= $(CC)
-OPENWRTVERSION:=$(RELEASE)$(if $(REVISION), ($(REVISION)))
 export RELEASE
 export REVISION
-export OPENWRTVERSION
 export LD_LIBRARY_PATH:=$(subst ::,:,$(if $(LD_LIBRARY_PATH),$(LD_LIBRARY_PATH):)$(TOPDIR)/staging_dir/host/lib)
 export DYLD_LIBRARY_PATH:=$(subst ::,:,$(if $(DYLD_LIBRARY_PATH),$(DYLD_LIBRARY_PATH):)$(TOPDIR)/staging_dir/host/lib)
 export GIT_CONFIG_PARAMETERS='core.autocrlf=false'
