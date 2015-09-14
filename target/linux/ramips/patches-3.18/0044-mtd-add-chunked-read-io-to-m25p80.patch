@@ -16,7 +16,7 @@
  	u8			command[MAX_CMD_SIZE];
  };
  
-@@ -157,6 +159,58 @@ static int m25p80_read(struct spi_nor *n
+@@ -157,6 +159,61 @@ static int m25p80_read(struct spi_nor *n
  	return 0;
  }
  
@@ -30,6 +30,9 @@
 +	chunk_size = flash->chunk_size;
 +	if (!chunk_size)
 +		chunk_size = _len;
++
++	if (nor->addr_width > 3)
++		chunk_size -= nor->addr_width - 3;
 +
 +	while (retlen < _len) {
 +		size_t len = min_t(int, chunk_size, _len - retlen);
@@ -75,7 +78,7 @@
  static int m25p80_erase(struct spi_nor *nor, loff_t offset)
  {
  	struct m25p *flash = nor->priv;
-@@ -197,6 +251,7 @@ static int m25p_probe(struct spi_device
+@@ -197,6 +254,7 @@ static int m25p_probe(struct spi_device
  	struct spi_nor *nor;
  	enum read_mode mode = SPI_NOR_NORMAL;
  	char *flash_name = NULL;
@@ -83,7 +86,7 @@
  	int ret;
  
  	data = dev_get_platdata(&spi->dev);
-@@ -244,6 +299,14 @@ static int m25p_probe(struct spi_device
+@@ -244,6 +302,14 @@ static int m25p_probe(struct spi_device
  	if (ret)
  		return ret;
  
