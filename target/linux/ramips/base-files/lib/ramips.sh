@@ -370,6 +370,9 @@ ramips_board_detect() {
 	*"WIZARD 8800")
 		name="wizard8800"
 		;;
+	*"WizFi630A")
+		name="wizfi630a"
+		;;                
 	*"WL-330N")
 		name="wl-330n"
 		;;
