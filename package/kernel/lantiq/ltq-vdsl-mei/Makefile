@@ -7,14 +7,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9-mei
-PKG_VERSION:=1.2.0
+PKG_VERSION:=1.4.8.4
 PKG_RELEASE:=1
 
 PKG_BASE_NAME:=drv_mei_cpe
 PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_MD5SUM:=cf2fccc1bc72390b2aec46650abf2f20
+PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_BASE_NAME)/archive/v$(PKG_VERSION)
+PKG_MD5SUM:=30570722dc7f19ff2f0228838043f2a2
 PKG_FIXUP:=autoreconf
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 PKG_USE_MIPS16:=0
@@ -49,9 +49,10 @@ CONFIGURE_ARGS += \
 	--enable-error_print \
 	--enable-ifxos-include="-I$(STAGING_DIR)/usr/include/ifxos/" \
 	--enable-ifxos-library="-L$(STAGING_DIR)/usr/lib" \
-	--enable-add_drv_cflags="$(DEBUG) -DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1 -fno-pic -mno-abicalls -mlong-calls -O2 -g0" \
+	--enable-add_drv_cflags="$(DEBUG) -DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1 -DMEI_EXPORT_INTERNAL_API=1 -DMEI_SUPPORT_DSM=0 -fno-pic -mno-abicalls -mlong-calls -O2 -g0" \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
+	--enable-drv_test_appl=0 \
 	ARCH=$(LINUX_KARCH)
 
 define Build/InstallDev

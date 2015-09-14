@@ -7,11 +7,12 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lib_ifxos
-PKG_VERSION:=1.5.14
+PKG_VERSION:=1.5.19
+PKG_RELEASE:=1
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_RELEASE:=3
-PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
-PKG_MD5SUM:=bc107f9d8ff6bed4c2760a2817bbb029
+PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
+PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_NAME)/archive/v$(PKG_VERSION)
+PKG_MD5SUM:=39eace039ae4c3dde4da96bfdbee2721
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 PKG_USE_MIPS16:=0

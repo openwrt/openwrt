@@ -1,26 +1,22 @@
-Index: dsl_cpe_control-4.11.4/src/dsl_cpe_init_cfg.c
-===================================================================
---- dsl_cpe_control-4.11.4.orig/src/dsl_cpe_init_cfg.c	2011-10-26 00:35:26.000000000 +0200
-+++ dsl_cpe_control-4.11.4/src/dsl_cpe_init_cfg.c	2012-11-28 15:53:10.857692092 +0100
-@@ -43,7 +43,7 @@
-    {
-    DSL_CPE_LL_CFG_SET(-1, -1, DSL_DEV_HS_TONE_GROUP_VDSL2_B43, \
-       DSL_DEV_HS_TONE_GROUP_VDSL2_B43, DSL_DEV_HS_TONE_GROUP_VDSL2_B43, \
+--- a/src/dsl_cpe_init_cfg.c
++++ b/src/dsl_cpe_init_cfg.c
+@@ -38,7 +38,7 @@ DSL_InitData_t gInitCfgData =
+       DSL_DEV_HS_TONE_GROUP_CLEANED, \
+       DSL_DEV_HS_TONE_GROUP_CLEANED, \
+       DSL_DEV_HS_TONE_GROUP_CLEANED, \
 -      0x1E116000, 0x37, -1),
 +      0x1E116000, 0x3f, -1),
- #endif
- 
- #if defined(INCLUDE_DSL_CPE_API_VINAX)
-Index: dsl_cpe_control-4.11.4/src/dsl_cpe_control.c
-===================================================================
---- dsl_cpe_control-4.11.4.orig/src/dsl_cpe_control.c	2012-01-13 15:15:34.000000000 +0100
-+++ dsl_cpe_control-4.11.4/src/dsl_cpe_control.c	2012-11-28 15:53:23.465692408 +0100
-@@ -6432,7 +6432,7 @@
-    for (nDevice = 0; nDevice < DSL_CPE_MAX_DEVICE_NUMBER; nDevice++)
+    DSL_CPE_SIC_SET(DSL_TC_ATM, DSL_EMF_TC_CLEANED, DSL_EMF_TC_CLEANED, DSL_SYSTEMIF_MII, \
+                    DSL_TC_EFM, DSL_EMF_TC_CLEANED, DSL_EMF_TC_CLEANED, DSL_SYSTEMIF_MII),
+    }
+--- a/src/dsl_cpe_control.c
++++ b/src/dsl_cpe_control.c
+@@ -6856,7 +6856,7 @@ DSL_int_t dsl_cpe_daemon (
+    for (nDevice = 0; nDevice < DSL_CPE_MAX_DSL_ENTITIES; nDevice++)
     {
- #if defined(INCLUDE_DSL_CPE_API_VINAX) || defined(INCLUDE_DSL_CPE_API_VRX)
+ #if defined(INCLUDE_DSL_CPE_API_VRX)
 -      sprintf (device, "%s/%d", DSL_CPE_DEVICE_NAME, nDevice);
 +      sprintf (device, "%s%d", DSL_CPE_DEVICE_NAME, nDevice);
  #else
        sprintf (device, "%s", DSL_CPE_DEVICE_NAME);
- #endif /* defined(INCLUDE_DSL_CPE_API_VINAX) || defined(INCLUDE_DSL_CPE_API_VRX)*/
+ #endif /* defined(INCLUDE_DSL_CPE_API_VRX)*/

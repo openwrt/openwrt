@@ -1,8 +1,6 @@
-Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_common.c	2011-10-26 00:49:51.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c	2013-09-01 21:04:12.197022086 +0200
-@@ -20,7 +20,6 @@
+--- a/src/drv_mei_cpe_common.c
++++ b/src/drv_mei_cpe_common.c
+@@ -19,7 +19,6 @@
  /* get at first the driver configuration */
  #include "drv_mei_cpe_config.h"
  
@@ -10,312 +8,270 @@ Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_common.c
  #include "drv_mei_cpe_os.h"
  #include "drv_mei_cpe_dbg.h"
  
-Index: drv_mei_cpe-1.2.0/configure.in
-===================================================================
---- drv_mei_cpe-1.2.0.orig/configure.in	2012-01-20 17:41:07.000000000 +0100
-+++ drv_mei_cpe-1.2.0/configure.in	2013-09-01 21:04:12.197022086 +0200
-@@ -140,7 +140,7 @@
- AC_ARG_ENABLE(kernelbuild,
-    AC_HELP_STRING([--enable-kernelbuild=x],[Set the target kernel build path]),
-     [
--        if test -e $enableval/include/linux/autoconf.h; then
-+        if test -e $enableval/include/generated/autoconf.h; then
-             AC_SUBST([KERNEL_BUILD_PATH],[$enableval])
-         else
-             AC_MSG_ERROR([The kernel build directory is not valid or not configured!])
-Index: drv_mei_cpe-1.2.0/configure
-===================================================================
---- drv_mei_cpe-1.2.0.orig/configure	2012-01-20 17:50:02.000000000 +0100
-+++ drv_mei_cpe-1.2.0/configure	2013-09-01 21:04:14.361022179 +0200
-@@ -617,6 +617,7 @@
- am__fastdepCC_FALSE
- am__fastdepCC_TRUE
- CCDEPMODE
-+am__nodep
- AMDEPBACKSLASH
- AMDEP_FALSE
- AMDEP_TRUE
-@@ -2367,11 +2368,11 @@
- 
- # We need awk for the "check" target.  The system "awk" is bad on
- # some platforms.
--# Always define AMTAR for backward compatibility.
-+# Always define AMTAR for backward compatibility.  Yes, it's still used
-+# in the wild :-(  We should find a proper way to deprecate it ...
-+AMTAR='$${TAR-tar}'
- 
--AMTAR=${AMTAR-"${am_missing_run}tar"}
--
--am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
-+am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'
- 
- 
- 
-@@ -3219,6 +3220,7 @@
- if test "x$enable_dependency_tracking" != xno; then
-   am_depcomp="$ac_aux_dir/depcomp"
-   AMDEPBACKSLASH='\'
-+  am__nodep='_no'
- fi
-  if test "x$enable_dependency_tracking" != xno; then
-   AMDEP_TRUE=
-@@ -3243,6 +3245,7 @@
-   # instance it was reported that on HP-UX the gcc test will end up
-   # making a dummy file named `D' -- because `-MD' means `put the output
-   # in D'.
-+  rm -rf conftest.dir
-   mkdir conftest.dir
-   # Copy depcomp to subdir because otherwise we won't find it if we're
-   # using a relative directory.
-@@ -3302,7 +3305,7 @@
- 	break
-       fi
-       ;;
--    msvisualcpp | msvcmsys)
-+    msvc7 | msvc7msys | msvisualcpp | msvcmsys)
-       # This compiler won't grok `-c -o', but also, the minuso test has
-       # not run yet.  These depmodes are late enough in the game, and
-       # so weak that their functioning should not be impacted.
-@@ -3656,7 +3659,7 @@
- # Check whether --enable-kernelbuild was given.
- if test "${enable_kernelbuild+set}" = set; then :
-   enableval=$enable_kernelbuild;
--        if test -e $enableval/include/linux/autoconf.h; then
-+        if test -e $enableval/include/generated/autoconf.h; then
-             KERNEL_BUILD_PATH=$enableval
- 
-         else
-Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.h
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_linux.h	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.h	2013-09-01 21:04:12.197022086 +0200
-@@ -34,8 +34,6 @@
- #include <linux/sched.h>
- #include <linux/interrupt.h>
- 
--#include <asm/ifx/irq.h>
--
- #if (MEI_DRV_IFXOS_ENABLE == 0)
- 
- #include <linux/version.h>
-@@ -44,8 +42,6 @@
+--- a/src/drv_mei_cpe_linux.h
++++ b/src/drv_mei_cpe_linux.h
+@@ -51,12 +51,6 @@
  #include <linux/poll.h>
  #include <linux/types.h>
  
--#include <asm/ifx/ifx_types.h>
+-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0))
+-   #include <asm/ifx/ifx_types.h>
+-#else
+-   #include <ifx_types.h>
+-#endif
 -
  #endif /* #if (MEI_DRV_IFXOS_ENABLE == 0)*/
  
  /* ============================================================================
-Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_vr9.h
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_mei_vr9.h	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_vr9.h	2013-09-01 21:04:12.197022086 +0200
-@@ -40,12 +40,6 @@
- #endif
- #endif
+--- a/src/drv_mei_cpe_linux.c
++++ b/src/drv_mei_cpe_linux.c
+@@ -98,6 +98,8 @@
  
--#ifdef LINUX
--   #include <asm/ifx/ifx_pmu.h>
--#else
--   #error "Please check PMU driver path!"
--#endif
--
- /* ============================================================================
-    Module      :  RCU register address and bits
-    ========================================================================= */
-Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_api_atm_ptm_intern.c
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_api_atm_ptm_intern.c	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_api_atm_ptm_intern.c	2013-09-01 21:04:12.197022086 +0200
-@@ -25,11 +25,7 @@
- #include "ifx_types.h"
- #include "drv_mei_cpe_os.h"
+ #include "drv_mei_cpe_api_atm_ptm_intern.h"
  
--#ifdef LINUX
--   #include <asm/ifx/ifx_atm.h>
--#else
--   #error "ATM/PTM internal interface is only supported for Linux!"
--#endif
-+#include <lantiq_atm.h>
- 
- /** get interface and configuration */
- #include "drv_mei_cpe_interface.h"
-Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_linux.c	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_linux.c	2013-09-01 21:04:12.197022086 +0200
-@@ -32,11 +32,9 @@
- #include <linux/module.h>
- #include <linux/version.h>
- 
--#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,17))
--#include <linux/utsrelease.h>
--#endif
--#include <linux/init.h>
-+#include <generated/utsrelease.h>
- 
-+#include <linux/device.h>
- #include <linux/ioport.h>
- #include <linux/irq.h>
- #include <asm/io.h>
-@@ -67,6 +65,9 @@
- 
- #include "drv_mei_cpe_msg_process.h"
- 
-+#undef MEI_SUPPORT_PROCFS_CONFIG
-+#undef CONFIG_PROC_FS
-+
- #if (MEI_SUPPORT_PROCFS_CONFIG == 1)
- #include "drv_mei_cpe_linux_proc_config.h"
- #endif /* MEI_SUPPORT_PROCFS_CONFIG */
-@@ -87,6 +88,8 @@
- #include "drv_mei_cpe_device_cntrl.h"
- #endif
- 
-+#define INT_NUM_IM4_IRL30 (INT_NUM_IM4_IRL0 + 30)
++#include <lantiq_soc.h>
 +
  /* ===================================
     extern function declarations
     =================================== */
-@@ -122,7 +125,7 @@
-                      size_t length,
-                      loff_t * ppos);
- 
--static int MEI_Ioctl( struct inode *inode, struct file *filp,
-+static long MEI_Ioctl(struct file *filp,
-                         unsigned int nCmd, unsigned long nArgument);
- 
- static unsigned int MEI_Poll (struct file *filp, poll_table *table);
-@@ -137,7 +140,7 @@
- 
- static void MEI_IfxFreeIrq(unsigned int usedIrq, void *pUsedDevId);
- 
--static irqreturn_t MEI_InterruptLinux(int irq, void *dev_id, struct pt_regs *regs);
-+static irqreturn_t MEI_InterruptLinux(int irq, void *dev_id);
- #endif
- 
- #if CONFIG_PROC_FS
-@@ -194,7 +197,9 @@
- /* =================================== */
- /* Local variables (LINUX)             */
- /* =================================== */
--static IFX_uint8_t major_number = 0;
-+#define MEI_MAJOR       105
-+
-+static IFX_uint8_t major_number = MEI_MAJOR;
- #ifdef MODULE
- #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
- MODULE_PARM(major_number, "b");
-@@ -242,7 +247,7 @@
-         MEI_Write,
-     poll:
-         MEI_Poll,
--    ioctl:
-+    unlocked_ioctl:
-         MEI_Ioctl,
-     open:
-         MEI_OpenOS,
-@@ -457,7 +462,7 @@
-    0 and positive values - success,
-    negative value - ioctl failed
- */
--static int MEI_Ioctl( struct inode *inode, struct file *filp,
-+static long MEI_Ioctl(struct file *filp,
-                             unsigned int nCmd, unsigned long nArgument)
- {
-    int ret = 0, retSize = sizeof(IOCTL_MEI_ioctl_t);
-@@ -1242,7 +1247,7 @@
- \remark
-    None.
- */
--static irqreturn_t MEI_InterruptLinux(int irq, void *dev_id, struct pt_regs *regs)
-+static irqreturn_t MEI_InterruptLinux(int irq, void *dev_id)
- {
-    IFX_int32_t    meiIntCnt = 0;
-    MEIX_CNTRL_T *pMeiXCntrlList = (MEIX_CNTRL_T*)dev_id;
-@@ -1691,6 +1696,7 @@
- static int __init MEI_module_init (void)
- {
-    int result;
-+   static struct class *dsl_class;
- 
-    printk(KERN_INFO "%s" MEI_DRV_CRLF, &MEI_WHATVERSION[4]);
-    printk(KERN_INFO "(c) Copyright 2009, Infineon Technologies AG" MEI_DRV_CRLF);
-@@ -1730,6 +1736,8 @@
+@@ -1783,7 +1785,9 @@ static int __init MEI_module_init (void)
        return (result);
     }
  
-+   dsl_class = class_create(THIS_MODULE, "ifx_mei");
-+   device_create(dsl_class, NULL, MKDEV(MEI_MAJOR, 0), NULL, "ifx_mei");
++#if 0
+    ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)ltq_mei_atm_showtime_check);
++#endif
+ 
+    return 0;
+ }
+@@ -1963,7 +1967,9 @@ static void MEI_module_exit (void)
+             ("MEI_DRV: Chipset Basic Exit failed" MEI_DRV_CRLF));
+    }
+ 
++#if 0
+    ppa_callback_set(LTQ_MEI_SHOWTIME_CHECK, (void *)NULL);
++#endif
+ 
+    /* touch one time this variable to avoid that the linker will remove it */
+    debug_level = MEI_DRV_PRN_LEVEL_OFF;
+@@ -2120,21 +2126,32 @@ static int MEI_InitModuleBasics(void)
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
++
++#define PMU_DFE         BIT(9)
++
+ static int MEI_SysClkEnable(struct clk *clk)
+ {
++#if 0
+    if (IS_ERR(clk))
+       return -1;
+    clk_enable(clk);
++#else
++   ltq_pmu_enable(PMU_DFE);
++#endif
+ 
     return 0;
  }
  
-Index: drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_access_vr9.c
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/drv_mei_cpe_mei_access_vr9.c	2011-07-25 20:41:02.000000000 +0200
-+++ drv_mei_cpe-1.2.0/src/drv_mei_cpe_mei_access_vr9.c	2013-09-01 21:04:12.197022086 +0200
-@@ -37,6 +37,7 @@
+ static int MEI_SysClkDisable(struct clk *clk)
+ {
++#if 0
+    if (IS_ERR(clk))
+       return -1;
+    clk_disable(clk);
+    clk_put(clk);
++#else
++   ltq_pmu_disable(PMU_DFE);
++#endif
  
- #include "cmv_message_format.h"
+    return 0;
+ }
+@@ -2454,11 +2471,15 @@ IFX_int32_t MEI_IoctlInitDevice(
+             pMeiDev->eModePoll = e_MEI_DEV_ACCESS_MODE_IRQ;
+             pMeiDev->intMask   = ME_ARC2ME_INTERRUPT_UNMASK_ALL;
  
-+#include <lantiq_soc.h>
++#if 1
++            virq = (IFX_uint32_t)pInitDev->usedIRQ;
++#else
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0))
+             virq = (IFX_uint32_t)pInitDev->usedIRQ;
+ #else
+             virq = irq_create_mapping(NULL, (IFX_uint32_t)pInitDev->usedIRQ);
+ #endif
++#endif
  
- /* ============================================================================
-    Local macro definition
-@@ -1527,32 +1528,35 @@
-    return IFX_ERROR;
+             pTmpXCntrl = MEI_VrxXDevToIrqListAdd(
+                                           MEI_DRV_LINENUM_GET(pMeiDev),
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.c
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.c
+@@ -193,6 +193,51 @@ int ifx_mei_atm_led_blink(void)
+     return IFX_SUCCESS;
  }
  
-+#define PMU_DFE         BIT(9)
++#if MEI_MAX_DFE_CHAN_DEVICES > 1
++#error "Compat functions do not support MEI_MAX_DFE_CHAN_DEVICES > 1 yet"
++#else
++int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *) = NULL;
++int (*ifx_mei_atm_showtime_exit)(void) = NULL;
 +
- IFX_int32_t MEI_BasicChipInit(IFX_void_t)
- {
-    /* Power up MEI */
--   DSL_DFE_PMU_SETUP(IFX_PMU_ENABLE);
--
--   if (ifx_pmu_pg_dsl_dfe_enable() != 0)
-+//   DSL_DFE_PMU_SETUP(IFX_PMU_ENABLE);
-+ltq_pmu_enable(PMU_DFE);
-+  /* if (ifx_pmu_pg_dsl_dfe_enable() != 0)
-    {
-       PRN_ERR_USR_NL( MEI_MEI_ACCESS, MEI_DRV_PRN_LEVEL_ERR,
-             ("MEI: ERROR - DSL DFE PG enable failed!" MEI_DRV_CRLF));
-       return IFX_ERROR;
--   }
-+   }*/
++ltq_ifx_mei_atm_showtime_enter_compat(IFX_uint8_t dslLineNum,
++				      struct port_cell_info *cellInfo,
++				      void *xdata) {
++	if (ifx_mei_atm_showtime_enter)
++		return ifx_mei_atm_showtime_enter(cellInfo, xdata);
++
++	return -e_MEI_ERR_OP_FAILED;
++}
++
++ltq_ifx_mei_atm_showtime_exit_compat(IFX_uint8_t dslLineNum) {
++	if (ifx_mei_atm_showtime_exit)
++		return ifx_mei_atm_showtime_exit();
++
++	return -e_MEI_ERR_OP_FAILED;
++}
++
++void* ppa_callback_get(e_ltq_mei_cb_type type) {
++	switch (type) {
++		case LTQ_MEI_SHOWTIME_ENTER:
++			return &ltq_ifx_mei_atm_showtime_enter_compat;
++		case LTQ_MEI_SHOWTIME_EXIT:
++			return &ltq_ifx_mei_atm_showtime_exit_compat;
++			break;
++	}
++
++	BUG();
++}
++
++int ifx_mei_atm_showtime_check(int *is_showtime,
++                              struct port_cell_info *port_cell,
++                              void **xdata_addr) {
++	return ltq_mei_atm_showtime_check(0, is_showtime, port_cell, xdata_addr);
++}
++
++EXPORT_SYMBOL(ifx_mei_atm_showtime_enter);
++EXPORT_SYMBOL(ifx_mei_atm_showtime_exit);
++EXPORT_SYMBOL(ifx_mei_atm_showtime_check);
++#endif
++
+ EXPORT_SYMBOL (MEI_InternalXtmSwhowtimeEntrySignal);
+ EXPORT_SYMBOL (MEI_InternalXtmSwhowtimeExitSignal);
+ EXPORT_SYMBOL(ifx_mei_atm_led_blink);
+--- a/src/drv_mei_cpe_api_atm_ptm_intern.h
++++ b/src/drv_mei_cpe_api_atm_ptm_intern.h
+@@ -21,7 +21,6 @@
  
-    return IFX_SUCCESS;
- }
+ #include "drv_mei_cpe_config.h"
+ #include "drv_mei_cpe_interface.h"
+-#include <net/ppa_stack_al.h>
  
- IFX_int32_t MEI_BasicChipExit(IFX_void_t)
+ #if (MEI_EXPORT_INTERNAL_API == 1) && (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
+ 
+@@ -42,8 +41,20 @@ extern IFX_int32_t MEI_InternalXtmSwhowt
+                               MEI_DYN_CNTRL_T        *pMeiDynCntrl,
+                               MEI_XTM_ShowtimeExit_t *pArgXtm);
+ 
++#if 1
++typedef enum {
++	LTQ_MEI_SHOWTIME_ENTER,
++	LTQ_MEI_SHOWTIME_EXIT
++} e_ltq_mei_cb_type;
++
++typedef void (*ltq_mei_atm_showtime_enter_t)(IFX_uint8_t, struct port_cell_info *, void *);
++typedef void (*ltq_mei_atm_showtime_exit_t)(IFX_uint8_t);
++
++void* ppa_callback_get(e_ltq_mei_cb_type type);
++#else
+ extern int ppa_callback_set(e_ltq_mei_cb_type type, void *func);
+ extern void* ppa_callback_get(e_ltq_mei_cb_type type);
++#endif
+ 
+ int ltq_mei_atm_showtime_check (
+                               const unsigned char line_idx,
+--- a/src/drv_mei_cpe_device_vrx.c
++++ b/src/drv_mei_cpe_device_vrx.c
+@@ -27,13 +27,6 @@
+ #include "drv_mei_cpe_mei_interface.h"
+ #include "drv_mei_cpe_api.h"
+ 
+-#if defined(LINUX)
+-#  if (LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0))
+-#    include "ifx_pcie.h"
+-#  else
+-#    include "lantiq_pcie.h"
+-#  endif
+-#endif /* #if defined(LINUX)*/
+ 
+ IFX_int32_t MEI_GPIntProcess(MEI_MeiRegVal_t processInt, MEI_DEV_T *pMeiDev)
  {
--   if (ifx_pmu_pg_dsl_dfe_disable() != 0)
-+/*   if (ifx_pmu_pg_dsl_dfe_disable() != 0)
-    {
-       PRN_ERR_USR_NL( MEI_MEI_ACCESS, MEI_DRV_PRN_LEVEL_ERR,
-             ("MEI: ERROR - DSL DFE PG disable failed!" MEI_DRV_CRLF));
-       return IFX_ERROR;
+@@ -81,6 +74,7 @@ IFX_int32_t MEI_GetChipInfo(MEI_DEV_T *p
+ */
+ IFX_int32_t MEI_VR10_PcieEntitiesCheck(IFX_uint8_t nEntityNum)
+ {
++#if 0
+    IFX_uint32_t pcie_entitiesNum;
+ 
+    /* get information from pcie driver */
+@@ -101,6 +95,9 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
     }
--
-+*/
-    /* Power down MEI */
--   DSL_DFE_PMU_SETUP(IFX_PMU_DISABLE);
-+//   DSL_DFE_PMU_SETUP(IFX_PMU_DISABLE);
-+ltq_pmu_disable(PMU_DFE);
  
     return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
  }
-Index: drv_mei_cpe-1.2.0/src/Makefile.am
-===================================================================
---- drv_mei_cpe-1.2.0.orig/src/Makefile.am	2013-09-01 21:05:24.581025175 +0200
-+++ drv_mei_cpe-1.2.0/src/Makefile.am	2013-09-01 21:05:30.765025452 +0200
-@@ -97,8 +97,6 @@
- 	drv_mei_cpe_dbg_driver.h\
- 	drv_mei_cpe_linux.c\
- 	drv_mei_cpe_linux.h\
--	drv_mei_cpe_linux_proc_config.c\
--	drv_mei_cpe_linux_proc_config.h\
- 	drv_mei_cpe_vxworks.c\
- 	drv_mei_cpe_vxworks.h\
- 	drv_mei_cpe_vxworks_bsp.c\
+ 
+ /**
+@@ -115,6 +112,7 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
+ */
+ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
+ {
++#if 0
+    IFX_uint8_t entityNum;
+    ifx_pcie_ep_dev_t MEI_pcie_ep_dev;
+ 
+@@ -137,6 +135,9 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
+    pMeiDrvCntrl->MEI_pcie_irq = MEI_pcie_ep_dev.irq;
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
+ /**
+@@ -151,6 +152,7 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
+ */
+ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_uint8_t entityNum)
+ {
++#if 0
+    if (ifx_pcie_ep_dev_info_release(entityNum))
+    {
+       PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
+@@ -160,6 +162,9 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
+    }
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
+ /**
+@@ -174,6 +179,7 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
+ */
+ IFX_int32_t MEI_VR10_InternalInitDevice(MEI_DYN_CNTRL_T *pMeiDynCntrl)
+ {
++#if 0
+    IFX_int32_t         retVal;
+    IOCTL_MEI_devInit_t InitDev;
+    MEI_DEV_T           *pMeiDev = pMeiDynCntrl->pMeiDev;
+@@ -198,5 +204,8 @@ IFX_int32_t MEI_VR10_InternalInitDevice(
+    *MEI_GPIO_U32REG(GPIO_P0_ALSEL1) &= ~((1 << 0) | (1 << 3) | (1 << 8));
+ 
+    return IFX_SUCCESS;
++#else
++   return IFX_ERROR;
++#endif
+ }
+ 
