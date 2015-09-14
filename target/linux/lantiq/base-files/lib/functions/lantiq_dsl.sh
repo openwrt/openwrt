@@ -19,6 +19,9 @@ dsl_cmd() {
 dsl_val() {
 	echo $(expr "$1" : '.*'$2'=\([-\.[:alnum:]]*\).*')
 }
+dsl_string() {
+	echo $(expr "$1" : '.*'$2'=(\([A-Z0-9,]*\))')
+}
 
 #
 # Simple divide by 10 routine to cope with one decimal place
@@ -49,6 +52,16 @@ scale() {
 	fi
 }
 
+scale_latency() {
+	local val=$1
+	local a
+	local b
+
+	a=$(expr $val / 100)
+	b=$(expr $val % 100)
+	printf "%d.%d ms" ${a} ${b}
+}
+
 #
 # Read the data rates for both directions
 #
@@ -77,7 +90,7 @@ data_rates() {
 		echo "dsl.data_rate_down_s=\"$sdrd\""
 		echo "dsl.data_rate_up_s=\"$sdru\""
 	else
-		echo "Data Rate:		${sdrd}/s / ${sdru}/s"
+		echo "Data Rate:                                Down: ${sdrd}/s / Up: ${sdru}/s"
 	fi
 }
 
@@ -92,11 +105,340 @@ chipset() {
 	vig=$(dsl_cmd vig)
 	cs=$(dsl_val "$vig" DSL_ChipSetType)
 	csv=$(dsl_val "$vig" DSL_ChipSetHWVersion)
+	csfw=$(dsl_val "$vig" DSL_ChipSetFWVersion)
+	csapi=$(dsl_val "$vig" DSL_DriverVersionApi)
 
 	if [ "$action" = "lucistat" ]; then
 		echo "dsl.chipset=\"${cs} ${csv}\""
+		echo "dsl.firmware_version=\"${csfw}\""
+		echo "dsl.api_version=\"${csapi}\""
 	else
-		echo "Chipset:		${cs} ${csv}"
+		echo "Chipset:                                  ${cs} ${csv}"
+		echo "Firmware Version:                         ${csfw}"
+		echo "API Version:                              ${csapi}"
+	fi
+}
+
+#
+# Vendor information
+#
+vendor() {
+	local lig
+	local vid
+	local svid
+
+	lig=$(dsl_cmd g997lig 1)
+	vid=$(dsl_string "$lig" G994VendorID)
+	svid=$(dsl_string "$lig" SystemVendorID)
+
+	if [ "$action" = "lucistat" ]; then
+		echo "dsl.atuc_vendor_id=\"${vid}\""
+		echo "dsl.atuc_system_vendor_id=\"${svid}\""
+	else
+		echo "ATU-C Vendor ID:                          ${vid}"
+		echo "ATU-C System Vendor ID:                   ${svid}"
+	fi
+}
+
+#
+# XTSE capabilities
+#
+xtse() {
+	local xtusesg
+	local xtse1
+	local xtse2
+	local xtse3
+	local xtse4
+	local xtse5
+	local xtse6
+	local xtse7
+	local xtse8
+
+	local xtse_s=""
+
+	local annex_s=""
+	local line_mode_s=""
+	local cmd=""
+
+	xtusesg=$(dsl_cmd g997xtusesg)
+	xtse1=$(dsl_val "$xtusesg" XTSE1)
+	xtse2=$(dsl_val "$xtusesg" XTSE2)
+	xtse3=$(dsl_val "$xtusesg" XTSE3)
+	xtse4=$(dsl_val "$xtusesg" XTSE4)
+	xtse5=$(dsl_val "$xtusesg" XTSE5)
+	xtse6=$(dsl_val "$xtusesg" XTSE6)
+	xtse7=$(dsl_val "$xtusesg" XTSE7)
+	xtse8=$(dsl_val "$xtusesg" XTSE8)
+
+	# Evaluate Annex (according to G.997.1, 7.3.1.1.1)
+	if [ $((xtse1 & 13)) != 0 \
+	-o $((xtse2 & 1)) != 0 \
+	-o $((xtse3 & 12)) != 0 \
+	-o $((xtse4 & 3)) != 0 \
+	-o $((xtse6 & 3)) != 0 \
+	-o $((xtse8 & 1)) != 0 ]; then
+		annex_s=" A,"
+	fi
+
+	if [ $((xtse1 & 48)) != 0 \
+	-o $((xtse2 & 2)) != 0 \
+	-o $((xtse3 & 48)) != 0 \
+	-o $((xtse6 & 12)) != 0 \
+	-o $((xtse8 & 2)) != 0 ]; then
+		annex_s="$annex_s B,"
+	fi
+
+	if [ $((xtse1 & 194)) != 0 \
+	-o $((xtse2 & 12)) != 0 \
+	-o $((xtse8 & 4)) != 0 ]; then
+		annex_s="$annex_s C,"
+	fi
+
+	if [ $((xtse4 & 48)) != 0 \
+	-o $((xtse5 & 3)) != 0 \
+	-o $((xtse6 & 192)) != 0 ]; then
+		annex_s="$annex_s I,"
+	fi
+
+	if [ $((xtse4 & 192)) != 0 \
+	-o $((xtse7 & 3)) != 0 ]; then
+		annex_s="$annex_s J,"
+	fi
+
+	if [ $((xtse5 & 60)) != 0 ]; then
+		annex_s="$annex_s L,"
+	fi
+
+	if [ $((xtse5 & 192)) != 0 \
+	-o $((xtse7 & 12)) != 0 ]; then
+		annex_s="$annex_s M,"
+	fi
+
+	annex_s=`echo ${annex_s:1}`
+	annex_s=`echo ${annex_s%?}`
+
+	# Evaluate Line Mode (according to G.997.1, 7.3.1.1.1)
+
+	# Regional standard: ANSI T1.413
+	if [ $((xtse1 & 1)) != 0  ]; then
+		line_mode_s=" T1.413,"
+	fi
+
+	# Regional standard: TS 101 388
+	if [ $((xtse1 & 1)) != 0  ]; then
+		line_mode_s="$line_mode_s TS 101 388,"
+	fi
+
+	if [ $((xtse1 & 252)) != 0  ]; then
+		line_mode_s="$line_mode_s G.992.1 (ADSL),"
+	fi
+
+	if [ $((xtse2 & 15)) != 0  ]; then
+		line_mode_s="$line_mode_s G.992.2 (ADSL lite),"
+	fi
+
+	if [ $((xtse3 & 60)) != 0 \
+	-o $((xtse4 & 240)) != 0 \
+	-o $((xtse5 & 252)) != 0  ]; then
+		line_mode_s="$line_mode_s G.992.3 (ADSL2),"
+	fi
+
+	if [ $((xtse4 & 3)) != 0 \
+	-o $((xtse5 & 3)) != 0  ]; then
+		line_mode_s="$line_mode_s G.992.4 (ADSL2 lite),"
+	fi
+
+	if [ $((xtse6 & 199)) != 0 \
+	-o $((xtse7 & 15)) != 0  ]; then
+		line_mode_s="$line_mode_s G.992.5 (ADSL2+),"
+	fi
+
+	if [ $((xtse8 & 7)) != 0  ]; then
+		line_mode_s="$line_mode_s G.993.2 (VDSL2),"
+	fi
+
+	#!!! PROPRIETARY & INTERMEDIATE USE !!!
+	if [ $((xtse8 & 128)) != 0  ]; then
+		line_mode_s="$line_mode_s G.993.1 (VDSL),"
+	fi
+
+	line_mode_s=`echo ${line_mode_s:1}`
+	line_mode_s=`echo ${line_mode_s%?}`
+
+	xtse_s="${xtse1}, ${xtse2}, ${xtse3}, ${xtse4}, ${xtse5}, ${xtse6}, ${xtse7}, ${xtse8}"
+
+	if [ "$action" = "lucistat" ]; then
+		echo "dsl.xtse1=$xtse1"
+		echo "dsl.xtse2=$xtse2"
+		echo "dsl.xtse3=$xtse3"
+		echo "dsl.xtse4=$xtse4"
+		echo "dsl.xtse5=$xtse5"
+		echo "dsl.xtse6=$xtse6"
+		echo "dsl.xtse7=$xtse7"
+		echo "dsl.xtse8=$xtse8"
+		echo "dsl.xtse_s=\"$xtse_s\""
+		echo "dsl.annex_s=\"${annex_s}\""
+		echo "dsl.line_mode_s=\"${line_mode_s}\""
+	else
+		echo "XTSE Capabilities:                        ${xtse_s}"
+		echo "Annex:                                    ${annex_s}"
+		echo "Line Mode:                                ${line_mode_s}"
+	fi
+}
+
+#
+# Power Management Mode
+#
+power_mode() {
+	local pmsg=$(dsl_cmd g997pmsg)
+	local pm=$(dsl_val "$pmsg" nPowerManagementStatus);
+	local s;
+
+	case "$pm" in
+		"-1")		s="Power management state is not available" ;;
+		"0")		s="L0 - Synchronized" ;;
+		"1")		s="L1 - Power Down Data transmission (G.992.2)" ;;
+		"2")		s="L2 - Power Down Data transmission (G.992.3 and G.992.4)" ;;
+		"3")		s="L3 - No power" ;;
+		*)		s="unknown" ;;
+	esac
+
+	if [ "$action" = "lucistat" ]; then
+		echo "dsl.power_mode_num=$pm"
+		echo "dsl.power_mode_s=\"$s\""
+	else
+		echo "Power Management Mode:                    $s"
+	fi
+}
+
+#
+# Latency type (interleave delay)
+#
+latency_delay() {
+	local csg
+
+	local idu
+	local idu_s;
+	local sidu
+
+	local idd
+	local idd_s;
+	local sidd
+
+	csg=$(dsl_cmd g997csg 0 1)
+	idd=$(dsl_val "$csg" ActualInterleaveDelay)
+
+	csg=$(dsl_cmd g997csg 0 0)
+	idu=$(dsl_val "$csg" ActualInterleaveDelay)
+
+	[ -z "$idd" ] && idd=0
+	[ -z "$idu" ] && idu=0
+
+	if [ "$idd" > 100 ]; then
+		idd_s="Interleave"
+	else
+		idd_s="Fast"
+	fi
+
+	if [ "$idu" > 100 ]; then
+		idu_s="Interleave"
+	else
+		idu_s="Fast"
+	fi
+
+	sidu=$(scale_latency $idu)
+	sidd=$(scale_latency $idd)
+
+	if [ "$action" = "lucistat" ]; then
+		echo "dsl.latency_num_down=\"$sidu\""
+		echo "dsl.latency_num_up=\"$sidd\""
+		echo "dsl.latency_s_down=\"$idd_s\""
+		echo "dsl.latency_s_up=\"$idu_s\""
+	else
+		echo "Latency / Interleave Delay:               Down: ${idd_s} (${sidd}) / Up: ${idu_s} (${sidu})"
+	fi
+}
+
+#
+# Errors
+#
+errors() {
+	local lsctg
+	local dpctg
+	local ccsg
+	local esf
+	local esn
+	local sesf
+	local sesn
+	local lossf
+	local lossn
+	local uasf
+	local uasn
+
+	local crc_pf
+	local crc_pn
+	local crcp_pf
+	local crcp_pn
+	local hecf
+	local hecn
+
+	local fecn
+	local fecf
+
+	lsctg=$(dsl_cmd pmlsctg 1)
+	esf=$(dsl_val "$lsctg" nES)
+	sesf=$(dsl_val "$lsctg" nSES)
+	lossf=$(dsl_val "$lsctg" nLOSS)
+	uasf=$(dsl_val "$lsctg" nUAS)
+
+	lsctg=$(dsl_cmd pmlsctg 0)
+	esn=$(dsl_val "$lsctg" nES)
+	sesn=$(dsl_val "$lsctg" nSES)
+	lossn=$(dsl_val "$lsctg" nLOSS)
+	uasn=$(dsl_val "$lsctg" nUAS)
+
+	dpctg=$(dsl_cmd pmdpctg 0 1)
+	hecf=$(dsl_val "$dpctg" nHEC)
+	crc_pf=$(dsl_val "$dpctg" nCRC_P)
+	crcp_pf=$(dsl_val "$dpctg" nCRCP_P)
+
+	dpctg=$(dsl_cmd pmdpctg 0 0)
+	hecn=$(dsl_val "$dpctg" nHEC)
+	crc_pn=$(dsl_val "$dpctg" nCRC_P)
+	crcp_pn=$(dsl_val "$dpctg" nCRCP_P)
+
+	ccsg=$(dsl_cmd pmccsg 0 1 0)
+	fecf=$(dsl_val "$ccsg" nFEC)
+
+	ccsg=$(dsl_cmd pmccsg 0 0 0)
+	fecn=$(dsl_val "$ccsg" nFEC)
+
+	if [ "$action" = "lucistat" ]; then
+		echo "dsl.errors_fec_near=$fecn"
+		echo "dsl.errors_fec_far=$fecf"
+		echo "dsl.errors_es_near=$esn"
+		echo "dsl.errors_es_far=$esf"
+		echo "dsl.errors_ses_near=$sesn"
+		echo "dsl.errors_ses_far=$sesf"
+		echo "dsl.errors_loss_near=$lossn"
+		echo "dsl.errors_loss_far=$lossf"
+		echo "dsl.errors_uas_near=$uasn"
+		echo "dsl.errors_uas_far=$uasf"
+		echo "dsl.errors_hec_near=$hecn"
+		echo "dsl.errors_hec_far=$hecf"
+		echo "dsl.errors_crc_p_near=$crc_pn"
+		echo "dsl.errors_crc_p_far=$crc_pf"
+		echo "dsl.errors_crcp_p_near=$crcp_pn"
+		echo "dsl.errors_crcp_p_far=$crcp_pf"
+	else
+		echo "Forward Error Correction Seconds (FECS):  Near: ${fecn} / Far: ${fecf}"
+		echo "Errored seconds (ES):                     Near: ${esn} / Far: ${esf}"
+		echo "Severely Errored Seconds (SES):           Near: ${sesn} / Far: ${sesf}"
+		echo "Loss of Signal Seconds (LOSS):            Near: ${lossn} / Far: ${lossf}"
+		echo "Unavailable Seconds (UAS):                Near: ${uasn} / Far: ${uasf}"
+		echo "Header Error Code Errors (HEC):           Near: ${hecn} / Far: ${hecf}"
+		echo "Non Pre-emtive CRC errors (CRC_P):        Near: ${crcp_pn} / Far: ${crcp_pf}"
+		echo "Pre-emtive CRC errors (CRCP_P):           Near: ${crcp_pn} / Far: ${crcp_pf}"
 	fi
 }
 
@@ -118,11 +460,6 @@ line_uptime() {
 
 	[ -z "$et" ] && et=0
 
-	if [ "$action" = "lucistat" ]; then
-		echo "dsl.line_uptime=${et}"
-		return
-	fi
-
 	d=$(expr $et / 86400)
 	etr=$(expr $et % 86400)
 	h=$(expr $etr / 3600)
@@ -137,7 +474,16 @@ line_uptime() {
 	[ "${d}" -ne 0 ] && rc="${d}d ${rc}"
 
 	[ -z "$rc" ] && rc="down"
-	echo "Line Uptime:		${rc}"
+
+
+	if [ "$action" = "lucistat" ]; then
+		echo "dsl.line_uptime=${et}"
+		echo "dsl.line_uptime_s=\"${rc}\""
+	else
+
+		echo "Line Uptime Seconds:                      ${et}"
+		echo "Line Uptime:                              ${rc}"
+	fi
 }
 
 #
@@ -147,35 +493,72 @@ line_data() {
 	local lsg
 	local latnu
 	local latnd
+	local satnu
+	local satnd
 	local snru
 	local snrd
+	local attndru
+	local attndrd
+	local sattndru
+	local sattndrd
+	local actatpu
+	local actatpd
 
 	lsg=$(dsl_cmd g997lsg 1 1)
 	latnd=$(dsl_val "$lsg" LATN)
+	satnd=$(dsl_val "$lsg" SATN)
 	snrd=$(dsl_val "$lsg" SNR)
+	attndrd=$(dsl_val "$lsg" ATTNDR)
+	actatpd=$(dsl_val "$lsg" ACTATP)
 
 	lsg=$(dsl_cmd g997lsg 0 1)
 	latnu=$(dsl_val "$lsg" LATN)
+	satnu=$(dsl_val "$lsg" SATN)
 	snru=$(dsl_val "$lsg" SNR)
+	attndru=$(dsl_val "$lsg" ATTNDR)
+	actatpu=$(dsl_val "$lsg" ACTATP)
 
 	[ -z "$latnd" ] && latnd=0
 	[ -z "$latnu" ] && latnu=0
+	[ -z "$satnd" ] && satnd=0
+	[ -z "$satnu" ] && satnu=0
 	[ -z "$snrd" ] && snrd=0
 	[ -z "$snru" ] && snru=0
 
 	latnd=$(dbt $latnd)
 	latnu=$(dbt $latnu)
+	satnd=$(dbt $satnd)
+	satnu=$(dbt $satnu)
 	snrd=$(dbt $snrd)
 	snru=$(dbt $snru)
+	actatpd=$(dbt $actatpd)
+	actatpu=$(dbt $actatpu)
+
+	[ -z "$attndrd" ] && attndrd=0
+	[ -z "$attndru" ] && attndru=0
+
+	sattndrd=$(scale $attndrd)
+	sattndru=$(scale $attndru)
 	
 	if [ "$action" = "lucistat" ]; then
 		echo "dsl.line_attenuation_down=$latnd"
 		echo "dsl.line_attenuation_up=$latnu"
 		echo "dsl.noise_margin_down=$snrd"
 		echo "dsl.noise_margin_up=$snru"
+		echo "dsl.signal_attenuation_down=$satnd"
+		echo "dsl.signal_attenuation_up=$satnu"
+		echo "dsl.actatp_down=$actatpd"
+		echo "dsl.actatp_up=$actatpu"
+		echo "dsl.max_data_rate_down=$attndrd"
+		echo "dsl.max_data_rate_up=$attndru"
+		echo "dsl.max_data_rate_down_s=\"$sattndrd\""
+		echo "dsl.max_data_rate_up_s=\"$sattndru\""
 	else
-		echo "Line Attenuation:	${latnd}dB / ${latnu}dB"
-		echo "Noise Margin:		${snrd}dB / ${snru}dB"
+		echo "Line Attenuation (LATN):                  Down: ${latnd}dB / Up: ${latnu}dB"
+		echo "Signal Attenuation (SATN):                Down: ${satnd}dB / Up: ${satnu}dB"
+		echo "Noise Margin (SNR):                       Down: ${snrd}dB / Up: ${snru}dB"
+		echo "Aggregate Transmit Power(ACTATP):         Down: ${actatpd}dB / Up: ${actatpu}dB"
+		echo "Max. Attainable Data Rate (ATTNDR):       Down: ${sattndrd}/s / Up: ${sattndru}/s"
 	fi
 }
 
@@ -226,16 +609,21 @@ line_state() {
 		fi
 	else
 		if [ "$ls" = "0x801" ]; then
-			echo "Line State:		UP [$ls: $s]"
+			echo "Line State:                               UP [$ls: $s]"
 		else
-			echo "Line State:		DOWN [$ls: $s]"
+			echo "Line State:                               DOWN [$ls: $s]"
 		fi
 	fi
 }
 
 status() {
+	vendor
 	chipset
+	xtse
 	line_state
+	errors
+	power_mode
+	latency_delay
 	data_rates
 	line_data
 	line_uptime
