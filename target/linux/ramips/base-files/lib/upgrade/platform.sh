@@ -36,6 +36,7 @@ platform_check_image() {
 	cf-wr800n|\
 	d105|\
 	dap-1350|\
+	db-wrt01|\
 	dcs-930|\
 	dcs-930l-b1|\
 	dir-300-b1|\

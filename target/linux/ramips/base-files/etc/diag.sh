@@ -94,6 +94,7 @@ get_status_led() {
 	y1s)
 		status_led="$board:blue:power"
 		;;
+	db-wrt01|\
 	esr-9753)
 		status_led="$board:orange:power"
 		;;

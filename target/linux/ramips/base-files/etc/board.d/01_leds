@@ -87,6 +87,9 @@ d105)
 	ucidef_set_led_default "power" "POWER" "$board:red:power" "1"
 	set_usb_led "$board:green:usb"
 	;;
+db-wrt01)
+	ucidef_set_led_default "power" "power" "$board:orange:power" "1"
+	;;
 dcs-930l-b1)
 	ucidef_set_led_default "power" "POWER" "$board:red:power" "1"
 	ucidef_set_led_netdev "wifi" "WiFi" "$board:blue:wps"
