@@ -16,4 +16,15 @@ platform_check_image() {
 	esac
 }
 
+platform_pre_upgrade() {
+	local board=$(ipq806x_board_name)
+
+	case "$board" in
+	AP148 |\
+	r7500)
+		nand_do_upgrade "$1"
+		;;
+	esac
+}
+
 # use default for platform_do_upgrade()
