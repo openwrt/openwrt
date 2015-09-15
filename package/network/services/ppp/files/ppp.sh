@@ -90,7 +90,7 @@ ppp_generic_setup() {
 		ipv6=""
 	elif [ -z "$ipv6" -o "$ipv6" = auto ]; then
 		ipv6=1
-		proto_export "AUTOIPV6=1"
+		autoipv6=1
 	fi
 
 	if [ "${demand:-0}" -gt 0 ]; then
@@ -126,6 +126,7 @@ ppp_generic_setup() {
 		${localip:+$localip:} \
 		${lcp_failure:+lcp-echo-interval $lcp_interval lcp-echo-failure $lcp_failure $lcp_adaptive} \
 		${ipv6:++ipv6} \
+		${autoipv6:+set AUTOIPV6=1} \
 		nodefaultroute \
 		usepeerdns \
 		$demand maxfail 1 \

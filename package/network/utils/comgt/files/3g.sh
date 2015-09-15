@@ -89,9 +89,6 @@ proto_3g_setup() {
 		;;
 	esac
 
-	# Enable RFC 7278
-	proto_export "EXTENDPREFIX=1"
-
 	connect="${apn:+USE_APN=$apn }DIALNUMBER=$dialnumber /usr/sbin/chat -t5 -v -E -f $chat"
 	ppp_generic_setup "$interface" \
 		noaccomp \
@@ -99,6 +96,7 @@ proto_3g_setup() {
 		novj \
 		nobsdcomp \
 		noauth \
+		set EXTENDPREFIX=1 \
 		lock \
 		crtscts \
 		115200 "$device"
