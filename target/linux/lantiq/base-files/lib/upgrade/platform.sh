@@ -25,6 +25,16 @@ platform_check_image() {
 	esac
 }
 
+platform_pre_upgrade() {
+	local board=$(lantiq_board_name)
+
+	case "$board" in
+	BTHOMEHUBV2B|BTHOMEHUBV3A|P2812HNUF* )
+		nand_do_upgrade $1
+		;;
+	esac
+}
+
 # use default for platform_do_upgrade()
 
 disable_watchdog() {
