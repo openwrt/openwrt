@@ -60,10 +60,16 @@ $(eval $(call TestHostCommand,ncurses, \
 	echo 'int main(int argc, char **argv) { initscr(); return 0; }' | \
 		gcc -include ncurses.h -x c -o $(TMP_DIR)/a.out - -lncurses))
 
+ifeq ($(HOST_OS),Linux)
+  zlib_link_flags := -Wl,-Bstatic -lz -Wl,-Bdynamic
+else
+  zlib_link_flags := -lz
+endif
+
 $(eval $(call TestHostCommand,zlib, \
-	Please install zlib. (Missing libz.so or zlib.h), \
+	Please install a static zlib. (Missing libz.a or zlib.h), \
 	echo 'int main(int argc, char **argv) { gzdopen(0, "rb"); return 0; }' | \
-		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out - -lz))
+		gcc -include zlib.h -x c -o $(TMP_DIR)/a.out - $(zlib_link_flags)))
 
 $(eval $(call TestHostCommand,libssl, \
 	Please install the openssl library (with development headers), \
