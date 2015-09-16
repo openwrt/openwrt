@@ -23,15 +23,28 @@ PKG_BUILD_PARALLEL:=1
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 PKG_DRIVERS = \
-	adm8211 ath5k libertas-usb libertas-sdio p54-common p54-pci p54-usb p54-spi \
-	rt2x00-lib rt2x00-pci rt2x00-usb rt2800-lib rt2400-pci rt2500-pci \
-	rt2500-usb rt61-pci rt73-usb rt2800-mmio rt2800-pci rt2800-usb rt2800-soc \
-	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
-	ath9k-common ath9k ath9k-htc ath10k ath libipw ipw2100 ipw2200 \
-	mwl8k mwifiex-pcie hermes hermes-pci hermes-plx hermes-pcmcia \
-	iwl-legacy iwl3945 iwl4965 iwlagn wlcore wl12xx wl18xx lib80211 \
+	adm8211 \
+	ath ath5k ath9k ath9k-common ath9k-htc ath10k \
+	b43 b43legacy \
+	carl9170 \
+	hermes hermes-pci hermes-pcmcia hermes-plx\
+	iwl-legacy iwl3945 iwl4965 iwlagn \
+	lib80211 \
+	libipw ipw2100 ipw2200 \
+	libertas-sdio libertas-usb \
+	mac80211-hwsim \
+	mt7601u \
+	mwl8k mwifiex-pcie \
+	p54-common p54-pci p54-spi p54-usb \
+	rt2x00-lib rt2x00-pci rt2x00-usb \
+	rt2400-pci rt2500-pci rt2500-usb \
+	rt2800-lib rt2800-mmio rt2800-pci rt2800-soc rt2800-usb \
+	rt61-pci rt73-usb \
+	rtl8180 rtl8187 \
 	rtlwifi rtlwifi-pci rtlwifi-usb rtl8192c-common rtl8192ce rtl8192se \
-	rtl8192de rtl8192cu mt7601u
+	rtl8192de rtl8192cu \
+	wlcore wl12xx wl18xx \
+	zd1211rw
 
 PKG_CONFIG_DEPENDS:= \
 	CONFIG_PACKAGE_kmod-mac80211 \
@@ -126,369 +139,6 @@ define Download/linux-firmware
 endef
 $(eval $(call Download,linux-firmware))
 
-PKG_ATH10K_LINUX_FIRMWARE_NAME:=ath10k-firmware
-PKG_ATH10K_LINUX_FIRMWARE_VERSION:=b46f3e01a6c1f9150fb4612ef53611d714565842
-PKG_ATH10K_LINUX_FIRMWARE_SOURCE:=$(PKG_ATH10K_LINUX_FIRMWARE_NAME)-$(PKG_ATH10K_LINUX_FIRMWARE_VERSION).tar.bz2
-PKG_ATH10K_LINUX_FIRMWARE_PROTO:=git
-PKG_ATH10K_LINUX_FIRMWARE_SOURCE_URL:=https://github.com/kvalo/ath10k-firmware.git
-PKG_ATH10K_LINUX_FIRMWARE_SUBDIR:=$(PKG_ATH10K_LINUX_FIRMWARE_NAME)-$(PKG_ATH10K_LINUX_FIRMWARE_VERSION)
-#PKG_ATH10K_LINUX_FIRMWARE_MIRROR_MD5SUM:=?
-
-define Download/ath10k-firmware
-  FILE:=$(PKG_ATH10K_LINUX_FIRMWARE_SOURCE)
-  URL:=$(PKG_ATH10K_LINUX_FIRMWARE_SOURCE_URL)
-  PROTO:=$(PKG_ATH10K_LINUX_FIRMWARE_PROTO)
-  VERSION:=$(PKG_ATH10K_LINUX_FIRMWARE_VERSION)
-  SUBDIR:=$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)
-  #MIRROR_MD5SUM:=$(PKG_ATH10K_LINUX_FIRMWARE_MIRROR_MD5SUM)
-endef
-$(eval $(call Download,ath10k-firmware))
-
-# Prism54 drivers
-P54PCIFW:=2.13.12.0.arm
-P54USBFW:=2.13.24.0.lm87.arm
-P54SPIFW:=2.13.0.0.a.13.14.arm
-
-define Download/p54usb
-  FILE:=$(P54USBFW)
-  URL:=http://daemonizer.de/prism54/prism54-fw/fw-usb
-  MD5SUM:=8e8ab005a4f8f0123bcdc51bc25b47f6
-endef
-$(eval $(call Download,p54usb))
-
-define Download/p54pci
-  FILE:=$(P54PCIFW)
-  URL:=http://daemonizer.de/prism54/prism54-fw/fw-softmac
-  MD5SUM:=ff7536af2092b1c4b21315bd103ef4c4
-endef
-$(eval $(call Download,p54pci))
-
-define Download/p54spi
-  FILE:=$(P54SPIFW)
-  URL:=http://daemonizer.de/prism54/prism54-fw/stlc4560
-  MD5SUM:=42661f8ecbadd88012807493f596081d
-endef
-$(eval $(call Download,p54spi))
-
-define KernelPackage/p54/Default
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Prism54 Drivers
-endef
-
-define KernelPackage/p54/description
-  Kernel module for Prism54 chipsets (mac80211)
-endef
-
-define KernelPackage/p54-common
-  $(call KernelPackage/p54/Default)
-  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT||@TARGET_omap24xx +kmod-mac80211 +kmod-lib-crc-ccitt
-  TITLE+= (COMMON)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54common.ko
-endef
-
-define KernelPackage/p54-pci
-  $(call KernelPackage/p54/Default)
-  TITLE+= (PCI)
-  DEPENDS+= @PCI_SUPPORT +kmod-p54-common
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54pci.ko
-  AUTOLOAD:=$(call AutoProbe,p54pci)
-endef
-
-define KernelPackage/p54-usb
-  $(call KernelPackage/p54/Default)
-  TITLE+= (USB)
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-p54-common
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54usb.ko
-  AUTOLOAD:=$(call AutoProbe,p54usb)
-endef
-
-define KernelPackage/p54-spi
-  $(call KernelPackage/p54/Default)
-  TITLE+= (SPI)
-  DEPENDS+= @TARGET_omap24xx +kmod-p54-common
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54spi.ko
-  AUTOLOAD:=$(call AutoProbe,p54spi)
-endef
-
-define KernelPackage/rt2x00/Default
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Ralink Drivers for RT2x00 cards
-endef
-
-define KernelPackage/rt2x00-lib
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-mac80211 +kmod-lib-crc-itu-t
-  TITLE+= (LIB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00lib.ko
-  MENU:=1
-endef
-
-define KernelPackage/rt2x00-lib/config
-  if PACKAGE_kmod-rt2x00-lib
-
-	config PACKAGE_RT2X00_LIB_DEBUGFS
-		bool "Enable rt2x00 debugfs support"
-		depends on PACKAGE_MAC80211_DEBUGFS
-		help
-		  Enable creation of debugfs files for the rt2x00 drivers.
-		  These debugfs files support both reading and writing of the
-		  most important register types of the rt2x00 hardware.
-
-	config PACKAGE_RT2X00_DEBUG
-		bool "Enable rt2x00 debug output"
-		help
-		  Enable debugging output for all rt2x00 modules
-
-  endif
-endef
-
-define KernelPackage/rt2x00-mmio
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-eeprom-93cx6
-  HIDDEN:=1
-  TITLE+= (MMIO)
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00mmio.ko
-endef
-
-define KernelPackage/rt2x00-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-mmio +kmod-rt2x00-lib
-  HIDDEN:=1
-  TITLE+= (PCI)
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2x00pci)
-endef
-
-define KernelPackage/rt2x00-usb
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-lib +kmod-usb-core
-  HIDDEN:=1
-  TITLE+= (USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt2x00usb)
-endef
-
-define KernelPackage/rt2800-lib
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-lib-crc-ccitt +@DRIVER_11N_SUPPORT
-  HIDDEN:=1
-  TITLE+= (rt2800 LIB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800lib.ko
-endef
-
-define KernelPackage/rt2400-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
-  TITLE+= (RT2400 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2400pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2400pci)
-endef
-
-define KernelPackage/rt2500-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
-  TITLE+= (RT2500 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2500pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2500pci)
-endef
-
-define KernelPackage/rt2500-usb
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
-  TITLE+= (RT2500 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2500usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt2500usb)
-endef
-
-define KernelPackage/rt61-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
-  TITLE+= (RT2x61 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt61pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt61pci)
-endef
-
-define KernelPackage/rt73-usb
-  $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
-  TITLE+= (RT73 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt73usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt73usb)
-endef
-
-define KernelPackage/rt2800-mmio
-$(call KernelPackage/rt2x00/Default)
-  TITLE += (RT28xx/RT3xxx MMIO)
-  DEPENDS += +kmod-rt2800-lib +kmod-rt2x00-mmio
-  HIDDEN:=1
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800mmio.ko
-endef
-
-define KernelPackage/rt2800-soc
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS += @(TARGET_ramips_rt288x||TARGET_ramips_rt305x||TARGET_ramips_rt3883||TARGET_ramips_mt7620) +kmod-rt2800-mmio +kmod-rt2800-lib
-  TITLE += (RT28xx/RT3xxx SoC)
-  FILES := \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800soc.ko
-  AUTOLOAD:=$(call AutoProbe,rt2800soc)
-endef
-
-define KernelPackage/rt2800-pci
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-rt2800-mmio
-  TITLE+= (RT2860 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.ko
-  AUTOLOAD:=$(call AutoProbe,rt2800pci)
-endef
-
-define KernelPackage/rt2800-usb
-$(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-rt2800-lib +kmod-lib-crc-ccitt
-  TITLE+= (RT2870 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.ko
-  AUTOLOAD:=$(call AutoProbe,rt2800usb)
-endef
-
-define KernelPackage/rtl818x/Default
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek Drivers for RTL818x devices
-  URL:=http://wireless.kernel.org/en/users/Drivers/rtl8187
-  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211
-endef
-
-define KernelPackage/rtl8180
-  $(call KernelPackage/rtl818x/Default)
-  DEPENDS+= @PCI_SUPPORT
-  TITLE+= (RTL8180 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl818x_pci.ko
-  AUTOLOAD:=$(call AutoProbe,rtl818x_pci)
-endef
-
-define KernelPackage/rtl8187
-$(call KernelPackage/rtl818x/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core
-  TITLE+= (RTL8187 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187/rtl8187.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8187)
-endef
-
-define KernelPackage/rtlwifi/config
-	config PACKAGE_RTLWIFI_DEBUG
-		bool "Realtek wireless debugging"
-		depends on PACKAGE_kmod-rtlwifi
-		help
-		  Say Y, if you want to debug realtek wireless drivers.
-
-endef
-
-define KernelPackage/rtlwifi
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek common driver part
-  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtlwifi.ko
-  HIDDEN:=1
-endef
-
-define KernelPackage/rtlwifi-pci
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek common driver part (PCI support)
-  DEPENDS+= @PCI_SUPPORT +kmod-rtlwifi
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl_pci.ko
-  AUTOLOAD:=$(call AutoProbe,rtl_pci)
-  HIDDEN:=1
-endef
-
-define KernelPackage/rtlwifi-usb
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek common driver part (USB support)
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-rtlwifi
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl_usb.ko
-  AUTOLOAD:=$(call AutoProbe,rtl_usb)
-  HIDDEN:=1
-endef
-
-define KernelPackage/rtl8192c-common
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek RTL8192CE/RTL8192CU common support module
-  DEPENDS+= +kmod-rtlwifi
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192c/rtl8192c-common.ko
-  HIDDEN:=1
-endef
-
-define KernelPackage/rtl8192ce
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek RTL8192CE/RTL8188CE support
-  DEPENDS+= +kmod-rtlwifi-pci +kmod-rtl8192c-common
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192ce/rtl8192ce.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8192ce)
-endef
-
-define KernelPackage/rtl8192ce/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfw.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfwU.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfwU_B.bin $(1)/lib/firmware/rtlwifi
-endef
-
-define KernelPackage/rtl8192se
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek RTL8192SE/RTL8191SE support
-  DEPENDS+= +kmod-rtlwifi-pci
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192se/rtl8192se.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8192se)
-endef
-
-define KernelPackage/rtl8192se/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192sefw.bin $(1)/lib/firmware/rtlwifi
-endef
-
-define KernelPackage/rtl8192de
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek RTL8192DE/RTL8188DE support
-  DEPENDS+= +kmod-rtlwifi-pci
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192de/rtl8192de.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8192de)
-endef
-
-define KernelPackage/rtl8192de/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192defw.bin $(1)/lib/firmware/rtlwifi
-endef
-
-define KernelPackage/rtl8192cu
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Realtek RTL8192CU/RTL8188CU support
-  DEPENDS+= +kmod-rtlwifi-usb +kmod-rtl8192c-common
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192cu/rtl8192cu.ko
-  AUTOLOAD:=$(call AutoProbe,rtl8192cu)
-endef
-
-define KernelPackage/rtl8192cu/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_A.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_B.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_TMSC.bin $(1)/lib/firmware/rtlwifi
-endef
-
-ZD1211FW_NAME:=zd1211-firmware
-ZD1211FW_VERSION:=1.4
-define Download/zd1211rw
-  FILE:=$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
-  URL:=@SF/zd1211/
-  MD5SUM:=19f28781d76569af8551c9d11294c870
-endef
-$(eval $(call Download,zd1211rw))
-
-define KernelPackage/zd1211rw
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Zydas ZD1211 support
-  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.ko
-  AUTOLOAD:=$(call AutoProbe,zd1211rw)
-endef
 
 define KernelPackage/adm8211
   $(call KernelPackage/mac80211/Default)
@@ -585,7 +235,7 @@ define KernelPackage/ath9k/config
 	config ATH9K_SUPPORT_PCOEM
 		bool "Support chips used in PC OEM cards"
 		depends on PACKAGE_kmod-ath9k
-	
+
 endef
 
 define KernelPackage/ath9k-htc
@@ -633,487 +283,23 @@ define KernelPackage/ath10k/config
   endif
 endef
 
-define KernelPackage/carl9170
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for Atheros AR9170 USB sticks
-  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core +kmod-input-core +@DRIVER_11N_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170/carl9170.ko
-  AUTOLOAD:=$(call AutoProbe,carl9170)
+PKG_ATH10K_LINUX_FIRMWARE_NAME:=ath10k-firmware
+PKG_ATH10K_LINUX_FIRMWARE_VERSION:=b46f3e01a6c1f9150fb4612ef53611d714565842
+PKG_ATH10K_LINUX_FIRMWARE_SOURCE:=$(PKG_ATH10K_LINUX_FIRMWARE_NAME)-$(PKG_ATH10K_LINUX_FIRMWARE_VERSION).tar.bz2
+PKG_ATH10K_LINUX_FIRMWARE_PROTO:=git
+PKG_ATH10K_LINUX_FIRMWARE_SOURCE_URL:=https://github.com/kvalo/ath10k-firmware.git
+PKG_ATH10K_LINUX_FIRMWARE_SUBDIR:=$(PKG_ATH10K_LINUX_FIRMWARE_NAME)-$(PKG_ATH10K_LINUX_FIRMWARE_VERSION)
+#PKG_ATH10K_LINUX_FIRMWARE_MIRROR_MD5SUM:=?
+
+define Download/ath10k-firmware
+  FILE:=$(PKG_ATH10K_LINUX_FIRMWARE_SOURCE)
+  URL:=$(PKG_ATH10K_LINUX_FIRMWARE_SOURCE_URL)
+  PROTO:=$(PKG_ATH10K_LINUX_FIRMWARE_PROTO)
+  VERSION:=$(PKG_ATH10K_LINUX_FIRMWARE_VERSION)
+  SUBDIR:=$(PKG_ATH10K_LINUX_FIRMWARE_SUBDIR)
+  #MIRROR_MD5SUM:=$(PKG_ATH10K_LINUX_FIRMWARE_MIRROR_MD5SUM)
 endef
-
-define KernelPackage/lib80211
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=802.11 Networking stack
-  DEPENDS:=+kmod-cfg80211
-  FILES:= \
-	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
-	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \
-	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_ccmp.ko \
-	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_tkip.ko
-  AUTOLOAD:=$(call AutoProbe, \
-	lib80211 \
-	lib80211_crypt_wep \
-	lib80211_crypt_ccmp \
-	lib80211_crypt_tkip \
-  )
-endef
-
-define KernelPackage/lib80211/description
- Kernel modules for 802.11 Networking stack
- Includes:
- - lib80211
- - lib80211_crypt_wep
- - lib80211_crypt_tkip
- - lib80211_crytp_ccmp
-endef
-
-define KernelPackage/libertas-usb
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT
-  TITLE:=Marvell 88W8015 Wireless Driver
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/usb8xxx.ko
-  AUTOLOAD:=$(call AutoProbe,libertas usb8xxx)
-endef
-
-define KernelPackage/libertas-sdio
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT @!TARGET_uml
-  TITLE:=Marvell 88W8686 Wireless Driver
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas_sdio.ko
-  AUTOLOAD:=$(call AutoProbe,libertas libertas_sdio)
-endef
-
-define KernelPackage/mac80211-hwsim
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=mac80211 HW simulation device
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.ko
-  AUTOLOAD:=$(call AutoProbe,mac80211_hwsim)
-endef
-
-PKG_MT7601U_FW_NAME:=DPO_MT7601U_LinuxSTA
-PKG_MT7601U_FW_VERSION:=3.0.0.4_20130913
-PKG_MT7601U_FW_MD5SUM:=5f440dccc8bc952745a191994fc34699
-PKG_MT7601U_FW_SOURCE:=$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION).tar.bz2
-PKG_MT7601U_FW_SOURCE_URL:=http://www.mediatek.com/AmazonS3/Downloads/linux/
-define Download/mt7601u-firmware
-  FILE:=$(PKG_MT7601U_FW_SOURCE)
-  URL:=$(PKG_MT7601U_FW_SOURCE_URL)
-  MD5SUM:=$(PKG_MT7601U_FW_MD5SUM)
-  SUBDIR:=$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION)
-endef
-$(eval $(call Download,mt7601u-firmware))
-
-define KernelPackage/mt7601u
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=MT7601U-based USB dongles Wireless Driver
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mediatek/mt7601u/mt7601u.ko
-  AUTOLOAD:=$(call AutoProbe,mt7601)
-endef
-
-define KernelPackage/libipw
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=libipw for ipw2100 and ipw2200
-  DEPENDS:=@PCI_SUPPORT +kmod-crypto-michael-mic +kmod-lib80211 +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT @!BIG_ENDIAN
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/libipw.ko
-  AUTOLOAD:=$(call AutoProbe,libipw)
-endef
-
-define KernelPackage/libipw/description
- Hardware independent IEEE 802.11 networking stack for ipw2100 and ipw2200.
-endef
-
-IPW2100_NAME:=ipw2100-fw
-IPW2100_VERSION:=1.3
-
-define Download/ipw2100
-  URL:=http://bughost.org/firmware/
-  FILE:=$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
-  MD5SUM=46aa75bcda1a00efa841f9707bbbd113
-endef
-$(eval $(call Download,ipw2100))
-
-define KernelPackage/ipw2100
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Intel IPW2100 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-libipw
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/ipw2100.ko
-  AUTOLOAD:=$(call AutoProbe,ipw2100)
-endef
-
-define KernelPackage/ipw2100/description
- Kernel support for Intel IPW2100
- Includes:
- - ipw2100
-endef
-
-IPW2200_NAME:=ipw2200-fw
-IPW2200_VERSION:=3.1
-
-define Download/ipw2200
-  URL:=http://bughost.org/firmware/
-  FILE:=$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
-  MD5SUM=eaba788643c7cc7483dd67ace70f6e99
-endef
-$(eval $(call Download,ipw2200))
-
-define KernelPackage/ipw2200
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Intel IPW2200 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-libipw
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/ipw2200.ko
-  AUTOLOAD:=$(call AutoProbe,ipw2200)
-endef
-
-define KernelPackage/ipw2200/description
- Kernel support for Intel IPW2200
- Includes:
- - ipw2200
-endef
-
-
-define KernelPackage/hermes
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Hermes 802.11b chipset support
-  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco.ko
-  AUTOLOAD:=$(call AutoProbe,orinoco)
-endef
-
-define KernelPackage/hermes/description
- Kernel support for Hermes 802.11b chipsets
-endef
-
-define KernelPackage/hermes-pci
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Intersil Prism 2.5 PCI support
-  DEPENDS:=@PCI_SUPPORT +kmod-hermes
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_pci.ko
-  AUTOLOAD:=$(call AutoProbe,orinoco_pci)
-endef
-
-define KernelPackage/hermes-pci/description
- Kernel modules for Intersil Prism 2.5 PCI support
-endef
-
-define KernelPackage/hermes-plx
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=PLX9052 based PCI adaptor
-  DEPENDS:=@PCI_SUPPORT +kmod-hermes
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_plx.ko
-  AUTOLOAD:=$(call AutoProbe,orinoco_plx)
-endef
-
-define KernelPackage/hermes-plx/description
- Kernel modules for Hermes in PLX9052 based PCI adaptors
-endef
-
-define KernelPackage/hermes-pcmcia
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Hermes based PCMCIA adaptors
-  DEPENDS:=@PCMCIA_SUPPORT +kmod-hermes @BROKEN
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_cs.ko
-  AUTOLOAD:=$(call AutoProbe,orinoco_cs)
-endef
-
-define KernelPackage/hermes-pcmcia/description
- Kernel modules for Hermes based PCMCIA adaptors
-endef
-
-define KernelPackage/iwlagn
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT +@DRIVER_11N_SUPPORT
-  TITLE:=Intel AGN Wireless support
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlwifi.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/dvm/iwldvm.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/mvm/iwlmvm.ko
-  AUTOLOAD:=$(call AutoProbe,iwlwifi iwldvm iwlmvm)
-  MENU:=1
-endef
-
-define KernelPackage/iwlagn/description
- iwlagn kernel module for
- Intel Wireless WiFi Link 6250AGN Adapter
- Intel 6000 Series Wi-Fi Adapters (6200AGN and 6300AGN)
- Intel WiFi Link 1000BGN
- Intel Wireless WiFi 5150AGN
- Intel Wireless WiFi 5100AGN, 5300AGN, and 5350AGN
- Intel 6005 Series Wi-Fi Adapters
- Intel 6030 Series Wi-Fi Adapters
- Intel Wireless WiFi Link 6150BGN 2 Adapter
- Intel 100 Series Wi-Fi Adapters (100BGN and 130BGN)
- Intel 2000 Series Wi-Fi Adapters
- Intel 7260 Wi-Fi Adapter
- Intel 3160 Wi-Fi Adapter
- Intel 7265 Wi-Fi Adapter
- Intel 8260 Wi-Fi Adapter
- Intel 3165 Wi-Fi Adapter
-endef
-
-define KernelPackage/iwlagn/config
-  if PACKAGE_kmod-iwlagn
-
-	config PACKAGE_IWLWIFI_DEBUG
-		bool "Enable full debugging output in the iwlagn driver"
-		default n
-		help
-		  This option will enable debug tracing output for the iwlwifi drivers
-
-		  This will result in the kernel module being ~100k larger.  You can
-		  control which debug output is sent to the kernel log by setting the
-		  value in
-
-			/sys/module/iwlwifi/parameters/debug
-
-		  This entry will only exist if this option is enabled.
-
-		  To set a value, simply echo an 8-byte hex value to the same file:
-
-			  % echo 0x43fff > /sys/module/iwlwifi/parameters/debug
-
-		  You can find the list of debug mask values in:
-			  drivers/net/wireless/iwlwifi/iwl-debug.h
-
-		  If this is your first time using this driver, you should say Y here
-		  as the debug information can assist others in helping you resolve
-		  any problems you may encounter.
-
-	config PACKAGE_IWLWIFI_DEBUGFS
-	        bool "iwlwifi debugfs support"
-		depends on PACKAGE_MAC80211_DEBUGFS
-		default n
-		help
-		  Enable creation of debugfs files for the iwlwifi drivers. This
-		  is a low-impact option that allows getting insight into the
-		  driver's state at runtime.
-
-	config IWL100_FW
-		bool "Intel 100 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Wireless-N 100
-
-	config IWL1000_FW
-		bool "Intel 1000 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Wireless-N 1000
-
-	config IWL105_FW
-		bool "Intel 105 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Wireless-N 105
-
-	config IWL135_FW
-		bool "Intel 135 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Wireless-N 135
-
-	config IWL2000_FW
-		bool "Intel 2000 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Wireless-N 2200
-
-	config IWL2030_FW
-		bool "Intel 2030 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Wireless-N 2230
-
-	config IWL3160_FW
-		bool "Intel 3160 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Wireless WiFi 3160
-
-	config IWL5000_FW
-		bool "Intel 5000 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Wireless WiFi 5100AGN, 5300AGN, and 5350AGN
-
-	config IWL5150_FW
-		bool "Intel 5150 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Wireless WiFi 5150AGN
-
-	config IWL6000_FW
-		bool "Intel 6000 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Ultimate-N 6300 and Advanced-N 6200
-
-	config IWL6005_FW
-		bool "Intel 6005 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Advanced-N 6205
-
-	config IWL6030_FW
-		bool "Intel 6030 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Advanced-N 6230, Wireless-N 1030, Wireless-N 130 and Advanced-N 6235
-
-	config IWL6050_FW
-		bool "Intel 6050 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Centrino Advanced-N + WiMAX 6250 and Wireless-N + WiMAX 6150
-
-	config IWL7260_FW
-		bool "Intel 7260 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Dual Band Wireless-N 7260 and Intel Dual Band Wireless-AC 7260
-
-	config IWL7265_FW
-		bool "Intel 7265 Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Wireless 7265, 7265D, 3165
-
-	config IWL8000_FW
-		bool "Intel 8000 Series Firmware"
-		default y
-		help
-		  Download and install firmware for:
-		    Intel Wireless Series 8260, 4165
-
-  endif
-endef
-
-define KernelPackage/iwl-legacy
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
-  TITLE:=Intel legacy Wireless support
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwlegacy.ko
-  AUTOLOAD:=$(call AutoProbe,iwlegacy)
-endef
-
-define KernelPackage/iwl-legacy/description
- iwl-legacy kernel module for legacy Intel wireless support
-endef
-
-define KernelPackage/iwl3945
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy
-  TITLE:=Intel iwl3945 Wireless support
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl3945.ko
-  AUTOLOAD:=$(call AutoProbe,iwl3945)
-endef
-
-define KernelPackage/iwl3945/description
- iwl3945 kernel module for Intel 3945 support
-endef
-
-define KernelPackage/iwl4965
-  $(call KernelPackage/mac80211/Default)
-  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy +@DRIVER_11N_SUPPORT
-  TITLE:=Intel iwl4965 Wireless support
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl4965.ko
-  AUTOLOAD:=$(call AutoProbe,iwl4965)
-endef
-
-define KernelPackage/iwl4965/description
- iwl4965 kernel module for Intel 4965 support
-endef
-
-
-define KernelPackage/mwl8k
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for Marvell TOPDOG 802.11 Wireless cards
-  URL:=http://wireless.kernel.org/en/users/Drivers/mwl8k
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mwl8k.ko
-  AUTOLOAD:=$(call AutoProbe,mwl8k)
-endef
-
-define KernelPackage/mwl8k/description
- Kernel modules for Marvell TOPDOG 802.11 Wireless cards
-endef
-
-
-define KernelPackage/mwifiex-pcie
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for Marvell 802.11n/802.11ac PCIe Wireless cards
-  URL:=http://wireless.kernel.org/en/users/Drivers/mwifiex
-  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/mwifiex/mwifiex.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/mwifiex/mwifiex_pcie.ko
-  AUTOLOAD:=$(call AutoProbe,mwifiex_pcie)
-endef
-
-define KernelPackage/mwifiex-pcie/description
- Kernel modules for Marvell 802.11n/802.11ac PCIe Wireless cards
-endef
-
-
-define KernelPackage/wlcore
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=TI common driver part
-  DEPENDS+= @TARGET_omap +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:= \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
-	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko
-  AUTOLOAD:=$(call AutoProbe,wlcore wlcore_sdio)
-endef
-
-define KernelPackage/wlcore/description
- This module contains some common parts needed by TI Wireless drivers.
-endef
-
-define KernelPackage/wl12xx
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for TI WL12xx
-  URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
-  DEPENDS+= +kmod-wlcore
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko
-  AUTOLOAD:=$(call AutoProbe,wl12xx)
-endef
-
-define KernelPackage/wl12xx/description
- Kernel modules for TI WL12xx
-endef
-
-define KernelPackage/wl18xx
-  $(call KernelPackage/mac80211/Default)
-  TITLE:=Driver for TI WL18xx
-  URL:=http://wireless.kernel.org/en/users/Drivers/wl18xx
-  DEPENDS+= +kmod-wlcore
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl18xx/wl18xx.ko
-  AUTOLOAD:=$(call AutoProbe,wl18xx)
-endef
-
-define KernelPackage/wl18xx/description
- Kernel modules for TI WL18xx
-endef
+$(eval $(call Download,ath10k-firmware))
 
 
 #Broadcom firmware
@@ -1596,6 +782,845 @@ define KernelPackage/brcmfmac/config
   endif
 endef
 
+
+define KernelPackage/carl9170
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for Atheros AR9170 USB sticks
+  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core +kmod-input-core +@DRIVER_11N_SUPPORT
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170/carl9170.ko
+  AUTOLOAD:=$(call AutoProbe,carl9170)
+endef
+
+
+define KernelPackage/hermes
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Hermes 802.11b chipset support
+  DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco.ko
+  AUTOLOAD:=$(call AutoProbe,orinoco)
+endef
+
+define KernelPackage/hermes/description
+ Kernel support for Hermes 802.11b chipsets
+endef
+
+define KernelPackage/hermes-pci
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Intersil Prism 2.5 PCI support
+  DEPENDS:=@PCI_SUPPORT +kmod-hermes
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_pci.ko
+  AUTOLOAD:=$(call AutoProbe,orinoco_pci)
+endef
+
+define KernelPackage/hermes-pci/description
+ Kernel modules for Intersil Prism 2.5 PCI support
+endef
+
+define KernelPackage/hermes-plx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=PLX9052 based PCI adaptor
+  DEPENDS:=@PCI_SUPPORT +kmod-hermes
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_plx.ko
+  AUTOLOAD:=$(call AutoProbe,orinoco_plx)
+endef
+
+define KernelPackage/hermes-plx/description
+ Kernel modules for Hermes in PLX9052 based PCI adaptors
+endef
+
+define KernelPackage/hermes-pcmcia
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Hermes based PCMCIA adaptors
+  DEPENDS:=@PCMCIA_SUPPORT +kmod-hermes @BROKEN
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_cs.ko
+  AUTOLOAD:=$(call AutoProbe,orinoco_cs)
+endef
+
+define KernelPackage/hermes-pcmcia/description
+ Kernel modules for Hermes based PCMCIA adaptors
+endef
+
+
+define KernelPackage/iwlagn
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT +@DRIVER_11N_SUPPORT
+  TITLE:=Intel AGN Wireless support
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/iwlwifi.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/dvm/iwldvm.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/iwlwifi/mvm/iwlmvm.ko
+  AUTOLOAD:=$(call AutoProbe,iwlwifi iwldvm iwlmvm)
+  MENU:=1
+endef
+
+define KernelPackage/iwlagn/description
+ iwlagn kernel module for
+ Intel Wireless WiFi Link 6250AGN Adapter
+ Intel 6000 Series Wi-Fi Adapters (6200AGN and 6300AGN)
+ Intel WiFi Link 1000BGN
+ Intel Wireless WiFi 5150AGN
+ Intel Wireless WiFi 5100AGN, 5300AGN, and 5350AGN
+ Intel 6005 Series Wi-Fi Adapters
+ Intel 6030 Series Wi-Fi Adapters
+ Intel Wireless WiFi Link 6150BGN 2 Adapter
+ Intel 100 Series Wi-Fi Adapters (100BGN and 130BGN)
+ Intel 2000 Series Wi-Fi Adapters
+ Intel 7260 Wi-Fi Adapter
+ Intel 3160 Wi-Fi Adapter
+ Intel 7265 Wi-Fi Adapter
+ Intel 8260 Wi-Fi Adapter
+ Intel 3165 Wi-Fi Adapter
+endef
+
+define KernelPackage/iwlagn/config
+  if PACKAGE_kmod-iwlagn
+
+	config PACKAGE_IWLWIFI_DEBUG
+		bool "Enable full debugging output in the iwlagn driver"
+		default n
+		help
+		  This option will enable debug tracing output for the iwlwifi drivers
+
+		  This will result in the kernel module being ~100k larger.  You can
+		  control which debug output is sent to the kernel log by setting the
+		  value in
+
+			/sys/module/iwlwifi/parameters/debug
+
+		  This entry will only exist if this option is enabled.
+
+		  To set a value, simply echo an 8-byte hex value to the same file:
+
+			  % echo 0x43fff > /sys/module/iwlwifi/parameters/debug
+
+		  You can find the list of debug mask values in:
+			  drivers/net/wireless/iwlwifi/iwl-debug.h
+
+		  If this is your first time using this driver, you should say Y here
+		  as the debug information can assist others in helping you resolve
+		  any problems you may encounter.
+
+	config PACKAGE_IWLWIFI_DEBUGFS
+	        bool "iwlwifi debugfs support"
+		depends on PACKAGE_MAC80211_DEBUGFS
+		default n
+		help
+		  Enable creation of debugfs files for the iwlwifi drivers. This
+		  is a low-impact option that allows getting insight into the
+		  driver's state at runtime.
+
+	config IWL100_FW
+		bool "Intel 100 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 100
+
+	config IWL1000_FW
+		bool "Intel 1000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 1000
+
+	config IWL105_FW
+		bool "Intel 105 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 105
+
+	config IWL135_FW
+		bool "Intel 135 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 135
+
+	config IWL2000_FW
+		bool "Intel 2000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 2200
+
+	config IWL2030_FW
+		bool "Intel 2030 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Wireless-N 2230
+
+	config IWL3160_FW
+		bool "Intel 3160 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Wireless WiFi 3160
+
+	config IWL5000_FW
+		bool "Intel 5000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Wireless WiFi 5100AGN, 5300AGN, and 5350AGN
+
+	config IWL5150_FW
+		bool "Intel 5150 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Wireless WiFi 5150AGN
+
+	config IWL6000_FW
+		bool "Intel 6000 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Ultimate-N 6300 and Advanced-N 6200
+
+	config IWL6005_FW
+		bool "Intel 6005 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Advanced-N 6205
+
+	config IWL6030_FW
+		bool "Intel 6030 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Advanced-N 6230, Wireless-N 1030, Wireless-N 130 and Advanced-N 6235
+
+	config IWL6050_FW
+		bool "Intel 6050 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Centrino Advanced-N + WiMAX 6250 and Wireless-N + WiMAX 6150
+
+	config IWL7260_FW
+		bool "Intel 7260 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Dual Band Wireless-N 7260 and Intel Dual Band Wireless-AC 7260
+
+	config IWL7265_FW
+		bool "Intel 7265 Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Wireless 7265, 7265D, 3165
+
+	config IWL8000_FW
+		bool "Intel 8000 Series Firmware"
+		default y
+		help
+		  Download and install firmware for:
+		    Intel Wireless Series 8260, 4165
+
+  endif
+endef
+
+define KernelPackage/iwl-legacy
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211 @PCI_SUPPORT
+  TITLE:=Intel legacy Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwlegacy.ko
+  AUTOLOAD:=$(call AutoProbe,iwlegacy)
+endef
+
+define KernelPackage/iwl-legacy/description
+ iwl-legacy kernel module for legacy Intel wireless support
+endef
+
+define KernelPackage/iwl3945
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy
+  TITLE:=Intel iwl3945 Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl3945.ko
+  AUTOLOAD:=$(call AutoProbe,iwl3945)
+endef
+
+define KernelPackage/iwl3945/description
+ iwl3945 kernel module for Intel 3945 support
+endef
+
+define KernelPackage/iwl4965
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS:= +kmod-mac80211 +kmod-iwl-legacy +@DRIVER_11N_SUPPORT
+  TITLE:=Intel iwl4965 Wireless support
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/iwlegacy/iwl4965.ko
+  AUTOLOAD:=$(call AutoProbe,iwl4965)
+endef
+
+define KernelPackage/iwl4965/description
+ iwl4965 kernel module for Intel 4965 support
+endef
+
+
+define KernelPackage/lib80211
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=802.11 Networking stack
+  DEPENDS:=+kmod-cfg80211
+  FILES:= \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211.ko \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_wep.ko \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_ccmp.ko \
+	$(PKG_BUILD_DIR)/net/wireless/lib80211_crypt_tkip.ko
+  AUTOLOAD:=$(call AutoProbe, \
+	lib80211 \
+	lib80211_crypt_wep \
+	lib80211_crypt_ccmp \
+	lib80211_crypt_tkip \
+  )
+endef
+
+define KernelPackage/lib80211/description
+ Kernel modules for 802.11 Networking stack
+ Includes:
+ - lib80211
+ - lib80211_crypt_wep
+ - lib80211_crypt_tkip
+ - lib80211_crytp_ccmp
+endef
+
+
+define KernelPackage/libipw
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=libipw for ipw2100 and ipw2200
+  DEPENDS:=@PCI_SUPPORT +kmod-crypto-michael-mic +kmod-lib80211 +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT @!BIG_ENDIAN
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/libipw.ko
+  AUTOLOAD:=$(call AutoProbe,libipw)
+endef
+
+define KernelPackage/libipw/description
+ Hardware independent IEEE 802.11 networking stack for ipw2100 and ipw2200.
+endef
+
+IPW2100_NAME:=ipw2100-fw
+IPW2100_VERSION:=1.3
+
+define Download/ipw2100
+  URL:=http://bughost.org/firmware/
+  FILE:=$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
+  MD5SUM=46aa75bcda1a00efa841f9707bbbd113
+endef
+$(eval $(call Download,ipw2100))
+
+define KernelPackage/ipw2100
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Intel IPW2100 driver
+  DEPENDS:=@PCI_SUPPORT +kmod-libipw
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/ipw2100.ko
+  AUTOLOAD:=$(call AutoProbe,ipw2100)
+endef
+
+define KernelPackage/ipw2100/description
+ Kernel support for Intel IPW2100
+ Includes:
+ - ipw2100
+endef
+
+IPW2200_NAME:=ipw2200-fw
+IPW2200_VERSION:=3.1
+
+define Download/ipw2200
+  URL:=http://bughost.org/firmware/
+  FILE:=$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
+  MD5SUM=eaba788643c7cc7483dd67ace70f6e99
+endef
+$(eval $(call Download,ipw2200))
+
+define KernelPackage/ipw2200
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Intel IPW2200 driver
+  DEPENDS:=@PCI_SUPPORT +kmod-libipw
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/ipw2200.ko
+  AUTOLOAD:=$(call AutoProbe,ipw2200)
+endef
+
+define KernelPackage/ipw2200/description
+ Kernel support for Intel IPW2200
+ Includes:
+ - ipw2200
+endef
+
+
+define KernelPackage/libertas-usb
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +kmod-usb-core +kmod-lib80211 +@DRIVER_WEXT_SUPPORT
+  TITLE:=Marvell 88W8015 Wireless Driver
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/usb8xxx.ko
+  AUTOLOAD:=$(call AutoProbe,libertas usb8xxx)
+endef
+
+define KernelPackage/libertas-sdio
+  $(call KernelPackage/mac80211/Default)
+  DEPENDS+= +kmod-cfg80211 +kmod-lib80211 +kmod-mmc +@DRIVER_WEXT_SUPPORT @!TARGET_uml
+  TITLE:=Marvell 88W8686 Wireless Driver
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/libertas/libertas_sdio.ko
+  AUTOLOAD:=$(call AutoProbe,libertas libertas_sdio)
+endef
+
+define KernelPackage/mac80211-hwsim
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=mac80211 HW simulation device
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mac80211_hwsim.ko
+  AUTOLOAD:=$(call AutoProbe,mac80211_hwsim)
+endef
+
+PKG_MT7601U_FW_NAME:=DPO_MT7601U_LinuxSTA
+PKG_MT7601U_FW_VERSION:=3.0.0.4_20130913
+PKG_MT7601U_FW_MD5SUM:=5f440dccc8bc952745a191994fc34699
+PKG_MT7601U_FW_SOURCE:=$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION).tar.bz2
+PKG_MT7601U_FW_SOURCE_URL:=http://www.mediatek.com/AmazonS3/Downloads/linux/
+define Download/mt7601u-firmware
+  FILE:=$(PKG_MT7601U_FW_SOURCE)
+  URL:=$(PKG_MT7601U_FW_SOURCE_URL)
+  MD5SUM:=$(PKG_MT7601U_FW_MD5SUM)
+  SUBDIR:=$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION)
+endef
+$(eval $(call Download,mt7601u-firmware))
+
+define KernelPackage/mt7601u
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=MT7601U-based USB dongles Wireless Driver
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mediatek/mt7601u/mt7601u.ko
+  AUTOLOAD:=$(call AutoProbe,mt7601)
+endef
+
+
+define KernelPackage/mwl8k
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for Marvell TOPDOG 802.11 Wireless cards
+  URL:=http://wireless.kernel.org/en/users/Drivers/mwl8k
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mwl8k.ko
+  AUTOLOAD:=$(call AutoProbe,mwl8k)
+endef
+
+define KernelPackage/mwl8k/description
+ Kernel modules for Marvell TOPDOG 802.11 Wireless cards
+endef
+
+
+define KernelPackage/mwifiex-pcie
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for Marvell 802.11n/802.11ac PCIe Wireless cards
+  URL:=http://wireless.kernel.org/en/users/Drivers/mwifiex
+  DEPENDS+= @PCI_SUPPORT +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/mwifiex/mwifiex.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/mwifiex/mwifiex_pcie.ko
+  AUTOLOAD:=$(call AutoProbe,mwifiex_pcie)
+endef
+
+define KernelPackage/mwifiex-pcie/description
+ Kernel modules for Marvell 802.11n/802.11ac PCIe Wireless cards
+endef
+
+
+# Prism54 drivers
+P54PCIFW:=2.13.12.0.arm
+P54USBFW:=2.13.24.0.lm87.arm
+P54SPIFW:=2.13.0.0.a.13.14.arm
+
+define Download/p54usb
+  FILE:=$(P54USBFW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/fw-usb
+  MD5SUM:=8e8ab005a4f8f0123bcdc51bc25b47f6
+endef
+$(eval $(call Download,p54usb))
+
+define Download/p54pci
+  FILE:=$(P54PCIFW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/fw-softmac
+  MD5SUM:=ff7536af2092b1c4b21315bd103ef4c4
+endef
+$(eval $(call Download,p54pci))
+
+define Download/p54spi
+  FILE:=$(P54SPIFW)
+  URL:=http://daemonizer.de/prism54/prism54-fw/stlc4560
+  MD5SUM:=42661f8ecbadd88012807493f596081d
+endef
+$(eval $(call Download,p54spi))
+
+define KernelPackage/p54/Default
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Prism54 Drivers
+endef
+
+define KernelPackage/p54/description
+  Kernel module for Prism54 chipsets (mac80211)
+endef
+
+define KernelPackage/p54-common
+  $(call KernelPackage/p54/Default)
+  DEPENDS+= @PCI_SUPPORT||@USB_SUPPORT||@TARGET_omap24xx +kmod-mac80211 +kmod-lib-crc-ccitt
+  TITLE+= (COMMON)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54common.ko
+endef
+
+define KernelPackage/p54-pci
+  $(call KernelPackage/p54/Default)
+  TITLE+= (PCI)
+  DEPENDS+= @PCI_SUPPORT +kmod-p54-common
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54pci.ko
+  AUTOLOAD:=$(call AutoProbe,p54pci)
+endef
+
+define KernelPackage/p54-usb
+  $(call KernelPackage/p54/Default)
+  TITLE+= (USB)
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-p54-common
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54usb.ko
+  AUTOLOAD:=$(call AutoProbe,p54usb)
+endef
+
+define KernelPackage/p54-spi
+  $(call KernelPackage/p54/Default)
+  TITLE+= (SPI)
+  DEPENDS+= @TARGET_omap24xx +kmod-p54-common
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/p54/p54spi.ko
+  AUTOLOAD:=$(call AutoProbe,p54spi)
+endef
+
+define KernelPackage/rt2x00/Default
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Ralink Drivers for RT2x00 cards
+endef
+
+define KernelPackage/rt2x00-lib
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-mac80211 +kmod-lib-crc-itu-t
+  TITLE+= (LIB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00lib.ko
+  MENU:=1
+endef
+
+define KernelPackage/rt2x00-lib/config
+  if PACKAGE_kmod-rt2x00-lib
+
+	config PACKAGE_RT2X00_LIB_DEBUGFS
+		bool "Enable rt2x00 debugfs support"
+		depends on PACKAGE_MAC80211_DEBUGFS
+		help
+		  Enable creation of debugfs files for the rt2x00 drivers.
+		  These debugfs files support both reading and writing of the
+		  most important register types of the rt2x00 hardware.
+
+	config PACKAGE_RT2X00_DEBUG
+		bool "Enable rt2x00 debug output"
+		help
+		  Enable debugging output for all rt2x00 modules
+
+  endif
+endef
+
+define KernelPackage/rt2x00-mmio
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @(PCI_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-eeprom-93cx6
+  HIDDEN:=1
+  TITLE+= (MMIO)
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00mmio.ko
+endef
+
+define KernelPackage/rt2x00-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-mmio +kmod-rt2x00-lib
+  HIDDEN:=1
+  TITLE+= (PCI)
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00pci.ko
+  AUTOLOAD:=$(call AutoProbe,rt2x00pci)
+endef
+
+define KernelPackage/rt2x00-usb
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-lib +kmod-usb-core
+  HIDDEN:=1
+  TITLE+= (USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00usb.ko
+  AUTOLOAD:=$(call AutoProbe,rt2x00usb)
+endef
+
+define KernelPackage/rt2800-lib
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT||TARGET_ramips) +kmod-rt2x00-lib +kmod-lib-crc-ccitt +@DRIVER_11N_SUPPORT
+  HIDDEN:=1
+  TITLE+= (rt2800 LIB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800lib.ko
+endef
+
+define KernelPackage/rt2400-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
+  TITLE+= (RT2400 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2400pci.ko
+  AUTOLOAD:=$(call AutoProbe,rt2400pci)
+endef
+
+define KernelPackage/rt2500-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
+  TITLE+= (RT2500 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2500pci.ko
+  AUTOLOAD:=$(call AutoProbe,rt2500pci)
+endef
+
+define KernelPackage/rt2500-usb
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
+  TITLE+= (RT2500 USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2500usb.ko
+  AUTOLOAD:=$(call AutoProbe,rt2500usb)
+endef
+
+define KernelPackage/rt2800-mmio
+$(call KernelPackage/rt2x00/Default)
+  TITLE += (RT28xx/RT3xxx MMIO)
+  DEPENDS += +kmod-rt2800-lib +kmod-rt2x00-mmio
+  HIDDEN:=1
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800mmio.ko
+endef
+
+define KernelPackage/rt2800-soc
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS += @(TARGET_ramips_rt288x||TARGET_ramips_rt305x||TARGET_ramips_rt3883||TARGET_ramips_mt7620) +kmod-rt2800-mmio +kmod-rt2800-lib
+  TITLE += (RT28xx/RT3xxx SoC)
+  FILES := \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2x00soc.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800soc.ko
+  AUTOLOAD:=$(call AutoProbe,rt2800soc)
+endef
+
+define KernelPackage/rt2800-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-rt2800-mmio
+  TITLE+= (RT2860 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800pci.ko
+  AUTOLOAD:=$(call AutoProbe,rt2800pci)
+endef
+
+define KernelPackage/rt2800-usb
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-rt2800-lib +kmod-lib-crc-ccitt
+  TITLE+= (RT2870 USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt2800usb.ko
+  AUTOLOAD:=$(call AutoProbe,rt2800usb)
+endef
+
+
+define KernelPackage/rt61-pci
+$(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
+  TITLE+= (RT2x61 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt61pci.ko
+  AUTOLOAD:=$(call AutoProbe,rt61pci)
+endef
+
+define KernelPackage/rt73-usb
+  $(call KernelPackage/rt2x00/Default)
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
+  TITLE+= (RT73 USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rt2x00/rt73usb.ko
+  AUTOLOAD:=$(call AutoProbe,rt73usb)
+endef
+
+
+define KernelPackage/rtl818x/Default
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek Drivers for RTL818x devices
+  URL:=http://wireless.kernel.org/en/users/Drivers/rtl8187
+  DEPENDS+= +kmod-eeprom-93cx6 +kmod-mac80211
+endef
+
+define KernelPackage/rtl8180
+  $(call KernelPackage/rtl818x/Default)
+  DEPENDS+= @PCI_SUPPORT
+  TITLE+= (RTL8180 PCI)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl818x_pci.ko
+  AUTOLOAD:=$(call AutoProbe,rtl818x_pci)
+endef
+
+define KernelPackage/rtl8187
+$(call KernelPackage/rtl818x/Default)
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core
+  TITLE+= (RTL8187 USB)
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187/rtl8187.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8187)
+endef
+
+define KernelPackage/rtlwifi/config
+	config PACKAGE_RTLWIFI_DEBUG
+		bool "Realtek wireless debugging"
+		depends on PACKAGE_kmod-rtlwifi
+		help
+		  Say Y, if you want to debug realtek wireless drivers.
+
+endef
+
+define KernelPackage/rtlwifi
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek common driver part
+  DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtlwifi.ko
+  HIDDEN:=1
+endef
+
+define KernelPackage/rtlwifi-pci
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek common driver part (PCI support)
+  DEPENDS+= @PCI_SUPPORT +kmod-rtlwifi
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl_pci.ko
+  AUTOLOAD:=$(call AutoProbe,rtl_pci)
+  HIDDEN:=1
+endef
+
+define KernelPackage/rtlwifi-usb
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek common driver part (USB support)
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-rtlwifi
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl_usb.ko
+  AUTOLOAD:=$(call AutoProbe,rtl_usb)
+  HIDDEN:=1
+endef
+
+define KernelPackage/rtl8192c-common
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192CE/RTL8192CU common support module
+  DEPENDS+= +kmod-rtlwifi
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192c/rtl8192c-common.ko
+  HIDDEN:=1
+endef
+
+define KernelPackage/rtl8192ce
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192CE/RTL8188CE support
+  DEPENDS+= +kmod-rtlwifi-pci +kmod-rtl8192c-common
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192ce/rtl8192ce.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8192ce)
+endef
+
+define KernelPackage/rtl8192ce/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfw.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfwU.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfwU_B.bin $(1)/lib/firmware/rtlwifi
+endef
+
+define KernelPackage/rtl8192se
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192SE/RTL8191SE support
+  DEPENDS+= +kmod-rtlwifi-pci
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192se/rtl8192se.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8192se)
+endef
+
+define KernelPackage/rtl8192se/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192sefw.bin $(1)/lib/firmware/rtlwifi
+endef
+
+define KernelPackage/rtl8192de
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192DE/RTL8188DE support
+  DEPENDS+= +kmod-rtlwifi-pci
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192de/rtl8192de.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8192de)
+endef
+
+define KernelPackage/rtl8192de/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192defw.bin $(1)/lib/firmware/rtlwifi
+endef
+
+define KernelPackage/rtl8192cu
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Realtek RTL8192CU/RTL8188CU support
+  DEPENDS+= +kmod-rtlwifi-usb +kmod-rtl8192c-common
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192cu/rtl8192cu.ko
+  AUTOLOAD:=$(call AutoProbe,rtl8192cu)
+endef
+
+define KernelPackage/rtl8192cu/install
+	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_A.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_B.bin $(1)/lib/firmware/rtlwifi
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_TMSC.bin $(1)/lib/firmware/rtlwifi
+endef
+
+
+define KernelPackage/wlcore
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=TI common driver part
+  DEPENDS+= @TARGET_omap +kmod-mac80211 +@DRIVER_11N_SUPPORT
+  FILES:= \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore.ko \
+	$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wlcore/wlcore_sdio.ko
+  AUTOLOAD:=$(call AutoProbe,wlcore wlcore_sdio)
+endef
+
+define KernelPackage/wlcore/description
+ This module contains some common parts needed by TI Wireless drivers.
+endef
+
+define KernelPackage/wl12xx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for TI WL12xx
+  URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
+  DEPENDS+= +kmod-wlcore
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko
+  AUTOLOAD:=$(call AutoProbe,wl12xx)
+endef
+
+define KernelPackage/wl12xx/description
+ Kernel modules for TI WL12xx
+endef
+
+define KernelPackage/wl18xx
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Driver for TI WL18xx
+  URL:=http://wireless.kernel.org/en/users/Drivers/wl18xx
+  DEPENDS+= +kmod-wlcore
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl18xx/wl18xx.ko
+  AUTOLOAD:=$(call AutoProbe,wl18xx)
+endef
+
+define KernelPackage/wl18xx/description
+ Kernel modules for TI WL18xx
+endef
+
+
+ZD1211FW_NAME:=zd1211-firmware
+ZD1211FW_VERSION:=1.4
+define Download/zd1211rw
+  FILE:=$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
+  URL:=@SF/zd1211/
+  MD5SUM:=19f28781d76569af8551c9d11294c870
+endef
+$(eval $(call Download,zd1211rw))
+
+define KernelPackage/zd1211rw
+  $(call KernelPackage/mac80211/Default)
+  TITLE:=Zydas ZD1211 support
+  DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-mac80211
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/zd1211rw/zd1211rw.ko
+  AUTOLOAD:=$(call AutoProbe,zd1211rw)
+endef
+
+
+
 config_package=$(if $(CONFIG_PACKAGE_kmod-$(1)),m)
 
 config-y:= \
@@ -1828,104 +1853,6 @@ define Build/InstallDev
 	rm -f $(1)/usr/include/mac80211-backport/linux/module.h
 endef
 
-define KernelPackage/libertas-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware/libertas
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v9.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8682.bin \
-		$(1)/lib/firmware/libertas/
-endef
-
-define KernelPackage/libertas-sdio/install
-	$(INSTALL_DIR) $(1)/lib/firmware/libertas
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385_helper.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9_helper.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688_helper.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688.bin \
-		$(1)/lib/firmware/libertas
-endef
-
-define KernelPackage/cfg80211/install
-	$(INSTALL_DIR) $(1)/lib/wifi $(1)/lib/netifd/wireless
-	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
-	$(INSTALL_BIN) ./files/lib/netifd/wireless/mac80211.sh $(1)/lib/netifd/wireless
-endef
-
-define KernelPackage/p54-pci/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(P54PCIFW) $(1)/lib/firmware/isl3886pci
-endef
-
-define KernelPackage/p54-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(P54USBFW) $(1)/lib/firmware/isl3887usb
-endef
-
-define KernelPackage/p54-spi/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(DL_DIR)/$(P54SPIFW) $(1)/lib/firmware/3826.arm
-endef
-
-define KernelPackage/rt61-pci/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561s.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2661.bin \
-		$(1)/lib/firmware/
-endef
-
-define KernelPackage/rt73-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt73.bin $(1)/lib/firmware/
-endef
-
-define KernelPackage/rt2800-pci/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2860.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt3290.bin \
-		$(1)/lib/firmware
-endef
-
-define KernelPackage/rt2800-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2870.bin $(1)/lib/firmware/
-endef
-
-define KernelPackage/wl12xx/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-mr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-plt.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-sr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1271-nvs.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-mr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-plt.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-sr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-nvs.bin \
-		$(1)/lib/firmware/ti-connectivity
-endef
-
-define KernelPackage/wl18xx/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl18xx-fw-4.bin \
-		$(1)/lib/firmware/ti-connectivity
-endef
-
-define KernelPackage/zd1211rw/install
-	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
-endef
-
-define KernelPackage/carl9170/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/carl9170-1.fw $(1)/lib/firmware
-endef
 
 define KernelPackage/ath9k-htc/install
 	$(INSTALL_DIR) $(1)/lib/firmware
@@ -1951,29 +1878,75 @@ else
 endif
 endef
 
-define KernelPackage/mt7601u/install
+define KernelPackage/b43/install
+	rm -rf $(1)/lib/firmware/
+ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
+	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+else
+	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
+endif
+	$(INSTALL_DIR) $(1)/lib/firmware/
+ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
+	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/"
+	$(INSTALL_DIR) $(1)/lib/firmware/b43-open/
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/ucode5.fw $(1)/lib/firmware/b43-open/ucode5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0bsinitvals5.fw $(1)/lib/firmware/b43-open/b0g0bsinitvals5.fw
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
+else
+	b43-fwcutter -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)
+endif
+ifneq ($(CONFIG_B43_FW_SQUASH),)
+	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
+endif
+endef
+
+define KernelPackage/b43legacy/install
+	$(INSTALL_DIR) $(1)/lib/firmware/
+	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
+ifneq ($(CONFIG_B43LEGACY_FW_SQUASH),)
+	b43-fwsquash.py "G" "$(CONFIG_B43LEGACY_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43legacy"
+endif
+endef
+
+define KernelPackage/brcmsmac/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+ifeq ($(CONFIG_BRCMSMAC_USE_FW_FROM_WL),y)
+	tar xjf "$(DL_DIR)/$(PKG_BRCMSMAC_FW_SOURCE)" -C "$(PKG_BUILD_DIR)"
+	b43-fwcutter --brcmsmac -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_BRCMSMAC_FW_OBJECT)
+else
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx-0.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx_hdr-0.fw \
+		$(1)/lib/firmware/brcm/
+endif
+endef
+
+define KernelPackage/brcmfmac/install
+	$(INSTALL_DIR) $(1)/lib/firmware/brcm
+ifneq ($(CONFIG_BRCMFMAC_USB),)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43236b.bin \
+		$(1)/lib/firmware/brcm/
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43143.bin \
+		$(1)/lib/firmware/brcm/
+endif
+ifneq ($(CONFIG_BRCMFMAC_PCIE),)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43602-pcie.ap.bin \
+		$(1)/lib/firmware/brcm/brcmfmac43602-pcie.bin
+endif
+endef
+
+define KernelPackage/carl9170/install
 	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION)/mcu/bin/MT7601.bin \
-		$(1)/lib/firmware/mt7601u.bin
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/carl9170-1.fw $(1)/lib/firmware
 endef
 
-define KernelPackage/mwl8k/install
-	$(INSTALL_DIR) $(1)/lib/firmware/mwl8k
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8366_ap-3.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8366.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/helper_8366.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8687.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/helper_8687.fw \
-		$(1)/lib/firmware/mwl8k/
-endef
-
-define KernelPackage/mwifiex-pcie/install
-	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mrvl/pcie8897_uapsta.bin \
-		$(1)/lib/firmware/mrvl/
+define KernelPackage/cfg80211/install
+	$(INSTALL_DIR) $(1)/lib/wifi $(1)/lib/netifd/wireless
+	$(INSTALL_DATA) ./files/lib/wifi/mac80211.sh $(1)/lib/wifi
+	$(INSTALL_BIN) ./files/lib/netifd/wireless/mac80211.sh $(1)/lib/netifd/wireless
 endef
 
 define KernelPackage/ipw2100/install
@@ -2049,73 +2022,153 @@ define KernelPackage/iwl4965/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-4965-2.ucode $(1)/lib/firmware
 endef
 
-define KernelPackage/b43/install
-	rm -rf $(1)/lib/firmware/
-ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
-	tar xzf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
-else
-	tar xjf "$(DL_DIR)/$(PKG_B43_FWV4_SOURCE)" -C "$(PKG_BUILD_DIR)"
-endif
-	$(INSTALL_DIR) $(1)/lib/firmware/
-ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
-	$(MAKE) -C "$(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/"
-	$(INSTALL_DIR) $(1)/lib/firmware/b43-open/
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/ucode5.fw $(1)/lib/firmware/b43-open/ucode5.fw
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0bsinitvals5.fw $(1)/lib/firmware/b43-open/b0g0bsinitvals5.fw
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)/b0g0initvals5.fw $(1)/lib/firmware/b43-open/b0g0initvals5.fw
-else
-	b43-fwcutter -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_B43_FWV4_OBJECT)
-endif
-ifneq ($(CONFIG_B43_FW_SQUASH),)
-	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
-endif
+define KernelPackage/libertas-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware/libertas
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8388_v9.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/usb8682.bin \
+		$(1)/lib/firmware/libertas/
 endef
 
-define KernelPackage/b43legacy/install
-	$(INSTALL_DIR) $(1)/lib/firmware/
-	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
-ifneq ($(CONFIG_B43LEGACY_FW_SQUASH),)
-	b43-fwsquash.py "G" "$(CONFIG_B43LEGACY_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43legacy"
-endif
+define KernelPackage/libertas-sdio/install
+	$(INSTALL_DIR) $(1)/lib/firmware/libertas
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8385.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8686_v9.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688_helper.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/libertas/sd8688.bin \
+		$(1)/lib/firmware/libertas
 endef
 
-define KernelPackage/brcmsmac/install
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-ifeq ($(CONFIG_BRCMSMAC_USE_FW_FROM_WL),y)
-	tar xjf "$(DL_DIR)/$(PKG_BRCMSMAC_FW_SOURCE)" -C "$(PKG_BUILD_DIR)"
-	b43-fwcutter --brcmsmac -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_BRCMSMAC_FW_OBJECT)
-else
+define KernelPackage/mt7601u/install
+	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx-0.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx_hdr-0.fw \
-		$(1)/lib/firmware/brcm/
-endif
+		$(PKG_BUILD_DIR)/$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION)/mcu/bin/MT7601.bin \
+		$(1)/lib/firmware/mt7601u.bin
 endef
 
-define KernelPackage/brcmfmac/install
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-ifneq ($(CONFIG_BRCMFMAC_USB),)
+define KernelPackage/mwl8k/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mwl8k
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43236b.bin \
-		$(1)/lib/firmware/brcm/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43143.bin \
-		$(1)/lib/firmware/brcm/
-endif
-ifneq ($(CONFIG_BRCMFMAC_PCIE),)
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43602-pcie.ap.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43602-pcie.bin
-endif
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8366_ap-3.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8366.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/helper_8366.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/fmimage_8687.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mwl8k/helper_8687.fw \
+		$(1)/lib/firmware/mwl8k/
 endef
+
+define KernelPackage/mwifiex-pcie/install
+	$(INSTALL_DIR) $(1)/lib/firmware/mrvl
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mrvl/pcie8897_uapsta.bin \
+		$(1)/lib/firmware/mrvl/
+endef
+
+define KernelPackage/p54-pci/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(P54PCIFW) $(1)/lib/firmware/isl3886pci
+endef
+
+define KernelPackage/p54-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(P54USBFW) $(1)/lib/firmware/isl3887usb
+endef
+
+define KernelPackage/p54-spi/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(DL_DIR)/$(P54SPIFW) $(1)/lib/firmware/3826.arm
+endef
+
+define KernelPackage/rt2800-pci/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2860.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt3290.bin \
+		$(1)/lib/firmware
+endef
+
+define KernelPackage/rt2800-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2870.bin $(1)/lib/firmware/
+endef
+
+define KernelPackage/rt61-pci/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561s.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2661.bin \
+		$(1)/lib/firmware/
+endef
+
+define KernelPackage/rt73-usb/install
+	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt73.bin $(1)/lib/firmware/
+endef
+
+define KernelPackage/wl12xx/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-mr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-plt.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-sr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1271-nvs.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-mr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-plt.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-sr.bin \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-nvs.bin \
+		$(1)/lib/firmware/ti-connectivity
+endef
+
+define KernelPackage/wl18xx/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl18xx-fw-4.bin \
+		$(1)/lib/firmware/ti-connectivity
+endef
+
+define KernelPackage/zd1211rw/install
+	$(INSTALL_DIR) $(1)/lib/firmware/zd1211
+	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(ZD1211FW_NAME)/zd1211* $(1)/lib/firmware/zd1211
+endef
+
 
 $(eval $(call KernelPackage,adm8211))
+$(eval $(call KernelPackage,ath))
+$(eval $(call KernelPackage,ath10k))
 $(eval $(call KernelPackage,ath5k))
+$(eval $(call KernelPackage,ath9k))
+$(eval $(call KernelPackage,ath9k-common))
+$(eval $(call KernelPackage,ath9k-htc))
+$(eval $(call KernelPackage,b43))
+$(eval $(call KernelPackage,b43legacy))
+$(eval $(call KernelPackage,brcmsmac))
+$(eval $(call KernelPackage,brcmfmac))
+$(eval $(call KernelPackage,brcmutil))
+$(eval $(call KernelPackage,carl9170))
+$(eval $(call KernelPackage,cfg80211))
+$(eval $(call KernelPackage,hermes))
+$(eval $(call KernelPackage,hermes-pci))
+$(eval $(call KernelPackage,hermes-plx))
+$(eval $(call KernelPackage,hermes-pcmcia))
+$(eval $(call KernelPackage,iwlagn))
+$(eval $(call KernelPackage,iwl-legacy))
+$(eval $(call KernelPackage,iwl4965))
+$(eval $(call KernelPackage,iwl3945))
 $(eval $(call KernelPackage,lib80211))
 $(eval $(call KernelPackage,libertas-usb))
 $(eval $(call KernelPackage,libertas-sdio))
-$(eval $(call KernelPackage,cfg80211))
+$(eval $(call KernelPackage,libipw))
+$(eval $(call KernelPackage,ipw2100))
+$(eval $(call KernelPackage,ipw2200))
 $(eval $(call KernelPackage,mac80211))
+$(eval $(call KernelPackage,mac80211-hwsim))
+$(eval $(call KernelPackage,mt7601u))
+$(eval $(call KernelPackage,mwl8k))
+$(eval $(call KernelPackage,mwifiex-pcie))
 $(eval $(call KernelPackage,p54-common))
 $(eval $(call KernelPackage,p54-pci))
 $(eval $(call KernelPackage,p54-usb))
@@ -2128,12 +2181,12 @@ $(eval $(call KernelPackage,rt2800-lib))
 $(eval $(call KernelPackage,rt2400-pci))
 $(eval $(call KernelPackage,rt2500-pci))
 $(eval $(call KernelPackage,rt2500-usb))
-$(eval $(call KernelPackage,rt61-pci))
-$(eval $(call KernelPackage,rt73-usb))
 $(eval $(call KernelPackage,rt2800-mmio))
 $(eval $(call KernelPackage,rt2800-soc))
 $(eval $(call KernelPackage,rt2800-pci))
 $(eval $(call KernelPackage,rt2800-usb))
+$(eval $(call KernelPackage,rt61-pci))
+$(eval $(call KernelPackage,rt73-usb))
 $(eval $(call KernelPackage,rtl8180))
 $(eval $(call KernelPackage,rtl8187))
 $(eval $(call KernelPackage,rtlwifi))
@@ -2144,33 +2197,7 @@ $(eval $(call KernelPackage,rtl8192ce))
 $(eval $(call KernelPackage,rtl8192se))
 $(eval $(call KernelPackage,rtl8192de))
 $(eval $(call KernelPackage,rtl8192cu))
-$(eval $(call KernelPackage,zd1211rw))
-$(eval $(call KernelPackage,mac80211-hwsim))
-$(eval $(call KernelPackage,mt7601u))
-$(eval $(call KernelPackage,ath9k-common))
-$(eval $(call KernelPackage,ath9k))
-$(eval $(call KernelPackage,ath9k-htc))
-$(eval $(call KernelPackage,ath10k))
-$(eval $(call KernelPackage,ath))
-$(eval $(call KernelPackage,carl9170))
-$(eval $(call KernelPackage,b43))
-$(eval $(call KernelPackage,b43legacy))
-$(eval $(call KernelPackage,brcmutil))
-$(eval $(call KernelPackage,brcmsmac))
-$(eval $(call KernelPackage,brcmfmac))
-$(eval $(call KernelPackage,libipw))
-$(eval $(call KernelPackage,ipw2100))
-$(eval $(call KernelPackage,ipw2200))
-$(eval $(call KernelPackage,iwlagn))
-$(eval $(call KernelPackage,iwl-legacy))
-$(eval $(call KernelPackage,iwl4965))
-$(eval $(call KernelPackage,iwl3945))
-$(eval $(call KernelPackage,mwl8k))
-$(eval $(call KernelPackage,mwifiex-pcie))
-$(eval $(call KernelPackage,hermes))
-$(eval $(call KernelPackage,hermes-pci))
-$(eval $(call KernelPackage,hermes-plx))
-$(eval $(call KernelPackage,hermes-pcmcia))
 $(eval $(call KernelPackage,wlcore))
 $(eval $(call KernelPackage,wl12xx))
 $(eval $(call KernelPackage,wl18xx))
+$(eval $(call KernelPackage,zd1211rw))
