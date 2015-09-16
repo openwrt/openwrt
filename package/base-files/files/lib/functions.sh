@@ -174,61 +174,60 @@ default_prerm() {
 }
 
 default_postinst() {
-	local pkgname rusers ret
-	ret=0
-	pkgname=$(basename ${1%.*})
-	rusers=$(grep "Require-User:" ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.control)
-	[ -n "$rusers" ] && {
-		local user group uid gid
-		for a in $(echo $rusers | sed "s/Require-User://g"); do
-			user=""
-			group=""
-			for b in $(echo $a | sed "s/:/ /g"); do
-				local ugname ugid
+	local root="${IPKG_INSTROOT}"
+	local pkgname="$(basename ${1%.*})"
+	local rusers="$(sed -ne 's/^Require-User: *//p' $root/usr/lib/opkg/info/${pkgname}.control 2>/dev/null)"
+	local ret=0
 
-				ugname=$(echo $b | cut -d= -f1)
-				ugid=$(echo $b | cut -d= -f2)
+	if [ -n "$rusers" ]; then
+		local tuple oIFS="$IFS"
+		for tuple in $rusers; do
+			local uid gid uname gname
 
-				[ -z "$user" ] && {
-					user=$ugname
-					uid=$ugid
-					continue
-				}
+			IFS=":"
+			set -- $tuple; uname="$1"; gname="$2"
+			IFS="="
+			set -- $uname; uname="$1"; uid="$2"
+			set -- $gname; gname="$1"; gid="$2"
+			IFS="$oIFS"
 
-				gid=$ugid
-				[ -n "$gid" ] && {
-					group_exists $ugname || group_add $ugname $gid
-				}
+			if [ -n "$gname" ] && [ -n "$gid" ]; then
+				group_exists "$gname" || group_add "$gname" "$gid"
+			elif [ -n "$gname" ]; then
+				group_add_next "$gname"; gid=$?
+			fi
 
-				[ -z "$gid" ] && {
-					group_add_next $ugname
-					gid=$?
-				}
+			if [ -n "$uname" ]; then
+				user_exists "$uname" || user_add "$uname" "$uid" "$gid"
+			fi
 
-				[ -z "$group" ] && {
-					user_exists $user || user_add $user "$uid" $gid
-					group=$ugname
-					continue
-				}
+			if [ -n "$uname" ] && [ -n "$gname" ]; then
+				group_add_user "$gname" "$uname"
+			fi
 
-				group_add_user $ugname $user
-			done
+			unset uid gid uname gname
 		done
-	}
+	fi
 
-	if [ -f ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.postinst-pkg ]; then
-		( . ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.postinst-pkg )
+	if [ -f "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" ]; then
+		( . "$root/usr/lib/opkg/info/${pkgname}.postinst-pkg" )
 		ret=$?
 	fi
-	[ -n "${IPKG_INSTROOT}" ] || rm -f /tmp/luci-indexcache 2>/dev/null
 
-	[ "$PKG_UPGRADE" = "1" ] || for i in `cat ${IPKG_INSTROOT}/usr/lib/opkg/info/${pkgname}.list | grep "^/etc/init.d/"`; do
-		[ -n "${IPKG_INSTROOT}" ] && $(which bash) ${IPKG_INSTROOT}/etc/rc.common ${IPKG_INSTROOT}$i enable; \
-		[ -n "${IPKG_INSTROOT}" ] || {
-			$i enable
-			$i start
-		}
-	done
+	[ -n "$root" ] || rm -f /tmp/luci-indexcache 2>/dev/null
+
+	if [ "$PKG_UPGRADE" != "1" ]; then
+		local shell="$(which bash)"
+		for i in $(grep -s "^/etc/init.d/" "$root/usr/lib/opkg/info/${pkgname}.list"); do
+			if [ -n "$root" ]; then
+				${shell:-/bin/sh} "$root/etc/rc.common" "$root$i" enable
+			else
+				"$i" enable
+				"$i" start
+			fi
+		done
+	fi
+
 	return $ret
 }
 
