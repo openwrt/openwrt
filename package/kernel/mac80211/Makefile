@@ -27,8 +27,8 @@ PKG_DRIVERS = \
 	rt2x00-lib rt2x00-pci rt2x00-usb rt2800-lib rt2400-pci rt2500-pci \
 	rt2500-usb rt61-pci rt73-usb rt2800-mmio rt2800-pci rt2800-usb rt2800-soc \
 	rtl8180 rtl8187 zd1211rw mac80211-hwsim carl9170 b43 b43legacy \
-	ath9k-common ath9k ath9k-htc ath10k ath net-libipw net-ipw2100 net-ipw2200 \
-	mwl8k mwifiex-pcie net-hermes net-hermes-pci net-hermes-plx net-hermes-pcmcia \
+	ath9k-common ath9k ath9k-htc ath10k ath libipw ipw2100 ipw2200 \
+	mwl8k mwifiex-pcie hermes hermes-pci hermes-plx hermes-pcmcia \
 	iwl-legacy iwl3945 iwl4965 iwlagn wlcore wl12xx wl18xx lib80211 \
 	rtlwifi rtlwifi-pci rtlwifi-usb rtl8192c-common rtl8192ce rtl8192se \
 	rtl8192de rtl8192cu mt7601u
@@ -716,7 +716,7 @@ define KernelPackage/mt7601u
   AUTOLOAD:=$(call AutoProbe,mt7601)
 endef
 
-define KernelPackage/net-libipw
+define KernelPackage/libipw
   $(call KernelPackage/mac80211/Default)
   TITLE:=libipw for ipw2100 and ipw2200
   DEPENDS:=@PCI_SUPPORT +kmod-crypto-michael-mic +kmod-lib80211 +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT @!BIG_ENDIAN
@@ -724,29 +724,29 @@ define KernelPackage/net-libipw
   AUTOLOAD:=$(call AutoProbe,libipw)
 endef
 
-define KernelPackage/net-libipw/description
+define KernelPackage/libipw/description
  Hardware independent IEEE 802.11 networking stack for ipw2100 and ipw2200.
 endef
 
 IPW2100_NAME:=ipw2100-fw
 IPW2100_VERSION:=1.3
 
-define Download/net-ipw2100
+define Download/ipw2100
   URL:=http://bughost.org/firmware/
   FILE:=$(IPW2100_NAME)-$(IPW2100_VERSION).tgz
   MD5SUM=46aa75bcda1a00efa841f9707bbbd113
 endef
-$(eval $(call Download,net-ipw2100))
+$(eval $(call Download,ipw2100))
 
-define KernelPackage/net-ipw2100
+define KernelPackage/ipw2100
   $(call KernelPackage/mac80211/Default)
   TITLE:=Intel IPW2100 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-net-libipw
+  DEPENDS:=@PCI_SUPPORT +kmod-libipw
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/ipw2100.ko
   AUTOLOAD:=$(call AutoProbe,ipw2100)
 endef
 
-define KernelPackage/net-ipw2100/description
+define KernelPackage/ipw2100/description
  Kernel support for Intel IPW2100
  Includes:
  - ipw2100
@@ -755,29 +755,29 @@ endef
 IPW2200_NAME:=ipw2200-fw
 IPW2200_VERSION:=3.1
 
-define Download/net-ipw2200
+define Download/ipw2200
   URL:=http://bughost.org/firmware/
   FILE:=$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
   MD5SUM=eaba788643c7cc7483dd67ace70f6e99
 endef
-$(eval $(call Download,net-ipw2200))
+$(eval $(call Download,ipw2200))
 
-define KernelPackage/net-ipw2200
+define KernelPackage/ipw2200
   $(call KernelPackage/mac80211/Default)
   TITLE:=Intel IPW2200 driver
-  DEPENDS:=@PCI_SUPPORT +kmod-net-libipw
+  DEPENDS:=@PCI_SUPPORT +kmod-libipw
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ipw2x00/ipw2200.ko
   AUTOLOAD:=$(call AutoProbe,ipw2200)
 endef
 
-define KernelPackage/net-ipw2200/description
+define KernelPackage/ipw2200/description
  Kernel support for Intel IPW2200
  Includes:
  - ipw2200
 endef
 
 
-define KernelPackage/net-hermes
+define KernelPackage/hermes
   $(call KernelPackage/mac80211/Default)
   TITLE:=Hermes 802.11b chipset support
   DEPENDS:=@PCI_SUPPORT||PCMCIA_SUPPORT +kmod-cfg80211 +@DRIVER_WEXT_SUPPORT
@@ -785,43 +785,43 @@ define KernelPackage/net-hermes
   AUTOLOAD:=$(call AutoProbe,orinoco)
 endef
 
-define KernelPackage/net-hermes/description
+define KernelPackage/hermes/description
  Kernel support for Hermes 802.11b chipsets
 endef
 
-define KernelPackage/net-hermes-pci
+define KernelPackage/hermes-pci
   $(call KernelPackage/mac80211/Default)
   TITLE:=Intersil Prism 2.5 PCI support
-  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
+  DEPENDS:=@PCI_SUPPORT +kmod-hermes
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_pci.ko
   AUTOLOAD:=$(call AutoProbe,orinoco_pci)
 endef
 
-define KernelPackage/net-hermes-pci/description
+define KernelPackage/hermes-pci/description
  Kernel modules for Intersil Prism 2.5 PCI support
 endef
 
-define KernelPackage/net-hermes-plx
+define KernelPackage/hermes-plx
   $(call KernelPackage/mac80211/Default)
   TITLE:=PLX9052 based PCI adaptor
-  DEPENDS:=@PCI_SUPPORT +kmod-net-hermes
+  DEPENDS:=@PCI_SUPPORT +kmod-hermes
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_plx.ko
   AUTOLOAD:=$(call AutoProbe,orinoco_plx)
 endef
 
-define KernelPackage/net-hermes-plx/description
+define KernelPackage/hermes-plx/description
  Kernel modules for Hermes in PLX9052 based PCI adaptors
 endef
 
-define KernelPackage/net-hermes-pcmcia
+define KernelPackage/hermes-pcmcia
   $(call KernelPackage/mac80211/Default)
   TITLE:=Hermes based PCMCIA adaptors
-  DEPENDS:=@PCMCIA_SUPPORT +kmod-net-hermes @BROKEN
+  DEPENDS:=@PCMCIA_SUPPORT +kmod-hermes @BROKEN
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/orinoco/orinoco_cs.ko
   AUTOLOAD:=$(call AutoProbe,orinoco_cs)
 endef
 
-define KernelPackage/net-hermes-pcmcia/description
+define KernelPackage/hermes-pcmcia/description
  Kernel modules for Hermes based PCMCIA adaptors
 endef
 
@@ -1704,19 +1704,19 @@ config-$(call config_package,iwlagn) += IWLWIFI IWLDVM IWLMVM
 config-$(CONFIG_PACKAGE_IWLWIFI_DEBUG)+= IWLWIFI_DEBUG
 config-$(CONFIG_PACKAGE_IWLWIFI_DEBUGFS)+= IWLWIFI_DEBUGFS
 
-config-$(call config_package,net-libipw) += LIBIPW
-config-$(call config_package,net-ipw2100) += IPW2100
-config-$(call config_package,net-ipw2200) += IPW2200
+config-$(call config_package,libipw) += LIBIPW
+config-$(call config_package,ipw2100) += IPW2100
+config-$(call config_package,ipw2200) += IPW2200
 
 config-$(call config_package,p54-common) += P54_COMMON
 config-$(call config_package,p54-pci) += P54_PCI
 config-$(call config_package,p54-usb) += P54_USB
 config-$(call config_package,p54-spi) += P54_SPI
 
-config-$(call config_package,net-hermes) += HERMES
-config-$(call config_package,net-hermes-pci) += PCI_HERMES
-config-$(call config_package,net-hermes-plx) += PLX_HERMES
-config-$(call config_package,net-hermes-pcmcia) += PCMCIA_HERMES
+config-$(call config_package,hermes) += HERMES
+config-$(call config_package,hermes-pci) += PCI_HERMES
+config-$(call config_package,hermes-plx) += PLX_HERMES
+config-$(call config_package,hermes-pcmcia) += PCMCIA_HERMES
 config-y += HERMES_PRISM
 
 config-$(call config_package,adm8211) += ADM8211
@@ -1976,12 +1976,12 @@ define KernelPackage/mwifiex-pcie/install
 		$(1)/lib/firmware/mrvl/
 endef
 
-define KernelPackage/net-ipw2100/install
+define KernelPackage/ipw2100/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/ipw2100-$(IPW2100_VERSION)*.fw $(1)/lib/firmware
 endef
 
-define KernelPackage/net-ipw2200/install
+define KernelPackage/ipw2200/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION)/ipw2200*.fw $(1)/lib/firmware
 endef
@@ -2158,19 +2158,19 @@ $(eval $(call KernelPackage,b43legacy))
 $(eval $(call KernelPackage,brcmutil))
 $(eval $(call KernelPackage,brcmsmac))
 $(eval $(call KernelPackage,brcmfmac))
-$(eval $(call KernelPackage,net-libipw))
-$(eval $(call KernelPackage,net-ipw2100))
-$(eval $(call KernelPackage,net-ipw2200))
+$(eval $(call KernelPackage,libipw))
+$(eval $(call KernelPackage,ipw2100))
+$(eval $(call KernelPackage,ipw2200))
 $(eval $(call KernelPackage,iwlagn))
 $(eval $(call KernelPackage,iwl-legacy))
 $(eval $(call KernelPackage,iwl4965))
 $(eval $(call KernelPackage,iwl3945))
 $(eval $(call KernelPackage,mwl8k))
 $(eval $(call KernelPackage,mwifiex-pcie))
-$(eval $(call KernelPackage,net-hermes))
-$(eval $(call KernelPackage,net-hermes-pci))
-$(eval $(call KernelPackage,net-hermes-plx))
-$(eval $(call KernelPackage,net-hermes-pcmcia))
+$(eval $(call KernelPackage,hermes))
+$(eval $(call KernelPackage,hermes-pci))
+$(eval $(call KernelPackage,hermes-plx))
+$(eval $(call KernelPackage,hermes-pcmcia))
 $(eval $(call KernelPackage,wlcore))
 $(eval $(call KernelPackage,wl12xx))
 $(eval $(call KernelPackage,wl18xx))
