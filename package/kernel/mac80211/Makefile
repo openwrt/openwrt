@@ -28,7 +28,7 @@ PKG_DRIVERS = \
 	b43 b43legacy \
 	carl9170 \
 	hermes hermes-pci hermes-pcmcia hermes-plx\
-	iwl-legacy iwl3945 iwl4965 iwlagn \
+	iwl-legacy iwl3945 iwl4965 iwlwifi \
 	lib80211 \
 	libipw ipw2100 ipw2200 \
 	libertas-sdio libertas-usb \
@@ -841,7 +841,7 @@ define KernelPackage/hermes-pcmcia/description
 endef
 
 
-define KernelPackage/iwlagn
+define KernelPackage/iwlwifi
   $(call KernelPackage/mac80211/Default)
   DEPENDS:= +kmod-mac80211 @PCI_SUPPORT +@DRIVER_11N_SUPPORT
   TITLE:=Intel AGN Wireless support
@@ -853,8 +853,8 @@ define KernelPackage/iwlagn
   MENU:=1
 endef
 
-define KernelPackage/iwlagn/description
- iwlagn kernel module for
+define KernelPackage/iwlwifi/description
+ iwlwifi kernel module for
  Intel Wireless WiFi Link 6250AGN Adapter
  Intel 6000 Series Wi-Fi Adapters (6200AGN and 6300AGN)
  Intel WiFi Link 1000BGN
@@ -872,11 +872,11 @@ define KernelPackage/iwlagn/description
  Intel 3165 Wi-Fi Adapter
 endef
 
-define KernelPackage/iwlagn/config
-  if PACKAGE_kmod-iwlagn
+define KernelPackage/iwlwifi/config
+  if PACKAGE_kmod-iwlwifi
 
 	config PACKAGE_IWLWIFI_DEBUG
-		bool "Enable full debugging output in the iwlagn driver"
+		bool "Enable full debugging output in the iwlwifi driver"
 		default n
 		help
 		  This option will enable debug tracing output for the iwlwifi drivers
@@ -1725,7 +1725,7 @@ config-y += RT2800USB_RT33XX RT2800USB_RT35XX RT2800USB_RT3573 RT2800USB_RT53XX 
 config-$(call config_package,iwl-legacy) += IWLEGACY
 config-$(call config_package,iwl3945) += IWL3945
 config-$(call config_package,iwl4965) += IWL4965
-config-$(call config_package,iwlagn) += IWLWIFI IWLDVM IWLMVM
+config-$(call config_package,iwlwifi) += IWLWIFI IWLDVM IWLMVM
 config-$(CONFIG_PACKAGE_IWLWIFI_DEBUG)+= IWLWIFI_DEBUG
 config-$(CONFIG_PACKAGE_IWLWIFI_DEBUGFS)+= IWLWIFI_DEBUGFS
 
@@ -1959,7 +1959,7 @@ define KernelPackage/ipw2200/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION)/ipw2200*.fw $(1)/lib/firmware
 endef
 
-define KernelPackage/iwlagn/install
+define KernelPackage/iwlwifi/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 ifneq ($(CONFIG_IWL100_FW),)
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/iwlwifi-100-5.ucode $(1)/lib/firmware
@@ -2154,7 +2154,7 @@ $(eval $(call KernelPackage,hermes))
 $(eval $(call KernelPackage,hermes-pci))
 $(eval $(call KernelPackage,hermes-plx))
 $(eval $(call KernelPackage,hermes-pcmcia))
-$(eval $(call KernelPackage,iwlagn))
+$(eval $(call KernelPackage,iwlwifi))
 $(eval $(call KernelPackage,iwl-legacy))
 $(eval $(call KernelPackage,iwl4965))
 $(eval $(call KernelPackage,iwl3945))
