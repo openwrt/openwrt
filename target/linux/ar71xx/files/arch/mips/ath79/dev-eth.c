@@ -633,7 +633,6 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 		case ATH79_SOC_AR9330:
 		case ATH79_SOC_AR9331:
 		case ATH79_SOC_QCA9533:
-		case ATH79_SOC_QCA9561:
 		case ATH79_SOC_TP9343:
 			pdata->phy_if_mode = PHY_INTERFACE_MODE_MII;
 			break;
@@ -665,6 +664,11 @@ static int __init ath79_setup_phy_if_mode(unsigned int id,
 			default:
 				return -EINVAL;
 			}
+			break;
+
+		case ATH79_SOC_QCA9561:
+			if (!pdata->phy_if_mode)
+				pdata->phy_if_mode = PHY_INTERFACE_MODE_MII;
 			break;
 
 		default:
@@ -1035,7 +1039,8 @@ void __init ath79_register_eth(unsigned int id)
 					   AR933X_RESET_GE0_MDIO;
 			pdata->set_speed = ath79_set_speed_dummy;
 
-			pdata->phy_mask = BIT(4);
+			if (!pdata->phy_mask)
+				pdata->phy_mask = BIT(4);
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC |
 					   AR933X_RESET_GE1_MDIO;
