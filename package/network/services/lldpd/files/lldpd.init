@@ -47,15 +47,15 @@ start() {
 		fi
 	done
 
+	mkdir -p /var/run/lldp
+	chown lldp:lldp /var/run/lldp
+
 	[ -n "$ifnames" ] && append args "-I $ifnames"
 	[ $enable_cdp -gt 0 ] && append args '-c'
 	[ $enable_fdp -gt 0 ] && append args '-f'
 	[ $enable_sonmp -gt 0 ] && append args '-s'
 	[ $enable_edp -gt 0 ] && append args '-e'
 	[ $readonly_mode -gt 0 ] && append args '-r'
-
-	mkdir -p /var/run/lldp
-	chown lldp:lldp /var/run/lldp
 
 	service_start /usr/sbin/lldpd $args \
 		${lldp_class:+ -M $lldp_class} \
