@@ -883,6 +883,15 @@ define Device/ubnt-air-gateway
 endef
 TARGET_DEVICES += ubnt-air-gateway
 
+define Device/ubnt-air-gateway-pro
+  $(Device/ubnt-xm)
+  BOARDNAME := UBNT-AGWP
+  UBNT_TYPE := AirGWP
+  UBNT_CHIP := ar934x
+  CONSOLE = ttyS0,115200
+endef
+TARGET_DEVICES += ubnt-air-gateway-pro
+
 define Device/ubdev01
   $(Device/ubnt-xm)
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7488k(firmware),64k(certs),256k(cfg)ro,64k(EEPROM)ro

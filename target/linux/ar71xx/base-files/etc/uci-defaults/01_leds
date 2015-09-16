@@ -9,7 +9,8 @@
 board=$(ar71xx_board_name)
 
 case "$board" in
-airgateway)
+airgateway | \
+airgatewaypro)
 	ucidef_set_led_wlan "wlan" "WLAN" "ubnt:blue:wlan" "phy0tpt"
 	;;
 alfa-nx)

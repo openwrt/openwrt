@@ -311,7 +311,8 @@ get_status_led() {
 	unifi-outdoor-plus)
 		status_led="ubnt:white:front"
 		;;
-	airgateway)
+	airgateway | \
+	airgatewaypro)
 		status_led="ubnt:white:status"
 		;;
 	whr-g301n | \
