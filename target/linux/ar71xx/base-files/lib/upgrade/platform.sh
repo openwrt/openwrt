@@ -227,6 +227,7 @@ platform_check_image() {
 	tew-732br | \
 	wrt400n | \
 	airgateway | \
+	airgatewaypro | \
 	airrouter | \
 	bullet-m | \
 	loco-m-xw | \

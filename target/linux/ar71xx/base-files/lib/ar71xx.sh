@@ -329,6 +329,9 @@ ar71xx_board_detect() {
 	*"AirGateway")
 		name="airgateway"
 		;;
+	*"AirGateway Pro")
+		name="airgatewaypro"
+		;;
 	*"AirRouter")
 		name="airrouter"
 		;;
