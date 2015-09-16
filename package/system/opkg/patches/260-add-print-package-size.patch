@@ -1,0 +1,74 @@
+--- a/libopkg/opkg_conf.c
++++ b/libopkg/opkg_conf.c
+@@ -69,6 +69,7 @@ opkg_option_t options[] = {
+ 	  { "proxy_passwd", OPKG_OPT_TYPE_STRING, &_conf.proxy_passwd },
+ 	  { "proxy_user", OPKG_OPT_TYPE_STRING, &_conf.proxy_user },
+ 	  { "query-all", OPKG_OPT_TYPE_BOOL, &_conf.query_all },
++	  { "size", OPKG_OPT_TYPE_BOOL, &_conf.size },
+ 	  { "tmp_dir", OPKG_OPT_TYPE_STRING, &_conf.tmp_dir },
+ 	  { "verbosity", OPKG_OPT_TYPE_INT, &_conf.verbosity },
+ #if defined(HAVE_OPENSSL)
+--- a/libopkg/opkg_conf.h
++++ b/libopkg/opkg_conf.h
+@@ -88,6 +88,7 @@ struct opkg_conf
+      int query_all;
+      int verbosity;
+      int noaction;
++     int size;
+      int download_only;
+      char *cache;
+ 
+--- a/src/opkg-cl.c
++++ b/src/opkg-cl.c
+@@ -52,6 +52,7 @@ enum {
+ 	ARGS_OPT_AUTOREMOVE,
+ 	ARGS_OPT_CACHE,
+ 	ARGS_OPT_FORCE_SIGNATURE,
++	ARGS_OPT_SIZE,
+ };
+ 
+ static struct option long_options[] = {
+@@ -98,6 +99,7 @@ static struct option long_options[] = {
+ 	{"offline-root", 1, 0, 'o'},
+ 	{"add-arch", 1, 0, ARGS_OPT_ADD_ARCH},
+ 	{"add-dest", 1, 0, ARGS_OPT_ADD_DEST},
++	{"size", 0, 0, ARGS_OPT_SIZE},
+ 	{"test", 0, 0, ARGS_OPT_NOACTION},
+ 	{"tmp-dir", 1, 0, 't'},
+ 	{"tmp_dir", 1, 0, 't'},
+@@ -212,6 +214,9 @@ args_parse(int argc, char *argv[])
+ 			}
+ 			free(tuple);
+ 			break;
++		case ARGS_OPT_SIZE:
++			conf->size = 1;
++			break;
+ 		case ARGS_OPT_NOACTION:
+ 			conf->noaction = 1;
+ 			break;
+@@ -315,6 +320,7 @@ usage()
+ 	printf("\t--download-only	No action -- download only\n");
+ 	printf("\t--nodeps		Do not follow dependencies\n");
+ 	printf("\t--nocase		Perform case insensitive pattern matching\n");
++	printf("\t--size			Print package size when listing available packages\n");
+ 	printf("\t--force-removal-of-dependent-packages\n");
+ 	printf("\t			Remove package and all dependencies\n");
+ 	printf("\t--autoremove		Remove packages that were installed\n");
+--- a/libopkg/opkg_cmd.c
++++ b/libopkg/opkg_cmd.c
+@@ -47,10 +47,12 @@ static void
+ print_pkg(pkg_t *pkg)
+ {
+ 	char *version = pkg_version_str_alloc(pkg);
++	printf("%s - %s", pkg->name, version);
++	if (conf->size)
++		printf(" - %lu", pkg->size);
+ 	if (pkg->description)
+-		printf("%s - %s - %s\n", pkg->name, version, pkg->description);
+-	else
+-		printf("%s - %s\n", pkg->name, version);
++		printf(" - %s", pkg->description);
++	printf("\n");
+ 	free(version);
+ }
+ 
