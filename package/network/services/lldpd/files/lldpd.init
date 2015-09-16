@@ -3,7 +3,7 @@
 
 START=90
 
-SERVICE_USE_PID=1
+USE_PROCD=1
 
 find_release_info()
 {
@@ -14,7 +14,7 @@ find_release_info()
 	echo "${DISTRIB_DESCRIPTION:-Unknown OpenWrt release} @ $(cat /proc/sys/kernel/hostname)"
 }
 
-start() {
+start_service() {
 	. /lib/functions/network.sh
 
 	local enable_cdp
@@ -50,19 +50,24 @@ start() {
 	mkdir -p /var/run/lldp
 	chown lldp:lldp /var/run/lldp
 
-	[ -n "$ifnames" ] && append args "-I $ifnames"
-	[ $enable_cdp -gt 0 ] && append args '-c'
-	[ $enable_fdp -gt 0 ] && append args '-f'
-	[ $enable_sonmp -gt 0 ] && append args '-s'
-	[ $enable_edp -gt 0 ] && append args '-e'
-	[ $readonly_mode -gt 0 ] && append args '-r'
+	procd_open_instance
+	procd_set_param command /usr/sbin/lldpd
+	procd_append_param command -d # don't daemonize, procd will handle that for us
 
-	service_start /usr/sbin/lldpd $args \
-		${lldp_class:+ -M $lldp_class} \
-		${lldp_description:+ -S "$lldp_description"}
+	[ -n "$ifnames" ] && procd_append_param command "-I $ifnames"
+	[ $enable_cdp -gt 0 ] && procd_append_param command '-c'
+	[ $enable_fdp -gt 0 ] && procd_append_param command '-f'
+	[ $enable_sonmp -gt 0 ] && procd_append_param command '-s'
+	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
+	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
+	[ -n "$lldp_class" ] && procd_append_param command "-M $lldp_class"
+	[ -n "$lldp_description" ] && procd_append_param command "-S $lldp_description"
+
+	# set auto respawn behavior
+	procd_set_param respawn
+	procd_close_instance
 }
 
-stop() {
-	service_stop /usr/sbin/lldpd
+stop_service() {
 	rm -f /var/run/lldpd.socket /var/run/lldpd.pid
 }
