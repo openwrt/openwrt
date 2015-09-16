@@ -86,6 +86,7 @@ endef
 # 3+: candidates
 define SetupHostCommand
   define Require/$(1)
+	[ -f "$(STAGING_DIR_HOST)/bin/$(strip $(1))" ] && exit 0; \
 	for cmd in $(call QuoteHostCommand,$(3)) $(call QuoteHostCommand,$(4)) \
 	           $(call QuoteHostCommand,$(5)) $(call QuoteHostCommand,$(6)) \
 	           $(call QuoteHostCommand,$(7)) $(call QuoteHostCommand,$(8)) \
