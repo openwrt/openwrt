@@ -1,12 +1,12 @@
 --- a/include/uapi/linux/atm.h
 +++ b/include/uapi/linux/atm.h
-@@ -139,6 +139,9 @@ struct atm_trafprm {
- 	int		min_pcr;	/* minimum PCR in cells per second */
- 	int		max_cdv;	/* maximum CDV in microseconds */
- 	int		max_sdu;	/* maximum SDU in bytes */
+@@ -154,6 +154,9 @@
+ 	unsigned int adtf      :10;     /* ACR Decrease Time Factor (10-bit) */
+ 	unsigned int cdf       :3;      /* Cutoff Decrease Factor (3-bit) */
+         unsigned int spare     :9;      /* spare bits */ 
 +	int		scr;		/* sustained rate in cells per second */
 +	int		mbs;		/* maximum burst size (MBS) in cells */
 +	int		cdv;		/* Cell delay varition */
-         /* extra params for ABR */
-         unsigned int 	icr;         	/* Initial Cell Rate (24-bit) */
-         unsigned int	tbe;		/* Transient Buffer Exposure (24-bit) */ 
+ };
+ 
+ struct atm_qos {
