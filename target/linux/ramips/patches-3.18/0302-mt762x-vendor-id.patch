@@ -1,0 +1,22 @@
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -555,7 +555,7 @@
+ 	}
+ 
+ 	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
+-		"Ralink %s ver:%u eco:%u",
++		"MediaTek %s ver:%u eco:%u",
+ 		name,
+ 		(rev >> CHIP_REV_VER_SHIFT) & CHIP_REV_VER_MASK,
+ 		(rev & CHIP_REV_ECO_MASK));
+--- a/arch/mips/ralink/mt7621.c
++++ b/arch/mips/ralink/mt7621.c
+@@ -168,7 +168,7 @@
+ 	rev = __raw_readl(sysc + SYSC_REG_CHIP_REV);
+ 
+ 	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
+-		"Mediatek %s ver:%u eco:%u",
++		"MediaTek %s ver:%u eco:%u",
+ 		name,
+ 		(rev >> CHIP_REV_VER_SHIFT) & CHIP_REV_VER_MASK,
+ 		(rev & CHIP_REV_ECO_MASK));
