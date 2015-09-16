@@ -60,11 +60,6 @@ start() {
 	service_start /usr/sbin/lldpd $args \
 		${lldp_class:+ -M $lldp_class} \
 		${lldp_description:+ -S "$lldp_description"}
-
-	[ -n "$lldp_location" ] && {
-		sleep 1
-		/usr/sbin/lldpctl -L "$lldp_location" > /dev/null 2>&1
-	}
 }
 
 stop() {
