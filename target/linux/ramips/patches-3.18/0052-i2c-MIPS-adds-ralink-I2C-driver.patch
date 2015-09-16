@@ -68,7 +68,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-ralink.c
-@@ -0,0 +1,302 @@
+@@ -0,0 +1,327 @@
 +/*
 + * drivers/i2c/busses/i2c-ralink.c
 + *
@@ -97,6 +97,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/init.h>
 +#include <linux/errno.h>
 +#include <linux/platform_device.h>
++#include <linux/of_platform.h>
 +#include <linux/i2c.h>
 +#include <linux/io.h>
 +#include <linux/err.h>
@@ -112,6 +113,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define REG_STATUS_REG		0x18
 +#define REG_STARTXFR_REG	0x1C
 +#define REG_BYTECNT_REG		0x20
++#define REG_SM0CFG2		0x28
++#define REG_SM0CTL0		0x40
 +
 +#define I2C_STARTERR		BIT(4)
 +#define I2C_ACKERR		BIT(3)
@@ -129,11 +132,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define WRITE_CMD		0x00
 +#define READ_BLOCK              64
 +
++#define SM0CTL0_OD		BIT(31)
++#define SM0CTL0_VTRIG		BIT(28)
++#define SM0CTL0_OUTHI		BIT(6)
++#define SM0CTL0_STRETCH		BIT(1)
++#define SM0CTL0_DEFAULT		(SM0CTL0_OD | SM0CTL0_VTRIG | SM0CTL0_OUTHI | SM0CTL0_STRETCH)
++
 +/* timeout waiting for I2C devices to respond (clock streching) */
 +#define RT_I2C_TIMEOUT (msecs_to_jiffies(1000))
 +
++enum {
++	I2C_TYPE_RALINK,
++	I2C_TYPE_MEDIATEK,
++};
++
 +static void __iomem *membase;
 +static struct i2c_adapter *adapter;
++static int hw_type;
 +
 +static void rt_i2c_w32(u32 val, unsigned reg)
 +{
@@ -267,7 +282,12 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	rt_i2c_w32(m->addr, REG_DEVADDR_REG);
 +	rt_i2c_w32(I2C_DEVADLEN_7 | I2C_ADDRDIS, REG_CONFIG_REG);
-+	rt_i2c_w32(CLKDIV_VALUE, REG_CLKDIV_REG);
++	if (hw_type == I2C_TYPE_RALINK) {
++		rt_i2c_w32(CLKDIV_VALUE, REG_CLKDIV_REG);
++	} else {
++		rt_i2c_w32((CLKDIV_VALUE << 16) | SM0CTL0_DEFAULT, REG_SM0CTL0);
++		rt_i2c_w32(1, REG_SM0CFG2);
++	}
 +
 +	for (i = 0; i < n && !ret; i++) {
 +		ret = rt_i2c_handle_msg(a, &m[i]);
@@ -290,10 +310,22 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	.functionality	= rt_i2c_func,
 +};
 +
++static const struct of_device_id i2c_rt_dt_ids[] = {
++	{ .compatible = "ralink,rt2880-i2c", .data = (void *) I2C_TYPE_RALINK },
++	{ .compatible = "mediatek,mt7628-i2c", .data = (void *) I2C_TYPE_MEDIATEK },
++	{ /* sentinel */ }
++};
++
++MODULE_DEVICE_TABLE(of, i2c_rt_dt_ids);
++
 +static int rt_i2c_probe(struct platform_device *pdev)
 +{
 +	struct resource *res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	const struct of_device_id *match;
 +	int ret;
++
++	match = of_match_device(i2c_rt_dt_ids, &pdev->dev);
++	hw_type = (int) match->data;
 +
 +	if (!res) {
 +		dev_err(&pdev->dev, "no memory resource found\n");
@@ -336,13 +368,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	return 0;
 +}
-+
-+static const struct of_device_id i2c_rt_dt_ids[] = {
-+	{ .compatible = "ralink,rt2880-i2c", },
-+	{ /* sentinel */ }
-+};
-+
-+MODULE_DEVICE_TABLE(of, i2c_rt_dt_ids);
 +
 +static struct platform_driver rt_i2c_driver = {
 +	.probe		= rt_i2c_probe,
