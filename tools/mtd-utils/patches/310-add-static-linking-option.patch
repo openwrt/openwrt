@@ -1,23 +1,43 @@
 --- a/common.mk
 +++ b/common.mk
-@@ -2,6 +2,11 @@ CC := $(CROSS)gcc
+@@ -2,6 +2,16 @@ CC := $(CROSS)gcc
  AR := $(CROSS)ar
  RANLIB := $(CROSS)ranlib
  
 +ifeq ($(STATIC),1)
-+  LD_STATIC_ON := -Wl,-Bstatic
-+  LD_STATIC_OFF := -Wl,-Bdynamic
++ define static_link
++  -Wl,-Bstatic $(1) -Wl,-Bdynamic
++ endef
++else
++ define static_link
++  $(1)
++ endef
 +endif
 +
  # Stolen from Linux build system
  comma = ,
  try-run = $(shell set -e; ($(1)) >/dev/null 2>&1 && echo "$(2)" || echo "$(3)")
-@@ -68,7 +73,7 @@ endef
+--- a/Makefile
++++ b/Makefile
+@@ -89,10 +89,10 @@ obj-mkfs.jffs2 = compr_rtime.o compr_zli
+ 	compr_lzma.o lzma/LzFind.o lzma/LzmaEnc.o lzma/LzmaDec.o \
+ 	compr.o rbtree.o
+ LDFLAGS_mkfs.jffs2 = $(ZLIBLDFLAGS) $(LZOLDFLAGS)
+-LDLIBS_mkfs.jffs2  = -lz $(LZOLDLIBS)
++LDLIBS_mkfs.jffs2  = $(call static_link,-lz $(LZOLDLIBS))
  
- %: %.o $(LDDEPS)
- 	$(call BECHO,LD)
--	$(Q)$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_$(notdir $@)) -g -o $@ $^ $(LDLIBS) $(LDLIBS_$(notdir $@))
-+	$(Q)$(CC) $(CFLAGS) $(LDFLAGS) $(LDFLAGS_$(notdir $@)) -g -o $@ $(LD_STATIC_ON) $^ $(LDLIBS) $(LDLIBS_$(notdir $@)) $(LD_STATIC_OFF)
+ LDFLAGS_jffs2reader = $(ZLIBLDFLAGS) $(LZOLDFLAGS)
+-LDLIBS_jffs2reader  = -lz $(LZOLDLIBS)
++LDLIBS_jffs2reader  = $(call static_link,-lz $(LZOLDLIBS))
  
- $(BUILDDIR)/%.a:
- 	$(call BECHO,AR)
+ $(foreach v,$(MTD_BINS),$(eval $(call mkdep,,$(v))))
+ 
+@@ -119,7 +119,7 @@ else
+   XZLDLIBS = -llzma
+ endif
+ 
+-LDLIBS_mkfs.ubifs = -lz $(LZOLDLIBS) $(XZLDLIBS) -lm -luuid
++LDLIBS_mkfs.ubifs = $(call static_link,-lz $(LZOLDLIBS) $(XZLDLIBS)) -lm $(call static_link,-luuid)
+ $(call mkdep,mkfs.ubifs/,mkfs.ubifs,,ubi-utils/libubi.a)
+ 
+ #
