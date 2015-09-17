@@ -370,7 +370,9 @@ static int ppe_open(struct atm_vcc *vcc)
 	/*  check bandwidth */
 	if ( (vcc->qos.txtp.traffic_class == ATM_CBR && vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
 		|| (vcc->qos.txtp.traffic_class == ATM_VBR_RT && vcc->qos.txtp.max_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
+#if 0
 		|| (vcc->qos.txtp.traffic_class == ATM_VBR_NRT && vcc->qos.txtp.scr > (port->tx_max_cell_rate - port->tx_current_cell_rate))
+#endif
 		|| (vcc->qos.txtp.traffic_class == ATM_UBR_PLUS && vcc->qos.txtp.min_pcr > (port->tx_max_cell_rate - port->tx_current_cell_rate)) )
 	{
 		ret = -EINVAL;
@@ -408,7 +410,9 @@ static int ppe_open(struct atm_vcc *vcc)
 		port->tx_current_cell_rate += vcc->qos.txtp.max_pcr;
 		break;
 	case ATM_VBR_NRT:
+#if 0
 		port->tx_current_cell_rate += vcc->qos.txtp.scr;
+#endif
 		break;
 	case ATM_UBR_PLUS:
 		port->tx_current_cell_rate += vcc->qos.txtp.min_pcr;
@@ -486,7 +490,9 @@ static void ppe_close(struct atm_vcc *vcc)
 		port->tx_current_cell_rate -= vcc->qos.txtp.max_pcr;
 		break;
 	case ATM_VBR_NRT:
+#if 0
 		port->tx_current_cell_rate -= vcc->qos.txtp.scr;
+#endif
 		break;
 	case ATM_UBR_PLUS:
 		port->tx_current_cell_rate -= vcc->qos.txtp.min_pcr;
@@ -1159,10 +1165,13 @@ static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue
 	 *  Sustained Cell Rate (SCR) Leaky Bucket Shaper VBR.0/VBR.1
 	 */
 	if ( qos->txtp.traffic_class == ATM_VBR_RT || qos->txtp.traffic_class == ATM_VBR_NRT ) {
+#if 0
 		if ( qos->txtp.scr == 0 ) {
+#endif
 			/*  disable shaper  */
 			qsb_queue_vbr_parameter_table.bit.taus = 0;
 			qsb_queue_vbr_parameter_table.bit.ts = 0;
+#if 0
 		} else {
 			/*  Cell Loss Priority  (CLP)   */
 			if ( (vcc->atm_options & ATM_ATMOPT_CLP) )
@@ -1182,6 +1191,7 @@ static void set_qsb(struct atm_vcc *vcc, struct atm_qos *qos, unsigned int queue
 			else
 				qsb_queue_vbr_parameter_table.bit.taus = tmp;
 		}
+#endif
 	} else {
 		qsb_queue_vbr_parameter_table.bit.taus = 0;
 		qsb_queue_vbr_parameter_table.bit.ts = 0;
