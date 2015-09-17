@@ -1,0 +1,61 @@
+From: David Woodhouse <dwmw2@infradead.org>
+Date: Thu, 17 Sep 2015 10:16:54 +0100
+Subject: [PATCH] x86/platform: Fix Geode LX timekeeping in the generic x86
+ build
+
+In 2007, commit 07190a08eef36 ("Mark TSC on GeodeLX reliable")
+bypassed verification of the TSC on Geode LX. However, this code
+(now in the check_system_tsc_reliable() function in
+arch/x86/kernel/tsc.c) was only present if CONFIG_MGEODE_LX was
+set.
+
+OpenWRT has recently started building its generic Geode target
+for Geode GX, not LX, to include support for additional
+platforms. This broke the timekeeping on LX-based devices,
+because the TSC wasn't marked as reliable:
+https://dev.openwrt.org/ticket/20531
+
+By adding a runtime check on is_geode_lx(), we can also include
+the fix if CONFIG_MGEODEGX1 or CONFIG_X86_GENERIC are set, thus
+fixing the problem.
+
+Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
+Signed-off-by: Ingo Molnar <mingo@kernel.org>
+Closes #20531
+---
+
+--- a/arch/x86/kernel/tsc.c
++++ b/arch/x86/kernel/tsc.c
+@@ -21,6 +21,7 @@
+ #include <asm/hypervisor.h>
+ #include <asm/nmi.h>
+ #include <asm/x86_init.h>
++#include <asm/geode.h>
+ 
+ unsigned int __read_mostly cpu_khz;	/* TSC clocks / usec, not used here */
+ EXPORT_SYMBOL(cpu_khz);
+@@ -1004,15 +1005,17 @@ EXPORT_SYMBOL_GPL(mark_tsc_unstable);
+ 
+ static void __init check_system_tsc_reliable(void)
+ {
+-#ifdef CONFIG_MGEODE_LX
+-	/* RTSC counts during suspend */
++#if defined(CONFIG_MGEODEGX1) || defined(CONFIG_MGEODE_LX) || defined(CONFIG_X86_GENERIC)
++	if (is_geode_lx()) {
++		/* RTSC counts during suspend */
+ #define RTSC_SUSP 0x100
+-	unsigned long res_low, res_high;
++		unsigned long res_low, res_high;
+ 
+-	rdmsr_safe(MSR_GEODE_BUSCONT_CONF0, &res_low, &res_high);
+-	/* Geode_LX - the OLPC CPU has a very reliable TSC */
+-	if (res_low & RTSC_SUSP)
+-		tsc_clocksource_reliable = 1;
++		rdmsr_safe(MSR_GEODE_BUSCONT_CONF0, &res_low, &res_high);
++		/* Geode_LX - the OLPC CPU has a very reliable TSC */
++		if (res_low & RTSC_SUSP)
++			tsc_clocksource_reliable = 1;
++	}
+ #endif
+ 	if (boot_cpu_has(X86_FEATURE_TSC_RELIABLE))
+ 		tsc_clocksource_reliable = 1;
