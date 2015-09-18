@@ -43,3 +43,23 @@
  	default n
  	---help---
  	  Support for UNIX socket monitoring interface used by the ss tool.
+--- a/net/netlink/Kconfig
++++ b/net/netlink/Kconfig
+@@ -13,6 +13,7 @@ config NETLINK_MMAP
+ 
+ config NETLINK_DIAG
+ 	tristate "NETLINK: socket monitoring interface"
++	select SOCK_DIAG
+ 	default n
+ 	---help---
+ 	  Support for NETLINK socket monitoring interface used by the ss tool.
+--- a/net/packet/Kconfig
++++ b/net/packet/Kconfig
+@@ -18,6 +18,7 @@ config PACKET
+ config PACKET_DIAG
+ 	tristate "Packet: sockets monitoring interface"
+ 	depends on PACKET
++	select SOCK_DIAG
+ 	default n
+ 	---help---
+ 	  Support for PF_PACKET sockets monitoring interface used by the ss tool.
