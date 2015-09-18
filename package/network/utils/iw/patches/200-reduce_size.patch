@@ -107,27 +107,6 @@
  
  static int print_feature_handler(struct nl_msg *msg, void *arg)
  {
---- a/event.c
-+++ b/event.c
-@@ -298,6 +298,7 @@ static int print_event(struct nl_msg *ms
- 	int rem_nst;
- 	__u16 status;
- 
-+	return;
- 	if (args->time || args->reltime) {
- 		unsigned long long usecs, previous;
- 
-@@ -764,8 +765,10 @@ static int print_events(struct nl80211_s
- 
- 	return __do_listen_events(state, 0, NULL, &args);
- }
-+#if 0
- TOPLEVEL(event, "[-t] [-r] [-f]", 0, 0, CIB_NONE, print_events,
- 	"Monitor events from the kernel.\n"
- 	"-t - print timestamp\n"
- 	"-r - print relative timstamp\n"
- 	"-f - print full frame for auth/assoc etc.");
-+#endif
 --- a/scan.c
 +++ b/scan.c
 @@ -1080,6 +1080,7 @@ static void print_ht_op(const uint8_t ty
@@ -236,3 +215,41 @@
  
  int ieee80211_channel_to_frequency(int chan, enum nl80211_band band)
  {
+--- a/event.c
++++ b/event.c
+@@ -334,6 +334,7 @@ static int print_event(struct nl_msg *ms
+ 	}
+ 
+ 	switch (gnlh->cmd) {
++#if 0
+ 	case NL80211_CMD_NEW_WIPHY:
+ 		printf("renamed to %s\n", nla_get_string(tb[NL80211_ATTR_WIPHY_NAME]));
+ 		break;
+@@ -368,6 +369,7 @@ static int print_event(struct nl_msg *ms
+ 	case NL80211_CMD_SCHED_SCAN_RESULTS:
+ 		printf("got scheduled scan results\n");
+ 		break;
++#endif
+ 	case NL80211_CMD_REG_CHANGE:
+ 		printf("regulatory domain change: ");
+ 
+@@ -446,6 +448,7 @@ static int print_event(struct nl_msg *ms
+ 		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
+ 		printf("del station %s\n", macbuf);
+ 		break;
++#if 0
+ 	case NL80211_CMD_JOIN_IBSS:
+ 		mac_addr_n2a(macbuf, nla_data(tb[NL80211_ATTR_MAC]));
+ 		printf("IBSS %s joined\n", macbuf);
+@@ -599,9 +602,9 @@ static int print_event(struct nl_msg *ms
+ 		}
+ 		printf("\n");
+ 		break;
++#endif
+ 	default:
+-		printf("unknown event %d (%s)\n",
+-		       gnlh->cmd, command_name(gnlh->cmd));
++		printf("unknown event %d\n", gnlh->cmd);
+ 		break;
+ 	}
+ 
