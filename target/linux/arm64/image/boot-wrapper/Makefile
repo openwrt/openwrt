@@ -26,7 +26,7 @@ define Build/Compile
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		KERNEL="../Image" \
 		DTC="$(LINUX_DIR)/scripts/dtc/dtc" \
-		FDT_SRC="$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts/foundation-v8.dts" \
+		FDT_SRC="$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts/arm/foundation-v8.dts" \
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		BOOTARGS="console=ttyAMA0 earlyprintk"
 endef
