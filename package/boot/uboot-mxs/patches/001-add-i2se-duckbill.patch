@@ -1,20 +1,20 @@
-From 201bd7bba4a7c08c49d4ec36da651eec1c3d156b Mon Sep 17 00:00:00 2001
+From 4d9a32780ec795b9edc83c7b3a1e947cec49a5a4 Mon Sep 17 00:00:00 2001
 From: Michael Heimpold <mhei@heimpold.de>
-Date: Mon, 24 Nov 2014 23:29:30 +0100
+Date: Sat, 15 Aug 2015 20:26:18 +0200
 Subject: [PATCH] Add support for I2SE Duckbill boards
 
 Signed-off-by: Michael Heimpold <mhei@heimpold.de>
 ---
- arch/arm/Kconfig                  |   6 ++
- arch/arm/include/asm/mach-types.h |  14 +++
- board/i2se/duckbill/Kconfig       |  15 ++++
- board/i2se/duckbill/MAINTAINERS   |   6 ++
- board/i2se/duckbill/Makefile      |  12 +++
- board/i2se/duckbill/duckbill.c    | 103 +++++++++++++++++++++
- board/i2se/duckbill/iomux.c       | 125 ++++++++++++++++++++++++++
- configs/duckbill_defconfig        |   4 +
- include/configs/duckbill.h        | 183 ++++++++++++++++++++++++++++++++++++++
- 9 files changed, 468 insertions(+)
+ arch/arm/Kconfig                  |    6 ++
+ arch/arm/include/asm/mach-types.h |   13 +++
+ board/i2se/duckbill/Kconfig       |   15 ++++
+ board/i2se/duckbill/MAINTAINERS   |    6 ++
+ board/i2se/duckbill/Makefile      |   12 +++
+ board/i2se/duckbill/duckbill.c    |  112 +++++++++++++++++++++++
+ board/i2se/duckbill/iomux.c       |  125 ++++++++++++++++++++++++++
+ configs/duckbill_defconfig        |    9 ++
+ include/configs/duckbill.h        |  177 +++++++++++++++++++++++++++++++++++++
+ 9 files changed, 475 insertions(+)
  create mode 100644 board/i2se/duckbill/Kconfig
  create mode 100644 board/i2se/duckbill/MAINTAINERS
  create mode 100644 board/i2se/duckbill/Makefile
@@ -24,22 +24,22 @@ Signed-off-by: Michael Heimpold <mhei@heimpold.de>
  create mode 100644 include/configs/duckbill.h
 
 diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 5eb1d03..03ffb99 100644
+index 9908b43..7c795ac 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
-@@ -293,6 +293,11 @@ config TARGET_MX28EVK
+@@ -178,6 +178,11 @@ config TARGET_MX28EVK
  	select CPU_ARM926EJS
  	select SUPPORT_SPL
  
 +config TARGET_DUCKBILL
-+	bool "I2SE Duckbill"
++	bool "Support I2SE Duckbill"
 +	select CPU_ARM926EJS
 +	select SUPPORT_SPL
 +
  config TARGET_MX23_OLINUXINO
  	bool "Support mx23_olinuxino"
  	select CPU_ARM926EJS
-@@ -922,6 +927,7 @@ source "board/genesi/mx51_efikamx/Kconfig"
+@@ -926,6 +931,7 @@ source "board/genesi/mx51_efikamx/Kconfig"
  source "board/gumstix/pepper/Kconfig"
  source "board/h2200/Kconfig"
  source "board/hale/tt01/Kconfig"
@@ -48,19 +48,18 @@ index 5eb1d03..03ffb99 100644
  source "board/imx31_phycore/Kconfig"
  source "board/isee/igep0033/Kconfig"
 diff --git a/arch/arm/include/asm/mach-types.h b/arch/arm/include/asm/mach-types.h
-index d4a447b..5c71573 100644
+index 5afe791..330a88d 100644
 --- a/arch/arm/include/asm/mach-types.h
 +++ b/arch/arm/include/asm/mach-types.h
-@@ -1108,6 +1108,8 @@ extern unsigned int __machine_arch_type;
+@@ -1109,6 +1109,7 @@ extern unsigned int __machine_arch_type;
  #define MACH_TYPE_COLIBRI_T30          4493
  #define MACH_TYPE_APALIS_T30           4513
  #define MACH_TYPE_OMAPL138_LCDK        2495
 +#define MACH_TYPE_DUCKBILL             4754
-+
  
  #ifdef CONFIG_ARCH_EBSA110
  # ifdef machine_arch_type
-@@ -14261,6 +14263,18 @@ extern unsigned int __machine_arch_type;
+@@ -14262,6 +14263,18 @@ extern unsigned int __machine_arch_type;
  # define machine_is_apalis_t30()	(0)
  #endif
  
@@ -132,10 +131,10 @@ index 0000000..b5577e3
 +endif
 diff --git a/board/i2se/duckbill/duckbill.c b/board/i2se/duckbill/duckbill.c
 new file mode 100644
-index 0000000..3fa3ddb
+index 0000000..7794f65
 --- /dev/null
 +++ b/board/i2se/duckbill/duckbill.c
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,112 @@
 +/*
 + * I2SE Duckbill board
 + *
@@ -220,6 +219,15 @@ index 0000000..3fa3ddb
 +	}
 +
 +	return ret;
++}
++
++void mx28_adjust_mac(int dev_id, unsigned char *mac)
++{
++	mac[0] = 0x00;
++	mac[1] = 0x01;
++
++	if (dev_id == 1) /* Let MAC1 be MAC0 + 1 by default */
++		mac[5] += 1;
 +}
 +#endif
 +
@@ -372,22 +380,27 @@ index 0000000..538e138
 +}
 diff --git a/configs/duckbill_defconfig b/configs/duckbill_defconfig
 new file mode 100644
-index 0000000..d86f5e2
+index 0000000..2edf895
 --- /dev/null
 +++ b/configs/duckbill_defconfig
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,9 @@
++CONFIG_ARM=y
++CONFIG_TARGET_DUCKBILL=y
 +CONFIG_SPL=y
 +CONFIG_SYS_EXTRA_OPTIONS="ENV_IS_IN_MMC"
-++S:CONFIG_ARM=y
-++S:CONFIG_TARGET_DUCKBILL=y
++# CONFIG_CMD_IMLS is not set
++# CONFIG_CMD_FLASH is not set
++# CONFIG_SPI_FLASH is not set
++# CONFIG_CMD_FPGA is not set
++CONFIG_CMD_PING=y
 diff --git a/include/configs/duckbill.h b/include/configs/duckbill.h
 new file mode 100644
-index 0000000..38df7b3
+index 0000000..46e403b
 --- /dev/null
 +++ b/include/configs/duckbill.h
-@@ -0,0 +1,183 @@
+@@ -0,0 +1,177 @@
 +/*
-+ * Copyright (C) 2014 Michael Heimpold <mhei@heimpold.de>
++ * Copyright (C) 2014-2015 Michael Heimpold <mhei@heimpold.de>
 + *
 + * SPDX-License-Identifier:	GPL-2.0+
 + */
@@ -404,7 +417,6 @@ index 0000000..38df7b3
 +
 +/* U-Boot Commands */
 +#define CONFIG_SYS_NO_FLASH
-+#include <config_cmd_default.h>
 +#define CONFIG_DISPLAY_CPUINFO
 +#define CONFIG_DOS_PARTITION
 +
@@ -414,16 +426,11 @@ index 0000000..38df7b3
 +#define CONFIG_CMD_EXT4
 +#define CONFIG_CMD_EXT4_WRITE
 +#define CONFIG_CMD_FAT
++#define CONFIG_CMD_FUSE
 +#define CONFIG_CMD_GPIO
 +#define CONFIG_CMD_I2C
-+#define CONFIG_CMD_ITEST
 +#define CONFIG_CMD_MII
 +#define CONFIG_CMD_MMC
-+#define CONFIG_CMD_NET
-+#define CONFIG_CMD_NFS
-+#define CONFIG_CMD_PING
-+#define CONFIG_CMD_SAVEENV
-+#define CONFIG_CMD_SETEXPR
 +#define CONFIG_CMD_SPI
 +#define CONFIG_CMD_UNZIP
 +
@@ -569,3 +576,6 @@ index 0000000..38df7b3
 +#include <configs/mxs.h>
 +
 +#endif /* __CONFIGS_DUCKBILL_H__ */
+-- 
+1.7.10.4
+
