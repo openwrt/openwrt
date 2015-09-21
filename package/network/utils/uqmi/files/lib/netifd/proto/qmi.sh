@@ -140,7 +140,7 @@ proto_qmi_setup() {
 		return 1
 	}
 
-	if [ -z "$dhcp" ]; then
+	if [ -z "$dhcp" -o "$dhcp" = 0 ]; then
 		echo "Setting up $ifname"
 		[ -n "$ipv4" ] && {
 			json_load "$(uqmi -s -d $device --set-client-id wds,$cid_4 --get-current-settings)"
