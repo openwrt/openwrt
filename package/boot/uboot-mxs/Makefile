@@ -77,7 +77,7 @@ endef
 
 define Package/uboot/install/default
 	$(INSTALL_DIR) $(BIN_DIR)/uboot-$(BOARD)-$(1)
-	dd if=$(PKG_BUILD_DIR)/u-boot.sb of=$(BIN_DIR)/uboot-$(BOARD)-$(1)/uboot-$(BOARD)-$(1).sb bs=512 seek=4
+	$(CP) $(PKG_BUILD_DIR)/u-boot.sb $(BIN_DIR)/uboot-$(BOARD)-$(1)/uboot-$(BOARD)-$(1).sb
 endef
 
 define Package/uboot/install/template
