@@ -80,7 +80,7 @@ define KernelPackage/nf-conntrack6
   SUBMENU:=$(NF_MENU)
   TITLE:=Netfilter IPv6 connection tracking
   KCONFIG:=$(KCONFIG_NF_CONNTRACK6)
-  DEPENDS:=+kmod-ipv6 +kmod-nf-conntrack
+  DEPENDS:=@IPV6 +kmod-nf-conntrack
   FILES:=$(foreach mod,$(NF_CONNTRACK6-m),$(LINUX_DIR)/net/$(mod).ko)
   AUTOLOAD:=$(call AutoProbe,$(notdir $(NF_CONNTRACK6-m)))
 endef
@@ -454,7 +454,7 @@ $(eval $(call KernelPackage,ipt-led))
 
 define KernelPackage/ipt-tproxy
   TITLE:=Transparent proxying support
-  DEPENDS+=+kmod-ipt-conntrack +IPV6:kmod-ipv6 +IPV6:kmod-ip6tables
+  DEPENDS+=+kmod-ipt-conntrack +IPV6:kmod-ip6tables
   KCONFIG:= \
   	CONFIG_NETFILTER_TPROXY \
   	CONFIG_NETFILTER_XT_MATCH_SOCKET \
@@ -473,7 +473,7 @@ $(eval $(call KernelPackage,ipt-tproxy))
 
 define KernelPackage/ipt-tee
   TITLE:=TEE support
-  DEPENDS:=+kmod-ipt-conntrack +IPV6:kmod-ipv6
+  DEPENDS:=+kmod-ipt-conntrack
   KCONFIG:= \
   	CONFIG_NETFILTER_XT_TARGET_TEE
   FILES:= \

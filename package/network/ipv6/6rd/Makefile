@@ -17,7 +17,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/6rd
   SECTION:=net
   CATEGORY:=Network
-  DEPENDS:=+kmod-ipv6 +kmod-sit
+  DEPENDS:=@IPV6 +kmod-sit
   TITLE:=6rd configuration support
   MAINTAINER:=Steven Barth <cyrus@openwrt.org>
   PKGARCH:=all

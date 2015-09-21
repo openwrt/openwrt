@@ -44,7 +44,7 @@ endef
 define Package/dnsmasq-dhcpv6
 $(call Package/dnsmasq/Default)
   TITLE += (with DHCPv6 support)
-  DEPENDS:=@IPV6 +kmod-ipv6
+  DEPENDS:=@IPV6
   VARIANT:=dhcpv6
 endef
 
