@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2013-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -57,7 +57,7 @@ define Image/Build/SDCard
 		$(KDIR)/root.$(1) \
 		$(CONFIG_MXS_SD_BOOT_PARTSIZE) \
 		$(CONFIG_TARGET_ROOTFS_PARTSIZE) \
-		$(BIN_DIR)/uboot-mxs-$(3).sb
+		$(BIN_DIR)/uboot-mxs-$(3)/uboot-mxs-$(3).sb
 endef
 
 define Image/Build/Profile/olinuxino-maxi
