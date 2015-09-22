@@ -23,7 +23,8 @@
 #include <string.h>
 #include <time.h>
 #include <limits.h>
-#include "polarssl/havege.h"
+#include <fcntl.h>
+#include <unistd.h>
 #include "polarssl/bignum.h"
 #include "polarssl/x509.h"
 #include "polarssl/rsa.h"
@@ -32,8 +33,17 @@
 #define PX5G_COPY "Copyright (c) 2009 Steven Barth <steven@midlink.org>"
 #define PX5G_LICENSE "Licensed under the GNU Lesser General Public License v2.1"
 
+static int urandom_fd;
+
+static int _urandom(void *ctx)
+{
+	int ret;
+	read(urandom_fd, &ret, sizeof(ret));
+	return ret;
+}
+
+
 int rsakey(char **arg) {
-	havege_state hs;
 	rsa_context rsa;
 
 	unsigned int ksize = 512;
@@ -57,8 +67,7 @@ int rsakey(char **arg) {
 		ksize = (unsigned int)atoi(*arg);
 	}
 
-	havege_init(&hs);
-	rsa_init(&rsa, RSA_PKCS_V15, 0, havege_rand, &hs);
+	rsa_init(&rsa, RSA_PKCS_V15, 0, _urandom, NULL);
 
 	fprintf(stderr, "Generating RSA private key, %i bit long modulus\n", ksize);
 	if (rsa_gen_key(&rsa, ksize, exp)) {
@@ -76,7 +85,6 @@ int rsakey(char **arg) {
 }
 
 int selfsigned(char **arg) {
-	havege_state hs;
 	rsa_context rsa;
 	x509_node node;
 
@@ -139,8 +147,7 @@ int selfsigned(char **arg) {
 		arg++;
 	}
 
-	havege_init(&hs);
-	rsa_init(&rsa, RSA_PKCS_V15, 0, havege_rand, &hs);
+	rsa_init(&rsa, RSA_PKCS_V15, 0, _urandom, NULL);
 	x509write_init_node(&node);
 	fprintf(stderr, "Generating RSA private key, %i bit long modulus\n", ksize);
 	if (rsa_gen_key(&rsa, ksize, exp)) {
@@ -184,6 +191,12 @@ int selfsigned(char **arg) {
 }
 
 int main(int argc, char *argv[]) {
+	urandom_fd = open("/dev/urandom", O_RDONLY);
+	if (urandom_fd < 0) {
+		perror("open(/dev/urandom)");
+		return 1;
+	}
+
 	if (!argv[1]) {
 		//Usage
 	} else if (!strcmp(argv[1], "rsakey")) {
