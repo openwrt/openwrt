@@ -1,6 +1,6 @@
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -872,7 +872,7 @@ static int pppoe_sendmsg(struct socket *
+@@ -871,7 +871,7 @@ static int pppoe_sendmsg(struct socket *
  		goto end;
  
  
@@ -9,7 +9,7 @@
  			   0, GFP_KERNEL);
  	if (!skb) {
  		error = -ENOMEM;
-@@ -880,7 +880,7 @@ static int pppoe_sendmsg(struct socket *
+@@ -879,7 +879,7 @@ static int pppoe_sendmsg(struct socket *
  	}
  
  	/* Reserve space for headers. */
