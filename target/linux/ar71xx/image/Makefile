@@ -208,6 +208,14 @@ define Device/cf-e316n-v2
 endef
 TARGET_DEVICES += cf-e316n-v2
 
+define Device/weio
+  BOARDNAME = WEIO
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyATH0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += weio
+
 define Device/wndr3700
   BOARDNAME = WNDR3700
   NETGEAR_KERNEL_MAGIC = 0x33373030
