@@ -65,7 +65,7 @@
  }
  
  static const struct ieee80211_iface_limit if_limits[] = {
-@@ -903,6 +904,18 @@ static void ath9k_set_hw_capab(struct at
+@@ -904,6 +905,18 @@ static void ath9k_set_hw_capab(struct at
  	SET_IEEE80211_PERM_ADDR(hw, common->macaddr);
  }
  
@@ -84,7 +84,7 @@
  int ath9k_init_device(u16 devid, struct ath_softc *sc,
  		    const struct ath_bus_ops *bus_ops)
  {
-@@ -948,6 +961,8 @@ int ath9k_init_device(u16 devid, struct
+@@ -949,6 +962,8 @@ int ath9k_init_device(u16 devid, struct
  		ARRAY_SIZE(ath9k_tpt_blink));
  #endif
  
