@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/ath9k/debug.c
 +++ b/drivers/net/wireless/ath/ath9k/debug.c
-@@ -1346,6 +1346,52 @@ static const struct file_operations fops
+@@ -1348,6 +1348,52 @@ static const struct file_operations fops
  	.owner = THIS_MODULE
  };
  
@@ -53,7 +53,7 @@
  int ath9k_init_debug(struct ath_hw *ah)
  {
  	struct ath_common *common = ath9k_hw_common(ah);
-@@ -1367,6 +1413,8 @@ int ath9k_init_debug(struct ath_hw *ah)
+@@ -1369,6 +1415,8 @@ int ath9k_init_debug(struct ath_hw *ah)
  
  	debugfs_create_file("eeprom", S_IRUSR, sc->debug.debugfs_phy, sc,
  			    &fops_eeprom);
