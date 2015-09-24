@@ -26,6 +26,7 @@ define KernelPackage/can
 	CONFIG_CAN_MSCAN=n \
 	CONFIG_CAN_SJA1000=n \
 	CONFIG_CAN_SOFTING=n \
+	CONFIG_CAN_XILINXCAN=n \
 	CONFIG_NET_EMATCH_CANID=n \
 	CONFIG_CAN_DEBUG_DEVICES=n
   FILES:=$(LINUX_DIR)/drivers/net/can/can-dev.ko \
