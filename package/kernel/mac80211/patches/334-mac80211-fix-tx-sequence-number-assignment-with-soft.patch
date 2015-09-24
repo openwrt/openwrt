@@ -1,0 +1,23 @@
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Thu, 24 Sep 2015 14:10:07 +0200
+Subject: [PATCH] mac80211: fix tx sequence number assignment with software
+ queue + fast-xmit
+
+When using software queueing, tx sequence number assignment happens at
+ieee80211_tx_dequeue time, so the fast-xmit codepath must not do that.
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+---
+
+--- a/net/mac80211/tx.c
++++ b/net/mac80211/tx.c
+@@ -2766,7 +2766,8 @@ static bool ieee80211_xmit_fast(struct i
+ 
+ 	if (hdr->frame_control & cpu_to_le16(IEEE80211_STYPE_QOS_DATA)) {
+ 		*ieee80211_get_qos_ctl(hdr) = tid;
+-		hdr->seq_ctrl = ieee80211_tx_next_seq(sta, tid);
++		if (!sta->sta.txq[0])
++			hdr->seq_ctrl = ieee80211_tx_next_seq(sta, tid);
+ 	} else {
+ 		info->flags |= IEEE80211_TX_CTL_ASSIGN_SEQ;
+ 		hdr->seq_ctrl = cpu_to_le16(sdata->sequence_number);
