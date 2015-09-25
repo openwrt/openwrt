@@ -178,7 +178,7 @@ static struct proc_dir_entry *procdebug;
 static struct ssb_device_id ubsec_ssb_tbl[] = {
     /* Broadcom BCM5365P IPSec Core */
     SSB_DEVICE(SSB_VENDOR_BROADCOM, SSB_DEV_IPSEC, SSB_ANY_REV),
-    SSB_DEVTABLE_END
+    {},
 };
 
 static struct ssb_driver ubsec_ssb_driver = {
