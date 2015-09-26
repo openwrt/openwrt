@@ -87,6 +87,18 @@ define AsusDevice
   TARGET_DEVICES += asus-$(1)
 endef
 
+define Device/linksys
+  IMAGES := trx
+  IMAGE/trx := trx-nand
+endef
+
+define LinksysDevice
+  define Device/linksys-$(1)
+	$$(Device/linksys)
+  endef
+  TARGET_DEVICES += linksys-$(1)
+endef
+
 define Device/netgear
   IMAGES := chk
   IMAGE/chk := trx-nand | netgear-chk
@@ -131,6 +143,7 @@ $(eval $(call AsusDevice,rt-ac56u,RT-AC56U))
 $(eval $(call AsusDevice,rt-ac68u,RT-AC68U))
 $(eval $(call AsusDevice,rt-ac87u,RT-AC87U))
 $(eval $(call AsusDevice,rt-n18u,RT-N18U))
+$(eval $(call LinksysDevice,ea6300-v1))
 $(eval $(call NetgearDevice,r7000,U12H270T00_NETGEAR))
 
 $(eval $(call BuildImage))
