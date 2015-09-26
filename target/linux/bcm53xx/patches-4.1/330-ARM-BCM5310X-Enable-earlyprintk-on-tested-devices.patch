@@ -157,3 +157,14 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	};
  
  	memory {
+--- a/arch/arm/boot/dts/bcm4708-linksys-ea6300-v1.dts
++++ b/arch/arm/boot/dts/bcm4708-linksys-ea6300-v1.dts
+@@ -17,7 +17,7 @@
+ 	model = "Linksys EA6300 V1";
+ 
+ 	chosen {
+-		bootargs = "console=ttyS0,115200";
++		bootargs = "console=ttyS0,115200 earlyprintk";
+ 	};
+ 
+ 	memory {
