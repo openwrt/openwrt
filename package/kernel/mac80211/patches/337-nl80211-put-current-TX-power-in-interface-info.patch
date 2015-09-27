@@ -1,0 +1,37 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 31 Aug 2015 22:59:38 +0200
+Subject: [PATCH] nl80211: put current TX power in interface info
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Many drivers implement reading current TX power (using either cfg80211
+or ieee80211 op) but userspace can't get it using nl80211. Right now the
+only way to access it is to call some wext ioctl.
+Let's put TX power in interface info reply (callback is wdev specific)
+just like we do with current channel.
+To be consistent (e.g. NL80211_CMD_SET_WIPHY) let's use mBm as na unit.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/wireless/nl80211.c
++++ b/net/wireless/nl80211.c
+@@ -2406,6 +2406,16 @@ static int nl80211_send_iface(struct sk_
+ 		}
+ 	}
+ 
++	if (rdev->ops->get_tx_power) {
++		int dbm, ret;
++
++		ret = rdev_get_tx_power(rdev, wdev, &dbm);
++		if (ret == 0 &&
++		    nla_put_u32(msg, NL80211_ATTR_WIPHY_TX_POWER_LEVEL,
++				DBM_TO_MBM(dbm)))
++			goto nla_put_failure;
++	}
++
+ 	if (wdev->ssid_len) {
+ 		if (nla_put(msg, NL80211_ATTR_SSID, wdev->ssid_len, wdev->ssid))
+ 			goto nla_put_failure;
