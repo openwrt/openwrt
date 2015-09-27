@@ -1,3 +1,11 @@
+From: Jeff Hansen <jhansen@cardaccess-inc.com>
+Subject: [PATCH] kmap_coherent
+
+On ASUS WL-500gP there are some "Data bus error"s when executing simple
+commands liks "ps" or "cat /proc/1/cmdline".
+
+This fixes OpenWrt ticket #1485: https://dev.openwrt.org/ticket/1485
+---
 --- a/arch/mips/include/asm/cpu-features.h
 +++ b/arch/mips/include/asm/cpu-features.h
 @@ -158,6 +158,9 @@
