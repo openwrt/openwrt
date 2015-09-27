@@ -51,6 +51,8 @@ igmp_add_phyint() {
 		return;
 	}
 
+	append netdevs "$device"
+
 	[[ "$direction" = "upstream" ]] && has_upstream=1
 
 	echo -e "\nphyint $device $direction ratelimit 0 threshold 1" >> /var/etc/igmpproxy.conf
@@ -67,7 +69,7 @@ igmp_add_network() {
 	local network
 
 	config_get network $1 network
-	procd_add_interface_trigger "interface.*" $network /etc/init.d/igmpproxy restart
+	procd_add_interface_trigger "interface.*" $network /etc/init.d/igmpproxy reload
 }
 
 igmp_add_firewall_routing() {
@@ -110,6 +112,7 @@ service_triggers() {
 
 start_service() {
 	has_upstream=
+	netdevs=
 	config_load igmpproxy
 
 	config_foreach igmp_header igmpproxy
@@ -121,6 +124,7 @@ start_service() {
 	[ -n "$OPTIONS" ] && procd_append_param $OPTIONS
 	procd_append_param command $CONFIGFILE
 	procd_set_param file $CONFIGFILE
+	procd_set_param netdev $netdevs
 	procd_set_param respawn
 	procd_open_trigger
 	config_foreach igmp_add_network phyint
