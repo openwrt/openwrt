@@ -159,7 +159,7 @@
  #include <asm/uaccess.h>
  
  #include <trace/events/module.h>
-@@ -231,6 +232,28 @@ static int ____call_usermodehelper(void
+@@ -223,6 +224,28 @@ static int ____call_usermodehelper(void
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -188,7 +188,7 @@
  	/* We can run anywhere, unlike our parent keventd(). */
  	set_cpus_allowed_ptr(current, cpu_all_mask);
  
-@@ -544,6 +567,20 @@ struct subprocess_info *call_usermodehel
+@@ -522,6 +545,20 @@ struct subprocess_info *call_usermodehel
  }
  EXPORT_SYMBOL(call_usermodehelper_setup);
  
