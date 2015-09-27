@@ -1,0 +1,44 @@
+From: Richard Weinberger <richard@nod.at>
+Date: Sun, 31 May 2015 22:15:58 +0200
+Subject: [PATCH] um: Remove copy&paste code from init.h
+
+As we got rid of the __KERNEL__ abuse, we can directly
+include linux/compiler.h now.
+This also allows gcc 5 to build UML.
+
+Reported-by: Hans-Werner Hilse <hwhilse@gmail.com>
+Signed-off-by: Richard Weinberger <richard@nod.at>
+---
+
+--- a/arch/um/include/shared/init.h
++++ b/arch/um/include/shared/init.h
+@@ -40,28 +40,8 @@
+ typedef int (*initcall_t)(void);
+ typedef void (*exitcall_t)(void);
+ 
+-#ifndef __KERNEL__
+-#ifndef __section
+-# define __section(S) __attribute__ ((__section__(#S)))
+-#endif
+-
+-#if __GNUC__ == 3
+-
+-#if __GNUC_MINOR__ >= 3
+-# define __used			__attribute__((__used__))
+-#else
+-# define __used			__attribute__((__unused__))
+-#endif
+-
+-#else
+-#if __GNUC__ == 4
+-# define __used			__attribute__((__used__))
+-#endif
+-#endif
+-
+-#else
+ #include <linux/compiler.h>
+-#endif
++
+ /* These are for everybody (although not all archs will actually
+    discard it in modules) */
+ #define __init		__section(.init.text)
