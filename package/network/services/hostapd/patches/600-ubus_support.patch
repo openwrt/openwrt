@@ -830,3 +830,29 @@
  int ieee802_11_set_beacon(struct hostapd_data *hapd);
  int ieee802_11_set_beacons(struct hostapd_iface *iface);
  int ieee802_11_update_beacons(struct hostapd_iface *iface);
+--- a/src/ap/drv_callbacks.c
++++ b/src/ap/drv_callbacks.c
+@@ -49,6 +49,10 @@ int hostapd_notif_assoc(struct hostapd_d
+ 	u16 reason = WLAN_REASON_UNSPECIFIED;
+ 	u16 status = WLAN_STATUS_SUCCESS;
+ 	const u8 *p2p_dev_addr = NULL;
++	struct hostapd_ubus_request req = {
++		.type = HOSTAPD_UBUS_ASSOC_REQ,
++		.addr = addr,
++	};
+ 
+ 	if (addr == NULL) {
+ 		/*
+@@ -113,6 +117,12 @@ int hostapd_notif_assoc(struct hostapd_d
+ 	}
+ 	sta->flags &= ~(WLAN_STA_WPS | WLAN_STA_MAYBE_WPS | WLAN_STA_WPS2);
+ 
++	if (hostapd_ubus_handle_event(hapd, &req)) {
++		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by ubus handler.\n",
++			   MAC2STR(req.addr));
++		goto fail;
++	}
++
+ #ifdef CONFIG_P2P
+ 	if (elems.p2p) {
+ 		wpabuf_free(sta->p2p_ie);
