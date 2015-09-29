@@ -76,6 +76,10 @@ $(eval $(call TestHostCommand,libssl, \
 	echo 'int main(int argc, char **argv) { SSL_library_init(); return 0; }' | \
 		gcc -include openssl/ssl.h -x c -o $(TMP_DIR)/a.out - -lcrypto -lssl))
 
+$(eval $(call TestHostCommand,perl-thread-queue, \
+	Please install the Perl Thread::Queue module, \
+	perl -MThread::Queue -e 1))
+
 
 $(eval $(call SetupHostCommand,tar,Please install GNU 'tar', \
 	gtar --version 2>&1 | grep GNU, \
