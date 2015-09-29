@@ -15,9 +15,6 @@ PKG_MD5SUM:=c0ef4beb58a6fa72563b955e70624b6e
 
 include $(INCLUDE_DIR)/host-build.mk
 
-HOST_CONFIGURE_ARGS += \
-	--with-find=$(FIND)
-
 define Host/Configure
 	cd $(HOST_BUILD_DIR) && autoconf
 	$(call Host/Configure/Default)
