@@ -11,6 +11,10 @@ choice
 		select UCLIBC_VERSION_0_9_33
 		bool "uClibc 0.9.33.2"
 
+	config UCLIBC_USE_VERSION_NG
+		select UCLIBC_VERSION_NG
+		bool "uClibc-ng"
+
 endchoice
 
 # Debug version.
