@@ -175,6 +175,9 @@ get_status_led() {
 	whr-g300n)
 		status_led="whr-g300n:green:router"
 		;;
+	wizfi630a)
+		status_led="wizfi630a::run"
+		;;
 	wmr300)
 		status_led="buffalo:green:status"
 		;;
