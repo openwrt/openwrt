@@ -25,7 +25,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/mmc/host/Kconfig
 +++ b/drivers/mmc/host/Kconfig
-@@ -773,3 +773,5 @@ config MMC_SUNXI
+@@ -773,3 +773,5 @@
  	help
  	  This selects support for the SD/MMC Host Controller on
  	  Allwinner sunxi SoCs.
@@ -1760,7 +1760,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 --- /dev/null
 +++ b/drivers/mmc/host/mtk-mmc/sd.c
-@@ -0,0 +1,3050 @@
+@@ -0,0 +1,3060 @@
 +/* Copyright Statement:
 + *
 + * This software/firmware and related documentation ("MediaTek Software") are
@@ -1918,6 +1918,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif 
 +
 +static int mtk_sw_poll;
++
++static int cd_active_low = 1;
 +
 +//=================================
 +#define PERI_MSDC0_PDN      (15)
@@ -2337,7 +2339,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	inserted = hw->get_cd_status();
 +    } else {
 +        status = sdr_read32(MSDC_PS);
-+        inserted = (status & MSDC_PS_CDSTS) ? 0 : 1;
++        if (cd_active_low)
++		inserted = (status & MSDC_PS_CDSTS) ? 0 : 1;
++	else
++	        inserted = (status & MSDC_PS_CDSTS) ? 1 : 0;
 +    }
 +
 +#if 0
@@ -4081,7 +4086,11 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#if 0        
 +        present = host->card_inserted;  /* why not read from H/W: Fix me*/
 +#else
-+        present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 0 : 1; 
++        // CD
++	if (cd_active_low)
++		present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 0 : 1; 
++        else
++		present = (sdr_read32(MSDC_PS) & MSDC_PS_CDSTS) ? 1 : 0; 
 +        host->card_inserted = present;  
 +#endif        
 +        spin_unlock_irqrestore(&host->lock, flags);
@@ -4534,6 +4543,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +    if ((hw->flags & MSDC_SDIO_IRQ) || (hw->flags & MSDC_EXT_SDIO_IRQ))
 +        mmc->caps |= MMC_CAP_SDIO_IRQ;  /* yes for sdio */
 +
++	cd_active_low = !of_property_read_bool(pdev->dev.of_node, "mediatek,cd-high");
 +	mtk_sw_poll = of_property_read_bool(pdev->dev.of_node, "mediatek,cd-poll");
 +
 +	if (mtk_sw_poll)
