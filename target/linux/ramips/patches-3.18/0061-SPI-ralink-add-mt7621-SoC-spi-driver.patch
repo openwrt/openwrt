@@ -25,7 +25,7 @@
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
 --- /dev/null
 +++ b/drivers/spi/spi-mt7621.c
-@@ -0,0 +1,479 @@
+@@ -0,0 +1,480 @@
 +/*
 + * spi-mt7621.c -- MediaTek MT7621 SPI controller driver
 + *
@@ -117,12 +117,12 @@
 +{
 +	u32 master = mt7621_spi_read(rs, MT7621_SPI_MASTER);
 +
-+	master &= ~(0xfff << 16);
-+	master |= 1 << 16;
 +	master |= 7 << 29;
 +	master |= 1 << 2;
 +	if (duplex)
 +		master |= 1 << 10;
++	else
++		master &= ~(1 << 10);
 +
 +	mt7621_spi_write(rs, MT7621_SPI_MASTER, master);
 +}
@@ -322,6 +322,8 @@
 +
 +		for (i = 0; i < t->len; i++, len++)
 +			data[len / 4] |= buf[i] << (8 * (len & 3));
++		if (speed > t->speed_hz)
++			speed = t->speed_hz;
 +	}
 +
 +	if (WARN_ON(rx_len > 16)) {
@@ -354,7 +356,6 @@
 +	for (i = 0; i < rx_len; i += 4)
 +		data[i / 4] = mt7621_spi_read(rs, MT7621_SPI_DATA4 + i);
 +
-+	//m->actual_length = len + rx_len;
 +	m->actual_length = rx_len;
 +
 +	len = 0;
