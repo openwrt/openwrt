@@ -4,7 +4,7 @@
 
 [ -z "$PREINIT" ] && exec /sbin/init
 
-export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
 pi_ifname=
 pi_ip=192.168.1.1
@@ -20,7 +20,7 @@ fs_failsafe_wait_timeout=2
 
 pi_suppress_stderr="y"
 pi_init_suppress_stderr="y"
-pi_init_path="/bin:/sbin:/usr/bin:/usr/sbin"
+pi_init_path="/usr/sbin:/usr/bin:/sbin:/bin"
 pi_init_cmd="/sbin/init"
 
 . /lib/functions.sh
