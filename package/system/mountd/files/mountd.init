@@ -10,6 +10,9 @@ MOUNTD_BIN=/sbin/mountd
 
 start()
 {
+	P="$(uci get mountd.mountd.path)"
+	[ -n "$P" -a ! -f "$P" ] && mkdir -p $P
+
 	service_start $MOUNTD_BIN -f
 }
 
