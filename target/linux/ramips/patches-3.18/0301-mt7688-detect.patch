@@ -1,0 +1,114 @@
+--- a/arch/mips/include/asm/mach-ralink/mt7620.h
++++ b/arch/mips/include/asm/mach-ralink/mt7620.h
+@@ -17,6 +17,7 @@
+ 
+ #define SYSC_REG_CHIP_NAME0		0x00
+ #define SYSC_REG_CHIP_NAME1		0x04
++#define SYSC_REG_EFUSE_CFG		0x08
+ #define SYSC_REG_CHIP_REV		0x0c
+ #define SYSC_REG_SYSTEM_CONFIG0		0x10
+ #define SYSC_REG_SYSTEM_CONFIG1		0x14
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -43,6 +43,9 @@
+ #define CLKCFG_FFRAC_MASK	0x001f
+ #define CLKCFG_FFRAC_USB_VAL	0x0003
+ 
++/* EFUSE bits */
++#define EFUSE_MT7688		0x100000
++
+ /* does the board have sdram or ddram */
+ static int dram_type;
+ 
+@@ -391,7 +394,7 @@
+ #define RINT(x)		((x) / 1000000)
+ #define RFRAC(x)	(((x) / 1000) % 1000)
+ 
+-	if (ralink_soc == MT762X_SOC_MT7628AN) {
++	if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688) {
+ 		if (xtal_rate == MHZ(40))
+ 			cpu_rate = MHZ(580);
+ 		else
+@@ -436,7 +439,8 @@
+  	ralink_clk_add("10000e00.uart2", periph_rate);
+ 	ralink_clk_add("10180000.wmac", xtal_rate);
+ 
+-	if (IS_ENABLED(CONFIG_USB) && ralink_soc != MT762X_SOC_MT7628AN) {
++	if (IS_ENABLED(CONFIG_USB) &&
++		(ralink_soc == MT762X_SOC_MT7620A || ralink_soc == MT762X_SOC_MT7620N)) {
+ 		/*
+ 		 * When the CPU goes into sleep mode, the BUS clock will be too low for
+ 		 * USB to function properly
+@@ -536,8 +540,15 @@
+ #endif
+ 		}
+ 	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
+-		ralink_soc = MT762X_SOC_MT7628AN;
+-		name = "MT7628AN";
++		u32 efuse = __raw_readl(sysc + SYSC_REG_EFUSE_CFG);
++
++		if (efuse & EFUSE_MT7688) {
++			ralink_soc = MT762X_SOC_MT7688;
++			name = "MT7688";
++		} else {
++			ralink_soc = MT762X_SOC_MT7628AN;
++			name = "MT7628AN";
++		}
+ 		soc_info->compatible = "ralink,mt7628an-soc";
+ 	} else {
+ 		panic("mt762x: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
+@@ -551,13 +562,13 @@
+ 
+ 	cfg0 = __raw_readl(sysc + SYSC_REG_SYSTEM_CONFIG0);
+ 
+-	if (ralink_soc == MT762X_SOC_MT7628AN)
++	if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688)
+ 		dram_type = ((cfg0&0x00000001) == 0x00000001)?SYSCFG0_DRAM_TYPE_DDR1_MT7628:SYSCFG0_DRAM_TYPE_DDR2_MT7628;
+ 	else
+ 		dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
+ 
+ 	soc_info->mem_base = MT7620_DRAM_BASE;
+-	if (ralink_soc == MT762X_SOC_MT7628AN)
++	if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688)
+ 		mt7628_dram_init(soc_info);
+ 	else
+ 		mt7620_dram_init(soc_info);
+@@ -570,7 +581,7 @@
+ 	pr_info("Digital PMU set to %s control\n",
+ 		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
+ 
+-	if (ralink_soc == MT762X_SOC_MT7628AN)
++	if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688)
+ 		rt2880_pinmux_data = mt7628an_pinmux_data;
+ 	else
+ 		rt2880_pinmux_data = mt7620a_pinmux_data;
+--- a/arch/mips/include/asm/mach-ralink/ralink_regs.h
++++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
+@@ -24,6 +24,7 @@
+ 	MT762X_SOC_MT7620N,
+ 	MT762X_SOC_MT7621AT,
+ 	MT762X_SOC_MT7628AN,
++	MT762X_SOC_MT7688,
+ };
+ extern enum ralink_soc_type ralink_soc;
+ 
+--- a/drivers/net/ethernet/ralink/esw_rt3052.c
++++ b/drivers/net/ethernet/ralink/esw_rt3052.c
+@@ -611,7 +611,7 @@
+ 		rt305x_mii_write(esw, 0, 29, 0x598b);
+ 		/* select local register */
+ 		rt305x_mii_write(esw, 0, 31, 0x8000);
+-	} else if (ralink_soc == MT762X_SOC_MT7628AN) {
++	} else if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688) {
+ 		int i;
+ //		u32 phy_val;
+ 		u32 val;
+@@ -1042,7 +1042,7 @@
+ 	int shift = attr->id == RT5350_ESW_ATTR_PORT_TR_GOOD ? 0 : 16;
+ 	u32 reg;
+ 
+-	if ((ralink_soc != RT305X_SOC_RT5350) && (ralink_soc != MT762X_SOC_MT7628AN))
++	if ((ralink_soc != RT305X_SOC_RT5350) && (ralink_soc != MT762X_SOC_MT7628AN) && (ralink_soc != MT762X_SOC_MT7688))
+ 		return -EINVAL;
+ 
+ 	if (idx < 0 || idx >= RT305X_ESW_NUM_LANWAN)
