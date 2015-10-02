@@ -348,9 +348,6 @@ nand_do_platform_check() {
 		return 1
 	}
 
-	echo -n $2 > /tmp/sysupgrade-nand-path
-	cp /sbin/upgraded /tmp/
-
 	return 0
 }
 
