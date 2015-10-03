@@ -33,6 +33,9 @@
 				reg = <0x1 0x0 0x2000000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				nand-on-flash-bbt;
+				nand-ecc-strength = <3>;
+				nand-ecc-step-size = <256>;
 
 				partitions {
 					compatible = "fixed-partitions";
@@ -41,26 +44,25 @@
 
 					partition@0 {
 						label = "u-boot";
-						reg = <0x0 0x40000>;
-						read-only;
-					};
-					partition@40000 {
-						label = "uboot-env";
-						reg = <0x40000 0x40000>;
-					};
-					caldata: partition@80000 {
-						label = "caldata";
-						reg = <0x80000 0x20000>;
+						reg = <0x0 0xa0000>;
 						read-only;
 					};
 					partition@a0000 {
-						label = "kernel";
-						reg = <0xa0000 0x200000>;
+						label = "uboot-env";
+						reg = <0xa0000 0x20000>;
+						read-only;
 					};
-					partition@2a0000 {
+					partition@c0000 {
+						label = "unused";
+						reg = <0xc0000 0x40000>;
+					};
+					partition@100000 {
 						label = "ubi";
-						reg = <0x2a0000 0x7d60000>;
+						reg = <0x100000 0x7e80000>;
 					};
+					/*
+					 * last 512 KiB are for the bad block table, not writable
+					 */
 				};
 			};
 		};
@@ -216,7 +218,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <0>;
-		mtd-mac-address = <&caldata 0x110c>;
 		lantiq,switch;
 
 		ethernet@0 {
@@ -250,8 +251,6 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <1>;
-		mtd-mac-address = <&caldata 0x110c>;
-		mtd-mac-address-increment = <4>;
 		lantiq,wan;
 
 		ethernet@5 {

@@ -75,7 +75,8 @@ BTHOMEHUBV3A)
 	;;
 
 BTHOMEHUBV5A)
-	wan_mac=$(macaddr_add "$(mtd_get_mac_binary caldata 4364)" 1)
+	lan_mac=$(mtd_get_mac_binary_ubi caldata 4364)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
 	ucidef_add_switch "switch0" \
 		"0:lan:3" "1:lan:4" "2:lan:2" "4:lan:1" "6t@eth0"
 	;;
