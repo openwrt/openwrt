@@ -9,7 +9,7 @@
  #define AR913X_BASE_FREQ	5000000
  
  struct clk {
-@@ -99,8 +99,8 @@
+@@ -99,8 +99,8 @@ static void __init ar724x_clocks_init(vo
  	div = ((pll >> AR724X_PLL_DIV_SHIFT) & AR724X_PLL_DIV_MASK);
  	freq = div * ref_rate;
  

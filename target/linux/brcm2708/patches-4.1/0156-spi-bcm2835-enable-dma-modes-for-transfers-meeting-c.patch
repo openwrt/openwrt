@@ -375,7 +375,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  static int bcm2835_spi_transfer_one_poll(struct spi_master *master,
  					 struct spi_device *spi,
  					 struct spi_transfer *tfr,
-@@ -301,12 +582,26 @@ static int bcm2835_spi_transfer_one(stru
+@@ -299,6 +580,11 @@ static int bcm2835_spi_transfer_one(stru
  		return bcm2835_spi_transfer_one_poll(master, spi, tfr,
  						     cs, xfer_time_us);
  
@@ -387,6 +387,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	return bcm2835_spi_transfer_one_irq(master, spi, tfr, cs);
  }
  
+@@ -324,6 +610,15 @@ static int bcm2835_spi_prepare_message(s
  static void bcm2835_spi_handle_err(struct spi_master *master,
  				   struct spi_message *msg)
  {
@@ -402,7 +403,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	bcm2835_spi_reset_hw(master);
  }
  
-@@ -505,6 +800,8 @@ static int bcm2835_spi_probe(struct plat
+@@ -523,6 +818,8 @@ static int bcm2835_spi_probe(struct plat
  		goto out_clk_disable;
  	}
  
@@ -411,7 +412,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  	/* initialise the hardware with the default polarities */
  	bcm2835_wr(bs, BCM2835_SPI_CS,
  		   BCM2835_SPI_CS_CLEAR_RX | BCM2835_SPI_CS_CLEAR_TX);
-@@ -535,6 +832,8 @@ static int bcm2835_spi_remove(struct pla
+@@ -553,6 +850,8 @@ static int bcm2835_spi_remove(struct pla
  
  	clk_disable_unprepare(bs->clk);
  

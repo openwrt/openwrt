@@ -9,15 +9,15 @@ Subject: [PATCH 163/171] spi: bcm2835: Fix buld error from previous commit
 
 --- a/drivers/spi/spi-bcm2835.c
 +++ b/drivers/spi/spi-bcm2835.c
-@@ -592,7 +592,6 @@ static int bcm2835_spi_transfer_one(stru
- 	return bcm2835_spi_transfer_one_irq(master, spi, tfr, cs);
+@@ -609,7 +609,6 @@ static int bcm2835_spi_prepare_message(s
+ 	return 0;
  }
  
 -#if 0
  static void bcm2835_spi_handle_err(struct spi_master *master,
  				   struct spi_message *msg)
  {
-@@ -607,7 +606,6 @@ static void bcm2835_spi_handle_err(struc
+@@ -624,7 +623,6 @@ static void bcm2835_spi_handle_err(struc
  	/* and reset */
  	bcm2835_spi_reset_hw(master);
  }
