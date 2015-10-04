@@ -11,15 +11,15 @@ Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
 
 --- a/drivers/spi/spi-bcm2835.c
 +++ b/drivers/spi/spi-bcm2835.c
-@@ -592,6 +592,7 @@ static int bcm2835_spi_transfer_one(stru
- 	return bcm2835_spi_transfer_one_irq(master, spi, tfr, cs);
+@@ -609,6 +609,7 @@ static int bcm2835_spi_prepare_message(s
+ 	return 0;
  }
  
 +#if 0
  static void bcm2835_spi_handle_err(struct spi_master *master,
  				   struct spi_message *msg)
  {
-@@ -606,6 +607,7 @@ static void bcm2835_spi_handle_err(struc
+@@ -623,6 +624,7 @@ static void bcm2835_spi_handle_err(struc
  	/* and reset */
  	bcm2835_spi_reset_hw(master);
  }

@@ -63,7 +63,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				     interface);
 +	}
  
- 	if (IS_ERR(phydev)) {
+ 	if (IS_ERR_OR_NULL(phydev)) {
  		pr_err("%s: Could not attach to PHY\n", dev->name);
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c

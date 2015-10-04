@@ -168,7 +168,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  config ARCH_MULTIPLATFORM
  	bool "Allow multiple platforms to be selected"
  	depends on MMU
-@@ -823,6 +859,9 @@ config ARCH_VIRT
+@@ -824,6 +860,9 @@ config ARCH_VIRT
  # Kconfigs may be included either alphabetically (according to the
  # plat- suffix) or along side the corresponding mach-* source.
  #
@@ -6745,7 +6745,7 @@ Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
  ENTRY(cpu_v6_dcache_clean_area)
 --- a/arch/arm/mm/proc-v7.S
 +++ b/arch/arm/mm/proc-v7.S
-@@ -456,6 +456,7 @@ __v7_setup:
+@@ -460,6 +460,7 @@ __v7_setup_cont:
  	orr	r0, r0, r6			@ set them
   THUMB(	orr	r0, r0, #1 << 30	)	@ Thumb exceptions
  	ret	lr				@ return to head.S:__ret

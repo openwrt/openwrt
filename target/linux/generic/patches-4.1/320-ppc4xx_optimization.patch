@@ -15,7 +15,7 @@ they still want to support gcc 3.3 -- well, we don't.
  
 --- a/arch/powerpc/boot/Makefile
 +++ b/arch/powerpc/boot/Makefile
-@@ -45,10 +45,10 @@ BOOTCFLAGS	+= -I$(obj) -I$(srctree)/$(ob
+@@ -48,10 +48,10 @@ BOOTCFLAGS	+= -I$(obj) -I$(srctree)/$(ob
  DTC_FLAGS	?= -p 1024
  
  $(obj)/4xx.o: BOOTCFLAGS += -mcpu=405
