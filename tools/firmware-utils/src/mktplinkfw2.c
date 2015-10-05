@@ -161,6 +161,11 @@ static struct board_info boards[] = {
 		.hw_rev		= 1,
 		.layout_id	= "8Mltq",
 	}, {
+		.id		= "TD-W8980v1",
+		.hw_id		= 0x89800001,
+		.hw_rev		= 14,
+		.layout_id	= "8Mltq",
+	}, {
 		.id		= "ArcherC20i",
 		.hw_id		= 0xc2000001,
 		.hw_rev		= 58,
