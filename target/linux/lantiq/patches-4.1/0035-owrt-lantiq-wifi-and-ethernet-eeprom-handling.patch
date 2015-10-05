@@ -415,7 +415,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +device_initcall(of_eth_mac_init);
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/pci-ath-fixup.c
-@@ -0,0 +1,109 @@
+@@ -0,0 +1,118 @@
 +/*
 + *  Atheros AP94 reference board PCI initialization
 + *
@@ -442,6 +442,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static void ath_pci_fixup(struct pci_dev *dev)
 +{
 +	void __iomem *mem;
++	struct pci_dev *bridge = pci_upstream_bridge(dev); 
 +	u16 *cal_data = NULL;
 +	u16 cmd;
 +	u32 bar0;
@@ -475,6 +476,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (!mem) {
 +		pr_err("pci %s: ioremap error\n", pci_name(dev));
 +		return;
++	}
++
++	if (bridge) {
++		pci_enable_device(dev);
 +	}
 +
 +	pci_read_config_dword(dev, PCI_BASE_ADDRESS_0, &bar0);
@@ -511,6 +516,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	pci_write_config_word(dev, PCI_COMMAND, cmd);
 +
 +	pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, bar0);
++
++	if (bridge) {
++		pci_disable_device(dev);
++	}
 +
 +	iounmap(mem);
 +}
