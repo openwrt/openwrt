@@ -18,7 +18,7 @@
 			nor-boot@0 {
 				compatible = "lantiq,nor";
 				bank-width = <2>;
-				reg = <0 0x0 0x2000000>, <1 0x2000000 0x2000000>;
+				reg = <0 0x0 0x2000000>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 
@@ -151,7 +151,11 @@
 		ifxhcd@E101000 {
 			status = "okay";
 			gpios = <&gpio 32 0>;
-			lantiq,portmask = <0x3>;
+		};
+
+		ifxhcd@E106000 {
+			status = "okay";
+			gpios = <&gpio 32 0>;
 		};
 
 		pcie@d900000 {
@@ -202,11 +206,11 @@
 			label = "lan";
 			gpios = <&gpio 2 1>;
 		};
-		message_red {
-			label = "message_red";
+		internet_red {
+			label = "internet_red";
 			gpios = <&gpio 10 1>;
 		};
-		power_red {
+		power_green {
 			label = "power";
 			gpios = <&gpio 14 1>;
 			default-state = "on";
@@ -215,12 +219,12 @@
 			label = "alarm";
 			gpios = <&gpio 15 1>;
 		};
-		message_orange {
-			label = "message_orange";
+		internet_orange {
+			label = "internet_orange";
 			gpios = <&gpio 19 1>;
 		};
-		message_green {
-			label = "message_green";
+		internet_green {
+			label = "internet_green";
 			gpios = <&gpio 28 1>;
 		};
 		voice_green {

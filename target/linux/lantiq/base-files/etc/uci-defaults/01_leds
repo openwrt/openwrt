@@ -51,6 +51,11 @@ P2812HNUF*)
 	ucidef_set_led_netdev "dsl" "dsl" "dsl" "nas0"
 	ucidef_set_led_netdev "internet_green" "internet_green" "internet_green" "pppoe-wan"
 	;;
+ARV7519RW22)
+	ucidef_set_led_default "power" "power" "power" "1"
+	ucidef_set_led_netdev "internet_green" "internet_green" "internet_green" "pppoe-wan"
+	ucidef_set_led_netdev "lan" "lan" "lan" "eth0.1"
+	;;
 ARV8539PW22)
         ucidef_set_led_default "power" "power" "soc:green:power" "1"
         ucidef_set_led_default "power2" "power2" "soc:red:power" "0"
