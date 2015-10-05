@@ -197,6 +197,13 @@ if VERSIONOPT
 			This is the manufacturer name embedded in /etc/device_info
 			Useful for OEMs building OpenWrt based firmware
 
+	config VERSION_MANUFACTURER_URL
+		string
+		prompt "Manufacturer URL"
+		help
+			This is an URL to the manufacturer's website embedded in /etc/device_info
+			Useful for OEMs building OpenWrt based firmware
+
 	config VERSION_PRODUCT
 		string
 		prompt "Product name"
