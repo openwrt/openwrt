@@ -170,7 +170,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	int tx_irq;
 +	int rx_irq;
 +
-+	const void *mac;
++	unsigned char mac[6];
 +	int mii_mode;
  
  	spinlock_t lock;
