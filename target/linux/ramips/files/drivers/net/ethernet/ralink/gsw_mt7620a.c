@@ -602,12 +602,12 @@ static void gsw_hw_init_mt7621(struct mt7620_gsw *gsw, struct device_node *np)
 	udelay(10);
 
 	if ((rt_sysc_r32(SYSC_REG_CHIP_REV_ID) & 0xFFFF) == 0x0101) {
-		/* (GE1, Force 1000M/FD, FC ON) */
-		gsw_w32(gsw, 0x2005e30b, 0x100);
+		/* (GE1, Force 1000M/FD, FC ON, MAX_RX_LENGTH 1536) */
+		gsw_w32(gsw, 0x2105e30b, 0x100);
 		mt7530_mdio_w32(gsw, 0x3600, 0x5e30b);
 	} else {
-		/* (GE1, Force 1000M/FD, FC ON) */
-		gsw_w32(gsw, 0x2005e33b, 0x100);
+		/* (GE1, Force 1000M/FD, FC ON, MAX_RX_LENGTH 1536) */
+		gsw_w32(gsw, 0x2105e33b, 0x100);
 		mt7530_mdio_w32(gsw, 0x3600, 0x5e33b);
 	}
 
