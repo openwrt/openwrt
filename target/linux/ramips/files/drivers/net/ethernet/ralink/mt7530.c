@@ -484,6 +484,8 @@ mt7530_apply_config(struct switch_dev *dev)
 {
 	struct mt7530_priv *priv = container_of(dev, struct mt7530_priv, swdev);
 	int i, j;
+	u8 tag_ports;
+	u8 untag_ports;
 
 	if (!priv->global_vlan_enable) {
 		for (i = 0; i < MT7530_NUM_PORTS; i++)
@@ -499,9 +501,37 @@ mt7530_apply_config(struct switch_dev *dev)
 	for (i = 0; i < MT7530_NUM_PORTS; i++)
 		mt7530_w32(priv, REG_ESW_PORT_PCR(i), 0x00ff0003);
 
-	/* set all ports as user port */
-	for (i = 0; i < MT7530_NUM_PORTS; i++)
-		mt7530_w32(priv, REG_ESW_PORT_PVC(i), 0x81000000);
+	/* check if a port is used in tag/untag vlan egress mode */
+	tag_ports = 0;
+	untag_ports = 0;
+
+	for (i = 0; i < MT7530_NUM_VLANS; i++) {
+		u8 member = priv->vlan_entries[i].member;
+		u8 etags = priv->vlan_entries[i].etags;
+
+		if (!member)
+			continue;
+
+		for (j = 0; j < MT7530_NUM_PORTS; j++) {
+			if (!(member & BIT(j)))
+				continue;
+
+			if (etags & BIT(j))
+				tag_ports |= 1u << j;
+			else
+				untag_ports |= 1u << j;
+		}
+	}
+
+	/* set all untag-only ports as transparent and the rest as user port */
+	for (i = 0; i < MT7530_NUM_PORTS; i++) {
+		u32 pvc_mode = 0x81000000;
+
+		if (untag_ports & BIT(i) && !(tag_ports & BIT(i)))
+			pvc_mode = 0x810000c0;
+
+		mt7530_w32(priv, REG_ESW_PORT_PVC(i), pvc_mode);
+	}
 
 	for (i = 0; i < MT7530_NUM_VLANS; i++) {
 		u16 vid = priv->vlan_entries[i].vid;
