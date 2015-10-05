@@ -47,7 +47,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +			break;
 +
 +		cp0_timer_irq_installed = 0;
-+		free_irq(evt->irq, &c0_compare_irqaction);
++		remove_irq(evt->irq, &c0_compare_irqaction);
 +		break;
 +
 +	default:
