@@ -74,7 +74,7 @@ $(eval $(call TestHostCommand,zlib, \
 $(eval $(call TestHostCommand,libssl, \
 	Please install the openssl library (with development headers), \
 	echo 'int main(int argc, char **argv) { SSL_library_init(); return 0; }' | \
-		gcc -include openssl/ssl.h -x c -o $(TMP_DIR)/a.out - -lcrypto -lssl))
+		gcc $(HOST_CFLAGS) -include openssl/ssl.h -x c -o $(TMP_DIR)/a.out - -lcrypto -lssl $(HOST_LDFLAGS)))
 
 $(eval $(call TestHostCommand,perl-thread-queue, \
 	Please install the Perl Thread::Queue module, \
