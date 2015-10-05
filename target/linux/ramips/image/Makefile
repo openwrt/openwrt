@@ -598,7 +598,17 @@ Image/Build/Profile/SL-R7205=$(call BuildFirmware/Default4M/$(1),$(1),sl-r7205,S
 
 Image/Build/Profile/V22RW-2X2=$(call BuildFirmware/Default4M/$(1),$(1),v22rw-2x2,V22RW-2X2)
 
-Image/Build/Profile/VOCORE=$(call BuildFirmware/Default8M/$(1),$(1),vocore,VOCORE)
+vocore_8mb_mtd_size=8060928
+vocore_16mb_mtd_size=16449536
+define BuildFirmware/VOCORE/squashfs
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2)-8M,$(3)-8M,$(vocore_8mb_mtd_size))
+	$(call BuildFirmware/CustomFlash/$(1),$(1),$(2)-16M,$(3)-16M,$(vocore_16mb_mtd_size))
+endef
+define BuildFirmware/VOCORE/initramfs
+	$(call BuildFirmware/OF/initramfs,$(1),$(2)-8M,$(3)-8M)
+	$(call BuildFirmware/OF/initramfs,$(1),$(2)-16M,$(3)-16M)
+endef
+Image/Build/Profile/VOCORE=$(call BuildFirmware/VOCORE/$(1),$(1),vocore,VOCORE)
 
 Image/Build/Profile/W150M=$(call BuildFirmware/CustomFlashFactory/$(1),$(1),w150m,W150M,$(ralink_default_fw_size_4M),W150M Kernel Image,factory)
 
