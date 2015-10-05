@@ -849,7 +849,7 @@ static int fe_poll_rx(struct napi_struct *napi, int budget,
 
 		dma_unmap_single(&netdev->dev, trxd.rxd1,
 				ring->rx_buf_size, DMA_FROM_DEVICE);
-		pktlen = RX_DMA_PLEN0(trxd.rxd2);
+		pktlen = RX_DMA_GET_PLEN0(trxd.rxd2);
 		skb->dev = netdev;
 		skb_put(skb, pktlen);
 		if (trxd.rxd4 & checksum_bit) {
