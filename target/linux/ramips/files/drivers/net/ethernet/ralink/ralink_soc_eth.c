@@ -32,6 +32,7 @@
 #include <linux/reset.h>
 #include <linux/tcp.h>
 #include <linux/io.h>
+#include <linux/bug.h>
 
 #include <asm/mach-ralink/ralink_regs.h>
 
@@ -41,8 +42,8 @@
 #include "ralink_ethtool.h"
 
 #define	MAX_RX_LENGTH		1536
-#define FE_RX_HLEN		(NET_SKB_PAD + VLAN_ETH_HLEN + VLAN_HLEN + \
-		+ NET_IP_ALIGN + ETH_FCS_LEN)
+#define FE_RX_ETH_HLEN		(VLAN_ETH_HLEN + VLAN_HLEN + ETH_FCS_LEN)
+#define FE_RX_HLEN		(NET_SKB_PAD + FE_RX_ETH_HLEN + NET_IP_ALIGN)
 #define DMA_DUMMY_DESC		0xffffffff
 #define FE_DEFAULT_MSG_ENABLE    \
         (NETIF_MSG_DRV      | \
@@ -172,14 +173,21 @@ static int fe_set_mac_address(struct net_device *dev, void *p)
 
 static inline int fe_max_frag_size(int mtu)
 {
+	/* make sure buf_size will be at least MAX_RX_LENGTH */
+	if (mtu + FE_RX_ETH_HLEN < MAX_RX_LENGTH)
+		mtu = MAX_RX_LENGTH - FE_RX_ETH_HLEN;
+
 	return SKB_DATA_ALIGN(FE_RX_HLEN + mtu) +
 		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
 static inline int fe_max_buf_size(int frag_size)
 {
-	return frag_size - NET_SKB_PAD - NET_IP_ALIGN -
-		SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+	int buf_size = frag_size - NET_SKB_PAD - NET_IP_ALIGN -
+		       SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
+
+	BUG_ON(buf_size < MAX_RX_LENGTH);
+	return buf_size;
 }
 
 static inline void fe_get_rxd(struct fe_rx_dma *rxd, struct fe_rx_dma *dma_rxd)
