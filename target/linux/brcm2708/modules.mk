@@ -28,6 +28,8 @@ $(eval $(call KernelPackage,sound-arm-bcm2835))
 define KernelPackage/sound-soc-bcm2708-i2s
   TITLE:=SoC Audio support for the Broadcom 2708 I2S module
   KCONFIG:= \
+	CONFIG_BCM2708_SPIDEV=n \
+	CONFIG_MFD_RPISENSE_CORE=n \
 	CONFIG_SND_BCM2708_SOC_I2S \
 	CONFIG_SND_SOC_DMAENGINE_PCM=y \
 	CONFIG_SND_SOC_GENERIC_DMAENGINE_PCM=y
