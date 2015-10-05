@@ -590,15 +590,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +device_initcall(of_ralink_eeprom_init);
 --- a/drivers/net/ethernet/lantiq_etop.c
 +++ b/drivers/net/ethernet/lantiq_etop.c
-@@ -161,7 +161,7 @@ struct ltq_etop_priv {
- 	int tx_irq;
- 	int rx_irq;
- 
--	const void *mac;
-+	void *mac;
- 	int mii_mode;
- 
- 	spinlock_t lock;
 @@ -840,7 +840,11 @@ ltq_etop_init(struct net_device *dev)
  	if (err)
  		goto err_hw;
