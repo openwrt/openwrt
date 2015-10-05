@@ -54,14 +54,14 @@ start_service() {
 	procd_set_param command /usr/sbin/lldpd
 	procd_append_param command -d # don't daemonize, procd will handle that for us
 
-	[ -n "$ifnames" ] && procd_append_param command "-I $ifnames"
+	[ -n "$ifnames" ] && procd_append_param command -I "$ifnames"
 	[ $enable_cdp -gt 0 ] && procd_append_param command '-c'
 	[ $enable_fdp -gt 0 ] && procd_append_param command '-f'
 	[ $enable_sonmp -gt 0 ] && procd_append_param command '-s'
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
-	[ -n "$lldp_class" ] && procd_append_param command "-M $lldp_class"
-	[ -n "$lldp_description" ] && procd_append_param command "-S $lldp_description"
+	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
+	[ -n "$lldp_description" ] && procd_append_param command -S "$lldp_description"
 
 	# set auto respawn behavior
 	procd_set_param respawn
