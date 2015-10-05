@@ -169,6 +169,15 @@ ramips_board_detect() {
 	*"FreeStation5")
 		name="freestation5"
 		;;
+	*"HC5661")
+		name="hc5661"
+		;;
+	*"HC5761")
+		name="hc5761"
+		;;
+	*"HC5861")
+		name="hc5861"
+		;;
 	*"HG255D")
 		name="hg255d"
 		;;
