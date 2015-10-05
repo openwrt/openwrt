@@ -524,6 +524,8 @@ line_data() {
 	[ -z "$satnu" ] && satnu=0
 	[ -z "$snrd" ] && snrd=0
 	[ -z "$snru" ] && snru=0
+	[ -z "$actatpd" ] && actatpd=0
+	[ -z "$actatpu" ] && actatpu=0
 
 	latnd=$(dbt $latnd)
 	latnu=$(dbt $latnu)
