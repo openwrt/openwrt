@@ -16,10 +16,56 @@
  	u8			command[MAX_CMD_SIZE];
  };
  
-@@ -157,6 +159,61 @@ static int m25p80_read(struct spi_nor *n
- 	return 0;
+@@ -117,25 +119,14 @@ static inline unsigned int m25p80_rx_nbi
+ 	}
  }
  
+-/*
+- * Read an address range from the nor chip.  The address range
+- * may be any size provided it is within the physical boundaries.
+- */
+-static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
+-			size_t *retlen, u_char *buf)
++static int __m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
++			 size_t *retlen, u_char *buf)
+ {
+ 	struct m25p *flash = nor->priv;
+ 	struct spi_device *spi = flash->spi;
+ 	struct spi_transfer t[2];
+ 	struct spi_message m;
+ 	int dummy = nor->read_dummy;
+-	int ret;
+-
+-	/* Wait till previous write/erase is done. */
+-	ret = nor->wait_till_ready(nor);
+-	if (ret)
+-		return ret;
+-
+ 	spi_message_init(&m);
+ 	memset(t, 0, (sizeof t));
+ 
+@@ -156,6 +147,84 @@ static int m25p80_read(struct spi_nor *n
+ 	*retlen = m.actual_length - m25p_cmdsz(nor) - dummy;
+ 	return 0;
+ }
++/*
++ * Read an address range from the nor chip.  The address range
++ * may be any size provided it is within the physical boundaries.
++ */
++static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
++			size_t *retlen, u_char *buf)
++{
++	int ret;
++
++	/* Wait till previous write/erase is done. */
++	ret = nor->wait_till_ready(nor);
++	if (ret)
++		return ret;
++
++	return __m25p80_read(nor, from, len, retlen, buf);
++}
++
++
 +static void m25p80_chunked_write(struct spi_nor *nor, loff_t _from, size_t _len,
 +			size_t *_retlen, const u_char *_buf)
 +{
@@ -52,6 +98,12 @@
 +{
 +	struct m25p *flash = nor->priv;
 +	int chunk_size;
++	int ret;
++
++	/* Wait till previous write/erase is done. */
++	ret = nor->wait_till_ready(nor);
++	if (ret)
++		return ret;
 +
 +	chunk_size = flash->chunk_size;
 +	if (!chunk_size)
@@ -64,7 +116,7 @@
 +		u_char *buf = _buf + *_retlen;
 +		loff_t from = _from + *_retlen;
 +		int retlen = 0;
-+		int ret = m25p80_read(nor, from, len, &retlen, buf);
++		int ret = __m25p80_read(nor, from, len, &retlen, buf);
 +
 +		if (ret)
 +			return ret;
@@ -74,11 +126,10 @@
 +
 +	return 0;
 +}
-+
+ 
  static int m25p80_erase(struct spi_nor *nor, loff_t offset)
  {
- 	struct m25p *flash = nor->priv;
-@@ -197,6 +254,7 @@ static int m25p_probe(struct spi_device
+@@ -197,6 +266,7 @@ static int m25p_probe(struct spi_device
  	struct spi_nor *nor;
  	enum read_mode mode = SPI_NOR_NORMAL;
  	char *flash_name = NULL;
@@ -86,7 +137,7 @@
  	int ret;
  
  	data = dev_get_platdata(&spi->dev);
-@@ -244,6 +302,14 @@ static int m25p_probe(struct spi_device
+@@ -244,6 +314,14 @@ static int m25p_probe(struct spi_device
  	if (ret)
  		return ret;
  
