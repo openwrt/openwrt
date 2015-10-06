@@ -8,8 +8,7 @@
 define Profile/MIWIFI-MINI
 	NAME:=Xiaomi MiWiFi Mini
 	PACKAGES:=\
-		kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci \
-		kmod-mt76
+		kmod-usb-core kmod-usb-dwc2 kmod-usb2 kmod-usb-ohci
 endef
 
 define Profile/MIWIFI-MINI/Description
