@@ -32,7 +32,7 @@ define Package/oprofile
   CATEGORY:=Development
   TITLE:=OProfile System Profiler
   URL:=http://oprofile.sourceforge.net
-  DEPENDS:=+libpopt +kmod-oprofile +libstdcpp +objdump +librt @(!TARGET_uml||BROKEN)
+  DEPENDS:=+libpopt +libstdcpp +objdump +librt @(!TARGET_uml||BROKEN)
 endef
 
 define Package/oprofile/description
