@@ -1,11 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 # OpenWrt download directory cleanup utility.
 # Delete all but the very last version of the program tarballs.
 #
-# Copyright (C) 2010 Michael Buesch <mb@bu3sch.de>
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2010-2015 Michael Buesch <m@bues.ch>
+# Copyright (C) 2013-2015 OpenWrt.org
 """
+
+from __future__ import print_function
 
 import sys
 import os
@@ -28,7 +30,7 @@ def parseVer_123(match, filepath):
 	progname = match.group(1)
 	try:
 		patchlevel = match.group(5)
-	except (IndexError), e:
+	except IndexError as e:
 		patchlevel = None
 	if patchlevel:
 		patchlevel = ord(patchlevel[0])
@@ -44,7 +46,7 @@ def parseVer_12(match, filepath):
 	progname = match.group(1)
 	try:
 		patchlevel = match.group(4)
-	except (IndexError), e:
+	except IndexError as e:
 		patchlevel = None
 	if patchlevel:
 		patchlevel = ord(patchlevel[0])
@@ -121,7 +123,7 @@ class Entry:
 				self.fileext = ext
 				break
 		else:
-			print self.filename, "has an unknown file-extension"
+			print(self.filename, "has an unknown file-extension")
 			raise EntryParseError("ext")
 		for (regex, parseVersion) in versionRegex:
 			match = regex.match(filename)
@@ -130,28 +132,28 @@ class Entry:
 					match, directory + "/" + filename + self.fileext)
 				break
 		else:
-			print self.filename, "has an unknown version pattern"
+			print(self.filename, "has an unknown version pattern")
 			raise EntryParseError("ver")
 
+	def getPath(self):
+		return (self.directory + "/" + self.filename).replace("//", "/")
+
 	def deleteFile(self):
-		path = (self.directory + "/" + self.filename).replace("//", "/")
-		print "Deleting", path
+		path = self.getPath()
+		print("Deleting", path)
 		if not opt_dryrun:
 			os.unlink(path)
-
-	def __eq__(self, y):
-		return self.filename == y.filename
 
 	def __ge__(self, y):
 		return self.version >= y.version
 
 def usage():
-	print "OpenWrt download directory cleanup utility"
-	print "Usage: " + sys.argv[0] + " [OPTIONS] <path/to/dl>"
-	print ""
-	print " -d|--dry-run            Do a dry-run. Don't delete any files"
-	print " -B|--show-blacklist     Show the blacklist and exit"
-	print " -w|--whitelist ITEM     Remove ITEM from blacklist"
+	print("OpenWrt download directory cleanup utility")
+	print("Usage: " + sys.argv[0] + " [OPTIONS] <path/to/dl>")
+	print("")
+	print(" -d|--dry-run            Do a dry-run. Don't delete any files")
+	print(" -B|--show-blacklist     Show the blacklist and exit")
+	print(" -w|--whitelist ITEM     Remove ITEM from blacklist")
 
 def main(argv):
 	global opt_dryrun
@@ -163,7 +165,7 @@ def main(argv):
 		if len(args) != 1:
 			usage()
 			return 1
-	except getopt.GetoptError:
+	except getopt.GetoptError as e:
 		usage()
 		return 1
 	directory = args[0]
@@ -180,12 +182,12 @@ def main(argv):
 					del blacklist[i]
 					break
 			else:
-				print "Whitelist error: Item", v,\
-				      "is not in blacklist"
+				print("Whitelist error: Item", v,\
+				      "is not in blacklist")
 				return 1
 		if o in ("-B", "--show-blacklist"):
 			for (name, regex) in blacklist:
-				print name
+				print(name)
 			return 0
 
 	# Create a directory listing and parse the file names.
@@ -196,12 +198,13 @@ def main(argv):
 		for (name, regex) in blacklist:
 			if regex.match(filename):
 				if opt_dryrun:
-					print filename, "is blacklisted"
+					print(filename, "is blacklisted")
 				break
 		else:
 			try:
 				entries.append(Entry(directory, filename))
-			except (EntryParseError), e: pass
+			except EntryParseError as e:
+				pass
 
 	# Create a map of programs
 	progmap = {}
@@ -220,10 +223,10 @@ def main(argv):
 				lastVersion = version
 		if lastVersion:
 			for version in versions:
-				if version != lastVersion:
+				if version is not lastVersion:
 					version.deleteFile()
 			if opt_dryrun:
-				print "Keeping", lastVersion.filename
+				print("Keeping", lastVersion.getPath())
 
 	return 0
 
