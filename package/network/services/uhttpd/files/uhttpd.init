@@ -131,11 +131,6 @@ start_instance()
 	}
 
 	procd_close_instance
-
-	# Check if daemon is running, if not then
-	# re-execute in foreground to display error.
-#	sleep 1 && service_check $UHTTPD_BIN || \
-#		$UHTTPD_BIN -f $UHTTPD_ARGS
 }
 
 service_triggers()
