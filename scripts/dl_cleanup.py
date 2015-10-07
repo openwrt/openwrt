@@ -99,7 +99,7 @@ versionRegex = (
 )
 
 blacklist = [
-	("linux",		re.compile(r"linux-.*")),
+	("linux",		re.compile(r"linux-\d.*")),
 	("gcc",			re.compile(r"gcc-.*")),
 	("wl_apsta",		re.compile(r"wl_apsta.*")),
 	(".fw",			re.compile(r".*\.fw")),
@@ -187,7 +187,10 @@ def main(argv):
 				return 1
 		if o in ("-B", "--show-blacklist"):
 			for (name, regex) in blacklist:
-				print(name)
+				sep = "\t\t"
+				if len(name) >= 8:
+					sep = "\t"
+				print("%s%s(%s)" % (name, sep, regex.pattern))
 			return 0
 
 	# Create a directory listing and parse the file names.
