@@ -133,6 +133,7 @@ $(eval $(call NANDProfile,XP-GP,armada-xp-gp,512KiB,4096))
 $(eval $(call NANDProfile,Mamba,armada-xp-linksys-mamba,128KiB,2048,512,2048))
 $(eval $(call NANDProfile,Caiman,armada-385-linksys-caiman,128KiB,2048,512,2048))
 $(eval $(call NANDProfile,Cobra,armada-385-linksys-cobra,128KiB,2048,512,2048))
+$(eval $(call NANDProfile,Shelby,armada-385-linksys-shelby,128KiB,2048,512,2048))
 
 # Boards with large NOR, where we want to use UBI
 $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
@@ -172,6 +173,16 @@ define Image/Build/Profile/Mamba/squashfs
 		dd if=$(KDIR)/$(IMG_PREFIX)-armada-xp-linksys-mamba-squashfs-ubinized.bin \
 		bs=2048 conv=sync; \
 	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-xp-linksys-mamba-squashfs-factory.img
+endef
+
+# Shelby: Linksys WRT1900ACS
+define Image/Build/Profile/Shelby/squashfs
+	$(call Image/Build/UbinizeImage,armada-385-linksys-shelby,,squashfs, -p 128KiB -m 2048 -s 512 -O 2048)
+	( \
+		dd if=$(KDIR)/uImage-armada-385-linksys-shelby bs=6M conv=sync; \
+		dd if=$(KDIR)/$(IMG_PREFIX)-armada-385-linksys-shelby-squashfs-ubinized.bin \
+		bs=2048 conv=sync; \
+	) > $(BIN_DIR)/$(IMG_PREFIX)-armada-385-linksys-shelby-squashfs-factory.img
 endef
 
 ###
