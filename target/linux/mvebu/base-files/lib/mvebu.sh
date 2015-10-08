@@ -40,6 +40,9 @@ mvebu_board_detect() {
 	*"Linksys WRT1900ACv2")
 		name="armada-385-linksys-cobra"
 		;;
+	*"Linksys WRT1900ACS")
+		name="armada-385-linksys-shelby"
+		;;
 	*"Marvell Armada 385 Access Point Development Board")
 		name="armada-385-db-ap"
 		;;

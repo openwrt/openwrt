@@ -19,6 +19,11 @@ armada-385-linksys-cobra)
 	ucidef_set_led_usbdev "usb2" "USB2" "pca963x:cobra:white:usb2" "1-1"
 	ucidef_set_led_usbdev "usb3" "USB3" "pca963x:cobra:white:usb3_1" "2-1"
 	;;
+armada-385-linksys-shelby)
+	ucidef_set_led_netdev "wan" "WAN" "pca963x:shelby:white:wan" "eth0"
+	ucidef_set_led_usbdev "usb2" "USB2" "pca963x:shelby:white:usb2" "1-1"
+	ucidef_set_led_usbdev "usb3" "USB3" "pca963x:shelby:white:usb3_1" "2-1"
+	;;
 armada-xp-linksys-mamba)
 	ucidef_set_led_netdev "wan" "WAN" "mamba:white:wan" "eth1"
 	ucidef_set_led_usbdev "usb2" "USB2" "mamba:white:usb2" "1-1"

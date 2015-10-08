@@ -63,3 +63,23 @@ define Profile/Mamba/Description
 endef
 
 $(eval $(call Profile,Mamba))
+
+
+define Profile/Shelby
+  NAME:=Linksys WRT1900ACS (Shelby)
+  PACKAGES:= \
+	kmod-usb2 kmod-usb3 kmod-usb-storage \
+	kmod-i2c-core kmod-i2c-mv64xxx \
+	kmod-ata-core kmod-ata-mvebu-ahci \
+	kmod-rtc-armada38x kmod-thermal-armada \
+	kmod-gpio-button-hotplug kmod-hwmon-tmp421 \
+	kmod-leds-pca963x \
+	kmod-ledtrig-usbdev kmod-mwlwifi wpad-mini \
+	swconfig
+endef
+
+define Profile/Shelby/Description
+ Package set compatible with the Linksys WRT1900ACS (Shelby).
+endef
+
+$(eval $(call Profile,Shelby))
