@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2010-2011 OpenWrt.org
+# Copyright (C) 2010-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -15,11 +15,11 @@ CPU_TYPE:=arm1136j-s
 
 KERNEL_PATCHVER:=4.1
 
+KERNELNAME:=zImage dtbs
+
 define Target/Description
 	TI OMAP-24xx
 endef
-
-KERNELNAME:=zImage
 
 include $(INCLUDE_DIR)/target.mk
 
