@@ -15,16 +15,16 @@ board=$(imx6_board_name)
 ucidef_set_interface_loopback
 
 case "$board" in
-"gw51xx" |\
-"gw52xx")
+*gw51xx |\
+*gw52xx)
 	ucidef_set_interface_lan 'eth0'
 	;;
-"gw53xx" |\
-"gw54xx" |\
-"gw552x")
+*gw53xx |\
+*gw54xx |\
+*gw552x)
 	ucidef_set_interfaces_lan_wan 'eth0' 'eth1'
 	;;
-"wandboard")
+*wandboard)
 	ucidef_set_interface_wan 'eth0'
 	;;
 esac
