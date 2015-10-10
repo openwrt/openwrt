@@ -8,7 +8,7 @@ platform_check_image() {
 	local board=$(imx6_board_name)
 
 	case "$board" in
-	gw54xx)
+	*gw5*)
 		nand_do_platform_check $board $1
 		return $?;
 		;;
@@ -22,7 +22,7 @@ platform_pre_upgrade() {
 	local board=$(imx6_board_name)
 
 	case "$board" in
-	gw54xx)
+	*gw5*)
 		nand_do_upgrade "$1"
 		;;
 	esac
