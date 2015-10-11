@@ -27,7 +27,7 @@ define Package/iperf3
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Internet Protocol bandwidth measuring tool
-  URL:=http://sourceforge.net/projects/iperf/
+  URL:=https://github.com/esnet/iperf
 endef
 
 TARGET_CFLAGS += -D_GNU_SOURCE
