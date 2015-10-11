@@ -21,7 +21,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/libnl/default
   SECTION:=libs
   CATEGORY:=Libraries
-  URL:=http://people.suug.ch/~tgr/libnl/
+  URL:=http://www.infradead.org/~tgr/libnl/
 endef
 
 define Package/libnl-core
