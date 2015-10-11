@@ -22,15 +22,17 @@ HOST_CONFIGURE_VARS += \
 	ac_cv_header_iconv_h=no
 
 define Host/Compile
-	$(MAKE) -C $(HOST_BUILD_DIR) mcopy
+	$(MAKE) -C $(HOST_BUILD_DIR) mcopy mmd
 endef
 
 define Host/Install
 	$(INSTALL_BIN) $(HOST_BUILD_DIR)/mcopy $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_BIN) $(HOST_BUILD_DIR)/mmd $(STAGING_DIR_HOST)/bin/
 endef
 
 define Host/Clean
 	rm -f $(STAGING_DIR_HOST)/bin/mcopy
+	rm -f $(STAGING_DIR_HOST)/bin/mmd
 endef
 
 $(eval $(call HostBuild))
