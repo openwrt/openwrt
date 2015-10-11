@@ -142,7 +142,7 @@ static void appendfile(int outfd, char *path, int kernel) {
 
 	// write padding
 	padded_len = ((len + sizeof(footer) + sizeof(padding) - 1) & ~(sizeof(padding) - 1)) - sizeof(footer);
-	fprintf(stderr, "len=%08x padded_len=%08x\n", len, padded_len);
+	fprintf(stderr, "len=%08zx padded_len=%08zx\n", len, padded_len);
 	write(outfd, padding, padded_len - len);
 
 	// write footer

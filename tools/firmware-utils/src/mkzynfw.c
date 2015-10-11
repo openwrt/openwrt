@@ -27,6 +27,7 @@
 #if defined(__CYGWIN__)
 #  include <byteswap.h>
 #endif
+#include <inttypes.h>
 
 #include "zynos.h"
 
@@ -687,7 +688,7 @@ write_out_file(FILE *outfile, char *name, size_t len, struct csum_state *css)
 	FILE *f;
 	int res;
 
-	DBG(2, "writing out file, name=%s, len=%d",
+	DBG(2, "writing out file, name=%s, len=%zu",
 		name, len);
 
 	errno = 0;
@@ -988,7 +989,7 @@ calc_block_offsets(int type, uint32_t *offset)
 	uint32_t avail;
 	int i, res;
 
-	DBG(1,"calculating block offsets, starting with %lu",
+	DBG(1,"calculating block offsets, starting with %" PRIu32,
 		*offset);
 
 	res = 0;

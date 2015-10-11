@@ -293,7 +293,7 @@ int main(int argc, char **argv)
 	*((uint32_t *) & b[0x18]) = 0x0L;
 
 	sum = crc32(b, 0x400);
-	printf("CRC32 sum0 - (%x, %x, %x)\n", sum, sum0, 0x400);
+	printf("CRC32 sum0 - (%x, %lx, %x)\n", sum, sum0, 0x400);
 	if (EHDR)
 		lseek(fd, 0x20, SEEK_SET);
 	else
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
 	write(fd, &buf[0x18], 0x4);
 
 	sum = crc32(buf, l0);
-	printf("CRC32 sum1 - (%x, %x, %x)\n", sum, sum1, l0);
+	printf("CRC32 sum1 - (%x, %lx, %x)\n", sum, sum1, l0);
 	if (EHDR)
 		lseek(fd, 0xC, SEEK_SET);
 	else
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
 		unsigned long sum2 = buf[-0x8] | ((uint32_t)buf[-0x7] << 8) | ((uint32_t)buf[-0x6] << 16) | ((uint32_t)buf[-0x5] << 24);
 		*((uint32_t *) & buf[-0x8]) = 0L;
 		sum = crc32(buf - 0x4, len - 0x4);
-		printf("CRC32 sum2 - (%x, %x, %x)\n", sum, sum2,
+		printf("CRC32 sum2 - (%x, %lx, %lx)\n", sum, sum2,
 		       len - 0x4);
 		lseek(fd, 0, SEEK_SET);
 		*((uint32_t *) & buf[-0x8]) = htonl(sum);

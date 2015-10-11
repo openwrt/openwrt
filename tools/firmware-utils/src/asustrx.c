@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 	}
 	for (i = 0; i < bytes; i++) {
 		if (buf[i]) {
-			fprintf(stderr, "Input TRX doesn't have last 64 B empty %s\n");
+			fprintf(stderr, "Input TRX doesn't have last 64 B empty %s\n", out_path);
 			err = -ENOSPC;
 			goto err;
 		}
@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
 	bytes = sizeof(tail);
 	fseek(out, -bytes, SEEK_CUR);
 	if (fwrite(&tail, 1, bytes, out) != bytes) {
-		fprintf(stderr, "Couldn't write %zu B to %s\n", bytes);
+		fprintf(stderr, "Couldn't write %zu B to %s\n", bytes, out_path);
 		err = -EIO;
 		goto err;
 	}
@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
 	hdr.crc32 = cpu_to_le32(crc32);
 	rewind(out);
 	if (fwrite(&hdr, 1, bytes, out) != bytes) {
-		fprintf(stderr, "Couldn't write %zu B to %s\n", bytes);
+		fprintf(stderr, "Couldn't write %zu B to %s\n", bytes, out_path);
 		err = -EIO;
 		goto err;
 	}
