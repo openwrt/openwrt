@@ -154,7 +154,7 @@
  #define IFX_MPS_PLATFORM_NAME "MIPS24KEc"
 --- a/src/mps/drv_mps_vmmc_linux.c
 +++ b/src/mps/drv_mps_vmmc_linux.c
-@@ -2225,7 +2225,7 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2229,7 +2229,7 @@ IFX_int32_t __init ifx_mps_init_module (
  #if defined(CONFIG_MIPS) && !defined(CONFIG_MIPS_UNCACHED)
  #if defined(SYSTEM_DANUBE)
     bDoCacheOps = IFX_TRUE; /* on Danube always perform cache ops */
@@ -163,7 +163,7 @@
     /* on AR9/VR9 cache is configured by BSP;
        here we check whether the D-cache is shared or partitioned;
        1) in case of shared D-cache all cache operations are omitted;
-@@ -2255,7 +2255,8 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2259,7 +2259,8 @@ IFX_int32_t __init ifx_mps_init_module (
  
     /* reset the device before initializing the device driver */
     ifx_mps_reset ();
@@ -171,9 +171,9 @@
 +
 +  result = request_irq (INT_NUM_IM4_IRL18,
  #ifdef LINUX_2_6
-                          ifx_mps_ad0_irq, IRQF_DISABLED
+                          ifx_mps_ad0_irq, 0x0
  #else /* */
-@@ -2396,7 +2397,7 @@ IFX_int32_t __init ifx_mps_init_module (
+@@ -2400,7 +2401,7 @@ IFX_int32_t __init ifx_mps_init_module (
     if (result = ifx_mps_init_gpt_danube ())
        return result;
  #endif /*DANUBE*/
@@ -718,7 +718,7 @@
     pMPSDev->event.MPS_Ad1Reg.val = MPS_Ad1StatusReg.val;
  
     /* use callback function or queue wake up to notify about data reception */
-@@ -2977,11 +2990,13 @@ irqreturn_t ifx_mps_vc_irq (IFX_int32_t 
+@@ -2977,11 +2990,13 @@ irqreturn_t ifx_mps_vc_irq (IFX_int32_t
     IFX_MPS_CVC0SR[chan] = MPS_VCStatusReg.val;
     /* handle only enabled interrupts */
     MPS_VCStatusReg.val &= IFX_MPS_VC0ENR[chan];
