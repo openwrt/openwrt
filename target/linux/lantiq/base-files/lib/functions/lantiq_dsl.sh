@@ -437,7 +437,7 @@ errors() {
 		echo "Loss of Signal Seconds (LOSS):            Near: ${lossn} / Far: ${lossf}"
 		echo "Unavailable Seconds (UAS):                Near: ${uasn} / Far: ${uasf}"
 		echo "Header Error Code Errors (HEC):           Near: ${hecn} / Far: ${hecf}"
-		echo "Non Pre-emtive CRC errors (CRC_P):        Near: ${crcp_pn} / Far: ${crcp_pf}"
+		echo "Non Pre-emtive CRC errors (CRC_P):        Near: ${crc_pn} / Far: ${crc_pf}"
 		echo "Pre-emtive CRC errors (CRCP_P):           Near: ${crcp_pn} / Far: ${crcp_pf}"
 	fi
 }
