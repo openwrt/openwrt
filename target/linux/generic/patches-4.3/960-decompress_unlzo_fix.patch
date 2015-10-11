@@ -1,0 +1,23 @@
+--- /dev/null
++++ b/include/linux/decompress/unlzo_mm.h
+@@ -0,0 +1,10 @@
++#ifndef UNLZO_MM_H
++#define UNLZO_MM_H
++
++#ifdef STATIC
++#define INIT
++#else
++#define INIT __init
++#endif
++
++#endif
+--- a/lib/decompress_unlzo.c
++++ b/lib/decompress_unlzo.c
+@@ -39,6 +39,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/lzo.h>
++#include <linux/decompress/unlzo_mm.h>
+ #include <linux/decompress/mm.h>
+ 
+ #include <linux/compiler.h>
