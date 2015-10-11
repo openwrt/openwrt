@@ -1002,7 +1002,7 @@ endef
 
 SINGLE_PROFILES:=
 
-# $(1)      : name of image build method to be used, e.g., TPLINK-LZMA, AthLzma.
+# $(1)      : name of image build method to be used, e.g., AthLzma.
 # $(2)      : name of the build template to be used, e.g. 64k, 64kraw, 128k, etc.
 # $(3)      : name of the profile to be defined.
 # $(4)      : board name.
@@ -1779,33 +1779,6 @@ define Image/Build/TPLINK/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
-
-Image/Build/TPLINK-LZMA/buildkernel=$(call PatchKernelLzma,$(2),$(3))
-
-define Image/Build/TPLINK-LZMA
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) \
-		-X 0x40000 \
-		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
-		-r $(KDIR)/root.$(1) \
-		-a $(call rootfs_align,$(1)) -j \
-		-o $(call factoryname,$(1),$(2))
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) -s \
-		-X 0x40000 \
-		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma \
-		-r $(KDIR)/root.$(1) \
-		-a $(call rootfs_align,$(1)) -j \
-		-o $(call sysupname,$(1),$(2))
-endef
-
-define Image/Build/TPLINK-LZMA/initramfs
-	$(call PatchKernelLzma,$(2),$(3),,-initramfs)
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) $(7) -s \
-		-k $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma \
-		-o $(call imgname,$(1),$(2))-uImage.bin
-endef
 
 Image/Build/TPLINK-64K/buildkernel=$(call PatchKernelLzma,$(2),$(3))
 
