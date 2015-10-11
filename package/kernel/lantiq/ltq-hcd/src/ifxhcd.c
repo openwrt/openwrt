@@ -701,10 +701,7 @@ int ifxhcd_init(ifxhcd_hcd_t *_ifxhcd)
 	 * allocates the DMA buffer pool, registers the USB bus, requests the
 	 * IRQ line, and calls ifxusb_hcd_start method.
 	 */
-	retval = usb_add_hcd(syshcd, _ifxhcd->core_if.irq, 0
-			                                   |IRQF_DISABLED
-			                                   |IRQF_SHARED
-							   );
+	retval = usb_add_hcd(syshcd, _ifxhcd->core_if.irq, 0 | IRQF_SHARED);
 	if (retval < 0)
 		goto error2;
 

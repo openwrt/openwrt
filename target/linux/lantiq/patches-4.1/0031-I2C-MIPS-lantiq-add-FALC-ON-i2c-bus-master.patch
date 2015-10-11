@@ -668,7 +668,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	priv->irq_lb = irqres[0].start;
 +
 +	ret = devm_request_irq(&pdev->dev, irqres[0].start, ltq_i2c_isr_burst,
-+		IRQF_DISABLED, "i2c lb", priv);
++		0x0, "i2c lb", priv);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't get last burst IRQ %d\n",
 +			irqres[0].start);
@@ -676,7 +676,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	ret = devm_request_irq(&pdev->dev, irqres[1].start, ltq_i2c_isr_burst,
-+		IRQF_DISABLED, "i2c b", priv);
++		0x0, "i2c b", priv);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't get burst IRQ %d\n",
 +			irqres[1].start);
@@ -684,7 +684,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	ret = devm_request_irq(&pdev->dev, irqres[2].start, ltq_i2c_isr,
-+		IRQF_DISABLED, "i2c err", priv);
++		0x0, "i2c err", priv);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't get error IRQ %d\n",
 +			irqres[2].start);
@@ -692,7 +692,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	ret = devm_request_irq(&pdev->dev, irqres[3].start, ltq_i2c_isr,
-+		IRQF_DISABLED, "i2c p", priv);
++		0x0, "i2c p", priv);
 +	if (ret) {
 +		dev_err(&pdev->dev, "can't get protocol IRQ %d\n",
 +			irqres[3].start);
