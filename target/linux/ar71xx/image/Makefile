@@ -675,6 +675,24 @@ define Device/tl-wr1041n-v2
 endef
 TARGET_DEVICES += tl-wr1041n-v2
 
+define Device/tl-wr1043nd-v2
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WR1043ND-v2
+    DEVICE_PROFILE := TLWR1043
+    TPLINK_HWID := 0x10430002
+endef
+TARGET_DEVICES += tl-wr1043nd-v2
+
+define Device/tl-wr2543-v1
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WR2543N
+    DEVICE_PROFILE := TLWR2543
+    TPLINK_HWID := 0x25430001
+    IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade "-v 3.13.99"
+    IMAGE/factory.bin := append-rootfs | mktplinkfw factory "-v 3.13.99"
+endef
+TARGET_DEVICES += tl-wr2543-v1
+
 define Device/tl-wdr4900-v2
     $(Device/tplink-8mlzma)
     BOARDNAME := TL-WDR4900-v2
@@ -2248,9 +2266,6 @@ $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV3,tl-wr941nd-v3,TL-WR941ND,tt
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR941NV4,tl-wr941nd-v4,TL-WR741ND,ttyS0,115200,0x09410004,1,4M))
 $(eval $(call SingleProfile,TPLINK,64kraw,TLWR1043V1,tl-wr1043nd-v1,TL-WR1043ND,ttyS0,115200,0x10430001,1,8M))
 
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR1043V2,tl-wr1043nd-v2,TL-WR1043ND-v2,ttyS0,115200,0x10430002,1,8M))
-$(eval $(call SingleProfile,TPLINK-LZMA,64kraw,TLWR2543,tl-wr2543-v1,TL-WR2543N,ttyS0,115200,0x25430001,1,8Mlzma,-v 3.13.99))
-
 $(eval $(call SingleProfile,TPLINK-64K,64kraw,TLWDR6500V2,tl-wdr6500-v2,TL-WDR6500-v2,ttyS0,115200,0x65000002,1,8Mlzma))
 
 $(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,CPE510,ttyS0,115200,$$(cpe510_mtdlayout),CPE510))
@@ -2296,7 +2311,7 @@ $(eval $(call MultiProfile,TLWR743,TLWR743NV1))
 $(eval $(call MultiProfile,TLWR841,TLWR841NV15 TLWR841NV3 TLWR841NV5 TLWR841NV7))
 $(eval $(call MultiProfile,TLWR842,TLWR842V1))
 $(eval $(call MultiProfile,TLWR941,TLWR941NV2 TLWR941NV3 TLWR941NV4))
-$(eval $(call MultiProfile,TLWR1043,TLWR1043V1 TLWR1043V2))
+$(eval $(call MultiProfile,TLWR1043,TLWR1043V1))
 $(eval $(call MultiProfile,TUBE2H,TUBE2H8M TUBE2H16M))
 $(eval $(call MultiProfile,WNR612V2,REALWNR612V2 N150R))
 $(eval $(call MultiProfile,WNR1000V2,REALWNR1000V2 WNR1000V2_VC))
