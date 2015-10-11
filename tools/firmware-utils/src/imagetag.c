@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <netinet/in.h>
+#include <inttypes.h>
 
 #include "bcm_tag.h"
 #include "imagetag_cmdline.h"
@@ -304,7 +305,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	sprintf(tag.totalLength, "%lu", imagelen);
 
 	if (args->cfe_given) {
-	  sprintf(tag.cfeAddress, "%lu", flash_start);
+	  sprintf(tag.cfeAddress, "%" PRIu32, flash_start);
 	  sprintf(tag.cfeLength, "%lu", cfelen);
 	} else {
 	  /* We don't include CFE */
@@ -345,7 +346,7 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	}
 
 	if (args->altinfo_given) {
-	  strncpy(&tag.information1[0], args->altinfo_arg, ALTTAGINFO_LEN);
+	  strncpy(tag.information1, args->altinfo_arg, TAGINFO1_LEN);
 	}
 
 	if (args->second_image_flag_given) {

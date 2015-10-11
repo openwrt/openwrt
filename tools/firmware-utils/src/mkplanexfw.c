@@ -82,7 +82,7 @@ static struct board_info boards[] = {
 #define ERRS(fmt, ...) do { \
 	int save = errno; \
 	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt "\n", \
+	fprintf(stderr, "[%s] *** error: " fmt ": %s\n", \
 			progname, ## __VA_ARGS__, strerror(save)); \
 } while (0)
 

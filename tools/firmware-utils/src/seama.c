@@ -235,10 +235,10 @@ static int verify_seama(const char * fname, int msg)
 			{
 				printf("SEAMA ==========================================\n");
 				printf("  magic      : %08x\n", ntohl(shdr.magic));
-				printf("  meta size  : %d bytes\n", msize);
+				printf("  meta size  : %zu bytes\n", msize);
 				for (i=0; i<msize; i+=(strlen((const char *)&buf[i])+1))
 					printf("  meta data  : %s\n", &buf[i]);
-				printf("  image size : %d bytes\n", isize);
+				printf("  image size : %zu bytes\n", isize);
 			}
 
 			/* verify checksum */
@@ -473,7 +473,7 @@ static void extract_file(const char * output)
 				fread(buf, sizeof(char), msize, ifh);
 				if (match_meta((const char *)buf, msize))
 				{
-					printf("SEAMA: found image @ '%s', image size: %d\n", o_images[i], isize);
+					printf("SEAMA: found image @ '%s', image size: %zu\n", o_images[i], isize);
 					/* open output file */
 					ofh = fopen(output, "w");
 					if (!ofh) printf("SEAMA: unable to open '%s' for writting.\n",output);

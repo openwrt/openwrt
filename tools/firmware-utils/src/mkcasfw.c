@@ -258,7 +258,7 @@ static struct board_info boards[] = {
 #define ERRS(fmt, ...) do { \
 	int save = errno; \
 	fflush(0); \
-	fprintf(stderr, "[%s] *** error: " fmt "\n", \
+	fprintf(stderr, "[%s] *** error: " fmt ": %s\n", \
 			progname, ## __VA_ARGS__, strerror(save)); \
 } while (0)
 
@@ -708,7 +708,7 @@ image_writeout(FILE *outfile, struct image_desc *desc)
 
 	/* write padding data if neccesary */
 	padlen = desc->out_size - desc->file_size;
-	DBG(1,"padding desc, length=%d", padlen);
+	DBG(1,"padding desc, length=%zu", padlen);
 	res = write_out_padding(outfile, padlen, desc->padc, &css);
 
 	desc->csum = csum_get(&css);
@@ -985,11 +985,11 @@ main(int argc, char *argv[])
 			res = ERR_FATAL;
 
 		if (keep_invalid_images == 0) {
-			WARN("generation of invalid images disabled", ofname);
+			WARN("generation of invalid images \"%s\" disabled", ofname);
 			goto out;
 		}
 
-		WARN("generating invalid image", ofname);
+		WARN("generating invalid image: \"%s\"", ofname);
 	}
 
 	outfile = fopen(ofname, "w");
