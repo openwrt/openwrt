@@ -21,12 +21,6 @@ else
   endef
 endif
 
-define Image/Prepare
-	rm -rf $(KDIR)/overlays
-	mkdir -p $(KDIR)/overlays
-	$(CP) $(DTS_DIR)/overlays/*.dtb $(KDIR)/overlays/
-endef
-
 ### Image scripts ###
 define Build/gen-cfg
 	cat config.txt > $@.config
@@ -47,7 +41,8 @@ define Build/boot-img
 	mcopy -i $@.boot $@.config ::config.txt
 	mcopy -i $@.boot $(word 1,$^) ::kernel.img
 	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::$(DEVICE_DTS).dtb
-	mcopy -s -i $@.boot $(KDIR)/overlays ::
+	mmd -i $@.boot ::/overlays
+	mcopy -i $@.boot $(DTS_DIR)/overlays/*.dtb ::/overlays/
 endef
 
 define Build/sdcard-img
