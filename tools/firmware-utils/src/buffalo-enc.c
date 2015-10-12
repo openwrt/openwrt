@@ -34,6 +34,7 @@ static unsigned char seed = 'O';
 static char *product;
 static char *version;
 static int do_decrypt;
+static int offset;
 
 void usage(int status)
 {
@@ -52,6 +53,7 @@ void usage(int status)
 "  -p <product>    set product name to <product>\n"
 "  -v <version>    set version to <version>\n"
 "  -h              show this screen\n"
+"  -O              Offset of encrypted data in file (decryption)\n"
 	);
 
 	exit(status);
@@ -87,7 +89,7 @@ static int decrypt_file(void)
 	ep.key = (unsigned char *) crypt_key;
 	ep.longstate = longstate;
 
-	err = decrypt_buf(&ep, buf, src_len);
+	err = decrypt_buf(&ep, buf + offset, src_len - offset);
 	if (err) {
 		ERR("unable to decrypt '%s'", ifname);
 		goto out;
@@ -100,7 +102,7 @@ static int decrypt_file(void)
 	printf("Data len\t: %u\n", ep.datalen);
 	printf("Checksum\t: 0x%08x\n", ep.csum);
 
-	err = write_buf_to_file(ofname, buf, ep.datalen);
+	err = write_buf_to_file(ofname, buf + offset, ep.datalen);
 	if (err) {
 		ERR("unable to write to file '%s'", ofname);
 		goto out;
@@ -239,7 +241,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "adi:m:o:hlp:v:k:r:s:");
+		c = getopt(argc, argv, "adi:m:o:hlp:v:k:O:r:s:");
 		if (c == -1)
 			break;
 
@@ -270,6 +272,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			seed = strtoul(optarg, NULL, 16);
+			break;
+		case 'O':
+			offset = strtoul(optarg, NULL, 0);
 			break;
 		case 'h':
 			usage(EXIT_SUCCESS);
