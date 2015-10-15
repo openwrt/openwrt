@@ -62,7 +62,7 @@ ifneq ($(CONFIG_VOICE_CPE_VMMC_MPS_HISTORY_SIZE),128)
   CONFIGURE_ARGS += --enable-history-buf=$(CONFIG_VOICE_CPE_VMMC_MPS_HISTORY_SIZE)
 endif
 
-#defaults 
+#defaults
 FW_URL:=http://downloads.openwrt.org/sources/
 FW_TARGET:=ifx_firmware.bin
 FW_FILE:=fw_voip_ifx.tar.gz
