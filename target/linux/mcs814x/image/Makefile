@@ -30,7 +30,7 @@ define Image/Build/DTB
 endef
 
 define Image/Build/Profile/dLAN_USB_Extender
-	dd if=$(KDIR)/uImage-dlan-usb-extender bs=1M conv=sync of=$(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin
+	dd if=$(KDIR)/uImage-dlan-usb-extender bs=64k conv=sync of=$(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin
 	cat $(KDIR)/root.$(1) >> $(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin
 	cp $(KDIR)/$(IMG_PREFIX)-dlan-usb-extender-upgrade-$(1).bin $(BIN_DIR)/
 endef
