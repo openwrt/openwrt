@@ -162,6 +162,9 @@ TDW8970)
 ARV7519RW22)
 	lan_mac=$(mtd_get_mac_binary boardconfig 22)
 	wan_mac=$(macaddr_add "$lan_mac" 1)
+	ucidef_set_interface_lan "eth0.1"
+	ucidef_add_switch "switch0" "1" "1"
+	ucidef_add_switch_vlan "switch0" "1" "0 2 3 4 5 6t"
 	;;
 
 BTHOMEHUBV2B|BTHOMEHUBV3A)
