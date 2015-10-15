@@ -8,8 +8,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=6in4
-PKG_VERSION:=21
-PKG_RELEASE:=2
+PKG_VERSION:=22
+PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0
 
 include $(INCLUDE_DIR)/package.mk
