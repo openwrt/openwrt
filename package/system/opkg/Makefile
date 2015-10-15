@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2006-2014 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -12,7 +12,7 @@ include $(INCLUDE_DIR)/feeds.mk
 PKG_NAME:=opkg
 PKG_REV:=9c97d5ecd795709c8584e972bfdf3aee3a5b846d
 PKG_VERSION:=$(PKG_REV)
-PKG_RELEASE:=8
+PKG_RELEASE:=9
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=$(PKG_REV)
