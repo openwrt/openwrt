@@ -15,6 +15,7 @@
 #include <linux/io.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
+#include <linux/of_irq.h>
 
 #include <asm/mach/time.h>
 #include <mach/mcs814x.h>
@@ -71,21 +72,15 @@ static irqreturn_t mcs814x_timer_interrupt(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static struct irqaction mcs814x_timer_irq = {
-	.name		= "mcs814x-timer",
-	.flags		= IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
-	.handler	= mcs814x_timer_interrupt,
-};
-
 static struct of_device_id mcs814x_timer_ids[] = {
 	{ .compatible = "moschip,mcs814x-timer" },
 	{ /* sentinel */ },
 };
 
-static void __init mcs814x_of_timer_init(void)
+static int __init mcs814x_of_timer_init(void)
 {
 	struct device_node *np;
-	const unsigned int *intspec;
+	int irq;
 
 	np = of_find_matching_node(NULL, mcs814x_timer_ids);
 	if (!np)
@@ -95,16 +90,17 @@ static void __init mcs814x_of_timer_init(void)
 	if (!mcs814x_timer_base)
 		panic("unable to remap timer cpu registers");
 
-	intspec = of_get_property(np, "interrupts", NULL);
-	if (!intspec)
-		panic("no interrupts property for timer");
+	irq = irq_of_parse_and_map(np, 0);
+	if (!irq)
+		panic("no interrupts property/mapping failed for timer");
 
-	mcs814x_timer_irq.irq = be32_to_cpup(intspec);
+	return irq;
 }
 
 void __init mcs814x_timer_init(void)
 {
 	struct clk *clk;
+	int irq;
 
 	arch_gettimeoffset = mcs814x_gettimeoffset;
 
@@ -114,7 +110,7 @@ void __init mcs814x_timer_init(void)
 
 	clock_rate = clk_get_rate(clk);
 
-	mcs814x_of_timer_init();
+	irq = mcs814x_of_timer_init();
 
 	pr_info("Timer frequency: %d (kHz)\n", clock_rate / 1000);
 
@@ -125,7 +121,11 @@ void __init mcs814x_timer_init(void)
 	writel_relaxed(timer_reload_value, mcs814x_timer_base + TIMER_VAL);
 	last_reload = timer_reload_value;
 
-	setup_irq(mcs814x_timer_irq.irq, &mcs814x_timer_irq);
+	if (request_irq(irq, mcs814x_timer_interrupt,
+		IRQF_DISABLED | IRQF_TIMER | IRQF_IRQPOLL,
+		"mcs814x-timer", NULL))
+		panic("unable to request timer0 irq %d", irq);
+
 	/* enable timer, stop timer in debug mode */
 	writel_relaxed(TIMER_CTL_EN | TIMER_CTL_DBG,
 		mcs814x_timer_base + TIMER_CTL);

@@ -17,6 +17,7 @@
 #include <mach/mcs814x.h>
 
 static void __iomem *mcs814x_intc_base;
+static struct irq_domain *domain;
 
 static void __init mcs814x_alloc_gc(void __iomem *base, unsigned int irq_start,
 					unsigned int num)
@@ -24,20 +25,21 @@ static void __init mcs814x_alloc_gc(void __iomem *base, unsigned int irq_start,
 	struct irq_chip_generic *gc;
 	struct irq_chip_type *ct;
 
-	gc = irq_alloc_generic_chip("mcs814x-intc", 1,
-			irq_start, base, handle_level_irq);
-	if (!gc)
-		panic("unable to allocate generic irq chip");
+	if (irq_alloc_domain_generic_chips(domain, num, 1, "mcs814x-intc", handle_level_irq,
+                IRQ_GC_INIT_MASK_CACHE, IRQ_NOREQUEST, 0))
+		panic("unable to allocate domain generic irq chip");
 
+	gc = irq_get_domain_generic_chip(domain, irq_start);
+	if (!gc)
+		panic("unable to get generic irq chip");
+
+	gc->reg_base = base;
 	ct = gc->chip_types;
 	ct->chip.irq_ack = irq_gc_unmask_enable_reg;
 	ct->chip.irq_mask = irq_gc_mask_clr_bit;
 	ct->chip.irq_unmask = irq_gc_mask_set_bit;
 	ct->regs.mask = MCS814X_IRQ_MASK;
 	ct->regs.enable = MCS814X_IRQ_ICR;
-
-	irq_setup_generic_chip(gc, IRQ_MSK(num), IRQ_GC_INIT_MASK_CACHE,
-		IRQ_NOREQUEST, 0);
 
 	/* Clear all interrupts */
 	writel_relaxed(0xffffffff, base + MCS814X_IRQ_ICR);
@@ -58,7 +60,7 @@ asmlinkage void __exception_irq_entry mcs814x_handle_irq(struct pt_regs *regs)
 		/* clear the interrupt */
 		__raw_writel(status, mcs814x_intc_base + MCS814X_IRQ_STS0);
 		/* call the generic handler */
-		handle_IRQ(irq, regs);
+		handle_domain_irq(domain, irq, regs);
 
 	} while (1);
 }
@@ -80,7 +82,10 @@ void __init mcs814x_of_irq_init(void)
 	if (!mcs814x_intc_base)
 		panic("unable to map intc cpu registers\n");
 
-	irq_domain_add_simple(np, 32, 0, &irq_generic_chip_ops, NULL);
+	domain = irq_domain_add_linear(np, 32, &irq_generic_chip_ops, NULL);
+	if (!domain)
+		panic("unable to add irq domain\n");
+	irq_set_default_host(domain);
 
 	of_node_put(np);
 
