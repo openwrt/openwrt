@@ -27,8 +27,8 @@ proto_6in4_setup() {
 	local iface="$2"
 	local link="6in4-$cfg"
 
-	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey
-	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr ip6prefix tunnelid username password updatekey
+	local mtu ttl tos ipaddr peeraddr ip6addr ip6prefix tunlink tunnelid username password updatekey
+	json_get_vars mtu ttl tos ipaddr peeraddr ip6addr ip6prefix tunlink tunnelid username password updatekey
 
 	[ -z "$peeraddr" ] && {
 		proto_notify_error "$cfg" "MISSING_ADDRESS"
@@ -36,11 +36,16 @@ proto_6in4_setup() {
 		return
 	}
 
-	( proto_add_host_dependency "$cfg" "$peeraddr" )
+	( proto_add_host_dependency "$cfg" "$peeraddr" "$tunlink" )
 
 	[ -z "$ipaddr" ] && {
-		local wanif
-		if ! network_find_wan wanif || ! network_get_ipaddr ipaddr "$wanif"; then
+		local wanif="$tunlink"
+		if [ -z "$wanif" ] && ! network_find_wan wanif; then
+			proto_notify_error "$cfg" "NO_WAN_LINK"
+			return
+		fi
+
+		if ! network_get_ipaddr ipaddr "$wanif"; then
 			proto_notify_error "$cfg" "NO_WAN_LINK"
 			return
 		fi
@@ -68,6 +73,7 @@ proto_6in4_setup() {
 	[ -n "$tos" ] && json_add_string tos "$tos"
 	json_add_string local "$ipaddr"
 	json_add_string remote "$peeraddr"
+	[ -n "$tunlink" ] && json_add_string link "$tunlink"
 	proto_close_tunnel
 
 	proto_send_update "$cfg"
@@ -135,6 +141,7 @@ proto_6in4_init_config() {
 	proto_config_add_string "ip6addr"
 	proto_config_add_string "ip6prefix"
 	proto_config_add_string "peeraddr"
+	proto_config_add_string "tunlink"
 	proto_config_add_string "tunnelid"
 	proto_config_add_string "username"
 	proto_config_add_string "password"
