@@ -1,6 +1,6 @@
 --- a/include/mbedtls/config.h
 +++ b/include/mbedtls/config.h
-@@ -181,7 +181,7 @@
+@@ -184,7 +184,7 @@
   *
   * Uncomment to get errors on using deprecated functions.
   */
@@ -9,7 +9,7 @@
  
  /* \} name SECTION: System support */
  
-@@ -320,7 +320,7 @@
+@@ -323,7 +323,7 @@
   *
   * Enable Cipher Feedback mode (CFB) for symmetric ciphers.
   */
@@ -18,7 +18,7 @@
  
  /**
   * \def MBEDTLS_CIPHER_MODE_CTR
-@@ -413,13 +413,13 @@
+@@ -416,13 +416,13 @@
   *
   * Comment macros to disable the curve and functions for it
   */
@@ -36,7 +36,7 @@
  #define MBEDTLS_ECP_DP_SECP256K1_ENABLED
  #define MBEDTLS_ECP_DP_BP256R1_ENABLED
  #define MBEDTLS_ECP_DP_BP384R1_ENABLED
-@@ -435,7 +435,7 @@
+@@ -438,7 +438,7 @@
   *
   * Comment this macro to disable NIST curves optimisation.
   */
@@ -45,16 +45,7 @@
  
  /**
   * \def MBEDTLS_ECDSA_DETERMINISTIC
-@@ -443,7 +443,7 @@
-  * Enable deterministic ECDSA (RFC 6979).
-  * Standard ECDSA is "fragile" in the sense that lack of entropy when signing
-  * may result in a compromise of the long-term signing key. This is avoided by
-- * the deterministic variant.
-+       DH	* the deterministic variant.
-  *
-  * Requires: MBEDTLS_HMAC_DRBG_C
-  *
-@@ -495,7 +495,7 @@
+@@ -498,7 +498,7 @@
   *      MBEDTLS_TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA
   *      MBEDTLS_TLS_DHE_PSK_WITH_RC4_128_SHA
   */
@@ -63,7 +54,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
-@@ -540,7 +540,7 @@
+@@ -543,7 +543,7 @@
   *      MBEDTLS_TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA
   *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
   */
@@ -72,7 +63,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
-@@ -594,7 +594,7 @@
+@@ -597,7 +597,7 @@
   *      MBEDTLS_TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA
   *      MBEDTLS_TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA
   */
@@ -81,7 +72,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
-@@ -667,7 +667,7 @@
+@@ -670,7 +670,7 @@
   *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384
   */
@@ -90,7 +81,7 @@
  
  /**
   * \def MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
-@@ -691,7 +691,7 @@
+@@ -694,7 +694,7 @@
   *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384
   */
@@ -99,7 +90,7 @@
  
  /**
   * \def MBEDTLS_PK_PARSE_EC_EXTENDED
-@@ -810,7 +810,7 @@
+@@ -813,7 +813,7 @@
   *
   * Comment this macro to disable support for external private RSA keys.
   */
@@ -108,7 +99,7 @@
  
  /**
   * \def MBEDTLS_PKCS1_V15
-@@ -842,14 +842,14 @@
+@@ -845,14 +845,14 @@
   * Uncomment this macro to disable the use of CRT in RSA.
   *
   */
@@ -125,7 +116,7 @@
  
  /**
   * \def MBEDTLS_SHA256_SMALLER
-@@ -865,7 +865,7 @@
+@@ -868,7 +868,7 @@
   *
   * Uncomment to enable the smaller implementation of SHA256.
   */
@@ -134,7 +125,7 @@
  
  /**
   * \def MBEDTLS_SSL_AEAD_RANDOM_IV
-@@ -1038,7 +1038,7 @@
+@@ -1041,7 +1041,7 @@
   *
   * Comment this macro to disable support for SSL 3.0
   */
@@ -143,7 +134,7 @@
  
  /**
   * \def MBEDTLS_SSL_PROTO_TLS1
-@@ -1176,7 +1176,7 @@
+@@ -1195,7 +1195,7 @@
   *
   * Comment this macro to disable support for truncated HMAC in SSL
   */
@@ -152,7 +143,7 @@
  
  /**
   * \def MBEDTLS_THREADING_ALT
-@@ -1410,7 +1410,7 @@
+@@ -1431,7 +1431,7 @@
   *      MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA
   *      MBEDTLS_TLS_PSK_WITH_RC4_128_SHA
   */
@@ -161,7 +152,7 @@
  
  /**
   * \def MBEDTLS_ASN1_PARSE_C
-@@ -1475,7 +1475,7 @@
+@@ -1496,7 +1496,7 @@
   *
   * Module:  library/blowfish.c
   */
@@ -170,7 +161,7 @@
  
  /**
   * \def MBEDTLS_CAMELLIA_C
-@@ -1530,7 +1530,7 @@
+@@ -1551,7 +1551,7 @@
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256
   *      MBEDTLS_TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256
   */
@@ -179,7 +170,7 @@
  
  /**
   * \def MBEDTLS_CCM_C
-@@ -1544,7 +1544,7 @@
+@@ -1565,7 +1565,7 @@
   * This module enables the AES-CCM ciphersuites, if other requisites are
   * enabled as well.
   */
@@ -188,7 +179,7 @@
  
  /**
   * \def MBEDTLS_CERTS_C
-@@ -1556,7 +1556,7 @@
+@@ -1577,7 +1577,7 @@
   *
   * This module is used for testing (ssl_client/server).
   */
@@ -197,7 +188,7 @@
  
  /**
   * \def MBEDTLS_CIPHER_C
-@@ -1596,7 +1596,7 @@
+@@ -1617,7 +1617,7 @@
   *
   * This module provides debugging functions.
   */
@@ -206,7 +197,7 @@
  
  /**
   * \def MBEDTLS_DES_C
-@@ -1636,7 +1636,7 @@
+@@ -1657,7 +1657,7 @@
   * This module is used by the following key exchanges:
   *      DHE-RSA, DHE-PSK
   */
@@ -215,7 +206,7 @@
  
  /**
   * \def MBEDTLS_ECDH_C
-@@ -2026,7 +2026,7 @@
+@@ -2047,7 +2047,7 @@
   * Caller:  library/mbedtls_md.c
   *
   */
@@ -224,7 +215,7 @@
  
  /**
   * \def MBEDTLS_RSA_C
-@@ -2324,7 +2324,7 @@
+@@ -2345,7 +2345,7 @@
   * Module:  library/xtea.c
   * Caller:
   */
