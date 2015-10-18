@@ -7,14 +7,17 @@
 
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=mbedtls
-PKG_VERSION:=1.3.11
+PKG_NAME:=polarssl
+SRC_PKG_NAME:=mbedtls
+PKG_VERSION:=1.3.14
 PKG_RELEASE:=1
 PKG_USE_MIPS16:=0
 
-PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION)-gpl.tgz
+PKG_SOURCE:=$(SRC_PKG_NAME)-$(PKG_VERSION)-gpl.tgz
 PKG_SOURCE_URL:=https://polarssl.org/download/
-PKG_MD5SUM:=c02ce2e54862d678604794ee484fb59e
+PKG_MD5SUM:=869c7b5798b8769902880c7cf0212fed
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(SRC_PKG_NAME)-$(PKG_VERSION)
 
 PKG_BUILD_PARALLEL:=1
 PKG_LICENSE:=GPL-2.0+
@@ -58,14 +61,14 @@ define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
 	$(CP) $(PKG_INSTALL_DIR)/usr/include/polarssl $(1)/usr/include/
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libmbedtls.so* $(1)/usr/lib/
-	$(LN) libmbedtls.so $(1)/usr/lib/libpolarssl.so
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libmbedtls.so.* $(1)/usr/lib/
+	$(LN) libmbedtls.so.$(PKG_VERSION) $(1)/usr/lib/libpolarssl.so
 endef
 
 define Package/libpolarssl/install
 	$(INSTALL_DIR) $(1)/usr/lib
-	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libmbedtls.so* $(1)/usr/lib/
-	$(LN) libmbedtls.so $(1)/usr/lib/libpolarssl.so
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libmbedtls.so.* $(1)/usr/lib/
+	$(LN) libmbedtls.so.$(PKG_VERSION) $(1)/usr/lib/libpolarssl.so
 endef
 
 $(eval $(call BuildPackage,libpolarssl))
