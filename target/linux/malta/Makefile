@@ -8,7 +8,7 @@ include $(TOPDIR)/rules.mk
 
 BOARD:=malta
 BOARDNAME:=MIPS Malta CoreLV board (qemu)
-SUBTARGETS:=le be #le64 be64
+SUBTARGETS:=le be
 INITRAMFS_EXTRA_FILES:=
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
