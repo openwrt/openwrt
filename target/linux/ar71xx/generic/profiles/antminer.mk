@@ -5,24 +5,24 @@
 # See /LICENSE for more information.
 #
 
-define Profile/ANTMINER_S1
-	NAME:=Antminer S1
+define Profile/ANTMINERS1
+	NAME:=Antminer-S1
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-crypto-manager kmod-i2c-gpio-custom kmod-usb-hid
 endef
 
 
-define Profile/ANTMINER_S1/Description
+define Profile/ANTMINERS1/Description
 	Package set optimized for the Bitmain Antminer S1.
 endef
-$(eval $(call Profile,ANTMINER_S1))
+$(eval $(call Profile,ANTMINERS1))
 
-define Profile/ANTMINER_S3
-	NAME:=Antminer S3
+define Profile/ANTMINERS3
+	NAME:=Antminer-S3
 	PACKAGES:=kmod-usb-core kmod-usb2 kmod-crypto-manager kmod-i2c-gpio-custom kmod-usb-hid
 endef
 
 
-define Profile/ANTMINER_S1/Description
+define Profile/ANTMINERS3/Description
 	Package set optimized for the Bitmain Antminer S3.
 endef
-$(eval $(call Profile,ANTMINER_S3))
+$(eval $(call Profile,ANTMINERS3))

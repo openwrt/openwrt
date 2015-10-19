@@ -42,15 +42,15 @@ static struct flash_platform_data ANTMINER_S3_flash_data = {
 
 static struct gpio_led ANTMINER_S3_leds_gpio[] __initdata = {
 	{
-		.name		= "bitmain:green:wlan",
+		.name		= "antminer-s3:green:wlan",
 		.gpio		= ANTMINER_S3_GPIO_LED_WLAN,
 		.active_low	= 0,
 	},{
-		.name		= "bitmain:green:system",
+		.name		= "antminer-s3:green:system",
 		.gpio		= ANTMINER_S3_GPIO_LED_SYSTEM,
 		.active_low	= 0,
 	},{
-		.name		= "bitmain:yellow:lan",
+		.name		= "antminer-s3:yellow:lan",
 		.gpio		= ANTMINER_S3_GPIO_LED_LAN,
 		.active_low	= 0,
 	},
@@ -95,4 +95,4 @@ static void __init antminer_s3_setup(void)
 }
 
 MIPS_MACHINE(ATH79_MACH_ANTMINER_S3, "ANTMINER-S3",
-	     "Bitmain Antminer S3", antminer_s3_setup);
+	     "Antminer-S3", antminer_s3_setup);
