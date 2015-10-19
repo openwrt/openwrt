@@ -313,6 +313,7 @@ platform_check_image() {
 	el-mini | \
 	gl-inet | \
 	mc-mac1200r | \
+	minibox-v1 |\
 	onion-omega | \
 	oolite | \
 	smart-300 | \
