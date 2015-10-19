@@ -129,17 +129,17 @@ static const struct flash_partition_entry cpe510_partitions[] = {
 
 /**
    The support list for CPE210/220/510/520
-
-   The stock images also contain strings for two more devices: BS510 and BS210.
-   At the moment, there exists no public information about these devices.
 */
 static const char cpe510_support_list[] =
 	"SupportList:\r\n"
 	"CPE510(TP-LINK|UN|N300-5):1.0\r\n"
+	"CPE510(TP-LINK|UN|N300-5):1.1\r\n"
 	"CPE520(TP-LINK|UN|N300-5):1.0\r\n"
+	"CPE520(TP-LINK|UN|N300-5):1.1\r\n"
 	"CPE210(TP-LINK|UN|N300-2):1.0\r\n"
+	"CPE210(TP-LINK|UN|N300-2):1.1\r\n"
 	"CPE220(TP-LINK|UN|N300-2):1.0\r\n"
-	"\r\n";
+	"CPE220(TP-LINK|UN|N300-2):1.1\r\n";
 
 #define error(_ret, _errno, _str, ...)				\
 	do {							\
