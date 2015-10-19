@@ -46,6 +46,8 @@ ramips_setup_interfaces()
 	dcs-930|\
 	dcs-930l-b1|\
 	ht-tm02|\
+	linkits7688 | \
+	linkits7688d | \
 	microwrt|\
 	ncs601w|\
 	w150m|\
@@ -301,6 +303,11 @@ ramips_setup_macs()
 		;;
 	ht-tm02)
 		lan_mac=$(cat /sys/class/net/eth0/address)
+		;;
+	linkits7688 | \
+	linkits7688d)
+		wan_mac=$(mtd_get_mac_binary factory 4)
+		lan_mac=$(mtd_get_mac_binary factory 46)
 		;;
 	m3|\
 	m4|\
