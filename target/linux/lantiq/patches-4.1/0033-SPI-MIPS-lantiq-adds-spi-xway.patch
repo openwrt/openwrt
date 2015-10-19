@@ -927,7 +927,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* Read module capabilities */
 +	id = ltq_spi_reg_read(hw, LTQ_SPI_ID);
 +	hw->txfs = (id >> LTQ_SPI_ID_TXFS_SHIFT) & LTQ_SPI_ID_TXFS_MASK;
-+	hw->rxfs = (id >> LTQ_SPI_ID_TXFS_SHIFT) & LTQ_SPI_ID_TXFS_MASK;
++	hw->rxfs = (id >> LTQ_SPI_ID_RXFS_SHIFT) & LTQ_SPI_ID_RXFS_MASK;
 +	hw->dma_support = (id & LTQ_SPI_ID_CFG) ? 1 : 0;
 +
 +	ltq_spi_config_mode_set(hw);
