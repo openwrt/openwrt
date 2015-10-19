@@ -42,7 +42,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SPI_XWAY)			+= spi-xway.o
 --- /dev/null
 +++ b/drivers/spi/spi-xway.c
-@@ -0,0 +1,989 @@
+@@ -0,0 +1,991 @@
 +/*
 + * Lantiq SoC SPI controller
 + *
@@ -749,6 +749,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* Disable all interrupts */
 +	ltq_spi_reg_clearbit(hw, LTQ_SPI_IRNEN_ALL, LTQ_SPI_IRNEN);
++
++	dev_err(hw->dev, "error %x\n", ltq_spi_reg_read(hw, LTQ_SPI_STAT));
 +
 +	/* Clear all error flags */
 +	ltq_spi_reg_write(hw, LTQ_SPI_WHBSTATE_CLR_ERRORS, LTQ_SPI_WHBSTATE);
