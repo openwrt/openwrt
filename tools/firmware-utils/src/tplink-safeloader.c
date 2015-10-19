@@ -152,7 +152,7 @@ static const unsigned char cpe510_support_list[] =
 
 
 /** Allocates a new image partition */
-struct image_partition_entry alloc_image_partition(const char *name, size_t len) {
+static struct image_partition_entry alloc_image_partition(const char *name, size_t len) {
 	struct image_partition_entry entry = {name, len, malloc(len)};
 	if (!entry.data)
 		error(1, errno, "malloc");
@@ -161,12 +161,12 @@ struct image_partition_entry alloc_image_partition(const char *name, size_t len)
 }
 
 /** Frees an image partition */
-void free_image_partition(struct image_partition_entry entry) {
+static void free_image_partition(struct image_partition_entry entry) {
 	free(entry.data);
 }
 
 /** Generates the partition-table partition */
-struct image_partition_entry make_partition_table(const struct flash_partition_entry *p) {
+static struct image_partition_entry make_partition_table(const struct flash_partition_entry *p) {
 	struct image_partition_entry entry = alloc_image_partition("partition-table", 0x800);
 
 	char *s = (char *)entry.data, *end = (char *)(s+entry.size);
@@ -202,7 +202,7 @@ static inline uint8_t bcd(uint8_t v) {
 
 
 /** Generates the soft-version partition */
-struct image_partition_entry make_soft_version(uint32_t rev) {
+static struct image_partition_entry make_soft_version(uint32_t rev) {
 	struct image_partition_entry entry = alloc_image_partition("soft-version", sizeof(struct soft_version));
 	struct soft_version *s = (struct soft_version *)entry.data;
 
@@ -233,14 +233,14 @@ struct image_partition_entry make_soft_version(uint32_t rev) {
 }
 
 /** Generates the support-list partition */
-struct image_partition_entry make_support_list(const unsigned char *support_list, size_t len) {
+static struct image_partition_entry make_support_list(const unsigned char *support_list, size_t len) {
 	struct image_partition_entry entry = alloc_image_partition("support-list", len);
 	memcpy(entry.data, support_list, len);
 	return entry;
 }
 
 /** Creates a new image partition with an arbitrary name from a file */
-struct image_partition_entry read_file(const char *part_name, const char *filename, bool add_jffs2_eof) {
+static struct image_partition_entry read_file(const char *part_name, const char *filename, bool add_jffs2_eof) {
 	struct stat statbuf;
 
 	if (stat(filename, &statbuf) < 0)
@@ -300,7 +300,7 @@ struct image_partition_entry read_file(const char *part_name, const char *filena
 
    I think partition-table must be the first partition in the firmware image.
 */
-void put_partitions(uint8_t *buffer, const struct image_partition_entry *parts) {
+static void put_partitions(uint8_t *buffer, const struct image_partition_entry *parts) {
 	size_t i;
 	char *image_pt = (char *)buffer, *end = image_pt + 0x800;
 
@@ -325,7 +325,7 @@ void put_partitions(uint8_t *buffer, const struct image_partition_entry *parts) 
 }
 
 /** Generates and writes the image MD5 checksum */
-void put_md5(uint8_t *md5, uint8_t *buffer, unsigned int len) {
+static void put_md5(uint8_t *md5, uint8_t *buffer, unsigned int len) {
 	MD5_CTX ctx;
 
 	MD5_Init(&ctx);
@@ -349,7 +349,7 @@ void put_md5(uint8_t *md5, uint8_t *buffer, unsigned int len) {
      1014-1813    Image partition table (2048 bytes, padded with 0xff)
      1814-xxxx    Firmware partitions
 */
-void * generate_factory_image(const unsigned char *vendor, size_t vendor_len, const struct image_partition_entry *parts, size_t *len) {
+static void * generate_factory_image(const unsigned char *vendor, size_t vendor_len, const struct image_partition_entry *parts, size_t *len) {
 	*len = 0x1814;
 
 	size_t i;
@@ -381,7 +381,7 @@ void * generate_factory_image(const unsigned char *vendor, size_t vendor_len, co
    should be generalized when TP-LINK starts building its safeloader into hardware with
    different flash layouts.
 */
-void * generate_sysupgrade_image(const struct flash_partition_entry *flash_parts, const struct image_partition_entry *image_parts, size_t *len) {
+static void * generate_sysupgrade_image(const struct flash_partition_entry *flash_parts, const struct image_partition_entry *image_parts, size_t *len) {
 	const struct flash_partition_entry *flash_os_image = &flash_parts[5];
 	const struct flash_partition_entry *flash_soft_version = &flash_parts[6];
 	const struct flash_partition_entry *flash_support_list = &flash_parts[7];
@@ -459,7 +459,7 @@ static void do_cpe510(const char *output, const char *kernel_image, const char *
 
 
 /** Usage output */
-void usage(const char *argv0) {
+static void usage(const char *argv0) {
 	fprintf(stderr,
 		"Usage: %s [OPTIONS...]\n"
 		"\n"
