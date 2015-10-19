@@ -105,6 +105,39 @@
 			};
 		};
 
+		i2c@900 {
+			compatible = "mediatek,mt7628-i2c";
+			reg = <0x900 0x100>;
+
+			resets = <&rstctrl 16>;
+			reset-names = "i2c";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
+		};
+
+		i2s@a00 {
+			compatible = "ralink,mt7620a-i2s";
+			reg = <0xa00 0x100>;
+
+			resets = <&rstctrl 17>;
+			reset-names = "i2s";
+
+			interrupt-parent = <&intc>;
+			interrupts = <10>;
+
+			dmas = <&gdma 2>,
+				<&gdma 3>;
+			dma-names = "tx", "rx";
+
+			status = "disabled";
+		};
+
 		spi@b00 {
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
@@ -178,6 +211,49 @@
 
 			status = "disabled";
 		};
+
+		pwm@5000 {
+			compatible = "mediatek,mt7628-pwm";
+			reg = <0x5000 0x1000>;
+
+			resets = <&rstctrl 31>;
+			reset-names = "pwm";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&pwm0_pins>, <&pwm1_pins>;
+
+			status = "disabled";
+		};
+
+		pcm@2000 {
+			compatible = "ralink,mt7620a-pcm";
+			reg = <0x2000 0x800>;
+
+			resets = <&rstctrl 11>;
+			reset-names = "pcm";
+
+			interrupt-parent = <&intc>;
+			interrupts = <4>;
+
+			status = "disabled";
+		};
+
+		gdma: gdma@2800 {
+			compatible = "ralink,mt7620a-gdma", "ralink,rt2880-gdma";
+			reg = <0x2800 0x800>;
+
+			resets = <&rstctrl 14>;
+			reset-names = "dma";
+
+			interrupt-parent = <&intc>;
+			interrupts = <7>;
+
+			#dma-cells = <1>;
+			#dma-channels = <16>;
+			#dma-requests = <16>;
+
+			status = "disabled";
+		};
 	};
 
 	pinctrl {
@@ -192,6 +268,20 @@
 			spi {
 				ralink,group = "spi";
 				ralink,function = "spi";
+			};
+		};
+
+		spi_cs1_pins: spi_cs1 {
+			spi_cs1 {
+				ralink,group = "spi cs1";
+				ralink,function = "spi cs1";
+			};
+		};
+
+		i2c_pins: i2c {
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "i2c";
 			};
 		};
 
@@ -220,6 +310,27 @@
 			sdxc {
 				ralink,group = "sdmode";
 				ralink,function = "sdxc";
+			};
+		};
+
+		pwm0_pins: pwm0 {
+			pwm0 {
+				ralink,group = "pwm0";
+				ralink,function = "pwm0";
+			};
+		};
+
+		pwm1_pins: pwm1 {
+			pwm1 {
+				ralink,group = "pwm1";
+				ralink,function = "pwm1";
+			};
+		};
+
+		pcm_i2s_pins: i2s {
+			i2s {
+				ralink,group = "i2s";
+				ralink,function = "pcm";
 			};
 		};
 	};
