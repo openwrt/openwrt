@@ -201,6 +201,10 @@ ralink_default_fw_size_16M=16121856
 BuildFirmware/Default16M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_16M),$(4))
 BuildFirmware/Default16M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
 
+ralink_default_fw_size_32M=33226752
+BuildFirmware/Default32M/squashfs=$(call BuildFirmware/OF,$(1),$(2),$(3),$(ralink_default_fw_size_32M),$(4))
+BuildFirmware/Default32M/initramfs=$(call BuildFirmware/OF/initramfs,$(1),$(2),$(3),$(4))
+
 # Build images for a custom sized flash layout
 # $(1) = squashfs/initramfs
 # $(2) = lowercase board name
@@ -1014,10 +1018,12 @@ endif
 #
 
 Image/Build/Profile/mt7688=$(call BuildFirmware/Default16M/$(1),$(1),mt7688,MT7688)
+Image/Build/Profile/LinkIt7688=$(call BuildFirmware/Default32M/$(1),$(1),LinkIt7688,LINKIT7688)
 
 ifeq ($(SUBTARGET),mt7688)
 define Image/Build/Profile/Default
 	$(call Image/Build/Profile/mt7688,$(1))
+	$(call Image/Build/Profile/LinkIt7688,$(1))
 endef
 endif
 
