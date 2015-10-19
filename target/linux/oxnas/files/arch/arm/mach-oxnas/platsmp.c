@@ -60,7 +60,7 @@ static struct fiq_handler fh = {
 
 DEFINE_PER_CPU(struct fiq_req, fiq_data);
 
-static inline void __cpuinit ox820_set_fiq_regs(unsigned int cpu)
+static inline void ox820_set_fiq_regs(unsigned int cpu)
 {
 	struct pt_regs FIQ_regs;
 	struct fiq_req *fiq_req = &per_cpu(fiq_data, !cpu);
@@ -194,7 +194,7 @@ void fiq_flush_kern_dcache_area(void *addr, size_t size)
 
 static DEFINE_SPINLOCK(boot_lock);
 
-void __cpuinit ox820_secondary_init(unsigned int cpu)
+void ox820_secondary_init(unsigned int cpu)
 {
 	/*
 	 * Setup Secondary Core FIQ regs
@@ -214,7 +214,7 @@ void __cpuinit ox820_secondary_init(unsigned int cpu)
 	spin_unlock(&boot_lock);
 }
 
-int __cpuinit ox820_boot_secondary(unsigned int cpu, struct task_struct *idle)
+int ox820_boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	unsigned long timeout;
 
