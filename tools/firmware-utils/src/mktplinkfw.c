@@ -31,8 +31,8 @@
 
 #define HEADER_VERSION_V1	0x01000000
 #define HEADER_VERSION_V2	0x02000000
-#define HWID_ANTMINER_S1	0x04440001
-#define HWID_ANTMINER_S3	0x04440003
+#define HWID_ANTMINER_S1	0x04440101
+#define HWID_ANTMINER_S3	0x04440301
 #define HWID_GL_INET_V1		0x08000001
 #define HWID_GS_OOLITE_V1	0x3C000101
 #define HWID_ONION_OMEGA	0x04700001
@@ -431,6 +431,11 @@ static struct board_info boards[] = {
 	}, {
 		.id		= "ANTMINER-S1",
 		.hw_id		= HWID_ANTMINER_S1,
+		.hw_rev		= 1,
+		.layout_id	= "8Mlzma",
+	}, {
+		.id		= "ANTMINER-S3",
+		.hw_id		= HWID_ANTMINER_S3,
 		.hw_rev		= 1,
 		.layout_id	= "8Mlzma",
 	}, {
