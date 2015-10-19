@@ -6,8 +6,13 @@
 #include <linux/irqchip/chained_irq.h>
 #include <linux/err.h>
 #include <linux/io.h>
+#include <linux/version.h>
 
-#include "irqchip.h"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
+# include "irqchip.h"
+#else
+# include <linux/irqchip.h>
+#endif
 
 struct rps_chip_data {
 	void __iomem *base;
@@ -73,7 +78,11 @@ static int rps_irq_domain_map(struct irq_domain *d, unsigned int irq,
 				irq_hw_number_t hw)
 {
 	irq_set_chip_and_handler(irq, &rps_chip, handle_level_irq);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 	set_irq_flags(irq, IRQF_VALID | IRQF_PROBE);
+#else
+	irq_set_probe(irq);
+#endif
 	irq_set_chip_data(irq, d->host_data);
 	return 0;
 }
@@ -83,10 +92,14 @@ const struct irq_domain_ops rps_irq_domain_ops = {
 	.xlate = rps_irq_domain_xlate,
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 static void rps_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
+#else
+static void rps_handle_cascade_irq(struct irq_desc *desc)
+#endif
 {
-	struct rps_chip_data *chip_data = irq_get_handler_data(irq);
-	struct irq_chip *chip = irq_get_chip(irq);
+	struct rps_chip_data *chip_data = irq_desc_get_handler_data(desc);
+	struct irq_chip *chip = irq_desc_get_chip(desc);
 	unsigned int cascade_irq, rps_irq;
 	u32 status;
 
@@ -97,7 +110,11 @@ static void rps_handle_cascade_irq(unsigned int irq, struct irq_desc *desc)
 	cascade_irq = irq_find_mapping(chip_data->domain, rps_irq);
 
 	if (unlikely(rps_irq >= RPS_IRQ_COUNT))
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 		handle_bad_irq(cascade_irq, desc);
+#else
+		handle_bad_irq(desc);
+#endif
 	else
 		generic_handle_irq(cascade_irq);
 
