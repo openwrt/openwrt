@@ -78,6 +78,25 @@ endef
 
 $(eval $(call KernelPackage,bluetooth))
 
+define KernelPackage/ath3k
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=ATH3K Kernel Module support
+  DEPENDS:=+kmod-bluetooth +ar3k-firmware
+  KCONFIG:= \
+	CONFIG_BT_ATH3K \
+	CONFIG_BT_HCIUART_ATH3K
+  $(call AddDepends/bluetooth)
+  FILES:= \
+	$(LINUX_DIR)/drivers/bluetooth/ath3k.ko
+  AUTOLOAD:=$(call AutoProbe,ath3k)
+endef
+
+define KernelPackage/ath3k/description
+ Kernel support for ATH3K Module
+endef
+
+$(eval $(call KernelPackage,ath3k))
+
 
 define KernelPackage/bluetooth_6lowpan
   SUBMENU:=$(OTHER_MENU)
