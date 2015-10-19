@@ -103,7 +103,7 @@ static const uint8_t md5_salt[16] = {
 
 
 /** Vendor information for CPE210/220/510/520 */
-static const unsigned char cpe510_vendor[] = "\x00\x00\x00\x1f""CPE510(TP-LINK|UN|N300-5):1.0\r\n";
+static const char cpe510_vendor[] = "CPE510(TP-LINK|UN|N300-5):1.0\r\n";
 
 
 /**
@@ -133,14 +133,13 @@ static const struct flash_partition_entry cpe510_partitions[] = {
    The stock images also contain strings for two more devices: BS510 and BS210.
    At the moment, there exists no public information about these devices.
 */
-static const unsigned char cpe510_support_list[] =
-	"\x00\x00\x00\xc8\x00\x00\x00\x00"
+static const char cpe510_support_list[] =
 	"SupportList:\r\n"
 	"CPE510(TP-LINK|UN|N300-5):1.0\r\n"
 	"CPE520(TP-LINK|UN|N300-5):1.0\r\n"
 	"CPE210(TP-LINK|UN|N300-2):1.0\r\n"
 	"CPE220(TP-LINK|UN|N300-2):1.0\r\n"
-	"\r\n\xff";
+	"\r\n";
 
 #define error(_ret, _errno, _str, ...)				\
 	do {							\
@@ -150,6 +149,14 @@ static const unsigned char cpe510_support_list[] =
 			exit(_ret);				\
 	} while (0)
 
+
+/** Stores a uint32 as big endian */
+static inline void put32(uint8_t *buf, uint32_t val) {
+	buf[0] = val >> 24;
+	buf[1] = val >> 16;
+	buf[2] = val >> 8;
+	buf[3] = val;
+}
 
 /** Allocates a new image partition */
 static struct image_partition_entry alloc_image_partition(const char *name, size_t len) {
@@ -233,9 +240,15 @@ static struct image_partition_entry make_soft_version(uint32_t rev) {
 }
 
 /** Generates the support-list partition */
-static struct image_partition_entry make_support_list(const unsigned char *support_list, size_t len) {
-	struct image_partition_entry entry = alloc_image_partition("support-list", len);
-	memcpy(entry.data, support_list, len);
+static struct image_partition_entry make_support_list(const char *support_list) {
+	size_t len = strlen(support_list);
+	struct image_partition_entry entry = alloc_image_partition("support-list", len + 9);
+
+	put32(entry.data, len);
+	memset(entry.data+4, 0, 4);
+	memcpy(entry.data+8, support_list, len);
+	entry.data[len+8] = '\xff';
+
 	return entry;
 }
 
@@ -344,12 +357,13 @@ static void put_md5(uint8_t *md5, uint8_t *buffer, unsigned int len) {
      -----------  -----
      0000-0003    Image size (4 bytes, big endian)
      0004-0013    MD5 hash (hash of a 16 byte salt and the image data starting with byte 0x14)
-     0014-1013    Vendor information (4096 bytes, padded with 0xff; there seem to be older
+     0014-0017    Vendor information length (without padding) (4 bytes, big endian)
+     0018-1013    Vendor information (4092 bytes, padded with 0xff; there seem to be older
                   (VxWorks-based) TP-LINK devices which use a smaller vendor information block)
      1014-1813    Image partition table (2048 bytes, padded with 0xff)
      1814-xxxx    Firmware partitions
 */
-static void * generate_factory_image(const unsigned char *vendor, size_t vendor_len, const struct image_partition_entry *parts, size_t *len) {
+static void * generate_factory_image(const char *vendor, const struct image_partition_entry *parts, size_t *len) {
 	*len = 0x1814;
 
 	size_t i;
@@ -360,13 +374,12 @@ static void * generate_factory_image(const unsigned char *vendor, size_t vendor_
 	if (!image)
 		error(1, errno, "malloc");
 
-	image[0] = *len >> 24;
-	image[1] = *len >> 16;
-	image[2] = *len >> 8;
-	image[3] = *len;
+	put32(image, *len);
 
-	memcpy(image+0x14, vendor, vendor_len);
-	memset(image+0x14+vendor_len, 0xff, 4096-vendor_len);
+	size_t vendor_len = strlen(vendor);
+	put32(image+0x14, vendor_len);
+	memcpy(image+0x18, vendor, vendor_len);
+	memset(image+0x18+vendor_len, 0xff, 4092-vendor_len);
 
 	put_partitions(image + 0x1014, parts);
 	put_md5(image+0x04, image+0x14, *len-0x14);
@@ -430,7 +443,7 @@ static void do_cpe510(const char *output, const char *kernel_image, const char *
 
 	parts[0] = make_partition_table(cpe510_partitions);
 	parts[1] = make_soft_version(rev);
-	parts[2] = make_support_list(cpe510_support_list, sizeof(cpe510_support_list)-1);
+	parts[2] = make_support_list(cpe510_support_list);
 	parts[3] = read_file("os-image", kernel_image, false);
 	parts[4] = read_file("file-system", rootfs_image, add_jffs2_eof);
 
@@ -439,7 +452,7 @@ static void do_cpe510(const char *output, const char *kernel_image, const char *
 	if (sysupgrade)
 		image = generate_sysupgrade_image(cpe510_partitions, parts, &len);
 	else
-		image = generate_factory_image(cpe510_vendor, sizeof(cpe510_vendor)-1, parts, &len);
+		image = generate_factory_image(cpe510_vendor, parts, &len);
 
 	FILE *file = fopen(output, "wb");
 	if (!file)
