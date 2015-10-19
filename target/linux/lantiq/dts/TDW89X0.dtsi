@@ -10,50 +10,6 @@
 	};
 
 	fpi@10000000 {
-		spi@E100800 {
-			compatible = "lantiq,spi-xway";
-			reg = <0xE100800 0x100>;
-			interrupt-parent = <&icu0>;
-			interrupts = <22 23 24>;
-			#address-cells = <1>;
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "en25q64", "m25p80";
-				reg = <3>;
-				linux,modalias = "en25q64";
-				spi-max-frequency = <20000000>;
-
-				partition@0 {
-					reg = <0x0 0x20000>;
-					label = "u-boot";
-					read-only;
-				};
-
-				partition@20000 {
-					reg = <0x20000 0x6a0000>;
-					label = "firmware";
-				};
-
-				partition@6c0000 {
-					reg = <0x6c0000 0x100000>;
-					label = "dsl_fw";
-				};
-
-				partition@7c0000 {
-					reg = <0x7c0000 0x10000>;
-					label = "config";
-					read-only;
-				};
-
-				ath9k_cal: partition@7d0000 {
-					reg = <0x7d0000 0x30000>;
-					label = "boardconfig";
-					read-only;
-				};
-			};
-		};
-
 		gpio: pinmux@E100B10 {
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
@@ -76,9 +32,15 @@
 					lantiq,open-drain = <0>;
 					lantiq,output = <1>;
 				};
-				spi {
-					lantiq,groups = "spi", "spi_cs4";
-					lantiq,function = "spi";
+				spi-in {
+					lantiq,pins = "io16";
+					lantiq,open-drain = <1>;
+					lantiq,pull = <2>;
+				};
+				spi-out {
+					lantiq,pins = "io10", "io17", "io18", "io21";
+					lantiq,open-drain = <0>;
+					lantiq,pull = <2>;
 				};
 				pcie-rst {
 					lantiq,pins = "io38";
@@ -178,6 +140,56 @@
 
 	pcie {
 		compatible = "lantiq,pcie-xway";
+	};
+
+	spi {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		compatible = "spi-gpio";
+
+		gpio-miso = <&gpio 16 0>;
+		gpio-mosi = <&gpio 17 0>;
+		gpio-sck = <&gpio 18 0>;
+		num-chipselects = <1>;
+		cs-gpios = <&gpio 10 1>;
+
+		m25p80@0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "en25q64", "m25p80";
+			reg = <0 0>;
+			linux,modalias = "en25q64";
+			spi-max-frequency = <1000000>;
+
+			partition@0 {
+				reg = <0x0 0x20000>;
+				label = "u-boot";
+				read-only;
+			};
+
+			partition@20000 {
+				reg = <0x20000 0x6a0000>;
+				label = "firmware";
+			};
+
+			partition@6c0000 {
+				reg = <0x6c0000 0x100000>;
+				label = "dsl_fw";
+			};
+
+			partition@7c0000 {
+				reg = <0x7c0000 0x10000>;
+				label = "config";
+				read-only;
+			};
+
+			ath9k_cal: partition@7d0000 {
+				reg = <0x7d0000 0x30000>;
+				label = "boardconfig";
+				read-only;
+			};
+		};
 	};
 	
 	ath9k_eep {
