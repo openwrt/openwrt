@@ -26,6 +26,7 @@
 #include <linux/pinctrl/pinmux.h>
 /* Since we request GPIOs from ourself */
 #include <linux/pinctrl/consumer.h>
+#include <linux/version.h>
 
 #include "core.h"
 
@@ -1187,7 +1188,11 @@ static struct irq_chip gpio_irqchip = {
 	.irq_set_type	= gpio_irq_type,
 };
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 static void gpio_irq_handler(unsigned irq, struct irq_desc *desc)
+#else
+static void gpio_irq_handler(struct irq_desc *desc)
+#endif
 {
 	struct irq_chip *chip = irq_desc_get_chip(desc);
 	struct irq_data *idata = irq_desc_get_irq_data(desc);
@@ -1228,7 +1233,9 @@ static int oxnas_gpio_irq_map(struct irq_domain *h, unsigned int virq,
 	irq_set_lockdep_class(virq, &gpio_lock_class);
 
 	irq_set_chip_and_handler(virq, &gpio_irqchip, handle_edge_irq);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,2,0)
 	set_irq_flags(virq, IRQF_VALID);
+#endif
 	irq_set_chip_data(virq, oxnas_gpio);
 
 	return 0;
