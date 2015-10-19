@@ -1,0 +1,39 @@
+--- a/arch/mips/ath79/machtypes.h
++++ b/arch/mips/ath79/machtypes.h
+@@ -64,6 +64,7 @@ enum ath79_mach_type {
+	ATH79_MACH_EPG5000,		/* EnGenius EPG5000 */
+	ATH79_MACH_F9K1115V2,		/* Belkin AC1750DB */
+	ATH79_MACH_GL_INET,		/* GL-CONNECT GL-INET */
++	ATH79_MACH_GS_MINIBOX_V1,	/* Gainstrong MiniBox V1.0 */
+	ATH79_MACH_GS_OOLITE,           /* GS OOLITE V1.0 */
+	ATH79_MACH_HIWIFI_HC6361,	/* HiWiFi HC6361 */
+	ATH79_MACH_JA76PF,		/* jjPlus JA76PF */
+--- a/arch/mips/ath79/Kconfig
++++ b/arch/mips/ath79/Kconfig
+@@ -511,6 +511,16 @@
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
++config ATH79_MACH_GS_MINIBOX_V1
++	bool "Gainstrong MiniBox V1.0 support"
++	select SOC_AR933X
++	select ARH79_DEV_ETH
++	select ARH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
+ config ATH79_MACH_GS_OOLITE
+        bool "GS Oolite V1 support"
+        select SOC_AR933X
+--- a/arch/mips/ath79/Makefile	2015-08-10 23:27:44.599500173 +0200
++++ b/arch/mips/ath79/Makefile	2015-08-10 23:29:25.090929262 +0200
+@@ -75,6 +75,7 @@
+ obj-$(CONFIG_ATH79_MACH_ESR1750)	+= mach-esr1750.o
+ obj-$(CONFIG_ATH79_MACH_F9K1115V2)	+= mach-f9k1115v2.o
+ obj-$(CONFIG_ATH79_MACH_GL_INET)	+= mach-gl-inet.o
++obj-$(CONFIG_ATH79_MACH_GS_MINIBOX_V1)	+= mach-gs-minibox-v1.o
+ obj-$(CONFIG_ATH79_MACH_GS_OOLITE)	+= mach-gs-oolite.o
+ obj-$(CONFIG_ATH79_MACH_HIWIFI_HC6361)	+= mach-hiwifi-hc6361.o
+ obj-$(CONFIG_ATH79_MACH_JA76PF)		+= mach-ja76pf.o

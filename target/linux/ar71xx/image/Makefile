@@ -438,6 +438,15 @@ define Device/mc-mac1200r
 endef
 TARGET_DEVICES += mc-mac1200r
 
+define Device/minibox-v1
+    $(Device/tplink-16mlzma)
+    BOARDNAME := MINIBOX-V1
+    DEVICE_PROFILE := MINIBOXV1
+    TPLINK_HWID := 0x3C000201
+    CONSOLE := ttyATH0,115200
+endef
+TARGET_DEVICES += minibox-v1
+
 define Device/onion-omega
     $(Device/tplink-16mlzma)
     BOARDNAME := ONION-OMEGA
