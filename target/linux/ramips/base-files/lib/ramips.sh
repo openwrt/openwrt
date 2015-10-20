@@ -331,6 +331,9 @@ ramips_board_detect() {
 	*"WHR-G300N")
 		name="whr-g300n"
 		;;
+	*"WizFi630A")
+		name="wizfi630a"
+		;;
 	*"Sitecom WL-341 v3")
 		name="wl341v3"
 		;;
