@@ -84,7 +84,7 @@ define KernelPackage/ath3k
   DEPENDS:=+kmod-bluetooth +ar3k-firmware
   KCONFIG:= \
 	CONFIG_BT_ATH3K \
-	CONFIG_BT_HCIUART_ATH3K
+	CONFIG_BT_HCIUART_ATH3K=y
   $(call AddDepends/bluetooth)
   FILES:= \
 	$(LINUX_DIR)/drivers/bluetooth/ath3k.ko
