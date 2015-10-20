@@ -12,9 +12,11 @@ get_status_led() {
 	all0305)
 		status_led="eap7660d:green:ds4"
 		;;
-	antminer-s1|\
+	antminer-s1)
+		status_led="antminer-s1:green:system"
+		;;
 	antminer-s3)
-		status_led="bitmain:green:system"
+		status_led="antminer-s3:green:system"
 		;;
 	ap132)
 		status_led="ap132:green:status"
