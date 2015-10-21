@@ -7,6 +7,8 @@ STOP=01
 USE_PROCD=1
 LLDPCLI=/usr/sbin/lldpcli
 LLDPSOCKET=/var/run/lldpd.socket
+LLDPD_CONF=/tmp/lldpd.conf
+LLDPD_CONFS_DIR=/tmp/lldpd.d
 
 find_release_info()
 {
@@ -17,27 +19,14 @@ find_release_info()
 	echo "${PRETTY_NAME:-Unknown Lede release} @ $(cat /proc/sys/kernel/hostname)"
 }
 
-start_service() {
+write_lldpd_conf()
+{
 	. /lib/functions/network.sh
 
-	local enable_cdp
-	local enable_fdp
-	local enable_sonmp
-	local enable_edp
-	local lldp_class
-	local lldp_location
 	local lldp_description
-	local readonly_mode
 
 	config_load 'lldpd'
-	config_get_bool enable_cdp 'config' 'enable_cdp' 0
-	config_get_bool enable_fdp 'config' 'enable_fdp' 0
-	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
-	config_get_bool enable_edp 'config' 'enable_edp' 0
-	config_get lldp_class 'config' 'lldp_class'
-	config_get lldp_location 'config' 'lldp_location'
 	config_get lldp_description 'config' 'lldp_description' "$(find_release_info)"
-	config_get_bool readonly_mode 'config' 'readonly_mode' 0
 
 	local ifaces
 	config_get ifaces 'config' 'interface'
@@ -50,21 +39,50 @@ start_service() {
 		fi
 	done
 
+	# Clear out the config file first
+	echo -n > "$LLDPD_CONF"
+	[ -n "$ifnames" ] && echo "configure system interface pattern" "$ifnames" >> "$LLDPD_CONF"
+	[ -n "$lldp_description" ] && echo "configure system description" "\"$lldp_description\"" >> "$LLDPD_CONF"
+
+	# Since lldpd's sysconfdir is /tmp, we'll symlink /etc/lldpd.d to /tmp/$LLDPD_CONFS_DIR
+	[ -e $LLDPD_CONFS_DIR ] || ln -s /etc/lldpd.d $LLDPD_CONFS_DIR
+}
+
+start_service() {
+
+	local enable_cdp
+	local enable_fdp
+	local enable_sonmp
+	local enable_edp
+	local lldp_class
+	local lldp_location
+	local readonly_mode
+
+	config_load 'lldpd'
+	config_get_bool enable_cdp 'config' 'enable_cdp' 0
+	config_get_bool enable_fdp 'config' 'enable_fdp' 0
+	config_get_bool enable_sonmp 'config' 'enable_sonmp' 0
+	config_get_bool enable_edp 'config' 'enable_edp' 0
+	config_get lldp_class 'config' 'lldp_class'
+	config_get lldp_location 'config' 'lldp_location'
+	config_get_bool readonly_mode 'config' 'readonly_mode' 0
+
 	mkdir -p /var/run/lldp
 	chown lldp:lldp /var/run/lldp
+
+	# When lldpd starts, it also loads up what we write in this config file
+	write_lldpd_conf
 
 	procd_open_instance
 	procd_set_param command /usr/sbin/lldpd
 	procd_append_param command -d # don't daemonize, procd will handle that for us
 
-	[ -n "$ifnames" ] && procd_append_param command -I "$ifnames"
 	[ $enable_cdp -gt 0 ] && procd_append_param command '-c'
 	[ $enable_fdp -gt 0 ] && procd_append_param command '-f'
 	[ $enable_sonmp -gt 0 ] && procd_append_param command '-s'
 	[ $enable_edp -gt 0 ] && procd_append_param command '-e'
 	[ $readonly_mode -gt 0 ] && procd_append_param command '-r'
 	[ -n "$lldp_class" ] && procd_append_param command -M "$lldp_class"
-	[ -n "$lldp_description" ] && procd_append_param command -S "$lldp_description"
 
 	# set auto respawn behavior
 	procd_set_param respawn
@@ -80,10 +98,15 @@ service_running() {
 
 reload_service() {
 	running || return 1
-	# Custom TLVs are special and should be
-	# reloaded from config during lldpd reload
-	$LLDPCLI -u $LLDPSOCKET unconfigure lldp custom-tlv &> /dev/null
-	$LLDPCLI -u $LLDPSOCKET -c /etc/lldpd.conf -c /etc/lldpd.d &> /dev/null
+	$LLDPCLI -u $LLDPSOCKET &> /dev/null <<-EOF
+		unconfigure lldp custom-tlv
+		unconfigure system interface pattern
+		unconfigure system description
+	EOF
+	# Rewrite lldpd.conf
+	# If something changed it should be included by the lldpcli call
+	write_lldpd_conf
+	$LLDPCLI -u $LLDPSOCKET -c $LLDPD_CONF -c $LLDPD_CONFS_DIR &> /dev/null
 	# Broadcast update over the wire
 	$LLDPCLI -u $LLDPSOCKET update &> /dev/null
 	return 0
