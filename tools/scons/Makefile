@@ -11,7 +11,8 @@ PKG_NAME:=scons
 PKG_VERSION:=2.3.5
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=@SF/scons
+PKG_SOURCE_URL:=@SF/scons \
+		http://ftp.osuosl.org/pub/blfs/conglomeration/scons/
 PKG_MD5SUM:=8b0d1041266f89b18e47f26d943f8aa5
 
 include $(INCLUDE_DIR)/host-build.mk
