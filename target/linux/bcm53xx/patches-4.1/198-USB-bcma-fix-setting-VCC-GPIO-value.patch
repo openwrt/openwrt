@@ -1,7 +1,7 @@
-From bdc3b01d94b22f8b5f9621a1c37336e78f4f1bce Mon Sep 17 00:00:00 2001
+From 7572673e06393b117f87b20b82be0518634d7042 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
 Date: Sun, 21 Jun 2015 12:09:57 +0200
-Subject: [PATCH] USB: bcma: fix setting VCC GPIO value
+Subject: [PATCH v3 6/6] usb: bcma: fix setting VCC GPIO value
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,13 +10,22 @@ It wasn't working (on most of devices?) without setting GPIO direction
 and wasn't respecting ACTIVE_LOW flag.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
- drivers/usb/host/bcma-hcd.c | 13 +++++++++----
- 1 file changed, 9 insertions(+), 4 deletions(-)
+ drivers/usb/host/bcma-hcd.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
 
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -230,17 +230,22 @@ static void bcma_hcd_init_chip_arm(struc
+@@ -26,6 +26,7 @@
+ #include <linux/slab.h>
+ #include <linux/of.h>
+ #include <linux/of_gpio.h>
++#include <linux/gpio/consumer.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
+ #include <linux/usb/xhci_pdriver.h>
+@@ -231,17 +232,22 @@ static void bcma_hcd_init_chip_arm(struc
  
  static void bcma_hci_platform_power_gpio(struct bcma_device *dev, bool val)
  {

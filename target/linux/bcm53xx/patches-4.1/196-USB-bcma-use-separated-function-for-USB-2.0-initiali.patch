@@ -1,7 +1,8 @@
-From 4aed231f49954114d5ae23e97789e9aa540a0b70 Mon Sep 17 00:00:00 2001
+From fa5622c2fadae573dd6b0f5bffe436b230b411f6 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
 Date: Tue, 16 Jun 2015 12:52:07 +0200
-Subject: [PATCH] USB: bcma: use separated function for USB 2.0 initialization
+Subject: [PATCH v3 4/6] usb: bcma: use separated function for USB 2.0
+ initialization
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -9,6 +10,7 @@ Content-Transfer-Encoding: 8bit
 This will allow adding USB 3.0 (XHCI) support cleanly.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/bcma-hcd.c | 51 +++++++++++++++++++++++++++++++--------------
  1 file changed, 35 insertions(+), 16 deletions(-)
