@@ -1,7 +1,8 @@
-From 5b4fed9fc917cc2bfc5297eeab03aeba5d340618 Mon Sep 17 00:00:00 2001
+From c7c7bf7fcbacadac7781783de25fe1e13e2a2c35 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
 Date: Tue, 16 Jun 2015 12:33:46 +0200
-Subject: [PATCH] USB: bcma: make helper creating platform dev more generic
+Subject: [PATCH v3 3/6] usb: bcma: make helper creating platform dev more
+ generic
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -10,6 +11,7 @@ Having "bool ohci" argument bounded us to two cases only and didn't
 allow re-using this code for XHCI.
 
 Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 ---
  drivers/usb/host/bcma-hcd.c | 24 +++++++++++++-----------
  1 file changed, 13 insertions(+), 11 deletions(-)
