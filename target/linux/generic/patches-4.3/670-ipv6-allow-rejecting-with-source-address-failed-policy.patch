@@ -121,7 +121,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static void		ip6_link_failure(struct sk_buff *skb);
  static void		ip6_rt_update_pmtu(struct dst_entry *dst, struct sock *sk,
  					   struct sk_buff *skb, u32 mtu);
-@@ -301,6 +303,21 @@ static const struct rt6_info ip6_prohibi
+@@ -296,6 +298,21 @@ static const struct rt6_info ip6_prohibi
  	.rt6i_ref	= ATOMIC_INIT(1),
  };
  
@@ -143,7 +143,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  static const struct rt6_info ip6_blk_hole_entry_template = {
  	.dst = {
  		.__refcnt	= ATOMIC_INIT(1),
-@@ -1885,6 +1902,11 @@ int ip6_route_info_create(struct fib6_co
+@@ -1881,6 +1898,11 @@ int ip6_route_info_create(struct fib6_co
  			rt->dst.output = ip6_pkt_prohibit_out;
  			rt->dst.input = ip6_pkt_prohibit;
  			break;
@@ -155,7 +155,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		case RTN_THROW:
  		case RTN_UNREACHABLE:
  		default:
-@@ -2487,6 +2509,17 @@ static int ip6_pkt_prohibit_out(struct s
+@@ -2483,6 +2505,17 @@ static int ip6_pkt_prohibit_out(struct s
  	return ip6_pkt_drop(skb, ICMPV6_ADM_PROHIBITED, IPSTATS_MIB_OUTNOROUTES);
  }
  
@@ -173,7 +173,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  /*
   *	Allocate a dst for local (unicast / anycast) address.
   */
-@@ -2726,7 +2759,8 @@ static int rtm_to_fib6_config(struct sk_
+@@ -2723,7 +2756,8 @@ static int rtm_to_fib6_config(struct sk_
  	if (rtm->rtm_type == RTN_UNREACHABLE ||
  	    rtm->rtm_type == RTN_BLACKHOLE ||
  	    rtm->rtm_type == RTN_PROHIBIT ||
@@ -183,7 +183,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		cfg->fc_flags |= RTF_REJECT;
  
  	if (rtm->rtm_type == RTN_LOCAL)
-@@ -3082,6 +3116,9 @@ static int rt6_fill_node(struct net *net
+@@ -3079,6 +3113,9 @@ static int rt6_fill_node(struct net *net
  		case -EACCES:
  			rtm->rtm_type = RTN_PROHIBIT;
  			break;
@@ -193,7 +193,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		case -EAGAIN:
  			rtm->rtm_type = RTN_THROW;
  			break;
-@@ -3350,6 +3387,8 @@ static int ip6_route_dev_notify(struct n
+@@ -3347,6 +3384,8 @@ static int ip6_route_dev_notify(struct n
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  		net->ipv6.ip6_prohibit_entry->dst.dev = dev;
  		net->ipv6.ip6_prohibit_entry->rt6i_idev = in6_dev_get(dev);
@@ -202,7 +202,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  		net->ipv6.ip6_blk_hole_entry->dst.dev = dev;
  		net->ipv6.ip6_blk_hole_entry->rt6i_idev = in6_dev_get(dev);
  #endif
-@@ -3566,6 +3605,17 @@ static int __net_init ip6_route_net_init
+@@ -3563,6 +3602,17 @@ static int __net_init ip6_route_net_init
  	net->ipv6.ip6_blk_hole_entry->dst.ops = &net->ipv6.ip6_dst_ops;
  	dst_init_metrics(&net->ipv6.ip6_blk_hole_entry->dst,
  			 ip6_template_metrics, true);
@@ -220,7 +220,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #endif
  
  	net->ipv6.sysctl.flush_delay = 0;
-@@ -3584,6 +3634,8 @@ out:
+@@ -3581,6 +3631,8 @@ out:
  	return ret;
  
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
@@ -229,7 +229,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  out_ip6_prohibit_entry:
  	kfree(net->ipv6.ip6_prohibit_entry);
  out_ip6_null_entry:
-@@ -3601,6 +3653,7 @@ static void __net_exit ip6_route_net_exi
+@@ -3598,6 +3650,7 @@ static void __net_exit ip6_route_net_exi
  #ifdef CONFIG_IPV6_MULTIPLE_TABLES
  	kfree(net->ipv6.ip6_prohibit_entry);
  	kfree(net->ipv6.ip6_blk_hole_entry);
@@ -237,7 +237,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  #endif
  	dst_entries_destroy(&net->ipv6.ip6_dst_ops);
  }
-@@ -3698,6 +3751,9 @@ int __init ip6_route_init(void)
+@@ -3695,6 +3748,9 @@ int __init ip6_route_init(void)
  	init_net.ipv6.ip6_prohibit_entry->rt6i_idev = in6_dev_get(init_net.loopback_dev);
  	init_net.ipv6.ip6_blk_hole_entry->dst.dev = init_net.loopback_dev;
  	init_net.ipv6.ip6_blk_hole_entry->rt6i_idev = in6_dev_get(init_net.loopback_dev);

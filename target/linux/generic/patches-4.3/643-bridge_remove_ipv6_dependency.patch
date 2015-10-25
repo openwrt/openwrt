@@ -65,7 +65,7 @@ big the performance impact is.
  
  int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
  		      u32 banned_flags)
-@@ -5939,6 +5938,9 @@ int __init addrconf_init(void)
+@@ -5941,6 +5940,9 @@ int __init addrconf_init(void)
  
  	ipv6_addr_label_rtnl_register();
  
@@ -75,7 +75,7 @@ big the performance impact is.
  	return 0;
  errout:
  	rtnl_af_unregister(&inet6_ops);
-@@ -5958,6 +5960,9 @@ void addrconf_cleanup(void)
+@@ -5960,6 +5962,9 @@ void addrconf_cleanup(void)
  	struct net_device *dev;
  	int i;
  
