@@ -1,0 +1,63 @@
+From 1420e53fc88673683f8990aa5342e7b2640ce165 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 18 Oct 2015 19:13:27 +0200
+Subject: [PATCH v3 1/6] usb: xhci: plat: fix adding usb3-lpm-capable quirk
+
+The xhci->quirks member is overwritten in xhci_gen_setup() with the
+quirks given through the module load parameter. Without this patch the
+usb3-lpm-capable quirk will be over written before it gets used. This
+patch moves the quirks code to the xhci_plat_quirks() callback function
+which gets called directly after the quirks member variable is
+overwritten with the module load parameter.
+
+I do not have any hardware which is using usb3-lpm-capabls so I can not
+test this on real hardware.
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/usb/host/xhci-plat.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
+
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -37,12 +37,20 @@ static const struct xhci_driver_override
+ 
+ static void xhci_plat_quirks(struct device *dev, struct xhci_hcd *xhci)
+ {
++	struct platform_device	*pdev = to_platform_device(dev);
++	struct device_node	*node = pdev->dev.of_node;
++	struct usb_xhci_pdata	*pdata = dev_get_platdata(&pdev->dev);
++
+ 	/*
+ 	 * As of now platform drivers don't provide MSI support so we ensure
+ 	 * here that the generic code does not try to make a pci_dev from our
+ 	 * dev struct in order to setup MSI
+ 	 */
+ 	xhci->quirks |= XHCI_PLAT;
++
++	if ((node && of_property_read_bool(node, "usb3-lpm-capable")) ||
++			(pdata && pdata->usb3_lpm_capable))
++		xhci->quirks |= XHCI_LPM_SUPPORT;
+ }
+ 
+ /* called during probe() after chip reset completes */
+@@ -74,8 +82,6 @@ static int xhci_plat_start(struct usb_hc
+ 
+ static int xhci_plat_probe(struct platform_device *pdev)
+ {
+-	struct device_node	*node = pdev->dev.of_node;
+-	struct usb_xhci_pdata	*pdata = dev_get_platdata(&pdev->dev);
+ 	const struct hc_driver	*driver;
+ 	struct xhci_hcd		*xhci;
+ 	struct resource         *res;
+@@ -148,10 +154,6 @@ static int xhci_plat_probe(struct platfo
+ 		goto disable_clk;
+ 	}
+ 
+-	if ((node && of_property_read_bool(node, "usb3-lpm-capable")) ||
+-			(pdata && pdata->usb3_lpm_capable))
+-		xhci->quirks |= XHCI_LPM_SUPPORT;
+-
+ 	if (HCC_MAX_PSA(xhci->hcc_params) >= 4)
+ 		xhci->shared_hcd->can_do_streams = 1;
+ 

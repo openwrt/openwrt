@@ -1,0 +1,86 @@
+From: Florian Fainelli <f.fainelli@gmail.com>
+Subject: [PATCH] ARM: BCM5301x: Disable MMU and Dcache during decompression
+Date: Tue, 14 Jul 2015 16:12:08 -0700
+
+Use the existing __armv7_mmu_cache_flush() to perform the cache flush
+since this does what we are after.
+
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
+---
+ arch/arm/boot/compressed/Makefile                |  4 +++
+ arch/arm/boot/compressed/head-bcm_5301x-mpcore.S | 37 ++++++++++++++++++++++++
+ arch/arm/boot/compressed/head.S                  |  2 ++
+ 3 files changed, 43 insertions(+)
+ create mode 100644 arch/arm/boot/compressed/head-bcm_5301x-mpcore.S
+
+--- a/arch/arm/boot/compressed/Makefile
++++ b/arch/arm/boot/compressed/Makefile
+@@ -31,6 +31,10 @@ ifeq ($(CONFIG_ARCH_ACORN),y)
+ OBJS		+= ll_char_wr.o font.o
+ endif
+ 
++ifeq ($(CONFIG_ARCH_BCM_5301X),y)
++OBJS		+= head-bcm_5301x-mpcore.o
++endif
++
+ ifeq ($(CONFIG_ARCH_SA1100),y)
+ OBJS		+= head-sa1100.o
+ endif
+--- /dev/null
++++ b/arch/arm/boot/compressed/head-bcm_5301x-mpcore.S
+@@ -0,0 +1,37 @@
++/*
++ *
++ * Platform specific tweaks.  This is merged into head.S by the linker.
++ *
++ */
++
++#include <linux/linkage.h>
++#include <asm/assembler.h>
++#include <asm/cp15.h>
++
++		.section        ".start", "ax"
++
++/*
++ * This code section is spliced into the head code by the linker
++ */
++
++__plat_uncompress_start:
++
++	@ Preserve r8/r7 i.e. kernel entry values
++	mov	r12, r8
++
++	@ Clear MMU enable and Dcache enable bits
++	mrc	p15, 0, r0, c1, c0, 0		@ Read SCTLR
++	bic	r0, #CR_C|CR_M
++	mcr	p15, 0, r0, c1, c0, 0		@ Write SCTLR
++	nop
++
++	@ Call the cache invalidation routine
++	bl	__armv7_mmu_cache_flush_fn
++	nop
++	mov	r0,#0
++	ldr	r3, =0x19022000			@ L2 cache controller, control reg
++	str	r0, [r3, #0x100]		@ Disable L2 cache
++	nop
++
++	@ Restore
++	mov	r8, r12
+--- a/arch/arm/boot/compressed/head.S
++++ b/arch/arm/boot/compressed/head.S
+@@ -1152,6 +1152,7 @@ __armv7_mmu_cache_flush:
+ hierarchical:
+ 		mcr	p15, 0, r10, c7, c10, 5	@ DMB
+ 		stmfd	sp!, {r0-r7, r9-r11}
++ENTRY(__armv7_mmu_cache_flush_fn)
+ 		mrc	p15, 1, r0, c0, c0, 1	@ read clidr
+ 		ands	r3, r0, #0x7000000	@ extract loc from clidr
+ 		mov	r3, r3, lsr #23		@ left align loc bit field
+@@ -1201,6 +1202,7 @@ iflush:
+ 		mcr	p15, 0, r10, c7, c10, 4	@ DSB
+ 		mcr	p15, 0, r10, c7, c5, 4	@ ISB
+ 		mov	pc, lr
++ENDPROC(__armv7_mmu_cache_flush_fn)
+ 
+ __armv5tej_mmu_cache_flush:
+ 		tst	r4, #1
