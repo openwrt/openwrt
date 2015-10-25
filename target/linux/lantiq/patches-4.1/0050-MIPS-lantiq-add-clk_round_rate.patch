@@ -1,0 +1,43 @@
+From b3c10c6c19a9a0ad2b967b6afc8d8302ff4e10f9 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke@hauke-m.de>
+Date: Sun, 25 Oct 2015 21:47:23 +0100
+Subject: [PATCH] MIPS: lantiq: add clk_round_rate()
+
+This adds a basic implementation of clk_round_rate()
+The clk_round_rate() function is called by multiple drivers and
+subsystems now and the lantiq clk driver is supposed to export this,
+but doesn't do so, this causes linking problems like this one:
+ERROR: "clk_round_rate" [drivers/media/v4l2-core/videodev.ko] undefined!
+
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+Cc: <stable@vger.kernel.org> # 4.1+
+---
+ arch/mips/lantiq/clk.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/arch/mips/lantiq/clk.c
++++ b/arch/mips/lantiq/clk.c
+@@ -99,6 +99,23 @@ int clk_set_rate(struct clk *clk, unsign
+ }
+ EXPORT_SYMBOL(clk_set_rate);
+ 
++long clk_round_rate(struct clk *clk, unsigned long rate)
++{
++	if (unlikely(!clk_good(clk)))
++		return 0;
++	if (clk->rates && *clk->rates) {
++		unsigned long *r = clk->rates;
++
++		while (*r && (*r != rate))
++			r++;
++		if (!*r) {
++			return clk->rate;
++		}
++	}
++	return rate;
++}
++EXPORT_SYMBOL(clk_round_rate);
++
+ int clk_enable(struct clk *clk)
+ {
+ 	if (unlikely(!clk_good(clk)))
