@@ -16,7 +16,7 @@ Signed-off-by: Hans de Goede <hdegoede@redhat.com>
 
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
-@@ -1853,6 +1853,15 @@ static int sunxi_nand_chip_init(struct d
+@@ -1851,6 +1851,15 @@ static int sunxi_nand_chip_init(struct d
  	if (of_get_nand_on_flash_bbt(np))
  		nand->bbt_options |= NAND_BBT_USE_FLASH | NAND_BBT_NO_OOB;
  

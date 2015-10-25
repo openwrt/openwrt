@@ -11,7 +11,7 @@ See: https://github.com/raspberrypi/linux/issues/1054
 
 --- a/drivers/spi/spidev.c
 +++ b/drivers/spi/spidev.c
-@@ -706,6 +706,7 @@ static struct class *spidev_class;
+@@ -707,6 +707,7 @@ static struct class *spidev_class;
  #ifdef CONFIG_OF
  static const struct of_device_id spidev_dt_ids[] = {
  	{ .compatible = "rohm,dh2228fv" },

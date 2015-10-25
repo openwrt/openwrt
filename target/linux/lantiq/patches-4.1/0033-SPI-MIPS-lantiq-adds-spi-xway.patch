@@ -18,7 +18,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -626,6 +626,14 @@
+@@ -626,6 +626,14 @@ config SPI_NUC900
  	help
  	  SPI driver for Nuvoton NUC900 series ARM SoCs
  
@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -90,3 +90,4 @@
+@@ -90,3 +90,4 @@ obj-$(CONFIG_SPI_TXX9)			+= spi-txx9.o
  obj-$(CONFIG_SPI_XCOMM)		+= spi-xcomm.o
  obj-$(CONFIG_SPI_XILINX)		+= spi-xilinx.o
  obj-$(CONFIG_SPI_XTENSA_XTFPGA)		+= spi-xtensa-xtfpga.o
