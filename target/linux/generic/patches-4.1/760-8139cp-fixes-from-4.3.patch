@@ -113,8 +113,6 @@ Date:   Fri Sep 18 00:19:08 2015 +0100
     
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Signed-off-by: David S. Miller <davem@davemloft.net>
-diff --git a/drivers/net/ethernet/realtek/8139cp.c b/drivers/net/ethernet/realtek/8139cp.c
-index d79e33b..686334f 100644
 --- a/drivers/net/ethernet/realtek/8139cp.c
 +++ b/drivers/net/ethernet/realtek/8139cp.c
 @@ -157,6 +157,7 @@ enum {
@@ -133,7 +131,7 @@ index d79e33b..686334f 100644
  
  	unsigned		rx_buf_sz;
  	unsigned		wol_enabled : 1; /* Is Wake-on-LAN enabled? */
-@@ -665,7 +667,7 @@ static void cp_tx (struct cp_private *cp)
+@@ -665,7 +667,7 @@ static void cp_tx (struct cp_private *cp
  		BUG_ON(!skb);
  
  		dma_unmap_single(&cp->pdev->dev, le64_to_cpu(txd->addr),
@@ -142,7 +140,7 @@ index d79e33b..686334f 100644
  				 PCI_DMA_TODEVICE);
  
  		if (status & LastFrag) {
-@@ -733,7 +735,7 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -733,7 +735,7 @@ static netdev_tx_t cp_start_xmit (struct
  {
  	struct cp_private *cp = netdev_priv(dev);
  	unsigned entry;
@@ -151,7 +149,7 @@ index d79e33b..686334f 100644
  	unsigned long intr_flags;
  	__le32 opts2;
  	int mss = 0;
-@@ -753,6 +755,21 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -753,6 +755,21 @@ static netdev_tx_t cp_start_xmit (struct
  	mss = skb_shinfo(skb)->gso_size;
  
  	opts2 = cpu_to_le32(cp_tx_vlan_tag(skb));
@@ -173,7 +171,7 @@ index d79e33b..686334f 100644
  
  	if (skb_shinfo(skb)->nr_frags == 0) {
  		struct cp_desc *txd = &cp->tx_ring[entry];
-@@ -768,31 +785,20 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -768,31 +785,20 @@ static netdev_tx_t cp_start_xmit (struct
  		txd->addr = cpu_to_le64(mapping);
  		wmb();
  
@@ -211,7 +209,7 @@ index d79e33b..686334f 100644
  
  		/* We must give this initial chunk to the device last.
  		 * Otherwise we could race with the device.
-@@ -805,14 +811,14 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -805,14 +811,14 @@ static netdev_tx_t cp_start_xmit (struct
  			goto out_dma_error;
  
  		cp->tx_skb[entry] = skb;
@@ -228,7 +226,7 @@ index d79e33b..686334f 100644
  			len = skb_frag_size(this_frag);
  			mapping = dma_map_single(&cp->pdev->dev,
  						 skb_frag_address(this_frag),
-@@ -824,19 +830,7 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -824,19 +830,7 @@ static netdev_tx_t cp_start_xmit (struct
  
  			eor = (entry == (CP_TX_RING_SIZE - 1)) ? RingEnd : 0;
  
@@ -249,7 +247,7 @@ index d79e33b..686334f 100644
  
  			if (frag == skb_shinfo(skb)->nr_frags - 1)
  				ctrl |= LastFrag;
-@@ -849,8 +843,8 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -849,8 +843,8 @@ static netdev_tx_t cp_start_xmit (struct
  			txd->opts1 = cpu_to_le32(ctrl);
  			wmb();
  
@@ -259,7 +257,7 @@ index d79e33b..686334f 100644
  		}
  
  		txd = &cp->tx_ring[first_entry];
-@@ -858,27 +852,17 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -858,27 +852,17 @@ static netdev_tx_t cp_start_xmit (struct
  		txd->addr = cpu_to_le64(first_mapping);
  		wmb();
  
@@ -294,7 +292,7 @@ index d79e33b..686334f 100644
  	if (TX_BUFFS_AVAIL(cp) <= (MAX_SKB_FRAGS + 1))
  		netif_stop_queue(dev);
  
-@@ -1115,6 +1099,7 @@ static int cp_init_rings (struct cp_private *cp)
+@@ -1115,6 +1099,7 @@ static int cp_init_rings (struct cp_priv
  {
  	memset(cp->tx_ring, 0, sizeof(struct cp_desc) * CP_TX_RING_SIZE);
  	cp->tx_ring[CP_TX_RING_SIZE - 1].opts1 = cpu_to_le32(RingEnd);
@@ -302,7 +300,7 @@ index d79e33b..686334f 100644
  
  	cp_init_rings_index(cp);
  
-@@ -1151,7 +1136,7 @@ static void cp_clean_rings (struct cp_private *cp)
+@@ -1151,7 +1136,7 @@ static void cp_clean_rings (struct cp_pr
  			desc = cp->rx_ring + i;
  			dma_unmap_single(&cp->pdev->dev,le64_to_cpu(desc->addr),
  					 cp->rx_buf_sz, PCI_DMA_FROMDEVICE);
@@ -311,7 +309,7 @@ index d79e33b..686334f 100644
  		}
  	}
  
-@@ -1164,7 +1149,7 @@ static void cp_clean_rings (struct cp_private *cp)
+@@ -1164,7 +1149,7 @@ static void cp_clean_rings (struct cp_pr
  					 le32_to_cpu(desc->opts1) & 0xffff,
  					 PCI_DMA_TODEVICE);
  			if (le32_to_cpu(desc->opts1) & LastFrag)
@@ -320,7 +318,7 @@ index d79e33b..686334f 100644
  			cp->dev->stats.tx_dropped++;
  		}
  	}
-@@ -1172,6 +1157,7 @@ static void cp_clean_rings (struct cp_private *cp)
+@@ -1172,6 +1157,7 @@ static void cp_clean_rings (struct cp_pr
  
  	memset(cp->rx_ring, 0, sizeof(struct cp_desc) * CP_RX_RING_SIZE);
  	memset(cp->tx_ring, 0, sizeof(struct cp_desc) * CP_TX_RING_SIZE);
@@ -328,7 +326,7 @@ index d79e33b..686334f 100644
  
  	memset(cp->rx_skb, 0, sizeof(struct sk_buff *) * CP_RX_RING_SIZE);
  	memset(cp->tx_skb, 0, sizeof(struct sk_buff *) * CP_TX_RING_SIZE);
-@@ -1249,7 +1235,7 @@ static void cp_tx_timeout(struct net_device *dev)
+@@ -1249,7 +1235,7 @@ static void cp_tx_timeout(struct net_dev
  {
  	struct cp_private *cp = netdev_priv(dev);
  	unsigned long flags;
@@ -337,7 +335,7 @@ index d79e33b..686334f 100644
  
  	netdev_warn(dev, "Transmit timeout, status %2x %4x %4x %4x\n",
  		    cpr8(Cmd), cpr16(CpCmd),
-@@ -1257,13 +1243,26 @@ static void cp_tx_timeout(struct net_device *dev)
+@@ -1257,13 +1243,26 @@ static void cp_tx_timeout(struct net_dev
  
  	spin_lock_irqsave(&cp->lock, flags);
  

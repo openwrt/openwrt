@@ -33,8 +33,6 @@ Date:   Wed Sep 23 09:46:09 2015 +0100
     
     Signed-off-by: David Woodhouse <David.Woodhouse@intel.com>
     Signed-off-by: David S. Miller <davem@davemloft.net>
-diff --git a/drivers/net/ethernet/realtek/8139cp.c b/drivers/net/ethernet/realtek/8139cp.c
-index 686334f..deae10d 100644
 --- a/drivers/net/ethernet/realtek/8139cp.c
 +++ b/drivers/net/ethernet/realtek/8139cp.c
 @@ -175,7 +175,7 @@ enum {
@@ -46,7 +44,7 @@ index 686334f..deae10d 100644
  	TxError		= (1 << 23), /* Tx error summary */
  	RxError		= (1 << 20), /* Rx error summary */
  	IPCS		= (1 << 18), /* Calculate IP checksum */
-@@ -754,10 +754,16 @@ static netdev_tx_t cp_start_xmit (struct sk_buff *skb,
+@@ -754,10 +754,16 @@ static netdev_tx_t cp_start_xmit (struct
  	eor = (entry == (CP_TX_RING_SIZE - 1)) ? RingEnd : 0;
  	mss = skb_shinfo(skb)->gso_size;
  
@@ -64,7 +62,7 @@ index 686334f..deae10d 100644
  	else if (skb->ip_summed == CHECKSUM_PARTIAL) {
  		const struct iphdr *ip = ip_hdr(skb);
  		if (ip->protocol == IPPROTO_TCP)
-@@ -1852,6 +1858,15 @@ static void cp_set_d3_state (struct cp_private *cp)
+@@ -1852,6 +1858,15 @@ static void cp_set_d3_state (struct cp_p
  	pci_set_power_state (cp->pdev, PCI_D3hot);
  }
  
@@ -80,7 +78,7 @@ index 686334f..deae10d 100644
  static const struct net_device_ops cp_netdev_ops = {
  	.ndo_open		= cp_open,
  	.ndo_stop		= cp_close,
-@@ -1864,6 +1879,7 @@ static const struct net_device_ops cp_netdev_ops = {
+@@ -1864,6 +1879,7 @@ static const struct net_device_ops cp_ne
  	.ndo_tx_timeout		= cp_tx_timeout,
  	.ndo_set_features	= cp_set_features,
  	.ndo_change_mtu		= cp_change_mtu,
@@ -88,7 +86,7 @@ index 686334f..deae10d 100644
  
  #ifdef CONFIG_NET_POLL_CONTROLLER
  	.ndo_poll_controller	= cp_poll_controller,
-@@ -1983,12 +1999,12 @@ static int cp_init_one (struct pci_dev *pdev, const struct pci_device_id *ent)
+@@ -1983,12 +1999,12 @@ static int cp_init_one (struct pci_dev *
  	dev->ethtool_ops = &cp_ethtool_ops;
  	dev->watchdog_timeo = TX_TIMEOUT;
  

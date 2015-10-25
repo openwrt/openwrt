@@ -74,7 +74,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  /*
   * Set the run bit and wait for the host to be running.
   */
-@@ -556,10 +589,25 @@ int xhci_init(struct usb_hcd *hcd)
+@@ -557,10 +590,25 @@ int xhci_init(struct usb_hcd *hcd)
  
  static int xhci_run_finished(struct xhci_hcd *xhci)
  {
@@ -103,7 +103,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	xhci->shared_hcd->state = HC_STATE_RUNNING;
  	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
  
-@@ -569,6 +617,9 @@ static int xhci_run_finished(struct xhci
+@@ -570,6 +618,9 @@ static int xhci_run_finished(struct xhci
  	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
  			"Finished xhci_run for USB3 roothub");
  	return 0;

@@ -1,7 +1,7 @@
 --- a/drivers/tty/serial/8250/8250_core.c
 +++ b/drivers/tty/serial/8250/8250_core.c
-@@ -339,6 +339,13 @@ configured less than Maximum supported f
- 				  UART_FCR7_64BYTE,
+@@ -347,6 +347,13 @@ configured less than Maximum supported f
+ 		.rxtrig_bytes	= {1, 4, 8, 14},
  		.flags		= UART_CAP_FIFO,
  	},
 +	[PORT_AR7] = {
@@ -14,7 +14,7 @@
  };
  
  /* Uart divisor latch read */
-@@ -3340,7 +3347,11 @@ static void serial8250_console_putchar(s
+@@ -3348,7 +3355,11 @@ static void serial8250_console_putchar(s
  {
  	struct uart_8250_port *up = up_to_u8250p(port);
  

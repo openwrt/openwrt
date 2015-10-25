@@ -23,7 +23,7 @@
  
 --- a/drivers/mtd/nand/sunxi_nand.c
 +++ b/drivers/mtd/nand/sunxi_nand.c
-@@ -1427,7 +1427,7 @@ static int sunxi_nand_chip_init_timings(
+@@ -1425,7 +1425,7 @@ static int sunxi_nand_chip_init_timings(
  
  	mode = onfi_get_async_timing_mode(&chip->nand);
  	if (mode == ONFI_TIMING_MODE_UNKNOWN) {
@@ -32,7 +32,7 @@
  	} else {
  		uint8_t feature[ONFI_SUBFEATURE_PARAM_LEN] = {};
  
-@@ -1441,9 +1441,10 @@ static int sunxi_nand_chip_init_timings(
+@@ -1439,9 +1439,10 @@ static int sunxi_nand_chip_init_timings(
  						feature);
  		if (ret)
  			return ret;
