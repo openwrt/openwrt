@@ -1,0 +1,41 @@
+From 504dba5b073a9009ae1e3f2fc53ea9c3aa10c38a Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@openwrt.org>
+Date: Wed, 13 May 2015 20:56:38 +0200
+Subject: [PATCH] ARM: BCM5301X: Add Buffalo WXR-1900DHP clock and USB power
+ control
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -24,6 +24,23 @@
+ 		reg = <0x00000000 0x08000000>;
+ 	};
+ 
++	clocks {
++		clk_periph: periph {
++			clock-frequency = <500000000>;
++		};
++	};
++
++	axi@18000000 {
++		usb2@21000 {
++			reg = <0x00021000 0x1000>;
++
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			vcc-gpio = <&chipcommon 13 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
+ 	leds {
+ 		compatible = "gpio-leds";
+ 

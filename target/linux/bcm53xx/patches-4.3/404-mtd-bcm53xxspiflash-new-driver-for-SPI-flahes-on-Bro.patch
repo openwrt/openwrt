@@ -1,0 +1,20 @@
+--- a/drivers/mtd/spi-nor/Kconfig
++++ b/drivers/mtd/spi-nor/Kconfig
+@@ -40,4 +40,10 @@ config SPI_NXP_SPIFI
+ 	  Flash. Enable this option if you have a device with a SPIFI
+ 	  controller and want to access the Flash as a mtd device.
+ 
++config MTD_SPI_BCM53XXSPIFLASH
++	tristate "SPI-NOR flashes connected to the Broadcom ARM SoC"
++	depends on MTD_SPI_NOR
++	help
++	  SPI driver for flashes used on Broadcom ARM SoCs.
++
+ endif # MTD_SPI_NOR
+--- a/drivers/mtd/spi-nor/Makefile
++++ b/drivers/mtd/spi-nor/Makefile
+@@ -1,3 +1,4 @@
+ obj-$(CONFIG_MTD_SPI_NOR)	+= spi-nor.o
+ obj-$(CONFIG_SPI_FSL_QUADSPI)	+= fsl-quadspi.o
++obj-$(CONFIG_MTD_SPI_BCM53XXSPIFLASH)	+= bcm53xxspiflash.o
+ obj-$(CONFIG_SPI_NXP_SPIFI)	+= nxp-spifi.o

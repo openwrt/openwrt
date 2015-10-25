@@ -1,0 +1,50 @@
+From ddbf0ad85be06948dd214c7beb7b315ef2749e65 Mon Sep 17 00:00:00 2001
+From: Jon Mason <jonmason@broadcom.com>
+Date: Thu, 15 Oct 2015 14:14:10 -0400
+Subject: [PATCH] ARM: BCM: Add SMP support for Broadcom 4708
+
+ARM: BCM: Add SMP support for Broadcom 4708
+
+Add SMP support for Broadcom's 4708 SoCs.
+
+Signed-off-by: Jon Mason <jonmason@broadcom.com>
+---
+ arch/arm/boot/dts/bcm4708.dtsi | 2 ++
+ arch/arm/mach-bcm/Kconfig      | 2 ++
+ arch/arm/mach-bcm/Makefile     | 3 +++
+ 3 files changed, 7 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm4708.dtsi
++++ b/arch/arm/boot/dts/bcm4708.dtsi
+@@ -15,6 +15,8 @@
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		enable-method = "brcm,bcm-nsp-smp";
++		secondary-boot-reg = <0xffff0400>;
+ 
+ 		cpu@0 {
+ 			device_type = "cpu";
+--- a/arch/arm/mach-bcm/Kconfig
++++ b/arch/arm/mach-bcm/Kconfig
+@@ -38,6 +38,8 @@ config ARCH_BCM_CYGNUS
+ config ARCH_BCM_5301X
+ 	bool "Broadcom BCM470X / BCM5301X ARM SoC" if ARCH_MULTI_V7
+ 	select ARCH_BCM_IPROC
++	select ARM_ERRATA_764369 if SMP
++	select HAVE_SMP
+ 	help
+ 	  Support for Broadcom BCM470X and BCM5301X SoCs with ARM CPU cores.
+ 
+--- a/arch/arm/mach-bcm/Makefile
++++ b/arch/arm/mach-bcm/Makefile
+@@ -36,6 +36,9 @@ obj-$(CONFIG_ARCH_BCM2835)	+= board_bcm2
+ 
+ # BCM5301X
+ obj-$(CONFIG_ARCH_BCM_5301X)	+= bcm_5301x.o
++ifeq ($(CONFIG_ARCH_BCM_5301X),y)
++obj-$(CONFIG_SMP)		+= headsmp.o platsmp.o
++endif
+ 
+ # BCM63XXx
+ ifeq ($(CONFIG_ARCH_BCM_63XX),y)
