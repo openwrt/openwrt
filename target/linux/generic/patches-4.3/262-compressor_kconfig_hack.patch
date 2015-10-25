@@ -1,6 +1,6 @@
 --- a/lib/Kconfig
 +++ b/lib/Kconfig
-@@ -216,25 +216,25 @@ config 842_DECOMPRESS
+@@ -216,26 +216,26 @@ config 842_DECOMPRESS
  	tristate
  
  config ZLIB_INFLATE
@@ -10,6 +10,7 @@
  config ZLIB_DEFLATE
 -	tristate
 +	tristate "ZLIB deflate support"
+ 	select BITREVERSE
  
  config LZO_COMPRESS
 -	tristate
