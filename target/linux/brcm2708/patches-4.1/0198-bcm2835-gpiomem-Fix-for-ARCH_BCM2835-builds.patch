@@ -1,0 +1,67 @@
+From 6413adc1fbf4c3e9a2bcd707dd7776f419988d7c Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 6 Oct 2015 10:16:58 +0100
+Subject: [PATCH 198/203] bcm2835-gpiomem: Fix for ARCH_BCM2835 builds
+
+Build on ARCH_BCM2835, and fail to probe if no IO resource.
+
+See: https://github.com/raspberrypi/linux/issues/1154
+---
+ drivers/char/broadcom/bcm2835-gpiomem.c | 25 ++++++++++---------------
+ 1 file changed, 10 insertions(+), 15 deletions(-)
+
+--- a/drivers/char/broadcom/bcm2835-gpiomem.c
++++ b/drivers/char/broadcom/bcm2835-gpiomem.c
+@@ -143,7 +143,6 @@ static int bcm2835_gpiomem_probe(struct
+ 	int err;
+ 	void *ptr_err;
+ 	struct device *dev = &pdev->dev;
+-	struct device_node *node = dev->of_node;
+ 	struct resource *ioresource;
+ 
+ 	/* Allocate buffers and instance data */
+@@ -157,6 +156,15 @@ static int bcm2835_gpiomem_probe(struct
+ 
+ 	inst->dev = dev;
+ 
++	ioresource = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (ioresource) {
++		inst->gpio_regs_phys = ioresource->start;
++	} else {
++		dev_err(inst->dev, "failed to get IO resource");
++		err = -ENOENT;
++		goto failed_get_resource;
++	}
++
+ 	/* Create character device entries */
+ 
+ 	err = alloc_chrdev_region(&bcm2835_gpiomem_devid,
+@@ -187,20 +195,6 @@ static int bcm2835_gpiomem_probe(struct
+ 	if (IS_ERR(ptr_err))
+ 		goto failed_device_create;
+ 
+-	/* Get address from device tree if available (*_resource() correctly
+-	   converts the bus address in device tree to a physical address),
+-	   or use hardcoded offset + BCM2708_PERI_BASE if not.
+-	   (In spite of its name 2708 actually seems to have the correct
+-	   mach-dependent value on 2709 etc, as it is defined in
+-	   mach-bcm270x/platform.h) */
+-
+-	if (node) {
+-		ioresource = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+-		inst->gpio_regs_phys = ioresource->start;
+-	} else {
+-		inst->gpio_regs_phys = GPIO_BASE;
+-	}
+-
+ 	dev_info(inst->dev, "Initialised: Registers at 0x%08lx",
+ 		inst->gpio_regs_phys);
+ 
+@@ -214,6 +208,7 @@ failed_class_create:
+ failed_cdev_add:
+ 	unregister_chrdev_region(bcm2835_gpiomem_devid, 1);
+ failed_alloc_chrdev:
++failed_get_resource:
+ 	kfree(inst);
+ failed_inst_alloc:
+ 	dev_err(inst->dev, "could not load bcm2835_gpiomem");

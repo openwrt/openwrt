@@ -1,0 +1,23 @@
+From 1e348feeabfbf0b2628162c2b67a89eeebf8ff7d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 11 Sep 2015 12:10:15 +0100
+Subject: [PATCH 179/203] bcm2835-mmc: Don't overwrite MMC capabilities from DT
+
+---
+ drivers/mmc/host/bcm2835-mmc.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-mmc.c
++++ b/drivers/mmc/host/bcm2835-mmc.c
+@@ -1327,8 +1327,9 @@ static int bcm2835_mmc_add_host(struct b
+ 	mmc->max_busy_timeout = (1 << 27) / host->timeout_clk;
+ #endif
+ 	/* host controller capabilities */
+-	mmc->caps = MMC_CAP_CMD23 | MMC_CAP_ERASE | MMC_CAP_NEEDS_POLL | MMC_CAP_SDIO_IRQ |
+-	MMC_CAP_SD_HIGHSPEED | MMC_CAP_MMC_HIGHSPEED | MMC_CAP_4_BIT_DATA;
++	mmc->caps |= MMC_CAP_CMD23 | MMC_CAP_ERASE | MMC_CAP_NEEDS_POLL |
++		MMC_CAP_SDIO_IRQ | MMC_CAP_SD_HIGHSPEED |
++		MMC_CAP_MMC_HIGHSPEED | MMC_CAP_4_BIT_DATA;
+ 
+ 	host->flags = SDHCI_AUTO_CMD23;
+ 

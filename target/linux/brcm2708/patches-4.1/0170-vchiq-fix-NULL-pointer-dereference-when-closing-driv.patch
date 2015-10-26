@@ -1,0 +1,98 @@
+From d3f5bff6c861a3addea60da69196172f2e6d360c Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Tue, 1 Sep 2015 16:52:34 +0000
+Subject: [PATCH 170/203] vchiq: fix NULL pointer dereference when closing
+ driver
+
+The following code run as root will cause a null pointer dereference oops:
+
+        int fd = open("/dev/vc-cma", O_RDONLY);
+        if (fd < 0)
+                err(1, "open failed");
+        (void)close(fd);
+
+[ 1704.877721] Unable to handle kernel NULL pointer dereference at virtual address 00000000
+[ 1704.877725] pgd = b899c000
+[ 1704.877736] [00000000] *pgd=37fab831, *pte=00000000, *ppte=00000000
+[ 1704.877748] Internal error: Oops: 817 [#1] PREEMPT SMP ARM
+[ 1704.877765] Modules linked in: evdev i2c_bcm2708 uio_pdrv_genirq uio
+[ 1704.877774] CPU: 2 PID: 3656 Comm: stress-ng-fstat Not tainted 3.19.1-12-generic-bcm2709 #12-Ubuntu
+[ 1704.877777] Hardware name: BCM2709
+[ 1704.877783] task: b8ab9b00 ti: b7e68000 task.ti: b7e68000
+[ 1704.877798] PC is at __down_interruptible+0x50/0xec
+[ 1704.877806] LR is at down_interruptible+0x5c/0x68
+[ 1704.877813] pc : [<80630ee8>]    lr : [<800704b0>]    psr: 60080093
+sp : b7e69e50  ip : b7e69e88  fp : b7e69e84
+[ 1704.877817] r10: b88123c8  r9 : 00000010  r8 : 00000001
+[ 1704.877822] r7 : b8ab9b00  r6 : 7fffffff  r5 : 80a1cc34  r4 : 80a1cc34
+[ 1704.877826] r3 : b7e69e50  r2 : 00000000  r1 : 00000000  r0 : 80a1cc34
+[ 1704.877833] Flags: nZCv  IRQs off  FIQs on  Mode SVC_32  ISA ARM  Segment user
+[ 1704.877838] Control: 10c5387d  Table: 3899c06a  DAC: 00000015
+[ 1704.877843] Process do-oops (pid: 3656, stack limit = 0xb7e68238)
+[ 1704.877848] Stack: (0xb7e69e50 to 0xb7e6a000)
+[ 1704.877856] 9e40:                                     80a1cc3c 00000000 00000010 b88123c8
+[ 1704.877865] 9e60: b7e69e84 80a1cc34 fff9fee9 ffffffff b7e68000 00000009 b7e69ea4 b7e69e88
+[ 1704.877874] 9e80: 800704b0 80630ea4 fff9fee9 60080013 80a1cc28 fff9fee9 b7e69edc b7e69ea8
+[ 1704.877884] 9ea0: 8040f558 80070460 fff9fee9 ffffffff 00000000 00000000 00000009 80a1cb7c
+[ 1704.877893] 9ec0: 00000000 80a1cb7c 00000000 00000010 b7e69ef4 b7e69ee0 803e1ba4 8040f514
+[ 1704.877902] 9ee0: 00000e48 80a1cb7c b7e69f14 b7e69ef8 803e1c9c 803e1b74 b88123c0 b92acb18
+[ 1704.877911] 9f00: b8812790 b8d815d8 b7e69f24 b7e69f18 803e2250 803e1bc8 b7e69f5c b7e69f28
+[ 1704.877921] 9f20: 80167bac 803e222c 00000000 00000000 b7e69f54 b8ab9ffc 00000000 8098c794
+[ 1704.877930] 9f40: b8ab9b00 8000efc4 b7e68000 00000000 b7e69f6c b7e69f60 80167d6c 80167b28
+[ 1704.877939] 9f60: b7e69f8c b7e69f70 80047d38 80167d60 b7e68000 b7e68010 8000efc4 b7e69fb0
+[ 1704.877949] 9f80: b7e69fac b7e69f90 80012820 80047c84 01155490 011549a8 00000001 00000006
+[ 1704.877957] 9fa0: 00000000 b7e69fb0 8000ee5c 80012790 00000000 353d8c0f 7efc4308 00000000
+[ 1704.877966] 9fc0: 01155490 011549a8 00000001 00000006 00000000 00000000 76cf3ba0 00000003
+[ 1704.877975] 9fe0: 00000000 7efc42e4 0002272f 76e2ed66 60080030 00000003 00000000 00000000
+[ 1704.877998] [<80630ee8>] (__down_interruptible) from [<800704b0>] (down_interruptible+0x5c/0x68)
+[ 1704.878015] [<800704b0>] (down_interruptible) from [<8040f558>] (vchiu_queue_push+0x50/0xd8)
+[ 1704.878032] [<8040f558>] (vchiu_queue_push) from [<803e1ba4>] (send_worker_msg+0x3c/0x54)
+[ 1704.878045] [<803e1ba4>] (send_worker_msg) from [<803e1c9c>] (vc_cma_set_reserve+0xe0/0x1c4)
+[ 1704.878057] [<803e1c9c>] (vc_cma_set_reserve) from [<803e2250>] (vc_cma_release+0x30/0x38)
+[ 1704.878069] [<803e2250>] (vc_cma_release) from [<80167bac>] (__fput+0x90/0x1e0)
+[ 1704.878082] [<80167bac>] (__fput) from [<80167d6c>] (____fput+0x18/0x1c)
+[ 1704.878094] [<80167d6c>] (____fput) from [<80047d38>] (task_work_run+0xc0/0xf8)
+[ 1704.878109] [<80047d38>] (task_work_run) from [<80012820>] (do_work_pending+0x9c/0xc4)
+[ 1704.878123] [<80012820>] (do_work_pending) from [<8000ee5c>] (work_pending+0xc/0x20)
+[ 1704.878133] Code: e50b1034 e3a01000 e50b2030 e580300c (e5823000)
+
+..the fix is to ensure that we have actually initialized the queue before we attempt
+to push any items onto it.  This occurs if we do an open() followed by a close() without
+any activity in between.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c | 4 ++++
+ drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h | 1 +
+ 2 files changed, 5 insertions(+)
+
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.c
+@@ -46,6 +46,7 @@ int vchiu_queue_init(VCHIU_QUEUE_T *queu
+ 	queue->size = size;
+ 	queue->read = 0;
+ 	queue->write = 0;
++	queue->initialized = 1;
+ 
+ 	sema_init(&queue->pop, 0);
+ 	sema_init(&queue->push, 0);
+@@ -76,6 +77,9 @@ int vchiu_queue_is_full(VCHIU_QUEUE_T *q
+ 
+ void vchiu_queue_push(VCHIU_QUEUE_T *queue, VCHIQ_HEADER_T *header)
+ {
++	if (!queue->initialized)
++		return;
++
+ 	while (queue->write == queue->read + queue->size) {
+ 		if (down_interruptible(&queue->pop) != 0) {
+ 			flush_signals(current);
+--- a/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
++++ b/drivers/misc/vc04_services/interface/vchiq_arm/vchiq_util.h
+@@ -60,6 +60,7 @@ typedef struct {
+ 	int size;
+ 	int read;
+ 	int write;
++	int initialized;
+ 
+ 	struct semaphore pop;
+ 	struct semaphore push;

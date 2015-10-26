@@ -1,0 +1,36 @@
+From a78ad9a34f11fecfdcd08675396bf2bf163a3f4d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Mon, 12 Oct 2015 08:52:00 +0100
+Subject: [PATCH 201/203] BCM270X_DT: Reduce default at86rf233 SPI frequency
+
+The AT86RF233 has been found to be unreliable on a 7.5MHz SPI bus,
+so reduce the default frequency to 6MHz.
+
+See: https://github.com/raspberrypi/linux/issues/1151
+---
+ arch/arm/boot/dts/overlays/README                | 2 +-
+ arch/arm/boot/dts/overlays/at86rf233-overlay.dts | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -178,7 +178,7 @@ Load:   dtoverlay=at86rf233,<param>=<val
+ Params: interrupt                GPIO used for INT (default 23)
+         reset                    GPIO used for Reset (default 24)
+         sleep                    GPIO used for Sleep (default 25)
+-        speed                    SPI bus speed in Hz (default 750000)
++        speed                    SPI bus speed in Hz (default 6000000)
+         trim                     Fine tuning of the internal capacitance
+                                  arrays (0=+0pF, 15=+4.5pF, default 15)
+ 
+--- a/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
++++ b/arch/arm/boot/dts/overlays/at86rf233-overlay.dts
+@@ -25,7 +25,7 @@
+ 				interrupts = <23 4>; /* active high */
+ 				reset-gpio = <&gpio 24 1>;
+ 				sleep-gpio = <&gpio 25 1>;
+-				spi-max-frequency = <7500000>;
++				spi-max-frequency = <6000000>;
+ 				xtal-trim = /bits/ 8 <0xf>;
+ 			};
+ 		};

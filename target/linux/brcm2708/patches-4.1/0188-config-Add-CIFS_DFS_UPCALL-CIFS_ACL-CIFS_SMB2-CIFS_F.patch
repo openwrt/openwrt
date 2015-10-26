@@ -1,0 +1,37 @@
+From 4d8738a3f5befd5487930f5bbe62eb58cf943823 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Tue, 15 Sep 2015 15:16:24 +0100
+Subject: [PATCH 188/203] config: Add CIFS_DFS_UPCALL, CIFS_ACL, CIFS_SMB2,
+ CIFS_FSCACHE
+
+---
+ arch/arm/configs/bcm2709_defconfig | 4 ++++
+ arch/arm/configs/bcmrpi_defconfig  | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -1158,6 +1158,10 @@ CONFIG_CIFS_WEAK_PW_HASH=y
+ CONFIG_CIFS_UPCALL=y
+ CONFIG_CIFS_XATTR=y
+ CONFIG_CIFS_POSIX=y
++CONFIG_CIFS_ACL=y
++CONFIG_CIFS_DFS_UPCALL=y
++CONFIG_CIFS_SMB2=y
++CONFIG_CIFS_FSCACHE=y
+ CONFIG_9P_FS=m
+ CONFIG_9P_FS_POSIX_ACL=y
+ CONFIG_NLS_DEFAULT="utf8"
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -1151,6 +1151,10 @@ CONFIG_CIFS_WEAK_PW_HASH=y
+ CONFIG_CIFS_UPCALL=y
+ CONFIG_CIFS_XATTR=y
+ CONFIG_CIFS_POSIX=y
++CONFIG_CIFS_ACL=y
++CONFIG_CIFS_DFS_UPCALL=y
++CONFIG_CIFS_SMB2=y
++CONFIG_CIFS_FSCACHE=y
+ CONFIG_9P_FS=m
+ CONFIG_9P_FS_POSIX_ACL=y
+ CONFIG_NLS_DEFAULT="utf8"

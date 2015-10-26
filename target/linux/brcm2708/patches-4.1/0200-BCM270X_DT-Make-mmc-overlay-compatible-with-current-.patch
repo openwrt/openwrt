@@ -1,0 +1,39 @@
+From f6c213fbd75a2efeb2e8ef0034be7376a306f7fd Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 9 Oct 2015 10:49:00 +0100
+Subject: [PATCH 200/203] BCM270X_DT: Make mmc overlay compatible with current
+ firmware
+
+The original DT overlay logic followed a merge-then-patch procedure,
+i.e. parameters are applied to the loaded overlay before the overlay
+is merged into the base DTB. This sequence has been changed to
+patch-then-merge, in order to support parameterised node names, and
+to protect against bad overlays. As a result, overrides (parameters)
+must only target labels in the overlay, but the overlay can obviously target nodes in the base DTB.
+
+mmc-overlay.dts (that switches back to the original mmc sdcard
+driver) is the only overlay violating that rule, and this patch
+fixes it.
+---
+ arch/arm/boot/dts/overlays/mmc-overlay.dts | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/mmc-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mmc-overlay.dts
+@@ -7,13 +7,13 @@
+ 	fragment@0 {
+ 		target = <&mmc>;
+ 
+-		__overlay__ {
++		frag0: __overlay__ {
+ 			brcm,overclock-50 = <0>;
+ 		};
+ 	};
+ 
+ 	__overrides__ {
+-		overclock_50     = <&mmc>,"brcm,overclock-50:0";
+-		force_pio        = <&mmc>,"brcm,force-pio?";
++		overclock_50     = <&frag0>,"brcm,overclock-50:0";
++		force_pio        = <&frag0>,"brcm,force-pio?";
+ 	};
+ };

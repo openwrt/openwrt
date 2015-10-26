@@ -1,0 +1,90 @@
+From f578216ec77548da230336549ed488dbdf4a42f3 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Thu, 8 Oct 2015 13:33:28 +0100
+Subject: [PATCH 199/203] scripts/mkknlimg: Improve ARCH_BCM2835 detection
+
+The board support code contains sufficient strings to be able to
+distinguish 2708 vs. 2835 builds, so remove the check for
+bcm2835-pm-wdt which could exist in either.
+
+Also, since the canned configuration is no longer built in (it's
+a module), remove the config string checking.
+
+See: https://github.com/raspberrypi/linux/issues/1157
+---
+ scripts/mkknlimg | 41 +++++------------------------------------
+ 1 file changed, 5 insertions(+), 36 deletions(-)
+
+--- a/scripts/mkknlimg
++++ b/scripts/mkknlimg
+@@ -50,12 +50,6 @@ if (! -r $kernel_file)
+     usage();
+ }
+ 
+-my @wanted_config_lines =
+-(
+-	'CONFIG_BCM2708_DT',
+-	'CONFIG_ARCH_BCM2835'
+-);
+-
+ my @wanted_strings =
+ (
+ 	'bcm2708_fb',
+@@ -63,7 +57,8 @@ my @wanted_strings =
+ 	'brcm,bcm2835-sdhost',
+ 	'brcm,bcm2708-pinctrl',
+ 	'brcm,bcm2835-gpio',
+-	'brcm,bcm2835-pm-wdt'
++	'brcm,bcm2835',
++	'brcm,bcm2836'
+ );
+ 
+ my $res = try_extract($kernel_file, $tmpfile1);
+@@ -98,12 +93,11 @@ if ($res)
+ 	    config_bool($res, 'brcm,bcm2835-mmc') ||
+ 	    config_bool($res, 'brcm,bcm2835-sdhost'))
+ 	{
+-	    $dtok ||= config_bool($res, 'CONFIG_BCM2708_DT');
+-	    $dtok ||= config_bool($res, 'CONFIG_ARCH_BCM2835');
+ 	    $dtok ||= config_bool($res, 'brcm,bcm2708-pinctrl');
+ 	    $dtok ||= config_bool($res, 'brcm,bcm2835-gpio');
+-	    $is_283x ||= config_bool($res, 'CONFIG_ARCH_BCM2835');
+-	    $is_283x ||= config_bool($res, 'brcm,bcm2835-pm-wdt');
++	    $is_283x ||= config_bool($res, 'brcm,bcm2835');
++	    $is_283x ||= config_bool($res, 'brcm,bcm2836');
++	    $dtok ||= $is_283x;
+ 	    $append_trailer = 1;
+ 	}
+ 	else
+@@ -205,31 +199,6 @@ sub try_extract
+ 	    $res->{$match} = 1;
+ 	}
+ 
+-	my $config_pattern = '^('.join('|', @wanted_config_lines).')=(.*)$';
+-	my $cf1 = 'IKCFG_ST\037\213\010';
+-	my $cf2 = '0123456789';
+-
+-	my $pos = `tr "$cf1\n$cf2" "\n$cf2=" < "$knl" | grep -abo "^$cf2"`;
+-	if ($pos)
+-	{
+-		$pos =~ s/:.*[\r\n]*$//s;
+-		$pos += 8;
+-		my $err = (system("tail -c+$pos \"$knl\" | zcat > $tmp 2> /dev/null") >> 8);
+-		if (($err == 0) || ($err == 2))
+-		{
+-			if (open(my $fh, '<', $tmp))
+-			{
+-				while (my $line = <$fh>)
+-				{
+-					chomp($line);
+-					$res->{$1} = $2 if ($line =~ /$config_pattern/);
+-				}
+-
+-				close($fh);
+-			}
+-		}
+-	}
+-
+ 	return $res;
+ }
+ 

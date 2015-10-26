@@ -1,0 +1,34 @@
+From d3735e837e3102dfee2d2429c8043c9f4c673383 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 2 Sep 2015 07:27:36 -0400
+Subject: [PATCH 173/203] vcsm: increment res_stats MAP_FAIL stats before we
+ potentially release the resource
+
+resource can be kfree'd when the reference count is zero, so we should
+not bump the res_stats of the resource after the vmcs_sm_release_resource
+call since the resource may have been kfree'd by this call. Instead, bump
+the stats before we call vmcs_sm_release_resource to avoid a potential
+NULL pointer derefernce.
+
+Bug found using cppcheck static analysis:
+
+[drivers/char/broadcom/vc_sm/vmcs_sm.c:1373]: (error) Dereferencing
+  'resource' after it is deallocated / released
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ drivers/char/broadcom/vc_sm/vmcs_sm.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/char/broadcom/vc_sm/vmcs_sm.c
++++ b/drivers/char/broadcom/vc_sm/vmcs_sm.c
+@@ -1368,8 +1368,8 @@ static int vc_sm_mmap(struct file *file,
+ 	return 0;
+ 
+ error:
+-	vmcs_sm_release_resource(resource, 0);
+ 	resource->res_stats[MAP_FAIL]++;
++	vmcs_sm_release_resource(resource, 0);
+ 	return ret;
+ }
+ 

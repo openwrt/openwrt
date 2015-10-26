@@ -1,0 +1,29 @@
+From 8a969160370faf8c7b09959ca36456d5f96a64d7 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 2 Sep 2015 07:15:38 -0400
+Subject: [PATCH 172/203] bcm2708_fb: remove unnecessary initialization of
+ result
+
+static analysis by cppcheck detected an unnecessary initialization
+of variable 'result' which is re-assigned almost immediately after
+the initialization.  Remove the redundant initialization.
+
+[drivers/video/fbdev/bcm2708_fb.c:406]: (performance) Variable
+  'result' is reassigned a value before the old one has been used.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ drivers/video/fbdev/bcm2708_fb.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -420,7 +420,7 @@ static int bcm2708_fb_blank(int blank_mo
+ 
+ static int bcm2708_fb_pan_display(struct fb_var_screeninfo *var, struct fb_info *info)
+ {
+-	s32 result = -1;
++	s32 result;
+ 	info->var.xoffset = var->xoffset;
+ 	info->var.yoffset = var->yoffset;
+ 	result = bcm2708_fb_set_par(info);

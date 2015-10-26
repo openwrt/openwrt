@@ -1,0 +1,32 @@
+From 7e5a9f5063a11fcb006c77ee41584b9cc63a79b5 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 2 Sep 2015 07:13:17 -0400
+Subject: [PATCH 171/203] bcm2708_fb: remove redundant code as detected by
+ static analysis
+
+static analysis with cppcheck detected some redundant code which
+should probably be removed:
+
+[drivers/video/fbdev/bcm2708_fb.c:269]: (style) Variable 'yres'
+  is assigned a value that is never used.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ drivers/video/fbdev/bcm2708_fb.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -263,12 +263,6 @@ static int bcm2708_fb_check_var(struct f
+ 	if (var->yoffset > var->yres_virtual - var->yres)
+ 		var->yoffset = var->yres_virtual - var->yres - 1;
+ 
+-	yres = var->yres;
+-	if (var->vmode & FB_VMODE_DOUBLE)
+-		yres *= 2;
+-	else if (var->vmode & FB_VMODE_INTERLACED)
+-		yres = (yres + 1) / 2;
+-
+ 	return 0;
+ }
+ 

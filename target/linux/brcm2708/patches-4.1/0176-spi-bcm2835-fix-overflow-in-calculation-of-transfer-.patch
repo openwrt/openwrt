@@ -1,0 +1,53 @@
+From 6e1447aaad894f45595a45fc52ae5f7dbe072b2e Mon Sep 17 00:00:00 2001
+From: Martin Sperl <kernel@martin.sperl.org>
+Date: Wed, 29 Jul 2015 07:34:10 +0000
+Subject: [PATCH 176/203] spi: bcm2835: fix overflow in calculation of transfer
+ time
+
+This resulted in the use of polling mode when other approaches
+(dma or interrupts) would have been more appropriate.
+
+Happened for transfers longer than 477 bytes.
+
+Reported-by: Noralf Tronnes <noralf@tronnes.org>
+Signed-off-by: Martin Sperl <kernel@martin.sperl.org>
+Signed-off-by: Mark Brown <broonie@kernel.org>
+(cherry picked from commit 0122a5183088e3117bb9c8fbe248914efb502f3f)
+---
+ drivers/spi/spi-bcm2835.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/drivers/spi/spi-bcm2835.c
++++ b/drivers/spi/spi-bcm2835.c
+@@ -480,7 +480,7 @@ static int bcm2835_spi_transfer_one_poll
+ 					 struct spi_device *spi,
+ 					 struct spi_transfer *tfr,
+ 					 u32 cs,
+-					 unsigned long xfer_time_us)
++					 unsigned long long xfer_time_us)
+ {
+ 	struct bcm2835_spi *bs = spi_master_get_devdata(master);
+ 	unsigned long timeout;
+@@ -531,7 +531,8 @@ static int bcm2835_spi_transfer_one(stru
+ {
+ 	struct bcm2835_spi *bs = spi_master_get_devdata(master);
+ 	unsigned long spi_hz, clk_hz, cdiv;
+-	unsigned long spi_used_hz, xfer_time_us;
++	unsigned long spi_used_hz;
++	unsigned long long xfer_time_us;
+ 	u32 cs = bcm2835_rd(bs, BCM2835_SPI_CS);
+ 
+ 	/* set clock */
+@@ -573,9 +574,10 @@ static int bcm2835_spi_transfer_one(stru
+ 	bs->rx_len = tfr->len;
+ 
+ 	/* calculate the estimated time in us the transfer runs */
+-	xfer_time_us = tfr->len
++	xfer_time_us = (unsigned long long)tfr->len
+ 		* 9 /* clocks/byte - SPI-HW waits 1 clock after each byte */
+-		* 1000000 / spi_used_hz;
++		* 1000000;
++	do_div(xfer_time_us, spi_used_hz);
+ 
+ 	/* for short requests run polling*/
+ 	if (xfer_time_us <= BCM2835_SPI_POLLING_LIMIT_US)

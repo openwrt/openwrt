@@ -1,0 +1,92 @@
+From 502a751c5b49d0730f25280345d145e26f0b671d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Fri, 11 Sep 2015 09:14:01 +0100
+Subject: [PATCH 178/203] BCM270X_DT: Use fixed-factor-clock for uart1
+
+The BCM2835 mini-UART is almost 8250-compatible, but there is
+a factor-of-two difference in the clock divider for the baud rate.
+The standard 8250 driver can be used unmodified provided we lie to it
+about the clock frequency, pretending it is double the actual value.
+The mini-UART block shares the core clock, and the current firmware
+uses a DT-parameter to update the clock-frequency property. Although it
+works, this isn't ideal because it exposes the firmware to a driver
+problem.
+
+This patch uses the fixed-factor-clock module to create a clock that is
+always twice the frequency of the core clock. (N.B. These "fixed" clocks
+just describe an existing clock, rather than changing any hardware
+settings.)
+---
+ arch/arm/boot/dts/bcm2708-rpi-b-plus.dts |  1 -
+ arch/arm/boot/dts/bcm2708-rpi-b.dts      |  1 -
+ arch/arm/boot/dts/bcm2708-rpi-cm.dts     |  1 -
+ arch/arm/boot/dts/bcm2708_common.dtsi    | 10 +++++++++-
+ arch/arm/boot/dts/bcm2709-rpi-2-b.dts    |  1 -
+ 5 files changed, 9 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b-plus.dts
+@@ -103,7 +103,6 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
+-		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-b.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-b.dts
+@@ -97,7 +97,6 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
+-		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708-rpi-cm.dts
++++ b/arch/arm/boot/dts/bcm2708-rpi-cm.dts
+@@ -79,7 +79,6 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
+-		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -165,7 +165,7 @@
+ 			compatible = "brcm,bcm2835-aux-uart", "ns16550";
+ 			reg = <0x7e215040 0x40>;
+ 			interrupts = <1 29>;
+-			clock-frequency = <500000000>;
++			clocks = <&clk_uart1>;
+ 			reg-shift = <2>;
+ 			no-loopback-test;
+ 			status = "disabled";
+@@ -294,6 +294,14 @@
+ 			 clock-output-names = "pwm";
+ 			 clock-frequency = <100000000>;
+ 		};
++
++		clk_uart1: clock@6 {
++			compatible = "fixed-factor-clock";
++			clocks = <&clk_core>;
++			#clock-cells = <0>;
++			clock-div = <1>;
++			clock-mult = <2>;
++		};
+ 	};
+ 
+ 	__overrides__ {
+--- a/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
++++ b/arch/arm/boot/dts/bcm2709-rpi-2-b.dts
+@@ -103,7 +103,6 @@
+ 	__overrides__ {
+ 		uart0 = <&uart0>,"status";
+ 		uart0_clkrate = <&clk_uart0>,"clock-frequency:0";
+-		uart1_clkrate = <&uart1>,"clock-frequency:0";
+ 		i2s = <&i2s>,"status";
+ 		spi = <&spi0>,"status";
+ 		i2c0 = <&i2c0>,"status";
