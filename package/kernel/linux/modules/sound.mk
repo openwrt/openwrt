@@ -99,6 +99,23 @@ endef
 $(eval $(call KernelPackage,ac97))
 
 
+define KernelPackage/sound-mpu401
+  TITLE:=MPU-401 uart driver
+  KCONFIG:=CONFIG_SND_MPU401_UART
+  FILES:= \
+	$(LINUX_DIR)/sound/drivers/mpu401/snd-mpu401-uart.ko
+  AUTOLOAD:=$(call AutoLoad,35,snd-mpu401-uart)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-mpu401/description
+ support for MIDI ports compatible with the Roland MPU-401
+ interface in UART mode.
+endef
+
+$(eval $(call KernelPackage,sound-mpu401))
+
+
 define KernelPackage/sound-seq
   TITLE:=Sequencer support
   FILES:= \
@@ -132,6 +149,23 @@ define KernelPackage/sound-i8x0/description
 endef
 
 $(eval $(call KernelPackage,sound-i8x0))
+
+
+define KernelPackage/sound-via82xx
+  TITLE:=VIA 82xx AC97 Controller
+  DEPENDS:=+kmod-ac97 +kmod-sound-mpu401
+  KCONFIG:=CONFIG_SND_VIA82XX
+  FILES:=$(LINUX_DIR)/sound/pci/snd-via82xx.ko
+  AUTOLOAD:=$(call AutoLoad,36,snd-via82xx)
+  $(call AddDepends/sound)
+endef
+
+define KernelPackage/sound-via82xx/description
+ support for the integrated AC97 sound device on motherboards
+ with VIA chipsets.
+endef
+
+$(eval $(call KernelPackage,sound-via82xx))
 
 
 define KernelPackage/sound-soc-core
