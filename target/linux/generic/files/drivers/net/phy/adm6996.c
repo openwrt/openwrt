@@ -1099,6 +1099,11 @@ static void adm6996_remove(struct phy_device *pdev)
 		unregister_switch(&priv->dev);
 }
 
+static int adm6996_soft_reset(struct phy_device *phydev)
+{
+	/* we don't need an extra reset */
+	return 0;
+}
 
 static struct phy_driver adm6996_phy_driver = {
 	.name		= "Infineon ADM6996",
@@ -1110,6 +1115,7 @@ static struct phy_driver adm6996_phy_driver = {
 	.config_init	= &adm6996_config_init,
 	.config_aneg	= &adm6996_config_aneg,
 	.read_status	= &adm6996_read_status,
+	.soft_reset	= adm6996_soft_reset,
 	.driver		= { .owner = THIS_MODULE,},
 };
 
