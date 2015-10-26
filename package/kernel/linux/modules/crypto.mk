@@ -101,15 +101,25 @@ $(eval $(call KernelPackage,crypto-wq))
 define KernelPackage/crypto-rng
   TITLE:=CryptoAPI random number generation
   KCONFIG:=CONFIG_CRYPTO_RNG2
-  FILES:= \
-	$(LINUX_DIR)/crypto/rng.ko \
-	$(LINUX_DIR)/crypto/krng.ko
+  FILES:=$(LINUX_DIR)/crypto/rng.ko
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,4.2.0)),1)
+  FILES+=$(LINUX_DIR)/crypto/krng.ko
+endif
   AUTOLOAD:=$(call AutoLoad,09,rng krng)
   $(call AddDepends/crypto)
 endef
 
 $(eval $(call KernelPackage,crypto-rng))
 
+define KernelPackage/crypto-rng-jitterentropy
+  TITLE:=Jitterentropy Non-Deterministic Random Number Generator
+  KCONFIG:=CONFIG_CRYPTO_JITTERENTROPY
+  FILES:= $(LINUX_DIR)/crypto/jitterentropy_rng.ko
+  AUTOLOAD:=$(call AutoLoad,10,jitterentropy-rng)
+  $(call AddDepends/crypto)
+endef
+
+$(eval $(call KernelPackage,crypto-rng-jitterentropy))
 
 define KernelPackage/crypto-iv
   TITLE:=CryptoAPI initialization vectors
