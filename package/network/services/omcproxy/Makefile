@@ -17,7 +17,7 @@ PKG_SOURCE_URL:=https://github.com/sbyx/omcproxy.git
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_VERSION:=8de9fa84e018e152e45c342f10b5b5140b63e4b1
 PKG_MAINTAINER:=Steven Barth <cyrus@openwrt.org>
-PKG_LICENSE:=APACHE-2.0
+PKG_LICENSE:=Apache-2.0
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
