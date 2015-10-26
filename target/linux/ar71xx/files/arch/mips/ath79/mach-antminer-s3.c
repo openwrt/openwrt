@@ -25,6 +25,7 @@
 #define ANTMINER_S3_GPIO_LED_WLAN		0
 #define ANTMINER_S3_GPIO_LED_SYSTEM		17
 #define ANTMINER_S3_GPIO_LED_LAN		22
+#define ANTMINER_S3_GPIO_USB_POWER		26
 
 #define ANTMINER_S3_GPIO_BTN_RESET		11
 
@@ -81,6 +82,10 @@ static void __init antminer_s3_setup(void)
 	ath79_register_gpio_keys_polled(-1, ANTMINER_S3_KEYSPOLL_INTERVAL,
 					ARRAY_SIZE(ANTMINER_S3_GPIO_keys),
 					ANTMINER_S3_GPIO_keys);
+
+	gpio_request_one(ANTMINER_S3_GPIO_USB_POWER,
+			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
+			 "USB power");
 	ath79_register_usb();
 
 	ath79_register_m25p80(&ANTMINER_S3_flash_data);
