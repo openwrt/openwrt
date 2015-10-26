@@ -4947,7 +4947,7 @@
 +
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_i2s.c
-@@ -0,0 +1,309 @@
+@@ -0,0 +1,304 @@
 +/*
 + * mtk_audio_drv.c
 + *
@@ -5138,7 +5138,6 @@
 +	struct snd_pcm_runtime *runtime = substream->runtime;
 +	i2s_config_type* rtd = runtime->private_data;
 +
-+	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +	//printk("******* %s *******\n", __func__);
 +	switch(params_rate(params)){
 +	case 8000:
@@ -5151,7 +5150,6 @@
 +		srate = 32000;
 +		break;
 +	case 44100:
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +		srate = 44100;
 +		break;
 +	case 48000:
@@ -5163,9 +5161,7 @@
 +		break;
 +	}
 +	if(srate){
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +		if((rtd->bRxDMAEnable != GDMA_I2S_EN) && (rtd->bTxDMAEnable != GDMA_I2S_EN)){
-+			printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +			rtd->srate = srate;
 +			MSG("set audio sampling rate to %d Hz\n", rtd->srate);
 +		}
@@ -5217,7 +5213,6 @@
 +static int mt76xx_i2s_drv_probe(struct platform_device *pdev)
 +{
 +	//printk("****** %s ******\n", __func__);
-+	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +	return snd_soc_register_component(&pdev->dev, &mt76xx_i2s_component,
 +					&mt76xx_i2s_dai, 1);
 +}
@@ -5280,7 +5275,7 @@
 +#endif /* MTK_I2S_H_ */
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_machine.c
-@@ -0,0 +1,319 @@
+@@ -0,0 +1,317 @@
 +/*
 + * mt76xx_machine.c
 + *
@@ -5378,11 +5373,9 @@
 +	unsigned long* pTable;
 +	int mclk,ret,targetClk = 0;
 +
-+	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +	/*For duplex mode, avoid setting twice.*/
 +	if((rtd->bRxDMAEnable == GDMA_I2S_EN) || (rtd->bTxDMAEnable == GDMA_I2S_EN))
 +		return 0;
-+	//printk("%s:%d \n",__func__,__LINE__);
 +#if defined(CONFIG_I2S_MCLK_12MHZ)
 +	mclk = 12000000;
 +#elif defined(CONFIG_I2S_MCLK_12P288MHZ)
@@ -5392,7 +5385,6 @@
 +#endif
 +	//snd_soc_dai_set_sysclk(codec_dai,0,mclk, SND_SOC_CLOCK_IN);
 +
-+	printk("%s:%s[%d]%d\n", __FILE__, __func__, __LINE__, params_rate(params));
 +	switch(params_rate(params)){
 +	case 8000:
 +		index = 0;
@@ -5444,17 +5436,14 @@
 +		//MSG("audio sampling rate %u should be %d ~ %d Hz\n", (u32)params_rate(params), MIN_SRATE_HZ, MAX_SRATE_HZ);
 +		break;
 +	}
-+printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +#if defined(CONFIG_SND_SOC_WM8960)
 +	/*
 +	 * There is a fixed divide by 4 in the PLL and a selectable
 +	 * divide by N after the PLL which should be set to divide by 2 to meet this requirement.
 +	 * */
-+	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +	ret = snd_soc_dai_set_pll(codec_dai, 0, 0,mclk, targetClk*2);
 +	/* From app notes: allow Vref to stabilize to reduce clicks */
 +	if(rtd->slave_en){
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +		//printk("WM8960 is in master mode\n");
 +		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8960_DCLKDIV, 0x1c4);
 +		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8960_SYSCLKDIV, 0x5);
@@ -5476,12 +5465,10 @@
 +	pTable = i2s_codec_12p288Mhz;
 +	data = pTable[index];
 +#endif
-+	printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +	if(rtd->codec_pll_en)
 +		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8960_DACDIV, (data<<3)|0x5);
 +	else
 +		ret = snd_soc_dai_set_clkdiv(codec_dai, WM8960_DACDIV, (data<<3|0x4));
-+printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
 +#endif
 +
 +	return 0;
@@ -5504,10 +5491,11 @@
 +#if defined(CONFIG_SND_SOC_WM8750)
 +		I2C_BOARD_INFO("wm8750", (0x36 >> 1)),
 +#elif defined(CONFIG_SND_SOC_WM8960)
-+	//	I2C_BOARD_INFO("wm8960", (0x34 >> 1)),
 +		I2C_BOARD_INFO("codec_wm8960", (0x34)),
++	}, {
++		I2C_BOARD_INFO("wm8960", (0x34 >> 1)),
 +#endif
-+	},
++	}
 +};
 +
 +static struct platform_device *soc_mtk_i2s_dev;
@@ -5525,12 +5513,17 @@
 +	adapter = i2c_get_adapter(I2C_AUDIO_DEV_ID);
 +	if (!adapter)
 +		return -ENODEV;
-+	client = i2c_new_device(adapter, i2c_board_info);
++	client = i2c_new_device(adapter, &i2c_board_info[0]);
 +	if (!client)
 +		return -ENODEV;
++	i2c_get_clientdata(client);
++
++	client = i2c_new_device(adapter, &i2c_board_info[1]);
++	if (!client)
++		return -ENODEV;
++	i2c_get_clientdata(client);
 +
 +	i2c_put_adapter(adapter);
-+	i2c_get_clientdata(client);
 +
 +	soc_mtk_i2s_dev =
 +		platform_device_register_simple("mt76xx-i2s", -1, NULL, 0);
@@ -8288,27 +8281,11 @@
  	}
  	snd_soc_write(codec, WM8960_PLL1, reg);
  
-@@ -876,19 +964,27 @@
- 
- 	switch (div_id) {
- 	case WM8960_SYSCLKDIV:
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
- 		reg = snd_soc_read(codec, WM8960_CLOCK1) & 0x1f9;
- 		snd_soc_write(codec, WM8960_CLOCK1, reg | div);
- 		break;
- 	case WM8960_DACDIV:
- 		reg = snd_soc_read(codec, WM8960_CLOCK1) & 0x1c7;
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
- 		snd_soc_write(codec, WM8960_CLOCK1, reg | div);
- 		break;
- 	case WM8960_OPCLKDIV:
- 		reg = snd_soc_read(codec, WM8960_PLL1) & 0x03f;
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
+@@ -888,7 +976,11 @@
  		snd_soc_write(codec, WM8960_PLL1, reg | div);
  		break;
  	case WM8960_DCLKDIV:
 +#if 1
-+		printk("%s:%s[%d]\n", __FILE__, __func__, __LINE__);
  		reg = snd_soc_read(codec, WM8960_CLOCK2) & 0x03f;
 +#else
 +		reg = snd_soc_read(codec, WM8960_CLOCK2) & 0x03f;
@@ -8316,7 +8293,7 @@
  		snd_soc_write(codec, WM8960_CLOCK2, reg | div);
  		break;
  	case WM8960_TOCLKSEL:
-@@ -962,7 +1058,7 @@
+@@ -962,7 +1054,7 @@
  {
  	struct wm8960_priv *wm8960 = snd_soc_codec_get_drvdata(codec);
  	struct wm8960_data *pdata = dev_get_platdata(codec->dev);
@@ -8325,7 +8302,7 @@
  
  	wm8960->set_bias_level = wm8960_set_bias_level_out3;
  
-@@ -973,11 +1069,7 @@
+@@ -973,11 +1065,7 @@
  			wm8960->set_bias_level = wm8960_set_bias_level_capless;
  	}
  
