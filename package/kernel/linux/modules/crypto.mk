@@ -140,6 +140,7 @@ define KernelPackage/crypto-hw-talitos
   TITLE:=Freescale integrated security engine (SEC) driver
   DEPENDS:=+kmod-crypto-manager +kmod-crypto-hash +kmod-random-core +kmod-crypto-authenc
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_TALITOS
   FILES:= \
 	$(LINUX_DIR)/drivers/crypto/talitos.ko
@@ -154,6 +155,7 @@ define KernelPackage/crypto-hw-padlock
   TITLE:=VIA PadLock ACE with AES/SHA hw crypto module
   DEPENDS:=+kmod-crypto-manager
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PADLOCK \
 	CONFIG_CRYPTO_DEV_PADLOCK_AES \
 	CONFIG_CRYPTO_DEV_PADLOCK_SHA
@@ -171,6 +173,7 @@ define KernelPackage/crypto-hw-geode
   TITLE:=AMD Geode hardware crypto module
   DEPENDS:=+kmod-crypto-manager
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_GEODE
   FILES:=$(LINUX_DIR)/drivers/crypto/geode-aes.ko
   AUTOLOAD:=$(call AutoLoad,09,geode-aes)
@@ -184,6 +187,7 @@ define KernelPackage/crypto-hw-hifn-795x
   TITLE:=HIFN 795x crypto accelerator
   DEPENDS:=+kmod-random-core +kmod-crypto-manager
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_HIFN_795X \
 	CONFIG_CRYPTO_DEV_HIFN_795X_RNG=y
   FILES:=$(LINUX_DIR)/drivers/crypto/hifn_795x.ko
@@ -198,6 +202,7 @@ define KernelPackage/crypto-hw-ppc4xx
   TITLE:=AMCC PPC4xx hardware crypto module
   DEPENDS:=@TARGET_ppc40x||TARGET_ppc44x
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_PPC4XX
   FILES:=$(LINUX_DIR)/drivers/crypto/amcc/crypto4xx.ko
   AUTOLOAD:=$(call AutoLoad,90,crypto4xx)
@@ -215,6 +220,7 @@ define KernelPackage/crypto-hw-omap
   TITLE:=TI OMAP hardware crypto modules
   DEPENDS:=@TARGET_omap
   KCONFIG:= \
+	CONFIG_CRYPTO_HW=y \
 	CONFIG_CRYPTO_DEV_OMAP_AES \
 	CONFIG_CRYPTO_DEV_OMAP_DES \
 	CONFIG_CRYPTO_DEV_OMAP_SHAM
