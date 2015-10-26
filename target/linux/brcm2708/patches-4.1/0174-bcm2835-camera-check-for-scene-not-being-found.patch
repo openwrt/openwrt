@@ -1,0 +1,31 @@
+From ebdecd6494e5b67306b5e247180f5d5c4b3d8f27 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 2 Sep 2015 07:33:39 -0400
+Subject: [PATCH 174/203] bcm2835: camera: check for scene not being found
+
+static analysis by cppcheck detected some potential NULL pointer
+dereference issues:
+
+[drivers/media/platform/bcm2835/controls.c:854]: (error) Possible null
+  pointer dereference: scene
+  (and lines 858, 859 too)
+
+it is possible that scene is not found because of an invalue ctrl->val
+and is therefore NULL and hence causing a null pointer dereference.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ drivers/media/platform/bcm2835/controls.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/media/platform/bcm2835/controls.c
++++ b/drivers/media/platform/bcm2835/controls.c
+@@ -845,6 +845,8 @@ static int ctrl_set_scene_mode(struct bm
+ 				break;
+ 			}
+ 		}
++		if (!scene)
++			return -EINVAL;
+ 		if (i >= ARRAY_SIZE(scene_configs))
+ 			return -EINVAL;
+ 

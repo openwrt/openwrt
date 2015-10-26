@@ -1,0 +1,25 @@
+From ec31dc882de68b041b6ac36e3de7e17cf256c222 Mon Sep 17 00:00:00 2001
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 2 Sep 2015 07:47:51 -0400
+Subject: [PATCH 175/203] bcm2835: memcpy port data to m rather than rmsg
+
+static analysis by cppcheck detected a memcpy to rmsg which is
+not actually initialized at that point.  The memcpy should be copying
+to variable m instead.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+---
+ drivers/media/platform/bcm2835/mmal-vchiq.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/platform/bcm2835/mmal-vchiq.c
++++ b/drivers/media/platform/bcm2835/mmal-vchiq.c
+@@ -851,7 +851,7 @@ static int port_info_set(struct vchiq_mm
+ 	       sizeof(union mmal_es_specific_format));
+ 
+ 	m.u.port_info_set.format.extradata_size = port->format.extradata_size;
+-	memcpy(rmsg->u.port_info_set.extradata, port->format.extradata,
++	memcpy(&m.u.port_info_set.extradata, port->format.extradata,
+ 	       port->format.extradata_size);
+ 
+ 	ret = send_synchronous_mmal_msg(instance, &m,

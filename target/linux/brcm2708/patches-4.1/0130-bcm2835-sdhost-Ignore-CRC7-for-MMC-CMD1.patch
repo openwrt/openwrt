@@ -1,7 +1,7 @@
-From 0bb775b407dab3bab972663ef47dde38b0d34c24 Mon Sep 17 00:00:00 2001
+From abc4d789f9fd535f05a3dcb08712dfd6bada45b6 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Mon, 20 Jul 2015 17:32:18 +0100
-Subject: [PATCH 130/171] bcm2835-sdhost: Ignore CRC7 for MMC CMD1
+Subject: [PATCH 130/203] bcm2835-sdhost: Ignore CRC7 for MMC CMD1
 
 It seems that the sdhost interface returns CRC7 errors for CMD1,
 which is the MMC-specific SEND_OP_COND. Returning these errors to

@@ -1,7 +1,7 @@
-From 4e62a443aa8ffecca7918db93329d8bd8210a92c Mon Sep 17 00:00:00 2001
+From a3414b2d51a0fa2b4cea7886168e5e14013904c8 Mon Sep 17 00:00:00 2001
 From: Phil Elwell <phil@raspberrypi.org>
 Date: Thu, 20 Aug 2015 13:50:18 +0100
-Subject: [PATCH 165/171] bcm2708-dmaengine: Use more DMA channels (but not 12)
+Subject: [PATCH 163/203] bcm2708-dmaengine: Use more DMA channels (but not 12)
 
 1) Only the bcm2708_fb drivers uses the legacy DMA API, and
 it requires a BULK-capable channel, so all other types

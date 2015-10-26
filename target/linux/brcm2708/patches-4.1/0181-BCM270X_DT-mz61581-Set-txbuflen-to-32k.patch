@@ -1,0 +1,47 @@
+From d9273547c2d4f0d79a3d22324dfc0e125754e6e0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Noralf=20Tr=C3=B8nnes?= <noralf@tronnes.org>
+Date: Sun, 13 Sep 2015 17:17:14 +0200
+Subject: [PATCH 181/203] BCM270X_DT: mz61581: Set txbuflen to 32k
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Because of the spi dma mapping/engine overhead with spi-bcm2835,
+txbuflen has to be increased from 4096 to 32768 to maximize
+throughput (11MB/s at 128MHz).
+
+Signed-off-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ arch/arm/boot/dts/overlays/README              | 2 ++
+ arch/arm/boot/dts/overlays/mz61581-overlay.dts | 2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -368,6 +368,8 @@ Params: speed                    Display
+ 
+         fps                      Delay between frame updates
+ 
++        txbuflen                 Transmit buffer length (default 32768)
++
+         debug                    Debug output level {0-7}
+ 
+         xohms                    Touchpanel sensitivity (X-plate resistance)
+--- a/arch/arm/boot/dts/overlays/mz61581-overlay.dts
++++ b/arch/arm/boot/dts/overlays/mz61581-overlay.dts
+@@ -57,6 +57,7 @@
+ 				bgr;
+ 				fps = <30>;
+ 				buswidth = <8>;
++				txbuflen = <32768>;
+ 
+ 				reset-gpios = <&gpio 15 0>;
+ 				dc-gpios = <&gpio 25 0>;
+@@ -103,6 +104,7 @@
+ 		speed =   <&mz61581>, "spi-max-frequency:0";
+ 		rotate =  <&mz61581>, "rotate:0";
+ 		fps =     <&mz61581>, "fps:0";
++		txbuflen = <&mz61581>, "txbuflen:0";
+ 		debug =   <&mz61581>, "debug:0";
+ 		xohms =   <&mz61581_ts>,"ti,x-plate-ohms;0";
+ 	};

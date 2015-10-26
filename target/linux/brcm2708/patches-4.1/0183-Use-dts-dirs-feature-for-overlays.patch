@@ -1,0 +1,37 @@
+From a025837fe723648981d68e23e53d3c4d7f270c21 Mon Sep 17 00:00:00 2001
+From: David Lechner <david@lechnology.com>
+Date: Mon, 14 Sep 2015 19:08:36 -0500
+Subject: [PATCH 183/203] Use dts-dirs feature for overlays.
+
+The kernel makefiles have a dts-dirs target that is for vendor subdirectories.
+
+Using this fixes the install_dtbs target, which previously did not install the overlays.
+---
+ arch/arm/boot/dts/Makefile | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -15,6 +15,9 @@ endif
+ ifeq ($(CONFIG_ARCH_BCM2835),y)
+    RPI_DT_OVERLAYS=y
+ endif
++ifeq ($(RPI_DT_OVERLAYS),y)
++    dts-dirs += overlays
++endif
+ 
+ dtb-$(CONFIG_ARCH_ALPINE) += \
+ 	alpine-db.dtb
+@@ -683,11 +686,10 @@ targets += $(dtb-y)
+ endif
+ 
+ always		:= $(dtb-y)
++subdir-y	:= $(dts-dirs)
+ clean-files	:= *.dtb
+ 
+ # Enable fixups to support overlays on BCM2708 platforms
+ ifeq ($(RPI_DT_OVERLAYS),y)
+ 	DTC_FLAGS ?= -@
+ endif
+-
+-subdir-y  += overlays

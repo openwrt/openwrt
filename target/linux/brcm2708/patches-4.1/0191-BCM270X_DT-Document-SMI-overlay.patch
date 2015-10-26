@@ -1,0 +1,59 @@
+From 31c23a1d9ad93cf6795d1fc72f9a254d5bcfc81b Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 16 Sep 2015 17:28:41 +0100
+Subject: [PATCH 191/203] BCM270X_DT: Document SMI overlay
+
+---
+ arch/arm/boot/dts/overlays/Makefile |  6 +++---
+ arch/arm/boot/dts/overlays/README   | 18 ++++++++++++++++++
+ 2 files changed, 21 insertions(+), 3 deletions(-)
+
+--- a/arch/arm/boot/dts/overlays/Makefile
++++ b/arch/arm/boot/dts/overlays/Makefile
+@@ -13,9 +13,6 @@ ifeq ($(CONFIG_ARCH_BCM2835),y)
+ endif
+ 
+ dtb-$(RPI_DT_OVERLAYS) += ads7846-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += smi-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += smi-dev-overlay.dtb
+-dtb-$(RPI_DT_OVERLAYS) += smi-nand-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += bmp085_i2c-sensor-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += dht11-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += enc28j60-overlay.dtb
+@@ -48,6 +45,9 @@ dtb-$(RPI_DT_OVERLAYS) += rpi-proto-over
+ dtb-$(RPI_DT_OVERLAYS) += rpi-sense-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += sdhost-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += sdio-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += smi-dev-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += smi-nand-overlay.dtb
++dtb-$(RPI_DT_OVERLAYS) += smi-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2708-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-bcm2835-overlay.dtb
+ dtb-$(RPI_DT_OVERLAYS) += spi-dma-overlay.dtb
+--- a/arch/arm/boot/dts/overlays/README
++++ b/arch/arm/boot/dts/overlays/README
+@@ -530,6 +530,24 @@ Params: overclock_50             Clock (
+         debug                    Enable debug output (default off)
+ 
+ 
++Name:   smi
++Info:   Enables the Secondary Memory Interface peripheral. Uses GPIOs 2-25!
++Load:   dtoverlay=smi
++Params: <None>
++
++
++Name:   smi-dev
++Info:   Enables the userspace interface for the SMI driver
++Load:   dtoverlay=smi-dev
++Params: <None>
++
++
++Name:   smi-nand
++Info:   Enables access to NAND flash via the SMI interface
++Load:   dtoverlay=smi-nand
++Params: <None>
++
++
+ Name:   spi-bcm2708
+ Info:   Selects the bcm2708-spi SPI driver
+ Load:   dtoverlay=spi-bcm2708
