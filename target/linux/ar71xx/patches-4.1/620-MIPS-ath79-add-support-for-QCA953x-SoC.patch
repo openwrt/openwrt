@@ -413,12 +413,13 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  
  	id = ath79_reset_rr(AR71XX_RESET_REG_REV_ID);
  	major = id & REV_ID_MAJOR_MASK;
-@@ -152,6 +153,16 @@ static void __init ath79_detect_sys_type
+@@ -152,6 +153,17 @@ static void __init ath79_detect_sys_type
  		rev = id & AR934X_REV_ID_REVISION_MASK;
  		break;
  
 +	case REV_ID_MAJOR_QCA9533_V2:
 +		ver = 2;
++		ath79_soc_rev = 2;
 +		/* drop through */
 +
 +	case REV_ID_MAJOR_QCA9533:
@@ -430,15 +431,23 @@ meaning of the bits CPUCLK_FROM_CPUPLL and DDRCLK_FROM_DDRPLL is reversed.
  	case REV_ID_MAJOR_QCA9556:
  		ath79_soc = ATH79_SOC_QCA9556;
  		chip = "9556";
-@@ -170,7 +181,7 @@ static void __init ath79_detect_sys_type
+@@ -168,11 +180,12 @@ static void __init ath79_detect_sys_type
+ 		panic("ath79: unknown SoC, id:0x%08x", id);
+ 	}
  
- 	ath79_soc_rev = rev;
+-	ath79_soc_rev = rev;
++	if (ver == 1)
++		ath79_soc_rev = rev;
  
 -	if (soc_is_qca955x())
+-		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s rev %u",
+-			chip, rev);
 +	if (soc_is_qca953x() || soc_is_qca955x())
- 		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s rev %u",
- 			chip, rev);
++		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s ver %u rev %u",
++			chip, ver, rev);
  	else
+ 		sprintf(ath79_sys_type, "Atheros AR%s rev %u", chip, rev);
+ 	pr_info("SoC: %s\n", ath79_sys_type);
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 @@ -105,6 +105,21 @@

@@ -452,7 +452,7 @@
  		return -ENODEV;
 --- a/arch/mips/ath79/setup.c
 +++ b/arch/mips/ath79/setup.c
-@@ -175,14 +175,29 @@ static void __init ath79_detect_sys_type
+@@ -176,6 +176,18 @@ static void __init ath79_detect_sys_type
  		rev = id & QCA955X_REV_ID_REVISION_MASK;
  		break;
  
@@ -471,19 +471,20 @@
  	default:
  		panic("ath79: unknown SoC, id:0x%08x", id);
  	}
- 
- 	ath79_soc_rev = rev;
+@@ -183,9 +195,12 @@ static void __init ath79_detect_sys_type
+ 	if (ver == 1)
+ 		ath79_soc_rev = rev;
  
 -	if (soc_is_qca953x() || soc_is_qca955x())
--		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s rev %u",
 +	if (soc_is_qca953x() || soc_is_qca955x() || soc_is_qca9561())
-+		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s ver %u rev %u",
-+			chip, ver, rev);
+ 		sprintf(ath79_sys_type, "Qualcomm Atheros QCA%s ver %u rev %u",
+ 			chip, ver, rev);
 +	else if (soc_is_tp9343())
 +		sprintf(ath79_sys_type, "Qualcomm Atheros TP%s rev %u",
- 			chip, rev);
++			chip, rev);
  	else
  		sprintf(ath79_sys_type, "Atheros AR%s rev %u", chip, rev);
+ 	pr_info("SoC: %s\n", ath79_sys_type);
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 @@ -143,6 +143,23 @@
