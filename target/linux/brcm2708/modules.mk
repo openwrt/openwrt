@@ -66,20 +66,21 @@ endef
 $(eval $(call KernelPackage,sound-soc-hifiberry-dac))
 
 define KernelPackage/sound-soc-hifiberry-dacplus
-  TITLE:=Support for HifiBerry DAC+
+  TITLE:=Support for HifiBerry DAC+ / DAC+ Pro
   KCONFIG:= \
 	CONFIG_SND_BCM2708_SOC_HIFIBERRY_DACPLUS \
 	CONFIG_SND_SOC_PCM512x
   FILES:= \
+	$(LINUX_DIR)/drivers/clk/clk-hifiberry-dacpro.ko \
 	$(LINUX_DIR)/sound/soc/bcm/snd-soc-hifiberry-dacplus.ko \
 	$(LINUX_DIR)/sound/soc/codecs/snd-soc-pcm512x.ko
-  AUTOLOAD:=$(call AutoLoad,68,snd-soc-pcm512x snd-soc-hifiberry-dacplus)
+  AUTOLOAD:=$(call AutoLoad,68,clk-hifiberry-dacpro snd-soc-pcm512x snd-soc-hifiberry-dacplus)
   DEPENDS:=kmod-sound-soc-bcm2708-i2s +kmod-i2c-bcm2708
   $(call AddDepends/sound)
 endef
 
 define KernelPackage/sound-soc-hifiberry-dacplus/description
-  This package contains support for HifiBerry DAC+
+  This package contains support for HifiBerry DAC+ / DAC+ Pro
 endef
 
 $(eval $(call KernelPackage,sound-soc-hifiberry-dacplus))
@@ -234,6 +235,40 @@ define KernelPackage/random-bcm2835/description
 endef
 
 $(eval $(call KernelPackage,random-bcm2835))
+
+
+define KernelPackage/smi-bcm2835
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BCM2835 SMI driver
+  KCONFIG:=CONFIG_BCM2835_SMI
+  FILES:=$(LINUX_DIR)/drivers/misc/bcm2835_smi.ko
+  AUTOLOAD:=$(call AutoLoad,20,bcm2835_smi)
+  DEPENDS:=@TARGET_brcm2708
+endef
+
+define KernelPackage/smi-bcm2835/description
+  This package contains the Character device driver for Broadcom Secondary
+  Memory Interface
+endef
+
+$(eval $(call KernelPackage,smi-bcm2835))
+
+define KernelPackage/smi-bcm2835-dev
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=BCM2835 SMI device driver
+  KCONFIG:=CONFIG_BCM2835_SMI_DEV
+  FILES:=$(LINUX_DIR)/drivers/char/broadcom/bcm2835_smi_dev.ko
+  AUTOLOAD:=$(call AutoLoad,21,bcm2835_smi_dev)
+  DEPENDS:=@TARGET_brcm2708 +kmod-smi-bcm2835
+endef
+
+define KernelPackage/smi-bcm2835-dev/description
+  This driver provides a character device interface (ioctl + read/write) to
+  Broadcom's Secondary Memory interface. The low-level functionality is provided
+  by the SMI driver itself.
+endef
+
+$(eval $(call KernelPackage,smi-bcm2835-dev))
 
 
 define KernelPackage/spi-bcm2708
