@@ -97,9 +97,10 @@ HOST_CONFIGURE_ARGS+= \
 	--prefix=$(STAGING_DIR_HOST)
 
 define Host/Install
-	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/
+	$(INSTALL_DIR) $(STAGING_DIR_HOST)/bin/ $(STAGING_DIR_HOST)/usr/lib
 	$(MAKE) -C $(HOST_BUILD_DIR) PREFIX=$(STAGING_DIR_HOST)/usr/ install
-#	$(INSTALL_BIN) $(HOST_BUILD_DIR)/Parser/pgen $(STAGING_DIR_HOST)/bin/pgen2
+	$(CP) $(HOST_BUILD_DIR)/libbz2.so* $(STAGING_DIR_HOST)/usr/lib/
+	$(CP) $(HOST_BUILD_DIR)/libbz2.so.1.0 $(STAGING_DIR_HOST)/usr/lib/libbz2.so
 endef
 
 $(eval $(call HostBuild))
