@@ -43,6 +43,7 @@ define Build/boot-img
 	mcopy -i $@.boot $(DTS_DIR)/$(DEVICE_DTS).dtb ::$(DEVICE_DTS).dtb
 	mmd -i $@.boot ::/overlays
 	mcopy -i $@.boot $(DTS_DIR)/overlays/*.dtb ::/overlays/
+	mcopy -i $@.boot $(DTS_DIR)/overlays/README ::/overlays/
 endef
 
 define Build/sdcard-img
