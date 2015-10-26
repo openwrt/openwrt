@@ -265,6 +265,13 @@ if KERNEL_CGROUPS
 		  Provides a cgroup implementing whitelists for devices which
 		  a process in the cgroup can mknod or open.
 
+	config KERNEL_CGROUP_PIDS
+		bool "PIDs cgroup subsystem"
+		default y
+		help
+		  Provides enforcement of process number limits in the scope of a
+		  cgroup.
+
 	config KERNEL_CPUSETS
 		bool "Cpuset support"
 		default n
