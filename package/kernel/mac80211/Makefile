@@ -10,11 +10,11 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=mac80211
 
-PKG_VERSION:=2015-07-21
+PKG_VERSION:=2015-10-26
 PKG_RELEASE:=1
 PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
 PKG_BACKPORT_VERSION:=
-PKG_MD5SUM:=ec529acfb9c942daf8116e5cff47c999
+PKG_MD5SUM:=3b07569065a18c6a69a340ea50235b7d
 
 PKG_SOURCE:=compat-wireless-$(PKG_VERSION)$(PKG_BACKPORT_VERSION).tar.bz2
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/compat-wireless-$(PKG_VERSION)
@@ -1435,7 +1435,7 @@ define KernelPackage/rtl8180
   $(call KernelPackage/rtl818x/Default)
   DEPENDS+= @PCI_SUPPORT
   TITLE+= (RTL8180 PCI)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8180/rtl818x_pci.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtl818x/rtl8180/rtl818x_pci.ko
   AUTOLOAD:=$(call AutoProbe,rtl818x_pci)
 endef
 
@@ -1443,7 +1443,7 @@ define KernelPackage/rtl8187
 $(call KernelPackage/rtl818x/Default)
   DEPENDS+= @USB_SUPPORT +kmod-usb-core
   TITLE+= (RTL8187 USB)
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtl818x/rtl8187/rtl8187.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtl818x/rtl8187/rtl8187.ko
   AUTOLOAD:=$(call AutoProbe,rtl8187)
 endef
 
@@ -1460,7 +1460,7 @@ define KernelPackage/rtlwifi
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek common driver part
   DEPENDS+= @(PCI_SUPPORT||USB_SUPPORT) +kmod-mac80211 +@DRIVER_11N_SUPPORT
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtlwifi.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtlwifi.ko
   HIDDEN:=1
 endef
 
@@ -1468,7 +1468,7 @@ define KernelPackage/rtlwifi-pci
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek common driver part (PCI support)
   DEPENDS+= @PCI_SUPPORT +kmod-rtlwifi
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl_pci.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl_pci.ko
   AUTOLOAD:=$(call AutoProbe,rtl_pci)
   HIDDEN:=1
 endef
@@ -1477,7 +1477,7 @@ define KernelPackage/rtlwifi-usb
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek common driver part (USB support)
   DEPENDS+= @USB_SUPPORT +kmod-usb-core +kmod-rtlwifi
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl_usb.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl_usb.ko
   AUTOLOAD:=$(call AutoProbe,rtl_usb)
   HIDDEN:=1
 endef
@@ -1486,7 +1486,7 @@ define KernelPackage/rtl8192c-common
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192CE/RTL8192CU common support module
   DEPENDS+= +kmod-rtlwifi
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192c/rtl8192c-common.ko
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192c/rtl8192c-common.ko
   HIDDEN:=1
 endef
 
@@ -1494,7 +1494,7 @@ define KernelPackage/rtl8192ce
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192CE/RTL8188CE support
   DEPENDS+= +kmod-rtlwifi-pci +kmod-rtl8192c-common
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192ce/rtl8192ce.ko
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192ce/rtl8192ce.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192ce)
 endef
 
@@ -1509,7 +1509,7 @@ define KernelPackage/rtl8192se
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192SE/RTL8191SE support
   DEPENDS+= +kmod-rtlwifi-pci
-  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192se/rtl8192se.ko
+  FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192se/rtl8192se.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192se)
 endef
 
@@ -1522,7 +1522,7 @@ define KernelPackage/rtl8192de
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192DE/RTL8188DE support
   DEPENDS+= +kmod-rtlwifi-pci
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192de/rtl8192de.ko
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192de/rtl8192de.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192de)
 endef
 
@@ -1535,7 +1535,7 @@ define KernelPackage/rtl8192cu
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192CU/RTL8188CU support
   DEPENDS+= +kmod-rtlwifi-usb +kmod-rtl8192c-common
-  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/rtlwifi/rtl8192cu/rtl8192cu.ko
+  FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rtl8192cu.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192cu)
 endef
 
