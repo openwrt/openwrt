@@ -1,6 +1,6 @@
 --- a/networking/udhcp/dhcpc.c
 +++ b/networking/udhcp/dhcpc.c
-@@ -663,10 +663,10 @@ static void add_client_options(struct dh
+@@ -673,10 +673,10 @@ static void add_client_options(struct dh
   * client reverts to using the IP broadcast address.
   */
  
@@ -13,7 +13,7 @@
  		/*dst*/ INADDR_BROADCAST, SERVER_PORT, MAC_BCAST_ADDR,
  		client_config.ifindex);
  }
-@@ -677,7 +677,7 @@ static int bcast_or_ucast(struct dhcp_pa
+@@ -687,7 +687,7 @@ static int bcast_or_ucast(struct dhcp_pa
  		return udhcp_send_kernel_packet(packet,
  			ciaddr, CLIENT_PORT,
  			server, SERVER_PORT);
@@ -22,7 +22,7 @@
  }
  
  /* Broadcast a DHCP discover packet to the network, with an optionally requested IP */
-@@ -705,7 +705,7 @@ static NOINLINE int send_discover(uint32
+@@ -715,7 +715,7 @@ static NOINLINE int send_discover(uint32
  
  	if (msgs++ < 3)
  	bb_info_msg("Sending discover...");
@@ -31,7 +31,7 @@
  }
  
  /* Broadcast a DHCP request message */
-@@ -749,7 +749,7 @@ static NOINLINE int send_select(uint32_t
+@@ -759,7 +759,7 @@ static NOINLINE int send_select(uint32_t
  
  	addr.s_addr = requested;
  	bb_info_msg("Sending select for %s...", inet_ntoa(addr));
@@ -40,7 +40,7 @@
  }
  
  /* Unicast or broadcast a DHCP renew message */
-@@ -817,7 +817,7 @@ static NOINLINE int send_decline(/*uint3
+@@ -827,7 +827,7 @@ static NOINLINE int send_decline(/*uint3
  	udhcp_add_simple_option(&packet, DHCP_SERVER_ID, server);
  
  	bb_info_msg("Sending decline...");
