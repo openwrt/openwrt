@@ -991,8 +991,11 @@ static int fe_poll(struct napi_struct *napi, int budget)
 
 	if (!tx_again && (rx_done < budget)) {
 		status = fe_reg_r32(FE_REG_FE_INT_STATUS);
-		if (status & (tx_intr | rx_intr ))
+		if (status & (tx_intr | rx_intr)) {
+			/* let napi poll again */
+			rx_done = budget;
 			goto poll_again;
+		}
 
 		napi_complete(napi);
 		fe_int_enable(tx_intr | rx_intr);
