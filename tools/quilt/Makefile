@@ -1,5 +1,5 @@
 # 
-# Copyright (C) 2006-2014 OpenWrt.org
+# Copyright (C) 2006-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=quilt
-PKG_VERSION:=0.63
+PKG_VERSION:=0.64
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=@SAVANNAH/quilt
-PKG_MD5SUM:=c0ef4beb58a6fa72563b955e70624b6e
+PKG_MD5SUM:=fc0310db5868a0873d602d4332a76d43
 
 include $(INCLUDE_DIR)/host-build.mk
 
