@@ -1,0 +1,77 @@
+From: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+Date: Tue, 27 Oct 2015 17:51:11 +0530
+Subject: [PATCH] ath10k: remove supported chain mask
+
+Removing supported chainmask fields as it can be always derived
+from num_rf_chains.
+
+Signed-off-by: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+Signed-off-by: Kalle Valo <kvalo@qca.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath10k/core.h
++++ b/drivers/net/wireless/ath/ath10k/core.h
+@@ -745,8 +745,6 @@ struct ath10k {
+ 	int num_started_vdevs;
+ 
+ 	/* Protected by conf-mutex */
+-	u8 supp_tx_chainmask;
+-	u8 supp_rx_chainmask;
+ 	u8 cfg_tx_chainmask;
+ 	u8 cfg_rx_chainmask;
+ 
+--- a/drivers/net/wireless/ath/ath10k/mac.c
++++ b/drivers/net/wireless/ath/ath10k/mac.c
+@@ -3736,13 +3736,8 @@ static int ath10k_get_antenna(struct iee
+ 
+ 	mutex_lock(&ar->conf_mutex);
+ 
+-	if (ar->cfg_tx_chainmask) {
+-		*tx_ant = ar->cfg_tx_chainmask;
+-		*rx_ant = ar->cfg_rx_chainmask;
+-	} else {
+-		*tx_ant = ar->supp_tx_chainmask;
+-		*rx_ant = ar->supp_rx_chainmask;
+-	}
++	*tx_ant = ar->cfg_tx_chainmask;
++	*rx_ant = ar->cfg_rx_chainmask;
+ 
+ 	mutex_unlock(&ar->conf_mutex);
+ 
+@@ -3884,9 +3879,7 @@ static int ath10k_start(struct ieee80211
+ 		}
+ 	}
+ 
+-	if (ar->cfg_tx_chainmask)
+-		__ath10k_set_antenna(ar, ar->cfg_tx_chainmask,
+-				     ar->cfg_rx_chainmask);
++	__ath10k_set_antenna(ar, ar->cfg_tx_chainmask, ar->cfg_rx_chainmask);
+ 
+ 	/*
+ 	 * By default FW set ARP frames ac to voice (6). In that case ARP
+@@ -7169,8 +7162,8 @@ int ath10k_mac_register(struct ath10k *a
+ 		BIT(NL80211_IFTYPE_AP) |
+ 		BIT(NL80211_IFTYPE_MESH_POINT);
+ 
+-	ar->hw->wiphy->available_antennas_rx = ar->supp_rx_chainmask;
+-	ar->hw->wiphy->available_antennas_tx = ar->supp_tx_chainmask;
++	ar->hw->wiphy->available_antennas_rx = ar->cfg_rx_chainmask;
++	ar->hw->wiphy->available_antennas_tx = ar->cfg_tx_chainmask;
+ 
+ 	if (!test_bit(ATH10K_FW_FEATURE_NO_P2P, ar->fw_features))
+ 		ar->hw->wiphy->interface_modes |=
+--- a/drivers/net/wireless/ath/ath10k/wmi.c
++++ b/drivers/net/wireless/ath/ath10k/wmi.c
+@@ -4460,8 +4460,10 @@ static void ath10k_wmi_event_service_rea
+ 		ar->num_rf_chains = ar->max_spatial_stream;
+ 	}
+ 
+-	ar->supp_tx_chainmask = (1 << ar->num_rf_chains) - 1;
+-	ar->supp_rx_chainmask = (1 << ar->num_rf_chains) - 1;
++	if (!ar->cfg_tx_chainmask) {
++		ar->cfg_tx_chainmask = (1 << ar->num_rf_chains) - 1;
++		ar->cfg_rx_chainmask = (1 << ar->num_rf_chains) - 1;
++	}
+ 
+ 	if (strlen(ar->hw->wiphy->fw_version) == 0) {
+ 		snprintf(ar->hw->wiphy->fw_version,

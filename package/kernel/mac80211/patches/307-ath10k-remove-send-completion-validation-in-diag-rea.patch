@@ -1,0 +1,49 @@
+From: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+Date: Fri, 23 Oct 2015 18:01:04 +0530
+Subject: [PATCH] ath10k: remove send completion validation in diag
+ read/write
+
+CE diag window access is serialized (it has to be by design) so
+there's no way to get a different send completion. so there's no
+need for post completion validation.
+
+Signed-off-by: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+Signed-off-by: Kalle Valo <kvalo@qca.qualcomm.com>
+---
+
+--- a/drivers/net/wireless/ath/ath10k/pci.c
++++ b/drivers/net/wireless/ath/ath10k/pci.c
+@@ -920,16 +920,6 @@ static int ath10k_pci_diag_read_mem(stru
+ 			}
+ 		}
+ 
+-		if (nbytes != completed_nbytes) {
+-			ret = -EIO;
+-			goto done;
+-		}
+-
+-		if (buf != (u32)address) {
+-			ret = -EIO;
+-			goto done;
+-		}
+-
+ 		i = 0;
+ 		while (ath10k_ce_completed_recv_next_nolock(ce_diag, NULL, &buf,
+ 							    &completed_nbytes,
+@@ -1094,16 +1084,6 @@ static int ath10k_pci_diag_write_mem(str
+ 			}
+ 		}
+ 
+-		if (nbytes != completed_nbytes) {
+-			ret = -EIO;
+-			goto done;
+-		}
+-
+-		if (buf != ce_data) {
+-			ret = -EIO;
+-			goto done;
+-		}
+-
+ 		i = 0;
+ 		while (ath10k_ce_completed_recv_next_nolock(ce_diag, NULL, &buf,
+ 							    &completed_nbytes,
