@@ -84,6 +84,9 @@ endif
 ifdef CONFIG_USE_MUSL
   TARGET_CFLAGS += -DHAVE_SETNS
 endif
+ifdef CONFIG_UCLIBC_USE_VERSION_NG
+  TARGET_CFLAGS += -DHAVE_SETNS
+endif
 
 TARGET_CFLAGS += -ffunction-sections -fdata-sections
 
