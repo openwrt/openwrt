@@ -20,9 +20,26 @@ netgear,r8000)
 	;;
 esac
 
+# Workaround for devices using eth2
+case "$board" in
+netgear,r8000)
+	ifname=eth0
+	;;
+esac
+
 ucidef_set_interface_loopback
 ucidef_set_interfaces_lan_wan "$ifname.1" "$ifname.2"
 ucidef_add_switch "switch0" "1" "1"
+
+# Workaround for devices using CPU port 8 (connected to eth2)
+case "$board" in
+netgear,r8000)
+	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
+	ucidef_add_switch_vlan "switch0" "2" "4 5t"
+	board_config_flush
+	exit 0
+	;;
+esac
 
 # NVRAM entries may contain unsorted ports, e.g. Netgear R6250 uses
 # vlan1ports=3 2 1 0 5*
