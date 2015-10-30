@@ -282,7 +282,7 @@ endef
 define BuildImage/mkfs
   install: mkfs-$(1)
   .PHONY: mkfs-$(1)
-  mkfs-$(1): mkfs_prepare
+  mkfs-$(1): kernel_prepare
 	$(Image/mkfs/$(1))
 	$(call Build/mkfs/default,$(1))
 	$(call Build/mkfs/$(1),$(1))
