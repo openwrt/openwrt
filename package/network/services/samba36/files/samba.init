@@ -2,6 +2,7 @@
 # Copyright (C) 2008-2012 OpenWrt.org
 
 START=60
+USE_PROCD=1
 
 smb_header() {
 	local interface
@@ -86,15 +87,32 @@ smb_add_share() {
 	[ -n "$browseable" ] && echo -e "\tbrowseable = $browseable" >> /var/etc/smb.conf
 }
 
-start() {
+init_config() {
 	config_load samba
 	config_foreach smb_header samba
 	config_foreach smb_add_share sambashare
-	service_start /usr/sbin/smbd -D
-	service_start /usr/sbin/nmbd -D
 }
 
-stop() {
-	service_stop /usr/sbin/smbd
-	service_stop /usr/sbin/nmbd
+reload_service() {
+	init_config
+
+	killall -HUP smbd
+}
+
+service_triggers() {
+	procd_add_reload_trigger samba
+}
+
+start_service() {
+	init_config
+
+	procd_open_instance
+	procd_set_param command /usr/sbin/smbd -F
+	procd_set_param respawn
+	procd_close_instance
+
+	procd_open_instance
+	procd_set_param command /usr/sbin/nmbd -F
+	procd_set_param respawn
+	procd_close_instance
 }
