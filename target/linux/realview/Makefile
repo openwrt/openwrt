@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=arm
 BOARD:=realview
 BOARDNAME:=ARM Ltd. Realview board (qemu)
-FEATURES:=fpu ramdisk
+FEATURES:=ext4 fpu ramdisk
 CPU_TYPE:=mpcore
 CPU_SUBTYPE:=vfp
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
