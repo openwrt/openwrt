@@ -33,6 +33,15 @@ define Package/ath10k-firmware-qca988x
   TITLE:=ath10k firmware for QCA988x devices
 endef
 
+define Package/ath10k-firmware-qca99x0
+  SECTION:=kernel
+  CATEGORY:=Kernel modules
+  SUBMENU:=$(WMENU)
+  URL:=$(PKG_SOURCE_URL)
+  DEPENDS:=kmod-ath10k
+  TITLE:=ath10k firmware for QCA99x0 devices
+endef
+
 define Build/Compile
 
 endef
@@ -47,4 +56,15 @@ define Package/ath10k-firmware-qca988x/install
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin
 endef
 
+define Package/ath10k-firmware-qca99x0/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/QCA99X0/hw2.0/boardData_AR900B_CUS239_5G_v2_001.bin \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/QCA99X0/hw2.0/firmware-5.bin_10.4.1.00030-1 \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/firmware-5.bin
+endef
+
 $(eval $(call BuildPackage,ath10k-firmware-qca988x))
+$(eval $(call BuildPackage,ath10k-firmware-qca99x0))
