@@ -273,8 +273,9 @@ else
       STRIP:=$(STAGING_DIR_HOST)/bin/sstrip
     endif
   endif
-  RSTRIP:= \
+  RSTRIP= \
     export CROSS="$(TARGET_CROSS)" \
+		$(if $(PKG_BUILD_ID),KEEP_BUILD_ID=1) \
 		$(if $(CONFIG_KERNEL_KALLSYMS),NO_RENAME=1) \
 		$(if $(CONFIG_KERNEL_PROFILING),KEEP_SYMBOLS=1); \
     NM="$(TARGET_CROSS)nm" \

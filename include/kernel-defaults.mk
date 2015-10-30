@@ -11,7 +11,8 @@ KERNEL_MAKEOPTS := -C $(LINUX_DIR) \
 	ARCH="$(LINUX_KARCH)" \
 	KBUILD_HAVE_NLS=no \
 	CONFIG_SHELL="$(BASH)" \
-	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='')
+	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
+	$(if $(PKG_BUILD_ID),LDFLAGS_MODULE=--build-id=0x$(PKG_BUILD_ID))
 
 ifdef CONFIG_STRIP_KERNEL_EXPORTS
   KERNEL_MAKEOPTS += \
