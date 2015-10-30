@@ -29,10 +29,6 @@ define Package/r8169-firmware
   TITLE:=RealTek r8169 firmware
 endef
 
-define Build/Compile
-
-endef
-
 define Package/r8169-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/rtl_nic
 	$(CP) \
@@ -40,17 +36,11 @@ define Package/r8169-firmware/install
 		$(1)/lib/firmware/rtl_nic
 endef
 
-$(eval $(call BuildPackage,r8169-firmware))
-
 define Package/r8188eu-firmware
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
   TITLE:=RealTek r8188eu firmware
-endef
-
-define Build/Compile
-
 endef
 
 define Package/r8188eu-firmware/install
@@ -60,17 +50,11 @@ define Package/r8188eu-firmware/install
 		$(1)/lib/firmware/rtlwifi
 endef
 
-$(eval $(call BuildPackage,r8188eu-firmware))
-
 define Package/ibt-firmware
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
   TITLE:=Intel bluetooth firmware
-endef
-
-define Build/Compile
-
 endef
 
 define Package/ibt-firmware/install
@@ -80,17 +64,11 @@ define Package/ibt-firmware/install
 		$(1)/lib/firmware/intel
 endef
 
-$(eval $(call BuildPackage,ibt-firmware))
-
 define Package/ar3k-firmware
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
   TITLE:=ath3k firmware
-endef
-
-define Build/Compile
-
 endef
 
 define Package/ar3k-firmware/install
@@ -100,4 +78,11 @@ define Package/ar3k-firmware/install
 		$(1)/lib/firmware/ar3k
 endef
 
+define Build/Compile
+
+endef
+
 $(eval $(call BuildPackage,ar3k-firmware))
+$(eval $(call BuildPackage,ibt-firmware))
+$(eval $(call BuildPackage,r8169-firmware))
+$(eval $(call BuildPackage,r8188eu-firmware))
