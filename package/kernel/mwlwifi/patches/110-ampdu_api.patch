@@ -1,0 +1,11 @@
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -574,7 +574,7 @@ static int mwl_mac80211_ampdu_action(str
+ 				     struct ieee80211_vif *vif,
+ 				     enum ieee80211_ampdu_mlme_action action,
+ 				     struct ieee80211_sta *sta,
+-				     u16 tid, u16 *ssn, u8 buf_size)
++				     u16 tid, u16 *ssn, u8 buf_size, bool amsdu)
+ {
+ 	int rc = 0;
+ 	struct mwl_priv *priv = hw->priv;

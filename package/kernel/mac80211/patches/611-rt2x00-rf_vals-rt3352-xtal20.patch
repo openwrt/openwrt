@@ -78,7 +78,7 @@
  	retval = rt2800_probe_hw_mode(rt2x00dev);
 --- a/drivers/net/wireless/rt2x00/rt2x00.h
 +++ b/drivers/net/wireless/rt2x00/rt2x00.h
-@@ -398,6 +398,7 @@ static inline struct rt2x00_intf* vif_to
+@@ -400,6 +400,7 @@ static inline struct rt2x00_intf* vif_to
   * @channels: Device/chipset specific channel values (See &struct rf_channel).
   * @channels_info: Additional information for channels (See &struct channel_info).
   * @ht: Driver HT Capabilities (See &ieee80211_sta_ht_cap).
@@ -86,7 +86,7 @@
   */
  struct hw_mode_spec {
  	unsigned int supported_bands;
-@@ -414,6 +415,7 @@ struct hw_mode_spec {
+@@ -416,6 +417,7 @@ struct hw_mode_spec {
  	const struct channel_info *channels_info;
  
  	struct ieee80211_sta_ht_cap ht;

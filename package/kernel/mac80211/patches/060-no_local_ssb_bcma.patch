@@ -1,9 +1,9 @@
 --- a/.local-symbols
 +++ b/.local-symbols
-@@ -449,43 +449,6 @@ USB_CDC_PHONET=
- USB_IPHETH=
+@@ -454,43 +454,6 @@ USB_IPHETH=
  USB_SIERRA_NET=
  USB_VL600=
+ USB_NET_CH9200=
 -SSB_POSSIBLE=
 -SSB=
 -SSB_SPROM=
@@ -46,7 +46,7 @@
  NFC_NCI=
 --- a/drivers/net/wireless/b43/main.c
 +++ b/drivers/net/wireless/b43/main.c
-@@ -2866,7 +2866,7 @@ static struct ssb_device *b43_ssb_gpio_d
+@@ -2867,7 +2867,7 @@ static struct ssb_device *b43_ssb_gpio_d
  {
  	struct ssb_bus *bus = dev->dev->sdev->bus;
  
@@ -55,7 +55,7 @@
  	return (bus->chipco.dev ? bus->chipco.dev : bus->pcicore.dev);
  #else
  	return bus->chipco.dev;
-@@ -4903,7 +4903,7 @@ static int b43_wireless_core_init(struct
+@@ -4904,7 +4904,7 @@ static int b43_wireless_core_init(struct
  	}
  	if (sprom->boardflags_lo & B43_BFL_XTAL_NOSLOW)
  		hf |= B43_HF_DSCRQ; /* Disable slowclock requests from ucode. */
@@ -120,7 +120,7 @@
 --- a/Makefile.kernel
 +++ b/Makefile.kernel
 @@ -38,8 +38,6 @@ obj-$(CPTCFG_MAC80211) += net/mac80211/
- obj-$(CPTCFG_WLAN) += drivers/net/wireless/
+ #obj-$(CPTCFG_WLAN += drivers/net/wireless/
  obj-$(CPTCFG_BT) += net/bluetooth/
  obj-$(CPTCFG_BT) += drivers/bluetooth/
 -obj-$(CPTCFG_SSB) += drivers/ssb/
