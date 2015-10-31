@@ -3,4 +3,7 @@
 . /lib/functions/uci-defaults.sh
 
 ucidef_set_interface_loopback
-ucidef_set_interface_raw "lan" "eth0" "dhcp"
+ucidef_set_interface_wan "eth0"
+if [ -d "/sys/class/net/eth1" ]; then
+	ucidef_set_interface_lan "eth1"
+fi
