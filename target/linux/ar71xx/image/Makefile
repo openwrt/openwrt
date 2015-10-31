@@ -669,6 +669,14 @@ define Device/tl-wr743nd-v2
 endef
 TARGET_DEVICES += tl-wr740n-v1 tl-wr740n-v3 tl-wr740n-v4 tl-wr740n-v5 tl-wr741nd-v1 tl-wr741nd-v2 tl-wr741nd-v4 tl-wr741nd-v5 tl-wr743nd-v1 tl-wr743nd-v2
 
+define Device/tl-wr841nd-v1.5
+    $(Device/tplink-4m)
+    BOARDNAME := TL-WR841N-v1.5
+    DEVICE_PROFILE := TLWR841
+    TPLINK_HWID := 0x08410002
+    TPLINK_HWREV := 2
+endef
+
 define Device/tl-wr841nd-v3
     $(Device/tplink-4m)
     BOARDNAME := TL-WR941ND
@@ -739,7 +747,7 @@ define Device/tl-wr847n-v8
     DEVICE_PROFILE := TLWR841
     TPLINK_HWID := 0x08470008
 endef
-TARGET_DEVICES += tl-wr841nd-v3 tl-wr841nd-v5 tl-wr841nd-v7 tl-wr841n-v8 tl-wr841n-v9 tl-wr841n-v10 tl-wr842n-v1 tl-wr842n-v2 tl-wr843nd-v1 tl-wr847n-v8
+TARGET_DEVICES += tl-wr841nd-v1.5 tl-wr841nd-v3 tl-wr841nd-v5 tl-wr841nd-v7 tl-wr841n-v8 tl-wr841n-v9 tl-wr841n-v10 tl-wr842n-v1 tl-wr842n-v2 tl-wr843nd-v1 tl-wr847n-v8
 
 define Device/tl-wr941nd-v2
     $(Device/tplink-4m)
@@ -2351,8 +2359,6 @@ $(eval $(call SingleProfile,Seama,64k,QIHOO360,qihoo-c301,QIHOO-C301,ttyS0,11520
 
 $(eval $(call SingleProfile,Senao,squashfs-only,EAP300V2,eap300v2,EAP300V2,ttyS0,115200,$$(eap300v2_mtdlayout)))
 
-$(eval $(call SingleProfile,TPLINKOLD,squashfs-only,TLWR841NV15,tl-wr841nd-v1.5,TL-WR841N-v1.5,ttyS0,115200,0x08410002,2,4M))
-
 $(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,CPE510,ttyS0,115200,$$(cpe510_mtdlayout),CPE510))
 
 $(eval $(call SingleProfile,WHRHPG300N,64kraw,WHRG301N,whr-g301n,WHR-G301N,ttyS0,115200,$$(whrhpg300n_mtdlayout),WHR-G301N))
@@ -2383,7 +2389,6 @@ $(eval $(call MultiProfile,DIR615IX,DIR615I1 DIR615I3))
 $(eval $(call MultiProfile,EWDORIN, EWDORINAP EWDORINRT EWDORIN16M))
 $(eval $(call MultiProfile,OPENMESH,OM2P OM5P MR600 MR900 MR1750))
 $(eval $(call MultiProfile,TEW652BRP,TEW652BRP_FW TEW652BRP_RECOVERY))
-$(eval $(call MultiProfile,TLWR841,TLWR841NV15))
 $(eval $(call MultiProfile,TUBE2H,TUBE2H8M TUBE2H16M))
 $(eval $(call MultiProfile,WNR612V2,REALWNR612V2 N150R))
 $(eval $(call MultiProfile,WNR1000V2,REALWNR1000V2 WNR1000V2_VC))
