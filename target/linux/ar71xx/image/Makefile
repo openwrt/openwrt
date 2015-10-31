@@ -1948,39 +1948,6 @@ define Image/Build/TPLINK/initramfs
 		-o $(call imgname,$(1),$(2))-uImage.bin
 endef
 
-
-Image/Build/TPLINK-64K/buildkernel=$(call PatchKernelLzma,$(2),$(3))
-
-define Image/Build/TPLINK-64K
-	-$(STAGING_DIR_HOST)/bin/mkimage \
-		-A mips -O linux -T kernel -a 0x80060000 -C lzma \
-		-e 0x80060000 -n 'MIPS OpenWrt Linux-$(LINUX_VERSION)' \
-		-d $$(KDIR_TMP)/vmlinux-$(2).bin.lzma $(KDIR_TMP)/vmlinux-$(2).bin.lzma.img
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -m 2 -V $(REVISION) $(7) \
-		-X 0x20000 \
-		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma.img \
-		-r $(KDIR)/root.$(1) \
-		-a $(call rootfs_align,$(1)) -j \
-		-o $(call factoryname,$(1),$(2))
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -m 2 -V $(REVISION) $(7) -s \
-		-X 0x20000 \
-		-k $(KDIR_TMP)/vmlinux-$(2).bin.lzma.img \
-		-r $(KDIR)/root.$(1) \
-		-a $(call rootfs_align,$(1)) -j \
-		-o $(call sysupname,$(1),$(2))
-endef
-
-define Image/Build/TPLINK-64K/initramfs
-	$(call PatchKernelLzma,$(2),$(3),,-initramfs)
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -m 2 -V $(REVISION) $(7) -s \
-		-k $(KDIR_TMP)/vmlinux-initramfs-$(2).bin.lzma.img \
-		-o $(call imgname,$(1),$(2))-uImage.bin
-endef
-
-
 Image/Build/TPLINK-SAFELOADER/loader = $(call Image/BuildLoaderPatched,$(1),elf,$(2) $(3))
 
 define Image/Build/TPLINK-SAFELOADER
