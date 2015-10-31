@@ -1891,38 +1891,6 @@ define Image/Build/Senao
 		$(call sysupname,$(1),$(2))
 endef
 
-Image/Build/TPLINKOLD/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
-
-define Image/Build/TPLINKOLD
-	[ -e "$(KDIR)/loader-$(2).gz" ]
-	$(call MkuImageOKLI,$(2))
-	( \
-		dd if=$(KDIR)/loader-$(2).gz bs=7680 count=1 conv=sync; \
-		dd if=$(KDIR_TMP)/vmlinux-$(2).okli conv=sync; \
-	) > $(KDIR_TMP)/kernel-$(2).bin
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION)\
-		-X 0x40000 \
-		-k $(KDIR_TMP)/kernel-$(2).bin \
-		-r $(KDIR)/root.$(1) \
-		-o $(call factoryname,$(1),$(2))
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-X 0x40000 \
-		-k $(KDIR_TMP)/kernel-$(2).bin \
-		-r $(KDIR)/root.$(1) \
-		-o $(call sysupname,$(1),$(2))
-endef
-
-define Image/Build/TPLINKOLD/initramfs
-	$(call Image/BuildLoader,$(2),gz,$(3),0x80060000,-initramfs)
-	-$(STAGING_DIR_HOST)/bin/mktplinkfw -c \
-		-H $(4) -W $(5) -F $(6) -N OpenWrt -V $(REVISION) -s\
-		-k $(KDIR)/loader-$(2)-initramfs.gz \
-		-o $(call imgname,$(1),$(2))-initramfs-uImage.bin
-endef
-
-
 Image/Build/TPLINK/loader=$(call Image/BuildLoaderAlone,$(1),gz,$(2),0x22000,0)
 
 define Image/Build/TPLINK
