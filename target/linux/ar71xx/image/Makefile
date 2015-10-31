@@ -259,13 +259,6 @@ define Device/tplink
   IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
 
-define Device/tplink-chn-v2
-$(Device/tplink)
-  TPLINK_HEADER_VERSION := 2
-  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
-  IMAGE/factory.bin := append-rootfs | mktplinkfw factory
-endef
-
 define Device/tplink-nolzma
 $(Device/tplink)
   LOADER_FLASH_OFFS := 0x22000
@@ -305,12 +298,6 @@ $(Device/tplink)
   IMAGE_SIZE := 15872k
 endef
 
-define Device/tplink-chn-v2-4mlzma
-$(Device/tplink-chn-v2)
-  TPLINK_FLASHLAYOUT := 4Mlzma
-  IMAGE_SIZE := 3904k
-endef
-
 define Device/tl-wdr4300-v1
 $(Device/tplink-8mlzma)
   BOARDNAME = TL-WDR4300
@@ -346,10 +333,11 @@ endef
 TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-wdr4310-v1 mw4530r-v1
 
 define Device/tl-wdr3320-v2
-$(Device/tplink-chn-v2-4mlzma)
+$(Device/tplink-4mlzma)
   BOARDNAME = TL-WDR3320-v2
   DEVICE_PROFILE = TLWDR3320V2
   TPLINK_HWID := 0x33200002
+  TPLINK_HEADER_VERSION := 2
 endef
 TARGET_DEVICES += tl-wdr3320-v2
 
