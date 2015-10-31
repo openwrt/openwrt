@@ -1,8 +1,8 @@
 --- a/Tests/RunCMake/CMakeLists.txt
 +++ b/Tests/RunCMake/CMakeLists.txt
-@@ -101,16 +101,6 @@
- add_RunCMake_test(TargetPolicies)
- add_RunCMake_test(alias_targets)
+@@ -160,15 +160,6 @@
+ add_RunCMake_test(no_install_prefix)
+ add_RunCMake_test(configure_file)
  
 -find_package(Qt4 QUIET)
 -find_package(Qt5Core QUIET)
@@ -10,21 +10,20 @@
 -  add_RunCMake_test(IncompatibleQt)
 -endif()
 -if (QT4_FOUND)
--  set(ObsoleteQtMacros_ARGS -DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE})
--  add_RunCMake_test(ObsoleteQtMacros)
+-  add_RunCMake_test(ObsoleteQtMacros -DQT_QMAKE_EXECUTABLE:FILEPATH=${QT_QMAKE_EXECUTABLE})
 -endif()
 -
- if("${CMAKE_TEST_GENERATOR}" MATCHES "Visual Studio [^6]")
-   add_RunCMake_test(include_external_msproject)
-   add_RunCMake_test(SolutionGlobalSections)
+ find_package(PkgConfig QUIET)
+ if(PKG_CONFIG_FOUND)
+   add_RunCMake_test(FindPkgConfig)
 --- a/Tests/CMakeLists.txt
 +++ b/Tests/CMakeLists.txt
-@@ -262,10 +262,6 @@
+@@ -358,10 +358,6 @@
  
    list(APPEND TEST_BUILD_DIRS ${CMake_TEST_INSTALL_PREFIX})
  
 -  if(NOT QT4_FOUND)
--    find_package(Qt4)
+-    find_package(Qt4 QUIET)
 -  endif()
 -
    if(QT4_FOUND)
