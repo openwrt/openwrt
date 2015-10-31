@@ -75,11 +75,6 @@ define Image/Build/squashfs
 	) > $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-$(1).bin || true
 endef
 
-define Image/mkfs/targz
-
-	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
-endef
-
 define ubifs_imx_gateworks_ventana
 	# Micron MT29F1G08ABAD/MT29F2G08ABAE/MT29F4G08ABAD/MT29F8G08ADAD NAND
 	$(eval VENTANA_UBIFS_OPTS:="-m 2048 -e 124KiB -c 8124")
