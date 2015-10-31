@@ -15,8 +15,6 @@ MAINTAINER:=Florian Fainelli <florian@openwrt.org>
 
 KERNEL_PATCHVER:=3.18
 
-DEVICE_TYPE:=developerboard
-
 include $(INCLUDE_DIR)/target.mk
 
 DEFAULT_PACKAGES += wpad-mini kmod-mac80211-hwsim kmod-pcnet32
