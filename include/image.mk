@@ -89,6 +89,16 @@ define toupper
 $(shell echo $(1) | tr '[:lower:]' '[:upper:]')
 endef
 
+define tolower
+$(shell echo $(1) | tr '[:upper:]' '[:lower:]')
+endef
+
+define sanitize
+$(shell echo $(call tolower,$(1)) | sed 's/_/-/g')
+endef
+
+PROFILE_SANITIZED := $(call sanitize,$(PROFILE))
+
 define split_args
 $(foreach data, \
 	$(subst |,$(space),\
