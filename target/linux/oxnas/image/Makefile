@@ -87,11 +87,6 @@ define Image/Build/squashfs
 	cp $(KDIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-squashfs-ubinized.bin $(BIN_DIR)
 endef
 
-define Image/mkfs/targz
-
-	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
-endef
-
 define Image/Build/ubifs
 
  ifneq ($($(PROFILE)_UBIFS_OPTS),)
