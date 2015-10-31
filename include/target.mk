@@ -212,6 +212,7 @@ ifeq ($(DUMP),1)
     CPU_CFLAGS_mips32 = -mips32 -mtune=mips32
     CPU_CFLAGS_mips32r2 = -mips32r2 -mtune=mips32r2
     CPU_CFLAGS_mips64 = -mips64 -mtune=mips64 -mabi=64
+    CPU_CFLAGS_24kc = -mips32r2 -mtune=24kc
     CPU_CFLAGS_24kec = -mips32r2 -mtune=24kec
     CPU_CFLAGS_34kc = -mips32r2 -mtune=34kc
     CPU_CFLAGS_74kc = -mips32r2 -mtune=74kc
