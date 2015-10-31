@@ -332,6 +332,15 @@ $(Device/tl-wdr4300-v1)
 endef
 TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-wdr4310-v1 mw4530r-v1
 
+define Device/tl-wdr6500-v2
+$(Device/tplink-8mlzma)
+  BOARDNAME = TL-WDR6500-v2
+  DEVICE_PROFILE = TLWDR6500V2
+  TPLINK_HWID := 0x65000002
+  TPLINK_HEADER_VERSION := 2
+endef
+TARGET_DEVICES += tl-wdr6500-v2
+
 define Device/tl-wdr3320-v2
 $(Device/tplink-4mlzma)
   BOARDNAME = TL-WDR3320-v2
@@ -2376,8 +2385,6 @@ $(eval $(call SingleProfile,Seama,64k,QIHOO360,qihoo-c301,QIHOO-C301,ttyS0,11520
 $(eval $(call SingleProfile,Senao,squashfs-only,EAP300V2,eap300v2,EAP300V2,ttyS0,115200,$$(eap300v2_mtdlayout)))
 
 $(eval $(call SingleProfile,TPLINKOLD,squashfs-only,TLWR841NV15,tl-wr841nd-v1.5,TL-WR841N-v1.5,ttyS0,115200,0x08410002,2,4M))
-
-$(eval $(call SingleProfile,TPLINK-64K,64kraw,TLWDR6500V2,tl-wdr6500-v2,TL-WDR6500-v2,ttyS0,115200,0x65000002,1,8Mlzma))
 
 $(eval $(call SingleProfile,TPLINK-SAFELOADER,64kraw,CPE510,cpe210-220-510-520,CPE510,ttyS0,115200,$$(cpe510_mtdlayout),CPE510))
 
