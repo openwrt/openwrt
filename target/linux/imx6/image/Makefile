@@ -7,10 +7,6 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define sanitize_profile_name
-$(shell echo $(PROFILE) | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
-endef
-
 define Image/BuildKernel/Template
 
  ifneq ($(1),)
@@ -73,15 +69,15 @@ endef
 define Image/Build/squashfs
 	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
 	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin bs=128k conv=sync
-	[ -f "$(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-fit-uImage.itb" ] && ( \
-		dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-fit-uImage.itb bs=2048k conv=sync; \
+	[ -f "$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-uImage.itb" ] && ( \
+		dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-uImage.itb bs=2048k conv=sync; \
 		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-fit-$(1).bin || true
+	) > $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-$(1).bin || true
 endef
 
 define Image/mkfs/targz
 
-	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 endef
 
 define ubifs_imx_gateworks_ventana
@@ -89,15 +85,15 @@ define ubifs_imx_gateworks_ventana
 	$(eval VENTANA_UBIFS_OPTS:="-m 2048 -e 124KiB -c 8124")
 	$(eval VENTANA_UBI_OPTS:="-m 2048 -p 128KiB -s 2048")
 	$(call Image/mkfs/ubifs)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_normal.ubifs
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_normal.ubi
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_normal.ubifs
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_normal.ubi
 
 	# Micron MT29F8G08ABAC/MT29F16G08ADAC 1GB/2GB NAND
 	$(eval VENTANA_UBIFS_OPTS:="-m 4096 -e 248KiB -c 8124")
 	$(eval VENTANA_UBI_OPTS:="-m 4096 -p 256KiB -s 4096")
 	$(call Image/mkfs/ubifs)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_large.ubifs
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs_large.ubi
+	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_large.ubifs
+	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_large.ubi
 endef
 
 define Image/Build/ubifs
@@ -134,7 +130,7 @@ endef
 define Image/Build
 	$(if $(Image/Build/$(1)), \
 		$(call Image/Build/$(1),$(1)), \
-		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-$(1).img \
+		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-$(1).img \
 	)
 endef
 
