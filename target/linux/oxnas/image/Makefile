@@ -22,10 +22,6 @@ POGOPLUG_V3_UBIFS_OPTS = -m 2048 -e 126KiB -c 4096
 VMLINUX:=$(BIN_DIR)/$(IMG_PREFIX)-vmlinux
 UIMAGE:=$(BIN_DIR)/$(IMG_PREFIX)-uImage
 
-define sanitize_profile_name
-$(shell echo $(PROFILE) | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
-endef
-
 define Image/BuildKernel/Template
 	$(CP) $(DTS_DIR)/ox820-$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
 
@@ -86,22 +82,22 @@ define Image/InstallKernel/Template
 endef
 
 define Image/Build/squashfs
-	$(call Image/Build/SysupgradeNAND,$(call sanitize_profile_name),$(1),$(KDIR)/fit-$(call sanitize_profile_name).itb)
-	$(call Image/Build/UbinizeImage,$(call sanitize_profile_name),--uboot-env --kernel $(KDIR)/fit-$(call sanitize_profile_name).itb,$(1),$($(PROFILE)_UBI_OPTS))
-	cp $(KDIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-squashfs-ubinized.bin $(BIN_DIR)
+	$(call Image/Build/SysupgradeNAND,$(PROFILE_SANITIZED),$(1),$(KDIR)/fit-$(PROFILE_SANITIZED).itb)
+	$(call Image/Build/UbinizeImage,$(PROFILE_SANITIZED),--uboot-env --kernel $(KDIR)/fit-$(PROFILE_SANITIZED).itb,$(1),$($(PROFILE)_UBI_OPTS))
+	cp $(KDIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-squashfs-ubinized.bin $(BIN_DIR)
 endef
 
 define Image/mkfs/targz
 
-	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
+	$(TAR) -czpf $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs.tar.gz --numeric-owner --owner=0 --group=0 -C $(TARGET_DIR)/ .
 endef
 
 define Image/Build/ubifs
 
  ifneq ($($(PROFILE)_UBIFS_OPTS),)
-	$(call Image/Build/SysupgradeNAND,$(call sanitize_profile_name),ubifs,$(KDIR)/fit-$(call sanitize_profile_name).itb)
-	$(call Image/Build/UbinizeImage,$(call sanitize_profile_name),--uboot-env --kernel $(KDIR)/fit-$(call sanitize_profile_name).itb,ubifs,$($(PROFILE)_UBI_OPTS))
-	cp $(KDIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-ubifs-ubinized.bin $(BIN_DIR)
+	$(call Image/Build/SysupgradeNAND,$(PROFILE_SANITIZED),ubifs,$(KDIR)/fit-$(PROFILE_SANITIZED).itb)
+	$(call Image/Build/UbinizeImage,$(PROFILE_SANITIZED),--uboot-env --kernel $(KDIR)/fit-$(PROFILE_SANITIZED).itb,ubifs,$($(PROFILE)_UBI_OPTS))
+	cp $(KDIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-ubifs-ubinized.bin $(BIN_DIR)
  endif
 
 endef
@@ -129,7 +125,7 @@ endef
 define Image/Build
 	$(if $(Image/Build/$(1)), \
 		$(call Image/Build/$(1),$(1)), \
-		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(call sanitize_profile_name)-$(1).img \
+		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-$(1).img \
 	)
 endef
 
