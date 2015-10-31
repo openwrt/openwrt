@@ -48,6 +48,7 @@ endef
 define Build/mktplinkfw
 	-$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $2 \
+		-m $(TPLINK_HEADER_VERSION) \
 		-k $(word 1,$^) \
 		-r $@ \
 		-o $@.new \
@@ -62,6 +63,7 @@ endef
 define Build/mktplinkfw-initramfs
 	$(STAGING_DIR_HOST)/bin/mktplinkfw \
 		-H $(TPLINK_HWID) -W $(TPLINK_HWREV) -F $(TPLINK_FLASHLAYOUT) -N OpenWrt -V $(REVISION) $2 \
+		-m $(TPLINK_HEADER_VERSION) \
 		-k $@ \
 		-o $@.new \
 		-s -S \
@@ -99,7 +101,7 @@ define Build/copy-file
 	cat "$(1)" > "$@"
 endef
 
-DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT
+DEVICE_VARS += TPLINK_HWID TPLINK_HWREV TPLINK_FLASHLAYOUT TPLINK_HEADER_VERSION
 
 # UBNT_BOARD e.g. one of (XS2, XS5, RS, XM)
 # UBNT_TYPE e.g. one of (BZ, XM, XW)
@@ -249,6 +251,7 @@ TARGET_DEVICES += wndr3700 wndr3700v2 wndr3800 wndr3800ch wndrmac wndrmacv2
 
 define Device/tplink
   TPLINK_HWREV := 0x1
+  TPLINK_HEADER_VERSION := 1
   KERNEL := kernel-bin | patch-cmdline | lzma
   KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | mktplinkfw-initramfs
   IMAGES := sysupgrade.bin factory.bin
@@ -258,8 +261,9 @@ endef
 
 define Device/tplink-chn-v2
 $(Device/tplink)
-  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade "-m 2"
-  IMAGE/factory.bin := append-rootfs | mktplinkfw factory "-m 2"
+  TPLINK_HEADER_VERSION := 2
+  IMAGE/sysupgrade.bin := append-rootfs | mktplinkfw sysupgrade
+  IMAGE/factory.bin := append-rootfs | mktplinkfw factory
 endef
 
 define Device/tplink-nolzma
