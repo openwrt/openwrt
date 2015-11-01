@@ -18,7 +18,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -249,7 +249,10 @@ static const struct usb_ehci_pdata ehci_
+@@ -244,7 +244,10 @@ static const struct usb_ehci_pdata ehci_
  static const struct usb_ohci_pdata ohci_pdata = {
  };
  
@@ -30,7 +30,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  {
  	struct platform_device *hci_dev;
  	struct resource hci_res[2];
-@@ -264,8 +267,7 @@ static struct platform_device *bcma_hcd_
+@@ -259,8 +262,7 @@ static struct platform_device *bcma_hcd_
  	hci_res[1].start = dev->irq;
  	hci_res[1].flags = IORESOURCE_IRQ;
  
@@ -40,7 +40,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	if (!hci_dev)
  		return ERR_PTR(-ENOMEM);
  
-@@ -276,12 +278,8 @@ static struct platform_device *bcma_hcd_
+@@ -271,12 +273,8 @@ static struct platform_device *bcma_hcd_
  					    ARRAY_SIZE(hci_res));
  	if (ret)
  		goto err_alloc;
@@ -55,7 +55,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	if (ret)
  		goto err_alloc;
  	ret = platform_device_add(hci_dev);
-@@ -334,11 +332,15 @@ static int bcma_hcd_probe(struct bcma_de
+@@ -333,11 +331,15 @@ static int bcma_hcd_probe(struct bcma_de
  	    && chipinfo->rev == 0)
  		ohci_addr = 0x18009000;
  

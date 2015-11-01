@@ -17,15 +17,15 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -34,6 +34,7 @@ MODULE_DESCRIPTION("Common USB driver fo
+@@ -35,6 +35,7 @@ MODULE_DESCRIPTION("Common USB driver fo
  MODULE_LICENSE("GPL");
  
  struct bcma_hcd_device {
 +	struct bcma_device *core;
  	struct platform_device *ehci_dev;
  	struct platform_device *ohci_dev;
- };
-@@ -293,27 +294,16 @@ err_alloc:
+ 	struct gpio_desc *gpio_desc;
+@@ -288,31 +289,16 @@ err_alloc:
  	return ERR_PTR(ret);
  }
  
@@ -52,12 +52,16 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 -	if (!usb_dev)
 -		return -ENOMEM;
 -
--	bcma_hci_platform_power_gpio(dev, true);
+-	if (dev->dev.of_node)
+-		usb_dev->gpio_desc = devm_get_gpiod_from_child(&dev->dev, "vcc",
+-							       &dev->dev.of_node->fwnode);
+-	if (!IS_ERR_OR_NULL(usb_dev->gpio_desc))
+-		gpiod_direction_output(usb_dev->gpio_desc, 1);
 -
  	switch (dev->id.id) {
  	case BCMA_CORE_NS_USB20:
  		bcma_hcd_init_chip_arm(dev);
-@@ -346,7 +336,6 @@ static int bcma_hcd_probe(struct bcma_de
+@@ -345,7 +331,6 @@ static int bcma_hcd_probe(struct bcma_de
  		goto err_unregister_ohci_dev;
  	}
  
@@ -65,7 +69,7 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
  	return 0;
  
  err_unregister_ohci_dev:
-@@ -354,6 +343,36 @@ err_unregister_ohci_dev:
+@@ -353,6 +338,40 @@ err_unregister_ohci_dev:
  	return err;
  }
  
@@ -82,7 +86,11 @@ Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
 +		return -ENOMEM;
 +	usb_dev->core = dev;
 +
-+	bcma_hci_platform_power_gpio(dev, true);
++	if (dev->dev.of_node)
++		usb_dev->gpio_desc = devm_get_gpiod_from_child(&dev->dev, "vcc",
++							       &dev->dev.of_node->fwnode);
++	if (!IS_ERR_OR_NULL(usb_dev->gpio_desc))
++		gpiod_direction_output(usb_dev->gpio_desc, 1);
 +
 +	switch (dev->id.id) {
 +	case BCMA_CORE_USB20_HOST:
