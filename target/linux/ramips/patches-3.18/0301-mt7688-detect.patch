@@ -20,7 +20,7 @@
  /* does the board have sdram or ddram */
  static int dram_type;
  
-@@ -391,7 +394,7 @@
+@@ -391,7 +394,7 @@ void __init ralink_clk_init(void)
  #define RINT(x)		((x) / 1000000)
  #define RFRAC(x)	(((x) / 1000) % 1000)
  
@@ -29,7 +29,7 @@
  		if (xtal_rate == MHZ(40))
  			cpu_rate = MHZ(580);
  		else
-@@ -436,7 +439,8 @@
+@@ -436,7 +439,8 @@ void __init ralink_clk_init(void)
   	ralink_clk_add("10000e00.uart2", periph_rate);
  	ralink_clk_add("10180000.wmac", xtal_rate);
  
@@ -39,8 +39,8 @@
  		/*
  		 * When the CPU goes into sleep mode, the BUS clock will be too low for
  		 * USB to function properly
-@@ -536,8 +540,15 @@
- #endif
+@@ -533,8 +537,15 @@ void prom_soc_init(struct ralink_soc_inf
+ 			soc_info->compatible = "ralink,mt7620n-soc";
  		}
  	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
 -		ralink_soc = MT762X_SOC_MT7628AN;
@@ -57,7 +57,7 @@
  		soc_info->compatible = "ralink,mt7628an-soc";
  	} else {
  		panic("mt762x: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
-@@ -551,13 +562,13 @@
+@@ -548,13 +559,13 @@ void prom_soc_init(struct ralink_soc_inf
  
  	cfg0 = __raw_readl(sysc + SYSC_REG_SYSTEM_CONFIG0);
  
@@ -73,7 +73,7 @@
  		mt7628_dram_init(soc_info);
  	else
  		mt7620_dram_init(soc_info);
-@@ -570,7 +581,7 @@
+@@ -567,7 +578,7 @@ void prom_soc_init(struct ralink_soc_inf
  	pr_info("Digital PMU set to %s control\n",
  		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
  
@@ -84,7 +84,7 @@
  		rt2880_pinmux_data = mt7620a_pinmux_data;
 --- a/arch/mips/include/asm/mach-ralink/ralink_regs.h
 +++ b/arch/mips/include/asm/mach-ralink/ralink_regs.h
-@@ -24,6 +24,7 @@
+@@ -24,6 +24,7 @@ enum ralink_soc_type {
  	MT762X_SOC_MT7620N,
  	MT762X_SOC_MT7621AT,
  	MT762X_SOC_MT7628AN,
@@ -94,7 +94,7 @@
  
 --- a/drivers/net/ethernet/ralink/esw_rt3052.c
 +++ b/drivers/net/ethernet/ralink/esw_rt3052.c
-@@ -611,7 +611,7 @@
+@@ -611,7 +611,7 @@ static void esw_hw_init(struct rt305x_es
  		rt305x_mii_write(esw, 0, 29, 0x598b);
  		/* select local register */
  		rt305x_mii_write(esw, 0, 31, 0x8000);
@@ -103,7 +103,7 @@
  		int i;
  //		u32 phy_val;
  		u32 val;
-@@ -1042,7 +1042,7 @@
+@@ -1042,7 +1042,7 @@ esw_get_port_tr_badgood(struct switch_de
  	int shift = attr->id == RT5350_ESW_ATTR_PORT_TR_GOOD ? 0 : 16;
  	u32 reg;
  

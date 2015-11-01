@@ -24,7 +24,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -453,6 +453,8 @@
+@@ -453,6 +453,8 @@ config RALINK
  	select CLKDEV_LOOKUP
  	select ARCH_HAS_RESET_CONTROLLER
  	select RESET_CONTROLLER
@@ -35,7 +35,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool "SGI IP22 (Indy/Indigo2)"
 --- a/arch/mips/include/asm/mach-ralink/mt7620.h
 +++ b/arch/mips/include/asm/mach-ralink/mt7620.h
-@@ -90,7 +90,6 @@
+@@ -90,7 +90,6 @@ enum mt762x_soc_type {
  #define MT7620_DDR2_SIZE_MIN		32
  #define MT7620_DDR2_SIZE_MAX		256
  
@@ -43,7 +43,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  #define MT7620_GPIO_MODE_UART0_SHIFT	2
  #define MT7620_GPIO_MODE_UART0_MASK	0x7
  #define MT7620_GPIO_MODE_UART0(x)	((x) << MT7620_GPIO_MODE_UART0_SHIFT)
-@@ -102,16 +101,36 @@
+@@ -102,16 +101,36 @@ enum mt762x_soc_type {
  #define MT7620_GPIO_MODE_GPIO_UARTF	0x5
  #define MT7620_GPIO_MODE_GPIO_I2S	0x6
  #define MT7620_GPIO_MODE_GPIO		0x7
@@ -148,7 +148,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 --- a/arch/mips/include/asm/mach-ralink/rt305x.h
 +++ b/arch/mips/include/asm/mach-ralink/rt305x.h
-@@ -125,24 +125,29 @@
+@@ -125,24 +125,29 @@ static inline int soc_is_rt5350(void)
  #define RT305X_GPIO_GE0_TXD0		40
  #define RT305X_GPIO_GE0_RXCLK		51
  
@@ -263,7 +263,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  #include "common.h"
  
-@@ -47,118 +48,58 @@
+@@ -47,118 +48,58 @@ enum mt762x_soc_type mt762x_soc;
  /* does the board have sdram or ddram */
  static int dram_type;
  
@@ -498,7 +498,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  static void rt288x_wdt_reset(void)
-@@ -69,11 +50,6 @@
+@@ -69,11 +50,6 @@ static void rt288x_wdt_reset(void)
  	rt_sysc_w32(t, SYSC_REG_CLKCFG);
  }
  
@@ -510,7 +510,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  void __init ralink_clk_init(void)
  {
  	unsigned long cpu_rate, wmac_rate = 40000000;
-@@ -141,4 +117,6 @@
+@@ -141,4 +117,6 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_base = RT2880_SDRAM_BASE;
  	soc_info->mem_size_min = RT2880_MEM_SIZE_MIN;
  	soc_info->mem_size_max = RT2880_MEM_SIZE_MAX;
@@ -673,7 +673,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  static void rt305x_wdt_reset(void)
-@@ -114,14 +100,6 @@
+@@ -114,14 +100,6 @@ static void rt305x_wdt_reset(void)
  	rt_sysc_w32(t, SYSC_REG_SYSTEM_CONFIG);
  }
  
@@ -688,7 +688,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  static unsigned long rt5350_get_mem_size(void)
  {
  	void __iomem *sysc = (void __iomem *) KSEG1ADDR(RT305X_SYSC_BASE);
-@@ -290,11 +268,14 @@
+@@ -290,11 +268,14 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_base = RT305X_SDRAM_BASE;
  	if (soc_is_rt5350()) {
  		soc_info->mem_size = rt5350_get_mem_size();
@@ -876,7 +876,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  };
  
  static void rt3883_wdt_reset(void)
-@@ -155,17 +73,6 @@
+@@ -155,17 +73,6 @@ static void rt3883_wdt_reset(void)
  	rt_sysc_w32(t, RT3883_SYSC_REG_SYSCFG1);
  }
  
@@ -894,7 +894,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  void __init ralink_clk_init(void)
  {
  	unsigned long cpu_rate, sys_rate;
-@@ -244,4 +151,6 @@
+@@ -244,4 +151,6 @@ void prom_soc_init(struct ralink_soc_inf
  	soc_info->mem_base = RT3883_SDRAM_BASE;
  	soc_info->mem_size_min = RT3883_MEM_SIZE_MIN;
  	soc_info->mem_size_max = RT3883_MEM_SIZE_MAX;
@@ -903,7 +903,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  }
 --- a/drivers/pinctrl/Kconfig
 +++ b/drivers/pinctrl/Kconfig
-@@ -103,6 +103,11 @@
+@@ -103,6 +103,11 @@ config PINCTRL_LANTIQ
  	select PINMUX
  	select PINCONF
  
@@ -917,7 +917,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	depends on SOC_FALCON
 --- a/drivers/pinctrl/Makefile
 +++ b/drivers/pinctrl/Makefile
-@@ -20,6 +20,7 @@
+@@ -20,6 +20,7 @@ obj-$(CONFIG_PINCTRL_BCM281XX)	+= pinctr
  obj-$(CONFIG_PINCTRL_FALCON)	+= pinctrl-falcon.o
  obj-$(CONFIG_PINCTRL_PALMAS)	+= pinctrl-palmas.o
  obj-$(CONFIG_PINCTRL_ROCKCHIP)	+= pinctrl-rockchip.o

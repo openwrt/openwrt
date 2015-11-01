@@ -88,7 +88,7 @@ Miklos
  		err = PTR_ERR(opaquedir);
 --- a/fs/overlayfs/super.c
 +++ b/fs/overlayfs/super.c
-@@ -740,9 +740,15 @@ static int ovl_fill_super(struct super_b
+@@ -741,9 +741,15 @@ static int ovl_fill_super(struct super_b
  	ufs->workdir = ovl_workdir_create(ufs->upper_mnt, workpath.dentry);
  	err = PTR_ERR(ufs->workdir);
  	if (IS_ERR(ufs->workdir)) {
