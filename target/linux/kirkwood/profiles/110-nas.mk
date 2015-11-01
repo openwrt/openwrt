@@ -100,6 +100,22 @@ IOMEGA_IX2_200_UBI_OPTS:="-m 512 -p 16384 -s 256"
 
 $(eval $(call Profile,IOMEGA_IX2_200))
 
+define Profile/NSA310S
+  NAME:=ZyXEL NSA310S
+  PACKAGES:= \
+	kmod-ata-core kmod-ata-marvell-sata \
+	kmod-rtc-marvell kmod-usb2 kmod-usb-storage
+endef
+
+define Profile/NSA310S/Description
+ Package set compatible with ZyXEL NSA310S board.
+endef
+
+NSA310S_UBIFS_OPTS:="-m 2048 -e 126KiB -c 4096"
+NSA310S_UBI_OPTS:="-m 2048 -p 128KiB -s 512"
+
+$(eval $(call Profile,NSA310S))
+
 define Profile/POGOE02
   NAME:=Cloud Engines Pogoplug E02
   PACKAGES:= \
