@@ -334,6 +334,8 @@ TARGET_DEVICES += tl-wdr3500-v1 tl-wdr3600-v1 tl-wdr4300-v1 tl-wdr4300-v1-il tl-
 
 define Device/tl-wdr6500-v2
 $(Device/tplink-8mlzma)
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma
+  KERNEL_INITRAMFS := kernel-bin | patch-cmdline | lzma | uImage lzma | mktplinkfw-initramfs
   BOARDNAME = TL-WDR6500-v2
   DEVICE_PROFILE = TLWDR6500V2
   TPLINK_HWID := 0x65000002
