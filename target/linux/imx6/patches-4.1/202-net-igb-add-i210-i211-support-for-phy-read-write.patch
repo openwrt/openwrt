@@ -1,0 +1,129 @@
+Author: Tim Harvey <tharvey@gateworks.com>
+Date:   Thu May 15 00:12:26 2014 -0700
+
+    net: igb: add i210/i211 support for phy read/write
+    
+    The i210/i211 uses the MDICNFG register for the phy address instead of the
+    MDIC register.
+    
+    Signed-off-by: Tim Harvey <tharvey@gateworks.com>
+
+--- a/drivers/net/ethernet/intel/igb/e1000_phy.c
++++ b/drivers/net/ethernet/intel/igb/e1000_phy.c
+@@ -135,7 +135,7 @@ out:
+ s32 igb_read_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 *data)
+ {
+ 	struct e1000_phy_info *phy = &hw->phy;
+-	u32 i, mdic = 0;
++	u32 i, mdicnfg, mdic = 0;
+ 	s32 ret_val = 0;
+ 
+ 	if (offset > MAX_PHY_REG_ADDRESS) {
+@@ -148,11 +148,25 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
+ 	 * Control register.  The MAC will take care of interfacing with the
+ 	 * PHY to retrieve the desired data.
+ 	 */
+-	mdic = ((offset << E1000_MDIC_REG_SHIFT) |
+-		(phy->addr << E1000_MDIC_PHY_SHIFT) |
+-		(E1000_MDIC_OP_READ));
++	switch (hw->mac.type) {
++	case e1000_i210:
++	case e1000_i211:
++		mdicnfg = rd32(E1000_MDICNFG);
++		mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
++		mdicnfg |= (phy->addr << E1000_MDICNFG_PHY_SHIFT);
++		wr32(E1000_MDICNFG, mdicnfg);
++		mdic = ((offset << E1000_MDIC_REG_SHIFT) |
++			(E1000_MDIC_OP_READ));
++		break;
++	default:
++		mdic = ((offset << E1000_MDIC_REG_SHIFT) |
++			(phy->addr << E1000_MDIC_PHY_SHIFT) |
++			(E1000_MDIC_OP_READ));
++		break;
++	}
+ 
+ 	wr32(E1000_MDIC, mdic);
++	wrfl();
+ 
+ 	/* Poll the ready bit to see if the MDI read completed
+ 	 * Increasing the time out as testing showed failures with
+@@ -177,6 +191,18 @@ s32 igb_read_phy_reg_mdic(struct e1000_h
+ 	*data = (u16) mdic;
+ 
+ out:
++	switch (hw->mac.type) {
++		/* restore MDICNFG to have phy's addr */
++		case e1000_i210:
++		case e1000_i211:
++			mdicnfg = rd32(E1000_MDICNFG);
++			mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
++			mdicnfg |= (hw->phy.addr << E1000_MDICNFG_PHY_SHIFT);
++			wr32(E1000_MDICNFG, mdicnfg);
++			break;
++		default:
++			break;
++	}
+ 	return ret_val;
+ }
+ 
+@@ -191,7 +217,7 @@ out:
+ s32 igb_write_phy_reg_mdic(struct e1000_hw *hw, u32 offset, u16 data)
+ {
+ 	struct e1000_phy_info *phy = &hw->phy;
+-	u32 i, mdic = 0;
++	u32 i, mdicnfg, mdic = 0;
+ 	s32 ret_val = 0;
+ 
+ 	if (offset > MAX_PHY_REG_ADDRESS) {
+@@ -204,12 +230,27 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+ 	 * Control register.  The MAC will take care of interfacing with the
+ 	 * PHY to retrieve the desired data.
+ 	 */
+-	mdic = (((u32)data) |
+-		(offset << E1000_MDIC_REG_SHIFT) |
+-		(phy->addr << E1000_MDIC_PHY_SHIFT) |
+-		(E1000_MDIC_OP_WRITE));
++	switch (hw->mac.type) {
++		case e1000_i210:
++		case e1000_i211:
++			mdicnfg = rd32(E1000_MDICNFG);
++			mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
++			mdicnfg |= (phy->addr << E1000_MDICNFG_PHY_SHIFT);
++			wr32(E1000_MDICNFG, mdicnfg);
++			mdic = (((u32)data) |
++				(offset << E1000_MDIC_REG_SHIFT) |
++				(E1000_MDIC_OP_WRITE));
++			break;
++		default:
++			mdic = (((u32)data) |
++				(offset << E1000_MDIC_REG_SHIFT) |
++				(phy->addr << E1000_MDIC_PHY_SHIFT) |
++				(E1000_MDIC_OP_WRITE));
++			break;
++	}
+ 
+ 	wr32(E1000_MDIC, mdic);
++	wrfl();
+ 
+ 	/* Poll the ready bit to see if the MDI read completed
+ 	 * Increasing the time out as testing showed failures with
+@@ -233,6 +274,18 @@ s32 igb_write_phy_reg_mdic(struct e1000_
+ 	}
+ 
+ out:
++	switch (hw->mac.type) {
++		/* restore MDICNFG to have phy's addr */
++		case e1000_i210:
++		case e1000_i211:
++			mdicnfg = rd32(E1000_MDICNFG);
++			mdicnfg &= ~(E1000_MDICNFG_PHY_MASK);
++			mdicnfg |= (hw->phy.addr << E1000_MDICNFG_PHY_SHIFT);
++			wr32(E1000_MDICNFG, mdicnfg);
++			break;
++		default:
++			break;
++	}
+ 	return ret_val;
+ }
+ 
