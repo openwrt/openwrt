@@ -78,6 +78,21 @@ endef
 $(eval $(call KernelPackage,hwmon-adt7475))
 
 
+define KernelPackage/hwmon-ina209
+  TITLE:=INA209 monitoring support
+  KCONFIG:=CONFIG_SENSORS_INA209
+  FILES:=$(LINUX_DIR)/drivers/hwmon/ina209.ko
+  AUTOLOAD:=$(call AutoProbe,ina209)
+  $(call AddDepends/hwmon,+kmod-i2c-core)
+endef
+
+define KernelPackage/hwmon-ina209/description
+ Kernel module for ina209 dc power monitor chips
+endef
+
+$(eval $(call KernelPackage,hwmon-ina209))
+
+
 define KernelPackage/hwmon-ina2xx
   TITLE:=INA2XX monitoring support
   KCONFIG:=CONFIG_SENSORS_INA2XX
