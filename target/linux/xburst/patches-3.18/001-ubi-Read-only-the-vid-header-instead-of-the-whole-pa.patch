@@ -9,7 +9,7 @@ Subject: [PATCH 1/7] ubi: Read only the vid header instead of the whole page
 
 --- a/drivers/mtd/ubi/io.c
 +++ b/drivers/mtd/ubi/io.c
-@@ -1009,7 +1009,7 @@ int ubi_io_read_vid_hdr(struct ubi_devic
+@@ -1014,7 +1014,7 @@ int ubi_io_read_vid_hdr(struct ubi_devic
  
  	p = (char *)vid_hdr - ubi->vid_hdr_shift;
  	read_err = ubi_io_read(ubi, p, pnum, ubi->vid_hdr_aloffset,

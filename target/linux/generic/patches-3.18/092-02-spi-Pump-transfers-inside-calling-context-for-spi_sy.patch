@@ -116,7 +116,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  static int spi_master_initialize_queue(struct spi_master *master)
  {
  	int ret;
-@@ -2105,19 +2128,46 @@ static int __spi_sync(struct spi_device
+@@ -2104,19 +2127,46 @@ static int __spi_sync(struct spi_device
  	DECLARE_COMPLETION_ONSTACK(done);
  	int status;
  	struct spi_master *master = spi->master;

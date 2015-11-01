@@ -1,6 +1,6 @@
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
-@@ -177,6 +177,15 @@
+@@ -177,6 +177,15 @@ config PWM_LPSS_PLATFORM
  	  To compile this driver as a module, choose M here: the module
  	  will be called pwm-lpss-platform.
  
@@ -18,7 +18,7 @@
  	depends on ARCH_MXS && OF
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -15,6 +15,7 @@
+@@ -15,6 +15,7 @@ obj-$(CONFIG_PWM_LPC32XX)	+= pwm-lpc32xx
  obj-$(CONFIG_PWM_LPSS)		+= pwm-lpss.o
  obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-pci.o
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
