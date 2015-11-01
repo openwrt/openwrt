@@ -157,7 +157,7 @@ Subject: [PATCH 089/114] Add 2709 platform for Raspberry Pi 2
  
 --- a/arch/arm/Makefile
 +++ b/arch/arm/Makefile
-@@ -152,6 +152,7 @@ machine-$(CONFIG_ARCH_AT91)		+= at91
+@@ -160,6 +160,7 @@ machine-$(CONFIG_ARCH_AT91)		+= at91
  machine-$(CONFIG_ARCH_AXXIA)		+= axxia
  machine-$(CONFIG_ARCH_BCM)		+= bcm
  machine-$(CONFIG_ARCH_BCM2708)		+= bcm2708
@@ -9448,7 +9448,7 @@ Subject: [PATCH 089/114] Add 2709 platform for Raspberry Pi 2
  
 --- a/sound/arm/Kconfig
 +++ b/sound/arm/Kconfig
-@@ -41,7 +41,7 @@ config SND_PXA2XX_AC97
+@@ -42,7 +42,7 @@ config SND_PXA2XX_AC97
  
  config SND_BCM2835
  	tristate "BCM2835 ALSA driver"

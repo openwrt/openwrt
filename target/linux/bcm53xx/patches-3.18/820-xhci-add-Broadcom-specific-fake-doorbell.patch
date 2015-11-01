@@ -90,5 +90,5 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 +#endif /* CONFIG_ARCH_BCM_5301X */
 +
  	if (!ret)
- 		xhci->xhc_state &= ~XHCI_STATE_HALTED;
- 	return ret;
+ 		xhci->xhc_state &= ~(XHCI_STATE_HALTED | XHCI_STATE_DYING);
+ 

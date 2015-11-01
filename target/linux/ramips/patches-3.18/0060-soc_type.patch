@@ -110,8 +110,8 @@
  		if (xtal_rate == MHZ(40))
  			cpu_rate = MHZ(580);
  		else
-@@ -418,7 +416,7 @@ void __init ralink_clk_init(void)
- 	ralink_clk_add("10000c00.uartlite", periph_rate);
+@@ -420,7 +418,7 @@ void __init ralink_clk_init(void)
+  	ralink_clk_add("10000e00.uart2", periph_rate);
  	ralink_clk_add("10180000.wmac", xtal_rate);
  
 -	if (IS_ENABLED(CONFIG_USB) && mt762x_soc != MT762X_SOC_MT7628AN) {
@@ -119,7 +119,7 @@
  		/*
  		 * When the CPU goes into sleep mode, the BUS clock will be too low for
  		 * USB to function properly
-@@ -506,11 +504,11 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -508,11 +506,11 @@ void prom_soc_init(struct ralink_soc_inf
  
  	if (n0 == MT7620_CHIP_NAME0 && n1 == MT7620_CHIP_NAME1) {
  		if (bga) {
@@ -133,7 +133,7 @@
  			name = "MT7620N";
  			soc_info->compatible = "ralink,mt7620n-soc";
  #ifdef CONFIG_PCI
-@@ -518,7 +516,7 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -520,7 +518,7 @@ void prom_soc_init(struct ralink_soc_inf
  #endif
  		}
  	} else if (n0 == MT7620_CHIP_NAME0 && n1 == MT7628_CHIP_NAME1) {
@@ -142,7 +142,7 @@
  		name = "MT7628AN";
  		soc_info->compatible = "ralink,mt7628an-soc";
  	} else {
-@@ -535,7 +533,7 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -537,7 +535,7 @@ void prom_soc_init(struct ralink_soc_inf
  	dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
  
  	soc_info->mem_base = MT7620_DRAM_BASE;
@@ -151,7 +151,7 @@
  		mt7628_dram_init(soc_info);
  	else
  		mt7620_dram_init(soc_info);
-@@ -548,7 +546,7 @@ void prom_soc_init(struct ralink_soc_inf
+@@ -550,7 +548,7 @@ void prom_soc_init(struct ralink_soc_inf
  	pr_info("Digital PMU set to %s control\n",
  		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
  

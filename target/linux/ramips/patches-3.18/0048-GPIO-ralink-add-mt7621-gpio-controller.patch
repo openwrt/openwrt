@@ -14,7 +14,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
-@@ -455,6 +455,9 @@
+@@ -455,6 +455,9 @@ config RALINK
  	select RESET_CONTROLLER
  	select PINCTRL
  	select PINCTRL_RT2880
@@ -26,7 +26,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	bool "SGI IP22 (Indy/Indigo2)"
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -898,6 +898,12 @@
+@@ -898,6 +898,12 @@ config GPIO_BCM_KONA
  	help
  	  Turn on GPIO support for Broadcom "Kona" chips.
  
@@ -41,7 +41,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  config GPIO_VIPERBOARD
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -107,3 +107,5 @@
+@@ -107,3 +107,5 @@ obj-$(CONFIG_GPIO_XILINX)	+= gpio-xilinx
  obj-$(CONFIG_GPIO_XTENSA)	+= gpio-xtensa.o
  obj-$(CONFIG_GPIO_ZEVIO)	+= gpio-zevio.o
  obj-$(CONFIG_GPIO_ZYNQ)		+= gpio-zynq.o

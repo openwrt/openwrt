@@ -50,7 +50,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  
  static inline void uart_w32(u32 val, unsigned reg)
  {
-@@ -38,11 +43,46 @@
+@@ -38,11 +43,46 @@ static inline u32 uart_r32(unsigned reg)
  	return __raw_readl(uart_membase + reg);
  }
  

@@ -1,6 +1,6 @@
 --- a/drivers/tty/serial/serial_core.c
 +++ b/drivers/tty/serial/serial_core.c
-@@ -356,6 +356,9 @@
+@@ -356,6 +356,9 @@ uart_get_baud_rate(struct uart_port *por
  	else if (flags == UPF_SPD_WARP)
  		altbaud = 460800;
  

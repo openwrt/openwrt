@@ -72,7 +72,7 @@ Signed-off-by: Mark Brown <broonie@kernel.org>
  static int spi_init_queue(struct spi_master *master)
  {
  	struct sched_param param = { .sched_priority = MAX_RT_PRIO - 1 };
-@@ -2166,7 +2186,7 @@ static int __spi_sync(struct spi_device
+@@ -2165,7 +2185,7 @@ static int __spi_sync(struct spi_device
  		 * can.
  		 */
  		if (master->transfer == spi_queued_transfer)

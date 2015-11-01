@@ -1,6 +1,6 @@
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
-@@ -56,6 +56,7 @@
+@@ -56,6 +56,7 @@ source "sound/soc/spear/Kconfig"
  source "sound/soc/tegra/Kconfig"
  source "sound/soc/txx9/Kconfig"
  source "sound/soc/ux500/Kconfig"
@@ -10,14 +10,14 @@
  source "sound/soc/codecs/Kconfig"
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
-@@ -33,3 +33,4 @@
+@@ -33,3 +33,4 @@ obj-$(CONFIG_SND_SOC)	+= spear/
  obj-$(CONFIG_SND_SOC)	+= tegra/
  obj-$(CONFIG_SND_SOC)	+= txx9/
  obj-$(CONFIG_SND_SOC)	+= ux500/
 +obj-$(CONFIG_SND_SOC)   += mtk/
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
-@@ -725,7 +725,7 @@
+@@ -725,7 +725,7 @@ config SND_SOC_WM8955
  	tristate
  
  config SND_SOC_WM8960
@@ -7371,7 +7371,7 @@
 +#endif
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1851,7 +1851,8 @@
+@@ -1851,7 +1851,8 @@ static int soc_probe(struct platform_dev
  	/* Bodge while we unpick instantiation */
  	card->dev = &pdev->dev;
  
@@ -8107,7 +8107,7 @@
  	{  0x4, 0x0000 },
  	{  0x5, 0x0008 },
  	{  0x6, 0x0000 },
-@@ -88,8 +89,8 @@
+@@ -88,8 +89,8 @@ static const struct reg_default wm8960_r
  	{ 0x25, 0x0050 },
  	{ 0x26, 0x0000 },
  	{ 0x27, 0x0000 },
@@ -8118,7 +8118,7 @@
  	{ 0x2a, 0x0040 },
  	{ 0x2b, 0x0000 },
  	{ 0x2c, 0x0000 },
-@@ -127,8 +128,15 @@
+@@ -127,8 +128,15 @@ struct wm8960_priv {
  	int playback_fs;
  };
  
@@ -8135,7 +8135,7 @@
  /* enumerated controls */
  static const char *wm8960_polarity[] = {"No Inversion", "Left Inverted",
  	"Right Inverted", "Stereo Inversion"};
-@@ -181,8 +189,8 @@
+@@ -181,8 +189,8 @@ static int wm8960_get_deemph(struct snd_
  	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
  	struct wm8960_priv *wm8960 = snd_soc_codec_get_drvdata(codec);
  
@@ -8146,7 +8146,7 @@
  }
  
  static int wm8960_put_deemph(struct snd_kcontrol *kcontrol,
-@@ -200,6 +208,70 @@
+@@ -200,6 +208,70 @@ static int wm8960_put_deemph(struct snd_
  	return wm8960_set_deemph(codec);
  }
  
@@ -8217,7 +8217,7 @@
  static const DECLARE_TLV_DB_SCALE(adc_tlv, -9700, 50, 0);
  static const DECLARE_TLV_DB_SCALE(dac_tlv, -12700, 50, 1);
  static const DECLARE_TLV_DB_SCALE(bypass_tlv, -2100, 300, 0);
-@@ -542,6 +614,7 @@
+@@ -542,6 +614,7 @@ static int wm8960_set_dai_fmt(struct snd
  
  	/* set iface */
  	snd_soc_write(codec, WM8960_IFACE1, iface);
@@ -8225,7 +8225,7 @@
  	return 0;
  }
  
-@@ -623,11 +696,16 @@
+@@ -623,11 +696,16 @@ static int wm8960_set_bias_level_out3(st
  		break;
  
  	case SND_SOC_BIAS_PREPARE:
@@ -8242,7 +8242,7 @@
  		if (codec->dapm.bias_level == SND_SOC_BIAS_OFF) {
  			regcache_sync(wm8960->regmap);
  
-@@ -650,9 +728,13 @@
+@@ -650,9 +728,13 @@ static int wm8960_set_bias_level_out3(st
  
  		/* Set VMID to 2x250k */
  		snd_soc_update_bits(codec, WM8960_POWER1, 0x180, 0x100);
@@ -8256,7 +8256,7 @@
  		/* Enable anti-pop features */
  		snd_soc_write(codec, WM8960_APOP1,
  			     WM8960_POBCTRL | WM8960_SOFT_ST |
-@@ -661,6 +743,7 @@
+@@ -661,6 +743,7 @@ static int wm8960_set_bias_level_out3(st
  		/* Disable VMID and VREF, let them discharge */
  		snd_soc_write(codec, WM8960_POWER1, 0);
  		msleep(600);
@@ -8264,7 +8264,7 @@
  		break;
  	}
  
-@@ -853,10 +936,15 @@
+@@ -853,10 +936,15 @@ static int wm8960_set_dai_pll(struct snd
  
  	if (pll_div.k) {
  		reg |= 0x20;
@@ -8281,7 +8281,7 @@
  	}
  	snd_soc_write(codec, WM8960_PLL1, reg);
  
-@@ -888,7 +976,11 @@
+@@ -888,7 +976,11 @@ static int wm8960_set_dai_clkdiv(struct
  		snd_soc_write(codec, WM8960_PLL1, reg | div);
  		break;
  	case WM8960_DCLKDIV:
@@ -8293,7 +8293,7 @@
  		snd_soc_write(codec, WM8960_CLOCK2, reg | div);
  		break;
  	case WM8960_TOCLKSEL:
-@@ -962,7 +1054,7 @@
+@@ -962,7 +1054,7 @@ static int wm8960_probe(struct snd_soc_c
  {
  	struct wm8960_priv *wm8960 = snd_soc_codec_get_drvdata(codec);
  	struct wm8960_data *pdata = dev_get_platdata(codec->dev);
@@ -8302,7 +8302,7 @@
  
  	wm8960->set_bias_level = wm8960_set_bias_level_out3;
  
-@@ -973,11 +1065,7 @@
+@@ -973,11 +1065,7 @@ static int wm8960_probe(struct snd_soc_c
  			wm8960->set_bias_level = wm8960_set_bias_level_capless;
  	}
  
