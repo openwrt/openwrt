@@ -130,6 +130,9 @@ Image/InstallKernel/Template/ICONNECT=$(call Image/InstallKernel/Template,iconne
 Image/BuildKernel/Template/IOMEGA_IX2_200=$(call Image/BuildKernel/Template,iomega_ix2_200)
 Image/InstallKernel/Template/IOMEGA_IX2_200=$(call Image/InstallKernel/Template,iomega_ix2_200)
 
+Image/BuildKernel/Template/NSA310S=$(call Image/BuildKernel/Template,nsa310s)
+Image/InstallKernel/Template/NSA310S=$(call Image/InstallKernel/Template,nsa310s)
+
 Image/BuildKernel/Template/POGOE02=$(call Image/BuildKernel/Template,pogo_e02)
 Image/InstallKernel/Template/POGOE02=$(call Image/InstallKernel/Template,pogo_e02)
 
