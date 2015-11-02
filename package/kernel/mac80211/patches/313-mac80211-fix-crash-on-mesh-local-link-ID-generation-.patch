@@ -1,0 +1,42 @@
+From: Matthias Schiffer <mschiffer@universe-factory.net>
+Date: Sat, 24 Oct 2015 21:25:51 +0200
+Subject: [PATCH] mac80211: fix crash on mesh local link ID generation with
+ VIFs
+
+llid_in_use needs to be limited to stations of the same VIF, otherwise it
+will cause a NULL deref as the sta_info of non-mesh-VIFs don't have
+sta->mesh set.
+
+Steps to reproduce:
+
+   modprobe mac80211_hwsim channels=2
+   iw phy phy0 interface add ibss0 type ibss
+   iw phy phy0 interface add mesh0 type mp
+   iw phy phy1 interface add ibss1 type ibss
+   iw phy phy1 interface add mesh1 type mp
+   ip link set ibss0 up
+   ip link set mesh0 up
+   ip link set ibss1 up
+   ip link set mesh1 up
+   iw dev ibss0 ibss join foo 2412
+   iw dev ibss1 ibss join foo 2412
+   # Ensure that ibss0 and ibss1 are actually associated; I often need to
+   # leave and join the cell on ibss1 a second time.
+   iw dev mesh0 mesh join bar
+   iw dev mesh1 mesh join bar # crash
+
+Signed-off-by: Matthias Schiffer <mschiffer@universe-factory.net>
+---
+
+--- a/net/mac80211/mesh_plink.c
++++ b/net/mac80211/mesh_plink.c
+@@ -686,6 +686,9 @@ static bool llid_in_use(struct ieee80211
+ 
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(sta, &local->sta_list, list) {
++		if (sdata != sta->sdata)
++			continue;
++
+ 		if (!memcmp(&sta->mesh->llid, &llid, sizeof(llid))) {
+ 			in_use = true;
+ 			break;
