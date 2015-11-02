@@ -7,7 +7,6 @@
 
 define Profile/BEAGLEBOARD
 	NAME:=EBV BeagleBoard
-	FEATURES:= usb ext4 targz
 	DEFAULT_PACKAGES += kmod-usb2 kmod-usb2-omap \
 			kmod-usb-net kmod-usb-net-asix \
 			kmod-usb-net-asix-ax88179 kmod-usb-net-hso \
