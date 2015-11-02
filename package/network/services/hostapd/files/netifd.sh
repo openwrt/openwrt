@@ -194,6 +194,7 @@ hostapd_set_bss_options() {
 	set_default hidden 0
 	set_default wmm 1
 	set_default uapsd 1
+	set_default eapol_version 0
 
 	append bss_conf "ctrl_interface=/var/run/hostapd"
 	if [ "$isolate" -gt 0 ]; then
