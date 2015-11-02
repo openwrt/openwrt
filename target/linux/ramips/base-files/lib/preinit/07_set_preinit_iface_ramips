@@ -23,8 +23,8 @@ ramips_set_preinit_iface() {
 		swconfig dev rt305x vlan 1 set ports "0 6"
 		swconfig dev rt305x port 6 set untag 0
 		swconfig dev rt305x set apply 1
-		vconfig add eth0 1
-		ifconfig eth0 up
+		ip link add link eth0 name eth0.1 type vlan id 1
+		ip link set eth0 up
 		ifname=eth0.1
 	else
 		ifname=eth0
