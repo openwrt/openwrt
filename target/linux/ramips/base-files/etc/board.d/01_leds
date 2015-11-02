@@ -222,6 +222,10 @@ rt-n14u)
 	set_wifi_led "$board:blue:air"
 	set_usb_led "$board:blue:usb"
 	;;
+tiny-ac)
+	set_wifi_led "$board:orange:wifi"
+	set_usb_led "$board:green:usb"
+	;;
 vocore)
 	ucidef_set_led_netdev "eth" "ETH" "$board:orange:eth" "eth0"
 	set_wifi_led "$board:green:status"

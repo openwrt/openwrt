@@ -334,6 +334,10 @@ ramips_setup_macs()
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 4)
 		;;
+	tiny-ac)
+		lan_mac=$(mtd_get_mac_ascii u-boot-env LAN_MAC_ADDR)
+		wan_mac=$(mtd_get_mac_ascii u-boot-env WAN_MAC_ADDR)
+		;;
 	w306r-v20)
 		lan_mac=$(cat /sys/class/net/eth0/address)
 		wan_mac=$(macaddr_add "$lan_mac" 5)

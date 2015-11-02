@@ -145,6 +145,9 @@ ramips_board_detect() {
 	*"DIR-860L B1")
 		name="dir-860l-b1"
 		;;
+	*"Dovado Tiny AC")
+		name="tiny-ac"
+		;;
 	*"E1700")
 		name="e1700"
 		;;
