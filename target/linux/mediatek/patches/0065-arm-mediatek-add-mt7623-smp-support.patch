@@ -1,0 +1,38 @@
+From 3f181d60fcd80b0d98849076ed2aa43de2cb6d8c Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 27 Jun 2015 13:16:27 +0200
+Subject: [PATCH 65/76] arm: mediatek: add mt7623 smp support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/arm/mach-mediatek/platsmp.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/arch/arm/mach-mediatek/platsmp.c b/arch/arm/mach-mediatek/platsmp.c
+index e266b3d..81fdcff 100644
+--- a/arch/arm/mach-mediatek/platsmp.c
++++ b/arch/arm/mach-mediatek/platsmp.c
+@@ -45,6 +45,12 @@ static const struct mtk_smp_boot_info mtk_mt6589_boot = {
+ 	{ 0x38, 0x3c, 0x40 },
+ };
+ 
++static const struct mtk_smp_boot_info mtk_mt7623_boot = {
++	0x10202000, 0x34, 0x30,
++	{ 0x534c4131, 0x4c415332, 0x41534c33 },
++	{ 0x38, 0x3c, 0x40 },
++};
++
+ static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
+ 	{ .compatible   = "mediatek,mt8135", .data = &mtk_mt8135_tz_boot },
+ 	{ .compatible   = "mediatek,mt8127", .data = &mtk_mt8135_tz_boot },
+@@ -52,6 +58,7 @@ static const struct of_device_id mtk_tz_smp_boot_infos[] __initconst = {
+ 
+ static const struct of_device_id mtk_smp_boot_infos[] __initconst = {
+ 	{ .compatible   = "mediatek,mt6589", .data = &mtk_mt6589_boot },
++	{ .compatible   = "mediatek,mt7623", .data = &mtk_mt7623_boot },
+ };
+ 
+ static void __iomem *mtk_smp_base;
+-- 
+1.7.10.4
+

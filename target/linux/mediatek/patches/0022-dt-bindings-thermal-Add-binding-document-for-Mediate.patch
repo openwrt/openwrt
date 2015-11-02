@@ -1,0 +1,57 @@
+From 9b799b8a4ecbf560f8fb996e8e5147a8f7b9a1b3 Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 13 May 2015 10:52:41 +0200
+Subject: [PATCH 22/76] dt-bindings: thermal: Add binding document for
+ Mediatek thermal controller
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+---
+ .../bindings/thermal/mediatek-thermal.txt          |   36 ++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/thermal/mediatek-thermal.txt
+
+diff --git a/Documentation/devicetree/bindings/thermal/mediatek-thermal.txt b/Documentation/devicetree/bindings/thermal/mediatek-thermal.txt
+new file mode 100644
+index 0000000..adf5d2c
+--- /dev/null
++++ b/Documentation/devicetree/bindings/thermal/mediatek-thermal.txt
+@@ -0,0 +1,36 @@
++* Mediatek Thermal
++
++This describes the device tree binding for the Mediatek thermal controller
++which measures the on-SoC temperatures. This device does not have its own ADC,
++instead it directly controls the AUXADC via AHB bus accesses. For this reason
++this device needs phandles to the AUXADC.
++
++Required properties:
++- compatible: "mediatek,mt8173-thermal"
++- reg: Address range of the thermal controller
++- interrupts: IRQ for the thermal controller
++- clocks, clock-names: Clocks needed for the thermal controller. required
++                       clocks are:
++		"therm":	Main clock needed for register access
++		"auxadc":	The AUXADC clock
++- resets, reset-names: Reference to the reset controller controlling the thermal
++                       controller. Required reset-names:
++		"therm":	The main reset line
++- auxadc: A phandle to the AUXADC which the thermal controller uses
++- apmixedsys: A phandle to the APMIXEDSYS controller.
++- #thermal-sensor-cells : Should be 1. See ./thermal.txt for a description
++
++Example:
++
++	thermal: thermal@1100b000 {
++		#thermal-sensor-cells = <1>;
++		compatible = "mediatek,mt8173-thermal";
++		reg = <0 0x1100b000 0 0x1000>;
++		interrupts = <0 70 IRQ_TYPE_LEVEL_LOW>;
++		clocks = <&pericfg CLK_PERI_THERM>, <&pericfg CLK_PERI_AUXADC>;
++		clock-names = "therm", "auxadc";
++		resets = <&pericfg MT8173_PERI_THERM_SW_RST>;
++		reset-names = "therm";
++		auxadc = <&auxadc>;
++		apmixedsys = <&apmixedsys>;
++	};
+-- 
+1.7.10.4
+

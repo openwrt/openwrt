@@ -1,0 +1,30 @@
+From 1671d902f8dcfce70f920ad3dfebb1031a7a38de Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Jul 2015 05:46:51 +0200
+Subject: [PATCH 76/76] reset
+
+---
+ include/dt-bindings/reset-controller/mt7623-resets.h |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/include/dt-bindings/reset-controller/mt7623-resets.h b/include/dt-bindings/reset-controller/mt7623-resets.h
+index 28a7d69..3e0f39a 100644
+--- a/include/dt-bindings/reset-controller/mt7623-resets.h
++++ b/include/dt-bindings/reset-controller/mt7623-resets.h
+@@ -56,4 +56,13 @@
+ #define MT7623_PERI_ETH_SW_RST		29
+ #define MT7623_PERI_SPI0_SW_RST		33
+ 
++/* high speed interface resets */
++#define MT7623_HIFSYS_UHOST0_SW_RST	3
++#define MT7623_HIFSYS_UHOST1_SW_RST	4
++#define MT7623_HIFSYS_UPHY0_SW_RST	21
++#define MT7623_HIFSYS_UPHY1_SW_RST	22
++#define MT7623_HIFSYS_PCIE0_SW_RST	24
++#define MT7623_HIFSYS_PCIE0_SW_RST	25
++#define MT7623_HIFSYS_PCIE0_SW_RST	26
++
+ #endif /* _DT_BINDINGS_RESET_CONTROLLER_MT7623 */
+-- 
+1.7.10.4
+

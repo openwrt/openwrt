@@ -1,0 +1,30 @@
+From e5de6556a25d4b2e2d30683d629095bce102c792 Mon Sep 17 00:00:00 2001
+From: Hongzhou Yang <hongzhou.yang@mediatek.com>
+Date: Mon, 18 May 2015 23:11:19 -0700
+Subject: [PATCH 55/76] mfd: mediatek: Add GPIO sub module support into mfd.
+
+Register pinctrl subnode into 6397 mfd cell.
+
+Signed-off-by: Hongzhou Yang <hongzhou.yang@mediatek.com>
+Acked-by: Linus Walleij <linus.walleij@linaro.org>
+---
+ drivers/mfd/mt6397-core.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
+index 09bc780..012c620 100644
+--- a/drivers/mfd/mt6397-core.c
++++ b/drivers/mfd/mt6397-core.c
+@@ -34,6 +34,9 @@ static const struct mfd_cell mt6397_devs[] = {
+ 	}, {
+ 		.name = "mt6397-clk",
+ 		.of_compatible = "mediatek,mt6397-clk",
++	}, {
++		.name = "mediatek-mt6397-pinctrl",
++		.of_compatible = "mediatek,mt6397-pinctrl",
+ 	},
+ };
+ 
+-- 
+1.7.10.4
+

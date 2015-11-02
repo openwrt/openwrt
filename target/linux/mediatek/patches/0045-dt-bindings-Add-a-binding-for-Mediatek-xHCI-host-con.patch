@@ -1,0 +1,43 @@
+From 8629bcb28208ef5b9f5eeb6d4b669651c9521b30 Mon Sep 17 00:00:00 2001
+From: Chunfeng Yun <chunfeng.yun@mediatek.com>
+Date: Wed, 27 May 2015 19:47:59 +0800
+Subject: [PATCH 45/76] dt-bindings: Add a binding for Mediatek xHCI host
+ controller
+
+add a DT binding documentation of xHCI host controller for
+the MT8173 SoC from Mediatek.
+
+Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
+---
+ .../devicetree/bindings/usb/mt8173-xhci.txt         |   19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/mt8173-xhci.txt
+
+diff --git a/Documentation/devicetree/bindings/usb/mt8173-xhci.txt b/Documentation/devicetree/bindings/usb/mt8173-xhci.txt
+new file mode 100644
+index 0000000..da28570
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/mt8173-xhci.txt
+@@ -0,0 +1,19 @@
++MT65XX xhci
++
++The device node for Mediatek SOC usb3.0 host controller
++
++Required properties:
++ - compatible : supports "mediatek,mt8173-xhci", "generic-xhci"
++ - reg        : Offset and length of registers
++ - interrupts : Interrupt; mode, number and trigger
++ - usb-phy : the phy that xhci will bind
++ - usb3-lpm-capable: suppots USB3 LPM
++
++Example:
++usb: usb30@11270000 {
++	compatible = "mediatek,mt8173-xhci", "generic-xhci";
++	reg = <0 0x11270000 0 0x1000>;
++	interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL_LOW>;
++	usb-phy = <&u3phy>;
++	usb3-lpm-capable;
++};
+-- 
+1.7.10.4
+

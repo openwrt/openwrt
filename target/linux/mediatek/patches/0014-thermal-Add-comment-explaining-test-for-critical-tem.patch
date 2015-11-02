@@ -1,0 +1,34 @@
+From 18f50eae474edc716b01959fad6898c8553b131c Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Wed, 13 May 2015 10:52:33 +0200
+Subject: [PATCH 14/76] thermal: Add comment explaining test for critical
+ temperature
+
+The code testing if a temperature should be emulated or not is
+not obvious. Add a comment explaining why this test is done.
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+Reviewed-by: Mikko Perttunen <mperttunen@nvidia.com>
+---
+ drivers/thermal/thermal_core.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
+index 3e0fe55..e204deb 100644
+--- a/drivers/thermal/thermal_core.c
++++ b/drivers/thermal/thermal_core.c
+@@ -435,6 +435,11 @@ int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
+ 			}
+ 		}
+ 
++		/*
++		 * Only allow emulating a temperature when the real temperature
++		 * is below the critical temperature so that the emulation code
++		 * cannot hide critical conditions.
++		 */
+ 		if (!ret && *temp < crit_temp)
+ 			*temp = tz->emul_temperature;
+ 	}
+-- 
+1.7.10.4
+

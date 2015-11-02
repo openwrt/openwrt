@@ -1,0 +1,26 @@
+From 46c695d8285b73d39b0e16fcfd7da332fd2398d4 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 27 Jun 2015 13:00:27 +0200
+Subject: [PATCH 60/76] arm: mediatek: select the arm timer by default
+
+select ARM_ARCH_TIMER inside the Kconfig
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/arm/mach-mediatek/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
+index 9f59e58..7704818 100644
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -1,5 +1,6 @@
+ menuconfig ARCH_MEDIATEK
+ 	bool "Mediatek MT65xx & MT81xx SoC" if ARCH_MULTI_V7
++	select ARM_ARCH_TIMER
+ 	select ARM_GIC
+ 	select PINCTRL
+ 	select MTK_TIMER
+-- 
+1.7.10.4
+

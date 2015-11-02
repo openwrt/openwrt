@@ -1,0 +1,182 @@
+From df59c3b7030b6d7802fe5e5abda81467fcdf2178 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Jul 2015 05:46:13 +0200
+Subject: [PATCH 74/76] dts
+
+---
+ arch/arm/boot/dts/mt7623-evb.dts |  124 +++++++++++++++++++++++++++++++++++++-
+ arch/arm/boot/dts/mt7623.dtsi    |   11 ++++
+ 2 files changed, 133 insertions(+), 2 deletions(-)
+
+--- a/arch/arm/boot/dts/mt7623-evb.dts
++++ b/arch/arm/boot/dts/mt7623-evb.dts
+@@ -145,8 +145,8 @@
+ 	bus-width = <8>;
+ 	max-frequency = <50000000>;
+ 	cap-mmc-highspeed;
+-//	vmmc-supply = <&mt6397_vemc_3v3_reg>;
+-//	vqmmc-supply = <&mt6397_vio18_reg>;
++//	vmmc-supply = <&mt6323_vemc_3v3_reg>;
++//	vqmmc-supply = <&mt6323_vio18_reg>;
+ 	non-removable;
+ };
+ 
+@@ -160,3 +160,123 @@
+ 	pinctrl-names = "default";
+         pinctrl-0 = <&pinctrl_pcie_default>;
+ };
++
++&pwrap {
++	pmic: mt6323 {
++		compatible = "mediatek,mt6323";
++
++		mt6323regulator: mt6323regulator {
++			compatible = "mediatek,mt6323-regulator";
++
++			mt6323_vproc_reg: buck_vproc {
++				regulator-compatible = "buck_vproc";
++				regulator-name = "vproc";
++				regulator-min-microvolt = < 700000>;
++				regulator-max-microvolt = <1493750>;
++				regulator-ramp-delay = <6250>;
++				regulator-always-on;
++			};
++
++			mt6323_vsys_reg: buck_vsys {
++				regulator-compatible = "buck_vsys";
++				regulator-name = "vsys";
++				regulator-min-microvolt = <1400000>;
++				regulator-max-microvolt = <3000000>;
++				regulator-ramp-delay = <12500>;
++				regulator-always-on;
++			};
++
++			mt6323_vpa_reg: buck_vpa {
++				regulator-compatible = "buck_vpa";
++				regulator-name = "vpa";
++				regulator-min-microvolt = < 500000>;
++				regulator-max-microvolt = <3650000>;
++				regulator-ramp-delay = <50000>;
++				regulator-always-on;
++			};
++
++			mt6323_vtcxo_reg: ldo_vtcxo {
++				regulator-compatible = "ldo_vtcxo";
++				regulator-name = "vtcxo";
++				regulator-always-on;
++			};
++
++			mt6323_va_reg: ldo_va {
++				regulator-compatible = "ldo_va";
++				regulator-name = "va";
++				regulator-always-on;
++			};
++
++			mt6323_vcn28_reg: ldo_vcn28 {
++				regulator-compatible = "ldo_vcn28";
++				regulator-name = "vcn28";
++				regulator-always-on;
++			};
++
++			mt6323_vcn33_reg: ldo_vcn33 {
++				regulator-compatible = "ldo_vcn33";
++				regulator-name = "vcn33";
++				regulator-always-on;
++			};
++
++			mt6323_vcama_reg: ldo_vcama {
++				regulator-compatible = "ldo_vcama";
++				regulator-name = "vcama";
++				regulator-min-microvolt = <1500000>;
++				regulator-max-microvolt = <2800000>;
++				regulator-enable-ramp-delay = <218>;
++			};
++
++			mt6323_vio28_reg: ldo_vio28 {
++				regulator-compatible = "ldo_vio28";
++				regulator-name = "vio28";
++				regulator-always-on;
++			};
++
++			mt6323_vusb_reg: ldo_vusb {
++				regulator-compatible = "ldo_vusb";
++				regulator-name = "vusb";
++			};
++
++			mt6323_vmc_reg: ldo_vmc {
++				regulator-compatible = "ldo_vmc";
++				regulator-name = "vmc";
++				regulator-min-microvolt = <1800000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-enable-ramp-delay = <218>;
++			};
++
++			mt6323_vmch_reg: ldo_vmch {
++				regulator-compatible = "ldo_vmch";
++				regulator-name = "vmch";
++				regulator-min-microvolt = <3000000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-enable-ramp-delay = <218>;
++			};
++
++			mt6323_vemc_3v3_reg: ldo_vemc3v3 {
++				regulator-compatible = "ldo_vemc3v3";
++				regulator-name = "vemc_3v3";
++				regulator-min-microvolt = <3000000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-enable-ramp-delay = <218>;
++			};
++
++			mt6323_vgp1_reg: ldo_vgp1 {
++				regulator-compatible = "ldo_vgp1";
++				regulator-name = "vcamd";
++				regulator-min-microvolt = <1220000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-enable-ramp-delay = <240>;
++			};
++
++			mt6323_vgp2_reg: ldo_vgp2 {
++				regulator-compatible = "ldo_vgp2";
++				regulator-name = "vcamio";
++				regulator-min-microvolt = <1000000>;
++				regulator-max-microvolt = <3300000>;
++				regulator-enable-ramp-delay = <218>;
++			};
++		};
++	};
++};
+--- a/arch/arm/boot/dts/mt7623.dtsi
++++ b/arch/arm/boot/dts/mt7623.dtsi
+@@ -150,6 +150,17 @@
+ 			clock-names = "system-clk", "rtc-clk";
+ 		};
+ 
++		pwrap: pwrap@1000f000 {
++			compatible = "mediatek,mt7623-pwrap";
++			reg = <0 0x1000f000 0 0x1000>;
++			reg-names = "pwrap";
++			interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL_HIGH>;
++			resets = <&infracfg MT7623_INFRA_PMIC_WRAP_RST>;
++			reset-names = "pwrap";
++			clocks = <&clk26m>, <&clk26m>;
++			clock-names = "spi", "wrap";
++		};
++
+ 		sysirq: interrupt-controller@10200100 {
+ 			compatible = "mediatek,mt7623-sysirq",
+ 				     "mediatek,mt6577-sysirq";
+@@ -311,6 +322,7 @@
+ 		device_type = "pci";
+ 
+ 		bus-range = <0 255>;
++		status = "disabled";
+ 		ranges = <
+ 			0x02000000 0 0 0x00000000 0x60000000 0 0x10000000 /* pci memory */
+ 			0x01000000 0 0 0x00000000 0x1A160000 0 0x00010000 /* io space */
+@@ -343,6 +355,5 @@
+ 			device_type = "pci";
+ 		};
+ 
+-		status = "disabled";
+ 	};
+ };
