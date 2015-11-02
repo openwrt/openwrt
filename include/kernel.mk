@@ -62,15 +62,15 @@ endif
 
 ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
-else ifneq (,$(findstring $(ARCH), aarch64 aarch64_be))
+else ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be ))
   LINUX_KARCH := arm64
-else ifneq (,$(findstring $(ARCH), armeb))
+else ifneq (,$(findstring $(ARCH) , armeb ))
   LINUX_KARCH := arm
-else ifneq (,$(findstring $(ARCH), mipsel mips64 mips64el))
+else ifneq (,$(findstring $(ARCH) , mipsel mips64 mips64el ))
   LINUX_KARCH := mips
-else ifneq (,$(findstring $(ARCH), sh2 sh3 sh4))
+else ifneq (,$(findstring $(ARCH) , sh2 sh3 sh4 ))
   LINUX_KARCH := sh
-else ifneq (,$(findstring $(ARCH), i386 x86_64))
+else ifneq (,$(findstring $(ARCH) , i386 x86_64 ))
   LINUX_KARCH := x86
 else
   LINUX_KARCH := $(ARCH)
