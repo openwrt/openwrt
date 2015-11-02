@@ -372,7 +372,14 @@ define Device/archer-c7-v2
     DEVICE_PROFILE := ARCHERC7
     TPLINK_HWID := 0xc7000002
 endef
-TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2
+
+define Device/tl-wdr7500-v3
+    $(Device/tplink-8mlzma)
+    BOARDNAME := ARCHER-C7
+    DEVICE_PROFILE := ARCHERC7
+    TPLINK_HWID := 0x75000003
+endef
+TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2 tl-wdr7500-v3
 
 define Device/antminer-s1
     $(Device/tplink-8mlzma)
