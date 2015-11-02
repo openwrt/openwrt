@@ -30,7 +30,7 @@
 +#########################################################################
 --- /dev/null
 +++ b/board/arcadyan/vgv7510kw22/vgv7510kw22.c
-@@ -0,0 +1,133 @@
+@@ -0,0 +1,136 @@
 +/*
 + * Copyright (C) 2015 Martin Blumenstingl <martin.blumenstingl@googlemail.com>
 + *
@@ -122,7 +122,10 @@
 +	const enum ltq_gphy_clk clk = LTQ_GPHY_CLK_25MHZ_PLL0;
 +	const ulong fw_addr = 0x80FF0000;
 +
-+	ltq_gphy_phy22f_a1x_load(fw_addr);
++	if (ltq_chip_version_get() == 1)
++		ltq_gphy_phy22f_a1x_load(fw_addr);
++	else
++		ltq_gphy_phy22f_a2x_load(fw_addr);
 +
 +	ltq_cgu_gphy_clk_src(clk);
 +
