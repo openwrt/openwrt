@@ -62,7 +62,8 @@ get_status_led() {
 	rut5xx|\
 	v11st-fe|\
 	vocore|\
-	wmr-300)
+	wmr-300|\
+	zbt-wg2626)
 		status_led="$board:green:status"
 		;;
 	atp-52b|\

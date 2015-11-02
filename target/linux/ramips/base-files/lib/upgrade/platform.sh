@@ -132,6 +132,7 @@ platform_check_image() {
 	y1|\
 	y1s|\
 	zbt-wa05|\
+	zbt-wg2626|\
 	zbt-wr8305rt|\
 	zte-q7)
 		[ "$magic" != "27051956" ] && {
