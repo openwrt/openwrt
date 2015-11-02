@@ -1,0 +1,118 @@
+From 89556b1a4d98fbfe498c8f26e988cbb8266f7dfe Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 27 Jun 2015 13:17:35 +0200
+Subject: [PATCH 67/76] arm: mediatek: add mt7623 support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/arm/mach-mediatek/Kconfig                     |    6 ++
+ arch/arm/mach-mediatek/mediatek.c                  |    2 +
+ .../dt-bindings/reset-controller/mt7623-resets.h   |   59 ++++++++++++++++++++
+ 3 files changed, 67 insertions(+)
+ create mode 100644 include/dt-bindings/reset-controller/mt7623-resets.h
+
+diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
+index 7704818..5393d25 100644
+--- a/arch/arm/mach-mediatek/Kconfig
++++ b/arch/arm/mach-mediatek/Kconfig
+@@ -17,6 +17,12 @@ config MACH_MT6592
+ 	bool "MediaTek MT6592 SoCs support"
+ 	default ARCH_MEDIATEK
+ 
++config MACH_MT7623
++	bool "MediaTek MT7623 SoCs support"
++	default ARCH_MEDIATEK
++	select ARCH_HAS_PCI
++	select PCI
++
+ config MACH_MT8127
+ 	bool "MediaTek MT8127 SoCs support"
+ 	default ARCH_MEDIATEK
+diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
+index 6b38d67..ab8cf21 100644
+--- a/arch/arm/mach-mediatek/mediatek.c
++++ b/arch/arm/mach-mediatek/mediatek.c
+@@ -29,6 +29,7 @@ static void __init mediatek_timer_init(void)
+ 	void __iomem *gpt_base = 0;
+ 
+ 	if (of_machine_is_compatible("mediatek,mt6589") ||
++	    of_machine_is_compatible("mediatek,mt7623") ||
+ 	    of_machine_is_compatible("mediatek,mt8135") ||
+ 	    of_machine_is_compatible("mediatek,mt8127")) {
+ 		/* turn on GPT6 which ungates arch timer clocks */
+@@ -48,6 +49,7 @@ static void __init mediatek_timer_init(void)
+ static const char * const mediatek_board_dt_compat[] = {
+ 	"mediatek,mt6589",
+ 	"mediatek,mt6592",
++	"mediatek,mt7623",
+ 	"mediatek,mt8127",
+ 	"mediatek,mt8135",
+ 	NULL,
+diff --git a/include/dt-bindings/reset-controller/mt7623-resets.h b/include/dt-bindings/reset-controller/mt7623-resets.h
+new file mode 100644
+index 0000000..28a7d69
+--- /dev/null
++++ b/include/dt-bindings/reset-controller/mt7623-resets.h
+@@ -0,0 +1,59 @@
++/*
++ * Copyright (c) 2015 OpenWrt
++ * Author: John Crispin
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef _DT_BINDINGS_RESET_CONTROLLER_MT7623
++#define _DT_BINDINGS_RESET_CONTROLLER_MT7623
++
++/* INFRACFG resets */
++#define MT7623_INFRA_EMI_REG_RST	0
++#define MT7623_INFRA_DRAMC0_A0_RST	1
++#define MT7623_INFRA_FHCTL_RST		2
++#define MT7623_INFRA_APCIRQ_EINT_RST	3
++#define MT7623_INFRA_APXGPT_RST		4
++#define MT7623_INFRA_SCPSYS_RST		5
++#define MT7623_INFRA_KP_RST		6
++#define MT7623_INFRA_PMIC_WRAP_RST	7
++#define MT7623_INFRA_MIPI_RST		8
++#define MT7623_INFRA_IRRX_RST		9
++#define MT7623_INFRA_CEC_RST		10
++#define MT7623_INFRA_EMI_RST		32
++#define MT7623_INFRA_DRAMC0_RST		34
++#define MT7623_INFRA_SMI_RST		37
++#define MT7623_INFRA_M4U_RST		38
++
++/* PERICFG resets */
++#define MT7623_PERI_UART0_SW_RST	0
++#define MT7623_PERI_UART1_SW_RST	1
++#define MT7623_PERI_UART2_SW_RST	2
++#define MT7623_PERI_UART3_SW_RST	3
++#define MT7623_PERI_GCPU_SW_RST		5
++#define MT7623_PERI_BTIF_SW_RST		6
++#define MT7623_PERI_PWM_SW_RST		8
++#define MT7623_PERI_AUXADC_SW_RST	10
++#define MT7623_PERI_DMA_SW_RST		11
++#define MT7623_PERI_NFI_SW_RST		14
++#define MT7623_PERI_NLI_SW_RST		15
++#define MT7623_PERI_THERM_SW_RST	16
++#define MT7623_PERI_MSDC0_SW_RST	17
++#define MT7623_PERI_MSDC1_SW_RST	19
++#define MT7623_PERI_MSDC2_SW_RST	20
++#define MT7623_PERI_I2C0_SW_RST		22
++#define MT7623_PERI_I2C1_SW_RST		23
++#define MT7623_PERI_I2C2_SW_RST		24
++#define MT7623_PERI_I2C3_SW_RST		25
++#define MT7623_PERI_USB_SW_RST		28
++#define MT7623_PERI_ETH_SW_RST		29
++#define MT7623_PERI_SPI0_SW_RST		33
++
++#endif /* _DT_BINDINGS_RESET_CONTROLLER_MT7623 */
+-- 
+1.7.10.4
+

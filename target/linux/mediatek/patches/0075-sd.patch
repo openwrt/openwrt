@@ -1,0 +1,55 @@
+From a5982c5e4b58c4335e789969e04f9e24b894f510 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Jul 2015 05:46:39 +0200
+Subject: [PATCH 75/76] sd
+
+---
+ drivers/mmc/host/mtk-sd.c |   12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
+index 7c20f28..be2b00c 100644
+--- a/drivers/mmc/host/mtk-sd.c
++++ b/drivers/mmc/host/mtk-sd.c
+@@ -227,11 +227,13 @@ struct mt_gpdma_desc {
+ #define GPDMA_DESC_BDP		(0x1 << 1)
+ #define GPDMA_DESC_CHECKSUM	(0xff << 8) /* bit8 ~ bit15 */
+ #define GPDMA_DESC_INT		(0x1 << 16)
++#define GPDMA_DESC_GPDH4B	(0x1 << 24)
++#define GPDMA_DESC_BDH4B	(0x1 << 28)
+ 	u32 next;
+ 	u32 ptr;
+ 	u32 gpd_data_len;
+-#define GPDMA_DESC_BUFLEN	(0xffff) /* bit0 ~ bit15 */
+-#define GPDMA_DESC_EXTLEN	(0xff << 16) /* bit16 ~ bit23 */
++#define GPDMA_DESC_BUFLEN	(0xffffff) /* bit0 ~ bit15 */
++#define GPDMA_DESC_EXTLEN	(0xff << 24) /* bit16 ~ bit23 */
+ 	u32 arg;
+ 	u32 blknum;
+ 	u32 cmd;
+@@ -243,10 +245,12 @@ struct mt_bdma_desc {
+ #define BDMA_DESC_CHECKSUM	(0xff << 8) /* bit8 ~ bit15 */
+ #define BDMA_DESC_BLKPAD	(0x1 << 17)
+ #define BDMA_DESC_DWPAD		(0x1 << 18)
++#define BDMA_DESC_GPDH4B	(0x1 << 24)
++#define BDMA_DESC_BDH4B		(0x1 << 28)
+ 	u32 next;
+ 	u32 ptr;
+ 	u32 bd_data_len;
+-#define BDMA_DESC_BUFLEN	(0xffff) /* bit0 ~ bit15 */
++#define BDMA_DESC_BUFLEN	(0xffffff) /* bit0 ~ bit15 */
+ };
+ 
+ struct msdc_dma {
+@@ -1115,7 +1119,7 @@ static void msdc_init_hw(struct msdc_host *host)
+ 	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 1);
+ 	writel(0x403c004f, host->base + MSDC_PATCH_BIT);
+ 	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
+-	writel(0xffff0089, host->base + MSDC_PATCH_BIT1);
++//	writel(0xffff0089, host->base + MSDC_PATCH_BIT1);
+ 	/* Configure to enable SDIO mode.
+ 	 * it's must otherwise sdio cmd5 failed
+ 	 */
+-- 
+1.7.10.4
+

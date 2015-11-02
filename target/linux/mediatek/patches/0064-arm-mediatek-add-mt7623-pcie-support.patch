@@ -1,0 +1,436 @@
+From 29ceb2449cb3622ccfba9eb1c77bf2ac4162464b Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 27 Jun 2015 13:15:29 +0200
+Subject: [PATCH 64/76] arm: mediatek: add mt7623 pcie support
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/arm/mach-mediatek/Makefile |    2 +-
+ arch/arm/mach-mediatek/pcie.c   |  383 +++++++++++++++++++++++++++++++++++++++
+ arch/arm/mach-mediatek/pcie.h   |   14 ++
+ 3 files changed, 398 insertions(+), 1 deletion(-)
+ create mode 100644 arch/arm/mach-mediatek/pcie.c
+ create mode 100644 arch/arm/mach-mediatek/pcie.h
+
+diff --git a/arch/arm/mach-mediatek/Makefile b/arch/arm/mach-mediatek/Makefile
+index 2116460..aca28a2 100644
+--- a/arch/arm/mach-mediatek/Makefile
++++ b/arch/arm/mach-mediatek/Makefile
+@@ -1,4 +1,4 @@
+ ifeq ($(CONFIG_SMP),y)
+ obj-$(CONFIG_ARCH_MEDIATEK) += platsmp.o
+ endif
+-obj-$(CONFIG_ARCH_MEDIATEK) += mediatek.o
++obj-$(CONFIG_ARCH_MEDIATEK) += mediatek.o pcie.o
+diff --git a/arch/arm/mach-mediatek/pcie.c b/arch/arm/mach-mediatek/pcie.c
+new file mode 100644
+index 0000000..8394712
+--- /dev/null
++++ b/arch/arm/mach-mediatek/pcie.c
+@@ -0,0 +1,383 @@
++/*
++ *  Mediatek MT7623 SoC PCIE support
++ *
++ *  Copyright (C) 2015 Mediatek
++ *  Copyright (C) 2015 John Crispin <blogic@openwrt.org>
++ *
++ *  This program is free software; you can redistribute it and/or modify it
++ *  under the terms of the GNU General Public License version 2 as published
++ *  by the Free Software Foundation.
++ */
++
++#include <linux/kernel.h>
++#include <linux/pci.h>
++#include <linux/ioport.h>
++#include <linux/interrupt.h>
++#include <linux/spinlock.h>
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/delay.h>
++#include <asm/irq.h>
++#include <asm/mach/pci.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/of_irq.h>
++#include <linux/of_pci.h>
++#include <linux/reset.h>
++#include <linux/platform_device.h>
++
++#include "pcie.h"
++
++#define PCICFG			0x00
++#define PCIINT			0x08
++#define PCIENA			0x0C
++#define CFGADDR			0x20
++#define CFGDATA			0x24
++#define MEMBASE			0x28
++#define IOBASE			0x2C
++
++#define BAR0SETUP		0x10
++#define IMBASEBAR0		0x18
++#define PCIE_CLASS		0x34
++#define PCIE_SISTAT		0x50
++
++#define MTK_PCIE_HIGH_PERF	BIT(14)
++#define PCIEP0_BASE		0x2000
++#define PCIEP1_BASE		0x3000
++#define PCIEP2_BASE		0x4000
++
++#define PHY_P0_CTL		0x9000
++#define PHY_P1_CTL		0xA000
++#define PHY_P2_CTL		0x4000
++
++#define RSTCTL_PCIE0_RST	BIT(24)
++#define RSTCTL_PCIE1_RST	BIT(25)
++#define RSTCTL_PCIE2_RST	BIT(26)
++
++static void __iomem *pcie_base;
++static int pcie_card_link;
++
++static struct mtk_pcie_port {
++	int id;
++	int enable;
++	u32 base;
++	u32 phy_base;
++	u32 perst_n;
++	u32 reset;
++	u32 interrupt;
++	u32 link;
++} mtk_pcie_port[] = {
++	{ 0, 1, PCIEP0_BASE, PHY_P0_CTL, BIT(1), RSTCTL_PCIE0_RST, BIT(20) },
++	{ 1, 1, PCIEP1_BASE, PHY_P1_CTL, BIT(2), RSTCTL_PCIE1_RST, BIT(21) },
++	{ 2, 0, PCIEP2_BASE, PHY_P2_CTL, BIT(3), RSTCTL_PCIE2_RST, BIT(22) },
++};
++
++#define mtk_foreach_port(p)		\
++	for (p = mtk_pcie_port; p != &mtk_pcie_port[ARRAY_SIZE(mtk_pcie_port)]; p++)
++
++#define mtk_foreach_port_enabled(p)	\
++	mtk_foreach_port(p)		\
++		if (p->enable)
++
++#define mtk_foreach_port_link(p)	\
++	mtk_foreach_port(p)		\
++		if (p->link)
++
++static struct mtk_phy_init {
++	uint32_t reg;
++	uint32_t mask;
++	uint32_t val;
++} mtk_phy_init[] = {
++	{ 0xC00, 0x33000, 0x22000 },
++	{ 0xB04, 0xe0000000, 0x40000000 },
++	{ 0xB00, 0xe, 0x4 },
++	{ 0xC3C, 0xffff0000, 0x3c0000 },
++	{ 0xC48, 0xffff, 0x36 },
++	{ 0xC0C, 0x30000000, 0x10000000 },
++	{ 0xC08, 0x3800c0, 0xc0 },
++	{ 0xC10, 0xf0000, 0x20000 },
++	{ 0xC0C, 0xf000, 0x1000 },
++	{ 0xC14, 0xf0000, 0xa0000 },
++};
++
++static inline void pcie_w32(u32 val, unsigned reg)
++{
++	iowrite32(val, pcie_base + reg);
++}
++
++static inline u32 pcie_r32(unsigned reg)
++{
++	return ioread32(pcie_base + reg);
++}
++
++static inline void pcie_m32(u32 mask, u32 val, unsigned reg)
++{
++	u32 v = pcie_r32(reg);
++
++	v &= mask;
++	v |= val;
++	pcie_w32(v, reg);
++}
++
++static int pcie_config_read(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 * val)
++{
++	unsigned int slot = PCI_SLOT(devfn);
++	u8 func = PCI_FUNC(devfn);
++	u32 address;
++	u32 data;
++	u32 num = 0;
++
++	if (bus)
++		num = bus->number;
++
++	address = (((where & 0xF00) >> 8) << 24) | (num << 16) | (slot << 11) | (func << 8) | (where & 0xfc);
++	pcie_m32(0xf0000000, address, CFGADDR);
++	data = pcie_r32(CFGDATA);
++
++	switch (size) {
++	case 1:
++		*val = (data >> ((where & 3) << 3)) & 0xff;
++		break;
++	case 2:
++		*val = (data >> ((where & 3) << 3)) & 0xffff;
++		break;
++	case 4:
++		*val = data;
++		break;
++	}
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static int pcie_config_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u32 val)
++{
++	unsigned int slot = PCI_SLOT(devfn);
++	u8 func = PCI_FUNC(devfn);
++	u32 address;
++	u32 data;
++	u32 num = 0;
++
++	if (bus)
++		num = bus->number;
++
++	address = (((where & 0xF00) >> 8) << 24) | (num << 16) | (slot << 11) | (func << 8) | (where & 0xfc);
++	pcie_m32(0xf0000000, address, CFGADDR);
++	data = pcie_r32(CFGDATA);
++
++	switch (size) {
++	case 1:
++		data = (data & ~(0xff << ((where & 3) << 3))) |
++		(val << ((where & 3) << 3));
++		break;
++	case 2:
++		data = (data & ~(0xffff << ((where & 3) << 3))) |
++		(val << ((where & 3) << 3));
++		break;
++	case 4:
++		data = val;
++		break;
++	}
++
++	pcie_w32(data, CFGDATA);
++
++	return PCIBIOS_SUCCESSFUL;
++}
++
++static struct pci_ops mtk_pcie_ops = {
++	.read   = pcie_config_read,
++	.write  = pcie_config_write,
++};
++
++static struct resource pci_mem = {
++	.name   = "PCIe Memory space",
++	.start  = MEM_DIRECT1,
++	.end    = (u32) (MEM_DIRECT1 + (unsigned char *) 0x0fffffff),
++	.flags  = IORESOURCE_MEM,
++};
++
++static struct resource pci_io = {
++	.name   = "PCIe IO space",
++	.start  = IO_WIN,
++	.end    = (u32) (IO_WIN + (unsigned char *) 0x0ffff),
++	.flags  = IORESOURCE_IO,
++};
++
++static int __init mtk_pcie_setup(int nr, struct pci_sys_data *sys)
++{
++	sys->mem_offset = 0;
++	sys->io_offset = 0;
++
++	request_resource(&ioport_resource, &pci_io);
++	request_resource(&iomem_resource, &pci_mem);
++
++	pci_add_resource_offset(&sys->resources, &pci_io, sys->io_offset);
++	pci_add_resource_offset(&sys->resources, &pci_mem, sys->mem_offset);
++
++	return 1;
++}
++
++static struct pci_bus * __init mtk_pcie_scan_bus(int nr, struct pci_sys_data *sys)
++{
++	return pci_scan_root_bus(NULL, sys->busnr, &mtk_pcie_ops, sys,
++				 &sys->resources);
++}
++
++static int __init mtk_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
++{
++	u16 cmd;
++	u32 val;
++
++	if (dev->bus->number == 0) {
++		pcie_config_write(NULL, slot, 0, PCI_BASE_ADDRESS_0, MEMORY_BASE);
++		pcie_config_read(NULL, slot, 0, PCI_BASE_ADDRESS_0, &val);
++		printk("BAR0 at bus %d, slot %d\n", dev->bus->number, slot);
++	}
++
++	printk("bus=0x%x, slot = 0x%x, pin=0x%x, irq=0x%x\n", dev->bus->number, slot, pin, dev->irq);
++
++	pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 0x14);
++	pci_write_config_byte(dev, PCI_LATENCY_TIMER, 0xFF);
++	pci_read_config_word(dev, PCI_COMMAND, &cmd);
++	cmd = cmd | PCI_COMMAND_MASTER | PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
++	pci_write_config_word(dev, PCI_COMMAND, cmd);
++	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
++
++	return dev->irq;
++}
++
++static void __init mtk_pcie_preinit(void)
++{
++	struct mtk_pcie_port *port;
++	u32 val = 0;
++	int i;
++
++	pcibios_min_io = 0;
++	pcibios_min_mem = 0;
++
++#if defined (CONFIG_PCIE_PORT2)
++	printk("%s: PCIe/USB3 combo PHY mode (%x) =%x\n", __func__, SYSCFG1, REGDATA(SYSCFG1));
++	REGDATA(SYSCFG1) &= ~(0x300000);
++	printk("%s: PCIe/USB3 combo PHY mode (%x) =%x\n", __func__, SYSCFG1, REGDATA(SYSCFG1));
++#endif
++
++	/* PCIe RC Reset */
++	val = 0;
++	mtk_foreach_port_enabled(port)
++		val |= port->reset;
++	REGDATA(RSTCTL) |= val;
++	mdelay(10);
++	REGDATA(RSTCTL) &= ~val;
++	mdelay(10);
++
++	/* Configure PCIe PHY */
++	mtk_foreach_port_enabled(port) {
++		for (i = 0; i < ARRAY_SIZE(mtk_phy_init); i++) {
++			u32 val = pcie_r32(port->phy_base + mtk_phy_init[i].reg);
++			val &= ~mtk_phy_init[i].mask;
++			val |= mtk_phy_init[i].val;
++			pcie_w32(val, port->phy_base + mtk_phy_init[i].reg);
++		}
++		mdelay(10);
++	}
++
++	/* Enable RC */
++	mtk_foreach_port_enabled(port) {
++		val = 0;
++		pcie_config_read(NULL, port->id, 0, 0x73c, &val);
++		val &= ~(0x9fff)<<16;
++		val |= 0x806c<<16;
++		pcie_config_write(NULL, port->id, 0, 0x73c, val);
++	}
++
++	/* PCIe EP reset */
++	val = 0;
++	mtk_foreach_port_enabled(port)
++		val |= port->perst_n;
++	val |= MTK_PCIE_HIGH_PERF;
++	pcie_w32(pcie_r32(PCICFG) | val, PCICFG);
++	mdelay(10);
++	pcie_w32(pcie_r32(PCICFG) & ~val, PCICFG);
++	mdelay(10);
++
++	/* check the link status */
++	val = 0;
++	mtk_foreach_port_enabled(port) {
++		if ((pcie_r32(port->base + PCIE_SISTAT) & 0x1))
++			port->link = 1;
++		else
++			val |= port->reset;
++	}
++	REGDATA(RSTCTL) |= val;
++
++	mtk_foreach_port_link(port)
++		pcie_card_link++;
++
++	printk("PCIe Link count = %d\n", pcie_card_link);
++	if (!pcie_card_link)
++		return;
++
++	pcie_w32(MEM_WIN, MEMBASE);
++	pcie_w32(IO_WIN, IOBASE);
++
++	mtk_foreach_port_link(port) {
++		pcie_m32(0, port->interrupt, PCIENA);
++		pcie_w32(0x7FFF0001, port->base + BAR0SETUP);
++		pcie_w32(MEMORY_BASE, port->base + IMBASEBAR0);
++		pcie_w32(0x06040001, port->base + PCIE_CLASS);
++		printk("PCIE%d Setup OK\n", port->id);
++	}
++	val = 0;
++
++	pcie_config_read(NULL, pcie_card_link - 1, 0, 0x4, &val);
++	pcie_config_write(NULL, pcie_card_link - 1, 0, 0x4, val|0x4);
++	pcie_config_read(NULL, pcie_card_link - 1, 0, 0x70c, &val);
++	val &= ~(0xff3) << 8;
++	val |= 0x50 << 8;
++	pcie_config_write(NULL, pcie_card_link - 1, 0, 0x70c, val);
++	pcie_config_read(NULL, pcie_card_link - 1, 0, 0x70c, &val);
++}
++
++static struct hw_pci mtk_pci __initdata = {
++	.nr_controllers		= 1,
++	.map_irq		= mtk_pcie_map_irq,
++	.setup			= mtk_pcie_setup,
++	.scan			= mtk_pcie_scan_bus,
++	.preinit		= mtk_pcie_preinit,
++};
++
++extern void mt7623_ethifsys_init(void);
++static int mtk_pcie_probe(struct platform_device *pdev)
++{
++	struct resource *pcie_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++
++	pcie_base = devm_ioremap_resource(&pdev->dev, pcie_res);
++        if (!pcie_base)
++		return -ENOMEM;
++
++	mt7623_ethifsys_init();
++	pci_common_init_dev(&pdev->dev, &mtk_pci);
++
++	return 0;
++}
++
++static const struct of_device_id mtk_pcie_ids[] = {
++	{ .compatible = "mediatek,mt7623-pcie" },
++	{},
++};
++MODULE_DEVICE_TABLE(of, mtk_pcie_ids);
++
++static struct platform_driver mtk_pcie_driver = {
++	.probe = mtk_pcie_probe,
++	.driver = {
++		.name = "mt7623-pcie",
++		.owner = THIS_MODULE,
++		.of_match_table = of_match_ptr(mtk_pcie_ids),
++	},
++};
++
++static int __init mtk_pcie_init(void)
++{
++	return platform_driver_register(&mtk_pcie_driver);
++}
++
++late_initcall(mtk_pcie_init);
+diff --git a/arch/arm/mach-mediatek/pcie.h b/arch/arm/mach-mediatek/pcie.h
+new file mode 100644
+index 0000000..400a760e
+--- /dev/null
++++ b/arch/arm/mach-mediatek/pcie.h
+@@ -0,0 +1,14 @@
++#define SYSCTL_BASE	0xFA000000
++#define MEM_WIN		0x1A150000
++#define IO_WIN		0x1A160000
++#define MEM_DIRECT1	0x60000000
++#define MEMORY_BASE	0x80000000
++
++#define REGADDR(x, y)	(x##_BASE + y)
++#define REGDATA(x)			*((volatile unsigned int *)(x))	
++
++#define SYSCFG1		REGADDR(SYSCTL, 0x14)
++#define RSTCTL		REGADDR(SYSCTL, 0x34)
++
++
++
+-- 
+1.7.10.4
+

@@ -1,0 +1,199 @@
+From ac825c0dd7370ae1b9a1a4346f895728e09d9cc7 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Wed, 1 Jul 2015 07:58:44 +0200
+Subject: [PATCH 70/76] clk: mediatek: Export CPU mux clocks for CPU frequency
+ control
+
+This patch adds CPU mux clocks which are used by Mediatek cpufreq driver
+for intermediate clock source switching.
+
+Changes in v3:
+- Rebase to 4.2-rc1
+- Fix some issues of v2
+
+Changes in v2:
+- Remove use of .determine_rate callback
+
+Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
+---
+ drivers/clk/mediatek/Makefile     |    2 +-
+ drivers/clk/mediatek/clk-cpumux.c |  119 +++++++++++++++++++++++++++++++++++++
+ drivers/clk/mediatek/clk-cpumux.h |   30 ++++++++++
+ 3 files changed, 150 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/clk/mediatek/clk-cpumux.c
+ create mode 100644 drivers/clk/mediatek/clk-cpumux.h
+
+diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
+index 19a3763..fe07e26 100644
+--- a/drivers/clk/mediatek/Makefile
++++ b/drivers/clk/mediatek/Makefile
+@@ -1,4 +1,4 @@
+-obj-y += clk-mtk.o clk-pll.o clk-gate.o
++obj-y += clk-mtk.o clk-pll.o clk-gate.o clk-cpumux.o
+ obj-$(CONFIG_RESET_CONTROLLER) += reset.o
+ obj-y += clk-mt7623.o
+ obj-y += clk-mt8135.o
+diff --git a/drivers/clk/mediatek/clk-cpumux.c b/drivers/clk/mediatek/clk-cpumux.c
+new file mode 100644
+index 0000000..593df45
+--- /dev/null
++++ b/drivers/clk/mediatek/clk-cpumux.c
+@@ -0,0 +1,119 @@
++/*
++ * Copyright (c) 2015 Linaro Ltd.
++ * Author: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/mfd/syscon.h>
++#include <linux/slab.h>
++
++#include "clk-mtk.h"
++#include "clk-cpumux.h"
++
++static inline struct mtk_clk_cpumux *to_clk_mux(struct clk_hw *_hw)
++{
++	return container_of(_hw, struct mtk_clk_cpumux, hw);
++}
++
++static u8 clk_cpumux_get_parent(struct clk_hw *hw)
++{
++	struct mtk_clk_cpumux *mux = to_clk_mux(hw);
++	int num_parents = __clk_get_num_parents(hw->clk);
++	unsigned int val;
++
++	regmap_read(mux->regmap, mux->reg, &val);
++
++	val >>= mux->shift;
++	val &= mux->mask;
++
++	if (val >= num_parents)
++		return -EINVAL;
++
++	return val;
++}
++
++static int clk_cpumux_set_parent(struct clk_hw *hw, u8 index)
++{
++	struct mtk_clk_cpumux *mux = to_clk_mux(hw);
++	u32 mask, val;
++
++	val = index << mux->shift;
++	mask = mux->mask << mux->shift;
++
++	return regmap_update_bits(mux->regmap, mux->reg, mask, val);
++}
++
++static const struct clk_ops clk_cpumux_ops = {
++	.get_parent = clk_cpumux_get_parent,
++	.set_parent = clk_cpumux_set_parent,
++};
++
++static struct clk *mtk_clk_register_cpumux(const struct mtk_composite *mux,
++					   struct regmap *regmap)
++{
++	struct mtk_clk_cpumux *cpumux;
++	struct clk *clk;
++	struct clk_init_data init;
++
++	cpumux = kzalloc(sizeof(*cpumux), GFP_KERNEL);
++	if (!cpumux)
++		return ERR_PTR(-ENOMEM);
++
++	init.name = mux->name;
++	init.ops = &clk_cpumux_ops;
++	init.parent_names = mux->parent_names;
++	init.num_parents = mux->num_parents;
++	init.flags = mux->flags;
++
++	cpumux->reg = mux->mux_reg;
++	cpumux->shift = mux->mux_shift;
++	cpumux->mask = BIT(mux->mux_width) - 1;
++	cpumux->regmap = regmap;
++	cpumux->hw.init = &init;
++
++	clk = clk_register(NULL, &cpumux->hw);
++	if (IS_ERR(clk))
++		kfree(cpumux);
++
++	return clk;
++}
++
++int mtk_clk_register_cpumuxes(struct device_node *node,
++			      const struct mtk_composite *clks, int num,
++			      struct clk_onecell_data *clk_data)
++{
++	int i;
++	struct clk *clk;
++	struct regmap *regmap;
++
++	regmap = syscon_node_to_regmap(node);
++	if (IS_ERR(regmap)) {
++		pr_err("Cannot find regmap for %s: %d\n", node->full_name,
++		       PTR_ERR(regmap));
++		return PTR_ERR(regmap);
++	}
++
++	for (i = 0; i < num; i++) {
++		const struct mtk_composite *mux = &clks[i];
++
++		clk = mtk_clk_register_cpumux(mux, regmap);
++		if (IS_ERR(clk)) {
++			pr_err("Failed to register clk %s: %ld\n",
++			       mux->name, PTR_ERR(clk));
++			continue;
++		}
++
++		clk_data->clks[mux->id] = clk;
++	}
++
++	return 0;
++}
+diff --git a/drivers/clk/mediatek/clk-cpumux.h b/drivers/clk/mediatek/clk-cpumux.h
+new file mode 100644
+index 0000000..dddaad5
+--- /dev/null
++++ b/drivers/clk/mediatek/clk-cpumux.h
+@@ -0,0 +1,30 @@
++/*
++ * Copyright (c) 2015 Linaro Ltd.
++ * Author: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#ifndef __DRV_CLK_CPUMUX_H
++#define __DRV_CLK_CPUMUX_H
++
++struct mtk_clk_cpumux {
++	struct clk_hw	hw;
++	struct regmap	*regmap;
++	u32		reg;
++	u32		mask;
++	u8		shift;
++};
++
++int mtk_clk_register_cpumuxes(struct device_node *node,
++			      const struct mtk_composite *clks, int num,
++			      struct clk_onecell_data *clk_data);
++
++#endif /* __DRV_CLK_CPUMUX_H */
+-- 
+1.7.10.4
+

@@ -1,0 +1,654 @@
+From 3031cefd8cd323e04be11a8058616d8cf21c1313 Mon Sep 17 00:00:00 2001
+From: Hongzhou Yang <hongzhou.yang@mediatek.com>
+Date: Mon, 18 May 2015 23:11:17 -0700
+Subject: [PATCH 53/76] pinctrl: mediatek: Add Pinctrl/GPIO driver for mt6397.
+
+Add mt6397 support using mediatek common pinctrl driver.
+
+mt6397 is a PMIC, and pinctrl/GPIO is part of 6397 chip.
+Pinctrl/GPIO driver should obtain regmap from PMIC,
+so adding this support to common code.
+
+Also, mt6397 is no need to support interrupt controller,
+so changing common code to skip it.
+
+Signed-off-by: Hongzhou Yang <hongzhou.yang@mediatek.com>
+---
+ drivers/pinctrl/mediatek/Kconfig              |    6 +
+ drivers/pinctrl/mediatek/Makefile             |    1 +
+ drivers/pinctrl/mediatek/pinctrl-mt6397.c     |   78 +++++
+ drivers/pinctrl/mediatek/pinctrl-mt8135.c     |    2 +-
+ drivers/pinctrl/mediatek/pinctrl-mt8173.c     |    2 +-
+ drivers/pinctrl/mediatek/pinctrl-mtk-common.c |   13 +-
+ drivers/pinctrl/mediatek/pinctrl-mtk-common.h |    3 +-
+ drivers/pinctrl/mediatek/pinctrl-mtk-mt6397.h |  424 +++++++++++++++++++++++++
+ 8 files changed, 524 insertions(+), 5 deletions(-)
+ create mode 100644 drivers/pinctrl/mediatek/pinctrl-mt6397.c
+ create mode 100644 drivers/pinctrl/mediatek/pinctrl-mtk-mt6397.h
+
+diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
+index 6b3551c..ddae479 100644
+--- a/drivers/pinctrl/mediatek/Kconfig
++++ b/drivers/pinctrl/mediatek/Kconfig
+@@ -23,4 +23,10 @@ config PINCTRL_MT8173
+ 	default ARM64 && ARCH_MEDIATEK
+ 	select PINCTRL_MTK_COMMON
+ 
++# For PMIC
++config PINCTRL_MT6397
++	bool "Mediatek MT6397 pin control" if COMPILE_TEST && !MFD_MT6397
++	default MFD_MT6397
++	select PINCTRL_MTK_COMMON
++
+ endif
+diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
+index d8606a2..ad0180c 100644
+--- a/drivers/pinctrl/mediatek/Makefile
++++ b/drivers/pinctrl/mediatek/Makefile
+@@ -4,3 +4,4 @@ obj-$(CONFIG_PINCTRL_MTK_COMMON)	+= pinctrl-mtk-common.o
+ # SoC Drivers
+ obj-$(CONFIG_PINCTRL_MT8135)		+= pinctrl-mt8135.o
+ obj-$(CONFIG_PINCTRL_MT8173)		+= pinctrl-mt8173.o
++obj-$(CONFIG_PINCTRL_MT6397)		+= pinctrl-mt6397.o
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mt6397.c b/drivers/pinctrl/mediatek/pinctrl-mt6397.c
+new file mode 100644
+index 0000000..767bbdf
+--- /dev/null
++++ b/drivers/pinctrl/mediatek/pinctrl-mt6397.c
+@@ -0,0 +1,78 @@
++/*
++ * Copyright (c) 2015 MediaTek Inc.
++ * Author: Hongzhou.Yang <hongzhou.yang@mediatek.com>
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/pinctrl/pinctrl.h>
++#include <linux/pinctrl/pinconf-generic.h>
++#include <linux/mfd/mt6397/core.h>
++
++#include "pinctrl-mtk-common.h"
++#include "pinctrl-mtk-mt6397.h"
++
++#define MT6397_PIN_REG_BASE  0xc000
++
++static const struct mtk_pinctrl_devdata mt6397_pinctrl_data = {
++	.pins = mtk_pins_mt6397,
++	.npins = ARRAY_SIZE(mtk_pins_mt6397),
++	.dir_offset = (MT6397_PIN_REG_BASE + 0x000),
++	.ies_offset = MTK_PINCTRL_NOT_SUPPORT,
++	.smt_offset = MTK_PINCTRL_NOT_SUPPORT,
++	.pullen_offset = (MT6397_PIN_REG_BASE + 0x020),
++	.pullsel_offset = (MT6397_PIN_REG_BASE + 0x040),
++	.dout_offset = (MT6397_PIN_REG_BASE + 0x080),
++	.din_offset = (MT6397_PIN_REG_BASE + 0x0a0),
++	.pinmux_offset = (MT6397_PIN_REG_BASE + 0x0c0),
++	.type1_start = 41,
++	.type1_end = 41,
++	.port_shf = 3,
++	.port_mask = 0x3,
++	.port_align = 2,
++};
++
++static int mt6397_pinctrl_probe(struct platform_device *pdev)
++{
++	struct mt6397_chip *mt6397;
++
++	mt6397 = dev_get_drvdata(pdev->dev.parent);
++	return mtk_pctrl_init(pdev, &mt6397_pinctrl_data, mt6397->regmap);
++}
++
++static const struct of_device_id mt6397_pctrl_match[] = {
++	{ .compatible = "mediatek,mt6397-pinctrl", },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, mt6397_pctrl_match);
++
++static struct platform_driver mtk_pinctrl_driver = {
++	.probe = mt6397_pinctrl_probe,
++	.driver = {
++		.name = "mediatek-mt6397-pinctrl",
++		.owner = THIS_MODULE,
++		.of_match_table = mt6397_pctrl_match,
++	},
++};
++
++static int __init mtk_pinctrl_init(void)
++{
++	return platform_driver_register(&mtk_pinctrl_driver);
++}
++
++module_init(mtk_pinctrl_init);
++
++MODULE_LICENSE("GPL v2");
++MODULE_DESCRIPTION("MediaTek MT6397 Pinctrl Driver");
++MODULE_AUTHOR("Hongzhou Yang <hongzhou.yang@mediatek.com>");
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mt8135.c b/drivers/pinctrl/mediatek/pinctrl-mt8135.c
+index 8e6abd5..203bd2a 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-mt8135.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt8135.c
+@@ -342,7 +342,7 @@ static const struct mtk_pinctrl_devdata mt8135_pinctrl_data = {
+ 
+ static int mt8135_pinctrl_probe(struct platform_device *pdev)
+ {
+-	return mtk_pctrl_init(pdev, &mt8135_pinctrl_data);
++	return mtk_pctrl_init(pdev, &mt8135_pinctrl_data, NULL);
+ }
+ 
+ static const struct of_device_id mt8135_pctrl_match[] = {
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mt8173.c b/drivers/pinctrl/mediatek/pinctrl-mt8173.c
+index a7e5b24..cf4ed6e 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-mt8173.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mt8173.c
+@@ -361,7 +361,7 @@ static const struct mtk_pinctrl_devdata mt8173_pinctrl_data = {
+ 
+ static int mt8173_pinctrl_probe(struct platform_device *pdev)
+ {
+-	return mtk_pctrl_init(pdev, &mt8173_pinctrl_data);
++	return mtk_pctrl_init(pdev, &mt8173_pinctrl_data, NULL);
+ }
+ 
+ static const struct of_device_id mt8173_pctrl_match[] = {
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
+index 97fe2ab..e772cef 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
++++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
+@@ -1209,7 +1209,8 @@ static struct pinctrl_desc mtk_pctrl_desc = {
+ };
+ 
+ int mtk_pctrl_init(struct platform_device *pdev,
+-		const struct mtk_pinctrl_devdata *data)
++		const struct mtk_pinctrl_devdata *data,
++		struct regmap *regmap)
+ {
+ 	struct pinctrl_pin_desc *pins;
+ 	struct mtk_pinctrl *pctl;
+@@ -1235,6 +1236,11 @@ int mtk_pctrl_init(struct platform_device *pdev,
+ 		pctl->regmap1 = syscon_node_to_regmap(node);
+ 		if (IS_ERR(pctl->regmap1))
+ 			return PTR_ERR(pctl->regmap1);
++	} else if (regmap) {
++		pctl->regmap1  = regmap;
++	} else {
++		dev_err(&pdev->dev, "Pinctrl node has not register regmap.\n");
++		return -EINVAL;
+ 	}
+ 
+ 	/* Only 8135 has two base addr, other SoCs have only one. */
+@@ -1280,7 +1286,7 @@ int mtk_pctrl_init(struct platform_device *pdev,
+ 	pctl->chip->ngpio = pctl->devdata->npins;
+ 	pctl->chip->label = dev_name(&pdev->dev);
+ 	pctl->chip->dev = &pdev->dev;
+-	pctl->chip->base = 0;
++	pctl->chip->base = -1;
+ 
+ 	ret = gpiochip_add(pctl->chip);
+ 	if (ret) {
+@@ -1296,6 +1302,9 @@ int mtk_pctrl_init(struct platform_device *pdev,
+ 		goto chip_error;
+ 	}
+ 
++	if (of_find_property(np, "interrupt-controller", NULL))
++		return 0;
++
+ 	/* Get EINT register base from dts. */
+ 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+ 	if (!res) {
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
+index c703e7d..30213e5 100644
+--- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
++++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
+@@ -269,7 +269,8 @@ struct mtk_pinctrl {
+ };
+ 
+ int mtk_pctrl_init(struct platform_device *pdev,
+-		const struct mtk_pinctrl_devdata *data);
++		const struct mtk_pinctrl_devdata *data,
++		struct regmap *regmap);
+ 
+ int mtk_pctrl_spec_pull_set_samereg(struct regmap *regmap,
+ 		const struct mtk_pin_spec_pupd_set_samereg *pupd_infos,
+diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-mt6397.h b/drivers/pinctrl/mediatek/pinctrl-mtk-mt6397.h
+new file mode 100644
+index 0000000..4eb98dd
+--- /dev/null
++++ b/drivers/pinctrl/mediatek/pinctrl-mtk-mt6397.h
+@@ -0,0 +1,424 @@
++#ifndef __PINCTRL_MTK_MT6397_H
++#define __PINCTRL_MTK_MT6397_H
++
++#include <linux/pinctrl/pinctrl.h>
++#include "pinctrl-mtk-common.h"
++
++static const struct mtk_desc_pin mtk_pins_mt6397[] = {
++	MTK_PIN(
++		PINCTRL_PIN(0, "INT"),
++		"N2", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO0"),
++		MTK_FUNCTION(1, "INT")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(1, "SRCVOLTEN"),
++		"M4", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO1"),
++		MTK_FUNCTION(1, "SRCVOLTEN"),
++		MTK_FUNCTION(6, "TEST_CK1")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(2, "SRCLKEN_PERI"),
++		"M2", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO2"),
++		MTK_FUNCTION(1, "SRCLKEN_PERI"),
++		MTK_FUNCTION(6, "TEST_CK2")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(3, "RTC_32K1V8"),
++		"K3", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO3"),
++		MTK_FUNCTION(1, "RTC_32K1V8"),
++		MTK_FUNCTION(6, "TEST_CK3")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(4, "WRAP_EVENT"),
++		"J2", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO4"),
++		MTK_FUNCTION(1, "WRAP_EVENT")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(5, "SPI_CLK"),
++		"L4", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO5"),
++		MTK_FUNCTION(1, "SPI_CLK")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(6, "SPI_CSN"),
++		"J3", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO6"),
++		MTK_FUNCTION(1, "SPI_CSN")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(7, "SPI_MOSI"),
++		"J1", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO7"),
++		MTK_FUNCTION(1, "SPI_MOSI")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(8, "SPI_MISO"),
++		"L3", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO8"),
++		MTK_FUNCTION(1, "SPI_MISO")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(9, "AUD_CLK_MOSI"),
++		"H2", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO9"),
++		MTK_FUNCTION(1, "AUD_CLK"),
++		MTK_FUNCTION(6, "TEST_IN0"),
++		MTK_FUNCTION(7, "TEST_OUT0")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(10, "AUD_DAT_MISO"),
++		"H3", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO10"),
++		MTK_FUNCTION(1, "AUD_MISO"),
++		MTK_FUNCTION(6, "TEST_IN1"),
++		MTK_FUNCTION(7, "TEST_OUT1")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(11, "AUD_DAT_MOSI"),
++		"H1", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO11"),
++		MTK_FUNCTION(1, "AUD_MOSI"),
++		MTK_FUNCTION(6, "TEST_IN2"),
++		MTK_FUNCTION(7, "TEST_OUT2")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(12, "COL0"),
++		"F3", "mt6397",
++		MTK_EINT_FUNCTION(2, 10),
++		MTK_FUNCTION(0, "GPIO12"),
++		MTK_FUNCTION(1, "COL0_USBDL"),
++		MTK_FUNCTION(2, "EINT10_1X"),
++		MTK_FUNCTION(3, "PWM1_3X"),
++		MTK_FUNCTION(6, "TEST_IN3"),
++		MTK_FUNCTION(7, "TEST_OUT3")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(13, "COL1"),
++		"G8", "mt6397",
++		MTK_EINT_FUNCTION(2, 11),
++		MTK_FUNCTION(0, "GPIO13"),
++		MTK_FUNCTION(1, "COL1"),
++		MTK_FUNCTION(2, "EINT11_1X"),
++		MTK_FUNCTION(3, "SCL0_2X"),
++		MTK_FUNCTION(6, "TEST_IN4"),
++		MTK_FUNCTION(7, "TEST_OUT4")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(14, "COL2"),
++		"H4", "mt6397",
++		MTK_EINT_FUNCTION(2, 12),
++		MTK_FUNCTION(0, "GPIO14"),
++		MTK_FUNCTION(1, "COL2"),
++		MTK_FUNCTION(2, "EINT12_1X"),
++		MTK_FUNCTION(3, "SDA0_2X"),
++		MTK_FUNCTION(6, "TEST_IN5"),
++		MTK_FUNCTION(7, "TEST_OUT5")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(15, "COL3"),
++		"G2", "mt6397",
++		MTK_EINT_FUNCTION(2, 13),
++		MTK_FUNCTION(0, "GPIO15"),
++		MTK_FUNCTION(1, "COL3"),
++		MTK_FUNCTION(2, "EINT13_1X"),
++		MTK_FUNCTION(3, "SCL1_2X"),
++		MTK_FUNCTION(6, "TEST_IN6"),
++		MTK_FUNCTION(7, "TEST_OUT6")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(16, "COL4"),
++		"F2", "mt6397",
++		MTK_EINT_FUNCTION(2, 14),
++		MTK_FUNCTION(0, "GPIO16"),
++		MTK_FUNCTION(1, "COL4"),
++		MTK_FUNCTION(2, "EINT14_1X"),
++		MTK_FUNCTION(3, "SDA1_2X"),
++		MTK_FUNCTION(6, "TEST_IN7"),
++		MTK_FUNCTION(7, "TEST_OUT7")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(17, "COL5"),
++		"G7", "mt6397",
++		MTK_EINT_FUNCTION(2, 15),
++		MTK_FUNCTION(0, "GPIO17"),
++		MTK_FUNCTION(1, "COL5"),
++		MTK_FUNCTION(2, "EINT15_1X"),
++		MTK_FUNCTION(3, "SCL2_2X"),
++		MTK_FUNCTION(6, "TEST_IN8"),
++		MTK_FUNCTION(7, "TEST_OUT8")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(18, "COL6"),
++		"J6", "mt6397",
++		MTK_EINT_FUNCTION(2, 16),
++		MTK_FUNCTION(0, "GPIO18"),
++		MTK_FUNCTION(1, "COL6"),
++		MTK_FUNCTION(2, "EINT16_1X"),
++		MTK_FUNCTION(3, "SDA2_2X"),
++		MTK_FUNCTION(4, "GPIO32K_0"),
++		MTK_FUNCTION(5, "GPIO26M_0"),
++		MTK_FUNCTION(6, "TEST_IN9"),
++		MTK_FUNCTION(7, "TEST_OUT9")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(19, "COL7"),
++		"J5", "mt6397",
++		MTK_EINT_FUNCTION(2, 17),
++		MTK_FUNCTION(0, "GPIO19"),
++		MTK_FUNCTION(1, "COL7"),
++		MTK_FUNCTION(2, "EINT17_1X"),
++		MTK_FUNCTION(3, "PWM2_3X"),
++		MTK_FUNCTION(4, "GPIO32K_1"),
++		MTK_FUNCTION(5, "GPIO26M_1"),
++		MTK_FUNCTION(6, "TEST_IN10"),
++		MTK_FUNCTION(7, "TEST_OUT10")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(20, "ROW0"),
++		"L7", "mt6397",
++		MTK_EINT_FUNCTION(2, 18),
++		MTK_FUNCTION(0, "GPIO20"),
++		MTK_FUNCTION(1, "ROW0"),
++		MTK_FUNCTION(2, "EINT18_1X"),
++		MTK_FUNCTION(3, "SCL0_3X"),
++		MTK_FUNCTION(6, "TEST_IN11"),
++		MTK_FUNCTION(7, "TEST_OUT11")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(21, "ROW1"),
++		"P1", "mt6397",
++		MTK_EINT_FUNCTION(2, 19),
++		MTK_FUNCTION(0, "GPIO21"),
++		MTK_FUNCTION(1, "ROW1"),
++		MTK_FUNCTION(2, "EINT19_1X"),
++		MTK_FUNCTION(3, "SDA0_3X"),
++		MTK_FUNCTION(4, "AUD_TSTCK"),
++		MTK_FUNCTION(6, "TEST_IN12"),
++		MTK_FUNCTION(7, "TEST_OUT12")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(22, "ROW2"),
++		"J8", "mt6397",
++		MTK_EINT_FUNCTION(2, 20),
++		MTK_FUNCTION(0, "GPIO22"),
++		MTK_FUNCTION(1, "ROW2"),
++		MTK_FUNCTION(2, "EINT20_1X"),
++		MTK_FUNCTION(3, "SCL1_3X"),
++		MTK_FUNCTION(6, "TEST_IN13"),
++		MTK_FUNCTION(7, "TEST_OUT13")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(23, "ROW3"),
++		"J7", "mt6397",
++		MTK_EINT_FUNCTION(2, 21),
++		MTK_FUNCTION(0, "GPIO23"),
++		MTK_FUNCTION(1, "ROW3"),
++		MTK_FUNCTION(2, "EINT21_1X"),
++		MTK_FUNCTION(3, "SDA1_3X"),
++		MTK_FUNCTION(6, "TEST_IN14"),
++		MTK_FUNCTION(7, "TEST_OUT14")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(24, "ROW4"),
++		"L5", "mt6397",
++		MTK_EINT_FUNCTION(2, 22),
++		MTK_FUNCTION(0, "GPIO24"),
++		MTK_FUNCTION(1, "ROW4"),
++		MTK_FUNCTION(2, "EINT22_1X"),
++		MTK_FUNCTION(3, "SCL2_3X"),
++		MTK_FUNCTION(6, "TEST_IN15"),
++		MTK_FUNCTION(7, "TEST_OUT15")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(25, "ROW5"),
++		"N6", "mt6397",
++		MTK_EINT_FUNCTION(2, 23),
++		MTK_FUNCTION(0, "GPIO25"),
++		MTK_FUNCTION(1, "ROW5"),
++		MTK_FUNCTION(2, "EINT23_1X"),
++		MTK_FUNCTION(3, "SDA2_3X"),
++		MTK_FUNCTION(6, "TEST_IN16"),
++		MTK_FUNCTION(7, "TEST_OUT16")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(26, "ROW6"),
++		"L6", "mt6397",
++		MTK_EINT_FUNCTION(2, 24),
++		MTK_FUNCTION(0, "GPIO26"),
++		MTK_FUNCTION(1, "ROW6"),
++		MTK_FUNCTION(2, "EINT24_1X"),
++		MTK_FUNCTION(3, "PWM3_3X"),
++		MTK_FUNCTION(4, "GPIO32K_2"),
++		MTK_FUNCTION(5, "GPIO26M_2"),
++		MTK_FUNCTION(6, "TEST_IN17"),
++		MTK_FUNCTION(7, "TEST_OUT17")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(27, "ROW7"),
++		"P2", "mt6397",
++		MTK_EINT_FUNCTION(2, 3),
++		MTK_FUNCTION(0, "GPIO27"),
++		MTK_FUNCTION(1, "ROW7"),
++		MTK_FUNCTION(2, "EINT3_1X"),
++		MTK_FUNCTION(3, "CBUS"),
++		MTK_FUNCTION(4, "GPIO32K_3"),
++		MTK_FUNCTION(5, "GPIO26M_3"),
++		MTK_FUNCTION(6, "TEST_IN18"),
++		MTK_FUNCTION(7, "TEST_OUT18")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(28, "PWM1(VMSEL1)"),
++		"J4", "mt6397",
++		MTK_EINT_FUNCTION(2, 4),
++		MTK_FUNCTION(0, "GPIO28"),
++		MTK_FUNCTION(1, "PWM1"),
++		MTK_FUNCTION(2, "EINT4_1X"),
++		MTK_FUNCTION(4, "GPIO32K_4"),
++		MTK_FUNCTION(5, "GPIO26M_4"),
++		MTK_FUNCTION(6, "TEST_IN19"),
++		MTK_FUNCTION(7, "TEST_OUT19")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(29, "PWM2(VMSEL2)"),
++		"N5", "mt6397",
++		MTK_EINT_FUNCTION(2, 5),
++		MTK_FUNCTION(0, "GPIO29"),
++		MTK_FUNCTION(1, "PWM2"),
++		MTK_FUNCTION(2, "EINT5_1X"),
++		MTK_FUNCTION(4, "GPIO32K_5"),
++		MTK_FUNCTION(5, "GPIO26M_5"),
++		MTK_FUNCTION(6, "TEST_IN20"),
++		MTK_FUNCTION(7, "TEST_OUT20")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(30, "PWM3(PWM)"),
++		"R3", "mt6397",
++		MTK_EINT_FUNCTION(2, 6),
++		MTK_FUNCTION(0, "GPIO30"),
++		MTK_FUNCTION(1, "PWM3"),
++		MTK_FUNCTION(2, "EINT6_1X"),
++		MTK_FUNCTION(3, "COL0"),
++		MTK_FUNCTION(4, "GPIO32K_6"),
++		MTK_FUNCTION(5, "GPIO26M_6"),
++		MTK_FUNCTION(6, "TEST_IN21"),
++		MTK_FUNCTION(7, "TEST_OUT21")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(31, "SCL0"),
++		"N1", "mt6397",
++		MTK_EINT_FUNCTION(2, 7),
++		MTK_FUNCTION(0, "GPIO31"),
++		MTK_FUNCTION(1, "SCL0"),
++		MTK_FUNCTION(2, "EINT7_1X"),
++		MTK_FUNCTION(3, "PWM1_2X"),
++		MTK_FUNCTION(6, "TEST_IN22"),
++		MTK_FUNCTION(7, "TEST_OUT22")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(32, "SDA0"),
++		"N3", "mt6397",
++		MTK_EINT_FUNCTION(2, 8),
++		MTK_FUNCTION(0, "GPIO32"),
++		MTK_FUNCTION(1, "SDA0"),
++		MTK_FUNCTION(2, "EINT8_1X"),
++		MTK_FUNCTION(6, "TEST_IN23"),
++		MTK_FUNCTION(7, "TEST_OUT23")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(33, "SCL1"),
++		"T1", "mt6397",
++		MTK_EINT_FUNCTION(2, 9),
++		MTK_FUNCTION(0, "GPIO33"),
++		MTK_FUNCTION(1, "SCL1"),
++		MTK_FUNCTION(2, "EINT9_1X"),
++		MTK_FUNCTION(3, "PWM2_2X"),
++		MTK_FUNCTION(6, "TEST_IN24"),
++		MTK_FUNCTION(7, "TEST_OUT24")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(34, "SDA1"),
++		"T2", "mt6397",
++		MTK_EINT_FUNCTION(2, 0),
++		MTK_FUNCTION(0, "GPIO34"),
++		MTK_FUNCTION(1, "SDA1"),
++		MTK_FUNCTION(2, "EINT0_1X"),
++		MTK_FUNCTION(6, "TEST_IN25"),
++		MTK_FUNCTION(7, "TEST_OUT25")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(35, "SCL2"),
++		"T3", "mt6397",
++		MTK_EINT_FUNCTION(2, 1),
++		MTK_FUNCTION(0, "GPIO35"),
++		MTK_FUNCTION(1, "SCL2"),
++		MTK_FUNCTION(2, "EINT1_1X"),
++		MTK_FUNCTION(3, "PWM3_2X"),
++		MTK_FUNCTION(6, "TEST_IN26"),
++		MTK_FUNCTION(7, "TEST_OUT26")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(36, "SDA2"),
++		"U2", "mt6397",
++		MTK_EINT_FUNCTION(2, 2),
++		MTK_FUNCTION(0, "GPIO36"),
++		MTK_FUNCTION(1, "SDA2"),
++		MTK_FUNCTION(2, "EINT2_1X"),
++		MTK_FUNCTION(6, "TEST_IN27"),
++		MTK_FUNCTION(7, "TEST_OUT27")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(37, "HDMISD"),
++		"H6", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO37"),
++		MTK_FUNCTION(1, "HDMISD"),
++		MTK_FUNCTION(6, "TEST_IN28"),
++		MTK_FUNCTION(7, "TEST_OUT28")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(38, "HDMISCK"),
++		"H5", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO38"),
++		MTK_FUNCTION(1, "HDMISCK"),
++		MTK_FUNCTION(6, "TEST_IN29"),
++		MTK_FUNCTION(7, "TEST_OUT29")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(39, "HTPLG"),
++		"H7", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO39"),
++		MTK_FUNCTION(1, "HTPLG"),
++		MTK_FUNCTION(6, "TEST_IN30"),
++		MTK_FUNCTION(7, "TEST_OUT30")
++	),
++	MTK_PIN(
++		PINCTRL_PIN(40, "CEC"),
++		"J9", "mt6397",
++		MTK_EINT_FUNCTION(NO_EINT_SUPPORT, NO_EINT_SUPPORT),
++		MTK_FUNCTION(0, "GPIO40"),
++		MTK_FUNCTION(1, "CEC"),
++		MTK_FUNCTION(6, "TEST_IN31"),
++		MTK_FUNCTION(7, "TEST_OUT31")
++	),
++};
++
++#endif /* __PINCTRL_MTK_MT6397_H */
+-- 
+1.7.10.4
+

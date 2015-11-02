@@ -1,0 +1,779 @@
+From cee7c5a343bdecf407c876289327c567bfd34fd4 Mon Sep 17 00:00:00 2001
+From: Chunfeng Yun <chunfeng.yun@mediatek.com>
+Date: Wed, 27 May 2015 19:48:01 +0800
+Subject: [PATCH 46/76] usb: phy: add usb3.0 phy driver for mt65xx SoCs
+
+Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
+---
+ drivers/usb/phy/Kconfig           |   10 +
+ drivers/usb/phy/Makefile          |    1 +
+ drivers/usb/phy/phy-mt65xx-usb3.c |  724 +++++++++++++++++++++++++++++++++++++
+ 3 files changed, 735 insertions(+)
+ create mode 100644 drivers/usb/phy/phy-mt65xx-usb3.c
+
+diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
+index 2175678..dfca566 100644
+--- a/drivers/usb/phy/Kconfig
++++ b/drivers/usb/phy/Kconfig
+@@ -151,6 +151,16 @@ config USB_MSM_OTG
+ 	  This driver is not supported on boards like trout which
+ 	  has an external PHY.
+ 
++config USB_MT65XX_USB3_PHY
++	tristate "Mediatek USB3.0 PHY controller Driver"
++	depends on ARCH_MEDIATEK || COMPILE_TEST
++	select USB_PHY
++	help
++	  Say 'Y' here to add support for Mediatek USB3.0 PHY driver
++	  for mt65xx SoCs. it supports two usb2.0 ports and
++	  one usb3.0 port.
++	  To compile this driver as a module, choose M here
++
+ config USB_MV_OTG
+ 	tristate "Marvell USB OTG support"
+ 	depends on USB_EHCI_MV && USB_MV_UDC && PM
+diff --git a/drivers/usb/phy/Makefile b/drivers/usb/phy/Makefile
+index 75f2bba..d6113a4 100644
+--- a/drivers/usb/phy/Makefile
++++ b/drivers/usb/phy/Makefile
+@@ -20,6 +20,7 @@ obj-$(CONFIG_USB_EHCI_TEGRA)		+= phy-tegra-usb.o
+ obj-$(CONFIG_USB_GPIO_VBUS)		+= phy-gpio-vbus-usb.o
+ obj-$(CONFIG_USB_ISP1301)		+= phy-isp1301.o
+ obj-$(CONFIG_USB_MSM_OTG)		+= phy-msm-usb.o
++obj-$(CONFIG_USB_MT65XX_USB3_PHY)	+= phy-mt65xx-usb3.o
+ obj-$(CONFIG_USB_MV_OTG)		+= phy-mv-usb.o
+ obj-$(CONFIG_USB_MXS_PHY)		+= phy-mxs-usb.o
+ obj-$(CONFIG_USB_RCAR_PHY)		+= phy-rcar-usb.o
+diff --git a/drivers/usb/phy/phy-mt65xx-usb3.c b/drivers/usb/phy/phy-mt65xx-usb3.c
+new file mode 100644
+index 0000000..ec5cf24
+--- /dev/null
++++ b/drivers/usb/phy/phy-mt65xx-usb3.c
+@@ -0,0 +1,724 @@
++/*
++ * Copyright (c) 2015 MediaTek Inc.
++ * Author: Chunfeng.Yun <chunfeng.yun@mediatek.com>
++ *
++ * This software is licensed under the terms of the GNU General Public
++ * License version 2, as published by the Free Software Foundation, and
++ * may be copied, distributed, and modified under those terms.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ */
++
++#include <linux/resource.h>
++#include <linux/delay.h>
++#include <linux/slab.h>
++#include <linux/err.h>
++#include <linux/export.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/regulator/consumer.h>
++#include <linux/pm_runtime.h>
++#include <linux/io.h>
++#include <linux/gpio.h>
++#include <linux/of.h>
++#include <linux/of_device.h>
++#include <linux/of_gpio.h>
++#include <linux/of_address.h>
++#include <linux/usb/otg.h>
++#include <linux/usb/of.h>
++#include <linux/usb/phy.h>
++#include <linux/clk.h>
++#include <linux/iopoll.h>
++
++/*
++ * relative to MAC base address
++ */
++#define SSUSB_USB3_MAC_CSR_BASE	(0x1400)
++#define SSUSB_USB3_SYS_CSR_BASE	(0x1400)
++#define SSUSB_USB2_CSR_BASE		(0x2400)
++
++/*
++ * for sifslv1 register
++ * relative to USB3_SIF_BASE base address
++ */
++#define SSUSB_SIFSLV_IPPC_BASE		(0x700)
++
++/*
++ * for sifslv2 register
++ * relative to USB3_SIF_BASE base address
++ */
++#define SSUSB_SIFSLV_U2PHY_COM_BASE	(0x10800)
++#define SSUSB_SIFSLV_U3PHYD_BASE	(0x10900)
++#define SSUSB_SIFSLV_U2FREQ_BASE	(0x10f00)
++#define SSUSB_USB30_PHYA_SIV_B_BASE		(0x10b00)
++#define SSUSB_SIFSLV_U3PHYA_DA_BASE		(0x10c00)
++#define SSUSB_SIFSLV_SPLLC		(0x10000)
++
++/*port1 refs. +0x800(refer to port0)*/
++#define U3P_PORT_OFFSET (0x800)	/*based on port0 */
++#define U3P_PHY_BASE(index) ((U3P_PORT_OFFSET) * (index))
++
++#define U3P_IP_PW_CTRL0	(SSUSB_SIFSLV_IPPC_BASE+0x0000)
++#define CTRL0_IP_SW_RST			(0x1<<0)
++
++#define U3P_IP_PW_CTRL1	(SSUSB_SIFSLV_IPPC_BASE+0x0004)
++#define CTRL1_IP_HOST_PDN		(0x1<<0)
++
++#define U3P_IP_PW_STS1		(SSUSB_SIFSLV_IPPC_BASE+0x0010)
++#define STS1_U3_MAC_RST		(0x1 << 16)
++#define STS1_SYS125_RST		(0x1 << 10)
++#define STS1_REF_RST		(0x1 << 8)
++#define STS1_SYSPLL_STABLE	(0x1 << 0)
++
++#define U3P_IP_PW_STS2	(SSUSB_SIFSLV_IPPC_BASE+0x0014)
++#define STS2_U2_MAC_RST	(0x1 << 0)
++
++#define U3P_IP_XHCI_CAP	(SSUSB_SIFSLV_IPPC_BASE + 0x24)
++#define CAP_U3_PORT_NUM(p)	((p) & 0xff)
++#define CAP_U2_PORT_NUM(p)	(((p) >> 8) & 0xff)
++
++#define U3P_U3_CTRL_0P	(SSUSB_SIFSLV_IPPC_BASE+0x0030)
++#define CTRL_U3_PORT_HOST_SEL	(0x1<<2)
++#define CTRL_U3_PORT_PDN		(0x1<<1)
++#define CTRL_U3_PORT_DIS		(0x1<<0)
++
++#define U3P_U2_CTRL_0P	(SSUSB_SIFSLV_IPPC_BASE+0x0050)
++#define CTRL_U2_PORT_HOST_SEL	(0x1<<2)
++#define CTRL_U2_PORT_PDN		(0x1<<1)
++#define CTRL_U2_PORT_DIS		(0x1<<0)
++
++#define U3P_U3_CTRL(p)	(U3P_U3_CTRL_0P + ((p) * 0x08))
++#define U3P_U2_CTRL(p)	(U3P_U2_CTRL_0P + ((p) * 0x08))
++
++#define U3P_USBPHYACR5      (SSUSB_SIFSLV_U2PHY_COM_BASE+0x0014)
++#define PA5_RG_U2_HSTX_SRCTRL			(0x7<<12)
++#define PA5_RG_U2_HSTX_SRCTRL_VAL(x)	((0x7 & (x)) << 12)
++#define PA5_RG_U2_HS_100U_U3_EN			(0x1<<11)
++
++#define U3P_USBPHYACR6      (SSUSB_SIFSLV_U2PHY_COM_BASE+0x0018)
++#define PA6_RG_U2_ISO_EN			(0x1<<31)
++#define PA6_RG_U2_BC11_SW_EN		(0x1<<23)
++#define PA6_RG_U2_OTG_VBUSCMP_EN	(0x1<<20)
++
++#define U3P_U2PHYACR4       (SSUSB_SIFSLV_U2PHY_COM_BASE+0x0020)
++#define P2C_RG_USB20_GPIO_CTL	(0x1<<9)
++#define P2C_USB20_GPIO_MODE		(0x1<<8)
++#define P2C_U2_GPIO_CTR_MSK  (P2C_RG_USB20_GPIO_CTL | P2C_USB20_GPIO_MODE)
++
++#define U3P_U2PHYDTM0       (SSUSB_SIFSLV_U2PHY_COM_BASE+0x0068)
++#define P2C_FORCE_UART_EN		(0x1<<26)
++#define P2C_FORCE_DATAIN		(0x1<<23)
++#define P2C_FORCE_DM_PULLDOWN	(0x1<<21)
++#define P2C_FORCE_DP_PULLDOWN	(0x1<<20)
++#define P2C_FORCE_XCVRSEL		(0x1<<19)
++#define P2C_FORCE_SUSPENDM		(0x1<<18)
++#define P2C_FORCE_TERMSEL		(0x1<<17)
++#define P2C_RG_DATAIN			(0xf<<10)
++#define P2C_RG_DATAIN_VAL(x)	((0xf & (x)) << 10)
++#define P2C_RG_DMPULLDOWN		(0x1<<7)
++#define P2C_RG_DPPULLDOWN		(0x1<<6)
++#define P2C_RG_XCVRSEL			(0x3<<4)
++#define P2C_RG_XCVRSEL_VAL(x)	((0x3 & (x)) << 4)
++#define P2C_RG_SUSPENDM			(0x1<<3)
++#define P2C_RG_TERMSEL			(0x1<<2)
++#define P2C_DTM0_PART_MASK \
++		(P2C_FORCE_DATAIN | P2C_FORCE_DM_PULLDOWN | \
++		P2C_FORCE_DP_PULLDOWN | P2C_FORCE_XCVRSEL | \
++		P2C_FORCE_TERMSEL | P2C_RG_DMPULLDOWN | \
++		P2C_RG_TERMSEL)
++
++#define U3P_U2PHYDTM1       (SSUSB_SIFSLV_U2PHY_COM_BASE+0x006C)
++#define P2C_RG_UART_EN		(0x1<<16)
++#define P2C_RG_VBUSVALID	(0x1<<5)
++#define P2C_RG_SESSEND		(0x1<<4)
++#define P2C_RG_AVALID		(0x1<<2)
++
++#define U3P_U3_PHYA_REG0	(SSUSB_USB30_PHYA_SIV_B_BASE+0x0000)
++#define P3A_RG_U3_VUSB10_ON			(1<<5)
++
++#define U3P_U3_PHYA_REG6	(SSUSB_USB30_PHYA_SIV_B_BASE+0x0018)
++#define P3A_RG_TX_EIDLE_CM			(0xf<<28)
++#define P3A_RG_TX_EIDLE_CM_VAL(x)	((0xf & (x)) << 28)
++
++#define U3P_U3_PHYA_REG9	(SSUSB_USB30_PHYA_SIV_B_BASE+0x0024)
++#define P3A_RG_RX_DAC_MUX			(0x1f<<1)
++#define P3A_RG_RX_DAC_MUX_VAL(x)	((0x1f & (x)) << 1)
++
++#define U3P_U3PHYA_DA_REG0	(SSUSB_SIFSLV_U3PHYA_DA_BASE + 0x0)
++#define P3A_RG_XTAL_EXT_EN_U3			(0x3<<10)
++#define P3A_RG_XTAL_EXT_EN_U3_VAL(x)	((0x3 & (x)) << 10)
++
++#define U3P_PHYD_CDR1		(SSUSB_SIFSLV_U3PHYD_BASE+0x5c)
++#define P3D_RG_CDR_BIR_LTD1				(0x1f<<24)
++#define P3D_RG_CDR_BIR_LTD1_VAL(x)		((0x1f & (x)) << 24)
++#define P3D_RG_CDR_BIR_LTD0				(0x1f<<8)
++#define P3D_RG_CDR_BIR_LTD0_VAL(x)		((0x1f & (x)) << 8)
++
++#define U3P_XTALCTL3		(SSUSB_SIFSLV_SPLLC + 0x18)
++#define XC3_RG_U3_XTAL_RX_PWD			(0x1<<9)
++#define XC3_RG_U3_FRC_XTAL_RX_PWD		(0x1<<8)
++
++#define U3P_UX_EXIT_LFPS_PARAM	(SSUSB_USB3_MAC_CSR_BASE+0x00A0)
++#define RX_UX_EXIT_REF		(0xff<<8)
++#define RX_UX_EXIT_REF_VAL	(0x3 << 8)
++
++#define U3P_REF_CLK_PARAM	(SSUSB_USB3_MAC_CSR_BASE+0x00B0)
++#define REF_CLK_1000NS		(0xff << 0)
++#define REF_CLK_VAL_DEF		(0xa << 0)
++
++#define U3P_LINK_PM_TIMER			(SSUSB_USB3_SYS_CSR_BASE+0x0208)
++#define PM_LC_TIMEOUT			(0xf<<0)
++#define PM_LC_TIMEOUT_VAL		(0x3 << 0)
++
++#define U3P_TIMING_PULSE_CTRL	(SSUSB_USB3_SYS_CSR_BASE+0x02B4)
++#define U3T_CNT_1US			(0xff << 0)
++#define U3T_CNT_1US_VAL		(0x3f << 0)	/* 62.5MHz: 63 */
++
++#define U3P_U2_TIMING_PARAM		(SSUSB_USB2_CSR_BASE+0x0040)
++#define U2T_VAL_1US			(0xff<<0)
++#define U2T_VAL_1US_VAL		(0x3f << 0)	/* 62.5MHz: 63 */
++
++
++struct mt65xx_u3phy {
++	struct usb_phy phy;
++	struct device *dev;
++	struct regulator *vusb33;
++	struct regulator *p1_vbus;
++	void __iomem *mac_base;	/* only device-mac regs, exclude xhci's */
++	void __iomem *sif_base;	/* include sif & sif2 */
++	struct clk *wk_deb_p0;	/* port0's wakeup debounce clock */
++	struct clk *wk_deb_p1;
++	struct clk *sys_mac;	/* sys and mac clock */
++	struct clk *u3phya_ref;	/* reference clock of usb3 anolog phy */
++	bool enable_usb2_p1;
++};
++
++
++static void u3p_writel(void __iomem *base, u32 offset, u32 data)
++{
++	writel(data, base + offset);
++}
++
++static u32 u3p_readl(void __iomem *base, u32 offset)
++{
++	return readl(base + offset);
++}
++
++static void u3p_setmsk(void __iomem *base, u32 offset, u32 msk)
++{
++	void __iomem *addr = base + offset;
++
++	writel((readl(addr) | msk), addr);
++}
++
++static void u3p_clrmsk(void __iomem *base, u32 offset, u32 msk)
++{
++	void __iomem *addr = base + offset;
++
++	writel((readl(addr) & ~msk), addr);
++}
++
++static void u3p_setval(void __iomem *base, u32 offset,
++	u32 mask, u32 value)
++{
++	void __iomem *addr = base + offset;
++	unsigned int new_value;
++
++	new_value = (readl(addr) & ~mask) | value;
++	writel(new_value, addr);
++}
++
++static void phy_index_power_on(struct mt65xx_u3phy *u3phy, int index)
++{
++	void __iomem *sif_base = u3phy->sif_base + U3P_PHY_BASE(index);
++
++	if (!index) {
++		/* Set RG_SSUSB_VUSB10_ON as 1 after VUSB10 ready */
++		u3p_setmsk(sif_base, U3P_U3_PHYA_REG0, P3A_RG_U3_VUSB10_ON);
++		/* power domain iso disable */
++		u3p_clrmsk(sif_base, U3P_USBPHYACR6, PA6_RG_U2_ISO_EN);
++	}
++
++	/* switch to USB function. (system register, force ip into usb mode) */
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM0, P2C_FORCE_UART_EN);
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM1, P2C_RG_UART_EN);
++	if (!index)
++		u3p_clrmsk(sif_base, U3P_U2PHYACR4, P2C_U2_GPIO_CTR_MSK);
++
++	/* (force_suspendm=0) (let suspendm=1, enable usb 480MHz pll) */
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM0, P2C_FORCE_SUSPENDM);
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM0,
++			P2C_RG_XCVRSEL | P2C_RG_DATAIN | P2C_DTM0_PART_MASK);
++
++	/* DP/DM BC1.1 path Disable */
++	u3p_clrmsk(sif_base, U3P_USBPHYACR6, PA6_RG_U2_BC11_SW_EN);
++	/* OTG Enable */
++	u3p_setmsk(sif_base, U3P_USBPHYACR6, PA6_RG_U2_OTG_VBUSCMP_EN);
++	u3p_setval(sif_base, U3P_U3PHYA_DA_REG0, P3A_RG_XTAL_EXT_EN_U3,
++			P3A_RG_XTAL_EXT_EN_U3_VAL(2));
++	u3p_setval(sif_base, U3P_U3_PHYA_REG9, P3A_RG_RX_DAC_MUX,
++			P3A_RG_RX_DAC_MUX_VAL(4));
++
++	if (!index) {
++		u3p_setmsk(sif_base, U3P_XTALCTL3, XC3_RG_U3_XTAL_RX_PWD);
++		u3p_setmsk(sif_base, U3P_XTALCTL3, XC3_RG_U3_FRC_XTAL_RX_PWD);
++		/* [mt8173]disable Change 100uA current from SSUSB */
++		u3p_clrmsk(sif_base, U3P_USBPHYACR5, PA5_RG_U2_HS_100U_U3_EN);
++	}
++	u3p_setval(sif_base, U3P_U3_PHYA_REG6, P3A_RG_TX_EIDLE_CM,
++			P3A_RG_TX_EIDLE_CM_VAL(0xe));
++	u3p_setval(sif_base, U3P_PHYD_CDR1, P3D_RG_CDR_BIR_LTD0,
++			P3D_RG_CDR_BIR_LTD0_VAL(0xc));
++	u3p_setval(sif_base, U3P_PHYD_CDR1, P3D_RG_CDR_BIR_LTD1,
++			P3D_RG_CDR_BIR_LTD1_VAL(0x3));
++
++	udelay(800);
++	u3p_setmsk(sif_base, U3P_U2PHYDTM1, P2C_RG_VBUSVALID | P2C_RG_AVALID);
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM1, P2C_RG_SESSEND);
++
++	/* USB 2.0 slew rate calibration */
++	u3p_setval(sif_base, U3P_USBPHYACR5, PA5_RG_U2_HSTX_SRCTRL,
++			PA5_RG_U2_HSTX_SRCTRL_VAL(4));
++
++	dev_dbg(u3phy->dev, "%s(%d)\n", __func__, index);
++}
++
++
++static void phy_index_power_off(struct mt65xx_u3phy *u3phy, int index)
++{
++	void __iomem *sif_base = u3phy->sif_base + U3P_PHY_BASE(index);
++
++	/* switch to USB function. (system register, force ip into usb mode) */
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM0, P2C_FORCE_UART_EN);
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM1, P2C_RG_UART_EN);
++	if (!index)
++		u3p_clrmsk(sif_base, U3P_U2PHYACR4, P2C_U2_GPIO_CTR_MSK);
++
++	u3p_setmsk(sif_base, U3P_U2PHYDTM0, P2C_FORCE_SUSPENDM);
++	u3p_setval(sif_base, U3P_U2PHYDTM0,
++			P2C_RG_XCVRSEL, P2C_RG_XCVRSEL_VAL(1));
++	u3p_setval(sif_base, U3P_U2PHYDTM0,
++			P2C_RG_DATAIN, P2C_RG_DATAIN_VAL(0));
++	u3p_setmsk(sif_base, U3P_U2PHYDTM0, P2C_DTM0_PART_MASK);
++	/* DP/DM BC1.1 path Disable */
++	u3p_clrmsk(sif_base, U3P_USBPHYACR6, PA6_RG_U2_BC11_SW_EN);
++	/* OTG Disable */
++	u3p_clrmsk(sif_base, U3P_USBPHYACR6, PA6_RG_U2_OTG_VBUSCMP_EN);
++	if (!index) {
++		/* Change 100uA current switch to USB2.0 */
++		u3p_clrmsk(sif_base, U3P_USBPHYACR5, PA5_RG_U2_HS_100U_U3_EN);
++	}
++	udelay(800);
++
++	/* let suspendm=0, set utmi into analog power down */
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM0, P2C_RG_SUSPENDM);
++	udelay(1);
++
++	u3p_clrmsk(sif_base, U3P_U2PHYDTM1, P2C_RG_VBUSVALID | P2C_RG_AVALID);
++	u3p_setmsk(sif_base, U3P_U2PHYDTM1, P2C_RG_SESSEND);
++	if (!index) {
++		/* Set RG_SSUSB_VUSB10_ON as 1 after VUSB10 ready */
++		u3p_clrmsk(sif_base, U3P_U3_PHYA_REG0, P3A_RG_U3_VUSB10_ON);
++	}
++	dev_dbg(u3phy->dev, "%s(%d)\n", __func__, index);
++}
++
++
++static int check_ip_clk_status(struct mt65xx_u3phy *u3phy)
++{
++	int ret;
++	int u3_port_num;
++	int u2_port_num;
++	u32 xhci_cap;
++	u32 val;
++	void __iomem *sif_base = u3phy->sif_base;
++
++	xhci_cap = u3p_readl(sif_base, U3P_IP_XHCI_CAP);
++	u3_port_num = CAP_U3_PORT_NUM(xhci_cap);
++	u2_port_num = CAP_U2_PORT_NUM(xhci_cap);
++
++	ret = readl_poll_timeout(sif_base + U3P_IP_PW_STS1, val,
++			  (val & STS1_SYSPLL_STABLE), 100, 10000);
++	if (ret) {
++		dev_err(u3phy->dev, "sypll is not stable!!!\n");
++		return ret;
++	}
++
++	ret = readl_poll_timeout(sif_base + U3P_IP_PW_STS1, val,
++			  (val & STS1_REF_RST), 100, 10000);
++	if (ret) {
++		dev_err(u3phy->dev, "ref_clk is still active!!!\n");
++		return ret;
++	}
++
++	ret = readl_poll_timeout(sif_base + U3P_IP_PW_STS1, val,
++			   (val & STS1_SYS125_RST), 100, 10000);
++	if (ret) {
++		dev_err(u3phy->dev, "sys125_ck is still active!!!\n");
++		return ret;
++	}
++
++	if (u3_port_num) {
++		ret = readl_poll_timeout(sif_base + U3P_IP_PW_STS1, val,
++				   (val & STS1_U3_MAC_RST), 100, 10000);
++		if (ret) {
++			dev_err(u3phy->dev, "mac3_mac_ck is still active!!!\n");
++			return ret;
++		}
++	}
++
++	if (u2_port_num) {
++		ret = readl_poll_timeout(sif_base + U3P_IP_PW_STS2, val,
++				   (val & STS2_U2_MAC_RST), 100, 10000);
++		if (ret) {
++			dev_err(u3phy->dev, "mac2_sys_ck is still active!!!\n");
++			return ret;
++		}
++	}
++
++	return 0;
++}
++
++static int u3phy_ports_enable(struct mt65xx_u3phy *u3phy)
++{
++	int i;
++	u32 temp;
++	int u3_port_num;
++	int u2_port_num;
++	void __iomem *sif_base = u3phy->sif_base;
++
++	temp = u3p_readl(sif_base, U3P_IP_XHCI_CAP);
++	u3_port_num = CAP_U3_PORT_NUM(temp);
++	u2_port_num = CAP_U2_PORT_NUM(temp);
++	dev_dbg(u3phy->dev, "%s u2p:%d, u3p:%d\n",
++		__func__, u2_port_num, u3_port_num);
++
++	/* power on host ip */
++	u3p_clrmsk(sif_base, U3P_IP_PW_CTRL1, CTRL1_IP_HOST_PDN);
++
++	/* power on and enable all u3 ports */
++	for (i = 0; i < u3_port_num; i++) {
++		temp = u3p_readl(sif_base, U3P_U3_CTRL(i));
++		temp &= ~(CTRL_U3_PORT_PDN | CTRL_U3_PORT_DIS);
++		temp |= CTRL_U3_PORT_HOST_SEL;
++		u3p_writel(sif_base, U3P_U3_CTRL(i), temp);
++	}
++
++	/* power on and enable all u2 ports */
++	for (i = 0; i < u2_port_num; i++) {
++		temp = u3p_readl(sif_base, U3P_U2_CTRL(i));
++		temp &= ~(CTRL_U2_PORT_PDN | CTRL_U2_PORT_DIS);
++		temp |= CTRL_U2_PORT_HOST_SEL;
++		u3p_writel(sif_base, U3P_U2_CTRL(i), temp);
++	}
++	return check_ip_clk_status(u3phy);
++}
++
++
++static void u3phy_timing_init(struct mt65xx_u3phy *u3phy)
++{
++	void __iomem *mbase = u3phy->mac_base;
++	int u3_port_num;
++	u32 temp;
++
++	temp = u3p_readl(u3phy->sif_base, U3P_IP_XHCI_CAP);
++	u3_port_num = CAP_U3_PORT_NUM(temp);
++
++	if (u3_port_num) {
++		/* set MAC reference clock speed */
++		u3p_setval(mbase, U3P_UX_EXIT_LFPS_PARAM,
++				RX_UX_EXIT_REF, RX_UX_EXIT_REF_VAL);
++		/* set REF_CLK */
++		u3p_setval(mbase, U3P_REF_CLK_PARAM,
++				REF_CLK_1000NS, REF_CLK_VAL_DEF);
++		/* set SYS_CLK */
++		u3p_setval(mbase, U3P_TIMING_PULSE_CTRL,
++				U3T_CNT_1US, U3T_CNT_1US_VAL);
++		/* set LINK_PM_TIMER=3 */
++		u3p_setval(mbase, U3P_LINK_PM_TIMER,
++				PM_LC_TIMEOUT, PM_LC_TIMEOUT_VAL);
++	}
++	u3p_setval(mbase, U3P_U2_TIMING_PARAM, U2T_VAL_1US, U2T_VAL_1US_VAL);
++}
++
++
++static int u3phy_clks_enable(struct mt65xx_u3phy *u3phy)
++{
++	int ret;
++
++	ret = clk_prepare_enable(u3phy->sys_mac);
++	if (ret) {
++		dev_err(u3phy->dev, "failed to enable sys_mac\n");
++		goto sys_mac_err;
++	}
++
++	ret = clk_prepare_enable(u3phy->u3phya_ref);
++	if (ret) {
++		dev_err(u3phy->dev, "failed to enable u3phya_ref\n");
++		goto u3phya_ref_err;
++	}
++	ret = clk_prepare_enable(u3phy->wk_deb_p0);
++	if (ret) {
++		dev_err(u3phy->dev, "failed to enable wk_deb_p0\n");
++		goto usb_p0_err;
++	}
++	if (u3phy->enable_usb2_p1) {
++		ret = clk_prepare_enable(u3phy->wk_deb_p1);
++		if (ret) {
++			dev_err(u3phy->dev, "failed to enable wk_deb_p1\n");
++			goto usb_p1_err;
++		}
++	}
++	udelay(50);
++
++	return 0;
++
++usb_p1_err:
++	clk_disable_unprepare(u3phy->wk_deb_p0);
++usb_p0_err:
++	clk_disable_unprepare(u3phy->u3phya_ref);
++u3phya_ref_err:
++	clk_disable_unprepare(u3phy->sys_mac);
++sys_mac_err:
++	return -EINVAL;
++}
++
++static void u3phy_clks_disable(struct mt65xx_u3phy *u3phy)
++{
++	if (u3phy->enable_usb2_p1)
++		clk_disable_unprepare(u3phy->wk_deb_p1);
++	clk_disable_unprepare(u3phy->wk_deb_p0);
++	clk_disable_unprepare(u3phy->u3phya_ref);
++	clk_disable_unprepare(u3phy->sys_mac);
++}
++
++
++static int mt65xx_u3phy_init(struct usb_phy *phy)
++{
++	struct mt65xx_u3phy *u3phy;
++	int ret;
++
++	u3phy = container_of(phy, struct mt65xx_u3phy, phy);
++	dev_dbg(u3phy->dev, "%s+\n", __func__);
++
++	if (u3phy->enable_usb2_p1) {
++		ret = regulator_enable(u3phy->p1_vbus);
++		if (ret) {
++			dev_err(u3phy->dev, "failed to enable p1-vbus\n");
++			goto reg_p1_err;
++		}
++	}
++
++	ret = regulator_enable(u3phy->vusb33);
++	if (ret) {
++		dev_err(u3phy->dev, "failed to enable vusb33\n");
++		goto reg_err;
++	}
++
++	ret = pm_runtime_get_sync(u3phy->dev);
++	if (ret < 0)
++		goto pm_err;
++
++	ret = u3phy_clks_enable(u3phy);
++	if (ret) {
++		dev_err(u3phy->dev, "failed to enable clks\n");
++		goto clks_err;
++	}
++
++	/* reset whole ip */
++	u3p_setmsk(u3phy->sif_base, U3P_IP_PW_CTRL0, CTRL0_IP_SW_RST);
++	u3p_clrmsk(u3phy->sif_base, U3P_IP_PW_CTRL0, CTRL0_IP_SW_RST);
++
++	ret = u3phy_ports_enable(u3phy);
++	if (ret) {
++		dev_err(u3phy->dev, "failed to enable ports\n");
++		goto port_err;
++	}
++	u3phy_timing_init(u3phy);
++	phy_index_power_on(u3phy, 0);
++	if (u3phy->enable_usb2_p1)
++		phy_index_power_on(u3phy, 1);
++
++	return 0;
++
++port_err:
++	u3phy_clks_disable(u3phy);
++clks_err:
++	pm_runtime_put_sync(u3phy->dev);
++pm_err:
++	regulator_disable(u3phy->vusb33);
++reg_err:
++	if (u3phy->enable_usb2_p1)
++		regulator_disable(u3phy->p1_vbus);
++reg_p1_err:
++	return ret;
++}
++
++
++static void mt65xx_u3phy_shutdown(struct usb_phy *phy)
++{
++	struct mt65xx_u3phy *u3phy;
++
++	u3phy = container_of(phy, struct mt65xx_u3phy, phy);
++	dev_dbg(u3phy->dev, "%s+\n", __func__);
++
++	phy_index_power_off(u3phy, 0);
++	if (u3phy->enable_usb2_p1) {
++		phy_index_power_off(u3phy, 1);
++		regulator_disable(u3phy->p1_vbus);
++	}
++	u3phy_clks_disable(u3phy);
++	pm_runtime_put_sync(u3phy->dev);
++	regulator_disable(u3phy->vusb33);
++}
++
++
++static int mt65xx_u3phy_suspend(struct usb_phy *x, int suspend)
++{
++	struct mt65xx_u3phy *u3phy = container_of(x, struct mt65xx_u3phy, phy);
++
++	if (suspend) {
++		mt65xx_u3phy_shutdown(&u3phy->phy);
++		return 0;
++	} else {
++		return mt65xx_u3phy_init(&u3phy->phy);
++	}
++}
++
++
++static const struct of_device_id mt65xx_u3phy_id_table[] = {
++	{ .compatible = "mediatek,mt8173-u3phy",},
++	{ },
++};
++MODULE_DEVICE_TABLE(of, mt65xx_u3phy_id_table);
++
++
++static int mt65xx_u3phy_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct resource *mac_res;
++	struct resource *sif_res;
++	struct mt65xx_u3phy *u3phy;
++	int retval = -ENOMEM;
++
++	u3phy = devm_kzalloc(&pdev->dev, sizeof(*u3phy), GFP_KERNEL);
++	if (!u3phy)
++		goto err;
++
++	u3phy->dev = &pdev->dev;
++
++	mac_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	u3phy->mac_base = devm_ioremap_resource(dev, mac_res);
++	if (IS_ERR(u3phy->mac_base)) {
++		dev_err(dev, "failed to remap mac regs\n");
++		retval = PTR_ERR(u3phy->mac_base);
++		goto err;
++	}
++
++	sif_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
++	u3phy->sif_base = devm_ioremap_resource(dev, sif_res);
++	if (IS_ERR(u3phy->sif_base)) {
++		dev_err(dev, "failed to remap sif regs\n");
++		retval = PTR_ERR(u3phy->sif_base);
++		goto err;
++	}
++
++	u3phy->enable_usb2_p1 = !of_property_read_bool(np, "disable-usb2-p1");
++	dev_dbg(dev, "enable_usb2_p1 - %d\n", u3phy->enable_usb2_p1);
++
++	u3phy->sys_mac = devm_clk_get(u3phy->dev, "sys_mac");
++	if (IS_ERR(u3phy->sys_mac)) {
++		dev_err(dev, "error to get sys_mac\n");
++		retval = PTR_ERR(u3phy->sys_mac);
++		goto err;
++	}
++
++	u3phy->u3phya_ref = devm_clk_get(u3phy->dev, "u3phya_ref");
++	if (IS_ERR(u3phy->u3phya_ref)) {
++		dev_err(dev, "error to get u3phya_ref\n");
++		retval = PTR_ERR(u3phy->u3phya_ref);
++		goto err;
++	}
++
++	u3phy->wk_deb_p0 = devm_clk_get(u3phy->dev, "wakeup_deb_p0");
++	if (IS_ERR(u3phy->wk_deb_p0)) {
++		dev_err(dev, "error to get wakeup_deb_p0\n");
++		retval = PTR_ERR(u3phy->wk_deb_p0);
++		goto err;
++	}
++
++	if (u3phy->enable_usb2_p1) {
++		u3phy->wk_deb_p1 = devm_clk_get(u3phy->dev, "wakeup_deb_p1");
++		if (IS_ERR(u3phy->wk_deb_p1)) {
++			dev_err(dev, "error to get wakeup_deb_p1\n");
++			retval = PTR_ERR(u3phy->wk_deb_p1);
++			goto err;
++		}
++
++		u3phy->p1_vbus = devm_regulator_get(u3phy->dev, "reg-p1-vbus");
++		if (IS_ERR_OR_NULL(u3phy->p1_vbus)) {
++			dev_err(dev, "fail to get p1-vbus\n");
++			retval = PTR_ERR(u3phy->p1_vbus);
++			goto err;
++		}
++	}
++
++	u3phy->vusb33 = devm_regulator_get(u3phy->dev, "reg-vusb33");
++	if (IS_ERR_OR_NULL(u3phy->vusb33)) {
++		dev_err(dev, "fail to get vusb33\n");
++		retval = PTR_ERR(u3phy->vusb33);
++		goto err;
++	}
++
++	pm_runtime_enable(dev);
++	u3phy->phy.dev = u3phy->dev;
++	u3phy->phy.label = "mt65xx-usb3phy";
++	u3phy->phy.type = USB_PHY_TYPE_USB3;
++	u3phy->phy.init = mt65xx_u3phy_init;
++	u3phy->phy.shutdown = mt65xx_u3phy_shutdown;
++	u3phy->phy.set_suspend = mt65xx_u3phy_suspend;
++
++	platform_set_drvdata(pdev, u3phy);
++	retval = usb_add_phy_dev(&u3phy->phy);
++	if (retval) {
++		dev_err(dev, "failed to add phy\n");
++		goto add_phy_err;
++	}
++
++	return 0;
++
++add_phy_err:
++	pm_runtime_disable(dev);
++err:
++	return retval;
++}
++
++static int mt65xx_u3phy_remove(struct platform_device *pdev)
++{
++	struct mt65xx_u3phy *u3phy = platform_get_drvdata(pdev);
++
++	mt65xx_u3phy_shutdown(&u3phy->phy);
++	pm_runtime_disable(&pdev->dev);
++	usb_remove_phy(&u3phy->phy);
++
++	return 0;
++}
++
++static struct platform_driver mt65xx_u3phy_driver = {
++	.probe		= mt65xx_u3phy_probe,
++	.remove		= mt65xx_u3phy_remove,
++	.driver		= {
++		.name	= "mt65xx-u3phy",
++		.of_match_table = mt65xx_u3phy_id_table,
++	},
++};
++
++module_platform_driver(mt65xx_u3phy_driver);
++
++MODULE_DESCRIPTION("Mt65xx USB PHY driver");
++MODULE_LICENSE("GPL v2");
+-- 
+1.7.10.4
+

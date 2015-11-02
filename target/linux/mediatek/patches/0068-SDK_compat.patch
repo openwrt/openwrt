@@ -1,0 +1,1579 @@
+From 4c48177826502673737609ffa04b66051a1e0f75 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 27 Jun 2015 17:05:12 +0200
+Subject: [PATCH 68/76] SDK_compat
+
+---
+ arch/arm/include/asm/mach/mt_irq.h         |  174 ++++++++
+ arch/arm/include/asm/rt2880/mt_irq.h       |  174 ++++++++
+ arch/arm/include/asm/rt2880/rt_mmap.h      |   58 +++
+ arch/arm/include/asm/rt2880/surfboardint.h |   42 ++
+ arch/arm/include/asm/rt2880/x_define_irq.h |  160 +++++++
+ arch/arm/mach-mediatek/mediatek.c          |  186 ++++++++
+ arch/arm/mach-mediatek/mt_reg_base.h       |  640 ++++++++++++++++++++++++++++
+ arch/arm/mach-mediatek/rt_mmap.h           |   58 +++
+ 8 files changed, 1492 insertions(+)
+ create mode 100644 arch/arm/include/asm/mach/mt_irq.h
+ create mode 100644 arch/arm/include/asm/rt2880/mt_irq.h
+ create mode 100644 arch/arm/include/asm/rt2880/rt_mmap.h
+ create mode 100644 arch/arm/include/asm/rt2880/surfboardint.h
+ create mode 100644 arch/arm/include/asm/rt2880/x_define_irq.h
+ create mode 100644 arch/arm/mach-mediatek/mt_reg_base.h
+ create mode 100644 arch/arm/mach-mediatek/rt_mmap.h
+
+diff --git a/arch/arm/include/asm/mach/mt_irq.h b/arch/arm/include/asm/mach/mt_irq.h
+new file mode 100644
+index 0000000..ff265e0
+--- /dev/null
++++ b/arch/arm/include/asm/mach/mt_irq.h
+@@ -0,0 +1,174 @@
++#ifndef __MT_IRQ_H
++#define __MT_IRQ_H
++
++#define GIC_PRIVATE_SIGNALS     (32)
++#define NR_GIC_SGI              (16)
++#define NR_GIC_PPI              (16)
++#define GIC_PPI_OFFSET          (27)
++#define MT_NR_PPI               (5)
++#define MT_NR_SPI               (224)
++#define NR_MT_IRQ_LINE          (GIC_PPI_OFFSET + MT_NR_PPI + MT_NR_SPI)
++
++#define MT65xx_EDGE_SENSITIVE 0
++#define MT65xx_LEVEL_SENSITIVE 1
++
++#define MT65xx_POLARITY_LOW   0
++#define MT65xx_POLARITY_HIGH  1
++
++#define GIC_PPI_GLOBAL_TIMER      (GIC_PPI_OFFSET + 0)
++#define GIC_PPI_LEGACY_FIQ        (GIC_PPI_OFFSET + 1)
++#define GIC_PPI_PRIVATE_TIMER     (GIC_PPI_OFFSET + 2)
++#define GIC_PPI_NS_PRIVATE_TIMER  (GIC_PPI_OFFSET + 3)
++#define GIC_PPI_LEGACY_IRQ        (GIC_PPI_OFFSET + 4)
++
++#define MT_BTIF_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 50)
++#define MT_DMA_BTIF_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 71)
++#define MT_DMA_BTIF_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 72)
++
++#if !defined(CONFIG_MT8127_FPGA)
++
++#if !defined(__ASSEMBLY__)
++#define X_DEFINE_IRQ(__name, __num, __pol, __sens)  __name = __num,
++enum 
++{
++#include "x_define_irq.h"
++};
++#undef X_DEFINE_IRQ
++#define MT6582_AHB_SLAVE_HIF_IRQ_ID         WF_HIF_IRQ_ID /* FIXME */
++
++#endif
++
++#else
++
++#define MT6582_USB0_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 32)
++#define MT6582_USB1_IRQ_ID					(GIC_PRIVATE_SIGNALS + 33)
++#define MT_PTP_THERM_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 38)
++#define MT_MSDC0_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 39)
++#define MT_MSDC1_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 40)
++//#define MT_MSDC2_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 41) //6582 take off
++//#define MT_MSDC3_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 42) //6582 take off
++#define MT6582_AP_HIF_IRQ_ID                (GIC_PRIVATE_SIGNALS + 43)
++#define MT_I2C0_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 44)
++#define MT_I2C1_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 45)
++#define MT_I2C2_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 46)
++#define MT_UART1_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 51)
++#define MT_UART2_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 52)
++#define MT_UART3_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 53)
++#define MT_UART4_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 54)
++#define MT_NFIECC_IRQ_ID                    (GIC_PRIVATE_SIGNALS + 55)
++#define MT_NFI_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 56)
++#define MT_GDMA1_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 57)
++#define MT_GDMA2_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 58)
++#define MT_DMA_UART0_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 63)
++#define MT_DMA_UART0_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 64)
++#define MT_DMA_UART1_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 65)
++#define MT_DMA_UART1_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 66)
++#define MT_DMA_UART2_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 67)
++#define MT_DMA_UART2_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 68)
++#define MT6582_SPI1_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 78)
++//#define MT_MSDC4_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 83) //6582 take off
++#define MT_PTP_FSM_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 85)
++#define MT_WDT_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 88)//TBD:For build pass
++#define MT_APARM_DOMAIN_IRQ_ID              (GIC_PRIVATE_SIGNALS + 94)
++#define MT_APARM_DECERR_IRQ_ID              (GIC_PRIVATE_SIGNALS + 95)
++#if 1 //cliff
++#define MT6582_GPT_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 112)//10.2 update
++#define MT_EINT_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 113)//10.2 update
++#else
++#define MT6582_GPT_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 113)//10.2 update
++#define MT_EINT_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 116)//10.2 update
++#endif
++#define MT6582_PMIC_WRAP_IRQ_ID             (GIC_PRIVATE_SIGNALS + 115)//0x80
++#define MT_KP_IRQ_ID			(GIC_PRIVATE_SIGNALS + 116)
++#define MT_SPM_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 117)
++#define MT_SPM1_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 118)
++#define MT_VENC_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 139)
++#define MT_VDEC_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 140)
++#define CAMERA_ISP_IRQ0_ID                  (GIC_PRIVATE_SIGNALS + 143) // cam_irq_b
++#define CAMERA_ISP_IRQ1_ID                  (GIC_PRIVATE_SIGNALS + 144) // cam_irq1_b
++#define CAMERA_ISP_IRQ2_ID                  (GIC_PRIVATE_SIGNALS + 145) // cam_irq2_b
++//#define CAMERA_ISP_IRQ3_ID                  (GIC_PRIVATE_SIGNALS + 144) // cam_irq3_b 6582 take off
++#define MT6582_JPEG_ENC_IRQ_ID              (GIC_PRIVATE_SIGNALS + 141)
++//#define MT6582_JPEG_DEC_IRQ_ID              (GIC_PRIVATE_SIGNALS + 148) //6582 take off
++/* Not sure and comments for early porting */
++#define MT_EINT_DIRECT0_IRQ_ID              (GIC_PRIVATE_SIGNALS + 121)
++
++#if 0
++#define MT_MFG_IRQ_GP_ID                     (GIC_PRIVATE_SIGNALS + 170)
++#define MT_MFG_IRQ_GPMMU_ID                  (GIC_PRIVATE_SIGNALS + 171)
++#define MT_MFG_IRQ_PP0_ID                    (GIC_PRIVATE_SIGNALS + 172)
++#define MT_MFG_IRQ_PPMMU0_ID                 (GIC_PRIVATE_SIGNALS + 173)
++#define MT_MFG_IRQ_PP1_ID                    (GIC_PRIVATE_SIGNALS + 174)
++#define MT_MFG_IRQ_PPMMU1_ID                 (GIC_PRIVATE_SIGNALS + 175)
++#else
++#define MT_MFG_IRQ0_ID                     (GIC_PRIVATE_SIGNALS + 170)
++#define MT_MFG_IRQ1_ID                     (GIC_PRIVATE_SIGNALS + 171)
++#define MT_MFG_IRQ2_ID                     (GIC_PRIVATE_SIGNALS + 172)
++#define MT_MFG_IRQ3_ID                     (GIC_PRIVATE_SIGNALS + 173)
++#define MT_MFG_IRQ4_ID                     (GIC_PRIVATE_SIGNALS + 174)
++#define MT_MFG_IRQ5_ID                     (GIC_PRIVATE_SIGNALS + 175)
++#define MT_MFG_IRQ6_ID                     (GIC_PRIVATE_SIGNALS + 176)
++#define MT_MFG_IRQ7_ID                     (GIC_PRIVATE_SIGNALS + 177)
++#define MT_MFG_IRQ8_ID                     (GIC_PRIVATE_SIGNALS + 178)
++#define MT_MFG_IRQ9_ID                     (GIC_PRIVATE_SIGNALS + 179)
++#define MT_MFG_IRQ10_ID                    (GIC_PRIVATE_SIGNALS + 180)
++#endif
++
++
++#if 0
++#define MT6582_DISP_MUTEX_IRQ_ID            (GIC_PRIVATE_SIGNALS + 160)
++#define MT6582_DISP_ROT_IRQ_ID              (GIC_PRIVATE_SIGNALS + 161)
++#define MT6582_DISP_SCL_IRQ_ID              (GIC_PRIVATE_SIGNALS + 162)
++#define MT6582_DISP_OVL_IRQ_ID              (GIC_PRIVATE_SIGNALS + 163)
++#define MT6582_DISP_WDMA0_IRQ_ID            (GIC_PRIVATE_SIGNALS + 164)
++#define MT6582_DISP_WDMA1_IRQ_ID            (GIC_PRIVATE_SIGNALS + 165)
++#define MT6582_DISP_RDMA0_IRQ_ID            (GIC_PRIVATE_SIGNALS + 166)
++#define MT6582_DISP_RDMA1_IRQ_ID            (GIC_PRIVATE_SIGNALS + 167)
++#define MT6582_DISP_BLS_IRQ_ID              (GIC_PRIVATE_SIGNALS + 168)
++#define MT6582_DISP_COLOR_IRQ_ID            (GIC_PRIVATE_SIGNALS + 169)
++#define MT6582_DISP_TDSHP_IRQ_ID            (GIC_PRIVATE_SIGNALS + 170)
++#define MT6582_DISP_DBI_IRQ_ID              (GIC_PRIVATE_SIGNALS + 171)
++#define MT6582_DISP_DSI_IRQ_ID              (GIC_PRIVATE_SIGNALS + 172)
++#define MT6582_DISP_DPI0_IRQ_ID             (GIC_PRIVATE_SIGNALS + 173)
++#define MT6582_DISP_DPI1_IRQ_ID             (GIC_PRIVATE_SIGNALS + 174)
++#define MT6582_DISP_CMDQ_IRQ_ID             (GIC_PRIVATE_SIGNALS + 176)
++#else
++#define MT6582_DISP_MDP_RDMA_IRQ_ID       (GIC_PRIVATE_SIGNALS+146)  
++#define MT6582_DISP_MDP_RSZ0_IRQ_ID       (GIC_PRIVATE_SIGNALS+147)  
++#define MT6582_DISP_MDP_RSZ1_IRQ_ID       (GIC_PRIVATE_SIGNALS+148)  
++#define MT6582_DISP_MDP_TDSHP_IRQ_ID      (GIC_PRIVATE_SIGNALS+149)  
++#define MT6582_DISP_MDP_WDMA_IRQ_ID       (GIC_PRIVATE_SIGNALS+150)  
++#define MT6582_DISP_MDP_WROT_IRQ_ID       (GIC_PRIVATE_SIGNALS+151)  
++#define MT6582_DISP_RDMA_IRQ_ID           (GIC_PRIVATE_SIGNALS+152)  
++#define MT6582_DISP_OVL_IRQ_ID            (GIC_PRIVATE_SIGNALS+153)  
++#define MT6582_DISP_WDMA_IRQ_ID           (GIC_PRIVATE_SIGNALS+154)  
++#define MT6582_DISP_BLS_IRQ_ID            (GIC_PRIVATE_SIGNALS+155)  
++#define MT6582_DISP_COLOR_IRQ_ID          (GIC_PRIVATE_SIGNALS+156)  
++#define MT6582_DISP_DSI_IRQ_ID            (GIC_PRIVATE_SIGNALS+157)  
++#define MT6582_DISP_DPI0_IRQ_ID           (GIC_PRIVATE_SIGNALS+158)  
++#define MT6582_DISP_CMDQ_IRQ_ID           (GIC_PRIVATE_SIGNALS+159)  
++#define MT6582_DISP_CMDQ_SECURE_IRQ_ID    (GIC_PRIVATE_SIGNALS+160)  
++#define MT6582_DISP_MUTEX_IRQ_ID          (GIC_PRIVATE_SIGNALS+161)  
++#define MT6582_DISP_SMI_LARB0_IRQ_ID      (GIC_PRIVATE_SIGNALS+162)
++#define MT_CIRQ_IRQ_ID                      (GIC_PRIVATE_SIGNALS+187)
++#endif
++#define MT6582_APARM_GPTTIMER_IRQ_LINE      MT6582_GPT_IRQ_ID
++
++// MT6582 Wifi AHB Slave HIF
++#define MT6582_AHB_SLAVE_HIF_IRQ_ID         (GIC_PRIVATE_SIGNALS + 160)
++#define MT6582_HIF_PDMA_IRQ_ID              (GIC_PRIVATE_SIGNALS + 59)
++
++/* These are defined for solving compile errors only. They are not existing on FPGA */
++#define TS_IRQ_ID                         (GIC_PRIVATE_SIGNALS + 163)
++#define CONN_WDT_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 163)
++#define LOWBATTERY_IRQ_ID                 (GIC_PRIVATE_SIGNALS + 163)
++#define MD_WDT_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 163)
++
++#define WF_HIF_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 184)
++#define MT_CONN2AP_BTIF_WAKEUP_IRQ_ID    (GIC_PRIVATE_SIGNALS + 185)
++#define BT_CVSD_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 186)
++
++#define CCIF0_AP_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 100)
++#endif
++
++#endif
+diff --git a/arch/arm/include/asm/rt2880/mt_irq.h b/arch/arm/include/asm/rt2880/mt_irq.h
+new file mode 100644
+index 0000000..ff265e0
+--- /dev/null
++++ b/arch/arm/include/asm/rt2880/mt_irq.h
+@@ -0,0 +1,174 @@
++#ifndef __MT_IRQ_H
++#define __MT_IRQ_H
++
++#define GIC_PRIVATE_SIGNALS     (32)
++#define NR_GIC_SGI              (16)
++#define NR_GIC_PPI              (16)
++#define GIC_PPI_OFFSET          (27)
++#define MT_NR_PPI               (5)
++#define MT_NR_SPI               (224)
++#define NR_MT_IRQ_LINE          (GIC_PPI_OFFSET + MT_NR_PPI + MT_NR_SPI)
++
++#define MT65xx_EDGE_SENSITIVE 0
++#define MT65xx_LEVEL_SENSITIVE 1
++
++#define MT65xx_POLARITY_LOW   0
++#define MT65xx_POLARITY_HIGH  1
++
++#define GIC_PPI_GLOBAL_TIMER      (GIC_PPI_OFFSET + 0)
++#define GIC_PPI_LEGACY_FIQ        (GIC_PPI_OFFSET + 1)
++#define GIC_PPI_PRIVATE_TIMER     (GIC_PPI_OFFSET + 2)
++#define GIC_PPI_NS_PRIVATE_TIMER  (GIC_PPI_OFFSET + 3)
++#define GIC_PPI_LEGACY_IRQ        (GIC_PPI_OFFSET + 4)
++
++#define MT_BTIF_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 50)
++#define MT_DMA_BTIF_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 71)
++#define MT_DMA_BTIF_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 72)
++
++#if !defined(CONFIG_MT8127_FPGA)
++
++#if !defined(__ASSEMBLY__)
++#define X_DEFINE_IRQ(__name, __num, __pol, __sens)  __name = __num,
++enum 
++{
++#include "x_define_irq.h"
++};
++#undef X_DEFINE_IRQ
++#define MT6582_AHB_SLAVE_HIF_IRQ_ID         WF_HIF_IRQ_ID /* FIXME */
++
++#endif
++
++#else
++
++#define MT6582_USB0_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 32)
++#define MT6582_USB1_IRQ_ID					(GIC_PRIVATE_SIGNALS + 33)
++#define MT_PTP_THERM_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 38)
++#define MT_MSDC0_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 39)
++#define MT_MSDC1_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 40)
++//#define MT_MSDC2_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 41) //6582 take off
++//#define MT_MSDC3_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 42) //6582 take off
++#define MT6582_AP_HIF_IRQ_ID                (GIC_PRIVATE_SIGNALS + 43)
++#define MT_I2C0_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 44)
++#define MT_I2C1_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 45)
++#define MT_I2C2_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 46)
++#define MT_UART1_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 51)
++#define MT_UART2_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 52)
++#define MT_UART3_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 53)
++#define MT_UART4_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 54)
++#define MT_NFIECC_IRQ_ID                    (GIC_PRIVATE_SIGNALS + 55)
++#define MT_NFI_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 56)
++#define MT_GDMA1_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 57)
++#define MT_GDMA2_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 58)
++#define MT_DMA_UART0_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 63)
++#define MT_DMA_UART0_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 64)
++#define MT_DMA_UART1_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 65)
++#define MT_DMA_UART1_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 66)
++#define MT_DMA_UART2_TX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 67)
++#define MT_DMA_UART2_RX_IRQ_ID              (GIC_PRIVATE_SIGNALS + 68)
++#define MT6582_SPI1_IRQ_ID                  (GIC_PRIVATE_SIGNALS + 78)
++//#define MT_MSDC4_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 83) //6582 take off
++#define MT_PTP_FSM_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 85)
++#define MT_WDT_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 88)//TBD:For build pass
++#define MT_APARM_DOMAIN_IRQ_ID              (GIC_PRIVATE_SIGNALS + 94)
++#define MT_APARM_DECERR_IRQ_ID              (GIC_PRIVATE_SIGNALS + 95)
++#if 1 //cliff
++#define MT6582_GPT_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 112)//10.2 update
++#define MT_EINT_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 113)//10.2 update
++#else
++#define MT6582_GPT_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 113)//10.2 update
++#define MT_EINT_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 116)//10.2 update
++#endif
++#define MT6582_PMIC_WRAP_IRQ_ID             (GIC_PRIVATE_SIGNALS + 115)//0x80
++#define MT_KP_IRQ_ID			(GIC_PRIVATE_SIGNALS + 116)
++#define MT_SPM_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 117)
++#define MT_SPM1_IRQ_ID                       (GIC_PRIVATE_SIGNALS + 118)
++#define MT_VENC_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 139)
++#define MT_VDEC_IRQ_ID                      (GIC_PRIVATE_SIGNALS + 140)
++#define CAMERA_ISP_IRQ0_ID                  (GIC_PRIVATE_SIGNALS + 143) // cam_irq_b
++#define CAMERA_ISP_IRQ1_ID                  (GIC_PRIVATE_SIGNALS + 144) // cam_irq1_b
++#define CAMERA_ISP_IRQ2_ID                  (GIC_PRIVATE_SIGNALS + 145) // cam_irq2_b
++//#define CAMERA_ISP_IRQ3_ID                  (GIC_PRIVATE_SIGNALS + 144) // cam_irq3_b 6582 take off
++#define MT6582_JPEG_ENC_IRQ_ID              (GIC_PRIVATE_SIGNALS + 141)
++//#define MT6582_JPEG_DEC_IRQ_ID              (GIC_PRIVATE_SIGNALS + 148) //6582 take off
++/* Not sure and comments for early porting */
++#define MT_EINT_DIRECT0_IRQ_ID              (GIC_PRIVATE_SIGNALS + 121)
++
++#if 0
++#define MT_MFG_IRQ_GP_ID                     (GIC_PRIVATE_SIGNALS + 170)
++#define MT_MFG_IRQ_GPMMU_ID                  (GIC_PRIVATE_SIGNALS + 171)
++#define MT_MFG_IRQ_PP0_ID                    (GIC_PRIVATE_SIGNALS + 172)
++#define MT_MFG_IRQ_PPMMU0_ID                 (GIC_PRIVATE_SIGNALS + 173)
++#define MT_MFG_IRQ_PP1_ID                    (GIC_PRIVATE_SIGNALS + 174)
++#define MT_MFG_IRQ_PPMMU1_ID                 (GIC_PRIVATE_SIGNALS + 175)
++#else
++#define MT_MFG_IRQ0_ID                     (GIC_PRIVATE_SIGNALS + 170)
++#define MT_MFG_IRQ1_ID                     (GIC_PRIVATE_SIGNALS + 171)
++#define MT_MFG_IRQ2_ID                     (GIC_PRIVATE_SIGNALS + 172)
++#define MT_MFG_IRQ3_ID                     (GIC_PRIVATE_SIGNALS + 173)
++#define MT_MFG_IRQ4_ID                     (GIC_PRIVATE_SIGNALS + 174)
++#define MT_MFG_IRQ5_ID                     (GIC_PRIVATE_SIGNALS + 175)
++#define MT_MFG_IRQ6_ID                     (GIC_PRIVATE_SIGNALS + 176)
++#define MT_MFG_IRQ7_ID                     (GIC_PRIVATE_SIGNALS + 177)
++#define MT_MFG_IRQ8_ID                     (GIC_PRIVATE_SIGNALS + 178)
++#define MT_MFG_IRQ9_ID                     (GIC_PRIVATE_SIGNALS + 179)
++#define MT_MFG_IRQ10_ID                    (GIC_PRIVATE_SIGNALS + 180)
++#endif
++
++
++#if 0
++#define MT6582_DISP_MUTEX_IRQ_ID            (GIC_PRIVATE_SIGNALS + 160)
++#define MT6582_DISP_ROT_IRQ_ID              (GIC_PRIVATE_SIGNALS + 161)
++#define MT6582_DISP_SCL_IRQ_ID              (GIC_PRIVATE_SIGNALS + 162)
++#define MT6582_DISP_OVL_IRQ_ID              (GIC_PRIVATE_SIGNALS + 163)
++#define MT6582_DISP_WDMA0_IRQ_ID            (GIC_PRIVATE_SIGNALS + 164)
++#define MT6582_DISP_WDMA1_IRQ_ID            (GIC_PRIVATE_SIGNALS + 165)
++#define MT6582_DISP_RDMA0_IRQ_ID            (GIC_PRIVATE_SIGNALS + 166)
++#define MT6582_DISP_RDMA1_IRQ_ID            (GIC_PRIVATE_SIGNALS + 167)
++#define MT6582_DISP_BLS_IRQ_ID              (GIC_PRIVATE_SIGNALS + 168)
++#define MT6582_DISP_COLOR_IRQ_ID            (GIC_PRIVATE_SIGNALS + 169)
++#define MT6582_DISP_TDSHP_IRQ_ID            (GIC_PRIVATE_SIGNALS + 170)
++#define MT6582_DISP_DBI_IRQ_ID              (GIC_PRIVATE_SIGNALS + 171)
++#define MT6582_DISP_DSI_IRQ_ID              (GIC_PRIVATE_SIGNALS + 172)
++#define MT6582_DISP_DPI0_IRQ_ID             (GIC_PRIVATE_SIGNALS + 173)
++#define MT6582_DISP_DPI1_IRQ_ID             (GIC_PRIVATE_SIGNALS + 174)
++#define MT6582_DISP_CMDQ_IRQ_ID             (GIC_PRIVATE_SIGNALS + 176)
++#else
++#define MT6582_DISP_MDP_RDMA_IRQ_ID       (GIC_PRIVATE_SIGNALS+146)  
++#define MT6582_DISP_MDP_RSZ0_IRQ_ID       (GIC_PRIVATE_SIGNALS+147)  
++#define MT6582_DISP_MDP_RSZ1_IRQ_ID       (GIC_PRIVATE_SIGNALS+148)  
++#define MT6582_DISP_MDP_TDSHP_IRQ_ID      (GIC_PRIVATE_SIGNALS+149)  
++#define MT6582_DISP_MDP_WDMA_IRQ_ID       (GIC_PRIVATE_SIGNALS+150)  
++#define MT6582_DISP_MDP_WROT_IRQ_ID       (GIC_PRIVATE_SIGNALS+151)  
++#define MT6582_DISP_RDMA_IRQ_ID           (GIC_PRIVATE_SIGNALS+152)  
++#define MT6582_DISP_OVL_IRQ_ID            (GIC_PRIVATE_SIGNALS+153)  
++#define MT6582_DISP_WDMA_IRQ_ID           (GIC_PRIVATE_SIGNALS+154)  
++#define MT6582_DISP_BLS_IRQ_ID            (GIC_PRIVATE_SIGNALS+155)  
++#define MT6582_DISP_COLOR_IRQ_ID          (GIC_PRIVATE_SIGNALS+156)  
++#define MT6582_DISP_DSI_IRQ_ID            (GIC_PRIVATE_SIGNALS+157)  
++#define MT6582_DISP_DPI0_IRQ_ID           (GIC_PRIVATE_SIGNALS+158)  
++#define MT6582_DISP_CMDQ_IRQ_ID           (GIC_PRIVATE_SIGNALS+159)  
++#define MT6582_DISP_CMDQ_SECURE_IRQ_ID    (GIC_PRIVATE_SIGNALS+160)  
++#define MT6582_DISP_MUTEX_IRQ_ID          (GIC_PRIVATE_SIGNALS+161)  
++#define MT6582_DISP_SMI_LARB0_IRQ_ID      (GIC_PRIVATE_SIGNALS+162)
++#define MT_CIRQ_IRQ_ID                      (GIC_PRIVATE_SIGNALS+187)
++#endif
++#define MT6582_APARM_GPTTIMER_IRQ_LINE      MT6582_GPT_IRQ_ID
++
++// MT6582 Wifi AHB Slave HIF
++#define MT6582_AHB_SLAVE_HIF_IRQ_ID         (GIC_PRIVATE_SIGNALS + 160)
++#define MT6582_HIF_PDMA_IRQ_ID              (GIC_PRIVATE_SIGNALS + 59)
++
++/* These are defined for solving compile errors only. They are not existing on FPGA */
++#define TS_IRQ_ID                         (GIC_PRIVATE_SIGNALS + 163)
++#define CONN_WDT_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 163)
++#define LOWBATTERY_IRQ_ID                 (GIC_PRIVATE_SIGNALS + 163)
++#define MD_WDT_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 163)
++
++#define WF_HIF_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 184)
++#define MT_CONN2AP_BTIF_WAKEUP_IRQ_ID    (GIC_PRIVATE_SIGNALS + 185)
++#define BT_CVSD_IRQ_ID                     (GIC_PRIVATE_SIGNALS + 186)
++
++#define CCIF0_AP_IRQ_ID                   (GIC_PRIVATE_SIGNALS + 100)
++#endif
++
++#endif
+diff --git a/arch/arm/include/asm/rt2880/rt_mmap.h b/arch/arm/include/asm/rt2880/rt_mmap.h
+new file mode 100644
+index 0000000..e86b3bb
+--- /dev/null
++++ b/arch/arm/include/asm/rt2880/rt_mmap.h
+@@ -0,0 +1,58 @@
++#define HIFSYS_BASE			0xFA000000 //for PCIe/USB
++#define ETHDMASYS_BASE			0xFB000000 //for I2S/PCM/GDMA/HSDMA/FE/GMAC
++
++#define HIFSYS_PCI_BASE                 0xFA140000
++#define HIFSYS_USB_HOST_BASE            0xFA1C0000
++#define HIFSYS_USB_HOST2_BASE           0xFA240000
++
++#define ETHDMASYS_SYSCTL_BASE           0xFB000000
++#define ETHDMASYS_RBUS_MATRIXCTL_BASE   0xFB000400
++#define ETHDMASYS_I2S_BASE              0xFB000A00
++#define ETHDMASYS_PCM_BASE              0xFB002000
++#define ETHDMASYS_GDMA_BASE             0xFB002800
++#define ETHDMASYS_HS_DMA_BASE           0xFB007000
++#define ETHDMASYS_FRAME_ENGINE_BASE     0xFB100000
++#define ETHDMASYS_PPE_BASE		0xFB100C00
++#define ETHDMASYS_ETH_SW_BASE		0xFB110000
++#define ETHDMASYS_CRYPTO_ENGINE_BASE	0xFB240000
++
++//for backward-compatible
++#define RALINK_FRAME_ENGINE_BASE	ETHDMASYS_FRAME_ENGINE_BASE
++#define RALINK_PPE_BASE                 ETHDMASYS_PPE_BASE
++#define RALINK_SYSCTL_BASE		ETHDMASYS_SYSCTL_BASE
++#define RALINK_ETH_SW_BASE		ETHDMASYS_ETH_SW_BASE
++#define RALINK_GDMA_BASE      ETHDMASYS_GDMA_BASE
++#define RALINK_HS_DMA_BASE    ETHDMASYS_HS_DMA_BASE
++#define RALINK_11N_MAC_BASE		0	//unused for rt_rdm usage
++
++//Reset Control Register
++#define RSTCTL_SYS_RST			(1<<0)
++#define RSTCTL_MCM_RST			(1<<2)
++#define RSTCTL_HSDMA_RST		(1<<5)
++#define RSTCTL_FE_RST			(1<<6)
++#define RSTCTL_SPDIF_RST		(1<<7)
++#define RSTCTL_TIMER_RST		(1<<8)
++#define RSTCTL_CIRQ_RST			(1<<9)
++#define RSTCTL_MC_RST			(1<<10)
++#define RSTCTL_PCM_RST			(1<<11)
++#define RSTCTL_GPIO_RST			(1<<13)
++#define RSTCTL_GDMA_RST			(1<<14)
++#define RSTCTL_NAND_RST			(1<<15)
++#define RSTCTL_I2C_RST			(1<<16)
++#define RSTCTL_I2S_RST			(1<<17)
++#define RSTCTL_SPI_RST			(1<<18)
++#define RSTCTL_UART0_RST		(1<<19)
++#define RSTCTL_UART1_RST		(1<<20)
++#define RSTCTL_UART2_RST		(1<<21)
++#define RSTCTL_UPHY_RST			(1<<22)
++#define RSTCTL_ETH_RST			(1<<23)
++#define RSTCTL_PCIE0_RST		(1<<24)
++#define RSTCTL_PCIE1_RST		(1<<25)
++#define RSTCTL_PCIE2_RST		(1<<26)
++#define RSTCTL_AUX_STCK_RST		(1<<28)
++#define RSTCTL_CRYPT_RST		(1<<29)
++#define RSTCTL_SDXC_RST			(1<<30)
++#define RSTCTL_PWM_RST			(1<<31)
++
++//for backward-compatible
++#define RALINK_FE_RST			RSTCTL_FE_RST
+diff --git a/arch/arm/include/asm/rt2880/surfboardint.h b/arch/arm/include/asm/rt2880/surfboardint.h
+new file mode 100644
+index 0000000..4581598
+--- /dev/null
++++ b/arch/arm/include/asm/rt2880/surfboardint.h
+@@ -0,0 +1,42 @@
++#include "mt_irq.h"
++
++//#define SURFBOARDINT_SYSCTL      0      /* SYSCTL */
++#define SURFBOARDINT_FE          MT_FE_ORIG_IRQ_ID	/* FE */
++#define SURFBOARDINT_PCM         MT_PCM_IRQ_ID      /* PCM */
++//#define SURFBOARDINT_GPIO        6      /* GPIO */
++#define SURFBOARDINT_HSGDMA      MT_HSDMA_IRQ_ID      /* HSGDMA */
++#define SURFBOARDINT_DMA         MT_GDMA_IRQ_ID      /* DMA */
++//#define SURFBOARDINT_PC          9      /* Performance counter */
++#define SURFBOARDINT_I2S         MT_I2S_IRQ_ID     /* I2S */
++//#define SURFBOARDINT_SPI         11     /* SPI */
++//#define SURFBOARDINT_AES         13     /* AES */
++//#define SURFBOARDINT_AESENGINE      13     /* AES Engine */
++#define SURFBOARDINT_CRYPTO      MT_CRYPTO_IRQ_ID     /* CryptoEngine */
++//#define SURFBOARDINT_SDXC        14     /* SDXC */
++//#define SURFBOARDINT_ESW         17     /* ESW */
++#define SURFBOARDINT_USB0         MT_SSUSB_XHCI0_IRQ_ID     /* USB0 */
++#define SURFBOARDINT_USB1         MT_SSUSB_XHCI1_IRQ_ID     /* USB1 */
++//#define SURFBOARDINT_UART_LITE1  20     /* UART Lite */
++//#define SURFBOARDINT_UART_LITE2  21     /* UART Lite */
++//#define SURFBOARDINT_UART_LITE3  22     /* UART Lite */
++//#define SURFBOARDINT_UART1       SURFBOARDINT_UART_LITE1
++//#define SURFBOARDINT_UART        SURFBOARDINT_UART_LITE2
++//#define SURFBOARDINT_WDG         23     /* WDG timer */
++//#define SURFBOARDINT_TIMER0      24     /* Timer0 */
++//#define SURFBOARDINT_TIMER1      25     /* Timer1 */
++//#define SURFBOARDINT_ILL_ACC     35     /* illegal access */
++#define RALINK_INT_PCIE0         MT_PCIE0_IRQ_ID     /* PCIE0 */
++#define RALINK_INT_PCIE1         MT_PCIE1_IRQ_ID     /* PCIE1 */
++#define RALINK_INT_PCIE2         MT_PCIE2_IRQ_ID     /* PCIE2 */
++
++// Wait for RD to define IRQ source
++
++//#define RALINK_INT_xxx         MT_CRYPTO_RING0_IRQ_ID     /*  */
++//#define RALINK_INT_xxx         MT_CRYPTO_RING1_IRQ_ID     /*  */
++//#define RALINK_INT_xxx         MT_CRYPTO_RING2_IRQ_ID     /*  */
++//#define RALINK_INT_xxx         MT_FE_PDMA_IRQ_ID     /*  */
++//#define RALINK_INT_xxx         MT_FE_QDMA_IRQ_ID     /*  */
++//#define RALINK_INT_xxx         MT_PCIE_LINK_DOWN_RST_IRQ_ID     /*  */
++
++
++
+diff --git a/arch/arm/include/asm/rt2880/x_define_irq.h b/arch/arm/include/asm/rt2880/x_define_irq.h
+new file mode 100644
+index 0000000..4b2e669
+--- /dev/null
++++ b/arch/arm/include/asm/rt2880/x_define_irq.h
+@@ -0,0 +1,160 @@
++/*
++ * This file is generated automatically according to the design of silicon.
++ * Don't modify it directly.
++ */
++
++X_DEFINE_IRQ(MT6582_USB0_IRQ_ID            , 64, L,LEVEL)
++X_DEFINE_IRQ(MT6582_USB1_IRQ_ID            , 65, L,LEVEL)
++X_DEFINE_IRQ(TS_IRQ_ID                     , 66, L,EDGE)
++X_DEFINE_IRQ(TS_BATCH_IRQ_ID               , 67, L,EDGE)
++X_DEFINE_IRQ(LOWBATTERY_IRQ_ID             , 68, L,EDGE)
++X_DEFINE_IRQ(PWM_IRQ_ID                    , 69, L,LEVEL)
++X_DEFINE_IRQ(THERM_CTRL_IRQ_ID             , 70, L,LEVEL)
++X_DEFINE_IRQ(MT_MSDC0_IRQ_ID               , 71, L,LEVEL)
++X_DEFINE_IRQ(MT_MSDC1_IRQ_ID               , 72, L,LEVEL)
++X_DEFINE_IRQ(MT_MSDC2_IRQ_ID               , 73, L,LEVEL)
++X_DEFINE_IRQ(MT_MSDC3_IRQ_ID               , 74, L,LEVEL)
++X_DEFINE_IRQ(MT_I2C0_IRQ_ID                , 76, L,LEVEL)
++X_DEFINE_IRQ(MT_I2C1_IRQ_ID                , 77, L,LEVEL)
++X_DEFINE_IRQ(MT_I2C2_IRQ_ID                , 78, L,LEVEL)
++X_DEFINE_IRQ(BITF_IRQ_ID                   , 82, L,LEVEL)
++X_DEFINE_IRQ(MT_UART1_IRQ_ID               , 83, L,LEVEL)
++X_DEFINE_IRQ(MT_UART2_IRQ_ID               , 84, L,LEVEL)
++X_DEFINE_IRQ(MT_UART3_IRQ_ID               , 85, L,LEVEL)
++X_DEFINE_IRQ(MT_UART4_IRQ_ID               , 86, L,LEVEL)
++X_DEFINE_IRQ(MT_NFIECC_IRQ_ID              , 87, L,LEVEL)
++X_DEFINE_IRQ(MT_NFI_IRQ_ID                 , 88, L,LEVEL)
++X_DEFINE_IRQ(MT_GDMA1_IRQ_ID               , 89, L,LEVEL)
++X_DEFINE_IRQ(MT_GDMA2_IRQ_ID               , 90, L,LEVEL)
++X_DEFINE_IRQ(MT6582_HIF_PDMA_IRQ_ID        , 91, L,LEVEL)
++X_DEFINE_IRQ(AP_DMA_I2C0_IRQ_ID            , 92, L,LEVEL)
++X_DEFINE_IRQ(AP_DMA_I2C1_IRQ_ID            , 93, L,LEVEL)
++X_DEFINE_IRQ(AP_DMA_I2C2_IRQ_ID            , 94, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART0_TX_IRQ_ID        , 95, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART0_RX_IRQ_ID        , 96, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART1_TX_IRQ_ID        , 97, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART1_RX_IRQ_ID        , 98, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART2_TX_IRQ_ID        , 99, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART2_RX_IRQ_ID        , 100, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART3_TX_IRQ_ID        , 101, L,LEVEL)
++X_DEFINE_IRQ(MT_DMA_UART3_RX_IRQ_ID        , 102, L,LEVEL)
++X_DEFINE_IRQ(AP_DMA_BTIF_TX_IRQ_ID         , 103, L,LEVEL)
++X_DEFINE_IRQ(AP_DMA_BTIF_RX_IRQ_ID         , 104, L,LEVEL)
++X_DEFINE_IRQ(MT_GCPU_IRQ_ID                , 105, L,LEVEL) 
++X_DEFINE_IRQ(MT_GCPU_DMX_IRQ_ID            , 106, L,LEVEL)
++X_DEFINE_IRQ(MT_GCPU_MMU_IRQ_ID            , 107, L,LEVEL)
++X_DEFINE_IRQ(MT_GCPU_MMU_SEC_IRQ_ID        , 108, L,LEVEL)
++X_DEFINE_IRQ(MT_ETHER_NIC_WRAP_IRQ_ID      , 109, L,LEVEL)
++X_DEFINE_IRQ(MT6582_SPI1_IRQ_ID            , 110, L,LEVEL)
++X_DEFINE_IRQ(MSDC0_WAKEUP_PS_IRQ_ID        , 111, H,EDGE)
++X_DEFINE_IRQ(MSDC1_WAKEUP_PS_IRQ_ID        , 112, H,EDGE)
++X_DEFINE_IRQ(MSDC2_WAKEUP_PS_IRQ_ID        , 113, H,EDGE)
++X_DEFINE_IRQ(MT_CRYPTO_RING0_IRQ_ID        , 114, H,LEVEL)
++X_DEFINE_IRQ(MT_CRYPTO_RING1_IRQ_ID        , 115, H,LEVEL)
++X_DEFINE_IRQ(MT_CRYPTO_RING2_IRQ_ID        , 116, H,LEVEL)
++X_DEFINE_IRQ(MT_PTP_FSM_IRQ_ID             , 117, L,LEVEL)
++X_DEFINE_IRQ(BTIF_WAKEUP_IRQ_ID            , 118, L,LEVEL)
++X_DEFINE_IRQ(MT_IRRX_IRQ_ID                , 119, L,LEVEL) 
++X_DEFINE_IRQ(MT_WDT_IRQ_ID                 , 120, L,EDGE)
++X_DEFINE_IRQ(MT_CRYPTO_RING3_IRQ_ID        , 123, H,LEVEL)
++X_DEFINE_IRQ(DCC_APARM_IRQ_ID              , 124, L,LEVEL)
++X_DEFINE_IRQ(APARM_CTI_IRQ_ID              , 125, L,LEVEL)
++X_DEFINE_IRQ(MT_APARM_DOMAIN_IRQ_ID        , 126, L,LEVEL)
++X_DEFINE_IRQ(MT_APARM_DECERR_IRQ_ID        , 127, L,LEVEL)
++X_DEFINE_IRQ(DOMAIN_ABORT_IRQ_ID0          , 128, L,LEVEL)
++X_DEFINE_IRQ(MT_CRYPTO_IRQ_ID              , 129, H,LEVEL)
++X_DEFINE_IRQ(MT_HSDMA_IRQ_ID               , 130, H,LEVEL)
++X_DEFINE_IRQ(MT_GDMA_IRQ_ID                , 131, H,LEVEL)
++X_DEFINE_IRQ(CCIF0_AP_IRQ_ID               , 132, L,LEVEL)
++X_DEFINE_IRQ(MT_I2S_IRQ_ID                 , 134, H,LEVEL)
++X_DEFINE_IRQ(MT_PCM_IRQ_ID                 , 135, H,LEVEL)
++X_DEFINE_IRQ(AFE_MCU_IRQ_ID                , 136, L,LEVEL)
++X_DEFINE_IRQ(M4U1_IRQ_ID                   , 138, L,LEVEL)
++X_DEFINE_IRQ(M4UL2_IRQ_ID                  , 139, L,LEVEL)
++X_DEFINE_IRQ(M4UL2_SEC_IRQ_ID              , 140, L,LEVEL)
++X_DEFINE_IRQ(REFRESH_RATE_IRQ_ID           , 141, L,EDGE)
++X_DEFINE_IRQ(MT6582_APARM_GPTTIMER_IRQ_LINE, 144, L,LEVEL)
++X_DEFINE_IRQ(MT_EINT_IRQ_ID                , 145, H,LEVEL)
++X_DEFINE_IRQ(EINT_EVENT_IRQ_ID             , 146, L,LEVEL)
++X_DEFINE_IRQ(MT6582_PMIC_WRAP_IRQ_ID       , 147, H,LEVEL)
++X_DEFINE_IRQ(MT_KP_IRQ_ID                  , 148, L,EDGE)
++X_DEFINE_IRQ(MT_SPM_IRQ_ID                 , 149, L,LEVEL)
++X_DEFINE_IRQ(MT_SPM1_IRQ_ID                , 150, L,LEVEL)
++X_DEFINE_IRQ(MT_SPM2_IRQ_ID                , 151, L,LEVEL)
++X_DEFINE_IRQ(MT_SPM3_IRQ_ID                , 152, L,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT0_IRQ_ID        , 153, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT1_IRQ_ID        , 154, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT2_IRQ_ID        , 155, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT3_IRQ_ID        , 156, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT4_IRQ_ID        , 157, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT5_IRQ_ID        , 158, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT6_IRQ_ID        , 159, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT7_IRQ_ID        , 160, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT8_IRQ_ID        , 161, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT9_IRQ_ID        , 162, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT10_IRQ_ID       , 163, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT11_IRQ_ID       , 164, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT12_IRQ_ID       , 165, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT13_IRQ_ID       , 166, H,LEVEL)
++X_DEFINE_IRQ(MT_EINT_DIRECT14_IRQ_ID       , 167, H,LEVEL)
++X_DEFINE_IRQ(SMI_LARB0_IRQ_ID              , 168, L,LEVEL)
++X_DEFINE_IRQ(SMI_LARB1_IRQ_ID              , 169, L,LEVEL)
++X_DEFINE_IRQ(SMI_LARB2_IRQ_ID              , 170, L,LEVEL)
++X_DEFINE_IRQ(MT_VDEC_IRQ_ID                , 171, L,LEVEL)
++X_DEFINE_IRQ(MT_VENC_IRQ_ID                , 172, L,LEVEL)
++X_DEFINE_IRQ(MT6582_JPEG_ENC_IRQ_ID        , 173, L,LEVEL)
++X_DEFINE_IRQ(SENINF_IRQ_ID                 , 174, L,LEVEL)
++X_DEFINE_IRQ(CAMERA_ISP_IRQ0_ID            , 175, L,LEVEL)
++X_DEFINE_IRQ(CAMERA_ISP_IRQ1_ID            , 176, L,LEVEL)
++X_DEFINE_IRQ(CAMERA_ISP_IRQ2_ID            , 177, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MDP_RDMA_IRQ_ID   , 178, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MDP_RSZ0_IRQ_ID   , 179, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MDP_RSZ1_IRQ_ID   , 180, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MDP_TDSHP_IRQ_ID  , 181, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MDP_WDMA_IRQ_ID   , 182, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MDP_WROT_IRQ_ID   , 183, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_RDMA_IRQ_ID       , 184, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_OVL_IRQ_ID        , 185, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_WDMA_IRQ_ID       , 186, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_BLS_IRQ_ID        , 187, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_COLOR_IRQ_ID      , 188, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_DSI_IRQ_ID        , 189, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_DPI0_IRQ_ID       , 190, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_CMDQ_IRQ_ID       , 191, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_CMDQ_SECURE_IRQ_ID, 192, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_MUTEX_IRQ_ID      , 193, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY0_IRQ_ID              , 194, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY1_IRQ_ID              , 195, L,LEVEL)
++X_DEFINE_IRQ(MT6582_DISP_RDMA1_IRQ_ID      , 196, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY3_IRQ_ID              , 197, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY4_IRQ_ID              , 198, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY5_IRQ_ID              , 199, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY6_IRQ_ID              , 200, L,LEVEL)
++X_DEFINE_IRQ(MM_DUMMY7_IRQ_ID              , 201, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ0_ID                , 202, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ1_ID                , 203, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ2_ID                , 204, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ3_ID                , 205, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ4_ID                , 206, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ5_ID                , 207, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ6_ID                , 208, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ7_ID                , 209, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ8_ID                , 210, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ9_ID                , 211, L,LEVEL)
++X_DEFINE_IRQ(MT_MFG_IRQ10_ID               , 212, L,LEVEL)
++X_DEFINE_IRQ(MT_APXGPT_SECURE_IRQ_ID       , 213, L,LEVEL)
++X_DEFINE_IRQ(MT_CEC_IRQ_ID                 , 214, L,LEVEL)
++X_DEFINE_IRQ(CONN_WDT_IRQ_ID               , 215, L,EDGE)
++X_DEFINE_IRQ(WF_HIF_IRQ_ID                 , 216, L,LEVEL)
++X_DEFINE_IRQ(MT_CONN2AP_BTIF_WAKEUP_IRQ_ID , 217, L,LEVEL)
++X_DEFINE_IRQ(BT_CVSD_IRQ_ID                , 218, L,LEVEL)
++X_DEFINE_IRQ(MT_CIRQ_IRQ_ID                , 219, L,LEVEL)
++X_DEFINE_IRQ(MT_PCIE_LINK_DOWN_RST_IRQ_ID  , 224, H,EDGE)
++X_DEFINE_IRQ(MT_PCIE0_IRQ_ID               , 225, H,LEVEL)
++X_DEFINE_IRQ(MT_PCIE1_IRQ_ID               , 226, H,LEVEL)
++X_DEFINE_IRQ(MT_PCIE2_IRQ_ID               , 227, H,LEVEL)
++X_DEFINE_IRQ(MT_SSUSB_XHCI0_IRQ_ID         , 228, H,LEVEL)
++X_DEFINE_IRQ(MT_SSUSB_XHCI1_IRQ_ID         , 229, H,LEVEL)
++X_DEFINE_IRQ(MT_FE_PDMA_IRQ_ID             , 230, H,LEVEL)
++X_DEFINE_IRQ(MT_FE_QDMA_IRQ_ID             , 231, H,LEVEL)
++X_DEFINE_IRQ(MT_FE_ORIG_IRQ_ID             , 232, H,LEVEL)
+diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
+index ab8cf21..c0e373b 100644
+--- a/arch/arm/mach-mediatek/mediatek.c
++++ b/arch/arm/mach-mediatek/mediatek.c
+@@ -19,6 +19,186 @@
+ #include <linux/of.h>
+ #include <linux/clk-provider.h>
+ #include <linux/clocksource.h>
++#include <asm/mach/map.h>
++#include "rt_mmap.h"
++#include "mt_reg_base.h"
++
++#define IO_VIRT_TO_PHYS(v) (0x10000000 | ((v) & 0x0fffffff))
++
++static struct map_desc mt_io_desc[] __initdata =
++{
++#if !defined(CONFIG_MT8127_FPGA)
++    {
++        .virtual = INFRA_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(INFRA_BASE)),
++        .length = (SZ_1M - SZ_4K),
++        .type = MT_DEVICE
++    },
++    /* Skip the mapping of 0xF0130000~0xF013FFFF to protect access from APMCU */
++    {
++        .virtual = (DEBUGTOP_BASE - SZ_4K),
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS((DEBUGTOP_BASE - SZ_4K))),
++        .length = (0x30000 + SZ_4K),
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = (DEBUGTOP_BASE + 0x40000),
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(DEBUGTOP_BASE + 0x40000)),
++        .length = 0xC0000,
++        .type = MT_DEVICE
++    },            
++    {
++        .virtual = MCUSYS_CFGREG_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(MCUSYS_CFGREG_BASE)),
++        .length = SZ_2M,
++        .type = MT_DEVICE
++    },
++    /* //// */
++    {
++        .virtual = AP_DMA_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(AP_DMA_BASE)),
++        .length = SZ_2M + SZ_1M,
++        .type = MT_DEVICE
++    },
++    {
++        /* virtual 0xF2000000, physical 0x00200000 */
++        .virtual = SYSRAM_BASE,
++        .pfn = __phys_to_pfn(0x00200000),
++        .length = SZ_128K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = G3D_CONFIG_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(G3D_CONFIG_BASE)),
++        .length = SZ_128K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = DISPSYS_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(DISPSYS_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = IMGSYS_CONFG_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(IMGSYS_CONFG_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = VDEC_GCON_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(VDEC_GCON_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    {
++        /* virtual 0xF7000000, physical 0x08000000 */
++        .virtual = DEVINFO_BASE,
++        .pfn = __phys_to_pfn(0x08000000),
++        .length = SZ_64K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = CONN_BTSYS_PKV_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(CONN_BTSYS_PKV_BASE)),
++        .length = SZ_1M,
++        .type = MT_DEVICE
++    },
++    {
++        /* virtual 0xF9000000, physical 0x00100000 */
++        .virtual = INTER_SRAM,
++        .pfn = __phys_to_pfn(0x00100000),
++        .length = SZ_64K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = HIFSYS_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(HIFSYS_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = ETHDMASYS_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(ETHDMASYS_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++#if 0
++    {
++        .virtual = BDP_DISPSYS_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(BDP_DISPSYS_BASE)),
++        .length = SZ_32K + SZ_16K,
++        .type = MT_DEVICE
++    },
++#endif
++#else
++    {
++        .virtual = INFRA_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(INFRA_BASE)),
++        .length = SZ_4M,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = AP_DMA_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(AP_DMA_BASE)),
++        .length = SZ_2M + SZ_1M,
++        .type = MT_DEVICE
++    },
++    #if 0
++    {
++        .virtual = MMSYS1_CONFIG_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(MMSYS1_CONFIG_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    #endif
++    {
++        /* From: 0xF2000000 to 0xF2020000*/
++        .virtual = SYSRAM_BASE,
++        .pfn = __phys_to_pfn(0x00200000),
++        .length = SZ_128K,
++        .type = MT_DEVICE
++    },    
++    {
++        .virtual = DISPSYS_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(DISPSYS_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = IMGSYS_CONFG_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(IMGSYS_CONFG_BASE)),
++        .length = SZ_16M,
++        .type = MT_DEVICE
++    },
++    /* G3DSYS */
++    {
++        .virtual = G3D_CONFIG_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(G3D_CONFIG_BASE)),
++        .length = SZ_4K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = DEVINFO_BASE,
++        .pfn = __phys_to_pfn(0x08000000),
++        .length = SZ_64K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = MALI_BASE,
++        .pfn = __phys_to_pfn(IO_VIRT_TO_PHYS(MALI_BASE)),
++        .length = SZ_64K,
++        .type = MT_DEVICE
++    },
++    {
++        .virtual = INTER_SRAM,
++        .pfn = __phys_to_pfn(0x00100000),
++        .length = SZ_64K,
++        .type = MT_DEVICE
++    },
++#endif
++};
++
+ 
+ 
+ #define GPT6_CON_MT65xx 0x10008060
+@@ -55,7 +235,13 @@ static const char * const mediatek_board_dt_compat[] = {
+ 	NULL,
+ };
+ 
++void __init mt_map_io(void)
++{
++    iotable_init(mt_io_desc, ARRAY_SIZE(mt_io_desc));
++}
++
+ DT_MACHINE_START(MEDIATEK_DT, "Mediatek Cortex-A7 (Device Tree)")
+ 	.dt_compat	= mediatek_board_dt_compat,
+ 	.init_time	= mediatek_timer_init,
++	.map_io		= mt_map_io,
+ MACHINE_END
+diff --git a/arch/arm/mach-mediatek/mt_reg_base.h b/arch/arm/mach-mediatek/mt_reg_base.h
+new file mode 100644
+index 0000000..cf2bb9e
+--- /dev/null
++++ b/arch/arm/mach-mediatek/mt_reg_base.h
+@@ -0,0 +1,640 @@
++/*
++ * This file is generated automatically according to the design of silicon.
++ * Don't modify it directly.
++ */
++
++#ifndef __MT_REG_BASE
++#define __MT_REG_BASE
++
++#if !defined(CONFIG_MT8127_FPGA)
++
++// APB Module cksys
++#define INFRA_BASE (0xF0000000)
++
++// APB Module infracfg_ao
++#define INFRACFG_AO_BASE (0xF0001000)
++
++// APB Module fhctl
++#define FHCTL_BASE (0xF0002000)
++
++// APB Module pericfg
++#define PERICFG_BASE (0xF0003000)
++
++// APB Module dramc
++#define DRAMC0_BASE (0xF0004000)
++
++// APB Module gpio
++#define GPIO_BASE (0xF0005000)
++
++// APB Module sleep
++#define SPM_BASE (0xF0006000)
++
++// APB Module toprgu
++#define TOPRGU_BASE (0xF0007000)
++#define AP_RGU_BASE TOPRGU_BASE
++
++// APB Module apxgpt
++#define APMCU_GPTIMER_BASE (0xF0008000)
++
++// APB Module rsvd
++#define RSVD_BASE (0xF0009000)
++
++// APB Module sej
++#define HACC_BASE (0xF000A000)
++
++// APB Module ap_cirq_eint
++#define AP_CIRQ_EINT (0xF000B000)
++
++// APB Module ap_cirq_eint
++#define EINT_BASE (0xF000B000)
++
++// APB Module smi
++#define SMI1_BASE (0xF000C000)
++
++// APB Module pmic_wrap
++#define PWRAP_BASE (0xF000D000)
++
++// APB Module device_apc_ao
++#define DEVAPC_AO_BASE (0xF000E000)
++
++// APB Module ddrphy
++#define DDRPHY_BASE (0xF000F000)
++
++// APB Module vencpll
++#define VENCPLL_BASE (0xF000F000)
++
++// APB Module mipi_tx_config
++#define MIPI_CONFIG_BASE (0xF0010000)
++
++// APB Module LVDS ANA
++#define LVDS_ANA_BASE (0xF0010400)
++
++// APB Module mipi_rx_ana
++#define MIPI_RX_ANA_BASE (0xF0215000)
++
++// APB Module kp
++#define KP_BASE (0xF0011000)
++
++// APB Module dbgapb
++#define DEBUGTOP_BASE (0xF0100000)
++
++// APB Module mcucfg
++#define MCUSYS_CFGREG_BASE (0xF0200000)
++
++// APB Module infracfg
++#define INFRACFG_BASE (0xF0201000)
++
++// APB Module sramrom
++#define SRAMROM_BASE (0xF0202000)
++
++// APB Module emi
++#define EMI_BASE (0xF0203000)
++
++// APB Module sys_cirq
++#define SYS_CIRQ_BASE (0xF0204000)
++
++// APB Module m4u
++#define SMI_MMU_TOP_BASE (0xF0205000)
++
++// APB Module nb_mmu
++#define NB_MMU0_BASE (0xF0205200)
++
++// APB Module nb_mmu
++#define NB_MMU1_BASE (0xF0205800)
++
++// APB Module efusec
++#define EFUSEC_BASE (0xF0206000)
++
++// APB Module device_apc
++#define DEVAPC_BASE (0xF0207000)
++
++// APB Module mcu_biu_cfg
++#define MCU_BIU_BASE (0xF0208000)
++
++// APB Module apmixed
++#define APMIXEDSYS_BASE (0xF0209000)
++
++// APB Module ccif
++#define AP_CCIF_BASE (0xF020A000)
++
++// APB Module ccif
++#define MD_CCIF_BASE (0xF020B000)
++
++// APB Module gpio1
++#define GPIO1_BASE (0xF020C000)
++
++// APB Module infra_mbist
++#define INFRA_TOP_MBIST_CTRL_BASE (0xF020D000)
++
++// APB Module dramc_conf_nao
++#define DRAMC_NAO_BASE (0xF020E000)
++
++// APB Module trng
++#define TRNG_BASE (0xF020F000)
++
++// APB Module ca9
++#define CORTEXA7MP_BASE (0xF0210000)
++
++// APB Module ap_dma
++#define AP_DMA_BASE (0xF1000000)
++
++// APB Module auxadc
++#define AUXADC_BASE (0xF1001000)
++
++// APB Module uart
++#define UART1_BASE (0xF1002000)
++
++// APB Module uart
++#define UART2_BASE (0xF1003000)
++
++// APB Module uart
++#define UART3_BASE (0xF1004000)
++
++// APB Module uart
++#define UART4_BASE (0xF1005000)
++
++// APB Module pwm
++#define PWM_BASE (0xF1006000)
++
++// APB Module i2c
++#define I2C0_BASE (0xF1007000)
++
++// APB Module i2c
++#define I2C1_BASE (0xF1008000)
++
++// APB Module i2c
++#define I2C2_BASE (0xF1009000)
++
++// APB Module spi
++#define SPI0_BASE (0xF100A000)
++#define SPI1_BASE (0xF100A000)
++
++// APB Module therm_ctrl
++#define THERMAL_BASE (0xF100B000)
++
++// APB Module btif
++#define BTIF_BASE (0xF100C000)
++
++// APB Module nfi
++#define NFI_BASE (0xF100D000)
++
++// APB Module nfiecc_16bit
++#define NFIECC_BASE (0xF100E000)
++
++// APB Module nli_arb
++#define NLI_ARB_BASE (0xF100F000)
++
++// APB Module peri_pwrap_bridge
++#define PERI_PWRAP_BRIDGE_BASE (0xF1017000)
++
++// APB Module usb2
++#define USB_BASE (0xF1200000)
++#define USB1_BASE   (0xF1270000)
++
++// APB Module usb_sif
++#define USB_SIF_BASE (0xF1210000)
++
++// APB Module msdc
++#define MSDC_0_BASE (0xF1230000)
++
++// APB Module msdc
++#define MSDC_1_BASE (0xF1240000)
++
++// APB Module msdc
++#define MSDC_2_BASE (0xF1250000)
++
++// APB Module msdc
++#define MSDC_3_BASE (0xF12C0000)
++
++// APB Module wcn_ahb
++#define WCN_AHB_BASE (0xF1260000)
++
++// ARB Module ethernet
++#define ETHERNET_BASE (0xF1280000)
++// APB Module mfg_top
++#define G3D_CONFIG_BASE (0xF3000000)
++
++// APB Module mali
++#define MALI_BASE (0xF3040000)
++
++// APB Module mali_tb_cmd
++#define MALI_TB_BASE (0xF301f000)
++
++// APB Module mmsys_config
++#define DISPSYS_BASE (0xF4000000)
++
++// APB Module mdp_rdma
++#define MDP_RDMA_BASE (0xF4001000)
++
++// APB Module mdp_rsz
++#define MDP_RSZ0_BASE (0xF4002000)
++
++// APB Module mdp_rsz
++#define MDP_RSZ1_BASE (0xF4003000)
++
++// APB Module disp_wdma
++#define MDP_WDMA_BASE (0xF4004000)
++
++// APB Module disp_wdma
++#define WDMA1_BASE (0xF4004000)
++
++// APB Module mdp_wrot
++#define MDP_WROT_BASE (0xF4005000)
++
++// APB Module mdp_tdshp
++#define MDP_TDSHP_BASE (0xF4006000)
++
++// APB Module ovl
++#define DISP_OVL_BASE (0xF4007000)
++
++// APB Module ovl
++#define OVL0_BASE (0xF4007000)
++
++// APB Module ovl
++#define OVL1_BASE (0xF4007000)
++
++// APB Module disp_rdma
++#define DISP_RDMA_BASE (0xF4008000)
++
++// APB Module disp_rdma
++#define R_DMA1_BASE (0xF4008000)
++
++// APB Module disp_rdma
++#define R_DMA0_BASE (0xF4008000)
++
++// APB Module disp_wdma
++#define DISP_WDMA_BASE (0xF4009000)
++
++// APB Module disp_wdma
++#define WDMA0_BASE (0xF4009000)
++
++// APB Module disp_bls
++#define DISP_BLS_BASE (0xF400A000)
++
++// APB Module disp_color_config
++#define DISP_COLOR_BASE (0xF400B000)
++
++// APB Module dsi
++#define DSI_BASE (0xF400C000)
++
++// APB Module disp_dpi
++#define DPI_BASE (0xF400D000)
++
++// APB Module disp_mutex
++#define MMSYS_MUTEX_BASE (0xF400E000)
++
++// APB Module mm_cmdq
++#define MMSYS_CMDQ_BASE (0xF400F000)
++
++#define DPI1_BASE (0xF4014000)
++
++
++// APB Module smi_larb
++#define SMI_LARB0_BASE (0xF4010000)
++
++// APB Module smi
++#define SMI_BASE (0xF4011000)
++
++// LVDS TX 
++#define LVDS_TX_BASE (0xF4016200)
++
++// APB Module smi_larb
++#define SMILARB2_BASE (0xF5001000)
++
++// APB Module smi_larb
++#define SMI_LARB3_BASE (0xF5001000)
++
++// APB Module mmu
++#define SMI_LARB3_MMU_BASE (0xF5001800)
++
++// APB Module smi_larb
++#define SMI_LARB4_BASE (0xF5002000)
++
++// APB Module fake_eng
++#define FAKE_ENG_BASE (0xF5002000)
++
++// APB Module mmu
++#define SMI_LARB4_MMU_BASE (0xF5002800)
++
++// APB Module smi
++#define VENC_BASE (0xF5009000)
++
++// APB Module jpgenc
++#define JPGENC_BASE (0xF500A000)
++
++// APB Module vdecsys_config
++#define VDEC_GCON_BASE (0xF6000000)
++
++// APB Module smi_larb
++#define SMI_LARB1_BASE (0xF6010000)
++
++// APB Module mmu
++#define SMI_LARB1_MMU_BASE (0xF6010800)
++
++// APB Module vdtop
++#define VDEC_BASE (0xF6020000)
++
++// APB Module vdtop
++#define VDTOP_BASE (0xF6020000)
++
++// APB Module vld
++#define VLD_BASE (0xF6021000)
++
++// APB Module vld_top
++#define VLD_TOP_BASE (0xF6021800)
++
++// APB Module mc
++#define MC_BASE (0xF6022000)
++
++// APB Module avc_vld
++#define AVC_VLD_BASE (0xF6023000)
++
++// APB Module avc_mv
++#define AVC_MV_BASE (0xF6024000)
++
++// APB Module vdec_pp
++#define VDEC_PP_BASE (0xF6025000)
++
++// APB Module vp8_vld
++#define VP8_VLD_BASE (0xF6026800)
++
++// APB Module vp6
++#define VP6_BASE (0xF6027000)
++
++// APB Module vld2
++#define VLD2_BASE (0xF6027800)
++
++// APB Module mc_vmmu
++#define MC_VMMU_BASE (0xF6028000)
++
++// APB Module pp_vmmu
++#define PP_VMMU_BASE (0xF6029000)
++
++// APB Module imgsys
++#define IMGSYS_CONFG_BASE (0xF5000000)
++
++// APB Module cam
++#define CAMINF_BASE (0xF5000000)
++
++// APB Module csi2
++#define CSI2_BASE (0xF5000000)
++
++// APB Module seninf
++#define SENINF_BASE (0xF5000000)
++
++// APB Module seninf_tg
++#define SENINF_TG_BASE (0xF5000000)
++
++// APB Module seninf_top
++#define SENINF_TOP_BASE (0xF5000000)
++
++// APB Module mipi_rx_config
++#define MIPI_RX_CONFIG_BASE (0xF500C000)
++
++// APB Module scam
++#define SCAM_BASE (0xF5008000)
++
++// APB Module ncsi2
++#define NCSI2_BASE (0xF5008000)
++
++// APB Module ccir656
++#define CCIR656_BASE (0xF5000000)
++
++// APB Module n3d_ctl
++#define N3D_CTL_BASE (0xF5000000)
++
++// APB Module fdvt
++#define FDVT_BASE (0xF500B000)
++
++// APB Module audiosys
++#define AUDIO_BASE (0xF1221000)
++#define AUDIO_REG_BASE (0xF1220000)
++
++// CONNSYS
++#define CONN_BTSYS_PKV_BASE (0xF8000000)
++#define CONN_BTSYS_TIMCON_BASE (0xF8010000)
++#define CONN_BTSYS_RF_CONTROL_BASE (0xF8020000)
++#define CONN_BTSYS_MODEM_BASE (0xF8030000)
++#define CONN_BTSYS_BT_CONFIG_BASE (0xF8040000)
++#define CONN_MCU_CONFIG_BASE (0xF8070000)
++#define CONN_TOP_CR_BASE (0xF80B0000)
++#define CONN_HIF_CR_BASE (0xF80F0000)
++
++/*
++ * Addresses below are added manually.
++ * They cannot be mapped via IO_VIRT_TO_PHYS().
++ */
++
++#define GIC_CPU_BASE (CORTEXA7MP_BASE + 0x2000)
++#define GIC_DIST_BASE (CORTEXA7MP_BASE + 0x1000)
++#define SYSRAM_BASE 0xF2000000  /* L2 cache shared RAM */
++#define DEVINFO_BASE 0xF7000000
++#define INTER_SRAM 0xF9000000
++
++#else 
++
++#define SMI_MMU_TOP_BASE            0xF0205000
++#define SMILARB2_BASE               0xF5001000
++
++/* on-chip SRAM */
++#define INTER_SRAM                  0xF9000000
++
++/* infrasys */
++//#define TOPRGU_BASE                 0xF0000000
++#define INFRA_BASE                  0xF0000000
++#define INFRACFG_BASE               0xF0001000
++#define INFRACFG_AO_BASE            0xF0001000
++#define FHCTL_BASE                  0xF0002000
++#define PERICFG_BASE                0xF0003000
++#define DRAMC0_BASE                 0xF0004000
++#define DDRPHY_BASE                 0xF000F000
++#define DRAMC_NAO_BASE              0xF020E000
++#define GPIO_BASE                   0xF0005000
++#define GPIO1_BASE                  0xF020C000
++#define TOPSM_BASE                  0xF0006000
++#define SPM_BASE                    0xF0006000
++#define TOPRGU_BASE                 0xF0007000
++#define AP_RGU_BASE                 TOPRGU_BASE
++#define APMCU_GPTIMER_BASE          0xF0008000
++#define HACC_BASE                   0xF000A000
++#define AP_CIRQ_EINT                0xF000B000
++#define SMI1_BASE                   0xF000C000
++#define MIPI_CONFIG_BASE            0xF0010000
++// APB Module LVDS ANA
++#define LVDS_ANA_BASE (0xF0010400)
++
++
++#define KP_BASE                     0xF0011000
++#if 0
++#define DEVICE_APC_0_BASE           0xF0010000
++#define DEVICE_APC_1_BASE           0xF0011000
++#define DEVICE_APC_2_BASE           0xF0012000
++#define DEVICE_APC_3_BASE           0xF0013000
++#define DEVICE_APC_4_BASE           0xF0014000
++#define SMI0_BASE                   0xF0208000
++#endif
++#define EINT_BASE                   0xF000B000
++
++
++#define DEBUGTOP_BASE               0xF0100000
++#define MCUSYS_CFGREG_BASE          0xF0200000
++#define SRAMROM_BASE                0xF0202000
++#define EMI_BASE                    0xF0203000
++#define EFUSEC_BASE                 0xF0206000
++#define MCU_BIU_BASE                0xF0208000
++#define APMIXED_BASE                0xF0209000
++#define APMIXEDSYS_BASE             0xF0209000
++#define AP_CCIF_BASE                0xF020A000
++#define MD_CCIF_BASE                0xF020B000
++#define INFRA_TOP_MBIST_CTRL_BASE   0xF020D000
++#define DRAMC_NAO_BASE              0xF020E000
++#define CORTEXA7MP_BASE             0xF0210000
++#define GIC_CPU_BASE    (CORTEXA7MP_BASE + 0x2000)
++#define GIC_DIST_BASE   (CORTEXA7MP_BASE + 0x1000)
++//#define SMI_LARB_BASE             0xF0211000
++//#define MCUSYS_AVS_BASE           0xF0212000
++
++/* perisys */
++/*avalaible*/
++#define AP_DMA_BASE                 0xF1000000
++#define AUXADC_BASE                 0xF1001000
++#define UART1_BASE                  0xF1002000
++#define UART2_BASE                  0xF1003000
++#define UART3_BASE                  0xF1004000
++#define UART4_BASE                  0xF1005000
++#define PWM_BASE                    0xF1006000
++#define I2C0_BASE                   0xF1007000
++#define I2C1_BASE                   0xF1008000
++#define I2C2_BASE                   0xF1009000
++#define SPI0_BASE                   0xF100A000
++#define BTIF_BASE                   (0xF100C000)
++#define NFI_BASE                    0xF100D000
++#define NFIECC_BASE                 0xF100E000
++#define NLI_ARB_BASE                0xF100F000
++#define I2C3_BASE                   0xF1010000 //FIXME 6582 take off
++#define SPI1_BASE                   0xF100A000 
++#define THERMAL_BASE                0xF100B000
++
++// APB Module pmic_wrap
++#define PWRAP_BASE (0xF000D000)
++
++#if 0
++//#define IRDA_BASE                 0xF1007000
++#define I2C4_BASE                   0xF1014000
++#define I2CDUAL_BASE                0xF1015000
++#define ACCDET_BASE                 0xF1016000
++#define AP_HIF_BASE                 0xF1017000
++#define MD_HIF_BASE                 0xF1018000
++#define GCPU_BASE                   0xF101B000
++#define GCPU_NS_BASE                0xF01C000
++#define GCPU_MMU_BASE               0xF01D000
++#define SATA_BASE                   0xF01E000
++#define CEC_BASE                    0xF01F000
++//#define SPI1_BASE                 0xF1022000
++#endif
++
++#define USB1_BASE                   0xF1270000
++#define USB2_BASE                   0xF1200000
++#define USB_BASE                    0xF1200000
++#define USB_SIF_BASE                0xF1210000
++//#define USB3_BASE                 0xF1220000
++#define MSDC_0_BASE                 0xF1230000
++#define MSDC_1_BASE                 0xF1240000
++#define MSDC_2_BASE                 0xF1250000
++#define MSDC_3_BASE                 0xF12C0000
++#define MSDC_4_BASE                 0xF1270000
++//#define ETHERNET_BASE             0xF1290000
++
++//#define ETB_BASE                  0xF0111000
++//#define ETM_BASE                  0xF017C000
++
++
++/* SMI common subsystem */
++#define SYSRAM_BASE                 0xF2000000
++#define AUDIO_REG_BASE              0xF2030000
++#define MFG_AXI_BASE                0xF2060000
++#define CONN_MCU_CONFIG_BASE       0xF8070000
++#define AUDIO_BASE                  0xF1200000 //0xF2071000
++#define MMSYS1_CONFIG_BASE          0xF2080000
++#define SMI_LARB0_BASE              0xF2081000
++// APB Module smi
++#define SMI_BASE (0xF4011000)
++#define SMI_LARB1_BASE              0xF2082000
++#define SMI_LARB2_BASE              0xF2083000
++#define VDEC_GCON_BASE              0xF6000000 //0xF4000000
++#define VDEC_BASE                   0xF4020000
++#define VENC_TOP_BASE               0xF7000000
++#define VENC_BASE                   0xF7002000
++#define JPGENC_BASE                 0xF500A000
++#define R_DMA0_BASE                 0xF2086000
++#define R_DMA1_BASE                 0xF2087000
++#define VDO_ROT0_BASE               0xF2088000
++#define RGB_ROT0_BASE               0xF2089000
++#define VDO_ROT1_BASE               0xF208A000
++#define RGB_ROT1_BASE               0xF208B000
++//#define DPI_BASE                    0xF208C000
++#define BRZ_BASE                    0xF208D000
++#define JPG_DMA_BASE                0xF208E000
++#define OVL_DMA_BASE                0xF208F000
++#define CSI2_BASE                   0xF2092000
++#define CRZ_BASE                    0xF2093000
++#define VRZ0_BASE                   0xF2094000
++#define IMGPROC_BASE                0xF2095000
++#define EIS_BASE                    0xF2096000
++#define SPI_BASE                    0xF2097000
++#define SCAM_BASE                   0xF2098000
++#define PRZ0_BASE                   0xF2099000
++#define PRZ1_BASE                   0xF209A000
++#define JPG_CODEC_BASE              0xF209B000
++//#define DSI_BASE                    0xF209C000
++#define TVC_BASE                    0xF209D000
++#define TVE_BASE                    0xF209E000
++#define TV_ROT_BASE                 0xF209F000
++#define RGB_ROT2_BASE               0xF20A0000
++//#define LCD_BASE                    0xF20A1000
++#define FD_BASE                     0xF20A2000
++#define MIPI_CONFG_BASE             0xF20A3000
++#define VRZ1_BASE                   0xF20A4000
++#define MMSYS2_CONFG_BASE           0xF20C0000
++#define SMI_LARB3_BASE              0xF20C1000
++#define MFG_APB_BASE                0xF20C4000
++#define G2D_BASE                    0xF20C6000
++
++#define DISPSYS_BASE				0xF4000000
++#define ROT_BASE					0xF4001000
++#define SCL_BASE					0xF4002000
++#define OVL_BASE					0xF4007000
++#define WDMA0_BASE					0xF4009000
++#define WDMA1_BASE					0xF4005000
++#define RDMA0_BASE					0xF4008000
++//#define RDMA1_BASE					0xF4007000
++#define BLS_BASE					0xF400A000
++//#define GAMMA_BASE					0xF400000
++#define COLOR_BASE					0xF400B000
++#define TDSHP_BASE					0xF4006000
++#define LCD_BASE					0xF4012000// only exist on FPGA
++#define DSI_BASE					0xF400C000
++#define DPI_BASE					0xF400D000
++
++#define DPI1_BASE                                0xF4014000
++
++// LVDS TX 
++#define LVDS_TX_BASE (0xF4016200)
++
++#define SMILARB1_BASE				0xF4010000
++#define DISP_MUTEX_BASE				0xF400E000
++#define DISP_CMDQ_BASE				0xF400F000
++
++/* imgsys */
++#define IMGSYS_CONFG_BASE           0xF5000000
++#define CAMINF_BASE                 IMGSYS_CONFG_BASE
++
++/* G3DSYS */
++#define G3D_CONFIG_BASE             0xF3000000
++#define MALI_BASE                   0xF3040000
++
++#define DEVINFO_BASE                0xF8000000
++
++#endif
++
++#endif
+diff --git a/arch/arm/mach-mediatek/rt_mmap.h b/arch/arm/mach-mediatek/rt_mmap.h
+new file mode 100644
+index 0000000..e86b3bb
+--- /dev/null
++++ b/arch/arm/mach-mediatek/rt_mmap.h
+@@ -0,0 +1,58 @@
++#define HIFSYS_BASE			0xFA000000 //for PCIe/USB
++#define ETHDMASYS_BASE			0xFB000000 //for I2S/PCM/GDMA/HSDMA/FE/GMAC
++
++#define HIFSYS_PCI_BASE                 0xFA140000
++#define HIFSYS_USB_HOST_BASE            0xFA1C0000
++#define HIFSYS_USB_HOST2_BASE           0xFA240000
++
++#define ETHDMASYS_SYSCTL_BASE           0xFB000000
++#define ETHDMASYS_RBUS_MATRIXCTL_BASE   0xFB000400
++#define ETHDMASYS_I2S_BASE              0xFB000A00
++#define ETHDMASYS_PCM_BASE              0xFB002000
++#define ETHDMASYS_GDMA_BASE             0xFB002800
++#define ETHDMASYS_HS_DMA_BASE           0xFB007000
++#define ETHDMASYS_FRAME_ENGINE_BASE     0xFB100000
++#define ETHDMASYS_PPE_BASE		0xFB100C00
++#define ETHDMASYS_ETH_SW_BASE		0xFB110000
++#define ETHDMASYS_CRYPTO_ENGINE_BASE	0xFB240000
++
++//for backward-compatible
++#define RALINK_FRAME_ENGINE_BASE	ETHDMASYS_FRAME_ENGINE_BASE
++#define RALINK_PPE_BASE                 ETHDMASYS_PPE_BASE
++#define RALINK_SYSCTL_BASE		ETHDMASYS_SYSCTL_BASE
++#define RALINK_ETH_SW_BASE		ETHDMASYS_ETH_SW_BASE
++#define RALINK_GDMA_BASE      ETHDMASYS_GDMA_BASE
++#define RALINK_HS_DMA_BASE    ETHDMASYS_HS_DMA_BASE
++#define RALINK_11N_MAC_BASE		0	//unused for rt_rdm usage
++
++//Reset Control Register
++#define RSTCTL_SYS_RST			(1<<0)
++#define RSTCTL_MCM_RST			(1<<2)
++#define RSTCTL_HSDMA_RST		(1<<5)
++#define RSTCTL_FE_RST			(1<<6)
++#define RSTCTL_SPDIF_RST		(1<<7)
++#define RSTCTL_TIMER_RST		(1<<8)
++#define RSTCTL_CIRQ_RST			(1<<9)
++#define RSTCTL_MC_RST			(1<<10)
++#define RSTCTL_PCM_RST			(1<<11)
++#define RSTCTL_GPIO_RST			(1<<13)
++#define RSTCTL_GDMA_RST			(1<<14)
++#define RSTCTL_NAND_RST			(1<<15)
++#define RSTCTL_I2C_RST			(1<<16)
++#define RSTCTL_I2S_RST			(1<<17)
++#define RSTCTL_SPI_RST			(1<<18)
++#define RSTCTL_UART0_RST		(1<<19)
++#define RSTCTL_UART1_RST		(1<<20)
++#define RSTCTL_UART2_RST		(1<<21)
++#define RSTCTL_UPHY_RST			(1<<22)
++#define RSTCTL_ETH_RST			(1<<23)
++#define RSTCTL_PCIE0_RST		(1<<24)
++#define RSTCTL_PCIE1_RST		(1<<25)
++#define RSTCTL_PCIE2_RST		(1<<26)
++#define RSTCTL_AUX_STCK_RST		(1<<28)
++#define RSTCTL_CRYPT_RST		(1<<29)
++#define RSTCTL_SDXC_RST			(1<<30)
++#define RSTCTL_PWM_RST			(1<<31)
++
++//for backward-compatible
++#define RALINK_FE_RST			RSTCTL_FE_RST
+-- 
+1.7.10.4
+

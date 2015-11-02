@@ -1,0 +1,27 @@
+From d1a856804b84affae30274b391b3c685e901093f Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sat, 27 Jun 2015 11:35:29 +0200
+Subject: [PATCH 57/76] thermal oops
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/thermal/mtk_thermal.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/thermal/mtk_thermal.c b/drivers/thermal/mtk_thermal.c
+index 27aab12..5fdcbf6 100644
+--- a/drivers/thermal/mtk_thermal.c
++++ b/drivers/thermal/mtk_thermal.c
+@@ -394,7 +394,8 @@ static irqreturn_t mtk_thermal_irq(int irq, void *dev_id)
+ 
+ 	for (i = 0; i < MT8173_NUM_BANKS; i++) {
+ 		if (!(irqstat & (1 << i)))
+-			mtk_thermal_irq_bank(&mt->banks[i]);
++			if (!IS_ERR(mt->banks[i].tz))
++				mtk_thermal_irq_bank(&mt->banks[i]);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+-- 
+1.7.10.4
+

@@ -1,0 +1,60 @@
+From 8d61eb953496aba51b94dac07c31c7e069c784bd Mon Sep 17 00:00:00 2001
+From: Chunfeng Yun <chunfeng.yun@mediatek.com>
+Date: Wed, 27 May 2015 19:47:58 +0800
+Subject: [PATCH 44/76] dt-bindings: Add usb3.0 phy binding for MT65xx SoCs
+
+add a DT binding documentation of usb3.0 phy for MT65xx
+SoCs from Mediatek.
+
+Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
+---
+ .../devicetree/bindings/usb/mt65xx-u3phy.txt       |   37 ++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/usb/mt65xx-u3phy.txt
+
+diff --git a/Documentation/devicetree/bindings/usb/mt65xx-u3phy.txt b/Documentation/devicetree/bindings/usb/mt65xx-u3phy.txt
+new file mode 100644
+index 0000000..b0b91b0
+--- /dev/null
++++ b/Documentation/devicetree/bindings/usb/mt65xx-u3phy.txt
+@@ -0,0 +1,37 @@
++MT65xx U3PHY
++
++The device node for Mediatek SOC usb3.0 phy
++
++Required properties:
++ - compatible : Should be "mediatek,mt8173-u3phy"
++ - reg        : Offset and length of registers, the first is for mac domain,
++	another for phy domain
++ - power-domains: to enable usb's mtcmos
++ - reg-vusb33-supply:  regulator of usb avdd3.3v
++ - clocks     : must support all clocks that phy need
++ - clock-names: should be "wakeup_deb_p0", "wakeup_deb_p1" for wakeup
++	debounce control clocks, "sys_mac" for sys and mac clocks and
++	"u3phya_ref" for u3phya reference clock.
++
++Optional properties:
++ - disable-usb2-p1 : disable port1 of usb2.0 which has two ports.
++ - reg-p1-vbus-supply : regulator of port1's vbus;
++
++Example:
++
++u3phy: usb-phy@11271000 {
++	compatible = "mediatek,mt8173-u3phy";
++	reg = <0 0x11271000 0 0x3000>,
++	      <0 0x11280000 0 0x20000>;
++	power-domains = <&scpsys MT8173_POWER_DOMAIN_USB>;
++	reg-vusb33-supply = <&mt6397_usb_reg>;
++	clocks = <&perisys PERI_USB0>,
++		 <&perisys PERI_USB1>,
++		 <&topckgen CLK_TOP_USB30_SEL>,
++		 <&apmixedsys CLK_APMIXED_REF2USB_TX>;
++	clock-names = "wakeup_deb_p0",
++		      "wakeup_deb_p1",
++		      "sys_mac",
++		      "u3phya_ref";
++	disable-usb2-p1;
++};
+-- 
+1.7.10.4
+

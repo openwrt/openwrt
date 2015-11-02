@@ -1,0 +1,28 @@
+From 0435517df474d830711b7e1dc56e2d47ae5083b5 Mon Sep 17 00:00:00 2001
+From: Eddie Huang <eddie.huang@mediatek.com>
+Date: Mon, 15 Jun 2015 19:20:52 +0800
+Subject: [PATCH 37/76] arm64: mediatek: Add Mediatek MMC support in defconfig
+
+Add CONFIG_MMC_MTK=y in defconfig
+
+Signed-off-by: Chaotian Jing <chaotian.jing@mediatek.com>
+Signed-off-by: Eddie Huang <eddie.huang@mediatek.com>
+---
+ arch/arm64/configs/defconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/configs/defconfig b/arch/arm64/configs/defconfig
+index 2ed7449..e03288a 100644
+--- a/arch/arm64/configs/defconfig
++++ b/arch/arm64/configs/defconfig
+@@ -138,6 +138,7 @@ CONFIG_MMC_ARMMMCI=y
+ CONFIG_MMC_SDHCI=y
+ CONFIG_MMC_SDHCI_PLTFM=y
+ CONFIG_MMC_SPI=y
++CONFIG_MMC_MTK=y
+ CONFIG_RTC_CLASS=y
+ CONFIG_RTC_DRV_EFI=y
+ CONFIG_RTC_DRV_XGENE=y
+-- 
+1.7.10.4
+

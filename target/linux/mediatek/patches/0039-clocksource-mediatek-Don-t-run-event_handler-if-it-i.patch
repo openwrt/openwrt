@@ -1,0 +1,32 @@
+From 9d4cba66a74cbdf25f43a7a8cc360370214ba5fc Mon Sep 17 00:00:00 2001
+From: "Joe.C" <yingjoe.chen@mediatek.com>
+Date: Fri, 1 May 2015 15:43:24 +0800
+Subject: [PATCH 39/76] clocksource: mediatek: Don't run event_handler if it
+ is NULL
+
+Spurious timer interrupt is noticed in mtk timer and cause kernel
+crash. In mtk_timer_interrupt(), only run event_handler if it is
+not NULL.
+
+Signed-off-by: Yingjoe Chen <yingjoe.chen@mediatek.com>
+---
+ drivers/clocksource/mtk_timer.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clocksource/mtk_timer.c b/drivers/clocksource/mtk_timer.c
+index 68ab423..85e0ab5 100644
+--- a/drivers/clocksource/mtk_timer.c
++++ b/drivers/clocksource/mtk_timer.c
+@@ -143,7 +143,8 @@ static irqreturn_t mtk_timer_interrupt(int irq, void *dev_id)
+ 
+ 	/* Acknowledge timer0 irq */
+ 	writel(GPT_IRQ_ACK(GPT_CLK_EVT), evt->gpt_base + GPT_IRQ_ACK_REG);
+-	evt->dev.event_handler(&evt->dev);
++	if (evt->dev.event_handler)
++		evt->dev.event_handler(&evt->dev);
+ 
+ 	return IRQ_HANDLED;
+ }
+-- 
+1.7.10.4
+

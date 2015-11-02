@@ -1,0 +1,342 @@
+From c3a3617a8c37b43db7ff622a31f171d3ce870173 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Fri, 3 Jul 2015 05:44:57 +0200
+Subject: [PATCH 71/76] clk
+
+---
+ drivers/clk/mediatek/clk-mt7623.c |  194 ++++++++++++++++---------------------
+ 1 file changed, 83 insertions(+), 111 deletions(-)
+
+diff --git a/drivers/clk/mediatek/clk-mt7623.c b/drivers/clk/mediatek/clk-mt7623.c
+index 07843bb..d46b2ad 100644
+--- a/drivers/clk/mediatek/clk-mt7623.c
++++ b/drivers/clk/mediatek/clk-mt7623.c
+@@ -20,6 +20,7 @@
+ 
+ #include "clk-mtk.h"
+ #include "clk-gate.h"
++#include "clk-cpumux.h"
+ 
+ static DEFINE_SPINLOCK(mt7623_clk_lock);
+ 
+@@ -37,18 +38,11 @@ static void mtk_clk_enable_critical(void)
+ 	clk_prepare_enable(mt7623_top_clk_data->clks[CLK_TOP_RTC_SEL]);
+ }
+ 
+-static const struct mtk_fixed_factor root_clk_alias[] __initconst = {
+-	FACTOR(CLK_TOP_DSI0_LNTC_DSICLK, "dsi0_lntc_dsiclk", "clk_null", 1, 1),
+-	FACTOR(CLK_TOP_HDMITX_CLKDIG_CTS, "hdmitx_clkdig_cts", "clk_null", 1, 1),
+-	FACTOR(CLK_TOP_CLKPH_MCK, "clkph_mck", "clk_null", 1, 1),
+-	FACTOR(CLK_TOP_CPUM_TCK_IN, "cpum_tck_in", "clk_null", 1, 1),
+-};
+-
+ static const struct mtk_fixed_factor top_divs[] __initconst = {
+-	FACTOR(CLK_TOP_MAINPLL_806M, "mainpll_650m", "mainpll", 1, 2),
+-	FACTOR(CLK_TOP_MAINPLL_537P3M, "mainpll_433p3m", "mainpll", 1, 3),
+-	FACTOR(CLK_TOP_MAINPLL_322P4M, "mainpll_260m", "mainpll", 1, 5),
+-	FACTOR(CLK_TOP_MAINPLL_230P3M, "mainpll_185p6m", "mainpll", 1, 7),
++	FACTOR(CLK_TOP_MAINPLL_650M, "mainpll_650m", "mainpll", 1, 2),
++	FACTOR(CLK_TOP_MAINPLL_433P3M, "mainpll_433p3m", "mainpll", 1, 3),
++	FACTOR(CLK_TOP_MAINPLL_260M, "mainpll_260m", "mainpll", 1, 5),
++	FACTOR(CLK_TOP_MAINPLL_185P6M, "mainpll_185p6m", "mainpll", 1, 7),
+ 
+ 	FACTOR(CLK_TOP_UNIVPLL_624M, "univpll_624m", "univpll", 1, 2),
+ 	FACTOR(CLK_TOP_UNIVPLL_416M, "univpll_416m", "univpll", 1, 3),
+@@ -61,13 +55,6 @@ static const struct mtk_fixed_factor top_divs[] __initconst = {
+ 	FACTOR(CLK_TOP_AUDPLL_D16, "audpll_d16", "audpll", 1, 16),
+ 	FACTOR(CLK_TOP_AUDPLL_24, "audpll_d24", "audpll", 1, 24),
+ 
+-	FACTOR(CLK_TOP_LVDSPLL_D2, "lvdspll_d2", "lvdspll", 1, 2),
+-	FACTOR(CLK_TOP_LVDSPLL_D4, "lvdspll_d4", "lvdspll", 1, 4),
+-	FACTOR(CLK_TOP_LVDSPLL_D8, "lvdspll_d8", "lvdspll", 1, 8),
+-	FACTOR(CLK_TOP_LVDS_ETH, "lvdspll_eth", "lvdspll", 1, 16),
+-
+-	FACTOR(CLK_TOP_MMPLL_D2, "mmpll_d2", "mmpll", 1, 2),
+-
+ 	FACTOR(CLK_TOP_MSDCPLL_D2, "msdcpll_d2", "msdcpll", 1, 2),
+ 
+ 	FACTOR(CLK_TOP_SYSPLL1_D2, "syspll1_d2", "mainpll_650m", 1, 2),
+@@ -85,9 +72,6 @@ static const struct mtk_fixed_factor top_divs[] __initconst = {
+ 	FACTOR(CLK_TOP_SYSPLL_D5, "syspll_d5", "mainpll_260m", 1, 1),
+ 	FACTOR(CLK_TOP_SYSPLL_D7, "syspll_d7", "mainpll_185p6m", 1, 1),
+ 
+-	FACTOR(CLK_TOP_TVDPLL_d2, "tvdpll_d2", "tvdpll", 1, 2),
+-	FACTOR(CLK_TOP_TVDPLL_D4, "tvdpll_d4", "tvdpll", 1, 4),
+-
+ 	FACTOR(CLK_TOP_UNIVPLL1_D2, "univpll1_d2", "univpll_624m", 1, 2),
+ 	FACTOR(CLK_TOP_UNIVPLL1_D4, "univpll1_d4", "univpll_624m", 1, 4),
+ 	FACTOR(CLK_TOP_UNIVPLL1_D8, "univpll1_d8", "univpll_624m", 1, 8),
+@@ -110,9 +94,6 @@ static const struct mtk_fixed_factor top_divs[] __initconst = {
+ 
+ 	FACTOR(CLK_TOP_UNIVPLL_D5, "univpll_d5", "univpll_249p6m", 1, 1),
+ 	FACTOR(CLK_TOP_UNIVPLL_D26, "univpll_d26", "univpll_48m", 1, 1),
+-
+-
+-	FACTOR(CLK_TOP_MEMPLL_MCK_D4, "mempll_mck_d4", "clkph_mck", 1, 4),
+ };
+ 
+ static const char * const axi_parents[] __initconst = {
+@@ -155,18 +136,6 @@ static const char * const pwm_parents[] __initconst = {
+ 	"univpll1_d4",
+ };
+ 
+-static const char * const vdec_parents[] __initconst = {
+-	"clk26m",
+-	"syspll1_d2",
+-	"syspll_d5",
+-	"syspll1_d4",
+-	"univpll_d5",
+-	"univpll2_d2",
+-	"univpll2_d4",
+-	"msdcpll_d2",
+-	"mmpll_d2",
+-};
+-
+ static const char * const mfg_parents[] __initconst = {
+ 	"clk26m",
+ 	"mmpll_ck",
+@@ -178,17 +147,6 @@ static const char * const mfg_parents[] __initconst = {
+ 	"univpll1_d2",
+ };
+ 
+-static const char * const cam_parents[] __initconst = {
+-	"clk26m",
+-	"univpll_d26",
+-	"univpll2_d2",
+-	"syspll3_d2",
+-	"syspll3_d4",
+-	"msdcpll_d2",
+-	"mmpll_d2",
+-	"clk26m",
+-};
+-
+ static const char * const uart_parents[] __initconst = {
+ 	"clk26m",
+ 	"univpll2_d8",
+@@ -277,35 +235,6 @@ static const char * const scp_parents[] __initconst = {
+ 	"dmpll_d4",
+ };
+ 
+-static const char * const dpi0_parents[] __initconst = {
+-	"clk26m",
+-	"mipipll",
+-	"mipipll_d2",
+-	"mipipll_d4",
+-	"lvdspll",
+-	"lvdspll_d2",
+-	"lvdspll_d4",
+-	"lvdspll_d8",
+-};
+-
+-static const char * const dpi1_parents[] __initconst = {
+-	"clk26m",
+-	"tvdpll",
+-	"tvdpll_d2",
+-	"tvdpll_d4",
+-};
+-
+-static const char * const tve_parents[] __initconst = {
+-	"clk26m",
+-	"mipipll",
+-	"mipipll_d2",
+-	"mipipll_d4",
+-	"clk26m",
+-	"tvdpll",
+-	"tvdpll_d2",
+-	"tvdpll_d4",
+-};
+-
+ static const char * const apll_parents[] __initconst = {
+ 	"clk26m",
+ 	"audpll",
+@@ -317,17 +246,6 @@ static const char * const apll_parents[] __initconst = {
+ 	"clk26m",
+ };
+ 
+-static const char * const dpilvds_parents[] __initconst = {
+-	"clk26m",
+-	"lvdspll",
+-	"lvdspll_d2",
+-	"lvdspll_d4",
+-	"lvdspll_d8",
+-	"fpc_ck",
+-	"clk26m",
+-	"clk26m",
+-};
+-
+ static const char * const rtc_parents[] __initconst = {
+ 	"clk32k",
+ 	"external_32k",
+@@ -367,9 +285,7 @@ static const struct mtk_composite top_muxes[] __initconst = {
+ 		0x0140, 24, 3, INVALID_MUX_GATE_BIT),
+ 	/* CLK_CFG_1 */
+ 	MUX_GATE(CLK_TOP_PWM_SEL, "pwm_sel", pwm_parents, 0x0050, 0, 2, 7),
+-	MUX_GATE(CLK_TOP_VDEC_SEL, "vdec_sel", vdec_parents, 0x0050, 8, 4, 15),
+ 	MUX_GATE(CLK_TOP_MFG_SEL, "mfg_sel", mfg_parents, 0x0050, 16, 3, 23),
+-	MUX_GATE(CLK_TOP_CAM_SEL, "cam_sel", cam_parents, 0x0050, 24, 3, 31),
+ 	/* CLK_CFG_2 */
+ 	MUX_GATE(CLK_TOP_UART_SEL, "uart_sel", uart_parents, 0x0060, 0, 1, 7),
+ 	MUX_GATE(CLK_TOP_SPI_SEL, "spi_sel", spi_parents, 0x0060, 8, 3, 15),
+@@ -384,12 +300,8 @@ static const struct mtk_composite top_muxes[] __initconst = {
+ 	/* CLK_CFG_4 */
+ 	MUX_GATE(CLK_TOP_PMICSPI_SEL, "pmicspi_sel", pmic_spi_parents, 0x0080, 0, 4, 7),
+ 	MUX_GATE(CLK_TOP_SCP_SEL, "scp_sel", scp_parents, 0x0080, 8, 2, 15),
+-	MUX_GATE(CLK_TOP_DPI0_SEL, "dpi0_sel", dpi0_parents, 0x0080, 16, 3, 23),
+-	MUX_GATE(CLK_TOP_DPI1_SEL, "dpi1_sel", dpi1_parents, 0x0080, 24, 2, 31),
+ 	/* CLK_CFG_5 */
+-	MUX_GATE(CLK_TOP_TVE_SEL, "tve_sel", tve_parents, 0x0090, 0, 3, 7),
+ 	MUX_GATE(CLK_TOP_APLL_SEL, "apll_sel", apll_parents, 0x0090, 16, 3, 23),
+-	MUX_GATE(CLK_TOP_DPILVDS_SEL, "dpilvds_sel", dpilvds_parents, 0x0090, 24, 3, 31),
+ 	/* CLK_CFG_6 */
+ 	MUX_GATE(CLK_TOP_RTC_SEL, "rtc_sel", rtc_parents, 0x00a0, 0, 2, 7),
+ 	MUX_GATE(CLK_TOP_NFI2X_SEL, "nfi2x_sel", nfi2x_parents, 0x00a0, 8, 3, 15),
+@@ -428,6 +340,17 @@ static const struct mtk_gate infra_clks[] __initconst = {
+ 	GATE_ICG(CLK_INFRA_PMIC_WRAP, "pmic_wrap_ck", "axi_sel", 23),
+ };
+ 
++static const char * const ca7_parents[] __initconst = {
++	"clk26m",
++	"armpll",
++	"mainpll",
++	"univpll"
++};
++
++static struct mtk_composite cpu_muxes[] __initdata = {
++	MUX(CLK_INFRA_CA7SEL, "infra_ca7_sel", ca7_parents, 0x0000, 2, 2),
++};
++
+ static const struct mtk_gate_regs peri0_cg_regs = {
+ 	.set_ofs = 0x0008,
+ 	.clr_ofs = 0x0010,
+@@ -499,6 +422,29 @@ static const struct mtk_gate peri_gates[] __initconst = {
+ 	GATE_PERI1(CLK_PERI_NFI_PAD, "nfi_pad_ck", "axi_sel", 2),
+ };
+ 
++static const struct mtk_gate_regs hifsys_cg_regs = {
++	.set_ofs = 0x0034,
++	.clr_ofs = 0x0014,
++	.sta_ofs = 0x0038,
++};
++
++#define GATE_HIFSYS(_id, _name, _parent, _shift) {		\
++		.id = _id,					\
++		.name = _name,					\
++		.parent_name = _parent,				\
++		.regs = &hifsys_cg_regs,			\
++		.shift = _shift,				\
++		.ops = &mtk_clk_gate_ops_setclr,		\
++	}
++
++static const struct mtk_gate hifsys_gates[] __initconst = {
++	GATE_HIFSYS(CLK_HIFSYS_USB0_PHY, "usb0_phy_ck", "axi_sel", 21),
++	GATE_HIFSYS(CLK_HIFSYS_USB1_PHY, "usb1_phy_ck", "axi_sel", 22),
++	GATE_HIFSYS(CLK_HIFSYS_PCIE0, "pcie0_ck", "axi_sel", 24),
++	GATE_HIFSYS(CLK_HIFSYS_PCIE1, "pcie1_ck", "axi_sel", 25),
++	GATE_HIFSYS(CLK_HIFSYS_PCIE2, "pcie2_ck", "axi_sel", 26),
++};
++
+ static const char * const uart_ck_sel_parents[] __initconst = {
+ 	"clk26m",
+ 	"uart_sel",
+@@ -525,10 +471,9 @@ static void __init mtk_topckgen_init(struct device_node *node)
+ 
+ 	mt7623_top_clk_data = clk_data = mtk_alloc_clk_data(CLK_TOP_NR_CLK);
+ 
+-	mtk_clk_register_factors(root_clk_alias, ARRAY_SIZE(root_clk_alias), clk_data);
+ 	mtk_clk_register_factors(top_divs, ARRAY_SIZE(top_divs), clk_data);
+ 	mtk_clk_register_composites(top_muxes, ARRAY_SIZE(top_muxes), base,
+-			&mt7623_clk_lock, clk_data);
++					&mt7623_clk_lock, clk_data);
+ 
+ 	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
+ 	if (r)
+@@ -547,7 +492,10 @@ static void __init mtk_infrasys_init(struct device_node *node)
+ 	clk_data = mtk_alloc_clk_data(CLK_INFRA_NR_CLK);
+ 
+ 	mtk_clk_register_gates(node, infra_clks, ARRAY_SIZE(infra_clks),
+-						clk_data);
++				clk_data);
++
++	mtk_clk_register_cpumuxes(node, cpu_muxes, ARRAY_SIZE(cpu_muxes),
++				   clk_data);
+ 
+ 	clk_prepare_enable(clk_data->clks[CLK_INFRA_M4U]);
+ 
+@@ -588,35 +536,59 @@ static void __init mtk_pericfg_init(struct device_node *node)
+ }
+ CLK_OF_DECLARE(mtk_pericfg, "mediatek,mt7623-pericfg", mtk_pericfg_init);
+ 
+-#define MT7623_PLL_FMAX		(2000 * MHZ)
+-#define CON0_MT7623_RST_BAR	BIT(27)
++static void __init mtk_hifsys_init(struct device_node *node)
++{
++	struct clk_onecell_data *clk_data;
++	int r;
++	void __iomem *base;
++
++	base = of_iomap(node, 0);
++	if (!base) {
++		pr_err("%s(): ioremap failed\n", __func__);
++		return;
++	}
++
++	clk_data = mtk_alloc_clk_data(CLK_HIFSYS_NR_CLK);
++
++	mtk_clk_register_gates(node, hifsys_gates, ARRAY_SIZE(hifsys_gates),
++						clk_data);
++
++	r = of_clk_add_provider(node, of_clk_src_onecell_get, clk_data);
++	if (r)
++		pr_err("%s(): could not register clock provider: %d\n",
++			__func__, r);
++
++	mtk_register_reset_controller(node, 1, 0x34);
++}
++CLK_OF_DECLARE(mtk_hifsys, "mediatek,mt7623-hifsys", mtk_hifsys_init);
++
++#define MT7623_PLL_FMAX		(1300 * MHZ)
++#define CON0_MT7623_RST_BAR	BIT(24)
+ 
+-#define PLL(_id, _name, _reg, _pwr_reg, _en_mask, _flags, _pcwbits, _pd_reg, _pd_shift, _tuner_reg, _pcw_reg, _pcw_shift) { \
++#define PLL(_id, _name, _con0_reg, _con1_reg, _pwr_reg, _en_mask, _flags, _pcwbits, _pcw_shift, _pd_shift) { \
+ 		.id = _id,						\
+ 		.name = _name,						\
+-		.reg = _reg,						\
++		.reg = _con0_reg,						\
+ 		.pwr_reg = _pwr_reg,					\
+ 		.en_mask = _en_mask,					\
+ 		.flags = _flags,					\
+ 		.rst_bar_mask = CON0_MT7623_RST_BAR,			\
+ 		.fmax = MT7623_PLL_FMAX,				\
+ 		.pcwbits = _pcwbits,					\
+-		.pd_reg = _pd_reg,					\
++		.pd_reg = _con0_reg,					\
+ 		.pd_shift = _pd_shift,					\
+-		.tuner_reg = _tuner_reg,				\
+-		.pcw_reg = _pcw_reg,					\
++		.pcw_reg = _con1_reg,					\
+ 		.pcw_shift = _pcw_shift,				\
+ 	}
+ 
+ static const struct mtk_pll_data plls[] = {
+-	PLL(CLK_APMIXED_ARMPLL, "armpll", 0x200, 0x20c, 0x00000001, 0, 21, 0x204, 24, 0x0, 0x204, 0),
+-	PLL(CLK_APMIXED_MAINPLL, "mainpll", 0x210, 0x21c, 0x78000001, HAVE_RST_BAR, 21, 0x214, 6, 0x0, 0x214, 0),
+-	PLL(CLK_APMIXED_UNIVPLL, "univpll", 0x220, 0x22c, 0xFC000001, HAVE_RST_BAR, 7, 0x224, 6, 0x0, 0x224, 0),
+-	PLL(CLK_APMIXED_MMPLL, "mmpll", 0x230, 0x23c, 0x00000001, 0, 21, 0x254, 6, 0x0, 0x258, 0),
+-	PLL(CLK_APMIXED_MSDCPLL, "msdcpll", 0x240, 0x24c, 0x00000001, 0, 21, 0x244, 6, 0x0, 0x244, 0),
+-	PLL(CLK_APMIXED_AUDPLL, "audpll", 0x250, 0x25c, 0x00000001, 0, 31, 0x2e8, 6, 0x2f8, 0x254, 0),
+-	PLL(CLK_APMIXED_TVDPLL, "tvdpll", 0x260, 0x26c, 0x00000001, 0, 31, 0x294, 6, 0x0, 0x298, 0),
+-	PLL(CLK_APMIXED_LVDSPLL, "lvdspll", 0x270, 0x27c, 0x00000001, 0, 21, 0x2b0, 6, 0x0, 0x2b4, 0),
++	PLL(CLK_APMIXED_ARMPLL, "armpll", 0x200, 0x204, 0x20c, 0x00000001, 0, 21, 0, 4 ),
++	PLL(CLK_APMIXED_MAINPLL, "mainpll", 0x210, 0x214, 0x21c, 0x78000001, HAVE_RST_BAR, 21, 0, 4 ),
++	PLL(CLK_APMIXED_UNIVPLL, "univpll", 0x220, 0x224, 0x22c, 0xFC000001, HAVE_RST_BAR, 7, 14, 4 ),
++	PLL(CLK_APMIXED_MSDCPLL, "msdcpll", 0x240, 0x244, 0x24c, 0x00000001, 0, 21, 0, 4 ),
++	PLL(CLK_APMIXED_AUDPLL, "audpll", 0x270, 0x274, 0x27c, 0x00000001, 0, 31, 0, 4 ),
++	PLL(CLK_APMIXED_TRGPLL, "trgpll", 0x280, 0x284, 0x28c, 0x00000001, 0, 31, 0, 4 ),
++	PLL(CLK_APMIXED_ETHPLL, "ethpll", 0x290, 0x294, 0x29c, 0x00000001, 0, 31, 0, 4 ),
+ };
+ 
+ static void __init mtk_apmixedsys_init(struct device_node *node)
+-- 
+1.7.10.4
+

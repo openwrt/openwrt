@@ -1,0 +1,25 @@
+From b1c69201563ae3ff878abf4ba192e73031de8653 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Tue, 23 Jun 2015 23:46:00 +0200
+Subject: [PATCH 58/76] dont disable clocks
+
+---
+ drivers/clk/clk.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 5b0f418..360e6e4 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -541,7 +541,7 @@ unlock_out:
+ 	clk_enable_unlock(flags);
+ }
+ 
+-static bool clk_ignore_unused;
++static bool clk_ignore_unused = true;
+ static int __init clk_ignore_unused_setup(char *__unused)
+ {
+ 	clk_ignore_unused = true;
+-- 
+1.7.10.4
+
