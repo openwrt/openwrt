@@ -1,0 +1,79 @@
+From 7b9f57f207b51132f188f750161953b7baf32154 Mon Sep 17 00:00:00 2001
+From: Rich Felker <dalias@aerifal.cx>
+Date: Thu, 8 Oct 2015 22:03:53 +0000
+Subject: fix open_[w]memstream behavior when no writes take place
+
+the specification for these functions requires that the buffer/size
+exposed to the caller be valid after any successful call to fflush or
+fclose on the stream. the implementation's approach is to update them
+only at flush time, but that misses the case where fflush or fclose is
+called without any writes having taken place, in which case the write
+flushing callback will not be called.
+
+to fix both the observable bug and the desired invariant, setup empty
+buffers at open time and fail the open operation if no memory is
+available.
+---
+ src/stdio/open_memstream.c  | 11 +++++++++--
+ src/stdio/open_wmemstream.c | 11 +++++++++--
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/src/stdio/open_memstream.c b/src/stdio/open_memstream.c
+index 58504c9..eab024d 100644
+--- a/src/stdio/open_memstream.c
++++ b/src/stdio/open_memstream.c
+@@ -59,14 +59,21 @@ FILE *open_memstream(char **bufp, size_t *sizep)
+ {
+ 	FILE *f;
+ 	struct cookie *c;
++	char *buf;
++
+ 	if (!(f=malloc(sizeof *f + sizeof *c + BUFSIZ))) return 0;
++	if (!(buf=malloc(sizeof *buf))) {
++		free(f);
++		return 0;
++	}
+ 	memset(f, 0, sizeof *f + sizeof *c);
+ 	f->cookie = c = (void *)(f+1);
+ 
+ 	c->bufp = bufp;
+ 	c->sizep = sizep;
+-	c->pos = c->len = c->space = 0;
+-	c->buf = 0;
++	c->pos = c->len = c->space = *sizep = 0;
++	c->buf = *bufp = buf;
++	*buf = 0;
+ 
+ 	f->flags = F_NORD;
+ 	f->fd = -1;
+diff --git a/src/stdio/open_wmemstream.c b/src/stdio/open_wmemstream.c
+index 7ab2c64..4d90cd9 100644
+--- a/src/stdio/open_wmemstream.c
++++ b/src/stdio/open_wmemstream.c
+@@ -61,14 +61,21 @@ FILE *open_wmemstream(wchar_t **bufp, size_t *sizep)
+ {
+ 	FILE *f;
+ 	struct cookie *c;
++	wchar_t *buf;
++
+ 	if (!(f=malloc(sizeof *f + sizeof *c))) return 0;
++	if (!(buf=malloc(sizeof *buf))) {
++		free(f);
++		return 0;
++	}
+ 	memset(f, 0, sizeof *f + sizeof *c);
+ 	f->cookie = c = (void *)(f+1);
+ 
+ 	c->bufp = bufp;
+ 	c->sizep = sizep;
+-	c->pos = c->len = c->space = 0;
+-	c->buf = 0;
++	c->pos = c->len = c->space = *sizep = 0;
++	c->buf = *bufp = buf;
++	*buf = 0;
+ 
+ 	f->flags = F_NORD;
+ 	f->fd = -1;
+-- 
+cgit v0.11.2
+
