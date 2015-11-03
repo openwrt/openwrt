@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2014 OpenWrt.org
+# Copyright (C) 2009-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,11 +7,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mpc
-PKG_VERSION:=1.0.2
+PKG_VERSION:=1.0.3
 
-PKG_SOURCE_URL:=http://www.multiprecision.org/mpc/download/
+PKG_SOURCE_URL:=@GNU/mpc/
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_MD5SUM:=68fadff3358fb3e7976c7a398a0af4c3
+PKG_MD5SUM:=d6a1d5f8ddea3abd2cc3e98f58352d26
 
 HOST_BUILD_PARALLEL:=1
 
