@@ -110,6 +110,10 @@ get_status_led() {
 	mlwg2)
 		status_led="$board:blue:system"
 		;;
+	linkits7688| \
+	linkits7688d)
+		[ "$1" = "upgrade" ] && status_led="mediatek:orange:wifi"
+		;;
 	m2m)
 		status_led="$board:blue:wifi"
 		;;
@@ -179,7 +183,7 @@ get_status_led() {
 }
 
 set_state() {
-	get_status_led
+	get_status_led $1
 
 	case "$1" in
 	preinit)
@@ -188,6 +192,7 @@ set_state() {
 	failsafe)
 		status_led_blink_failsafe
 		;;
+	upgrade | \
 	preinit_regular)
 		status_led_blink_preinit_regular
 		;;
