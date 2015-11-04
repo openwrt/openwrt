@@ -17,7 +17,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4158,6 +4158,9 @@ static enum gro_result dev_gro_receive(s
+@@ -4185,6 +4185,9 @@ static enum gro_result dev_gro_receive(s
  	enum gro_result ret;
  	int grow;
  
@@ -27,7 +27,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (!(skb->dev->features & NETIF_F_GRO))
  		goto normal;
  
-@@ -5309,6 +5312,48 @@ static void __netdev_adjacent_dev_unlink
+@@ -5336,6 +5339,48 @@ static void __netdev_adjacent_dev_unlink
  					   &upper_dev->adj_list.lower);
  }
  
@@ -76,7 +76,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  static int __netdev_upper_dev_link(struct net_device *dev,
  				   struct net_device *upper_dev, bool master,
  				   void *private)
-@@ -5374,6 +5419,7 @@ static int __netdev_upper_dev_link(struc
+@@ -5401,6 +5446,7 @@ static int __netdev_upper_dev_link(struc
  			goto rollback_lower_mesh;
  	}
  
@@ -84,7 +84,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
  				      &changeupper_info.info);
  	return 0;
-@@ -5497,6 +5543,7 @@ void netdev_upper_dev_unlink(struct net_
+@@ -5524,6 +5570,7 @@ void netdev_upper_dev_unlink(struct net_
  	list_for_each_entry(i, &upper_dev->all_adj_list.upper, list)
  		__netdev_adjacent_dev_unlink(dev, i->dev);
  
@@ -92,7 +92,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
  				      &changeupper_info.info);
  }
-@@ -6037,6 +6084,7 @@ int dev_set_mac_address(struct net_devic
+@@ -6064,6 +6111,7 @@ int dev_set_mac_address(struct net_devic
  	if (err)
  		return err;
  	dev->addr_assign_type = NET_ADDR_SET;
@@ -102,7 +102,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return 0;
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
-@@ -1623,6 +1623,8 @@ struct net_device {
+@@ -1629,6 +1629,8 @@ struct net_device {
  	struct netdev_hw_addr_list	mc;
  	struct netdev_hw_addr_list	dev_addrs;
  
