@@ -46,7 +46,7 @@ endef
 define Build/Configure
 	touch $(PKG_BUILD_DIR)/include/config.mk
 	touch $(PKG_BUILD_DIR)/include/config.h
-	mkdir $(PKG_BUILD_DIR)/include/generated
+	mkdir -p $(PKG_BUILD_DIR)/include/generated
 	touch $(PKG_BUILD_DIR)/include/generated/autoconf.h
 endef
 
@@ -57,6 +57,8 @@ define Build/Compile
 		CROSS_COMPILE="$(TARGET_CROSS)" \
 		TARGET_CFLAGS="$(TARGET_CFLAGS)" \
 		UBI="$(CONFIG_UBOOT_ENVTOOLS_UBI)" \
+		dot-config=0 \
+		HOSTLDFLAGS= \
 		env
 endef
 
