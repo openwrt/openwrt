@@ -23,7 +23,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +Required properties:
 +
-+- compatible: Should be "brcm,bcm6345-l2-intc".
++- compatible: Should be "brcm,bcm6345-ext-intc".
 +- reg: Specifies the base physical addresses and size of the registers.
 +- interrupt-controller: identifies the node as an interrupt controller.
 +- #interrupt-cells: Specifies the number of cells needed to encode an interrupt
@@ -41,7 +41,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +Example:
 +
 +ext_intc: interrupt-controller@10000018 {
-+	compatible = "brcm,bcm6345-l2-intc";
++	compatible = "brcm,bcm6345-ext-intc";
 +	interrupt-parent = <&periph_intc>;
 +	#interrupt-cells = <2>;
 +	reg = <0x10000018 0x4>;
@@ -73,7 +73,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  obj-$(CONFIG_METAG)			+= irq-metag-ext.o
 --- /dev/null
 +++ b/drivers/irqchip/irq-bcm6345-ext.c
-@@ -0,0 +1,287 @@
+@@ -0,0 +1,288 @@
 +/*
 + * This file is subject to the terms and conditions of the GNU General Public
 + * License.  See the file "COPYING" in the main directory of this archive
@@ -283,6 +283,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +	}
 +
 +	data->reg = reg;
++	data->shift = shift;
 +
 +	data->chip.name = "bcm6345-ext-intc";
 +	data->chip.irq_ack = bcm6345_ext_intc_irq_ack;
