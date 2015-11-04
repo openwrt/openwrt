@@ -30,8 +30,8 @@ case "$board" in
 	ucidef_set_led_default "fault" "fault" "ib62x0:red:os" "1"
 	;;
 "pogo_e02")
-	ucidef_set_led_default "health" "health" "status:green:health" "1"
-	ucidef_set_led_default "fault" "fault" "status:orange:fault" "1"
+	ucidef_set_led_default "health" "health" "pogo_e02:green:health" "1"
+	ucidef_set_led_default "fault" "fault" "pogo_e02:orange:fault" "1"
 	;;
 "guruplug-server-plus")
 	ucidef_set_led_timer "health" "health" "guruplug:red:health" "200" "800"
