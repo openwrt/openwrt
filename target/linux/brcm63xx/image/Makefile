@@ -581,7 +581,7 @@ $(eval $(call bcm63xxCfeRamdisk,VG50,vg50,vg50,VW6339GU,63268))
 # Inventel Livebox 1
 $(eval $(call bcm63xxRedBoot,Livebox,livebox,livebox-blue-5g))
 # Netgear CVG834G
-$(eval $(call bcm33xxHcsRamdisk,CVG834G,cvg834g,cvg834g,a020,0001,0022))
+$(eval $(call bcm33xxHcsRamdisk,CVG834G,cvg834g,cvg834g,0xa020,0001,0022))
 # Netgear DG834GT/PN
 $(eval $(call bcm63xxCfe,DG834GTPN,DG834GT_PN,dg834gtpn,96348GW-10,6348))
 # Netgear DG834G v4
