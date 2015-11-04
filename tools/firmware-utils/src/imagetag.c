@@ -164,6 +164,8 @@ int tagfile(const char *kernel, const char *rootfs, const char *bin, \
 	  /* align the start if requested */
 	  if (args->align_rootfs_flag)
 		rootfsoff = (rootfsoff % block_size) > 0 ? (((rootfsoff / block_size) + 1) * block_size) : rootfsoff;
+          else
+		rootfsoff = (rootfsoff % 4) > 0 ? (((rootfsoff / 4) + 1) * 4) : rootfsoff;
 
 	  /* align the end */
 	  rootfsend = rootfsoff + getlen(rootfsfile);
