@@ -212,7 +212,7 @@ int selfsigned(char **arg)
 			" and validity %s-%s\n", subject, fstr, tstr);
 
 	x509write_crt_init(&cert);
-	x509write_crt_set_md_alg(&cert, POLARSSL_MD_SHA1);
+	x509write_crt_set_md_alg(&cert, POLARSSL_MD_SHA256);
 	x509write_crt_set_issuer_key(&cert, &key);
 	x509write_crt_set_subject_key(&cert, &key);
 	x509write_crt_set_subject_name(&cert, subject);
