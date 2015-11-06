@@ -408,7 +408,7 @@ define KernelPackage/softdog
   TITLE:=Software watchdog driver
   KCONFIG:=CONFIG_SOFT_WATCHDOG
   FILES:=$(LINUX_DIR)/drivers/$(WATCHDOG_DIR)/softdog.ko
-  AUTOLOAD:=$(call AutoLoad,50,softdog)
+  AUTOLOAD:=$(call AutoLoad,50,softdog,1)
 endef
 
 define KernelPackage/softdog/description
