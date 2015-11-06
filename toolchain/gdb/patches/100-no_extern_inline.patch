@@ -21,11 +21,11 @@
 +#endif /* DEFINE_NON_INLINE_P */
 --- a/sim/common/sim-arange.h
 +++ b/sim/common/sim-arange.h
-@@ -62,7 +62,7 @@ extern void sim_addr_range_delete (ADDR_
+@@ -73,7 +73,7 @@ extern void sim_addr_range_delete (ADDR_
  
  /* Return non-zero if ADDR is in range AR, traversing the entire tree.
     If no range is specified, that is defined to mean "everything".  */
--extern INLINE int
+-SIM_ARANGE_INLINE int
 +extern int
  sim_addr_range_hit_p (ADDR_RANGE * /*ar*/, address_word /*addr*/);
  #define ADDR_RANGE_HIT_P(ar, addr) \
