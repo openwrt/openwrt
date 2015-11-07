@@ -1,0 +1,28 @@
+From: Johannes Berg <johannes.berg@intel.com>
+Date: Wed, 4 Nov 2015 14:09:02 +0100
+Subject: [PATCH] mac80211: don't advertise
+ NL80211_FEATURE_FULL_AP_CLIENT_STATE
+
+For now, this feature doesn't actually work. To avoid shipping a
+kernel that has it enabled but where it can't be used disable it
+for now - we can re-enable it when it's fixed.
+
+This partially reverts 44674d9c2267 ("mac80211: advertise support
+for full station state in AP mode").
+
+Cc: Ayala Beker <ayala.beker@intel.com>
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -541,8 +541,7 @@ struct ieee80211_hw *ieee80211_alloc_hw_
+ 			   NL80211_FEATURE_HT_IBSS |
+ 			   NL80211_FEATURE_VIF_TXPOWER |
+ 			   NL80211_FEATURE_MAC_ON_CREATE |
+-			   NL80211_FEATURE_USERSPACE_MPM |
+-			   NL80211_FEATURE_FULL_AP_CLIENT_STATE;
++			   NL80211_FEATURE_USERSPACE_MPM;
+ 
+ 	if (!ops->hw_scan)
+ 		wiphy->features |= NL80211_FEATURE_LOW_PRIORITY_SCAN |
