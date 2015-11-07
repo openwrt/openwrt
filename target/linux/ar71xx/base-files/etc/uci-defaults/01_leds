@@ -306,12 +306,19 @@ nbg460n_550n_550nh)
 	ucidef_set_led_wlan "wlan" "WLAN" "nbg460n:green:wlan" "phy0tpt"
 	;;
 
+nbg6616)
+	ucidef_set_led_wlan "wlan" "WLAN" "nbg6616:green:wifi2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5" "WLAN5" "nbg6616:green:wifi5g" "phy0tpt"
+	ucidef_set_led_usbdev "usb1" "USB1" "nbg6616:green:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "nbg6616:green:usb2" "2-1"
+	;;
+
 nbg6716)
-	ucidef_set_led_netdev "wan" "WAN" "zyxel:white:internet" "eth1"
-	ucidef_set_led_wlan "wlan" "WLAN" "zyxel:white:wifi2g" "phy1tpt"
-	ucidef_set_led_wlan "wlan5" "WLAN5" "zyxel:white:wifi5g" "phy0tpt"
-	ucidef_set_led_usbdev "usb1" "USB1" "zyxel:white:usb1" "2-1"
-	ucidef_set_led_usbdev "usb2" "USB2" "zyxel:white:usb2" "1-1"
+	ucidef_set_led_netdev "wan" "WAN" "nbg6716:white:internet" "eth1"
+	ucidef_set_led_wlan "wlan" "WLAN" "nbg6716:white:wifi2g" "phy1tpt"
+	ucidef_set_led_wlan "wlan5" "WLAN5" "nbg6716:white:wifi5g" "phy0tpt"
+	ucidef_set_led_usbdev "usb1" "USB1" "nbg6716:white:usb1" "1-1"
+	ucidef_set_led_usbdev "usb2" "USB2" "nbg6716:white:usb2" "2-1"
 	;;
 
 om2p | \

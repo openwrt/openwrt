@@ -173,8 +173,11 @@ get_status_led() {
 	nbg460n_550n_550nh)
 		status_led="nbg460n:green:power"
 		;;
+	nbg6616)
+		status_led="nbg6616:green:power"
+		;;
 	nbg6716)
-		status_led="zyxel:white:power"
+		status_led="nbg6716:white:power"
 		;;
 	om2p | \
 	om2pv2 | \

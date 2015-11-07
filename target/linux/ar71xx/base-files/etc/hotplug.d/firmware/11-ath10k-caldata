@@ -84,8 +84,10 @@ case "$FIRMWARE" in
 		ath10kcal_extract "art" 20480 2116
 		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
+	nbg6616 | \
 	nbg6716)
 		ath10kcal_extract "RFdata" 20480 2116
+		ath10kcal_patch_mac $(macaddr_add $(cat /sys/class/net/eth1/address) -2)
 		;;
 	rb-911g-5hpacd)
 		ath10kcal_from_file "/sys/firmware/routerboot/ext_wlan_data" 20480 2116

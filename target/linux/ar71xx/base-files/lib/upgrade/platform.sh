@@ -405,6 +405,7 @@ platform_check_image() {
 		return 1
 		;;
 
+	nbg6616 | \
 	unifi-outdoor-plus | \
 	uap-pro)
 		[ "$magic_long" != "19852003" ] && {

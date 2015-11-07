@@ -15,3 +15,15 @@ define Profile/NBG_460N_550N_550NH/Description
 endef
 
 $(eval $(call Profile,NBG_460N_550N_550NH))
+
+
+define Profile/NBG6616
+	NAME:=ZyXEL NBG6616
+	PACKAGES:=kmod-usb-core kmod-usb2 kmod-ledtrig-usbdev kmod-usb-storage kmod-rtc-pcf8563 kmod-ath10k
+endef
+
+define Profile/NBG6616/Description
+	Package set optimized for the ZyXEL NBG6616
+endef
+
+$(eval $(call Profile,NBG6616))
