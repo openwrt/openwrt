@@ -432,6 +432,7 @@ define Device/Init
   KERNEL_IMAGE = $$(KERNEL_PREFIX)$$(KERNEL_SUFFIX)
   KERNEL_INITRAMFS_PREFIX = $$(IMAGE_PREFIX)-initramfs
   KERNEL_INITRAMFS_IMAGE = $$(KERNEL_INITRAMFS_PREFIX)$$(KERNEL_SUFFIX)
+  KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
   KERNEL_INSTALL :=
   KERNEL_NAME := vmlinux
   KERNEL_SIZE :=
@@ -458,11 +459,11 @@ define Device/Build/initramfs
   $(call Device/Export,$(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE),$(1))
   $$(_TARGET): $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
 
-  $(KDIR)/$$(KERNEL_NAME)-initramfs: image_prepare
+  $(KDIR)/$$(KERNEL_INITRAMFS_NAME): image_prepare
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
 	cp $$^ $$@
 
-  $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_NAME)-initramfs
+  $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME)
 	@rm -f $$@
 	$$(call concat_cmd,$$(KERNEL_INITRAMFS))
 endef
