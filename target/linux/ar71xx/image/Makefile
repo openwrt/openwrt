@@ -804,7 +804,14 @@ define Device/tl-wr1043nd-v2
     DEVICE_PROFILE := TLWR1043
     TPLINK_HWID := 0x10430002
 endef
-TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2
+
+define Device/tl-wr1043nd-v3
+    $(Device/tplink-8mlzma)
+    BOARDNAME := TL-WR1043ND-v2
+    DEVICE_PROFILE := TLWR1043
+    TPLINK_HWID := 0x10430003
+endef
+TARGET_DEVICES += tl-wr1043nd-v1 tl-wr1043nd-v2 tl-wr1043nd-v3
 
 define Device/tl-wr2543-v1
     $(Device/tplink-8mlzma)
