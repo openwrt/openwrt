@@ -1,5 +1,5 @@
 /*
- * ZyXEL NBG6716 board support
+ * ZyXEL NBG6716/NBG6616 board support
  *
  * Based on the Qualcomm Atheros AP135/AP136 reference board support code
  * Copyright (c) 2012 Qualcomm Atheros
@@ -66,39 +66,44 @@
 #define NBG6716_WMAC_CALDATA_OFFSET	0x1000
 #define NBG6716_PCIE_CALDATA_OFFSET	0x5000
 
+/* NBG6616 has a different GPIO usage as it does not have USB Buttons */
+#define NBG6616_GPIO_LED_USB0		14
+#define NBG6616_GPIO_LED_USB1		21
+#define NBG6616_GPIO_LED_WPS		0
+
 static struct gpio_led nbg6716_leds_gpio[] __initdata = {
 	{
-		.name		= "zyxel:white:internet",
+		.name		= "nbg6716:white:internet",
 		.gpio		= NBG6716_GPIO_LED_INTERNET,
 		.active_low	= 1,
 	},
 	{
-		.name		= "zyxel:white:power",
+		.name		= "nbg6716:white:power",
 		.gpio		= NBG6716_GPIO_LED_POWER,
 		.active_low	= 1,
 	},
 	{
-		.name		= "zyxel:white:usb1",
+		.name		= "nbg6716:white:usb1",
 		.gpio		= NBG6716_GPIO_LED_USB1,
 		.active_low	= 1,
 	},
 	{
-		.name		= "zyxel:white:usb2",
+		.name		= "nbg6716:white:usb2",
 		.gpio		= NBG6716_GPIO_LED_USB2,
 		.active_low	= 1,
 	},
 	{
-		.name		= "zyxel:white:wifi2g",
+		.name		= "nbg6716:white:wifi2g",
 		.gpio		= NBG6716_GPIO_LED_WIFI2G,
 		.active_low	= 1,
 	},
 	{
-		.name		= "zyxel:white:wifi5g",
+		.name		= "nbg6716:white:wifi5g",
 		.gpio		= NBG6716_GPIO_LED_WIFI5G,
 		.active_low	= 1,
 	},
 	{
-		.name		= "zyxel:white:wps",
+		.name		= "nbg6716:white:wps",
 		.gpio		= NBG6716_GPIO_LED_WPS,
 		.active_low	= 1,
 	}
@@ -147,6 +152,69 @@ static struct gpio_keys_button nbg6716_gpio_keys[] __initdata = {
 	},
 };
 
+
+
+static struct gpio_led nbg6616_leds_gpio[] __initdata = {
+	{
+		.name		= "nbg6616:green:power",
+		.gpio		= NBG6716_GPIO_LED_POWER,
+		.active_low	= 1,
+	},
+	{
+		.name		= "nbg6616:green:usb2",
+		.gpio		= NBG6616_GPIO_LED_USB0,
+		.active_low	= 1,
+	},
+	{
+		.name		= "nbg6616:green:usb1",
+		.gpio		= NBG6616_GPIO_LED_USB1,
+		.active_low	= 1,
+	},
+	{
+		.name		= "nbg6616:green:wifi2g",
+		.gpio		= NBG6716_GPIO_LED_WIFI2G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "nbg6616:green:wifi5g",
+		.gpio		= NBG6716_GPIO_LED_WIFI5G,
+		.active_low	= 1,
+	},
+	{
+		.name		= "nbg6616:green:wps",
+		.gpio		= NBG6616_GPIO_LED_WPS,
+		.active_low	= 1,
+	}
+};
+
+static struct gpio_keys_button nbg6616_gpio_keys[] __initdata = {
+	{
+		.desc		= "RESET button",
+		.type		= EV_KEY,
+		.code		= KEY_RESTART,
+		.debounce_interval = NBG6716_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= NBG6716_GPIO_BTN_RESET,
+		.active_low	= 1,
+	},
+	{
+		.desc		= "RFKILL button",
+		.type		= EV_KEY,
+		.code		= KEY_RFKILL,
+		.debounce_interval = NBG6716_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= NBG6716_GPIO_BTN_RFKILL,
+		.active_low	= 1,
+	},
+	{
+		.desc		= "WPS button",
+		.type		= EV_KEY,
+		.code		= KEY_WPS_BUTTON,
+		.debounce_interval = NBG6716_KEYS_DEBOUNCE_INTERVAL,
+		.gpio		= NBG6716_GPIO_BTN_WPS,
+		.active_low	= 1,
+	},
+};
+
+
 static struct ar8327_pad_cfg nbg6716_ar8327_pad0_cfg;
 static struct ar8327_pad_cfg nbg6716_ar8327_pad6_cfg;
 static struct ar8327_led_cfg nbg6716_ar8327_led_cfg;
@@ -179,9 +247,9 @@ static struct mdio_board_info nbg6716_mdio0_info[] = {
 	},
 };
 
-static void nbg6716_get_mac(const char *name, char *mac)
+static void nbg6716_get_mac(void* nvram_addr, const char *name, char *mac)
 {
-	u8 *nvram = (u8 *) KSEG1ADDR(0x1f040000);
+	u8 *nvram = (u8 *) KSEG1ADDR(nvram_addr);
 	int err;
 
 	err = ath79_nvram_parse_mac_addr(nvram, 0x10000,
@@ -190,18 +258,19 @@ static void nbg6716_get_mac(const char *name, char *mac)
 		pr_err("no MAC address found for %s\n", name);
 }
 
-static void __init nbg6716_common_setup(void)
+static void __init nbg6716_common_setup(u32 leds_num, struct gpio_led* leds,
+					u32 keys_num,
+					struct gpio_keys_button* keys,
+					void* art_addr, void* nvram)
 {
-	u8 *art = (u8 *) KSEG1ADDR(0x1f050000);
+	u8 *art = (u8 *) KSEG1ADDR(art_addr);
 	u8 tmpmac[ETH_ALEN];
 
 	ath79_register_m25p80(NULL);
 
-	ath79_register_leds_gpio(-1, ARRAY_SIZE(nbg6716_leds_gpio),
-				 nbg6716_leds_gpio);
+	ath79_register_leds_gpio(-1, leds_num, leds);
 	ath79_register_gpio_keys_polled(-1, NBG6716_KEYS_POLL_INTERVAL,
-					ARRAY_SIZE(nbg6716_gpio_keys),
-					nbg6716_gpio_keys);
+					keys_num, keys);
 
 	ath79_nfc_set_ecc_mode(AR934X_NFC_ECC_HW);
 	ath79_register_nfc();
@@ -212,7 +281,7 @@ static void __init nbg6716_common_setup(void)
 
 	ath79_register_usb();
 
-	nbg6716_get_mac("ethaddr=", tmpmac);
+	nbg6716_get_mac(nvram, "ethaddr=", tmpmac);
 
 	ath79_register_pci();
 
@@ -267,10 +336,46 @@ static void __init nbg6716_010_setup(void)
 	nbg6716_ar8327_led_cfg.led_ctrl2 = 0xffb7ffb7;
 	nbg6716_ar8327_led_cfg.led_ctrl3 = 0x03ffff00;
 
-	nbg6716_common_setup();
+	nbg6716_common_setup(ARRAY_SIZE(nbg6716_leds_gpio), nbg6716_leds_gpio,
+			     ARRAY_SIZE(nbg6716_gpio_keys), nbg6716_gpio_keys,
+			     (void*) 0x1f050000, (void*) 0x1f040000);
 }
+
+static void __init nbg6616_010_setup(void)
+{
+	/* GMAC0 of the AR8337 switch is connected to GMAC0 via RGMII */
+	nbg6716_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_RGMII;
+	nbg6716_ar8327_pad0_cfg.txclk_delay_en = true;
+	nbg6716_ar8327_pad0_cfg.rxclk_delay_en = true;
+	nbg6716_ar8327_pad0_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
+	nbg6716_ar8327_pad0_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+
+	/* GMAC6 of the AR8337 switch is connected to GMAC1 via SGMII */
+	nbg6716_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;
+	nbg6716_ar8327_pad6_cfg.rxclk_delay_en = true;
+	nbg6716_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0;
+
+	ath79_eth0_pll_data.pll_1000 = 0xa6000000;
+	ath79_eth1_pll_data.pll_1000 = 0x03000101;
+
+	nbg6716_ar8327_led_cfg.open_drain = 0;
+	nbg6716_ar8327_led_cfg.led_ctrl0 = 0xffb7ffb7;
+	nbg6716_ar8327_led_cfg.led_ctrl1 = 0xffb7ffb7;
+	nbg6716_ar8327_led_cfg.led_ctrl2 = 0xffb7ffb7;
+	nbg6716_ar8327_led_cfg.led_ctrl3 = 0x03ffff00;
+
+
+	nbg6716_common_setup(ARRAY_SIZE(nbg6616_leds_gpio), nbg6616_leds_gpio,
+			     ARRAY_SIZE(nbg6616_gpio_keys), nbg6616_gpio_keys,
+			     (void*) 0x1f040000, (void*) 0x1f030000);
+}
+
 
 MIPS_MACHINE(ATH79_MACH_NBG6716, "NBG6716",
 	     "Zyxel NBG6716",
 	     nbg6716_010_setup);
+
+MIPS_MACHINE(ATH79_MACH_NBG6616, "NBG6616",
+	     "Zyxel NBG6616",
+	     nbg6616_010_setup);
 

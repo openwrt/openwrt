@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,24 +16,210 @@
+@@ -16,24 +16,211 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -75,6 +75,7 @@
 +	ATH79_MACH_MZK_W04NU,		/* Planex MZK-W04NU */
 +	ATH79_MACH_MZK_W300NH,		/* Planex MZK-W300NH */
 +	ATH79_MACH_NBG460N,		/* Zyxel NBG460N/550N/550NH */
++	ATH79_MACH_NBG6616,		/* Zyxel NBG6616 */
 +	ATH79_MACH_NBG6716,		/* Zyxel NBG6716 */
 +	ATH79_MACH_OM2P_HSv2,		/* OpenMesh OM2P-HSv2 */
 +	ATH79_MACH_OM2P_HS,		/* OpenMesh OM2P-HS */
@@ -1503,7 +1504,7 @@
 +	select ATH79_DEV_WMAC
 +
 +config ATH79_MACH_NBG6716
-+	bool "Zyxel NBG6716 board support"
++	bool "Zyxel NBG6616/NBG6716 board support"
 +	select SOC_QCA955X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
