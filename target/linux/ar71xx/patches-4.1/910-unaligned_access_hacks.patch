@@ -891,3 +891,14 @@
  }
  
  static inline struct neighbour *___neigh_lookup_noref(
+--- a/include/uapi/linux/netfilter_arp/arp_tables.h
++++ b/include/uapi/linux/netfilter_arp/arp_tables.h
+@@ -68,7 +68,7 @@ struct arpt_arp {
+ 	__u8 flags;
+ 	/* Inverse flags */
+ 	__u16 invflags;
+-};
++} __attribute__((aligned(4));
+ 
+ /* Values for "flag" field in struct arpt_ip (general arp structure).
+  * No flags defined yet.
