@@ -139,23 +139,6 @@ endef
 $(eval $(call KernelPackage,xen-fbdev))
 
 
-define KernelPackage/xen-kbddev
-  SUBMENU:=$(VIRTUAL_MENU)
-  TITLE:=Xen virtual keyboard and mouse
-  DEPENDS:=@TARGET_x86_xen_domu +kmod-input-core
-  KCONFIG:=CONFIG_INPUT_MISC=y \
-	CONFIG_INPUT_XEN_KBDDEV_FRONTEND
-  FILES:=$(LINUX_DIR)/drivers/input/misc/xen-kbdfront.ko
-  AUTOLOAD:=$(call AutoLoad,08,xen-kbdfront)
-endef
-
-define KernelPackage/xen-kbddev/description
- Kernel module for the Xen virtual keyboard and mouse
-endef
-
-$(eval $(call KernelPackage,xen-kbddev))
-
-
 define KernelPackage/xen-netdev
   SUBMENU:=$(VIRTUAL_MENU)
   TITLE:=Xen network device frontend
