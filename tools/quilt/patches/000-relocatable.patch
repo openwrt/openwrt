@@ -7,10 +7,10 @@
 -export TEXTDOMAINDIR=@LOCALEDIR@
  
 -: ${QUILT_DIR=@QUILT_DIR@}
-+if test -n "$STAGING_DIR"; then
-+	export TEXTDOMAINDIR="$STAGING_DIR/../host/share/locale"
-+	: ${QUILT_DIR=$STAGING_DIR/../host/share/quilt} ${QUILT_LIB=$STAGING_DIR/../host/lib/quilt}
-+	: ${QUILT_ETC=$STAGING_DIR/../host/etc}
++if test -n "$STAGING_DIR_HOST"; then
++	export TEXTDOMAINDIR="$STAGING_DIR_HOST/share/locale"
++	: ${QUILT_DIR=$STAGING_DIR_HOST/share/quilt} ${QUILT_LIB=$STAGING_DIR_HOST/lib/quilt}
++	: ${QUILT_ETC=$STAGING_DIR_HOST/etc}
 +else
 +	export TEXTDOMAINDIR=@LOCALEDIR@
 +	: ${QUILT_DIR=@QUILT_DIR@}
@@ -41,7 +41,7 @@
  
  setlocale(LC_MESSAGES, "");
 -bindtextdomain("quilt", "@LOCALEDIR@");
-+bindtextdomain("quilt", $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/locale' : "@LOCALEDIR@");
++bindtextdomain("quilt", $ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . '/share/locale' : "@LOCALEDIR@");
  textdomain("quilt");
  
  sub _($) {
@@ -52,8 +52,8 @@
  
  export TEXTDOMAIN=quilt
 -export TEXTDOMAINDIR=@LOCALEDIR@
-+if [ -n "$STAGING_DIR" ]; then
-+	export TEXTDOMAINDIR="$STAGING_DIR/../host/share/locale"
++if [ -n "$STAGING_DIR_HOST" ]; then
++	export TEXTDOMAINDIR="$STAGING_DIR_HOST/share/locale"
 +else
 +	export TEXTDOMAINDIR=@LOCALEDIR@
 +fi
@@ -75,7 +75,7 @@
  
  setlocale(LC_MESSAGES, "");
 -bindtextdomain("quilt", "@LOCALEDIR@");
-+bindtextdomain("quilt", $ENV{'STAGING_DIR'} ? $ENV{'STAGING_DIR'} . '/../host/share/locale' : "@LOCALEDIR@");
++bindtextdomain("quilt", $ENV{'STAGING_DIR_HOST'} ? $ENV{'STAGING_DIR_HOST'} . '/share/locale' : "@LOCALEDIR@");
  textdomain("quilt");
  
  sub _($) {
@@ -119,8 +119,8 @@
  }
  
 -: ${QUILT_DIR=@QUILT_DIR@}
-+if test -n "$STAGING_DIR"; then
-+	: ${QUILT_DIR="$STAGING_DIR/../host/share/quilt"}
++if test -n "$STAGING_DIR_HOST"; then
++	: ${QUILT_DIR="$STAGING_DIR_HOST/share/quilt"}
 +else
 +	: ${QUILT_DIR=@QUILT_DIR@}
 +fi
