@@ -347,6 +347,21 @@ define Build/gzip
 	@mv $@.new $@
 endef
 
+define Build/jffs2
+	rm -rf $(KDIR_TMP)/$(DEVICE_NAME)/jffs2 && \
+		mkdir -p $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/$$(dirname $(1)) && \
+		cp $@ $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/$(1) && \
+		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 --pad \
+			$(if $(CONFIG_BIG_ENDIAN),--big-endian,--little-endian) \
+			--squash-uids -v -e $(patsubst %k,%KiB,$(BLOCKSIZE)) \
+			-o $@.new \
+			-d $(KDIR_TMP)/$(DEVICE_NAME)/jffs2 \
+			2>&1 1>/dev/null | awk '/^.+$$$$/' && \
+		$(STAGING_DIR_HOST)/bin/padjffs2 $@.new -J $(patsubst %k,,$(BLOCKSIZE))
+	-rm -rf $(KDIR_TMP)/$(DEVICE_NAME)/jffs2/
+	@mv $@.new $@
+endef
+
 define Build/kernel-bin
 	rm -f $@
 	cp $^ $@
