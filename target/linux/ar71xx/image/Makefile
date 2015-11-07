@@ -140,20 +140,6 @@ endef
 
 DEVICE_VARS += UBNT_BOARD UBNT_CHIP UBNT_TYPE
 
-define Build/mkubntkernelimage
-	rm -rf $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image && \
-		mkdir -p $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image && \
-		cp $@ $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image/kernel0 && \
-		$(STAGING_DIR_HOST)/bin/mkfs.jffs2 \
-			--pad --big-endian --squash-uids -v -e 64KiB \
-			-o $@.new \
-			-d $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image \
-			2>&1 && \
-		$(STAGING_DIR_HOST)/bin/padjffs2 $@.new -J 64
-	-rm -rf $(KDIR_TMP)/ubnt-$(KERNEL_IMAGE)/image
-	@mv $@.new $@
-endef
-
 define Device/Default
   BOARDNAME :=
   DEVICE_PROFILE = $$(BOARDNAME)
@@ -1135,15 +1121,16 @@ endef
 TARGET_DEVICES += ubnt-rs ubnt-rspro ubnt-ls-sr71
 
 define Device/ubnt-uap-pro
+  KERNEL_SIZE := 1536k
   IMAGE_SIZE := 15744k
   MTDPARTS := spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1536k(kernel),14208k(rootfs),256k(cfg)ro,64k(EEPROM)ro,15744k@0x50000(firmware)
   UBNT_TYPE := BZ
   UBNT_CHIP := ar934x
   BOARDNAME := UAP-PRO
   DEVICE_PROFILE := UBNT UAPPRO
-  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | mkubntkernelimage
+  KERNEL := kernel-bin | patch-cmdline | lzma | uImage lzma | jffs2 kernel0
   IMAGES := sysupgrade.bin factory.bin
-  IMAGE/sysupgrade.bin = append-kernel 1536k | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
+  IMAGE/sysupgrade.bin = append-kernel $$$$(KERNEL_SIZE) | append-rootfs | pad-rootfs | check-size $$$$(IMAGE_SIZE)
   IMAGE/factory.bin = $$(IMAGE/sysupgrade.bin) | mkubntimage2
 endef
 
