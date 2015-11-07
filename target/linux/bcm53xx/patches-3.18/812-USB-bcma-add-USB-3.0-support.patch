@@ -13,15 +13,15 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/usb/host/bcma-hcd.c
 +++ b/drivers/usb/host/bcma-hcd.c
-@@ -37,6 +37,7 @@ struct bcma_hcd_device {
+@@ -38,6 +38,7 @@ struct bcma_hcd_device {
  	struct bcma_device *core;
  	struct platform_device *ehci_dev;
  	struct platform_device *ohci_dev;
 +	struct platform_device *xhci_dev;
+ 	struct gpio_desc *gpio_desc;
  };
  
- /* Wait for bitmask in a register to get set or cleared.
-@@ -343,6 +344,215 @@ err_unregister_ohci_dev:
+@@ -338,6 +339,215 @@ err_unregister_ohci_dev:
  	return err;
  }
  
@@ -237,7 +237,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  static int bcma_hcd_probe(struct bcma_device *dev)
  {
  	int err;
-@@ -365,6 +575,11 @@ static int bcma_hcd_probe(struct bcma_de
+@@ -364,6 +574,11 @@ static int bcma_hcd_probe(struct bcma_de
  		if (err)
  			return err;
  		break;
@@ -249,7 +249,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	default:
  		return -ENODEV;
  	}
-@@ -378,11 +593,14 @@ static void bcma_hcd_remove(struct bcma_
+@@ -377,11 +592,14 @@ static void bcma_hcd_remove(struct bcma_
  	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
  	struct platform_device *ohci_dev = usb_dev->ohci_dev;
  	struct platform_device *ehci_dev = usb_dev->ehci_dev;
@@ -264,7 +264,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  
  	bcma_core_disable(dev, 0);
  }
-@@ -419,6 +637,7 @@ static int bcma_hcd_resume(struct bcma_d
+@@ -418,6 +636,7 @@ static int bcma_hcd_resume(struct bcma_d
  static const struct bcma_device_id bcma_hcd_table[] = {
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_USB20_HOST, BCMA_ANY_REV, BCMA_ANY_CLASS),
  	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_USB20, BCMA_ANY_REV, BCMA_ANY_CLASS),
