@@ -188,7 +188,7 @@ else
 endif
 
 export PATH:=$(TARGET_PATH)
-export STAGING_DIR
+export STAGING_DIR STAGING_DIR_HOST
 export SH_FUNC:=. $(INCLUDE_DIR)/shell.sh;
 
 PKG_CONFIG:=$(STAGING_DIR_HOST)/bin/pkg-config
