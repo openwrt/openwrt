@@ -1384,6 +1384,9 @@ ar71xx_board_detect() {
 	*"ZCN-1523H-5")
 		name="zcn-1523h-5"
 		;;
+	*"ZSUN WiFi SD Card Reader")
+		name="zsun-sdreader"
+		;;
 	esac
 
 	[ -z "$AR71XX_MODEL" ] && [ "${machine:0:8}" = 'TP-LINK ' ] && \
