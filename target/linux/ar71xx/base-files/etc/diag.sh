@@ -432,6 +432,9 @@ get_status_led() {
 	wlr8100)
 		status_led="sitecom:amber:status"
 		;;
+	zsun-sdreader)
+		status_led="zsunsdreader:green:system"
+		;;
 	esac
 }
 

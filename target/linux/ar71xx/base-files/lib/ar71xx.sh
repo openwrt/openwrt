@@ -1109,6 +1109,9 @@ ar71xx_board_detect() {
         *"ANONABOX_PRO")
                 name="anonabox-pro"
                 ;;
+	*"ZSUN WiFi SD Card Reader")
+		name="zsun-sdreader"
+		;;
 	esac
 
 	[ -z "$AR71XX_MODEL" ] && [ "${machine:0:8}" = 'TP-LINK ' ] && \

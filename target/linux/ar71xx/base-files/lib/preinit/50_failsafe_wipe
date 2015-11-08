@@ -1,0 +1,11 @@
+#!/bin/sh
+
+failsafe_wipe() {
+      echo "Doing a factory reset."
+      mount_root
+      firstboot -y
+      sleep 10
+      reboot -f
+}
+  
+boot_hook_add failsafe failsafe_wipe
