@@ -6,9 +6,9 @@
  
 +#include <stdint.h>
 +
+ #ifndef HAVE___U8
+ #define HAVE___U8
  #ifdef __U8_TYPEDEF
- typedef __U8_TYPEDEF __u8;
- #else
 --- a/lib/ext2fs/ext2_types.h.in
 +++ b/lib/ext2fs/ext2_types.h.in
 @@ -9,6 +9,8 @@
@@ -17,6 +17,7 @@
  
 +#include <stdint.h>
 +
+ #ifndef HAVE___U8
+ #define HAVE___U8
  #ifdef __U8_TYPEDEF
- typedef __U8_TYPEDEF __u8;
- #else
+
