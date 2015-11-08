@@ -8,6 +8,7 @@ USE_PROCD=1
 PROG="/usr/sbin/conntrackd"
 
 start_service() {
+	[ -e /etc/conntrackd/conntrackd.conf ] || return
 	procd_open_instance
 
 	procd_set_param command $PROG -C /etc/conntrackd/conntrackd.conf
