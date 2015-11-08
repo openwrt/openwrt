@@ -135,6 +135,10 @@ start_instance()
 		append_bool "$cfg" redirect_https "-q" 0
 	}
 
+	for file in /etc/uhttpd/*.json; do
+		[ -s "$file" ] && procd_append_param command -H "$file"
+	done
+
 	procd_close_instance
 }
 
