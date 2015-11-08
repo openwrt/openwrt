@@ -23,6 +23,7 @@ drv_mac80211_init_device_config() {
 	config_add_int rxantenna txantenna antenna_gain txpower distance
 	config_add_boolean noscan ht_coex
 	config_add_array ht_capab
+	config_add_array channels
 	config_add_boolean \
 		rxldpc \
 		short_gi_80 \
@@ -89,6 +90,7 @@ mac80211_hostapd_setup_base() {
 	json_select config
 
 	[ "$auto_channel" -gt 0 ] && channel=acs_survey
+	[ "$auto_channel" -gt 0 ] && json_get_values channel_list channels
 
 	json_get_vars noscan ht_coex
 	json_get_values ht_capab_list ht_capab
@@ -301,6 +303,7 @@ mac80211_hostapd_setup_base() {
 	hostapd_prepare_device_config "$hostapd_conf_file" nl80211
 	cat >> "$hostapd_conf_file" <<EOF
 ${channel:+channel=$channel}
+${channel_list:+chanlist=$channel_list}
 ${noscan:+noscan=$noscan}
 $base_cfg
 
