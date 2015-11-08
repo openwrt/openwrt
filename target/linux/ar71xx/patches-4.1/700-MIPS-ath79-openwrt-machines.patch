@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -16,24 +16,211 @@
+@@ -16,24 +16,212 @@
  
  enum ath79_mach_type {
  	ATH79_MACH_GENERIC = 0,
@@ -159,6 +159,7 @@
 +	ATH79_MACH_TL_WR842N_V2,	/* TP-LINK TL-WR842N/ND v2 */
 +	ATH79_MACH_TL_WR941ND,		/* TP-LINK TL-WR941ND */
 +	ATH79_MACH_TL_WR941ND_V5,	/* TP-LINK TL-WR941ND v5 */
++	ATH79_MACH_TL_WR941ND_V6,	/* TP-LINK TL-WR941ND v6 */
 +	ATH79_MACH_TUBE2H,		/* Alfa Network Tube2H */
 +	ATH79_MACH_UBNT_AIRGW,		/* Ubiquiti AirGateway */
 +	ATH79_MACH_UBNT_AIRGWP,		/* Ubiquiti AirGateway Pro */
@@ -305,7 +306,7 @@
  config ATH79_MACH_AP121
  	bool "Atheros AP121 reference board"
  	select SOC_AR933X
-@@ -11,62 +95,1107 @@ config ATH79_MACH_AP121
+@@ -11,62 +95,1116 @@ config ATH79_MACH_AP121
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
@@ -1186,10 +1187,7 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
- 
--config ATH79_MACH_AP136
--	bool "Atheros AP136/AP135 reference board"
--	select SOC_QCA955X
++
 +config ATH79_MACH_TL_WA7210N_V2
 +       bool "TP-LINK TL-WA7210N v2 support"
 +       select SOC_AR724X
@@ -1204,6 +1202,69 @@
 +	bool "TP-LINK TL-WA830RE v2 support"
 +	select SOC_AR934X
 +	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_TL_WA901ND
++	bool "TP-LINK TL-WA901ND/TL-WA7510N support"
++	select SOC_AR724X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++
++config ATH79_MACH_TL_WA901ND_V2
++	bool "TP-LINK TL-WA901ND v2 support"
++	select SOC_AR913X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_TL_WDR3500
++	bool "TP-LINK TL-WDR3500 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_TL_WDR4300
++	bool "TP-LINK TL-WDR3600/4300/4310 board support"
++	select SOC_AR934X
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++
++config ATH79_MACH_TL_WR703N
++	bool "TP-LINK TL-WR703N/TL-WR710N/TL-MR10U support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
+ 
+-config ATH79_MACH_AP136
+-	bool "Atheros AP136/AP135 reference board"
+-	select SOC_QCA955X
++config ATH79_MACH_TL_WR720N_V3
++	bool "TP-LINK TL-WR720N v3/v4 support"
++	select SOC_AR933X
++	select ATH79_DEV_ETH
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
 -	select ATH79_DEV_NFC
@@ -1217,77 +1278,7 @@
  
 -config ATH79_MACH_AP81
 -	bool "Atheros AP81 reference board"
-+config ATH79_MACH_TL_WA901ND
-+	bool "TP-LINK TL-WA901ND/TL-WA7510N support"
-+	select SOC_AR724X
-+	select ATH79_DEV_AP9X_PCI if PCI
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
-+
-+config ATH79_MACH_TL_WA901ND_V2
-+	bool "TP-LINK TL-WA901ND v2 support"
- 	select SOC_AR913X
- 	select ATH79_DEV_ETH
- 	select ATH79_DEV_GPIO_BUTTONS
- 	select ATH79_DEV_LEDS_GPIO
- 	select ATH79_DEV_M25P80
-+	select ATH79_DEV_WMAC
-+
-+config ATH79_MACH_TL_WDR3500
-+	bool "TP-LINK TL-WDR3500 board support"
-+	select SOC_AR934X
-+	select ATH79_DEV_AP9X_PCI if PCI
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
- 	select ATH79_DEV_USB
- 	select ATH79_DEV_WMAC
--	help
--	  Say 'Y' here if you want your kernel to support the
--	  Atheros AP81 reference board.
- 
--config ATH79_MACH_DB120
--	bool "Atheros DB120 reference board"
-+config ATH79_MACH_TL_WDR4300
-+	bool "TP-LINK TL-WDR3600/4300/4310 board support"
- 	select SOC_AR934X
- 	select ATH79_DEV_AP9X_PCI if PCI
- 	select ATH79_DEV_ETH
- 	select ATH79_DEV_GPIO_BUTTONS
- 	select ATH79_DEV_LEDS_GPIO
- 	select ATH79_DEV_M25P80
--	select ATH79_DEV_NFC
- 	select ATH79_DEV_USB
- 	select ATH79_DEV_WMAC
--	help
--	  Say 'Y' here if you want your kernel to support the
--	  Atheros DB120 reference board.
- 
--config ATH79_MACH_PB44
--	bool "Atheros PB44 reference board"
-+config ATH79_MACH_TL_WR703N
-+	bool "TP-LINK TL-WR703N/TL-WR710N/TL-MR10U support"
-+	select SOC_AR933X
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+
-+config ATH79_MACH_TL_WR720N_V3
-+	bool "TP-LINK TL-WR720N v3/v4 support"
-+	select SOC_AR933X
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+
+-	select SOC_AR913X
 +config ATH79_MACH_TL_WR741ND
 +	bool "TP-LINK TL-WR741ND support"
 +	select SOC_AR724X
@@ -1300,21 +1291,25 @@
 +config ATH79_MACH_TL_WR741ND_V4
 +	bool "TP-LINK TL-WR741ND v4/TL-MR3220 v2 support"
 +	select SOC_AR933X
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
-+	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
-+	select ATH79_DEV_WMAC
-+
-+config ATH79_MACH_TL_WR841N_V1
-+	bool "TP-LINK TL-WR841N v1 support"
- 	select SOC_AR71XX
-+	select ATH79_DEV_DSA
  	select ATH79_DEV_ETH
  	select ATH79_DEV_GPIO_BUTTONS
  	select ATH79_DEV_LEDS_GPIO
--	select ATH79_DEV_SPI
+ 	select ATH79_DEV_M25P80
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros AP81 reference board.
+ 
+-config ATH79_MACH_DB120
+-	bool "Atheros DB120 reference board"
++config ATH79_MACH_TL_WR841N_V1
++	bool "TP-LINK TL-WR841N v1 support"
++	select SOC_AR71XX
++	select ATH79_DEV_DSA
++	select ATH79_DEV_ETH
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
 +
 +config ATH79_MACH_TL_WR841N_V8
@@ -1346,17 +1341,32 @@
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_WMAC
 +
-+config ATH79_MACH_TL_WR1041N_V2
-+	bool "TP-LINK TL-WR1041N v2 support"
-+	select SOC_AR934X
-+	select ATH79_DEV_AP9X_PCI if PCI
++config ATH79_MACH_TL_WR941ND_V6
++	bool "TP-LINK TL-WR941ND v6 support"
++	select SOC_QCA956X
 +	select ATH79_DEV_ETH
 +	select ATH79_DEV_GPIO_BUTTONS
 +	select ATH79_DEV_LEDS_GPIO
 +	select ATH79_DEV_M25P80
-+	select ATH79_DEV_USB
 +	select ATH79_DEV_WMAC
 +
++config ATH79_MACH_TL_WR1041N_V2
++	bool "TP-LINK TL-WR1041N v2 support"
+ 	select SOC_AR934X
+ 	select ATH79_DEV_AP9X_PCI if PCI
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_M25P80
+-	select ATH79_DEV_NFC
+ 	select ATH79_DEV_USB
+ 	select ATH79_DEV_WMAC
+-	help
+-	  Say 'Y' here if you want your kernel to support the
+-	  Atheros DB120 reference board.
+ 
+-config ATH79_MACH_PB44
+-	bool "Atheros PB44 reference board"
 +config ATH79_MACH_TL_WR1043ND
 +	bool "TP-LINK TL-WR1043ND support"
 +	select SOC_AR913X
@@ -1399,11 +1409,12 @@
 +
 +config ATH79_MACH_TEW_673GRU
 +	bool "TRENDnet TEW-673GRU support"
-+	select SOC_AR71XX
+ 	select SOC_AR71XX
 +	select ATH79_DEV_AP9X_PCI if PCI
-+	select ATH79_DEV_ETH
-+	select ATH79_DEV_GPIO_BUTTONS
-+	select ATH79_DEV_LEDS_GPIO
+ 	select ATH79_DEV_ETH
+ 	select ATH79_DEV_GPIO_BUTTONS
+ 	select ATH79_DEV_LEDS_GPIO
+-	select ATH79_DEV_SPI
 +	select ATH79_DEV_M25P80
 +	select ATH79_DEV_USB
 +	select ATH79_NVRAM
@@ -1441,7 +1452,7 @@
  
  config ATH79_MACH_UBNT_XM
  	bool "Ubiquiti Networks XM/UniFi boards"
-@@ -83,6 +1212,116 @@ config ATH79_MACH_UBNT_XM
+@@ -83,6 +1221,116 @@ config ATH79_MACH_UBNT_XM
  	  Say 'Y' here if you want your kernel to support the
  	  Ubiquiti Networks XM (rev 1.0) board.
  
@@ -1558,7 +1569,7 @@
  endmenu
  
  config SOC_AR71XX
-@@ -134,7 +1373,10 @@ config ATH79_DEV_DSA
+@@ -134,7 +1382,10 @@ config ATH79_DEV_DSA
  config ATH79_DEV_ETH
  	def_bool n
  
@@ -1570,7 +1581,7 @@
  	def_bool n
  
  config ATH79_DEV_GPIO_BUTTONS
-@@ -164,6 +1406,11 @@ config ATH79_PCI_ATH9K_FIXUP
+@@ -164,6 +1415,11 @@ config ATH79_PCI_ATH9K_FIXUP
  	def_bool n
  
  config ATH79_ROUTERBOOT
@@ -1584,7 +1595,7 @@
  endif
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -38,9 +38,135 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
+@@ -38,9 +38,136 @@ obj-$(CONFIG_ATH79_ROUTERBOOT)		+= route
  #
  # Machines
  #
@@ -1685,6 +1696,7 @@
 +obj-$(CONFIG_ATH79_MACH_TL_WR841N_V8)	+= mach-tl-wr841n-v8.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR841N_V9)	+= mach-tl-wr841n-v9.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR941ND)	+= mach-tl-wr941nd.o
++obj-$(CONFIG_ATH79_MACH_TL_WR941ND_V6)	+= mach-tl-wr941nd-v6.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR1041N_V2)	+= mach-tl-wr1041n-v2.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR1043ND)	+= mach-tl-wr1043nd.o
 +obj-$(CONFIG_ATH79_MACH_TL_WR1043ND_V2)	+= mach-tl-wr1043nd-v2.o
@@ -1722,7 +1734,7 @@
 +obj-$(CONFIG_ATH79_MACH_NBG6716)	+= mach-nbg6716.o
 --- a/arch/mips/ath79/prom.c
 +++ b/arch/mips/ath79/prom.c
-@@ -130,6 +130,13 @@ void __init prom_init(void)
+@@ -136,6 +136,13 @@ void __init prom_init(void)
  		initrd_end = initrd_start + fw_getenvl("initrd_size");
  	}
  #endif

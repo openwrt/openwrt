@@ -774,6 +774,13 @@ define Device/tl-wr941nd-v5
     TPLINK_HWID := 0x09410005
 endef
 
+define Device/tl-wr941nd-v6
+    $(Device/tplink-4mlzma)
+    BOARDNAME := TL-WR941ND-v6
+    DEVICE_PROFILE := TLWR941
+    TPLINK_HWID := 0x09410006
+endef
+
 # Chinese version (unlike European) is similar to the TL-WDR3500
 define Device/tl-wr941nd-v6-cn
     $(Device/tplink-4mlzma)
@@ -781,7 +788,7 @@ define Device/tl-wr941nd-v6-cn
     DEVICE_PROFILE := TLWR941
     TPLINK_HWID := 0x09410006
 endef
-TARGET_DEVICES += tl-wr941nd-v2 tl-wr941nd-v3 tl-wr941nd-v4 tl-wr941nd-v5 tl-wr941nd-v6-cn
+TARGET_DEVICES += tl-wr941nd-v2 tl-wr941nd-v3 tl-wr941nd-v4 tl-wr941nd-v5 tl-wr941nd-v6 tl-wr941nd-v6-cn
 
 define Device/tl-wr1041n-v2
     $(Device/tplink-4mlzma)
