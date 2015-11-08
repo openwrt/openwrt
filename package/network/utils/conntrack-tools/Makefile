@@ -30,34 +30,49 @@ PKG_BUILD_DEPENDS:=librpc
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/conntrack-tools
+TARGET_CFLAGS += -D_GNU_SOURCE=1
+
+define Package/conntrack-tools/default
   SECTION:=net
   CATEGORY:=Network
   DEPENDS:=+libnetfilter-conntrack +libnetfilter-cttimeout +libnetfilter-cthelper +libnetfilter-queue
   SUBMENU:=Firewall
-  TITLE:=Connection tracking userspace tools
   URL:=http://conntrack-tools.netfilter.org/
 endef
 
-define Package/conntrack-tools/description
- The conntrack-tools are a set of free software userspace tools for Linux
- that allow system administrators interact with the Connection Tracking
- System, which is the module that provides stateful packet inspection for
- iptables. The conntrack-tools are the userspace daemon conntrackd and the
- command line interface conntrack.
+define Package/conntrack
+$(call Package/conntrack-tools/default)
+  TITLE:=Connection tracking tool
 endef
 
-TARGET_CFLAGS += -D_GNU_SOURCE=1
+define Package/conntrack/description
+ Conntrack is a userspace command line program targeted at system
+ administrators. It enables them to view and manage the in-kernel
+ connection tracking state table.
+endef
 
-define Package/conntrack-tools/install
-	$(INSTALL_DIR) $(1)/etc/conntrackd
+define Package/conntrack/install
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) \
-		$(PKG_INSTALL_DIR)/usr/sbin/conntrack \
-		$(PKG_INSTALL_DIR)/usr/sbin/conntrackd \
-		$(1)/usr/sbin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/conntrack $(1)/usr/sbin/
+endef
+
+define Package/conntrackd
+$(call Package/conntrack-tools/default)
+  TITLE:=Connection tracking daemon
+endef
+
+define Package/conntrackd/description
+ Conntrackd can replicate the status of the connections that are
+ currently being processed by your stateful firewall based on Linux.
+ Conntrackd can also run as statistics daemon.
+endef
+
+define Package/conntrackd/install
+	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_BIN) 	$(PKG_INSTALL_DIR)/usr/sbin/conntrackd $(1)/usr/sbin/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/conntrackd.init $(1)/etc/init.d/conntrackd
 endef
 
-$(eval $(call BuildPackage,conntrack-tools))
+$(eval $(call BuildPackage,conntrack))
+$(eval $(call BuildPackage,conntrackd))
