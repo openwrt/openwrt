@@ -47,17 +47,10 @@ define Package/conntrack-tools/description
  command line interface conntrack.
 endef
 
-define Package/conntrack-tools/conffiles
-/etc/conntrackd/conntrackd.conf
-endef
-
 TARGET_CFLAGS += -D_GNU_SOURCE=1
 
 define Package/conntrack-tools/install
 	$(INSTALL_DIR) $(1)/etc/conntrackd
-	$(INSTALL_CONF) \
-		$(PKG_BUILD_DIR)/doc/stats/conntrackd.conf \
-		$(1)/etc/conntrackd/
 	$(INSTALL_DIR) $(1)/usr/sbin
 	$(INSTALL_BIN) \
 		$(PKG_INSTALL_DIR)/usr/sbin/conntrack \
