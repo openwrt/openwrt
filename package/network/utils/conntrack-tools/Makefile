@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=conntrack-tools
-PKG_VERSION:=1.4.2
+PKG_VERSION:=1.4.3
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
@@ -16,7 +16,7 @@ PKG_SOURCE_URL:= \
 	http://www.netfilter.org/projects/conntrack-tools/files \
 	ftp://ftp.netfilter.org/pub/conntrack-tools \
 	http://mirrors.evolva.ro/netfilter.org/conntrack-tools
-PKG_MD5SUM:=b1f9d006e7bf000a77395ff7cd3fac16
+PKG_MD5SUM:=966a5d8f846ddf5304bcd12685c0707f
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=GPL-2.0
