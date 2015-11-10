@@ -1,18 +1,18 @@
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -120,6 +120,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += kirkwood-
- 	kirkwood-ds411.dtb \
- 	kirkwood-ds411j.dtb \
- 	kirkwood-ds411slim.dtb \
-+	kirkwood-ea3500.dtb \
- 	kirkwood-ea4500.dtb \
- 	kirkwood-goflexnet.dtb \
- 	kirkwood-guruplug-server-plus.dtb \
+@@ -128,6 +128,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += kirkwood-
+ 	kirkwood-is2.dtb \
+ 	kirkwood-km_kirkwood.dtb \
+ 	kirkwood-laplug.dtb \
++	kirkwood-linksys-audi.dtb \
+ 	kirkwood-linksys-viper.dtb \
+ 	kirkwood-lschlv2.dtb \
+ 	kirkwood-lsxhl.dtb \
 --- /dev/null
-+++ b/arch/arm/boot/dts/kirkwood-ea3500.dts
-@@ -0,0 +1,160 @@
++++ b/arch/arm/boot/dts/kirkwood-linksys-audi.dts
+@@ -0,0 +1,179 @@
 +/*
-+ * kirkwood-ea3500.dts - Device Tree file for Linksys EA3500
++ * kirkwood-linksys-audi.dts - Device Tree file for Linksys EA3500
 + *
 + * (c) 2013 Jonas Gorski <jogo@openwrt.org>
 + * (c) 2013 Deutsche Telekom Innovation Laboratories
@@ -31,7 +31,7 @@
 +
 +/ {
 +	model = "Linksys EA3500";
-+	compatible = "linksys,ea3500", "marvell,kirkwood-88f6282", "marvell,kirkwood";
++	compatible = "linksys,audi", "marvell,kirkwood-88f6282", "marvell,kirkwood";
 +
 +	memory {
 +		device_type = "memory";
@@ -108,7 +108,7 @@
 +		pinctrl-names = "default";
 +
 +		green-power {
-+			label = "ea3500:green:power";
++			label = "audi:green:power";
 +			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
@@ -132,23 +132,42 @@
 +
 +	partition@0 {
 +		label = "u-boot";
-+		reg = <0x0000000 0x80000>;
-+		read-only;
++		reg = <0x0 0x80000>;
 +	};
 +
 +	partition@80000 {
-+		label = "u-boot environment";
-+		reg = <0x80000 0x20000>;
++		label = "u_env";
++		reg = <0x80000 0x4000>;
++	};
++
++	partition@84000 {
++		label = "s_env";
++		reg = <0x84000 0x4000>;
 +	};
 +
 +	partition@200000 {
-+		label = "kernel";
-+		reg = <0x200000 0x200000>;
++		label = "kernel1";
++		reg = <0x200000 0x1400000>;
 +	};
 +
-+	partition@400000 {
-+		label = "root";
-+		reg = <0x400000 0x1200000>;
++	partition@490000 {
++		label = "rootfs1";
++		reg = <0x490000 0x1170000>;
++	};
++
++	partition@1600000 {
++		label = "kernel2";
++		reg = <0x1600000 0x1400000>;
++	};
++
++	partition@1890000 {
++		label = "rootfs2";
++		reg = <0x1890000 0x1170000>;
++	};
++
++	partition@2a00000 {
++		label = "syscfg";
++		reg = <0x2a00000  0x1600000>;
 +	};
 +};
 +
