@@ -12,6 +12,9 @@ get_status_led() {
 	pogo_e02)
 		status_led="status:orange:fault"
 		;;
+	linksys-audi)
+		status_led="audi:green:power"
+		;;
 	linksys-viper)
 		status_led="viper:white:health"
 		;;
