@@ -1,18 +1,18 @@
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
-@@ -168,6 +168,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += \
- 	kirkwood-ds411.dtb \
- 	kirkwood-ds411j.dtb \
- 	kirkwood-ds411slim.dtb \
-+	kirkwood-ea4500.dtb \
- 	kirkwood-goflexnet.dtb \
- 	kirkwood-guruplug-server-plus.dtb \
- 	kirkwood-ib62x0.dtb \
+@@ -176,6 +176,7 @@ dtb-$(CONFIG_MACH_KIRKWOOD) += \
+ 	kirkwood-is2.dtb \
+ 	kirkwood-km_kirkwood.dtb \
+ 	kirkwood-laplug.dtb \
++	kirkwood-linksys-viper.dtb \
+ 	kirkwood-lschlv2.dtb \
+ 	kirkwood-lswvl.dtb \
+ 	kirkwood-lswxl.dtb \
 --- /dev/null
-+++ b/arch/arm/boot/dts/kirkwood-ea4500.dts
-@@ -0,0 +1,167 @@
++++ b/arch/arm/boot/dts/kirkwood-linksys-viper.dts
+@@ -0,0 +1,187 @@
 +/*
-+ * kirkwood-ea4500.dts - Device Tree file for Linksys EA4500
++ * kirkwood-linksys-viper.dts - Device Tree file for Linksys EA4500
 + *
 + * (c) 2013 Jonas Gorski <jogo@openwrt.org>
 + * (c) 2013 Deutsche Telekom Innovation Laboratories
@@ -29,8 +29,8 @@
 +#include "kirkwood-6282.dtsi"
 +
 +/ {
-+	model = "Linksys EA4500";
-+	compatible = "linksys,ea4500", "marvell,kirkwood-88f6282", "marvell,kirkwood";
++	model = "Linksys E4200v2 / EA4500";
++	compatible = "linksys,viper", "marvell,kirkwood-88f6282", "marvell,kirkwood";
 +
 +	memory {
 +		device_type = "memory";
@@ -111,12 +111,12 @@
 +		pinctrl-names = "default";
 +
 +		white-health {
-+			label = "ea4500:white:health";
++			label = "viper:white:health";
 +			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 +		};
 +
 +		white-pulse {
-+			label = "ea4500:white:pulse";
++			label = "viper:white:pulse";
 +			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 +		};
 +	};
@@ -140,22 +140,42 @@
 +
 +	partition@0 {
 +		label = "u-boot";
-+		reg = <0x0000000 0x80000>;
++		reg = <0x0 0x80000>;
 +	};
 +
 +	partition@80000 {
-+		label = "u-boot environment";
++		label = "u_env";
 +		reg = <0x80000 0x20000>;
 +	};
 +
-+	partition@200000 {
-+		label = "kernel";
-+		reg = <0x200000 0x200000>;
++	partition@a0000 {
++		label = "s_env";
++		reg = <0xa0000 0x20000>;
 +	};
 +
-+	partition@400000 {
-+		label = "root";
-+		reg = <0x400000 0x1c00000>;
++	partition@200000 {
++		label = "kernel1";
++		reg = <0x200000 0x1a00000>;
++	};
++
++	partition@4a0000 {
++		label = "rootfs1";
++		reg = <0x4a0000 0x1760000>;
++	};
++
++	partition@1c00000 {
++		label = "kernel2";
++		reg = <0x1c00000 0x1a00000>;
++	};
++
++	partition@1ea0000 {
++		label = "rootfs2";
++		reg = <0x1ea0000 0x1760000>;
++	};
++
++	partition@3600000 {
++		label = "syscfg";
++		reg = <0x3600000 0x4a00000>;
 +	};
 +};
 +
