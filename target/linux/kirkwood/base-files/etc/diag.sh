@@ -12,8 +12,8 @@ get_status_led() {
 	pogo_e02)
 		status_led="status:orange:fault"
 		;;
-	ea4500)
-		status_led="ea4500:white:health"
+	linksys-viper)
+		status_led="viper:white:health"
 		;;
 	esac
 }
