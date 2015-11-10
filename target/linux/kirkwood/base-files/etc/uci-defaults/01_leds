@@ -13,12 +13,12 @@ case "$board" in
 	ucidef_set_led_default "health" "health" "status:green:health" "1"
 	ucidef_set_led_default "fault" "fault" "status:orange:fault" "1"
 	;;
-"ea3500")
-	ucidef_set_led_default "power" "power" "ea3500:green:power" "1"
+"linksys-audi")
+	ucidef_set_led_default "power" "power" "audi:green:power" "1"
 	;;
-"ea4500")
-	ucidef_set_led_default "health" "health" "ea4500:white:health" "1"
-	ucidef_set_led_default "pulse" "pulse" "ea4500:white:pulse" "1"
+"linksys-viper")
+	ucidef_set_led_default "health" "health" "viper:white:health" "1"
+	ucidef_set_led_default "pulse" "pulse" "viper:white:pulse" "1"
 	;;
 "goflexhome" | \
 "goflexnet")
