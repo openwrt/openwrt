@@ -23,23 +23,28 @@ include $(INCLUDE_DIR)/package.mk
 
 WMENU:=Wireless Drivers
 
-define Package/ath10k-firmware-qca988x
+define Package/ath10k-firmware-default
   SECTION:=kernel
   CATEGORY:=Kernel modules
   SUBMENU:=$(WMENU)
   URL:=$(PKG_SOURCE_URL)
-  DEFAULT:=PACKAGE_kmod-ath10k
   DEPENDS:=kmod-ath10k
+endef
+
+define Package/ath10k-firmware-qca988x
+$(Package/ath10k-firmware-default)
+  DEFAULT:=PACKAGE_kmod-ath10k
   TITLE:=ath10k firmware for QCA988x devices
 endef
 
 define Package/ath10k-firmware-qca99x0
-  SECTION:=kernel
-  CATEGORY:=Kernel modules
-  SUBMENU:=$(WMENU)
-  URL:=$(PKG_SOURCE_URL)
-  DEPENDS:=kmod-ath10k
+$(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA99x0 devices
+endef
+
+define Package/ath10k-firmware-qca6174
+$(Package/ath10k-firmware-default)
+  TITLE:=ath10k firmware for QCA6174 devices
 endef
 
 define Build/Compile
@@ -56,6 +61,11 @@ define Package/ath10k-firmware-qca988x/install
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin
 endef
 
+define Package/ath10k-firmware-qca6174/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ath10k
+	$(CP) $(PKG_BUILD_DIR)/ath10k/QCA6174 $(1)/lib/firmware/ath10k/
+endef
+
 define Package/ath10k-firmware-qca99x0/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
 	$(INSTALL_DATA) \
@@ -68,3 +78,4 @@ endef
 
 $(eval $(call BuildPackage,ath10k-firmware-qca988x))
 $(eval $(call BuildPackage,ath10k-firmware-qca99x0))
+$(eval $(call BuildPackage,ath10k-firmware-qca6174))
