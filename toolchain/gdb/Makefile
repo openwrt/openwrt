@@ -44,6 +44,7 @@ HOST_CONFIGURE_ARGS = \
 	--without-included-gettext \
 	--enable-threads \
 	--with-expat \
+	--without-python \
 	--disable-binutils \
 	--disable-ld \
 	--disable-gas \
