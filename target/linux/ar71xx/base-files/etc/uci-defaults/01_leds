@@ -43,6 +43,11 @@ antminer-s3)
 	ucidef_set_led_default "lan" "LAN" "antminer-s3:yellow:lan" "0"
 	;;
 
+arduino-yun)
+	ucidef_set_led_wlan "wlan" "WLAN" "arduino:blue:wlan" "phy0tpt"
+	ucidef_set_led_usbdev "usb" "USB" "arduino:white:usb" "1-1.1"
+	;;
+
 ap113)
 	ucidef_set_led_usbdev "usb" "USB" "ap113:green:usb" "1-1"
 	;;
