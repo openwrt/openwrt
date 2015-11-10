@@ -1,0 +1,11 @@
+--- a/libsanitizer/interception/interception_type_test.cc
++++ b/libsanitizer/interception/interception_type_test.cc
+@@ -31,7 +31,7 @@ COMPILER_CHECK(sizeof(OFF64_T) == sizeof
+ // rest (they depend on _FILE_OFFSET_BITS setting when building an application).
+ # if defined(__ANDROID__) || !defined _FILE_OFFSET_BITS || \
+   _FILE_OFFSET_BITS != 64
+-COMPILER_CHECK(sizeof(OFF_T) == sizeof(off_t));
++// COMPILER_CHECK(sizeof(OFF_T) == sizeof(off_t));
+ # endif
+ 
+ #endif

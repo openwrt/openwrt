@@ -10,6 +10,13 @@ PKG_NAME:=binutils
 PKG_VERSION:=$(call qstrip,$(CONFIG_BINUTILS_VERSION))
 BIN_VERSION:=$(PKG_VERSION)
 
+PKG_SOURCE_URL:=@GNU/binutils/
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+
+ifeq ($(PKG_VERSION),2.25.1)
+  PKG_MD5SUM:=ac493a78de4fee895961d025b7905be4
+endif
+
 ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
   PKG_SOURCE_URL:=https://releases.linaro.org/14.09/components/toolchain/binutils-linaro/
   PKG_REV:=2.24.0-2014.09
@@ -17,13 +24,15 @@ ifeq ($(findstring linaro, $(CONFIG_BINUTILS_VERSION)),linaro)
   PKG_MD5SUM:=8f9b2b2e049d59b1b86ce9657802a353
   BINUTILS_DIR:=$(PKG_NAME)-linaro-$(PKG_REV)
   HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
-else
-  PKG_SOURCE_URL:=@GNU/binutils/
-  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+endif
 
-  ifeq ($(PKG_VERSION),2.25.1)
-    PKG_MD5SUM:=ac493a78de4fee895961d025b7905be4
-  endif
+ifneq ($(CONFIG_BINUTILS_VERSION_2_23_ARC),)
+  PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2015.06/
+  PKG_REV:=2015.06
+  PKG_SOURCE:=$(PKG_NAME)-arc-$(PKG_REV).tar.gz
+  PKG_MD5SUM:=961a3564de857238c255c381f8e4360b
+  BINUTILS_DIR:=$(PKG_NAME)-gdb-arc-$(PKG_REV)
+  HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(BINUTILS_DIR)
 endif
 
 HOST_BUILD_PARALLEL:=1
@@ -46,6 +55,8 @@ BINUTILS_CONFIGURE:= \
 		--disable-multilib \
 		--disable-werror \
 		--disable-nls \
+		--disable-sim \
+		--disable-gdb \
 		$(GRAPHITE_CONFIGURE) \
 		$(SOFT_FLOAT_CONFIG_OPTION) \
 		$(call qstrip,$(CONFIG_EXTRA_BINUTILS_CONFIG_OPTIONS)) 
@@ -91,6 +102,12 @@ define Host/Install
 	$(call FixupLibdir,$(TOOLCHAIN_DIR)/initial)
 	$(RM) $(TOOLCHAIN_DIR)/initial/lib/libiberty.a
 	$(CP) $(TOOLCHAIN_DIR)/bin/$(REAL_GNU_TARGET_NAME)-readelf $(REAL_STAGING_DIR_HOST)/bin/readelf
+	# ARC gcc requires extlib.
+	# If extlib is not available in "initial" folder
+	# initial gcc will fail to build libc.
+	if [ -d $(TOOLCHAIN_DIR)/extlib ]; then \
+		$(CP) -r $(TOOLCHAIN_DIR)/extlib $(TOOLCHAIN_DIR)/initial/; \
+	fi
 endef
 
 define Host/Clean

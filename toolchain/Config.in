@@ -212,6 +212,7 @@ comment "C Library"
 choice
 	prompt "C Library implementation" if TOOLCHAINOPTS
 	default LIBC_USE_GLIBC if mips64 || mips64el
+	default LIBC_USE_UCLIBC if arc
 	default LIBC_USE_MUSL
 	help
 	  Select the C library implementation.
@@ -219,6 +220,7 @@ choice
 	config LIBC_USE_GLIBC
 		bool "Use (e)glibc"
 		select USE_GLIBC
+		depends on !arc
 
 	config LIBC_USE_UCLIBC
 		select USE_UCLIBC
@@ -229,7 +231,7 @@ choice
 	config LIBC_USE_MUSL
 		select USE_MUSL
 		bool "Use musl"
-		depends on !(mips64 || mips64el)
+		depends on !(arc || mips64 || mips64el)
 
 endchoice
 
@@ -260,17 +262,18 @@ config USE_GLIBC
 	bool
 
 config USE_UCLIBC
-	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && (mips64 || mips64el)
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && (arc || mips64 || mips64el)
 	bool
 
 config USE_MUSL
-	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && !(mips64 || mips64el)
+	default y if !TOOLCHAINOPTS && !EXTERNAL_TOOLCHAIN && !NATIVE_TOOLCHAIN && !(arc || mips64 || mips64el)
 	bool
 
 config USE_EXTERNAL_LIBC
 	bool
 	default y if EXTERNAL_TOOLCHAIN || NATIVE_TOOLCHAIN
 
+source "toolchain/binutils/Config.version"
 source "toolchain/gcc/Config.version"
 
 source "toolchain/glibc/Config.version"
