@@ -8,11 +8,6 @@ choice
 	help
 	  Select the version of gcc you wish to use.
 
-	config GCC_USE_VERSION_4_6_LINARO
-		select GCC_VERSION_4_6_LINARO
-		bool "gcc 4.6.x with Linaro enhancements"
-		depends on !arc
-
 	config GCC_USE_VERSION_4_8_LINARO
 		select GCC_VERSION_4_8_LINARO
 		bool "gcc 4.8.x with Linaro enhancements"
