@@ -62,14 +62,17 @@
  	private = table->private;
  	cpu        = smp_processor_id();
  	/*
-@@ -357,6 +365,20 @@ ipt_do_table(struct sk_buff *skb,
+@@ -357,6 +365,23 @@ ipt_do_table(struct sk_buff *skb,
  	 */
  	smp_read_barrier_depends();
  	table_base = private->entries;
 +
 +	e = get_entry(table_base, private->hook_entry[hook]);
 +	if (ipt_handle_default_rule(e, &verdict)) {
-+		ADD_COUNTER(e->counters, skb->len, 1);
++		struct xt_counters *counter;
++
++		counter = xt_get_this_cpu_counter(&e->counters);
++		ADD_COUNTER(*counter, skb->len, 1);
 +		local_bh_enable();
 +		return verdict;
 +	}
@@ -83,7 +86,7 @@
  	jumpstack  = (struct ipt_entry **)private->jumpstack[cpu];
  
  	/* Switch to alternate jumpstack if we're being invoked via TEE.
-@@ -369,7 +391,19 @@ ipt_do_table(struct sk_buff *skb,
+@@ -369,7 +394,19 @@ ipt_do_table(struct sk_buff *skb,
  	if (static_key_false(&xt_tee_enabled))
  		jumpstack += private->stacksize * __this_cpu_read(nf_skb_duplicated);
  
