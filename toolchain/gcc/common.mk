@@ -25,6 +25,19 @@ GCC_VERSION:=$(call qstrip,$(CONFIG_GCC_VERSION))
 PKG_VERSION:=$(firstword $(subst +, ,$(GCC_VERSION)))
 GCC_DIR:=$(PKG_NAME)-$(PKG_VERSION)
 
+PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+
+ifeq ($(PKG_VERSION),4.6.3)
+  PKG_MD5SUM:=773092fe5194353b02bb0110052a972e
+endif
+ifeq ($(PKG_VERSION),4.8.0)
+  PKG_MD5SUM:=e6040024eb9e761c3bea348d1fa5abb0
+endif
+ifeq ($(PKG_VERSION),5.2.0)
+  PKG_MD5SUM:=a51bcfeb3da7dd4c623e27207ed43467
+endif
+
 ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
     LINARO_RELEASE:=
     ifeq ($(CONFIG_GCC_VERSION),"4.6-linaro")
@@ -49,16 +62,16 @@ ifeq ($(findstring linaro, $(CONFIG_GCC_VERSION)),linaro)
     PKG_SOURCE:=$(PKG_NAME)-linaro-$(PKG_REV).tar.$(PKG_COMP)
     GCC_DIR:=gcc-linaro-$(PKG_REV)
     HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GCC_DIR)
-else
-  PKG_SOURCE_URL:=@GNU/gcc/gcc-$(PKG_VERSION)
-  PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+endif
 
-  ifeq ($(PKG_VERSION),4.8.0)
-    PKG_MD5SUM:=e6040024eb9e761c3bea348d1fa5abb0
-  endif
-  ifeq ($(PKG_VERSION),5.2.0)
-    PKG_MD5SUM:=a51bcfeb3da7dd4c623e27207ed43467
-  endif
+ifneq ($(CONFIG_GCC_VERSION_4_8_ARC),)
+    PKG_VERSION:=4.8.4
+    PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/gcc/archive/arc-2015.06
+    PKG_SOURCE:=$(PKG_NAME)-$(GCC_VERSION).tar.gz
+    PKG_MD5SUM:=25007ebb02a5f6c32532b103bb5984a0
+    PKG_REV:=2015.06
+    GCC_DIR:=gcc-arc-$(PKG_REV)
+    HOST_BUILD_DIR = $(BUILD_DIR_HOST)/$(PKG_NAME)-$(GCC_VERSION)
 endif
 
 PATCH_DIR=../patches/$(GCC_VERSION)

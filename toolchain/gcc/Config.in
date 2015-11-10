@@ -3,6 +3,7 @@
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
 	default GCC_USE_VERSION_4_6_LINARO if TARGET_octeon
+	default GCC_USE_VERSION_4_8_ARC if arc
 	default GCC_USE_VERSION_4_8_LINARO
 	help
 	  Select the version of gcc you wish to use.
@@ -10,14 +11,22 @@ choice
 	config GCC_USE_VERSION_4_6_LINARO
 		select GCC_VERSION_4_6_LINARO
 		bool "gcc 4.6.x with Linaro enhancements"
+		depends on !arc
 
 	config GCC_USE_VERSION_4_8_LINARO
 		select GCC_VERSION_4_8_LINARO
 		bool "gcc 4.8.x with Linaro enhancements"
+		depends on !arc
+
+	config GCC_USE_VERSION_4_8_ARC
+		select GCC_VERSION_4_8_ARC
+		bool "gcc 4.8.x with support of ARC cores"
+		depends on arc
 
 	config GCC_USE_VERSION_5
 		select GCC_VERSION_5
 		bool "gcc 5.x"
+		depends on !arc
 
 endchoice
 

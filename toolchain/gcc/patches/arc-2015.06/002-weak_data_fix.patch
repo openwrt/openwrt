@@ -1,0 +1,42 @@
+--- /dev/null
++++ b/gcc/testsuite/gcc.dg/visibility-21.c
+@@ -0,0 +1,14 @@
++/* PR target/32219 */
++/* { dg-do run } */
++/* { dg-require-visibility "" } */
++/* { dg-options "-fPIC" { target fpic } } */
++
++extern void f() __attribute__((weak,visibility("hidden")));
++extern int puts( char const* );
++int main()
++{
++	if (f)
++		f();
++	return 0;
++}
++
+--- a/gcc/varasm.c
++++ b/gcc/varasm.c
+@@ -6677,6 +6677,10 @@ default_binds_local_p_1 (const_tree exp,
+   /* Static variables are always local.  */
+   else if (! TREE_PUBLIC (exp))
+     local_p = true;
++  /* hidden weak can't be overridden by something non-local, all
++     that is possible is that it is not defined at all. */
++  else if (DECL_WEAK (exp))
++    local_p = false;
+   /* A variable is local if the user has said explicitly that it will
+      be.  */
+   else if ((DECL_VISIBILITY_SPECIFIED (exp)
+@@ -6690,11 +6694,6 @@ default_binds_local_p_1 (const_tree exp,
+      local.  */
+   else if (DECL_VISIBILITY (exp) != VISIBILITY_DEFAULT)
+     local_p = true;
+-  /* Default visibility weak data can be overridden by a strong symbol
+-     in another module and so are not local.  */
+-  else if (DECL_WEAK (exp)
+-	   && !resolved_locally)
+-    local_p = false;
+   /* If PIC, then assume that any global name can be overridden by
+      symbols resolved from other modules.  */
+   else if (shlib)

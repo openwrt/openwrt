@@ -7,11 +7,24 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=gdb
+
+ifeq ($(CONFIG_arc),y)
+PKG_VERSION:=arc-2015.06-gdb
+
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+PKG_SOURCE_URL:=https://github.com/foss-for-synopsys-dwc-arc-processors/binutils-gdb/archive/arc-2015.06-gdb/
+PKG_MD5SUM:=d318829bfd2ed62714817f0d25706825
+GDB_DIR:=binutils-$(PKG_NAME)-$(PKG_VERSION)
+else
 PKG_VERSION:=7.10
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@GNU/gdb
 PKG_MD5SUM:=2a35bac41fa8e10bf04f3a0dd7f7f363
+GDB_DIR:=$(PKG_NAME)-$(PKG_VERSION)
+endif
+
+HOST_BUILD_DIR:=$(BUILD_DIR_TOOLCHAIN)/$(GDB_DIR)
 
 HOST_BUILD_PARALLEL:=1
 
@@ -30,7 +43,11 @@ HOST_CONFIGURE_ARGS = \
 	--disable-tui --disable-gdbtk --without-x \
 	--without-included-gettext \
 	--enable-threads \
-	--with-expat
+	--with-expat \
+	--disable-binutils \
+	--disable-ld \
+	--disable-gas \
+	--disable-sim
 
 define Host/Install
 	mkdir -p $(TOOLCHAIN_DIR)/bin
