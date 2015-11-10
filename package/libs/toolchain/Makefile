@@ -402,7 +402,7 @@ ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
 
   define Package/libatomic/install
 	$(INSTALL_DIR) $(1)/lib
-	$(if $(CONFIG_GCC_VERSION_4_6),,$(CP) $(TOOLCHAIN_DIR)/lib/libatomic.so.* $(1)/lib/)
+	$(CP) $(TOOLCHAIN_DIR)/lib/libatomic.so.* $(1)/lib/
   endef
 
   define Package/libgfortran/install

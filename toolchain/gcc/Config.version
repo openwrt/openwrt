@@ -1,7 +1,3 @@
-config GCC_VERSION_4_6_LINARO
-	default y if (!TOOLCHAINOPTS && TARGET_octeon)
-	bool
-
 config GCC_VERSION_4_8_LINARO
 	default y if (!TOOLCHAINOPTS && !(TARGET_octeon || arc))
 	bool
@@ -13,14 +9,9 @@ config GCC_VERSION_4_8_ARC
 config GCC_VERSION
 	string
 	default "5.2.0"	    if GCC_VERSION_5
-	default "4.6-linaro"    if GCC_VERSION_4_6_LINARO
 	default "4.8-linaro"    if GCC_VERSION_4_8_LINARO
 	default "arc-2015.06"   if GCC_VERSION_4_8_ARC
-	default "4.6-linaro"
-
-config GCC_VERSION_4_6
-	bool
-	default y       if GCC_VERSION_4_6_LINARO
+	default "4.8-linaro"
 
 config GCC_VERSION_4_8
 	bool
