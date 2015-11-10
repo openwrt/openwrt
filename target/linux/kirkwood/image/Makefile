@@ -10,6 +10,45 @@ NAND_BLOCKSIZE := 2048-128k
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+DEVICE_VARS += DEVICE_DTS KERNEL_SIZE PAGESIZE BLOCKSIZE SUBPAGESIZE
+KERNEL_LOADADDR:=0x8000
+TARGET_DEVICES = linksys-audi linksys-viper
+
+define Device/Default
+  KERNEL := kernel-bin | append-dtb | uImage none
+  KERNEL_NAME := zImage
+endef
+
+define Device/linksys-audi
+  DEVICE_DTS := kirkwood-linksys-audi
+  PAGESIZE := 512
+  SUBPAGESIZE := 256
+  BLOCKSIZE := 16KiB
+  KERNEL_SIZE := 2624k
+  FILESYSTEMS := squashfs
+  PROFILES := EA3500
+  IMAGES := factory.bin sysupgrade.tar
+  IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.tar := sysupgrade-nand
+endef
+
+define Device/linksys-viper
+  DEVICE_DTS := kirkwood-linksys-viper
+  PAGESIZE := 2048
+  SUBPAGESIZE := 512
+  BLOCKSIZE := 128KiB
+  KERNEL_SIZE := 2688k
+  FILESYSTEMS := squashfs
+  PROFILES := EA4500
+  IMAGES := factory.bin sysupgrade.tar
+  IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
+  IMAGE/sysupgrade.tar := sysupgrade-nand
+endef
+
+define Build/append-dtb
+	cat $(DTS_DIR)/$(DEVICE_DTS).dtb >> $@
+endef
+
 define Image/BuildKernel/Template
 
 	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
@@ -108,12 +147,6 @@ Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
 
 Image/BuildKernel/Template/DOCKSTAR=$(call Image/BuildKernel/Template,dockstar)
 Image/InstallKernel/Template/DOCKSTAR=$(call Image/InstallKernel/Template,dockstar)
-
-Image/BuildKernel/Template/EA3500=$(call Image/BuildKernel/Template,ea3500)
-Image/InstallKernel/Template/EA3500=$(call Image/InstallKernel/Template,ea3500)
-
-Image/BuildKernel/Template/EA4500=$(call Image/BuildKernel/Template,ea4500)
-Image/InstallKernel/Template/EA4500=$(call Image/InstallKernel/Template,ea4500)
 
 Image/BuildKernel/Template/GOFLEXHOME=$(call Image/BuildKernel/Template,goflexhome)
 Image/InstallKernel/Template/GOFLEXHOME=$(call Image/InstallKernel/Template,goflexhome)
