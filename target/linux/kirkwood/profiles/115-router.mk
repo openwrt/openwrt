@@ -5,28 +5,28 @@
 # See /LICENSE for more information.
 #
 
-define Profile/EA3500
-  NAME:=Linksys EA3500
+define Profile/AUDI
+  NAME:=Linksys EA3500 (Audi)
   PACKAGES:= \
 	kmod-mwl8k kmod-usb2 kmod-usb-storage \
 	swconfig wpad-mini
 endef
 
-define Profile/EA3500/Description
+define Profile/AUDI/Description
  Package set compatible with Linksys EA3500 board.
 endef
 
-$(eval $(call Profile,EA3500))
+$(eval $(call Profile,AUDI))
 
-define Profile/EA4500
-  NAME:=Linksys EA4500
+define Profile/VIPER
+  NAME:=Linksys E4200v2 / EA4500 (Viper)
   PACKAGES:= \
 	kmod-mwl8k kmod-usb2 kmod-usb-storage \
 	swconfig wpad-mini
 endef
 
-define Profile/EA4500/Description
- Package set compatible with Linksys EA4500 board.
+define Profile/VIPER/Description
+ Package set compatible with Linksys E4200v2 and EA4500 boards.
 endef
 
-$(eval $(call Profile,EA4500))
+$(eval $(call Profile,VIPER))
