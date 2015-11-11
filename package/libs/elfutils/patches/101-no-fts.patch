@@ -72,7 +72,7 @@
  	struct parse_opt *opt = state->hook;
 --- a/libdwfl/Makefile.in
 +++ b/libdwfl/Makefile.in
-@@ -123,7 +123,7 @@ am__libdwfl_a_SOURCES_DIST = dwfl_begin.
+@@ -121,7 +121,7 @@ am__libdwfl_a_SOURCES_DIST = dwfl_begin.
  	dwfl_getmodules.c dwfl_getdwarf.c dwfl_module_getdwarf.c \
  	dwfl_module_getelf.c dwfl_validate_address.c argp-std.c \
  	find-debuginfo.c dwfl_build_id_find_elf.c \
@@ -81,7 +81,7 @@
  	linux-proc-maps.c dwfl_addrmodule.c dwfl_addrdwarf.c cu.c \
  	dwfl_module_nextcu.c dwfl_nextcu.c dwfl_cumodule.c \
  	dwfl_module_addrdie.c dwfl_addrdie.c lines.c dwfl_lineinfo.c \
-@@ -152,7 +152,7 @@ am_libdwfl_a_OBJECTS = dwfl_begin.$(OBJE
+@@ -150,7 +150,7 @@ am_libdwfl_a_OBJECTS = dwfl_begin.$(OBJE
  	dwfl_validate_address.$(OBJEXT) argp-std.$(OBJEXT) \
  	find-debuginfo.$(OBJEXT) dwfl_build_id_find_elf.$(OBJEXT) \
  	dwfl_build_id_find_debuginfo.$(OBJEXT) \
@@ -90,7 +90,7 @@
  	dwfl_addrmodule.$(OBJEXT) dwfl_addrdwarf.$(OBJEXT) \
  	cu.$(OBJEXT) dwfl_module_nextcu.$(OBJEXT) \
  	dwfl_nextcu.$(OBJEXT) dwfl_cumodule.$(OBJEXT) \
-@@ -424,7 +424,7 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
+@@ -425,7 +425,7 @@ libdwfl_a_SOURCES = dwfl_begin.c dwfl_en
  	dwfl_getmodules.c dwfl_getdwarf.c dwfl_module_getdwarf.c \
  	dwfl_module_getelf.c dwfl_validate_address.c argp-std.c \
  	find-debuginfo.c dwfl_build_id_find_elf.c \
@@ -99,7 +99,7 @@
  	linux-proc-maps.c dwfl_addrmodule.c dwfl_addrdwarf.c cu.c \
  	dwfl_module_nextcu.c dwfl_nextcu.c dwfl_cumodule.c \
  	dwfl_module_addrdie.c dwfl_addrdie.c lines.c dwfl_lineinfo.c \
-@@ -561,7 +561,6 @@ distclean-compile:
+@@ -562,7 +562,6 @@ distclean-compile:
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lines.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/link_map.Po@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux-core-attach.Po@am__quote@

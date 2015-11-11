@@ -311,7 +311,7 @@
 +#include <err.h>
  #include <unistd.h>
  #include <dwarf.h>
- #include <sys/resource.h>
+ #ifdef __linux__
 --- a/tests/backtrace-data.c
 +++ b/tests/backtrace-data.c
 @@ -27,7 +27,7 @@
@@ -322,7 +322,7 @@
 +#include <err.h>
  #include <unistd.h>
  #include <dwarf.h>
- #include <sys/resource.h>
+ #if defined(__x86_64__) && defined(__linux__)
 --- a/tests/buildid.c
 +++ b/tests/buildid.c
 @@ -23,7 +23,7 @@
@@ -457,8 +457,8 @@
  #include <stdio.h>
 --- a/tests/ecp.c
 +++ b/tests/ecp.c
-@@ -16,7 +16,7 @@
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+@@ -20,7 +20,7 @@
+ #endif
  
  #include <errno.h>
 -#include <error.h>
@@ -534,8 +534,8 @@
  #include "sha1.h"
 --- a/tests/rdwrmmap.c
 +++ b/tests/rdwrmmap.c
-@@ -15,7 +15,7 @@
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+@@ -19,7 +19,7 @@
+ #endif
  
  #include <errno.h>
 -#include <error.h>
@@ -583,9 +583,9 @@
  #define _LIBELF_H 1
  
 +#include <fcntl.h>
+ #include <stdint.h>
  #include <sys/types.h>
  
- /* Get the ELF types.  */
 --- a/libasm/asm_end.c
 +++ b/libasm/asm_end.c
 @@ -32,7 +32,7 @@
@@ -705,15 +705,15 @@
    for (subs = nodep->next; subs != NULL; subs = subs->next)
 --- a/libdwfl/dwfl_error.c
 +++ b/libdwfl/dwfl_error.c
-@@ -141,6 +141,7 @@ const char *
- dwfl_errmsg (error)
-      int error;
+@@ -140,6 +140,7 @@ __libdwfl_seterrno (Dwfl_Error error)
+ const char *
+ dwfl_errmsg (int error)
  {
 +  static __thread char s[64] = "";
    if (error == 0 || error == -1)
      {
        int last_error = global_error;
-@@ -155,7 +156,8 @@ dwfl_errmsg (error)
+@@ -154,7 +155,8 @@ dwfl_errmsg (int error)
    switch (error &~ 0xffff)
      {
      case OTHER_ERROR (ERRNO):
@@ -755,7 +755,7 @@
  typedef struct Dwfl Dwfl;
 --- a/libdwfl/find-debuginfo.c
 +++ b/libdwfl/find-debuginfo.c
-@@ -361,7 +361,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
+@@ -372,7 +372,7 @@ dwfl_standard_find_debuginfo (Dwfl_Modul
        /* If FILE_NAME is a symlink, the debug file might be associated
  	 with the symlink target name instead.  */
  
@@ -777,8 +777,8 @@
  	      *file_name = name;
 --- a/libelf/elf_getarsym.c
 +++ b/libelf/elf_getarsym.c
-@@ -301,7 +301,7 @@ elf_getarsym (elf, ptr)
- 		arsym[cnt].as_off = file_data->u32[cnt];
+@@ -297,7 +297,7 @@ elf_getarsym (Elf *elf, size_t *ptr)
+ 		arsym[cnt].as_off = (*u32)[cnt];
  
  	      arsym[cnt].as_hash = _dl_elf_hash (str_data);
 -	      str_data = rawmemchr (str_data, '\0') + 1;
