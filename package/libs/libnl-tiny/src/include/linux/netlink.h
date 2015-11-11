@@ -3,6 +3,7 @@
 
 #include <linux/socket.h> /* for sa_family_t */
 #include <linux/types.h>
+#include <sys/socket.h> /* for sa_family_t */
 
 #define NETLINK_ROUTE		0	/* Routing/device hook				*/
 #define NETLINK_UNUSED		1	/* Unused number				*/
