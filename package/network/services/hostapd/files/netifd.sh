@@ -1,3 +1,5 @@
+. /lib/functions/network.sh
+
 wpa_supplicant_add_rate() {
 	local var="$1"
 	local val="$(($2 / 1000))"
@@ -351,8 +353,9 @@ hostapd_set_bss_options() {
 	append bss_conf "ssid=$ssid" "$N"
 	[ -n "$network_bridge" ] && append bss_conf "bridge=$network_bridge" "$N"
 	[ -n "$iapp_interface" ] && {
-		iapp_interface="$(uci_get_state network "$iapp_interface" ifname "$iapp_interface")"
-		[ -n "$iapp_interface" ] && append bss_conf "iapp_interface=$iapp_interface" "$N"
+		local ifname
+		network_get_device ifname "$iapp_interface" || ifname = "$iapp_interface"
+		append bss_conf "iapp_interface=$ifname" "$N"
 	}
 
 	if [ "$wpa" -ge "1" ]; then
