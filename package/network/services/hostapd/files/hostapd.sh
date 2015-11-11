@@ -1,3 +1,5 @@
+. /lib/functions/network.sh
+
 hostapd_set_bss_options() {
 	local var="$1"
 	local vif="$2"
@@ -213,7 +215,11 @@ hostapd_set_bss_options() {
 	append "$var" "ssid=$ssid" "$N"
 	[ -n "$bridge" ] && append "$var" "bridge=$bridge" "$N"
 	[ -n "$ieee80211d" ] && append "$var" "ieee80211d=$ieee80211d" "$N"
-	[ -n "$iapp_interface" ] && append "$var" iapp_interface=$(uci_get_state network "$iapp_interface" ifname "$iapp_interface") "$N"
+	[ -n "$iapp_interface" ] && {
+		local ifname
+		network_get_device ifname "$iapp_interface" || ifname = "$iapp_interface"
+		append bss_conf "iapp_interface=$ifname" "$N"
+	}
 
 	if [ "$wpa" -ge "1" ]
 	then
@@ -391,4 +397,3 @@ $hostapd_cfg
 EOF
 	hostapd -P /var/run/wifi-$ifname.pid -B /var/run/hostapd-$ifname.conf
 }
-
