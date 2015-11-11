@@ -11,7 +11,8 @@ define Profile/Generic
 	kmod-mmc kmod-mvsdio kmod-usb2 kmod-usb-storage \
 	kmod-i2c-core kmod-i2c-mv64xxx \
 	kmod-ata-core kmod-ata-marvell-sata \
-	kmod-rtc-marvell kmod-thermal-kirkwood
+	kmod-rtc-marvell kmod-thermal-kirkwood \
+	kmod-mwl8k swconfig wpad-mini
 endef
 
 define Profile/Generic/Description

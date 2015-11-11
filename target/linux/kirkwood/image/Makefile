@@ -26,7 +26,7 @@ define Device/linksys-audi
   BLOCKSIZE := 16KiB
   KERNEL_SIZE := 2624k
   FILESYSTEMS := squashfs
-  PROFILES := AUDI
+  PROFILES := Generic AUDI
   IMAGES := factory.bin sysupgrade.tar
   IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.tar := sysupgrade-nand
@@ -39,7 +39,7 @@ define Device/linksys-viper
   BLOCKSIZE := 128KiB
   KERNEL_SIZE := 2688k
   FILESYSTEMS := squashfs
-  PROFILES := VIPER
+  PROFILES := Generic VIPER
   IMAGES := factory.bin sysupgrade.tar
   IMAGE/factory.bin := append-kernel $$$$(KERNEL_SIZE) | append-ubi
   IMAGE/sysupgrade.tar := sysupgrade-nand
