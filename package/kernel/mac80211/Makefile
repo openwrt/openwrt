@@ -1782,7 +1782,8 @@ define Build/Prepare
 		$(PKG_BUILD_DIR)/include/linux/eeprom_93cx6.h \
 		$(PKG_BUILD_DIR)/include/linux/wl12xx.h \
 		$(PKG_BUILD_DIR)/include/linux/spi/libertas_spi.h \
-		$(PKG_BUILD_DIR)/include/net/ieee80211.h
+		$(PKG_BUILD_DIR)/include/net/ieee80211.h \
+		$(PKG_BUILD_DIR)/backport-include/linux/bcm47xx_nvram.h
 
 	echo 'compat-wireless-$(PKG_VERSION)-$(PKG_RELEASE)-$(REVISION)' > $(PKG_BUILD_DIR)/compat_version
 	$(CP) ./files/regdb.txt $(PKG_BUILD_DIR)/net/wireless/db.txt

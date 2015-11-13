@@ -29,8 +29,6 @@ Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
  3 files changed, 4 insertions(+), 1 deletion(-)
  create mode 100644 tools/build/tests/ex/empty2/README
 
-diff --git a/tools/build/Makefile.build b/tools/build/Makefile.build
-index 10df572..69c35cf 100644
 --- a/tools/build/Makefile.build
 +++ b/tools/build/Makefile.build
 @@ -37,7 +37,7 @@ subdir-obj-y :=
@@ -42,8 +40,6 @@ index 10df572..69c35cf 100644
  
  quiet_cmd_flex  = FLEX     $@
  quiet_cmd_bison = BISON    $@
-diff --git a/tools/build/tests/ex/Build b/tools/build/tests/ex/Build
-index 0e6c3e6..70d8762 100644
 --- a/tools/build/tests/ex/Build
 +++ b/tools/build/tests/ex/Build
 @@ -2,6 +2,7 @@ ex-y += ex.o
@@ -54,14 +50,8 @@ index 0e6c3e6..70d8762 100644
  
  libex-y += c.o
  libex-y += d.o
-diff --git a/tools/build/tests/ex/empty2/README b/tools/build/tests/ex/empty2/README
-new file mode 100644
-index 0000000..2107cc5
 --- /dev/null
 +++ b/tools/build/tests/ex/empty2/README
 @@ -0,0 +1,2 @@
 +This directory is left intentionally without Build file
 +to test proper nesting into Build-less directories.
--- 
-2.1.4
-
