@@ -13,10 +13,14 @@ tools-y :=
 
 ifeq ($(CONFIG_EXTERNAL_TOOLCHAIN),)
   BUILD_TOOLCHAIN := y
-endif
-ifdef CONFIG_GCC_USE_GRAPHITE
-  ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
-    BUILD_PPL_CLOOG = y
+  ifdef CONFIG_GCC_USE_GRAPHITE
+    ifneq ($(CONFIG_GCC_VERSION_4_8),)
+      ifeq ($(CONFIG_GCC_USE_SYSTEM_PPL_CLOOG),)
+        BUILD_PPL_CLOOG = y
+      endif
+    else
+      BUILD_ISL = y
+    endif
   endif
 endif
 ifneq ($(CONFIG_PACKAGE_kmod-b43)$(CONFIG_PACKAGE_kmod-b43legacy)$(CONFIG_BRCMSMAC_USE_FW_FROM_WL),)
@@ -37,6 +41,7 @@ tools-$(CONFIG_TARGET_ar71xx) += lzma-old squashfs
 tools-y += lzma squashfs4
 tools-$(BUILD_B43_TOOLS) += b43-tools
 tools-$(BUILD_PPL_CLOOG) += ppl cloog
+tools-$(BUILD_ISL) += isl
 tools-$(CONFIG_USE_SPARSE) += sparse
 
 # builddir dependencies
@@ -67,6 +72,7 @@ $(curdir)/sdcc/compile := $(curdir)/bison/install
 $(curdir)/b43-tools/compile := $(curdir)/bison/install
 $(curdir)/padjffs2/compile := $(curdir)/findutils/install
 $(curdir)/cloog/compile := $(curdir)/ppl/install
+$(curdir)/isl/compile := $(curdir)/gmp/install
 $(curdir)/bc/compile := $(curdir)/bison/install
 $(curdir)/findutils/compile := $(curdir)/bison/install
 $(curdir)/gengetopt/compile := $(curdir)/libtool/install
