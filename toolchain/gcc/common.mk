@@ -108,6 +108,16 @@ ifdef CONFIG_USE_UCLIBC
   export glibcxx_cv_c99_math_tr1=no
 endif
 
+ifdef CONFIG_GCC_USE_GRAPHITE
+  ifdef CONFIG_GCC_VERSION_4_8
+    GRAPHITE_CONFIGURE=--with-cloog=$(REAL_STAGING_DIR_HOST)
+  else
+    GRAPHITE_CONFIGURE=--with-isl=$(REAL_STAGING_DIR_HOST)
+  endif
+else
+  GRAPHITE_CONFIGURE=--without-isl --without-cloog
+endif
+
 GCC_CONFIGURE:= \
 	SHELL="$(BASH)" \
 	$(if $(shell gcc --version 2>&1 | grep LLVM), \
