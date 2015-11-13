@@ -80,6 +80,7 @@ start_instance()
 	[ -f /usr/lib/uhttpd_ubus.so ] && {
 		append_arg "$cfg" ubus_prefix "-u"
 		append_arg "$cfg" ubus_socket "-U"
+		append_bool "$cfg" ubus_cors "-X" 0
 	}
 	append_arg "$cfg" script_timeout "-t"
 	append_arg "$cfg" network_timeout "-T"
