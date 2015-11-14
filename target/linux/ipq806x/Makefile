@@ -6,7 +6,8 @@ ARCH:=arm
 BOARD:=ipq806x
 BOARDNAME:=Qualcomm Atheros IPQ806X
 FEATURES:=squashfs nand ubifs
-CPU_TYPE:=cortex-a7
+CPU_TYPE:=cortex-a9
+CPU_SUBTYPE:=neon-vfpv4
 MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 KERNEL_PATCHVER:=3.18

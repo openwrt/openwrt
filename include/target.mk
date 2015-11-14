@@ -244,6 +244,7 @@ ifeq ($(DUMP),1)
       CPU_CFLAGS_neon = -mfpu=neon
       CPU_CFLAGS_vfp = -mfpu=vfp
       CPU_CFLAGS_vfpv3 = -mfpu=vfpv3-d16
+      CPU_CFLAGS_neon-vfpv4 = -mfpu=neon-vfpv4
     endif
   endif
   ifeq ($(ARCH),powerpc)
