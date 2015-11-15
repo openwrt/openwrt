@@ -473,10 +473,17 @@ $(eval $(call KernelPackage,crypto-michael-mic))
 define KernelPackage/crypto-sha1
   TITLE:=SHA1 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
-  KCONFIG:=CONFIG_CRYPTO_SHA1
+  KCONFIG:= \
+	CONFIG_CRYPTO_SHA1 \
+	CONFIG_CRYPTO_SHA1_OCTEON
   FILES:=$(LINUX_DIR)/crypto/sha1_generic.ko
   AUTOLOAD:=$(call AutoLoad,09,sha1_generic)
   $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-sha1/octeon
+  FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha1.ko
+  AUTOLOAD:=$(call AutoLoad,09,octeon-sha1)
 endef
 
 $(eval $(call KernelPackage,crypto-sha1))
