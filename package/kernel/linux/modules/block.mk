@@ -654,3 +654,17 @@ define KernelPackage/scsi-cdrom
 endef
 
 $(eval $(call KernelPackage,scsi-cdrom))
+
+
+define KernelPackage/scsi-tape
+  SUBMENU:=$(OTHER_MENU)
+  TITLE:=Kernel support for scsi tape drives
+  DEPENDS:=+kmod-scsi-core
+  KCONFIG:= \
+    CONFIG_CHR_DEV_ST
+  FILES:= \
+    $(LINUX_DIR)/drivers/scsi/st.ko
+  AUTOLOAD:=$(call AutoLoad,45,st)
+endef
+
+$(eval $(call KernelPackage,scsi-tape))
