@@ -442,10 +442,17 @@ $(eval $(call KernelPackage,crypto-md4))
 define KernelPackage/crypto-md5
   TITLE:=MD5 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
-  KCONFIG:=CONFIG_CRYPTO_MD5
+  KCONFIG:= \
+	CONFIG_CRYPTO_MD5 \
+	CONFIG_CRYPTO_MD5_OCTEON
   FILES:=$(LINUX_DIR)/crypto/md5.ko
   AUTOLOAD:=$(call AutoLoad,09,md5)
   $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-md5/octeon
+  FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-md5.ko
+  AUTOLOAD:=$(call AutoLoad,09,octeon-md5)
 endef
 
 $(eval $(call KernelPackage,crypto-md5))
