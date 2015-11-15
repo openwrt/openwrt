@@ -511,10 +511,17 @@ $(eval $(call KernelPackage,crypto-sha256))
 define KernelPackage/crypto-sha512
   TITLE:=SHA512 digest CryptoAPI module
   DEPENDS:=+kmod-crypto-hash
-  KCONFIG:=CONFIG_CRYPTO_SHA512
+  KCONFIG:= \
+	CONFIG_CRYPTO_SHA512 \
+	CONFIG_CRYPTO_SHA512_OCTEON
   FILES:=$(LINUX_DIR)/crypto/sha512_generic.ko
   AUTOLOAD:=$(call AutoLoad,09,sha512_generic)
   $(call AddDepends/crypto)
+endef
+
+define KernelPackage/crypto-sha512/octeon
+  FILES+=$(LINUX_DIR)/arch/mips/cavium-octeon/crypto/octeon-sha512.ko
+  AUTOLOAD:=$(call AutoLoad,09,octeon-sha512)
 endef
 
 $(eval $(call KernelPackage,crypto-sha512))
