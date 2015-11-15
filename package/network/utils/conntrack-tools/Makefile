@@ -61,6 +61,10 @@ $(call Package/conntrack-tools/default)
   TITLE:=Connection tracking daemon
 endef
 
+define Package/conntrackd/conffiles
+/etc/conntrackd/
+endef
+
 define Package/conntrackd/description
  Conntrackd can replicate the status of the connections that are
  currently being processed by your stateful firewall based on Linux.
