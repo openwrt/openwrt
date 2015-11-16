@@ -1,0 +1,18 @@
+--- a/src/network/getifaddrs.c
++++ b/src/network/getifaddrs.c
+@@ -161,6 +161,15 @@ static int netlink_msg_to_ifaddr(void *p
+ 		ifs->ifa.ifa_flags = ifs0->ifa.ifa_flags;
+ 		for (rta = NLMSG_RTA(h, sizeof(*ifa)); NLMSG_RTAOK(rta, h); rta = RTA_NEXT(rta)) {
+ 			switch (rta->rta_type) {
++			case IFA_LOCAL:
++				/* If ifa_addr is set and we get IFA_LOCAL, assume we have
++				 * a point-to-point network. Move address to correct field.  */
++				if (ifs->ifa.ifa_addr != NULL) {
++					ifs->ifu = ifs->addr;
++					ifs->ifa.ifa_broadaddr = &ifs->ifu.sa;
++					memset(&ifs->addr, 0, sizeof(ifs->addr));
++				}
++				/* fall through */
+ 			case IFA_ADDRESS:
+ 				copy_addr(&ifs->ifa.ifa_addr, ifa->ifa_family, &ifs->addr, RTA_DATA(rta), RTA_DATALEN(rta), ifa->ifa_index);
+ 				break;
