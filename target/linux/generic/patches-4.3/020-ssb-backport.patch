@@ -1,0 +1,686 @@
+--- a/arch/mips/bcm47xx/Kconfig
++++ b/arch/mips/bcm47xx/Kconfig
+@@ -4,6 +4,7 @@ config BCM47XX_SSB
+ 	bool "SSB Support for Broadcom BCM47XX"
+ 	select SYS_HAS_CPU_BMIPS32_3300
+ 	select SSB
++	select SSB_HOST_SOC
+ 	select SSB_DRIVER_MIPS
+ 	select SSB_DRIVER_EXTIF
+ 	select SSB_EMBEDDED
+--- a/drivers/ssb/Kconfig
++++ b/drivers/ssb/Kconfig
+@@ -80,6 +80,15 @@ config SSB_SDIOHOST
+ 
+ 	  If unsure, say N
+ 
++config SSB_HOST_SOC
++	bool "Support for SSB bus on SoC"
++	depends on SSB
++	help
++	  Host interface for a SSB directly mapped into memory. This is
++	  for some Broadcom SoCs from the BCM47xx and BCM53xx lines.
++
++	  If unsure, say N
++
+ config SSB_SILENT
+ 	bool "No SSB kernel messages"
+ 	depends on SSB && EXPERT
+--- a/drivers/ssb/Makefile
++++ b/drivers/ssb/Makefile
+@@ -5,8 +5,9 @@ ssb-$(CONFIG_SSB_SPROM)			+= sprom.o
+ 
+ # host support
+ ssb-$(CONFIG_SSB_PCIHOST)		+= pci.o pcihost_wrapper.o
+-ssb-$(CONFIG_SSB_PCMCIAHOST)		+= pcmcia.o
++ssb-$(CONFIG_SSB_PCMCIAHOST)		+= pcmcia.o bridge_pcmcia_80211.o
+ ssb-$(CONFIG_SSB_SDIOHOST)		+= sdio.o
++ssb-$(CONFIG_SSB_HOST_SOC)		+= host_soc.o
+ 
+ # built-in drivers
+ ssb-y					+= driver_chipcommon.o
+--- /dev/null
++++ b/drivers/ssb/bridge_pcmcia_80211.c
+@@ -0,0 +1,128 @@
++/*
++ * Broadcom 43xx PCMCIA-SSB bridge module
++ *
++ * Copyright (c) 2007 Michael Buesch <m@bues.ch>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/ssb/ssb.h>
++#include <linux/slab.h>
++#include <linux/module.h>
++
++#include <pcmcia/cistpl.h>
++#include <pcmcia/ciscode.h>
++#include <pcmcia/ds.h>
++#include <pcmcia/cisreg.h>
++
++#include "ssb_private.h"
++
++static const struct pcmcia_device_id ssb_host_pcmcia_tbl[] = {
++	PCMCIA_DEVICE_MANF_CARD(0x2D0, 0x448),
++	PCMCIA_DEVICE_MANF_CARD(0x2D0, 0x476),
++	PCMCIA_DEVICE_NULL,
++};
++
++MODULE_DEVICE_TABLE(pcmcia, ssb_host_pcmcia_tbl);
++
++static int ssb_host_pcmcia_probe(struct pcmcia_device *dev)
++{
++	struct ssb_bus *ssb;
++	int err = -ENOMEM;
++	int res = 0;
++
++	ssb = kzalloc(sizeof(*ssb), GFP_KERNEL);
++	if (!ssb)
++		goto out_error;
++
++	err = -ENODEV;
++
++	dev->config_flags |= CONF_ENABLE_IRQ;
++
++	dev->resource[2]->flags |=  WIN_ENABLE | WIN_DATA_WIDTH_16 |
++			 WIN_USE_WAIT;
++	dev->resource[2]->start = 0;
++	dev->resource[2]->end = SSB_CORE_SIZE;
++	res = pcmcia_request_window(dev, dev->resource[2], 250);
++	if (res != 0)
++		goto err_kfree_ssb;
++
++	res = pcmcia_map_mem_page(dev, dev->resource[2], 0);
++	if (res != 0)
++		goto err_disable;
++
++	if (!dev->irq)
++		goto err_disable;
++
++	res = pcmcia_enable_device(dev);
++	if (res != 0)
++		goto err_disable;
++
++	err = ssb_bus_pcmciabus_register(ssb, dev, dev->resource[2]->start);
++	if (err)
++		goto err_disable;
++	dev->priv = ssb;
++
++	return 0;
++
++err_disable:
++	pcmcia_disable_device(dev);
++err_kfree_ssb:
++	kfree(ssb);
++out_error:
++	ssb_err("Initialization failed (%d, %d)\n", res, err);
++	return err;
++}
++
++static void ssb_host_pcmcia_remove(struct pcmcia_device *dev)
++{
++	struct ssb_bus *ssb = dev->priv;
++
++	ssb_bus_unregister(ssb);
++	pcmcia_disable_device(dev);
++	kfree(ssb);
++	dev->priv = NULL;
++}
++
++#ifdef CONFIG_PM
++static int ssb_host_pcmcia_suspend(struct pcmcia_device *dev)
++{
++	struct ssb_bus *ssb = dev->priv;
++
++	return ssb_bus_suspend(ssb);
++}
++
++static int ssb_host_pcmcia_resume(struct pcmcia_device *dev)
++{
++	struct ssb_bus *ssb = dev->priv;
++
++	return ssb_bus_resume(ssb);
++}
++#else /* CONFIG_PM */
++# define ssb_host_pcmcia_suspend		NULL
++# define ssb_host_pcmcia_resume		NULL
++#endif /* CONFIG_PM */
++
++static struct pcmcia_driver ssb_host_pcmcia_driver = {
++	.owner		= THIS_MODULE,
++	.name		= "ssb-pcmcia",
++	.id_table	= ssb_host_pcmcia_tbl,
++	.probe		= ssb_host_pcmcia_probe,
++	.remove		= ssb_host_pcmcia_remove,
++	.suspend	= ssb_host_pcmcia_suspend,
++	.resume		= ssb_host_pcmcia_resume,
++};
++
++/*
++ * These are not module init/exit functions!
++ * The module_pcmcia_driver() helper cannot be used here.
++ */
++int ssb_host_pcmcia_init(void)
++{
++	return pcmcia_register_driver(&ssb_host_pcmcia_driver);
++}
++
++void ssb_host_pcmcia_exit(void)
++{
++	pcmcia_unregister_driver(&ssb_host_pcmcia_driver);
++}
+--- /dev/null
++++ b/drivers/ssb/host_soc.c
+@@ -0,0 +1,173 @@
++/*
++ * Sonics Silicon Backplane SoC host related functions.
++ * Subsystem core
++ *
++ * Copyright 2005, Broadcom Corporation
++ * Copyright 2006, 2007, Michael Buesch <m@bues.ch>
++ *
++ * Licensed under the GNU/GPL. See COPYING for details.
++ */
++
++#include <linux/ssb/ssb.h>
++
++#include "ssb_private.h"
++
++static u8 ssb_host_soc_read8(struct ssb_device *dev, u16 offset)
++{
++	struct ssb_bus *bus = dev->bus;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	return readb(bus->mmio + offset);
++}
++
++static u16 ssb_host_soc_read16(struct ssb_device *dev, u16 offset)
++{
++	struct ssb_bus *bus = dev->bus;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	return readw(bus->mmio + offset);
++}
++
++static u32 ssb_host_soc_read32(struct ssb_device *dev, u16 offset)
++{
++	struct ssb_bus *bus = dev->bus;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	return readl(bus->mmio + offset);
++}
++
++#ifdef CONFIG_SSB_BLOCKIO
++static void ssb_host_soc_block_read(struct ssb_device *dev, void *buffer,
++				    size_t count, u16 offset, u8 reg_width)
++{
++	struct ssb_bus *bus = dev->bus;
++	void __iomem *addr;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	addr = bus->mmio + offset;
++
++	switch (reg_width) {
++	case sizeof(u8): {
++		u8 *buf = buffer;
++
++		while (count) {
++			*buf = __raw_readb(addr);
++			buf++;
++			count--;
++		}
++		break;
++	}
++	case sizeof(u16): {
++		__le16 *buf = buffer;
++
++		SSB_WARN_ON(count & 1);
++		while (count) {
++			*buf = (__force __le16)__raw_readw(addr);
++			buf++;
++			count -= 2;
++		}
++		break;
++	}
++	case sizeof(u32): {
++		__le32 *buf = buffer;
++
++		SSB_WARN_ON(count & 3);
++		while (count) {
++			*buf = (__force __le32)__raw_readl(addr);
++			buf++;
++			count -= 4;
++		}
++		break;
++	}
++	default:
++		SSB_WARN_ON(1);
++	}
++}
++#endif /* CONFIG_SSB_BLOCKIO */
++
++static void ssb_host_soc_write8(struct ssb_device *dev, u16 offset, u8 value)
++{
++	struct ssb_bus *bus = dev->bus;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	writeb(value, bus->mmio + offset);
++}
++
++static void ssb_host_soc_write16(struct ssb_device *dev, u16 offset, u16 value)
++{
++	struct ssb_bus *bus = dev->bus;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	writew(value, bus->mmio + offset);
++}
++
++static void ssb_host_soc_write32(struct ssb_device *dev, u16 offset, u32 value)
++{
++	struct ssb_bus *bus = dev->bus;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	writel(value, bus->mmio + offset);
++}
++
++#ifdef CONFIG_SSB_BLOCKIO
++static void ssb_host_soc_block_write(struct ssb_device *dev, const void *buffer,
++				     size_t count, u16 offset, u8 reg_width)
++{
++	struct ssb_bus *bus = dev->bus;
++	void __iomem *addr;
++
++	offset += dev->core_index * SSB_CORE_SIZE;
++	addr = bus->mmio + offset;
++
++	switch (reg_width) {
++	case sizeof(u8): {
++		const u8 *buf = buffer;
++
++		while (count) {
++			__raw_writeb(*buf, addr);
++			buf++;
++			count--;
++		}
++		break;
++	}
++	case sizeof(u16): {
++		const __le16 *buf = buffer;
++
++		SSB_WARN_ON(count & 1);
++		while (count) {
++			__raw_writew((__force u16)(*buf), addr);
++			buf++;
++			count -= 2;
++		}
++		break;
++	}
++	case sizeof(u32): {
++		const __le32 *buf = buffer;
++
++		SSB_WARN_ON(count & 3);
++		while (count) {
++			__raw_writel((__force u32)(*buf), addr);
++			buf++;
++			count -= 4;
++		}
++		break;
++	}
++	default:
++		SSB_WARN_ON(1);
++	}
++}
++#endif /* CONFIG_SSB_BLOCKIO */
++
++/* Ops for the plain SSB bus without a host-device (no PCI or PCMCIA). */
++const struct ssb_bus_ops ssb_host_soc_ops = {
++	.read8		= ssb_host_soc_read8,
++	.read16		= ssb_host_soc_read16,
++	.read32		= ssb_host_soc_read32,
++	.write8		= ssb_host_soc_write8,
++	.write16	= ssb_host_soc_write16,
++	.write32	= ssb_host_soc_write32,
++#ifdef CONFIG_SSB_BLOCKIO
++	.block_read	= ssb_host_soc_block_read,
++	.block_write	= ssb_host_soc_block_write,
++#endif
++};
+--- a/drivers/ssb/main.c
++++ b/drivers/ssb/main.c
+@@ -596,166 +596,6 @@ error:
+ 	return err;
+ }
+ 
+-static u8 ssb_ssb_read8(struct ssb_device *dev, u16 offset)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	return readb(bus->mmio + offset);
+-}
+-
+-static u16 ssb_ssb_read16(struct ssb_device *dev, u16 offset)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	return readw(bus->mmio + offset);
+-}
+-
+-static u32 ssb_ssb_read32(struct ssb_device *dev, u16 offset)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	return readl(bus->mmio + offset);
+-}
+-
+-#ifdef CONFIG_SSB_BLOCKIO
+-static void ssb_ssb_block_read(struct ssb_device *dev, void *buffer,
+-			       size_t count, u16 offset, u8 reg_width)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-	void __iomem *addr;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	addr = bus->mmio + offset;
+-
+-	switch (reg_width) {
+-	case sizeof(u8): {
+-		u8 *buf = buffer;
+-
+-		while (count) {
+-			*buf = __raw_readb(addr);
+-			buf++;
+-			count--;
+-		}
+-		break;
+-	}
+-	case sizeof(u16): {
+-		__le16 *buf = buffer;
+-
+-		SSB_WARN_ON(count & 1);
+-		while (count) {
+-			*buf = (__force __le16)__raw_readw(addr);
+-			buf++;
+-			count -= 2;
+-		}
+-		break;
+-	}
+-	case sizeof(u32): {
+-		__le32 *buf = buffer;
+-
+-		SSB_WARN_ON(count & 3);
+-		while (count) {
+-			*buf = (__force __le32)__raw_readl(addr);
+-			buf++;
+-			count -= 4;
+-		}
+-		break;
+-	}
+-	default:
+-		SSB_WARN_ON(1);
+-	}
+-}
+-#endif /* CONFIG_SSB_BLOCKIO */
+-
+-static void ssb_ssb_write8(struct ssb_device *dev, u16 offset, u8 value)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	writeb(value, bus->mmio + offset);
+-}
+-
+-static void ssb_ssb_write16(struct ssb_device *dev, u16 offset, u16 value)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	writew(value, bus->mmio + offset);
+-}
+-
+-static void ssb_ssb_write32(struct ssb_device *dev, u16 offset, u32 value)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	writel(value, bus->mmio + offset);
+-}
+-
+-#ifdef CONFIG_SSB_BLOCKIO
+-static void ssb_ssb_block_write(struct ssb_device *dev, const void *buffer,
+-				size_t count, u16 offset, u8 reg_width)
+-{
+-	struct ssb_bus *bus = dev->bus;
+-	void __iomem *addr;
+-
+-	offset += dev->core_index * SSB_CORE_SIZE;
+-	addr = bus->mmio + offset;
+-
+-	switch (reg_width) {
+-	case sizeof(u8): {
+-		const u8 *buf = buffer;
+-
+-		while (count) {
+-			__raw_writeb(*buf, addr);
+-			buf++;
+-			count--;
+-		}
+-		break;
+-	}
+-	case sizeof(u16): {
+-		const __le16 *buf = buffer;
+-
+-		SSB_WARN_ON(count & 1);
+-		while (count) {
+-			__raw_writew((__force u16)(*buf), addr);
+-			buf++;
+-			count -= 2;
+-		}
+-		break;
+-	}
+-	case sizeof(u32): {
+-		const __le32 *buf = buffer;
+-
+-		SSB_WARN_ON(count & 3);
+-		while (count) {
+-			__raw_writel((__force u32)(*buf), addr);
+-			buf++;
+-			count -= 4;
+-		}
+-		break;
+-	}
+-	default:
+-		SSB_WARN_ON(1);
+-	}
+-}
+-#endif /* CONFIG_SSB_BLOCKIO */
+-
+-/* Ops for the plain SSB bus without a host-device (no PCI or PCMCIA). */
+-static const struct ssb_bus_ops ssb_ssb_ops = {
+-	.read8		= ssb_ssb_read8,
+-	.read16		= ssb_ssb_read16,
+-	.read32		= ssb_ssb_read32,
+-	.write8		= ssb_ssb_write8,
+-	.write16	= ssb_ssb_write16,
+-	.write32	= ssb_ssb_write32,
+-#ifdef CONFIG_SSB_BLOCKIO
+-	.block_read	= ssb_ssb_block_read,
+-	.block_write	= ssb_ssb_block_write,
+-#endif
+-};
+-
+ static int ssb_fetch_invariants(struct ssb_bus *bus,
+ 				ssb_invariants_func_t get_invariants)
+ {
+@@ -876,7 +716,6 @@ int ssb_bus_pcibus_register(struct ssb_b
+ 
+ 	return err;
+ }
+-EXPORT_SYMBOL(ssb_bus_pcibus_register);
+ #endif /* CONFIG_SSB_PCIHOST */
+ 
+ #ifdef CONFIG_SSB_PCMCIAHOST
+@@ -898,7 +737,6 @@ int ssb_bus_pcmciabus_register(struct ss
+ 
+ 	return err;
+ }
+-EXPORT_SYMBOL(ssb_bus_pcmciabus_register);
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+ #ifdef CONFIG_SSB_SDIOHOST
+@@ -923,13 +761,14 @@ int ssb_bus_sdiobus_register(struct ssb_
+ EXPORT_SYMBOL(ssb_bus_sdiobus_register);
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
++#ifdef CONFIG_SSB_HOST_SOC
+ int ssb_bus_ssbbus_register(struct ssb_bus *bus, unsigned long baseaddr,
+ 			    ssb_invariants_func_t get_invariants)
+ {
+ 	int err;
+ 
+ 	bus->bustype = SSB_BUSTYPE_SSB;
+-	bus->ops = &ssb_ssb_ops;
++	bus->ops = &ssb_host_soc_ops;
+ 
+ 	err = ssb_bus_register(bus, get_invariants, baseaddr);
+ 	if (!err) {
+@@ -939,6 +778,7 @@ int ssb_bus_ssbbus_register(struct ssb_b
+ 
+ 	return err;
+ }
++#endif
+ 
+ int __ssb_driver_register(struct ssb_driver *drv, struct module *owner)
+ {
+@@ -1465,6 +1305,12 @@ static int __init ssb_modinit(void)
+ 		/* don't fail SSB init because of this */
+ 		err = 0;
+ 	}
++	err = ssb_host_pcmcia_init();
++	if (err) {
++		ssb_err("PCMCIA host initialization failed\n");
++		/* don't fail SSB init because of this */
++		err = 0;
++	}
+ 	err = ssb_gige_init();
+ 	if (err) {
+ 		ssb_err("SSB Broadcom Gigabit Ethernet driver initialization failed\n");
+@@ -1482,6 +1328,7 @@ fs_initcall(ssb_modinit);
+ static void __exit ssb_modexit(void)
+ {
+ 	ssb_gige_exit();
++	ssb_host_pcmcia_exit();
+ 	b43_pci_ssb_bridge_exit();
+ 	bus_unregister(&ssb_bustype);
+ }
+--- a/drivers/ssb/pcmcia.c
++++ b/drivers/ssb/pcmcia.c
+@@ -147,8 +147,7 @@ error:
+ 	return err;
+ }
+ 
+-int ssb_pcmcia_switch_core(struct ssb_bus *bus,
+-			   struct ssb_device *dev)
++static int ssb_pcmcia_switch_core(struct ssb_bus *bus, struct ssb_device *dev)
+ {
+ 	int err;
+ 
+--- a/drivers/ssb/sdio.c
++++ b/drivers/ssb/sdio.c
+@@ -200,7 +200,7 @@ out:
+ }
+ 
+ /* host must be already claimed */
+-int ssb_sdio_switch_core(struct ssb_bus *bus, struct ssb_device *dev)
++static int ssb_sdio_switch_core(struct ssb_bus *bus, struct ssb_device *dev)
+ {
+ 	u8 coreidx = dev->core_index;
+ 	u32 sbaddr;
+--- a/drivers/ssb/ssb_private.h
++++ b/drivers/ssb/ssb_private.h
+@@ -85,8 +85,6 @@ static inline int ssb_pci_init(struct ss
+ 
+ /* pcmcia.c */
+ #ifdef CONFIG_SSB_PCMCIAHOST
+-extern int ssb_pcmcia_switch_core(struct ssb_bus *bus,
+-				  struct ssb_device *dev);
+ extern int ssb_pcmcia_switch_coreidx(struct ssb_bus *bus,
+ 				     u8 coreidx);
+ extern int ssb_pcmcia_switch_segment(struct ssb_bus *bus,
+@@ -96,13 +94,10 @@ extern int ssb_pcmcia_get_invariants(str
+ extern int ssb_pcmcia_hardware_setup(struct ssb_bus *bus);
+ extern void ssb_pcmcia_exit(struct ssb_bus *bus);
+ extern int ssb_pcmcia_init(struct ssb_bus *bus);
++extern int ssb_host_pcmcia_init(void);
++extern void ssb_host_pcmcia_exit(void);
+ extern const struct ssb_bus_ops ssb_pcmcia_ops;
+ #else /* CONFIG_SSB_PCMCIAHOST */
+-static inline int ssb_pcmcia_switch_core(struct ssb_bus *bus,
+-					 struct ssb_device *dev)
+-{
+-	return 0;
+-}
+ static inline int ssb_pcmcia_switch_coreidx(struct ssb_bus *bus,
+ 					    u8 coreidx)
+ {
+@@ -124,6 +119,13 @@ static inline int ssb_pcmcia_init(struct
+ {
+ 	return 0;
+ }
++static inline int ssb_host_pcmcia_init(void)
++{
++	return 0;
++}
++static inline void ssb_host_pcmcia_exit(void)
++{
++}
+ #endif /* CONFIG_SSB_PCMCIAHOST */
+ 
+ /* sdio.c */
+@@ -132,9 +134,7 @@ extern int ssb_sdio_get_invariants(struc
+ 				     struct ssb_init_invariants *iv);
+ 
+ extern u32 ssb_sdio_scan_read32(struct ssb_bus *bus, u16 offset);
+-extern int ssb_sdio_switch_core(struct ssb_bus *bus, struct ssb_device *dev);
+ extern int ssb_sdio_scan_switch_coreidx(struct ssb_bus *bus, u8 coreidx);
+-extern int ssb_sdio_hardware_setup(struct ssb_bus *bus);
+ extern void ssb_sdio_exit(struct ssb_bus *bus);
+ extern int ssb_sdio_init(struct ssb_bus *bus);
+ 
+@@ -144,19 +144,10 @@ static inline u32 ssb_sdio_scan_read32(s
+ {
+ 	return 0;
+ }
+-static inline int ssb_sdio_switch_core(struct ssb_bus *bus,
+-					 struct ssb_device *dev)
+-{
+-	return 0;
+-}
+ static inline int ssb_sdio_scan_switch_coreidx(struct ssb_bus *bus, u8 coreidx)
+ {
+ 	return 0;
+ }
+-static inline int ssb_sdio_hardware_setup(struct ssb_bus *bus)
+-{
+-	return 0;
+-}
+ static inline void ssb_sdio_exit(struct ssb_bus *bus)
+ {
+ }
+@@ -166,6 +157,13 @@ static inline int ssb_sdio_init(struct s
+ }
+ #endif /* CONFIG_SSB_SDIOHOST */
+ 
++/**************************************************
++ * host_soc.c
++ **************************************************/
++
++#ifdef CONFIG_SSB_HOST_SOC
++extern const struct ssb_bus_ops ssb_host_soc_ops;
++#endif
+ 
+ /* scan.c */
+ extern const char *ssb_core_name(u16 coreid);
