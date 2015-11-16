@@ -82,7 +82,7 @@
  bcm47xx_buttons_netgear_wnr3500lv1[] __initconst = {
  	BCM47XX_GPIO_KEY(4, KEY_RESTART),
  	BCM47XX_GPIO_KEY(6, KEY_WPS_BUTTON),
-@@ -414,6 +442,9 @@ int __init bcm47xx_buttons_register(void
+@@ -413,6 +441,9 @@ int __init bcm47xx_buttons_register(void
  	int err;
  
  	switch (board) {
@@ -92,7 +92,7 @@
  	case BCM47XX_BOARD_ASUS_RTN12:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_asus_rtn12);
  		break;
-@@ -544,6 +575,12 @@ int __init bcm47xx_buttons_register(void
+@@ -543,6 +574,12 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_LINKSYS_WRT310NV1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt310nv1);
  		break;
@@ -105,7 +105,7 @@
  	case BCM47XX_BOARD_LINKSYS_WRT54G3GV2:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_linksys_wrt54g3gv2);
  		break;
-@@ -580,6 +617,9 @@ int __init bcm47xx_buttons_register(void
+@@ -579,6 +616,9 @@ int __init bcm47xx_buttons_register(void
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_motorola_wr850gv2v3);
  		break;
  
@@ -115,7 +115,7 @@
  	case BCM47XX_BOARD_NETGEAR_WNDR3400V1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr3400v1);
  		break;
-@@ -592,6 +632,9 @@ int __init bcm47xx_buttons_register(void
+@@ -591,6 +631,9 @@ int __init bcm47xx_buttons_register(void
  	case BCM47XX_BOARD_NETGEAR_WNDR4500V1:
  		err = bcm47xx_copy_bdata(bcm47xx_buttons_netgear_wndr4500v1);
  		break;
