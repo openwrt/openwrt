@@ -3,13 +3,11 @@
 
 # needs to start before the atm layer which starts at 50
 START=48
+USE_PROCD=1
 
 EXTRA_COMMANDS="status lucistat"
 EXTRA_HELP="	status  Get DSL status information
 	lucistat  Get status information if lua friendly format"
-
-SERVICE_DAEMONIZE=1
-SERVICE_WRITE_PID=1
 
 [ -f /lib/functions/lantiq_dsl.sh ] && . /lib/functions/lantiq_dsl.sh
 
@@ -37,7 +35,11 @@ xtse_adsl_j="10 00 10 40 00 04 01 00"
 
 xtse_vdsl="00 00 00 00 00 00 00 07"
 
-start() {
+service_triggers() {
+	procd_add_reload_trigger network
+}
+
+start_service() {
 	local annex
 	local firmware
 	local xtse
@@ -53,11 +55,13 @@ start() {
 
 	case "${xfer_mode}" in
 	atm)
-		insmod ltq_atm_vr9
+		LOAD=ltq_atm_vr9
+		UNLOAD=ltq_ptm_vr9
 		mode=1
 		;;
 	*)
-		insmod ltq_ptm_vr9
+		LOAD=ltq_ptm_vr9
+		UNLOAD=ltq_atm_vr9
 		mode=2
 		;;
 	esac
@@ -75,17 +79,18 @@ start() {
 		return 1
 	}
 
-	service_start /sbin/vdsl_cpe_control \
+	procd_open_instance
+	procd_set_param command /sbin/vdsl_cpe_control_wrapper \
 			-i `echo $xtse | sed "s/ /_/g"` \
 			-n /sbin/dsl_notify.sh \
 			-f ${firmware} \
 			-M ${mode}
+	procd_append_param env "LOAD=$LOAD" "UNLOAD=$UNLOAD"
+	procd_close_instance
 }
 
-stop() {
+stop_service() {
 	DSL_NOTIFICATION_TYPE="DSL_INTERFACE_STATUS" \
 	DSL_INTERFACE_STATUS="DOWN" \
 		/sbin/dsl_notify.sh
-
-	service_stop /sbin/vdsl_cpe_control
 }

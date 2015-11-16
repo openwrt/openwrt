@@ -68,10 +68,10 @@ CONFIGURE_ARGS += --enable-model=full
 #CONFIGURE_ARGS += --enable-model=debug
 
 define Package/ltq-vdsl-app/install
-	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_DIR) $(1)/etc/init.d $(1)/sbin
 	$(INSTALL_BIN) ./files/dsl_control $(1)/etc/init.d/
+	$(INSTALL_BIN) ./files/vdsl_cpe_control_wrapper $(1)/sbin/
 
-	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin/vdsl_cpe_control
 endef
 
