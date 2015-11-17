@@ -322,7 +322,6 @@ nand_upgrade_stage1() {
 		exit 0
 	}
 }
-append sysupgrade_pre_upgrade nand_upgrade_stage1
 
 # Check if passed file is a valid one for NAND sysupgrade. Currently it accepts
 # 3 types of files:
