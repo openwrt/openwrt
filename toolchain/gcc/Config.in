@@ -2,9 +2,8 @@
 
 choice
 	prompt "GCC compiler Version" if TOOLCHAINOPTS
-	default GCC_USE_VERSION_5 if TARGET_octeon
 	default GCC_USE_VERSION_4_8_ARC if arc
-	default GCC_USE_VERSION_4_8_LINARO
+	default GCC_USE_VERSION_5
 	help
 	  Select the version of gcc you wish to use.
 
