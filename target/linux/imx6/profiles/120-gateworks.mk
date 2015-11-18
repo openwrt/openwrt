@@ -36,19 +36,4 @@ define Profile/VENTANA/Description
   * mSATA
 endef
 
-VENTANA_DTS:= \
-	imx6dl-gw51xx \
-	imx6dl-gw52xx \
-	imx6dl-gw53xx \
-	imx6dl-gw54xx \
-	imx6dl-gw551x \
-	imx6dl-gw552x \
-	imx6q-gw51xx \
-	imx6q-gw52xx \
-	imx6q-gw53xx \
-	imx6q-gw54xx \
-	imx6q-gw5400-a \
-	imx6q-gw551x \
-	imx6q-gw552x
-
 $(eval $(call Profile,VENTANA))
