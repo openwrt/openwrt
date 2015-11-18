@@ -1,9 +1,9 @@
 --- a/arch/arm/boot/dts/imx6qdl-gw51xx.dtsi
 +++ b/arch/arm/boot/dts/imx6qdl-gw51xx.dtsi
-@@ -89,6 +89,11 @@
- 			enable-active-high;
- 		};
- 	};
+@@ -158,6 +158,11 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
 +
 +	gw16083: gw16083@52 {
 +		compatible = "gateworks,gw16083";
@@ -11,13 +11,13 @@
 +	};
  };
  
- &fec {
+ &i2c3 {
 --- a/arch/arm/boot/dts/imx6qdl-gw52xx.dtsi
 +++ b/arch/arm/boot/dts/imx6qdl-gw52xx.dtsi
-@@ -266,6 +266,11 @@
- 			};
- 		};
- 	};
+@@ -233,6 +233,11 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
 +
 +	gw16083: gw16083@52 {
 +		compatible = "gateworks,gw16083";
@@ -25,13 +25,13 @@
 +	};
  };
  
- &pcie {
+ &i2c3 {
 --- a/arch/arm/boot/dts/imx6qdl-gw53xx.dtsi
 +++ b/arch/arm/boot/dts/imx6qdl-gw53xx.dtsi
-@@ -267,6 +267,11 @@
- 			};
- 		};
- 	};
+@@ -226,6 +226,11 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&pinctrl_i2c2>;
+ 	status = "okay";
 +
 +	gw16083: gw16083@52 {
 +		compatible = "gateworks,gw16083";
@@ -39,10 +39,10 @@
 +	};
  };
  
- &pcie {
+ &i2c3 {
 --- a/arch/arm/boot/dts/imx6qdl-gw54xx.dtsi
 +++ b/arch/arm/boot/dts/imx6qdl-gw54xx.dtsi
-@@ -308,6 +308,11 @@
+@@ -317,6 +317,11 @@
  			};
  		};
  	};
