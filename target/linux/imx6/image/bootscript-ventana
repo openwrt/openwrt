@@ -1,0 +1,150 @@
+echo "Gateworks Ventana OpenWrt Boot script v1.00"
+
+# set some defaults
+# set some defaults
+test -n "$fs"    || fs=ext2
+test -n "$disk"  || disk=0
+setenv nextcon 0
+setenv bootargs console=${console},${baudrate}
+setenv loadaddr 10800000
+setenv fdt_addr 18000000
+
+# detect displays in the following priority: HDMI, LVDS
+# setenv display to override detection for a single display
+# or setenv video if you want multiple displays
+if test -n "$video" ; then
+  echo "using video config from env: $video"
+  setenv bootargs "${bootargs}" "${video}"
+else
+  if test -n "$display" ; then
+    echo "using display from env: $display"
+  elif test -n "$panel" ; then
+    echo "using display from env: $panel"
+    setenv display "$panel"
+  else
+    echo "Detecting displays..."
+    i2c dev 2
+    if hdmidet ; then
+	echo "  HDMI detected"
+	setenv display "HDMI"
+    elif i2c probe 0x04 ; then
+	echo "  Freescale MXC-LVDS1 detected"
+	setenv display "LVDS"
+    elif i2c probe 0x14 ; then
+	echo "  DLC800FIGT3 detected"
+	setenv display "LVDS"
+    elif i2c probe 0x38 ; then
+	echo "  DLC700JMGT4 detected"
+	setenv display "LVDS"
+    fi
+  fi
+
+  # configure displays
+  echo "Configuring kernel bootargs for display(s): $display"
+  for p in ${display}; do
+    if itest.s "x${p}" == "xHannstar-XGA" ; then
+	setenv ptype "LVDS"
+    elif itest.s "x${p}" == "xDLC700JMGT4" ; then
+	setenv ptype "LVDS"
+    elif itest.s "x${p}" == "xDLC800FIGT3" ; then
+	setenv ptype "LVDS"
+    elif itest.s "x${p}" == "xLVDS" ; then
+	setenv ptype "LVDS"
+    elif itest.s "x${p}" == "xHDMI" ; then
+	setenv ptype "HDMI"
+	test -n "$hdmi" || hdmi=1080p
+	if itest.s "x${hdmi}" == "x1080p" ; then
+		setenv hdmi "1920x1080M@60"
+	elif itest.s "x${hdmi}" == "x720p" ; then
+		setenv hdmi "1280x720M@60"
+	elif itest.s "x${hdmi}" == "x480p" ; then
+		setenv hdmi "720x480M@60"
+	fi
+    else
+        echo "${p} not supported"
+    fi
+
+    if itest.s "x${ptype}" == "xLVDS" ; then
+	echo "  mxcfb${nextcon}: LVDS ($p)"
+	setenv bootargs "${bootargs}" video=mxcfb${nextcon}:dev=ldb,bpp=32,if=RGB666
+	setexpr nextcon $nextcon + 1
+    elif itest.s "x${ptype}" == "xHDMI" ; then
+	echo "  mxcfb${nextcon}: HDMI ($hdmi)"
+	setenv bootargs "${bootargs}" video=mxcfb${nextcon}:dev=hdmi,bpp=32,${hdmi},if=RGB24
+	setexpr nextcon $nextcon + 1
+    fi
+
+  done
+
+  # disable remaining mxcfb devices
+  while test "4" -ne $nextcon ; do
+	setenv bootargs "${bootargs}" video=mxcfb${nextcon}:off
+	setexpr nextcon $nextcon + 1
+  done
+fi
+
+# detect dtype and bootdev by looking for kernel on media the bootloader
+# has mounted (in order of preference: usb/mmc/sata)
+#
+# This assumes the bootloader has already started the respective subsystem
+# or mounted the filesystem if appropriate to get to this bootscript
+#
+# To Speed up boot set dtype manually
+if test -n "$dtype" ; then
+	echo "Using dtype from env: $dtype"
+else
+	echo "Detecting boot device (dtype)..."
+	if ${fs}load usb ${disk}:1 ${loadaddr} ${bootdir}/uImage ; then
+		dtype=usb
+	elif ${fs}load mmc ${disk}:1 ${loadaddr} ${bootdir}/uImage ; then
+		dtype=mmc
+	elif ${fs}load sata ${disk}:1 ${loadaddr} ${bootdir}/uImage ; then
+		dtype=sata
+	elif ubifsload ${loadaddr} ${bootdir}/uImage ; then
+		dtype=nand
+	fi
+	echo "detected dtype:$dtype"
+fi
+if test -n "$bootdev" ; then
+	echo "Using bootdev from env: $bootdev"
+else
+	if itest.s "x${dtype}" == "xmmc" ; then
+		bootdev=mmcblk0
+	else
+		bootdev=sda
+	fi
+fi
+
+if itest.s "x${dtype}" == "xnand" ; then
+	echo "Booting from NAND..."
+	# fix partition name
+	#  OpenWrt kernel bug prevents partition name of 'rootfs' from booting
+	#  instead name the partition ubi which is what is looked for by
+	#  procd sysupgrade
+	mtdparts del rootfs && mtdparts add nand0 - ubi
+	echo "mtdparts:${mtdparts}"
+	setenv fsload ubifsload
+	setenv root "ubi0:ubi ubi.mtd=2 rootfstype=squashfs,ubifs"
+else
+	echo "Booting from block device ${bootdev}..."
+	setenv fsload "${fs}load ${dtype} ${disk}:1"
+	setenv root "root=/dev/${bootdev}"
+fi
+
+setenv bootargs "${bootargs}" "${root}" "${extra}"
+if ${fsload} ${loadaddr} ${bootdir}/uImage; then
+	if ${fsload} ${fdt_addr} ${bootdir}/${fdt_file}; then
+		echo Loaded DTB from ${bootdir}/${fdt_file}
+		bootm ${loadaddr} - ${fdt_addr}
+	elif ${fsload} ${fdt_addr} ${bootdir}/${fdt_file1}; then
+		echo Loaded DTB from ${bootdir}/${fdt_file1}
+		bootm ${loadaddr} - ${fdt_addr}
+	elif ${fsload} ${fdt_addr} ${bootdir}/${fdt_file2}; then
+		echo Loaded DTB from ${bootdir}/${fdt_file2}
+		bootm ${loadaddr} - ${fdt_addr}
+	else
+		echo "Error loading device-tree"
+	fi
+else
+	echo "Error loading kernel image"
+fi
