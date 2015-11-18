@@ -7,126 +7,113 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
-define Image/BuildKernel/Template
+#################################################
+# Images
+#################################################
 
- ifneq ($(1),)
-	$(CP) $(DTS_DIR)/$(1).dtb $(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb
+# build a ubi for a specific flash geometry/layout which can contain
+# volumes with the following data from ubinize-$(DEVICE_NAME).cfg:
+#   - 'boot.ubifs' volume: kernel+dtbs+bootscript
+#   - 'root.squashfs' volume: rootfs
+# $(1): name (used for suffix)
+# $(2): PAGESIZE (-m param to mkfs.ubifs/ubinize)
+# $(3): ERASESIZE (logical eraseblock size: -e param to mkfs.ubifs)
+# $(4): BLOCKSIZE (-p param to ubinize)
+# $(5): MAXSIZE (maximum file-system size in LEB's -c param to mkfs.ubifs)
+#
+define Build/ubi-boot-overlay
+	# ubi-boot-overlay $(DEVICE_NAME) $(word 1, $(1))
 
-	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x10008000,0x10008000)
-	$(CP) $(KDIR)/fit-$(1).itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage.itb
-
-  ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(call Image/BuildKernel/MkFIT,$(1),$(KDIR)/zImage-initramfs,$(BIN_DIR)/$(IMG_PREFIX)-$(1).dtb,none,0x10008000,0x10008000,-initramfs)
-	$(CP) $(KDIR)/fit-$(1)-initramfs.itb $(BIN_DIR)/$(IMG_PREFIX)-$(1)-fit-uImage-initramfs.itb
-  endif
- endif
-
-	$(CP) $(KDIR)/zImage $(BIN_DIR)/$(IMG_PREFIX)-zImage
-	$(call Image/BuildKernel/MkuImage, \
-		none, 0x10008000, 0x10008000, \
-		$(BIN_DIR)/$(IMG_PREFIX)-zImage, \
-		$(BIN_DIR)/$(IMG_PREFIX)-uImage \
+	# boot filesystem
+	rm -rf $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))
+	mkdir -p $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))
+	$(CP) $< $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/$(IMG_PREFIX)-uImage
+	ln -sf $(IMG_PREFIX)-uImage \
+		$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/uImage
+	$(foreach dts,$(shell echo $(DEVICE_DTS)), \
+		$(CP) $(LINUX_DIR)/arch/$(ARCH)/boot/dts/$(dts).dtb \
+			$(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb; \
+		$(CP) $(LINUX_DIR)/arch/$(ARCH)/boot/dts/$(dts).dtb \
+			$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/$(IMG_PREFIX)-$(dts).dtb; \
+		ln -sf $(IMG_PREFIX)-$(dts).dtb \
+			$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/$(dts).dtb; \
 	)
+	mkimage -A arm -O linux -T script -C none -a 0 -e 0 \
+		-n '$(DEVICE_ID) OpenWrt bootscript' \
+		-d ./bootscript-$(DEVICE_NAME) \
+		$(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))/6x_bootscript-$(DEVICE_NAME)
+	$(STAGING_DIR_HOST)/bin/mkfs.ubifs \
+		--space-fixup --force-compr=zlib --squash-uids \
+		-m $(word 2, $(1)) -e $(word 3, $(1)) -c $(word 5, $(1)) \
+		-o $(KDIR)/boot-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs \
+		-d $(TARGET_ROOTFS_DIR)/boot-$(DEVICE_NAME)_$(word 1, $(1))
+	$(CP) $(KDIR)/boot-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs \
+		$(BIN_DIR)/$(IMG_PREFIX)-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs
 
- ifneq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),)
-	$(CP) $(KDIR)/zImage-initramfs $(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs
-	$(call Image/BuildKernel/MkuImage, \
-		none, 0x10008000, 0x10008000, \
-		$(BIN_DIR)/$(IMG_PREFIX)-zImage-initramfs, \
-		$(BIN_DIR)/$(IMG_PREFIX)-uImage-initramfs \
-	)
- endif
-endef
-
-define Image/InstallKernel/Template
-
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_KERNEL)$(CONFIG_TARGET_imx6_VENTANA),)
-	$(INSTALL_DIR) $(TARGET_DIR)/boot
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_UIMAGE)$(CONFIG_TARGET_imx6_VENTANA),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-uImage $(TARGET_DIR)/boot/uImage
-   endif
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_ZIMAGE),)
-	$(CP) $(BIN_DIR)/$(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/
-	ln -sf $(IMG_PREFIX)-zImage $(TARGET_DIR)/boot/zImage
-   endif
-   ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_FIT),)
-	$(foreach dts,$(shell echo $(1)), \
-		$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(dts)-fit-uImage.itb $(TARGET_DIR)/boot/
-	)
-   endif
- endif
-
- ifneq ($(CONFIG_TARGET_ROOTFS_INCLUDE_DTB)$(CONFIG_TARGET_imx6_VENTANA),)
-	$(INSTALL_DIR) $(TARGET_DIR)/boot
-	$(foreach dts,$(shell echo $(1)), \
-		$(CP) $(BIN_DIR)/$(IMG_PREFIX)-$(dts).dtb $(TARGET_DIR)/boot/ ; \
-		ln -sf $(IMG_PREFIX)-$(dts).dtb $(TARGET_DIR)/boot/$(dts).dtb ; \
-	)
- endif
-endef
-
-define Image/Build/squashfs
-	$(call prepare_generic_squashfs,$(KDIR)/root.$(1))
-	dd if=$(KDIR)/root.$(1) of=$(BIN_DIR)/$(IMG_PREFIX)-$(1).bin bs=128k conv=sync
-	[ -f "$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-uImage.itb" ] && ( \
-		dd if=$(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-uImage.itb bs=2048k conv=sync; \
-		dd if=$(KDIR)/root.$(1) bs=128k conv=sync; \
-	) > $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-fit-$(1).bin || true
-endef
-
-define ubifs_imx_gateworks_ventana
-	# Micron MT29F1G08ABAD/MT29F2G08ABAE/MT29F4G08ABAD/MT29F8G08ADAD NAND
-	$(eval VENTANA_UBIFS_OPTS:="-m 2048 -e 124KiB -c 8124")
-	$(eval VENTANA_UBI_OPTS:="-m 2048 -p 128KiB -s 2048")
-	$(call Image/mkfs/ubifs)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_normal.ubifs
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_normal.ubi
-
-	# Micron MT29F8G08ABAC/MT29F16G08ADAC 1GB/2GB NAND
-	$(eval VENTANA_UBIFS_OPTS:="-m 4096 -e 248KiB -c 8124")
-	$(eval VENTANA_UBI_OPTS:="-m 4096 -p 256KiB -s 4096")
-	$(call Image/mkfs/ubifs)
-	$(CP) $(KDIR)/root.ubifs $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_large.ubifs
-	$(CP) $(KDIR)/root.ubi $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-rootfs_large.ubi
-endef
-
-define Image/Build/ubifs
-	true
-endef
-
-define Image/Build/ubi
-	true
-endef
-
-
-Image/BuildKernel/Template/Generic=$(call Image/BuildKernel/Template)
-Image/InstallKernel/Template/Generic=$(call Image/InstallKernel/Template)
-
-Image/BuildKernel/Template/IMX6DL_WANDBOARD=$(call Image/BuildKernel/Template,imx6dl-wandboard)
-Image/InstallKernel/Template/IMX6DL_WANDBOARD=$(call Image/InstallKernel/Template,imx6dl-wandboard)
-
-Image/BuildKernel/Template/VENTANA=$(foreach dts,$(shell echo $(VENTANA_DTS)),$(call Image/BuildKernel/Template,$(dts)))
-Image/InstallKernel/Template/VENTANA=$(call Image/InstallKernel/Template,$(VENTANA_DTS))
-Image/ubifs/VENTANA=$(call ubifs_imx_gateworks_ventana)
-
-
-define Image/BuildKernel
-	$(call Image/BuildKernel/Template/$(PROFILE))
-endef
-
-define Image/InstallKernel
-	$(call Image/InstallKernel/Template/$(PROFILE))
-	$(if $(Image/ubifs/$(PROFILE)), \
-		$(call Image/ubifs/$(PROFILE))
+	# ubi
+	rm -rf p $(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))
+	mkdir -p $(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))
+	$(CP) $(word 2, $^) \
+		$(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))/
+	$(CP) $(KDIR)/boot-$(DEVICE_NAME)-bootfs_$(word 1, $(1)).ubifs \
+		$(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))/boot.ubifs
+	$(CP) ./ubinize-$(DEVICE_NAME).cfg \
+		$(KDIR)/$(DEVICE_NAME)_$(word 1, $(1))/ubinize.cfg
+	( cd $(KDIR)/$(DEVICE_NAME)_$(word 1, $(1)); \
+		$(STAGING_DIR_HOST)/bin/ubinize \
+		-m $(word 2, $(1)) -p $(word 4, $(1)) -s $(word 2, $(1)) \
+		-o $@ \
+		ubinize.cfg \
 	)
 endef
 
-define Image/Build
-	$(if $(Image/Build/$(1)), \
-		$(call Image/Build/$(1),$(1)), \
-		$(CP) $(KDIR)/root.$(1) $(BIN_DIR)/$(IMG_PREFIX)-$(PROFILE_SANITIZED)-$(1).img \
-	)
+#################################################
+# Devices
+#################################################
+
+KERNEL_LOADADDR=0x10008000
+
+define Device/Default
+	DEVICE_DTS :=
+	FILESYSTEMS := squashfs ext4
+	KERNEL_INSTALL := 1
+	KERNEL_SUFFIX := -uImage
+	KERNEL_NAME := zImage
+	KERNEL := kernel-bin | uImage none
+	IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
+	IMAGES :=
 endef
+
+DEVICE_VARS += DEVICE_DTS
+
+define Device/ventana
+	PROFILES = Generic VENTANA
+	DEVICE_DTS:= \
+		imx6dl-gw51xx \
+		imx6dl-gw52xx \
+		imx6dl-gw53xx \
+		imx6dl-gw54xx \
+		imx6dl-gw551x \
+		imx6dl-gw552x \
+		imx6q-gw51xx \
+		imx6q-gw52xx \
+		imx6q-gw53xx \
+		imx6q-gw54xx \
+		imx6q-gw5400-a \
+		imx6q-gw551x \
+		imx6q-gw552x
+	IMAGES := nand-factory_normal.ubi nand-factory_large.ubi
+	IMAGE/nand-factory_normal.ubi := ubi-boot-overlay normal 2048 124KiB 128KiB 8124
+	IMAGE/nand-factory_large.ubi := ubi-boot-overlay large 4096 248KiB 256KiB 8124
+endef
+
+define Device/wandboard
+	PROFILES = Generic IMX6DL_WANDBOARD
+	DEVICE_DTS := imx6dl-wandboard
+endef
+
+TARGET_DEVICES += \
+	ventana \
+	wandboard
 
 $(eval $(call BuildImage))
