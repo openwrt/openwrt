@@ -657,7 +657,7 @@ $(eval $(call KernelPackage,scsi-cdrom))
 
 
 define KernelPackage/scsi-tape
-  SUBMENU:=$(OTHER_MENU)
+  SUBMENU:=$(BLOCK_MENU)
   TITLE:=Kernel support for scsi tape drives
   DEPENDS:=+kmod-scsi-core
   KCONFIG:= \
