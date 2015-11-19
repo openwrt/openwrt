@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2013-2015 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -8,14 +8,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=odhcpd
-PKG_VERSION:=2015-09-07-1
+PKG_VERSION:=2015-11-19
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
 PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=git://github.com/sbyx/odhcpd.git
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_VERSION:=cb1842c117030e6779f9556cd5d86b1a0ef145d7
+PKG_SOURCE_VERSION:=01d3f9d64486ac1daa144848944e877e7f0cb762
 
 PKG_MAINTAINER:=Steven Barth <steven@midlink.org>
 PKG_LICENSE:=GPL-2.0
