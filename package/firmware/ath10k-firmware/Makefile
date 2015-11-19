@@ -63,7 +63,7 @@ endef
 
 define Package/ath10k-firmware-qca6174/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k
-	$(CP) $(PKG_BUILD_DIR)/ath10k/QCA6174 $(1)/lib/firmware/ath10k/
+	$(CP) $(PKG_BUILD_DIR)/QCA6174 $(1)/lib/firmware/ath10k/
 endef
 
 define Package/ath10k-firmware-qca99x0/install
