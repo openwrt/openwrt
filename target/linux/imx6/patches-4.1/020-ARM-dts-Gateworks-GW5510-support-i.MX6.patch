@@ -33,8 +33,6 @@ Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
  create mode 100644 arch/arm/boot/dts/imx6q-gw551x.dts
  create mode 100644 arch/arm/boot/dts/imx6qdl-gw551x.dtsi
 
-diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
-index 86217db..8932e6e 100644
 --- a/arch/arm/boot/dts/Makefile
 +++ b/arch/arm/boot/dts/Makefile
 @@ -262,6 +262,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
@@ -53,9 +51,6 @@ index 86217db..8932e6e 100644
  	imx6q-gw552x.dtb \
  	imx6q-hummingboard.dtb \
  	imx6q-nitrogen6x.dtb \
-diff --git a/arch/arm/boot/dts/imx6dl-gw551x.dts b/arch/arm/boot/dts/imx6dl-gw551x.dts
-new file mode 100644
-index 0000000..82d5f85
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6dl-gw551x.dts
 @@ -0,0 +1,55 @@
@@ -114,9 +109,6 @@ index 0000000..82d5f85
 +	model = "Gateworks Ventana i.MX6 DualLite/Solo GW551X";
 +	compatible = "gw,imx6dl-gw551x", "gw,ventana", "fsl,imx6dl";
 +};
-diff --git a/arch/arm/boot/dts/imx6q-gw551x.dts b/arch/arm/boot/dts/imx6q-gw551x.dts
-new file mode 100644
-index 0000000..2c7feee
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6q-gw551x.dts
 @@ -0,0 +1,55 @@
@@ -175,9 +167,6 @@ index 0000000..2c7feee
 +	model = "Gateworks Ventana i.MX6 Dual/Quad GW551X";
 +	compatible = "gw,imx6q-gw551x", "gw,ventana", "fsl,imx6q";
 +};
-diff --git a/arch/arm/boot/dts/imx6qdl-gw551x.dtsi b/arch/arm/boot/dts/imx6qdl-gw551x.dtsi
-new file mode 100644
-index 0000000..d1866a0
 --- /dev/null
 +++ b/arch/arm/boot/dts/imx6qdl-gw551x.dtsi
 @@ -0,0 +1,314 @@
@@ -495,6 +484,3 @@ index 0000000..d1866a0
 +		};
 +	};
 +};
--- 
-2.5.1
-
