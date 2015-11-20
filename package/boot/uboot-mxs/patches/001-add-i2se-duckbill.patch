@@ -23,8 +23,6 @@ Signed-off-by: Michael Heimpold <mhei@heimpold.de>
  create mode 100644 configs/duckbill_defconfig
  create mode 100644 include/configs/duckbill.h
 
-diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index 9908b43..7c795ac 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -178,6 +178,11 @@ config TARGET_MX28EVK
@@ -39,7 +37,7 @@ index 9908b43..7c795ac 100644
  config TARGET_MX23_OLINUXINO
  	bool "Support mx23_olinuxino"
  	select CPU_ARM926EJS
-@@ -926,6 +931,7 @@ source "board/genesi/mx51_efikamx/Kconfig"
+@@ -926,6 +931,7 @@ source "board/genesi/mx51_efikamx/Kconfi
  source "board/gumstix/pepper/Kconfig"
  source "board/h2200/Kconfig"
  source "board/hale/tt01/Kconfig"
@@ -47,8 +45,6 @@ index 9908b43..7c795ac 100644
  source "board/icpdas/lp8x4x/Kconfig"
  source "board/imx31_phycore/Kconfig"
  source "board/isee/igep0033/Kconfig"
-diff --git a/arch/arm/include/asm/mach-types.h b/arch/arm/include/asm/mach-types.h
-index 5afe791..330a88d 100644
 --- a/arch/arm/include/asm/mach-types.h
 +++ b/arch/arm/include/asm/mach-types.h
 @@ -1109,6 +1109,7 @@ extern unsigned int __machine_arch_type;
@@ -78,9 +74,6 @@ index 5afe791..330a88d 100644
  /*
   * These have not yet been registered
   */
-diff --git a/board/i2se/duckbill/Kconfig b/board/i2se/duckbill/Kconfig
-new file mode 100644
-index 0000000..98c1e46
 --- /dev/null
 +++ b/board/i2se/duckbill/Kconfig
 @@ -0,0 +1,15 @@
@@ -99,9 +92,6 @@ index 0000000..98c1e46
 +	default "duckbill"
 +
 +endif
-diff --git a/board/i2se/duckbill/MAINTAINERS b/board/i2se/duckbill/MAINTAINERS
-new file mode 100644
-index 0000000..5496baa
 --- /dev/null
 +++ b/board/i2se/duckbill/MAINTAINERS
 @@ -0,0 +1,6 @@
@@ -111,9 +101,6 @@ index 0000000..5496baa
 +F:	board/i2se/duckbill/
 +F:	include/configs/duckbill.h
 +F:	configs/duckbill_defconfig
-diff --git a/board/i2se/duckbill/Makefile b/board/i2se/duckbill/Makefile
-new file mode 100644
-index 0000000..b5577e3
 --- /dev/null
 +++ b/board/i2se/duckbill/Makefile
 @@ -0,0 +1,12 @@
@@ -129,9 +116,6 @@ index 0000000..b5577e3
 +else
 +obj-y	:= iomux.o
 +endif
-diff --git a/board/i2se/duckbill/duckbill.c b/board/i2se/duckbill/duckbill.c
-new file mode 100644
-index 0000000..7794f65
 --- /dev/null
 +++ b/board/i2se/duckbill/duckbill.c
 @@ -0,0 +1,112 @@
@@ -247,9 +231,6 @@ index 0000000..7794f65
 +
 +	return 0;
 +}
-diff --git a/board/i2se/duckbill/iomux.c b/board/i2se/duckbill/iomux.c
-new file mode 100644
-index 0000000..538e138
 --- /dev/null
 +++ b/board/i2se/duckbill/iomux.c
 @@ -0,0 +1,125 @@
@@ -378,9 +359,6 @@ index 0000000..538e138
 +{
 +	mxs_common_spl_init(arg, resptr, iomux_setup, ARRAY_SIZE(iomux_setup));
 +}
-diff --git a/configs/duckbill_defconfig b/configs/duckbill_defconfig
-new file mode 100644
-index 0000000..2edf895
 --- /dev/null
 +++ b/configs/duckbill_defconfig
 @@ -0,0 +1,9 @@
@@ -393,9 +371,6 @@ index 0000000..2edf895
 +# CONFIG_SPI_FLASH is not set
 +# CONFIG_CMD_FPGA is not set
 +CONFIG_CMD_PING=y
-diff --git a/include/configs/duckbill.h b/include/configs/duckbill.h
-new file mode 100644
-index 0000000..46e403b
 --- /dev/null
 +++ b/include/configs/duckbill.h
 @@ -0,0 +1,177 @@
@@ -576,6 +551,3 @@ index 0000000..46e403b
 +#include <configs/mxs.h>
 +
 +#endif /* __CONFIGS_DUCKBILL_H__ */
--- 
-1.7.10.4
-
