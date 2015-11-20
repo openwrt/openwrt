@@ -17,11 +17,9 @@ Signed-off-by: Daniel Golle <daniel@makrotopia.org>
  disk/part.c | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/disk/part.c b/disk/part.c
-index 43485c9..7c67ea6 100644
 --- a/disk/part.c
 +++ b/disk/part.c
-@@ -229,13 +229,13 @@ void dev_print (block_dev_desc_t *dev_desc)
+@@ -229,13 +229,13 @@ void dev_print (block_dev_desc_t *dev_de
  			printf ("            Supports 48-bit addressing\n");
  #endif
  #if defined(CONFIG_SYS_64BIT_LBA)
@@ -37,6 +35,3 @@ index 43485c9..7c67ea6 100644
  			mb_quot, mb_rem,
  			gb_quot, gb_rem,
  			(ulong)lba,
--- 
-2.1.3
-
