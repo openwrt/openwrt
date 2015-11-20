@@ -3,12 +3,10 @@
 # Copyright (C) 2014-2015 OpenWrt.org
 #
 
-[ -e /etc/config/network ] && exit 0
-
-touch /etc/config/network
-
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/mvebu.sh
+
+board_config_update
 
 ucidef_set_interface_loopback
 
@@ -41,6 +39,6 @@ armada-xp-gp)
 	;;
 esac
 
-uci commit network
+board_config_flush
 
 exit 0
