@@ -86,6 +86,9 @@ get_status_led() {
 	dir-835-a1)
 		status_led="d-link:amber:power"
 		;;
+	dlan-hotspot)
+		status_led="devolo:green:wifi"
+		;;
 	dlan-pro-500-wp)
 		status_led="devolo:green:wlan-2g"
 		;;
