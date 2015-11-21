@@ -10,10 +10,8 @@ include $(INCLUDE_DIR)/host.mk
 ARCH:=arm
 BOARD:=brcm2708
 BOARDNAME:=Broadcom BCM2708/BCM2709
-FEATURES:=ext4 audio usb usbgadget display gpio
+FEATURES:=ext4 audio usb usbgadget display gpio fpu
 MAINTAINER:=Florian Fainelli <florian@openwrt.org>
-CPU_TYPE:=arm1176jzf-s
-CPU_SUBTYPE:=vfp
 SUBTARGETS:=bcm2708 bcm2709
 
 KERNEL_PATCHVER:=4.1

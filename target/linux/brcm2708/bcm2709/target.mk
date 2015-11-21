@@ -5,7 +5,7 @@
 SUBTARGET:=bcm2709
 BOARDNAME:=BCM2709 based boards
 CPU_TYPE:=cortex-a7
-CPU_SUBTYPE:=vfp
+CPU_SUBTYPE:=neon-vfpv4
 
 define Target/Description
 	Build firmware image for Broadcom BCM2709 SoC devices.
