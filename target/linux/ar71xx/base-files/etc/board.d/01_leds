@@ -200,6 +200,10 @@ dir-825-c1)
 	ucidef_set_led_wlan "wlan2g" "WLAN 2.4 GHz" "d-link:blue:wlan2g" "phy0tpt"
 	;;
 
+dlan-hotspot)
+	ucidef_set_led_wlan "wlan" "WLAN" "devolo:green:wifi" "phy0tpt"
+	;;
+
 dlan-pro-500-wp)
 	ucidef_set_led_default "power" "System Power" "devolo:green:status" "1"
 	ucidef_set_led_netdev "lan" "Ethernet Activity" "devolo:green:eth" "br-lan"

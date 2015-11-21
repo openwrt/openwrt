@@ -454,6 +454,9 @@ ar71xx_board_detect() {
 	*"DIR-835 rev. A1")
 		name="dir-835-a1"
 		;;
+	*"dLAN Hotspot")
+		name="dlan-hotspot"
+		;;
 	*"dLAN pro 500 Wireless+")
 		name="dlan-pro-500-wp"
 		;;
