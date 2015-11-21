@@ -1,6 +1,6 @@
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -25,6 +25,11 @@
+@@ -26,6 +26,11 @@
  			next-level-cache = <&L2>;
  			qcom,acc = <&acc0>;
  			qcom,saw = <&saw0>;
@@ -12,7 +12,7 @@
  		};
  
  		cpu@1 {
-@@ -35,11 +40,24 @@
+@@ -36,11 +41,24 @@
  			next-level-cache = <&L2>;
  			qcom,acc = <&acc1>;
  			qcom,saw = <&saw1>;
@@ -37,7 +37,7 @@
  		};
  	};
  
-@@ -72,6 +90,46 @@
+@@ -73,6 +91,46 @@
  		};
  	};
  
@@ -84,7 +84,7 @@
  	soc: soc {
  		#address-cells = <1>;
  		#size-cells = <1>;
-@@ -187,11 +245,13 @@
+@@ -215,11 +273,13 @@
  		acc0: clock-controller@2088000 {
  			compatible = "qcom,kpss-acc-v1";
  			reg = <0x02088000 0x1000>, <0x02008000 0x1000>;

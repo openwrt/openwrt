@@ -1,6 +1,6 @@
 --- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
 +++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -341,15 +341,21 @@
+@@ -369,15 +369,21 @@
  
  			clocks = <&gcc PCIE_A_CLK>,
  				 <&gcc PCIE_H_CLK>,
@@ -24,9 +24,9 @@
 +				 <&gcc PCIE_EXT_RESET>;
 +			reset-names = "axi", "ahb", "por", "pci", "phy", "ext";
  
- 			status = "disabled";
- 		};
-@@ -382,15 +388,21 @@
+ 			pinctrl-0 = <&pcie0_pins>;
+ 			pinctrl-names = "default";
+@@ -415,15 +421,21 @@
  
  			clocks = <&gcc PCIE_1_A_CLK>,
  				 <&gcc PCIE_1_H_CLK>,
@@ -50,9 +50,9 @@
 +				 <&gcc PCIE_1_EXT_RESET>;
 +			reset-names = "axi", "ahb", "por", "pci", "phy", "ext";
  
- 			status = "disabled";
- 		};
-@@ -423,15 +435,21 @@
+ 			pinctrl-0 = <&pcie1_pins>;
+ 			pinctrl-names = "default";
+@@ -461,15 +473,21 @@
  
  			clocks = <&gcc PCIE_2_A_CLK>,
  				 <&gcc PCIE_2_H_CLK>,
@@ -76,5 +76,5 @@
 +				 <&gcc PCIE_2_EXT_RESET>;
 +			reset-names = "axi", "ahb", "por", "pci", "phy", "ext";
  
- 			status = "disabled";
- 		};
+ 			pinctrl-0 = <&pcie2_pins>;
+ 			pinctrl-names = "default";
