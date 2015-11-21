@@ -15,59 +15,59 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 
 --- a/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-ap148.dts
-@@ -35,6 +35,24 @@
- 				bias-disable;
- 			};
- 
-+			pcie0_pins: pcie0_pinmux {
-+				mux {
-+					pins = "gpio3";
-+					function = "pcie1_rst";
-+					drive-strength = <12>;
-+					bias-disable;
-+				};
-+			};
-+
-+			pcie1_pins: pcie1_pinmux {
-+				mux {
-+					pins = "gpio48";
-+					function = "pcie2_rst";
-+					drive-strength = <12>;
-+					bias-disable;
-+				};
-+			};
-+
- 			spi_pins: spi_pins {
- 				mux {
- 					pins = "gpio18", "gpio19", "gpio21";
-@@ -91,5 +109,21 @@
+@@ -91,5 +91,15 @@
  		sata@29000000 {
  			status = "ok";
  		};
 +
 +		pcie0: pci@1b500000 {
 +			status = "ok";
-+			reset-gpio = <&qcom_pinmux 3 0>;
-+			pinctrl-0 = <&pcie0_pins>;
-+			pinctrl-names = "default";
 +			phy-tx0-term-offset = <7>;
 +		};
 +
 +		pcie1: pci@1b700000 {
 +			status = "ok";
-+			reset-gpio = <&qcom_pinmux 48 0>;
-+			pinctrl-0 = <&pcie1_pins>;
-+			pinctrl-names = "default";
 +			phy-tx0-term-offset = <7>;
 +		};
  	};
  };
 --- a/arch/arm/boot/dts/qcom-ipq8064-db149.dts
 +++ b/arch/arm/boot/dts/qcom-ipq8064-db149.dts
-@@ -30,6 +30,33 @@
- 				bias-disable;
- 			};
+@@ -128,5 +128,17 @@
+ 		usb30@1 {
+ 			status = "ok";
+ 		};
++
++		pcie0: pci@1b500000 {
++			status = "ok";
++		};
++
++		pcie1: pci@1b700000 {
++			status = "ok";
++		};
++
++		pcie2: pci@1b900000 {
++			status = "ok";
++		};
+ 	};
+ };
+--- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
++++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
+@@ -4,6 +4,9 @@
+ #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
+ #include <dt-bindings/clock/qcom,lcc-ipq806x.h>
+ #include <dt-bindings/soc/qcom,gsbi.h>
++#include <dt-bindings/reset/qcom,gcc-ipq806x.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/gpio/gpio.h>
  
+ / {
+ 	model = "Qualcomm IPQ8064";
+@@ -99,6 +102,33 @@
+ 			interrupt-controller;
+ 			#interrupt-cells = <2>;
+ 			interrupts = <0 16 0x4>;
++
 +			pcie0_pins: pcie0_pinmux {
 +				mux {
 +					pins = "gpio3";
@@ -94,49 +94,10 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +					bias-disable;
 +				};
 +			};
-+
- 			spi_pins: spi_pins {
- 				mux {
- 					pins = "gpio18", "gpio19", "gpio21";
-@@ -128,5 +155,26 @@
- 		usb30@1 {
- 			status = "ok";
  		};
-+
-+		pcie0: pci@1b500000 {
-+			status = "ok";
-+			reset-gpio = <&qcom_pinmux 3 0>;
-+			pinctrl-0 = <&pcie0_pins>;
-+			pinctrl-names = "default";
-+		};
-+
-+		pcie1: pci@1b700000 {
-+			status = "ok";
-+			reset-gpio = <&qcom_pinmux 48 0>;
-+			pinctrl-0 = <&pcie1_pins>;
-+			pinctrl-names = "default";
-+		};
-+
-+		pcie2: pci@1b900000 {
-+			status = "ok";
-+			reset-gpio = <&qcom_pinmux 63 0>;
-+			pinctrl-0 = <&pcie2_pins>;
-+			pinctrl-names = "default";
-+		};
- 	};
- };
---- a/arch/arm/boot/dts/qcom-ipq8064.dtsi
-+++ b/arch/arm/boot/dts/qcom-ipq8064.dtsi
-@@ -4,6 +4,8 @@
- #include <dt-bindings/clock/qcom,gcc-ipq806x.h>
- #include <dt-bindings/clock/qcom,lcc-ipq806x.h>
- #include <dt-bindings/soc/qcom,gsbi.h>
-+#include <dt-bindings/reset/qcom,gcc-ipq806x.h>
-+#include <dt-bindings/interrupt-controller/arm-gic.h>
  
- / {
- 	model = "Qualcomm IPQ8064";
-@@ -333,6 +335,129 @@
+ 		intc: interrupt-controller@2000000 {
+@@ -333,6 +363,144 @@
  			compatible = "syscon";
  			reg = <0x01200600 0x100>;
  		};
@@ -179,6 +140,11 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				 <&gcc PCIE_PHY_RESET>;
 +			reset-names = "axi", "ahb", "por", "pci", "phy";
 +
++			pinctrl-0 = <&pcie0_pins>;
++			pinctrl-names = "default";
++
++			perst-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
++
 +			status = "disabled";
 +		};
 +
@@ -220,6 +186,11 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				 <&gcc PCIE_1_PHY_RESET>;
 +			reset-names = "axi", "ahb", "por", "pci", "phy";
 +
++			pinctrl-0 = <&pcie1_pins>;
++			pinctrl-names = "default";
++
++			perst-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
++
 +			status = "disabled";
 +		};
 +
@@ -260,6 +231,11 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +				 <&gcc PCIE_2_PCI_RESET>,
 +				 <&gcc PCIE_2_PHY_RESET>;
 +			reset-names = "axi", "ahb", "por", "pci", "phy";
++
++			pinctrl-0 = <&pcie2_pins>;
++			pinctrl-names = "default";
++
++			perst-gpio = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
 +
 +			status = "disabled";
 +		};

@@ -22,7 +22,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	qcom-msm8974-sony-xperia-honami.dtb
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-ipq8064-r7500.dts
-@@ -0,0 +1,362 @@
+@@ -0,0 +1,338 @@
 +#include "qcom-ipq8064-v1.0.dtsi"
 +
 +#include <dt-bindings/input/input.h>
@@ -62,24 +62,6 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +				pins = "gpio12", "gpio13";
 +				function = "gsbi4";
 +				bias-disable;
-+			};
-+
-+			pcie0_pins: pcie0_pinmux {
-+				mux {
-+					pins = "gpio3";
-+					function = "pcie1_rst";
-+					drive-strength = <12>;
-+					bias-disable;
-+				};
-+			};
-+
-+			pcie1_pins: pcie1_pinmux {
-+				mux {
-+					pins = "gpio48";
-+					function = "pcie2_rst";
-+					drive-strength = <12>;
-+					bias-disable;
-+				};
 +			};
 +
 +			nand_pins: nand_pins {
@@ -173,16 +155,10 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +
 +		pcie0: pci@1b500000 {
 +			status = "ok";
-+			reset-gpio = <&qcom_pinmux 3 0>;
-+			pinctrl-0 = <&pcie0_pins>;
-+			pinctrl-names = "default";
 +		};
 +
 +		pcie1: pci@1b700000 {
 +			status = "ok";
-+			reset-gpio = <&qcom_pinmux 48 0>;
-+			pinctrl-0 = <&pcie1_pins>;
-+			pinctrl-names = "default";
 +		};
 +
 +		nand@1ac00000 {
