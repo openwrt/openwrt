@@ -72,9 +72,10 @@ define Package/conntrackd/description
 endef
 
 define Package/conntrackd/install
-	$(INSTALL_DIR) $(1)/usr/sbin
+	$(INSTALL_DIR) \
+		$(1)/etc/init.d \
+		$(1)/usr/sbin
 	$(INSTALL_BIN) 	$(PKG_INSTALL_DIR)/usr/sbin/conntrackd $(1)/usr/sbin/
-	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/conntrackd.init $(1)/etc/init.d/conntrackd
 endef
 
