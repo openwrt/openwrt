@@ -47,8 +47,8 @@ define Device/Default
   FILESYSTEMS := ext4
   PROFILES = Default $$(DEVICE_PROFILE)
   KERNEL := kernel-bin
-  IMAGES := sdcard.bin
-  IMAGE/sdcard.bin := gen-cfg | boot-img | sdcard-img
+  IMAGES := sdcard.img
+  IMAGE/sdcard.img := gen-cfg | boot-img | sdcard-img
   DEVICE_PROFILE :=
   DEVICE_DTS :=
 endef
