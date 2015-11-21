@@ -40,6 +40,27 @@
 		};
 	};
 
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+		/* GPIO 54、55、56 USB1、2、3 */
+		usb0 {
+			gpio-export,name = "usb0";
+			gpio-export,output = <1>; // GPIOF_OUT_INIT_HIGH
+			gpios = <&gpio2 14 0>; // GPIO2:40+14=GPIO 54
+		};
+		usb1 {
+			gpio-export,name = "usb1";
+			gpio-export,output = <1>;
+			gpios = <&gpio2 15 0>;
+		};
+		usb2 {
+			gpio-export,name = "usb2";
+			gpio-export,output = <1>;
+			gpios = <&gpio2 16 0>;
+		};
+	};
+
 	gsw@10110000 {
 		ralink,port4 = "gmac";
 	};
