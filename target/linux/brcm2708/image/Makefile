@@ -57,7 +57,7 @@ DEVICE_VARS += DEVICE_PROFILE DEVICE_DTS
 # $(1) = profile
 # $(2) = image name
 # $(3) = dts
-define add_bcm2708
+define bcm270x
   define Device/$(2)
     DEVICE_PROFILE := $(1)
     DEVICE_DTS := $(3)
@@ -68,17 +68,17 @@ endef
 ### BCM2708/BCM2835 ###
 ifeq ($(SUBTARGET),bcm2708)
   # Raspberry Pi Model B
-  $(eval $(call add_bcm2708,RaspberryPi_B,rpi-b,bcm2708-rpi-b))
+  $(eval $(call bcm270x,RaspberryPi_B,rpi-b,bcm2708-rpi-b))
   # Raspberry Pi Model B+
-  $(eval $(call add_bcm2708,RaspberryPi_BPlus,rpi-b-plus,bcm2708-rpi-b-plus))
+  $(eval $(call bcm270x,RaspberryPi_BPlus,rpi-b-plus,bcm2708-rpi-b-plus))
   # Raspberry Pi Compute Module
-  $(eval $(call add_bcm2708,RaspberryPi_CM,rpi-cm,bcm2708-rpi-cm))
+  $(eval $(call bcm270x,RaspberryPi_CM,rpi-cm,bcm2708-rpi-cm))
 endif
 
 ### BCM2709/BCM2836 ###
 ifeq ($(SUBTARGET),bcm2709)
   # Raspberry Pi 2 Model B
-  $(eval $(call add_bcm2708,RaspberryPi_2,rpi-2-b,bcm2709-rpi-2-b))
+  $(eval $(call bcm270x,RaspberryPi_2,rpi-2-b,bcm2709-rpi-2-b))
 endif
 
 $(eval $(call BuildImage))
