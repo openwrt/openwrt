@@ -40,7 +40,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  			spi_pins: spi_pins {
  				mux {
  					pins = "gpio18", "gpio19", "gpio21";
-@@ -91,5 +109,19 @@
+@@ -91,5 +109,21 @@
  		sata@29000000 {
  			status = "ok";
  		};
@@ -50,6 +50,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +			reset-gpio = <&qcom_pinmux 3 0>;
 +			pinctrl-0 = <&pcie0_pins>;
 +			pinctrl-names = "default";
++			phy-tx0-term-offset = <7>;
 +		};
 +
 +		pcie1: pci@1b700000 {
@@ -57,6 +58,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +			reset-gpio = <&qcom_pinmux 48 0>;
 +			pinctrl-0 = <&pcie1_pins>;
 +			pinctrl-names = "default";
++			phy-tx0-term-offset = <7>;
 +		};
  	};
  };
