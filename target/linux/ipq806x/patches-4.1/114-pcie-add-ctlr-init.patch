@@ -111,7 +111,7 @@
  	ret = clk_prepare_enable(res->iface_clk);
  	if (ret) {
  		dev_err(dev, "cannot prepare/enable iface clock\n");
-@@ -219,6 +274,18 @@ static int qcom_pcie_enable_resources_v0
+@@ -219,21 +274,40 @@ static int qcom_pcie_enable_resources_v0
  		goto err_clk_phy;
  	}
  
@@ -130,7 +130,10 @@
  	ret = reset_control_deassert(res->ahb_reset);
  	if (ret) {
  		dev_err(dev, "cannot deassert ahb reset\n");
-@@ -228,12 +295,18 @@ static int qcom_pcie_enable_resources_v0
+ 		goto err_reset_ahb;
+ 	}
++	udelay(1);
+ 
  	return 0;
  
  err_reset_ahb:
@@ -149,7 +152,7 @@
  	regulator_disable(res->vdda_phy);
  err_vdda_phy:
  	regulator_disable(res->vdda_refclk);
-@@ -329,6 +402,14 @@ static int qcom_pcie_get_resources_v0(st
+@@ -329,6 +403,14 @@ static int qcom_pcie_get_resources_v0(st
  	if (IS_ERR(res->phy_clk))
  		return PTR_ERR(res->phy_clk);
  
@@ -164,7 +167,7 @@
  	res->pci_reset = devm_reset_control_get(dev, "pci");
  	if (IS_ERR(res->pci_reset))
  		return PTR_ERR(res->pci_reset);
-@@ -349,6 +430,14 @@ static int qcom_pcie_get_resources_v0(st
+@@ -349,6 +431,14 @@ static int qcom_pcie_get_resources_v0(st
  	if (IS_ERR(res->phy_reset))
  		return PTR_ERR(res->phy_reset);
  
@@ -179,7 +182,7 @@
  	return 0;
  }
  
-@@ -461,6 +550,57 @@ err_res:
+@@ -461,6 +551,57 @@ err_res:
  	qcom_pcie_disable_resources_v1(pcie);
  }
  
@@ -237,7 +240,15 @@
  static void qcom_pcie_host_init_v0(struct pcie_port *pp)
  {
  	struct qcom_pcie *pcie = to_qcom_pcie(pp);
-@@ -476,9 +616,26 @@ static void qcom_pcie_host_init_v0(struc
+@@ -470,15 +611,34 @@ static void qcom_pcie_host_init_v0(struc
+ 
+ 	qcom_ep_reset_assert(pcie);
+ 
++	reset_control_assert(res->ahb_reset);
++
+ 	ret = qcom_pcie_enable_resources_v0(pcie);
+ 	if (ret)
+ 		return;
  
  	writel_masked(pcie->parf + PCIE20_PARF_PHY_CTRL, BIT(0), 0);
  
@@ -266,7 +277,7 @@
  	ret = reset_control_deassert(res->phy_reset);
  	if (ret) {
  		dev_err(dev, "cannot deassert phy reset\n");
-@@ -517,6 +674,9 @@ static void qcom_pcie_host_init_v0(struc
+@@ -517,6 +677,9 @@ static void qcom_pcie_host_init_v0(struc
  	if (ret)
  		goto err;
  
