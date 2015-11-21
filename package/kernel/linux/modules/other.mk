@@ -522,7 +522,8 @@ define KernelPackage/rtc-ds1307
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1307 (and compatible) RTC support
   DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
-  KCONFIG:=CONFIG_RTC_DRV_DS1307
+  KCONFIG:=CONFIG_RTC_DRV_DS1307 \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1307.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1307)
 endef
@@ -539,7 +540,8 @@ define KernelPackage/rtc-ds1672
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Dallas/Maxim DS1672 RTC support
   DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
-  KCONFIG:=CONFIG_RTC_DRV_DS1672
+  KCONFIG:=CONFIG_RTC_DRV_DS1672 \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-ds1672.ko
   AUTOLOAD:=$(call AutoProbe,rtc-ds1672)
 endef
@@ -555,7 +557,8 @@ define KernelPackage/rtc-isl1208
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Intersil ISL1208 RTC support
   DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
-  KCONFIG:=CONFIG_RTC_DRV_ISL1208
+  KCONFIG:=CONFIG_RTC_DRV_ISL1208 \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-isl1208.ko
   AUTOLOAD:=$(call AutoProbe,rtc-isl1208)
 endef
@@ -571,7 +574,8 @@ define KernelPackage/rtc-marvell
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell SoC built-in RTC support
   DEPENDS:=@RTC_SUPPORT @TARGET_kirkwood||TARGET_orion||TARGET_mvebu
-  KCONFIG:=CONFIG_RTC_DRV_MV
+  KCONFIG:=CONFIG_RTC_DRV_MV \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-mv.ko
   AUTOLOAD:=$(call AutoProbe,rtc-mv)
 endef
@@ -587,7 +591,8 @@ define KernelPackage/rtc-armada38x
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Marvell Armada 38x SoC built-in RTC support
   DEPENDS:=@RTC_SUPPORT @TARGET_mvebu
-  KCONFIG:=CONFIG_RTC_DRV_ARMADA38X
+  KCONFIG:=CONFIG_RTC_DRV_ARMADA38X \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-armada38x.ko
   AUTOLOAD:=$(call AutoProbe,rtc-armada38x)
 endef
@@ -603,7 +608,8 @@ define KernelPackage/rtc-pcf8563
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF8563/Epson RTC8564 RTC support
   DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
-  KCONFIG:=CONFIG_RTC_DRV_PCF8563
+  KCONFIG:=CONFIG_RTC_DRV_PCF8563 \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf8563.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf8563)
 endef
@@ -620,7 +626,8 @@ define KernelPackage/rtc-pcf2123
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Philips PCF2123 RTC support
   DEPENDS:=@RTC_SUPPORT
-  KCONFIG:=CONFIG_RTC_DRV_PCF2123
+  KCONFIG:=CONFIG_RTC_DRV_PCF2123 \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pcf2123.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pcf2123)
 endef
@@ -635,7 +642,8 @@ define KernelPackage/rtc-pt7c4338
   SUBMENU:=$(OTHER_MENU)
   TITLE:=Pericom PT7C4338 RTC support
   DEPENDS:=@RTC_SUPPORT +kmod-i2c-core
-  KCONFIG:=CONFIG_RTC_DRV_PT7C4338
+  KCONFIG:=CONFIG_RTC_DRV_PT7C4338 \
+	CONFIG_RTC_CLASS=y
   FILES:=$(LINUX_DIR)/drivers/rtc/rtc-pt7c4338.ko
   AUTOLOAD:=$(call AutoProbe,rtc-pt7c4338)
 endef
