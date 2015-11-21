@@ -229,8 +229,8 @@
 +	writel(upper_32_bits(pp->mem_bus_addr),
 +	       pcie->dbi + PCIE20_PLR_IATU_UTAR);
 +
-+	/* 1K PCIE buffer setting */
-+	writel(0x3, pcie->dbi + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
++	/* 256B PCIE buffer setting */
++	writel(0x1, pcie->dbi + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
 +	writel(0x1, pcie->dbi + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
 +}
 +
