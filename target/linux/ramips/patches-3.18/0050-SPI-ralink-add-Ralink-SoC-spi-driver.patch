@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,539 @@
+@@ -0,0 +1,533 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -172,8 +172,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +struct rt2880_spi {
 +	struct spi_master	*master;
 +	void __iomem		*base;
-+	unsigned int		sys_freq;
-+	unsigned int		speed;
++	u32			speed;
 +	u16			wait_loops;
 +	u16			mode;
 +	struct clk		*clk;
@@ -209,61 +208,33 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	iowrite32((ioread32(addr) & ~mask), addr);
 +}
 +
-+static int rt2880_spi_baudrate_set(struct spi_device *spi, unsigned int speed)
++static u32 rt2880_spi_baudrate_get(struct spi_device *spi, unsigned int speed)
 +{
 +	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
 +	u32 rate;
 +	u32 prescale;
-+	u32 reg;
-+
-+	dev_dbg(&spi->dev, "speed:%u\n", speed);
 +
 +	/*
 +	 * the supported rates are: 2, 4, 8, ... 128
 +	 * round up as we look for equal or less speed
 +	 */
-+	rate = DIV_ROUND_UP(rs->sys_freq, speed);
-+	dev_dbg(&spi->dev, "rate-1:%u\n", rate);
++	rate = DIV_ROUND_UP(clk_get_rate(rs->clk), speed);
 +	rate = roundup_pow_of_two(rate);
-+	dev_dbg(&spi->dev, "rate-2:%u\n", rate);
 +
 +	/* Convert the rate to SPI clock divisor value.	*/
 +	prescale = ilog2(rate / 2);
-+	dev_dbg(&spi->dev, "prescale:%u\n", prescale);
-+
-+	reg = rt2880_spi_read(rs, RAMIPS_SPI_CFG);
-+	reg = ((reg & ~SPICFG_SPICLK_PRESCALE_MASK) | prescale);
-+	rt2880_spi_write(rs, RAMIPS_SPI_CFG, reg);
 +
 +	/* some tolerance. double and add 100 */
 +	rs->wait_loops = (8 * HZ * loops_per_jiffy) /
 +		(clk_get_rate(rs->clk) / rate);
 +	rs->wait_loops = (rs->wait_loops << 1) + 100;
 +	rs->speed = speed;
-+	return 0;
-+}
 +
-+/*
-+ * called only when no transfer is active on the bus
-+ */
-+static int
-+rt2880_spi_setup_transfer(struct spi_device *spi, struct spi_transfer *t)
-+{
-+	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
-+	unsigned int speed = spi->max_speed_hz;
-+	int rc;
++	dev_dbg(&spi->dev, "speed: %lu/%u, rate: %u, prescal: %u, loops: %hu\n",
++			clk_get_rate(rs->clk) / rate, speed, rate, prescale,
++			rs->wait_loops);
 +
-+	if ((t != NULL) && t->speed_hz)
-+		speed = t->speed_hz;
-+
-+	if (rs->speed != speed) {
-+		dev_dbg(&spi->dev, "speed_hz:%u\n", speed);
-+		rc = rt2880_spi_baudrate_set(spi, speed);
-+		if (rc)
-+			return rc;
-+	}
-+
-+	return 0;
++	return prescale;
 +}
 +
 +static u32 get_arbiter_offset(struct spi_master *master)
@@ -345,14 +316,8 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	struct rt2880_spi *rs = spi_master_get_devdata(master);
 +	struct spi_device *spi = m->spi;
 +	struct spi_transfer *t = NULL;
-+	int par_override = 0;
 +	int status = 0;
 +	int cs_active = 0;
-+
-+	/* Load defaults */
-+	status = rt2880_spi_setup_transfer(spi, NULL);
-+	if (status < 0)
-+		goto msg_done;
 +
 +	list_for_each_entry(t, &m->transfers, transfer_list) {
 +		if (t->tx_buf == NULL && t->rx_buf == NULL && t->len) {
@@ -360,23 +325,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +				"message rejected: invalid transfer data buffers\n");
 +			status = -EIO;
 +			goto msg_done;
-+		}
-+
-+		if (t->speed_hz && t->speed_hz < (rs->sys_freq / 128)) {
-+			dev_err(&spi->dev,
-+				"message rejected: device min speed (%d Hz) exceeds required transfer speed (%d Hz)\n",
-+				(rs->sys_freq / 128), t->speed_hz);
-+			status = -EIO;
-+			goto msg_done;
-+		}
-+
-+		if (par_override || t->speed_hz || t->bits_per_word) {
-+			par_override = 1;
-+			status = rt2880_spi_setup_transfer(spi, t);
-+			if (status < 0)
-+				goto msg_done;
-+			if (!t->speed_hz && !t->bits_per_word)
-+				par_override = 0;
 +		}
 +
 +		if (!cs_active) {
@@ -465,12 +413,60 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return 0;
 +}
 +
-+static void rt2880_spi_reset(struct rt2880_spi *rs)
++static int rt2880_spi_prepare_message(struct spi_master *master,
++		struct spi_message *msg)
 +{
-+	rt2880_spi_write(rs, RAMIPS_SPI_CFG,
-+			 SPICFG_MSBFIRST | SPICFG_TXCLKEDGE_FALLING |
-+			 SPICFG_SPICLK_DIV16 | SPICFG_SPICLKPOL);
-+	rt2880_spi_write(rs, RAMIPS_SPI_CTL, SPICTL_HIZSDO | SPICTL_SPIENA);
++	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	struct spi_device *spi = msg->spi;
++	u32 reg;
++
++	if ((rs->mode == spi->mode) && (rs->speed == spi->max_speed_hz))
++		return 0;
++
++#if 0
++	/* set spido to tri-state */
++	rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_HIZSDO);
++#endif
++
++	reg = rt2880_spi_read(rs, RAMIPS_SPI_CFG);
++
++	reg &= ~(SPICFG_MSBFIRST | SPICFG_SPICLKPOL |
++			SPICFG_RXCLKEDGE_FALLING |
++			SPICFG_TXCLKEDGE_FALLING |
++			SPICFG_SPICLK_PRESCALE_MASK);
++
++	/* MSB */
++	if (!(spi->mode & SPI_LSB_FIRST))
++		reg |= SPICFG_MSBFIRST;
++
++	/* spi mode */
++	switch (spi->mode & (SPI_CPOL | SPI_CPHA)) {
++	case SPI_MODE_0:
++		reg |= SPICFG_TXCLKEDGE_FALLING;
++		break;
++	case SPI_MODE_1:
++		reg |= SPICFG_RXCLKEDGE_FALLING;
++		break;
++	case SPI_MODE_2:
++		reg |= SPICFG_SPICLKPOL | SPICFG_RXCLKEDGE_FALLING;
++		break;
++	case SPI_MODE_3:
++		reg |= SPICFG_SPICLKPOL | SPICFG_TXCLKEDGE_FALLING;
++		break;
++	}
++	rs->mode = spi->mode;
++
++#if 0
++	/* set spiclk and spiena to tri-state */
++	reg |= SPICFG_HIZSPI;
++#endif
++
++	/* clock divide */
++	reg |= rt2880_spi_baudrate_get(spi, spi->max_speed_hz);
++
++	rt2880_spi_write(rs, RAMIPS_SPI_CFG, reg);
++
++	return 0;
 +}
 +
 +static int rt2880_spi_probe(struct platform_device *pdev)
@@ -511,6 +507,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	master->max_speed_hz = clk_get_rate(clk) / 2;
 +	master->flags = SPI_MASTER_HALF_DUPLEX;
 +	master->setup = rt2880_spi_setup;
++	master->prepare_message = rt2880_spi_prepare_message;
 +	master->transfer_one_message = rt2880_spi_transfer_one_message;
 +	master->num_chipselect = RALINK_NUM_CHIPSELECTS;
 +
@@ -520,12 +517,9 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	rs->master = master;
 +	rs->base = base;
 +	rs->clk = clk;
-+	rs->sys_freq = clk_get_rate(rs->clk);
-+	dev_dbg(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
 +
 +	device_reset(&pdev->dev);
 +
-+	rt2880_spi_reset(rs);
 +
 +	ret = devm_spi_register_master(&pdev->dev, master);
 +	if (ret < 0) {
