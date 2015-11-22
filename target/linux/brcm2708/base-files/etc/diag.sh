@@ -4,9 +4,19 @@
 #
 
 . /lib/functions/leds.sh
+. /lib/brcm2708.sh
 
 set_state() {
-	status_led="led0"
+	case "$(brcm2708_board_name)" in
+	rpi-b |\
+	rpi-cm)
+		status_led="led0"
+		;;
+	rpi-b-plus |\
+	rpi-2-b)
+		status_led="led1"
+		;;
+	esac
 
 	case "$1" in
 	preinit)

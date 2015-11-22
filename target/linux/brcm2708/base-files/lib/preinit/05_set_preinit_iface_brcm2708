@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Copyright (C) 2015 OpenWrt.org
+#
+
+. /lib/brcm2708.sh
+
+set_preinit_iface() {
+	case "$(brcm2708_board_name)" in
+	rpi-b |\
+	rpi-b-plus |\
+	rpi-2-b)
+		ifname=eth0
+		;;
+	esac
+}
+
+boot_hook_add preinit_main set_preinit_iface
