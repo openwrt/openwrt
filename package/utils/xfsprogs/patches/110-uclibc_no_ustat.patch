@@ -4,8 +4,6 @@ Date:   Thu Jan 26 00:36:42 2012 +0100
 
     110-uclibc_no_ustat
 
-diff --git a/libxfs/linux.c b/libxfs/linux.c
-index 2e07d54..6a6c905 100644
 --- a/libxfs/linux.c
 +++ b/libxfs/linux.c
 @@ -21,7 +21,6 @@
@@ -16,7 +14,7 @@ index 2e07d54..6a6c905 100644
  #include <sys/mount.h>
  #include <sys/ioctl.h>
  #include <sys/sysinfo.h>
-@@ -49,6 +51,7 @@ static int max_block_alignment;
+@@ -49,6 +48,7 @@ static int max_block_alignment;
  int
  platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
  {
@@ -24,7 +22,7 @@ index 2e07d54..6a6c905 100644
  	/* Pad ust; pre-2.6.28 linux copies out too much in 32bit compat mode */
  	struct ustat	ust[2];
  	struct stat64	st;
-@@ -68,6 +71,7 @@ platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
+@@ -68,6 +68,7 @@ platform_check_ismounted(char *name, cha
  				progname, name);
  		return 1;
  	}

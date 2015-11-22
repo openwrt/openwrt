@@ -1,7 +1,6 @@
-diff -urN xfsprogs-3.1.7/Makefile xfsprogs-3.1.7.new/Makefile
---- xfsprogs-3.1.7/Makefile	2011-11-18 00:30:24.000000000 +0100
-+++ xfsprogs-3.1.7.new/Makefile	2012-04-20 14:15:48.641722955 +0200
-@@ -41,7 +41,7 @@
+--- a/Makefile
++++ b/Makefile
+@@ -41,7 +41,7 @@ endif
  
  LIB_SUBDIRS = libxfs libxlog libxcmd libhandle libdisk
  TOOL_SUBDIRS = copy db estimate fsck fsr growfs io logprint mkfs quota \
@@ -10,7 +9,7 @@ diff -urN xfsprogs-3.1.7/Makefile xfsprogs-3.1.7.new/Makefile
  
  SUBDIRS = include $(LIB_SUBDIRS) $(TOOL_SUBDIRS)
  
-@@ -135,7 +135,6 @@
+@@ -135,7 +135,6 @@ ifeq ($(HAVE_BUILDDEFS), no)
  	$(Q)$(MAKE) $(MAKEOPTS) -C . $@
  else
  	$(Q)$(MAKE) $(MAKEOPTS) $(SRCDIR)

@@ -4,8 +4,6 @@ Date:   Thu Jan 26 00:38:27 2012 +0100
 
     130-uclibc_no_xattr
 
-diff --git a/fsr/xfs_fsr.c b/fsr/xfs_fsr.c
-index 40c2e6f..4f54059 100644
 --- a/fsr/xfs_fsr.c
 +++ b/fsr/xfs_fsr.c
 @@ -35,7 +35,6 @@
@@ -16,7 +14,7 @@ index 40c2e6f..4f54059 100644
  
  
  #ifndef XFS_XFLAG_NODEFRAG
-@@ -990,6 +992,7 @@ fsr_setup_attr_fork(
+@@ -990,6 +989,7 @@ fsr_setup_attr_fork(
  	int		tfd,
  	xfs_bstat_t	*bstatp)
  {
@@ -24,7 +22,7 @@ index 40c2e6f..4f54059 100644
  	struct stat64	tstatbuf;
  	int		i;
  	int		last_forkoff = 0;
-@@ -1108,6 +1111,7 @@ fsr_setup_attr_fork(
+@@ -1108,6 +1108,7 @@ fsr_setup_attr_fork(
  out:
  	if (dflag)
  		fsrprintf(_("set temp attr\n"));

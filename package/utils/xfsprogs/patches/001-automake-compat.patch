@@ -4,8 +4,6 @@ Date:   Thu Jan 26 00:34:15 2012 +0100
 
     001-automake-compat
 
-diff --git a/configure.in b/configure.in
-index 664c0e9..d91b6ec 100644
 --- a/configure.in
 +++ b/configure.in
 @@ -2,7 +2,8 @@ AC_INIT(include/libxfs.h)
@@ -18,8 +16,6 @@ index 664c0e9..d91b6ec 100644
  AC_PREFIX_DEFAULT(/usr)
  
  AC_PROG_LIBTOOL
-diff --git a/include/builddefs.in b/include/builddefs.in
-index 81ebfcd..5a4a0e8 100644
 --- a/include/builddefs.in
 +++ b/include/builddefs.in
 @@ -20,6 +20,8 @@
@@ -31,8 +27,6 @@ index 81ebfcd..5a4a0e8 100644
  DEBUG = @debug_build@
  OPTIMIZER = @opt_build@
  MALLOCLIB = @malloc_lib@
-diff --git a/m4/package_types.m4 b/m4/package_types.m4
-index 0a0e087..66a136a 100644
 --- a/m4/package_types.m4
 +++ b/m4/package_types.m4
 @@ -9,7 +9,7 @@ AC_DEFUN([AC_TYPE_PSINT],
