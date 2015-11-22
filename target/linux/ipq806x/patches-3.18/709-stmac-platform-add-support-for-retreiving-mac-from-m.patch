@@ -9,27 +9,23 @@ Subject: [PATCH] stmac: platform: add support for retreiving mac from mtd
 
 --- a/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
 +++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_platform.c
-@@ -284,6 +284,7 @@ static int stmmac_pltfr_probe(struct pla
- 	struct stmmac_priv *priv = NULL;
- 	struct plat_stmmacenet_data *plat_dat = NULL;
- 	const char *mac = NULL;
-+	u8 mtd_mac[ETH_ALEN] = { };
+@@ -116,6 +116,19 @@ stmmac_probe_config_dt(struct platform_d
+ 		return ERR_PTR(-ENOMEM);
  
- 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
- 	addr = devm_ioremap_resource(dev, res);
-@@ -313,6 +314,15 @@ static int stmmac_pltfr_probe(struct pla
- 			pr_err("%s: main dt probe failed", __func__);
- 			return ret;
- 		}
+ 	*mac = of_get_mac_address(np);
++	if (!*mac) {
++		u8 mtd_mac[ETH_ALEN];
++		int ret;
 +
-+		if (!mac) {
-+			ret = of_get_mac_address_mtd(dev->of_node, &mtd_mac);
-+			if (ret == -EPROBE_DEFER)
-+				return ret;
++		ret = of_get_mac_address_mtd(np, mtd_mac);
++		if (ret == -EPROBE_DEFER)
++			return ERR_PTR(ret);
 +
-+			if (is_valid_ether_addr(&mtd_mac))
-+				mac = mtd_mac;
-+		}
- 	}
++		if (is_valid_ether_addr(mtd_mac))
++			*mac = devm_kmemdup(&pdev->dev, mtd_mac, ETH_ALEN,
++					    GFP_KERNEL);
++	}
++
+ 	plat->interface = of_get_phy_mode(np);
  
- 	/* Custom setup (if needed) */
+ 	/* Get max speed of operation from device tree */
