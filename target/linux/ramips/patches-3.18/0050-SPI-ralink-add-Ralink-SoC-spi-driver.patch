@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,493 @@
+@@ -0,0 +1,480 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -174,7 +174,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	unsigned int		sys_freq;
 +	unsigned int		speed;
 +	struct clk		*clk;
-+	spinlock_t		lock;
 +};
 +
 +static inline struct rt2880_spi *spidev_to_rt2880_spi(struct spi_device *spi)
@@ -187,7 +186,8 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	return ioread32(rs->base + reg);
 +}
 +
-+static inline void rt2880_spi_write(struct rt2880_spi *rs, u32 reg, u32 val)
++static inline void rt2880_spi_write(struct rt2880_spi *rs, u32 reg,
++		const u32 val)
 +{
 +	iowrite32(val, rs->base + reg);
 +}
@@ -195,27 +195,15 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +static inline void rt2880_spi_setbits(struct rt2880_spi *rs, u32 reg, u32 mask)
 +{
 +	void __iomem *addr = rs->base + reg;
-+	unsigned long flags;
-+	u32 val;
 +
-+	spin_lock_irqsave(&rs->lock, flags);
-+	val = ioread32(addr);
-+	val |= mask;
-+	iowrite32(val, addr);
-+	spin_unlock_irqrestore(&rs->lock, flags);
++	iowrite32((ioread32(addr) | mask), addr);
 +}
 +
 +static inline void rt2880_spi_clrbits(struct rt2880_spi *rs, u32 reg, u32 mask)
 +{
 +	void __iomem *addr = rs->base + reg;
-+	unsigned long flags;
-+	u32 val;
 +
-+	spin_lock_irqsave(&rs->lock, flags);
-+	val = ioread32(addr);
-+	val &= ~mask;
-+	iowrite32(val, addr);
-+	spin_unlock_irqrestore(&rs->lock, flags);
++	iowrite32((ioread32(addr) & ~mask), addr);
 +}
 +
 +static int rt2880_spi_baudrate_set(struct spi_device *spi, unsigned int speed)
@@ -488,7 +476,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	rs->master = master;
 +	rs->sys_freq = clk_get_rate(rs->clk);
 +	dev_dbg(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
-+	spin_lock_irqsave(&rs->lock, flags);
 +
 +	device_reset(&pdev->dev);
 +
