@@ -1,0 +1,39 @@
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-ipq806x.c
+@@ -259,6 +259,7 @@ static int ipq806x_gmac_probe(struct pla
+ {
+ 	struct plat_stmmacenet_data *plat_dat;
+ 	struct stmmac_resources stmmac_res;
++	struct stmmac_dma_cfg *dma_cfg;
+ 	struct device *dev = &pdev->dev;
+ 	struct ipq806x_gmac *gmac;
+ 	int val;
+@@ -348,6 +349,16 @@ static int ipq806x_gmac_probe(struct pla
+ 	plat_dat->bsp_priv = gmac;
+ 	plat_dat->fix_mac_speed = ipq806x_gmac_fix_mac_speed;
+ 
++	dma_cfg = devm_kzalloc(&pdev->dev, sizeof(*dma_cfg),
++			       GFP_KERNEL);
++
++	dma_cfg->pbl = 32;
++	dma_cfg->burst_len = DMA_AXI_BLEN_16 |
++		(7 << DMA_AXI_RD_OSR_LMT_SHIFT) |
++		(7 << DMA_AXI_WR_OSR_LMT_SHIFT);
++
++	plat_dat->dma_cfg = dma_cfg;
++
+ 	return stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
+ }
+ 
+--- a/include/linux/stmmac.h
++++ b/include/linux/stmmac.h
+@@ -73,6 +73,9 @@
+ 			| DMA_AXI_BLEN_32 | DMA_AXI_BLEN_64 \
+ 			| DMA_AXI_BLEN_128 | DMA_AXI_BLEN_256)
+ 
++#define DMA_AXI_RD_OSR_LMT_SHIFT	16
++#define DMA_AXI_WR_OSR_LMT_SHIFT	20
++
+ /* Platfrom data for platform device structure's platform_data field */
+ 
+ struct stmmac_mdio_bus_data {
