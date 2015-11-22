@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,488 @@
+@@ -0,0 +1,539 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -175,6 +175,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	unsigned int		sys_freq;
 +	unsigned int		speed;
 +	u16			wait_loops;
++	u16			mode;
 +	struct clk		*clk;
 +};
 +
@@ -263,6 +264,17 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	return 0;
++}
++
++static u32 get_arbiter_offset(struct spi_master *master)
++{
++	u32 offset;
++
++	offset = RAMIPS_SPI_ARBITER;
++	if (master->bus_num == 1)
++		offset -= RAMIPS_SPI_DEV_OFFSET;
++
++	return offset;
 +}
 +
 +static void rt2880_spi_set_cs(struct rt2880_spi *rs, int enable)
@@ -396,21 +408,60 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +
 +static int rt2880_spi_setup(struct spi_device *spi)
 +{
-+	struct rt2880_spi *rs = spidev_to_rt2880_spi(spi);
++	struct spi_master *master = spi->master;
++	struct rt2880_spi *rs = spi_master_get_devdata(master);
++	u32 reg, old_reg, arbit_off;
 +
-+	if ((spi->max_speed_hz == 0) ||
-+	    (spi->max_speed_hz > (rs->sys_freq / 2)))
-+		spi->max_speed_hz = (rs->sys_freq / 2);
-+
-+	if (spi->max_speed_hz < (rs->sys_freq / 128)) {
-+		dev_err(&spi->dev, "setup: requested speed is too low %d Hz\n",
-+			spi->max_speed_hz);
++	if ((spi->max_speed_hz > master->max_speed_hz) ||
++			(spi->max_speed_hz < master->min_speed_hz)) {
++		dev_err(&spi->dev, "invalide requested speed %d Hz\n",
++				spi->max_speed_hz);
 +		return -EINVAL;
 +	}
 +
-+	/*
-+	 * baudrate & width will be set rt2880_spi_setup_transfer
-+	 */
++	if (!(master->bits_per_word_mask &
++				BIT(spi->bits_per_word - 1))) {
++		dev_err(&spi->dev, "invalide bits_per_word %d\n",
++				spi->bits_per_word);
++		return -EINVAL;
++	}
++
++	/* the hardware seems can't work on mode0 force it to mode3 */
++	if ((spi->mode & (SPI_CPOL | SPI_CPHA)) == SPI_MODE_0) {
++		dev_warn(&spi->dev, "force spi mode3\n");
++		spi->mode |= SPI_MODE_3;
++	}
++
++	/* chip polarity */
++	arbit_off = get_arbiter_offset(master);
++	reg = old_reg = rt2880_spi_read(rs, arbit_off);
++	if (spi->mode & SPI_CS_HIGH) {
++		switch (master->bus_num) {
++		case 1:
++			reg |= SPI1_POR;
++			break;
++		default:
++			reg |= SPI0_POR;
++			break;
++		}
++	} else {
++		switch (master->bus_num) {
++		case 1:
++			reg &= ~SPI1_POR;
++			break;
++		default:
++			reg &= ~SPI0_POR;
++			break;
++		}
++	}
++
++	/* enable spi1 */
++	if (master->bus_num == 1)
++		reg |= SPICTL_ARB_EN;
++
++	if (reg != old_reg)
++		rt2880_spi_write(rs, arbit_off, reg);
++
 +	return 0;
 +}
 +
