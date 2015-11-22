@@ -1,0 +1,25 @@
+#!/bin/sh
+# Copyright (C) 2014-2015 OpenWrt.org
+
+. /lib/functions/uci-defaults-new.sh
+. /lib/brcm2708.sh
+. /lib/functions.sh
+. /lib/functions/system.sh
+
+board_config_update
+
+ucidef_set_interface_loopback
+
+board=$(brcm2708_board_name)
+
+case "$board" in
+rpi-b |\
+rpi-b-plus |\
+rpi-2-b)
+	ucidef_set_interface_lan "eth0"
+	;;
+esac
+
+board_config_flush
+
+exit 0
