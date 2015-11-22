@@ -570,7 +570,7 @@ static int x509write_file(x509_node *node, char *path, int format,
             break;
 
         case X509_OUTPUT_PEM:
-            if (fprintf(ofstream,pem_prolog)<0) {
+            if (fprintf(ofstream, "%s", pem_prolog)<0) {
                 is_err = -1;
                 break;
             }
@@ -589,7 +589,7 @@ static int x509write_file(x509_node *node, char *path, int format,
                 fprintf(ofstream,"%.64s\n",&base_buf[i]);
             }
 
-            if (fprintf(ofstream, pem_epilog)<0) {
+            if (fprintf(ofstream, "%s", pem_epilog)<0) {
                 is_err = -1;
                 break;
             }
