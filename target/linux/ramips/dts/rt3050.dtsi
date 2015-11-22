@@ -13,6 +13,10 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
+	aliases {
+		spi0 = &spi0;
+	};
+
 	cpuintc: cpuintc@0 {
 		#address-cells = <0>;
 		#interrupt-cells = <1>;
@@ -144,7 +148,7 @@
 			status = "disabled";
 		};
 
-		spi@b00 {
+		spi0: spi@b00 {
 			compatible = "ralink,rt3050-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x100>;
 

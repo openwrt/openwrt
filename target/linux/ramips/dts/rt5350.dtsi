@@ -20,6 +20,11 @@
 		compatible = "mti,cpu-interrupt-controller";
 	};
 
+	aliases {
+		spi0 = &spi0;
+		spi1 = &spi1;
+	};
+
 	palmbus@10000000 {
 		compatible = "palmbus";
 		reg = <0x10000000 0x200000>;
@@ -150,9 +155,25 @@
 			status = "disabled";
 		};
 
-		spi@b00 {
-			compatible = "ralink,rt5350-spi";
-			reg = <0xb00 0x100>;
+		spi0: spi@b00 {
+			compatible = "ralink,rt5350-spi", "ralink,rt2880-spi";
+			reg = <0xb00 0x40>;
+
+			resets = <&rstctrl 18>;
+			reset-names = "spi";
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;
+
+			status = "disabled";
+		};
+
+		spi1: spi@b40 {
+			compatible = "ralink,rt5350-spi", "ralink,rt2880-spi";
+			reg = <0xb40 0x60>;
 
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
@@ -161,7 +182,7 @@
 			#size-cells = <0>;
 
 			pinctrl-names = "default";
-			pinctrl-0 = <&spi_pins &spi_cs1>;
+			pinctrl-0 = <&spi_cs1>;
 
 			status = "disabled";
 		};
