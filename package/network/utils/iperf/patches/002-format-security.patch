@@ -1,0 +1,96 @@
+Description: iperf format string FTBFS with -Werror=format-security
+ Reported by Didier Raboud <odyx@debian.org>
+Author: Simon Paillard <spaillard@debian.org>
+Bug-Debian: http://bugs.debian.org/643408
+
+--- a/compat/Thread.c
++++ b/compat/Thread.c
+@@ -381,7 +381,7 @@ int thread_release_nonterm( int interrup
+     Condition_Lock( thread_sNum_cond );
+     thread_sNum -= nonterminating_num;
+     if ( thread_sNum > 1 && nonterminating_num > 0 && interrupt != 0 ) {
+-        fprintf( stderr, wait_server_threads );
++        fprintf( stderr, "%s", wait_server_threads );
+     }
+     nonterminating_num = 0;
+     Condition_Signal( &thread_sNum_cond );
+--- a/src/ReportDefault.c
++++ b/src/ReportDefault.c
+@@ -78,7 +78,7 @@ void reporter_printstats( Transfer_Info
+     if ( stats->mUDP != (char)kMode_Server ) {
+         // TCP Reporting
+         if( !header_printed ) {
+-            printf( report_bw_header);
++            printf( "%s", report_bw_header);
+             header_printed = 1;
+         }
+         printf( report_bw_format, stats->transferID, 
+@@ -87,7 +87,7 @@ void reporter_printstats( Transfer_Info
+     } else {
+         // UDP Reporting
+         if( !header_printed ) {
+-            printf( report_bw_jitter_loss_header);
++            printf( "%s", report_bw_jitter_loss_header);
+             header_printed = 1;
+         }
+         printf( report_bw_jitter_loss_format, stats->transferID, 
+@@ -159,7 +159,7 @@ void reporter_reportsettings( ReporterDa
+                   (data->mThreadMode == kMode_Listener ? 0 : 1) );
+     win_requested = data->mTCPWin;
+ 
+-    printf( separator_line );
++    printf( "%s", separator_line );
+     if ( data->mThreadMode == kMode_Listener ) {
+         printf( server_port,
+                 (isUDP( data ) ? "UDP" : "TCP"), 
+@@ -198,7 +198,7 @@ void reporter_reportsettings( ReporterDa
+         printf( warn_window_requested, buffer );
+     }
+     printf( "\n" );
+-    printf( separator_line );
++    printf( "%s", separator_line );
+ }
+ 
+ /*
+@@ -286,7 +286,7 @@ void reporter_reportMSS( int inMSS, thre
+         } else if ( checkMSS_MTU( inMSS, 576 ) ) {
+             net = "minimum";
+             mtu = 576;
+-            printf( warn_no_pathmtu );
++            printf( "%s", warn_no_pathmtu );
+         } else {
+             mtu = inMSS + 40;
+             net = "unknown interface";
+--- a/src/Reporter.c
++++ b/src/Reporter.c
+@@ -901,7 +901,7 @@ void PrintMSS( ReporterData *stats ) {
+         } else if ( checkMSS_MTU( inMSS, 576 ) ) {
+             net = "minimum";
+             mtu = 576;
+-            printf( warn_no_pathmtu );
++            printf( "%s", warn_no_pathmtu );
+         } else {
+             mtu = inMSS + 40;
+             net = "unknown interface";
+--- a/src/Settings.cpp
++++ b/src/Settings.cpp
+@@ -375,8 +375,8 @@ void Settings_Interpret( char option, co
+             break;
+ 
+         case 'h': // print help and exit
+-            fprintf(stderr, usage_long1);
+-            fprintf(stderr, usage_long2);
++            fprintf(stderr, "%s", usage_long1);
++            fprintf(stderr, "%s", usage_long2);
+             exit(1);
+             break;
+ 
+@@ -482,7 +482,7 @@ void Settings_Interpret( char option, co
+             break;
+ 
+         case 'v': // print version and exit
+-            fprintf( stderr, version );
++            fprintf( stderr, "%s", version );
+             exit(1);
+             break;
+ 
