@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,480 @@
+@@ -0,0 +1,479 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -70,8 +70,6 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +#define DRIVER_NAME			"spi-rt2880"
 +/* only one slave is supported*/
 +#define RALINK_NUM_CHIPSELECTS		1
-+/* in usec */
-+#define RALINK_SPI_WAIT_MAX_LOOP	2000
 +
 +#define RAMIPS_SPI_STAT			0x00
 +#define RAMIPS_SPI_CFG			0x10
@@ -173,6 +171,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	void __iomem		*base;
 +	unsigned int		sys_freq;
 +	unsigned int		speed;
++	u16			wait_loops;
 +	struct clk		*clk;
 +};
 +
@@ -238,6 +237,11 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	reg = rt2880_spi_read(rs, RAMIPS_SPI_CFG);
 +	reg = ((reg & ~SPICFG_SPICLK_PRESCALE_MASK) | prescale);
 +	rt2880_spi_write(rs, RAMIPS_SPI_CFG, reg);
++
++	/* some tolerance. double and add 100 */
++	rs->wait_loops = (8 * HZ * loops_per_jiffy) /
++		(clk_get_rate(rs->clk) / rate);
++	rs->wait_loops = (rs->wait_loops << 1) + 100;
 +	rs->speed = speed;
 +	return 0;
 +}
@@ -273,20 +277,15 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +		rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_SPIENA);
 +}
 +
-+static inline int rt2880_spi_wait_till_ready(struct rt2880_spi *rs)
++static int rt2880_spi_wait_ready(struct rt2880_spi *rs, int len)
 +{
-+	int i;
++	int loop = rs->wait_loops * len;
 +
-+	for (i = 0; i < RALINK_SPI_WAIT_MAX_LOOP; i++) {
-+		u32 status;
-+
-+		status = rt2880_spi_read(rs, RAMIPS_SPI_STAT);
-+		if ((status & SPISTAT_BUSY) == 0)
-+			return 0;
-+
++	while ((rt2880_spi_read(rs, RAMIPS_SPI_STAT) & SPISTAT_BUSY) && --loop)
 +		cpu_relax();
-+		udelay(1);
-+	}
++
++	if (loop)
++		return 0;
 +
 +	return -ETIMEDOUT;
 +}
@@ -308,7 +307,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +		for (count = 0; count < xfer->len; count++) {
 +			rt2880_spi_write(rs, RAMIPS_SPI_DATA, tx[count]);
 +			rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_STARTWR);
-+			err = rt2880_spi_wait_till_ready(rs);
++			err = rt2880_spi_wait_ready(rs, 1);
 +			if (err) {
 +				dev_err(&spi->dev, "TX failed, err=%d\n", err);
 +				goto out;
@@ -319,7 +318,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +	if (rx) {
 +		for (count = 0; count < xfer->len; count++) {
 +			rt2880_spi_setbits(rs, RAMIPS_SPI_CTL, SPICTL_STARTRD);
-+			err = rt2880_spi_wait_till_ready(rs);
++			err = rt2880_spi_wait_ready(rs, 1);
 +			if (err) {
 +				dev_err(&spi->dev, "RX failed, err=%d\n", err);
 +				goto out;
