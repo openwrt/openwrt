@@ -41,7 +41,7 @@ Acked-by: John Crispin <blogic@openwrt.org>
  spi-s3c24xx-hw-$(CONFIG_SPI_S3C24XX_FIQ) += spi-s3c24xx-fiq.o
 --- /dev/null
 +++ b/drivers/spi/spi-rt2880.c
-@@ -0,0 +1,432 @@
+@@ -0,0 +1,493 @@
 +/*
 + * spi-rt2880.c -- Ralink RT288x/RT305x SPI controller driver
 + *
@@ -77,17 +77,31 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +#define RAMIPS_SPI_CFG			0x10
 +#define RAMIPS_SPI_CTL			0x14
 +#define RAMIPS_SPI_DATA			0x20
++#define RAMIPS_SPI_ADDR			0x24
++#define RAMIPS_SPI_BS			0x28
++#define RAMIPS_SPI_USER			0x2C
++#define RAMIPS_SPI_TXFIFO		0x30
++#define RAMIPS_SPI_RXFIFO		0x34
 +#define RAMIPS_SPI_FIFO_STAT		0x38
++#define RAMIPS_SPI_MODE			0x3C
++#define RAMIPS_SPI_DEV_OFFSET		0x40
++#define RAMIPS_SPI_DMA			0x80
++#define RAMIPS_SPI_DMASTAT		0x84
++#define RAMIPS_SPI_ARBITER		0xF0
 +
 +/* SPISTAT register bit field */
 +#define SPISTAT_BUSY			BIT(0)
 +
 +/* SPICFG register bit field */
-+#define SPICFG_LSBFIRST			0
++#define SPICFG_ADDRMODE			BIT(12)
++#define SPICFG_RXENVDIS			BIT(11)
++#define SPICFG_RXCAP			BIT(10)
++#define SPICFG_SPIENMODE		BIT(9)
 +#define SPICFG_MSBFIRST			BIT(8)
 +#define SPICFG_SPICLKPOL		BIT(6)
 +#define SPICFG_RXCLKEDGE_FALLING	BIT(5)
 +#define SPICFG_TXCLKEDGE_FALLING	BIT(4)
++#define SPICFG_HIZSPI			BIT(3)
 +#define SPICFG_SPICLK_PRESCALE_MASK	0x7
 +#define SPICFG_SPICLK_DIV2		0
 +#define SPICFG_SPICLK_DIV4		1
@@ -99,13 +113,60 @@ Acked-by: John Crispin <blogic@openwrt.org>
 +#define SPICFG_SPICLK_DISABLE		7
 +
 +/* SPICTL register bit field */
++#define SPICTL_START			BIT(4)
 +#define SPICTL_HIZSDO			BIT(3)
 +#define SPICTL_STARTWR			BIT(2)
 +#define SPICTL_STARTRD			BIT(1)
 +#define SPICTL_SPIENA			BIT(0)
 +
++/* SPIUSER register bit field */
++#define SPIUSER_USERMODE		BIT(21)
++#define SPIUSER_INSTR_PHASE		BIT(20)
++#define SPIUSER_ADDR_PHASE_MASK		0x7
++#define SPIUSER_ADDR_PHASE_OFFSET	17
++#define SPIUSER_MODE_PHASE		BIT(16)
++#define SPIUSER_DUMMY_PHASE_MASK	0x3
++#define SPIUSER_DUMMY_PHASE_OFFSET	14
++#define SPIUSER_DATA_PHASE_MASK		0x3
++#define SPIUSER_DATA_PHASE_OFFSET	12
++#define SPIUSER_DATA_READ		(BIT(0) << SPIUSER_DATA_PHASE_OFFSET)
++#define SPIUSER_DATA_WRITE		(BIT(1) << SPIUSER_DATA_PHASE_OFFSET)
++#define SPIUSER_ADDR_TYPE_OFFSET	9
++#define SPIUSER_MODE_TYPE_OFFSET	6
++#define SPIUSER_DUMMY_TYPE_OFFSET	3
++#define SPIUSER_DATA_TYPE_OFFSET	0
++#define SPIUSER_TRANSFER_MASK		0x7
++#define SPIUSER_TRANSFER_SINGLE		BIT(0)
++#define SPIUSER_TRANSFER_DUAL		BIT(1)
++#define SPIUSER_TRANSFER_QUAD		BIT(2)
++
++#define SPIUSER_TRANSFER_TYPE(type) ( \
++	(type << SPIUSER_ADDR_TYPE_OFFSET) | \
++	(type << SPIUSER_MODE_TYPE_OFFSET) | \
++	(type << SPIUSER_DUMMY_TYPE_OFFSET) | \
++	(type << SPIUSER_DATA_TYPE_OFFSET) \
++)
++
 +/* SPIFIFOSTAT register bit field */
++#define SPIFIFOSTAT_TXEMPTY		BIT(19)
++#define SPIFIFOSTAT_RXEMPTY		BIT(18)
 +#define SPIFIFOSTAT_TXFULL		BIT(17)
++#define SPIFIFOSTAT_RXFULL		BIT(16)
++#define SPIFIFOSTAT_FIFO_MASK		0xff
++#define SPIFIFOSTAT_TX_OFFSET		8
++#define SPIFIFOSTAT_RX_OFFSET		0
++
++#define SPI_FIFO_DEPTH			16
++
++/* SPIMODE register bit field */
++#define SPIMODE_MODE_OFFSET		24
++#define SPIMODE_DUMMY_OFFSET		0
++
++/* SPIARB register bit field */
++#define SPICTL_ARB_EN			BIT(31)
++#define SPICTL_CSCTL1			BIT(16)
++#define SPI1_POR			BIT(1)
++#define SPI0_POR			BIT(0)
 +
 +struct rt2880_spi {
 +	struct spi_master	*master;
