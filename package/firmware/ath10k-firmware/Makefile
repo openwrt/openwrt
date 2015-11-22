@@ -47,6 +47,17 @@ $(Package/ath10k-firmware-default)
   TITLE:=ath10k firmware for QCA6174 devices
 endef
 
+QCA99X0_BOARD_REV:=ddcec9efd245da9365c474f513a855a55f3ac7fe
+QCA99X0_BOARD_FILE:=board-2.bin.$(QCA99X0_BOARD_REV)
+
+define Download/qca99x0-board
+  URL:=https://www.codeaurora.org/cgit/quic/qsdk/oss/firmware/ath10k-firmware/plain/ath10k/QCA99X0/hw2.0
+  URL_FILE:=board-2.bin?id=ddcec9efd245da9365c474f513a855a55f3ac7fe
+  FILE:=$(QCA99X0_BOARD_FILE)
+  MD5SUM:=a2b3c653c2363a5641200051d6333d0a
+endef
+$(eval $(call Download,qca99x0-board))
+
 define Build/Compile
 
 endef
@@ -68,6 +79,9 @@ endef
 
 define Package/ath10k-firmware-qca99x0/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ath10k/QCA99X0/hw2.0
+	$(INSTALL_DATA) \
+		$(DL_DIR)/$(QCA99X0_BOARD_FILE) \
+		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board-2.bin
 	$(INSTALL_DATA) \
 		$(PKG_BUILD_DIR)/QCA99X0/hw2.0/boardData_AR900B_CUS239_5G_v2_001.bin \
 		$(1)/lib/firmware/ath10k/QCA99X0/hw2.0/board.bin
