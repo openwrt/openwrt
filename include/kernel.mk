@@ -64,6 +64,8 @@ ifneq (,$(findstring uml,$(BOARD)))
   LINUX_KARCH=um
 else ifneq (,$(findstring $(ARCH) , aarch64 aarch64_be ))
   LINUX_KARCH := arm64
+else ifneq (,$(findstring $(ARCH) , arceb ))
+  LINUX_KARCH := arc
 else ifneq (,$(findstring $(ARCH) , armeb ))
   LINUX_KARCH := arm
 else ifneq (,$(findstring $(ARCH) , mipsel mips64 mips64el ))
