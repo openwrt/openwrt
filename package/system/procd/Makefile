@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=procd
-PKG_VERSION:=2015-10-26
+PKG_VERSION:=2015-10-29
 
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
 
@@ -24,7 +24,8 @@ PKG_LICENSE_FILES:=
 
 PKG_MAINTAINER:=John Crispin <blogic@openwrt.org>
 
-PKG_CONFIG_DEPENDS:= CONFIG_KERNEL_SECCOMP CONFIG_NAND_SUPPORT CONFIG_PROCD_SHOW_BOOT CONFIG_PROCD_ZRAM_TMPFS CONFIG_PROCD_JAIL_SUPPORT
+PKG_CONFIG_DEPENDS:= CONFIG_KERNEL_SECCOMP CONFIG_NAND_SUPPORT CONFIG_PROCD_SHOW_BOOT CONFIG_PROCD_ZRAM_TMPFS \
+	CONFIG_KERNEL_NAMESPACES CONFIG_PACKAGE_procd-ujail CONFIG_PACKAGE_procd-seccomp
 
 include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
@@ -38,12 +39,18 @@ define Package/procd
   TITLE:=OpenWrt system process manager
 endef
 
-define Package/procd-jail
+define Package/procd-ujail
   SECTION:=base
   CATEGORY:=Base system
-  DEPENDS:=procd +@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS @PROCD_JAIL_SUPPORT
-  TITLE:=OpenWrt process jail
-  DEFAULT:=n
+  DEPENDS:=@KERNEL_NAMESPACES +@KERNEL_UTS_NS +@KERNEL_IPC_NS +@KERNEL_PID_NS +libubox +libblobmsg-json
+  TITLE:=OpenWrt process jail helper
+endef
+
+define Package/procd-seccomp
+  SECTION:=base
+  CATEGORY:=Base system
+  DEPENDS:=@arm||@armeb||@mips||@mipsel||@i386||@x86_64 @!TARGET_uml @KERNEL_SECCOMP +libubox +libblobmsg-json
+  TITLE:=OpenWrt process seccomp helper + utrace
 endef
 
 define Package/procd-nand
@@ -73,16 +80,6 @@ config PROCD_ZRAM_TMPFS
 	bool
 	default n
 	prompt "Mount /tmp using zram."
-
-config PROCD_JAIL_SUPPORT
-	bool
-	default y
-	depends on (arm || armeb || mips || mipsel || i386 || x86_64) && PROCD_SECCOMP_SUPPORT
-
-config PROCD_SECCOMP_SUPPORT
-	bool
-	default y
-	depends on (arm || armeb || mips || mipsel || i386 || x86_64) && !TARGET_uml && @KERNEL_SECCOMP
 endmenu
 endef
 
@@ -99,12 +96,12 @@ ifeq ($(CONFIG_PROCD_ZRAM_TMPFS),y)
   CMAKE_OPTIONS += -DZRAM_TMPFS=1
 endif
 
-ifeq ($(CONFIG_PROCD_JAIL_SUPPORT),y)
+ifdef CONFIG_PACKAGE_procd-ujail
   CMAKE_OPTIONS += -DJAIL_SUPPORT=1
 endif
 
-ifeq ($(CONFIG_PROCD_SECCOMP_SUPPORT),y)
-  CMAKE_OPTIONS += -DSECCOMP_SUPPORT=1
+ifdef CONFIG_PACKAGE_procd-seccomp
+  CMAKE_OPTIONS += -DSECCOMP_SUPPORT=1 -DUTRACE_SUPPORT=1
 endif
 
 define Package/procd/install
@@ -115,15 +112,17 @@ define Package/procd/install
 	$(INSTALL_BIN) ./files/reload_config $(1)/sbin/
 	$(INSTALL_DATA) ./files/hotplug*.json $(1)/etc/
 	$(INSTALL_DATA) ./files/procd.sh $(1)/lib/functions/
-ifeq ($(CONFIG_PROCD_SECCOMP_SUPPORT),y)
-	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libpreload-seccomp.so $(1)/lib
-endif
 endef
 
-define Package/procd-jail/install
-	$(INSTALL_DIR) $(1)/sbin $(1)/lib
+define Package/procd-ujail/install
+	$(INSTALL_DIR) $(1)/sbin
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/ujail $(1)/sbin/
+endef
 
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/{utrace,ujail} $(1)/sbin/
+define Package/procd-seccomp/install
+	$(INSTALL_DIR) $(1)/sbin $(1)/lib
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libpreload-seccomp.so $(1)/lib
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/utrace $(1)/sbin/
 	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/libpreload-trace.so $(1)/lib
 endef
 
@@ -141,6 +140,7 @@ define Package/procd-nand-firstboot/install
 endef
 
 $(eval $(call BuildPackage,procd))
-$(eval $(call BuildPackage,procd-jail))
+$(eval $(call BuildPackage,procd-ujail))
+$(eval $(call BuildPackage,procd-seccomp))
 $(eval $(call BuildPackage,procd-nand))
 $(eval $(call BuildPackage,procd-nand-firstboot))
