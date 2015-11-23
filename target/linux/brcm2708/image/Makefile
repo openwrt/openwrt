@@ -28,6 +28,9 @@ define Image/Build/RaspberryPi
 	mcopy -i $(KDIR)/boot.img $(KDIR)/Image ::kernel.img  # Copy OpenWrt built kernel
 	./gen_rpi_sdcard_img.sh $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img $(KDIR)/boot.img $(KDIR)/root.$(1) \
 		$(CONFIG_BRCM2708_SD_BOOT_PARTSIZE) $(CONFIG_TARGET_ROOTFS_PARTSIZE)
+  ifneq ($(CONFIG_TARGET_IMAGES_GZIP),)
+	gzip -9n -c $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img > $(BIN_DIR)/$(IMG_PREFIX)-sdcard-vfat-$(1).img.gz
+  endif
 endef
 
 define Image/Build
