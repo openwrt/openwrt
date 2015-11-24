@@ -52,6 +52,14 @@ ucidef_set_interface_lan() {
 	json_select ..
 }
 
+ucidef_set_interface_wan() {
+        local wan_if=$1
+
+        json_select_object network
+        _ucidef_set_interface wan $wan_if
+        json_select ..
+}
+
 ucidef_set_interfaces_lan_wan() {
 	local lan_if=$1
 	local wan_if=$2
@@ -88,6 +96,48 @@ ucidef_add_switch_attr() {
 	json_add_string $key $val
 	json_select ..
 
+	json_select ..
+}
+
+ucidef_add_switch_ports() {
+	local name="$1"; shift
+	local port num role dev idx
+
+	json_select_object switch
+	json_select_object "$name"
+	json_select_array ports
+
+	for port in "$@"; do
+		case "$port" in
+			[0-9]*@*)
+				num="${port%%@*}"
+				dev="${port##*@}"
+			;;
+			[0-9]*:*:[0-9]*)
+				num="${port%%:*}"
+				idx="${port##*:}"
+				role="${port#[0-9]*:}"; role="${role%:*}"
+			;;
+			[0-9]*:*)
+				num="${port%%:*}"
+				role="${port##*:}"
+			;;
+		esac
+
+		if [ -n "$num" ] && [ -n "$dev$role" ]; then
+			json_add_object
+			json_add_int num "$num"
+			[ -n "$dev" ] && json_add_string device "$dev"
+			[ -n "$role" ] && json_add_string role "$role"
+			[ -n "$idx" ] && json_add_int index "$idx"
+			json_close_object
+		fi
+
+		unset num dev role idx
+	done
+
+	json_select ..
+	json_select ..
 	json_select ..
 }
 
