@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -69,6 +69,7 @@ enum ath79_mach_type {
+@@ -70,6 +70,7 @@ enum ath79_mach_type {
  	ATH79_MACH_EPG5000,		/* EnGenius EPG5000 */
  	ATH79_MACH_F9K1115V2,		/* Belkin AC1750DB */
  	ATH79_MACH_GL_INET,		/* GL-CONNECT GL-INET */
@@ -10,7 +10,7 @@
  	ATH79_MACH_JA76PF,		/* jjPlus JA76PF */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -556,6 +556,16 @@ config ATH79_MACH_EAP300V2
+@@ -565,6 +565,16 @@ config ATH79_MACH_EAP300V2
  	select ATH79_DEV_M25P80
  	select ATH79_DEV_WMAC
  
@@ -29,7 +29,7 @@
         select SOC_AR933X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -80,6 +80,7 @@ obj-$(CONFIG_ATH79_MACH_EPG5000)	+= mach
+@@ -81,6 +81,7 @@ obj-$(CONFIG_ATH79_MACH_EPG5000)	+= mach
  obj-$(CONFIG_ATH79_MACH_ESR1750)	+= mach-esr1750.o
  obj-$(CONFIG_ATH79_MACH_F9K1115V2)	+= mach-f9k1115v2.o
  obj-$(CONFIG_ATH79_MACH_GL_INET)	+= mach-gl-inet.o

@@ -50,8 +50,6 @@ Signed-off-by: Petr Štetiar <ynezz@true.cz>
  drivers/usb/serial/qcserial.c |   39 +++++++++++++++++++++++++++++++++++++++
  1 file changed, 39 insertions(+)
 
-diff --git a/drivers/usb/serial/qcserial.c b/drivers/usb/serial/qcserial.c
-index ebcec8c..d462132 100644
 --- a/drivers/usb/serial/qcserial.c
 +++ b/drivers/usb/serial/qcserial.c
 @@ -22,6 +22,8 @@
@@ -63,7 +61,7 @@ index ebcec8c..d462132 100644
  /* standard device layouts supported by this driver */
  enum qcserial_layouts {
  	QCSERIAL_G2K = 0,	/* Gobi 2000 */
-@@ -167,6 +169,38 @@ static const struct usb_device_id id_table[] = {
+@@ -167,6 +169,38 @@ static const struct usb_device_id id_tab
  };
  MODULE_DEVICE_TABLE(usb, id_table);
  
@@ -102,7 +100,7 @@ index ebcec8c..d462132 100644
  static int qcprobe(struct usb_serial *serial, const struct usb_device_id *id)
  {
  	struct usb_host_interface *intf = serial->interface->cur_altsetting;
-@@ -235,6 +269,11 @@ static int qcprobe(struct usb_serial *serial, const struct usb_device_id *id)
+@@ -235,6 +269,11 @@ static int qcprobe(struct usb_serial *se
  			altsetting = -1;
  		break;
  	case QCSERIAL_G2K:
@@ -114,6 +112,3 @@ index ebcec8c..d462132 100644
  		/*
  		 * Gobi 2K+ USB layout:
  		 * 0: QMI/net
--- 
-1.7.9.5
-
