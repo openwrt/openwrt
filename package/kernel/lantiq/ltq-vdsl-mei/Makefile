@@ -35,6 +35,21 @@ define KernelPackage/ltq-vdsl-vr9-mei/description
 	Lantiq MEI CPE Kernel Module Driver
 endef
 
+
+define Package/ltq-vdsl-mei_test
+  SECTION:=net
+  CATEGORY:=Network
+  TITLE:=Lantiq mei driver test tool
+  URL:=http://www.lantiq.com/
+  DEPENDS:=@TARGET_lantiq_xrx200
+endef
+
+define Package/ltq-vdsl-mei_test/description
+	Userland tool to directly control the mei driver, this is only needed
+	for test and development purposes.
+endef
+
+
 #DEBUG=-DDEBUG_PRINT=1
 
 MAKE_FLAGS += \
@@ -52,7 +67,7 @@ CONFIGURE_ARGS += \
 	--enable-add_drv_cflags="$(DEBUG) -DMEI_DRV_ATM_PTM_INTERFACE_ENABLE=1 -DMEI_EXPORT_INTERNAL_API=1 -DMEI_SUPPORT_DSM=0 -fno-pic -mno-abicalls -mlong-calls -O2 -g0" \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
-	--enable-drv_test_appl=0 \
+	--enable-drv_test_appl=yes \
 	ARCH=$(LINUX_KARCH)
 
 define Build/InstallDev
@@ -65,3 +80,10 @@ define Build/InstallDev
 endef
 
 $(eval $(call KernelPackage,ltq-vdsl-vr9-mei))
+
+define Package/ltq-vdsl-mei_test/install
+	$(INSTALL_DIR) $(1)/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/mei_cpe_drv_test $(1)/bin
+endef
+
+$(eval $(call BuildPackage,ltq-vdsl-mei_test))
