@@ -19,7 +19,7 @@
  #include "drv_dsl_cpe_api.h"
  #include "drv_dsl_cpe_api_ioctl.h"
  
-@@ -238,24 +239,10 @@ static DSL_long_t DSL_DRV_Ioctls(DSL_DRV
+@@ -238,14 +239,7 @@ static DSL_long_t DSL_DRV_Ioctls(DSL_DRV
     }
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36))
@@ -34,18 +34,8 @@
 +   pINode = file_inode(pFile);
  #endif
  
--   if (pINode == DSL_NULL)
--   {
--      bIsInKernel = DSL_TRUE;
--   }
--   else
--   {
-       bIsInKernel = DSL_FALSE;
--   }
- 
-    if ( (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API) ||
-         (_IOC_TYPE(nCommand) == DSL_IOC_MAGIC_CPE_API_G997) ||
-@@ -1102,6 +1089,9 @@ static void DSL_DRV_DebugInit(void)
+    if (pINode == DSL_NULL)
+@@ -1118,6 +1112,9 @@ static void DSL_DRV_DebugInit(void)
     return;
  }
  
@@ -55,7 +45,7 @@
  /* Entry point of driver */
  int __init DSL_ModuleInit(void)
  {
-@@ -1140,6 +1130,10 @@ int __init DSL_ModuleInit(void)
+@@ -1156,6 +1153,10 @@ int __init DSL_ModuleInit(void)
  
     DSL_DRV_DevNodeInit();
  
@@ -66,7 +56,7 @@
     return 0;
  }
  
-@@ -1147,6 +1141,11 @@ void __exit DSL_ModuleCleanup(void)
+@@ -1163,6 +1164,11 @@ void __exit DSL_ModuleCleanup(void)
  {
     printk("Module will be unloaded"DSL_DRV_CRLF);
  
