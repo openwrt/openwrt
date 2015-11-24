@@ -708,7 +708,7 @@ define Image/Build/Profile/Default
 	$(call Image/Build/Profile/3G6200NL,$(1))
 	$(call Image/Build/Profile/3G150B,$(1))
 	$(call Image/Build/Profile/3G300M,$(1))
-	$(call Image/Build/Profile/A5-11,$(1))
+	$(call Image/Build/Profile/A5-V11,$(1))
 	$(call Image/Build/Profile/AIR3GII,$(1))
 	$(call Image/Build/Profile/ALL02393G,$(1))
 	$(call Image/Build/Profile/ALL0256N,$(1))
