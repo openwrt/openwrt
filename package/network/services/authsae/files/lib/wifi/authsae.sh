@@ -5,7 +5,7 @@ authsae_start_interface() {
 	local authsae_conf_file="/var/run/authsae-$ifname.cfg"
 	local ret=1
 
-	json_get_vars mcast_rate
+	json_get_vars mcast_rate mesh_id
 	set_default mcast_rate "12"
 
 	case "$htmode" in
