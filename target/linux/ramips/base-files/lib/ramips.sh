@@ -460,6 +460,9 @@ ramips_board_detect() {
 	*"ZBT-WR8305RT")
 		name="zbt-wr8305rt"
 		;;
+	*"YK1")
+		name="youku-yk1"
+		;;
 	*)
 		name="generic"
 		;;
