@@ -40,27 +40,20 @@
  
     /* Enable signals in Kernel >= 2.6 */
     allow_signal(SIGKILL);
-@@ -221,9 +218,7 @@ IFX_int32_t IFXOS_ThreadInit(
+@@ -221,9 +218,11 @@ IFX_int32_t IFXOS_ThreadInit(
           init_completion(&pThrCntrl->thrCompletion);
  
           /* start kernel thread via the wrapper function */
 -         pThrCntrl->tid = kernel_thread( (IFXOS_KERNEL_THREAD_StartRoutine)IFXOS_KernelThreadStartup,
 -                        (void *)pThrCntrl,
 -                        IFXOS_DRV_THREAD_OPTIONS);
-+         pThrCntrl->tid = kthread_run(IFXOS_KernelThreadStartup, (void *)pThrCntrl, "ifxos");
++         pThrCntrl->tid = kthread_run(IFXOS_KernelThreadStartup, (void *)pThrCntrl, pThrCntrl->thrParams.pName);
++         if (IS_ERR(pThrCntrl->tid)) {
++            IFXOS_PRN_USR_ERR_NL( IFXOS, IFXOS_PRN_LEVEL_ERR,
++               ("IFXOS ERROR - Problem creating thread: %li" IFXOS_CRLF, PTR_ERR(pThrCntrl->tid)));
++         }
  
           pThrCntrl->bValid = IFX_TRUE;
- 
---- a/src/include/ifxos_thread.h
-+++ b/src/include/ifxos_thread.h
-@@ -111,7 +111,7 @@ typedef struct IFXOS_ThreadParams_s
- /**
-    Function type of the user thread/task function.
- */
--typedef IFX_int32_t (*IFXOS_ThreadFunction_t)(IFXOS_ThreadParams_t *);
-+typedef int (*IFXOS_ThreadFunction_t)(void*);
- 
- /** @} */
  
 --- a/src/include/linux/ifxos_linux_thread.h
 +++ b/src/include/linux/ifxos_linux_thread.h

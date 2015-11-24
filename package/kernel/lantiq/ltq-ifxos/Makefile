@@ -8,7 +8,7 @@ include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=lib_ifxos
 PKG_VERSION:=1.5.19
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
 PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_NAME)/archive/v$(PKG_VERSION)
@@ -31,12 +31,14 @@ define KernelPackage/ltq-ifxos
   AUTOLOAD:=$(call AutoLoad,10,drv_ifxos)
 endef
 
+MAKE_FLAGS+=-s
+
 CONFIGURE_ARGS += \
 	ARCH=$(LINUX_KARCH) \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-kernelincl="$(LINUX_DIR)/include" \
-	--enable-add_drv_cflags="-fno-pic -mno-abicalls -mlong-calls -G 0"
+	--with-kernel-module
 
 ifdef CONFIG_TARGET_lantiq
   define Build/InstallDev
