@@ -1,4 +1,5 @@
 # Copyright (C) 2012 OpenWrt.org
+# Copyright (C) 2015 Lantiq Beteiligungs GmbH & Co KG.
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -7,14 +8,14 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=ltq-vdsl-vr9
-PKG_VERSION:=4.16.2.4
+PKG_VERSION:=4.16.6.3
 PKG_RELEASE:=1
 
-PKG_BASE_NAME:=drv_dsl_cpe_api_vrx
-PKG_SOURCE:=$(PKG_BASE_NAME)-$(PKG_VERSION).tar.gz
+PKG_BASE_NAME:=drv_dsl_cpe_api
+PKG_SOURCE:=$(PKG_BASE_NAME)_vrx-$(PKG_VERSION).tar.gz
 PKG_BUILD_DIR:=$(KERNEL_BUILD_DIR)/$(PKG_BASE_NAME)-$(PKG_VERSION)
-PKG_SOURCE_URL:=https://github.com/xdarklight/$(PKG_BASE_NAME)/archive/v$(PKG_VERSION)
-PKG_MD5SUM:=0a3e35d199eb8936f3e8f61bb074223a
+PKG_SOURCE_URL:=http://mirror2.openwrt.org/sources
+PKG_MD5SUM:=5b15a866bb1939c333d30a1b7f9e7856
 
 PKG_USE_MIPS16:=0
 
@@ -56,11 +57,10 @@ CONFIGURE_ARGS += --enable-kernel-include="$(LINUX_DIR)/include" \
 	--enable-adsl-led=no \
 	--enable-adsl-mib=no \
 	--enable-dsl-ceoc=no \
-	--enable-dsl-bonding=no \
 	--enable-linux-26 \
 	--enable-kernelbuild="$(LINUX_DIR)" \
 	--enable-debug-prints=no \
-	KERNEL_ARCH=mips
+	ARCH=mips
 
 CONFIGURE_ARGS += --enable-model=full
 #CONFIGURE_ARGS += --enable-model=lite
