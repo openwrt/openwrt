@@ -31,7 +31,7 @@ generate_network() {
 	json_select ..
 
 	[ -n "$ifname" ] || return
-	[ "$create_vlan" -eq 1 ] && case $1 in
+	[ "${create_vlan:-0}" -eq 1 ] && case $1 in
 	lan) vlan=1;;
 	wan) vlan=2;;
 	*)
@@ -94,6 +94,116 @@ set network.@switch_vlan[-1].ports='$ports ${cpu_port}t'
 EOF
 }
 
+calculate_switch_vlans() {
+	local switch=$1
+	local ports port
+	local prev_role
+	local num device role index
+	local n_cpu=0 cpu0 cpu1 cpu2 cpu3
+	local dev0 dev1 dev2 dev3 role0 role1 role2 role3
+	local n_vlan=0 vlan_off=-1
+	local vlan_ports cpu_port
+
+	json_get_keys ports ports
+
+	json_select ports
+
+	# gather all cpu ports and count vlans
+	for port in $ports; do
+		json_select "$port"
+		json_get_vars num device role
+
+		if [ -n "$num" ] && [ -n "$device" ]; then
+			export "cpu$n_cpu=$num"
+			export "dev$n_cpu=$device"
+			n_cpu=$((n_cpu + 1))
+		elif [ -n "$num" ] && [ -n "$role" ] && [ "$role" != "$prev_role" ]; then
+			export "role$n_vlan=$role"
+			n_vlan=$((n_vlan + 1))
+			prev_role="$role"
+		fi
+
+		json_select ..
+	done
+
+	unset prev_role
+
+	# autogenerate vlans
+	for port in $ports ""; do
+		json_select "$port"
+
+		if [ -n "$port" ]; then
+			json_get_vars num device role
+		else
+			num="-"; role="-"
+		fi
+
+		if [ -n "$num" ] && [ -n "$role" ]; then
+			if [ "$role" != "$prev_role" ]; then
+				if [ -n "$vlan_ports" ]; then
+					let cpu_port="cpu$((vlan_off % n_cpu))"
+					[ $n_vlan -gt $n_cpu ] && cpu_port="${cpu_port}t"
+
+					uci -q batch <<-EOF
+						add network switch_vlan
+						set network.@switch_vlan[-1].device='$switch'
+						set network.@switch_vlan[-1].vlan='$((vlan_off + 1))'
+						set network.@switch_vlan[-1].ports='$vlan_ports $cpu_port'
+					EOF
+				fi
+
+				vlan_off=$((vlan_off + 1))
+				vlan_ports="$num"
+				prev_role="$role"
+			else
+				vlan_ports="$vlan_ports $num"
+			fi
+
+		fi
+
+		json_select ..
+	done
+
+	json_select ..
+
+	# autogenerate interfaces
+	vlan_off=0; while [ $vlan_off -lt $n_vlan ]; do
+		eval role="\$role$((vlan_off))"
+		eval device="\$dev$((vlan_off++ % n_cpu))"
+		[ $n_vlan -gt $n_cpu ] && device="$device.$vlan_off"
+
+		uci -q batch <<-EOF
+			delete network.$role
+			set network.$role='interface'
+			set network.$role.ifname='$device'
+		EOF
+
+		case $role in
+			lan) uci -q batch <<-EOF
+				set network.lan.type='bridge'
+				set network.lan.proto='static'
+				set network.lan.ipaddr='192.168.1.1'
+				set network.lan.netmask='255.255.255.0'
+				set network.lan.ip6assign='60'
+			EOF
+			;;
+			wan) uci -q batch <<-EOF
+				set network.wan.proto='dhcp'
+				delete network.wan6
+				set network.wan6='interface'
+				set network.wan6.ifname='$device'
+				set network.wan6.proto='dhcpv6'
+			EOF
+			;;
+			*) uci -q batch <<-EOF
+				set network.$role.force_link='1'
+				set network.$role.proto='none'
+			EOF
+			;;
+		esac
+	done
+}
+
 generate_switch() {
 	local key=$1
 	local vlans
@@ -109,10 +219,14 @@ set network.@switch[-1].reset='$reset'
 set network.@switch[-1].enable_vlan='$enable'
 set network.@switch[-1].blinkrate='$blinkrate'
 EOF
-	[ -n "$cpu_port" ] && {
+
+	if [ -n "$cpu_port" ]; then
 		json_get_keys vlans vlans
 		for vlan in $vlans; do generate_switch_vlan $1 $vlan $cpu_port; done
-	}
+	elif json_is_a ports array; then
+		calculate_switch_vlans $1
+	fi
+
 	json_select ..
 	json_select ..
 }
