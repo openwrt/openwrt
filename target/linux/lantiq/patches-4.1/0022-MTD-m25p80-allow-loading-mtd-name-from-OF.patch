@@ -38,7 +38,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  	if (data && data->name)
  		nor->mtd.name = data->name;
 +	else if (of_mtd_name)
-+		flash->mtd.name = of_mtd_name;
++		nor->mtd.name = of_mtd_name;
  
  	/* For some (historical?) reason many platforms provide two different
  	 * names in flash_platform_data: "name" and "type". Quite often name is
