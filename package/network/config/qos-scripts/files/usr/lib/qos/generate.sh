@@ -216,7 +216,7 @@ config_cb() {
 			config_get device "$CONFIG_SECTION" device
 			[ -z "$device" ] && {
 				device="$(find_ifname ${CONFIG_SECTION})"
-				config_set "$CONFIG_SECTION" device "${device:-eth0}"
+				config_set "$CONFIG_SECTION" device "$device"
 			}
 		;;
 		classgroup) append CG "$CONFIG_SECTION";;
