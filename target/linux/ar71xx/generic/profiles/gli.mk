@@ -25,3 +25,14 @@ define Profile/GL-AR150/Description
 endef
 
 $(eval $(call Profile,GL-AR150))
+
+define Profile/GL-AR300
+	NAME:=GL AR300
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/GL-AR300/Description
+	Configuration of GL AR300.
+endef
+
+$(eval $(call Profile,GL-AR300))
