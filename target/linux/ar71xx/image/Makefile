@@ -204,6 +204,14 @@ define Device/gl-ar300
 endef
 TARGET_DEVICES += gl-ar300
 
+define Device/gl-domino
+  BOARDNAME = DOMINO
+  IMAGE_SIZE = 16000k
+  CONSOLE = ttyATH0,115200
+  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
+endef
+TARGET_DEVICES += gl-domino
+
 
 define Device/wndr3700
   BOARDNAME = WNDR3700
