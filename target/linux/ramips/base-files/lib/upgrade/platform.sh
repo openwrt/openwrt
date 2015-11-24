@@ -108,6 +108,7 @@ platform_check_image() {
 	w150m|\
 	w306r-v20|\
 	w502u|\
+	wf-2881|\
 	whr-1166d|\
 	whr-300hp2|\
 	whr-600d|\
