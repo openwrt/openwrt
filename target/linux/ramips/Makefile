@@ -10,7 +10,7 @@ ARCH:=mipsel
 BOARD:=ramips
 BOARDNAME:=Ralink RT288x/RT3xxx
 SUBTARGETS:=rt305x mt7620 mt7621 mt7628 mt7688 rt3883 rt288x
-FEATURES:=squashfs gpio
+FEATURES:=squashfs gpio ubifs
 MAINTAINER:=John Crispin <blogic@openwrt.org>
 
 KERNEL_PATCHVER:=3.18

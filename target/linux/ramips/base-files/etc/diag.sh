@@ -155,6 +155,7 @@ get_status_led() {
 	tew-692gr|\
 	ur-326n4g|\
 	ur-336un|\
+	wf-2881|\
 	wr512-3gn)
 		status_led="$board:green:wps"
 		;;
