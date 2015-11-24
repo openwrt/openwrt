@@ -1,6 +1,10 @@
 #!/bin/sh
 [ -f /etc/banner ] && cat /etc/banner
 [ -e /tmp/.failsafe ] && cat /etc/banner.failsafe
+fgrep -sq '/ overlay ro,' /proc/mounts && {
+	echo 'Your JFFS2-partition seems full and overlayfs is mounted read-only.'
+	echo 'Please try to remove files from /overlay/upper/... and reboot!'
+}
 
 export PATH=/usr/sbin:/usr/bin:/sbin:/bin
 export HOME=$(grep -e "^${USER:-root}:" /etc/passwd | cut -d ":" -f 6)
