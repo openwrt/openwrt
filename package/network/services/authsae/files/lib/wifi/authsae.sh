@@ -6,7 +6,7 @@ authsae_start_interface() {
 	local ret=1
 
 	json_get_vars mcast_rate mesh_id
-	set_default mcast_rate "12"
+	set_default mcast_rate "12000"
 
 	case "$htmode" in
 		HT20|HT40+|HT40-) mesh_htmode="$htmode";;
@@ -17,6 +17,14 @@ authsae_start_interface() {
 		*g*) mesh_band=11g;;
 		*a*) mesh_band=11a;;
 	esac
+
+	if [ "$mcast_rate" -gt 1000 ]; then
+		# authsae only allows integers as rates and not things like 5.5
+		mcval=$(($mcast_rate / 1000))
+	else
+		# compat: to still support mbit/s rates
+		mcval="$mcast_rate"
+	fi
 
 	cat > "$authsae_conf_file" <<EOF
 authsae:
@@ -40,7 +48,7 @@ authsae:
     band = "$mesh_band";
     channel = $channel;
     htmode = "$mesh_htmode";
-    mcast-rate = $mcast_rate;
+    mcast-rate = $mcval;
   };
 };
 EOF
