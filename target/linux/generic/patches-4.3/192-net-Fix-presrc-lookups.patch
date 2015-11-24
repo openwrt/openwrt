@@ -29,11 +29,9 @@ This is needed in v4.3.
  net/ipv4/fib_semantics.c | 13 ++++++++++---
  1 file changed, 10 insertions(+), 3 deletions(-)
 
-diff --git a/net/ipv4/fib_semantics.c b/net/ipv4/fib_semantics.c
-index 064bd3caaa4f..aac966f6162f 100644
 --- a/net/ipv4/fib_semantics.c
 +++ b/net/ipv4/fib_semantics.c
-@@ -864,14 +864,21 @@ static bool fib_valid_prefsrc(struct fib_config *cfg, __be32 fib_prefsrc)
+@@ -864,14 +864,21 @@ static bool fib_valid_prefsrc(struct fib
  	if (cfg->fc_type != RTN_LOCAL || !cfg->fc_dst ||
  	    fib_prefsrc != cfg->fc_dst) {
  		u32 tb_id = cfg->fc_table;
