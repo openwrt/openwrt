@@ -34,7 +34,16 @@
  /* ===================================
     extern function declarations
     =================================== */
-@@ -1783,7 +1785,9 @@ static int __init MEI_module_init (void)
+@@ -196,6 +198,8 @@ static void MEI_MemVAllocTest();
+ /* Local variables (LINUX)             */
+ /* =================================== */
+ static IFX_uint8_t major_number = 0;
++static struct class *mei_class;
++static dev_t mei_devt;
+ #ifdef MODULE
+ #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
+ MODULE_PARM(major_number, "b");
+@@ -1783,7 +1787,9 @@ static int __init MEI_module_init (void)
        return (result);
     }
  
@@ -44,7 +53,18 @@
  
     return 0;
  }
-@@ -1963,7 +1967,9 @@ static void MEI_module_exit (void)
+@@ -1907,6 +1913,10 @@ static void MEI_module_exit (void)
+ 
+ #else
+    unregister_chrdev ( major_number , DRV_MEI_NAME );
++   device_destroy(mei_class, mei_devt);
++   mei_devt = 0;
++   class_destroy(mei_class);
++   mei_class = NULL;
+ #endif
+ 
+ #if CONFIG_PROC_FS
+@@ -1963,7 +1973,9 @@ static void MEI_module_exit (void)
              ("MEI_DRV: Chipset Basic Exit failed" MEI_DRV_CRLF));
     }
  
@@ -54,7 +74,18 @@
  
     /* touch one time this variable to avoid that the linker will remove it */
     debug_level = MEI_DRV_PRN_LEVEL_OFF;
-@@ -2120,21 +2126,32 @@ static int MEI_InitModuleBasics(void)
+@@ -2080,6 +2092,10 @@ static int MEI_InitModuleRegCharDev(cons
+             ("Using major number %d" MEI_DRV_CRLF, major_number));
+    }
+ 
++   mei_class = class_create(THIS_MODULE, devName);
++   mei_devt = MKDEV(major_number, 0);
++   device_create(mei_class, NULL, mei_devt, NULL, "%s/%i", devName, 0);
++
+    return 0;
+ #endif      /* CONFIG_DEVFS_FS */
+ }
+@@ -2120,21 +2136,32 @@ static int MEI_InitModuleBasics(void)
  }
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
@@ -87,7 +118,7 @@
  
     return 0;
  }
-@@ -2454,11 +2471,15 @@ IFX_int32_t MEI_IoctlInitDevice(
+@@ -2454,11 +2481,15 @@ IFX_int32_t MEI_IoctlInitDevice(
              pMeiDev->eModePoll = e_MEI_DEV_ACCESS_MODE_IRQ;
              pMeiDev->intMask   = ME_ARC2ME_INTERRUPT_UNMASK_ALL;
  
