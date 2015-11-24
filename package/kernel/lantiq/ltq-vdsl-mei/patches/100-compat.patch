@@ -43,7 +43,7 @@
  #ifdef MODULE
  #if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
  MODULE_PARM(major_number, "b");
-@@ -1783,7 +1787,9 @@ static int __init MEI_module_init (void)
+@@ -1798,7 +1802,9 @@ static int __init MEI_module_init (void)
        return (result);
     }
  
@@ -53,7 +53,7 @@
  
     return 0;
  }
-@@ -1907,6 +1913,10 @@ static void MEI_module_exit (void)
+@@ -1922,6 +1928,10 @@ static void MEI_module_exit (void)
  
  #else
     unregister_chrdev ( major_number , DRV_MEI_NAME );
@@ -64,7 +64,7 @@
  #endif
  
  #if CONFIG_PROC_FS
-@@ -1963,7 +1973,9 @@ static void MEI_module_exit (void)
+@@ -1978,7 +1988,9 @@ static void MEI_module_exit (void)
              ("MEI_DRV: Chipset Basic Exit failed" MEI_DRV_CRLF));
     }
  
@@ -74,7 +74,7 @@
  
     /* touch one time this variable to avoid that the linker will remove it */
     debug_level = MEI_DRV_PRN_LEVEL_OFF;
-@@ -2080,6 +2092,10 @@ static int MEI_InitModuleRegCharDev(cons
+@@ -2095,6 +2107,10 @@ static int MEI_InitModuleRegCharDev(cons
              ("Using major number %d" MEI_DRV_CRLF, major_number));
     }
  
@@ -85,7 +85,7 @@
     return 0;
  #endif      /* CONFIG_DEVFS_FS */
  }
-@@ -2120,21 +2136,32 @@ static int MEI_InitModuleBasics(void)
+@@ -2135,21 +2151,32 @@ static int MEI_InitModuleBasics(void)
  }
  
  #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0))
@@ -118,7 +118,7 @@
  
     return 0;
  }
-@@ -2454,11 +2481,15 @@ IFX_int32_t MEI_IoctlInitDevice(
+@@ -2469,11 +2496,15 @@ IFX_int32_t MEI_IoctlInitDevice(
              pMeiDev->eModePoll = e_MEI_DEV_ACCESS_MODE_IRQ;
              pMeiDev->intMask   = ME_ARC2ME_INTERRUPT_UNMASK_ALL;
  
@@ -146,7 +146,7 @@
 +int (*ifx_mei_atm_showtime_enter)(struct port_cell_info *, void *) = NULL;
 +int (*ifx_mei_atm_showtime_exit)(void) = NULL;
 +
-+ltq_ifx_mei_atm_showtime_enter_compat(IFX_uint8_t dslLineNum,
++int ltq_ifx_mei_atm_showtime_enter_compat(IFX_uint8_t dslLineNum,
 +				      struct port_cell_info *cellInfo,
 +				      void *xdata) {
 +	if (ifx_mei_atm_showtime_enter)
@@ -155,7 +155,7 @@
 +	return -e_MEI_ERR_OP_FAILED;
 +}
 +
-+ltq_ifx_mei_atm_showtime_exit_compat(IFX_uint8_t dslLineNum) {
++int ltq_ifx_mei_atm_showtime_exit_compat(IFX_uint8_t dslLineNum) {
 +	if (ifx_mei_atm_showtime_exit)
 +		return ifx_mei_atm_showtime_exit();
 +
@@ -198,11 +198,12 @@
  
  #if (MEI_EXPORT_INTERNAL_API == 1) && (MEI_DRV_ATM_PTM_INTERFACE_ENABLE == 1)
  
-@@ -42,8 +41,20 @@ extern IFX_int32_t MEI_InternalXtmSwhowt
+@@ -42,8 +41,21 @@ extern IFX_int32_t MEI_InternalXtmSwhowt
                                MEI_DYN_CNTRL_T        *pMeiDynCntrl,
                                MEI_XTM_ShowtimeExit_t *pArgXtm);
  
 +#if 1
++#include <lantiq_atm.h>
 +typedef enum {
 +	LTQ_MEI_SHOWTIME_ENTER,
 +	LTQ_MEI_SHOWTIME_EXIT
@@ -221,9 +222,9 @@
                                const unsigned char line_idx,
 --- a/src/drv_mei_cpe_device_vrx.c
 +++ b/src/drv_mei_cpe_device_vrx.c
-@@ -27,13 +27,6 @@
- #include "drv_mei_cpe_mei_interface.h"
+@@ -28,13 +28,6 @@
  #include "drv_mei_cpe_api.h"
+ #include "drv_mei_cpe_mei_vrx.h"
  
 -#if defined(LINUX)
 -#  if (LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0))
@@ -235,7 +236,7 @@
  
  IFX_int32_t MEI_GPIntProcess(MEI_MeiRegVal_t processInt, MEI_DEV_T *pMeiDev)
  {
-@@ -81,6 +74,7 @@ IFX_int32_t MEI_GetChipInfo(MEI_DEV_T *p
+@@ -82,6 +75,7 @@ IFX_int32_t MEI_GetChipInfo(MEI_DEV_T *p
  */
  IFX_int32_t MEI_VR10_PcieEntitiesCheck(IFX_uint8_t nEntityNum)
  {
@@ -243,7 +244,7 @@
     IFX_uint32_t pcie_entitiesNum;
  
     /* get information from pcie driver */
-@@ -101,6 +95,9 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
+@@ -102,6 +96,9 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
     }
  
     return IFX_SUCCESS;
@@ -253,7 +254,7 @@
  }
  
  /**
-@@ -115,6 +112,7 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
+@@ -116,6 +113,7 @@ IFX_int32_t MEI_VR10_PcieEntitiesCheck(I
  */
  IFX_int32_t MEI_VR10_PcieEntityInit(MEI_MEI_DRV_CNTRL_T *pMeiDrvCntrl)
  {
@@ -261,7 +262,7 @@
     IFX_uint8_t entityNum;
     ifx_pcie_ep_dev_t MEI_pcie_ep_dev;
  
-@@ -137,6 +135,9 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
+@@ -138,6 +136,9 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
     pMeiDrvCntrl->MEI_pcie_irq = MEI_pcie_ep_dev.irq;
  
     return IFX_SUCCESS;
@@ -271,7 +272,7 @@
  }
  
  /**
-@@ -151,6 +152,7 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
+@@ -152,6 +153,7 @@ IFX_int32_t MEI_VR10_PcieEntityInit(MEI_
  */
  IFX_int32_t MEI_VR10_PcieEntityFree(IFX_uint8_t entityNum)
  {
@@ -279,7 +280,7 @@
     if (ifx_pcie_ep_dev_info_release(entityNum))
     {
        PRN_ERR_USR_NL( MEI_DRV, MEI_DRV_PRN_LEVEL_ERR,
-@@ -160,6 +162,9 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
+@@ -161,6 +163,9 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
     }
  
     return IFX_SUCCESS;
@@ -289,7 +290,7 @@
  }
  
  /**
-@@ -174,6 +179,7 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
+@@ -175,6 +180,7 @@ IFX_int32_t MEI_VR10_PcieEntityFree(IFX_
  */
  IFX_int32_t MEI_VR10_InternalInitDevice(MEI_DYN_CNTRL_T *pMeiDynCntrl)
  {
@@ -297,7 +298,7 @@
     IFX_int32_t         retVal;
     IOCTL_MEI_devInit_t InitDev;
     MEI_DEV_T           *pMeiDev = pMeiDynCntrl->pMeiDev;
-@@ -198,5 +204,8 @@ IFX_int32_t MEI_VR10_InternalInitDevice(
+@@ -199,6 +205,9 @@ IFX_int32_t MEI_VR10_InternalInitDevice(
     *MEI_GPIO_U32REG(GPIO_P0_ALSEL1) &= ~((1 << 0) | (1 << 3) | (1 << 8));
  
     return IFX_SUCCESS;
@@ -306,3 +307,4 @@
 +#endif
  }
  
+ IFX_int32_t MEI_PLL_ConfigInit(MEI_DEV_T *pMeiDev)
