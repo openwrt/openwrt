@@ -581,6 +581,9 @@ wpa_supplicant_add_network() {
 	}
 
 	[[ "$_w_mode" = "mesh" ]] && {
+		json_get_vars mesh_id
+		ssid="${mesh_id}"
+
 		append network_data "mode=5" "$N$T"
 		[ -n "$channel" ] && {
 			freq="$(get_freq "$phy" "$channel")"
