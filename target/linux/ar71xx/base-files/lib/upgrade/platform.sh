@@ -222,6 +222,7 @@ platform_check_image() {
 	ew-dorin-router | \
 	gl-ar150 | \
 	gl-ar300 | \
+	gl-domino | \
 	hiwifi-hc6361 | \
 	hornet-ub-x2 | \
 	mzk-w04nu | \

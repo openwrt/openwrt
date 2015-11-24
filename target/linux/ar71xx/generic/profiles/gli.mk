@@ -36,3 +36,14 @@ define Profile/GL-AR300/Description
 endef
 
 $(eval $(call Profile,GL-AR300))
+
+define Profile/DOMINO
+	NAME:=GL Domino Pi
+	PACKAGES:=kmod-usb-core kmod-usb2
+endef
+
+define Profile/DOMINO/Description
+	Configuration of Domino, Wifi for everything.
+endef
+
+$(eval $(call Profile,DOMINO))
