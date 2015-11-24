@@ -217,6 +217,10 @@ dlan-pro-1200-ac)
 	ucidef_set_led_trigger_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
 	;;
 
+gl-ar150)
+	ucidef_set_led_wlan "wlan" "WLAN" "gl_ar150:wlan" "phy0tpt"
+	;;
+
 gl-inet)
 	ucidef_set_led_netdev "lan" "LAN" "gl-connect:green:lan" "eth1"
 	ucidef_set_led_wlan "wlan" "WLAN" "gl-connect:red:wlan" "phy0tpt"
