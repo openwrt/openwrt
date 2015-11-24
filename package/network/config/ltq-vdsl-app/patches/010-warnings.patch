@@ -1,0 +1,23 @@
+--- a/src/dsl_cpe_os.h
++++ b/src/dsl_cpe_os.h
+@@ -31,15 +31,15 @@
+ #ifndef _lint
+ #ifdef LINUX
+ #include "dsl_cpe_linux.h"
+-#elif WIN32
++#elif defined(WIN32)
+ #include "dsl_cpe_win32.h"
+-#elif VXWORKS
++#elif defined(VXWORKS)
+ #include "dsl_cpe_vxworks.h"
+-#elif ECOS
++#elif defined(ECOS)
+ #include "dsl_cpe_ecos.h"
+-#elif RTEMS
++#elif defined(RTEMS)
+ #include "dsl_cpe_rtems.h"
+-#elif GENERIC_OS
++#elif defined(GENERIC_OS)
+ #include "dsl_cpe_generic_os.h"
+ #else
+ #error please define your OS for the CPE Control adaptation
