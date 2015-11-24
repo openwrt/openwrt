@@ -54,7 +54,8 @@ CONFIGURE_ARGS += \
 	--disable-soap-support \
 	--enable-dsl-bonding=no \
 	--enable-debug-prints=err \
-	--disable-dti
+	--disable-dti \
+	--enable-debug
 
 ifeq ($(CONFIG_IFX_CLI),y)
 CONFIGURE_ARGS += \
@@ -73,6 +74,7 @@ define Package/ltq-vdsl-app/install
 	$(INSTALL_BIN) ./files/vdsl_cpe_control_wrapper $(1)/sbin/
 
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/src/dsl_cpe_control $(1)/sbin/vdsl_cpe_control
+	$(INSTALL_BIN) ./files/dsl_cpe_pipe.sh $(1)/sbin/
 endef
 
 $(eval $(call BuildPackage,ltq-vdsl-app))
