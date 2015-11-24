@@ -30,7 +30,7 @@ define Build/boot-img
 	mcopy -i $@.boot cmdline.txt ::
 	mcopy -i $@.boot config.txt ::
 	mcopy -i $@.boot $(word 1,$^) ::kernel.img
-	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::)
+	$(foreach dts,$(shell echo $(DEVICE_DTS)),mcopy -i $@.boot $(DTS_DIR)/$(dts).dtb ::;)
 	mmd -i $@.boot ::/overlays
 	mcopy -i $@.boot $(DTS_DIR)/overlays/*.dtb ::/overlays/
 	mcopy -i $@.boot $(DTS_DIR)/overlays/README ::/overlays/
