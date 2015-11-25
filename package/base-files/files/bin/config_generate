@@ -172,6 +172,16 @@ calculate_switch_vlans() {
 		eval device="\$dev$((vlan_off++ % n_cpu))"
 		[ $n_vlan -gt $n_cpu ] && device="$device.$vlan_off"
 
+		# quirk: append ifnames for subsequent switches
+		case "$switch" in switch[1-9])
+			local prev_devs="$(uci -q get "network.$role.ifname")"
+			if echo "$prev_devs" | grep -wq "$device"; then
+				device="$prev_devs"
+			else
+				device="$prev_devs $device"
+			fi
+		;; esac
+
 		uci -q batch <<-EOF
 			delete network.$role
 			set network.$role='interface'
