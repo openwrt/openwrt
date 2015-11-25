@@ -1,17 +1,18 @@
 #!/bin/sh
 #
-# Copyright (C) 2011-2015 OpenWrt.org
+# Copyright (C) 2011 OpenWrt.org
 #
 
-. /lib/functions/uci-defaults-new.sh
-. /lib/ar71xx.sh
+[ -e /etc/config/network ] && exit 0
 
-board_config_update
+touch /etc/config/network
+
+. /lib/functions/uci-defaults.sh
+. /lib/ar71xx.sh
 
 ucidef_set_interface_loopback
 
 board=$(ar71xx_board_name)
-
 
 case "$board" in
 all0315n |\
@@ -536,6 +537,6 @@ wndr3700)
 	;;
 esac
 
-board_config_flush
+uci commit network
 
 exit 0
