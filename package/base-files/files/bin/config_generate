@@ -183,7 +183,6 @@ calculate_switch_vlans() {
 		;; esac
 
 		uci -q batch <<-EOF
-			delete network.$role
 			set network.$role='interface'
 			set network.$role.ifname='$device'
 		EOF
@@ -199,7 +198,6 @@ calculate_switch_vlans() {
 			;;
 			wan) uci -q batch <<-EOF
 				set network.wan.proto='dhcp'
-				delete network.wan6
 				set network.wan6='interface'
 				set network.wan6.ifname='$device'
 				set network.wan6.proto='dhcpv6'
