@@ -190,7 +190,7 @@ ucidef_set_interface_macaddr() {
 
 	json_add_string macaddr $macaddr
 	json_select ..
-	
+
 	json_select ..
 }
 
@@ -201,7 +201,7 @@ ucidef_set_led_netdev() {
 	local dev=$4
 
 	json_select_object led
-	
+
 	json_select_object $1
 	json_add_string name $name
 	json_add_string type netdev
@@ -217,7 +217,7 @@ ucidef_set_led_interface() {
 	local sysfs=$2
 
 	json_select_object led
-	
+
 	json_select_object $1
 	json_add_string name $name
 	json_add_string type interface
@@ -235,9 +235,9 @@ ucidef_set_led_usbdev() {
 	local dev=$4
 
 	json_select_object led
-	
+
 	json_select_object $1
-	json_add_string name $name	
+	json_add_string name $name
 	json_add_string type usb
 	json_add_string sysfs $sysfs
 	json_add_string device $dev
@@ -253,7 +253,7 @@ ucidef_set_led_wlan() {
 	local trigger=$4
 
 	json_select_object led
-	
+
 	json_select_object $1
 	json_add_string name $name
 	json_add_string type trigger
@@ -272,7 +272,7 @@ ucidef_set_led_switch() {
 	local port_mask=$5
 
 	json_select_object led
-	
+
 	json_select_object $1
 	json_add_string name $name
 	json_add_string type switch
@@ -291,7 +291,7 @@ ucidef_set_led_default() {
 	local default=$4
 
 	json_select_object led
-	
+
 	json_select_object $1
 	json_add_string name $name
 	json_add_string sysfs $sysfs
@@ -312,7 +312,7 @@ ucidef_set_led_rssi() {
 	local factor=$8
 
 	json_select_object led
-	
+
 	json_select_object rssi
 	json_select_object $1
 	json_add_string name $name
@@ -333,7 +333,7 @@ ucidef_set_rssimon() {
 	local threshold="$3"
 
 	json_select_object led
-	
+
 	json_select_object rssi
 	json_add_string type rssi
 	json_add_string dev $dev
@@ -341,7 +341,7 @@ ucidef_set_rssimon() {
 	json_select ..
 
 	json_select ..
-	
+
 }
 
 board_config_update() {
