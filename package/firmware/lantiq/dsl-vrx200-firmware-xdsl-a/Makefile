@@ -15,16 +15,16 @@ PKG_MD5SUM:=4c8d9ca68dda88d3cfc0ca0fb946a63e
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/dsl-vr9-firmware-xdsl
+define Package/dsl-vrx200-firmware-xdsl-a
   SECTION:=firmware
   CATEGORY:=Firmware
-  TITLE:=VR9 CPE xDSL firmware
+  TITLE:=VRX200 / VR9 CPE xDSL Annex A firmware
   URL:=http://www.lantiq.com/
   DEPENDS:=@TARGET_lantiq_xrx200
 endef
 
-define Package/dsl-vr9-firmware-xdsl/description
-	VRX200 CPE xDSL firmware
+define Package/dsl-vrx200-firmware-xdsl-a/description
+	VRX200 / VR9 CPE VDSL and ADSL Annex A firmware
 endef
 
 define Build/Prepare
@@ -36,11 +36,12 @@ endef
 define Build/Compile
 endef
 
-define Package/dsl-vr9-firmware-xdsl/install
+define Package/dsl-vrx200-firmware-xdsl-a/install
 	$(INSTALL_DIR) $(1)/lib/firmware/
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/LICENSE $(1)/lib/firmware/xcpe_574306_571801.LICENSE
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/xcpe_574306_571801.bin $(1)/lib/firmware/
 	ln -s xcpe_574306_571801.bin $(1)/lib/firmware/vdsl.bin
+	ln -s xcpe_574306_571801.bin $(1)/lib/firmware/adsl-a.bin
 endef
 
-$(eval $(call BuildPackage,dsl-vr9-firmware-xdsl))
+$(eval $(call BuildPackage,dsl-vrx200-firmware-xdsl-a))
