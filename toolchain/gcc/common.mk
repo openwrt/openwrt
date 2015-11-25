@@ -151,6 +151,10 @@ ifneq ($(CONFIG_mips)$(CONFIG_mipsel),)
   GCC_CONFIGURE += --with-mips-plt
 endif
 
+ifndef GCC_VERSION_4_8
+  GCC_CONFIGURE += --with-diagnostics-color=auto-if-env
+endif
+
 ifneq ($(CONFIG_SSP_SUPPORT),)
   GCC_CONFIGURE+= \
 		--enable-libssp
