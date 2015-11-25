@@ -96,7 +96,7 @@ EOF
 
 calculate_switch_vlans() {
 	local switch=$1
-	local ports port
+	local ports port attr val
 	local prev_role
 	local num device role index
 	local n_cpu=0 cpu0 cpu1 cpu2 cpu3
@@ -113,6 +113,26 @@ calculate_switch_vlans() {
 		json_select "$port"
 		json_get_vars num device role
 
+		if json_is_a attr object; then
+			json_get_keys attr attr
+			json_select attr
+
+			uci -q batch <<-EOF
+				add network switch_port
+				set network.@switch_port[-1].device='$switch'
+				set network.@switch_port[-1].port=$num
+			EOF
+
+			for attr in $attr; do
+				json_get_var val "$attr"
+				uci -q set network.@switch_port[-1].$attr="$val"
+			done
+
+			json_select ..
+		fi
+
+		json_select ..
+
 		if [ -n "$num" ] && [ -n "$device" ]; then
 			export "cpu$n_cpu=$num"
 			export "dev$n_cpu=$device"
@@ -122,18 +142,16 @@ calculate_switch_vlans() {
 			n_vlan=$((n_vlan + 1))
 			prev_role="$role"
 		fi
-
-		json_select ..
 	done
 
 	unset prev_role
 
 	# autogenerate vlans
 	for port in $ports ""; do
-		json_select "$port"
-
 		if [ -n "$port" ]; then
+			json_select "$port"
 			json_get_vars num device role
+			json_select ..
 		else
 			num="-"; role="-"
 		fi
@@ -160,8 +178,6 @@ calculate_switch_vlans() {
 			fi
 
 		fi
-
-		json_select ..
 	done
 
 	json_select ..
