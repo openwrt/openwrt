@@ -3,8 +3,10 @@
 # Copyright (C) 2011 OpenWrt.org
 #
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/ar71xx.sh
+
+board_config_update
 
 board=$(ar71xx_board_name)
 
@@ -211,8 +213,8 @@ dlan-pro-500-wp)
 
 dlan-pro-1200-ac)
 	ucidef_set_led_wlan "wlan" "WLAN" "devolo:status:wlan" "phy0radio"
-	ucidef_set_led_trigger_gpio "plcw" "dLAN" "devolo:status:dlan" "17" "0"
-	ucidef_set_led_trigger_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
+	ucidef_set_led_gpio "plcw" "dLAN" "devolo:status:dlan" "17" "0"
+	ucidef_set_led_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
 	;;
 
 gl-ar150)
@@ -667,6 +669,6 @@ zcn-1523h-5)
 	;;
 esac
 
-ucidef_commit_leds
+board_config_flush
 
 exit 0
