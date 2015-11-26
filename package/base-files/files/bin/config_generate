@@ -293,7 +293,7 @@ generate_led() {
 
 	json_select led
 	json_select "$key"
-	json_get_vars name sysfs type trigger device interface default port_mask
+	json_get_vars name sysfs type trigger device default port_mask
 
 	uci -q batch <<-EOF
 		delete system.$cfg
