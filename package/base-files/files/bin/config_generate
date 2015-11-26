@@ -293,36 +293,40 @@ generate_led() {
 
 	json_select led
 	json_select "$key"
-	json_get_vars name sysfs type trigger device default port_mask
+	json_get_vars name sysfs type trigger default
 
 	uci -q batch <<-EOF
 		delete system.$cfg
 		set system.$cfg='led'
 		set system.$cfg.name='$name'
 		set system.$cfg.sysfs='$sysfs'
-		set system.$cfg.dev='$device'
 		set system.$cfg.trigger='$trigger'
-		set system.$cfg.port_mask='$port_mask'
 		set system.$cfg.default='$default'
 	EOF
 
 	case "$type" in
 		netdev)
+			local device
+			json_get_vars device
 			uci -q batch <<-EOF
 				set system.$cfg.trigger='netdev'
 				set system.$cfg.mode='link tx rx'
+				set system.$cfg.dev='$device'
 			EOF
 		;;
 
 		usb)
+			local device
+			json_get_vars device
 			uci -q batch <<-EOF
 				set system.$cfg.trigger='usbdev'
 				set system.$cfg.interval='50'
+				set system.$cfg.dev='$device'
 			EOF
 		;;
 
 		rssi)
-			local minq maxq offset factor
+			local iface minq maxq offset factor
 			json_get_vars iface minq maxq offset factor
 			uci -q batch <<-EOF
 				set system.$cfg.trigger='rssi'
@@ -331,6 +335,14 @@ generate_led() {
 				set system.$cfg.maxq='$maxq'
 				set system.$cfg.offset='$offset'
 				set system.$cfg.factor='$factor'
+			EOF
+		;;
+
+		switch)
+			local port_mask
+			json_get_vars port_mask
+			uci -q batch <<-EOF
+				set system.$cfg.port_mask='$port_mask'
 			EOF
 		;;
 	esac
