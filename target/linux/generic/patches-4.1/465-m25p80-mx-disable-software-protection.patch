@@ -9,6 +9,6 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	if (JEDEC_MFR(info) == SNOR_MFR_ATMEL ||
  	    JEDEC_MFR(info) == SNOR_MFR_INTEL ||
 +	    JEDEC_MFR(info) == SNOR_MFR_MACRONIX ||
- 	    JEDEC_MFR(info) == SNOR_MFR_SST ||
- 	    JEDEC_MFR(info) == SNOR_MFR_WINBOND) {
+ 	    JEDEC_MFR(info) == SNOR_MFR_SST) {
  		write_enable(nor);
+ 		write_sr(nor, 0);
