@@ -349,15 +349,15 @@ ucidef_set_led_rssi() {
 
 	json_select_object led
 
-	json_select_object rssi
 	json_select_object "$1"
+	json_add_string type rssi
 	json_add_string name "$name"
+	json_add_string iface "$iface"
 	json_add_string sysfs "$sysfs"
 	json_add_string minq "$minq"
 	json_add_string maxq "$maxq"
 	json_add_string offset "$offset"
 	json_add_string factor "$factor"
-	json_select ..
 	json_select ..
 
 	json_select ..
@@ -368,12 +368,11 @@ ucidef_set_rssimon() {
 	local refresh="$2"
 	local threshold="$3"
 
-	json_select_object led
+	json_select_object rssimon
 
-	json_select_object rssi
-	json_add_string type rssi
-	json_add_string dev "$dev"
-	json_add_string threshold "$threshold"
+	json_select_object "$dev"
+	[ -n "$refresh" ] && json_add_int refresh "$refresh"
+	[ -n "$threshold" ] && json_add_int threshold "$threshold"
 	json_select ..
 
 	json_select ..
