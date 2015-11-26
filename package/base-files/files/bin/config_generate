@@ -305,6 +305,16 @@ generate_led() {
 	EOF
 
 	case "$type" in
+		gpio)
+			local gpio inverted
+			json_get_vars gpio inverted
+			uci -q batch <<-EOF
+				set system.$cfg.trigger='gpio'
+				set system.$cfg.gpio='$gpio'
+				set system.$cfg.inverted='$inverted'
+			EOF
+		;;
+
 		netdev)
 			local device
 			json_get_vars device
