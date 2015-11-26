@@ -154,7 +154,7 @@ hc5861)
 hg255d)
 	set_wifi_led "$board:green:wlan"
 	set_usb_led "$board:green:usb"
-	ucidef_set_led_interface "lan" "$board:green:internet"
+	ucidef_set_led_netdev "internet" "internet" "$board:green:internet" "eth0.2"
 	;;
 hpm)
 	ucidef_set_led_default "power" "POWER" "$board:orange:power" "1"
