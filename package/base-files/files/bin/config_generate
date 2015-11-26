@@ -267,6 +267,26 @@ generate_switch() {
 	json_select ..
 }
 
+generate_rssimon() {
+	local key="$1"
+	local cfg="rssid_$key"
+	local refresh threshold
+
+	json_select rssimon
+	json_select "$key"
+	json_get_vars refresh threshold
+	json_select ..
+	json_select ..
+
+	uci -q batch <<-EOF
+		delete system.$cfg
+		set system.$cfg='rssid'
+		set system.$cfg.dev='$key'
+		set system.$cfg.refresh='$refresh'
+		set system.$cfg.threshold='$threshold'
+	EOF
+}
+
 generate_led() {
 	local key="$1"
 	local cfg="led_$key"
@@ -274,8 +294,6 @@ generate_led() {
 	json_select led
 	json_select "$key"
 	json_get_vars name sysfs type trigger device interface default port_mask
-	json_select ..
-	json_select ..
 
 	uci -q batch <<-EOF
 		delete system.$cfg
@@ -302,7 +320,23 @@ generate_led() {
 				set system.$cfg.interval='50'
 			EOF
 		;;
+
+		rssi)
+			local minq maxq offset factor
+			json_get_vars iface minq maxq offset factor
+			uci -q batch <<-EOF
+				set system.$cfg.trigger='rssi'
+				set system.$cfg.iface='rssid_$iface'
+				set system.$cfg.minq='$minq'
+				set system.$cfg.maxq='$maxq'
+				set system.$cfg.offset='$offset'
+				set system.$cfg.factor='$factor'
+			EOF
+		;;
 	esac
+
+	json_select ..
+	json_select ..
 }
 
 json_init
@@ -315,6 +349,9 @@ for key in $keys; do generate_network $key; done
 
 json_get_keys keys switch
 for key in $keys; do generate_switch $key; done
+
+json_get_keys keys rssimon
+for key in $keys; do generate_rssimon $key; done
 
 json_get_keys keys led
 for key in $keys; do generate_led $key; done
