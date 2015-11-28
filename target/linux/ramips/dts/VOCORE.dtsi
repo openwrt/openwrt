@@ -12,16 +12,6 @@
 		i2c@900 {
 			status = "okay";
 		};
-
-		spi@b00 {
-			status = "okay";
-
-			spidev@1 {
-				compatible = "linux,spidev";
-				spi-max-frequency = <10000000>;
-				reg = <1>;
-			};
-		};
 	};
 
 	pinctrl {
@@ -193,5 +183,15 @@
 			label = "vocore:orange:eth";
 			gpios = <&gpio0 11 0>;
 		};
+	};
+};
+
+&spi1 {
+	status = "okay";
+
+	spidev@0 {
+		compatible = "linux,spidev";
+		spi-max-frequency = <10000000>;
+		reg = <0>;
 	};
 };
