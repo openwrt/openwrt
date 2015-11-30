@@ -116,7 +116,7 @@ ucidef_add_switch_attr() {
 
 ucidef_add_switch_ports() {
 	local name="$1"; shift
-	local port num role dev idx
+	local port num role dev idx tag
 
 	json_select_object switch
 	json_select_object "$name"
@@ -127,6 +127,11 @@ ucidef_add_switch_ports() {
 			[0-9]*@*)
 				num="${port%%@*}"
 				dev="${port##*@}"
+				tag=0
+				[ "${num%t}" != "$num" ] && {
+					num="${num%t}"
+					tag=1
+				}
 			;;
 			[0-9]*:*:[0-9]*)
 				num="${port%%:*}"
@@ -143,12 +148,13 @@ ucidef_add_switch_ports() {
 			json_add_object
 			json_add_int num "$num"
 			[ -n "$dev" ] && json_add_string device "$dev"
+			[ -n "$tag" ] && json_add_boolean need_tag "$tag"
 			[ -n "$role" ] && json_add_string role "$role"
 			[ -n "$idx" ] && json_add_int index "$idx"
 			json_close_object
 		fi
 
-		unset num dev role idx
+		unset num dev role idx tag
 	done
 
 	json_select ..

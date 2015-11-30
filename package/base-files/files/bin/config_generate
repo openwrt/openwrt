@@ -173,7 +173,8 @@ calculate_switch_vlans() {
 			if [ "$role" != "$prev_role" ]; then
 				if [ -n "$vlan_ports" ]; then
 					let cpu_port="cpu$((vlan_off % n_cpu))"
-					[ $n_vlan -gt $n_cpu ] && cpu_port="${cpu_port}t"
+					let need_tag="tag$((vlan_off % n_cpu))"
+					[ $n_vlan -gt $n_cpu -o $need_tag -eq 1 ] && cpu_port="${cpu_port}t"
 
 					uci -q batch <<-EOF
 						add network switch_vlan
@@ -198,8 +199,9 @@ calculate_switch_vlans() {
 	# autogenerate interfaces
 	vlan_off=0; while [ $vlan_off -lt $n_vlan ]; do
 		eval role="\$role$((vlan_off))"
-		eval device="\$dev$((vlan_off++ % n_cpu))"
-		[ $n_vlan -gt $n_cpu ] && device="$device.$vlan_off"
+		eval device="\$dev$((vlan_off % n_cpu))"
+		let need_tag="tag$((vlan_off++ % n_cpu))"
+		[ $n_vlan -gt $n_cpu -o $need_tag -eq 1 ] && device="$device.$vlan_off"
 
 		# quirk: append ifnames for subsequent switches
 		case "$switch" in switch[1-9])
