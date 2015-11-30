@@ -1,10 +1,12 @@
 #!/bin/sh
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/mvebu.sh
+
+board_config_update
 
 board=$(mvebu_board_name)
 
@@ -32,6 +34,6 @@ armada-xp-linksys-mamba)
 
 esac
 
-ucidef_commit_leds
+board_config_flush
 
 exit 0
