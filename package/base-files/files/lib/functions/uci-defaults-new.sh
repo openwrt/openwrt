@@ -38,6 +38,18 @@ _ucidef_set_interface() {
 	json_select ..
 }
 
+ucidef_set_board_id() {
+	json_select_object model
+	json_add_string id "$1"
+	json_select ..
+}
+
+ucidef_set_model_name() {
+	json_select_object model
+	json_add_string name "$1"
+	json_select ..
+}
+
 ucidef_set_interface_loopback()
 {
 	# stub
