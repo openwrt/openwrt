@@ -49,7 +49,6 @@ generate_network() {
 		delete network.$1
 		set network.$1='interface'
 		set network.$1.ifname='$ifname'
-		set network.$1.force_link=1
 		set network.$1.proto='none'
 		set network.$1.macaddr='$macaddr'
 	EOF
@@ -64,6 +63,7 @@ generate_network() {
 				set network.$1.ip6assign='60'
 			EOF
 		;;
+
 		wan)
 			uci -q batch <<-EOF
 				set network.$1.proto='dhcp'
@@ -71,6 +71,12 @@ generate_network() {
 				set network.wan6='interface'
 				set network.wan6.ifname='$ifname'
 				set network.wan6.proto='dhcpv6'
+			EOF
+		;;
+
+		*)
+			uci -q batch <<-EOF
+				set network.$1.force_link=1
 			EOF
 		;;
 	esac
