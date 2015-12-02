@@ -22,7 +22,7 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
  	qcom-msm8974-sony-xperia-honami.dtb
 --- /dev/null
 +++ b/arch/arm/boot/dts/qcom-ipq8064-r7500.dts
-@@ -0,0 +1,338 @@
+@@ -0,0 +1,342 @@
 +#include "qcom-ipq8064-v1.0.dtsi"
 +
 +#include <dt-bindings/input/input.h>
@@ -257,13 +257,17 @@ Signed-off-by: Jonas Gorski <jogo@openwrt.org>
 +		gmac1: ethernet@37200000 {
 +			status = "ok";
 +			phy-mode = "rgmii";
-+			phy-handle = <&phy4>;
 +			qcom,id = <1>;
 +
 +			pinctrl-0 = <&rgmii2_pins>;
 +			pinctrl-names = "default";
 +
 +			mtd-mac-address = <&art 6>;
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
 +		};
 +
 +		gmac2: ethernet@37400000 {

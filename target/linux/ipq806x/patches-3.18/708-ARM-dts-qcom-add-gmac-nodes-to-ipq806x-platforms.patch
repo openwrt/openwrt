@@ -29,7 +29,7 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
  		};
  
  		gsbi@16300000 {
-@@ -200,6 +210,27 @@
+@@ -200,6 +210,31 @@
  				reg = <4>;
  			};
  		};
@@ -37,11 +37,15 @@ Signed-off-by: Mathieu Olivari <mathieu@codeaurora.org>
 +		gmac1: ethernet@37200000 {
 +			status = "ok";
 +			phy-mode = "rgmii";
-+			phy-handle = <&phy4>;
 +			qcom,id = <1>;
 +
 +			pinctrl-0 = <&rgmii2_pins>;
 +			pinctrl-names = "default";
++
++			fixed-link {
++				speed = <1000>;
++				full-duplex;
++			};
 +		};
 +
 +		gmac2: ethernet@37400000 {
