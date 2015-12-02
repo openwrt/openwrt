@@ -178,9 +178,8 @@
 		m25p80@0 {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "mx25l2005a";
+			compatible = "jedec,spi-nor";
 			reg = <0 0>;
-			linux,modalias = "m25p80", "mx25l2005a";
 			spi-max-frequency = <1000000>;
 
 			ath9k_cal: partition@0 {
