@@ -13,8 +13,6 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  3 files changed, 558 insertions(+)
  create mode 100644 drivers/cpufreq/mt8173-cpufreq.c
 
-diff --git a/drivers/cpufreq/Kconfig.arm b/drivers/cpufreq/Kconfig.arm
-index 4f3dbc8..350752b 100644
 --- a/drivers/cpufreq/Kconfig.arm
 +++ b/drivers/cpufreq/Kconfig.arm
 @@ -141,6 +141,13 @@ config ARM_KIRKWOOD_CPUFREQ
@@ -31,11 +29,9 @@ index 4f3dbc8..350752b 100644
  config ARM_OMAP2PLUS_CPUFREQ
  	bool "TI OMAP2+"
  	depends on ARCH_OMAP2PLUS
-diff --git a/drivers/cpufreq/Makefile b/drivers/cpufreq/Makefile
-index cdce92a..97f9a9b 100644
 --- a/drivers/cpufreq/Makefile
 +++ b/drivers/cpufreq/Makefile
-@@ -63,6 +63,7 @@ obj-$(CONFIG_ARM_HISI_ACPU_CPUFREQ)	+= hisi-acpu-cpufreq.o
+@@ -63,6 +63,7 @@ obj-$(CONFIG_ARM_HISI_ACPU_CPUFREQ)	+= h
  obj-$(CONFIG_ARM_IMX6Q_CPUFREQ)		+= imx6q-cpufreq.o
  obj-$(CONFIG_ARM_INTEGRATOR)		+= integrator-cpufreq.o
  obj-$(CONFIG_ARM_KIRKWOOD_CPUFREQ)	+= kirkwood-cpufreq.o
@@ -43,9 +39,6 @@ index cdce92a..97f9a9b 100644
  obj-$(CONFIG_ARM_OMAP2PLUS_CPUFREQ)	+= omap-cpufreq.o
  obj-$(CONFIG_ARM_PXA2xx_CPUFREQ)	+= pxa2xx-cpufreq.o
  obj-$(CONFIG_PXA3xx)			+= pxa3xx-cpufreq.o
-diff --git a/drivers/cpufreq/mt8173-cpufreq.c b/drivers/cpufreq/mt8173-cpufreq.c
-new file mode 100644
-index 0000000..d539e7b
 --- /dev/null
 +++ b/drivers/cpufreq/mt8173-cpufreq.c
 @@ -0,0 +1,550 @@
@@ -599,6 +592,3 @@ index 0000000..d539e7b
 +	return 0;
 +}
 +module_init(mt8173_cpufreq_driver_init);
--- 
-1.7.10.4
-

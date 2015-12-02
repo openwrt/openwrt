@@ -26,8 +26,6 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  create mode 100644 drivers/clk/mediatek/clk-mtk.h
  create mode 100644 drivers/clk/mediatek/clk-pll.c
 
-diff --git a/drivers/clk/Makefile b/drivers/clk/Makefile
-index 3d00c25..d965b3f 100644
 --- a/drivers/clk/Makefile
 +++ b/drivers/clk/Makefile
 @@ -51,6 +51,7 @@ obj-$(CONFIG_ARCH_HI3xxx)		+= hisilicon/
@@ -38,16 +36,10 @@ index 3d00c25..d965b3f 100644
  ifeq ($(CONFIG_COMMON_CLK), y)
  obj-$(CONFIG_ARCH_MMP)			+= mmp/
  endif
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-new file mode 100644
-index 0000000..c384e97
 --- /dev/null
 +++ b/drivers/clk/mediatek/Makefile
 @@ -0,0 +1 @@
 +obj-y += clk-mtk.o clk-pll.o clk-gate.o
-diff --git a/drivers/clk/mediatek/clk-gate.c b/drivers/clk/mediatek/clk-gate.c
-new file mode 100644
-index 0000000..9d77ee3
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-gate.c
 @@ -0,0 +1,137 @@
@@ -188,9 +180,6 @@ index 0000000..9d77ee3
 +
 +	return clk;
 +}
-diff --git a/drivers/clk/mediatek/clk-gate.h b/drivers/clk/mediatek/clk-gate.h
-new file mode 100644
-index 0000000..6b6780b
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-gate.h
 @@ -0,0 +1,49 @@
@@ -243,9 +232,6 @@ index 0000000..6b6780b
 +		const struct clk_ops *ops);
 +
 +#endif /* __DRV_CLK_GATE_H */
-diff --git a/drivers/clk/mediatek/clk-mtk.c b/drivers/clk/mediatek/clk-mtk.c
-new file mode 100644
-index 0000000..18444ae
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mtk.c
 @@ -0,0 +1,220 @@
@@ -469,9 +455,6 @@ index 0000000..18444ae
 +			clk_data->clks[mc->id] = clk;
 +	}
 +}
-diff --git a/drivers/clk/mediatek/clk-mtk.h b/drivers/clk/mediatek/clk-mtk.h
-new file mode 100644
-index 0000000..694fc39
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mtk.h
 @@ -0,0 +1,159 @@
@@ -634,9 +617,6 @@ index 0000000..694fc39
 +		struct clk_onecell_data *clk_data);
 +
 +#endif /* __DRV_CLK_MTK_H */
-diff --git a/drivers/clk/mediatek/clk-pll.c b/drivers/clk/mediatek/clk-pll.c
-new file mode 100644
-index 0000000..66154ca
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-pll.c
 @@ -0,0 +1,332 @@
@@ -972,6 +952,3 @@ index 0000000..66154ca
 +		pr_err("%s(): could not register clock provider: %d\n",
 +			__func__, r);
 +}
--- 
-1.7.10.4
-

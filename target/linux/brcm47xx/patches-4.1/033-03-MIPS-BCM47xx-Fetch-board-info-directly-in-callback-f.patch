@@ -23,11 +23,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/include/asm/mach-bcm47xx/bcm47xx.h |  5 -----
  3 files changed, 18 insertions(+), 19 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/setup.c b/arch/mips/bcm47xx/setup.c
-index 17503a0..6d38948 100644
 --- a/arch/mips/bcm47xx/setup.c
 +++ b/arch/mips/bcm47xx/setup.c
-@@ -105,11 +105,28 @@ static int bcm47xx_get_invariants(struct ssb_bus *bus,
+@@ -105,11 +105,28 @@ static int bcm47xx_get_invariants(struct
  				  struct ssb_init_invariants *iv)
  {
  	char buf[20];
@@ -57,11 +55,9 @@ index 17503a0..6d38948 100644
  
  	memset(&iv->sprom, 0, sizeof(struct ssb_sprom));
  	bcm47xx_fill_sprom(&iv->sprom, NULL, false);
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 43353db..a7e569c 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -599,19 +599,6 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
+@@ -599,19 +599,6 @@ void bcm47xx_fill_sprom(struct ssb_sprom
  	bcm47xx_sprom_fill_auto(sprom, prefix, fallback);
  }
  
@@ -81,11 +77,9 @@ index 43353db..a7e569c 100644
  #if defined(CONFIG_BCM47XX_SSB)
  static int bcm47xx_get_sprom_ssb(struct ssb_bus *bus, struct ssb_sprom *out)
  {
-diff --git a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
-index 1461c10..71e4096 100644
 --- a/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
 +++ b/arch/mips/include/asm/mach-bcm47xx/bcm47xx.h
-@@ -48,11 +48,6 @@ extern enum bcm47xx_bus_type bcm47xx_bus_type;
+@@ -48,11 +48,6 @@ extern enum bcm47xx_bus_type bcm47xx_bus
  void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
  			bool fallback);
  
@@ -97,6 +91,3 @@ index 1461c10..71e4096 100644
  void bcm47xx_set_system_type(u16 chip_id);
  
  #endif /* __ASM_BCM47XX_H */
--- 
-1.8.4.5
-

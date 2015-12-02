@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
-@@ -577,6 +577,16 @@ config ATH79_MACH_EL_MINI
+@@ -586,6 +586,16 @@ config ATH79_MACH_EL_MINI
  	select ATH79_DEV_USB
  	select ATH79_DEV_WMAC
  
@@ -19,7 +19,7 @@
  	select SOC_AR933X
 --- a/arch/mips/ath79/Makefile
 +++ b/arch/mips/ath79/Makefile
-@@ -83,6 +83,7 @@ obj-$(CONFIG_ATH79_MACH_EL_MINI)	+= mach
+@@ -84,6 +84,7 @@ obj-$(CONFIG_ATH79_MACH_EL_MINI)	+= mach
  obj-$(CONFIG_ATH79_MACH_EPG5000)	+= mach-epg5000.o
  obj-$(CONFIG_ATH79_MACH_ESR1750)	+= mach-esr1750.o
  obj-$(CONFIG_ATH79_MACH_F9K1115V2)	+= mach-f9k1115v2.o
@@ -29,7 +29,7 @@
  obj-$(CONFIG_ATH79_MACH_GS_OOLITE)	+= mach-gs-oolite.o
 --- a/arch/mips/ath79/machtypes.h
 +++ b/arch/mips/ath79/machtypes.h
-@@ -72,6 +72,7 @@ enum ath79_mach_type {
+@@ -73,6 +73,7 @@ enum ath79_mach_type {
  	ATH79_MACH_ESR1750,		/* EnGenius ESR1750 */
  	ATH79_MACH_EPG5000,		/* EnGenius EPG5000 */
  	ATH79_MACH_F9K1115V2,		/* Belkin AC1750DB */

@@ -23,8 +23,6 @@ Signed-off-by: Pi-Cheng Chen <pi-cheng.chen@linaro.org>
  create mode 100644 drivers/clk/mediatek/clk-cpumux.c
  create mode 100644 drivers/clk/mediatek/clk-cpumux.h
 
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 19a3763..fe07e26 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,4 +1,4 @@
@@ -33,9 +31,6 @@ index 19a3763..fe07e26 100644
  obj-$(CONFIG_RESET_CONTROLLER) += reset.o
  obj-y += clk-mt7623.o
  obj-y += clk-mt8135.o
-diff --git a/drivers/clk/mediatek/clk-cpumux.c b/drivers/clk/mediatek/clk-cpumux.c
-new file mode 100644
-index 0000000..593df45
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-cpumux.c
 @@ -0,0 +1,119 @@
@@ -158,9 +153,6 @@ index 0000000..593df45
 +
 +	return 0;
 +}
-diff --git a/drivers/clk/mediatek/clk-cpumux.h b/drivers/clk/mediatek/clk-cpumux.h
-new file mode 100644
-index 0000000..dddaad5
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-cpumux.h
 @@ -0,0 +1,30 @@
@@ -194,6 +186,3 @@ index 0000000..dddaad5
 +			      struct clk_onecell_data *clk_data);
 +
 +#endif /* __DRV_CLK_CPUMUX_H */
--- 
-1.7.10.4
-

@@ -7,11 +7,9 @@ Subject: [PATCH 58/76] dont disable clocks
  drivers/clk/clk.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
-index 5b0f418..360e6e4 100644
 --- a/drivers/clk/clk.c
 +++ b/drivers/clk/clk.c
-@@ -541,7 +541,7 @@ unlock_out:
+@@ -542,7 +542,7 @@ unlock_out:
  	clk_enable_unlock(flags);
  }
  
@@ -20,6 +18,3 @@ index 5b0f418..360e6e4 100644
  static int __init clk_ignore_unused_setup(char *__unused)
  {
  	clk_ignore_unused = true;
--- 
-1.7.10.4
-

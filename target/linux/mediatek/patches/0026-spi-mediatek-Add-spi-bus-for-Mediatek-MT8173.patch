@@ -13,11 +13,9 @@ Signed-off-by: Leilk Liu <leilk.liu@mediatek.com>
  3 files changed, 633 insertions(+)
  create mode 100644 drivers/spi/spi-mt65xx.c
 
-diff --git a/drivers/spi/Kconfig b/drivers/spi/Kconfig
-index 72b0590..53dbea3 100644
 --- a/drivers/spi/Kconfig
 +++ b/drivers/spi/Kconfig
-@@ -325,6 +325,16 @@ config SPI_MESON_SPIFC
+@@ -334,6 +334,16 @@ config SPI_MESON_SPIFC
  	  This enables master mode support for the SPIFC (SPI flash
  	  controller) available in Amlogic Meson SoCs.
  
@@ -34,11 +32,9 @@ index 72b0590..53dbea3 100644
  config SPI_OC_TINY
  	tristate "OpenCores tiny SPI"
  	depends on GPIOLIB
-diff --git a/drivers/spi/Makefile b/drivers/spi/Makefile
-index d8cbf65..ab332ef 100644
 --- a/drivers/spi/Makefile
 +++ b/drivers/spi/Makefile
-@@ -48,6 +48,7 @@ obj-$(CONFIG_SPI_MESON_SPIFC)		+= spi-meson-spifc.o
+@@ -49,6 +49,7 @@ obj-$(CONFIG_SPI_MESON_SPIFC)		+= spi-me
  obj-$(CONFIG_SPI_MPC512x_PSC)		+= spi-mpc512x-psc.o
  obj-$(CONFIG_SPI_MPC52xx_PSC)		+= spi-mpc52xx-psc.o
  obj-$(CONFIG_SPI_MPC52xx)		+= spi-mpc52xx.o
@@ -46,9 +42,6 @@ index d8cbf65..ab332ef 100644
  obj-$(CONFIG_SPI_MXS)			+= spi-mxs.o
  obj-$(CONFIG_SPI_NUC900)		+= spi-nuc900.o
  obj-$(CONFIG_SPI_OC_TINY)		+= spi-oc-tiny.o
-diff --git a/drivers/spi/spi-mt65xx.c b/drivers/spi/spi-mt65xx.c
-new file mode 100644
-index 0000000..92c119d
 --- /dev/null
 +++ b/drivers/spi/spi-mt65xx.c
 @@ -0,0 +1,622 @@
@@ -674,6 +667,3 @@ index 0000000..92c119d
 +MODULE_AUTHOR("Leilk Liu <leilk.liu@mediatek.com>");
 +MODULE_LICENSE("GPL v2");
 +MODULE_ALIAS("platform: mtk_spi");
--- 
-1.7.10.4
-

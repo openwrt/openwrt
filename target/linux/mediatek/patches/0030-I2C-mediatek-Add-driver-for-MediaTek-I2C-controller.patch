@@ -17,8 +17,6 @@ Signed-off-by: Eddie Huang <eddie.huang@mediatek.com>
  3 files changed, 710 insertions(+)
  create mode 100644 drivers/i2c/busses/i2c-mt65xx.c
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 2255af2..14c7266 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -620,6 +620,15 @@ config I2C_MPC
@@ -37,8 +35,6 @@ index 2255af2..14c7266 100644
  config I2C_MV64XXX
  	tristate "Marvell mv64xxx I2C Controller"
  	depends on MV64X60 || PLAT_ORION || ARCH_SUNXI
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index cdf941d..abbf422 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
 @@ -60,6 +60,7 @@ obj-$(CONFIG_I2C_JZ4780)	+= i2c-jz4780.o
@@ -49,9 +45,6 @@ index cdf941d..abbf422 100644
  obj-$(CONFIG_I2C_MV64XXX)	+= i2c-mv64xxx.o
  obj-$(CONFIG_I2C_MXS)		+= i2c-mxs.o
  obj-$(CONFIG_I2C_NOMADIK)	+= i2c-nomadik.o
-diff --git a/drivers/i2c/busses/i2c-mt65xx.c b/drivers/i2c/busses/i2c-mt65xx.c
-new file mode 100644
-index 0000000..faecf7e
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-mt65xx.c
 @@ -0,0 +1,700 @@
@@ -755,6 +748,3 @@ index 0000000..faecf7e
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("MediaTek I2C Bus Driver");
 +MODULE_AUTHOR("Xudong Chen <xudong.chen@mediatek.com>");
--- 
-1.7.10.4
-

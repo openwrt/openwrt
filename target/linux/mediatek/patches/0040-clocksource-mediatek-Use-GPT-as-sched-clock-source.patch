@@ -11,8 +11,6 @@ Signed-off-by: Yingjoe Chen <yingjoe.chen@mediatek.com>
  drivers/clocksource/mtk_timer.c |   10 ++++++++++
  1 file changed, 10 insertions(+)
 
-diff --git a/drivers/clocksource/mtk_timer.c b/drivers/clocksource/mtk_timer.c
-index 85e0ab5..9a90c7b 100644
 --- a/drivers/clocksource/mtk_timer.c
 +++ b/drivers/clocksource/mtk_timer.c
 @@ -24,6 +24,7 @@
@@ -37,7 +35,7 @@ index 85e0ab5..9a90c7b 100644
  static inline struct mtk_clock_event_device *to_mtk_clk(
  				struct clock_event_device *c)
  {
-@@ -239,6 +247,8 @@ static void __init mtk_timer_init(struct device_node *node)
+@@ -239,6 +247,8 @@ static void __init mtk_timer_init(struct
  	mtk_timer_setup(evt, GPT_CLK_SRC, TIMER_CTRL_OP_FREERUN);
  	clocksource_mmio_init(evt->gpt_base + TIMER_CNT_REG(GPT_CLK_SRC),
  			node->name, rate, 300, 32, clocksource_mmio_readl_up);
@@ -46,6 +44,3 @@ index 85e0ab5..9a90c7b 100644
  
  	/* Configure clock event */
  	mtk_timer_setup(evt, GPT_CLK_EVT, TIMER_CTRL_OP_REPEAT);
--- 
-1.7.10.4
-

@@ -30,11 +30,9 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  include/linux/thermal.h        |    3 +++
  2 files changed, 46 insertions(+)
 
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index 6bbf61f..3ae1795 100644
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -453,6 +453,45 @@ int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
+@@ -453,6 +453,45 @@ int thermal_zone_get_temp(struct thermal
  }
  EXPORT_SYMBOL_GPL(thermal_zone_get_temp);
  
@@ -80,7 +78,7 @@ index 6bbf61f..3ae1795 100644
  void thermal_zone_device_update(struct thermal_zone_device *tz)
  {
  	int temp, ret, count;
-@@ -479,6 +518,8 @@ void thermal_zone_device_update(struct thermal_zone_device *tz)
+@@ -479,6 +518,8 @@ void thermal_zone_device_update(struct t
  	dev_dbg(&tz->device, "last_temperature=%d, current_temperature=%d\n",
  				tz->last_temperature, tz->temperature);
  
@@ -89,7 +87,7 @@ index 6bbf61f..3ae1795 100644
  	for (count = 0; count < tz->trips; count++)
  		handle_thermal_trip(tz, count);
  }
-@@ -1494,6 +1535,8 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
+@@ -1494,6 +1535,8 @@ struct thermal_zone_device *thermal_zone
  	tz->trips = trips;
  	tz->passive_delay = passive_delay;
  	tz->polling_delay = polling_delay;
@@ -98,8 +96,6 @@ index 6bbf61f..3ae1795 100644
  
  	dev_set_name(&tz->device, "thermal_zone%d", tz->id);
  	result = device_register(&tz->device);
-diff --git a/include/linux/thermal.h b/include/linux/thermal.h
-index 07bd5e8..aef6e13 100644
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
 @@ -87,6 +87,7 @@ struct thermal_zone_device_ops {
@@ -119,6 +115,3 @@ index 07bd5e8..aef6e13 100644
  	unsigned int forced_passive;
  	const struct thermal_zone_device_ops *ops;
  	const struct thermal_zone_params *tzp;
--- 
-1.7.10.4
-

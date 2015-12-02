@@ -12,8 +12,6 @@ Subject: [PATCH 72/76] mfd
  5 files changed, 636 insertions(+), 608 deletions(-)
  create mode 100644 include/linux/regulator/mt6323-regulator.h
 
-diff --git a/drivers/mfd/mt6323-core.c b/drivers/mfd/mt6323-core.c
-index 012c620..9b7f5b9 100644
 --- a/drivers/mfd/mt6323-core.c
 +++ b/drivers/mfd/mt6323-core.c
 @@ -18,111 +18,99 @@
@@ -166,7 +164,7 @@ index 012c620..9b7f5b9 100644
  	irq_set_nested_thread(irq, 1);
  #ifdef CONFIG_ARM
  	set_irq_flags(irq, IRQF_VALID);
-@@ -133,98 +121,98 @@ static int mt6397_irq_domain_map(struct irq_domain *d, unsigned int irq,
+@@ -133,98 +121,98 @@ static int mt6397_irq_domain_map(struct
  	return 0;
  }
  
@@ -305,8 +303,6 @@ index 012c620..9b7f5b9 100644
  MODULE_LICENSE("GPL");
 -MODULE_ALIAS("platform:mt6397");
 +MODULE_ALIAS("platform:mt6323");
-diff --git a/drivers/regulator/mt6323-regulator.c b/drivers/regulator/mt6323-regulator.c
-index a5b2f47..f5e3f67 100644
 --- a/drivers/regulator/mt6323-regulator.c
 +++ b/drivers/regulator/mt6323-regulator.c
 @@ -16,15 +16,15 @@
@@ -397,7 +393,7 @@ index a5b2f47..f5e3f67 100644
  		.owner = THIS_MODULE,					\
  		.n_voltages = 1,					\
  		.enable_reg = enreg,					\
-@@ -106,50 +106,34 @@ static const struct regulator_linear_range buck_volt_range1[] = {
+@@ -106,50 +106,34 @@ static const struct regulator_linear_ran
  };
  
  static const struct regulator_linear_range buck_volt_range2[] = {
@@ -455,7 +451,7 @@ index a5b2f47..f5e3f67 100644
  
  	ret = regmap_read(rdev->regmap, info->desc.enable_reg, &regval);
  	if (ret != 0) {
-@@ -160,7 +144,7 @@ static int mt6397_get_status(struct regulator_dev *rdev)
+@@ -160,7 +144,7 @@ static int mt6397_get_status(struct regu
  	return (regval & info->qi) ? REGULATOR_STATUS_ON : REGULATOR_STATUS_OFF;
  }
  
@@ -464,7 +460,7 @@ index a5b2f47..f5e3f67 100644
  	.list_voltage = regulator_list_voltage_linear_range,
  	.map_voltage = regulator_map_voltage_linear_range,
  	.set_voltage_sel = regulator_set_voltage_sel_regmap,
-@@ -169,10 +153,10 @@ static struct regulator_ops mt6397_volt_range_ops = {
+@@ -169,10 +153,10 @@ static struct regulator_ops mt6397_volt_
  	.enable = regulator_enable_regmap,
  	.disable = regulator_disable_regmap,
  	.is_enabled = regulator_is_enabled_regmap,
@@ -477,7 +473,7 @@ index a5b2f47..f5e3f67 100644
  	.list_voltage = regulator_list_voltage_table,
  	.map_voltage = regulator_map_voltage_iterate,
  	.set_voltage_sel = regulator_set_voltage_sel_regmap,
-@@ -181,90 +165,68 @@ static struct regulator_ops mt6397_volt_table_ops = {
+@@ -181,90 +165,68 @@ static struct regulator_ops mt6397_volt_
  	.enable = regulator_enable_regmap,
  	.disable = regulator_disable_regmap,
  	.is_enabled = regulator_is_enabled_regmap,
@@ -610,7 +606,7 @@ index a5b2f47..f5e3f67 100644
  			}
  		}
  	}
-@@ -272,44 +234,34 @@ static int mt6397_set_buck_vosel_reg(struct platform_device *pdev)
+@@ -272,44 +234,34 @@ static int mt6397_set_buck_vosel_reg(str
  	return 0;
  }
  
@@ -665,7 +661,7 @@ index a5b2f47..f5e3f67 100644
  			return PTR_ERR(rdev);
  		}
  	}
-@@ -317,16 +269,16 @@ static int mt6397_regulator_probe(struct platform_device *pdev)
+@@ -317,16 +269,16 @@ static int mt6397_regulator_probe(struct
  	return 0;
  }
  
@@ -688,8 +684,6 @@ index a5b2f47..f5e3f67 100644
  MODULE_LICENSE("GPL");
 -MODULE_ALIAS("platform:mt6397-regulator");
 +MODULE_ALIAS("platform:mt6323-regulator");
-diff --git a/include/linux/mfd/mt6323/core.h b/include/linux/mfd/mt6323/core.h
-index cf5265b..5bb2d32 100644
 --- a/include/linux/mfd/mt6323/core.h
 +++ b/include/linux/mfd/mt6323/core.h
 @@ -12,46 +12,46 @@
@@ -782,8 +776,6 @@ index cf5265b..5bb2d32 100644
  
 -#endif /* __MFD_MT6397_CORE_H__ */
 +#endif /* __MFD_MT6323_CORE_H__ */
-diff --git a/include/linux/mfd/mt6323/registers.h b/include/linux/mfd/mt6323/registers.h
-index f23a0a6..4ee5e1f0 100644
 --- a/include/linux/mfd/mt6323/registers.h
 +++ b/include/linux/mfd/mt6323/registers.h
 @@ -1,6 +1,5 @@
@@ -1543,9 +1535,6 @@ index f23a0a6..4ee5e1f0 100644
  
 -#endif /* __MFD_MT6397_REGISTERS_H__ */
 +#endif
-diff --git a/include/linux/regulator/mt6323-regulator.h b/include/linux/regulator/mt6323-regulator.h
-new file mode 100644
-index 0000000..620b0e3
 --- /dev/null
 +++ b/include/linux/regulator/mt6323-regulator.h
 @@ -0,0 +1,37 @@
@@ -1586,6 +1575,3 @@ index 0000000..620b0e3
 +#define MT6323_MAX_REGULATOR	MT6323_ID_RG_MAX
 +
 +#endif /* __LINUX_REGULATOR_MT6323_H */
--- 
-1.7.10.4
-

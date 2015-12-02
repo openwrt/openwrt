@@ -20,11 +20,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/sprom.c | 25 ++++++++++++++++---------
  1 file changed, 16 insertions(+), 9 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index e19c1b9..43353db 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -60,9 +60,9 @@ static int get_nvram_var(const char *prefix, const char *postfix,
+@@ -60,9 +60,9 @@ static int get_nvram_var(const char *pre
  }
  
  #define NVRAM_READ_VAL(type)						\
@@ -37,7 +35,7 @@ index e19c1b9..43353db 100644
  {									\
  	char buf[100];							\
  	int err;							\
-@@ -422,7 +422,10 @@ static void bcm47xx_fill_sprom_path_r4589(struct ssb_sprom *sprom,
+@@ -422,7 +422,10 @@ static void bcm47xx_fill_sprom_path_r458
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(sprom->core_pwr_info); i++) {
@@ -49,7 +47,7 @@ index e19c1b9..43353db 100644
  		snprintf(postfix, sizeof(postfix), "%i", i);
  		nvram_read_u8(prefix, postfix, "maxp2ga",
  			      &pwr_info->maxpwr_2g, 0, fallback);
-@@ -470,7 +473,10 @@ static void bcm47xx_fill_sprom_path_r45(struct ssb_sprom *sprom,
+@@ -470,7 +473,10 @@ static void bcm47xx_fill_sprom_path_r45(
  	int i;
  
  	for (i = 0; i < ARRAY_SIZE(sprom->core_pwr_info); i++) {
@@ -61,7 +59,7 @@ index e19c1b9..43353db 100644
  		snprintf(postfix, sizeof(postfix), "%i", i);
  		nvram_read_u16(prefix, postfix, "pa2gw3a",
  			       &pwr_info->pa_2g[3], 0, fallback);
-@@ -535,10 +541,11 @@ static void bcm47xx_fill_sprom_ethernet(struct ssb_sprom *sprom,
+@@ -535,10 +541,11 @@ static void bcm47xx_fill_sprom_ethernet(
  	nvram_read_macaddr(prefix, "il0macaddr", sprom->il0mac, fallback);
  
  	/* The address prefix 00:90:4C is used by Broadcom in their initial
@@ -77,6 +75,3 @@ index e19c1b9..43353db 100644
  	if (!bcm47xx_is_valid_mac(sprom->il0mac)) {
  		u8 mac[6];
  
--- 
-1.8.4.5
-

@@ -75,8 +75,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/raeth/smb_nf.c
  create mode 100644 drivers/net/ethernet/raeth/sync_write.h
 
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index eadcb05..627e1d4 100644
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
 @@ -17,6 +17,7 @@ config MDIO
@@ -87,8 +85,6 @@ index eadcb05..627e1d4 100644
  source "drivers/net/ethernet/3com/Kconfig"
  source "drivers/net/ethernet/adaptec/Kconfig"
  source "drivers/net/ethernet/aeroflex/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index 1367afc..abdd636 100644
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
 @@ -84,3 +84,4 @@ obj-$(CONFIG_NET_VENDOR_VIA) += via/
@@ -96,9 +92,6 @@ index 1367afc..abdd636 100644
  obj-$(CONFIG_NET_VENDOR_XILINX) += xilinx/
  obj-$(CONFIG_NET_VENDOR_XIRCOM) += xircom/
 +obj-$(CONFIG_RAETH) += raeth/
-diff --git a/drivers/net/ethernet/raeth/Kconfig b/drivers/net/ethernet/raeth/Kconfig
-new file mode 100644
-index 0000000..c252c85
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/Kconfig
 @@ -0,0 +1,415 @@
@@ -517,9 +510,6 @@ index 0000000..c252c85
 +config 100PHY
 +bool
 +default y if GE1_MII_AN || GE2_MII_AN
-diff --git a/drivers/net/ethernet/raeth/Makefile b/drivers/net/ethernet/raeth/Makefile
-new file mode 100644
-index 0000000..563af05
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/Makefile
 @@ -0,0 +1,67 @@
@@ -590,9 +580,6 @@ index 0000000..563af05
 +ifeq ($(CONFIG_TASKLET_WORKQUEUE_SW),y)
 +EXTRA_CFLAGS   += -DTASKLET_WORKQUEUE_SW
 +endif
-diff --git a/drivers/net/ethernet/raeth/Makefile.release b/drivers/net/ethernet/raeth/Makefile.release
-new file mode 100644
-index 0000000..ecdeeda
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/Makefile.release
 @@ -0,0 +1,60 @@
@@ -656,9 +643,6 @@ index 0000000..ecdeeda
 +ifeq ($(CONFIG_TASKLET_WORKQUEUE_SW),y)
 +EXTRA_CFLAGS   += -DTASKLET_WORKQUEUE_SW
 +endif
-diff --git a/drivers/net/ethernet/raeth/csr_netlink.h b/drivers/net/ethernet/raeth/csr_netlink.h
-new file mode 100644
-index 0000000..add7745
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/csr_netlink.h
 @@ -0,0 +1,27 @@
@@ -689,9 +673,6 @@ index 0000000..add7745
 +// static CSR_MSG	input_csr_msg;
 +
 +#endif
-diff --git a/drivers/net/ethernet/raeth/dvt/pkt_gen.c b/drivers/net/ethernet/raeth/dvt/pkt_gen.c
-new file mode 100755
-index 0000000..b351b21
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/dvt/pkt_gen.c
 @@ -0,0 +1,88 @@
@@ -783,9 +764,6 @@ index 0000000..b351b21
 +MODULE_LICENSE("Proprietary");
 +MODULE_PARM_DESC (ifname, "interface name");
 +
-diff --git a/drivers/net/ethernet/raeth/dvt/pkt_gen_tcp_frag.c b/drivers/net/ethernet/raeth/dvt/pkt_gen_tcp_frag.c
-new file mode 100755
-index 0000000..e78c65a
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/dvt/pkt_gen_tcp_frag.c
 @@ -0,0 +1,138 @@
@@ -927,9 +905,6 @@ index 0000000..e78c65a
 +MODULE_LICENSE("Proprietary");
 +MODULE_PARM_DESC (ifname, "interface name");
 +
-diff --git a/drivers/net/ethernet/raeth/dvt/pkt_gen_udp_frag.c b/drivers/net/ethernet/raeth/dvt/pkt_gen_udp_frag.c
-new file mode 100755
-index 0000000..917e7ad
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/dvt/pkt_gen_udp_frag.c
 @@ -0,0 +1,191 @@
@@ -1124,9 +1099,6 @@ index 0000000..917e7ad
 +MODULE_LICENSE("Proprietary");
 +MODULE_PARM_DESC (ifname, "interface name");
 +
-diff --git a/drivers/net/ethernet/raeth/dvt/raether_pdma_dvt.c b/drivers/net/ethernet/raeth/dvt/raether_pdma_dvt.c
-new file mode 100755
-index 0000000..971a821
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/dvt/raether_pdma_dvt.c
 @@ -0,0 +1,1527 @@
@@ -2657,9 +2629,6 @@ index 0000000..971a821
 +#endif  /* CONFIG_RAETH_PDMA_DVT */	
 +}
 +
-diff --git a/drivers/net/ethernet/raeth/dvt/raether_pdma_dvt.h b/drivers/net/ethernet/raeth/dvt/raether_pdma_dvt.h
-new file mode 100755
-index 0000000..600aab7
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/dvt/raether_pdma_dvt.h
 @@ -0,0 +1,75 @@
@@ -2738,9 +2707,6 @@ index 0000000..600aab7
 +void raeth_pdma_lro_dly_int_dvt(void);
 +void pdma_dvt_set_dma_mode(void);
 +
-diff --git a/drivers/net/ethernet/raeth/ethtool_readme.txt b/drivers/net/ethernet/raeth/ethtool_readme.txt
-new file mode 100644
-index 0000000..10e918b
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ethtool_readme.txt
 @@ -0,0 +1,44 @@
@@ -2788,9 +2754,6 @@ index 0000000..10e918b
 +# ethtool eth2
 +
 +
-diff --git a/drivers/net/ethernet/raeth/mcast.c b/drivers/net/ethernet/raeth/mcast.c
-new file mode 100644
-index 0000000..d796b03
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/mcast.c
 @@ -0,0 +1,187 @@
@@ -2981,9 +2944,6 @@ index 0000000..d796b03
 +    return 1;
 +}
 +
-diff --git a/drivers/net/ethernet/raeth/mii_mgr.c b/drivers/net/ethernet/raeth/mii_mgr.c
-new file mode 100644
-index 0000000..77a47f1
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/mii_mgr.c
 @@ -0,0 +1,603 @@
@@ -3590,9 +3550,6 @@ index 0000000..77a47f1
 +
 +EXPORT_SYMBOL(mii_mgr_write);
 +EXPORT_SYMBOL(mii_mgr_read);
-diff --git a/drivers/net/ethernet/raeth/ra2882ethreg.h b/drivers/net/ethernet/raeth/ra2882ethreg.h
-new file mode 100644
-index 0000000..c67a042
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra2882ethreg.h
 @@ -0,0 +1,1985 @@
@@ -5581,9 +5538,6 @@ index 0000000..c67a042
 +#define RAETH_TX_DLY_INT TX_DLY_INT
 +#define RAETH_TX_DONE_INT0 TX_DONE_INT0
 +#define RAETH_DLY_INT_CFG DLY_INT_CFG
-diff --git a/drivers/net/ethernet/raeth/ra_ethtool.c b/drivers/net/ethernet/raeth/ra_ethtool.c
-new file mode 100644
-index 0000000..ff13e59
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_ethtool.c
 @@ -0,0 +1,515 @@
@@ -6102,9 +6056,6 @@ index 0000000..ff13e59
 +#endif /* CONFIG_PSEUDO_SUPPORT */
 +
 +
-diff --git a/drivers/net/ethernet/raeth/ra_ethtool.h b/drivers/net/ethernet/raeth/ra_ethtool.h
-new file mode 100644
-index 0000000..d64a1ab
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_ethtool.h
 @@ -0,0 +1,13 @@
@@ -6121,9 +6072,6 @@ index 0000000..d64a1ab
 +void mdio_virt_write(struct net_device *dev, int phy_id, int location, int value);
 +
 +#endif
-diff --git a/drivers/net/ethernet/raeth/ra_ioctl.h b/drivers/net/ethernet/raeth/ra_ioctl.h
-new file mode 100644
-index 0000000..83b806a
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_ioctl.h
 @@ -0,0 +1,102 @@
@@ -6229,9 +6177,6 @@ index 0000000..83b806a
 +
 +
 +#endif
-diff --git a/drivers/net/ethernet/raeth/ra_mac.c b/drivers/net/ethernet/raeth/ra_mac.c
-new file mode 100644
-index 0000000..e8e978d
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_mac.c
 @@ -0,0 +1,2645 @@
@@ -8880,9 +8825,6 @@ index 0000000..e8e978d
 +    printk(KERN_ALERT "proc exit\n");
 +}
 +EXPORT_SYMBOL(procRegDir);
-diff --git a/drivers/net/ethernet/raeth/ra_mac.h b/drivers/net/ethernet/raeth/ra_mac.h
-new file mode 100644
-index 0000000..66b32d3
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_mac.h
 @@ -0,0 +1,57 @@
@@ -8943,9 +8885,6 @@ index 0000000..66b32d3
 +typedef int (*PDMA_DBG_FUNC)(int par1, int par2);
 +#endif  //#if defined(CONFIG_RAETH_PDMA_DVT)
 +#endif
-diff --git a/drivers/net/ethernet/raeth/ra_netlink.c b/drivers/net/ethernet/raeth/ra_netlink.c
-new file mode 100644
-index 0000000..f7c3650
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_netlink.c
 @@ -0,0 +1,142 @@
@@ -9091,9 +9030,6 @@ index 0000000..f7c3650
 +		printk("Netlink end...\n");
 +	}
 +}
-diff --git a/drivers/net/ethernet/raeth/ra_netlink.h b/drivers/net/ethernet/raeth/ra_netlink.h
-new file mode 100644
-index 0000000..19ca71f
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_netlink.h
 @@ -0,0 +1,10 @@
@@ -9107,9 +9043,6 @@ index 0000000..19ca71f
 +void csr_netlink_end(void);
 +
 +#endif
-diff --git a/drivers/net/ethernet/raeth/ra_qos.c b/drivers/net/ethernet/raeth/ra_qos.c
-new file mode 100644
-index 0000000..0a7d9c5
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_qos.c
 @@ -0,0 +1,655 @@
@@ -9768,9 +9701,6 @@ index 0000000..0a7d9c5
 +					(GDMA2_TOKEN_RATE << 0); /* token rate (unit=8B/ms) */
 +#endif
 +}
-diff --git a/drivers/net/ethernet/raeth/ra_qos.h b/drivers/net/ethernet/raeth/ra_qos.h
-new file mode 100644
-index 0000000..7f2a8a1
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_qos.h
 @@ -0,0 +1,18 @@
@@ -9792,9 +9722,6 @@ index 0000000..7f2a8a1
 +void set_scheduler_weight(void);
 +void set_output_shaper(void);
 +#endif
-diff --git a/drivers/net/ethernet/raeth/ra_rfrw.c b/drivers/net/ethernet/raeth/ra_rfrw.c
-new file mode 100644
-index 0000000..d73db01
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_rfrw.c
 @@ -0,0 +1,66 @@
@@ -9864,9 +9791,6 @@ index 0000000..d73db01
 +        return 0;
 +}
 +
-diff --git a/drivers/net/ethernet/raeth/ra_rfrw.h b/drivers/net/ethernet/raeth/ra_rfrw.h
-new file mode 100644
-index 0000000..da5a371
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/ra_rfrw.h
 @@ -0,0 +1,6 @@
@@ -9876,9 +9800,6 @@ index 0000000..da5a371
 +int rw_rf_reg(int write, int reg, int *data);
 +
 +#endif
-diff --git a/drivers/net/ethernet/raeth/raether.c b/drivers/net/ethernet/raeth/raether.c
-new file mode 100644
-index 0000000..328285a
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/raether.c
 @@ -0,0 +1,6401 @@
@@ -16283,9 +16204,6 @@ index 0000000..328285a
 +
 +
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/net/ethernet/raeth/raether.h b/drivers/net/ethernet/raeth/raether.h
-new file mode 100644
-index 0000000..7a97109
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/raether.h
 @@ -0,0 +1,126 @@
@@ -16415,9 +16333,6 @@ index 0000000..7a97109
 +void fe_sw_init(void);
 +
 +#endif
-diff --git a/drivers/net/ethernet/raeth/raether_hwlro.c b/drivers/net/ethernet/raeth/raether_hwlro.c
-new file mode 100755
-index 0000000..5fc4f36
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/raether_hwlro.c
 @@ -0,0 +1,347 @@
@@ -16768,9 +16683,6 @@ index 0000000..5fc4f36
 +}
 +EXPORT_SYMBOL(fe_hw_lro_init);
 +
-diff --git a/drivers/net/ethernet/raeth/raether_pdma.c b/drivers/net/ethernet/raeth/raether_pdma.c
-new file mode 100755
-index 0000000..4d47ee2
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/raether_pdma.c
 @@ -0,0 +1,1121 @@
@@ -17895,9 +17807,6 @@ index 0000000..4d47ee2
 +EXPORT_SYMBOL(ei_xmit_housekeeping);
 +EXPORT_SYMBOL(fe_dma_init);
 +EXPORT_SYMBOL(rt2880_eth_send);
-diff --git a/drivers/net/ethernet/raeth/raether_qdma.c b/drivers/net/ethernet/raeth/raether_qdma.c
-new file mode 100644
-index 0000000..acf8bfe
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/raether_qdma.c
 @@ -0,0 +1,1407 @@
@@ -19308,9 +19217,6 @@ index 0000000..acf8bfe
 +EXPORT_SYMBOL(ei_xmit_housekeeping);
 +EXPORT_SYMBOL(fe_dma_init);
 +EXPORT_SYMBOL(rt2880_eth_send);
-diff --git a/drivers/net/ethernet/raeth/raether_qdma_mt7623.c b/drivers/net/ethernet/raeth/raether_qdma_mt7623.c
-new file mode 100644
-index 0000000..b465b75
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/raether_qdma_mt7623.c
 @@ -0,0 +1,1020 @@
@@ -20334,9 +20240,6 @@ index 0000000..b465b75
 +EXPORT_SYMBOL(ei_xmit_housekeeping);
 +EXPORT_SYMBOL(fe_dma_init);
 +EXPORT_SYMBOL(rt2880_eth_send);
-diff --git a/drivers/net/ethernet/raeth/smb_hook.c b/drivers/net/ethernet/raeth/smb_hook.c
-new file mode 100644
-index 0000000..617139c
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/smb_hook.c
 @@ -0,0 +1,17 @@
@@ -20357,9 +20260,6 @@ index 0000000..617139c
 +EXPORT_SYMBOL(smb_nf_post_routing_hook);
 +
 +
-diff --git a/drivers/net/ethernet/raeth/smb_nf.c b/drivers/net/ethernet/raeth/smb_nf.c
-new file mode 100644
-index 0000000..86250eb
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/smb_nf.c
 @@ -0,0 +1,177 @@
@@ -20540,9 +20440,6 @@ index 0000000..86250eb
 +module_exit(mtk_smb_hook_cleanup);
 +
 +MODULE_LICENSE("GPL");
-diff --git a/drivers/net/ethernet/raeth/sync_write.h b/drivers/net/ethernet/raeth/sync_write.h
-new file mode 100644
-index 0000000..8b800e6
 --- /dev/null
 +++ b/drivers/net/ethernet/raeth/sync_write.h
 @@ -0,0 +1,103 @@
@@ -20649,6 +20546,3 @@ index 0000000..8b800e6
 +#endif  /* __KERNEL__ */
 +
 +#endif  /* !_MT_SYNC_WRITE_H */
--- 
-1.7.10.4
-

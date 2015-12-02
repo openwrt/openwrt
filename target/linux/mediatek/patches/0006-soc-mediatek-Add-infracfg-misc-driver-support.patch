@@ -18,8 +18,6 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  create mode 100644 drivers/soc/mediatek/mtk-infracfg.c
  create mode 100644 include/linux/soc/mediatek/infracfg.h
 
-diff --git a/drivers/soc/mediatek/Kconfig b/drivers/soc/mediatek/Kconfig
-index 3c18503..09da41e 100644
 --- a/drivers/soc/mediatek/Kconfig
 +++ b/drivers/soc/mediatek/Kconfig
 @@ -1,6 +1,15 @@
@@ -38,16 +36,11 @@ index 3c18503..09da41e 100644
  config MTK_PMIC_WRAP
  	tristate "MediaTek PMIC Wrapper Support"
  	depends on ARCH_MEDIATEK
-diff --git a/drivers/soc/mediatek/Makefile b/drivers/soc/mediatek/Makefile
-index ecaf4de..3fa940f 100644
 --- a/drivers/soc/mediatek/Makefile
 +++ b/drivers/soc/mediatek/Makefile
 @@ -1 +1,2 @@
 +obj-$(CONFIG_MTK_INFRACFG) += mtk-infracfg.o
  obj-$(CONFIG_MTK_PMIC_WRAP) += mtk-pmic-wrap.o
-diff --git a/drivers/soc/mediatek/mtk-infracfg.c b/drivers/soc/mediatek/mtk-infracfg.c
-new file mode 100644
-index 0000000..ca786e0
 --- /dev/null
 +++ b/drivers/soc/mediatek/mtk-infracfg.c
 @@ -0,0 +1,91 @@
@@ -142,9 +135,6 @@ index 0000000..ca786e0
 +
 +	return 0;
 +}
-diff --git a/include/linux/soc/mediatek/infracfg.h b/include/linux/soc/mediatek/infracfg.h
-new file mode 100644
-index 0000000..a5714e9
 --- /dev/null
 +++ b/include/linux/soc/mediatek/infracfg.h
 @@ -0,0 +1,26 @@
@@ -174,6 +164,3 @@ index 0000000..a5714e9
 +int mtk_infracfg_clear_bus_protection(struct regmap *infracfg, u32 mask);
 +
 +#endif /* __SOC_MEDIATEK_INFRACFG_H */
--- 
-1.7.10.4
-

@@ -15,8 +15,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h
  create mode 100644 include/dt-bindings/pinctrl/mt7623-pinfunc.h
 
-diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
-index 0bc84fb..27c5673 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -9,6 +9,12 @@ config PINCTRL_MTK_COMMON
@@ -32,8 +30,6 @@ index 0bc84fb..27c5673 100644
  config PINCTRL_MT8135
  	bool "Mediatek MT8135 pin control" if COMPILE_TEST && !MACH_MT8135
  	depends on OF
-diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
-index eb923d6..8998433 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
 @@ -2,6 +2,7 @@
@@ -44,9 +40,6 @@ index eb923d6..8998433 100644
  obj-$(CONFIG_PINCTRL_MT8135)		+= pinctrl-mt8135.o
  obj-$(CONFIG_PINCTRL_MT8127)		+= pinctrl-mt8127.o
  obj-$(CONFIG_PINCTRL_MT8173)		+= pinctrl-mt8173.o
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt7623.c b/drivers/pinctrl/mediatek/pinctrl-mt7623.c
-new file mode 100644
-index 0000000..77e1a66
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt7623.c
 @@ -0,0 +1,368 @@
@@ -418,9 +411,6 @@ index 0000000..77e1a66
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("MediaTek Pinctrl Driver");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h b/drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h
-new file mode 100644
-index 0000000..4b65668
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-mt7623.h
 @@ -0,0 +1,1926 @@
@@ -2351,9 +2341,6 @@ index 0000000..4b65668
 +
 +#endif /* __PINCTRL_MTK_MT7623_H */
 \ No newline at end of file
-diff --git a/include/dt-bindings/pinctrl/mt7623-pinfunc.h b/include/dt-bindings/pinctrl/mt7623-pinfunc.h
-new file mode 100644
-index 0000000..826835c
 --- /dev/null
 +++ b/include/dt-bindings/pinctrl/mt7623-pinfunc.h
 @@ -0,0 +1,526 @@
@@ -2884,6 +2871,3 @@ index 0000000..826835c
 +
 +#endif /* __DTS_MT7623_PINFUNC_H */
 \ No newline at end of file
--- 
-1.7.10.4
-

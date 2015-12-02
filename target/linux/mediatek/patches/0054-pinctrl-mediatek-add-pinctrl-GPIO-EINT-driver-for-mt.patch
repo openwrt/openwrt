@@ -18,8 +18,6 @@ Signed-off-by: Hongzhou Yang <hongzhou.yang@mediatek.com>
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mt8127.c
  create mode 100644 drivers/pinctrl/mediatek/pinctrl-mtk-mt8127.h
 
-diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
-index ddae479..0bc84fb 100644
 --- a/drivers/pinctrl/mediatek/Kconfig
 +++ b/drivers/pinctrl/mediatek/Kconfig
 @@ -15,6 +15,12 @@ config PINCTRL_MT8135
@@ -35,20 +33,15 @@ index ddae479..0bc84fb 100644
  # For ARMv8 SoCs
  config PINCTRL_MT8173
  	bool "Mediatek MT8173 pin control"
-diff --git a/drivers/pinctrl/mediatek/Makefile b/drivers/pinctrl/mediatek/Makefile
-index ad0180c..eb923d6 100644
 --- a/drivers/pinctrl/mediatek/Makefile
 +++ b/drivers/pinctrl/mediatek/Makefile
-@@ -3,5 +3,6 @@ obj-$(CONFIG_PINCTRL_MTK_COMMON)	+= pinctrl-mtk-common.o
+@@ -3,5 +3,6 @@ obj-$(CONFIG_PINCTRL_MTK_COMMON)	+= pinc
  
  # SoC Drivers
  obj-$(CONFIG_PINCTRL_MT8135)		+= pinctrl-mt8135.o
 +obj-$(CONFIG_PINCTRL_MT8127)		+= pinctrl-mt8127.o
  obj-$(CONFIG_PINCTRL_MT8173)		+= pinctrl-mt8173.o
  obj-$(CONFIG_PINCTRL_MT6397)		+= pinctrl-mt6397.o
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt8127.c b/drivers/pinctrl/mediatek/pinctrl-mt8127.c
-new file mode 100644
-index 0000000..6a26cfa
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt8127.c
 @@ -0,0 +1,359 @@
@@ -411,9 +404,6 @@ index 0000000..6a26cfa
 +MODULE_LICENSE("GPL v2");
 +MODULE_DESCRIPTION("MediaTek MT8127 Pinctrl Driver");
 +MODULE_AUTHOR("Yingjoe Chen <yingjoe.chen@mediatek.com>");
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-mt8127.h b/drivers/pinctrl/mediatek/pinctrl-mtk-mt8127.h
-new file mode 100644
-index 0000000..212559c
 --- /dev/null
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-mt8127.h
 @@ -0,0 +1,1318 @@
@@ -1735,6 +1725,3 @@ index 0000000..212559c
 +};
 +
 +#endif /* __PINCTRL_MTK_MT8127_H */
--- 
-1.7.10.4
-

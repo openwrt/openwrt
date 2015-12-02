@@ -13,8 +13,6 @@ Signed-off-by: YH Huang <yh.huang@mediatek.com>
  3 files changed, 235 insertions(+)
  create mode 100644 drivers/pwm/pwm-disp-mediatek.c
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index b1541f4..9edbb5a 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -111,6 +111,15 @@ config PWM_CLPS711X
@@ -33,11 +31,9 @@ index b1541f4..9edbb5a 100644
  config PWM_EP93XX
  	tristate "Cirrus Logic EP93xx PWM support"
  	depends on ARCH_EP93XX
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index ec50eb5..c5ff72a 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -8,6 +8,7 @@ obj-$(CONFIG_PWM_BCM_KONA)	+= pwm-bcm-kona.o
+@@ -8,6 +8,7 @@ obj-$(CONFIG_PWM_BCM_KONA)	+= pwm-bcm-ko
  obj-$(CONFIG_PWM_BCM2835)	+= pwm-bcm2835.o
  obj-$(CONFIG_PWM_BFIN)		+= pwm-bfin.o
  obj-$(CONFIG_PWM_CLPS711X)	+= pwm-clps711x.o
@@ -45,9 +41,6 @@ index ec50eb5..c5ff72a 100644
  obj-$(CONFIG_PWM_EP93XX)	+= pwm-ep93xx.o
  obj-$(CONFIG_PWM_FSL_FTM)	+= pwm-fsl-ftm.o
  obj-$(CONFIG_PWM_IMG)		+= pwm-img.o
-diff --git a/drivers/pwm/pwm-disp-mediatek.c b/drivers/pwm/pwm-disp-mediatek.c
-new file mode 100644
-index 0000000..38293af
 --- /dev/null
 +++ b/drivers/pwm/pwm-disp-mediatek.c
 @@ -0,0 +1,225 @@
@@ -276,6 +269,3 @@ index 0000000..38293af
 +MODULE_AUTHOR("YH Huang <yh.huang@mediatek.com>");
 +MODULE_DESCRIPTION("MediaTek SoC display PWM driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

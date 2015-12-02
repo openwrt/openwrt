@@ -19,8 +19,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 include/linux/mfd/mt6323/core.h
  create mode 100644 include/linux/mfd/mt6323/registers.h
 
-diff --git a/drivers/mfd/Kconfig b/drivers/mfd/Kconfig
-index d5ad04d..ff2c14e 100644
 --- a/drivers/mfd/Kconfig
 +++ b/drivers/mfd/Kconfig
 @@ -529,6 +529,16 @@ config MFD_MAX8998
@@ -40,8 +38,6 @@ index d5ad04d..ff2c14e 100644
  config MFD_MT6397
  	tristate "MediaTek MT6397 PMIC Support"
  	select MFD_CORE
-diff --git a/drivers/mfd/Makefile b/drivers/mfd/Makefile
-index 0e5cfeb..6e91123 100644
 --- a/drivers/mfd/Makefile
 +++ b/drivers/mfd/Makefile
 @@ -184,4 +184,5 @@ obj-$(CONFIG_MFD_SKY81452)	+= sky81452.o
@@ -50,9 +46,6 @@ index 0e5cfeb..6e91123 100644
  obj-$(CONFIG_INTEL_SOC_PMIC)	+= intel-soc-pmic.o
 +obj-$(CONFIG_MFD_MT6323)	+= mt6323-core.o
  obj-$(CONFIG_MFD_MT6397)	+= mt6397-core.o
-diff --git a/drivers/mfd/mt6323-core.c b/drivers/mfd/mt6323-core.c
-new file mode 100644
-index 0000000..012c620
 --- /dev/null
 +++ b/drivers/mfd/mt6323-core.c
 @@ -0,0 +1,230 @@
@@ -286,8 +279,6 @@ index 0000000..012c620
 +MODULE_DESCRIPTION("Driver for MediaTek MT6397 PMIC");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mt6397");
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index a6f116a..336d4c6 100644
 --- a/drivers/regulator/Kconfig
 +++ b/drivers/regulator/Kconfig
 @@ -441,6 +441,15 @@ config REGULATOR_MC13892
@@ -306,11 +297,9 @@ index a6f116a..336d4c6 100644
  config REGULATOR_MT6397
  	tristate "MediaTek MT6397 PMIC"
  	depends on MFD_MT6397
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index 2c4da15..ac6a9da 100644
 --- a/drivers/regulator/Makefile
 +++ b/drivers/regulator/Makefile
-@@ -59,6 +59,7 @@ obj-$(CONFIG_REGULATOR_MAX77843) += max77843.o
+@@ -59,6 +59,7 @@ obj-$(CONFIG_REGULATOR_MAX77843) += max7
  obj-$(CONFIG_REGULATOR_MC13783) += mc13783-regulator.o
  obj-$(CONFIG_REGULATOR_MC13892) += mc13892-regulator.o
  obj-$(CONFIG_REGULATOR_MC13XXX_CORE) +=  mc13xxx-regulator-core.o
@@ -318,9 +307,6 @@ index 2c4da15..ac6a9da 100644
  obj-$(CONFIG_REGULATOR_MT6397)	+= mt6397-regulator.o
  obj-$(CONFIG_REGULATOR_QCOM_RPM) += qcom_rpm-regulator.o
  obj-$(CONFIG_REGULATOR_PALMAS) += palmas-regulator.o
-diff --git a/drivers/regulator/mt6323-regulator.c b/drivers/regulator/mt6323-regulator.c
-new file mode 100644
-index 0000000..a5b2f47
 --- /dev/null
 +++ b/drivers/regulator/mt6323-regulator.c
 @@ -0,0 +1,332 @@
@@ -656,9 +642,6 @@ index 0000000..a5b2f47
 +MODULE_DESCRIPTION("Regulator Driver for MediaTek MT6397 PMIC");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:mt6397-regulator");
-diff --git a/include/linux/mfd/mt6323/core.h b/include/linux/mfd/mt6323/core.h
-new file mode 100644
-index 0000000..cf5265b
 --- /dev/null
 +++ b/include/linux/mfd/mt6323/core.h
 @@ -0,0 +1,64 @@
@@ -726,9 +709,6 @@ index 0000000..cf5265b
 +};
 +
 +#endif /* __MFD_MT6397_CORE_H__ */
-diff --git a/include/linux/mfd/mt6323/registers.h b/include/linux/mfd/mt6323/registers.h
-new file mode 100644
-index 0000000..f23a0a6
 --- /dev/null
 +++ b/include/linux/mfd/mt6323/registers.h
 @@ -0,0 +1,362 @@
@@ -1094,6 +1074,3 @@ index 0000000..f23a0a6
 +#define MT6397_NCP_CLKDIV_CON1		0x0746
 +
 +#endif /* __MFD_MT6397_REGISTERS_H__ */
--- 
-1.7.10.4
-

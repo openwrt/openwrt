@@ -16,9 +16,6 @@ Acked-by: Matthias Brugger <matthias.bgg@gmail.com>
  2 files changed, 764 insertions(+)
  create mode 100644 arch/arm/boot/dts/mt8127-pinfunc.h
 
-diff --git a/arch/arm/boot/dts/mt8127-pinfunc.h b/arch/arm/boot/dts/mt8127-pinfunc.h
-new file mode 100644
-index 0000000..9198331
 --- /dev/null
 +++ b/arch/arm/boot/dts/mt8127-pinfunc.h
 @@ -0,0 +1,742 @@
@@ -764,8 +761,6 @@ index 0000000..9198331
 +#define MT8127_PIN_142_EINT21__FUNC_DBG_MON_B_32 (MTK_PIN_NO(142) | 7)
 +
 +#endif /* __DTS_MT8127_PINFUNC_H */
-diff --git a/arch/arm/boot/dts/mt8127.dtsi b/arch/arm/boot/dts/mt8127.dtsi
-index 7c2090d..1d429ed 100644
 --- a/arch/arm/boot/dts/mt8127.dtsi
 +++ b/arch/arm/boot/dts/mt8127.dtsi
 @@ -14,6 +14,7 @@
@@ -804,6 +799,3 @@ index 7c2090d..1d429ed 100644
  		timer: timer@10008000 {
  			compatible = "mediatek,mt8127-timer",
  					"mediatek,mt6577-timer";
--- 
-1.7.10.4
-

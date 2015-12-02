@@ -11,8 +11,6 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  3 files changed, 735 insertions(+)
  create mode 100644 drivers/usb/phy/phy-mt65xx-usb3.c
 
-diff --git a/drivers/usb/phy/Kconfig b/drivers/usb/phy/Kconfig
-index 2175678..dfca566 100644
 --- a/drivers/usb/phy/Kconfig
 +++ b/drivers/usb/phy/Kconfig
 @@ -151,6 +151,16 @@ config USB_MSM_OTG
@@ -32,11 +30,9 @@ index 2175678..dfca566 100644
  config USB_MV_OTG
  	tristate "Marvell USB OTG support"
  	depends on USB_EHCI_MV && USB_MV_UDC && PM
-diff --git a/drivers/usb/phy/Makefile b/drivers/usb/phy/Makefile
-index 75f2bba..d6113a4 100644
 --- a/drivers/usb/phy/Makefile
 +++ b/drivers/usb/phy/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_USB_EHCI_TEGRA)		+= phy-tegra-usb.o
+@@ -20,6 +20,7 @@ obj-$(CONFIG_USB_EHCI_TEGRA)		+= phy-teg
  obj-$(CONFIG_USB_GPIO_VBUS)		+= phy-gpio-vbus-usb.o
  obj-$(CONFIG_USB_ISP1301)		+= phy-isp1301.o
  obj-$(CONFIG_USB_MSM_OTG)		+= phy-msm-usb.o
@@ -44,9 +40,6 @@ index 75f2bba..d6113a4 100644
  obj-$(CONFIG_USB_MV_OTG)		+= phy-mv-usb.o
  obj-$(CONFIG_USB_MXS_PHY)		+= phy-mxs-usb.o
  obj-$(CONFIG_USB_RCAR_PHY)		+= phy-rcar-usb.o
-diff --git a/drivers/usb/phy/phy-mt65xx-usb3.c b/drivers/usb/phy/phy-mt65xx-usb3.c
-new file mode 100644
-index 0000000..ec5cf24
 --- /dev/null
 +++ b/drivers/usb/phy/phy-mt65xx-usb3.c
 @@ -0,0 +1,724 @@
@@ -774,6 +767,3 @@ index 0000000..ec5cf24
 +
 +MODULE_DESCRIPTION("Mt65xx USB PHY driver");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-

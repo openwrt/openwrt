@@ -23,11 +23,9 @@ Acked-by: Uwe Kleine-König <u.kleine-koenig@pengutronix.de>
  include/linux/clk-provider.h |    8 ++++----
  3 files changed, 7 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/clk/clk-composite.c b/drivers/clk/clk-composite.c
-index 956b7e5..077f4c7 100644
 --- a/drivers/clk/clk-composite.c
 +++ b/drivers/clk/clk-composite.c
-@@ -188,7 +188,7 @@ static void clk_composite_disable(struct clk_hw *hw)
+@@ -188,7 +188,7 @@ static void clk_composite_disable(struct
  }
  
  struct clk *clk_register_composite(struct device *dev, const char *name,
@@ -36,8 +34,6 @@ index 956b7e5..077f4c7 100644
  			struct clk_hw *mux_hw, const struct clk_ops *mux_ops,
  			struct clk_hw *rate_hw, const struct clk_ops *rate_ops,
  			struct clk_hw *gate_hw, const struct clk_ops *gate_ops,
-diff --git a/drivers/clk/clk-mux.c b/drivers/clk/clk-mux.c
-index 69a094c..1fa2a8d 100644
 --- a/drivers/clk/clk-mux.c
 +++ b/drivers/clk/clk-mux.c
 @@ -114,7 +114,7 @@ const struct clk_ops clk_mux_ro_ops = {
@@ -49,7 +45,7 @@ index 69a094c..1fa2a8d 100644
  		void __iomem *reg, u8 shift, u32 mask,
  		u8 clk_mux_flags, u32 *table, spinlock_t *lock)
  {
-@@ -166,7 +166,7 @@ struct clk *clk_register_mux_table(struct device *dev, const char *name,
+@@ -166,7 +166,7 @@ struct clk *clk_register_mux_table(struc
  EXPORT_SYMBOL_GPL(clk_register_mux_table);
  
  struct clk *clk_register_mux(struct device *dev, const char *name,
@@ -58,8 +54,6 @@ index 69a094c..1fa2a8d 100644
  		void __iomem *reg, u8 shift, u8 width,
  		u8 clk_mux_flags, spinlock_t *lock)
  {
-diff --git a/include/linux/clk-provider.h b/include/linux/clk-provider.h
-index df69531..ec609e5 100644
 --- a/include/linux/clk-provider.h
 +++ b/include/linux/clk-provider.h
 @@ -209,7 +209,7 @@ struct clk_ops {
@@ -95,6 +89,3 @@ index df69531..ec609e5 100644
  		struct clk_hw *mux_hw, const struct clk_ops *mux_ops,
  		struct clk_hw *rate_hw, const struct clk_ops *rate_ops,
  		struct clk_hw *gate_hw, const struct clk_ops *gate_ops,
--- 
-1.7.10.4
-

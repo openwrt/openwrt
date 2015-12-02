@@ -12,8 +12,6 @@ Reviewed-by: Mikko Perttunen <mperttunen@nvidia.com>
  drivers/thermal/thermal_core.c |   17 +++++------------
  1 file changed, 5 insertions(+), 12 deletions(-)
 
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index e204deb..19da022 100644
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
 @@ -450,9 +450,12 @@ exit:
@@ -31,7 +29,7 @@ index e204deb..19da022 100644
  
  	ret = thermal_zone_get_temp(tz, &temp);
  	if (ret) {
-@@ -471,16 +474,6 @@ static void update_temperature(struct thermal_zone_device *tz)
+@@ -471,16 +474,6 @@ static void update_temperature(struct th
  	trace_thermal_temperature(tz);
  	dev_dbg(&tz->device, "last_temperature=%d, current_temperature=%d\n",
  				tz->last_temperature, tz->temperature);
@@ -48,6 +46,3 @@ index e204deb..19da022 100644
  
  	for (count = 0; count < tz->trips; count++)
  		handle_thermal_trip(tz, count);
--- 
-1.7.10.4
-

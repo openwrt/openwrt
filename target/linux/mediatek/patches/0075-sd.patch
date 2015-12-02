@@ -7,8 +7,6 @@ Subject: [PATCH 75/76] sd
  drivers/mmc/host/mtk-sd.c |   12 ++++++++----
  1 file changed, 8 insertions(+), 4 deletions(-)
 
-diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
-index 7c20f28..be2b00c 100644
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
 @@ -227,11 +227,13 @@ struct mt_gpdma_desc {
@@ -41,7 +39,7 @@ index 7c20f28..be2b00c 100644
  };
  
  struct msdc_dma {
-@@ -1115,7 +1119,7 @@ static void msdc_init_hw(struct msdc_host *host)
+@@ -1115,7 +1119,7 @@ static void msdc_init_hw(struct msdc_hos
  	sdr_set_field(host->base + MSDC_IOCON, MSDC_IOCON_DDLSEL, 1);
  	writel(0x403c004f, host->base + MSDC_PATCH_BIT);
  	sdr_set_field(host->base + MSDC_PATCH_BIT, MSDC_CKGEN_MSDC_DLY_SEL, 1);
@@ -50,6 +48,3 @@ index 7c20f28..be2b00c 100644
  	/* Configure to enable SDIO mode.
  	 * it's must otherwise sdio cmd5 failed
  	 */
--- 
-1.7.10.4
-

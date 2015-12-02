@@ -11,8 +11,6 @@ Signed-off-by: Chaotian Jing <chaotian.jing@mediatek.com>
  drivers/mmc/host/mtk-sd.c |   89 +++++++++++++++++++++++++++++++++++++++++++--
  1 file changed, 86 insertions(+), 3 deletions(-)
 
-diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
-index 952be2e..7c20f28 100644
 --- a/drivers/mmc/host/mtk-sd.c
 +++ b/drivers/mmc/host/mtk-sd.c
 @@ -22,6 +22,8 @@
@@ -56,7 +54,7 @@ index 952be2e..7c20f28 100644
  };
  
  static void sdr_set_bits(void __iomem *reg, u32 bs)
-@@ -677,6 +690,9 @@ static void msdc_request_done(struct msdc_host *host, struct mmc_request *mrq)
+@@ -677,6 +690,9 @@ static void msdc_request_done(struct msd
  	if (mrq->data)
  		msdc_unprepare_data(host, mrq);
  	mmc_request_done(host->mmc, mrq);
@@ -66,7 +64,7 @@ index 952be2e..7c20f28 100644
  }
  
  /* returns true if command is fully handled; returns false otherwise */
-@@ -831,6 +847,8 @@ static void msdc_ops_request(struct mmc_host *mmc, struct mmc_request *mrq)
+@@ -831,6 +847,8 @@ static void msdc_ops_request(struct mmc_
  	WARN_ON(host->mrq);
  	host->mrq = mrq;
  
@@ -75,7 +73,7 @@ index 952be2e..7c20f28 100644
  	if (mrq->data)
  		msdc_prepare_data(host, mrq);
  
-@@ -1145,6 +1163,8 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1145,6 +1163,8 @@ static void msdc_ops_set_ios(struct mmc_
  	int ret;
  	u32 ddr = 0;
  
@@ -84,7 +82,7 @@ index 952be2e..7c20f28 100644
  	if (ios->timing == MMC_TIMING_UHS_DDR50 ||
  	    ios->timing == MMC_TIMING_MMC_DDR52)
  		ddr = 1;
-@@ -1159,7 +1179,7 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1159,7 +1179,7 @@ static void msdc_ops_set_ios(struct mmc_
  					ios->vdd);
  			if (ret) {
  				dev_err(host->dev, "Failed to set vmmc power!\n");
@@ -93,7 +91,7 @@ index 952be2e..7c20f28 100644
  			}
  		}
  		break;
-@@ -1187,6 +1207,10 @@ static void msdc_ops_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+@@ -1187,6 +1207,10 @@ static void msdc_ops_set_ios(struct mmc_
  
  	if (host->mclk != ios->clock || host->ddr != ddr)
  		msdc_set_mclk(host, ddr, ios->clock);
@@ -104,7 +102,7 @@ index 952be2e..7c20f28 100644
  }
  
  static struct mmc_host_ops mt_msdc_ops = {
-@@ -1310,12 +1334,18 @@ static int msdc_drv_probe(struct platform_device *pdev)
+@@ -1310,12 +1334,18 @@ static int msdc_drv_probe(struct platfor
  	if (ret)
  		goto release;
  
@@ -125,7 +123,7 @@ index 952be2e..7c20f28 100644
  release:
  	platform_set_drvdata(pdev, NULL);
  	msdc_deinit_hw(host);
-@@ -1343,11 +1373,15 @@ static int msdc_drv_remove(struct platform_device *pdev)
+@@ -1343,11 +1373,15 @@ static int msdc_drv_remove(struct platfo
  	mmc = platform_get_drvdata(pdev);
  	host = mmc_priv(mmc);
  
@@ -141,7 +139,7 @@ index 952be2e..7c20f28 100644
  	dma_free_coherent(&pdev->dev,
  			sizeof(struct mt_gpdma_desc),
  			host->dma.gpd, host->dma.gpd_addr);
-@@ -1359,6 +1393,54 @@ static int msdc_drv_remove(struct platform_device *pdev)
+@@ -1359,6 +1393,54 @@ static int msdc_drv_remove(struct platfo
  	return 0;
  }
  
@@ -196,7 +194,7 @@ index 952be2e..7c20f28 100644
  static const struct of_device_id msdc_of_ids[] = {
  	{   .compatible = "mediatek,mt8135-mmc", },
  	{}
-@@ -1370,6 +1452,7 @@ static struct platform_driver mt_msdc_driver = {
+@@ -1370,6 +1452,7 @@ static struct platform_driver mt_msdc_dr
  	.driver = {
  		.name = "mtk-msdc",
  		.of_match_table = msdc_of_ids,
@@ -204,6 +202,3 @@ index 952be2e..7c20f28 100644
  	},
  };
  
--- 
-1.7.10.4
-

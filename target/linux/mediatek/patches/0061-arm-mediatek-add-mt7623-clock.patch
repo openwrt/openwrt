@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/clk/mediatek/clk-mt7623.c
  create mode 100644 include/dt-bindings/clock/mt7623-clk.h
 
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 8e4b2a4..19a3763 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,4 +1,5 @@
@@ -22,9 +20,6 @@ index 8e4b2a4..19a3763 100644
 +obj-y += clk-mt7623.o
  obj-y += clk-mt8135.o
  obj-y += clk-mt8173.o
-diff --git a/drivers/clk/mediatek/clk-mt7623.c b/drivers/clk/mediatek/clk-mt7623.c
-new file mode 100644
-index 0000000..07843bb
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt7623.c
 @@ -0,0 +1,634 @@
@@ -662,9 +657,6 @@ index 0000000..07843bb
 +}
 +CLK_OF_DECLARE(mtk_apmixedsys, "mediatek,mt7623-apmixedsys",
 +		mtk_apmixedsys_init);
-diff --git a/include/dt-bindings/clock/mt7623-clk.h b/include/dt-bindings/clock/mt7623-clk.h
-new file mode 100644
-index 0000000..cb1e8a9
 --- /dev/null
 +++ b/include/dt-bindings/clock/mt7623-clk.h
 @@ -0,0 +1,173 @@
@@ -841,6 +833,3 @@ index 0000000..cb1e8a9
 +
 +#endif /* _DT_BINDINGS_CLK_MT7623_H */
 +
--- 
-1.7.10.4
-

@@ -21,11 +21,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/sprom.c | 53 ++++++++---------------------------------------
  1 file changed, 9 insertions(+), 44 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index b0d62e7..2d5c7a7 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -200,6 +200,9 @@ static void bcm47xx_sprom_fill_auto(struct ssb_sprom *sprom,
+@@ -200,6 +200,9 @@ static void bcm47xx_sprom_fill_auto(stru
  	const char *pre = prefix;
  	bool fb = fallback;
  
@@ -35,7 +33,7 @@ index b0d62e7..2d5c7a7 100644
  	ENTRY(0xfffffffe, u16, pre, "boardrev", board_rev, 0, true);
  	ENTRY(0xfffffffe, u32, pre, "boardflags", boardflags, 0, fb);
  	ENTRY(0xfffffff0, u32, pre, "boardflags2", boardflags2, 0, fb);
-@@ -412,27 +415,6 @@ static void bcm47xx_sprom_fill_auto(struct ssb_sprom *sprom,
+@@ -412,27 +415,6 @@ static void bcm47xx_sprom_fill_auto(stru
  }
  #undef ENTRY /* It's specififc, uses local variable, don't use it (again). */
  
@@ -63,7 +61,7 @@ index b0d62e7..2d5c7a7 100644
  static void bcm47xx_fill_sprom_path_r4589(struct ssb_sprom *sprom,
  					  const char *prefix, bool fallback)
  {
-@@ -589,39 +571,22 @@ void bcm47xx_fill_sprom(struct ssb_sprom *sprom, const char *prefix,
+@@ -589,39 +571,22 @@ void bcm47xx_fill_sprom(struct ssb_sprom
  
  	nvram_read_u8(prefix, NULL, "sromrev", &sprom->revision, 0, fallback);
  
@@ -109,6 +107,3 @@ index b0d62e7..2d5c7a7 100644
  	}
  
  	bcm47xx_sprom_fill_auto(sprom, prefix, fallback);
--- 
-1.8.4.5
-

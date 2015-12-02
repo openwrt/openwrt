@@ -27,11 +27,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/buttons.c | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/buttons.c b/arch/mips/bcm47xx/buttons.c
-index 08a4abf..52caa75 100644
 --- a/arch/mips/bcm47xx/buttons.c
 +++ b/arch/mips/bcm47xx/buttons.c
-@@ -396,10 +396,9 @@ static int __init bcm47xx_buttons_copy(const struct gpio_keys_button *buttons,
+@@ -396,10 +396,9 @@ static int __init bcm47xx_buttons_copy(c
  {
  	size_t size = nbuttons * sizeof(*buttons);
  
@@ -43,6 +41,3 @@ index 08a4abf..52caa75 100644
  	bcm47xx_button_pdata.nbuttons = nbuttons;
  
  	return 0;
--- 
-1.8.4.5
-
