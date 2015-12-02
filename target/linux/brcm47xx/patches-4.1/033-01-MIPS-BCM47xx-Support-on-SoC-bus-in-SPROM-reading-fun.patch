@@ -21,11 +21,9 @@ Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
  arch/mips/bcm47xx/sprom.c | 8 ++++++--
  1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/bcm47xx/sprom.c b/arch/mips/bcm47xx/sprom.c
-index 2d5c7a7..e19c1b9 100644
 --- a/arch/mips/bcm47xx/sprom.c
 +++ b/arch/mips/bcm47xx/sprom.c
-@@ -610,14 +610,18 @@ static int bcm47xx_get_sprom_ssb(struct ssb_bus *bus, struct ssb_sprom *out)
+@@ -610,14 +610,18 @@ static int bcm47xx_get_sprom_ssb(struct
  {
  	char prefix[10];
  
@@ -46,6 +44,3 @@ index 2d5c7a7..e19c1b9 100644
  		pr_warn("Unable to fill SPROM for given bustype.\n");
  		return -EINVAL;
  	}
--- 
-1.8.4.5
-

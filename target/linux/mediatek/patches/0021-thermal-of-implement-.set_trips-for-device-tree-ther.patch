@@ -10,11 +10,9 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  include/linux/thermal.h      |    3 +++
  2 files changed, 15 insertions(+)
 
-diff --git a/drivers/thermal/of-thermal.c b/drivers/thermal/of-thermal.c
-index bd3185e..f8dd847 100644
 --- a/drivers/thermal/of-thermal.c
 +++ b/drivers/thermal/of-thermal.c
-@@ -97,6 +97,17 @@ static int of_thermal_get_temp(struct thermal_zone_device *tz,
+@@ -97,6 +97,17 @@ static int of_thermal_get_temp(struct th
  	return data->ops->get_temp(data->sensor_data, temp);
  }
  
@@ -32,7 +30,7 @@ index bd3185e..f8dd847 100644
  /**
   * of_thermal_get_ntrips - function to export number of available trip
   *			   points.
-@@ -367,6 +378,7 @@ static int of_thermal_get_crit_temp(struct thermal_zone_device *tz,
+@@ -367,6 +378,7 @@ static int of_thermal_get_crit_temp(stru
  
  static const struct thermal_zone_device_ops of_thermal_ops = {
  	.get_temp = of_thermal_get_temp,
@@ -40,8 +38,6 @@ index bd3185e..f8dd847 100644
  	.get_trend = of_thermal_get_trend,
  	.set_emul_temp = of_thermal_set_emul_temp,
  
-diff --git a/include/linux/thermal.h b/include/linux/thermal.h
-index aef6e13..b751f6b 100644
 --- a/include/linux/thermal.h
 +++ b/include/linux/thermal.h
 @@ -267,12 +267,15 @@ struct thermal_genl_event {
@@ -60,6 +56,3 @@ index aef6e13..b751f6b 100644
  	int (*set_emul_temp)(void *, int);
  };
  
--- 
-1.7.10.4
-

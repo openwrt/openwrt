@@ -21,9 +21,6 @@ Subject: [PATCH 68/76] SDK_compat
  create mode 100644 arch/arm/mach-mediatek/mt_reg_base.h
  create mode 100644 arch/arm/mach-mediatek/rt_mmap.h
 
-diff --git a/arch/arm/include/asm/mach/mt_irq.h b/arch/arm/include/asm/mach/mt_irq.h
-new file mode 100644
-index 0000000..ff265e0
 --- /dev/null
 +++ b/arch/arm/include/asm/mach/mt_irq.h
 @@ -0,0 +1,174 @@
@@ -201,9 +198,6 @@ index 0000000..ff265e0
 +#endif
 +
 +#endif
-diff --git a/arch/arm/include/asm/rt2880/mt_irq.h b/arch/arm/include/asm/rt2880/mt_irq.h
-new file mode 100644
-index 0000000..ff265e0
 --- /dev/null
 +++ b/arch/arm/include/asm/rt2880/mt_irq.h
 @@ -0,0 +1,174 @@
@@ -381,9 +375,6 @@ index 0000000..ff265e0
 +#endif
 +
 +#endif
-diff --git a/arch/arm/include/asm/rt2880/rt_mmap.h b/arch/arm/include/asm/rt2880/rt_mmap.h
-new file mode 100644
-index 0000000..e86b3bb
 --- /dev/null
 +++ b/arch/arm/include/asm/rt2880/rt_mmap.h
 @@ -0,0 +1,58 @@
@@ -445,9 +436,6 @@ index 0000000..e86b3bb
 +
 +//for backward-compatible
 +#define RALINK_FE_RST			RSTCTL_FE_RST
-diff --git a/arch/arm/include/asm/rt2880/surfboardint.h b/arch/arm/include/asm/rt2880/surfboardint.h
-new file mode 100644
-index 0000000..4581598
 --- /dev/null
 +++ b/arch/arm/include/asm/rt2880/surfboardint.h
 @@ -0,0 +1,42 @@
@@ -493,9 +481,6 @@ index 0000000..4581598
 +
 +
 +
-diff --git a/arch/arm/include/asm/rt2880/x_define_irq.h b/arch/arm/include/asm/rt2880/x_define_irq.h
-new file mode 100644
-index 0000000..4b2e669
 --- /dev/null
 +++ b/arch/arm/include/asm/rt2880/x_define_irq.h
 @@ -0,0 +1,160 @@
@@ -659,8 +644,6 @@ index 0000000..4b2e669
 +X_DEFINE_IRQ(MT_FE_PDMA_IRQ_ID             , 230, H,LEVEL)
 +X_DEFINE_IRQ(MT_FE_QDMA_IRQ_ID             , 231, H,LEVEL)
 +X_DEFINE_IRQ(MT_FE_ORIG_IRQ_ID             , 232, H,LEVEL)
-diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
-index ab8cf21..c0e373b 100644
 --- a/arch/arm/mach-mediatek/mediatek.c
 +++ b/arch/arm/mach-mediatek/mediatek.c
 @@ -19,6 +19,186 @@
@@ -850,7 +833,7 @@ index ab8cf21..c0e373b 100644
  
  
  #define GPT6_CON_MT65xx 0x10008060
-@@ -55,7 +235,13 @@ static const char * const mediatek_board_dt_compat[] = {
+@@ -55,7 +235,13 @@ static const char * const mediatek_board
  	NULL,
  };
  
@@ -864,9 +847,6 @@ index ab8cf21..c0e373b 100644
  	.init_time	= mediatek_timer_init,
 +	.map_io		= mt_map_io,
  MACHINE_END
-diff --git a/arch/arm/mach-mediatek/mt_reg_base.h b/arch/arm/mach-mediatek/mt_reg_base.h
-new file mode 100644
-index 0000000..cf2bb9e
 --- /dev/null
 +++ b/arch/arm/mach-mediatek/mt_reg_base.h
 @@ -0,0 +1,640 @@
@@ -1510,9 +1490,6 @@ index 0000000..cf2bb9e
 +#endif
 +
 +#endif
-diff --git a/arch/arm/mach-mediatek/rt_mmap.h b/arch/arm/mach-mediatek/rt_mmap.h
-new file mode 100644
-index 0000000..e86b3bb
 --- /dev/null
 +++ b/arch/arm/mach-mediatek/rt_mmap.h
 @@ -0,0 +1,58 @@
@@ -1574,6 +1551,3 @@ index 0000000..e86b3bb
 +
 +//for backward-compatible
 +#define RALINK_FE_RST			RSTCTL_FE_RST
--- 
-1.7.10.4
-

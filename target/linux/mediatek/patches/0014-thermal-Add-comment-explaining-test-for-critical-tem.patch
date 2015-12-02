@@ -13,11 +13,9 @@ Reviewed-by: Mikko Perttunen <mperttunen@nvidia.com>
  drivers/thermal/thermal_core.c |    5 +++++
  1 file changed, 5 insertions(+)
 
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index 3e0fe55..e204deb 100644
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -435,6 +435,11 @@ int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
+@@ -435,6 +435,11 @@ int thermal_zone_get_temp(struct thermal
  			}
  		}
  
@@ -29,6 +27,3 @@ index 3e0fe55..e204deb 100644
  		if (!ret && *temp < crit_temp)
  			*temp = tz->emul_temperature;
  	}
--- 
-1.7.10.4
-

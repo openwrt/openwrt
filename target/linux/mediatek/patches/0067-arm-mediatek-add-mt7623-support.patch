@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 67 insertions(+)
  create mode 100644 include/dt-bindings/reset-controller/mt7623-resets.h
 
-diff --git a/arch/arm/mach-mediatek/Kconfig b/arch/arm/mach-mediatek/Kconfig
-index 7704818..5393d25 100644
 --- a/arch/arm/mach-mediatek/Kconfig
 +++ b/arch/arm/mach-mediatek/Kconfig
 @@ -17,6 +17,12 @@ config MACH_MT6592
@@ -28,11 +26,9 @@ index 7704818..5393d25 100644
  config MACH_MT8127
  	bool "MediaTek MT8127 SoCs support"
  	default ARCH_MEDIATEK
-diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
-index 6b38d67..ab8cf21 100644
 --- a/arch/arm/mach-mediatek/mediatek.c
 +++ b/arch/arm/mach-mediatek/mediatek.c
-@@ -29,6 +29,7 @@ static void __init mediatek_timer_init(void)
+@@ -29,6 +29,7 @@ static void __init mediatek_timer_init(v
  	void __iomem *gpt_base = 0;
  
  	if (of_machine_is_compatible("mediatek,mt6589") ||
@@ -40,7 +36,7 @@ index 6b38d67..ab8cf21 100644
  	    of_machine_is_compatible("mediatek,mt8135") ||
  	    of_machine_is_compatible("mediatek,mt8127")) {
  		/* turn on GPT6 which ungates arch timer clocks */
-@@ -48,6 +49,7 @@ static void __init mediatek_timer_init(void)
+@@ -48,6 +49,7 @@ static void __init mediatek_timer_init(v
  static const char * const mediatek_board_dt_compat[] = {
  	"mediatek,mt6589",
  	"mediatek,mt6592",
@@ -48,9 +44,6 @@ index 6b38d67..ab8cf21 100644
  	"mediatek,mt8127",
  	"mediatek,mt8135",
  	NULL,
-diff --git a/include/dt-bindings/reset-controller/mt7623-resets.h b/include/dt-bindings/reset-controller/mt7623-resets.h
-new file mode 100644
-index 0000000..28a7d69
 --- /dev/null
 +++ b/include/dt-bindings/reset-controller/mt7623-resets.h
 @@ -0,0 +1,59 @@
@@ -113,6 +106,3 @@ index 0000000..28a7d69
 +#define MT7623_PERI_SPI0_SW_RST		33
 +
 +#endif /* _DT_BINDINGS_RESET_CONTROLLER_MT7623 */
--- 
-1.7.10.4
-

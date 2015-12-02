@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/thermal/mtk_thermal.c |    3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/thermal/mtk_thermal.c b/drivers/thermal/mtk_thermal.c
-index 27aab12..5fdcbf6 100644
 --- a/drivers/thermal/mtk_thermal.c
 +++ b/drivers/thermal/mtk_thermal.c
-@@ -394,7 +394,8 @@ static irqreturn_t mtk_thermal_irq(int irq, void *dev_id)
+@@ -394,7 +394,8 @@ static irqreturn_t mtk_thermal_irq(int i
  
  	for (i = 0; i < MT8173_NUM_BANKS; i++) {
  		if (!(irqstat & (1 << i)))
@@ -22,6 +20,3 @@ index 27aab12..5fdcbf6 100644
  	}
  
  	return IRQ_HANDLED;
--- 
-1.7.10.4
-

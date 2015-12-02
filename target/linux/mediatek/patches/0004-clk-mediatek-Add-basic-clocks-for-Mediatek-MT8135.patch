@@ -19,17 +19,12 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  create mode 100644 include/dt-bindings/clock/mt8135-clk.h
  create mode 100644 include/dt-bindings/reset-controller/mt8135-resets.h
 
-diff --git a/drivers/clk/mediatek/Makefile b/drivers/clk/mediatek/Makefile
-index 0b6f1c3..12ce576 100644
 --- a/drivers/clk/mediatek/Makefile
 +++ b/drivers/clk/mediatek/Makefile
 @@ -1,2 +1,3 @@
  obj-y += clk-mtk.o clk-pll.o clk-gate.o
  obj-$(CONFIG_RESET_CONTROLLER) += reset.o
 +obj-y += clk-mt8135.o
-diff --git a/drivers/clk/mediatek/clk-mt8135.c b/drivers/clk/mediatek/clk-mt8135.c
-new file mode 100644
-index 0000000..a63435b
 --- /dev/null
 +++ b/drivers/clk/mediatek/clk-mt8135.c
 @@ -0,0 +1,644 @@
@@ -677,9 +672,6 @@ index 0000000..a63435b
 +}
 +CLK_OF_DECLARE(mtk_apmixedsys, "mediatek,mt8135-apmixedsys",
 +		mtk_apmixedsys_init);
-diff --git a/include/dt-bindings/clock/mt8135-clk.h b/include/dt-bindings/clock/mt8135-clk.h
-new file mode 100644
-index 0000000..6dac6c0
 --- /dev/null
 +++ b/include/dt-bindings/clock/mt8135-clk.h
 @@ -0,0 +1,194 @@
@@ -877,9 +869,6 @@ index 0000000..6dac6c0
 +#define CLK_PERI_NR_CLK			46
 +
 +#endif /* _DT_BINDINGS_CLK_MT8135_H */
-diff --git a/include/dt-bindings/reset-controller/mt8135-resets.h b/include/dt-bindings/reset-controller/mt8135-resets.h
-new file mode 100644
-index 0000000..1fb6295
 --- /dev/null
 +++ b/include/dt-bindings/reset-controller/mt8135-resets.h
 @@ -0,0 +1,64 @@
@@ -947,6 +936,3 @@ index 0000000..1fb6295
 +#define MT8135_PERI_PWRAP_BRIDGE_SW_RST 34
 +
 +#endif  /* _DT_BINDINGS_RESET_CONTROLLER_MT8135 */
--- 
-1.7.10.4
-

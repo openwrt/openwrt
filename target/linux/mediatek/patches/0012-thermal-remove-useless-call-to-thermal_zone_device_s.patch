@@ -15,11 +15,9 @@ Acked-by: Eduardo Valentin <edubezval@gmail.com>
  drivers/thermal/thermal_core.c |    3 ---
  1 file changed, 3 deletions(-)
 
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index 244784f..1b68d20 100644
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -1571,9 +1571,6 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
+@@ -1571,9 +1571,6 @@ struct thermal_zone_device *thermal_zone
  
  	INIT_DELAYED_WORK(&(tz->poll_queue), thermal_zone_device_check);
  
@@ -29,6 +27,3 @@ index 244784f..1b68d20 100644
  	thermal_zone_device_update(tz);
  
  	return tz;
--- 
-1.7.10.4
-

@@ -20,11 +20,9 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  drivers/thermal/thermal_core.c |   24 +++++++++++++++++-------
  1 file changed, 17 insertions(+), 7 deletions(-)
 
-diff --git a/drivers/thermal/thermal_core.c b/drivers/thermal/thermal_core.c
-index 19da022..3d8f9f9 100644
 --- a/drivers/thermal/thermal_core.c
 +++ b/drivers/thermal/thermal_core.c
-@@ -413,13 +413,16 @@ static void handle_thermal_trip(struct thermal_zone_device *tz, int trip)
+@@ -413,13 +413,16 @@ static void handle_thermal_trip(struct t
   */
  int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
  {
@@ -44,7 +42,7 @@ index 19da022..3d8f9f9 100644
  
  	mutex_lock(&tz->lock);
  
-@@ -445,7 +448,7 @@ int thermal_zone_get_temp(struct thermal_zone_device *tz, int *temp)
+@@ -445,7 +448,7 @@ int thermal_zone_get_temp(struct thermal
  	}
   
  	mutex_unlock(&tz->lock);
@@ -53,7 +51,7 @@ index 19da022..3d8f9f9 100644
  	return ret;
  }
  EXPORT_SYMBOL_GPL(thermal_zone_get_temp);
-@@ -454,10 +457,11 @@ void thermal_zone_device_update(struct thermal_zone_device *tz)
+@@ -454,10 +457,11 @@ void thermal_zone_device_update(struct t
  {
  	int temp, ret, count;
  
@@ -67,7 +65,7 @@ index 19da022..3d8f9f9 100644
  	if (ret) {
  		if (ret != -EAGAIN)
  			dev_warn(&tz->device,
-@@ -783,10 +787,16 @@ emul_temp_store(struct device *dev, struct device_attribute *attr,
+@@ -783,10 +787,16 @@ emul_temp_store(struct device *dev, stru
  	if (kstrtoul(buf, 10, &temperature))
  		return -EINVAL;
  
@@ -85,6 +83,3 @@ index 19da022..3d8f9f9 100644
  	} else {
  		ret = tz->ops->set_emul_temp(tz, temperature);
  	}
--- 
-1.7.10.4
-

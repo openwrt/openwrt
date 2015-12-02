@@ -26,8 +26,6 @@ Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
  create mode 100644 drivers/soc/mediatek/mtk-scpsys.c
  create mode 100644 include/dt-bindings/power/mt8173-power.h
 
-diff --git a/drivers/soc/mediatek/Kconfig b/drivers/soc/mediatek/Kconfig
-index 09da41e..2dc5d90 100644
 --- a/drivers/soc/mediatek/Kconfig
 +++ b/drivers/soc/mediatek/Kconfig
 @@ -19,3 +19,12 @@ config MTK_PMIC_WRAP
@@ -43,17 +41,12 @@ index 09da41e..2dc5d90 100644
 +	help
 +	  Say yes here to add support for the MediaTek SCPSYS power domain
 +	  driver.
-diff --git a/drivers/soc/mediatek/Makefile b/drivers/soc/mediatek/Makefile
-index 3fa940f..12998b0 100644
 --- a/drivers/soc/mediatek/Makefile
 +++ b/drivers/soc/mediatek/Makefile
 @@ -1,2 +1,3 @@
  obj-$(CONFIG_MTK_INFRACFG) += mtk-infracfg.o
  obj-$(CONFIG_MTK_PMIC_WRAP) += mtk-pmic-wrap.o
 +obj-$(CONFIG_MTK_SCPSYS) += mtk-scpsys.o
-diff --git a/drivers/soc/mediatek/mtk-scpsys.c b/drivers/soc/mediatek/mtk-scpsys.c
-new file mode 100644
-index 0000000..b9eed37
 --- /dev/null
 +++ b/drivers/soc/mediatek/mtk-scpsys.c
 @@ -0,0 +1,490 @@
@@ -547,9 +540,6 @@ index 0000000..b9eed37
 +};
 +
 +module_platform_driver_probe(scpsys_drv, scpsys_probe);
-diff --git a/include/dt-bindings/power/mt8173-power.h b/include/dt-bindings/power/mt8173-power.h
-new file mode 100644
-index 0000000..b34cee9
 --- /dev/null
 +++ b/include/dt-bindings/power/mt8173-power.h
 @@ -0,0 +1,15 @@
@@ -568,6 +558,3 @@ index 0000000..b34cee9
 +#define MT8173_POWER_DOMAIN_MFG		9
 +
 +#endif /* _DT_BINDINGS_POWER_MT8183_POWER_H */
--- 
-1.7.10.4
-

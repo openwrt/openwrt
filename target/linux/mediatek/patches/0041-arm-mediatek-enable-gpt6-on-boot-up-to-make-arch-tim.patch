@@ -13,8 +13,6 @@ Signed-off-by: Yingjoe Chen <yingjoe.chen@mediatek.com>
  arch/arm/mach-mediatek/mediatek.c |   29 +++++++++++++++++++++++++++++
  1 file changed, 29 insertions(+)
 
-diff --git a/arch/arm/mach-mediatek/mediatek.c b/arch/arm/mach-mediatek/mediatek.c
-index a954900..6b38d67 100644
 --- a/arch/arm/mach-mediatek/mediatek.c
 +++ b/arch/arm/mach-mediatek/mediatek.c
 @@ -16,6 +16,34 @@
@@ -52,12 +50,9 @@ index a954900..6b38d67 100644
  
  static const char * const mediatek_board_dt_compat[] = {
  	"mediatek,mt6589",
-@@ -27,4 +55,5 @@ static const char * const mediatek_board_dt_compat[] = {
+@@ -27,4 +55,5 @@ static const char * const mediatek_board
  
  DT_MACHINE_START(MEDIATEK_DT, "Mediatek Cortex-A7 (Device Tree)")
  	.dt_compat	= mediatek_board_dt_compat,
 +	.init_time	= mediatek_timer_init,
  MACHINE_END
--- 
-1.7.10.4
-

@@ -24,7 +24,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
 
 --- a/drivers/usb/host/Kconfig
 +++ b/drivers/usb/host/Kconfig
-@@ -41,6 +41,15 @@
+@@ -41,6 +41,15 @@ config USB_XHCI_PLATFORM
  
  	  If unsure, say N.
  
@@ -42,7 +42,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	select USB_XHCI_PLATFORM
 --- a/drivers/usb/host/Makefile
 +++ b/drivers/usb/host/Makefile
-@@ -15,6 +15,9 @@
+@@ -15,6 +15,9 @@ xhci-hcd-y += xhci-ring.o xhci-hub.o xhc
  xhci-hcd-y += xhci-trace.o
  
  xhci-plat-hcd-y := xhci-plat.o
@@ -657,7 +657,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
  static struct hc_driver __read_mostly xhci_plat_hc_driver;
  
-@@ -49,7 +50,23 @@
+@@ -49,7 +50,23 @@ static int xhci_plat_setup(struct usb_hc
  			return ret;
  	}
  
@@ -682,7 +682,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  }
  
  static int xhci_plat_start(struct usb_hcd *hcd)
-@@ -207,6 +224,8 @@
+@@ -207,6 +224,8 @@ static int xhci_plat_remove(struct platf
  	if (!IS_ERR(clk))
  		clk_disable_unprepare(clk);
  	usb_put_hcd(hcd);
@@ -691,7 +691,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	kfree(xhci);
  
  	return 0;
-@@ -253,6 +272,7 @@
+@@ -253,6 +272,7 @@ static const struct of_device_id usb_xhc
  	{ .compatible = "marvell,armada-380-xhci"},
  	{ .compatible = "renesas,xhci-r8a7790"},
  	{ .compatible = "renesas,xhci-r8a7791"},
@@ -709,7 +709,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
  /*
   * Returns zero if the TRB isn't in this segment, otherwise it returns the DMA
-@@ -3163,9 +3164,14 @@
+@@ -3173,9 +3174,14 @@ static int queue_bulk_sg_tx(struct xhci_
  
  		/* Set the TRB length, TD size, and interrupter fields. */
  		if (xhci->hci_version < 0x100) {
@@ -725,7 +725,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  		} else {
  			remainder = xhci_v1_0_td_remainder(running_total,
  					trb_buff_len, total_packet_count, urb,
-@@ -3336,9 +3342,14 @@
+@@ -3346,9 +3352,14 @@ int xhci_queue_bulk_tx(struct xhci_hcd *
  
  		/* Set the TRB length, TD size, and interrupter fields. */
  		if (xhci->hci_version < 0x100) {
@@ -741,7 +741,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  		} else {
  			remainder = xhci_v1_0_td_remainder(running_total,
  					trb_buff_len, total_packet_count, urb,
-@@ -3457,8 +3468,14 @@
+@@ -3467,8 +3478,14 @@ int xhci_queue_ctrl_tx(struct xhci_hcd *
  		field = TRB_TYPE(TRB_DATA);
  
  	length_field = TRB_LEN(urb->transfer_buffer_length) |
@@ -757,7 +757,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	if (urb->transfer_buffer_length > 0) {
  		if (setup->bRequestType & USB_DIR_IN)
  			field |= TRB_DIR_IN;
-@@ -3682,8 +3699,14 @@
+@@ -3692,8 +3709,14 @@ static int xhci_queue_isoc_tx(struct xhc
  
  			/* Set the TRB length, TD size, & interrupter fields. */
  			if (xhci->hci_version < 0x100) {
@@ -784,7 +784,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
  #define DRIVER_AUTHOR "Sarah Sharp"
  #define DRIVER_DESC "'eXtensible' Host Controller (xHC) Driver"
-@@ -624,7 +625,11 @@
+@@ -624,7 +625,11 @@ int xhci_run(struct usb_hcd *hcd)
  			"// Set the interrupt modulation register");
  	temp = readl(&xhci->ir_set->irq_control);
  	temp &= ~ER_IRQ_INTERVAL_MASK;
@@ -797,7 +797,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	writel(temp, &xhci->ir_set->irq_control);
  
  	/* Set the HCD state before we enable the irqs */
-@@ -1698,6 +1703,9 @@
+@@ -1698,6 +1703,9 @@ int xhci_drop_endpoint(struct usb_hcd *h
  
  	xhci_endpoint_zero(xhci, xhci->devs[udev->slot_id], ep);
  
@@ -807,7 +807,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  	xhci_dbg(xhci, "drop ep 0x%x, slot id %d, new drop flags = %#x, new add flags = %#x\n",
  			(unsigned int) ep->desc.bEndpointAddress,
  			udev->slot_id,
-@@ -1793,6 +1801,12 @@
+@@ -1793,6 +1801,12 @@ int xhci_add_endpoint(struct usb_hcd *hc
  		return -ENOMEM;
  	}
  
@@ -822,7 +822,7 @@ Signed-off-by: Chunfeng Yun <chunfeng.yun@mediatek.com>
  
 --- a/drivers/usb/host/xhci.h
 +++ b/drivers/usb/host/xhci.h
-@@ -1568,6 +1568,7 @@
+@@ -1568,6 +1568,7 @@ struct xhci_hcd {
  /* For controllers with a broken beyond repair streams implementation */
  #define XHCI_BROKEN_STREAMS	(1 << 19)
  #define XHCI_PME_STUCK_QUIRK	(1 << 20)

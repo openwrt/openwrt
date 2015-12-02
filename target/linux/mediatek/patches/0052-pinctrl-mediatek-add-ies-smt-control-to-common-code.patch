@@ -19,8 +19,6 @@ Signed-off-by: Hongzhou Yang <hongzhou.yang@mediatek.com>
  drivers/pinctrl/mediatek/pinctrl-mtk-common.h |   31 +++-
  3 files changed, 198 insertions(+), 116 deletions(-)
 
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mt8173.c b/drivers/pinctrl/mediatek/pinctrl-mt8173.c
-index cc44b27..a7e5b24 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mt8173.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-mt8173.c
 @@ -18,6 +18,7 @@
@@ -60,7 +58,7 @@ index cc44b27..a7e5b24 100644
  static const struct mtk_pin_spec_pupd_set_samereg mt8173_spec_pupd[] = {
  	MTK_PIN_PUPD_SPEC_SR(119, 0xe00, 2, 1, 0),  /* KROW0 */
  	MTK_PIN_PUPD_SPEC_SR(120, 0xe00, 6, 5, 4),  /* KROW1 */
-@@ -97,80 +76,114 @@ static int mt8173_spec_pull_set(struct regmap *regmap, unsigned int pin,
+@@ -97,80 +76,114 @@ static int mt8173_spec_pull_set(struct r
  		ARRAY_SIZE(mt8173_spec_pupd), pin, align, isup, r1r0);
  }
  
@@ -165,22 +163,6 @@ index cc44b27..a7e5b24 100644
 -{
 -	unsigned int i, reg_addr, bit;
 -	bool find = false;
--
--	for (i = 0; i < ARRAY_SIZE(mt8173_ies_smt_set); i++) {
--		if (pin >= mt8173_ies_smt_set[i].start &&
--				pin <= mt8173_ies_smt_set[i].end) {
--			find = true;
--			break;
--		}
--	}
--
--	if (!find)
--		return -EINVAL;
--
--	if (value)
--		reg_addr = mt8173_ies_smt_set[i].offset + align;
--	else
--		reg_addr = mt8173_ies_smt_set[i].offset + (align << 1);
 +static const struct mtk_pin_ies_smt_set mt8173_ies_set[] = {
 +	MTK_PIN_IES_SMT_SPEC(0, 4, 0x900, 1),
 +	MTK_PIN_IES_SMT_SPEC(5, 9, 0x900, 2),
@@ -230,6 +212,22 @@ index cc44b27..a7e5b24 100644
 +	MTK_PIN_IES_SMT_SPEC(133, 134, 0x910, 8)
 +};
  
+-	for (i = 0; i < ARRAY_SIZE(mt8173_ies_smt_set); i++) {
+-		if (pin >= mt8173_ies_smt_set[i].start &&
+-				pin <= mt8173_ies_smt_set[i].end) {
+-			find = true;
+-			break;
+-		}
+-	}
+-
+-	if (!find)
+-		return -EINVAL;
+-
+-	if (value)
+-		reg_addr = mt8173_ies_smt_set[i].offset + align;
+-	else
+-		reg_addr = mt8173_ies_smt_set[i].offset + (align << 1);
+-
 -	bit = BIT(mt8173_ies_smt_set[i].bit);
 -	regmap_write(regmap, reg_addr, bit);
 -	return 0;
@@ -246,7 +244,7 @@ index cc44b27..a7e5b24 100644
  }
  
  static const struct mtk_drv_group_desc mt8173_drv_grp[] =  {
-@@ -307,7 +320,7 @@ static const struct mtk_pinctrl_devdata mt8173_pinctrl_data = {
+@@ -307,7 +320,7 @@ static const struct mtk_pinctrl_devdata
  	.pin_drv_grp = mt8173_pin_drv,
  	.n_pin_drv_grps = ARRAY_SIZE(mt8173_pin_drv),
  	.spec_pull_set = mt8173_spec_pull_set,
@@ -255,11 +253,9 @@ index cc44b27..a7e5b24 100644
  	.dir_offset = 0x0000,
  	.pullen_offset = 0x0100,
  	.pullsel_offset = 0x0200,
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
-index 0d51145..97fe2ab 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.c
-@@ -107,28 +107,38 @@ static void mtk_gpio_set(struct gpio_chip *chip, unsigned offset, int value)
+@@ -107,28 +107,38 @@ static void mtk_gpio_set(struct gpio_chi
  	regmap_write(mtk_get_regmap(pctl, offset), reg_addr, bit);
  }
  
@@ -308,7 +304,7 @@ index 0d51145..97fe2ab 100644
  		offset = pctl->devdata->ies_offset;
  	else
  		offset = pctl->devdata->smt_offset;
-@@ -139,6 +149,33 @@ static void mtk_pconf_set_ies_smt(struct mtk_pinctrl *pctl, unsigned pin,
+@@ -139,6 +149,33 @@ static void mtk_pconf_set_ies_smt(struct
  		reg_addr = CLR_ADDR(mtk_get_port(pctl, pin) + offset, pctl);
  
  	regmap_write(mtk_get_regmap(pctl, pin), reg_addr, bit);
@@ -342,7 +338,7 @@ index 0d51145..97fe2ab 100644
  }
  
  static const struct mtk_pin_drv_grp *mtk_find_pin_drv_grp_by_pin(
-@@ -295,36 +332,37 @@ static int mtk_pconf_parse_conf(struct pinctrl_dev *pctldev,
+@@ -295,36 +332,37 @@ static int mtk_pconf_parse_conf(struct p
  		unsigned int pin, enum pin_config_param param,
  		enum pin_config_param arg)
  {
@@ -389,7 +385,7 @@ index 0d51145..97fe2ab 100644
  }
  
  static int mtk_pconf_group_get(struct pinctrl_dev *pctldev,
-@@ -343,12 +381,14 @@ static int mtk_pconf_group_set(struct pinctrl_dev *pctldev, unsigned group,
+@@ -343,12 +381,14 @@ static int mtk_pconf_group_set(struct pi
  {
  	struct mtk_pinctrl *pctl = pinctrl_dev_get_drvdata(pctldev);
  	struct mtk_pinctrl_group *g = &pctl->groups[group];
@@ -406,8 +402,6 @@ index 0d51145..97fe2ab 100644
  
  		g->config = configs[i];
  	}
-diff --git a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
-index 2a4b7be..c703e7d 100644
 --- a/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
 +++ b/drivers/pinctrl/mediatek/pinctrl-mtk-common.h
 @@ -17,6 +17,7 @@
@@ -465,7 +459,7 @@ index 2a4b7be..c703e7d 100644
  	unsigned int dir_offset;
  	unsigned int ies_offset;
  	unsigned int smt_offset;
-@@ -251,4 +276,8 @@ int mtk_pctrl_spec_pull_set_samereg(struct regmap *regmap,
+@@ -251,4 +276,8 @@ int mtk_pctrl_spec_pull_set_samereg(stru
  		unsigned int info_num, unsigned int pin,
  		unsigned char align, bool isup, unsigned int r1r0);
  
@@ -474,6 +468,3 @@ index 2a4b7be..c703e7d 100644
 +		unsigned int pin, unsigned char align, int value);
 +
  #endif /* __PINCTRL_MTK_COMMON_H */
--- 
-1.7.10.4
-

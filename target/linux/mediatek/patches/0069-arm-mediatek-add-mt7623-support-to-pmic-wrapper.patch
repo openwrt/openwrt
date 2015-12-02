@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/soc/mediatek/mtk-pmic-wrap.c |  345 +++++++++++++++++++++++++++++-----
  1 file changed, 296 insertions(+), 49 deletions(-)
 
-diff --git a/drivers/soc/mediatek/mtk-pmic-wrap.c b/drivers/soc/mediatek/mtk-pmic-wrap.c
-index f432291..9ff02a1 100644
 --- a/drivers/soc/mediatek/mtk-pmic-wrap.c
 +++ b/drivers/soc/mediatek/mtk-pmic-wrap.c
 @@ -31,6 +31,13 @@
@@ -335,7 +333,7 @@ index f432291..9ff02a1 100644
  static inline int pwrap_is_mt8135(struct pmic_wrapper *wrp)
  {
  	return wrp->type == PWRAP_MT8135;
-@@ -475,6 +677,16 @@ static int pwrap_read(struct pmic_wrapper *wrp, u32 adr, u32 *rdata)
+@@ -475,6 +677,16 @@ static int pwrap_read(struct pmic_wrappe
  	return 0;
  }
  
@@ -352,7 +350,7 @@ index f432291..9ff02a1 100644
  static int pwrap_regmap_read(void *context, u32 adr, u32 *rdata)
  {
  	return pwrap_read(context, adr, rdata);
-@@ -535,7 +747,7 @@ static int pwrap_init_sidly(struct pmic_wrapper *wrp)
+@@ -535,7 +747,7 @@ static int pwrap_init_sidly(struct pmic_
  
  	for (i = 0; i < 4; i++) {
  		pwrap_writel(wrp, i, PWRAP_SIDLY);
@@ -361,7 +359,7 @@ index f432291..9ff02a1 100644
  		if (rdata == PWRAP_DEW_READ_TEST_VAL) {
  			dev_dbg(wrp->dev, "[Read Test] pass, SIDLY=%x\n", i);
  			pass |= 1 << i;
-@@ -561,6 +773,14 @@ static int pwrap_init_reg_clock(struct pmic_wrapper *wrp)
+@@ -561,6 +773,14 @@ static int pwrap_init_reg_clock(struct p
  		pwrap_writel(wrp, 0x4, PWRAP_CSHEXT_READ);
  		pwrap_writel(wrp, 0x0, PWRAP_CSLEXT_START);
  		pwrap_writel(wrp, 0x0, PWRAP_CSLEXT_END);
@@ -376,7 +374,7 @@ index f432291..9ff02a1 100644
  	} else {
  		pwrap_writel(wrp, 0x0, PWRAP_CSHEXT_WRITE);
  		pwrap_writel(wrp, 0x4, PWRAP_CSHEXT_READ);
-@@ -581,7 +801,7 @@ static bool pwrap_is_pmic_cipher_ready(struct pmic_wrapper *wrp)
+@@ -581,7 +801,7 @@ static bool pwrap_is_pmic_cipher_ready(s
  	u32 rdata;
  	int ret;
  
@@ -385,7 +383,7 @@ index f432291..9ff02a1 100644
  	if (ret)
  		return 0;
  
-@@ -606,12 +826,16 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -606,12 +826,16 @@ static int pwrap_init_cipher(struct pmic
  	}
  
  	/* Config cipher mode @PMIC */
@@ -408,7 +406,7 @@ index f432291..9ff02a1 100644
  
  	/* wait for cipher data ready@AP */
  	ret = pwrap_wait_for_state(wrp, pwrap_is_cipher_ready);
-@@ -628,7 +852,7 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -628,7 +852,7 @@ static int pwrap_init_cipher(struct pmic
  	}
  
  	/* wait for cipher mode idle */
@@ -417,7 +415,7 @@ index f432291..9ff02a1 100644
  	ret = pwrap_wait_for_state(wrp, pwrap_is_fsm_idle_and_sync_idle);
  	if (ret) {
  		dev_err(wrp->dev, "cipher mode idle fail, ret=%d\n", ret);
-@@ -638,8 +862,8 @@ static int pwrap_init_cipher(struct pmic_wrapper *wrp)
+@@ -638,8 +862,8 @@ static int pwrap_init_cipher(struct pmic
  	pwrap_writel(wrp, 1, PWRAP_CIPHER_MODE);
  
  	/* Write Test */
@@ -428,7 +426,7 @@ index f432291..9ff02a1 100644
  			(rdata != PWRAP_DEW_WRITE_TEST_VAL)) {
  		dev_err(wrp->dev, "rdata=0x%04X\n", rdata);
  		return -EFAULT;
-@@ -657,12 +881,17 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -657,12 +881,17 @@ static int pwrap_init(struct pmic_wrappe
  	if (wrp->rstc_bridge)
  		reset_control_reset(wrp->rstc_bridge);
  
@@ -447,7 +445,7 @@ index f432291..9ff02a1 100644
  	/* Reset SPI slave */
  	ret = pwrap_reset_spislave(wrp);
  	if (ret)
-@@ -674,6 +903,9 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -674,6 +903,9 @@ static int pwrap_init(struct pmic_wrappe
  
  	pwrap_writel(wrp, 1, PWRAP_WACS2_EN);
  
@@ -457,7 +455,7 @@ index f432291..9ff02a1 100644
  	ret = pwrap_init_reg_clock(wrp);
  	if (ret)
  		return ret;
-@@ -684,7 +916,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -684,7 +916,7 @@ static int pwrap_init(struct pmic_wrappe
  		return ret;
  
  	/* Enable dual IO mode */
@@ -466,7 +464,7 @@ index f432291..9ff02a1 100644
  
  	/* Check IDLE & INIT_DONE in advance */
  	ret = pwrap_wait_for_state(wrp, pwrap_is_fsm_idle_and_sync_idle);
-@@ -696,7 +928,7 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -696,7 +928,7 @@ static int pwrap_init(struct pmic_wrappe
  	pwrap_writel(wrp, 1, PWRAP_DIO_EN);
  
  	/* Read Test */
@@ -475,7 +473,7 @@ index f432291..9ff02a1 100644
  	if (rdata != PWRAP_DEW_READ_TEST_VAL) {
  		dev_err(wrp->dev, "Read test failed after switch to DIO mode: 0x%04x != 0x%04x\n",
  				PWRAP_DEW_READ_TEST_VAL, rdata);
-@@ -709,12 +941,13 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -709,12 +941,13 @@ static int pwrap_init(struct pmic_wrappe
  		return ret;
  
  	/* Signature checking - using CRC */
@@ -491,7 +489,7 @@ index f432291..9ff02a1 100644
  	pwrap_writel(wrp, wrp->arb_en_all, PWRAP_HIPRIO_ARB_EN);
  
  	if (pwrap_is_mt8135(wrp))
-@@ -728,7 +961,16 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -728,7 +961,16 @@ static int pwrap_init(struct pmic_wrappe
  	pwrap_writel(wrp, 0xf, PWRAP_WDT_UNIT);
  	pwrap_writel(wrp, 0xffffffff, PWRAP_WDT_SRC_EN);
  	pwrap_writel(wrp, 0x1, PWRAP_TIMER_EN);
@@ -509,7 +507,7 @@ index f432291..9ff02a1 100644
  
  	if (pwrap_is_mt8135(wrp)) {
  		/* enable pwrap events and pwrap bridge in AP side */
-@@ -743,15 +985,15 @@ static int pwrap_init(struct pmic_wrapper *wrp)
+@@ -743,15 +985,15 @@ static int pwrap_init(struct pmic_wrappe
  		writel(0x7ff, wrp->bridge_base + PWRAP_MT8135_BRIDGE_INT_EN);
  
  		/* enable PMIC event out and sources */
@@ -530,7 +528,7 @@ index f432291..9ff02a1 100644
  			dev_err(wrp->dev, "enable dewrap fail\n");
  			return -EFAULT;
  		}
-@@ -795,6 +1037,9 @@ static const struct regmap_config pwrap_regmap_config = {
+@@ -795,6 +1037,9 @@ static const struct regmap_config pwrap_
  
  static struct of_device_id of_pwrap_match_tbl[] = {
  	{
@@ -540,7 +538,7 @@ index f432291..9ff02a1 100644
  		.compatible = "mediatek,mt8135-pwrap",
  		.data = &pwrap_mt8135,
  	}, {
-@@ -824,6 +1069,8 @@ static int pwrap_probe(struct platform_device *pdev)
+@@ -824,6 +1069,8 @@ static int pwrap_probe(struct platform_d
  
  	type = of_id->data;
  	wrp->regs = type->regs;
@@ -549,6 +547,3 @@ index f432291..9ff02a1 100644
  	wrp->type = type->type;
  	wrp->arb_en_all = type->arb_en_all;
  	wrp->dev = &pdev->dev;
--- 
-1.7.10.4
-
