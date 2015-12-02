@@ -1,12 +1,12 @@
-From a0ad1511d5805b95ac4c454d7904c670a1696055 Mon Sep 17 00:00:00 2001
+From e99fb6d01cddf38cffc11655aba4a96a981d604e Mon Sep 17 00:00:00 2001
 From: Kapil Hali <kapilh@broadcom.com>
-Date: Wed, 14 Oct 2015 13:47:00 -0400
-Subject: [PATCH] ARM: BCM: Add SMP support for Broadcom NSP
+Date: Wed, 25 Nov 2015 13:25:55 -0500
+Subject: [PATCH 133/134] ARM: BCM: Add SMP support for Broadcom NSP
 
-Add SMP support for Broadcom's Northstar Plus SoC,
-cpu enable method and pen_release procedures. This
-changes also consolidates iProc family's - BCM NSP
-and BCM Kona, SMP handling in a common file.
+Add SMP support for Broadcom's Northstar Plus SoC
+cpu enable method. This changes also consolidates
+iProc family's - BCM NSP and BCM Kona, platform
+SMP handling in a common file.
 
 Northstar Plus SoC is based on ARM Cortex-A9
 revision r3p0 which requires configuration for ARM
@@ -15,14 +15,11 @@ configuration option.
 
 Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 ---
- arch/arm/mach-bcm/Makefile   |   2 +-
- arch/arm/mach-bcm/bcm_nsp.h  |  19 +++
- arch/arm/mach-bcm/headsmp.S  |  37 +++++
- arch/arm/mach-bcm/kona_smp.c | 202 ---------------------------
- arch/arm/mach-bcm/platsmp.c  | 326 +++++++++++++++++++++++++++++++++++++++++++
- 5 files changed, 383 insertions(+), 203 deletions(-)
- create mode 100644 arch/arm/mach-bcm/bcm_nsp.h
- create mode 100644 arch/arm/mach-bcm/headsmp.S
+ arch/arm/mach-bcm/Kconfig    |   2 +
+ arch/arm/mach-bcm/Makefile   |   8 +-
+ arch/arm/mach-bcm/kona_smp.c | 228 ----------------------------------
+ arch/arm/mach-bcm/platsmp.c  | 290 +++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 298 insertions(+), 230 deletions(-)
  delete mode 100644 arch/arm/mach-bcm/kona_smp.c
  create mode 100644 arch/arm/mach-bcm/platsmp.c
 
@@ -37,73 +34,11 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
  
  # BCM281XX and BCM21664 L2 cache control
  obj-$(CONFIG_ARCH_BCM_MOBILE_L2_CACHE) += kona_l2_cache.o
---- /dev/null
-+++ b/arch/arm/mach-bcm/bcm_nsp.h
-@@ -0,0 +1,19 @@
-+/*
-+ * Copyright (C) 2015 Broadcom Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License as
-+ * published by the Free Software Foundation version 2.
-+ *
-+ * This program is distributed "as is" WITHOUT ANY WARRANTY of any
-+ * kind, whether express or implied; without even the implied warranty
-+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#ifndef __BCM_NSP_H
-+#define __BCM_NSP_H
-+
-+extern void nsp_secondary_startup(void);
-+
-+#endif /* __BCM_NSP_H */
---- /dev/null
-+++ b/arch/arm/mach-bcm/headsmp.S
-@@ -0,0 +1,37 @@
-+/*
-+ * Copyright (C) 2015 Broadcom Corporation
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public License as
-+ * published by the Free Software Foundation version 2.
-+ *
-+ * This program is distributed "as is" WITHOUT ANY WARRANTY of any
-+ * kind, whether express or implied; without even the implied warranty
-+ * of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+ * GNU General Public License for more details.
-+ */
-+
-+#include <linux/linkage.h>
-+
-+/*
-+ * iProc specific entry point for secondary CPUs.  This provides
-+ * a "holding pen" into which all secondary cores are held until
-+ * we are ready for them to initialise.
-+ */
-+ENTRY(nsp_secondary_startup)
-+	mrc     p15, 0, r0, c0, c0, 5
-+	and     r0, r0, #15
-+	adr     r4, 1f
-+	ldmia   r4, {r5, r6}
-+	sub     r4, r4, r5
-+	add     r6, r6, r4
-+pen:	ldr     r7, [r6]
-+	cmp     r7, r0
-+	bne     pen
-+
-+	b    secondary_startup
-+
-+1:	.long   .
-+	.long   pen_release
-+
-+ENDPROC(nsp_secondary_startup)
 --- a/arch/arm/mach-bcm/kona_smp.c
 +++ /dev/null
-@@ -1,202 +0,0 @@
+@@ -1,228 +0,0 @@
 -/*
-- * Copyright (C) 2014 Broadcom Corporation
+- * Copyright (C) 2014-2015 Broadcom Corporation
 - * Copyright 2014 Linaro Limited
 - *
 - * This program is free software; you can redistribute it and/or
@@ -134,9 +69,10 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 -
 -/* Name of device node property defining secondary boot register location */
 -#define OF_SECONDARY_BOOT	"secondary-boot-reg"
+-#define MPIDR_CPUID_BITMASK	0x3
 -
 -/* I/O address of register used to coordinate secondary core startup */
--static u32	secondary_boot;
+-static u32	secondary_boot_addr;
 -
 -/*
 - * Enable the Cortex A9 Snoop Control Unit
@@ -182,10 +118,9 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 -static void __init bcm_smp_prepare_cpus(unsigned int max_cpus)
 -{
 -	static cpumask_t only_cpu_0 = { CPU_BITS_CPU0 };
--	struct device_node *node;
+-	struct device_node *cpus_node = NULL;
+-	struct device_node *cpu_node = NULL;
 -	int ret;
--
--	BUG_ON(secondary_boot);		/* We're called only once */
 -
 -	/*
 -	 * This function is only called via smp_ops->smp_prepare_cpu().
@@ -193,33 +128,58 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 -	 * and has an "enable-method" property that selects the SMP
 -	 * operations defined herein.
 -	 */
--	node = of_find_node_by_path("/cpus");
--	BUG_ON(!node);
+-	cpus_node = of_find_node_by_path("/cpus");
+-	if (!cpus_node)
+-		return;
 -
--	/*
--	 * Our secondary enable method requires a "secondary-boot-reg"
--	 * property to specify a register address used to request the
--	 * ROM code boot a secondary code.  If we have any trouble
--	 * getting this we fall back to uniprocessor mode.
--	 */
--	if (of_property_read_u32(node, OF_SECONDARY_BOOT, &secondary_boot)) {
--		pr_err("%s: missing/invalid " OF_SECONDARY_BOOT " property\n",
--			node->name);
--		ret = -ENOENT;		/* Arrange to disable SMP */
--		goto out;
+-	for_each_child_of_node(cpus_node, cpu_node) {
+-		u32 cpuid;
+-
+-		if (of_node_cmp(cpu_node->type, "cpu"))
+-			continue;
+-
+-		if (of_property_read_u32(cpu_node, "reg", &cpuid)) {
+-			pr_debug("%s: missing reg property\n",
+-				     cpu_node->full_name);
+-			ret = -ENOENT;
+-			goto out;
+-		}
+-
+-		/*
+-		 * "secondary-boot-reg" property should be defined only
+-		 * for secondary cpu
+-		 */
+-		if ((cpuid & MPIDR_CPUID_BITMASK) == 1) {
+-			/*
+-			 * Our secondary enable method requires a
+-			 * "secondary-boot-reg" property to specify a register
+-			 * address used to request the ROM code boot a secondary
+-			 * core. If we have any trouble getting this we fall
+-			 * back to uniprocessor mode.
+-			 */
+-			if (of_property_read_u32(cpu_node,
+-						OF_SECONDARY_BOOT,
+-						&secondary_boot_addr)) {
+-				pr_warn("%s: no" OF_SECONDARY_BOOT "property\n",
+-					cpu_node->name);
+-				ret = -ENOENT;
+-				goto out;
+-			}
+-		}
 -	}
 -
 -	/*
--	 * Enable the SCU on Cortex A9 based SoCs.  If -ENOENT is
+-	 * Enable the SCU on Cortex A9 based SoCs. If -ENOENT is
 -	 * returned, the SoC reported a uniprocessor configuration.
 -	 * We bail on any other error.
 -	 */
 -	ret = scu_a9_enable();
 -out:
--	of_node_put(node);
+-	of_node_put(cpu_node);
+-	of_node_put(cpus_node);
+-
 -	if (ret) {
 -		/* Update the CPU present map to reflect uniprocessor mode */
--		BUG_ON(ret != -ENOENT);
 -		pr_warn("disabling SMP\n");
 -		init_cpu_present(&only_cpu_0);
 -	}
@@ -243,7 +203,7 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 - * - Wait for the secondary boot register to be re-written, which
 - *   indicates the secondary core has started.
 - */
--static int bcm_boot_secondary(unsigned int cpu, struct task_struct *idle)
+-static int kona_boot_secondary(unsigned int cpu, struct task_struct *idle)
 -{
 -	void __iomem *boot_reg;
 -	phys_addr_t boot_func;
@@ -258,15 +218,16 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 -		return -EINVAL;
 -	}
 -
--	if (!secondary_boot) {
+-	if (!secondary_boot_addr) {
 -		pr_err("required secondary boot register not specified\n");
 -		return -EINVAL;
 -	}
 -
--	boot_reg = ioremap_nocache((phys_addr_t)secondary_boot, sizeof(u32));
+-	boot_reg = ioremap_nocache(
+-			(phys_addr_t)secondary_boot_addr, sizeof(u32));
 -	if (!boot_reg) {
 -		pr_err("unable to map boot register for cpu %u\n", cpu_id);
--		return -ENOSYS;
+-		return -ENOMEM;
 -	}
 -
 -	/*
@@ -295,18 +256,18 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 -
 -	pr_err("timeout waiting for cpu %u to start\n", cpu_id);
 -
--	return -ENOSYS;
+-	return -ENXIO;
 -}
 -
 -static struct smp_operations bcm_smp_ops __initdata = {
 -	.smp_prepare_cpus	= bcm_smp_prepare_cpus,
--	.smp_boot_secondary	= bcm_boot_secondary,
+-	.smp_boot_secondary	= kona_boot_secondary,
 -};
 -CPU_METHOD_OF_DECLARE(bcm_smp_bcm281xx, "brcm,bcm11351-cpu-method",
 -			&bcm_smp_ops);
 --- /dev/null
 +++ b/arch/arm/mach-bcm/platsmp.c
-@@ -0,0 +1,326 @@
+@@ -0,0 +1,290 @@
 +/*
 + * Copyright (C) 2014-2015 Broadcom Corporation
 + * Copyright 2014 Linaro Limited
@@ -336,8 +297,6 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +#include <asm/smp_plat.h>
 +#include <asm/smp_scu.h>
 +
-+#include "bcm_nsp.h"
-+
 +/* Size of mapped Cortex A9 SCU address space */
 +#define CORTEX_A9_SCU_SIZE	0x58
 +
@@ -346,27 +305,10 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +
 +/* Name of device node property defining secondary boot register location */
 +#define OF_SECONDARY_BOOT	"secondary-boot-reg"
++#define MPIDR_CPUID_BITMASK	0x3
 +
 +/* I/O address of register used to coordinate secondary core startup */
-+static u32	secondary_boot;
-+
-+static DEFINE_SPINLOCK(boot_lock);
-+
-+/*
-+ * Write pen_release in a way that is guaranteed to be visible to all
-+ * observers, irrespective of whether they're taking part in coherency
-+ * or not.  This is necessary for the hotplug code to work reliably.
-+ */
-+static void write_pen_release(int val)
-+{
-+	pen_release = val;
-+	/*
-+	 * Ensure write to pen_release is visible to the other cores,
-+	 * here - primary core
-+	 */
-+	smp_wmb();
-+	sync_cache_w(&pen_release);
-+}
++static u32	secondary_boot_addr;
 +
 +/*
 + * Enable the Cortex A9 Snoop Control Unit
@@ -409,18 +351,18 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +	return 0;
 +}
 +
-+static int nsp_write_lut(void (*secondary_startup) (void))
++static int nsp_write_lut(void)
 +{
 +	void __iomem *sku_rom_lut;
 +	phys_addr_t secondary_startup_phy;
 +
-+	if (!secondary_boot) {
++	if (!secondary_boot_addr) {
 +		pr_warn("required secondary boot register not specified\n");
 +		return -EINVAL;
 +	}
 +
-+	sku_rom_lut = ioremap_nocache((phys_addr_t)secondary_boot,
-+						sizeof(secondary_boot));
++	sku_rom_lut = ioremap_nocache((phys_addr_t)secondary_boot_addr,
++						sizeof(secondary_boot_addr));
 +	if (!sku_rom_lut) {
 +		pr_warn("unable to ioremap SKU-ROM LUT register\n");
 +		return -ENOMEM;
@@ -430,9 +372,8 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +	BUG_ON(secondary_startup_phy > (phys_addr_t)U32_MAX);
 +
 +	writel_relaxed(secondary_startup_phy, sku_rom_lut);
-+	/*
-+	 * Ensure the write is visible to the secondary core.
-+	 */
++
++	/* Ensure the write is visible to the secondary core */
 +	smp_wmb();
 +
 +	iounmap(sku_rom_lut);
@@ -440,27 +381,12 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +	return 0;
 +}
 +
-+static void nsp_secondary_init(unsigned int cpu)
-+{
-+	/*
-+	 * Let the primary cpu know we are out of holding pen.
-+	 */
-+	write_pen_release(-1);
-+
-+	/*
-+	 * Synchronise with the boot thread.
-+	 */
-+	spin_lock(&boot_lock);
-+	spin_unlock(&boot_lock);
-+}
-+
 +static void __init bcm_smp_prepare_cpus(unsigned int max_cpus)
 +{
 +	static cpumask_t only_cpu_0 = { CPU_BITS_CPU0 };
-+	struct device_node *node;
++	struct device_node *cpus_node = NULL;
++	struct device_node *cpu_node = NULL;
 +	int ret;
-+
-+	BUG_ON(secondary_boot);		/* We're called only once */
 +
 +	/*
 +	 * This function is only called via smp_ops->smp_prepare_cpu().
@@ -468,30 +394,56 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +	 * and has an "enable-method" property that selects the SMP
 +	 * operations defined herein.
 +	 */
-+	node = of_find_node_by_path("/cpus");
-+	BUG_ON(!node);
++	cpus_node = of_find_node_by_path("/cpus");
++	if (!cpus_node)
++		return;
 +
-+	/*
-+	 * Our secondary enable method requires a "secondary-boot-reg"
-+	 * property to specify a register address used to request the
-+	 * ROM code boot a secondary core.  If we have any trouble
-+	 * getting this we fall back to uniprocessor mode.
-+	 */
-+	if (of_property_read_u32(node, OF_SECONDARY_BOOT, &secondary_boot)) {
-+		pr_warn("%s: missing/invalid " OF_SECONDARY_BOOT " property\n",
-+			node->name);
-+		ret = -ENOENT;		/* Arrange to disable SMP */
-+		goto out;
++	for_each_child_of_node(cpus_node, cpu_node) {
++		u32 cpuid;
++
++		if (of_node_cmp(cpu_node->type, "cpu"))
++			continue;
++
++		if (of_property_read_u32(cpu_node, "reg", &cpuid)) {
++			pr_debug("%s: missing reg property\n",
++				     cpu_node->full_name);
++			ret = -ENOENT;
++			goto out;
++		}
++
++		/*
++		 * "secondary-boot-reg" property should be defined only
++		 * for secondary cpu
++		 */
++		if ((cpuid & MPIDR_CPUID_BITMASK) == 1) {
++			/*
++			 * Our secondary enable method requires a
++			 * "secondary-boot-reg" property to specify a register
++			 * address used to request the ROM code boot a secondary
++			 * core. If we have any trouble getting this we fall
++			 * back to uniprocessor mode.
++			 */
++			if (of_property_read_u32(cpu_node,
++						OF_SECONDARY_BOOT,
++						&secondary_boot_addr)) {
++				pr_warn("%s: no" OF_SECONDARY_BOOT "property\n",
++					cpu_node->name);
++				ret = -ENOENT;
++				goto out;
++			}
++		}
 +	}
 +
 +	/*
-+	 * Enable the SCU on Cortex A9 based SoCs.  If -ENOENT is
++	 * Enable the SCU on Cortex A9 based SoCs. If -ENOENT is
 +	 * returned, the SoC reported a uniprocessor configuration.
 +	 * We bail on any other error.
 +	 */
 +	ret = scu_a9_enable();
 +out:
-+	of_node_put(node);
++	of_node_put(cpu_node);
++	of_node_put(cpus_node);
++
 +	if (ret) {
 +		/* Update the CPU present map to reflect uniprocessor mode */
 +		pr_warn("disabling SMP\n");
@@ -532,12 +484,13 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +		return -EINVAL;
 +	}
 +
-+	if (!secondary_boot) {
++	if (!secondary_boot_addr) {
 +		pr_err("required secondary boot register not specified\n");
 +		return -EINVAL;
 +	}
 +
-+	boot_reg = ioremap_nocache((phys_addr_t)secondary_boot, sizeof(u32));
++	boot_reg = ioremap_nocache(
++			(phys_addr_t)secondary_boot_addr, sizeof(u32));
 +	if (!boot_reg) {
 +		pr_err("unable to map boot register for cpu %u\n", cpu_id);
 +		return -ENOMEM;
@@ -574,47 +527,20 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +
 +static int nsp_boot_secondary(unsigned int cpu, struct task_struct *idle)
 +{
-+	unsigned long timeout;
 +	int ret;
 +
 +	/*
 +	 * After wake up, secondary core branches to the startup
 +	 * address programmed at SKU ROM LUT location.
 +	 */
-+	ret = nsp_write_lut(nsp_secondary_startup);
++	ret = nsp_write_lut();
 +	if (ret) {
 +		pr_err("unable to write startup addr to SKU ROM LUT\n");
 +		goto out;
 +	}
 +
-+	/*
-+	 * The secondary processor is waiting to be released from
-+	 * the holding pen - release it, then wait for it to flag
-+	 * that it has been released by resetting pen_release.
-+	 */
-+	spin_lock(&boot_lock);
-+
-+	write_pen_release(cpu_logical_map(cpu));
-+	/*
-+	 * Send an Event to wake up the secondary core which is in
-+	 * WFE state. Updated pen_release should also be visible to
-+	 * the secondary core.
-+	 */
-+	dsb_sev();
-+
-+	timeout = jiffies + (1 * HZ);
-+	while (time_before(jiffies, timeout)) {
-+		/* Make sure loads on other CPU is visible */
-+		smp_rmb();
-+		if (pen_release == -1)
-+			break;
-+
-+		udelay(10);
-+	}
-+
-+	spin_unlock(&boot_lock);
-+
-+	ret = pen_release != -1 ? -ENXIO : 0;
++	/* Send a CPU wakeup interrupt to the secondary core */
++	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
 +
 +out:
 +	return ret;
@@ -629,7 +555,6 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +
 +struct smp_operations nsp_smp_ops __initdata = {
 +	.smp_prepare_cpus	= bcm_smp_prepare_cpus,
-+	.smp_secondary_init	= nsp_secondary_init,
 +	.smp_boot_secondary	= nsp_boot_secondary,
 +};
 +CPU_METHOD_OF_DECLARE(bcm_smp_nsp, "brcm,bcm-nsp-smp", &nsp_smp_ops);
