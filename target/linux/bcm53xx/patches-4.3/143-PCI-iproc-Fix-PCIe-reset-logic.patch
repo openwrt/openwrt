@@ -1,0 +1,62 @@
+From 199ff14100095d52cd1b232cc0f3b12f348b5b07 Mon Sep 17 00:00:00 2001
+From: Ray Jui <rjui@broadcom.com>
+Date: Tue, 15 Sep 2015 17:39:18 -0700
+Subject: [PATCH 143/147] PCI: iproc: Fix PCIe reset logic
+
+The current reset logic does not always properly reset the device.  For
+example, in the case when the perst_b signal is already de-asserted in the
+bootloader, the current reset logic fails to trigger a proper assert ->
+de-assert reset sequence.
+
+Fix the issue by always triggering the proper reset sequence.
+
+Also explicitly select the desired reset source, i.e., perst_b, and reduce
+the wait time after the device comes out of reset from 250 ms to 100 ms,
+based on recommendation from the ASIC team.
+
+Tested-by: Vladimir Dreizin <vdreizin@broadcom.com>
+Tested-by: Darren Edamura <dedamura@broadcom.com>
+Signed-off-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+Reviewed-by: Vladimir Dreizin <vdreizin@broadcom.com>
+Reviewed-by: Trac Hoang <trhoang@broadcom.com>
+Reviewed-by: Scott Branden <sbranden@broadcom.com>
+---
+ drivers/pci/host/pcie-iproc.c | 15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+--- a/drivers/pci/host/pcie-iproc.c
++++ b/drivers/pci/host/pcie-iproc.c
+@@ -31,6 +31,8 @@
+ #include "pcie-iproc.h"
+ 
+ #define CLK_CONTROL_OFFSET           0x000
++#define EP_PERST_SOURCE_SELECT_SHIFT 2
++#define EP_PERST_SOURCE_SELECT       BIT(EP_PERST_SOURCE_SELECT_SHIFT)
+ #define EP_MODE_SURVIVE_PERST_SHIFT  1
+ #define EP_MODE_SURVIVE_PERST        BIT(EP_MODE_SURVIVE_PERST_SHIFT)
+ #define RC_PCIE_RST_OUTPUT_SHIFT     0
+@@ -119,15 +121,18 @@ static void iproc_pcie_reset(struct ipro
+ 	u32 val;
+ 
+ 	/*
+-	 * Configure the PCIe controller as root complex and send a downstream
+-	 * reset
++	 * Select perst_b signal as reset source. Put the device into reset,
++	 * and then bring it out of reset
+ 	 */
+-	val = EP_MODE_SURVIVE_PERST | RC_PCIE_RST_OUTPUT;
++	val = readl(pcie->base + CLK_CONTROL_OFFSET);
++	val &= ~EP_PERST_SOURCE_SELECT & ~EP_MODE_SURVIVE_PERST &
++		~RC_PCIE_RST_OUTPUT;
+ 	writel(val, pcie->base + CLK_CONTROL_OFFSET);
+ 	udelay(250);
+-	val &= ~EP_MODE_SURVIVE_PERST;
++
++	val |= RC_PCIE_RST_OUTPUT;
+ 	writel(val, pcie->base + CLK_CONTROL_OFFSET);
+-	msleep(250);
++	msleep(100);
+ }
+ 
+ static int iproc_pcie_check_link(struct iproc_pcie *pcie, struct pci_bus *bus)
