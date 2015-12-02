@@ -9,9 +9,9 @@ include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
 PKG_NAME:=xtables-addons
-PKG_VERSION:=2.9
+PKG_VERSION:=2.10
 PKG_RELEASE:=1
-PKG_MD5SUM:=87df49f3804036eccd4619f566d26bb3
+PKG_MD5SUM:=727bf0dd4a3d9c65724267bd0d5d80b0
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@SF/xtables-addons
