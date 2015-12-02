@@ -1823,11 +1823,11 @@ endef
 
 
 define KernelPackage/ath9k-htc/install
-	$(INSTALL_DIR) $(1)/lib/firmware
+	$(INSTALL_DIR) $(1)/lib/firmware/ath9k_htc
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/htc_9271.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/htc_7010.fw \
-		$(1)/lib/firmware/
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ath9k_htc/htc_9271-1.4.0.fw \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ath9k_htc/htc_7010-1.4.0.fw \
+		$(1)/lib/firmware/ath9k_htc
 endef
 
 define KernelPackage/b43/install
