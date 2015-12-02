@@ -180,6 +180,9 @@ brcm63xx_dt_detect() {
 	"Netgear DGND3700v1/DGND3800B")
 		board_name="dgnd3700v1_dgnd3800b"
 		;;
+	"NuCom R5010UN v2")
+		board_name="r5010un_v2"
+		;;
 	"Pirelli A226G")
 		board_name="a226g"
 		;;

@@ -102,6 +102,9 @@ set_state() {
 	p870hw-51a_v2)
 		status_led="P870HW-51a:green:power"
 		;;
+	r5010un_v2)
+		status_led="R5010UNv2:green:power"
+		;;
 	rta770bw)
 		status_led="RTA770BW:green:diag"
 		;;

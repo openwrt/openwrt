@@ -590,6 +590,8 @@ $(eval $(call bcm63xxCfeRamdisk,DG834GV4,DG834GTv4,dg834g_v4,96348W3,6348))
 $(eval $(call bcm63xxCfeNetgear,DGND3700v1_3800B,DGND3700v1,dgnd3700v1,96368MVWG,6368,--image-offset 0x20000 --block-size 0x20000,U12L144T01_NETGEAR_NEWLED,1))
 # Netgear DGND3800B
 $(eval $(call bcm63xxCfeNetgear,DGND3700v1_3800B,DGND3800B,dgnd3700v1,96368MVWG,6368,--image-offset 0x20000 --block-size 0x20000,U12L144T11_NETGEAR_NEWLED,1))
+# NuCom R5010UNv2
+$(eval $(call bcm63xxCfe,R5010UNV2,R5010UNv2,r5010unv2,96328ang,6328,--pad 8))
 # Pirelli Alice Gate VoIP 2 Plus Wi-Fi AGPF-S0
 $(eval $(call bcm63xxCfe,AGPF_S0,AGV2+W,agpf-s0,AGPF-S0,6358,--block-size 0x20000 --image-offset 0x20000 --signature2 IMAGE --tag-version 8))
 # Pirelli A226G
