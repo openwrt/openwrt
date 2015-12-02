@@ -34,8 +34,8 @@ ucidef_add_switch "switch0" "1" "1"
 # Workaround for devices using CPU port 8 (connected to eth2)
 case "$board" in
 netgear,r8000)
-	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
-	ucidef_add_switch_vlan "switch0" "2" "4 5t"
+	ucidef_add_switch_ports "switch0" \
+		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@$ifname"
 	board_config_flush
 	exit 0
 	;;
@@ -50,19 +50,19 @@ vlan1ports="$(echo $(nvram get vlan1ports | tr " " "\n" | sort))"
 vlan2ports="$(echo $(nvram get vlan2ports | tr " " "\n" | sort))"
 if echo "$vlan1ports" | egrep -q "^1 2 3 4 5" && \
    echo "$vlan2ports" | egrep -q "^0 5"; then
-	ucidef_add_switch_vlan "switch0" "1" "1 2 3 4 5t"
-	ucidef_add_switch_vlan "switch0" "2" "0 5t"
+	ucidef_add_switch_ports "switch0" \
+		"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5t@$ifname"
 elif echo "$vlan1ports" | egrep -q "^1 2 3 5 7" && \
      echo "$vlan2ports" | egrep -q "^0 7"; then
-	ucidef_add_switch_vlan "switch0" "1" "1 2 3 5 7t"
-	ucidef_add_switch_vlan "switch0" "2" "0 7t"
+	ucidef_add_switch_ports "switch0" \
+		"1:lan" "2:lan" "3:lan" "5:lan" "0:wan" "7t@$ifname"
 elif echo "$vlan1ports" | egrep -q "^0 1 2 3 5 7 8" && \
      echo "$vlan2ports" | egrep -q "^4 8"; then
-	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5 7 8t"
-	ucidef_add_switch_vlan "switch0" "2" "4 8t"
+	ucidef_add_switch_ports "switch0" \
+		"0:lan" "1:lan" "2:lan" "3:lan" "5:lan" "7:lan" "4:wan" "8t@$ifname"
 else
-	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5t"
-	ucidef_add_switch_vlan "switch0" "2" "4 5t"
+	ucidef_add_switch_ports "switch0" \
+		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5t@$ifname"
 fi
 
 board_config_flush
