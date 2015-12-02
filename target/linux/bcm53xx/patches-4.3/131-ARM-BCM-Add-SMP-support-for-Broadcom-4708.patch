@@ -27,15 +27,14 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
  			device_type = "cpu";
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
-@@ -38,6 +38,8 @@ config ARCH_BCM_CYGNUS
- config ARCH_BCM_5301X
- 	bool "Broadcom BCM470X / BCM5301X ARM SoC" if ARCH_MULTI_V7
- 	select ARCH_BCM_IPROC
-+	select ARM_ERRATA_764369 if SMP
+@@ -41,6 +41,7 @@ config ARCH_BCM_5301X
+ 	select ARM_ERRATA_754322
+ 	select ARM_ERRATA_775420
+ 	select ARM_ERRATA_764369 if SMP
 +	select HAVE_SMP
+ 
  	help
  	  Support for Broadcom BCM470X and BCM5301X SoCs with ARM CPU cores.
- 
 --- a/arch/arm/mach-bcm/Makefile
 +++ b/arch/arm/mach-bcm/Makefile
 @@ -36,6 +36,9 @@ obj-$(CONFIG_ARCH_BCM2835)	+= board_bcm2
