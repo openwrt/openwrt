@@ -1,0 +1,18 @@
+--- a/fs/Kconfig
++++ b/fs/Kconfig
+@@ -30,6 +30,7 @@ source "fs/ocfs2/Kconfig"
+ source "fs/btrfs/Kconfig"
+ source "fs/nilfs2/Kconfig"
+ source "fs/f2fs/Kconfig"
++source "fs/yaffs2/Kconfig"
+ 
+ config FS_DAX
+ 	bool "Direct Access (DAX) support"
+--- a/fs/Makefile
++++ b/fs/Makefile
+@@ -126,3 +126,5 @@ obj-y				+= exofs/ # Multiple modules
+ obj-$(CONFIG_CEPH_FS)		+= ceph/
+ obj-$(CONFIG_PSTORE)		+= pstore/
+ obj-$(CONFIG_EFIVAR_FS)		+= efivarfs/
++obj-$(CONFIG_YAFFS_FS)		+= yaffs2/
++

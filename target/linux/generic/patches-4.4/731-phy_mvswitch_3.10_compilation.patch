@@ -1,0 +1,35 @@
+From e6a5abb9a02be0bceb4782d9f736bfb4ae217505 Mon Sep 17 00:00:00 2001
+From: Jonas Gorski <jogo@openwrt.org>
+Date: Sat, 21 Sep 2013 13:56:51 +0200
+Subject: [PATCH] phy: mvswitch: fix 3.10 compilation
+
+Update to API changes in 3.10.
+
+Signed-off-by: Jonas Gorsi <jogo@openwrt.org>
+---
+ target/linux/generic/files/drivers/net/phy/mvswitch.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/phy/mvswitch.c
++++ b/drivers/net/phy/mvswitch.c
+@@ -173,7 +173,7 @@ mvswitch_mangle_rx(struct net_device *de
+ 	if (vlan == -1)
+ 		return;
+ 
+-	__vlan_hwaccel_put_tag(skb, vlan);
++	__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
+ }
+ 
+ 
+@@ -307,9 +307,9 @@ mvswitch_config_init(struct phy_device *
+ 
+ #ifdef HEADER_MODE
+ 	dev->priv_flags |= IFF_NO_IP_ALIGN;
+-	dev->features |= NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX;
++	dev->features |= NETIF_F_HW_VLAN_CTAG_RX | NETIF_F_HW_VLAN_CTAG_TX;
+ #else
+-	dev->features |= NETIF_F_HW_VLAN_RX;
++	dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+ #endif
+ 
+ 	return 0;

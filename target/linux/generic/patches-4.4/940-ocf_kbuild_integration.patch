@@ -1,0 +1,20 @@
+--- a/crypto/Kconfig
++++ b/crypto/Kconfig
+@@ -1654,3 +1654,6 @@ source crypto/asymmetric_keys/Kconfig
+ source certs/Kconfig
+ 
+ endif	# if CRYPTO
++
++source "crypto/ocf/Kconfig"
++
+--- a/crypto/Makefile
++++ b/crypto/Makefile
+@@ -123,6 +123,8 @@ obj-$(CONFIG_CRYPTO_USER_API_SKCIPHER) +
+ obj-$(CONFIG_CRYPTO_USER_API_RNG) += algif_rng.o
+ obj-$(CONFIG_CRYPTO_USER_API_AEAD) += algif_aead.o
+ 
++obj-$(CONFIG_OCF_OCF) += ocf/
++
+ #
+ # generic algorithms and the async_tx api
+ #
