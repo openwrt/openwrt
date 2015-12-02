@@ -149,6 +149,23 @@
 			status = "disabled";
 		};
 
+		gdma: gdma@700 {
+			compatible = "ralink,rt305x-gdma";
+			reg = <0x700 0x100>;
+
+			resets = <&rstctrl 14>;
+			reset-names = "dma";
+
+			interrupt-parent = <&intc>;
+			interrupts = <7>;
+
+			#dma-cells = <1>;
+			#dma-channels = <8>;
+			#dma-requests = <8>;
+
+			status = "disabled";
+		};
+
 		spi0: spi@b00 {
 			compatible = "ralink,rt3050-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x100>;

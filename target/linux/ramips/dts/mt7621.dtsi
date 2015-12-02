@@ -144,6 +144,40 @@
 				m25p,chunked-io = <32>;
 			};
 		};
+
+		gdma: gdma@2800 {
+			compatible = "ralink,rt3883-gdma";
+			reg = <0x2800 0x800>;
+
+			resets = <&rstctrl 14>;
+			reset-names = "dma";
+
+			interrupt-parent = <&gic>;
+			interrupts = <0 13 4>;
+
+			#dma-cells = <1>;
+			#dma-channels = <16>;
+			#dma-requests = <16>;
+
+			status = "disabled";
+		};
+
+		hsdma: hsdma@7000 {
+			compatible = "mediatek,mt7621-hsdma";
+			reg = <0x7000 0x1000>;
+
+			resets = <&rstctrl 5>;
+			reset-names = "hsdma";
+
+			interrupt-parent = <&gic>;
+			interrupts = <0 11 4>;
+
+			#dma-cells = <1>;
+			#dma-channels = <1>;
+			#dma-requests = <1>;
+
+			status = "disabled";
+		};
 	};
 
 	pinctrl: pinctrl {
