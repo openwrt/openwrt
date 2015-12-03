@@ -1,16 +1,12 @@
 #!/bin/sh
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 
-[ -e /etc/config/network ] && exit 0
-
-touch /etc/config/network
-
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/at91.sh
 
-ucidef_set_interface_loopback
+board_config_update
 
 case "$(at91_board_name)" in
 
@@ -24,6 +20,6 @@ sama5d3_xplained)
 
 esac
 
-uci commit network
+board_config_flush
 
 exit 0
