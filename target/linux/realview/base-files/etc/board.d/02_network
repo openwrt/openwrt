@@ -1,0 +1,7 @@
+#!/bin/sh
+
+. /lib/functions/uci-defaults-new.sh
+
+board_config_update
+ucidef_set_interface_lan "eth0" "dhcp"
+board_config_flush
