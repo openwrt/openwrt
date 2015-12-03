@@ -2,6 +2,7 @@
 
 CFG=/etc/board.json
 
+. /lib/functions.sh
 . /usr/share/libubox/jshn.sh
 
 json_select_array() {
@@ -33,8 +34,7 @@ _ucidef_set_interface() {
 	local iface="$2"
 
 	json_select_object "$name"
-	json_add_string ifname "${iface%%.*}"
-	[ "$iface" = "${iface%%.*}" ] || json_add_boolean create_vlan 1
+	json_add_string ifname "$iface"
 	json_select ..
 }
 
@@ -114,28 +114,123 @@ ucidef_add_switch_attr() {
 	json_select ..
 }
 
+_ucidef_add_switch_port() {
+	# inherited: $num $device $need_tag $role $index $prev_role
+	# inherited: $n_cpu $n_ports $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
+
+	n_ports=$((n_ports + 1))
+
+	json_select_array ports
+		json_add_object
+			json_add_int num "$num"
+			[ -n "$device"   ] && json_add_string  device   "$device"
+			[ -n "$need_tag" ] && json_add_boolean need_tag "$need_tag"
+			[ -n "$role"     ] && json_add_string  role     "$role"
+			[ -n "$index"    ] && json_add_int     index    "$index"
+		json_close_object
+	json_select ..
+
+	# record pointer to cpu entry for lookup in _ucidef_finish_switch_roles()
+	[ -n "$device" ] && {
+		export "cpu$n_cpu=$n_ports"
+		n_cpu=$((n_cpu + 1))
+	}
+
+	# create/append object to role list
+	[ -n "$role" ] && {
+		json_select_array roles
+
+		if [ "$role" != "$prev_role" ]; then
+			json_add_object
+				json_add_string role "$role"
+				json_add_string ports "$num"
+			json_close_object
+
+			prev_role="$role"
+			n_vlan=$((n_vlan + 1))
+		else
+			json_select_object "$n_vlan"
+				json_get_var port ports
+				json_add_string ports "$port $num"
+			json_select ..
+		fi
+
+		json_select ..
+	}
+}
+
+_ucidef_finish_switch_roles() {
+	# inherited: $name $n_cpu $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
+	local index role roles num device need_tag port ports
+
+	json_select switch
+		json_select "$name"
+			json_get_keys roles roles
+		json_select ..
+	json_select ..
+
+	for index in $roles; do
+		eval "port=\$cpu$(((index - 1) % n_cpu))"
+
+		json_select switch
+			json_select "$name"
+				json_select ports
+					json_select "$port"
+						json_get_vars num device need_tag
+					json_select ..
+				json_select ..
+
+				if [ $n_vlan -gt $n_cpu -o ${need_tag:-0} -eq 1 ]; then
+					num="${num}t"
+					device="${device}.${index}"
+				fi
+
+				json_select roles
+					json_select "$index"
+						json_get_vars role ports
+						json_add_string ports "$ports $num"
+						json_add_string device "$device"
+					json_select ..
+				json_select ..
+			json_select ..
+		json_select ..
+
+		json_select_object network
+			json_select_object "$role"
+				# attach previous interfaces (for multi-switch devices)
+				local prev_device; json_get_var prev_device ifname
+				if ! list_contains prev_device "$device"; then
+					device="${prev_device:+$prev_device }$device"
+				fi
+				json_add_string ifname "$device"
+			json_select ..
+		json_select ..
+	done
+}
+
 ucidef_add_switch_ports() {
 	local name="$1"; shift
-	local port num role dev idx tag
+	local port num role device index need_tag prev_role
+	local cpu0 cpu1 cpu2 cpu3 cpu4 cpu5
+	local n_cpu=0 n_vlan=0 n_ports=0
 
 	json_select_object switch
 	json_select_object "$name"
-	json_select_array ports
 
 	for port in "$@"; do
 		case "$port" in
 			[0-9]*@*)
 				num="${port%%@*}"
-				dev="${port##*@}"
-				tag=0
+				device="${port##*@}"
+				need_tag=0
 				[ "${num%t}" != "$num" ] && {
 					num="${num%t}"
-					tag=1
+					need_tag=1
 				}
 			;;
 			[0-9]*:*:[0-9]*)
 				num="${port%%:*}"
-				idx="${port##*:}"
+				index="${port##*:}"
 				role="${port#[0-9]*:}"; role="${role%:*}"
 			;;
 			[0-9]*:*)
@@ -144,22 +239,17 @@ ucidef_add_switch_ports() {
 			;;
 		esac
 
-		if [ -n "$num" ] && [ -n "$dev$role" ]; then
-			json_add_object
-			json_add_int num "$num"
-			[ -n "$dev" ] && json_add_string device "$dev"
-			[ -n "$tag" ] && json_add_boolean need_tag "$tag"
-			[ -n "$role" ] && json_add_string role "$role"
-			[ -n "$idx" ] && json_add_int index "$idx"
-			json_close_object
+		if [ -n "$num" ] && [ -n "$device$role" ]; then
+			_ucidef_add_switch_port
 		fi
 
-		unset num dev role idx tag
+		unset num device role index need_tag
 	done
 
 	json_select ..
 	json_select ..
-	json_select ..
+
+	_ucidef_finish_switch_roles
 }
 
 ucidef_add_switch_port_attr() {
@@ -194,38 +284,6 @@ ucidef_add_switch_port_attr() {
 	done
 
 	json_select ..
-	json_select ..
-	json_select ..
-}
-
-ucidef_add_switch_vlan() {
-	local name="$1"
-	local vlan="$2"
-	local ports="$3"
-	local cpu_port=''
-
-	case "$vlan" in
-	1)	vlan=lan;;
-	2)	vlan=wan;;
-	*)	vlan=vlan$vlan;;
-	esac
-
-	json_select_object switch
-	json_select_object "$name"
-	json_select_object vlans
-
-	json_add_array "$vlan"
-	for p in $ports; do
-		if [ ${p%t} != $p ]; then
-			cpu_port=$p
-		else
-			json_add_int "" $p
-		fi
-	done
-	json_close_array
-
-	json_select ..
-	[ -n "$cpu_port" ] && json_add_int cpu_port "$cpu_port"
 	json_select ..
 	json_select ..
 }
