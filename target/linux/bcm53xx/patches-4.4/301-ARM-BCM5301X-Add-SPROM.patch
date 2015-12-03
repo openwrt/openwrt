@@ -1,0 +1,26 @@
+From d404e0b22356078a51719fa911f6e09cb1a72d80 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 7 Jun 2015 16:18:18 +0200
+Subject: [PATCH] ARM: BCM5301X: Add SPROM
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm5301x.dtsi | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm5301x.dtsi
++++ b/arch/arm/boot/dts/bcm5301x.dtsi
+@@ -136,6 +136,10 @@
+ 		};
+ 	};
+ 
++	sprom0: sprom@0 {
++		compatible = "brcm,bcm47xx-sprom";
++	};
++
+ 	axi@18000000 {
+ 		compatible = "brcm,bus-axi";
+ 		reg = <0x18000000 0x1000>;

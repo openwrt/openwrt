@@ -1,0 +1,173 @@
+From 36b2fbb3badf0e32b371e1f7579a95d4fe25c0e1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Wed, 14 Jan 2015 09:13:58 +0100
+Subject: [PATCH] ARM: BCM5301X: Specify RAM on devices by including HIGHMEM
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts  | 3 ++-
+ arch/arm/boot/dts/bcm4708-netgear-r6250.dts        | 3 ++-
+ arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts     | 3 ++-
+ arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts        | 3 ++-
+ arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts | 3 ++-
+ 5 files changed, 10 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
++++ b/arch/arm/boot/dts/bcm4708-buffalo-wzr-1750dhp.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x18000000>;
+ 	};
+ 
+ 	axi@18000000 {
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6250.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	axi@18000000 {
+--- a/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
++++ b/arch/arm/boot/dts/bcm4708-netgear-r6300-v2.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
++++ b/arch/arm/boot/dts/bcm47081-asus-rt-n18u.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-600dhp2.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	spi {
+--- a/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
++++ b/arch/arm/boot/dts/bcm47081-buffalo-wzr-900dhp.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	gpio-keys {
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	axi@18000000 {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac56u.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
++++ b/arch/arm/boot/dts/bcm4708-asus-rt-ac68u.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
++++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x18000000>;
+ 	};
+ 
+ 	clocks {
+--- a/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
++++ b/arch/arm/boot/dts/bcm4708-smartrg-sr400ac.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
++++ b/arch/arm/boot/dts/bcm4709-asus-rt-ac87u.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {
+--- a/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r7000.dts
+@@ -21,7 +21,8 @@
+ 	};
+ 
+ 	memory {
+-		reg = <0x00000000 0x08000000>;
++		reg = <0x00000000 0x08000000
++		       0x88000000 0x08000000>;
+ 	};
+ 
+ 	leds {

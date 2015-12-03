@@ -1,0 +1,42 @@
+From 21500872c1dba33848ddcf6bea97d58772675d36 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 17 May 2015 14:00:52 +0200
+Subject: [PATCH] mtd: bcm47xxpart: workaround for Asus RT-AC87U "asus"
+ partition
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ drivers/mtd/bcm47xxpart.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/drivers/mtd/bcm47xxpart.c
++++ b/drivers/mtd/bcm47xxpart.c
+@@ -14,6 +14,7 @@
+ #include <linux/slab.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/partitions.h>
++#include <linux/of.h>
+ 
+ #include <uapi/linux/magic.h>
+ 
+@@ -135,6 +136,17 @@ static int bcm47xxpart_parse(struct mtd_
+ 			break;
+ 		}
+ 
++		/*
++		 * Ugly workaround for Asus RT-AC87U and its "asus" partition.
++		 * It uses JFFS2 which we don't (want to) detect. We should
++		 * probably use DT to define partitions but we need a working
++		 * TRX firmware splitter first.
++		 */
++		if (of_machine_is_compatible("asus,rt-ac87u") && offset == 0x7ec0000) {
++			bcm47xxpart_add_part(&parts[curr_part++], "asus", offset, MTD_WRITEABLE);
++			continue;
++		}
++
+ 		/* Read beginning of the block */
+ 		if (mtd_read(master, offset, BCM47XXPART_BYTES_TO_READ,
+ 			     &bytes_read, (uint8_t *)buf) < 0) {
