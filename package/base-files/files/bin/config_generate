@@ -236,6 +236,16 @@ generate_led() {
 				set system.$cfg.port_mask='$port_mask'
 			EOF
 		;;
+
+		timer)
+			local delayon delayoff
+			json_get_vars delayon delayoff
+			uci -q batch <<-EOF
+				set system.$cfg.trigger='timer'
+				set system.$cfg.delayon='$delayon'
+				set system.$cfg.delayoff='$delayoff'
+			EOF
+		;;
 	esac
 
 	json_select ..
