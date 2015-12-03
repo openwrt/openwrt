@@ -82,35 +82,6 @@ ucidef_set_interfaces_lan_wan() {
 	json_select ..
 }
 
-ucidef_add_switch() {
-	local name="$1"
-
-	json_select_object switch
-		json_select_object "$name"
-			json_add_boolean enable 1
-			json_add_boolean reset 1
-		json_select ..
-	json_select ..
-}
-
-ucidef_add_switch_attr() {
-	local name="$1"
-	local key="$2"
-	local val="$3"
-
-	json_select_object switch
-		json_select_object "$name"
-
-		case "$val" in
-			true|false) [ "$val" != "true" ]; json_add_boolean "$key" $? ;;
-			[0-9]) json_add_int "$key" "$val" ;;
-			*) json_add_string "$key" "$val" ;;
-		esac
-
-		json_select ..
-	json_select ..
-}
-
 _ucidef_add_switch_port() {
 	# inherited: $num $device $need_tag $role $index $prev_role
 	# inherited: $n_cpu $n_ports $n_vlan $cpu0 $cpu1 $cpu2 $cpu3 $cpu4 $cpu5
@@ -205,48 +176,67 @@ _ucidef_finish_switch_roles() {
 	done
 }
 
-ucidef_add_switch_ports() {
+ucidef_add_switch() {
 	local name="$1"; shift
 	local port num role device index need_tag prev_role
 	local cpu0 cpu1 cpu2 cpu3 cpu4 cpu5
 	local n_cpu=0 n_vlan=0 n_ports=0
 
 	json_select_object switch
-	json_select_object "$name"
+		json_select_object "$name"
+			json_add_boolean enable 1
+			json_add_boolean reset 1
 
-	for port in "$@"; do
-		case "$port" in
-			[0-9]*@*)
-				num="${port%%@*}"
-				device="${port##*@}"
-				need_tag=0
-				[ "${num%t}" != "$num" ] && {
-					num="${num%t}"
-					need_tag=1
-				}
-			;;
-			[0-9]*:*:[0-9]*)
-				num="${port%%:*}"
-				index="${port##*:}"
-				role="${port#[0-9]*:}"; role="${role%:*}"
-			;;
-			[0-9]*:*)
-				num="${port%%:*}"
-				role="${port##*:}"
-			;;
-		esac
+			for port in "$@"; do
+				case "$port" in
+					[0-9]*@*)
+						num="${port%%@*}"
+						device="${port##*@}"
+						need_tag=0
+						[ "${num%t}" != "$num" ] && {
+							num="${num%t}"
+							need_tag=1
+						}
+					;;
+					[0-9]*:*:[0-9]*)
+						num="${port%%:*}"
+						index="${port##*:}"
+						role="${port#[0-9]*:}"; role="${role%:*}"
+					;;
+					[0-9]*:*)
+						num="${port%%:*}"
+						role="${port##*:}"
+					;;
+				esac
 
-		if [ -n "$num" ] && [ -n "$device$role" ]; then
-			_ucidef_add_switch_port
-		fi
+				if [ -n "$num" ] && [ -n "$device$role" ]; then
+					_ucidef_add_switch_port
+				fi
 
-		unset num device role index need_tag
-	done
-
-	json_select ..
+				unset num device role index need_tag
+			done
+		json_select ..
 	json_select ..
 
 	_ucidef_finish_switch_roles
+}
+
+ucidef_add_switch_attr() {
+	local name="$1"
+	local key="$2"
+	local val="$3"
+
+	json_select_object switch
+		json_select_object "$name"
+
+		case "$val" in
+			true|false) [ "$val" != "true" ]; json_add_boolean "$key" $? ;;
+			[0-9]) json_add_int "$key" "$val" ;;
+			*) json_add_string "$key" "$val" ;;
+		esac
+
+		json_select ..
+	json_select ..
 }
 
 ucidef_add_switch_port_attr() {
