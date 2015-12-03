@@ -15,16 +15,10 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
 +++ b/arch/arm/boot/dts/bcm4709-buffalo-wxr-1900dhp.dts
-@@ -24,6 +24,23 @@
+@@ -24,6 +24,17 @@
  		reg = <0x00000000 0x08000000>;
  	};
  
-+	clocks {
-+		clk_periph: periph {
-+			clock-frequency = <500000000>;
-+		};
-+	};
-+
 +	axi@18000000 {
 +		usb2@21000 {
 +			reg = <0x00021000 0x1000>;
