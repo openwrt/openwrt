@@ -28,7 +28,6 @@ netgear,r8000)
 esac
 
 ucidef_set_interface_loopback
-ucidef_set_interfaces_lan_wan "$ifname.1" "$ifname.2"
 
 # Workaround for devices using CPU port 8 (connected to eth2)
 case "$board" in

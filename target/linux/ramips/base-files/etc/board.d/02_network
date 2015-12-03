@@ -86,12 +86,10 @@ ramips_setup_interfaces()
 	y1|\
 	zbt-wg2626|\
 	youku-yk1)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	a5-v11)
-		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
 		;;
@@ -99,14 +97,12 @@ ramips_setup_interfaces()
 	ar725w|\
 	rt-n15|\
 	wl-351)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
 		;;
 	asl26555|\
 	re6500|\
 	rp-n53)
-		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "6t@eth0"
 		;;
@@ -123,12 +119,10 @@ ramips_setup_interfaces()
 	wrtnode|\
 	wt3020|\
 	zbt-wa05)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "6@eth0"
 		;;
 	awapn2403)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:wan" "6@eth0"
 		;;
@@ -142,17 +136,14 @@ ramips_setup_interfaces()
 		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		;;
 	br-6475nd)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 		;;
 	cf-wr800n)
-		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" \
 			"4:lan" "6t@eth0"
 		;;
 	cy-swr1100)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "9@eth0"
 		;;
@@ -164,13 +155,11 @@ ramips_setup_interfaces()
 		;;
 	e1700|\
 	mt7620a_mt7530)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch1" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
 	hc5*61|\
 	y1s)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:lan" "0:wan" "6@eth0"
 		;;
@@ -187,44 +176,36 @@ ramips_setup_interfaces()
 		;;
 	mzk-dp150n|\
 	vocore)
-		ucidef_set_interface_lan "eth0.1"
 		ucidef_add_switch "switch0" \
 			"0:lan" "4:lan" "6t@eth0"
 		;;
 	rt-n56u)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
 		;;
 	tew-691gr|\
 	tew-692gr)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "5:wan" "0@eth0"
 		;;
 	v11st-fe|\
 	wzr-agl300nh)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
 		;;
 	wcr-150gn)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "6t@eth0"
 		;;
 	whr-1166d)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "5:wan" "6@eth0"
 		;;
 	wizfi630a)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"1:lan" "2:lan" "0:wan" "6@eth0"
 		;;
 	zbt-wr8305rt)
-		ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "6@eth0"
 		;;
