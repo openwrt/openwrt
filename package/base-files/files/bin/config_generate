@@ -109,12 +109,13 @@ generate_switch_vlan() {
 
 calculate_switch_vlans() {
 	local switch="$1"
-	local ports port attr val
-	local prev_role
-	local num device role index
-	local n_cpu=0 cpu0 cpu1 cpu2 cpu3
-	local dev0 dev1 dev2 dev3 role0 role1 role2 role3
-	local n_vlan=0 vlan_off=-1
+	local ports port attr val prev_role
+	local num device role index need_tag
+	local cpu0 cpu1 cpu2 cpu3
+	local dev0 dev1 dev2 dev3
+	local tag0 tag1 tag2 tag3
+	local role0 role1 role2 role3
+	local n_cpu=0  n_vlan=0 vlan_off=-1
 	local vlan_ports cpu_port
 
 	json_get_keys ports ports
@@ -124,7 +125,7 @@ calculate_switch_vlans() {
 	# gather all cpu ports and count vlans
 	for port in $ports; do
 		json_select "$port"
-		json_get_vars num device role
+		json_get_vars num device role need_tag
 
 		if json_is_a attr object; then
 			json_get_keys attr attr
@@ -149,6 +150,7 @@ calculate_switch_vlans() {
 		if [ -n "$num" ] && [ -n "$device" ]; then
 			export "cpu$n_cpu=$num"
 			export "dev$n_cpu=$device"
+			export "tag$n_cpu=${need_tag:-0}"
 			n_cpu=$((n_cpu + 1))
 		elif [ -n "$num" ] && [ -n "$role" ] && [ "$role" != "$prev_role" ]; then
 			export "role$n_vlan=$role"
