@@ -84,16 +84,12 @@ ucidef_set_interfaces_lan_wan() {
 
 ucidef_add_switch() {
 	local name="$1"
-	local reset="$2"
-	local enable="$3"
 
 	json_select_object switch
-
-	json_select_object "$name"
-	json_add_boolean enable "$enable"
-	json_add_boolean reset "$reset"
-	json_select ..
-
+		json_select_object "$name"
+			json_add_boolean enable 1
+			json_add_boolean reset 1
+		json_select ..
 	json_select ..
 }
 
@@ -103,14 +99,15 @@ ucidef_add_switch_attr() {
 	local val="$3"
 
 	json_select_object switch
-	json_select_object "$name"
+		json_select_object "$name"
 
-	case "$val" in
-		[0-9]) json_add_int "$key" "$val" ;;
-		*) json_add_string "$key" "$val" ;;
-	esac
+		case "$val" in
+			true|false) [ "$val" != "true" ]; json_add_boolean "$key" $? ;;
+			[0-9]) json_add_int "$key" "$val" ;;
+			*) json_add_string "$key" "$val" ;;
+		esac
 
-	json_select ..
+		json_select ..
 	json_select ..
 }
 
@@ -273,6 +270,7 @@ ucidef_add_switch_port_attr() {
 			json_select_object attr
 
 			case "$val" in
+				true|false) [ "$val" != "true" ]; json_add_boolean "$key" $? ;;
 				[0-9]) json_add_int "$key" "$val" ;;
 				*) json_add_string "$key" "$val" ;;
 			esac
