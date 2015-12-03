@@ -24,14 +24,12 @@ ubnt-unifi-outdoor)
 
 ap132 |\
 wlr8100)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 	;;
 
 esr1750 |\
 epg5000)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 	;;
@@ -68,13 +66,11 @@ bsb)
 	;;
 
 cpe510)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "5:lan" "4:wan"
 	;;
 
 airgatewaypro)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "4:lan" "5:wan"
 	;;
@@ -85,8 +81,6 @@ rb-2011uas |\
 rb-2011uias |\
 rb-2011uas-2hnd|\
 rb-2011uias-2hnd)
-	ucidef_set_interfaces_lan_wan "eth0.1 eth1" "eth0.2"
-
 	case "$board" in
 	rb-2011uas* | rb-2011uias | rb-2011uias-2hnd)
 		ucidef_add_switch "switch0" \
@@ -162,7 +156,6 @@ rb-750gl |\
 rb-751g |\
 rb-951g-2hnd |\
 wzr-hp-g450h)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "2:lan" "3:lan" "4:lan" "5:lan" "1:wan"
 	;;
@@ -182,7 +175,6 @@ rb-493g)
 wzr-hp-g300nh2 |\
 pb92 |\
 ap113)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "2:wan"
 	;;
@@ -195,19 +187,16 @@ el-m150)
 
 tl-wdr4300|\
 tl-wr1041n-v2)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan:4" "2:lan:3" "3:lan:2" "4:lan:1" "5:wan"
 	;;
 
 tl-wr1043nd)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
 	;;
 
 tl-wr2543n)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "9@eth0"
 	;;
@@ -238,13 +227,11 @@ wnr1000-v2)
 	;;
 
 uap-pro)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:wan"
 	;;
 
 nanostation-m-xw)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "5:lan" "1:wan"
 	;;
@@ -264,7 +251,6 @@ wzr-hp-g300nh)
 dgl-5500-a1 |\
 dir-825-c1)
 	local mac
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 	mac=$(mtd_get_mac_ascii nvram "wan_mac")
@@ -273,7 +259,6 @@ dir-825-c1)
 
 mynet-n750)
 	local mac
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 	mac=$(mtd_get_mac_ascii devdata "wanmac")
@@ -288,7 +273,6 @@ dhp-1565-a1 |\
 dir-835-a1 |\
 wndr3700v4 | \
 wndr4300)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 	mac_lan=$(mtd_get_mac_binary caldata 0)
@@ -299,7 +283,6 @@ wndr4300)
 
 esr900)
 	local mac
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:lan" "3:lan" "4:lan" "5:wan"
 	mac=$(mtd_get_mac_ascii u-boot-env "wanaddr")
@@ -395,7 +378,6 @@ gl-ar300)
 	;;
 
 wpj344)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "3:lan" "2:wan"
 	;;
@@ -405,7 +387,6 @@ wpj531)
 	;;
 
 wpj558)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"5:lan" "1:wan" "6@eth0"
 	;;
@@ -449,13 +430,11 @@ wzr-hp-ag300h)
 	;;
 
 wzr-hp-g450h)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "2:lan:1 3:lan:2 4:lan:3 5:lan:4" "1:wan"
 	;;
 
 ew-dorin)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "1:lan" "2:lan" "3:wan"
 	;;

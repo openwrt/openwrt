@@ -14,7 +14,6 @@ board=$(mpc85xx_board_name)
 
 case "$board" in
 tl-wdr4900-v1)
-	ucidef_set_interfaces_lan_wan "eth0.1" "eth0.2"
 	ucidef_add_switch "switch0" \
 		"0@eth0" "2:lan:1" "3:lan:2" "4:lan:3" "5:lan:4" "1:wan"
 	;;
