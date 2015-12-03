@@ -166,11 +166,11 @@ _ucidef_finish_switch_roles() {
 		json_select_object network
 			json_select_object "$role"
 				# attach previous interfaces (for multi-switch devices)
-				local prev_device; json_get_var prev_device ifname
-				if ! list_contains prev_device "$device"; then
-					device="${prev_device:+$prev_device }$device"
+				local devices; json_get_var devices ifname
+				if ! list_contains devices "$device"; then
+					devices="${devices:+$devices }$device"
 				fi
-				json_add_string ifname "$device"
+				json_add_string ifname "$devices"
 			json_select ..
 		json_select ..
 	done
