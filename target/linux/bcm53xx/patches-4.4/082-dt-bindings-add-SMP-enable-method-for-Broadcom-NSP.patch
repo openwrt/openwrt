@@ -1,7 +1,7 @@
-From 204b9dbd7c4bd5a223fd104b9cba56c12fe04add Mon Sep 17 00:00:00 2001
+From fa20071c74be69a1d84df85e5d1e72a40a156b89 Mon Sep 17 00:00:00 2001
 From: Kapil Hali <kapilh@broadcom.com>
-Date: Wed, 19 Aug 2015 13:42:23 -0400
-Subject: [PATCH 130/134] dt-bindings: add SMP enable-method for Broadcom NSP
+Date: Tue, 1 Dec 2015 11:24:05 -0500
+Subject: [PATCH] dt-bindings: add SMP enable-method for Broadcom NSP
 
 Add a compatible string "brcm,bcm-nsp-smp" for Broadcom's
 Northstar Plus CPU to the 32-bit ARM CPU device tree binding
@@ -9,6 +9,7 @@ documentation file and create a new binding documentation for
 Northstar Plus CPU.
 
 Signed-off-by: Kapil Hali <kapilh@broadcom.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  .../bindings/arm/bcm/brcm,nsp-cpu-method.txt       | 39 ++++++++++++++++++++++
  Documentation/devicetree/bindings/arm/cpus.txt     |  1 +
@@ -59,7 +60,7 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 +	};
 --- a/Documentation/devicetree/bindings/arm/cpus.txt
 +++ b/Documentation/devicetree/bindings/arm/cpus.txt
-@@ -190,6 +190,7 @@ nodes to be present and contain the prop
+@@ -190,6 +190,7 @@ nodes to be present and contain the properties described below.
  			    "allwinner,sun6i-a31"
  			    "allwinner,sun8i-a23"
  			    "arm,psci"
