@@ -32,9 +32,26 @@ json_select_object() {
 _ucidef_set_interface() {
 	local name="$1"
 	local iface="$2"
+	local proto="$3"
 
 	json_select_object "$name"
 	json_add_string ifname "$iface"
+
+	if ! json_is_a protocol string; then
+		case "$proto" in
+			static|dhcp|none) : ;;
+			*)
+				case "$name" in
+					lan) proto="static" ;;
+					wan) proto="dhcp" ;;
+					*) proto="none" ;;
+				esac
+			;;
+		esac
+
+		json_add_string protocol "$proto"
+	fi
+
 	json_select ..
 }
 
@@ -57,19 +74,15 @@ ucidef_set_interface_loopback()
 }
 
 ucidef_set_interface_lan() {
-	local lan_if="$1"
-
 	json_select_object network
-	_ucidef_set_interface lan "$lan_if"
+	_ucidef_set_interface lan "$@"
 	json_select ..
 }
 
 ucidef_set_interface_wan() {
-        local wan_if="$1"
-
-        json_select_object network
-        _ucidef_set_interface wan "$wan_if"
-        json_select ..
+	json_select_object network
+	_ucidef_set_interface wan "$@"
+	json_select ..
 }
 
 ucidef_set_interfaces_lan_wan() {
@@ -164,14 +177,17 @@ _ucidef_finish_switch_roles() {
 		json_select ..
 
 		json_select_object network
+			local devices
+
 			json_select_object "$role"
 				# attach previous interfaces (for multi-switch devices)
-				local devices; json_get_var devices ifname
+				json_get_var devices ifname
 				if ! list_contains devices "$device"; then
 					devices="${devices:+$devices }$device"
 				fi
-				json_add_string ifname "$devices"
 			json_select ..
+
+			_ucidef_set_interface "$role" "$devices"
 		json_select ..
 	done
 }
