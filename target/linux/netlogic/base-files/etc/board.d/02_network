@@ -3,14 +3,10 @@
 # Copyright (C) 2014 OpenWrt.org
 #
 
-[ -e /etc/config/network ] && exit 0
-
-touch /etc/config/network
-
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-now.sh
 . /lib/netlogic.sh
 
-ucidef_set_interface_loopback
+board_config_update
 
 case "$board_name" in
 "xlp-evp" |\
@@ -23,6 +19,6 @@ case "$board_name" in
 
 esac
 
-uci commit network
+board_config_flush
 
 exit 0
