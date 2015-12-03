@@ -67,12 +67,6 @@ ucidef_set_model_name() {
 	json_select ..
 }
 
-ucidef_set_interface_loopback()
-{
-	# stub
-	local a="$1"
-}
-
 ucidef_set_interface_lan() {
 	json_select_object network
 	_ucidef_set_interface lan "$@"
