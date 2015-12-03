@@ -1,0 +1,33 @@
+From 1c8a47df36d72ace8cf78eb6c228aa0f8027d3c2 Mon Sep 17 00:00:00 2001
+From: Miklos Szeredi <miklos@szeredi.hu>
+Date: Mon, 12 Oct 2015 15:56:20 +0200
+Subject: ovl: fix open in stacked overlay
+
+If two overlayfs filesystems are stacked on top of each other, then we need
+recursion in ovl_d_select_inode().
+
+I guess d_backing_inode() is supposed to do that.  But currently it doesn't
+and that functionality is open coded in vfs_open().  This is now copied
+into ovl_d_select_inode() to fix this regression.
+
+Reported-by: Alban Crequy <alban.crequy@gmail.com>
+Signed-off-by: Miklos Szeredi <miklos@szeredi.hu>
+Fixes: 4bacc9c9234c ("overlayfs: Make f_path always point to the overlay...")
+Cc: David Howells <dhowells@redhat.com>
+Cc: <stable@vger.kernel.org> # v4.2+
+---
+ fs/overlayfs/inode.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/fs/overlayfs/inode.c
++++ b/fs/overlayfs/inode.c
+@@ -362,6 +362,9 @@ struct inode *ovl_d_select_inode(struct
+ 		ovl_path_upper(dentry, &realpath);
+ 	}
+ 
++	if (realpath.dentry->d_flags & DCACHE_OP_SELECT_INODE)
++		return realpath.dentry->d_op->d_select_inode(realpath.dentry, file_flags);
++
+ 	return d_backing_inode(realpath.dentry);
+ }
+ 
