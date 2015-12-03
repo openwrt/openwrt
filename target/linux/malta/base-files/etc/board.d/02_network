@@ -1,9 +1,14 @@
 #!/bin/sh
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 
-ucidef_set_interface_loopback
+board_config_udpate
+
 ucidef_set_interface_wan "eth0"
 if [ -d "/sys/class/net/eth1" ]; then
 	ucidef_set_interface_lan "eth1"
 fi
+
+board_config_flush
+
+exit 0
