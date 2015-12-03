@@ -1,15 +1,17 @@
-From e96ef422d0095fe9ae39b03c0805a0db8ff7e382 Mon Sep 17 00:00:00 2001
+From cdc36b22f0e4b8badf3db14395f0aa44dcbce4b3 Mon Sep 17 00:00:00 2001
 From: Jon Mason <jonmason@broadcom.com>
-Date: Tue, 13 Oct 2015 17:22:25 -0400
-Subject: [PATCH 50/50] ARM: dts: enable clock support for BCM5301X
+Date: Fri, 20 Nov 2015 10:17:18 -0500
+Subject: [PATCH] ARM: dts: enable clock support for BCM5301X
 
 Replace current device tree dummy clocks with real clock support for
 Broadcom Northstar SoCs.
 
 Signed-off-by: Jon Mason <jonmason@broadcom.com>
+Reviewed-by: Ray Jui <rjui@broadcom.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm/boot/dts/bcm5301x.dtsi | 88 ++++++++++++++++++++++++++++++++---------
- 1 file changed, 69 insertions(+), 19 deletions(-)
+ arch/arm/boot/dts/bcm5301x.dtsi | 92 +++++++++++++++++++++++++++++++----------
+ 1 file changed, 71 insertions(+), 21 deletions(-)
 
 --- a/arch/arm/boot/dts/bcm5301x.dtsi
 +++ b/arch/arm/boot/dts/bcm5301x.dtsi
@@ -21,7 +23,24 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
  #include <dt-bindings/gpio/gpio.h>
  #include <dt-bindings/input/input.h>
  #include <dt-bindings/interrupt-controller/irq.h>
-@@ -42,41 +43,48 @@
+@@ -27,7 +28,7 @@
+ 			compatible = "ns16550";
+ 			reg = <0x0300 0x100>;
+ 			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+-			clock-frequency = <100000000>;
++			clocks = <&iprocslow>;
+ 			status = "disabled";
+ 		};
+ 
+@@ -35,48 +36,55 @@
+ 			compatible = "ns16550";
+ 			reg = <0x0400 0x100>;
+ 			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+-			clock-frequency = <100000000>;
++			clocks = <&iprocslow>;
+ 			status = "disabled";
+ 		};
+ 	};
  
  	mpcore {
  		compatible = "simple-bus";
@@ -102,8 +121,7 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
 +		};
 +
 +		iprocmed: iprocmed {
- 			#clock-cells = <0>;
--			clock-frequency = <400000000>;
++			#clock-cells = <0>;
 +			compatible = "fixed-factor-clock";
 +			clocks = <&genpll BCM_NSP_GENPLL_IPROCFAST_CLK>;
 +			clock-div = <2>;
@@ -119,7 +137,8 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
 +		};
 +
 +		periph_clk: periph_clk {
-+			#clock-cells = <0>;
+ 			#clock-cells = <0>;
+-			clock-frequency = <400000000>;
 +			compatible = "fixed-factor-clock";
 +			clocks = <&a9pll>;
 +			clock-div = <2>;
@@ -127,11 +146,10 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
  		};
  	};
  
-@@ -189,4 +220,23 @@
- 
- 		brcm,nand-has-wp;
+@@ -178,6 +209,25 @@
+ 		};
  	};
-+
+ 
 +	lcpll0: lcpll0@1800c100 {
 +		#clock-cells = <1>;
 +		compatible = "brcm,nsp-lcpll0";
@@ -150,4 +168,7 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
 +				     "usbclk", "iprocfast", "sata1",
 +				     "sata2";
 +	};
- };
++
+ 	nand: nand@18028000 {
+ 		compatible = "brcm,nand-iproc", "brcm,brcmnand-v6.1", "brcm,brcmnand";
+ 		reg = <0x18028000 0x600>, <0x1811a408 0x600>, <0x18028f00 0x20>;
