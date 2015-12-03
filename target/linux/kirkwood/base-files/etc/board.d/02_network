@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2012-2014 OpenWrt.org
+# Copyright (C) 2012-2015 OpenWrt.org
 #
 
 [ -e /etc/config/network ] && exit 0
@@ -20,12 +20,14 @@ set network.lan6.reqprefix='no'
 EOF
 }
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/kirkwood.sh
 
-board=$(kirkwood_board_name)
+board_config_update
 
 ucidef_set_interface_loopback
+
+board=$(kirkwood_board_name)
 
 case "$board" in
 "dockstar"|\
@@ -35,29 +37,25 @@ case "$board" in
 "ib62x0"|\
 "nsa310s"|\
 "pogo_e02")
-	set_lan_dhcp "eth0"
+	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
 "linksys-audi")
-	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "switch0" "1" "1"
-	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
-	ucidef_add_switch_vlan "switch0" "2" "4 6"
+	ucidef_add_switch "switch0" \
+		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0" "6@eth1"
 	;;
 "linksys-viper")
-	ucidef_set_interfaces_lan_wan "eth0" "eth1"
-	ucidef_add_switch "switch0" "1" "1"
-	ucidef_add_switch_vlan "switch0" "1" "0 1 2 3 5"
-	ucidef_add_switch_vlan "switch0" "2" "4 6"
+	ucidef_add_switch "switch0" \
+		"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0" "6@eth1"
 	;;
 "guruplug-server-plus")
-	set_lan_dhcp "eth0" "eth1"
+	ucidef_set_interface_lan "eth0 eth1" "dhcp"
 	;;
 "sheevaplug" | \
 "sheevaplug-esata")
-	set_lan_dhcp "eth0"
+	ucidef_set_interface_lan "eth0" "dhcp"
 	;;
 *)
-	ucidef_set_interface_lan "eth0"
+	ucidef_set_interface_lan "eth0" "static"
 	;;
 esac
 

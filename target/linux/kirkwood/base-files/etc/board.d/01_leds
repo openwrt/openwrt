@@ -1,10 +1,12 @@
 #!/bin/sh
 #
-# Copyright (C) 2012-2014 OpenWrt.org
+# Copyright (C) 2012-2015 OpenWrt.org
 #
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/kirkwood.sh
+
+board_config_update
 
 board=$(kirkwood_board_name)
 
@@ -22,8 +24,8 @@ case "$board" in
 	;;
 "goflexhome" | \
 "goflexnet")
-        ucidef_set_led_default "health" "health" "status:green:health" "1"
-        ucidef_set_led_default "fault" "fault" "status:orange:fault" "0"
+	ucidef_set_led_default "health" "health" "status:green:health" "1"
+	ucidef_set_led_default "fault" "fault" "status:orange:fault" "0"
 	;;
 "ib62x0")
 	ucidef_set_led_default "health" "health" "ib62x0:green:os" "1"
@@ -44,6 +46,6 @@ case "$board" in
 	;;
 esac
 
-ucidef_commit_leds
+board_config_flush
 
 exit 0
