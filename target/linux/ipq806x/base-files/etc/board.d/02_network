@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Copyright (c) 2015 The Linux Foundation. All rights reserved.
+# Copyright (c) 2011-2015 OpenWrt.org
+#
+
+. /lib/functions/uci-defaults-new.sh
+. /lib/ipq806x.sh
+
+board_config_update
+
+ucidef_set_interface_loopback
+
+board=$(ipq806x_board_name)
+
+case "$board" in
+ap148 |\
+r7500)
+	ucidef_add_switch "switch0" \
+		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
+	;;
+db149)
+	ucidef_set_interface_lan "eth1 eth2 eth3"
+	ucidef_add_switch "switch0" \
+		"1:lan" "2:lan" "3:lan" "4:lan" "6@eth1" "5:wan" "0@eth0"
+	;;
+*)
+	echo "Unsupported hardware. Network interfaces not intialized"
+	;;
+esac
+
+board_config_flush
+
+exit 0
