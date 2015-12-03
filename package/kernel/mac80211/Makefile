@@ -71,6 +71,7 @@ WMENU:=Wireless Drivers
 
 define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
+  DEPENDS:=@!LINUX_4_4
   URL:=https://wireless.wiki.kernel.org/
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
@@ -78,7 +79,7 @@ endef
 define KernelPackage/cfg80211
   $(call KernelPackage/mac80211/Default)
   TITLE:=cfg80211 - wireless configuration API
-  DEPENDS+= +iw @!LINUX_4_4
+  DEPENDS+= +iw
   FILES:= \
 	$(PKG_BUILD_DIR)/compat/compat.ko \
 	$(PKG_BUILD_DIR)/net/wireless/cfg80211.ko
