@@ -1,0 +1,135 @@
+From dd0e5f9a6a4aed849bdb80641c2a2350476cede7 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 21 Jun 2015 11:10:49 +0200
+Subject: [PATCH v3 2/6] usb: xhci: add Broadcom specific fake doorbell
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This fixes problem with controller seeing devices only in some small
+percentage of cold boots.
+This quirk is also added to the platform data so we can activate it
+when we register our platform driver.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/usb/host/xhci-plat.c     |  3 +++
+ drivers/usb/host/xhci.c          | 57 +++++++++++++++++++++++++++++++++++++---
+ drivers/usb/host/xhci.h          |  1 +
+ include/linux/usb/xhci_pdriver.h |  1 +
+ 4 files changed, 59 insertions(+), 3 deletions(-)
+
+--- a/drivers/usb/host/xhci-plat.c
++++ b/drivers/usb/host/xhci-plat.c
+@@ -52,6 +52,9 @@ static void xhci_plat_quirks(struct devi
+ 	if ((node && of_property_read_bool(node, "usb3-lpm-capable")) ||
+ 			(pdata && pdata->usb3_lpm_capable))
+ 		xhci->quirks |= XHCI_LPM_SUPPORT;
++
++	if (pdata && pdata->usb3_fake_doorbell)
++		xhci->quirks |= XHCI_FAKE_DOORBELL;
+ }
+ 
+ /* called during probe() after chip reset completes */
+--- a/drivers/usb/host/xhci.c
++++ b/drivers/usb/host/xhci.c
+@@ -121,6 +121,39 @@ int xhci_halt(struct xhci_hcd *xhci)
+ 	return ret;
+ }
+ 
++static int xhci_fake_doorbell(struct xhci_hcd *xhci, int slot_id)
++{
++	u32 temp;
++
++	/* alloc a virt device for slot */
++	if (!xhci_alloc_virt_device(xhci, slot_id, NULL, GFP_NOIO)) {
++		xhci_warn(xhci, "Could not allocate xHCI USB device data structures\n");
++		return -ENOMEM;
++	}
++
++	/* ring fake doorbell for slot_id ep 0 */
++	xhci_ring_ep_doorbell(xhci, slot_id, 0, 0);
++	usleep_range(1000, 1500);
++
++	/* read the status register to check if HSE is set or not? */
++	temp = readl(&xhci->op_regs->status);
++
++	/* clear HSE if set */
++	if (temp & STS_FATAL) {
++		xhci_dbg(xhci, "HSE problem detected, status: 0x%x\n", temp);
++		temp &= ~(0x1fff);
++		temp |= STS_FATAL;
++		writel(temp, &xhci->op_regs->status);
++		usleep_range(1000, 1500);
++		readl(&xhci->op_regs->status);
++	}
++
++	/* Free virt device */
++	xhci_free_virt_device(xhci, slot_id);
++
++	return 0;
++}
++
+ /*
+  * Set the run bit and wait for the host to be running.
+  */
+@@ -567,10 +600,25 @@ int xhci_init(struct usb_hcd *hcd)
+ 
+ static int xhci_run_finished(struct xhci_hcd *xhci)
+ {
+-	if (xhci_start(xhci)) {
+-		xhci_halt(xhci);
+-		return -ENODEV;
++	int err;
++
++	err = xhci_start(xhci);
++	if (err) {
++		err = -ENODEV;
++		goto out_err;
++	}
++	if (xhci->quirks & XHCI_FAKE_DOORBELL) {
++		err = xhci_fake_doorbell(xhci, 1);
++		if (err)
++			goto out_err;
++
++		err = xhci_start(xhci);
++		if (err) {
++			err = -ENODEV;
++			goto out_err;
++		}
+ 	}
++
+ 	xhci->shared_hcd->state = HC_STATE_RUNNING;
+ 	xhci->cmd_ring_state = CMD_RING_STATE_RUNNING;
+ 
+@@ -580,6 +628,9 @@ static int xhci_run_finished(struct xhci
+ 	xhci_dbg_trace(xhci, trace_xhci_dbg_init,
+ 			"Finished xhci_run for USB3 roothub");
+ 	return 0;
++out_err:
++	xhci_halt(xhci);
++	return err;
+ }
+ 
+ /*
+--- a/drivers/usb/host/xhci.h
++++ b/drivers/usb/host/xhci.h
+@@ -1630,6 +1630,7 @@ struct xhci_hcd {
+ /* For controllers with a broken beyond repair streams implementation */
+ #define XHCI_BROKEN_STREAMS	(1 << 19)
+ #define XHCI_PME_STUCK_QUIRK	(1 << 20)
++#define XHCI_FAKE_DOORBELL	(1 << 21)
+ 	unsigned int		num_active_eps;
+ 	unsigned int		limit_active_eps;
+ 	/* There are two roothubs to keep track of bus suspend info for */
+--- a/include/linux/usb/xhci_pdriver.h
++++ b/include/linux/usb/xhci_pdriver.h
+@@ -22,6 +22,7 @@
+  */
+ struct usb_xhci_pdata {
+ 	unsigned	usb3_lpm_capable:1;
++	unsigned	usb3_fake_doorbell:1;
+ };
+ 
+ #endif /* __USB_CORE_XHCI_PDRIVER_H */

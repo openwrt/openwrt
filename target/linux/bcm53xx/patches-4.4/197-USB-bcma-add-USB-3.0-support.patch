@@ -1,0 +1,295 @@
+From 121ec6539abedbc0e975cf35f48ee044b323e4c3 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 16 Jun 2015 17:14:26 +0200
+Subject: [PATCH v3 5/6] usb: bcma: add USB 3.0 support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+---
+ drivers/usb/host/bcma-hcd.c | 225 ++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 225 insertions(+)
+
+--- a/drivers/usb/host/bcma-hcd.c
++++ b/drivers/usb/host/bcma-hcd.c
+@@ -29,6 +29,7 @@
+ #include <linux/of_gpio.h>
+ #include <linux/usb/ehci_pdriver.h>
+ #include <linux/usb/ohci_pdriver.h>
++#include <linux/usb/xhci_pdriver.h>
+ 
+ MODULE_AUTHOR("Hauke Mehrtens");
+ MODULE_DESCRIPTION("Common USB driver for BCMA Bus");
+@@ -38,6 +39,7 @@ struct bcma_hcd_device {
+ 	struct bcma_device *core;
+ 	struct platform_device *ehci_dev;
+ 	struct platform_device *ohci_dev;
++	struct platform_device *xhci_dev;
+ 	struct gpio_desc *gpio_desc;
+ };
+ 
+@@ -245,6 +247,10 @@ static const struct usb_ehci_pdata ehci_
+ static const struct usb_ohci_pdata ohci_pdata = {
+ };
+ 
++static const struct usb_xhci_pdata xhci_pdata = {
++	.usb3_fake_doorbell = 1
++};
++
+ static struct platform_device *bcma_hcd_create_pdev(struct bcma_device *dev,
+ 						    const char *name, u32 addr,
+ 						    const void *data,
+@@ -338,6 +344,216 @@ err_unregister_ohci_dev:
+ 	return err;
+ }
+ 
++static bool bcma_wait_reg(struct bcma_bus *bus, void __iomem *addr, u32 mask,
++			  u32 value, int timeout)
++{
++	unsigned long deadline = jiffies + timeout;
++	u32 val;
++
++	do {
++		val = readl(addr);
++		if ((val & mask) == value)
++			return true;
++		cpu_relax();
++		udelay(10);
++	} while (!time_after_eq(jiffies, deadline));
++
++	pr_err("Timeout waiting for register %p\n", addr);
++
++	return false;
++}
++
++static void bcma_hcd_usb30_phy_init(struct bcma_hcd_device *bcma_hcd)
++{
++	struct bcma_device *core = bcma_hcd->core;
++	struct bcma_bus *bus = core->bus;
++	struct bcma_chipinfo *chipinfo = &bus->chipinfo;
++	struct bcma_drv_cc_b *ccb = &bus->drv_cc_b;
++	struct bcma_device *arm_core;
++	void __iomem *dmu = NULL;
++	u32 cru_straps_ctrl;
++
++	if (chipinfo->id != BCMA_CHIP_ID_BCM4707 &&
++	    chipinfo->id != BCMA_CHIP_ID_BCM53018)
++		return;
++
++	arm_core = bcma_find_core(bus, BCMA_CORE_ARMCA9);
++	if (!arm_core)
++		return;
++
++	dmu = ioremap_nocache(arm_core->addr_s[0], 0x1000);
++	if (!dmu)
++		goto out;
++
++	/* Check strapping of PCIE/USB3 SEL */
++	cru_straps_ctrl = ioread32(dmu + 0x2a0);
++	if ((cru_straps_ctrl & 0x10) == 0)
++		goto out;
++
++	/* Perform USB3 system soft reset */
++	bcma_awrite32(core, BCMA_RESET_CTL, BCMA_RESET_CTL_RESET);
++
++	/* Enable MDIO. Setting MDCDIV as 26  */
++	iowrite32(0x0000009a, ccb->mii + 0x000);
++	udelay(2);
++
++	switch (chipinfo->id) {
++	case BCMA_CHIP_ID_BCM4707:
++		if (chipinfo->rev == 4) {
++			/* For NS-B0, USB3 PLL Block */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x587e8000, ccb->mii + 0x004);
++
++			/* Clear ana_pllSeqStart */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x58061000, ccb->mii + 0x004);
++
++			/* CMOS Divider ratio to 25 */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x582a6400, ccb->mii + 0x004);
++
++			/* Asserting PLL Reset */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x582ec000, ccb->mii + 0x004);
++
++			/* Deaaserting PLL Reset */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x582e8000, ccb->mii + 0x004);
++
++			/* Deasserting USB3 system reset */
++			bcma_awrite32(core, BCMA_RESET_CTL, 0);
++
++			/* Set ana_pllSeqStart */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x58069000, ccb->mii + 0x004);
++
++			/* RXPMD block */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x587e8020, ccb->mii + 0x004);
++
++			/* CDR int loop locking BW to 1 */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x58120049, ccb->mii + 0x004);
++
++			/* CDR int loop acquisition BW to 1 */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x580e0049, ccb->mii + 0x004);
++
++			/* CDR prop loop BW to 1 */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x580a005c, ccb->mii + 0x004);
++
++			/* Waiting MII Mgt interface idle */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		} else {
++			/* PLL30 block */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x587e8000, ccb->mii + 0x004);
++
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x582a6400, ccb->mii + 0x004);
++
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x587e80e0, ccb->mii + 0x004);
++
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x580a009c, ccb->mii + 0x004);
++
++			/* Enable SSC */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x587e8040, ccb->mii + 0x004);
++
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x580a21d3, ccb->mii + 0x004);
++
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++			iowrite32(0x58061003, ccb->mii + 0x004);
++
++			/* Waiting MII Mgt interface idle */
++			bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++
++			/* Deasserting USB3 system reset */
++			bcma_awrite32(core, BCMA_RESET_CTL, 0);
++		}
++		break;
++	case BCMA_CHIP_ID_BCM53018:
++		/* USB3 PLL Block */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x587e8000, ccb->mii + 0x004);
++
++		/* Assert Ana_Pllseq start */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x58061000, ccb->mii + 0x004);
++
++		/* Assert CML Divider ratio to 26 */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x582a6400, ccb->mii + 0x004);
++
++		/* Asserting PLL Reset */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x582ec000, ccb->mii + 0x004);
++
++		/* Deaaserting PLL Reset */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x582e8000, ccb->mii + 0x004);
++
++		/* Waiting MII Mgt interface idle */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++
++		/* Deasserting USB3 system reset */
++		bcma_awrite32(core, BCMA_RESET_CTL, 0);
++
++		/* PLL frequency monitor enable */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x58069000, ccb->mii + 0x004);
++
++		/* PIPE Block */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x587e8060, ccb->mii + 0x004);
++
++		/* CMPMAX & CMPMINTH setting */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x580af30d, ccb->mii + 0x004);
++
++		/* DEGLITCH MIN & MAX setting */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x580e6302, ccb->mii + 0x004);
++
++		/* TXPMD block */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x587e8040, ccb->mii + 0x004);
++
++		/* Enabling SSC */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++		iowrite32(0x58061003, ccb->mii + 0x004);
++
++		/* Waiting MII Mgt interface idle */
++		bcma_wait_reg(bus, ccb->mii + 0x000, 0x0100, 0x0000, 1000);
++
++		break;
++	}
++out:
++	if (dmu)
++		iounmap(dmu);
++}
++
++static int bcma_hcd_usb30_init(struct bcma_hcd_device *bcma_hcd)
++{
++	struct bcma_device *core = bcma_hcd->core;
++
++	bcma_core_enable(core, 0);
++
++	bcma_hcd_usb30_phy_init(bcma_hcd);
++
++	bcma_hcd->xhci_dev = bcma_hcd_create_pdev(core, "xhci-hcd", core->addr,
++						  &xhci_pdata,
++						  sizeof(xhci_pdata));
++	if (IS_ERR(bcma_hcd->ohci_dev))
++		return PTR_ERR(bcma_hcd->ohci_dev);
++
++	return 0;
++}
++
+ static int bcma_hcd_probe(struct bcma_device *dev)
+ {
+ 	int err;
+@@ -364,6 +580,11 @@ static int bcma_hcd_probe(struct bcma_de
+ 		if (err)
+ 			return err;
+ 		break;
++	case BCMA_CORE_NS_USB30:
++		err = bcma_hcd_usb30_init(usb_dev);
++		if (err)
++			return err;
++		break;
+ 	default:
+ 		return -ENODEV;
+ 	}
+@@ -377,11 +598,14 @@ static void bcma_hcd_remove(struct bcma_
+ 	struct bcma_hcd_device *usb_dev = bcma_get_drvdata(dev);
+ 	struct platform_device *ohci_dev = usb_dev->ohci_dev;
+ 	struct platform_device *ehci_dev = usb_dev->ehci_dev;
++	struct platform_device *xhci_dev = usb_dev->xhci_dev;
+ 
+ 	if (ohci_dev)
+ 		platform_device_unregister(ohci_dev);
+ 	if (ehci_dev)
+ 		platform_device_unregister(ehci_dev);
++	if (xhci_dev)
++		platform_device_unregister(xhci_dev);
+ 
+ 	bcma_core_disable(dev, 0);
+ }
+@@ -418,6 +642,7 @@ static int bcma_hcd_resume(struct bcma_d
+ static const struct bcma_device_id bcma_hcd_table[] = {
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_USB20_HOST, BCMA_ANY_REV, BCMA_ANY_CLASS),
+ 	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_USB20, BCMA_ANY_REV, BCMA_ANY_CLASS),
++	BCMA_CORE(BCMA_MANUF_BCM, BCMA_CORE_NS_USB30, BCMA_ANY_REV, BCMA_ANY_CLASS),
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(bcma, bcma_hcd_table);
