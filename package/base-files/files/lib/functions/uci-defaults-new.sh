@@ -406,6 +406,22 @@ ucidef_set_led_gpio() {
 	json_select ..
 }
 
+ucidef_set_led_ide() {
+	local cfg="led_$1"
+	local name="$2"
+	local sysfs="$3"
+
+	json_select_object led
+
+	json_select_object "$1"
+	json_add_string name "$name"
+	json_add_string sysfs "$sysfs"
+	json_add_string trigger ide-disk
+	json_select ..
+
+	json_select ..
+}
+
 ucidef_set_led_rssi() {
 	local cfg="led_$1"
 	local name="$2"
