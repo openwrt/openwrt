@@ -20,12 +20,13 @@ generate_static_network() {
 	EOF
 }
 
+addr_offset=2
 generate_network() {
-	local ifname macaddr type
+	local ifname macaddr protocol type
 
 	json_select network
 		json_select "$1"
-			json_get_vars ifname macaddr
+			json_get_vars ifname macaddr protocol
 		json_select ..
 	json_select ..
 
@@ -45,23 +46,32 @@ generate_network() {
 		set network.$1.macaddr='$macaddr'
 	EOF
 
-	case "$1" in
-		lan)
+	case "$protocol" in
+		static)
+			local ipaddr
+			case "$1" in
+				lan) ipaddr="192.168.1.1" ;;
+				*) ipaddr="192.168.$((addr_offset++)).1" ;;
+			esac
+
 			uci -q batch <<-EOF
 				set network.$1.proto='static'
-				set network.$1.ipaddr='192.168.1.1'
+				set network.$1.ipaddr='$ipaddr'
 				set network.$1.netmask='255.255.255.0'
 				set network.$1.ip6assign='60'
 			EOF
 		;;
-		wan)
+
+		dhcp)
+			# fixup IPv6 slave interface if parent is a bridge
+			[ "$type" = "bridge" ] && ifname="br-$1"
+
 			uci -q batch <<-EOF
 				set network.$1.proto='dhcp'
-				delete network.wan6
-				set network.wan6='interface'
-				set network.wan6.type='$type'
-				set network.wan6.ifname='$ifname'
-				set network.wan6.proto='dhcpv6'
+				delete network.${1}6
+				set network.${1}6='interface'
+				set network.${1}6.ifname='$ifname'
+				set network.${1}6.proto='dhcpv6'
 			EOF
 		;;
 	esac
