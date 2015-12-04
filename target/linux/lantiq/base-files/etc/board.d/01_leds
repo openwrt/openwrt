@@ -1,11 +1,13 @@
 #!/bin/sh
 #
-# Copyright (C) 2011 OpenWrt.org
+# Copyright (C) 2011-2015 OpenWrt.org
 # based on ar71xx
 #
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/functions/lantiq.sh
+
+board_config_update
 
 [ -e "/sys/class/leds/wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tpt"
 [ -e "/sys/class/leds/usb" ] && ucidef_set_led_usbdev "usb" "usb" "usb" "1-1"
@@ -72,6 +74,6 @@ for a in `ls /sys/class/leds/`; do
 	[ $? -eq 0 ] && ucidef_set_led_default $a $a $a `cat /sys/class/leds/$a/brightness`
 done
 
-ucidef_commit_leds
+board_config_flush
 
 exit 0
