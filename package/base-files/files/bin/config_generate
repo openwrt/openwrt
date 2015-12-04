@@ -18,6 +18,40 @@ generate_static_network() {
 		set network.globals='globals'
 		set network.globals.ula_prefix='auto'
 	EOF
+
+	if json_is_a dsl object; then
+		json_select dsl
+			if json_is_a atmbridge object; then
+				json_select atmbridge
+					local vpi vci encaps payload
+					json_get_vars vpi vci encaps payload
+					uci -q batch <<-EOF
+						delete network.atm
+						set network.atm='atm-bridge'
+						set network.atm.vpi='$vpi'
+						set network.atm.vci='$vci'
+						set network.atm.encaps='$encaps'
+						set network.atm.payload='$payload'
+					EOF
+				json_select ..
+			fi
+
+			if json_is_a modem object; then
+				json_select modem
+					local type annex firmware tone xfer_mode
+					json_get_vars type annex firmware tone xfer_mode
+					uci -q batch <<-EOF
+						delete network.dsl
+						set network.dsl='$type'
+						set network.dsl.annex='$annex'
+						set network.dsl.firmware='$firmware'
+						set network.dsl.tone='$tone'
+						set network.dsl.xfer_mode='$xfer_mode'
+					EOF
+				json_select ..
+			fi
+		json_select ..
+	fi
 }
 
 addr_offset=2
@@ -68,6 +102,22 @@ generate_network() {
 
 			uci -q batch <<-EOF
 				set network.$1.proto='dhcp'
+				delete network.${1}6
+				set network.${1}6='interface'
+				set network.${1}6.ifname='$ifname'
+				set network.${1}6.proto='dhcpv6'
+			EOF
+		;;
+
+		pppoe)
+			# fixup IPv6 slave interface
+			ifname="pppoe-$1"
+
+			uci -q batch <<-EOF
+				set network.$1.proto='pppoe'
+				set network.$1.username='username'
+				set network.$1.password='password'
+				set network.$1.ipv6='auto'
 				delete network.${1}6
 				set network.${1}6='interface'
 				set network.${1}6.ifname='$ifname'

@@ -39,7 +39,7 @@ _ucidef_set_interface() {
 
 	if ! json_is_a protocol string; then
 		case "$proto" in
-			static|dhcp|none) : ;;
+			static|dhcp|none|pppoe) : ;;
 			*)
 				case "$name" in
 					lan) proto="static" ;;
@@ -301,6 +301,52 @@ ucidef_set_interface_macaddr() {
 	json_add_string macaddr "$macaddr"
 	json_select ..
 
+	json_select ..
+}
+
+ucidef_add_atm_bridge() {
+	local vpi="$1"
+	local vci="$2"
+	local encaps="$3"
+	local payload="$4"
+
+	json_select_object dsl
+		json_select_object atmbridge
+			json_add_int vpi "$vpi"
+			json_add_int vci "$vci"
+			json_add_string encaps "$encaps"
+			json_add_string payload "$payload"
+		json_select ..
+	json_select ..
+}
+
+ucidef_add_adsl_modem() {
+	local annex="$1"
+	local firmware="$2"
+
+	json_select_object dsl
+		json_select_object modem
+			json_add_string type "adsl"
+			json_add_string annex "$annex"
+			json_add_string firmware "$firmware"
+		json_select ..
+	json_select ..
+}
+
+ucidef_add_vdsl_modem() {
+	local annex="$1"
+	local firmware="$2"
+	local tone="$3"
+	local xfer_mode="$4"
+
+	json_select_object dsl
+		json_select_object modem
+			json_add_string type "vdsl"
+			json_add_string annex "$annex"
+			json_add_string firmware "$firmware"
+			json_add_string tone "$tone"
+			json_add_string xfer_mode "$xfer_mode"
+		json_select ..
 	json_select ..
 }
 
