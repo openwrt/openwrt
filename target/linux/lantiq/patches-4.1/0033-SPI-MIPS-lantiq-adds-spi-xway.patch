@@ -42,7 +42,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SPI_XWAY)			+= spi-xway.o
 --- /dev/null
 +++ b/drivers/spi/spi-xway.c
-@@ -0,0 +1,991 @@
+@@ -0,0 +1,1003 @@
 +/*
 + * Lantiq SoC SPI controller
 + *
@@ -667,8 +667,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static void ltq_spi_rxreq_set(struct ltq_spi *hw)
 +{
 +	u32 rxreq, rxreq_max, rxtodo;
++	u32 fstat, fifo_fill;
 +
 +	rxtodo = ltq_spi_reg_read(hw, LTQ_SPI_RXCNT) & LTQ_SPI_RXCNT_TODO_MASK;
++
++	/*
++	 * Check if there is remaining data in the FIFO before starting a new
++	 * receive request. The controller might have processed some more data
++	 * since the last FIFO poll.
++	 */
++	fstat = ltq_spi_reg_read(hw, LTQ_SPI_FSTAT);
++	fifo_fill = ((fstat >> LTQ_SPI_FSTAT_RXFFL_SHIFT)
++			& LTQ_SPI_FSTAT_RXFFL_MASK);
++	if (fifo_fill)
++		return;
 +
 +	/*
 +	 * In RX-only mode the serial clock is activated only after writing
