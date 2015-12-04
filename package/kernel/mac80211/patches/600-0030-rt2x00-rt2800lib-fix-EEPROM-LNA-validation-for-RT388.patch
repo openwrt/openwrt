@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800lib: fix EEPROM LNA validation for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    9 ++++++---
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -7606,7 +7606,8 @@ static int rt2800_validate_eeprom(struct
  	rt2800_eeprom_read(rt2x00dev, EEPROM_RSSI_BG2, &word);
  	if (abs(rt2x00_get_field16(word, EEPROM_RSSI_BG2_OFFSET2)) > 10)

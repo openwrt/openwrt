@@ -18,12 +18,12 @@ new field with the actually used value.
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    5 ++++-
- drivers/net/wireless/rt2x00/rt2800lib.h |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    5 ++++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h |    1 +
  2 files changed, 5 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -4614,6 +4614,7 @@ EXPORT_SYMBOL_GPL(rt2800_link_tuner);
   */
  static int rt2800_init_registers(struct rt2x00_dev *rt2x00dev)
@@ -50,8 +50,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  	/*
  	 * Allocate eeprom data.
  	 */
---- a/drivers/net/wireless/rt2x00/rt2800lib.h
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 @@ -35,6 +35,7 @@ struct rt2800_drv_data {
  	u8 txmixer_gain_24g;
  	u8 txmixer_gain_5g;

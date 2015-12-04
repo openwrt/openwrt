@@ -1,5 +1,5 @@
---- a/drivers/net/wireless/rt2x00/rt2800.h
-+++ b/drivers/net/wireless/rt2x00/rt2800.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -74,6 +74,7 @@
  #define RF3070				0x3070
  #define RF3290				0x3290
@@ -8,8 +8,8 @@
  #define RF5360				0x5360
  #define RF5362				0x5362
  #define RF5370				0x5370
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -3014,6 +3014,13 @@ static void rt2800_config_channel_rf53xx
  
  				rt2800_rfcsr_write(rt2x00dev, 59,
@@ -264,8 +264,8 @@
  	case RT5390:
  	case RT5392:
  	case RT5592:
---- a/drivers/net/wireless/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 @@ -169,6 +169,7 @@ struct rt2x00_chip {
  #define RT3572		0x3572
  #define RT3593		0x3593
