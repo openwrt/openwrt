@@ -40,7 +40,7 @@
  
  /* Our partition linked list */
  static LIST_HEAD(mtd_partitions);
-@@ -47,13 +49,14 @@ struct mtd_part {
+@@ -47,6 +49,8 @@ struct mtd_part {
  	struct list_head list;
  };
  
@@ -49,27 +49,7 @@
  /*
   * Given a pointer to the MTD object in the mtd_part structure, we can retrieve
   * the pointer to that structure with this macro.
-  */
- #define PART(x)  ((struct mtd_part *)(x))
- 
--
- /*
-  * MTD methods which simply translate the effective address and pass through
-  * to the _real_ device.
-@@ -579,8 +582,10 @@ static int mtd_add_partition_attrs(struc
- 	return ret;
- }
- 
--int mtd_add_partition(struct mtd_info *master, const char *name,
--		      long long offset, long long length)
-+
-+static int
-+__mtd_add_partition(struct mtd_info *master, const char *name,
-+		    long long offset, long long length, bool dup_check)
- {
- 	struct mtd_partition part;
- 	struct mtd_part *new;
-@@ -612,6 +617,7 @@ int mtd_add_partition(struct mtd_info *m
+@@ -612,6 +616,7 @@ int mtd_add_partition(struct mtd_info *m
  	mutex_unlock(&mtd_partitions_mutex);
  
  	add_mtd_device(&new->mtd);
@@ -77,20 +57,7 @@
  
  	mtd_add_partition_attrs(new);
  
-@@ -619,6 +625,12 @@ int mtd_add_partition(struct mtd_info *m
- }
- EXPORT_SYMBOL_GPL(mtd_add_partition);
- 
-+int mtd_add_partition(struct mtd_info *master, const char *name,
-+		      long long offset, long long length)
-+{
-+	return __mtd_add_partition(master, name, offset, length, true);
-+}
-+
- int mtd_del_partition(struct mtd_info *master, int partno)
- {
- 	struct mtd_part *slave, *next;
-@@ -644,6 +656,35 @@ int mtd_del_partition(struct mtd_info *m
+@@ -644,6 +649,35 @@ int mtd_del_partition(struct mtd_info *m
  }
  EXPORT_SYMBOL_GPL(mtd_del_partition);
  
@@ -126,7 +93,7 @@
  /*
   * This function, given a master MTD object and a partition table, creates
   * and registers slave MTD objects which are bound to the master according to
-@@ -675,6 +716,7 @@ int add_mtd_partitions(struct mtd_info *
+@@ -675,6 +709,7 @@ int add_mtd_partitions(struct mtd_info *
  		mutex_unlock(&mtd_partitions_mutex);
  
  		add_mtd_device(&slave->mtd);
