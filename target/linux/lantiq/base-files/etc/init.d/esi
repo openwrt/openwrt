@@ -1,7 +1,0 @@
-#!/bin/sh /etc/rc.common
-# Copyright (C) 2013 OpenWrt.org
-
-START=19
-start() {
-	esi $(printf '%012X' $((1+0x$(tr -d : </sys/class/net/eth0/address)))) 2>/dev/console || :
-}
