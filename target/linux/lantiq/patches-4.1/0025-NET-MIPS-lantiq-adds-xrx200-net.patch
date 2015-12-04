@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1796 @@
+@@ -0,0 +1,1798 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -355,6 +355,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#define PMAC_IPG_MASK		0xf
 +#define PMAC_HD_CTL_AS		0x0008
 +#define PMAC_HD_CTL_AC		0x0004
++#define PMAC_HD_CTL_RC		0x0010
 +#define PMAC_HD_CTL_RXSH	0x0040
 +#define PMAC_HD_CTL_AST		0x0080
 +#define PMAC_HD_CTL_RST		0x0100
@@ -1067,20 +1068,19 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static int xrx200_open(struct net_device *dev)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
-+	unsigned long flags;
 +	int i;
 +
 +	for (i = 0; i < XRX200_MAX_DMA; i++) {
 +		if (!priv->hw->chan[i].dma.irq)
 +			continue;
-+		spin_lock_irqsave(&priv->hw->lock, flags);
++		spin_lock_bh(&priv->hw->lock);
 +		if (!priv->hw->chan[i].refcount) {
 +			if (XRX200_DMA_IS_RX(i))
 +				napi_enable(&priv->hw->chan[i].napi);
 +			ltq_dma_open(&priv->hw->chan[i].dma);
 +		}
 +		priv->hw->chan[i].refcount++;
-+		spin_unlock_irqrestore(&priv->hw->lock, flags);
++		spin_unlock_bh(&priv->hw->lock);
 +	}
 +	for (i = 0; i < priv->num_port; i++)
 +		if (priv->port[i].phydev)
@@ -1093,7 +1093,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static int xrx200_close(struct net_device *dev)
 +{
 +	struct xrx200_priv *priv = netdev_priv(dev);
-+	unsigned long flags;
 +	int i;
 +
 +	netif_stop_queue(dev);
@@ -1105,14 +1104,14 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	for (i = 0; i < XRX200_MAX_DMA; i++) {
 +		if (!priv->hw->chan[i].dma.irq)
 +			continue;
-+		spin_lock_irqsave(&priv->hw->lock, flags);
++		spin_lock_bh(&priv->hw->lock);
 +		priv->hw->chan[i].refcount--;
 +		if (!priv->hw->chan[i].refcount) {
 +			if (XRX200_DMA_IS_RX(i))
 +				napi_disable(&priv->hw->chan[i].napi);
 +			ltq_dma_close(&priv->hw->chan[XRX200_DMA_RX].dma);
 +		}
-+		spin_unlock_irqrestore(&priv->hw->lock, flags);
++		spin_unlock_bh(&priv->hw->lock);
 +	}
 +
 +	return 0;
@@ -1123,7 +1122,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#define DMA_PAD	(NET_IP_ALIGN + NET_SKB_PAD)
 +	ch->skb[ch->dma.desc] = dev_alloc_skb(XRX200_DMA_DATA_LEN + DMA_PAD);
 +	if (!ch->skb[ch->dma.desc])
-+		return -ENOMEM;
++		goto skip;
 +
 +	skb_reserve(ch->skb[ch->dma.desc], NET_SKB_PAD);
 +	ch->dma.desc_base[ch->dma.desc].addr = dma_map_single(NULL,
@@ -1131,10 +1130,12 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			DMA_FROM_DEVICE);
 +	ch->dma.desc_base[ch->dma.desc].addr =
 +		CPHYSADDR(ch->skb[ch->dma.desc]->data);
++	skb_reserve(ch->skb[ch->dma.desc], NET_IP_ALIGN);
++
++skip:
 +	ch->dma.desc_base[ch->dma.desc].ctl =
 +		LTQ_DMA_OWN | LTQ_DMA_RX_OFFSET(NET_IP_ALIGN) |
 +		XRX200_DMA_DATA_LEN;
-+	skb_reserve(ch->skb[ch->dma.desc], NET_IP_ALIGN);
 +
 +	return 0;
 +}
@@ -1146,18 +1147,18 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
 +	struct sk_buff *skb = ch->skb[ch->dma.desc];
 +	int len = (desc->ctl & LTQ_DMA_SIZE_MASK);
-+	unsigned long flags;
++	int ret;
 +
-+	spin_lock_irqsave(&priv->hw->lock, flags);
-+	if (xrx200_alloc_skb(ch)) {
-+		netdev_err(dev,
-+			"failed to allocate new rx buffer, stopping DMA\n");
-+		ltq_dma_close(&ch->dma);
-+	}
++	ret = xrx200_alloc_skb(ch);
 +
 +	ch->dma.desc++;
 +	ch->dma.desc %= LTQ_DESC_NUM;
-+	spin_unlock_irqrestore(&priv->hw->lock, flags);
++
++	if (ret) {
++		netdev_err(dev,
++			"failed to allocate new rx buffer\n");
++		return 0;
++	}
 +
 +	skb_put(skb, len);
 +#ifdef SW_ROUTING
@@ -1177,7 +1178,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +	struct xrx200_priv *priv = netdev_priv(ch->devs[0]);
 +	int rx = 0;
 +	int complete = 0;
-+	unsigned long flags;
 +
 +	while ((rx < budget) && !complete) {
 +		struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
@@ -1195,12 +1195,12 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +			complete = 1;
 +		}
 +	}
++
 +	if (complete || !rx) {
 +		napi_complete(&ch->napi);
-+		spin_lock_irqsave(&priv->hw->lock, flags);
-+		ltq_dma_ack_irq(&ch->dma);
-+		spin_unlock_irqrestore(&priv->hw->lock, flags);
++		ltq_dma_enable_irq(&ch->dma);
 +	}
++
 +	return rx;
 +}
 +
@@ -1208,30 +1208,30 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +{
 +	struct xrx200_hw *hw = (struct xrx200_hw *) ptr;
 +	struct xrx200_chan *ch = &hw->chan[XRX200_DMA_TX];
-+	unsigned long flags;
++	int pkts = 0;
 +	int i;
 +
-+	spin_lock_irqsave(&hw->lock, flags);
++	spin_lock_bh(&hw->lock);
++	ltq_dma_ack_irq(&ch->dma);
 +	while ((ch->dma.desc_base[ch->tx_free].ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) == LTQ_DMA_C) {
-+		dev_kfree_skb_any(ch->skb[ch->tx_free]);
++		struct sk_buff *skb = ch->skb[ch->tx_free];
++
++		pkts++;
 +		ch->skb[ch->tx_free] = NULL;
++		dev_kfree_skb(skb);
 +		memset(&ch->dma.desc_base[ch->tx_free], 0,
 +			sizeof(struct ltq_dma_desc));
 +		ch->tx_free++;
 +		ch->tx_free %= LTQ_DESC_NUM;
 +	}
-+	spin_unlock_irqrestore(&hw->lock, flags);
++	ltq_dma_enable_irq(&ch->dma);
++	spin_unlock_bh(&hw->lock);
 +
-+	for (i = 0; i < XRX200_MAX_DEV && ch->devs[i]; i++) {
-+		struct netdev_queue *txq =
-+			netdev_get_tx_queue(ch->devs[i], 0);
-+		if (netif_tx_queue_stopped(txq))
-+			netif_tx_start_queue(txq);
-+	}
++	if (!pkts)
++		return;
 +
-+	spin_lock_irqsave(&hw->lock, flags);
-+	ltq_dma_ack_irq(&ch->dma);
-+	spin_unlock_irqrestore(&hw->lock, flags);
++	for (i = 0; i < XRX200_MAX_DEV && ch->devs[i]; i++)
++		netif_wake_queue(ch->devs[i]);
 +}
 +
 +static struct net_device_stats *xrx200_get_stats (struct net_device *dev)
@@ -1253,12 +1253,9 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +static int xrx200_start_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
-+	int queue = skb_get_queue_mapping(skb);
-+	struct netdev_queue *txq = netdev_get_tx_queue(dev, queue);
 +	struct xrx200_priv *priv = netdev_priv(dev);
 +	struct xrx200_chan *ch = &priv->hw->chan[XRX200_DMA_TX];
 +	struct ltq_dma_desc *desc = &ch->dma.desc_base[ch->dma.desc];
-+	unsigned long flags;
 +	u32 byte_offset;
 +	int len;
 +#ifdef SW_ROUTING
@@ -1269,11 +1266,12 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +  #endif
 +#endif
 +
++	skb->dev = dev;
 +	len = skb->len < ETH_ZLEN ? ETH_ZLEN : skb->len;
 +
 +	if ((desc->ctl & (LTQ_DMA_OWN | LTQ_DMA_C)) || ch->skb[ch->dma.desc]) {
 +		netdev_err(dev, "tx ring full\n");
-+		netif_tx_stop_queue(txq);
++		netif_stop_queue(dev);
 +		return NETDEV_TX_BUSY;
 +	}
 +#ifdef SW_ROUTING
@@ -1299,7 +1297,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +	dev->trans_start = jiffies;
 +
-+	spin_lock_irqsave(&priv->hw->lock, flags);
++	spin_lock_bh(&priv->hw->lock);
 +	desc->addr = ((unsigned int) dma_map_single(NULL, skb->data, len,
 +						DMA_TO_DEVICE)) - byte_offset;
 +	wmb();
@@ -1307,10 +1305,10 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +		LTQ_DMA_TX_OFFSET(byte_offset) | (len & LTQ_DMA_SIZE_MASK);
 +	ch->dma.desc++;
 +	ch->dma.desc %= LTQ_DESC_NUM;
-+	spin_unlock_irqrestore(&priv->hw->lock, flags);
++	if (ch->dma.desc == ch->tx_free)
++		netif_stop_queue(dev);
 +
-+	if (ch->dma.desc_base[ch->dma.desc].ctl & LTQ_DMA_OWN)
-+		netif_tx_stop_queue(txq);
++	spin_unlock_bh(&priv->hw->lock);
 +
 +	priv->stats.tx_packets++;
 +	priv->stats.tx_bytes+=len;
@@ -1321,12 +1319,16 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +static irqreturn_t xrx200_dma_irq(int irq, void *priv)
 +{
 +	struct xrx200_hw *hw = priv;
-+	int ch = irq - XRX200_DMA_IRQ;
++	int chnr = irq - XRX200_DMA_IRQ;
++	struct xrx200_chan *ch = &hw->chan[chnr];
 +
-+	if (ch % 2)
-+		tasklet_schedule(&hw->chan[ch].tasklet);
++	ltq_dma_disable_irq(&ch->dma);
++	ltq_dma_ack_irq(&ch->dma);
++
++	if (chnr % 2)
++		tasklet_schedule(&ch->tasklet);
 +	else
-+		napi_schedule(&hw->chan[ch].napi);
++		napi_schedule(&ch->napi);
 +
 +	return IRQ_HANDLED;
 +}
@@ -1714,12 +1716,12 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +#ifdef SW_ROUTING
 +	/* enable status header, enable CRC */
 +	ltq_pmac_w32_mask(0,
-+		PMAC_HD_CTL_RST | PMAC_HD_CTL_AST | PMAC_HD_CTL_RXSH | PMAC_HD_CTL_AS | PMAC_HD_CTL_AC,
++		PMAC_HD_CTL_RST | PMAC_HD_CTL_AST | PMAC_HD_CTL_RXSH | PMAC_HD_CTL_AS | PMAC_HD_CTL_AC | PMAC_HD_CTL_RC,
 +		PMAC_HD_CTL);
 +#else
 +	/* disable status header, enable CRC */
 +	ltq_pmac_w32_mask(PMAC_HD_CTL_AST | PMAC_HD_CTL_RXSH | PMAC_HD_CTL_AS,
-+		PMAC_HD_CTL_AC,
++		PMAC_HD_CTL_AC | PMAC_HD_CTL_RC,
 +		PMAC_HD_CTL);
 +#endif
 +
