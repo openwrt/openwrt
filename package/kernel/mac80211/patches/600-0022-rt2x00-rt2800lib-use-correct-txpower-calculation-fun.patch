@@ -6,11 +6,11 @@ Subject: [PATCH] rt2x00: rt2800lib: use correct txpower calculation function
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    3 ++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -4611,7 +4611,8 @@ static void rt2800_config_txpower(struct
  				  struct ieee80211_channel *chan,
  				  int power_level)

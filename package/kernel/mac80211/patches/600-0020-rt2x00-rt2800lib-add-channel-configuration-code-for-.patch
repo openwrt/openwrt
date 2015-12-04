@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800lib: add channel configuration code for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |   72 +++++++++++++++++++++++++++++--
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |   72 +++++++++++++++++++++++++++++--
  1 file changed, 69 insertions(+), 3 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -3405,6 +3405,36 @@ static char rt2800_txpower_to_dev(struct
  		return clamp_t(char, txpower, MIN_A_TXPOWER, MAX_A_TXPOWER);
  }

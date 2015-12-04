@@ -13,7 +13,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 
 --- a/drivers/net/wireless/ath/ath10k/wmi.c
 +++ b/drivers/net/wireless/ath/ath10k/wmi.c
-@@ -4258,34 +4258,58 @@ void ath10k_wmi_event_vdev_resume_req(st
+@@ -4312,34 +4312,58 @@ void ath10k_wmi_event_vdev_resume_req(st
  	ath10k_dbg(ar, ATH10K_DBG_WMI, "WMI_VDEV_RESUME_REQ_EVENTID\n");
  }
  
@@ -23,7 +23,8 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 +				  u32 num_units, u32 unit_len)
  {
  	dma_addr_t paddr;
- 	u32 pool_size;
+-	u32 pool_size;
++	u32 pool_size = 0;
  	int idx = ar->wmi.num_mem_chunks;
 +	void *vaddr = NULL;
  
@@ -53,13 +54,13 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 -	memset(ar->wmi.mem_chunks[idx].vaddr, 0, pool_size);
 +	if (!num_units)
 +		return -ENOMEM;
- 
++
 +	paddr = dma_map_single(ar->dev, vaddr, pool_size, DMA_TO_DEVICE);
 +	if (dma_mapping_error(ar->dev, paddr)) {
 +		kfree(vaddr);
 +		return -ENOMEM;
 +	}
-+
+ 
 +	ar->wmi.mem_chunks[idx].vaddr = vaddr;
  	ar->wmi.mem_chunks[idx].paddr = paddr;
  	ar->wmi.mem_chunks[idx].len = pool_size;
@@ -85,7 +86,7 @@ Signed-off-by: Felix Fietkau <nbd@openwrt.org>
  	return 0;
  }
  
-@@ -7616,10 +7640,11 @@ void ath10k_wmi_free_host_mem(struct ath
+@@ -7717,10 +7741,11 @@ void ath10k_wmi_free_host_mem(struct ath
  
  	/* free the host memory chunks requested by firmware */
  	for (i = 0; i < ar->wmi.num_mem_chunks; i++) {

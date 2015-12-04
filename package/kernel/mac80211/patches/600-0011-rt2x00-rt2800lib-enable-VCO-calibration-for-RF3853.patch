@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800lib: enable VCO calibration for RF3853
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    2 ++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    2 ++
  1 file changed, 2 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -4378,6 +4378,7 @@ void rt2800_vco_calibration(struct rt2x0
  	case RF3053:
  	case RF3070:

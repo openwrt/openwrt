@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800lib: fix VGC setup for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |   11 +++++++++--
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |   11 +++++++++--
  1 file changed, 9 insertions(+), 2 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -4811,7 +4811,8 @@ static u8 rt2800_get_default_vgc(struct
  		else
  			vgc = 0x2e + rt2x00dev->lna_gain;

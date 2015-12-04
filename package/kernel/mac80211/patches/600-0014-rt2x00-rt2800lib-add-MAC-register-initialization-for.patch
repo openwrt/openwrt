@@ -6,12 +6,12 @@ Subject: [PATCH] rt2x00: rt2800lib: add MAC register initialization for
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800.h    |   14 ++++++++++++++
- drivers/net/wireless/rt2x00/rt2800lib.c |   19 ++++++++++++++++---
+ drivers/net/wireless/ralink/rt2x00/rt2800.h    |   14 ++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |   19 ++++++++++++++++---
  2 files changed, 30 insertions(+), 3 deletions(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800.h
-+++ b/drivers/net/wireless/rt2x00/rt2800.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -1588,6 +1588,20 @@
  #define TX_PWR_CFG_9_STBC7_CH2		FIELD32(0x00000f00)
  
@@ -33,8 +33,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
   * RX_FILTER_CFG: RX configuration register.
   */
  #define RX_FILTER_CFG			0x1400
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -4981,6 +4981,12 @@ static int rt2800_init_registers(struct
  			rt2800_register_write(rt2x00dev, TX_SW_CFG2,
  					      0x00000000);

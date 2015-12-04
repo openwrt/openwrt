@@ -18,12 +18,12 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 Changes since v1:
   - don't enable the new flag for RT3071 and RT5592
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    4 ++++
- drivers/net/wireless/rt2x00/rt2800lib.h |   13 +++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    4 ++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h |   13 +++++++++++++
  2 files changed, 17 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -7721,6 +7721,7 @@ static int rt2800_probe_rt(struct rt2x00
  
  int rt2800_probe_hw(struct rt2x00_dev *rt2x00dev)
@@ -42,8 +42,8 @@ Changes since v1:
  	/*
  	 * Allocate eeprom data.
  	 */
---- a/drivers/net/wireless/rt2x00/rt2800lib.h
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 @@ -22,6 +22,10 @@
  
  #include "rt2800.h"

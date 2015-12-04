@@ -1,5 +1,5 @@
---- a/drivers/net/wireless/b43/main.c
-+++ b/drivers/net/wireless/b43/main.c
+--- a/drivers/net/wireless/broadcom/b43/main.c
++++ b/drivers/net/wireless/broadcom/b43/main.c
 @@ -1648,7 +1648,7 @@ static void b43_write_beacon_template(st
  				  len, ram_offset, shm_size_offset, rate);
  
@@ -118,8 +118,8 @@
  	wl->hw_registred = false;
  	hw->max_rates = 2;
  	SET_IEEE80211_DEV(hw, dev->dev);
---- a/drivers/net/wireless/b43/b43.h
-+++ b/drivers/net/wireless/b43/b43.h
+--- a/drivers/net/wireless/broadcom/b43/b43.h
++++ b/drivers/net/wireless/broadcom/b43/b43.h
 @@ -840,6 +840,8 @@ struct b43_wldev {
  	bool hwcrypto_enabled;		/* TRUE, if HW crypto acceleration is enabled. */
  	bool use_pio;			/* TRUE if next init should use PIO */

@@ -17,17 +17,17 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
 Changes since v1: ---
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c  |   55 +++++++++++++++++++++++++++++-
- drivers/net/wireless/rt2x00/rt2800lib.h  |   32 +++++++++++++++++
- drivers/net/wireless/rt2x00/rt2800mmio.c |   26 ++++++++++++++
- drivers/net/wireless/rt2x00/rt2800mmio.h |    4 +++
- drivers/net/wireless/rt2x00/rt2800pci.c  |   14 ++++++++
- drivers/net/wireless/rt2x00/rt2800soc.c  |    3 ++
- drivers/net/wireless/rt2x00/rt2800usb.c  |   31 +++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c  |   55 +++++++++++++++++++++++++++++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.h  |   32 +++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800mmio.c |   26 ++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800mmio.h |    4 +++
+ drivers/net/wireless/ralink/rt2x00/rt2800pci.c  |   14 ++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800soc.c  |    3 ++
+ drivers/net/wireless/ralink/rt2x00/rt2800usb.c  |   31 +++++++++++++++++
  7 files changed, 164 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -451,11 +451,13 @@ void rt2800_mcu_request(struct rt2x00_de
  		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_CMD_TOKEN, token);
  		rt2x00_set_field32(&reg, H2M_MAILBOX_CSR_ARG0, arg0);
@@ -260,8 +260,8 @@ Changes since v1: ---
  
  	memcpy(&seq->tkip.iv16, &iveiv_entry.iv[0], 2);
  	memcpy(&seq->tkip.iv32, &iveiv_entry.iv[4], 4);
---- a/drivers/net/wireless/rt2x00/rt2800lib.h
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.h
 @@ -38,6 +38,11 @@ struct rt2800_drv_data {
  	DECLARE_BITMAP(sta_ids, STA_IDS_SIZE);
  
@@ -315,8 +315,8 @@ Changes since v1: ---
  static inline void rt2800_register_read(struct rt2x00_dev *rt2x00dev,
  					const unsigned int offset,
  					u32 *value)
---- a/drivers/net/wireless/rt2x00/rt2800mmio.c
-+++ b/drivers/net/wireless/rt2x00/rt2800mmio.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.c
 @@ -820,8 +820,10 @@ int rt2800mmio_init_registers(struct rt2
  	rt2x00_set_field32(&reg, WPDMA_RST_IDX_DRX_IDX0, 1);
  	rt2x00mmio_register_write(rt2x00dev, WPDMA_RST_IDX, reg);
@@ -359,8 +359,8 @@ Changes since v1: ---
  MODULE_AUTHOR(DRV_PROJECT);
  MODULE_VERSION(DRV_VERSION);
  MODULE_DESCRIPTION("rt2800 MMIO library");
---- a/drivers/net/wireless/rt2x00/rt2800mmio.h
-+++ b/drivers/net/wireless/rt2x00/rt2800mmio.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800mmio.h
 @@ -160,4 +160,8 @@ int rt2800mmio_init_registers(struct rt2
  /* Device state switch handlers. */
  int rt2800mmio_enable_radio(struct rt2x00_dev *rt2x00dev);
@@ -370,8 +370,8 @@ Changes since v1: ---
 +void rt2800mmio_shmem_unlock(struct rt2x00_dev *rt2x00dev);
 +
  #endif /* RT2800MMIO_H */
---- a/drivers/net/wireless/rt2x00/rt2800pci.c
-+++ b/drivers/net/wireless/rt2x00/rt2800pci.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800pci.c
 @@ -69,7 +69,9 @@ static void rt2800pci_mcu_status(struct
  		return;
  
@@ -444,8 +444,8 @@ Changes since v1: ---
  };
  
  static const struct rt2x00lib_ops rt2800pci_rt2x00_ops = {
---- a/drivers/net/wireless/rt2x00/rt2800soc.c
-+++ b/drivers/net/wireless/rt2x00/rt2800soc.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800soc.c
 @@ -176,6 +176,9 @@ static const struct rt2800_ops rt2800soc
  	.drv_write_firmware	= rt2800soc_write_firmware,
  	.drv_init_registers	= rt2800mmio_init_registers,
@@ -456,8 +456,8 @@ Changes since v1: ---
  };
  
  static const struct rt2x00lib_ops rt2800soc_rt2x00_ops = {
---- a/drivers/net/wireless/rt2x00/rt2800usb.c
-+++ b/drivers/net/wireless/rt2x00/rt2800usb.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800usb.c
 @@ -51,6 +51,27 @@ static bool rt2800usb_hwcrypt_disabled(s
  	return modparam_nohwcrypt;
  }

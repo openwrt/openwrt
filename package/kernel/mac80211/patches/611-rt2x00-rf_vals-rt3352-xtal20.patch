@@ -1,5 +1,5 @@
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -8185,6 +8185,27 @@ static const struct rf_channel rf_vals_5
  	{196, 83, 0, 12, 1},
  };
@@ -76,8 +76,8 @@
  	 * Initialize hw specifications.
  	 */
  	retval = rt2800_probe_hw_mode(rt2x00dev);
---- a/drivers/net/wireless/rt2x00/rt2x00.h
-+++ b/drivers/net/wireless/rt2x00/rt2x00.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2x00.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2x00.h
 @@ -400,6 +400,7 @@ static inline struct rt2x00_intf* vif_to
   * @channels: Device/chipset specific channel values (See &struct rf_channel).
   * @channels_info: Additional information for channels (See &struct channel_info).

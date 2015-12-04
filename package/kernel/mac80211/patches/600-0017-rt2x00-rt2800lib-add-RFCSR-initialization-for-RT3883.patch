@@ -5,12 +5,12 @@ Subject: [PATCH] rt2x00: rt2800lib: add RFCSR initialization for RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800.h    |    1 +
- drivers/net/wireless/rt2x00/rt2800lib.c |  141 +++++++++++++++++++++++++++++++
+ drivers/net/wireless/ralink/rt2x00/rt2800.h    |    1 +
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |  141 +++++++++++++++++++++++++++++++
  2 files changed, 142 insertions(+)
 
---- a/drivers/net/wireless/rt2x00/rt2800.h
-+++ b/drivers/net/wireless/rt2x00/rt2800.h
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800.h
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800.h
 @@ -2171,6 +2171,7 @@ struct mac_iveiv_entry {
  /*
   * RFCSR 2:
@@ -19,8 +19,8 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  #define RFCSR2_RESCAL_EN		FIELD8(0x80)
  
  /*
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -6819,6 +6819,144 @@ static void rt2800_init_rfcsr_3593(struc
  	/* TODO: enable stream mode support */
  }

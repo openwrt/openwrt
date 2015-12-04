@@ -5,11 +5,11 @@ Subject: [PATCH] rt2x00: rt2800lib: use high memory for beacons on RT3883
 
 Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
 ---
- drivers/net/wireless/rt2x00/rt2800lib.c |    3 ++-
+ drivers/net/wireless/ralink/rt2x00/rt2800lib.c |    3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
---- a/drivers/net/wireless/rt2x00/rt2800lib.c
-+++ b/drivers/net/wireless/rt2x00/rt2800lib.c
+--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
 @@ -97,7 +97,8 @@ static inline void rt2800_shared_mem_sel
  
  static inline bool rt2800_beacon_uses_high_mem(struct rt2x00_dev *rt2x00dev)
