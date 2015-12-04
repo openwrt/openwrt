@@ -803,7 +803,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	/* Enable TX or RX interrupts */
 +	ltq_spi_reg_setbit(hw, irq_flags, LTQ_SPI_IRNEN);
-+	wait_for_completion_interruptible(&hw->done);
++	wait_for_completion(&hw->done);
 +
 +	/* Disable all interrupts */
 +	ltq_spi_reg_clearbit(hw, LTQ_SPI_IRNEN_ALL, LTQ_SPI_IRNEN);
