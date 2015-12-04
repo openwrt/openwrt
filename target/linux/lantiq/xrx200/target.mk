@@ -15,8 +15,7 @@ DEFAULT_PACKAGES+=kmod-leds-gpio \
 	kmod-ltq-deu-vr9 \
 	ltq-vdsl-app \
 	ppp-mod-pppoa \
-	swconfig \
-	atm-esi
+	swconfig
 
 define Target/Description
 	Lantiq XRX200
