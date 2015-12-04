@@ -540,6 +540,21 @@ ucidef_set_rssimon() {
 
 }
 
+ucidef_add_gpio_switch() {
+	local cfg="$1"
+	local name="$2"
+	local pin="$3"
+	local default="${4:-0}"
+
+	json_select_object gpioswitch
+		json_select_object "$cfg"
+			json_add_string name "$name"
+			json_add_int pin "$pin"
+			json_add_int default "$default"
+		json_select ..
+	json_select ..
+}
+
 board_config_update() {
 	json_init
 	[ -f ${CFG} ] && json_load "$(cat ${CFG})"

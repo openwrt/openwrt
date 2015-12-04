@@ -312,6 +312,24 @@ generate_led() {
 	json_select ..
 }
 
+generate_gpioswitch() {
+	local cfg="$1"
+
+	json_select gpioswitch
+		json_select "$cfg"
+			local name pin default
+			json_get_vars name pin default
+			uci -q batch <<-EOF
+				delete system.$cfg
+				set system.$cfg='gpio_switch'
+				set system.$cfg.name='$name'
+				set system.$cfg.gpio_pin='$pin'
+				set system.$cfg.default='$default'
+			EOF
+		json_select ..
+	json_select ..
+}
+
 json_init
 json_load "$(cat ${CFG})"
 
@@ -325,6 +343,9 @@ for key in $keys; do generate_switch $key; done
 
 json_get_keys keys rssimon
 for key in $keys; do generate_rssimon $key; done
+
+json_get_keys keys gpioswitch
+for key in $keys; do generate_gpioswitch $key; done
 
 json_get_keys keys led
 for key in $keys; do generate_led $key; done
