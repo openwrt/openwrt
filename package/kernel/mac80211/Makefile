@@ -71,7 +71,6 @@ WMENU:=Wireless Drivers
 
 define KernelPackage/mac80211/Default
   SUBMENU:=$(WMENU)
-  DEPENDS:=@!LINUX_4_4
   URL:=https://wireless.wiki.kernel.org/
   MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 endef
