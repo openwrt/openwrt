@@ -54,10 +54,10 @@ CONFIGURE_ARGS += \
 	--enable-cli-support
 endif
 
-CONFIGURE_ARGS += --enable-model=full
+#CONFIGURE_ARGS += --enable-model=full
 #CONFIGURE_ARGS += --enable-model=lite
 #CONFIGURE_ARGS += --enable-model=footprint
-#CONFIGURE_ARGS += --enable-model=typical
+CONFIGURE_ARGS += --enable-model=typical
 #CONFIGURE_ARGS += --enable-model=debug
 
 define Package/ltq-vdsl-app/install
