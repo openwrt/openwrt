@@ -1,10 +1,12 @@
 #!/bin/sh
 #
-# Copyright (C) 2013-2014 OpenWrt.org
+# Copyright (C) 2013-2015 OpenWrt.org
 #
 
-. /lib/functions/uci-defaults.sh
+. /lib/functions/uci-defaults-new.sh
 . /lib/brcm63xx.sh
+
+board_config_update
 
 case "$(brcm63xx_board_name)" in
 a4001n1)
@@ -51,6 +53,6 @@ r5010un_v2)
 	;;
 esac
 
-ucidef_commit_leds
+board_config_flush
 
 exit 0
