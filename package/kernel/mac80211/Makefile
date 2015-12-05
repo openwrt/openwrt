@@ -109,6 +109,15 @@ define KernelPackage/mac80211/config
 		  Select this to see extensive information about
 		  the internal state of mac80211 in debugfs.
 
+	config PACKAGE_MAC80211_TRACING
+		bool "Enable tracing (mac80211 and supported drivers)"
+		select KERNEL_FTRACE
+		select KERNEL_ENABLE_DEFAULT_TRACERS
+		default n
+		help
+		  Select this to enable tracing of mac80211 and
+		  related wifi drivers (using trace-cmd).
+
 	config PACKAGE_MAC80211_MESH
 		bool "Enable 802.11s mesh support"
 		default y
@@ -1629,6 +1638,16 @@ ifdef CONFIG_PACKAGE_MAC80211_DEBUGFS
 	ATH10K_DEBUGFS \
 	CARL9170_DEBUGFS \
 	ATH5K_DEBUG
+endif
+
+ifdef CONFIG_PACKAGE_MAC80211_TRACING
+  config-y += \
+	ATH10K_TRACING \
+	ATH6KL_TRACING \
+	ATH_TRACEPOINTS \
+	WIL6210_TRACING \
+	ATH5K_TRACER \
+	IWLWIFI_DEVICE_TRACING
 endif
 
 config-$(call config_package,lib80211) += LIB80211 LIB80211_CRYPT_WEP LIB80211_CRYPT_CCMP LIB80211_CRYPT_TKIP
