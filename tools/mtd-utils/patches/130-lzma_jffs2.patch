@@ -1,7 +1,7 @@
 --- a/Makefile
 +++ b/Makefile
 @@ -4,6 +4,7 @@
- VERSION = 1.5.1
+ VERSION = 1.5.2
  
  CPPFLAGS += -D_GNU_SOURCE -I./include -I$(BUILDDIR)/include -I./ubi-utils/include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(UUIDCPPFLAGS)
 +CPPFLAGS += -I./include/linux/lzma
@@ -123,7 +123,7 @@
 +}
 +
 +STATIC int jffs2_lzma_compress(unsigned char *data_in, unsigned char *cpage_out,
-+			      uint32_t *sourcelen, uint32_t *dstlen, void *model)
++			      uint32_t *sourcelen, uint32_t *dstlen)
 +{
 +	SizeT compress_size = (SizeT)(*dstlen);
 +	int ret;
@@ -148,7 +148,7 @@
 +}
 +
 +STATIC int jffs2_lzma_decompress(unsigned char *data_in, unsigned char *cpage_out,
-+				 uint32_t srclen, uint32_t destlen, void *model)
++				 uint32_t srclen, uint32_t destlen)
 +{
 +	int ret;
 +	SizeT dl = (SizeT)destlen;
