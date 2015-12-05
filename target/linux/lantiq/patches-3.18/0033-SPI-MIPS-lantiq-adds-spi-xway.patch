@@ -42,7 +42,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +obj-$(CONFIG_SPI_XWAY)			+= spi-xway.o
 --- /dev/null
 +++ b/drivers/spi/spi-xway.c
-@@ -0,0 +1,975 @@
+@@ -0,0 +1,1003 @@
 +/*
 + * Lantiq SoC SPI controller
 + *
@@ -184,8 +184,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +#define LTQ_SPI_IRNEN_F		BIT(3)	/* Frame end interrupt request */
 +#define LTQ_SPI_IRNEN_E		BIT(2)	/* Error end interrupt request */
-+#define LTQ_SPI_IRNEN_T		BIT(1)	/* Transmit end interrupt request */
-+#define LTQ_SPI_IRNEN_R		BIT(0)	/* Receive end interrupt request */
++#define LTQ_SPI_IRNEN_T		BIT(0)  /* Transmit end interrupt request */
++#define LTQ_SPI_IRNEN_R		BIT(1)  /* Receive end interrupt request */
++#define LTQ_SPI_IRNEN_T_XWAY	BIT(1)  /* Transmit end interrupt request */
++#define LTQ_SPI_IRNEN_R_XWAY	BIT(0)  /* Receive end interrupt request */
 +#define LTQ_SPI_IRNEN_ALL	0xF
 +
 +struct ltq_spi {
@@ -214,6 +216,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	u16			rxfs;
 +	unsigned		dma_support:1;
 +	unsigned		cfg_mode:1;
++
++	u32			irnen_t;
++	u32			irnen_r;
 +};
 +
 +static inline struct ltq_spi *ltq_spi_to_hw(struct spi_device *spi)
@@ -517,6 +522,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +{
 +	struct ltq_spi *hw = ltq_spi_to_hw(spi);
 +
++	if (ltq_spi_wait_ready(hw))
++		dev_err(&spi->dev, "wait failed\n");
++
 +	switch (cs) {
 +	case BITBANG_CS_ACTIVE:
 +		ltq_spi_bits_per_word_set(spi);
@@ -546,8 +554,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +
 +	if (bits_per_word > 32)
 +		return -EINVAL;
-+
-+	ltq_spi_config_mode_set(hw);
 +
 +	return 0;
 +}
@@ -661,8 +667,20 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +static void ltq_spi_rxreq_set(struct ltq_spi *hw)
 +{
 +	u32 rxreq, rxreq_max, rxtodo;
++	u32 fstat, fifo_fill;
 +
 +	rxtodo = ltq_spi_reg_read(hw, LTQ_SPI_RXCNT) & LTQ_SPI_RXCNT_TODO_MASK;
++
++	/*
++	 * Check if there is remaining data in the FIFO before starting a new
++	 * receive request. The controller might have processed some more data
++	 * since the last FIFO poll.
++	 */
++	fstat = ltq_spi_reg_read(hw, LTQ_SPI_FSTAT);
++	fifo_fill = ((fstat >> LTQ_SPI_FSTAT_RXFFL_SHIFT)
++			& LTQ_SPI_FSTAT_RXFFL_MASK);
++	if (fifo_fill)
++		return;
 +
 +	/*
 +	 * In RX-only mode the serial clock is activated only after writing
@@ -744,6 +762,8 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* Disable all interrupts */
 +	ltq_spi_reg_clearbit(hw, LTQ_SPI_IRNEN_ALL, LTQ_SPI_IRNEN);
 +
++	dev_err(hw->dev, "error %x\n", ltq_spi_reg_read(hw, LTQ_SPI_STAT));
++
 +	/* Clear all error flags */
 +	ltq_spi_reg_write(hw, LTQ_SPI_WHBSTATE_CLR_ERRORS, LTQ_SPI_WHBSTATE);
 +
@@ -780,22 +800,22 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (hw->tx) {
 +		/* Initially fill TX FIFO with as much data as possible */
 +		ltq_spi_txfifo_write(hw);
-+		irq_flags |= LTQ_SPI_IRNEN_T;
++		irq_flags |= hw->irnen_t;
 +
 +		/* Always enable RX interrupt in Full Duplex mode */
 +		if (hw->rx)
-+			irq_flags |= LTQ_SPI_IRNEN_R;
++			irq_flags |= hw->irnen_r;
 +	} else if (hw->rx) {
 +		/* Start RX clock */
 +		ltq_spi_rxreq_set(hw);
 +
 +		/* Enable RX interrupt to receive data from RX FIFOs */
-+		irq_flags |= LTQ_SPI_IRNEN_R;
++		irq_flags |= hw->irnen_r;
 +	}
 +
 +	/* Enable TX or RX interrupts */
 +	ltq_spi_reg_setbit(hw, irq_flags, LTQ_SPI_IRNEN);
-+	wait_for_completion_interruptible(&hw->done);
++	wait_for_completion(&hw->done);
 +
 +	/* Disable all interrupts */
 +	ltq_spi_reg_clearbit(hw, LTQ_SPI_IRNEN_ALL, LTQ_SPI_IRNEN);
@@ -895,10 +915,18 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	hw->bitbang.setup_transfer = ltq_spi_setup_transfer;
 +	hw->bitbang.txrx_bufs = ltq_spi_txrx_bufs;
 +
-+	if (of_machine_is_compatible("lantiq,ase"))
++	if (of_machine_is_compatible("lantiq,ase")) {
 +		master->num_chipselect = 3;
-+	else
++
++		hw->irnen_t = LTQ_SPI_IRNEN_T_XWAY;
++		hw->irnen_r = LTQ_SPI_IRNEN_R_XWAY;
++	} else {
 +		master->num_chipselect = 6;
++
++		hw->irnen_t = LTQ_SPI_IRNEN_T;
++		hw->irnen_r = LTQ_SPI_IRNEN_R;
++	}
++
 +	master->bus_num = pdev->id;
 +	master->setup = ltq_spi_setup;
 +	master->cleanup = ltq_spi_cleanup;
@@ -913,7 +941,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	/* Read module capabilities */
 +	id = ltq_spi_reg_read(hw, LTQ_SPI_ID);
 +	hw->txfs = (id >> LTQ_SPI_ID_TXFS_SHIFT) & LTQ_SPI_ID_TXFS_MASK;
-+	hw->rxfs = (id >> LTQ_SPI_ID_TXFS_SHIFT) & LTQ_SPI_ID_TXFS_MASK;
++	hw->rxfs = (id >> LTQ_SPI_ID_RXFS_SHIFT) & LTQ_SPI_ID_RXFS_MASK;
 +	hw->dma_support = (id & LTQ_SPI_ID_CFG) ? 1 : 0;
 +
 +	ltq_spi_config_mode_set(hw);
