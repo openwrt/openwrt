@@ -160,6 +160,9 @@ xtse() {
 
 	local annex_s=""
 	local line_mode_s=""
+	local vector_s=""
+
+	local dsmsg=""
 	local cmd=""
 
 	xtusesg=$(dsl_cmd g997xtusesg)
@@ -256,7 +259,15 @@ xtse() {
 	fi
 
 	if [ $((xtse8 & 7)) != 0  ]; then
-		line_mode_s="$line_mode_s G.993.2 (VDSL2),"
+		dsmsg=$(dsl_cmd dsmsg)
+		vector_s=$(dsl_val "$dsmsg" eVectorStatus)
+
+		case "$vector_s" in
+			"0")	line_mode_s="$line_mode_s G.993.2 (VDSL2)," ;;
+			"1")	line_mode_s="$line_mode_s G.993.5 (VDSL2 with downstream vectoring)," ;;
+			"2")	line_mode_s="$line_mode_s G.993.5 (VDSL2 with down- and upstream vectoring)," ;;
+			*)	line_mode_s="$line_mode_s unknown," ;;
+		esac
 	fi
 
 	#!!! PROPRIETARY & INTERMEDIATE USE !!!
