@@ -248,7 +248,7 @@ get_status_led() {
 		status_led="lenovo:blue:power"
 		;;
 	zbt-wg2626)
-		status_led="zbt-wg2626:green:power"
+		status_led="zbt-wg2626:green:status"
 		;;
 	zte-q7)
 		status_led="zte:red:status"
