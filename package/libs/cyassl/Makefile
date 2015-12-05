@@ -8,12 +8,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=wolfssl
-PKG_VERSION:=3.6.0
+PKG_VERSION:=3.7.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).zip
-PKG_SOURCE_URL:=http://www.wolfssl.com/
-PKG_MD5SUM:=fea119ce10c715d3f22514b5b387781e
+PKG_SOURCE_URL:=https://www.wolfssl.com/
+PKG_MD5SUM:=e5a4f69b06b2796806a8cf51f5bd3758
 
 PKG_FIXUP:=libtool
 PKG_INSTALL:=1
@@ -43,6 +43,7 @@ CONFIGURE_ARGS += \
 	--enable-opensslextra \
 	--enable-sni \
 	--enable-ecc \
+	--enable-sslv3 \
 	--disable-examples
 
 ifneq ($(CONFIG_TARGET_x86),)

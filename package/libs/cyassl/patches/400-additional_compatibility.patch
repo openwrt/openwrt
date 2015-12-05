@@ -1,16 +1,12 @@
 --- a/cyassl/openssl/ssl.h
 +++ b/cyassl/openssl/ssl.h
-@@ -24,4 +24,13 @@
-  *
-  */
+@@ -27,6 +27,9 @@
+ #define CYASSL_OPENSSL_H_
  
-+#ifndef CYASSL_OPENSSL_H_
-+#define CYASSL_OPENSSL_H_
-+
-+#include <cyassl/ssl.h>
+ #include <cyassl/ssl.h>
 +#ifndef HAVE_SNI
 +#undef CYASSL_SNI_HOST_NAME
 +#endif
  #include <wolfssl/openssl/ssl.h>
-+
-+#endif
+ 
+ #endif
