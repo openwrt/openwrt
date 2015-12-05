@@ -1,0 +1,32 @@
+From: =?utf-8?q?Rafa=C5=82_Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Tue, 1 Sep 2015 09:55:52 +0200
+Subject: iw: display interface TX power if available
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+[print dBm]
+Signed-off-by: Johannes Berg <johannes.berg@intel.com>
+---
+ interface.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/interface.c b/interface.c
+index 73ccecd..4f0821d 100644
+--- a/interface.c
++++ b/interface.c
+@@ -368,6 +368,13 @@ static int print_iface_handler(struct nl_msg *msg, void *arg)
+ 		printf("\n");
+ 	}
+ 
++	if (tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]) {
++		uint32_t txp = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_TX_POWER_LEVEL]);
++
++		printf("%s\ttxpower %d.%.2d dBm\n",
++		       indent, txp / 100, txp % 100);
++	}
++
+ 	return NL_SKIP;
+ }
+ 
