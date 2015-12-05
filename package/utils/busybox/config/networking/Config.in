@@ -94,6 +94,89 @@ config BUSYBOX_CONFIG_FEATURE_FANCY_PING
 	help
 	  Make the output from the ping applet include statistics, and at the
 	  same time provide full support for ICMP packets.
+config BUSYBOX_CONFIG_WGET
+	bool "wget"
+	default BUSYBOX_DEFAULT_WGET
+	help
+	  wget is a utility for non-interactive download of files from HTTP
+	  and FTP servers.
+
+config BUSYBOX_CONFIG_FEATURE_WGET_STATUSBAR
+	bool "Enable a nifty process meter (+2k)"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_STATUSBAR
+	depends on BUSYBOX_CONFIG_WGET
+	help
+	  Enable the transfer progress bar for wget transfers.
+
+config BUSYBOX_CONFIG_FEATURE_WGET_AUTHENTICATION
+	bool "Enable HTTP authentication"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_AUTHENTICATION
+	depends on BUSYBOX_CONFIG_WGET
+	help
+	  Support authenticated HTTP transfers.
+
+config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
+	bool "Enable long options"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_LONG_OPTIONS
+	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_LONG_OPTS
+	help
+	  Support long options for the wget applet.
+
+config BUSYBOX_CONFIG_FEATURE_WGET_TIMEOUT
+	bool "Enable timeout option -T SEC"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_TIMEOUT
+	depends on BUSYBOX_CONFIG_WGET
+	help
+	  Supports network read and connect timeouts for wget,
+	  so that wget will give up and timeout, through the -T
+	  command line option.
+
+	  Currently only connect and network data read timeout are
+	  supported (i.e., timeout is not applied to the DNS query). When
+	  FEATURE_WGET_LONG_OPTIONS is also enabled, the --timeout option
+	  will work in addition to -T.
+
+config BUSYBOX_CONFIG_FEATURE_WGET_OPENSSL
+	bool "Try to connect to HTTPS using openssl"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_OPENSSL
+	depends on BUSYBOX_CONFIG_WGET
+	help
+	  Choose how wget establishes SSL connection for https:// URLs.
+
+	  Busybox itself contains no SSL code. wget will spawn
+	  a helper program to talk over HTTPS.
+
+	  OpenSSL has a simple SSL client for debug purposes.
+	  If you select "openssl" helper, wget will effectively call
+	  "openssl s_client -quiet -connect IP:443 2>/dev/null"
+	  and pipe its data through it.
+	  Note inconvenient API: host resolution is done twice,
+	  and there is no guarantee openssl's idea of IPv6 address
+	  format is the same as ours.
+	  Another problem is that s_client prints debug information
+	  to stderr, and it needs to be suppressed. This means
+	  all error messages get suppressed too.
+	  openssl is also a big binary, often dynamically linked
+	  against ~15 libraries.
+
+config BUSYBOX_CONFIG_FEATURE_WGET_SSL_HELPER
+	bool "Try to connect to HTTPS using ssl_helper"
+	default BUSYBOX_DEFAULT_FEATURE_WGET_SSL_HELPER
+	depends on BUSYBOX_CONFIG_WGET
+	help
+	  Choose how wget establishes SSL connection for https:// URLs.
+
+	  Busybox itself contains no SSL code. wget will spawn
+	  a helper program to talk over HTTPS.
+
+	  ssl_helper is a tool which can be built statically
+	  from busybox sources against a small embedded SSL library.
+	  Please see networking/ssl_helper/README.
+	  It does not require double host resolution and emits
+	  error messages to stderr.
+
+	  Precompiled static binary may be available at
+	  http://busybox.net/downloads/binaries/
 config BUSYBOX_CONFIG_WHOIS
 	bool "whois"
 	default BUSYBOX_DEFAULT_WHOIS
@@ -626,6 +709,13 @@ config BUSYBOX_CONFIG_FEATURE_IP_ROUTE
 	help
 	  Add support for routing table management to "ip".
 
+config BUSYBOX_CONFIG_FEATURE_IP_ROUTE_DIR
+	string "ip route configuration directory"
+	default BUSYBOX_DEFAULT_FEATURE_IP_ROUTE_DIR
+	depends on BUSYBOX_CONFIG_FEATURE_IP_ROUTE
+	help
+	  Location of the "ip" applet routing configuration.
+
 config BUSYBOX_CONFIG_FEATURE_IP_TUNNEL
 	bool "ip tunnel"
 	default BUSYBOX_DEFAULT_FEATURE_IP_TUNNEL
@@ -849,8 +939,7 @@ config BUSYBOX_CONFIG_TELNETD
 
 	  Note that for busybox telnetd to work you need several things:
 	  First of all, your kernel needs:
-		  UNIX98_PTYS=y
-		  DEVPTS_FS=y
+		  CONFIG_UNIX98_PTYS=y
 
 	  Next, you need a /dev/pts directory on your root filesystem:
 
@@ -1046,48 +1135,6 @@ config BUSYBOX_CONFIG_VCONFIG
 	select BUSYBOX_CONFIG_PLATFORM_LINUX
 	help
 	  Creates, removes, and configures VLAN interfaces
-
-config BUSYBOX_CONFIG_WGET
-	bool "wget"
-	default BUSYBOX_DEFAULT_WGET
-	help
-	  wget is a utility for non-interactive download of files from HTTP
-	  and FTP servers.
-
-config BUSYBOX_CONFIG_FEATURE_WGET_STATUSBAR
-	bool "Enable a nifty process meter (+2k)"
-	default BUSYBOX_DEFAULT_FEATURE_WGET_STATUSBAR
-	depends on BUSYBOX_CONFIG_WGET
-	help
-	  Enable the transfer progress bar for wget transfers.
-
-config BUSYBOX_CONFIG_FEATURE_WGET_AUTHENTICATION
-	bool "Enable HTTP authentication"
-	default BUSYBOX_DEFAULT_FEATURE_WGET_AUTHENTICATION
-	depends on BUSYBOX_CONFIG_WGET
-	help
-	  Support authenticated HTTP transfers.
-
-config BUSYBOX_CONFIG_FEATURE_WGET_LONG_OPTIONS
-	bool "Enable long options"
-	default BUSYBOX_DEFAULT_FEATURE_WGET_LONG_OPTIONS
-	depends on BUSYBOX_CONFIG_WGET && BUSYBOX_CONFIG_LONG_OPTS
-	help
-	  Support long options for the wget applet.
-
-config BUSYBOX_CONFIG_FEATURE_WGET_TIMEOUT
-	bool "Enable timeout option -T SEC"
-	default BUSYBOX_DEFAULT_FEATURE_WGET_TIMEOUT
-	depends on BUSYBOX_CONFIG_WGET
-	help
-	  Supports network read and connect timeouts for wget,
-	  so that wget will give up and timeout, through the -T
-	  command line option.
-
-	  Currently only connect and network data read timeout are
-	  supported (i.e., timeout is not applied to the DNS query). When
-	  FEATURE_WGET_LONG_OPTIONS is also enabled, the --timeout option
-	  will work in addition to -T.
 
 config BUSYBOX_CONFIG_ZCIP
 	bool "zcip"
