@@ -58,6 +58,50 @@ config BUSYBOX_CONFIG_FEATURE_DATE_COMPAT
 	  With this option off, 'date DATE' is 'date -s DATE' support
 	  the same format. With it on, 'date DATE' additionally supports
 	  MMDDhhmm[[YY]YY][.ss] format.
+config BUSYBOX_CONFIG_DD
+	bool "dd"
+	default BUSYBOX_DEFAULT_DD
+	help
+	  dd copies a file (from standard input to standard output,
+	  by default) using specific input and output blocksizes,
+	  while optionally performing conversions on it.
+
+config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
+	bool "Enable signal handling for status reporting"
+	default BUSYBOX_DEFAULT_FEATURE_DD_SIGNAL_HANDLING
+	depends on BUSYBOX_CONFIG_DD
+	help
+	  Sending a SIGUSR1 signal to a running `dd' process makes it
+	  print to standard error the number of records read and written
+	  so far, then to resume copying.
+
+	  $ dd if=/dev/zero of=/dev/null &
+	  $ pid=$!; kill -USR1 $pid; sleep 1; kill $pid
+	  10899206+0 records in
+	  10899206+0 records out
+
+config BUSYBOX_CONFIG_FEATURE_DD_THIRD_STATUS_LINE
+	bool "Enable the third status line upon signal"
+	default BUSYBOX_DEFAULT_FEATURE_DD_THIRD_STATUS_LINE
+	depends on BUSYBOX_CONFIG_DD && BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
+	help
+	  Displays a coreutils-like third status line with transferred bytes,
+	  elapsed time and speed.
+
+config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
+	bool "Enable ibs, obs and conv options"
+	default BUSYBOX_DEFAULT_FEATURE_DD_IBS_OBS
+	depends on BUSYBOX_CONFIG_DD
+	help
+	  Enables support for writing a certain number of bytes in and out,
+	  at a time, and performing conversions on the data stream.
+
+config BUSYBOX_CONFIG_FEATURE_DD_STATUS
+	bool "Enable status display options"
+	default BUSYBOX_DEFAULT_FEATURE_DD_STATUS
+	depends on BUSYBOX_CONFIG_DD
+	help
+	  Enables support for status=noxfer/none option.
 config BUSYBOX_CONFIG_HOSTID
 	bool "hostid"
 	default BUSYBOX_DEFAULT_HOSTID
@@ -79,6 +123,18 @@ config BUSYBOX_CONFIG_SHUF
 	default BUSYBOX_DEFAULT_SHUF
 	help
 	  Generate random permutations
+config BUSYBOX_CONFIG_SYNC
+	bool "sync"
+	default BUSYBOX_DEFAULT_SYNC
+	help
+	  sync is used to flush filesystem buffers.
+config BUSYBOX_CONFIG_FEATURE_SYNC_FANCY
+	bool "Enable -d and -f flags (requres syncfs(2) in libc)"
+	default BUSYBOX_DEFAULT_FEATURE_SYNC_FANCY
+	depends on BUSYBOX_CONFIG_SYNC
+	help
+	  sync -d FILE... executes fdatasync() on each FILE.
+	  sync -f FILE... executes syncfs() on each FILE.
 config BUSYBOX_CONFIG_TEST
 	bool "test"
 	default BUSYBOX_DEFAULT_TEST
@@ -139,6 +195,12 @@ config BUSYBOX_CONFIG_FEATURE_TR_EQUIV
 	  replace all instances of 'a' with 'xyz'. This option is mainly
 	  useful for cases when no other way of expressing a character
 	  is possible.
+config BUSYBOX_CONFIG_TRUNCATE
+	bool "truncate"
+	default BUSYBOX_DEFAULT_TRUNCATE
+	help
+	  truncate truncates files to a given size. If a file does
+	  not exist, it is created unless told otherwise.
 config BUSYBOX_CONFIG_UNLINK
 	bool "unlink"
 	default BUSYBOX_DEFAULT_UNLINK
@@ -166,7 +228,7 @@ config BUSYBOX_CONFIG_CAL
 	bool "cal"
 	default BUSYBOX_DEFAULT_CAL
 	help
-	  cal is used to display a monthly calender.
+	  cal is used to display a monthly calendar.
 
 config BUSYBOX_CONFIG_CATV
 	bool "catv"
@@ -241,44 +303,6 @@ config BUSYBOX_CONFIG_CUT
 	help
 	  cut is used to print selected parts of lines from
 	  each file to stdout.
-
-config BUSYBOX_CONFIG_DD
-	bool "dd"
-	default BUSYBOX_DEFAULT_DD
-	help
-	  dd copies a file (from standard input to standard output,
-	  by default) using specific input and output blocksizes,
-	  while optionally performing conversions on it.
-
-config BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
-	bool "Enable DD signal handling for status reporting"
-	default BUSYBOX_DEFAULT_FEATURE_DD_SIGNAL_HANDLING
-	depends on BUSYBOX_CONFIG_DD
-	help
-	  Sending a SIGUSR1 signal to a running `dd' process makes it
-	  print to standard error the number of records read and written
-	  so far, then to resume copying.
-
-	  $ dd if=/dev/zero of=/dev/null&
-	  $ pid=$! kill -USR1 $pid; sleep 1; kill $pid
-	  10899206+0 records in
-	  10899206+0 records out
-
-config BUSYBOX_CONFIG_FEATURE_DD_THIRD_STATUS_LINE
-	bool "Enable the third status line upon signal"
-	default BUSYBOX_DEFAULT_FEATURE_DD_THIRD_STATUS_LINE
-	depends on BUSYBOX_CONFIG_DD && BUSYBOX_CONFIG_FEATURE_DD_SIGNAL_HANDLING
-	help
-	  Displays a coreutils-like third status line with transferred bytes,
-	  elapsed time and speed.
-
-config BUSYBOX_CONFIG_FEATURE_DD_IBS_OBS
-	bool "Enable ibs, obs and conv options"
-	default BUSYBOX_DEFAULT_FEATURE_DD_IBS_OBS
-	depends on BUSYBOX_CONFIG_DD
-	help
-	  Enables support for writing a certain number of bytes in and out,
-	  at a time, and performing conversions on the data stream.
 
 config BUSYBOX_CONFIG_DF
 	bool "df"
@@ -764,12 +788,6 @@ config BUSYBOX_CONFIG_SUM
 	help
 	  checksum and count the blocks in a file
 
-config BUSYBOX_CONFIG_SYNC
-	bool "sync"
-	default BUSYBOX_DEFAULT_SYNC
-	help
-	  sync is used to flush filesystem buffers.
-
 config BUSYBOX_CONFIG_TAC
 	bool "tac"
 	default BUSYBOX_DEFAULT_TAC
@@ -828,6 +846,14 @@ config BUSYBOX_CONFIG_UNAME
 	default BUSYBOX_DEFAULT_UNAME
 	help
 	  uname is used to print system information.
+
+config BUSYBOX_CONFIG_UNAME_OSNAME
+	string "Operating system name"
+	default BUSYBOX_DEFAULT_UNAME_OSNAME
+	depends on BUSYBOX_CONFIG_UNAME
+	help
+	  Sets the operating system name reported by uname -o.  The
+	  default BUSYBOX_DEFAULT_UNAME_OSNAME "GNU/Linux".
 
 config BUSYBOX_CONFIG_UNEXPAND
 	bool "unexpand"

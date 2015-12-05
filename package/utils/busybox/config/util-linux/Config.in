@@ -80,11 +80,112 @@ config BUSYBOX_CONFIG_FEATURE_MDEV_LOAD_FIRMWARE
 	  These devices will request userspace look up the files in
 	  /lib/firmware/ and if it exists, send it to the kernel for
 	  loading into the hardware.
+config BUSYBOX_CONFIG_MOUNT
+	bool "mount"
+	default BUSYBOX_DEFAULT_MOUNT
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  All files and filesystems in Unix are arranged into one big directory
+	  tree. The 'mount' utility is used to graft a filesystem onto a
+	  particular part of the tree. A filesystem can either live on a block
+	  device, or it can be accessible over the network, as is the case with
+	  NFS filesystems. Most people using BusyBox will also want to enable
+	  the 'mount' utility.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_FAKE
+	bool "Support option -f"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FAKE
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	  Enable support for faking a file system mount.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_VERBOSE
+	bool "Support option -v"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_VERBOSE
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	  Enable multi-level -v[vv...] verbose messages. Useful if you
+	  debug mount problems and want to see what is exactly passed
+	  to the kernel.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_HELPERS
+	bool "Support mount helpers"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_HELPERS
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	  Enable mounting of virtual file systems via external helpers.
+	  E.g. "mount obexfs#-b00.11.22.33.44.55 /mnt" will in effect call
+	  "obexfs -b00.11.22.33.44.55 /mnt"
+	  Also "mount -t sometype [-o opts] fs /mnt" will try
+	  "sometype [-o opts] fs /mnt" if simple mount syscall fails.
+	  The idea is to use such virtual filesystems in /etc/fstab.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
+	bool "Support specifying devices by label or UUID"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_LABEL
+	depends on BUSYBOX_CONFIG_MOUNT
+	select BUSYBOX_CONFIG_VOLUMEID
+	help
+	  This allows for specifying a device by label or uuid, rather than by
+	  name. This feature utilizes the same functionality as blkid/findfs.
+	  This also enables label or uuid support for swapon.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
+	bool "Support mounting NFS file systems on Linux < 2.6.23"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_NFS
+	depends on BUSYBOX_CONFIG_MOUNT
+	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
+	select BUSYBOX_CONFIG_FEATURE_SYSLOG
+	help
+	  Enable mounting of NFS file systems on Linux kernels prior
+	  to version 2.6.23. Note that in this case mounting of NFS
+	  over IPv6 will not be possible.
+
+	  Note that this option links in RPC support from libc,
+	  which is rather large (~10 kbytes on uclibc).
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_CIFS
+	bool "Support mounting CIFS/SMB file systems"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_CIFS
+	depends on BUSYBOX_CONFIG_MOUNT
+	help
+	  Enable support for samba mounts.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_FLAGS
+	depends on BUSYBOX_CONFIG_MOUNT
+	bool "Support lots of -o flags in mount"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FLAGS
+	help
+	  Without this, mount only supports ro/rw/remount. With this, it
+	  supports nosuid, suid, dev, nodev, exec, noexec, sync, async, atime,
+	  noatime, diratime, nodiratime, loud, bind, move, shared, slave,
+	  private, unbindable, rshared, rslave, rprivate, and runbindable.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_FSTAB
+	depends on BUSYBOX_CONFIG_MOUNT
+	bool "Support /etc/fstab and -a"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FSTAB
+	help
+	  Support mount all and looking for files in /etc/fstab.
+
+config BUSYBOX_CONFIG_FEATURE_MOUNT_OTHERTAB
+	depends on BUSYBOX_CONFIG_FEATURE_MOUNT_FSTAB
+	bool "Support -T <alt_fstab>"
+	default BUSYBOX_DEFAULT_FEATURE_MOUNT_OTHERTAB
+	help
+	  Support mount -T (specifying an alternate fstab)
 config BUSYBOX_CONFIG_REV
 	bool "rev"
 	default BUSYBOX_DEFAULT_REV
 	help
 	  Reverse lines of a file or files.
+config BUSYBOX_CONFIG_UEVENT
+	bool "uevent"
+	default BUSYBOX_DEFAULT_UEVENT
+	select BUSYBOX_CONFIG_PLATFORM_LINUX
+	help
+	  uevent is a netlink listener for kernel uevent notifications
+	  sent via netlink. It is usually used for dynamic device creation.
 
 config BUSYBOX_CONFIG_ACPID
 	bool "acpid"
@@ -512,94 +613,6 @@ config BUSYBOX_CONFIG_MORE
 	  the screen, and you are using anything faster than a 300 baud modem,
 	  you will probably find this utility very helpful. If you don't have
 	  any need to reading text files, you can leave this disabled.
-
-config BUSYBOX_CONFIG_MOUNT
-	bool "mount"
-	default BUSYBOX_DEFAULT_MOUNT
-	select BUSYBOX_CONFIG_PLATFORM_LINUX
-	help
-	  All files and filesystems in Unix are arranged into one big directory
-	  tree. The 'mount' utility is used to graft a filesystem onto a
-	  particular part of the tree. A filesystem can either live on a block
-	  device, or it can be accessible over the network, as is the case with
-	  NFS filesystems. Most people using BusyBox will also want to enable
-	  the 'mount' utility.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_FAKE
-	bool "Support option -f"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FAKE
-	depends on BUSYBOX_CONFIG_MOUNT
-	help
-	  Enable support for faking a file system mount.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_VERBOSE
-	bool "Support option -v"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_VERBOSE
-	depends on BUSYBOX_CONFIG_MOUNT
-	help
-	  Enable multi-level -v[vv...] verbose messages. Useful if you
-	  debug mount problems and want to see what is exactly passed
-	  to the kernel.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_HELPERS
-	bool "Support mount helpers"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_HELPERS
-	depends on BUSYBOX_CONFIG_MOUNT
-	help
-	  Enable mounting of virtual file systems via external helpers.
-	  E.g. "mount obexfs#-b00.11.22.33.44.55 /mnt" will in effect call
-	  "obexfs -b00.11.22.33.44.55 /mnt"
-	  Also "mount -t sometype [-o opts] fs /mnt" will try
-	  "sometype [-o opts] fs /mnt" if simple mount syscall fails.
-	  The idea is to use such virtual filesystems in /etc/fstab.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_LABEL
-	bool "Support specifying devices by label or UUID"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_LABEL
-	depends on BUSYBOX_CONFIG_MOUNT
-	select BUSYBOX_CONFIG_VOLUMEID
-	help
-	  This allows for specifying a device by label or uuid, rather than by
-	  name. This feature utilizes the same functionality as blkid/findfs.
-	  This also enables label or uuid support for swapon.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_NFS
-	bool "Support mounting NFS file systems on Linux < 2.6.23"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_NFS
-	depends on BUSYBOX_CONFIG_MOUNT
-	select BUSYBOX_CONFIG_FEATURE_HAVE_RPC
-	select BUSYBOX_CONFIG_FEATURE_SYSLOG
-	help
-	  Enable mounting of NFS file systems on Linux kernels prior
-	  to version 2.6.23. Note that in this case mounting of NFS
-	  over IPv6 will not be possible.
-
-	  Note that this option links in RPC support from libc,
-	  which is rather large (~10 kbytes on uclibc).
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_CIFS
-	bool "Support mounting CIFS/SMB file systems"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_CIFS
-	depends on BUSYBOX_CONFIG_MOUNT
-	help
-	  Enable support for samba mounts.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_FLAGS
-	depends on BUSYBOX_CONFIG_MOUNT
-	bool "Support lots of -o flags in mount"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FLAGS
-	help
-	  Without this, mount only supports ro/rw/remount. With this, it
-	  supports nosuid, suid, dev, nodev, exec, noexec, sync, async, atime,
-	  noatime, diratime, nodiratime, loud, bind, move, shared, slave,
-	  private, unbindable, rshared, rslave, rprivate, and runbindable.
-
-config BUSYBOX_CONFIG_FEATURE_MOUNT_FSTAB
-	depends on BUSYBOX_CONFIG_MOUNT
-	bool "Support /etc/fstab and -a"
-	default BUSYBOX_DEFAULT_FEATURE_MOUNT_FSTAB
-	help
-	  Support mount all and looking for files in /etc/fstab.
 
 config BUSYBOX_CONFIG_PIVOT_ROOT
 	bool "pivot_root"
