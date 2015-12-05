@@ -499,7 +499,7 @@ mac80211_setup_supplicant() {
 mac80211_setup_adhoc_htmode() {
 	case "$htmode" in
 		VHT20|HT20) ibss_htmode=HT20;;
-		HT40*|VHT40|VHT80|VHT160)
+		HT40*|VHT40|VHT160)
 			case "$hwmode" in
 				a)
 					case "$(( ($channel / 4) % 2 ))" in
@@ -522,6 +522,9 @@ mac80211_setup_adhoc_htmode() {
 				;;
 			esac
 			[ "$auto_channel" -gt 0 ] && ibss_htmode="HT40+"
+		;;
+		VHT80)
+			ibss_htmode="80Mhz"
 		;;
 		*) ibss_htmode="" ;;
 	esac
