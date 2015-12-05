@@ -1,0 +1,170 @@
+From: Sven Eckelmann <sven@open-mesh.com>
+Date: Tue, 24 Nov 2015 17:55:22 +0100
+Subject: iw: add VHT80 support for 802.11s
+
+Support next to the non-HT/HT channel widths like HT20 or NOHT also VHT80
+channels during the mesh join
+
+    iw dev mesh0 mesh join "meshnet" freq 5180 80MHz
+
+Signed-off-by: Sven Eckelmann <sven@open-mesh.com>
+---
+ ibss.c | 33 ---------------------------------
+ iw.h   |  9 +++++++++
+ mesh.c | 16 ++++++++--------
+ util.c | 26 ++++++++++++++++++++++++++
+ 4 files changed, 43 insertions(+), 41 deletions(-)
+
+diff --git a/ibss.c b/ibss.c
+index 23bda70..ac06fc5 100644
+--- a/ibss.c
++++ b/ibss.c
+@@ -16,39 +16,6 @@
+ 
+ SECTION(ibss);
+ 
+-struct chanmode {
+-	const char *name;
+-	unsigned int width;
+-	int freq1_diff;
+-	int chantype; /* for older kernel */
+-};
+-
+-static int get_cf1(const struct chanmode *chanmode, unsigned long freq)
+-{
+-	int cf1 = freq, j;
+-	int vht80[] = { 5180, 5260, 5500, 5580, 5660, 5745 };
+-
+-	switch (chanmode->width) {
+-	case NL80211_CHAN_WIDTH_80:
+-	        /* setup center_freq1 */
+-		for (j = 0; j < ARRAY_SIZE(vht80); j++) {
+-			if (freq >= vht80[j] && freq < vht80[j] + 80)
+-				break;
+-		}
+-
+-		if (j == ARRAY_SIZE(vht80))
+-			break;
+-
+-		cf1 = vht80[j] + 30;
+-		break;
+-	default:
+-		cf1 = freq + chanmode->freq1_diff;
+-		break;
+-	}
+-
+-	return cf1;
+-}
+-
+ static int join_ibss(struct nl80211_state *state,
+ 		     struct nl_msg *msg,
+ 		     int argc, char **argv,
+diff --git a/iw.h b/iw.h
+index cef9da8..8e1a37a 100644
+--- a/iw.h
++++ b/iw.h
+@@ -59,6 +59,13 @@ struct cmd {
+ 	const struct cmd *parent;
+ };
+ 
++struct chanmode {
++	const char *name;
++	unsigned int width;
++	int freq1_diff;
++	int chantype; /* for older kernel */
++};
++
+ #define ARRAY_SIZE(ar) (sizeof(ar)/sizeof(ar[0]))
+ #define DIV_ROUND_UP(x, y) (((x) + (y - 1)) / (y))
+ 
+@@ -174,6 +181,8 @@ void print_ies(unsigned char *ie, int ielen, bool unknown,
+ void parse_bitrate(struct nlattr *bitrate_attr, char *buf, int buflen);
+ void iw_hexdump(const char *prefix, const __u8 *data, size_t len);
+ 
++int get_cf1(const struct chanmode *chanmode, unsigned long freq);
++
+ #define SCHED_SCAN_OPTIONS "interval <in_msecs> [delay <in_secs>] " \
+ 	"[freqs <freq>+] [matches [ssid <ssid>]+]] [active [ssid <ssid>]+|passive] [randomise[=<addr>/<mask>]]"
+ int parse_sched_scan(struct nl_msg *msg, int *argc, char ***argv);
+diff --git a/mesh.c b/mesh.c
+index 0090530..930d58f 100644
+--- a/mesh.c
++++ b/mesh.c
+@@ -439,12 +439,8 @@ static int join_mesh(struct nl80211_state *state,
+ 	int bintval, dtim_period, i, n_rates = 0;
+ 	char *end, *value = NULL, *sptr = NULL;
+ 	unsigned long freq = 0;
+-	static const struct {
+-		const char *name;
+-		unsigned int width;
+-		int freq1_diff;
+-		int chantype; /* for older kernel */
+-	} *chanmode_selected = NULL, chanmode[] = {
++	const struct chanmode *chanmode_selected = NULL;
++	static const struct chanmode chanmode[] = {
+ 		{ .name = "HT20",
+ 		  .width = NL80211_CHAN_WIDTH_20,
+ 		  .freq1_diff = 0,
+@@ -461,6 +457,10 @@ static int join_mesh(struct nl80211_state *state,
+ 		  .width = NL80211_CHAN_WIDTH_20_NOHT,
+ 		  .freq1_diff = 0,
+ 		  .chantype = NL80211_CHAN_NO_HT },
++		{ .name = "80MHz",
++		  .width = NL80211_CHAN_WIDTH_80,
++		  .freq1_diff = 0,
++		  .chantype = -1 },
+ 	};
+ 
+ 	if (argc < 1)
+@@ -497,7 +497,7 @@ static int join_mesh(struct nl80211_state *state,
+ 			NLA_PUT_U32(msg, NL80211_ATTR_CHANNEL_WIDTH,
+ 				    chanmode_selected->width);
+ 			NLA_PUT_U32(msg, NL80211_ATTR_CENTER_FREQ1,
+-				    freq + chanmode_selected->freq1_diff);
++				    get_cf1(chanmode_selected, freq));
+ 			if (chanmode_selected->chantype != -1)
+ 				NLA_PUT_U32(msg,
+ 					    NL80211_ATTR_WIPHY_CHANNEL_TYPE,
+@@ -599,7 +599,7 @@ static int join_mesh(struct nl80211_state *state,
+  nla_put_failure:
+ 	return -ENOBUFS;
+ }
+-COMMAND(mesh, join, "<mesh ID> [[freq <freq in MHz> <HT20|HT40+|HT40-|NOHT>]"
++COMMAND(mesh, join, "<mesh ID> [[freq <freq in MHz> <HT20|HT40+|HT40-|NOHT|80MHz>]"
+ 	" [basic-rates <rate in Mbps,rate2,...>]], [mcast-rate <rate in Mbps>]"
+ 	" [beacon-interval <time in TUs>] [dtim-period <value>]"
+ 	" [vendor_sync on|off] [<param>=<value>]*",
+diff --git a/util.c b/util.c
+index 4efc4c8..d75ffe0 100644
+--- a/util.c
++++ b/util.c
+@@ -728,3 +728,29 @@ void iw_hexdump(const char *prefix, const __u8 *buf, size_t size)
+ 	}
+ 	printf("\n\n");
+ }
++
++int get_cf1(const struct chanmode *chanmode, unsigned long freq)
++{
++	int cf1 = freq, j;
++	int vht80[] = { 5180, 5260, 5500, 5580, 5660, 5745 };
++
++	switch (chanmode->width) {
++	case NL80211_CHAN_WIDTH_80:
++	        /* setup center_freq1 */
++		for (j = 0; j < ARRAY_SIZE(vht80); j++) {
++			if (freq >= vht80[j] && freq < vht80[j] + 80)
++				break;
++		}
++
++		if (j == ARRAY_SIZE(vht80))
++			break;
++
++		cf1 = vht80[j] + 30;
++		break;
++	default:
++		cf1 = freq + chanmode->freq1_diff;
++		break;
++	}
++
++	return cf1;
++}
