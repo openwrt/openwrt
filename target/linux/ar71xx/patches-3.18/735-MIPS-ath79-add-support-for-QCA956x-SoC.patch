@@ -519,7 +519,7 @@
  		return -ENODEV;
 --- a/arch/mips/ath79/setup.c
 +++ b/arch/mips/ath79/setup.c
-@@ -175,15 +175,30 @@ static void __init ath79_detect_sys_type
+@@ -176,6 +176,18 @@ static void __init ath79_detect_sys_type
  		rev = id & QCA955X_REV_ID_REVISION_MASK;
  		break;
  
@@ -538,8 +538,9 @@
  	default:
  		panic("ath79: unknown SoC, id:0x%08x", id);
  	}
- 
- 	ath79_soc_rev = rev;
+@@ -183,9 +195,12 @@ static void __init ath79_detect_sys_type
+ 	if (ver == 1)
+ 		ath79_soc_rev = rev;
  
 -	if (soc_is_qca953x() || soc_is_qca955x())
 +	if (soc_is_qca953x() || soc_is_qca955x() || soc_is_qca9561())
