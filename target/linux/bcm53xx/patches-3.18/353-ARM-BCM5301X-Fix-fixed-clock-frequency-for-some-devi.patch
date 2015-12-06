@@ -1,0 +1,29 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Sun, 6 Dec 2015 10:21:00 +0100
+Subject: [PATCH] ARM: BCM5301X: Fix fixed-clock frequency of some devices
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Some devices (mostly BCM4709 based) use higher clock.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ arch/arm/boot/dts/bcm4709-netgear-r8000.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+--- a/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
++++ b/arch/arm/boot/dts/bcm4709-netgear-r8000.dts
+@@ -25,6 +25,12 @@
+ 		       0x88000000 0x08000000>;
+ 	};
+ 
++	clocks {
++		clk_periph: periph {
++			clock-frequency = <500000000>;
++		};
++	};
++
+ 	axi@18000000 {
+ 		usb2@21000 {
+ 			reg = <0x00021000 0x1000>;
