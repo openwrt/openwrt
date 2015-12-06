@@ -130,7 +130,7 @@ VGV7510KW22)
 
 esac
 
-if [ -z "$(ls /lib/modules/`uname -r`/ltq_atm*)" ]; then
+if [ -n "$(ls /lib/modules/`uname -r`/ltq_atm*)" ]; then
 	ucidef_add_atm_bridge "$vpi" "$vci" "$encaps" "$payload"
 	ucidef_set_interface_wan "nas0" "pppoe"
 fi
