@@ -1,7 +1,7 @@
-From 16e1bf7dde22ee22a331aabf824cc31a6794a4cb Mon Sep 17 00:00:00 2001
+From af0783a87a365e87e5ee0ac0ba7e3075abc5007c Mon Sep 17 00:00:00 2001
 From: Jon Mason <jonmason@broadcom.com>
-Date: Thu, 15 Oct 2015 14:09:10 -0400
-Subject: [PATCH 134/134] ARM: BCM: Add SMP support for Broadcom 4708
+Date: Sat, 5 Dec 2015 06:53:44 -0500
+Subject: [PATCH] ARM: BCM: Add SMP support for Broadcom 4708
 
 Add SMP support for Broadcom's 4708 SoCs.
 
@@ -9,43 +9,39 @@ Signed-off-by: Jon Mason <jonmason@broadcom.com>
 Acked-by: Hauke Mehrtens <hauke@hauke-m.de>
 Tested-by: Hauke Mehrtens <hauke@hauke-m.de>
 Signed-off-by: Kapil Hali <kapilh@broadcom.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm/boot/dts/bcm4708.dtsi | 2 ++
+ arch/arm/boot/dts/bcm4708.dtsi | 3 ++-
  arch/arm/mach-bcm/Kconfig      | 1 +
  arch/arm/mach-bcm/Makefile     | 3 +++
- 3 files changed, 6 insertions(+)
+ 3 files changed, 6 insertions(+), 1 deletion(-)
 
 --- a/arch/arm/boot/dts/bcm4708.dtsi
 +++ b/arch/arm/boot/dts/bcm4708.dtsi
-@@ -15,6 +15,7 @@
- 	cpus {
- 		#address-cells = <1>;
- 		#size-cells = <0>;
-+		enable-method = "brcm,bcm-nsp-smp";
- 
- 		cpu@0 {
- 			device_type = "cpu";
-@@ -27,6 +28,7 @@
+@@ -27,8 +27,9 @@
  			device_type = "cpu";
  			compatible = "arm,cortex-a9";
  			next-level-cache = <&L2>;
++			enable-method = "brcm,bcm-nsp-smp";
 +			secondary-boot-reg = <0xffff0400>;
  			reg = <0x1>;
  		};
  	};
+-
+ };
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
-@@ -55,6 +55,7 @@ config ARCH_BCM_5301X
- 	select ARM_ERRATA_754322
- 	select ARM_ERRATA_775420
- 	select ARM_ERRATA_764369 if SMP
+@@ -29,6 +29,7 @@ config ARCH_BCM_IPROC
+ config ARCH_BCM_CYGNUS
+ 	bool "Broadcom Cygnus Support" if ARCH_MULTI_V7
+ 	select ARCH_BCM_IPROC
 +	select HAVE_SMP
- 
  	help
- 	  Support for Broadcom BCM470X and BCM5301X SoCs with ARM CPU cores.
+ 	  Enable support for the Cygnus family,
+ 	  which includes the following variants:
 --- a/arch/arm/mach-bcm/Makefile
 +++ b/arch/arm/mach-bcm/Makefile
-@@ -39,6 +39,9 @@ obj-$(CONFIG_ARCH_BCM2835)	+= board_bcm2
+@@ -43,6 +43,9 @@ obj-$(CONFIG_ARCH_BCM2835)	+= board_bcm2835.o
  
  # BCM5301X
  obj-$(CONFIG_ARCH_BCM_5301X)	+= bcm_5301x.o
