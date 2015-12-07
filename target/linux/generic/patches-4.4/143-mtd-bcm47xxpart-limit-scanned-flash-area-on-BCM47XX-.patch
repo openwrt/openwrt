@@ -20,7 +20,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -118,8 +118,8 @@ static int bcm47xxpart_parse(struct mtd_info *master,
+@@ -118,8 +118,8 @@ static int bcm47xxpart_parse(struct mtd_
  	/* Parse block by block looking for magics */
  	for (offset = 0; offset <= master->size - blocksize;
  	     offset += blocksize) {

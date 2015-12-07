@@ -16,7 +16,7 @@
  
  /**
   *	struct net_device - The DEVICE structure.
-@@ -1602,6 +1604,11 @@ struct net_device {
+@@ -1603,6 +1605,11 @@ struct net_device {
  	const struct l3mdev_ops	*l3mdev_ops;
  #endif
  
@@ -28,7 +28,7 @@
  	const struct header_ops *header_ops;
  
  	unsigned int		flags;
-@@ -1668,6 +1675,10 @@ struct net_device {
+@@ -1669,6 +1676,10 @@ struct net_device {
  	struct mpls_dev __rcu	*mpls_ptr;
  #endif
  
