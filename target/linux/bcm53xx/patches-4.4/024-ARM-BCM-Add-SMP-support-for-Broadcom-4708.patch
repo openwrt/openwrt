@@ -1,6 +1,6 @@
-From af0783a87a365e87e5ee0ac0ba7e3075abc5007c Mon Sep 17 00:00:00 2001
+From 99498905ac1fbc73a97d27d21ea449fb939072e3 Mon Sep 17 00:00:00 2001
 From: Jon Mason <jonmason@broadcom.com>
-Date: Sat, 5 Dec 2015 06:53:44 -0500
+Date: Tue, 1 Dec 2015 11:24:09 -0500
 Subject: [PATCH] ARM: BCM: Add SMP support for Broadcom 4708
 
 Add SMP support for Broadcom's 4708 SoCs.
@@ -11,34 +11,39 @@ Tested-by: Hauke Mehrtens <hauke@hauke-m.de>
 Signed-off-by: Kapil Hali <kapilh@broadcom.com>
 Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
- arch/arm/boot/dts/bcm4708.dtsi | 3 ++-
+ arch/arm/boot/dts/bcm4708.dtsi | 2 ++
  arch/arm/mach-bcm/Kconfig      | 1 +
  arch/arm/mach-bcm/Makefile     | 3 +++
- 3 files changed, 6 insertions(+), 1 deletion(-)
+ 3 files changed, 6 insertions(+)
 
 --- a/arch/arm/boot/dts/bcm4708.dtsi
 +++ b/arch/arm/boot/dts/bcm4708.dtsi
-@@ -27,8 +27,9 @@
+@@ -15,6 +15,7 @@
+ 	cpus {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
++		enable-method = "brcm,bcm-nsp-smp";
+ 
+ 		cpu@0 {
+ 			device_type = "cpu";
+@@ -27,6 +28,7 @@
  			device_type = "cpu";
  			compatible = "arm,cortex-a9";
  			next-level-cache = <&L2>;
-+			enable-method = "brcm,bcm-nsp-smp";
 +			secondary-boot-reg = <0xffff0400>;
  			reg = <0x1>;
  		};
  	};
--
- };
 --- a/arch/arm/mach-bcm/Kconfig
 +++ b/arch/arm/mach-bcm/Kconfig
-@@ -29,6 +29,7 @@ config ARCH_BCM_IPROC
- config ARCH_BCM_CYGNUS
- 	bool "Broadcom Cygnus Support" if ARCH_MULTI_V7
- 	select ARCH_BCM_IPROC
+@@ -57,6 +57,7 @@ config ARCH_BCM_5301X
+ 	select ARM_ERRATA_754322
+ 	select ARM_ERRATA_775420
+ 	select ARM_ERRATA_764369 if SMP
 +	select HAVE_SMP
+ 
  	help
- 	  Enable support for the Cygnus family,
- 	  which includes the following variants:
+ 	  Support for Broadcom BCM470X and BCM5301X SoCs with ARM CPU cores.
 --- a/arch/arm/mach-bcm/Makefile
 +++ b/arch/arm/mach-bcm/Makefile
 @@ -43,6 +43,9 @@ obj-$(CONFIG_ARCH_BCM2835)	+= board_bcm2835.o
