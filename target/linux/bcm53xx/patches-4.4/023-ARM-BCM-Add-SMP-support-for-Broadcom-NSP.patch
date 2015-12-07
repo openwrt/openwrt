@@ -1,7 +1,7 @@
-From e99fb6d01cddf38cffc11655aba4a96a981d604e Mon Sep 17 00:00:00 2001
+From 55be958cd27439a58c4d9369d6fe2a1f83efdaa6 Mon Sep 17 00:00:00 2001
 From: Kapil Hali <kapilh@broadcom.com>
-Date: Wed, 25 Nov 2015 13:25:55 -0500
-Subject: [PATCH 133/134] ARM: BCM: Add SMP support for Broadcom NSP
+Date: Sat, 5 Dec 2015 06:53:43 -0500
+Subject: [PATCH] ARM: BCM: Add SMP support for Broadcom NSP
 
 Add SMP support for Broadcom's Northstar Plus SoC
 cpu enable method. This changes also consolidates
@@ -14,6 +14,7 @@ Errata 764369 for SMP. This change adds the needed
 configuration option.
 
 Signed-off-by: Kapil Hali <kapilh@broadcom.com>
+Signed-off-by: Florian Fainelli <f.fainelli@gmail.com>
 ---
  arch/arm/mach-bcm/Kconfig    |   2 +
  arch/arm/mach-bcm/Makefile   |   8 +-
@@ -23,9 +24,33 @@ Signed-off-by: Kapil Hali <kapilh@broadcom.com>
  delete mode 100644 arch/arm/mach-bcm/kona_smp.c
  create mode 100644 arch/arm/mach-bcm/platsmp.c
 
+--- a/arch/arm/mach-bcm/Kconfig
++++ b/arch/arm/mach-bcm/Kconfig
+@@ -40,6 +40,8 @@ config ARCH_BCM_NSP
+ 	select ARCH_BCM_IPROC
+ 	select ARM_ERRATA_754322
+ 	select ARM_ERRATA_775420
++	select ARM_ERRATA_764369 if SMP
++	select HAVE_SMP
+ 	help
+ 	  Support for Broadcom Northstar Plus SoC.
+ 	  Broadcom Northstar Plus family of SoCs are used for switching control
 --- a/arch/arm/mach-bcm/Makefile
 +++ b/arch/arm/mach-bcm/Makefile
-@@ -23,7 +23,7 @@ obj-$(CONFIG_ARCH_BCM_281XX)	+= board_bc
+@@ -14,7 +14,11 @@
+ obj-$(CONFIG_ARCH_BCM_CYGNUS) +=  bcm_cygnus.o
+ 
+ # Northstar Plus
+-obj-$(CONFIG_ARCH_BCM_NSP) += bcm_nsp.o
++obj-$(CONFIG_ARCH_BCM_NSP)	+= bcm_nsp.o
++
++ifeq ($(CONFIG_ARCH_BCM_NSP),y)
++obj-$(CONFIG_SMP)		+= platsmp.o
++endif
+ 
+ # BCM281XX
+ obj-$(CONFIG_ARCH_BCM_281XX)	+= board_bcm281xx.o
+@@ -23,7 +27,7 @@ obj-$(CONFIG_ARCH_BCM_281XX)	+= board_bcm281xx.o
  obj-$(CONFIG_ARCH_BCM_21664)	+= board_bcm21664.o
  
  # BCM281XX and BCM21664 SMP support
