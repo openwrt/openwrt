@@ -5938,7 +5938,7 @@
 +		if(rtd->dmaStat[SNDRV_PCM_STREAM_CAPTURE]){
 +
 +			gdma_En_Switch(rtd,STREAM_CAPTURE,GDMA_I2S_DIS);
-+			i2s_tx_end_sleep_on(rtd);
++			i2s_rx_end_sleep_on(rtd);
 +			tasklet_kill(&i2s_rx_tasklet);
 +			i2s_rx_disable(rtd);
 +			//mt76xx_pcm_free_dma_buffer(substream,substream->stream);
