@@ -525,6 +525,9 @@ mac80211_setup_adhoc_htmode() {
 			esac
 			[ "$auto_channel" -gt 0 ] && ibss_htmode="HT40+"
 		;;
+		NONE|NOHT)
+			ibss_htmode="NOHT"
+		;;
 		*) ibss_htmode="" ;;
 	esac
 
