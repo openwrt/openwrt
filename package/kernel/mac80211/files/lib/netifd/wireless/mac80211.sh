@@ -526,6 +526,9 @@ mac80211_setup_adhoc_htmode() {
 		VHT80)
 			ibss_htmode="80Mhz"
 		;;
+		NONE|NOHT)
+			ibss_htmode="NOHT"
+		;;
 		*) ibss_htmode="" ;;
 	esac
 
