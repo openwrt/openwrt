@@ -76,7 +76,7 @@ service_triggers() {
 
 	procd_open_trigger
 	procd_add_raw_trigger hotplug.atm 2000 /etc/init.d/$name reload
-	procd_add_config_trigger "config.change" "$file" /etc/init.d/$name reload
+	procd_add_config_trigger "config.change" "network" /etc/init.d/$name reload
 	procd_close_trigger
 }
 
