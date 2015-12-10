@@ -6,7 +6,11 @@ USE_PROCD=1
 start_daemon() {
 	local cfg="$1"
 
-	local atmdev
+	local atmdev disabled
+
+	config_get_bool disabled "$cfg" disabled 0
+	[ "$disabled" -eq 1 ] && return
+
 	config_get atmdev "$cfg" atmdev 0
 
 	local unit
