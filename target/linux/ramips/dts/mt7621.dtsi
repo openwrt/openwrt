@@ -77,7 +77,7 @@
 			reg = <0xc00 0x100>;
 
 			interrupt-parent = <&gic>;
-			interrupts = <26>;
+			interrupts = <0 26 4>;
 
 			reg-shift = <2>;
 			reg-io-width = <4>;
@@ -210,28 +210,27 @@
 		reg = <0x1E130000 4000>;
 
 		interrupt-parent = <&gic>;
-		interrupts = <20>;
+		interrupts = <0 20 4>;
 	};
 
 	xhci@1E1C0000 {
-		status = "disabled";
+		status = "okay";
 
 		compatible = "xhci-platform";
 		reg = <0x1E1C0000 4000>;
 
 		interrupt-parent = <&gic>;
-		interrupts = <22>;
+		interrupts = <0 22 4>;
 	};
 
-	gic: gic@1fbc0000 {
-		#address-cells = <0>;
-		#interrupt-cells = <1>;
+	gic: interrupt-controller@1fbc0000 {
+		compatible = "mti,gic";
+		reg = <0x1fbc0000 0x80>;
+
 		interrupt-controller;
-		compatible = "ralink,mt7621-gic";
-		reg = < 0x1fbc0000 0x80 /* gic */
-			0x1fbf0000 0x8000 /* cpc */
-			0x1fbf8000 0x8000 /* gpmc */
-		>;
+		#interrupt-cells = <3>;
+
+		mti,reserved-cpu-vectors = <7>;
 	};
 
 	nand@1e003000 {
@@ -274,7 +273,7 @@
 		reset-names = "fe", "eth";
 
 		interrupt-parent = <&gic>;
-		interrupts = <3>;
+		interrupts = <0 3 4>;
 
 		mdio-bus {
 			#address-cells = <1>;
@@ -291,7 +290,7 @@
 		compatible = "ralink,mt7620a-gsw";
 		reg = <0x1e110000 8000>;
 		interrupt-parent = <&gic>;
-		interrupts = <23>;
+		interrupts = <0 23 4>;
 	};
 
 	pcie@1e140000 {
@@ -312,6 +311,11 @@
 			0x02000000 0 0x00000000 0x60000000 0 0x10000000 /* pci memory */
 			0x01000000 0 0x00000000 0x1e160000 0 0x00010000 /* io space */
 		>;
+
+		interrupt-parent = <&gic>;
+		interrupts = <0 4 4
+				0 24 4
+				0 25 4>;
 
 		status = "okay";
 

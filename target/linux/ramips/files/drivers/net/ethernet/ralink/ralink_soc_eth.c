@@ -575,13 +575,15 @@ static int fe_tx_map_dma(struct sk_buff *skb, struct net_device *dev,
 		txd.txd4 |= TX_DMA_CHKSUM;
 
 	/* VLAN header offload */
-	if (vlan_tx_tag_present(skb)) {
+	if (skb_vlan_tag_present(skb)) {
+		u16 tag = skb_vlan_tag_get(skb);
+
 		if (IS_ENABLED(CONFIG_SOC_MT7621))
-			txd.txd4 |= TX_DMA_INS_VLAN_MT7621 | vlan_tx_tag_get(skb);
+			txd.txd4 |= TX_DMA_INS_VLAN_MT7621 | tag;
 		else
 			txd.txd4 |= TX_DMA_INS_VLAN |
-				((vlan_tx_tag_get(skb) >> VLAN_PRIO_SHIFT) << 4) |
-				(vlan_tx_tag_get(skb) & 0xF);
+				((tag >> VLAN_PRIO_SHIFT) << 4) |
+				(tag & 0xF);
 	}
 
 	/* TSO: fill MSS info in tcp checksum field */
@@ -711,8 +713,7 @@ static inline int fe_skb_padto(struct sk_buff *skb, struct fe_priv *priv) {
 		if ((priv->flags & FE_FLAG_PADDING_64B) &&
 				!(priv->flags & FE_FLAG_PADDING_BUG))
 			return ret;
-
-		if (vlan_tx_tag_present(skb))
+		if (skb_vlan_tag_present(skb))
 			len = ETH_ZLEN;
 		else if (skb->protocol == cpu_to_be16(ETH_P_8021Q))
 			len = VLAN_ETH_ZLEN;
@@ -999,6 +1000,8 @@ static int fe_poll(struct napi_struct *napi, int budget)
 
 		napi_complete(napi);
 		fe_int_enable(tx_intr | rx_intr);
+	} else {
+			rx_done = budget;
 	}
 
 poll_again:

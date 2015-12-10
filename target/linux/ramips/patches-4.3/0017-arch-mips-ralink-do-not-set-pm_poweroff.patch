@@ -1,0 +1,25 @@
+From 145fcd145e0adb10531bb2e8c9f919b0606dff4d Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 7 Dec 2015 17:19:15 +0100
+Subject: [PATCH 17/53] arch: mips: ralink: do not set pm_poweroff
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/reset.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/arch/mips/ralink/reset.c b/arch/mips/ralink/reset.c
+index 55c7ec5..ee26d45 100644
+--- a/arch/mips/ralink/reset.c
++++ b/arch/mips/ralink/reset.c
+@@ -98,7 +98,6 @@ static int __init mips_reboot_setup(void)
+ {
+ 	_machine_restart = ralink_restart;
+ 	_machine_halt = ralink_halt;
+-	pm_power_off = ralink_halt;
+ 
+ 	return 0;
+ }
+-- 
+1.7.10.4
+

@@ -1,0 +1,40 @@
+From ef42c519247f677229bcbd1ab622222b165242af Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Sun, 27 Jul 2014 09:49:07 +0100
+Subject: [PATCH 30/53] USB: add OHCI/EHCI OF binding
+
+based on f3bc64d6d1f21c1b92d75f233a37b75d77af6963
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ drivers/usb/host/ehci-platform.c |    1 +
+ drivers/usb/host/ohci-platform.c |    1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
+index 5c3c085..fe78568 100644
+--- a/drivers/usb/host/ehci-platform.c
++++ b/drivers/usb/host/ehci-platform.c
+@@ -379,6 +379,7 @@ static int ehci_platform_resume(struct device *dev)
+ static const struct of_device_id vt8500_ehci_ids[] = {
+ 	{ .compatible = "via,vt8500-ehci", },
+ 	{ .compatible = "wm,prizm-ehci", },
++	{ .compatible = "ralink,rt3xxx-ehci", },
+ 	{ .compatible = "generic-ehci", },
+ 	{ .compatible = "cavium,octeon-6335-ehci", },
+ 	{}
+diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
+index c2669f18..5cf794a 100644
+--- a/drivers/usb/host/ohci-platform.c
++++ b/drivers/usb/host/ohci-platform.c
+@@ -344,6 +344,7 @@ static int ohci_platform_resume(struct device *dev)
+ #endif /* CONFIG_PM_SLEEP */
+ 
+ static const struct of_device_id ohci_platform_ids[] = {
++	{ .compatible = "ralink,rt3xxx-ohci", },
+ 	{ .compatible = "generic-ohci", },
+ 	{ .compatible = "cavium,octeon-6335-ohci", },
+ 	{ }
+-- 
+1.7.10.4
+
