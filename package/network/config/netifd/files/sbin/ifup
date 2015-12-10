@@ -67,12 +67,10 @@ if [ -n "$setup_wifi" ] && grep -sq config /etc/config/wireless; then
 		fi
 	}
 
-	local radio_devs
-	local network="$1"
+	network="$1"
 	config_load wireless
 	config_foreach find_related_radios wifi-iface
 
-	local dev
 	for dev in $(echo "$radio_devs" | sort -u); do
 		/sbin/wifi up "$dev"
 	done
