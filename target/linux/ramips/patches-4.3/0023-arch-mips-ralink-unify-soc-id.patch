@@ -1,0 +1,90 @@
+From 4ede4fbb485d0a88839df1f02371fc00755db636 Mon Sep 17 00:00:00 2001
+From: John Crispin <blogic@openwrt.org>
+Date: Mon, 7 Dec 2015 17:31:41 +0100
+Subject: [PATCH 23/53] arch: mips: ralink: unify soc id
+
+Signed-off-by: John Crispin <blogic@openwrt.org>
+---
+ arch/mips/ralink/mt7620.c |   19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
+
+diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
+index da734e2..db99e9c 100644
+--- a/arch/mips/ralink/mt7620.c
++++ b/arch/mips/ralink/mt7620.c
+@@ -37,9 +37,6 @@
+ #define PMU1_CFG		0x8C
+ #define DIG_SW_SEL		BIT(25)
+ 
+-/* is this a MT7620 or a MT7628 */
+-enum mt762x_soc_type mt762x_soc;
+-
+ /* clock scaling */
+ #define CLKCFG_FDIV_MASK	0x1f00
+ #define CLKCFG_FDIV_USB_VAL	0x0300
+@@ -410,7 +407,7 @@ void __init ralink_clk_init(void)
+ #define RINT(x)		((x) / 1000000)
+ #define RFRAC(x)	(((x) / 1000) % 1000)
+ 
+-	if (mt762x_soc == MT762X_SOC_MT7628AN || mt762x_soc == MT762X_SOC_MT7688) {
++	if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688) {
+ 		if (xtal_rate == MHZ(40))
+ 			cpu_rate = MHZ(580);
+ 		else
+@@ -455,7 +452,7 @@ void __init ralink_clk_init(void)
+ 	ralink_clk_add("10180000.wmac", xtal_rate);
+ 
+ 	if (IS_ENABLED(CONFIG_USB) &&
+-		(mt762x_soc == MT762X_SOC_MT7620A || mt762x_soc == MT762X_SOC_MT7620N)) {
++		(ralink_soc == MT762X_SOC_MT7620A || ralink_soc == MT762X_SOC_MT7620N)) {
+ 		/*
+ 		 * When the CPU goes into sleep mode, the BUS clock will be too low for
+ 		 * USB to function properly
+@@ -543,11 +540,11 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+ 
+ 	if (n0 == MT7620_CHIP_NAME0 && n1 == MT7620_CHIP_NAME1) {
+ 		if (bga) {
+-			mt762x_soc = MT762X_SOC_MT7620A;
++			ralink_soc = MT762X_SOC_MT7620A;
+ 			name = "MT7620A";
+ 			soc_info->compatible = "ralink,mt7620a-soc";
+ 		} else {
+-			mt762x_soc = MT762X_SOC_MT7620N;
++			ralink_soc = MT762X_SOC_MT7620N;
+ 			name = "MT7620N";
+ 			soc_info->compatible = "ralink,mt7620n-soc";
+ 		}
+@@ -555,10 +552,10 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+ 		u32 efuse = __raw_readl(sysc + SYSC_REG_EFUSE_CFG);
+ 
+ 		if (efuse & EFUSE_MT7688) {
+-			mt762x_soc = MT762X_SOC_MT7688;
++			ralink_soc = MT762X_SOC_MT7688;
+ 			name = "MT7688";
+ 		} else {
+-			mt762x_soc = MT762X_SOC_MT7628AN;
++			ralink_soc = MT762X_SOC_MT7628AN;
+ 			name = "MT7628AN";
+ 		}
+ 		soc_info->compatible = "ralink,mt7628an-soc";
+@@ -580,7 +577,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+ 		dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
+ 
+ 	soc_info->mem_base = MT7620_DRAM_BASE;
+-	if (mt762x_soc == MT762X_SOC_MT7628AN)
++	if (ralink_soc == MT762X_SOC_MT7628AN)
+ 		mt7628_dram_init(soc_info);
+ 	else
+ 		mt7620_dram_init(soc_info);
+@@ -593,7 +590,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+ 	pr_info("Digital PMU set to %s control\n",
+ 		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
+ 
+-	if (mt762x_soc == MT762X_SOC_MT7628AN || mt762x_soc == MT762X_SOC_MT7688)
++	if (ralink_soc == MT762X_SOC_MT7628AN || ralink_soc == MT762X_SOC_MT7688)
+ 		rt2880_pinmux_data = mt7628an_pinmux_data;
+ 	else
+ 		rt2880_pinmux_data = mt7620a_pinmux_data;
+-- 
+1.7.10.4
+
