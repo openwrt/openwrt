@@ -5,7 +5,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
 
 --- a/drivers/mtd/ofpart.c
 +++ b/drivers/mtd/ofpart.c
-@@ -25,12 +25,15 @@ static bool node_has_compatible(struct d
+@@ -25,6 +25,8 @@ static bool node_has_compatible(struct d
  	return of_get_property(pp, "compatible", NULL);
  }
  
@@ -14,14 +14,15 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  static int parse_ofpart_partitions(struct mtd_info *master,
  				   struct mtd_partition **pparts,
  				   struct mtd_part_parser_data *data)
- {
- 	struct device_node *node;
+@@ -32,6 +34,7 @@ static int parse_ofpart_partitions(struc
+ 	struct device_node *mtd_node;
+ 	struct device_node *ofpart_node;
  	const char *partname;
 +	const char *owrtpart = "ubi";
  	struct device_node *pp;
- 	int nr_parts, i;
- 
-@@ -78,9 +81,15 @@ static int parse_ofpart_partitions(struc
+ 	int nr_parts, i, ret = 0;
+ 	bool dedicated = true;
+@@ -102,9 +105,15 @@ static int parse_ofpart_partitions(struc
  		(*pparts)[i].offset = of_read_number(reg, a_cells);
  		(*pparts)[i].size = of_read_number(reg + a_cells, s_cells);
  
@@ -40,7 +41,7 @@ Signed-off-by: Imre Kaloz <kaloz@openwrt.org>
  		(*pparts)[i].name = partname;
  
  		if (of_get_property(pp, "read-only", &len))
-@@ -178,6 +187,18 @@ static int __init ofpart_parser_init(voi
+@@ -207,6 +216,18 @@ static int __init ofpart_parser_init(voi
  	return 0;
  }
  

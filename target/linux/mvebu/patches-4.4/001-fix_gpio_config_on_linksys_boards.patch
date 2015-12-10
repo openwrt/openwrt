@@ -11,7 +11,7 @@ Cc: <stable@vger.kernel.org> # v4.1 +
 
 --- a/arch/arm/boot/dts/armada-385-linksys.dtsi
 +++ b/arch/arm/boot/dts/armada-385-linksys.dtsi
-@@ -243,7 +243,7 @@
+@@ -245,7 +245,7 @@
  		button@2 {
  			label = "Factory Reset Button";
  			linux,code = <KEY_RESTART>;
@@ -20,7 +20,7 @@ Cc: <stable@vger.kernel.org> # v4.1 +
  		};
  	};
  
-@@ -258,7 +258,7 @@
+@@ -260,7 +260,7 @@
  		};
  
  		sata {
@@ -29,7 +29,7 @@ Cc: <stable@vger.kernel.org> # v4.1 +
  			default-state = "off";
  		};
  	};
-@@ -311,7 +311,7 @@
+@@ -313,7 +313,7 @@
  
  &pinctrl {
  	keys_pin: keys-pin {
@@ -40,7 +40,7 @@ Cc: <stable@vger.kernel.org> # v4.1 +
  
 --- a/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
 +++ b/arch/arm/boot/dts/armada-xp-linksys-mamba.dts
-@@ -302,13 +302,13 @@
+@@ -304,13 +304,13 @@
  		button@1 {
  			label = "WPS";
  			linux,code = <KEY_WPS_BUTTON>;
