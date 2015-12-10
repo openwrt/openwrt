@@ -5,6 +5,7 @@
 
 [ ! -e /etc/config/wireless ] && exit 0
 
+. /lib/functions/system.sh
 . /lib/mvebu.sh
 
 board=$(mvebu_board_name)
@@ -12,6 +13,8 @@ board=$(mvebu_board_name)
 case "$board" in
 armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-shelby|armada-xp-linksys-mamba)
 	SKU=$(strings /dev/mtd3|sed -ne 's/^cert_region=//p')
+	WIFIMAC2G=$(macaddr_add $(cat /sys/class/net/eth0/address) +1)
+	WIFIMAC5G=$(macaddr_add $WIFIMAC2G +1)
 	case "$SKU" in
 		AP)
 			REGD=CN
@@ -29,8 +32,22 @@ armada-385-linksys-caiman|armada-385-linksys-cobra|armada-385-linksys-shelby|arm
 			REGD=US
 		;;
 	esac
+
+	case "$board" in
+		armada-xp-linksys-mamba)
+			WIFIMAC0=$WIFIMAC2G
+			WIFIMAC1=$WIFIMAC5G
+		;;
+		*)
+			WIFIMAC0=$WIFIMAC5G
+			WIFIMAC1=$WIFIMAC2G
+		;;
+	esac
+
 	uci get wireless.radio0.country || uci set wireless.radio0.country=$REGD
+	uci get wireless.@wifi-iface[0].macaddr || uci set wireless.@wifi-iface[0].macaddr=$WIFIMAC0
 	uci get wireless.radio1.country || uci set wireless.radio1.country=$REGD
+	uci get wireless.@wifi-iface[1].macaddr || uci set wireless.@wifi-iface[1].macaddr=$WIFIMAC1
 	;;
 esac
 
