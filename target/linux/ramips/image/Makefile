@@ -39,7 +39,7 @@ define Device/Default
 endef
 
 define Build/patch-dtb
-	$(LINUX_DIR)/scripts/dtc/dtc -O dtb -o $@.dtb ../dts/$(DTS).dts
+	$(call Image/BuildDTB,../dts/$(DTS).dts,$@.dtb)
 	$(STAGING_DIR_HOST)/bin/patch-dtb $@ $@.dtb
 endef
 
