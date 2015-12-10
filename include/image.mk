@@ -16,7 +16,7 @@ override NO_TRACE_MAKE:=$(_SINGLE)$(NO_TRACE_MAKE)
 
 KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
-DTS_DIR:=$(LINUX_DIR)/arch/$(ARCH)/boot/dts/
+DTS_DIR:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts
 
 IMG_PREFIX:=openwrt-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
@@ -143,8 +143,8 @@ endef
 # $(4) extra DTC flags
 define Image/BuildDTB
 	$(CPP) -nostdinc -x assembler-with-cpp \
-		-I$(LINUX_DIR)/arch/$(ARCH)/boot/dts \
-		-I$(LINUX_DIR)/arch/$(ARCH)/boot/dts/include \
+		-I$(DTS_DIR) \
+		-I$(DTS_DIR)/include \
 		-undef -D__DTS__ $(3) \
 		-o $(2).tmp $(1)
 	$(LINUX_DIR)/scripts/dtc/dtc -O dtb \
