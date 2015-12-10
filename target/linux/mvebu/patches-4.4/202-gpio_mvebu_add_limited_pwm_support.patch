@@ -23,8 +23,8 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
 
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
-@@ -287,6 +287,11 @@ config GPIO_MVEBU
- 	select GPIO_GENERIC
+@@ -294,6 +294,11 @@ config GPIO_MVEBU
+ 	depends on OF
  	select GENERIC_IRQ_CHIP
  
 +config GPIO_MVEBU_PWM
@@ -37,9 +37,9 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	depends on ARCH_MXC
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -62,6 +62,7 @@ obj-$(CONFIG_GPIO_MPC8XXX)	+= gpio-mpc8x
+@@ -67,6 +67,7 @@ obj-$(CONFIG_GPIO_MPC5200)	+= gpio-mpc52
+ obj-$(CONFIG_GPIO_MPC8XXX)	+= gpio-mpc8xxx.o
  obj-$(CONFIG_GPIO_MSIC)		+= gpio-msic.o
- obj-$(CONFIG_GPIO_MSM_V2)	+= gpio-msm-v2.o
  obj-$(CONFIG_GPIO_MVEBU)        += gpio-mvebu.o
 +obj-$(CONFIG_GPIO_MVEBU_PWM)	+= gpio-mvebu-pwm.o
  obj-$(CONFIG_GPIO_MXC)		+= gpio-mxc.o
@@ -290,7 +290,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  /*
   * Functions returning addresses of individual registers for a given
   * GPIO controller.
-@@ -228,7 +211,7 @@ static int mvebu_gpio_get(struct gpio_ch
+@@ -218,7 +201,7 @@ static int mvebu_gpio_get(struct gpio_ch
  	return (u >> pin) & 1;
  }
  
@@ -299,7 +299,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  {
  	struct mvebu_gpio_chip *mvchip =
  		container_of(chip, struct mvebu_gpio_chip, chip);
-@@ -617,6 +600,8 @@ static int mvebu_gpio_suspend(struct pla
+@@ -607,6 +590,8 @@ static int mvebu_gpio_suspend(struct pla
  		BUG();
  	}
  
@@ -308,7 +308,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	return 0;
  }
  
-@@ -660,6 +645,8 @@ static int mvebu_gpio_resume(struct plat
+@@ -650,6 +635,8 @@ static int mvebu_gpio_resume(struct plat
  		BUG();
  	}
  
@@ -317,7 +317,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	return 0;
  }
  
-@@ -671,7 +658,6 @@ static int mvebu_gpio_probe(struct platf
+@@ -661,7 +648,6 @@ static int mvebu_gpio_probe(struct platf
  	struct resource *res;
  	struct irq_chip_generic *gc;
  	struct irq_chip_type *ct;
@@ -325,7 +325,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  	unsigned int ngpios;
  	int soc_variant;
  	int i, cpu, id;
-@@ -701,10 +687,10 @@ static int mvebu_gpio_probe(struct platf
+@@ -691,10 +677,10 @@ static int mvebu_gpio_probe(struct platf
  		return id;
  	}
  
@@ -339,7 +339,7 @@ Signed-off-by: Andrew Lunn <andrew@lunn.ch>
  
  	mvchip->soc_variant = soc_variant;
  	mvchip->chip.label = dev_name(&pdev->dev);
-@@ -838,7 +824,8 @@ static int mvebu_gpio_probe(struct platf
+@@ -828,7 +814,8 @@ static int mvebu_gpio_probe(struct platf
  		goto err_generic_chip;
  	}
  
