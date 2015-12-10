@@ -8,12 +8,11 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=mm-macros
-PKG_VERSION:=0.9.8
+PKG_VERSION:=0.9.9
 
-PKG_SOURCE_URL:=http://ftp.gnome.org/pub/GNOME/sources/mm-common/0.9 \
-		http://www.mirrorservice.org/sites/ftp.gnome.org/pub/GNOME/sources/mm-common/0.9/
+PKG_SOURCE_URL:=@GNOME/mm-common/0.9
 PKG_SOURCE:=mm-common-$(PKG_VERSION).tar.xz
-PKG_MD5SUM:=00fd5c6850cd5fecc2e02b04d0dd1637
+PKG_MD5SUM:=c9d8c016a99b639d66115cbe1d892402
 
 HOST_BUILD_DIR:=$(BUILD_DIR_HOST)/mm-common-$(PKG_VERSION)
 
