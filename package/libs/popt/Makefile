@@ -54,9 +54,5 @@ define Package/libpopt/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libpopt.so.* $(1)/usr/lib/
 endef
 
-$(eval $(call RequireCommand,xgettext, \
-	$(PKG_NAME) requires the GNU gettext development package installed on the local system to build. \
-))
-
 $(eval $(call BuildPackage,libpopt))
 
