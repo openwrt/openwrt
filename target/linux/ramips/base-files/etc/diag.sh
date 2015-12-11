@@ -162,6 +162,7 @@ get_status_led() {
 		status_led="$board:green:security"
 		;;
 	w306r-v20|\
+	witi|\
 	zbt-wr8305rt)
 		status_led="$board:green:sys"
 		;;
