@@ -95,6 +95,9 @@ get_status_led() {
 	dlan-pro-1200-ac)
 		status_led="devolo:status:wlan"
 		;;
+	dr344)
+		status_led="dr344:green:status"
+		;;
 	dragino2)
 		status_led="dragino2:red:system"
 		;;
