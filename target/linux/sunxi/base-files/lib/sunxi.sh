@@ -105,7 +105,7 @@ sunxi_board_detect() {
 			board="i12-tvbox"
 			;;
 
-		"Lamobo R1")
+		"Lamobo Banana Pi R1")
 			board="lamobo-r1"
 			;;
 
