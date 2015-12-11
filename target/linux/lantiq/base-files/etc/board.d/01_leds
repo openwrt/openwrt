@@ -27,10 +27,16 @@ BTHOMEHUBV2B)
 	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "pppoa-wan"
 	ucidef_set_led_usbdev "usb" "usb" "soc:blue:phone" "1-1"
 	;;
-BTHOMEHUBV3A|BTHOMEHUBV5A)
+BTHOMEHUBV3A)
 	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
 	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0tpt"
 	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "pppoa-wan"
+	;;
+BTHOMEHUBV5A)
+	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
+	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0tpt"
+	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "pppoa-wan"
+	ucidef_set_led_default "dimmed" "dimmed" "dimmed" "0"
 	;;
 VGV7510KW22)
 	ucidef_set_led_default "power" "power" "power" "1"
@@ -68,11 +74,6 @@ ARV8539PW22)
 *)
 	;;
 esac
-
-for a in `ls /sys/class/leds/`; do
-	grep -q "\[none\]" /sys/class/leds/$a/trigger
-	[ $? -eq 0 ] && ucidef_set_led_default $a $a $a `cat /sys/class/leds/$a/brightness`
-done
 
 board_config_flush
 
