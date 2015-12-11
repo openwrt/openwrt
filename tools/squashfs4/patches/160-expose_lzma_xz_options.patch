@@ -637,7 +637,7 @@
  		}
  
  		name = argv[1];
-@@ -76,190 +73,50 @@ static int xz_options(char *argv[], int 
+@@ -76,190 +73,50 @@ static int xz_options(char *argv[], int
  			}
  			if(bcj[i].name == NULL) {
  				fprintf(stderr, "xz: -Xbcj unrecognised "
@@ -864,7 +864,7 @@
  		SQUASHFS_METADATA_SIZE;
  
  	filter[0].filter[0].id = LZMA_FILTER_LZMA2;
-@@ -323,14 +181,25 @@ static int xz_compress(void *strm, void 
+@@ -323,14 +181,25 @@ static int xz_compress(void *strm, void
          lzma_ret res = 0;
  	struct xz_stream *stream = strm;
  	struct filter *selected = NULL;
