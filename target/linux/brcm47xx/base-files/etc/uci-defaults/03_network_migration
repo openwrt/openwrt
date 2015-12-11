@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2014 OpenWrt.org
+# Copyright (C) 2014-2015 OpenWrt.org
 #
 
 uci show network | grep "\.vlan=0"
@@ -15,8 +15,8 @@ local wan_proto="$(uci -q get network.wan.proto)"
 local wan_ipaddr="$(uci -q get network.wan.ipaddr)"
 local wan_netmask="$(uci -q get network.wan.netmask)"
 
-rm /etc/config/network
-/etc/init.d/netconfig start
+echo "" > /etc/config/network
+config_generate
 
 uci set network.lan.proto=$lan_proto
 uci set network.lan.ipaddr=$lan_ipaddr
