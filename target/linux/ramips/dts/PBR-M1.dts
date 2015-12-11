@@ -17,6 +17,12 @@
 
 	sdhci@10130000 {
 		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdhci_pins>;
+	};
+
+	xhci@1E1C0000 {
+		status = "okay";
 	};
 
 	palmbus@1E000000 {
@@ -81,7 +87,7 @@
 			mt76@0,0 {
 				reg = <0x0000 0 0 0 0>;
 				device_type = "pci";
-				mediatek,mtd-eeprom = <&factory 0x0000>;
+				mediatek,mtd-eeprom = <&factory 0x8000>;
 				mediatek,2ghz = <0>;
 			};
 		};
@@ -90,7 +96,7 @@
 			mt76@1,0 {
 				reg = <0x0000 0 0 0 0>;
 				device_type = "pci";
-				mediatek,mtd-eeprom = <&factory 0x8000>;
+				mediatek,mtd-eeprom = <&factory 0x0000>;
 				mediatek,5ghz = <0>;
 			};
 		};
@@ -103,24 +109,29 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		buzzer {
-			label = "pbr-m1:buzzer";
-			gpios = <&gpio0 27 1>;
-		};
-
 		power {
-			label = "pbr-m1:green:power";
-			gpios = <&gpio0 25 1>;
+			label = "pbr-m1:blue:power";
+			gpios = <&gpio0 31 1>;
 		};
 
 		sys {
-			label = "pbr-m1:green:sys";
-			gpios = <&gpio0 24 1>;
+			label = "pbr-m1:blue:sys";
+			gpios = <&gpio1 0 1>;
 		};
 
 		internet {
-			label = "pbr-m1:green:internet";
-			gpios = <&gpio0 23 1>;
+			label = "pbr-m1:blue:internet";
+			gpios = <&gpio0 29 1>;
+		};
+
+		wlan2g {
+			label = "pbr-m1:blue:wlan2g";
+			gpios = <&gpio1 1 1>;
+		};
+
+		wlan5g {
+			label = "pbr-m1:blue:wlan5g";
+			gpios = <&gpio0 28 1>;
 		};
 	};
 
@@ -137,10 +148,38 @@
 		};
 	};
 
+	gpio_export {
+		compatible = "gpio-export";
+		#size-cells = <0>;
+
+		power_usb2 {
+			gpio-export,name = "power_usb2";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 22 0>;
+		};
+
+		power_usb3 {
+			gpio-export,name = "power_usb3";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 25 0>;
+		};
+
+		power_sata {
+			gpio-export,name = "power_sata";
+			gpio-export,output = <1>;
+			gpios = <&gpio0 27 0>;
+		};
+	};
+
+	beeper: beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpio0 26 1>;
+	};
+
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "wdt", "rgmii2", "wdt rst", "jtag", "mdio";
+				ralink,group = "wdt", "rgmii2", "jtag", "mdio";
 				ralink,function = "gpio";
 			};
 		};

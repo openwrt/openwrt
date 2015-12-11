@@ -200,9 +200,9 @@ oy-0001)
 	set_wifi_led "$board:green:wifi"
 	;;
 pbr-m1)
-	ucidef_set_led_netdev "internet" "internet" "$board:green:internet" "eth0.2"
-	ucidef_set_led_default "power" "power" "$board:green:power" "1"
-	ucidef_set_led_default "sys" "sys" "$board:green:sys" "1"
+	ucidef_set_led_netdev "internet" "internet" "$board:blue:internet" "eth0.2"
+	ucidef_set_led_default "power" "power" "$board:blue:power" "1"
+	ucidef_set_led_default "sys" "sys" "$board:blue:sys" "1"
 	;;
 px-4885)
 	set_wifi_led "$board:orange:wifi"
