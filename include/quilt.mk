@@ -17,6 +17,7 @@ HOST_FILES_DIR?=$(FILES_DIR)
 
 ifeq ($(MAKECMDGOALS),refresh)
   override QUILT=1
+  override HOST_QUILT=1
 endif
 
 QUILT_CMD:=quilt --quiltrc=-
