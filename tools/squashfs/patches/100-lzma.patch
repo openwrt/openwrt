@@ -1,6 +1,6 @@
 --- a/squashfs-tools/Makefile
 +++ b/squashfs-tools/Makefile
-@@ -7,6 +8,9 @@ all: mksquashfs unsquashfs
+@@ -7,6 +7,9 @@ all: mksquashfs unsquashfs
  mksquashfs: mksquashfs.o read_fs.o sort.o
  	$(CC) mksquashfs.o read_fs.o sort.o -lz -o $@
  
@@ -10,7 +10,7 @@
  mksquashfs.o: mksquashfs.c squashfs_fs.h mksquashfs.h global.h sort.h
  
  read_fs.o: read_fs.c squashfs_fs.h read_fs.h global.h
-@@ -16,4 +20,9 @@ sort.o: sort.c squashfs_fs.h global.h so
+@@ -16,4 +19,9 @@ sort.o: sort.c squashfs_fs.h global.h so
  unsquashfs: unsquashfs.o
  	$(CC) unsquashfs.o -lz -o $@
  
