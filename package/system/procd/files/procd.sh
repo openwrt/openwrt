@@ -126,7 +126,6 @@ _procd_open_validate() {
 _procd_add_jail() {
 	json_add_object "jail"
 	json_add_string name "$1"
-	json_add_string root "/tmp/.jail/$1"
 
 	shift
 	
@@ -136,6 +135,7 @@ _procd_add_jail() {
 		ubus)	json_add_boolean "ubus" "1";;
 		procfs)	json_add_boolean "procfs" "1";;
 		sysfs)	json_add_boolean "sysfs" "1";;
+		ronly)	json_add_boolean "ronly" "1";;
 		esac
 	done
 	json_add_object "mount"
@@ -195,10 +195,10 @@ _procd_set_param() {
 		nice)
 			json_add_int "$type" "$1"
 		;;
-		user|seccomp)
+		user|seccomp|capabilities)
 			json_add_string "$type" "$1"
 		;;
-		stdout|stderr)
+		stdout|stderr|no_new_privs)
 			json_add_boolean "$type" "$1"
 		;;
 	esac
