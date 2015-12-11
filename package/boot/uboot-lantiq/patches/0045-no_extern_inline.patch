@@ -1,0 +1,101 @@
+From b11c5d1dc29e81326d1215011d19377737082aeb Mon Sep 17 00:00:00 2001
+From: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+Date: Wed, 1 Jul 2015 16:36:43 +0200
+Subject: [PATCH] MIPS: change 'extern inline' to 'static inline'
+
+The kernel changed it a long time ago. Also this is now broken
+on gcc-5.x.
+
+Reported-by: Andy Kennedy <andy.kennedy@adtran.com>
+Signed-off-by: Daniel Schwierzeck <daniel.schwierzeck@gmail.com>
+---
+ arch/mips/include/asm/io.h     | 12 ++++++------
+ arch/mips/include/asm/system.h |  6 +++---
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/arch/mips/include/asm/io.h b/arch/mips/include/asm/io.h
+index 3fa37f5..a7ab087 100644
+--- a/arch/mips/include/asm/io.h
++++ b/arch/mips/include/asm/io.h
+@@ -117,7 +117,7 @@ static inline void set_io_port_base(unsigned long base)
+  * Change virtual addresses to physical addresses and vv.
+  * These are trivial on the 1:1 Linux/MIPS mapping
+  */
+-extern inline phys_addr_t virt_to_phys(volatile void * address)
++static inline phys_addr_t virt_to_phys(volatile void * address)
+ {
+ #ifndef CONFIG_64BIT
+ 	return CPHYSADDR(address);
+@@ -126,7 +126,7 @@ extern inline phys_addr_t virt_to_phys(volatile void * address)
+ #endif
+ }
+ 
+-extern inline void * phys_to_virt(unsigned long address)
++static inline void * phys_to_virt(unsigned long address)
+ {
+ #ifndef CONFIG_64BIT
+ 	return (void *)KSEG0ADDR(address);
+@@ -138,7 +138,7 @@ extern inline void * phys_to_virt(unsigned long address)
+ /*
+  * IO bus memory addresses are also 1:1 with the physical address
+  */
+-extern inline unsigned long virt_to_bus(volatile void * address)
++static inline unsigned long virt_to_bus(volatile void * address)
+ {
+ #ifndef CONFIG_64BIT
+ 	return CPHYSADDR(address);
+@@ -147,7 +147,7 @@ extern inline unsigned long virt_to_bus(volatile void * address)
+ #endif
+ }
+ 
+-extern inline void * bus_to_virt(unsigned long address)
++static inline void * bus_to_virt(unsigned long address)
+ {
+ #ifndef CONFIG_64BIT
+ 	return (void *)KSEG0ADDR(address);
+@@ -165,12 +165,12 @@ extern unsigned long isa_slot_offset;
+ extern void * __ioremap(unsigned long offset, unsigned long size, unsigned long flags);
+ 
+ #if 0
+-extern inline void *ioremap(unsigned long offset, unsigned long size)
++static inline void *ioremap(unsigned long offset, unsigned long size)
+ {
+ 	return __ioremap(offset, size, _CACHE_UNCACHED);
+ }
+ 
+-extern inline void *ioremap_nocache(unsigned long offset, unsigned long size)
++static inline void *ioremap_nocache(unsigned long offset, unsigned long size)
+ {
+ 	return __ioremap(offset, size, _CACHE_UNCACHED);
+ }
+diff --git a/arch/mips/include/asm/system.h b/arch/mips/include/asm/system.h
+index 7a28952..d56f73b 100644
+--- a/arch/mips/include/asm/system.h
++++ b/arch/mips/include/asm/system.h
+@@ -22,7 +22,7 @@
+ #include <linux/kernel.h>
+ #endif
+ 
+-extern __inline__ void
++static __inline__ void
+ __sti(void)
+ {
+ 	__asm__ __volatile__(
+@@ -46,7 +46,7 @@ __sti(void)
+  * R4000/R4400 need three nops, the R4600 two nops and the R10000 needs
+  * no nops at all.
+  */
+-extern __inline__ void
++static __inline__ void
+ __cli(void)
+ {
+ 	__asm__ __volatile__(
+@@ -207,7 +207,7 @@ do { \
+  * For 32 and 64 bit operands we can take advantage of ll and sc.
+  * FIXME: This doesn't work for R3000 machines.
+  */
+-extern __inline__ unsigned long xchg_u32(volatile int * m, unsigned long val)
++static __inline__ unsigned long xchg_u32(volatile int * m, unsigned long val)
+ {
+ #ifdef CONFIG_CPU_HAS_LLSC
+ 	unsigned long dummy;
