@@ -273,3 +273,19 @@ define KernelPackage/pcspkr/description
 endef
 
 $(eval $(call KernelPackage,pcspkr))
+
+define KernelPackage/sound-dummy
+  $(call AddDepends/sound)
+  TITLE:=Null sound output driver (sink)
+  KCONFIG:= \
+	CONFIG_SND_DUMMY
+  FILES:= \
+	$(LINUX_DIR)/sound/drivers/snd-dummy.ko
+  AUTOLOAD:=$(call AutoLoad,32,snd-dummy)
+endef
+
+define KernelPackage/sound_dummy/description
+ Dummy sound device for Alsa when no hardware present
+endef
+
+$(eval $(call KernelPackage,sound-dummy))
