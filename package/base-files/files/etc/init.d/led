@@ -44,7 +44,7 @@ load_led() {
 		ret="$?"
 
 		[ $default = 1 ] &&
-			echo 1 >/sys/class/leds/${sysfs}/brightness
+			cat /sys/class/leds/${sysfs}/max_brightness > /sys/class/leds/${sysfs}/brightness
 
 		[ $ret = 0 ] || {
 			echo >&2 "Skipping trigger '$trigger' for led '$name' due to missing kernel module"
