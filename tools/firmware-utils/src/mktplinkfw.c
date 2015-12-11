@@ -709,13 +709,13 @@ static int check_options(void)
 		} else {
 			exceed_bytes = kernel_info.file_size - (rootfs_ofs - sizeof(struct fw_header));
 			if (exceed_bytes > 0) {
-				ERR("kernel image is too big");
+				ERR("kernel image is too big by %i bytes", exceed_bytes);
 				return -1;
 			}
 
 			exceed_bytes = rootfs_info.file_size - (fw_max_len - rootfs_ofs);
 			if (exceed_bytes > 0) {
-				ERR("rootfs image is too big");
+				ERR("rootfs image is too big by %i bytes", exceed_bytes);
 				return -1;
 			}
 		}
