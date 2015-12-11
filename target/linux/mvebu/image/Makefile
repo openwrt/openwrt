@@ -139,7 +139,7 @@ $(eval $(call NANDProfile,Shelby,armada-385-linksys-shelby,128KiB,2048,512,2048)
 $(eval $(call UBINORProfile,OpenBlocks-AX-3-4,armada-xp-openblocks-ax3-4,128KiB))
 
 # Boards with small NOR, where UBI doesn't make sense
-$(eval $(call NORProfile,385-RD,armada-385-rd,256KiB))
+$(eval $(call NORProfile,388-RD,armada-388-rd,256KiB))
 
 ###
 ### Linksys
