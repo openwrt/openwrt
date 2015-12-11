@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 364 insertions(+)
  create mode 100644 drivers/gpio/gpio-mt7621.c
 
-diff --git a/arch/mips/Kconfig b/arch/mips/Kconfig
-index 0098bff..94ea345 100644
 --- a/arch/mips/Kconfig
 +++ b/arch/mips/Kconfig
 @@ -559,6 +559,9 @@ config RALINK
@@ -26,8 +24,6 @@ index 0098bff..94ea345 100644
  
  config SGI_IP22
  	bool "SGI IP22 (Indy/Indigo2)"
-diff --git a/drivers/gpio/Kconfig b/drivers/gpio/Kconfig
-index 4a3e7df..13f860c 100644
 --- a/drivers/gpio/Kconfig
 +++ b/drivers/gpio/Kconfig
 @@ -269,6 +269,12 @@ config GPIO_MB86S7X
@@ -43,18 +39,13 @@ index 4a3e7df..13f860c 100644
  config GPIO_MM_LANTIQ
  	bool "Lantiq Memory mapped GPIOs"
  	depends on LANTIQ && SOC_XWAY
-diff --git a/drivers/gpio/Makefile b/drivers/gpio/Makefile
-index 13448d78..5563d6e 100644
 --- a/drivers/gpio/Makefile
 +++ b/drivers/gpio/Makefile
-@@ -119,3 +119,4 @@ obj-$(CONFIG_GPIO_XTENSA)	+= gpio-xtensa.o
+@@ -119,3 +119,4 @@ obj-$(CONFIG_GPIO_XTENSA)	+= gpio-xtensa
  obj-$(CONFIG_GPIO_ZEVIO)	+= gpio-zevio.o
  obj-$(CONFIG_GPIO_ZYNQ)		+= gpio-zynq.o
  obj-$(CONFIG_GPIO_ZX)		+= gpio-zx.o
 +obj-$(CONFIG_GPIO_MT7621)	+= gpio-mt7621.o
-diff --git a/drivers/gpio/gpio-mt7621.c b/drivers/gpio/gpio-mt7621.c
-new file mode 100644
-index 0000000..7a98b94
 --- /dev/null
 +++ b/drivers/gpio/gpio-mt7621.c
 @@ -0,0 +1,354 @@
@@ -243,7 +234,7 @@ index 0000000..7a98b94
 +}
 +
 +static void
-+mediatek_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
++mediatek_gpio_irq_handler(struct irq_desc *desc)
 +{
 +	int i;
 +
@@ -412,6 +403,3 @@ index 0000000..7a98b94
 +}
 +
 +subsys_initcall(mediatek_gpio_init);
--- 
-1.7.10.4
-
