@@ -513,7 +513,7 @@ int srec2bin(int argc,char *argv[],int verbose)
     return(1);
 }
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     debug = TRUE;
     debug = FALSE;

@@ -7,12 +7,14 @@
  *
  *	Author: Sandeep Mistry
  */
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "cyg_crc.h"
 
