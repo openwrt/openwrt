@@ -1,3 +1,5 @@
+#include <dt-bindings/interrupt-controller/mips-gic.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -72,12 +74,22 @@
 			reg = <0x300 0x100>;
 		};
 
+		cpc@1fbf0000 {
+			     compatible = "mtk,mt7621-cpc";
+			     reg = <0x1fbf0000 0x8000>;
+		};
+
+		mc@1fbf8000 {
+			    compatible = "mtk,mt7621-mc";
+			    reg = <0x1fbf8000 0x8000>;
+ 		};
+
 		uartlite@c00 {
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
 			interrupt-parent = <&gic>;
-			interrupts = <0 26 4>;
+			interrupts = <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>;
 
 			reg-shift = <2>;
 			reg-io-width = <4>;
@@ -210,7 +222,7 @@
 		reg = <0x1E130000 4000>;
 
 		interrupt-parent = <&gic>;
-		interrupts = <0 20 4>;
+		interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	xhci@1E1C0000 {
@@ -220,7 +232,7 @@
 		reg = <0x1E1C0000 4000>;
 
 		interrupt-parent = <&gic>;
-		interrupts = <0 22 4>;
+		interrupts = <GIC_SHARED 22 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	gic: interrupt-controller@1fbc0000 {
@@ -273,7 +285,7 @@
 		reset-names = "fe", "eth";
 
 		interrupt-parent = <&gic>;
-		interrupts = <0 3 4>;
+		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>;
 
 		mdio-bus {
 			#address-cells = <1>;
@@ -290,7 +302,7 @@
 		compatible = "ralink,mt7620a-gsw";
 		reg = <0x1e110000 8000>;
 		interrupt-parent = <&gic>;
-		interrupts = <0 23 4>;
+		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
 	};
 
 	pcie@1e140000 {
@@ -313,9 +325,9 @@
 		>;
 
 		interrupt-parent = <&gic>;
-		interrupts = <0 4 4
-				0 24 4
-				0 25 4>;
+		interrupts = <GIC_SHARED 4 IRQ_TYPE_LEVEL_HIGH
+				GIC_SHARED 24 IRQ_TYPE_LEVEL_HIGH
+				GIC_SHARED 25 IRQ_TYPE_LEVEL_HIGH>;
 
 		status = "okay";
 
