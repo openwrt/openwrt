@@ -88,9 +88,6 @@
 			compatible = "ns16550a";
 			reg = <0xc00 0x100>;
 
-			/* FIXME: there should be way to detect this */
-			clock-frequency = <50000000>;
-
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SHARED 26 IRQ_TYPE_LEVEL_HIGH>;
 
@@ -104,9 +101,6 @@
 
 			compatible = "ralink,mt7621-spi";
 			reg = <0xb00 0x100>;
-
-			/* FIXME: there should be way to detect this */
-			clock-frequency = <50000000>;
 
 			resets = <&rstctrl 18>;
 			reset-names = "spi";
@@ -249,14 +243,6 @@
 		#interrupt-cells = <3>;
 
 		mti,reserved-cpu-vectors = <7>;
-
-		timer {
-			compatible = "mti,gic-timer";
-			interrupts = <GIC_LOCAL 1 IRQ_TYPE_NONE>;
-
-			/* FIXME: there should be way to detect this */
-			clock-frequency = <880000000>;
-		};
 	};
 
 	nand@1e003000 {
