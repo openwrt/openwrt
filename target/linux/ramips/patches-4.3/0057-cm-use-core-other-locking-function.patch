@@ -1,0 +1,80 @@
+commit 4ede31617056b7424eef28dce59dd6dbe81729c3
+Author: Paul Burton <paul.burton@imgtec.com>
+Date:   Tue Sep 22 11:12:17 2015 -0700
+
+    MIPS: CM: make use of mips_cm_{lock,unlock}_other
+    
+    Document that CPC core-other accesses must take place within the bounds
+    of the CM lock, and begin using the CM lock functions where we access
+    the GCRs of other cores. This is required because with CM3 the CPC began
+    using GCR_CL_OTHER instead of CPC_CL_OTHER.
+    
+    Signed-off-by: Paul Burton <paul.burton@imgtec.com>
+    Cc: linux-mips@linux-mips.org
+    Cc: Rusty Russell <rusty@rustcorp.com.au>
+    Cc: Andrew Bresticker <abrestic@chromium.org>
+    Cc: Bjorn Helgaas <bhelgaas@google.com>
+    Cc: linux-kernel@vger.kernel.org
+    Cc: Niklas Cassel <niklas.cassel@axis.com>
+    Cc: Ezequiel Garcia <ezequiel.garcia@imgtec.com>
+    Cc: Markos Chandras <markos.chandras@imgtec.com>
+    Patchwork: https://patchwork.linux-mips.org/patch/11208/
+    Signed-off-by: Ralf Baechle <ralf@linux-mips.org>
+
+--- a/arch/mips/include/asm/mips-cpc.h
++++ b/arch/mips/include/asm/mips-cpc.h
+@@ -149,7 +149,8 @@ BUILD_CPC_Cx_RW(other,		0x10)
+  * core: the other core to be accessed
+  *
+  * Call before operating upon a core via the 'other' register region in
+- * order to prevent the region being moved during access. Must be followed
++ * order to prevent the region being moved during access. Must be called
++ * within the bounds of a mips_cm_{lock,unlock}_other pair, and followed
+  * by a call to mips_cpc_unlock_other.
+  */
+ extern void mips_cpc_lock_other(unsigned int core);
+--- a/arch/mips/kernel/smp-cps.c
++++ b/arch/mips/kernel/smp-cps.c
+@@ -37,8 +37,9 @@ static unsigned core_vpe_count(unsigned
+ 	if (!config_enabled(CONFIG_MIPS_MT_SMP) || !cpu_has_mipsmt)
+ 		return 1;
+ 
+-	write_gcr_cl_other(core << CM_GCR_Cx_OTHER_CORENUM_SHF);
++	mips_cm_lock_other(core, 0);
+ 	cfg = read_gcr_co_config() & CM_GCR_Cx_CONFIG_PVPE_MSK;
++	mips_cm_unlock_other();
+ 	return (cfg >> CM_GCR_Cx_CONFIG_PVPE_SHF) + 1;
+ }
+ 
+@@ -193,7 +194,7 @@ static void boot_core(unsigned core)
+ 	u32 access;
+ 
+ 	/* Select the appropriate core */
+-	write_gcr_cl_other(core << CM_GCR_Cx_OTHER_CORENUM_SHF);
++	mips_cm_lock_other(core, 0);
+ 
+ 	/* Set its reset vector */
+ 	write_gcr_co_reset_base(CKSEG1ADDR((unsigned long)mips_cps_core_entry));
+@@ -216,6 +217,8 @@ static void boot_core(unsigned core)
+ 		write_gcr_co_reset_release(0);
+ 	}
+ 
++	mips_cm_unlock_other();
++
+ 	/* The core is now powered up */
+ 	bitmap_set(core_power, core, 1);
+ }
+--- a/arch/mips/kernel/smp-gic.c
++++ b/arch/mips/kernel/smp-gic.c
+@@ -46,9 +46,11 @@ void gic_send_ipi_single(int cpu, unsign
+ 
+ 	if (mips_cpc_present() && (core != current_cpu_data.core)) {
+ 		while (!cpumask_test_cpu(cpu, &cpu_coherent_mask)) {
++			mips_cm_lock_other(core, 0);
+ 			mips_cpc_lock_other(core);
+ 			write_cpc_co_cmd(CPC_Cx_CMD_PWRUP);
+ 			mips_cpc_unlock_other();
++			mips_cm_unlock_other();
+ 		}
+ 	}
+ 
