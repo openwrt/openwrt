@@ -120,7 +120,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  choice
  	prompt "Ralink SoC selection"
  	default SOC_RT305X
-@@ -34,6 +39,15 @@ choice
+@@ -34,6 +39,14 @@ choice
  	config SOC_MT7620
  		bool "MT7620/8"
  
@@ -129,14 +129,13 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +		select MIPS_CPU_SCACHE
 +		select SYS_SUPPORTS_MULTITHREADING
 +		select SYS_SUPPORTS_SMP
-+		select SYS_SUPPORTS_MIPS_CMP
++		select SYS_SUPPORTS_MIPS_CPS
 +		select MIPS_GIC
-+		select IRQ_GIC
 +		select HW_HAS_PCI
  endchoice
  
  choice
-@@ -65,6 +79,10 @@ choice
+@@ -65,6 +78,10 @@ choice
  		depends on SOC_MT7620
  		select BUILTIN_DTB
  
@@ -149,7 +148,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  endif
 --- a/arch/mips/ralink/Makefile
 +++ b/arch/mips/ralink/Makefile
-@@ -6,16 +6,21 @@
+@@ -6,16 +6,20 @@
  # Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
  # Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  
@@ -161,8 +160,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_RALINK_ILL_ACC) += ill_acc.o
  
 +obj-$(CONFIG_IRQ_INTC) += irq.o
-+obj-$(CONFIG_MIPS_GIC_IPI) += irq-gic.o
-+obj-$(CONFIG_MIPS_MT_SMP) += malta-amon.o
++obj-$(CONFIG_MIPS_GIC) += irq-gic.o
 +
  obj-$(CONFIG_SOC_RT288X) += rt288x.o
  obj-$(CONFIG_SOC_RT305X) += rt305x.o
@@ -185,136 +183,28 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +cflags-$(CONFIG_SOC_MT7621)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/mt7621
 --- /dev/null
 +++ b/arch/mips/ralink/irq-gic.c
-@@ -0,0 +1,42 @@
+@@ -0,0 +1,18 @@
 +#include <linux/init.h>
-+#include <linux/sched.h>
-+#include <linux/slab.h>
-+#include <linux/interrupt.h>
-+#include <linux/kernel_stat.h>
-+#include <linux/hardirq.h>
-+#include <linux/preempt.h>
-+#include <linux/irqdomain.h>
-+#include <linux/of_platform.h>
-+#include <linux/of_address.h>
-+#include <linux/of_irq.h>
 +
-+#include <asm/irq_cpu.h>
-+#include <asm/mipsregs.h>
++#include <linux/of.h>
++#include <linux/irqchip.h>
 +
-+#include <asm/irq.h>
-+#include <asm/setup.h>
-+
-+#include <asm/mips-cm.h>
 +#include <linux/irqchip/mips-gic.h>
-+
-+#include <asm/mach-ralink/mt7621.h>
-+
-+extern int __init gic_of_init(struct device_node *node,
-+			      struct device_node *parent);
 +
 +unsigned int get_c0_compare_int(void)
 +{
 +	return gic_get_c0_compare_int();
 +}
 +
-+static struct of_device_id __initdata of_irq_ids[] = {
-+	{ .compatible = "mti,cpu-interrupt-controller", .data = mips_cpu_irq_of_init },
-+	{ .compatible = "mti,gic", .data = gic_of_init },
-+	{},
-+};
-+
 +void __init
 +arch_init_irq(void)
 +{
-+	of_irq_init(of_irq_ids);
-+}
---- /dev/null
-+++ b/arch/mips/ralink/malta-amon.c
-@@ -0,0 +1,81 @@
-+/*
-+ * Copyright (C) 2007  MIPS Technologies, Inc.
-+ *	All rights reserved.
-+
-+ *  This program is free software; you can distribute it and/or modify it
-+ *  under the terms of the GNU General Public License (Version 2) as
-+ *  published by the Free Software Foundation.
-+ *
-+ *  This program is distributed in the hope it will be useful, but WITHOUT
-+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-+ *  for more details.
-+ *
-+ *  You should have received a copy of the GNU General Public License along
-+ *  with this program; if not, write to the Free Software Foundation, Inc.,
-+ *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
-+ *
-+ * Arbitrary Monitor interface
-+ */
-+
-+#include <linux/kernel.h>
-+#include <linux/init.h>
-+#include <linux/smp.h>
-+
-+#include <asm/addrspace.h>
-+#include <asm/mips-boards/launch.h>
-+#include <asm/mipsmtregs.h>
-+
-+int amon_cpu_avail(int cpu)
-+{
-+	struct cpulaunch *launch = (struct cpulaunch *)CKSEG0ADDR(CPULAUNCH);
-+
-+	if (cpu < 0 || cpu >= NCPULAUNCH) {
-+		pr_debug("avail: cpu%d is out of range\n", cpu);
-+		return 0;
-+	}
-+
-+	launch += cpu;
-+	if (!(launch->flags & LAUNCH_FREADY)) {
-+		pr_debug("avail: cpu%d is not ready\n", cpu);
-+		return 0;
-+	}
-+	if (launch->flags & (LAUNCH_FGO|LAUNCH_FGONE)) {
-+		pr_debug("avail: too late.. cpu%d is already gone\n", cpu);
-+		return 0;
-+	}
-+
-+	return 1;
++	irqchip_init();
 +}
 +
-+void amon_cpu_start(int cpu,
-+		    unsigned long pc, unsigned long sp,
-+		    unsigned long gp, unsigned long a0)
-+{
-+	volatile struct cpulaunch *launch =
-+		(struct cpulaunch  *)CKSEG0ADDR(CPULAUNCH);
-+
-+	if (!amon_cpu_avail(cpu))
-+		return;
-+	if (cpu == smp_processor_id()) {
-+		pr_debug("launch: I am cpu%d!\n", cpu);
-+		return;
-+	}
-+	launch += cpu;
-+
-+	pr_debug("launch: starting cpu%d\n", cpu);
-+
-+	launch->pc = pc;
-+	launch->gp = gp;
-+	launch->sp = sp;
-+	launch->a0 = a0;
-+
-+	smp_wmb();		/* Target must see parameters before go */
-+	launch->flags |= LAUNCH_FGO;
-+	smp_wmb();		/* Target must see go before we poll  */
-+
-+	while ((launch->flags & LAUNCH_FGONE) == 0)
-+		;
-+	smp_rmb();	/* Target will be updating flags soon */
-+	pr_debug("launch: cpu%d gone!\n", cpu);
-+}
 --- /dev/null
 +++ b/arch/mips/ralink/mt7621.c
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,213 @@
 +/*
 + * This program is free software; you can redistribute it and/or modify it
 + * under the terms of the GNU General Public License version 2 as published
@@ -431,6 +321,10 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	GRP("rgmii1", rgmii1_grp, 1, MT7621_GPIO_MODE_RGMII1),
 +	{ 0 }
 +};
++
++phys_addr_t mips_cpc_default_phys_base() {
++	panic("Cannot detect cpc address");
++}
 +
 +void __init ralink_clk_init(void)
 +{
