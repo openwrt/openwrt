@@ -46,31 +46,3 @@
 +	def_bool n
 +
  endif
---- a/arch/mips/ath79/Makefile
-+++ b/arch/mips/ath79/Makefile
-@@ -17,13 +17,25 @@ obj-$(CONFIG_PCI)			+= pci.o
- # Devices
- #
- obj-y					+= dev-common.o
-+obj-$(CONFIG_ATH79_DEV_AP9X_PCI)	+= dev-ap9x-pci.o
-+obj-$(CONFIG_ATH79_DEV_DSA)		+= dev-dsa.o
-+obj-$(CONFIG_ATH79_DEV_ETH)		+= dev-eth.o
- obj-$(CONFIG_ATH79_DEV_GPIO_BUTTONS)	+= dev-gpio-buttons.o
- obj-$(CONFIG_ATH79_DEV_LEDS_GPIO)	+= dev-leds-gpio.o
-+obj-$(CONFIG_ATH79_DEV_M25P80)		+= dev-m25p80.o
-+obj-$(CONFIG_ATH79_DEV_NFC)		+= dev-nfc.o
- obj-$(CONFIG_ATH79_DEV_SPI)		+= dev-spi.o
- obj-$(CONFIG_ATH79_DEV_USB)		+= dev-usb.o
- obj-$(CONFIG_ATH79_DEV_WMAC)		+= dev-wmac.o
- 
- #
-+# Miscellaneous objects
-+#
-+obj-$(CONFIG_ATH79_NVRAM)		+= nvram.o
-+obj-$(CONFIG_ATH79_PCI_ATH9K_FIXUP)	+= pci-ath9k-fixup.o
-+obj-$(CONFIG_ATH79_ROUTERBOOT)		+= routerboot.o
-+
-+#
- # Machines
- #
- obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o

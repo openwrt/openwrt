@@ -276,18 +276,6 @@
 +MIPS_MACHINE(ATH79_MACH_AP135_020, "AP135-020",
 +	     "Atheros AP135-020 reference board",
 +	     ap135_020_setup);
---- a/arch/mips/ath79/machtypes.h
-+++ b/arch/mips/ath79/machtypes.h
-@@ -18,7 +18,9 @@ enum ath79_mach_type {
- 	ATH79_MACH_GENERIC = 0,
- 	ATH79_MACH_AP121,		/* Atheros AP121 reference board */
- 	ATH79_MACH_AP121_MINI,		/* Atheros AP121-MINI reference board */
-+	ATH79_MACH_AP135_020,		/* Atheros AP135-020 reference board */
- 	ATH79_MACH_AP136_010,		/* Atheros AP136-010 reference board */
-+	ATH79_MACH_AP136_020,		/* Atheros AP136-020 reference board */
- 	ATH79_MACH_AP81,		/* Atheros AP81 reference board */
- 	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
- 	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 --- a/arch/mips/ath79/Kconfig
 +++ b/arch/mips/ath79/Kconfig
 @@ -16,16 +16,17 @@ config ATH79_MACH_AP121
