@@ -275,6 +275,10 @@ nand_upgrade_tar() {
 nand_do_upgrade_stage2() {
 	local file_type=$(identify $1)
 
+	if type 'platform_nand_pre_upgrade' >/dev/null 2>/dev/null; then
+		platform_nand_pre_upgrade "$1"
+	fi
+
 	[ ! "$(find_mtd_index "$CI_UBIPART")" ] && CI_UBIPART="rootfs"
 
 	case "$file_type" in
