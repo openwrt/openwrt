@@ -182,10 +182,34 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	ubnt-erx)
+		nand_do_platform_check "$board" "$1"
+		return $?;
+		;;
 	esac
 
 	echo "Sysupgrade is not yet supported on $board."
 	return 1
+}
+
+platform_nand_pre_upgrade() {
+	local board=$(ramips_board_name)
+
+	case "$board" in
+	ubnt-erx)
+		platform_upgrade_ubnt_erx "$ARGV"
+		;;
+	esac
+}
+
+platform_pre_upgrade() {
+	local board=$(ramips_board_name)
+
+	case "$board" in
+    	ubnt-erx)
+		nand_do_upgrade "$ARGV"
+		;;
+	esac
 }
 
 platform_do_upgrade() {
