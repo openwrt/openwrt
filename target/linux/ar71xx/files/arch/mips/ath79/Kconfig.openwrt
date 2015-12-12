@@ -853,6 +853,17 @@ config ATH79_MACH_MR16
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_MR18
+	bool "Meraki MR18 board support"
+	select SOC_QCA955X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_NFC
+	select ATH79_DEV_WMAC
+	select LEDS_NU801
+
 config ATH79_MACH_MR600
 	bool "OpenMesh MR600 board support"
 	select SOC_AR934X

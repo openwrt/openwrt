@@ -98,6 +98,7 @@ obj-$(CONFIG_ATH79_MACH_HORNET_UB)	+= mach-hornet-ub.o
 obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)     += mach-mc-mac1200r.o
 obj-$(CONFIG_ATH79_MACH_MR12)		+= mach-mr12.o
 obj-$(CONFIG_ATH79_MACH_MR16)		+= mach-mr16.o
+obj-$(CONFIG_ATH79_MACH_MR18)		+= mach-mr18.o
 obj-$(CONFIG_ATH79_MACH_MR1750)		+= mach-mr1750.o
 obj-$(CONFIG_ATH79_MACH_MR600)		+= mach-mr600.o
 obj-$(CONFIG_ATH79_MACH_MR900)		+= mach-mr900.o

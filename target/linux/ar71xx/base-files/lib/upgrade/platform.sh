@@ -434,6 +434,10 @@ platform_check_image() {
 		}
 		return 0
 		;;
+	mr18)
+		merakinand_do_platform_check $board $1
+		return $?;
+		;;
 	nbg6716 | \
 	r6100 | \
 	wndr3700v4 | \
@@ -493,6 +497,9 @@ platform_pre_upgrade() {
 	wndr3700v4 | \
 	wndr4300 )
 		nand_do_upgrade "$1"
+		;;
+	mr18)
+		merakinand_do_upgrade "$1"
 		;;
 	esac
 }
