@@ -349,6 +349,9 @@ ramips_board_detect() {
 	*"TEW-692GR")
 		name="tew-692gr"
 		;;
+	*"UBNT-ERX")
+		name="ubnt-erx"
+		;;
 	*"UR-326N4G")
 		name="ur-326n4g"
 		;;
@@ -399,7 +402,7 @@ ramips_board_detect() {
 		;;
 	*"WizFi630A")
 		name="wizfi630a"
-		;;                
+		;;
 	*"WL-330N")
 		name="wl-330n"
 		;;

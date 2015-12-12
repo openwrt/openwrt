@@ -69,6 +69,51 @@ define Build/relocate-kernel
 	mv $@.new $@
 endef
 
+define Build/ubnt-erx-factory-compat
+	echo '21001:6' > $@.compat
+	$(TAR) -cf $@ --transform='s/^.*/compat/' $@.compat
+	$(RM) $@.compat
+endef
+
+define Build/ubnt-erx-factory-kernel
+	if [ -e $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE) ]; then \
+		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp/' $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE); \
+		\
+		md5sum --binary $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE) | awk '{print $$1}'> $@.md5; \
+		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp.md5/' $@.md5; \
+		$(RM) $@.md5; \
+	fi
+endef
+
+define Build/ubnt-erx-factory-rootfs
+	echo "dummy" > $@.rootfs
+	$(TAR) -rf $@ --transform='s/^.*/squashfs.tmp/' $@.rootfs
+
+	md5sum --binary $@.rootfs | awk '{print $$1}'> $@.md5
+	$(TAR) -rf $@ --transform='s/^.*/squashfs.tmp.md5/' $@.md5
+	$(RM) $@.md5
+	$(RM) $@.rootfs
+endef
+
+define Build/ubnt-erx-factory-version
+	echo '$(BOARD) $(VERSION_CODE) $(VERSION_NUMBER)' > $@.version
+	$(TAR) -rf $@ --transform='s/^.*/version.tmp/' $@.version
+	$(RM) $@.version
+endef
+
+#We need kernel+initrams fit into kernel partition
+define Build/ubnt-erx-factory-check-size
+	@[ $$(($(subst k,* 1024,$(subst m, * 1024k,$(1))))) -ge "$$($(TAR) -xf $@ vmlinux.tmp -O | wc -c)" ] || { \
+		echo "WARNING: Initramfs kernel for image $@ is too big (kernel size: $$($(TAR) -xf $@ vmlinux.tmp -O | wc -c), max size $(1))" >&2; \
+		$(RM) -f $@; \
+	}
+
+	@[ "$$($(TAR) -xf $@ vmlinux.tmp -O | wc -c)" -gt 0 ] || { \
+		echo "WARNING: Kernel for image $@ not found" >&2; \
+		$(RM) -f $@; \
+	}
+endef
+
 define MkCombineduImage
 	$(call PatchKernelLzma,$(2),$(3))
 	if [ `stat -c%s "$(KDIR)/vmlinux-$(2).bin.lzma"` -gt `expr $(4) - 64` ]; then \
@@ -954,7 +999,7 @@ endif
 #
 
 ifeq ($(SUBTARGET),mt7621)
-  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1 firewrt pbr-m1 re6500 sap-g3200u3 witi wf-2881 zbt-wg2626
+  TARGET_DEVICES += mt7621 wsr-600 wsr-1166 dir-860l-b1 firewrt pbr-m1 re6500 sap-g3200u3 ubnt-erx witi wf-2881 zbt-wg2626
 endif
 
 define Device/mt7621
@@ -1021,6 +1066,20 @@ define Device/wf-2881
   KERNEL_SIZE := 2097152
   FILESYSTEMS := squashfs
   IMAGE/sysupgrade.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-ubi | check-size $$$$(IMAGE_SIZE)
+endef
+
+define Device/ubnt-erx
+  DTS := UBNT-ERX
+  FILESYSTEMS := squashfs
+  KERNEL_SIZE := 3145728
+  KERNEL := $(KERNEL_DTB) | uImage lzma
+  IMAGES := sysupgrade.tar factory-initramfs.tar
+  IMAGE/factory-initramfs.tar := ubnt-erx-factory-compat | \
+				 ubnt-erx-factory-kernel | \
+				 ubnt-erx-factory-rootfs | \
+				 ubnt-erx-factory-version | \
+				 ubnt-erx-factory-check-size $$$$(KERNEL_SIZE)
+  IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
 #
