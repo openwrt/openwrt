@@ -1042,7 +1042,7 @@ esw_get_port_tr_badgood(struct switch_dev *dev,
 	int shift = attr->id == RT5350_ESW_ATTR_PORT_TR_GOOD ? 0 : 16;
 	u32 reg;
 
-+	if ((ralink_soc != RT305X_SOC_RT5350) && (ralink_soc != MT762X_SOC_MT7628AN) && (ralink_soc != MT762X_SOC_MT7688))
+	if ((ralink_soc != RT305X_SOC_RT5350) && (ralink_soc != MT762X_SOC_MT7628AN) && (ralink_soc != MT762X_SOC_MT7688))
 		return -EINVAL;
 
 	if (idx < 0 || idx >= RT305X_ESW_NUM_LANWAN)
