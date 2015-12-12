@@ -87,6 +87,7 @@ enum ath79_mach_type {
 	ATH79_MACH_HORNET_UB,		/* ALFA Networks Hornet-UB */
 	ATH79_MACH_MR12,		/* Cisco Meraki MR12 */
 	ATH79_MACH_MR16,		/* Cisco Meraki MR16 */
+	ATH79_MACH_MR18,		/* Cisco Meraki MR18 */
 	ATH79_MACH_MR1750,		/* OpenMesh MR1750 */
 	ATH79_MACH_MR600V2,		/* OpenMesh MR600v2 */
 	ATH79_MACH_MR600,		/* OpenMesh MR600 */
