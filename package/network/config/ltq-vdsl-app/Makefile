@@ -47,7 +47,8 @@ CONFIGURE_ARGS += \
 	--enable-dsl-ceoc=no \
 	--enable-vrx-device=vr9 \
 	--disable-dti \
-	--enable-debug
+	--enable-debug \
+	--enable-dsl-pm-showtime
 
 ifeq ($(CONFIG_IFX_CLI),y)
 CONFIGURE_ARGS += \
