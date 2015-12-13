@@ -7,7 +7,6 @@
 #
 . /lib/ar71xx.sh
 . /lib/functions.sh
-. /lib/upgrade/nand.sh
 
 get_magic_at() {
 	local mtddev=$1
