@@ -91,7 +91,7 @@ PACKAGE_INSTALL_FILES:= \
 $(curdir)/cleanup: $(TMP_DIR)/.build
 	rm -rf $(STAGING_DIR_ROOT)
 
-$(curdir)/install: $(TMP_DIR)/.build
+$(curdir)/install: $(TMP_DIR)/.build $(curdir)/system/opkg/host/install
 	- find $(STAGING_DIR_ROOT) -type d | $(XARGS) chmod 0755
 	rm -rf $(TARGET_DIR)
 	[ -d $(TARGET_DIR)/tmp ] || mkdir -p $(TARGET_DIR)/tmp
