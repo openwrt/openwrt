@@ -182,7 +182,10 @@ define Package/br2684ctl/install
 	$(INSTALL_BIN) ./files/br2684ctl $(1)/etc/init.d/
 	$(INSTALL_DATA) ./files/atm.hotplug $(1)/etc/hotplug.d/atm/00-trigger
 	$(INSTALL_DIR) $(1)/usr/sbin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/sbin/br2684ctl $(1)/usr/sbin/
+	$(INSTALL_BIN) \
+		./files/br2684ctl_wrap \
+		$(PKG_INSTALL_DIR)/usr/sbin/br2684ctl \
+		$(1)/usr/sbin/
 endef
 
 $(eval $(call BuildPackage,linux-atm))
