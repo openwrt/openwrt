@@ -30,6 +30,8 @@ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
 
 #define ETH_SWITCH_HEADER_LEN	2
 
+static int ag71xx_tx_packets(struct ag71xx *ag, bool flush);
+
 static inline unsigned int ag71xx_max_frame_len(unsigned int mtu)
 {
 	return ETH_SWITCH_HEADER_LEN + ETH_HLEN + VLAN_HLEN + mtu + ETH_FCS_LEN;
@@ -512,6 +514,7 @@ static void ag71xx_fast_reset(struct ag71xx *ag)
 
 	ag71xx_dma_reset(ag);
 	ag71xx_hw_setup(ag);
+	ag71xx_tx_packets(ag, true);
 
 	/* setup max frame length */
 	ag71xx_wr(ag, AG71XX_REG_MAC_MFL,
@@ -531,6 +534,8 @@ static void ag71xx_hw_start(struct ag71xx *ag)
 
 	/* enable interrupts */
 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
+
+	netif_wake_queue(ag->dev);
 }
 
 void ag71xx_link_adjust(struct ag71xx *ag)
@@ -898,7 +903,7 @@ static bool ag71xx_check_dma_stuck(struct ag71xx *ag, unsigned long timestamp)
 	return false;
 }
 
-static int ag71xx_tx_packets(struct ag71xx *ag)
+static int ag71xx_tx_packets(struct ag71xx *ag, bool flush)
 {
 	struct ag71xx_ring *ring = &ag->tx_ring;
 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
@@ -913,7 +918,7 @@ static int ag71xx_tx_packets(struct ag71xx *ag)
 		struct ag71xx_desc *desc = ag71xx_ring_desc(ring, i);
 		struct sk_buff *skb = ring->buf[i].skb;
 
-		if (!ag71xx_desc_empty(desc)) {
+		if (!flush && !ag71xx_desc_empty(desc)) {
 			if (pdata->is_ar7240 &&
 			    ag71xx_check_dma_stuck(ag, ring->buf[i].timestamp))
 				schedule_work(&ag->restart_work);
@@ -1039,7 +1044,7 @@ static int ag71xx_poll(struct napi_struct *napi, int limit)
 	int rx_done;
 
 	pdata->ddr_flush();
-	tx_done = ag71xx_tx_packets(ag);
+	tx_done = ag71xx_tx_packets(ag, false);
 
 	DBG("%s: processing RX ring\n", dev->name);
 	rx_done = ag71xx_rx_packets(ag, limit);
