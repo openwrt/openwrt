@@ -418,14 +418,3 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (!register_vsmp_smp_ops())
 +		return;
 +}
---- a/drivers/irqchip/irq-mips-gic.c
-+++ b/drivers/irqchip/irq-mips-gic.c
-@@ -862,7 +862,7 @@ void __init gic_init(unsigned long gic_b
- 	__gic_init(gic_base_addr, gic_addrspace_size, cpu_vec, irqbase, NULL);
- }
- 
--static int __init gic_of_init(struct device_node *node,
-+int __init gic_of_init(struct device_node *node,
- 			      struct device_node *parent)
- {
- 	struct resource res;
