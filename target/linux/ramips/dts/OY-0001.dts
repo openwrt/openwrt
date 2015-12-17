@@ -69,11 +69,11 @@
 	ethernet@10100000 {
 		pinctrl-names = "default";
 		pinctrl-0 = <&ephy_pins>;
-		ralink,port-map = "llllw";
+		mediatek,portmap = "llllw";
 	};
 
 	gsw@10110000 {
-		ralink,port4 = "ephy";
+		mediatek,port4 = "ephy";
 	};
 
 	wmac@10180000 {

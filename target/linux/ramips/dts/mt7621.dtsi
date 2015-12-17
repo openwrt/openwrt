@@ -281,7 +281,7 @@
 	};
 
 	ethernet@1e100000 {
-		compatible = "ralink,mt7621-eth";
+		compatible = "mediatek,mt7621-eth";
 		reg = <0x1e100000 10000>;
 
 		#address-cells = <1>;
@@ -292,6 +292,8 @@
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>;
+
+		mediatek,switch = <&gsw>;
 
 		mdio-bus {
 			#address-cells = <1>;
@@ -304,8 +306,8 @@
 		};
 	};
 
-	gsw@1e110000 {
-		compatible = "ralink,mt7620a-gsw";
+	gsw: gsw@1e110000 {
+		compatible = "mediatek,mt7621-gsw";
 		reg = <0x1e110000 8000>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
