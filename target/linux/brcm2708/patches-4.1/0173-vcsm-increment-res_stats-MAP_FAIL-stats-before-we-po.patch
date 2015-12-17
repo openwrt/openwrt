@@ -1,7 +1,7 @@
-From d3735e837e3102dfee2d2429c8043c9f4c673383 Mon Sep 17 00:00:00 2001
+From 3037adf3f75b008d63a351b307f058200548c4ee Mon Sep 17 00:00:00 2001
 From: Colin Ian King <colin.king@canonical.com>
 Date: Wed, 2 Sep 2015 07:27:36 -0400
-Subject: [PATCH 173/203] vcsm: increment res_stats MAP_FAIL stats before we
+Subject: [PATCH 173/222] vcsm: increment res_stats MAP_FAIL stats before we
  potentially release the resource
 
 resource can be kfree'd when the reference count is zero, so we should

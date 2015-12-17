@@ -1,7 +1,7 @@
-From ec31dc882de68b041b6ac36e3de7e17cf256c222 Mon Sep 17 00:00:00 2001
+From e0cedac30a461fadfb06f14aa491e989918b6f52 Mon Sep 17 00:00:00 2001
 From: Colin Ian King <colin.king@canonical.com>
 Date: Wed, 2 Sep 2015 07:47:51 -0400
-Subject: [PATCH 175/203] bcm2835: memcpy port data to m rather than rmsg
+Subject: [PATCH 175/222] bcm2835: memcpy port data to m rather than rmsg
 
 static analysis by cppcheck detected a memcpy to rmsg which is
 not actually initialized at that point.  The memcpy should be copying
