@@ -159,7 +159,7 @@
 +		trigger = ieee80211_get_radio_led_name(sc->hw);
  
 -	sc->led_registered = true;
-+	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger, 1);
++	ath_create_gpio_led(sc, sc->sc_ah->led_pin, led_name, trigger, !sc->sc_ah->config.led_active_high);
  }
  
  void ath_fill_led_pin(struct ath_softc *sc)
