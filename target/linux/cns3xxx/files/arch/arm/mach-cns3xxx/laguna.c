@@ -814,7 +814,7 @@ static void __init laguna_init(void)
 
 	platform_device_register(&laguna_i2c_controller);
 
-	/* Set ext_int 0-3 drive strength to 21 mA */
+	/* Set I2C 0-3 drive strength to 21 mA */
 	reg = MISC_IO_PAD_DRIVE_STRENGTH_CTRL_B;
 	*reg |= 0x300;
 
