@@ -237,9 +237,11 @@
 
 		interrupt-parent = <&cpuintc>;
 		interrupts = <5>;
+
+		mediatek,switch = <&esw>;
 	};
 
-	esw@10110000 {
+	esw: esw@10110000 {
 		compatible = "ralink,rt3352-esw", "ralink,rt3050-esw";
 		reg = <0x10110000 8000>;
 

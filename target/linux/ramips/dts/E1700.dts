@@ -71,7 +71,7 @@
 
 		port@5 {
 			status = "okay";
-			ralink,fixed-link = <1000 1 1 1>;
+			mediatek,fixed-link = <1000 1 1 1>;
 			phy-mode = "rgmii";
 		};
 
@@ -111,7 +111,7 @@
 	};
 
 	gsw@10110000 {
-		ralink,port4 = "gmac";
+		mediatek,port4 = "gmac";
 		mediatek,mt7530 = <1>;
 	};
 

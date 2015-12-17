@@ -11,7 +11,7 @@
 		mtd-mac-address = <&factory 0x4>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-		ralink,port-map = "wllll";
+		mediatek,portmap = "wllll";
 
 		port@4 {
 			status = "okay";
@@ -62,7 +62,7 @@
 	};
 
 	gsw@10110000 {
-		ralink,port4 = "gmac";
+		mediatek,port4 = "gmac";
 	};
 	
 	gpio-leds {

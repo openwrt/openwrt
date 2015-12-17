@@ -79,11 +79,11 @@
 
 	ethernet@10100000 {
 		mtd-mac-address = <&factory 0x28>;
-		ralink,port-map = "llllw";
+		mediatek,portmap = "llllw";
 	};
 
 	gsw@10110000 {
-		ralink,port4 = "ephy";
+		mediatek,port4 = "ephy";
 		pinctrl-names = "default";
 		pinctrl-0 = <&ephy_pins>;
 	};

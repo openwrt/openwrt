@@ -71,7 +71,7 @@
 		status = "okay";
 		pinctrl-names = "default";
 		pinctrl-0 = <&rgmii1_pins &mdio_pins>;
-		ralink,port-map = "llllw";
+		mediatek,portmap = "llllw";
 
 		port@4 {
 			status = "okay";
@@ -161,7 +161,7 @@
 	};
 
 	gsw@10110000 {
-		ralink,port4 = "gmac";
+		mediatek,port4 = "gmac";
 	};
 
 	ehci@101c0000 {
