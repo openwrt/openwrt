@@ -1520,6 +1520,7 @@ wnr2200_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,7808k(firmwar
 wnr2000v3_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,3712k(firmware),64k(art)ro
 wnr2000v4_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(u-boot-env)ro,3776k(firmware),64k(art)ro
 r6100_mtdlayout=mtdparts=ar934x-nfc:128k(u-boot)ro,256k(caldata),256k(caldata-backup),512k(config),512k(pot),2048k(kernel),122240k(ubi),25600k@0x1a0000(firmware),2048k(language),3072k(traffic_meter)
+tew823dru_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,15296k(firmware),192k(lang)ro,512k(my-dlink)ro,64k(mac)ro,64k(art)ro
 wndr4300_mtdlayout=mtdparts=ar934x-nfc:256k(u-boot)ro,256k(u-boot-env)ro,256k(caldata),512k(pot),2048k(language),512k(config),3072k(traffic_meter),2048k(kernel),23552k(ubi),25600k@0x6c0000(firmware),256k(caldata_backup),-(reserved)
 zcn1523h_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6208k(rootfs),1472k(kernel),64k(configure)ro,64k(mfg)ro,64k(art)ro,7680k@0x50000(firmware)
 mynet_n600_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,64k(devdata)ro,64k(devconf)ro,15872k(firmware),64k(radiocfg)ro
@@ -2324,6 +2325,7 @@ $(eval $(call SingleProfile,CameoAP121,64kraw-nojffs,DIR601B1,dir-601-b1,TEW-712
 $(eval $(call SingleProfile,CameoAP121_8M,64kraw-nojffs,DIR505A1,dir-505-a1,DIR-505-A1,ttyATH0,115200,"HORNET-PACKET-DIR505A1-3",1.99.99,""))
 
 $(eval $(call SingleProfile,CameoAP135,64kraw,DGL5500A1,dgl-5500-a1,DGL-5500-A1,ttyS0,115200,$$(dgl_5500_mtdlayout),"00AP135AR9558-RT-130508-00"))
+$(eval $(call SingleProfile,CameoAP135,64kraw,TEW823DRU,tew-823dru,TEW-823DRU,ttyS0,115200,$$(tew823dru_mtdlayout) mem=256M,"00AP135AR9558-RT-131129-00"))
 
 $(eval $(call SingleProfile,CameoDB120,64kraw,DHP1565A1,dhp-1565-a1,DHP-1565-A1,ttyS0,115200,"00DB120AR9344-RT-101214-00"))
 $(eval $(call SingleProfile,CameoDB120,64kraw,DIR825C1,dir-825-c1,DIR-825-C1,ttyS0,115200,"00DB120AR9344-RT-101214-00"))
