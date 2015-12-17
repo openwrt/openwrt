@@ -255,7 +255,8 @@ get_status_led() {
 		status_led="trendnet:blue:wps"
 		;;
 	tew-712br|\
-	tew-732br)
+	tew-732br|\
+	tew-823dru)
 		status_led="trendnet:green:power"
 		;;
 	tl-mr3020)

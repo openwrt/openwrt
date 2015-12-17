@@ -231,6 +231,7 @@ platform_check_image() {
 	tew-632brp | \
 	tew-712br | \
 	tew-732br | \
+	tew-823dru | \
 	wrt400n | \
 	airgateway | \
 	airgatewaypro | \
