@@ -49,6 +49,7 @@ config LLDPD_WITH_CUSTOM
 config LLDPD_WITH_JSON
 	bool
 	prompt "Enable JSON output for the LLDP Command-Line Interface"
+	select PACKAGE_json-c
 	default n
 
 endmenu
