@@ -43,6 +43,7 @@
 #include <linux/ioctl.h>
 #include <linux/etherdevice.h>
 #include <linux/interrupt.h>
+#include <linux/netdevice.h>
 #include <asm/io.h>
 
 /*
@@ -277,6 +278,10 @@ static int g_showtime = 0;
 
 static void ptm_setup(struct net_device *dev, int ndev)
 {
+#if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
+    netif_carrier_off(dev);
+#endif
+
     /*  hook network operations */
     dev->netdev_ops      = &g_ptm_netdev_ops;
     netif_napi_add(dev, &g_ptm_priv_data.itf[ndev].napi, ptm_napi_poll, 25);
@@ -1384,8 +1389,12 @@ static INLINE void init_tables(void)
 
 static int ptm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr)
 {
+    int i;
 
     g_showtime = 1;
+
+    for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ )
+        netif_carrier_on(g_net_dev[i]);
 
     printk("enter showtime\n");
 
@@ -1394,8 +1403,13 @@ static int ptm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr
 
 static int ptm_showtime_exit(void)
 {
+    int i;
+
     if ( !g_showtime )
         return -1;
+
+    for ( i = 0; i < ARRAY_SIZE(g_net_dev); i++ )
+        netif_carrier_off(g_net_dev[i]);
 
     g_showtime = 0;
 
