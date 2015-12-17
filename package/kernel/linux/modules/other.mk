@@ -820,7 +820,9 @@ define KernelPackage/ptp
   SUBMENU:=$(OTHER_MENU)
   TITLE:=PTP clock support
   DEPENDS:=+kmod-pps
-  KCONFIG:=CONFIG_PTP_1588_CLOCK
+  KCONFIG:= \
+	CONFIG_PTP_1588_CLOCK \
+	CONFIG_NET_PTP_CLASSIFY=y
   FILES:=$(LINUX_DIR)/drivers/ptp/ptp.ko
   AUTOLOAD:=$(call AutoLoad,18,ptp,1)
 endef
