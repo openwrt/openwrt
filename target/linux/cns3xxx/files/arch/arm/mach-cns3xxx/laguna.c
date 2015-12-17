@@ -1054,7 +1054,9 @@ static int __init laguna_model_setup(void)
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds[1].gpio = 106;
 			laguna_gpio_leds_data.num_leds = 2;
-		} else if (strncmp(laguna_info.model, "GW2391", 6) == 0) {
+		} else if ( (strncmp(laguna_info.model, "GW2391", 6) == 0)
+			 || (strncmp(laguna_info.model, "GW2393", 6) == 0) )
+		{
 			// configure GPIO's
 			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2391));
 			// configure LED's
