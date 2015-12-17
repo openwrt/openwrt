@@ -1715,7 +1715,7 @@ static inline void init_tx_tables(void)
 
 static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr)
 {
-	int i, j;
+	int i, j, port_num;
 
 	ASSERT(port_cell != NULL, "port_cell is NULL");
 	ASSERT(xdata_addr != NULL, "xdata_addr is NULL");
@@ -1738,6 +1738,9 @@ static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr
 
 	g_showtime = 1;
 
+	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ )
+		atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_FOUND);
+
 #if defined(CONFIG_VR9)
 	IFX_REG_W32(0x0F, UTP_CFG);
 #endif
@@ -1752,12 +1755,18 @@ static int atm_showtime_enter(struct port_cell_info *port_cell, void *xdata_addr
 
 static int atm_showtime_exit(void)
 {
+	int port_num;
+
 	if ( !g_showtime )
 		return -1;
 
 #if defined(CONFIG_VR9)
 	IFX_REG_W32(0x00, UTP_CFG);
 #endif
+
+	for ( port_num = 0; port_num < ATM_PORT_NUMBER; port_num++ )
+		atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_LOST);
+
 	g_showtime = 0;
 	g_xdata_addr = NULL;
 	printk("leave showtime\n");
@@ -1824,6 +1833,10 @@ static int ltq_atm_probe(struct platform_device *pdev)
 			g_atm_priv_data.port[port_num].dev->ci_range.vci_bits = 16;
 			g_atm_priv_data.port[port_num].dev->link_rate = g_atm_priv_data.port[port_num].tx_max_cell_rate;
 			g_atm_priv_data.port[port_num].dev->dev_data = (void*)port_num;
+
+#if defined(CONFIG_IFXMIPS_DSL_CPE_MEI) || defined(CONFIG_IFXMIPS_DSL_CPE_MEI_MODULE)
+			atm_dev_signal_change(g_atm_priv_data.port[port_num].dev, ATM_PHY_SIG_LOST);
+#endif
 		}
 	}
 
