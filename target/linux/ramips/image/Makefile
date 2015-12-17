@@ -1078,7 +1078,7 @@ define Device/ubnt-erx
 				 ubnt-erx-factory-kernel | \
 				 ubnt-erx-factory-rootfs | \
 				 ubnt-erx-factory-version | \
-				 ubnt-erx-factory-check-size $$$$(KERNEL_SIZE)
+				 ubnt-erx-factory-check-size $$(KERNEL_SIZE)
   IMAGE/sysupgrade.tar := sysupgrade-nand
 endef
 
