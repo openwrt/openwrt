@@ -177,20 +177,20 @@
 		#size-cells = <0>;
 		poll-interval = <100>;
 
-		wps {
-			label = "wps";
-			gpios = <&gpio 20 1>;
-			linux,code = <0x211>;
-		};
 		reset {
 			label = "reset";
-			gpios = <&gpio 22 1>;
+			gpios = <&gpio 6 1>;
 			linux,code = <0x198>;
 		};
 		rfkill {
 			label = "rfkill";
-			gpios = <&gpio 45 1>;
+			gpios = <&gpio 33 1>;
 			linux,code = <0xf7>;
+		};
+		wps {
+			label = "wps";
+			gpios = <&gpio 37 1>;
+			linux,code = <0x211>;
 		};
 	};
 
