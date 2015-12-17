@@ -28,4 +28,11 @@
 	ath9k_eep {
 		ath,pci-slot = <0>;
 	};
+
+	gpio-leds {
+		wifi2 {
+			label = "wifi2";
+			gpios = <&gpio 24 1>;
+		};
+	};
 };
