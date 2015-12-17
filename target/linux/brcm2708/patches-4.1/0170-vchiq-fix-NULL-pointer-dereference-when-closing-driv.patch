@@ -1,7 +1,7 @@
-From d3f5bff6c861a3addea60da69196172f2e6d360c Mon Sep 17 00:00:00 2001
+From 71df4d3c4c49639529666bc0a93d5c03ecedf443 Mon Sep 17 00:00:00 2001
 From: Colin Ian King <colin.king@canonical.com>
 Date: Tue, 1 Sep 2015 16:52:34 +0000
-Subject: [PATCH 170/203] vchiq: fix NULL pointer dereference when closing
+Subject: [PATCH 170/222] vchiq: fix NULL pointer dereference when closing
  driver
 
 The following code run as root will cause a null pointer dereference oops:

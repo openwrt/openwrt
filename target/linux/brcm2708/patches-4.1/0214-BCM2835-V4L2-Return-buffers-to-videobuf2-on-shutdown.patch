@@ -1,0 +1,23 @@
+From bca6a0dce0230700814a3a0c5af3458e46d63d93 Mon Sep 17 00:00:00 2001
+From: Dave Stevenson <6by9@users.noreply.github.com>
+Date: Tue, 14 Jul 2015 22:57:57 +0100
+Subject: [PATCH 214/222] BCM2835-V4L2: Return buffers to videobuf2 on shutdown
+
+https://github.com/raspberrypi/linux/issues/817
+Fixes the kernel warning from videobuf2 as buffers
+are now returned as they are being flushed on
+stop_streaming.
+---
+ drivers/media/platform/bcm2835/bcm2835-camera.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/platform/bcm2835/bcm2835-camera.c
++++ b/drivers/media/platform/bcm2835/bcm2835-camera.c
+@@ -404,6 +404,7 @@ static void buffer_cb(struct vchiq_mmal_
+ 			}
+ 		} else {
+ 			/* signal frame completion */
++			vb2_buffer_done(&buf->vb, VB2_BUF_STATE_ERROR);
+ 			complete(&dev->capture.frame_cmplt);
+ 		}
+ 	}

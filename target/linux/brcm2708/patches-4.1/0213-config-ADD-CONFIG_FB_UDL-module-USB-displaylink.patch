@@ -1,0 +1,30 @@
+From 3f9c94335658587e7f80b18b63a4cf70241cc8d0 Mon Sep 17 00:00:00 2001
+From: popcornmix <popcornmix@gmail.com>
+Date: Wed, 11 Nov 2015 12:55:53 +0000
+Subject: [PATCH 213/222] config: ADD CONFIG_FB_UDL module (USB displaylink)
+
+---
+ arch/arm/configs/bcm2709_defconfig | 1 +
+ arch/arm/configs/bcmrpi_defconfig  | 1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/arch/arm/configs/bcm2709_defconfig
++++ b/arch/arm/configs/bcm2709_defconfig
+@@ -805,6 +805,7 @@ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
+ CONFIG_FB=y
+ CONFIG_FB_BCM2708=y
++CONFIG_FB_UDL=m
+ CONFIG_FB_SSD1307=m
+ CONFIG_FB_RPISENSE=m
+ # CONFIG_BACKLIGHT_GENERIC is not set
+--- a/arch/arm/configs/bcmrpi_defconfig
++++ b/arch/arm/configs/bcmrpi_defconfig
+@@ -798,6 +798,7 @@ CONFIG_VIDEO_OV7640=m
+ CONFIG_VIDEO_MT9V011=m
+ CONFIG_FB=y
+ CONFIG_FB_BCM2708=y
++CONFIG_FB_UDL=m
+ CONFIG_FB_SSD1307=m
+ CONFIG_FB_RPISENSE=m
+ # CONFIG_BACKLIGHT_GENERIC is not set

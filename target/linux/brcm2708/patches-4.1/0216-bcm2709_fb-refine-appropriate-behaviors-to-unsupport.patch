@@ -1,0 +1,38 @@
+From 52725443dcfd674734ab36a6e61a2fccde00b98b Mon Sep 17 00:00:00 2001
+From: wuyuehang <yuehan9.wu@gmail.com>
+Date: Tue, 17 Nov 2015 09:24:41 +0800
+Subject: [PATCH 216/222] bcm2709_fb: refine appropriate behaviors to
+ unsupported fb ioctls
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+since fbturbo introduces and use FBUNSUPPORTED ioctl on copyarea
+operations for unsupported dummy ioctl which is expected to return
+failure. in such scenario, bcm2709 always prompts error log.
+
+in order not to bother users in kernel log, we change the dev_err to
+dev_dbg and return a ENOTTY other than EINVAL to let userspace handles
+the return value.
+
+Signed-off-by: wuyuehang <yuehan9.wu@gmail.com>
+Reviewed-by: popcornmix <popcornmix@gmail.com>
+Reviewed-by: Phil Elwell <pelwell@users.noreply.github.com>
+Reviewed-by: Noralf Trønnes <noralf@tronnes.org>
+---
+ drivers/video/fbdev/bcm2708_fb.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/video/fbdev/bcm2708_fb.c
++++ b/drivers/video/fbdev/bcm2708_fb.c
+@@ -442,8 +442,8 @@ static int bcm2708_ioctl(struct fb_info
+ 					    &dummy, sizeof(dummy));
+ 		break;
+ 	default:
+-		dev_err(info->device, "Unknown ioctl 0x%x\n", cmd);
+-		return -EINVAL;
++		dev_dbg(info->device, "Unknown ioctl 0x%x\n", cmd);
++		return -ENOTTY;
+ 	}
+ 
+ 	if (ret)

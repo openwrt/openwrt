@@ -1,0 +1,110 @@
+From ae8fa8ea424c354cfc7da1c9c11715287ce253d1 Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Tue, 1 Dec 2015 16:52:13 +0000
+Subject: [PATCH 220/222] BCM270X_DT: Use clk_core for I2C interfaces
+
+---
+ arch/arm/boot/dts/bcm2708_common.dtsi | 43 +++++++++++++++--------------------
+ 1 file changed, 18 insertions(+), 25 deletions(-)
+
+--- a/arch/arm/boot/dts/bcm2708_common.dtsi
++++ b/arch/arm/boot/dts/bcm2708_common.dtsi
+@@ -147,7 +147,7 @@
+ 			compatible = "brcm,bcm2708-i2c";
+ 			reg = <0x7e205000 0x1000>;
+ 			interrupts = <2 21>;
+-			clocks = <&clk_i2c>;
++			clocks = <&clk_core>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";
+@@ -186,7 +186,7 @@
+ 			compatible = "brcm,bcm2708-i2c";
+ 			reg = <0x7e804000 0x1000>;
+ 			interrupts = <2 21>;
+-			clocks = <&clk_i2c>;
++			clocks = <&clk_core>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";
+@@ -199,7 +199,7 @@
+ 			compatible = "brcm,bcm2708-i2c";
+ 			reg = <0x7e805000 0x1000>;
+ 			interrupts = <2 21>;
+-			clocks = <&clk_i2c>;
++			clocks = <&clk_core>;
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			status = "disabled";
+@@ -258,56 +258,49 @@
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
+-		clk_mmc: clock@0 {
++		clk_core: clock@0 {
+ 			compatible = "fixed-clock";
+ 			reg = <0>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "mmc";
++			clock-output-names = "core";
+ 			clock-frequency = <250000000>;
+ 		};
+ 
+-		clk_i2c: clock@1 {
++		clk_mmc: clock@1 {
+ 			compatible = "fixed-clock";
+ 			reg = <1>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "i2c";
++			clock-output-names = "mmc";
+ 			clock-frequency = <250000000>;
+ 		};
+ 
+-		clk_core: clock@2 {
++		clk_uart0: clock@2 {
+ 			compatible = "fixed-clock";
+ 			reg = <2>;
+ 			#clock-cells = <0>;
+-			clock-output-names = "core";
+-			clock-frequency = <250000000>;
+-		};
+-
+-		clk_uart0: clock@3 {
+-			compatible = "fixed-clock";
+-			reg = <3>;
+-			#clock-cells = <0>;
+ 			clock-output-names = "uart0_pclk";
+ 			clock-frequency = <3000000>;
+ 		};
+ 
+-		clk_apb_p: clock@4 {
++		clk_apb_p: clock@3 {
+ 			compatible = "fixed-clock";
+-			reg = <4>;
++			reg = <3>;
+ 			#clock-cells = <0>;
+ 			clock-output-names = "apb_pclk";
+ 			clock-frequency = <126000000>;
+ 		};
+ 
+-		clk_pwm: clock@5 {
+-			 compatible = "fixed-clock";
+-			 reg = <3>;
+-			 #clock-cells = <0>;
+-			 clock-output-names = "pwm";
+-			 clock-frequency = <100000000>;
++		clk_pwm: clock@4 {
++			compatible = "fixed-clock";
++			reg = <4>;
++			#clock-cells = <0>;
++			clock-output-names = "pwm";
++			clock-frequency = <100000000>;
+ 		};
+ 
+-		clk_uart1: clock@6 {
++		clk_uart1: clock@5 {
+ 			compatible = "fixed-factor-clock";
++			reg = <5>;
+ 			clocks = <&clk_core>;
+ 			#clock-cells = <0>;
+ 			clock-div = <1>;

@@ -1,0 +1,43 @@
+From 190044f7b7a0b06d46de345f9c79f7991051b68d Mon Sep 17 00:00:00 2001
+From: Phil Elwell <phil@raspberrypi.org>
+Date: Wed, 9 Dec 2015 11:38:15 +0000
+Subject: [PATCH 222/222] bcm2835-sdhost: Don't log timeout errors unless
+ debug=1
+
+The MMC card-discovery process generates timeouts. This is
+expected behaviour, so reporting it to the user serves no purpose.
+Suppress the reporting of timeout errors unless the debug flag
+is on.
+---
+ drivers/mmc/host/bcm2835-sdhost.c | 18 +++++++-----------
+ 1 file changed, 7 insertions(+), 11 deletions(-)
+
+--- a/drivers/mmc/host/bcm2835-sdhost.c
++++ b/drivers/mmc/host/bcm2835-sdhost.c
+@@ -966,19 +966,15 @@ static void bcm2835_sdhost_finish_comman
+ 					mmc_hostname(host->mmc));
+ 		} else {
+ 			if (sdhsts & SDHSTS_CMD_TIME_OUT) {
+-				switch (host->cmd->opcode) {
+-				case 5: case 52: case 53:
+-					/* Don't warn about SDIO commands */
+-					break;
+-				default:
+-					pr_err("%s: command timeout\n",
+-					       mmc_hostname(host->mmc));
+-					break;
+-				}
++				if (host->debug)
++					pr_err("%s: command %d timeout\n",
++					       mmc_hostname(host->mmc),
++					       host->cmd->opcode);
+ 				host->cmd->error = -ETIMEDOUT;
+ 			} else {
+-				pr_err("%s: unexpected command error\n",
+-				       mmc_hostname(host->mmc));
++				pr_err("%s: unexpected command %d error\n",
++				       mmc_hostname(host->mmc),
++				       host->cmd->opcode);
+ 				bcm2835_sdhost_dumpregs(host);
+ 				host->cmd->error = -EIO;
+ 			}
