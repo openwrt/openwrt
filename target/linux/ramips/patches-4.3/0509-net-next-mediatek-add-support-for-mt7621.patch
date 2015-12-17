@@ -1,4 +1,4 @@
-From 693f0ff3dbc53f910dff57ac15c324f7a94cc0ad Mon Sep 17 00:00:00 2001
+From 107ff718dad1c8f6abbf6247d6796a4535b71276 Mon Sep 17 00:00:00 2001
 From: John Crispin <blogic@openwrt.org>
 Date: Mon, 14 Dec 2015 23:50:53 +0100
 Subject: [PATCH 509/513] net-next: mediatek: add support for mt7621
@@ -15,16 +15,16 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
 Signed-off-by: Michael Lee <igvtee@gmail.com>
 ---
- drivers/net/ethernet/mediatek/soc_mt7621.c |  184 ++++++++++++++++++++++++++++
- 1 file changed, 184 insertions(+)
+ drivers/net/ethernet/mediatek/soc_mt7621.c |  186 ++++++++++++++++++++++++++++
+ 1 file changed, 186 insertions(+)
  create mode 100644 drivers/net/ethernet/mediatek/soc_mt7621.c
 
 diff --git a/drivers/net/ethernet/mediatek/soc_mt7621.c b/drivers/net/ethernet/mediatek/soc_mt7621.c
 new file mode 100644
-index 0000000..d6f7f23
+index 0000000..1609a3e
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/soc_mt7621.c
-@@ -0,0 +1,184 @@
+@@ -0,0 +1,186 @@
 +/*   This program is free software; you can redistribute it and/or modify
 + *   it under the terms of the GNU General Public License as published by
 + *   the Free Software Foundation; version 2 of the License
@@ -52,18 +52,13 @@ index 0000000..d6f7f23
 +#include "mdio.h"
 +
 +#define MT7620A_CDMA_CSG_CFG	0x400
-+#define MT7620_DMA_VID		(MT7620A_CDMA_CSG_CFG | 0x30)
 +#define MT7621_CDMP_IG_CTRL	(MT7620A_CDMA_CSG_CFG + 0x00)
 +#define MT7621_CDMP_EG_CTRL	(MT7620A_CDMA_CSG_CFG + 0x04)
-+#define MT7620A_RESET_FE	BIT(21)
 +#define MT7621_RESET_FE		BIT(6)
-+#define MT7620A_RESET_ESW	BIT(23)
-+#define MT7620_L4_VALID		BIT(23)
 +#define MT7621_L4_VALID		BIT(24)
 +
-+#define MT7620_TX_DMA_UDF	BIT(15)
 +#define MT7621_TX_DMA_UDF	BIT(19)
-+#define TX_DMA_FP_BMAP		((0xff) << 19)
++#define MT7621_TX_DMA_FPORT	BIT(25)
 +
 +#define CDMA_ICS_EN		BIT(2)
 +#define CDMA_UCS_EN		BIT(1)
@@ -74,11 +69,6 @@ index 0000000..d6f7f23
 +#define GDMA_UCS_EN		BIT(20)
 +
 +/* frame engine counters */
-+#define MT7620_REG_MIB_OFFSET	0x1000
-+#define MT7620_PPE_AC_BCNT0	(MT7620_REG_MIB_OFFSET + 0x00)
-+#define MT7620_GDM1_TX_GBCNT	(MT7620_REG_MIB_OFFSET + 0x300)
-+#define MT7620_GDM2_TX_GBCNT	(MT7620_GDM1_TX_GBCNT + 0x40)
-+
 +#define MT7621_REG_MIB_OFFSET	0x2000
 +#define MT7621_PPE_AC_BCNT0	(MT7621_REG_MIB_OFFSET + 0x00)
 +#define MT7621_GDM1_TX_GBCNT	(MT7621_REG_MIB_OFFSET + 0x400)
@@ -130,6 +120,18 @@ index 0000000..d6f7f23
 +	fe_reset(MT7621_RESET_FE);
 +}
 +
++static void mt7621_rxcsum_config(bool enable)
++{
++	if (enable)
++		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN |
++					GDMA_TCS_EN | GDMA_UCS_EN),
++				MT7620A_GDMA1_FWD_CFG);
++	else
++		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~(GDMA_ICS_EN |
++					GDMA_TCS_EN | GDMA_UCS_EN),
++				MT7620A_GDMA1_FWD_CFG);
++}
++
 +static void mt7621_rxvlan_config(bool enable)
 +{
 +	if (enable)
@@ -145,8 +147,8 @@ index 0000000..d6f7f23
 +	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~0xffff,
 +	       MT7620A_GDMA1_FWD_CFG);
 +
-+	/* mt7621 don't have txcsum config */
-+	mt7620_rxcsum_config((dev->features & NETIF_F_RXCSUM));
++	/* mt7621 doesn't have txcsum config */
++	mt7621_rxcsum_config((dev->features & NETIF_F_RXCSUM));
 +	mt7621_rxvlan_config((dev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
 +			     (priv->flags & FE_FLAG_RX_VLAN_CTAG));
 +
@@ -155,7 +157,7 @@ index 0000000..d6f7f23
 +
 +static void mt7621_tx_dma(struct fe_tx_dma *txd)
 +{
-+	txd->txd4 = BIT(25);
++	txd->txd4 = MT7621_TX_DMA_FPORT;
 +}
 +
 +static void mt7621_init_data(struct fe_soc_data *data,
