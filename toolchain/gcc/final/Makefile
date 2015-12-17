@@ -74,7 +74,7 @@ define Host/Install
 	# Set up the symlinks to enable lying about target name.
 	set -e; \
 	(cd $(TOOLCHAIN_DIR); \
-		ln -sf $(REAL_GNU_TARGET_NAME) $(GNU_TARGET_NAME); \
+		ln -nsf $(REAL_GNU_TARGET_NAME) $(GNU_TARGET_NAME); \
 		cd bin; \
 		for app in $(REAL_GNU_TARGET_NAME)-* ; do \
 			ln -sf $$$${app} \
