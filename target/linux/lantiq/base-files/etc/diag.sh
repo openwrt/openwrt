@@ -3,40 +3,48 @@
 
 . /lib/functions/leds.sh
 
-status_led="power"
+status_led=power
+[ ! -d /sys/class/leds/power/ ] && [ ! -d /sys/class/leds/power1/ ] && [ ! -d /sys/class/leds/power2/ ] && [ -d /sys/class/leds/wps/ ] && status_led=wps
 
 set_state() {
-	[ -d /sys/class/leds/power2/ ] && {
-
-		case "$1" in
-		preinit)
-			led_set_attr "power2" "trigger" "heartbeat"
-			status_led_on
-			;;
-		failsafe)
-			led_off "power2"
-			status_led_set_timer 100 100
-			;;
-		done)
-			led_off "power2"
-			;;
-		esac
-		return
-	}
-
 	case "$1" in
 	preinit)
-		status_led_set_heartbeat
+		if [ -d /sys/class/leds/power2/ ]; then
+			status_led_on
+			status_led=power2
+			status_led_blink_preinit
+			status_led=power
+		else
+			status_led_blink_preinit
+		fi
 		;;
 	failsafe)
-		[ -d /sys/class/leds/power1 ] && {
+		if [ -d /sys/class/leds/power2/ ]; then
+			led_off power2
+			status_led_blink_failsafe
+		elif [ -d /sys/class/leds/power1/ ]; then
 			status_led_off
-			led_timer "power1" 100 100
-		} || status_led_set_timer 100 100
+			status_led=power1
+			status_led_blink_failsafe
+			status_led=power
+		else
+			status_led_blink_failsafe
+		fi
+		;;
+	preinit_regular)
+		if [ -d /sys/class/leds/power2/ ]; then
+			status_led_on
+			status_led=power2
+			status_led_blink_preinit_regular
+			status_led=power
+		else
+			status_led_blink_preinit_regular
+		fi
 		;;
 	done)
 		status_led_on
-		led_off "power1"
+		led_off power1
+		led_off power2
 		;;
 	esac
 }
