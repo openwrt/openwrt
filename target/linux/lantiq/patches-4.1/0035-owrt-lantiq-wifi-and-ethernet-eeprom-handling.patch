@@ -51,13 +51,14 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_XRX200_PHY_FW) += xrx200_phy_fw.o
 --- /dev/null
 +++ b/arch/mips/lantiq/xway/ath_eep.c
-@@ -0,0 +1,282 @@
+@@ -0,0 +1,298 @@
 +/*
 + *  Copyright (C) 2011 Luca Olivetti <luca@ventoso.org>
 + *  Copyright (C) 2011 John Crispin <blogic@openwrt.org>
 + *  Copyright (C) 2011 Andrej Vlašić <andrej.vlasic0@gmail.com>
 + *  Copyright (C) 2013 Álvaro Fernández Rojas <noltari@gmail.com>
 + *  Copyright (C) 2013 Daniel Gimpelevich <daniel@gimpelevich.san-francisco.ca.us>
++ *  Copyright (C) 2015 Vittorio Gambaletta <openwrt@vittgam.net>
 + *
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
@@ -190,6 +191,21 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	if (!of_property_read_u32(np, "ath,led-pin", &led_pin)) {
 +		ath9k_pdata.led_pin = led_pin;
 +		dev_info(&pdev->dev, "using led pin %d.\n", led_pin);
++	}
++
++	if (of_property_read_bool(np, "ath,led-active-high")) {
++		ath9k_pdata.led_active_high = true;
++		dev_info(&pdev->dev, "inverted LED polarity\n");
++	}
++
++	if (of_property_read_bool(np, "ath,disable-2ghz")) {
++		ath9k_pdata.disable_2ghz = true;
++		dev_info(&pdev->dev, "disabled 2.4 GHz band\n");
++	}
++
++	if (of_property_read_bool(np, "ath,disable-5ghz")) {
++		ath9k_pdata.disable_5ghz = true;
++		dev_info(&pdev->dev, "disabled 5 GHz band\n");
 +	}
 +
 +	dev_info(&pdev->dev, "loaded ath9k eeprom\n");
