@@ -24,30 +24,6 @@ index 51f33a5..d7c4ba4 100644
  	ralink_clk_add("10000b00.spi", sys_rate);
  	ralink_clk_add("10000b40.spi", sys_rate);
  	ralink_clk_add("10000100.timer", wdt_rate);
-diff --git a/drivers/net/ethernet/Kconfig b/drivers/net/ethernet/Kconfig
-index 05aa759..5628f2d 100644
---- a/drivers/net/ethernet/Kconfig
-+++ b/drivers/net/ethernet/Kconfig
-@@ -154,6 +154,7 @@ source "drivers/net/ethernet/packetengines/Kconfig"
- source "drivers/net/ethernet/pasemi/Kconfig"
- source "drivers/net/ethernet/qlogic/Kconfig"
- source "drivers/net/ethernet/qualcomm/Kconfig"
-+source "drivers/net/ethernet/ralink/Kconfig"
- source "drivers/net/ethernet/realtek/Kconfig"
- source "drivers/net/ethernet/renesas/Kconfig"
- source "drivers/net/ethernet/rdc/Kconfig"
-diff --git a/drivers/net/ethernet/Makefile b/drivers/net/ethernet/Makefile
-index ddfc808..cbfe95e 100644
---- a/drivers/net/ethernet/Makefile
-+++ b/drivers/net/ethernet/Makefile
-@@ -64,6 +64,7 @@ obj-$(CONFIG_NET_PACKET_ENGINE) += packetengines/
- obj-$(CONFIG_NET_VENDOR_PASEMI) += pasemi/
- obj-$(CONFIG_NET_VENDOR_QLOGIC) += qlogic/
- obj-$(CONFIG_NET_VENDOR_QUALCOMM) += qualcomm/
-+obj-$(CONFIG_NET_RALINK) += ralink/
- obj-$(CONFIG_NET_VENDOR_REALTEK) += realtek/
- obj-$(CONFIG_NET_VENDOR_RENESAS) += renesas/
- obj-$(CONFIG_NET_VENDOR_RDC) += rdc/
 -- 
 1.7.10.4
 
