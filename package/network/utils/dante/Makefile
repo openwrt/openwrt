@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dante
-PKG_VERSION:=1.2.2
+PKG_VERSION:=1.4.1
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
@@ -23,14 +23,15 @@ PKG_INSTALL:=1
 
 include $(INCLUDE_DIR)/package.mk
 
-TARGET_CFLAGS += -D_GNU_SOURCE
+TARGET_CFLAGS += -D_GNU_SOURCE -std=gnu89
+
 CONFIGURE_ARGS += \
 	--without-upnp \
 	--without-pam \
 	--disable-libwrap
 
 CONFIGURE_VARS += \
-	CC="$(TARGET_CC) $(TARGET_CFLAGS)"
+	ac_cv_search_pam_start=""
 
 define Build/InstallDev
 	$(INSTALL_DIR) $(1)/usr/include
