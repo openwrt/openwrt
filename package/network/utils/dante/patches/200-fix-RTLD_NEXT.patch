@@ -1,8 +1,8 @@
 --- a/lib/address.c
 +++ b/lib/address.c
-@@ -45,11 +45,12 @@
+@@ -48,11 +48,12 @@
  
- #include "interposition.h"
+ #include "upnp.h"
  
 -#ifndef __USE_GNU
 -#define __USE_GNU /* XXX for RTLD_NEXT on Linux */
@@ -14,13 +14,13 @@
 +#endif
 +
  static const char rcsid[] =
- "$Id: address.c,v 1.177.2.2 2010/05/24 16:38:36 karls Exp $";
+ "$Id: address.c,v 1.288.4.4 2014/08/15 18:16:40 karls Exp $";
  
 --- a/dlib/interposition.c
 +++ b/dlib/interposition.c
-@@ -66,11 +66,12 @@ sendto(HAVE_PROT_SENDTO_1, HAVE_PROT_SEN
-     HAVE_PROT_SENDTO_4, HAVE_PROT_SENDTO_5, HAVE_PROT_SENDTO_6);
- #endif
+@@ -93,11 +93,12 @@ write$NOCANCEL(HAVE_PROT_WRITE_1, HAVE_P
+ 
+ #endif /* HAVE_DARWIN */
  
 -#ifndef __USE_GNU
 -#define __USE_GNU /* XXX for RTLD_NEXT on Linux */
@@ -31,6 +31,6 @@
 +#define RTLD_NEXT  ((void *) -1l)
 +#endif
 +
- #undef accept
- #undef bind
- #undef bindresvport
+ #ifdef __COVERITY__
+ /*
+  * Coverity naturally has no idea what the function sys_foo calls does,
