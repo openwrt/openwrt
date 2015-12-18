@@ -14,7 +14,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			m25p80@0 {
-				compatible = "mx25l6405d";
+				compatible = "jedec,spi-nor";
 				linux,modalias = "m25p80", "mx25l6405d";
 			};
 		};
