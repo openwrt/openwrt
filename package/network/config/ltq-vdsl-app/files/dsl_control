@@ -81,7 +81,7 @@ start_service() {
 
 	procd_open_instance
 	procd_set_param command /sbin/vdsl_cpe_control_wrapper \
-			-i `echo $xtse | sed "s/ /_/g"` \
+			-i`echo $xtse | sed "s/ /_/g"` \
 			-n /sbin/dsl_notify.sh \
 			-f ${firmware} \
 			-M ${mode}
