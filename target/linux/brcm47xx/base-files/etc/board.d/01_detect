@@ -17,12 +17,26 @@ detect_by_vlanports() {
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "8@eth0"
 
+	elif [ "${vlan0ports:0:9}" = "1 2 3 4 8" -a "${vlan1ports:0:3}" = "0 8" -a ${cpuport:-0} -eq 8 ] || \
+	     [ "${vlan1ports:0:9}" = "1 2 3 4 8" -a "${vlan2ports:0:3}" = "0 8" -a ${cpuport:-0} -eq 8 ] || \
+	     [ "${vlan2ports:0:9}" = "1 2 3 4 8" -a "${vlan1ports:0:3}" = "0 8" -a ${cpuport:-0} -eq 8 ];
+	then
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "8@eth0"
+
 	elif [ "${vlan0ports:0:9}" = "0 1 2 3 5" -a "${vlan1ports:0:3}" = "4 5" -a ${cpuport:-0} -eq 5 ] || \
 		 [ "${vlan1ports:0:9}" = "0 1 2 3 5" -a "${vlan2ports:0:3}" = "4 5" -a ${cpuport:-0} -eq 5 ] || \
 		 [ "${vlan2ports:0:9}" = "0 1 2 3 5" -a "${vlan1ports:0:3}" = "4 5" -a ${cpuport:-0} -eq 5 ];
 	then
 		ucidef_add_switch "switch0" \
 			"0:lan" "1:lan" "2:lan" "3:lan" "4:wan" "5@eth0"
+
+	elif [ "${vlan0ports:0:9}" = "1 2 3 4 5" -a "${vlan1ports:0:3}" = "0 5" -a ${cpuport:-0} -eq 5 ] || \
+	     [ "${vlan1ports:0:9}" = "1 2 3 4 5" -a "${vlan2ports:0:3}" = "0 5" -a ${cpuport:-0} -eq 5 ] || \
+	     [ "${vlan2ports:0:9}" = "1 2 3 4 5" -a "${vlan1ports:0:3}" = "0 5" -a ${cpuport:-0} -eq 5 ];
+	then
+		ucidef_add_switch "switch0" \
+			"1:lan" "2:lan" "3:lan" "4:lan" "0:wan" "5@eth0"
 
 	else
 		logger -t "01_detect" "Unable to determine network configuration"
