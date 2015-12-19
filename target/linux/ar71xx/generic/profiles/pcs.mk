@@ -27,3 +27,23 @@ define Profile/DLRTDEV01/Description
 endef
 
 $(eval $(call Profile,DLRTDEV01))
+
+define Profile/CAP324
+	NAME:=PowerCloud CAP324 Cloud AP
+	PACKAGES:=uboot-envtools
+endef
+
+define Profile/CAP324/Description
+	Package set optimized for the PowerCloud Systems CAP324 Cloud AP
+
+	The CAP324 Cloud AP is a device sold by PowerCloud Systems 
+	who's stock firmware (CloudCommand) provides 'cloud' based
+	managment of large numbers of access points.    
+
+	The CAP324 is a dual-band 802.11n wireless access point with 16MB
+	flash and 128MB RAM and single gigabit ethernet port.  It can be 
+	powered via PoE or a wall wart.
+endef
+
+$(eval $(call Profile,CAP324))
+

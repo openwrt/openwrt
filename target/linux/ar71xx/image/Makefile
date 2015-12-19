@@ -392,6 +392,24 @@ define Device/tl-wdr7500-v3
 endef
 TARGET_DEVICES += archer-c5-v1 archer-c7-v1 archer-c7-v2 tl-wdr7500-v3
 
+define Device/cap324
+  BOARDNAME := CAP324
+  DEVICE_PROFILE := CAP324
+  IMAGE_SIZE = 15296k
+  MTDPARTS = spi0.0:256k(u-boot),64k(u-boot-env)ro,15296k(firmware),640k(certs),64k(nvram),64k(art)
+endef
+
+TARGET_DEVICES += cap324
+
+define Device/cap324-nocloud
+  BOARDNAME := CAP324
+  DEVICE_PROFILE := CAP324
+  IMAGE_SIZE = 16000k
+  MTDPARTS = spi0.0:256k(u-boot),64k(u-boot-env)ro,16000k(firmware),64k(art)
+endef
+
+TARGET_DEVICES += cap324-nocloud
+
 define Device/antminer-s1
     $(Device/tplink-8mlzma)
     BOARDNAME := ANTMINER-S1
