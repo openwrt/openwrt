@@ -47,3 +47,21 @@ endef
 
 $(eval $(call Profile,CAP324))
 
+define Profile/CR3000
+	NAME:=PowerCloud CR3000 Cloud Router
+	PACKAGES:=uboot-envtools
+endef
+
+define Profile/CR3000/Description
+	Package set optimized for the PowerCloud Systems CR3000 Cloud Router
+
+	The CR3000 is a device sold by PowerCloud Systems as a hardware
+	option for their Skydog cloud-managed Wifi solution.
+
+	The CR3000 is a 2.4 GHz 802.11n wireless router with 8MB
+	flash and 64MB RAM, four-port fast ethernet switch, and fast
+	ethernet WAN port.
+endef
+
+$(eval $(call Profile,CR3000))
+
