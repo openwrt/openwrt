@@ -65,3 +65,21 @@ endef
 
 $(eval $(call Profile,CR3000))
 
+define Profile/CR5000
+	NAME:=PowerCloud CR5000 Cloud Router
+	PACKAGES:=uboot-envtools kmod-usb2 kmod-usb-ohci kmod-ledtrig-usbdev kmod-usb-core
+endef
+
+define Profile/CR5000/Description
+	Package set optimized for the PowerCloud Systems CR5000 Cloud Router
+
+	The CR5000 is a device sold by PowerCloud Systems as a hardware
+	option for their Skydog cloud-managed Wifi solution.
+
+	The CR5000 is a dual band GHz 802.11n wireless router with 8MB
+	flash and 64MB RAM, a five port gigabit switch and a USB 2.0
+	port which was unused in the stock firmware.
+endef
+
+$(eval $(call Profile,CR5000))
+
