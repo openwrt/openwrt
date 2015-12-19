@@ -168,7 +168,8 @@ platform_check_image() {
 	all0315n | \
 	all0258n | \
 	cap324 | \
-	cap4200ag)
+	cap4200ag | \
+	cr3000)
 		platform_check_image_allnet "$1" && return 0
 		return 1
 		;;

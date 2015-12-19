@@ -67,6 +67,9 @@ get_status_led() {
 	cpe510)
 		status_led="tp-link:green:link4"
 		;;
+	cr3000)
+		status_led="pcs:amber:power"
+		;;
 	db120)
 		status_led="db120:green:status"
 		;;
