@@ -48,6 +48,7 @@ enum ath79_mach_type {
 	ATH79_MACH_CF_E316N_V2,		/* COMFAST CF-E316N v2 */
 	ATH79_MACH_CPE510,		/* TP-LINK CPE510 */
 	ATH79_MACH_CR3000,		/* PowerCloud CR3000 */
+	ATH79_MACH_CR5000,		/* PowerCloud CR5000 */
 	ATH79_MACH_DB120,		/* Atheros DB120 reference board */
 	ATH79_MACH_PB44,		/* Atheros PB44 reference board */
 	ATH79_MACH_DGL_5500_A1,		/* D-link DGL-5500 rev. A1 */
