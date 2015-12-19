@@ -70,6 +70,9 @@ get_status_led() {
 	cr3000)
 		status_led="pcs:amber:power"
 		;;
+	cr5000)
+		status_led="pcs:amber:power"
+		;;
 	db120)
 		status_led="db120:green:status"
 		;;
