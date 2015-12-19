@@ -64,6 +64,7 @@ obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
 obj-$(CONFIG_ATH79_MACH_CF_E316N_V2)	+= mach-cf-e316n-v2.o
 obj-$(CONFIG_ATH79_MACH_CPE510)		+= mach-cpe510.o
 obj-$(CONFIG_ATH79_MACH_CR3000)		+= mach-cr3000.o
+obj-$(CONFIG_ATH79_MACH_CR5000)		+= mach-cr5000.o
 obj-$(CONFIG_ATH79_MACH_DB120)		+= mach-db120.o
 obj-$(CONFIG_ATH79_MACH_DLAN_HOTSPOT)	+= mach-dlan-hotspot.o
 obj-$(CONFIG_ATH79_MACH_DLAN_PRO_500_WP)	+= mach-dlan-pro-500-wp.o
