@@ -427,6 +427,9 @@ ar71xx_board_detect() {
 	*CR3000)
 		name="cr3000"
 		;;
+	*CR5000)
+		name="cr5000"
+		;;
 	*"DB120 reference board")
 		name="db120"
 		;;
