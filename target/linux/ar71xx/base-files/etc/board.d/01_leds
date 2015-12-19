@@ -92,6 +92,12 @@ bxu2000n-2-a1)
 	ucidef_set_led_wlan "wlan" "WLAN" "bhu:green:wlan" "phy0tpt"
 	;;
 
+cap324)
+	ucidef_set_led_netdev "lan" "LAN" "pcs:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan_amber" "WLAN_AMBER" "pcs:amber:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan_green" "WLAN_GREEN" "pcs:green:wlan" "phy1tpt"
+	;;
+
 cap4200ag)
 	ucidef_set_led_default "lan_green" "LAN_GREEN" "senao:green:lan" "1"
 	ucidef_set_led_wlan "wlan_amber" "WLAN_AMBER" "senao:amber:wlan" "phy0tpt"
