@@ -212,7 +212,6 @@ define Device/gl-domino
 endef
 TARGET_DEVICES += gl-domino
 
-
 define Device/wndr3700
   BOARDNAME = WNDR3700
   NETGEAR_KERNEL_MAGIC = 0x33373030
@@ -409,6 +408,24 @@ define Device/cap324-nocloud
 endef
 
 TARGET_DEVICES += cap324-nocloud
+
+define Device/cr3000
+  BOARDNAME := CR3000
+  DEVICE_PROFILE := CR3000
+  IMAGE_SIZE = 7104k
+  MTDPARTS = spi0.0:256k(u-boot),64k(u-boot-env)ro,7104k(firmware),640k(certs),64k(nvram),64k(art)
+endef
+
+TARGET_DEVICES += cr3000
+
+define Device/cr3000-nocloud
+  BOARDNAME := CR3000
+  DEVICE_PROFILE := CR3000
+  IMAGE_SIZE = 7808k
+  MTDPARTS = spi0.0:256k(u-boot),64k(u-boot-env)ro,7808k(firmware),64k(art)
+endef
+
+TARGET_DEVICES += cr3000-nocloud
 
 define Device/antminer-s1
     $(Device/tplink-8mlzma)
@@ -1469,7 +1486,6 @@ endef
 define Build/Clean
 	$(LOADER_MAKE) clean
 endef
-
 
 alfa_ap96_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,256k(u-boot-env)ro,13312k(rootfs),2048k(kernel),512k(caldata)ro,15360k@0x80000(firmware)
 alfa_mtdlayout_8M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,6144k(rootfs),1600k(kernel),64k(nvram),64k(art)ro,7744k@0x50000(firmware)
