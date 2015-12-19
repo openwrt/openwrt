@@ -38,7 +38,7 @@ mtd_get_mac_binary() {
 		return
 	fi
 
-	dd bs=1 skip=$offset count=6 if=$part 2>/dev/null | hexdump -v -n 6 -e '5/1 "%02x:" 1/1 "%02x"'
+	hexdump -v -n 6 -s $offset -e '5/1 "%02x:" 1/1 "%02x"' $part 2>/dev/null
 }
 
 mtd_get_mac_binary_ubi() {
