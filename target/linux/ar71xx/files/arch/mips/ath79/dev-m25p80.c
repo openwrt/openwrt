@@ -106,6 +106,14 @@ static void add_mtd_concat_notifier(void)
 	register_mtd_user(&not);
 }
 
+void __init ath79_register_m25p80_large(struct flash_platform_data *pdata)
+{
+	ath79_spi_data.bus_num = 0;
+	ath79_spi_data.num_chipselect = 1;
+	ath79_spi0_cdata.is_flash = false;
+	ath79_spi_info[0].platform_data = pdata;
+	ath79_register_spi(&ath79_spi_data, ath79_spi_info, 1);
+}
 
 void __init ath79_register_m25p80_multi(struct flash_platform_data *pdata)
 {
