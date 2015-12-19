@@ -59,6 +59,7 @@ obj-$(CONFIG_ATH79_MACH_ARCHER_C7)	+= mach-archer-c7.o
 obj-$(CONFIG_ATH79_MACH_AW_NR580)	+= mach-aw-nr580.o
 obj-$(CONFIG_ATH79_MACH_BHU_BXU2000N2_A)+= mach-bhu-bxu2000n2-a.o
 obj-$(CONFIG_ATH79_MACH_BSB)		+= mach-bsb.o
+obj-$(CONFIG_ATH79_MACH_CAP324)		+= mach-cap324.o
 obj-$(CONFIG_ATH79_MACH_CAP4200AG)	+= mach-cap4200ag.o
 obj-$(CONFIG_ATH79_MACH_CF_E316N_V2)	+= mach-cf-e316n-v2.o
 obj-$(CONFIG_ATH79_MACH_CPE510)		+= mach-cpe510.o
