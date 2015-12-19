@@ -25,6 +25,21 @@ ath9k_eeprom_extract() {
 		ath9k_eeprom_die "failed to extract from $mtd"
 }
 
+ath9k_ubi_eeprom_extract() {
+	local part=$1
+	local offset=$2
+	local count=$3
+	local ubidev=$(nand_find_ubi $CI_UBIPART)
+	local ubi
+
+	ubi=$(nand_find_volume $ubidev $part)
+	[ -n "$ubi" ] || \
+		ath9k_eeprom_die "no UBI volume found for $part"
+
+	dd if=/dev/$ubi of=/lib/firmware/$FIRMWARE bs=1 skip=$offset count=$count 2>/dev/null || \
+		ath9k_eeprom_die "failed to extract from $ubi"
+}
+
 ath9k_patch_firmware_mac() {
 	local mac=$1
 
@@ -39,6 +54,8 @@ case "$FIRMWARE" in
 "soc_wmac.eeprom")
 	case $board in
 	mr18)
+		. /lib/upgrade/nand.sh
+
 		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
 			ath9k_ubi_eeprom_extract "caldata" 4096 2048
 		else
@@ -61,6 +78,8 @@ case "$FIRMWARE" in
 "pci_wmac0.eeprom")
 	case $board in
 	mr18)
+		. /lib/upgrade/nand.sh
+
 		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
 			ath9k_ubi_eeprom_extract "caldata" 20480 2048
 		else
@@ -82,6 +101,8 @@ case "$FIRMWARE" in
 "pci_wmac1.eeprom")
 	case $board in
 	mr18)
+		. /lib/upgrade/nand.sh
+
 		if [ -n "$(nand_find_volume ubi0 caldata)" ]; then
 			ath9k_ubi_eeprom_extract "caldata" 36864 2048
 		else
