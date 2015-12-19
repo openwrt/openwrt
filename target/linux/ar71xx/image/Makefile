@@ -427,6 +427,24 @@ endef
 
 TARGET_DEVICES += cr3000-nocloud
 
+define Device/cr5000
+  BOARDNAME := CR5000
+  DEVICE_PROFILE := CR5000
+  IMAGE_SIZE = 7104k
+  MTDPARTS = spi0.0:256k(u-boot),64k(u-boot-env)ro,7104k(firmware),640k(certs),64k(nvram),64k(art)
+endef
+
+TARGET_DEVICES += cr5000
+
+define Device/cr5000-nocloud
+  BOARDNAME := CR5000
+  DEVICE_PROFILE := CR5000
+  IMAGE_SIZE = 7808k
+  MTDPARTS = spi0.0:256k(u-boot),64k(u-boot-env)ro,7808k(firmware),64k(art)
+endef
+
+TARGET_DEVICES += cr5000-nocloud
+
 define Device/antminer-s1
     $(Device/tplink-8mlzma)
     BOARDNAME := ANTMINER-S1
