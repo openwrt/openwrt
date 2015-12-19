@@ -923,6 +923,16 @@ config ATH79_MACH_CAP4200AG
 	select ATH79_DEV_M25P80
 	select ATH79_DEV_WMAC
 
+config ATH79_MACH_CR3000
+	bool "PowerCloud CR3000 support"
+	select SOC_AR934X
+	select ATH79_DEV_AP9X_PCI if PCI
+	select ATH79_DEV_ETH
+	select ATH79_DEV_GPIO_BUTTONS
+	select ATH79_DEV_LEDS_GPIO
+	select ATH79_DEV_M25P80
+	select ATH79_DEV_WMAC
+
 config ATH79_MACH_MR1750
 	bool "OpenMesh MR1750 board support"
 	select SOC_QCA955X
