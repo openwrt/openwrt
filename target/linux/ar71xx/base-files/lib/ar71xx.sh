@@ -424,6 +424,9 @@ ar71xx_board_detect() {
 		name="cpe510"
 		tplink_pharos_board_detect
 		;;
+	*CR3000)
+		name="cr3000"
+		;;
 	*"DB120 reference board")
 		name="db120"
 		;;
