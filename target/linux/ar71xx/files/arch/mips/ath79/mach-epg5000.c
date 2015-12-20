@@ -98,7 +98,6 @@ static struct ar8327_pad_cfg epg5000_ar8327_pad0_cfg = {
 	.rxclk_delay_en = true,
 	.txclk_delay_sel = AR8327_CLK_DELAY_SEL2,
 	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
-	.mac06_exchange_en = true,
 };
 
 static struct ar8327_platform_data epg5000_ar8327_data = {
