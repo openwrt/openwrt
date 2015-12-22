@@ -274,7 +274,7 @@ define KernelPackage/hwmon-gpiofan
   KCONFIG:=CONFIG_SENSORS_GPIO_FAN
   FILES:=$(LINUX_DIR)/drivers/hwmon/gpio-fan.ko
   AUTOLOAD:=$(call AutoLoad,60,gpio-fan)
-  $(call AddDepends/hwmon,+kmod-i2c-core)
+  $(call AddDepends/hwmon,+kmod-i2c-core +kmod-thermal)
 endef
 
 define KernelPackage/hwmon-gpiofan/description
