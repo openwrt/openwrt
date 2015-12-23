@@ -6,7 +6,7 @@
     seq_printf(s, "%s" MEI_DRV_CRLF, &MEI_WHATVERSION[4]);
 -   seq_printf(s, "Compiled on %s, %s for Linux kernel %s (jiffies: %ld)" MEI_DRV_CRLF,
 -                                    __DATE__, __TIME__, UTS_RELEASE, jiffies);
-+   seq_printf(s, "Compiled on for Linux kernel %s (jiffies: %ld)" MEI_DRV_CRLF,
++   seq_printf(s, "Compiled for Linux kernel %s (jiffies: %ld)" MEI_DRV_CRLF,
 +                                    UTS_RELEASE, jiffies);
  }
  
