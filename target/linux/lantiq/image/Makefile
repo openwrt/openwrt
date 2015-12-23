@@ -426,8 +426,7 @@ Image/BuildKernel/Profile/VGV7519BRN=$(call Image/BuildKernel/Template,VGV7519BR
 Image/Build/Profile/VGV7519BRN=$(call Image/Build/$(1),$(1),VGV7519BRN,5D00008000,0x12345678,0x2083b8ed,$(1))
 
 define Image/Prepare
-	$(call Image/Prepare/Profile,VG3503J)
-	$(call Image/Prepare/Profile,VG3503J_V2)
+	$(call Image/Prepare/Profile,$(PROFILE))
 endef
 
 endif
