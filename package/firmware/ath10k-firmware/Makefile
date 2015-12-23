@@ -8,7 +8,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=ath10k-firmware
-PKG_SOURCE_VERSION:=69f955c3dd95d97c7c30960aa5c9852c80b85cc3
+PKG_SOURCE_VERSION:=77f72b5f7dd940386d9e619a17904987759b7186
 PKG_VERSION:=2014-11-13-$(PKG_SOURCE_VERSION)
 PKG_RELEASE:=1
 
@@ -36,6 +36,15 @@ $(Package/ath10k-firmware-default)
   DEFAULT:=PACKAGE_kmod-ath10k
   TITLE:=ath10k firmware for QCA988x devices
 endef
+
+QCA988X_FIRMWARE_FILE:=firmware-5.bin_10.2.4.97-1
+
+define Download/ath10k-firmware-qca988x
+  URL:=https://www.codeaurora.org/cgit/quic/qsdk/oss/firmware/ath10k-firmware/plain/10.2.4/
+  FILE:=$(QCA988X_FIRMWARE_FILE)
+  MD5SUM:=fcb2fbd42d73a63fbf603505c718cbde
+endef
+$(eval $(call Download,ath10k-firmware-qca988x))
 
 define Package/ath10k-firmware-qca99x0
 $(Package/ath10k-firmware-default)
@@ -68,7 +77,7 @@ define Package/ath10k-firmware-qca988x/install
 		$(PKG_BUILD_DIR)/QCA988X/board.bin \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/QCA988X/10.2.4/firmware-5.bin_10.2.4.70.12-2 \
+		$(DL_DIR)/$(QCA988X_FIRMWARE_FILE) \
 		$(1)/lib/firmware/ath10k/QCA988X/hw2.0/firmware-5.bin
 endef
 
