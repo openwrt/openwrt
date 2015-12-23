@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/gpio.c
 +++ b/arch/mips/ath79/gpio.c
-@@ -221,15 +221,30 @@ void __init ath79_gpio_output_select(uns
+@@ -223,15 +223,30 @@ void __init ath79_gpio_output_select(uns
  {
  	void __iomem *base = ath79_gpio_base;
  	unsigned long flags;
@@ -37,7 +37,7 @@
  	spin_lock_irqsave(&ath79_gpio_lock, flags);
 --- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
 +++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
-@@ -868,6 +868,14 @@
+@@ -875,6 +875,14 @@
  #define QCA953X_GPIO_OUT_MUX_LED_LINK4		44
  #define QCA953X_GPIO_OUT_MUX_LED_LINK5		45
  
@@ -52,7 +52,7 @@
  #define QCA956X_GPIO_REG_OUT_FUNC0	0x2c
  #define QCA956X_GPIO_REG_OUT_FUNC1	0x30
  #define QCA956X_GPIO_REG_OUT_FUNC2	0x34
-@@ -1007,6 +1015,8 @@
+@@ -1014,6 +1022,8 @@
  #define AR934X_GPIO_OUT_EXT_LNA0	46
  #define AR934X_GPIO_OUT_EXT_LNA1	47
  

@@ -29,7 +29,7 @@
  static void __ath79_gpio_set_value(unsigned gpio, int value)
  {
  	void __iomem *base = ath79_gpio_base;
-@@ -233,6 +245,132 @@ void __init ath79_gpio_output_select(uns
+@@ -235,6 +247,132 @@ void __init ath79_gpio_output_select(uns
  	spin_unlock_irqrestore(&ath79_gpio_lock, flags);
  }
  
@@ -162,7 +162,7 @@
  void __init ath79_gpio_init(void)
  {
  	int err;
-@@ -269,6 +407,10 @@ void __init ath79_gpio_init(void)
+@@ -271,6 +409,10 @@ void __init ath79_gpio_init(void)
  	err = gpiochip_add(&ath79_gpio_chip);
  	if (err)
  		panic("cannot add AR71xx GPIO chip, error=%d", err);
@@ -173,7 +173,7 @@
  }
  
  int gpio_get_value(unsigned gpio)
-@@ -291,14 +433,22 @@ EXPORT_SYMBOL(gpio_set_value);
+@@ -293,14 +435,22 @@ EXPORT_SYMBOL(gpio_set_value);
  
  int gpio_to_irq(unsigned gpio)
  {
