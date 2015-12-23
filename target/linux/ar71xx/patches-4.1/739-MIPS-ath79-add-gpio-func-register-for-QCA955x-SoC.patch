@@ -1,6 +1,6 @@
 --- a/arch/mips/ath79/gpio.c
 +++ b/arch/mips/ath79/gpio.c
-@@ -221,15 +221,27 @@ void __init ath79_gpio_output_select(uns
+@@ -221,15 +221,30 @@ void __init ath79_gpio_output_select(uns
  {
  	void __iomem *base = ath79_gpio_base;
  	unsigned long flags;
@@ -9,7 +9,7 @@
 +	unsigned long gpio_count;
  	u32 t, s;
  
--	BUG_ON(!soc_is_ar934x() && !soc_is_qca953x());
+-	BUG_ON(!soc_is_ar934x() && !soc_is_qca953x() && !soc_is_qca956x());
 +	if (soc_is_ar934x()) {
 +		gpio_count = AR934X_GPIO_COUNT;
 +		reg_base = AR934X_GPIO_REG_OUT_FUNC0;
@@ -19,6 +19,9 @@
 +	} else if (soc_is_qca955x()) {
 +		gpio_count = QCA955X_GPIO_COUNT;
 +		reg_base = QCA955X_GPIO_REG_OUT_FUNC0;
++	} else if (soc_is_qca956x()) {
++		gpio_count = QCA956X_GPIO_COUNT;
++		reg_base = QCA956X_GPIO_REG_OUT_FUNC0;
 +	} else {
 +		BUG();
 +	}
