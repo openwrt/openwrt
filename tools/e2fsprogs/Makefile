@@ -22,10 +22,7 @@ include $(INCLUDE_DIR)/host-build.mk
 HOST_CFLAGS += $(FPIC)
 
 HOST_CONFIGURE_ARGS += \
-	--disable-shared \
 	--disable-elf-shlibs \
-	--enable-static \
-	--enable-dynamic-e2fsck \
 	--disable-tls \
 	--disable-nls
 
