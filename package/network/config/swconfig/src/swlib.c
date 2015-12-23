@@ -51,6 +51,15 @@ static struct nla_policy portmap_policy[SWITCH_PORTMAP_MAX] = {
 	[SWITCH_PORTMAP_VIRT] = { .type = NLA_U32 },
 };
 
+static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
+	[SWITCH_LINK_FLAG_LINK] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },
+	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
+	[SWITCH_LINK_FLAG_EEE_100BASET] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_EEE_1000BASET] = { .type = NLA_FLAG },
+};
+
 static inline void *
 swlib_alloc(size_t size)
 {
@@ -202,6 +211,37 @@ out:
 }
 
 static int
+store_link_val(struct nl_msg *msg, struct nlattr *nla, struct switch_val *val)
+{
+	struct nlattr *tb[SWITCH_LINK_ATTR_MAX + 1];
+	struct switch_port_link *link;
+	int err = 0;
+
+	if (!val->value.link)
+		val->value.link = malloc(sizeof(struct switch_port_link));
+
+	err = nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy);
+	if (err < 0)
+		goto out;
+
+	link = val->value.link;
+	link->link = !!tb[SWITCH_LINK_FLAG_LINK];
+	link->duplex = !!tb[SWITCH_LINK_FLAG_DUPLEX];
+	link->aneg = !!tb[SWITCH_LINK_FLAG_ANEG];
+	link->tx_flow = !!tb[SWITCH_LINK_FLAG_TX_FLOW];
+	link->rx_flow = !!tb[SWITCH_LINK_FLAG_RX_FLOW];
+	link->speed = nla_get_u32(tb[SWITCH_LINK_SPEED]);
+	link->eee = 0;
+	if (tb[SWITCH_LINK_FLAG_EEE_100BASET])
+		link->eee |= SWLIB_LINK_FLAG_EEE_100BASET;
+	if (tb[SWITCH_LINK_FLAG_EEE_1000BASET])
+		link->eee |= SWLIB_LINK_FLAG_EEE_1000BASET;
+
+out:
+	return err;
+}
+
+static int
 store_val(struct nl_msg *msg, void *arg)
 {
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
@@ -221,6 +261,8 @@ store_val(struct nl_msg *msg, void *arg)
 		val->value.s = strdup(nla_get_string(tb[SWITCH_ATTR_OP_VALUE_STR]));
 	else if (tb[SWITCH_ATTR_OP_VALUE_PORTS])
 		val->err = store_port_val(msg, tb[SWITCH_ATTR_OP_VALUE_PORTS], val);
+	else if (tb[SWITCH_ATTR_OP_VALUE_LINK])
+		val->err = store_link_val(msg, tb[SWITCH_ATTR_OP_VALUE_LINK], val);
 
 	val->err = 0;
 	return 0;
