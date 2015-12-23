@@ -16,7 +16,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 
 --- a/drivers/net/ethernet/Kconfig
 +++ b/drivers/net/ethernet/Kconfig
-@@ -101,7 +101,13 @@ config LANTIQ_ETOP
+@@ -101,7 +101,13 @@
  	tristate "Lantiq SoC ETOP driver"
  	depends on SOC_TYPE_XWAY
  	---help---
@@ -33,7 +33,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
  source "drivers/net/ethernet/mellanox/Kconfig"
 --- a/drivers/net/ethernet/Makefile
 +++ b/drivers/net/ethernet/Makefile
-@@ -43,6 +43,7 @@ obj-$(CONFIG_IP1000) += icplus/
+@@ -43,6 +43,7 @@
  obj-$(CONFIG_JME) += jme.o
  obj-$(CONFIG_KORINA) += korina.o
  obj-$(CONFIG_LANTIQ_ETOP) += lantiq_etop.o
@@ -209,7 +209,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +};
 --- /dev/null
 +++ b/drivers/net/ethernet/lantiq_xrx200.c
-@@ -0,0 +1,1798 @@
+@@ -0,0 +1,1797 @@
 +/*
 + *   This program is free software; you can redistribute it and/or modify it
 + *   under the terms of the GNU General Public License version 2 as published
@@ -248,7 +248,7 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +#define SW_POLLING
 +#define SW_ROUTING
-+#define SW_PORTMAP
++/* #define SW_PORTMAP */
 +
 +#ifdef SW_ROUTING
 +  #ifdef SW_PORTMAP
@@ -941,7 +941,6 @@ Subject: [PATCH 25/36] NET: MIPS: lantiq: adds xrx200-net
 +
 +static int xrx200_set_port_attr(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 +{
-+	printk("%s %s(%d)\n", __FILE__, __func__, __LINE__);
 +	if (val->port_vlan >= XRX200_MAX_PORT)
 +		return -EINVAL;
 +
