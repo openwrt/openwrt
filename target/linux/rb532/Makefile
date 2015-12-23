@@ -9,7 +9,7 @@ include $(TOPDIR)/rules.mk
 ARCH:=mipsel
 BOARD:=rb532
 BOARDNAME:=Mikrotik RouterBoard 532
-FEATURES:=pci targz
+FEATURES:=pci targz squashfs
 
 KERNEL_PATCHVER:=3.18
 
