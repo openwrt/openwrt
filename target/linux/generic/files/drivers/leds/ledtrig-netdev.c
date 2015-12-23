@@ -122,6 +122,8 @@ static ssize_t led_device_name_store(struct device *dev,
 	strcpy(trigger_data->device_name, buf);
 	if (size > 0 && trigger_data->device_name[size-1] == '\n')
 		trigger_data->device_name[size-1] = 0;
+	trigger_data->link_up = 0;
+	trigger_data->last_activity = 0;
 
 	if (trigger_data->device_name[0] != 0) {
 		/* check for existing device to update from */
