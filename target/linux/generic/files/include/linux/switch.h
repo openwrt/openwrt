@@ -122,6 +122,7 @@ struct switch_dev {
 	struct mutex sw_mutex;
 	struct switch_port *portbuf;
 	struct switch_portmap *portmap;
+	struct switch_port_link linkbuf;
 
 	char buf[128];
 
@@ -148,6 +149,7 @@ struct switch_val {
 		const char *s;
 		u32 i;
 		struct switch_port *ports;
+		struct switch_port_link *link;
 	} value;
 };
 
