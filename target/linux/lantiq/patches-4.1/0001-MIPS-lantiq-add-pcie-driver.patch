@@ -89,7 +89,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
 --- /dev/null
 +++ b/arch/mips/pci/fixup-lantiq-pcie.c
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,74 @@
 +/******************************************************************************
 +**
 +** FILE NAME    : ifxmips_fixup_pcie.c
@@ -123,14 +123,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <lantiq_soc.h>
 +
 +#include "pcie-lantiq.h"
-+
-+#define PCI_VENDOR_ID_INFINEON         0x15D1
-+#define PCI_DEVICE_ID_INFINEON_DANUBE  0x000F
-+#define PCI_DEVICE_ID_INFINEON_PCIE    0x0011
-+#define PCI_VENDOR_ID_LANTIQ        0x1BEF
-+#define PCI_DEVICE_ID_LANTIQ_PCIE       0x0011
-+
-+
 +
 +static void
 +ifx_pcie_fixup_resource(struct pci_dev *dev)
@@ -5533,7 +5525,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#define PCI_DEVICE_ID_INFINEON_DANUBE	0x000F
 +#define PCI_DEVICE_ID_INFINEON_PCIE	0x0011
 +#define PCI_VENDOR_ID_LANTIQ		0x1BEF
-+#define PCI_DEVICE_ID_LANTIQ_PCIE	0x00
++#define PCI_DEVICE_ID_LANTIQ_PCIE	0x0011
 +
  #define PCI_VENDOR_ID_WINBOND		0x10ad
  #define PCI_DEVICE_ID_WINBOND_82C105	0x0105
