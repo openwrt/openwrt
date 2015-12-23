@@ -127,30 +127,11 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr,
 	return dev->ops->get_port_pvid(dev, val->port_vlan, &val->value.i);
 }
 
-static const char *
-swconfig_speed_str(enum switch_port_speed speed)
-{
-	switch (speed) {
-	case SWITCH_PORT_SPEED_10:
-		return "10baseT";
-	case SWITCH_PORT_SPEED_100:
-		return "100baseT";
-	case SWITCH_PORT_SPEED_1000:
-		return "1000baseT";
-	default:
-		break;
-	}
-
-	return "unknown";
-}
-
 static int
 swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
 			struct switch_val *val)
 {
-	struct switch_port_link link;
-	int len;
-	int ret;
+	struct switch_port_link *link = val->value.link;
 
 	if (val->port_vlan >= dev->ports)
 		return -EINVAL;
@@ -158,32 +139,8 @@ swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
 	if (!dev->ops->get_port_link)
 		return -EOPNOTSUPP;
 
-	memset(&link, 0, sizeof(link));
-	ret = dev->ops->get_port_link(dev, val->port_vlan, &link);
-	if (ret)
-		return ret;
-
-	memset(dev->buf, 0, sizeof(dev->buf));
-
-	if (link.link)
-		len = snprintf(dev->buf, sizeof(dev->buf),
-			       "port:%d link:up speed:%s %s-duplex %s%s%s%s%s",
-			       val->port_vlan,
-			       swconfig_speed_str(link.speed),
-			       link.duplex ? "full" : "half",
-			       link.tx_flow ? "txflow " : "",
-			       link.rx_flow ?	"rxflow " : "",
-			       link.eee & ADVERTISED_100baseT_Full ? "eee100 " : "",
-			       link.eee & ADVERTISED_1000baseT_Full ? "eee1000 " : "",
-			       link.aneg ? "auto" : "");
-	else
-		len = snprintf(dev->buf, sizeof(dev->buf), "port:%d link:down",
-			       val->port_vlan);
-
-	val->value.s = dev->buf;
-	val->len = len;
-
-	return 0;
+	memset(link, 0, sizeof(*link));
+	return dev->ops->get_port_link(dev, val->port_vlan, link);
 }
 
 static int
@@ -246,7 +203,7 @@ static struct switch_attr default_port[] = {
 		.get = swconfig_get_pvid,
 	},
 	[PORT_LINK] = {
-		.type = SWITCH_TYPE_STRING,
+		.type = SWITCH_TYPE_LINK,
 		.name = "link",
 		.description = "Get port link information",
 		.set = NULL,
