@@ -98,6 +98,12 @@ cap324)
 	ucidef_set_led_wlan "wlan_green" "WLAN_GREEN" "pcs:green:wlan" "phy1tpt"
 	;;
 
+c-55)
+	ucidef_set_led_netdev "lan_green" "LAN_GREEN" "c-55:green:lan" "eth0"
+	ucidef_set_led_wlan "wlan_amber" "WLAN_AMBER" "c-55:amber:wlan" "phy0tpt"
+	ucidef_set_led_wlan "wlan_green" "WLAN_GREEN" "c-55:green:wlan" "phy1tpt"
+	;;
+
 cap4200ag)
 	ucidef_set_led_default "lan_green" "LAN_GREEN" "senao:green:lan" "1"
 	ucidef_set_led_wlan "wlan_amber" "WLAN_AMBER" "senao:amber:wlan" "phy0tpt"

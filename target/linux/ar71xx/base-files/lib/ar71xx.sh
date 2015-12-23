@@ -414,6 +414,9 @@ ar71xx_board_detect() {
 	*CAP324)
 		name="cap324"
 		;;
+	*C-55)
+		name="c-55"
+		;;
 	*CAP4200AG)
 		name="cap4200ag"
 		;;

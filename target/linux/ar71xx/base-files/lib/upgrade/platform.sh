@@ -204,6 +204,7 @@ platform_check_image() {
 	ap81 | \
 	ap83 | \
 	ap132 | \
+	c-55 | \
 	cf-e316n-v2 | \
 	dgl-5500-a1 |\
 	dhp-1565-a1 |\
