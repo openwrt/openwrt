@@ -53,6 +53,10 @@ board=$(ar71xx_board_name)
 case "$FIRMWARE" in
 "soc_wmac.eeprom")
 	case $board in
+	c-55)
+		ath9k_eeprom_extract "art" 4096 2048
+		ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary art 0) +1)
+		;;
 	mr18)
 		. /lib/upgrade/nand.sh
 
@@ -77,6 +81,10 @@ case "$FIRMWARE" in
 
 "pci_wmac0.eeprom")
 	case $board in
+	c-55)
+		ath9k_eeprom_extract "art" 20480 2048
+		ath9k_patch_firmware_mac $(macaddr_add $(mtd_get_mac_binary art 0) +2)
+		;;
 	mr18)
 		. /lib/upgrade/nand.sh
 
