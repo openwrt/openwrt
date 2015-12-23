@@ -37,7 +37,6 @@ endef
 
 CONFIGURE_ARGS += \
 	--disable-rpath \
-	--enable-new-mount	\
 	--disable-tls		\
 	--disable-sulogin	\
 	--without-python	\
