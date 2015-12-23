@@ -27,7 +27,8 @@ system_config() {
 	echo "$hostname" > /proc/sys/kernel/hostname
 	[ -z "$conloglevel" -a -z "$buffersize" ] || dmesg ${conloglevel:+-n $conloglevel} ${buffersize:+-s $buffersize}
 	echo "$timezone" > /tmp/TZ
-	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/$zonename" ] && ln -s "/usr/share/zoneinfo/$zonename" /tmp/localtime
+	[ -n "$zonename" ] && [ -f "/usr/share/zoneinfo/$zonename" ] && \
+		ln -sf "/usr/share/zoneinfo/$zonename" /tmp/localtime && rm -f /tmp/TZ
 
 	# apply timezone to kernel
 	date -k
