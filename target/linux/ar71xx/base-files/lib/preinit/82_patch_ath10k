@@ -12,7 +12,7 @@ do_patch_ath10k_firmware() {
 		return
 	}
 
-	local firmware_md5_orig="36768dc68572b3f2660211e20e89f558"
+	local firmware_md5_orig="fcb2fbd42d73a63fbf603505c718cbde"
 	local firmware_md5_current="$(md5sum $firmware_file)"
 	local firmware_md5_current="${firmware_md5_current%% *}"
 
