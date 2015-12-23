@@ -236,7 +236,7 @@
  static bool __init
  ar93xx_wmac_otp_read_word(void __iomem *base, int addr, u32 *data)
  {
-@@ -392,6 +410,8 @@ void __init ath79_register_wmac(u8 *cal_
+@@ -392,6 +412,8 @@ void __init ath79_register_wmac(u8 *cal_
  		qca953x_wmac_setup();
  	else if (soc_is_qca955x())
  		qca955x_wmac_setup();
