@@ -1,5 +1,5 @@
 From: Felix Fietkau <nbd@openwrt.org>
-Date: Sat, 9 May 2015 23:03:47 +0200
+Date: Sat, 9 May 2015 23:08:38 +0200
 Subject: [PATCH] pppoe: drop pppoe device in pppoe_unbind_sock_work
 
 After receiving a PADT and the socket is closed, user space will no
@@ -10,11 +10,12 @@ This leads to errors like this:
 
 Fixes: 287f3a943fe ("pppoe: Use workqueue to die properly when a PADT is received")
 Signed-off-by: Felix Fietkau <nbd@openwrt.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
 
 --- a/drivers/net/ppp/pppoe.c
 +++ b/drivers/net/ppp/pppoe.c
-@@ -462,6 +462,10 @@ static void pppoe_unbind_sock_work(struc
+@@ -465,6 +465,10 @@ static void pppoe_unbind_sock_work(struc
  	struct sock *sk = sk_pppox(po);
  
  	lock_sock(sk);

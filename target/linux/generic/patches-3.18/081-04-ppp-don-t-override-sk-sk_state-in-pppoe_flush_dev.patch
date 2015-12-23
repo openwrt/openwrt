@@ -1,0 +1,68 @@
+From: Guillaume Nault <g.nault@alphalink.fr>
+Date: Wed, 30 Sep 2015 11:45:33 +0200
+Subject: [PATCH] ppp: don't override sk->sk_state in pppoe_flush_dev()
+
+Since commit 2b018d57ff18 ("pppoe: drop PPPOX_ZOMBIEs in pppoe_release"),
+pppoe_release() calls dev_put(po->pppoe_dev) if sk is in the
+PPPOX_ZOMBIE state. But pppoe_flush_dev() can set sk->sk_state to
+PPPOX_ZOMBIE _and_ reset po->pppoe_dev to NULL. This leads to the
+following oops:
+
+[  570.140800] BUG: unable to handle kernel NULL pointer dereference at 00000000000004e0
+[  570.142931] IP: [<ffffffffa018c701>] pppoe_release+0x50/0x101 [pppoe]
+[  570.144601] PGD 3d119067 PUD 3dbc1067 PMD 0
+[  570.144601] Oops: 0000 [#1] SMP
+[  570.144601] Modules linked in: l2tp_ppp l2tp_netlink l2tp_core ip6_udp_tunnel udp_tunnel pppoe pppox ppp_generic slhc loop crc32c_intel ghash_clmulni_intel jitterentropy_rng sha256_generic hmac drbg ansi_cprng aesni_intel aes_x86_64 ablk_helper cryptd lrw gf128mul glue_helper acpi_cpufreq evdev serio_raw processor button ext4 crc16 mbcache jbd2 virtio_net virtio_blk virtio_pci virtio_ring virtio
+[  570.144601] CPU: 1 PID: 15738 Comm: ppp-apitest Not tainted 4.2.0 #1
+[  570.144601] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Debian-1.8.2-1 04/01/2014
+[  570.144601] task: ffff88003d30d600 ti: ffff880036b60000 task.ti: ffff880036b60000
+[  570.144601] RIP: 0010:[<ffffffffa018c701>]  [<ffffffffa018c701>] pppoe_release+0x50/0x101 [pppoe]
+[  570.144601] RSP: 0018:ffff880036b63e08  EFLAGS: 00010202
+[  570.144601] RAX: 0000000000000000 RBX: ffff880034340000 RCX: 0000000000000206
+[  570.144601] RDX: 0000000000000006 RSI: ffff88003d30dd20 RDI: ffff88003d30dd20
+[  570.144601] RBP: ffff880036b63e28 R08: 0000000000000001 R09: 0000000000000000
+[  570.144601] R10: 00007ffee9b50420 R11: ffff880034340078 R12: ffff8800387ec780
+[  570.144601] R13: ffff8800387ec7b0 R14: ffff88003e222aa0 R15: ffff8800387ec7b0
+[  570.144601] FS:  00007f5672f48700(0000) GS:ffff88003fc80000(0000) knlGS:0000000000000000
+[  570.144601] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  570.144601] CR2: 00000000000004e0 CR3: 0000000037f7e000 CR4: 00000000000406a0
+[  570.144601] Stack:
+[  570.144601]  ffffffffa018f240 ffff8800387ec780 ffffffffa018f240 ffff8800387ec7b0
+[  570.144601]  ffff880036b63e48 ffffffff812caabe ffff880039e4e000 0000000000000008
+[  570.144601]  ffff880036b63e58 ffffffff812cabad ffff880036b63ea8 ffffffff811347f5
+[  570.144601] Call Trace:
+[  570.144601]  [<ffffffff812caabe>] sock_release+0x1a/0x75
+[  570.144601]  [<ffffffff812cabad>] sock_close+0xd/0x11
+[  570.144601]  [<ffffffff811347f5>] __fput+0xff/0x1a5
+[  570.144601]  [<ffffffff811348cb>] ____fput+0x9/0xb
+[  570.144601]  [<ffffffff81056682>] task_work_run+0x66/0x90
+[  570.144601]  [<ffffffff8100189e>] prepare_exit_to_usermode+0x8c/0xa7
+[  570.144601]  [<ffffffff81001a26>] syscall_return_slowpath+0x16d/0x19b
+[  570.144601]  [<ffffffff813babb1>] int_ret_from_sys_call+0x25/0x9f
+[  570.144601] Code: 48 8b 83 c8 01 00 00 a8 01 74 12 48 89 df e8 8b 27 14 e1 b8 f7 ff ff ff e9 b7 00 00 00 8a 43 12 a8 0b 74 1c 48 8b 83 a8 04 00 00 <48> 8b 80 e0 04 00 00 65 ff 08 48 c7 83 a8 04 00 00 00 00 00 00
+[  570.144601] RIP  [<ffffffffa018c701>] pppoe_release+0x50/0x101 [pppoe]
+[  570.144601]  RSP <ffff880036b63e08>
+[  570.144601] CR2: 00000000000004e0
+[  570.200518] ---[ end trace 46956baf17349563 ]---
+
+pppoe_flush_dev() has no reason to override sk->sk_state with
+PPPOX_ZOMBIE. pppox_unbind_sock() already sets sk->sk_state to
+PPPOX_DEAD, which is the correct state given that sk is unbound and
+po->pppoe_dev is NULL.
+
+Fixes: 2b018d57ff18 ("pppoe: drop PPPOX_ZOMBIEs in pppoe_release")
+Tested-by: Oleksii Berezhniak <core@irc.lg.ua>
+Signed-off-by: Guillaume Nault <g.nault@alphalink.fr>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+---
+
+--- a/drivers/net/ppp/pppoe.c
++++ b/drivers/net/ppp/pppoe.c
+@@ -313,7 +313,6 @@ static void pppoe_flush_dev(struct net_d
+ 			if (po->pppoe_dev == dev &&
+ 			    sk->sk_state & (PPPOX_CONNECTED | PPPOX_BOUND | PPPOX_ZOMBIE)) {
+ 				pppox_unbind_sock(sk);
+-				sk->sk_state = PPPOX_ZOMBIE;
+ 				sk->sk_state_change(sk);
+ 				po->pppoe_dev = NULL;
+ 				dev_put(dev);
