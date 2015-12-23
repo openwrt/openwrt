@@ -479,13 +479,20 @@ platform_check_image() {
 		fi
 		return 0
 		;;
-    wnr2000-v4)
+	wnr2000-v4)
 		[ "$magic_long" != "32303034" ] && {
 			echo "Invalid image type."
 			return 1
 		}
 		return 0
 		;;
+	wnr2200)
+                [ "$magic_long" != "32323030" ] && {
+                        echo "Invalid image type."
+                        return 1
+                }
+                return 0
+                ;;
 
 	esac
 
