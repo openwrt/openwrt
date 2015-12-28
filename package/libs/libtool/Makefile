@@ -32,6 +32,19 @@ define Package/libltdl
   URL:=http://www.gnu.org/software/libtool/
 endef
 
+define Package/libtool
+  SECTION:=devel
+  CATEGORY:=Development
+  TITLE:=GNU libtool
+  URL:=http://www.gnu.org/software/libtool/
+  DEPENDS:=+gcc +file
+endef
+
+define Package/libtool/description
+GNU libtool is a generic library support script. Libtool hides the complexity
+of using shared libraries behind a consistent, portable interface.
+endef
+
 define Build/InstallDev
 	$(MAKE) -C $(PKG_BUILD_DIR) \
 		bindir="$(2)/bin" \
@@ -49,4 +62,30 @@ define Package/libltdl/install
 	$(CP) $(PKG_BUILD_DIR)/libltdl/.libs/libltdl.so.* $(1)/usr/lib/
 endef
 
+define Package/libtool/install
+	$(INSTALL_DIR) $(1)/usr/bin
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/libtoolize $(1)/usr/bin
+	$(SED) 's|$$(STAGING_DIR_HOST)|/usr|g' \
+	  $(1)/usr/bin/libtoolize
+	$(SED) 's|$$(CONFIGURE_PREFIX)|/usr|g' \
+	  $(1)/usr/bin/libtoolize
+	$(SED) 's|/usr/bin/sed|/bin/sed|g' \
+	  $(1)/usr/bin/libtoolize
+	$(INSTALL_DIR) $(1)/usr/share/aclocal
+	for file in argz.m4 ltversion.m4 lt~obsolete.m4 libtool.m4 \
+	  ltoptions.m4 ltsugar.m4; do \
+		$(INSTALL_DATA) $(PKG_BUILD_DIR)/libltdl/m4/$$$$file \
+		  $(1)/usr/share/aclocal/; \
+	done
+	$(INSTALL_DIR) $(1)/usr/share/libtool/config
+	for file in $$$$(cd $(PKG_BUILD_DIR)/libltdl/config && \
+	  find . -maxdepth 1 -type f); do \
+		$(INSTALL_DATA) $(PKG_BUILD_DIR)/libltdl/config/$$$$file \
+		  $(1)/usr/share/libtool/config/; \
+		$(SED) 's|$$(STAGING_DIR_HOST)|/usr|g' \
+		  $(1)/usr/share/libtool/config/$$$$file; \
+	done
+endef
+
 $(eval $(call BuildPackage,libltdl))
+$(eval $(call BuildPackage,libtool))
