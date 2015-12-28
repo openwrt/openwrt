@@ -1,0 +1,30 @@
+Index: linux-4.3/drivers/net/ethernet/marvell/sky2.c
+===================================================================
+--- linux-4.3.orig/drivers/net/ethernet/marvell/sky2.c	2015-11-01 16:05:25.000000000 -0800
++++ linux-4.3/drivers/net/ethernet/marvell/sky2.c	2015-12-18 10:39:44.983158318 -0800
+@@ -4812,7 +4812,24 @@
+ 	 * 1) from device tree data
+ 	 * 2) from internal registers set by bootloader
+ 	 */
+-	iap = of_get_mac_address(hw->pdev->dev.of_node);
++
++	iap = NULL;
++	if (IS_ENABLED(CONFIG_OF)) {
++		struct device_node *np;
++		np = of_find_node_by_path("/aliases");
++		if (np) {
++			const char *path = of_get_property(np, "sky2", NULL);
++			if (path)
++				np = of_find_node_by_path(path);
++			if (np)
++				path = of_get_mac_address(np);
++			if (path)
++				iap = (unsigned char *) path;
++		}
++	}
++
++	if (!iap)
++		iap = of_get_mac_address(hw->pdev->dev.of_node);
+ 	if (iap)
+ 		memcpy(dev->dev_addr, iap, ETH_ALEN);
+ 	else
