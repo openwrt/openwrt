@@ -28,6 +28,10 @@ define uboot/Default
   IMAGE:=
 endef
 
+define uboot/mx6qsabresd
+  TITLE:=U-Boot for SABRE i.MX6Quad board
+endef
+
 define uboot/nitrogen6dl
   TITLE:=U-Boot for Nitrogen6x i.MX6Dual-Lite 1GB board
 endef
@@ -65,6 +69,7 @@ define uboot/wandboard_solo
 endef
 
 UBOOTS := \
+	mx6qsabresd \
 	nitrogen6dl \
 	nitrogen6dl2g \
 	nitrogen6q \
