@@ -26,6 +26,14 @@ ramips_set_preinit_iface() {
 		ip link add link eth0 name eth0.1 type vlan id 1
 		ip link set eth0 up
 		ifname=eth0.1
+	elif grep MT7620 /proc/cpuinfo; then
+		# Switch on MT7620 has VLANs enabled by default and eth0 won't receive any packet,
+		# hence turn off VLAN support to get Failsafe working:
+		# https://dev.openwrt.org/ticket/18768
+		swconfig dev mt7620 set reset 1
+		swconfig dev mt7620 set enable_vlan 0
+		swconfig dev mt7620 set apply
+		ifname=eth0
 	else
 		ifname=eth0
 	fi
