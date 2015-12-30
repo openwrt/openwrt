@@ -243,7 +243,8 @@ get_status_led() {
 	tl-wa850re)
 		status_led="tp-link:blue:re"
 		;;
-	tl-wa860re)
+	tl-wa860re | \
+	tl-wa901nd-v4)
 		status_led="tp-link:green:power"
 		;;
 	tl-mr3220 | \
