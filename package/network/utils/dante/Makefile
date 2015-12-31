@@ -13,7 +13,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://www.inet.no/dante/files/
-PKG_MD5SUM:=69b9d6234154d7d6a91fcbd98c68e62a
+PKG_MD5SUM:=68c2ce12119e12cea11a90c7a80efa8f
 
 PKG_MAINTAINER:=Jo-Philipp Wich <jow@openwrt.org>
 PKG_LICENSE:=BSD-4-Clause
