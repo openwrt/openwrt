@@ -18,6 +18,9 @@ get_status_led() {
 	antminer-s3)
 		status_led="antminer-s3:green:system"
 		;;
+	antminer-r1)
+		status_led="antminer-r1:green:system"
+		;;
 	ap132)
 		status_led="ap132:green:status"
 		;;

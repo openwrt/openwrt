@@ -323,6 +323,7 @@ platform_check_image() {
 
 	antminer-s1 | \
 	antminer-s3 | \
+	antrouter-r1 | \
 	archer-c5 | \
 	archer-c7 | \
 	el-m150 | \
