@@ -5,10 +5,12 @@
 		bootargs-append = "root= console=ttyLTQ0,115200";
 
 		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
 			dsl = &dsl;
 			internet = &internet;
-			power = &power;
-			power2 = &power2;
 			usb = &usb;
 			wifi = &wifi;
 		};
@@ -171,11 +173,12 @@
 			label = "usb";
 			gpios = <&gpio 22 1>;
 		};
-		power: power {
+		power_green: power {
 			label = "power";
 			gpios = <&gpio 34 1>;
+			default-state = "keep";
 		};
-		power2: power2 {
+		power_red: power2 {
 			label = "power2";
 			gpios = <&gpio 39 1>;
 		};

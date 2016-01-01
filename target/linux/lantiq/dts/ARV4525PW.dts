@@ -7,10 +7,12 @@
 
 	chosen {
 		leds {
+			/* we dont have a power led, lets use the online led */
+			boot = &online;
+			failsafe = &online;
+
 			dsl = &dsl;
 			internet = &online;
-			/* we dont have a power led, lets use the online led */
-			power = &online;
 			wifi = &wifi;
 		};
 	};
@@ -155,8 +157,7 @@
 			gpios = <&gpio 8 1>;
 		};
 		online: online {
-			/*label = "online"; - we dont have a power led, lets use this one */
-			label = "power";
+			label = "online";
 			gpios = <&gpio 9 1>;
 		};
 	};

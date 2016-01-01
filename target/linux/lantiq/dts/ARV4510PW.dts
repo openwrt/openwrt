@@ -9,10 +9,12 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
+			boot = &power;
+			failsafe = &power2;
+			running = &power;
+
 			dsl = &adsl;
 			internet = &internet;
-			power = &power;
-			power2 = &power2;
 			usb = &usb;
 			usb2 = &usb2;
 			wifi = &wifi;
@@ -152,6 +154,7 @@
 		power: power {
 			label = "power";
 			gpios = <&gpios 21 0>;
+			default-state = "keep";
 		};
 		power2: power2 {
 			label = "power2";
