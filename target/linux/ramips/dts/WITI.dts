@@ -104,25 +104,6 @@
 		mtd-mac-address = <&factory 0xe000>;
 	};
 
-	gpio-leds {
-		compatible = "gpio-leds";
-
-		power {
-			label = "witi:green:power";
-			gpios = <&gpio0 25 1>;
-		};
-
-		sys {
-			label = "witi:green:sys";
-			gpios = <&gpio0 24 1>;
-		};
-
-		internet {
-			label = "witi:green:internet";
-			gpios = <&gpio0 23 1>;
-		};
-	};
-
 	gpio-keys-polled {
 		compatible = "gpio-keys-polled";
 		#address-cells = <1>;
