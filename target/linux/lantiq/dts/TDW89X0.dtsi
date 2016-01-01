@@ -224,25 +224,27 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-
+		/*
+			power is not controllable via gpio
+        */
 		dsl: dsl {
-			label = "dsl";
+			label = "tdw89x0:green:dsl";
 			gpios = <&gpio 4 0>;
 		};
 		internet: internet {
-			label = "internet";
+			label = "tdw89x0:green:internet";
 			gpios = <&gpio 5 0>;
 		};
 		usb0: usb0 {
-			label = "usb";
+			label = "tdw89x0:green:usb";
 			gpios = <&gpio 19 0>;
 		};
 		usb2: usb2 {
-			label = "usb2";
+			label = "tdw89x0:green:usb2";
 			gpios = <&gpio 20 0>;
 		};
 		wps: wps {
-			label = "wps";
+			label = "tdw89x0:green:wps";
 			gpios = <&gpio 37 0>;
 		};
 	};

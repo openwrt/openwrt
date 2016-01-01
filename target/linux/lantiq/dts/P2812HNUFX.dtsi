@@ -5,11 +5,11 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
-			boot = &power2;
-			failsafe = &power;
-			running = &power2;
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
 
-			dsl = &dsl;
+			dsl = &dsl_green;
 			internet = &internet_green;
 			usb = &usb1;
 			usb2 = &usb2;
@@ -40,7 +40,7 @@
 			compatible = "lantiq,pinctrl-xr9";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-			
+
 			interrupt-parent = <&icu0>;
 			interrupts = <166 135 66 40 41 42 38>;
 
@@ -275,61 +275,61 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		internet_red {				/* red */
-			label = "internet_red";
+		internet_red {
+			label = "p2812hnufx:red:internet";
 			gpios = <&stp 16 1>;
 		};
 		internet_green: internet_green {
-			label = "internet_green";	/* green */
+			label = "p2812hnufx:green:internet";
 			gpios = <&stp 17 1>;
 		};
-		dsl: dsl {
-			label = "dsl";
+		dsl_green: dsl_green {
+			label = "p2812hnufx:green:dsl";
 			gpios = <&stp 18 1>;
 		};
-		dsl2 {
-			label = "dsl2";
+		dsl_orange {
+			label = "p2812hnufx:orange:dsl";
 			gpios = <&stp 19 1>;
 		};
-		wireless_red {				/* red */
-			label = "wireless_red";
+		wireless_orange {
+			label = "p2812hnufx:orange:wlan";
 			gpios = <&stp 20 1>;
 		};
-		wireless_green: wireless_green {			/* green */
-			label = "wireless_green";
+		wireless_green: wireless_green {
+			label = "p2812hnufx:green:wlan";
 			gpios = <&stp 21 1>;
 		};
-		power: power {					/* red */
-			label = "power";
+		power_red: power {
+			label = "p2812hnufx:red:power";
 			gpios = <&stp 22 1>;
 		};
-		power2: power2 {				/* green */
-			label = "power2";
+		power_green: power2 {
+			label = "p2812hnufx:green:power";
 			gpios = <&stp 23 1>;
 			default-state = "keep";
 		};
-		usb1: usb1 {					/* green */
-			label = "usb1";
+		usb1: usb1 {
+			label = "p2812hnufx:green:usb1";
 			gpios = <&gpio 38 1>;
 		};
-		usb2: usb2 {					/* green */
-			label = "usb2";
+		usb2: usb2 {
+			label = "p2812hnufx:green:usb2";
 			gpios = <&gpio 44 1>;
 		};
-		phone1 {				/* green */
-			label = "phone1";
+		phone1 {
+			label = "p2812hnufx:green:phone";
 			gpios = <&gpio 11 1>;
 		};
-		phone1warn {				/* red */
-			label = "phone1warn";
+		phone1warn {
+			label = "p2812hnufx:orange:phone";
 			gpios = <&gpio 12 1>;
 		};
-		phone2warn {				/* red */
-			label = "phone2warn";
+		phone2warn {
+			label = "p2812hnufx:orange:phone2";
 			gpios = <&gpio 26 1>;
 		};
-		phone2 {				/* green */
-			label = "phone2";
+		phone2 {
+			label = "p2812hnufx:green:phone2";
 			gpios = <&gpio 28 1>;
 		};
 	};

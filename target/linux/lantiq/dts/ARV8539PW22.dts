@@ -147,29 +147,32 @@
                 compatible = "gpio-leds";
 
                 power_green: power-green {
-                        label = "power";
+                        label = "arv8539pw22:green:power";
                         gpios = <&gpio 24 1>;
                         default-state = "keep";
                 };
                 power_red: power-red {
-                        label = "soc:red:power";
+                        label = "arv8539pw22:red:power";
                         gpios = <&gpio 4 1>;
                 };
 
                 dsl_green: dsl-green {
-                        label = "soc:green:dsl";
+                        label = "arv8539pw22:green:dsl";
                         gpios = <&gpio 5 1>;
                 };
 
                 online_green: online-green {
-                        label = "soc:green:online";
+                        label = "arv8539pw22:green:online";
                         gpios = <&gpio 6 1>;
                 };
 
                 wireless_green: wireless-green {
-                        label = "soc:green:wireless";
+                        label = "arv8539pw22:green:wlan";
                         gpios = <&gpio 8 1>;
                 };
+                /*
+                        telefonie green is missing
+                */
         };
 };
 

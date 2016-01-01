@@ -9,11 +9,11 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
-			boot = &power;
-			failsafe = &power1;
-			running = &power;
+			boot = &power_red;
+			failsafe = &power_blue;
+			running = &power_red;
 
-			internet = &internet;
+			internet = &internet_red;
 			wifi = &wifi;
 		};
 	};
@@ -183,69 +183,69 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power1: power1 {
-			label = "power1";
+		power_blue: power1 {
+			label = "arv752dpw22:blue:power";
 			gpios = <&gpio 3 1>;
 		};
-		internet: internet {
-			label = "internet";
+		internet_red: internet {
+			label = "arv752dpw22:red:internet";
 			gpios = <&gpio 4 1>;
 		};
 		message {
-			label = "message";
+			label = "arv752dpw22:red:message";
 			gpios = <&gpio 5 1>;
 		};
-		power: power {
-			label = "power";
+		power_red: power {
+			label = "arv752dpw22:red:power";
 			gpios = <&gpio 6 1>;
 			default-state = "keep";
 		};
 		voice1 {
-			label = "voice1";
+			label = "arv752dpw22:red:voice";
 			gpios = <&gpio 8 1>;
 		};
 		microphone {
-			label = "umts";
+			label = "arv752dpw22:red:umts";
 			gpios = <&gpiomm 3 1>;
 		};
 		wifi: wifi {
-			label = "wifi_rt";
+			label = "arv752dpw22:red:wifi";
 			gpios = <&gpiomm 4 1>;
 		};
 		fxs1 {
-			label = "fxs1";
+			label = "arv752dpw22:green:tae-n";
 			gpios = <&gpiomm 5 1>;
 		};
 		fxs2 {
-			label = "fxs2";
+			label = "arv752dpw22:green:tae-u";
 			gpios = <&gpiomm 6 1>;
 		};
 		fxo {
-			label = "fxo";
+			label = "arv752dpw22:green:isdn";
 			gpios = <&gpiomm 7 1>;
 		};
 		internet2 {
-			label = "internet2";
+			label = "arv752dpw22:blue:internet";
 			gpios = <&gpiomm 8 1>;
 		};
 		voice2 {
-			label = "voice2";
+			label = "arv752dpw22:blue:voice";
 			gpios = <&gpiomm 9 1>;
 		};
 		eth1 {
-			 label = "eth1";
+			 label = "arv752dpw22:green:lan1";
 			 gpios = <&gpiomm 11 1>;
 		};
 		eth2 {
-			label = "eth2";
+			label = "arv752dpw22:green:lan2";
 			gpios = <&gpiomm 12 1>;
 		};
 		eth3 {
-			label = "eth3";
+			label = "arv752dpw22:green:lan3";
 			gpios = <&gpiomm 13 1>;
 		};
 		eth4 {
-			label = "eth4";
+			label = "arv752dpw22:green:lan4";
 			gpios = <&gpiomm 14 1>;
 		};
 	};
