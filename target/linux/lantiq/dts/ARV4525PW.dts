@@ -141,23 +141,23 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		fxo {
-			label = "fxo";
+			label = "arv4525pw:green:festnetz";
 			gpios = <&gpio 4 1>;
 		};
 		fxs {
-			label = "fxs";
+			label = "arv4525pw:green:internet";
 			gpios = <&gpio 5 1>;
 		};
 		dsl: dsl {
-			label = "dsl";
+			label = "arv4525pw:green:t-dsl";
 			gpios = <&gpio 6 1>;
 		};
 		wifi: wifi {
-			label = "wifi";
+			label = "arv4525pw:green:wlan";
 			gpios = <&gpio 8 1>;
 		};
 		online: online {
-			label = "online";
+			label = "arv4525pw:green:online";
 			gpios = <&gpio 9 1>;
 		};
 	};

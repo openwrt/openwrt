@@ -162,32 +162,38 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		internet: internet {
-			label = "internet";
+			label = "dgn3500:green:internet";
 			gpios = <&gpio 2 1>;
 		};
+		/*
+			internet red is missing
+		*/
 		dsl: dsl {
-			label = "dsl";
+			label = "dgn3500:green:dsl";
 			gpios = <&gpio 4 1>;
 		};
 		usb: usb {
-			label = "usb";
+			label = "dgn3500:green:usb";
 			gpios = <&gpio 22 1>;
 		};
 		power_green: power {
-			label = "power";
+			label = "dgn3500:green:power";
 			gpios = <&gpio 34 1>;
 			default-state = "keep";
 		};
 		power_red: power2 {
-			label = "power2";
+			label = "dgn3500:red:power";
 			gpios = <&gpio 39 1>;
 		};
+        /*
+			power amber is missing
+		*/
 		wifi: wifi {
-			label = "wifi";
+			label = "dgn3500:blue:wireless";
 			gpios = <&gpio 51 1>;
 		};
 		wps {
-			label = "wps";
+			label = "dgn3500:green:wps";
 			gpios = <&gpio 52 1>;
 		};
 	};

@@ -13,8 +13,8 @@
 			failsafe = &power;
 			running = &power;
 
+			internet = &info_green;
 			dsl = &power;
-			internet = &online;
 			wifi = &wlan;
 		};
 	};
@@ -121,28 +121,28 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		power: power {
-			label = "power";
+			label = "fritz7320:green:power";
 			gpios = <&gpio 44 1>;
 			default-state = "keep";
 		};
 		voice {
-			label = "voice";
+			label = "fritz7320:green:fon";
 			gpios = <&gpio 47 1>;
 		};
 		dect {
-			label = "dect";
+			label = "fritz7320:green:dect";
 			gpios = <&gpio 38 1>;
 		};
 		wlan: wlan {
-			label = "wlan";
+			label = "fritz7320:green:wlan";
 			gpios = <&gpio 37 1>;
 		};
-		online: online {
-			label = "online";
+		info_green: info_green {
+			label = "fritz7320:green:info";
 			gpios = <&gpio 35 1>;
 		};
-		online2 {
-			label = "online2";
+		info_red {
+			label = "fritz7320:red:info";
 			gpios = <&gpio 45 1>;
 		};
 	};

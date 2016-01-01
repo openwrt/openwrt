@@ -7,9 +7,9 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
-			boot = &power;
-			failsafe = &power2;
-			running = &power;
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
 
 			internet = &dsl;
 		};
@@ -156,16 +156,16 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power2: power2 {
-			label = "power2";
+		power_red: power2 {
+			label = "vg3503j:red:power";
 			gpios = <&gpio 14 1>;
 		};
 		dsl: dsl {
-			label = "bt:green:dsl";
+			label = "vg3503j:green:dsl";
 			gpios = <&gpio 19 1>;
 		};
-		power: power {
-			label = "power";
+		power_green: power {
+			label = "vg3503j:green:power";
 			gpios = <&gpio 28 1>;
 			default-state = "keep";
 		};

@@ -8,13 +8,13 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
-			boot = &power2;
-			failsafe = &power;
-			running = &power2;
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
 
-			dsl = &broadband_yellow;
-			internet = &internet_yellow;
-			wifi = &wireless_yellow;
+			dsl = &broadband_green;
+			internet = &internet_green;
+			wifi = &wireless_green;
 		};
 	};
 
@@ -39,7 +39,7 @@
 			compatible = "lantiq,pinctrl-xr9";
 			pinctrl-names = "default";
 			pinctrl-0 = <&state_default>;
-			
+
 			interrupt-parent = <&icu0>;
 			interrupts = <166 135 66 40 41 42 38>;
 
@@ -269,61 +269,61 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		eco {					/* blue */
-			label = "eco";
+		eco {
+			label = "vgv7519:blue:eco";
 			gpios = <&stp 2 1>;
 		};
-		wps_red {				/* red */
-			label = "wps_red";
+		wps_red {
+			label = "vgv7519:red:wps";
 			gpios = <&stp 3 1>;
 		};
-		wps_yellow {				/* yellow */
-			label = "wps_yellow";
+		wps_green {
+			label = "vgv7519:green:wps";
 			gpios = <&stp 4 1>;
 		};
-		upgrade {				/* blue */
-			label = "upgrade";
+		upgrade {
+			label = "vgv7519:blue:upgrade";
 			gpios = <&stp 5 1>;
 		};
-		tv {					/* yellow */
-			label = "tv";
+		tv {
+			label = "vgv7519:green:tv";
 			gpios = <&stp 6 1>;
 		};
-		internet_yellow: internet_yellow {			/* yellow */
-			label = "internet_yellow";
+		internet_green: internet_green {
+			label = "vgv7519:green:internet";
 			gpios = <&stp 7 1>;
 		};
-		internet_red {				/* red */
-			label = "internet_red";
+		internet_red {
+			label = "vgv7519:red:internet";
 			gpios = <&stp 8 1>;
 		};
-		broadband_red {				/* red */
-			label = "broadband_red";
+		broadband_red {
+			label = "vgv7519:red:broadband";
 			gpios = <&stp 9 1>;
 		};
-		broadband_yellow: broadband_yellow {			/* yellow */
-			label = "broadband_yellow";
+		broadband_green: broadband_green {
+			label = "vgv7519:green:broadband";
 			gpios = <&stp 10 1>;
 		};
-		voice {					/* yellow */
-			label = "voice";
+		voice {
+			label = "vgv7519:green:voice";
 			gpios = <&stp 11 1>;
 		};
-		wireless_red {				/* red */
-			label = "wireless_red";
+		wireless_red {
+			label = "vgv7519:red:wireless";
 			gpios = <&stp 12 1>;
 		};
-		wireless_yellow: wireless_yellow {			/* yellow */
-			label = "wireless_yellow";
+		wireless_green: wireless_green {
+			label = "vgv7519:green:wireless";
 			gpios = <&stp 13 1>;
 		};
-		power2: power2 {				/* yellow */
-			label = "power2";
+		power_green: power2 {
+			label = "vgv7519:green:power";
 			gpios = <&stp 14 1>;
 			default-state = "keep";
 		};
-		power: power {					/* red */
-			label = "power";
+		power_red: power {
+			label = "vgv7519:red:power";
 			gpios = <&stp 15 1>;
 		};
 	};

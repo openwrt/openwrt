@@ -14,7 +14,7 @@
 			running = &power;
 
 			dsl = &dsl;
-			internet = &online;
+			internet = &online_green;
 		};
 	};
 
@@ -118,29 +118,32 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 		dsl: dsl {
-			label = "dsl";
+			label = "dgn1000b:green:dsl";
 			gpios = <&gpio 1 1>;
 			default-state = "on";
 		};
-		online: online {
-			label = "online";
+		online_green: online {
+			label = "dgn1000b:green:online";
 			gpios = <&gpio 2 1>;
 			default-state = "on";
 		};
 		online2 {
-			label = "online2";
+			label = "dgn1000b:red:online";
 			gpios = <&gpio 3 1>;
 			default-state = "on";
 		};
 		wps {
-			label = "wps";
+			label = "dgn1000b:green:wps";
 			gpios = <&gpio 4 1>;
 			default-state = "on";
 		};
 		power: power {
-			label = "power";
+			label = "dgn1000b:green:power";
 			gpios = <&gpio 13 1>;
 			default-state = "keep";
 		};
+		/*
+			power red is missing
+		*/
 	};
 };

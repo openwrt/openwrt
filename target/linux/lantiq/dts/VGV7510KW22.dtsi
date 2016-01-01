@@ -7,9 +7,9 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
-			boot = &power;
-			failsafe = &power2;
-			running = &power;
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
 
 			dsl = &dsl;
 			internet = &internet_green;
@@ -219,48 +219,48 @@
 		compatible = "gpio-leds";
 
 		dsl: dsl {
-			label = "dsl";
+			label = "vgv7510kw22:green:dsl";
 			gpios = <&gpio 2 1>;
 		};
 
 		internet_red {
-			label = "internet_red";
+			label = "vgv7510kw22:red:internet";
 			gpios = <&gpio 10 1>;
 		};
 
 		info_red {
-			label = "info_red";
+			label = "vgv7510kw22:red:info";
 			gpios = <&gpio 12 1>;
 		};
 
-		power: power {
-			label = "power"; /* green */
+		power_green: power {
+			label = "vgv7510kw22:green:power";
 			gpios = <&gpio 14 1>;
 			default-state = "keep";
 		};
 
 		info_green {
-			label = "info_green";
+			label = "vgv7510kw22:green:info";
 			gpios = <&gpio 15 1>;
 		};
 
 		internet_green: internet_green {
-			label = "internet_green";
+			label = "vgv7510kw22:green:internet";
 			gpios = <&gpio 19 1>;
 		};
 
 		wifi: wifi {
-			label = "wifi";
+			label = "vgv7510kw22:green:wlan";
 			gpios = <&gpio 20 1>;
 		};
 
-		power2: power2 {
-			label = "power2"; /* red */
+		power_red: power2 {
+			label = "vgv7510kw22:red:power";
 			gpios = <&gpio 28 1>;
 		};
 
-		phone_red {
-			label = "phone_red";
+		phone {
+			label = "vgv7510kw22:green:telefon";
 			gpios = <&gpio 29 1>;
 		};
 	};

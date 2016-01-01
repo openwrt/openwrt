@@ -12,7 +12,7 @@
 			boot = &power_red;
 			failsafe = &power_red;
 
-			internet = &internet;
+			internet = &internet_green;
 			usb = &usb;
 			wifi = &wifi;
 		};
@@ -120,23 +120,23 @@
 		compatible = "gpio-leds";
 
 		power_red: power2 {
-			label = "power2";
+			label = "gr7000:red:power";
 			gpios = <&stp 4 0>;
 		};
-		internet: internet {
-			label = "internet";
+		internet_green: internet {
+			label = "gr7000:green:internet";
 			gpios = <&stp 2 1>;
 		};
 		internet2 {
-			label = "internet2";
+			label = "gr7000:red:internet";
 			gpios = <&stp 3 1>;
 		};
 		usb: usb {
-			label = "usb";
+			label = "gr7000:green:usb";
 			gpios = <&stp 10 1>;
 		};
 		wifi: wifi {
-			label = "wifi";
+			label = "gr7000:green:wireless";
 			gpios = <&stp 15 1>;
 		};
 	};
