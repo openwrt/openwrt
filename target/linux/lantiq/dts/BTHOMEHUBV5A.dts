@@ -7,6 +7,11 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			internet = &broadband_blue;
+			wifi = &wireless_blue;
+		};
 	};
 
 	memory@0 {
@@ -248,7 +253,7 @@
 			label = "soc:green:broadband";
 			gpios = <&gpio 3 1>;
 		};
-		broadband-blue {
+		broadband_blue: broadband-blue {
 			label = "soc:blue:broadband";
 			gpios = <&gpio 8 1>;
 		};
@@ -261,7 +266,7 @@
 			label = "soc:green:wireless";
 			gpios = <&gpio 10 1>;
 		};
-		wireless-blue {
+		wireless_blue: wireless-blue {
 			label = "soc:blue:wireless";
 			gpios = <&gpio 11 1>;
 		};

@@ -7,6 +7,11 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			internet = &broadband_blue;
+			wifi = &wireless_blue;
+		};
 	};
 
 	memory@0 {				  /* RAM: Samsung K4H511638F-LC 64MB */
@@ -244,7 +249,7 @@
 			label = "soc:orange:wireless";
 			gpios = <&stp0 8 0>;
 		};
-		wireless-blue {
+		wireless_blue: wireless-blue {
 			label = "soc:blue:wireless";
 			gpios = <&stp0 9 0>;
 		};
@@ -257,7 +262,7 @@
 			label = "soc:orange:broadband";
 			gpios = <&stp0 11 0>;
 		};
-		broadband-blue {
+		broadband_blue: broadband-blue {
 			label = "soc:blue:broadband";
 			gpios = <&stp0 12 0>;
 		};

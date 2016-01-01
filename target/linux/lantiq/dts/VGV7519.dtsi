@@ -6,6 +6,14 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			dsl = &broadband_yellow;
+			internet = &internet_yellow;
+			power = &power;
+			power2 = &power2;
+			wifi = &wireless_yellow;
+		};
 	};
 
 	memory@0 {
@@ -279,7 +287,7 @@
 			label = "tv";
 			gpios = <&stp 6 1>;
 		};
-		internet_yellow {			/* yellow */
+		internet_yellow: internet_yellow {			/* yellow */
 			label = "internet_yellow";
 			gpios = <&stp 7 1>;
 		};
@@ -291,7 +299,7 @@
 			label = "broadband_red";
 			gpios = <&stp 9 1>;
 		};
-		broadband_yellow {			/* yellow */
+		broadband_yellow: broadband_yellow {			/* yellow */
 			label = "broadband_yellow";
 			gpios = <&stp 10 1>;
 		};
@@ -303,15 +311,15 @@
 			label = "wireless_red";
 			gpios = <&stp 12 1>;
 		};
-		wireless_yellow {			/* yellow */
+		wireless_yellow: wireless_yellow {			/* yellow */
 			label = "wireless_yellow";
 			gpios = <&stp 13 1>;
 		};
-		power2 {				/* yellow */
+		power2: power2 {				/* yellow */
 			label = "power2";
 			gpios = <&stp 14 1>;
 		};
-		power {					/* red */
+		power: power {					/* red */
 			label = "power";
 			gpios = <&stp 15 1>;
 			default-state = "on";

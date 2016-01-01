@@ -7,6 +7,14 @@
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			dsl = &dsl;
+			internet = &online;
+			power = &power;
+			usb = &usb;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -85,16 +93,16 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power {
+		power: power {
 			label = "power";
 			gpios = <&gpio 19 1>;
 			default-state = "on";
 		};
-		online {
+		online: online {
 			label = "online";
 			gpios = <&gpio 37 1>;
 		};
-		dsl {
+		dsl: dsl {
 			label = "dsl";
 			gpios = <&gpio 4 1>;
 		};
@@ -106,11 +114,11 @@
 			label = "wps";
 			gpios = <&gpio 22 1>;
 		};
-		wifi {
+		wifi: wifi {
 			label = "wifi";
 			gpios = <&gpio 6 1>;
 		};
-		usb {
+		usb: usb {
 			label = "usb";
 			gpios = <&gpio 14 1>;
 		};
