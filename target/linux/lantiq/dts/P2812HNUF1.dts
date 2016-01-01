@@ -5,6 +5,13 @@
 / {
 	model = "P2812HNUF1 - ZyXEL P-2812HNU-F1";
 
+	chosen {
+		leds {
+			usb = &usb1;
+			usb2 = &usb2;
+		};
+	};
+
 	fpi@10000000 {
 		localbus@0 {
 			nand-parts@0 {
@@ -41,5 +48,16 @@
 	ralink_eep {
 		compatible = "ralink,eeprom";
 		ralink,eeprom = "RT3062.eeprom";
+	};
+
+	gpio-leds {
+		usb1: usb1 {
+			label = "p2812hnuf1:green:usb1";
+			gpios = <&gpio 38 1>;
+		};
+		usb2: usb2 {
+			label = "p2812hnuf1:green:usb2";
+			gpios = <&gpio 44 1>;
+		};
 	};
 };
