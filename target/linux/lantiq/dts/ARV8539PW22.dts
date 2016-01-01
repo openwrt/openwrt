@@ -5,6 +5,15 @@
 / {
         model = "ARV8539PW22 - Speedport W 504V Typ A";
 
+	    chosen {
+		    leds {
+			    dsl = &dsl_green;
+			    internet = &online_green;
+			    power = &power_green;
+			    wifi = &wireless_green;
+		    };
+	    };
+
         memory@0 {
                 reg = <0x0 0x4000000>;
         };
@@ -134,7 +143,7 @@
         gpio-leds {
                 compatible = "gpio-leds";
 
-                power-green {
+                power_green: power-green {
                         label = "power";
                         gpios = <&gpio 24 1>;
                 };
@@ -143,17 +152,17 @@
                         gpios = <&gpio 4 1>;
                 };
 
-                dsl-green {
+                dsl_green: dsl-green {
                         label = "soc:green:dsl";
                         gpios = <&gpio 5 1>;
                 };
 
-                online-green {
+                online_green: online-green {
                         label = "soc:green:online";
                         gpios = <&gpio 6 1>;
                 };
 
-                wireless-green {
+                wireless_green: wireless-green {
                         label = "soc:green:wireless";
                         gpios = <&gpio 8 1>;
                 };

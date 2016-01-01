@@ -3,6 +3,15 @@
 / {
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
+
+		leds {
+			dsl = &dsl;
+			internet = &internet;
+			/* the power led can't be controlled, use the wps led instead */
+			power = &wps;
+			usb = &usb0;
+			usb2 = &usb2;
+		};
 	};
 
 	memory@0 {
@@ -214,23 +223,23 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		dsl {
+		dsl: dsl {
 			label = "dsl";
 			gpios = <&gpio 4 0>;
 		};
-		internet {
+		internet: internet {
 			label = "internet";
 			gpios = <&gpio 5 0>;
 		};
-		usb0 {
+		usb0: usb0 {
 			label = "usb";
 			gpios = <&gpio 19 0>;
 		};
-		usb2 {
+		usb2: usb2 {
 			label = "usb2";
 			gpios = <&gpio 20 0>;
 		};
-		wps {
+		wps: wps {
 			label = "wps";
 			gpios = <&gpio 37 0>;
 		};

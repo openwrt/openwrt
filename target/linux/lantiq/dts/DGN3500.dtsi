@@ -3,6 +3,15 @@
 / {
 	chosen {
 		bootargs-append = "root= console=ttyLTQ0,115200";
+
+		leds {
+			dsl = &dsl;
+			internet = &internet;
+			power = &power;
+			power2 = &power2;
+			usb = &usb;
+			wifi = &wifi;
+		};
 	};
 
 	memory@0 {
@@ -150,27 +159,27 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		internet {
+		internet: internet {
 			label = "internet";
 			gpios = <&gpio 2 1>;
 		};
-		dsl {
+		dsl: dsl {
 			label = "dsl";
 			gpios = <&gpio 4 1>;
 		};
-		usb {
+		usb: usb {
 			label = "usb";
 			gpios = <&gpio 22 1>;
 		};
-		power {
+		power: power {
 			label = "power";
 			gpios = <&gpio 34 1>;
 		};
-		power2 {
+		power2: power2 {
 			label = "power2";
 			gpios = <&gpio 39 1>;
 		};
-		wifi {
+		wifi: wifi {
 			label = "wifi";
 			gpios = <&gpio 51 1>;
 		};

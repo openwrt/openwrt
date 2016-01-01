@@ -5,6 +5,16 @@
 / {
 	model = "ARV4525PW - Speedport W501V Typ A";
 
+	chosen {
+		leds {
+			dsl = &dsl;
+			internet = &online;
+			/* we dont have a power led, lets use the online led */
+			power = &online;
+			wifi = &wifi;
+		};
+	};
+
 	memory@0 {
 		reg = <0x0 0x2000000>;
 	};
@@ -136,15 +146,15 @@
 			label = "fxs";
 			gpios = <&gpio 5 1>;
 		};
-		dsl {
+		dsl: dsl {
 			label = "dsl";
 			gpios = <&gpio 6 1>;
 		};
-		wifi {
+		wifi: wifi {
 			label = "wifi";
 			gpios = <&gpio 8 1>;
 		};
-		online {
+		online: online {
 			/*label = "online"; - we dont have a power led, lets use this one */
 			label = "power";
 			gpios = <&gpio 9 1>;
