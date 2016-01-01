@@ -174,80 +174,70 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
+		power1 {
+			label = "power1";
 			gpios = <&gpio 3 1>;
-			default-state = "on";
+		};
+		internet {
+			label = "internet";
+			gpios = <&gpio 4 1>;
 		};
 		message {
 			label = "message";
 			gpios = <&gpio 5 1>;
-			default-state = "on";
 		};
-		power1 {
-			label = "power1";
+		power {
+			label = "power";
 			gpios = <&gpio 6 1>;
-			default-state = "on";
+			default-state = "keep";
 		};
 		voice1 {
 			label = "voice1";
 			gpios = <&gpio 8 1>;
-			default-state = "on";
 		};
 		microphone {
-			label = "microphone";
+			label = "umts";
 			gpios = <&gpiomm 3 1>;
-			default-state = "on";
 		};
 		wifi {
 			label = "wifi_rt";
 			gpios = <&gpiomm 4 1>;
-			default-state = "on";
 		};
 		fxs1 {
 			label = "fxs1";
 			gpios = <&gpiomm 5 1>;
-			default-state = "on";
 		};
 		fxs2 {
 			label = "fxs2";
 			gpios = <&gpiomm 6 1>;
-			default-state = "on";
 		};
 		fxo {
 			label = "fxo";
 			gpios = <&gpiomm 7 1>;
-			default-state = "on";
 		};
-		dsl {
-			label = "dsl";
+		internet2 {
+			label = "internet2";
 			gpios = <&gpiomm 8 1>;
-			default-state = "on";
 		};
 		voice2 {
 			label = "voice2";
 			gpios = <&gpiomm 9 1>;
-			default-state = "on";
 		};
 		eth1 {
 			 label = "eth1";
 			 gpios = <&gpiomm 11 1>;
-			 default-state = "on";
 		};
 		eth2 {
 			label = "eth2";
 			gpios = <&gpiomm 12 1>;
-			default-state = "on";
 		};
 		eth3 {
 			label = "eth3";
 			gpios = <&gpiomm 13 1>;
-			default-state = "on";
 		};
 		eth4 {
 			label = "eth4";
 			gpios = <&gpiomm 14 1>;
-			default-state = "on";
 		};
 	};
 };
