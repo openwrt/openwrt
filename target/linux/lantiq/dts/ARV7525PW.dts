@@ -9,10 +9,12 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
+			boot = &power;
+			failsafe = &power1;
+			running = &power;
+
 			dsl = &power;
 			internet = &online;
-			power = &power;
-			power1 = &power1;
 			wifi = &wifi;
 		};
 	};
@@ -125,6 +127,7 @@
 		power: power {
 			label = "power";
 			gpios = <&gpio 3 1>;
+			default-state = "keep";
 		};
 		power1: power1 {
 			label = "power1";

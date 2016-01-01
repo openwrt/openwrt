@@ -3,14 +3,17 @@
 /include/ "vr9.dtsi"
 
 / {
-	model = "ARV7519RW22 - Astoria Networks ARV7519RW22-A-LT";
+	model = "ARV7519RW22 - Orange Livebox 2.1";
 
 	chosen {
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
+			boot = &power_green;
+			failsafe = &power_green;
+			running = &power_green;
+
 			internet = &internet_green;
-			power = &power_green;
 		};
 	};
 
@@ -213,7 +216,7 @@
 		power_green: power_green {
 			label = "power";
 			gpios = <&gpio 14 1>;
-			default-state = "on";
+			default-state = "keep";
 		};
 		alarm_blue {
 			label = "alarm";

@@ -9,6 +9,10 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
+			boot = &power_orange;
+			failsafe = &power_red;
+			running = &power_blue;
+
 			internet = &broadband_blue;
 			wifi = &wireless_blue;
 		};
@@ -197,19 +201,19 @@
 			gpios = <&gpio 12 1>;
 		};
 
-		power-red {
+		power_red: power-red {
 			label = "soc:red:power";
 			gpios = <&gpio 14 1>;
 		};
-		power-orange {
+		power_orange: power-orange {
 			label = "soc:orange:power";
 			gpios = <&gpio 5 1>;
+			default-state = "keep";
 		};
-		ppower-blue {
+		power_blue: power-blue {
 			label = "soc:blue:power";
 			gpios = <&gpio 1 1>;
 		};
 	};
-
 };
 

@@ -7,9 +7,12 @@
 
 	    chosen {
 		    leds {
+                boot = &power_green;
+                failsafe = &power_red;
+                running = &power_green;
+
 			    dsl = &dsl_green;
 			    internet = &online_green;
-			    power = &power_green;
 			    wifi = &wireless_green;
 		    };
 	    };
@@ -146,8 +149,9 @@
                 power_green: power-green {
                         label = "power";
                         gpios = <&gpio 24 1>;
+                        default-state = "keep";
                 };
-                power-red {
+                power_red: power-red {
                         label = "soc:red:power";
                         gpios = <&gpio 4 1>;
                 };

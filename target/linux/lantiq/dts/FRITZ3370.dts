@@ -9,10 +9,12 @@
 		bootargs = "console=ttyLTQ0,115200 ubi.mtd=1,512 root=/dev/mtdblock9";
 
 		leds {
+			boot = &power_green;
+			failsafe = &power_red;
+			running = &power_green;
+
 			dsl = &dsl;
 			internet = &info_green;
-			power = &power;
-			power2 = &power2;
 			wifi = &wifi;
 		};
 	};
@@ -243,11 +245,12 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		power_green: power {
 			label = "power";
 			gpios = <&gpio 32 1>;
+			default-state = "keep";
 		};
-		power2: power2 {
+		power_red: power2 {
 			label = "power2";
 			gpios = <&gpio 33 1>;
 		};

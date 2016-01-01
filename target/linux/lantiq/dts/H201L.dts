@@ -9,9 +9,12 @@
 		bootargs = "console=ttyLTQ0,115200 init=/etc/preinit";
 
 		leds {
+			boot = &power_green;
+			failsafe = &power_green;
+			running = &power_green;
+
 			dsl = &dsl;
 			internet = &online;
-			power = &power;
 			usb = &usb;
 			wifi = &wifi;
 		};
@@ -93,10 +96,10 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		power: power {
+		power_green: power {
 			label = "power";
 			gpios = <&gpio 19 1>;
-			default-state = "on";
+			default-state = "keep";
 		};
 		online: online {
 			label = "online";
