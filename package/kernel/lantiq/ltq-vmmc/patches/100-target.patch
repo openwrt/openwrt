@@ -143,7 +143,7 @@
 -#include <asm/ifx/ifx_gptu.h>
 +#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
 +#  include <lantiq.h>
-+#  include <irq.h>
++#  include <linux/irq.h>
 +#  include <lantiq_timer.h>
 +
 +#  define ifx_gptu_timer_request    lq_request_timer
@@ -432,7 +432,7 @@
 -#include <asm/ifx/common_routines.h>
 +#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
 +#  include <lantiq.h>
-+#  include <irq.h>
++#  include <linux/irq.h>
 +#  include <lantiq_timer.h>
 +#  include <linux/dma-mapping.h>
 +
@@ -513,9 +513,9 @@
 -#include <asm/ifx_vpe.h>
 +#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,6,28))
 +#  include <lantiq.h>
-+#  include <irq.h>
++#  include <linux/irq.h>
 +#  include <lantiq_soc.h>
-+#  include <gpio.h>
++#  include <linux/gpio.h>
 +#define IFXMIPS_MPS_SRAM		((u32 *)(KSEG1 + 0x1F200000))
 +#define IFXMIPS_MPS_BASE_ADDR		(KSEG1 + 0x1F107000)
 +#define IFXMIPS_MPS_CHIPID		((u32 *)(IFXMIPS_MPS_BASE_ADDR + 0x0344))
