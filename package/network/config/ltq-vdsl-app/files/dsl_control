@@ -11,16 +11,20 @@ EXTRA_HELP="	status  Get DSL status information
 
 [ -f /lib/functions/lantiq_dsl.sh ] && . /lib/functions/lantiq_dsl.sh
 
+#
+# ITU-T G.997.1 (06/2012) - Section 7.3.1.1.1 (xTU transmission system enabling (XTSE))
+#
 # G.992.1 Annex A
 # G.992.3 Annex A / L-US1 / L_US-2 / M
 # G.992.5 Annex A / M
-xtse_adsl_a="04_00_04_00_4C_01_04_00"
+# G.993.2 Annex A/B/C
+xtse_xdsl_a="04_00_04_00_4C_01_04_07"
 
 # G.992.1 Annex B
 # G.992.3 Annex B
 # G.992.5 Annex B
 # G.993.2 Annex A/B/C
-xtse_adsl_b="10_00_10_00_00_04_00_00"
+xtse_adsl_b="10_00_10_00_00_04_00_07"
 
 # G.992.1 Annex B
 # G.992.3 Annex B
@@ -28,7 +32,7 @@ xtse_adsl_b="10_00_10_00_00_04_00_00"
 # G.992.5 Annex B
 # G.992.5 Annex J
 # G.993.2 Annex A/B/C
-xtse_adsl_j="10_00_10_40_00_04_01_00"
+xtse_adsl_j="10_00_10_40_00_04_01_07"
 
 xtse_vdsl="00_00_00_00_00_00_00_07"
 
@@ -40,7 +44,6 @@ start_service() {
 	local annex
 	local firmware
 	local xtse
-	local xtse_adsl
 	local mode
 
 	config_load network
@@ -63,12 +66,8 @@ start_service() {
 		;;
 	esac
 
-	eval "xtse_adsl=\"\${xtse_adsl_$annex}\""
-	if [ "${xtse_adsl}" ]; then
-		xtse=$xtse_adsl
-	else
-		xtse=$xtse_vdsl
-	fi
+	eval "xtse=\"\${xtse_xdsl_$annex}\""
+	[ -z "${xtse}" ] && xtse=$xtse_vdsl
 
 	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
 	[ -f "${firmware}" ] || {
