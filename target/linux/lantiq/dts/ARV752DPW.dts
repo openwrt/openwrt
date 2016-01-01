@@ -170,25 +170,29 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		power {
-			label = "power";
+		power1 {
+			label = "power1";
 			gpios = <&gpio 3 1>;
+		};
+		internet {
+			label = "internet";
+			gpios = <&gpio 4 1>;
 		};
 		message {
 			label = "message";
 			gpios = <&gpio 5 1>;
 		};
-		power1 {
-			label = "power1";
+		power {
+			label = "power";
 			gpios = <&gpio 6 1>;
+			default-state = "keep";
 		};
 		voice1 {
 			label = "voice1";
 			gpios = <&gpio 8 1>;
 		};
 		microphone {
-			/* use this led as te usb led */
-			label = "usb";
+			label = "umts";
 			gpios = <&gpiomm 3 1>;
 		};
 		wifi {
@@ -199,7 +203,7 @@
 			label = "fxs1";
 			gpios = <&gpiomm 5 1>;
 		};
-		fx2 {
+		fxs2 {
 			label = "fxs2";
 			gpios = <&gpiomm 6 1>;
 		};
@@ -207,8 +211,8 @@
 			label = "fxo";
 			gpios = <&gpiomm 7 1>;
 		};
-		internet {
-			label = "internet";
+		internet2 {
+			label = "internet2";
 			gpios = <&gpiomm 8 1>;
 		};
 		voice2 {
