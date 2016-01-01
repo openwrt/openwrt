@@ -114,6 +114,9 @@ tplink_board_detect() {
 	"044403"*)
 		model="ANTMINER-S3"
 		;;
+	"44440101"*)
+		model="ANTROUTER-R1"
+		;;
 	"120000"*)
 		model="MERCURY MAC1200R"
 		;;

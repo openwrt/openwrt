@@ -23,6 +23,7 @@ enum ath79_mach_type {
 	ATH79_MACH_ALL0315N,		/* Allnet ALL0315N */
 	ATH79_MACH_ANTMINER_S1,	/* Antminer S1 */
 	ATH79_MACH_ANTMINER_S3,	/* Antminer S3 */
+	ATH79_MACH_ANTROUTER_R1,	/* Antrouter R1 */
 	ATH79_MACH_ARDUINO_YUN,		/* Yun */
 	ATH79_MACH_AP113,		/* Atheros AP113 reference board */
 	ATH79_MACH_AP121,		/* Atheros AP121 reference board */

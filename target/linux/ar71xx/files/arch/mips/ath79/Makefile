@@ -44,6 +44,7 @@ obj-$(CONFIG_ATH79_MACH_ALL0258N)	+= mach-all0258n.o
 obj-$(CONFIG_ATH79_MACH_ALL0315N)	+= mach-all0315n.o
 obj-$(CONFIG_ATH79_MACH_ANTMINER_S1)+= mach-antminer-s1.o
 obj-$(CONFIG_ATH79_MACH_ANTMINER_S3)+= mach-antminer-s3.o
+obj-$(CONFIG_ATH79_MACH_ANTROUTER_R1)  += mach-antrouter-r1.o
 obj-$(CONFIG_ATH79_MACH_ARDUINO_YUN)	+= mach-arduino-yun.o
 obj-$(CONFIG_ATH79_MACH_AP113)		+= mach-ap113.o
 obj-$(CONFIG_ATH79_MACH_AP121)		+= mach-ap121.o
