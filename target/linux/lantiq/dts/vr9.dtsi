@@ -75,6 +75,11 @@
 			interrupt-parent = <&icu0>;
 			interrupts = <115>;
 		};
+
+		xbar0: xbar@400000 {
+			compatible = "lantiq,xbar-xway";
+			reg = <0x400000 0x1000>;
+		};
 	};
 
 	fpi@10000000 {
@@ -184,7 +189,6 @@
 				0xE105400 0x400>;       /* pci bridge */
 			status = "disabled";
 		};
-
 	};
 
 	vdsl {
