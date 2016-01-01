@@ -85,6 +85,7 @@
 				device_type = "pci";
 				mediatek,mtd-eeprom = <&factory 0x8000>;
 				mediatek,2ghz = <0>;
+				mtd-mac-address = <&factory 0xe000>;
 			};
 		};
 
@@ -94,6 +95,7 @@
 				device_type = "pci";
 				mediatek,mtd-eeprom = <&factory 0x0000>;
 				mediatek,5ghz = <0>;
+				mtd-mac-address = <&factory 0xe000>;
 			};
 		};
 	};
