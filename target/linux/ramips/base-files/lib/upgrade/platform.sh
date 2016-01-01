@@ -125,6 +125,8 @@ platform_check_image() {
 	wr512-3gn|\
 	wr6202|\
 	wrtnode|\
+	wrtnode2r |\
+	wrtnode2p |\
 	wsr-600|\
 	wt1520|\
 	wt3020|\

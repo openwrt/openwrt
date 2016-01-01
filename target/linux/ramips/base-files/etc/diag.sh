@@ -181,6 +181,11 @@ get_status_led() {
 	wsr-600)
 		status_led="$board:orange:diag"
 		;;
+	wrtnode2r | \
+	wrtnode2p | \
+	wrtnode)
+		status_led="wrtnode:blue:indicator"
+		;;
 	esac
 }
 
