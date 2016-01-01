@@ -433,6 +433,12 @@ ramips_board_detect() {
 	*"WRTNODE")
 		name="wrtnode"
 		;;
+	*"WRTnode2R")
+		name="wrtnode2r"
+		;;
+	*"WRTnode2P")
+		name="wrtnode2p"
+		;;
 	*"WSR-1166DHP")
 		name="wsr-1166"
 		;;
