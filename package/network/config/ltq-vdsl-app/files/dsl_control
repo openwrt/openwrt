@@ -34,8 +34,6 @@ xtse_adsl_b="10_00_10_00_00_04_00_07"
 # G.993.2 Annex A/B/C
 xtse_adsl_j="10_00_10_40_00_04_01_07"
 
-xtse_vdsl="00_00_00_00_00_00_00_07"
-
 service_triggers() {
 	procd_add_reload_trigger network
 }
@@ -67,7 +65,6 @@ start_service() {
 	esac
 
 	eval "xtse=\"\${xtse_xdsl_$annex}\""
-	[ -z "${xtse}" ] && xtse=$xtse_vdsl
 
 	[ -z "${firmware}" ] && firmware=/lib/firmware/vdsl.bin
 	[ -f "${firmware}" ] || {
