@@ -12,14 +12,21 @@ board_config_update
 [ -n "$(lantiq_is_dt_led_chosen wifi)" ] && ucidef_set_led_wlan "wifi" "wifi" "$(lantiq_get_dt_led_chosen wifi)" "phy0tpt"
 [ -n "$(lantiq_is_dt_led_chosen usb)" ] && ucidef_set_led_usbdev "usb" "usb" "$(lantiq_get_dt_led_chosen usb)" "1-1"
 [ -n "$(lantiq_is_dt_led_chosen usb2)" ] && ucidef_set_led_usbdev "usb2" "usb2" "$(lantiq_get_dt_led_chosen usb2)" "2-1"
-[ -n "$(lantiq_is_dt_led_chosen internet)" ] && ucidef_set_led_netdev "internet" "internet" "$(lantiq_get_dt_led_chosen internet)" "pppoe-wan"
+
+[ -n "$(lantiq_is_dt_led_chosen internet)" ] && {
+	interface="nas0"
+
+	[ -n "$(lantiq_is_dt_led_chosen dsl)" ] && {
+		interface="pppoe-wan"
+		ucidef_set_led_default "dsl" "dsl" "$(lantiq_get_dt_led_chosen dsl)" "0"
+	}
+
+	ucidef_set_led_netdev "internet" "internet" "$(lantiq_get_dt_led_chosen internet)" "$interface"
+}
 
 board=$(lantiq_board_name)
 
 case "$board" in
-VG3503J)
-	ucidef_set_led_netdev "vdsl" "vdsl" "bt:green:dsl" "ptm0"
-	;;
 BTHOMEHUBV2B)
 	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
 	;;
@@ -34,19 +41,16 @@ VGV7510KW22)
 	ucidef_set_led_default "power" "power" "power" "1"
 	ucidef_set_led_default "power2" "power2" "power2" "0"
 	ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0radio"
-	ucidef_set_led_netdev "dsl" "dsl" "dsl" "nas0"
 	;;
 VGV7519)
 	ucidef_set_led_default "power" "power" "power" "0"
 	ucidef_set_led_default "power2" "power2" "power2" "1"
 	ucidef_set_led_wlan "wifi" "wifi" "wireless_yellow" "phy0radio"
-	ucidef_set_led_netdev "broadband_yellow" "broadband_yellow" "broadband_yellow" "nas0"
 	;;
 P2812HNUF*)
 	ucidef_set_led_default "power" "power" "power" "0"
 	ucidef_set_led_default "power2" "power2" "power2" "1"
 	ucidef_set_led_wlan "wifi" "wifi" "wireless_green" "phy0radio"
-	ucidef_set_led_netdev "dsl" "dsl" "dsl" "nas0"
 	;;
 ARV7519RW22)
 	ucidef_set_led_default "power" "power" "power" "1"
@@ -55,7 +59,6 @@ ARV7519RW22)
 ARV8539PW22)
         ucidef_set_led_default "power" "power" "soc:green:power" "1"
         ucidef_set_led_default "power2" "power2" "soc:red:power" "0"
-        ucidef_set_led_netdev "dsl" "dsl" "soc:green:dsl" "nas0"
         ;;
 *)
 	;;
