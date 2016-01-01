@@ -11,8 +11,6 @@
 
 			dsl = &dsl_green;
 			internet = &internet_green;
-			usb = &usb1;
-			usb2 = &usb2;
 			wifi = &wireless_green;
 		};
 	};
@@ -307,14 +305,6 @@
 			label = "p2812hnufx:green:power";
 			gpios = <&stp 23 1>;
 			default-state = "keep";
-		};
-		usb1: usb1 {
-			label = "p2812hnufx:green:usb1";
-			gpios = <&gpio 38 1>;
-		};
-		usb2: usb2 {
-			label = "p2812hnufx:green:usb2";
-			gpios = <&gpio 44 1>;
 		};
 		phone1 {
 			label = "p2812hnufx:green:phone";
