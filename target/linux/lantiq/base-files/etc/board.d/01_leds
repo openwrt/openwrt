@@ -9,10 +9,10 @@
 
 board_config_update
 
-[ -e "/sys/class/leds/wifi" ] && ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0tpt"
-[ -e "/sys/class/leds/usb" ] && ucidef_set_led_usbdev "usb" "usb" "usb" "1-1"
-[ -e "/sys/class/leds/usb2" ] && ucidef_set_led_usbdev "usb2" "usb2" "usb2" "2-1"
-[ -e "/sys/class/leds/internet" ] && ucidef_set_led_netdev "internet" "internet" "internet" "pppoe-wan"
+[ -n "$(lantiq_is_dt_led_chosen wifi)" ] && ucidef_set_led_wlan "wifi" "wifi" "$(lantiq_get_dt_led_chosen wifi)" "phy0tpt"
+[ -n "$(lantiq_is_dt_led_chosen usb)" ] && ucidef_set_led_usbdev "usb" "usb" "$(lantiq_get_dt_led_chosen usb)" "1-1"
+[ -n "$(lantiq_is_dt_led_chosen usb2)" ] && ucidef_set_led_usbdev "usb2" "usb2" "$(lantiq_get_dt_led_chosen usb2)" "2-1"
+[ -n "$(lantiq_is_dt_led_chosen internet)" ] && ucidef_set_led_netdev "internet" "internet" "$(lantiq_get_dt_led_chosen internet)" "pppoe-wan"
 
 board=$(lantiq_board_name)
 
@@ -22,19 +22,12 @@ VG3503J)
 	;;
 BTHOMEHUBV2B)
 	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
-#	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0radio"
-	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0tpt"
-	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "pppoa-wan"
 	;;
 BTHOMEHUBV3A)
 	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
-	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0tpt"
-	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "pppoa-wan"
 	;;
 BTHOMEHUBV5A)
 	ucidef_set_led_default "power" "power" "soc:blue:power" "1"
-	ucidef_set_led_wlan "wifi" "wifi" "soc:blue:wireless" "phy0tpt"
-	ucidef_set_led_netdev "internet" "internet" "soc:blue:broadband" "pppoa-wan"
 	ucidef_set_led_default "dimmed" "dimmed" "dimmed" "0"
 	;;
 VGV7510KW22)
@@ -42,33 +35,27 @@ VGV7510KW22)
 	ucidef_set_led_default "power2" "power2" "power2" "0"
 	ucidef_set_led_wlan "wifi" "wifi" "wifi" "phy0radio"
 	ucidef_set_led_netdev "dsl" "dsl" "dsl" "nas0"
-	ucidef_set_led_netdev "internet_green" "internet_green" "internet_green" "pppoe-wan"
 	;;
 VGV7519)
 	ucidef_set_led_default "power" "power" "power" "0"
 	ucidef_set_led_default "power2" "power2" "power2" "1"
-	ucidef_set_led_wlan "wireless_yellow" "wireless_yellow" "wireless_yellow" "phy0radio"
-	ucidef_set_led_netdev "internet_yellow" "internet_yellow" "internet_yellow" "nas0"
-	ucidef_set_led_netdev "broadband_yellow" "broadband_yellow" "broadband_yellow" "pppoe-wan"
+	ucidef_set_led_wlan "wifi" "wifi" "wireless_yellow" "phy0radio"
+	ucidef_set_led_netdev "broadband_yellow" "broadband_yellow" "broadband_yellow" "nas0"
 	;;
 P2812HNUF*)
 	ucidef_set_led_default "power" "power" "power" "0"
 	ucidef_set_led_default "power2" "power2" "power2" "1"
-	ucidef_set_led_wlan "wireless_green" "wireless_green" "wireless_green" "phy0radio"
+	ucidef_set_led_wlan "wifi" "wifi" "wireless_green" "phy0radio"
 	ucidef_set_led_netdev "dsl" "dsl" "dsl" "nas0"
-	ucidef_set_led_netdev "internet_green" "internet_green" "internet_green" "pppoe-wan"
 	;;
 ARV7519RW22)
 	ucidef_set_led_default "power" "power" "power" "1"
-	ucidef_set_led_netdev "internet_green" "internet_green" "internet_green" "pppoe-wan"
 	ucidef_set_led_netdev "lan" "lan" "lan" "eth0.1"
 	;;
 ARV8539PW22)
         ucidef_set_led_default "power" "power" "soc:green:power" "1"
         ucidef_set_led_default "power2" "power2" "soc:red:power" "0"
-        ucidef_set_led_wlan "wifi" "wifi" "soc:green:wireless" "phy0tpt"
         ucidef_set_led_netdev "dsl" "dsl" "soc:green:dsl" "nas0"
-        ucidef_set_led_netdev "online" "online" "soc:green:online" "pppoe-wan"
         ;;
 *)
 	;;
