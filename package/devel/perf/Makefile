@@ -24,7 +24,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/perf
   SECTION:=devel
   CATEGORY:=Development
-  DEPENDS:= @USE_GLIBC +libelf1 +libdw +libpthread +librt +binutils
+  DEPENDS:= @!USE_UCLIBC +libelf1 +libdw +libpthread +librt +binutils
   TITLE:=Linux performance monitoring tool
   VERSION:=$(LINUX_VERSION)-$(PKG_RELEASE)
   URL:=http://www.kernel.org
@@ -56,6 +56,10 @@ MAKE_FLAGS = \
 	$(if $(findstring c,$(OPENWRT_VERBOSE)),V=1,V='') \
 	WERROR=0 \
 	prefix=/usr
+
+ifdef CONFIG_USE_MUSL
+ MAKE_FLAGS += EXTRA_CFLAGS="-include $(CURDIR)/musl-compat.h -D__UCLIBC__"
+endif
 
 define Build/Compile
 	+$(MAKE_FLAGS) $(MAKE) $(PKG_JOBS) \
