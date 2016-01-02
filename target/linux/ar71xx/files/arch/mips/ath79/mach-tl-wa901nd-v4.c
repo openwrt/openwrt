@@ -33,15 +33,6 @@
 #define TL_WA901ND_V4_KEYS_DEBOUNCE_INTERVAL   \
                                        (3 * TL_WA901ND_V4_KEYS_POLL_INTERVAL)
 
-static const char *tl_wa901n_v4_part_probes[] = {
-       "tp-link",
-       NULL,
-};
-
-static struct flash_platform_data tl_wa901n_v4_flash_data = {
-       .part_probes    = tl_wa901n_v4_part_probes,
-};
-
 static struct gpio_led tl_wa901nd_v4_leds_gpio[] __initdata = {
        {
                .name           = "tp-link:green:power",
@@ -77,33 +68,38 @@ static struct gpio_keys_button tl_wa901nd_v4_gpio_keys[] __initdata = {
        }
 };
 
+static const char *tl_wa901n_v4_part_probes[] = {
+       "tp-link",
+       NULL,
+};
+
+static struct flash_platform_data tl_wa901n_v4_flash_data = {
+       .part_probes    = tl_wa901n_v4_part_probes,
+};
 
 static void __init tl_wa901nd_v4_setup(void)
 {
-       u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
-       u8 *eeprom = (u8 *) KSEG1ADDR(0x1fff1000);
-       ath79_init_mac(ath79_eth0_data.mac_addr, mac, 1);
-       ath79_init_mac(ath79_eth1_data.mac_addr, mac, -1);
-       ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
-       ath79_eth0_data.phy_mask = 0x00001000;
-       ath79_register_mdio(0, 0x0);
+        u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
+	u8 *ee = (u8 *) KSEG1ADDR(0x1fff1000);
 
-       ath79_eth0_data.reset_bit = AR71XX_RESET_GE0_MAC |
-                                   AR71XX_RESET_GE0_PHY;
+	ath79_register_m25p80(&tl_wa901n_v4_flash_data);
 
-       ath79_register_eth(0);
-       ath79_register_eth(1);
+	ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa901nd_v4_leds_gpio),
+				 tl_wa901nd_v4_leds_gpio);
 
-       ath79_register_m25p80(&tl_wa901n_v4_flash_data);
+	ath79_register_gpio_keys_polled(-1, TL_WA901ND_V4_KEYS_POLL_INTERVAL,
+					ARRAY_SIZE(tl_wa901nd_v4_gpio_keys),
+					tl_wa901nd_v4_gpio_keys);
 
-       ath79_register_leds_gpio(-1, ARRAY_SIZE(tl_wa901nd_v4_leds_gpio),
-                                tl_wa901nd_v4_leds_gpio);
+	ath79_register_mdio(0, 0x0);
 
-       ath79_register_gpio_keys_polled(-1, TL_WA901ND_V4_KEYS_POLL_INTERVAL,
-                                       ARRAY_SIZE(tl_wa901nd_v4_gpio_keys),
-                                       tl_wa901nd_v4_gpio_keys);
+	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 1);
+	ath79_init_mac(ath79_eth1_data.mac_addr, mac, -1);
 
-       ath79_register_wmac(eeprom, mac);
+	ath79_register_eth(0);
+	ath79_register_eth(1);
+
+	ath79_register_wmac(ee, mac);
 
 }
 
