@@ -14,6 +14,10 @@ PKG_RELEASE:=2
 
 PKG_USE_MIPS16:=0
 
+# Perf's makefile and headers are not relocatable and must be built from the
+# Linux sources directory
+PKG_BUILD_DIR:=$(LINUX_DIR)/tools/perf-$(TARGET_DIR_NAME)
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/perf
@@ -29,20 +33,8 @@ define Package/perf/description
   perf is the Linux performance monitoring tool
 endef
 
-# Perf's makefile and headers are not relocatable and must be built from the
-# Linux sources directory
 define Build/Prepare
-	$(RM) -r $(PKG_BUILD_DIR)
-	$(LN) $(LINUX_DIR)/tools/perf $(PKG_BUILD_DIR)
-endef
-
-# MAKE_FLAGS should be passed again upon cleaning because Perf's makefile
-# always performs checks before processing any rule
-define Build/Clean
-	-$(MAKE) -C $(PKG_BUILD_DIR) \
-		NO_DWARF=1 \
-		$(MAKE_FLAGS) \
-		clean
+	$(CP) $(LINUX_DIR)/tools/perf/* $(PKG_BUILD_DIR)/
 endef
 
 MAKE_FLAGS = \
@@ -62,7 +54,7 @@ MAKE_FLAGS = \
 
 define Package/perf/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(LINUX_DIR)/tools/perf/perf $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/perf $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,perf))
