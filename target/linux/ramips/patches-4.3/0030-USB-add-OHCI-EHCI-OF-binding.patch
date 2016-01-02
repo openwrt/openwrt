@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/usb/host/ohci-platform.c |    1 +
  2 files changed, 2 insertions(+)
 
-diff --git a/drivers/usb/host/ehci-platform.c b/drivers/usb/host/ehci-platform.c
-index 5c3c085..fe78568 100644
 --- a/drivers/usb/host/ehci-platform.c
 +++ b/drivers/usb/host/ehci-platform.c
-@@ -379,6 +379,7 @@ static int ehci_platform_resume(struct device *dev)
+@@ -381,6 +381,7 @@ static int ehci_platform_resume(struct d
  static const struct of_device_id vt8500_ehci_ids[] = {
  	{ .compatible = "via,vt8500-ehci", },
  	{ .compatible = "wm,prizm-ehci", },
@@ -23,11 +21,9 @@ index 5c3c085..fe78568 100644
  	{ .compatible = "generic-ehci", },
  	{ .compatible = "cavium,octeon-6335-ehci", },
  	{}
-diff --git a/drivers/usb/host/ohci-platform.c b/drivers/usb/host/ohci-platform.c
-index c2669f18..5cf794a 100644
 --- a/drivers/usb/host/ohci-platform.c
 +++ b/drivers/usb/host/ohci-platform.c
-@@ -344,6 +344,7 @@ static int ohci_platform_resume(struct device *dev)
+@@ -344,6 +344,7 @@ static int ohci_platform_resume(struct d
  #endif /* CONFIG_PM_SLEEP */
  
  static const struct of_device_id ohci_platform_ids[] = {
@@ -35,6 +31,3 @@ index c2669f18..5cf794a 100644
  	{ .compatible = "generic-ohci", },
  	{ .compatible = "cavium,octeon-6335-ohci", },
  	{ }
--- 
-1.7.10.4
-

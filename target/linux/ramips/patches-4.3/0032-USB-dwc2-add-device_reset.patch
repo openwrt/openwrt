@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/usb/dwc2/hcd.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/usb/dwc2/hcd.c b/drivers/usb/dwc2/hcd.c
-index f845c41..767c93a 100644
 --- a/drivers/usb/dwc2/hcd.c
 +++ b/drivers/usb/dwc2/hcd.c
 @@ -47,6 +47,7 @@
@@ -20,7 +18,7 @@ index f845c41..767c93a 100644
  
  #include <linux/usb/hcd.h>
  #include <linux/usb/ch11.h>
-@@ -2841,6 +2842,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hsotg, int irq)
+@@ -2841,6 +2842,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hso
  
  	retval = -ENOMEM;
  
@@ -29,6 +27,3 @@ index f845c41..767c93a 100644
  	hcfg = readl(hsotg->regs + HCFG);
  	dev_dbg(hsotg->dev, "hcfg=%08x\n", hcfg);
  
--- 
-1.7.10.4
-

@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 308 insertions(+)
  create mode 100644 drivers/i2c/busses/i2c-mt7621.c
 
-diff --git a/drivers/i2c/busses/Kconfig b/drivers/i2c/busses/Kconfig
-index 53d565b..073bfe3 100644
 --- a/drivers/i2c/busses/Kconfig
 +++ b/drivers/i2c/busses/Kconfig
 @@ -807,6 +807,10 @@ config I2C_RALINK
@@ -26,8 +24,6 @@ index 53d565b..073bfe3 100644
  config HAVE_S3C2410_I2C
  	bool
  	help
-diff --git a/drivers/i2c/busses/Makefile b/drivers/i2c/busses/Makefile
-index 2edd32c..764e16e 100644
 --- a/drivers/i2c/busses/Makefile
 +++ b/drivers/i2c/busses/Makefile
 @@ -76,6 +76,7 @@ obj-$(CONFIG_I2C_PUV3)		+= i2c-puv3.o
@@ -38,9 +34,6 @@ index 2edd32c..764e16e 100644
  obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
  obj-$(CONFIG_I2C_RIIC)		+= i2c-riic.o
  obj-$(CONFIG_I2C_RK3X)		+= i2c-rk3x.o
-diff --git a/drivers/i2c/busses/i2c-mt7621.c b/drivers/i2c/busses/i2c-mt7621.c
-new file mode 100644
-index 0000000..646ca40
 --- /dev/null
 +++ b/drivers/i2c/busses/i2c-mt7621.c
 @@ -0,0 +1,303 @@
@@ -347,6 +340,3 @@ index 0000000..646ca40
 +MODULE_DESCRIPTION("MT7621 I2c host driver");
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS("platform:MT7621-I2C");
--- 
-1.7.10.4
-

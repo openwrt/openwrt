@@ -12,8 +12,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  4 files changed, 585 insertions(+)
  create mode 100644 drivers/dma/ralink-gdma.c
 
-diff --git a/drivers/dma/Kconfig b/drivers/dma/Kconfig
-index b458475..2d5ae4a 100644
 --- a/drivers/dma/Kconfig
 +++ b/drivers/dma/Kconfig
 @@ -40,6 +40,12 @@ config ASYNC_TX_ENABLE_CHANNEL_SWITCH
@@ -29,20 +27,15 @@ index b458475..2d5ae4a 100644
  config DMA_ENGINE
  	bool
  
-diff --git a/drivers/dma/Makefile b/drivers/dma/Makefile
-index 7711a71..b33c434 100644
 --- a/drivers/dma/Makefile
 +++ b/drivers/dma/Makefile
-@@ -65,5 +65,6 @@ obj-$(CONFIG_TI_DMA_CROSSBAR) += ti-dma-crossbar.o
+@@ -65,5 +65,6 @@ obj-$(CONFIG_TI_DMA_CROSSBAR) += ti-dma-
  obj-$(CONFIG_TI_EDMA) += edma.o
  obj-$(CONFIG_XGENE_DMA) += xgene-dma.o
  obj-$(CONFIG_ZX_DMA) += zx296702_dma.o
 +obj-$(CONFIG_DMA_RALINK) += ralink-gdma.o
  
  obj-y += xilinx/
-diff --git a/drivers/dma/ralink-gdma.c b/drivers/dma/ralink-gdma.c
-new file mode 100644
-index 0000000..2c3cace
 --- /dev/null
 +++ b/drivers/dma/ralink-gdma.c
 @@ -0,0 +1,577 @@
@@ -623,11 +616,9 @@ index 0000000..2c3cace
 +MODULE_AUTHOR("Lars-Peter Clausen <lars@metafoo.de>");
 +MODULE_DESCRIPTION("GDMA4740 DMA driver");
 +MODULE_LICENSE("GPLv2");
-diff --git a/include/linux/dmaengine.h b/include/linux/dmaengine.h
-index 7ea9184..d371bf1 100644
 --- a/include/linux/dmaengine.h
 +++ b/include/linux/dmaengine.h
-@@ -496,6 +496,7 @@ static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
+@@ -496,6 +496,7 @@ static inline void dma_set_unmap(struct
  struct dmaengine_unmap_data *
  dmaengine_get_unmap_data(struct device *dev, int nr, gfp_t flags);
  void dmaengine_unmap_put(struct dmaengine_unmap_data *unmap);
@@ -635,6 +626,3 @@ index 7ea9184..d371bf1 100644
  #else
  static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
  				 struct dmaengine_unmap_data *unmap)
--- 
-1.7.10.4
-

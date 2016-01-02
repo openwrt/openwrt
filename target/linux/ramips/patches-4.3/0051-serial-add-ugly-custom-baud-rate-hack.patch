@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/tty/serial/serial_core.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/tty/serial/serial_core.c b/drivers/tty/serial/serial_core.c
-index 603d2cc..4020e07 100644
 --- a/drivers/tty/serial/serial_core.c
 +++ b/drivers/tty/serial/serial_core.c
-@@ -359,6 +359,9 @@ uart_get_baud_rate(struct uart_port *port, struct ktermios *termios,
+@@ -359,6 +359,9 @@ uart_get_baud_rate(struct uart_port *por
  		break;
  	}
  
@@ -22,6 +20,3 @@ index 603d2cc..4020e07 100644
  	for (try = 0; try < 2; try++) {
  		baud = tty_termios_baud_rate(termios);
  
--- 
-1.7.10.4
-

@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/esw_rt3050.c |  805 ++++++++++++++++++++++++++++
  1 file changed, 805 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/esw_rt3050.c b/drivers/net/ethernet/mediatek/esw_rt3050.c
-index 670ae16..352d50a 100644
 --- a/drivers/net/ethernet/mediatek/esw_rt3050.c
 +++ b/drivers/net/ethernet/mediatek/esw_rt3050.c
 @@ -17,6 +17,8 @@
@@ -167,7 +165,7 @@ index 670ae16..352d50a 100644
  static unsigned esw_get_port_disable(struct rt305x_esw *esw)
  {
  	unsigned reg;
-@@ -261,6 +372,59 @@ static unsigned esw_get_port_disable(struct rt305x_esw *esw)
+@@ -261,6 +372,59 @@ static unsigned esw_get_port_disable(str
  	       RT305X_ESW_POC0_DIS_PORT_M;
  }
  
@@ -227,7 +225,7 @@ index 670ae16..352d50a 100644
  static void esw_hw_init(struct rt305x_esw *esw)
  {
  	int i;
-@@ -519,6 +683,9 @@ static void esw_hw_init(struct rt305x_esw *esw)
+@@ -519,6 +683,9 @@ static void esw_hw_init(struct rt305x_es
  	for (i = 0; i < RT305X_ESW_NUM_LEDS; i++)
  		esw->ports[i].led = 0x05;
  
@@ -237,7 +235,7 @@ index 670ae16..352d50a 100644
  	/* Only unmask the port change interrupt */
  	esw_w32(esw, ~RT305X_ESW_PORT_ST_CHG, RT305X_ESW_REG_IMR);
  }
-@@ -541,11 +708,629 @@ static irqreturn_t esw_interrupt(int irq, void *_esw)
+@@ -541,11 +708,629 @@ static irqreturn_t esw_interrupt(int irq
  	return IRQ_HANDLED;
  }
  
@@ -867,7 +865,7 @@ index 670ae16..352d50a 100644
  	struct rt305x_esw *esw;
  	struct resource *irq;
  	int ret;
-@@ -568,6 +1353,21 @@ static int esw_probe(struct platform_device *pdev)
+@@ -568,6 +1353,21 @@ static int esw_probe(struct platform_dev
  	if (reg_init)
  		esw->reg_led_polarity = be32_to_cpu(*reg_init);
  
@@ -889,7 +887,7 @@ index 670ae16..352d50a 100644
  	platform_set_drvdata(pdev, esw);
  
  	spin_lock_init(&esw->reg_rw_lock);
-@@ -583,6 +1383,11 @@ static int esw_probe(struct platform_device *pdev)
+@@ -583,6 +1383,11 @@ static int esw_probe(struct platform_dev
  	}
  
  	return ret;
@@ -901,6 +899,3 @@ index 670ae16..352d50a 100644
  }
  
  static int esw_remove(struct platform_device *pdev)
--- 
-1.7.10.4
-

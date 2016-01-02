@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/mt7620.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index 6975ed8..da734e2 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
-@@ -567,7 +567,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -567,7 +567,7 @@ void prom_soc_init(struct ralink_soc_inf
  	}
  
  	snprintf(soc_info->sys_type, RAMIPS_SYS_TYPE_LEN,
@@ -21,6 +19,3 @@ index 6975ed8..da734e2 100644
  		name,
  		(rev >> CHIP_REV_VER_SHIFT) & CHIP_REV_VER_MASK,
  		(rev & CHIP_REV_ECO_MASK));
--- 
-1.7.10.4
-

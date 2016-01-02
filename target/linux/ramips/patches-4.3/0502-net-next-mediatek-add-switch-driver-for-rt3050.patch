@@ -14,9 +14,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/esw_rt3050.c
  create mode 100644 drivers/net/ethernet/mediatek/esw_rt3050.h
 
-diff --git a/drivers/net/ethernet/mediatek/esw_rt3050.c b/drivers/net/ethernet/mediatek/esw_rt3050.c
-new file mode 100644
-index 0000000..f07f4a5
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/esw_rt3050.c
 @@ -0,0 +1,640 @@
@@ -660,9 +657,6 @@ index 0000000..f07f4a5
 +{
 +	platform_driver_unregister(&esw_driver);
 +}
-diff --git a/drivers/net/ethernet/mediatek/esw_rt3050.h b/drivers/net/ethernet/mediatek/esw_rt3050.h
-new file mode 100644
-index 0000000..455107a
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/esw_rt3050.h
 @@ -0,0 +1,29 @@
@@ -695,6 +689,3 @@ index 0000000..455107a
 +
 +#endif
 +#endif
--- 
-1.7.10.4
-

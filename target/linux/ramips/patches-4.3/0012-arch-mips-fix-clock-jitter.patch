@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/cevt-rt3352.c |    2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/arch/mips/ralink/cevt-rt3352.c b/arch/mips/ralink/cevt-rt3352.c
-index b36888c..cecf44f 100644
 --- a/arch/mips/ralink/cevt-rt3352.c
 +++ b/arch/mips/ralink/cevt-rt3352.c
-@@ -69,7 +69,7 @@ static int systick_next_event(unsigned long delta,
+@@ -69,7 +69,7 @@ static int systick_next_event(unsigned l
  	sdev = container_of(evt, struct systick_device, dev);
  	count = ioread32(sdev->membase + SYSTICK_COUNT);
  	count = (count + delta) % SYSTICK_FREQ;
@@ -21,6 +19,3 @@ index b36888c..cecf44f 100644
  
  	return 0;
  }
--- 
-1.7.10.4
-

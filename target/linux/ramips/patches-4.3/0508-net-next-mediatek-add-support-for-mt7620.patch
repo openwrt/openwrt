@@ -21,9 +21,6 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
  create mode 100644 drivers/net/ethernet/mediatek/mdio_mt7620.c
  create mode 100644 drivers/net/ethernet/mediatek/soc_mt7620.c
 
-diff --git a/drivers/net/ethernet/mediatek/mdio_mt7620.c b/drivers/net/ethernet/mediatek/mdio_mt7620.c
-new file mode 100644
-index 0000000..89c6c30
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mdio_mt7620.c
 @@ -0,0 +1,156 @@
@@ -183,9 +180,6 @@ index 0000000..89c6c30
 +				priv->phy->speed[port],
 +				(priv->phy->duplex[port] == DUPLEX_FULL));
 +}
-diff --git a/drivers/net/ethernet/mediatek/soc_mt7620.c b/drivers/net/ethernet/mediatek/soc_mt7620.c
-new file mode 100644
-index 0000000..9ad6bc9
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/soc_mt7620.c
 @@ -0,0 +1,334 @@
@@ -523,6 +517,3 @@ index 0000000..9ad6bc9
 +};
 +
 +MODULE_DEVICE_TABLE(of, of_fe_match);
--- 
-1.7.10.4
-

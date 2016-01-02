@@ -49,7 +49,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
  /* HW limitations for this switch:
   * - No large frame support (PKT_MAX_LEN at most 1536)
   * - Can't have untagged vlan and tagged vlan on one port at the same time,
-@@ -559,7 +543,7 @@
+@@ -559,7 +543,7 @@ static irqreturn_t esw_interrupt(int irq
  
  static int esw_probe(struct platform_device *pdev)
  {
@@ -58,7 +58,7 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
  	struct device_node *np = pdev->dev.of_node;
  	const __be32 *port_map, *reg_init;
  	struct rt305x_esw *esw;
-@@ -629,12 +613,9 @@
+@@ -629,12 +613,9 @@ static struct platform_driver esw_driver
  	},
  };
  

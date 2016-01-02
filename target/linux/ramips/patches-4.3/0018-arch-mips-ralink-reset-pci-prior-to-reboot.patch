@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/reset.c |   12 ++++++++++--
  1 file changed, 10 insertions(+), 2 deletions(-)
 
-diff --git a/arch/mips/ralink/reset.c b/arch/mips/ralink/reset.c
-index ee26d45..ee117c4 100644
 --- a/arch/mips/ralink/reset.c
 +++ b/arch/mips/ralink/reset.c
 @@ -11,6 +11,7 @@
@@ -45,6 +43,3 @@ index ee26d45..ee117c4 100644
  	local_irq_disable();
  	rt_sysc_w32(RSTCTL_RESET_SYSTEM, SYSC_REG_RESET_CTRL);
  	unreachable();
--- 
-1.7.10.4
-

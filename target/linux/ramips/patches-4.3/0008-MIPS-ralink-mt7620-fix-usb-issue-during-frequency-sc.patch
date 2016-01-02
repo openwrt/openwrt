@@ -15,8 +15,6 @@ Subject: [PATCH 08/53] MIPS: ralink: mt7620: fix usb issue during frequency
  arch/mips/ralink/mt7620.c |   19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index 2ea5ff6..33a7e42 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
 @@ -40,6 +40,12 @@
@@ -52,6 +50,3 @@ index 2ea5ff6..33a7e42 100644
  }
  
  void __init ralink_of_remap(void)
--- 
-1.7.10.4
-
