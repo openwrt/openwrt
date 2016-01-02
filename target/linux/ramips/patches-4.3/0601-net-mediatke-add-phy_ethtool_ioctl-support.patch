@@ -8,11 +8,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/net/ethernet/mediatek/mtk_eth_soc.c |    3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-index 9999768..84b1a43 100644
 --- a/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-@@ -1342,6 +1342,9 @@ static int fe_do_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+@@ -1344,6 +1344,9 @@ static int fe_do_ioctl(struct net_device
  		return -ENODEV;
  
  	switch (cmd) {
@@ -22,6 +20,3 @@ index 9999768..84b1a43 100644
  	case SIOCGMIIPHY:
  	case SIOCGMIIREG:
  	case SIOCSMIIREG:
--- 
-1.7.10.4
-

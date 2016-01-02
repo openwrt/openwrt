@@ -14,9 +14,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7620.c
  create mode 100644 drivers/net/ethernet/mediatek/gsw_mt7620.h
 
-diff --git a/drivers/net/ethernet/mediatek/gsw_mt7620.c b/drivers/net/ethernet/mediatek/gsw_mt7620.c
-new file mode 100644
-index 0000000..a37ed1b
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7620.c
 @@ -0,0 +1,255 @@
@@ -275,9 +272,6 @@ index 0000000..a37ed1b
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("GBit switch driver for Mediatek MT7620 SoC");
 +MODULE_VERSION(MTK_FE_DRV_VERSION);
-diff --git a/drivers/net/ethernet/mediatek/gsw_mt7620.h b/drivers/net/ethernet/mediatek/gsw_mt7620.h
-new file mode 100644
-index 0000000..0d6ee84
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/gsw_mt7620.h
 @@ -0,0 +1,117 @@
@@ -398,6 +392,3 @@ index 0000000..0d6ee84
 +u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg);
 +
 +#endif
--- 
-1.7.10.4
-

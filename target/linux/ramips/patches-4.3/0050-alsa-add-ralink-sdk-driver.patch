@@ -41,8 +41,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  create mode 100644 sound/soc/mtk/ralink_gdma.c
  create mode 100644 sound/soc/mtk/ralink_gdma.h
 
-diff --git a/sound/soc/Kconfig b/sound/soc/Kconfig
-index 76ce95c..09aa2c7 100644
 --- a/sound/soc/Kconfig
 +++ b/sound/soc/Kconfig
 @@ -64,6 +64,7 @@ source "sound/soc/txx9/Kconfig"
@@ -53,8 +51,6 @@ index 76ce95c..09aa2c7 100644
  
  # Supported codecs
  source "sound/soc/codecs/Kconfig"
-diff --git a/sound/soc/Makefile b/sound/soc/Makefile
-index e9d8e0e..a3c6b43 100644
 --- a/sound/soc/Makefile
 +++ b/sound/soc/Makefile
 @@ -46,3 +46,4 @@ obj-$(CONFIG_SND_SOC)	+= txx9/
@@ -62,8 +58,6 @@ index e9d8e0e..a3c6b43 100644
  obj-$(CONFIG_SND_SOC)	+= xtensa/
  obj-$(CONFIG_SND_SOC)	+= zte/
 +obj-$(CONFIG_SND_SOC)   += mtk/
-diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 0c9733e..276a4c5 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
 @@ -816,7 +816,7 @@ config SND_SOC_WM8955
@@ -75,8 +69,6 @@ index 0c9733e..276a4c5 100644
  
  config SND_SOC_WM8961
  	tristate
-diff --git a/sound/soc/codecs/wm8960.c b/sound/soc/codecs/wm8960.c
-index dbd8840..3118f5c 100644
 --- a/sound/soc/codecs/wm8960.c
 +++ b/sound/soc/codecs/wm8960.c
 @@ -27,6 +27,7 @@
@@ -87,7 +79,7 @@ index dbd8840..3118f5c 100644
  
  /* R25 - Power 1 */
  #define WM8960_VMID_MASK 0x180
-@@ -57,10 +58,10 @@ static int wm8960_set_pll(struct snd_soc_codec *codec,
+@@ -57,10 +58,10 @@ static int wm8960_set_pll(struct snd_soc
   * using 2 wire for device control, so we cache them instead.
   */
  static const struct reg_default wm8960_reg_defaults[] = {
@@ -102,7 +94,7 @@ index dbd8840..3118f5c 100644
  	{  0x4, 0x0000 },
  	{  0x5, 0x0008 },
  	{  0x6, 0x0000 },
-@@ -92,8 +93,8 @@ static const struct reg_default wm8960_reg_defaults[] = {
+@@ -92,8 +93,8 @@ static const struct reg_default wm8960_r
  	{ 0x25, 0x0050 },
  	{ 0x26, 0x0000 },
  	{ 0x27, 0x0000 },
@@ -129,7 +121,7 @@ index dbd8840..3118f5c 100644
  
  /* enumerated controls */
  static const char *wm8960_polarity[] = {"No Inversion", "Left Inverted",
-@@ -192,8 +201,8 @@ static int wm8960_get_deemph(struct snd_kcontrol *kcontrol,
+@@ -192,8 +201,8 @@ static int wm8960_get_deemph(struct snd_
  	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
  	struct wm8960_priv *wm8960 = snd_soc_codec_get_drvdata(codec);
  
@@ -140,7 +132,7 @@ index dbd8840..3118f5c 100644
  }
  
  static int wm8960_put_deemph(struct snd_kcontrol *kcontrol,
-@@ -211,6 +220,71 @@ static int wm8960_put_deemph(struct snd_kcontrol *kcontrol,
+@@ -211,6 +220,71 @@ static int wm8960_put_deemph(struct snd_
  	return wm8960_set_deemph(codec);
  }
  
@@ -212,7 +204,7 @@ index dbd8840..3118f5c 100644
  static const DECLARE_TLV_DB_SCALE(adc_tlv, -9750, 50, 1);
  static const DECLARE_TLV_DB_SCALE(inpga_tlv, -1725, 75, 0);
  static const DECLARE_TLV_DB_SCALE(dac_tlv, -12750, 50, 1);
-@@ -563,6 +637,7 @@ static int wm8960_set_dai_fmt(struct snd_soc_dai *codec_dai,
+@@ -563,6 +637,7 @@ static int wm8960_set_dai_fmt(struct snd
  
  	/* set iface */
  	snd_soc_write(codec, WM8960_IFACE1, iface);
@@ -220,7 +212,7 @@ index dbd8840..3118f5c 100644
  	return 0;
  }
  
-@@ -809,9 +884,10 @@ static int wm8960_set_bias_level_out3(struct snd_soc_codec *codec,
+@@ -809,9 +884,10 @@ static int wm8960_set_bias_level_out3(st
  			ret = wm8960_configure_clocking(codec);
  			if (ret)
  				return ret;
@@ -232,7 +224,7 @@ index dbd8840..3118f5c 100644
  			break;
  
  		case SND_SOC_BIAS_ON:
-@@ -852,12 +928,16 @@ static int wm8960_set_bias_level_out3(struct snd_soc_codec *codec,
+@@ -852,12 +928,16 @@ static int wm8960_set_bias_level_out3(st
  			/* Disable anti-pop features */
  			snd_soc_write(codec, WM8960_APOP1, WM8960_BUFIOEN);
  		}
@@ -250,7 +242,7 @@ index dbd8840..3118f5c 100644
  		/* Enable anti-pop features */
  		snd_soc_write(codec, WM8960_APOP1,
  			     WM8960_POBCTRL | WM8960_SOFT_ST |
-@@ -866,6 +946,7 @@ static int wm8960_set_bias_level_out3(struct snd_soc_codec *codec,
+@@ -866,6 +946,7 @@ static int wm8960_set_bias_level_out3(st
  		/* Disable VMID and VREF, let them discharge */
  		snd_soc_write(codec, WM8960_POWER1, 0);
  		msleep(600);
@@ -258,24 +250,24 @@ index dbd8840..3118f5c 100644
  		break;
  	}
  
-@@ -1101,10 +1182,15 @@ static int wm8960_set_pll(struct snd_soc_codec *codec,
+@@ -1101,10 +1182,15 @@ static int wm8960_set_pll(struct snd_soc
  
  	if (pll_div.k) {
  		reg |= 0x20;
 -
 +#if 1
- 		snd_soc_write(codec, WM8960_PLL2, (pll_div.k >> 16) & 0xff);
- 		snd_soc_write(codec, WM8960_PLL3, (pll_div.k >> 8) & 0xff);
- 		snd_soc_write(codec, WM8960_PLL4, pll_div.k & 0xff);
-+#else
 +		snd_soc_write(codec, WM8960_PLL2, (pll_div.k >> 16) & 0xff);
 +		snd_soc_write(codec, WM8960_PLL3, (pll_div.k >> 8) & 0xff);
 +		snd_soc_write(codec, WM8960_PLL4, pll_div.k & 0xff);
++#else
+ 		snd_soc_write(codec, WM8960_PLL2, (pll_div.k >> 16) & 0xff);
+ 		snd_soc_write(codec, WM8960_PLL3, (pll_div.k >> 8) & 0xff);
+ 		snd_soc_write(codec, WM8960_PLL4, pll_div.k & 0xff);
 +#endif
  	}
  	snd_soc_write(codec, WM8960_PLL1, reg);
  
-@@ -1150,7 +1236,11 @@ static int wm8960_set_dai_clkdiv(struct snd_soc_dai *codec_dai,
+@@ -1150,7 +1236,11 @@ static int wm8960_set_dai_clkdiv(struct
  		snd_soc_write(codec, WM8960_PLL1, reg | div);
  		break;
  	case WM8960_DCLKDIV:
@@ -287,7 +279,7 @@ index dbd8840..3118f5c 100644
  		snd_soc_write(codec, WM8960_CLOCK2, reg | div);
  		break;
  	case WM8960_TOCLKSEL:
-@@ -1285,7 +1375,7 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
+@@ -1285,7 +1375,7 @@ static int wm8960_i2c_probe(struct i2c_c
  {
  	struct wm8960_data *pdata = dev_get_platdata(&i2c->dev);
  	struct wm8960_priv *wm8960;
@@ -296,7 +288,7 @@ index dbd8840..3118f5c 100644
  
  	wm8960 = devm_kzalloc(&i2c->dev, sizeof(struct wm8960_priv),
  			      GFP_KERNEL);
-@@ -1307,11 +1397,7 @@ static int wm8960_i2c_probe(struct i2c_client *i2c,
+@@ -1307,11 +1397,7 @@ static int wm8960_i2c_probe(struct i2c_c
  	else if (i2c->dev.of_node)
  		wm8960_set_pdata_from_of(i2c, &wm8960->pdata);
  
@@ -309,8 +301,6 @@ index dbd8840..3118f5c 100644
  
  	if (wm8960->pdata.shared_lrclk) {
  		ret = regmap_update_bits(wm8960->regmap, WM8960_ADDCTL2,
-diff --git a/sound/soc/codecs/wm8960.h b/sound/soc/codecs/wm8960.h
-index ab3220d..5205deb 100644
 --- a/sound/soc/codecs/wm8960.h
 +++ b/sound/soc/codecs/wm8960.h
 @@ -111,4 +111,68 @@
@@ -382,9 +372,6 @@ index ab3220d..5205deb 100644
 +#define RINV_RINVOL(x)                  ((x) & 0x3f)
 +
  #endif
-diff --git a/sound/soc/mtk/Kconfig b/sound/soc/mtk/Kconfig
-new file mode 100644
-index 0000000..26d2531
 --- /dev/null
 +++ b/sound/soc/mtk/Kconfig
 @@ -0,0 +1,35 @@
@@ -423,9 +410,6 @@ index 0000000..26d2531
 +	tristate "MTK SoC I2S Support"
 +	depends on SND_MT76XX_SOC
 +
-diff --git a/sound/soc/mtk/Makefile b/sound/soc/mtk/Makefile
-new file mode 100644
-index 0000000..00b3dff
 --- /dev/null
 +++ b/sound/soc/mtk/Makefile
 @@ -0,0 +1,39 @@
@@ -468,9 +452,6 @@ index 0000000..00b3dff
 +
 +
 +
-diff --git a/sound/soc/mtk/i2c_wm8960.c b/sound/soc/mtk/i2c_wm8960.c
-new file mode 100644
-index 0000000..70f16e1
 --- /dev/null
 +++ b/sound/soc/mtk/i2c_wm8960.c
 @@ -0,0 +1,492 @@
@@ -966,9 +947,6 @@ index 0000000..70f16e1
 +MODULE_DESCRIPTION("WM8960 I2C client driver");
 +MODULE_LICENSE("GPL");
 +
-diff --git a/sound/soc/mtk/i2c_wm8960.h b/sound/soc/mtk/i2c_wm8960.h
-new file mode 100644
-index 0000000..c769345
 --- /dev/null
 +++ b/sound/soc/mtk/i2c_wm8960.h
 @@ -0,0 +1,288 @@
@@ -1260,9 +1238,6 @@ index 0000000..c769345
 +void audiohw_bypass(void);
 +
 +#endif /* _WM875x_H */
-diff --git a/sound/soc/mtk/i2s_ctrl.c b/sound/soc/mtk/i2s_ctrl.c
-new file mode 100644
-index 0000000..05034b0
 --- /dev/null
 +++ b/sound/soc/mtk/i2s_ctrl.c
 @@ -0,0 +1,3524 @@
@@ -4790,9 +4765,6 @@ index 0000000..05034b0
 +#else
 +module_param (i2sdrv_major, int, 0);
 +#endif
-diff --git a/sound/soc/mtk/i2s_ctrl.h b/sound/soc/mtk/i2s_ctrl.h
-new file mode 100644
-index 0000000..b762c9c
 --- /dev/null
 +++ b/sound/soc/mtk/i2s_ctrl.h
 @@ -0,0 +1,523 @@
@@ -5319,9 +5291,6 @@ index 0000000..b762c9c
 +
 +#endif /* __RALINK_I2S_H_ */
 +
-diff --git a/sound/soc/mtk/i2s_debug.c b/sound/soc/mtk/i2s_debug.c
-new file mode 100644
-index 0000000..9f61b14
 --- /dev/null
 +++ b/sound/soc/mtk/i2s_debug.c
 @@ -0,0 +1,698 @@
@@ -6023,9 +5992,6 @@ index 0000000..9f61b14
 +	
 +	return 0;	
 +}
-diff --git a/sound/soc/mtk/mt76xx_i2s.c b/sound/soc/mtk/mt76xx_i2s.c
-new file mode 100644
-index 0000000..7615b51
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_i2s.c
 @@ -0,0 +1,304 @@
@@ -6333,9 +6299,6 @@ index 0000000..7615b51
 +MODULE_DESCRIPTION("Stretch MT76xx I2S Interface");
 +MODULE_LICENSE("GPL");
 +#endif
-diff --git a/sound/soc/mtk/mt76xx_i2s.h b/sound/soc/mtk/mt76xx_i2s.h
-new file mode 100644
-index 0000000..9ae0e50
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_i2s.h
 @@ -0,0 +1,18 @@
@@ -6357,9 +6320,6 @@ index 0000000..9ae0e50
 +
 +#include "i2s_ctrl.h"
 +#endif /* MTK_I2S_H_ */
-diff --git a/sound/soc/mtk/mt76xx_machine.c b/sound/soc/mtk/mt76xx_machine.c
-new file mode 100644
-index 0000000..00d2145
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_machine.c
 @@ -0,0 +1,317 @@
@@ -6680,9 +6640,6 @@ index 0000000..00d2145
 +module_exit(mt76xx_machine_exit);
 +//EXPORT_SYMBOL_GPL(mt76xx_soc_platform);
 +MODULE_LICENSE("GPL");
-diff --git a/sound/soc/mtk/mt76xx_machine.h b/sound/soc/mtk/mt76xx_machine.h
-new file mode 100644
-index 0000000..79532b5
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_machine.h
 @@ -0,0 +1,21 @@
@@ -6707,9 +6664,6 @@ index 0000000..79532b5
 +#endif
 +
 +#endif /* MT76XX_MACHINE_H_ */
-diff --git a/sound/soc/mtk/mt76xx_pcm.c b/sound/soc/mtk/mt76xx_pcm.c
-new file mode 100644
-index 0000000..1100ee0
 --- /dev/null
 +++ b/sound/soc/mtk/mt76xx_pcm.c
 @@ -0,0 +1,499 @@
@@ -7212,9 +7166,6 @@ index 0000000..1100ee0
 +MODULE_DESCRIPTION("MTK APSoC I2S DMA driver");
 +MODULE_LICENSE("GPL");
 +
-diff --git a/sound/soc/mtk/ralink_gdma.c b/sound/soc/mtk/ralink_gdma.c
-new file mode 100644
-index 0000000..b385f05
 --- /dev/null
 +++ b/sound/soc/mtk/ralink_gdma.c
 @@ -0,0 +1,918 @@
@@ -8136,9 +8087,6 @@ index 0000000..b385f05
 +MODULE_AUTHOR("Steven Liu <steven_liu@ralinktech.com.tw>");
 +MODULE_LICENSE("GPL");
 +MODULE_VERSION(MOD_VERSION);
-diff --git a/sound/soc/mtk/ralink_gdma.h b/sound/soc/mtk/ralink_gdma.h
-new file mode 100644
-index 0000000..95ce5f7
 --- /dev/null
 +++ b/sound/soc/mtk/ralink_gdma.h
 @@ -0,0 +1,326 @@
@@ -8468,11 +8416,9 @@ index 0000000..95ce5f7
 +
 +
 +#endif
-diff --git a/sound/soc/soc-core.c b/sound/soc/soc-core.c
-index 6173d15..d9c52a7 100644
 --- a/sound/soc/soc-core.c
 +++ b/sound/soc/soc-core.c
-@@ -1758,7 +1758,8 @@ static int soc_probe(struct platform_device *pdev)
+@@ -1758,7 +1758,8 @@ static int soc_probe(struct platform_dev
  	/* Bodge while we unpick instantiation */
  	card->dev = &pdev->dev;
  
@@ -8482,6 +8428,3 @@ index 6173d15..d9c52a7 100644
  }
  
  static int soc_cleanup_card_resources(struct snd_soc_card *card)
--- 
-1.7.10.4
-

@@ -8,8 +8,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  arch/mips/ralink/mt7620.c |   19 ++++++++-----------
  1 file changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/arch/mips/ralink/mt7620.c b/arch/mips/ralink/mt7620.c
-index da734e2..db99e9c 100644
 --- a/arch/mips/ralink/mt7620.c
 +++ b/arch/mips/ralink/mt7620.c
 @@ -37,9 +37,6 @@
@@ -40,7 +38,7 @@ index da734e2..db99e9c 100644
  		/*
  		 * When the CPU goes into sleep mode, the BUS clock will be too low for
  		 * USB to function properly
-@@ -543,11 +540,11 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -543,11 +540,11 @@ void prom_soc_init(struct ralink_soc_inf
  
  	if (n0 == MT7620_CHIP_NAME0 && n1 == MT7620_CHIP_NAME1) {
  		if (bga) {
@@ -54,7 +52,7 @@ index da734e2..db99e9c 100644
  			name = "MT7620N";
  			soc_info->compatible = "ralink,mt7620n-soc";
  		}
-@@ -555,10 +552,10 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -555,10 +552,10 @@ void prom_soc_init(struct ralink_soc_inf
  		u32 efuse = __raw_readl(sysc + SYSC_REG_EFUSE_CFG);
  
  		if (efuse & EFUSE_MT7688) {
@@ -67,7 +65,7 @@ index da734e2..db99e9c 100644
  			name = "MT7628AN";
  		}
  		soc_info->compatible = "ralink,mt7628an-soc";
-@@ -580,7 +577,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -580,7 +577,7 @@ void prom_soc_init(struct ralink_soc_inf
  		dram_type = (cfg0 >> SYSCFG0_DRAM_TYPE_SHIFT) & SYSCFG0_DRAM_TYPE_MASK;
  
  	soc_info->mem_base = MT7620_DRAM_BASE;
@@ -76,7 +74,7 @@ index da734e2..db99e9c 100644
  		mt7628_dram_init(soc_info);
  	else
  		mt7620_dram_init(soc_info);
-@@ -593,7 +590,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
+@@ -593,7 +590,7 @@ void prom_soc_init(struct ralink_soc_inf
  	pr_info("Digital PMU set to %s control\n",
  		(pmu1 & DIG_SW_SEL) ? ("sw") : ("hw"));
  
@@ -85,6 +83,3 @@ index da734e2..db99e9c 100644
  		rt2880_pinmux_data = mt7628an_pinmux_data;
  	else
  		rt2880_pinmux_data = mt7620a_pinmux_data;
--- 
-1.7.10.4
-

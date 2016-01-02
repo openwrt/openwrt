@@ -12,7 +12,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 
 --- a/arch/mips/pci/Makefile
 +++ b/arch/mips/pci/Makefile
-@@ -43,6 +43,7 @@
+@@ -43,6 +43,7 @@ obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1
  obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
  obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
  obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
@@ -22,7 +22,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
 --- /dev/null
 +++ b/arch/mips/pci/pci-mt7621.c
-@@ -0,0 +1,813 @@
+@@ -0,0 +1,832 @@
 +/**************************************************************************
 + *
 + *  BRIEF MODULE DESCRIPTION
@@ -71,6 +71,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#include <linux/version.h>
 +#include <asm/pci.h>
 +#include <asm/io.h>
++#include <asm/mips-cm.h>
 +#include <linux/init.h>
 +#include <linux/module.h>
 +#include <linux/delay.h>
@@ -578,6 +579,23 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +#endif
 +}
 +
++void setup_cm_memory_region(struct resource *mem_resource)
++{
++	resource_size_t mask;
++	if (mips_cm_numiocu()) {
++		/* FIXME: hardware doesn't accept mask values with 1s after
++		   0s (e.g. 0xffef), so it would be great to warn if that's
++		   about to happen */
++		mask = ~(mem_resource->end - mem_resource->start);
++
++		write_gcr_reg1_base(mem_resource->start);
++		write_gcr_reg1_mask(mask | CM_GCR_REGn_MASK_CMTGT_IOCU0);
++		printk("PCI coherence region base: 0x%08lx, mask/settings: 0x%08lx\n",
++		       read_gcr_reg1_base(),
++		       read_gcr_reg1_mask());
++	}
++}
++
 +static int mt7621_pci_probe(struct platform_device *pdev)
 +{
 +	unsigned long val = 0;
@@ -805,6 +823,7 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
 +	}
 +
 +	pci_load_of_ranges(&mt7621_controller, pdev->dev.of_node);
++	setup_cm_memory_region(mt7621_controller.mem_resource);
 +	register_pci_controller(&mt7621_controller);
 +	return 0;
 +

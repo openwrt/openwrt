@@ -11,11 +11,9 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  drivers/media/usb/uvc/uvcvideo.h   |    5 +-
  4 files changed, 165 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/media/usb/uvc/uvc_driver.c b/drivers/media/usb/uvc/uvc_driver.c
-index 4b5b3e8..6808bcc 100644
 --- a/drivers/media/usb/uvc/uvc_driver.c
 +++ b/drivers/media/usb/uvc/uvc_driver.c
-@@ -2536,6 +2536,18 @@ static struct usb_device_id uvc_ids[] = {
+@@ -2536,6 +2536,18 @@ static struct usb_device_id uvc_ids[] =
  	  .bInterfaceSubClass	= 1,
  	  .bInterfaceProtocol	= 0,
  	  .driver_info		= UVC_QUIRK_FORCE_Y8 },
@@ -34,11 +32,9 @@ index 4b5b3e8..6808bcc 100644
  	/* Generic USB Video Class */
  	{ USB_INTERFACE_INFO(USB_CLASS_VIDEO, 1, 0) },
  	{}
-diff --git a/drivers/media/usb/uvc/uvc_status.c b/drivers/media/usb/uvc/uvc_status.c
-index f552ab9..7132ad4 100644
 --- a/drivers/media/usb/uvc/uvc_status.c
 +++ b/drivers/media/usb/uvc/uvc_status.c
-@@ -139,6 +139,7 @@ static void uvc_status_complete(struct urb *urb)
+@@ -139,6 +139,7 @@ static void uvc_status_complete(struct u
  		switch (dev->status[0] & 0x0f) {
  		case UVC_STATUS_TYPE_CONTROL:
  			uvc_event_control(dev, dev->status, len);
@@ -46,7 +42,7 @@ index f552ab9..7132ad4 100644
  			break;
  
  		case UVC_STATUS_TYPE_STREAMING:
-@@ -182,6 +183,7 @@ int uvc_status_init(struct uvc_device *dev)
+@@ -182,6 +183,7 @@ int uvc_status_init(struct uvc_device *d
  	}
  
  	pipe = usb_rcvintpipe(dev->udev, ep->desc.bEndpointAddress);
@@ -54,8 +50,6 @@ index f552ab9..7132ad4 100644
  
  	/* For high-speed interrupt endpoints, the bInterval value is used as
  	 * an exponent of two. Some developers forgot about it.
-diff --git a/drivers/media/usb/uvc/uvc_video.c b/drivers/media/usb/uvc/uvc_video.c
-index f839654..b30aab6 100644
 --- a/drivers/media/usb/uvc/uvc_video.c
 +++ b/drivers/media/usb/uvc/uvc_video.c
 @@ -21,6 +21,11 @@
@@ -70,7 +64,7 @@ index f839654..b30aab6 100644
  
  #include <media/v4l2-common.h>
  
-@@ -1089,9 +1094,149 @@ static void uvc_video_decode_data(struct uvc_streaming *stream,
+@@ -1089,9 +1094,149 @@ static void uvc_video_decode_data(struct
  	}
  }
  
@@ -220,7 +214,7 @@ index f839654..b30aab6 100644
  	/* Mark the buffer as done if the EOF marker is set. */
  	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
  		uvc_trace(UVC_TRACE_FRAME, "Frame complete (EOF found).\n");
-@@ -1504,6 +1649,8 @@ static int uvc_init_video_isoc(struct uvc_streaming *stream,
+@@ -1504,6 +1649,8 @@ static int uvc_init_video_isoc(struct uv
  	if (npackets == 0)
  		return -ENOMEM;
  
@@ -229,8 +223,6 @@ index f839654..b30aab6 100644
  	size = npackets * psize;
  
  	for (i = 0; i < UVC_URBS; ++i) {
-diff --git a/drivers/media/usb/uvc/uvcvideo.h b/drivers/media/usb/uvc/uvcvideo.h
-index 816dd1a..d0aa324 100644
 --- a/drivers/media/usb/uvc/uvcvideo.h
 +++ b/drivers/media/usb/uvc/uvcvideo.h
 @@ -152,7 +152,9 @@
@@ -252,6 +244,3 @@ index 816dd1a..d0aa324 100644
  };
  
  enum uvc_handle_state {
--- 
-1.7.10.4
-

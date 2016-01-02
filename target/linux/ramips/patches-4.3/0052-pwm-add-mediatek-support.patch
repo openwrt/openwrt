@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 183 insertions(+)
  create mode 100644 drivers/pwm/pwm-mediatek.c
 
-diff --git a/drivers/pwm/Kconfig b/drivers/pwm/Kconfig
-index 062630a..76974ea 100644
 --- a/drivers/pwm/Kconfig
 +++ b/drivers/pwm/Kconfig
 @@ -230,6 +230,15 @@ config PWM_LPSS_PLATFORM
@@ -31,11 +29,9 @@ index 062630a..76974ea 100644
  config PWM_MXS
  	tristate "Freescale MXS PWM support"
  	depends on ARCH_MXS && OF
-diff --git a/drivers/pwm/Makefile b/drivers/pwm/Makefile
-index a0e00c0..aa0bd2e 100644
 --- a/drivers/pwm/Makefile
 +++ b/drivers/pwm/Makefile
-@@ -20,6 +20,7 @@ obj-$(CONFIG_PWM_LPC32XX)	+= pwm-lpc32xx.o
+@@ -20,6 +20,7 @@ obj-$(CONFIG_PWM_LPC32XX)	+= pwm-lpc32xx
  obj-$(CONFIG_PWM_LPSS)		+= pwm-lpss.o
  obj-$(CONFIG_PWM_LPSS_PCI)	+= pwm-lpss-pci.o
  obj-$(CONFIG_PWM_LPSS_PLATFORM)	+= pwm-lpss-platform.o
@@ -43,9 +39,6 @@ index a0e00c0..aa0bd2e 100644
  obj-$(CONFIG_PWM_MXS)		+= pwm-mxs.o
  obj-$(CONFIG_PWM_PCA9685)	+= pwm-pca9685.o
  obj-$(CONFIG_PWM_PUV3)		+= pwm-puv3.o
-diff --git a/drivers/pwm/pwm-mediatek.c b/drivers/pwm/pwm-mediatek.c
-new file mode 100644
-index 0000000..f9d8ed4
 --- /dev/null
 +++ b/drivers/pwm/pwm-mediatek.c
 @@ -0,0 +1,173 @@
@@ -222,6 +215,3 @@ index 0000000..f9d8ed4
 +MODULE_LICENSE("GPL");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_ALIAS("platform:mtk-pwm");
--- 
-1.7.10.4
-

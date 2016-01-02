@@ -44,9 +44,6 @@ Signed-off-by: Michael Lee <igvtee@gmail.com>
  create mode 100644 drivers/net/ethernet/mediatek/mtk_eth_soc.c
  create mode 100644 drivers/net/ethernet/mediatek/mtk_eth_soc.h
 
-diff --git a/drivers/net/ethernet/mediatek/ethtool.c b/drivers/net/ethernet/mediatek/ethtool.c
-new file mode 100644
-index 0000000..697cd80
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/ethtool.c
 @@ -0,0 +1,235 @@
@@ -285,9 +282,6 @@ index 0000000..697cd80
 +
 +	netdev->ethtool_ops = &fe_ethtool_ops;
 +}
-diff --git a/drivers/net/ethernet/mediatek/ethtool.h b/drivers/net/ethernet/mediatek/ethtool.h
-new file mode 100644
-index 0000000..955b84f
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/ethtool.h
 @@ -0,0 +1,22 @@
@@ -313,9 +307,6 @@ index 0000000..955b84f
 +void fe_set_ethtool_ops(struct net_device *netdev);
 +
 +#endif /* FE_ETHTOOL_H */
-diff --git a/drivers/net/ethernet/mediatek/mdio.c b/drivers/net/ethernet/mediatek/mdio.c
-new file mode 100644
-index 0000000..169c937
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mdio.c
 @@ -0,0 +1,258 @@
@@ -577,9 +568,6 @@ index 0000000..169c937
 +	of_node_put(priv->mii_bus->dev.of_node);
 +	kfree(priv->mii_bus);
 +}
-diff --git a/drivers/net/ethernet/mediatek/mdio.h b/drivers/net/ethernet/mediatek/mdio.h
-new file mode 100644
-index 0000000..b7d4a24
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mdio.h
 @@ -0,0 +1,27 @@
@@ -610,9 +598,6 @@ index 0000000..b7d4a24
 +static inline void fe_mdio_cleanup(struct fe_priv *priv) {}
 +#endif
 +#endif
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.c b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
-new file mode 100644
-index 0000000..dae7147
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.c
 @@ -0,0 +1,1607 @@
@@ -2223,9 +2208,6 @@ index 0000000..dae7147
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_DESCRIPTION("Ethernet driver for Ralink SoC");
 +MODULE_VERSION(MTK_FE_DRV_VERSION);
-diff --git a/drivers/net/ethernet/mediatek/mtk_eth_soc.h b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
-new file mode 100644
-index 0000000..ba5ba07
 --- /dev/null
 +++ b/drivers/net/ethernet/mediatek/mtk_eth_soc.h
 @@ -0,0 +1,522 @@
@@ -2751,6 +2733,3 @@ index 0000000..ba5ba07
 +}
 +
 +#endif /* FE_ETH_H */
--- 
-1.7.10.4
-

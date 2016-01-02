@@ -7,11 +7,9 @@ Subject: [PATCH 36/53] mtd: fix cfi cmdset 0002 erase status check
  drivers/mtd/chips/cfi_cmdset_0002.c |    4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/drivers/mtd/chips/cfi_cmdset_0002.c b/drivers/mtd/chips/cfi_cmdset_0002.c
-index c3624eb..60d960a 100644
 --- a/drivers/mtd/chips/cfi_cmdset_0002.c
 +++ b/drivers/mtd/chips/cfi_cmdset_0002.c
-@@ -2290,7 +2290,7 @@ static int __xipram do_erase_chip(struct map_info *map, struct flchip *chip)
+@@ -2291,7 +2291,7 @@ static int __xipram do_erase_chip(struct
  			chip->erase_suspended = 0;
  		}
  
@@ -20,7 +18,7 @@ index c3624eb..60d960a 100644
  			break;
  
  		if (time_after(jiffies, timeo)) {
-@@ -2379,7 +2379,7 @@ static int __xipram do_erase_oneblock(struct map_info *map, struct flchip *chip,
+@@ -2380,7 +2380,7 @@ static int __xipram do_erase_oneblock(st
  			chip->erase_suspended = 0;
  		}
  
@@ -29,6 +27,3 @@ index c3624eb..60d960a 100644
  			xip_enable(map, chip, adr);
  			break;
  		}
--- 
-1.7.10.4
-

@@ -11,8 +11,6 @@ Signed-off-by: John Crispin <blogic@openwrt.org>
  3 files changed, 181 insertions(+)
  create mode 100644 drivers/phy/phy-ralink-usb.c
 
-diff --git a/drivers/phy/Kconfig b/drivers/phy/Kconfig
-index 47da573..96ef184 100644
 --- a/drivers/phy/Kconfig
 +++ b/drivers/phy/Kconfig
 @@ -331,6 +331,11 @@ config PHY_XGENE
@@ -27,18 +25,13 @@ index 47da573..96ef184 100644
  config PHY_STIH407_USB
  	tristate "STMicroelectronics USB2 picoPHY driver for STiH407 family"
  	depends on RESET_CONTROLLER
-diff --git a/drivers/phy/Makefile b/drivers/phy/Makefile
-index a5b18c1..8dbf6cc 100644
 --- a/drivers/phy/Makefile
 +++ b/drivers/phy/Makefile
-@@ -46,3 +46,4 @@ obj-$(CONFIG_PHY_QCOM_UFS) 	+= phy-qcom-ufs-qmp-14nm.o
+@@ -46,3 +46,4 @@ obj-$(CONFIG_PHY_QCOM_UFS) 	+= phy-qcom-
  obj-$(CONFIG_PHY_TUSB1210)		+= phy-tusb1210.o
  obj-$(CONFIG_PHY_BRCMSTB_SATA)		+= phy-brcmstb-sata.o
  obj-$(CONFIG_PHY_PISTACHIO_USB)		+= phy-pistachio-usb.o
 +obj-$(CONFIG_PHY_RALINK_USB)		+= phy-ralink-usb.o
-diff --git a/drivers/phy/phy-ralink-usb.c b/drivers/phy/phy-ralink-usb.c
-new file mode 100644
-index 0000000..6c74954
 --- /dev/null
 +++ b/drivers/phy/phy-ralink-usb.c
 @@ -0,0 +1,175 @@
@@ -217,6 +210,3 @@ index 0000000..6c74954
 +MODULE_DESCRIPTION("Ralink USB phy driver");
 +MODULE_AUTHOR("John Crispin <blogic@openwrt.org>");
 +MODULE_LICENSE("GPL v2");
--- 
-1.7.10.4
-
