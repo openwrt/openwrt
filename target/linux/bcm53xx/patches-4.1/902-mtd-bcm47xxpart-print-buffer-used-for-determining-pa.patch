@@ -12,7 +12,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
 
 --- a/drivers/mtd/bcm47xxpart.c
 +++ b/drivers/mtd/bcm47xxpart.c
-@@ -66,19 +66,22 @@ static void bcm47xxpart_add_part(struct
+@@ -94,19 +94,22 @@ static size_t bcm47xxpart_real_offset(st
  static const char *bcm47xxpart_trx_data_part_name(struct mtd_info *master,
  						  size_t offset)
  {
