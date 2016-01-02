@@ -269,10 +269,11 @@ static int netdev_trig_notify(struct notifier_block *nb,
 		return NOTIFY_DONE;
 
 	spin_lock_bh(&trigger_data->lock);
-	del_timer_sync(&trigger_data->timer);
 
 	if (strcmp(dev->name, trigger_data->device_name))
 		goto done;
+
+	del_timer_sync(&trigger_data->timer);
 
 	if (evt == NETDEV_REGISTER || evt == NETDEV_CHANGENAME) {
 		if (trigger_data->net_dev != NULL)
