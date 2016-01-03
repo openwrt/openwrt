@@ -39,6 +39,13 @@ unexport LPATH
 # make sure that a predefined CFLAGS variable does not disturb packages
 export CFLAGS=
 
+empty:=
+space:= $(empty) $(empty)
+path:=$(subst :,$(space),$(PATH))
+path:=$(filter-out .%,$(path))
+path:=$(subst $(space),:,$(path))
+export PATH:=$(path)
+
 unexport TAR_OPTIONS
 
 ifneq ($(shell $(HOSTCC) 2>&1 | grep clang),)
