@@ -457,7 +457,7 @@ static void esw_hw_init(struct rt305x_esw *esw)
 		      (RT305X_ESW_PORTS_ALL << RT305X_ESW_PFC1_EN_VLAN_S),
 		      RT305X_ESW_REG_PFC1);
 
-	/* Enable Back Pressure, and Flow Control */
+	/* Enable all ports, Back Pressure and Flow Control */
 	esw_w32(esw,
 		      ((RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_BP_S) |
 		       (RT305X_ESW_PORTS_ALL << RT305X_ESW_POC0_EN_FC_S)),
