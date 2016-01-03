@@ -194,6 +194,22 @@ menuconfig EXTERNAL_TOOLCHAIN
 		  Specify additional directories searched for libraries (override LDFLAGS).
 		  Use ./DIR for directories relative to the root above.
 
+	config EXTERNAL_TOOLCHAIN_IB
+		bool
+		prompt "Allow Imagebuilder with external toolchain" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN
+		default n
+		help
+		  Allows selecting to build ImageBuilder even with external toolchain.
+
+	config EXTERNAL_TOOLCHAIN_SDK
+		bool
+		prompt "Allow SDK with external toolchain" if DEVEL
+		depends on EXTERNAL_TOOLCHAIN
+		default n
+		help
+		  Allows selecting to build SDK even with external toolchain.
+
 config NEED_TOOLCHAIN
 	bool
 	depends on DEVEL
