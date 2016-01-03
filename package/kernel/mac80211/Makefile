@@ -1154,18 +1154,6 @@ define KernelPackage/mac80211-hwsim
   AUTOLOAD:=$(call AutoProbe,mac80211_hwsim)
 endef
 
-PKG_MT7601U_FW_NAME:=DPO_MT7601U_LinuxSTA
-PKG_MT7601U_FW_VERSION:=3.0.0.4_20130913
-PKG_MT7601U_FW_MD5SUM:=5f440dccc8bc952745a191994fc34699
-PKG_MT7601U_FW_SOURCE:=$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION).tar.bz2
-PKG_MT7601U_FW_SOURCE_URL:=http://www.mediatek.com/AmazonS3/Downloads/linux/
-define Download/mt7601u-firmware
-  FILE:=$(PKG_MT7601U_FW_SOURCE)
-  URL:=$(PKG_MT7601U_FW_SOURCE_URL)
-  MD5SUM:=$(PKG_MT7601U_FW_MD5SUM)
-  SUBDIR:=$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION)
-endef
-$(eval $(call Download,mt7601u-firmware))
 
 define KernelPackage/mt7601u
   $(call KernelPackage/mac80211/Default)
@@ -1803,7 +1791,6 @@ define Build/Prepare
 	$(TAR) -C $(PKG_BUILD_DIR) -xzf $(DL_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION).tgz
 	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(ZD1211FW_NAME)-$(ZD1211FW_VERSION).tar.bz2
 	$(TAR) -C $(PKG_BUILD_DIR) -xJf $(DL_DIR)/$(PKG_LINUX_FIRMWARE_SOURCE)
-	$(TAR) -C $(PKG_BUILD_DIR) -xjf $(DL_DIR)/$(PKG_MT7601U_FW_SOURCE)
 	rm -rf \
 		$(PKG_BUILD_DIR)/include/linux/ssb \
 		$(PKG_BUILD_DIR)/include/linux/bcma \
@@ -2030,8 +2017,8 @@ endef
 define KernelPackage/mt7601u/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_MT7601U_FW_NAME)_$(PKG_MT7601U_FW_VERSION)/mcu/bin/MT7601.bin \
-		$(1)/lib/firmware/mt7601u.bin
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mt7601u.bin \
+		$(1)/lib/firmware
 endef
 
 define KernelPackage/mwl8k/install
