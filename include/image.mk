@@ -18,17 +18,7 @@ KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
 DTS_DIR:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts
 
-define toupper
-$(shell echo $(1) | tr '[:lower:]' '[:upper:]')
-endef
-
-define tolower
-$(shell echo $(1) | tr '[:upper:]' '[:lower:]')
-endef
-
-define sanitize
-$(shell echo $(call tolower,$(1)) | sed 's/_/-/g')
-endef
+sanitize = $(call tolower,$(subst _,-,$(1)))
 
 DIST_SANITIZED:=$(call sanitize,$(VERSION_DIST))
 EXTRA_NAME_SANITIZED=$(call sanitize,$(EXTRA_IMAGE_NAME))
