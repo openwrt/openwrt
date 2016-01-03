@@ -18,7 +18,21 @@ KDIR=$(KERNEL_BUILD_DIR)
 KDIR_TMP=$(KDIR)/tmp
 DTS_DIR:=$(LINUX_DIR)/arch/$(LINUX_KARCH)/boot/dts
 
-IMG_PREFIX:=openwrt-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
+define toupper
+$(shell echo $(1) | tr '[:lower:]' '[:upper:]')
+endef
+
+define tolower
+$(shell echo $(1) | tr '[:upper:]' '[:lower:]')
+endef
+
+define sanitize
+$(shell echo $(call tolower,$(1)) | sed 's/_/-/g')
+endef
+
+DIST_SANITIZED:=$(call sanitize,$(VERSION_DIST))
+
+IMG_PREFIX:=$(DIST_SANITIZED)-$(if $(CONFIG_VERSION_FILENAMES),$(VERSION_NUMBER)-)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))
 
 MKFS_DEVTABLE_OPT := -D $(INCLUDE_DIR)/device_table.txt
 
@@ -83,18 +97,6 @@ FS_256K := $(filter-out jffs2-%,$(TARGET_FILESYSTEMS)) jffs2-256k
 
 define add_jffs2_mark
 	echo -ne '\xde\xad\xc0\xde' >> $(1)
-endef
-
-define toupper
-$(shell echo $(1) | tr '[:lower:]' '[:upper:]')
-endef
-
-define tolower
-$(shell echo $(1) | tr '[:upper:]' '[:lower:]')
-endef
-
-define sanitize
-$(shell echo $(call tolower,$(1)) | sed 's/_/-/g')
 endef
 
 PROFILE_SANITIZED := $(call sanitize,$(PROFILE))
