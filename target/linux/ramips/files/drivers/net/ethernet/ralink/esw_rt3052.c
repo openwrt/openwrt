@@ -1417,19 +1417,19 @@ static int esw_probe(struct platform_device *pdev)
 	}
 
 	port_map = of_get_property(np, "ralink,portmap", NULL);
-        if (port_map)
+	if (port_map)
 		esw->port_map = be32_to_cpu(*port_map);
 
 	reg_init = of_get_property(np, "ralink,fct2", NULL);
-        if (reg_init)
+	if (reg_init)
 		esw->reg_initval_fct2 = be32_to_cpu(*reg_init);
 
 	reg_init = of_get_property(np, "ralink,fpa2", NULL);
-        if (reg_init)
+	if (reg_init)
 		esw->reg_initval_fpa2 = be32_to_cpu(*reg_init);
 
 	reg_init = of_get_property(np, "ralink,led_polarity", NULL);
-        if (reg_init)
+	if (reg_init)
 		esw->reg_led_polarity = be32_to_cpu(*reg_init);
 
 	swdev = &esw->swdev;
