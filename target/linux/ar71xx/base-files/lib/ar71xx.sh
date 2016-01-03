@@ -39,7 +39,7 @@ wndr3700_board_detect() {
 	"33373031")
 		model="$(ar71xx_get_mtd_offset_size_format art 41 32 %c)"
 		# Use awk to remove everything unprintable
-		model_stripped="$(echo -n "$model" | LC_CTYPE=C awk -v 'FS=[^[:print:]]' '{print $1; exit}')"
+		model_stripped="$(ar71xx_get_mtd_offset_size_format art 41 32 %c | LC_CTYPE=C awk -v 'FS=[^[:print:]]' '{print $1; exit}')"
 		case $model in
 		$'\xff'*)
 			if [ "${model:24:1}" = 'N' ]; then
