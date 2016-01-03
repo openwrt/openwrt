@@ -16,9 +16,10 @@ open FIND, "find \"$PATH\" -name Config.in |";
 while (<FIND>) {
 	chomp;
 	my $input = $_;
-	s/^$PATH\///g;
-	s/sysdeps\/linux\///g;
-	my $output = $_;
+	my $output = $input;
+	my $replace = quotemeta($PATH);
+	$output =~ s/^$replace\///g;
+	$output =~ s/sysdeps\/linux\///g;
 	print STDERR "$input => $output\n";
 	$output =~ /^(.+)\/[^\/]+$/ and system("mkdir -p $1");
 
