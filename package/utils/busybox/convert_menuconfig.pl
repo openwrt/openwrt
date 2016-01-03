@@ -41,7 +41,7 @@ while (<FIND>) {
 			undef $cur;
 			undef $default_set;
 		}
-		$line =~ s/^(\s*source\s+)/$1package\/utils\/busybox\/config\//;
+		$line =~ s/^(\s*source\s+)([^\/]+\/)*([^\/]+\/[^\/]+)$/$1$3/;
 		if ($line =~ /^(\s*range\s*)(\w+)(\s+)(\w+)\s*$/) {
 			my $prefix = $1;
 			my $r1 = $2;
