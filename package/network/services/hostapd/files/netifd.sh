@@ -536,9 +536,15 @@ wpa_supplicant_prepare_interface() {
 		_w_modestr="mode=1"
 	}
 
+	local country_str=
+	[ -n "$country" ] && {
+		country_str="country=$country"
+	}
+
 	wpa_supplicant_teardown_interface "$ifname"
 	cat > "$_config" <<EOF
 $ap_scan
+$country_str
 EOF
 	return 0
 }
