@@ -37,8 +37,9 @@ wndr3700_board_detect() {
 		machine="NETGEAR WNDR3700"
 		;;
 	"33373031")
-		# Use awk to remove everything after the first zero byte
-		model="$(ar71xx_get_mtd_offset_size_format art 41 32 %c | LC_CTYPE=C awk -v 'FS=[^[:print:]]' '{print $1; exit}')"
+		model="$(ar71xx_get_mtd_offset_size_format art 41 32 %c)"
+		# Use awk to remove everything unprintable
+		model_stripped="$(echo -n "$model" | LC_CTYPE=C awk -v 'FS=[^[:print:]]' '{print $1; exit}')"
 		case $model in
 		$'\xff'*)
 			if [ "${model:24:1}" = 'N' ]; then
@@ -48,14 +49,14 @@ wndr3700_board_detect() {
 			fi
 			;;
 		'29763654+16+64'*)
-			machine="NETGEAR ${model:14}"
+			machine="NETGEAR ${model_stripped:14}"
 			;;
 		'29763654+16+128'*)
-			machine="NETGEAR ${model:15}"
+			machine="NETGEAR ${model_stripped:15}"
 			;;
 		*)
 			# Unknown ID
-			machine="NETGEAR $model"
+			machine="NETGEAR ${model_stripped}"
 		esac
 	esac
 
