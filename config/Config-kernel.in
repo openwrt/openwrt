@@ -551,3 +551,26 @@ config KERNEL_SECCOMP
 		default n
 		help
 		  Build kernel with support for seccomp.
+
+#
+# IPv6 configuration
+#
+
+config KERNEL_IPV6
+	def_bool IPV6
+
+if KERNEL_IPV6
+
+	config KERNEL_IPV6_MULTIPLE_TABLES
+		def_bool y
+
+	config KERNEL_IPV6_SUBTREES
+		def_bool y
+
+	config KERNEL_IPV6_MROUTE
+		def_bool y
+
+	config KERNEL_IPV6_PIMSM_V2
+		def_bool n
+
+endif
