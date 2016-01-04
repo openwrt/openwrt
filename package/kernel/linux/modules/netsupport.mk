@@ -454,28 +454,6 @@ endef
 $(eval $(call KernelPackage,iptunnel6))
 
 
-define KernelPackage/ipv6
-  SUBMENU:=$(NETWORK_SUPPORT_MENU)
-  TITLE:=IPv6 support
-  DEPENDS:=@IPV6
-  HIDDEN:=1
-  DEFAULT:=y
-  KCONFIG:= \
-	CONFIG_IPV6=y \
-	CONFIG_IPV6_PRIVACY=y \
-	CONFIG_IPV6_MULTIPLE_TABLES=y \
-	CONFIG_IPV6_MROUTE=y \
-	CONFIG_IPV6_PIMSM_V2=n \
-	CONFIG_IPV6_SUBTREES=y
-endef
-
-define KernelPackage/ipv6/description
- Kernel modules for IPv6 support
-endef
-
-$(eval $(call KernelPackage,ipv6))
-
-
 define KernelPackage/sit
   SUBMENU:=$(NETWORK_SUPPORT_MENU)
   DEPENDS:=@IPV6 +kmod-iptunnel +kmod-iptunnel4
