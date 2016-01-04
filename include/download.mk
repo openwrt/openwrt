@@ -5,6 +5,8 @@
 # See /LICENSE for more information.
 #
 
+OPENWRT_GIT = http://git.openwrt.org
+
 DOWNLOAD_RDEP=$(STAMP_PREPARED) $(HOST_STAMP_PREPARED)
 
 # Try to guess the download method from the URL
