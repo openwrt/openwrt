@@ -18,7 +18,7 @@ Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
  	if (dev->dev.of_node)
 -		usb_dev->gpio_desc = devm_get_gpiod_from_child(&dev->dev, "vcc",
 -							       &dev->dev.of_node->fwnode);
-+		usb_dev->gpio_desc = devm_gpiod_get(&dev->dev, "vcc");
++		usb_dev->gpio_desc = devm_gpiod_get(&dev->dev, "vcc", 0);
  	if (!IS_ERR_OR_NULL(usb_dev->gpio_desc))
  		gpiod_direction_output(usb_dev->gpio_desc, 1);
  
