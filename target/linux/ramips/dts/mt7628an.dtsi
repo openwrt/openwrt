@@ -341,11 +341,11 @@
 	};
 
 	usbphy: usbphy {
-		compatible = "ralink,mt7628an-usbphy", "ralink,mt7620a-usbphy";
+		compatible = "ralink,mt7628an-usbphy", "mediatek,mt7620-usbphy";
 		#phy-cells = <1>;
 
-		resets = <&rstctrl 22>;
-		reset-names = "host";
+		resets = <&rstctrl 22 &rstctrl 25>;
+		reset-names = "host", "device";
 	};
 
 	sdhci@10130000 {
