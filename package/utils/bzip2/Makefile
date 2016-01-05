@@ -89,7 +89,6 @@ HOST_CFLAGS += \
 	$(HOST_LDFLAGS)
 
 HOST_MAKE_FLAGS+= \
-	-f Makefile-libbz2_so \
 	CFLAGS="$(HOST_CFLAGS)" \
 	all
 
