@@ -80,6 +80,7 @@ ifeq ($(CONFIG_TARGET_ROOTFS_INITRAMFS),y)
   endif
 
   define Kernel/SetInitramfs
+	rm -f $(LINUX_DIR)/.config.prev
 	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
 	$(call Kernel/SetInitramfs/PreConfigure)
 	echo 'CONFIG_INITRAMFS_ROOT_UID=$(shell id -u)' >> $(LINUX_DIR)/.config
@@ -96,9 +97,9 @@ else
 endif
 
 define Kernel/SetNoInitramfs
-	mv $(LINUX_DIR)/.config $(LINUX_DIR)/.config.old
-	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config
-	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config
+	mv $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.old
+	grep -v INITRAMFS $(LINUX_DIR)/.config.old > $(LINUX_DIR)/.config.set
+	echo 'CONFIG_INITRAMFS_SOURCE=""' >> $(LINUX_DIR)/.config.set
 endef
 
 define Kernel/Configure/Default
@@ -109,11 +110,15 @@ define Kernel/Configure/Default
 	echo "# CONFIG_KALLSYMS_ALL is not set" >> $(LINUX_DIR)/.config.target
 	echo "# CONFIG_KALLSYMS_UNCOMPRESSED is not set" >> $(LINUX_DIR)/.config.target
 	$(SCRIPT_DIR)/metadata.pl kconfig $(TMP_DIR)/.packageinfo $(TOPDIR)/.config $(KERNEL_PATCHVER) > $(LINUX_DIR)/.config.override
-	$(SCRIPT_DIR)/kconfig.pl 'm+' '+' $(LINUX_DIR)/.config.target /dev/null $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config
+	$(SCRIPT_DIR)/kconfig.pl 'm+' '+' $(LINUX_DIR)/.config.target /dev/null $(LINUX_DIR)/.config.override > $(LINUX_DIR)/.config.set
 	$(call Kernel/SetNoInitramfs)
 	rm -rf $(KERNEL_BUILD_DIR)/modules
+	cmp -s $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev || { \
+		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config; \
+		cp $(LINUX_DIR)/.config.set $(LINUX_DIR)/.config.prev; \
+	}
 	$(_SINGLE) [ -d $(LINUX_DIR)/user_headers ] || $(MAKE) $(KERNEL_MAKEOPTS) INSTALL_HDR_PATH=$(LINUX_DIR)/user_headers headers_install
-	$(SH_FUNC) grep '=[ym]' $(LINUX_DIR)/.config | LC_ALL=C sort | md5s > $(LINUX_DIR)/.vermagic
+	$(SH_FUNC) grep '=[ym]' $(LINUX_DIR)/.config.set | LC_ALL=C sort | md5s > $(LINUX_DIR)/.vermagic
 endef
 
 define Kernel/Configure/Initramfs
