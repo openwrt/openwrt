@@ -357,7 +357,7 @@ endef
 
 define Build/kernel-bin
 	rm -f $@
-	cp $^ $@
+	cp $< $@
 endef
 
 define Build/patch-cmdline
@@ -444,6 +444,7 @@ define Device/Init
   KERNEL_INITRAMFS_NAME = $$(KERNEL_NAME)-initramfs
   KERNEL_INSTALL :=
   KERNEL_NAME := vmlinux
+  KERNEL_DEPENDS :=
   KERNEL_SIZE :=
 
   FILESYSTEMS := $(TARGET_FILESYSTEMS)
@@ -468,11 +469,11 @@ define Device/Build/initramfs
   $(call Device/Export,$(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE),$(1))
   $$(_TARGET): $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE)
 
-  $(KDIR)/$$(KERNEL_INITRAMFS_NAME): image_prepare
+  $(KDIR)/$$(KERNEL_INITRAMFS_NAME):: image_prepare
   $(BIN_DIR)/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE)
 	cp $$^ $$@
 
-  $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME)
+  $(KDIR)/tmp/$$(KERNEL_INITRAMFS_IMAGE): $(KDIR)/$$(KERNEL_INITRAMFS_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS)
 	@rm -f $$@
 	$$(call concat_cmd,$$(KERNEL_INITRAMFS))
 endef
@@ -495,7 +496,7 @@ endef
 
 define Device/Build/kernel
   _KERNEL_IMAGES += $(KDIR)/$$(KERNEL_NAME)
-  $(KDIR)/$$(KERNEL_NAME): image_prepare
+  $(KDIR)/$$(KERNEL_NAME):: image_prepare
   $$(_TARGET): $$(if $$(KERNEL_INSTALL),$(BIN_DIR)/$$(KERNEL_IMAGE))
   $(call Device/Export,$(KDIR)/$$(KERNEL_IMAGE),$(1))
   $(BIN_DIR)/$$(KERNEL_IMAGE): $(KDIR)/$$(KERNEL_IMAGE)
@@ -504,7 +505,7 @@ define Device/Build/kernel
     ifdef CONFIG_IB
       install: $(KDIR)/$$(KERNEL_IMAGE)
     endif
-    $(KDIR)/$$(KERNEL_IMAGE): $(KDIR)/$$(KERNEL_NAME)
+    $(KDIR)/$$(KERNEL_IMAGE): $(KDIR)/$$(KERNEL_NAME) $(CURDIR)/Makefile $$(KERNEL_DEPENDS)
 	@rm -f $$@
 	$$(call concat_cmd,$$(KERNEL))
 	$$(if $$(KERNEL_SIZE),$$(call Device/Build/check_size,$$(KERNEL_SIZE)))
@@ -580,9 +581,6 @@ define BuildImage
 
   $(foreach device,$(TARGET_DEVICES),$(call Device,$(device)))
   $(foreach fs,$(TARGET_FILESYSTEMS) $(fs-subtypes-y),$(call BuildImage/mkfs,$(fs)))
-
-  $$(sort $$(_KERNEL_IMAGES)):
-	@touch $$@
 
   install: kernel_prepare
 	$(foreach fs,$(TARGET_FILESYSTEMS),
