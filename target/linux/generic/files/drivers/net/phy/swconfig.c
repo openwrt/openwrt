@@ -128,6 +128,16 @@ swconfig_get_pvid(struct switch_dev *dev, const struct switch_attr *attr,
 }
 
 static int
+swconfig_set_link(struct switch_dev *dev, const struct switch_attr *attr,
+			struct switch_val *val)
+{
+	if (!dev->ops->set_port_link)
+		return -EOPNOTSUPP;
+
+	return dev->ops->set_port_link(dev, val->port_vlan, val->value.link);
+}
+
+static int
 swconfig_get_link(struct switch_dev *dev, const struct switch_attr *attr,
 			struct switch_val *val)
 {
@@ -206,7 +216,7 @@ static struct switch_attr default_port[] = {
 		.type = SWITCH_TYPE_LINK,
 		.name = "link",
 		.description = "Get port link information",
-		.set = NULL,
+		.set = swconfig_set_link,
 		.get = swconfig_get_link,
 	}
 };
@@ -280,6 +290,12 @@ static const struct nla_policy switch_policy[SWITCH_ATTR_MAX+1] = {
 static const struct nla_policy port_policy[SWITCH_PORT_ATTR_MAX+1] = {
 	[SWITCH_PORT_ID] = { .type = NLA_U32 },
 	[SWITCH_PORT_FLAG_TAGGED] = { .type = NLA_FLAG },
+};
+
+static struct nla_policy link_policy[SWITCH_LINK_ATTR_MAX] = {
+	[SWITCH_LINK_FLAG_DUPLEX] = { .type = NLA_FLAG },
+	[SWITCH_LINK_FLAG_ANEG] = { .type = NLA_FLAG },
+	[SWITCH_LINK_SPEED] = { .type = NLA_U32 },
 };
 
 static inline void
@@ -595,6 +611,22 @@ swconfig_parse_ports(struct sk_buff *msg, struct nlattr *head,
 }
 
 static int
+swconfig_parse_link(struct sk_buff *msg, struct nlattr *nla,
+		    struct switch_port_link *link)
+{
+	struct nlattr *tb[SWITCH_LINK_ATTR_MAX + 1];
+
+	if (nla_parse_nested(tb, SWITCH_LINK_ATTR_MAX, nla, link_policy))
+		return -EINVAL;
+
+	link->duplex = !!tb[SWITCH_LINK_FLAG_DUPLEX];
+	link->aneg = !!tb[SWITCH_LINK_FLAG_ANEG];
+	link->speed = nla_get_u32(tb[SWITCH_LINK_SPEED]);
+
+	return 0;
+}
+
+static int
 swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 {
 	const struct switch_attr *attr;
@@ -637,6 +669,21 @@ swconfig_set_attr(struct sk_buff *skb, struct genl_info *info)
 			err = swconfig_parse_ports(skb,
 				info->attrs[SWITCH_ATTR_OP_VALUE_PORTS],
 				&val, dev->ports);
+			if (err < 0)
+				goto error;
+		} else {
+			val.len = 0;
+			err = 0;
+		}
+		break;
+	case SWITCH_TYPE_LINK:
+		val.value.link = &dev->linkbuf;
+		memset(&dev->linkbuf, 0, sizeof(struct switch_port_link));
+
+		if (info->attrs[SWITCH_ATTR_OP_VALUE_LINK]) {
+			err = swconfig_parse_link(skb,
+						  info->attrs[SWITCH_ATTR_OP_VALUE_LINK],
+						  val.value.link);
 			if (err < 0)
 				goto error;
 		} else {

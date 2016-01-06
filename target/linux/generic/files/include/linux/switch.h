@@ -95,6 +95,8 @@ struct switch_dev_ops {
 
 	int (*get_port_link)(struct switch_dev *dev, int port,
 			     struct switch_port_link *link);
+	int (*set_port_link)(struct switch_dev *dev, int port,
+			     struct switch_port_link *link);
 	int (*get_port_stats)(struct switch_dev *dev, int port,
 			      struct switch_port_stats *stats);
 };
