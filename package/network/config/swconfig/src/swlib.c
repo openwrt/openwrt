@@ -337,6 +337,30 @@ nla_put_failure:
 }
 
 static int
+send_attr_link(struct nl_msg *msg, struct switch_val *val)
+{
+	struct switch_port_link *link = val->value.link;
+	struct nlattr *n;
+
+	n = nla_nest_start(msg, SWITCH_ATTR_OP_VALUE_LINK);
+	if (!n)
+		goto nla_put_failure;
+
+	if (link->duplex)
+		NLA_PUT_FLAG(msg, SWITCH_LINK_FLAG_DUPLEX);
+	if (link->aneg)
+		NLA_PUT_FLAG(msg, SWITCH_LINK_FLAG_ANEG);
+	NLA_PUT_U32(msg, SWITCH_LINK_SPEED, link->speed);
+
+	nla_nest_end(msg, n);
+
+	return 0;
+
+nla_put_failure:
+	return -1;
+}
+
+static int
 send_attr_val(struct nl_msg *msg, void *arg)
 {
 	struct switch_val *val = arg;
@@ -358,6 +382,10 @@ send_attr_val(struct nl_msg *msg, void *arg)
 		break;
 	case SWITCH_TYPE_PORTS:
 		if (send_attr_ports(msg, val) < 0)
+			goto nla_put_failure;
+		break;
+	case SWITCH_TYPE_LINK:
+		if (send_attr_link(msg, val))
 			goto nla_put_failure;
 		break;
 	default:
