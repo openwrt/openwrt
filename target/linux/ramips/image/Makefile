@@ -77,10 +77,10 @@ define Build/ubnt-erx-factory-compat
 endef
 
 define Build/ubnt-erx-factory-kernel
-	if [ -e $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE) ]; then \
-		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp/' $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE); \
+	if [ -e $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) ]; then \
+		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp/' $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE); \
 		\
-		md5sum --binary $(BIN_DIR)/$(KERNEL_INITRAMFS_IMAGE) | awk '{print $$1}'> $@.md5; \
+		md5sum --binary $(KDIR)/tmp/$(KERNEL_INITRAMFS_IMAGE) | awk '{print $$1}'> $@.md5; \
 		$(TAR) -rf $@ --transform='s/^.*/vmlinux.tmp.md5/' $@.md5; \
 		$(RM) $@.md5; \
 	fi
