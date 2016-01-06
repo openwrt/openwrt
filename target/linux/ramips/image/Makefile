@@ -1073,7 +1073,7 @@ define Device/ubnt-erx
   FILESYSTEMS := squashfs
   KERNEL_SIZE := 3145728
   KERNEL := $(KERNEL_DTB) | uImage lzma
-  IMAGES := sysupgrade.tar factory-initramfs.tar
+  IMAGES := sysupgrade.tar $(if $(CONFIG_TARGET_ROOTFS_INITRAMFS),factory-initramfs.tar)
   IMAGE/factory-initramfs.tar := ubnt-erx-factory-compat | \
 				 ubnt-erx-factory-kernel | \
 				 ubnt-erx-factory-rootfs | \
