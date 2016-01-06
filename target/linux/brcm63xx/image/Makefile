@@ -168,6 +168,7 @@ endef
 # Shared device definition: applies to every defined device
 define Device/Default
   PROFILES = Default $$(DEVICE_PROFILE)
+  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DEVICE_DTS).dts)
   KERNEL_INITRAMFS_IMAGE = $$(KERNEL_INITRAMFS_PREFIX).elf
   DEVICE_PROFILE :=
   DEVICE_DTS :=

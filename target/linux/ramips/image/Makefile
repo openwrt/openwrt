@@ -32,6 +32,7 @@ KERNEL_LOADADDR := $(loadaddr-y)
 
 KERNEL_DTB = kernel-bin | patch-dtb | lzma
 define Device/Default
+  KERNEL_DEPENDS = $$(wildcard ../dts/$$(DTS).dts)
   KERNEL := $(KERNEL_DTB) | uImage lzma
   IMAGES := sysupgrade.bin
   IMAGE_SIZE := $(ralink_default_fw_size_8M)

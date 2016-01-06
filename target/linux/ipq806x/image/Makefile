@@ -42,6 +42,7 @@ endef
 
 define Device/Default
 	PROFILES := Default
+	KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
 	KERNEL_INITRAMFS_PREFIX := $$(IMG_PREFIX)-$(1)-initramfs
 	DEVICE_DTS :=
 	KERNEL_PREFIX := $$(IMAGE_PREFIX)
