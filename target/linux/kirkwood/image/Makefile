@@ -15,6 +15,7 @@ KERNEL_LOADADDR:=0x8000
 TARGET_DEVICES = linksys-audi linksys-viper
 
 define Device/Default
+  KERNEL_DEPENDS = $$(wildcard $(DTS_DIR)/$$(DEVICE_DTS).dts)
   KERNEL := kernel-bin | append-dtb | uImage none
   KERNEL_NAME := zImage
 endef

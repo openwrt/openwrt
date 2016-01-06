@@ -67,6 +67,7 @@ define Device/Default
   # extract the full dtb name based on the device info
   DT := $(patsubst %.dtb,%,$(notdir $(wildcard $(if $(IB),$(KDIR),$(DTS_DIR))/*-$(1).dtb)))
   KERNEL := kernel-bin | append-dtb | lzma-d16
+  KERNEL_DEPENDS = $$(wildcard $(KDIR)/$$(DT).dts)
   FILESYSTEMS := squashfs
   KERNEL_NAME := zImage
   IMAGE_NAME = $$(IMAGE_PREFIX)-$$(1).$$(2)
