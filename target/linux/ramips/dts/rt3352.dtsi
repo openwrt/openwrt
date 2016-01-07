@@ -146,6 +146,22 @@
 			status = "disabled";
 		};
 
+		i2c@900 {
+			compatible = "ralink,rt2880-i2c";
+			reg = <0x900 0x100>;
+
+			resets = <&rstctrl 16>;
+			reset-names = "i2c";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+
+			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;
+		};
+
 		spi0: spi@b00 {
 			compatible = "ralink,rt3352-spi", "ralink,rt2880-spi";
 			reg = <0xb00 0x40>;
@@ -217,6 +233,13 @@
 		pinctrl-0 = <&state_default>;
 
 		state_default: pinctrl0 {
+		};
+
+		i2c_pins: i2c {
+			i2c {
+				ralink,group = "i2c";
+				ralink,function = "i2c";
+			};
 		};
 
 		spi_pins: spi {
