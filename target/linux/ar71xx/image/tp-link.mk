@@ -35,6 +35,16 @@ define Build/mktplinkfw-combined
 	@mv $@.new $@
 endef
 
+# add RE450 and similar header to the kernel image
+define Build/mktplinkfw-kernel
+	$(STAGING_DIR_HOST)/bin/mktplinkfw-kernel \
+		-H $(TPLINK_HWID) -N OpenWrt -V $(REVISION) \
+		-L $(KERNEL_LOADADDR) -E $(KERNEL_LOADADDR) \
+		-k $@ \
+		-o $@.new
+	@mv $@.new $@
+endef
+
 define Device/tplink
   TPLINK_HWREV := 0x1
   TPLINK_HEADER_VERSION := 1
