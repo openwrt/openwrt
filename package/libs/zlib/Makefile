@@ -27,6 +27,24 @@ define Package/zlib
   URL:=http://www.zlib.net/
 endef
 
+define Package/zlib-dev
+  SECTION:=devel
+  CATEGORY:=Development
+  SUBMENU:=Libraries
+  DEPENDS:=zlib
+  TITLE:=Development files for the zlib library
+endef
+
+define Package/zlib/description
+ zlib is a lossless data-compression library.
+ This package includes the shared library.
+endef
+
+define Package/zlib-dev/description
+ zlib is a lossless data-compression library.
+ This package includes the development support files.
+endef
+
 define Build/Configure
 	(cd $(PKG_BUILD_DIR); \
 		$(TARGET_CONFIGURE_OPTS) \
@@ -69,4 +87,18 @@ define Package/zlib/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.so.* $(1)/usr/lib/
 endef
 
+define Package/zlib-dev/install
+	$(INSTALL_DIR) $(1)/usr/include
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/zconf.h \
+	  $(1)/usr/include/
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/include/zlib.h \
+	  $(1)/usr/include/
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libz.a $(1)/usr/lib/
+	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
+	$(INSTALL_DATA) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/zlib.pc \
+	  $(1)/usr/lib/pkgconfig/
+endef
+
 $(eval $(call BuildPackage,zlib))
+$(eval $(call BuildPackage,zlib-dev))
