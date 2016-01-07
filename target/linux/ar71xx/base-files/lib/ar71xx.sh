@@ -770,6 +770,9 @@ ar71xx_board_detect() {
 	*"Qihoo 360 C301")
 		name="qihoo-c301"
 		;;
+	*"RE450")
+		name="re450"
+		;;
 	*"RouterBOARD 411/A/AH")
 		name="rb-411"
 		;;

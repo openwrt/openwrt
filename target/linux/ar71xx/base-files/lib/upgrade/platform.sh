@@ -343,6 +343,7 @@ platform_check_image() {
 	omy-x1|\
 	onion-omega|\
 	oolite|\
+	re450|\
 	smart-300|\
 	som9331|\
 	tellstick-znet-lite|\
