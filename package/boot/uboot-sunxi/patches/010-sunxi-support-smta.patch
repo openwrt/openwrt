@@ -1,0 +1,60 @@
+diff --git a/arch/arm/cpu/armv7/sunxi/Makefile b/arch/arm/cpu/armv7/sunxi/Makefile
+index dfb0a3e..7a6a3cc 100644
+--- a/arch/arm/cpu/armv7/sunxi/Makefile
++++ b/arch/arm/cpu/armv7/sunxi/Makefile
+@@ -33,6 +33,7 @@ obj-$(CONFIG_MACH_SUN8I)	+= clock_sun6i.o
+ endif
+ obj-$(CONFIG_MACH_SUN9I)	+= clock_sun9i.o
+ obj-$(CONFIG_MACH_SUN6I)	+= tzpc.o
++obj-$(CONFIG_MACH_SUN8I)	+= tzpc.o
+ 
+ obj-$(CONFIG_AXP152_POWER)	+= pmic_bus.o
+ obj-$(CONFIG_AXP209_POWER)	+= pmic_bus.o
+diff --git a/arch/arm/cpu/armv7/sunxi/tzpc.c b/arch/arm/cpu/armv7/sunxi/tzpc.c
+index 5c9c69b..6c8a0fd 100644
+--- a/arch/arm/cpu/armv7/sunxi/tzpc.c
++++ b/arch/arm/cpu/armv7/sunxi/tzpc.c
+@@ -13,6 +13,15 @@ void tzpc_init(void)
+ {
+ 	struct sunxi_tzpc *tzpc = (struct sunxi_tzpc *)SUNXI_TZPC_BASE;
+ 
++#ifdef CONFIG_MACH_SUN6I
+ 	/* Enable non-secure access to the RTC */
+-	writel(SUNXI_TZPC_DECPORT0_RTC, &tzpc->decport0_set);
++	writel(SUN6I_TZPC_DECPORT0_RTC, &tzpc->decport0_set);
++#endif
++
++#ifdef CONFIG_MACH_SUN8I_H3
++	/* Enable non-secure access to all peripherals */
++	writel(SUN8I_H3_TZPC_DECPORT0_ALL, &tzpc->decport0_set);
++	writel(SUN8I_H3_TZPC_DECPORT1_ALL, &tzpc->decport1_set);
++	writel(SUN8I_H3_TZPC_DECPORT2_ALL, &tzpc->decport2_set);
++#endif
+ }
+diff --git a/arch/arm/include/asm/arch-sunxi/tzpc.h b/arch/arm/include/asm/arch-sunxi/tzpc.h
+index ba4d43b..95c55cd 100644
+--- a/arch/arm/include/asm/arch-sunxi/tzpc.h
++++ b/arch/arm/include/asm/arch-sunxi/tzpc.h
+@@ -13,10 +13,21 @@ struct sunxi_tzpc {
+ 	u32 decport0_status;	/* 0x04 Status of decode protection port 0 */
+ 	u32 decport0_set;	/* 0x08 Set decode protection port 0 */
+ 	u32 decport0_clear;	/* 0x0c Clear decode protection port 0 */
++	/* For A80 and later SoCs */
++	u32 decport1_status;	/* 0x10 Status of decode protection port 1 */
++	u32 decport1_set;	/* 0x14 Set decode protection port 1 */
++	u32 decport1_clear;	/* 0x18 Clear decode protection port 1 */
++	u32 decport2_status;	/* 0x1c Status of decode protection port 2 */
++	u32 decport2_set;	/* 0x20 Set decode protection port 2 */
++	u32 decport2_clear;	/* 0x24 Clear decode protection port 2 */
+ };
+ #endif
+ 
+-#define SUNXI_TZPC_DECPORT0_RTC	(1 << 1)
++#define SUN6I_TZPC_DECPORT0_RTC	(1 << 1)
++
++#define SUN8I_H3_TZPC_DECPORT0_ALL  0xbe
++#define SUN8I_H3_TZPC_DECPORT1_ALL  0xff
++#define SUN8I_H3_TZPC_DECPORT2_ALL  0x7f
+ 
+ void tzpc_init(void);
+ 
