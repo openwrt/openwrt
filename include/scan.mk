@@ -26,8 +26,12 @@ define feedname
 $(if $(patsubst feeds/%,,$(1)),,$(word 2,$(subst /, ,$(1))))
 endef
 
+ifdef SDK
+  IGNORE_PACKAGES = linux
+endif
+
 define PackageDir
-  $(TMP_DIR)/.$(SCAN_TARGET): $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1)
+  $(if $(filter $(addprefix %_,$(IGNORE_PACKAGES)),$(1)),,$(TMP_DIR)/.$(SCAN_TARGET): $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1))
   $(TMP_DIR)/info/.$(SCAN_TARGET)-$(1): $(SCAN_DIR)/$(2)/Makefile $(SCAN_STAMP) $(foreach DEP,$(DEPS_$(SCAN_DIR)/$(2)/Makefile) $(SCAN_DEPS),$(wildcard $(if $(filter /%,$(DEP)),$(DEP),$(SCAN_DIR)/$(2)/$(DEP))))
 	{ \
 		$$(call progress,Collecting $(SCAN_NAME) info: $(SCAN_DIR)/$(2)) \
