@@ -1,0 +1,16 @@
+diff --git a/board/sunxi/Kconfig b/board/sunxi/Kconfig
+index 9d67847..28e6bb4 100644
+--- a/board/sunxi/Kconfig
++++ b/board/sunxi/Kconfig
+@@ -71,8 +71,11 @@ config MACH_SUN8I_A33
+ config MACH_SUN8I_H3
+ 	bool "sun8i (Allwinner H3)"
+ 	select CPU_V7
++	select CPU_V7_HAS_NONSEC
++	select CPU_V7_HAS_VIRT
+ 	select SUNXI_GEN_SUN6I
+ 	select SUPPORT_SPL
++	select ARMV7_BOOT_SEC_DEFAULT if OLD_SUNXI_KERNEL_COMPAT
+ 
+ config MACH_SUN8I_A83T
+ 	bool "sun8i (Allwinner A83T)"
