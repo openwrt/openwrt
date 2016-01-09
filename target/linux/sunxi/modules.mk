@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2013 OpenWrt.org
+# Copyright (C) 2013-2016 OpenWrt.org
 #
 # This is free software, licensed under the GNU General Public License v2.
 # See /LICENSE for more information.
@@ -25,7 +25,7 @@ $(eval $(call KernelPackage,rtc-sunxi))
 define KernelPackage/sunxi-ir
     SUBMENU:=$(OTHER_MENU)
     TITLE:=Sunxi SoC built-in IR support (A20)
-    DEPENDS:=@TARGET_sunxi +kmod-input-core
+    DEPENDS:=@TARGET_sunxi @!LINUX_4_4 +kmod-input-core 
     $(call AddDepends/rtc)
     KCONFIG:= \
 	CONFIG_MEDIA_SUPPORT=y \
@@ -45,7 +45,7 @@ $(eval $(call KernelPackage,sunxi-ir))
 define KernelPackage/eeprom-sunxi
     SUBMENU:=$(OTHER_MENU)
     TITLE:=AllWinner Security ID fuse support
-    DEPENDS:=@TARGET_sunxi
+    DEPENDS:=@TARGET_sunxi @!LINUX_4_4
     KCONFIG:= \
 	CONFIG_EEPROM_SUNXI_SID
     FILES:=$(LINUX_DIR)/drivers/misc/eeprom/sunxi_sid.ko
@@ -76,7 +76,7 @@ $(eval $(call KernelPackage,ata-sunxi))
 define KernelPackage/sun4i-emac
   SUBMENU:=$(NETWORK_DEVICES_MENU)
   TITLE:=AllWinner EMAC Ethernet support
-  DEPENDS:=@TARGET_sunxi
+  DEPENDS:=@TARGET_sunxi +LINUX_4_4:kmod-of-mdio +LINUX_4_4:kmod-libphy
   KCONFIG:=CONFIG_SUN4I_EMAC
   FILES:=$(LINUX_DIR)/drivers/net/ethernet/allwinner/sun4i-emac.ko
   AUTOLOAD:=$(call AutoProbe,sun4i-emac)
@@ -104,11 +104,17 @@ $(eval $(call KernelPackage,wdt-sunxi))
 define KernelPackage/sound-soc-sunxi
   TITLE:=AllWinner built-in SoC sound support
   KCONFIG:= \
-	CONFIG_SND_SUNXI_SOC_CODEC
-  FILES:= \
-	$(LINUX_DIR)/sound/soc/sunxi/sunxi-codec.ko
+	CONFIG_SND_SUNXI_SOC_CODEC \
+	CONFIG_SND_SUN4I_CODEC
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),lt,4.4.0)),1)
+  FILES+=$(LINUX_DIR)/sound/soc/sunxi/sunxi-codec.ko
   AUTOLOAD:=$(call AutoLoad,65,sunxi-codec)
-  DEPENDS:=@TARGET_sunxi +kmod-sound-soc-core @LINUX_4_1
+endif
+ifeq ($(strip $(call CompareKernelPatchVer,$(KERNEL_PATCHVER),ge,4.4.0)),1)
+  FILES:=$(LINUX_DIR)/sound/soc/sunxi/sun4i-codec.ko
+  AUTOLOAD:=$(call AutoLoad,65,sun4i-codec)
+endif
+  DEPENDS:=@TARGET_sunxi +kmod-sound-soc-core
   $(call AddDepends/sound)
 endef
 
