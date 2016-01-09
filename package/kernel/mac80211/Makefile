@@ -1945,6 +1945,14 @@ ifneq ($(CONFIG_BRCMFMAC_PCIE),)
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43602-pcie.ap.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43602-pcie.bin
 endif
+ifneq ($(CONFIG_BRCMFMAC_SDIO),)
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac4329-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac4329-sdio.bin
+	$(INSTALL_DATA) \
+		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43362-sdio.bin \
+		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
+endif
 endef
 
 define KernelPackage/carl9170/install
