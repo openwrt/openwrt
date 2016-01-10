@@ -3,6 +3,7 @@ use FindBin;
 use lib "$FindBin::Bin";
 use strict;
 use metadata;
+use Getopt::Long;
 
 my %board;
 
@@ -871,6 +872,7 @@ sub gen_version_filtered_list() {
 }
 
 sub parse_command() {
+	GetOptions("ignore=s", \@ignore);
 	my $cmd = shift @ARGV;
 	for ($cmd) {
 		/^target_config$/ and return gen_target_config();
@@ -895,6 +897,8 @@ Available Commands:
 	$0 package_licensefull [file] 		Package license information (full list)
 	$0 version_filter [patchver] [list...]	Filter list of version tagged strings
 
+Options:
+	--ignore <name>				Ignore the source package <name>
 EOF
 }
 
