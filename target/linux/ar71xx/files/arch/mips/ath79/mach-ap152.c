@@ -132,7 +132,6 @@ static void __init ap152_setup(void)
 	ath79_eth0_data.duplex = DUPLEX_FULL;
 	ath79_eth0_data.phy_mask = BIT(0);
 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
-	ath79_eth0_pll_data.pll_1000 = 0x06000000;
 
 	ath79_register_eth(0);
 }
