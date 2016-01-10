@@ -1441,7 +1441,7 @@ define KernelPackage/wl12xx
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for TI WL12xx
   URL:=http://wireless.kernel.org/en/users/Drivers/wl12xx
-  DEPENDS+= +kmod-wlcore
+  DEPENDS+= +kmod-wlcore +wl12xx-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl12xx/wl12xx.ko
   AUTOLOAD:=$(call AutoProbe,wl12xx)
 endef
@@ -1454,7 +1454,7 @@ define KernelPackage/wl18xx
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for TI WL18xx
   URL:=http://wireless.kernel.org/en/users/Drivers/wl18xx
-  DEPENDS+= +kmod-wlcore
+  DEPENDS+= +kmod-wlcore +wl18xx-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ti/wl18xx/wl18xx.ko
   AUTOLOAD:=$(call AutoProbe,wl18xx)
 endef
@@ -1839,27 +1839,6 @@ endef
 define KernelPackage/p54-spi/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(P54SPIFW) $(1)/lib/firmware/3826.arm
-endef
-
-define KernelPackage/wl12xx/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-mr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-plt.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl127x-fw-5-sr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl1271-nvs.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-mr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-plt.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-fw-5-sr.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl128x-nvs.bin \
-		$(1)/lib/firmware/ti-connectivity
-endef
-
-define KernelPackage/wl18xx/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ti-connectivity
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ti-connectivity/wl18xx-fw-4.bin \
-		$(1)/lib/firmware/ti-connectivity
 endef
 
 define KernelPackage/zd1211rw/install
