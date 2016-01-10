@@ -1472,58 +1472,33 @@ endef
 define KernelPackage/rtl8192ce
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192CE/RTL8188CE support
-  DEPENDS+= +kmod-rtlwifi-pci +kmod-rtl8192c-common
+  DEPENDS+= +kmod-rtlwifi-pci +kmod-rtl8192c-common +rtl8192ce-firmware
   FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192ce/rtl8192ce.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192ce)
-endef
-
-define KernelPackage/rtl8192ce/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfw.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfwU.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cfwU_B.bin $(1)/lib/firmware/rtlwifi
 endef
 
 define KernelPackage/rtl8192se
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192SE/RTL8191SE support
-  DEPENDS+= +kmod-rtlwifi-pci
+  DEPENDS+= +kmod-rtlwifi-pci +rtl8192se-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192se/rtl8192se.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192se)
-endef
-
-define KernelPackage/rtl8192se/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192sefw.bin $(1)/lib/firmware/rtlwifi
 endef
 
 define KernelPackage/rtl8192de
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192DE/RTL8188DE support
-  DEPENDS+= +kmod-rtlwifi-pci
+  DEPENDS+= +kmod-rtlwifi-pci +rtl8192de-firmware
   FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192de/rtl8192de.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192de)
-endef
-
-define KernelPackage/rtl8192de/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192defw.bin $(1)/lib/firmware/rtlwifi
 endef
 
 define KernelPackage/rtl8192cu
   $(call KernelPackage/mac80211/Default)
   TITLE:=Realtek RTL8192CU/RTL8188CU support
-  DEPENDS+= +kmod-rtlwifi-usb +kmod-rtl8192c-common
+  DEPENDS+= +kmod-rtlwifi-usb +kmod-rtl8192c-common +rtl8192cu-firmware
   FILES:= $(PKG_BUILD_DIR)/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rtl8192cu.ko
   AUTOLOAD:=$(call AutoProbe,rtl8192cu)
-endef
-
-define KernelPackage/rtl8192cu/install
-	$(INSTALL_DIR) $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_A.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_B.bin $(1)/lib/firmware/rtlwifi
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rtlwifi/rtl8192cufw_TMSC.bin $(1)/lib/firmware/rtlwifi
 endef
 
 
