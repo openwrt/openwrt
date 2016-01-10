@@ -36,14 +36,5 @@ define Build/Compile
 
 endef
 
-Package/ar3k-firmware = $(call Package/firmware-default,ath3k firmware)
-define Package/ar3k-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ar3k
-	$(CP) \
-		$(PKG_BUILD_DIR)/ar3k/*.dfu \
-		$(1)/lib/firmware/ar3k
-endef
-$(eval $(call BuildPackage,ar3k-firmware))
-
 include $(wildcard ./*.mk)
 #$(eval $(call BuildPackage,linux-firmware))

@@ -252,7 +252,7 @@ define KernelPackage/ath9k-htc
   $(call KernelPackage/mac80211/Default)
   TITLE:=Atheros 802.11n USB device support
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/ath9k
-  DEPENDS+= @USB_SUPPORT +kmod-ath9k-common +kmod-usb-core
+  DEPENDS+= @USB_SUPPORT +kmod-ath9k-common +kmod-usb-core +ath9k-htc-firmware
   FILES:= \
 	$(PKG_BUILD_DIR)/drivers/net/wireless/ath/ath9k/ath9k_htc.ko
   AUTOLOAD:=$(call AutoProbe,ath9k_htc)
@@ -764,7 +764,7 @@ endef
 define KernelPackage/carl9170
   $(call KernelPackage/mac80211/Default)
   TITLE:=Driver for Atheros AR9170 USB sticks
-  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core +kmod-input-core +@DRIVER_11N_SUPPORT
+  DEPENDS:=@USB_SUPPORT +kmod-mac80211 +kmod-ath +kmod-usb-core +kmod-input-core +@DRIVER_11N_SUPPORT +carl9170-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ath/carl9170/carl9170.ko
   AUTOLOAD:=$(call AutoProbe,carl9170)
 endef
@@ -1742,14 +1742,6 @@ define Build/InstallDev
 endef
 
 
-define KernelPackage/ath9k-htc/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ath9k_htc
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ath9k_htc/htc_9271-1.4.0.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/ath9k_htc/htc_7010-1.4.0.fw \
-		$(1)/lib/firmware/ath9k_htc
-endef
-
 define KernelPackage/b43/install
 	rm -rf $(1)/lib/firmware/
 ifeq ($(CONFIG_B43_OPENFIRMWARE),y)
@@ -1816,11 +1808,6 @@ ifneq ($(CONFIG_BRCMFMAC_SDIO),)
 		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43362-sdio.bin \
 		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
 endif
-endef
-
-define KernelPackage/carl9170/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/carl9170-1.fw $(1)/lib/firmware
 endef
 
 define KernelPackage/cfg80211/install
