@@ -687,7 +687,7 @@ define KernelPackage/brcmsmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n PCIe SoftMAC WLAN driver
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT +!TARGET_brcm47xx:kmod-bcma +kmod-lib-cordic +kmod-lib-crc8 +kmod-brcmutil +!BRCMSMAC_USE_FW_FROM_WL:brcmsmac-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmsmac/brcmsmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmsmac)
   MENU:=1
@@ -719,7 +719,10 @@ define KernelPackage/brcmfmac
   $(call KernelPackage/mac80211/Default)
   TITLE:=Broadcom IEEE802.11n USB FullMAC WLAN driver
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/brcm80211
-  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil +BRCMFMAC_SDIO:kmod-mmc +BRCMFMAC_USB:kmod-usb-core
+  DEPENDS+= @USB_SUPPORT +kmod-cfg80211 +@DRIVER_11N_SUPPORT +kmod-brcmutil \
+	+BRCMFMAC_PCIE:brcmfmac-firmware-pcie \
+	+BRCMFMAC_SDIO:kmod-mmc +BRCMFMAC_SDIO:brcmfmac-firmware-sdio \
+	+BRCMFMAC_USB:kmod-usb-core +BRCMFMAC_USB:brcmfmac-firmware-usb
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko
   AUTOLOAD:=$(call AutoProbe,brcmfmac)
 endef
@@ -1777,36 +1780,6 @@ define KernelPackage/brcmsmac/install
 ifeq ($(CONFIG_BRCMSMAC_USE_FW_FROM_WL),y)
 	tar xjf "$(DL_DIR)/$(PKG_BRCMSMAC_FW_SOURCE)" -C "$(PKG_BUILD_DIR)"
 	b43-fwcutter --brcmsmac -w $(1)/lib/firmware/ $(PKG_BUILD_DIR)/$(PKG_BRCMSMAC_FW_OBJECT)
-else
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx-0.fw \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/bcm43xx_hdr-0.fw \
-		$(1)/lib/firmware/brcm/
-endif
-endef
-
-define KernelPackage/brcmfmac/install
-	$(INSTALL_DIR) $(1)/lib/firmware/brcm
-ifneq ($(CONFIG_BRCMFMAC_USB),)
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43236b.bin \
-		$(1)/lib/firmware/brcm/
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43143.bin \
-		$(1)/lib/firmware/brcm/
-endif
-ifneq ($(CONFIG_BRCMFMAC_PCIE),)
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43602-pcie.ap.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43602-pcie.bin
-endif
-ifneq ($(CONFIG_BRCMFMAC_SDIO),)
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac4329-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac4329-sdio.bin
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/brcm/brcmfmac43362-sdio.bin \
-		$(1)/lib/firmware/brcm/brcmfmac43362-sdio.bin
 endif
 endef
 
