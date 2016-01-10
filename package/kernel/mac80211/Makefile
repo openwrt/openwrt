@@ -1047,7 +1047,7 @@ endef
 define KernelPackage/mt7601u
   $(call KernelPackage/mac80211/Default)
   TITLE:=MT7601U-based USB dongles Wireless Driver
-  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core
+  DEPENDS+= +kmod-mac80211 +@DRIVER_11N_SUPPORT @USB_SUPPORT +kmod-usb-core +mt7601u-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/mediatek/mt7601u/mt7601u.ko
   AUTOLOAD:=$(call AutoProbe,mt7601u)
 endef
@@ -1259,7 +1259,7 @@ endef
 
 define KernelPackage/rt2800-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-rt2800-mmio
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +kmod-rt2800-lib +kmod-rt2800-mmio +rt2800-pci-firmware
   TITLE+= (RT2860 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800pci.ko
   AUTOLOAD:=$(call AutoProbe,rt2800pci)
@@ -1267,7 +1267,7 @@ endef
 
 define KernelPackage/rt2800-usb
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-rt2800-lib +kmod-lib-crc-ccitt
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +kmod-rt2800-lib +kmod-lib-crc-ccitt +rt2800-usb-firmware
   TITLE+= (RT2870 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt2800usb.ko
   AUTOLOAD:=$(call AutoProbe,rt2800usb)
@@ -1276,7 +1276,7 @@ endef
 
 define KernelPackage/rt61-pci
 $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci
+  DEPENDS+= @PCI_SUPPORT +kmod-rt2x00-pci +rt61-pci-firmware
   TITLE+= (RT2x61 PCI)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt61pci.ko
   AUTOLOAD:=$(call AutoProbe,rt61pci)
@@ -1284,7 +1284,7 @@ endef
 
 define KernelPackage/rt73-usb
   $(call KernelPackage/rt2x00/Default)
-  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb
+  DEPENDS+= @USB_SUPPORT +kmod-rt2x00-usb +rt73-usb-firmware
   TITLE+= (RT73 USB)
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/ralink/rt2x00/rt73usb.ko
   AUTOLOAD:=$(call AutoProbe,rt73usb)
@@ -1826,13 +1826,6 @@ define KernelPackage/ipw2200/install
 	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(IPW2200_NAME)-$(IPW2200_VERSION)/ipw2200*.fw $(1)/lib/firmware
 endef
 
-define KernelPackage/mt7601u/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/mt7601u.bin \
-		$(1)/lib/firmware
-endef
-
 define KernelPackage/p54-pci/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(P54PCIFW) $(1)/lib/firmware/isl3886pci
@@ -1846,33 +1839,6 @@ endef
 define KernelPackage/p54-spi/install
 	$(INSTALL_DIR) $(1)/lib/firmware
 	$(INSTALL_DATA) $(DL_DIR)/$(P54SPIFW) $(1)/lib/firmware/3826.arm
-endef
-
-define KernelPackage/rt2800-pci/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2860.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt3290.bin \
-		$(1)/lib/firmware
-endef
-
-define KernelPackage/rt2800-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2870.bin $(1)/lib/firmware/
-endef
-
-define KernelPackage/rt61-pci/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2561s.bin \
-		$(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt2661.bin \
-		$(1)/lib/firmware/
-endef
-
-define KernelPackage/rt73-usb/install
-	$(INSTALL_DIR) $(1)/lib/firmware
-	$(INSTALL_DATA) $(PKG_BUILD_DIR)/$(PKG_LINUX_FIRMWARE_SUBDIR)/rt73.bin $(1)/lib/firmware/
 endef
 
 define KernelPackage/wl12xx/install
