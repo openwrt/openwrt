@@ -1,0 +1,24 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:04 +0200
+Subject: [PATCH] brcmfmac: Fix exception handling.
+
+In some exception situations the ifp->vif was not properly assigned
+which could result in crash.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -6331,6 +6331,7 @@ wiphy_unreg_out:
+ priv_out:
+ 	wl_deinit_priv(cfg);
+ 	brcmf_free_vif(vif);
++	ifp->vif = NULL;
+ wiphy_out:
+ 	brcmf_free_wiphy(wiphy);
+ 	return NULL;

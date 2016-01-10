@@ -1,0 +1,113 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:08 +0200
+Subject: [PATCH] brcmfmac: Inform p2p module about p2pon through API
+
+When the p2pon module param is used then p2p attach will initialize
+p2p device iface in the firmware, but it is doing that by checking
+data. It is cleaner to pass the p2pon information to p2p by API.
+This information is also needed for other patch.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -6126,7 +6126,8 @@ static void brcmf_free_wiphy(struct wiph
+ }
+ 
+ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
+-						  struct device *busdev)
++						  struct device *busdev,
++						  bool p2pdev_forced)
+ {
+ 	struct net_device *ndev = brcmf_get_ifp(drvr, 0)->ndev;
+ 	struct brcmf_cfg80211_info *cfg;
+@@ -6218,7 +6219,7 @@ struct brcmf_cfg80211_info *brcmf_cfg802
+ 			*cap &= ~IEEE80211_HT_CAP_SUP_WIDTH_20_40;
+ 	}
+ 
+-	err = brcmf_p2p_attach(cfg);
++	err = brcmf_p2p_attach(cfg, p2pdev_forced);
+ 	if (err) {
+ 		brcmf_err("P2P initilisation failed (%d)\n", err);
+ 		goto wiphy_unreg_out;
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.h
+@@ -469,7 +469,8 @@ brcmf_cfg80211_connect_info *cfg_to_conn
+ }
+ 
+ struct brcmf_cfg80211_info *brcmf_cfg80211_attach(struct brcmf_pub *drvr,
+-						  struct device *busdev);
++						  struct device *busdev,
++						  bool p2pdev_forced);
+ void brcmf_cfg80211_detach(struct brcmf_cfg80211_info *cfg);
+ s32 brcmf_cfg80211_up(struct net_device *ndev);
+ s32 brcmf_cfg80211_down(struct net_device *ndev);
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -1044,7 +1044,8 @@ int brcmf_bus_start(struct device *dev)
+ 
+ 	brcmf_fws_add_interface(ifp);
+ 
+-	drvr->config = brcmf_cfg80211_attach(drvr, bus_if->dev);
++	drvr->config = brcmf_cfg80211_attach(drvr, bus_if->dev,
++					     brcmf_p2p_enable);
+ 	if (drvr->config == NULL) {
+ 		ret = -ENOMEM;
+ 		goto fail;
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -2333,7 +2333,7 @@ void brcmf_p2p_stop_device(struct wiphy
+  *
+  * @cfg: driver private data for cfg80211 interface.
+  */
+-s32 brcmf_p2p_attach(struct brcmf_cfg80211_info *cfg)
++s32 brcmf_p2p_attach(struct brcmf_cfg80211_info *cfg, bool p2pdev_forced)
+ {
+ 	struct brcmf_if *pri_ifp;
+ 	struct brcmf_if *p2p_ifp;
+@@ -2348,11 +2348,15 @@ s32 brcmf_p2p_attach(struct brcmf_cfg802
+ 
+ 	drvr = cfg->pub;
+ 
+-	pri_ifp = drvr->iflist[0];
+-	p2p_ifp = drvr->iflist[1];
+-
++	pri_ifp = brcmf_get_ifp(drvr, 0);
+ 	p2p->bss_idx[P2PAPI_BSSCFG_PRIMARY].vif = pri_ifp->vif;
+ 
++	if (p2pdev_forced) {
++		p2p_ifp = drvr->iflist[1];
++	} else {
++		p2p_ifp = NULL;
++		p2p->p2pdev_dynamically = true;
++	}
+ 	if (p2p_ifp) {
+ 		p2p_vif = brcmf_alloc_vif(cfg, NL80211_IFTYPE_P2P_DEVICE,
+ 					  false);
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.h
+@@ -124,6 +124,7 @@ struct afx_hdl {
+  * @wait_next_af: thread synchronizing struct.
+  * @gon_req_action: about to send go negotiation requets frame.
+  * @block_gon_req_tx: drop tx go negotiation requets frame.
++ * @p2pdev_dynamically: is p2p device if created by module param or supplicant.
+  */
+ struct brcmf_p2p_info {
+ 	struct brcmf_cfg80211_info *cfg;
+@@ -144,9 +145,10 @@ struct brcmf_p2p_info {
+ 	struct completion wait_next_af;
+ 	bool gon_req_action;
+ 	bool block_gon_req_tx;
++	bool p2pdev_dynamically;
+ };
+ 
+-s32 brcmf_p2p_attach(struct brcmf_cfg80211_info *cfg);
++s32 brcmf_p2p_attach(struct brcmf_cfg80211_info *cfg, bool p2pdev_forced);
+ void brcmf_p2p_detach(struct brcmf_p2p_info *p2p);
+ struct wireless_dev *brcmf_p2p_add_vif(struct wiphy *wiphy, const char *name,
+ 				       enum nl80211_iftype type, u32 *flags,

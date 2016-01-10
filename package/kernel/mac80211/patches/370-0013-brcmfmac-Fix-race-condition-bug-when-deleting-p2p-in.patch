@@ -1,0 +1,80 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:16 +0200
+Subject: [PATCH] brcmfmac: Fix race condition bug when deleting p2p interface.
+
+When p2p device interface gets deleted by deinitialising discovery
+it will result in an event which removes the interface, but that is
+also done by delete p2p interface code. This results in race
+condition which sometimes results in lockup/crash. With this patch
+the delete device interface will wait for the event (with timeout)
+removing the possible race condition. Also on the stop device call
+from cfg80211 the deinitialisation of the discovery device should
+be avoided as it can result in a similar situation.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -2238,6 +2238,7 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+ 	brcmf_dbg(TRACE, "delete P2P vif\n");
+ 	vif = container_of(wdev, struct brcmf_cfg80211_vif, wdev);
+ 
++	brcmf_cfg80211_arm_vif_event(cfg, vif);
+ 	switch (vif->wdev.iftype) {
+ 	case NL80211_IFTYPE_P2P_CLIENT:
+ 		if (test_bit(BRCMF_VIF_STATUS_DISCONNECTING, &vif->sme_state))
+@@ -2254,8 +2255,6 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+ 			return 0;
+ 		brcmf_p2p_cancel_remain_on_channel(vif->ifp);
+ 		brcmf_p2p_deinit_discovery(p2p);
+-		brcmf_remove_interface(vif->ifp);
+-		return 0;
+ 	default:
+ 		return -ENOTSUPP;
+ 	}
+@@ -2267,10 +2266,11 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+ 		wait_for_completion_timeout(&cfg->vif_disabled,
+ 					    msecs_to_jiffies(500));
+ 
+-	brcmf_vif_clear_mgmt_ies(vif);
+-
+-	brcmf_cfg80211_arm_vif_event(cfg, vif);
+-	err = brcmf_p2p_release_p2p_if(vif);
++	err = 0;
++	if (vif->wdev.iftype != NL80211_IFTYPE_P2P_DEVICE) {
++		brcmf_vif_clear_mgmt_ies(vif);
++		err = brcmf_p2p_release_p2p_if(vif);
++	}
+ 	if (!err) {
+ 		/* wait for firmware event */
+ 		err = brcmf_cfg80211_wait_vif_event_timeout(cfg, BRCMF_E_IF_DEL,
+@@ -2280,8 +2280,12 @@ int brcmf_p2p_del_vif(struct wiphy *wiph
+ 		else
+ 			err = 0;
+ 	}
++	if (err)
++		brcmf_remove_interface(vif->ifp);
++
+ 	brcmf_cfg80211_arm_vif_event(cfg, NULL);
+-	p2p->bss_idx[P2PAPI_BSSCFG_CONNECTION].vif = NULL;
++	if (vif->wdev.iftype != NL80211_IFTYPE_P2P_DEVICE)
++		p2p->bss_idx[P2PAPI_BSSCFG_CONNECTION].vif = NULL;
+ 
+ 	return err;
+ }
+@@ -2330,7 +2334,9 @@ void brcmf_p2p_stop_device(struct wiphy
+ 	 */
+ 	if (p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif == vif) {
+ 		mutex_lock(&cfg->usr_sync);
+-		(void)brcmf_p2p_deinit_discovery(p2p);
++		/* Set the discovery state to SCAN */
++		(void)brcmf_p2p_set_discover_state(vif->ifp,
++						   WL_P2P_DISC_ST_SCAN, 0, 0);
+ 		brcmf_abort_scanning(cfg);
+ 		clear_bit(BRCMF_VIF_STATUS_READY, &vif->sme_state);
+ 		mutex_unlock(&cfg->usr_sync);

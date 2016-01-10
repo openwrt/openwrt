@@ -1,0 +1,40 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:13 +0200
+Subject: [PATCH] brcmfmac: Only handle p2p_stop_device if vif is valid
+
+In some situations it is possible that vif has been removed while
+cfg80211 invokes the p2p_stop_device handler. This will result in
+crash.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -2324,11 +2324,17 @@ void brcmf_p2p_stop_device(struct wiphy
+ 	struct brcmf_cfg80211_vif *vif;
+ 
+ 	vif = container_of(wdev, struct brcmf_cfg80211_vif, wdev);
+-	mutex_lock(&cfg->usr_sync);
+-	(void)brcmf_p2p_deinit_discovery(p2p);
+-	brcmf_abort_scanning(cfg);
+-	clear_bit(BRCMF_VIF_STATUS_READY, &vif->sme_state);
+-	mutex_unlock(&cfg->usr_sync);
++	/* This call can be result of the unregister_wdev call. In that case
++	 * we dont want to do anything anymore. Just return. The config vif
++	 * will have been cleared at this point.
++	 */
++	if (p2p->bss_idx[P2PAPI_BSSCFG_DEVICE].vif == vif) {
++		mutex_lock(&cfg->usr_sync);
++		(void)brcmf_p2p_deinit_discovery(p2p);
++		brcmf_abort_scanning(cfg);
++		clear_bit(BRCMF_VIF_STATUS_READY, &vif->sme_state);
++		mutex_unlock(&cfg->usr_sync);
++	}
+ }
+ 
+ /**

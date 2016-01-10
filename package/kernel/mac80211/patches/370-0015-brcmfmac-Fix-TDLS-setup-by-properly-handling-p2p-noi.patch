@@ -1,0 +1,120 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:18 +0200
+Subject: [PATCH] brcmfmac: Fix TDLS setup by properly handling p2p noif.
+
+There is a workaround needed for p2p device setup which breaks tdls
+functionality. This patch fixes that by properly signalling fweh that
+p2p device setup is ongoing.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fweh.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fweh.c
+@@ -188,11 +188,13 @@ static void brcmf_fweh_handle_if_event(s
+ 
+ 	/* The P2P Device interface event must not be ignored contrary to what
+ 	 * firmware tells us. Older firmware uses p2p noif, with sta role.
+-	 * This should be accepted.
++	 * This should be accepted when p2pdev_setup is ongoing. TDLS setup will
++	 * use the same ifevent and should be ignored.
+ 	 */
+ 	is_p2pdev = ((ifevent->flags & BRCMF_E_IF_FLAG_NOIF) &&
+ 		     (ifevent->role == BRCMF_E_IF_ROLE_P2P_CLIENT ||
+-		      ifevent->role == BRCMF_E_IF_ROLE_STA));
++		      ((ifevent->role == BRCMF_E_IF_ROLE_STA) &&
++		       (drvr->fweh.p2pdev_setup_ongoing))));
+ 	if (!is_p2pdev && (ifevent->flags & BRCMF_E_IF_FLAG_NOIF)) {
+ 		brcmf_dbg(EVENT, "event can be ignored\n");
+ 		return;
+@@ -316,6 +318,17 @@ event_free:
+ }
+ 
+ /**
++ * brcmf_fweh_p2pdev_setup() - P2P device setup ongoing (or not).
++ *
++ * @ifp: ifp on which setup is taking place or finished.
++ * @ongoing: p2p device setup in progress (or not).
++ */
++void brcmf_fweh_p2pdev_setup(struct brcmf_if *ifp, bool ongoing)
++{
++	ifp->drvr->fweh.p2pdev_setup_ongoing = ongoing;
++}
++
++/**
+  * brcmf_fweh_attach() - initialize firmware event handling.
+  *
+  * @drvr: driver information object.
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fweh.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fweh.h
+@@ -230,12 +230,14 @@ typedef int (*brcmf_fweh_handler_t)(stru
+ /**
+  * struct brcmf_fweh_info - firmware event handling information.
+  *
++ * @p2pdev_setup_ongoing: P2P device creation in progress.
+  * @event_work: event worker.
+  * @evt_q_lock: lock for event queue protection.
+  * @event_q: event queue.
+  * @evt_handler: registered event handlers.
+  */
+ struct brcmf_fweh_info {
++	bool p2pdev_setup_ongoing;
+ 	struct work_struct event_work;
+ 	spinlock_t evt_q_lock;
+ 	struct list_head event_q;
+@@ -255,6 +257,7 @@ void brcmf_fweh_unregister(struct brcmf_
+ int brcmf_fweh_activate_events(struct brcmf_if *ifp);
+ void brcmf_fweh_process_event(struct brcmf_pub *drvr,
+ 			      struct brcmf_event *event_packet);
++void brcmf_fweh_p2pdev_setup(struct brcmf_if *ifp, bool ongoing);
+ 
+ static inline void brcmf_fweh_process_skb(struct brcmf_pub *drvr,
+ 					  struct sk_buff *skb)
+--- a/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/p2p.c
+@@ -2084,11 +2084,13 @@ static struct wireless_dev *brcmf_p2p_cr
+ 	brcmf_p2p_set_firmware(pri_ifp, p2p->dev_addr);
+ 
+ 	brcmf_cfg80211_arm_vif_event(p2p->cfg, p2p_vif);
++	brcmf_fweh_p2pdev_setup(pri_ifp, true);
+ 
+ 	/* Initialize P2P Discovery in the firmware */
+ 	err = brcmf_fil_iovar_int_set(pri_ifp, "p2p_disc", 1);
+ 	if (err < 0) {
+ 		brcmf_err("set p2p_disc error\n");
++		brcmf_fweh_p2pdev_setup(pri_ifp, false);
+ 		brcmf_cfg80211_arm_vif_event(p2p->cfg, NULL);
+ 		goto fail;
+ 	}
+@@ -2097,6 +2099,7 @@ static struct wireless_dev *brcmf_p2p_cr
+ 	err = brcmf_cfg80211_wait_vif_event_timeout(p2p->cfg, BRCMF_E_IF_ADD,
+ 						    msecs_to_jiffies(1500));
+ 	brcmf_cfg80211_arm_vif_event(p2p->cfg, NULL);
++	brcmf_fweh_p2pdev_setup(pri_ifp, false);
+ 	if (!err) {
+ 		brcmf_err("timeout occurred\n");
+ 		err = -EIO;
+@@ -2393,6 +2396,8 @@ s32 brcmf_p2p_attach(struct brcmf_cfg802
+ 		memcpy(p2p_ifp->mac_addr, p2p->dev_addr, ETH_ALEN);
+ 		brcmf_p2p_set_firmware(pri_ifp, p2p->dev_addr);
+ 
++		brcmf_fweh_p2pdev_setup(pri_ifp, true);
++
+ 		/* Initialize P2P Discovery in the firmware */
+ 		err = brcmf_fil_iovar_int_set(pri_ifp, "p2p_disc", 1);
+ 		if (err < 0) {
+@@ -2419,8 +2424,9 @@ s32 brcmf_p2p_attach(struct brcmf_cfg802
+ 		INIT_WORK(&p2p->afx_hdl.afx_work, brcmf_p2p_afx_handler);
+ 		init_completion(&p2p->afx_hdl.act_frm_scan);
+ 		init_completion(&p2p->wait_next_af);
+-	}
+ exit:
++		brcmf_fweh_p2pdev_setup(pri_ifp, false);
++	}
+ 	return err;
+ }
+ 

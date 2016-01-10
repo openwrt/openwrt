@@ -1,0 +1,81 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Fri, 18 Sep 2015 22:08:05 +0200
+Subject: [PATCH] brcmfmac: Add support for the BCM4350 PCIE device.
+
+This patch adds support fo the BRCM4350 2x2 11ac PCIE device.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/chip.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/chip.c
+@@ -647,6 +647,7 @@ static u32 brcmf_chip_tcm_rambase(struct
+ 		return 0x198000;
+ 	case BRCM_CC_4335_CHIP_ID:
+ 	case BRCM_CC_4339_CHIP_ID:
++	case BRCM_CC_4350_CHIP_ID:
+ 	case BRCM_CC_4354_CHIP_ID:
+ 	case BRCM_CC_4356_CHIP_ID:
+ 	case BRCM_CC_43567_CHIP_ID:
+--- a/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
+@@ -47,6 +47,8 @@ enum brcmf_pcie_state {
+ 
+ #define BRCMF_PCIE_43602_FW_NAME		"brcm/brcmfmac43602-pcie.bin"
+ #define BRCMF_PCIE_43602_NVRAM_NAME		"brcm/brcmfmac43602-pcie.txt"
++#define BRCMF_PCIE_4350_FW_NAME			"brcm/brcmfmac4350-pcie.bin"
++#define BRCMF_PCIE_4350_NVRAM_NAME		"brcm/brcmfmac4350-pcie.txt"
+ #define BRCMF_PCIE_4356_FW_NAME			"brcm/brcmfmac4356-pcie.bin"
+ #define BRCMF_PCIE_4356_NVRAM_NAME		"brcm/brcmfmac4356-pcie.txt"
+ #define BRCMF_PCIE_43570_FW_NAME		"brcm/brcmfmac43570-pcie.bin"
+@@ -194,6 +196,8 @@ enum brcmf_pcie_state {
+ 
+ MODULE_FIRMWARE(BRCMF_PCIE_43602_FW_NAME);
+ MODULE_FIRMWARE(BRCMF_PCIE_43602_NVRAM_NAME);
++MODULE_FIRMWARE(BRCMF_PCIE_4350_FW_NAME);
++MODULE_FIRMWARE(BRCMF_PCIE_4350_NVRAM_NAME);
+ MODULE_FIRMWARE(BRCMF_PCIE_4356_FW_NAME);
+ MODULE_FIRMWARE(BRCMF_PCIE_4356_NVRAM_NAME);
+ MODULE_FIRMWARE(BRCMF_PCIE_43570_FW_NAME);
+@@ -1418,6 +1422,10 @@ static int brcmf_pcie_get_fwnames(struct
+ 		fw_name = BRCMF_PCIE_43602_FW_NAME;
+ 		nvram_name = BRCMF_PCIE_43602_NVRAM_NAME;
+ 		break;
++	case BRCM_CC_4350_CHIP_ID:
++		fw_name = BRCMF_PCIE_4350_FW_NAME;
++		nvram_name = BRCMF_PCIE_4350_NVRAM_NAME;
++		break;
+ 	case BRCM_CC_4356_CHIP_ID:
+ 		fw_name = BRCMF_PCIE_4356_FW_NAME;
+ 		nvram_name = BRCMF_PCIE_4356_NVRAM_NAME;
+@@ -1956,6 +1964,7 @@ cleanup:
+ 	PCI_ANY_ID, PCI_ANY_ID, PCI_CLASS_NETWORK_OTHER << 8, 0xffff00, 0 }
+ 
+ static struct pci_device_id brcmf_pcie_devid_table[] = {
++	BRCMF_PCIE_DEVICE(BRCM_PCIE_4350_DEVICE_ID),
+ 	BRCMF_PCIE_DEVICE(BRCM_PCIE_4356_DEVICE_ID),
+ 	BRCMF_PCIE_DEVICE(BRCM_PCIE_43567_DEVICE_ID),
+ 	BRCMF_PCIE_DEVICE(BRCM_PCIE_43570_DEVICE_ID),
+--- a/drivers/net/wireless/brcm80211/include/brcm_hw_ids.h
++++ b/drivers/net/wireless/brcm80211/include/brcm_hw_ids.h
+@@ -39,6 +39,7 @@
+ #define BRCM_CC_4339_CHIP_ID		0x4339
+ #define BRCM_CC_43430_CHIP_ID		43430
+ #define BRCM_CC_4345_CHIP_ID		0x4345
++#define BRCM_CC_4350_CHIP_ID		0x4350
+ #define BRCM_CC_4354_CHIP_ID		0x4354
+ #define BRCM_CC_4356_CHIP_ID		0x4356
+ #define BRCM_CC_43566_CHIP_ID		43566
+@@ -56,6 +57,7 @@
+ #define BRCM_USB_BCMFW_DEVICE_ID	0x0bdc
+ 
+ /* PCIE Device IDs */
++#define BRCM_PCIE_4350_DEVICE_ID	0x43a3
+ #define BRCM_PCIE_4354_DEVICE_ID	0x43df
+ #define BRCM_PCIE_4356_DEVICE_ID	0x43ec
+ #define BRCM_PCIE_43567_DEVICE_ID	0x43d3
