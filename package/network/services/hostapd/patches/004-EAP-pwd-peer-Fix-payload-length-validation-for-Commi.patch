@@ -1,0 +1,73 @@
+From dd2f043c9c43d156494e33d7ce22db96e6ef42c7 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Fri, 1 May 2015 16:37:45 +0300
+Subject: [PATCH 1/5] EAP-pwd peer: Fix payload length validation for Commit
+ and Confirm
+
+The length of the received Commit and Confirm message payloads was not
+checked before reading them. This could result in a buffer read
+overflow when processing an invalid message.
+
+Fix this by verifying that the payload is of expected length before
+processing it. In addition, enforce correct state transition sequence to
+make sure there is no unexpected behavior if receiving a Commit/Confirm
+message before the previous exchanges have been completed.
+
+Thanks to Kostya Kortchinsky of Google security team for discovering and
+reporting this issue.
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/eap_peer/eap_pwd.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/src/eap_peer/eap_pwd.c b/src/eap_peer/eap_pwd.c
+index f2b0926..a629437 100644
+--- a/src/eap_peer/eap_pwd.c
++++ b/src/eap_peer/eap_pwd.c
+@@ -355,6 +355,23 @@ eap_pwd_perform_commit_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
+ 	BIGNUM *mask = NULL, *x = NULL, *y = NULL, *cofactor = NULL;
+ 	u16 offset;
+ 	u8 *ptr, *scalar = NULL, *element = NULL;
++	size_t prime_len, order_len;
++
++	if (data->state != PWD_Commit_Req) {
++		ret->ignore = TRUE;
++		goto fin;
++	}
++
++	prime_len = BN_num_bytes(data->grp->prime);
++	order_len = BN_num_bytes(data->grp->order);
++
++	if (payload_len != 2 * prime_len + order_len) {
++		wpa_printf(MSG_INFO,
++			   "EAP-pwd: Unexpected Commit payload length %u (expected %u)",
++			   (unsigned int) payload_len,
++			   (unsigned int) (2 * prime_len + order_len));
++		goto fin;
++	}
+ 
+ 	if (((data->private_value = BN_new()) == NULL) ||
+ 	    ((data->my_element = EC_POINT_new(data->grp->group)) == NULL) ||
+@@ -554,6 +571,18 @@ eap_pwd_perform_confirm_exchange(struct eap_sm *sm, struct eap_pwd_data *data,
+ 	u8 conf[SHA256_MAC_LEN], *cruft = NULL, *ptr;
+ 	int offset;
+ 
++	if (data->state != PWD_Confirm_Req) {
++		ret->ignore = TRUE;
++		goto fin;
++	}
++
++	if (payload_len != SHA256_MAC_LEN) {
++		wpa_printf(MSG_INFO,
++			   "EAP-pwd: Unexpected Confirm payload length %u (expected %u)",
++			   (unsigned int) payload_len, SHA256_MAC_LEN);
++		goto fin;
++	}
++
+ 	/*
+ 	 * first build up the ciphersuite which is group | random_function |
+ 	 *	prf
+-- 
+1.9.1
+

@@ -1,0 +1,50 @@
+From 3035cc2894e08319b905bd6561e8bddc8c2db9fa Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Sat, 2 May 2015 19:26:06 +0300
+Subject: [PATCH 4/5] EAP-pwd server: Fix Total-Length parsing for fragment
+ reassembly
+
+The remaining number of bytes in the message could be smaller than the
+Total-Length field size, so the length needs to be explicitly checked
+prior to reading the field and decrementing the len variable. This could
+have resulted in the remaining length becoming negative and interpreted
+as a huge positive integer.
+
+In addition, check that there is no already started fragment in progress
+before allocating a new buffer for reassembling fragments. This avoid a
+potential memory leak when processing invalid message.
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/eap_server/eap_server_pwd.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/src/eap_server/eap_server_pwd.c b/src/eap_server/eap_server_pwd.c
+index 3189105..2bfc3c2 100644
+--- a/src/eap_server/eap_server_pwd.c
++++ b/src/eap_server/eap_server_pwd.c
+@@ -942,11 +942,21 @@ static void eap_pwd_process(struct eap_sm *sm, void *priv,
+ 	 * the first fragment has a total length
+ 	 */
+ 	if (EAP_PWD_GET_LENGTH_BIT(lm_exch)) {
++		if (len < 2) {
++			wpa_printf(MSG_DEBUG,
++				   "EAP-pwd: Frame too short to contain Total-Length field");
++			return;
++		}
+ 		tot_len = WPA_GET_BE16(pos);
+ 		wpa_printf(MSG_DEBUG, "EAP-pwd: Incoming fragments, total "
+ 			   "length = %d", tot_len);
+ 		if (tot_len > 15000)
+ 			return;
++		if (data->inbuf) {
++			wpa_printf(MSG_DEBUG,
++				   "EAP-pwd: Unexpected new fragment start when previous fragment is still in use");
++			return;
++		}
+ 		data->inbuf = wpabuf_alloc(tot_len);
+ 		if (data->inbuf == NULL) {
+ 			wpa_printf(MSG_INFO, "EAP-pwd: Out of memory to "
+-- 
+1.9.1
+
