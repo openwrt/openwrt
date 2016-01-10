@@ -23,7 +23,7 @@ PKG_LICENSE_FILES:=LICENSE libtomcrypt/LICENSE libtommath/LICENSE
 PKG_BUILD_PARALLEL:=1
 PKG_USE_MIPS16:=0
 
-PKG_CONFIG_DEPENDS:=CONFIG_DROPBEAR_ECC
+PKG_CONFIG_DEPENDS:=CONFIG_DROPBEAR_ECC CONFIG_DROPBEAR_CURVE25519
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -80,9 +80,16 @@ TARGET_LDFLAGS += -Wl,--gc-sections
 define Build/Configure
 	$(Build/Configure/Default)
 
+	awk 'BEGIN { rc = 1 } \
+	     /'DROPBEAR_CURVE25519'/ { $$$$0 = "$(if $(CONFIG_DROPBEAR_CURVE25519),,// )#define 'DROPBEAR_CURVE25519'"; rc = 0 } \
+	     { print } \
+	     END { exit(rc) }' $(PKG_BUILD_DIR)/options.h \
+	     >$(PKG_BUILD_DIR)/options.h.new && \
+	mv $(PKG_BUILD_DIR)/options.h.new $(PKG_BUILD_DIR)/options.h
+
 	# Enforce that all replacements are made, otherwise options.h has changed
 	# format and this logic is broken.
-	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH DROPBEAR_CURVE25519; do \
+	for OPTION in DROPBEAR_ECDSA DROPBEAR_ECDH; do \
 	  awk 'BEGIN { rc = 1 } \
 	       /'$$$$OPTION'/ { $$$$0 = "$(if $(CONFIG_DROPBEAR_ECC),,// )#define '$$$$OPTION'"; rc = 0 } \
 	       { print } \
