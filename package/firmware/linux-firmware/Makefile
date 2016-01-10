@@ -53,3 +53,4 @@ endef
 $(eval $(call BuildPackage,ar3k-firmware))
 
 include $(wildcard ./*.mk)
+#$(eval $(call BuildPackage,linux-firmware))
