@@ -1,0 +1,32 @@
+From 28a069a545b06b99eb55ad53f63f2c99e65a98f6 Mon Sep 17 00:00:00 2001
+From: Jouni Malinen <j@w1.fi>
+Date: Sat, 2 May 2015 19:26:28 +0300
+Subject: [PATCH 5/5] EAP-pwd peer: Fix asymmetric fragmentation behavior
+
+The L (Length) and M (More) flags needs to be cleared before deciding
+whether the locally generated response requires fragmentation. This
+fixes an issue where these flags from the server could have been invalid
+for the following message. In some cases, this could have resulted in
+triggering the wpabuf security check that would terminate the process
+due to invalid buffer allocation.
+
+Signed-off-by: Jouni Malinen <j@w1.fi>
+---
+ src/eap_peer/eap_pwd.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/eap_peer/eap_pwd.c b/src/eap_peer/eap_pwd.c
+index 1d2079b..e58b13a 100644
+--- a/src/eap_peer/eap_pwd.c
++++ b/src/eap_peer/eap_pwd.c
+@@ -968,6 +968,7 @@ eap_pwd_process(struct eap_sm *sm, void *priv, struct eap_method_ret *ret,
+ 	/*
+ 	 * we have output! Do we need to fragment it?
+ 	 */
++	lm_exch = EAP_PWD_GET_EXCHANGE(lm_exch);
+ 	len = wpabuf_len(data->outbuf);
+ 	if ((len + EAP_PWD_HDR_SIZE) > data->mtu) {
+ 		resp = eap_msg_alloc(EAP_VENDOR_IETF, EAP_TYPE_PWD, data->mtu,
+-- 
+1.9.1
+
