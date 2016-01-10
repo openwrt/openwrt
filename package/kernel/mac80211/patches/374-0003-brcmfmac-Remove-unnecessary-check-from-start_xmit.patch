@@ -1,0 +1,32 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Thu, 29 Oct 2015 20:33:13 +0100
+Subject: [PATCH] brcmfmac: Remove unnecessary check from start_xmit.
+
+The brcmf_netdev_start_xmit checks if the ndev is still valid by
+checking if it still exists in database. This check is not needed
+and therefor removed.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -217,14 +217,6 @@ static netdev_tx_t brcmf_netdev_start_xm
+ 		goto done;
+ 	}
+ 
+-	if (!drvr->iflist[ifp->bssidx]) {
+-		brcmf_err("bad ifidx %d\n", ifp->bssidx);
+-		netif_stop_queue(ndev);
+-		dev_kfree_skb(skb);
+-		ret = -ENODEV;
+-		goto done;
+-	}
+-
+ 	/* Make sure there's enough room for any header */
+ 	if (skb_headroom(skb) < drvr->hdrlen) {
+ 		struct sk_buff *skb2;

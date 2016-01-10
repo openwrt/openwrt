@@ -1,0 +1,30 @@
+From: Colin Ian King <colin.king@canonical.com>
+Date: Wed, 2 Dec 2015 11:45:10 +0000
+Subject: [PATCH] brcmfmac: only lock and unlock fws if fws is not null
+
+There is a null ptr check for fws to set bcmc_credit_check, however,
+there a lock and unlock on fws should only performed if fwts is
+also not null to also avoid a potential null pointer deference.
+
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/fwsignal.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/fwsignal.c
+@@ -1609,10 +1609,11 @@ static int brcmf_fws_notify_bcmc_credit_
+ {
+ 	struct brcmf_fws_info *fws = ifp->drvr->fws;
+ 
+-	brcmf_fws_lock(fws);
+-	if (fws)
++	if (fws) {
++		brcmf_fws_lock(fws);
+ 		fws->bcmc_credit_check = true;
+-	brcmf_fws_unlock(fws);
++		brcmf_fws_unlock(fws);
++	}
+ 	return 0;
+ }
+ 

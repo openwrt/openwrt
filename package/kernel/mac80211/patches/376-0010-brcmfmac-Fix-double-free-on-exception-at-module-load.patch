@@ -1,0 +1,22 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 25 Nov 2015 11:32:47 +0100
+Subject: [PATCH] brcmfmac: Fix double free on exception at module load.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -1083,6 +1083,8 @@ fail:
+ 			brcmf_net_detach(ifp->ndev);
+ 		if (p2p_ifp)
+ 			brcmf_net_detach(p2p_ifp->ndev);
++		drvr->iflist[0] = NULL;
++		drvr->iflist[1] = NULL;
+ 		return ret;
+ 	}
+ 	return 0;

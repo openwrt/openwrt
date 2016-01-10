@@ -1,0 +1,41 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 25 Nov 2015 11:32:39 +0100
+Subject: [PATCH] brcmfmac: Change error print on wlan0 existence.
+
+During initialization of the device, but also on some other
+moments the driver prints an error that the netdev already exists.
+This is a result of the way the driver is initializing the
+firmware and not really an error. The code is not treating it as
+an error either. This error print has resulted in many questions
+by users and is confusing and incorrect. This patch changes the
+error log into a debug info log.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -811,14 +811,15 @@ struct brcmf_if *brcmf_add_if(struct brc
+ 	 * in case we missed the BRCMF_E_IF_DEL event.
+ 	 */
+ 	if (ifp) {
+-		brcmf_err("ERROR: netdev:%s already exists\n",
+-			  ifp->ndev->name);
+ 		if (ifidx) {
++			brcmf_err("ERROR: netdev:%s already exists\n",
++				  ifp->ndev->name);
+ 			netif_stop_queue(ifp->ndev);
+ 			brcmf_net_detach(ifp->ndev);
+ 			drvr->iflist[bsscfgidx] = NULL;
+ 		} else {
+-			brcmf_err("ignore IF event\n");
++			brcmf_dbg(INFO, "netdev:%s ignore IF event\n",
++				  ifp->ndev->name);
+ 			return ERR_PTR(-EINVAL);
+ 		}
+ 	}

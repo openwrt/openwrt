@@ -1,0 +1,57 @@
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Sat, 14 Nov 2015 17:22:07 +0100
+Subject: [PATCH] brcmfmac: constify brcmf_bus_ops structures
+
+The brcmf_bus_ops structures are never modified, so declare them as const.
+
+Done with the help of Coccinelle.
+
+Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/bus.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/bus.h
+@@ -137,7 +137,7 @@ struct brcmf_bus {
+ 	bool always_use_fws_queue;
+ 	bool wowl_supported;
+ 
+-	struct brcmf_bus_ops *ops;
++	const struct brcmf_bus_ops *ops;
+ 	struct brcmf_bus_msgbuf *msgbuf;
+ };
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
+@@ -1413,7 +1413,7 @@ static int brcmf_pcie_get_memdump(struct
+ }
+ 
+ 
+-static struct brcmf_bus_ops brcmf_pcie_bus_ops = {
++static const struct brcmf_bus_ops brcmf_pcie_bus_ops = {
+ 	.txdata = brcmf_pcie_tx,
+ 	.stop = brcmf_pcie_down,
+ 	.txctl = brcmf_pcie_tx_ctlpkt,
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -4025,7 +4025,7 @@ brcmf_sdio_watchdog(unsigned long data)
+ 	}
+ }
+ 
+-static struct brcmf_bus_ops brcmf_sdio_bus_ops = {
++static const struct brcmf_bus_ops brcmf_sdio_bus_ops = {
+ 	.stop = brcmf_sdio_bus_stop,
+ 	.preinit = brcmf_sdio_bus_preinit,
+ 	.txdata = brcmf_sdio_bus_txdata,
+--- a/drivers/net/wireless/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/usb.c
+@@ -1163,7 +1163,7 @@ static void brcmf_usb_wowl_config(struct
+ 		device_set_wakeup_enable(devinfo->dev, false);
+ }
+ 
+-static struct brcmf_bus_ops brcmf_usb_bus_ops = {
++static const struct brcmf_bus_ops brcmf_usb_bus_ops = {
+ 	.txdata = brcmf_usb_tx,
+ 	.stop = brcmf_usb_down,
+ 	.txctl = brcmf_usb_tx_ctlpkt,

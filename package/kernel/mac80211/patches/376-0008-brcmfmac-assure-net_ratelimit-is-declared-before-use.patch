@@ -1,0 +1,25 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Wed, 25 Nov 2015 11:32:45 +0100
+Subject: [PATCH] brcmfmac: assure net_ratelimit() is declared before use
+
+Under some kernel configuration we get build issue with implicit
+declaration of net_ratelimit() function. Fix this by explicitly
+including the file providing the prototype.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/debug.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/debug.h
+@@ -17,6 +17,8 @@
+ #ifndef BRCMFMAC_DEBUG_H
+ #define BRCMFMAC_DEBUG_H
+ 
++#include <linux/net.h>	/* net_ratelimit() */
++
+ /* message levels */
+ #define BRCMF_TRACE_VAL		0x00000002
+ #define BRCMF_INFO_VAL		0x00000004

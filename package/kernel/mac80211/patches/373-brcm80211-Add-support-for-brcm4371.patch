@@ -1,0 +1,78 @@
+From: Eric Caruso <ejcaruso@google.com>
+Date: Wed, 14 Oct 2015 12:34:11 -0700
+Subject: [PATCH] brcm80211: Add support for brcm4371
+
+This is a new Broadcom chip and we should be able to recognize it.
+
+Signed-off-by: Eric Caruso <ejcaruso@google.com>
+Acked-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/chip.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/chip.c
+@@ -682,6 +682,7 @@ static u32 brcmf_chip_tcm_rambase(struct
+ 	case BRCM_CC_43570_CHIP_ID:
+ 	case BRCM_CC_4358_CHIP_ID:
+ 	case BRCM_CC_43602_CHIP_ID:
++	case BRCM_CC_4371_CHIP_ID:
+ 		return 0x180000;
+ 	case BRCM_CC_4365_CHIP_ID:
+ 	case BRCM_CC_4366_CHIP_ID:
+--- a/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
+@@ -59,6 +59,8 @@ enum brcmf_pcie_state {
+ #define BRCMF_PCIE_4365_NVRAM_NAME		"brcm/brcmfmac4365b-pcie.txt"
+ #define BRCMF_PCIE_4366_FW_NAME			"brcm/brcmfmac4366b-pcie.bin"
+ #define BRCMF_PCIE_4366_NVRAM_NAME		"brcm/brcmfmac4366b-pcie.txt"
++#define BRCMF_PCIE_4371_FW_NAME			"brcm/brcmfmac4371-pcie.bin"
++#define BRCMF_PCIE_4371_NVRAM_NAME		"brcm/brcmfmac4371-pcie.txt"
+ 
+ #define BRCMF_PCIE_FW_UP_TIMEOUT		2000 /* msec */
+ 
+@@ -212,6 +214,8 @@ MODULE_FIRMWARE(BRCMF_PCIE_4365_FW_NAME)
+ MODULE_FIRMWARE(BRCMF_PCIE_4365_NVRAM_NAME);
+ MODULE_FIRMWARE(BRCMF_PCIE_4366_FW_NAME);
+ MODULE_FIRMWARE(BRCMF_PCIE_4366_NVRAM_NAME);
++MODULE_FIRMWARE(BRCMF_PCIE_4371_FW_NAME);
++MODULE_FIRMWARE(BRCMF_PCIE_4371_NVRAM_NAME);
+ 
+ 
+ struct brcmf_pcie_console {
+@@ -1521,6 +1525,10 @@ static int brcmf_pcie_get_fwnames(struct
+ 		fw_name = BRCMF_PCIE_4366_FW_NAME;
+ 		nvram_name = BRCMF_PCIE_4366_NVRAM_NAME;
+ 		break;
++	case BRCM_CC_4371_CHIP_ID:
++		fw_name = BRCMF_PCIE_4371_FW_NAME;
++		nvram_name = BRCMF_PCIE_4371_NVRAM_NAME;
++		break;
+ 	default:
+ 		brcmf_err("Unsupported chip 0x%04x\n", devinfo->ci->chip);
+ 		return -ENODEV;
+@@ -2060,6 +2068,7 @@ static struct pci_device_id brcmf_pcie_d
+ 	BRCMF_PCIE_DEVICE(BRCM_PCIE_4366_DEVICE_ID),
+ 	BRCMF_PCIE_DEVICE(BRCM_PCIE_4366_2G_DEVICE_ID),
+ 	BRCMF_PCIE_DEVICE(BRCM_PCIE_4366_5G_DEVICE_ID),
++	BRCMF_PCIE_DEVICE(BRCM_PCIE_4371_DEVICE_ID),
+ 	{ /* end: all zeroes */ }
+ };
+ 
+--- a/drivers/net/wireless/brcm80211/include/brcm_hw_ids.h
++++ b/drivers/net/wireless/brcm80211/include/brcm_hw_ids.h
+@@ -50,6 +50,7 @@
+ #define BRCM_CC_43602_CHIP_ID		43602
+ #define BRCM_CC_4365_CHIP_ID		0x4365
+ #define BRCM_CC_4366_CHIP_ID		0x4366
++#define BRCM_CC_4371_CHIP_ID		0x4371
+ 
+ /* USB Device IDs */
+ #define BRCM_USB_43143_DEVICE_ID	0xbd1e
+@@ -75,6 +76,7 @@
+ #define BRCM_PCIE_4366_DEVICE_ID	0x43c3
+ #define BRCM_PCIE_4366_2G_DEVICE_ID	0x43c4
+ #define BRCM_PCIE_4366_5G_DEVICE_ID	0x43c5
++#define BRCM_PCIE_4371_DEVICE_ID	0x440d
+ 
+ 
+ /* brcmsmac IDs */

@@ -1,0 +1,664 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Wed, 25 Nov 2015 11:32:46 +0100
+Subject: [PATCH] brcmfmac: Unify methods to define and map firmware files.
+
+All bus drivers (sdio, usb and pcie) require firmware files which
+needs to be downloaded to the device, The definitions and mapping
+of device id and revision to firmware and nvram file is done by
+each bus driver. This patch creates common functions and defines
+to simplify and unify the definition of these firmware and nvram
+files and mapping.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/firmware.c
+@@ -27,9 +27,9 @@
+ #define BRCMF_FW_NVRAM_DEVPATH_LEN		19	/* devpath0=pcie/1/4/ */
+ #define BRCMF_FW_NVRAM_PCIEDEV_LEN		10	/* pcie/1/4/ + \0 */
+ 
+-char brcmf_firmware_path[BRCMF_FW_PATH_LEN];
++static char brcmf_firmware_path[BRCMF_FW_NAME_LEN];
+ module_param_string(alternative_fw_path, brcmf_firmware_path,
+-		    BRCMF_FW_PATH_LEN, 0440);
++		    BRCMF_FW_NAME_LEN, 0440);
+ 
+ enum nvram_parser_state {
+ 	IDLE,
+@@ -531,3 +531,43 @@ int brcmf_fw_get_firmwares(struct device
+ 					   0);
+ }
+ 
++int brcmf_fw_map_chip_to_name(u32 chip, u32 chiprev,
++			      struct brcmf_firmware_mapping mapping_table[],
++			      u32 table_size, char fw_name[BRCMF_FW_NAME_LEN],
++			      char nvram_name[BRCMF_FW_NAME_LEN])
++{
++	u32 i;
++	char end;
++
++	for (i = 0; i < table_size; i++) {
++		if (mapping_table[i].chipid == chip &&
++		    mapping_table[i].revmask & BIT(chiprev))
++			break;
++	}
++
++	if (i == table_size) {
++		brcmf_err("Unknown chipid %d [%d]\n", chip, chiprev);
++		return -ENODEV;
++	}
++
++	/* check if firmware path is provided by module parameter */
++	if (brcmf_firmware_path[0] != '\0') {
++		strlcpy(fw_name, brcmf_firmware_path, BRCMF_FW_NAME_LEN);
++		if ((nvram_name) && (mapping_table[i].nvram))
++			strlcpy(nvram_name, brcmf_firmware_path,
++				BRCMF_FW_NAME_LEN);
++
++		end = brcmf_firmware_path[strlen(brcmf_firmware_path) - 1];
++		if (end != '/') {
++			strlcat(fw_name, "/", BRCMF_FW_NAME_LEN);
++			if ((nvram_name) && (mapping_table[i].nvram))
++				strlcat(nvram_name, "/", BRCMF_FW_NAME_LEN);
++		}
++	}
++	strlcat(fw_name, mapping_table[i].fw, BRCMF_FW_NAME_LEN);
++	if ((nvram_name) && (mapping_table[i].nvram))
++		strlcat(nvram_name, mapping_table[i].nvram, BRCMF_FW_NAME_LEN);
++
++	return 0;
++}
++
+--- a/drivers/net/wireless/brcm80211/brcmfmac/firmware.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/firmware.h
+@@ -21,11 +21,51 @@
+ #define BRCMF_FW_REQ_FLAGS		0x00F0
+ #define  BRCMF_FW_REQ_NV_OPTIONAL	0x0010
+ 
+-#define	BRCMF_FW_PATH_LEN	256
+-#define	BRCMF_FW_NAME_LEN	32
++#define	BRCMF_FW_NAME_LEN		320
+ 
+-extern char brcmf_firmware_path[];
++#define BRCMF_FW_DEFAULT_PATH		"brcm/"
+ 
++/**
++ * struct brcmf_firmware_mapping - Used to map chipid/revmask to firmware
++ *	filename and nvram filename. Each bus type implementation should create
++ *	a table of firmware mappings (using the macros defined below).
++ *
++ * @chipid: ID of chip.
++ * @revmask: bitmask of revisions, e.g. 0x10 means rev 4 only, 0xf means rev 0-3
++ * @fw: name of the firmware file.
++ * @nvram: name of nvram file.
++ */
++struct brcmf_firmware_mapping {
++	u32 chipid;
++	u32 revmask;
++	const char *fw;
++	const char *nvram;
++};
++
++#define BRCMF_FW_NVRAM_DEF(fw_nvram_name, fw, nvram) \
++static const char BRCM_ ## fw_nvram_name ## _FIRMWARE_NAME[] = \
++	BRCMF_FW_DEFAULT_PATH fw; \
++static const char BRCM_ ## fw_nvram_name ## _NVRAM_NAME[] = \
++	BRCMF_FW_DEFAULT_PATH nvram; \
++MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH fw); \
++MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH nvram)
++
++#define BRCMF_FW_DEF(fw_name, fw) \
++static const char BRCM_ ## fw_name ## _FIRMWARE_NAME[] = \
++	BRCMF_FW_DEFAULT_PATH fw; \
++MODULE_FIRMWARE(BRCMF_FW_DEFAULT_PATH fw) \
++
++#define BRCMF_FW_NVRAM_ENTRY(chipid, mask, name) \
++	{ chipid, mask, \
++	  BRCM_ ## name ## _FIRMWARE_NAME, BRCM_ ## name ## _NVRAM_NAME }
++
++#define BRCMF_FW_ENTRY(chipid, mask, name) \
++	{ chipid, mask, BRCM_ ## name ## _FIRMWARE_NAME, NULL }
++
++int brcmf_fw_map_chip_to_name(u32 chip, u32 chiprev,
++			      struct brcmf_firmware_mapping mapping_table[],
++			      u32 table_size, char fw_name[BRCMF_FW_NAME_LEN],
++			      char nvram_name[BRCMF_FW_NAME_LEN]);
+ void brcmf_fw_nvram_free(void *nvram);
+ /*
+  * Request firmware(s) asynchronously. When the asynchronous request
+--- a/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
+@@ -44,25 +44,29 @@ enum brcmf_pcie_state {
+ 	BRCMFMAC_PCIE_STATE_UP
+ };
+ 
+-
+-#define BRCMF_PCIE_43602_FW_NAME		"brcm/brcmfmac43602-pcie.bin"
+-#define BRCMF_PCIE_43602_NVRAM_NAME		"brcm/brcmfmac43602-pcie.txt"
+-#define BRCMF_PCIE_4350_FW_NAME			"brcm/brcmfmac4350-pcie.bin"
+-#define BRCMF_PCIE_4350_NVRAM_NAME		"brcm/brcmfmac4350-pcie.txt"
+-#define BRCMF_PCIE_4356_FW_NAME			"brcm/brcmfmac4356-pcie.bin"
+-#define BRCMF_PCIE_4356_NVRAM_NAME		"brcm/brcmfmac4356-pcie.txt"
+-#define BRCMF_PCIE_43570_FW_NAME		"brcm/brcmfmac43570-pcie.bin"
+-#define BRCMF_PCIE_43570_NVRAM_NAME		"brcm/brcmfmac43570-pcie.txt"
+-#define BRCMF_PCIE_4358_FW_NAME			"brcm/brcmfmac4358-pcie.bin"
+-#define BRCMF_PCIE_4358_NVRAM_NAME		"brcm/brcmfmac4358-pcie.txt"
+-#define BRCMF_PCIE_4359_FW_NAME			"brcm/brcmfmac4359-pcie.bin"
+-#define BRCMF_PCIE_4359_NVRAM_NAME		"brcm/brcmfmac4359-pcie.txt"
+-#define BRCMF_PCIE_4365_FW_NAME			"brcm/brcmfmac4365b-pcie.bin"
+-#define BRCMF_PCIE_4365_NVRAM_NAME		"brcm/brcmfmac4365b-pcie.txt"
+-#define BRCMF_PCIE_4366_FW_NAME			"brcm/brcmfmac4366b-pcie.bin"
+-#define BRCMF_PCIE_4366_NVRAM_NAME		"brcm/brcmfmac4366b-pcie.txt"
+-#define BRCMF_PCIE_4371_FW_NAME			"brcm/brcmfmac4371-pcie.bin"
+-#define BRCMF_PCIE_4371_NVRAM_NAME		"brcm/brcmfmac4371-pcie.txt"
++BRCMF_FW_NVRAM_DEF(43602, "brcmfmac43602-pcie.bin", "brcmfmac43602-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4350, "brcmfmac4350-pcie.bin", "brcmfmac4350-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4356, "brcmfmac4356-pcie.bin", "brcmfmac4356-pcie.txt");
++BRCMF_FW_NVRAM_DEF(43570, "brcmfmac43570-pcie.bin", "brcmfmac43570-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4358, "brcmfmac4358-pcie.bin", "brcmfmac4358-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4359, "brcmfmac4359-pcie.bin", "brcmfmac4359-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4365B, "brcmfmac4365b-pcie.bin", "brcmfmac4365b-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4366B, "brcmfmac4366b-pcie.bin", "brcmfmac4366b-pcie.txt");
++BRCMF_FW_NVRAM_DEF(4371, "brcmfmac4371-pcie.bin", "brcmfmac4371-pcie.txt");
++
++static struct brcmf_firmware_mapping brcmf_pcie_fwnames[] = {
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43602_CHIP_ID, 0xFFFFFFFF, 43602),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4350_CHIP_ID, 0xFFFFFFFF, 4350),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4356_CHIP_ID, 0xFFFFFFFF, 4356),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43567_CHIP_ID, 0xFFFFFFFF, 43570),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43569_CHIP_ID, 0xFFFFFFFF, 43570),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43570_CHIP_ID, 0xFFFFFFFF, 43570),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4358_CHIP_ID, 0xFFFFFFFF, 4358),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4359_CHIP_ID, 0xFFFFFFFF, 4359),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4365_CHIP_ID, 0xFFFFFFFF, 4365B),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4366_CHIP_ID, 0xFFFFFFFF, 4366B),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4371_CHIP_ID, 0xFFFFFFFF, 4371),
++};
+ 
+ #define BRCMF_PCIE_FW_UP_TIMEOUT		2000 /* msec */
+ 
+@@ -202,26 +206,6 @@ enum brcmf_pcie_state {
+ #define BRCMF_PCIE_LINK_STATUS_CTRL_ASPM_ENAB	3
+ 
+ 
+-MODULE_FIRMWARE(BRCMF_PCIE_43602_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_43602_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4350_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4350_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4356_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4356_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_43570_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_43570_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4358_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4358_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4359_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4359_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4365_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4365_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4366_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4366_NVRAM_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4371_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_PCIE_4371_NVRAM_NAME);
+-
+-
+ struct brcmf_pcie_console {
+ 	u32 base_addr;
+ 	u32 buf_addr;
+@@ -258,8 +242,8 @@ struct brcmf_pciedev_info {
+ 	enum brcmf_pcie_state state;
+ 	bool in_irq;
+ 	struct pci_dev *pdev;
+-	char fw_name[BRCMF_FW_PATH_LEN + BRCMF_FW_NAME_LEN];
+-	char nvram_name[BRCMF_FW_PATH_LEN + BRCMF_FW_NAME_LEN];
++	char fw_name[BRCMF_FW_NAME_LEN];
++	char nvram_name[BRCMF_FW_NAME_LEN];
+ 	void __iomem *regs;
+ 	void __iomem *tcm;
+ 	u32 tcm_size;
+@@ -1478,84 +1462,6 @@ brcmf_pcie_init_share_ram_info(struct br
+ }
+ 
+ 
+-static int brcmf_pcie_get_fwnames(struct brcmf_pciedev_info *devinfo)
+-{
+-	char *fw_name;
+-	char *nvram_name;
+-	uint fw_len, nv_len;
+-	char end;
+-
+-	brcmf_dbg(PCIE, "Enter, chip 0x%04x chiprev %d\n", devinfo->ci->chip,
+-		  devinfo->ci->chiprev);
+-
+-	switch (devinfo->ci->chip) {
+-	case BRCM_CC_43602_CHIP_ID:
+-		fw_name = BRCMF_PCIE_43602_FW_NAME;
+-		nvram_name = BRCMF_PCIE_43602_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4350_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4350_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4350_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4356_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4356_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4356_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_43567_CHIP_ID:
+-	case BRCM_CC_43569_CHIP_ID:
+-	case BRCM_CC_43570_CHIP_ID:
+-		fw_name = BRCMF_PCIE_43570_FW_NAME;
+-		nvram_name = BRCMF_PCIE_43570_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4358_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4358_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4358_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4359_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4359_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4359_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4365_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4365_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4365_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4366_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4366_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4366_NVRAM_NAME;
+-		break;
+-	case BRCM_CC_4371_CHIP_ID:
+-		fw_name = BRCMF_PCIE_4371_FW_NAME;
+-		nvram_name = BRCMF_PCIE_4371_NVRAM_NAME;
+-		break;
+-	default:
+-		brcmf_err("Unsupported chip 0x%04x\n", devinfo->ci->chip);
+-		return -ENODEV;
+-	}
+-
+-	fw_len = sizeof(devinfo->fw_name) - 1;
+-	nv_len = sizeof(devinfo->nvram_name) - 1;
+-	/* check if firmware path is provided by module parameter */
+-	if (brcmf_firmware_path[0] != '\0') {
+-		strncpy(devinfo->fw_name, brcmf_firmware_path, fw_len);
+-		strncpy(devinfo->nvram_name, brcmf_firmware_path, nv_len);
+-		fw_len -= strlen(devinfo->fw_name);
+-		nv_len -= strlen(devinfo->nvram_name);
+-
+-		end = brcmf_firmware_path[strlen(brcmf_firmware_path) - 1];
+-		if (end != '/') {
+-			strncat(devinfo->fw_name, "/", fw_len);
+-			strncat(devinfo->nvram_name, "/", nv_len);
+-			fw_len--;
+-			nv_len--;
+-		}
+-	}
+-	strncat(devinfo->fw_name, fw_name, fw_len);
+-	strncat(devinfo->nvram_name, nvram_name, nv_len);
+-
+-	return 0;
+-}
+-
+-
+ static int brcmf_pcie_download_fw_nvram(struct brcmf_pciedev_info *devinfo,
+ 					const struct firmware *fw, void *nvram,
+ 					u32 nvram_len)
+@@ -1891,7 +1797,10 @@ brcmf_pcie_probe(struct pci_dev *pdev, c
+ 	bus->wowl_supported = pci_pme_capable(pdev, PCI_D3hot);
+ 	dev_set_drvdata(&pdev->dev, bus);
+ 
+-	ret = brcmf_pcie_get_fwnames(devinfo);
++	ret = brcmf_fw_map_chip_to_name(devinfo->ci->chip, devinfo->ci->chiprev,
++					brcmf_pcie_fwnames,
++					ARRAY_SIZE(brcmf_pcie_fwnames),
++					devinfo->fw_name, devinfo->nvram_name);
+ 	if (ret)
+ 		goto fail_bus;
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -596,136 +596,41 @@ static const struct sdiod_drive_str sdio
+ 	{4,  0x1}
+ };
+ 
+-#define BCM43143_FIRMWARE_NAME		"brcm/brcmfmac43143-sdio.bin"
+-#define BCM43143_NVRAM_NAME		"brcm/brcmfmac43143-sdio.txt"
+-#define BCM43241B0_FIRMWARE_NAME	"brcm/brcmfmac43241b0-sdio.bin"
+-#define BCM43241B0_NVRAM_NAME		"brcm/brcmfmac43241b0-sdio.txt"
+-#define BCM43241B4_FIRMWARE_NAME	"brcm/brcmfmac43241b4-sdio.bin"
+-#define BCM43241B4_NVRAM_NAME		"brcm/brcmfmac43241b4-sdio.txt"
+-#define BCM43241B5_FIRMWARE_NAME	"brcm/brcmfmac43241b5-sdio.bin"
+-#define BCM43241B5_NVRAM_NAME		"brcm/brcmfmac43241b5-sdio.txt"
+-#define BCM4329_FIRMWARE_NAME		"brcm/brcmfmac4329-sdio.bin"
+-#define BCM4329_NVRAM_NAME		"brcm/brcmfmac4329-sdio.txt"
+-#define BCM4330_FIRMWARE_NAME		"brcm/brcmfmac4330-sdio.bin"
+-#define BCM4330_NVRAM_NAME		"brcm/brcmfmac4330-sdio.txt"
+-#define BCM4334_FIRMWARE_NAME		"brcm/brcmfmac4334-sdio.bin"
+-#define BCM4334_NVRAM_NAME		"brcm/brcmfmac4334-sdio.txt"
+-#define BCM43340_FIRMWARE_NAME		"brcm/brcmfmac43340-sdio.bin"
+-#define BCM43340_NVRAM_NAME		"brcm/brcmfmac43340-sdio.txt"
+-#define BCM4335_FIRMWARE_NAME		"brcm/brcmfmac4335-sdio.bin"
+-#define BCM4335_NVRAM_NAME		"brcm/brcmfmac4335-sdio.txt"
+-#define BCM43362_FIRMWARE_NAME		"brcm/brcmfmac43362-sdio.bin"
+-#define BCM43362_NVRAM_NAME		"brcm/brcmfmac43362-sdio.txt"
+-#define BCM4339_FIRMWARE_NAME		"brcm/brcmfmac4339-sdio.bin"
+-#define BCM4339_NVRAM_NAME		"brcm/brcmfmac4339-sdio.txt"
+-#define BCM43430_FIRMWARE_NAME		"brcm/brcmfmac43430-sdio.bin"
+-#define BCM43430_NVRAM_NAME		"brcm/brcmfmac43430-sdio.txt"
+-#define BCM43455_FIRMWARE_NAME		"brcm/brcmfmac43455-sdio.bin"
+-#define BCM43455_NVRAM_NAME		"brcm/brcmfmac43455-sdio.txt"
+-#define BCM4354_FIRMWARE_NAME		"brcm/brcmfmac4354-sdio.bin"
+-#define BCM4354_NVRAM_NAME		"brcm/brcmfmac4354-sdio.txt"
+-
+-MODULE_FIRMWARE(BCM43143_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43143_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43241B0_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43241B0_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43241B4_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43241B4_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43241B5_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43241B5_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM4329_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM4329_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM4330_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM4330_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM4334_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM4334_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43340_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43340_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM4335_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM4335_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43362_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43362_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM4339_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM4339_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43430_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43430_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM43455_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM43455_NVRAM_NAME);
+-MODULE_FIRMWARE(BCM4354_FIRMWARE_NAME);
+-MODULE_FIRMWARE(BCM4354_NVRAM_NAME);
+-
+-struct brcmf_firmware_names {
+-	u32 chipid;
+-	u32 revmsk;
+-	const char *bin;
+-	const char *nv;
++BRCMF_FW_NVRAM_DEF(43143, "brcmfmac43143-sdio.bin", "brcmfmac43143-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43241B0, "brcmfmac43241b0-sdio.bin",
++		   "brcmfmac43241b0-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43241B4, "brcmfmac43241b4-sdio.bin",
++		   "brcmfmac43241b4-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43241B5, "brcmfmac43241b5-sdio.bin",
++		   "brcmfmac43241b5-sdio.txt");
++BRCMF_FW_NVRAM_DEF(4329, "brcmfmac4329-sdio.bin", "brcmfmac4329-sdio.txt");
++BRCMF_FW_NVRAM_DEF(4330, "brcmfmac4330-sdio.bin", "brcmfmac4330-sdio.txt");
++BRCMF_FW_NVRAM_DEF(4334, "brcmfmac4334-sdio.bin", "brcmfmac4334-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43340, "brcmfmac43340-sdio.bin", "brcmfmac43340-sdio.txt");
++BRCMF_FW_NVRAM_DEF(4335, "brcmfmac4335-sdio.bin", "brcmfmac4335-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43362, "brcmfmac43362-sdio.bin", "brcmfmac43362-sdio.txt");
++BRCMF_FW_NVRAM_DEF(4339, "brcmfmac4339-sdio.bin", "brcmfmac4339-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43430, "brcmfmac43430-sdio.bin", "brcmfmac43430-sdio.txt");
++BRCMF_FW_NVRAM_DEF(43455, "brcmfmac43455-sdio.bin", "brcmfmac43455-sdio.txt");
++BRCMF_FW_NVRAM_DEF(4354, "brcmfmac4354-sdio.bin", "brcmfmac4354-sdio.txt");
++
++static struct brcmf_firmware_mapping brcmf_sdio_fwnames[] = {
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43143_CHIP_ID, 0xFFFFFFFF, 43143),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43241_CHIP_ID, 0x0000001F, 43241B0),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43241_CHIP_ID, 0x00000020, 43241B4),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43241_CHIP_ID, 0xFFFFFFC0, 43241B5),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4329_CHIP_ID, 0xFFFFFFFF, 4329),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4330_CHIP_ID, 0xFFFFFFFF, 4330),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4334_CHIP_ID, 0xFFFFFFFF, 4334),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43340_CHIP_ID, 0xFFFFFFFF, 43340),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4335_CHIP_ID, 0xFFFFFFFF, 4335),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43362_CHIP_ID, 0xFFFFFFFE, 43362),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4339_CHIP_ID, 0xFFFFFFFF, 4339),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_43430_CHIP_ID, 0xFFFFFFFF, 43430),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4345_CHIP_ID, 0xFFFFFFC0, 43455),
++	BRCMF_FW_NVRAM_ENTRY(BRCM_CC_4354_CHIP_ID, 0xFFFFFFFF, 4354)
+ };
+ 
+-enum brcmf_firmware_type {
+-	BRCMF_FIRMWARE_BIN,
+-	BRCMF_FIRMWARE_NVRAM
+-};
+-
+-#define BRCMF_FIRMWARE_NVRAM(name) \
+-	name ## _FIRMWARE_NAME, name ## _NVRAM_NAME
+-
+-static const struct brcmf_firmware_names brcmf_fwname_data[] = {
+-	{ BRCM_CC_43143_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM43143) },
+-	{ BRCM_CC_43241_CHIP_ID, 0x0000001F, BRCMF_FIRMWARE_NVRAM(BCM43241B0) },
+-	{ BRCM_CC_43241_CHIP_ID, 0x00000020, BRCMF_FIRMWARE_NVRAM(BCM43241B4) },
+-	{ BRCM_CC_43241_CHIP_ID, 0xFFFFFFC0, BRCMF_FIRMWARE_NVRAM(BCM43241B5) },
+-	{ BRCM_CC_4329_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4329) },
+-	{ BRCM_CC_4330_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4330) },
+-	{ BRCM_CC_4334_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4334) },
+-	{ BRCM_CC_43340_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM43340) },
+-	{ BRCM_CC_4335_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4335) },
+-	{ BRCM_CC_43362_CHIP_ID, 0xFFFFFFFE, BRCMF_FIRMWARE_NVRAM(BCM43362) },
+-	{ BRCM_CC_4339_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4339) },
+-	{ BRCM_CC_43430_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM43430) },
+-	{ BRCM_CC_4345_CHIP_ID, 0xFFFFFFC0, BRCMF_FIRMWARE_NVRAM(BCM43455) },
+-	{ BRCM_CC_4354_CHIP_ID, 0xFFFFFFFF, BRCMF_FIRMWARE_NVRAM(BCM4354) }
+-};
+-
+-static int brcmf_sdio_get_fwnames(struct brcmf_chip *ci,
+-				  struct brcmf_sdio_dev *sdiodev)
+-{
+-	int i;
+-	char end;
+-
+-	for (i = 0; i < ARRAY_SIZE(brcmf_fwname_data); i++) {
+-		if (brcmf_fwname_data[i].chipid == ci->chip &&
+-		    brcmf_fwname_data[i].revmsk & BIT(ci->chiprev))
+-			break;
+-	}
+-
+-	if (i == ARRAY_SIZE(brcmf_fwname_data)) {
+-		brcmf_err("Unknown chipid %d [%d]\n", ci->chip, ci->chiprev);
+-		return -ENODEV;
+-	}
+-
+-	/* check if firmware path is provided by module parameter */
+-	if (brcmf_firmware_path[0] != '\0') {
+-		strlcpy(sdiodev->fw_name, brcmf_firmware_path,
+-			sizeof(sdiodev->fw_name));
+-		strlcpy(sdiodev->nvram_name, brcmf_firmware_path,
+-			sizeof(sdiodev->nvram_name));
+-
+-		end = brcmf_firmware_path[strlen(brcmf_firmware_path) - 1];
+-		if (end != '/') {
+-			strlcat(sdiodev->fw_name, "/",
+-				sizeof(sdiodev->fw_name));
+-			strlcat(sdiodev->nvram_name, "/",
+-				sizeof(sdiodev->nvram_name));
+-		}
+-	}
+-	strlcat(sdiodev->fw_name, brcmf_fwname_data[i].bin,
+-		sizeof(sdiodev->fw_name));
+-	strlcat(sdiodev->nvram_name, brcmf_fwname_data[i].nv,
+-		sizeof(sdiodev->nvram_name));
+-
+-	return 0;
+-}
+-
+ static void pkt_align(struct sk_buff *p, int len, int align)
+ {
+ 	uint datalign;
+@@ -4252,7 +4157,10 @@ struct brcmf_sdio *brcmf_sdio_probe(stru
+ 	brcmf_sdio_debugfs_create(bus);
+ 	brcmf_dbg(INFO, "completed!!\n");
+ 
+-	ret = brcmf_sdio_get_fwnames(bus->ci, sdiodev);
++	ret = brcmf_fw_map_chip_to_name(bus->ci->chip, bus->ci->chiprev,
++					brcmf_sdio_fwnames,
++					ARRAY_SIZE(brcmf_sdio_fwnames),
++					sdiodev->fw_name, sdiodev->nvram_name);
+ 	if (ret)
+ 		goto fail;
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.h
+@@ -195,8 +195,8 @@ struct brcmf_sdio_dev {
+ 	uint max_segment_size;
+ 	uint txglomsz;
+ 	struct sg_table sgtable;
+-	char fw_name[BRCMF_FW_PATH_LEN + BRCMF_FW_NAME_LEN];
+-	char nvram_name[BRCMF_FW_PATH_LEN + BRCMF_FW_NAME_LEN];
++	char fw_name[BRCMF_FW_NAME_LEN];
++	char nvram_name[BRCMF_FW_NAME_LEN];
+ 	bool wowl_enabled;
+ 	enum brcmf_sdiod_state state;
+ 	struct brcmf_sdiod_freezer *freezer;
+--- a/drivers/net/wireless/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/usb.c
+@@ -43,10 +43,20 @@
+ #define BRCMF_USB_CBCTL_READ		1
+ #define BRCMF_USB_MAX_PKT_SIZE		1600
+ 
+-#define BRCMF_USB_43143_FW_NAME		"brcm/brcmfmac43143.bin"
+-#define BRCMF_USB_43236_FW_NAME		"brcm/brcmfmac43236b.bin"
+-#define BRCMF_USB_43242_FW_NAME		"brcm/brcmfmac43242a.bin"
+-#define BRCMF_USB_43569_FW_NAME		"brcm/brcmfmac43569.bin"
++BRCMF_FW_DEF(43143, "brcmfmac43143.bin");
++BRCMF_FW_DEF(43236B, "brcmfmac43236b.bin");
++BRCMF_FW_DEF(43242A, "brcmfmac43242a.bin");
++BRCMF_FW_DEF(43569, "brcmfmac43569.bin");
++
++static struct brcmf_firmware_mapping brcmf_usb_fwnames[] = {
++	BRCMF_FW_ENTRY(BRCM_CC_43143_CHIP_ID, 0xFFFFFFFF, 43143),
++	BRCMF_FW_ENTRY(BRCM_CC_43235_CHIP_ID, 0x00000008, 43236B),
++	BRCMF_FW_ENTRY(BRCM_CC_43236_CHIP_ID, 0x00000008, 43236B),
++	BRCMF_FW_ENTRY(BRCM_CC_43238_CHIP_ID, 0x00000008, 43236B),
++	BRCMF_FW_ENTRY(BRCM_CC_43242_CHIP_ID, 0xFFFFFFFF, 43242A),
++	BRCMF_FW_ENTRY(BRCM_CC_43566_CHIP_ID, 0xFFFFFFFF, 43569),
++	BRCMF_FW_ENTRY(BRCM_CC_43569_CHIP_ID, 0xFFFFFFFF, 43569)
++};
+ 
+ #define TRX_MAGIC		0x30524448	/* "HDR0" */
+ #define TRX_MAX_OFFSET		3		/* Max number of file offsets */
+@@ -139,6 +149,7 @@ struct brcmf_usbdev_info {
+ 	struct brcmf_usbreq *tx_reqs;
+ 	struct brcmf_usbreq *rx_reqs;
+ 
++	char fw_name[BRCMF_FW_NAME_LEN];
+ 	const u8 *image;	/* buffer for combine fw and nvram */
+ 	int image_len;
+ 
+@@ -983,45 +994,15 @@ static int brcmf_usb_dlrun(struct brcmf_
+ 	return 0;
+ }
+ 
+-static bool brcmf_usb_chip_support(int chipid, int chiprev)
+-{
+-	switch(chipid) {
+-	case BRCM_CC_43143_CHIP_ID:
+-		return true;
+-	case BRCM_CC_43235_CHIP_ID:
+-	case BRCM_CC_43236_CHIP_ID:
+-	case BRCM_CC_43238_CHIP_ID:
+-		return (chiprev == 3);
+-	case BRCM_CC_43242_CHIP_ID:
+-		return true;
+-	case BRCM_CC_43566_CHIP_ID:
+-	case BRCM_CC_43569_CHIP_ID:
+-		return true;
+-	default:
+-		break;
+-	}
+-	return false;
+-}
+-
+ static int
+ brcmf_usb_fw_download(struct brcmf_usbdev_info *devinfo)
+ {
+-	int devid, chiprev;
+ 	int err;
+ 
+ 	brcmf_dbg(USB, "Enter\n");
+ 	if (devinfo == NULL)
+ 		return -ENODEV;
+ 
+-	devid = devinfo->bus_pub.devid;
+-	chiprev = devinfo->bus_pub.chiprev;
+-
+-	if (!brcmf_usb_chip_support(devid, chiprev)) {
+-		brcmf_err("unsupported chip %d rev %d\n",
+-			  devid, chiprev);
+-		return -EINVAL;
+-	}
+-
+ 	if (!devinfo->image) {
+ 		brcmf_err("No firmware!\n");
+ 		return -ENOENT;
+@@ -1071,25 +1052,6 @@ static int check_file(const u8 *headers)
+ 	return -1;
+ }
+ 
+-static const char *brcmf_usb_get_fwname(struct brcmf_usbdev_info *devinfo)
+-{
+-	switch (devinfo->bus_pub.devid) {
+-	case BRCM_CC_43143_CHIP_ID:
+-		return BRCMF_USB_43143_FW_NAME;
+-	case BRCM_CC_43235_CHIP_ID:
+-	case BRCM_CC_43236_CHIP_ID:
+-	case BRCM_CC_43238_CHIP_ID:
+-		return BRCMF_USB_43236_FW_NAME;
+-	case BRCM_CC_43242_CHIP_ID:
+-		return BRCMF_USB_43242_FW_NAME;
+-	case BRCM_CC_43566_CHIP_ID:
+-	case BRCM_CC_43569_CHIP_ID:
+-		return BRCMF_USB_43569_FW_NAME;
+-	default:
+-		return NULL;
+-	}
+-}
+-
+ 
+ static
+ struct brcmf_usbdev *brcmf_usb_attach(struct brcmf_usbdev_info *devinfo,
+@@ -1274,9 +1236,16 @@ static int brcmf_usb_probe_cb(struct brc
+ 	bus->chip = bus_pub->devid;
+ 	bus->chiprev = bus_pub->chiprev;
+ 
++	ret = brcmf_fw_map_chip_to_name(bus_pub->devid, bus_pub->chiprev,
++					brcmf_usb_fwnames,
++					ARRAY_SIZE(brcmf_usb_fwnames),
++					devinfo->fw_name, NULL);
++	if (ret)
++		goto fail;
++
+ 	/* request firmware here */
+-	ret = brcmf_fw_get_firmwares(dev, 0, brcmf_usb_get_fwname(devinfo),
+-				     NULL, brcmf_usb_probe_phase2);
++	ret = brcmf_fw_get_firmwares(dev, 0, devinfo->fw_name, NULL,
++				     brcmf_usb_probe_phase2);
+ 	if (ret) {
+ 		brcmf_err("firmware request failed: %d\n", ret);
+ 		goto fail;
+@@ -1472,8 +1441,7 @@ static int brcmf_usb_reset_resume(struct
+ 
+ 	brcmf_dbg(USB, "Enter\n");
+ 
+-	return brcmf_fw_get_firmwares(&usb->dev, 0,
+-				      brcmf_usb_get_fwname(devinfo), NULL,
++	return brcmf_fw_get_firmwares(&usb->dev, 0, devinfo->fw_name, NULL,
+ 				      brcmf_usb_probe_phase2);
+ }
+ 
+@@ -1491,10 +1459,6 @@ static struct usb_device_id brcmf_usb_de
+ };
+ 
+ MODULE_DEVICE_TABLE(usb, brcmf_usb_devid_table);
+-MODULE_FIRMWARE(BRCMF_USB_43143_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_USB_43236_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_USB_43242_FW_NAME);
+-MODULE_FIRMWARE(BRCMF_USB_43569_FW_NAME);
+ 
+ static struct usb_driver brcmf_usbdrvr = {
+ 	.name = KBUILD_MODNAME,
