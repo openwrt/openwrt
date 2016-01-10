@@ -313,26 +313,12 @@ ifneq ($(CONFIG_B43_OPENFIRMWARE),)
 endif
 
 
-PKG_B43_FWV3_NAME:=wl_apsta
-PKG_B43_FWV3_VERSION:=3.130.20.0
-PKG_B43_FWV3_SOURCE:=$(PKG_B43_FWV3_NAME)-$(PKG_B43_FWV3_VERSION).o
-PKG_B43_FWV3_SOURCE_URL:=http://downloads.openwrt.org/sources/
-PKG_B43_FWV3_MD5SUM:=e08665c5c5b66beb9c3b2dd54aa80cb3
-
 define Download/b43
   FILE:=$(PKG_B43_FWV4_SOURCE)
   URL:=$(PKG_B43_FWV4_SOURCE_URL)
   MD5SUM:=$(PKG_B43_FWV4_MD5SUM)
 endef
 $(eval $(call Download,b43))
-
-define Download/b43legacy
-  FILE:=$(PKG_B43_FWV3_SOURCE)
-  URL:=$(PKG_B43_FWV3_SOURCE_URL)
-  MD5SUM:=$(PKG_B43_FWV3_MD5SUM)
-endef
-$(eval $(call Download,b43legacy))
-
 
 define KernelPackage/b43
   $(call KernelPackage/mac80211/Default)
@@ -584,39 +570,10 @@ define KernelPackage/b43legacy
   URL:=https://wireless.wiki.kernel.org/en/users/drivers/b43
   KCONFIG:= \
   	CONFIG_HW_RANDOM=y
-  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb
+  DEPENDS+= +kmod-mac80211 +!(TARGET_brcm47xx||TARGET_brcm63xx):kmod-ssb +b43legacy-firmware
   FILES:=$(PKG_BUILD_DIR)/drivers/net/wireless/broadcom/b43legacy/b43legacy.ko
   AUTOLOAD:=$(call AutoProbe,b43legacy)
   MENU:=1
-endef
-
-define KernelPackage/b43legacy/config
-  if PACKAGE_kmod-b43legacy
-
-	config B43LEGACY_FW_SQUASH
-		bool "Remove unnecessary firmware files"
-		default y
-		help
-		  This options allows you to remove unnecessary b43legacy firmware files
-		  from the final rootfs image. This can reduce the rootfs size by
-		  up to 50k.
-
-		  If unsure, say Y.
-
-	config B43LEGACY_FW_SQUASH_COREREVS
-		string "Core revisions to include"
-		depends on B43LEGACY_FW_SQUASH
-		default "1,2,3,4"
-		help
-		  This is a comma seperated list of core revision numbers.
-
-		  Example (keep files for rev4 only):
-		    4
-
-		  Example (keep files for rev2 and rev4):
-		    2,4
-
-  endif
 endef
 
 define KernelPackage/b43legacy/description
@@ -1743,14 +1700,6 @@ else
 endif
 ifneq ($(CONFIG_B43_FW_SQUASH),)
 	b43-fwsquash.py "$(CONFIG_B43_FW_SQUASH_PHYTYPES)" "$(CONFIG_B43_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43"
-endif
-endef
-
-define KernelPackage/b43legacy/install
-	$(INSTALL_DIR) $(1)/lib/firmware/
-	b43-fwcutter --unsupported -w $(1)/lib/firmware/ $(DL_DIR)/$(PKG_B43_FWV3_SOURCE)
-ifneq ($(CONFIG_B43LEGACY_FW_SQUASH),)
-	b43-fwsquash.py "G" "$(CONFIG_B43LEGACY_FW_SQUASH_COREREVS)" "$(1)/lib/firmware/b43legacy"
 endif
 endef
 
