@@ -21,6 +21,8 @@ PKG_MIRROR_MD5SUM:=ca4d289ad9380471cae376fc7dd3660a
 
 PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
+SCAN_DEPS = *.mk
+
 include $(INCLUDE_DIR)/package.mk
 
 define Package/firmware-default
