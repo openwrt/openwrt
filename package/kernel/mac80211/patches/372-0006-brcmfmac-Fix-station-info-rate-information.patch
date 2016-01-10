@@ -1,0 +1,36 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Thu, 8 Oct 2015 20:33:16 +0200
+Subject: [PATCH] brcmfmac: Fix station info rate information.
+
+Txrate and rxrate in get_station got assigned first with value
+in kbps and then divided by 100 to get it in 100kbps unit. The
+problem with that is that type of rate is u16 which resulted
+in incorrect values for high data rate values.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -2477,13 +2477,13 @@ brcmf_cfg80211_get_station(struct wiphy
+ 		sinfo->rx_packets += le32_to_cpu(sta_info_le.rx_mcast_pkts);
+ 		if (sinfo->tx_packets) {
+ 			sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
+-			sinfo->txrate.legacy = le32_to_cpu(sta_info_le.tx_rate);
+-			sinfo->txrate.legacy /= 100;
++			sinfo->txrate.legacy =
++				le32_to_cpu(sta_info_le.tx_rate) / 100;
+ 		}
+ 		if (sinfo->rx_packets) {
+ 			sinfo->filled |= BIT(NL80211_STA_INFO_RX_BITRATE);
+-			sinfo->rxrate.legacy = le32_to_cpu(sta_info_le.rx_rate);
+-			sinfo->rxrate.legacy /= 100;
++			sinfo->rxrate.legacy =
++				le32_to_cpu(sta_info_le.rx_rate) / 100;
+ 		}
+ 		if (le16_to_cpu(sta_info_le.ver) >= 4) {
+ 			sinfo->filled |= BIT(NL80211_STA_INFO_TX_BYTES);

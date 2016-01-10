@@ -1,0 +1,347 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Thu, 8 Oct 2015 20:33:11 +0200
+Subject: [PATCH] brcmfmac: expose device memory to devcoredump subsystem
+
+Upon PSM watchdog event received from firmware the driver will obtain
+a memory snapshot of the device and expose it to user-space through
+the devcoredump framework. This will trigger a uevent.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Reviewed-by: Franky (Zhenhui) Lin <frankyl@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/Kconfig
++++ b/drivers/net/wireless/brcm80211/Kconfig
+@@ -85,5 +85,6 @@ config BRCM_TRACING
+ config BRCMDBG
+ 	bool "Broadcom driver debug functions"
+ 	depends on BRCMSMAC || BRCMFMAC
++	select WANT_DEV_COREDUMP
+ 	---help---
+ 	  Selecting this enables additional code for debug purposes.
+--- a/drivers/net/wireless/brcm80211/brcmfmac/bus.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/bus.h
+@@ -65,6 +65,8 @@ struct brcmf_bus_dcmd {
+  * @rxctl: receive a control response message from dongle.
+  * @gettxq: obtain a reference of bus transmit queue (optional).
+  * @wowl_config: specify if dongle is configured for wowl when going to suspend
++ * @get_ramsize: obtain size of device memory.
++ * @get_memdump: obtain device memory dump in provided buffer.
+  *
+  * This structure provides an abstract interface towards the
+  * bus specific driver. For control messages to common driver
+@@ -79,6 +81,8 @@ struct brcmf_bus_ops {
+ 	int (*rxctl)(struct device *dev, unsigned char *msg, uint len);
+ 	struct pktq * (*gettxq)(struct device *dev);
+ 	void (*wowl_config)(struct device *dev, bool enabled);
++	size_t (*get_ramsize)(struct device *dev);
++	int (*get_memdump)(struct device *dev, void *data, size_t len);
+ };
+ 
+ 
+@@ -185,6 +189,23 @@ void brcmf_bus_wowl_config(struct brcmf_
+ 		bus->ops->wowl_config(bus->dev, enabled);
+ }
+ 
++static inline size_t brcmf_bus_get_ramsize(struct brcmf_bus *bus)
++{
++	if (!bus->ops->get_ramsize)
++		return 0;
++
++	return bus->ops->get_ramsize(bus->dev);
++}
++
++static inline
++int brcmf_bus_get_memdump(struct brcmf_bus *bus, void *data, size_t len)
++{
++	if (!bus->ops->get_memdump)
++		return -EOPNOTSUPP;
++
++	return bus->ops->get_memdump(bus->dev, data, len);
++}
++
+ /*
+  * interface functions from common layer
+  */
+--- a/drivers/net/wireless/brcm80211/brcmfmac/core.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/core.c
+@@ -957,8 +957,8 @@ int brcmf_attach(struct device *dev)
+ 	drvr->bus_if = dev_get_drvdata(dev);
+ 	drvr->bus_if->drvr = drvr;
+ 
+-	/* create device debugfs folder */
+-	brcmf_debugfs_attach(drvr);
++	/* attach debug facilities */
++	brcmf_debug_attach(drvr);
+ 
+ 	/* Attach and link in the protocol */
+ 	ret = brcmf_proto_attach(drvr);
+@@ -1155,7 +1155,7 @@ void brcmf_detach(struct device *dev)
+ 
+ 	brcmf_proto_detach(drvr);
+ 
+-	brcmf_debugfs_detach(drvr);
++	brcmf_debug_detach(drvr);
+ 	bus_if->drvr = NULL;
+ 	kfree(drvr);
+ }
+--- a/drivers/net/wireless/brcm80211/brcmfmac/debug.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/debug.c
+@@ -16,15 +16,45 @@
+ #include <linux/debugfs.h>
+ #include <linux/netdevice.h>
+ #include <linux/module.h>
++#include <linux/devcoredump.h>
+ 
+ #include <brcmu_wifi.h>
+ #include <brcmu_utils.h>
+ #include "core.h"
+ #include "bus.h"
++#include "fweh.h"
+ #include "debug.h"
+ 
+ static struct dentry *root_folder;
+ 
++static int brcmf_debug_create_memdump(struct brcmf_bus *bus, const void *data,
++				      size_t len)
++{
++	void *dump;
++	size_t ramsize;
++
++	ramsize = brcmf_bus_get_ramsize(bus);
++	if (ramsize) {
++		dump = vzalloc(len + ramsize);
++		if (!dump)
++			return -ENOMEM;
++		memcpy(dump, data, len);
++		brcmf_bus_get_memdump(bus, dump + len, ramsize);
++		dev_coredumpv(bus->dev, dump, len + ramsize, GFP_KERNEL);
++	}
++	return 0;
++}
++
++static int brcmf_debug_psm_watchdog_notify(struct brcmf_if *ifp,
++					   const struct brcmf_event_msg *evtmsg,
++					   void *data)
++{
++	brcmf_dbg(TRACE, "enter: idx=%d\n", ifp->bssidx);
++
++	return brcmf_debug_create_memdump(ifp->drvr->bus_if, data,
++					  evtmsg->datalen);
++}
++
+ void brcmf_debugfs_init(void)
+ {
+ 	root_folder = debugfs_create_dir(KBUILD_MODNAME, NULL);
+@@ -41,7 +71,7 @@ void brcmf_debugfs_exit(void)
+ 	root_folder = NULL;
+ }
+ 
+-int brcmf_debugfs_attach(struct brcmf_pub *drvr)
++int brcmf_debug_attach(struct brcmf_pub *drvr)
+ {
+ 	struct device *dev = drvr->bus_if->dev;
+ 
+@@ -49,12 +79,18 @@ int brcmf_debugfs_attach(struct brcmf_pu
+ 		return -ENODEV;
+ 
+ 	drvr->dbgfs_dir = debugfs_create_dir(dev_name(dev), root_folder);
++	if (IS_ERR(drvr->dbgfs_dir))
++		return PTR_ERR(drvr->dbgfs_dir);
+ 
+-	return PTR_ERR_OR_ZERO(drvr->dbgfs_dir);
++
++	return brcmf_fweh_register(drvr, BRCMF_E_PSM_WATCHDOG,
++				   brcmf_debug_psm_watchdog_notify);
+ }
+ 
+-void brcmf_debugfs_detach(struct brcmf_pub *drvr)
++void brcmf_debug_detach(struct brcmf_pub *drvr)
+ {
++	brcmf_fweh_unregister(drvr, BRCMF_E_PSM_WATCHDOG);
++
+ 	if (!IS_ERR_OR_NULL(drvr->dbgfs_dir))
+ 		debugfs_remove_recursive(drvr->dbgfs_dir);
+ }
+--- a/drivers/net/wireless/brcm80211/brcmfmac/debug.h
++++ b/drivers/net/wireless/brcm80211/brcmfmac/debug.h
+@@ -109,8 +109,8 @@ struct brcmf_pub;
+ #ifdef DEBUG
+ void brcmf_debugfs_init(void);
+ void brcmf_debugfs_exit(void);
+-int brcmf_debugfs_attach(struct brcmf_pub *drvr);
+-void brcmf_debugfs_detach(struct brcmf_pub *drvr);
++int brcmf_debug_attach(struct brcmf_pub *drvr);
++void brcmf_debug_detach(struct brcmf_pub *drvr);
+ struct dentry *brcmf_debugfs_get_devdir(struct brcmf_pub *drvr);
+ int brcmf_debugfs_add_entry(struct brcmf_pub *drvr, const char *fn,
+ 			    int (*read_fn)(struct seq_file *seq, void *data));
+@@ -121,11 +121,11 @@ static inline void brcmf_debugfs_init(vo
+ static inline void brcmf_debugfs_exit(void)
+ {
+ }
+-static inline int brcmf_debugfs_attach(struct brcmf_pub *drvr)
++static inline int brcmf_debug_attach(struct brcmf_pub *drvr)
+ {
+ 	return 0;
+ }
+-static inline void brcmf_debugfs_detach(struct brcmf_pub *drvr)
++static inline void brcmf_debug_detach(struct brcmf_pub *drvr)
+ {
+ }
+ static inline
+--- a/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/pcie.c
+@@ -448,6 +448,47 @@ brcmf_pcie_copy_mem_todev(struct brcmf_p
+ }
+ 
+ 
++static void
++brcmf_pcie_copy_dev_tomem(struct brcmf_pciedev_info *devinfo, u32 mem_offset,
++			  void *dstaddr, u32 len)
++{
++	void __iomem *address = devinfo->tcm + mem_offset;
++	__le32 *dst32;
++	__le16 *dst16;
++	u8 *dst8;
++
++	if (((ulong)address & 4) || ((ulong)dstaddr & 4) || (len & 4)) {
++		if (((ulong)address & 2) || ((ulong)dstaddr & 2) || (len & 2)) {
++			dst8 = (u8 *)dstaddr;
++			while (len) {
++				*dst8 = ioread8(address);
++				address++;
++				dst8++;
++				len--;
++			}
++		} else {
++			len = len / 2;
++			dst16 = (__le16 *)dstaddr;
++			while (len) {
++				*dst16 = cpu_to_le16(ioread16(address));
++				address += 2;
++				dst16++;
++				len--;
++			}
++		}
++	} else {
++		len = len / 4;
++		dst32 = (__le32 *)dstaddr;
++		while (len) {
++			*dst32 = cpu_to_le32(ioread32(address));
++			address += 4;
++			dst32++;
++			len--;
++		}
++	}
++}
++
++
+ #define WRITECC32(devinfo, reg, value) brcmf_pcie_write_reg32(devinfo, \
+ 		CHIPCREGOFFS(reg), value)
+ 
+@@ -1352,12 +1393,36 @@ static void brcmf_pcie_wowl_config(struc
+ }
+ 
+ 
++static size_t brcmf_pcie_get_ramsize(struct device *dev)
++{
++	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
++	struct brcmf_pciedev *buspub = bus_if->bus_priv.pcie;
++	struct brcmf_pciedev_info *devinfo = buspub->devinfo;
++
++	return devinfo->ci->ramsize - devinfo->ci->srsize;
++}
++
++
++static int brcmf_pcie_get_memdump(struct device *dev, void *data, size_t len)
++{
++	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
++	struct brcmf_pciedev *buspub = bus_if->bus_priv.pcie;
++	struct brcmf_pciedev_info *devinfo = buspub->devinfo;
++
++	brcmf_dbg(PCIE, "dump at 0x%08X: len=%zu\n", devinfo->ci->rambase, len);
++	brcmf_pcie_copy_dev_tomem(devinfo, devinfo->ci->rambase, data, len);
++	return 0;
++}
++
++
+ static struct brcmf_bus_ops brcmf_pcie_bus_ops = {
+ 	.txdata = brcmf_pcie_tx,
+ 	.stop = brcmf_pcie_down,
+ 	.txctl = brcmf_pcie_tx_ctlpkt,
+ 	.rxctl = brcmf_pcie_rx_ctlpkt,
+ 	.wowl_config = brcmf_pcie_wowl_config,
++	.get_ramsize = brcmf_pcie_get_ramsize,
++	.get_memdump = brcmf_pcie_get_memdump,
+ };
+ 
+ 
+--- a/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/sdio.c
+@@ -3539,6 +3539,51 @@ done:
+ 	return err;
+ }
+ 
++static size_t brcmf_sdio_bus_get_ramsize(struct device *dev)
++{
++	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
++	struct brcmf_sdio_dev *sdiodev = bus_if->bus_priv.sdio;
++	struct brcmf_sdio *bus = sdiodev->bus;
++
++	return bus->ci->ramsize - bus->ci->srsize;
++}
++
++static int brcmf_sdio_bus_get_memdump(struct device *dev, void *data,
++				      size_t mem_size)
++{
++	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
++	struct brcmf_sdio_dev *sdiodev = bus_if->bus_priv.sdio;
++	struct brcmf_sdio *bus = sdiodev->bus;
++	int err;
++	int address;
++	int offset;
++	int len;
++
++	brcmf_dbg(INFO, "dump at 0x%08x: size=%zu\n", bus->ci->rambase,
++		  mem_size);
++
++	address = bus->ci->rambase;
++	offset = err = 0;
++	sdio_claim_host(sdiodev->func[1]);
++	while (offset < mem_size) {
++		len = ((offset + MEMBLOCK) < mem_size) ? MEMBLOCK :
++		      mem_size - offset;
++		err = brcmf_sdiod_ramrw(sdiodev, false, address, data, len);
++		if (err) {
++			brcmf_err("error %d on reading %d membytes at 0x%08x\n",
++				  err, len, address);
++			goto done;
++		}
++		data += len;
++		offset += len;
++		address += len;
++	}
++
++done:
++	sdio_release_host(sdiodev->func[1]);
++	return err;
++}
++
+ void brcmf_sdio_trigger_dpc(struct brcmf_sdio *bus)
+ {
+ 	if (!bus->dpc_triggered) {
+@@ -3987,7 +4032,9 @@ static struct brcmf_bus_ops brcmf_sdio_b
+ 	.txctl = brcmf_sdio_bus_txctl,
+ 	.rxctl = brcmf_sdio_bus_rxctl,
+ 	.gettxq = brcmf_sdio_bus_gettxq,
+-	.wowl_config = brcmf_sdio_wowl_config
++	.wowl_config = brcmf_sdio_wowl_config,
++	.get_ramsize = brcmf_sdio_bus_get_ramsize,
++	.get_memdump = brcmf_sdio_bus_get_memdump,
+ };
+ 
+ static void brcmf_sdio_firmware_callback(struct device *dev,

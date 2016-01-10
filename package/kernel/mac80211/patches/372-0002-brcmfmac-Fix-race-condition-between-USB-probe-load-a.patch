@@ -1,0 +1,108 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Thu, 8 Oct 2015 20:33:12 +0200
+Subject: [PATCH] brcmfmac: Fix race condition between USB probe/load and
+ disconnect.
+
+When a USB device gets disconnected due to for example removal
+then it is possible that it is still in the loading phase due to
+the asynchronous load routines. These routines can then possible
+access memory which has been freed. Fix this by mutex locking the
+device init phase.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/usb.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/usb.c
+@@ -144,6 +144,7 @@ struct brcmf_usbdev_info {
+ 
+ 	struct usb_device *usbdev;
+ 	struct device *dev;
++	struct mutex dev_init_lock;
+ 
+ 	int ctl_in_pipe, ctl_out_pipe;
+ 	struct urb *ctl_urb; /* URB for control endpoint */
+@@ -1204,6 +1205,8 @@ static void brcmf_usb_probe_phase2(struc
+ 	int ret;
+ 
+ 	brcmf_dbg(USB, "Start fw downloading\n");
++
++	devinfo = bus->bus_priv.usb->devinfo;
+ 	ret = check_file(fw->data);
+ 	if (ret < 0) {
+ 		brcmf_err("invalid firmware\n");
+@@ -1211,7 +1214,6 @@ static void brcmf_usb_probe_phase2(struc
+ 		goto error;
+ 	}
+ 
+-	devinfo = bus->bus_priv.usb->devinfo;
+ 	devinfo->image = fw->data;
+ 	devinfo->image_len = fw->size;
+ 
+@@ -1224,9 +1226,11 @@ static void brcmf_usb_probe_phase2(struc
+ 	if (ret)
+ 		goto error;
+ 
++	mutex_unlock(&devinfo->dev_init_lock);
+ 	return;
+ error:
+ 	brcmf_dbg(TRACE, "failed: dev=%s, err=%d\n", dev_name(dev), ret);
++	mutex_unlock(&devinfo->dev_init_lock);
+ 	device_release_driver(dev);
+ }
+ 
+@@ -1264,6 +1268,7 @@ static int brcmf_usb_probe_cb(struct brc
+ 		if (ret)
+ 			goto fail;
+ 		/* we are done */
++		mutex_unlock(&devinfo->dev_init_lock);
+ 		return 0;
+ 	}
+ 	bus->chip = bus_pub->devid;
+@@ -1317,6 +1322,12 @@ brcmf_usb_probe(struct usb_interface *in
+ 
+ 	devinfo->usbdev = usb;
+ 	devinfo->dev = &usb->dev;
++	/* Take an init lock, to protect for disconnect while still loading.
++	 * Necessary because of the asynchronous firmware load construction
++	 */
++	mutex_init(&devinfo->dev_init_lock);
++	mutex_lock(&devinfo->dev_init_lock);
++
+ 	usb_set_intfdata(intf, devinfo);
+ 
+ 	/* Check that the device supports only one configuration */
+@@ -1391,6 +1402,7 @@ brcmf_usb_probe(struct usb_interface *in
+ 	return 0;
+ 
+ fail:
++	mutex_unlock(&devinfo->dev_init_lock);
+ 	kfree(devinfo);
+ 	usb_set_intfdata(intf, NULL);
+ 	return ret;
+@@ -1403,8 +1415,19 @@ brcmf_usb_disconnect(struct usb_interfac
+ 
+ 	brcmf_dbg(USB, "Enter\n");
+ 	devinfo = (struct brcmf_usbdev_info *)usb_get_intfdata(intf);
+-	brcmf_usb_disconnect_cb(devinfo);
+-	kfree(devinfo);
++
++	if (devinfo) {
++		mutex_lock(&devinfo->dev_init_lock);
++		/* Make sure that devinfo still exists. Firmware probe routines
++		 * may have released the device and cleared the intfdata.
++		 */
++		if (!usb_get_intfdata(intf))
++			goto done;
++
++		brcmf_usb_disconnect_cb(devinfo);
++		kfree(devinfo);
++	}
++done:
+ 	brcmf_dbg(USB, "Exit\n");
+ }
+ 

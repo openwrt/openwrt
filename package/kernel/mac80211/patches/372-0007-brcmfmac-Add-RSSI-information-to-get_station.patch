@@ -1,0 +1,50 @@
+From: Hante Meuleman <meuleman@broadcom.com>
+Date: Thu, 8 Oct 2015 20:33:17 +0200
+Subject: [PATCH] brcmfmac: Add RSSI information to get_station.
+
+Reviewed-by: Arend Van Spriel <arend@broadcom.com>
+Reviewed-by: Pieter-Paul Giesberts <pieterpg@broadcom.com>
+Signed-off-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/cfg80211.c
+@@ -2431,6 +2431,9 @@ brcmf_cfg80211_get_station(struct wiphy
+ 	struct brcmf_sta_info_le sta_info_le;
+ 	u32 sta_flags;
+ 	u32 is_tdls_peer;
++	s32 total_rssi;
++	s32 count_rssi;
++	u32 i;
+ 
+ 	brcmf_dbg(TRACE, "Enter, MAC %pM\n", mac);
+ 	if (!check_vif_up(ifp->vif))
+@@ -2491,6 +2494,26 @@ brcmf_cfg80211_get_station(struct wiphy
+ 			sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES);
+ 			sinfo->rx_bytes = le64_to_cpu(sta_info_le.rx_tot_bytes);
+ 		}
++		total_rssi = 0;
++		count_rssi = 0;
++		for (i = 0; i < BRCMF_ANT_MAX; i++) {
++			if (sta_info_le.rssi[i]) {
++				sinfo->chain_signal_avg[count_rssi] =
++					sta_info_le.rssi[i];
++				sinfo->chain_signal[count_rssi] =
++					sta_info_le.rssi[i];
++				total_rssi += sta_info_le.rssi[i];
++				count_rssi++;
++			}
++		}
++		if (count_rssi) {
++			sinfo->filled |= BIT(NL80211_STA_INFO_CHAIN_SIGNAL);
++			sinfo->chains = count_rssi;
++
++			sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
++			total_rssi /= count_rssi;
++			sinfo->signal = total_rssi;
++		}
+ 	}
+ done:
+ 	brcmf_dbg(TRACE, "Exit\n");

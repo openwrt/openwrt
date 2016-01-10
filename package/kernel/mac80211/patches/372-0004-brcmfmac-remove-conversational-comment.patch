@@ -1,0 +1,25 @@
+From: Arend van Spriel <arend@broadcom.com>
+Date: Thu, 8 Oct 2015 20:33:14 +0200
+Subject: [PATCH] brcmfmac: remove conversational comment
+
+Removing a comment that was only useful during the review of
+the change that introduced it and which should never have been
+submitted.
+
+Reviewed-by: Hante Meuleman <meuleman@broadcom.com>
+Signed-off-by: Arend van Spriel <arend@broadcom.com>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+---
+
+--- a/drivers/net/wireless/brcm80211/brcmfmac/msgbuf.c
++++ b/drivers/net/wireless/brcm80211/brcmfmac/msgbuf.c
+@@ -873,9 +873,6 @@ brcmf_msgbuf_process_txstatus(struct brc
+ 	commonring = msgbuf->flowrings[flowid];
+ 	atomic_dec(&commonring->outstanding_tx);
+ 
+-	/* Hante: i believe this was a bug as tx_status->msg.ifidx was used
+-	 * in brcmf_txfinalize as index in drvr->iflist. Can you confirm/deny?
+-	 */
+ 	brcmf_txfinalize(brcmf_get_ifp(msgbuf->drvr, tx_status->msg.ifidx),
+ 			 skb, true);
+ }
