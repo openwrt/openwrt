@@ -23,39 +23,33 @@ PKG_MAINTAINER:=Felix Fietkau <nbd@openwrt.org>
 
 include $(INCLUDE_DIR)/package.mk
 
-define Package/ibt-firmware
+define Package/firmware-default
   SECTION:=firmware
   CATEGORY:=Firmware
   URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
-  TITLE:=Intel bluetooth firmware
-endef
-
-define Package/ibt-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/intel
-	$(CP) \
-		$(PKG_BUILD_DIR)/intel/*.bseq \
-		$(1)/lib/firmware/intel
-endef
-
-define Package/ar3k-firmware
-  SECTION:=firmware
-  CATEGORY:=Firmware
-  URL:=http://git.kernel.org/cgit/linux/kernel/git/firmware/linux-firmware.git
-  TITLE:=ath3k firmware
-endef
-
-define Package/ar3k-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/ar3k
-	$(CP) \
-		$(PKG_BUILD_DIR)/ar3k/*.dfu \
-		$(1)/lib/firmware/ar3k
+  TITLE:=$(1)
 endef
 
 define Build/Compile
 
 endef
 
-include $(wildcard ./*.mk)
-
-$(eval $(call BuildPackage,ar3k-firmware))
+Package/ibt-firmware = $(call Package/firmware-default,Intel bluetooth firmware)
+define Package/ibt-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/intel
+	$(CP) \
+		$(PKG_BUILD_DIR)/intel/*.bseq \
+		$(1)/lib/firmware/intel
+endef
 $(eval $(call BuildPackage,ibt-firmware))
+
+Package/ar3k-firmware = $(call Package/firmware-default,ath3k firmware)
+define Package/ar3k-firmware/install
+	$(INSTALL_DIR) $(1)/lib/firmware/ar3k
+	$(CP) \
+		$(PKG_BUILD_DIR)/ar3k/*.dfu \
+		$(1)/lib/firmware/ar3k
+endef
+$(eval $(call BuildPackage,ar3k-firmware))
+
+include $(wildcard ./*.mk)
