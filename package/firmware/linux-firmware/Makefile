@@ -34,15 +34,6 @@ define Build/Compile
 
 endef
 
-Package/ibt-firmware = $(call Package/firmware-default,Intel bluetooth firmware)
-define Package/ibt-firmware/install
-	$(INSTALL_DIR) $(1)/lib/firmware/intel
-	$(CP) \
-		$(PKG_BUILD_DIR)/intel/*.bseq \
-		$(1)/lib/firmware/intel
-endef
-$(eval $(call BuildPackage,ibt-firmware))
-
 Package/ar3k-firmware = $(call Package/firmware-default,ath3k firmware)
 define Package/ar3k-firmware/install
 	$(INSTALL_DIR) $(1)/lib/firmware/ar3k
