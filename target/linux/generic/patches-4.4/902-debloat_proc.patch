@@ -134,7 +134,7 @@
 --- a/mm/vmstat.c
 +++ b/mm/vmstat.c
 @@ -1553,10 +1553,12 @@ static int __init setup_vmstat(void)
- 	vmstat_wq = alloc_workqueue("vmstat", WQ_FREEZABLE|WQ_MEM_RECLAIM, 0);
+ 	cpu_notifier_register_done();
  #endif
  #ifdef CONFIG_PROC_FS
 -	proc_create("buddyinfo", S_IRUGO, NULL, &fragmentation_file_operations);
