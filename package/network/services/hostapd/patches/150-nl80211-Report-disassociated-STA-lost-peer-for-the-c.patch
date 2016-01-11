@@ -1,0 +1,67 @@
+From: =?UTF-8?q?Rafa=C5=82=20Mi=C5=82ecki?= <zajec5@gmail.com>
+Date: Mon, 11 Jan 2016 19:18:06 +0100
+Subject: [PATCH] nl80211: Report disassociated STA / lost peer for the correct
+ BSS
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+We shouldn't use drv->ctx as it always points to the first BSS. When
+using FullMAC driver with multi-BSS support it resulted in incorrect
+treating nl80211 events. I noticed with with brcmfmac and BCM43602.
+
+Before my change I was getting "disassociated" on a wrong interface:
+wlan0-1: STA 78:d6:f0:00:11:22 IEEE 802.11: associated
+wlan0-1: STA 78:d6:f0:00:11:22 WPA: pairwise key handshake completed (RSN)
+wlan0: STA 78:d6:f0:00:11:22 IEEE 802.11: disassociated
+
+With this patch it works as expected:
+wlan0-1: STA 78:d6:f0:00:11:22 IEEE 802.11: associated
+wlan0-1: STA 78:d6:f0:00:11:22 WPA: pairwise key handshake completed (RSN)
+wlan0-1: STA 78:d6:f0:00:11:22 IEEE 802.11: disassociated
+
+This doesn't apply to hostapd dealing with SoftMAC drivers when handling
+AP SME & MLME is done it hostapd not the firmware.
+
+Signed-off-by: Rafał Miłecki <zajec5@gmail.com>
+---
+ src/drivers/driver_nl80211_event.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/src/drivers/driver_nl80211_event.c
++++ b/src/drivers/driver_nl80211_event.c
+@@ -1154,6 +1154,7 @@ static void nl80211_new_station_event(st
+ 
+ 
+ static void nl80211_del_station_event(struct wpa_driver_nl80211_data *drv,
++				      struct i802_bss *bss,
+ 				      struct nlattr **tb)
+ {
+ 	u8 *addr;
+@@ -1166,7 +1167,7 @@ static void nl80211_del_station_event(st
+ 		   MAC2STR(addr));
+ 
+ 	if (is_ap_interface(drv->nlmode) && drv->device_ap_sme) {
+-		drv_event_disassoc(drv->ctx, addr);
++		drv_event_disassoc(bss->ctx, addr);
+ 		return;
+ 	}
+ 
+@@ -1175,7 +1176,7 @@ static void nl80211_del_station_event(st
+ 
+ 	os_memset(&data, 0, sizeof(data));
+ 	os_memcpy(data.ibss_peer_lost.peer, addr, ETH_ALEN);
+-	wpa_supplicant_event(drv->ctx, EVENT_IBSS_PEER_LOST, &data);
++	wpa_supplicant_event(bss->ctx, EVENT_IBSS_PEER_LOST, &data);
+ }
+ 
+ 
+@@ -1939,7 +1940,7 @@ static void do_process_drv_event(struct
+ 		nl80211_new_station_event(drv, bss, tb);
+ 		break;
+ 	case NL80211_CMD_DEL_STATION:
+-		nl80211_del_station_event(drv, tb);
++		nl80211_del_station_event(drv, bss, tb);
+ 		break;
+ 	case NL80211_CMD_SET_REKEY_OFFLOAD:
+ 		nl80211_rekey_offload_event(drv, tb);
