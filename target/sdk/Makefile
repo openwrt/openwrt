@@ -56,6 +56,7 @@ KERNEL_FILES_BASE := \
 	scripts \
 	include \
 	Module.symvers \
+	modules.builtin \
 	$(addprefix arch/$(LINUX_KARCH)/,$(KERNEL_FILES_ARCH))
 
 KERNEL_FILES := $(patsubst $(TOPDIR)/%,%,$(wildcard $(addprefix $(LINUX_DIR)/,$(KERNEL_FILES_BASE))))
